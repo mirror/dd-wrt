@@ -631,12 +631,12 @@ static void do_portsetup(char *lan, char *ifname)
 
 #define PORTSETUPWAN(a) if (strlen(a)>0 && strlen(nvram_safe_get ("wan_ifname2"))>0) \
 	    { \
-		nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2")); \
+		strcpy(wan_ifname, nvram_safe_get ("wan_ifname2")); \
 		nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));\
 	    } \
 	  else \
 	    { \
-		nvram_set ("wan_ifname",a); \
+		strcpy(wan_ifname,a); \
 		nvram_set ("wan_ifnames",a); \
 	    }
 
@@ -773,6 +773,17 @@ void reset_hwaddr(char *ifname)
 
 void start_lan(void)
 {
+	struct ifreq ifr;
+	static unsigned char mac[20];
+	int s;
+	static char eabuf[32];
+	static char lan_ifname[64]; //= strdup(nvram_safe_get("lan_ifname"));
+	static char wan_ifname[64]; //= strdup(nvram_safe_get("wan_ifname"));
+	static char lan_ifnames[128]; //= strdup(nvram_safe_get("lan_ifnames"));
+	static char name[80];
+	char *next, *svbuf;
+	static char realname[80];
+	static char wl_face[10];
 	if (strlen(nvram_safe_get("wan_default")) > 0) {
 		PORTSETUPWAN(nvram_safe_get("wan_default"));	// setup
 		// default
@@ -785,23 +796,21 @@ void start_lan(void)
 		// setup
 		set_fullswitch();	// for broadcom - add wan to switch ...
 	}
-	struct ifreq ifr;
-	unsigned char mac[20];
-	int s;
-	char eabuf[32];
+
+
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		return;
 
+#define nvram_setz(a,b) strcpy(a,b)
+	nvram_setz(lan_ifname, "br0");
 #ifdef HAVE_RB500
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames",
+		nvram_setz(lan_ifnames,
 			  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames",
+		nvram_setz(lan_ifnames,
 			  "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
 		PORTSETUPWAN("eth0");
 	}
@@ -813,12 +822,10 @@ void start_lan(void)
 
 #ifdef HAVE_MAGICBOX
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth1 ath0");
+		nvram_setz(lan_ifnames, "eth1 ath0");
 		PORTSETUPWAN("eth0");
 	}
 
@@ -835,23 +842,19 @@ void start_lan(void)
 #if defined(HAVE_FONERA) && !defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_MR3202A)
 	if (getRouterBrand() == ROUTER_BOARD_FONERA2200) {
 		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan0 vlan1 ath0");
+			nvram_setz(lan_ifnames, "vlan0 vlan1 ath0");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan1 vlan0 ath0");
+			nvram_setz(lan_ifnames, "vlan1 vlan0 ath0");
 			PORTSETUPWAN("vlan1");
 		}
 	} else {
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 			PORTSETUPWAN("eth0");
 		}
 	}
@@ -862,12 +865,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_WRT54G2
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "vlan1 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "vlan1 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 		PORTSETUPWAN("vlan2");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -877,12 +878,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_DIR300
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "vlan0 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan0 vlan2 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "vlan0 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan0 vlan2 ath0");
 		PORTSETUPWAN("vlan2");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -892,12 +891,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_RS
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0 ath1 ath2");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1 ath2");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0 ath1 ath2");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1 ath2");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -906,12 +903,10 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_AP83
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 		PORTSETUPWAN("eth1");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -920,12 +915,10 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_LSX
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -935,12 +928,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_DANUBE
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -953,23 +944,19 @@ void start_lan(void)
 	{
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth2 ra0");
+			nvram_setz(lan_ifnames, "eth2 ra0");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth2 ra0");
+			nvram_setz(lan_ifnames, "eth2 ra0");
 			PORTSETUPWAN("eth2");
 		}
 	} else {
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan1 vlan2 ra0");
+			nvram_setz(lan_ifnames, "vlan1 vlan2 ra0");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan1 vlan2 ra0");
+			nvram_setz(lan_ifnames, "vlan1 vlan2 ra0");
 			PORTSETUPWAN("vlan2");
 		}
 	}
@@ -980,12 +967,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_STORM
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -999,24 +984,20 @@ void start_lan(void)
 	    || getRouterBrand() == ROUTER_BOARD_NP28G) {
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 eth1 ath0");
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 eth1 ath0");
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 			PORTSETUPWAN("eth1");
 		}
 	} else {
 
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 			PORTSETUPWAN("eth0");
 		}
 	}
@@ -1028,12 +1009,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_MR3202A
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "vlan1 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "vlan1 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 		PORTSETUPWAN("vlan2");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -1047,26 +1026,22 @@ void start_lan(void)
 #if defined(HAVE_LS2) || defined(HAVE_SOLO51)
 	if (getSTA() || getWET() || CANBRIDGE()) {
 #if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2) || defined(HAVE_BS2HP) || defined(HAVE_MS2) || defined(HAVE_PICO2) || defined(HAVE_PICO2HP)
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
 #else
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "vlan0 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan0 vlan2 ath0");
 		PORTSETUPWAN("");
 #endif
 	} else {
 #if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2) || defined(HAVE_BS2HP) || defined(HAVE_MS2) || defined(HAVE_PICO2) || defined(HAVE_PICO2HP)
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("eth0");
 #else
-		nvram_set("lan_ifname", "br0");
 #ifdef HAVE_BWRG1000
-		nvram_set("lan_ifnames", "vlan0 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan0 vlan2 ath0");
 		PORTSETUPWAN("vlan2");
 #else
-		nvram_set("lan_ifnames", "vlan0 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan0 vlan2 ath0");
 		PORTSETUPWAN("vlan0");
 #endif
 #endif
@@ -1079,12 +1054,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_LS5
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("eth0");
 	}
 
@@ -1095,12 +1068,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_TW6600
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0 ath1");
+		nvram_setz(lan_ifnames, "eth0 ath0 ath1");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 ath0 ath1");
+		nvram_setz(lan_ifnames, "eth0 ath0 ath1");
 		PORTSETUPWAN("eth0");
 	}
 
@@ -1111,12 +1082,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_PB42
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0 ath1");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0 ath1");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
 		PORTSETUPWAN("eth0");
 	}
 
@@ -1127,12 +1096,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_WHRAG108
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0 ath1");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
-		nvram_set("lan_ifnames", "eth0 eth1 ath0 ath1");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
 		PORTSETUPWAN("eth1");
 	}
 
@@ -1144,38 +1111,30 @@ void start_lan(void)
 #ifdef HAVE_CA8
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		if (getRouterBrand() == ROUTER_BOARD_CA8PRO) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan0 vlan1 ath0");
+			nvram_setz(lan_ifnames, "vlan0 vlan1 ath0");
 			PORTSETUPWAN("");
 		} else if (getRouterBrand() == ROUTER_BOARD_RCAA01) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan0 vlan1 ath0 ath1");
+			nvram_setz(lan_ifnames, "vlan0 vlan1 ath0 ath1");
 			PORTSETUPWAN("");
 		} else if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0 ath1");
+			nvram_setz(lan_ifnames, "eth0 ath0 ath1");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 			PORTSETUPWAN("");
 		}
 	} else {
 		if (getRouterBrand() == ROUTER_BOARD_CA8PRO) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan0 vlan1 ath0");
+			nvram_setz(lan_ifnames, "vlan0 vlan1 ath0");
 			PORTSETUPWAN("vlan1");
 		} else if (getRouterBrand() == ROUTER_BOARD_RCAA01) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "vlan0 vlan1 ath0 ath1");
+			nvram_setz(lan_ifnames, "vlan0 vlan1 ath0 ath1");
 			PORTSETUPWAN("vlan1");
 		} else if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0 ath1");
+			nvram_setz(lan_ifnames, "eth0 ath0 ath1");
 			PORTSETUPWAN("eth0");
 		} else {
-			nvram_set("lan_ifname", "br0");
-			nvram_set("lan_ifnames", "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 			PORTSETUPWAN("eth0");
 		}
 	}
@@ -1188,82 +1147,74 @@ void start_lan(void)
 #ifdef HAVE_GATEWORX
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP) {
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("");
 		} else if (getRouterBrand() == ROUTER_BOARD_GATEWORX_GW2345) {
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("");
 		} else {
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("");
 		}
 	} else {
 		if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP) {
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "eth0 eth1 ixp0 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("ixp0");
 		} else if (getRouterBrand() == ROUTER_BOARD_GATEWORX_GW2345) {
 #ifdef HAVE_MI424WR
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("ixp0");
 #else
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("ixp1");
 #endif
 		} else {
 #ifdef HAVE_XIOCOM
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 
 			PORTSETUPWAN("ixp0");
 
 #else
-			nvram_set("lan_ifname", "br0");
 			if (nvram_match("intel_eth", "1"))
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_set("lan_ifnames",
+				nvram_setz(lan_ifnames,
 					  "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 
 			PORTSETUPWAN("ixp1");
@@ -1287,45 +1238,42 @@ void start_lan(void)
 #endif
 #ifdef HAVE_X86
 	if (getSTA() || getWET()) {
-		nvram_set("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
-		nvram_set("lan_ifnames",
+		nvram_setz(lan_ifnames,
 			  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
 		if (nvram_match("wifi_bonding", "1"))
-			nvram_set("lan_ifnames",
+			nvram_setz(lan_ifnames,
 				  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
 		else
-			nvram_set("lan_ifnames",
+			nvram_setz(lan_ifnames,
 				  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 
 #endif
 		PORTSETUPWAN("");
 	} else if (CANBRIDGE()) {
-		nvram_set("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
-		nvram_set("lan_ifnames",
+		nvram_setz(lan_ifnames,
 			  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
 		if (nvram_match("wifi_bonding", "1"))
-			nvram_set("lan_ifnames",
+			nvram_setz(lan_ifnames,
 				  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
 		else
-			nvram_set("lan_ifnames",
+			nvram_setz(lan_ifnames,
 				  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
 		PORTSETUPWAN("");
 	} else {
-		nvram_set("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
-		nvram_set("lan_ifnames",
+		nvram_setz(lan_ifnames,
 			  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
 		if (nvram_match("wifi_bonding", "1"))
-			nvram_set("lan_ifnames",
+			nvram_setz(lan_ifnames,
 				  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
 		else
-			nvram_set("lan_ifnames",
+			nvram_setz(lan_ifnames,
 				  "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
 #ifdef HAVE_GW700
@@ -1335,6 +1283,13 @@ void start_lan(void)
 #endif
 
 	}
+	nvram_set("lan_ifname",lan_ifname);
+	nvram_set("wan_ifname",wan_ifname);
+	nvram_set("lan_ifnames",lan_ifnames);
+
+	if (!nvram_match("lan_ifnames",lan_ifnames) || !nvram_match("wan_ifname",wan_ifname))
+	    nvram_commit();
+	
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
@@ -1348,16 +1303,8 @@ void start_lan(void)
 	 * SIOCSIFHWADDR, &ifr); 
 	 */
 #endif
-	char *lan_ifname = strdup(nvram_safe_get("lan_ifname"));
-	char *wan_ifname = strdup(nvram_safe_get("wan_ifname"));
-	char *lan_ifnames = strdup(nvram_safe_get("lan_ifnames"));
-	char name[80], *next, *svbuf;
-	char realname[80];
-	char wl_face[10];
-
-	strcpy(lan_ifname, nvram_safe_get("lan_ifname"));
-	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
-	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
+	
+	
 
 	cprintf("%s\n", lan_ifname);
 
@@ -1459,7 +1406,8 @@ void start_lan(void)
 		eval("killall", "-9", "ead");
 #endif
 		foreach(name, lan_ifnames, next) {
-			if (!ifexists(name))
+			int ex = ifexists(name);
+			if (!ex)
 				continue;
 #ifdef HAVE_EAD
 #if defined(HAVE_RT2880) || defined(HAVE_MADWIFI)
@@ -1731,9 +1679,6 @@ void start_lan(void)
 		}
 	}
 
-	free(lan_ifname);
-	free(wan_ifname);
-	free(lan_ifnames);
 #ifdef HAVE_EAD
 	if (strlen(eadline) > 0)
 		sysprintf("ead %s -B", eadline);
@@ -1795,8 +1740,6 @@ void start_lan(void)
 #ifdef HAVE_WAVESAT
 	configure_wimax();
 #endif
-	lan_ifname = strdup(nvram_safe_get("lan_ifname"));
-	lan_ifnames = strdup(nvram_safe_get("lan_ifnames"));
 
 	/*
 	 * specific non-bridged lan i/f 
@@ -3806,14 +3749,12 @@ void start_hotplug_net(void)
 	sprintf(bridged, "%s_bridged", ifname);
 
 	if (!strcmp(action, "add")) {
-		fprintf(stderr, "adding WDS %s\n", interface);
 
 		eval("ifconfig", interface, "up");
 		if (nvram_match(bridged, "1"))
 			br_add_interface(getBridge(ifname), interface);
 	}
 	if (!strcmp(action, "remove")) {
-		fprintf(stderr, "removing WDS %s\n", interface);
 		eval("ifconfig", interface, "down");
 		if (nvram_match(bridged, "1"))
 			br_del_interface(getBridge(ifname), interface);

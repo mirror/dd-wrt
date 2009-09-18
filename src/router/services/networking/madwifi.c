@@ -931,27 +931,27 @@ void setMacFilter(char *iface)
 static void configure_single(int count)
 {
 	char *next;
-	char var[80];
-	char mode[80];
+	static char var[80];
+	static char mode[80];
 	int cnt = 0;
-	char dev[10];
-	char wif[10];
-	char mtikie[32];
-	char wl[16];
-	char channel[16];
-	char ssid[16];
-	char net[16];
-	char wifivifs[16];
-	char broadcast[16];
-	char power[32];
-	char sens[32];
-	char basedev[16];
-	char diversity[32];
-	char rxantenna[32];
-	char txantenna[32];
-	char athmac[16];
-	char maxassoc[32];
-	char wl_poll[32];
+	static char dev[10];
+	static char wif[10];
+	static char mtikie[32];
+	static char wl[16];
+	static char channel[16];
+	static char ssid[16];
+	static char net[16];
+	static char wifivifs[16];
+	static char broadcast[16];
+	static char power[32];
+	static char sens[32];
+	static char basedev[16];
+	static char diversity[32];
+	static char rxantenna[32];
+	static char txantenna[32];
+	static char athmac[16];
+	static char maxassoc[32];
+	static char wl_poll[32];
 	static int vapcount = 0;
 	if (count == 0)
 		vapcount = 0;
