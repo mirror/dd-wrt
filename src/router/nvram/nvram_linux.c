@@ -87,14 +87,12 @@ char *nvram_get(const char *name)
 
 	if (nvram_fd < 0)
 		if (nvram_init(NULL)) {
-			fprintf(stderr,"nvram_get failed, init fucked up\n");
 			//unlock();
 			return NULL;
 		}
 	if (count > sizeof(tmp)) {
 		if (!(off = malloc(count))) {
 			//unlock();
-			fprintf(stderr,"nvram_get failed, malloc fucked up\n");
 			return NULL;
 		}
 	}
@@ -116,14 +114,12 @@ char *nvram_get(const char *name)
 		free(off);
 	//unlock();
 
-//fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
-//fprintf(stderr,"NVRAM_GET(%s)=%s\n",name,value);
+
 	return value;
 }
 
 int nvram_getall(char *buf, int count)
 {
-//fprintf(stderr,"getall\n");
 //lock();
 	int ret;
 
@@ -200,8 +196,6 @@ int nvram_set(const char *name, const char *value)
 	struct nvram_convert *v;
 	int ret;
 	ret = _nvram_set(name, value);
-	if (ret!=0)
-	    fprintf(stderr,"nvram_set failed with code %d\n",ret);
 
 	for (v = nvram_converts; v->name; v++) {
 		if (!strcmp(v->name, name)) {
@@ -220,7 +214,6 @@ int nvram_immed_set(const char *name, const char *value)
 int nvram_unset(const char *name)
 {
 //lock();
-//fprintf(stderr,"nvram_unset %s\n",name);
 	int v = _nvram_set(name, NULL);
 //unlock();
 	return v;
