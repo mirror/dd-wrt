@@ -1283,12 +1283,6 @@ void start_lan(void)
 #endif
 
 	}
-	nvram_set("lan_ifname",lan_ifname);
-	nvram_set("wan_ifname",wan_ifname);
-	nvram_set("lan_ifnames",lan_ifnames);
-
-	if (!nvram_match("lan_ifnames",lan_ifnames) || !nvram_match("wan_ifname",wan_ifname))
-	    nvram_commit();
 	
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
@@ -1304,6 +1298,12 @@ void start_lan(void)
 	 */
 #endif
 	
+	nvram_set("lan_ifname",lan_ifname);
+	nvram_set("wan_ifname",wan_ifname);
+	nvram_set("lan_ifnames",lan_ifnames);
+
+	if (!nvram_match("lan_ifnames",lan_ifnames) || !nvram_match("wan_ifname",wan_ifname))
+	    nvram_commit();
 	
 
 	cprintf("%s\n", lan_ifname);
