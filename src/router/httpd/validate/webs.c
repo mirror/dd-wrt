@@ -693,20 +693,24 @@ _8021xprv
 	copytonv(wp, "%s_tls8021xca", prefix);
 	copytonv(wp, "%s_tls8021xpem", prefix);
 	copytonv(wp, "%s_tls8021xprv", prefix);
+	copytonv(wp, "%s_tls8021xaddopt", prefix);
 	copytonv(wp, "%s_peap8021xuser", prefix);
 	copytonv(wp, "%s_peap8021xanon", prefix);
 	copytonv(wp, "%s_peap8021xpasswd", prefix);
 	copytonv(wp, "%s_peap8021xphase2", prefix);
 	copytonv(wp, "%s_peap8021xca", prefix);
+	copytonv(wp, "%s_peap8021xaddopt", prefix);
 	copytonv(wp, "%s_ttls8021xuser", prefix);
 	copytonv(wp, "%s_ttls8021xanon", prefix);
 	copytonv(wp, "%s_ttls8021xpasswd", prefix);
 	copytonv(wp, "%s_ttls8021xphase2", prefix);
 	copytonv(wp, "%s_ttls8021xca", prefix);
+	copytonv(wp, "%s_ttls8021xaddopt", prefix);
 	copytonv(wp, "%s_leap8021xuser", prefix);
 	copytonv(wp, "%s_leap8021xanon", prefix);
 	copytonv(wp, "%s_leap8021xpasswd", prefix);
 	copytonv(wp, "%s_leap8021xphase2", prefix);
+	copytonv(wp, "%s_leap8021xaddopt", prefix);
 
 #endif
 
