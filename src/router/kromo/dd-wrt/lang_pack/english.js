@@ -1696,6 +1696,7 @@ sec80211x.servercertif="Public Server Certificate";
 sec80211x.clientcertif="Client Certificate";
 sec80211x.phase2="Phase2 Authentication";
 sec80211x.anon="Anonymous Identity";
+sec80211x.options="Additional Supplicant Options";
 
 //help container
 var hwpa = new Object();
