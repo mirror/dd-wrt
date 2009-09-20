@@ -4806,6 +4806,7 @@ void show_80211X(webs_t wp, char *prefix)
 	 * _8021xca
 	 * _8021xpem
 	 * _8021xprv
+	 * _8021xaddopt
 	 */
 	char type[32];
 
@@ -4881,6 +4882,23 @@ void show_80211X(webs_t wp, char *prefix)
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
+	
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
+	websWrite(wp,
+		  "<textarea cols=\"60\" rows=\"3\" id=\"%s_ttls8021xaddopt\" name=\"%s_ttls8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
+		  prefix, prefix);
+	websWrite(wp, "var %s_ttls8021xaddopt = fix_cr( '", prefix);
+	sprintf(namebuf, "%s_ttls8021xaddopt", prefix);
+	tf_webWriteESCNV(wp, namebuf);
+	websWrite(wp, "' );\n");
+	websWrite(wp,
+		  "document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n",
+		  prefix, prefix);
+	websWrite(wp, "//]]>\n</script>\n");
+	websWrite(wp, "</div>\n");
+	
 	websWrite(wp, "</div>\n");
 
 	// peap authentication
@@ -4924,12 +4942,28 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_peap8021xca", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-
 	websWrite(wp,
 		  "document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n",
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
+	
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
+	websWrite(wp,
+		  "<textarea cols=\"60\" rows=\"3\" id=\"%s_peap8021xaddopt\" name=\"%s_peap8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
+		  prefix, prefix);
+	websWrite(wp, "var %s_peap8021xaddopt = fix_cr( '", prefix);
+	sprintf(namebuf, "%s_peap8021xaddopt", prefix);
+	tf_webWriteESCNV(wp, namebuf);
+	websWrite(wp, "' );\n");
+	websWrite(wp,
+		  "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n",
+		  prefix, prefix);
+	websWrite(wp, "//]]>\n</script>\n");
+	websWrite(wp, "</div>\n");	
+	
 	websWrite(wp, "</div>\n");
 	// leap authentication
 	websWrite(wp, "<div id=\"idleap%s\">\n", prefix);
@@ -4960,6 +4994,22 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 		  prefix, nvram_prefix_get("leap8021xphase2", prefix));
+		  
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
+	websWrite(wp,
+		  "<textarea cols=\"60\" rows=\"3\" id=\"%s_leap8021xaddopt\" name=\"%s_leap8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
+		  prefix, prefix);
+	websWrite(wp, "var %s_leap8021xaddopt = fix_cr( '", prefix);
+	sprintf(namebuf, "%s_leap8021xaddopt", prefix);
+	tf_webWriteESCNV(wp, namebuf);
+	websWrite(wp, "' );\n");
+	websWrite(wp,
+		  "document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n",
+		  prefix, prefix);
+	websWrite(wp, "//]]>\n</script>\n");
+	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "</div>\n");
 
@@ -5003,7 +5053,6 @@ void show_80211X(webs_t wp, char *prefix)
 	sprintf(namebuf, "%s_tls8021xca", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-
 	websWrite(wp,
 		  "document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n",
 		  prefix, prefix);
@@ -5016,12 +5065,10 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xpem\" name=\"%s_tls8021xpem\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 		  prefix, prefix);
-
 	websWrite(wp, "var %s_tls8021xpem = fix_cr( '", prefix);
 	sprintf(namebuf, "%s_tls8021xpem", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-
 	websWrite(wp,
 		  "document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n",
 		  prefix, prefix);
@@ -5034,14 +5081,28 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xprv\" name=\"%s_tls8021xprv\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 		  prefix, prefix);
-
 	websWrite(wp, "var %s_tls8021xprv = fix_cr( '", prefix);
 	sprintf(namebuf, "%s_tls8021xprv", prefix);
 	tf_webWriteESCNV(wp, namebuf);
 	websWrite(wp, "' );\n");
-
 	websWrite(wp,
 		  "document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n",
+		  prefix, prefix);
+	websWrite(wp, "//]]>\n</script>\n");
+	websWrite(wp, "</div>\n");
+	
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
+	websWrite(wp,
+		  "<textarea cols=\"60\" rows=\"3\" id=\"%s_tls8021xaddopt\" name=\"%s_tls8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
+		  prefix, prefix);
+	websWrite(wp, "var %s_tls8021xaddopt = fix_cr( '", prefix);
+	sprintf(namebuf, "%s_tls8021xaddopt", prefix);
+	tf_webWriteESCNV(wp, namebuf);
+	websWrite(wp, "' );\n");
+	websWrite(wp,
+		  "document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n",
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
