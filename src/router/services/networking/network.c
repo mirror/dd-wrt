@@ -784,6 +784,11 @@ void start_lan(void)
 	char *next, *svbuf;
 	static char realname[80];
 	static char wl_face[10];
+
+	strcpy(lan_ifname, nvram_safe_get("wan_ifname"));	
+	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
+	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));	
+	
 	if (strlen(nvram_safe_get("wan_default")) > 0) {
 		PORTSETUPWAN(nvram_safe_get("wan_default"));	// setup
 		// default
@@ -1298,15 +1303,19 @@ void start_lan(void)
 	 */
 #endif
 	
-	nvram_set("lan_ifname",lan_ifname);
-	nvram_set("wan_ifname",wan_ifname);
-	nvram_set("lan_ifnames",lan_ifnames);
+	if (!nvram_match("lan_ifname", lan_ifname) 
+		|| !nvram_match("wan_ifname", wan_ifname) 
+		|| !nvram_match("lan_ifnames", lan_ifnames))
+		{
+		nvram_set("lan_ifname", lan_ifname);
+		nvram_set("wan_ifname", wan_ifname);
+		nvram_set("lan_ifnames", lan_ifnames);
+	    nvram_commit();	
+		}
 
-	if (!nvram_match("lan_ifnames",lan_ifnames) || !nvram_match("wan_ifname",wan_ifname))
-	    nvram_commit();
-	
-
-	cprintf("%s\n", lan_ifname);
+	cprintf("lan ifname = %s\n", lan_ifname);
+	cprintf("lan ifnames = %s\n", lan_ifnames);
+	cprintf("wan ifname = %s\n", wan_ifname);
 
 	// If running in client-mode, remove old WAN-configuration
 	if (getSTA()) {
