@@ -331,6 +331,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_tls8021xanon", prefix));
 			}
+			if (strlen(nvram_nget("%s_tls8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_tls8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
+			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "peap")) {
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
@@ -361,6 +367,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_peap8021xanon", prefix));
 			}
+			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_peap8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
+			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "ttls")) {
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
@@ -390,6 +402,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_ttls8021xanon", prefix));
 			}
+			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_ttls8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
+			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "leap")) {
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
@@ -417,6 +435,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			if (strlen(nvram_nget("%s_leap8021xanon", prefix)) > 0) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_leap8021xanon", prefix));
+			}
+			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_leap8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
 			}
 		}
 		fprintf(fp, "}\n");
