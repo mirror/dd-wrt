@@ -1286,26 +1286,6 @@ void start_lan(void)
 	 */
 #endif
 
-	if (nvram_match("fullswitch", "1")
-	    && (getSTA() || getWET()
-		|| nvram_match("wan_proto", "disabled"))) {
-		if (!nvram_match("fullswitch_set", "1")) {
-			nvram_set("lan_default", lan_ifnames);
-			nvram_set("fullswitch_set", "1");
-		}
-		sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"),
-			nvram_safe_get("wan_default"));
-		strcpy(wan_ifname, "");
-	} else {
-		if (nvram_match("fullswitch_set", "1")) {
-			strcpy(lan_ifnames, nvram_safe_get("lan_default"));
-			nvram_unset("lan_default");
-			strcpy(wan_ifname, nvram_safe_get("wan_default"));
-			nvram_unset("fullswitch_set");
-		}
-	}
-
-	
 	if (!nvram_match("lan_ifname", lan_ifname) 
 		|| !nvram_match("wan_ifname", wan_ifname) 
 		|| !nvram_match("lan_ifnames", lan_ifnames))
