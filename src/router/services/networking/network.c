@@ -640,44 +640,6 @@ static void do_portsetup(char *lan, char *ifname)
 		nvram_set ("wan_ifnames",a); \
 	    }
 
- /*
-  * add wan ifname to lan_ifnames if we use fullswitch 
-  */
-void set_fullswitch(void)
-{
-	char wanifname[8];
-	char lanifnames[128];
-
-	strcpy(wanifname, nvram_safe_get("wan_ifname"));
-	strcpy(lanifnames, nvram_safe_get("lan_ifnames"));
-
-	if (nvram_match("fullswitch", "1")
-	    && (getSTA() || getWET()
-		|| nvram_match("wan_proto", "disabled"))) {
-		if (!nvram_match("fullswitch_set", "1")) {
-			nvram_set("lan_default", lanifnames);
-			nvram_set("fullswitch_set", "1");
-		}
-		sprintf(lanifnames, "%s %s", nvram_safe_get("lan_default"),
-			nvram_safe_get("wan_default"));
-		strcpy(wanifname, "");
-	} else {
-		if (nvram_match("fullswitch_set", "1")) {
-			strcpy(lanifnames, nvram_safe_get("lan_default"));
-			nvram_unset("lan_default");
-			strcpy(wanifname, nvram_safe_get("wan_default"));
-			nvram_unset("fullswitch_set");
-		}
-	}
-
-	nvram_set("lan_ifnames", lanifnames);
-	nvram_set("wan_ifname", wanifname);
-	nvram_set("wan_ifnames", wanifname);
-	nvram_set("pppoe_wan_ifname", wanifname);
-	nvram_set("pppoe_ifname", wanifname);
-
-	return;
-}
 
 void reset_hwaddr(char *ifname)
 {
@@ -799,7 +761,28 @@ void start_lan(void)
 		// required
 		// by network 
 		// setup
-		set_fullswitch();	// for broadcom - add wan to switch ...
+		
+ /*
+  * add wan ifname to lan_ifnames if we use fullswitch 
+  */
+	if (nvram_match("fullswitch", "1")
+	    && (getSTA() || getWET()
+		|| nvram_match("wan_proto", "disabled"))) {
+		if (!nvram_match("fullswitch_set", "1")) {
+			nvram_set("lan_default", lan_ifnames);
+			nvram_set("fullswitch_set", "1");
+		}
+		sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"),
+			nvram_safe_get("wan_default"));
+		strcpy(wan_ifname, "");
+	} else {
+		if (nvram_match("fullswitch_set", "1")) {
+			strcpy(lan_ifnames, nvram_safe_get("lan_default"));
+			nvram_unset("lan_default");
+			strcpy(wan_ifname, nvram_safe_get("wan_default"));
+			nvram_unset("fullswitch_set");
+		}
+	}		
 	}
 
 
@@ -1302,6 +1285,26 @@ void start_lan(void)
 	 * SIOCSIFHWADDR, &ifr); 
 	 */
 #endif
+
+	if (nvram_match("fullswitch", "1")
+	    && (getSTA() || getWET()
+		|| nvram_match("wan_proto", "disabled"))) {
+		if (!nvram_match("fullswitch_set", "1")) {
+			nvram_set("lan_default", lan_ifnames);
+			nvram_set("fullswitch_set", "1");
+		}
+		sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"),
+			nvram_safe_get("wan_default"));
+		strcpy(wan_ifname, "");
+	} else {
+		if (nvram_match("fullswitch_set", "1")) {
+			strcpy(lan_ifnames, nvram_safe_get("lan_default"));
+			nvram_unset("lan_default");
+			strcpy(wan_ifname, nvram_safe_get("wan_default"));
+			nvram_unset("fullswitch_set");
+		}
+	}
+
 	
 	if (!nvram_match("lan_ifname", lan_ifname) 
 		|| !nvram_match("wan_ifname", wan_ifname) 
