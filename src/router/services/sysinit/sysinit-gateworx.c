@@ -246,8 +246,10 @@ void start_sysinit(void)
 	insmod("ixp400_eth");
 	eval("ifconfig", "ixp0", "0.0.0.0", "up");
 	eval("ifconfig", "ixp1", "0.0.0.0", "up");
+#ifndef HAVE_WAVESAT
 	insmod("ocf");
 	insmod("cryptodev");
+#endif
 	// insmod("ixp4xx", "init_crypto=0");
 #else
 	// eval ("mknod", "/dev/IxNpe","c","10","184");
