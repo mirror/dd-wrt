@@ -2,11 +2,7 @@
 CPPFLAGS += -Iinclude
 LDFLAGS =
 
-ifneq ($(HOST_OS),Linux)
-USE_LIBNL_MICRO=1
-else
-USE_LIBNL_MICRO=
-endif
+USE_LIBNL_MICRO=0
 
 ifeq ($(USE_LIBNL_MICRO),1)
 LIBNL_PREFIX = /usr/local
