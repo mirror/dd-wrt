@@ -81,12 +81,21 @@ else
 	if test -e "src/Makefile"; then make -C src; fi
 endif
 endif
+ifeq ($(CONFIG_MADWIFI),y)
+	make -C wprobe
+endif
+
+
+
 
 clean:
 ifeq ($(CONFIG_BUFFALO),y)
 	make -C src clean
 else
 	if test -e "src/Makefile"; then make -C src clean; fi
+endif
+ifeq ($(CONFIG_MADWIFI),y)
+	make -C wprobe clean
 endif
 	rm -f *.o *~ $(UTILS)
 
@@ -122,6 +131,9 @@ else
 	install -D wl.v23 $(INSTALLDIR)/utils/usr/sbin/wl
 endif
 
+endif
+ifeq ($(CONFIG_MADWIFI),y)
+	install -D wprobe/wprobe-util $(INSTALLDIR)/utils/usr/sbin/wprobe-util
 endif
 	@true
 endif
