@@ -242,7 +242,7 @@ void start_sysinit(void)
 #if 1
 	insmod("ixp400th");
 	insmod("ixp400");
-	system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+//	system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
 	insmod("ixp400_eth");
 	eval("ifconfig", "ixp0", "0.0.0.0", "up");
 	eval("ifconfig", "ixp1", "0.0.0.0", "up");
