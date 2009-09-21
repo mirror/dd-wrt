@@ -28,6 +28,7 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	char *buffer;
 	int i = 1, d = 1;
 	unsigned int days = daysformonth(month, year);
+//      fprintf(stderr,"days %d, month %d, year %d\n",days,month,year);
 	unsigned long old_rcvd;
 	unsigned long old_sent;
 	char *tdata;
@@ -35,7 +36,6 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	memset(buffer, 0, 2048);
 	sprintf(tq, "traff-%02u-%u", month, year);
 	tdata = nvram_safe_get(tq);
-
 	if (tdata == NULL || strlen(tdata) == 0) {
 		for (d = 0; d < days; d++) {
 			strcat(sbuff, "0:0 ");
@@ -44,7 +44,6 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 		nvram_set(tq, sbuff);
 		tdata = nvram_safe_get(tq);
 	}
-
 	foreach(var, tdata, next) {
 		if (i == day) {
 			sscanf(var, "%lu:%lu", &old_rcvd, &old_sent);
@@ -63,6 +62,14 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 			strcat(buffer, " ");
 		}
 		i++;
+	}
+	int a;
+	/* correct entries if something strange happend */
+	if (i <= days) {
+		for (a = i; a == days; a++) {
+			strcat(buffer, "0:0 ");
+		}
+		strcat(buffer, "[0:0]");
 	}
 	strtrim_right(buffer, ' ');
 	nvram_set(tq, buffer);
@@ -126,7 +133,6 @@ int main(int argc, char **argv)
 		day = currtime->tm_mday;
 		month = currtime->tm_mon + 1;	// 1 - 12
 		year = currtime->tm_year + 1900;
-
 		if ((in = fopen("/proc/net/dev", "rb")) != NULL) {
 			while (fgets(line, sizeof(line), in) != NULL) {
 				int ifl = 0;
@@ -198,7 +204,7 @@ int main(int argc, char **argv)
 			out_dev_last += (out_diff << 20);
 		}
 
-		// fprintf (stderr, "in_diff=%lu, out_diff=%lu\n", in_diff,
+//              fprintf (stderr, "in_diff=%lu, out_diff=%lu\n", in_diff,
 		// out_diff);
 
 		if (in_diff || out_diff) {
