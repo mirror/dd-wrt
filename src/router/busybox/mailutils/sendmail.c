@@ -46,7 +46,7 @@ static char *sane_address(char *str)
 	char *s = str;
 	char *p = s;
 	while (*s) {
-		if (isalnum(*s) || '_' == *s || '-' == *s || '.' == *s || '@' == *s) {
+		if (isalnum(*s) || '_' == *s || '-' == *s || '.' == *s || ';' == *s || '@' == *s) {
 			*p++ = *s;
 		}
 		s++;
