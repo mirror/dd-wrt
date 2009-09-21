@@ -85,7 +85,7 @@ void setupSupplicant(char *prefix)
 
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
-		fprintf(fp, "eapol_version=2\n");
+		fprintf(fp, "eapol_version=1\n");
 		fprintf(fp, "network={\n");
 		sprintf(psk, "%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", nvram_safe_get(psk));
@@ -122,6 +122,12 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_tls8021xanon", prefix));
 			}
+			if (strlen(nvram_nget("%s_tls8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_tls8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
+			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "peap")) {
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
@@ -152,6 +158,12 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_peap8021xanon", prefix));
 			}
+			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_peap8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
+			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "ttls")) {
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
@@ -181,6 +193,12 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_ttls8021xanon", prefix));
 			}
+			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_ttls8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
+			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "leap")) {
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
@@ -202,6 +220,12 @@ void setupSupplicant(char *prefix)
 			if (strlen(nvram_nget("%s_leap8021xanon", prefix)) > 0) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_leap8021xanon", prefix));
+			}
+			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) > 0) {
+				sprintf(ath, "%s_leap8021xaddopt", prefix);
+				fprintf(fp, "\t");	// tab
+				fwritenvram(ath, fp);
+				fprintf(fp, "\n");	// extra new line at the end
 			}
 		}
 		fprintf(fp, "}\n");
