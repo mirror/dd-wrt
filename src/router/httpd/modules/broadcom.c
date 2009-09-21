@@ -2129,6 +2129,8 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 
 	if (sscanf(query, "%u-%u", &month, &year) != 2)
 		return;
+	if (month<1 || month>12)
+		return;
 
 	days = daysformonth(month, year);
 	wd = weekday(month, 1, year);	// first day in month (mon=0, tue=1,
@@ -2139,11 +2141,13 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 	sprintf(tq, "traff-%02u-%u", month, year);
 	char *tdata = nvram_safe_get(tq);
 
-	if (tdata != NULL || strlen(tdata)) {
+	if (tdata != NULL && strlen(tdata)) {
 		foreach(var, tdata, next) {
 			if (i == days)
 				break;	//skip monthly total
-			sscanf(var, "%lu:%lu", &rcvd[i], &sent[i]);
+			int ret = sscanf(var, "%lu:%lu", &rcvd[i], &sent[i]);
+			if (ret!=2)
+			    break;
 			totin += rcvd[i];
 			totout += sent[i];
 			if (rcvd[i] > max)
@@ -2166,13 +2170,13 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 
 	char incom[32];
 
-	sprintf(incom, "%s", live_translate("status_inet.traffin"));
+	snprintf(incom,32, "%s", live_translate("status_inet.traffin"));
 	char outcom[32];
 
-	sprintf(outcom, "%s", live_translate("status_inet.traffout"));
+	snprintf(outcom,32, "%s", live_translate("status_inet.traffout"));
 	char monthname[32];
 
-	sprintf(monthname, "%s", live_translate(months[month - 1]));
+	snprintf(monthname,32, "%s", live_translate(months[month - 1]));
 
 	websWrite(stream,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
