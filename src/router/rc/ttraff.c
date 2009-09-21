@@ -66,7 +66,7 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	int a;
 	/* correct entries if something strange happend */
 	if (i <= days) {
-		for (a = i; a == days; a++) {
+		for (a = i; a <= days; a++) {
 			strcat(buffer, "0:0 ");
 		}
 		strcat(buffer, "[0:0]");
