@@ -579,6 +579,12 @@ void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 #endif
+#ifdef HAVE_QUAGGA
+	if (!strcmp(name, "QUAGGA")) {
+		websWrite(wp, output);
+		return;
+	}
+#endif
 	if (!strcmp(name, "WET")) {
 		if (getWET())
 			websWrite(wp, output);
@@ -664,6 +670,10 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_MILKFISH
 	if (!strcmp(name, "MILKFISH"))
+		return;
+#endif
+#ifdef HAVE_QUAGGA
+	if (!strcmp(name, "QUAGGA"))
 		return;
 #endif
 	// HAVE_AFTERBURNER
