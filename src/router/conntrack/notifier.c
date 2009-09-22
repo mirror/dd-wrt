@@ -143,12 +143,12 @@ void send_email(struct linkedlist *list, char *source, int value)
 	
 	if (strlen(user) > 0)
 		sprintf(email_line,
-			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" -u \"%s\" -p \"%s\"  \"%s\" -m \"%s\" -d \"%s\"",
+			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" -u \"%s\" -p \"%s\"  %s -m \"%s\" -d \"%s\"",
 			server, from, fromfull, subject, user, pass, to,
 			mess, domain);
 	else
 		sprintf(email_line,
-			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" \"%s\" -m \"%s\" -d \"%s\"",
+			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" %s -m \"%s\" -d \"%s\"",
 			server, from, fromfull, subject, to, mess, domain);
 	
 	system(email_line);
