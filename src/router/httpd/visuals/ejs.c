@@ -511,6 +511,61 @@ void ej_startswith(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+static char *s_conditions[] = {
+#ifdef HAVE_MICRO
+	"MICRO",
+#endif
+#ifdef HAVE_EXTHELP
+	"EXTHELP",
+#endif
+#ifdef HAVE_MULTICAST
+	"MULTICAST",
+#endif
+#ifdef HAVE_WIVIZ
+	"WIVIZ",
+#endif
+#ifdef HAVE_RSTATS
+	"RSTATS",
+#endif
+#ifdef HAVE_ACK
+	"ACK",
+#endif
+#ifdef HAVE_SSHD
+	"SSHD",
+#endif
+#ifdef HAVE_QUAGGA
+	"QUAGGA",
+#endif
+#ifdef HAVE_SAMBA
+	"SAMBA",
+#endif
+#ifdef HAVE_JFFS2
+	"JFFS2",
+#endif
+#ifdef HAVE_GPSI
+	"GPSI",
+#endif
+#ifdef HAVE_MMC
+	"MMC",
+#endif
+#ifdef HAVE_SPUTNIK_APD
+	"SPUTNIK_APD",
+#endif
+#ifdef HAVE_RFLOW
+	"RFLOW",
+#endif
+#ifdef HAVE_USB
+	"USB",
+#endif
+#ifdef HAVE_PPPOESERVER
+	"PPPOESERVER",
+#endif
+#ifdef HAVE_MILKFISH
+	"MILKFISH",
+#endif
+	NULL
+};
+
 void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 {
 	char *name, *output;
@@ -523,18 +578,14 @@ void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 #endif
 	name = argv[0];
 	output = argv[1];
-#ifdef HAVE_MICRO
-	if (!strcmp(name, "MICRO")) {
-		websWrite(wp, output);
-		return;
+	int cnt = 0;
+	while (s_conditions[cnt]) {
+		if (!strcmp(name, s_conditions[cnt++])) {
+			websWrite(wp, output);
+			return;
+		}
 	}
-#endif
-#ifdef HAVE_EXTHELP
-	if (!strcmp(name, "EXTHELP")) {
-		websWrite(wp, output);
-		return;
-	}
-#endif
+
 	if (!strcmp(name, "MINI"))	// to include mini + mini-special
 	{
 		if (startswith(nvram_safe_get("dist_type"), "mini")) {
@@ -549,42 +600,6 @@ void ej_ifdef(webs_t wp, int argc, char_t ** argv)
 			return;
 		}
 	}
-#ifdef HAVE_MULTICAST
-	if (!strcmp(name, "MULTICAST")) {
-		websWrite(wp, output);
-		return;
-	}
-#endif
-#ifdef HAVE_WIVIZ
-	if (!strcmp(name, "WIVIZ")) {
-		websWrite(wp, output);
-		return;
-	}
-#endif
-#ifdef HAVE_RSTATS
-	if (!strcmp(name, "RSTATS")) {
-		websWrite(wp, output);
-		return;
-	}
-#endif
-#ifdef HAVE_ACK
-	if (!strcmp(name, "ACK")) {
-		websWrite(wp, output);
-		return;
-	}
-#endif
-#ifdef HAVE_SSHD
-	if (!strcmp(name, "SSHD")) {
-		websWrite(wp, output);
-		return;
-	}
-#endif
-#ifdef HAVE_QUAGGA
-	if (!strcmp(name, "QUAGGA")) {
-		websWrite(wp, output);
-		return;
-	}
-#endif
 	if (!strcmp(name, "WET")) {
 		if (getWET())
 			websWrite(wp, output);
@@ -612,70 +627,13 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
 	name = argv[0];
 	output = argv[1];
 
-#ifdef HAVE_MICRO
-	if (!strcmp(name, "MICRO"))
-		return;
-#endif
-#ifdef HAVE_MULTICAST
-	if (!strcmp(name, "MULTICAST"))
-		return;
-#endif
-#ifdef HAVE_WIVIZ
-	if (!strcmp(name, "WIVIZ"))
-		return;
-#endif
-#ifdef HAVE_RSTATS
-	if (!strcmp(name, "RSTATS"))
-		return;
-#endif
-#ifdef HAVE_ACK
-	if (!strcmp(name, "ACK"))
-		return;
-#endif
-#ifdef HAVE_SAMBA
-	if (!strcmp(name, "SAMBA"))
-		return;
-#endif
-#ifdef HAVE_JFFS2
-	if (!strcmp(name, "JFFS2"))
-		return;
-#endif
-#ifdef HAVE_GPSI
-	if (!strcmp(name, "GPSI"))
-		return;
-#endif
-#ifdef HAVE_MMC
-	if (!strcmp(name, "MMC"))
-		return;
-#endif
-#ifdef HAVE_SPUTNIK_APD
-	if (!strcmp(name, "SPUTNIK_APD"))
-		return;
-#endif
-#ifdef HAVE_RFLOW
-	if (!strcmp(name, "RFLOW"))
-		return;
-#endif
-#ifdef HAVE_USB
-	if (!strcmp(name, "USB"))
-		return;
-#endif
-#ifdef HAVE_SSHD
-	if (!strcmp(name, "SSHD"))
-		return;
-#endif
-#ifdef HAVE_PPPOESERVER
-	if (!strcmp(name, "PPPOESERVER"))
-		return;
-#endif
-#ifdef HAVE_MILKFISH
-	if (!strcmp(name, "MILKFISH"))
-		return;
-#endif
-#ifdef HAVE_QUAGGA
-	if (!strcmp(name, "QUAGGA"))
-		return;
-#endif
+	int cnt = 0;
+	while (s_conditions[cnt]) {
+		if (!strcmp(name, s_conditions[cnt++])) {
+			return;
+		}
+	}
+
 	// HAVE_AFTERBURNER
 	if (!strncmp(name, "AFTERBURNER", 11)) {
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
