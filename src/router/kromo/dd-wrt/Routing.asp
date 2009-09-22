@@ -2,6 +2,12 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
+<% ifndef("QUAGGA", "/*"); %>	
+route.zebra_copt = route.bird_copt;
+route.zebra_legend = route.bird_legend;
+route.zebra_log = route.bird_log;
+<% ifndef("QUAGGA", "*/"); %>
+		
 function valid_value(F) {
 	if(F.wk_mode.value != "ospf") {
 		if(!valid_ip(F,"F.route_ipaddr","IP",0))
