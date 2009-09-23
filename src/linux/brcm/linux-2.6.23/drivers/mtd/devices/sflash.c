@@ -189,6 +189,7 @@ sflash_mtd_init(void)
 	struct pci_dev *dev = NULL;
 #ifdef CONFIG_MTD_PARTITIONS
 	struct mtd_partition *parts;
+	int i;
 #endif
 
   int do_support = 0;
@@ -295,7 +296,8 @@ sflash_mtd_init(void)
 
 #ifdef CONFIG_MTD_PARTITIONS
 	parts = init_mtd_partitions(&sflash.mtd, sflash.mtd.size);
-	ret = add_mtd_partitions(&sflash.mtd, parts, 4);
+	for (i = 0; parts[i].name; i++);
+	ret = add_mtd_partitions(&sflash.mtd, parts, i);
 	if (ret) {
 		printk(KERN_ERR "sflash: add_mtd failed\n");
 		goto fail;
