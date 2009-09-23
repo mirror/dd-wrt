@@ -1258,6 +1258,13 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
+		
+	case ROUTER_NETGEAR_WNR3500L:  //usb power fix (gpio 12)
+		if (nvram_match("boardflags", "0x00001710")) {
+			nvram_set("boardflags", "0x00000710");
+			need_reboot = 1;
+		}
+		break;
 	}
 
 	if (need_reboot) {
