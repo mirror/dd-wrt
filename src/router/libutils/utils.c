@@ -1688,8 +1688,8 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNR3500L;
 	}
 	
-	if (boardnum == 66 && nvram_match("boardtype", "0x04EF")
-	    && nvram_match("boardrev", "0x1305")) {
+	if ((boardnum == 42 || boardnum == 66) && nvram_match("boardtype", "0x04EF")
+	    && (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305"))) {
 		cprintf("router is wrt320n\n");
 		setRouter("Linksys WRT320N");
 		return ROUTER_WRT320N;
@@ -2875,7 +2875,11 @@ int led_control(int type, int act)
 		ses_gpio = 0x001;	// WPS led green
 		connected_gpio = 0x002;  //wan led green
 		break;
-
+	case ROUTER_WRT320N:
+		power_gpio = 0x002;  //power/diag (disabled=blink)
+		ses_gpio = 0x103;	// ses blue
+		connected_gpio = 0x104;  //ses orange
+		break;
 #endif
 	}
 	if (type == LED_DIAG && v1func == 1) {
