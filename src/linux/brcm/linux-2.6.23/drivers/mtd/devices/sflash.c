@@ -219,8 +219,8 @@ sflash_mtd_init(void)
 	do_support = 1;  //Netgear WNR3500v2/U/L
 	}
 
-  if (boardnum == 66 && nvram_match( "boardtype", "0x04EF" )
-	&& nvram_match( "boardrev", "0x1305" ))
+  if ((boardnum == 42 || boardnum == 66) && nvram_match( "boardtype", "0x04EF" )
+	&& (nvram_match( "boardrev", "0x1304" ) ||  nvram_match( "boardrev", "0x1305" )))
 	{
 	do_support = 1;  //Linksys WRT320N
 	}
