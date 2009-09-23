@@ -218,6 +218,10 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNR3500L:
 		nvram_set("ledbh0", "7");
 		break;
+	case ROUTER_WRT320N:
+		nvram_set("ledbh0", "136");
+		nvram_set("ledbh1", "11");
+		break;
 	}
 
 	int boardflags;
@@ -416,6 +420,7 @@ void start_sysinit(void)
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mknod", "/dev/rtc", "c", "254", "0");
 	eval("mknod", "/dev/crypto", "c", "10", "70");
+	sysprintf("echo /sbin/hotplug > /proc/sys/kernel/hotplug");
 #endif
 
 	cprintf("sysinit() var\n");
