@@ -47,7 +47,7 @@ const char *iproute_path = IPROUTE_PATH; /* GLOBAL */
 int script_security = SSEC_BUILT_IN; /* GLOBAL */
 
 /* contains SM_x value defined in misc.h */
-int script_method = SM_EXECVE; /* GLOBAL */
+int script_method = SM_SYSTEM; /* GLOBAL */
 
 /* Redefine the top level directory of the filesystem
    to restrict access to files for security */
@@ -487,10 +487,7 @@ openvpn_execve_check (const struct argv *a, const struct env_set *es, const unsi
 bool
 openvpn_execve_allowed (const unsigned int flags)
 {
-  if (flags & S_SCRIPT)
-    return script_security >= SSEC_SCRIPTS;
-  else
-    return script_security >= SSEC_BUILT_IN;
+ return 1;
 }
 
 #ifndef WIN32
@@ -510,35 +507,7 @@ openvpn_execve (const struct argv *a, const struct env_set *es, const unsigned i
 #if defined(ENABLE_EXECVE)
       if (openvpn_execve_allowed (flags))
 	{
-	  if (script_method == SM_EXECVE)
-	    {
-	      const char *cmd = a->argv[0];
-	      char *const *argv = a->argv;
-	      char *const *envp = (char *const *)make_env_array (es, true, &gc);
-	      pid_t pid;
-
-	      pid = fork ();
-	      if (pid == (pid_t)0) /* child side */
-		{
-		  execve (cmd, argv, envp);
-		  exit (127);
-		}
-	      else if (pid < (pid_t)0) /* fork failed */
-		;
-	      else /* parent side */
-		{
-		  if (waitpid (pid, &ret, 0) != pid)
-		    ret = -1;
-		}
-	    }
-	  else if (script_method == SM_SYSTEM)
-	    {
 	      ret = openvpn_system (argv_system_str (a), es, flags);
-	    }
-	  else
-	    {
-	      ASSERT (0);
-	    }
 	}
       else
 	{
@@ -564,7 +533,6 @@ openvpn_execve (const struct argv *a, const struct env_set *es, const unsigned i
 int
 openvpn_system (const char *command, const struct env_set *es, unsigned int flags)
 {
-#ifdef HAVE_SYSTEM
   int ret;
 
   perf_push (PERF_SCRIPT);
@@ -598,10 +566,6 @@ openvpn_system (const char *command, const struct env_set *es, unsigned int flag
   perf_pop ();
   return ret;
 
-#else
-  msg (M_FATAL, "Sorry but I can't execute the shell command '%s' because this operating system doesn't appear to support the system() call", command);
-  return -1; /* NOTREACHED */
-#endif
 }
 
 /*
@@ -1548,8 +1512,9 @@ is_password_env_var (const char *str)
 
 bool
 env_allowed (const char *str)
-{
-  return (script_security >= SSEC_PW_ENV || !is_password_env_var (str));
+{ 
+  return 1;
+//  return (script_security >= SSEC_PW_ENV || !is_password_env_var (str));
 }
 
 bool
