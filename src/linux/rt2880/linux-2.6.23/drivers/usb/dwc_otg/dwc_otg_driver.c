@@ -839,35 +839,7 @@ static struct lm_driver dwc_otg_driver = {
 	.probe		= dwc_otg_driver_probe,
 	.remove		= dwc_otg_driver_remove,
 };
-#define RALINK_PIO_BASE			0xA0300600
-
-#define RALINK_PRGIO_ADDR		RALINK_PIO_BASE // Programmable I/O
-
-#define RALINK_REG_PIOINT		(RALINK_PRGIO_ADDR + 0)
-#define RALINK_REG_PIOEDGE		(RALINK_PRGIO_ADDR + 0x04)
-#define RALINK_REG_PIORENA		(RALINK_PRGIO_ADDR + 0x08)
-#define RALINK_REG_PIOFENA		(RALINK_PRGIO_ADDR + 0x0C)
-#define RALINK_REG_PIODATA		(RALINK_PRGIO_ADDR + 0x20)
-#define RALINK_REG_PIODIR		(RALINK_PRGIO_ADDR + 0x24)
-#define RALINK_REG_PIOSET		(RALINK_PRGIO_ADDR + 0x2C)
-#define RALINK_REG_PIORESET		(RALINK_PRGIO_ADDR + 0x30)
-
-void ralink_gpio_control(int gpio,int level)
-{
-   unsigned long piodir,piodata;
-
-       piodir = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODIR));
-       piodir |= (1L << gpio);
-       *(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(piodir);
-       piodata = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
-
-       if(level)
-          piodata |= (1L << gpio);
-       else
-          piodata &= ~(1L << gpio);
-
-       *(volatile u32 *)(RALINK_REG_PIODATA) = cpu_to_le32(piodata); 
-}
+extern void ralink_gpio_control(int gpio,int level);
 
 /**
  * This function is called when the dwc_otg_driver is installed with the
@@ -886,7 +858,9 @@ static int __init dwc_otg_driver_init(void)
 	int error;
 	
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0x0; //Enable USB Port
-//	ralink_gpio_control(6,1); // turn on 5V
+#ifdef CONFIG_MTD_ESR6650
+	ralink_gpio_control(6,1); // turn on 5V
+#endif
 	lmdev = kzalloc(sizeof(struct lm_device), GFP_KERNEL);
 	if (!lmdev)
 	{
@@ -928,7 +902,9 @@ static void __exit dwc_otg_driver_cleanup(void)
 	driver_remove_file(&dwc_otg_driver.drv, &driver_attr_version);
 
 	lm_driver_unregister(&dwc_otg_driver);
-//	ralink_gpio_control(6,0); // turn off 5V
+#ifdef CONFIG_MTD_ESR6650
+	ralink_gpio_control(6,0); // turn off 5V
+#endif
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0xF; //Disable USB Port
 	printk(KERN_INFO "%s module removed\n", dwc_driver_name);
 }

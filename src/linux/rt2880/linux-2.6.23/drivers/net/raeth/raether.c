@@ -1675,18 +1675,38 @@ void rt305x_esw_init(void)
 
         mii_mgr_write(0, 31, 0x8000);   //---> select local register
         for(i=0;i<5;i++){
-                mii_mgr_write(i, 26, 0x1601);   //TX10 waveform coefficient
+                mii_mgr_write(i, 26, 0x1600);   //TX10 waveform coefficient
                 mii_mgr_write(i, 29, 0x7058);   //TX100/TX10 AD/DA current bias
                 mii_mgr_write(i, 30, 0x0018);   //TX100 slew rate control
         }
         /* PHY IOT */
-        mii_mgr_write(0, 31, 0x0);      //select global register
-        mii_mgr_write(0, 22, 0x052f);   //tune TP_IDL tail and head waveform
-        mii_mgr_write(0, 17, 0x0fe0);   //set TX10 signal amplitude threshold to minimum
-        mii_mgr_write(0, 18, 0x40ba);   //set squelch amplitude to higher threshold
-        mii_mgr_write(0, 14, 0x65);     //longer TP_IDL tail length
-        mii_mgr_write(0, 31, 0x8000);   //select local register
+        //mii_mgr_write(0, 31, 0x0);      //select global register
+        //mii_mgr_write(0, 22, 0x052f);   //tune TP_IDL tail and head waveform
+        //mii_mgr_write(0, 17, 0x0fe0);   //set TX10 signal amplitude threshold to minimum
+        //mii_mgr_write(0, 18, 0x40ba);   //set squelch amplitude to higher threshold
+        //mii_mgr_write(0, 14, 0x65);     //longer TP_IDL tail length
+        //mii_mgr_write(0, 31, 0x8000);   //select local register
 
+         mii_mgr_write(0, 31, 0x0);   //select global register
+        mii_mgr_write(0, 1, 0x4a40); //enlarge agcsel threshold 3 and threshold 2
+        mii_mgr_write(0, 2, 0x6254); //enlarge agcsel threshold 5 and threshold 4
+        mii_mgr_write(0, 3, 0xa17f); //enlarge agcsel threshold 6
+        mii_mgr_write(0, 12, 0x7eaa); //100% link down power saving & tx10 link up 50%
+        mii_mgr_write(0, 14, 0x65);   //longer TP_IDL tail length
+        mii_mgr_write(0, 16, 0x0684);  //increased squelch pulse count threshold.
+        mii_mgr_write(0, 17, 0x0fe0); //set TX10 signal amplitude threshold to minimum
+        mii_mgr_write(0, 18, 0x40ba); //set squelch amplitude to higher threshold
+        mii_mgr_write(0, 22, 0x252f); //tune TP_IDL tail and head waveform, enable power down slew rate control
+        mii_mgr_write(0, 27, 0x2fc3); //set PLL/Receive bias current are calibrated(RT3350)
+        mii_mgr_write(0, 28, 0xc410); //change PLL/Receive bias current to internal(RT3350)
+        mii_mgr_write(0, 29, 0x598b); //change PLL bias current to internal(RT3052_MP3)
+        mii_mgr_write(0, 31, 0x8000); //select local register
+        for(i=0;i<5;i++){
+                //LSB=1 enable PHY
+                mii_mgr_read(i, 26, &my_val);
+                my_val |= 0x0001;
+                mii_mgr_write(i, 26, my_val);
+        }
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
 	*(unsigned long *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
         *(unsigned long *)(0xb01100C8) &= ~(1<<29); //disable port 5 auto-polling

@@ -23,6 +23,7 @@
 #include <linux/autoconf.h>
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
+#include <linux/delay.h>
 #include <linux/fs.h>
 #ifdef CONFIG_RALINK_GPIO_LED
 #include <linux/timer.h>
@@ -67,6 +68,39 @@ MODULE_AUTHOR("Winfred Lu <winfred_lu@ralinktech.com.tw>");
 MODULE_LICENSE("GPL");
 ralink_gpio_reg_info info;
 
+void ralink_reset(int reset_pin)
+{
+   unsigned long piodir,piodata;
+
+       piodir = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODIR));
+       piodir |= (1L << reset_pin);
+       *(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(piodir);
+
+       piodata = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
+       udelay(10);
+       piodata &= ~(1L << reset_pin);
+       *(volatile u32 *)(RALINK_REG_PIODATA) = cpu_to_le32(piodata); 
+       mdelay(100); /* G693L : output low 140ms after power on */
+       piodata |= (1L << reset_pin);
+       *(volatile u32 *)(RALINK_REG_PIODATA) = cpu_to_le32(piodata);
+}
+
+void ralink_gpio_control(int gpio,int level)
+{
+   unsigned long piodir,piodata;
+
+       piodir = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODIR));
+       piodir |= (1L << gpio);
+       *(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(piodir);
+       piodata = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
+
+       if(level)
+          piodata |= (1L << gpio);
+       else
+          piodata &= ~(1L << gpio);
+
+       *(volatile u32 *)(RALINK_REG_PIODATA) = cpu_to_le32(piodata); 
+}
 
 int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		unsigned long arg)
@@ -455,6 +489,11 @@ int __init ralink_gpio_init(void)
 #ifdef CONFIG_RALINK_GPIO_LED
 	ralink_gpio_led_init_timer();
 #endif
+#ifdef CONFIG_MTD_ESR6650
+	ralink_gpio_control(3,1); /* RX_SW pill high */
+	ralink_gpio_control(5,0);
+#endif
+
 	printk("Ralink gpio driver initialized\n");
 	return 0;
 }
