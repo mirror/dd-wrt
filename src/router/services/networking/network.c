@@ -3765,7 +3765,11 @@ void start_hotplug_net(void)
 		return;
 
 	cprintf("action: %s\n", action);
+#ifdef HAVE_BCMMODERN	
+	if (!strcmp(action, "add")) {
+#else	
 	if (!strcmp(action, "register")) {
+#endif
 #ifdef HAVE_MICRO
 		br_init();
 #endif
