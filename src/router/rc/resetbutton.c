@@ -491,6 +491,9 @@ void period_check(int sig)
 	case ROUTER_NETGEAR_WNR3500L: 
 		sesgpio = 0x16;	// gpio 6, inversed
 		break;
+	case ROUTER_WRT320N: 
+		sesgpio = 0x15;	// gpio 5, inversed
+		break;
 
 #endif
 	default:
