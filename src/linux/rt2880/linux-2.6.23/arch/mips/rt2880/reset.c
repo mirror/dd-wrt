@@ -45,10 +45,15 @@
 static void mips_machine_restart(char *command);
 static void mips_machine_halt(void);
 static void mips_machine_power_off(void);
+extern void ralink_reset(int reset_pin);
 
 static void mips_machine_restart(char *command)
 {
+#ifdef CONFIG_MTD_ESR6650
+        ralink_reset(7);
+#else
 	*(volatile unsigned int*)(SOFTRES_REG) = GORESET;
+#endif
 }
 
 static void mips_machine_halt(void)
