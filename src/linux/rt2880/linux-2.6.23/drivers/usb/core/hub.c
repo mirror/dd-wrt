@@ -1171,6 +1171,10 @@ void usb_disconnect(struct usb_device **pdev)
 		pr_debug ("%s nodev\n", __FUNCTION__);
 		return;
 	}
+#ifdef ENABLE_HOT_PLUG_RESET
+		if(usb_hotplug_flag&USB_UNPLUG_RESET)
+		   ralink_reset(7);
+#endif	
 
 	/* mark the device as inactive, so any further urb submissions for
 	 * this device (and any of its children) will fail immediately.
@@ -2057,6 +2061,9 @@ static int hub_set_address(struct usb_device *udev)
  * newly detected device that is not accessible through any global
  * pointers, it's not necessary to lock the device.
  */
+
+extern void ralink_gpio_control(int gpio,int level);
+
 static int
 hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 		int retry_counter)
@@ -2068,7 +2075,13 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 	unsigned		delay = HUB_SHORT_RESET_TIME;
 	enum usb_device_speed	oldspeed = udev->speed;
 	char 			*speed, *type;
-
+#ifdef ENABLE_HOT_PLUG_RESET
+		if(usb_hotplug_flag&USB_PLUG_RESET)
+		   ralink_reset(7);
+#endif
+#ifdef CONFIG_MTD_ESR3650
+	ralink_gpio_control(9,0);
+#endif
 	/* root hub ports have a slightly longer reset period
 	 * (from USB 2.0 spec, section 7.1.7.5)
 	 */
@@ -2390,6 +2403,10 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
 	/* during HNP, don't repeat the debounce */
 	if (hdev->bus->is_b_host)
 		portchange &= ~USB_PORT_STAT_C_CONNECTION;
+#endif
+
+#ifdef CONFIG_MTD_ESR3650
+	ralink_gpio_control(9,1);
 #endif
 
 	if (portchange & USB_PORT_STAT_C_CONNECTION) {
