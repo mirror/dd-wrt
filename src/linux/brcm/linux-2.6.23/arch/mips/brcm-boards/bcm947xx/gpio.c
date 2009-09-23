@@ -154,6 +154,7 @@ static struct file_operations gpio_fops = {
 extern int iswrt350n;
 extern int iswrt300n11;
 extern int iswnr3500v2;
+extern int iswrt320n;
 static struct class *gpio_class = NULL;
 
 static int __init
@@ -219,6 +220,13 @@ if (iswnr3500v2)
 //		si_gpioouten(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
 //		si_gpioout(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
 	
+}
+if (iswrt320n)
+{
+		printk(KERN_EMERG "WRT320N GPIO Init\n");
+		si_gpioreserve(gpio_sih, 1 << 2, GPIO_APP_PRIORITY); //diag led
+		si_gpioreserve(gpio_sih, 1 << 3, GPIO_APP_PRIORITY); //wps_led
+		si_gpioreserve(gpio_sih, 1 << 4, GPIO_APP_PRIORITY); //wps_status_led
 }
 /*if (iswrt300n11)
 {
