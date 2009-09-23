@@ -1647,7 +1647,8 @@ int ei_close(struct net_device *dev)
 #if defined (CONFIG_RALINK_RT3052) 
 void rt305x_esw_init(void)
 {
-	int i=0;
+	u32 i=0;
+	u32 my_val;
 
         *(unsigned long *)(0xb0110008) = 0xC8A07850;
         *(unsigned long *)(0xb01100E4) = 0x00000000;
