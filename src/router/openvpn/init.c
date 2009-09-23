@@ -2024,6 +2024,7 @@ do_option_warnings (struct context *c)
     msg (M_WARN, "NOTE: --connect-timeout option is not supported on this OS");
 #endif
 
+#if 0
   if (script_security >= SSEC_SCRIPTS)
     msg (M_WARN, "NOTE: the current --script-security setting may allow this configuration to call user-defined scripts");
   else if (script_security >= SSEC_PW_ENV)
@@ -2033,6 +2034,7 @@ do_option_warnings (struct context *c)
 
   if (script_method == SM_SYSTEM)
     msg (M_WARN, "NOTE: --script-security method='system' is deprecated due to the fact that passed parameters will be subject to shell expansion");
+#endif
 }
 
 static void
