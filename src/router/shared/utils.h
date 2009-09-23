@@ -397,8 +397,8 @@
 // Netgear WNR3500v2 - same - half flash
 #define ROUTER_NETGEAR_WNR3500L 0x7414 //(18)
 
-// Linksys WRT320N (BCM4717 cpu, fccid: Linksys Q87-WRT320N)
-#define ROUTER_WRT320N 0x750f
+// Linksys WRT320N (BCM4717A cpu, 8MB serial flash, Gigabit switch, fccid: Linksys Q87-WRT320N)
+#define ROUTER_WRT320N 0x7518
 
 #define ROUTER_BOARD_ESR9752 0x7610
 
