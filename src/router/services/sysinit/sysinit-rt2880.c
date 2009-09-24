@@ -151,6 +151,8 @@ if (in!=NULL)
     fclose(in);
     }
 #endif
+
+
 	/* switch config */
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750)	// lets load
 	{
@@ -218,6 +220,20 @@ if (in!=NULL)
 		sysprintf("switch reg w 48 1002");
 		sysprintf("switch reg w 70 ffff506f");
 #endif
+	}
+
+	struct ifreq ifr;
+	int s;
+
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth2", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		nvram_set("et0macaddr_safe",
+			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				     eabuf));
+		close(s);
 	}
 
 /*
