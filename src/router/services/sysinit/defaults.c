@@ -1285,7 +1285,11 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_DDLAN
 	{"wk_mode", "zero", 0},	/* Network mode [gateway|router] */
 #elif HAVE_MAKSAT
+#ifdef HAVE_ESR6650
+	{"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
+#else
 	{"wk_mode", "router", 0},	/* Network mode [gateway|router] */
+#endif // HAVE_ESR6650
 #else
 	{"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
 #endif
