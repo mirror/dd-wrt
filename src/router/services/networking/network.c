@@ -2999,6 +2999,9 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
+		if (isClient()) {
+			wan_ifname = getSTA();
+		}
 		start_dhcpc(wan_ifname);
 	}
 #endif
