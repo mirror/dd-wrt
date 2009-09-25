@@ -430,6 +430,12 @@ ddns.dynamic="Dynamisch";
 ddns.custom="Spezifisch";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS-Status";
+ddns.system="DYNDNS Server";
+ddns.options="Erweiterte DDNS Optionen";
+ddns.forceupd="Erzwinge Update Interval";
+ddns.wanip="Kein Externer IP Check";
+
+
 
 
 ddnsm.all_closed="DDNS-Server ist aktuell geschlossen";
