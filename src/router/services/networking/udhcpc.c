@@ -336,7 +336,6 @@ static int bound(void)
 		dns_to_resolv();
 
 		dns_list = get_dns_list();
-		int i = 0;
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
