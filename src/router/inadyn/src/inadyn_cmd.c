@@ -115,7 +115,7 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 
 void print_help_page(void)
 {
-	printf("\n\n\n"
+/*	printf("\n\n\n"
 	"			INADYN Help\n\n"
 	"	INADYN is a dynamic DNS client. That is, it maintains the IP address\n"
 	"of a host name. It periodically checks whether the IP address of the current machine\n"
@@ -140,7 +140,7 @@ void print_help_page(void)
 			++it;
 		}
 	}
-	printf("\n\n\n");
+	printf("\n\n\n");*/
 }
 
 static RC_TYPE help_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
