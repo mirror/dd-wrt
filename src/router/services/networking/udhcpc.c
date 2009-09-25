@@ -322,6 +322,7 @@ static int bound(void)
 #ifdef HAVE_L2TP
 	else if (nvram_match("wan_proto", "l2tp")) {
 		int i = 0;
+		char l2tpip[64];
 
 		/*
 		 * Delete all default routes 
@@ -329,9 +330,22 @@ static int bound(void)
 		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0
 		       || i++ < 10) ;
 
-		/*
-		 * Set default route to gateway if specified 
-		 */
+
+		struct dns_lists *dns_list = NULL;
+
+		dns_to_resolv();
+
+		dns_list = get_dns_list();
+		int i = 0;
+
+		if (dns_list) {
+			for (i = 0; i < dns_list->num_servers; i++)
+				route_add(wan_ifname, 0,
+					  dns_list->dns_server[i],
+					  nvram_safe_get("wan_gateway"),
+					  "255.255.255.255");
+			free(dns_list);
+		}
 		route_add(wan_ifname, 0, "0.0.0.0",
 			  nvram_safe_get("wan_gateway"), "0.0.0.0");
 
@@ -341,11 +355,21 @@ static int bound(void)
 		 */
 		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
 
-		/*
-		 * clear dns from the resolv.conf 
-		 */
-		nvram_set("wan_get_dns", "");
-		dns_to_resolv();
+		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip);
+		nvram_set("l2tp_server_ip", l2tpip);
+
+		if (nvram_match("wan_gateway", "0.0.0.0")
+		    || nvram_match("wan_netmask", "0.0.0.0"))
+			route_add(wan_ifname, 0,
+				  nvram_safe_get("l2tp_server_ip"),
+				  nvram_safe_get("wan_gateway"),
+				  "255.255.255.255");
+		else
+			route_add(wan_ifname, 0,
+				  nvram_safe_get("l2tp_server_ip"),
+				  nvram_safe_get("wan_gateway"),
+				  nvram_safe_get("wan_netmask"));
+
 		start_firewall();
 		start_l2tp_boot();
 	}

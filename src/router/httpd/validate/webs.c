@@ -3132,7 +3132,7 @@ char *request_freedns(char *user, char *password)
 void ddns_save_value(webs_t wp)
 {
 	char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard,
-	    *custom, *conf, *url, *force;
+	    *custom, *conf, *url, *force, *wan_ip;
 	struct variable ddns_variables[] = {
 	      {argv:ARGV("0", "1", "2", "3", "4", "5", "6",
 		     "7",
@@ -3148,6 +3148,7 @@ void ddns_save_value(webs_t wp)
 	char _conf[] = "ddns_conf";
 	char _url[] = "ddns_url";
 	char _force[] = "ddns_force";
+	char _wan_ip[] = "ddns_wan_ip";
 
 	which = &ddns_variables[0];
 
@@ -3234,8 +3235,9 @@ void ddns_save_value(webs_t wp)
 	conf = websGetVar(wp, _conf, NULL);
 	url = websGetVar(wp, _url, NULL);
 	force = websGetVar(wp, _force, NULL);
+	wan_ip = websGetVar(wp, _wan_ip, NULL);
 
-	if (!username || !passwd || !hostname || !force) {
+	if (!username || !passwd || !hostname || !force || !wan_ip) {
 		return;
 	}
 
@@ -3267,6 +3269,7 @@ void ddns_save_value(webs_t wp)
 	nvram_set(_conf, conf);
 	nvram_set(_url, url);
 	nvram_set(_force, force);
+	nvram_set(_wan_ip, wan_ip);
 
 }
 

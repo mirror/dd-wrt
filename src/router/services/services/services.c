@@ -1101,7 +1101,7 @@ void start_l2tp(int status)
 		fprintf(fp, "section sync-pppd\n");	// Configure the sync-pppd
 		// handler
 		fprintf(fp, "section peer\n");	// Peer section
-		fprintf(fp, "peer %s\n", nvram_safe_get("l2tp_server_ip"));
+		fprintf(fp, "peer %s\n", nvram_safe_get("l2tp_server_name"));
 		fprintf(fp, "port 1701\n");
 		fprintf(fp, "lac-handler sync-pppd\n");
 		fprintf(fp, "section cmd\n");	// Configure the cmd handler
@@ -1229,7 +1229,7 @@ void start_l2tp(int status)
 			eval("listen", nvram_safe_get("lan_ifname"));
 	} else
 		sysprintf("l2tp-control \"start-session %s\"",
-			  nvram_safe_get("l2tp_server_ip"));
+			  nvram_safe_get("l2tp_server_name"));
 
 	cprintf("done\n");
 	return;
@@ -1421,7 +1421,7 @@ void start_force_to_dial(void)
 	if (nvram_match("wan_proto", "l2tp")) {
 
 		sysprintf("l2tp-control \"start-session %s\"",
-			  nvram_safe_get("l2tp_server_ip"));
+			  nvram_safe_get("l2tp_server_name"));
 		return;
 	}
 #endif
