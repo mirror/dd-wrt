@@ -109,7 +109,7 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
         {"default@zoneedit.com", NULL,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_zoneedit_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_zoneedit_http_dns_server,
-            "dynamic.zoneedit.com", "/checkip.html", 
+            DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL, 
 			"dynamic.zoneedit.com", "/auth/dynamic.html?host=", ""}},
 
 
