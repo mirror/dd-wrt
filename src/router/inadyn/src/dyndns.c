@@ -38,6 +38,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "base64.h"
 #include "get_cmd.h"
 
+extern int nvram_match(char *name, char *match);
+extern char *nvram_safe_get(const char *name);
+
 /* DNS systems specific configurations*/
 
 DYNDNS_ORG_SPECIFIC_DATA dyndns_org_dynamic = {"dyndns"};
@@ -923,6 +926,10 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 
 	do
 	{
+		if (nvram_match("ddns_wan_ip","1"))
+		{
+		strcpy(p_self->info.my_ip_address.name,nvram_safe_get("wan_ipaddr"));
+		}else{
 		/*ask IP server something so he will respond and give me my IP */
 		rc = do_ip_server_transaction(p_self);
 		if (rc != RC_OK)
@@ -947,7 +954,7 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 		{
 			DBG_PRINTF((LOG_WARNING,"W: DYNDNS: My IP address: %s\n", p_self->info.my_ip_address.name));		
 		}
-
+		}
 		/*step through aliases list, resolve them and check if they point to my IP*/
 		rc = do_check_alias_update_table(p_self);
 		if (rc != RC_OK)
