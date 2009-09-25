@@ -1314,8 +1314,8 @@ service.ttraff_legend="WAN Traffic Counter";
 service.ttraff_daemon="ttraff Daemon";
 
 //notifier.webservices
-service.warn_legend="Connection Warning Daemon";
-service.warn="Warning Daemon";
+service.warn_legend="Connection Warning Notifier";
+service.warn="Warning Notifier";
 service.warn_limit="Connection Limit";
 service.warn_server="Email SMTP Server";
 service.warn_from="Senders Email Address";
