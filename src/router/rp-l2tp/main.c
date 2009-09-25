@@ -62,19 +62,25 @@ main(int argc, char *argv[])
 	    usage(argc, argv, EXIT_FAILURE);
 	}
     }
-
+//    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     l2tp_random_init();
+//    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     l2tp_tunnel_init(es);
+//    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     l2tp_peer_init();
+//    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     l2tp_debug_set_bitmask(debugmask);
+//    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 
     if (l2tp_parse_config_file(es, "/tmp/l2tp.conf") < 0) {	// modify by kanki
 	l2tp_die();
     }
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 
     if (!l2tp_network_init(es)) {
 	l2tp_die();
     }
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 
     /* Daemonize */
     if (do_fork) {
