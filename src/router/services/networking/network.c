@@ -2219,6 +2219,7 @@ void start_wan(int status)
 			sleep(1);
 		}
 	}
+		rmmod("n_hdlc");
 
 	eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 
@@ -2999,6 +3000,7 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
+		insmod("n_hdlc");
 		if (isClient()) {
 			wan_ifname = getSTA();
 		}
