@@ -94,7 +94,7 @@ ifeq ($(ARCHITECTURE),broadcom)
 CFLAGS= -DBROADCOM
 endif
 
-CFLAGS+= -O2 $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS+= -O2 $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' 
 
 
 
@@ -114,7 +114,7 @@ endif
 # EAP SRP-SHA1
 ifdef USE_SRP
 CFLAGS	+= -DUSE_SRP -DOPENSSL -I/usr/local/ssl/include
-LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto -ffunction-sections -fdata-sections -Wl,--gc-sections
+LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto
 TARGETS	+= srp-entry
 EXTRAINSTALL = $(INSTALL) -c -m 555 srp-entry $(BINDIR)/srp-entry
 MANPAGES += srp-entry.8
