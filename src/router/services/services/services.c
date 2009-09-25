@@ -1075,6 +1075,7 @@ void start_l2tp(int status)
 #ifdef HAVE_PPTP
 	stop_pptp();
 #endif
+	stop_l2tp();
 
 	snprintf(username, sizeof(username), "%s",
 		 nvram_safe_get("ppp_username"));
@@ -1247,6 +1248,8 @@ void start_l2tp_boot(void)
 
 void stop_l2tp(void)
 {
+	route_del(nvram_safe_get("wan_ifname"), 0,
+		  nvram_safe_get("l2tp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
 	// ret = killps("pppd","-9");
