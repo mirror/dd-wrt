@@ -928,7 +928,10 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 	{
 		if (nvram_match("ddns_wan_ip","1"))
 		{
-		strcpy(p_self->info.my_ip_address.name,nvram_safe_get("wan_ipaddr"));
+		char new_ip_str[32];
+		strcpy(new_ip_str,nvram_safe_get("wan_ipaddr"));
+		p_self->info.my_ip_has_changed = (strcmp(new_ip_str, p_self->info.my_ip_address.name) != 0);
+		strcpy(p_self->info.my_ip_address.name, new_ip_str);
 		}else{
 		/*ask IP server something so he will respond and give me my IP */
 		rc = do_ip_server_transaction(p_self);
@@ -950,10 +953,10 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 			break;
 		}
 		
+		}
 		if (p_self->dbg.level > 1)
 		{
 			DBG_PRINTF((LOG_WARNING,"W: DYNDNS: My IP address: %s\n", p_self->info.my_ip_address.name));		
-		}
 		}
 		/*step through aliases list, resolve them and check if they point to my IP*/
 		rc = do_check_alias_update_table(p_self);
