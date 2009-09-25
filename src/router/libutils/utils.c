@@ -879,6 +879,9 @@ int internal_getRouterBrand()
 	setRouter("Ubiquiti RouterStation");
 #endif
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WZRG300NH
+	setRouter("Buffalo WZR-G300NH");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_AP83
 	setRouter("Atheros AP83");
 	return ROUTER_BOARD_PB42;
