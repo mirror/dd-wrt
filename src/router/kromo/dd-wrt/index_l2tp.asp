@@ -9,8 +9,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_l.srv"); %></div>
-	<input type="hidden" name="l2tp_server_ip" value="4"/>
-	<input class="num" size="3" maxlength="3" name="l2tp_server_ip_0" onblur="valid_range(this,0,255,idx_l.srv)" value="<% get_single_ip("l2tp_server_ip","0"); %>" />.<input class="num" size="3" maxlength="3" name="l2tp_server_ip_1" onblur="valid_range(this,0,255,idx_l.srv)" value="<% get_single_ip("l2tp_server_ip","1"); %>" />.<input class="num" size="3" maxlength="3" name="l2tp_server_ip_2" onblur="valid_range(this,0,255,idx_l.srv)" value="<% get_single_ip("l2tp_server_ip","2"); %>" />.<input class="num" size="3" maxlength="3" name="l2tp_server_ip_3" onblur="valid_range(this,1,254,idx_l.srv)" value="<% get_single_ip("l2tp_server_ip","3"); %>" />
+	<input name="l2tp_server_name" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("l2tp_server_name"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>

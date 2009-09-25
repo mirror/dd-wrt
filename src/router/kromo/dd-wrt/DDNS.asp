@@ -148,8 +148,11 @@ addEvent(window, "unload", function() {
 										</script>
 									</select>
 								</div>
-
-
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
+								</div>
 					<% nvram_selmatch("ddns_enable","0","<!--"); %>
 					<% nvram_selmatch("ddns_enable","2","<!--"); %>
 					<% nvram_selmatch("ddns_enable","3","<!--"); %>
