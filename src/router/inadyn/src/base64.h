@@ -12,7 +12,7 @@
 #endif
 
 #ifndef __cplusplus
-	typedef int bool;
+	typedef unsigned char bool; 
 	#define false (1 == 0)
 	#define true  !false
 #endif
