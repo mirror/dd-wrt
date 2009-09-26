@@ -13,7 +13,12 @@ PPPDIR=$(DESTDIR)/etc/ppp
 
 #CC	= gcc
 RM	= rm -f
-OPTIMIZE= $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+OPTIMIZE= $(COPTS) -O2 -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+OPTIMIZE += -O2
+endif
+endif
 
 #OPTIMIZE= -O0
 DEBUG	= -g
