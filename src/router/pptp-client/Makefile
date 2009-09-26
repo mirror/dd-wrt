@@ -13,7 +13,7 @@ PPPDIR=$(DESTDIR)/etc/ppp
 
 #CC	= gcc
 RM	= rm -f
-OPTIMIZE= $(COPTS) -O2 -ffunction-sections -fdata-sections -Wl,--gc-sections
+OPTIMIZE= $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 include ../.config
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
