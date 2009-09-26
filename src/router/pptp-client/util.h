@@ -16,19 +16,22 @@ extern char * log_string;
    to 1 (errors and warnings) to 2 (high verbosity, for debugging) */
 extern int    log_level;
 
-void _log(const char *func, const char *file, int line, const char *format, ...)
+/*void _log(const char *func, const char *file, int line, const char *format, ...)
      __attribute__ ((format (printf, 4, 5)));
 void _warn(const char *func, const char *file, int line, const char *format, ...)
      __attribute__ ((format (printf, 4, 5)));
 void _fatal(const char *func, const char *file, int line, const char *format, ...)
      __attribute__ ((format (printf, 4, 5))) __attribute__ ((noreturn));
-
 #define log(format, args...) \
 	_log(__FUNCTION__,__FILE__,__LINE__, format , ## args)
 #define warn(format, args...) \
 	_warn(__FUNCTION__,__FILE__,__LINE__, format , ## args)
 #define fatal(format, args...) \
 	_fatal(__FUNCTION__,__FILE__,__LINE__, format , ## args)
+*/
+#define log(format, args...) do { } while(0)
+#define warn(format, args...) do { } while(0)
+#define fatal(format, args...) do { } while(0)
 
 int file2fd(const char *path, const char *mode, int fd);
 
