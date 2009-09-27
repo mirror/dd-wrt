@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Dutch reference translation file - DD-WRT V23 SP1 by Fabian 22/6/2006	Resynced 28/8/2007 by Blackraven  //
+//	Dutch reference translation file - DD-WRT V24 SP2 by Fabian 22/6/2006	Resynced 27/9/2009 by Dutchman01  //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -98,14 +98,14 @@ share.auto="Auto";
 share.right="Rechts";
 share.left="Links";
 share.share_key="Gedeelde Sleutel";
-share.inter="Interval (in seconden)";
+share.inter="Interval (seconden)";
 share.srv="Service Naam";
 share.port_range="Poort Bereik";
 share.priority="Prioriteit";
 share.gateway="Gateway";
 share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
 share.pintrface="Fysieke Interface";
-share.vintrface="Virtuele Interfaces";
+share.vintrface="Virtuele Interface";
 share.router="Router";
 share.static_lease="Statische Lease";
 share.srvip="Server IP";
@@ -174,13 +174,13 @@ sbutton.saving="Opgeslagen";
 sbutton.cmd="Bezig met uitvoeren";
 sbutton.cancel="Annuleer Wijzigingen";
 sbutton.canceltitle="Alleen wijzigingen op dit blad annuleren";
-sbutton.refres="Vernieuw";
-sbutton.clos="Sluit";
-sbutton.del="Verwijder";
+sbutton.refres="Vernieuwen";
+sbutton.clos="Sluiten";
+sbutton.del="Verwijderen";
 sbutton.continu="Verder";
 sbutton.add="Toevoegen";
 sbutton.remove="Verwijderen";
-sbutton.modify="Wijzig";
+sbutton.modify="Wijzigen";
 sbutton.deleted="Verwijderd";
 sbutton.delall="Verwijder alles";
 sbutton.autorefresh="Auto-verversen is Actief";
@@ -192,13 +192,13 @@ sbutton.startup="Bewaar Startup";
 sbutton.firewall="Bewaar Firewall";
 sbutton.custom="Bewaar Custom Script";
 sbutton.wol="Wekken";
-sbutton.add_wol="Voeg Host Toe";
+sbutton.add_wol="Host Toevoegen";
 sbutton.manual_wol="Handmatig Wekken";
 sbutton.summary="Samenvatting";
-sbutton.filterIP="Bewerk Lijst PCs";
-sbutton.filterMac="Bewerk MAC Filter Lijst";
+sbutton.filterIP="Lijst Computers Bewerken";
+sbutton.filterMac="MAC Filter Lijst Bewerken";
 sbutton.filterSer="Service Toevoegen/Aanpassen";
-sbutton.reboot="Herstart Router";
+sbutton.reboot="Router Herstarten";
 sbutton.help="   Help  ";
 sbutton.wl_client_mac="Draadloze Client MAC Lijst";
 sbutton.update_filter="Vernieuw Filter Lijst";
@@ -207,7 +207,7 @@ sbutton.log_in="Ingaande Log";
 sbutton.log_out="Uitgaande Log";
 sbutton.edit_srv="Service Toevoegen/Aanpassen";
 sbutton.routingtab="Toon Route Tabel";
-sbutton.wanmac="Verkrijg Huidig PC MAC Adres";
+sbutton.wanmac="Huidige Computer MAC Adres Opvragen";
 sbutton.dhcprel="DHCP Release";
 sbutton.dhcpren="DHCP Vernieuw";
 sbutton.survey="Site Survey";
@@ -220,32 +220,32 @@ sbutton.allways_off="Altijd Uit";
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
 
-errmsg.err0="U moet een gebruikersnaam invullen.";
-errmsg.err1="U moet een Router Naam invullen.";
+errmsg.err0="U dient een gebruikersnaam op te geven.";
+errmsg.err1="U dient een Router Naam op te geven.";
 errmsg.err2="Buiten het bereik, gelieve het start IP adres aan te passen of het gebruikers nr.";
-errmsg.err3="U moet een dag selecteren.."
+errmsg.err3="U dient een dag selecteren.."
 errmsg.err4="De eindtijd moet groter zijn dan de begintijd.";
 errmsg.err5="De lengte van het MAC Adres is niet correct.";
-errmsg.err6="U moet een wachtwoord ingeven.";
-errmsg.err7="U moet een hostnaam ingeven.";
-errmsg.err8="U moet een IP Adres of Domein naam ingeven.";
+errmsg.err6="U dient een wachtwoord op te geven.";
+errmsg.err7="U dient een hostnaam op te geven.";
+errmsg.err8="U dient een IP Adres of Domein naam op te geven.";
 errmsg.err9="Foutief DMZ IP Adres.";
-errmsg.err10="Het bevestigde wachtwoord komt niet overeen met het ingegeven wachtwoord. Gelieve opnieuw te proberen.";
+errmsg.err10="Het bevestigde wachtwoord komt niet overeen met het opgegeven wachtwoord. Gelieve opnieuw te proberen.";
 errmsg.err11="Spaties zijn niet toegelaten in het Wachtwoord.";
-errmsg.err12="U moet een commando ingeven.";
-errmsg.err13="Upgrade is mislukt.";
-errmsg.err45="Dit is niet beschikbaar in HTTPS! Gelieve te verbinden in HTTP modus.";
+errmsg.err12="U dient een commando op te geven.";
+errmsg.err13="Het Upgraden is mislukt.";
+errmsg.err45="Dit is niet beschikbaar in HTTPS! Gelieve te verbinden in de HTTP modus.";
 errmsg.err46="Dit is niet beschikbaar in HTTPS";
 
 
 //common.js error messages
-errmsg.err14=" waarde valt buiten het toegelaten bereik [";
+errmsg.err14=" De waarde valt buiten het toegelaten bereik [";
 errmsg.err15="Het WAN MAC Adres valt buiten de toegelaten waarde [00 - ff].";
 errmsg.err16="Het tweede karakter van het MAC adres moet even zijn : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="Het ingegeven MAC Adres is niet correct.";
+errmsg.err17="Het opgegeven MAC Adres is niet correct.";
 errmsg.err18="De lengte van het MAC Adres is niet correct.";
 errmsg.err19="Het MAC Adres kan niet het broadcast adres zijn."
-errmsg.err20="Geef het MAC Adres in (xx:xx:xx:xx:xx:xx) formaat in.";
+errmsg.err20="Geef het MAC Adres in (xx:xx:xx:xx:xx:xx) formaat op.";
 errmsg.err21="Ongeldig MAC Adres formaat.";
 errmsg.err22="Het WAN MAC Adres is ongeldig.";
 errmsg.err23="Ongeldige hex waarde ";
@@ -262,16 +262,16 @@ errmsg.err33="IP adres en gateway kunnen niet gelijk zijn.";
 errmsg.err34=" is niet toegelaten om spaties te bevatten.";
 
 //Wol.asp error messages
-errmsg.err35="U moet een MAC adres ingeven voor verwerking.";
-errmsg.err36="U moet een network broadcast adres ingeven voor verwerking.";
-errmsg.err37="U moet een UDP poort ingeven voor verwerking.";
+errmsg.err35="U dient een MAC adres op te geven voor verwerking.";
+errmsg.err36="U dient een network broadcast adres op te geven voor verwerking.";
+errmsg.err37="U dient een UDP poort op te geven voor verwerking.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Gelieve een gedeelde sleutel in te geven!";
-errmsg.err39="Ongeldige sleutel, lengte moet tussen 8 en 63 ASCII karakters of 64 hexadecimal karakters liggen"
-errmsg.err40="U moet een sleutel ingeven voor sleutel ";
-errmsg.err41="Ongeldige lengte in sleutel ";
+errmsg.err39="Ongeldige sleutel, lengte dient tussen de 8 en 63 ASCII karakters of 64 hexadecimal karakters te liggen"
+errmsg.err40="U dient een sleutel op te geven voor sleutel ";
+errmsg.err41="Ongeldige lengte in de sleutel ";
 errmsg.err43="Interval vernieuwing sleutel";
 
 //config.asp error messages
@@ -293,38 +293,38 @@ errmsg.err49="Radius is enkel beschikbaar in AP modus.";
 errmsg.err50="U moet een SSID ingeven.";
 
 // Management.asp error messages
-errmsg.err51="De router gebruikt momenteel het standaard wachtwoord. Ter beveiliging, moet u het wachtwoord veranderen alvorens u controle op afstand kan inschakelen. Klik op OK om uw wachtwoord te veranderen. Klik op Annuleren om controle op afstand ongewijzigd te laten.";
+errmsg.err51="De router gebruikt momenteel het standaard wachtwoord. Ter beveiliging, dient u het wachtwoord te veranderen alvorens u controle op afstand kan inschakelen. Klik op OK om uw wachtwoord te veranderen. Klik op Annuleren om controle op afstand ongewijzigd te laten.";
 errmsg.err52="Wachtwoord confirmatie komt niet overeen.";
 
 // Port_Services.asp error messages
 errmsg.err53="Klik op Toepassen, na voltooiing van alle acties.";
-errmsg.err54="U moet een Service Naam ingeven.";
-errmsg.err55="De Service Naam bestaat al.";
+errmsg.err54="U dient een Service Naam op te geven.";
+errmsg.err55="De Service Naam bestaat reeds.";
 
 // QoS.asp error messages
-errmsg.err56="Poort waarde is buiten het toegestane bereik [0 - 65535]";
+errmsg.err56="De Poort waarde valt buiten het toegestane bereik [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="Gegeven verwijderen ?";
+errmsg.err57="Gegevens verwijderen ?";
 errmsg.err103=" moet lager zijn dan ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Klik om de lease te verwijderen";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Niet Beschikbaar! Gelieve het draadloos netwerk te activeren.";
+errmsg.err59="Niet Beschikbaar! Gelieve het draadloze netwerk in te schakelen.";
 
 //Upgrade.asp error messages
-errmsg.err60="Selecteer een bestand voor upgrade.";
+errmsg.err60="Selecteer het bestand voor de upgrade.";
 errmsg.err61="Ongeldig image bestand.";
 
 //Services.asp error messages
 errmsg.err62=" is reeds gedefinieerd als statische lease.";
 
 //Saving message
-errmsg.err100="Verwerken...<br/>Wacht, a.u.b.";
+errmsg.err100="Verwerken...<br/>Even Wachten, a.u.b.";
 errmsg.err101="Configuratie bestand terugzetten...<br/>Wacht, a.u.b.";
-errmsg.err102="Upgrading firmware...<br/>Wacht, a.u.b.";
+errmsg.err102="Upgrading firmware...<br/>Even Wachten, a.u.b.";
 
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
@@ -356,13 +356,13 @@ bmenu.security="Beveiliging";
 bmenu.firwall="Firewall";
 bmenu.vpn="VPN Passthrough";
 
-bmenu.accrestriction="Toegang Beperking";
+bmenu.accrestriction="Toegangs Beperking";
 bmenu.webaccess="Internet Toegang";
 
 
 bmenu.applications="NAT / QoS";
-bmenu.applicationsprforwarding="Poorten Forwarden";
-bmenu.applicationspforwarding="Poorten Forwarden";
+bmenu.applicationsprforwarding="Enkele Poorten Forwarden";
+bmenu.applicationspforwarding="Poorten Bereik Forwarden";
 bmenu.applicationsptriggering="Poorten Triggering";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
@@ -380,7 +380,7 @@ bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Log";
 bmenu.adminDiag="Commando's";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Fabriek Instellingen";
+bmenu.adminFactory="Fabrieks Instellingen";
 bmenu.adminUpgrade="Firmware Upgrade";
 bmenu.adminBackup="Backup";
 
@@ -436,12 +436,12 @@ config.h22="Herstel Configuratie";
 config.legend2="Herstel Instellingen";
 config.mess2="Selecteer een te herstellen bestand";
 config.mess3="O P G E L E T";
-config.mess4="Gelieve enkel bestanden te uploaden die met deze firmware of het zelfde model router zijn gemaakt.<br />Upload geen bestanden die niet gecreëerd werden door deze interface!";
+config.mess4="Gelieve alleen bestanden te uploaden die met deze firmware of zelfde model router zijn gemaakt.<br />Upload geen bestanden die niet gecreëerd zijn door deze interface!";
 
 //help container
 
-hconfig.right2="U kan uw huidige configuratie opslaan in het geval dat u uw router terug naar de fabriek instellingen moet zetten.<br /><br />Klik op de <em>Backup</em> knop om uw huidige configuratie op ge slaan.";
-hconfig.right4="Klik op de <em>Bladeren...</em> knop om naar een configuratie bestand te zoeken dat zich momenteel op je computer bevind.<br /><br />Klik op de <em>" + sbutton.restore + "</em> knop om alle huidige configuraties te vervangen door die uit het configuratie bestand.";
+hconfig.right2="U kunt uw huidige configuratie opslaan in het geval dat u uw router naar de fabriek instellingen moet terug zetten.<br /><br />Klik op de <em>Backup</em> knop om uw huidige configuratie op te slaan.";
+hconfig.right4="Klik op de <em>Bladeren...</em> knop om naar een configuratie bestand te bladeren dat zich momenteel op uw computer bevindt.<br /><br />Klik op de <em>" + sbutton.restore + "</em> knop om de huidige configuratie te vervangen door die uit het configuratie bestand.";
 
 
 
@@ -459,7 +459,7 @@ ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
 ddns.system="DYNDNS Server";
 ddns.options="Aanvullende DDNS Opties";
-ddns.forceupd="Forceer Update Interval";
+ddns.forceupd="Geforceerde Update Interval";
 
 
 ddnsm.all_closed="DDNS server is niet actief";
@@ -474,15 +474,15 @@ ddnsm.all_noip="Geen actieve internet verbinding";
 
 hddns.right2="DDNS biedt toegang tot uw netwerk via een hostnaam in plaats van een IP adres. \
 	Deze service houdt uw domein informatie dynamisch up-to-date. \
-	U moet hiervoor registreren op een volgende site: DynDNS.org, TZO.com of ZoneEdit.com.";
+	U dient zich hiervoor te registreren op één van de volgende site's: DynDNS.org, TZO.com of ZoneEdit.com.";
 hddns.right4="Typ een integer nummer in het veld voor een geforceerde update interval (in dagen). Updates zouden alleen automatisch plaats moeten vinden als uw IP adres is veranderd. Let op uw DDNS provider update abuse policy om te voorkomen dat uw hostnaam of domein wordt geblokkeerd.";
 
 
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-diag.titl="Diagnoses";
-diag.h2="Diagnoses";
+diag.titl="Diagnose";
+diag.h2="Diagnose";
 diag.legend="Commando Shell";
 diag.cmd="Commando's";
 diag.startup="Opstarten";
@@ -491,7 +491,7 @@ diag.custom="Custom Script";
 
 //help container
 
-hdiag.right2="U kan commando's uitvoeren via de webinterface. Vul uw commando in, in het tekst veld en klik <em>" + sbutton.runcmd + "</em>.";
+hdiag.right2="U kunt commando's uitvoeren via de webinterface. Vul uw commando in het tekst veld en klik <em>" + sbutton.runcmd + "</em>.";
 
 
 
@@ -506,7 +506,7 @@ dmz.host="DMZ Host IP Adres";
 
 //help container
 
-hdmz.right2="Indien u deze optie activeert zal u bepaalde hosts openstellen naar het internet toe. Alle poorten zullen bereikbaar zijn vanuit het internet.";
+hdmz.right2="Indien u deze optie activeert zal u bepaalde hosts openstellen naar het internet toe. Alle poorten zullen bereikbaar zijn vanaf het internet.";
 
 
 
@@ -732,7 +732,7 @@ info.ap="Access Point";
 idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="Connectie Strategie";
 idx_h.max_idle="Verbinden op aanvraag: Max Idle Tijd";
-idx_h.alive="Keep Alive: Herverbinding Periode";
+idx_h.alive="Keep Alive: Herverbindings Periode";
 idx_h.reconnect="Forceer herverbinding";
 
 
@@ -766,7 +766,7 @@ idx_static.dns="Statische DNS";
 // ******************************************* index.asp *******************************************//
 
 idx.titl="Instellen";
-idx.h2="Internet Instellen";
+idx.h2="Internet Instellingen";
 idx.h22="Draadloos Instellen";
 idx.legend="Internet Verbinding Type";
 idx.conn_type="Verbinding Type";
@@ -778,7 +778,7 @@ idx.h23="Netwerk Instellingen";
 idx.routerip="Router IP";
 idx.lanip="Lokaal IP Adres";
 idx.legend2="WAN Poort";
-idx.wantoswitch="Verbind WAN Poort met Switch";
+idx.wantoswitch="Verbind de WAN Poort met Switch";
 idx.legend3="Tijd Instellingen";
 idx.timeset="Tijdzone";
 idx.dsttime="Zomertijd (DST)";
@@ -810,13 +810,13 @@ idx.ntp_client="NTP Client";
 //help container
 
 hidx.right2="Deze instellingen worden het meest gebruikt door kabel providers.";
-hidx.right4="Voer de hostnaam toegewezen door uw ISP in.";
-hidx.right6="Voer de domeinnaam in aangewezen door uw ISP.";
+hidx.right4="Vul de hostnaam toegewezen door uw ISP in.";
+hidx.right6="Vul de domeinnaam in aangewezen door uw ISP.";
 hidx.right8="Dit is het adres van de router.";
 hidx.right10="Dit is de subnet masker van de router.";
-hidx.right12="Staat toe dat de router uw IP adressen beheert.";
+hidx.right12="Toestaan dat uw router de IP adressen beheert.";
 hidx.right14="Het adres waarmee u zou willen beginnen.";
-hidx.right16="U kan het aantal adressen beperken dat uw router uitdeelt.";
+hidx.right16="U kunt het aantal adressen beperken dat uw router uitdeelt.";
 hidx.right18="Kies de tijdzone en zomertijdperiode waarin u zich bevindt. De router kan dan de lokale of UTC tijd gebruiken.";
 
 
@@ -835,7 +835,7 @@ join.mess1="Succesvol als client met het volgende netwerk verbonden: ";
 log_in.titl="Inkomende Log Tabel";
 log_in.h2="Inkomende Log Tabel";
 log_in.th_ip="IP Afkomst";
-log_in.th_port="Destinatie Poort Nummer";
+log_in.th_port="Bestemmings Poort Nummer";
 
 
 
@@ -869,7 +869,7 @@ management.h2="Router Beheer";
 management.psswd_legend="Router Wachtwoord";
 management.psswd_user="Router Gebruikersnaam";
 management.psswd_pass="Router Wachtwoord";
-management.pass_conf="Vul opnieuw in ter bevestiging";
+management.pass_conf="Herhaal Wachtwoord";
 
 management.remote_legend="Toegang op Afstand";
 management.remote_gui="Web GUI Beheer";
@@ -879,7 +879,7 @@ management.remote_ssh="SSH Beheer";
 management.remote_sshport="SSH Poort";
 
 management.web_legend="Web Toegang";
-management.web_refresh="Auto-vernieuwen (in seconds)";
+management.web_refresh="Auto-vernieuwen (Seconden)";
 management.web_sysinfo="Activeer Info Site";
 management.web_sysinfopass="Info Site Wachtwoord Bescherming";
 management.web_sysinfomasq="Info Site MAC Verbergen";
@@ -889,7 +889,7 @@ management.boot_srv="Boot Wait";
 
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
-management.cron_jobs="Additional Cron Jobs";
+management.cron_jobs="Aanvullende Cron Taken";
 
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
@@ -934,14 +934,14 @@ management.lang_japanese="Japans";
 
 management.net_legend="IP Filter Instellingen (Pas deze aan voor P2P)";
 management.net_port="Maximum Poorten";
-management.net_tcptimeout="TCP Timeout (in seconden)";
-management.net_udptimeout="UDP Timeout (in seconden)";
+management.net_tcptimeout="TCP Timeout (seconden)";
+management.net_udptimeout="UDP Timeout (seconden)";
 
 management.clock_legend="Overklokken";
 management.clock_frq="Frequentie";
 management.clock_support="Niet mogelijk";
 
-management.mmc_legend="MMC/SD Card Ondersteuning";
+management.mmc_legend="MMC/SD Flash Kaart Ondersteuning";
 management.mmc_srv="MMC Device";
 management.mmc_gpiosel="selecteer GPIO pins";
 management.mmc_gpiopins="GPIO pins";
@@ -994,7 +994,7 @@ qos.srv="Start QoS";
 qos.type="Pakket Planner";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
-qos.gaming="Optimaliseer voor Gaming";
+qos.gaming="Optimaliseren om te Gamen";
 qos.legend2="Diensten Prioriteit";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
@@ -1017,9 +1017,9 @@ hqos.right1="Uplink:";
 hqos.right2="Stel dit in op 80%-95% (max) van uw totale upload limiet.";
 hqos.right3="Downlink:";
 hqos.right4="Stel dit in op 80%-100% (max) van uw totale download limiet.";
-hqos.right6="U kan uw data snelheid beperken aan de hand van de applicatie die bandbreedte verbruikt.";
-hqos.right8="U kan uw data een prioriteit toekennen voor alle gegeven IP adressen of een IP range.";
-hqos.right10="U kan uw data een prioriteit toekennen voor alle informatie afkomstig van een bepaald apparaat, \
+hqos.right6="U kunt uw snelheid beperken aan de hand van de applicatie die bandbreedte verbruikt.";
+hqos.right8="U kunt uw data een prioriteit toekennen voor alle gegeven IP adressen of een IP bereik.";
+hqos.right10="U kunt uw data een prioriteit toekennen voor alle informatie afkomstig van een bepaald apparaat, \
 			door het een prioriteit en het MAC adres toe te kennen.";
 hqos.right12="U kan uw bandbreedte beheren volgens de fysieke LAN poort waarop het apparaat is aangesloten. \
 			U kan prioriteiten toewijzen volgens apparaten van poort 1 tot 4.";
@@ -1068,9 +1068,9 @@ route.static_ip="Bestemming LAN IP";
 
 //help container
 
-hroute.right2="Indien de router gehost is via uw internet connectie, kies dan <em>Gateway</em> modus. Indien er zich een andere router bevind in het netwerk, selecteer <em>Router</em> modus.";
+hroute.right2="Indien de router gehost is via uw internet verbinding, kies dan <em>Gateway</em> modus. Indien er zich een andere router bevind in het netwerk, selecteer <em>Router</em> modus.";
 hroute.right4="Dit is het unieke routerings nummer, je kan tot 50 routes aanmaken.";
-hroute.right6="Voer de naam in die u wilt toekennen aan deze route.";
+hroute.right6="Vul de naam in die u wilt toekennen aan deze route.";
 hroute.right8="Dit is de remote host naar waar u de statische route wilt verwijzen.";
 hroute.right10="Herkent de host en netwerk grootte.";
 
@@ -1164,7 +1164,7 @@ service.pppoesrv_radip="Radius Server IP";
 service.pppoesrv_radauthport="Radius Authenticatie Poort";
 service.pppoesrv_radaccport="Radius Accounting Poort";
 service.pppoesrv_radkey="Radius Shared Key";
-service.pppoesrv_chaps="Lokaal Gebruiker Management (CHAP Secrets)";
+service.pppoesrv_chaps="Lokaal Gebruikers Management (CHAP Secrets)";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1198,7 +1198,7 @@ service.ssh_key="Toegestane Sleutels";
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Knop";
 service.radiooff_srv="Gebruik deze knop om de radio uit te zetten";
-service.radiooff_bootoff="Zet radio uit bij opstarten";
+service.radiooff_bootoff="Zet de radio uit bij het opstarten";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS / EZ-SETUP / WPS Knop";
@@ -1212,17 +1212,17 @@ service.hwmon_critemp="Kritieke Temperatuur (FAN Schakelaar Aan)";
 service.hwmon_hystemp="Hysteresis Temperatuur (FAN Schakelaar Uit)";
 
 //rstat.webservices
-service.rstats_legend="Bandbreedte Monitoring";
+service.rstats_legend="Bandbreedte Monitor";
 service.rstats_srv="rstats Daemon";
-service.rstats_path="Sla Bandbreedte Data op naar";
+service.rstats_path="Sla de Bandbreedte Data op naar";
 service.rstats_time="opslaan Interval";
-service.rstats_usrdir="Gebruiker Directory";
+service.rstats_usrdir="Gebruikers Directory";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS Tunneling";
 service.nstx_srv="nstx Daemon";
 service.nstx_ipenable="Bind alleen aan deze IP";
-service.nstx_log="Switch on debug messages";
+service.nstx_log="Aanschakelen Debug Berichten";
 
 
 // ******************************************* eop-tunnel.asp *******************************************//
@@ -1273,8 +1273,8 @@ hstatus_lan.right10="Door op een MAC adres te klikken, zal u de producent van de
 
 // ******************************************* Status_Bandwidth.asp *******************************************//
 
-status_band.titl="Bandbreedte Monitoring";
-status_band.h2="Bandbreedte Monitoring";
+status_band.titl="Bandbreedte Monitor";
+status_band.h2="Bandbreedte Monitor";
 
 
 // ******************************************* Status_Router.asp *******************************************//
@@ -1285,8 +1285,8 @@ status_router.legend="Systeem";
 status_router.sys_model="Router Model";
 status_router.sys_firmver="Firmware Versie";
 status_router.sys_time="Huidige Tijd";
-status_router.sys_up="Uptime";
-status_router.sys_load="Load Gemiddelde";
+status_router.sys_up="Tijd beschikbaar";
+status_router.sys_load="Gemiddelde proces belasting";
 status_router.legend2="CPU";
 status_router.cpu="CPU Model";
 status_router.clock="CPU Klok";
@@ -1301,18 +1301,18 @@ status_router.mem_inactive="Niet Actief";
 status_router.legend4="Netwerk";
 status_router.net_maxports="IP Filter Maximum Poorten";
 status_router.net_conntrack="Actieve IP Connecties";
-status_router.notavail="Niet beschikbaar";
+status_router.notavail="Niet Beschikbaar";
 status_router.legend6="Ruimte Gebruik";
 status_router.inpvolt="Bord Invoer Voltage";
 status_router.cputemp="CPU Temperatuur";
 
 //help container
 
-hstatus_router.right2="Dit is de specifieke naam gegeven aan de router, U kan deze veranderen op de <i>Setup</i> tab.";
+hstatus_router.right2="Dit is de specifieke naam opgegeven aan de router, U kunt deze veranderen op de <i>Setup</i> pagina.";
 hstatus_router.right4="Dit is het MAC Adres van de router, zoals uw ISP het zal herkennen.";
 hstatus_router.right6="Dit is de huidige firmware van de router.";
-hstatus_router.right8="Dit is de tijd verkregen van de ntp server ingesteld op de <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> tab.";
-hstatus_router.right10="Dit is een berekening van de tijd dat de router \"up and running\" was.";
+hstatus_router.right8="Dit is de tijd verkregen van de ntp server ingesteld op de <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> pagina.";
+hstatus_router.right10="Dit is een berekening van de tijd dat de router \"Aan en in Werking\" is.";
 hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste één, vijf of vijftien minuten.";
 
 // ** Status_Internet.asp **//
@@ -1321,20 +1321,20 @@ status_inet.titl="WAN Status";
 status_inet.h11="WAN";
 status_inet.conft="Configuratie Type";
 status_inet.www_loginstatus="Login Status";
-status_inet.wanuptime="Connectie Uptime";
+status_inet.wanuptime="Verbindings Uptime";
 status_inet.leasetime="Resterende Lease Tijd";
-status_inet.traff="Traffic";
-status_inet.traff_tot="Total Traffic";
-status_inet.traff_mon="Traffic by Month";
-status_inet.traffin="Incoming";
-status_inet.traffout="Outgoing";
-status_inet.previous="Previous Month";
-status_inet.next="Next Month";
+status_inet.traff="Verkeer";
+status_inet.traff_tot="Totaal Verkeer";
+status_inet.traff_mon="Verkeer per Maand";
+status_inet.traffin="In";
+status_inet.traffout="Uit";
+status_inet.previous="Verleden Maand";
+status_inet.next="Volgende Maand";
 
 //help container
 
-hstatus_inet.right2="Dit geeft de informatie die vereist is door uw ISP weer. Deze informatie werd ingegeven op de Setup Tab. U kan uw connectie <em>Verbinden</em> of <em>Verbreken</em> door op de knop te klikken.";
-hstatus_inet.right4="This shows your router's Internet traffic.";
+hstatus_inet.right2="Dit geeft de informatie die vereist is door uw ISP weer. Deze informatie werd ingegeven op de Setup pagina. U kunt uw connectie <em>Verbinden</em> of <em>Verbreken</em> door op de knop te klikken.";
+hstatus_inet.right4="Dit geeft uw router's Internet Verkeer weer.";
 
 // ******************************************* Status_Conntrack.asp *******************************************//
 
@@ -1367,18 +1367,18 @@ status_wireless.h2="Draadloos";
 status_wireless.legend="Draadloze Status";
 status_wireless.net="Netwerk";
 status_wireless.pptp="PPTP Status";
-status_wireless.legend2="Pakket Info";
+status_wireless.legend2="Pakket Informatie";
 status_wireless.rx="Ontvangen (RX)";
 status_wireless.tx="Verzonden (TX)";
 status_wireless.h22="Draadloze Nodes";
 status_wireless.legend3="Clienten";
-status_wireless.signal_qual="Signaal Kwaliteit";
+status_wireless.signal_qual="Kwaliteit Signaal";
 status_wireless.wds="WDS Nodes";
 
 //help container
 
-hstatus_wireless.right2="Dit is het MAC Adres van de router, zoals het wordt weergegeven op uw draadloos netwerk.";
-hstatus_wireless.right4="U hebt de draadloze modus ingesteld op de Draadloos tab, dit zal de huidige draadloze modus weergeven (Gemengd, alleen-G, alleen-B of Niet Geactiveerd).";
+hstatus_wireless.right2="Dit is het MAC Adres van de router, zoals het wordt weergegeven op uw draadloze netwerk.";
+hstatus_wireless.right4="U heeft de draadloze modus ingesteld op de Draadloos pagina, dit zal de huidige draadloze modus weergeven (Gemengd, alleen-G, alleen-B, alleen-N of Niet Geactiveerd).";
 
 
 
@@ -1498,9 +1498,9 @@ wol.pass="SecureOn Wachtwoord";
 
 //help container
 
-hwol.right2="Op deze pagina kan u hosts <em>Wekken</em> die verbonden zijn met uw netwerk (bv. locaal verbonden met uw router). U kan handmatig een host wekken door op de <em>"+sbutton.wol+"</em> te klikken of u kan een automatisch geplande wake up programmeren dankzij "+wol.srv+".";
-hwol.right4="MAC Adressen moeten ingevoerd worden volgens het formaat xx:xx:xx:xx:xx:xx (bv. 01:23:45:67:89:AB) en moeten gescheiden zijn door een <em>SPATIE</em>";
-hwol.right6="Het IP Adres is het broadcast adres van het netwerk, maar kan ook een remote adres zijn indien het doel zich niet in het lokale bevind."
+hwol.right2="Op deze pagina kunt u hosts <em>Wekken</em> die verbonden zijn met uw netwerk (bv. lokaal verbonden met uw router). U kan handmatig een host wekken door op de <em>"+sbutton.wol+"</em> te klikken of u kunt een automatisch geplande wake-up programmeren dankzij "+wol.srv+".";
+hwol.right4="MAC Adressen dienen ingevuld te worden volgens het formaat xx:xx:xx:xx:xx:xx (bv. 01:23:45:67:89:AB) en moeten gescheiden zijn door een <em>SPATIE</em>";
+hwol.right6="Het IP Adres is het broadcast adres van het netwerk, maar het kan ook een remote adres zijn indien het doel zich niet in het lokale bevind."
 
 
 
@@ -1514,7 +1514,7 @@ wanmac.wlan="Kloon Draadloos MAC";
 
 //help container
 
-hwanmac.right2="Sommige ISP's eisen dat je je MAC adres registreert. Indien je je MAC adres niet wilt herregistreren, kan je de router je MAC adres laten klonen met degene die je geregistreerd hebt bij je ISP.";
+hwanmac.right2="Sommige ISP's eisen dat je je MAC adres registreert. Indien u uw MAC adres niet opnieuw wilt registreren, kunt u het hier het MAC adres klonen met het MAC adres die u geregistreerd heeft bij uw ISP.";
 
 
 
@@ -1528,7 +1528,7 @@ wpa.auth_mode="Netwerk Authenticatie";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Groep Hersleutel Interval";
-wpa.rekey="Sleutel Vernieuwings Interval (in seconden)";
+wpa.rekey="Sleutel Vernieuwings Interval (seconden)";
 wpa.radius_ipaddr="RADIUS Server Adres";
 wpa.radius_port="RADIUS Server Poort";
 wpa.radius_key="RADIUS Sleutel";
@@ -1542,7 +1542,7 @@ sec80211x.clientcertif="Client Certificaat";
 
 //help container
 
-hwpa.right2="U hebt keuze uit Deactiveren, WEP, WPA Personal, WPA Enterprise of RADIUS. Alle apparaten in uw netwerk moeten dezelfde beveiligingmodus gebruiken.";
+hwpa.right2="U heeft de keuze uit Deactiveren, WEP, WPA Personal, WPA Enterprise of RADIUS. Alle apparaten in uw netwerk dienen dezelfde beveiligingmodus te gebruiken.";
 
 
 
@@ -1604,7 +1604,7 @@ wl_mac.legend="MAC Filter";
 wl_mac.label="Gebruik Filter";
 wl_mac.label2="Filter Modus";
 wl_mac.deny="Verbied toegang tot het draadloos netwerk voor de PC's toegevoegd aan de lijst";
-wl_mac.allow="Sta enkel toegang toe aan de PC's die toegevoegd zijn aan de lijst";
+wl_mac.allow="Alleen toegang toestaan aan computers die zijn toegevoegd aan de lijst";
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
@@ -1686,8 +1686,8 @@ wl_basic.n="alleen-N";
 wl_basic.legend2="Radio Tijd Restricties";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Programmering";
-wl_basic.radio_on="Radio is Aan";
-wl_basic.radio_off="Radio is Uit";
+wl_basic.radio_on="Radio is Ingeschakeld";
+wl_basic.radio_off="Radio is Uitgeschakeld";
 
 wl_basic.h2_v24="Draadloze Fysieke Interface";
 wl_basic.h2_vi="Virtuele Interfaces";
@@ -1723,20 +1723,20 @@ hwl_basic.right4="Pas de ack timing aan. 0 schakelt ack timing volledig uit.";
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
-fail.mess1="De waarden die u invoerde zijn niet geldig. Probeer nog eens.";
-fail.mess2="Upgrade mislukt.";
+fail.mess1="De waarden die u heeft ingevuld zijn niet juist. Probeert u het nog eens.";
+fail.mess2="De Upgrade is mislukt.";
 
 
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
-success.saved="Instellingen opgeslagen.";
-success.restore="Instellingen hersteld.<br/>Unit reboot nu. Gelieve even te wachten...";
-success.upgrade="Upgrade succesvol.<br/>Unit reboot nu. Gelieve even te wachten...";
+success.saved="Instellingen zijn opgeslagen.";
+success.restore="Instellingen zijn hersteld.<br/>Unit reboot nu. Gelieve even te wachten...";
+success.upgrade="Upgrade is succesvol.<br/>Unit reboot nu. Gelieve even te wachten...";
 success.success_noreboot="Instellingen zijn ok.";
 success.success_reboot=success.success_noreboot + "<br />Unit reboot nu. Gelieve even te wachten...";
 
-success.alert_reset="Alle configuratie instellingen werden naar hun oorspronkelijke waarden hersteld.<br /><br />";
+success.alert_reset="Alle configuratie instellingen zijn naar hun oorspronkelijke waarden hersteld.<br /><br />";
 success.alert1="Gelieve het volgende te controleren alvorens te verbinden:";
 success.alert2="Indien u uw routers IP adres heeft veranderd, moet u het netwerkadres van uw client(en) vernieuwen.";
 success.alert3="Indien u verbonden bent via WLAN, sluit u dan aan bij het netwerk en klik op <em>Activeer</em>.";
@@ -1756,4 +1756,4 @@ dhcp.server="DHCP Server IP Adres :";
 dhcp.tclient="Client Host Naam";
 
 
-donate.mb="U kan ook geld doneren via de Moneybookers acount mb@dd-wrt.com";
+donate.mb="U kunt ook geld doneren via het Moneybookers acount mb@dd-wrt.com";
