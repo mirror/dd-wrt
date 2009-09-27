@@ -1289,11 +1289,13 @@ void start_sysinit(void)
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
 			case ROUTER_WRT310N:
+			case ROUTER_WRT320N:
 			case ROUTER_WRT350N:
 			case ROUTER_WRT600N:
 			case ROUTER_WRT610N:
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
+			case ROUTER_NETGEAR_WNR3500L:
 				nvram_set("portprio_support", "0");
 				modules = "bcm57xxlsys";
 				break;
@@ -1360,10 +1362,13 @@ void start_sysinit(void)
 		} else {
 			switch (brand) {
 			case ROUTER_WRT310N:
+			case ROUTER_WRT320N:
 			case ROUTER_WRT350N:
 			case ROUTER_WRT600N:
 			case ROUTER_WRT610N:
+			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
+			case ROUTER_NETGEAR_WNR3500L:
 				nvram_set("portprio_support", "0");
 				modules = "bcm57xxlsys";
 				break;
