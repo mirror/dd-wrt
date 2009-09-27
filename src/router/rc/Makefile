@@ -400,6 +400,9 @@ CFLAGS += -DHAVE_SSHD
 #LDFLAGS += -Wl,--gc-sections
 endif
 
+ifeq ($(CONFIG_IPV6),y)
+CFLAGS += -DHAVE_IPV6
+endif
 ifeq ($(CONFIG_RADVD),y)
 CFLAGS += -DHAVE_RADVD
 endif
