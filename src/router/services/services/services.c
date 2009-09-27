@@ -1159,7 +1159,7 @@ void start_l2tp(int status)
 		fprintf(fp, "nopcomp\n");	// Disable protocol field compression
 		fprintf(fp, "noaccomp\n");	// Disable Address/Control
 		// compression 
-		fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
+//		fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
 		// Protocol)
 		fprintf(fp, "novj\n");	// Disable Van Jacobson style TCP/IP
 		// header compression
@@ -1170,6 +1170,7 @@ void start_l2tp(int status)
 		// peer
 		fprintf(fp, "lock\n");
 		fprintf(fp, "noauth\n");
+		fprintf(fp, "debug\n");
 
 		fclose(fp);
 
@@ -1256,7 +1257,7 @@ void stop_l2tp(void)
 	// ret += killps("l2tpd","-9");
 	// ret += killps("listen","-9");
 
-	if (pidof("pppd") > 0) {
+	if (pidof("pppd") > 0 || pidof("l2tpd")) {
 		killall("pppd", SIGTERM);
 		killall("l2tpd", SIGKILL);
 		killall("listen", SIGKILL);

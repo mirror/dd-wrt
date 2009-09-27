@@ -140,6 +140,7 @@ int site_survey_main(int argc, char *argv[])
 //	fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);	//skip second line
 	i = 0;
 	do {
+//		fprintf(stderr,"read\n");
 		if (feof(scan))
 			break;
 		fread(b1, 4, 1, scan);
@@ -149,8 +150,8 @@ int site_survey_main(int argc, char *argv[])
 		b2[32] = 0;
 		b2[strlen(b2)] = 0;
 		int ret = fscanf(scan, "%s %s %s %s %s", b3, b4, b5, b6, b7);	//skip second line
-
-		if (ret < 6)
+//		fprintf(stderr,"%d\n",ret);
+		if (ret < 5)
 			break;
 		site_survey_lists[i].channel = atoi(b1);	// channel
 		strcpy(site_survey_lists[i].SSID, b2);	//SSID
