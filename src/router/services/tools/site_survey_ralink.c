@@ -98,14 +98,27 @@ static struct site_survey_list {
 	unsigned char dtim_period;	/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
 
+static void skipline(FILE * in)
+{
+	while (1) {
+		int c = getc(in);
+
+		if (c == EOF)
+			return;
+		if (c == 0x0)
+			return;
+		if (c == 0xa)
+			return;
+	}
+}
+
 int site_survey_main(int argc, char *argv[])
 {
 #define DOT11_CAP_ESS				0x0001
 #define DOT11_CAP_IBSS				0x0002
 #define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
 
-	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32],
-	    b8[32];
+	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32];
 	int i = 0;
 
 	unlink(SITE_SURVEY_DB);
@@ -121,8 +134,10 @@ int site_survey_main(int argc, char *argv[])
 
 	FILE *scan = popen("iwpriv ra0 get_site_survey", "rb");
 
-	fscanf(scan, "%s %s", b1, b2);	// skip first line
-	fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);	//skip second line
+	skipline(in);
+	skipline(in);
+//	fscanf(scan, "%s %s", b1, b2);	// skip first line
+//	fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);	//skip second line
 	i = 0;
 	do {
 		if (feof(scan))
@@ -133,7 +148,7 @@ int site_survey_main(int argc, char *argv[])
 		fread(b2, 33, 1, scan);
 		b2[32] = 0;
 		b2[strlen(b2)] = 0;
-		int ret = fscanf(scan, "%s %s %s %s %s %s", b3, b4, b5, b6, b7, b8);	//skip second line
+		int ret = fscanf(scan, "%s %s %s %s %s", b3, b4, b5, b6, b7);	//skip second line
 
 		if (ret < 6)
 			break;
@@ -141,24 +156,24 @@ int site_survey_main(int argc, char *argv[])
 		strcpy(site_survey_lists[i].SSID, b2);	//SSID
 		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
 		site_survey_lists[i].phy_noise = -95;	// no way
-		strcpy(site_survey_lists[i].ENCINFO, b5);
-		strcat(site_survey_lists[i].ENCINFO, b4);
-		site_survey_lists[i].RSSI = -atoi(b6);
+		strcpy(site_survey_lists[i].ENCINFO, b4);
+//		strcat(site_survey_lists[i].ENCINFO, b4);
+		site_survey_lists[i].RSSI = -atoi(b5);
 
-		if (!strcmp(b7, "11b/g"))
+		if (!strcmp(b6, "11b/g"))
 			site_survey_lists[i].rate_count = 12;
-		if (!strcmp(b7, "11b"))
+		if (!strcmp(b6, "11b"))
 			site_survey_lists[i].rate_count = 4;
-		if (!strcmp(b7, "11b/g/n"))
+		if (!strcmp(b6, "11b/g/n"))
 			site_survey_lists[i].rate_count = 300;
 
-		if (!strcmp(b8, "In"))
+		if (!strcmp(b7, "In"))
 			site_survey_lists[i].capability = DOT11_CAP_ESS;
 
-		if (!strcmp(b8, "Ad"))
+		if (!strcmp(b7, "Ad"))
 			site_survey_lists[i].capability = DOT11_CAP_IBSS;
 
-		if (strcmp(b5, "OPEN"))
+		if (strcmp(b4, "OPEN"))
 			site_survey_lists[i].capability |= DOT11_CAP_PRIVACY;
 
 		i++;
