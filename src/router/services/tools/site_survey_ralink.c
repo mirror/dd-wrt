@@ -134,8 +134,8 @@ int site_survey_main(int argc, char *argv[])
 
 	FILE *scan = popen("iwpriv ra0 get_site_survey", "rb");
 
-	skipline(in);
-	skipline(in);
+	skipline(scan);
+	skipline(scan);
 //	fscanf(scan, "%s %s", b1, b2);	// skip first line
 //	fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);	//skip second line
 	i = 0;
