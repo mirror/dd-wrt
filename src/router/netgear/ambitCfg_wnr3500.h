@@ -10,8 +10,8 @@
 #define KO_VERSION           6
 #define TWC_VERSION          7
 
-#define WLAN_REGION          NA_VERSION
-#define FW_REGION            NA_VERSION   /* true f/w region */
+#define WLAN_REGION          WW_VERSION
+#define FW_REGION            WW_VERSION   /* true f/w region */
 
 /*formal version control*/
 #if (defined WNR3500v2)
@@ -41,6 +41,16 @@
 #define AMBIT_PRODUCT_NAME          "WNR3500v2"
 #define AMBIT_PRODUCT_DESCRIPTION   "Netgear Wireless Router WNR3500v2"
 #define UPnP_MODEL_URL              "WNR3500v2.aspx"
+#define UPnP_MODEL_DESCRIPTION      "RangeMax NEXT"
+#endif
+
+#if (defined WNR3500L)
+#define AMBIT_HARDWARE_VERSION     "U12H13699"
+#define AMBIT_SOFTWARE_VERSION     "V1.0.0.64"
+#define AMBIT_UI_VERSION           "11.0.51NA"
+#define AMBIT_PRODUCT_NAME          "WNR3500L"
+#define AMBIT_PRODUCT_DESCRIPTION   "Netgear Wireless Router WNR3500L"
+#define UPnP_MODEL_URL              "WNR3500L.aspx"
 #define UPnP_MODEL_DESCRIPTION      "RangeMax NEXT"
 #endif
 
