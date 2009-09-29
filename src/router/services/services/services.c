@@ -1074,7 +1074,8 @@ void start_l2tp(int status)
 #endif
 #ifdef HAVE_PPTP
 	stop_pptp();
-#endif
+#endif	
+	stop_l2tp();
 	stop_l2tp();
 
 	snprintf(username, sizeof(username), "%s",
