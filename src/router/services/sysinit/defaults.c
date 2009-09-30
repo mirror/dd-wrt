@@ -1410,6 +1410,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath3_txpwrdbm", "17", 0},
 	{"ath4_txpwrdbm", "17", 0},
 	{"ath5_txpwrdbm", "17", 0},
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
+	{"ath0_txpwrdbm", "28", 0},
 #else
 
 	{"ath0_txpwrdbm", "20", 0},
