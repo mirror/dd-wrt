@@ -183,19 +183,17 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_inet.traff_mon"); %></legend>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" width=\"555\" height=\"350\" frameborder=\"0\" type=\"text/html\">");
+									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" width=\"555\" height=\"350\" frameborder=\"0\" type=\"text/html\"></iframe>");
 									//]]>
 									</script>
-
-									</iframe>
-										<div class="center">
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.previous + "\" onclick=\"do_show_prev();\">");
-											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.next + "\" onclick=\"do_show_next();\">");
-											//]]>
-											</script>
-										</div>
+									<div class="center">
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.previous + "\" onclick=\"do_show_prev();\">");
+										document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.next + "\" onclick=\"do_show_next();\">");
+										//]]>
+										</script>
+									</div>
 								</fieldset><br />
 								<fieldset>
 								<legend><% tran("status_inet.dataadmin"); %></legend>
