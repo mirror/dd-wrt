@@ -4,7 +4,6 @@
 # Copyright 2001-2003, Broadcom Corporation
 # All Rights Reserved.
 #
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
 # KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 # SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 # FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
@@ -497,12 +496,17 @@ endif
 ifeq ($(CONFIG_WILLIAM),y)
 CFLAGS += -DWILLIAM=1
 endif
+ifeq ($(ARCHITECTURE),broadcom)
+VISOBJS += wireless_broadcom.o
 
+endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
+CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
+VISOBJS += wireless_madwifi11n.o
 else
 CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h
+VISOBJS += wireless_madwifi.o
 endif
 
 OBJS += ../wireless-tools/libiw.so.29
@@ -629,6 +633,7 @@ endif
 
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880
+  VISOBJS += wireless_ralink.o
 endif
 ifeq ($(CONFIG_RT3052),y)
   CFLAGS += -DHAVE_RT2880  -DHAVE_RT3052
