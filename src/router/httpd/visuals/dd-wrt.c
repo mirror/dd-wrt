@@ -2517,10 +2517,11 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	int c = getifcount("wifi");
 
 	for (i = 0; i < c; i++) {
-		char ath[32];
+//		char ath[32];
 
-		sprintf(ath, "ath%d_bridged", i);
-		if (nvram_default_match(ath, "1", "1")) {
+//		sprintf(ath, "ath%d_bridged", i);
+//		if (nvram_default_match(ath, "1", "1")) 
+		{
 			sprintf(bufferif, "%s ath%d", bufferif, i);
 			char vifs[32];
 
