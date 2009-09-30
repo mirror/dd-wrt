@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Dutch reference translation file - DD-WRT V24 SP2 by Fabian 22/6/2006	Resynced 27/9/2009 by Dutchman01  //
+//	Dutch reference translation file - DD-WRT V24 SP2 by Fabian 22/6/2006	Resynced 28/9/2009 by Dutchman01  //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -91,10 +91,10 @@ share.lan="LAN";
 share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Subnet Masker";
-share.unmask="Unmask";
+share.unmask="Zichtbaar Maken";
 share.deflt="Standaard";  //don't use share.default !!!
 share.all="Alles";
-share.auto="Auto";
+share.auto="Automatisch";
 share.right="Rechts";
 share.left="Links";
 share.share_key="Gedeelde Sleutel";
@@ -183,7 +183,7 @@ sbutton.remove="Verwijderen";
 sbutton.modify="Wijzigen";
 sbutton.deleted="Verwijderd";
 sbutton.delall="Verwijder alles";
-sbutton.autorefresh="Auto-verversen is Actief";
+sbutton.autorefresh="Automatisch verversen ingeschakeld";
 sbutton.backup="Backup";
 sbutton.restore="Herstel";
 sbutton.cptotext="Pas aan";
@@ -435,12 +435,12 @@ config.mess1="Klik op de \"" + sbutton.backup + "\" knop om de huidige configura
 config.h22="Herstel Configuratie";
 config.legend2="Herstel Instellingen";
 config.mess2="Selecteer een te herstellen bestand";
-config.mess3="O P G E L E T";
+config.mess3="O P G E L E T !";
 config.mess4="Gelieve alleen bestanden te uploaden die met deze firmware of zelfde model router zijn gemaakt.<br />Upload geen bestanden die niet gecreëerd zijn door deze interface!";
 
 //help container
 
-hconfig.right2="U kunt uw huidige configuratie opslaan in het geval dat u uw router naar de fabriek instellingen moet terug zetten.<br /><br />Klik op de <em>Backup</em> knop om uw huidige configuratie op te slaan.";
+hconfig.right2="U kunt uw huidige configuratie opslaan in het geval dat u uw router naar de fabriek instellingen moet terug zetten.<br /><br />Klik op de <em>Backup</em> knop om de huidige configuratie elders te bewaren.";
 hconfig.right4="Klik op de <em>Bladeren...</em> knop om naar een configuratie bestand te bladeren dat zich momenteel op uw computer bevindt.<br /><br />Klik op de <em>" + sbutton.restore + "</em> knop om de huidige configuratie te vervangen door die uit het configuratie bestand.";
 
 
@@ -521,7 +521,7 @@ factdef.mess1="Opgelet! Indien u OK klikt, zal het aparaat naar fabrieksinstelli
 
 //help container
 
-hfactdef.right1="Dit zal al uw instellingen herstellen naar fabrieksinstellingen. Al uw voorgaande instellingen worden gewist.";
+hfactdef.right1="Dit zal alle instellingen herstellen naar de fabrieksinstellingen. Alle huidige instellingen worden gewist.";
 
 
 
@@ -554,19 +554,19 @@ filter.legend4="Website Verbieden Per URL";
 filter.legend5="Website Verbieden Per URL";
 
 filter.mess1="Verwijder het Beleid?";
-filter.mess2="U moet een dag selecteren.";
+filter.mess2="U dient een dag te selecteren.";
 filter.mess3="De eindtijd moet groter dan de begintijd zijn.";
 
 //help container
 
-hfilter.right2="U kan tot 10 toegangs beperkingen aanmaken. Klik op <em>" + sbutton.del + "</em> om een beperking te verwijderen of <em>" + sbutton.summary + "</em> om een overzicht te krijgen.";
+hfilter.right2="U kunt tot max. 10 toegangs beperkingen aanmaken. Klik op <em>" + sbutton.del + "</em> om een beperking te verwijderen of <em>" + sbutton.summary + "</em> om een overzicht te krijgen.";
 hfilter.right4="Activeer of Deactiveer een beperking.";
-hfilter.right6="U mag het beleid een naam geven.";
-hfilter.right8="Kies een dag van de week waarop u de beperking wilt doen gelden.";
-hfilter.right10="Kies het uur van de dag waarop u de beperking wilt doen gelden";
-hfilter.right12="U kan toegang tot een bepaalde dienst verbieden. Klik op<em>" + sbutton.filterSer + "</em> om deze instelling te veranderen.";
-hfilter.right14="U kan toegang tot een bepaalde website verbieden door hun URL hier in te voeren.";
-hfilter.right16="U kan toegang tot een bepaalde website verbieden aan de hand van sleutelwoorden, vermeld op hun site.";
+hfilter.right6="U kunt het beleid een naam geven.";
+hfilter.right8="Kies een dag van de week waarop de beperking van toepassing is.";
+hfilter.right10="Kies het uur van de dag waarop de beperking van toepassing is";
+hfilter.right12="U kunt de toegang tot een bepaalde dienst verbieden. Klik op<em>" + sbutton.filterSer + "</em> om deze instelling aan te passen.";
+hfilter.right14="U kunt de toegang tot een bepaalde website verbieden door hun URL hier in te voeren.";
+hfilter.right16="U kunt de toegang tot een bepaalde website verbieden aan de hand van sleutelwoorden, vermeld op deze website's.";
 
 
 
@@ -611,7 +611,7 @@ prforward.app="Applicatie";
 
 //help container
 
-hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de route de data doorsturen naar de computer dat u wenst. Door veiligheids overwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten dat u effectief gebruikt, u moet de <em>" + share.enable +"</em> checkbox uit vinken als u klaar bent met instellen.";
+hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. Voorbeelden van gebruik van deze applicatie zijn servers en bepaalde online games. Wanneer een aanvraag voor een bepaalde poort afkomstig is van het internet, zal de router de data doorsturen naar de juiste computer. Door veiligheids overwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten dat u effectief gebruikt, u moet de <em>" + share.enable +"</em> checkbox uit vinken als u klaar bent met instellen.";
 
 
 // ******************************************* P2P.asp *******************************************//
@@ -637,7 +637,7 @@ pforward.from="Van poort";
 pforward.to="Naar poort";
 
 //help container
-hpforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de router de data doorsturen naar de computer die u wenst. Uit veiligheidsoverwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten die u effectief gebruikt, u moet de <em>Activeer</em> checkbox uitvinken nadat u klaar bent met instellen.";
+hpforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. Wanneer een aanvraag voor een bepaalde poort afkomstig van het internet, zal de router de data doorsturen naar de juiste computer waarvoor u de poort open heeft gezet. Uit veiligheidsoverwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten die effectief gebruikt worden, u dient de <em>Activeer</em> checkbox uit te vinken nadat u deze poorten niet langer in gebruikt heeft.";
 
 
 
@@ -768,10 +768,10 @@ idx_static.dns="Statische DNS";
 idx.titl="Instellen";
 idx.h2="Internet Instellingen";
 idx.h22="Draadloos Instellen";
-idx.legend="Internet Verbinding Type";
-idx.conn_type="Verbinding Type";
+idx.legend="Internet Verbindings Type";
+idx.conn_type="Verbindings Type";
 idx.stp="STP";
-idx.stp_mess="(deactiveer voor COMCAST ISP)";
+idx.stp_mess="(Deactiveer voor COMCAST ISP)";
 idx.optional="Optionele Instellingen";
 idx.mtu="MTU";
 idx.h23="Netwerk Instellingen";
@@ -879,7 +879,7 @@ management.remote_ssh="SSH Beheer";
 management.remote_sshport="SSH Poort";
 
 management.web_legend="Web Toegang";
-management.web_refresh="Auto-vernieuwen (Seconden)";
+management.web_refresh="Automatisch verversen (Seconden)";
 management.web_sysinfo="Activeer Info Site";
 management.web_sysinfopass="Info Site Wachtwoord Bescherming";
 management.web_sysinfomasq="Info Site MAC Verbergen";
@@ -960,8 +960,8 @@ management.gui_style="Router GUI Stijl";
 
 //help container
 
-hmanagement.right1="Auto-Vernieuwen:";
-hmanagement.right2="Past de automatische vernieuwings interval van de Web GUI aan. 0 zet deze functie volledig uit.";
+hmanagement.right1="Automatisch Verversen:";
+hmanagement.right2="Past de automatische verversings interval van de Web GUI aan. 0 zet deze functie volledig uit.";
 
 
 
@@ -1411,12 +1411,12 @@ htrforward.right10="Voer het eindigend poort nummer in van de Trigger en Forward
 upgrad.titl="Firmware Upgrade";
 upgrad.h2="Firmware Beheer";
 upgrad.legend="Firmware Upgrade";
-upgrad.info1="Na het flashen, reset op volgende manier";
-upgrad.resetOff="Geen reset";
-upgrad.resetOn="Standaard instellingen";
-upgrad.file="Selecteer een bestand voor de upgrade";
-upgrad.warning="O P G E L E T";
-upgrad.mess1="Firmware upgraden kan enkele minuten duren.<br />Zet uw router NIET af, reset uw router NIET, gedurende dit proces!";
+upgrad.info1="Na het flashen, reset op de volgende manier";
+upgrad.resetOff="Geen reset uitvoeren";
+upgrad.resetOn="Naar de Standaard instellingen";
+upgrad.file="Selecteer het bestand voor de upgrade";
+upgrad.warning="O P G E L E T !";
+upgrad.mess1="De Firmware Upgrade kan enkele minuten duren.<br />Zet uw router NIET uit, reset uw router NIET, gedurende dit proces!";
 
 //help container
 
@@ -1465,7 +1465,7 @@ vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Toegewezen aan<br />Bridge";
 vlan.tagged="Tagged";
-vlan.negociate="Auto-Onderhandelen";
+vlan.negociate="Automatisch Onderhandelen";
 vlan.aggregation="Link Aggregatie<br>op Poorten 3 & 4";
 vlan.trunk="Trunk";
 
@@ -1650,7 +1650,7 @@ wl_adv.shrt="Kort"; 				//************* don't use .short ! **************
 
 //help container
 
-hwl_adv.right2="U kunt kiezen uit Auto of Shared Key. Shared key authenticatie is veiliger, maar alle apparaten op uw netwerk moeten dit ook ondersteunen.";
+hwl_adv.right2="U kunt kiezen uit Automatisch of Shared Key. Shared key authenticatie is veiliger, maar alle apparaten op uw netwerk moeten dit ook ondersteunen.";
 hwl_basic.right6="Klik op een uur om het radio signaal in of uit te schakelen. (<em>groen</em> geeft toegestane draadloze toegang aan, <em>rood</em> geblokkeerde draadloze toegang)";
 
 
