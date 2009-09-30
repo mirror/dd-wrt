@@ -1019,14 +1019,14 @@ int wifi_gettxpoweroffset(char *ifname)
 	return poweroffset;
 }
 
-int get_wifioffset(char *ifname)
+int get_wififreq(char *ifname,int freq)
 {
 #ifdef HAVE_NS3
 	return -2000;
 #endif
 	if (isEMP(ifname)) {
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
-			return -2400;
+			return freq-2400;
 	}
 	char *var = NULL;
 	if (ifname) {
@@ -1035,7 +1035,7 @@ int get_wifioffset(char *ifname)
 		var = nvram_get(localvar);
 	}
 	if (var) {
-		return atoi(var);
+		return freq+atoi(var);
 	}
 	int vendor;
 	int devcount;
@@ -1053,28 +1053,85 @@ int get_wifioffset(char *ifname)
 	}
 	switch (vendor) {
 	case 9:		// ubnt xr9
+		if (freq<2427 || freq>2442)
+		    return -1;
+		return freq-(2427 - 907);
+	break;
 	case 4:		// ubnt sr9
-		return -(2427 - 907);
+		switch (freq) // mmh weired order
+		{
+		case 2422:
+		    return 922;
+		break;
+		case 2423:
+		    return 921;
+		break;
+		case 2424:
+		    return 920;
+		break;
+		case 2425:
+		    return 919;
+		break;
+		case 2426:
+		    return 918;
+		break;
+		case 2427:
+		    return 917;
+		break;
+		case 2428:
+		    return 916;
+		break;
+		case 2429:
+		    return 915;
+		break;
+		case 2430:
+		    return 914;
+		break;
+		case 2431:
+		    return 913;
+		break;
+		case 2432:
+		    return 912;
+		break;
+		case 2433:
+		    return 911;
+		break;
+		case 2434:
+		    return 910;
+		break;
+		case 2435:
+		    return 909;
+		break;
+		case 2436:
+		    return 908;
+		break;
+		case 2437:
+		    return 907;
+		break;
+		}
+		return -1;
 	case 13:
-		return -(5540 - 3540);	// xr3 general 3,5 ghz
+		return freq-(5540 - 3540);	// xr3 general 3,5 ghz
 	case 1328:
-		return -(5540 - 2840);	// xr3 special 2.8 ghz
+		return freq-(5540 - 2840);	// xr3 special 2.8 ghz
 	case 1336:
 		if (nvram_nmatch("2", "%s_cardtype", ifname))
-			return -(5765 - 3658); // xr3 3.7 ghz
+			return freq-(5765 - 3658); // xr3 3.7 ghz
 		else
-			return -(5540 - 3340); // xr3 special 3.3/3.6 ghz
+			return freq-(5540 - 3340); // xr3 special 3.3/3.6 ghz
 	case 7:
-		return -(2427 - 763);	// xr7 
+		if (freq<2427 || freq>2442)
+		    return -1;
+		return freq-(2427 - 763);	// xr7 
 	case 14:
-		return -(5540 - 4516);	// xr4 
+		return freq-(5540 - 4516);	// xr4 
 		// case 24:
 		// return -(5540-4540); //sr4 
 	default:
-		return 0;
+		return freq;
 		break;
 	}
-	return 0;
+	return freq;
 }
 
 #ifdef WILLAM
