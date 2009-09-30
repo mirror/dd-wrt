@@ -2707,13 +2707,14 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
+				int freq = get_wififreq(prefix,chan[i].freq);
+				if (freq!=-1)
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
 					  fr, nvram_match(wl_channel,
 							  fr) ?
 					  "selected=\\\"selected\\\"" : "", cn,
-					  (chan[i].freq +
-					   get_wifioffset(prefix)));
+					  (freq));
 				// free (chan[i].freq);
 				i++;
 			}
@@ -5757,9 +5758,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	int channel = wifi_getchannel(nvram_safe_get("wifi_display"));
 
 	if (channel > 0 && channel < 1000) {
-		websWrite(wp, "%d (%d Mhz)", channel,
-			  (wifi_getfreq(nvram_safe_get("wifi_display")) +
-			   get_wifioffset(nvram_safe_get("wifi_display"))));
+		websWrite(wp, "%d (%d Mhz)", channel,get_wififreq(nvram_safe_get("wifi_display"),wifi_getfreq(nvram_safe_get("wifi_display"))));
 	} else
 		// websWrite (wp, "unknown");
 		websWrite(wp, "%s", live_translate("share.unknown"));
