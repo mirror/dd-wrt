@@ -1329,6 +1329,18 @@ void start_restore_defaults(void)
 		}
 
 	}
+	
+	if (restore_defaults) { //hack for VLAN page display for some routers: lan is on vlan1, wan is on vlan2
+		if (strlen(nvram_safe_get("vlan1ports")) == 10) {
+				nvram_set("port0vlans", "2");
+				nvram_set("port1vlans", "1");
+				nvram_set("port2vlans", "1");
+				nvram_set("port3vlans", "1");
+				nvram_set("port4vlans", "1");
+				nvram_set("port5vlans", "1 2 16");
+		}	
+	}
+
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
 	    || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_get("aa0"))
