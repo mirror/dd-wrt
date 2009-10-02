@@ -110,17 +110,13 @@ int ipup_main(int argc, char **argv)
 			nvram_set("wan_netmask", "255.255.255.255");
 		} else if (nvram_match("wan_proto", "pptp")) {
 			nvram_set("wan_ipaddr_buf", nvram_safe_get("pptp_get_ip"));	// Store 
-			// last 
-			// ip 
-			// address
 			nvram_set("wan_ipaddr", value);
 			nvram_set("wan_netmask", "255.255.255.255");
 			nvram_set("pptp_get_ip", value);
 		} else if (nvram_match("wan_proto", "l2tp")) {
 			nvram_set("wan_ipaddr_buf", nvram_safe_get("l2tp_get_ip"));	// Store 
-			// last 
-			// ip 
-			// address
+			nvram_set("wan_ipaddr", value);
+			nvram_set("wan_netmask", "255.255.255.255");
 			nvram_set("l2tp_get_ip", value);
 		}
 #ifdef HAVE_3G
