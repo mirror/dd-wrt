@@ -2408,6 +2408,11 @@ void start_wan(int status)
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
 #endif
+#ifdef HAVE_PPPOE
+	if (nvram_match("wan_proto", "l2tp"))
+		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
+	else
+#endif
 		strncpy(ifr.ifr_name, wan_ifname, IFNAMSIZ);
 
 	/*
@@ -2529,17 +2534,21 @@ void start_wan(int status)
 	 */
 	if (strcmp(wan_proto, "pppoe") == 0)
 		ifconfig(pppoe_wan_ifname, IFUP, NULL, NULL);
-	else {
+	else
+#endif
+#ifdef HAVE_L2TP
+	if (strcmp(wan_proto, "l2tp") == 0)
+		ifconfig(pppoe_wan_ifname, IFUP, NULL, NULL);
+	else
+#endif
+	{
 		ifconfig(wan_ifname, IFUP, NULL, NULL);
 	}
-#else
-
-	ifconfig(wan_ifname, IFUP, NULL, NULL);
 	if (nvram_match("wl0_mode", "infra")) {
 		eval("wl", "infra", "0");
 		eval("wl", "ssid", nvram_safe_get("wl0_ssid"));
 	}
-#endif
+
 	set_host_domain_name();
 
 	// Remove the current value of pppd_pppifname
@@ -3003,7 +3012,9 @@ void start_wan(int status)
 		insmod("n_hdlc");
 		if (isClient()) {
 			wan_ifname = getSTA();
-		}
+		}else
+			wan_ifname = pppoe_wan_ifname;
+		
 		start_dhcpc(wan_ifname);
 	}
 #endif

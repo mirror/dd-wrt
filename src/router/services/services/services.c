@@ -1084,6 +1084,7 @@ void start_l2tp(int status)
 
 	if (status != REDIAL) {
 		mkdir("/tmp/ppp", 0777);
+		mkdir("/var/run/xl2tpd", 0777);
 		mkdir("/tmp/xl2tpd", 0777);
 		symlink("/sbin/rc", "/tmp/ppp/ip-up");
 		symlink("/sbin/rc", "/tmp/ppp/ip-down");
