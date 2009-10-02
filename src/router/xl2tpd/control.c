@@ -822,7 +822,7 @@ int control_finish (struct tunnel *t, struct call *c)
         control_xmit (buf);
         po = NULL;
         po = add_opt (po, "passive");
-        po = add_opt (po, "-detach");
+        po = add_opt (po, "nodetach");
         if (c->lac)
         {
             if (c->lac->defaultroute)
@@ -923,7 +923,7 @@ int control_finish (struct tunnel *t, struct call *c)
         strncpy (ip2, IPADDY (c->addr), sizeof (ip2));
         po = NULL;
         po = add_opt (po, "passive");
-        po = add_opt (po, "-detach");
+        po = add_opt (po, "nodetach");
         po = add_opt (po, "%s:%s", c->lns->localaddr ? ip1 : "", ip2);
         if (c->lns->authself)
         {
@@ -971,7 +971,7 @@ int control_finish (struct tunnel *t, struct call *c)
     case OCCN:                 /* jz: get OCCN, so the only thing we must do is to start the pppd */
         po = NULL;
         po = add_opt (po, "passive");
-        po = add_opt (po, "-detach");
+        po = add_opt (po, "nodetach");
         po = add_opt (po, "file");
         strcat (dummy_buf, c->dial_no); /* jz: use /etc/ppp/dialnumber.options for pppd - kick it if you dont like */
         strcat (dummy_buf, ".options");

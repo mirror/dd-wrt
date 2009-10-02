@@ -23,6 +23,9 @@ typedef unsigned long long _u64;
 
 #include <netinet/in.h>
 #include <termios.h>
+#ifdef OPENBSD
+# include <util.h>
+#endif
 #include "osport.h"
 #include "scheduler.h"
 #include "misc.h"
@@ -37,15 +40,13 @@ typedef unsigned long long _u64;
 #define CONTROL_PIPE "/var/run/xl2tpd/l2tp-control"
 
 #define BINARY "xl2tpd"
-#define SERVER_VERSION "xl2tpd-1.1.12"
+#define SERVER_VERSION "xl2tpd-1.2.4"
 #define VENDOR_NAME "xelerance.com"
 #ifndef PPPD
 #define PPPD		"/usr/sbin/pppd"
 #endif
 #define CALL_PPP_OPTS "defaultroute"
 #define FIRMWARE_REV	0x0690  /* Revision of our firmware (software, in this case) */
-#define DEF_MAX_TUNNELS 32      /* By default only allow this many
-                                   tunnels to exist */
 
 #define HELLO_DELAY 60          /* How often to send a Hello message */
 
@@ -202,7 +203,6 @@ extern struct tunnel_list tunnels;
 extern void tunnel_close (struct tunnel *t);
 extern void network_thread ();
 extern int init_network ();
-extern int max_tunnels;
 extern int kernel_support;
 extern int server_socket;
 extern struct tunnel *new_tunnel ();

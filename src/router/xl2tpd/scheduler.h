@@ -47,18 +47,11 @@ struct schedule_entry *aschedule (struct timeval tv, void (*func) (void *),
 
 void deschedule (struct schedule_entry *);
 
-/* The alarm handler */
-
-void alarm_handler (int);
-
 /* Initialization function */
 void init_scheduler (void);
 
-/* Prevent the scheduler from running */
-void schedule_lock ();
-
-/* Restore normal scheduling functions */
-void schedule_unlock ();
+/* Scheduled event processor */
+struct timeval *process_schedule(struct timeval *);
 
 /* Compare two timeval functions and see if a <= b */
 
