@@ -1184,6 +1184,7 @@ length bit = yes
 		}
 
 		fprintf(fp, "default-asyncmap\n");	// Disable asyncmap
+		fprintf(fp, "crtscts\n");	// Disable protocol field compression
 		// negotiation
 		fprintf(fp, "nopcomp\n");	// Disable protocol field compression
 		fprintf(fp, "refuse-eap\n");	// Disable protocol field compression
