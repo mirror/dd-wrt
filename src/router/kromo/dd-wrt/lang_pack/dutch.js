@@ -511,8 +511,7 @@ ddnsm.all_noip="Geen WAN verbinding";
 
 //help container
 
-hddns.right2="DDNS biedt toegang tot uw netwerk via host en domeinnaam in plaats van een IP adres. Dit is een handige optie wanneer u de hoster van uw eigen website, FTP-server of een andere server achter de router bent.
-Deze service houdt uw domein informatie dynamisch up-to-date. U dient zich wel hiervoor te registreren op één van de volgende site's: DynDNS.org, TZO.com of ZoneEdit.com.";
+hddns.right2="DDNS biedt toegang tot uw netwerk via host en domeinnaam in plaats van een IP adres. Dit is een handige optie wanneer u de hoster van uw eigen website, FTP-server of een andere server achter de router bent. Deze service houdt uw domein informatie dynamisch up-to-date. U dient zich wel hiervoor te registreren op één van de volgende site's: DynDNS.org, TZO.com of ZoneEdit.com.";
 hddns.right4="Typ een integer nummer in het veld voor een geforceerde update interval (in dagen). Updates zouden alleen automatisch plaats moeten vinden indien uw IP adres is veranderd. Let op uw DDNS provider voor hun update abuse policy om te voorkomen dat uw hostnaam of domeinnaam wordt geblokkeerd.";
 
 
@@ -542,13 +541,7 @@ dmz.host="DMZ Host IP Adres";
 
 //help container
 
-hdmz.right2="Met de DMZ-functie kan een netwerkcomputer verbinding met internet maken en bepaalde services gebruiken,
-zoals onlinegames of videoconferenties etc. DMZ-hosting wijst
-alle poorten op hetzelfde moment aan één computer toe.
-De functie voor het forwarden van poortbereiken is veiliger,
-omdat hierbij alleen poorten worden geopend die u wilt
-openen, terwijl bij DMZ-hosting alle poorten op een computer
-worden geopend, zodat via het internet verbinding met deze bepaalde computer kan worden gemaakt.";
+hdmz.right2="Met de DMZ-functie kan een netwerkcomputer verbinding met internet maken en bepaalde services gebruiken, zoals onlinegames of videoconferenties etc. DMZ-hosting wijst alle poorten op hetzelfde moment aan één computer toe. De functie voor het forwarden van poortbereiken is veiliger, omdat hierbij alleen poorten worden geopend die u wilt openen, terwijl bij DMZ-hosting alle poorten op een computer worden geopend, zodat via het internet verbinding met deze bepaalde computer kan worden gemaakt.";
 
 
 // ** Factory_Defaults.asp **//
@@ -815,8 +808,7 @@ hanchorfree.right5="Voor meer informatie bezoekt u www.anchorfree.com";
 hanchorfree.right6="Activatie is heel erg gemakkelijk";
 hanchorfree.right7="Zodra u heeft geactiveerd, stuurt AnchorFree u een email naar de geregistreerde accounteigenaar met eenvoudige instructies over het optimaliseren van uw hotspot, FAQs en andere relevante informatie over het verdienen van geld met uw router. Door dit configuratie scherm, voegt AnchorFree een dunne, niet-opdringerige reclameframe rechtstreeks aan de webbrowsers die toegang tot het internet maken via deze router.";
 hanchorfree.right8="Klantenservice";
-hanchorfree.right9="Heeft u vragen? Neem contact met ons op via
-boxhelp@anchorfree.com";
+hanchorfree.right9="Heeft u vragen? Neem contact met ons op via boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//
@@ -910,16 +902,12 @@ idx.ntp_client="NTP Cliënt";
 
 //help container
 
-hidx.right2="Houd deze instelling alleen aan als uw
-internetprovider DHCP ondersteunt of als u verbinding maakt
-via een dynamisch IP-adres. (Deze optie is meestal van toepassing op kabelverbindingen)";
+hidx.right2="Houd deze instelling alleen aan als uw internetprovider DHCP ondersteunt of als u verbinding maakt via een dynamisch IP-adres. (Deze optie is meestal van toepassing op kabelverbindingen)";
 hidx.right4="Geef de hostnaam op die u van uw provider heeft ontvangen.";
 hidx.right6="Geef de domeinnaam op die u van uw provider heeft ontvangen.";
 hidx.right8="Dit is het IP adres van de router.";
 hidx.right10="Dit is het subnetmasker van de router.";
-hidx.right12="De router kan worden gebruikt als DHCP-server voor uw netwerk. DHCP-servers wijzen automatisch een IP-adres toe aan
-elke computer in uw netwerk. Als u de DHCP-serveroptie van de
-router wilt inschakelen, dient u te controleren dat er geen andere DHCP-server op uw netwerk actief is.";
+hidx.right12="De router kan worden gebruikt als DHCP-server voor uw netwerk. DHCP-servers wijzen automatisch een IP-adres toe aan elke computer in uw netwerk. Als u de DHCP-serveroptie van de router wilt inschakelen, dient u te controleren dat er geen andere DHCP-server op uw netwerk actief is.";
 hidx.right14="Het IP adres waarmee u zou willen starten.";
 hidx.right16="U kunt het aantal adressen beperken dat uw router uitdeeld. 0 betekent dat alleen voorgedefinieerde statische leases zullen worden uitgedeeld.";
 hidx.right18="Selecteer de juiste tijdzone en zomertijd periode van de locatie waar in u zich bevindt. De router kan dan de lokale of UTC tijd gebruiken.";
