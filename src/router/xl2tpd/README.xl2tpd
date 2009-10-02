@@ -19,6 +19,9 @@ NAT'ed IP's by different clients (eg all clients connecting from their
 linksys internal IP 192.168.1.101) as well as multiple clients behind
 the same NAT router.
 
+xl2tpd supports the pppol2tp kernel mode operations on 2.6.23 or higher,
+or via a patch in contrib for 2.4.x kernels. Note that kernel mode and
+IPsec SA Reference tracking do not yet work together.
 
 Xl2tpd is based on the 0.69 L2TP by Jeff McAdams <jeffm@iglou.com>
 It was de-facto maintained by Jacco de Leeuw <jacco2@dds.nl> in 2002 and 2003.

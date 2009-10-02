@@ -2,7 +2,7 @@
 #define _IPSECMAST_H
 
 #ifndef IP_IPSEC_REFINFO
-#define IP_IPSEC_REFINFO 18
+#define IP_IPSEC_REFINFO 22
 #endif
 
 #ifndef IPSEC_SAREF_NULL
