@@ -1,6 +1,42 @@
+v1.2.4
+* Fixes to Suse spec file [Shingo Yamawaki]
+* unclutter logs for 'select timeout' [Shingo Yamawaki]
+* Make sure child_handler and destroy_call won't conflict when pppd is killed
+  [Mika Ilmaranta/ Tuomo]
+* Workaround for broken kernels that send duplicate pids to waitpid()
+  See: https://bugzilla.redhat.com/show_bug.cgi?id=486945 [Mika / Tuomo]
+* Fix pppd option from legacy -detach to nodetach [Tuomo]
+  
+v1.2.3
+* Fixes for prefix/destdir and spec files [paul/tuomo]
+* Use pcap not pcap-devel on suse, rhel and centos [paul/tuomo/shingo]
+* Added pfc to contrib. pfc is a tool to compile active-filters
+  for pppd, which can be used for dial-on-demand filters [paul/roberto]
+* Bug tracker bugs fixed
+  # 998: xl2tpd-1.2.2 Makefile sets wrong path for mandir 
+
+v1.2.2
+* PPP CHAP authentication using plugin passwordfd.so failed [tgohad@mvista.com]
+* Use SIGALRM only in select(). This prevents a problem where a pppd child
+  (eg ntpd via ppp-up.d/ script) is using signaling too. [Shingo Yamawaki]
+* A file descriptor is left opened when exec'ing pppd. [Shingo Yamawaki]
+* When select() is interrupted, readfds should not be used. [Shingo Yamawaki]
+* Modifications to Makefile to support DESTDIR [paul]
+* Modifications to compile on OpenBSD [Stephen Ayotte]
+* Bug tracker bugs fixed
+  #955: refuse authentication is backward for LAC sections [Dean Scarff]
+
+v1.2.1
+* Fixes to Suse init file and spec file [paul]
+* Changed some build defaults in Makefile [paul]
+
+v1.2.0
+* Synchronised IP_IPSEC_REFINFO define with KLIPSNG patch [paul]
+* Fixed versioning and bumped to 1.2.0 [paul]
+
 v1.1.12
-* Included debian directory from Roberto C. Sanchez <roberto@connexer.com> 
 * Fix for dropped packets and wrong disconnects. [Ray Overland / Tuomo]
+* Included debian directory from Roberto C. Sanchez <roberto@connexer.com> 
 
 v1.1.11
 * Support for passwordfd when using xl2tpd as client.

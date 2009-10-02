@@ -47,6 +47,7 @@
 #define PTY01 "0123456789abcdefghijklmnopqrstuv"
 #endif
 
+#ifndef OPENBSD
 int getPtyMaster_pty (char *tty10, char *tty01)
 {
     char *p10;
@@ -116,12 +117,36 @@ int getPtyMaster_ptmx(char *ttybuf, int ttybuflen)
 
     return fd;
 }
-	
+#ifdef OPENBSD
+int getPtyMaster_ptm(char *ttybuf, int ttybuflen)
+{
+    int amaster, aslave;
+    char *tty = (char*) malloc(64);
+
+    if((openpty(&amaster, &aslave, tty, NULL, NULL)) == -1)
+    {
+	l2tp_log (LOG_WARNING, "%s: openpty() returned %s\n",
+		__FUNCTION__, strerror(errno));
+	free(tty);
+	return -EINVAL;
+    }
+
+    ttybuf[0] = '\0';
+    strncat(ttybuf, tty, ttybuflen);
+
+    free(tty);
+
+    return amaster;
+}
+#endif /* OPENBSD */
+
 int getPtyMaster(char *ttybuf, int ttybuflen)
 {
-    int fd = getPtyMaster_ptmx(ttybuf, ttybuflen);
+    int fd;
+#ifndef OPENBSD
+    fd = getPtyMaster_ptmx(ttybuf, ttybuflen);
     char a, b;
-    
+
     if(fd >= 0) {
 	return fd;
     }
@@ -133,7 +158,16 @@ int getPtyMaster(char *ttybuf, int ttybuflen)
 	snprintf(ttybuf, ttybuflen, "/dev/tty%c%c", a, b);
 	return fd;
     }
+#endif
+#ifdef OPENBSD
+
+    fd = getPtyMaster_ptm(ttybuf, ttybuflen);
+    if(fd >= 0) {
+        return fd;
+    }
+#endif /* OPENBSD */
 
     return -EINVAL;
 }
-	
+
+#endif

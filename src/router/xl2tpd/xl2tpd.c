@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <time.h>
 #if (__GLIBC__ < 2)
-# if defined(FREEBSD)
+# if defined(FREEBSD) || defined(OPENBSD)
 #  include <sys/signal.h>
 # elif defined(LINUX)
 #  include <bsd/signal.h>
@@ -38,6 +38,9 @@
 # endif
 #else
 # include <signal.h>
+#endif
+#ifndef LINUX
+# include <sys/socket.h>
 #endif
 #include <netdb.h>
 #include <string.h>
@@ -48,7 +51,6 @@
 #include "l2tp.h"
 
 struct tunnel_list tunnels;
-int max_tunnels = DEF_MAX_TUNNELS;
 int rand_source;
 int ppd = 1;                    /* Packet processing delay */
 int control_fd;                 /* descriptor of control area */
@@ -435,6 +437,7 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
         /* connect the pty to stdin and stdout */
         dup2 (fd2, 0);
         dup2 (fd2, 1);
+	close(fd2);
 
         /* close all the calls pty fds */
         st = tunnels.head;
@@ -857,6 +860,7 @@ void do_control ()
     int cnt = -1;
     int done = 0;
 
+    bzero(buf, sizeof(buf));
     buf[0]='\0';
 
     while (!done)
@@ -891,6 +895,8 @@ void do_control ()
             switch_io = 1;  /* jz: Switch for Incoming - Outgoing Calls */
             
             tunstr = strtok (&buf[1], delims);
+
+            /* Are these passed on the command line? */
             authname = strtok (NULL, delims);
             password = strtok (NULL, delims);
 

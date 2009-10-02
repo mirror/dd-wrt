@@ -14,34 +14,18 @@
  */
 
 #include <stdlib.h>
-#include <signal.h>
 #include <string.h>
 #include "l2tp.h"
 #include "scheduler.h"
 
 struct schedule_entry *events;
-static struct timeval zero;
-static sigset_t alarm;
 
 void init_scheduler (void)
 {
-    struct sigaction act;
-    act.sa_handler = alarm_handler;
-#if defined (LINUX) && (__i386__)
-    act.sa_restorer = NULL;
-#endif
-    act.sa_flags = 0;
-    sigemptyset (&act.sa_mask);
-    sigaddset (&act.sa_mask, SIGALRM);
-    sigaction (SIGALRM, &act, NULL);
     events = NULL;
-    zero.tv_usec = 0;
-    zero.tv_sec = 0;
-    sigemptyset (&alarm);
-    sigaddset (&alarm, SIGALRM);
 }
 
-void alarm_handler (int signal)
+struct timeval *process_schedule (struct timeval *ptv)
 {
     /* Check queue for events which should be
        executed right now.  Execute them, then
@@ -50,15 +34,6 @@ void alarm_handler (int signal)
     struct schedule_entry *p = events;
     struct timeval now;
     struct timeval then;
-    struct itimerval itv;
-    static int cnt = 0;
-    cnt++;
-    if (cnt != 1)
-    {
-        /* Whoa, we got called from within ourselves! */
-        l2tp_log (LOG_DEBUG, "%s : Whoa... cnt = %d\n", __FUNCTION__, cnt);
-        return;
-    }
     while (events)
     {
         gettimeofday (&now, NULL);
@@ -91,29 +66,17 @@ void alarm_handler (int signal)
         {
             l2tp_log (LOG_WARNING, "%s: Whoa...  Scheduling for <=0 time???\n",
                  __FUNCTION__);
+            then.tv_sec = 1;
+            then.tv_usec = 0;
         }
-        else
-        {
-            itv.it_interval = zero;
-            itv.it_value = then;
-            setitimer (ITIMER_REAL, &itv, NULL);
-        }
+        *ptv = then;
+        return ptv;
     }
-    cnt--;
+    else
+    {
+        return NULL;
+    }
 }
-
-void schedule_lock ()
-{
-    while (sigprocmask (SIG_BLOCK, &alarm, NULL));
-};
-
-void schedule_unlock ()
-{
-    /* See if we missed any events */
-/*	alarm_handler(0); */
-    while (sigprocmask (SIG_UNBLOCK, &alarm, NULL));
-    raise (SIGALRM);
-};
 
 struct schedule_entry *schedule (struct timeval tv, void (*func) (void *),
                                  void *data)
@@ -123,9 +86,7 @@ struct schedule_entry *schedule (struct timeval tv, void (*func) (void *),
        immediately.  The queue should be in order of
        increasing time */
     struct schedule_entry *p = events, *q = NULL;
-    int need_timer = 0;
     struct timeval diff;
-    struct itimerval itv;
     diff = tv;
     gettimeofday (&tv, NULL);
     tv.tv_sec += diff.tv_sec;
@@ -152,19 +113,11 @@ struct schedule_entry *schedule (struct timeval tv, void (*func) (void *),
     {
         q = (struct schedule_entry *) malloc (sizeof (struct schedule_entry));
         events = q;
-        need_timer = -1;
     }
     q->tv = tv;
     q->func = func;
     q->data = data;
     q->next = p;
-    if (need_timer)
-    {
-        itv.it_interval = zero;
-        itv.it_value = diff;
-        setitimer (ITIMER_REAL, &itv, NULL);
-
-    }
     return q;
 
 }

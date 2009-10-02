@@ -13,5 +13,10 @@ typedef unsigned char _u8;
 typedef unsigned short _u16;
 typedef unsigned long long _u64;
 extern int rand_source;
+
+#ifndef LINUX
+# define SOL_IP 0
+#endif
+
 #define _COMMON_H_
 #endif

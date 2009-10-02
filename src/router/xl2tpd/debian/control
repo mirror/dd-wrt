@@ -8,6 +8,8 @@ Standards-Version: 3.7.2
 Package: xl2tpd
 Architecture: any
 Provides: l2tpd
+# For Ubuntu dapper drake, use:
+#Replaces: l2tpd (<< ${source-Version})
 Replaces: l2tpd (<< ${source:Version})
 Depends: ${shlibs:Depends}, ${misc:Depends}, ppp
 Description: a layer 2 tunneling protocol implementation
