@@ -58,7 +58,7 @@ obj-$(CONFIG_SPUTNIK_APD) += sputnik
 ##################################################################
 CONFIG_OTHERS=y
 #obj-$(CONFIG_ADM6996) += adm6996
-obj-$(CONFIG_L2TP) += rp-l2tp
+obj-$(CONFIG_L2TP) += xl2tpd
 
 obj-$(CONFIG_CHILLISPOT) += chillispot
 obj-$(CONFIG_PARPROUTED) += parprouted
@@ -182,6 +182,7 @@ obj-$(CONFIG_SNOOP) += snoop
 obj-y+=anchorfree
 obj-y+=ttraff
 obj-y+=speedtest
+obj-$(CONFIG_MKIMAGE) += mkimage
 obj-y+=configs
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
