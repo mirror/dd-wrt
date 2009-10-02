@@ -1287,9 +1287,9 @@ void stop_l2tp(void)
 	// ret += killps("l2tpd","-9");
 	// ret += killps("listen","-9");
 
-	if (pidof("pppd") > 0 || pidof("l2tpd")) {
+	if (pidof("pppd") > 0 || pidof("xl2tpd")) {
 		killall("pppd", SIGTERM);
-		killall("l2tpd", SIGKILL);
+		killall("xl2tpd", SIGKILL);
 		killall("listen", SIGKILL);
 	}
 	cprintf("done\n");
