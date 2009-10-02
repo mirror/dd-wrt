@@ -97,10 +97,10 @@ SRCS=${OBJS:.o=.c} ${HDRS}
 #LIBS= $(OSLIBS) # -lefence # efence for malloc checking
 EXEC=xl2tpd
 
-PREFIX?=/usr/local
-SBINDIR?=$(DESTDIR)${PREFIX}/sbin
-BINDIR?=$(DESTDIR)${PREFIX}/bin
-MANDIR?=$(DESTDIR)${PREFIX}/share/man
+PREFIX?=/usr
+SBINDIR?=$(INSTALLDIR)${PREFIX}/sbin
+BINDIR?=$(INSTALLDIR)${PREFIX}/bin
+MANDIR?=$(INSTALLDIR)${PREFIX}/share/man
 
 
 all: $(EXEC)
