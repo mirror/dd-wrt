@@ -1063,7 +1063,7 @@ void start_l2tp(int status)
 {
 	int ret;
 	FILE *fp;
-	char *l2tp_argv[] = { "l2tpd",
+	char *l2tp_argv[] = { "xl2tpd",
 		NULL
 	};
 	char username[80], passwd[80];
@@ -1084,6 +1084,7 @@ void start_l2tp(int status)
 
 	if (status != REDIAL) {
 		mkdir("/tmp/ppp", 0777);
+		mkdir("/tmp/xl2tpd", 0777);
 		symlink("/sbin/rc", "/tmp/ppp/ip-up");
 		symlink("/sbin/rc", "/tmp/ppp/ip-down");
 		symlink("/dev/null", "/tmp/ppp/connect-errors");
@@ -1091,22 +1092,38 @@ void start_l2tp(int status)
 		/*
 		 * Generate L2TP configuration file 
 		 */
-		if (!(fp = fopen("/tmp/l2tp.conf", "w"))) {
-			perror("/tmp/l2tp.conf");
+		if (!(fp = fopen("/tmp/xl2tpd/xl2tpd.conf", "w"))) {
+			perror("/tmp/xl2tpd/xl2tpd.conf");
 			return;
 		}
-		fprintf(fp, "global\n");	// Global section
-		fprintf(fp, "load-handler \"sync-pppd.so\"\n");	// Load
-		// handlers
-		fprintf(fp, "load-handler \"cmd.so\"\n");
-		fprintf(fp, "listen-port 1701\n");	// Bind address
-		fprintf(fp, "section sync-pppd\n");	// Configure the sync-pppd
-		// handler
-		fprintf(fp, "section peer\n");	// Peer section
-		fprintf(fp, "peer %s\n", nvram_safe_get("l2tp_server_name"));
-		fprintf(fp, "port 1701\n");
-		fprintf(fp, "lac-handler sync-pppd\n");
-		fprintf(fp, "section cmd\n");	// Configure the cmd handler
+/*[global]
+port = 1701
+;auth file = /etc/xl2tpd/xl2tp-secrets
+
+
+[lac fbnl2tpserver]
+lns = 10.64.1.237
+require chap = yes
+refuse pap = yes
+require authentication = yes
+; Name should be the same as the username in the PPP authentication!
+name = dani
+ppp debug = yes
+pppoptfile = /etc/xl2tpd/options.l2tp
+length bit = yes
+*/
+
+
+		fprintf(fp, "[global]\n");	// Global section
+		fprintf(fp, "port = 1701\n");	// Bind address
+		fprintf(fp, "[lac %s]\n",nvram_safe_get("l2tp_server_name"));
+		fprintf(fp, "lns = %s\n",nvram_safe_get("l2tp_server_name"));
+		fprintf(fp, "require chap = yes\n");
+		fprintf(fp, "refuse pap = yes\n");
+		fprintf(fp, "require authentication = yes\n");
+		fprintf(fp, "name = %s\n",username);
+		fprintf(fp, "pppoptfile = /tmp/ppp/options\n");
+		fprintf(fp, "length bit = yes\n");
 		fclose(fp);
 
 		/*
@@ -1116,6 +1133,19 @@ void start_l2tp(int status)
 			perror("/tmp/ppp/options");
 			return;
 		}
+
+			if (nvram_match("mtu_enable", "1")) {
+				if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+					fprintf(fp, "mtu %s\n",
+						nvram_safe_get("wan_mtu"));
+					fprintf(fp, "mru %s\n",
+						nvram_safe_get("wan_mtu"));
+				}
+
+			}
+
+
+
 		fprintf(fp, "defaultroute\n");	// Add a default route to the 
 		// system routing tables,
 		// using the peer as the
@@ -1128,9 +1158,6 @@ void start_l2tp(int status)
 		// fprintf(fp, "persist\n"); // Do not exit after a connection is
 		// terminated.
 
-		if (nvram_match("mtu_enable", "1")) {
-			fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
-		}
 
 		if (nvram_match("ppp_demand", "1")) {	// demand mode
 			fprintf(fp, "idle %d\n",
@@ -1158,6 +1185,7 @@ void start_l2tp(int status)
 		fprintf(fp, "default-asyncmap\n");	// Disable asyncmap
 		// negotiation
 		fprintf(fp, "nopcomp\n");	// Disable protocol field compression
+		fprintf(fp, "refuse-eap\n");	// Disable protocol field compression
 		fprintf(fp, "noaccomp\n");	// Disable Address/Control
 		// compression 
 		fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
@@ -1231,8 +1259,9 @@ void start_l2tp(int status)
 		else
 			eval("listen", nvram_safe_get("lan_ifname"));
 	} else
-		sysprintf("l2tp-control \"start-session %s\"",
-			  nvram_safe_get("l2tp_server_name"));
+	{
+	sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",nvram_safe_get("l2tp_server_name"));
+	}
 
 	cprintf("done\n");
 	return;
@@ -1425,8 +1454,7 @@ void start_force_to_dial(void)
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp")) {
 
-		sysprintf("l2tp-control \"start-session %s\"",
-			  nvram_safe_get("l2tp_server_name"));
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",nvram_safe_get("l2tp_server_name"));
 		return;
 	}
 #endif
