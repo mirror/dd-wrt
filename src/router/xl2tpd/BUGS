@@ -1,0 +1,10 @@
+Here are the known outstanding bugs, with reasons if it's known...
+
+Problem								Reason for problem if known
+=======								===========================
+Makefile doesn't have dependencies	dependencies need to be added
+
+Timeouts are compile-time			RTT adaptive timeouts need to be added
+
+All the FIXME's need to be fixed and of course everything in the TODO list
+needs to be done, too!
