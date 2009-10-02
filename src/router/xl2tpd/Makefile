@@ -35,7 +35,8 @@
 # - ppp-2.4.2-6.4.RHEL4
 # -DTRUST_PPPD_TO_DIE 
 #
-DFLAGS= -DDEBUG_PPPD
+DFLAGS= 
+#-DDEBUG_PPPD
 #DFLAGS= -g -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_FLOW -DDEBUG_PAYLOAD -DDEBUG_CONTROL -DDEBUG_CONTROL_XMIT -DDEBUG_FLOW_MORE -DDEBUG_MAGIC -DDEBUG_ENTROPY -DDEBUG_HIDDEN -DDEBUG_PPPD -DDEBUG_AAA -DDEBUG_FILE -DDEBUG_FLOW -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_ZLB -DDEBUG_AUTH
 #
 # Uncomment the next line for Linux
@@ -69,7 +70,7 @@ OSFLAGS= -DLINUX
 
 FFLAGS= -DIP_ALLOCATION
 
-CFLAGS+= $(DFLAGS) -O2 -fno-builtin -Wall -DSANITY $(OSFLAGS) $(FFLAGS)
+CFLAGS+= $(DFLAGS) $(COPTS) -fno-builtin -Wall -DSANITY $(OSFLAGS) $(FFLAGS)
 HDRS=l2tp.h avp.h misc.h control.h call.h scheduler.h file.h aaa.h md5.h
 OBJS=xl2tpd.o pty.o misc.o control.o avp.o call.o network.o avpsend.o scheduler.o file.o aaa.o md5.o
 SRCS=${OBJS:.o=.c} ${HDRS}
@@ -89,11 +90,7 @@ romfs:
 	$(ROMFSINST) /bin/$(EXEC)
 
 install: ${EXEC}
-	install -D --mode=0755 ${EXEC} ${DESTDIR}/${BINDIR}/${EXEC}
-	install -d --mode=0755 ${DESTDIR}/${MANDIR}/man{5,8}
-	install --mode=0644 doc/xl2tpd.8 ${DESTDIR}/${MANDIR}/man8/
-	install --mode=0644 doc/xl2tpd.conf.5 doc/l2tp-secrets.5 \
-		${DESTDIR}${MANDIR}/man5/
-
+	install -D --mode=0755 ${EXEC} ${INSTALLDIR}/${BINDIR}/${EXEC}
+#
 TAGS:	${SRCS}
 	etags ${SRCS}
