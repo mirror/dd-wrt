@@ -49,7 +49,7 @@ int init_config ()
     gconfig.debug_state = 0;
     lnslist = NULL;
     laclist = NULL;
-    deflac = (struct lac *) malloc (sizeof (struct lac));
+    deflac = (struct lac *) calloc (1, sizeof (struct lac));
 
     f = fopen (gconfig.configfile, "r");
     if (!f) 
@@ -79,7 +79,7 @@ int init_config ()
 struct lns *new_lns ()
 {
     struct lns *tmp;
-    tmp = (struct lns *) malloc (sizeof (struct lns));
+    tmp = (struct lns *) calloc (1, sizeof (struct lns));
     if (!tmp)
     {
         l2tp_log (LOG_CRIT, "%s: Unable to allocate memory for new LNS\n",
@@ -124,7 +124,7 @@ struct lns *new_lns ()
 struct lac *new_lac ()
 {
     struct lac *tmp;
-    tmp = (struct lac *) malloc (sizeof (struct lac));
+    tmp = (struct lac *) calloc (1, sizeof (struct lac));
     if (!tmp)
     {
         l2tp_log (LOG_CRIT, "%s: Unable to allocate memory for lac entry!\n",
@@ -608,7 +608,7 @@ int set_papchap (char *word, char *value, int context, void *item)
                 l->pap_require = result;
         else if (c[0] == 'a')   /* Authentication */
             if (word[2] == 'f')
-                l->authself = result;
+                l->authself = !result;
             else
                 l->authpeer = result;
         else /* CHAP */ if (word[2] == 'f')
@@ -1078,6 +1078,9 @@ int set_ipsec_saref (char *word, char *value, int context, void *item)
 		    return -1;
 	    if(g->ipsecsaref) {
 		    l2tp_log(LOG_WARNING, "Enabling IPsec SAref processing for L2TP transport mode SAs\n");
+	    }
+	    if(g->forceuserspace != 1) {
+		    l2tp_log(LOG_WARNING, "IPsec SAref does not work with L2TP kernel mode yet, enabling forceuserspace=yes\n");
 	    }
 	    break;
     default:

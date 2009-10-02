@@ -1,14 +1,19 @@
 Summary: Layer 2 Tunnelling Protocol Daemon (RFC 2661)
 Name: xl2tpd
-Version: 1.1.12
+Version: 1.2.4
 Release: 1%{?dist}
-License: GPL
+License: GPLv2
 Url: http://www.xelerance.com/software/xl2tpd/
 Group: System Environment/Daemons
 Source0: http://www.xelerance.com/software/xl2tpd/xl2tpd-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: ppp 
-#BuildRequires:
+BuildRequires: kernel-headers => 2.6.23
+%if 0%{?el3}%{?el4}
+BuildRequires: libpcap
+%else
+BuildRequires: libpcap-devel
+%endif
 Obsoletes: l2tpd <= 0.69-0.6.20051030.fc6
 Provides: l2tpd = 0.69-0.6.20051030.fc7
 Requires(post): /sbin/chkconfig
@@ -34,6 +39,8 @@ NAT'ed IP's by different clients (eg all clients connecting from their
 linksys internal IP 192.168.1.101) as well as multiple clients behind
 the same NAT router.
 
+xl2tpd supports the pppol2tp kernel mode operations on 2.6.23 or higher,
+or via a patch in contrib for 2.4.x kernels.
 
 Xl2tpd is based on the 0.69 L2TP by Jeff McAdams <jeffm@iglou.com>
 It was de-facto maintained by Jacco de Leeuw <jacco2@dds.nl> in 2002 and 2003.
@@ -43,11 +50,10 @@ It was de-facto maintained by Jacco de Leeuw <jacco2@dds.nl> in 2002 and 2003.
 
 %build
 make DFLAGS="$RPM_OPT_FLAGS -g -DDEBUG_PPPD -DDEBUG_CONTROL -DDEBUG_ENTROPY"
-sed -i -e 's|chkconfig:[ \t][ \t]*|chkconfig: |' packaging/fedora/xl2tpd.init
 
 %install
 rm -rf %{buildroot}
-make DESTDIR=%{buildroot} install
+make DESTDIR=%{buildroot} PREFIX=%{_prefix} install
 install -p -D -m644 examples/xl2tpd.conf %{buildroot}%{_sysconfdir}/xl2tpd/xl2tpd.conf
 install -p -D -m644 examples/ppp-options.xl2tpd %{buildroot}%{_sysconfdir}/ppp/options.xl2tpd
 install -p -D -m600 doc/l2tp-secrets.sample %{buildroot}%{_sysconfdir}/xl2tpd/l2tp-secrets
@@ -91,6 +97,7 @@ fi
 %doc BUGS CHANGES CREDITS LICENSE README.* TODO doc/rfc2661.txt 
 %doc doc/README.patents examples/chapsecrets.sample
 %{_sbindir}/xl2tpd
+%{_bindir}/pfc
 %{_mandir}/*/*
 %dir %{_sysconfdir}/xl2tpd
 %config(noreplace) %{_sysconfdir}/xl2tpd/*
@@ -99,6 +106,10 @@ fi
 %dir %{_localstatedir}/run/xl2tpd
 
 %changelog
+* Sun Oct 26 2008 Paul Wouters <paul@xelerance.com> 1.2.2-1
+- Updated Suse init scripts and spec file
+- Added pfc for pppd's precompiled-active-filter
+
 * Tue Jun 26 2007 Paul Wouters <paul@xelerance.com> 1.1.11-1
 - Minor changes to spec file to accomodate new README files
 

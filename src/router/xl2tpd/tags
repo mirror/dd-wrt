@@ -41,7 +41,6 @@ DEFAULT_PID_FILE	file.h	56;"	d
 DEFAULT_RWS_SIZE	l2tp.h	92;"	d
 DEFAULT_RX_BPS	l2tp.h	95;"	d
 DEFAULT_TX_BPS	l2tp.h	94;"	d
-DEF_MAX_TUNNELS	l2tp.h	44;"	d
 DFLAGS	Makefile	/^DFLAGS= -g -O2 -DDEBUG_PPPD -DDEBUG_CONTROL -DDEBUG_ENTROPY$/;"	m
 DIGITAL_BEARER	avp.h	73;"	d
 ERROR_INVALID	avp.h	81;"	d
@@ -421,7 +420,6 @@ m	avp.h	/^    int m;                      \/* Set M? *\/$/;"	m	struct:avp
 magic_lac_dial	l2tpd.c	/^void magic_lac_dial (void *data)$/;"	f
 magic_lac_tunnel	l2tpd.c	/^void magic_lac_tunnel (void *data)$/;"	f
 main	l2tpd.c	/^int main (int argc, char *argv[])$/;"	f
-max_tunnels	l2tpd.c	/^int max_tunnels = DEF_MAX_TUNNELS;$/;"	v
 maxlen	misc.h	/^    int maxlen;$/;"	m	struct:buffer
 md5	aaa.h	/^    struct MD5Context md5;$/;"	m	struct:challenge
 message_type_avp	avp.c	/^int message_type_avp (struct tunnel *t, struct call *c, void *data,$/;"	f
