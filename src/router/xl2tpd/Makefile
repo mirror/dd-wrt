@@ -48,7 +48,7 @@ OSFLAGS= -DLINUX
 # or a 2.6.23+ kernel. On some distributions kernel include files
 # are packages seperately (eg kernel-headers on Fedora)
 #
-#OSFLAGS+= -DUSE_KERNEL
+OSFLAGS+= -DUSE_KERNEL
 #
 # Uncomment the next line for FreeBSD
 #
@@ -70,7 +70,7 @@ OSFLAGS= -DLINUX
 
 FFLAGS= -DIP_ALLOCATION
 
-CFLAGS+= $(DFLAGS) $(COPTS) -fno-builtin -Wall -DSANITY $(OSFLAGS) $(FFLAGS)
+CFLAGS+= $(DFLAGS) $(COPTS) -fno-builtin -Wall -DSANITY $(OSFLAGS) $(FFLAGS) -DNEED_PRINTF
 HDRS=l2tp.h avp.h misc.h control.h call.h scheduler.h file.h aaa.h md5.h
 OBJS=xl2tpd.o pty.o misc.o control.o avp.o call.o network.o avpsend.o scheduler.o file.o aaa.o md5.o
 SRCS=${OBJS:.o=.c} ${HDRS}
