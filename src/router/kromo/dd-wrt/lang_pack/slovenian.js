@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 22.Apr.2009, svn 11994	//
+//				Slovenian translation DD-WRT by Eko, last revision: 03.Okt.2009, svn 13019	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -180,9 +180,9 @@ share._24h="Vsak dan";
 share._48h="Vsaka 2 dneva";
 share._168h="Vsak teden";
 share.days="dni";
-share.from2 = share.from;
-share.to2 = share.to;
-share.days_genetive = share.days;
+share.from2=share.from;
+share.to2=share.to;
+share.days_genetive=share.days;
 share.standard="Standard";
 share.execscript="Za¾eni script";
 share.user="Uporabnik";
@@ -249,6 +249,7 @@ sbutton.upgrade="Posodobi";
 sbutton.preview="Predogled";
 sbutton.allways_on="Vedno vkljuèeno";
 sbutton.allways_off="Vedno izkljuèeno";
+sbutton.download="Prenos";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -423,6 +424,7 @@ bmenu.adminBackup="Varnostna kop.";
 
 bmenu.services="Storitve";
 bmenu.servicesServices="Storitve";
+bmenu.servicesRadius="FreeRadius"
 bmenu.servicesPppoesrv="PPPoE stre¾nik";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
@@ -496,6 +498,7 @@ ddns.statu="DDNS status";
 ddns.system="DNS sistem";
 ddns.options="Dodatne DDNS mo¾nosti";
 ddns.forceupd="Interval prisiljene posodobitve";
+ddns.wanip="Ne uporabi zunanjega preverjanja IPja";
 
 
 ddnsm.all_closed="DDNS stre¾nik je trenutno zaprt";
@@ -1128,9 +1131,16 @@ route.olsrd_hysteresis="Histereza";
 route.olsrd_newiface="Nov vmesnik";
 route.zebra_legend="Zebra konfiguracija";
 route.zebra_log="Zebra dnevnik";
+route.zebra_copt="Zebra naèin konfiguracije";
+route.bird_legend="Bird konfiguracija";
+route.bird_log="Bird dnevnik";
+route.bird_copt="Bird naèin konfiguracije";
 route.ospf_mod="OSPF usmerjalnik";
 route.ospf_legend="OSPF usmerjanje";
 route.ospf_conf="OSPF konfiguracija";
+route.ospf_copt="OSPF naèin konfiguracije";
+route.copt_gui="GUI";
+route.copt_vtysh="Vtysh";
 route.gateway_legend="Dinamièno usmerjanje";
 route.static_legend="Statièno usmerjanje";
 route.static_setno="Izberi ¹t. niza";
@@ -1302,6 +1312,18 @@ service.nstx_log="Sporoèila za razhro¹èevanje";
 //ttraff.webservices
 service.ttraff_legend="©tevec WAN prometa";
 service.ttraff_daemon="ttraff demon";
+
+//notifier.webservices
+service.warn_legend="Javljalnik svaril zveze";
+service.warn="Javljalnik svaril";
+service.warn_limit="Meja zvez";
+service.warn_server="Email SMTP stre¾nik";
+service.warn_from="Po¹iljateljev email naslov";
+service.warn_fromfull="Polno ime po¹iljatelja";
+service.warn_to="Prejemnikov email naslov";
+service.warn_domain="Prejemnikovo domensko ime";
+service.warn_user="Uporabni¹ko ime za SMTP overjanje";
+service.warn_pass="Geslo za SMTP overjanje";
 
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
@@ -1676,8 +1698,9 @@ wpa.shared_key="WPA deljeni kljuè";
 sec80211x.xsuptype="Tip XSupplicanta";
 sec80211x.servercertif="Certifikat javnega stre¾nika";
 sec80211x.clientcertif="Certifikat odjemalca";
-sec80211x.phase2="Phase2 overjanje";
+sec80211x.phase2="Phase2";
 sec80211x.anon="Anonimna identiteta";
+sec80211x.options="Dodatne mre¾ne mo¾nosti";
 
 //help container
 
@@ -1689,6 +1712,7 @@ hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA Personal, WPA Enterprise 
 wl_filter.titl="Seznam filtra MAC naslovov";
 wl_filter.h2="Seznam filtra MAC naslovov";
 wl_filter.h3="Vnesi MAC naslov v tem formatu&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+
 
 
 // ** WL_ActiveTable.asp **//
@@ -1724,9 +1748,14 @@ radius.label="MAC Radius odjemalec";
 radius.label2="MAC format";
 radius.label3="Radius Auth stre¾nikov naslov";
 radius.label4="Radius Auth stre¾nikova vrata";
+radius.label7="Radius Auth deljena skrivnost";
+
+radius.label23="Radius Auth naslov rezervnega stre¾nika";
+radius.label24="Radius Auth vrata rezervnega stre¾nika";
+radius.label27="Radius Auth deljena skrivnost rezervnega stre¾nika";
+
 radius.label5="Najveèje ¹t. neoverovljenih uporabnikov";
 radius.label6="Format gesla";
-radius.label7="Radius Auth deljena skrivnost";
 radius.label8="Razveljavi Radius, èe stre¾nik ni na voljo";
 radius.label13="Radius Acct stre¾nikov naslov";
 radius.label14="Radius Acct stre¾nikova vrata";
@@ -1747,12 +1776,41 @@ wl_mac.allow="Dovoli odjemalcem na seznamu dostop do brez¾iènega omre¾ja";
 
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access";
-wl_wimax.downstream="Downstream Frequency";
-wl_wimax.upstream="Upstream Frequency";
-wl_wimax.width="Channel Width";
-wl_wimax.duplex="Duplex Mode";
-wl_wimax.mode="Operation Mode";
+wl_wimax.downstream="Downstream frekvenca";
+wl_wimax.upstream="Upstream frekvenca";
+wl_wimax.width="©irina kanala";
+wl_wimax.duplex="Duplex naèin";
+wl_wimax.mode="Naèin delovanja";
 wl_wimax.mac="Subscriber MAC Address";
+
+// ** FreeRadius.asp **//
+
+freeradius.titl="FreeRadius";
+freeradius.h2="FreeRadius";
+freeradius.certificate="Certifikat stre¾nika";
+freeradius.cert="Naredi certifikate";
+freeradius.clientcert="Odjemalèevi certifikati";
+freeradius.settings="Nastavitve";
+freeradius.users="Uporabniki";
+freeradius.clients="Odjemalci";
+freeradius.username="Uporabni¹ko ime";
+freeradius.password="Geslo";
+freeradius.downstream="Downstream";
+freeradius.upstream="Upstream";
+freeradius.sharedkey="Deljeni kjluè";
+
+
+freeradius.countrycode="Koda dr¾ave";
+freeradius.state="Dr¾ava ali de¾ela";
+freeradius.locality="Kraj";
+freeradius.organisation="Organizacija / dru¾ba";
+freeradius.email="Email naslov";
+freeradius.common="Skupno ime certifikata";
+freeradius.expiration="Rok veljavnosti (dni)";
+freeradius.passphrase="Geslo";
+freeradius.generate="Izdelaj certifikat";
+freeradius.cert_status="Status certifikata";
+freeradius.port="Radius vrata";
 
 // ** Wireless_Advanced.asp **//
 
