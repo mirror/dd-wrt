@@ -1,62 +1,224 @@
-diff -urN openvpn-2.1_rc14/ChangeLog openvpn-2.1_rc15/ChangeLog
---- openvpn-2.1_rc14/ChangeLog	2008-11-17 05:38:17.000000000 +0100
-+++ openvpn-2.1_rc15/ChangeLog	2008-11-19 19:17:39.000000000 +0100
-@@ -1,7 +1,34 @@
- OpenVPN
- Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
+diff -urN openvpn-2.1_rc18/ChangeLog openvpn-2.1_rc20/ChangeLog
+--- openvpn-2.1_rc18/ChangeLog	2009-06-07 08:47:27.000000000 +0200
++++ openvpn-2.1_rc20/ChangeLog	2009-10-01 23:26:27.000000000 +0200
+@@ -1,6 +1,68 @@
+ OpenVPN Change Log
+ Copyright (C) 2002-2009 OpenVPN Technologies, Inc. <sales@openvpn.net>
  
--$Id: ChangeLog 3495 2008-11-17 04:28:07Z james $
-+$Id: ChangeLog 3525 2008-11-19 18:17:39Z james $
++2009.10.01 -- Version 2.1_rc20
 +
-+2008.11.19 -- Version 2.1_rc15
++* Fixed a bug introduced in 2.1_rc17 (svn r4436) where using the
++  redirect-gateway option by itself, without any extra parameters,
++  would cause the option to be ignored.
 +
-+* Fixed issue introduced in 2.1_rc14 that may cause a
-+  segfault when a --plugin module is used.
++* Fixed build problem when ./configure --disable-server is used.
 +
-+* Added server-side --opt-verify option: clients that connect
-+  with options that are incompatible with those of the server
-+  will be disconnected (without this option, incompatible
-+  clients would trigger a warning message in the server log
-+  but would not be disconnected).
++* Fixed ifconfig command for "topology subnet" on FreeBSD (Stefan Bethke).
 +
-+* Added --tcp-nodelay option: Macro that sets TCP_NODELAY socket
-+  flag on the server as well as pushes it to connecting clients.
++* Added --remote-random-hostname option.
 +
-+* Minor options check fix: --no-name-remapping is a
-+  server-only option and should therefore generate an
-+  error when used on the client.
++* Added "load-stats" management interface command to get global server
++  load statistics.
 +
-+* Added --prng option to control PRNG (pseudo-random
-+  number generator) parameters.  In previous OpenVPN
-+  versions, the PRNG was hardcoded to use the SHA1
-+  hash.  Now any OpenSSL hash may be used.  This is
-+  part of an effort to remove hardcoded references to
-+  a specific cipher or cryptographic hash algorithm.
++* Added new ./configure flags:
 +
-+* Cleaned up man page synopsis.
++  --disable-def-auth      Disable deferred authentication
++  --disable-pf            Disable internal packet filter
++
++* Added "setcon" directive for interoperability with SELinux (Sebastien
++  Raveau).
++
++* Optimized PUSH_REQUEST handshake sequence to shave several seconds
++  off of a typical client connection initiation.
++
++* The maximum number of "route" directives (specified in the config
++  file or pulled from a server) can now be configured via the new
++  "max-routes" directive.
++
++* Eliminated the limitation on the number of options that can be pushed
++  to clients, including routes.  Previously, all pushed options needed
++  to fit within a 1024 byte options string.
++
++* Added --server-poll-timeout option : when polling possible remote
++  servers to connect to in a round-robin fashion, spend no more than
++  n seconds waiting for a response before trying the next server.
++
++* Added the ability for the server to provide a custom reason string
++  when an AUTH_FAILED message is returned to the client.  This
++  string can be set by the server-side managment interface and read
++  by the client-side management interface.
++
++* client-kill management interface command, when issued on server, will
++  now send a RESTART message to client.
++  This feature is intended to make UDP clients respond the same as TCP
++  clients in the case where the server issues a RESTART message in
++  order to force the client to reconnect and pull a new options/route
++  list.
++
++2009.07.16 -- Version 2.1_rc19
++
++* In Windows TAP driver, refactor DHCP/ARP packet injection code to
++  use a DPC (deferred procedure call) to defer packet injection until
++  IRQL < DISPATCH_LEVEL, rather than calling NdisMEthIndicateReceive
++  in the context of AdapterTransmit.  This is an attempt to reduce kernel
++  stack usage, and prevent EXCEPTION_DOUBLE_FAULT BSODs that have been
++  observed on Vista.  Updated TAP driver version number to 9.6.
++
++* In configure.ac, use datadir instead of datarootdir for compatibility
++  with <autoconf-2.60.
++
+ 2009.06.07 -- Version 2.1_rc18
  
- 2008.11.16 -- Version 2.1_rc14
+ * Fixed compile error on ./configure --enable-small
+diff -urN openvpn-2.1_rc18/Makefile.am openvpn-2.1_rc20/Makefile.am
+--- openvpn-2.1_rc18/Makefile.am	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/Makefile.am	2009-10-01 20:02:18.000000000 +0200
+@@ -123,6 +123,7 @@
+ 	ieproxy.h ieproxy.c \
+         ps.c ps.h \
+ 	push.c push.h \
++	pushlist.h \
+ 	reliable.c reliable.h \
+ 	route.c route.h \
+ 	schedule.c schedule.h \
+diff -urN openvpn-2.1_rc18/Makefile.in openvpn-2.1_rc20/Makefile.in
+--- openvpn-2.1_rc18/Makefile.in	2009-06-07 08:47:58.000000000 +0200
++++ openvpn-2.1_rc20/Makefile.in	2009-10-02 00:14:29.000000000 +0200
+@@ -353,6 +353,7 @@
+ 	ieproxy.h ieproxy.c \
+         ps.c ps.h \
+ 	push.c push.h \
++	pushlist.h \
+ 	reliable.c reliable.h \
+ 	route.c route.h \
+ 	schedule.c schedule.h \
+diff -urN openvpn-2.1_rc18/buffer.c openvpn-2.1_rc20/buffer.c
+--- openvpn-2.1_rc18/buffer.c	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/buffer.c	2009-10-01 20:02:18.000000000 +0200
+@@ -33,11 +33,11 @@
+ #include "memdbg.h"
  
-diff -urN openvpn-2.1_rc14/config-win32.h openvpn-2.1_rc15/config-win32.h
---- openvpn-2.1_rc14/config-win32.h	2008-11-17 05:39:49.000000000 +0100
-+++ openvpn-2.1_rc15/config-win32.h	2008-11-19 19:18:24.000000000 +0100
+ size_t
+-array_mult_safe (const size_t m1, const size_t m2)
++array_mult_safe (const size_t m1, const size_t m2, const size_t extra)
+ {
+   const size_t limit = 0xFFFFFFFF;
+-  unsigned long long res = (unsigned long long)m1 * (unsigned long long)m2;
+-  if (unlikely(m1 > limit) || unlikely(m2 > limit) || unlikely(res > (unsigned long long)limit))
++  unsigned long long res = (unsigned long long)m1 * (unsigned long long)m2 + (unsigned long long)extra;
++  if (unlikely(m1 > limit) || unlikely(m2 > limit) || unlikely(extra > limit) || unlikely(res > (unsigned long long)limit))
+     msg (M_FATAL, "attemped allocation of excessively large array");
+   return (size_t) res;
+ }
+diff -urN openvpn-2.1_rc18/buffer.h openvpn-2.1_rc20/buffer.h
+--- openvpn-2.1_rc18/buffer.h	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/buffer.h	2009-10-01 20:02:18.000000000 +0200
+@@ -88,7 +88,7 @@
+ void string_clear (char *str);
+ int string_array_len (const char **array);
+ 
+-size_t array_mult_safe (const size_t m1, const size_t m2);
++size_t array_mult_safe (const size_t m1, const size_t m2, const size_t extra);
+ 
+ #define PA_BRACKET (1<<0)
+ char *print_argv (const char **p, struct gc_arena *gc, const unsigned int flags);
+@@ -776,23 +776,28 @@
+ 
+ #define ALLOC_ARRAY(dptr, type, n) \
+ { \
+-  check_malloc_return ((dptr) = (type *) malloc (array_mult_safe (sizeof (type), (n)))); \
++  check_malloc_return ((dptr) = (type *) malloc (array_mult_safe (sizeof (type), (n), 0))); \
+ }
+ 
+ #define ALLOC_ARRAY_GC(dptr, type, n, gc) \
+ { \
+-  (dptr) = (type *) gc_malloc (array_mult_safe (sizeof (type), (n)), false, (gc)); \
++  (dptr) = (type *) gc_malloc (array_mult_safe (sizeof (type), (n), 0), false, (gc)); \
+ }
+ 
+ #define ALLOC_ARRAY_CLEAR(dptr, type, n) \
+ { \
+   ALLOC_ARRAY (dptr, type, n); \
+-  memset ((dptr), 0, (array_mult_safe (sizeof(type), (n)))); \
++  memset ((dptr), 0, (array_mult_safe (sizeof(type), (n), 0)));	\
+ }
+ 
+ #define ALLOC_ARRAY_CLEAR_GC(dptr, type, n, gc) \
+ { \
+-  (dptr) = (type *) gc_malloc (array_mult_safe (sizeof (type), (n)), true, (gc)); \
++  (dptr) = (type *) gc_malloc (array_mult_safe (sizeof (type), (n), 0), true, (gc)); \
++}
++
++#define ALLOC_VAR_ARRAY_CLEAR_GC(dptr, type, atype, n, gc)	\
++{ \
++  (dptr) = (type *) gc_malloc (array_mult_safe (sizeof (atype), (n), sizeof (type)), true, (gc)); \
+ }
+ 
+ #define ALLOC_OBJ_GC(dptr, type, gc) \
+diff -urN openvpn-2.1_rc18/common.h openvpn-2.1_rc20/common.h
+--- openvpn-2.1_rc18/common.h	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/common.h	2009-10-01 20:02:18.000000000 +0200
+@@ -74,12 +74,10 @@
+ #define CCD_DEFAULT "DEFAULT"
+ 
+ /*
+- * This parameter controls the TLS channel buffer size.  Among
+- * other things, this buffer must be large enough to contain
+- * the full --push/--pull list.  If you increase it, do so
+- * on both server and client.
++ * This parameter controls the TLS channel buffer size and the
++ * maximum size of a single TLS message (cleartext).
+  */
+-#define TLS_CHANNEL_BUF_SIZE 2048
++#define TLS_CHANNEL_BUF_SIZE 1024
+ 
+ /*
+  * A sort of pseudo-filename for data provided inline within
+diff -urN openvpn-2.1_rc18/config-win32.h openvpn-2.1_rc20/config-win32.h
+--- openvpn-2.1_rc18/config-win32.h	2009-06-07 08:48:33.000000000 +0200
++++ openvpn-2.1_rc20/config-win32.h	2009-10-02 00:15:04.000000000 +0200
 @@ -228,7 +228,7 @@
  #define PACKAGE_TARNAME openvpn
  
  /* Define to the version of this package. */
--#define PACKAGE_VERSION 2.1_rc14
-+#define PACKAGE_VERSION 2.1_rc15
+-#define PACKAGE_VERSION 2.1_rc18
++#define PACKAGE_VERSION 2.1_rc20
  
  /* Define to the full name and version of this package. */
  #ifdef DEBUG_LABEL
-diff -urN openvpn-2.1_rc14/configure openvpn-2.1_rc15/configure
---- openvpn-2.1_rc14/configure	2008-11-17 05:39:17.000000000 +0100
-+++ openvpn-2.1_rc15/configure	2008-11-19 19:17:50.000000000 +0100
+diff -urN openvpn-2.1_rc18/config.h.in openvpn-2.1_rc20/config.h.in
+--- openvpn-2.1_rc18/config.h.in	2009-06-07 08:47:57.000000000 +0200
++++ openvpn-2.1_rc20/config.h.in	2009-10-02 00:14:28.000000000 +0200
+@@ -1,5 +1,11 @@
+ /* config.h.in.  Generated from configure.ac by autoheader.  */
+ 
++/* Enable deferred authentication */
++#undef CONFIGURE_DEF_AUTH
++
++/* Enable internal packet filter */
++#undef CONFIGURE_PF
++
+ /* enable iproute2 support */
+ #undef CONFIG_FEATURE_IPROUTE
+ 
+@@ -279,6 +285,9 @@
+ /* Define to 1 if you have the `sendto' function. */
+ #undef HAVE_SENDTO
+ 
++/* SELinux support */
++#undef HAVE_SETCON
++
+ /* Define to 1 if you have the `setgid' function. */
+ #undef HAVE_SETGID
+ 
+diff -urN openvpn-2.1_rc18/configure openvpn-2.1_rc20/configure
+--- openvpn-2.1_rc18/configure	2009-06-07 08:47:56.000000000 +0200
++++ openvpn-2.1_rc20/configure	2009-10-02 00:14:28.000000000 +0200
 @@ -1,6 +1,6 @@
  #! /bin/sh
  # Guess values for system-dependent variables and create Makefiles.
--# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc14.
-+# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc15.
+-# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc18.
++# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc20.
  #
  # Report bugs to <openvpn-users@lists.sourceforge.net>.
  #
@@ -64,897 +226,2951 @@ diff -urN openvpn-2.1_rc14/configure openvpn-2.1_rc15/configure
  # Identity of this package.
  PACKAGE_NAME='OpenVPN'
  PACKAGE_TARNAME='openvpn'
--PACKAGE_VERSION='2.1_rc14'
--PACKAGE_STRING='OpenVPN 2.1_rc14'
-+PACKAGE_VERSION='2.1_rc15'
-+PACKAGE_STRING='OpenVPN 2.1_rc15'
+-PACKAGE_VERSION='2.1_rc18'
+-PACKAGE_STRING='OpenVPN 2.1_rc18'
++PACKAGE_VERSION='2.1_rc20'
++PACKAGE_STRING='OpenVPN 2.1_rc20'
  PACKAGE_BUGREPORT='openvpn-users@lists.sourceforge.net'
  
  ac_unique_file="syshead.h"
-@@ -1232,7 +1232,7 @@
+@@ -1233,7 +1233,7 @@
    # Omit some internal or obsolete options to make the list less imposing.
    # This message is too long to be a string in the A/UX 3.1 sh.
    cat <<_ACEOF
--\`configure' configures OpenVPN 2.1_rc14 to adapt to many kinds of systems.
-+\`configure' configures OpenVPN 2.1_rc15 to adapt to many kinds of systems.
+-\`configure' configures OpenVPN 2.1_rc18 to adapt to many kinds of systems.
++\`configure' configures OpenVPN 2.1_rc20 to adapt to many kinds of systems.
  
  Usage: $0 [OPTION]... [VAR=VALUE]...
  
-@@ -1303,7 +1303,7 @@
+@@ -1304,7 +1304,7 @@
  
  if test -n "$ac_init_help"; then
    case $ac_init_help in
--     short | recursive ) echo "Configuration of OpenVPN 2.1_rc14:";;
-+     short | recursive ) echo "Configuration of OpenVPN 2.1_rc15:";;
+-     short | recursive ) echo "Configuration of OpenVPN 2.1_rc18:";;
++     short | recursive ) echo "Configuration of OpenVPN 2.1_rc20:";;
     esac
    cat <<\_ACEOF
  
-@@ -1425,7 +1425,7 @@
+@@ -1329,10 +1329,13 @@
+   --enable-pthread        Enable pthread support (Experimental for OpenVPN 2.0)
+   --enable-password-save  Allow --askpass and --auth-user-pass passwords to be read from a file
+   --enable-iproute2       Enable support for iproute2
++  --disable-def-auth      Disable deferred authentication
++  --disable-pf            Disable internal packet filter
+   --enable-strict         Enable strict compiler warnings (debugging option)
+   --enable-pedantic       Enable pedantic compiler warnings, will not generate a working executable (debugging option)
+   --enable-profiling      Enable profiling (debugging option)
+   --enable-strict-options Enable strict options check between peers (debugging option)
++  --disable-selinux       Disable SELinux support
+   --disable-dependency-tracking  speeds up one-time build
+   --enable-dependency-tracking   do not reject slow dependency extractors
+ 
+@@ -1426,7 +1429,7 @@
  test -n "$ac_init_help" && exit $ac_status
  if $ac_init_version; then
    cat <<\_ACEOF
--OpenVPN configure 2.1_rc14
-+OpenVPN configure 2.1_rc15
+-OpenVPN configure 2.1_rc18
++OpenVPN configure 2.1_rc20
  generated by GNU Autoconf 2.61
  
  Copyright (C) 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001,
-@@ -1439,7 +1439,7 @@
+@@ -1440,7 +1443,7 @@
  This file contains any messages produced by compilers while
  running configure, to aid debugging if configure makes a mistake.
  
--It was created by OpenVPN $as_me 2.1_rc14, which was
-+It was created by OpenVPN $as_me 2.1_rc15, which was
+-It was created by OpenVPN $as_me 2.1_rc18, which was
++It was created by OpenVPN $as_me 2.1_rc20, which was
  generated by GNU Autoconf 2.61.  Invocation command line was
  
    $ $0 $@
-@@ -13235,7 +13235,7 @@
+@@ -2606,6 +2609,24 @@
+ fi
+ 
+ 
++# Check whether --enable-def-auth was given.
++if test "${enable_def_auth+set}" = set; then
++  enableval=$enable_def_auth; DEF_AUTH="$enableval"
++else
++  DEF_AUTH="yes"
++
++fi
++
++
++# Check whether --enable-pf was given.
++if test "${enable_pf+set}" = set; then
++  enableval=$enable_pf; PF="$enableval"
++else
++  PF="yes"
++
++fi
++
++
+ # Check whether --enable-strict was given.
+ if test "${enable_strict+set}" = set; then
+   enableval=$enable_strict; STRICT="$enableval"
+@@ -2642,6 +2663,15 @@
+ fi
+ 
+ 
++# Check whether --enable-selinux was given.
++if test "${enable_selinux+set}" = set; then
++  enableval=$enable_selinux; SELINUX="$enableval"
++else
++  SELINUX="yes"
++
++fi
++
++
+ 
+ # Check whether --with-ssl-headers was given.
+ if test "${with_ssl_headers+set}" = set; then
+@@ -12765,6 +12795,22 @@
+ 
+ fi
+ 
++if test "$DEF_AUTH" = "yes"; then
++
++cat >>confdefs.h <<\_ACEOF
++#define CONFIGURE_DEF_AUTH 1
++_ACEOF
++
++fi
++
++if test "$PF" = "yes"; then
++
++cat >>confdefs.h <<\_ACEOF
++#define CONFIGURE_PF 1
++_ACEOF
++
++fi
++
+ if test "$STRICT" = "yes"; then
+    CFLAGS="$CFLAGS -Wall -Wno-unused-parameter -Wno-unused-function"
+ fi
+@@ -12793,6 +12839,227 @@
+ 
+ fi
+ 
++if test "$SELINUX" = "yes"; then
++   { echo "$as_me:$LINENO: checking for libselinux Library and Header files..." >&5
++echo "$as_me: checking for libselinux Library and Header files..." >&6;}
++   if test "${ac_cv_header_selinux_selinux_h+set}" = set; then
++  { echo "$as_me:$LINENO: checking for selinux/selinux.h" >&5
++echo $ECHO_N "checking for selinux/selinux.h... $ECHO_C" >&6; }
++if test "${ac_cv_header_selinux_selinux_h+set}" = set; then
++  echo $ECHO_N "(cached) $ECHO_C" >&6
++fi
++{ echo "$as_me:$LINENO: result: $ac_cv_header_selinux_selinux_h" >&5
++echo "${ECHO_T}$ac_cv_header_selinux_selinux_h" >&6; }
++else
++  # Is the header compilable?
++{ echo "$as_me:$LINENO: checking selinux/selinux.h usability" >&5
++echo $ECHO_N "checking selinux/selinux.h usability... $ECHO_C" >&6; }
++cat >conftest.$ac_ext <<_ACEOF
++/* confdefs.h.  */
++_ACEOF
++cat confdefs.h >>conftest.$ac_ext
++cat >>conftest.$ac_ext <<_ACEOF
++/* end confdefs.h.  */
++$ac_includes_default
++#include <selinux/selinux.h>
++_ACEOF
++rm -f conftest.$ac_objext
++if { (ac_try="$ac_compile"
++case "(($ac_try" in
++  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
++  *) ac_try_echo=$ac_try;;
++esac
++eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
++  (eval "$ac_compile") 2>conftest.er1
++  ac_status=$?
++  grep -v '^ *+' conftest.er1 >conftest.err
++  rm -f conftest.er1
++  cat conftest.err >&5
++  echo "$as_me:$LINENO: \$? = $ac_status" >&5
++  (exit $ac_status); } && {
++	 test -z "$ac_c_werror_flag" ||
++	 test ! -s conftest.err
++       } && test -s conftest.$ac_objext; then
++  ac_header_compiler=yes
++else
++  echo "$as_me: failed program was:" >&5
++sed 's/^/| /' conftest.$ac_ext >&5
++
++	ac_header_compiler=no
++fi
++
++rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
++{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
++echo "${ECHO_T}$ac_header_compiler" >&6; }
++
++# Is the header present?
++{ echo "$as_me:$LINENO: checking selinux/selinux.h presence" >&5
++echo $ECHO_N "checking selinux/selinux.h presence... $ECHO_C" >&6; }
++cat >conftest.$ac_ext <<_ACEOF
++/* confdefs.h.  */
++_ACEOF
++cat confdefs.h >>conftest.$ac_ext
++cat >>conftest.$ac_ext <<_ACEOF
++/* end confdefs.h.  */
++#include <selinux/selinux.h>
++_ACEOF
++if { (ac_try="$ac_cpp conftest.$ac_ext"
++case "(($ac_try" in
++  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
++  *) ac_try_echo=$ac_try;;
++esac
++eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
++  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
++  ac_status=$?
++  grep -v '^ *+' conftest.er1 >conftest.err
++  rm -f conftest.er1
++  cat conftest.err >&5
++  echo "$as_me:$LINENO: \$? = $ac_status" >&5
++  (exit $ac_status); } >/dev/null && {
++	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
++	 test ! -s conftest.err
++       }; then
++  ac_header_preproc=yes
++else
++  echo "$as_me: failed program was:" >&5
++sed 's/^/| /' conftest.$ac_ext >&5
++
++  ac_header_preproc=no
++fi
++
++rm -f conftest.err conftest.$ac_ext
++{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
++echo "${ECHO_T}$ac_header_preproc" >&6; }
++
++# So?  What about this header?
++case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
++  yes:no: )
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h: accepted by the compiler, rejected by the preprocessor!" >&5
++echo "$as_me: WARNING: selinux/selinux.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h: proceeding with the compiler's result" >&5
++echo "$as_me: WARNING: selinux/selinux.h: proceeding with the compiler's result" >&2;}
++    ac_header_preproc=yes
++    ;;
++  no:yes:* )
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h: present but cannot be compiled" >&5
++echo "$as_me: WARNING: selinux/selinux.h: present but cannot be compiled" >&2;}
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h:     check for missing prerequisite headers?" >&5
++echo "$as_me: WARNING: selinux/selinux.h:     check for missing prerequisite headers?" >&2;}
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h: see the Autoconf documentation" >&5
++echo "$as_me: WARNING: selinux/selinux.h: see the Autoconf documentation" >&2;}
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h:     section \"Present But Cannot Be Compiled\"" >&5
++echo "$as_me: WARNING: selinux/selinux.h:     section \"Present But Cannot Be Compiled\"" >&2;}
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h: proceeding with the preprocessor's result" >&5
++echo "$as_me: WARNING: selinux/selinux.h: proceeding with the preprocessor's result" >&2;}
++    { echo "$as_me:$LINENO: WARNING: selinux/selinux.h: in the future, the compiler will take precedence" >&5
++echo "$as_me: WARNING: selinux/selinux.h: in the future, the compiler will take precedence" >&2;}
++    ( cat <<\_ASBOX
++## -------------------------------------------------- ##
++## Report this to openvpn-users@lists.sourceforge.net ##
++## -------------------------------------------------- ##
++_ASBOX
++     ) | sed "s/^/$as_me: WARNING:     /" >&2
++    ;;
++esac
++{ echo "$as_me:$LINENO: checking for selinux/selinux.h" >&5
++echo $ECHO_N "checking for selinux/selinux.h... $ECHO_C" >&6; }
++if test "${ac_cv_header_selinux_selinux_h+set}" = set; then
++  echo $ECHO_N "(cached) $ECHO_C" >&6
++else
++  ac_cv_header_selinux_selinux_h=$ac_header_preproc
++fi
++{ echo "$as_me:$LINENO: result: $ac_cv_header_selinux_selinux_h" >&5
++echo "${ECHO_T}$ac_cv_header_selinux_selinux_h" >&6; }
++
++fi
++if test $ac_cv_header_selinux_selinux_h = yes; then
++  { echo "$as_me:$LINENO: checking for setcon in -lselinux" >&5
++echo $ECHO_N "checking for setcon in -lselinux... $ECHO_C" >&6; }
++if test "${ac_cv_lib_selinux_setcon+set}" = set; then
++  echo $ECHO_N "(cached) $ECHO_C" >&6
++else
++  ac_check_lib_save_LIBS=$LIBS
++LIBS="-lselinux  $LIBS"
++cat >conftest.$ac_ext <<_ACEOF
++/* confdefs.h.  */
++_ACEOF
++cat confdefs.h >>conftest.$ac_ext
++cat >>conftest.$ac_ext <<_ACEOF
++/* end confdefs.h.  */
++
++/* Override any GCC internal prototype to avoid an error.
++   Use char because int might match the return type of a GCC
++   builtin and then its argument prototype would still apply.  */
++#ifdef __cplusplus
++extern "C"
++#endif
++char setcon ();
++int
++main ()
++{
++return setcon ();
++  ;
++  return 0;
++}
++_ACEOF
++rm -f conftest.$ac_objext conftest$ac_exeext
++if { (ac_try="$ac_link"
++case "(($ac_try" in
++  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
++  *) ac_try_echo=$ac_try;;
++esac
++eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
++  (eval "$ac_link") 2>conftest.er1
++  ac_status=$?
++  grep -v '^ *+' conftest.er1 >conftest.err
++  rm -f conftest.er1
++  cat conftest.err >&5
++  echo "$as_me:$LINENO: \$? = $ac_status" >&5
++  (exit $ac_status); } && {
++	 test -z "$ac_c_werror_flag" ||
++	 test ! -s conftest.err
++       } && test -s conftest$ac_exeext &&
++       $as_test_x conftest$ac_exeext; then
++  ac_cv_lib_selinux_setcon=yes
++else
++  echo "$as_me: failed program was:" >&5
++sed 's/^/| /' conftest.$ac_ext >&5
++
++	ac_cv_lib_selinux_setcon=no
++fi
++
++rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
++      conftest$ac_exeext conftest.$ac_ext
++LIBS=$ac_check_lib_save_LIBS
++fi
++{ echo "$as_me:$LINENO: result: $ac_cv_lib_selinux_setcon" >&5
++echo "${ECHO_T}$ac_cv_lib_selinux_setcon" >&6; }
++if test $ac_cv_lib_selinux_setcon = yes; then
++
++
++  LIBS="-lselinux $LIBS"
++
++
++cat >>confdefs.h <<\_ACEOF
++#define HAVE_SETCON 1
++_ACEOF
++
++
++else
++  { echo "$as_me:$LINENO: result: SELinux library not found." >&5
++echo "${ECHO_T}SELinux library not found." >&6; }
++
++fi
++
++else
++  { echo "$as_me:$LINENO: result: SELinux headers not found." >&5
++echo "${ECHO_T}SELinux headers not found." >&6; }
++
++fi
++
++
++fi
++
+ TAP_ID="tap0901"
+ TAP_WIN32_MIN_MAJOR="9"
+ TAP_WIN32_MIN_MINOR="1"
+@@ -12828,7 +13095,7 @@
+ 
+ # workaround for <autoconf-2.60
+ if test -z "${docdir}"; then
+-	docdir="\$(datarootdir)/doc/\$(PACKAGE_NAME)"
++	docdir="\$(datadir)/doc/\$(PACKAGE_NAME)"
+ 
+ fi
+ if test -z "${htmldir}"; then
+@@ -13256,7 +13523,7 @@
  # report actual input values of CONFIG_FILES etc. instead of their
  # values after options handling.
  ac_log="
--This file was extended by OpenVPN $as_me 2.1_rc14, which was
-+This file was extended by OpenVPN $as_me 2.1_rc15, which was
+-This file was extended by OpenVPN $as_me 2.1_rc18, which was
++This file was extended by OpenVPN $as_me 2.1_rc20, which was
  generated by GNU Autoconf 2.61.  Invocation command line was
  
    CONFIG_FILES    = $CONFIG_FILES
-@@ -13288,7 +13288,7 @@
+@@ -13309,7 +13576,7 @@
  _ACEOF
  cat >>$CONFIG_STATUS <<_ACEOF
  ac_cs_version="\\
--OpenVPN config.status 2.1_rc14
-+OpenVPN config.status 2.1_rc15
+-OpenVPN config.status 2.1_rc18
++OpenVPN config.status 2.1_rc20
  configured by $0, generated by GNU Autoconf 2.61,
    with options \\"`echo "$ac_configure_args" | sed 's/^ //; s/[\\""\`\$]/\\\\&/g'`\\"
  
-diff -urN openvpn-2.1_rc14/crypto.c openvpn-2.1_rc15/crypto.c
---- openvpn-2.1_rc14/crypto.c	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc15/crypto.c	2008-11-18 01:51:58.000000000 +0100
-@@ -1640,6 +1640,7 @@
-       engine_initialized = false;
-     }
+diff -urN openvpn-2.1_rc18/configure.ac openvpn-2.1_rc20/configure.ac
+--- openvpn-2.1_rc18/configure.ac	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/configure.ac	2009-10-01 20:02:18.000000000 +0200
+@@ -170,6 +170,18 @@
+    test $enableval = "yes" && AC_DEFINE(CONFIG_FEATURE_IPROUTE, 1, [enable iproute2 support])   
+ )
+ 
++AC_ARG_ENABLE(def-auth,
++   [  --disable-def-auth      Disable deferred authentication],
++   [DEF_AUTH="$enableval"],
++   [DEF_AUTH="yes"]
++)
++
++AC_ARG_ENABLE(pf,
++   [  --disable-pf            Disable internal packet filter],
++   [PF="$enableval"],
++   [PF="yes"]
++)
++
+ AC_ARG_ENABLE(strict,
+    [  --enable-strict         Enable strict compiler warnings (debugging option)],
+    [STRICT="$enableval"],
+@@ -194,6 +206,12 @@
+    [STRICT_OPTIONS="no"]
+ )
+ 
++AC_ARG_ENABLE(selinux,
++   [  --disable-selinux       Disable SELinux support],
++   [SELINUX="$enableval"],
++   [SELINUX="yes"]
++)
++
+ AC_ARG_WITH(ssl-headers,
+    [  --with-ssl-headers=DIR  Crypto/SSL Include files location],
+    [CS_HDR_DIR="$withval"]
+@@ -816,6 +834,16 @@
+    AC_DEFINE(ENABLE_PORT_SHARE, 1, [Enable TCP Server port sharing])
+ fi
+ 
++dnl enable deferred auth
++if test "$DEF_AUTH" = "yes"; then
++   AC_DEFINE(CONFIGURE_DEF_AUTH, 1, [Enable deferred authentication])
++fi
++
++dnl enable internal packet filter
++if test "$PF" = "yes"; then
++   AC_DEFINE(CONFIGURE_PF, 1, [Enable internal packet filter])
++fi
++
+ dnl enable strict compiler warnings
+ if test "$STRICT" = "yes"; then
+    CFLAGS="$CFLAGS -Wall -Wno-unused-parameter -Wno-unused-function"
+@@ -841,6 +869,23 @@
+    AC_DEFINE(ENABLE_PASSWORD_SAVE, 1, [Allow --askpass and --auth-user-pass passwords to be read from a file])
+ fi
+ 
++dnl
++dnl check for SELinux library and headers
++dnl
++if test "$SELINUX" = "yes"; then
++   AC_CHECKING([for libselinux Library and Header files])
++   AC_CHECK_HEADER(selinux/selinux.h,
++      [AC_CHECK_LIB(selinux, setcon,
++         [
++            OPENVPN_ADD_LIBS(-lselinux)
++            AC_DEFINE(HAVE_SETCON, 1, [SELinux support])
++         ],
++            [AC_MSG_RESULT([SELinux library not found.])]
++         )],
++      [AC_MSG_RESULT([SELinux headers not found.])]
++   )
++fi
++
+ TAP_ID="PRODUCT_TAP_ID"
+ TAP_WIN32_MIN_MAJOR="PRODUCT_TAP_WIN32_MIN_MAJOR"
+ TAP_WIN32_MIN_MINOR="PRODUCT_TAP_WIN32_MIN_MINOR"
+@@ -857,7 +902,7 @@
+ 
+ # workaround for <autoconf-2.60
+ if test -z "${docdir}"; then
+-	docdir="\$(datarootdir)/doc/\$(PACKAGE_NAME)"
++	docdir="\$(datadir)/doc/\$(PACKAGE_NAME)"
+ 	AC_SUBST([docdir])
+ fi
+ if test -z "${htmldir}"; then
+diff -urN openvpn-2.1_rc18/crypto.c openvpn-2.1_rc20/crypto.c
+--- openvpn-2.1_rc18/crypto.c	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/crypto.c	2009-10-01 20:02:18.000000000 +0200
+@@ -1796,4 +1796,49 @@
+ }
+ 
+ #endif /* USE_SSL */
++
++/*
++ * md5 functions
++ */
++
++void
++md5_state_init (struct md5_state *s)
++{
++  MD5_Init (&s->ctx);
++}
++
++void
++md5_state_update (struct md5_state *s, void *data, size_t len)
++{
++  MD5_Update (&s->ctx, data, len);
++}
++
++void
++md5_state_final (struct md5_state *s, struct md5_digest *out)
++{
++  MD5_Final (out->digest, &s->ctx);
++}
++
++void
++md5_digest_clear (struct md5_digest *digest)
++{
++  CLEAR (*digest);
++}
++
++bool
++md5_digest_defined (const struct md5_digest *digest)
++{
++  int i;
++  for (i = 0; i < MD5_DIGEST_LENGTH; ++i)
++    if (digest->digest[i])
++      return true;
++  return false;
++}
++
++bool
++md5_digest_equal (const struct md5_digest *d1, const struct md5_digest *d2)
++{
++  return memcmp(d1->digest, d2->digest, MD5_DIGEST_LENGTH) == 0;
++}
++
+ #endif /* USE_CRYPTO */
+diff -urN openvpn-2.1_rc18/crypto.h openvpn-2.1_rc20/crypto.h
+--- openvpn-2.1_rc18/crypto.h	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/crypto.h	2009-10-01 20:02:18.000000000 +0200
+@@ -398,5 +398,24 @@
+   return key->encrypt.cipher || key->encrypt.hmac || key->decrypt.cipher || key->decrypt.hmac;
+ }
+ 
++/*
++ * md5 functions
++ */
++
++struct md5_state {
++  MD5_CTX ctx;
++};
++
++struct md5_digest {
++  uint8_t digest [MD5_DIGEST_LENGTH];
++};
++
++void md5_state_init (struct md5_state *s);
++void md5_state_update (struct md5_state *s, void *data, size_t len);
++void md5_state_final (struct md5_state *s, struct md5_digest *out);
++void md5_digest_clear (struct md5_digest *digest);
++bool md5_digest_defined (const struct md5_digest *digest);
++bool md5_digest_equal (const struct md5_digest *d1, const struct md5_digest *d2);
++
+ #endif /* USE_CRYPTO */
+ #endif /* CRYPTO_H */
+diff -urN openvpn-2.1_rc18/error.h openvpn-2.1_rc20/error.h
+--- openvpn-2.1_rc18/error.h	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/error.h	2009-10-01 20:02:18.000000000 +0200
+@@ -33,7 +33,7 @@
+ #ifdef ENABLE_PKCS11
+ #define ERR_BUF_SIZE 8192
+ #else
+-#define ERR_BUF_SIZE 1024
++#define ERR_BUF_SIZE 1280
  #endif
-+  prng_uninit ();
+ 
+ struct gc_arena;
+diff -urN openvpn-2.1_rc18/forward-inline.h openvpn-2.1_rc20/forward-inline.h
+--- openvpn-2.1_rc18/forward-inline.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/forward-inline.h	2009-10-01 20:02:18.000000000 +0200
+@@ -119,6 +119,17 @@
+ }
+ 
+ #if P2MP
++
++static inline void
++check_server_poll_timeout (struct context *c)
++{
++  void check_server_poll_timeout_dowork (struct context *c);
++
++  if (c->options.server_poll_timeout
++      && event_timeout_trigger (&c->c2.server_poll_interval, &c->c2.timeval, ETT_DEFAULT))
++    check_server_poll_timeout_dowork (c);
++}
++
+ /*
+  * Scheduled exit?
+  */
+diff -urN openvpn-2.1_rc18/forward.c openvpn-2.1_rc20/forward.c
+--- openvpn-2.1_rc18/forward.c	2009-05-30 23:34:11.000000000 +0200
++++ openvpn-2.1_rc20/forward.c	2009-10-01 21:35:38.000000000 +0200
+@@ -32,6 +32,7 @@
+ #include "event.h"
+ #include "ps.h"
+ #include "dhcp.h"
++#include "common.h"
+ 
+ #include "memdbg.h"
+ 
+@@ -39,6 +40,9 @@
+ #include "occ-inline.h"
+ #include "ping-inline.h"
+ 
++counter_type link_read_bytes_global;  /* GLOBAL */
++counter_type link_write_bytes_global; /* GLOBAL */
++
+ /* show event wait debugging info */
+ 
+ #ifdef ENABLE_DEBUG
+@@ -153,6 +157,8 @@
+ 	    receive_auth_failed (c, &buf);
+ 	  else if (buf_string_match_head_str (&buf, "PUSH_"))
+ 	    incoming_push_message (c, &buf);
++	  else if (buf_string_match_head_str (&buf, "RESTART"))
++	    server_pushed_restart (c, &buf);
+ 	  else
+ 	    msg (D_PUSH_ERRORS, "WARNING: Received unknown control message: %s", BSTR (&buf));
+ 	}
+@@ -172,9 +178,12 @@
+ check_push_request_dowork (struct context *c)
+ {
+   send_push_request (c);
++
++  /* if no response to first push_request, retry at 5 second intervals */
++  event_timeout_modify_wakeup (&c->c2.push_request_interval, 5);
+ }
+ 
+-#endif
++#endif /* P2MP */
+ 
+ /*
+  * Things that need to happen immediately after connection initiation should go here.
+@@ -200,10 +209,8 @@
+ 					0);
+ 		}
+ #endif
+-	      send_push_request (c);
+-
+-	      /* if no reply, try again in 5 sec */
+-	      event_timeout_init (&c->c2.push_request_interval, 5, now);
++	      /* send push request in 1 sec */
++	      event_timeout_init (&c->c2.push_request_interval, 1, now);
+ 	      reset_coarse_timers (c);
+ 	    }
+ 	  else
+@@ -309,16 +316,30 @@
+ 
+ #if P2MP
+ 
++void
++check_server_poll_timeout_dowork (struct context *c)
++{
++  event_timeout_reset (&c->c2.server_poll_interval);
++  if (!tls_initial_packet_received (c->c2.tls_multi))
++    {
++      msg (M_INFO, "Server poll timeout, restarting");
++      c->sig->signal_received = SIGUSR1;
++      c->sig->signal_text = "server_poll";
++      c->persist.restart_sleep_seconds = -1;
++    }
++}
++
+ /*
+- * Schedule a SIGTERM n_seconds from now.
++ * Schedule a signal n_seconds from now.
+  */
+ void
+-schedule_exit (struct context *c, const int n_seconds)
++schedule_exit (struct context *c, const int n_seconds, const int signal)
+ {
+   tls_set_single_session (c->c2.tls_multi);
+   update_time ();
+   reset_coarse_timers (c);
+   event_timeout_init (&c->c2.scheduled_exit, n_seconds, now);
++  c->c2.scheduled_exit_signal = signal;
+   msg (D_SCHED_EXIT, "Delayed exit in %d seconds", n_seconds);
+ }
+ 
+@@ -328,7 +349,7 @@
+ void
+ check_scheduled_exit_dowork (struct context *c)
+ {
+-  c->sig->signal_received = SIGTERM;
++  c->sig->signal_received = c->c2.scheduled_exit_signal;
+   c->sig->signal_text = "delayed-exit";
+ }
+ 
+@@ -511,6 +532,10 @@
+     return;
+ 
+ #if P2MP
++  check_server_poll_timeout (c);
++  if (c->sig->signal_received)
++    return;
++
+   check_scheduled_exit (c);
+   if (c->sig->signal_received)
+     return;
+@@ -704,6 +729,7 @@
+   if (c->c2.buf.len > 0)
+     {
+       c->c2.link_read_bytes += c->c2.buf.len;
++      link_read_bytes_global += c->c2.buf.len;
+       c->c2.original_recv_size = c->c2.buf.len;
+ #ifdef ENABLE_MANAGEMENT
+       if (management)
+@@ -1103,6 +1129,7 @@
+ 	    {
+ 	      c->c2.max_send_size_local = max_int (size, c->c2.max_send_size_local);
+ 	      c->c2.link_write_bytes += size;
++	      link_write_bytes_global += size;
+ #ifdef ENABLE_MANAGEMENT
+ 	      if (management)
+ 		{
+diff -urN openvpn-2.1_rc18/forward.h openvpn-2.1_rc20/forward.h
+--- openvpn-2.1_rc18/forward.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/forward.h	2009-10-01 21:35:38.000000000 +0200
+@@ -80,7 +80,7 @@
+ void process_ipv4_header (struct context *c, unsigned int flags, struct buffer *buf);
+ 
+ #if P2MP
+-void schedule_exit (struct context *c, const int n_seconds);
++void schedule_exit (struct context *c, const int n_seconds, const int signal);
+ #endif
+ 
+ #endif /* FORWARD_H */
+diff -urN openvpn-2.1_rc18/init.c openvpn-2.1_rc20/init.c
+--- openvpn-2.1_rc18/init.c	2009-06-01 21:55:25.000000000 +0200
++++ openvpn-2.1_rc20/init.c	2009-10-01 20:02:18.000000000 +0200
+@@ -667,7 +667,7 @@
  }
  
  /*
-@@ -1649,33 +1650,73 @@
-  * IV values and a number of other miscellaneous tasks.
+- * Actually do UID/GID downgrade, and chroot, if requested.
++ * Actually do UID/GID downgrade, chroot and SELinux context switching, if requested.
   */
- 
--#define NONCE_SECRET_LEN 16
-+static uint8_t *nonce_data; /* GLOBAL */
-+static const EVP_MD *nonce_md = NULL; /* GLOBAL */
-+static int nonce_secret_len; /* GLOBAL */
- 
--static uint8_t nonce_data [SHA_DIGEST_LENGTH + NONCE_SECRET_LEN]; /* GLOBAL */
-+void
-+prng_init (const char *md_name, const int nonce_secret_len_parm)
-+{
-+  prng_uninit ();
-+  nonce_md = md_name ? get_md (md_name) : NULL;
-+  if (nonce_md)
-+    {
-+      ASSERT (nonce_secret_len_parm >= NONCE_SECRET_LEN_MIN && nonce_secret_len_parm <= NONCE_SECRET_LEN_MAX);
-+      nonce_secret_len = nonce_secret_len_parm;
-+      {
-+	const int size = EVP_MD_size (nonce_md) + nonce_secret_len;
-+	dmsg (D_CRYPTO_DEBUG, "PRNG init md=%s size=%d", EVP_MD_name (nonce_md), size);
-+	nonce_data = (uint8_t*) malloc (size);
-+	check_malloc_return (nonce_data);
-+#if 1 /* Must be 1 for real usage */
-+	if (!RAND_bytes (nonce_data, size))
-+	  msg (M_FATAL, "ERROR: Random number generator cannot obtain entropy for PRNG");
-+#else
-+	/* Only for testing -- will cause a predictable PRNG sequence */
+ static void
+ do_uid_gid_chroot (struct context *c, bool no_delay)
+@@ -697,6 +697,26 @@
+ 	{
+ 	  msg (M_INFO, "NOTE: UID/GID downgrade %s", why_not);
+ 	}
++
++#ifdef HAVE_SETCON
++      /* Apply a SELinux context in order to restrict what OpenVPN can do
++       * to _only_ what it is supposed to do after initialization is complete
++       * (basically just network I/O operations). Doing it after chroot
++       * requires /proc to be mounted in the chroot (which is annoying indeed
++       * but doing it before requires more complex SELinux policies.
++       */
++      if (c->options.selinux_context)
 +	{
-+	  int i;
-+	  for (i = 0; i < size; ++i)
-+	    nonce_data[i] = (uint8_t) i;
++	  if (no_delay) {
++	    if (-1 == setcon (c->options.selinux_context))
++	      msg (M_ERR, "setcon to '%s' failed; is /proc accessible?", c->options.selinux_context);
++	    else
++	      msg (M_INFO, "setcon to '%s' succeeded", c->options.selinux_context);
++	  }
++	  else
++	    msg (M_INFO, "NOTE: setcon %s", why_not);
 +	}
 +#endif
-+      }
-+    }
-+}
- 
- void
--prng_init (void)
-+prng_uninit (void)
- {
--  if (!RAND_bytes (nonce_data, sizeof(nonce_data)))
--    msg (M_FATAL, "ERROR: Random number generator cannot obtain entropy for PRNG");
-+  free (nonce_data);
-+  nonce_data = NULL;
-+  nonce_md = NULL;
-+  nonce_secret_len = 0;
- }
- 
- void
- prng_bytes (uint8_t *output, int len)
- {
--  SHA_CTX ctx;
--  mutex_lock_static (L_PRNG);
--  while (len > 0)
-+  if (nonce_md)
-     {
--      const int blen = min_int (len, SHA_DIGEST_LENGTH);
--      SHA1_Init (&ctx);
--      SHA1_Update (&ctx, nonce_data, sizeof (nonce_data));
--      SHA1_Final (nonce_data, &ctx);
--      memcpy (output, nonce_data, blen);
--      output += blen;
--      len -= blen;
-+      EVP_MD_CTX ctx;
-+      const int md_size = EVP_MD_size (nonce_md);
-+      mutex_lock_static (L_PRNG);
-+      while (len > 0)
-+	{
-+	  unsigned int outlen = 0;
-+	  const int blen = min_int (len, md_size);
-+	  EVP_DigestInit (&ctx, nonce_md);
-+	  EVP_DigestUpdate (&ctx, nonce_data, md_size + nonce_secret_len);
-+	  EVP_DigestFinal (&ctx, nonce_data, &outlen);
-+	  ASSERT (outlen == md_size);
-+	  EVP_MD_CTX_cleanup (&ctx);
-+	  memcpy (output, nonce_data, blen);
-+	  output += blen;
-+	  len -= blen;
-+	}
-+      mutex_unlock_static (L_PRNG);
      }
--  mutex_unlock_static (L_PRNG);
+ }
+ 
+@@ -772,6 +792,11 @@
+   if (c->options.ping_rec_timeout)
+     event_timeout_init (&c->c2.ping_rec_interval, c->options.ping_rec_timeout, now);
+ 
++#if P2MP
++  if (c->options.server_poll_timeout)
++    event_timeout_init (&c->c2.server_poll_interval, c->options.server_poll_timeout, now);
++#endif
++
+   if (!deferred)
+     {
+       /* initialize connection establishment timer */
+@@ -827,7 +852,7 @@
+ do_alloc_route_list (struct context *c)
+ {
+   if (c->options.routes && !c->c1.route_list)
+-    c->c1.route_list = new_route_list (&c->gc);
++    c->c1.route_list = new_route_list (c->options.max_routes, &c->gc);
+ }
+ 
+ 
+@@ -972,15 +997,12 @@
+  */
+ #if P2MP
+ static void
+-save_pulled_options_string (struct context *c, const char *newstring)
++save_pulled_options_digest (struct context *c, const struct md5_digest *newdigest)
+ {
+-  if (c->c1.pulled_options_string_save)
+-    free (c->c1.pulled_options_string_save);
+-
+-  c->c1.pulled_options_string_save = NULL;
+-
+-  if (newstring)
+-    c->c1.pulled_options_string_save = string_alloc (newstring, NULL);
++  if (newdigest)
++    c->c1.pulled_options_digest_save = *newdigest;
 +  else
-+    RAND_bytes (output, len);
++    md5_digest_clear (&c->c1.pulled_options_digest_save);
+ }
+ #endif
+ 
+@@ -1124,7 +1146,7 @@
+   c->c1.tuntap = NULL;
+   c->c1.tuntap_owned = false;
+ #if P2MP
+-  save_pulled_options_string (c, NULL); /* delete C1-saved pulled_options_string */
++  save_pulled_options_digest (c, NULL); /* delete C1-saved pulled_options_digest */
+ #endif
  }
  
- /* an analogue to the random() function, but use prng_bytes */
-diff -urN openvpn-2.1_rc14/crypto.h openvpn-2.1_rc15/crypto.h
---- openvpn-2.1_rc14/crypto.h	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc15/crypto.h	2008-11-17 21:00:22.000000000 +0100
-@@ -329,8 +329,11 @@
- 				    bool packet_id,
- 				    bool packet_id_long_form);
+@@ -1224,8 +1246,8 @@
+ 	  if (!c->c2.did_open_tun
+ 	      && PULL_DEFINED (&c->options)
+ 	      && c->c1.tuntap
+-	      && (!c->c1.pulled_options_string_save || !c->c2.pulled_options_string
+-		  || strcmp (c->c1.pulled_options_string_save, c->c2.pulled_options_string)))
++	      && (!md5_digest_defined (&c->c1.pulled_options_digest_save) || !md5_digest_defined (&c->c2.pulled_options_digest)
++		  || !md5_digest_equal (&c->c1.pulled_options_digest_save, &c->c2.pulled_options_digest)))
+ 	    {
+ 	      /* if so, close tun, delete routes, then reinitialize tun and add routes */
+ 	      msg (M_INFO, "NOTE: Pulled options changed on restart, will need to close and reopen TUN/TAP device.");
+@@ -1240,7 +1262,7 @@
+       if (c->c2.did_open_tun)
+ 	{
+ #if P2MP
+-	  save_pulled_options_string (c, c->c2.pulled_options_string);
++	  save_pulled_options_digest (c, &c->c2.pulled_options_digest);
+ #endif
  
--void prng_init (void);
-+#define NONCE_SECRET_LEN_MIN 16
-+#define NONCE_SECRET_LEN_MAX 64
-+void prng_init (const char *md_name, const int nonce_secret_len_parm);
- void prng_bytes (uint8_t *output, int len);
-+void prng_uninit ();
+ 	  /* if --route-delay was specified, start timer */
+@@ -1427,10 +1449,15 @@
+ #if P2MP
+   if (auth_retry_get () == AR_NOINTERACT)
+     sec = 10;
++
++  if (c->options.server_poll_timeout && sec > 1)
++    sec = 1;
+ #endif
  
- void test_crypto (const struct crypto_options *co, struct frame* f);
+   if (c->persist.restart_sleep_seconds > 0 && c->persist.restart_sleep_seconds > sec)
+     sec = c->persist.restart_sleep_seconds;
++  else if (c->persist.restart_sleep_seconds == -1)
++    sec = 0;
+   c->persist.restart_sleep_seconds = 0;
  
-diff -urN openvpn-2.1_rc14/errlevel.h openvpn-2.1_rc15/errlevel.h
---- openvpn-2.1_rc14/errlevel.h	2008-11-17 03:14:54.000000000 +0100
-+++ openvpn-2.1_rc15/errlevel.h	2008-11-18 01:55:06.000000000 +0100
-@@ -140,6 +140,7 @@
- #define D_AUTO_USERID        LOGLEV(7, 70, M_DEBUG)  /* AUTO_USERID debugging */
- #define D_TLS_KEYSELECT      LOGLEV(7, 70, M_DEBUG)  /* show information on key selection for data channel */
- #define D_ARGV_PARSE_CMD     LOGLEV(7, 70, M_DEBUG)  /* show parse_line() errors in argv_printf %sc */
-+#define D_CRYPTO_DEBUG       LOGLEV(7, 70, M_DEBUG)  /* show detailed info from crypto.c routines */
- #define D_PF_DROPPED_BCAST   LOGLEV(7, 71, M_DEBUG)  /* packet filter dropped a broadcast packet */
- #define D_PF_DEBUG           LOGLEV(7, 72, M_DEBUG)  /* packet filter debugging, must also define PF_DEBUG in pf.h */
+   /* do managment hold on context restart, i.e. second, third, fourth, etc. initialization */
+@@ -1964,16 +1991,20 @@
+   if (o->ping_send_timeout && !o->ping_rec_timeout)
+     msg (M_WARN, "WARNING: --ping should normally be used with --ping-restart or --ping-exit");
  
-@@ -153,7 +154,6 @@
- #define D_MULTI_TCP          LOGLEV(8, 70, M_DEBUG)  /* show debug info from mtcp.c */
+-  if (o->username || o->groupname || o->chroot_dir)
++  if (o->username || o->groupname || o->chroot_dir
++#ifdef HAVE_SETCON
++      || o->selinux_context
++#endif
++      )
+    {
+     if (!o->persist_tun)
+-     msg (M_WARN, "WARNING: you are using user/group/chroot without persist-tun -- this may cause restarts to fail");
++     msg (M_WARN, "WARNING: you are using user/group/chroot/setcon without persist-tun -- this may cause restarts to fail");
+     if (!o->persist_key
+ #ifdef ENABLE_PKCS11
+ 	&& !o->pkcs11_id
+ #endif
+ 	)
+-     msg (M_WARN, "WARNING: you are using user/group/chroot without persist-key -- this may cause restarts to fail");
++     msg (M_WARN, "WARNING: you are using user/group/chroot/setcon without persist-key -- this may cause restarts to fail");
+    }
  
- #define D_TLS_DEBUG          LOGLEV(9, 70, M_DEBUG)  /* show detailed info from TLS routines */
--#define D_CRYPTO_DEBUG       LOGLEV(9, 70, M_DEBUG)  /* show detailed info from crypto.c routines */
- #define D_COMP               LOGLEV(9, 70, M_DEBUG)  /* show compression info */
- #define D_READ_WRITE         LOGLEV(9, 70, M_DEBUG)  /* show all tun/tcp/udp reads/writes/opens */
- #define D_PACKET_CONTENT     LOGLEV(9, 70, M_DEBUG)  /* show before/after encryption packet content */
-diff -urN openvpn-2.1_rc14/helper.c openvpn-2.1_rc15/helper.c
---- openvpn-2.1_rc14/helper.c	2008-11-02 07:34:00.000000000 +0100
-+++ openvpn-2.1_rc15/helper.c	2008-11-18 05:53:58.000000000 +0100
-@@ -96,6 +96,14 @@
-   return BSTR (&out);
+   if (o->chroot_dir && !(o->username && o->groupname))
+diff -urN openvpn-2.1_rc18/install-win32/maketap openvpn-2.1_rc20/install-win32/maketap
+--- openvpn-2.1_rc18/install-win32/maketap	2008-10-07 23:10:10.000000000 +0200
++++ openvpn-2.1_rc20/install-win32/maketap	2009-10-01 20:02:16.000000000 +0200
+@@ -40,6 +40,7 @@
+     for mode in "$w2ktarget" "$amdtarget"; do
+ 	echo '**********' build TAP $mode
+ 	cmd //c "C:\\WINDDK\\$DDKVER\\bin\\setenv.bat C:\\WINDDK\\$DDKVER $mode && cd `perl install-win32/dosname.pl $t` && build -cef"
++	mv tap-win32/tapdrvr.cod "tap-win32/tapdrvr-$(echo $mode | tr ' ' '-').cod"
+     done
+ 
+     title openvpn-build &>/dev/null
+diff -urN openvpn-2.1_rc18/install-win32/openssl/.svn/entries openvpn-2.1_rc20/install-win32/openssl/.svn/entries
+--- openvpn-2.1_rc18/install-win32/openssl/.svn/entries	2009-05-30 21:59:24.000000000 +0200
++++ openvpn-2.1_rc20/install-win32/openssl/.svn/entries	2009-10-01 20:02:16.000000000 +0200
+@@ -1,7 +1,7 @@
+ 8
+ 
+ dir
+-4475
++5019
+ https://svn.openvpn.net/projects/openvpn/branches/BETA21/openvpn/install-win32/openssl
+ https://svn.openvpn.net/projects/openvpn
+ 
+@@ -32,7 +32,7 @@
+ 
+ 
+ 
+-2008-09-30T02:34:06.000000Z
++2009-10-01T18:02:16.000000Z
+ 686b9f53674fe4132af89cdc7aea5344
+ 2008-06-04T10:53:57.832544Z
+ 2982
+@@ -44,7 +44,7 @@
+ 
+ 
+ 
+-2008-09-30T02:34:06.000000Z
++2009-10-01T18:02:16.000000Z
+ 6f2e5ab0b37296726fbbd4dbc59df49c
+ 2008-07-31T22:03:38.310201Z
+ 3149
+@@ -56,7 +56,7 @@
+ 
+ 
+ 
+-2009-05-16T08:16:16.000000Z
++2009-10-01T18:02:16.000000Z
+ fccb41da0fec42fe0b0cd08ce147510a
+ 2009-05-13T13:36:23.481742Z
+ 4318
+diff -urN openvpn-2.1_rc18/install-win32/settings.in openvpn-2.1_rc20/install-win32/settings.in
+--- openvpn-2.1_rc18/install-win32/settings.in	2009-05-16 10:16:16.000000000 +0200
++++ openvpn-2.1_rc20/install-win32/settings.in	2009-10-01 20:02:16.000000000 +0200
+@@ -30,20 +30,20 @@
+ # Optional directory of prebuilt OpenVPN binary components,
+ # to be used as a source when build-from-scratch prerequisites
+ # are not met.
+-!define GENOUT_PREBUILT  "../gen-prebuilt"
++;!define GENOUT_PREBUILT  "../gen-prebuilt"
+ 
+ # tapinstall.exe source code.
+ # Not needed if DRVBINSRC is defined
+ # (or if using pre-built mode).
+-;!define TISRC	"../tapinstall"
++!define TISRC	"../tapinstall"
+ 
+ # TAP Adapter parameters.  Note that PRODUCT_TAP_ID is
+ # defined in version.m4.
+ !define PRODUCT_TAP_DEVICE_DESCRIPTION  "TAP-Win32 Adapter V9"
+ !define PRODUCT_TAP_PROVIDER            "TAP-Win32 Provider V9"
+ !define PRODUCT_TAP_MAJOR_VER           9
+-!define PRODUCT_TAP_MINOR_VER           5
+-!define PRODUCT_TAP_RELDATE             "05/13/2009"
++!define PRODUCT_TAP_MINOR_VER           6
++!define PRODUCT_TAP_RELDATE             "06/22/2009"
+ 
+ # TAP adapter icon -- visible=0x81 or hidden=0x89
+ !define PRODUCT_TAP_CHARACTERISTICS     0x81
+@@ -53,8 +53,8 @@
+ 
+ # DDK Version.
+ # DDK distribution is assumed to be in C:\WINDDK\${DDKVER}
+-;!define DDKVER	     6001.18002
+-;!define DDKVER_MAJOR 6001
++!define DDKVER	     6001.18002
++!define DDKVER_MAJOR 6001
+ 
+ # Code Signing.
+ # If undefined, don't sign any files.
+diff -urN openvpn-2.1_rc18/interval.h openvpn-2.1_rc20/interval.h
+--- openvpn-2.1_rc18/interval.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/interval.h	2009-10-01 20:02:18.000000000 +0200
+@@ -177,6 +177,14 @@
+     et->last = now;
  }
  
-+static const char *
-+print_str (const char *str, struct gc_arena *gc)
++static inline void
++event_timeout_modify_wakeup (struct event_timeout* et, interval_t n)
 +{
-+  struct buffer out = alloc_buf_gc (128, gc);
-+  buf_printf (&out, "%s", str);
-+  return BSTR (&out);
++  /* note that you might need to call reset_coarse_timers after this */
++  if (et->defined)
++    et->n = (n >= 0) ? n : 0;
 +}
 +
+ /*
+  * This is the principal function for testing and triggering recurring
+  * timers and will return true on a timer signal event.
+diff -urN openvpn-2.1_rc18/manage.c openvpn-2.1_rc20/manage.c
+--- openvpn-2.1_rc18/manage.c	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/manage.c	2009-10-01 22:30:21.000000000 +0200
+@@ -35,6 +35,7 @@
+ #include "integer.h"
+ #include "misc.h"
+ #include "ssl.h"
++#include "common.h"
+ #include "manage.h"
+ 
+ #include "memdbg.h"
+@@ -75,6 +76,7 @@
+   msg (M_CLIENT, "                         release current hold and start tunnel."); 
+   msg (M_CLIENT, "kill cn                : Kill the client instance(s) having common name cn.");
+   msg (M_CLIENT, "kill IP:port           : Kill the client instance connecting from IP:port.");
++  msg (M_CLIENT, "load-stats             : Show global server load stats.");
+   msg (M_CLIENT, "log [on|off] [N|all]   : Turn on/off realtime log display");
+   msg (M_CLIENT, "                         + show last N lines or 'all' for entire history.");
+   msg (M_CLIENT, "mute [n]               : Set log mute level to n, or show level if n is absent.");
+@@ -92,7 +94,8 @@
+ #ifdef MANAGEMENT_DEF_AUTH
+   msg (M_CLIENT, "client-auth CID KID    : Authenticate client-id/key-id CID/KID (MULTILINE)");
+   msg (M_CLIENT, "client-auth-nt CID KID : Authenticate client-id/key-id CID/KID");
+-  msg (M_CLIENT, "client-deny CID KID R  : Deny auth client-id/key-id CID/KID with reason text R");
++  msg (M_CLIENT, "client-deny CID KID R [CR] : Deny auth client-id/key-id CID/KID with log reason");
++  msg (M_CLIENT, "                             text R and optional client reason text CR");
+   msg (M_CLIENT, "client-kill CID        : Kill client instance CID");
+ #ifdef MANAGEMENT_PF
+   msg (M_CLIENT, "client-pf CID          : Define packet filter for client CID (MULTILINE)");
+@@ -799,6 +802,7 @@
+ 	     man->connection.in_extra_kid,
+ 	     true,
+ 	     NULL,
++	     NULL,
+ 	     man->connection.in_extra);
+ 	  man->connection.in_extra = NULL;
+ 	  if (status)
+@@ -860,7 +864,7 @@
+ }
+ 
  static void
- helper_add_route (const in_addr_t network, const in_addr_t netmask, struct options *o)
+-man_client_deny (struct management *man, const char *cid_str, const char *kid_str, const char *reason)
++man_client_deny (struct management *man, const char *cid_str, const char *kid_str, const char *reason, const char *client_reason)
  {
-@@ -438,3 +446,34 @@
+   unsigned long cid = 0;
+   unsigned int kid = 0;
+@@ -874,6 +878,7 @@
+ 	     kid,
+ 	     false,
+ 	     reason,
++	     client_reason,
+ 	     NULL);
+ 	  if (status)
+ 	    {
+@@ -948,6 +953,21 @@
+ #endif
+ #endif
+ 
++static void
++man_load_stats (struct management *man)
++{
++  extern counter_type link_read_bytes_global;
++  extern counter_type link_write_bytes_global;
++  int nclients = 0;
++
++  if (man->persist.callback.n_clients)
++    nclients = (*man->persist.callback.n_clients) (man->persist.callback.arg);
++  msg (M_CLIENT, "SUCCESS: nclients=%d,bytesin=" counter_format ",bytesout=" counter_format,
++       nclients,
++       link_read_bytes_global,
++       link_write_bytes_global);
++}
++
+ #define MN_AT_LEAST (1<<0)
+ 
+ static bool
+@@ -995,15 +1015,21 @@
+     {
+       msg (M_CLIENT, "SUCCESS: pid=%d", openvpn_getpid ());
+     }
++#ifdef MANAGEMENT_DEF_AUTH
+   else if (streq (p[0], "nclients"))
+     {
+       man_client_n_clients (man);
+     }
++#endif
+   else if (streq (p[0], "signal"))
+     {
+       if (man_need (man, p, 1, 0))
+ 	man_signal (man, p[1]);
+     }
++  else if (streq (p[0], "load-stats"))
++    {
++      man_load_stats (man);
++    }
+   else if (streq (p[0], "status"))
+     {
+       int version = 0;
+@@ -1137,8 +1163,8 @@
+     }
+   else if (streq (p[0], "client-deny"))
+     {
+-      if (man_need (man, p, 3, 0))
+-	man_client_deny (man, p[1], p[2], p[3]);
++      if (man_need (man, p, 3, MN_AT_LEAST))
++	man_client_deny (man, p[1], p[2], p[3], p[4]);
+     }
+   else if (streq (p[0], "client-auth-nt"))
+     {
+@@ -1575,7 +1601,7 @@
+       nparms = parse_line (line, parms, MAX_PARMS, "TCP", 0, M_CLIENT, &gc);
+       if (parms[0] && streq (parms[0], "password"))
+ 	msg (D_MANAGEMENT_DEBUG, "MANAGEMENT: CMD 'password [...]'");
+-      else
++      else if (!streq (line, "load-stats"))
+ 	msg (D_MANAGEMENT_DEBUG, "MANAGEMENT: CMD '%s'", line);
+ 
+ #if 0
+diff -urN openvpn-2.1_rc18/manage.h openvpn-2.1_rc20/manage.h
+--- openvpn-2.1_rc18/manage.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/manage.h	2009-10-01 20:02:18.000000000 +0200
+@@ -162,6 +162,7 @@
+ 		       const unsigned int mda_key_id,
+ 		       const bool auth,
+ 		       const char *reason,
++		       const char *client_reason,
+ 		       struct buffer_list *cc_config); /* ownership transferred */
+ #endif
+ #ifdef MANAGEMENT_PF
+diff -urN openvpn-2.1_rc18/misc.c openvpn-2.1_rc20/misc.c
+--- openvpn-2.1_rc18/misc.c	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/misc.c	2009-10-01 20:02:18.000000000 +0200
+@@ -1186,6 +1186,44 @@
+   return gen_path (directory, BSTR (&fname), gc);
+ }
+ 
++/*
++ * Add a random string to first DNS label of hostname to prevent DNS caching.
++ * For example, foo.bar.gov would be modified to <random-chars>.foo.bar.gov.
++ * Of course, this requires explicit support in the DNS server.
++ */
++const char *
++hostname_randomize(const char *hostname, struct gc_arena *gc)
++{
++  const int n_rnd_bytes = 6;
++
++  char *hst = string_alloc(hostname, gc);
++  char *dot = strchr(hst, '.');
++
++  if (dot)
++    {
++      uint8_t rnd_bytes[n_rnd_bytes];
++      const char *rnd_str;
++      struct buffer hname = alloc_buf_gc (strlen(hostname)+sizeof(rnd_bytes)*2+4, gc);
++
++      *dot++ = '\0';
++      prng_bytes (rnd_bytes, sizeof (rnd_bytes));
++      rnd_str = format_hex_ex (rnd_bytes, sizeof (rnd_bytes), 40, 0, NULL, gc);
++      buf_printf(&hname, "%s-0x%s.%s", hst, rnd_str, dot);
++      return BSTR(&hname);
++    }
++  else
++    return hostname;
++}
++
++#else
++
++const char *
++hostname_randomize(const char *hostname, struct gc_arena *gc)
++{
++  msg (M_WARN, "WARNING: hostname randomization disabled when crypto support is not compiled");
++  return hostname;
++}
++
+ #endif
+ 
+ /*
+diff -urN openvpn-2.1_rc18/misc.h openvpn-2.1_rc20/misc.h
+--- openvpn-2.1_rc18/misc.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/misc.h	2009-10-01 20:02:18.000000000 +0200
+@@ -230,6 +230,9 @@
+ /* return true if pathname is absolute */
+ bool absolute_pathname (const char *pathname);
+ 
++/* prepend a random prefix to hostname (need USE_CRYPTO) */
++const char *hostname_randomize(const char *hostname, struct gc_arena *gc);
++
+ /*
+  * Get and store a username/password
+  */
+diff -urN openvpn-2.1_rc18/multi.c openvpn-2.1_rc20/multi.c
+--- openvpn-2.1_rc18/multi.c	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/multi.c	2009-10-01 21:43:06.000000000 +0200
+@@ -2539,7 +2539,7 @@
+   struct multi_instance *mi = lookup_by_cid (m, cid);
+   if (mi)
+     {
+-      multi_signal_instance (m, mi, SIGTERM);
++      send_restart (&mi->context); /* was: multi_signal_instance (m, mi, SIGTERM); */
+       return true;
+     }
+   else
+@@ -2552,6 +2552,7 @@
+ 			const unsigned int mda_key_id,
+ 			const bool auth,
+ 			const char *reason,
++			const char *client_reason,
+ 			struct buffer_list *cc_config) /* ownership transferred */
+ {
+   struct multi_context *m = (struct multi_context *) arg;
+@@ -2561,7 +2562,7 @@
+ 
+   if (mi)
+     {
+-      ret = tls_authenticate_key (mi->context.c2.tls_multi, mda_key_id, auth);
++      ret = tls_authenticate_key (mi->context.c2.tls_multi, mda_key_id, auth, client_reason);
+       if (ret)
+ 	{
+ 	  if (auth && !mi->connection_established_flag)
+@@ -2570,7 +2571,7 @@
+ 	      cc_config_owned = false;
+ 	    }
+ 	  if (!auth && reason)
+-	    msg (D_MULTI_LOW, "MULTI: connection rejected: %s", reason);
++	    msg (D_MULTI_LOW, "MULTI: connection rejected: %s, CLI:%s", reason, np(client_reason));
  	}
      }
- }
-+
-+/*
-+ *
-+ * HELPER DIRECTIVE:
-+ *
-+ * tcp-nodelay
-+ *
-+ * EXPANDS TO:
-+ *
-+ * if mode server:
-+ *   socket-flags TCP_NODELAY
-+ *   push "socket-flags TCP_NODELAY"
-+ */
-+void
-+helper_tcp_nodelay (struct options *o)
-+{
-+#if P2MP_SERVER
-+  if (o->server_flags & SF_TCP_NODELAY_HELPER)
-+    {
-+      if (o->mode == MODE_SERVER)
-+	{
-+	  o->sockflags |= SF_TCP_NODELAY;	  
-+	  push_option (o, print_str ("socket-flags TCP_NODELAY", &o->gc), M_USAGE);
-+	}
-+      else
-+	{
-+	  ASSERT (0);
-+	}
-+    }
-+#endif
-+}
-diff -urN openvpn-2.1_rc14/helper.h openvpn-2.1_rc15/helper.h
---- openvpn-2.1_rc14/helper.h	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc15/helper.h	2008-11-18 05:53:58.000000000 +0100
-@@ -33,5 +33,6 @@
- 
- void helper_keepalive (struct options *o);
- void helper_client_server (struct options *o);
-+void helper_tcp_nodelay (struct options *o);
- 
- #endif
-diff -urN openvpn-2.1_rc14/init.c openvpn-2.1_rc15/init.c
---- openvpn-2.1_rc14/init.c	2008-11-17 04:02:43.000000000 +0100
-+++ openvpn-2.1_rc15/init.c	2008-11-18 01:39:39.000000000 +0100
-@@ -401,7 +401,7 @@
-   /* init PRNG used for IV generation */
-   /* When forking, copy this to more places in the code to avoid fork
-      random-state predictability */
--  prng_init ();
-+  prng_init (NULL, 0);
- #endif
- 
- #ifdef PID_TEST
-@@ -473,6 +473,29 @@
-   }
- #endif
- 
-+#ifdef PRNG_TEST
-+  {
-+    struct gc_arena gc = gc_new ();
-+    uint8_t rndbuf[8];
-+    int i;
-+    prng_init ("sha1", 16);
-+    //prng_init (NULL, 0);
-+    const int factor = 1;
-+    for (i = 0; i < factor * 8; ++i)
-+      {
-+#if 1
-+	prng_bytes (rndbuf, sizeof (rndbuf));
-+#else
-+	ASSERT(RAND_bytes (rndbuf, sizeof (rndbuf)));
-+#endif
-+	printf ("[%d] %s\n", i, format_hex (rndbuf, sizeof (rndbuf), 0, &gc));
-+      }
-+    gc_free (&gc);
-+    prng_uninit ();
-+    return false;
-+  }
-+#endif
-+
-   return true;
- }
- 
-@@ -1634,6 +1657,9 @@
- 		     options->ciphername_defined, options->authname,
- 		     options->authname_defined, options->keysize, true, true);
- 
-+      /* Initialize PRNG with config-specified digest */
-+      prng_init (options->prng_hash, options->prng_nonce_secret_len);
-+
-       /* TLS handshake authentication (--tls-auth) */
-       if (options->tls_auth_file)
- 	{
-diff -urN openvpn-2.1_rc14/misc.c openvpn-2.1_rc15/misc.c
---- openvpn-2.1_rc14/misc.c	2008-11-17 05:01:16.000000000 +0100
-+++ openvpn-2.1_rc15/misc.c	2008-11-19 18:59:32.000000000 +0100
-@@ -1863,8 +1863,8 @@
-     {
-       for (i = 0; i < a->argc; ++i)
- 	argv_append (&r, string_alloc (a->argv[i], NULL));
-+      r.system_str = string_alloc (a->system_str, NULL);
-     }
--  r.system_str = string_alloc (a->system_str, NULL);
-   return r;
- }
- 
-diff -urN openvpn-2.1_rc14/openvpn.8 openvpn-2.1_rc15/openvpn.8
---- openvpn-2.1_rc14/openvpn.8	2008-11-17 04:08:45.000000000 +0100
-+++ openvpn-2.1_rc15/openvpn.8	2008-11-18 06:09:27.000000000 +0100
-@@ -26,7 +26,7 @@
- .\" LP paragraph
- .\" IP indented paragraph
- .\" TP hanging label
--.TH openvpn 8 "4 November 2008"
-+.TH openvpn 8 "17 November 2008"
- .\"*********************************************************
- .SH NAME
- openvpn \- secure IP tunnel daemon.
-@@ -36,278 +36,7 @@
- .nh
- .in +4
- .ti -4
--.B openvpn
--[\ \fB\-\-help\fR\ ]
--.in -4
--.ti +4
--.hy
--
--.nh
--.in +4
--.ti -4
--.B openvpn
--[\ \fB\-\-config\fR\ \fIfile\fR\ ]
--.in -4
--.ti +4
--.hy
--
--.nh
--.in +4
--.ti -4
--.B openvpn
--[\ \fB\-\-genkey\fR\ ]
--[\ \fB\-\-secret\fR\ \fIfile\fR\ ]
--.in -4
--.ti +4
--.hy
--
--.nh
--.in +4
--.ti -4
--.B openvpn
--[\ \fB\-\-mktun\fR\ ]
--[\ \fB\-\-rmtun\fR\ ]
--[\ \fB\-\-dev\fR\ \fItunX\ |\ tapX\fR\ ]
--[\ \fB\-\-dev\-type\fR\ \fIdevice\-type\fR\ ]
--[\ \fB\-\-dev\-node\fR\ \fInode\fR\ ]
--[\ \fB\-\-lladdr\fR\ \fIaddress\fR\ ]
--[\ \fB\-\-user\fR\ \fIuser\fR\ ]
--[\ \fB\-\-group\fR\ \fIgroup\fR\ ]
--.in -4
--.ti +4
--.hy
--
--.nh
--.in +4
--.ti -4
--.B openvpn
--[\ \fB\-\-test\-crypto\fR\ ]
--[\ \fB\-\-secret\fR\ \fIfile\fR\ ]
--[\ \fB\-\-auth\fR\ \fIalg\fR\ ]
--[\ \fB\-\-cipher\fR\ \fIalg\fR\ ]
--[\ \fB\-\-engine\fR\ ]
--[\ \fB\-\-keysize\fR\ \fIn\fR\ ]
--[\ \fB\-\-no\-replay\fR\ ]
--[\ \fB\-\-no\-iv\fR\ ]
--.in -4
--.ti +4
--.hy
--
--.nh
--.in +4
--.ti -4
--.B openvpn
--[\ \fB\-\-allow\-nonadmin\fR\ \fI[TAP\-adapter]\fR\ ]
--[\ \fB\-\-allow\-pull\-fqdn\fR\ ]
--[\ \fB\-\-askpass\fR\ \fI[file]\fR\ ]
--[\ \fB\-\-auth\-nocache\fR\ ]
--[\ \fB\-\-auth\-retry\fR\ \fItype\fR\ ]
--[\ \fB\-\-auth\-user\-pass\-optional\fR\ ]
--[\ \fB\-\-auth\-user\-pass\-verify\fR\ \fIscript\fR\ ]
--[\ \fB\-\-auth\-user\-pass\fR\ \fIup\fR\ ]
--[\ \fB\-\-auth\fR\ \fIalg\fR\ ]
--[\ \fB\-\-auto\-proxy\fR\ ]
--[\ \fB\-\-bcast\-buffers\fR\ \fIn\fR\ ]
--[\ \fB\-\-ca\fR\ \fIfile\fR\ ]
--[\ \fB\-\-ccd\-exclusive\fR\ ]
--[\ \fB\-\-cd\fR\ \fIdir\fR\ ]
--[\ \fB\-\-cert\fR\ \fIfile\fR\ ]
--[\ \fB\-\-chroot\fR\ \fIdir\fR\ ]
--[\ \fB\-\-cipher\fR\ \fIalg\fR\ ]
--[\ \fB\-\-client\-cert\-not\-required\fR\ ]
--[\ \fB\-\-client\-config\-dir\fR\ \fIdir\fR\ ]
--[\ \fB\-\-client\-connect\fR\ \fIscript\fR\ ]
--[\ \fB\-\-client\-disconnect\fR\ ]
--[\ \fB\-\-client\-to\-client\fR\ ]
--[\ \fB\-\-client\fR\ ]
--[\ \fB\-\-comp\-lzo\fR\ \fI[mode]\fR\ ]
--[\ \fB\-\-comp\-noadapt\fR\ ]
--[\ \fB\-\-config\fR\ \fIfile\fR\ ]
--[\ \fB\-\-connect\-freq\fR\ \fIn\ sec\fR\ ]
--[\ \fB\-\-connect\-retry\fR\ \fIn\fR\ ]
--[\ \fB\-\-connect\-retry\-max\fR\ \fIn\fR\ ]
--[\ \fB\-\-crl\-verify\fR\ \fIcrl\fR\ ]
--[\ \fB\-\-cryptoapicert\fR\ \fIselect\-string\fR\ ]
--[\ \fB\-\-daemon\fR\ \fI[progname]\fR\ ]
--[\ \fB\-\-dev\-node\fR\ \fInode\fR\ ]
--[\ \fB\-\-dev\-type\fR\ \fIdevice\-type\fR\ ]
--[\ \fB\-\-dev\fR\ \fItunX\ |\ tapX\ |\ null\fR\ ]
--[\ \fB\-\-dev\fR\ \fItunX\ |\ tapX\fR\ ]
--[\ \fB\-\-dh\fR\ \fIfile\fR\ ]
--[\ \fB\-\-dhcp\-option\fR\ \fItype\ [parm]\fR\ ]
--[\ \fB\-\-dhcp\-release\fR\ ]
--[\ \fB\-\-dhcp\-renew\fR\ ]
--[\ \fB\-\-disable\-occ\fR\ ]
--[\ \fB\-\-disable\fR\ ]
--[\ \fB\-\-down\-pre\fR\ ]
--[\ \fB\-\-down\fR\ \fIcmd\fR\ ]
--[\ \fB\-\-duplicate\-cn\fR\ ]
--[\ \fB\-\-echo\fR\ \fI[parms...]\fR\ ]
--[\ \fB\-\-engine\fR\ \fI[engine\-name]\fR\ ]
--[\ \fB\-\-explicit\-exit\-notify\fR\ \fI[n]\fR\ ]
--[\ \fB\-\-fast\-io\fR\ ]
--[\ \fB\-\-float\fR\ ]
--[\ \fB\-\-fragment\fR\ \fImax\fR\ ]
--[\ \fB\-\-genkey\fR\ ]
--[\ \fB\-\-group\fR\ \fIgroup\fR\ ]
--[\ \fB\-\-hand\-window\fR\ \fIn\fR\ ]
--[\ \fB\-\-hash\-size\fR\ \fIr\ v\fR\ ]
--[\ \fB\-\-help\fR\ ]
--[\ \fB\-\-http\-proxy\-option\fR\ \fItype\ [parm]\fR\ ]
--[\ \fB\-\-http\-proxy\-retry\fR\ ]
--[\ \fB\-\-http\-proxy\-timeout\fR\ \fIn\fR\ ]
--[\ \fB\-\-http\-proxy\fR\ \fIserver\ port\ [authfile]\ [auth\-method]\fR\ ]
--[\ \fB\-\-ifconfig\-noexec\fR\ ]
--[\ \fB\-\-ifconfig\-nowarn\fR\ ]
--[\ \fB\-\-ifconfig\-pool\-linear\fR\ ]
--[\ \fB\-\-ifconfig\-pool\-persist\fR\ \fIfile\ [seconds]\fR\ ]
--[\ \fB\-\-ifconfig\-pool\fR\ \fIstart\-IP\ end\-IP\ [netmask]\fR\ ]
--[\ \fB\-\-ifconfig\-push\fR\ \fIlocal\ remote\-netmask\fR\ ]
--[\ \fB\-\-ifconfig\fR\ \fIl\ rn\fR\ ]
--[\ \fB\-\-inactive\fR\ \fIn\ [bytes]\fR\ ]
--[\ \fB\-\-inetd\fR\ \fI[wait|nowait]\ [progname]\fR\ ]
--[\ \fB\-\-ip\-win32\fR\ \fImethod\fR\ ]
--[\ \fB\-\-ipchange\fR\ \fIcmd\fR\ ]
--[\ \fB\-\-iproute\fR\ \fIcmd\fR\ ]
--[\ \fB\-\-iroute\fR\ \fInetwork\ [netmask]\fR\ ]
--[\ \fB\-\-keepalive\fR\ \fIn\ m\fR\ ]
--[\ \fB\-\-key\-method\fR\ \fIm\fR\ ]
--[\ \fB\-\-key\fR\ \fIfile\fR\ ]
--[\ \fB\-\-keysize\fR\ \fIn\fR\ ]
--[\ \fB\-\-learn\-address\fR\ \fIcmd\fR\ ]
--[\ \fB\-\-link\-mtu\fR\ \fIn\fR\ ]
--[\ \fB\-\-local\fR\ \fIhost\fR\ ]
--[\ \fB\-\-log\-append\fR\ \fIfile\fR\ ]
--[\ \fB\-\-log\fR\ \fIfile\fR\ ]
--[\ \fB\-\-suppress-timestamps\fR\ ]
--[\ \fB\-\-lport\fR\ \fIport\fR\ ]
--[\ \fB\-\-management\-client\-auth\fR\ ]
--[\ \fB\-\-management\-client\-group\fR\ \fIg\fR\ ]
--[\ \fB\-\-management\-client\-pf\fR\ ]
--[\ \fB\-\-management\-client\-user\fR\ \fIu\fR\ ]
--[\ \fB\-\-management\-forget\-disconnect\fR\ ]
--[\ \fB\-\-management\-hold\fR\ ]
--[\ \fB\-\-management\-log\-cache\fR\ \fIn\fR\ ]
--[\ \fB\-\-management\-signal\fR\ ]
--[\ \fB\-\-management\-query\-passwords\fR\ ]
--[\ \fB\-\-management\fR\ \fIIP\ port\ [pw\-file]\fR\ ]
--[\ \fB\-\-max\-clients\fR\ \fIn\fR\ ]
--[\ \fB\-\-max\-routes\-per\-client\fR\ \fIn\fR\ ]
--[\ \fB\-\-mktun\fR\ ]
--[\ \fB\-\-mlock\fR\ ]
--[\ \fB\-\-mode\fR\ \fIm\fR\ ]
--[\ \fB\-\-mssfix\fR\ \fImax\fR\ ]
--[\ \fB\-\-mtu\-disc\fR\ \fItype\fR\ ]
--[\ \fB\-\-mtu\-test\fR\ ]
--[\ \fB\-\-mute\-replay\-warnings\fR\ ]
--[\ \fB\-\-mute\fR\ \fIn\fR\ ]
--[\ \fB\-\-nice\fR\ \fIn\fR\ ]
--[\ \fB\-\-no\-iv\fR\ ]
--[\ \fB\-\-no\-name\-remapping\fR\ ]
--[\ \fB\-\-no\-replay\fR\ ]
--[\ \fB\-\-bind\fR\ ]
--[\ \fB\-\-nobind\fR\ ]
--[\ \fB\-\-ns\-cert\-type\fR\ \fIclient|server\fR\ ]
--[\ \fB\-\-passtos\fR\ ]
--[\ \fB\-\-pause\-exit\fR\ ]
--[\ \fB\-\-persist\-key\fR\ ]
--[\ \fB\-\-persist\-local\-ip\fR\ ]
--[\ \fB\-\-persist\-remote\-ip\fR\ ]
--[\ \fB\-\-persist\-tun\fR\ ]
--[\ \fB\-\-ping\-exit\fR\ \fIn\fR\ ]
--[\ \fB\-\-ping\-restart\fR\ \fIn\fR\ ]
--[\ \fB\-\-ping\-timer\-rem\fR\ ]
--[\ \fB\-\-ping\fR\ \fIn\fR\ ]
--[\ \fB\-\-pkcs11\-cert\-private\fR\ \fI[0|1]...\fR\ ]
--[\ \fB\-\-pkcs11\-id\fR\ \fIname\fR\ ]
--[\ \fB\-\-pkcs11\-id\-management\fR\ ]
--[\ \fB\-\-pkcs11\-pin\-cache\fR\ \fIseconds\fR\ ]
--[\ \fB\-\-pkcs11\-private\-mode\fR\ \fImode...\fR\ ]
--[\ \fB\-\-pkcs11\-protected\-authentication\fR\ \fI[0|1]...\fR\ ]
--[\ \fB\-\-pkcs11\-providers\fR\ \fIprovider...\fR\ ]
--[\ \fB\-\-pkcs12\fR\ \fIfile\fR\ ]
--[\ \fB\-\-plugin\fR\ \fImodule\-pathname\ init\-string\fR\ ]
--[\ \fB\-\-port\fR\ \fIport\fR\ ]
--[\ \fB\-\-port\-share\fR\ \fIhost\ port\fR\ ]
--[\ \fB\-\-proto\fR\ \fIp\fR\ ]
--[\ \fB\-\-pull\fR\ ]
--[\ \fB\-\-push\-reset\fR\ ]
--[\ \fB\-\-push\fR\ \fI"option"\fR\ ]
--[\ \fB\-\-rcvbuf\fR\ \fIsize\fR\ ]
--[\ \fB\-\-redirect\-gateway\fR\ \fIflags...\fR\ ]
--[\ \fB\-\-remap\-usr1\fR\ \fIsignal\fR\ ]
--[\ \fB\-\-remote\-random\fR\ ]
--[\ \fB\-\-remote\fR\ \fIhost\ [port]\fR\ ]
--[\ \fB\-\-remote\-cert\-ku\ \fIv...\fR\ ]
--[\ \fB\-\-remote\-cert\-eku\ \fIoid\fR\ ]
--[\ \fB\-\-remote\-cert\-tls\ \fIt\fR\ ]
--[\ \fB\-\-reneg\-bytes\fR\ \fIn\fR\ ]
--[\ \fB\-\-reneg\-pkts\fR\ \fIn\fR\ ]
--[\ \fB\-\-reneg\-sec\fR\ \fIn\fR\ ]
--[\ \fB\-\-replay\-persist\fR\ \fIfile\fR\ ]
--[\ \fB\-\-replay\-window\fR\ \fIn\ [t]\fR\ ]
--[\ \fB\-\-resolv\-retry\fR\ \fIn\fR\ ]
--[\ \fB\-\-rmtun\fR\ ]
--[\ \fB\-\-route\-delay\fR\ \fI[n]\ [w]\fR\ ]
--[\ \fB\-\-route\-gateway\fR\ \fIgw\fR\ ]
--[\ \fB\-\-route\-method\fR\ \fIm\fR\ ]
--[\ \fB\-\-route\-metric\fR\ \fIm\fR\ ]
--[\ \fB\-\-route\-noexec\fR\ ]
--[\ \fB\-\-route\-nopull\fR\ ]
--[\ \fB\-\-route\-up\fR\ \fIcmd\fR\ ]
--[\ \fB\-\-route\fR\ \fInetwork\ [netmask]\ [gateway]\ [metric]\fR\ ]
--[\ \fB\-\-rport\fR\ \fIport\fR\ ]
--[\ \fB\-\-script\-security\fR\ \fIlevel\fR\ ]
--[\ \fB\-\-secret\fR\ \fIfile\ [direction]\fR\ ]
--[\ \fB\-\-secret\fR\ \fIfile\fR\ ]
--[\ \fB\-\-server\-bridge\fR\ \fIgateway\ netmask\ pool\-start\-IP\ pool\-end\-IP\fR\ ]
--[\ \fB\-\-server\fR\ \fInetwork\ netmask\fR\ ]
--[\ \fB\-\-service\fR\ \fIexit\-event\ [0|1]\fR\ ]
--[\ \fB\-\-setenv\fR\ \fIname\ value\fR\ ]
--[\ \fB\-\-setenv\-safe\fR\ \fIname\ value\fR\ ]
--[\ \fB\-\-shaper\fR\ \fIn\fR\ ]
--[\ \fB\-\-show\-adapters\fR\ ]
--[\ \fB\-\-show\-ciphers\fR\ ]
--[\ \fB\-\-show\-digests\fR\ ]
--[\ \fB\-\-show\-engines\fR\ ]
--[\ \fB\-\-show\-pkcs11\-ids\fR\ \fIprovider\ [cert_private]\fR\ ]
--[\ \fB\-\-show\-net\-up\fR\ ]
--[\ \fB\-\-show\-net\fR\ ]
--[\ \fB\-\-show\-tls\fR\ ]
--[\ \fB\-\-show\-valid\-subnets\fR\ ]
--[\ \fB\-\-single\-session\fR\ ]
--[\ \fB\-\-sndbuf\fR\ \fIsize\fR\ ]
--[\ \fB\-\-socks\-proxy\-retry\fR\ ]
--[\ \fB\-\-socks\-proxy\fR\ \fIserver\ [port]\fR\ ]
--[\ \fB\-\-status\fR\ \fIfile\ [n]\fR\ ]
--[\ \fB\-\-status\-version\fR\ \fIn\fR\ ]
--[\ \fB\-\-syslog\fR\ \fI[progname]\fR\ ]
--[\ \fB\-\-tap\-sleep\fR\ \fIn\fR\ ]
--[\ \fB\-\-tcp\-queue\-limit\fR\ \fIn\fR\ ]
--[\ \fB\-\-test\-crypto\fR\ ]
--[\ \fB\-\-tls\-auth\fR\ \fIfile\ [direction]\fR\ ]
--[\ \fB\-\-tls\-cipher\fR\ \fIl\fR\ ]
--[\ \fB\-\-tls\-client\fR\ ]
--[\ \fB\-\-tls\-exit\fR\ ]
--[\ \fB\-\-tls\-remote\fR\ \fIx509name\fR\ ]
--[\ \fB\-\-tls\-server\fR\ ]
--[\ \fB\-\-tls\-timeout\fR\ \fIn\fR\ ]
--[\ \fB\-\-tls\-verify\fR\ \fIcmd\fR\ ]
--[\ \fB\-\-tmp\-dir\fR\ \fIdir\fR\ ]
--[\ \fB\-\-topology\fR\ \fImode\fR\ ]
--[\ \fB\-\-tran\-window\fR\ \fIn\fR\ ]
--[\ \fB\-\-tun\-ipv6\fR\ ]
--[\ \fB\-\-tun\-mtu\-extra\fR\ \fIn\fR\ ]
--[\ \fB\-\-tun\-mtu\fR\ \fIn\fR\ ]
--[\ \fB\-\-txqueuelen\fR\ \fIn\fR\ ]
--[\ \fB\-\-up\-delay\fR\ ]
--[\ \fB\-\-up\-restart\fR\ ]
--[\ \fB\-\-up\fR\ \fIcmd\fR\ ]
--[\ \fB\-\-user\fR\ \fIuser\fR\ ]
--[\ \fB\-\-username\-as\-common\-name\fR\ ]
--[\ \fB\-\-verb\fR\ \fIn\fR\ ]
--[\ \fB\-\-win\-sys\fR\ \fIpath|'env'\fR\ ]
--[\ \fB\-\-writepid\fR\ \fIfile\fR\ ]
-+.B openvpn [ options ... ]
- .in -4
- .ti +4
- .hy
-@@ -3137,6 +2866,31 @@
- at this client.
+   if (cc_config_owned && cc_config)
+diff -urN openvpn-2.1_rc18/openvpn.8 openvpn-2.1_rc20/openvpn.8
+--- openvpn-2.1_rc18/openvpn.8	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/openvpn.8	2009-10-01 20:02:18.000000000 +0200
+@@ -946,6 +946,13 @@
+ address if OpenVPN is being run in client mode, and is undefined in server mode.
  .\"*********************************************************
  .TP
-+.B --tcp-nodelay
-+This macro sets the TCP_NODELAY socket flag on the server
-+as well as pushes it to connecting clients.  The TCP_NODELAY
-+flag disables the Nagle algorithm on TCP sockets causing
-+packets to be transmitted immediately with low latency,
-+rather than waiting a short period of time in order
-+to aggregate several packets into a larger containing
-+packet.  In VPN applications over TCP, TCP_NODELAY
-+is generally a good latency optimization.
-+
-+The macro expands as follows:
-+
-+.RS
-+.ft 3
-+.nf
-+.sp
-+ if mode server:
-+   socket-flags TCP_NODELAY
-+   push "socket-flags TCP_NODELAY"
-+.ft
-+.LP
-+.RE
-+.fi
++.B --max-routes n
++Allow a maximum number of n
++.B --route
++options to be specified, either in the local configuration file,
++or pulled from an OpenVPN server.  By default, n=100.
 +.\"*********************************************************
 +.TP
- .B --max-clients n
- Limit server to a maximum of
- .B n
-@@ -3288,6 +3042,20 @@
- in the OpenVPN source distribution.
+ .B --route-gateway gw|'dhcp'
+ Specify a default gateway
+ .B gw
+@@ -1889,6 +1896,39 @@
+ are executed after the chroot operation.
  .\"*********************************************************
  .TP
-+.B --opt-verify
-+Clients that connect with options that are incompatible
-+with those of the server will be disconnected.
++.B --setcon context
++Apply SELinux
++.B context
++after initialization. This
++essentially provides the ability to restrict OpenVPN's
++rights to only network I/O operations, thanks to
++SELinux. This goes further than
++.B --user
++and
++.B --chroot
++in that those two, while being great security features,
++unfortunately do not protect against privilege escalation
++by exploitation of a vulnerable system call. You can of
++course combine all three, but please note that since
++setcon requires access to /proc you will have to provide
++it inside the chroot directory (e.g. with mount --bind).
 +
-+Options that will be compared for compatibility include
-+dev-type, link-mtu, tun-mtu, proto, tun-ipv6, ifconfig,
-+comp-lzo, fragment, keydir, cipher, auth, keysize, secret,
-+no-replay, no-iv, tls-auth, key-method, tls-server, and tls-client.
++Since the setcon operation is delayed until after
++initialization, OpenVPN can be restricted to just
++network-related system calls, whereas by applying the
++context before startup (such as the OpenVPN one provided
++in the SELinux Reference Policies) you will have to
++allow many things required only during initialization.
 +
-+This option requires that
-+.B --disable-occ
-+NOT be used.
++Like with chroot, complications can result when scripts
++or restarts are executed after the setcon operation,
++which is why you should really consider using the
++.B --persist-key
++and
++.B --persist-tun
++options.
 +.\"*********************************************************
 +.TP
- .B --auth-user-pass-optional
- Allow connections by clients that do not specify a username/password.
- Normally, when
-@@ -3616,6 +3384,21 @@
- security, or may even reduce security.
+ .B --daemon [progname]
+ Become a daemon after all initialization functions are completed.
+ This option will cause all message and error output to
+@@ -3239,6 +3279,13 @@
+ from the management interface.
  .\"*********************************************************
  .TP
-+.B --prng alg [nsl]
-+(Advanced) For PRNG (Pseudo-random number generator),
-+use digest algorithm
-+.B alg
-+(default=sha1), and set
-+.B nsl
-+(default=16)
-+to the size in bytes of the nonce secret length (between 16 and 64).
-+
-+Set
-+.B alg=none
-+to disable the PRNG and use the OpenSSL RAND_bytes function
-+instead for all of OpenVPN's pseudo-random number needs.
++.B --server-poll-timeout n
++when polling possible remote servers to connect to
++in a round-robin fashion, spend no more than
++.B n
++seconds waiting for a response before trying the next server.
 +.\"*********************************************************
 +.TP
- .B --engine [engine-name]
- Enable OpenSSL hardware-based crypto engine functionality.
+ .B --explicit-exit-notify [n]
+ In UDP client mode or point-to-point mode, send server/peer an exit notification
+ if tunnel is restarted or OpenVPN process is exited.  In client mode, on
+diff -urN openvpn-2.1_rc18/openvpn.h openvpn-2.1_rc20/openvpn.h
+--- openvpn-2.1_rc18/openvpn.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/openvpn.h	2009-10-01 21:35:38.000000000 +0200
+@@ -189,8 +189,8 @@
+   bool ifconfig_pool_persist_owned;
+ #endif
  
-diff -urN openvpn-2.1_rc14/openvpn.spec openvpn-2.1_rc15/openvpn.spec
---- openvpn-2.1_rc14/openvpn.spec	2008-11-17 05:39:49.000000000 +0100
-+++ openvpn-2.1_rc15/openvpn.spec	2008-11-19 19:18:24.000000000 +0100
+-  /* if client mode, option strings we pulled from server */
+-  char *pulled_options_string_save;
++  /* if client mode, hash of option strings we pulled from server */
++  struct md5_digest pulled_options_digest_save;
+ 
+   /* save user/pass for authentication */
+   struct user_pass *auth_user_pass;
+@@ -427,9 +427,16 @@
+ #endif
+ 
+   struct event_timeout push_request_interval;
+-  const char *pulled_options_string;
++  bool did_pre_pull_restore;
++
++  /* hash of pulled options, so we can compare when options change */
++  struct md5_state pulled_options_state;
++  struct md5_digest pulled_options_digest;
++
++  struct event_timeout server_poll_interval;
+ 
+   struct event_timeout scheduled_exit;
++  int scheduled_exit_signal;
+ #endif
+ 
+   /* packet filter */
+diff -urN openvpn-2.1_rc18/openvpn.spec openvpn-2.1_rc20/openvpn.spec
+--- openvpn-2.1_rc18/openvpn.spec	2009-06-07 08:48:33.000000000 +0200
++++ openvpn-2.1_rc20/openvpn.spec	2009-10-02 00:15:04.000000000 +0200
 @@ -16,7 +16,7 @@
  
  Summary:	OpenVPN is a robust and highly flexible VPN daemon by James Yonan.
  Name:           openvpn
--Version:        2.1_rc14
-+Version:        2.1_rc15
+-Version:        2.1_rc18
++Version:        2.1_rc20
  Release:	1
  URL:		http://openvpn.net/
  Source0:	http://prdownloads.sourceforge.net/openvpn/%{name}-%{version}.tar.gz
-diff -urN openvpn-2.1_rc14/options.c openvpn-2.1_rc15/options.c
---- openvpn-2.1_rc14/options.c	2008-11-17 04:23:51.000000000 +0100
-+++ openvpn-2.1_rc15/options.c	2008-11-18 05:59:13.000000000 +0100
-@@ -384,6 +384,8 @@
-   "                  run script cmd to verify.  If method='via-env', pass\n"
-   "                  user/pass via environment, if method='via-file', pass\n"
-   "                  user/pass via temporary file.\n"
-+  "--opt-verify    : Clients that connect with options that are incompatible\n"
-+  "                  with those of the server will be disconnected.\n"
-   "--auth-user-pass-optional : Allow connections by clients that don't\n"
-   "                  specify a username/password.\n"
-   "--no-name-remapping : Allow Common Name and X509 Subject to include\n"
-@@ -400,6 +402,8 @@
-   "                  virtual address table to v.\n"
-   "--bcast-buffers n : Allocate n broadcast buffers.\n"
-   "--tcp-queue-limit n : Maximum number of queued TCP output packets.\n"
-+  "--tcp-nodelay   : Macro that sets TCP_NODELAY socket flag on the server\n"
-+  "                  as well as pushes it to connecting clients.\n"
-   "--learn-address cmd : Run script cmd to validate client virtual addresses.\n"
-   "--connect-freq n s : Allow a maximum of n new connections per s seconds.\n"
-   "--max-clients n : Allow a maximum of n simultaneously connected clients.\n"
-@@ -442,6 +446,8 @@
-   "--cipher alg    : Encrypt packets with cipher algorithm alg\n"
-   "                  (default=%s).\n"
-   "                  Set alg=none to disable encryption.\n"
-+  "--prng alg [nsl] : For PRNG, use digest algorithm alg, and\n"
-+  "                   nonce_secret_len=nsl.  Set alg=none to disable PRNG.\n"
- #ifdef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
-   "--keysize n     : Size of cipher key in bits (optional).\n"
-   "                  If unspecified, defaults to cipher-specific default.\n"
-@@ -717,6 +723,8 @@
-   o->ciphername_defined = true;
-   o->authname = "SHA1";
-   o->authname_defined = true;
-+  o->prng_hash = "SHA1";
-+  o->prng_nonce_secret_len = 16;
-   o->replay = true;
-   o->replay_window = DEFAULT_SEQ_BACKTRACK;
-   o->replay_time = DEFAULT_TIME_BACKTRACK;
-@@ -1272,6 +1280,8 @@
-   SHOW_STR (ciphername);
-   SHOW_BOOL (authname_defined);
-   SHOW_STR (authname);
-+  SHOW_STR (prng_hash);
-+  SHOW_INT (prng_nonce_secret_len);
-   SHOW_INT (keysize);
-   SHOW_BOOL (engine);
-   SHOW_BOOL (replay);
-@@ -1752,6 +1762,12 @@
- 	msg (M_USAGE, "--username-as-common-name requires --mode server");
-       if (options->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL)
- 	msg (M_USAGE, "--auth-user-pass-optional requires --mode server");
-+      if (options->ssl_flags & SSLF_NO_NAME_REMAPPING)
-+	msg (M_USAGE, "--no-name-remapping requires --mode server");
-+      if (options->ssl_flags & SSLF_OPT_VERIFY)
-+	msg (M_USAGE, "--opt-verify requires --mode server");
-+      if (options->server_flags & SF_TCP_NODELAY_HELPER)
-+	msg (M_USAGE, "--tcp-nodelay requires --mode server");
-       if (options->auth_user_pass_verify_script)
- 	msg (M_USAGE, "--auth-user-pass-verify requires --mode server");
- #if PORT_SHARE
-@@ -2053,6 +2069,7 @@
-    */
-   helper_client_server (o);
-   helper_keepalive (o);
-+  helper_tcp_nodelay (o);
+diff -urN openvpn-2.1_rc18/options.c openvpn-2.1_rc20/options.c
+--- openvpn-2.1_rc18/options.c	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/options.c	2009-10-01 20:02:18.000000000 +0200
+@@ -90,6 +90,7 @@
+   "--local host    : Local host name or ip address. Implies --bind.\n"
+   "--remote host [port] : Remote host name or ip address.\n"
+   "--remote-random : If multiple --remote options specified, choose one randomly.\n"
++  "--remote-random-hostname : Add a random string to remote DNS name.\n"
+   "--mode m        : Major mode, m = 'p2p' (default, point-to-point) or 'server'.\n"
+   "--proto p       : Use protocol p for communicating with peer.\n"
+   "                  p = udp (default), tcp-server, or tcp-client\n"
+@@ -169,6 +170,8 @@
+   "                  netmask default: 255.255.255.255\n"
+   "                  gateway default: taken from --route-gateway or --ifconfig\n"
+   "                  Specify default by leaving blank or setting to \"nil\".\n"
++  "--max-routes n :  Specify the maximum number of routes that may be defined\n"
++  "                  or pulled from a server.\n"
+   "--route-gateway gw|'dhcp' : Specify a default gateway for use with --route.\n"
+   "--route-metric m : Specify a default metric for use with --route.\n"
+   "--route-delay n [w] : Delay n seconds after connection initiation before\n"
+@@ -264,6 +267,9 @@
+   "--user user     : Set UID to user after initialization.\n"
+   "--group group   : Set GID to group after initialization.\n"
+   "--chroot dir    : Chroot to this directory after initialization.\n"
++#ifdef HAVE_SETCON
++  "--setcon context: Apply this SELinux context after initialization.\n"
++#endif
+   "--cd dir        : Change to this directory before initialization.\n"
+   "--daemon [name] : Become a daemon after initialization.\n"
+   "                  The optional 'name' parameter will be passed\n"
+@@ -426,6 +432,9 @@
+   "                  when connecting to a '--mode server' remote host.\n"
+   "--auth-retry t  : How to handle auth failures.  Set t to\n"
+   "                  none (default), interact, or nointeract.\n"
++  "--server-poll-timeout n : when polling possible remote servers to connect to\n"
++  "                  in a round-robin fashion, spend no more than n seconds\n"
++  "                  waiting for a response before trying the next server.\n"
+ #endif
+ #ifdef ENABLE_OCC
+   "--explicit-exit-notify [n] : On exit/restart, send exit signal to\n"
+@@ -676,6 +685,7 @@
+   o->mtu_discover_type = -1;
+   o->mssfix = MSSFIX_DEFAULT;
+   o->route_delay_window = 30;
++  o->max_routes = MAX_ROUTES_DEFAULT;
+   o->resolve_retry_seconds = RESOLV_RETRY_INFINITE;
+ #ifdef ENABLE_OCC
+   o->occ = true;
+@@ -719,6 +729,7 @@
+ #endif
+ #if P2MP
+   o->scheduled_exit_interval = 5;
++  o->server_poll_timeout = 0;
+ #endif
+ #ifdef USE_CRYPTO
+   o->ciphername = "BF-CBC";
+@@ -953,11 +964,15 @@
+   msg (D_SHOW_PARMS, "  server_bridge_netmask = %s", print_in_addr_t (o->server_bridge_netmask, 0, &gc));
+   msg (D_SHOW_PARMS, "  server_bridge_pool_start = %s", print_in_addr_t (o->server_bridge_pool_start, 0, &gc));
+   msg (D_SHOW_PARMS, "  server_bridge_pool_end = %s", print_in_addr_t (o->server_bridge_pool_end, 0, &gc));
+-  if (o->push_list)
++  if (o->push_list.head)
+     {
+-      const struct push_list *l = o->push_list;
+-      const char *printable_push_list = l->options;
+-      msg (D_SHOW_PARMS, "  push_list = '%s'", printable_push_list);
++      const struct push_entry *e = o->push_list.head;
++      while (e)
++	{
++	  if (e->enable)
++	    msg (D_SHOW_PARMS, "  push_entry = '%s'", e->option);
++	  e = e->next;
++	}
+     }
+   SHOW_BOOL (ifconfig_pool_defined);
+   msg (D_SHOW_PARMS, "  ifconfig_pool_start = %s", print_in_addr_t (o->ifconfig_pool_start, 0, &gc));
+@@ -1058,12 +1073,7 @@
+   gc_detach (&o->gc);
+   o->routes = NULL;
+ #if P2MP_SERVER
+-  if (o->push_list) /* clone push_list */
+-    {
+-      const struct push_list *old = o->push_list;
+-      ALLOC_OBJ_GC (o->push_list, struct push_list, &o->gc);
+-      strcpy (o->push_list->options, old->options);
+-    }
++  clone_push_list(o);
+ #endif
+ }
  
-   options_postprocess_mutate_invariant (o);
+@@ -1071,7 +1081,7 @@
+ rol_check_alloc (struct options *options)
+ {
+   if (!options->routes)
+-    options->routes = new_route_option_list (&options->gc);
++    options->routes = new_route_option_list (options->max_routes, &options->gc);
+ }
  
-@@ -4619,6 +4636,11 @@
+ #ifdef ENABLE_DEBUG
+@@ -1215,6 +1225,9 @@
+   SHOW_STR (groupname);
+   SHOW_STR (chroot_dir);
+   SHOW_STR (cd_dir);
++#ifdef HAVE_SETCON
++  SHOW_STR (selinux_context);
++#endif
+   SHOW_STR (writepid);
+   SHOW_STR (up_script);
+   SHOW_STR (down_script);
+@@ -1257,6 +1270,7 @@
+   SHOW_BOOL (route_delay_defined);
+   SHOW_BOOL (route_nopull);
+   SHOW_BOOL (route_gateway_via_dhcp);
++  SHOW_INT (max_routes);
+   SHOW_BOOL (allow_pull_fqdn);
+   if (o->routes)
+     print_route_options (o->routes, D_SHOW_PARMS);
+@@ -2153,7 +2167,7 @@
+       o->pre_pull->foreign_option_index = o->foreign_option_index;
+       if (o->routes)
+ 	{
+-	  o->pre_pull->routes = *o->routes;
++	  o->pre_pull->routes = clone_route_option_list(o->routes, &o->gc);
+ 	  o->pre_pull->routes_defined = true;
+ 	}
+     }
+@@ -2172,13 +2186,15 @@
+       if (pp->routes_defined)
+ 	{
+ 	  rol_check_alloc (o);
+-	  *o->routes = pp->routes;
++	  copy_route_option_list (o->routes, pp->routes);
+ 	}
+       else
+ 	o->routes = NULL;
+ 
+       o->foreign_option_index = pp->foreign_option_index;
+     }
++
++  o->push_continuation = 0;
+ }
+ 
+ #endif
+@@ -3709,6 +3725,13 @@
+ 	}
+       options->cd_dir = p[1];
+     }
++#ifdef HAVE_SETCON
++  else if (streq (p[0], "setcon") && p[1])
++    {
++      VERIFY_PERMISSION (OPT_P_GENERAL);
++      options->selinux_context = p[1];
++    }
++#endif
+   else if (streq (p[0], "writepid") && p[1])
+     {
        VERIFY_PERMISSION (OPT_P_GENERAL);
-       options->ssl_flags |= SSLF_NO_NAME_REMAPPING;
+@@ -4329,6 +4352,19 @@
+ 	}
+       add_route_to_option_list (options->routes, p[1], p[2], p[3], p[4]);
      }
-+  else if (streq (p[0], "opt-verify"))
++  else if (streq (p[0], "max-routes") && p[1])
 +    {
++      int max_routes;
++
 +      VERIFY_PERMISSION (OPT_P_GENERAL);
-+      options->ssl_flags |= SSLF_OPT_VERIFY;
++      max_routes = atoi (p[1]);
++      if (max_routes < 0 || max_routes > 100000000)
++	{
++	  msg (msglevel, "--max-routes parameter is out of range");
++	  goto err;
++	}
++      options->max_routes = max_routes;
 +    }
-   else if (streq (p[0], "auth-user-pass-verify") && p[1])
+   else if (streq (p[0], "route-gateway") && p[1])
      {
-       VERIFY_PERMISSION (OPT_P_SCRIPT);
-@@ -4780,6 +4802,11 @@
-       VERIFY_PERMISSION (OPT_P_INSTANCE);
-       options->disable = true;
+       VERIFY_PERMISSION (OPT_P_ROUTE_EXTRAS);
+@@ -4398,10 +4434,10 @@
+       int j;
+       VERIFY_PERMISSION (OPT_P_ROUTE);
+       rol_check_alloc (options);
++      if (streq (p[0], "redirect-gateway"))
++	options->routes->flags |= RG_REROUTE_GW;
+       for (j = 1; j < MAX_PARMS && p[j] != NULL; ++j)
+ 	{
+-	  if (streq (p[0], "redirect-gateway"))
+-	    options->routes->flags |= RG_REROUTE_GW;
+ 	  if (streq (p[j], "local"))
+ 	    options->routes->flags |= RG_LOCAL;
+ 	  else if (streq (p[j], "autolocal"))
+@@ -4420,15 +4456,33 @@
+ 	}
+       options->routes->flags |= RG_ENABLE;
      }
-+  else if (streq (p[0], "tcp-nodelay"))
++  else if (streq (p[0], "remote-random-hostname"))
 +    {
 +      VERIFY_PERMISSION (OPT_P_GENERAL);
-+      options->server_flags |= SF_TCP_NODELAY_HELPER;
++      options->sockflags |= SF_HOST_RANDOMIZE;
 +    }
- #endif /* P2MP_SERVER */
- 
-   else if (streq (p[0], "client"))
-@@ -5158,6 +5185,28 @@
-       VERIFY_PERMISSION (OPT_P_CRYPTO);
-       options->ciphername_defined = true;
-     }
-+  else if (streq (p[0], "prng") && p[1])
-+    {
-+      VERIFY_PERMISSION (OPT_P_CRYPTO);
-+      if (streq (p[1], "none"))
-+	options->prng_hash = NULL;
+   else if (streq (p[0], "setenv") && p[1])
+     {
+       VERIFY_PERMISSION (OPT_P_GENERAL);
+-      if (streq (p[1], "FORWARD_COMPATIBLE") && p[2] && streq (p[2], "1"))
++      if (streq (p[1], "REMOTE_RANDOM_HOSTNAME"))
+ 	{
+-	  options->forward_compatible = true;
+-	  msglevel_fc = msglevel_forward_compatible (options, msglevel);
++	  options->sockflags |= SF_HOST_RANDOMIZE;
++	}
++#if P2MP
++      else if (streq (p[1], "SERVER_POLL_TIMEOUT") && p[2])
++	{
++	  options->server_poll_timeout = positive_atoi(p[2]);
++	}
++#endif
 +      else
-+	options->prng_hash = p[1];
-+      if (p[2])
 +	{
-+	  const int sl = atoi (p[2]);
-+	  if (sl >= NONCE_SECRET_LEN_MIN && sl <= NONCE_SECRET_LEN_MAX)
++	  if (streq (p[1], "FORWARD_COMPATIBLE") && p[2] && streq (p[2], "1"))
 +	    {
-+	      options->prng_nonce_secret_len = sl;
++	      options->forward_compatible = true;
++	      msglevel_fc = msglevel_forward_compatible (options, msglevel);
 +	    }
-+	  else
-+	    {
-+	      msg (msglevel, "prng parameter nonce_secret_len must be between %d and %d",
-+		   NONCE_SECRET_LEN_MIN, NONCE_SECRET_LEN_MAX);
-+	      goto err;
-+	    }
-+	}
-+    }
-   else if (streq (p[0], "no-replay"))
-     {
-       VERIFY_PERMISSION (OPT_P_CRYPTO);
-diff -urN openvpn-2.1_rc14/options.h openvpn-2.1_rc15/options.h
---- openvpn-2.1_rc14/options.h	2008-11-04 21:08:47.000000000 +0100
-+++ openvpn-2.1_rc15/options.h	2008-11-18 05:43:47.000000000 +0100
-@@ -346,6 +346,7 @@
-   in_addr_t server_netmask;
- 
- # define SF_NOPOOL (1<<0)
-+# define SF_TCP_NODELAY_HELPER (1<<1)
-   unsigned int server_flags;
- 
-   bool server_bridge_proxy_dhcp;
-@@ -418,6 +419,8 @@
-   bool authname_defined;
-   const char *authname;
-   int keysize;
-+  const char *prng_hash;
-+  int prng_nonce_secret_len;
-   const char *engine;
-   bool replay;
-   bool mute_replay_warnings;
-diff -urN openvpn-2.1_rc14/ps.c openvpn-2.1_rc15/ps.c
---- openvpn-2.1_rc14/ps.c	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc15/ps.c	2008-11-17 21:00:22.000000000 +0100
-@@ -793,7 +793,7 @@
-       set_nonblock (fd[1]);
- 
-       /* initialize prng */
--      prng_init ();
-+      prng_init (NULL, 0);
- 
-       /* execute the event loop */
-       port_share_proxy (hostaddr, port, fd[1]);
-diff -urN openvpn-2.1_rc14/ssl.c openvpn-2.1_rc15/ssl.c
---- openvpn-2.1_rc14/ssl.c	2008-10-31 07:37:45.000000000 +0100
-+++ openvpn-2.1_rc15/ssl.c	2008-11-18 03:57:27.000000000 +0100
-@@ -3465,6 +3465,11 @@
-       !options_cmp_equal (options, session->opt->remote_options))
-     {
-       options_warning (options, session->opt->remote_options);
-+      if (session->opt->ssl_flags & SSLF_OPT_VERIFY)
-+	{
-+	  msg (D_TLS_ERRORS, "Option inconsistency warnings triggering disconnect due to --opt-verify");
-+	  ks->authenticated = false;
-+	}
++	  setenv_str (es, p[1], p[2] ? p[2] : "");
+ 	}
+-      setenv_str (es, p[1], p[2] ? p[2] : "");
      }
+   else if (streq (p[0], "setenv-safe") && p[1])
+     {
+@@ -4838,6 +4892,16 @@
+       VERIFY_PERMISSION (OPT_P_GENERAL);
+       options->pull = true;
+     }
++  else if (streq (p[0], "push-continuation") && p[1])
++    {
++      VERIFY_PERMISSION (OPT_P_PULL_MODE);
++      options->push_continuation = atoi(p[1]);
++    }
++  else if (streq (p[0], "server-poll-timeout") && p[1])
++    {
++      VERIFY_PERMISSION (OPT_P_GENERAL);
++      options->server_poll_timeout = positive_atoi(p[1]);
++    }
+   else if (streq (p[0], "auth-user-pass"))
+     {
+       VERIFY_PERMISSION (OPT_P_GENERAL);
+diff -urN openvpn-2.1_rc18/options.h openvpn-2.1_rc20/options.h
+--- openvpn-2.1_rc18/options.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/options.h	2009-10-01 20:02:18.000000000 +0200
+@@ -40,6 +40,7 @@
+ #include "manage.h"
+ #include "proxy.h"
+ #include "lzo.h"
++#include "pushlist.h"
+ 
+ /*
+  * Maximum number of parameters associated with an option,
+@@ -57,17 +58,6 @@
+ 
+ #if P2MP
+ 
+-#if P2MP_SERVER
+-/* parameters to be pushed to peer */
+-
+-#define MAX_PUSH_LIST_LEN TLS_CHANNEL_BUF_SIZE /* This parm is related to PLAINTEXT_BUFFER_SIZE in ssl.h */
+-
+-struct push_list {
+-  /* newline delimited options, like config file */
+-  char options[MAX_PUSH_LIST_LEN];
+-};
+-#endif
+-
+ /* certain options are saved before --pull modifications are applied */
+ struct options_pre_pull
+ {
+@@ -75,7 +65,7 @@
+   struct tuntap_options tuntap_options;
+ 
+   bool routes_defined;
+-  struct route_option_list routes;
++  struct route_option_list *routes;
+ 
+   int foreign_option_index;
+ };
+@@ -253,6 +243,9 @@
+   const char *groupname;
+   const char *chroot_dir;
+   const char *cd_dir;
++#ifdef HAVE_SETCON
++  char *selinux_context;
++#endif
+   const char *writepid;
+   const char *up_script;
+   const char *down_script;
+@@ -303,6 +296,7 @@
+   int route_delay;
+   int route_delay_window;
+   bool route_delay_defined;
++  int max_routes;
+   struct route_option_list *routes;
+   bool route_nopull;
+   bool route_gateway_via_dhcp;
+@@ -358,7 +352,7 @@
+   in_addr_t server_bridge_pool_start;
+   in_addr_t server_bridge_pool_end;
+ 
+-  struct push_list *push_list;
++  struct push_list push_list;
+   bool ifconfig_pool_defined;
+   in_addr_t ifconfig_pool_start;
+   in_addr_t ifconfig_pool_end;
+@@ -401,9 +395,12 @@
+ 
+   bool client;
+   bool pull; /* client pull of config options from server */
++  int push_continuation;
+   const char *auth_user_pass_file;
+   struct options_pre_pull *pre_pull;
+ 
++  int server_poll_timeout;
++
+   int scheduled_exit_interval;
+ 
+ #endif
+diff -urN openvpn-2.1_rc18/push.c openvpn-2.1_rc20/push.c
+--- openvpn-2.1_rc18/push.c	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/push.c	2009-10-01 21:35:38.000000000 +0200
+@@ -61,21 +61,70 @@
+       c->sig->signal_text = "auth-failure";
+ #ifdef ENABLE_MANAGEMENT
+       if (management)
+-	management_auth_failure (management, UP_TYPE_AUTH);
++	{
++	  const char *reason = UP_TYPE_AUTH;
++	  struct buffer buf = *buffer;
++	  if (buf_string_compare_advance (&buf, "AUTH_FAILED,") && BLEN (&buf))
++	    reason = BSTR (&buf);
++	  management_auth_failure (management, reason);
++	}
+ #endif
+     }
+ }
+ 
++/*
++ * Act on received restart message from server
++ */
++void
++server_pushed_restart (struct context *c, const struct buffer *buffer)
++{
++  if (c->options.pull)
++    {
++      msg (D_STREAM_ERRORS, "Connection reset command was pushed by server");
++      c->sig->signal_received = SIGUSR1; /* SOFT-SIGUSR1 -- server-pushed connection reset */
++      c->sig->signal_text = "server-pushed-connection-reset";
++    }
++}
++
+ #if P2MP_SERVER
++
+ /*
+  * Send auth failed message from server to client.
+  */
+ void
+-send_auth_failed (struct context *c)
++send_auth_failed (struct context *c, const char *client_reason)
+ {
+-  schedule_exit (c, c->options.scheduled_exit_interval);
+-  send_control_channel_string (c, "AUTH_FAILED", D_PUSH);
++  struct gc_arena gc = gc_new ();
++  static const char auth_failed[] = "AUTH_FAILED";
++  size_t len;
++
++  schedule_exit (c, c->options.scheduled_exit_interval, SIGTERM);
++
++  len = (client_reason ? strlen(client_reason)+1 : 0) + sizeof(auth_failed);
++  if (len > TLS_CHANNEL_BUF_SIZE)
++    len = TLS_CHANNEL_BUF_SIZE;
++
++  {
++    struct buffer buf = alloc_buf_gc (len, &gc);
++    buf_printf (&buf, auth_failed);
++    if (client_reason)
++      buf_printf (&buf, ",%s", client_reason);
++    send_control_channel_string (c, BSTR (&buf), D_PUSH);
++  }
++
++  gc_free (&gc);
+ }
++
++/*
++ * Send restart message from server to client.
++ */
++void
++send_restart (struct context *c)
++{
++  schedule_exit (c, c->options.scheduled_exit_interval, SIGTERM);
++  send_control_channel_string (c, "RESTART", D_PUSH);
++}
++
  #endif
  
-diff -urN openvpn-2.1_rc14/ssl.h openvpn-2.1_rc15/ssl.h
---- openvpn-2.1_rc14/ssl.h	2008-10-31 07:37:44.000000000 +0100
-+++ openvpn-2.1_rc15/ssl.h	2008-11-18 03:44:06.000000000 +0100
-@@ -469,6 +469,7 @@
- # define SSLF_USERNAME_AS_COMMON_NAME  (1<<1)
- # define SSLF_AUTH_USER_PASS_OPTIONAL  (1<<2)
- # define SSLF_NO_NAME_REMAPPING        (1<<3)
-+# define SSLF_OPT_VERIFY               (1<<4)
-   unsigned int ssl_flags;
+ /*
+@@ -99,9 +148,10 @@
+ 
+   if (status == PUSH_MSG_ERROR)
+     msg (D_PUSH_ERRORS, "WARNING: Received bad push/pull message: %s", BSTR (buffer));
+-  else if (status == PUSH_MSG_REPLY)
++  else if (status == PUSH_MSG_REPLY || status == PUSH_MSG_CONTINUATION)
+     {
+-      do_up (c, true, option_types_found); /* delay bringing tun/tap up until --push parms received from remote */
++      if (status == PUSH_MSG_REPLY)
++	do_up (c, true, option_types_found); /* delay bringing tun/tap up until --push parms received from remote */
+       event_timeout_clear (&c->c2.push_request_interval);
+     }
+ 
+@@ -115,60 +165,114 @@
+ }
+ 
+ #if P2MP_SERVER
++
+ bool
+ send_push_reply (struct context *c)
+ {
+   struct gc_arena gc = gc_new ();
+-  struct buffer buf = alloc_buf_gc (MAX_PUSH_LIST_LEN + 256, &gc);
+-  bool ret = false;
++  struct buffer buf = alloc_buf_gc (TLS_CHANNEL_BUF_SIZE, &gc);
++  struct push_entry *e = c->options.push_list.head;
++  bool multi_push = false;
++  static char cmd[] = "PUSH_REPLY";
++  const int extra = 64; /* extra space for possible trailing ifconfig and push-continuation */
++  const int safe_cap = BCAP (&buf) - extra;
+ 
+-  buf_printf (&buf, "PUSH_REPLY");
++  buf_printf (&buf, cmd);
+ 
+-  if (c->options.push_list && strlen (c->options.push_list->options))
+-    buf_printf (&buf, ",%s", c->options.push_list->options);
++  while (e)
++    {
++      if (e->enable)
++	{
++	  const int l = strlen (e->option);
++	  if (BLEN (&buf) + l >= safe_cap)
++	    {
++	      buf_printf (&buf, ",push-continuation 2");
++	      {
++		const bool status = send_control_channel_string (c, BSTR (&buf), D_PUSH);
++		if (!status)
++		  goto fail;
++		multi_push = true;
++		buf_reset_len (&buf);
++		buf_printf (&buf, cmd);
++	      }
++	    }
++	  if (BLEN (&buf) + l >= safe_cap)
++	    {
++	      msg (M_WARN, "--push option is too long");
++	      goto fail;
++	    }
++	  buf_printf (&buf, ",%s", e->option);
++	}
++      e = e->next;
++    }
+ 
+   if (c->c2.push_ifconfig_defined && c->c2.push_ifconfig_local && c->c2.push_ifconfig_remote_netmask)
+     buf_printf (&buf, ",ifconfig %s %s",
+ 		print_in_addr_t (c->c2.push_ifconfig_local, 0, &gc),
+ 		print_in_addr_t (c->c2.push_ifconfig_remote_netmask, 0, &gc));
++  if (multi_push)
++    buf_printf (&buf, ",push-continuation 1");
+ 
+-  if (strlen (BSTR (&buf)) < MAX_PUSH_LIST_LEN)
+-    ret = send_control_channel_string (c, BSTR (&buf), D_PUSH);
+-  else
+-    msg (M_WARN, "Maximum length of --push buffer (%d) has been exceeded", MAX_PUSH_LIST_LEN);
++  if (BLEN (&buf) > sizeof(cmd)-1)
++    {
++      const bool status = send_control_channel_string (c, BSTR (&buf), D_PUSH);
++      if (!status)
++	goto fail;
++    }
+ 
+   gc_free (&gc);
+-  return ret;
++  return true;
++
++ fail:
++  gc_free (&gc);
++  return false;
+ }
+ 
+-void
+-push_option (struct options *o, const char *opt, int msglevel)
++static void
++push_option_ex (struct options *o, const char *opt, bool enable, int msglevel)
+ {
+-  int len;
+-  bool first = false;
+-
+   if (!string_class (opt, CC_ANY, CC_COMMA))
+     {
+       msg (msglevel, "PUSH OPTION FAILED (illegal comma (',') in string): '%s'", opt);
+     }
+   else
+     {
+-      if (!o->push_list)
++      struct push_entry *e;
++      ALLOC_OBJ_CLEAR_GC (e, struct push_entry, &o->gc);
++      e->enable = true;
++      e->option = opt;
++      if (o->push_list.head)
+ 	{
+-	  ALLOC_OBJ_CLEAR_GC (o->push_list, struct push_list, &o->gc);
+-	  first = true;
++	  ASSERT(o->push_list.tail);
++	  o->push_list.tail->next = e;
++	  o->push_list.tail = e;
+ 	}
+-
+-      len = strlen (o->push_list->options);
+-      if (len + strlen (opt) + 2 >= MAX_PUSH_LIST_LEN)
++      else
+ 	{
+-	  msg (msglevel, "Maximum length of --push buffer (%d) has been exceeded", MAX_PUSH_LIST_LEN);
++	  ASSERT(!o->push_list.tail);
++	  o->push_list.head = e;
++	  o->push_list.tail = e;
+ 	}
+-      else
++    }
++}
++
++void
++push_option (struct options *o, const char *opt, int msglevel)
++{
++  push_option_ex (o, opt, true, msglevel);
++}
++
++void
++clone_push_list (struct options *o)
++{
++  if (o->push_list.head)
++    {
++      const struct push_entry *e = o->push_list.head;
++      push_reset (o);
++      while (e)
+ 	{
+-	  if (!first)
+-	    strcat (o->push_list->options, ",");
+-	  strcat (o->push_list->options, opt);
++	  push_option_ex (o, string_alloc (e->option, &o->gc), true, M_FATAL);
++	  e = e->next;
+ 	}
+     }
+ }
+@@ -184,7 +288,7 @@
+ void
+ push_reset (struct options *o)
+ {
+-  o->push_list = NULL;
++  CLEAR (o->push_list);
+ }
+ #endif
+ 
+@@ -203,7 +307,8 @@
+     {
+       if (tls_authentication_status (c->c2.tls_multi, 0) == TLS_AUTHENTICATION_FAILED || c->c2.context_auth == CAS_FAILED)
+ 	{
+-	  send_auth_failed (c);
++	  const char *client_reason = tls_client_reason (c->c2.tls_multi);
++	  send_auth_failed (c, client_reason);
+ 	  ret = PUSH_MSG_AUTH_FAILURE;
+ 	}
+       else if (!c->c2.push_reply_deferred && c->c2.context_auth == CAS_SUCCEEDED)
+@@ -224,14 +329,31 @@
+       const uint8_t ch = buf_read_u8 (&buf);
+       if (ch == ',')
+ 	{
+-	  pre_pull_restore (&c->options);
+-	  c->c2.pulled_options_string = string_alloc (BSTR (&buf), &c->c2.gc);
++	  struct buffer buf_orig = buf;
++	  if (!c->c2.did_pre_pull_restore)
++	    {
++	      pre_pull_restore (&c->options);
++	      md5_state_init (&c->c2.pulled_options_state);
++	      c->c2.did_pre_pull_restore = true;
++	    }
+ 	  if (apply_push_options (&c->options,
+ 				  &buf,
+ 				  permission_mask,
+ 				  option_types_found,
+ 				  c->c2.es))
+-	    ret = PUSH_MSG_REPLY;
++	    switch (c->options.push_continuation)
++	      {
++	      case 0:
++	      case 1:
++		md5_state_update (&c->c2.pulled_options_state, BPTR(&buf_orig), BLEN(&buf_orig));
++		md5_state_final (&c->c2.pulled_options_state, &c->c2.pulled_options_digest);
++		ret = PUSH_MSG_REPLY;
++		break;
++	      case 2:
++		md5_state_update (&c->c2.pulled_options_state, BPTR(&buf_orig), BLEN(&buf_orig));
++		ret = PUSH_MSG_CONTINUATION;
++		break;
++	      }
+ 	}
+       else if (ch == '\0')
+ 	{
+@@ -243,36 +365,27 @@
+ }
+ 
+ #if P2MP_SERVER
++
+ /*
+  * Remove iroutes from the push_list.
+  */
+ void
+ remove_iroutes_from_push_route_list (struct options *o)
+ {
+-  if (o && o->push_list && o->iroutes)
++  if (o && o->push_list.head && o->iroutes)
+     {
+       struct gc_arena gc = gc_new ();
+-      struct push_list *pl;
+-      struct buffer in, out;
+-      char *line;
+-      bool first = true;
+-
+-      /* prepare input and output buffers */
+-      ALLOC_OBJ_CLEAR_GC (pl, struct push_list, &gc);
+-      ALLOC_ARRAY_CLEAR_GC (line, char, MAX_PUSH_LIST_LEN, &gc);
+-
+-      buf_set_read (&in, (const uint8_t*) o->push_list->options, strlen (o->push_list->options));
+-      buf_set_write (&out, (uint8_t*) pl->options, sizeof (pl->options));
++      struct push_entry *e = o->push_list.head;
+ 
+       /* cycle through the push list */
+-      while (buf_parse (&in, ',', line, MAX_PUSH_LIST_LEN))
++      while (e)
+ 	{
+ 	  char *p[MAX_PARMS];
+-	  bool copy = true;
++	  bool enable = true;
+ 
+ 	  /* parse the push item */
+ 	  CLEAR (p);
+-	  if (parse_line (line, p, SIZE (p), "[PUSH_ROUTE_REMOVE]", 1, D_ROUTE_DEBUG, &gc))
++	  if (parse_line (e->option, p, SIZE (p), "[PUSH_ROUTE_REMOVE]", 1, D_ROUTE_DEBUG, &gc))
+ 	    {
+ 	      /* is the push item a route directive? */
+ 	      if (p[0] && !strcmp (p[0], "route") && !p[3])
+@@ -292,7 +405,7 @@
+ 			{
+ 			  if (network == ir->network && netmask == netbits_to_netmask (ir->netbits >= 0 ? ir->netbits : 32))
+ 			    {
+-			      copy = false;
++			      enable = false;
+ 			      break;
+ 			    }
+ 			}
+@@ -301,28 +414,17 @@
+ 	    }
+ 
+ 	  /* should we copy the push item? */
+-	  if (copy)
+-	    {
+-	      if (!first)
+-		buf_printf (&out, ",");
+-	      buf_printf (&out, "%s", line);
+-	      first = false;
+-	    }
+-	  else
+-	    msg (D_PUSH, "REMOVE PUSH ROUTE: '%s'", line);
+-	}
++	  e->enable = enable;
++	  if (!enable)
++	    msg (D_PUSH, "REMOVE PUSH ROUTE: '%s'", e->option);
+ 
+-#if 0
+-      msg (M_INFO, "BEFORE: '%s'", o->push_list->options);
+-      msg (M_INFO, "AFTER:  '%s'", pl->options);
+-#endif
+-
+-      /* copy new push list back to options */
+-      *o->push_list = *pl;
++	  e = e->next;
++	}
+ 
+       gc_free (&gc);
+     }
+ }
++
+ #endif
+ 
+ #endif
+diff -urN openvpn-2.1_rc18/push.h openvpn-2.1_rc20/push.h
+--- openvpn-2.1_rc18/push.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/push.h	2009-10-01 21:35:38.000000000 +0200
+@@ -34,6 +34,7 @@
+ #define PUSH_MSG_REPLY            2
+ #define PUSH_MSG_REQUEST_DEFERRED 3
+ #define PUSH_MSG_AUTH_FAILURE     4
++#define PUSH_MSG_CONTINUATION     5
+ 
+ void incoming_push_message (struct context *c,
+ 			    const struct buffer *buffer);
+@@ -48,8 +49,12 @@
+ 
+ void receive_auth_failed (struct context *c, const struct buffer *buffer);
+ 
++void server_pushed_restart (struct context *c, const struct buffer *buffer);
++
+ #if P2MP_SERVER
+ 
++void clone_push_list (struct options *o);
++
+ void push_option (struct options *o, const char *opt, int msglevel);
+ void push_options (struct options *o, char **p, int msglevel, struct gc_arena *gc);
+ 
+@@ -59,7 +64,9 @@
+ 
+ void remove_iroutes_from_push_route_list (struct options *o);
+ 
+-void send_auth_failed (struct context *c);
++void send_auth_failed (struct context *c, const char *client_reason);
++
++void send_restart (struct context *c);
+ 
+ #endif
+ #endif
+diff -urN openvpn-2.1_rc18/pushlist.h openvpn-2.1_rc20/pushlist.h
+--- openvpn-2.1_rc18/pushlist.h	1970-01-01 01:00:00.000000000 +0100
++++ openvpn-2.1_rc20/pushlist.h	2009-10-01 20:02:18.000000000 +0200
+@@ -0,0 +1,42 @@
++/*
++ *  OpenVPN -- An application to securely tunnel IP networks
++ *             over a single TCP/UDP port, with support for SSL/TLS-based
++ *             session authentication and key exchange,
++ *             packet encryption, packet authentication, and
++ *             packet compression.
++ *
++ *  Copyright (C) 2002-2009 OpenVPN Technologies, Inc. <sales@openvpn.net>
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License version 2
++ *  as published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program (see the file COPYING included with this
++ *  distribution); if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#if !defined(PUSHLIST_H) && P2MP && P2MP_SERVER
++#define PUSHLIST_H
++
++/* parameters to be pushed to peer */
++
++struct push_entry {
++  struct push_entry *next;
++  bool enable;
++  const char *option;
++};
++
++struct push_list {
++  struct push_entry *head;
++  struct push_entry *tail;
++};
++
++
++#endif
+diff -urN openvpn-2.1_rc18/route.c openvpn-2.1_rc20/route.c
+--- openvpn-2.1_rc18/route.c	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/route.c	2009-10-01 20:02:18.000000000 +0200
+@@ -80,18 +80,38 @@
+ }
+ 
+ struct route_option_list *
+-new_route_option_list (struct gc_arena *a)
++new_route_option_list (const int max_routes, struct gc_arena *a)
+ {
+   struct route_option_list *ret;
+-  ALLOC_OBJ_CLEAR_GC (ret, struct route_option_list, a);
++  ALLOC_VAR_ARRAY_CLEAR_GC (ret, struct route_option_list, struct route_option, max_routes, a);
++  ret->capacity = max_routes;
+   return ret;
+ }
+ 
++struct route_option_list *
++clone_route_option_list (const struct route_option_list *src, struct gc_arena *a)
++{
++  const size_t rl_size = array_mult_safe (sizeof(struct route_option), src->capacity, sizeof(struct route_option_list));
++  struct route_option_list *ret = gc_malloc (rl_size, false, a);
++  memcpy (ret, src, rl_size);
++  return ret;
++}
++
++void
++copy_route_option_list (struct route_option_list *dest, const struct route_option_list *src)
++{
++  const size_t src_size = array_mult_safe (sizeof(struct route_option), src->capacity, sizeof(struct route_option_list));
++  if (src->n > dest->capacity)
++    msg (M_FATAL, PACKAGE_NAME " ROUTE: (copy) number of route options in src (%d) is greater than route list capacity in dest (%d)", src->n, dest->capacity);
++  memcpy (dest, src, src_size);
++}
++
+ struct route_list *
+-new_route_list (struct gc_arena *a)
++new_route_list (const int max_routes, struct gc_arena *a)
+ {
+   struct route_list *ret;
+-  ALLOC_OBJ_CLEAR_GC (ret, struct route_list, a);
++  ALLOC_VAR_ARRAY_CLEAR_GC (ret, struct route_list, struct route, max_routes, a);
++  ret->capacity = max_routes;
+   return ret;
+ }
+ 
+@@ -317,9 +337,9 @@
+ 			  const char *metric)
+ {
+   struct route_option *ro;
+-  if (l->n >= MAX_ROUTES)
+-    msg (M_FATAL, PACKAGE_NAME " ROUTE: cannot add more than %d routes",
+-	 MAX_ROUTES);
++  if (l->n >= l->capacity)
++    msg (M_FATAL, PACKAGE_NAME " ROUTE: cannot add more than %d routes -- please increase the max-routes option in the client configuration file",
++	 l->capacity);
+   ro = &l->routes[l->n];
+   ro->network = network;
+   ro->netmask = netmask;
+@@ -331,7 +351,10 @@
+ void
+ clear_route_list (struct route_list *rl)
+ {
+-  CLEAR (*rl);
++  const int capacity = rl->capacity;
++  const size_t rl_size = array_mult_safe (sizeof(struct route), capacity, sizeof(struct route_list));
++  memset(rl, 0, rl_size);
++  rl->capacity = capacity;
+ }
+ 
+ void
+@@ -415,7 +438,8 @@
+   else
+     rl->spec.remote_endpoint_defined = false;
+ 
+-  ASSERT (opt->n >= 0 && opt->n < MAX_ROUTES);
++  if (!(opt->n >= 0 && opt->n <= rl->capacity))
++    msg (M_FATAL, PACKAGE_NAME " ROUTE: (init) number of route options (%d) is greater than route list capacity (%d)", opt->n, rl->capacity);
+ 
+   /* parse the routes from opt to rl */
+   {
+@@ -716,7 +740,7 @@
+     }
+   undo_redirect_default_route_to_vpn (rl, tt, flags, es);
+ 
+-  CLEAR (*rl);
++  clear_route_list (rl);
+ }
+ 
+ #ifdef ENABLE_DEBUG
+@@ -2060,7 +2084,7 @@
+ #else
+ 
+ bool
+-get_default_gateway (in_addr_t *ret, in_addr_t *netmask)
++get_default_gateway (in_addr_t *ret, in_addr_t *netmask)  /* PLATFORM-SPECIFIC */
+ {
+   return false;
+ }
+@@ -2156,7 +2180,7 @@
+ #else
+ 
+ static void
+-get_bypass_addresses (struct route_bypass *rb, const unsigned int flags)
++get_bypass_addresses (struct route_bypass *rb, const unsigned int flags)  /* PLATFORM-SPECIFIC */
+ {
+ }
+ 
+@@ -2303,7 +2327,7 @@
+ #else
+ 
+ bool
+-get_default_gateway_mac_addr (unsigned char *macaddr)
++get_default_gateway_mac_addr (unsigned char *macaddr) /* PLATFORM-SPECIFIC */
+ {
+   return false;
+ }
+@@ -2355,7 +2379,7 @@
+ 
+ 
+ int
+-test_local_addr (const in_addr_t addr)
++test_local_addr (const in_addr_t addr) /* PLATFORM-SPECIFIC */
+ {
+   return TLA_NOT_IMPLEMENTED;
+ }
+diff -urN openvpn-2.1_rc18/route.h openvpn-2.1_rc20/route.h
+--- openvpn-2.1_rc18/route.h	2009-05-30 23:34:12.000000000 +0200
++++ openvpn-2.1_rc20/route.h	2009-10-01 20:02:18.000000000 +0200
+@@ -32,7 +32,7 @@
+ #include "tun.h"
+ #include "misc.h"
+ 
+-#define MAX_ROUTES 100
++#define MAX_ROUTES_DEFAULT 100
+ 
+ #ifdef WIN32
+ /*
+@@ -86,9 +86,10 @@
+ #define RG_AUTO_LOCAL     (1<<6)
+ 
+ struct route_option_list {
+-  int n;
+   unsigned int flags;
+-  struct route_option routes[MAX_ROUTES];
++  int capacity;
++  int n;
++  struct route_option routes[EMPTY_ARRAY_SIZE];
+ };
+ 
+ struct route {
+@@ -107,8 +108,9 @@
+   unsigned int flags;
+   bool did_redirect_default_gateway;
+   bool did_local;
++  int capacity;
+   int n;
+-  struct route routes[MAX_ROUTES];
++  struct route routes[EMPTY_ARRAY_SIZE];
+ };
+ 
+ #if P2MP
+@@ -120,9 +122,11 @@
+ };
+ #endif
+ 
+-struct route_option_list *new_route_option_list (struct gc_arena *a);
++struct route_option_list *new_route_option_list (const int max_routes, struct gc_arena *a);
++struct route_option_list *clone_route_option_list (const struct route_option_list *src, struct gc_arena *a);
++void copy_route_option_list (struct route_option_list *dest, const struct route_option_list *src);
+ 
+-struct route_list *new_route_list (struct gc_arena *a);
++struct route_list *new_route_list (const int max_routes, struct gc_arena *a);
+ 
+ void add_route (struct route *r, const struct tuntap *tt, unsigned int flags, const struct env_set *es);
+ 
+@@ -132,8 +136,6 @@
+ 			       const char *gateway,
+ 			       const char *metric);
+ 
+-void clear_route_list (struct route_list *rl);
+-
+ bool init_route_list (struct route_list *rl,
+ 		      const struct route_option_list *opt,
+ 		      const char *remote_endpoint,
+diff -urN openvpn-2.1_rc18/socket.c openvpn-2.1_rc20/socket.c
+--- openvpn-2.1_rc18/socket.c	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/socket.c	2009-10-01 20:02:18.000000000 +0200
+@@ -32,6 +32,7 @@
+ #include "plugin.h"
+ #include "ps.h"
+ #include "manage.h"
++#include "misc.h"
+ 
+ #include "memdbg.h"
+ 
+@@ -43,6 +44,19 @@
+ };
+ 
+ /*
++ * Convert sockflags/getaddr_flags into getaddr_flags
++ */
++static unsigned int
++sf2gaf(const unsigned int getaddr_flags,
++       const unsigned int sockflags)
++{
++  if (sockflags & SF_HOST_RANDOMIZE)
++    return getaddr_flags | GETADDR_RANDOMIZE;
++  else
++    return getaddr_flags;
++}
++
++/*
+  * Functions related to the translation of DNS names to IP addresses.
+  */
+ 
+@@ -79,6 +93,10 @@
+   int status;
+   int sigrec = 0;
+   int msglevel = (flags & GETADDR_FATAL) ? M_FATAL : D_RESOLVE_ERRORS;
++  struct gc_arena gc = gc_new ();
++
++  if (flags & GETADDR_RANDOMIZE)
++    hostname = hostname_randomize(hostname, &gc);
+ 
+   if (flags & GETADDR_MSG_VIRT_OUT)
+     msglevel |= M_MSG_VIRT_OUT;
+@@ -225,6 +243,7 @@
+       msg (level, "RESOLVE: signal received during DNS resolution attempt");
+     }
+ 
++  gc_free (&gc);
+   return (flags & GETADDR_HOST_ORDER) ? ntohl (ia.s_addr) : ia.s_addr;
+ }
+ 
+@@ -359,12 +378,13 @@
+ static void
+ update_remote (const char* host,
+ 	       struct openvpn_sockaddr *addr,
+-	       bool *changed)
++	       bool *changed,
++	       const unsigned int sockflags)
+ {
+   if (host && addr)
+     {
+       const in_addr_t new_addr = getaddr (
+-					  GETADDR_RESOLVE|GETADDR_UPDATE_MANAGEMENT_STATE,
++					  sf2gaf(GETADDR_RESOLVE|GETADDR_UPDATE_MANAGEMENT_STATE, sockflags),
+ 					  host,
+ 					  1,
+ 					  NULL,
+@@ -728,7 +748,7 @@
+ 
+       if (socket_defined (new_sd))
+ 	{
+-	  update_remote (remote_dynamic, &remote_verify, remote_changed);
++	  update_remote (remote_dynamic, &remote_verify, remote_changed, 0);
+ 	  if (addr_defined (&remote_verify)
+ 	      && !addr_match (&remote_verify, &act->dest))
+ 	    {
+@@ -858,6 +878,7 @@
+ 		const int connect_retry_seconds,
+ 		const int connect_timeout,
+ 		const int connect_retry_max,
++		const unsigned int sockflags,
+ 		volatile int *signal_received)
+ {
+   struct gc_arena gc = gc_new ();
+@@ -919,7 +940,7 @@
+       *sd = create_socket_tcp ();
+       if (bind_local)
+         socket_bind (*sd, local, "TCP Client");
+-      update_remote (remote_dynamic, remote, remote_changed);
++      update_remote (remote_dynamic, remote, remote_changed, sockflags);
+     }
+ 
+   msg (M_INFO, "TCP connection established with %s", 
+@@ -1023,7 +1044,7 @@
+ 
+ 	  if (sock->remote_host)
+ 	    {
+-	      unsigned int flags = GETADDR_RESOLVE|GETADDR_UPDATE_MANAGEMENT_STATE;
++	      unsigned int flags = sf2gaf(GETADDR_RESOLVE|GETADDR_UPDATE_MANAGEMENT_STATE, sock->sockflags);
+ 	      int retry = 0;
+ 	      bool status = false;
+ 
+@@ -1384,6 +1405,7 @@
+ 			    sock->connect_retry_seconds,
+ 			    sock->connect_timeout,
+ 			    sock->connect_retry_max,
++			    sock->sockflags,
+ 			    signal_received);
+ 
+ 	    if (*signal_received)
+@@ -1432,6 +1454,7 @@
+ 			  sock->connect_retry_seconds,
+ 			  sock->connect_timeout,
+ 			  sock->connect_retry_max,
++			  sock->sockflags,
+ 			  signal_received);
+ 
+ 	  if (*signal_received)
+diff -urN openvpn-2.1_rc18/socket.h openvpn-2.1_rc20/socket.h
+--- openvpn-2.1_rc18/socket.h	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/socket.h	2009-10-01 20:02:18.000000000 +0200
+@@ -198,6 +198,7 @@
+ # define SF_USE_IP_PKTINFO (1<<0)
+ # define SF_TCP_NODELAY (1<<1)
+ # define SF_PORT_SHARE (1<<2)
++# define SF_HOST_RANDOMIZE (1<<3)
+   unsigned int sockflags;
+ 
+   /* for stream sockets */
+@@ -447,6 +448,7 @@
+ #define GETADDR_MSG_VIRT_OUT          (1<<6)
+ #define GETADDR_TRY_ONCE              (1<<7)
+ #define GETADDR_UPDATE_MANAGEMENT_STATE (1<<8)
++#define GETADDR_RANDOMIZE             (1<<9)
+ 
+ in_addr_t getaddr (unsigned int flags,
+ 		   const char *hostname,
+diff -urN openvpn-2.1_rc18/ssl.c openvpn-2.1_rc20/ssl.c
+--- openvpn-2.1_rc18/ssl.c	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/ssl.c	2009-10-01 20:02:18.000000000 +0200
+@@ -908,6 +908,18 @@
+ #endif
  
  #ifdef MANAGEMENT_DEF_AUTH
-diff -urN openvpn-2.1_rc14/version.m4 openvpn-2.1_rc15/version.m4
---- openvpn-2.1_rc14/version.m4	2008-11-17 05:38:35.000000000 +0100
-+++ openvpn-2.1_rc15/version.m4	2008-11-19 19:08:50.000000000 +0100
++static void
++man_def_auth_set_client_reason (struct tls_multi *multi, const char *client_reason)
++{
++  if (multi->client_reason)
++    {
++      free (multi->client_reason);
++      multi->client_reason = NULL;
++    }
++  if (client_reason && strlen (client_reason))
++    multi->client_reason = string_alloc (client_reason, NULL);
++}
++
+ static inline unsigned int
+ man_def_auth_test (const struct key_state *ks)
+ {
+@@ -1077,12 +1089,13 @@
+ 
+ #ifdef MANAGEMENT_DEF_AUTH
+ bool
+-tls_authenticate_key (struct tls_multi *multi, const unsigned int mda_key_id, const bool auth)
++tls_authenticate_key (struct tls_multi *multi, const unsigned int mda_key_id, const bool auth, const char *client_reason)
+ {
+   bool ret = false;
+   if (multi)
+     {
+       int i;
++      man_def_auth_set_client_reason (multi, client_reason);
+       for (i = 0; i < KEY_SCAN_SIZE; ++i)
+ 	{
+ 	  struct key_state *ks = multi->key_scan[i];
+@@ -2069,8 +2082,8 @@
+   ALLOC_OBJ_CLEAR (ks->rec_ack, struct reliable_ack);
+ 
+   /* allocate buffers */
+-  ks->plaintext_read_buf = alloc_buf (PLAINTEXT_BUFFER_SIZE);
+-  ks->plaintext_write_buf = alloc_buf (PLAINTEXT_BUFFER_SIZE);
++  ks->plaintext_read_buf = alloc_buf (TLS_CHANNEL_BUF_SIZE);
++  ks->plaintext_write_buf = alloc_buf (TLS_CHANNEL_BUF_SIZE);
+   ks->ack_write_buf = alloc_buf (BUF_SIZE (&session->opt->frame));
+   reliable_init (ks->send_reliable, BUF_SIZE (&session->opt->frame),
+ 		 FRAME_HEADROOM (&session->opt->frame), TLS_RELIABLE_N_SEND_BUFFERS,
+@@ -2397,6 +2410,10 @@
+ 
+   ASSERT (multi);
+ 
++#ifdef MANAGEMENT_DEF_AUTH
++  man_def_auth_set_client_reason(multi, NULL);  
++#endif
++
+   if (multi->locked_cn)
+     free (multi->locked_cn);
+ 
+@@ -3750,7 +3767,7 @@
+ 	      int status;
+ 
+ 	      ASSERT (buf_init (buf, 0));
+-	      status = key_state_read_plaintext (multi, ks, buf, PLAINTEXT_BUFFER_SIZE);
++	      status = key_state_read_plaintext (multi, ks, buf, TLS_CHANNEL_BUF_SIZE);
+ 	      update_time ();
+ 	      if (status == -1)
+ 		{
+diff -urN openvpn-2.1_rc18/ssl.h openvpn-2.1_rc20/ssl.h
+--- openvpn-2.1_rc18/ssl.h	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/ssl.h	2009-10-01 20:02:18.000000000 +0200
+@@ -278,8 +278,6 @@
+  * Buffer sizes (also see mtu.h).
+  */
+ 
+-#define PLAINTEXT_BUFFER_SIZE TLS_CHANNEL_BUF_SIZE
+-
+ /* Maximum length of common name */
+ #define TLS_CN_LEN 64
+ 
+@@ -596,6 +594,11 @@
+   char *locked_cn;
+ 
+ #ifdef ENABLE_DEF_AUTH
++  /*
++   * An error message to send to client on AUTH_FAILED
++   */
++  char *client_reason;
++
+   /* Time of last call to tls_authentication_status */
+   time_t tas_last;
+ #endif
+@@ -697,7 +700,7 @@
+ void tls_deauthenticate (struct tls_multi *multi);
+ 
+ #ifdef MANAGEMENT_DEF_AUTH
+-bool tls_authenticate_key (struct tls_multi *multi, const unsigned int mda_key_id, const bool auth);
++bool tls_authenticate_key (struct tls_multi *multi, const unsigned int mda_key_id, const bool auth, const char *client_reason);
+ #endif
+ 
+ /*
+@@ -705,6 +708,12 @@
+  */
+ 
+ static inline bool
++tls_initial_packet_received (const struct tls_multi *multi)
++{
++  return multi->n_sessions > 0;
++}
++
++static inline bool
+ tls_test_auth_deferred_interval (const struct tls_multi *multi)
+ {
+   if (multi)
+@@ -734,6 +743,16 @@
+     multi->opt.single_session = true;
+ }
+ 
++static inline const char *
++tls_client_reason (struct tls_multi *multi)
++{
++#ifdef ENABLE_DEF_AUTH
++  return multi->client_reason;
++#else
++  return NULL;
++#endif
++}
++
+ #ifdef ENABLE_PF
+ 
+ static inline bool
+diff -urN openvpn-2.1_rc18/syshead.h openvpn-2.1_rc20/syshead.h
+--- openvpn-2.1_rc18/syshead.h	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/syshead.h	2009-10-01 20:02:18.000000000 +0200
+@@ -180,6 +180,10 @@
+ #include <sys/epoll.h>
+ #endif
+ 
++#ifdef HAVE_SETCON
++#include <selinux/selinux.h>
++#endif
++
+ #ifdef TARGET_SOLARIS
+ #ifdef HAVE_STRINGS_H
+ #include <strings.h>
+@@ -494,7 +498,6 @@
+ /*
+  * Enable deferred authentication?
+  */
+-#define CONFIGURE_DEF_AUTH /* this should be set by autoconf and config.h */
+ #if defined(CONFIGURE_DEF_AUTH) && P2MP_SERVER && defined(ENABLE_PLUGIN)
+ #define PLUGIN_DEF_AUTH
+ #endif
+@@ -508,7 +511,6 @@
+ /*
+  * Enable packet filter?
+  */
+-#define CONFIGURE_PF /* this should be set by autoconf and config.h */
+ #if defined(CONFIGURE_PF) && P2MP_SERVER && defined(ENABLE_PLUGIN) && defined(HAVE_STAT)
+ #define PLUGIN_PF
+ #endif
+diff -urN openvpn-2.1_rc18/tap-win32/constants.h openvpn-2.1_rc20/tap-win32/constants.h
+--- openvpn-2.1_rc18/tap-win32/constants.h	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/tap-win32/constants.h	2009-10-01 20:02:18.000000000 +0200
+@@ -51,5 +51,6 @@
+ 
+ #define PACKET_QUEUE_SIZE   64 // tap -> userspace queue size
+ #define IRP_QUEUE_SIZE      16 // max number of simultaneous i/o operations from userspace
++#define INJECT_QUEUE_SIZE   16 // DHCP/ARP -> tap injection queue
+ 
+ #define TAP_LITTLE_ENDIAN      // affects ntohs, htonl, etc. functions
+diff -urN openvpn-2.1_rc18/tap-win32/dhcp.c openvpn-2.1_rc20/tap-win32/dhcp.c
+--- openvpn-2.1_rc18/tap-win32/dhcp.c	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/tap-win32/dhcp.c	2009-10-01 20:02:18.000000000 +0200
+@@ -379,9 +379,9 @@
+ 		       DHCPMSG_LEN_FULL (pkt));
+ 
+ 	  // Return DHCP response to kernel
+-	  InjectPacket (a,
+-			DHCPMSG_BUF (pkt),
+-			DHCPMSG_LEN_FULL (pkt));
++	  InjectPacketDeferred (a,
++				DHCPMSG_BUF (pkt),
++				DHCPMSG_LEN_FULL (pkt));
+ 	}
+       else
+ 	{
+diff -urN openvpn-2.1_rc18/tap-win32/prototypes.h openvpn-2.1_rc20/tap-win32/prototypes.h
+--- openvpn-2.1_rc18/tap-win32/prototypes.h	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/tap-win32/prototypes.h	2009-10-01 20:02:18.000000000 +0200
+@@ -171,13 +171,32 @@
+     BOOLEAN state
+    );
+ 
+-VOID InjectPacket
++VOID InjectPacketDeferred
+    (
+     TapAdapterPointer p_Adapter,
+     UCHAR *packet,
+     const unsigned int len
+    );
+ 
++VOID InjectPacketNow
++   (
++    TapAdapterPointer p_Adapter,
++    UCHAR *packet,
++    const unsigned int len
++   );
++
++// for KDEFERRED_ROUTINE and Static Driver Verifier
++//#include <wdm.h>
++//KDEFERRED_ROUTINE InjectPacketDpc;
++
++VOID InjectPacketDpc
++   (
++    KDPC *Dpc,
++    PVOID DeferredContext,
++    PVOID SystemArgument1,
++    PVOID SystemArgument2
++    );
++
+ VOID CheckIfDhcpAndTunMode
+    (
+     TapAdapterPointer p_Adapter
+diff -urN openvpn-2.1_rc18/tap-win32/tapdrvr.c openvpn-2.1_rc20/tap-win32/tapdrvr.c
+--- openvpn-2.1_rc18/tap-win32/tapdrvr.c	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/tap-win32/tapdrvr.c	2009-10-01 20:02:18.000000000 +0200
+@@ -692,6 +692,8 @@
+     QueueFree (p_Extension->m_PacketQueue);
+   if (p_Extension->m_IrpQueue)
+     QueueFree (p_Extension->m_IrpQueue);
++  if (p_Extension->m_InjectQueue)
++    QueueFree (p_Extension->m_InjectQueue);
+ 
+   if (p_Extension->m_CreatedUnicodeLinkName)
+     RtlFreeUnicodeString (&p_Extension->m_UnicodeLinkName);
+@@ -717,8 +719,14 @@
+   if (p_Extension->m_TapName)
+     MemFree (p_Extension->m_TapName, NAME_BUFFER_SIZE);
+   
++  if (p_Extension->m_InjectDpcInitialized)
++    KeRemoveQueueDpc (&p_Extension->m_InjectDpc);
++
+   if (p_Extension->m_AllocatedSpinlocks)
+-    NdisFreeSpinLock (&p_Extension->m_QueueLock);
++    {
++      NdisFreeSpinLock (&p_Extension->m_QueueLock);
++      NdisFreeSpinLock (&p_Extension->m_InjectLock);
++    }
+ }
+ 
+ //========================================================================
+@@ -932,19 +940,28 @@
+   //========================================================
+ 
+   NdisAllocateSpinLock (&p_Extension->m_QueueLock);
++  NdisAllocateSpinLock (&p_Extension->m_InjectLock);
+   p_Extension->m_AllocatedSpinlocks = TRUE;
+ 
+   p_Extension->m_PacketQueue = QueueInit (PACKET_QUEUE_SIZE);
+   p_Extension->m_IrpQueue = QueueInit (IRP_QUEUE_SIZE);
+-
++  p_Extension->m_InjectQueue = QueueInit (INJECT_QUEUE_SIZE);
+   if (!p_Extension->m_PacketQueue
+-      || !p_Extension->m_IrpQueue)
++      || !p_Extension->m_IrpQueue
++      || !p_Extension->m_InjectQueue)
+     {
+       DEBUGP (("[%s] couldn't alloc TAP queues\n", p_Name));
+       l_Return = NDIS_STATUS_RESOURCES;
+       goto cleanup;
+     }
+ 
++  //=================================================================
++  // Initialize deferred procedure call for DHCP/ARP packet injection
++  //=================================================================
++
++  KeInitializeDpc (&p_Extension->m_InjectDpc, InjectPacketDpc, NULL);
++  p_Extension->m_InjectDpcInitialized = TRUE;
++
+   //========================
+   // Finalize initialization
+   //========================
+@@ -1808,9 +1825,9 @@
+ 		NULL,
+ 		STRSAFE_FILL_BEHIND_NULL | STRSAFE_IGNORE_NULLS,
+ #if PACKET_TRUNCATION_CHECK
+-		"State=%s Err=[%s/%d] #O=%d Tx=[%d,%d,%d] Rx=[%d,%d,%d] IrpQ=[%d,%d,%d] PktQ=[%d,%d,%d]",
++		"State=%s Err=[%s/%d] #O=%d Tx=[%d,%d,%d] Rx=[%d,%d,%d] IrpQ=[%d,%d,%d] PktQ=[%d,%d,%d] InjQ=[%d,%d,%d]",
+ #else
+-		"State=%s Err=[%s/%d] #O=%d Tx=[%d,%d] Rx=[%d,%d] IrpQ=[%d,%d,%d] PktQ=[%d,%d,%d]",
++		"State=%s Err=[%s/%d] #O=%d Tx=[%d,%d] Rx=[%d,%d] IrpQ=[%d,%d,%d] PktQ=[%d,%d,%d] InjQ=[%d,%d,%d]",
+ #endif
+ 		state,
+ 		g_LastErrorFilename,
+@@ -1831,7 +1848,10 @@
+ 		(int)IRP_QUEUE_SIZE,
+ 		(int)l_Adapter->m_Extension.m_PacketQueue->size,
+ 		(int)l_Adapter->m_Extension.m_PacketQueue->max_size,
+-		(int)PACKET_QUEUE_SIZE
++		(int)PACKET_QUEUE_SIZE,
++		(int)l_Adapter->m_Extension.m_InjectQueue->size,
++		(int)l_Adapter->m_Extension.m_InjectQueue->max_size,
++		(int)INJECT_QUEUE_SIZE
+ 		);
+ 
+ 	      p_IRP->IoStatus.Information
+@@ -2519,15 +2539,16 @@
+     IoCompleteRequest (p_IRP, IO_NO_INCREMENT);
+ }
+ 
+-//====================================
+-// Exhaust packet and IRP queues.
+-//====================================
++//===========================================
++// Exhaust packet, IRP, and injection queues.
++//===========================================
+ VOID
+ FlushQueues (TapExtensionPointer p_Extension)
+ {
+   PIRP l_IRP;
+   TapPacketPointer l_PacketBuffer;
+-  int n_IRP=0, n_Packet=0;
++  InjectPacketPointer l_InjectBuffer;
++  int n_IRP=0, n_Packet=0, n_Inject=0;
+ 
+   MYASSERT (p_Extension);
+   MYASSERT (p_Extension->m_TapDevice);
+@@ -2560,15 +2581,32 @@
+ 	break;
+     }
+ 
++  while (TRUE)
++    {
++      NdisAcquireSpinLock (&p_Extension->m_InjectLock);
++      l_InjectBuffer = QueuePop (p_Extension->m_InjectQueue);
++      NdisReleaseSpinLock (&p_Extension->m_InjectLock);
++      if (l_InjectBuffer)
++	{
++	  ++n_Inject;
++	  INJECT_PACKET_FREE(l_InjectBuffer);
++	}
++      else
++	break;
++    }
++
+   DEBUGP ((
+-	   "[%s] [TAP] FlushQueues n_IRP=[%d,%d,%d] n_Packet=[%d,%d,%d]\n",
++	   "[%s] [TAP] FlushQueues n_IRP=[%d,%d,%d] n_Packet=[%d,%d,%d] n_Inject=[%d,%d,%d]\n",
+ 	   p_Extension->m_TapName,
+ 	   n_IRP,
+ 	   p_Extension->m_IrpQueue->max_size,
+ 	   IRP_QUEUE_SIZE,
+ 	   n_Packet,
+ 	   p_Extension->m_PacketQueue->max_size,
+-	   PACKET_QUEUE_SIZE
++	   PACKET_QUEUE_SIZE,
++	   n_Inject,
++	   p_Extension->m_InjectQueue->max_size,
++	   INJECT_QUEUE_SIZE
+ 	   ));
+ }
+ 
+@@ -2667,7 +2705,7 @@
+ 		       (unsigned char *) arp,
+ 		       sizeof (ARP_PACKET));
+ 
+-	  InjectPacket (p_Adapter, (UCHAR *) arp, sizeof (ARP_PACKET));
++	  InjectPacketDeferred (p_Adapter, (UCHAR *) arp, sizeof (ARP_PACKET));
+ 
+ 	  MemFree (arp, sizeof (ARP_PACKET));
+ 	}
+@@ -2684,10 +2722,60 @@
+ // seen as an incoming packet "arriving" on the interface.
+ //===============================================================
+ 
++// Defer packet injection till IRQL < DISPATCH_LEVEL
++VOID
++InjectPacketDeferred (TapAdapterPointer p_Adapter,
++		      UCHAR *packet,
++		      const unsigned int len)
++{
++  InjectPacketPointer l_InjectBuffer;
++  PVOID result;
++
++  if (NdisAllocateMemoryWithTag (&l_InjectBuffer,
++				 INJECT_PACKET_SIZE (len),
++				 'IPAT') == NDIS_STATUS_SUCCESS)
++    {
++      l_InjectBuffer->m_Size = len;
++      NdisMoveMemory (l_InjectBuffer->m_Data, packet, len);
++      NdisAcquireSpinLock (&p_Adapter->m_Extension.m_InjectLock);
++      result = QueuePush (p_Adapter->m_Extension.m_InjectQueue, l_InjectBuffer);
++      NdisReleaseSpinLock (&p_Adapter->m_Extension.m_InjectLock);
++      if (result)
++	KeInsertQueueDpc (&p_Adapter->m_Extension.m_InjectDpc, p_Adapter, NULL);
++      else
++	INJECT_PACKET_FREE(l_InjectBuffer);
++    }
++}
++
++// Handle the injection of previously deferred packets
+ VOID
+-InjectPacket (TapAdapterPointer p_Adapter,
+-	      UCHAR *packet,
+-	      const unsigned int len)
++InjectPacketDpc(KDPC *Dpc,
++		PVOID DeferredContext,
++		PVOID SystemArgument1,
++		PVOID SystemArgument2)
++{
++  InjectPacketPointer l_InjectBuffer;
++  TapAdapterPointer l_Adapter = (TapAdapterPointer)SystemArgument1;
++  while (TRUE)
++    {
++      NdisAcquireSpinLock (&l_Adapter->m_Extension.m_InjectLock);
++      l_InjectBuffer = QueuePop (l_Adapter->m_Extension.m_InjectQueue);
++      NdisReleaseSpinLock (&l_Adapter->m_Extension.m_InjectLock);
++      if (l_InjectBuffer)
++	{
++	  InjectPacketNow(l_Adapter, l_InjectBuffer->m_Data, l_InjectBuffer->m_Size);
++	  INJECT_PACKET_FREE(l_InjectBuffer);
++	}
++      else
++	break;
++    }
++}
++
++// Do packet injection now
++VOID
++InjectPacketNow (TapAdapterPointer p_Adapter,
++		 UCHAR *packet,
++		 const unsigned int len)
+ {
+   MYASSERT (len >= ETHERNET_HEADER_SIZE);
+ 
+@@ -2699,6 +2787,9 @@
+       // TapDeviceHook/IRP_MJ_WRITE.
+       //
+       // The DDK docs imply that this is okay.
++      //
++      // Note that reentrant behavior could only occur if the
++      // non-deferred version of InjectPacket is used.
+       //------------------------------------------------------------
+       NdisMEthIndicateReceive
+ 	(p_Adapter->m_MiniportAdapterHandle,
+@@ -2713,7 +2804,7 @@
+     }
+   __except (EXCEPTION_EXECUTE_HANDLER)
+     {
+-      DEBUGP (("[%s] NdisMEthIndicateReceive failed in InjectPacket\n",
++      DEBUGP (("[%s] NdisMEthIndicateReceive failed in InjectPacketNow\n",
+ 	       NAME (p_Adapter)));
+       NOTE_ERROR ();
+     }
+diff -urN openvpn-2.1_rc18/tap-win32/types.h openvpn-2.1_rc20/tap-win32/types.h
+--- openvpn-2.1_rc18/tap-win32/types.h	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/tap-win32/types.h	2009-10-01 20:02:18.000000000 +0200
+@@ -86,6 +86,12 @@
+   // Flags
+   BOOLEAN m_TapIsRunning;
+   BOOLEAN m_CalledTapDeviceFreeResources;
++
++  // DPC queue for deferred packet injection
++  BOOLEAN m_InjectDpcInitialized;
++  KDPC m_InjectDpc;
++  NDIS_SPIN_LOCK m_InjectLock;
++  Queue *m_InjectQueue;
+ }
+ TapExtension, *TapExtensionPointer;
+ 
+@@ -99,6 +105,15 @@
+    }
+ TapPacket, *TapPacketPointer;
+ 
++typedef struct _InjectPacket
++   {
++#   define INJECT_PACKET_SIZE(data_size) (sizeof (InjectPacket) + (data_size))
++#   define INJECT_PACKET_FREE(ib)  NdisFreeMemory ((ib), INJECT_PACKET_SIZE ((ib)->m_Size), 0)
++    ULONG m_Size;
++    UCHAR m_Data []; // m_Data must be the last struct member
++   }
++InjectPacket, *InjectPacketPointer;
++
+ typedef struct _TapAdapter
+ {
+ # define NAME(a) ((a)->m_NameAnsi.Buffer)
+diff -urN openvpn-2.1_rc18/tun.c openvpn-2.1_rc20/tun.c
+--- openvpn-2.1_rc18/tun.c	2009-05-30 23:34:13.000000000 +0200
++++ openvpn-2.1_rc20/tun.c	2009-10-01 20:02:18.000000000 +0200
+@@ -863,11 +863,10 @@
+       else {
+ 	if (tt->topology == TOP_SUBNET)
+             argv_printf (&argv,
+-                              "%s %s %s %s netmask %s mtu %d up",
++                              "%s %s %s netmask %s mtu %d up",
+                               IFCONFIG_PATH,
+                               actual,
+                               ifconfig_local,
+-                              ifconfig_local,
+                               ifconfig_remote_netmask,
+                               tun_mtu
+                               );
+@@ -1745,14 +1744,19 @@
+ {
+   open_tun_generic (dev, dev_type, dev_node, ipv6, true, true, tt);
+ 
+-  if (tt->fd >= 0)
++  if (tt->fd >= 0 && tt->type == DEV_TYPE_TUN)
+     {
+       int i = 0;
+ 
+-      /* Disable extended modes */
+-      ioctl (tt->fd, TUNSLMODE, &i);
++      i = tt->topology == TOP_SUBNET ? IFF_BROADCAST : IFF_POINTOPOINT;
++      i |= IFF_MULTICAST;
++      if (ioctl (tt->fd, TUNSIFMODE, &i) < 0) {
++	msg (M_WARN | M_ERRNO, "ioctl(TUNSIFMODE): %s", strerror(errno));
++      }
+       i = 1;
+-      ioctl (tt->fd, TUNSIFHEAD, &i);
++      if (ioctl (tt->fd, TUNSIFHEAD, &i) < 0) {
++	msg (M_WARN | M_ERRNO, "ioctl(TUNSIFHEAD): %s", strerror(errno));
++      }
+     }
+ }
+ 
+diff -urN openvpn-2.1_rc18/version.m4 openvpn-2.1_rc20/version.m4
+--- openvpn-2.1_rc18/version.m4	2009-06-07 08:47:24.000000000 +0200
++++ openvpn-2.1_rc20/version.m4	2009-10-01 20:37:48.000000000 +0200
 @@ -1,5 +1,5 @@
  dnl define the OpenVPN version
--define(PRODUCT_VERSION,[2.1_rc14])
-+define(PRODUCT_VERSION,[2.1_rc15])
+-define(PRODUCT_VERSION,[2.1_rc18])
++define(PRODUCT_VERSION,[2.1_rc20])
  dnl define the TAP version
  define(PRODUCT_TAP_ID,[tap0901])
  define(PRODUCT_TAP_WIN32_MIN_MAJOR,[9])

@@ -90,6 +90,7 @@ static const char usage_message[] =
   "--local host    : Local host name or ip address. Implies --bind.\n"
   "--remote host [port] : Remote host name or ip address.\n"
   "--remote-random : If multiple --remote options specified, choose one randomly.\n"
+  "--remote-random-hostname : Add a random string to remote DNS name.\n"
   "--mode m        : Major mode, m = 'p2p' (default, point-to-point) or 'server'.\n"
   "--proto p       : Use protocol p for communicating with peer.\n"
   "                  p = udp (default), tcp-server, or tcp-client\n"
@@ -169,6 +170,8 @@ static const char usage_message[] =
   "                  netmask default: 255.255.255.255\n"
   "                  gateway default: taken from --route-gateway or --ifconfig\n"
   "                  Specify default by leaving blank or setting to \"nil\".\n"
+  "--max-routes n :  Specify the maximum number of routes that may be defined\n"
+  "                  or pulled from a server.\n"
   "--route-gateway gw|'dhcp' : Specify a default gateway for use with --route.\n"
   "--route-metric m : Specify a default metric for use with --route.\n"
   "--route-delay n [w] : Delay n seconds after connection initiation before\n"
@@ -264,6 +267,9 @@ static const char usage_message[] =
   "--user user     : Set UID to user after initialization.\n"
   "--group group   : Set GID to group after initialization.\n"
   "--chroot dir    : Chroot to this directory after initialization.\n"
+#ifdef HAVE_SETCON
+  "--setcon context: Apply this SELinux context after initialization.\n"
+#endif
   "--cd dir        : Change to this directory before initialization.\n"
   "--daemon [name] : Become a daemon after initialization.\n"
   "                  The optional 'name' parameter will be passed\n"
@@ -426,6 +432,9 @@ static const char usage_message[] =
   "                  when connecting to a '--mode server' remote host.\n"
   "--auth-retry t  : How to handle auth failures.  Set t to\n"
   "                  none (default), interact, or nointeract.\n"
+  "--server-poll-timeout n : when polling possible remote servers to connect to\n"
+  "                  in a round-robin fashion, spend no more than n seconds\n"
+  "                  waiting for a response before trying the next server.\n"
 #endif
 #ifdef ENABLE_OCC
   "--explicit-exit-notify [n] : On exit/restart, send exit signal to\n"
@@ -676,6 +685,7 @@ init_options (struct options *o, const bool init_gc)
   o->mtu_discover_type = -1;
   o->mssfix = MSSFIX_DEFAULT;
   o->route_delay_window = 30;
+  o->max_routes = MAX_ROUTES_DEFAULT;
   o->resolve_retry_seconds = RESOLV_RETRY_INFINITE;
 #ifdef ENABLE_OCC
   o->occ = true;
@@ -719,6 +729,7 @@ init_options (struct options *o, const bool init_gc)
 #endif
 #if P2MP
   o->scheduled_exit_interval = 5;
+  o->server_poll_timeout = 0;
 #endif
 #ifdef USE_CRYPTO
   o->ciphername = "BF-CBC";
@@ -953,11 +964,15 @@ show_p2mp_parms (const struct options *o)
   msg (D_SHOW_PARMS, "  server_bridge_netmask = %s", print_in_addr_t (o->server_bridge_netmask, 0, &gc));
   msg (D_SHOW_PARMS, "  server_bridge_pool_start = %s", print_in_addr_t (o->server_bridge_pool_start, 0, &gc));
   msg (D_SHOW_PARMS, "  server_bridge_pool_end = %s", print_in_addr_t (o->server_bridge_pool_end, 0, &gc));
-  if (o->push_list)
+  if (o->push_list.head)
     {
-      const struct push_list *l = o->push_list;
-      const char *printable_push_list = l->options;
-      msg (D_SHOW_PARMS, "  push_list = '%s'", printable_push_list);
+      const struct push_entry *e = o->push_list.head;
+      while (e)
+	{
+	  if (e->enable)
+	    msg (D_SHOW_PARMS, "  push_entry = '%s'", e->option);
+	  e = e->next;
+	}
     }
   SHOW_BOOL (ifconfig_pool_defined);
   msg (D_SHOW_PARMS, "  ifconfig_pool_start = %s", print_in_addr_t (o->ifconfig_pool_start, 0, &gc));
@@ -1058,12 +1073,7 @@ options_detach (struct options *o)
   gc_detach (&o->gc);
   o->routes = NULL;
 #if P2MP_SERVER
-  if (o->push_list) /* clone push_list */
-    {
-      const struct push_list *old = o->push_list;
-      ALLOC_OBJ_GC (o->push_list, struct push_list, &o->gc);
-      strcpy (o->push_list->options, old->options);
-    }
+  clone_push_list(o);
 #endif
 }
 
@@ -1071,7 +1081,7 @@ void
 rol_check_alloc (struct options *options)
 {
   if (!options->routes)
-    options->routes = new_route_option_list (&options->gc);
+    options->routes = new_route_option_list (options->max_routes, &options->gc);
 }
 
 #ifdef ENABLE_DEBUG
@@ -1215,6 +1225,9 @@ show_settings (const struct options *o)
   SHOW_STR (groupname);
   SHOW_STR (chroot_dir);
   SHOW_STR (cd_dir);
+#ifdef HAVE_SETCON
+  SHOW_STR (selinux_context);
+#endif
   SHOW_STR (writepid);
   SHOW_STR (up_script);
   SHOW_STR (down_script);
@@ -1257,6 +1270,7 @@ show_settings (const struct options *o)
   SHOW_BOOL (route_delay_defined);
   SHOW_BOOL (route_nopull);
   SHOW_BOOL (route_gateway_via_dhcp);
+  SHOW_INT (max_routes);
   SHOW_BOOL (allow_pull_fqdn);
   if (o->routes)
     print_route_options (o->routes, D_SHOW_PARMS);
@@ -2153,7 +2167,7 @@ pre_pull_save (struct options *o)
       o->pre_pull->foreign_option_index = o->foreign_option_index;
       if (o->routes)
 	{
-	  o->pre_pull->routes = *o->routes;
+	  o->pre_pull->routes = clone_route_option_list(o->routes, &o->gc);
 	  o->pre_pull->routes_defined = true;
 	}
     }
@@ -2172,13 +2186,15 @@ pre_pull_restore (struct options *o)
       if (pp->routes_defined)
 	{
 	  rol_check_alloc (o);
-	  *o->routes = pp->routes;
+	  copy_route_option_list (o->routes, pp->routes);
 	}
       else
 	o->routes = NULL;
 
       o->foreign_option_index = pp->foreign_option_index;
     }
+
+  o->push_continuation = 0;
 }
 
 #endif
@@ -3709,6 +3725,13 @@ add_option (struct options *options,
 	}
       options->cd_dir = p[1];
     }
+#ifdef HAVE_SETCON
+  else if (streq (p[0], "setcon") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->selinux_context = p[1];
+    }
+#endif
   else if (streq (p[0], "writepid") && p[1])
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
@@ -4329,6 +4352,19 @@ add_option (struct options *options,
 	}
       add_route_to_option_list (options->routes, p[1], p[2], p[3], p[4]);
     }
+  else if (streq (p[0], "max-routes") && p[1])
+    {
+      int max_routes;
+
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      max_routes = atoi (p[1]);
+      if (max_routes < 0 || max_routes > 100000000)
+	{
+	  msg (msglevel, "--max-routes parameter is out of range");
+	  goto err;
+	}
+      options->max_routes = max_routes;
+    }
   else if (streq (p[0], "route-gateway") && p[1])
     {
       VERIFY_PERMISSION (OPT_P_ROUTE_EXTRAS);
@@ -4398,10 +4434,10 @@ add_option (struct options *options,
       int j;
       VERIFY_PERMISSION (OPT_P_ROUTE);
       rol_check_alloc (options);
+      if (streq (p[0], "redirect-gateway"))
+	options->routes->flags |= RG_REROUTE_GW;
       for (j = 1; j < MAX_PARMS && p[j] != NULL; ++j)
 	{
-	  if (streq (p[0], "redirect-gateway"))
-	    options->routes->flags |= RG_REROUTE_GW;
 	  if (streq (p[j], "local"))
 	    options->routes->flags |= RG_LOCAL;
 	  else if (streq (p[j], "autolocal"))
@@ -4420,15 +4456,33 @@ add_option (struct options *options,
 	}
       options->routes->flags |= RG_ENABLE;
     }
+  else if (streq (p[0], "remote-random-hostname"))
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->sockflags |= SF_HOST_RANDOMIZE;
+    }
   else if (streq (p[0], "setenv") && p[1])
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
-      if (streq (p[1], "FORWARD_COMPATIBLE") && p[2] && streq (p[2], "1"))
+      if (streq (p[1], "REMOTE_RANDOM_HOSTNAME"))
 	{
-	  options->forward_compatible = true;
-	  msglevel_fc = msglevel_forward_compatible (options, msglevel);
+	  options->sockflags |= SF_HOST_RANDOMIZE;
 	}
-      setenv_str (es, p[1], p[2] ? p[2] : "");
+#if P2MP
+      else if (streq (p[1], "SERVER_POLL_TIMEOUT") && p[2])
+	{
+	  options->server_poll_timeout = positive_atoi(p[2]);
+	}
+#endif
+      else
+	{
+	  if (streq (p[1], "FORWARD_COMPATIBLE") && p[2] && streq (p[2], "1"))
+	    {
+	      options->forward_compatible = true;
+	      msglevel_fc = msglevel_forward_compatible (options, msglevel);
+	    }
+	  setenv_str (es, p[1], p[2] ? p[2] : "");
+	}
     }
   else if (streq (p[0], "setenv-safe") && p[1])
     {
@@ -4837,6 +4891,16 @@ add_option (struct options *options,
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
       options->pull = true;
+    }
+  else if (streq (p[0], "push-continuation") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_PULL_MODE);
+      options->push_continuation = atoi(p[1]);
+    }
+  else if (streq (p[0], "server-poll-timeout") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->server_poll_timeout = positive_atoi(p[1]);
     }
   else if (streq (p[0], "auth-user-pass"))
     {

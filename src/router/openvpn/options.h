@@ -40,6 +40,7 @@
 #include "manage.h"
 #include "proxy.h"
 #include "lzo.h"
+#include "pushlist.h"
 
 /*
  * Maximum number of parameters associated with an option,
@@ -57,17 +58,6 @@ extern const char title_string[];
 
 #if P2MP
 
-#if P2MP_SERVER
-/* parameters to be pushed to peer */
-
-#define MAX_PUSH_LIST_LEN TLS_CHANNEL_BUF_SIZE /* This parm is related to PLAINTEXT_BUFFER_SIZE in ssl.h */
-
-struct push_list {
-  /* newline delimited options, like config file */
-  char options[MAX_PUSH_LIST_LEN];
-};
-#endif
-
 /* certain options are saved before --pull modifications are applied */
 struct options_pre_pull
 {
@@ -75,7 +65,7 @@ struct options_pre_pull
   struct tuntap_options tuntap_options;
 
   bool routes_defined;
-  struct route_option_list routes;
+  struct route_option_list *routes;
 
   int foreign_option_index;
 };
@@ -253,6 +243,9 @@ struct options
   const char *groupname;
   const char *chroot_dir;
   const char *cd_dir;
+#ifdef HAVE_SETCON
+  char *selinux_context;
+#endif
   const char *writepid;
   const char *up_script;
   const char *down_script;
@@ -303,6 +296,7 @@ struct options
   int route_delay;
   int route_delay_window;
   bool route_delay_defined;
+  int max_routes;
   struct route_option_list *routes;
   bool route_nopull;
   bool route_gateway_via_dhcp;
@@ -358,7 +352,7 @@ struct options
   in_addr_t server_bridge_pool_start;
   in_addr_t server_bridge_pool_end;
 
-  struct push_list *push_list;
+  struct push_list push_list;
   bool ifconfig_pool_defined;
   in_addr_t ifconfig_pool_start;
   in_addr_t ifconfig_pool_end;
@@ -401,8 +395,11 @@ struct options
 
   bool client;
   bool pull; /* client pull of config options from server */
+  int push_continuation;
   const char *auth_user_pass_file;
   struct options_pre_pull *pre_pull;
+
+  int server_poll_timeout;
 
   int scheduled_exit_interval;
 
