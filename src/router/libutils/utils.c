@@ -562,6 +562,10 @@ int internal_getRouterBrand()
 			setRouter("Cambria GW2350");
 			return ROUTER_BOARD_GATEWORX;
 		}
+		if (!strncmp(gwid, "GW2369", 6)) {
+			setRouter("Cambria GW2369");
+			return ROUTER_BOARD_GATEWORX;
+		}
 		if (!strncmp(gwid, "GW2355", 6)) {
 			setRouter("Avila GW2355");
 			return ROUTER_BOARD_GATEWORX_GW2345;
