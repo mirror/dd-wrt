@@ -213,6 +213,8 @@ void start_sysinit(void)
 	 * Modules 
 	 */
 	uname(&name);
+
+
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
 //    checkupdate(  );
@@ -430,6 +432,11 @@ void start_sysinit(void)
 		}
 		fclose(file);
 	}
+
+
+
+
+
 #ifdef HAVE_MAKSAT
 	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro"))
 #else
@@ -549,6 +556,13 @@ void start_sysinit(void)
 	}
 #endif
 
+
+	/* cf capability ? */
+	char *modelname = nvram_safe_get("DD_BOARD");
+	if (!strncmp(modelname,"Avila GW2348",12) || !strncmp(modelname,"Avila GW2358",12)) {
+	    insmod("pata_ixp4xx_cf");
+	}    
+	
 	/*
 	 * Set a sane date 
 	 */
