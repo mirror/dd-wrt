@@ -667,7 +667,7 @@ possibly_become_daemon (const struct options *options, const bool first_time)
 }
 
 /*
- * Actually do UID/GID downgrade, and chroot, if requested.
+ * Actually do UID/GID downgrade, chroot and SELinux context switching, if requested.
  */
 static void
 do_uid_gid_chroot (struct context *c, bool no_delay)
@@ -697,6 +697,26 @@ do_uid_gid_chroot (struct context *c, bool no_delay)
 	{
 	  msg (M_INFO, "NOTE: UID/GID downgrade %s", why_not);
 	}
+
+#ifdef HAVE_SETCON
+      /* Apply a SELinux context in order to restrict what OpenVPN can do
+       * to _only_ what it is supposed to do after initialization is complete
+       * (basically just network I/O operations). Doing it after chroot
+       * requires /proc to be mounted in the chroot (which is annoying indeed
+       * but doing it before requires more complex SELinux policies.
+       */
+      if (c->options.selinux_context)
+	{
+	  if (no_delay) {
+	    if (-1 == setcon (c->options.selinux_context))
+	      msg (M_ERR, "setcon to '%s' failed; is /proc accessible?", c->options.selinux_context);
+	    else
+	      msg (M_INFO, "setcon to '%s' succeeded", c->options.selinux_context);
+	  }
+	  else
+	    msg (M_INFO, "NOTE: setcon %s", why_not);
+	}
+#endif
     }
 }
 
@@ -772,6 +792,11 @@ do_init_timers (struct context *c, bool deferred)
   if (c->options.ping_rec_timeout)
     event_timeout_init (&c->c2.ping_rec_interval, c->options.ping_rec_timeout, now);
 
+#if P2MP
+  if (c->options.server_poll_timeout)
+    event_timeout_init (&c->c2.server_poll_interval, c->options.server_poll_timeout, now);
+#endif
+
   if (!deferred)
     {
       /* initialize connection establishment timer */
@@ -827,7 +852,7 @@ static void
 do_alloc_route_list (struct context *c)
 {
   if (c->options.routes && !c->c1.route_list)
-    c->c1.route_list = new_route_list (&c->gc);
+    c->c1.route_list = new_route_list (c->options.max_routes, &c->gc);
 }
 
 
@@ -972,15 +997,12 @@ do_route (const struct options *options,
  */
 #if P2MP
 static void
-save_pulled_options_string (struct context *c, const char *newstring)
+save_pulled_options_digest (struct context *c, const struct md5_digest *newdigest)
 {
-  if (c->c1.pulled_options_string_save)
-    free (c->c1.pulled_options_string_save);
-
-  c->c1.pulled_options_string_save = NULL;
-
-  if (newstring)
-    c->c1.pulled_options_string_save = string_alloc (newstring, NULL);
+  if (newdigest)
+    c->c1.pulled_options_digest_save = *newdigest;
+  else
+    md5_digest_clear (&c->c1.pulled_options_digest_save);
 }
 #endif
 
@@ -1124,7 +1146,7 @@ do_close_tun_simple (struct context *c)
   c->c1.tuntap = NULL;
   c->c1.tuntap_owned = false;
 #if P2MP
-  save_pulled_options_string (c, NULL); /* delete C1-saved pulled_options_string */
+  save_pulled_options_digest (c, NULL); /* delete C1-saved pulled_options_digest */
 #endif
 }
 
@@ -1224,8 +1246,8 @@ do_up (struct context *c, bool pulled_options, unsigned int option_types_found)
 	  if (!c->c2.did_open_tun
 	      && PULL_DEFINED (&c->options)
 	      && c->c1.tuntap
-	      && (!c->c1.pulled_options_string_save || !c->c2.pulled_options_string
-		  || strcmp (c->c1.pulled_options_string_save, c->c2.pulled_options_string)))
+	      && (!md5_digest_defined (&c->c1.pulled_options_digest_save) || !md5_digest_defined (&c->c2.pulled_options_digest)
+		  || !md5_digest_equal (&c->c1.pulled_options_digest_save, &c->c2.pulled_options_digest)))
 	    {
 	      /* if so, close tun, delete routes, then reinitialize tun and add routes */
 	      msg (M_INFO, "NOTE: Pulled options changed on restart, will need to close and reopen TUN/TAP device.");
@@ -1240,7 +1262,7 @@ do_up (struct context *c, bool pulled_options, unsigned int option_types_found)
       if (c->c2.did_open_tun)
 	{
 #if P2MP
-	  save_pulled_options_string (c, c->c2.pulled_options_string);
+	  save_pulled_options_digest (c, &c->c2.pulled_options_digest);
 #endif
 
 	  /* if --route-delay was specified, start timer */
@@ -1427,10 +1449,15 @@ socket_restart_pause (struct context *c)
 #if P2MP
   if (auth_retry_get () == AR_NOINTERACT)
     sec = 10;
+
+  if (c->options.server_poll_timeout && sec > 1)
+    sec = 1;
 #endif
 
   if (c->persist.restart_sleep_seconds > 0 && c->persist.restart_sleep_seconds > sec)
     sec = c->persist.restart_sleep_seconds;
+  else if (c->persist.restart_sleep_seconds == -1)
+    sec = 0;
   c->persist.restart_sleep_seconds = 0;
 
   /* do managment hold on context restart, i.e. second, third, fourth, etc. initialization */
@@ -1964,16 +1991,20 @@ do_option_warnings (struct context *c)
   if (o->ping_send_timeout && !o->ping_rec_timeout)
     msg (M_WARN, "WARNING: --ping should normally be used with --ping-restart or --ping-exit");
 
-  if (o->username || o->groupname || o->chroot_dir)
+  if (o->username || o->groupname || o->chroot_dir
+#ifdef HAVE_SETCON
+      || o->selinux_context
+#endif
+      )
    {
     if (!o->persist_tun)
-     msg (M_WARN, "WARNING: you are using user/group/chroot without persist-tun -- this may cause restarts to fail");
+     msg (M_WARN, "WARNING: you are using user/group/chroot/setcon without persist-tun -- this may cause restarts to fail");
     if (!o->persist_key
 #ifdef ENABLE_PKCS11
 	&& !o->pkcs11_id
 #endif
 	)
-     msg (M_WARN, "WARNING: you are using user/group/chroot without persist-key -- this may cause restarts to fail");
+     msg (M_WARN, "WARNING: you are using user/group/chroot/setcon without persist-key -- this may cause restarts to fail");
    }
 
   if (o->chroot_dir && !(o->username && o->groupname))

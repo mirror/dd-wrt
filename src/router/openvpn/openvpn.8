@@ -946,6 +946,13 @@ table (not supported on all OSes).
 address if OpenVPN is being run in client mode, and is undefined in server mode.
 .\"*********************************************************
 .TP
+.B --max-routes n
+Allow a maximum number of n
+.B --route
+options to be specified, either in the local configuration file,
+or pulled from an OpenVPN server.  By default, n=100.
+.\"*********************************************************
+.TP
 .B --route-gateway gw|'dhcp'
 Specify a default gateway
 .B gw
@@ -1887,6 +1894,39 @@ In many cases, the
 parameter can point to an empty directory, however
 complications can result when scripts or restarts
 are executed after the chroot operation.
+.\"*********************************************************
+.TP
+.B --setcon context
+Apply SELinux
+.B context
+after initialization. This
+essentially provides the ability to restrict OpenVPN's
+rights to only network I/O operations, thanks to
+SELinux. This goes further than
+.B --user
+and
+.B --chroot
+in that those two, while being great security features,
+unfortunately do not protect against privilege escalation
+by exploitation of a vulnerable system call. You can of
+course combine all three, but please note that since
+setcon requires access to /proc you will have to provide
+it inside the chroot directory (e.g. with mount --bind).
+
+Since the setcon operation is delayed until after
+initialization, OpenVPN can be restricted to just
+network-related system calls, whereas by applying the
+context before startup (such as the OpenVPN one provided
+in the SELinux Reference Policies) you will have to
+allow many things required only during initialization.
+
+Like with chroot, complications can result when scripts
+or restarts are executed after the setcon operation,
+which is why you should really consider using the
+.B --persist-key
+and
+.B --persist-tun
+options.
 .\"*********************************************************
 .TP
 .B --daemon [progname]
@@ -3237,6 +3277,13 @@ username/password and/or private key password before attempting a reconnection.
 
 Note that while this option cannot be pushed, it can be controlled
 from the management interface.
+.\"*********************************************************
+.TP
+.B --server-poll-timeout n
+when polling possible remote servers to connect to
+in a round-robin fashion, spend no more than
+.B n
+seconds waiting for a response before trying the next server.
 .\"*********************************************************
 .TP
 .B --explicit-exit-notify [n]
