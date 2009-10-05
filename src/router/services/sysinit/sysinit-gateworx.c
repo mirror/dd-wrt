@@ -224,6 +224,32 @@ void start_sysinit(void)
 		nvram_set("intel_eth", "1");
 		insmod("e1000");
 	}
+	if (detect("8139"))	// Intel Gigabit
+	{
+		nvram_set("intel_eth", "1");
+		insmod("8139too");
+	}
+	else if (detect("8139"))	// Realtek 8139 Adapter (various notebooks) 
+	{
+		nvram_set("intel_eth", "1");
+		insmod("8139too");
+	}
+	else if (detect("DFE-690TXD"))	// Realtek 8139 Adapter (various
+	{
+		// notebooks) 
+		nvram_set("intel_eth", "1");
+		insmod("8139too");
+	}
+	else if (detect("SMC2-1211TX"))	// Realtek 8139 Adapter (various
+	{	// notebooks) 
+		nvram_set("intel_eth", "1");
+		insmod("8139too");
+	}
+	else if (detect("Robotics"))	// Realtek 8139 Adapter (various
+	{	// notebooks) 
+		nvram_set("intel_eth", "1");
+		insmod("8139too");
+	}
 #ifndef HAVE_NOWIFI
 	insmod("ath_hal");
 	if (nvram_get("rate_control") != NULL) {
