@@ -547,7 +547,7 @@ int internal_getRouterBrand()
 			return ROUTER_BOARD_GATEWORX_SWAP;
 		}
 		if (!strncmp(gwid, "GW2353", 6)) {
-			setRouter("Avila GW2343");
+			setRouter("Avila GW2353");
 			return ROUTER_BOARD_GATEWORX;
 		}
 		if (!strncmp(gwid, "GW2348", 6)) {
