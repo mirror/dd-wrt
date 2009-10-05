@@ -196,8 +196,6 @@ void start_sysinit(void)
 	mkdir("/var/run", 0777);
 	mkdir("/var/tmp", 0777);
 
-	if (!nvram_match("disable_watchdog", "1"))
-		eval("watchdog");	// system watchdog
 
 	cprintf("sysinit() setup console\n");
 
@@ -559,9 +557,21 @@ void start_sysinit(void)
 
 	/* cf capability ? */
 	char *modelname = nvram_safe_get("DD_BOARD");
-	if (!strncmp(modelname,"Avila GW2348",12) || !strncmp(modelname,"Avila GW2358",12)) {
+	if (!strncmp(modelname,"Avila GW2348",12) || !strcmp(modelname,"Cambria GW2358-4")) {
 	    insmod("pata_ixp4xx_cf");
 	}    
+	/* watchdog type */
+	if (!strncmp(modelname,"Avila GW2369",12) || 
+	    insmod("softdog");
+	} else {
+	    insmod("ixp4xx_wdt");
+	}
+	
+
+
+
+	if (!nvram_match("disable_watchdog", "1"))
+		eval("watchdog");	// system watchdog
 	
 	/*
 	 * Set a sane date 
