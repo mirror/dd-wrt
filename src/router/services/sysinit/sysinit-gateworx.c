@@ -560,8 +560,9 @@ void start_sysinit(void)
 	if (!strncmp(modelname,"Avila GW2348",12) || !strcmp(modelname,"Cambria GW2358-4")) {
 	    insmod("pata_ixp4xx_cf");
 	}    
+
 	/* watchdog type */
-	if (!strncmp(modelname,"Avila GW2369",12) || 
+	if (!strncmp(modelname,"Avila GW2369",12)) {
 	    insmod("softdog");
 	} else {
 	    insmod("ixp4xx_wdt");
