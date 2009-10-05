@@ -2508,16 +2508,16 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 #ifdef HAVE_MADWIFI
-	memset(bufferif2, 0, 256);
-	getIfList(bufferif2, "ath");
-	foreach(word, bufferif2, next) {
-		if (contains(word, '.'))
-			sprintf(bufferif, "%s %s", bufferif, word);
-	}
+//	memset(bufferif2, 0, 256);
+//	getIfList(bufferif2, "ath");
+//	foreach(word, bufferif2, next) {
+//		if (contains(word, '.'))
+//			sprintf(bufferif, "%s %s", bufferif, word);
+//	}
 	int c = getifcount("wifi");
 
 	for (i = 0; i < c; i++) {
-//		char ath[32];
+		char ath[32];
 
 //		sprintf(ath, "ath%d_bridged", i);
 //		if (nvram_default_match(ath, "1", "1")) 
