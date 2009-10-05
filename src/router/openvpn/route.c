@@ -80,18 +80,38 @@ add_bypass_address (struct route_bypass *rb, const in_addr_t a)
 }
 
 struct route_option_list *
-new_route_option_list (struct gc_arena *a)
+new_route_option_list (const int max_routes, struct gc_arena *a)
 {
   struct route_option_list *ret;
-  ALLOC_OBJ_CLEAR_GC (ret, struct route_option_list, a);
+  ALLOC_VAR_ARRAY_CLEAR_GC (ret, struct route_option_list, struct route_option, max_routes, a);
+  ret->capacity = max_routes;
   return ret;
 }
 
+struct route_option_list *
+clone_route_option_list (const struct route_option_list *src, struct gc_arena *a)
+{
+  const size_t rl_size = array_mult_safe (sizeof(struct route_option), src->capacity, sizeof(struct route_option_list));
+  struct route_option_list *ret = gc_malloc (rl_size, false, a);
+  memcpy (ret, src, rl_size);
+  return ret;
+}
+
+void
+copy_route_option_list (struct route_option_list *dest, const struct route_option_list *src)
+{
+  const size_t src_size = array_mult_safe (sizeof(struct route_option), src->capacity, sizeof(struct route_option_list));
+  if (src->n > dest->capacity)
+    msg (M_FATAL, PACKAGE_NAME " ROUTE: (copy) number of route options in src (%d) is greater than route list capacity in dest (%d)", src->n, dest->capacity);
+  memcpy (dest, src, src_size);
+}
+
 struct route_list *
-new_route_list (struct gc_arena *a)
+new_route_list (const int max_routes, struct gc_arena *a)
 {
   struct route_list *ret;
-  ALLOC_OBJ_CLEAR_GC (ret, struct route_list, a);
+  ALLOC_VAR_ARRAY_CLEAR_GC (ret, struct route_list, struct route, max_routes, a);
+  ret->capacity = max_routes;
   return ret;
 }
 
@@ -317,9 +337,9 @@ add_route_to_option_list (struct route_option_list *l,
 			  const char *metric)
 {
   struct route_option *ro;
-  if (l->n >= MAX_ROUTES)
-    msg (M_FATAL, PACKAGE_NAME " ROUTE: cannot add more than %d routes",
-	 MAX_ROUTES);
+  if (l->n >= l->capacity)
+    msg (M_FATAL, PACKAGE_NAME " ROUTE: cannot add more than %d routes -- please increase the max-routes option in the client configuration file",
+	 l->capacity);
   ro = &l->routes[l->n];
   ro->network = network;
   ro->netmask = netmask;
@@ -331,7 +351,10 @@ add_route_to_option_list (struct route_option_list *l,
 void
 clear_route_list (struct route_list *rl)
 {
-  CLEAR (*rl);
+  const int capacity = rl->capacity;
+  const size_t rl_size = array_mult_safe (sizeof(struct route), capacity, sizeof(struct route_list));
+  memset(rl, 0, rl_size);
+  rl->capacity = capacity;
 }
 
 void
@@ -415,7 +438,8 @@ init_route_list (struct route_list *rl,
   else
     rl->spec.remote_endpoint_defined = false;
 
-  ASSERT (opt->n >= 0 && opt->n < MAX_ROUTES);
+  if (!(opt->n >= 0 && opt->n <= rl->capacity))
+    msg (M_FATAL, PACKAGE_NAME " ROUTE: (init) number of route options (%d) is greater than route list capacity (%d)", opt->n, rl->capacity);
 
   /* parse the routes from opt to rl */
   {
@@ -716,7 +740,7 @@ delete_routes (struct route_list *rl, const struct tuntap *tt, unsigned int flag
     }
   undo_redirect_default_route_to_vpn (rl, tt, flags, es);
 
-  CLEAR (*rl);
+  clear_route_list (rl);
 }
 
 #ifdef ENABLE_DEBUG
@@ -2060,7 +2084,7 @@ get_default_gateway (in_addr_t *ret, in_addr_t *netmask)
 #else
 
 bool
-get_default_gateway (in_addr_t *ret, in_addr_t *netmask)
+get_default_gateway (in_addr_t *ret, in_addr_t *netmask)  /* PLATFORM-SPECIFIC */
 {
   return false;
 }
@@ -2156,7 +2180,7 @@ get_bypass_addresses (struct route_bypass *rb, const unsigned int flags)
 #else
 
 static void
-get_bypass_addresses (struct route_bypass *rb, const unsigned int flags)
+get_bypass_addresses (struct route_bypass *rb, const unsigned int flags)  /* PLATFORM-SPECIFIC */
 {
 }
 
@@ -2303,7 +2327,7 @@ get_default_gateway_mac_addr (unsigned char *macaddr)
 #else
 
 bool
-get_default_gateway_mac_addr (unsigned char *macaddr)
+get_default_gateway_mac_addr (unsigned char *macaddr) /* PLATFORM-SPECIFIC */
 {
   return false;
 }
@@ -2355,7 +2379,7 @@ test_local_addr (const in_addr_t addr)
 
 
 int
-test_local_addr (const in_addr_t addr)
+test_local_addr (const in_addr_t addr) /* PLATFORM-SPECIFIC */
 {
   return TLA_NOT_IMPLEMENTED;
 }

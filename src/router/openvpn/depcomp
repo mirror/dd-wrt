@@ -18,8 +18,8 @@ scriptversion=2007-03-29.01
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -44,18 +44,17 @@ Environment variables:
   depmode     Dependency tracking mode.
   source      Source file read by `PROGRAMS ARGS'.
   object      Object file output by `PROGRAMS ARGS'.
-  DEPDIR      directory where to store dependencies.
   depfile     Dependency file to output.
   tmpdepfile  Temporary file to use when outputing dependencies.
   libtool     Whether libtool is used (yes/no).
 
 Report bugs to <bug-automake@gnu.org>.
 EOF
-    exit $?
+    exit 0
     ;;
   -v | --v*)
     echo "depcomp $scriptversion"
-    exit $?
+    exit 0
     ;;
 esac
 
@@ -63,10 +62,18 @@ if test -z "$depmode" || test -z "$source" || test -z "$object"; then
   echo "depcomp: Variables source, object and depmode must be set" 1>&2
   exit 1
 fi
+# `libtool' can also be set to `yes' or `no'.
 
-# Dependencies for sub/bar.o or sub/bar.obj go into sub/.deps/bar.Po.
-depfile=${depfile-`echo "$object" |
-  sed 's|[^\\/]*$|'${DEPDIR-.deps}'/&|;s|\.\([^.]*\)$|.P\1|;s|Pobj$|Po|'`}
+if test -z "$depfile"; then
+   base=`echo "$object" | sed -e 's,^.*/,,' -e 's,\.\([^.]*\)$,.P\1,'`
+   dir=`echo "$object" | sed 's,/.*$,/,'`
+   if test "$dir" = "$object"; then
+      dir=
+   fi
+   # FIXME: should be _deps on DOS.
+   depfile="$dir.deps/$base"
+fi
+
 tmpdepfile=${tmpdepfile-`echo "$depfile" | sed 's/\.\([^.]*\)$/.T\1/'`}
 
 rm -f "$tmpdepfile"
@@ -365,24 +372,23 @@ tru64)
       tmpdepfile4=$dir.libs/$base.d      # Compaq CCC V6.2-504
       "$@" -Wc,-MD
    else
-      tmpdepfile1=$dir$base.o.d
-      tmpdepfile2=$dir$base.d
-      tmpdepfile3=$dir$base.d
-      tmpdepfile4=$dir$base.d
+      tmpdepfile1="$dir$base.o.d"
+      tmpdepfile2="$dir$base.d"
       "$@" -MD
    fi
 
    stat=$?
    if test $stat -eq 0; then :
    else
-      rm -f "$tmpdepfile1" "$tmpdepfile2" "$tmpdepfile3" "$tmpdepfile4"
+      rm -f "$tmpdepfile1" "$tmpdepfile2"
       exit $stat
    fi
 
-   for tmpdepfile in "$tmpdepfile1" "$tmpdepfile2" "$tmpdepfile3" "$tmpdepfile4"
-   do
-     test -f "$tmpdepfile" && break
-   done
+   if test -f "$tmpdepfile1"; then
+      tmpdepfile="$tmpdepfile1"
+   else
+      tmpdepfile="$tmpdepfile2"
+   fi
    if test -f "$tmpdepfile"; then
       sed -e "s,^.*\.[a-z]*:,$object:," < "$tmpdepfile" > "$depfile"
       # That's a tab and a space in the [].
@@ -526,8 +532,7 @@ cpp)
   done
 
   "$@" -E |
-    sed -n -e '/^# [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' \
-       -e '/^#line [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' |
+    sed -n '/^# [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' |
     sed '$ s: \\$::' > "$tmpdepfile"
   rm -f "$depfile"
   echo "$object : \\" > "$depfile"

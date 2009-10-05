@@ -908,6 +908,18 @@ tls_lock_common_name (struct tls_multi *multi)
 #endif
 
 #ifdef MANAGEMENT_DEF_AUTH
+static void
+man_def_auth_set_client_reason (struct tls_multi *multi, const char *client_reason)
+{
+  if (multi->client_reason)
+    {
+      free (multi->client_reason);
+      multi->client_reason = NULL;
+    }
+  if (client_reason && strlen (client_reason))
+    multi->client_reason = string_alloc (client_reason, NULL);
+}
+
 static inline unsigned int
 man_def_auth_test (const struct key_state *ks)
 {
@@ -1077,12 +1089,13 @@ tls_authentication_status (struct tls_multi *multi, const int latency)
 
 #ifdef MANAGEMENT_DEF_AUTH
 bool
-tls_authenticate_key (struct tls_multi *multi, const unsigned int mda_key_id, const bool auth)
+tls_authenticate_key (struct tls_multi *multi, const unsigned int mda_key_id, const bool auth, const char *client_reason)
 {
   bool ret = false;
   if (multi)
     {
       int i;
+      man_def_auth_set_client_reason (multi, client_reason);
       for (i = 0; i < KEY_SCAN_SIZE; ++i)
 	{
 	  struct key_state *ks = multi->key_scan[i];
@@ -2069,8 +2082,8 @@ key_state_init (struct tls_session *session, struct key_state *ks)
   ALLOC_OBJ_CLEAR (ks->rec_ack, struct reliable_ack);
 
   /* allocate buffers */
-  ks->plaintext_read_buf = alloc_buf (PLAINTEXT_BUFFER_SIZE);
-  ks->plaintext_write_buf = alloc_buf (PLAINTEXT_BUFFER_SIZE);
+  ks->plaintext_read_buf = alloc_buf (TLS_CHANNEL_BUF_SIZE);
+  ks->plaintext_write_buf = alloc_buf (TLS_CHANNEL_BUF_SIZE);
   ks->ack_write_buf = alloc_buf (BUF_SIZE (&session->opt->frame));
   reliable_init (ks->send_reliable, BUF_SIZE (&session->opt->frame),
 		 FRAME_HEADROOM (&session->opt->frame), TLS_RELIABLE_N_SEND_BUFFERS,
@@ -2396,6 +2409,10 @@ tls_multi_free (struct tls_multi *multi, bool clear)
   int i;
 
   ASSERT (multi);
+
+#ifdef MANAGEMENT_DEF_AUTH
+  man_def_auth_set_client_reason(multi, NULL);  
+#endif
 
   if (multi->locked_cn)
     free (multi->locked_cn);
@@ -3750,7 +3767,7 @@ tls_process (struct tls_multi *multi,
 	      int status;
 
 	      ASSERT (buf_init (buf, 0));
-	      status = key_state_read_plaintext (multi, ks, buf, PLAINTEXT_BUFFER_SIZE);
+	      status = key_state_read_plaintext (multi, ks, buf, TLS_CHANNEL_BUF_SIZE);
 	      update_time ();
 	      if (status == -1)
 		{

@@ -34,6 +34,7 @@
 #define PUSH_MSG_REPLY            2
 #define PUSH_MSG_REQUEST_DEFERRED 3
 #define PUSH_MSG_AUTH_FAILURE     4
+#define PUSH_MSG_CONTINUATION     5
 
 void incoming_push_message (struct context *c,
 			    const struct buffer *buffer);
@@ -48,7 +49,11 @@ bool send_push_request (struct context *c);
 
 void receive_auth_failed (struct context *c, const struct buffer *buffer);
 
+void server_pushed_restart (struct context *c, const struct buffer *buffer);
+
 #if P2MP_SERVER
+
+void clone_push_list (struct options *o);
 
 void push_option (struct options *o, const char *opt, int msglevel);
 void push_options (struct options *o, char **p, int msglevel, struct gc_arena *gc);
@@ -59,7 +64,9 @@ bool send_push_reply (struct context *c);
 
 void remove_iroutes_from_push_route_list (struct options *o);
 
-void send_auth_failed (struct context *c);
+void send_auth_failed (struct context *c, const char *client_reason);
+
+void send_restart (struct context *c);
 
 #endif
 #endif
