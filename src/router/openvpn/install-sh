@@ -102,12 +102,10 @@ no_target_directory=
 usage="\
 Usage: $0 [OPTION]... [-T] SRCFILE DSTFILE
    or: $0 [OPTION]... SRCFILES... DIRECTORY
-   or: $0 [OPTION]... -t DIRECTORY SRCFILES...
-   or: $0 [OPTION]... -d DIRECTORIES...
+   or: $0 -d DIRECTORIES...
 
-In the 1st form, copy SRCFILE to DSTFILE.
-In the 2nd and 3rd, copy all SRCFILES to DIRECTORY.
-In the 4th, create DIRECTORIES.
+In the first form, install SRCFILE to DSTFILE, removing SRCFILE by default.
+In the second, create the directory path DIR.
 
 Options:
      --help     display this help and exit.
@@ -139,7 +137,7 @@ while test $# -ne 0; do
     -g) chgrpcmd="$chgrpprog $2"
 	shift;;
 
-    --help) echo "$usage"; exit $?;;
+    --help) echo "$usage"; exit 0;;
 
     -m) mode=$2
 	case $mode in
@@ -159,8 +157,6 @@ while test $# -ne 0; do
 	shift;;
 
     -T) no_target_directory=true;;
-
-    --version) echo "$0 $scriptversion"; exit $?;;
 
     --)	shift
 	break;;
@@ -240,7 +236,7 @@ do
     dstdir_status=$?
   else
 
-    # Waiting for this to be detected by the "$cpprog $src $dsttmp" command
+    # Waiting for this to be detected by the "$instcmd $src $dsttmp" command
     # might cause directories to be created, which would be especially bad
     # if $src (and thus $dsttmp) contains '*'.
     if test ! -f "$src" && test ! -d "$src"; then
@@ -442,12 +438,15 @@ do
       test -z "$chmodcmd" || $doit $chmodcmd $mode "$dst"; } || exit 1
   else
 
+    # don't allow the sed command to completely eliminate the filename.
+    test -z "$dstfile" && dstfile=`basename "$dst"`
+
     # Make a couple of temp file names in the proper directory.
     dsttmp=$dstdir/_inst.$$_
     rmtmp=$dstdir/_rm.$$_
 
     # Trap to clean up those temp files at exit.
-    trap 'ret=$?; rm -f "$dsttmp" "$rmtmp" && exit $ret' 0
+    trap 'status=$?; rm -f "$dsttmp" "$rmtmp" && exit $status' 0
 
     # Copy the file name to the temp name.
     (umask $cp_umask && $doit_exec $cpprog "$src" "$dsttmp") &&
@@ -456,7 +455,7 @@ do
     #
     # If any of these fail, we abort the whole thing.  If we want to
     # ignore errors from any of these, just make sure not to ignore
-    # errors from the above "$doit $cpprog $src $dsttmp" command.
+    # errors from the above "$doit $instcmd $src $dsttmp" command.
     #
     { test -z "$chowncmd" || $doit $chowncmd "$dsttmp"; } &&
     { test -z "$chgrpcmd" || $doit $chgrpcmd "$dsttmp"; } &&

@@ -1,5 +1,11 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Enable deferred authentication */
+#undef CONFIGURE_DEF_AUTH
+
+/* Enable internal packet filter */
+#undef CONFIGURE_PF
+
 /* enable iproute2 support */
 #undef CONFIG_FEATURE_IPROUTE
 
@@ -278,6 +284,9 @@
 
 /* Define to 1 if you have the `sendto' function. */
 #undef HAVE_SENDTO
+
+/* SELinux support */
+#undef HAVE_SETCON
 
 /* Define to 1 if you have the `setgid' function. */
 #undef HAVE_SETGID
