@@ -2561,6 +2561,8 @@ int led_control(int type, int act)
 		connected_gpio = 0x106;
 		break;
 	case ROUTER_BOARD_GATEWORX:
+	if (nvram_match("DD_BOARD", "Avila GW2369"))
+	    break;
 #ifdef HAVE_WG302V1
 		diag_gpio = 0x104;
 		wlan_gpio = 0x105;
