@@ -149,6 +149,7 @@ void start_sysinit(void)
 	/*
 	 * /proc 
 	 */
+	fprintf(stderr,"mount devices\n");
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 	// system2 ("/etc/convert");
 	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
@@ -165,9 +166,9 @@ void start_sysinit(void)
 	 * eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
 	 * eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop"); 
 	 */
+	fprintf(stderr,"create folders\n");
 	eval("mkdir", "/tmp/www");
 	eval("mknod", "/dev/gpio", "c", "127", "0");
-	eval("ledtool", "1", "1");	// blink the led 4 times
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mknod", "/dev/rtc", "c", "254", "0");
@@ -203,6 +204,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
+	fprintf(stderr,"set console loglevel\n");
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
@@ -218,6 +220,7 @@ void start_sysinit(void)
 //    checkupdate(  );
 #endif
 #endif
+	fprintf(stderr,"try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
 	if (detect("82541"))	// Intel Gigabit
 	{
@@ -251,7 +254,9 @@ void start_sysinit(void)
 		insmod("8139too");
 	}
 #ifndef HAVE_NOWIFI
+	fprintf(stderr,"load HAL Driver\n");
 	insmod("ath_hal");
+	fprintf(stderr,"load ATH Driver\n");
 	if (nvram_get("rate_control") != NULL) {
 		char rate[64];
 
@@ -266,13 +271,18 @@ void start_sysinit(void)
 #endif
 
 #if 1
+	fprintf(stderr,"load IXP helper\n");
 	insmod("ixp400th");
+	fprintf(stderr,"load IXP Core Driver\n");
 	insmod("ixp400");
 //	system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+	fprintf(stderr,"load IXP Ethernet Driver\n");
 	insmod("ixp400_eth");
+	fprintf(stderr,"initialize Ethernet\n");
 	eval("ifconfig", "ixp0", "0.0.0.0", "up");
 	eval("ifconfig", "ixp1", "0.0.0.0", "up");
 #ifndef HAVE_WAVESAT
+	fprintf(stderr,"Load OCF Drivers\n");
 	insmod("ocf");
 	insmod("cryptodev");
 #endif
@@ -296,6 +306,7 @@ void start_sysinit(void)
 
 	// insmod("ipv6");
 
+	fprintf(stderr,"Load Sensor Driver\n");
 	insmod("ad7418");	// temp / voltage sensor
 	/*
 	 * Configure mac addresses by reading data from eeprom 
@@ -343,6 +354,7 @@ void start_sysinit(void)
 #else
 	char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
 												 */
+	fprintf(stderr,"Read MAC Addresses from EEPROM\n");
 	FILE *file = fopen(filename, "r");
 
 	if (file) {
@@ -375,6 +387,7 @@ void start_sysinit(void)
 		// for this
 		// switch
 	{
+	fprintf(stderr,"Load SPI Kendin Switch Driver\n");
 		insmod("spi-algo-bit");
 		if (nvram_match("DD_BOARD", "Avila GW2355"))
 			insmod("spi-ixp4xx-gw2355");
@@ -387,6 +400,7 @@ void start_sysinit(void)
 
 	char filename2[64];
 
+	fprintf(stderr,"Detect additional Device capabilities\n");
 	sprintf(filename2, "/dev/mtdblock/%d", getMTD("RedBoot"));
 	file = fopen(filename2, "r");
 	if (file) {
@@ -558,19 +572,25 @@ void start_sysinit(void)
 	/* cf capability ? */
 	char *modelname = nvram_safe_get("DD_BOARD");
 	if (!strncmp(modelname,"Avila GW2348",12) || !strcmp(modelname,"Cambria GW2358-4")) {
+	fprintf(stderr,"Load CF Card Driver\n");
 	    insmod("pata_ixp4xx_cf");
 	}    
 
 	/* watchdog type */
 	if (!strncmp(modelname,"Avila GW2369",12)) {
+	fprintf(stderr,"Load Software Watchdog\n");
 	    insmod("softdog");
 	} else {
+	fprintf(stderr,"blink led\n");
+	eval("ledtool", "1", "1");	// blink the led 4 times
+	fprintf(stderr,"Load Hardware Watchdog\n");
 	    insmod("ixp4xx_wdt");
 	}
 	
 
 
 
+	fprintf(stderr,"Enable Watchdog\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");	// system watchdog
 	
