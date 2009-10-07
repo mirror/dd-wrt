@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Dutch reference translation file - DD-WRT V24 SP2 by Fabian 22/6/2006	Resynced 04/10/2009 by Dutchman01  //
+//	Dutch reference translation file - DD-WRT V24 SP2 by Fabian 22/6/2006	Resynced 05/10/2009 by Dutchman01  //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -37,7 +37,7 @@ share.proto="Protocol";
 share.ip="IP-Adres";
 share.mac="MAC-Adres";
 share.none="Geen";
-share.none2="nee";
+share.none2="geen";
 share.both="Beide";
 share.del="Verwijder";
 share.remove="Verwijder";
@@ -167,7 +167,7 @@ share.fssize="Totaal / Vrije Ruimte";
 share.src="Bron Adres";
 share.dst="Remote Adres";
 share.name_resolution="Naam Resolutie";
-share.timeout="Timeout (s)";
+share.timeout="Tijdsoverschrijding (s)";
 share.detail="Klik om de details te zien";
 share.tmpmem="Tijdelijk Geheugen";
 share._1h="Elk uur";
@@ -229,7 +229,7 @@ sbutton.wol="Wekken";
 sbutton.add_wol="Host Toevoegen";
 sbutton.manual_wol="Handmatig Wekken";
 sbutton.summary="Samenvatting";
-sbutton.filterIP="Lijst Cliënten Bewerken";
+sbutton.filterIP="Cliënten Lijst Bewerken";
 sbutton.filterMac="MAC Filter Lijst Bewerken";
 sbutton.filterSer="Service Toevoegen/Bewerken";
 sbutton.reboot="Router Herstarten";
@@ -588,8 +588,8 @@ filter.time="Tijden";
 filter.h24="24 Uur";
 filter.legend3="Geblokkeerde Diensten";
 filter.catchall="Blokkeer alle P2P Protocollen";
-filter.legend4="Website's Verbieden Per URL Adressen";
-filter.legend5="Website's Verbieden Per Sleutelwoord";
+filter.legend4="Website's Verbieden Per URL";
+filter.legend5="Website's Verbieden Per Sleutelwoorden";
 filter.mess1="Verwijder het Beleid?";
 filter.mess2="U dient tenminste één dag te selecteren.";
 filter.mess3="De eindtijd dient later te zijn dan de starttijd."; 
@@ -751,7 +751,7 @@ hotspot.nocat_allowweb="Web Hosts Toegestaan";
 hotspot.nocat_docroot="Document Root";
 hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="Verbied Poorten";
-hotspot.nocat_timeout="Timeout Inlog";
+hotspot.nocat_timeout="Inlog Tijdsoverschrijding";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Alleen Route";
 hotspot.nocat_MAClist="MAC White List";
@@ -778,7 +778,7 @@ hotspot.wifidog_port="Poort";
 hotspot.wifidog_httpdname="Webserver naam";
 hotspot.wifidog_httpdconn="Max Gebruikers";
 hotspot.wifidog_checkinter="Controle Interval (sec.)";
-hotspot.wifidog_checktimeout="Cliënt Timeout";
+hotspot.wifidog_checktimeout="Cliënt Tijdsoverschrijding";
 hotspot.wifidog_tmaclist="Vertrouwde MAC Lijst";
 hotspot.wifidog_authsrv="AuthServer Hostnaam";
 hotspot.wifidog_authsrvssl="AuthServer SSL Beschikbaar";
@@ -791,7 +791,7 @@ hotspot.wifidog_config="Firewall Regelset";
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="Mijn Reclame Hotspot";
 anchorfree.h2="AnchorFree Reclame Hotspot";
-anchorfree.anchorfree_revenue="Inkomsten generen met AnchorFree Hotspot Reclame";
+anchorfree.anchorfree_revenue="Inkomsten genereren met AnchorFree Hotspot Reclame";
 anchorfree.email="Email om inkomstenrapporten te ontvangen";
 anchorfree.ssid="Gebruik een verschillend SSID";
 anchorfree.ssid_name="SSID";
@@ -901,10 +901,10 @@ idx.dhcp_fwd="DHCP Forwarder";
 idx.dhcp_start="Start IP-Adres";
 idx.dhcp_end="Eind IP-Adres";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximum DHCP Gebruikers";
-idx.dhcp_lease="Cliënt Lease Tijd";
+idx.dhcp_lease="Lease Tijd";
 idx.dhcp_dnsmasq="Gebruik DNSMasq voor DHCP";
 idx.dns_dnsmasq="Gebruik DNSMasq voor DNS";
-idx.auth_dnsmasq="DHCP-Autoritair";
+idx.auth_dnsmasq="Gebruik DHCP-Autoritair";
 idx.summt_opt1="geen";
 idx.summt_opt2="eerste Zon Apr - laatste Zon Okt";
 idx.summt_opt3="laatste Zon Mrt - laatste Zon Okt";
@@ -944,9 +944,9 @@ join.mess1="Succesvol als cliënt met het volgende netwerk verbonden: ";
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-log_in.titl="Inkomende Log Tabel";
-log_in.h2="Inkomende Log Tabel";
-log_in.th_ip="IP Bron";
+log_in.titl="Ingaande Log Tabel";
+log_in.h2="Ingaande Log Tabel";
+log_in.th_ip="Bron IP";
 log_in.th_port="Bestemmingspoort Nummer";
 
 
@@ -1006,7 +1006,7 @@ management.cron_jobs="Extra Cron Taken";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
-management.wifi_srv="Beperkt 802.1x";
+management.wifi_srv="Beperk 802.1x";
 management.rst_legend="Reset Knop";
 management.rst_srv="Reset Knop";
 management.routing_legend="Routing";
@@ -1040,9 +1040,9 @@ management.lang_swedish="Zweeds";
 management.lang_japanese="Japans";
 management.lang_hungarian="Hongaars";
 management.net_legend="IP Filter Instellingen (Pas deze aan voor P2P)";
-management.net_port="Maximum Poorten";
-management.net_tcptimeout="TCP Timeout (in seconden)";
-management.net_udptimeout="UDP Timeout (in seconden)";
+management.net_port="Maximum Aantal Poorten";
+management.net_tcptimeout="TCP Tijdsoverschrijding (seconden)";
+management.net_udptimeout="UDP Tijdsoverschrijding (seconden)";
 management.clock_legend="Overklokken";
 management.clock_frq="Frequentie";
 management.clock_support="Niet Ondersteund";
@@ -1210,13 +1210,13 @@ service.kaid_orbdeepport="ORB Diepe Poort";
 
 //DHCPd
 service.dhcp_legend="DHCP Cliënt";
-service.dhcp_vendor="Geef Vendorclass";
+service.dhcp_vendor="Vendorclass";
 service.dhcp_reqip="IP Aanvragen";
 service.dhcp_legend2="DHCP Server";
 service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="Gebruik JFFS2 voor de cliënt lease DB";
 service.dhcp_nvramlease="Gebruik NVRAM voor de cliënt lease DB";
-service.dhcp_domain="Gebruikte Domein";
+service.dhcp_domain="Domein Gebruik";
 service.dhcp_landomain="LAN Domein";
 service.dhcp_option="Extra DHCPd Opties";
 service.dnsmasq_legend="DNSMasq";
@@ -1243,7 +1243,7 @@ service.telnet_srv="Telnet";
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Cliënt";
 service.pptpd_option="PPTP Cliënt Opties";
-service.pptpd_ipdns="Server IP of DNS Naam";
+service.pptpd_ipdns="Server IP / DNS Naam";
 service.pptpd_subnet="Remote Subnet";
 service.pptpd_subnetmask="Remote Subnetmasker";
 service.pptpd_encry="MPPE Encryptie";
@@ -1294,13 +1294,13 @@ service.vpn_ipname="Server IP/Naam";
 service.vpn_mtu="TUN MTU Instelling";
 service.vpn_mru="TUN MTU Extra";
 service.vpn_mss="TCP MSS";
-service.vpn_compress="Gebruik LZO Compressie";
+service.vpn_compress="LZO Compressie";
 service.vpn_tunnel="Tunnel Protocol";
 service.vpn_tuntap="Tunnel Apparaat";
 service.vpn_srvcert="Publieke Server Cert";
 service.vpn_clicert="Publieke Cliënt Cert";
 service.vpn_certtype="nsCertType";
-service.vpn_clikey="Prive Cliënt Sleutel";
+service.vpn_clikey="Prive Sleutel Cliënt";
 
 service.vncrepeater_legend="VNC";
 service.vncrepeater="VNC Repeater";
@@ -1472,7 +1472,7 @@ hstatus_band.right2="Klik op de text \"Autoscale\" in de grafiek om te schakelen
 status_router.titl="Router Status";
 status_router.h2="Router Informatie";
 status_router.legend="Systeem";
-status_router.sys_model="Router Model";
+status_router.sys_model="Model";
 status_router.sys_firmver="Firmware Versie";
 status_router.sys_time="Huidige Tijd";
 status_router.sys_up="Tijd Online";
@@ -1512,7 +1512,7 @@ status_inet.titl="WAN Status";
 status_inet.h11="WAN";
 status_inet.conft="Configuratie Type";
 status_inet.www_loginstatus="Login Status";
-status_inet.wanuptime="Verbindings Uptime";
+status_inet.wanuptime="Tijd Verbonden";
 status_inet.leasetime="Resterende Lease Tijd";
 status_inet.traff="Verkeer";
 status_inet.traff_tot="Totaal Verkeer";
@@ -1522,7 +1522,7 @@ status_inet.traffout="Uit";
 status_inet.previous="Vorige Maand";
 status_inet.next="Volgende Maand";
 status_inet.dataadmin="Data Administratie";
-status_inet.delete_confirm="WAARSCHUWING! Dit zal alle verkeersdata wissen. Doorgaan?"; 
+status_inet.delete_confirm="WAARSCHUWING! Dit zal alle verkeersdata wissen. Wilt u Doorgaan?"; 
 
 //help container
 
@@ -1642,7 +1642,7 @@ upnp.msg2="Alle waarden verwijderen?";
 
 //help container
 
-hupnp.right2="Klik op de vuilnisbak om een individuele waarde te verwijderen.";
+hupnp.right2="Klik op de vuilnisbak om een individuele waarde te verwijderen..";
 hupnp.right4="Staat applicaties toe automatisch poort forwards in te stellen."; 
 
 
@@ -1966,8 +1966,8 @@ wl_basic.protmode="Beschermings Mode";
 wl_basic.legend2="Radio Tijd Restricties";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Programmering";
-wl_basic.radio_on="Radio is Geactiveerd";
-wl_basic.radio_off="Radio is Gedeactiveerd";
+wl_basic.radio_on="Radio Ingeschakeld";
+wl_basic.radio_off="Radio Uitgeschakeld";
 wl_basic.h2_v24="Draadloos Fysieke Interface";
 wl_basic.h2_vi="Virtuele Interfaces";
 wl_basic.regdom="Regulatory Domein";
