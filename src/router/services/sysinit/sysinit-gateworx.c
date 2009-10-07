@@ -230,28 +230,28 @@ void start_sysinit(void)
 	if (detect("8139"))	// Intel Gigabit
 	{
 		nvram_set("intel_eth", "1");
-		insmod("8139too");
+		insmod("8139cp");
 	}
 	else if (detect("8139"))	// Realtek 8139 Adapter (various notebooks) 
 	{
 		nvram_set("intel_eth", "1");
-		insmod("8139too");
+		insmod("8139cp");
 	}
 	else if (detect("DFE-690TXD"))	// Realtek 8139 Adapter (various
 	{
 		// notebooks) 
 		nvram_set("intel_eth", "1");
-		insmod("8139too");
+		insmod("8139cp");
 	}
 	else if (detect("SMC2-1211TX"))	// Realtek 8139 Adapter (various
 	{	// notebooks) 
 		nvram_set("intel_eth", "1");
-		insmod("8139too");
+		insmod("8139cp");
 	}
 	else if (detect("Robotics"))	// Realtek 8139 Adapter (various
 	{	// notebooks) 
 		nvram_set("intel_eth", "1");
-		insmod("8139too");
+		insmod("8139cp");
 	}
 #ifndef HAVE_NOWIFI
 	fprintf(stderr,"load HAL Driver\n");
