@@ -439,8 +439,6 @@ void start_sysinit(void)
 			eval("ifconfig", "ixp1", "hw", "ether", mac);
 			eval("ifconfig", "ixp0", "0.0.0.0", "up");
 			eval("ifconfig", "ixp1", "0.0.0.0", "up");
-		} else {
-			eval("insmod", "avila-ide");
 		}
 		fclose(file);
 	}
@@ -577,18 +575,11 @@ void start_sysinit(void)
 	}    
 
 	/* watchdog type */
-	if (!strncmp(modelname,"Avila GW2369",12)) {
-	fprintf(stderr,"Load Software Watchdog\n");
-	    insmod("softdog");
-	} else {
+	fprintf(stderr,"Load Hardware Watchdog\n");
+	insmod("ixp4xx_wdt");
 	fprintf(stderr,"blink led\n");
 	eval("ledtool", "1", "1");	// blink the led 4 times
-	fprintf(stderr,"Load Hardware Watchdog\n");
-	    insmod("ixp4xx_wdt");
-	}
 	
-
-
 
 	fprintf(stderr,"Enable Watchdog\n");
 	if (!nvram_match("disable_watchdog", "1"))

@@ -418,7 +418,8 @@ int check_vlan_support(void)
 		break;
 	}
 
-	unsigned long boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
+	unsigned long boardflags =
+	    strtoul(nvram_safe_get("boardflags"), NULL, 0);
 
 	if (boardflags & BFL_ENETVLAN)
 		return 1;
@@ -1535,7 +1536,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WBR54G;
 	}
 #ifndef HAVE_BUFFALO
-	if (boardnum == 0 && nvram_match("boardtype", "0x048e") &&   // cfe sets boardnum="", strtoul -> 0
+	if (boardnum == 0 && nvram_match("boardtype", "0x048e") &&	// cfe sets boardnum="", strtoul -> 0
 	    nvram_match("boardrev", "0x35")) {
 		cprintf("router is D-Link DIR-320\n");
 		setRouter("D-Link DIR-320");
@@ -1685,18 +1686,20 @@ int internal_getRouterBrand()
 		setRouter("Linksys WAP54G v3.x");
 		return ROUTER_WAP54G_V3;
 	}
-	
+
 	if ((boardnum == 1 || boardnum == 3500)
-		&& nvram_match("boardtype", "0x04CF")
+	    && nvram_match("boardtype", "0x04CF")
 	    && (nvram_match("boardrev", "0x1213")
-	    || nvram_match("boardrev", "02"))) {
+		|| nvram_match("boardrev", "02"))) {
 		cprintf("router is wnr3500v2/U/L\n");
 		setRouter("Netgear WNR3500v2/U/L");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
-	
-	if ((boardnum == 42 || boardnum == 66) && nvram_match("boardtype", "0x04EF")
-	    && (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305"))) {
+
+	if ((boardnum == 42 || boardnum == 66)
+	    && nvram_match("boardtype", "0x04EF")
+	    && (nvram_match("boardrev", "0x1304")
+		|| nvram_match("boardrev", "0x1305"))) {
 		cprintf("router is wrt320n\n");
 		setRouter("Linksys WRT320N");
 		return ROUTER_WRT320N;
@@ -2561,8 +2564,6 @@ int led_control(int type, int act)
 		connected_gpio = 0x106;
 		break;
 	case ROUTER_BOARD_GATEWORX:
-	if (nvram_match("DD_BOARD", "Avila GW2369"))
-	    break;
 #ifdef HAVE_WG302V1
 		diag_gpio = 0x104;
 		wlan_gpio = 0x105;
@@ -2570,8 +2571,10 @@ int led_control(int type, int act)
 		diag_gpio = 0x102;
 		wlan_gpio = 0x104;
 #else
-		if (nvram_match("DD_BOARD", "Cambria GW2350")
-		    || nvram_match("DD_BOARD2", "Cambria GW2350"))
+		if (nvram_match("DD_BOARD", "Avila GW2369")) {
+			connected_gpio = 0x102;
+		} else if (nvram_match("DD_BOARD", "Cambria GW2350")
+			   || nvram_match("DD_BOARD2", "Cambria GW2350"))
 			connected_gpio = 0x105;
 		else if (nvram_match("DD_BOARD", "Cambria GW2358-4")
 			 || nvram_match("DD_BOARD2", "Cambria GW2358-4"))
@@ -2879,15 +2882,15 @@ int led_control(int type, int act)
 		diag_gpio = 0x001;	// power led blink /off to indicate factory defaults
 		break;
 	case ROUTER_NETGEAR_WNR3500L:
-		power_gpio = 0x003;  //power led green
+		power_gpio = 0x003;	//power led green
 		diag_gpio = 0x007;	// power led amber
 		ses_gpio = 0x001;	// WPS led green
-		connected_gpio = 0x002;  //wan led green
+		connected_gpio = 0x002;	//wan led green
 		break;
 	case ROUTER_WRT320N:
-		power_gpio = 0x002;  //power/diag (disabled=blink)
+		power_gpio = 0x002;	//power/diag (disabled=blink)
 		ses_gpio = 0x103;	// ses blue
-		connected_gpio = 0x104;  //ses orange
+		connected_gpio = 0x104;	//ses orange
 		break;
 #endif
 	}
