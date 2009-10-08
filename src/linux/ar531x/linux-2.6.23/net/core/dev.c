@@ -1711,8 +1711,10 @@ gso:
 			}
 			HARD_TX_UNLOCK(dev);
 			if (net_ratelimit())
+				{
 				printk(KERN_CRIT "Virtual device %s asks to "
 				       "queue packet!\n", dev->name);
+				}
 		} else {
 			/* Recursion is detected! It is possible,
 			 * unfortunately */
