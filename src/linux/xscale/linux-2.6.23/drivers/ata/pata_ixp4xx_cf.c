@@ -21,6 +21,7 @@
 #include <linux/irq.h>
 #include <linux/platform_device.h>
 #include <scsi/scsi_host.h>
+#include <asm/mach-types.h>
 
 #define DRV_NAME	"pata_ixp4xx_cf"
 #define DRV_VERSION	"0.1.3"
@@ -332,8 +333,54 @@ static struct platform_driver ixp4xx_pata_platform_driver = {
 	.remove		= __devexit_p(ixp4xx_pata_remove),
 };
 
+static struct resource avila_pata_resources[] = {
+	{
+		.flags	= IORESOURCE_MEM
+	},
+	{
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.name	= "intrq",
+		.start	= IRQ_IXP4XX_GPIO12,
+		.end	= IRQ_IXP4XX_GPIO12,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct ixp4xx_pata_data avila_pata_data = {
+	.cs0_bits	= 0xbfff0043,
+	.cs1_bits	= 0xbfff0043,
+};
+
+
+static struct platform_device avila_pata = {
+	.name			= "pata_ixp4xx_cf",
+	.id			= 0,
+	.dev.platform_data      = &avila_pata_data,
+	.num_resources		= ARRAY_SIZE(avila_pata_resources),
+	.resource		= avila_pata_resources,
+};
+
+
+
+
 static int __init ixp4xx_pata_init(void)
 {
+if (!machine_is_cambria())
+{
+	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
+	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
+
+	avila_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(2);
+	avila_pata_resources[1].end = IXP4XX_EXP_BUS_END(2);
+
+	avila_pata_data.cs0_cfg = IXP4XX_EXP_CS1;
+	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
+
+	platform_device_register(&avila_pata);
+}
+
 	return platform_driver_register(&ixp4xx_pata_platform_driver);
 }
 

@@ -18,6 +18,7 @@
 #include <linux/tty.h>
 #include <linux/serial_8250.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
 
 #include <asm/types.h>
 #include <asm/setup.h>
@@ -149,33 +150,7 @@ static struct platform_device avila_uart = {
 	.resource		= avila_uart_resources
 };
 
-static struct resource avila_pata_resources[] = {
-	{
-		.flags	= IORESOURCE_MEM
-	},
-	{
-		.flags	= IORESOURCE_MEM,
-	},
-	{
-		.name	= "intrq",
-		.start	= IRQ_IXP4XX_GPIO12,
-		.end	= IRQ_IXP4XX_GPIO12,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
 
-static struct ixp4xx_pata_data avila_pata_data = {
-	.cs0_bits	= 0xbfff0043,
-	.cs1_bits	= 0xbfff0043,
-};
-
-static struct platform_device avila_pata = {
-	.name			= "pata_ixp4xx_cf",
-	.id			= 0,
-	.dev.platform_data      = &avila_pata_data,
-	.num_resources		= ARRAY_SIZE(avila_pata_resources),
-	.resource		= avila_pata_resources,
-};
 
 static struct platform_device *avila_devices[] __initdata = {
 	&avila_i2c_controller,
@@ -185,26 +160,216 @@ static struct platform_device *avila_devices[] __initdata = {
 	&ixdp425_gw2355_spi_controller
 };
 
+
+
+
+
+#define GPIO_EEPROM_SCL 6
+#define GPIO_EEPROM_SDA 7
+#define CLK_LO()      gpio_line_set(GPIO_EEPROM_SCL, IXP4XX_GPIO_LOW);
+#define CLK_HI()      gpio_line_set(GPIO_EEPROM_SCL, IXP4XX_GPIO_HIGH);
+#define DATA_LO()     gpio_line_set(GPIO_EEPROM_SDA, IXP4XX_GPIO_LOW);
+#define DATA_HI()     gpio_line_set(GPIO_EEPROM_SDA, IXP4XX_GPIO_HIGH);
+#define hal_delay_us(a) udelay(a)
+#define HAL_GPIO_OUTPUT_DISABLE(gpio) gpio_line_config(gpio, IXP4XX_GPIO_IN);
+#define HAL_GPIO_OUTPUT_ENABLE(gpio) gpio_line_config(gpio, IXP4XX_GPIO_OUT);
+#define HAL_GPIO_OUTPUT_SET(gpio) gpio_line_set(gpio, IXP4XX_GPIO_HIGH);
+typedef unsigned char cyg_uint8;
+
+// returns non-zero if ACK bit seen
+static int
+eeprom_start(cyg_uint8 b)
+{
+    int i;
+
+    CLK_HI();
+    hal_delay_us(5);
+    DATA_LO();
+    hal_delay_us(5);
+    CLK_LO();
+
+    for (i = 7; i >= 0; i--) {
+	if (b & (1 << i))
+	{
+	    DATA_HI();
+	}
+	else{
+	
+	    DATA_LO();
+	}
+	hal_delay_us(5);
+	CLK_HI();
+	hal_delay_us(5);
+	CLK_LO();
+    }
+    hal_delay_us(5);
+    HAL_GPIO_OUTPUT_DISABLE(GPIO_EEPROM_SDA);
+    CLK_HI();
+    hal_delay_us(5);
+    i = (*IXP4XX_GPIO_GPINR & (1 << GPIO_EEPROM_SDA)) ? 0 : 1;
+    CLK_LO();
+    hal_delay_us(5);
+    HAL_GPIO_OUTPUT_ENABLE(GPIO_EEPROM_SDA);
+
+    return i;
+}
+
+
+static void
+eeprom_stop(void)
+{
+    hal_delay_us(5);
+    DATA_LO();
+    hal_delay_us(5);
+    CLK_HI();
+    hal_delay_us(5);
+    DATA_HI();
+    hal_delay_us(5);
+    CLK_LO();
+    hal_delay_us(5);
+    CLK_HI();
+    hal_delay_us(5);
+}
+
+
+static int
+eeprom_putb(cyg_uint8 b)
+{
+    int i;
+
+    for (i = 7; i >= 0; i--) {
+	if (b & (1 << i)) {
+	    DATA_HI();
+	}
+	else{
+	    DATA_LO();
+	}
+	CLK_HI();
+	hal_delay_us(5);
+	CLK_LO();
+	hal_delay_us(5);
+    }
+    HAL_GPIO_OUTPUT_DISABLE(GPIO_EEPROM_SDA);
+    CLK_HI();
+    hal_delay_us(5);
+    i = (*IXP4XX_GPIO_GPINR & (1 << GPIO_EEPROM_SDA)) ? 0 : 1;
+    CLK_LO();
+    hal_delay_us(5);
+
+    DATA_HI();
+    HAL_GPIO_OUTPUT_ENABLE(GPIO_EEPROM_SDA);
+
+    return i;
+}
+
+
+static cyg_uint8
+eeprom_getb(int more)
+{
+    int i;
+    cyg_uint8 b = 0;
+
+    HAL_GPIO_OUTPUT_DISABLE(GPIO_EEPROM_SDA);
+    hal_delay_us(5);
+
+    for (i = 7; i >= 0; i--) {
+	b <<= 1;
+	if (*IXP4XX_GPIO_GPINR & (1 << GPIO_EEPROM_SDA))
+	    b |= 1;
+	CLK_HI();
+	hal_delay_us(5);
+	CLK_LO();
+	hal_delay_us(5);
+    }
+    HAL_GPIO_OUTPUT_ENABLE(GPIO_EEPROM_SDA);
+    if (more)
+    {
+	DATA_LO();
+    }
+    else{
+	DATA_HI();
+    }
+    hal_delay_us(5);
+    CLK_HI();
+    hal_delay_us(5);
+    CLK_LO();
+    hal_delay_us(5);
+
+    return b;
+}
+
+
+int
+eeprom_read(int addr, cyg_uint8 *buf, int nbytes)
+{
+    cyg_uint8 start_byte;
+    int i;
+
+    start_byte = 0xA0;  // write
+
+    if (addr & (1 << 8))
+	start_byte |= 2;
+
+    
+    for (i = 0; i < 10; i++)
+	if (eeprom_start(start_byte))
+	    break;
+
+    if (i == 10) {
+	printk(KERN_WARNING "eeprom_read: Can't get write start ACK\n");
+	return 0;
+    }
+
+    if (!eeprom_putb(addr & 0xff)) {
+	printk(KERN_WARNING "eeprom_read: Can't get address ACK\n");
+	return 0;
+    }
+
+    start_byte |= 1; // READ command
+    if (!eeprom_start(start_byte)) {
+	printk(KERN_WARNING "eeprom_read: Can't get read start ACK\n");
+	return 0;
+    }
+
+    for (i = 0; i < (nbytes - 1); i++)
+	*buf++ = eeprom_getb(1);
+
+    *buf++ = eeprom_getb(0);
+    hal_delay_us(5);
+    eeprom_stop();
+
+    return nbytes;
+}
+
+
+
+
+
+
 static void __init avila_init(void)
 {
 	ixp4xx_sys_init();
+	char model[16];
+	memset(model,0,16);
 
+    HAL_GPIO_OUTPUT_SET(GPIO_EEPROM_SCL);
+    HAL_GPIO_OUTPUT_ENABLE(GPIO_EEPROM_SCL);
+
+    HAL_GPIO_OUTPUT_SET(GPIO_EEPROM_SDA);
+    HAL_GPIO_OUTPUT_ENABLE(GPIO_EEPROM_SDA);
+
+
+	eeprom_read(0x120, model, 16);
+	printk(KERN_INFO "Gateworks Model %s detected!\n",model);
 	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-	avila_flash_resource.end =
-		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
-
+	if (!strncmp(model,"GW2369",6))
+	{
+	avila_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
+	}else
+	{
+	avila_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_16M - 1;	
+	}
 	platform_add_devices(avila_devices, ARRAY_SIZE(avila_devices));
-
-	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
-	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
-
-	avila_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(2);
-	avila_pata_resources[1].end = IXP4XX_EXP_BUS_END(2);
-
-	avila_pata_data.cs0_cfg = IXP4XX_EXP_CS1;
-	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
-
-	platform_device_register(&avila_pata);
 
 }
 
