@@ -26,6 +26,7 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
+#include <linux/delay.h>
 
 #include <asm/system.h>
 #include <asm/pci-bridge.h>
@@ -220,49 +221,234 @@ bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
 #endif
 }
 
-static struct resource magicbox_flash_resource = {
-	.start = 0xffc00000,
-	.end   = 0xffffffffULL,
-	.flags = IORESOURCE_MEM,
-};
-
-static struct mtd_partition magicbox_flash_parts[] = {
-	{
-		.name = "linux",
-		.offset = 0x0,
-		.size = 0x3c0000,
-	},
-	{
-		.name = "rootfs",
-		.offset = 0x100000,
-		.size = 0x2c0000,
-	}
-};
-
-static struct physmap_flash_data magicbox_flash_data = {
-	.width		= 2,
-	.parts		= magicbox_flash_parts,
-	.nr_parts	= ARRAY_SIZE(magicbox_flash_parts),
-};
-
-static struct platform_device magicbox_flash_device = {
-	.name		= "physmap-flash",
-	.id		= 0,
-	.dev = {
-			.platform_data = &magicbox_flash_data,
-		},
-	.num_resources	= 1,
-	.resource	= &magicbox_flash_resource,
-};
-
-static int magicbox_setup_flash(void)
+static void isp116x_delay(struct device *dev, int delay)
 {
-	platform_device_register(&magicbox_flash_device);
+	udelay(delay);
+}
+#include <linux/usb/isp116x.h>
+
+
+static struct isp116x_platform_data isp116x_platform_data = {
+	.remote_wakeup_enable	= 1,
+	.sel15Kres	= 1,
+	.delay			= isp116x_delay,
+};
+
+static struct resource isp116x_pfm_resources[] = {
+	[0] =	{
+		.start	= 0xff300000,
+		.end	= 0xff300000 + 1,
+		.flags	= IORESOURCE_MEM,
+		},
+	[1] =	{
+		.start  = 0xff300000 + 2,
+		.end	= 0xff300000 + 3,
+		.flags  = IORESOURCE_MEM,
+		},
+	[2] =	{
+		.start	= 27,
+		.end	= 27,
+		.flags	= IORESOURCE_IRQ,
+		},
+};
+
+
+static struct platform_device usb_device = {
+	.name		= "isp116x-hcd",
+	.num_resources	= ARRAY_SIZE(isp116x_pfm_resources),
+	.resource	= isp116x_pfm_resources,
+	.dev.platform_data = &isp116x_platform_data,
+};
+
+/*#ifdef ISP116X_HCD_SEL15kRES
+	isp116x_board.sel15Kres = 1;
+#endif
+#ifdef ISP116X_HCD_OC_ENABLE
+	isp116x_board.oc_enable = 1;
+#endif
+#ifdef ISP116X_HCD_REMOTE_WAKEUP_ENABLE
+	isp116x_board.remote_wakeup_enable = 1;
+#endif
+*/
+
+/**
+ * hcWriteWord - write a 16 bit value into the USB controller
+ * @base: base address to access the chip registers
+ * @value: 16 bit value to write into register @offset
+ * @offset: register to write the @value into
+ *
+ */
+static void inline hcWriteWord (unsigned long base, unsigned int value,
+				unsigned int offset)
+{
+	out_le16 ((volatile u16*)(base + 2), offset | 0x80);
+	out_le16 ((volatile u16*)base, value);
+}
+
+/**
+ * hcWriteDWord - write a 32 bit value into the USB controller
+ * @base: base address to access the chip registers
+ * @value: 32 bit value to write into register @offset
+ * @offset: register to write the @value into
+ *
+ */
+
+static void inline hcWriteDWord (unsigned long base, unsigned long value,
+				unsigned int offset)
+{
+	out_le16 ((volatile u16*)(base + 2), offset | 0x80);
+	out_le16 ((volatile u16*)base, value);
+	out_le16 ((volatile u16*)base, value >> 16);
+}
+
+/**
+ * hcReadWord - read a 16 bit value from the USB controller
+ * @base: base address to access the chip registers
+ * @offset: register to read from
+ *
+ * Returns the readed register value
+ */
+
+static unsigned int inline hcReadWord (unsigned long base, unsigned int offset)
+{
+	out_le16 ((volatile u16*)(base + 2), offset);
+	return (in_le16 ((volatile u16*)base));
+}
+
+/**
+ * hcReadDWord - read a 32 bit value from the USB controller
+ * @base: base address to access the chip registers
+ * @offset: register to read from
+ *
+ * Returns the readed register value
+ */
+
+static unsigned long inline hcReadDWord (unsigned long base, unsigned int offset)
+{
+	unsigned long val, val16;
+
+	out_le16 ((volatile u16*)(base + 2), offset);
+	val = in_le16((volatile u16*)base);
+	val16 = in_le16((volatile u16*)base);
+	return (val | (val16 << 16));
+}
+
+/* control and status registers isp1161 */
+#define HcRevision		0x00
+#define HcControl		0x01
+#define HcCommandStatus		0x02
+#define HcInterruptStatus	0x03
+#define HcInterruptEnable	0x04
+#define HcInterruptDisable	0x05
+#define HcFmInterval		0x0D
+#define HcFmRemaining		0x0E
+#define HcFmNumber		0x0F
+#define HcLSThreshold		0x11
+#define HcRhDescriptorA		0x12
+#define HcRhDescriptorB		0x13
+#define HcRhStatus		0x14
+#define HcRhPortStatus1		0x15
+#define HcRhPortStatus2		0x16
+
+#define HcHardwareConfiguration 0x20
+#define HcDMAConfiguration	0x21
+#define HcTransferCounter	0x22
+#define HcuPInterrupt		0x24
+#define HcuPInterruptEnable	0x25
+#define HcChipID		0x27
+#define HcScratch		0x28
+#define HcSoftwareReset		0x29
+#define HcITLBufferLength	0x2A
+#define HcATLBufferLength	0x2B
+#define HcBufferStatus		0x2C
+#define HcReadBackITL0Length	0x2D
+#define HcReadBackITL1Length	0x2E
+#define HcITLBufferPort		0x40
+#define HcATLBufferPort		0x41
+
+static inline void out_le16(volatile unsigned short __iomem *addr, int val)
+{
+	__asm__ __volatile__("sync; sthbrx %1,0,%2" : "=m" (*addr) :
+			      "r" (val), "r" (addr));
+}
+
+static inline int in_le16(const volatile unsigned short __iomem *addr)
+{
+	int ret;
+
+	__asm__ __volatile__("sync; lhbrx %0,0,%1;\n"
+			     "twi 0,%0,0;\n"
+			     "isync" : "=r" (ret) :
+			      "r" (addr), "m" (*addr));
+	return ret;
+}
+
+
+static int magicbox_usb(void)
+{
+int i;
+	/* PerCS3 (CF's CS1): base 0xff300000, 16-bit, rw */
+	mtdcr(DCRN_EBC_BASE, 3);
+	mtdcr(DCRN_EBC_BASE + 1, 0xff31a000);
+	mtdcr(DCRN_EBC_BASE, 0x13);
+	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
+	unsigned long usbBase= ioremap_nocache(0xff300000, 4096);
+
+#define USB_CHIP_ENABLE 0x04
+#define IDE_BOOSTING 0x40
+printk(KERN_INFO "reset usb controler\n");
+			hcWriteDWord (usbBase, 0x00000001, HcCommandStatus);
+			for (i = 1000; i > 0; i--) {	/* loop up to 10 seconds */
+				udelay (10);
+				if (!(hcReadDWord (usbBase, HcCommandStatus) & 0x01))
+					break;
+			}
+
+			if (!i)
+			{
+			printk(KERN_INFO "reset failed, do not register\n");
+				return 0;  /* the controller doesn't responding. Broken? */
+			}
+		/*
+		 * OK. USB controller is ready. Initialize it in such way the later driver
+		 * can us it (without any knowing about specific implementation)
+		 */
+			hcWriteDWord (usbBase, 0x00000000, HcControl);
+		/*
+		 * disable all interrupt sources. Because we
+		 * don't know where we come from (hard reset, cold start, soft reset...)
+		 */
+			hcWriteDWord (usbBase, 0x8000007D, HcInterruptDisable);
+		/*
+		 * our current setup hardware configuration
+		 * - every port power supply can switched indepently
+		 * - every port can signal overcurrent
+		 * - every port is "outside" and the devices are removeable
+		 */
+			hcWriteDWord (usbBase, 0x32000902, HcRhDescriptorA);
+			hcWriteDWord (usbBase, 0x00060000, HcRhDescriptorB);
+		/*
+		 * don't forget to switch off power supply of each port
+		 * The later running driver can reenable them to find and use
+		 * the (maybe) connected devices.
+		 *
+		 */
+			hcWriteDWord (usbBase, 0x00000200, HcRhPortStatus1);
+			hcWriteDWord (usbBase, 0x00000200, HcRhPortStatus2);
+			hcWriteWord (usbBase, 0x0428, HcHardwareConfiguration);
+			hcWriteWord (usbBase, 0x0040, HcDMAConfiguration);
+			hcWriteWord (usbBase, 0x0000, HcuPInterruptEnable);
+			hcWriteWord (usbBase, 0xA000 | (0x03 << 8) | 27, HcScratch);
+printk(KERN_INFO "register usb host\n");
+
+
+
+	platform_device_register(&usb_device);
 
 	return 0;
 };
 
-arch_initcall (magicbox_setup_flash);
+arch_initcall (magicbox_usb);
 
 void __init
 magicbox_setup_arch(void)

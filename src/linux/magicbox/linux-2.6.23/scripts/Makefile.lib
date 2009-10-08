@@ -163,3 +163,5 @@ quiet_cmd_gzip = GZIP    $@
 cmd_gzip = gzip -f -9 < $< > $@
 
 
+quiet_cmd_lzma = LZMA    $@
+cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 2>/dev/null
