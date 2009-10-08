@@ -23,9 +23,14 @@
 #define sysRegRead(phys)	\
 	(*(volatile u32 *)KSEG1ADDR(phys))
 
+int __ath_flash_size;
+
 void __init prom_init(void)
 {
-
+#ifdef CONFIG_AR9100
+    printk ("flash_size passed from bootloader = %d\n", fw_arg3);
+    __ath_flash_size = fw_arg3;
+#endif
 	/* 
 	 * if user passes kernel args, ignore the default one 
 	 */
