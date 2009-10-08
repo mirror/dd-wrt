@@ -230,9 +230,9 @@ typedef elf_fpreg_t elf_fpregset_t[ELF_NFPREG];
 /*
  * These are used to set parameters in the core dumps.
  */
-#ifdef __MIPSEB__
+#if defined(__MIPSEB__)
 #define ELF_DATA	ELFDATA2MSB
-#elif __MIPSEL__
+#elif defined( __MIPSEL__)
 #define ELF_DATA	ELFDATA2LSB
 #endif
 #define ELF_ARCH	EM_MIPS
