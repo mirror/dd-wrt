@@ -218,9 +218,9 @@ MKTREE				:= $(utils)/mktree
 targets := dummy.o
 
 $(obj)/zvmlinux: $(OBJS) $(LIBS) $(srctree)/$(boot)/ld.script \
-		$(images)/vmlinux.gz $(obj)/dummy.o
+		$(images)/vmlinux.lzma $(obj)/dummy.o
 	$(OBJCOPY) $(OBJCOPY_ARGS) \
-		--add-section=.image=$(images)/vmlinux.gz \
+		--add-section=.image=$(images)/vmlinux.lzma \
 		--set-section-flags=.image=contents,alloc,load,readonly,data \
 		$(obj)/dummy.o $(obj)/image.o
 	$(LD) $(LD_ARGS) -o $@ $(OBJS) $(obj)/image.o $(LIBS)
@@ -228,11 +228,11 @@ $(obj)/zvmlinux: $(OBJS) $(LIBS) $(srctree)/$(boot)/ld.script \
 		-R .stabstr -R .ramdisk
 
 $(obj)/zvmlinux.initrd: $(OBJS) $(LIBS) $(srctree)/$(boot)/ld.script \
-		$(images)/vmlinux.gz $(obj)/dummy.o
+		$(images)/vmlinux.lzma $(obj)/dummy.o
 	$(OBJCOPY) $(OBJCOPY_ARGS) \
 		--add-section=.ramdisk=$(images)/ramdisk.image.gz \
 		--set-section-flags=.ramdisk=contents,alloc,load,readonly,data \
-		--add-section=.image=$(images)/vmlinux.gz \
+		--add-section=.image=$(images)/vmlinux.lzma \
 		--set-section-flags=.image=contents,alloc,load,readonly,data \
 		$(obj)/dummy.o $(obj)/image.o
 	$(LD) $(LD_ARGS) -o $@ $(OBJS) $(obj)/image.o $(LIBS)

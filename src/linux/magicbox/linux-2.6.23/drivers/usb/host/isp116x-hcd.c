@@ -45,11 +45,11 @@
   3. Use ndelay (easiest, poorest). For that, uncomment
   the following USE_NDELAY macro.
 */
-#define USE_PLATFORM_DELAY
-//#define USE_NDELAY
+//#define USE_PLATFORM_DELAY
+#define USE_NDELAY
 
-//#define DEBUG
-//#define VERBOSE
+#define DEBUG
+#define VERBOSE
 /* Transfer descriptors. See dump_ptd() for printout format  */
 //#define PTD_TRACE
 /* enqueuing/finishing log of urbs */
@@ -81,6 +81,46 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
 
 static const char hcd_name[] = "isp116x-hcd";
+
+/*-----------------------------------------------------------------*/
+#define MB_USB_ADDR 0xff300000
+#define MB_USB_IRQ 27
+
+static struct resource isp116x_resources[] = {
+	[0] = {
+		.start  = MB_USB_ADDR,
+		.end    = MB_USB_ADDR ,
+		.flags  = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start  = MB_USB_ADDR + 1,
+		.end    = MB_USB_ADDR + 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	[2] = {
+		.start  = MB_USB_IRQ,
+		.end    = MB_USB_IRQ,
+		.flags  = IORESOURCE_IRQ,
+	},
+};
+ 
+static struct isp116x_platform_data
+openrb_isp116x_platform_data = {
+	.sel15Kres = 1,
+	.int_act_high = 1,
+//	.int_act_high = 0,
+	.int_edge_triggered = 1,
+};
+
+static struct platform_device isp116x_device = {
+	.name        = "isp116x-hcd",
+	.id        = 0,
+	.num_resources = ARRAY_SIZE(isp116x_resources),
+	.resource    = isp116x_resources,
+	.dev          = {
+		.platform_data = &openrb_isp116x_platform_data,
+	},
+};
 
 /*-----------------------------------------------------------------*/
 
@@ -1584,17 +1624,21 @@ static int __devinit isp116x_probe(struct platform_device *pdev)
 		ret = -ENODEV;
 		goto err1;
 	}
+	printk("init 1.0\n");
 
 	if (pdev->dev.dma_mask) {
 		DBG("DMA not supported\n");
 		ret = -EINVAL;
 		goto err1;
 	}
+	printk("init 1.1\n");
 
 	if (!request_mem_region(addr->start, 2, hcd_name)) {
 		ret = -EBUSY;
 		goto err1;
 	}
+	printk("init 1.2\n");
+
 	addr_reg = ioremap(addr->start, resource_len(addr));
 	if (addr_reg == NULL) {
 		ret = -ENOMEM;
@@ -1709,8 +1753,13 @@ static struct platform_driver isp116x_driver = {
 
 static int __init isp116x_init(void)
 {
+	int e;
+
 	if (usb_disabled())
 		return -ENODEV;
+
+	e = platform_device_register(&isp116x_device);
+	printk("isp116x: registered platform device for openrb, status=%d\n", e);
 
 	INFO("driver %s, %s\n", hcd_name, DRIVER_VERSION);
 	return platform_driver_register(&isp116x_driver);

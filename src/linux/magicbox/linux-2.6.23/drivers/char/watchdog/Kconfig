@@ -636,6 +636,15 @@ config BOOKE_WDT
 	  Please see Documentation/watchdog/watchdog-api.txt for
 	  more information.
 
+config PPC405_WDT
+	bool "PowerPC 4xx Watchdog Timer"
+	depends on 4xx
+	---help---
+	  Please see Documentation/watchdog/watchdog-api.txt for
+	  more information.
+
+
+
 # PPC64 Architecture
 
 config WATCHDOG_RTAS

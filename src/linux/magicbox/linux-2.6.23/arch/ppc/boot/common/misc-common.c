@@ -14,7 +14,7 @@
 
 #include <stdarg.h>	/* for va_ bits */
 #include <linux/string.h>
-#include <linux/zlib.h>
+//#include <linux/zlib.h>
 #include "nonstdio.h"
 
 /* If we're on a PReP, assume we have a keyboard controller
@@ -227,53 +227,99 @@ static void *zalloc(unsigned size)
 #define COMMENT		0x10
 #define RESERVED	0xe0
 
-void gunzip(void *dst, int dstlen, unsigned char *src, int *lenp)
+#define _LZMA_IN_CB
+
+#include "LzmaDecode.h"
+static __inline__ int read_byte(unsigned char **buffer, UInt32 *bufferSize);
+#include "LzmaDecode.c"
+
+static unsigned int staticbytecount=0;
+static unsigned char *staticbyte;
+
+
+
+static __inline__ int read_byte(unsigned char **buffer, UInt32 *bufferSize)
 {
-	z_stream s;
-	int r, i, flags;
+	static unsigned int val;
 
-	/* skip header */
-	i = 10;
-	flags = src[3];
-	if (src[2] != Z_DEFLATED || (flags & RESERVED) != 0) {
-		puts("bad gzipped data\n");
-		exit();
+	if (((unsigned int)staticbytecount % 4) == 0) {
+		val = *(unsigned int *)staticbyte;
+		staticbyte += 4;
 	}
-	if ((flags & EXTRA_FIELD) != 0)
-		i = 12 + src[10] + (src[11] << 8);
-	if ((flags & ORIG_NAME) != 0)
-		while (src[i++] != 0)
-			;
-	if ((flags & COMMENT) != 0)
-		while (src[i++] != 0)
-			;
-	if ((flags & HEAD_CRC) != 0)
-		i += 2;
-	if (i >= *lenp) {
-		puts("gunzip: ran out of data in header\n");
-		exit();
-	}
-
-	/* Initialize ourself. */
-	s.workspace = zalloc(zlib_inflate_workspacesize());
-	r = zlib_inflateInit2(&s, -MAX_WBITS);
-	if (r != Z_OK) {
-		puts("zlib_inflateInit2 returned "); puthex(r); puts("\n");
-		exit();
-	}
-	s.next_in = src + i;
-	s.avail_in = *lenp - i;
-	s.next_out = dst;
-	s.avail_out = dstlen;
-	r = zlib_inflate(&s, Z_FINISH);
-	if (r != Z_OK && r != Z_STREAM_END) {
-		puts("inflate returned "); puthex(r); puts("\n");
-		exit();
-	}
-	*lenp = s.next_out - (unsigned char *) dst;
-	zlib_inflateEnd(&s);
+        if (  staticbytecount % ( 1024 * 10 ) == 0 )
+               puts(".");
+	
+	*bufferSize = 1;
+	*buffer = ((unsigned char *)&val) + (staticbytecount++ & 3);
+	
+	return LZMA_RESULT_OK;
 }
 
+static __inline__ unsigned char get_byte(void)
+{
+	unsigned char *buffer;
+	unsigned int fake;
+	
+	return read_byte(&buffer, &fake), *buffer;
+}
+
+
+
+
+#define LZMA_WORKSPACE_SIZE ((LZMA_BASE_SIZE + \
+      (LZMA_LIT_SIZE << (lc + lp))) * sizeof(CProb))
+
+void gunzip(void *dst, int dstlen, unsigned char *src, int *lenp)
+{
+	unsigned int i;
+	unsigned int uncompressedSize = 0;
+        unsigned char *workspace;
+        unsigned int lc,lp,pb;
+	staticbyte = src;
+	staticbytecount=0;
+	// lzma args
+	i = get_byte();
+	lc = i % 9, i = i / 9;
+	lp = i % 5, pb = i / 5;
+        
+        // skip dictionary size
+        for (i = 0; i < 4; i++) 
+        	get_byte();
+        // get uncompressed size
+	uncompressedSize = (get_byte()) +
+		(get_byte() << 8) +
+		(get_byte() << 16) +
+		(get_byte() << 24);
+        workspace = zalloc(LZMA_WORKSPACE_SIZE);//(unsigned char *)dst + uncompressedSize;
+        // skip high order bytes
+        for (i = 0; i < 4; i++) 
+        	get_byte();
+	// decompress kernel
+//	if (LzmaDecode(workspace, ~0, lc, lp, pb,
+//		(unsigned char*)LOADADDR, osize, &i) == LZMA_RESULT_OK)
+	puts("decompressing...\n");
+/*	puts("uncompressedsize:");
+	puthex(uncompressedSize);
+	puts("\ndestination:");
+	puthex(dst);
+	puts("\ndestlen:");
+	puthex(dstlen);
+	puts("\nsource:");
+	puthex(src);
+	puts("\nworkspace:");
+	puthex(workspace);
+	puts("\n");*/
+	if (LzmaDecode(workspace, ~0, lc,lp,pb,(unsigned char*)dst, uncompressedSize, &i) == LZMA_RESULT_OK)
+	{
+		if ( i != uncompressedSize )
+		   puts( "kernel corrupted!\n");
+	}else
+	{
+	puts("decompressing error \n");
+	}
+
+	*lenp = uncompressedSize;
+}
 void
 puthex(unsigned long val)
 {
