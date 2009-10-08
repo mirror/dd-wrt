@@ -27,7 +27,10 @@ typedef unsigned int ar7100_reg_t;
 /*
  * Address map
  */
+#ifndef CONFIG_AR9100
 #define AR7100_PCI_MEM_BASE             0x10000000  /* 128M */
+#endif
+
 
 #define AR7100_APB_BASE                 0x18000000  /* 384M */
 #define AR7100_GE0_BASE                 0x19000000  /* 16M */
@@ -71,6 +74,13 @@ typedef unsigned int ar7100_reg_t;
 #define AR71XX_DMA_SIZE		0x10000
 #define AR71XX_STEREO_BASE	(AR71XX_APB_BASE + 0x000B0000)
 #define AR71XX_STEREO_SIZE	0x10000
+
+#ifdef CONFIG_AR9100
+#define AR9100_WMAC_BASE                AR7100_APB_BASE+0x000c0000
+#define AR9100_WMAC_LEN                 0x4000
+#define AR9100_FLASH_BASE               AR7100_APB_BASE+0x000F0000
+#define AR9100_FLASH_CONFIG             AR9100_FLASH_BASE+0x4
+#endif
 
 /*
  * APB block
@@ -135,14 +145,24 @@ typedef unsigned int ar7100_reg_t;
  * DDR block, gmac flushing 
  */
 
+#ifndef CONFIG_AR9100
+
 #define AR7100_DDR_GE0_FLUSH            AR7100_DDR_CTL_BASE+0x9c
 #define AR7100_DDR_GE1_FLUSH            AR7100_DDR_CTL_BASE+0xa0
 #define AR7100_DDR_USB_FLUSH            AR7100_DDR_CTL_BASE+0xa4
 #define AR7100_DDR_PCI_FLUSH            AR7100_DDR_CTL_BASE+0xa8
 
+#else
 
-#define AR7100_EEPROM_GE0_MAC_ADDR      0xbfff3004
-#define AR7100_EEPROM_GE1_MAC_ADDR      0xbfff300a
+#define AR7100_DDR_GE0_FLUSH            AR7100_DDR_CTL_BASE+0x7c
+#define AR7100_DDR_GE1_FLUSH            AR7100_DDR_CTL_BASE+0x80
+#define AR7100_DDR_USB_FLUSH            AR7100_DDR_CTL_BASE+0x84
+#define AR7100_DDR_WMAC_FLUSH           AR7100_DDR_CTL_BASE+0x88
+#endif
+
+
+#define AR7100_EEPROM_GE0_MAC_ADDR      0xbfff1004
+#define AR7100_EEPROM_GE1_MAC_ADDR      0xbfff100a
 
 /*
  * PLL block/CPU
@@ -290,7 +310,12 @@ typedef unsigned int ar7100_reg_t;
 /*
  * The IPs. Connected to CPU (hardware IP's; the first two are software)
  */
+#ifndef CONFIG_AR9100
 #define AR7100_CPU_IRQ_PCI                  AR7100_CPU_IRQ_BASE+2
+#else
+#define AR7100_CPU_IRQ_WMAC                 AR7100_CPU_IRQ_BASE+2
+#endif
+
 
 #define AR7100_CPU_IRQ_USB                  AR7100_CPU_IRQ_BASE+3
 #define AR7100_CPU_IRQ_GE0                  AR7100_CPU_IRQ_BASE+4
@@ -382,6 +407,7 @@ void ar7100_pci_irq_init(int irq_base); /* ??? */
 #define AR7100_GPIO_FUNCTION_UART_EN         (1<< 8)
 #define AR7100_GPIO_FUNCTION_OVERCURRENT_EN  (1<< 4)
 #define AR7100_GPIO_FUNCTION_USB_CLK_CORE_EN (1<< 0)
+#define AR7100_GPIO_FUNCTION_WMAC_LED        (1<<22)
 
 /*
  * GPIO Access & Control
@@ -557,19 +583,46 @@ static inline void ar7100_spi_flash_cs0_write_page(unsigned int addr, unsigned c
 #define AR7100_MISC_INT_MASK          AR7100_RESET_BASE+0x14
 
 
+#ifndef CONFIG_AR9100
+
 #define AR7100_PCI_INT_STATUS         AR7100_RESET_BASE+0x18
 #define AR7100_PCI_INT_MASK           AR7100_RESET_BASE+0x1c
 #define AR7100_GLOBAL_INT_STATUS      AR7100_RESET_BASE+0x20
 #define AR7100_RESET                  AR7100_RESET_BASE+0x24
 #define AR7100_OBSERVATION_ENABLE     AR7100_RESET_BASE+0x28
 
+#else /* ar9100 */
+
+#define AR7100_GLOBAL_INT_STATUS      AR7100_RESET_BASE+0x18
+#define AR7100_RESET                  AR7100_RESET_BASE+0x1c
+#define AR7100_RST_REVISION_ID        AR7100_RESET_BASE+0x90
+#endif
+
+#ifdef CONFIG_AR9100
+
+#define AR7100_WD_ACT_MASK	3u
+#define AR7100_WD_ACT_NONE	0u /* No Action */
+#define AR7100_WD_ACT_GP_INTR	1u /* General purpose intr */
+#define AR7100_WD_ACT_NMI	2u /* NMI */
+#define AR7100_WD_ACT_RESET	3u /* Full Chip Reset */
+
+#define AR7100_WD_LAST_SHIFT	31
+#define AR7100_WD_LAST_MASK	((uint32_t)(1 << AR7100_WD_LAST_SHIFT))
+
+#endif /* CONFIG_AR9100 */
 
 /*
  * Performace counters
  */
+#ifndef CONFIG_AR9100
 #define AR7100_PERF_CTL               AR7100_RESET_BASE+0x2c
 #define AR7100_PERF0_COUNTER          AR7100_RESET_BASE+0x30
 #define AR7100_PERF1_COUNTER          AR7100_RESET_BASE+0x34
+#else
+#define AR7100_PERF_CTL               AR7100_RESET_BASE+0x20
+#define AR7100_PERF0_COUNTER          AR7100_RESET_BASE+0x24
+#define AR7100_PERF1_COUNTER          AR7100_RESET_BASE+0x28
+#endif
 
 /*
  * SLIC/STEREO DMA Size Configurations 
@@ -771,6 +824,7 @@ static inline void ar7100_setup_for_stereo_slave(int ws)
 #define REV_ID_CHIP_AR7141	0xa1
 #define REV_ID_CHIP_AR7161	0xa2
 #define REV_ID_CHIP_AR9130	0xb0
+#define REV_ID_CHIP_AR9132	0xb1
 #define AR7240_REV_ID_AR7161    0xa2
 #define AR7240_REV_1_0          0xc0
 #define AR7240_REV_1_1          0xc1
@@ -925,12 +979,43 @@ void ar7100_reset(unsigned int mask);
 }while(0);
 
 
+#ifndef CONFIG_AR9100
+
 #define ar7100_flush_pci() do {                             \
     ar7100_reg_wr(AR7100_DDR_PCI_FLUSH, 1);                 \
     while((ar7100_reg_rd(AR7100_DDR_PCI_FLUSH) & 0x1));   \
     ar7100_reg_wr(AR7100_DDR_PCI_FLUSH, 1);                 \
     while((ar7100_reg_rd(AR7100_DDR_PCI_FLUSH) & 0x1));   \
 }while(0);
+
+#define ar9100_ahb2wmac_reset()
+
+#else
+
+#define ar9100_flush_wmac() do {                             \
+    ar7100_reg_wr(AR7100_DDR_WMAC_FLUSH, 1);                 \
+    while((ar7100_reg_rd(AR7100_DDR_WMAC_FLUSH) & 0x1));   \
+    ar7100_reg_wr(AR7100_DDR_WMAC_FLUSH, 1);                 \
+    while((ar7100_reg_rd(AR7100_DDR_WMAC_FLUSH) & 0x1));   \
+}while(0);
+
+#define ar9100_ahb2wmac_reset() do {                    \
+    u_int32_t reg;                                      \
+    reg = ar7100_reg_rd(AR7100_RESET);                  \
+    ar7100_reg_wr(AR7100_RESET, (reg | 0x00400000));    \
+    udelay(100000);                                     \
+                                                        \
+    reg = ar7100_reg_rd(AR7100_RESET);                  \
+    ar7100_reg_wr(AR7100_RESET, (reg & 0xffbfffff));    \
+    udelay(100000);                                     \
+} while(0)
+ 
+
+#define ar9100_get_rst_revisionid(version) do {         \
+    version = ar7100_reg_rd(AR7100_RST_REVISION_ID);    \
+} while(0)
+
+#endif /* ar9100 */
 
 
 #define ar7100_flush_USB() do {                             \
@@ -945,5 +1030,13 @@ int ar7100_local_write_config(int where, int size, u32 value);
 int ar7100_check_error(int verbose);
 unsigned char __ar7100_readb(const volatile void __iomem *p);
 unsigned short __ar7100_readw(const volatile void __iomem *p);
+#ifdef CONFIG_AR9100
+void enable_wmac_led(void);
+void disable_wmac_led(void);
+#endif
+#define AR9100_ETH_PLL_CONFIG           AR7100_PLL_BASE+0x4
+
+#define AR9100_ETH_INT0_CLK             AR7100_PLL_BASE+0x14
+#define AR9100_ETH_INT1_CLK             AR7100_PLL_BASE+0x18
 
 #endif
