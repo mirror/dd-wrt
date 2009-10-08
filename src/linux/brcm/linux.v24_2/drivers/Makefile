@@ -5,6 +5,7 @@
 # Rewritten to use lists instead of if-statements.
 #
 
+#EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 
 mod-subdirs :=	dio hil mtd sbus video macintosh usb input telephony ide \
 		message/i2o message/fusion scsi md ieee1394 pnp isdn atm \

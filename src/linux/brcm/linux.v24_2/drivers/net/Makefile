@@ -4,6 +4,7 @@
 #
 
 EXTRA_CFLAGS := -I$(TOPDIR)/arch/mips/bcm947xx/include
+#EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 
 obj-y           :=
 obj-m           :=
@@ -44,13 +45,17 @@ ifeq ($(CONFIG_ISDN_PPP),y)
 endif
 
 #subdir-$(CONFIG_HND) += hnd
+subdir-$(CONFIG_BRCMSWITCH) += switch
 ifdef CONFIG_BCM57XX
 subdir-$(CONFIG_BCM57XX) += bcm57xx
 endif
 subdir-$(CONFIG_ET) += et
-subdir-$(CONFIG_BRCMSWITCH) += switch
 subdir-$(CONFIG_ROBO) += robo
-#subdir-$(CONFIG_WL)	+= brcm
+ifdef CONFIG_V25
+subdir-$(CONFIG_WL)	+= brcm.v25
+else
+subdir-$(CONFIG_WL)	+= brcm
+endif
 subdir-$(CONFIG_WL) += wl
 #ifdef CONFIG_LED	#added by Jerry Lee
 #subdir-$(CONFIG_LED) += led
@@ -86,6 +91,10 @@ obj-$(CONFIG_SUNBMAC) += sunbmac.o
 obj-$(CONFIG_MYRI_SBUS) += myri_sbus.o
 obj-$(CONFIG_SUNGEM) += sungem.o
 obj-$(CONFIG_B44) += b44.o
+
+#obj-$(CONFIG_B44) += et_linux.o etc.o etc47xx.o
+
+#EXTRA_CFLAGS	+= -DDMA
 
 #ifeq ($(CONFIG_HND),y)
 #  obj-y += hnd/hnd.o
@@ -202,6 +211,7 @@ obj-$(CONFIG_PPP_DEFLATE) += ppp_deflate.o
 obj-$(CONFIG_PPP_BSDCOMP) += bsd_comp.o
 obj-$(CONFIG_PPP_MPPE_MPPC) += ppp_mppe_mppc.o
 obj-$(CONFIG_PPPOE) += pppox.o pppoe.o
+obj-$(CONFIG_PPPOL2TP) += pppox.o pppol2tp.o
 
 obj-$(CONFIG_SLIP) += slip.o
 ifeq ($(CONFIG_SLIP_COMPRESSED),y)
