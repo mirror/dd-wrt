@@ -1537,7 +1537,7 @@ done:
 extern void __init pnpide_init(void);
 extern void __exit pnpide_exit(void);
 extern void __init h8300_ide_init(void);
-extern void __init ide_magicbox_init(void);
+extern void __init ide_openrb_init(void);
 
 /*
  * probe_for_hwifs() finds/initializes "known" IDE interfaces
@@ -1609,7 +1609,7 @@ static void __init probe_for_hwifs (void)
 	h8300_ide_init();
 #endif
 #ifdef CONFIG_BLK_DEV_MAGICBOX_IDE
-	ide_magicbox_init();
+	ide_openrb_init();
 #endif
 }
 

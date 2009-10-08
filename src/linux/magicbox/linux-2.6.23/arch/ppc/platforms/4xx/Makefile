@@ -14,7 +14,7 @@ obj-$(CONFIG_REDWOOD_6)		+= redwood6.o
 obj-$(CONFIG_SYCAMORE)		+= sycamore.o
 obj-$(CONFIG_TAISHAN)		+= taishan.o
 obj-$(CONFIG_WALNUT)		+= walnut.o
-obj-$(CONFIG_MAGICBOX)		+= magicbox.o
+obj-$(CONFIG_MAGICBOX)		+= openrb.o
 obj-$(CONFIG_XILINX_ML300)	+= xilinx_ml300.o
 obj-$(CONFIG_XILINX_ML403)	+= xilinx_ml403.o
 

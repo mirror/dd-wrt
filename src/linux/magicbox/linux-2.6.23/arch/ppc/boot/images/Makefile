@@ -4,7 +4,7 @@
 
 MKIMAGE		:= $(srctree)/scripts/mkuboot.sh
 
-extra-y		:= vmlinux.bin vmlinux.gz
+extra-y		:= vmlinux.bin vmlinux.gz vmlinux.lzma
 
 # two make processes may write to vmlinux.gz at the same time with make -j
 quiet_cmd_mygzip = GZIP    $@
@@ -15,12 +15,20 @@ OBJCOPYFLAGS_vmlinux.bin := -O binary
 $(obj)/vmlinux.bin: vmlinux FORCE
 	$(call if_changed,objcopy)
 
+	    
+OBJCOPYFLAGS_zimage.bin := -O binary
+$(obj)/zimage.bin: $(obj)/zImage.elf FORCE
+	$(call if_changed,objcopy)
+
 $(obj)/vmlinux.gz: $(obj)/vmlinux.bin FORCE
 	$(call if_changed,mygzip)
 
+$(obj)/vmlinux.lzma: $(obj)/vmlinux.bin FORCE
+	$(call if_changed,lzma)
+
 quiet_cmd_uimage = UIMAGE  $@
       cmd_uimage = $(CONFIG_SHELL) $(MKIMAGE) -A ppc -O linux -T kernel \
-               -C gzip -a 00000000 -e 00000000 -n 'Linux-$(KERNELRELEASE)' \
+               -C gzip -a 00000000 -e 00000000 -n 'DD-WRT v24 SP2' \
                -d $< $@
 
 targets += uImage
