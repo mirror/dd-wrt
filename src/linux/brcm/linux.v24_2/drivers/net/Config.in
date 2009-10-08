@@ -393,6 +393,7 @@ if [ ! "$CONFIG_PPP" = "n" ]; then
    dep_tristate '  Microsoft PPP compression/encryption (MPPC/MPPE)' CONFIG_PPP_MPPE_MPPC $CONFIG_PPP
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
       dep_tristate '  PPP over Ethernet (EXPERIMENTAL)' CONFIG_PPPOE $CONFIG_PPP
+      dep_tristate '  PPP over L2TP (EXPERIMENTAL)' CONFIG_PPPOL2TP $CONFIG_PPP $CONFIG_PPPOE
    fi
    if [ "$CONFIG_ATM" = "y" -o "$CONFIG_ATM" = "m" ]; then
       dep_tristate '  PPP over ATM (EXPERIMENTAL)' CONFIG_PPPOATM $CONFIG_PPP $CONFIG_ATM

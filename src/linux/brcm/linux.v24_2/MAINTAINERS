@@ -819,7 +819,7 @@ S:	Maintained
 I2C SUBSYSTEM
 P:	Jean Delvare
 M:	khali@linux-fr.org
-L:	i2c@lm-sensors.org
+L:	linux-i2c@vger.kernel.org
 W:	http://www.lm-sensors.org/
 S:	Maintained
 

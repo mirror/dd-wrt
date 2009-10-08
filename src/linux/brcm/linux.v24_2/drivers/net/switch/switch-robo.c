@@ -264,7 +264,7 @@ static int robo_probe(char *devname)
 /* end */
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
-		ROBO_DBG("No Robo switch in managed mode found\n");
+		ROBO_DBG("No Robo switch in managed mode found %X\n",phyid);
 		return 1;
 	}
 	

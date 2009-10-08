@@ -235,10 +235,10 @@ $(MODINCL)/%.ver: %.c
 		echo '$(CC) $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -E -D__GENKSYMS__ $<'; \
 		echo '| $(GENKSYMS) $(genksyms_smp_prefix) -k $(VERSION).$(PATCHLEVEL).$(SUBLEVEL) > $@.tmp'; \
 		$(CC) $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -E -D__GENKSYMS__ $< \
-		| $(GENKSYMS) $(genksyms_smp_prefix) -k $(VERSION).$(PATCHLEVEL).$(SUBLEVEL) > $@.tmp; \
+		| $(GENKSYMS) $(genksyms_smp_prefix) -k $(VERSION).$(PATCHLEVEL).$(SUBLEVEL) > $@.tmp && \
 		if [ -r $@ ] && cmp -s $@ $@.tmp; then echo $@ is unchanged; rm -f $@.tmp; \
 		else echo mv $@.tmp $@; mv -f $@.tmp $@; fi; \
-	fi; touch $(MODINCL)/$*.stamp
+	fi && touch $(MODINCL)/$*.stamp
 	
 $(addprefix $(MODINCL)/,$(export-objs:.o=.ver)): $(TOPDIR)/include/linux/autoconf.h
 

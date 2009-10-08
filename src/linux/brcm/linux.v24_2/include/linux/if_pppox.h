@@ -1,6 +1,6 @@
 /***************************************************************************
  * Linux PPP over X - Generic PPP transport layer sockets
- * Linux PPP over Ethernet (PPPoE) Socket Implementation (RFC 2516) 
+ * Linux PPP over Ethernet (PPPoE) Socket Implementation (RFC 2516)
  *
  * This file supplies definitions required by the PPP over Ethernet driver
  * (pppox.c).  All version information wrt this file is located in pppox.c
@@ -28,6 +28,7 @@
 #include <asm/semaphore.h>
 #include <linux/ppp_channel.h>
 #endif /* __KERNEL__ */
+#include <linux/if_pppol2tp.h>
 
 /* For user-space programs to pick up these definitions
  * which they wouldn't get otherwise without defining __KERNEL__
@@ -37,30 +38,48 @@
 #define PF_PPPOX	AF_PPPOX
 #endif /* !(AF_PPPOX) */
 
-/************************************************************************ 
- * PPPoE addressing definition 
- */ 
-typedef __u16 sid_t; 
-struct pppoe_addr{ 
-       sid_t           sid;                    /* Session identifier */ 
-       unsigned char   remote[ETH_ALEN];       /* Remote address */ 
-       char            dev[IFNAMSIZ];          /* Local device to use */ 
-}; 
- 
-/************************************************************************ 
- * Protocols supported by AF_PPPOX 
- */ 
-#define PX_PROTO_OE    0 /* Currently just PPPoE */
-#define PX_MAX_PROTO   1	
- 
-struct sockaddr_pppox { 
-       sa_family_t     sa_family;            /* address family, AF_PPPOX */ 
-       unsigned int    sa_protocol;          /* protocol identifier */ 
-       union{ 
-               struct pppoe_addr       pppoe; 
-       }sa_addr; 
-}__attribute__ ((packed)); 
+/************************************************************************
+ * PPPoE addressing definition
+ */
+typedef __u16 sid_t;
+struct pppoe_addr{
+       sid_t           sid;                    /* Session identifier */
+       unsigned char   remote[ETH_ALEN];       /* Remote address */
+       char            dev[IFNAMSIZ];          /* Local device to use */
+};
 
+/************************************************************************
+ * Protocols supported by AF_PPPOX
+ */
+#define PX_PROTO_OE    0 /* Currently just PPPoE */
+#define PX_PROTO_OL2TP 1 /* Now L2TP also */
+#define PX_MAX_PROTO   2
+
+/* The use of a union isn't viable because the size of this struct
+ * must stay fixed over time -- applications use sizeof(struct
+ * sockaddr_pppox) to fill it. Use protocol specific sockaddr types
+ * instead.
+ */
+struct sockaddr_pppox {
+       sa_family_t     sa_family;            /* address family, AF_PPPOX */
+       unsigned int    sa_protocol;          /* protocol identifier */
+       union{
+               struct pppoe_addr       pppoe;
+       }sa_addr;
+}__attribute__ ((packed)); /* deprecated */
+
+/* Must be binary-compatible with sockaddr_pppox for backwards compatabilty */
+struct sockaddr_pppoe {
+	sa_family_t     sa_family;	/* address family, AF_PPPOX */
+	unsigned int    sa_protocol;    /* protocol identifier */
+	struct pppoe_addr pppoe;
+}__attribute__ ((packed));
+
+struct sockaddr_pppol2tp {
+	sa_family_t     sa_family;      /* address family, AF_PPPOX */
+	unsigned int    sa_protocol;    /* protocol identifier */
+	struct pppol2tp_addr pppol2tp;
+}__attribute__ ((packed));
 
 /*********************************************************************
  *
