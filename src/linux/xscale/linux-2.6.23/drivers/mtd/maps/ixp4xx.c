@@ -281,7 +281,7 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	info->map.read = ixp4xx_read16,
 	info->map.write = ixp4xx_probe_write16,
 	info->map.copy_from = ixp4xx_copy_from,
-
+	printk(KERN_ERR "try to reserve 0x%08X with size of 0x%08X\n",dev->resource->start,dev->resource->end - dev->resource->start + 1);
 	info->res = request_mem_region(dev->resource->start,
 			dev->resource->end - dev->resource->start + 1,
 			"IXP4XXFlash");
