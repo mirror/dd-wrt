@@ -725,7 +725,14 @@ CONFIG_SLHC=y
 # Character devices
 #
 # CONFIG_VT is not set
-# CONFIG_SERIAL_NONSTANDARD is not set
+CONFIG_SERIAL_NONSTANDARD=y
+# CONFIG_MOXA is not set
+# CONFIG_MOXA_SMARTIO is not set
+CONFIG_N_HDLC=m
+# CONFIG_RISCOM8 is not set
+# CONFIG_SPECIALIX is not set
+# CONFIG_RIO is not set
+# CONFIG_STALDRV is not set
 # CONFIG_MOXA is not set
 
 #

@@ -46,14 +46,14 @@ u8 *find_board_config(char *flash_limit)
 	for (addr = (char *) (flash_limit - 0x1000);
 		addr >= (char *) (flash_limit - 0x30000);
 		addr -= 0x1000) {
-	//	printk("scanning for board data at %X (%X)\n",addr,*(int *)addr);
+		printk("scanning for board data at %X (%X)\n",addr,*(int *)addr);
 		if ( *(int *)addr == 0x35333131) {
 			/* config magic found */
 			found = 1;
 			break;
 		}
 	}
-
+	printk("found %d\n",found);
 	if (!found) {
 		addr = NULL;
 		if (strstr((char*)(0xbfc00010),"CA804.SOB") || strstr((char*)(0xbfc00010),"CE801.SOB") || strstr((char*)(0xbfc00010),"OVISCA401") || strstr((char*)(0xbfc00010),"OVISCE401") || strstr((char*)(0xbfc00010),"RCAAO1") || strstr((char*)(0xbfc00010),"RDAT81.SOB"))
