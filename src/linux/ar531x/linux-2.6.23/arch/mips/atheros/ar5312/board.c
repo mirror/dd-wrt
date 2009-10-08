@@ -223,7 +223,7 @@ int __init ar5312_init_devices(void)
 	/* Locate board/radio config data */
 	ar531x_find_config(ar5312_flash_limit());
 	bcfg = (struct ar531x_boarddata *) board_config;
-//	printk(KERN_EMERG "radio = 0x%p\n",radio_config);
+	printk(KERN_EMERG "radio = 0x%p\n",radio_config);
 
 	
 	/*
@@ -240,7 +240,7 @@ int __init ar5312_init_devices(void)
 			bcfg->config |= BD_ISCASPER;
 	} else
 		{
-//		printk(KERN_EMERG "radio config not found, set radio to null\n");
+		printk(KERN_EMERG "radio config not found, set radio to null\n");
 		radio = NULL;
 		}
 
@@ -272,10 +272,11 @@ int __init ar5312_init_devices(void)
 	}
 
 	ar5312_devs[dev++] = &ar5312_physmap_flash;
-
+printk(KERN_EMERG "copy mac\n");
 	if (!memcmp(bcfg->enet0Mac, "\xff\xff\xff\xff\xff\xff", 6))
 		memcpy(bcfg->enet0Mac, bcfg->enet1Mac, 6);
 
+printk(KERN_EMERG "compare mac\n");
 	if (memcmp(bcfg->enet0Mac, bcfg->enet1Mac, 6) == 0) {
 		/* ENET0 and ENET1 have the same mac.
 		 * Increment the one from ENET1 */
