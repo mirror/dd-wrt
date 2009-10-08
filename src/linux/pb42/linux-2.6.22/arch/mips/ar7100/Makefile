@@ -26,4 +26,6 @@ obj-y	+=	prom.o	\
 			ar7100.o \
 			platform.o
 
+#obj-$(CONFIG_AR9100)	+= wdt.o
+
 #EXTRA_CFLAGS				+=	-fno-schedule-insns -fno-schedule-insns2

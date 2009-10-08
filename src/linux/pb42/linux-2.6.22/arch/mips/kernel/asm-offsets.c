@@ -21,6 +21,11 @@
 #define _offset(type, member) (&(((type *)NULL)->member))
 #define offset(string, ptr, member) \
 	__asm__("\n@@@" string "%0" : : "i" (_offset(ptr, member)))
+
+//#define constant(sym, val) \
+//        asm volatile("\n->" #sym " %0 " #val : : "i" (val))
+
+
 #define constant(string, member) \
 	__asm__("\n@@@" string "%X0" : : "ri" (member))
 #define size(string, size) \

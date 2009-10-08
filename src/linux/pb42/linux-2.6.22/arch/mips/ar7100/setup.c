@@ -37,6 +37,10 @@
 
 #include "ar7100.h"
 
+#ifdef CONFIG_AR9100
+#include "ar9100.h"
+#endif
+
 #ifdef CONFIG_AR7100_EMULATION
 #define         AG7100_CONSOLE_BAUD (9600)
 #else
@@ -87,6 +91,7 @@ ar7100_power_off(void)
 	(*(volatile u32 *)KSEG1ADDR(phys))
 
 
+int is_ar9000;
 const char 
 *get_system_type(void)
 {
@@ -94,6 +99,7 @@ char *chip;
 u32 id;
 u32 rev;
 static char str[64];
+is_ar9000=0;
 	id = ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK;
 	rev = (id >> REV_ID_REVISION_SHIFT) & REV_ID_REVISION_MASK;
 switch (id & REV_ID_CHIP_MASK) {
@@ -108,6 +114,11 @@ switch (id & REV_ID_CHIP_MASK) {
 		break;
 	case REV_ID_CHIP_AR9130:
 		chip = "9130";
+		is_ar9000=1;
+		break;
+	case REV_ID_CHIP_AR9132:
+		chip = "9132";
+		is_ar9000=1;
 		break;
 	default:
 		chip = "71xx";
@@ -145,6 +156,21 @@ get_wmac_mem_len(u_int16_t wmac_num)
 {
 	return AR9100_WMAC_LEN;
 }
+
+void
+enable_wmac_led()
+{
+    ar7100_reg_rmw_set(AR7100_GPIO_FUNCTIONS, AR7100_GPIO_FUNCTION_WMAC_LED);
+}
+EXPORT_SYMBOL(enable_wmac_led);
+
+void
+disable_wmac_led()
+{
+    ar7100_reg_rmw_clear(AR7100_GPIO_FUNCTIONS, AR7100_GPIO_FUNCTION_WMAC_LED);
+    ar7100_gpio_out_val(6, 1);
+}
+EXPORT_SYMBOL(disable_wmac_led);
 
 EXPORT_SYMBOL(valid_wmac_num);
 EXPORT_SYMBOL(get_wmac_irq);
@@ -234,6 +260,8 @@ static void __init ar71xx_detect_sys_frequency(void)
 	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
 }
 
+#define AR71XX_UART_FLAGS (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_IOREMAP)
+
 void __init
 serial_setup(void)
 {
@@ -241,7 +269,7 @@ serial_setup(void)
 
 	memset(&p, 0, sizeof(p));
 
-	p.flags     = STD_COM_FLAGS;
+	p.flags     = AR71XX_UART_FLAGS;
 	p.iotype    = UPIO_MEM32;
 	p.uartclk   = ar71xx_ahb_freq;
 	p.irq       = AR7100_MISC_IRQ_UART;
@@ -361,6 +389,13 @@ void __init plat_mem_setup(void)
 
 #if 0
 	serial_setup();
+#endif
+
+#ifdef CONFIG_AR9100
+    ar7100_gpio_config_output(6);
+    ar7100_gpio_out_val(6, 1);
+    ar7100_reg_wr(AR9100_OBS_GPIO_1, 0x16);
+    ar7100_reg_wr(AR9100_OBS_OE, 0x40);
 #endif
 }
 

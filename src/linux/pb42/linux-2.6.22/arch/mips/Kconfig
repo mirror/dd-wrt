@@ -678,13 +678,14 @@ config  MACH_AR7100
 	select SYS_SUPPORTS_BIG_ENDIAN
     select HW_HAS_PCI
 
-config  AR9100
+config AR9100
     bool "Support for Atheros ar9100 extenstions to ar7100"
     depends on MACH_AR7100
 
 config AR7100_EMULATION
     bool "build system for AR7100 emulation board?"
     depends on MACH_AR7100
+
 
 
 endchoice
