@@ -103,6 +103,7 @@ static int pcigame_open(struct gameport *gameport, int mode)
 	return 0;
 }
 
+#undef pcigame_attach
 struct pcigame *pcigame_attach(struct pci_dev *dev, int type)
 {
 	struct pcigame *pcigame;
@@ -148,6 +149,7 @@ struct pcigame *pcigame_attach(struct pci_dev *dev, int type)
 EXPORT_SYMBOL_GPL(pcigame_attach);
 
 
+#undef pcigame_detach
 void pcigame_detach(struct pcigame *game)
 {
 	gameport_unregister_port(&game->gameport);

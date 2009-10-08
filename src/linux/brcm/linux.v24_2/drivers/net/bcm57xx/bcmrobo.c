@@ -582,8 +582,11 @@ mii_wreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
 static int
 mii_rreg(robo_info_t *robo, uint8 page, uint8 reg, void *val, int len)
 {
-	uint16 cmd16, val16;
+	uint16 cmd16, val16,val48[3];
 	void *h = robo->h;
+	uint32 val64[2];
+	memset(val48,0,6);
+	memset(val64,0,8);
 	int i;
 	uint8 *ptr = (uint8 *)val;
 

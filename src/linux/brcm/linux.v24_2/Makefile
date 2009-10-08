@@ -310,7 +310,17 @@ vmlinus: vmlinux
 	/opt/3.3.4/bin/mipsel-linux-objcopy -O binary vmlinux vmlinus 
 
 
+vmlinux_optimize:
+	$(LD) $(LINKFLAGS) head_opt.o \
+		--start-group \
+		vmlinux_opt.o \
+		--end-group \
+		-o vmlinux_opt
+
 vmlinux: include/linux/version.h $(CONFIGURATION) init/main.o init/version.o init/do_mounts.o linuxsubdirs
+# prelink
+	$(LD) -r -o vmlinux.o $(CORE_FILES) $(DRIVERS) $(NETWORKS) $(LIBS)
+	$(LD) -r -o head.o $(HEAD) init/main.o init/version.o init/do_mounts.o
 	$(LD) $(LINKFLAGS) $(HEAD) init/main.o init/version.o init/do_mounts.o \
 		--start-group \
 		$(CORE_FILES) \
