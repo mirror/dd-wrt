@@ -57,6 +57,11 @@
 #define __mips 4
 
 /* Function which emulates a floating point instruction. */
+/* Further private data for which no space exists in mips_fpu_struct */
+
+struct mips_fpu_emulator_stats fpuemustats;
+
+#ifdef CONFIG_MIPS_FPU_EMU
 
 static int fpu_emu(struct pt_regs *, struct mips_fpu_struct *,
 	mips_instruction);
@@ -66,9 +71,6 @@ static int fpux_emu(struct pt_regs *,
 	struct mips_fpu_struct *, mips_instruction);
 #endif
 
-/* Further private data for which no space exists in mips_fpu_struct */
-
-struct mips_fpu_emulator_stats fpuemustats;
 
 /* Control registers */
 
@@ -1277,3 +1279,10 @@ int fpu_emulator_cop1Handler(struct pt_regs *xcp, struct mips_fpu_struct *ctx,
 
 	return sig;
 }
+#else
+int fpu_emulator_cop1Handler(struct pt_regs *xcp, struct mips_fpu_struct *ctx,
+        int has_fpu)
+{
+	return 0;
+}
+#endif /* CONFIG_MIPS_FPU_EMU */

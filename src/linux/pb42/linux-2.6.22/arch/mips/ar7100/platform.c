@@ -101,11 +101,13 @@ static struct resource ar7100_uart_resources[] = {
 	},
 };
 
+#define AR71XX_UART_FLAGS (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_IOREMAP)
+
 static struct plat_serial8250_port ar7100_uart_data[] = {
 	{
                 .membase        = (char *)KSEG1ADDR(AR7100_UART_BASE),
                 .irq            = AR7100_MISC_IRQ_UART,
-                .flags          = STD_COM_FLAGS,
+                .flags          = AR71XX_UART_FLAGS,
                 .iotype         = UPIO_MEM32,
                 .regshift       = 2,
                 .uartclk        = 0, /* ar7100_ahb_freq, */
@@ -139,8 +141,8 @@ int __init ar7100_platform_init(void)
 {
         /* need to set clock appropriately */
         ar7100_uart_data[0].uartclk = ar71xx_ahb_freq; 
-	return platform_add_devices(ar7100_platform_devices, 
-                                ARRAY_SIZE(ar7100_platform_devices));
+
+	return platform_add_devices(ar7100_platform_devices,ARRAY_SIZE(ar7100_platform_devices));
 }
 
 arch_initcall(ar7100_platform_init);

@@ -111,6 +111,8 @@ int mips_dsemul(struct pt_regs *regs, mips_instruction ir, unsigned long cpc)
 	return SIGILL;		/* force out of emulation loop */
 }
 
+#ifdef CONFIG_MIPS_FPU_EMU
+
 int do_dsemulret(struct pt_regs *xcp)
 {
 	struct emuframe *fr;
@@ -166,3 +168,9 @@ int do_dsemulret(struct pt_regs *xcp)
 
 	return 1;
 }
+#else
+int do_dsemulret(struct pt_regs *xcp)
+{
+	return 0;
+}
+#endif /* CONFIG_MIPS_FPU_EMU */
