@@ -748,6 +748,32 @@ static int spiflash_probe(struct platform_device *pdev)
 	
 	offset = 0;
 	buf = 0xa8000000;
+	int compex=0;
+		if (!strncmp((char*)(buf+0x26da),"myloram.bin",11))
+		    {
+/*static struct mtd_partition dir_parts[] = {
+        { name: "RedBoot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x30000, size: 0x390000, },
+        { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
+        { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
+        { name: "nvram", offset: 0x3d0000, size: 0x10000, },
+        { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
+        { name: "board_config", offset: 0x3f0000, size: 0x10000, },
+        { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
+        { name: NULL, },
+};
+*/
+		    printk(KERN_EMERG "Compex device detected\n");
+		    dir_parts[0].size=0x20000;
+		    dir_parts[0].offset=0;
+		    dir_parts[7].size=mtd->size;
+		    dir_parts[7].offset = 0;
+		    dir_parts[6].size=mtd->erasesize;
+		    dir_parts[6].offset = mtd->size-mtd->erasesize;
+		    compex=1;
+		    }
+
+
 	while((offset+mtd->erasesize)<mtd->size)
 	    {
 //	    printk(KERN_EMERG "[0x%08X]\n",offset);
@@ -773,6 +799,12 @@ static int spiflash_probe(struct platform_device *pdev)
 		dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 		rootsize = dir_parts[4].offset-offset; //size of rootfs aligned to nvram offset
 		//now scan for linux offset
+		if (compex)
+		{
+		dir_parts[1].offset=0x20000;
+		dir_parts[1].size=(dir_parts[2].offset-dir_parts[1].offset)+rootsize;		
+		break;
+		}else{
 		p=(unsigned char*)(0xa8000000+dir_parts[5].offset);
 		fis = (struct fis_image_desc*)p;
 		while(1)
@@ -798,6 +830,7 @@ static int spiflash_probe(struct platform_device *pdev)
 		fis = (struct fis_image_desc*)p;
 		}
 		break;
+		}
 		}
 	    offset+=mtd->erasesize;
 	    buf+=mtd->erasesize;
