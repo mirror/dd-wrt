@@ -6,6 +6,8 @@
  *
  * Delay routines, using a pre-computed "loops_per_jiffy" value.
  */
+#include <linux/kernel.h>
+#include <linux/param.h>
 
 extern unsigned long loops_per_jiffy;
 
