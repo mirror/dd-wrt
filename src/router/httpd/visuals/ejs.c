@@ -362,6 +362,26 @@ void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+void ej_get_single_nm(webs_t wp, int argc, char_t ** argv)
+{
+	char *c;
+
+#ifndef FASTWEB
+	if (argc < 1) {
+		websError(wp, 400, "Insufficient args\n");
+		return;
+	}
+#endif
+
+	c = nvram_safe_get(argv[0]);
+	if (c) {
+		websWrite(wp, "%d", get_single_ip(c, atoi(argv[1])));
+	} else
+		websWrite(wp, "0");
+
+	return;
+}
+
 /*
  * Example: wan_mac = 00:11:22:33:44:55 get_single_mac("wan_mac", 1);
  * produces "11" 
