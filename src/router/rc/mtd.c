@@ -221,6 +221,7 @@ int mtd_write(const char *path, const char *mtd)
 		goto fail;
 	}
 	sysinfo(&info);
+#ifndef HAVE_CAMBRIA
 	stop_service("sshd");
 	stop_service("snmpd");
 	stop_service("zebra");
@@ -232,7 +233,7 @@ int mtd_write(const char *path, const char *mtd)
 	stop_service("upnp");
 	stop_service("freeradius");
 	system("killall process_monitor");
-	
+#endif	
 #ifdef HAVE_MAGICBOX
 	trx.magic = STORE32_LE(trx.magic);
 	trx.len = STORE32_LE(trx.len);
