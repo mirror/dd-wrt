@@ -408,6 +408,8 @@
 
 #define ROUTER_BOARD_AR670W 0x7919
 
+#define ROUTER_BOARD_EAP9550 0x801a
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
