@@ -569,7 +569,7 @@ int internal_getRouterBrand()
 		}
 		if (!strncmp(gwid, "GW2369", 6)) {
 			setRouter("Avila GW2369");
-			return ROUTER_BOARD_GATEWORX;
+			return ROUTER_BOARD_GATEWORX_GW2369;
 		}
 		if (!strncmp(gwid, "GW2355", 6)) {
 			setRouter("Avila GW2355");
@@ -2570,6 +2570,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x102;
 		connected_gpio = 0x106;
 		break;
+	case ROUTER_BOARD_GATEWORX_GW2369:
+		connected_gpio = 0x102;	
+		break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
 		diag_gpio = 0x104;
@@ -2578,9 +2581,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x102;
 		wlan_gpio = 0x104;
 #else
-		if (nvram_match("DD_BOARD", "Avila GW2369")) {
-			connected_gpio = 0x102;
-		} else if (nvram_match("DD_BOARD", "Cambria GW2350")
+		if (nvram_match("DD_BOARD", "Cambria GW2350")
 			   || nvram_match("DD_BOARD2", "Cambria GW2350"))
 			connected_gpio = 0x105;
 		else if (nvram_match("DD_BOARD", "Cambria GW2358-4")
