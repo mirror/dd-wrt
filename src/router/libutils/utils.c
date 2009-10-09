@@ -458,6 +458,10 @@ void setRouter(char *name)
 	if (name)
 		nvram_set("DD_BOARD2", name);
 	nvram_set(NVROUTER, "KMT-WAS");
+#elif HAVE_TRIMAX
+	if (name)
+		nvram_set("DD_BOARD2", name);
+	nvram_set(NVROUTER, "Trimax Wireless");
 #else
 	if (name)
 		nvram_set(NVROUTER, name);
