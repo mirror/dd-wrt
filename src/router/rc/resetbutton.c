@@ -223,6 +223,15 @@ int isCompex(void)
 	return compex;
 }
 
+int isGW2369(void)
+{
+
+    int brand = getRouterBrand();
+    if (brand == ROUTER_BOARD_GATEWORX_GW2369)
+	return 1;
+    return 0;
+}
+
 int getbuttonstate()
 {
 	FILE *in;
@@ -241,6 +250,8 @@ int getbuttonstate()
 #else
 	if (isCompex())
 		ret = read_bit(0);
+	if (isGW2369())
+		ret = read_bit(3);
 	else
 		ret = read_bit(4);
 #endif
