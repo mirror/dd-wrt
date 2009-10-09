@@ -217,6 +217,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	if (nvram_match("DD_BOARD", "Avila GW2345")
 	    || nvram_match("DD_BOARD2", "Avila GW2345"))
 		eval("fischecksum");
+	if (nvram_match("DD_BOARD", "Avila GW2369")
+	    || nvram_match("DD_BOARD2", "Avila GW2369"))
+		eval("fischecksum");
 	if (nvram_match("DD_BOARD", "Avila GW2348-4/2")
 	    || nvram_match("DD_BOARD2", "Avila GW2348-4/2"))
 		eval("fischecksum");
