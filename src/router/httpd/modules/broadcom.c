@@ -1956,6 +1956,9 @@ static void do_stylecss_ie(struct mime_handler *handler, char *url,
 static void do_trial_logo(struct mime_handler *handler, char *url,
 			  webs_t stream, char *query)
 {
+#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM)
+	do_file(handler, url, stream, query);
+#else
 	if (!isregistered_real()) {
 		do_file(handler, "style/logo-trial.png", stream, query);
 	} else {
@@ -1965,6 +1968,7 @@ static void do_trial_logo(struct mime_handler *handler, char *url,
 			do_file(handler, url, stream, query);
 		}
 	}
+#endif
 }
 
 #endif
