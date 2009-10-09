@@ -159,6 +159,9 @@ endif
 ifeq ($(CONFIG_ESR6650),y)
   CFLAGS += -DHAVE_ESR6650
 endif
+ifeq ($(CONFIG_EAP9550),y)
+  CFLAGS += -DHAVE_EAP9550
+endif
 
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM

@@ -157,9 +157,12 @@ if (in!=NULL)
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750)	// lets load
 	{
 		eval("ifconfig", "eth2", "up");
+#ifndef HAVE_EAP9550		
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth2", "1");	//LAN 
 		eval("vconfig", "add", "eth2", "2");	//WAN
+#endif
+
 #ifdef HAVE_ALLNET11N
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
@@ -208,6 +211,9 @@ if (in!=NULL)
 	sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
 	sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
 	sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
+
+
+#elif HAVE_EAP9550
 
 
 #else

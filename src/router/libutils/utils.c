@@ -651,10 +651,13 @@ int internal_getRouterBrand()
 	setRouter("Airlink 101 AR670W");
 	return ROUTER_BOARD_AR670W;
 #elif HAVE_ESR6650
-	setRouter("Senao ESR6650");
+	setRouter("Senao ESR-6650");
 	return ROUTER_BOARD_ESR6650;
+#elif HAVE_EAP9550
+	setRouter("Senao EAP-9550");
+	return ROUTER_BOARD_EAP9550;
 #elif HAVE_ESR9752
-	setRouter("Senao ESR9752");
+	setRouter("Senao ESR-9752");
 	return ROUTER_BOARD_ESR9752;
 #elif HAVE_ACXNR22
 	setRouter("Aceex NR22");
