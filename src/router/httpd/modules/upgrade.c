@@ -202,32 +202,32 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		eval("fischecksum");
 	if (nvram_match("DD_BOARD", "Netgear WG302v1"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Avila GW2347")
-	    || nvram_match("DD_BOARD2", "Avila GW2347"))
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2347")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2347"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Avila GW2357")
-	    || nvram_match("DD_BOARD2", "Avila GW2357"))
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2357")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2357"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Avila GW2353")
-	    || nvram_match("DD_BOARD2", "Avila GW2353"))
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2353")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2353"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Avila GW2355")
-	    || nvram_match("DD_BOARD2", "Avila GW2355"))
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2355")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2355"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Avila GW2345")
-	    || nvram_match("DD_BOARD2", "Avila GW2345"))
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2345")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2345"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Avila GW2369")
-	    || nvram_match("DD_BOARD2", "Avila GW2369"))
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2369")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2369"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Avila GW2348-4/2")
-	    || nvram_match("DD_BOARD2", "Avila GW2348-4/2"))
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2348-4/2")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2348-4/2"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Cambria GW2358-4")
-	    || nvram_match("DD_BOARD2", "Cambria GW2358-4"))
+	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
+	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4"))
 		eval("fischecksum");
-	if (nvram_match("DD_BOARD", "Cambria GW2350")
-	    || nvram_match("DD_BOARD2", "Cambria GW2350"))
+	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
+	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
 		eval("fischecksum");
 	if (nvram_match("DD_BOARD", "Actiontec MI424WR"))
 		eval("fischecksum");
