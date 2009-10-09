@@ -544,39 +544,39 @@ int internal_getRouterBrand()
 		}
 		fclose(file);
 		if (!strncmp(gwid, "GW2347", 6)) {
-			setRouter("Avila GW2347");
+			setRouter("Gateworks Avila GW2347");
 			return ROUTER_BOARD_GATEWORX_SWAP;
 		}
 		if (!strncmp(gwid, "GW2357", 6)) {
-			setRouter("Avila GW2357");
+			setRouter("Gateworks Avila GW2357");
 			return ROUTER_BOARD_GATEWORX_SWAP;
 		}
 		if (!strncmp(gwid, "GW2353", 6)) {
-			setRouter("Avila GW2353");
+			setRouter("Gateworks Avila GW2353");
 			return ROUTER_BOARD_GATEWORX;
 		}
 		if (!strncmp(gwid, "GW2348", 6)) {
-			setRouter("Avila GW2348-4/2");
+			setRouter("Gateworks Avila GW2348-4/2");
 			return ROUTER_BOARD_GATEWORX;
 		}
 		if (!strncmp(gwid, "GW2358", 6)) {
-			setRouter("Cambria GW2358-4");
+			setRouter("Gateworks Cambria GW2358-4");
 			return ROUTER_BOARD_GATEWORX;
 		}
 		if (!strncmp(gwid, "GW2350", 6)) {
-			setRouter("Cambria GW2350");
+			setRouter("Gateworks Cambria GW2350");
 			return ROUTER_BOARD_GATEWORX;
 		}
 		if (!strncmp(gwid, "GW2369", 6)) {
-			setRouter("Avila GW2369");
+			setRouter("Gateworks Avila GW2369");
 			return ROUTER_BOARD_GATEWORX_GW2369;
 		}
 		if (!strncmp(gwid, "GW2355", 6)) {
-			setRouter("Avila GW2355");
+			setRouter("Gateworks Avila GW2355");
 			return ROUTER_BOARD_GATEWORX_GW2345;
 		}
 		if (!strncmp(gwid, "GW2345", 6)) {
-			setRouter("Avila GW2345");
+			setRouter("Gateworks Avila GW2345");
 			return ROUTER_BOARD_GATEWORX_GW2345;
 		}
 	}
@@ -587,7 +587,7 @@ int internal_getRouterBrand()
 
 	if (s < 0) {
 		fprintf(stderr, "socket(SOCK_DRAGM)\n");
-		setRouter("Avila Gateworks");
+		setRouter("Gateworks Avila");
 		return ROUTER_BOARD_GATEWORX;
 	}
 	(void)strncpy(iwr.ifr_name, "ixp0", sizeof("ixp0"));
@@ -616,7 +616,7 @@ int internal_getRouterBrand()
 #if HAVE_ALFA_BRANDING
 		setRouter("WLAN base-station");
 #else
-		setRouter("Avila GW2348-4/2");
+		setRouter("Gateworks Avila GW2348-4/2");
 #endif
 		return ROUTER_BOARD_GATEWORX;
 	} else if (reg1 == 0x143 && reg2 == 0xbc31)	// broadcom phy
@@ -625,7 +625,7 @@ int internal_getRouterBrand()
 		return ROUTER_BOARD_GATEWORX;
 	} else if (reg1 == 0x22 && reg2 == 0x1450)	// kendin switch 
 	{
-		setRouter("Avila GW2345");
+		setRouter("Gateworks Avila GW2345");
 		return ROUTER_BOARD_GATEWORX_GW2345;
 	} else if (reg1 == 0x0 && reg2 == 0x8201)	// realtek 
 	{
