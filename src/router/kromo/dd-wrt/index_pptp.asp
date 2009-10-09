@@ -11,7 +11,7 @@
 <div class="setting">
 	<div class="label"><% tran("share.subnet"); %></div>
 	<input type="hidden" name="wan_netmask" value="4"/>
-	<input class="num" maxlength="3" size="3" name="wan_netmask_0" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_ip("wan_netmask","0"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_1" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_ip("wan_netmask","1"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_2" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_ip("wan_netmask","2"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_3" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_ip("wan_netmask","3"); %>" />
+	<input class="num" maxlength="3" size="3" name="wan_netmask_0" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask","0"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_1" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask","1"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_2" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask","2"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_3" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask","3"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.gateway"); %></div>
