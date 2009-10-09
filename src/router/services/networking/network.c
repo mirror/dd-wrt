@@ -928,7 +928,8 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_RT2880
-	if (getRouterBrand() == ROUTER_BOARD_ECB9750)	// lets load
+	int rb = getRouterBrand();
+	if (rb == ROUTER_BOARD_ECB9750 || rb == ROUTER_BOARD_ESR9550)	// lets load
 	{
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
@@ -2251,6 +2252,10 @@ void start_wan(int status)
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_ECB9750
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ?
+	    nvram_safe_get("pppoe_wan_ifname") : "eth2";
+#elif HAVE_ESR9550
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "eth2";

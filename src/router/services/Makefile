@@ -819,6 +819,9 @@ endif
 ifeq ($(CONFIG_ESR6650),y)
   CFLAGS_EXTRA += -DHAVE_ESR6650
 endif
+ifeq ($(CONFIG_EAP9550),y)
+  CFLAGS_EXTRA += -DHAVE_EAP9550
+endif
 ifeq ($(CONFIG_NAS),y)
   CFLAGS_EXTRA += -DHAVE_NAS
 endif
