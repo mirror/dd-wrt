@@ -130,6 +130,8 @@ sysprintf("echo \"write 0 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 1 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
+#endif
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W)
 FILE *in=fopen("/dev/mtdblock/1","rb");
 if (in!=NULL)
     {
