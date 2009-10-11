@@ -569,7 +569,7 @@ void start_sysinit(void)
 
 	/* cf capability ? */
 	char *modelname = nvram_safe_get("DD_BOARD");
-	if (!strncmp(modelname,"Avila GW2348",12) || !strcmp(modelname,"Cambria GW2358-4")) {
+	if (!strncmp(modelname,"Gateworks Avila GW2348",22) || !strcmp(modelname,"Gateworks Cambria GW2358-4")) {
 	fprintf(stderr,"Load CF Card Driver\n");
 	    insmod("pata_ixp4xx_cf");
 	}    
