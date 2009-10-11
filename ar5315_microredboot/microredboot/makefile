@@ -175,7 +175,7 @@ ap48:
 	$(PLATFORM_RAM_START) \
 	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
 	ecosconfig import $(REDBOOT_DIR)/options/RAM/16MB_ram; \
-	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom_ap48; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom; \
 	ecosconfig import $(REDBOOT_DIR)/options/eth/kendin_phy; \
 	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
 	$(PLATFORM_BLD_CUST)
@@ -188,7 +188,7 @@ ap48:
 	$(PLATFORM_RAM_START) \
 	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
 	ecosconfig import $(REDBOOT_DIR)/options/RAM/16MB_ram; \
-	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom_ap48; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom; \
 	ecosconfig import $(REDBOOT_DIR)/options/eth/marvell_phy; \
 	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
 	$(PLATFORM_BLD_CUST)
@@ -201,7 +201,7 @@ ap48:
 	$(PLATFORM_RAM_START) \
 	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
 	ecosconfig import $(REDBOOT_DIR)/options/RAM/32MB_ram; \
-	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom_ap48; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/4MB_rom; \
 	ecosconfig import $(REDBOOT_DIR)/options/eth/marvell_phy; \
 	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/ap48/current/misc/redboot_RAM.ecm; \
 	$(PLATFORM_BLD_CUST)

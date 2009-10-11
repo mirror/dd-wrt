@@ -1,6 +1,6 @@
 This sourcecode is the smallest every builded redboot (less than 64 kb). it uses a decompression stub to load a lzma compressed redboot image
 into ram. the device initialisation itself is done within the stub itself. you can find the stub source within the ./boot dir
-if you build it manually, take care about the RESETBUTTON environment variable. it defines the gpio configuration for the gpio.
+if you build it manually, take care about the RESETBUTTON environment variable. it defines the gpio configuration for the reset button.
 the lower 4 bits are for the gpio itself and the higher 4 bits are for the type (1 means inverted, 0 means normal)
 for senao devices that means 0x15 (inverted gpio 5)
 
