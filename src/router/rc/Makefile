@@ -147,6 +147,9 @@ endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif
+ifeq ($(CONFIG_MYNETWAY),y)
+  CFLAGS += -DHAVE_MYNETWAY
+endif
 ifeq ($(CONFIG_MAKSAT_BLANK),y)
 CFLAGS += -DHAVE_MAKSAT_BLANK
 endif
