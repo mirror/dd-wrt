@@ -136,14 +136,27 @@ FILE *in=fopen("/dev/mtdblock/1","rb");
 if (in!=NULL)
     {
     unsigned char *config=malloc(65536);
+    memset(config,0,65536);
     fread(config,65536,1,in);
+#ifdef HAVE_AR670W
+    int len = sizeof("lanmac=");
+#else
     int len = sizeof("ethaddr=");
+#endif
     int i;
     for (i=0;i<65535-len;i++)
 	{
+#ifdef HAVE_AR670W
+	if (!strncmp(&config[i],"lanmac=",7))
+#else
 	if (!strncmp(&config[i],"ethaddr=",8))
+#endif
 	    {
+#ifdef HAVE_AR670W
+	    char *mac = &config[i+7];
+#else
 	    char *mac = &config[i+8];
+#endif
 	    eval("ifconfig","eth2","hw","ether",mac);
 	    nvram_set("et0macaddr_safe",mac);
 	    break;
