@@ -131,7 +131,7 @@ sysprintf("echo \"write 1 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
 sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
 #endif
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) 
 FILE *in=fopen("/dev/mtdblock/1","rb");
 if (in!=NULL)
     {
@@ -144,7 +144,7 @@ if (in!=NULL)
     int len = sizeof("ethaddr=");
 #endif
     int i;
-    for (i=0;i<65535-len;i++)
+    for (i=0;i<65535-18;i++)
 	{
 #ifdef HAVE_AR670W
 	if (!strncmp(&config[i],"lanmac=",7))
@@ -157,6 +157,9 @@ if (in!=NULL)
 #else
 	    char *mac = &config[i+8];
 #endif
+	    if (mac[0]=='"')
+		mac++;
+	    mac[17]=0;
 	    eval("ifconfig","eth2","hw","ether",mac);
 	    nvram_set("et0macaddr_safe",mac);
 	    break;
