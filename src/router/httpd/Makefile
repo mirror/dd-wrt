@@ -367,6 +367,9 @@ endif
 ifeq ($(CONFIG_TELCOM),y)
 CFLAGS += -DHAVE_TELCOM
 endif
+ifeq ($(CONFIG_MYNETWAY),y)
+  CFLAGS += -DHAVE_MYNETWAY
+endif
 
 
 ifeq ($(CONFIG_PPPOE),y)
