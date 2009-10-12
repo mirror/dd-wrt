@@ -386,7 +386,7 @@ void period_check(int sig)
 	} else if (brand == ROUTER_BOARD_ESR6650) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_EAP9550) {
-		val = get_gpio(10) << 10;
+		val = get_gpio(0);
 	} else if (brand == ROUTER_BOARD_ESR9752) {
 		val = get_gpio(0);
 	} else if (brand == ROUTER_BOARD_AR670W) {
