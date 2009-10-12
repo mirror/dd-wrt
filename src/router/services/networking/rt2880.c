@@ -397,7 +397,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	deconfigure_wifi();
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W)
 	char mac[32];
-	strcpy(mac,nvram_safe_get("et0macaddr_safe"));
+	strcpy(mac,nvram_default_get("et0macaddr_safe","00:11:22:33:44:55"));
 	MAC_ADD(mac);
 	MAC_ADD(mac);
 #endif
