@@ -831,7 +831,7 @@ idx_h.reconnect="Force reconnect";
 
 // ** index_l2tp.asp **//
 var idx_l = new Object();
-idx_l.srv="L2TP Server";
+idx_l.srv="Gateway (L2TP Server)";
 
 
 // ** index_pppoe.asp **//
