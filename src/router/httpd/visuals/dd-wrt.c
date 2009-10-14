@@ -453,7 +453,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "unknown");
 	return;
 }
-#elif HAVE_FONERA
+#elif defined(HAVE_FONERA) || defined(HAVE_SOLO51)
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
