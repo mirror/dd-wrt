@@ -123,7 +123,7 @@ ipPhyInfo_t ipPhyInfo[] = {
     {TRUE,   /* phy port 0 -- LAN port 0 */
      FALSE,
      ENET_UNIT_DEFAULT,
-     (UINT32) (PHYS_TO_K1(AR2316_ENET0)+AE531X_PHY_OFFSET),
+     (UINT32) (PHYS_TO_K1(AR531X_ENET0)+AE531X_PHY_OFFSET),
      IP_PHY0_ADDR,
      IP_LAN_PORT_VLAN
     },
@@ -131,7 +131,7 @@ ipPhyInfo_t ipPhyInfo[] = {
     {TRUE,   /* phy port 1 -- LAN port 1 */
      FALSE,
      ENET_UNIT_DEFAULT,
-     (UINT32) (PHYS_TO_K1(AR2316_ENET0)+AE531X_PHY_OFFSET),
+     (UINT32) (PHYS_TO_K1(AR531X_ENET0)+AE531X_PHY_OFFSET),
      IP_PHY1_ADDR,
      IP_LAN_PORT_VLAN
     },
@@ -139,7 +139,7 @@ ipPhyInfo_t ipPhyInfo[] = {
     {TRUE,   /* phy port 2 -- LAN port 2 */
      FALSE,
      ENET_UNIT_DEFAULT,
-     (UINT32) (PHYS_TO_K1(AR2316_ENET0)+AE531X_PHY_OFFSET),
+     (UINT32) (PHYS_TO_K1(AR531X_ENET0)+AE531X_PHY_OFFSET),
      IP_PHY2_ADDR, 
      IP_LAN_PORT_VLAN
     },
@@ -147,7 +147,7 @@ ipPhyInfo_t ipPhyInfo[] = {
     {TRUE,   /* phy port 3 -- LAN port 3 */
      FALSE,
      ENET_UNIT_DEFAULT,
-     (UINT32) (PHYS_TO_K1(AR2316_ENET0)+AE531X_PHY_OFFSET),
+     (UINT32) (PHYS_TO_K1(AR531X_ENET0)+AE531X_PHY_OFFSET),
      IP_PHY3_ADDR, 
      IP_LAN_PORT_VLAN
     },
@@ -155,7 +155,7 @@ ipPhyInfo_t ipPhyInfo[] = {
     {TRUE,   /* phy port 4 -- WAN port or LAN port 4 */
      FALSE,
      ENET_UNIT_DEFAULT,
-     (UINT32) (PHYS_TO_K1(AR2316_ENET0)+AE531X_PHY_OFFSET),
+     (UINT32) (PHYS_TO_K1(AR531X_ENET0)+AE531X_PHY_OFFSET),
      IP_PHY4_ADDR, 
 #if CONFIG_VENETDEV
      IP_WAN_PORT_VLAN   /* WAN port */
@@ -167,7 +167,7 @@ ipPhyInfo_t ipPhyInfo[] = {
     {FALSE,  /* phy port 5 -- CPU port (no RJ45 connector) */
      TRUE,
      ENET_UNIT_DEFAULT,
-     (UINT32) (PHYS_TO_K1(AR2316_ENET0)+AE531X_PHY_OFFSET),
+     (UINT32) (PHYS_TO_K1(AR531X_ENET0)+AE531X_PHY_OFFSET),
      0x00, 
 #if CONFIG_VENETDEV
      IP_WAN_PORT_VLAN
@@ -177,7 +177,7 @@ ipPhyInfo_t ipPhyInfo[] = {
     },
 };
 
-#define IP_GLOBALREGBASE    ((UINT32) (PHYS_TO_K1(AR2316_ENET0)))
+#define IP_GLOBALREGBASE    ((UINT32) (PHYS_TO_K1(AR531X_ENET0)))
 
 #define IP_PHY_MAX (sizeof(ipPhyInfo) / sizeof(ipPhyInfo[0]))
 

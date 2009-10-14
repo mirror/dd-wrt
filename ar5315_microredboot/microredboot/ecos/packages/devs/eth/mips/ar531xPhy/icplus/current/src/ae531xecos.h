@@ -56,6 +56,7 @@
 #define printf { }
 #else
 #include <cyg/hal/ar531xreg.h>
+#define printf { }
 #endif
 
 #define DEBUG 0 /* TBDXXX */
