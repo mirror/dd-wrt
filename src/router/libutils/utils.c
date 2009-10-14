@@ -831,7 +831,7 @@ int internal_getRouterBrand()
 	setRouter("Ubiquiti Nanostation 5");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_SOLO51
-	setRouter("Alfa Solo51");
+	setRouter("Alfa SoLo48-N");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_NS3
 	setRouter("Ubiquiti Nanostation 3");
