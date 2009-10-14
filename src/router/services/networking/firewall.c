@@ -770,7 +770,7 @@ static void nat_postrouting(void)
 		// ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j
 		// MASQUERADE "
 		// "--to-ports 5056-5071\n", wanface);
-		if (nvram_match("dtag_vlan8", "1")) {
+		if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 			save2file
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     nvram_safe_get("tvnicfrom"),
@@ -1819,7 +1819,7 @@ static void filter_input(void)
 	 * most of what was here has been moved to the end 
 	 */
 	save2file("-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n");
-	if (nvram_match("dtag_vlan8", "1")) {
+	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		save2file("-A INPUT -i %s -j ACCEPT\n",
 			  nvram_safe_get("tvnicfrom"));
 	}
@@ -2045,7 +2045,7 @@ static void filter_forward(void)
 	char var[80];
 
 	char vifs[256];		// 
-	if (nvram_match("dtag_vlan8", "1")) {
+	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		save2file("-A FORWARD -i %s -j ACCEPT\n",
 			  nvram_safe_get("tvnicfrom"));
 		save2file("-A FORWARD -o %s -j ACCEPT\n",
@@ -2227,7 +2227,7 @@ static void filter_forward(void)
 	/*
 	 * ACCEPT packets for Multicast pass through 
 	 */
-	if (nvram_match("dtag_vlan8", "1")) {
+	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		if (doMultiCast() > 0)
 			save2file
 			    ("-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
