@@ -383,6 +383,16 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_SOLO51
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan0 vlan2 ath0", 0},
+		{"wan_ifname", "vlan0", 0},
+		{"wan_ifname2", "vlan0", 0},
+		{"wan_ifnames", "vlan0", 0},
+		{"wan_default", "vlan0", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_LS2
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
