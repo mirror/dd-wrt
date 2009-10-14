@@ -110,13 +110,13 @@ static void do_flash_update(unsigned long base_addr, unsigned long len,
 	int rc;
 #if defined(CYGPKG_HAL_MIPS_AR2316)
 #if FISTYPE == 1
-	set_gpio(0,1);
+	set_gpio(0, 1);
 	page_programming_supported = 1;
 	page_gpio = 0;
 #endif
 
 #if FISTYPE == 2
-	set_gpio(3,1);
+	set_gpio(3, 1);
 	page_programming_supported = 1;
 	page_gpio = 3;
 #endif
@@ -236,15 +236,19 @@ tftpd_fsm(struct tftphdr *tp, int len, ip_route_t * src_route, word src_port)
 			     i <
 			     sizeof(fw_formats) /
 			     sizeof(struct firmware_formats); i++) {
-				int v = fw_formats[i].fw_check_image((char *)BASE_ADDR,ptr - BASE_ADDR,0);
-//				diag_printf("%s returns %d\n",fw_formats[i].name,v);
+				int v = fw_formats[i].fw_check_image((char *)
+								     BASE_ADDR,
+								     ptr -
+								     BASE_ADDR,
+								     0);
+//                              diag_printf("%s returns %d\n",fw_formats[i].name,v);
 				if (!v) {
 					detect = i;
 					break;
 				}
 			}
 
-			if (detect!=-1)	/* third parameter 0 - do not write to flash */
+			if (detect != -1)	/* third parameter 0 - do not write to flash */
 				tftpd_send(ACK, block, src_route, src_port);	// crc ok
 			else {
 				tftpd_error(EACCESS, "CRC error", src_route,
