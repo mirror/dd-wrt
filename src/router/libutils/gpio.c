@@ -39,7 +39,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#if  defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
+#if defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
 void set_gpio(int gpio, int value)
 {
