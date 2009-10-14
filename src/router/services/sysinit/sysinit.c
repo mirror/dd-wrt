@@ -734,6 +734,16 @@ void start_restore_defaults(void)
 	{
 		restore_defaults = 1;
 	}
+#elif HAVE_SOLO51
+	linux_overrides = generic;
+	int brand = getRouterBrand();
+
+	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
+		// nvram_invmatch("os_name", 
+		// "linux"))
+	{
+		restore_defaults = 1;
+	}
 #elif HAVE_RT2880
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -1063,6 +1073,11 @@ void start_restore_defaults(void)
 	}
 #endif
 #ifdef HAVE_FONERA
+	if (restore_defaults) {
+		eval("erase", "nvram");
+	}
+#endif
+#ifdef HAVE_SOLO51
 	if (restore_defaults) {
 		eval("erase", "nvram");
 	}
