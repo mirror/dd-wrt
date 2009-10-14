@@ -85,6 +85,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		write_argv[2] = "linux";
 #elif HAVE_DIR400
 		write_argv[2] = "linux";
+#elif HAVE_SOLO51
+		write_argv[2] = "linux";
 #elif HAVE_MERAKI
 		write_argv[2] = "linux";
 #elif HAVE_DLM101
@@ -166,6 +168,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	if (url)
 		return eval("write", url, "linux");
 #elif HAVE_GWMF54G2
+	eval("fischecksum");
+	if (url)
+		return eval("write", url, "linux");
+#elif HAVE_SOLO51
 	eval("fischecksum");
 	if (url)
 		return eval("write", url, "linux");
