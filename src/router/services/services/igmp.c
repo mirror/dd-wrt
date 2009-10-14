@@ -57,7 +57,7 @@ void start_igmp_proxy(void)
 	}*/
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
 
-	if (nvram_match("dtag_vlan8", "1")) {
+	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		fprintf(fp,
 			"quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",
 			nvram_safe_get("tvnicfrom"));

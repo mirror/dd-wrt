@@ -1818,7 +1818,7 @@ char *enable_dtag_vlan(int enable)
 			else
 				nvram_set("vlan2ports", "");
 			nvram_set("vlan7ports", vlan7ports);
-			if (nvram_match("dtag_vlan8", "1")) {
+			if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 				nvram_set("vlan8ports", vlan7ports);
 			}
 		}
@@ -1860,7 +1860,7 @@ char *enable_dtag_vlan(int enable)
 		if (enable) {
 			nvram_set("vlan1ports", "");
 			nvram_set("vlan7ports", vlan7ports);
-			if (nvram_match("dtag_vlan8", "1")) {
+			if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 				nvram_set("vlan8ports", vlan7ports);
 			}
 		}
@@ -1921,7 +1921,7 @@ char *enable_dtag_vlan(int enable)
 		if (enable) {
 			fprintf(stderr, "enable vlan port mapping %s/%s\n",
 				nvram_safe_get("vlan0ports"), vlan7ports);
-			if (!nvram_match("dtag_vlan8", "1")) {
+			if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0")) {
 				sysprintf
 				    ("echo \"%s\" > /proc/switch/%s/vlan/0/ports",
 				     nvram_safe_get("vlan0ports"), eth);
