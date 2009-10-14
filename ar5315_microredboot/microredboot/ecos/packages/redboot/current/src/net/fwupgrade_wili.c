@@ -247,7 +247,16 @@ int fw_check_image_wili(unsigned char *addr, unsigned long maxlen, int do_flash)
 				diag_printf
 				    ("WILI_FW: Can't erase region at %p: %s\n",
 				     err_addr, flash_errmsg(stat));
-				return -1;
+				_sleep(1000);
+				if ((stat =
+				     flash_erase((void *)img->flash_base,
+						 ntohl(fwp->header->part_size),
+						 (void **)&err_addr)) != 0) {
+					diag_printf
+					    ("WILI_FW: Can't erase region at %p: %s\n",
+					     err_addr, flash_errmsg(stat));
+					return -1;
+				}
 			}
 			if ((stat = flash_program((void *)img->flash_base,
 						  (void *)fwp->data,

@@ -34,6 +34,12 @@ make ap48 RESETBUTTON=0x06 FIS=0 LED1_PIN=7 LED2_PIN=5 LED3_PIN=4 LED4_PIN=3
 mkdir images_ubnt
 cp images/redboot_ap48_16M_4M_kendin.rom images_ubnt/LS5_NS5_PS5_BS5_LC5_PICO5.rom
 
+
+rm -f images/*
+make ap48 RESETBUTTON=0x06 FIS=0
+mkdir images_solo51
+cp images/redboot_ap48_32M_8M_icplus.rom images_solo51/SOLO51.rom
+
 #senao like inverted gpio 5
 rm -f images/*
 make ap51 RESETBUTTON=0x15 FIS=2  LED1_PIN=4 LED2_PIN=6 LED3_PIN=7

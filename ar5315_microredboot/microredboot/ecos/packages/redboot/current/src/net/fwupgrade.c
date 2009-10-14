@@ -122,12 +122,20 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 		img = fis_lookup("RedBoot", &i);
 		unsigned int flash_addr = img->flash_base + img->size;
 		diag_printf("DD-WRT_FW: flash base is 0x%08X\n", flash_addr);
-		if ((stat =
-		     flash_erase((void *)flash_addr, trx.len,
-				 (void **)&err_addr)) != 0) {
-			diag_printf("DD-WRT_FW: Can't erase region at %p: %s\n",
-				    err_addr, flash_errmsg(stat));
-			return -1;
+
+		if ((stat = flash_erase((void *)flash_addr, trx.len,
+					(void **)&err_addr)) != 0) {
+			diag_printf
+			    ("DD-WRT_FW: Can't erase region at %p: %s\ntry a second time after 1 second\n",
+			     err_addr, flash_errmsg(stat));
+			_sleep(1000);
+			if ((stat = flash_erase((void *)flash_addr, trx.len,
+						(void **)&err_addr)) != 0) {
+				diag_printf
+				    ("DD-WRT_FW: Can't erase region at %p: %s\n",
+				     err_addr, flash_errmsg(stat));
+				return -1;
+			}
 		}
 		if ((stat =
 		     flash_program((void *)flash_addr,
