@@ -546,7 +546,7 @@ void period_check(int sig)
 					    ("resetbutton: factory default.\n");
 					dd_syslog(LOG_DEBUG,
 						  "Reset button: restoring factory defaults now!\n");
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) %% !defined(HAVE_SOLO51)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 					led_control(LED_DIAG, LED_ON);
 #endif
 					ACTION("ACT_HW_RESTORE");
