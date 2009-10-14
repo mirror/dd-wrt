@@ -1,3 +1,8 @@
+14.10.09
+    * add some workarounds for slow low quality flash chips
+    * add ICPLUS switch support to AP48 target
+    * added SOL51 target (AP48, Resetbutton gpio 6, ICPLUS switch, 8 mb flash, 32 mb ram)
+
 10.10.09
     * added small advise
     

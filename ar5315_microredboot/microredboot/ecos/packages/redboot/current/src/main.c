@@ -721,7 +721,7 @@ set_console_baud_rate(int rate)
     return ret;
 }
 
-static void
+void
 _sleep(int ms)
 {
     int i;

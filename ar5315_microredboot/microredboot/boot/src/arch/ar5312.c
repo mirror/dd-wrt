@@ -96,6 +96,7 @@ typedef struct {
 } FLASHDEV;
 static const FLASHDEV flashdevs[] = {
 	{.devid = 0xc9,.name = "MX29LV640",.size = 8,.blocksize = 64},
+	{.devid = 0xcb,.name = "MX29LV640DB",.size = 8,.blocksize = 64},
 	{.devid = 0xa7,.name = "MX29LV320C",.size = 4,.blocksize = 64},
 	{.devid = 0xa8,.name = "MX29LV320B",.size = 4,.blocksize = 64},
 	{.devid = 0xc4,.name = "MX29LV160CT",.size = 2,.blocksize = 64},
