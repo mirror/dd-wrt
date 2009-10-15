@@ -10,11 +10,9 @@
 #include <cyg/hal/ar7100_soc.h>
 #include <string.h>
 
-#define DEBUG 1 /* TBDXXX */
+//#define DEBUG 1 /* TBDXXX */
 
-#if !defined(DEBUG)
-#define DEBUG 0
-#endif
+//#define DEBUG 0
 
 #define AG7100_TX_BUF_SIZE 1536
 

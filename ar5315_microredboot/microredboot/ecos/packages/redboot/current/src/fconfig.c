@@ -74,6 +74,9 @@ externC void read_eeprom(void *buf, int len);
 externC bool cyg_plf_redboot_esa_validate(unsigned char *val);
 #endif
 
+
+
+
 #ifdef CYGHWR_REDBOOT_FLASH_CONFIG_MEDIA_FLASH
 externC bool do_flash_init(void);
 externC int flash_read(void *flash_base, void *ram_base, int len, void **err_address);
@@ -105,8 +108,27 @@ void *cfg_base;   // Location in Flash of config data
 int   cfg_size;   // Length of config data - rounded to Flash block size
 #endif // FLASH MEDIA
 
+#ifdef ATHEROS_MODS
+static struct _atheros_config ath_cfg;  
+#endif
+
 // Prototypes for local functions
 static unsigned char *flash_lookup_config(char *key);
+
+#ifdef ATHEROS_MODS
+static int atoi(char *str);
+#ifdef CYGNUM_CONFIG_PRODUCT_ID
+static void do_mac_setting (int argc, char *argv[]);
+#endif /* CYGNUM_CONFIG_PRODUCT_ID */
+
+static void do_pll_settings_usage(void);
+static void read_atheros_config(void);
+static int get_atheros_config_pll(void);
+static int set_atheros_config_pll(int v);
+static bool flash_set_pll_freq (unsigned int val);
+static bool update_atheros_config(void);
+#endif
+
 
 static bool config_ok;
 
@@ -490,6 +512,238 @@ config_length(int type)
         return 0;
     }
 }
+
+#ifdef ATHEROS_MODS
+
+/*********************************************************************************
+** atoi
+**
+** Simple implementation of the conversion from decimal to binary integer value
+**
+*/
+
+static int atoi(char *str)
+{
+    int val  = 0;
+    int sign = 1;
+    
+    while(*str == ' ')
+        str++;;   /* strip spaces */
+    
+    if(*str == '-')
+    {
+        sign = -1;
+        str++;
+    }
+    
+    /*
+    ** Loop on digits
+    */
+    
+    while(*str > 0x2f && *str < 0x3a)
+    {
+        val= 10 * val + (*str++ - 0x30);
+    }
+    
+    val = val * sign;
+    
+    return (val);    
+}
+
+
+#ifdef CYGNUM_CONFIG_PRODUCT_ID
+/*
+** If the product ID is defined for this board, then we provide the command for programming
+** the MAC addresses for the board.  It is assumed that the board will have a WAN Mac address
+** and a LAN mac address.  Only the WAN mac address is used by redboot, but both will be read
+** by Linux to program the WAN and LAN MAC addresses upon bootup.
+*/
+
+static cmd_fun do_mac_setting;
+RedBoot_cmd("progmac",
+            "Programs the mac address(es) into flash.  Based on board serial number.Number of MACs required depends on board type",
+            "usage:\n"
+            "progmac serialno\n"
+            "  serialno = board serial number in decimal\n",
+            do_mac_setting
+        ); 
+
+/**********************************************************************************
+** do_mac_setting
+**
+** This is the executable portion of the progmac command.  This will process the
+** MAC address strings, and program them into the appropriate flash sector..
+**
+*/
+
+static void
+do_mac_setting (int argc, char *argv[])
+{
+    char    macPrefix[3]= { 0x00, 0x03, 0x7f };
+    int     serno;
+
+    /*
+    ** Argv[1] contains the value string.  Convert to binary, and program the
+    ** values in flash
+    */
+    
+    serno = atoi(argv[1]);
+    
+    /*
+    ** If the serial number is less than 0, or greater than 0x1fff, it's out of range
+    */
+    
+    if(serno < 0 || serno > 0x1fff)
+    {
+        diag_printf("Serno out of range\n",serno);
+        return;
+    }
+    
+    /*
+    ** Create the 24 bit number that composes the lower 3 bytes of the MAC address
+    */
+    
+    serno = 0xFFFFFF & ( (CYGNUM_CONFIG_PRODUCT_ID << 13) | (serno & 0x1fff));
+    
+    /*
+    ** Get the values from flash, and program into the MAC address registers
+    */
+    
+    read_atheros_config();
+    
+    /*
+    ** Set the first and second values
+    */
+    
+    memcpy(ath_cfg.MAC1,macPrefix,3);
+    ath_cfg.MAC1[3] = 0xFF & (serno >> 16);
+    ath_cfg.MAC1[4] = 0xFF & (serno >> 8);
+    ath_cfg.MAC1[5] = 0xFF &  serno;
+    
+    /*
+    ** Increment by 1 for the second MAC address
+    */
+
+    serno++;    
+    memcpy(ath_cfg.MAC2,macPrefix,3);
+    ath_cfg.MAC2[3] = 0xFF & (serno >> 16);
+    ath_cfg.MAC2[4] = 0xFF & (serno >> 8);
+    ath_cfg.MAC2[5] = 0xFF &  serno;
+    
+    update_atheros_config();
+}
+
+#endif /* CYGNUM_CONFIG_PRODUCT_ID */
+
+/****************************************************************************************
+** flash_get_mac_address
+**
+** This returns the indicated MAC address into the provided buffer.  The address is
+** based on the MAC pointer provided
+*/
+
+
+bool
+flash_get_mac_address(int unit, void *pdata)
+{
+    /*
+    ** Ensure we do a read first to make sure the data in the structure
+    ** is valid
+    */
+    
+    read_atheros_config();
+    
+    switch(unit)
+    {
+        case 0:
+            memcpy(pdata,ath_cfg.MAC1,6);
+            break;
+            
+        case 1:
+            memcpy(pdata,ath_cfg.MAC1,6);
+            break;
+            
+        case 2:
+            memcpy(pdata,ath_cfg.MAC1,6);
+            break;
+            
+        case 3:
+            memcpy(pdata,ath_cfg.MAC1,6);
+            break;
+     }
+     
+     return true;
+}
+
+
+
+
+
+static cmd_fun do_pll_setting;
+RedBoot_cmd("ar7100_pll",
+            "Set pll configuration for AR7100 (default = 0)",
+            "0 - use chip rev\n"
+            "1 - 200/200/100\n"
+            "2 - 300/300/150\n"
+            "3 - 333/333/166\n"
+            "4 - 266/266/133\n"
+            "5 - 266/266/66\n"
+            "6 - 400/400/200\n"
+            "7 - 600/300/150\n"
+            "8  - 680/340/170\n",
+            do_pll_setting
+        ); 
+
+static void
+do_pll_settings_usage(void)
+{
+  diag_printf ("usage: ar7100_pll <0|1|2|3|4|5|6|7|8> where\n"
+           "0  - use chip rev\n"
+           "1  - 200/200/100\n"
+           "2  - 300/300/150\n"
+           "3  - 333/333/166\n"
+           "4  - 266/266/133\n"
+           "5  - 266/266/66\n"
+           "6  - 400/400/200\n"
+           "7  - 600/300/150\n"
+           "8  - 680/340/170\n");
+  read_atheros_config();
+  diag_printf ("current value is %d\n", get_atheros_config_pll());
+}
+
+static void
+do_pll_setting (int argc, char *argv[])
+{
+  unsigned int  val;
+
+  if (argc != 2) {
+    do_pll_settings_usage();
+    return;
+  }
+
+  /*
+  ** We now can have a two digit number.  If the second character is a digit, then we
+  ** calculate the value based on the two digits.
+  */
+  
+  val = atoi(argv[1]);
+  
+  /*
+  ** The values 30 and 31 are "seceret" values for 720/340/170 and 800/400/200
+  ** divider settings, respectively.  These are used for debug ONLY, and are not
+  ** intimated to the user
+  */
+  
+  if ( val < 0 || ( (val > 8 ) && (val != 30) && (val != 31) ) ) {
+    do_pll_settings_usage();
+    return;
+  }
+  flash_set_pll_freq(val); 
+}
+
+#endif
+
+
 
 static cmd_fun do_flash_config;
 RedBoot_cmd("fconfig",
@@ -907,6 +1161,138 @@ flash_get_config(char *key, void *val, int type)
 #endif
     return false;
 }
+
+#ifdef ATHEROS_MODS 
+
+#if (CYGNUM_FLASH_BLOCK_NUM == 64)
+#define ATH_CFG_ADDR  0xbf3f0000  /* 4MB version */
+#else 
+#define ATH_CFG_ADDR  0xbf7f0000  /* 8MB version */
+#endif
+
+#define ATH_CFG_MAGIC_NUM  0xECECCECE
+
+static void
+read_atheros_config(void)
+{
+    /*
+    ** Copy the structure from the flash area to RAM
+    */
+    
+    memcpy (&ath_cfg, (char *)ATH_CFG_ADDR, sizeof(struct _atheros_config));
+    
+    /*
+    ** Check for the "magic number" to be valid.  We should also use checksum
+    */
+    
+    if (ath_cfg.magic_num != ATH_CFG_MAGIC_NUM)
+    {
+        memset(&ath_cfg,0,sizeof(ath_cfg));
+        ath_cfg.magic_num = ATH_CFG_MAGIC_NUM;
+        
+        /*
+        ** Need to set the MAC addresses to a default value
+        */
+        
+        ath_cfg.MAC1[0]= 0x00;
+        ath_cfg.MAC1[1]= 0x03;
+        ath_cfg.MAC1[2]= 0x7f;
+        ath_cfg.MAC1[3]= 0xff;
+        ath_cfg.MAC1[4]= 0xff;
+        ath_cfg.MAC1[5]= 0xfe;
+
+        ath_cfg.MAC2[0]= 0x00;
+        ath_cfg.MAC2[1]= 0x03;
+        ath_cfg.MAC2[2]= 0x7f;
+        ath_cfg.MAC2[3]= 0xff;
+        ath_cfg.MAC2[4]= 0xff;
+        ath_cfg.MAC2[5]= 0xff;
+    }
+}
+
+
+static int
+get_atheros_config_pll(void)
+{
+  if (ath_cfg.magic_num != ATH_CFG_MAGIC_NUM)
+    read_atheros_config();
+
+  return ath_cfg.freq_setting;
+}
+
+static int
+set_atheros_config_pll(int v)
+{
+  if (ath_cfg.magic_num != ATH_CFG_MAGIC_NUM)
+  {
+    read_atheros_config();
+  }
+  
+  ath_cfg.freq_setting=v;
+
+  return 0;
+}
+
+static bool
+flash_set_pll_freq (unsigned int val)
+{
+  read_atheros_config();
+  set_atheros_config_pll(val);
+  
+  return (update_atheros_config());
+}
+
+
+/****************************************************************************
+** update_atheros_config
+**
+** This routine will erase and write the current value of the ath_cfg structure
+** back to the flash sector from whence it came.  This can be called by any
+** routine that needs to write back to flash after updating parameters in
+** the ath_cfg structure.
+**
+** Returns true if the write was successful, and false if not.
+*/
+
+static bool
+update_atheros_config(void)
+{
+    int     stat;
+    void    *err_addr;
+    int     err_count = 0;
+    
+    /*
+    ** Code Begins
+    */
+    
+    diag_printf("Erasing last sector...\n");
+    
+    stat = flash_erase(ATH_CFG_ADDR, sizeof(struct _atheros_config),(void **)&err_addr);
+    
+    if(stat)
+    {
+        diag_printf("Error erasing flash!\n");
+        return false;
+    }
+
+try_again:
+    diag_printf("Writing to last sector....\n");
+    stat = FLASH_PROGRAM(ATH_CFG_ADDR, &ath_cfg, sizeof(struct _atheros_config),(void **) &err_addr);
+    
+    if (stat)
+    {
+        err_count++;
+        if(err_count < 2)
+            goto try_again;
+        
+        diag_printf("Error writing config data at %p: %s\n",err_addr, flash_errmsg(stat));
+        return false;
+    }
+    
+    return true; 
+}
+
+#endif
 
 //
 // Update a data object in the data base (in memory copy & backing store)

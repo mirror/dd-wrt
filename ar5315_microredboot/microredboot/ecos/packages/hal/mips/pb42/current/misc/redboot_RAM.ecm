@@ -20,7 +20,6 @@ cdl_configuration eCos {
     package -template CYGPKG_ISOINFRA current ;
     package -template CYGPKG_LIBC_STRING current ;
     package CYGPKG_MEMALLOC current ;
-    package CYGPKG_COMPRESS_ZLIB current ;
     package CYGPKG_COMPRESS_7ZIP current ;
     package CYGPKG_IO_ETH_DRIVERS current ;
     package CYGPKG_IO_FILEIO current ;

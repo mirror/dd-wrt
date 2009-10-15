@@ -23,7 +23,7 @@
 
 #include "ag7100_phy.h"
 
-#if /* DEBUG */ 1
+#if 0
 #define RT_DEBUG_ERROR     0x00000001
 #define RT_DEBUG_PHYSETUP  0x00000002
 #define RT_DEBUG_PHYCHANGE 0x00000004
@@ -217,7 +217,7 @@ rt_phyIsUp(int ethUnit)
 }
 
 #ifdef DEBUG
-
+#error "unwanted"
 /* Define the PHY registers of interest for a phyShow command */
 struct rtRegisterTable_s {
     UINT32 regNum;
