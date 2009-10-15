@@ -21,7 +21,6 @@ cdl_configuration eCos {
     package -template CYGPKG_LIBC_STRING v2_0 ;
     package CYGPKG_MEMALLOC v2_0 ;
     package CYGPKG_COMPRESS_7ZIP current ;	
-    package CYGPKG_COMPRESS_ZLIB v2_0 ;
     package CYGPKG_IO_ETH_DRIVERS v2_0 ;
     package CYGPKG_IO_FILEIO v2_0 ;
     package CYGPKG_IO_FLASH v2_0 ;

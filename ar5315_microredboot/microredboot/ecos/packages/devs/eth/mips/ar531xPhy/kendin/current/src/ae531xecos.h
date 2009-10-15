@@ -58,7 +58,7 @@
 #include <cyg/hal/ar531xreg.h>
 #endif
 
-#define DEBUG 0 /* TBDXXX */
+//#define DEBUG 0 /* TBDXXX */
 
 #if !defined(DEBUG)
 #define DEBUG 0

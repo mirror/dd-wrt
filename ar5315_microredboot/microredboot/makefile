@@ -123,6 +123,20 @@ PLATFORM_RAM_BUILD = echo "\#define RESETBUTTON ${RESETBUTTON}" > ecos/packages/
 	
 
 
+
+pb42:	BOARD_TYPE=pb42
+pb42:
+	echo "#define RAM_SIZE 0x2000000" > boot/src/ramconfig.h
+	echo "#define AR5312 1" >> boot/src/ramconfig.h
+# RAM version
+	$(PLATFORM_RAM_START) \
+	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/pb42/current/misc/redboot_RAM.ecm; \
+	ecosconfig import $(REDBOOT_DIR)/options/eth_ar7100/adm_phy; \
+	$(PLATFORM_BLD_CUST)
+	$(PLATFORM_RAM_BUILD)
+	cp redboot/pb42/ram/install/bin/redboot.rom images/redboot_pb42_32M_8M_kendin.rom
+	cp redboot/pb42/ram/install/bin/redboot.img images/redboot_pb42_32M_8M_kendin.elf
+
 #
 # The rules
 #
