@@ -2215,7 +2215,6 @@ void start_wan(int status)
 		while ((count--) > 0)	// wait until wan is available (10 sek max)
 		{
 			if (ifexists(ifn)) {
-				sleep(5);
 				break;
 			}
 			sleep(1);
@@ -2414,8 +2413,13 @@ void start_wan(int status)
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
 #endif
-#ifdef HAVE_PPPOE
+#ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp"))
+		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
+	else
+#endif
+#ifdef HAVE_L2TP
+	if (nvram_match("wan_proto", "pptp"))
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
 #endif
@@ -2461,7 +2465,7 @@ void start_wan(int status)
 			   ifr.ifr_hwaddr.sa_data);
 	} else {
 
-		if (wlifname && !strcmp(wan_ifname, wlifname))	// sta mode
+		if (wlifname && (!strcmp(wan_ifname, wlifname) || nvram_match("wan_proto","l2tp")  || nvram_match("wan_proto","pppoe") || nvram_match("wan_proto","pptp")))	// sta mode
 		{
 			getWirelessMac(mac);
 			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
