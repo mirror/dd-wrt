@@ -98,6 +98,52 @@ bool flash_next_key(char *key, int keylen, int *type, int *offset);
 // if no space is available.
 bool flash_add_config(struct config_option *opt, bool update);
 
+// Get mac address.
+bool flash_get_mac_address(int type, void *val);
+
+#if defined(CYGPKG_HAL_MIPS_AR7100)
+#define ATHEROS_MODS
+#endif
+
+#ifdef ATHEROS_MODS
+
+#define ATHEROS_CONFIG_SIZE        0x2000
+#define ATHEROS_BOARD_CONFIG_SIZE  0x1000
+
+/* this structure lives in last sector of the flash */
+struct _atheros_config {
+       /* We needed a simple way to read pll setting from flash when   */
+       /* 'C' environment isn't ready yet. Putting this  in cfg_env    */
+       /* would mean we would have to store and search the array using */ 
+       /* key=value format in assembly.  Having some of the config     */
+       /* parameters at fixed offsets - makes redboot startup code     */
+       /* simpler.                                                     */
+       /* 0x3F0000/0x7F0000 starts here */
+       unsigned int freq_setting; 
+       unsigned int PCI_clock;
+       unsigned int reserved[2];
+
+       /* generic config sector */
+       unsigned int  magic_num;
+       unsigned int  version;
+       unsigned int  boardid;
+       unsigned char cfg_env[ATHEROS_BOARD_CONFIG_SIZE-8*4]; /* key=value pairs */
+       unsigned int  checksum; /* covers the struct starting from magic_num */
+
+       /* 0x3F1000/0x7F1000 starts here */
+       unsigned char MAC1[6];
+       unsigned char MAC2[6];
+       unsigned char MAC3[6];
+       unsigned char MAC4[6];
+	   unsigned int	 macsum;
+};
+
+bool flash_set_pll_freq (unsigned int val);
+#endif
+
+// read atheros PCI clock
+cyg_uint32 get_atheros_config_PCI_clock(void);
+
 // Internal structure used to hold config data
 struct _config {
     unsigned long len;

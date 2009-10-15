@@ -167,6 +167,14 @@ if (state)
 	*(volatile unsigned *)AR2316_GPIO_DO |= 1<<gpio;	/*set GPIO0 to 1 to spi flash CS normal state */
 else
 	*(volatile unsigned *)AR2316_GPIO_DO &= ~(1<<gpio);	/*set GPIO0 to 1 to spi flash CS normal state */
+#elif defined(CYGPKG_HAL_MIPS_AR7100)
+//	*(volatile unsigned *)(AR7100_GPIO_OE) |= 1<<gpio;	/*set GPIO0 to be output */
+//if (state)
+//	*(volatile unsigned *)(AR7100_GPIO_OUT) |= 1<<gpio;	/*set GPIO0 to 1 to spi flash CS normal state */
+//else
+//	*(volatile unsigned *)(AR7100_GPIO_OUT )&= ~(1<<gpio);	/*set GPIO0 to 1 to spi flash CS normal state */
+
+
 #else
 	*(volatile unsigned *)AR531X_GPIO_CR &= ~(1<<gpio);	/*set GPIO0 to be output */
 if (state)
@@ -187,6 +195,10 @@ static int rescue_mode(void)
 #if defined(CYGPKG_HAL_MIPS_AR2316)
 	b = ((*(volatile unsigned int *)(AR2316_GPIO_DI)) >> 
 					resetgpio) & 1;
+#elif defined(CYGPKG_HAL_MIPS_AR7100) 
+	b = ((*(volatile unsigned int *)(AR7100_GPIO_IN)) >> 
+					resetgpio) & 1;
+
 #else
 	b = ((*(volatile unsigned int *)(AR531X_GPIO_DI)) >> 
 					resetgpio) & 1;
