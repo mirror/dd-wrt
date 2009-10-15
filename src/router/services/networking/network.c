@@ -2215,12 +2215,13 @@ void start_wan(int status)
 		while ((count--) > 0)	// wait until wan is available (10 sek max)
 		{
 			if (ifexists(ifn)) {
+				sleep(5);
 				break;
 			}
 			sleep(1);
 		}
 	}
-		rmmod("n_hdlc");
+	rmmod("n_hdlc");
 
 	eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 
@@ -2507,6 +2508,16 @@ void start_wan(int status)
 	// Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
 	if (nvram_match("wan_proto", "pppoe")) {
+		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+	} else 
+#endif
+#ifdef HAVE_PPTP
+	if (nvram_match("wan_proto", "pptp")) {
+		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+	} else 
+#endif
+#ifdef HAVE_L2TP
+	if (nvram_match("wan_proto", "l2tp")) {
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
 	} else
 #endif
