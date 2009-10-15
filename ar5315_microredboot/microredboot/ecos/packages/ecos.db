@@ -6177,3 +6177,231 @@ target ar5523_fpga {
            eCos on the AR5523 Emulation Board. By default it assumes a 4kc
 	   processor "
 }
+
+
+# --------------------------------------------------------------------------
+#
+# Atheros AP additions
+#
+
+package CYGPKG_HAL_MIPS_TB225 {
+        alias           { "TB225 BOARD HAL" hal_tb225 tb225_hal }
+        directory       hal/mips/tb225
+        script          hal_mips_tb225.cdl
+        hardware
+        description "
+           The TB225 Board HAL package provides support for the
+           Atheros TB25 test board.  It should be used on the
+           actual hardware."
+}
+
+package CYGPKG_HAL_MIPS_PB42 {
+        alias           { "PB42 BOARD HAL" hal_pb42 pb42_hal }
+        directory       hal/mips/pb42
+        script          hal_mips_pb42.cdl
+        hardware
+        description "
+           The PB42 Board HAL package provides support for the
+           Atheros PB42 test board.  It should be used on the
+           actual hardware."
+}
+
+package CYGPKG_HAL_MIPS_AP94 {
+        alias           { "AP94 BOARD HAL" hal_ap94 ap94_hal }
+        directory       hal/mips/ap94
+        script          hal_mips_ap94.cdl
+        hardware
+        description "
+           The AP94 Board HAL package provides support for the
+           single board dual concurrent AP platform"
+}
+
+package CYGPKG_HAL_MIPS_PB44 {
+        alias           { "PB44 BOARD HAL" hal_pb44 pb44_hal }
+        directory       hal/mips/pb44
+        script          hal_mips_pb44.cdl
+        hardware
+        description "
+           The PB44 Board HAL package provides support for the
+           Atheros PB44 reference design.  It should be used on the
+           actual hardware."
+}
+
+package CYGPKG_HAL_MIPS_PB45 {
+        alias           { "PB45 BOARD HAL" hal_pb45 pb45_hal }
+        directory       hal/mips/pb45
+        script          hal_mips_pb45.cdl
+        hardware
+        description "
+           The PB45 Board HAL package provides support for the
+           Atheros PB45 reference design.  It should be used on the
+           actual hardware."
+}
+
+package CYGPKG_HAL_MIPS_AR7100 {
+        alias           { "AR7100 WiSoC HAL" hal_ar7100 ar7100_hal }
+        directory       hal/mips/ar7100
+        script          hal_mips_ar7100.cdl
+        hardware
+        description "
+           The AR7100 WiSoC HAL package provides generic support for this
+           WiSoC. It is also necessary to select a specific target HAL
+           package. "
+}
+
+package CYGPKG_DEVS_FLASH_AR7100 {
+	alias 		{ "AR7100 SPI FLASH memory support" spiflash }
+	directory	devs/flash/mips/ar7100
+	script		devs_flash_ar7100.cdl
+	hardware
+        description "
+           This package contains hardware support for the Atheros SPI
+           FLASH devices, used on AR7100 boards."
+}
+
+package CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100 {
+        alias           { "AR7100 Ethernet driver" ar7100_eth_driver
+                          ag7100_driver}
+        hardware
+        directory       devs/eth/mips/ar7100
+        script          ar7100_eth_drivers.cdl
+        description     "
+                Ethernet driver for Atheros AR7100 boards.
+                Sufficient for use with RedBoot."
+}
+
+package CYGPKG_HAL_MIPS_CUS100 {
+        alias           { "CUS100 BOARD HAL" hal_cus100 cus100_hal }
+        directory       hal/mips/cus100
+        script          hal_mips_cus100.cdl
+        hardware
+        description "
+           The CUS100 Board HAL package provides support for the
+           Atheros CUS100 reference design.  It should be used on the
+           actual hardware."
+}
+
+package CYGPKG_HAL_MIPS_PB44_ROUTER {
+        alias           { "PB44 ROUTER BOARD HAL" hal_pb44 pb44_hal }
+        directory       hal/mips/pb44-router
+        script          hal_mips_pb44.cdl
+        hardware
+        description "
+           The PB44 Router Board HAL package provides support for the
+           Atheros PB44 with 16M flash reference design.  It should be used on the
+           actual hardware."
+}
+
+target atheros_tb225 {
+        alias           { "Atheros tb225 board based on AR7100 WiSoC" ar7100_mips32_4kc tb225}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7100
+                          CYGPKG_HAL_MIPS_TB225
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100
+                          CYGPKG_DEVS_FLASH_AR7100
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_tb225 target provides the packages needed to run
+           eCos on a Atheros t225 board based on the AR7100 WiSoC."
+}
+
+target atheros_pb42 {
+        alias           { "Atheros pb42 board based on AR7100 WiSoC" ar7100_mips32_4kc pb42}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7100
+                          CYGPKG_HAL_MIPS_PB42
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100
+                          CYGPKG_DEVS_FLASH_AR7100
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_pb42 target provides the packages needed to run
+           eCos on a Atheros pb42 board based on the AR7100 WiSoC."
+}
+
+target atheros_ap94 {
+        alias           { "Atheros ap94 board based on AR7100 WiSoC" ar7100_mips32_4kc ap94}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7100
+                          CYGPKG_HAL_MIPS_AP94
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100
+                          CYGPKG_DEVS_FLASH_AR7100
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_ap94 target provides the packages needed to run
+           eCos on a Atheros ap94 board based on the AR7100 WiSoC."
+}
+
+target atheros_pb44 {
+        alias           { "Atheros pb44 reference board based on AR7100 WiSoC" ar7100_mips32_4kc pb44}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7100
+                          CYGPKG_HAL_MIPS_PB44
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100
+                          CYGPKG_DEVS_FLASH_AR7100
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_pb44 target provides the packages needed to run
+           eCos on a Atheros p44 reference design based on the AR7100 WiSoC."
+}
+
+target atheros_pb45 {
+        alias           { "Atheros pb44 reference board based on AR7100 WiSoC" ar7100_mips32_4kc pb45}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7100
+                          CYGPKG_HAL_MIPS_PB44
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100
+                          CYGPKG_DEVS_FLASH_AR7100
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_pb45 target provides the packages needed to run
+           eCos on a Atheros p45 reference design based on the AR7100 WiSoC."
+}
+
+
+
+target atheros_cus100 {
+        alias           { "Atheros cus100 board based on AR7100 WiSoC" ar7100_mips32_4kc cus100}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7100
+                          CYGPKG_HAL_MIPS_CUS100
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100
+                          CYGPKG_DEVS_FLASH_AR7100
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_cus100 target provides the packages needed to run
+           eCos on a Atheros cus100 board based on the AR7100 WiSoC."
+}
+
+target atheros_pb44-router {
+        alias           { "Atheros pb44-router reference board based on AR7100 WiSoC" ar7100_mips32_4kc pb44-router}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7100
+                          CYGPKG_HAL_MIPS_PB44_ROUTER
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100
+                          CYGPKG_DEVS_FLASH_AR7100
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_pb44-router target provides the packages needed to run
+           eCos on a Atheros p44 reference design based on the AR7100 WiSoC with 16M flash."
+}
