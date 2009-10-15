@@ -45,15 +45,7 @@ extern int ag7100_debug;
     }                                               \
 }
 #else
-#define AG7100_PRINT(FLG, X)                       \
-{                                                   \
-    if (ag7100_debug & (FLG)) {                     \
-        DEBUG_PRINTF("#%d:%s ",                   \
-                     __LINE__,                      \
-                     __FUNCTION__);                 \
-        DEBUG_PRINTF X;                             \
-    }                                               \
-}
+#define AG7100_PRINT(FLG, X) 
 #endif
 
 #define ARRIVE() AG7100_PRINT(AG7100_DEBUG_ARRIVE, ("Arrive{\n"))

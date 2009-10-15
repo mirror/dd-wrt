@@ -1,3 +1,6 @@
+15.10.09
+    * start of ar7100 port (far from beeing finished, stub needs still to be written)
+
 14.10.09
     * add some workarounds for slow low quality flash chips
     * add ICPLUS switch support to AP48 target
