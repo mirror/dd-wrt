@@ -9,9 +9,9 @@
 **
 */
 
-
 #include <ag7100.h>
 #include "vscgen_phy.h"
+#ifdef CONFIG_VITESSE_PHY
 
 #define printk             diag_printf
 #define udelay             A_UDELAY
@@ -280,3 +280,4 @@ vscgen_phy_print_link_status(int unit)
 
     return (link);
 }
+#endif

@@ -22,7 +22,6 @@ cdl_configuration eCos {
     package CYGPKG_MEMALLOC current ;
     package CYGPKG_COMPRESS_7ZIP current ;
     package CYGPKG_IO_ETH_DRIVERS current ;
-    package CYGPKG_IO_FILEIO current ;
     package CYGPKG_IO_FLASH current ;
     package CYGPKG_DEVS_FLASH_AR7100 current ;
     package CYGPKG_IO current ;
@@ -79,7 +78,7 @@ cdl_option CYGDAT_REDBOOT_MIPS_LINUX_BOOT_ARGV_ADDR {
 }
 
 cdl_option CYGBLD_REDBOOT_MIN_IMAGE_SIZE {
-    inferred_value 0x40000
+    inferred_value 0x10000
 };
 
 cdl_component CYGSEM_REDBOOT_BSP_SYSCALLS {
@@ -120,16 +119,4 @@ cdl_option CYGBLD_ISO_STRERROR_HEADER {
 
 cdl_option CYGBLD_ISO_DIRENT_HEADER {
     inferred_value 1 <cyg/fileio/dirent.h>
-};
-
-cdl_option CYGBLD_ISO_OPEN_MAX_HEADER {
-    inferred_value 1 <cyg/fileio/limits.h>
-};
-
-cdl_option CYGBLD_ISO_NAME_MAX_HEADER {
-    inferred_value 1 <cyg/fileio/limits.h>
-};
-
-cdl_option CYGPKG_IO_FILEIO_INODE {
-    inferred_value 1
 };

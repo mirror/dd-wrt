@@ -150,7 +150,7 @@ cdl_package CYGPKG_HAL_MIPS_MIPS32 {
             display "Global compiler flags"
             flavor  data
             no_define
-            default_value { CYGPKG_HAL_MIPS_LSBFIRST ? "-mips32 -pipe -EL -msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -Os -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -G0 -mlong-calls" : \
+            default_value { CYGPKG_HAL_MIPS_AR7100 ? "-mips32r2 -pipe -msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -Os -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -G0 -mlong-calls" : \
 			       "-mips32 -pipe -msoft-float -Wall -Wpointer-arith -Wstrict-prototypes -Winline -Wundef -Woverloaded-virtual -Os -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fvtable-gc -finit-priority -G0 -mlong-calls"  }
             description   "
                 This option controls the global compiler flags which

@@ -43,6 +43,7 @@
 
 #include "vsc8601_phy.h"
 
+#ifdef CONFIG_VITESSE_8601_PHY
 #define MODULE_NAME "VSC8601"
 
 typedef struct {
@@ -1215,3 +1216,4 @@ vsc8601_phy_print_link_status(int unit)
   vsc8601_phy_print_status_raw(unit, phy->phy_addr);
   return 0;
 }
+#endif

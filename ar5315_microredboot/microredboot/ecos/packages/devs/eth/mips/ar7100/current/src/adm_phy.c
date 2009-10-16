@@ -16,6 +16,7 @@
 #include "ag7100_phy.h"
 #include  "adm_phy.h"
 
+#ifdef CONFIG_ADM6996FC_PHY
 /* PHY selections and access functions */
 
 typedef enum {
@@ -577,3 +578,4 @@ adm_get_counters()
 }
 
 
+#endif

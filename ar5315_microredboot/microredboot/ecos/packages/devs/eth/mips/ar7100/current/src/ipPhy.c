@@ -15,7 +15,7 @@
 #include "ag7100_phy.h"
 
 #include "ipPhy.h"
-
+#ifdef CONFIG_ICPLUS_PHY
 /* PHY selections and access functions */
 
 typedef enum {
@@ -843,4 +843,5 @@ ip_globalSet(uint32_t phyAddr, uint32_t regnum, uint32_t value)
 }
 
 
+#endif
 #endif

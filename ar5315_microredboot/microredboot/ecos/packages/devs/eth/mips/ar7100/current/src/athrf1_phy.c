@@ -47,7 +47,7 @@
 
 #include "ag7100.h"
 #include "ag7100_phy.h"
-
+#ifdef CONFIG_ATHRF1_PHY
 #define MODULE_NAME "ATHRF1"
 
 typedef struct {
@@ -208,3 +208,4 @@ athr_phy_speed(int unit)
     return -1;
 }
 
+#endif
