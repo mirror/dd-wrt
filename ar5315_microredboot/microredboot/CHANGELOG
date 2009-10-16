@@ -1,3 +1,7 @@
+16.10.09
+    * added some ar7100 specific functions to decompression stub. still alot todo
+    * compile only selected phys (ar7100)
+    
 15.10.09
     * start of ar7100 port (far from beeing finished, stub needs still to be written)
 

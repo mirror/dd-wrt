@@ -23,6 +23,8 @@
 
 #include "ag7100_phy.h"
 
+
+#ifdef CONFIG_REALTEK_PHY
 #if 0
 #define RT_DEBUG_ERROR     0x00000001
 #define RT_DEBUG_PHYSETUP  0x00000002
@@ -276,4 +278,5 @@ rt_phySet(int phyUnit, UINT32 regnum, UINT32 value)
 
     phyRegWrite(phyBase, phyAddr, regnum, value);
 }
+#endif
 #endif
