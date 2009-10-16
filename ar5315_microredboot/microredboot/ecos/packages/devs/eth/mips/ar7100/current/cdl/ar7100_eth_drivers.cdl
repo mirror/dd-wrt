@@ -29,6 +29,7 @@ cdl_package CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100 {
     include_dir   .
     include_files ;
     description   "Ethernet driver for Atheros AR7100 boards."
+#    compile       -library=libextras.a ag7100_ecos.c vscgen_phy.c ipPhy.c rtPhy.c adm_phy.c vsc8601_phy.c athrf1_phy.c athrs26_phy.c
     compile       -library=libextras.a ag7100_ecos.c vscgen_phy.c ipPhy.c rtPhy.c adm_phy.c vsc8601_phy.c athrf1_phy.c athrs26_phy.c
 #   compile       -library=libextras.a ag7100_ecos.c vsc8601_phy.c generic_i2c.c generic_spi.c vsc73xx.c
 

@@ -127,7 +127,7 @@ PLATFORM_RAM_BUILD = echo "\#define RESETBUTTON ${RESETBUTTON}" > ecos/packages/
 pb42:	BOARD_TYPE=pb42
 pb42:
 	echo "#define RAM_SIZE 0x2000000" > boot/src/ramconfig.h
-	echo "#define AR5312 1" >> boot/src/ramconfig.h
+	echo "#define AR7100 1" >> boot/src/ramconfig.h
 # RAM version
 	$(PLATFORM_RAM_START) \
 	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/pb42/current/misc/redboot_RAM.ecm; \

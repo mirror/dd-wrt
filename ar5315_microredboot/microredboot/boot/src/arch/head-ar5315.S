@@ -8,7 +8,8 @@
  *
  */
 #include "ramconfig.h"
-#ifndef AR5312
+
+#if !defined(AR5312) && !defined(AR7100)
 
 #include <linux/autoconf.h>
 #include <linux/init.h>

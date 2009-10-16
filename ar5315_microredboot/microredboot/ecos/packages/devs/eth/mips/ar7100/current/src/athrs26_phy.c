@@ -15,7 +15,7 @@
 #include "ag7100.h"
 #include "ag7100_phy.h"
 
-
+#ifdef CONFIG_ATHRS26_PHY
 /* PHY selections and access functions */
 
 typedef enum {
@@ -707,3 +707,4 @@ athrs26_reg_write(uint16_t reg_addr, uint32_t reg_val)
     phy_reg_write (0, phy_addr, phy_reg, phy_val);   
 }
 
+#endif

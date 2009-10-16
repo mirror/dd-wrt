@@ -67,5 +67,6 @@ cdl_package CYGPKG_HAL_MIPS_AR7100 {
 
     compile       platform.S plf_misc.c ar7100_serial.c
 
+
 }
 
