@@ -57,7 +57,7 @@ SYSTEM		 = redboot.elf
 #
 # Architecture dependencies
 #
-OBJS		+= arch/head-ar5315.o arch/head-ar531x.o
+OBJS		+= arch/head-ar5315.o arch/head-ar531x.o arch/head-ar7100.o
 
 #ifneq ($(CONFIG_BOOTLOADER),y)
 #ZTEXTADDR	= 0x80400000

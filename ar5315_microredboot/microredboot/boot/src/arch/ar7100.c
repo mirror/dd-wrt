@@ -13,11 +13,11 @@ static unsigned int linuxaddr = 0xbf010000;
 static unsigned int flashbase = 0xbf000000;
 static unsigned int flashsize = 0x800000;
 
-#define AR7100_PCI_MEM_BASE             0xB1000000  /* 128M */
-#define AR7100_APB_BASE                 0xB1800000  /* 384M */
-#define AR7100_GE0_BASE                 0xB1900000  /* 16M */
-#define AR7100_GE1_BASE                 0xB1a00000  /* 16M */
-#define AR7100_USB_EHCI_BASE            0xB1b00000  
+#define AR7100_PCI_MEM_BASE             0xB1000000	/* 128M */
+#define AR7100_APB_BASE                 0xB1800000	/* 384M */
+#define AR7100_GE0_BASE                 0xB1900000	/* 16M */
+#define AR7100_GE1_BASE                 0xB1a00000	/* 16M */
+#define AR7100_USB_EHCI_BASE            0xB1b00000
 #define AR7100_USB_OHCI_BASE            0xB1c00000
 #define AR7100_SPI_BASE                 0xB1f00000
 
@@ -46,7 +46,6 @@ static unsigned int flashsize = 0x800000;
 #define AR7100_RESET_GE0_PHY                (1 << 8)
 
 #define AR7100_RESET                  AR7100_RESET_BASE+0x24
-
 
 #define disable_watchdog() \
 { 					\
@@ -84,18 +83,17 @@ static int getGPIO(int nr)
                     ar7100_reg_rd(_phys);       \
 }while(0);
 
-
 static void enable_ethernet(void)
 {
-    unsigned int mask = ag7100_reset_mask(0);
-    /*
-     * put into reset, hold, pull out.
-     */         
-    ar7100_reg_rmw_set(AR7100_RESET, mask);
-    udelay(1000*1000);
-    ar7100_reg_rmw_clear(AR7100_RESET, mask);
-    udelay(1000*1000);
-    udelay(20);
+	unsigned int mask = ag7100_reset_mask(0);
+	/*
+	 * put into reset, hold, pull out.
+	 */
+	ar7100_reg_rmw_set(AR7100_RESET, mask);
+	udelay(1000 * 1000);
+	ar7100_reg_rmw_clear(AR7100_RESET, mask);
+	udelay(1000 * 1000);
+	udelay(20);
 }
 
 #define FLASH_1MB  1
@@ -167,10 +165,8 @@ static void enable_ethernet(void)
 #define AR7100_SPI_CMD_PAGE_PROG    0x02
 #define AR7100_SPI_CMD_SECTOR_ERASE 0xd8
 
-
 #define AR7100_SPI_SECTOR_SIZE      (1024*64)
 #define AR7100_SPI_PAGE_SIZE        256
-
 
 #define display(_x)     ar7100_reg_wr_nf(0x18040008, (_x))
 
@@ -180,34 +176,40 @@ static void enable_ethernet(void)
 
 #define ar7100_be_msb(_val, _i) (((_val) & (1 << (7 - _i))) >> (7 - _i))
 
-#define ar7100_spi_bit_banger(_byte)  do {        \
-    int i;                                      \
-    for(i = 0; i < 8; i++) {                    \
-        ar7100_reg_wr_nf(AR7100_SPI_WRITE,      \
-                        AR7100_SPI_CE_LOW | ar7100_be_msb(_byte, i));  \
-        ar7100_reg_wr_nf(AR7100_SPI_WRITE,      \
-                        AR7100_SPI_CE_HIGH | ar7100_be_msb(_byte, i)); \
-    }       \
-}while(0);
+static void ar7100_spi_bit_banger(unsigned char _byte)
+{
+	do {
+		int i;
+		for (i = 0; i < 8; i++) {
+			ar7100_reg_wr_nf(AR7100_SPI_WRITE,
+					 AR7100_SPI_CE_LOW |
+					 ar7100_be_msb(_byte, i));
+			ar7100_reg_wr_nf(AR7100_SPI_WRITE,
+					 AR7100_SPI_CE_HIGH |
+					 ar7100_be_msb(_byte, i));
+		}
+	} while (0);
+}
 
-#define ar7100_spi_go() do {        \
-    ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CE_LOW); \
-    ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS); \
-}while(0);
+static void ar7100_spi_go(void)
+{
+	do {
+		ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CE_LOW);
+		ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);
+	} while (0);
+}
 
-
-#define ar7100_spi_send_addr(_addr) do {                    \
-    ar7100_spi_bit_banger(((_addr & 0xff0000) >> 16));                 \
-    ar7100_spi_bit_banger(((_addr & 0x00ff00) >> 8));                 \
-    ar7100_spi_bit_banger(_addr & 0x0000ff);                 \
-}while(0);
+void ar7100_spi_send_addr(unsigned int _addr)
+{
+	do {
+		ar7100_spi_bit_banger(((_addr & 0xff0000) >> 16));
+		ar7100_spi_bit_banger(((_addr & 0x00ff00) >> 8));
+		ar7100_spi_bit_banger(_addr & 0x0000ff);
+	} while (0);
+}
 
 #define ar7100_spi_delay_8()    ar7100_spi_bit_banger(0)
 #define ar7100_spi_done()       ar7100_reg_wr_nf(AR7100_SPI_FS, 0)
-
-
-
-
 
 struct flashconfig {
 	__u32 byte_cnt;
@@ -241,7 +243,6 @@ struct opcodes {
 	{STM_OP_RD_SIG, 4, 1},	//
 };
 
-
 #define busy_wait(condition, wait) \
 	do { \
 		while (condition) { \
@@ -252,26 +253,25 @@ struct opcodes {
 		} \
 	} while (0)
 
-
 static int spiflash_probe_chip(void)
 {
 	unsigned int sig;
 	int flash_size;
 
-    ar7100_reg_wr_nf(AR7100_SPI_CLOCK, 0x43);
+	ar7100_reg_wr_nf(AR7100_SPI_CLOCK, 0x43);
 
-    sig = 0x777777;
+	sig = 0x777777;
 
-    ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);
-    ar7100_spi_bit_banger(0x9f);
-    ar7100_spi_delay_8();
-    ar7100_spi_delay_8();
-    ar7100_spi_delay_8();
-    ar7100_spi_done();
-    /* rd = ar7100_reg_rd(AR7100_SPI_RD_STATUS); */
-    ar7100_reg_wr_nf(AR7100_SPI_FS, 1);
-    sig = ar7100_reg_rd(AR7100_SPI_READ); 
-    ar7100_reg_wr_nf(AR7100_SPI_FS, 0);
+	ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);
+	ar7100_spi_bit_banger(0x9f);
+	ar7100_spi_delay_8();
+	ar7100_spi_delay_8();
+	ar7100_spi_delay_8();
+	ar7100_spi_done();
+	/* rd = ar7100_reg_rd(AR7100_SPI_RD_STATUS); */
+	ar7100_reg_wr_nf(AR7100_SPI_FS, 1);
+	sig = ar7100_reg_rd(AR7100_SPI_READ);
+	ar7100_reg_wr_nf(AR7100_SPI_FS, 0);
 
 	switch (sig) {
 	case STM_8MBIT_SIGNATURE:
@@ -297,29 +297,25 @@ static int spiflash_probe_chip(void)
 	return (flash_size);
 }
 
-static void
-ar7100_spi_write_enable()  
+static void ar7100_spi_write_enable()
 {
-    ar7100_reg_wr_nf(AR7100_SPI_FS, 1);                  
-    ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);     
-    ar7100_spi_bit_banger(AR7100_SPI_CMD_WREN);             
-    ar7100_spi_go();
+	ar7100_reg_wr_nf(AR7100_SPI_FS, 1);
+	ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);
+	ar7100_spi_bit_banger(AR7100_SPI_CMD_WREN);
+	ar7100_spi_go();
 }
 
-static void
-ar7100_spi_poll()   
+static void ar7100_spi_poll()
 {
-    int rd;                                                 
+	int rd;
 
-    do {
-        ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);     
-        ar7100_spi_bit_banger(AR7100_SPI_CMD_RD_STATUS);        
-        ar7100_spi_delay_8();
-        rd = (ar7100_reg_rd(AR7100_SPI_RD_STATUS) & 1);               
-    }while(rd);
+	do {
+		ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);
+		ar7100_spi_bit_banger(AR7100_SPI_CMD_RD_STATUS);
+		ar7100_spi_delay_8();
+		rd = (ar7100_reg_rd(AR7100_SPI_RD_STATUS) & 1);
+	} while (rd);
 }
-
-
 
 static unsigned int getPartition(char *name);
 
@@ -338,15 +334,14 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
 		return -1;
 	}
-    printf("erasing nvram at [0x%08X]\n", nvramdetect);
+	printf("erasing nvram at [0x%08X]\n", nvramdetect);
 
-
-    ar7100_spi_write_enable();
-    ar7100_spi_bit_banger(AR7100_SPI_CMD_SECTOR_ERASE);
-    ar7100_spi_send_addr(offset);
-    ar7100_spi_go();
-    display(0x7d);
-    ar7100_spi_poll();
+	ar7100_spi_write_enable();
+	ar7100_spi_bit_banger(AR7100_SPI_CMD_SECTOR_ERASE);
+	ar7100_spi_send_addr(offset);
+	ar7100_spi_go();
+	display(0x7d);
+	ar7100_spi_poll();
 
 	puts("done\n");
 	return 0;
