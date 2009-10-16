@@ -28,6 +28,8 @@
 #include "generic_spi.h"
 #include "vsc73xx.h"
 
+#ifdef CONFIG_VITESSE_8601_7395_PHY
+
 #define MODULE_NAME "VSC73XX"
 
 /* ************************************************************** */
@@ -1010,3 +1012,4 @@ vsc73xx_phy_print_link_status(int unit)
   vsc73xx_print_link_status_from_value(port, t_up, t_fdx, t_speed, t_cfg); 
   return 0;
 }
+#endif

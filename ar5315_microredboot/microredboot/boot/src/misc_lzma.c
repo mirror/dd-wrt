@@ -164,6 +164,8 @@ static int lzma_unzip(void)
 
 #ifdef AR5312
 #include "arch/ar5312.c"
+#elif AR7100
+#include "arch/ar7100.c"
 #else
 #include "arch/ar2315.c"
 #endif
@@ -305,7 +307,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	arch_decomp_setup();
 	/* initialize clock */
 	HAL_CLOCK_INITIALIZE(RTC_PERIOD);
-	printf("MicroRedBoot v1.3, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
+	printf("MicroRedBoot v1.4, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
 	printf("keep the reset button pushed to enter redboot!\n");
 	printf("CPU Clock: %dMhz\n", cpu_frequency() / 1000000);
 	nvram_init();
