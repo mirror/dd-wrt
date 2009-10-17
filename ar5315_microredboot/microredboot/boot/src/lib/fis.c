@@ -71,8 +71,8 @@ static unsigned int getLinux(void)
 		fis = (struct fis_image_desc *)p;
 		count++;
 	}
-	puts("no bootable image found, try default location 0xbfc10000\n");
+	printf("no bootable image found, try default location 0x%08X\n",flashbase+0x10000);
 	bootoffset = 0x80041000;
 	output_data = (uch *) 0x80041000;
-	return 0xbfc10000;	//first available address after bootloader
+	return flashbase+0x10000;	//first available address after bootloader
 }
