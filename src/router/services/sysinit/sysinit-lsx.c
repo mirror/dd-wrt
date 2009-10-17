@@ -200,11 +200,11 @@ void start_sysinit(void)
 			fprintf(stderr, "configure ETH1 to %s\n", mac);
 			eval("ifconfig", "eth1", "hw", "ether", mac);
 			/* disable led's */
-			eval("gpio","disable","3"); // 1
-			eval("gpio","disable","4"); // 2
-			eval("gpio","disable","5"); //wlan
-			eval("gpio","disable","6"); //conn
-			eval("gpio","disable","7"); //diag
+			eval("gpio","enable","3"); // 1
+			eval("gpio","enable","4"); // 2
+			eval("gpio","enable","5"); //wlan
+			eval("gpio","enable","6"); //conn
+			eval("gpio","enable","7"); //diag
 
 
 		}
