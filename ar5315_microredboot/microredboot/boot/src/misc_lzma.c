@@ -19,6 +19,9 @@
 
 #include <asm/uaccess.h>
 #include "ramconfig.h"
+#ifdef AR7100
+#define inline
+#endif
 #include "uncompress.h"
 #include "lib/lib.c"
 #include "lib/print.c"
@@ -309,6 +312,13 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	HAL_CLOCK_INITIALIZE(RTC_PERIOD);
 	printf("MicroRedBoot v1.4, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
 	printf("keep the reset button pushed to enter redboot!\n");
+#ifdef AR7100
+	printf("CPU Type: AR7100\n");
+#elif  AR5312
+	printf("CPU Type: AR5312\n");
+#else
+	printf("CPU Type: AR5315\n");
+#endif
 	printf("CPU Clock: %dMhz\n", cpu_frequency() / 1000000);
 	nvram_init();
 	char *ddboard = nvram_get("DD_BOARD");
