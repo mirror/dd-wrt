@@ -13,40 +13,6 @@ static unsigned int linuxaddr = 0xbf010000;
 static unsigned int flashbase = 0xbf000000;
 static unsigned int flashsize = 0x800000;
 
-#define AR7100_PCI_MEM_BASE             0xB1000000	/* 128M */
-#define AR7100_APB_BASE                 0xB1800000	/* 384M */
-#define AR7100_GE0_BASE                 0xB1900000	/* 16M */
-#define AR7100_GE1_BASE                 0xB1a00000	/* 16M */
-#define AR7100_USB_EHCI_BASE            0xB1b00000
-#define AR7100_USB_OHCI_BASE            0xB1c00000
-#define AR7100_SPI_BASE                 0xB1f00000
-
-#define AR7100_DDR_CTL_BASE             AR7100_APB_BASE+0x00000000
-#define AR7100_CPU_BASE                 AR7100_APB_BASE+0x00010000
-#define AR7100_UART_BASE                AR7100_APB_BASE+0x00020000
-#define AR7100_USB_CONFIG_BASE          AR7100_APB_BASE+0x00030000
-#define AR7100_GPIO_BASE                AR7100_APB_BASE+0x00040000
-#define AR7100_PLL_BASE                 AR7100_APB_BASE+0x00050000
-#define AR7100_RESET_BASE               AR7100_APB_BASE+0x00060000
-
-#define AR7100_GPIO_OE                  AR7100_GPIO_BASE+0x0
-#define AR7100_GPIO_IN                  AR7100_GPIO_BASE+0x4
-#define AR7100_GPIO_OUT                 AR7100_GPIO_BASE+0x8
-#define AR7100_GPIO_SET                 AR7100_GPIO_BASE+0xc
-#define AR7100_GPIO_CLEAR               AR7100_GPIO_BASE+0x10
-#define AR7100_GPIO_INT_ENABLE          AR7100_GPIO_BASE+0x14
-#define AR7100_GPIO_INT_TYPE            AR7100_GPIO_BASE+0x18
-#define AR7100_GPIO_INT_POLARITY        AR7100_GPIO_BASE+0x1c
-#define AR7100_GPIO_INT_PENDING         AR7100_GPIO_BASE+0x20
-#define AR7100_GPIO_INT_MASK            AR7100_GPIO_BASE+0x24
-
-#define AR7100_RESET_GE1_MAC                (1 << 13)
-#define AR7100_RESET_GE1_PHY                (1 << 12)
-#define AR7100_RESET_GE0_MAC                (1 << 9)
-#define AR7100_RESET_GE0_PHY                (1 << 8)
-
-#define AR7100_RESET                  AR7100_RESET_BASE+0x24
-
 #define disable_watchdog() \
 { 					\
 }					\
@@ -63,25 +29,6 @@ static int getGPIO(int nr)
                                         AR7100_RESET_GE1_PHY)   \
                                      : (AR7100_RESET_GE0_MAC |  \
                                         AR7100_RESET_GE0_PHY)
-
-#define ar7100_reg_rmw_set(_reg, _mask)  do {                        \
-    ar7100_reg_wr((_reg), (ar7100_reg_rd((_reg)) | (_mask)));      \
-    ar7100_reg_rd((_reg));                                           \
-}while(0);
-
-#define ar7100_reg_rmw_clear(_reg, _mask)  do {                        \
-    ar7100_reg_wr((_reg), (ar7100_reg_rd((_reg)) & ~(_mask)));      \
-    ar7100_reg_rd((_reg));                                           \
-}while(0);
-
-#define ar7100_reg_rd(_phys)    (*(volatile unsigned int *)_phys)
-#define ar7100_reg_wr_nf(_phys, _val) \
-                    ((*(volatile unsigned int *)KSEG1ADDR(_phys)) = (_val))
-
-#define ar7100_reg_wr(_phys, _val) do {     \
-                    ar7100_reg_wr_nf(_phys, _val);  \
-                    ar7100_reg_rd(_phys);       \
-}while(0);
 
 static void enable_ethernet(void)
 {
@@ -178,70 +125,30 @@ static void enable_ethernet(void)
 
 static void ar7100_spi_bit_banger(unsigned char _byte)
 {
-	do {
-		int i;
-		for (i = 0; i < 8; i++) {
-			ar7100_reg_wr_nf(AR7100_SPI_WRITE,
-					 AR7100_SPI_CE_LOW |
-					 ar7100_be_msb(_byte, i));
-			ar7100_reg_wr_nf(AR7100_SPI_WRITE,
-					 AR7100_SPI_CE_HIGH |
-					 ar7100_be_msb(_byte, i));
-		}
-	} while (0);
+	int i;
+	for (i = 0; i < 8; i++) {
+		ar7100_reg_wr_nf(AR7100_SPI_WRITE,
+				 AR7100_SPI_CE_LOW | ar7100_be_msb(_byte, i));
+		ar7100_reg_wr_nf(AR7100_SPI_WRITE,
+				 AR7100_SPI_CE_HIGH | ar7100_be_msb(_byte, i));
+	}
 }
 
 static void ar7100_spi_go(void)
 {
-	do {
-		ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CE_LOW);
-		ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);
-	} while (0);
+	ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CE_LOW);
+	ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);
 }
 
 void ar7100_spi_send_addr(unsigned int _addr)
 {
-	do {
-		ar7100_spi_bit_banger(((_addr & 0xff0000) >> 16));
-		ar7100_spi_bit_banger(((_addr & 0x00ff00) >> 8));
-		ar7100_spi_bit_banger(_addr & 0x0000ff);
-	} while (0);
+	ar7100_spi_bit_banger(((_addr & 0xff0000) >> 16));
+	ar7100_spi_bit_banger(((_addr & 0x00ff00) >> 8));
+	ar7100_spi_bit_banger(_addr & 0x0000ff);
 }
 
 #define ar7100_spi_delay_8()    ar7100_spi_bit_banger(0)
 #define ar7100_spi_done()       ar7100_reg_wr_nf(AR7100_SPI_FS, 0)
-
-struct flashconfig {
-	__u32 byte_cnt;
-	__u32 sector_cnt;
-	__u32 sector_size;
-	__u32 cs_addrmask;
-} static flashconfig_tbl[MAX_FLASH] = {
-	{0, 0, 0, 0},		//
-	{STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT, STM_1MB_SECTOR_SIZE, 0x0},	//
-	{STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE, 0x0},	//
-	{STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE, 0x0},	//
-	{STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0},	//
-	{STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT, STM_16MB_SECTOR_SIZE, 0x0}	//
-};
-
-struct opcodes {
-	__u16 code;
-	__s8 tx_cnt;
-	__s8 rx_cnt;
-} static stm_opcodes[] = {
-	{STM_OP_WR_ENABLE, 1, 0},	//
-	{STM_OP_WR_DISABLE, 1, 0},	//
-	{STM_OP_RD_STATUS, 1, 1},	//
-	{STM_OP_WR_STATUS, 1, 0},	//
-	{STM_OP_RD_DATA, 4, 4},	//
-	{STM_OP_FAST_RD_DATA, 5, 0},	//
-	{STM_OP_PAGE_PGRM, 8, 0},	//
-	{STM_OP_SECTOR_ERASE, 4, 0},	//
-	{STM_OP_BULK_ERASE, 1, 0},	//
-	{STM_OP_DEEP_PWRDOWN, 1, 0},	//
-	{STM_OP_RD_SIG, 4, 1},	//
-};
 
 #define busy_wait(condition, wait) \
 	do { \
@@ -276,18 +183,23 @@ static int spiflash_probe_chip(void)
 	switch (sig) {
 	case STM_8MBIT_SIGNATURE:
 		flash_size = FLASH_1MB;
+		sectorsize = 0x10000;
 		break;
 	case STM_16MBIT_SIGNATURE:
 		flash_size = FLASH_2MB;
+		sectorsize = 0x10000;
 		break;
 	case STM_32MBIT_SIGNATURE:
 		flash_size = FLASH_4MB;
+		sectorsize = 0x10000;
 		break;
 	case STM_64MBIT_SIGNATURE:
 		flash_size = FLASH_8MB;
+		sectorsize = 0x10000;
 		break;
 	case STM_128MBIT_SIGNATURE:
 		flash_size = FLASH_16MB;
+		sectorsize = 0x10000;
 		break;
 	default:
 		puts("Read of flash device signature failed!\n");
@@ -354,18 +266,12 @@ static int flashdetect(void)
 	if (flashdetected)
 		return 0;
 	flashsize = 8 * 1024 * 1024;
-	flashbase = 0xa8000000;
+	flashbase = 0xbf000000;
 	int index = 0;
 	if (!(index = spiflash_probe_chip())) {
 		puts("Found no serial flash device, cannot reset to factory defaults\n");
 		return -1;
 	} else {
-		flashsize = flashconfig_tbl[index].byte_cnt;
-		sectorsize = flashconfig_tbl[index].sector_size;
-		if (flashsize == 8 * 1024 * 1024)
-			flashbase = 0xa8000000;
-		else
-			flashbase = 0xbfc00000;
 		printf
 		    ("Found Flash device SIZE=0x%08X SECTORSIZE=0x%08X FLASHBASE=0x%08X\n",
 		     flashsize, sectorsize, flashbase);
