@@ -126,7 +126,7 @@ void start_sysinit(void)
 
 	for (i = 0; i < 256; i++)
 		copy[i] = buf2[i] & 0xff;
-	for (i = 0; i < 256 - 10; i++) {
+	for (i = 0; i < 256 - 12; i++) {
 		if (!strncmp(&buf2[i], "ar7100_esa", 10)) {
 			offsetmac1 = i + 11;
 		}
@@ -163,6 +163,57 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}
+
+	fp = fopen("/dev/mtdblock/0", "r");
+	if (fp) {
+		fseek(fp, 0x1f800, SEEK_SET);
+		unsigned int signature;
+
+		fread(&signature, 4, 1, fp);
+		if (signature == 0x20021103) {
+			fprintf(stderr, "Compex WP543 detected\n");
+			eval("ifconfig", "eth0", "0.0.0.0", "down");
+			eval("ifconfig", "eth1", "0.0.0.0", "down");
+			unsigned char buf[16];
+
+			fseek(fp, 0x1f810, SEEK_SET);
+			fread(&buf[0], 6, 1, fp);
+			char mac[16];
+			int i;
+
+			unsigned int copy[16];
+
+			for (i = 0; i < 12; i++)
+				copy[i] = buf[i] & 0xff;
+
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+				copy[1], copy[2], copy[3], copy[4], copy[5]);
+			fprintf(stderr, "configure ETH0 to %s\n", mac);
+			nvram_set("et0macaddr_safe",mac);
+			eval("ifconfig", "eth0", "hw", "ether", mac);
+			fseek(fp, 0x1f818, SEEK_SET);
+			fread(&buf[6], 6, 1, fp);
+			for (i = 0; i < 12; i++)
+				copy[i] = buf[i] & 0xff;
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6],
+				copy[7], copy[8], copy[9], copy[10], copy[11]);
+			fprintf(stderr, "configure ETH1 to %s\n", mac);
+			eval("ifconfig", "eth1", "hw", "ether", mac);
+			/* disable led's */
+			eval("gpio","disable","3"); // 1
+			eval("gpio","disable","4"); // 2
+			eval("gpio","disable","5"); //wlan
+			eval("gpio","disable","6"); //conn
+			eval("gpio","disable","7"); //diag
+
+
+		}
+		fclose(fp);
+	}
+
+
+
+
 //#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
@@ -201,6 +252,9 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 	system2("echo 2 >/proc/sys/dev/wifi2/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi2/softled");
+#elif HAVE_WP543
+	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #else
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");

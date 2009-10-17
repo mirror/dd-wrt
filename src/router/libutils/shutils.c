@@ -110,6 +110,10 @@ int system2(char *command)
 		fprintf(stderr, "system: %s\n", command);
 	}
 #endif
+
+#ifndef HAVE_SILENCE
+		fprintf(stderr, "system: %s\n", command);
+#endif
 	return system(command);
 }
 
@@ -146,6 +150,15 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 		}
 		fprintf(stderr, "\n");
 	}
+	#ifndef HAVE_SILENCE
+		int i = 0;
+
+		while (argv[i] != NULL) {
+			fprintf(stderr, "%s ", argv[i++]);
+		}
+		fprintf(stderr, "\n");
+	
+	#endif
 #endif
 
 	switch (pid = fork()) {

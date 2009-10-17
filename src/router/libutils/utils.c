@@ -897,6 +897,9 @@ int internal_getRouterBrand()
 #elif HAVE_AP83
 	setRouter("Atheros AP83");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WP543
+	setRouter("Compex WP543");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
 	setRouter("Ubiquiti Litestation-SR71");
 	return ROUTER_BOARD_PB42;
