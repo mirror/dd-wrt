@@ -123,7 +123,7 @@ x\@:
 /*
  * WARNING:
  * This code must be Position Independent Code (PIC) as it runs in
- * the prom address space (0xbfc00000) even though it is linked
+ * the prom address space (0xbf000000) even though it is linked
  * in memory.  Only call routines in romLib.s and romInit.s with
  * bal.
  */
