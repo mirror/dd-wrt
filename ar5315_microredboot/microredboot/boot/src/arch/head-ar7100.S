@@ -147,9 +147,9 @@ x\@:
 
 	.set	noreorder
 
-__AR531X_start:
-	RVECENT(__AR531X_init,0)	/* PROM entry point */
-	RVECENT(__AR531X_reboot,1)	/* software reboot */
+__AR7100_start:
+	RVECENT(__AR7100_init,0)	/* PROM entry point */
+	RVECENT(__AR7100_reboot,1)	/* software reboot */
 	RVECENT(romReserved,2)
 	RVECENT(romReserved,3)
 	RVECENT(romReserved,4)
@@ -404,17 +404,17 @@ __AR531X_start:
  * use.
  */
 romExcHandle:
-	b	__AR531X_init
+	b	__AR7100_init
 
 /*
  * romReserved - Handle a jump to an unknown vector.
  * void romReserved(void);
  */
 romReserved:
-	b	__AR531X_init		# just start over
+	b	__AR7100_init		# just start over
 
 
-__AR531X_init:
+__AR7100_init:
 	lar     t0, rel_start
 	li	t1, 0xff3fffff
 	and	t0, t0, t1
@@ -596,7 +596,7 @@ pll_locked:
 #define CAS_LATENCY_SHIFT	 	27
 #define CAS_LATENCY_MASK 		 7
 		
-__AR531X_reboot:
+__AR7100_reboot:
 	hal_get_speed_setting_from_flash_into_t1
 
 	/* check if it is needed to set CAS to 3 */
@@ -745,7 +745,7 @@ __AR531X_reboot:
 	
         la      t0,_text               # dest addr
 #       la      t1,_text          # source addr
-#	lar	t1,__AR531X_start
+#	lar	t1,__AR7100_start
         la      t1,_text-0x80400000+BOOTBASE          # source addr
         la      t3,_text+0x10000       # end dest addr
 3:      
