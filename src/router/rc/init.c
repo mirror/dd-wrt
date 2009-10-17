@@ -396,17 +396,13 @@ int main(int argc, char **argv)
 	/* 
 	 * Basic initialization 
 	 */
-#ifdef HAVE_LSX
-	sysprintf("echo \"trigger console\" > /dev/console");
-#endif
-	cprintf("console init\n");
 	if (console_init())
 		noconsole = 1;
 	cprintf("init lcd\n");
 	initlcd();
 	cprintf("first message\n");
 	lcdmessage("System Start");
-	cprintf("start service\n");
+	fprintf(stderr,"start service\n");
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
 	start_service("drivers");

@@ -21,10 +21,13 @@ LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L
 CFLAGS += -I$(LINUXDIR)
 else
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils  -ldl
-CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils 
+CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils -fpic
 
 ifneq ($(ARCHITECTURE),lsx)
-CFLAGS += -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+endif
+ifeq ($(ARCHITECTURE),lsx)
+CFLAGS += -fomit-frame-pointer 
 endif
 endif
 
