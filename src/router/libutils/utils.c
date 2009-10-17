@@ -2562,6 +2562,12 @@ int led_control(int type, int act)
 		// number (f=disabled)
 	{
 #ifndef HAVE_BUFFALO
+	case ROUTER_BOARD_PB42:
+	#ifdef HAVE_WP543
+		diag_gpio=0x107;
+		connected_gpio=0x106;	
+	#endif 
+	break;
 	case ROUTER_ALLNET01:
 		connected_gpio = 0x100;
 		break;
