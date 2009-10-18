@@ -171,7 +171,7 @@ static unsigned int major = 0;				// Device major number (mod parm - dynamic if 
 #define MSEC 32						// Maximum sectors per request
 
 #define VERSION "2.0.1"					// Module Version Number
-#define DEBUG						// Compile in debugging. Module is very slightly
+//#define DEBUG						// Compile in debugging. Module is very slightly
 							// faster, and 4k smaller with no debugging
 
 #ifdef DEBUG						// Defined via compiler argument
