@@ -1,0 +1,18 @@
+#!/bin/sh
+if [ -z "$(nvram get mmc_enable)" ]; then
+    nvram set mmc_enable=0
+fi
+
+if [ "$(nvram get mmc_enable0)" = "1" ]; then
+    if [ "$(nvram get mmc_enable)" = "0" ]; then
+    nvram set mmc_enable=1
+    nvram set need_reboot=1
+    fi
+fi
+if [ "$(nvram get mmc_enable0)" = "0" ]; then
+    if [ "$(nvram get mmc_enable)" = "1" ]; then
+    nvram set mmc_enable=0
+    nvram set need_reboot=1
+    fi
+fi
+
