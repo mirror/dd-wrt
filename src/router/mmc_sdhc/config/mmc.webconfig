@@ -1,0 +1,38 @@
+
+<fieldset>
+	<legend><% tran("management.mmc_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("management.mmc_srv"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="mmc_enable0" <% nvram_checked("mmc_enable0","1"); %> onclick="show_layer_ext(this, 'idmmc', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="mmc_enable0" <% nvram_checked("mmc_enable0","0"); %> onclick="show_layer_ext(this, 'idmmc', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idmmc">
+		<div class="setting">
+		  	<div class="label"><% tran("management.mmc_gpiosel"); %></div>
+		  	<input class="spaceradio" type="radio" value="0" name="mmc_gpio" <% nvram_checked("mmc_gpio","0"); %> onclick="show_layer_ext(this, 'idmmcgpio', false)" /><% tran("share.auto"); %>&nbsp;
+		  	<input class="spaceradio" type="radio" value="1" name="mmc_gpio" <% nvram_checked("mmc_gpio","1"); %> onclick="show_layer_ext(this, 'idmmcgpio', true)"/><% tran("share.manual"); %>
+		</div>
+		<div id="idmmcgpio">		
+			<div class="setting">
+				<div class="label"><% tran("management.mmc_gpiopins"); %></div>
+				DI:
+               <input class="num" name="mmc_di" size="2" maxlength="2" onblur="valid_range(this,0,15,management.mmc_gpiopins)" value='<% nvram_selget("mmc_di"); %>' />
+				&nbsp;&nbsp;&nbsp;D0:
+               <input class="num" name="mmc_do" size="2" maxlength="2" onblur="valid_range(this,0,15,management.mmc_gpiopins)" value='<% nvram_selget("mmc_do"); %>' />
+				&nbsp;&nbsp;&nbsp;CLK:
+               <input class="num" name="mmc_clk" size="2" maxlength="2" onblur="valid_range(this,0,15,management.mmc_gpiopins)" value='<% nvram_selget("mmc_clk"); %>' />
+				&nbsp;&nbsp;&nbsp;CS:
+               <input class="num" name="mmc_cs" size="2" maxlength="2" onblur="valid_range(this,0,15,management.mmc_gpiopins)" value='<% nvram_selget("mmc_cs"); %>' />
+			</div>
+		</div>	
+		<div class="setting">
+			<div class="label"><% tran("share.fssize"); %></div>
+			<script type="text/javascript">
+			//<![CDATA[
+			<% statfs("/mmc", "mmc"); %>
+			document.write( ((<% nvram_get("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.size) + ' / ' + scaleSize(mmc.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+			//]]>
+			</script>
+		</div>		
+	</div>	
+</fieldset><br/>
