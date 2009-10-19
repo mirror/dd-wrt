@@ -22,7 +22,6 @@
 #ifndef __LZMADECODE_H
 #define __LZMADECODE_H
 
-
 /* #define _LZMA_IN_CB */
 /* Use callback for input data */
 

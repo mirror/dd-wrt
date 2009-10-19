@@ -4,11 +4,11 @@
 /*
  * Address map
  */
-#define AR7100_PCI_MEM_BASE             0x10000000  /* 128M */
-#define AR7100_APB_BASE                 0x18000000  /* 384M */
-#define AR7100_GE0_BASE                 0x19000000  /* 16M */
-#define AR7100_GE1_BASE                 0x1a000000  /* 16M */
-#define AR7100_USB_EHCI_BASE            0x1b000000  
+#define AR7100_PCI_MEM_BASE             0x10000000	/* 128M */
+#define AR7100_APB_BASE                 0x18000000	/* 384M */
+#define AR7100_GE0_BASE                 0x19000000	/* 16M */
+#define AR7100_GE1_BASE                 0x1a000000	/* 16M */
+#define AR7100_USB_EHCI_BASE            0x1b000000
 #define AR7100_USB_OHCI_BASE            0x1c000000
 #define AR7100_SPI_BASE                 0x1f000000
 
@@ -53,7 +53,7 @@
 #define AR7100_DDR_CONFIG2_BL4          (4 << 0)
 #define AR7100_DDR_CONFIG2_BL8          (8 << 0)
 
-#define AR7100_DDR_CONFIG2_BT_IL        (1 << 4)       
+#define AR7100_DDR_CONFIG2_BT_IL        (1 << 4)
 #define AR7100_DDR_CONFIG2_CNTL_OE_EN   (1 << 5)
 #define AR7100_DDR_CONFIG2_PHASE_SEL    (1 << 6)
 #define AR7100_DDR_CONFIG2_DRAM_CKE     (1 << 7)
@@ -61,14 +61,14 @@
 #define AR7100_DDR_CONFIG2_TRTW_SHIFT   12
 #define AR7100_DDR_CONFIG2_TRTP_SHIFT   17
 #define AR7100_DDR_CONFIG2_TWTR_SHIFT   21
-#define AR7100_DDR_CONFIG2_HALF_WIDTH_L (1 << 31)   
+#define AR7100_DDR_CONFIG2_HALF_WIDTH_L (1 << 31)
 
 #define AR7100_DDR_TAP_DEFAULT          0x18
 
 /*
  * PLL
  */
-#define AR7100_CPU_PLL_CONFIG           AR7100_PLL_BASE    
+#define AR7100_CPU_PLL_CONFIG           AR7100_PLL_BASE
 
 /* Legacy */
 #define AR7100_USB_PLL_CONFIG           AR7100_PLL_BASE+0x4
@@ -106,14 +106,22 @@
 #define PLL_CONFIG_SW_UPDATE_SHIFT      31
 #define PLL_CONFIG_SW_UPDATE_MASK       (1 << 31)
 
+#define REV_ID_REVISION_MASK	0x3
+#define REV_ID_REVISION_SHIFT	2
 
 /* These are values used in platform.inc to select PLL settings */
 
 #define AR7100_REV_ID           (AR7100_RESET_BASE + 0x90)
+#define AR7100_REV_ID_CHIP_MASK	0xf3
 #define AR7100_REV_ID_MASK      0xff
 #define AR7100_REV_ID_AR7130    0xa0
 #define AR7100_REV_ID_AR7141    0xa1
 #define AR7100_REV_ID_AR7161    0xa2
+#define AR7100_REV_ID_AR9130    0xb0
+#define AR7100_REV_ID_AR9132    0xb1
+#define AR7240_REV_1_0          0xc0
+#define AR7240_REV_1_1          0xc1
+#define AR7240_REV_1_2          0xc2
 
 #define AR7100_PLL_USE_REV_ID    0
 #define AR7100_PLL_200_200_100   1
@@ -124,9 +132,12 @@
 #define AR7100_PLL_400_400_200   6
 #define AR7100_PLL_600_300_150   7
 #define AR7100_PLL_680_340_170   8
+#define AR7100_PLL_350_350_175   9
+
 /* "Secret values", for debug only */
 #define AR7100_PLL_720_360_180   30
 #define AR7100_PLL_800_400_200   31
+
 /*
  * PLL block
  */
@@ -167,7 +178,7 @@
 /*
  * PCI block
  */
-#define AR7100_PCI_WINDOW           0x8000000       /* 128MB */
+#define AR7100_PCI_WINDOW           0x8000000	/* 128MB */
 #define AR7100_PCI_WINDOW0_OFFSET   AR7100_DDR_CTL_BASE+0x7c
 #define AR7100_PCI_WINDOW1_OFFSET   AR7100_DDR_CTL_BASE+0x80
 #define AR7100_PCI_WINDOW2_OFFSET   AR7100_DDR_CTL_BASE+0x84
@@ -185,7 +196,6 @@
 #define AR7100_PCI_WINDOW5_VAL      0x15000000
 #define AR7100_PCI_WINDOW6_VAL      0x16000000
 #define AR7100_PCI_WINDOW7_VAL      0x07000000
-
 
 /*
  * CRP. To access the host controller config and status registers
@@ -323,7 +333,6 @@
 #define PISR_DEV2                           PIMR_DEV2
 #define PISR_CORE                           PIMR_CORE
 
-
 #define AR7100_GPIO_COUNT                   16
 
 /*
@@ -365,10 +374,10 @@
 
 #ifndef __ASSEMBLER__
 typedef enum {
-    AR7100_DDR_16B_LOW,
-    AR7100_DDR_16B_HIGH,
-    AR7100_DDR_32B,
-}ar7100_ddr_width_t;
+	AR7100_DDR_16B_LOW,
+	AR7100_DDR_16B_HIGH,
+	AR7100_DDR_32B,
+} ar7100_ddr_width_t;
 
 #define KSEG1ADDR(_addr) (CYGARC_UNCACHED_ADDRESS(_addr))
 #define ar7100_reg_rd(_phys)    (*(volatile unsigned int *)KSEG1ADDR(_phys))
@@ -412,6 +421,6 @@ typedef enum {
     while((ar7100_reg_rd(AR7100_DDR_PCI_FLUSH) & 0x1));   \
 }while(0);
 
-#endif  /*__ASSEMBLY*/
+#endif	/*__ASSEMBLY*/
 
 #endif
