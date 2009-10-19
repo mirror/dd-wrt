@@ -76,6 +76,13 @@ int fw_check_image_ubnt(unsigned char *addr, unsigned long maxlen, int do_flash)
 		return -1;
 	}
 #endif
+#if defined(CYGPKG_HAL_MIPS_AR7100)
+	if (strncmp((unsigned char *)&header->version[4], "ar7100", 6) && strncmp((unsigned char *)&header->version[6], "ar7100pro", 9)) {
+		diag_printf
+		    ("UBNT_FW: cannot upgrade, wrong target platform. only ar7100 (RouterStation) or ar7100pro (RouterStation PRO) is valid");
+		return -1;
+	}
+#endif
 	if (htonl(crc) != header->crc) {
 		diag_printf("UBNT_FW: header crc failed\n");
 		return -1;
@@ -163,13 +170,19 @@ int fw_check_image_ubnt(unsigned char *addr, unsigned long maxlen, int do_flash)
 
 			unsigned int base = ntohl(fwp->header->baseaddr);
 			/* convert flash mappings to fit to the current bootloader flash mapping which might be incompatible */
-			if ((base & 0xbfc00000) == 0xbfc00000) {
-				base ^= 0xbfc00000;
-			} else if ((base & 0xbe00000) == 0xbe00000) {
-				base ^= 0xbe00000;
-			} else if ((base & 0xa800000) == 0xa800000) {
-				base ^= 0xa800000;
+#if defined(CYGPKG_HAL_MIPS_AR7100)
+			if ((base & 0xbf00000) == 0xbf00000) {
+				base ^= 0xbf00000; // for AR7100
 			}
+#else
+			if ((base & 0xbfc00000) == 0xbfc00000) {
+				base ^= 0xbfc00000;// mips mapping 
+			} else if ((base & 0xbe00000) == 0xbe00000) {
+				base ^= 0xbe00000; // for AR5312 
+			} else if ((base & 0xa800000) == 0xa800000) {
+				base ^= 0xa800000; // for AR5315 8 MB mapping
+			}
+#endif
 			base |= CYGNUM_FLASH_BASE;
 			if ((stat =
 			     flash_erase((void *)base,
