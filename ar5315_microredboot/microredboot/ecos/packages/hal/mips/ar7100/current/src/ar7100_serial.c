@@ -233,8 +233,7 @@ cyg_hal_plf_serial_init_channel(void* __ch_data)
     HAL_WRITE_UINT32(port+SER_16550_LCR, _lcr);
 
     // Set baud rate.
-    cyg_hal_plf_serial_set_baud(port, hal_ar7100_sys_frequency() / (16 *
-                      CYGNUM_HAL_VIRTUAL_VECTOR_CHANNELS_DEFAULT_BAUD));
+    cyg_hal_plf_serial_set_baud(port, hal_ar7100_sys_frequency() / (16 * CYGNUM_HAL_VIRTUAL_VECTOR_CHANNELS_DEFAULT_BAUD));
 
     // Enable and clear FIFO
     HAL_WRITE_UINT32(port+SER_16550_FCR, (FCR_ENABLE | FCR_CLEAR_RCVR | FCR_CLEAR_XMIT));

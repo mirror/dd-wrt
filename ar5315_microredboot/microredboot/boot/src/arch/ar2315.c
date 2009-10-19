@@ -347,3 +347,8 @@ static int flashdetect(void)
 	return 0;
 
 }
+
+static const char *get_system_type(void)
+{
+	return "2315/6/7/8";
+}

@@ -7,6 +7,7 @@ firmware upgrade code for DD-WRT webflash images
 #include <fis.h>
 #include <flash_config.h>
 #include "fwupgrade_wili.h"
+#ifndef CYGPKG_HAL_MIPS_AR7100
 
 /* some variables from flash.c */
 extern void *flash_start, *flash_end;
@@ -277,3 +278,4 @@ int fw_check_image_wili(unsigned char *addr, unsigned long maxlen, int do_flash)
 
 	return 0;
 }
+#endif

@@ -41,6 +41,7 @@
 #define  VERBOSE           0
 #endif
 
+#include "ag7100_phy.h"
 #include "vsc8601_phy.h"
 
 #ifdef CONFIG_VITESSE_8601_PHY

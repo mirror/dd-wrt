@@ -100,8 +100,10 @@ struct firmware_formats {
 static const struct firmware_formats fw_formats[] = {
 	{.name = "DD-WRT",.fw_check_image = fw_check_image_ddwrt},
 	{.name = "UBIQUITI",.fw_check_image = fw_check_image_ubnt},
+#ifndef CYGPKG_HAL_MIPS_AR7100
 	{.name = "WILIGEAR",.fw_check_image = fw_check_image_wili},
 	{.name = "SENAO",.fw_check_image = fw_check_image_senao},
+#endif
 };
 
 static void do_flash_update(unsigned long base_addr, unsigned long len,

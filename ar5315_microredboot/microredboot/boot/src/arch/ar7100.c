@@ -96,25 +96,6 @@ static void enable_ethernet(void)
 #define STM_16MB_SECTOR_COUNT STM_M25P128_SECTOR_COUNT
 #define STM_16MB_SECTOR_SIZE  STM_M25P128_SECTOR_SIZE
 
-#define AR7100_SPI_FS           AR7100_SPI_BASE+0x0
-#define AR7100_SPI_CLOCK        AR7100_SPI_BASE+0x4
-#define AR7100_SPI_WRITE        AR7100_SPI_BASE+0x8
-#define AR7100_SPI_READ         AR7100_SPI_BASE+0x0
-#define AR7100_SPI_RD_STATUS    AR7100_SPI_BASE+0xc
-
-#define AR7100_SPI_CS_DIS       0x70000
-#define AR7100_SPI_CE_LOW       0x60000
-#define AR7100_SPI_CE_HIGH      0x60100
-
-#define AR7100_SPI_CMD_WREN         0x06
-#define AR7100_SPI_CMD_RD_STATUS    0x05
-#define AR7100_SPI_CMD_FAST_READ    0x0b
-#define AR7100_SPI_CMD_PAGE_PROG    0x02
-#define AR7100_SPI_CMD_SECTOR_ERASE 0xd8
-
-#define AR7100_SPI_SECTOR_SIZE      (1024*64)
-#define AR7100_SPI_PAGE_SIZE        256
-
 #define display(_x)     ar7100_reg_wr_nf(0x18040008, (_x))
 
 /*
@@ -279,4 +260,38 @@ static int flashdetect(void)
 	flashdetected = 1;
 	return 0;
 
+}
+
+static const char *get_system_type(void)
+{
+	char *chip;
+	u32 id;
+	u32 rev;
+	id = ar7100_reg_rd(AR7100_REV_ID) & AR7100_REV_ID_MASK;
+	rev = (id >> REV_ID_REVISION_SHIFT) & REV_ID_REVISION_MASK;
+	switch (id & AR7100_REV_ID_CHIP_MASK) {
+	case AR7100_REV_ID_AR7130:
+		chip = "7130";
+		break;
+	case AR7100_REV_ID_AR7141:
+		chip = "7141";
+		break;
+	case AR7100_REV_ID_AR7161:
+		chip = "7161";
+		break;
+	case AR7100_REV_ID_AR9130:
+		chip = "9130";
+		break;
+	case AR7100_REV_ID_AR9132:
+		chip = "9132";
+		break;
+	case AR7240_REV_1_0:
+	case AR7240_REV_1_1:
+	case AR7240_REV_1_2:
+		chip = "7240";
+		break;
+	default:
+		chip = "71xx";
+	}
+	return chip;
 }

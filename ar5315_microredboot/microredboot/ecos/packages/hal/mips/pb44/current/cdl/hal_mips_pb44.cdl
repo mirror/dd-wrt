@@ -194,7 +194,7 @@ cdl_package CYGPKG_HAL_MIPS_PB44 {
     cdl_option CYGNUM_RAM_ENTRY {
 	display		"Linked entry address"
 	flavor		data
-	default_value	0x80010000
+	default_value	0x80000000
 	description	"Text segment load address."
     }
  
