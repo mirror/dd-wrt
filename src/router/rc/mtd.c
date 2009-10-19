@@ -223,7 +223,7 @@ int mtd_write(const char *path, const char *mtd)
 	sysinfo(&info);
 #ifndef HAVE_CAMBRIA
 	stop_service("sshd");
-	stop_service("snmpd");
+	stop_service("snmp");
 	stop_service("zebra");
 	stop_service("pppoeserver");
 	stop_service("olsrd");
