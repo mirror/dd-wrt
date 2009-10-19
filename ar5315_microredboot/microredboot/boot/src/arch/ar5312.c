@@ -303,3 +303,8 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 	return 0;
 
 }
+
+static const char *get_system_type(void)
+{
+	return "5312";
+}

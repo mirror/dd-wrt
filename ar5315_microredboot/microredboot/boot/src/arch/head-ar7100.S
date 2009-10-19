@@ -391,6 +391,18 @@ __AR7100_start:
 	b	2f
 	nop
 
+1:	li	t0, AR7240_REV_1_0
+	bne	t0, t1, 1f
+	li	t1, AR7100_PLL_350_350_175
+	b	2f
+	nop
+
+1:	li	t0, AR7240_REV_1_1
+	bne	t0, t1, 1f
+	li	t1, AR7100_PLL_400_400_200
+	b	2f
+	nop
+
 1:	li	t1, AR7100_PLL_300_300_150
 
 
@@ -415,11 +427,74 @@ romReserved:
 
 
 __AR7100_init:
-	lar     t0, rel_start
-	li	t1, 0xff3fffff
-	and	t0, t0, t1
-	j       t0
+	/*
+	 * Clearing CP0 registers - This is generally required for the MIPS-24k
+     * core used by Atheros.
+	 */
+	mtc0	zero, $0
+	mtc0	zero, $1
+	mtc0	zero, $2
+	mtc0	zero, $3
+	mtc0	zero, $4
+	mtc0	zero, $5
+	mtc0	zero, $6
+	mtc0	zero, $7
+	mtc0	zero, $8
+	mtc0	zero, $9
+	mtc0	zero, $10
+	mtc0	zero, $11
+	li	t0, 0x10000004
+	mtc0	t0, $12 
+	mtc0	zero, $13 
+	mtc0	zero, $14
+	mtc0	zero, $15
+	mtc0	zero, $16
+	mtc0	zero, $17
+	mtc0	zero, $18
+	mtc0	zero, $19
+	mtc0	zero, $20
+	mtc0	zero, $21
+	mtc0	zero, $22
+	mtc0	zero, $23
+	mtc0	zero, $24
+	mtc0	zero, $25
+	mtc0	zero, $26
+	mtc0	zero, $27
+	mtc0	zero, $28
+	
+    /*
+    ** Clear watch registers.
+	*/
+
+	mtc0	zero, CP0_WATCHLO
+	mtc0	zero, CP0_WATCHHI
+
+	/* STATUS register */
+	mfc0	k0, CP0_STATUS
+	li	k1, ~ST0_IE
+	and	k0, k1
+        mtc0	zero, CP0_CAUSE
+	mtc0	k0, CP0_STATUS
+
+	/* CAUSE register */
+	mtc0	zero, CP0_CAUSE
+
+	/* Init Timer */
+	mtc0	zero, CP0_COUNT
+	mtc0	zero, CP0_COMPARE
+
+	/* CONFIG0 register */
+	li	t0, CONF_CM_UNCACHED
+	mtc0	t0, CP0_CONFIG
+
+
+	/* Initialize any external memory.
+	 */
+#if defined(AR7100) || defined(AR7240)
+	la	t0, rel_start
+	j	t0
 	nop
+#endif
 
 rel_start:
 
@@ -439,6 +514,9 @@ rel_start:
     	nop
     	li  	t2, AR7100_PLL_400_400_200
     	beq 	t1, t2, pll_400_400_200
+    	nop
+    	li  	t2, AR7100_PLL_350_350_175
+    	beq 	t1, t2, pll_350_350_175
     	nop
     	li  	t2, AR7100_PLL_333_333_166
     	beq 	t1, t2, pll_333_333_166
@@ -505,6 +583,18 @@ pll_400_400_200:
 		li	t5,	(0x0  << PLL_CONFIG_PLL_DIVOUT_SHIFT)
     	b 	got_setting
     	nop
+
+pll_350_350_175:
+
+    	li 	t0, (0x2  << PLL_CONFIG_CPU_DIV_SHIFT)
+    	li 	t1, (0x0  << PLL_CONFIG_DDR_DIV_SHIFT)
+    	li 	t2, (0x0  << PLL_CONFIG_AHB_DIV_SHIFT)
+    	li 	t3, (0x23 << PLL_CONFIG_PLL_FB_SHIFT)
+    	li 	t4, (0x2  << PLL_CONFIG_PLL_LOOP_BW_SHIFT)
+	li	t5,	(0x0  << PLL_CONFIG_PLL_DIVOUT_SHIFT)
+    	b 	got_setting
+    	nop
+
 
 pll_333_333_166:
     	li 	t0, (0x2  << PLL_CONFIG_CPU_DIV_SHIFT)

@@ -23,13 +23,13 @@ static unsigned int redboot_offset(unsigned int highoffset,
 {
 	unsigned int copy = highoffset;
 	int c = SCANCOUNT;
-	while ((c--)>0) {
+	while ((c--) > 0) {
 		highoffset -= erasesize;
 		unsigned char *p = (unsigned char *)highoffset;
 		if (!strncmp(p, "RedBoot", 7))
 			return highoffset;
 	}
-	return copy - erasesize; // default offset, if not found
+	return copy - erasesize;	// default offset, if not found
 }
 
 static unsigned int getPartition(char *name)
@@ -71,8 +71,9 @@ static unsigned int getLinux(void)
 		fis = (struct fis_image_desc *)p;
 		count++;
 	}
-	printf("no bootable image found, try default location 0x%08X\n",flashbase+0x10000);
+	printf("no bootable image found, try default location 0x%08X\n",
+	       flashbase + 0x10000);
 	bootoffset = 0x80041000;
 	output_data = (uch *) 0x80041000;
-	return flashbase+0x10000;	//first available address after bootloader
+	return flashbase + 0x10000;	//first available address after bootloader
 }

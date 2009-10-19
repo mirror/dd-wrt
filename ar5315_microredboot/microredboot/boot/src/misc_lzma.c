@@ -19,6 +19,7 @@
 
 #include <asm/uaccess.h>
 #include "ramconfig.h"
+#include "revision.h"
 #ifdef AR7100
 #define inline
 #endif
@@ -310,15 +311,9 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	arch_decomp_setup();
 	/* initialize clock */
 	HAL_CLOCK_INITIALIZE(RTC_PERIOD);
-	printf("MicroRedBoot v1.4, (c) 2009 DD-WRT.COM (%s)\n", __DATE__);
+	printf("MicroRedBoot v1.4, (c) 2009 DD-WRT.COM (%s REVISION %s)\n", __DATE__,SVN_REVISION);
 	printf("keep the reset button pushed to enter redboot!\n");
-#ifdef AR7100
-	printf("CPU Type: AR7100\n");
-#elif  AR5312
-	printf("CPU Type: AR5312\n");
-#else
-	printf("CPU Type: AR5315\n");
-#endif
+	printf("CPU Type: Atheros AR%s\n",get_system_type());
 	printf("CPU Clock: %dMhz\n", cpu_frequency() / 1000000);
 	nvram_init();
 	char *ddboard = nvram_get("DD_BOARD");

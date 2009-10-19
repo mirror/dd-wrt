@@ -134,8 +134,22 @@ pb42:
 	ecosconfig import $(REDBOOT_DIR)/options/eth_ar7100/adm_phy; \
 	$(PLATFORM_BLD_CUST)
 	$(PLATFORM_RAM_BUILD)
-	cp redboot/pb42/ram/install/bin/redboot.rom images/redboot_pb42_32M_8M_kendin.rom
-	cp redboot/pb42/ram/install/bin/redboot.img images/redboot_pb42_32M_8M_kendin.elf
+	cp redboot/pb42/ram/install/bin/redboot.rom images/redboot_pb42_32M_8M_admtek.rom
+#	cp redboot/pb42/ram/install/bin/redboot.img images/redboot_pb42_32M_8M_admtek.elf
+
+
+pb44:   BOARD_TYPE=pb44
+pb44:
+# RAM version
+	$(PLATFORM_RAM_START) \
+	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/pb44/current/misc/redboot_RAM.ecm; \
+	ecosconfig import $(REDBOOT_DIR)/options/eth_ar7100/vsc8601_phy; \
+	ecosconfig tree; \
+	$(PLATFORM_BLD_CUST)
+	$(PLATFORM_RAM_BUILD)
+	cp redboot/pb44/ram/install/bin/redboot.rom images/redboot_pb44_32M_8M_vsc8601.rom
+#	cp redboot/pb44/ram/install/bin/redboot.img images/redboot_pb42_32M_8M_kendin.elf
+
 
 #
 # The rules

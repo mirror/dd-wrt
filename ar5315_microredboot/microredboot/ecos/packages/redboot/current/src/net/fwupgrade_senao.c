@@ -1,3 +1,4 @@
+
 /*
 firmware upgrade code for senao webflash images
 */
@@ -7,6 +8,7 @@ firmware upgrade code for senao webflash images
 #include <fis.h>
 #include <flash_config.h>
 #include "fwupgrade.h"
+#ifndef CYGPKG_HAL_MIPS_AR7100
 
 /* some variables from flash.c */
 extern void *flash_start, *flash_end;
@@ -99,3 +101,4 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 	}
 	return 0;
 }
+#endif
