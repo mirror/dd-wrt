@@ -389,6 +389,7 @@ void start_dhcpc(char *wan_ifname)
 /*
  * Enable WET DHCP relay for ethernet clients 
  */
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 static int enable_dhcprelay(char *ifname)
 {
 	char name[80], *next;
@@ -433,7 +434,7 @@ static int enable_dhcprelay(char *ifname)
 	}
 	return 0;
 }
-
+#endif
 static int wlconf_up(char *name)
 {
 
@@ -1552,6 +1553,7 @@ void start_lan(void)
 							 name);
 					led_control(LED_BRIDGE, LED_ON);
 					/* Enable host DHCP relay */
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
@@ -1564,6 +1566,7 @@ void start_lan(void)
 					{
 						enable_dhcprelay(lan_ifname);
 					}
+#endif
 					do_mssid(name);
 				}
 #ifdef HAVE_WAVESAT

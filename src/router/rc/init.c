@@ -28,14 +28,27 @@
 #define SHELL "/bin/login"
 #define	_PATH_CONSOLE	"/dev/console"
 
-#define start_service(a) eval("startservice",a);
-#define start_service_f(a) eval("startservice_f",a);
-#define start_services() eval("startservices");
-#define start_single_service() eval("start_single_service");
-#define stop_service(a) eval("stopservice",a);
-#define stop_services() eval("stopservices");
-#define startstop(a) eval("startstop",a);
-#define startstop_f(a) eval("startstop_f",a);
+int sysprintf(const char *fmt, ...)
+{
+	char varbuf[256];
+	va_list args;
+
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	return system(varbuf);
+}
+
+
+
+#define start_service(a) sysprintf("startservice %s",a);
+#define start_service_f(a) sysprintf("startservice_f %s",a);
+#define start_services() system("startservices");
+#define start_single_service() system("start_single_service");
+#define stop_service(a) sysprintf("stopservice %s",a);
+#define stop_services() system("stopservices");
+#define startstop(a) sysprintf("startstop %s",a);
+#define startstop_f(a) sysprintf("startstop_f %s",a);
 
 static void set_term(int fd)
 {
@@ -230,9 +243,6 @@ void shutdown_system(void)
 	sync();
 	sleep(1);
 
-#ifdef HAVE_RB500
-	eval("umount", "/");
-#endif
 }
 
 static int fatal_signals[] = {
@@ -541,7 +551,9 @@ int main(int argc, char **argv)
 
 	fclose(fp);
 
+#ifndef HAVE_MADWIFI
 	int cnt = get_wl_instances();
+#endif
 	int c;
 
 	/* 
@@ -577,14 +589,14 @@ int main(int argc, char **argv)
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 			for (c = 0; c < cnt; c++) {
-				eval("wlconf", get_wl_instance_name(c), "down");
+				sysprintf("wlconf %s down", get_wl_instance_name(c));
 				char *next;
 				char var[80];
 				char *vifs = nvram_nget("wl%d_vifs", c);
 
 				if (vifs != NULL)
 					foreach(var, vifs, next) {
-					eval("ifconfig", var, "down");
+					sysprintf ("ifconfig %s down", var);
 					}
 			}
 #endif
@@ -617,7 +629,7 @@ int main(int argc, char **argv)
 			stop_service("stabridge");
 #endif
 #ifdef HAVE_RSTP
-			eval("killall", "rstpd");
+			system("killall rstpd");
 			unlink("/tmp/.rstp_server");
 #endif
 #ifdef HAVE_VLANTAGGING
@@ -706,9 +718,8 @@ int main(int argc, char **argv)
 			if (nvram_match("radiooff_button", "1")
 			    && nvram_match("radiooff_boot_off", "1")) {
 				for (c = 0; c < cnt; c++) {
-					eval("wl", "-i",
-					     get_wl_instance_name(c), "radio",
-					     "off");
+					sysprintf("wl -i %s radio off",
+					     get_wl_instance_name(c));
 				}
 				led_control(LED_SEC0, LED_OFF);
 				led_control(LED_SEC1, LED_OFF);
@@ -757,9 +768,9 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_RSTP
 			// just experimental for playing
-			eval("brctl", "stp", "br0", "off");
-			eval("rstpd");
-			eval("rstpctl", "rstp", "br0", "on");
+			system("brctl stp br0 off");
+			system("rstpd");
+			system("rstpctl rstp br0 on");
 #endif
 
 			system("/etc/postinit&");

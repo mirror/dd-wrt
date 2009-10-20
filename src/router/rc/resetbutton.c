@@ -350,7 +350,9 @@ void period_check(int sig)
 		ses_mode = 1;
 		initses = 0;
 	}
+#ifndef HAVE_MADWIFI
 	int cc = get_wl_instances();
+#endif
 	int ii;
 #endif
 
