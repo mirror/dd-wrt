@@ -22,7 +22,8 @@
 
 #include <string.h>
 #include <memory.h>
-int getsocket(void);
+
+
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
 #include <sys/file.h>
@@ -36,6 +37,7 @@ int getsocket(void);
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 #include <stdio.h>
+#include <utils.h>
 
 static int set80211param(char *iface, int op, int arg)
 {
