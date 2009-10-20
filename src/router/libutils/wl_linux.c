@@ -32,6 +32,20 @@ typedef u_int8_t u8;
 #include <wlioctl.h>
 #include <wlutils.h>
 
+
+int getsocket(void)
+{
+	static int s = -1;
+
+	if (s < 0) {
+		s = socket(AF_INET, SOCK_DGRAM, 0);
+		if (s < 0)
+			err(1, "socket(SOCK_DGRAM)");
+	}
+	return s;
+}
+
+
 int wl_ioctl(char *name, int cmd, void *buf, int len)
 {
 	struct ifreq ifr;

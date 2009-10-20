@@ -35,7 +35,7 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 CFLAGS	+= -fPIC
 LDFLAGS += -L.
 OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o
-WOBJS := wl.o
+WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
