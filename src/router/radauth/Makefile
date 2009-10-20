@@ -23,7 +23,7 @@ ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880 
 endif
 CFLAGS += -DNEED_PRINTF -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
-LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -L utils -ffunction-sections -fdata-sections -Wl,--gc-sections -lwireless
 all: wrt-radauth radius-client macupd
 
 wrt-radauth: wrt-radauth.o md5.o radius.o
