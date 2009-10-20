@@ -12,7 +12,7 @@ SOURCES = \
 	stream.c \
 	utility.c
 
-EXTRA_CFLAGS = -g
+EXTRA_CFLAGS = -fPIC
 EXTRA_INCLUDES  = $(INCLIBC) -I.
 
 LIBNAME = iksemel
