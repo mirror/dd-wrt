@@ -25,7 +25,7 @@ endif
 endif
 
 CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.bcm -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections
-LDFLAGS += -L../nvram -L../shared -lshared -L../libutils -lutils -lnvram -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -L../nvram -L../shared -lshared -L../libutils -lutils -lnvram -lwireless -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 vpath %.c $(SRCBASE)/tools/misc
 
