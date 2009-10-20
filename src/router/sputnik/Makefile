@@ -9,8 +9,8 @@ ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
 
-CFLAGS += -I iksemel
-CFLAGS += -I zlib
+CFLAGS += -I iksemel -fPIC
+CFLAGS += -I zlib 
 CFLAGS += -I ../../include.v23 -I../shared
 CFLAGS += -DIPTABLES=\"/usr/sbin/iptables\"
 ifeq ($(CONFIG_MAKSAT),y)
@@ -21,7 +21,7 @@ endif
 #CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"dd-wrt\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.6.6\"
 
 # LDFLAGS += -L$(INSTALLDIR)/nvram/usr/lib -lnvram -lshared
-LDFLAGS =-L../libutils -lutils -L../shared -lshared  -L../nvram -lnvram -lcrypt
+LDFLAGS =-L../libutils -lwireless -lutils -L../shared -lshared  -L../nvram -lnvram -lcrypt
 ifeq ($(CONFIG_MADWIFI),y)
 LDFLAGS += -lm
 endif
@@ -87,7 +87,7 @@ install: all
 	$(STRIP) $(INSTALLDIR)/sbin/apd
 
 libiksemel.so: $(IOBJS)
-	$(CC) -shared -o $(ARCH)/$@ $^ $(LDFLAGS) -fpic
+	$(CC) -fPIC -shared -o $(ARCH)/$@ $^ $(LDFLAGS) 
 	
 sputnik: $(OBJS) 
 	$(CC) -o $(ARCH)/$@ $^ $(LDFLAGS) -L$(ARCH) -liksemel
