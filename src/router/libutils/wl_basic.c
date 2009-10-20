@@ -9,7 +9,6 @@
 #include <bcmnvram.h>
 #include <math.h>
 
-
 #ifdef HAVE_RT2880
 char *get_wl_instance_name(int instance)
 {
