@@ -32,9 +32,11 @@ REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
 REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -fpic 
+CFLAGS	+= -fPIC
 LDFLAGS += -L.
-OBJS := utils.o shutils.o wl.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o
+OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o
+WOBJS := wl.o
+
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
@@ -54,13 +56,11 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS += -DHAVE_MADWIFI -DMADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+CFLAGS += -DHAVE_MADWIFI -DMADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
 else
-CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
 endif
-
-
-OBJS += ../wireless-tools/libiw.so.29 
+WLDFLAGS = ../wireless-tools/libiw.so.29
 endif
 OBJS += country.o
 
@@ -577,17 +577,17 @@ CFLAGS += -DHAVE_MATRIXSSL
 endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: libutils.so libutils.a
-#	gcc -o defaults $(HFLAGS) defaults.c
-#	./defaults
+all: libutils.so libutils.a libwireless.so libwireless.a
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
 	install -d $(INSTALLDIR)/libutils/lib
 	install -m 755 libutils.so $(INSTALLDIR)/libutils/lib
+	install -m 755 libwireless.so $(INSTALLDIR)/libutils/lib
 else
 	install -d $(INSTALLDIR)/libutils/usr/lib
 	install -m 755 libutils.so $(INSTALLDIR)/libutils/usr/lib
+	install -m 755 libwireless.so $(INSTALLDIR)/libutils/usr/lib
 endif
 
 clean:
@@ -598,9 +598,16 @@ clean:
 	rm -f *.c~
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram -lm
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram
+
+libwireless.so: $(WOBJS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ -L../nvram -lnvram  $(WLDFLAGS)
+
 
 libutils.a: $(OBJS)
+	$(AR) arc -o  $@ $^
+
+libwireless.a: $(WOBJS)
 	$(AR) arc -o  $@ $^
 
 *.o: $(CY_DEPS)

@@ -189,11 +189,6 @@ ifeq ($(CONFIG_MEDIASERVER),y)
 CFLAGS += -DHAVE_MEDIASERVER
 endif
 
-ifeq ($(CONFIG_MADWIFI),y)
-CFLAGS += -DHAVE_MADWIFI -DHAVE_ROAMING
-OBJS += ../wireless-tools/libiw.so.29 
-OBJS += roaming_daemon.o
-endif
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON
 endif
@@ -456,6 +451,11 @@ endif
 ifeq ($(CONFIG_RSTP),y)
 CFLAGS += -DHAVE_RSTP
 endif
+ifeq ($(CONFIG_MADWIFI),y)
+CFLAGS +=  -DHAVE_MADWIFI -DHAVE_ROAMING 
+endif
+
+
 
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS += -DHAVE_SNMP
@@ -563,7 +563,7 @@ ifeq ($(CONFIG_DIST),"micro-special")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
-	cd $(INSTALLDIR)/sbin && ln -sf rc roaming_daemon
+#	cd $(INSTALLDIR)/sbin && ln -sf rc roaming_daemon
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_wanface
 #	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
@@ -664,12 +664,13 @@ endif
 
 rc: $(OBJS)
 #	$(AR) arc -o $@.a $^
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless
+	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so.29 
 	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless
 	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o init init.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
+	$(CC) $(CFLAGS) -o init init.c -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -ldl -lutils
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)

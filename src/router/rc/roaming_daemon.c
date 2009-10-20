@@ -167,7 +167,7 @@ int roaming_daemon(void)
 
 }
 
-int roaming_daemon_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 
 	switch (fork()) {
