@@ -98,17 +98,6 @@ int getchannels(unsigned int *list, char *ifname)
 
 #include "wireless.h"
 
-int getsocket(void)
-{
-	static int s = -1;
-
-	if (s < 0) {
-		s = socket(AF_INET, SOCK_DGRAM, 0);
-		if (s < 0)
-			err(1, "socket(SOCK_DGRAM)");
-	}
-	return s;
-}
 
 u_int ieee80211_mhz2ieee(u_int freq)
 {
