@@ -34,7 +34,7 @@ LDFLAGS += -L$(TOP)/vfs
 endif
 
 #CFLAGS += -Ilzma
-LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lshared -lcrypt -ldl -lutils
+LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lshared -lcrypt -ldl -lutils -lwireless
 
 CFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 

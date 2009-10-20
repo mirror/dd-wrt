@@ -786,6 +786,7 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	return;
 }
 
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 {
 	int unit, val;
@@ -818,7 +819,7 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 	}
 	return;
 }
-
+#endif
 void ej_wme_match_op(webs_t wp, int argc, char_t ** argv)
 {
 	char word[256], *next;
