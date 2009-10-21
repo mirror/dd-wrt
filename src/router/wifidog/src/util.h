@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: util.h 969 2006-02-23 17:09:32Z papril $ */
+/* $Id: util.h 1373 2008-09-30 09:27:40Z wichert $ */
 /** @file util.h
     @brief Misc utility functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -35,10 +35,10 @@ int execute(char *cmd_line, int quiet);
 struct in_addr *wd_gethostbyname(const char *name);
 
 /* @brief Get IP address of an interface */
-char *get_iface_ip(char *ifname);
+char *get_iface_ip(const char *ifname);
 
 /* @brief Get MAC address of an interface */
-char *get_iface_mac(char *ifname);
+char *get_iface_mac(const char *ifname);
 
 /* @brief Get interface name of default gateway */
 char *get_ext_iface (void);

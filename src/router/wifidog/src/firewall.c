@@ -19,7 +19,7 @@
  \********************************************************************/
 
 /*
- * $Id: firewall.c 1305 2007-11-01 20:04:20Z benoitg $
+ * $Id: firewall.c 1389 2009-02-27 17:39:30Z benoitg $
  */
 /** @internal
   @file firewall.c
@@ -248,7 +248,7 @@ fw_sync_with_authserver(void)
 	    UNLOCK_CLIENT_LIST();
         /* Ping the client, if he responds it'll keep activity on the link.
          * However, if the firewall blocks it, it will not help.  The suggested
-         * way to deal witht his is to keep the DHCP lease time extremely 
+         * way to deal witht his is to keep the DHCP lease time extremely
          * short:  Shorter than config->checkinterval * config->clienttimeout */
         icmp_ping(ip);
         /* Update the counters on the remote server only if we have an auth server */
@@ -256,7 +256,7 @@ fw_sync_with_authserver(void)
             auth_server_request(&authresponse, REQUEST_TYPE_COUNTERS, ip, mac, token, incoming, outgoing);
         }
 	    LOCK_CLIENT_LIST();
-	
+
         if (!(p1 = client_list_find(ip, mac))) {
             debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
         } else {
@@ -353,7 +353,7 @@ icmp_ping(char *host)
 {
 	struct sockaddr_in saddr;
 #if defined(__linux__) || defined(__NetBSD__)
-	struct { 
+	struct {
 		struct ip ip;
 		struct icmp icmp;
 	} packet;
@@ -378,7 +378,7 @@ icmp_ping(char *host)
 		j += ((unsigned short *)&packet.icmp)[i];
 
 	while (j >> 16)
-		j = (j & 0xffff) + (j >> 16);  
+		j = (j & 0xffff) + (j >> 16);
 
 	packet.icmp.icmp_cksum = (j == 0xffff) ? j : ~j;
 
@@ -414,7 +414,7 @@ unsigned short rand16(void) {
 
     /* Some rand() implementations have less randomness in low bits
      * than in high bits, so we only pay attention to the high ones.
-     * But most implementations don't touch the high bit, so we 
+     * But most implementations don't touch the high bit, so we
      * ignore that one.
      **/
       return( (unsigned short) (rand() >> 15) );

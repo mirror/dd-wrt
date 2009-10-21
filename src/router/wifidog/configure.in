@@ -1,5 +1,5 @@
 ## -*-m4-*-
-# $Id: configure.in 1340 2008-03-25 02:22:37Z benoitg $
+# $Id: configure.in 1346M 2009-09-25 14:51:29Z (local) $
 
 dnl Process this file with autoconf to produce a configure script.
 
@@ -21,7 +21,7 @@ AC_SUBST(BUILDROOT)
 WIFIDOG_MAJOR_VERSION=1
 WIFIDOG_MINOR_VERSION=1
 WIFIDOG_MICRO_VERSION=5
-WIFIDOG_VERSION=$WIFIDOG_MAJOR_VERSION.$WIFIDOG_MINOR_VERSION.$WIFIDOG_MICRO_VERSION
+WIFIDOG_VERSION=20090925
 
 AC_SUBST(WIFIDOG_MAJOR_VERSION)
 AC_SUBST(WIFIDOG_MINOR_VERSION)
@@ -97,6 +97,7 @@ echo "libhttpd dependencies check complete"
 
 AC_OUTPUT( 		Makefile 
 	   		wifidog.spec
+                        wifidog-msg.html
 			src/Makefile
 			libhttpd/Makefile
 			doc/Makefile
