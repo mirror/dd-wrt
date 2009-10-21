@@ -32,7 +32,6 @@ typedef u_int8_t u8;
 #include <wlioctl.h>
 #include <wlutils.h>
 
-
 int getsocket(void)
 {
 	static int s = -1;
@@ -44,7 +43,6 @@ int getsocket(void)
 	}
 	return s;
 }
-
 
 int wl_ioctl(char *name, int cmd, void *buf, int len)
 {
@@ -122,29 +120,26 @@ int wl_get_dev_type(char *name, void *buf, int len)
 	struct ethtool_drvinfo info;
 
 	/* open socket to kernel */
-	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	    {
-		fprintf(stderr,"socket");
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		fprintf(stderr, "socket");
 		return -1;
-	    }
+	}
 
 	/* get device type */
 	memset(&info, 0, sizeof(info));
 	info.cmd = ETHTOOL_GDRVINFO;
-	ifr.ifr_data = (caddr_t)&info;
+	ifr.ifr_data = (caddr_t) & info;
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
 	if ((ret = ioctl(s, SIOCETHTOOL, &ifr)) < 0) {
 
 		/* print a good diagnostic if not superuser */
 		if (errno == EPERM)
-			fprintf(stderr,"wl_get_dev_type");
+			fprintf(stderr, "wl_get_dev_type");
 
 		*(char *)buf = '\0';
-	}
-	else
+	} else
 		strncpy(buf, info.driver, len);
 
 	close(s);
 	return ret;
 }
-
