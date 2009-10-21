@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: protocol.c 1305 2007-11-01 20:04:20Z benoitg $
+** $Id: protocol.c 1371 2008-09-30 09:17:21Z wichert $
 **
 */
 
@@ -467,6 +467,7 @@ httpDir *_httpd_findContentDir(server, dir, createFlag)
 		*curChild;
 
 	strncpy(buffer, dir, HTTP_MAX_URL);
+        buffer[HTTP_MAX_URL-1]=0;
 	curItem = server->content;
 	curDir = strtok(buffer,"/");
 	while(curDir)
@@ -688,10 +689,10 @@ static char *hex = "0123456789ABCDEF";
 
 
 char *_httpd_escape(str)
-        char *str;
+        const char *str;
 {
     unsigned char mask = URL_XPALPHAS;
-    char * p;
+    const char * p;
     char * q;
     char * result;
     int unacceptable = 0;

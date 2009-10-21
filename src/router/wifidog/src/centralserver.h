@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: centralserver.h 1305 2007-11-01 20:04:20Z benoitg $ */
+/* $Id: centralserver.h 1373 2008-09-30 09:27:40Z wichert $ */
 /** @file centralserver.h
     @brief Functions to talk to the central server (auth/send stats/get rules/etc...)
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -46,7 +46,13 @@
 #define GATEWAY_MESSAGE_ACCOUNT_LOGGED_OUT     "logged-out"
 
 /** @brief Initiates a transaction with the auth server */
-t_authcode auth_server_request(t_authresponse *authresponse, char *request_type, char *ip, char *mac, char *token, unsigned long long int incoming, unsigned long long int outgoing);
+t_authcode auth_server_request(t_authresponse *authresponse,
+			const char *request_type,
+			const char *ip,
+			const char *mac,
+			const char *token,
+			unsigned long long int incoming,
+			unsigned long long int outgoing);
 
 /** @brief Tries really hard to connect to an auth server.  Returns a connected file descriptor or -1 on error */
 int connect_auth_server();

@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: conf.h 1305 2007-11-01 20:04:20Z benoitg $ */
+/* $Id: conf.h 1373 2008-09-30 09:27:40Z wichert $ */
 /** @file conf.h
     @brief Config file parsing
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -38,6 +38,7 @@
 
 /** Defaults configuration values */
 #define DEFAULT_CONFIGFILE "/tmp/etc/wifidog.conf"
+#define DEFAULT_HTMLMSGFILE "/etc/wifidog-msg.html"
 #define DEFAULT_DAEMON 1
 #define DEFAULT_DEBUGLEVEL LOG_INFO
 #define DEFAULT_HTTPDMAXCONN 10
@@ -116,6 +117,7 @@ typedef struct _trusted_mac_t {
  */
 typedef struct {
     char configfile[255];	/**< @brief name of the config file */
+    char *htmlmsgfile;		/**< @brief name of the HTML file used for messages */
     char *wdctl_sock;		/**< @brief wdctl path to socket */
     char *internal_sock;		/**< @brief internal path to socket */
     int daemon;			/**< @brief if daemon > 0, use daemon mode */
@@ -134,6 +136,9 @@ typedef struct {
 				     replying to a request */
     int httpdmaxconn;		/**< @brief Used by libhttpd, not sure what it
 				     does */
+    char *httpdrealm;		/**< @brief HTTP Authentication realm */
+    char *httpdusername;	/**< @brief Username for HTTP authentication */
+    char *httpdpassword;	/**< @brief Password for HTTP authentication */
     int clienttimeout;		/**< @brief How many CheckIntervals before a client
 				     must be re-authenticated */
     int checkinterval;		/**< @brief Frequency the the client timeout check
@@ -155,7 +160,7 @@ void config_init(void);
 void config_init_override(void);
 
 /** @brief Reads the configuration file */
-void config_read(char *filename);
+void config_read(const char *filename);
 
 /** @brief Check that the configuration is valid */
 void config_validate(void);
@@ -167,7 +172,7 @@ t_auth_serv *get_auth_server(void);
 void mark_auth_server_bad(t_auth_serv *);
 
 /** @brief Fetch a firewall rule set. */
-t_firewall_rule *get_ruleset(char *);
+t_firewall_rule *get_ruleset(const char *);
 
 void parse_trusted_mac_list(char *);
 
