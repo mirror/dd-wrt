@@ -23,7 +23,7 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <shutils.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 
 #define SERVICE_MODULE "/lib/services.so"
 
