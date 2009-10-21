@@ -2508,19 +2508,19 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 #ifdef HAVE_MADWIFI
-//	memset(bufferif2, 0, 256);
-//	getIfList(bufferif2, "ath");
-//	foreach(word, bufferif2, next) {
-//		if (contains(word, '.'))
-//			sprintf(bufferif, "%s %s", bufferif, word);
-//	}
+//      memset(bufferif2, 0, 256);
+//      getIfList(bufferif2, "ath");
+//      foreach(word, bufferif2, next) {
+//              if (contains(word, '.'))
+//                      sprintf(bufferif, "%s %s", bufferif, word);
+//      }
 	int c = getifcount("wifi");
 
 	for (i = 0; i < c; i++) {
 		char ath[32];
 
-//		sprintf(ath, "ath%d_bridged", i);
-//		if (nvram_default_match(ath, "1", "1")) 
+//              sprintf(ath, "ath%d_bridged", i);
+//              if (nvram_default_match(ath, "1", "1")) 
 		{
 			sprintf(bufferif, "%s ath%d", bufferif, i);
 			char vifs[32];
@@ -2708,14 +2708,14 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
-				int freq = get_wififreq(prefix,chan[i].freq);
-				if (freq!=-1)
-				websWrite(wp,
-					  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
-					  fr, nvram_match(wl_channel,
-							  fr) ?
-					  "selected=\\\"selected\\\"" : "", cn,
-					  (freq));
+				int freq = get_wififreq(prefix, chan[i].freq);
+				if (freq != -1)
+					websWrite(wp,
+						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
+						  fr, nvram_match(wl_channel,
+								  fr) ?
+						  "selected=\\\"selected\\\"" :
+						  "", cn, (freq));
 				// free (chan[i].freq);
 				i++;
 			}
@@ -4887,7 +4887,7 @@ void show_80211X(webs_t wp, char *prefix)
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
-	
+
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
@@ -4903,7 +4903,7 @@ void show_80211X(webs_t wp, char *prefix)
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
-	
+
 	websWrite(wp, "</div>\n");
 
 	// peap authentication
@@ -4952,7 +4952,7 @@ void show_80211X(webs_t wp, char *prefix)
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
-	
+
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
@@ -4967,8 +4967,8 @@ void show_80211X(webs_t wp, char *prefix)
 		  "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n",
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");	
-	
+	websWrite(wp, "</div>\n");
+
 	websWrite(wp, "</div>\n");
 	// leap authentication
 	websWrite(wp, "<div id=\"idleap%s\">\n", prefix);
@@ -4999,7 +4999,7 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 		  prefix, nvram_prefix_get("leap8021xphase2", prefix));
-		  
+
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
@@ -5095,7 +5095,7 @@ void show_80211X(webs_t wp, char *prefix)
 		  prefix, prefix);
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
-	
+
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.options)</script></div>\n");
@@ -5762,7 +5762,10 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	int channel = wifi_getchannel(nvram_safe_get("wifi_display"));
 
 	if (channel > 0 && channel < 1000) {
-		websWrite(wp, "%d (%d Mhz)", channel,get_wififreq(nvram_safe_get("wifi_display"),wifi_getfreq(nvram_safe_get("wifi_display"))));
+		websWrite(wp, "%d (%d Mhz)", channel,
+			  get_wififreq(nvram_safe_get("wifi_display"),
+				       wifi_getfreq(nvram_safe_get
+						    ("wifi_display"))));
 	} else
 		// websWrite (wp, "unknown");
 		websWrite(wp, "%s", live_translate("share.unknown"));
@@ -5820,9 +5823,6 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 }
 
 #endif
-
-
-
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
 int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv,
@@ -7414,17 +7414,16 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].
-					      usersize) ? db->users[i].
-				  user : "");
+					      && db->users[i].usersize) ? db->
+				  users[i].user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -7481,17 +7480,16 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].
-					      clientsize) ? db->users[i].
-				  client : "");
+					      && db->users[i].clientsize) ? db->
+				  users[i].client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",

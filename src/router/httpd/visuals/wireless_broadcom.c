@@ -147,4 +147,3 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 }
-
