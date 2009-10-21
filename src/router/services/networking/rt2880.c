@@ -158,7 +158,8 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_peap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_peap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -193,7 +194,8 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_ttls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_ttls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -221,7 +223,8 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_leap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_leap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -397,7 +400,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	deconfigure_wifi();
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W)
 	char mac[32];
-	strcpy(mac,nvram_default_get("et0macaddr_safe","00:11:22:33:44:55"));
+	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
 	MAC_ADD(mac);
 #endif
@@ -1099,20 +1102,22 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 	if (isSTA()) {
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W)
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_whwaddr", "")) {
-		sysprintf("insmod rt2860v2_sta mac=%s",nvram_safe_get("def_whwaddr"));	    
-	}else {
-		sysprintf("insmod rt2860v2_sta mac=%s",mac);
+		if (nvram_match("mac_clone_enable", "1") &&
+		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+		    nvram_invmatch("def_whwaddr", "")) {
+			sysprintf("insmod rt2860v2_sta mac=%s",
+				  nvram_safe_get("def_whwaddr"));
+		} else {
+			sysprintf("insmod rt2860v2_sta mac=%s", mac);
 		}
 #else
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_whwaddr", "")) {
-		sysprintf("insmod rt2860v2_sta mac=%s",nvram_safe_get("def_whwaddr"));	    
-	}else {
-		insmod("rt2860v2_sta");
+		if (nvram_match("mac_clone_enable", "1") &&
+		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+		    nvram_invmatch("def_whwaddr", "")) {
+			sysprintf("insmod rt2860v2_sta mac=%s",
+				  nvram_safe_get("def_whwaddr"));
+		} else {
+			insmod("rt2860v2_sta");
 		}
 #endif
 		char *dev = "wl0";
@@ -1140,20 +1145,22 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		setupSupplicant("wl0");
 	} else {
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W)
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_whwaddr", "")) {
-		sysprintf("insmod rt2860v2_ap mac=%s",nvram_safe_get("def_whwaddr"));	    
-	}else {
-		sysprintf("insmod rt2860v2_ap mac=%s",mac);
+		if (nvram_match("mac_clone_enable", "1") &&
+		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+		    nvram_invmatch("def_whwaddr", "")) {
+			sysprintf("insmod rt2860v2_ap mac=%s",
+				  nvram_safe_get("def_whwaddr"));
+		} else {
+			sysprintf("insmod rt2860v2_ap mac=%s", mac);
 		}
 #else
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_whwaddr", "")) {
-		sysprintf("insmod rt2860v2_ap mac=%s",nvram_safe_get("def_whwaddr"));	    
-	}else {
-		insmod("rt2860v2_ap");
+		if (nvram_match("mac_clone_enable", "1") &&
+		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+		    nvram_invmatch("def_whwaddr", "")) {
+			sysprintf("insmod rt2860v2_ap mac=%s",
+				  nvram_safe_get("def_whwaddr"));
+		} else {
+			insmod("rt2860v2_ap");
 		}
 #endif
 

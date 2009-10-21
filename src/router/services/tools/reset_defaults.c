@@ -91,6 +91,7 @@ static int isCritical(char *name)
 	}
 	return 0;
 }
+
 extern void load_defaults(void);
 extern void free_defaults(void);
 

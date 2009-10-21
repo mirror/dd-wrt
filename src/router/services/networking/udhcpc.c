@@ -330,7 +330,6 @@ static int bound(void)
 		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0
 		       || i++ < 10) ;
 
-
 		struct dns_lists *dns_list = NULL;
 
 		dns_to_resolv();
@@ -345,8 +344,8 @@ static int bound(void)
 					  "255.255.255.255");
 			free(dns_list);
 		}
-//		route_add(wan_ifname, 0, "0.0.0.0",
-//			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+//              route_add(wan_ifname, 0, "0.0.0.0",
+//                        nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		/*
 		 * Backup the default gateway. It should be used if L2TP connection
@@ -358,9 +357,8 @@ static int bound(void)
 		nvram_set("l2tp_server_ip", l2tpip);
 
 		route_add(wan_ifname, 0,
-				  nvram_safe_get("l2tp_server_ip"),
-				  nvram_safe_get("wan_gateway"),
-				  "255.255.255.255");
+			  nvram_safe_get("l2tp_server_ip"),
+			  nvram_safe_get("wan_gateway"), "255.255.255.255");
 
 		start_firewall();
 		start_l2tp_boot();

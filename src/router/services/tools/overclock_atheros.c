@@ -168,7 +168,6 @@ void start_overclock(void)	// hidden feature. must be called with
 	fseek(in, 0x76b, SEEK_SET);
 	int dir300mul5 = getc(in);
 
-
 	fseek(in, 0x763, SEEK_SET);
 	int dir300div6 = getc(in);
 
@@ -499,8 +498,9 @@ void start_overclock(void)	// hidden feature. must be called with
 		}
 		fclose(in);
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-	} else if (microvipermul == 0x9 || microvipermul == 0xa || microvipermul == 0xb
-		   || microvipermul == 0xc || microvipermul == 0x17) {
+	} else if (microvipermul == 0x9 || microvipermul == 0xa
+		   || microvipermul == 0xb || microvipermul == 0xc
+		   || microvipermul == 0x17) {
 
 		fprintf(stderr, "viper microredboot(ar2313) found\n");
 		if (clk == 180 && microvipermul == 0x9) {

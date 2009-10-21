@@ -770,7 +770,8 @@ static void nat_postrouting(void)
 		// ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j
 		// MASQUERADE "
 		// "--to-ports 5056-5071\n", wanface);
-		if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
+		if (nvram_match("dtag_vlan8", "1")
+		    && nvram_match("wan_vdsl", "1")) {
 			save2file
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     nvram_safe_get("tvnicfrom"),
@@ -1958,13 +1959,12 @@ static void filter_input(void)
 	// ACCEPT\n", wanface);
 #endif
 #ifdef HAVE_VNCREPEATER
-	if (nvram_match("vncr_enable", "1") && strlen(wanface))
-		{
+	if (nvram_match("vncr_enable", "1") && strlen(wanface)) {
 		save2file("-A INPUT -p tcp -i %s --dport 5900 -j ACCEPT\n",
 			  wanface);
 		save2file("-A INPUT -p tcp -i %s --dport 5500 -j ACCEPT\n",
 			  wanface);
-		}
+	}
 #endif
 
 	/*

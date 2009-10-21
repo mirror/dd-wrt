@@ -79,13 +79,13 @@ void start_vlantagging(void)
 			break;
 		}
 		if (!prio)
-		    prio="0";
+			prio = "0";
 		eval("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", tag, port);
 		char vlan_name[32];
 
 		sprintf(vlan_name, "%s.%s", tag, port);
-		eval("vconfig",vlan_name,"set_egress_map","0",prio);
+		eval("vconfig", vlan_name, "set_egress_map", "0", prio);
 
 		char var[64];
 

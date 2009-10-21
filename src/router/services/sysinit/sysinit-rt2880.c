@@ -86,7 +86,6 @@ void start_sysinit(void)
 	eval("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
 	eval("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
 
-
 	eval("mknod", "/dev/gpio", "c", "252", "0");
 
 	cprintf("sysinit() var\n");
@@ -126,56 +125,53 @@ void start_sysinit(void)
 
 	insmod("rt2860v2_ap");
 #ifdef HAVE_DIR600
-sysprintf("echo \"write 0 0 0x3300\" > /proc/rt3052/mii/ctrl");
-sysprintf("echo \"write 1 0 0x3300\" > /proc/rt3052/mii/ctrl");
-sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
-sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
+	sysprintf("echo \"write 0 0 0x3300\" > /proc/rt3052/mii/ctrl");
+	sysprintf("echo \"write 1 0 0x3300\" > /proc/rt3052/mii/ctrl");
+	sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
+	sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
 #endif
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) 
-FILE *in=fopen("/dev/mtdblock/1","rb");
-if (in!=NULL)
-    {
-    unsigned char *config=malloc(65536);
-    memset(config,0,65536);
-    fread(config,65536,1,in);
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550)
+	FILE *in = fopen("/dev/mtdblock/1", "rb");
+	if (in != NULL) {
+		unsigned char *config = malloc(65536);
+		memset(config, 0, 65536);
+		fread(config, 65536, 1, in);
 #ifdef HAVE_AR670W
-    int len = sizeof("lanmac=");
+		int len = sizeof("lanmac=");
 #else
-    int len = sizeof("ethaddr=");
+		int len = sizeof("ethaddr=");
 #endif
-    int i;
-    for (i=0;i<65535-18;i++)
-	{
+		int i;
+		for (i = 0; i < 65535 - 18; i++) {
 #ifdef HAVE_AR670W
-	if (!strncmp(&config[i],"lanmac=",7))
+			if (!strncmp(&config[i], "lanmac=", 7))
 #else
-	if (!strncmp(&config[i],"ethaddr=",8))
+			if (!strncmp(&config[i], "ethaddr=", 8))
 #endif
-	    {
+			{
 #ifdef HAVE_AR670W
-	    char *mac = &config[i+7];
+				char *mac = &config[i + 7];
 #else
-	    char *mac = &config[i+8];
+				char *mac = &config[i + 8];
 #endif
-	    if (mac[0]=='"')
-		mac++;
-	    mac[17]=0;
-	    eval("ifconfig","eth2","hw","ether",mac);
-	    nvram_set("et0macaddr_safe",mac);
-	    break;
-	    }
+				if (mac[0] == '"')
+					mac++;
+				mac[17] = 0;
+				eval("ifconfig", "eth2", "hw", "ether", mac);
+				nvram_set("et0macaddr_safe", mac);
+				break;
+			}
+		}
+		free(config);
+		fclose(in);
 	}
-    free(config);
-    fclose(in);
-    }
 #endif
-
 
 	/* switch config */
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750)	// lets load
 	{
 		eval("ifconfig", "eth2", "up");
-#ifndef HAVE_EAP9550		
+#ifndef HAVE_EAP9550
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth2", "1");	//LAN 
 		eval("vconfig", "add", "eth2", "2");	//WAN
@@ -218,29 +214,28 @@ if (in!=NULL)
 		sysprintf("switch reg w 48 1001");
 		sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_AR670W
-	sysprintf("mii_mgr -s -p 29 -r 23 -v 0x07c2");
-	sysprintf("mii_mgr -s -p 29 -r 22 -v 0x8420");
+		sysprintf("mii_mgr -s -p 29 -r 23 -v 0x07c2");
+		sysprintf("mii_mgr -s -p 29 -r 22 -v 0x8420");
 
-	sysprintf("mii_mgr -s -p 29 -r 24 -v 0x1");
-	sysprintf("mii_mgr -s -p 29 -r 25 -v 0x1");
-	sysprintf("mii_mgr -s -p 29 -r 26 -v 0x1");
-	sysprintf("mii_mgr -s -p 29 -r 27 -v 0x1");
-	sysprintf("mii_mgr -s -p 29 -r 28 -v 0x2");
-	sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
-	sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
-	sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
-
+		sysprintf("mii_mgr -s -p 29 -r 24 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 25 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 26 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 27 -v 0x1");
+		sysprintf("mii_mgr -s -p 29 -r 28 -v 0x2");
+		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
+		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
+		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
 
 #elif HAVE_EAP9550
-	sysprintf("switch reg w 14 5555");
-	sysprintf("switch reg w 40 1001");
-	sysprintf("switch reg w 44 1001");
-	sysprintf("switch reg w 48 1001");
-	sysprintf("switch reg w 4c 1");
-	sysprintf("switch reg w 50 2001");
-	sysprintf("switch reg w 70 ffffffff");
-	sysprintf("switch reg w 98 7f7f");
-	sysprintf("switch reg w e4 7f");
+		sysprintf("switch reg w 14 5555");
+		sysprintf("switch reg w 40 1001");
+		sysprintf("switch reg w 44 1001");
+		sysprintf("switch reg w 48 1001");
+		sysprintf("switch reg w 4c 1");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 70 ffffffff");
+		sysprintf("switch reg w 98 7f7f");
+		sysprintf("switch reg w e4 7f");
 #else
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
