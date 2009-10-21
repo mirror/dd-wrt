@@ -60,6 +60,9 @@ void start_wifidog(void)
 			nvram_match("wd_sslavailable", "1") ? "yes" : "no");
 		fprintf(fp, "SSLPort %s\n", nvram_safe_get("wd_sslport"));
 		fprintf(fp, "HTTPPort %s\n", nvram_safe_get("wd_httpport"));
+		if (strlen(nvram_safe_get("wd_messagefile")) > 0) {
+			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
+		}
 		fprintf(fp, "Path %s\n", nvram_safe_get("wd_path"));
 		fprintf(fp, "}\n");
 		if (strlen(nvram_safe_get("wd_config")) > 0) {
