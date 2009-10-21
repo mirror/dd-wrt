@@ -28,16 +28,6 @@
 #define SHELL "/bin/login"
 #define	_PATH_CONSOLE	"/dev/console"
 
-int sysprintf(const char *fmt, ...)
-{
-	char varbuf[256];
-	va_list args;
-
-	va_start(args, (char *)fmt);
-	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
-	va_end(args);
-	return system(varbuf);
-}
 
 
 
@@ -582,8 +572,7 @@ int main(int argc, char **argv)
 			start_service("overclocking");
 #endif
 			cprintf("RESET NVRAM VARS\n");
-			nvram_set("wl0_lazy_wds",
-				  nvram_safe_get("wl_lazy_wds"));
+			nvram_set("wl0_lazy_wds",nvram_safe_get("wl_lazy_wds"));
 
 			cprintf("RESTART\n");
 
