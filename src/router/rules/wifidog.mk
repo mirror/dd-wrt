@@ -15,4 +15,5 @@ wifidog-install:
 	mkdir -p $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.nvramconfig $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.webhotspot $(INSTALLDIR)/wifidog/etc/config
+	install -D wifidog/wifidog-msg.html $(INSTALLDIR)/wifidog/etc
 
