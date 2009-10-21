@@ -702,7 +702,7 @@ static void handle_forward(void)
 
 static void handle_qos(void)
 {
-	void *handle = NULL;	
+	void *handle = NULL;
 
 	startstop_f("wshaper");
 	startstop_f("wland");
@@ -762,7 +762,6 @@ static void handle_freeradius(void)
 	startstop_f("freeradius");
 }
 #endif
-
 
 /* 
  * static void handle_ping (void) { char *ip = nvram_safe_get ("ping_ip"); // 

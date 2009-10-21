@@ -226,10 +226,10 @@ int isCompex(void)
 int isGW2369(void)
 {
 
-    int brand = getRouterBrand();
-    if (brand == ROUTER_BOARD_GATEWORX_GW2369)
-	return 1;
-    return 0;
+	int brand = getRouterBrand();
+	if (brand == ROUTER_BOARD_GATEWORX_GW2369)
+		return 1;
+	return 0;
 }
 
 int getbuttonstate()
@@ -503,10 +503,10 @@ void period_check(int sig)
 	case ROUTER_WRT54G_V81:
 	case ROUTER_DLINK_DIR320:
 	case ROUTER_WRT600N:
-	case ROUTER_NETGEAR_WNR3500L: 
+	case ROUTER_NETGEAR_WNR3500L:
 		sesgpio = 0x16;	// gpio 6, inversed
 		break;
-	case ROUTER_WRT320N: 
+	case ROUTER_WRT320N:
 		sesgpio = 0x15;	// gpio 5, inversed
 		break;
 
