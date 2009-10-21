@@ -98,7 +98,6 @@ int getchannels(unsigned int *list, char *ifname)
 
 #include "wireless.h"
 
-
 u_int ieee80211_mhz2ieee(u_int freq)
 {
 	if (freq == 2484)
@@ -778,7 +777,7 @@ int isEMP(char *ifname)		//checks if its usually a emp card (no concrete detecti
 
 }
 
-int isXR36(char *ifname)		//checks if its usually a emp card (no concrete detection possible)
+int isXR36(char *ifname)	//checks if its usually a emp card (no concrete detection possible)
 {
 	int vendor;
 	int product;
@@ -801,13 +800,11 @@ int isXR36(char *ifname)		//checks if its usually a emp card (no concrete detect
 		fscanf(in, "%d", &product);
 		fclose(in);
 	}
-	if (vendor == 0x0777 && product == 0x3c03) //XR3.3/XR3.6/XR3.7 share the same pci id's
+	if (vendor == 0x0777 && product == 0x3c03)	//XR3.3/XR3.6/XR3.7 share the same pci id's
 		return 1;
- 	return 0;
+	return 0;
 
 }
-
-
 
 int wifi_gettxpower(char *ifname)
 {
@@ -1008,14 +1005,14 @@ int wifi_gettxpoweroffset(char *ifname)
 	return poweroffset;
 }
 
-int get_wififreq(char *ifname,int freq)
+int get_wififreq(char *ifname, int freq)
 {
 #ifdef HAVE_NS3
 	return -2000;
 #endif
 	if (isEMP(ifname)) {
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
-			return freq-2400;
+			return freq - 2400;
 	}
 	char *var = NULL;
 	if (ifname) {
@@ -1024,7 +1021,7 @@ int get_wififreq(char *ifname,int freq)
 		var = nvram_get(localvar);
 	}
 	if (var) {
-		return freq+atoi(var);
+		return freq + atoi(var);
 	}
 	int vendor;
 	int devcount;
@@ -1042,78 +1039,78 @@ int get_wififreq(char *ifname,int freq)
 	}
 	switch (vendor) {
 	case 9:		// ubnt xr9
-		if (freq<2427 || freq>2442)
-		    return -1;
-		return freq-(2427 - 907);
-	break;
+		if (freq < 2427 || freq > 2442)
+			return -1;
+		return freq - (2427 - 907);
+		break;
 	case 4:		// ubnt sr9
-		switch (freq) // mmh weired order
+		switch (freq)	// mmh weired order
 		{
 		case 2422:
-		    return 922;
-		break;
+			return 922;
+			break;
 		case 2423:
-		    return 921;
-		break;
+			return 921;
+			break;
 		case 2424:
-		    return 920;
-		break;
+			return 920;
+			break;
 		case 2425:
-		    return 919;
-		break;
+			return 919;
+			break;
 		case 2426:
-		    return 918;
-		break;
+			return 918;
+			break;
 		case 2427:
-		    return 917;
-		break;
+			return 917;
+			break;
 		case 2428:
-		    return 916;
-		break;
+			return 916;
+			break;
 		case 2429:
-		    return 915;
-		break;
+			return 915;
+			break;
 		case 2430:
-		    return 914;
-		break;
+			return 914;
+			break;
 		case 2431:
-		    return 913;
-		break;
+			return 913;
+			break;
 		case 2432:
-		    return 912;
-		break;
+			return 912;
+			break;
 		case 2433:
-		    return 911;
-		break;
+			return 911;
+			break;
 		case 2434:
-		    return 910;
-		break;
+			return 910;
+			break;
 		case 2435:
-		    return 909;
-		break;
+			return 909;
+			break;
 		case 2436:
-		    return 908;
-		break;
+			return 908;
+			break;
 		case 2437:
-		    return 907;
-		break;
+			return 907;
+			break;
 		}
 		return -1;
 	case 13:
-		return freq-(5540 - 3540);	// xr3 general 3,5 ghz
+		return freq - (5540 - 3540);	// xr3 general 3,5 ghz
 	case 1328:
-		return freq-(5540 - 2840);	// xr3 special 2.8 ghz
+		return freq - (5540 - 2840);	// xr3 special 2.8 ghz
 	case 1336:
 		if (nvram_nmatch("2", "%s_cardtype", ifname))
-			return freq-(5765 - 3658); // xr3 3.7 ghz
+			return freq - (5765 - 3658);	// xr3 3.7 ghz
 		else
-			return freq-(5540 - 3340); // xr3 special 3.3/3.6 ghz
+			return freq - (5540 - 3340);	// xr3 special 3.3/3.6 ghz
 	case 7:
-		if (freq<2427 || freq>2442)
-		    return -1;
-		return freq-(2427 - 763);	// xr7 
+		if (freq < 2427 || freq > 2442)
+			return -1;
+		return freq - (2427 - 763);	// xr7 
 	case 14:
-		return freq-(5540 - 4516);	// xr4 
+		return freq - (5540 - 4516);	// xr4 
 		// case 24:
 		// return -(5540-4540); //sr4 
 	default:
@@ -1686,10 +1683,7 @@ int getassoclist(char *ifname, unsigned char *list)
 
 #endif
 
-
-
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-
 
 /*
  * int wl_probe (char *name) { int ret, val;

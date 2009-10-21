@@ -2563,11 +2563,11 @@ int led_control(int type, int act)
 	{
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_PB42:
-	#ifdef HAVE_WP543
-		diag_gpio=0x107;
-		connected_gpio=0x106;	
-	#endif 
-	break;
+#ifdef HAVE_WP543
+		diag_gpio = 0x107;
+		connected_gpio = 0x106;
+#endif
+		break;
 	case ROUTER_ALLNET01:
 		connected_gpio = 0x100;
 		break;
@@ -2580,7 +2580,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x106;
 		break;
 	case ROUTER_BOARD_GATEWORX_GW2369:
-		connected_gpio = 0x102;	
+		connected_gpio = 0x102;
 		break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
@@ -2591,7 +2591,7 @@ int led_control(int type, int act)
 		wlan_gpio = 0x104;
 #else
 		if (nvram_match("DD_BOARD", "Cambria GW2350")
-			   || nvram_match("DD_BOARD2", "Cambria GW2350"))
+		    || nvram_match("DD_BOARD2", "Cambria GW2350"))
 			connected_gpio = 0x105;
 		else if (nvram_match("DD_BOARD", "Cambria GW2358-4")
 			 || nvram_match("DD_BOARD2", "Cambria GW2358-4"))
