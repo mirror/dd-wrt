@@ -13,7 +13,7 @@ static void watchdog(void)
 	int registered = -1;
 	int radiostate = -1;
 	int oldstate = -1;
-	int counter=0;
+	int counter = 0;
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
 
 	if (fd == -1) {
@@ -72,13 +72,12 @@ static void watchdog(void)
 		/* 
 		 * end software wlan led control 
 		 */
-		
+
 		sleep(10);
-		if (nvram_match("warn_enabled","1"))
-		{
-		counter++;
-		if (!(counter%60))
-		    system("notifier&"); // 
+		if (nvram_match("warn_enabled", "1")) {
+			counter++;
+			if (!(counter % 60))
+				system("notifier&");	// 
 		}
 	}
 }

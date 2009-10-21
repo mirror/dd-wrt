@@ -225,7 +225,7 @@ static struct MAIN maincalls[] = {
 #endif
 	// {"nvram", NULL, &nvram_main},
 #ifdef HAVE_ROAMING
-//	{"roaming_daemon", NULL, &roaming_daemon_main},
+//      {"roaming_daemon", NULL, &roaming_daemon_main},
 	{"supplicant", "supplicant", NULL},
 #endif
 	{"get_wanface", NULL, &get_wanface},

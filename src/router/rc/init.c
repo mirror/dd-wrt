@@ -28,9 +28,6 @@
 #define SHELL "/bin/login"
 #define	_PATH_CONSOLE	"/dev/console"
 
-
-
-
 #define start_service(a) sysprintf("startservice %s",a);
 #define start_service_f(a) sysprintf("startservice_f %s",a);
 #define start_services() system("startservices");
@@ -402,7 +399,7 @@ int main(int argc, char **argv)
 	initlcd();
 	cprintf("first message\n");
 	lcdmessage("System Start");
-	fprintf(stderr,"start service\n");
+	fprintf(stderr, "start service\n");
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
 	start_service("drivers");
@@ -572,20 +569,22 @@ int main(int argc, char **argv)
 			start_service("overclocking");
 #endif
 			cprintf("RESET NVRAM VARS\n");
-			nvram_set("wl0_lazy_wds",nvram_safe_get("wl_lazy_wds"));
+			nvram_set("wl0_lazy_wds",
+				  nvram_safe_get("wl_lazy_wds"));
 
 			cprintf("RESTART\n");
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 			for (c = 0; c < cnt; c++) {
-				sysprintf("wlconf %s down", get_wl_instance_name(c));
+				sysprintf("wlconf %s down",
+					  get_wl_instance_name(c));
 				char *next;
 				char var[80];
 				char *vifs = nvram_nget("wl%d_vifs", c);
 
 				if (vifs != NULL)
 					foreach(var, vifs, next) {
-					sysprintf ("ifconfig %s down", var);
+					sysprintf("ifconfig %s down", var);
 					}
 			}
 #endif
@@ -708,7 +707,7 @@ int main(int argc, char **argv)
 			    && nvram_match("radiooff_boot_off", "1")) {
 				for (c = 0; c < cnt; c++) {
 					sysprintf("wl -i %s radio off",
-					     get_wl_instance_name(c));
+						  get_wl_instance_name(c));
 				}
 				led_control(LED_SEC0, LED_OFF);
 				led_control(LED_SEC1, LED_OFF);
