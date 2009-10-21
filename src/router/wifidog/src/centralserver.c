@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: centralserver.c 1305 2007-11-01 20:04:20Z benoitg $ */
+/* $Id: centralserver.c 1377 2008-09-30 10:36:25Z wichert $ */
 /** @file centralserver.c
   @brief Functions to talk to the central server (auth/send stats/get rules/etc...)
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -62,12 +62,14 @@ extern pthread_mutex_t	config_mutex;
 @param outgoing Current counter of the client's total outgoing traffic, in bytes 
 */
 t_authcode
-auth_server_request(t_authresponse *authresponse, char *request_type, char *ip, char *mac, char *token, unsigned long long int incoming, unsigned long long int outgoing)
+auth_server_request(t_authresponse *authresponse, const char *request_type, const char *ip, const char *mac, const char *token, unsigned long long int incoming, unsigned long long int outgoing)
 {
 	int sockfd;
-	size_t	numbytes, totalbytes;
+	ssize_t	numbytes;
+	size_t totalbytes;
 	char buf[MAX_BUF];
 	char *tmp;
+        char *safe_token;
 	int done, nfds;
 	fd_set			readfds;
 	struct timeval		timeout;
@@ -88,8 +90,9 @@ auth_server_request(t_authresponse *authresponse, char *request_type, char *ip, 
 	 * everywhere.
 	 */
 	memset(buf, 0, sizeof(buf));
+        safe_token=httpdUrlEncode(token);
 	snprintf(buf, (sizeof(buf) - 1),
-		"GET %s%sstage=%s&ip=%s&mac=%s&token=%s&incoming=%llu&outgoing=%llu HTTP/1.0\r\n"
+		"GET %s%sstage=%s&ip=%s&mac=%s&token=%s&incoming=%llu&outgoing=%llu&gw_id=%s HTTP/1.0\r\n"
 		"User-Agent: WiFiDog %s\r\n"
 		"Host: %s\r\n"
 		"\r\n",
@@ -98,12 +101,15 @@ auth_server_request(t_authresponse *authresponse, char *request_type, char *ip, 
 		request_type,
 		ip,
 		mac,
-		token,
+		safe_token,
 		incoming,
 		outgoing,
+                config_get_config()->gw_id,
 		VERSION,
 		auth_server->authserv_hostname
 	);
+
+        free(safe_token);
 
 	debug(LOG_DEBUG, "Sending HTTP request to auth server: [%s]\n", buf);
 	send(sockfd, buf, strlen(buf), 0);
