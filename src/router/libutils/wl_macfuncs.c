@@ -23,7 +23,6 @@
 #include <string.h>
 #include <memory.h>
 
-
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
 #include <sys/file.h>
