@@ -28,7 +28,7 @@ CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -fpic 
+CFLAGS	+= -fPIC
 LDFLAGS += -L.
 OBJS := nvparse.o utils.o linux_osl.o
 #defaults.o
