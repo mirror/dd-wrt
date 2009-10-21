@@ -15,4 +15,3 @@ static char *UPTIME(int uptime)
 			uptime % 60);
 	return str;
 }
-

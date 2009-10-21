@@ -769,11 +769,11 @@ static void handle_request(void)
 //      free(line);
 		return;
 	}
-	int nodetect=0;
-	if (nvram_match("status_auth", "0") && endswith(file,"Info.htm"))
-		nodetect=1;
+	int nodetect = 0;
+	if (nvram_match("status_auth", "0") && endswith(file, "Info.htm"))
+		nodetect = 1;
 
-	if (referer && host && nodetect==0) {
+	if (referer && host && nodetect == 0) {
 		int i;
 		int hlen = strlen(host);
 		int rlen = strlen(referer);
@@ -940,7 +940,7 @@ static void handle_request(void)
 
 	} else
 #endif
- {
+	{
 		/* extract url args if present */
 		query = strchr(file, '?');
 		if (query) {
@@ -964,9 +964,10 @@ static void handle_request(void)
 #endif
 		{
 			if (((nvram_match("http_username", DEFAULT_USER)
-			     && nvram_match("http_passwd", DEFAULT_PASS))
-			    || nvram_match("http_username", "")
-			    || nvram_match("http_passwd", "admin")) && !endswith(file, "register.asp")){
+			      && nvram_match("http_passwd", DEFAULT_PASS))
+			     || nvram_match("http_username", "")
+			     || nvram_match("http_passwd", "admin"))
+			    && !endswith(file, "register.asp")) {
 				changepassword = 1;
 				if (endswith(file, ".asp"))
 					file = "changepass.asp";
@@ -1055,7 +1056,8 @@ static void handle_request(void)
 				} else {
 					if (handler->send_headers)
 						send_headers(200, "Ok",
-							     handler->extra_header,
+							     handler->
+							     extra_header,
 							     handler->mime_type,
 							     0, NULL);
 				}
