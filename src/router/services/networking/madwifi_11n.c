@@ -72,7 +72,6 @@ static void setdistance(char *device, int distance, int chanbw)
 
 // returns the number of installed atheros devices/cards
 
-
 void deconfigure_single_11n(int count)
 {
 	char *next;
@@ -117,7 +116,6 @@ void deconfigure_single_11n(int count)
 	}
 
 }
-
 
 static int need_commit = 0;
 
@@ -167,10 +165,6 @@ static void setupKey(char *prefix)
 	}
 
 }
-
-
-
-
 
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
 static void set_scanlist(char *dev, char *wif)
@@ -507,8 +501,8 @@ void configure_single_11n(int count)
 	foreach(var, vifs, next) {
 		countvaps++;
 	}
-	if (countvaps<4)
-	    countvaps=4;
+	if (countvaps < 4)
+		countvaps = 4;
 	if (countvaps > vapcount)
 		vapcount = countvaps;
 
@@ -562,8 +556,8 @@ void configure_single_11n(int count)
 			     dev, wif);
 
 	} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-		sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode ap", dev,
-			  wif);
+		sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode ap",
+			  dev, wif);
 	else
 		sysprintf
 		    ("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
@@ -1127,7 +1121,8 @@ void configure_single_11n(int count)
 			continue;
 		hwaddr = nvram_get(wdsmacname);
 		if (hwaddr != NULL) {
-			sysprintf("80211n_wlanconfig %s nawdslist %s", primary, hwaddr);
+			sysprintf("80211n_wlanconfig %s nawdslist %s", primary,
+				  hwaddr);
 			set_rate(dev, primary);
 		}
 	}

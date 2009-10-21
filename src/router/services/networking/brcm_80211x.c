@@ -202,7 +202,8 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_peap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_peap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -237,7 +238,8 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_ttls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_ttls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -265,7 +267,8 @@ void setupSupplicant(char *prefix)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_leap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_leap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);

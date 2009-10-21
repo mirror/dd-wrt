@@ -1074,7 +1074,7 @@ void start_l2tp(int status)
 #endif
 #ifdef HAVE_PPTP
 	stop_pptp();
-#endif	
+#endif
 	stop_l2tp();
 	stop_l2tp();
 
@@ -1101,7 +1101,6 @@ void start_l2tp(int status)
 port = 1701
 ;auth file = /etc/xl2tpd/xl2tp-secrets
 
-
 [lac fbnl2tpserver]
 lns = 10.64.1.237
 require chap = yes
@@ -1114,15 +1113,14 @@ pppoptfile = /etc/xl2tpd/options.l2tp
 length bit = yes
 */
 
-
 		fprintf(fp, "[global]\n");	// Global section
 		fprintf(fp, "port = 1701\n");	// Bind address
-		fprintf(fp, "[lac %s]\n",nvram_safe_get("l2tp_server_name"));
-		fprintf(fp, "lns = %s\n",nvram_safe_get("l2tp_server_name"));
+		fprintf(fp, "[lac %s]\n", nvram_safe_get("l2tp_server_name"));
+		fprintf(fp, "lns = %s\n", nvram_safe_get("l2tp_server_name"));
 		fprintf(fp, "require chap = yes\n");
 		fprintf(fp, "refuse pap = yes\n");
 		fprintf(fp, "require authentication = yes\n");
-		fprintf(fp, "name = %s\n",username);
+		fprintf(fp, "name = %s\n", username);
 		fprintf(fp, "pppoptfile = /tmp/ppp/options\n");
 		fprintf(fp, "length bit = yes\n");
 		fclose(fp);
@@ -1135,17 +1133,15 @@ length bit = yes
 			return;
 		}
 
-			if (nvram_match("mtu_enable", "1")) {
-				if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-					fprintf(fp, "mtu %s\n",
-						nvram_safe_get("wan_mtu"));
-					fprintf(fp, "mru %s\n",
-						nvram_safe_get("wan_mtu"));
-				}
-
+		if (nvram_match("mtu_enable", "1")) {
+			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+				fprintf(fp, "mtu %s\n",
+					nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mru %s\n",
+					nvram_safe_get("wan_mtu"));
 			}
 
-
+		}
 
 		fprintf(fp, "defaultroute\n");	// Add a default route to the 
 		// system routing tables,
@@ -1158,7 +1154,6 @@ length bit = yes
 		fprintf(fp, "user '%s'\n", username);
 		// fprintf(fp, "persist\n"); // Do not exit after a connection is
 		// terminated.
-
 
 		if (nvram_match("ppp_demand", "1")) {	// demand mode
 			fprintf(fp, "idle %d\n",
@@ -1201,7 +1196,7 @@ length bit = yes
 		// peer
 		fprintf(fp, "lock\n");
 		fprintf(fp, "noauth\n");
-//		fprintf(fp, "debug\n");
+//              fprintf(fp, "debug\n");
 
 		fclose(fp);
 
@@ -1260,9 +1255,9 @@ length bit = yes
 		 */
 		else
 			eval("listen", nvram_safe_get("lan_ifname"));
-	} else
-	{
-	sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",nvram_safe_get("l2tp_server_name"));
+	} else {
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",
+			  nvram_safe_get("l2tp_server_name"));
 	}
 
 	cprintf("done\n");
@@ -1456,7 +1451,8 @@ void start_force_to_dial(void)
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp")) {
 
-		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",nvram_safe_get("l2tp_server_name"));
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",
+			  nvram_safe_get("l2tp_server_name"));
 		return;
 	}
 #endif
