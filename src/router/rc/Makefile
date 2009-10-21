@@ -31,6 +31,18 @@ CFLAGS += -fomit-frame-pointer
 endif
 endif
 
+cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
+             > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
+
+
+
+INITCFLAGS = $(call cc-option,-Os -fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
+# -fno-guess-branch-probability: prohibit pseudo-random guessing
+# of branch probabilities (hopefully makes bloatcheck more stable):
+INITCFLAGS += $(call cc-option,-fno-guess-branch-probability,)
+INITCFLAGS += $(call cc-option,-funsigned-char -static-libgcc,)
+INITCFLAGS += $(call cc-option,-falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1,)
+
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 OBJS := rc.o servicemanager.o event.o
@@ -532,7 +544,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 all: rc
 
 clean:
-	rm -f *.o *.a rc
+	rm -f *.o rc
 	rm -f *.c~
 
 install: all
@@ -672,7 +684,11 @@ endif
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless
 	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
-	$(CC) $(CFLAGS) -o init init.c -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -ldl -lutils
+ifeq ($(CONFIG_LSX),y)
+	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
+else
+	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils
+endif
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
