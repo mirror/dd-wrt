@@ -18,6 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  * $Id:
+ * this module detects various special 3G/CDMA USB Devices which is required to handle them correct, since some devices
+ * are using non standard tty interfaces. everything which is not handled here in this list, is supported by the default tty handling which means dialin on tty0
  */
 
 #include <stdio.h>
