@@ -770,7 +770,7 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		show_preshared(wp, prefix);
 #endif
 	else if (!strcmp(security_mode, "radius"))
-		show_radius(wp, prefix, 1,0);
+		show_radius(wp, prefix, 1, 0);
 	else if (!strcmp(security_mode, "wpa")
 		 || !strcmp(security_mode, "wpa2")
 		 || !strcmp(security_mode, "wpa wpa2"))

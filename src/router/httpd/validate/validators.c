@@ -809,7 +809,6 @@ void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 
 	if (!valid_ipaddr(wp, lan_ipaddr, v))
 		return;
-	
 
 	if (strcmp(nvram_safe_get("lan_ipaddr"), lan_ipaddr)) {
 		unlink("/tmp/udhcpd.leases");

@@ -27,8 +27,6 @@
 
 #include "wireless_generic.c"
 
-
-
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
