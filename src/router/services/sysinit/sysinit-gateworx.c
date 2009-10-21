@@ -149,7 +149,7 @@ void start_sysinit(void)
 	/*
 	 * /proc 
 	 */
-	fprintf(stderr,"mount devices\n");
+	fprintf(stderr, "mount devices\n");
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 	// system2 ("/etc/convert");
 	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
@@ -166,7 +166,7 @@ void start_sysinit(void)
 	 * eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
 	 * eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop"); 
 	 */
-	fprintf(stderr,"create folders\n");
+	fprintf(stderr, "create folders\n");
 	eval("mkdir", "/tmp/www");
 	eval("mknod", "/dev/gpio", "c", "127", "0");
 	eval("mknod", "/dev/nvram", "c", "229", "0");
@@ -197,14 +197,13 @@ void start_sysinit(void)
 	mkdir("/var/run", 0777);
 	mkdir("/var/tmp", 0777);
 
-
 	cprintf("sysinit() setup console\n");
 
 	/*
 	 * Setup console 
 	 */
 
-	fprintf(stderr,"set console loglevel\n");
+	fprintf(stderr, "set console loglevel\n");
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
@@ -214,13 +213,12 @@ void start_sysinit(void)
 	 */
 	uname(&name);
 
-
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
 //    checkupdate(  );
 #endif
 #endif
-	fprintf(stderr,"try modules for ethernet adapters\n");
+	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
 	if (detect("82541"))	// Intel Gigabit
 	{
@@ -231,32 +229,28 @@ void start_sysinit(void)
 	{
 		nvram_set("intel_eth", "1");
 		insmod("8139too");
-	}
-	else if (detect("8139"))	// Realtek 8139 Adapter (various notebooks) 
+	} else if (detect("8139"))	// Realtek 8139 Adapter (various notebooks) 
 	{
 		nvram_set("intel_eth", "1");
 		insmod("8139too");
-	}
-	else if (detect("DFE-690TXD"))	// Realtek 8139 Adapter (various
+	} else if (detect("DFE-690TXD"))	// Realtek 8139 Adapter (various
 	{
 		// notebooks) 
 		nvram_set("intel_eth", "1");
 		insmod("8139too");
-	}
-	else if (detect("SMC2-1211TX"))	// Realtek 8139 Adapter (various
-	{	// notebooks) 
+	} else if (detect("SMC2-1211TX"))	// Realtek 8139 Adapter (various
+	{			// notebooks) 
 		nvram_set("intel_eth", "1");
 		insmod("8139too");
-	}
-	else if (detect("Robotics"))	// Realtek 8139 Adapter (various
-	{	// notebooks) 
+	} else if (detect("Robotics"))	// Realtek 8139 Adapter (various
+	{			// notebooks) 
 		nvram_set("intel_eth", "1");
 		insmod("8139too");
 	}
 #ifndef HAVE_NOWIFI
-	fprintf(stderr,"load HAL Driver\n");
+	fprintf(stderr, "load HAL Driver\n");
 	insmod("ath_hal");
-	fprintf(stderr,"load ATH Driver\n");
+	fprintf(stderr, "load ATH Driver\n");
 	if (nvram_get("rate_control") != NULL) {
 		char rate[64];
 
@@ -271,18 +265,18 @@ void start_sysinit(void)
 #endif
 
 #if 1
-	fprintf(stderr,"load IXP helper\n");
+	fprintf(stderr, "load IXP helper\n");
 	insmod("ixp400th");
-	fprintf(stderr,"load IXP Core Driver\n");
+	fprintf(stderr, "load IXP Core Driver\n");
 	insmod("ixp400");
-//	system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-	fprintf(stderr,"load IXP Ethernet Driver\n");
+//      system2("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+	fprintf(stderr, "load IXP Ethernet Driver\n");
 	insmod("ixp400_eth");
-	fprintf(stderr,"initialize Ethernet\n");
+	fprintf(stderr, "initialize Ethernet\n");
 	eval("ifconfig", "ixp0", "0.0.0.0", "up");
 	eval("ifconfig", "ixp1", "0.0.0.0", "up");
 #ifndef HAVE_WAVESAT
-	fprintf(stderr,"Load OCF Drivers\n");
+	fprintf(stderr, "Load OCF Drivers\n");
 	insmod("ocf");
 	insmod("cryptodev");
 #endif
@@ -306,7 +300,7 @@ void start_sysinit(void)
 
 	// insmod("ipv6");
 
-	fprintf(stderr,"Load Sensor Driver\n");
+	fprintf(stderr, "Load Sensor Driver\n");
 	insmod("ad7418");	// temp / voltage sensor
 	/*
 	 * Configure mac addresses by reading data from eeprom 
@@ -337,7 +331,7 @@ void start_sysinit(void)
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
 			copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure IXP0 to %s\n", mac);
-		nvram_set("et0macaddr_safe",mac);
+		nvram_set("et0macaddr_safe", mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
 		fseek(file, 0x43b, SEEK_SET);
 		fread(&buf[6], 6, 1, file);
@@ -354,7 +348,7 @@ void start_sysinit(void)
 #else
 	char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
 												 */
-	fprintf(stderr,"Read MAC Addresses from EEPROM\n");
+	fprintf(stderr, "Read MAC Addresses from EEPROM\n");
 	FILE *file = fopen(filename, "r");
 
 	if (file) {
@@ -370,7 +364,7 @@ void start_sysinit(void)
 			copy[i] = buf[i] & 0xff;
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
 			copy[2], copy[3], copy[4], copy[5]);
-		nvram_set("et0macaddr_safe",mac);
+		nvram_set("et0macaddr_safe", mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7],
 			copy[8], copy[9], copy[10], copy[11]);
@@ -387,7 +381,7 @@ void start_sysinit(void)
 		// for this
 		// switch
 	{
-	fprintf(stderr,"Load SPI Kendin Switch Driver\n");
+		fprintf(stderr, "Load SPI Kendin Switch Driver\n");
 		insmod("spi-algo-bit");
 		if (nvram_match("DD_BOARD", "Avila GW2355"))
 			insmod("spi-ixp4xx-gw2355");
@@ -400,7 +394,7 @@ void start_sysinit(void)
 
 	char filename2[64];
 
-	fprintf(stderr,"Detect additional Device capabilities\n");
+	fprintf(stderr, "Detect additional Device capabilities\n");
 	sprintf(filename2, "/dev/mtdblock/%d", getMTD("RedBoot"));
 	file = fopen(filename2, "r");
 	if (file) {
@@ -427,7 +421,7 @@ void start_sysinit(void)
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 				copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure IXP0 to %s\n", mac);
-			nvram_set("et0macaddr_safe",mac);
+			nvram_set("et0macaddr_safe", mac);
 			eval("ifconfig", "ixp0", "hw", "ether", mac);
 			fseek(file, 0x1f818, SEEK_SET);
 			fread(&buf[6], 6, 1, file);
@@ -442,10 +436,6 @@ void start_sysinit(void)
 		}
 		fclose(file);
 	}
-
-
-
-
 
 #ifdef HAVE_MAKSAT
 	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro"))
@@ -467,8 +457,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -487,8 +477,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -540,8 +530,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -566,25 +556,24 @@ void start_sysinit(void)
 	}
 #endif
 
-
 	/* cf capability ? */
 	char *modelname = nvram_safe_get("DD_BOARD");
-	if (!strncmp(modelname,"Gateworks Avila GW2348",22) || !strcmp(modelname,"Gateworks Cambria GW2358-4")) {
-	fprintf(stderr,"Load CF Card Driver\n");
-	    insmod("pata_ixp4xx_cf");
-	}    
+	if (!strncmp(modelname, "Gateworks Avila GW2348", 22)
+	    || !strcmp(modelname, "Gateworks Cambria GW2358-4")) {
+		fprintf(stderr, "Load CF Card Driver\n");
+		insmod("pata_ixp4xx_cf");
+	}
 
 	/* watchdog type */
-	fprintf(stderr,"Load Hardware Watchdog\n");
+	fprintf(stderr, "Load Hardware Watchdog\n");
 	insmod("ixp4xx_wdt");
-	fprintf(stderr,"blink led\n");
+	fprintf(stderr, "blink led\n");
 	eval("ledtool", "1", "1");	// blink the led 4 times
-	
 
-	fprintf(stderr,"Enable Watchdog\n");
+	fprintf(stderr, "Enable Watchdog\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");	// system watchdog
-	
+
 	/*
 	 * Set a sane date 
 	 */

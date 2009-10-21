@@ -582,7 +582,7 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
-	
+
 	struct nvram_tuple wrt320vlan[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "vlan1 eth1", 0},
@@ -881,21 +881,22 @@ void start_restore_defaults(void)
 		 * adjust ip_conntrack_max based on available memory size
 		 * some routers that can run micro only have 16MB memory
 		 */
-	FILE *fmem = fopen("/proc/meminfo", "r");
-	char line[128];
-	unsigned long msize = 0;
-	
-	if (fmem != NULL) {
-	fgets(line, sizeof(line), fmem);  //eat first line
-	fgets(line, sizeof(line), fmem);
-	if (sscanf(line, "%*s %lu", &msize) == 1) {
-		if (msize > (8 * 1024 * 1024) ) {
-			nvram_set ("ip_conntrack_max", "4096");
-			nvram_set ("ip_conntrack_tcp_timeouts", "3600");
+		FILE *fmem = fopen("/proc/meminfo", "r");
+		char line[128];
+		unsigned long msize = 0;
+
+		if (fmem != NULL) {
+			fgets(line, sizeof(line), fmem);	//eat first line
+			fgets(line, sizeof(line), fmem);
+			if (sscanf(line, "%*s %lu", &msize) == 1) {
+				if (msize > (8 * 1024 * 1024)) {
+					nvram_set("ip_conntrack_max", "4096");
+					nvram_set("ip_conntrack_tcp_timeouts",
+						  "3600");
+				}
 			}
+			fclose(fmem);
 		}
-	fclose (fmem);
-	}
 #endif
 		/*
 		 * these unsets are important for routers where we can't erase nvram
@@ -1287,7 +1288,7 @@ void start_restore_defaults(void)
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_WRT320N:
 				nvram_unset("vlan0hwname");
-				break;			
+				break;
 			case ROUTER_LINKSYS_WTR54GS:
 				nvram_set("vlan0ports", "0 5*");
 				break;
@@ -1332,7 +1333,7 @@ void start_restore_defaults(void)
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_WRT320N:
 				nvram_set("vlan2ports", "0 8");
-			break;			
+				break;
 			case ROUTER_LINKSYS_WTR54GS:
 				nvram_set("vlan1ports", "1 5");
 				break;
@@ -1365,16 +1366,16 @@ void start_restore_defaults(void)
 		}
 
 	}
-	
-	if (restore_defaults) { //hack for VLAN page display for some routers: lan is on vlan1, wan is on vlan2
+
+	if (restore_defaults) {	//hack for VLAN page display for some routers: lan is on vlan1, wan is on vlan2
 		if (strlen(nvram_safe_get("vlan1ports")) == 10) {
-				nvram_set("port0vlans", "2");
-				nvram_set("port1vlans", "1");
-				nvram_set("port2vlans", "1");
-				nvram_set("port3vlans", "1");
-				nvram_set("port4vlans", "1");
-				nvram_set("port5vlans", "1 2 16");
-		}	
+			nvram_set("port0vlans", "2");
+			nvram_set("port1vlans", "1");
+			nvram_set("port2vlans", "1");
+			nvram_set("port3vlans", "1");
+			nvram_set("port4vlans", "1");
+			nvram_set("port5vlans", "1 2 16");
+		}
 	}
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
@@ -1417,16 +1418,16 @@ void start_restore_defaults(void)
 	nvram_unset("probe_blacklist");
 
 	if (nvram_get("overclocking") == NULL) {
-        char *clk = nvram_safe_get("clkfreq"); 
-        char dup[64]; 
+		char *clk = nvram_safe_get("clkfreq");
+		char dup[64];
 
-        strcpy(dup, clk); 
-        int j; 
-        for (j = 0; j < strlen(dup); j++) 
-            if (dup[j] == ',') 
-                     dup[j] = 0; 
+		strcpy(dup, clk);
+		int j;
+		for (j = 0; j < strlen(dup); j++)
+			if (dup[j] == ',')
+				dup[j] = 0;
 
-        nvram_set("overclocking", dup);
+		nvram_set("overclocking", dup);
 	}
 	cprintf("start overclocking\n");
 	start_overclocking();

@@ -34,11 +34,10 @@
 #include <services.h>
 #include <radiusdb.h>
 
-
 void start_gen_radius_cert(void)
 {
-	if (nvram_match("cert_running","1") && pidof("openssl") > 0)
-	    return; //already running
+	if (nvram_match("cert_running", "1") && pidof("openssl") > 0)
+		return;		//already running
 	FILE *fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
 	if (NULL == fp) {
 		//prepare files
@@ -47,13 +46,19 @@ void start_gen_radius_cert(void)
 	} else
 		fclose(fp);
 
-	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER,nvram_safe_get("radius_common"),nvram_safe_get("radius_passphrase"));
-	gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA,nvram_safe_get("radius_common"),nvram_safe_get("radius_passphrase"));
-	nvram_set("cert_running","1");
+	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER,
+		 nvram_safe_get("radius_common"),
+		 nvram_safe_get("radius_passphrase"));
+	gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA,
+		 nvram_safe_get("radius_common"),
+		 nvram_safe_get("radius_passphrase"));
+	nvram_set("cert_running", "1");
 	//this takes a long time (depending from the cpu speed)
 	system("cd /jffs/etc/freeradius/certs && ./bootstrap");
-	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf",nvram_safe_get("radius_passphrase"));
-	nvram_set("cert_running","0");
+	sysprintf
+	    ("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf",
+	     nvram_safe_get("radius_passphrase"));
+	nvram_set("cert_running", "0");
 }
 
 void start_freeradius(void)
@@ -92,8 +97,12 @@ void start_freeradius(void)
 	} else
 		fclose(fp);
 
-	sysprintf("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",nvram_safe_get("radius_port"));
-	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf",nvram_safe_get("radius_passphrase"));
+	sysprintf
+	    ("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",
+	     nvram_safe_get("radius_port"));
+	sysprintf
+	    ("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf",
+	     nvram_safe_get("radius_passphrase"));
 
 	fp = fopen("/jffs/etc/freeradius/certs/server.pem", "rb");
 	if (NULL == fp) {
@@ -104,77 +113,85 @@ void start_freeradius(void)
 	int i;
 
 	/* generate clients */
-{
-	struct radiusclientdb *db = loadradiusclientdb();
-	if (db)
 	{
-	fp = fopen("/jffs/etc/freeradius/clients.conf", "wb");
-	system("touch /jffs/etc/freeradius/clients.manual");
-	fprintf(fp, "$INCLUDE clients.manual\n");
-	
-	for (i = 0; i < db->usercount; i++) {
-		if (!db->users[i].clientsize)
-		    continue;
-		if (!db->users[i].client || !strlen(db->users[i].client))
-		    continue;
-		fprintf(fp, "client %s {\n"
-			    "\tsecret = %s\n"
-			    "\tshortname = DD-WRT-RADIUS\n}\n",db->users[i].client, db->users[i].passwd);
+		struct radiusclientdb *db = loadradiusclientdb();
+		if (db) {
+			fp = fopen("/jffs/etc/freeradius/clients.conf", "wb");
+			system("touch /jffs/etc/freeradius/clients.manual");
+			fprintf(fp, "$INCLUDE clients.manual\n");
+
+			for (i = 0; i < db->usercount; i++) {
+				if (!db->users[i].clientsize)
+					continue;
+				if (!db->users[i].client
+				    || !strlen(db->users[i].client))
+					continue;
+				fprintf(fp, "client %s {\n"
+					"\tsecret = %s\n"
+					"\tshortname = DD-WRT-RADIUS\n}\n",
+					db->users[i].client,
+					db->users[i].passwd);
+			}
+
+			fclose(fp);
+			freeradiusclientdb(db);
+		}
 	}
-	
-	
-	fclose(fp);
-	freeradiusclientdb(db);
-	}
-}	
 
 	/* now generate users */
-{
-	struct radiusdb *db = loadradiusdb();
-	if (db)
 	{
-	fp = fopen("/jffs/etc/freeradius/users", "wb");
-	system("touch /jffs/etc/freeradius/users.manual");
-	fprintf(fp, "$INCLUDE users.manual\n");
-	fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
-		"\tSession-Timeout := 3600,\n"
-		"\tUser-Name := \"%%{User-Name}\",\n"
-		"\tAcct-Interim-Interval := 300,\n" 
-		"\tFall-Through = Yes\n\n");
-	time_t tm;
-	struct tm tm_time;
-	for (i = 0; i < db->usercount; i++) {
-		if (!db->users[i].usersize)
-		    continue;
-		if (!db->users[i].user || !strlen(db->users[i].user))
-		    continue;
-		fprintf(fp, "%s        Cleartext-Password := \"%s\"",db->users[i].user, db->users[i].passwd);
-		if (db->users[i].expiration)
-		    {
-			tm=db->users[i].expiration*24*60*60;
-			memcpy(&tm_time, localtime(&tm), sizeof(tm_time));
-			char datebuf[128];
-			strftime(datebuf, sizeof(datebuf), "%d %b %Y", &tm_time);
-			fprintf(fp,", Expiration == \"%s\"\n",datebuf);
-		    }else
-			fprintf(fp,"\n");
-		if (db->users[i].downstream)
-			{
-			fprintf(fp, "\tWISPr-Bandwidth-Max-Down := %d",
-				db->users[i].downstream * 1024);
+		struct radiusdb *db = loadradiusdb();
+		if (db) {
+			fp = fopen("/jffs/etc/freeradius/users", "wb");
+			system("touch /jffs/etc/freeradius/users.manual");
+			fprintf(fp, "$INCLUDE users.manual\n");
+			fprintf(fp,
+				"DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n"
+				"\tSession-Timeout := 3600,\n"
+				"\tUser-Name := \"%%{User-Name}\",\n"
+				"\tAcct-Interim-Interval := 300,\n"
+				"\tFall-Through = Yes\n\n");
+			time_t tm;
+			struct tm tm_time;
+			for (i = 0; i < db->usercount; i++) {
+				if (!db->users[i].usersize)
+					continue;
+				if (!db->users[i].user
+				    || !strlen(db->users[i].user))
+					continue;
+				fprintf(fp,
+					"%s        Cleartext-Password := \"%s\"",
+					db->users[i].user, db->users[i].passwd);
+				if (db->users[i].expiration) {
+					tm = db->users[i].expiration * 24 * 60 *
+					    60;
+					memcpy(&tm_time, localtime(&tm),
+					       sizeof(tm_time));
+					char datebuf[128];
+					strftime(datebuf, sizeof(datebuf),
+						 "%d %b %Y", &tm_time);
+					fprintf(fp, ", Expiration == \"%s\"\n",
+						datebuf);
+				} else
+					fprintf(fp, "\n");
+				if (db->users[i].downstream) {
+					fprintf(fp,
+						"\tWISPr-Bandwidth-Max-Down := %d",
+						db->users[i].downstream * 1024);
+				}
+				if (db->users[i].upstream) {
+					if (db->users[i].downstream)
+						fprintf(fp, ",\n");
+					fprintf(fp,
+						"\tWISPr-Bandwidth-Max-Up := %d\n",
+						db->users[i].upstream * 1024);
+				}
+				fprintf(fp, "\n");
 			}
-		if (db->users[i].upstream) {
-			if (db->users[i].downstream)
-				fprintf(fp, ",\n");
-			fprintf(fp, "\tWISPr-Bandwidth-Max-Up := %d\n",
-				db->users[i].upstream * 1024);
+			fclose(fp);
+			freeradiusdb(db);
 		}
-		fprintf(fp,"\n");
 	}
-	fclose(fp);
-	freeradiusdb(db);
-	}
-}	
 	ret = _evalpid(radiusd_argv, NULL, 0, &pid);
 
 	dd_syslog(LOG_INFO,

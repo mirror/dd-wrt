@@ -251,13 +251,14 @@ void start_anchorfree(void)
 		toURL(nvram_safe_get("af_category"), cat);
 		eval("rm", "-f", "/tmp/.anchorfree");
 		char callbuffer[512];
-		
-		sprintf(callbuffer,"wget -q -O /tmp/.anchorfree \"http://afhrp.anchorfree.com/register.php?"
-		     "pid=0001&" "uid=%s&" "email=%s&" "ssid=%s&" "addr=%s&"
-		     "addr2=%s&" "city=%s&" "zip=%s&" "state=%s&" "country=%s&"
-		     "cat=%s&" "publish=%s\"", devid, email, ssid, addr, addr2,
-		     city, zip, state, country, cat,
-		     nvram_safe_get("af_publish"));
+
+		sprintf(callbuffer,
+			"wget -q -O /tmp/.anchorfree \"http://afhrp.anchorfree.com/register.php?"
+			"pid=0001&" "uid=%s&" "email=%s&" "ssid=%s&" "addr=%s&"
+			"addr2=%s&" "city=%s&" "zip=%s&" "state=%s&"
+			"country=%s&" "cat=%s&" "publish=%s\"", devid, email,
+			ssid, addr, addr2, city, zip, state, country, cat,
+			nvram_safe_get("af_publish"));
 		system(callbuffer);
 		FILE *response = fopen("/tmp/.anchorfree", "rb");
 
@@ -395,11 +396,11 @@ void stop_anchorfree_unregister(void)
 
 	eval("rm", "-f", "/tmp/.anchorfree");
 	char callbuffer[512];
-	
-	sprintf(callbuffer,"wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
-		  "uid=%s&"
-		  "sid=%s\"", nvram_safe_get("af_hash"),
-		  nvram_safe_get("af_serviceid"));
+
+	sprintf(callbuffer,
+		"wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
+		"uid=%s&" "sid=%s\"", nvram_safe_get("af_hash"),
+		nvram_safe_get("af_serviceid"));
 	system(callbuffer);
 }
 

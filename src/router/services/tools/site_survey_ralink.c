@@ -136,11 +136,11 @@ int site_survey_main(int argc, char *argv[])
 
 	skipline(scan);
 	skipline(scan);
-//	fscanf(scan, "%s %s", b1, b2);	// skip first line
-//	fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);	//skip second line
+//      fscanf(scan, "%s %s", b1, b2);  // skip first line
+//      fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);       //skip second line
 	i = 0;
 	do {
-//		fprintf(stderr,"read\n");
+//              fprintf(stderr,"read\n");
 		if (feof(scan))
 			break;
 		fread(b1, 4, 1, scan);
@@ -150,7 +150,7 @@ int site_survey_main(int argc, char *argv[])
 		b2[32] = 0;
 		b2[strlen(b2)] = 0;
 		int ret = fscanf(scan, "%s %s %s %s %s", b3, b4, b5, b6, b7);	//skip second line
-//		fprintf(stderr,"%d\n",ret);
+//              fprintf(stderr,"%d\n",ret);
 		if (ret < 5)
 			break;
 		site_survey_lists[i].channel = atoi(b1);	// channel
@@ -158,7 +158,7 @@ int site_survey_main(int argc, char *argv[])
 		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
 		site_survey_lists[i].phy_noise = -95;	// no way
 		strcpy(site_survey_lists[i].ENCINFO, b4);
-//		strcat(site_survey_lists[i].ENCINFO, b4);
+//              strcat(site_survey_lists[i].ENCINFO, b4);
 		site_survey_lists[i].RSSI = -atoi(b5);
 
 		if (!strcmp(b6, "11b/g"))

@@ -136,7 +136,6 @@ static int __inline ismtikoui(const unsigned char *frm)
 	return frm[1] > 3 && LE_READ_4(frm + 2) == MTIK_OUI;
 }
 
-
 static void fillenc(char *encinfo, unsigned char *vp, int ielen)
 {
 	memset(encinfo, 0, 128);

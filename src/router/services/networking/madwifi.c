@@ -72,7 +72,6 @@ static void setdistance(char *device, int distance, int chanbw)
 
 // returns the number of installed atheros devices/cards
 
-
 static void deconfigure_single(int count)
 {
 	char *next;
@@ -80,11 +79,10 @@ static void deconfigure_single(int count)
 	char var[80];
 	char wifivifs[16];
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count))
-	    {
-	    deconfigure_single_11n(count);
-	    return;
-	    }
+	if (is_ar5008(count)) {
+		deconfigure_single_11n(count);
+		return;
+	}
 #endif
 
 	sprintf(wifivifs, "ath%d_vifs", count);
@@ -367,7 +365,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_peap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_peap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -402,7 +401,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_ttls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_ttls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -436,7 +436,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
 					nvram_nget("%s_leap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) >
+			    0) {
 				sprintf(ath, "%s_leap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -594,11 +595,12 @@ void setupHostAP(char *prefix, int iswan)
 			fprintf(fp, "auth_server_shared_secret=%s\n",
 				nvram_nget("%s_radius_key", prefix));
 			char check[64];
-			sprintf(check,"%s_radius2_ipaddr",prefix);
-			nvram_default_get(check,"0.0.0.0");
+			sprintf(check, "%s_radius2_ipaddr", prefix);
+			nvram_default_get(check, "0.0.0.0");
 
 			if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
-			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr",prefix)
+			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr",
+					     prefix)
 			    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
 				fprintf(fp, "auth_server_addr=%s\n",
 					nvram_nget("%s_radius2_ipaddr",
@@ -956,11 +958,10 @@ static void configure_single(int count)
 {
 
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count))
-	    {
-	    configure_single_11n(count);
-	    return;
-	    }
+	if (is_ar5008(count)) {
+		configure_single_11n(count);
+		return;
+	}
 #endif
 	char *next;
 	static char var[80];
@@ -1028,8 +1029,8 @@ static void configure_single(int count)
 	foreach(var, vifs, next) {
 		countvaps++;
 	}
-	if (countvaps<4)
-	    countvaps=4;
+	if (countvaps < 4)
+		countvaps = 4;
 	if (countvaps > vapcount)
 		vapcount = countvaps;
 

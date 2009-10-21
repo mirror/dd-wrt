@@ -42,7 +42,7 @@ void start_chilli(void)
 	FILE *fp;
 	int i;
 
-	stop_chilli();//ensure that its stopped
+	stop_chilli();		//ensure that its stopped
 	if (!nvram_match("chilli_enable", "1"))
 		return;
 
