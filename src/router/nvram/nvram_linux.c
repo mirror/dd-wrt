@@ -62,7 +62,7 @@ void lock(void)
 	int lockwait = 0;
 	while ((in = fopen("/tmp/.nvlock", "rb")) != NULL) {
 		fclose(in);
-		//cprintf ("nvram lock, waiting....\n");
+		fprintf(stderr, "nvram lock, waiting....\n");
 		lockwait++;
 		if (lockwait == 3)
 			unlink("/tmp/.nvlock");	//something crashed, we fix it
@@ -225,11 +225,11 @@ int nvram_commit(void)
 		fprintf(stderr, "not allowed, flash process in progress");
 		exit(1);
 	}
+#ifndef HAVE_LSX
 	system("/sbin/ledtool 1");
-//fprintf(stderr,"nvram_commit \n");
+#endif
 	lock();
 	int ret;
-	//fprintf (stderr, "nvram_commit(): start\n");
 	if (nvram_fd < 0) {
 		if ((ret = nvram_init(NULL))) {
 			fprintf(stderr, "nvram_commit(): failed\n");
@@ -243,8 +243,6 @@ int nvram_commit(void)
 		fprintf(stderr, "nvram_commit(): failed\n");
 		perror(PATH_DEV_NVRAM);
 	}
-
-	fprintf(stderr, "nvram_commit(): end\n");
 	unlock();
 	sync();
 	return ret;

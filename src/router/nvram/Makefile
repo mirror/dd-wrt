@@ -25,7 +25,7 @@ else
 CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
 endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s $(COPTS) -fpic
+CFLAGS	+= -s $(COPTS) -fPIC
 LDFLAGS += -L.
 ifeq ($(ARCH),powerpc)
 CFLAGS  += -DHAVE_MAGICBOX -fpic
@@ -59,6 +59,9 @@ endif
 ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_X86
 endif
+ifeq ($(CONFIG_LSX),y)
+CFLAGS += -DHAVE_LSX
+endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
 endif
@@ -90,26 +93,32 @@ clean:
 ifeq ($(ARCH),i386)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
+	$(AR) arc -o libnvram.a $^
 endif
 ifeq ($(ARCH),armeb)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
+	$(AR) arc -o libnvram.a $^
 endif
 ifeq ($(ARCH),arm)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
+	$(AR) arc -o libnvram.a $^
 endif
 ifeq ($(ARCH),powerpc)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
+	$(AR) arc -o libnvram.a $^
 endif
 ifeq ($(ARCH),mips)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
+	$(AR) arc -o libnvram.a $^
 endif
 ifeq ($(ARCH),mipsel)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
+	$(AR) arc -o libnvram.a $^
 endif
 convertnvram: convertnvram.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
