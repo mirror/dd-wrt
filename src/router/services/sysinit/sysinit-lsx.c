@@ -189,7 +189,7 @@ void start_sysinit(void)
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 				copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure ETH0 to %s\n", mac);
-			nvram_set("et0macaddr_safe",mac);
+			nvram_set("et0macaddr_safe", mac);
 			eval("ifconfig", "eth0", "hw", "ether", mac);
 			fseek(fp, 0x1f818, SEEK_SET);
 			fread(&buf[6], 6, 1, fp);
@@ -200,19 +200,15 @@ void start_sysinit(void)
 			fprintf(stderr, "configure ETH1 to %s\n", mac);
 			eval("ifconfig", "eth1", "hw", "ether", mac);
 			/* disable led's */
-			eval("gpio","enable","3"); // 1
-			eval("gpio","enable","4"); // 2
-			eval("gpio","enable","5"); //wlan
-			eval("gpio","enable","6"); //conn
-			eval("gpio","enable","7"); //diag
-
+			eval("gpio", "enable", "3");	// 1
+			eval("gpio", "enable", "4");	// 2
+			eval("gpio", "enable", "5");	//wlan
+			eval("gpio", "enable", "6");	//conn
+			eval("gpio", "enable", "7");	//diag
 
 		}
 		fclose(fp);
 	}
-
-
-
 
 //#endif
 	eval("ifconfig", "eth0", "up");

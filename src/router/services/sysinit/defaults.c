@@ -1291,7 +1291,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
 #else
 	{"wk_mode", "router", 0},	/* Network mode [gateway|router] */
-#endif // HAVE_ESR6650
+#endif				// HAVE_ESR6650
 #else
 	{"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
 #endif
@@ -2624,8 +2624,8 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_VNCREPEATER
 	{"vncr_enable", "0", 0},
 #endif
-	{"warn_enabled","0",0},
-	{"warn_connlimit","500",0},
+	{"warn_enabled", "0", 0},
+	{"warn_connlimit", "500", 0},
 	{0, 0, 0}
 };
 #else
