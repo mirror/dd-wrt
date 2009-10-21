@@ -2,7 +2,7 @@
 
 %define name wifidog
 %define lib_name libhttpd
-%define version 1.1.5
+%define version 20090925
 %define release 1mdk
 
 Summary: The WiFi Guard Dog project is a complete and embeedable captive portal solution for wireless community groups or individuals who wish to open a free HotSpot while still preventing abuse of their Internet connection.

@@ -19,7 +19,7 @@
  \********************************************************************/
 
 /*
- * $Id: client_list.c 901 2006-01-17 18:58:13Z mina $
+ * $Id: client_list.c 1373 2008-09-30 09:27:40Z wichert $
  */
 /** @file client_list.c
   @brief Client List Functions
@@ -77,7 +77,7 @@ client_list_init(void)
  * @return Pointer to the client we just created
  */
 t_client         *
-client_list_append(char *ip, char *mac, char *token)
+client_list_append(const char *ip, const char *mac, const char *token)
 {
     t_client         *curclient, *prevclient;
 
@@ -117,7 +117,7 @@ client_list_append(char *ip, char *mac, char *token)
  * @return Pointer to the client, or NULL if not found
  */
 t_client         *
-client_list_find(char *ip, char *mac)
+client_list_find(const char *ip, const char *mac)
 {
     t_client         *ptr;
 
@@ -138,7 +138,7 @@ client_list_find(char *ip, char *mac)
  * @return Pointer to the client, or NULL if not found
  */
 t_client         *
-client_list_find_by_ip(char *ip)
+client_list_find_by_ip(const char *ip)
 {
     t_client         *ptr;
 
@@ -159,7 +159,7 @@ client_list_find_by_ip(char *ip)
  * @return Pointer to the client, or NULL if not found
  */
 t_client         *
-client_list_find_by_mac(char *mac)
+client_list_find_by_mac(const char *mac)
 {
     t_client         *ptr;
 
@@ -178,7 +178,7 @@ client_list_find_by_mac(char *mac)
  * @return Pointer to the client, or NULL if not found
  */
 t_client *
-client_list_find_by_token(char *token)
+client_list_find_by_token(const char *token)
 {
     t_client         *ptr;
 

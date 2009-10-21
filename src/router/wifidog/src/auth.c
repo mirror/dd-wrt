@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: auth.c 1305 2007-11-01 20:04:20Z benoitg $ */
+/* $Id: auth.c 1373 2008-09-30 09:27:40Z wichert $ */
 /** @file auth.c
     @brief Authentication handling thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
@@ -60,7 +60,7 @@ extern long served_this_session;
 @todo This thread loops infinitely, need a watchdog to verify that it is still running?
 */  
 void
-thread_client_timeout_check(void *arg)
+thread_client_timeout_check(const void *arg)
 {
 	pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
 	pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -148,9 +148,7 @@ authenticate_client(request *r)
 	case AUTH_ERROR:
 		/* Error talking to central server */
 		debug(LOG_ERR, "Got %d from central server authenticating token %s from %s at %s", auth_response, client->token, client->ip, client->mac);
-		http_wifidog_header(r, "Error!");
-		httpdOutput(r, "Error: We did not get a valid answer from the central server");
-		http_wifidog_footer(r);
+		send_http_page(r, "Error!", "Error: We did not get a valid answer from the central server");
 		break;
 
 	case AUTH_DENIED:
@@ -208,9 +206,7 @@ authenticate_client(request *r)
 
     default:
 		debug(LOG_WARNING, "I don't know what the validation code %d means for token %s from %s at %s - sending error message", auth_response.authcode, client->token, client->ip, client->mac);
-		http_wifidog_header(r, "Internal error");
-		httpdOutput(r, "We can not validate your request at this time");
-		http_wifidog_footer(r);
+		send_http_page(r, "Internal Error", "We can not validate your request at this time");
 	    break;
 
 	}

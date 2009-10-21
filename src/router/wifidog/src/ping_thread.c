@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: ping_thread.c 1305 2007-11-01 20:04:20Z benoitg $ */
+/* $Id: ping_thread.c 1373 2008-09-30 09:27:40Z wichert $ */
 /** @file ping_thread.c
     @brief Periodically checks in with the central auth server so the auth
     server knows the gateway is still up.  Note that this is NOT how the gateway
@@ -93,8 +93,8 @@ thread_ping(void *arg)
 static void
 ping(void)
 {
-	size_t			numbytes,
-				totalbytes;
+        ssize_t			numbytes;
+        size_t	        	totalbytes;
 	int			sockfd, nfds, done;
 	char			request[MAX_BUF];
 	fd_set			readfds;

@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: conf.c 1305 2007-11-01 20:04:20Z benoitg $ */
+/* $Id: conf.c 1373 2008-09-30 09:27:40Z wichert $ */
 /** @file conf.c
   @brief Config file parsing
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -84,13 +84,17 @@ typedef enum {
 	oAuthServAuthScriptPathFragment,
 	oHTTPDMaxConn,
 	oHTTPDName,
+	oHTTPDRealm,
+        oHTTPDUsername,
+        oHTTPDPassword,
 	oClientTimeout,
 	oCheckInterval,
 	oWdctlSocket,
 	oSyslogFacility,
 	oFirewallRule,
 	oFirewallRuleSet,
-	oTrustedMACList
+	oTrustedMACList,
+        oHtmlMessageFile,
 } OpCodes;
 
 /** @internal
@@ -98,43 +102,46 @@ typedef enum {
 static const struct {
 	const char *name;
 	OpCodes opcode;
-	int required;
 } keywords[] = {
-	{ "daemon",             oDaemon },
-	{ "debuglevel",         oDebugLevel },
-	{ "externalinterface",  oExternalInterface },
-	{ "gatewayid",          oGatewayID },
-	{ "gatewayinterface",   oGatewayInterface },
-	{ "gatewayaddress",     oGatewayAddress },
-	{ "gatewayport",        oGatewayPort },
-	{ "authserver",         oAuthServer },
-	{ "httpdmaxconn",       oHTTPDMaxConn },
-	{ "httpdname",          oHTTPDName },
-	{ "clienttimeout",      oClientTimeout },
-	{ "checkinterval",      oCheckInterval },
-	{ "syslogfacility", 	oSyslogFacility },
-	{ "wdctlsocket", 	    oWdctlSocket },
-	{ "hostname",		    oAuthServHostname },
-	{ "sslavailable",	    oAuthServSSLAvailable },
-	{ "sslport",		    oAuthServSSLPort },
-	{ "httpport",		    oAuthServHTTPPort },
-	{ "path",		        oAuthServPath },
+	{ "daemon",             	oDaemon },
+	{ "debuglevel",         	oDebugLevel },
+	{ "externalinterface",  	oExternalInterface },
+	{ "gatewayid",          	oGatewayID },
+	{ "gatewayinterface",   	oGatewayInterface },
+	{ "gatewayaddress",     	oGatewayAddress },
+	{ "gatewayport",        	oGatewayPort },
+	{ "authserver",         	oAuthServer },
+	{ "httpdmaxconn",       	oHTTPDMaxConn },
+	{ "httpdname",          	oHTTPDName },
+	{ "httpdrealm",			oHTTPDRealm },
+	{ "httpdusername",		oHTTPDUsername },
+	{ "httpdpassword",		oHTTPDPassword },
+	{ "clienttimeout",      	oClientTimeout },
+	{ "checkinterval",      	oCheckInterval },
+	{ "syslogfacility", 		oSyslogFacility },
+	{ "wdctlsocket",		oWdctlSocket },
+	{ "hostname",			oAuthServHostname },
+	{ "sslavailable",		oAuthServSSLAvailable },
+	{ "sslport",			oAuthServSSLPort },
+	{ "httpport",			oAuthServHTTPPort },
+	{ "path",			oAuthServPath },
 	{ "loginscriptpathfragment",	oAuthServLoginScriptPathFragment },
 	{ "portalscriptpathfragment",	oAuthServPortalScriptPathFragment },
-	{ "msgscriptpathfragment",		oAuthServMsgScriptPathFragment },
-	{ "pingscriptpathfragment",		oAuthServPingScriptPathFragment },
-	{ "authscriptpathfragment",		oAuthServAuthScriptPathFragment },
-	{ "firewallruleset",	oFirewallRuleSet },
-	{ "firewallrule",	    oFirewallRule },
-	{ "trustedmaclist",	    oTrustedMACList },
-	{ NULL,                 oBadOption },
+	{ "msgscriptpathfragment",	oAuthServMsgScriptPathFragment },
+	{ "pingscriptpathfragment",	oAuthServPingScriptPathFragment },
+	{ "authscriptpathfragment",	oAuthServAuthScriptPathFragment },
+	{ "firewallruleset",		oFirewallRuleSet },
+	{ "firewallrule",		oFirewallRule },
+	{ "trustedmaclist",		oTrustedMACList },
+        { "htmlmessagefile",		oHtmlMessageFile },
+	{ NULL,				oBadOption },
 };
 
-static void config_notnull(void *parm, char *parmname);
+static void config_notnull(const void *parm, const char *parmname);
 static int parse_boolean_value(char *);
-static void parse_auth_server(FILE *, char *, int *);
-static int _parse_firewall_rule(char *ruleset, char *leftover);
-static void parse_firewall_ruleset(char *, FILE *, char *, int *);
+static void parse_auth_server(FILE *, const char *, int *);
+static int _parse_firewall_rule(const char *ruleset, char *leftover);
+static void parse_firewall_ruleset(const char *, FILE *, const char *, int *);
 
 static OpCodes config_parse_token(const char *cp, const char *filename, int linenum);
 
@@ -153,6 +160,7 @@ config_init(void)
 {
 	debug(LOG_DEBUG, "Setting default config parameters");
 	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
+	config.htmlmsgfile = safe_strdup(DEFAULT_HTMLMSGFILE);
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
 	config.httpdmaxconn = DEFAULT_HTTPDMAXCONN;
 	config.external_interface = NULL;
@@ -162,6 +170,9 @@ config_init(void)
 	config.gw_port = DEFAULT_GATEWAYPORT;
 	config.auth_servers = NULL;
 	config.httpdname = NULL;
+	config.httpdrealm = DEFAULT_HTTPDNAME;
+	config.httpdusername = NULL;
+	config.httpdpassword = NULL;
 	config.clienttimeout = DEFAULT_CLIENTTIMEOUT;
 	config.checkinterval = DEFAULT_CHECKINTERVAL;
 	config.syslog_facility = DEFAULT_SYSLOG_FACILITY;
@@ -203,7 +214,7 @@ config_parse_token(const char *cp, const char *filename, int linenum)
 Parses auth server information
 */
 static void
-parse_auth_server(FILE *file, char *filename, int *linenum)
+parse_auth_server(FILE *file, const char *filename, int *linenum)
 {
 	char		*host = NULL,
 			*path = NULL,
@@ -342,10 +353,10 @@ parse_auth_server(FILE *file, char *filename, int *linenum)
 	new->authserv_use_ssl = ssl_available;
 	new->authserv_path = path;
 	new->authserv_login_script_path_fragment = loginscriptpathfragment;
-    new->authserv_portal_script_path_fragment = portalscriptpathfragment;
-    new->authserv_msg_script_path_fragment = msgscriptpathfragment;    
-    new->authserv_ping_script_path_fragment = pingscriptpathfragment;  
-    new->authserv_auth_script_path_fragment = authscriptpathfragment;  
+	new->authserv_portal_script_path_fragment = portalscriptpathfragment;
+	new->authserv_msg_script_path_fragment = msgscriptpathfragment;    
+	new->authserv_ping_script_path_fragment = pingscriptpathfragment;  
+	new->authserv_auth_script_path_fragment = authscriptpathfragment;  
 	new->authserv_http_port = http_port;
 	new->authserv_ssl_port = ssl_port;
 	
@@ -388,7 +399,7 @@ Advance to the next word
 Parses firewall rule set information
 */
 static void
-parse_firewall_ruleset(char *ruleset, FILE *file, char *filename, int *linenum)
+parse_firewall_ruleset(const char *ruleset, FILE *file, const char *filename, int *linenum)
 {
 	char		line[MAX_BUF],
 			*p1,
@@ -465,7 +476,7 @@ parse_firewall_ruleset(char *ruleset, FILE *file, char *filename, int *linenum)
 Helper for parse_firewall_ruleset.  Parses a single rule in a ruleset
 */
 static int
-_parse_firewall_rule(char *ruleset, char *leftover)
+_parse_firewall_rule(const char *ruleset, char *leftover)
 {
 	int i;
 	int block_allow = 0; /**< 0 == block, 1 == allow */
@@ -601,7 +612,7 @@ _parse_firewall_rule(char *ruleset, char *leftover)
 }
 
 t_firewall_rule *
-get_ruleset(char *ruleset)
+get_ruleset(const char *ruleset)
 {
 	t_firewall_ruleset	*tmp;
 
@@ -618,7 +629,7 @@ get_ruleset(char *ruleset)
 @param filename Full path of the configuration file to be read 
 */
 void
-config_read(char *filename)
+config_read(const char *filename)
 {
 	FILE *fd;
 	char line[MAX_BUF], *s, *p1, *p2;
@@ -702,6 +713,15 @@ config_read(char *filename)
 				case oHTTPDMaxConn:
 					sscanf(p1, "%d", &config.httpdmaxconn);
 					break;
+				case oHTTPDRealm:
+					config.httpdrealm = safe_strdup(p1);
+					break;
+				case oHTTPDUsername:
+					config.httpdusername = safe_strdup(p1);
+					break;
+				case oHTTPDPassword:
+					config.httpdpassword = safe_strdup(p1);
+					break;
 				case oBadOption:
 					debug(LOG_ERR, "Bad option on line %d "
 							"in %s.", linenum,
@@ -722,9 +742,18 @@ config_read(char *filename)
 				case oSyslogFacility:
 					sscanf(p1, "%d", &config.syslog_facility);
 					break;
+				case oHtmlMessageFile:
+					config.htmlmsgfile = safe_strdup(p1);
+					break;
+
 				}
 			}
 		}
+	}
+
+	if (config.httpdusername && !config.httpdpassword) {
+		debug(LOG_ERR, "HTTPDUserName requires a HTTPDPassword to be set.");
+		exit(-1);
 	}
 
 	fclose(fd);
@@ -799,7 +828,7 @@ void
 config_validate(void)
 {
 	config_notnull(config.gw_interface, "GatewayInterface");
-    config_notnull(config.auth_servers, "AuthServer");
+	config_notnull(config.auth_servers, "AuthServer");
 
 	if (missing_parms) {
 		debug(LOG_ERR, "Configuration is not complete, exiting...");
@@ -811,7 +840,7 @@ config_validate(void)
     Verifies that a required parameter is not a null pointer
 */
 static void
-config_notnull(void *parm, char *parmname)
+config_notnull(const void *parm, const char *parmname)
 {
 	if (parm == NULL) {
 		debug(LOG_ERR, "%s is not set", parmname);

@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: api.c 1305 2007-11-01 20:04:20Z benoitg $
+** $Id: api.c 1371 2008-09-30 09:17:21Z wichert $
 **
 */
 
@@ -50,7 +50,7 @@
 
 
 char *httpdUrlEncode(str)
-	char	*str;
+	const char	*str;
 {
         char    *new,
                 *cp;
@@ -88,7 +88,7 @@ char *httpdRequestMethodName(request *r)
 }
 
 
-httpVar *httpdGetVariableByName(request *r, char *name)
+httpVar *httpdGetVariableByName(request *r, const char *name)
 {
 	httpVar	*curVar;
 
@@ -104,7 +104,7 @@ httpVar *httpdGetVariableByName(request *r, char *name)
 
 
 
-httpVar *httpdGetVariableByPrefix(request *r, char *prefix)
+httpVar *httpdGetVariableByPrefix(request *r, const char *prefix)
 {
 	httpVar	*curVar;
 
@@ -121,7 +121,7 @@ httpVar *httpdGetVariableByPrefix(request *r, char *prefix)
 }
 
 
-httpVar *httpdGetVariableByPrefixedName(request *r, char *prefix, char *name)
+httpVar *httpdGetVariableByPrefixedName(request *r, const char *prefix, const char *name)
 {
 	httpVar	*curVar;
 	int	prefixLen;
@@ -145,7 +145,7 @@ httpVar *httpdGetVariableByPrefixedName(request *r, char *prefix, char *name)
 
 httpVar *httpdGetNextVariableByPrefix(curVar, prefix)
 	httpVar	*curVar;
-	char	*prefix;
+	const char	*prefix;
 {
 	if(curVar)
 		curVar = curVar->nextVariable;
@@ -159,7 +159,7 @@ httpVar *httpdGetNextVariableByPrefix(curVar, prefix)
 }
 
 
-int httpdAddVariable(request *r, char *name, char *value)
+int httpdAddVariable(request *r, const char *name, const char *value)
 {
 	httpVar *curVar, *lastVar, *newVar;
 
@@ -349,9 +349,10 @@ request *httpdGetConnection(server, timeout)
 	r->clientSock = accept(server->serverSock,(struct sockaddr *)&addr,
 		&addrLen);
 	ipaddr = inet_ntoa(addr.sin_addr);
-	if (ipaddr)
+	if (ipaddr) {
 		strncpy(r->clientAddr, ipaddr, HTTP_IP_ADDR_LEN);
-	else
+                r->clientAddr[HTTP_IP_ADDR_LEN-1]=0;
+        } else
 		*r->clientAddr = 0;
 	r->readBufRemain = 0;
 	r->readBufPtr = NULL;
@@ -438,6 +439,7 @@ int httpdReadRequest(httpd *server, request *r)
 				cp2++;
 			*cp2 = 0;
 			strncpy(r->request.path,cp,HTTP_MAX_URL);
+                        r->request.path[HTTP_MAX_URL-1]=0;
 			_httpd_sanitiseUrl(r->request.path);
 			continue;
 		}
@@ -485,7 +487,6 @@ int httpdReadRequest(httpd *server, request *r)
 			}
 			*/
 #endif
-#if 0
 			if (strncasecmp(buf,"Authorization: ",15) == 0)
 			{
 				cp = index(buf,':') + 2;
@@ -508,12 +509,13 @@ int httpdReadRequest(httpd *server, request *r)
 						strncpy(
 						   r->request.authPassword,
 						   cp+1, HTTP_MAX_AUTH);
+                                                r->request.authPassword[HTTP_MAX_AUTH-1]=0;
 					}
 					strncpy(r->request.authUser, 
 						authBuf, HTTP_MAX_AUTH);
+					r->request.authUser[HTTP_MAX_AUTH-1]=0;
 				}
 			}
-#endif
 #if 0
 			if (strncasecmp(buf,"Referer: ",9) == 0)
 			{
@@ -522,6 +524,7 @@ int httpdReadRequest(httpd *server, request *r)
 				{
 					strncpy(r->request.referer,cp,
 						HTTP_MAX_URL);
+					r->request.referer[HTTP_MAX_URL-1]=0;
 				}
 			}
 #endif
@@ -534,6 +537,7 @@ int httpdReadRequest(httpd *server, request *r)
 				{
 					strncpy(r->request.host,cp,
 						HTTP_MAX_URL);
+					r->request.host[HTTP_MAX_URL-1]=0;
 				}
 			}
 			/* End modification */
@@ -545,6 +549,7 @@ int httpdReadRequest(httpd *server, request *r)
 				{
 					strncpy(r->request.ifModified,cp,
 						HTTP_MAX_URL);
+					r->request.ifModified[HTTP_MAX_URL-1]=0;
 					cp = index(r->request.ifModified,
 						';');
 					if (cp)
@@ -558,6 +563,7 @@ int httpdReadRequest(httpd *server, request *r)
 				{
 					strncpy(r->request.contentType,cp,
 						HTTP_MAX_URL);
+					r->request.contentType[HTTP_MAX_URL-1]=0;
 				}
 			}
 			if (strncasecmp(buf,"Content-Length: ",16) == 0)
@@ -596,6 +602,7 @@ int httpdReadRequest(httpd *server, request *r)
 	{
 		*cp++ = 0;
 		strncpy(r->request.query, cp, sizeof(r->request.query));
+		r->request.query[sizeof(r->request.query)-1]=0;
 		_httpd_storeData(r, cp);
 	}
 
@@ -640,9 +647,10 @@ void httpdDumpVariables(request *r)
 
 void httpdSetFileBase(server, path)
 	httpd	*server;
-	char	*path;
+	const char	*path;
 {
 	strncpy(server->fileBasePath, path, HTTP_MAX_URL);
+	server->fileBasePath[HTTP_MAX_URL-1]=0;
 }
 
 
@@ -821,25 +829,26 @@ void httpdSendHeaders(request *r)
 	_httpd_sendHeaders(r, 0, 0);
 }
 
-void httpdSetResponse(request *r, char *msg)
+void httpdSetResponse(request *r, const char *msg)
 {
 	strncpy(r->response.response, msg, HTTP_MAX_URL);
+	r->response.response[HTTP_MAX_URL-1]=0;
 }
 
-void httpdSetContentType(request *r, char *type)
+void httpdSetContentType(request *r, const char *type)
 {
 	strcpy(r->response.contentType, type);
 }
 
 
-void httpdAddHeader(request *r, char *msg)
+void httpdAddHeader(request *r, const char *msg)
 {
 	strcat(r->response.headers,msg);
 	if (msg[strlen(msg) - 1] != '\n')
 		strcat(r->response.headers,"\n");
 }
 
-void httpdSetCookie(request *r, char *name, char *value)
+void httpdSetCookie(request *r, const char *name, const char *value)
 {
 	char	buf[HTTP_MAX_URL];
 
@@ -847,11 +856,11 @@ void httpdSetCookie(request *r, char *name, char *value)
 	httpdAddHeader(r, buf);
 }
 
-void httpdOutput(request *r, char *msg)
+void httpdOutput(request *r, const char *msg)
 {
+	const char *src;
 	char	buf[HTTP_MAX_LEN],
 		varName[80],
-		*src,
 		*dest;
 	int	count;
 
@@ -862,8 +871,8 @@ void httpdOutput(request *r, char *msg)
 	{
 		if (*src == '$')
 		{
-			char	*cp,
-				*tmp;
+			const char *tmp;
+			char	*cp;
 			int	count2;
 			httpVar	*curVar;
 
@@ -907,14 +916,14 @@ void httpdOutput(request *r, char *msg)
 
 
 #ifdef HAVE_STDARG_H
-void httpdPrintf(request *r, char *fmt, ...)
+void httpdPrintf(request *r, const char *fmt, ...)
 {
 #else
 void httpdPrintf(va_alist)
         va_dcl
 {
         request		*r;;
-        char		*fmt;
+        const char	*fmt;
 #endif
         va_list         args;
 	char		buf[HTTP_MAX_LEN];
@@ -946,6 +955,7 @@ void httpdProcessRequest(httpd *server, request *r)
 
 	r->response.responseLength = 0;
 	strncpy(dirName, httpdRequestPath(r), HTTP_MAX_URL);
+	dirName[HTTP_MAX_URL-1]=0;
 	cp = rindex(dirName, '/');
 	if (cp == NULL)
 	{
@@ -953,6 +963,7 @@ void httpdProcessRequest(httpd *server, request *r)
 		return;
 	}
 	strncpy(entryName, cp + 1, HTTP_MAX_URL);
+	entryName[HTTP_MAX_URL-1]=0;
 	if (cp != dirName)
 		*cp = 0;
 	else
@@ -1019,7 +1030,7 @@ void httpdSetErrorLog(server, fp)
 	server->errorLog = fp;
 }
 
-void httpdAuthenticate(request *r, char *realm)
+void httpdAuthenticate(request *r, const char *realm)
 {
 	char	buffer[255];
 
@@ -1034,7 +1045,7 @@ void httpdAuthenticate(request *r, char *realm)
 }
 
 
-void httpdForceAuthenticate(request *r, char *realm)
+void httpdForceAuthenticate(request *r, const char *realm)
 {
 	char	buffer[255];
 

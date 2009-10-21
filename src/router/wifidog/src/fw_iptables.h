@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: fw_iptables.h 901 2006-01-17 18:58:13Z mina $ */
+/* $Id: fw_iptables.h 1375 2008-09-30 10:20:06Z wichert $ */
 /** @file fw_iptables.h
     @brief Firewall iptables functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -31,17 +31,17 @@
 
 /*@{*/ 
 /**Iptable table names used by WifiDog */
-#define TABLE_WIFIDOG_OUTGOING  "WiFiDog_Outgoing"
-#define TABLE_WIFIDOG_WIFI_TO_INTERNET "WiFiDog_WIFI2Internet"
-#define TABLE_WIFIDOG_WIFI_TO_ROUTER "WiFiDog_WIFI2Router"
-#define TABLE_WIFIDOG_INCOMING  "WiFiDog_Incoming"
-#define TABLE_WIFIDOG_AUTHSERVERS "WiFiDog_AuthServers"
-#define TABLE_WIFIDOG_GLOBAL  "WiFiDog_Global"
-#define TABLE_WIFIDOG_VALIDATE  "WiFiDog_Validate"
-#define TABLE_WIFIDOG_KNOWN     "WiFiDog_Known"
-#define TABLE_WIFIDOG_UNKNOWN   "WiFiDog_Unknown"
-#define TABLE_WIFIDOG_LOCKED    "WiFiDog_Locked"
-#define TABLE_WIFIDOG_TRUSTED    "WiFiDog_Trusted"
+#define TABLE_WIFIDOG_OUTGOING  "WiFiDog_$ID$_Outgoing"
+#define TABLE_WIFIDOG_WIFI_TO_INTERNET "WiFiDog_$ID$_WIFI2Internet"
+#define TABLE_WIFIDOG_WIFI_TO_ROUTER "WiFiDog_$ID$_WIFI2Router"
+#define TABLE_WIFIDOG_INCOMING  "WiFiDog_$ID$_Incoming"
+#define TABLE_WIFIDOG_AUTHSERVERS "WiFiDog_$ID$_AuthServers"
+#define TABLE_WIFIDOG_GLOBAL  "WiFiDog_$ID$_Global"
+#define TABLE_WIFIDOG_VALIDATE  "WiFiDog_$ID$_Validate"
+#define TABLE_WIFIDOG_KNOWN     "WiFiDog_$ID$_Known"
+#define TABLE_WIFIDOG_UNKNOWN   "WiFiDog_$ID$_Unknown"
+#define TABLE_WIFIDOG_LOCKED    "WiFiDog_$ID$_Locked"
+#define TABLE_WIFIDOG_TRUSTED    "WiFiDog_$ID$_Trusted"
 /*@}*/ 
 
 /** Used by iptables_fw_access to select if the client should be granted of denied access */
@@ -63,10 +63,10 @@ void iptables_fw_clear_authservers(void);
 int iptables_fw_destroy(void);
 
 /** @brief Helper function for iptables_fw_destroy */
-int iptables_fw_destroy_mention( char * table, char * chain, char * mention);
+int iptables_fw_destroy_mention( const char * table, const char * chain, const char * mention);
 
 /** @brief Define the access of a specific client */
-int iptables_fw_access(fw_access_t type, char *ip, char *mac, int tag);
+int iptables_fw_access(fw_access_t type, const char *ip, const char *mac, int tag);
 
 /** @brief All counters in the client list */
 int iptables_fw_counters_update(void);

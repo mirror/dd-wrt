@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: auth.h 1305 2007-11-01 20:04:20Z benoitg $ */
+/* $Id: auth.h 1373 2008-09-30 09:27:40Z wichert $ */
 /** @file auth.h
     @brief Authentication handling thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
@@ -56,6 +56,6 @@ typedef struct _t_authresponse {
 void authenticate_client(request *);
 
 /** @brief Periodically check if connections expired */
-void thread_client_timeout_check(void *arg);
+void thread_client_timeout_check(const void *arg);
 
 #endif
