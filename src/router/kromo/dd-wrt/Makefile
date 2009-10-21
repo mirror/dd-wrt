@@ -62,7 +62,8 @@ endif
 
 
 	cp -a lang_pack $(INSTALLDIR)/www
-
+	rm -f $(INSTALLDIR)/www/lang_pack/arabic.js	
+	
 ifneq ($(CONFIG_LANGUAGE),y)
 	rm -f $(INSTALLDIR)/www/lang_pack/*.js
 	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
