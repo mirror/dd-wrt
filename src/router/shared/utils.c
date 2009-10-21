@@ -93,12 +93,12 @@ int getcpurev(void)
 
 int cpu_plltype(void)
 {
-	if (nvram_match("DD_BOARD","Buffalo WHR-G54S") || //
-	    nvram_match("DD_BOARD","Buffalo WHR-HP-G54") || //
-	    nvram_match("DD_BOARD","Buffalo AS-A100") || //
-	    nvram_match("DD_BOARD","Buffalo WHR-HP-G54DD")) //
-	return 0;
-	
+	if (nvram_match("DD_BOARD", "Buffalo WHR-G54S") ||	//
+	    nvram_match("DD_BOARD", "Buffalo WHR-HP-G54") ||	//
+	    nvram_match("DD_BOARD", "Buffalo AS-A100") ||	//
+	    nvram_match("DD_BOARD", "Buffalo WHR-HP-G54DD"))	//
+		return 0;
+
 	int cpurev = getcpurev();
 	int cputype = check_hw_type();
 
@@ -127,8 +127,7 @@ int cpu_plltype(void)
 /* In the space-separated/null-terminated list(haystack), try to
  * locate the string "needle"
  */
-char *
-find_in_list(const char *haystack, const char *needle)
+char *find_in_list(const char *haystack, const char *needle)
 {
 	const char *ptr = haystack;
 	int needle_len = 0;
@@ -141,8 +140,7 @@ find_in_list(const char *haystack, const char *needle)
 	needle_len = strlen(needle);
 	haystack_len = strlen(haystack);
 
-	while (*ptr != 0 && ptr < &haystack[haystack_len])
-	{
+	while (*ptr != 0 && ptr < &haystack[haystack_len]) {
 		/* consume leading spaces */
 		ptr += strspn(ptr, " ");
 
@@ -150,13 +148,12 @@ find_in_list(const char *haystack, const char *needle)
 		len = strcspn(ptr, " ");
 
 		if ((needle_len == len) && (!strncmp(needle, ptr, len)))
-			return (char*) ptr;
+			return (char *)ptr;
 
 		ptr += len;
 	}
 	return NULL;
 }
-
 
 /**
  *	remove_from_list
@@ -168,8 +165,7 @@ find_in_list(const char *haystack, const char *needle)
 
  *	@return	error code
  */
-int
-remove_from_list(const char *name, char *list, int listsize)
+int remove_from_list(const char *name, char *list, int listsize)
 {
 	int listlen = 0;
 	int namelen = 0;
@@ -187,17 +183,15 @@ remove_from_list(const char *name, char *list, int listsize)
 		return EINVAL;
 
 	/* last item in list? */
-	if (occurrence[namelen] == 0)
-	{
+	if (occurrence[namelen] == 0) {
 		/* only item in list? */
 		if (occurrence != list)
 			occurrence--;
 		occurrence[0] = 0;
-	}
-	else if (occurrence[namelen] == ' ')
-	{
-		strncpy(occurrence, &occurrence[namelen+1 /* space */],
-		        strlen(&occurrence[namelen+1 /* space */]) +1 /* terminate */);
+	} else if (occurrence[namelen] == ' ') {
+		strncpy(occurrence, &occurrence[namelen + 1 /* space */ ],
+			strlen(&occurrence[namelen + 1 /* space */ ]) +
+			1 /* terminate */ );
 	}
 
 	return 0;
@@ -216,8 +210,7 @@ remove_from_list(const char *name, char *list, int listsize)
 
  *	@return	error code
  */
-int
-add_to_list(const char *name, char *list, int listsize)
+int add_to_list(const char *name, char *list, int listsize)
 {
 	int listlen = 0;
 	int namelen = 0;
@@ -232,16 +225,15 @@ add_to_list(const char *name, char *list, int listsize)
 	if (find_in_list(list, name))
 		return 0;
 
-	if (listsize <= listlen + namelen + 1 /* space */ + 1 /* NULL */)
+	if (listsize <= listlen + namelen + 1 /* space */  + 1 /* NULL */ )
 		return EMSGSIZE;
 
 	/* add a space if the list isn't empty and it doesn't already have space */
-	if (list[0] != 0 && list[listlen-1] != ' ')
-	{
+	if (list[0] != 0 && list[listlen - 1] != ' ') {
 		list[listlen++] = 0x20;
 	}
 
-	strncpy(&list[listlen], name, namelen + 1 /* terminate */);
+	strncpy(&list[listlen], name, namelen + 1 /* terminate */ );
 
 	return 0;
 }
@@ -414,10 +406,11 @@ struct dns_lists *get_dns_list(void)
 					match = 1;
 			}
 			if (!match) {
-				snprintf(dns_list->
-					 dns_server[dns_list->num_servers],
-					 sizeof(dns_list->dns_server
-						[dns_list->num_servers]), "%s",
+				snprintf(dns_list->dns_server
+					 [dns_list->num_servers],
+					 sizeof(dns_list->
+						dns_server[dns_list->
+							   num_servers]), "%s",
 					 word);
 				dns_list->num_servers++;
 			}
@@ -438,9 +431,9 @@ struct dns_lists *get_dns_list(void)
 
 		if (strlen(nvram_safe_get(altdnsvar)) > 0) {
 			snprintf(dns_list->dns_server[dns_list->num_servers],
-				 sizeof(dns_list->
-					dns_server[dns_list->num_servers]),
-				 "%s", nvram_safe_get(altdnsvar));
+				 sizeof(dns_list->dns_server
+					[dns_list->num_servers]), "%s",
+				 nvram_safe_get(altdnsvar));
 			dns_list->num_servers++;
 		}
 		altdns_index++;
