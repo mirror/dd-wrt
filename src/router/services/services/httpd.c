@@ -30,6 +30,7 @@
 void start_httpd(void)
 {
 	int ret = 0;
+	stop_httpd();
 
 	if (nvram_invmatch("http_enable", "0")
 	    && !is_exist("/var/run/httpd.pid")) {
