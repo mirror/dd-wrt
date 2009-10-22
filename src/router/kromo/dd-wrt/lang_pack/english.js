@@ -772,6 +772,11 @@ hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 hotspot.wifidog_config="Firewall Ruleset";
+hotspot.wifidog_messagefile="HTML Message File for Wifidog";
+hotspot.wifidog_realm="HTTP Server Realm";
+hotspot.wifidog_username="HTTP Server Username";
+hotspot.wifidog_password="HTTP Server Password";
+hotspot.wifidog_auth="HTTP Server Authentication Support";
 
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
