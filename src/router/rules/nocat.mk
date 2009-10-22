@@ -1,6 +1,6 @@
 nocat-configure:
 	cd glib && ./config.sh "$(CC)" "$(COPTS)"
-	cd nocat && ./configure --with-remote-splash CC="$(ARCH)-linux-uclibc-gcc" CFLAGS="$(COPTS) -I../libghttp " --prefix=/tmp/ --with-glib-prefix=$(TOP)/glib-1.2.10-install --disable-glibtest --host=$(ARCH)-linux
+	cd nocat && ./configure --with-remote-splash CC="$(ARCH)-linux-uclibc-gcc" CFLAGS="$(COPTS) -DNEED_PRINTF -I../libghttp " --prefix=/tmp/ --with-glib-prefix=$(TOP)/glib-1.2.10-install --disable-glibtest --host=$(ARCH)-linux
 
 nocat:
 	make  -C glib
