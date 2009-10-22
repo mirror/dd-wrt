@@ -63,6 +63,13 @@ void start_wifidog(void)
 		if (strlen(nvram_safe_get("wd_messagefile")) > 0) {
 			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
 		}
+		if (nvram_match("wd_auth","1"))
+		    {
+			if (strlen(nvram_safe_get("wd_realm")) > 0) 
+			fprintf(fp, "HTTPDRealm %s\n", nvram_safe_get("wd_realm"));
+			fprintf(fp, "HTTPDUserName %s\n", nvram_safe_get("wd_username"));
+			fprintf(fp, "HTTPDPassword %s\n", nvram_safe_get("wd_password"));
+		    }
 		fprintf(fp, "Path %s\n", nvram_safe_get("wd_path"));
 		fprintf(fp, "}\n");
 		if (strlen(nvram_safe_get("wd_config")) > 0) {
