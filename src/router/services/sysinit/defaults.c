@@ -2300,6 +2300,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wd_sslport", "443", 0},
 	{"wd_httpport", "80", 0},
 	{"wd_path", "/wifidog", 0},
+	{"wd_auth", "0", 0},
+	{"wd_username", "", 0},
+	{"wd_password", "", 0},
 #endif
 
 #ifdef HAVE_CHILLILOCAL
