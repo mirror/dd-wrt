@@ -604,7 +604,7 @@ void period_check(int sig)
 			}
 		}
 	}
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_STORM) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G) && !defined(HAVE_SOLO51) && !defined(HAVE_ADM5120)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_STORM) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G) && !defined(HAVE_SOLO51) && !defined(HAVE_ADM5120) && !defined(HAVE_X86)
 
 	else if ((sesgpio != 0xff)
 		 && (((sesgpio & 0x10) == 0 && (val & push))
