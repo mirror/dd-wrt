@@ -762,7 +762,7 @@ int main(int argc, char **argv)
 #endif
 
 			system("/etc/postinit&");
-
+			start_service("httpd");
 			led_control(LED_DIAG, LED_OFF);
 			lcdmessage("System Ready");
 			/* 
