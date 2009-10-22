@@ -20,7 +20,7 @@ CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 #endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DBCMWPA2 -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
-LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lutils -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS	+= -L$(TOP)/nvram -lnvram -lwireless -L$(TOP)/libutils -lutils -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DBUFFALO_COUNTRY="\"$(CONFIG_COUNTRY)\""
 endif
