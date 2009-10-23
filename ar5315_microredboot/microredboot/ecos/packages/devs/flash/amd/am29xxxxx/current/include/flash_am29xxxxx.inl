@@ -91,6 +91,14 @@
 
 #define FLASH_unlocked                  FLASHWORD( 0x00 )
 
+#define FLASH_CMD_PROTECT		FLASHWORD(0x60)
+#define FLASH_CMD_PROTECT_SET		FLASHWORD(0x01)
+#define FLASH_CMD_PROTECT_CLEAR		FLASHWORD(0xD0)
+#define FLASH_CMD_CLEAR_STATUS		FLASHWORD(0x50)
+
+
+
+
 #ifndef CYGNUM_FLASH_16AS8
 #define _16AS8 0
 #else
@@ -349,7 +357,16 @@ flash_erase_block(void* block, unsigned int size)
     }
 
     while (size > 0) {
-#ifndef CYGHWR_FLASH_AM29XXXXX_NO_WRITE_PROTECT
+
+
+
+/* un-protect */
+        b_v = FLASH_P2V(b_p);
+        *f_s1 = FLASH_CMD_CLEAR_STATUS;
+        *f_s2 = FLASH_CMD_PROTECT;
+        *b_v = FLASH_CMD_PROTECT_CLEAR;
+
+/*#ifndef CYGHWR_FLASH_AM29XXXXX_NO_WRITE_PROTECT
         // First check whether the block is protected
         *f_s1 = FLASH_Setup_Code1;
         *f_s2 = FLASH_Setup_Code2;
@@ -360,8 +377,8 @@ flash_erase_block(void* block, unsigned int size)
         if (FLASH_unlocked != state)
             return FLASH_ERR_PROTECT;
 #endif
+*/
 
-        b_v = FLASH_P2V(b_p);
     
         // Send erase block command - six step sequence
         *f_s1 = FLASH_Setup_Code1;
