@@ -362,7 +362,7 @@ endif
 	rm -f $(TARGETDIR)/usr/lib/libpcap.so
 	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/*.o		
 ifeq ($(CONFIG_MMC),y)	
-	cp ./mmc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)
+	cp ./mmc_sdhc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
 #	tar -cvf $(TARGETDIR)/lib/modules/modules.tar $(TARGETDIR)/lib/modules/$(LINUXVER)/* 
 #	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)
