@@ -1038,6 +1038,104 @@ static void fis_create(int argc, char *argv[])
 
 extern void arm_fis_delete(char *);
 
+
+#ifdef CYGHWR_IO_FLASH_BLOCK_LOCKING
+
+static void
+fis_lock(int argc, char *argv[])
+{
+    char *name;
+    int stat;
+    unsigned long length;
+    CYG_ADDRESS flash_addr;
+    bool flash_addr_set = false;
+    bool length_set = false;
+    void *err_addr;
+    struct option_info opts[2];
+
+    init_opts(&opts[0], 'f', true, OPTION_ARG_TYPE_NUM, 
+              (void *)&flash_addr, (bool *)&flash_addr_set, "FLASH memory base address");
+    init_opts(&opts[1], 'l', true, OPTION_ARG_TYPE_NUM, 
+              (void *)&length, (bool *)&length_set, "length");
+    if (!scan_opts(argc, argv, 2, opts, 2, &name, OPTION_ARG_TYPE_STR, "image name"))
+    {
+        fis_usage("invalid arguments");
+        return;
+    }
+
+    /* Get parameters from image if specified */
+    if (name) {
+        struct fis_image_desc *img;
+        if ((img = fis_lookup(name, NULL)) == (struct fis_image_desc *)0) {
+            diag_printf("No image '%s' found\n", name);
+            return;
+        }
+
+        flash_addr = img->flash_base;
+        length = img->size;
+    } else if (!flash_addr_set || !length_set) {
+        fis_usage("missing argument");
+        return;
+    }
+    if (flash_addr_set &&
+        ((stat = flash_verify_addr((void *)flash_addr)) ||
+         (stat = flash_verify_addr((void *)(flash_addr+length-1))))) {
+        _show_invalid_flash_address(flash_addr, stat);
+        return;
+    }
+    if ((stat = flash_lock((void *)flash_addr, length, (void **)&err_addr)) != 0) {
+        diag_printf("Error locking at %p: %s\n", err_addr, flash_errmsg(stat));
+    }
+}
+
+static void
+fis_unlock(int argc, char *argv[])
+{
+    char *name;
+    int stat;
+    unsigned long length;
+    CYG_ADDRESS flash_addr;
+    bool flash_addr_set = false;
+    bool length_set = false;
+    void *err_addr;
+    struct option_info opts[2];
+
+    init_opts(&opts[0], 'f', true, OPTION_ARG_TYPE_NUM, 
+              (void *)&flash_addr, (bool *)&flash_addr_set, "FLASH memory base address");
+    init_opts(&opts[1], 'l', true, OPTION_ARG_TYPE_NUM, 
+              (void *)&length, (bool *)&length_set, "length");
+    if (!scan_opts(argc, argv, 2, opts, 2, &name, OPTION_ARG_TYPE_STR, "image name"))
+    {
+        fis_usage("invalid arguments");
+        return;
+    }
+
+    if (name) {
+        struct fis_image_desc *img;
+        if ((img = fis_lookup(name, NULL)) == (struct fis_image_desc *)0) {
+            diag_printf("No image '%s' found\n", name);
+            return;
+        }
+
+        flash_addr = img->flash_base;
+        length = img->size;
+    } else  if (!flash_addr_set || !length_set) {
+        fis_usage("missing argument");
+        return;
+    }
+    if (flash_addr_set &&
+        ((stat = flash_verify_addr((void *)flash_addr)) ||
+         (stat = flash_verify_addr((void *)(flash_addr+length-1))))) {
+        _show_invalid_flash_address(flash_addr, stat);
+        return;
+    }
+
+    if ((stat = flash_unlock((void *)flash_addr, length, (void **)&err_addr)) != 0) {
+        diag_printf("Error unlocking at %p: %s\n", err_addr, flash_errmsg(stat));
+    }
+}
+#endif
+
 static void fis_load(int argc, char *argv[])
 {
 	char *name;
