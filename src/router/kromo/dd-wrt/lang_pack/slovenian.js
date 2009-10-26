@@ -650,7 +650,7 @@ p2p.ctorrent_srv="Storitev Ctorrent";
 
 
 //help container
-//var hp2p = new Object();
+
 //hpp2p.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
 
 
@@ -772,8 +772,13 @@ hotspot.wifidog_authsrvsslport="AuthServer SSL vrata";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP vrata";
 hotspot.wifidog_authsrvpath="AuthServer pot";
 hotspot.wifidog_config="Pravila po¾arnega zidu";
+hotspot.wifidog_messagefile="HTML datoteka s sporoèilom za Wifidog";
+hotspot.wifidog_realm="Podroèje HTTP stre¾nika";
+hotspot.wifidog_username="HTTP stre¾nik: uporabni¹ko ime";
+hotspot.wifidog_password="HTTP stre¾nik: geslo";
+hotspot.wifidog_auth="HTTP stre¾nik: podpora overjanju";
 
-var anchorfree = new Object();
+
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="My Ad Network";
 anchorfree.h2="AnchorFree Ad Network";
@@ -799,7 +804,7 @@ anchorfree.validcat="please select a advertising category for your hotspot";
 anchorfree.validcountry="please select a country for your hotspot";
 anchorfree.validterms="You must agree to the terms & conditions!";
 
-var hanchorfree = new Object();
+
 hanchorfree.right1="Join AnchorFree's hotspot advertising network";
 hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
 hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
