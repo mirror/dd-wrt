@@ -1015,7 +1015,6 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WLA2G54C;
 	}
 	if (boardnum == 0 && melco_id == 29090
-	    && nvram_match("boardflags", "0x0010")
 	    && nvram_match("boardrev", "0x10")) {
 		cprintf("router is Buffalo WLAH-G54\n");
 		setRouter("Buffalo WLAH-G54");
