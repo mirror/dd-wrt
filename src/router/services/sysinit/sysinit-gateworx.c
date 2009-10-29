@@ -261,7 +261,17 @@ void start_sysinit(void)
 	}
 #endif
 #ifdef HAVE_MADWIFI_MIMO
-	insmod("ath_mimo_pci");
+	fprintf(stderr, "load ATH 802.11n Driver\n");
+	insmod("/lib/80211n/ath_mimo_hal.ko");
+	if (nvram_get("rate_control") != NULL) {
+		char rate[64];
+
+		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
+		insmod("/lib/80211n/ath_mimo_pci.ko");
+              eval("insmod", "ath_mimo_pci", rate);
+	} else {
+		insmod("/lib/80211n/ath_mimo_pci.ko");
+	}
 #endif
 
 #if 1
@@ -383,7 +393,7 @@ void start_sysinit(void)
 	{
 		fprintf(stderr, "Load SPI Kendin Switch Driver\n");
 		insmod("spi-algo-bit");
-		if (nvram_match("DD_BOARD", "Avila GW2355"))
+		if (nvram_match("DD_BOARD", "Gateworks Avila GW2355"))
 			insmod("spi-ixp4xx-gw2355");
 		else
 			insmod("spi-ixp4xx");
@@ -559,7 +569,7 @@ void start_sysinit(void)
 	/* cf capability ? */
 	char *modelname = nvram_safe_get("DD_BOARD");
 	if (!strncmp(modelname, "Gateworks Avila GW2348", 22)
-	    || !strcmp(modelname, "Gateworks Cambria GW2358-4")) {
+	    || !strcmp(modelname, "Gateworks Cambria GW2358-4") || !strcmp(modelname, "Gateworks Avila GW2355") || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
 		insmod("pata_ixp4xx_cf");
 	}
