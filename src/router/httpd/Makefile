@@ -503,8 +503,9 @@ ifeq ($(CONFIG_WILLIAM),y)
 CFLAGS += -DWILLIAM=1
 endif
 ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_MADWIFI),y)
 VISOBJS += wireless_broadcom.o
-
+endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
