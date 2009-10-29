@@ -393,6 +393,76 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan0", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_BS2
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0 ath1", 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
+#elif HAVE_NS2
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0 ath1", 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
+#elif HAVE_LC2
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0 ath1", 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
+#elif HAVE_PICO2
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0 ath1", 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
+#elif HAVE_PICO2HP
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0 ath1", 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
+#elif HAVE_MS2
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0 ath1", 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
+#elif HAVE_BS2HP
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0 ath1", 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_LS2
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
