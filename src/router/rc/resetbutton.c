@@ -617,6 +617,8 @@ void period_check(int sig)
 		if (ses_mode == 1) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 			// SES (AOSS) led
+#ifndef HAVE_MADWIFI
+
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")) {
 #ifndef HAVE_BUFFALO
@@ -637,6 +639,7 @@ void period_check(int sig)
 				}
 				eval("startservice", "nas");
 				eval("startservice", "guest_nas");
+#endif
 			}
 #endif
 
@@ -645,6 +648,7 @@ void period_check(int sig)
 		} else if (ses_mode == 0) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink SES
 			// (AOSS) led
+#ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")) {
 #ifndef HAVE_BUFFALO
@@ -664,6 +668,7 @@ void period_check(int sig)
 					     "off");
 				}
 			}
+#endif
 #endif
 
 			ses_mode = 1;
