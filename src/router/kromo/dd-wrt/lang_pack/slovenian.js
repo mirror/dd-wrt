@@ -1260,7 +1260,16 @@ service.snmp_name="Ime";
 service.snmp_read="RO skupnost";
 service.snmp_write="RW skupnost";
 
-//openvpn.webservices
+//openvpn.webvpn
+service.vpnd_legend="OpenVPN demon";
+service.vpnd_srv="Zaèni OpenVPN demon";
+service.vpnd_starttype="Zaèni ob";
+service.vpnd_startWanup="WAN vzpostavljen";
+service.vpnd_startSystem="Sistem";
+service.vpnd_crl="Seznam preklicanih certifikatov";
+service.vpnd_config="Open VPN konfiguracija";
+service.vpnd_dhpem="DH PEM";
+service.vpnd_tlsauth="OpenVPN TLS Auth";
 service.vpn_legend="OpenVPN odjemalec";
 service.vpn_srv="Zaèni OpenVPN";
 service.vpn_ipname="Stre¾nikov IP/ime";

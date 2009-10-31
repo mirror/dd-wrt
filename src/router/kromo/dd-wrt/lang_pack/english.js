@@ -1260,9 +1260,18 @@ service.snmp_name="Name";
 service.snmp_read="RO Community";
 service.snmp_write="RW Community";
 
-//openvpn.webservices
+//openvpn.webvpn
+service.vpnd_legend="OpenVPN Daemon";
+service.vpnd_srv="Start OpenVPN Daemon";
+service.vpnd_starttype="Start Type";
+service.vpnd_startWanup="WAN Up";
+service.vpnd_startSystem="System";
+service.vpnd_crl="Certificate Revoke List";
+service.vpnd_config="Open VPN Config";
+service.vpnd_dhpem="DH PEM";
+service.vpnd_tlsauth="OpenVPN TLS Auth";
 service.vpn_legend="OpenVPN Client";
-service.vpn_srv="Start OpenVPN";
+service.vpn_srv="Start OpenVPN Client";
 service.vpn_ipname="Server IP/Name";
 service.vpn_mtu="TUN MTU Setting";
 service.vpn_mru="TUN MTU Extra";
