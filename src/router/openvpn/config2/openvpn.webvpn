@@ -1,20 +1,20 @@
-<h2>OpenVPN Daemon</h2>
+<h2><% tran("service.vpnd_legend"); %></h2>
 <fieldset>
-	<legend>OpenVPN Daemon</legend>
+	<legend><% tran("service.vpnd_legend"); %></legend>
 	<div class="setting">
-		<div class="label">Start OpenVPN</div>
+		<div class="label"><% tran("service.vpnd_srv"); %></div>
 		<input class="spaceradio" type="radio" name="openvpn_enable" value="1" <% nvram_checked("openvpn_enable", "1"); %> onclick="show_layer_ext(this, 'idvpn', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="openvpn_enable" value="0" <% nvram_checked("openvpn_enable", "0"); %> onclick="show_layer_ext(this, 'idvpn', false)" /><% tran("share.disable"); %>
 		</div>
 	<div id="idvpn">
 	<div class="setting">
-		<div class="label">Start type</div>
-		<input type="radio" name="openvpn_onwan" value="1" <% nvram_checked("openvpn_onwan", "1"); %> />Wan Up
-		<input type="radio" name="openvpn_onwan" value="0" <% nvram_checked("openvpn_onwan", "0"); %> />System
+		<div class="label"><% tran("service.vpnd_starttype"); %></div>
+		<input type="radio" name="openvpn_onwan" value="1" <% nvram_checked("openvpn_onwan", "1"); %> /><% tran("service.vpnd_startWanup"); %>
+		<input type="radio" name="openvpn_onwan" value="0" <% nvram_checked("openvpn_onwan", "0"); %> /><% tran("service.vpnd_startSystem"); %>
 		</div>
 	
 	<div class="setting">		
-		<div class="label">Public Server Cert</div>
+		<div class="label"><% tran("service.vpn_srvcert"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_ca" name="openvpn_ca"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
@@ -24,7 +24,7 @@
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label">Certificate Revoke List</div>
+		<div class="label"><% tran("service.vpnd_crl"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_crl" name="openvpn_crl"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
@@ -34,7 +34,7 @@
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label">Public Client Cert</div>
+		<div class="label"><% tran("service.vpn_clicert"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_client" name="openvpn_client"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
@@ -44,7 +44,7 @@
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label">Private Client Key</div>
+		<div class="label"><% tran("service.vpn_clikey"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_key" name="openvpn_key"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[		
@@ -54,7 +54,7 @@
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label">DH PEM </div>
+		<div class="label"><% tran("service.vpnd_dhpem"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_dh" name="openvpn_dh"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[		
@@ -64,7 +64,7 @@
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label">OpenVPN Config </div>
+		<div class="label"><% tran("service.vpnd_config"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_config" name="openvpn_config"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
@@ -74,7 +74,7 @@
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label">OpenVPN TLS Auth </div>
+		<div class="label"><% tran("service.vpnd_tlsauth"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_tlsauth" name="openvpn_tlsauth"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
