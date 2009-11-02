@@ -326,37 +326,40 @@
 // Linksys WRT54Gv8.1 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV81)
 #define ROUTER_WRT54G_V81 0x5117
 
-// Netgear WGR614L (BCM5354 cpu, serial flash, fccid: Netgear PY306400057)
+// Netgear WGR614L (BCM5354 cpu, 4M serial flash - 16M ram, fccid: Netgear PY306400057)
 // Netgear WGR614 v8 - same -
-// Netgear WGR614 v9 - same - half flash, half ram
+// Netgear WGR614 WW - same -
 #define ROUTER_NETGEAR_WGR614L 0x5217
+
+// Netgear WGR614L (BCM5354 cpu, 2M serial flash - 8M ram, fccid: Netgear PY306400057)
+#define ROUTER_NETGEAR_WGR614V9 0x5317
 
 // Netgear WNR834Bv2 (BCM4704 cpu, BCM5325 switch, fccid: Netgear
 // PY307100061)
-#define ROUTER_NETGEAR_WNR834BV2 0x5316
+#define ROUTER_NETGEAR_WNR834BV2 0x5416
 
 // Asus WL-500g Premium v2 (BCM5354 cpu, fccid: Asus MSQWL500GPV2)
-#define ROUTER_ASUS_WL500G_PRE_V2 0x5412
+#define ROUTER_ASUS_WL500G_PRE_V2 0x5512
 
 // Wistron CA8-PRO (RDAA-81)
-#define ROUTER_BOARD_CA8PRO 0x5506
+#define ROUTER_BOARD_CA8PRO 0x5606
 
 // Askey board RT2205D-D56 / RT2206D-D56 (BCM4704 cpu, mini-pci)
 // Belkin MIMO F5D8230_v2 or F5D8230_v1001ea (fccid: Airgo networks Inc.
 // SA3-AGN0901AP0100)
-#define ROUTER_ASKEY_RT220XD 0x5617
+#define ROUTER_ASKEY_RT220XD 0x5717
 
 // U.S.Robotics USR5455 (BCM5354 cpu, no switch, fccid: Universal Scientific
 // Industrial Co. IXM-APGBR03)
 // U.S.Robotics USR5465 (BCM5354 cpu, fccid: Universal Scientific Industrial
 // Co. IXM-RTGBR03)
-#define ROUTER_USR_5465 0x570f
+#define ROUTER_USR_5465 0x580f
 
-#define ROUTER_ALLNET01 0x5813
+#define ROUTER_ALLNET01 0x5913
 
 // Linksys WRT610N (BCM4785 cpu, Gigabit switch, dual radio 2.4 and 5 GHz
 // Broadcom, fccid: Linksys Q87-WRT610N)
-#define ROUTER_WRT610N 0x5916
+#define ROUTER_WRT610N 0x5a16
 
 // Belkin F5D7230 v3000 (BCM5350 cpu, flash ?? , fccid: Belkin PD5F5D72304)
 #define ROUTER_BELKIN_F5D7230_V3000 0x6011
