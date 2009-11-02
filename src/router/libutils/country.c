@@ -123,7 +123,7 @@ enum EnumRd {
 	APL7_FCCA = 0x5C,	/* Taiwan 5.47 Band */
 	APL8_WORLD = 0x5D,	/* Malaysia 5GHz */
 	APL9_WORLD = 0x5E,	/* Korea 5GHz */
-	APL7_WORLD = 0x5f,	/* Singapore */
+	APL7_WORLD = 0x5a,	/* Singapore */
 
 	/*
 	 * World mode SKUs
