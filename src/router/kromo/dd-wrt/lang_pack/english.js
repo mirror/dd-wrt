@@ -1203,6 +1203,8 @@ service.pptp_srv="PPTP Server";
 service.pptp_forcemppe="Force MPPE Encryption";
 service.pptp_client="Client IP(s)";
 service.pptp_chap="CHAP-Secrets";
+service.pptp_custDNS="Custom DNS Servers List";
+service.pptp_custWINS="Custom WINS Servers List";
 
 //syslog.webservices
 service.syslog_legend="System Log";
