@@ -25,6 +25,10 @@ mkdir -p sys
 cd usr/local
 ln -sf /tmp/share share
 cd ../../
+mkdir -p usr/bin
+cd usr/bin
+ln -sf /opt/bin/perl perl
+cd ../../
 # tmp
 mkdir -p tmp
 ln -sf tmp/var var
