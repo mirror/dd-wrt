@@ -1,6 +1,0 @@
--Wp,-lang-c89
--W
--pedantic
--fforce-addr
--fomit-frame-pointer
--fno-strength-reduce
