@@ -1666,19 +1666,20 @@ int internal_getRouterBrand()
 	    && (nvram_match("boardrev", "0x11")
 		|| nvram_match("boardrev", "0x10"))
 	    && (nvram_match("boardflags", "0x750")
-		|| nvram_match("boardflags", "0x0750"))) {
-		if (nvram_match("sdram_init", "0x000A"))	//16 MB ram
+		|| nvram_match("boardflags", "0x0750"))
+		&& nvram_match("sdram_init", "0x000A"))	//16 MB ram
 		{
 			cprintf("router is Netgear WGR614v8/L/WW\n");
 			setRouter("Netgear WGR614v8/L/WW");
 			return ROUTER_NETGEAR_WGR614L;
-		} else if (nvram_match("sdram_init", "0x0002"))	//8 MB ram
-		{
-			cprintf("router is Netgear WGR614v9\n");
-			setRouter("Netgear WGR614v9");
-			return ROUTER_NETGEAR_WGR614L;
-		}
 	}
+			
+	if (boardnum == 3805 && nvram_match("boardtype", "0x48E")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is Netgear WGR614v9\n");
+		setRouter("Netgear WGR614v9");
+		return ROUTER_NETGEAR_WGR614V9;
+	}			
 
 	if (boardnum == 56 && nvram_match("boardtype", "0x456")
 	    && nvram_match("boardrev", "0x10")) {
@@ -2886,6 +2887,7 @@ int led_control(int type, int act)
 		usb_gpio = 0x001;
 		break;
 	case ROUTER_NETGEAR_WGR614L:
+	case ROUTER_NETGEAR_WGR614V9:
 		// power_gpio = 0x107;       // don't use - resets router
 		diag_gpio = 0x006;
 		connected_gpio = 0x104;
