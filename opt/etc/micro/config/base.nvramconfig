@@ -69,6 +69,8 @@
  "pptpd_lip"  "PPTPD"  "NULL"   "FALSE" "0"
  "pptpd_rip"  "PPTPD"  "NULL"  "FALSE" "0"
  "pptpd_auth"  "PPTPD"  "NULL"  "FALSE" "0"
+ "pptpd_custDNS"  "PPTPD DNS"  "NULL"  "FALSE" "0"
+ "pptpd_custWINS"  "PPTPD WINS"  "NULL"  "FALSE" "0"
  "pptp_encrypt"  "PPTP"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "pptp_reorder"  "PPTP"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "resetbutton_enable"  "Resetbuttond"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"  
