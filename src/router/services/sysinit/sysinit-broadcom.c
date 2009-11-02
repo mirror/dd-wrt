@@ -209,6 +209,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("wl0gpio3", "136");
 		break;
 	case ROUTER_NETGEAR_WGR614L:
+	case ROUTER_NETGEAR_WGR614V9:
 		nvram_set("wl0gpio5", "8");
 		break;
 	case ROUTER_BELKIN_F5D7231_V2000:
@@ -1060,6 +1061,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_NETGEAR_WGR614L:
+	case ROUTER_NETGEAR_WGR614V9:
 		if (nvram_match("vlan1ports", "0 5u"))
 			nvram_set("vlan1ports", "0 5");
 		if (nvram_match("sromrev", "2")
