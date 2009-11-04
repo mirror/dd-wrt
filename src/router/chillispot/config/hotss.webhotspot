@@ -1,0 +1,40 @@
+
+<fieldset>
+	<legend><% tran("hotspotsys.legend"); %></legend>
+	<div class="center"><img src="images/hotspotsystem.png" alt="hotspotsystem logo" /></div><br />
+	<div class="setting">
+		<div class="label"><% tran("hotspotsys.legend"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="hotss_enable" <% nvram_selmatch("hotss_enable","1", "checked"); %> onclick="show_layer_ext(this, 'idhotspotsys', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="hotss_enable" <% nvram_selmatch("hotss_enable","0", "checked"); %> onclick="show_layer_ext(this, 'idhotspotsys', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idhotspotsys">
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.nobridge"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","0", "checked"); %> /><% tran("share.disable"); %>
+		</div>
+	<div class="setting">
+		<div class="label"><% tran("hotspotsys.uamenable"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="hotss_uamenable" <% nvram_selmatch("hotss_uamenable","1", "checked"); %> onclick="show_layer_ext(this, 'idhotssuam', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="hotss_uamenable" <% nvram_selmatch("hotss_uamenable","0", "checked"); %> onclick="show_layer_ext(this, 'idhotssuam', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idhotssuam">
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
+			<input class="text" maxLength="500" size="25" name="hotss_uamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
+		</div>
+	</div>	
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.operatorid"); %></div>
+			<input class="text" maxLength="500" size="25" name="hotss_operatorid" value="<% nvram_get("hotss_operatorid"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.locationid"); %></div>
+			<input class="text" maxLength="500" size="25" name="hotss_locationid" value="<% nvram_get("hotss_locationid"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.dhcp"); %></div>
+			<% show_ifselect("totss_interface"); %>
+		</div>
+	  </div>
+</fieldset><br />
