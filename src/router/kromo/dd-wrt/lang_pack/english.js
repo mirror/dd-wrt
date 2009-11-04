@@ -778,6 +778,16 @@ hotspot.wifidog_username="HTTP Server Username";
 hotspot.wifidog_password="HTTP Server Password";
 hotspot.wifidog_auth="HTTP Server Authentication Support";
 
+// ** Hotspotsystem **//
+var hotspotsys = new Object();
+hotspotsys.legend="Hotspot System";
+hotspotsys.nobridge="Separate Wifi from LAN Bridge";
+hotspotsys.uamenable="UAM";
+hotspotsys.allowuam="UAM Allowed";
+hotspotsys.operatorid="Operator ID";
+hotspotsys.locationid="Location ID";
+hotspotsys.dhcp="DHCP Interface";
+
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="My Ad Network";
