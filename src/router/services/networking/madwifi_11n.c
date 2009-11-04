@@ -247,6 +247,9 @@ static void set_rate(char *dev, char *priv)
 			nvram_set(rate, "0");
 			r = "0";
 		}
+/*
+//must be rewritten
+
 	if (!strcmp(netmode, "b-only"))
 		sysprintf("iwconfig %s rate 11M auto", priv);
 	else {
@@ -256,6 +259,7 @@ static void set_rate(char *dev, char *priv)
 		sysprintf("iwpriv %s maxrate %s", priv, mr);
 	if (atoi(r) > 0)
 		sysprintf("iwpriv %s minrate %s", priv, r);
+*/
 }
 
 static void set_netmode(char *wif, char *dev, char *use)
@@ -308,13 +312,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 				sysprintf("iwpriv %s pureg 1", use);
 			}
 			if (!strcmp(netmode, "ng-only")) {
-				sysprintf("iwpriv %s mode 7", use);
-			}
-			if (!strcmp(netmode, "na-only")) {
-				sysprintf("iwpriv %s mode 6", use);
-			}
-			if (!strcmp(netmode, "bg-mixed")) {
-				sysprintf("iwpriv %s mode 3", use);
+				sysprintf("iwpriv %s mode 8", use);
 			}
 
 			if (!strcmp(netmode, "a-only"))
@@ -328,6 +326,40 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "a-only")) {
 				sysprintf("iwpriv %s mode 5", use);
+			}
+			if (!strcmp(netmode, "ng-only")) {
+			sysprintf("iwpriv %s cwmmode 2",use);
+			//iwpriv ${APNAME} extoffset $SEC_CH
+			sysprintf("iwpriv %s extprotspac 0",use);
+			}
+			if (!strcmp(netmode, "na-only")) {
+			sysprintf("iwpriv %s cwmmode 2",use);
+			//iwpriv ${APNAME} extoffset $SEC_CH
+			sysprintf("iwpriv %s extprotspac 0",use);
+			}
+		}
+	if (nvram_default_match(bw, "2040", "20")) {
+			if (!strcmp(netmode, "ng-only")) {
+			sysprintf("iwpriv %s cwmmode 1",use);
+			sysprintf("iwpriv %s extprotspac 0",use);
+			sysprintf("iwpriv %s mode 8", use);
+			}
+			if (!strcmp(netmode, "na-only")) {
+			sysprintf("iwpriv %s cwmmode 1",use);
+			sysprintf("iwpriv %s extprotspac 0",use);
+			sysprintf("iwpriv %s mode 7", use);
+			}
+		}
+	if (nvram_default_match(bw, "20", "20")) {
+			if (!strcmp(netmode, "ng-only")) {
+			sysprintf("iwpriv %s cwmmode 0",use);
+			sysprintf("iwpriv %s extprotspac 0",use);
+			sysprintf("iwpriv %s mode 8", use);
+			}
+			if (!strcmp(netmode, "na-only")) {
+			sysprintf("iwpriv %s cwmmode 0",use);
+			sysprintf("iwpriv %s extprotspac 0",use);
+			sysprintf("iwpriv %s mode 7", use);
 			}
 		}
 	} else {

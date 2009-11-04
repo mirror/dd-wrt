@@ -3231,6 +3231,25 @@ static void show_netmode(webs_t wp, char *prefix)
 #endif
 
 #endif
+#ifdef HAVE_MADWIFI_MIMO
+	int count;
+	sscanf(prefix, "ath%d", &count);
+	if (is_ar5008(count)) {
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
+				  nvram_match(wl_net_mode,
+					      "ng-only") ?
+				  "selected=\\\"selected\\\"" : "");
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
+				  nvram_match(wl_net_mode,
+					      "na-only") ?
+				  "selected=\\\"selected\\\"" : "");
+		return;
+	}
+#endif
+
+
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
@@ -4129,6 +4148,17 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+#ifdef HAVE_MADWIFI_MIMO
+	int count;
+	sscanf(prefix, "ath%d", &count);
+	if (is_ar5008(count)) {
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.turbodynamic + \"</option>\");\n",
+		  nvram_match(wl_width,
+			      "2040") ? "selected=\\\"selected\\\"" : "");
+	
+	}
+#endif
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
 		  nvram_match(wl_width,
