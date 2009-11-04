@@ -13,6 +13,10 @@ ifeq ($(CONFIG_CHILLILOCAL),y)
 	install -D chillispot/config/fon.nvramconfig $(INSTALLDIR)/chillispot/etc/config/fon.nvramconfig
 	install -D chillispot/config/fon.webhotspot $(INSTALLDIR)/chillispot/etc/config/fon.webhotspot
 endif
+ifeq ($(CONFIG_HOTSPOT),y)
+	install -D chillispot/config/hotss.nvramconfig $(INSTALLDIR)/chillispot/etc/config/hotss.nvramconfig
+	install -D chillispot/config/hotss.webhotspot $(INSTALLDIR)/chillispot/etc/config/hotss.webhotspot
+endif
 	install -D chillispot/src/chilli $(INSTALLDIR)/chillispot/usr/sbin/chilli
 	$(STRIP) $(INSTALLDIR)/chillispot/usr/sbin/chilli
 
