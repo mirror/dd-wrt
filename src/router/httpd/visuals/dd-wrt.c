@@ -3245,7 +3245,6 @@ static void show_netmode(webs_t wp, char *prefix)
 				  nvram_match(wl_net_mode,
 					      "na-only") ?
 				  "selected=\\\"selected\\\"" : "");
-		return;
 	}
 #endif
 
