@@ -86,6 +86,9 @@ endif
 ifeq ($(CONFIG_WIFIDOG),y)
 	cp wifidog/*.png $(INSTALLDIR)/www/images
 endif
+ifeq ($(CONFIG_HOTSPOT),y)
+	cp hotspotsystem/hotspotsystem.png $(INSTALLDIR)/www/images
+endif
 
 ifeq ($(CONFIG_3COM),y)
 	
