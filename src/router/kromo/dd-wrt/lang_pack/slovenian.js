@@ -778,6 +778,16 @@ hotspot.wifidog_username="HTTP stre¾nik: uporabni¹ko ime";
 hotspot.wifidog_password="HTTP stre¾nik: geslo";
 hotspot.wifidog_auth="HTTP stre¾nik: podpora overjanju";
 
+// ** Hotspotsystem **//
+
+hotspotsys.legend="Hotspot System";
+hotspotsys.nobridge="Loèi WiFi od LAN mosta";
+hotspotsys.uamenable="UAM";
+hotspotsys.allowuam="UAM dopu¹èeni";
+hotspotsys.operatorid="ID operatorja";
+hotspotsys.locationid="ID lokacije";
+hotspotsys.dhcp="DHCP vmesnik";
+
 
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="My Ad Network";
