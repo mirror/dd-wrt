@@ -4152,7 +4152,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sscanf(prefix, "ath%d", &count);
 	if (is_ar5008(count)) {
 	websWrite(wp,
-		  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.turbodynamic + \"</option>\");\n",
+		  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
 		  nvram_match(wl_width,
 			      "2040") ? "selected=\\\"selected\\\"" : "");
 	
