@@ -319,6 +319,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 				sysprintf("iwpriv %s mode 1", use);
 		}
 	}
+//	IEEE80211_HTINFO_EXTOFFSET_ABOVE = 1,   /* +1 extension channel above control channel */ 
+//	IEEE80211_HTINFO_EXTOFFSET_UNDEF = 2,   /* -2 undefined */ 
+//	IEEE80211_HTINFO_EXTOFFSET_BELOW = 3	/* -1 extension channel below control channel*/
 	if (nvram_default_match(bw, "40", "20")) {
 		{
 			if (!strcmp(netmode, "g-only")) {
@@ -329,23 +332,25 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s cwmmode 2",use);
-			//iwpriv ${APNAME} extoffset $SEC_CH
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 			if (!strcmp(netmode, "na-only")) {
 			sysprintf("iwpriv %s cwmmode 2",use);
-			//iwpriv ${APNAME} extoffset $SEC_CH
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 		}
 	if (nvram_default_match(bw, "2040", "20")) {
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s cwmmode 1",use);
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			sysprintf("iwpriv %s mode 8", use);
 			}
 			if (!strcmp(netmode, "na-only")) {
 			sysprintf("iwpriv %s cwmmode 1",use);
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			sysprintf("iwpriv %s mode 7", use);
 			}
@@ -353,11 +358,13 @@ static void set_netmode(char *wif, char *dev, char *use)
 	if (nvram_default_match(bw, "20", "20")) {
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s cwmmode 0",use);
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			sysprintf("iwpriv %s mode 8", use);
 			}
 			if (!strcmp(netmode, "na-only")) {
 			sysprintf("iwpriv %s cwmmode 0",use);
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			sysprintf("iwpriv %s mode 7", use);
 			}
