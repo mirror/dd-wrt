@@ -657,13 +657,15 @@ void configure_single_11n(int count)
 		if (strcmp(ch, "0") == 0) {
 			sysprintf("iwconfig %s channel 0", dev);
 		} else {
+			sysprintf("iwconfig %s channel 0", dev);
 			sysprintf("iwconfig %s freq %sM", dev, ch);
 		}
 	}
 
-	if (useif)
-		set_netmode(wif, dev, useif);
-	set_netmode(wif, dev, dev);
+	// don't call it twice
+	// if (useif)
+	// 	set_netmode(wif, dev, useif);
+	// set_netmode(wif, dev, dev);
 	setRTS(dev);
 
 	char macaddr[32];
@@ -1051,8 +1053,8 @@ void configure_single_11n(int count)
 	 * set_rate (dev);
 	 */
 	set_rate(dev, dev);
-
-	set_netmode(wif, dev, dev);
+	// don't call it triple
+	// set_netmode(wif, dev, dev);
 
 	setMacFilter(dev);
 	setupKey(dev);
