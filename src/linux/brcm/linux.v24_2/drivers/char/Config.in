@@ -61,9 +61,10 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
       tristate '  Specialix IO8+ card support' CONFIG_SPECIALIX
       if [ "$CONFIG_SPECIALIX" != "n" ]; then
          bool '  Specialix DTR/RTS pin is RTS' CONFIG_SPECIALIX_RTSCTS
+         bool '  Enable broken drivers for Specialix cards (may randomly crash)' CONFIG_SPECIALIX_BROKEN
       fi 
-      tristate '  Specialix SX (and SI) card support' CONFIG_SX
-      tristate '  Specialix RIO system support' CONFIG_RIO
+      dep_tristate '  Specialix SX (and SI) card support (broken)' CONFIG_SX $CONFIG_SPECIALIX_BROKEN
+      dep_tristate '  Specialix RIO system support (broken)' CONFIG_RIO $CONFIG_SPECIALIX_BROKEN
       if [ "$CONFIG_RIO" != "n" ]; then
         bool '    Support really old RIO/PCI cards' CONFIG_RIO_OLDPCI
       fi
@@ -134,7 +135,7 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
    fi
 fi
 if [ "$CONFIG_EXPERIMENTAL" = "y" -a "$CONFIG_ZORRO" = "y" ]; then
-   tristate 'Commodore A2232 serial support (EXPERIMENTAL)' CONFIG_A2232
+   dep_tristate 'Commodore A2232 serial support (EXPERIMENTAL)' CONFIG_A2232 $CONFIG_BROKEN
 fi
 if [ "$CONFIG_FOOTBRIDGE" = "y" ]; then
    bool 'DC21285 serial port support' CONFIG_SERIAL_21285

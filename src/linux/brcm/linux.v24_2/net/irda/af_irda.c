@@ -726,6 +726,7 @@ static int irda_getname(struct socket *sock, struct sockaddr *uaddr,
 	struct sock *sk = sock->sk;
 	struct irda_sock *self = sk->protinfo.irda;
 
+	memset(&saddr, 0, sizeof(saddr));
 	if (peer) {
 		if (sk->state != TCP_ESTABLISHED)
 			return -ENOTCONN;

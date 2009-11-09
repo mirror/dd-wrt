@@ -1262,17 +1262,21 @@ int r128_cce_clear( struct inode *inode, struct file *filp,
 	drm_file_t *priv = filp->private_data;
 	drm_device_t *dev = priv->dev;
 	drm_r128_private_t *dev_priv = dev->dev_private;
-	drm_r128_sarea_t *sarea_priv = dev_priv->sarea_priv;
+	drm_r128_sarea_t *sarea_priv;
 	drm_r128_clear_t clear;
 	DRM_DEBUG( "%s\n", __FUNCTION__ );
 
 	LOCK_TEST_WITH_RETURN( dev );
+
+	DEV_INIT_TEST_WITH_RETURN(dev_priv);
 
 	if ( copy_from_user( &clear, (drm_r128_clear_t *) arg,
 			     sizeof(clear) ) )
 		return -EFAULT;
 
 	RING_SPACE_TEST_WITH_RETURN( dev_priv );
+
+	sarea_priv = dev_priv->sarea_priv;
 
 	if ( sarea_priv->nbox > R128_NR_SAREA_CLIPRECTS )
 		sarea_priv->nbox = R128_NR_SAREA_CLIPRECTS;
@@ -1296,6 +1300,8 @@ int r128_cce_swap( struct inode *inode, struct file *filp,
 	DRM_DEBUG( "%s\n", __FUNCTION__ );
 
 	LOCK_TEST_WITH_RETURN( dev );
+
+	DEV_INIT_TEST_WITH_RETURN(dev_priv);
 
 	RING_SPACE_TEST_WITH_RETURN( dev_priv );
 
@@ -1326,10 +1332,7 @@ int r128_cce_vertex( struct inode *inode, struct file *filp,
 
 	LOCK_TEST_WITH_RETURN( dev );
 
-	if ( !dev_priv ) {
-		DRM_ERROR( "%s called with no initialization\n", __FUNCTION__ );
-		return -EINVAL;
-	}
+	DEV_INIT_TEST_WITH_RETURN(dev_priv);
 
 	if ( copy_from_user( &vertex, (drm_r128_vertex_t *)arg,
 			     sizeof(vertex) ) )
@@ -1389,10 +1392,7 @@ int r128_cce_indices( struct inode *inode, struct file *filp,
 
 	LOCK_TEST_WITH_RETURN( dev );
 
-	if ( !dev_priv ) {
-		DRM_ERROR( "%s called with no initialization\n", __FUNCTION__ );
-		return -EINVAL;
-	}
+	DEV_INIT_TEST_WITH_RETURN(dev_priv);
 
 	if ( copy_from_user( &elts, (drm_r128_indices_t *)arg,
 			     sizeof(elts) ) )
@@ -1461,6 +1461,8 @@ int r128_cce_blit( struct inode *inode, struct file *filp,
 
 	LOCK_TEST_WITH_RETURN( dev );
 
+	DEV_INIT_TEST_WITH_RETURN(dev_priv);
+
 	if ( copy_from_user( &blit, (drm_r128_blit_t *)arg,
 			     sizeof(blit) ) )
 		return -EFAULT;
@@ -1521,6 +1523,8 @@ int r128_cce_stipple( struct inode *inode, struct file *filp,
 
 	LOCK_TEST_WITH_RETURN( dev );
 
+	DEV_INIT_TEST_WITH_RETURN(dev_priv);
+
 	if ( copy_from_user( &stipple, (drm_r128_stipple_t *)arg,
 			     sizeof(stipple) ) )
 		return -EFAULT;
@@ -1552,10 +1556,7 @@ int r128_cce_indirect( struct inode *inode, struct file *filp,
 
 	LOCK_TEST_WITH_RETURN( dev );
 
-	if ( !dev_priv ) {
-		DRM_ERROR( "%s called with no initialization\n", __FUNCTION__ );
-		return -EINVAL;
-	}
+	DEV_INIT_TEST_WITH_RETURN(dev_priv);
 
 	if ( copy_from_user( &indirect, (drm_r128_indirect_t *)arg,
 			     sizeof(indirect) ) )

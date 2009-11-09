@@ -150,6 +150,7 @@ __nlmsg_put(struct sk_buff *skb, u32 pid, u32 seq, int type, int len)
 	nlh->nlmsg_flags = 0;
 	nlh->nlmsg_pid = pid;
 	nlh->nlmsg_seq = seq;
+	memset(NLMSG_DATA(nlh) + len, 0, NLMSG_ALIGN(size) - size);
 	return nlh;
 }
 

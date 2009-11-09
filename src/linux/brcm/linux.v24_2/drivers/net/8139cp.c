@@ -1701,7 +1701,7 @@ static int cp_init_one (struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 
 	/* Configure DMA attributes. */
-	if ((sizeof(dma_addr_t) > 32) &&
+	if ((sizeof(dma_addr_t) > 4) &&
 	    !pci_set_dma_mask(pdev, 0xffffffffffffffffULL)) {
 		pci_using_dac = 1;
 	} else {
