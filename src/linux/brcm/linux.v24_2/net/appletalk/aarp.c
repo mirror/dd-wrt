@@ -587,7 +587,7 @@ int aarp_send_ddp(struct net_device *dev,struct sk_buff *skb,
 	 
 	/* Non ELAP we cannot do. */
 	if (dev->type != ARPHRD_ETHER)
-		return -1;
+		goto free_it;
 
 	skb->dev = dev;
 	skb->protocol = htons(ETH_P_ATALK);
@@ -622,7 +622,7 @@ int aarp_send_ddp(struct net_device *dev,struct sk_buff *skb,
 	if (!a) {
 		/* Whoops slipped... good job it's an unreliable protocol 8) */
 		spin_unlock_bh(&aarp_lock);
-		return -1;
+		goto free_it;
 	}
 
 	/* Set up the queue */
@@ -650,13 +650,21 @@ int aarp_send_ddp(struct net_device *dev,struct sk_buff *skb,
 	spin_unlock_bh(&aarp_lock);
 
 	/* Tell the ddp layer we have taken over for this frame. */
-	return 0;
+	goto sent;
 
-sendit: if (skb->sk)
+sendit:
+	if (skb->sk)
 		skb->priority = skb->sk->priority;
-	dev_queue_xmit(skb);
-	return 1;
+	if (dev_queue_xmit(skb))
+		goto drop;
+ sent:
+	return NET_XMIT_SUCCESS;
+ free_it:
+	kfree_skb(skb);
+ drop:
+	return NET_XMIT_DROP;
 }
+EXPORT_SYMBOL(aarp_send_ddp);
 
 /*
  *	An entry in the aarp unresolved queue has become resolved. Send

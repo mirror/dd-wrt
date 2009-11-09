@@ -303,18 +303,23 @@ int proc_pid_status(struct task_struct *task, char * buffer)
 
 int proc_pid_stat(struct task_struct *task, char * buffer)
 {
-	unsigned long vsize, eip, esp, wchan;
+	unsigned long vsize, eip, esp, wchan = ~0UL;
 	long priority, nice;
 	int tty_pgrp = -1, tty_nr = 0;
 	sigset_t sigign, sigcatch;
 	char state;
 	int res;
 	pid_t ppid;
+	int permitted;
 	struct mm_struct *mm;
 	char tcomm[sizeof(task->comm)];
 
 	state = *get_task_state(task);
 	vsize = eip = esp = 0;
+	permitted = capable(CAP_SYS_PTRACE) ||
+		(current->uid == task->euid && current->uid == task->suid &&
+		 current->uid == task->uid  && current->gid == task->egid &&
+		 current->gid == task->sgid && current->gid == task->gid);
 	task_lock(task);
 	mm = task->mm;
 	if(mm)
@@ -332,14 +337,17 @@ int proc_pid_stat(struct task_struct *task, char * buffer)
 			vsize += vma->vm_end - vma->vm_start;
 			vma = vma->vm_next;
 		}
-		eip = KSTK_EIP(task);
-		esp = KSTK_ESP(task);
+		if (permitted) {
+			eip = KSTK_EIP(task);
+			esp = KSTK_ESP(task);
+		}
 		up_read(&mm->mmap_sem);
 	}
 
 	get_task_comm(tcomm, task);
 
-	wchan = get_wchan(task);
+	if (permitted)
+		wchan = get_wchan(task);
 
 	collect_sigign_sigcatch(task, &sigign, &sigcatch);
 
@@ -382,7 +390,7 @@ int proc_pid_stat(struct task_struct *task, char * buffer)
 		task->rlim[RLIMIT_RSS].rlim_cur,
 		mm ? mm->start_code : 0,
 		mm ? mm->end_code : 0,
-		mm ? mm->start_stack : 0,
+		(permitted && mm) ? mm->start_stack : 0,
 		esp,
 		eip,
 		/* The signal information here is obsolete.
@@ -563,6 +571,12 @@ static void *m_start(struct seq_file *m, loff_t *pos)
 
 	task_lock(task);
 	mm = task->mm;
+	if (mm && mm != current->mm &&
+	    !capable(CAP_SYS_PTRACE) &&
+	    ((current->uid != task->euid) || (current->uid != task->suid) ||
+	     (current->uid != task->uid)  || (current->gid != task->egid) ||
+	     (current->gid != task->sgid) || (current->gid != task->gid)))
+		mm = NULL;
 	if (mm)
 		atomic_inc(&mm->mm_users);
 	task_unlock(task);

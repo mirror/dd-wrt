@@ -1085,7 +1085,7 @@ verify:
  */
 static int bond_check_dev_link(struct bonding *bond, struct net_device *slave_dev, int reporting)
 {
-	static int (* ioctl)(struct net_device *, struct ifreq *, int);
+	int (* ioctl)(struct net_device *, struct ifreq *, int);
 	struct ifreq ifr;
 	struct mii_ioctl_data *mii;
 	struct ethtool_value etool;

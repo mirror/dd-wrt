@@ -414,6 +414,14 @@ extern int R128_READ_PLL(drm_device_t *dev, int addr);
  * Misc helper macros
  */
 
+#define DEV_INIT_TEST_WITH_RETURN(_dev_priv)				\
+do {									\
+	if (!_dev_priv) {						\
+		DRM_ERROR("called with no initialization\n");		\
+		return -EINVAL;						\
+	}								\
+} while (0)
+
 #define LOCK_TEST_WITH_RETURN( dev )					\
 do {									\
 	if ( !_DRM_LOCK_IS_HELD( dev->lock.hw_lock->lock ) ||		\

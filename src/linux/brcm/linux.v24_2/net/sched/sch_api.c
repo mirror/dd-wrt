@@ -746,6 +746,8 @@ static int tc_fill_qdisc(struct sk_buff *skb, struct Qdisc *q, u32 clid,
 	nlh->nlmsg_flags = flags;
 	tcm = NLMSG_DATA(nlh);
 	tcm->tcm_family = AF_UNSPEC;
+	tcm->tcm__pad1 = 0;
+	tcm->tcm__pad2 = 0;
 	tcm->tcm_ifindex = q->dev ? q->dev->ifindex : 0;
 	tcm->tcm_parent = clid;
 	tcm->tcm_handle = q->handle;
@@ -966,6 +968,8 @@ static int tc_fill_tclass(struct sk_buff *skb, struct Qdisc *q,
 	nlh->nlmsg_flags = flags;
 	tcm = NLMSG_DATA(nlh);
 	tcm->tcm_family = AF_UNSPEC;
+	tcm->tcm__pad1 = 0;
+	tcm->tcm__pad2 = 0;
 	tcm->tcm_ifindex = q->dev ? q->dev->ifindex : 0;
 	tcm->tcm_parent = q->handle;
 	tcm->tcm_handle = q->handle;
