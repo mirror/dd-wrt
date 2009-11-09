@@ -1347,7 +1347,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char *optval, int
 int packet_getsockopt(struct socket *sock, int level, int optname,
 		      char *optval, int *optlen)
 {
-	int len;
+	unsigned int len;
 	struct sock *sk = sock->sk;
 
 	if (level != SOL_PACKET)
@@ -1356,7 +1356,7 @@ int packet_getsockopt(struct socket *sock, int level, int optname,
   	if (get_user(len,optlen))
   		return -EFAULT;
 
-	if (len < 0)
+	if ((int)len < 0)
 		return -EINVAL;
 		
 	switch(optname)	{

@@ -9,7 +9,7 @@
 
 O_TARGET := appletalk.o
 
-export-objs = ddp.o
+export-objs = aarp.o ddp.o
 
 obj-y	 := aarp.o ddp.o
 obj-m	 := $(O_TARGET)

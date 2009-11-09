@@ -1337,6 +1337,7 @@ static int atalk_getname(struct socket *sock, struct sockaddr *uaddr,
 			return -ENOBUFS;
 
 	*uaddr_len = sizeof(struct sockaddr_at);
+	memset(&sat.sat_zero, 0, sizeof(sat.sat_zero));
 
 	if (peer) {
 		if (sk->state != TCP_ESTABLISHED)
@@ -1477,8 +1478,6 @@ static int atalk_rcv(struct sk_buff *skb, struct net_device *dev,
 			/* 22 bytes - 12 ether, 2 len, 3 802.2 5 snap */
 			struct sk_buff *nskb = skb_realloc_headroom(skb, 32);
 			kfree_skb(skb);
-			if (!nskb) 
-				goto out;
 			skb = nskb;
 		} else
 			skb = skb_unshare(skb, GFP_ATOMIC);
@@ -1487,9 +1486,12 @@ static int atalk_rcv(struct sk_buff *skb, struct net_device *dev,
 		 * If the buffer didn't vanish into the lack of
 		 * space bitbucket we can send it.
 		 */
-		if (skb && aarp_send_ddp(rt->dev, skb, &ta, NULL) == -1)
-			goto freeit;
-		goto out;
+		if (skb == NULL)
+			goto drop;
+
+		if (aarp_send_ddp(rt->dev, skb, &ta, NULL) == NET_XMIT_DROP)
+			return NET_RX_DROP;
+		return NET_RX_SUCCESS;
 	}
 
 #if defined(CONFIG_IPDDP) || defined(CONFIG_IPDDP_MODULE)
@@ -1499,8 +1501,10 @@ static int atalk_rcv(struct sk_buff *skb, struct net_device *dev,
 		struct net_device_stats *stats;
 
 		/* This needs to be able to handle ipddp"N" devices */
-                if (!dev)
-                        return -ENODEV;
+		if (!dev) {
+			kfree_skb(skb);
+			return NET_RX_DROP;
+		}
 
                 skb->protocol = htons(ETH_P_IP);
                 skb_pull(skb, 13);
@@ -1510,8 +1514,7 @@ static int atalk_rcv(struct sk_buff *skb, struct net_device *dev,
 		stats = dev->priv;
                 stats->rx_packets++;
                 stats->rx_bytes += skb->len + 13;
-                netif_rx(skb);  /* Send the SKB up to a higher place. */
-		goto out;
+		return netif_rx(skb);  /* Send the SKB up to a higher place. */
         }
 #endif
 	/*
@@ -1531,9 +1534,12 @@ static int atalk_rcv(struct sk_buff *skb, struct net_device *dev,
 
 	if (sock_queue_rcv_skb(sock, skb) < 0)
 		goto freeit;
-	goto out;
-freeit:	kfree_skb(skb);
-out:	return 0;
+
+	return NET_RX_SUCCESS;
+ freeit:
+	kfree_skb(skb);
+ drop:
+	return NET_RX_DROP;
 }
 
 /*
@@ -1723,10 +1729,10 @@ static int atalk_sendmsg(struct socket *sock, struct msghdr *msg, int len,
 		if (skb2) {
 			loopback = 1;
 			SOCK_DEBUG(sk, "SK %p: send out(copy).\n", sk);
-			if (aarp_send_ddp(dev, skb2,
-					  &usat->sat_addr, NULL) == -1)
-				kfree_skb(skb2);
-				/* else queued/sent above in the aarp queue */
+			/*
+			 * If it fails it is queued/sent above in the aarp queue
+			 */
+			aarp_send_ddp(dev, skb2, &usat->sat_addr, NULL);
 		}
 	}
 
@@ -1747,10 +1753,10 @@ static int atalk_sendmsg(struct socket *sock, struct msghdr *msg, int len,
 		    gsat.sat_addr = rt->gateway;
 		    usat = &gsat;
 		}
-
-		if (aarp_send_ddp(dev, skb, &usat->sat_addr, NULL) == -1)
-			kfree_skb(skb);
-		/* else queued/sent above in the aarp queue */
+		/*
+		 * If it fails it is queued/sent above in the aarp queue
+		 */
+		aarp_send_ddp(dev, skb, &usat->sat_addr, NULL);
 	}
 	SOCK_DEBUG(sk, "SK %p: Done write (%d).\n", sk, len);
 
@@ -1953,7 +1959,6 @@ struct packet_type ppptalk_packet_type=
 static char ddp_snap_id[] = {0x08, 0x00, 0x07, 0x80, 0x9B};
 
 /* Export symbols for use by drivers when AppleTalk is a module */
-EXPORT_SYMBOL(aarp_send_ddp);
 EXPORT_SYMBOL(atrtr_get_dev);
 EXPORT_SYMBOL(atalk_find_dev_addr);
 

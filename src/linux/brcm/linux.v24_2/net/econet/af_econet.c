@@ -455,6 +455,7 @@ static int econet_getname(struct socket *sock, struct sockaddr *uaddr,
 	if (peer)
 		return -EOPNOTSUPP;
 
+	memset(sec, 0, sizeof(*sec));
 	sec->sec_family = AF_ECONET;
 	sec->port = sk->protinfo.af_econet->port;
 	sec->addr.station = sk->protinfo.af_econet->station;

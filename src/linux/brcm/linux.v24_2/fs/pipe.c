@@ -339,36 +339,49 @@ pipe_rdwr_release(struct inode *inode, struct file *filp)
 static int
 pipe_read_open(struct inode *inode, struct file *filp)
 {
-	/* We could have perhaps used atomic_t, but this and friends
-	   below are the only places.  So it doesn't seem worthwhile.  */
+	int ret = -ENOENT;
+
 	down(PIPE_SEM(*inode));
-	PIPE_READERS(*inode)++;
+	if (inode->i_pipe) {
+		ret = 0;
+		PIPE_READERS(*inode)++;
+	}
 	up(PIPE_SEM(*inode));
 
-	return 0;
+	return ret;
 }
 
 static int
 pipe_write_open(struct inode *inode, struct file *filp)
 {
+	int ret = -ENOENT;
+
 	down(PIPE_SEM(*inode));
-	PIPE_WRITERS(*inode)++;
+	if (inode->i_pipe) {
+		ret = 0;
+		PIPE_WRITERS(*inode)++;
+	}
 	up(PIPE_SEM(*inode));
 
-	return 0;
+	return ret;
 }
 
 static int
 pipe_rdwr_open(struct inode *inode, struct file *filp)
 {
+	int ret = -ENOENT;
+
 	down(PIPE_SEM(*inode));
-	if (filp->f_mode & FMODE_READ)
-		PIPE_READERS(*inode)++;
-	if (filp->f_mode & FMODE_WRITE)
-		PIPE_WRITERS(*inode)++;
+	if (inode->i_pipe) {
+		ret = 0;
+		if (filp->f_mode & FMODE_READ)
+			PIPE_READERS(*inode)++;
+		if (filp->f_mode & FMODE_WRITE)
+			PIPE_WRITERS(*inode)++;
+	}
 	up(PIPE_SEM(*inode));
 
-	return 0;
+	return ret;
 }
 
 /*
