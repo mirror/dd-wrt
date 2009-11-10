@@ -229,6 +229,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	if (nvram_match("DD_BOARD", "Gateworks Avila GW2348-4/2")
 	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2348-4/2"))
 		eval("fischecksum");
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2348-2")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2348-2"))
+		eval("fischecksum");
+	if (nvram_match("DD_BOARD", "Gateworks Avila GW2348-4")
+	    || nvram_match("DD_BOARD2", "Gateworks Avila GW2348-4"))
+		eval("fischecksum");
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4"))
 		eval("fischecksum");

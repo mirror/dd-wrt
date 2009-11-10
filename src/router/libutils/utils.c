@@ -555,6 +555,14 @@ int internal_getRouterBrand()
 			setRouter("Gateworks Avila GW2353");
 			return ROUTER_BOARD_GATEWORX;
 		}
+		if (!strncmp(gwid, "GW2348-2", 6)) {
+			setRouter("Gateworks Avila GW2348-2");
+			return ROUTER_BOARD_GATEWORX;
+		}
+		if (!strncmp(gwid, "GW2348-4", 6)) {
+			setRouter("Gateworks Avila GW2348-4");
+			return ROUTER_BOARD_GATEWORX;
+		}
 		if (!strncmp(gwid, "GW2348", 6)) {
 			setRouter("Gateworks Avila GW2348-4/2");
 			return ROUTER_BOARD_GATEWORX;
