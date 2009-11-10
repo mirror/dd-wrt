@@ -340,7 +340,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprinff("iwpriv %s chan_switch 0",use);
+			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght40minus", use);
 
 			sysprintf("ifconfig %s txqueuelen 1000",use);
@@ -354,7 +354,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "na-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprinff("iwpriv %s chan_switch 0",use);
+			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11naht40minus", use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
@@ -368,7 +368,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 	if (nvram_default_match(bw, "2040", "20")) {
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprinff("iwpriv %s chan_switch 0",use);
+			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
@@ -380,7 +380,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "na-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprinff("iwpriv %s chan_switch 0",use);
+			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11naht20", use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
@@ -394,7 +394,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 	if (nvram_default_match(bw, "20", "20")) {
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprinff("iwpriv %s chan_switch 0",use);
+			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
@@ -406,7 +406,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "na-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprinff("iwpriv %s chan_switch 0",use);
+			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11naht20", use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
