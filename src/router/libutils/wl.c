@@ -1279,6 +1279,41 @@ int is_wifar5008(char *dev)
 	return 1;
 }
 
+#define	IEEE80211_CHAN_HT20	0x10000
+#define IEEE80211_CHAN_HT40PLUS  0x20000        /* HT 40 with extension channel above */
+#define IEEE80211_CHAN_HT40MINUS 0x40000        /* HT 40 with extension channel below */
+
+
+#define IEEE80211_CHAN_11NG_HT20 \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_HT20)
+#define IEEE80211_CHAN_11NA_HT20 \
+    (IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT20)
+#define IEEE80211_CHAN_11NG_HT40PLUS \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_HT40PLUS)
+#define IEEE80211_CHAN_11NG_HT40MINUS \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_HT40MINUS)
+#define IEEE80211_CHAN_11NA_HT40PLUS \
+    (IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT40PLUS)
+#define IEEE80211_CHAN_11NA_HT40MINUS \
+    (IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT40MINUS)
+#define IEEE80211_CHAN_ALL \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT20 | IEEE80211_CHAN_GFSK | \
+     IEEE80211_CHAN_CCK | IEEE80211_CHAN_OFDM | IEEE80211_CHAN_DYN | IEEE80211_CHAN_HT40PLUS |IEEE80211_CHAN_HT40MINUS) 
+
+#define	IEEE80211_IS_CHAN_11NG_HT20(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NG_HT20) == IEEE80211_CHAN_11NG_HT20)
+#define	IEEE80211_IS_CHAN_11NA_HT20(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NA_HT20) == IEEE80211_CHAN_11NA_HT20)
+#define	IEEE80211_IS_CHAN_11NG_HT40PLUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NG_HT40PLUS) == IEEE80211_CHAN_11NG_HT40PLUS)
+#define	IEEE80211_IS_CHAN_11NG_HT40MINUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NG_HT40MINUS) == IEEE80211_CHAN_11NG_HT40MINUS)
+#define	IEEE80211_IS_CHAN_11NA_HT40PLUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NA_HT40PLUS) == IEEE80211_CHAN_11NA_HT40PLUS)
+#define	IEEE80211_IS_CHAN_11NA_HT40MINUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NA_HT40MINUS) == IEEE80211_CHAN_11NA_HT40MINUS)
+
+
 static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 {
 	struct ieee80211req_chaninfo chans;
@@ -1339,13 +1374,13 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "mixed"))
 				continue;
 		}
-#ifdef GIBTSNICHT
-		if (IEEE80211_IS_CHAN_11NA(&achans.ic_chans[i])) {
+#ifdef MADWIFI_MIMO
+		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "na-only")
 			    && nvram_invmatch(wl_mode, "mixed"))
 				continue;
 		}
-		if (IEEE80211_IS_CHAN_11NG(&achans.ic_chans[i])) {
+		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "ng-only")
 			    && nvram_invmatch(wl_mode, "mixed"))
 				continue;
