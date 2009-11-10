@@ -1204,6 +1204,7 @@ void start_restore_defaults(void)
 		case ROUTER_ASUS_WL520G:
 		case ROUTER_ASUS_WL500G_PRE_V2:
 		case ROUTER_BELKIN_F5D7230_V3000:
+		case ROUTER_USR_5465: 
 			nvram_set("vlan0ports", "0 1 2 3 5*");
 			nvram_set("vlan1ports", "4 5");
 			break;
@@ -1377,6 +1378,7 @@ void start_restore_defaults(void)
 			case ROUTER_ASUS_WL500G_PRE_V2:
 			case ROUTER_WRT54G_V81:
 			case ROUTER_BELKIN_F5D7230_V3000:
+			case ROUTER_USR_5465:
 				nvram_set("vlan0ports", "0 1 2 3 5*");
 				break;
 			case ROUTER_LINKSYS_WRH54G:
@@ -1422,6 +1424,7 @@ void start_restore_defaults(void)
 			case ROUTER_ASUS_WL500G_PRE_V2:
 			case ROUTER_BELKIN_F5D7230_V3000:
 			case ROUTER_BELKIN_F5D7231_V2000:
+			case ROUTER_USR_5465:
 				nvram_set("vlan1ports", "4 5");
 				break;
 			default:

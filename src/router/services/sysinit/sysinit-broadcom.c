@@ -152,6 +152,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_BUFFALO_WLAG54C:
 	case ROUTER_NETGEAR_WG602_V3:
 	case ROUTER_RT480W:
+	case ROUTER_USR_5465:
 		nvram_set("wl0gpio0", "136");
 		break;
 	case ROUTER_WAP54G_V3:
@@ -511,6 +512,14 @@ void start_sysinit(void)
 		nvram_set("wl0_ifname", "eth1");
 		if (nvram_match("vlan1ports", "0 5u"))
 			nvram_set("vlan1ports", "0 5");
+		break;
+		
+	case ROUTER_USR_5465:
+		nvram_set("lan_ifnames", "vlan0 eth1");
+		nvram_set("wan_ifname", "vlan1");
+		nvram_set("wl0_ifname", "eth1");
+		if (nvram_match("vlan1ports", "4 5u"))
+			nvram_set("vlan1ports", "4 5");
 		break;
 
 	case ROUTER_RT210W:
