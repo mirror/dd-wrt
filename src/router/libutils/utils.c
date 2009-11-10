@@ -1495,6 +1495,18 @@ int internal_getRouterBrand()
 		setRouter("U.S.Robotics USR5441");
 		return ROUTER_USR_5461;	// should work in the same way
 	}
+	
+	if (boardnum == 35324 && nvram_match("boardtype", "0x048e")) {
+		cprintf("router is U.S. Robotics USR5465\n");
+		setRouter("U.S.Robotics USR5465");
+		return ROUTER_USR_5465;
+	}
+
+	if (boardnum == 35334 && nvram_match("boardtype", "0x048e")) {
+		cprintf("router is U.S. Robotics USR5455\n");
+		setRouter("U.S.Robotics USR5455");
+		return ROUTER_USR_5465;	// should work in the same way
+	}
 
 	if (boardnum == 1024 && nvram_match("boardtype", "0x0446")) {
 		char *cfe = nvram_safe_get("cfe_version");
@@ -2885,6 +2897,9 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_USR_5461:
 		usb_gpio = 0x001;
+		break;
+	case ROUTER_USR_5465:
+		usb_gpio = 0x101;
 		break;
 	case ROUTER_NETGEAR_WGR614L:
 	case ROUTER_NETGEAR_WGR614V9:
