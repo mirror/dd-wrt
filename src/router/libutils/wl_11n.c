@@ -60,7 +60,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	const struct ieee80211_channel *c;
 	int i;
 
-	// fprintf (stderr, "list channels for %s\n", ifname);
+	fprintf (stderr, "list channels for %s\n", ifname);
 	if (do80211priv
 	    (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof(chans)) < 0) {
 		fprintf(stderr, "unable to get channel information\n");
@@ -84,7 +84,6 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	} else
 		achans = chans;
 
-	// fprintf(stderr,"channel number %d\n", achans.ic_nchans);
 	struct wifi_channels *list =
 	    (struct wifi_channels *)malloc(sizeof(struct wifi_channels) *
 					   (achans.ic_nchans + 1));
@@ -97,20 +96,10 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	int l = 0;
 
 	for (i = 0; i < achans.ic_nchans; i++) {
-		// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 
 		// filter out A channels if mode isnt A-Only or mixed
 		if (IEEE80211_IS_CHAN_A(&achans.ic_chans[i])) {
-#ifdef HAVE_WHRAG108
-			if (!strcmp(ifname, "ath1"))
-				continue;
-#endif
-#ifdef HAVE_TW6600
-			if (!strcmp(ifname, "ath1"))
-				continue;
-#endif
-			if (nvram_invmatch(wl_mode, "a-only")
-			    && nvram_invmatch(wl_mode, "mixed"))
+			if (nvram_invmatch(wl_mode, "a-only") && nvram_invmatch(wl_mode, "mixed") && nvram_invmatch(wl_mode, "na-only"))
 				continue;
 		}
 		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i])) {
@@ -126,35 +115,10 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
 		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i])
 		    || IEEE80211_IS_CHAN_B(&achans.ic_chans[i])) {
-#ifdef HAVE_WHRAG108
-			if (!strcmp(ifname, "ath0"))
-				continue;
-#endif
-#ifdef HAVE_TW6600
-			if (!strcmp(ifname, "ath0"))
-				continue;
-#endif
 			if (nvram_invmatch(wl_mode, "g-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "b-only")
-			    && nvram_invmatch(wl_mode, "bg-mixed"))
-				continue;
-		}
-		// filter out channels which are not supporting turbo mode if turbo
-		// is enabled
-		if (!IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i])
-		    && !IEEE80211_IS_CHAN_DTURBO(&achans.ic_chans[i])) {
-			if (nvram_match(wl_turbo, "40"))
-				continue;
-		}
-		// filter out turbo channels if turbo mode is disabled
-		/*
-		 * if (IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]) ||
-		 * IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i])) { if (nvram_match
-		 * (wl_turbo, "0")) continue; }
-		 */
-		if (IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i])) {
-			if (!nvram_match(wl_turbo, "40"))
+			    && nvram_invmatch(wl_mode, "bg-mixed") && nvram_invmatch(wl_mode, "ng-only"))
 				continue;
 		}
 
