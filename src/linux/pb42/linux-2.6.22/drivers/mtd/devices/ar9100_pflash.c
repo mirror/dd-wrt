@@ -16,6 +16,7 @@
 
 #include "ar7100.h"
 #include "ar9100_pflash.h"
+#include <linux/squashfs_fs.h>
 
 /* this is passed in as a boot parameter by bootloader */
 extern int __ath_flash_size;
@@ -79,7 +80,7 @@ ar9100_flash_geom_t flash_geom_tbl[] = {
     {0x00bf, 0x236b, "SST-39VF6401", 0x01000, 0x800000},
     {0x00bf, 0x236a, "SST-39VF6402", 0x01000, 0x800000},
     {0x00bf, 0x236d, "SST-39VF6402", 0x01000, 0x800000},
-    {0x0001, 0x227e, "AMD-SPANSION", 0x01000, 0x1000000},  /* 16 MB  */
+    {0x0001, 0x227e, "AMD-SPANSION", 0x02000, 0x2000000},  /* 16 MB  */
     {0xffff, 0xffff, NULL, 0, 0}	/* end list */
 };
 
@@ -124,15 +125,25 @@ static int ar9100_flash_probe()
 
 static int ar9100_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
+    int nsect, s_curr, s_last;
+ 
+    if (instr->addr + instr->len > mtd->size) return (-EINVAL);
 
     ar9100_pflash_down();
 
-    ar9100_pflash_erase((ar9100_flash_geom_t *)mtd->priv,instr->addr, instr->len);
+    nsect = instr->len/mtd->erasesize;
+    if (instr->len % mtd->erasesize)
+        nsect ++;
+
+    s_curr = instr->addr/mtd->erasesize;
+    s_last  = s_curr + nsect;
+
+    ar9100_pflash_erase((ar9100_flash_geom_t *)mtd->priv,s_curr, s_last);
 
     ar9100_pflash_up();
 
     if (instr->callback) {
-        instr->state |= MTD_ERASE_DONE;
+        instr->state = MTD_ERASE_DONE;
         instr->callback(instr);
     }
 
@@ -147,11 +158,12 @@ ar9100_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 
     if (!len)
         return (0);
+    
     if (from + len > mtd->size)
         return (-EINVAL);
 
     ar9100_pflash_down();
-
+    
     memcpy(buf, (uint8_t *) (addr), len);
     *retlen = len;
 
@@ -165,14 +177,13 @@ ar9100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	   size_t * retlen, const u_char * buf)
 {
 
+//printk(KERN_EMERG "%s", __func__);
 
     ar9100_pflash_down();
 
     if (mtd->size < to + len)
         return ENOSPC;
 
-    ar9100_pflash_erase((ar9100_flash_geom_t *)mtd->priv, to, len);
-    udelay(10000);
     to += AR9100_PFLASH_CTRLR;
     ar9100_pflash_write_buff((ar9100_flash_geom_t *)mtd->priv, (u_char *) buf, to, len);
 
@@ -183,6 +194,16 @@ ar9100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
     return 0;
 }
 
+static struct mtd_partition dir_parts[] = {
+        { name: "RedBoot", offset: 0, size: 0x60000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x60000, size: 0x390000, },
+        { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
+        { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
+        { name: "nvram", offset: 0x3d0000, size: 0x10000, },
+        { name: "board_config", offset: 0x3f0000, size: 0x10000, },
+        { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
+        { name: NULL, },
+};
 
 /*
  * sets up flash_info and returns size of FLASH (bytes)
@@ -195,6 +216,12 @@ __init ar9100_flash_init(void)
     struct mtd_info *mtd;
     struct mtd_partition *mtd_parts;
     uint8_t index;
+	char *buf;
+	unsigned char *p;
+	int offset=0;
+	struct squashfs_super_block *sb;
+	size_t rootsize;
+	size_t len;
 
     init_MUTEX(&ar9100_flash_sem);
 
@@ -203,7 +230,7 @@ __init ar9100_flash_init(void)
 
     /* set flash size to value from bootloader if it passed valid value */
     /* otherwise use the default 4MB.                                   */
-    if (__ath_flash_size >= 4 && __ath_flash_size <= 16)
+    if (__ath_flash_size >= 4 && __ath_flash_size <= 32)
         geom->size = __ath_flash_size * 1024 * 1024;
 
     mtd = kmalloc(sizeof(struct mtd_info), GFP_KERNEL);
@@ -217,7 +244,7 @@ __init ar9100_flash_init(void)
     mtd->type = MTD_NORFLASH;
     mtd->flags = (MTD_CAP_NORFLASH | MTD_WRITEABLE);
     mtd->size = geom->size;
-    mtd->erasesize = (geom->sector_size * 16);	/* Erase block size is 64K */
+    mtd->erasesize = (geom->sector_size * 16);	/* Erase block size */
     mtd->numeraseregions = 0;
     mtd->eraseregions = NULL;
     mtd->owner = THIS_MODULE;
@@ -226,11 +253,43 @@ __init ar9100_flash_init(void)
     mtd->write = ar9100_flash_write;
     mtd->priv = (void *)(&flash_geom_tbl[index]);
 
-    np = parse_mtd_partitions(mtd, part_probes, &mtd_parts, 0);
-    if (np > 0) {
-        add_mtd_partitions(mtd, mtd_parts, np);
-    } else
-        printk("No partitions found on flash\n");
+	printk(KERN_EMERG "scanning for root partition\n");
+	
+	offset = 0;
+	buf = 0xbe000000;
+	while((offset+mtd->erasesize)<mtd->size)
+	    {
+	    //printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+	    if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
+		{
+		printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+		sb = (struct squashfs_super_block *) buf;
+		dir_parts[2].offset = offset;
+		dir_parts[2].size = sb->bytes_used;
+		len = dir_parts[2].offset + dir_parts[2].size;
+		len +=  (mtd->erasesize - 1);
+		len &= ~(mtd->erasesize - 1);
+		dir_parts[2].size = (len&0xffffff) - dir_parts[2].offset;
+		dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size; 
+		dir_parts[5].offset = mtd->size-mtd->erasesize; // board config
+		dir_parts[5].size = mtd->erasesize;
+		dir_parts[4].offset = dir_parts[5].offset-mtd->erasesize; //nvram
+		dir_parts[4].size = mtd->erasesize;
+		dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
+		rootsize = dir_parts[4].offset-offset; //size of rootfs aligned to nvram offset
+
+		dir_parts[1].offset=dir_parts[0].size;
+		dir_parts[1].size=(dir_parts[2].offset-dir_parts[0].size)+rootsize;
+		break;
+		}
+		//now scan for linux offset
+	    offset+=4096;
+	    buf+=4096;
+	    }
+	def:;
+	dir_parts[6].offset=0; // linux + nvram = phy size
+	dir_parts[6].size=mtd->size; // linux + nvram = phy size
+	add_mtd_partitions(mtd, dir_parts, 7);
     return 0;
 }
 
@@ -252,7 +311,7 @@ ar9100_pflash_write_buff(ar9100_flash_geom_t *geom, u_char * src, unsigned long 
 {
     unsigned long cp, wp, data;
     int i, l, rc;
-
+//printk(KERN_EMERG "%s", __func__);
 
     wp = (addr & ~3);   /* get lower word aligned address */
 
@@ -314,6 +373,7 @@ ar9100_pflash_write_buff(ar9100_flash_geom_t *geom, u_char * src, unsigned long 
 
 static int ar9100_pflash_write_word(ar9100_flash_geom_t *geom, unsigned long dest, unsigned long data)
 {
+//printk(KERN_EMERG "%s", __func__);
 
 
     volatile CFG_FLASH_WORD_SIZE *dest2 = (CFG_FLASH_WORD_SIZE *) dest;
@@ -337,7 +397,7 @@ static int ar9100_pflash_write_word(ar9100_flash_geom_t *geom, unsigned long des
         ar9100_write(CFG_FLASH_ADDR0, FLASH_Program);
         dest2[i] = data2[i];
 
-        if (!strcmp(geom->name,"AMD-SPANSION")) {
+#if 1
             timeout = 10000000;
             while (timeout) {
                 if (dest2[i] == data2[i]) {
@@ -345,8 +405,7 @@ static int ar9100_pflash_write_word(ar9100_flash_geom_t *geom, unsigned long des
                 }
                 timeout--;
             }
-        }
-        else {
+#else
         /*  Wait for completion (bit 6 stops toggling) */
         	timeout = 5000000;
         	prev_state = (dest2[i] & FLASH_Busy);
@@ -358,10 +417,9 @@ static int ar9100_pflash_write_word(ar9100_flash_geom_t *geom, unsigned long des
             	timeout--;
             	prev_state = state;
         	}
-
+#endif
         	if (!timeout)
             		return -1;
-       	    }
      }
 
     return (0);
@@ -369,12 +427,16 @@ static int ar9100_pflash_write_word(ar9100_flash_geom_t *geom, unsigned long des
 
 static int ar9100_pflash_erase(ar9100_flash_geom_t *geom, int s_first, int s_last)
 {
+//printk(KERN_EMERG "%s", __func__);
 
     int i;
     int timeout;
 
     for (i = s_first; i < s_last; i++) {
-        CFG_FLASH_WORD_SIZE state, prev_state;
+        CFG_FLASH_WORD_SIZE state, prev_state,rd_data;
+
+	 f_ptr addr_ptr = (f_ptr) (AR9100_PFLASH_CTRLR + (i * geom->sector_size * 16));
+//	printk(KERN_EMERG "%s %d", __func__,i);
 
         /* Program data [byte] - 6 step sequence */
         ar9100_write(CFG_FLASH_ADDR0, FLASH_Setup_Code1);
@@ -383,35 +445,35 @@ static int ar9100_pflash_erase(ar9100_flash_geom_t *geom, int s_first, int s_las
         ar9100_write(CFG_FLASH_ADDR0, FLASH_Setup_Code1);
         ar9100_write(CFG_FLASH_ADDR1, FLASH_Setup_Code2);
 
-        ar9100_write(i, FLASH_Block_Erase);
-
-  	if (!strcmp(geom->name,"AMD-SPANSION")) {
+        *addr_ptr = FLASH_Block_Erase;
+#if 1
         // Wait for erase completion.
         timeout = 10000000;
         while (timeout) {
-        	state = ar9100_read(i);
+        	state = *addr_ptr;
                 if (FLASHWORD(0xffff) == state) {
                         break;
                 }
                 timeout--;
             }
-	}
-	else {
+#else
         /*  Wait for completion (bit 6 stops toggling) */
        		timeout = 5000000;
-        	prev_state = (ar9100_read(i) & FLASH_Busy);
-        	while (timeout) {
-            		state = (ar9100_read(i) & FLASH_Busy);
-            		if (prev_state == state) {
-				break;
-            		}
-            		timeout--;
-            		prev_state = state;
-        	}
-
-        	if (!timeout)
-            		return -1;
-    	}
+        	prev_state = (*addr_ptr & FLASH_Busy);
+		while (timeout) {
+                	rd_data = *addr_ptr;
+                	state = rd_data & FLASH_Busy;
+                	if ((prev_state == state) && (rd_data == FLASHWORD(0xffff))) {
+                        	break;
+			}
+			timeout--;
+                        prev_state = state;
+                }
+#endif
+        if (!timeout) {
+		printk("Erase operation failed\n");
+        	return -1;
+	}
      }
    	 return 0;
 }

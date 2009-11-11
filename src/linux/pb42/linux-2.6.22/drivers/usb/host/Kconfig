@@ -78,6 +78,7 @@ config USB_EHCI_AR7100
 	help
 	  Support for Atheros AR71xx built-in EHCI controller
 
+
 config USB_ISP116X_HCD
 	tristate "ISP116X HCD support"
 	depends on USB
@@ -114,6 +115,12 @@ config USB_OHCI_AR7100
 	depends on USB_OHCI_HCD && MACH_AR7100
 	help
 	  Support for Atheros AR71xx built-in OHCI controller
+
+config USB_OHCI_AR7240
+    bool "USB OHCI support for AR7240"
+    depends on MACH_AR7240 && USB_OHCI_HCD
+    help
+        Support for AR7240 OHCI controller
 
 
 config USB_OHCI_HCD_PPC_SOC
