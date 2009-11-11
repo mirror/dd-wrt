@@ -107,11 +107,11 @@ void deconfigure_single_11n(int count)
 	sprintf(dev, "ath%d", count);
 
 	if (ifexists(dev))
-		sysprintf("wlanconfig %s destroy", dev);
+		sysprintf("80211n_wlanconfig %s destroy", dev);
 
 	foreach(var, vifs, next) {
 		if (ifexists(var)) {
-			sysprintf("wlanconfig %s destroy", var);
+			sysprintf("80211n_wlanconfig %s destroy", var);
 		}
 	}
 
