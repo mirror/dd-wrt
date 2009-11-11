@@ -228,6 +228,12 @@
 #define MACH_GROUP_AR7100       27
 #define MACH_ATHEROS_AP81       1
 
+/*
+ * Atheros ar7240
+ */
+#define MACH_GROUP_AR7240       28
+#define MACH_ATHEROS_AR7240     1
+
 #define CL_SIZE			COMMAND_LINE_SIZE
 
 const char *get_system_type(void);

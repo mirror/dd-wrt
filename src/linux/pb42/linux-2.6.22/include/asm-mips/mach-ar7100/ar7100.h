@@ -980,7 +980,6 @@ void ar7100_reset(unsigned int mask);
 
 
 #ifndef CONFIG_AR9100
-
 #define ar7100_flush_pci() do {                             \
     ar7100_reg_wr(AR7100_DDR_PCI_FLUSH, 1);                 \
     while((ar7100_reg_rd(AR7100_DDR_PCI_FLUSH) & 0x1));   \
@@ -1010,7 +1009,6 @@ void ar7100_reset(unsigned int mask);
     udelay(100000);                                     \
 } while(0)
  
-
 #define ar9100_get_rst_revisionid(version) do {         \
     version = ar7100_reg_rd(AR7100_RST_REVISION_ID);    \
 } while(0)
