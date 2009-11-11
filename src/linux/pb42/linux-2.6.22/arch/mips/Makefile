@@ -596,10 +596,41 @@ core-$(CONFIG_TOSHIBA_RBTX4938) += arch/mips/tx4938/toshiba_rbtx4938/
 core-$(CONFIG_TOSHIBA_RBTX4938) += arch/mips/tx4938/common/
 load-$(CONFIG_TOSHIBA_RBTX4938) += 0xffffffff80100000
 
+ifndef CONFIG_AR9100
+ifndef CONFIG_AR7100_LOW
+#
+#Atheros Ar7100
+#
 core-$(CONFIG_MACH_AR7100)		+=	arch/mips/ar7100/
 load-$(CONFIG_MACH_AR7100)		+=	0xffffffff80060000
-#load-$(CONFIG_MACH_AR7100)		+=	0xffffffffa0002000
 cflags-$(CONFIG_MACH_AR7100)	+= -Iinclude/asm-mips/mach-ar7100
+#
+else
+#
+# This is the Low memory load variant.  For AP94 and others
+#
+core-$(CONFIG_MACH_AR7100)		+=	arch/mips/ar7100/
+load-$(CONFIG_MACH_AR7100)		+=	0xffffffff80002000
+cflags-$(CONFIG_MACH_AR7100)	+= -Iinclude/asm-mips/mach-ar7100
+#
+endif
+else
+#
+# This is the AR9100 variant. Still dependant on MACH_AR7100
+#
+core-$(CONFIG_MACH_AR7100)		+=	arch/mips/ar7100/
+load-$(CONFIG_MACH_AR7100)		+=	0xffffffff80002000
+cflags-$(CONFIG_MACH_AR7100)	+= -Iinclude/asm-mips/mach-ar7100
+#
+endif
+
+#Atheros Ar7240
+#
+core-$(CONFIG_MACH_AR7240)		+=	arch/mips/ar7240/
+load-$(CONFIG_MACH_AR7240)		+=	0xffffffff80002000
+#load-$(CONFIG_MACH_AR7240)		+=	0xffffffffa0002000
+cflags-$(CONFIG_MACH_AR7240)	+= -Iinclude/asm-mips/mach-ar7240
+#
 
 cflags-y += -ffreestanding
 
