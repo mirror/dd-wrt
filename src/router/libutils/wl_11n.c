@@ -1,0 +1,302 @@
+/*
+ * Wireless network adapter utilities
+ *
+ * Copyright 2001-2003, Broadcom Corporation
+ * All Rights Reserved.
+ *
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ * $Id: wl.c,v 1.3 2005/11/11 09:26:19 seg Exp $
+ */
+#include <string.h>
+#include <unistd.h>
+
+#include <typedefs.h>
+#include <bcmutils.h>
+#include <wlutils.h>
+#include <shutils.h>
+#include <utils.h>
+#include <bcmnvram.h>
+#include <math.h>
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include "wireless.h"
+#undef WPA_OUI
+#undef WME_OUI
+#include "../madwifi.dev/madwifi_mimo.dev/core/net80211/ieee80211.h"
+#include "../madwifi.dev/madwifi_mimo.dev/core/net80211/ieee80211_crypto.h"
+#include "../madwifi.dev/madwifi_mimo.dev/core/net80211/ieee80211_ioctl.h"
+
+struct wifi_channels {
+	int channel;
+	int freq;
+	int noise;
+};
+
+
+/*
+ * Atheros 
+ */
+
+#define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
+static int
+set80211priv(struct iwreq *iwr, const char *ifname, int op, void *data,
+	     size_t len)
+{
+#define	N(a)	(sizeof(a)/sizeof(a[0]))
+
+	memset(iwr, 0, sizeof(struct iwreq));
+	strncpy(iwr->ifr_name, ifname, IFNAMSIZ);
+	if (len < IFNAMSIZ) {
+		/*
+		 * Argument data fits inline; put it there.
+		 */
+		memcpy(iwr->u.name, data, len);
+	} else {
+		/*
+		 * Argument data too big for inline transfer; setup a
+		 * parameter block instead; the kernel will transfer
+		 * the data for the driver.
+		 */
+		iwr->u.data.pointer = data;
+		iwr->u.data.length = len;
+	}
+
+	if (ioctl(getsocket(), op, iwr) < 0) {
+		static const char *opnames[] = {
+			IOCTL_ERR(IEEE80211_IOCTL_SETPARAM),
+			IOCTL_ERR(IEEE80211_IOCTL_GETPARAM),
+			IOCTL_ERR(IEEE80211_IOCTL_SETMODE),
+			IOCTL_ERR(IEEE80211_IOCTL_GETMODE),
+			IOCTL_ERR(IEEE80211_IOCTL_SETWMMPARAMS),
+			IOCTL_ERR(IEEE80211_IOCTL_GETWMMPARAMS),
+			IOCTL_ERR(IEEE80211_IOCTL_SETCHANLIST),
+			IOCTL_ERR(IEEE80211_IOCTL_GETCHANLIST),
+			IOCTL_ERR(IEEE80211_IOCTL_CHANSWITCH),
+			IOCTL_ERR(IEEE80211_IOCTL_GETCHANINFO),
+			IOCTL_ERR(IEEE80211_IOCTL_SETOPTIE),
+			IOCTL_ERR(IEEE80211_IOCTL_GETOPTIE),
+			IOCTL_ERR(IEEE80211_IOCTL_SETMLME),
+			IOCTL_ERR(IEEE80211_IOCTL_SETKEY),
+			IOCTL_ERR(IEEE80211_IOCTL_DELKEY),
+			IOCTL_ERR(IEEE80211_IOCTL_ADDMAC),
+			IOCTL_ERR(IEEE80211_IOCTL_DELMAC),
+		};
+		op -= SIOCIWFIRSTPRIV;
+		if (0 <= op && op < N(opnames))
+			perror(opnames[op]);
+		else
+			perror("ioctl[unknown???]");
+		return -1;
+	}
+	return 0;
+#undef N
+}
+
+int do80211priv(const char *ifname, int op, void *data, size_t len)
+{
+	struct iwreq iwr;
+
+	if (set80211priv(&iwr, ifname, op, data, len) < 0)
+		return -1;
+	if (len < IFNAMSIZ)
+		memcpy(data, iwr.u.name, len);
+	return iwr.u.data.length;
+}
+
+float wifi_getrate(char *ifname)
+{
+	struct iwreq wrq;
+
+	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+	ioctl(getsocket(), SIOCGIWRATE, &wrq);
+	return wrq.u.bitrate.value;
+}
+
+
+/*
+#define	IEEE80211_CHAN_HT20	0x10000
+#define IEEE80211_CHAN_HT40PLUS  0x20000       
+#define IEEE80211_CHAN_HT40MINUS 0x40000        
+
+
+#define IEEE80211_CHAN_11NG_HT20 \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_HT20)
+#define IEEE80211_CHAN_11NA_HT20 \
+    (IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT20)
+#define IEEE80211_CHAN_11NG_HT40PLUS \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_HT40PLUS)
+#define IEEE80211_CHAN_11NG_HT40MINUS \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_HT40MINUS)
+#define IEEE80211_CHAN_11NA_HT40PLUS \
+    (IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT40PLUS)
+#define IEEE80211_CHAN_11NA_HT40MINUS \
+    (IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT40MINUS)
+#define IEEE80211_CHAN_ALL \
+    (IEEE80211_CHAN_2GHZ | IEEE80211_CHAN_5GHZ | IEEE80211_CHAN_HT20 | IEEE80211_CHAN_GFSK | \
+     IEEE80211_CHAN_CCK | IEEE80211_CHAN_OFDM | IEEE80211_CHAN_DYN | IEEE80211_CHAN_HT40PLUS |IEEE80211_CHAN_HT40MINUS) 
+
+#define	IEEE80211_IS_CHAN_11NG_HT20(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NG_HT20) == IEEE80211_CHAN_11NG_HT20)
+#define	IEEE80211_IS_CHAN_11NA_HT20(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NA_HT20) == IEEE80211_CHAN_11NA_HT20)
+#define	IEEE80211_IS_CHAN_11NG_HT40PLUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NG_HT40PLUS) == IEEE80211_CHAN_11NG_HT40PLUS)
+#define	IEEE80211_IS_CHAN_11NG_HT40MINUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NG_HT40MINUS) == IEEE80211_CHAN_11NG_HT40MINUS)
+#define	IEEE80211_IS_CHAN_11NA_HT40PLUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NA_HT40PLUS) == IEEE80211_CHAN_11NA_HT40PLUS)
+#define	IEEE80211_IS_CHAN_11NA_HT40MINUS(_c) \
+	(((_c)->ic_flags & IEEE80211_CHAN_11NA_HT40MINUS) == IEEE80211_CHAN_11NA_HT40MINUS)
+*/
+
+static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
+{
+	struct ieee80211req_chaninfo chans;
+	struct ieee80211req_chaninfo achans;
+	const struct ieee80211_channel *c;
+	int i;
+
+	// fprintf (stderr, "list channels for %s\n", ifname);
+	if (do80211priv
+	    (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof(chans)) < 0) {
+		fprintf(stderr, "unable to get channel information\n");
+		return NULL;
+	}
+	if (!allchans) {
+		uint8_t active[64];
+
+		if (do80211priv
+		    (ifname, IEEE80211_IOCTL_GETCHANLIST, &active,
+		     sizeof(active)) < 0) {
+			fprintf(stderr, "unable to get active channel list\n");
+			return NULL;
+		}
+		memset(&achans, 0, sizeof(achans));
+		for (i = 0; i < chans.ic_nchans; i++) {
+			c = &chans.ic_chans[i];
+			if (isset(active, c->ic_ieee) || allchans)
+				achans.ic_chans[achans.ic_nchans++] = *c;
+		}
+	} else
+		achans = chans;
+
+	// fprintf(stderr,"channel number %d\n", achans.ic_nchans);
+	struct wifi_channels *list =
+	    (struct wifi_channels *)malloc(sizeof(struct wifi_channels) *
+					   (achans.ic_nchans + 1));
+
+	char wl_mode[16];
+	char wl_turbo[16];
+
+	sprintf(wl_mode, "%s_net_mode", ifname);
+	sprintf(wl_turbo, "%s_channelbw", ifname);
+	int l = 0;
+
+	for (i = 0; i < achans.ic_nchans; i++) {
+		// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
+
+		// filter out A channels if mode isnt A-Only or mixed
+		if (IEEE80211_IS_CHAN_A(&achans.ic_chans[i])) {
+#ifdef HAVE_WHRAG108
+			if (!strcmp(ifname, "ath1"))
+				continue;
+#endif
+#ifdef HAVE_TW6600
+			if (!strcmp(ifname, "ath1"))
+				continue;
+#endif
+			if (nvram_invmatch(wl_mode, "a-only")
+			    && nvram_invmatch(wl_mode, "mixed"))
+				continue;
+		}
+		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i])) {
+			if (nvram_invmatch(wl_mode, "na-only")
+			    && nvram_invmatch(wl_mode, "mixed"))
+				continue;
+		}
+		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i])) {
+			if (nvram_invmatch(wl_mode, "ng-only")
+			    && nvram_invmatch(wl_mode, "mixed"))
+				continue;
+		}
+		// filter out B/G channels if mode isnt g-only, b-only or mixed
+		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i])
+		    || IEEE80211_IS_CHAN_B(&achans.ic_chans[i])) {
+#ifdef HAVE_WHRAG108
+			if (!strcmp(ifname, "ath0"))
+				continue;
+#endif
+#ifdef HAVE_TW6600
+			if (!strcmp(ifname, "ath0"))
+				continue;
+#endif
+			if (nvram_invmatch(wl_mode, "g-only")
+			    && nvram_invmatch(wl_mode, "mixed")
+			    && nvram_invmatch(wl_mode, "b-only")
+			    && nvram_invmatch(wl_mode, "bg-mixed"))
+				continue;
+		}
+		// filter out channels which are not supporting turbo mode if turbo
+		// is enabled
+		if (!IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i])
+		    && !IEEE80211_IS_CHAN_DTURBO(&achans.ic_chans[i])) {
+			if (nvram_match(wl_turbo, "40"))
+				continue;
+		}
+		// filter out turbo channels if turbo mode is disabled
+		/*
+		 * if (IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]) ||
+		 * IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i])) { if (nvram_match
+		 * (wl_turbo, "0")) continue; }
+		 */
+		if (IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i])) {
+			if (!nvram_match(wl_turbo, "40"))
+				continue;
+		}
+
+		list[l].channel = achans.ic_chans[i].ic_ieee;
+		list[l].freq = achans.ic_chans[i].ic_freq;
+		list[l].noise = -95;	// achans.ic_chans[i].ic_noise;
+		l++;
+	}
+
+	list[l].freq = -1;
+	return list;
+}
+
+struct wifi_channels *list_channels_11n(char *devnr)
+{
+	return list_channelsext(devnr, 1);
+	/*
+	 * char csign[64]; char channel[64]; char ppp[64]; char freq[64]; char
+	 * dum1[64]; char dum2[64]; char dum3[64]; char dum4[64];
+	 * 
+	 * char cmd[64]; sprintf (cmd, "iwlist %s chan>/tmp/.channels", devnr);
+	 * system (cmd); FILE *in = fopen ("/tmp/.channels", "rb"); if (in ==
+	 * NULL) return NULL; fscanf (in, "%s %s %s %s %s %s %s %s", csign,
+	 * channel, ppp, freq, dum1, dum2, dum3, dum4); int ch = atoi (channel);
+	 * int i; struct wifi_channels *list = (struct wifi_channels *) malloc
+	 * (sizeof (struct wifi_channels) * (ch+1) ); for (i = 0; i < ch; i++) {
+	 * fscanf (in, "%s %s %s %s %s", csign, channel, ppp, freq, dum1); if
+	 * (!strcmp (csign, "Current")) break; list[i].channel = atoi (channel);
+	 * list[i].freq = strdup (freq); channelcount++; } fclose (in); return
+	 * list; 
+	 */
+}
+
+
