@@ -1306,6 +1306,7 @@ struct wifi_channels {
 	int noise;
 };
 extern struct wifi_channels *list_channels(char *devnr);
+extern struct wifi_channels *list_channels_11n(char *devnr);
 
 // extern int getchannelcount (void);
 extern int getdevicecount(void);
@@ -2654,6 +2655,10 @@ showDynOption(webs_t wp, char *propname, char *nvname, char *options[],
 static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 {
 	char wl_mode[16];
+#ifdef HAVE_MADWIFI_MIMO
+	int count;
+	sscanf(prefix, "ath%d", &count);
+#endif
 
 	sprintf(wl_mode, "%s_mode", prefix);
 	char wl_net_mode[16];
@@ -2690,9 +2695,22 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char cn[32];
 		char fr[32];
 
+#ifdef HAVE_MADWIFI_MIMO
+	if (is_ar5008(count))
+	{
+		chan = list_channels_11n(prefix);
+		if (chan == NULL)
+			chan = list_channels_11n(dev);
+	}else
+#endif
+	{
 		chan = list_channels(prefix);
 		if (chan == NULL)
 			chan = list_channels(dev);
+	}
+
+
+
 		if (chan != NULL) {
 			// int cnt = getchannelcount ();
 			websWrite(wp,
