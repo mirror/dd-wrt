@@ -438,8 +438,8 @@ if (nvram_match(sb,"upper"))
 	sysprintf("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
         sysprintf("iwpriv %s ampdu 1",use);
         sysprintf("iwpriv %s ampdulimit 50000",use);
-        sysprintf("iwpriv %s rx_chainmask %s",nvram_default_get(rxantenna,"7"));
-        sysprintf("iwpriv %s tx_chainmask %s",nvram_default_get(txantenna,"5"));
+        sysprintf("iwpriv %s rx_chainmask %s",use,nvram_default_get(rxantenna,"7"));
+        sysprintf("iwpriv %s tx_chainmask %s",use,nvram_default_get(txantenna,"5"));
 
 }
 
