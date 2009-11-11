@@ -434,6 +434,8 @@ if (nvram_match(sb,"upper"))
 	sysprintf("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
         sysprintf("iwpriv %s ampdu 1",use);
         sysprintf("iwpriv %s ampdulimit 50000",use);
+        sysprintf("iwpriv %s rx_chainmask 7",use);
+        sysprintf("iwpriv %s tx_chainmask 5",use);
 
 }
 
