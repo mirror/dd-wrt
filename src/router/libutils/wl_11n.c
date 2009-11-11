@@ -102,15 +102,33 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "a-only") && nvram_invmatch(wl_mode, "mixed") && nvram_invmatch(wl_mode, "na-only"))
 				continue;
 		}
-		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i])) {
+		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "na-only")
-			    && nvram_invmatch(wl_mode, "mixed"))
+			    && nvram_invmatch(wl_mode, "mixed") && nvram_invmatch(wl_turbo, "20") && nvram_invmatch(wl_turbo, "2040"))
+				{
 				continue;
+				}
 		}
-		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i])) {
-			if (nvram_invmatch(wl_mode, "ng-only")
-			    && nvram_invmatch(wl_mode, "mixed"))
+		if (IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i])) {
+			if (nvram_invmatch(wl_mode, "na-only")
+			    && nvram_invmatch(wl_mode, "mixed") && nvram_invmatch(wl_turbo, "40") && nvram_invmatch(wl_turbo, "2040"))
+				{
 				continue;
+				}
+		}
+		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i])) {
+			if (nvram_invmatch(wl_mode, "ng-only")
+			    && nvram_invmatch(wl_mode, "mixed") && nvram_invmatch(wl_turbo, "20") && nvram_invmatch(wl_turbo, "2040"))
+				{
+				continue;
+				}
+		}
+		if (IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i])) {
+			if (nvram_invmatch(wl_mode, "ng-only")
+			    && nvram_invmatch(wl_mode, "mixed") && nvram_invmatch(wl_turbo, "40") && nvram_invmatch(wl_turbo, "2040"))
+				{
+				continue;
+				}
 		}
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
 		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i])
@@ -118,7 +136,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "g-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "b-only")
-			    && nvram_invmatch(wl_mode, "bg-mixed") && nvram_invmatch(wl_mode, "ng-only"))
+			    && nvram_invmatch(wl_mode, "bg-mixed") 
+			    && nvram_invmatch(wl_mode, "ng-only"))
 				continue;
 		}
 
