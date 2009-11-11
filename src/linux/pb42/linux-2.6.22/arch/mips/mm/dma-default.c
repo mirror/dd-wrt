@@ -18,7 +18,6 @@
 #include <asm/io.h>
 
 #include <dma-coherence.h>
-#include <ar7100.h>
 
 static inline unsigned long dma_addr_to_virt(dma_addr_t dma_addr)
 {
@@ -119,14 +118,6 @@ static inline void __dma_sync(unsigned long addr, size_t size,
 		break;
 
 	case DMA_FROM_DEVICE:
-#ifdef CONFIG_MACH_AR7100
-#ifndef CONFIG_AR9100
-        /*
-         * Hydra needs DDR FIFO flush before any desc/dma data can be read.
-         */
-//            ar7100_flush_pci();
-#endif
-#endif
 		dma_cache_inv(addr, size);
 		break;
 

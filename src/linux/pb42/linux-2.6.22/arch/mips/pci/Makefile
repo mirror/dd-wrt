@@ -17,6 +17,7 @@ obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o pci-vr41xx.o
 obj-$(CONFIG_NEC_CMBVR4133)	+= fixup-vr4133.o
 obj-$(CONFIG_MARKEINS)		+= ops-emma2rh.o pci-emma2rh.o fixup-emma2rh.o
 obj-$(CONFIG_MACH_AR7100)	+= fixup-ar7100.o ops-ar7100.o pci-ar7100.o
+obj-$(CONFIG_MACH_AR7240)	+= fixup-ar7240.o ops-ar7240.o pci-ar7240.o
 
 #
 # These are still pretty much in the old state, watch, go blind.

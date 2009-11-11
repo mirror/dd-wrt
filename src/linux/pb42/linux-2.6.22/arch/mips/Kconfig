@@ -682,9 +682,28 @@ config AR9100
     bool "Support for Atheros ar9100 extenstions to ar7100"
     depends on MACH_AR7100
 
+config  AR7100_LOW 
+    bool "Support for loading AR7100 in low memory"
+    depends on MACH_AR7100
+
 config AR7100_EMULATION
     bool "build system for AR7100 emulation board?"
     depends on MACH_AR7100
+
+config  MACH_AR7240
+    bool "Support for Atheros ar7240 based board"
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select I8259
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_BIG_ENDIAN
+    select HW_HAS_PCI
+
+config AR7240_EMULATION
+    bool "build system for AR7240 emulation board?"
+    depends on MACH_AR7240
 
 
 
