@@ -4420,12 +4420,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
 					  prefix);
 				websWrite(wp,
-					  "<option value=\"upper\" %s>lower</option>\n",
+					  "<option value=\"upper\" %s>upper</option>\n",
 					  nvram_nmatch("upper", "%s_nctrlsb",
 						       prefix) ?
 					  "selected=\\\"selected\\\"" : "");
 				websWrite(wp,
-					  "<option value=\"lower\" %s>upper</option>\n",
+					  "<option value=\"lower\" %s>lower</option>\n",
 					  nvram_nmatch("lower", "%s_nctrlsb",
 						       prefix) ?
 					  "selected=\\\"selected\\\"" : "");
@@ -4445,12 +4445,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
 					  prefix);
 				websWrite(wp,
-					  "<option value=\"upper\" %s>lower</option>\n",
+					  "<option value=\"upper\" %s>upper</option>\n",
 					  nvram_nmatch("upper", "%s_nctrlsb",
 						       prefix) ?
 					  "selected=\\\"selected\\\"" : "");
 				websWrite(wp,
-					  "<option value=\"lower\" %s>upper</option>\n",
+					  "<option value=\"lower\" %s>lower</option>\n",
 					  nvram_nmatch("lower", "%s_nctrlsb",
 						       prefix) ?
 					  "selected=\\\"selected\\\"" : "");
