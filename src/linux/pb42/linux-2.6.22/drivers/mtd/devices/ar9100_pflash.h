@@ -5,7 +5,7 @@
 #define CFG_FLASH_ADDR0                 (0x5555)
 #define CFG_FLASH_ADDR1                 (0x2AAA)
 #define FLASHWORD(_x)                   ((CFG_FLASH_WORD_SIZE)(_x))
-#define AR9100_PFLASH_CTRLR          0xbf000000
+#define AR9100_PFLASH_CTRLR             0xbe000000
 #define AR9100_FLASH_NAME               "ar9100-nor0"
 
 

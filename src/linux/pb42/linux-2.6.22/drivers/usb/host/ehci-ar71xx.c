@@ -53,10 +53,34 @@ static int ehci_ar71xx_init(struct usb_hcd *hcd)
 	int ret;
 
 	ehci->caps = hcd->regs;
-	ehci->regs = hcd->regs +
+	ehci->regs = hcd->regs + HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
+	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
+
+	ehci->sbrn = 0x20;
+	ehci->has_synopsys_hc_bug = 1;
+
+	ehci_reset(ehci);
+
+	ret = ehci_init(hcd);
+	if (ret)
+		return ret;
+
+	ehci_port_power(ehci, 0);
+
+	return 0;
+}
+
+static int ehci_ar91xx_init(struct usb_hcd *hcd)
+{
+	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+	int ret;
+
+	ehci->caps = hcd->regs + 0x100;
+	ehci->regs = hcd->regs + 0x100 +
 			HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
 	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
 
+	ehci->is_tdi_rh_tt = 1; /*Informs USB Subsystem abt embedded TT */
 	ehci->sbrn = 0x20;
 
 	ehci_reset(ehci);
@@ -69,6 +93,7 @@ static int ehci_ar71xx_init(struct usb_hcd *hcd)
 
 	return 0;
 }
+
 
 
 static int ehci_ar71xx_probe(const struct hc_driver *driver,
@@ -168,6 +193,34 @@ static const struct hc_driver ehci_ar71xx_hc_driver = {
 #endif
 };
 
+static const struct hc_driver ehci_ar91xx_hc_driver = {
+	.description		= hcd_name,
+	.product_desc		= "Atheros AR91xx built-in EHCI controller",
+	.hcd_priv_size		= sizeof(struct ehci_hcd),
+	.irq			= ehci_irq,
+	.flags			= HCD_MEMORY | HCD_USB2,
+
+	.reset			= ehci_ar91xx_init,
+	.start			= ehci_run,
+	.stop			= ehci_stop,
+	.shutdown		= ehci_shutdown,
+
+	.urb_enqueue		= ehci_urb_enqueue,
+	.urb_dequeue		= ehci_urb_dequeue,
+	.endpoint_disable	= ehci_endpoint_disable,
+
+	.get_frame_number	= ehci_get_frame,
+
+	.hub_status_data	= ehci_hub_status_data,
+	.hub_control		= ehci_hub_control,
+#ifdef CONFIG_PM
+	.hub_suspend		= ehci_hub_suspend,
+	.hub_resume		= ehci_hub_resume,
+#endif
+};
+
+
+extern int is_ar9000;
 
 static int ehci_ar71xx_driver_probe(struct platform_device *pdev)
 {
@@ -177,7 +230,12 @@ static int ehci_ar71xx_driver_probe(struct platform_device *pdev)
 	if (usb_disabled())
 		return -ENODEV;
 
-	ret = ehci_ar71xx_probe(&ehci_ar71xx_hc_driver, &hcd, pdev);
+
+	if (is_ar9000)
+		ret = ehci_ar71xx_probe(&ehci_ar91xx_hc_driver, &hcd, pdev);
+	else
+		ret = ehci_ar71xx_probe(&ehci_ar71xx_hc_driver, &hcd, pdev);
+
 
 	return ret;
 }

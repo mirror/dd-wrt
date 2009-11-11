@@ -278,13 +278,19 @@ config MTD_AR7100_SPI_FLASH
 	depends on MTD
 config MTD_FLASH_16MB
 	bool "Support for 16MB Flash"
+	depends on MTD_AR7100_SPI_FLASH || MTD_AR7240_SPI_FLASH
+config MTD_PB44
+	bool "Support for PB44 Flash"
 	depends on MTD_AR7100_SPI_FLASH
 config MTD_FLASH_8MB
 	bool "Support for 8MB Flash"
-	depends on MTD_AR7100_SPI_FLASH
+	depends on MTD_AR7100_SPI_FLASH || MTD_AR7240_SPI_FLASH
 config MTD_AR9100_PARALLEL_FLASH
         bool "Support for ar9100 parallel flash"
         depends on MTD
+config MTD_AR7240_SPI_FLASH
+	bool "Support for ar7240 spi flash"
+	depends on MTD
 
 
 endmenu

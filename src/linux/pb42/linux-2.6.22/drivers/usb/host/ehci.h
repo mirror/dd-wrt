@@ -97,6 +97,7 @@ struct ehci_hcd {			/* one per controller */
 	unsigned		no_selective_suspend:1;
 	unsigned		has_fsl_port_bug:1; /* FreeScale */
 	unsigned		big_endian_mmio:1;
+	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */
 
 	u8			sbrn;		/* packed release number */
 
