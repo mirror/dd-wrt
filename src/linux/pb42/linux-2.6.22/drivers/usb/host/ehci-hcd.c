@@ -955,6 +955,11 @@ MODULE_LICENSE ("GPL");
 #define	PS3_SYSTEM_BUS_DRIVER	ps3_ehci_sb_driver
 #endif
 
+#ifdef CONFIG_USB_EHCI_AR9130
+#include "ehci-ar71xx.c"
+#define PLATFORM_DRIVER		ehci_ar71xx_driver
+#endif
+
 #ifdef CONFIG_USB_EHCI_AR7100
 #include "ehci-ar71xx.c"
 #define PLATFORM_DRIVER		ehci_ar71xx_driver

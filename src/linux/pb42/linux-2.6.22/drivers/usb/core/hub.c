@@ -30,6 +30,9 @@
 #include "usb.h"
 #include "hcd.h"
 #include "hub.h"
+#ifdef CONFIG_USB_OTG
+#include "../gadget/ar9130_otg.h"
+#endif
 
 struct usb_hub {
 	struct device		*intfdev;	/* the "interface" device */

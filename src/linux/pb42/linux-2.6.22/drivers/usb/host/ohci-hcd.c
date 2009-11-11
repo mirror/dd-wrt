@@ -849,7 +849,7 @@ MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_DESCRIPTION (DRIVER_INFO);
 MODULE_LICENSE ("GPL");
 
-#ifdef CONFIG_PCI
+#if defined(CONFIG_PCI) && !defined(CONFIG_USB_OHCI_AR7240)
 #include "ohci-pci.c"
 #define PCI_DRIVER		ohci_pci_driver
 #endif
@@ -923,6 +923,11 @@ MODULE_LICENSE ("GPL");
 #ifdef CONFIG_USB_OHCI_AR7100
 #include "ohci-ar71xx.c"
 #define PLATFORM_DRIVER		ohci_hcd_ar71xx_driver
+#endif
+
+#ifdef CONFIG_USB_OHCI_AR7240
+#include "ohci-ar7240.c"
+#define PLATFORM_DRIVER		ohci_hcd_ar7240_driver
 #endif
 
 #if	!defined(PCI_DRIVER) &&		\

@@ -225,10 +225,8 @@ nvram_unset(const char *name)
 static void
 erase_callback(struct erase_info *done)
 {
-//printk(KERN_EMERG "callback\n");
 	wait_queue_head_t *wait_q = (wait_queue_head_t *) done->priv;
 	wake_up(wait_q);
-//printk(KERN_EMERG "done\n");
 }
 
 int
@@ -295,7 +293,6 @@ nvram_commit(void)
 		erase.callback = erase_callback;
 		erase.priv = (u_long) &wait_q;
 
-
 		/* Unlock sector blocks */
 		if (nvram_mtd->unlock)
 			nvram_mtd->unlock(nvram_mtd, offset, nvram_mtd->erasesize);
@@ -303,14 +300,14 @@ nvram_commit(void)
 		if (!(ret = nvram_mtd->erase(nvram_mtd, &erase))) {
 				set_current_state(TASK_UNINTERRUPTIBLE);
 				add_wait_queue(&wait_q, &wait);
-				if (erase.state != MTD_ERASE_DONE &&
-				    erase.state != MTD_ERASE_FAILED)
+				if ((erase.state & MTD_ERASE_DONE)==0 &&
+				    (erase.state &MTD_ERASE_FAILED)==0)
 					schedule();
 				remove_wait_queue(&wait_q, &wait);
 				set_current_state(TASK_RUNNING);
-				if (erase.state == MTD_ERASE_FAILED)
+				if ((erase.state&MTD_ERASE_FAILED))
 				    {
-				    printk("nvram_commit: erase error\n");
+				    printk(KERN_EMERG "nvram_commit: erase error\n");
 				    goto done;
 				    }
 		}
@@ -325,6 +322,8 @@ nvram_commit(void)
 		ret = -EIO;
 		goto done;
 	}
+
+	
 
 	offset = nvram_mtd->size - erasesize;
 	ret = nvram_mtd->read(nvram_mtd, offset, 4, &len, buf);

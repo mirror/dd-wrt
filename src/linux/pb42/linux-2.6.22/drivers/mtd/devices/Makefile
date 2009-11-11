@@ -21,3 +21,4 @@ obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
 obj-$(CONFIG_MTD_SPIFLASH)	+= spiflash.o
 obj-$(CONFIG_MTD_AR7100_SPI_FLASH)	+= ar7100_flash.o
 obj-$(CONFIG_MTD_AR9100_PARALLEL_FLASH)	+= ar9100_pflash.o
+obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash.o
