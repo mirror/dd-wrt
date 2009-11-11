@@ -510,8 +510,8 @@ endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
-CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h 
+NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h  -DATH_USE_COMMONHAL
+CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -DATH_USE_COMMONHAL
 VISOBJS += wireless_madwifi.o
 NVISOBJS += wireless_madwifi11n.o
 NVISFILES += visuals/wireless_madwifi11n.c
