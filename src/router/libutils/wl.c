@@ -1374,7 +1374,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "mixed"))
 				continue;
 		}
-#ifdef MADWIFI_MIMO
+#ifdef HAVE_MADWIFI_MIMO
 		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "na-only")
 			    && nvram_invmatch(wl_mode, "mixed"))
