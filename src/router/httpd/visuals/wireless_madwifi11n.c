@@ -54,7 +54,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 }
 
 int
-ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
+ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		      char *ifname, int cnt, int turbo, int macmask)
 {
 	// unsigned char buf[24 * 1024];
@@ -160,82 +160,5 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 	return cnt;
 }
 
-extern char *getiflist(void);
-
-void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
-{
-	int c = getdevicecount();
-	char devs[32];
-	int i;
-	int cnt = 0;
-	char turbo[32];
-	int t;
-	int macmask;
-
-#ifdef FASTWEB
-	ejArgs(argc, argv, "%d", &macmask);
-#else
-	if (ejArgs(argc, argv, "%d", &macmask) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
-	for (i = 0; i < c; i++) {
-		sprintf(devs, "ath%d", i);
-		sprintf(turbo, "%s_channelbw", devs);
-		if (nvram_match(turbo, "40"))
-			t = 2;
-		else
-			t = 1;
-		cnt =
-		    ej_active_wireless_if(wp, argc, argv, devs, cnt, t,
-					  macmask);
-		char vif[32];
-
-		sprintf(vif, "%s_vifs", devs);
-		char var[80], *next;
-		char *vifs = nvram_get(vif);
-
-		if (vifs != NULL)
-			foreach(var, vifs, next) {
-			cnt =
-			    ej_active_wireless_if(wp, argc, argv, var, cnt, t,
-						  macmask);
-			}
-	}
-
-	// show wds links
-	for (i = 0; i < c; i++) {
-
-		int s;
-
-		for (s = 1; s <= 10; s++) {
-			char wdsvarname[32] = { 0 };
-			char wdsdevname[32] = { 0 };
-			char wdsmacname[32] = { 0 };
-			char *dev;
-			char *hwaddr;
-			char var[80];
-
-			sprintf(wdsvarname, "ath%d_wds%d_enable", i, s);
-			sprintf(wdsdevname, "ath%d_wds%d_if", i, s);
-			sprintf(wdsmacname, "ath%d_wds%d_hwaddr", i, s);
-			sprintf(turbo, "ath%d_channelbw", i);
-			if (nvram_match(turbo, "40"))
-				t = 2;
-			else
-				t = 1;
-
-			dev = nvram_safe_get(wdsdevname);
-			if (dev == NULL || strlen(dev) == 0)
-				continue;
-			if (nvram_match(wdsvarname, "0"))
-				continue;
-			cnt =
-			    ej_active_wireless_if(wp, argc, argv, dev, cnt, t,
-						  macmask);
-		}
-	}
-}
 
 #endif
