@@ -605,7 +605,9 @@ libutils.so: $(OBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram
 
 libwireless.so: $(WOBJS)
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) -shared -c $(NCFLAGS) $(NFILES)
+endif
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) -L../nvram -lnvram  $(WLDFLAGS)
 
 
