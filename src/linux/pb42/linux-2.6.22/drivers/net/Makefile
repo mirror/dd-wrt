@@ -133,6 +133,7 @@ obj-$(CONFIG_RIONET) += rionet.o
 
 obj-$(CONFIG_MII) += mii.o
 obj-$(CONFIG_PHYLIB) += phy/
+obj-$(CONFIG_AG71XX) += ag71xx/
 
 obj-$(CONFIG_SUNDANCE) += sundance.o
 obj-$(CONFIG_HAMACHI) += hamachi.o
@@ -290,3 +291,4 @@ obj-$(CONFIG_NETXEN_NIC) += netxen/
 obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
 obj-$(CONFIG_AR2313) += ar2313/
 obj-$(CONFIG_AG7100) += ag7100/
+obj-$(CONFIG_AG7240) += ag7240/
