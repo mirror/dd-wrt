@@ -62,7 +62,7 @@ NCFLAGS	+= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRC
 NOBJS += wl_11n.o
 NFILES += wl_11n.c
 else
-CFLAGS += -DHAVE_MADWIFI -I../services/networking -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
+CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
 endif
 WLDFLAGS = ../wireless-tools/libiw.so.29
 endif
