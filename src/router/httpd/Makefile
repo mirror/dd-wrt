@@ -17,27 +17,28 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-CFLAGS	= $(COPTS)  -fPIC
+BCFLAGS	= $(COPTS)  -fPIC
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -Imodules
+BCFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -Imodules
 else
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ -Imodules
+BCFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ -Imodules
 endif
 else
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ -Imodules
+BCFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ -Imodules
 endif
 
 ifeq ($(CONFIG_VFS),y)
-CFLAGS += -I$(TOP)/vfs -DHAVE_VFS
+BCFLAGS += -I$(TOP)/vfs -DHAVE_VFS
 LDFLAGS += -L$(TOP)/vfs
 endif
 
 #CFLAGS += -Ilzma
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lshared -lcrypt -ldl -lutils -lwireless
 
-CFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
+BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 
+CFLAGS = $(BCFLAGS)
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -509,8 +510,11 @@ endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
-VISOBJS += wireless_madwifi11n.o
+NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
+CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h 
+VISOBJS += wireless_madwifi.o
+NVISOBJS += wireless_madwifi11n.o
+NVISFILES += visuals/wireless_madwifi11n.c
 else
 CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h
 VISOBJS += wireless_madwifi.o
@@ -736,7 +740,10 @@ validate.so: validators.o webs.o wepkey.o $(REGOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
 
 visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o $(VISOBJS) $(REGOBJS2)
-	$(CC) --shared -o $@ $^ $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+	$(CC) --shared -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
+endif
+	$(CC) --shared -o $@ $^ $(NVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 	
 	
 build_date.o: build_date.c
