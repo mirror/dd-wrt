@@ -226,7 +226,7 @@ endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 NOBJS += site_survey_madwifi_11n.o
 NFILES += tools/site_survey_madwifi_11n.c
-NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
@@ -347,7 +347,7 @@ ifeq ($(CONFIG_WG302V1),y)
   CFLAGS_EXTRA += -DHAVE_WG302V1
 endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS_EXTRA += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+CFLAGS_EXTRA += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
