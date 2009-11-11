@@ -1694,7 +1694,7 @@ wl_adv.lng="Lang"; 					//************* don't use .long ! *************
 wl_adv.shrt="Kurz"; 				//************* don't use .short ! **************
 
 wl_adv.txchainmask="TX Antennen Pfade";
-wl_adv.rxchaimmask="RX Antennen Pfade";
+wl_adv.rxchainmask="RX Antennen Pfade";
 
 //help container
 
