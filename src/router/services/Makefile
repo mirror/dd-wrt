@@ -13,10 +13,11 @@ LDFLAGS += -lm
 endif
 endif
 
-CFLAGS	= $(COPTS) -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
-CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
-CFLAGS  += -fpic -I$(TOP)/services/include
+BCFLAGS	= $(COPTS) -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
+BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
+BCFLAGS  += -fpic -I$(TOP)/services/include
 
+CFLAGS += $(BCFLAGS)
 
 HCFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
@@ -222,6 +223,12 @@ endif
 ifeq ($(CONFIG_THOM),y)
 CFLAGS_EXTRA += -DHAVE_THOM
 endif
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+NOBJS += site_survey_madwifi_11n.o
+NFILES += tools/site_survey_madwifi_11n.c
+NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+endif
+
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
 OBJS += stabridge.o beep.o
@@ -339,14 +346,13 @@ endif
 ifeq ($(CONFIG_WG302V1),y)
   CFLAGS_EXTRA += -DHAVE_WG302V1
 endif
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+CFLAGS_EXTRA += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS_EXTRA += -DHAVE_MADWIFI -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-else
 CFLAGS_EXTRA += -DHAVE_MADWIFI -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-endif
 
 ifneq ($(CONFIG_NOWIFI),y)
 OBJS += madwifi.o
@@ -867,7 +873,10 @@ endif
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
-	$(CC) --shared $(CFLAGS) -o $@ $^ $(LDFLAGS)
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+	$(CC) --shared -c $(NCFLAGS) -o $(NOBJS) $(NFILES)
+endif
+	$(CC) --shared $(CFLAGS) -o $@ $^  $(NOBJS) $(LDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)

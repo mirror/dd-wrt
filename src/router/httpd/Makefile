@@ -741,7 +741,7 @@ validate.so: validators.o webs.o wepkey.o $(REGOBJS)
 
 visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o $(VISOBJS) $(REGOBJS2)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	$(CC) --shared -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	$(CC) --shared -c -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
 	$(CC) --shared -o $@ $^ $(NVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 	

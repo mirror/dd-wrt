@@ -174,6 +174,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
+int site_survey_main_11n(int argc, char *argv[]);
 
 int site_survey_main(int argc, char *argv[])
 {
@@ -190,6 +191,13 @@ int site_survey_main(int argc, char *argv[])
 	unsigned char *cp;
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
+#ifdef HAVE_MADWIFI_MIMO
+	int count;
+	sscanf(sta, "ath%d", &count);
+	if (is_ar5008(count)) {
+	    return site_survey_main_11n(argc,argv);
+	    }
+#endif
 
 	memset(site_survey_lists, sizeof(site_survey_lists), 0);
 	memset(buf, 24 * 1024, 0);
@@ -270,7 +278,7 @@ int write_site_survey(void)
 	return 1;
 }
 
-static int open_site_survey(void)
+int open_site_survey(void)
 {
 	FILE *fp;
 
