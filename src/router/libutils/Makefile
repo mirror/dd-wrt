@@ -56,11 +56,13 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS += -DHAVE_MADWIFI_MIMO
-CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
-#-DMADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
+CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
+NCFLAGS += $(COPTS) -fPIC -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi_mimo.dev/core  -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
+NCFLAGS	+= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+NOBJS += wl_11n.o
+NFILES += wl_11n.c
 else
-CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
+CFLAGS += -DHAVE_MADWIFI -I../services/networking -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
 endif
 WLDFLAGS = ../wireless-tools/libiw.so.29
 endif
@@ -600,7 +602,8 @@ clean:
 	rm -f *.c~
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram
+	$(CC) -shared -c $(NCFLAGS) $(NFILES)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ $(NOBJS) -L../nvram -lnvram
 
 libwireless.so: $(WOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ -L../nvram -lnvram  $(WLDFLAGS)
