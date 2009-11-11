@@ -2160,6 +2160,56 @@ config AG7100_GE1_RGMII
 
 endchoice
 
+config AG7240
+    tristate "Atheros AR7240 GigE"
+    depends on MACH_AR7240
+    help
+        This enables the building of Atheros AR7240 gigE driver module.
+
+config AR7240_S26_VLAN_IGMP
+    bool "Support vlan and igmp functions in AR7240-S26 switch"
+    depends on AG7240
+
+config ATHEROS_HEADER_EN
+    bool "Add two bytes atheros header before the ethernet packet."
+    depends on AG7240
+
+choice
+    prompt "port 0 interface"
+    depends on AG7240
+
+config AG7240_GE0_MII
+    bool "MII mode"
+
+endchoice
+
+config  AG7240_QOS
+    bool "Enable MAC 0 QOS "
+    depends on AG7240
+
+config  AG7240_GE1_IS_CONNECTED
+    bool "port 1 is connected to a PHY"
+    depends on AG7240
+
+choice
+    prompt "port 1 interface (depends on port0)"
+    depends on AG7240_GE1_IS_CONNECTED
+    
+config AG7240_GE1_MII
+    bool "MII mode"
+
+endchoice
+
+choice  
+    prompt "PHY or switch used"
+    depends on AG7240
+
+config AR7240_S26_PHY
+    bool "Atheros S26 Phy"
+
+endchoice
+
+
 choice  
     prompt "PHY or switch used"
     depends on AG7100
@@ -2170,9 +2220,19 @@ config ATHR_PHY
 config ATHRS26_PHY
     bool "Atheros S26 Phy"
 
+config ATHRS16_PHY
+    bool "Atheros S16 Phy"
+
 config VITESSE_PHY
     bool "Vitesse GigE Phy 8201"
 
+config CAMEO_REALTEK_PHY
+    bool "Cameo Realtek Phy"
+
+config BUFFALO
+    bool "WHR G300NH support"
+    depends on CAMEO_REALTEK_PHY
+        
 config VITESSE_8601_PHY
     bool "Vitesse Gige Phy 8601 on MAC0 and optionally on MAC1"
 	
@@ -2189,6 +2249,43 @@ config ADM6996FC_PHY
     bool "AdmTek 6996FC"
 
 endchoice
+
+config  AG7240_LEN_PER_TX_DS 
+        int "Len per tx descriptor" 
+        default "1536" 
+	depends on (REALTEK_PHY ||  ADM6996FC_PHY || ICPLUS_PHY) && AG7240
+
+config  AG7240_LEN_PER_TX_DS 
+        int "Len per tx descriptor" 
+	default "512" 	
+	depends on !(REALTEK_PHY ||  ADM6996FC_PHY || ICPLUS_PHY) && AG7240
+
+config  AG7240_NUMBER_TX_PKTS
+        int "Number tx pkts"   
+        default "100"
+        depends on AG7240
+
+config  AG7240_NUMBER_RX_PKTS
+        int "Number rx pkts"       
+        default "252"
+        depends on AG7240
+
+config  AG7240_MAC_LOCATION 
+    hex "Memory location of MAC addresses (in flash)" 
+	default "0xbfff0000" 	
+	help
+	  This is the physical address in memory that contains
+	  the MAC addresses for the board Ethernet interfaces.  They
+	  are stored sequentially in 6 byte groups, for the total number
+	  of interfaces supported on the board.
+	depends on AG7240
+
+config  AG7240_USE_TRC
+	bool "Print realtime trace on asserts, this will negatively affect performance"
+	default 0
+	depends on AG7240
+
+
 
 config  AG7100_LEN_PER_TX_DS 
         int "Len per tx descriptor" 
@@ -2255,6 +2352,8 @@ config ACENIC_OMIT_TIGON_I
 	  Tigon II, say N here.
 
 	  The safe and default value for this is N.
+
+#source drivers/net/ag71xx/Kconfig
 
 config DL2K
 	tristate "D-Link DL2000-based Gigabit Ethernet support"
