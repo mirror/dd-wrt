@@ -10,8 +10,8 @@
 	<div id="idhotspotsys">
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.nobridge"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","0", "checked"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","1", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","0", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', false)" /><% tran("share.disable"); %>
 		</div>
 	<div class="setting">
 		<div class="label"><% tran("hotspotsys.uamenable"); %></div>
@@ -32,9 +32,11 @@
 			<div class="label"><% tran("hotspotsys.locationid"); %></div>
 			<input class="text" maxLength="500" size="25" name="hotss_locationid" value="<% nvram_get("hotss_locationid"); %>" />
 		</div>
+	<div id="idhotssdhcp">
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.dhcp"); %></div>
 			<% show_ifselect("totss_interface"); %>
 		</div>
-	  </div>
+	</div>
+	</div>
 </fieldset><br />
