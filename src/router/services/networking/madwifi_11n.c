@@ -277,8 +277,8 @@ static void set_netmode(char *wif, char *dev, char *use)
 	sprintf(net, "%s_net_mode", dev);
 	sprintf(bw, "%s_channelbw", dev);
 	sprintf(xr, "%s_xr", dev);
-	sprintf(txantenna, "ath%d_txantenna", count);
-	sprintf(rxantenna, "ath%d_rxantenna", count);
+	sprintf(txantenna, "%s_txantenna", dev);
+	sprintf(rxantenna, "%s_rxantenna", dev);
 //    sprintf( comp, "%s_compression", dev );
 	sprintf(ff, "%s_ff", dev);
 #ifdef HAVE_WHRAG108
@@ -438,8 +438,8 @@ if (nvram_match(sb,"upper"))
 	sysprintf("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
         sysprintf("iwpriv %s ampdu 1",use);
         sysprintf("iwpriv %s ampdulimit 50000",use);
-        sysprintf("iwpriv %s rx_chainmask 7",nvram_default_get(rxantenna,"7"));
-        sysprintf("iwpriv %s tx_chainmask 5",nvram_default_get(txantenna,"5"));
+        sysprintf("iwpriv %s rx_chainmask %s",nvram_default_get(rxantenna,"7"));
+        sysprintf("iwpriv %s tx_chainmask %s",nvram_default_get(txantenna,"5"));
 
 }
 
