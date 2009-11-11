@@ -1693,6 +1693,9 @@ wl_adv.table2="EDCA STA Parameter (Client nach AP)";
 wl_adv.lng="Lang"; 					//************* don't use .long ! *************
 wl_adv.shrt="Kurz"; 				//************* don't use .short ! **************
 
+wl_adv.txchainmask="TX Antennen Pfade";
+wl_adv.rxchaimmask="RX Antennen Pfade";
+
 //help container
 
 hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muss dazu jedes Gerät in Ihrem Netzwerk diesen Betriebsmodus unterstützen.";

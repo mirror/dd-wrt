@@ -1870,6 +1870,11 @@ wl_adv.label24="Antenna Alignment";
 wl_adv.label25="Antenna Output";
 wl_adv.table1="EDCA AP Parameters (AP to Client)";
 
+wl_adv.txchainmask="TX Antenna Chains";
+wl_adv.rxchaimmask="RX Antenna Chains";
+
+
+
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
