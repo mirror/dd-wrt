@@ -602,11 +602,11 @@ clean:
 	rm -f *.c~
 
 libutils.so: $(OBJS)
-	$(CC) -shared -c $(NCFLAGS) $(NFILES)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ $(NOBJS) -L../nvram -lnvram
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram
 
 libwireless.so: $(WOBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ -L../nvram -lnvram  $(WLDFLAGS)
+	$(CC) -shared -c $(NCFLAGS) $(NFILES)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) -L../nvram -lnvram  $(WLDFLAGS)
 
 
 libutils.a: $(OBJS)
