@@ -51,6 +51,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.hotss_enable, 'idhotspotsys', <% nvram_else_match("hotss_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_uamenable, 'idhotssuam', <% nvram_else_match("hotss_uamenable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_nobridge, 'idhotssdhcp', <% nvram_else_match("hotss_nobridge", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.chilli_nowifibridge, 'idchillidhcp', <% nvram_else_match("chilli_nowifibridge", "1", "1", "0"); %> == 1);
 			
 	update = new StatusbarUpdate();
 	update.start();
