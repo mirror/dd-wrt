@@ -359,9 +359,9 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s puren 1",use);
 			sysprintf("iwpriv %s cwmmode 2",use);
 			if (up)
-			sysprintf("iwpriv %s extoffset 1",use);
-			else
 			sysprintf("iwpriv %s extoffset -1",use);
+			else
+			sysprintf("iwpriv %s extoffset 1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 			if (!strcmp(netmode, "na-only")) {
@@ -377,9 +377,9 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s puren 1",use);
 			sysprintf("iwpriv %s cwmmode 2",use);
 			if (up)
-			sysprintf("iwpriv %s extoffset 1",use);
-			else
 			sysprintf("iwpriv %s extoffset -1",use);
+			else
+			sysprintf("iwpriv %s extoffset 1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 		}
