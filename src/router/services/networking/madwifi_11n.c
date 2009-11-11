@@ -264,17 +264,21 @@ static void set_rate(char *dev, char *priv)
 
 static void set_netmode(char *wif, char *dev, char *use)
 {
-	char net[16];
-	char mode[16];
-	char xr[16];
-	char comp[32];
-	char ff[16];
-	char bw[16];
+	static char net[16];
+	static char mode[16];
+	static char xr[16];
+	static char comp[32];
+	static char ff[16];
+	static char bw[16];
+	static char rxantenna[32];
+	static char txantenna[32];
 
 	sprintf(mode, "%s_mode", dev);
 	sprintf(net, "%s_net_mode", dev);
 	sprintf(bw, "%s_channelbw", dev);
 	sprintf(xr, "%s_xr", dev);
+	sprintf(txantenna, "ath%d_txantenna", count);
+	sprintf(rxantenna, "ath%d_rxantenna", count);
 //    sprintf( comp, "%s_compression", dev );
 	sprintf(ff, "%s_ff", dev);
 #ifdef HAVE_WHRAG108
@@ -434,8 +438,8 @@ if (nvram_match(sb,"upper"))
 	sysprintf("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
         sysprintf("iwpriv %s ampdu 1",use);
         sysprintf("iwpriv %s ampdulimit 50000",use);
-        sysprintf("iwpriv %s rx_chainmask 7",use);
-        sysprintf("iwpriv %s tx_chainmask 5",use);
+        sysprintf("iwpriv %s rx_chainmask 7",nvram_default_get(rxantenna,"7"));
+        sysprintf("iwpriv %s tx_chainmask 5",nvram_default_get(txantenna,"5"));
 
 }
 
@@ -538,8 +542,6 @@ void configure_single_11n(int count)
 	static char sens[32];
 	static char basedev[16];
 	static char diversity[32];
-	static char rxantenna[32];
-	static char txantenna[32];
 	static char athmac[16];
 	static char maxassoc[32];
 	static char wl_poll[32];
@@ -563,8 +565,6 @@ void configure_single_11n(int count)
 	sprintf(power, "ath%d_txpwrdbm", count);
 	sprintf(sens, "ath%d_distance", count);
 	sprintf(diversity, "ath%d_diversity", count);
-	sprintf(txantenna, "ath%d_txantenna", count);
-	sprintf(rxantenna, "ath%d_rxantenna", count);
 	sprintf(athmac, "ath%d_hwaddr", count);
 
 	// create base device
