@@ -3772,6 +3772,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_mode[16];
 	char wl_macaddr[16];
 	char wl_ssid[16];
+#ifdef HAVE_MADWIFI_MIMO
+	int count;
+	sscanf(prefix, "ath%d", &count);
+#endif
 
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
@@ -4093,8 +4097,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
-	showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 
+#ifdef HAVE_MADWIFI_MIMO
+	if (!is_ar5008(count))
+#endif
+	{
+	showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.noise_immunity)</script></div>\n<select name=\"%s\">\n",
@@ -4123,6 +4131,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 	showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
+	}
 
 	showOptionsLabel(wp, "wl_basic.protmode", wl_protmode,
 			 "None CTS RTS/CTS", nvram_default_get(wl_protmode,
@@ -4131,9 +4140,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	show_rates(wp, prefix, 0);
 	show_rates(wp, prefix, 1);
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
+#ifdef HAVE_MADWIFI_MIMO
+	if (!is_ar5008(count))
+#endif
+	{
 	showRadio(wp, "wl_basic.extrange", wl_xr);
-//    showRadio( wp, "wl_basic.supergcomp", wl_comp );
 	showRadio(wp, "wl_basic.supergff", wl_ff);
+	}
 #if 0
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
@@ -4148,8 +4161,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_MADWIFI_MIMO
-	int count;
-	sscanf(prefix, "ath%d", &count);
 	if (is_ar5008(count)) {
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
@@ -4266,6 +4277,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 
 #else
+#ifdef HAVE_MADWIFI_MIMO
+	if (!is_ar5008(count))
+#endif
+	{
 	showRadio(wp, "wl_basic.diversity", wl_diversity);
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",
@@ -4306,6 +4321,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
+	}
 #endif
 #endif
 #ifdef HAVE_MADWIFI
@@ -4399,12 +4415,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 			if (nvram_nmatch("40", "%s_nbw", prefix)) {
 				websWrite(wp, "<div class=\"setting\">\n");
-//          websWrite( wp,
-//                     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
-//          websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",
-//                     prefix );
-
-////////////////////////
 				websWrite(wp,
 					  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
@@ -4420,13 +4430,36 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 						       prefix) ?
 					  "selected=\\\"selected\\\"" : "");
 				websWrite(wp, "</select>\n");
-////////////////////////
 
 				websWrite(wp, "</div>\n");
 			}
-		} else
+		} else{
 
 			show_channel(wp, prefix, prefix, 0);
+#ifdef HAVE_MADWIFI_MIMO
+	if (is_ar5008(count) && (nvram_match(wl_width,"40") || nvram_match(wl_width,"2040")))
+	{
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp,
+					  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
+				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",
+					  prefix);
+				websWrite(wp,
+					  "<option value=\"upper\" %s>lower</option>\n",
+					  nvram_nmatch("upper", "%s_nctrlsb",
+						       prefix) ?
+					  "selected=\\\"selected\\\"" : "");
+				websWrite(wp,
+					  "<option value=\"lower\" %s>upper</option>\n",
+					  nvram_nmatch("lower", "%s_nctrlsb",
+						       prefix) ?
+					  "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "</select>\n");
+
+				websWrite(wp, "</div>\n");	
+	}
+#endif
+		}
 
 		char wl_closed[16];
 

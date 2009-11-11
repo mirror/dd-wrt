@@ -328,10 +328,12 @@ static void set_netmode(char *wif, char *dev, char *use)
 //    ifconfig ${APNAME} txqueuelen $TXQUEUELEN
 //    ifconfig wifi$IFNUM txqueuelen $TXQUEUELEN
     
-
-
+int up=0;
+char sb[32];
+sprintf(sb,"%s_nctrlsb",use);
+if (nvram_match(sb,"upper"))
+    up=1;
 	if (nvram_default_match(bw, "40", "20")) {
-		{
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 6", use);
 			}
@@ -341,7 +343,10 @@ static void set_netmode(char *wif, char *dev, char *use)
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
-			sysprintf("iwpriv %s mode 11nght40minus", use);
+			if (up)
+			    sysprintf("iwpriv %s mode 11nbht40plus", use);
+			else
+			    sysprintf("iwpriv %s mode 11nght40minus", use);
 
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
@@ -349,18 +354,27 @@ static void set_netmode(char *wif, char *dev, char *use)
 			sysprintf("iwpriv %s shortgi 1",use);
 			sysprintf("iwpriv %s puren 1",use);
 			sysprintf("iwpriv %s cwmmode 2",use);
+			if (up)
+			sysprintf("iwpriv %s extoffset 1",use);
+			else
 			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 			if (!strcmp(netmode, "na-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
-			sysprintf("iwpriv %s mode 11naht40minus", use);
+			if (up)
+			    sysprintf("iwpriv %s mode 11naht40plus", use);
+			else
+			    sysprintf("iwpriv %s mode 11naht40minus", use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
 			sysprintf("iwpriv %s puren 1",use);
 			sysprintf("iwpriv %s cwmmode 2",use);
+			if (up)
+			sysprintf("iwpriv %s extoffset 1",use);
+			else
 			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
@@ -417,26 +431,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 		}
-	} else {
-		char *ext = nvram_get(xr);
-
-		if (ext) {
-			if (strcmp(ext, "1") == 0) {
-				sysprintf("iwpriv %s xr 1", use);
-			} else {
-				sysprintf("iwpriv %s xr 0", use);
-			}
-		}
-	}
-//    if( nvram_default_match( comp, "1", "0" ) )
-//      sysprintf("iwpriv %s compression 1",use);
-//    else
-//      sysprintf("iwpriv %s compression 0",use);
-
-	if (nvram_default_match(ff, "1", "0"))
-		sysprintf("iwpriv %s ff 1", use);
-	else
-		sysprintf("iwpriv %s ff 0", use);
+	sysprintf("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
+        sysprintf("iwpriv %s ampdu 1",use);
+        sysprintf("iwpriv %s ampdulimit 50000",use);
 
 }
 
@@ -691,16 +688,6 @@ void configure_single_11n(int count)
 	int disablescan = 0;
 
 	set_scanlist(dev, wif);
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
-		char *ch = nvram_default_get(channel, "0");
-
-		if (strcmp(ch, "0") == 0) {
-			sysprintf("iwconfig %s channel 0", dev);
-		} else {
-			sysprintf("iwconfig %s channel 0", dev);
-			sysprintf("iwconfig %s freq %sM", dev, ch);
-		}
-	}
 
 	// don't call it twice
 	// if (useif)
@@ -731,6 +718,7 @@ void configure_single_11n(int count)
 			setsysctrl(wif, "dynack_count", 20);
 		}
 	}
+#if 0
 	char wl_intmit[32];
 	char wl_noise_immunity[32];
 	char wl_ofdm_weak_det[32];
@@ -749,6 +737,7 @@ void configure_single_11n(int count)
 	setsysctrl(wif, "noise_immunity", level);
 	setsysctrl(wif, "ofdm_weak_det",
 		   atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
+#endif
 
 	if (isEMP(dev))		//check this only if the current installed card is usually a emp card. this is made to prevent card destruction
 	{
@@ -758,83 +747,7 @@ void configure_single_11n(int count)
 
 	}
 
-	char *enable = "enable";
-	char *disable = "disable";
 
-#ifdef HAVE_NS5
-	char *gpio = "1";
-#endif
-#ifdef HAVE_NS3
-	char *gpio = "1";
-#endif
-#ifdef HAVE_LC5
-	char *gpio = "1";
-#endif
-#ifdef HAVE_NS2
-	char *gpio = "7";
-#endif
-#ifdef HAVE_LC2
-	enable = "disable";	// swap it
-	disable = "enable";
-	char *gpio = "2";
-#endif
-
-#if defined(HAVE_NS2)  || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
-	int tx = atoi(nvram_default_get(txantenna, "0"));
-
-	setsysctrl(wif, "diversity", 0);
-	switch (tx) {
-	case 0:		// vertical
-		setsysctrl(wif, "rxantenna", 2);
-		setsysctrl(wif, "txantenna", 2);
-		eval("gpio", enable, gpio);
-		break;
-	case 1:		// horizontal
-		setsysctrl(wif, "rxantenna", 1);
-		setsysctrl(wif, "txantenna", 1);
-		eval("gpio", enable, gpio);
-		break;
-	case 2:		// external
-		setsysctrl(wif, "rxantenna", 1);
-		setsysctrl(wif, "txantenna", 1);
-		eval("gpio", disable, gpio);
-		break;
-	case 3:		// adaptive
-		setsysctrl(wif, "diversity", 1);
-		setsysctrl(wif, "rxantenna", 0);
-		setsysctrl(wif, "txantenna", 0);
-		eval("gpio", enable, gpio);
-		break;
-	}
-#else
-
-#if defined(HAVE_PICO2) || defined(HAVE_PICO2HP) || defined(HAVE_PICO5)
-	int rx = 1;
-	int tx = 1;
-	int diva = 0;		//atoi( nvram_default_get( diversity, "0" ) );
-//#elif defined(HAVE_EOC5610)
-//      int rx = atoi(nvram_default_get(txantenna, "1"));
-//      int tx = atoi(nvram_default_get(txantenna, "1"));
-//      int diva = 0;           //atoi( nvram_default_get( diversity, "0" ) );
-//      int rx = 1;
-//      int tx = 0;             // fix to internal path, since both antennas use the same connector. so only the switch matters
-//      int diva = 1;           //1;// atoi( nvram_default_get( diversity, "0" ) );
-//#elif defined(HAVE_EOC1650)
-//      int rx = 2;             //atoi( nvram_default_get( txantenna, "2" ) ); // secondary antenna output is the internal antenna and should be used as default value
-//      int tx = 2;             //atoi( nvram_default_get( txantenna, "2" ) );
-//      int rx = 1;
-//      int tx = 0;             // fix to internal path, since both antennas use the same connector. so only the switch matters
-//      int diva = 1;           //1;// atoi( nvram_default_get( diversity, "0" ) );
-#else
-	int rx = atoi(nvram_default_get(rxantenna, "1"));
-	int tx = atoi(nvram_default_get(txantenna, "1"));
-	int diva = atoi(nvram_default_get(diversity, "0"));
-#endif
-
-	setsysctrl(wif, "diversity", diva);
-	setsysctrl(wif, "rxantenna", rx);
-	setsysctrl(wif, "txantenna", tx);
-#endif
 	// setup vif interfaces first
 	char chanshift_s[32];
 
