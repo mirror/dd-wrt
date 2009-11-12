@@ -190,7 +190,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		else
 			t = 1;
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(c))
+	if (is_ar5008(i))
 		cnt = ej_active_wireless_if_11n(wp, argc, argv, devs, cnt, t,
 					  macmask);
 	else
@@ -206,7 +206,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(c))
+	if (is_ar5008(i))
 			cnt =
 			    ej_active_wireless_if_11n(wp, argc, argv, var, cnt, t,
 						  macmask);
@@ -246,7 +246,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			if (nvram_match(wdsvarname, "0"))
 				continue;
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(c))
+	if (is_ar5008(i))
 			cnt =
 			    ej_active_wireless_if_11n(wp, argc, argv, dev, cnt, t,
 						  macmask);
