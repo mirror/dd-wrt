@@ -262,6 +262,24 @@ static void set_rate(char *dev, char *priv)
 */
 }
 
+static void setup_channel(char *dev)
+{
+char *apm;
+char wl[32];
+sprintf(wl,"%s_mode",dev);
+	apm = nvram_default_get(wl, "ap");
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
+		cprintf("set channel\n");
+		char *ch = nvram_default_get(channel, "0");
+
+		if (strcmp(ch, "0") == 0) {
+			sysprintf("iwconfig %s channel 0", dev);
+		} else {
+			sysprintf("iwconfig %s freq %sM", dev, ch);
+		}
+	}
+}
+
 static void set_netmode(char *wif, char *dev, char *use)
 {
 	static char net[16];
@@ -281,43 +299,34 @@ static void set_netmode(char *wif, char *dev, char *use)
 	sprintf(rxantenna, "%s_rxantenna", dev);
 //    sprintf( comp, "%s_compression", dev );
 	sprintf(ff, "%s_ff", dev);
-#ifdef HAVE_WHRAG108
-	char *netmode;
-
-	if (!strcmp(dev, "ath0"))
-		netmode = nvram_default_get(net, "a-only");
-	else
-		netmode = nvram_default_get(net, "mixed");
-#else
 	char *netmode = nvram_default_get(net, "mixed");
-#endif
 	// fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
 	cprintf("configure net mode %s\n", netmode);
 
 	{
-#ifdef HAVE_WHRAG108
-		if (!strncmp(use, "ath0", 4)) {
-			sysprintf("iwpriv %s mode 1", use);
-		} else
-#endif
-#ifdef HAVE_TW6600
-		if (!strncmp(use, "ath0", 4)) {
-			sysprintf("iwpriv %s mode 1", use);
-		} else
-#endif
 		{
 			sysprintf("iwpriv %s xr 0", use);
 			if (!strcmp(netmode, "mixed"))
+				{
 				sysprintf("iwpriv %s mode 0", use);
+				setup_channel(use);
+				}
 			if (!strcmp(netmode, "b-only"))
+				{
 				sysprintf("iwpriv %s mode 2", use);
+				setup_channel(use);
+				}
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 3", use);
 				sysprintf("iwpriv %s pureg 1", use);
+				setup_channel(use);
 			}
 
 			if (!strcmp(netmode, "a-only"))
+				{
 				sysprintf("iwpriv %s mode 1", use);
+				setup_channel(use);
+				}
 		}
 	}
 //	IEEE80211_HTINFO_EXTOFFSET_ABOVE = 1,   /* +1 extension channel above control channel */ 
@@ -340,9 +349,11 @@ if (nvram_match(sb,"upper"))
 	if (nvram_default_match(bw, "40", "20")) {
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 6", use);
+				setup_channel(use);
 			}
 			if (!strcmp(netmode, "a-only")) {
 				sysprintf("iwpriv %s mode 5", use);
+				setup_channel(use);
 			}
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
@@ -352,6 +363,7 @@ if (nvram_match(sb,"upper"))
 			else
 			    sysprintf("iwpriv %s mode 11nght40minus", use);
 
+				setup_channel(use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			
@@ -371,6 +383,7 @@ if (nvram_match(sb,"upper"))
 			    sysprintf("iwpriv %s mode 11naht40plus", use);
 			else
 			    sysprintf("iwpriv %s mode 11naht40minus", use);
+				setup_channel(use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -388,6 +401,7 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
+				setup_channel(use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -414,6 +428,7 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
+				setup_channel(use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -426,6 +441,7 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11naht20", use);
+				setup_channel(use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -462,12 +478,12 @@ static void setRTS(char *use)
 	} else {
 		sysprintf("iwconfig %s rts off", use);
 	}
-	if (nvram_nmatch("None", "%s_protmode", use))
+/*	if (nvram_nmatch("None", "%s_protmode", use))
 		sysprintf("iwpriv %s protmode 0", use);
 	if (nvram_nmatch("CTS", "%s_protmode", use))
 		sysprintf("iwpriv %s protmode 1", use);
 	if (nvram_nmatch("RTS/CTS", "%s_protmode", use))
-		sysprintf("iwpriv %s protmode 2", use);
+		sysprintf("iwpriv %s protmode 2", use);*/
 }
 
 /*static void set_compression( int count )
@@ -835,6 +851,7 @@ void configure_single_11n(int count)
 		set_scanlist(dev, wif);
 		setRTS(var);
 
+#if 0
 		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta")
 		    && strcmp(mvap, "wet")) {
 			cprintf("set channel\n");
@@ -846,6 +863,7 @@ void configure_single_11n(int count)
 				sysprintf("iwconfig %s freq %sM", var, ch);
 			}
 		}
+#endif
 		sysprintf("iwpriv %s bgscan 0", var);
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
@@ -960,11 +978,11 @@ void configure_single_11n(int count)
 
 	char preamble[32];
 
-	sprintf(preamble, "%s_preamble", dev);
+/*	sprintf(preamble, "%s_preamble", dev);
 	if (nvram_default_match(preamble, "1", "0")) {
 		sysprintf("iwpriv %s shpreamble 1", dev);
 	} else
-		sysprintf("iwpriv %s shpreamble 0", dev);
+		sysprintf("iwpriv %s shpreamble 0", dev);*/
 
 	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0
 	    || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0) {
@@ -1019,6 +1037,7 @@ void configure_single_11n(int count)
 			setupKey(var);
 		}
 	}
+#if 0
 
 	apm = nvram_default_get(wl, "ap");
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
@@ -1031,7 +1050,7 @@ void configure_single_11n(int count)
 			sysprintf("iwconfig %s freq %sM", dev, ch);
 		}
 	}
-
+#endif
 	if (strcmp(apm, "sta")) {
 		char bridged[32];
 
