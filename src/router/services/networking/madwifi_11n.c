@@ -262,10 +262,12 @@ static void set_rate(char *dev, char *priv)
 */
 }
 
-static void setup_channel(char *dev)
+static void setup_channel(char *dev,char *use)
 {
 char *apm;
 char wl[32];
+char channel[32];
+sprintf(channel, "%s_channel", dev);
 sprintf(wl,"%s_mode",dev);
 	apm = nvram_default_get(wl, "ap");
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
@@ -273,9 +275,9 @@ sprintf(wl,"%s_mode",dev);
 		char *ch = nvram_default_get(channel, "0");
 
 		if (strcmp(ch, "0") == 0) {
-			sysprintf("iwconfig %s channel 0", dev);
+			sysprintf("iwconfig %s channel 0", use);
 		} else {
-			sysprintf("iwconfig %s freq %sM", dev, ch);
+			sysprintf("iwconfig %s freq %sM", use, ch);
 		}
 	}
 }
@@ -309,23 +311,23 @@ static void set_netmode(char *wif, char *dev, char *use)
 			if (!strcmp(netmode, "mixed"))
 				{
 				sysprintf("iwpriv %s mode 0", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 				}
 			if (!strcmp(netmode, "b-only"))
 				{
 				sysprintf("iwpriv %s mode 2", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 				}
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 3", use);
 				sysprintf("iwpriv %s pureg 1", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 			}
 
 			if (!strcmp(netmode, "a-only"))
 				{
 				sysprintf("iwpriv %s mode 1", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 				}
 		}
 	}
@@ -349,11 +351,11 @@ if (nvram_match(sb,"upper"))
 	if (nvram_default_match(bw, "40", "20")) {
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 6", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 			}
 			if (!strcmp(netmode, "a-only")) {
 				sysprintf("iwpriv %s mode 5", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 			}
 			if (!strcmp(netmode, "ng-only")) {
 			sysprintf("iwpriv %s nf_weight 2",use);
@@ -363,7 +365,7 @@ if (nvram_match(sb,"upper"))
 			else
 			    sysprintf("iwpriv %s mode 11nght40minus", use);
 
-				setup_channel(use);
+				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			
@@ -383,7 +385,7 @@ if (nvram_match(sb,"upper"))
 			    sysprintf("iwpriv %s mode 11naht40plus", use);
 			else
 			    sysprintf("iwpriv %s mode 11naht40minus", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -401,7 +403,7 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -428,7 +430,7 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -441,7 +443,7 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s nf_weight 2",use);
 			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11naht20", use);
-				setup_channel(use);
+				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
 			sysprintf("iwpriv %s shortgi 1",use);
@@ -978,11 +980,14 @@ void configure_single_11n(int count)
 
 	char preamble[32];
 
-/*	sprintf(preamble, "%s_preamble", dev);
+	if (nvram_match(wl,"g-only") || nvram_match(wl,"b-only"))
+	{
+	sprintf(preamble, "%s_preamble", dev);
 	if (nvram_default_match(preamble, "1", "0")) {
 		sysprintf("iwpriv %s shpreamble 1", dev);
 	} else
-		sysprintf("iwpriv %s shpreamble 0", dev);*/
+		sysprintf("iwpriv %s shpreamble 0", dev);
+	}
 
 	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0
 	    || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0) {
