@@ -533,10 +533,10 @@ int internal_getRouterBrand()
 	if (file)		// new detection scheme
 	{
 		fseek(file, 32, SEEK_SET);
-		char gwid[7];
+		char gwid[9];
 
-		gwid[6] = 0;
-		int ret = fread(gwid, 6, 1, file);
+		gwid[8] = 0;
+		int ret = fread(gwid, 8, 1, file);
 
 		if (ret < 1) {
 			fclose(file);
