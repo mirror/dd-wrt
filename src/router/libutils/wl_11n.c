@@ -94,6 +94,11 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	sprintf(wl_mode, "%s_net_mode", ifname);
 	sprintf(wl_turbo, "%s_channelbw", ifname);
 	int l = 0;
+int up=0;
+char sb[32];
+sprintf(sb,"%s_nctrlsb",ifname);
+if (nvram_match(sb,"upper"))
+    up=1;
 
 	for (i = 0; i < achans.ic_nchans; i++) {
 
@@ -115,6 +120,10 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				{
 				continue;
 				}
+			if (up && !IEEE80211_IS_CHAN_11N_CTL_U_CAPABLE(&achans.ic_chans[i]))
+			    continue;
+			if (!up && !IEEE80211_IS_CHAN_11N_CTL_L_CAPABLE(&achans.ic_chans[i]))
+			    continue;
 		}
 		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "ng-only")
@@ -129,6 +138,10 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				{
 				continue;
 				}
+			if (up && !IEEE80211_IS_CHAN_11N_CTL_U_CAPABLE(&achans.ic_chans[i]))
+			    continue;
+			if (!up && !IEEE80211_IS_CHAN_11N_CTL_L_CAPABLE(&achans.ic_chans[i]))
+			    continue;
 		}
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
 		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i])
