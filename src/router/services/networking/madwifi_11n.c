@@ -307,7 +307,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 
 	{
 		{
-			sysprintf("iwpriv %s xr 0", use);
+//			sysprintf("iwpriv %s xr 0", use);
 			if (!strcmp(netmode, "mixed"))
 				{
 				sysprintf("iwpriv %s mode 0", use);
@@ -358,8 +358,6 @@ if (nvram_match(sb,"upper"))
 				setup_channel(dev,use);
 			}
 			if (!strcmp(netmode, "ng-only")) {
-			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprintf("iwpriv %s chan_switch 0",use);
 			if (up)
 			    sysprintf("iwpriv %s mode 11nbht40plus", use);
 			else
@@ -373,14 +371,12 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s puren 1",use);
 			sysprintf("iwpriv %s cwmmode 2",use);
 			if (up)
-			sysprintf("iwpriv %s extoffset -1",use);
-			else
 			sysprintf("iwpriv %s extoffset 1",use);
+			else
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 			if (!strcmp(netmode, "na-only")) {
-			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprintf("iwpriv %s chan_switch 0",use);
 			if (up)
 			    sysprintf("iwpriv %s mode 11naht40plus", use);
 			else
@@ -392,16 +388,14 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s puren 1",use);
 			sysprintf("iwpriv %s cwmmode 2",use);
 			if (up)
-			sysprintf("iwpriv %s extoffset -1",use);
-			else
 			sysprintf("iwpriv %s extoffset 1",use);
+			else
+			sysprintf("iwpriv %s extoffset -1",use);
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 		}
 	if (nvram_default_match(bw, "2040", "20")) {
 			if (!strcmp(netmode, "ng-only")) {
-			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
 				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
@@ -413,8 +407,6 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 			if (!strcmp(netmode, "na-only")) {
-			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11naht20", use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
 			sysprintf("ifconfig %s txqueuelen 1000",wif);
@@ -427,8 +419,6 @@ if (nvram_match(sb,"upper"))
 		}
 	if (nvram_default_match(bw, "20", "20")) {
 			if (!strcmp(netmode, "ng-only")) {
-			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11nght20", use);
 				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
@@ -440,8 +430,6 @@ if (nvram_match(sb,"upper"))
 			sysprintf("iwpriv %s extprotspac 0",use);
 			}
 			if (!strcmp(netmode, "na-only")) {
-			sysprintf("iwpriv %s nf_weight 2",use);
-			sysprintf("iwpriv %s chan_switch 0",use);
 			sysprintf("iwpriv %s mode 11naht20", use);
 				setup_channel(dev,use);
 			sysprintf("ifconfig %s txqueuelen 1000",use);
