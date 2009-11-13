@@ -12,6 +12,12 @@
 			<input class="spaceradio" type="radio" value="1" name="chilli_nowifibridge" <% nvram_selmatch("chilli_nowifibridge","1", "checked"); %> onclick="show_layer_ext(this, 'idchillidhcp', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="chilli_nowifibridge" <% nvram_selmatch("chilli_nowifibridge","0", "checked"); %> onclick="show_layer_ext(this, 'idchillidhcp', false)" /><% tran("share.disable"); %>
 		</div>
+		<div id="idchillidhcp">		
+			<div class="setting">
+				<div class="label"><% tran("hotspot.dhcp"); %></div>
+				<% show_ifselect("chilli_interface"); %>
+			</div>
+		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.pserver"); %></div>
 			<input class="text" maxLength="100" size="25" name="chilli_radius" value="<% nvram_get("chilli_radius"); %>" />
@@ -35,12 +41,6 @@
 		<div class="setting">
 			<div class="label"><% tran("share.share_key"); %></div>
 			<input class="text" maxLength="100" size="25" name="chilli_pass" value="<% nvram_get("chilli_pass"); %>" />
-		</div>
-		<div id="idchillidhcp">		
-			<div class="setting">
-				<div class="label"><% tran("hotspot.dhcp"); %></div>
-				<% show_ifselect("chilli_interface"); %>
-			</div>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.radnas"); %></div>
