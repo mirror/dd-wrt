@@ -345,7 +345,7 @@ static void set_netmode(char *wif, char *dev, char *use)
     
 int up=0;
 char sb[32];
-sprintf(sb,"%s_nctrlsb",use);
+sprintf(sb,"%s_nctrlsb",dev);
 if (nvram_match(sb,"upper"))
     up=1;
 	if (nvram_default_match(bw, "40", "20")) {
