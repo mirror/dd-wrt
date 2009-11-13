@@ -120,9 +120,9 @@ if (nvram_match(sb,"upper"))
 				{
 				continue;
 				}
-			if (up && !IEEE80211_IS_CHAN_11N_CTL_U_CAPABLE(&achans.ic_chans[i]))
+			if (up && !IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]))
 			    continue;
-			if (!up && !IEEE80211_IS_CHAN_11N_CTL_L_CAPABLE(&achans.ic_chans[i]))
+			if (!up && !IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i]))
 			    continue;
 		}
 		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i])) {
@@ -138,9 +138,9 @@ if (nvram_match(sb,"upper"))
 				{
 				continue;
 				}
-			if (up && !IEEE80211_IS_CHAN_11N_CTL_U_CAPABLE(&achans.ic_chans[i]))
+			if (up && !IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i]))
 			    continue;
-			if (!up && !IEEE80211_IS_CHAN_11N_CTL_L_CAPABLE(&achans.ic_chans[i]))
+			if (!up && !IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i]))
 			    continue;
 		}
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
