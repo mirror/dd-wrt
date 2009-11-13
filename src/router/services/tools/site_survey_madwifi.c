@@ -88,9 +88,8 @@ copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
 #define SITE_SURVEY_DB	"/tmp/site_survey"
 #define SITE_SURVEY_NUM	256
 
-int write_site_survey(void);
+static int write_site_survey(void);
 static int open_site_survey(void);
-int write_site_survey(void);
 
 static struct site_survey_list {
 	unsigned char SSID[33];
@@ -266,7 +265,7 @@ int site_survey_main(int argc, char *argv[])
 	return 0;
 }
 
-int write_site_survey(void)
+static int write_site_survey(void)
 {
 	FILE *fp;
 
@@ -278,7 +277,7 @@ int write_site_survey(void)
 	return 1;
 }
 
-int open_site_survey(void)
+static int open_site_survey(void)
 {
 	FILE *fp;
 
