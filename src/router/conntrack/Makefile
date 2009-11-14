@@ -80,8 +80,12 @@ install:
 	install -d $(INSTALLDIR)/etc/config
 	install -d $(INSTALLDIR)/usr/sbin
 	cp $(MODULE)* $(INSTALLDIR)/etc/config
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 ifeq ($(CONFIG_SENDMAIL),y)
 	cp notifier.websecurity $(INSTALLDIR)/etc/config
 	cp notifier.nvramconfig $(INSTALLDIR)/etc/config
 	cp notifier $(INSTALLDIR)/usr/sbin
+endif
+endif
 endif
