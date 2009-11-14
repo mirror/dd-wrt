@@ -466,6 +466,9 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS +=  -DHAVE_MADWIFI -DHAVE_ROAMING 
 endif
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+CFLAGS +=  -DHAVE_MADWIFI_MIMO
+endif
 
 
 
