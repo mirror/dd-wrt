@@ -4350,26 +4350,26 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
 		  nvram_match(wl_txantenna,
 			      "1") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
-		  nvram_match(wl_txantenna,
-			      "2") ? "selected=\\\"selected\\\"" : "");
+//	websWrite(wp,
+//		  "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
+//		  nvram_match(wl_txantenna,
+//			      "2") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
 		  nvram_match(wl_txantenna,
 			      "3") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"4\\\" %s >3</option>\");\n",
-		  nvram_match(wl_txantenna,
-			      "4") ? "selected=\\\"selected\\\"" : "");
+//	websWrite(wp,
+//		  "document.write(\"<option value=\\\"4\\\" %s >3</option>\");\n",
+//		  nvram_match(wl_txantenna,
+//			      "4") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
 		  nvram_match(wl_txantenna,
 			      "5") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"6\\\" %s >2+3</option>\");\n",
-		  nvram_match(wl_txantenna,
-			      "6") ? "selected=\\\"selected\\\"" : "");
+//	websWrite(wp,
+//		  "document.write(\"<option value=\\\"6\\\" %s >2+3</option>\");\n",
+//		  nvram_match(wl_txantenna,
+//			      "6") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
 		  nvram_match(wl_txantenna,
@@ -4386,26 +4386,26 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
 		  nvram_match(wl_rxantenna,
 			      "1") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
-		  nvram_match(wl_rxantenna,
-			      "2") ? "selected=\\\"selected\\\"" : "");
+//	websWrite(wp,
+//		  "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
+//		  nvram_match(wl_rxantenna,
+//			      "2") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
 		  nvram_match(wl_rxantenna,
 			      "3") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"4\\\" %s >3</option>\");\n",
-		  nvram_match(wl_rxantenna,
-			      "4") ? "selected=\\\"selected\\\"" : "");
+//	websWrite(wp,
+//		  "document.write(\"<option value=\\\"4\\\" %s >3</option>\");\n",
+//		  nvram_match(wl_rxantenna,
+//			      "4") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
 		  nvram_match(wl_rxantenna,
 			      "5") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"6\\\" %s >2+3</option>\");\n",
-		  nvram_match(wl_rxantenna,
-			      "6") ? "selected=\\\"selected\\\"" : "");
+//	websWrite(wp,
+//		  "document.write(\"<option value=\\\"6\\\" %s >2+3</option>\");\n",
+//		  nvram_match(wl_rxantenna,
+//			      "6") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
 		  nvram_match(wl_rxantenna,
