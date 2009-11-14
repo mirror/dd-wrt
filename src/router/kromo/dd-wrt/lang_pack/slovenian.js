@@ -22,9 +22,9 @@ share.disabled="Onemogo&#269;eno";
 share.usrname="Uporabni¹ko ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
-share.vdsl="T-Home VDSL 7 Vlan oznaèevanje";
+share.vdsl="T-Home VDSL 7 VLAN oznaèevanje";
 share.vdslvlan8="VLAN 8 podpora";
-share.wan_vlantag="ID Vlan znaèke";
+share.wan_vlantag="ID VLAN znaèke";
 share.compression="PPP kompresija";
 share.domainname="Domensko ime";
 share.wandomainname="WAN domensko ime";
@@ -680,7 +680,7 @@ usb.usb_storage="USB podpora za shranjevanje datotek";
 usb.usb_extfs="ext2 / ext3 datoteèni sistem";
 usb.usb_fatfs="FAT datoteèni sistem";
 usb.usb_printer="USB printer";
-usb.usb_automnt="Avtomatièni priklop diska";
+usb.usb_automnt="Samodejni priklop diska";
 usb.usb_mntpoint="Priklopna toèka";
 usb.usb_runonmount="Run-on-mount ime skripta";
 usb.usb_diskinfo="Disk info";
@@ -890,7 +890,7 @@ idx.legend3="Nastavitev èasa";
 idx.timeset="Èasovna cona";
 idx.dsttime="Poletni èas";
 idx.static_ip="Statièni IP";
-idx.dhcp="Avtomatièna namestitev - DHCP";
+idx.dhcp="Samodejna namestitev - DHCP";
 idx.dhcp_legend="Nastavitev stre¾nika mre¾nih naslovov (DHCP)";
 idx.dhcp_type="Tip DHCP";
 idx.dhcp_srv="DHCP stre¾nik";
@@ -1041,7 +1041,7 @@ management.mmc_legend="Podpora za MMC/SD kartice";
 management.mmc_srv="MMC naprava";
 management.mmc_gpiosel="Izbira GPIO no¾ic";
 management.mmc_gpiopins="GPIO no¾ice";
-management.samba_legend="CIFS avtomatski priklop";
+management.samba_legend="CIFS samodejni priklop";
 management.samba_srv="CIFS datoteèni sistem";
 management.samba_share="Skupni imenik";
 management.samba_stscript="Zaèetni skript";
@@ -1677,7 +1677,7 @@ wol.mac="MAC naslov(i)";
 wol.broadcast="Mre¾ni broadcast";
 wol.udp="UDP vrata";
 wol.msg1="Kliknite za odstranitev WOL gostitelja";
-wol.h22="Automatic Wake-On-LAN";
+wol.h22="Samodejni Wake-On-LAN";
 wol.legend5="Wake-On-LAN";
 wol.srv="WOL";
 wol.pass="SecureOn geslo";
@@ -1699,7 +1699,7 @@ wanmac.wlan="Kloniraj brez¾ièni MAC";
 
 //help container
 
-hwanmac.right2="nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC naslov. Èe ne ¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je ¾e prijavljen pri va¹em ponudniku medmere¾ja.";
+hwanmac.right2="Nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC naslov. Èe ne ¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je ¾e prijavljen pri va¹em ponudniku medmere¾ja.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
@@ -1986,7 +1986,7 @@ wl_basic.csma="Zaznavanje nosilca";
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
-hwl_basic.right4="Prilagodi ACK uèasenje. 0 onemogoèi ACK uèasenje na Broadcomovi strojni programski opremi, na Atherosovi pa 0 vkljuèi avtomatsko ACK uèasenje";
+hwl_basic.right4="Prilagodi ACK uèasenje. 0 onemogoèi ACK uèasenje na Broadcomovi strojni programski opremi, na Atherosovi pa 0 vkljuèi samodejno ACK uèasenje";
 hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
