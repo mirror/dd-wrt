@@ -1041,6 +1041,7 @@ management.mmc_legend="MMC/SD Card Support";
 management.mmc_srv="MMC Device";
 management.mmc_gpiosel="GPIO pins select";
 management.mmc_gpiopins="GPIO pins";
+management.mmc_cardinfo="Card Info";
 management.samba_legend="CIFS Automount";
 management.samba_srv="Common Internet File System";
 management.samba_share="Share";
