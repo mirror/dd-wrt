@@ -1844,15 +1844,12 @@ void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t ** argv)
 	if (!nvram_match("mmc_enable0", "1"))
 		return;
 
-	system2("cat /proc/mmc/status > /tmp/.mmc_status");
-		
-	if ((fp = fopen("/tmp/.mmc_status", "r"))) {
+	if ((fp = fopen("/proc/mmc/status", "rb"))) {
 		while (fgets(buff, sizeof(buff), fp)) {
 			if (strcmp(buff, "\n"))
 				websWrite(wp, "%s<br />", buff);
 		}
 		fclose(fp);
-		unlink("/tmp/.mmc_status");
 	} else
 		websWrite(wp, "%s", live_translate("status_router.notavail"));
 
