@@ -33,6 +33,12 @@
 			document.write( ((<% nvram_get("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.size) + ' / ' + scaleSize(mmc.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 			//]]>
 			</script>
-		</div>		
+		</div>
+		<fieldset>
+		<legend><% tran("management.mmc_cardinfo"); %></legend>
+			<div class="setting">
+			<span id="disk_status"><% show_mmc_cardinfo(); %></span>&nbsp;
+			</div>
+		</fieldset><br />		
 	</div>	
 </fieldset><br/>
