@@ -1041,6 +1041,7 @@ management.mmc_legend="Podpora za MMC/SD kartice";
 management.mmc_srv="MMC naprava";
 management.mmc_gpiosel="Izbira GPIO no¾ic";
 management.mmc_gpiopins="GPIO no¾ice";
+management.mmc_cardinfo="Info o kartici";
 management.samba_legend="CIFS samodejni priklop";
 management.samba_srv="CIFS datoteèni sistem";
 management.samba_share="Skupni imenik";

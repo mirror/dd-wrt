@@ -648,7 +648,7 @@ prforward.app="Applicatie";
 
 //help container
 
-hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten, zodat deze correct kunnen functioneren. Voorbeelden van gebruik van deze applicatie's zijn: webservers, e-mailservers en bepaalde online games. Wanneer een aanvraag voor een bepaalde poort afkomstig is van het internet, zal de router de data doorsturen naar de juiste computer. Uit veiligheids-overwegingen zou u het gebruik van poort-forwarding moeten beperken.Indien u niet langer gebruik maakt van één van deze ingestelde poorten, vink deze dan ook weer uit. 
+hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten, zodat deze correct kunnen functioneren. Voorbeelden van gebruik van deze applicatie's zijn: webservers, e-mailservers en bepaalde online games. Wanneer een aanvraag voor een bepaalde poort afkomstig is van het internet, zal de router de data doorsturen naar de juiste computer. Uit veiligheids-overwegingen zou u het gebruik van poort-forwarding moeten beperken.Indien u niet langer gebruik maakt van één van deze ingestelde poorten, vink deze dan ook weer uit.";
 
 
 // ******************************************* P2P.asp *******************************************//
