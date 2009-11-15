@@ -137,7 +137,7 @@
  *   If you test one, please provide feedback on the results.
  *
  *============================================================================*/
-#include <linux/module.h>
+#include "module.h"
 #include <linux/delay.h>
 #include <linux/errno.h>
 #include <linux/init.h>
