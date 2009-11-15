@@ -89,11 +89,16 @@ void start_mmc(void)
 				break;
 			}
 		}
-
-		sprintf(dddi, "din=0x%X", 1 << mmc_di);
-		sprintf(dddo, "dout=0x%X", 1 << mmc_do);
-		sprintf(ddclk, "clk=0x%X", 1 << mmc_clk);
-		sprintf(ddcs, "cs=0x%X", 1 << mmc_cs);
+/*		
+		sprintf(dddi, "DDDI=0x%X", 1 << mmc_di);
+		sprintf(dddo, "DDDO=0x%X", 1 << mmc_do);
+		sprintf(ddclk, "DDCLK=0x%X", 1 << mmc_clk);
+		sprintf(ddcs, "DDCS=0x%X", 1 << mmc_cs);
+*/		
+		sprintf(dddi, "din=%d", mmc_di);
+		sprintf(dddo, "dout=%d", mmc_do);
+		sprintf(ddclk, "clk=%d", mmc_clk);
+		sprintf(ddcs, "cs=%d", mmc_cs);
 
 		if ((mmc_di + mmc_do + mmc_clk + mmc_cs) > 5)	// eval only
 			// if at
