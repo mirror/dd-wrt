@@ -2841,10 +2841,14 @@ int led_control(int type, int act)
 		// defaults
 		wlan_gpio = 0x104;
 		break;
-	case ROUTER_WRT150N:
 	case ROUTER_WRT300N:
 		power_gpio = 0x001;
 		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
+		break;
+	case ROUTER_WRT150N:
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
+		sec0_gpio = 0x105;
 		break;
 	case ROUTER_WRT300NV11:
 		ses_gpio = 0x105;
