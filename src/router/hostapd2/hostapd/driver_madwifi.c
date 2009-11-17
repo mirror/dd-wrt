@@ -1391,7 +1391,7 @@ madwifi_init(struct hostapd_data *hapd)
 		goto bad;
 	}
 
-	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
+//	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
 	madwifi_set_privacy(drv->iface, drv, 0); /* default to no privacy */
 
 	return drv;
@@ -1411,7 +1411,7 @@ madwifi_deinit(void *priv)
 {
 	struct madwifi_driver_data *drv = priv;
 
-	(void) madwifi_set_iface_flags(drv, 0);
+//	(void) madwifi_set_iface_flags(drv, 0);
 	if (drv->ioctl_sock >= 0)
 		close(drv->ioctl_sock);
 	if (drv->sock_recv != NULL && drv->sock_recv != drv->sock_xmit)
