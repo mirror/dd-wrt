@@ -226,6 +226,12 @@ sflash_mtd_init(void)
 	do_support = 1;  //Linksys WRT320N
 	}
 
+  if (boardnum == 42 && nvram_match( "boot_hw_model", "WRT160N" )
+	&& nvram_match( "boot_hw_ver", "3.0" ))
+	{
+	do_support = 1;  //Linksys WRT160Nv3
+	}
+
 	
   if (!do_support)
 	{
