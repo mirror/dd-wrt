@@ -1014,6 +1014,7 @@ void start_restore_defaults(void)
 	case ROUTER_NETGEAR_WNR3500L:
 		linux_overrides = wnr3500vlan;
 		break;
+	case ROUTER_WRT160NV3:
 	case ROUTER_WRT320N:
 		linux_overrides = wrt320vlan;
 		break;
