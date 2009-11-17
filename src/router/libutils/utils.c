@@ -1418,6 +1418,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys WRT160N");
 			return ROUTER_WRT160N;
+		} else if (nvram_match("boot_hw_model", "WRT160N")
+			   && nvram_match("boot_hw_ver", "3.0")) {
+			setRouter("Linksys WRT160Nv3");
+			return ROUTER_WRT160NV3;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys WRT310N");
@@ -2865,6 +2869,12 @@ int led_control(int type, int act)
 		// 
 		connected_gpio = 0x103;	// ses orange
 		ses_gpio = 0x105;	// ses blue
+		break;
+	case ROUTER_WRT160NV3:
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power led blink / off to indicate fac.def. 
+		connected_gpio = 0x102;	// ses orange
+		ses_gpio = 0x104;	// ses blue
 		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
