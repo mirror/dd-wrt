@@ -507,6 +507,7 @@ void period_check(int sig)
 		sesgpio = 0x16;	// gpio 6, inversed
 		break;
 	case ROUTER_WRT320N:
+	case ROUTER_WRT160NV3:	
 		sesgpio = 0x15;	// gpio 5, inversed
 		break;
 
