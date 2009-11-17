@@ -415,6 +415,9 @@
 
 #define ROUTER_BOARD_GATEWORX_GW2369 0x8103
 
+// Linksys WRT160Nv3 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-WRT160NV3)
+#define ROUTER_WRT160NV3 0x8216
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
