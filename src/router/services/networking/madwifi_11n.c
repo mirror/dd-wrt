@@ -446,6 +446,7 @@ if (nvram_match(sb,"upper"))
         sysprintf("iwpriv %s ampdulimit 50000",use);
         sysprintf("iwpriv %s rx_chainmask %s",use,nvram_default_get(rxantenna,"7"));
         sysprintf("iwpriv %s tx_chainmask %s",use,nvram_default_get(txantenna,"5"));
+        sysprintf("iwpriv %s tx_cm_legacy %s",use,nvram_default_get(txantenna,"5"));
 
 }
 
