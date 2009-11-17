@@ -714,6 +714,15 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
+		
+	case ROUTER_WRT160NV3:
+		nvram_set("lan_ifnames", "vlan1 eth1");
+		nvram_set("wan_ifname", "vlan2");
+		nvram_set("wan_ifname2", "vlan2");
+		nvram_set("wan_default", "vlan2");
+		nvram_set("wan_ifnames", "vlan2");
+		nvram_set("wl0_ifname", "eth1");
+		break;
 
 	case ROUTER_NETGEAR_WNDR3300:
 		nvram_set("lan_ifnames", "eth0 eth2 eth3");	// dual radio
