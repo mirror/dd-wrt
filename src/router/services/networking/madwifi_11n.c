@@ -502,7 +502,7 @@ static void setMacFilter(char *iface)
 	sprintf(nvvar, "%s_macmode", iface);
 	if (nvram_match(nvvar, "deny")) {
 		sysprintf("iwpriv %s maccmd 2", iface);
-		sysprintf("ifconfig %s up", iface);
+//		sysprintf("ifconfig %s up", iface);
 		char nvlist[32];
 
 		sprintf(nvlist, "%s_maclist", iface);
@@ -512,7 +512,7 @@ static void setMacFilter(char *iface)
 		}
 	} else if (nvram_match(nvvar, "allow")) {
 		sysprintf("iwpriv %s maccmd 1", iface);
-		sysprintf("ifconfig %s up", iface);
+//		sysprintf("ifconfig %s up", iface);
 
 		char nvlist[32];
 
@@ -523,7 +523,7 @@ static void setMacFilter(char *iface)
 		}
 	} else {
 		//undefined condition
-		sysprintf("ifconfig %s up", iface);
+//		sysprintf("ifconfig %s up", iface);
 	}
 
 }
@@ -1045,6 +1045,26 @@ void configure_single_11n(int count)
 		}
 	}
 #endif
+
+	// setup encryption
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
+		setupHostAP(dev, 0);
+	else
+		setupSupplicant(dev, NULL);
+	vifs = nvram_safe_get(wifivifs);
+	if (vifs != NULL)
+		foreach(var, vifs, next) {
+		sprintf(mode, "%s_mode", var);
+		char *vapm = nvram_default_get(mode, "ap");
+		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta")
+		    && strcmp(vapm, "wet"))
+			setupHostAP(var, 0);
+		else
+			setupSupplicant(var, NULL);
+		}
+
+	sleep(3); //give some time to let hostapd initialize
+
 	if (strcmp(apm, "sta")) {
 		char bridged[32];
 
@@ -1103,23 +1123,6 @@ void configure_single_11n(int count)
 			}
 		}
 	}
-	// setup encryption
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
-		setupHostAP(dev, 0);
-	else
-		setupSupplicant(dev, NULL);
-
-	vifs = nvram_safe_get(wifivifs);
-	if (vifs != NULL)
-		foreach(var, vifs, next) {
-		sprintf(mode, "%s_mode", var);
-		char *vapm = nvram_default_get(mode, "ap");
-		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta")
-		    && strcmp(vapm, "wet"))
-			setupHostAP(var, 0);
-		else
-			setupSupplicant(var, NULL);
-		}
 
 	for (s = 1; s <= 10; s++) {
 		char wdsvarname[32] = { 0 };
