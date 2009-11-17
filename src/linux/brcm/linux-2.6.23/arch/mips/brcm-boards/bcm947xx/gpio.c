@@ -155,6 +155,7 @@ extern int iswrt350n;
 extern int iswrt300n11;
 extern int iswnr3500v2;
 extern int iswrt320n;
+extern int iswrt160nv3;
 static struct class *gpio_class = NULL;
 
 static int __init
@@ -227,6 +228,14 @@ if (iswrt320n)
 		si_gpioreserve(gpio_sih, 1 << 2, GPIO_APP_PRIORITY); //diag led
 		si_gpioreserve(gpio_sih, 1 << 3, GPIO_APP_PRIORITY); //wps_led
 		si_gpioreserve(gpio_sih, 1 << 4, GPIO_APP_PRIORITY); //wps_status_led
+}
+
+if (iswrt160nv3)
+{
+		printk(KERN_EMERG "WRT160Nv3 GPIO Init\n");
+		si_gpioreserve(gpio_sih, 1 << 1, GPIO_APP_PRIORITY); //pwr led		
+		si_gpioreserve(gpio_sih, 1 << 2, GPIO_APP_PRIORITY); //ses_orange
+		si_gpioreserve(gpio_sih, 1 << 4, GPIO_APP_PRIORITY); //ses_white
 }
 /*if (iswrt300n11)
 {
