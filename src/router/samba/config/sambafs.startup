@@ -10,6 +10,7 @@ rmmod cifs
 if [ "$(nvram get samba_mount)" = "1" ]; then     
     mkdir /tmp/smbshare
     chmod 777 /tmp/smbshare
+    insmod nls_base
     insmod cifs
     mount.cifs $SAMBA_SHARE /tmp/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD"
     if [ "$(nvram get samba_script)" != "" ]; then
