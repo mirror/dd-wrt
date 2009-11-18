@@ -1857,6 +1857,30 @@ void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
+void ej_show_mypage(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *fp;
+	char *wordlist = nvram_safe_get("mypage_scripts");
+	char *next;
+	char word[128];
+	char buff[4096];
+	
+	foreach(word, wordlist, next) {
+	strcat (word, " > /tmp/mypage.tmp");
+	system2(word);
+	
+	if ((fp = fopen("/tmp/mypage.tmp", "rb"))) {
+		while (fgets(buff, sizeof(buff), fp)) {
+				websWrite(wp, "%s", buff);
+		}
+		fclose(fp);
+		unlink("/tmp/mypage.tmp");
+	}
+	}	
+
+	return;
+}
+
 void show_legend(webs_t wp, char *labelname, int translate)
 {
 	/*
