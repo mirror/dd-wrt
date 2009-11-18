@@ -1491,7 +1491,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", ""},
 	{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
 	 "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp",
-	 "Status_Bandwidth.asp", "Info.htm", "register.asp", "", ""}
+	 "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", ""}
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
@@ -1516,7 +1516,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 "adminFactory", "adminUpgrade", "adminBackup", "", "", "", ""},
 	{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN",
 	 "statuSputnik", "statuVPN", "statuBand", "statuSysInfo",
-	 "statuActivate", "", ""}
+	 "statuActivate", "statuMyPage", ""}
 	};
 
 	static char menu[8][11][32];
@@ -1736,10 +1736,13 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// over 
 					// Sys-Info
 					j++;
-
 				if ((registered) && !cpeonly && !strcmp(menu[i][j], "register.asp"))	// jump 
 					// over 
-					// Sys-Info
+					// register.asp
+					j++;
+				if ((!strlen(nvram_safe_get("mypage_scripts"))) && !strcmp(menu[i][j], "MyPage.asp"))	// jump 
+					// over 
+					// MyPage.asp
 					j++;
 #ifdef HAVE_MADWIFI
 				if (!strcmp(menu[i][j], submenu)
