@@ -343,7 +343,6 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
 #	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos
-	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
 #	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mbcache.ko
@@ -352,6 +351,11 @@ ifneq ($(CONFIG_USB_ADVANCED),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd	
+endif
+ifneq ($(CONFIG_USB),y)
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls
+endif
 endif
 ifneq ($(CONFIG_IPV6),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6
@@ -439,7 +443,12 @@ endif
 	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
 	cp ../../opt/etc/preinit mipsel-uclibc/target/etc
 	cp ../../opt/etc/postinit mipsel-uclibc/target/etc
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+	cp ../../opt/bin/ipkg mipsel-uclibc/target/bin
 	cp ../../opt/etc/ipkg.conf mipsel-uclibc/target/etc
+endif
+endif
 	cp ../../opt/etc/config/* mipsel-uclibc/target/etc/config
 	-./strip_libs.sh $(ARCH)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/rootfs.squashfs -noappend -root-owned -le
@@ -453,6 +462,8 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500U.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg_wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500U.chk
 	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
+	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt160nv3.bin -g
+
 
 	
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
