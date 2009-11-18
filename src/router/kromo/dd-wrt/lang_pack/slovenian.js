@@ -444,6 +444,7 @@ bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Pasovna ¹irina";
 bmenu.statuSysInfo="Info stran";
 bmenu.statuActivate="Aktiviraj";
+bmenu.statuMyPage="Moja stran";
 
 // ** Alive.asp **//
 
