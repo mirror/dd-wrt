@@ -444,6 +444,7 @@ bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
 bmenu.statuSysInfo="Sys-Info";
 bmenu.statuActivate="Activate";
+bmenu.statuMyPage="My Page";
 
 // ** Alive.asp **//
 var alive = new Object();
