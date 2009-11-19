@@ -1978,6 +1978,38 @@ static void do_trial_logo(struct mime_handler *handler, char *url,
  * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); } 
  */
 
+static void do_mypage(struct mime_handler *handler, char *url,
+		       webs_t stream, char *query)
+{
+	FILE *fp;
+	char *snamelist = nvram_safe_get("mypage_scripts");
+	char *next;
+	char sname[128];
+	char buff[4096];
+	int qnum;
+	int i = 1;
+	
+	if (query == NULL || strlen(query) == 0)
+		qnum = 0;
+	else
+		qnum = atoi(query);
+	
+	foreach(sname, snamelist, next) {
+	strcat (sname, " > /tmp/mypage.tmp");
+	
+	if (qnum == 0 || i == qnum) {
+		system2(sname);
+		do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
+		unlink("/tmp/mypage.tmp");
+	}
+	i++;
+	}
+
+	return;
+	
+}
+ 
+ 
 static void do_fetchif(struct mime_handler *handler, char *url,
 		       webs_t stream, char *query)
 {
@@ -2394,6 +2426,7 @@ struct mime_handler mime_handlers[] = {
 	{"Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv,
 	 do_auth, 1},
 	// #endif
+	{"MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1},
 	{"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1},
 	{"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL, 0},
 	// {"style.css", "text/css", NULL, NULL, do_style, NULL},
