@@ -215,6 +215,7 @@ configs-checkout:
 	rm -rf $(TOP)/kromo/dd-wrt/trimax
 	rm -rf $(TOP)/kromo/dd-wrt/wts
 	rm -rf $(TOP)/kromo/dd-wrt/mynetway
+	rm -rf $(TOP)/kromo/dd-wrt/wikings
 	svn co svn://svn.dd-wrt.com/private/designs/34telecom $(TOP)/kromo/dd-wrt/34telecom
 	svn co svn://svn.dd-wrt.com/private/designs/3com $(TOP)/kromo/dd-wrt/3com
 	svn co svn://svn.dd-wrt.com/private/designs/alfa $(TOP)/kromo/dd-wrt/alfa
@@ -238,6 +239,7 @@ configs-checkout:
 	svn co svn://svn.dd-wrt.com/private/designs/trimax $(TOP)/kromo/dd-wrt/trimax
 	svn co svn://svn.dd-wrt.com/private/designs/wts $(TOP)/kromo/dd-wrt/wts
 	svn co svn://svn.dd-wrt.com/private/designs/mynetway $(TOP)/kromo/dd-wrt/mynetway
+	svn co svn://svn.dd-wrt.com/private/designs/wikings $(TOP)/kromo/dd-wrt/wikings
 		
 
 configs-update:
@@ -265,6 +267,7 @@ configs-update:
 	svn update $(TOP)/kromo/dd-wrt/trimax
 	svn update $(TOP)/kromo/dd-wrt/wts
 	svn update $(TOP)/kromo/dd-wrt/mynetway
+	svn update $(TOP)/kromo/dd-wrt/wikings
 
 configs-clean:
 	@true
