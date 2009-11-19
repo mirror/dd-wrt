@@ -390,7 +390,6 @@ extern void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv);
  */
 extern void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv);
 extern void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t ** argv);
-extern void ej_show_mypage(webs_t wp, int argc, char_t ** argv);
 
 /*
  * Ping and Traceroute 
