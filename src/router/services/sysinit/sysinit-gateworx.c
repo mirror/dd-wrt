@@ -564,6 +564,8 @@ void start_sysinit(void)
 	    || nvram_match("DD_BOARD2", "Cambria GW2350")) {
 		insmod("8250_gw2350");
 	}
+	set_gpio(26,0);
+	set_gpio(27,0);
 #endif
 
 	/* cf capability ? */
