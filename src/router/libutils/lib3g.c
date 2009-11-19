@@ -112,33 +112,39 @@ char *get3GControlDevice(void)
 #ifdef HAVE_CAMBRIA
 	int gpio1 = atoi(nvram_safe_get("gpio26"));
 	int gpio2 = atoi(nvram_safe_get("gpio27"));
-	if (gpio1 == 0 && gpio2 == 0) {
-		gpio1 = 1;
-		gpio2 = 0;
-	}
-	if (nvram_match("wan_select", "1")) {
+	int select = atoi(nvram_safe_get("wan_select"));
+	switch (select) {
+	case 1:
 		if (gpio1 == 1 || gpio2 == 0)
 			needreset = 0;
 		else {
 			gpio1 = 1;
 			gpio2 = 0;
 		}
-	}
-	if (nvram_match("wan_select", "2")) {
+		break;
+	case 2:
 		if (gpio1 == 0 || gpio2 == 1)
 			needreset = 0;
 		else {
 			gpio1 = 0;
 			gpio2 = 1;
 		}
-	}
-	if (nvram_match("wan_select", "3")) {
+		break;
+	case 3:
 		if (gpio1 == 1 || gpio2 == 1)
 			needreset = 0;
 		else {
 			gpio1 = 1;
 			gpio2 = 1;
 		}
+		break;
+	default:
+		if (gpio1 == 0 && gpio2 == 0) {
+			gpio1 = 1;
+			gpio2 = 0;
+		} else
+			needreset = 0;
+		break;
 	}
 	if (gpio1) {
 		nvram_set("gpio26", "1");
