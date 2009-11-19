@@ -117,6 +117,16 @@ int getbuttonstate()
 	return ret;
 #endif
 }
+#elif defined(HAVE_UBNTM)
+int getbuttonstate()
+{
+	FILE *in;
+	int ret = get_gpio(12);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
