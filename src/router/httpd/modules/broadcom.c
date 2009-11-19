@@ -1981,11 +1981,9 @@ static void do_trial_logo(struct mime_handler *handler, char *url,
 static void do_mypage(struct mime_handler *handler, char *url,
 		       webs_t stream, char *query)
 {
-	FILE *fp;
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
 	char sname[128];
-	char buff[4096];
 	int qnum;
 	int i = 1;
 	
@@ -1995,13 +1993,12 @@ static void do_mypage(struct mime_handler *handler, char *url,
 		qnum = atoi(query);
 	
 	foreach(sname, snamelist, next) {
-	strcat (sname, " > /tmp/mypage.tmp");
-	
-	if (qnum == 0 || i == qnum) {
-		system2(sname);
-		do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
-		unlink("/tmp/mypage.tmp");
-	}
+		if (qnum == 0 || qnum == i) {
+			strcat (sname, " > /tmp/mypage.tmp");
+			system2(sname);
+			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
+			unlink("/tmp/mypage.tmp");
+		}
 	i++;
 	}
 
