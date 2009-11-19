@@ -107,22 +107,38 @@ char *get3GControlDevice(void)
 	eval("mount", "-t", "usbfs", "usb", "/tmp/usb");
 //insmod("sierra");  //further investigation required (compass problem)
 #endif
-
+	int needreset = 1;
 	char *ttsdevice = "/dev/usb/tts/0";
 #ifdef HAVE_CAMBRIA
-	eval("gpio", "enable", "26");
-	eval("gpio", "disable", "27");
+	int gpio1 = get_gpio(26);
+	int gpio2 = get_gpio(27);
+	if (gpio1 == 0 && gpio2 == 0) {
+		set_gpio(26, 1);
+		set_gpio(27, 0);
+	}
 	if (nvram_match("wan_select", "1")) {
-		eval("gpio", "enable", "26");
-		eval("gpio", "disable", "27");
+		if (gpio1 == 1 || gpio2 == 0)
+			needreset = 0;
+		else {
+			set_gpio(26, 1);
+			set_gpio(27, 0);
+		}
 	}
 	if (nvram_match("wan_select", "2")) {
-		eval("gpio", "disable", "26");
-		eval("gpio", "enable", "27");
+		if (gpio1 == 0 || gpio2 == 1)
+			needreset = 0;
+		else {
+			set_gpio(26, 0);
+			set_gpio(27, 1);
+		}
 	}
 	if (nvram_match("wan_select", "3")) {
-		eval("gpio", "enable", "26");
-		eval("gpio", "enable", "27");
+		if (gpio1 == 1 || gpio2 == 1)
+			needreset = 0;
+		else {
+			set_gpio(26, 1);
+			set_gpio(27, 1);
+		}
 	}
 #endif
 	nvram_set("3gdata", "/dev/usb/tts/0");
@@ -148,7 +164,8 @@ char *get3GControlDevice(void)
 		nvram_set("3gdata", "/dev/usb/tts/4");
 		insmod("usbserial");
 		insmod("sierra");
-		checkreset("/dev/usb/tts/3");
+		if (needreset)
+			checkreset("/dev/usb/tts/3");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x1199, 0x683D)) {
@@ -157,7 +174,8 @@ char *get3GControlDevice(void)
 		nvram_set("3gdata", "/dev/usb/tts/4");
 		insmod("usbserial");
 		insmod("sierra");
-		checkreset("/dev/usb/tts/3");
+		if (needreset)
+			checkreset("/dev/usb/tts/3");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x1199, 0x683E)) {
@@ -166,7 +184,8 @@ char *get3GControlDevice(void)
 		nvram_set("3gdata", "/dev/usb/tts/4");
 		insmod("usbserial");
 		insmod("sierra");
-		checkreset("/dev/usb/tts/3");
+		if (needreset)
+			checkreset("/dev/usb/tts/3");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x12d1, 0x1003)) {
@@ -262,7 +281,8 @@ char *get3GControlDevice(void)
 		//sierra wireless mc 8780
 		fprintf(stderr,
 			"Sierra Wireless MC 8780 detected\nreset card\n");
-		checkreset("/dev/usb/tts/2");
+		if (needreset)
+			checkreset("/dev/usb/tts/2");
 		return "/dev/usb/tts/2";
 	}
 	insmod("usbserial");
