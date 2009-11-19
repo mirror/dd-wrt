@@ -110,35 +110,49 @@ char *get3GControlDevice(void)
 	int needreset = 1;
 	char *ttsdevice = "/dev/usb/tts/0";
 #ifdef HAVE_CAMBRIA
-	int gpio1 = get_gpio(26);
-	int gpio2 = get_gpio(27);
+	int gpio1 = atoi(nvram_safe_get("gpio26"));
+	int gpio2 = atoi(nvram_safe_get("gpio27"));
 	if (gpio1 == 0 && gpio2 == 0) {
-		set_gpio(26, 1);
-		set_gpio(27, 0);
+		gpio1 = 1;
+		gpio2 = 0;
 	}
 	if (nvram_match("wan_select", "1")) {
 		if (gpio1 == 1 || gpio2 == 0)
 			needreset = 0;
 		else {
-			set_gpio(26, 1);
-			set_gpio(27, 0);
+			gpio1 = 1;
+			gpio2 = 0;
 		}
 	}
 	if (nvram_match("wan_select", "2")) {
 		if (gpio1 == 0 || gpio2 == 1)
 			needreset = 0;
 		else {
-			set_gpio(26, 0);
-			set_gpio(27, 1);
+			gpio1 = 0;
+			gpio2 = 1;
 		}
 	}
 	if (nvram_match("wan_select", "3")) {
 		if (gpio1 == 1 || gpio2 == 1)
 			needreset = 0;
 		else {
-			set_gpio(26, 1);
-			set_gpio(27, 1);
+			gpio1 = 1;
+			gpio2 = 1;
 		}
+	}
+	if (gpio1) {
+		nvram_set("gpio26", "1");
+		set_gpio(26, 1);
+	} else {
+		nvram_set("gpio26", "0");
+		set_gpio(26, 0);
+	}
+	if (gpio2) {
+		nvram_set("gpio27", "1");
+		set_gpio(27, 1);
+	} else {
+		nvram_set("gpio27", "0");
+		set_gpio(27, 0);
 	}
 #endif
 	nvram_set("3gdata", "/dev/usb/tts/0");
