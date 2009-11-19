@@ -566,6 +566,8 @@ void start_sysinit(void)
 	}
 	set_gpio(26,0);
 	set_gpio(27,0);
+	nvram_set(gpio26,"0");
+	nvram_set(gpio27,"0");
 #endif
 
 	/* cf capability ? */
