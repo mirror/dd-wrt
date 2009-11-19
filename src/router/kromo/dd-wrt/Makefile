@@ -249,6 +249,13 @@ endif
 ifeq ($(CONFIG_MYNETWAY),y)
 	cp -f mynetway/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
+ifeq ($(CONFIG_WIKINGS),y)
+	mkdir $(INSTALLDIR)/www/style/wikings
+	cp wikings/common.css $(INSTALLDIR)/www/style/
+	cp wikings/style.css $(INSTALLDIR)/www/style/wikings
+	cp wikings/images/* $(INSTALLDIR)/www/images
+	cp wikings/help/* $(INSTALLDIR)/www/help
+endif
 ifeq ($(CONFIG_ALLNETWRT),y)
 	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
