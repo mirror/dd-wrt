@@ -470,7 +470,7 @@ ifeq ($(CONFIG_ANTIFLASH),y)
 CFLAGS += -DANTI_FLASH
 endif
 ifeq ($(CONFIG_UBNTM),y)
-CFLAGS += -DANTI_UBNTM
+CFLAGS += -DHAVE_UBNTM
 endif
 
 

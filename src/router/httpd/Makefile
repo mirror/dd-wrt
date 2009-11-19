@@ -579,6 +579,10 @@ endif
 ifeq ($(ARP_TABLE_SUPPORT),1)
 OBJS  += arp.o
 endif
+ifeq ($(CONFIG_UBNTM),y)
+CFLAGS += -DHAVE_UBNTM
+endif
+
 ifeq ($(EMI_TEST),1)
 OBJS  += emi_test.o
 endif
