@@ -267,6 +267,12 @@ void start_sysinit(void)
 		insmod("e1000");
 		insmod("e1000e");
 	}
+	if (detect("Tolapai"))	// Realtek 8169 Adapter (various notebooks) 
+	{
+		insmod("e1000");
+		insmod("e1000e");
+		insmod("e1000gbe");
+	}
 	if (detect("RTL-8110"))	// Realtek 8169 Adapter (various notebooks) 
 		insmod("r8169");
 	else if (detect("RTL-8111"))	// Realtek 8169 Adapter (various notebooks) 
