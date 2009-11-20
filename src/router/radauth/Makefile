@@ -19,6 +19,9 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
   CFLAGS += -DHAVE_MADWIFI -I../madwifi/ -include ../madwifi/include/compat.h -DHEADERS_KERNEL
 endif
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+  CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi/ -include ../madwifi/include/compat.h -DHEADERS_KERNEL
+endif
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880 
 endif
