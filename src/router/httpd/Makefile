@@ -572,6 +572,24 @@ endif
 ifeq ($(CONFIG_POWERNOC),y)
 CFLAGS += -DHAVE_POWERNOC
 endif
+ifeq ($(CONFIG_R2M),y)
+  CFLAGS += -DHAVE_R2M
+endif
+ifeq ($(CONFIG_R5M),y)
+  CFLAGS += -DHAVE_R5M
+endif
+ifeq ($(CONFIG_BS2MHP),y)
+  CFLAGS += -DHAVE_BS2MHP
+endif
+ifeq ($(CONFIG_BS5MHP),y)
+  CFLAGS += -DHAVE_BS5MHP
+endif
+ifeq ($(CONFIG_NS2M),y)
+  CFLAGS += -DHAVE_NS2M
+endif
+ifeq ($(CONFIG_NS5M),y)
+  CFLAGS += -DHAVE_NS5M
+endif
 
 ifeq ($(CONFIG_FREEBIRD),y)
 CFLAGS += -DCONFIG_FREEBIRD
