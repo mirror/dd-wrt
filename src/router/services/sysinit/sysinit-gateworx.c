@@ -548,8 +548,8 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_CAMBRIA
-	if (nvram_match("DD_BOARD", "Cambria GW2358-4")
-	    || nvram_match("DD_BOARD2", "Cambria GW2358-4")) {
+	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
+	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4")) {
 		insmod("8250_gw2358");
 		system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
 		system2("echo 1 >/proc/sys/dev/wifi0/softled");
@@ -560,8 +560,8 @@ void start_sysinit(void)
 		system2("echo 3 >/proc/sys/dev/wifi3/ledpin");
 		system2("echo 1 >/proc/sys/dev/wifi3/softled");
 	}
-	if (nvram_match("DD_BOARD", "Cambria GW2350")
-	    || nvram_match("DD_BOARD2", "Cambria GW2350")) {
+	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
+	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
 		insmod("8250_gw2350");
 	}
 	set_gpio(26,0);
@@ -571,7 +571,9 @@ void start_sysinit(void)
 #endif
 
 	/* cf capability ? */
-	char *modelname = nvram_safe_get("DD_BOARD");
+	char *modelname = nvram_get("DD_BOARD2");
+	if (!modelname || strncmp(modelname,"Gateworks",9))
+	    char *modelname = nvram_safe_get("DD_BOARD");
 	if (!strncmp(modelname, "Gateworks Avila GW2348", 22)
 	    || !strcmp(modelname, "Gateworks Cambria GW2358-4") || !strcmp(modelname, "Gateworks Avila GW2355") || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
