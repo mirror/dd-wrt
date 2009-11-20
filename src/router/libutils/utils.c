@@ -829,6 +829,24 @@ int internal_getRouterBrand()
 #elif HAVE_BWRG1000
 	setRouter("Bountiful BWRG-1000");
 	return ROUTER_BOARD_LS2;
+#elif HAVE_BS2MHP
+	setRouter("Ubiquiti Bullet M2-HP");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_BS5MHP
+	setRouter("Ubiquiti Bullet M5-HP");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_NS2M
+	setRouter("Ubiquiti Nanostation M2");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_NS5M
+	setRouter("Ubiquiti Nanostation M5");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_R2M
+	setRouter("Ubiquiti Rocket M2");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_R5M
+	setRouter("Ubiquiti Rocket M5");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_NS2
 	setRouter("Ubiquiti Nanostation 2");
 	return ROUTER_BOARD_LS2;
