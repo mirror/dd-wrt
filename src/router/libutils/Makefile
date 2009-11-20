@@ -299,6 +299,24 @@ endif
 ifeq ($(CONFIG_NS2),y)
   CFLAGS += -DHAVE_NS2
 endif
+ifeq ($(CONFIG_R2M),y)
+  CFLAGS += -DHAVE_R2M
+endif
+ifeq ($(CONFIG_R5M),y)
+  CFLAGS += -DHAVE_R5M
+endif
+ifeq ($(CONFIG_BS2MHP),y)
+  CFLAGS += -DHAVE_BS2MHP
+endif
+ifeq ($(CONFIG_BS5MHP),y)
+  CFLAGS += -DHAVE_BS5MHP
+endif
+ifeq ($(CONFIG_NS2M),y)
+  CFLAGS += -DHAVE_NS2M
+endif
+ifeq ($(CONFIG_NS5M),y)
+  CFLAGS += -DHAVE_NS5M
+endif
 ifeq ($(CONFIG_NS5),y)
   CFLAGS += -DHAVE_NS5
 endif
