@@ -573,7 +573,7 @@ void start_sysinit(void)
 	/* cf capability ? */
 	char *modelname = nvram_get("DD_BOARD2");
 	if (!modelname || strncmp(modelname,"Gateworks",9))
-	    char *modelname = nvram_safe_get("DD_BOARD");
+	    modelname = nvram_safe_get("DD_BOARD");
 	if (!strncmp(modelname, "Gateworks Avila GW2348", 22)
 	    || !strcmp(modelname, "Gateworks Cambria GW2358-4") || !strcmp(modelname, "Gateworks Avila GW2355") || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
