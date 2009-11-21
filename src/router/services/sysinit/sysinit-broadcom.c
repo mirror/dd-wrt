@@ -513,7 +513,7 @@ void start_sysinit(void)
 		if (nvram_match("vlan1ports", "0 5u"))
 			nvram_set("vlan1ports", "0 5");
 		break;
-		
+
 	case ROUTER_USR_5465:
 		nvram_set("lan_ifnames", "vlan0 eth1");
 		nvram_set("wan_ifname", "vlan1");
@@ -714,7 +714,7 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
+
 	case ROUTER_WRT160NV3:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");

@@ -210,7 +210,6 @@ void start_sysinit(void)
 		}
 		fclose(fp);
 	}
-
 //#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
@@ -249,7 +248,7 @@ void start_sysinit(void)
 
 		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
 		insmod("/lib/80211n/ath_mimo_pci.ko");
-              eval("insmod", "ath_mimo_pci", rate);
+		eval("insmod", "ath_mimo_pci", rate);
 	} else {
 		insmod("/lib/80211n/ath_mimo_pci.ko");
 	}
