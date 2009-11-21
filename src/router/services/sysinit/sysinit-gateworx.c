@@ -268,7 +268,7 @@ void start_sysinit(void)
 
 		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
 		insmod("/lib/80211n/ath_mimo_pci.ko");
-              eval("insmod", "ath_mimo_pci", rate);
+		eval("insmod", "ath_mimo_pci", rate);
 	} else {
 		insmod("/lib/80211n/ath_mimo_pci.ko");
 	}
@@ -446,7 +446,6 @@ void start_sysinit(void)
 		}
 		fclose(file);
 	}
-
 #ifdef HAVE_MAKSAT
 	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro"))
 #else
@@ -467,8 +466,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -487,8 +486,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -540,8 +539,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -564,18 +563,20 @@ void start_sysinit(void)
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
 		insmod("8250_gw2350");
 	}
-	set_gpio(26,0);
-	set_gpio(27,0);
-	nvram_set("gpio26","0");
-	nvram_set("gpio27","0");
+	set_gpio(26, 0);
+	set_gpio(27, 0);
+	nvram_set("gpio26", "0");
+	nvram_set("gpio27", "0");
 #endif
 
 	/* cf capability ? */
 	char *modelname = nvram_get("DD_BOARD2");
-	if (!modelname || strncmp(modelname,"Gateworks",9))
-	    modelname = nvram_safe_get("DD_BOARD");
+	if (!modelname || strncmp(modelname, "Gateworks", 9))
+		modelname = nvram_safe_get("DD_BOARD");
 	if (!strncmp(modelname, "Gateworks Avila GW2348", 22)
-	    || !strcmp(modelname, "Gateworks Cambria GW2358-4") || !strcmp(modelname, "Gateworks Avila GW2355") || !strcmp(modelname, "Gateworks Avila GW2345")) {
+	    || !strcmp(modelname, "Gateworks Cambria GW2358-4")
+	    || !strcmp(modelname, "Gateworks Avila GW2355")
+	    || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
 		insmod("pata_ixp4xx_cf");
 	}

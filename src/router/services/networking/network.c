@@ -904,35 +904,34 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_UBNTM
 	int brand = getRouterBrand();
-	int devnum=2;
-	switch(brand)
-	{
+	int devnum = 2;
+	switch (brand) {
 	case ROUTER_BOARD_BS2M:
 	case ROUTER_BOARD_BS5M:
 	case ROUTER_BOARD_R2M:
 	case ROUTER_BOARD_R5M:
-	devnum=1;
-	break;
+		devnum = 1;
+		break;
 	case ROUTER_BOARD_NS2M:
 	case ROUTER_BOARD_NS5M:
-	devnum=2;
-	break;
+		devnum = 2;
+		break;
 	default:
-	devnum=2;
-	break;
+		devnum = 2;
+		break;
 	}
-	
+
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		if (devnum==2)
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		if (devnum == 2)
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 		else
-		nvram_setz(lan_ifnames, "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
 	} else {
-		if (devnum==2)
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		if (devnum == 2)
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 		else
-		nvram_setz(lan_ifnames, "eth0 ath0");
+			nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -1591,8 +1590,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
