@@ -829,24 +829,43 @@ int internal_getRouterBrand()
 #elif HAVE_BWRG1000
 	setRouter("Bountiful BWRG-1000");
 	return ROUTER_BOARD_LS2;
-#elif HAVE_BS2MHP
-	setRouter("Ubiquiti Bullet M2-HP");
-	return ROUTER_BOARD_PB42;
-#elif HAVE_BS5MHP
-	setRouter("Ubiquiti Bullet M5-HP");
-	return ROUTER_BOARD_PB42;
-#elif HAVE_NS2M
-	setRouter("Ubiquiti Nanostation M2");
-	return ROUTER_BOARD_PB42;
-#elif HAVE_NS5M
+#elif HAVE_UBNTM
+FILE *fp=fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device","rb");
+if (fp==NULL)
+    return ROUTER_BOARD_PB42;
+int device;
+fscanf(fp,"0x%04X",&device);
+fclose(fp);
+switch(device)
+{
+case 0xe005:
 	setRouter("Ubiquiti Nanostation M5");
-	return ROUTER_BOARD_PB42;
-#elif HAVE_R2M
-	setRouter("Ubiquiti Rocket M2");
-	return ROUTER_BOARD_PB42;
-#elif HAVE_R5M
+	return ROUTER_BOARD_NS5M;
+break;
+case 0xe002:
+	setRouter("Ubiquiti Nanostation M2");
+	return ROUTER_BOARD_NS2M;
+break;
+case 0xe205:
+	setRouter("Ubiquiti Bullet M5");
+	return ROUTER_BOARD_BS5M;
+break;
+case 0xe202:
+	setRouter("Ubiquiti Bullet M2");
+	return ROUTER_BOARD_BS2M;
+break;
+case 0xe105:
 	setRouter("Ubiquiti Rocket M5");
+	return ROUTER_BOARD_R2M;
+break;
+case 0xe102:
+	setRouter("Ubiquiti Rocket M2");
+	return ROUTER_BOARD_R5M;
+break;
+default:
+	setRouter("Ubiquiti Unknown Model");
 	return ROUTER_BOARD_PB42;
+}
 #elif HAVE_NS2
 	setRouter("Ubiquiti Nanostation 2");
 	return ROUTER_BOARD_LS2;
