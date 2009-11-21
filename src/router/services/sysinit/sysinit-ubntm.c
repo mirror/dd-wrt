@@ -109,59 +109,6 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7240_mod");
-	// sleep(1);
-	FILE *fp = fopen("/dev/mtdblock/5", "rb");
-	unsigned char buf2[256];
-
-	fseek(fp, 0x1fe1000, SEEK_SET);
-
-	fread(buf2, 256, 1, fp);
-	fclose(fp);
-	int i;
-	int offsetmac1 = -1;
-	int offsetmac2 = -1;
-	unsigned int copy[256];
-
-	for (i = 0; i < 256; i++)
-		copy[i] = buf2[i] & 0xff;
-	for (i = 0; i < 256 - 10; i++) {
-		if (!strncmp(&buf2[i], "ar7100_esa", 10)) {
-			offsetmac1 = i + 11;
-		}
-		if (!strncmp(&buf2[i], "ar7100_esa_2", 12)) {
-			offsetmac2 = i + 13;
-		}
-	}
-	if (offsetmac1 != -1) {
-		char mac[32];
-
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0 + offsetmac1], copy[1 + offsetmac1],
-			copy[2 + offsetmac1], copy[3 + offsetmac1],
-			copy[4 + offsetmac1], copy[5 + offsetmac1]);
-		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
-		/*
-		 * Right now the routerstation has no on-board mac stored for the secondary interface (LAN)
-		 * to solve this i advised UBNT to use "ar7100_esa_2" as future redboot parameter for the secondary mac address
-		 * if this parameter exists, we will take it as secondary mac, if not we increase the primary mac by 1
-		 * consider that if you feel you have problems with mac conflicts using multiple routerstations, add this secondary parameter to redboot
-		 * this should only happen, if you connect the wan port of a routerstation to the lan port of another one and if these routerstation are 
-		 * from the same production batch 
-		 * 
-		 */
-		if (offsetmac2 != -1) {
-			sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-				copy[0 + offsetmac2], copy[1 + offsetmac2],
-				copy[2 + offsetmac2], copy[3 + offsetmac2],
-				copy[4 + offsetmac2], copy[5 + offsetmac2]);
-		} else {
-			MAC_ADD(mac);
-		}
-		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
-	}
-//#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;

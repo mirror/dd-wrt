@@ -398,7 +398,7 @@
 
 // Netgear WNR3500L (BCM4718A cpu, 8MB serial flash, USB, Gigabit switch, fccid: Netgear PY308400093)
 // Netgear WNR3500v2 - same - half flash
-#define ROUTER_NETGEAR_WNR3500L 0x7414 //(18)
+#define ROUTER_NETGEAR_WNR3500L 0x7414	//(18)
 
 // Linksys WRT320N (BCM4717A cpu, 8MB serial flash, Gigabit switch, fccid: Linksys Q87-WRT320N)
 #define ROUTER_WRT320N 0x7518
@@ -417,6 +417,13 @@
 
 // Linksys WRT160Nv3 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-WRT160NV3)
 #define ROUTER_WRT160NV3 0x8216
+
+#define ROUTER_BOARD_BS2M 0x831c	//bullet 2m
+#define ROUTER_BOARD_BS5M 0x841c	//bullet 5m
+#define ROUTER_BOARD_R2M 0x851c	//rocket 2m
+#define ROUTER_BOARD_R5M 0x861c	//rocket 5m
+#define ROUTER_BOARD_NS2M 0x871c	//nanostation 2m
+#define ROUTER_BOARD_NS5M 0x881c	//nanostation 5m
 
 #define NVROUTER "DD_BOARD"
 
