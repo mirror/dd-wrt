@@ -1279,8 +1279,6 @@ int is_wifar5008(char *dev)
 	return 1;
 }
 
-
-
 static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 {
 	struct ieee80211req_chaninfo chans;

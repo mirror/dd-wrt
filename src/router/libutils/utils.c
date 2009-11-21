@@ -830,42 +830,42 @@ int internal_getRouterBrand()
 	setRouter("Bountiful BWRG-1000");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_UBNTM
-FILE *fp=fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device","rb");
-if (fp==NULL)
-    return ROUTER_BOARD_PB42;
-int device;
-fscanf(fp,"0x%04X",&device);
-fclose(fp);
-switch(device)
-{
-case 0xe005:
-	setRouter("Ubiquiti Nanostation M5");
-	return ROUTER_BOARD_NS5M;
-break;
-case 0xe002:
-	setRouter("Ubiquiti Nanostation M2");
-	return ROUTER_BOARD_NS2M;
-break;
-case 0xe205:
-	setRouter("Ubiquiti Bullet M5");
-	return ROUTER_BOARD_BS5M;
-break;
-case 0xe202:
-	setRouter("Ubiquiti Bullet M2");
-	return ROUTER_BOARD_BS2M;
-break;
-case 0xe105:
-	setRouter("Ubiquiti Rocket M5");
-	return ROUTER_BOARD_R2M;
-break;
-case 0xe102:
-	setRouter("Ubiquiti Rocket M2");
-	return ROUTER_BOARD_R5M;
-break;
-default:
-	setRouter("Ubiquiti Unknown Model");
-	return ROUTER_BOARD_PB42;
-}
+	FILE *fp =
+	    fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device", "rb");
+	if (fp == NULL)
+		return ROUTER_BOARD_PB42;
+	int device;
+	fscanf(fp, "0x%04X", &device);
+	fclose(fp);
+	switch (device) {
+	case 0xe005:
+		setRouter("Ubiquiti Nanostation M5");
+		return ROUTER_BOARD_NS5M;
+		break;
+	case 0xe002:
+		setRouter("Ubiquiti Nanostation M2");
+		return ROUTER_BOARD_NS2M;
+		break;
+	case 0xe205:
+		setRouter("Ubiquiti Bullet M5");
+		return ROUTER_BOARD_BS5M;
+		break;
+	case 0xe202:
+		setRouter("Ubiquiti Bullet M2");
+		return ROUTER_BOARD_BS2M;
+		break;
+	case 0xe105:
+		setRouter("Ubiquiti Rocket M5");
+		return ROUTER_BOARD_R2M;
+		break;
+	case 0xe102:
+		setRouter("Ubiquiti Rocket M2");
+		return ROUTER_BOARD_R5M;
+		break;
+	default:
+		setRouter("Ubiquiti Unknown Model");
+		return ROUTER_BOARD_PB42;
+	}
 #elif HAVE_NS2
 	setRouter("Ubiquiti Nanostation 2");
 	return ROUTER_BOARD_LS2;
@@ -1544,7 +1544,7 @@ default:
 		setRouter("U.S.Robotics USR5441");
 		return ROUTER_USR_5461;	// should work in the same way
 	}
-	
+
 	if (boardnum == 35324 && nvram_match("boardtype", "0x048e")) {
 		cprintf("router is U.S. Robotics USR5465\n");
 		setRouter("U.S.Robotics USR5465");
@@ -1728,19 +1728,19 @@ default:
 		|| nvram_match("boardrev", "0x10"))
 	    && (nvram_match("boardflags", "0x750")
 		|| nvram_match("boardflags", "0x0750"))
-		&& nvram_match("sdram_init", "0x000A"))	//16 MB ram
-		{
-			cprintf("router is Netgear WGR614v8/L/WW\n");
-			setRouter("Netgear WGR614v8/L/WW");
-			return ROUTER_NETGEAR_WGR614L;
+	    && nvram_match("sdram_init", "0x000A"))	//16 MB ram
+	{
+		cprintf("router is Netgear WGR614v8/L/WW\n");
+		setRouter("Netgear WGR614v8/L/WW");
+		return ROUTER_NETGEAR_WGR614L;
 	}
-			
+
 	if (boardnum == 3805 && nvram_match("boardtype", "0x48E")
 	    && nvram_match("boardrev", "0x10")) {
 		cprintf("router is Netgear WGR614v9\n");
 		setRouter("Netgear WGR614v9");
 		return ROUTER_NETGEAR_WGR614V9;
-	}			
+	}
 
 	if (boardnum == 56 && nvram_match("boardtype", "0x456")
 	    && nvram_match("boardrev", "0x10")) {
