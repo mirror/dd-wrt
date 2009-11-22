@@ -310,7 +310,26 @@ void start_setup_vlans(void)
 		vlanmap[0] = 1;
 		vlanmap[1] = 0;
 	}
-	// else if .... feel free to extend for giga routers
+	else if (nvram_match("vlan2ports", "0 8")) {
+		vlanmap[0] = 0;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan1ports", "4 3 2 1 8*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 3;
+			vlanmap[3] = 2;
+			vlanmap[4] = 1;
+		}
+	} else if (nvram_match("vlan1ports", "4 8")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan2ports", "0 1 2 3 8*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} 
+	}
+	// else ....
 
 	int ast = 0;
 	char *asttemp = nvram_safe_get("vlan0ports");
