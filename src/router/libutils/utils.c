@@ -1066,6 +1066,13 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_WL500GD;
 	}
 
+	if (boardnum == 45 && nvram_match("boardtype", "0x04cf")
+	    && nvram_match("boardrev", "0x1218")) {
+		cprintf("router is Asus RT-N16\n");
+		setRouter("Asus RT-N16");
+		return ROUTER_ASUS_RTN16;
+	}
+	
 	if (boardnum == 45 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("boardrev", "0x23") && nvram_match("parkid", "1")) {
 		cprintf("router is Asus WL-500W\n");
