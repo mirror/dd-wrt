@@ -1988,12 +1988,12 @@ static void do_mypage(struct mime_handler *handler, char *url,
 	int i = 1;
 	
 	if (query == NULL || strlen(query) == 0)
-		qnum = 0;
+		qnum = 1;
 	else
 		qnum = atoi(query);
 	
 	foreach(sname, snamelist, next) {
-		if (qnum == 0 || qnum == i) {
+		if (qnum == i) {
 			strcat (sname, " > /tmp/mypage.tmp");
 			system2(sname);
 			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
