@@ -453,6 +453,12 @@ endif
 	-./strip_libs.sh $(ARCH)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/rootfs.squashfs -noappend -root-owned -le
 	../../opt/tools/trx -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+# Asus RT-N16
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N16 1.00 1.05 $(ARCH)-uclibc/vmlinuz
+	../../opt/tools/trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N16.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs -a 4096 $(ARCH)-uclibc/asusver
+	rm -f $(ARCH)-uclibc/asusver
+# end Asus RT-N16
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg_wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg_wnr3500.h && \
@@ -463,8 +469,7 @@ endif
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500U.chk
 	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
 	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt160nv3.bin -g
-
-
+	../../opt/tools/addpattern -4 -p 610N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt610nv1.bin -g
 	
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
 
