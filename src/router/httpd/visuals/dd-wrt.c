@@ -4461,8 +4461,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_preambletime, nvram_default_get(wl_preambletime, "20"));
 	websWrite(wp, "</div>\n");
 #endif
+#ifdef HAVE_MADWIFI_MIMO
+	if (!is_ar5008(count))
+#endif
+	{
 	sprintf(wmm, "%s_wmm", prefix);
 	showRadio(wp, "wl_adv.label18", wmm);
+	}
 #endif
 
 	websWrite(wp, "<div class=\"setting\">\n");
