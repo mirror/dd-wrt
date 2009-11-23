@@ -425,6 +425,9 @@
 #define ROUTER_BOARD_NS2M 0x871c	//nanostation 2m
 #define ROUTER_BOARD_NS5M 0x881c	//nanostation 5m
 
+// Asus RT-N16 (BCM4718A cpu, 32MB flash / 128MB ram, BCM53115 giga switch, fccid: Asus MSQRTN16)
+#define ROUTER_ASUS_RTN16 0x8916
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
