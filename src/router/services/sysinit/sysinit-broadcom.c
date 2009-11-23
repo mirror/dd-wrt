@@ -232,6 +232,8 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT150N:
 	case ROUTER_WRT150NV11:
 	case ROUTER_WRT160N:
+	case ROUTER_WRT160NV3:
+	case ROUTER_ASUS_RTN16:
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
 	case ROUTER_WRT310N:
@@ -704,12 +706,22 @@ void start_sysinit(void)
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("wan_ifname2", "vlan2");
-		nvram_set("wan_default", "vlan2");
-		nvram_set("wan_ifnames", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		if (nvram_match("vlan1ports", "1 2 3 4 8*")
 		    || nvram_match("vlan2ports", "0 8u")) {
 			nvram_set("vlan1ports", "4 3 2 1 8*");
+			nvram_set("vlan2ports", "0 8");
+			need_reboot = 1;
+		}
+		break;
+		
+	case ROUTER_ASUS_RTN16:
+		nvram_set("lan_ifnames", "vlan1 eth1");
+		nvram_set("wan_ifname", "vlan2");
+		nvram_set("wan_ifname2", "vlan2");
+		nvram_set("wl0_ifname", "eth1");
+		nvram_set("vlan2hwname", "et0");
+		if (nvram_match("vlan2ports", "0 8u")) {
 			nvram_set("vlan2ports", "0 8");
 			need_reboot = 1;
 		}
@@ -719,8 +731,6 @@ void start_sysinit(void)
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("wan_ifname2", "vlan2");
-		nvram_set("wan_default", "vlan2");
-		nvram_set("wan_ifnames", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		break;
 
