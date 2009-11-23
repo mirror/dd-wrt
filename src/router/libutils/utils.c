@@ -838,30 +838,71 @@ int internal_getRouterBrand()
 	fscanf(fp, "0x%04X", &device);
 	fclose(fp);
 	switch (device) {
-	case 0xe005:
-		setRouter("Ubiquiti Nanostation M5");
-		return ROUTER_BOARD_NS5M;
-		break;
 	case 0xe002:
 		setRouter("Ubiquiti Nanostation M2");
 		return ROUTER_BOARD_NS2M;
 		break;
-	case 0xe205:
-		setRouter("Ubiquiti Bullet M5");
-		return ROUTER_BOARD_BS5M;
+	case 0xe012:
+		setRouter("Ubiquiti Nanostation M2");
+		return ROUTER_BOARD_NS2M;
+		break;
+	case 0xe005:
+		setRouter("Ubiquiti Nanostation M5");
+		return ROUTER_BOARD_NS5M;
+		break;
+	case 0xe102:
+		setRouter("Ubiquiti Rocket M2");
+		return ROUTER_BOARD_R2M;
+		break;
+	case 0xe112:
+		setRouter("Ubiquiti Rocket M2");
+		return ROUTER_BOARD_R2M;
+		break;
+	case 0xe105:
+		setRouter("Ubiquiti Rocket M5");
+		return ROUTER_BOARD_R5M;
 		break;
 	case 0xe202:
 		setRouter("Ubiquiti Bullet M2");
 		return ROUTER_BOARD_BS2M;
 		break;
-	case 0xe105:
-		setRouter("Ubiquiti Rocket M5");
+	case 0xe205:
+		setRouter("Ubiquiti Bullet M5");
+		return ROUTER_BOARD_BS5M;
+		break;
+	case 0xe212:
+		setRouter("Ubiquiti Airgrid M2"); //identical with Bullet M2 Spec
+		return ROUTER_BOARD_BS2M;
+		break;
+	case 0xe215:
+		setRouter("Ubiquiti Airgrid M5");
+		return ROUTER_BOARD_BS5M;
+		break;
+	case 0xe302: 
+		setRouter("Ubiquiti Pico M2");
+		return ROUTER_BOARD_BS2M;
+		break;
+	case 0xe305: 
+		setRouter("Ubiquiti Pico M5");
+		return ROUTER_BOARD_BS5M;
+		break;
+	case 0xe405: 
+		setRouter("Ubiquiti Airwire");
+		return ROUTER_BOARD_BS5M;
+		break;
+	case 0xe0A5:
+		setRouter("Ubiquiti Loco M5");
+		return ROUTER_BOARD_NS5M;
+		break;
+	case 0xe115: 
+		setRouter("Ubiquiti Litestation M25");
+		return ROUTER_BOARD_NS5M;
+		break;
+	case 0xe402: 
+		setRouter("Ubiquiti AP 1000N");
 		return ROUTER_BOARD_R2M;
 		break;
-	case 0xe102:
-		setRouter("Ubiquiti Rocket M2");
-		return ROUTER_BOARD_R5M;
-		break;
+
 	default:
 		setRouter("Ubiquiti Unknown Model");
 		return ROUTER_BOARD_PB42;
