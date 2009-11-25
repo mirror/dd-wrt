@@ -1593,7 +1593,7 @@ int internal_getRouterBrand()
 		return ROUTER_USR_5461;	// should work in the same way
 	}
 
-	if (boardnum == 35324 && nvram_match("boardtype", "0x048e")) {
+	if ((boardnum == 35324 || boardnum == 38256) && nvram_match("boardtype", "0x048e")) {
 		cprintf("router is U.S. Robotics USR5465\n");
 		setRouter("U.S.Robotics USR5465");
 		return ROUTER_USR_5465;
@@ -3006,7 +3006,7 @@ int led_control(int type, int act)
 		usb_gpio = 0x001;
 		break;
 	case ROUTER_USR_5465:
-		usb_gpio = 0x101;
+		//usb_gpio = 0x002; //or 0x001 ??
 		break;
 	case ROUTER_NETGEAR_WGR614L:
 	case ROUTER_NETGEAR_WGR614V9:
