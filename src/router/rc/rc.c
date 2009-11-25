@@ -347,32 +347,7 @@ int main(int argc, char **argv)
 	}
 #endif
 #endif
-	/* 
-	 * hotplug [event] 
-	 */
-	if (strstr(base, "hotplug")) {
-		if (argc >= 2) {
-			fprintf(stderr, "hotplug %s\n", argv[1]);
-			if (!strcmp(argv[1], "net")) {
-				start_service("hotplug_net");
-				return 0;
-			}
-#ifdef HAVE_USB
-			if (!strcmp(argv[1], "usb")) {
-				start_service("hotplug_usb");
-				return 0;
-			}
-#endif
-#ifdef HAVE_XSCALE
-			if (!strcmp(argv[1], "firmware"))
-				return eval("/etc/upload", argv[1]);
-#endif
-		} else {
-			fprintf(stderr, "usage: hotplug [event]\n");
-			return EINVAL;
-		}
-		return 0;
-	}
+
 	// ////////////////////////////////////////////////////
 	// 
 	if (strstr(base, "filtersync")) {
