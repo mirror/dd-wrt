@@ -64,6 +64,8 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 			sprintf(temp, "[%lu:%lu] ", old_rcvd + rcvd,
 				old_sent + sent);
 			strcat(buffer, temp);
+			i++;
+			break;
 		} else {
 			strcat(buffer, var);
 			strcat(buffer, " ");
@@ -72,7 +74,7 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	}
 	int a;
 	/* correct entries if something strange happend */
-	if (i < (days + 1)) {
+	if (i < (days + 2)) {
 		for (a = i; a < days; a++) {
 			strcat(buffer, "0:0 ");
 		}
