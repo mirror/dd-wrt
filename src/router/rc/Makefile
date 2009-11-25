@@ -568,7 +568,8 @@ endif
 	install nvram $(INSTALLDIR)/usr/sbin	
 	install ledtool $(INSTALLDIR)/sbin	
 #	install event $(INSTALLDIR)/sbin	
-	install radio_timer $(INSTALLDIR)/sbin	
+	install radio_timer $(INSTALLDIR)/sbin
+	install hotplug $(INSTALLDIR)/sbin
 	install listen $(INSTALLDIR)/sbin
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 #	cd $(INSTALLDIR)/sbin && ln -sf rc init
@@ -588,7 +589,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 #	cd $(INSTALLDIR)/sbin && ln -sf rc stats
 	cd $(INSTALLDIR)/sbin && ln -sf rc event
-	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
+#	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug  //done in hotplug.c
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
 #	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
 	cd $(INSTALLDIR)/sbin && ln -sf rc filtersync
@@ -700,6 +701,7 @@ endif
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
 #	$(CC) $(CFLAGS) -o event event.c
 	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o hotplug hotplug.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o listen listen.c $(LDFLAGS)
 
 $(OBJS): $(CY_DEPS)
