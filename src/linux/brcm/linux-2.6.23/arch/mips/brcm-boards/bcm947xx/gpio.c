@@ -23,6 +23,7 @@
 #include <bcmutils.h>
 #include <siutils.h>
 #include <bcmdevs.h>
+#include <bcmnvram.h>
 #include "ext_io.h"
 
 static si_t *gpio_sih;
@@ -236,6 +237,15 @@ if (iswrt160nv3)
 		si_gpioreserve(gpio_sih, 1 << 1, GPIO_APP_PRIORITY); //pwr led		
 		si_gpioreserve(gpio_sih, 1 << 2, GPIO_APP_PRIORITY); //ses_orange
 		si_gpioreserve(gpio_sih, 1 << 4, GPIO_APP_PRIORITY); //ses_white
+}
+
+if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
+	    && nvram_match("boardtype", "0x048e") && melco_id == 32093)
+{
+		printk(KERN_EMERG "WHR-G125 GPIO Init\n");
+		si_gpioreserve(gpio_sih, 1 << 1, GPIO_APP_PRIORITY);	
+		si_gpioreserve(gpio_sih, 1 << 6, GPIO_APP_PRIORITY);
+		si_gpioreserve(gpio_sih, 1 << 7, GPIO_APP_PRIORITY);
 }
 /*if (iswrt300n11)
 {
