@@ -1483,6 +1483,11 @@ void start_restore_defaults(void)
 		if (!nvram_get("boardflags2"))
 			nvram_set("boardflags2", "0");
 	}
+	
+	if (restore_defaults && brand == ROUTER_ASUS_RTN16) {
+		nvram_set("wl0_txpwr", "17");
+	}	
+	
 	/*
 	 * Always set OS defaults 
 	 */
