@@ -84,6 +84,8 @@ int getcpurev(void)
 				return 29;
 			if (!strncmp(cpurev, "BCM3302 V1.10", 13))	// BCM4785 (BCM3302 V1.10)
 				return 110;
+			if (!strncmp(cpurev, "MIPS 74K V4.0", 13))	// BCM4718 
+				return 40;				
 			return -1;
 		}
 	}
