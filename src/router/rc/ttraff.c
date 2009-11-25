@@ -32,31 +32,33 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	unsigned long old_rcvd;
 	unsigned long old_sent;
 	char *tdata;
+	
 	buffer = (char *)malloc(2048);
 	memset(buffer, 0, 2048);
 	sprintf(tq, "traff-%02u-%u", month, year);
 	tdata = nvram_safe_get(tq);
+	
 	if (tdata == NULL || strlen(tdata) == 0) {
-		for (d = 0; d < days; d++) {
+		for (d = 1; d <= days; d++) {
 			strcat(sbuff, "0:0 ");
 		}
 		strcat(sbuff, "[0:0]");
 		nvram_set(tq, sbuff);
 		tdata = nvram_safe_get(tq);
 	}
+
 	foreach(var, tdata, next) {
 		if (i == day) {
 			sscanf(var, "%lu:%lu", &old_rcvd, &old_sent);
 			sprintf(temp, "%lu:%lu ", old_rcvd + rcvd,
 				old_sent + sent);
 			strcat(buffer, temp);
-		} else if (i == days)	//make new monthly total
+		} else if (i == (days + 1))	//make new monthly total
 		{
 			sscanf(var, "[%lu:%lu]", &old_rcvd, &old_sent);
 			sprintf(temp, "[%lu:%lu] ", old_rcvd + rcvd,
 				old_sent + sent);
 			strcat(buffer, temp);
-			break;
 		} else {
 			strcat(buffer, var);
 			strcat(buffer, " ");
@@ -65,11 +67,11 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	}
 	int a;
 	/* correct entries if something strange happend */
-	if (i <= days) {
-		for (a = i; a <= days; a++) {
+	if (i < (days + 1)) {
+		for (a = i; a < days; a++) {
 			strcat(buffer, "0:0 ");
 		}
-		strcat(buffer, "[0:0]");
+		strcat(buffer, "[0:0] ");
 	}
 	strtrim_right(buffer, ' ');
 	nvram_set(tq, buffer);
