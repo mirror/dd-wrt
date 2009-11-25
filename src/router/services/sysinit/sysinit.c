@@ -1622,6 +1622,7 @@ void start_drivers(void)
 			if (nvram_match("usb_fs_fat", "1")) {
 				cprintf("loading usb_fs_fat\n");
 				insmod("nls_base");
+				insmod("nls_cp437");
 				insmod("fat");
 				cprintf("loading usb_fs_vfat\n");
 				insmod("vfat");
