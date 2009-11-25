@@ -240,7 +240,7 @@ if (iswrt160nv3)
 }
 
 if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
-	    && nvram_match("boardtype", "0x048e") && melco_id == 32093)
+	    && nvram_match("boardtype", "0x048e") && nvram_match("melco_id", "32093"))
 {
 		printk(KERN_EMERG "WHR-G125 GPIO Init\n");
 		si_gpioreserve(gpio_sih, 1 << 1, GPIO_APP_PRIORITY);	
