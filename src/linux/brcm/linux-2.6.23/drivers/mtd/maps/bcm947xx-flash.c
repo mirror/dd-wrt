@@ -530,7 +530,7 @@ init_bcm947xx_map(void)
 	bcm947xx_mtd->owner = THIS_MODULE;
 
 	/* override copy_from routine */
- 	bcm947xx_map.copy_from = bcm47xx_map_copy_from;
+// 	bcm947xx_map.copy_from = bcm47xx_map_copy_from;
 
 	/* Allow size override for testing */
 	size = flash ? : bcm947xx_mtd->size;
