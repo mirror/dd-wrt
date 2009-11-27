@@ -293,21 +293,31 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 			return NULL;
 		}
 
- 		if (extp->MajorVersion != '1' ||
-		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
-		        if (cfi->mfr == MANUFACTURER_SAMSUNG &&
-			    (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
-			    printk(KERN_NOTICE "  Newer Samsung flash detected, "
-			           "should be compatibile with Amd/Fujitsu.\n");
-		        }
-		        else {
-			    printk(KERN_ERR "  Unknown Amd/Fujitsu Extended Query "
-			           "version %c.%c.\n",  extp->MajorVersion,
-			           extp->MinorVersion);
-			    kfree(extp);
-			    kfree(mtd);
-			    return NULL;
-		        } 
+		if (extp->MajorVersion != '1' ||
+		  (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
+				if (cfi->mfr == MANUFACTURER_SAMSUNG &&
+				  (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
+					printk(KERN_NOTICE "  Newer Samsung flash detected, "
+					       "should be compatibile with Amd/Fujitsu.\n");
+				}
+				else if (cfi->mfr == MANUFACTURER_SAMSUNG && extp->MajorVersion == '0') {
+					printk(KERN_NOTICE "  Newer Samsung flash detected, "
+					       "should be compatibile with Amd/Fujitsu.\n");
+					switch (cfi->id) {
+						case 0x257e:
+						case 0x22e2:
+						extp->MajorVersion = '1';
+						break;
+					}
+				}
+				else {
+					printk(KERN_ERR "  Unknown Amd/Fujitsu Extended Query "
+				       "version %c.%c.\n",  extp->MajorVersion,
+				       extp->MinorVersion);
+					kfree(extp);
+					kfree(mtd);
+					return NULL;
+				}
 		}
 
 		/* Install our own private info structure */
