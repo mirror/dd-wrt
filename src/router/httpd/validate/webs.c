@@ -3184,6 +3184,7 @@ void ddns_save_value(webs_t wp)
 	case 3:		// zoneedit
 	case 4:		// no-ip
 	case 8:		// tzo
+	case 9: 	// dynSIP
 		snprintf(_username, sizeof(_username), "ddns_username_%s",
 			 enable);
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
