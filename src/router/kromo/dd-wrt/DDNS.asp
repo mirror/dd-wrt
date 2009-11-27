@@ -148,11 +148,6 @@ addEvent(window, "unload", function() {
 										</script>
 									</select>
 								</div>
-								<div class="setting">
-									<div class="label"><% tran("ddns.wanip"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
-								</div>
 					<% nvram_selmatch("ddns_enable","0","<!--"); %>
 					<% nvram_selmatch("ddns_enable","2","<!--"); %>
 					<% nvram_selmatch("ddns_enable","3","<!--"); %>
@@ -167,9 +162,10 @@ addEvent(window, "unload", function() {
 									<input name="ddns_username" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd","","d6nw5v1x2pc7st9m"); %>" />
-								</div>
+		  							<div class="label"><% tran("share.passwd"); %></div>
+									<input type="password" id="ddns_passwd" name="ddns_passwd" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
+								</div>			
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname"); %>" />
@@ -189,6 +185,11 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
 									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_checked("ddns_wildcard", "1"); %> />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
 					<% nvram_selmatch("ddns_enable","3","-->"); %>
@@ -214,11 +215,17 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_2","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_2" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_2"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_2', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_2" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_2"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","3","-->"); %>
@@ -244,11 +251,17 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_3","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_3" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_3"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_3', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_3" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_3"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -274,11 +287,17 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_4" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_4","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_4" name="ddns_passwd_4" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_4"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_4', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_4" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_4"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -304,7 +323,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_6" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_6","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_6" name="ddns_passwd_6" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_6"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_6', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
@@ -323,6 +343,11 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
 									<input type="checkbox" value="1" name="ddns_wildcard_6" <% nvram_checked("ddns_wildcard_6", "1"); %> />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -348,7 +373,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_7" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_7","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_7" name="ddns_passwd_7" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_7"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_7', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
@@ -357,6 +383,11 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
 									<input type="checkbox" value="1" name="ddns_wildcard_7" <% nvram_checked("ddns_wildcard_7", "1"); %> />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -382,11 +413,17 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_8" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_8","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_8" name="ddns_passwd_8" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_8"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_8', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_8" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_8"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -410,11 +447,17 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_9" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_9","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_9" name="ddns_passwd_9" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_9"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_9', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_9" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_9"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -444,7 +487,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_5" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_5","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_5" name="ddns_passwd_5" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_5"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd_5', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
@@ -470,7 +514,11 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-
+								<div class="setting">
+									<div class="label"><% tran("ddns.wanip"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvram_checked("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
+								</div>
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
 					<% nvram_selmatch("ddns_enable","3","-->"); %>
