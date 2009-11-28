@@ -225,6 +225,7 @@ void start_sysinit(void)
 		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
 		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
 		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
+#elif HAVE_BR6574N
 
 #elif HAVE_EAP9550
 		sysprintf("switch reg w 14 5555");
@@ -337,6 +338,8 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_AR670W
 
+#elif HAVE_BR6574N
+
 #else
 			sysprintf("switch reg w 40 1001");
 			sysprintf("switch reg w 44 1001");
@@ -370,11 +373,8 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_BR6574N
 #elif HAVE_AR670W
-/*			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");*/
 #else
 			sysprintf("switch reg w 40 1001");
 			sysprintf("switch reg w 44 1001");
