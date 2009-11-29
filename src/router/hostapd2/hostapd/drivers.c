@@ -15,6 +15,9 @@
 #include "includes.h"
 
 
+#ifdef CONFIG_DRIVER_WEXT
+extern struct wpa_driver_ops wpa_driver_wext_ops; /* driver_hostap.c */
+#endif /* CONFIG_DRIVER_WEXT */
 #ifdef CONFIG_DRIVER_HOSTAP
 extern struct wpa_driver_ops wpa_driver_hostap_ops; /* driver_hostap.c */
 #endif /* CONFIG_DRIVER_HOSTAP */
@@ -40,6 +43,9 @@ extern struct wpa_driver_ops wpa_driver_test_ops; /* driver_test.c */
 
 struct wpa_driver_ops *hostapd_drivers[] =
 {
+#ifdef CONFIG_DRIVER_WEXT
+	&wpa_driver_wext_ops,
+#endif /* CONFIG_DRIVER_WEXT */
 #ifdef CONFIG_DRIVER_HOSTAP
 	&wpa_driver_hostap_ops,
 #endif /* CONFIG_DRIVER_HOSTAP */
