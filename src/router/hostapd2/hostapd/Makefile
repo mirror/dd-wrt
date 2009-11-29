@@ -139,6 +139,11 @@ CFLAGS += -DCONFIG_DRIVER_TEST
 OBJS += driver_test.o
 endif
 
+ifdef CONFIG_DRIVER_WEXT
+CFLAGS += -DCONFIG_DRIVER_WEXT
+OBJS += driver_wext.o
+endif
+
 ifdef CONFIG_L2_PACKET
 ifdef CONFIG_DNET_PCAP
 ifdef CONFIG_L2_FREEBSD
