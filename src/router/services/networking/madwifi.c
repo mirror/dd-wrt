@@ -509,7 +509,7 @@ static void do_hostapd(char *fstr, char *prefix)
 
 }
 
-void setupHostAP(char *prefix, int iswan)
+void setupHostAP(char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -550,7 +550,7 @@ void setupHostAP(char *prefix, int iswan)
 		if (nvram_nmatch("1", "%s_bridged", prefix))
 			fprintf(fp, "bridge=%s\n", getBridge(prefix));
 
-		fprintf(fp, "driver=madwifi\n");
+		fprintf(fp, "driver=%s\n", driver);
 		fprintf(fp, "logger_syslog=-1\n");
 		fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
@@ -675,13 +675,24 @@ void start_hostapdwan(void)
 	for (i = 0; i < c; i++) {
 		sprintf(ath, "ath%d", i);
 		if (nvram_nmatch("ap", "%s_mode", ath)
-		    || nvram_nmatch("wdsap", "%s_mode", ath))
-			setupHostAP(ath, 1);
+		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
+#ifdef HAVE_MADWIFI_MIMO
+			if (is_ar5008(i))
+				setupHostAP(ath, "wext", 1);
+			else
+#endif
+				setupHostAP(ath, "madwifi", 1);
+		}
 		char *vifs = nvram_nget("ath%d_vifs", i);
 
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
-			setupHostAP(var, 1);
+#ifdef HAVE_MADWIFI_MIMO
+			if (is_ar5008(i))
+				setupHostAP(var, "wext", 1);
+			else
+#endif
+				setupHostAP(var, "madwifi", 1);
 			}
 	}
 
@@ -1616,7 +1627,7 @@ static void configure_single(int count)
 	}
 	// setup encryption
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
-		setupHostAP(dev, 0);
+		setupHostAP(dev, "madwifi", 0);
 	else
 		setupSupplicant(dev, NULL);
 
@@ -1627,7 +1638,7 @@ static void configure_single(int count)
 		char *vapm = nvram_default_get(mode, "ap");
 		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta")
 		    && strcmp(vapm, "wet"))
-			setupHostAP(var, 0);
+			setupHostAP(var, "madwifi", 0);
 		else
 			setupSupplicant(var, NULL);
 		}
