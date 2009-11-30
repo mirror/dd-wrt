@@ -274,7 +274,7 @@ void start_sysinit(void)
 		insmod("e1000gcu");
 		insmod("e1000gbe");
 	}
-	if (detect("EP80579"))	// Realtek 8169 Adapter (various notebooks) 
+	else if (detect("EP80579"))	// Realtek 8169 Adapter (various notebooks) 
 	{
 		insmod("e1000");
 		insmod("e1000e");
