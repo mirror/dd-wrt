@@ -1018,6 +1018,7 @@ void ej_show_paypal(webs_t wp, int argc, char_t ** argv)
 #endif
 
 #ifndef CONFIG_BRANDING
+#ifndef CONFIG_REGISTER
 	websWrite(wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a><br />");
 	websWrite(wp,
 		  "<form action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\" target=\"_blank\">");
@@ -1049,6 +1050,7 @@ void ej_show_paypal(webs_t wp, int argc, char_t ** argv)
 		  "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.png\" alt=\"donate thru interpayments\" />\n");
 	// #endif
 	websWrite(wp, "</a>\n");
+#endif
 #endif
 	return;
 }
