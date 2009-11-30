@@ -840,65 +840,95 @@ int internal_getRouterBrand()
 	switch (device) {
 	case 0xe002:
 		setRouter("Ubiquiti Nanostation M2");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_NS2M;
 		break;
 	case 0xe012:
 		setRouter("Ubiquiti Nanostation M2");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_NS2M;
 		break;
 	case 0xe005:
 		setRouter("Ubiquiti Nanostation M5");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_NS5M;
 		break;
 	case 0xe102:
 		setRouter("Ubiquiti Rocket M2");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_R2M;
 		break;
 	case 0xe112:
 		setRouter("Ubiquiti Rocket M2");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_R2M;
 		break;
 	case 0xe105:
 		setRouter("Ubiquiti Rocket M5");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_R5M;
 		break;
 	case 0xe202:
 		setRouter("Ubiquiti Bullet M2");
+		nvram_default_get("ath0_rxantenna", "1");
+		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS2M;
 		break;
 	case 0xe205:
 		setRouter("Ubiquiti Bullet M5");
+		nvram_default_get("ath0_rxantenna", "1");
+		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS5M;
 		break;
 	case 0xe212:
-		setRouter("Ubiquiti Airgrid M2"); //identical with Bullet M2 Spec
+		setRouter("Ubiquiti Airgrid M2");	//identical with Bullet M2 Spec
+		nvram_default_get("ath0_rxantenna", "1");
+		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS2M;
 		break;
 	case 0xe215:
 		setRouter("Ubiquiti Airgrid M5");
+		nvram_default_get("ath0_rxantenna", "1");
+		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS5M;
 		break;
-	case 0xe302: 
+	case 0xe302:
 		setRouter("Ubiquiti Pico M2");
+		nvram_default_get("ath0_rxantenna", "1");
+		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS2M;
 		break;
-	case 0xe305: 
+	case 0xe305:
 		setRouter("Ubiquiti Pico M5");
+		nvram_default_get("ath0_rxantenna", "1");
+		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS5M;
 		break;
-	case 0xe405: 
+	case 0xe405:
 		setRouter("Ubiquiti Airwire");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_BS5M;
 		break;
 	case 0xe0A5:
 		setRouter("Ubiquiti Loco M5");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_NS5M;
 		break;
-	case 0xe115: 
+	case 0xe115:
 		setRouter("Ubiquiti Litestation M25");
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
 		return ROUTER_BOARD_NS5M;
 		break;
-	case 0xe402: 
+	case 0xe402:
 		setRouter("Ubiquiti AP 1000N");
 		return ROUTER_BOARD_R2M;
 		break;
@@ -1072,7 +1102,7 @@ int internal_getRouterBrand()
 		setRouter("Asus RT-N16");
 		return ROUTER_ASUS_RTN16;
 	}
-	
+
 	if (boardnum == 45 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("boardrev", "0x23") && nvram_match("parkid", "1")) {
 		cprintf("router is Asus WL-500W\n");
@@ -1122,24 +1152,21 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WAPM_HP_AM54G54;
 	}
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
-	    && nvram_match("boardtype", "0x048e")
-	    && melco_id == 32093) {
+	    && nvram_match("boardtype", "0x048e") && melco_id == 32093) {
 		cprintf("router is Buffalo WHR-G125\n");
 		setRouter("Buffalo WHR-G125");
 		return ROUTER_BUFFALO_WHRG54S;
 	}
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
-	    && nvram_match("boardtype", "0x048e")
-	    && melco_id == 32139) {
+	    && nvram_match("boardtype", "0x048e") && melco_id == 32139) {
 		cprintf("router is Buffalo WCA-G\n");
 		setRouter("Buffalo WCA-G");
 		return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
 	}
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
-	    && nvram_match("boardtype", "0x048e")
-	    && melco_id == 32064) {
+	    && nvram_match("boardtype", "0x048e") && melco_id == 32064) {
 		cprintf("router is Buffalo WHR-HP-G125\n");
 		setRouter("Buffalo WHR-HP-G125");
 		return ROUTER_BUFFALO_WHRG54S;
@@ -1388,8 +1415,8 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 2
-	    && (startswith(gemtek, "RC") || gemteknum == 1
-		|| gemteknum == 10)) {
+	    && (startswith(gemtek, "RC") || gemteknum == 1 || gemteknum == 10))
+	{
 		cprintf("router is Linksys wap54g v1.x\n");
 		setRouter("Linksys WAP54G v1.x");
 		return ROUTER_WAP54G_V1;
@@ -1447,8 +1474,7 @@ int internal_getRouterBrand()
 #endif
 	if (boardnum == 0 && nvram_match("boardtype", "0x478")
 	    && nvram_match("cardbus", "0") && nvram_match("boardrev", "0x10")
-	    && nvram_match("boardflags", "0x110")
-	    && melco_id == 32027) {
+	    && nvram_match("boardflags", "0x110") && melco_id == 32027) {
 		setRouter("Buffalo WZR-G144NH");
 		return ROUTER_BUFFALO_WZRG144NH;
 	}
@@ -1593,7 +1619,8 @@ int internal_getRouterBrand()
 		return ROUTER_USR_5461;	// should work in the same way
 	}
 
-	if ((boardnum == 35324 || boardnum == 38256) && nvram_match("boardtype", "0x048e")) {
+	if ((boardnum == 35324 || boardnum == 38256)
+	    && nvram_match("boardtype", "0x048e")) {
 		cprintf("router is U.S. Robotics USR5465\n");
 		setRouter("U.S.Robotics USR5465");
 		return ROUTER_USR_5465;
@@ -1770,13 +1797,7 @@ int internal_getRouterBrand()
 	}
 
 	if ((boardnum == 83258 || boardnum == 1 || boardnum == 0123)	//or 01 or 001 or 0x01
-	    && (nvram_match("boardtype", "0x048e")
-		|| nvram_match("boardtype", "0x48E"))
-	    && (nvram_match("boardrev", "0x11")
-		|| nvram_match("boardrev", "0x10"))
-	    && (nvram_match("boardflags", "0x750")
-		|| nvram_match("boardflags", "0x0750"))
-	    && nvram_match("sdram_init", "0x000A"))	//16 MB ram
+	    && (nvram_match("boardtype", "0x048e") || nvram_match("boardtype", "0x48E")) && (nvram_match("boardrev", "0x11") || nvram_match("boardrev", "0x10")) && (nvram_match("boardflags", "0x750") || nvram_match("boardflags", "0x0750")) && nvram_match("sdram_init", "0x000A"))	//16 MB ram
 	{
 		cprintf("router is Netgear WGR614v8/L/WW\n");
 		setRouter("Netgear WGR614v8/L/WW");
