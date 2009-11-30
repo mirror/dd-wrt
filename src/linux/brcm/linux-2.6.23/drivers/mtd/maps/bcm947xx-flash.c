@@ -67,6 +67,49 @@ static struct mtd_info *bcm947xx_mtd;
 #endif
 
 
+#define ROUTER_NETGEAR_WGR614L         1
+#define ROUTER_NETGEAR_WNR834B         2
+#define ROUTER_NETGEAR_WNDR3300        3
+#define ROUTER_NETGEAR_WNR3500L        4
+
+#define WGR614_CHECKSUM_BLOCK_START    0x003A0000
+#define WGR614_CHECKSUM_OFF            0x003AFFF8
+#define WGR614_FAKE_LEN                0x00000004  //we fake checksum only over 4 bytes (HDR0)
+#define WGR614_FAKE_CHK                0x02C0010E
+
+static int get_router (void)
+{
+	uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );	
+		
+	if ( (boardnum == 8 || boardnum == 01)
+	  && nvram_match ("boardtype", "0x0472")
+	  && nvram_match ("cardbus", "1") ) {
+		return ROUTER_NETGEAR_WNR834B;	  //Netgear WNR834B, Netgear WNR834Bv2
+	}
+
+	if ( boardnum == 01
+	  && nvram_match ("boardtype", "0x0472")
+	  && nvram_match ("boardrev", "0x23") ) {
+		return ROUTER_NETGEAR_WNDR3300;  //Netgear WNDR-3300	
+	}	
+	
+	if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
+	  && (nvram_match ("boardtype", "0x048e") || nvram_match ("boardtype", "0x48E"))
+	  && (nvram_match ("boardrev", "0x11") || nvram_match ("boardrev", "0x10"))
+	  && (nvram_match ("boardflags", "0x750") || nvram_match ("boardflags", "0x0750"))
+	  &&  nvram_match ("sdram_init", "0x000A") ) {
+		return ROUTER_NETGEAR_WGR614L;  //Netgear WGR614v8/L/WW 16MB ram, cfe v1.3 or v1.5
+	}
+	
+	if ( (boardnum == 1 || boardnum == 3500)
+	  && nvram_match ("boardtype", "0x04CF")
+	  && (nvram_match ("boardrev", "0x1213") || nvram_match ("boardrev", "02")) ) {	
+		return ROUTER_NETGEAR_WNR3500L;  //Netgear WNR3500v2/U/L
+	}
+	
+	return 0;
+}
+
 static void bcm47xx_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
 {
 	if (len==1) {
@@ -323,16 +366,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		printk(KERN_EMERG "Done\n");
 		
 		/* Write fake Netgear checksum to the flash */		
-		uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
-		if ( (boardnum == 83258 || boardnum == 1 || boardnum == 0123)  //or 01 or 001 or 0x01
-	  	&& (nvram_match("boardtype", "0x048e") || nvram_match("boardtype", "0x48E"))
-	  	&& (nvram_match("boardrev", "0x11") || nvram_match("boardrev", "0x10"))
-	  	&& (nvram_match("boardflags", "0x750") || nvram_match("boardflags", "0x0750"))
-	  	&&  nvram_match ("sdram_init", "0x000A") ) {
-#define WGR614_CHECKSUM_BLOCK_START    0x003A0000
-#define WGR614_CHECKSUM_OFF            0x003AFFF8
-#define WGR614_FAKE_LEN                0x00000004  //we fake checksum only over 4 bytes (HDR0)
-#define WGR614_FAKE_CHK                0x02C0010E
+		if (get_router() == ROUTER_NETGEAR_WGR614L) {
 		/*
 		 * Read into buffer 
 		 */
@@ -375,36 +409,15 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	int board_data_size = 0; // e.g Netgear 0x003e0000-0x003f0000 : "board_data", we exclude this part from our mapping
 	int jffs_exclude_size = 0;  // to prevent overwriting len/checksum on e.g. Netgear WGR614v8/L/WW
 	
-	uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );	
-		
-	if ( (boardnum == 8 || boardnum == 01)
-	  && nvram_match ("boardtype", "0x0472")
-	  && nvram_match ("cardbus", "1") ) {
-		board_data_size = 4 * 0x10000;  //Netgear WNR834B, Netgear WNR834Bv2
-		jffs_exclude_size = 0x10000;    //checksum is @ 0x003AFFF8		
+	switch (get_router()) {
+		case ROUTER_NETGEAR_WGR614L:
+		case ROUTER_NETGEAR_WNR834B:
+		case ROUTER_NETGEAR_WNDR3300:
+		case ROUTER_NETGEAR_WNR3500L:	
+			board_data_size = 4 * 0x10000;  //Netgear: checksum is @ 0x003AFFF8 for 4M flash
+			jffs_exclude_size = 0x10000;    //or checksum is @ 0x007AFFF8 for 8M flash
+			break;		
 	}
-
-	if ( boardnum == 01
-	  && nvram_match ("boardtype", "0x0472")
-	  && nvram_match ("boardrev", "0x23") ) {
-		board_data_size = 4 * 0x10000;  //Netgear WNDR-3300
-		jffs_exclude_size = 0x10000;    //checksum is @ 0x003AFFF8		
-	}	
-	
-	if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
-	  && (nvram_match ("boardtype", "0x048e") || nvram_match ("boardtype", "0x48E"))
-	  && (nvram_match ("boardrev", "0x11") || nvram_match ("boardrev", "0x10"))
-	  && (nvram_match ("boardflags", "0x750") || nvram_match ("boardflags", "0x0750"))
-	  &&  nvram_match ("sdram_init", "0x000A") ) {
-		board_data_size = 4 * 0x10000;  //Netgear WGR614v8/L/WW 16MB ram, cfe v1.3 or v1.5
-		jffs_exclude_size = 0x10000;    //checksum is @ 0x003AFFF8
-	}
-	
-	if ( (boardnum == 1 || boardnum == 3500)
-	  && nvram_match ("boardtype", "0x04CF")
-	  && (nvram_match ("boardrev", "0x1213") || nvram_match ("boardrev", "02")) ) {	
-		board_data_size = 0x10000;  //Netgear WNR3500v2/U/L
-	}															
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
 		return NULL;
