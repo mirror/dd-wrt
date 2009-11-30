@@ -1091,6 +1091,7 @@ static void wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
 	if (wpa_driver_wext_get_ifflags(drv, &flags) != 0)
 		printf("Could not get interface '%s' flags\n", drv->ifname);
 	else if (!(flags & IFF_UP)) {
+#ifdef CONFIG_IFACE_DOWN_CONTROL
 		if (wpa_driver_wext_set_ifflags(drv, flags | IFF_UP) != 0) {
 			printf("Could not set interface '%s' UP\n",
 			       drv->ifname);
@@ -1106,6 +1107,7 @@ static void wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
 				   "initialization", drv->ifname);
 			sleep(1);
 		}
+#endif
 	}
 
 	/*
@@ -1150,7 +1152,9 @@ static void wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
 void wpa_driver_wext_deinit(void *priv)
 {
 	struct wpa_driver_wext_data *drv = priv;
+#ifdef CONFIG_IFACE_DOWN_CONTROL
 	int flags;
+#endif
 
 	eloop_cancel_timeout(wpa_driver_wext_scan_timeout, drv, drv->ctx);
 
@@ -1167,15 +1171,19 @@ void wpa_driver_wext_deinit(void *priv)
 	if (drv->mlme_sock >= 0)
 		eloop_unregister_read_sock(drv->mlme_sock);
 
+#ifdef CONFIG_IFACE_DOWN_CONTROL
 	if (wpa_driver_wext_get_ifflags(drv, &flags) == 0)
 		(void) wpa_driver_wext_set_ifflags(drv, flags & ~IFF_UP);
+#endif
 
 #ifdef CONFIG_CLIENT_MLME
 	if (drv->mlmedev[0]) {
+#ifdef CONFIG_IFACE_DOWN_CONTROL
 		if (wpa_driver_wext_get_ifflags_ifname(drv, drv->mlmedev,
 						       &flags) == 0)
 			(void) wpa_driver_wext_set_ifflags_ifname(
 				drv, drv->mlmedev, flags & ~IFF_UP);
+#endif
 		wpa_driver_prism2_param_set(drv, PRISM2_PARAM_MGMT_IF, 0);
 		wpa_driver_prism2_param_set(drv, PRISM2_PARAM_USER_SPACE_MLME,
 					    0);
@@ -1250,7 +1258,7 @@ int wpa_driver_wext_scan(void *priv, const u8 *ssid, size_t ssid_len)
 
 	/* Not all drivers generate "scan completed" wireless event, so try to
 	 * read results after a timeout. */
-	timeout = 5;
+	timeout = 15;
 	if (drv->scan_complete_events) {
 		/*
 		 * The driver seems to deliver SIOCGIWSCAN events to notify
