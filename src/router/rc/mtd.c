@@ -52,20 +52,21 @@
 #endif
 
 /* Netgear definitions */
-#define NETGEAR_4M_CRC_FAKE 1	//we fake checksum only over 4 bytes (HDR0)
+#define NETGEAR_CRC_FAKE 1	//we fake checksum only over 4 bytes (HDR0)
 
-#ifdef NETGEAR_4M_CRC_FAKE
-#define NETGEAR_4M_CRC_FAKE_LEN                0x00000004
-#define NETGEAR_4M_CRC_FAKE_CHK                0x02C0010E
+#ifdef NETGEAR_CRC_FAKE
+#define NETGEAR_CRC_FAKE_LEN		0x00000004
+#define NETGEAR_CRC_FAKE_CHK		0x02C0010E
 #else
 static unsigned long calculate_checksum(int action, char *s, int size);
 #endif
-#define NETGEAR_4M_FLASH_SIZE              4 * 1024 * 1024
-#define NETGEAR_4M_FLASH_BASE              0xBC000000
-#define NETGEAR_4M_KERNEL_FLASH_ADDR       0xBC020000
-#define NETGEAR_4M_KERNEL_LEN_ADDR         (NETGEAR_4M_FLASH_BASE + NETGEAR_4M_FLASH_SIZE - 0x50000 - 8)
-#define NETGEAR_4M_KERNEL_CHKSUM_ADDR      (NETGEAR_4M_KERNEL_LEN_ADDR + 4)
-#define WGR614_LZMA_LOADER_SIZE            0x0919	//loader+400.lzma = 2329 bytes, please change if size changes!
+#define WGR614_LZMA_LOADER_SIZE		0x000919	//loader+400.lzma = 2329 bytes, please change if size changes!
+#define FLASH_SIZE_4M				0x400000
+#define FLASH_SIZE_8M				0x800000
+#define CFE_SIZE_128K				0x020000
+#define CFE_SIZE_256K				0x040000
+#define NETGEAR_LEN_CHK_ADDR_4M		0x3AFFF8
+#define NETGEAR_LEN_CHK_ADDR_8M		0x7AFFF8
 /* end */
 
 /* 
@@ -358,7 +359,7 @@ int mtd_write(const char *path, const char *mtd)
 							 flag_version),
 		    CRC32_INIT_VALUE);
 	crc_data = 0;
-#ifndef NETGEAR_4M_CRC_FAKE
+#ifndef NETGEAR_CRC_FAKE
 	calculate_checksum(0, NULL, 0);	// init
 #endif
 	/* 
@@ -398,7 +399,7 @@ int mtd_write(const char *path, const char *mtd)
 		 * Update CRC 
 		 */
 		crc = crc32(&buf[off], count - off, crc);
-#ifndef NETGEAR_4M_CRC_FAKE
+#ifndef NETGEAR_CRC_FAKE
 		calculate_checksum(1, buf, count);
 #endif
 
@@ -457,26 +458,35 @@ int mtd_write(const char *path, const char *mtd)
 	if (getRouterBrand() == ROUTER_NETGEAR_WGR614L
 	    || getRouterBrand() == ROUTER_NETGEAR_WNR834B
 	    || getRouterBrand() == ROUTER_NETGEAR_WNR834BV2
-	    || getRouterBrand() == ROUTER_NETGEAR_WNDR3300) {
-#ifndef NETGEAR_4M_CRC_FAKE
+	    || getRouterBrand() == ROUTER_NETGEAR_WNDR3300
+	    || getRouterBrand() == ROUTER_NETGEAR_WNR3500L) {
+#ifndef NETGEAR_CRC_FAKE
 		cal_chksum = calculate_checksum(2, NULL, 0);
 #endif
 
 		char imageInfo[8];
+		unsigned long flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_4M;
+		unsigned long cfe_size = CFE_SIZE_128K;
 
-#ifndef NETGEAR_4M_CRC_FAKE
+		if (getRouterBrand() == ROUTER_NETGEAR_WNR3500L) {
+			cfe_size = CFE_SIZE_256K;
+			if (mtd_info.size > FLASH_SIZE_4M) {
+				flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_8M;
+			}
+		}
+					
+#ifndef NETGEAR_CRC_FAKE
 		trx.len = STORE32_LE(trx.len);
 		cal_chksum = STORE32_LE(cal_chksum);
 #else
-		trx.len = STORE32_LE(NETGEAR_4M_CRC_FAKE_LEN);
-		cal_chksum = STORE32_LE(NETGEAR_4M_CRC_FAKE_CHK);
+		trx.len = STORE32_LE(NETGEAR_CRC_FAKE_LEN);
+		cal_chksum = STORE32_LE(NETGEAR_CRC_FAKE_CHK);
 #endif
 		memcpy(&imageInfo[0], (char *)&trx.len, 4);
 		memcpy(&imageInfo[4], (char *)&cal_chksum, 4);
 
 		sector_start =
-		    ((NETGEAR_4M_KERNEL_LEN_ADDR -
-		      NETGEAR_4M_KERNEL_FLASH_ADDR) / mtd_info.erasesize) *
+		    ((flash_len_chk_addr - cfe_size) / mtd_info.erasesize) *
 		    mtd_info.erasesize;
 
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
@@ -512,10 +522,7 @@ int mtd_write(const char *path, const char *mtd)
 			goto fail;
 		}
 
-		tmp =
-		    buf +
-		    ((NETGEAR_4M_KERNEL_LEN_ADDR -
-		      NETGEAR_4M_KERNEL_FLASH_ADDR) % mtd_info.erasesize);
+		tmp = buf + ((flash_len_chk_addr - cfe_size) % mtd_info.erasesize);
 		memcpy(tmp, imageInfo, sizeof(imageInfo));
 
 		if (write(mtd_fd, buf, mtd_info.erasesize) !=
@@ -524,10 +531,10 @@ int mtd_write(const char *path, const char *mtd)
 			goto fail;
 		}
 		//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );
-#ifndef NETGEAR_4M_CRC_FAKE
-		fprintf(stderr, "Write len/chksum @ 0x003AFFF8...done.\n");
+#ifndef NETGEAR_CRC_FAKE
+		fprintf(stderr, "Write len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
 #else
-		fprintf(stderr, "Write fake len/chksum @ 0x003AFFF8...done.\n");
+		fprintf(stderr, "Write fake len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
 #endif
 	}
 
@@ -674,7 +681,7 @@ int mtd_unlock(const char *mtd)
 	return 0;
 }
 
-#ifndef NETGEAR_4M_CRC_FAKE
+#ifndef NETGEAR_CRC_FAKE
 // Netgear image checksum
 static unsigned long calculate_checksum(int action, char *s, int size)
 {
