@@ -15,8 +15,8 @@ static char word[256];
 void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
-	char *next, *page;
-	char *ipaddr, *netmask, *gateway, *metric, *ifname;
+	char *next=NULL, *page=NULL;
+	char *ipaddr=NULL, *netmask=NULL, *gateway=NULL, *metric=NULL, *ifname=NULL;
 	static char ifnamecopy[32];
 	static char bufferif[512];
 
@@ -50,7 +50,6 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	if (!ifname)
 		ifname = "br0";
 	strcpy(ifnamecopy, ifname);
-
 	memset(bufferif, 0, 512);
 	getIfList(bufferif, NULL);
 	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n",
