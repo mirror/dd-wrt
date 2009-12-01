@@ -124,7 +124,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"is_default", "1", 0},	/* is it default setting: 1:yes 0:no */
 	{"os_server", "", 0},	/* URL for getting upgrades */
 	{"stats_server", "", 0},	/* URL for posting stats */
-	{"console_loglevel", "1", 0},	/* Kernel panics only */
+	{"console_loglevel", "7", 0},	/* Kernel panics only */
 
 	/*
 	 * Big switches 
