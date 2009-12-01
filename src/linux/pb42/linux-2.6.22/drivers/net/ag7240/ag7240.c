@@ -335,7 +335,6 @@ ag7240_stop(struct net_device *dev)
     ag7240_hw_stop(mac);
     free_irq(mac->mac_irq, dev);
 
-    spin_unlock_irqrestore(&mac->mac_lock, flags);
 
     ag7240_tx_free(mac);
     ag7240_rx_free(mac);
@@ -356,6 +355,7 @@ ag7240_stop(struct net_device *dev)
 #ifdef CHECK_DMA_STATUS
     del_timer(&mac->mac_phy_timer);
 #endif
+    spin_unlock_irqrestore(&mac->mac_lock, flags);
 
     /*ag7240_trc_dump();*/
 
@@ -418,7 +418,7 @@ ag7240_hw_setup(ag7240_mac_t *mac)
                      mgmt_cfg_val = 0x5;
                      break;
             case 200: 
-                     mgmt_cfg_val = 0x3;
+                     mgmt_cfg_val = 0x4;
                      break;
             case 210: 
                       mgmt_cfg_val = 0x9;
@@ -429,18 +429,26 @@ ag7240_hw_setup(ag7240_mac_t *mac)
             default:
                      mgmt_cfg_val = 0x7;
         }
-        if (mac->mac_unit == 0) {
-            check_cnt = 0;
-            while (check_cnt++ < 10) {
-                ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
-                ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
-
-                if(athrs26_mdc_check() == 0) 
-                    break;
-            }
-            if(check_cnt == 11)
-                printk("%s: MDC check failed\n", __func__);
+	if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) {
+	    /* Virian */	
+            mgmt_cfg_val = 0x4;
+            ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+            ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+	    printk("Virian MDC CFG Value ==> %x\n",mgmt_cfg_val);
         }
+	else { /* Python 1.0 & 1.1 */
+        	if (mac->mac_unit == 0) {
+            		check_cnt = 0;
+            		while (check_cnt++ < 10) {
+                		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+                		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+                		if(athrs26_mdc_check() == 0) 
+                    			break;
+            		}
+            		if(check_cnt == 11)
+                		printk("%s: MDC check failed\n", __func__);
+       		}
+    	}
     }
         
     ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_1, 0x10ffff);
@@ -574,7 +582,7 @@ ag7240_set_mac_from_link(ag7240_mac_t *mac, ag7240_phy_speed_t speed, int fdx)
 static int 
 led_control_func(ATH_LED_CONTROL *pledctrl) 
 {
-    uint32_t i,cnt,reg_addr;
+    uint32_t i=0,cnt,reg_addr;
     const LED_BLINK_RATES  *bRateTab; 
     static uint32_t pkt_count;
     ag7240_mac_t *mac;
@@ -602,7 +610,7 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                 cnt = cnt + athrs26_reg_read(reg_addr);
 
                 if (cnt == 0) {
-                    s26_wr_phy(i,0x19,(s26_rd_phy(i,0x19) | (0x280)));
+                    s26_wr_phy(i,0x19,(s26_rd_phy(i,0x19) | (0x3c0)));
                     continue;
                 }
                 if (pledctrl->speed[i] == AG7240_PHY_SPEED_10T) {
@@ -635,7 +643,7 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                            ag7240_reg_rd(mac,AG7240_TX_BYTES_CNTR);
 
             if (ag7240_get_diff(pkt_count,cnt) == 0) {
-                s26_wr_phy(4,0x19,(s26_rd_phy(i,0x19) | (0x280)));
+                s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) | (0x3c0)));
                 goto done;
             }
             if (pledctrl->speed[4] == AG7240_PHY_SPEED_10T) {
@@ -645,7 +653,7 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                 if (ag7240_get_diff(pkt_count,cnt) <= bRateTab->rate) {
                     s26_wr_phy(4,0x18,((bRateTab->timeOn << 12)|
                         (bRateTab->timeOff << 8)));
-                    s26_wr_phy(4,0x19,(s26_rd_phy(i,0x19) & ~(0x280)));
+                    s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) & ~(0x280)));
                     break;
                 }
             }
@@ -670,26 +678,36 @@ done:
 
 #ifdef CHECK_DMA_STATUS
 static int check_dma_status_pause(ag7240_mac_t *mac) { 
-    int RxFsm,TxFsm;
+
+    int RxFsm,TxFsm,RxFD,RxCtrl,TxCtrl;
 
     RxFsm = ag7240_reg_rd(mac,AG7240_DMA_RXFSM);
     TxFsm = ag7240_reg_rd(mac,AG7240_DMA_TXFSM);
+    RxFD  = ag7240_reg_rd(mac,AG7240_DMA_XFIFO_DEPTH);
+    RxCtrl = ag7240_reg_rd(mac,AG7240_DMA_RX_CTRL);
+    TxCtrl = ag7240_reg_rd(mac,AG7240_DMA_TX_CTRL);
 
 
     if ((RxFsm & AG7240_DMA_DMA_STATE) == 0x3 
         && ((RxFsm >> 4) & AG7240_DMA_AHB_STATE) == 0x6) {
         return 0;
     }
-    else if(((TxFsm >> 4) & AG7240_DMA_AHB_STATE) <= 0x4) {
-        if (((RxFsm & AG7240_DMA_DMA_STATE) == 0x0) &&
-            (((RxFsm >> 4) & AG7240_DMA_AHB_STATE) == 0x0) && 
-            (((RxFsm >> 10) & 0x1) == 0x1))
-            return 0;
-        else
-            return 1; 
+    else if ((((TxFsm >> 4) & AG7240_DMA_AHB_STATE) <= 0x0) && 
+             ((RxFsm & AG7240_DMA_DMA_STATE) == 0x0) && 
+             (((RxFsm >> 4) & AG7240_DMA_AHB_STATE) == 0x0) && 
+             (RxFD  == 0x0) && (RxCtrl == 1) && (TxCtrl == 1)) {
+        return 0;
+    }
+    else if (((((TxFsm >> 4) & AG7240_DMA_AHB_STATE) <= 0x4) && 
+            ((RxFsm & AG7240_DMA_DMA_STATE) == 0x0) && 
+            (((RxFsm >> 4) & AG7240_DMA_AHB_STATE) == 0x0)) || 
+            (((RxFD >> 16) <= 0x20) && (RxCtrl == 1)) ) {
+        return 1;
     }
     else {
-        printk("RxFsm:%x TxFsm:%x\n",RxFsm,TxFsm);
+        DPRINTF(" FIFO DEPTH = %x",RxFD);
+        DPRINTF(" RX DMA CTRL = %x",RxCtrl);
+        DPRINTF("mac:%d RxFsm:%x TxFsm:%x\n",mac->mac_unit,RxFsm,TxFsm);
         return 2;
     }
 }
@@ -900,6 +918,10 @@ ag7240_mii_read(int unit, uint32_t phy_addr, uint8_t reg)
     volatile int           rddata;
     uint16_t      ii = 0x1000;
 
+    if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) {
+       mac = ag7240_unit2mac(1);
+    }
+
     ag7240_reg_wr(mac, AG7240_MII_MGMT_CMD, 0x0);
     ag7240_reg_wr(mac, AG7240_MII_MGMT_ADDRESS, addr);
     ag7240_reg_wr(mac, AG7240_MII_MGMT_CMD, AG7240_MGMT_CMD_READ);
@@ -924,6 +946,10 @@ ag7240_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data)
     volatile int rddata;
     uint16_t      ii = 0x1000;
 
+    if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) {
+       mac = ag7240_unit2mac(1);
+    }
+
     ag7240_reg_wr(mac, AG7240_MII_MGMT_ADDRESS, addr);
     ag7240_reg_wr(mac, AG7240_MII_MGMT_CTRL, data);
 
@@ -931,6 +957,7 @@ ag7240_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data)
     {
         rddata = ag7240_reg_rd(mac, AG7240_MII_MGMT_IND) & 0x1;
     }while(rddata && --ii);
+
 }
 
 /*
@@ -1866,27 +1893,7 @@ ag7240_get_default_macaddr(ag7240_mac_t *mac, u8 *mac_addr)
     printk(MODULE_NAME "CHH: %02x:%02x:%02x:%02x:%02x:%02x \n",
         eep_mac_addr[0],eep_mac_addr[1],eep_mac_addr[2],
         eep_mac_addr[3],eep_mac_addr[4],eep_mac_addr[5]);
-        
-    /*
-    ** Check for a valid manufacturer prefix.  If not, then use the defaults
-    */
-    
-    if(eep_mac_addr[0] == 0x00 && 
-       eep_mac_addr[1] == 0x03 && 
-       eep_mac_addr[2] == 0x7f)
-    {
-        memcpy(mac_addr, eep_mac_addr, 6);
-    }
-    else
-    {
-        /* Use Default address at top of range */
-        mac_addr[0] = 0x00;
-        mac_addr[1] = 0x03;
-        mac_addr[2] = 0x7F;
-        mac_addr[3] = 0xFF;
-        mac_addr[4] = 0xFF;
-        mac_addr[5] = 0xFF - mac->mac_unit;
-    }
+    memcpy(mac_addr,eep_mac_addr,6);    
 }
 
 static int
@@ -2082,7 +2089,7 @@ ag7240_init(void)
             printk(MODULE_NAME ": register netdev failed\n");
             goto failed;
         }
-
+	netif_carrier_off(dev);
         ag7240_reg_rmw_set(mac, AG7240_MAC_CFG1, AG7240_MAC_CFG1_SOFT_RST 
 				| AG7240_MAC_CFG1_RX_RST | AG7240_MAC_CFG1_TX_RST);
 
