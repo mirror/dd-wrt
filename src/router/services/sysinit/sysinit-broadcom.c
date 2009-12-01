@@ -1325,8 +1325,13 @@ void start_sysinit(void)
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_ASUS_RTN16:
 				nvram_set("portprio_support", "0");
+#ifdef HAVE_BCMMODERN
+				modules = "bcm57xx";
+#else
 				modules = "bcm57xxlsys";
+#endif
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 			case ROUTER_MOTOROLA:
@@ -1398,8 +1403,13 @@ void start_sysinit(void)
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_ASUS_RTN16:
 				nvram_set("portprio_support", "0");
+#ifdef HAVE_BCMMODERN
+				modules = "bcm57xx";
+#else
 				modules = "bcm57xxlsys";
+#endif
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 				modules =
@@ -1854,8 +1864,13 @@ char *enable_dtag_vlan(int enable)
 		}
 		stop_lan();
 		eval("ifconfig", eth, "down");
+#ifdef HAVE_BCMMODERN
+		rmmod("bcm57xx");
+		insmod("bcm57xx");
+#else
 		rmmod("bcm57xxlsys");
 		insmod("bcm57xxlsys");
+#endif
 		eval("ifconfig", eth, "up");
 		start_config_vlan();
 		start_lan();
@@ -1897,8 +1912,13 @@ char *enable_dtag_vlan(int enable)
 		}
 		stop_lan();
 		eval("ifconfig", eth, "down");
+#ifdef HAVE_BCMMODERN
+		rmmod("bcm57xx");
+		insmod("bcm57xx");
+#else
 		rmmod("bcm57xxlsys");
 		insmod("bcm57xxlsys");
+#endif
 		eval("ifconfig", eth, "up");
 		start_config_vlan();
 		start_lan();
