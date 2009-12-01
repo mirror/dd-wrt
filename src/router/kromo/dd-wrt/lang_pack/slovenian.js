@@ -1031,6 +1031,7 @@ management.lang_spanish="¹pan¹èina";
 management.lang_swedish="¹ved¹èina";
 management.lang_japanese="japon¹èina";
 management.lang_hungarian="mad¾ar¹èina";
+management.lang_latvian="Latvij¹èina";
 management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
 management.net_port="Najveèje ¹t. vrat";
 management.net_tcptimeout="TCP èasovna omejitev (v sekundah)";
