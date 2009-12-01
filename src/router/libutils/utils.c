@@ -1403,9 +1403,10 @@ int internal_getRouterBrand()
 	char *gemtek = nvram_safe_get("GemtekPmonVer");
 	unsigned long gemteknum = strtoul(gemtek, NULL, 0);
 
-	if (boardnum == 2 && gemteknum == 10 &&
+	if (boardnum == 2 && (gemteknum == 10 || gemteknum == 11) &&
 	    (startswith(et0, "00:0C:E5") ||
 	     startswith(et0, "00:0c:e5") ||
+		 startswith(et0, "00:11:22") ||
 	     startswith(et0, "00:0C:10") ||
 	     startswith(et0, "00:0c:10") ||
 	     startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11"))) {
