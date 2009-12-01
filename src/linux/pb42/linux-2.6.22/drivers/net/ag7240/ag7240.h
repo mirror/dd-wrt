@@ -307,6 +307,7 @@ typedef enum {
 #define AG7240_DMA_INTR                 0x19c
 #define AG7240_DMA_RXFSM		0x1b0
 #define AG7240_DMA_TXFSM		0x1b4
+#define AG7240_DMA_XFIFO_DEPTH		0x1a8
 
 
 /*
