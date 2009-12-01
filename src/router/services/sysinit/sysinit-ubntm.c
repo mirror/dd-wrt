@@ -109,7 +109,6 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7240_mod");
-	sleep(3);
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;
