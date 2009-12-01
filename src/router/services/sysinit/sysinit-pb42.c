@@ -112,6 +112,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	insmod("ag7100_mod");
+	sleep(3);
 
 	// insmod("ath_pci", "autocreate=none");
 	insmod("ath_mimo_pci");
