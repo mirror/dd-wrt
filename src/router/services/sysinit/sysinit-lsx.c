@@ -109,7 +109,6 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7100_mod");
-	sleep(3);
 
 
 	// sleep(1);
