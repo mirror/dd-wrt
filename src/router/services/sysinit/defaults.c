@@ -1544,6 +1544,16 @@ struct nvram_tuple srouter_defaults[] = {
 	{"chilli_macauth", "0", 0},
 	{"chilli_additional", "", 0},
 #endif
+#ifdef HAVE_HOTSPOT
+	{"hotss_enable", "0", 0},
+	{"hotss_interface", "br0", 0},
+	{"hotss_radiusnasid", "", 0},
+	{"hotss_uamenable", "0", 0},
+	{"hotss_allowuam", "", 0},
+	{"hotss_operatorid", "", 0},
+	{"hotss_locationid", "", 0},
+	{"hotss_nobridge", "0", 0},
+#endif
 #ifdef HAVE_SSHD
 
 #ifdef HAVE_SKYTEL
