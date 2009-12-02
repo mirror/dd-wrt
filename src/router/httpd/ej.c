@@ -356,6 +356,8 @@ FILE *getWebsFile(char *path)
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			FILE *web = fopen("/etc/www", "rb");
+			if (web==NULL)
+			    return NULL;
 			fseek(web, websRomPageIndex[i].offset, 0);
 			cprintf("found %s\n", path);
 			return web;
