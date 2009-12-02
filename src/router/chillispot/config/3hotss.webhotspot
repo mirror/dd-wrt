@@ -4,8 +4,8 @@
 	<div class="center"><img src="images/hotspotsystem.png" alt="hotspotsystem logo" /></div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspotsys.legend"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="hotss_enable" <% nvram_selmatch("hotss_enable","1", "checked"); %> onclick="show_layer_ext(this, 'idhotspotsys', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="hotss_enable" <% nvram_selmatch("hotss_enable","0", "checked"); %> onclick="show_layer_ext(this, 'idhotspotsys', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="hotss_enable" <% nvram_selmatch("hotss_enable","1", "checked"); %> onclick="setHotss(this.value);" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="hotss_enable" <% nvram_selmatch("hotss_enable","0", "checked"); %> onclick="setHotss(this.value);" /><% tran("share.disable"); %>
 	</div>
 	<div id="idhotspotsys">
 		<div class="setting">
