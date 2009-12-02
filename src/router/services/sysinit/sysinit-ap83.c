@@ -114,7 +114,7 @@ void start_sysinit(void)
 	if (fp)
 	{
 	unsigned char buf2[256];
-	fseek(fp, 0x1ff120a, SEEK_SET);
+	fseek(fp, 0x1ff120c, SEEK_SET);
 	fread(buf2, 256, 1, fp);
 	fclose(fp);
 	char mac[32];
