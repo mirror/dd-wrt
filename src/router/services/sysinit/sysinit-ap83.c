@@ -110,7 +110,7 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7100_mod");
 #ifdef HAVE_WZRG300NH
-	FILE *fp = fopen("/dev/mtdblock/7", "rb");
+	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp)
 	{
 	unsigned char buf2[256];
