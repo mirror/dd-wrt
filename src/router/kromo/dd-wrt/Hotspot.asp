@@ -35,6 +35,20 @@ function to_apply(F) {
 	applytake(F);
 }
 
+function setHotss(val) {
+	if (val == "1") {
+		//document.setup.chilli_enable[1].click();
+		setElementsActive("chilli_enable", "chilli_additional", false);
+		show_layer_ext(this, 'idhotspotsys', true);
+		show_layer_ext(this, 'idchilli', false);
+		}
+	else {
+		setElementsActive("chilli_enable", "chilli_additional", true);
+		show_layer_ext(this, 'idhotspotsys', false);
+		show_layer_ext(this, 'idchilli', <% nvram_else_match("chilli_enable", "1", "1", "0"); %> == 1);
+		}
+}
+
 
 var update;
 
@@ -52,7 +66,8 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.hotss_uamenable, 'idhotssuam', <% nvram_else_match("hotss_uamenable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_nobridge, 'idhotssdhcp', <% nvram_else_match("hotss_nobridge", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_nowifibridge, 'idchillidhcp', <% nvram_else_match("chilli_nowifibridge", "1", "1", "0"); %> == 1);
-			
+	setHotss("<% nvram_else_match("hotss_enable", "1", "1", "0"); %>");
+		
 	update = new StatusbarUpdate();
 	update.start();
 	
