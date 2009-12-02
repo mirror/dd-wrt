@@ -268,7 +268,7 @@ void start_sysinit(void)
 
 		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
 		insmod("/lib/80211n/ath_mimo_pci.ko");
-		eval("insmod", "ath_mimo_pci", rate);
+		eval("insmod", "ath_mimo_pci");
 	} else {
 		insmod("/lib/80211n/ath_mimo_pci.ko");
 	}

@@ -429,7 +429,17 @@ void start_sysinit(void)
 		insmod("ath_pci");
 	}
 #ifdef HAVE_MADWIFI_MIMO
-	insmod("ath_mimo_pci");
+	fprintf(stderr, "load ATH 802.11n Driver\n");
+	insmod("/lib/80211n/ath_mimo_hal.ko");
+	if (nvram_get("rate_control") != NULL) {
+		char rate[64];
+
+		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
+		insmod("/lib/80211n/ath_mimo_pci.ko");
+		eval("insmod", "ath_mimo_pci");
+	} else {
+		insmod("/lib/80211n/ath_mimo_pci.ko");
+	}
 #endif
 
 	/*
