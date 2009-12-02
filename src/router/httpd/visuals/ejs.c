@@ -1134,8 +1134,10 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 			sprintf(buf, "/www/style/%s/style.css", entry->d_name);
 			FILE *test = fopen(buf, "rb");
 
-			if (test == NULL)
+			if (test == NULL) {
+				fclose(web);
 				continue;
+				}
 			fclose(test);
 		}
 		fclose(web);
