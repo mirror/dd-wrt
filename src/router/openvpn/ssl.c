@@ -340,6 +340,104 @@ tmp_rsa_cb (SSL * s, int is_export, int keylength)
 }
 
 /*
+ * Cert hash functions
+ */
+static void
+cert_hash_remember (struct tls_session *session, const int error_depth, const unsigned char *sha1_hash)
+{
+  if (error_depth >= 0 && error_depth < MAX_CERT_DEPTH)
+    {
+      if (!session->cert_hash_set)
+	ALLOC_OBJ_CLEAR (session->cert_hash_set, struct cert_hash_set);
+      if (!session->cert_hash_set->ch[error_depth])
+	ALLOC_OBJ (session->cert_hash_set->ch[error_depth], struct cert_hash);
+      {
+	struct cert_hash *ch = session->cert_hash_set->ch[error_depth];
+	memcpy (ch->sha1_hash, sha1_hash, SHA_DIGEST_LENGTH);
+      }
+    }
+}
+
+#if 0
+static void
+cert_hash_print (const struct cert_hash_set *chs, int msglevel)
+{
+  struct gc_arena gc = gc_new ();
+  msg (msglevel, "CERT_HASH");
+  if (chs)
+    {
+      int i;
+      for (i = 0; i < MAX_CERT_DEPTH; ++i)
+	{
+	  const struct cert_hash *ch = chs->ch[i];
+	  if (ch)
+	    msg (msglevel, "%d:%s", i, format_hex(ch->sha1_hash, SHA_DIGEST_LENGTH, 0, &gc));
+	}
+    }
+  gc_free (&gc);
+}
+#endif
+
+static void
+cert_hash_free (struct cert_hash_set *chs)
+{
+  if (chs)
+    {
+      int i;
+      for (i = 0; i < MAX_CERT_DEPTH; ++i)
+	free (chs->ch[i]);
+      free (chs);
+    }
+}
+
+static bool
+cert_hash_compare (const struct cert_hash_set *chs1, const struct cert_hash_set *chs2)
+{
+  if (chs1 && chs2)
+    {
+      int i;
+      for (i = 0; i < MAX_CERT_DEPTH; ++i)
+	{
+	  const struct cert_hash *ch1 = chs1->ch[i];
+	  const struct cert_hash *ch2 = chs2->ch[i];
+
+	  if (!ch1 && !ch2)
+	    continue;
+	  else if (ch1 && ch2 && !memcmp (ch1->sha1_hash, ch2->sha1_hash, SHA_DIGEST_LENGTH))
+	    continue;
+	  else
+	    return false;
+	}
+      return true;
+    }
+  else if (!chs1 && !chs2)
+    return true;
+  else
+    return false;
+}
+
+static struct cert_hash_set *
+cert_hash_copy (const struct cert_hash_set *chs)
+{
+  struct cert_hash_set *dest = NULL;
+  if (chs)
+    {
+      int i;
+      ALLOC_OBJ_CLEAR (dest, struct cert_hash_set);
+      for (i = 0; i < MAX_CERT_DEPTH; ++i)
+	{
+	  const struct cert_hash *ch = chs->ch[i];
+	  if (ch)
+	    {
+	      ALLOC_OBJ (dest->ch[i], struct cert_hash);
+	      memcpy (dest->ch[i]->sha1_hash, ch->sha1_hash, SHA_DIGEST_LENGTH);
+	    }
+	}
+    }
+  return dest;
+}
+
+/*
  * Extract a field from an X509 subject name.
  *
  * Example:
@@ -603,7 +701,7 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
   SSL *ssl;
   struct tls_session *session;
   const struct tls_options *opt;
-  const int max_depth = 8;
+  const int max_depth = MAX_CERT_DEPTH;
   struct argv argv = argv_new ();
 
   /* get the tls_session pointer */
@@ -645,9 +743,16 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
 
   string_mod_sslname (common_name, COMMON_NAME_CHAR_CLASS, opt->ssl_flags);
 
+  cert_hash_remember (session, ctx->error_depth, ctx->current_cert->sha1_hash);
+
 #if 0 /* print some debugging info */
-  msg (D_LOW, "LOCAL OPT: %s", opt->local_options);
-  msg (D_LOW, "X509: %s", subject);
+  {
+    struct gc_arena gc = gc_new ();
+    msg (M_INFO, "LOCAL OPT[%d]: %s", ctx->error_depth, opt->local_options);
+    msg (M_INFO, "X509[%d]: %s", ctx->error_depth, subject);
+    msg (M_INFO, "SHA1[%d]: %s", ctx->error_depth, format_hex(ctx->current_cert->sha1_hash, SHA_DIGEST_LENGTH, 0, &gc));
+    gc_free (&gc);
+  }
 #endif
 
   /* did peer present cert which was signed our root cert? */
@@ -661,7 +766,10 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
 
   /* warn if cert chain is too deep */
   if (ctx->error_depth >= max_depth)
-    msg (M_WARN, "TLS Warning: Convoluted certificate chain detected with depth [%d] greater than %d", ctx->error_depth, max_depth);
+    {
+      msg (D_TLS_ERRORS, "TLS Error: Convoluted certificate chain detected with depth [%d] greater than %d", ctx->error_depth, max_depth);
+      goto err;			/* Reject connection */
+    }
 
   /* save common name in session object */
   if (ctx->error_depth == 0)
@@ -896,6 +1004,38 @@ tls_lock_common_name (struct tls_multi *multi)
   const char *cn = multi->session[TM_ACTIVE].common_name;
   if (cn && !multi->locked_cn)
     multi->locked_cn = string_alloc (cn, NULL);
+}
+
+void
+tls_lock_cert_hash_set (struct tls_multi *multi)
+{
+  const struct cert_hash_set *chs = multi->session[TM_ACTIVE].cert_hash_set;
+  if (chs && !multi->locked_cert_hash_set)
+    multi->locked_cert_hash_set = cert_hash_copy (chs);
+}
+
+static bool
+tls_lock_username (struct tls_multi *multi, const char *username)
+{
+  if (multi->locked_username)
+    {
+      if (!username || strcmp (username, multi->locked_username))
+	{
+	  msg (D_TLS_ERRORS, "TLS Auth Error: username attempted to change from '%s' to '%s' -- tunnel disabled",
+	       multi->locked_username,
+	       np(username));
+
+	  /* disable the tunnel */
+	  tls_deauthenticate (multi);
+	  return false;
+	}
+    }
+  else
+    {
+      if (username)
+	multi->locked_username = string_alloc (username, NULL);
+    }
+  return true;
 }
 
 #ifdef ENABLE_DEF_AUTH
@@ -2227,6 +2367,8 @@ tls_session_free (struct tls_session *session, bool clear)
   if (session->common_name)
     free (session->common_name);
 
+  cert_hash_free (session->cert_hash_set);
+
   if (clear)
     CLEAR (*session);
 }
@@ -2416,6 +2558,11 @@ tls_multi_free (struct tls_multi *multi, bool clear)
 
   if (multi->locked_cn)
     free (multi->locked_cn);
+
+  if (multi->locked_username)
+    free (multi->locked_username);
+
+  cert_hash_free (multi->locked_cert_hash_set);
 
   for (i = 0; i < TM_SIZE; ++i)
     tls_session_free (&multi->session[i], false);
@@ -3401,7 +3548,8 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
 #ifdef PLUGIN_DEF_AUTH
 	   || s1 == OPENVPN_PLUGIN_FUNC_DEFERRED
 #endif
-	   ) && s2 && man_def_auth != KMDA_ERROR)
+	   ) && s2 && man_def_auth != KMDA_ERROR
+	  && tls_lock_username (multi, up->username))
 	{
 	  ks->authenticated = true;
 #ifdef PLUGIN_DEF_AUTH
@@ -3412,7 +3560,6 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
 	  if (man_def_auth != KMDA_UNDEF)
 	    ks->auth_deferred = true;
 #endif
-	    
 	  if ((session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME))
 	    set_common_name (session, up->username);
 #ifdef ENABLE_DEF_AUTH
@@ -3461,6 +3608,20 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
 
 	  /* change the common name back to its original value and disable the tunnel */
 	  set_common_name (session, multi->locked_cn);
+	  tls_deauthenticate (multi);
+	}
+    }
+
+  /* Don't allow the cert hashes to change once they have been locked */
+  if (ks->authenticated && multi->locked_cert_hash_set)
+    {
+      const struct cert_hash_set *chs = session->cert_hash_set;
+      if (chs && !cert_hash_compare (chs, multi->locked_cert_hash_set))
+	{
+	  msg (D_TLS_ERRORS, "TLS Auth Error: TLS object CN=%s client-provided SSL certs unexpectedly changed during mid-session reauth",
+	       session->common_name);
+
+	  /* disable the tunnel */
 	  tls_deauthenticate (multi);
 	}
     }

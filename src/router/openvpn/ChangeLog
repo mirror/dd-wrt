@@ -1,6 +1,34 @@
 OpenVPN Change Log
 Copyright (C) 2002-2009 OpenVPN Technologies, Inc. <sales@openvpn.net>
 
+2009.11.20 -- Version 2.1_rc22
+
+* Fixed a client-side bug on Windows that occurred when the
+  "dhcp-pre-release" or "dhcp-renew" options were combined with
+  "route-gateway dhcp".  The release/renew would not occur
+  because the Windows DHCP renew function is blocking and
+  therefore must be called from another process or thread
+  so as not to stall the tunnel.
+
+* Added a hard failure when peer provides a certificate chain
+  with depth > 16.  Previously, a warning was issued.
+
+2009.11.12 -- Version 2.1_rc21
+
+* Rebuilt OpenVPN Windows installer with OpenSSL 0.9.8l to address
+  CVE-2009-3555.  Note that OpenVPN has never relied on the session
+  renegotiation capabilities that are built into the SSL/TLS protocol,
+  therefore the fix in OpenSSL 0.9.8l (disable SSL/TLS renegotiation
+  completely) will not adversely affect OpenVPN mid-session SSL/TLS
+  renegotation or any other OpenVPN capabilities.
+
+* Added additional session renegotiation hardening.  OpenVPN has always
+  required that mid-session renegotiations build up a new SSL/TLS
+  session from scratch.  While the client certificate common name is
+  already locked against changes in mid-session TLS renegotiations, we
+  now extend this locking to the auth-user-pass username as well as all
+  certificate content in the full client certificate chain.
+
 2009.10.01 -- Version 2.1_rc20
 
 * Fixed a bug introduced in 2.1_rc17 (svn r4436) where using the

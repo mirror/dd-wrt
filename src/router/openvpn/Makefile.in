@@ -257,6 +257,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 win32datadir = @win32datadir@
@@ -1076,7 +1077,7 @@ uninstall-man: uninstall-man8
 .PHONY: plugin
 
 dist-hook:
-	cd $(distdir) && for i in $(EXTRA_DIST) ; do find $$i -name .svn -type d -prune -exec rm -rf '{}' ';' ; rm -f `find $$i -type f | grep -E '(^|\/)\.?\#|\~$$|\.s?o$$'` ; done
+	cd $(distdir) && for i in $(EXTRA_DIST) $(SUBDIRS) ; do find $$i -name .svn -type d -prune -exec rm -rf '{}' ';' ; rm -f `find $$i -type f | grep -E '(^|\/)\.?\#|\~$$|\.s?o$$'` ; done
 @WIN32_TRUE@openvpn.8.html: $(srcdir)/openvpn.8
 @WIN32_TRUE@	$(MAN2HTML) < $(srcdir)/openvpn.8 > openvpn.8.html
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
