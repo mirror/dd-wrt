@@ -131,6 +131,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "ng-only")
 			    && nvram_invmatch(wl_mode, "mixed")
+			    && nvram_invmatch(wl_mode, "g-only")
+			    && nvram_invmatch(wl_mode, "b-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
 				continue;
@@ -154,8 +156,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				continue;
 		}
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
-		if (IEEE80211_IS_CHAN_ANYG(&achans.ic_chans[i])
-		    || IEEE80211_IS_CHAN_B(&achans.ic_chans[i])) {
+		if (IEEE80211_IS_CHAN_2GHZ(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "g-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "b-only")
