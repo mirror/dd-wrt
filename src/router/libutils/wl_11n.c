@@ -106,6 +106,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "na-only")
 			    && nvram_invmatch(wl_mode, "mixed")
+			    && nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
 				continue;
