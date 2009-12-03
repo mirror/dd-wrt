@@ -247,6 +247,15 @@ if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 		si_gpioreserve(gpio_sih, 1 << 6, GPIO_APP_PRIORITY);
 		si_gpioreserve(gpio_sih, 1 << 7, GPIO_APP_PRIORITY);
 }
+
+if ((nvram_match("boardtype", "0x04cf") && nvram_match("boot_hw_model", "WRT610N"))
+{
+		printk(KERN_EMERG "WRT610Nv2 GPIO Init\n");
+		si_gpioreserve(gpio_sih, 1 << 0, GPIO_APP_PRIORITY);	
+		si_gpioreserve(gpio_sih, 1 << 3, GPIO_APP_PRIORITY);
+		si_gpioreserve(gpio_sih, 1 << 5, GPIO_APP_PRIORITY);
+		si_gpioreserve(gpio_sih, 1 << 7, GPIO_APP_PRIORITY);
+}
 /*if (iswrt300n11)
 {
 	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
