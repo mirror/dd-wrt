@@ -428,7 +428,7 @@
 // Asus RT-N16 (BCM4718A cpu, 32MB flash / 128MB ram, BCM53115 giga switch, fccid: Asus MSQRTN16)
 #define ROUTER_ASUS_RTN16 0x8916
 
-#define ROUTER_BOARD_BR6574N 0x8a1b
+#define ROUTER_BOARD_BR6574N 0x8a1a
 
 #define NVROUTER "DD_BOARD"
 
