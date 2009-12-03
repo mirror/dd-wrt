@@ -1003,6 +1003,24 @@ void start_sysinit(void)
 			}
 		}
 		break;
+		
+	case ROUTER_WRT610NV2:
+		nvram_set("wan_ifname", "vlan2");
+		nvram_set("vlan2hwname", "et0");
+		nvram_set("pci/1/1/ledbh2", "8");
+		nvram_set("sb/1/ledbh1", "8");
+
+			if (startswith (nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")) {
+				unsigned char mac[20];
+				strcpy(mac, nvram_safe_get("et0macaddr"));
+				MAC_ADD(mac);
+				MAC_ADD(mac);
+				MAC_ADD(mac);
+				nvram_set("pci/1/1/macaddr", mac);
+				need_reboot = 1;
+			}
+
+		break;
 
 	case ROUTER_WRT300NV11:
 	case ROUTER_BUFFALO_WZRG144NH:
@@ -1322,6 +1340,7 @@ void start_sysinit(void)
 			case ROUTER_WRT350N:
 			case ROUTER_WRT600N:
 			case ROUTER_WRT610N:
+			case ROUTER_WRT610NV2:
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
@@ -1400,6 +1419,7 @@ void start_sysinit(void)
 			case ROUTER_WRT350N:
 			case ROUTER_WRT600N:
 			case ROUTER_WRT610N:
+			case ROUTER_WRT610NV2:
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
