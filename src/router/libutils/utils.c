@@ -1578,6 +1578,13 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT610N");
 		return ROUTER_WRT610N;
 	}
+	
+	if (nvram_match("boardtype", "0x04cf")
+	    && nvram_match("boot_hw_model", "WRT610N")) {
+		cprintf("router is Linksys WRT610Nv2\n");
+		setRouter("Linksys WRT610Nv2");
+		return ROUTER_WRT610NV2;
+	}
 
 	if (boardnum == 42 && nvram_match("boardtype", "bcm94710dev")) {
 		cprintf("router is Linksys WRT54G v1.x\n");
@@ -3026,6 +3033,12 @@ int led_control(int type, int act)
 		connected_gpio = 0x103;	// ses amber
 		ses_gpio = 0x109;	// ses blue
 		usb_gpio = 0x100;
+		break;
+	case ROUTER_WRT610NV2:
+		power_gpio = 0x005;
+		connected_gpio = 0x100;	// ses amber
+		ses_gpio = 0x103;	// ses blue
+		usb_gpio = 0x007;
 		break;
 	case ROUTER_USR_5461:
 		usb_gpio = 0x001;
