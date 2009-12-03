@@ -1135,7 +1135,6 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 			FILE *test = fopen(buf, "rb");
 
 			if (test == NULL) {
-				fclose(web);
 				continue;
 				}
 			fclose(test);
