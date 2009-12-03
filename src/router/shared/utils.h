@@ -361,6 +361,10 @@
 // Broadcom, fccid: Linksys Q87-WRT610N)
 #define ROUTER_WRT610N 0x5a16
 
+// Linksys WRT610Nv2 (BCM4718 cpu, Gigabit switch, dual radio 2.4 and 5 GHz
+// Broadcom, fccid: Linksys Q87-WRT610NV2)
+#define ROUTER_WRT610NV2 0x5b16
+
 // Belkin F5D7230 v3000 (BCM5350 cpu, flash ?? , fccid: Belkin PD5F5D72304)
 #define ROUTER_BELKIN_F5D7230_V3000 0x6011
 
