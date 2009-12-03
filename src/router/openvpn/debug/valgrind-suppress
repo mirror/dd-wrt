@@ -1173,6 +1173,28 @@
 
 {
    <insert a suppression name here>
+   Memcheck:Cond
+   fun:BN_mod_inverse
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:BN_div
+}
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:BN_mod_inverse
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:BN_div
+}
+{
+   <insert a suppression name here>
    Memcheck:Leak
    fun:malloc
    fun:CRYPTO_malloc
