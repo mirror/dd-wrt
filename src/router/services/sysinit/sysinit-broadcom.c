@@ -1010,7 +1010,10 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/ledbh2", "8");
 		nvram_set("sb/1/ledbh1", "8");
 
-			if (startswith (nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")) {
+			if (startswith
+				(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+			    || startswith(nvram_safe_get("pci/1/1/macaddr"),
+					  "00:90:4c")) {
 				unsigned char mac[20];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
@@ -1019,7 +1022,6 @@ void start_sysinit(void)
 				nvram_set("pci/1/1/macaddr", mac);
 				need_reboot = 1;
 			}
-
 		break;
 
 	case ROUTER_WRT300NV11:
