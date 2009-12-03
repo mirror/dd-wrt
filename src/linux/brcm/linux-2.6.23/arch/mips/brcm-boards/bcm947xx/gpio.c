@@ -248,7 +248,7 @@ if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 		si_gpioreserve(gpio_sih, 1 << 7, GPIO_APP_PRIORITY);
 }
 
-if ((nvram_match("boardtype", "0x04cf") && nvram_match("boot_hw_model", "WRT610N"))
+if (nvram_match("boardtype", "0x04cf") && nvram_match("boot_hw_model", "WRT610N"))
 {
 		printk(KERN_EMERG "WRT610Nv2 GPIO Init\n");
 		si_gpioreserve(gpio_sih, 1 << 0, GPIO_APP_PRIORITY);	
