@@ -482,6 +482,7 @@ void period_check(int sig)
 	case ROUTER_WRT160N:
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
+	case ROUTER_WRT610NV2:
 	case ROUTER_ASKEY_RT220XD:	// not soldered
 		sesgpio = 0x14;	// gpio 4, inversed
 		break;
