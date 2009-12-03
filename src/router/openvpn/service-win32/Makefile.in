@@ -196,6 +196,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 win32datadir = @win32datadir@
@@ -221,9 +222,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  service-win32/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  service-win32/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  service-win32/Makefile
+	  $(AUTOMAKE) --foreign  service-win32/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
