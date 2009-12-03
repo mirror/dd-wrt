@@ -702,6 +702,16 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
+	
+	struct nvram_tuple wrt6102vlan[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan1 eth1 eth2", 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
 
 	struct nvram_tuple wzr144nhvlan[] = {
 		{"lan_ifname", "br0", 0},
@@ -1046,6 +1056,9 @@ void start_restore_defaults(void)
 	case ROUTER_WRT610N:
 		linux_overrides = wrt60011vlan;
 		break;
+	case ROUTER_WRT610NV2:
+		linux_overrides = wrt6102vlan;
+		break;
 #endif
 	case ROUTER_BUFFALO_WZRG144NH:
 		linux_overrides = wzr144nhvlan;
@@ -1295,7 +1308,7 @@ void start_restore_defaults(void)
 				nvram_set("vlan2ports", "0 8*");
 			}
 		}
-	} else if (brand == ROUTER_WRT610N) {
+	} else if (brand == ROUTER_WRT610N || brand == ROUTER_WRT610NV2) {
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8");
