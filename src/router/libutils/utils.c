@@ -658,6 +658,9 @@ int internal_getRouterBrand()
 #elif HAVE_AR670W
 	setRouter("Airlink 101 AR670W");
 	return ROUTER_BOARD_AR670W;
+#elif HAVE_BR6574N
+	setRouter("Edimax BR-6574N");
+	return ROUTER_BOARD_BR6574N;
 #elif HAVE_ESR6650
 	setRouter("Senao ESR-6650");
 	return ROUTER_BOARD_ESR6650;
