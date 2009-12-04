@@ -1842,6 +1842,7 @@ printk(KERN_ALERT " The MSI support in this system is not functional.\n");
 	else
 		printk(KERN_INFO "%s: Using PCI INTX interrupt \n", dev->name);
 
+	napi_enable(&pDevice->sc_napi);
 	netif_start_queue(dev);
 
 	return 0;
@@ -2519,7 +2520,7 @@ bcm5700_poll(struct napi_struct *napi, int budget)
 		pDevice->RxPoll = FALSE;
 		if (pDevice->RxPoll) {
 			BCM5700_UNLOCK(pUmDevice, flags);
-			return 0;
+			return work_done;
 		}
 		/* Take care of possible missed rx interrupts */
 		REG_RD_BACK(pDevice, Grc.Mode);	/* flush the register write */
@@ -2552,9 +2553,9 @@ bcm5700_poll(struct napi_struct *napi, int budget)
 			}
 		}
 		BCM5700_UNLOCK(pUmDevice, flags);
-		return 0;
+		return work_done;
 	}
-	return 1;
+	return work_done;
 }
 #endif /* BCM_NAPI_RXPOLL */
 
@@ -2752,6 +2753,7 @@ bcm5700_close(struct net_device *dev)
 	dev->start = 0;
 #endif
 	netif_stop_queue(dev);
+	napi_disable(&pDevice->sc_napi);
 	pUmDevice->opened = 0;
 
 #ifdef BCM_ASF
@@ -4922,6 +4924,7 @@ STATIC int bcm5700_change_mtu(struct net_device *dev, int new_mtu)
 		if (memcmp(dev->dev_addr, pDevice->NodeAddress, 6)) {
 			LM_SetMacAddress(pDevice, dev->dev_addr);
 		}
+		napi_enable(&pDevice->sc_napi);
 		netif_start_queue(dev);
 		bcm5700_intr_on(pUmDevice);
 	}
