@@ -1225,7 +1225,8 @@ ag7100_poll(struct net_device *dev, int *budget)
     {
         status = 0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-        netif_rx_complete(dev, napi);
+	if (work_done < budget)
+    		netif_rx_complete(dev, napi);
 #else
         netif_rx_complete(dev);
 #endif
@@ -1236,11 +1237,13 @@ ag7100_poll(struct net_device *dev, int *budget)
     if (likely(ret == AG7100_RX_STATUS_DONE))
     {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-        netif_rx_complete(dev, napi);
+        spin_lock_irqsave(&mac->mac_lock, flags);
+	if (work_done < budget)
+    		__netif_rx_complete(dev, napi);
 #else
         netif_rx_complete(dev);
-#endif
         spin_lock_irqsave(&mac->mac_lock, flags);
+#endif
         ag7100_intr_enable_recv(mac);
         spin_unlock_irqrestore(&mac->mac_lock, flags);
     }
@@ -1259,7 +1262,8 @@ ag7100_poll(struct net_device *dev, int *budget)
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-        netif_rx_complete(dev, napi);
+	if (work_done < budget)
+    		netif_rx_complete(dev, napi);
 #else
         netif_rx_complete(dev);
 #endif
