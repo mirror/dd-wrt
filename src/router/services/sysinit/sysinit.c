@@ -174,11 +174,27 @@ void start_wanup(void)
 
 void start_run_rc_startup(void)
 {
+	struct dirent *entry;
+	DIR *directory;
+	int count = 60;  // 60 * 5 s = 300s
+
 	create_rc_file(RC_STARTUP);
+	
 	if (f_exists("/tmp/.rc_startup"))
 		system("/tmp/.rc_startup");
-	runStartup("/opt/etc/init.d", "S");	// if available; run S* startup scripts
-	return;
+
+	while (count > 0) {		
+		directory = opendir("/opt/etc/init.d");
+		if (directory == NULL) {
+			sleep (5);
+			count--;
+		}
+		else {
+			closedir("/opt/etc/init.d");	
+			runStartup("/opt/etc/init.d", "S");	// if available; run S* startup scripts
+			return;
+		}
+	}	
 }
 
 void start_run_rc_shutdown(void)
