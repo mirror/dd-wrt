@@ -112,7 +112,7 @@ void runStartup(char *folder, char *extension)
 	}
 	// list all files in this directory 
 	while ((entry = readdir(directory)) != NULL) {
-		if (endswith(entry->d_name, extension)) {
+		if (endswith(entry->d_name, extension) && startswith(extension, ".")) {
 #ifdef HAVE_REGISTER
 			if (!isregistered_real()) {
 				if (endswith
@@ -130,6 +130,11 @@ void runStartup(char *folder, char *extension)
 				  entry->d_name);
 			// execute script 
 		}
+		else if (startswith(entry->d_name, extension)) {  // S* or K* scripts
+			sysprintf("%s/%s 2>&1 > /dev/null&\n", folder,
+				  entry->d_name);
+			// execute script			
+		}	
 	}
 	closedir(directory);
 }
@@ -172,6 +177,7 @@ void start_run_rc_startup(void)
 	create_rc_file(RC_STARTUP);
 	if (f_exists("/tmp/.rc_startup"))
 		system("/tmp/.rc_startup");
+	runStartup("/opt/etc/init.d", "S");	// if available; run S* startup scripts
 	return;
 }
 
@@ -180,6 +186,7 @@ void start_run_rc_shutdown(void)
 	create_rc_file(RC_SHUTDOWN);
 	if (f_exists("/tmp/.rc_shutdown"))
 		system("/tmp/.rc_shutdown");
+	runStartup("/opt/etc/init.d", "K");	// if available; run K* shutdown scripts
 	return;
 }
 
