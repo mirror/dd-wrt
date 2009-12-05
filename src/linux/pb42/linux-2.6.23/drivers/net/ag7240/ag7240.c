@@ -78,7 +78,7 @@ int athr_ioctl(uint32_t *args, int cmd);
 #endif
 void ar7240_s26_intr(void);
 
-static int  ag7240_recv_packets(struct net_device *dev, ag7240_mac_t *mac,
+int  ag7240_recv_packets(struct net_device *dev, ag7240_mac_t *mac,
     int max_work, int *work_done);
 static irqreturn_t ag7240_intr(int cpl, void *dev_id);
 static irqreturn_t ag7240_link_intr(int cpl, void *dev_id);
@@ -843,7 +843,7 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
             ag7240_intr_disable_tx(mac);
 
             netif_carrier_off(dev);
-            netif_napi_disable(&mac->mac_napi);
+            napi_disable(&mac->mac_napi);
             netif_stop_queue(dev);
 #ifdef  ETH_SOFT_LED
        PLedCtrl.ledlink[phyUnit] = 0;
@@ -1352,20 +1352,17 @@ ag7240_poll(struct net_device *dev, int *budget)
 
     ret = ag7240_recv_packets(dev, mac, max_work, &work_done);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+	if (work_done < budget)
+    		netif_rx_complete(dev, napi);
+#else
     dev->quota  -= work_done;
     *budget     -= work_done;
+    netif_rx_complete(dev);
 #endif
     if (likely(ret == AG7240_RX_STATUS_DONE))
     {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
         spin_lock_irqsave(&mac->mac_lock, flags);
-	if (work_done < budget)
-		__netif_rx_complete(dev, napi);
-#else
-        netif_rx_complete(dev);
-        spin_lock_irqsave(&mac->mac_lock, flags);
-#endif
         ag7240_intr_enable_recv(mac);
         spin_unlock_irqrestore(&mac->mac_lock, flags);
     }
@@ -1383,14 +1380,8 @@ ag7240_poll(struct net_device *dev, int *budget)
         * Start timer, stop polling, but do not enable rx interrupts.
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (work_done < budget)
-    		netif_rx_complete(dev, napi);
-#else
-        netif_rx_complete(dev);
-#endif
     }
-    
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	return work_done;
 #else
@@ -1399,8 +1390,7 @@ ag7240_poll(struct net_device *dev, int *budget)
 
 }
 
-static int
-ag7240_recv_packets(struct net_device *dev, ag7240_mac_t *mac, 
+int ag7240_recv_packets(struct net_device *dev, ag7240_mac_t *mac, 
     int quota, int *work_done)
 {
     ag7240_ring_t       *r     = &mac->mac_rxring;
