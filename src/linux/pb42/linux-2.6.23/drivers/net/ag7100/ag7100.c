@@ -59,7 +59,7 @@ static void ag7100_buffer_free(struct sk_buff *skb);
 void ag7100_dma_reset(ag7100_mac_t *mac);
 int board_version;
 #endif
-static int  ag7100_recv_packets(struct net_device *dev, ag7100_mac_t *mac,
+int  ag7100_recv_packets(struct net_device *dev, ag7100_mac_t *mac,
     int max_work, int *work_done);
 static irqreturn_t ag7100_intr(int cpl, void *dev_id);
 static struct sk_buff * ag7100_buffer_alloc(void);
@@ -551,7 +551,7 @@ howl_10baset_war(ag7100_mac_t *mac)
 
         netif_carrier_off(dev);
         netif_stop_queue(dev);
-        netif_napi_disable(&mac->mac_napi);
+        napi_disable(&mac->mac_napi);
     }
     return ;
 }
@@ -795,7 +795,7 @@ ag7100_check_link(ag7100_mac_t *mac)
     */
     netif_carrier_on(dev);
     netif_start_queue(dev);
-    netif_napi_enable(&mac->mac_napi);
+    napi_enable(&mac->mac_napi);
 
 done:
     mod_timer(&mac->mac_phy_timer, jiffies + AG7100_PHY_POLL_SECONDS*HZ);
@@ -1220,35 +1220,26 @@ ag7100_poll(struct net_device *dev, int *budget)
 
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+	if (work_done < budget)
+    		netif_rx_complete(dev, napi);
+#else
     dev->quota  -= work_done;
     *budget     -= work_done;
+    netif_rx_complete(dev);
 #endif
 
 #ifdef CONFIG_AR9100
     if(ret == AG7100_RX_DMA_HANG)
     {
         status = 0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (work_done < budget)
-    		netif_rx_complete(dev, napi);
-#else
-        netif_rx_complete(dev);
-#endif
         ag7100_dma_reset(mac);
-        return status;
     }
 #endif
     if (likely(ret == AG7100_RX_STATUS_DONE))
     {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
         spin_lock_irqsave(&mac->mac_lock, flags);
-	if (work_done < budget)
-    		__netif_rx_complete(dev, napi);
-#else
-        netif_rx_complete(dev);
-        spin_lock_irqsave(&mac->mac_lock, flags);
-#endif
         ag7100_intr_enable_recv(mac);
         spin_unlock_irqrestore(&mac->mac_lock, flags);
     }
@@ -1266,12 +1257,6 @@ ag7100_poll(struct net_device *dev, int *budget)
         * Start timer, stop polling, but do not enable rx interrupts.
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (work_done < budget)
-    		netif_rx_complete(dev, napi);
-#else
-        netif_rx_complete(dev);
-#endif
     }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
@@ -1281,7 +1266,7 @@ ag7100_poll(struct net_device *dev, int *budget)
 #endif
 }
 
-static int
+int
 ag7100_recv_packets(struct net_device *dev, ag7100_mac_t *mac, 
     int quota, int *work_done)
 {

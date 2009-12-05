@@ -68,6 +68,9 @@ typedef enum {
 
 typedef struct {
     struct net_device      *mac_dev;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+    struct napi_struct mac_napi;
+#endif
     uint32_t                mac_unit;
     uint32_t                mac_base;
     int                     mac_irq;
@@ -85,9 +88,6 @@ typedef struct {
     int                     speed_10t;
 #endif
     ag7100_trc_t            tb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-    struct napi_struct mac_napi;
-#endif
 }ag7100_mac_t;
 
 #define net_rx_packets      mac_net_stats.rx_packets
