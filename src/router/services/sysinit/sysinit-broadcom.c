@@ -424,6 +424,7 @@ void start_sysinit(void)
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mknod", "/dev/rtc", "c", "254", "0");
 	eval("mknod", "/dev/crypto", "c", "10", "70");
+	eval("mkdir", "/dev/usb");
 #endif
 
 	cprintf("sysinit() var\n");
