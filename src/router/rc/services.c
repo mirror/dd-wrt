@@ -248,6 +248,9 @@ int stop_services_main(int argc, char **argv)
 
 #ifdef HAVE_CHILLI
 	handle = stop_service_nofree("chilli", handle);
+#ifdef HAVE_HOTSPOT
+	handle = stop_service_nofree("hotspotsys", handle);
+#endif
 #endif
 
 #ifdef HAVE_PPPOESERVER
@@ -400,6 +403,9 @@ static void handle_hotspot(void)
 #endif
 #ifdef HAVE_CHILLI
 	handle = startstop_nofree_f("chilli", handle);
+#ifdef HAVE_HOTSPOT
+	handle = startstop_nofree_f("hotspotsys", handle);
+#endif
 #endif
 #ifdef HAVE_SPUTNIK_APD
 	handle = startstop_nofree_f("sputnik", handle);

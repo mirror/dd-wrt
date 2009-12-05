@@ -439,6 +439,9 @@ endif
 ifeq ($(CONFIG_CHILLISPOT),y)
 CFLAGS += -DHAVE_CHILLI
 endif
+ifeq ($(CONFIG_HOTSPOT),y)
+CFLAGS += -DHAVE_HOTSPOT
+endif
 
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
