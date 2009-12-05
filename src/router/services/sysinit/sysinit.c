@@ -114,14 +114,14 @@ void runStartup(char *folder, char *extension)
 	while ((entry = readdir(directory)) != NULL) {
 		if (!strcmp(extension, "K**") && strlen(entry->d_name) > 3
 			&& startswith(entry->d_name, "K") && strspn(entry->d_name, "K1234567890") == 3) {  // K* scripts
-			sysprintf("%s/%s 2>&1 > /dev/null&\n", folder,
+			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
 				  entry->d_name);
 			// execute script
 			continue;			
 		}		
 		if (!strcmp(extension, "S**")  && strlen(entry->d_name) > 3 
 			&& startswith(entry->d_name, "S") && strspn(entry->d_name, "S1234567890") == 3) {  // S* scripts
-			sysprintf("%s/%s 2>&1 > /dev/null&\n", folder,
+			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
 				  entry->d_name);
 			// execute script
 			continue;			
