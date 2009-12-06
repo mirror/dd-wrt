@@ -10,8 +10,8 @@
 	<div id="idhotspotsys">
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.nobridge"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","1", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="hotss_nobridge" <% nvram_selmatch("hotss_nobridge","0", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="hotss_nowifibridge" <% nvram_selmatch("hotss_nowifibridge","1", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="hotss_nowifibridge" <% nvram_selmatch("hotss_nowifibridge","0", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', false)" /><% tran("share.disable"); %>
 		</div>
 	<div id="idhotssdhcp">
 		<div class="setting">
@@ -27,7 +27,7 @@
 	<div id="idhotssuam">
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
-			<input class="text" maxLength="500" size="25" name="hotss_allowuam" value="<% nvram_get("hotss_allowuam"); %>" />
+			<input class="text" maxLength="500" size="25" name="hotss_auamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
 		</div>
 	</div>	
 		<div class="setting">
