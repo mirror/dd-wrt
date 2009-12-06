@@ -16,7 +16,7 @@
 	<div id="idhotssdhcp">
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.dhcp"); %></div>
-			<% show_ifselect("totss_interface"); %>
+			<% show_ifselect("hotss_interface"); %>
 		</div>
 	</div>
 	<div class="setting">
