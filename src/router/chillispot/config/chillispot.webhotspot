@@ -17,6 +17,10 @@
 				<div class="label"><% tran("hotspot.dhcp"); %></div>
 				<% show_ifselect("chilli_interface"); %>
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("hotspot.net"); %></div>
+				<input class="text" maxLength="20" size="20" name="chilli_net" value="<% nvram_get("chilli_net"); %>" />
+			</div>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.pserver"); %></div>
@@ -29,10 +33,6 @@
 		<div class="setting">
 			<div class="label"><% tran("hotspot.dns"); %></div>
 			<input class="text" maxLength="15" size="15" name="chilli_dns1" value="<% nvram_get("chilli_dns1"); %>" />
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("hotspot.net"); %></div>
-			<input class="text" maxLength="20" size="20" name="chilli_net" value="<% nvram_get("chilli_net"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.url"); %></div>
