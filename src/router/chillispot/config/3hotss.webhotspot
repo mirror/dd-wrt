@@ -27,7 +27,7 @@
 	<div id="idhotssuam">
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
-			<input class="text" maxLength="500" size="25" name="hotss_auamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
+			<input class="text" maxLength="500" size="25" name="hotss_uamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
 		</div>
 	</div>	
 		<div class="setting">
