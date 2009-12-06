@@ -3499,8 +3499,8 @@ void start_wan_done(char *wan_ifname)
 #endif
 #else
 	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1")
-		&& nvram_match("chilli_enable", "1"))) {
+	    || (nvram_match("chilli_nowifibridge", "1") && nvram_match("chilli_enable", "1"))
+	    || (nvram_match("hotss_nowifibridge", "1") && nvram_match("hotss_enable", "1")) ) {
 		if (nvram_match("wl0_mode", "apsta")) {
 			br_del_interface(nvram_safe_get("lan_ifname"), "wl0.1");
 			ifconfig("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
@@ -3595,8 +3595,8 @@ void stop_wan(void)
 #endif
 #ifndef HAVE_FON
 	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1")
-		&& nvram_match("chilli_enable", "1")))
+	    || (nvram_match("chilli_nowifibridge", "1") && nvram_match("chilli_enable", "1"))
+	    || (nvram_match("hotss_nowifibridge", "1") && nvram_match("hotss_enable", "1")) ) 
 #endif
 	{
 #ifdef HAVE_MICRO
