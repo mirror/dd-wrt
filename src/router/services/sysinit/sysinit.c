@@ -100,52 +100,73 @@ int endswith(char *str, char *cmp)
 
 #ifdef HAVE_MACBIND
 #include "../../../opt/mac.h"
-#endif
+#endif 
+
 void runStartup(char *folder, char *extension)
 {
-	struct dirent *entry;
+	struct dirent **entry;
 	DIR *directory;
+	int num, n = 0;
 
 	directory = opendir(folder);
 	if (directory == NULL) {
 		return;
 	}
+	closedir(directory);
+	
+    num = scandir(folder, &entry, 0, alphasort);
+    if (num < 0)
+        return;
 	// list all files in this directory 
-	while ((entry = readdir(directory)) != NULL) {
-		if (!strcmp(extension, "K**") && strlen(entry->d_name) > 3
-			&& startswith(entry->d_name, "K") && strspn(entry->d_name, "K1234567890") == 3) {  // K* scripts
+	while (n < num) {
+		if (!strcmp(extension, "K**") && strlen(entry[n]->d_name) > 3
+			&& startswith(entry[n]->d_name, "K") && strspn(entry[n]->d_name, "K1234567890") == 3) {  // K* scripts
 			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
-				  entry->d_name);
-			// execute script
-			continue;			
+				  entry[n]->d_name);
+			free(entry[n]);
+			n++;
+			continue;
 		}		
-		if (!strcmp(extension, "S**")  && strlen(entry->d_name) > 3 
-			&& startswith(entry->d_name, "S") && strspn(entry->d_name, "S1234567890") == 3) {  // S* scripts
+		if (!strcmp(extension, "S**")  && strlen(entry[n]->d_name) > 3 
+			&& startswith(entry[n]->d_name, "S") && strspn(entry[n]->d_name, "S1234567890") == 3) {  // S* scripts
 			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
-				  entry->d_name);
-			// execute script
-			continue;			
+				  entry[n]->d_name);
+			free(entry[n]);
+			n++;
+			continue;
 		}		
-		if (endswith(entry->d_name, extension)) {
+		if (endswith(entry[n]->d_name, extension)) {
 #ifdef HAVE_REGISTER
 			if (!isregistered_real()) {
 				if (endswith
-				    (entry->d_name, "wdswatchdog.startup"))
+				    (entry[n]->d_name, "wdswatchdog.startup")) {
+					free(entry[n]);
+					n++;
 					continue;
+				}
 				if (endswith
-				    (entry->d_name, "schedulerb.startup"))
+				    (entry[n]->d_name, "schedulerb.startup")) { 
+					free(entry[n]);
+					n++;
 					continue;
+				}
 				if (endswith
-				    (entry->d_name, "proxywatchdog.startup"))
+				    (entry[n]->d_name, "proxywatchdog.startup")) {
+					free(entry[n]);
+					n++;
 					continue;
+				}
 			}
 #endif
 			sysprintf("%s/%s 2>&1 > /dev/null&\n", folder,
-				  entry->d_name);
+				  entry[n]->d_name);
 			// execute script 
 		}
+		free(entry[n]);
+		n++;
 	}
-	closedir(directory);
+	free(entry);
+	return;
 }
 
 /*
@@ -184,7 +205,7 @@ void start_wanup(void)
 void start_run_rc_startup(void)
 {
 	DIR *directory;
-	int count = 60;  // 60 * 5 s = 300s
+	int count = 36;  // 36 * 5 s = 180s
 
 	create_rc_file(RC_STARTUP);
 	
