@@ -1549,10 +1549,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"hotss_interface", "br0", 0},
 	{"hotss_radiusnasid", "", 0},
 	{"hotss_uamenable", "0", 0},
-	{"hotss_allowuam", "", 0},
+	{"hotss_uamallowed", "", 0},
 	{"hotss_operatorid", "", 0},
 	{"hotss_locationid", "", 0},
-	{"hotss_nobridge", "0", 0},
+	{"hotss_nowifibridge", "0", 0},
 #endif
 #ifdef HAVE_SSHD
 
