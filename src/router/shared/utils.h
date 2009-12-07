@@ -434,6 +434,8 @@
 
 #define ROUTER_BOARD_BR6574N 0x8a1a
 
+#define ROUTER_BOARD_WHRHPGN 0x8b1b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
