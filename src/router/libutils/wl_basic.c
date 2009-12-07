@@ -25,6 +25,24 @@ int get_wl_instance(char *name)
 	return 1;
 }
 
+#elif HAVE_MADWIFI
+
+char *get_wl_instance_name(int instance)
+{
+	return "ath0";
+}
+
+int get_wl_instances(void)
+{
+	return 1;
+}
+
+int get_wl_instance(char *name)
+{
+	return 1;
+}
+
+
 #else
 char *get_wl_instance_name(int instance)
 {
