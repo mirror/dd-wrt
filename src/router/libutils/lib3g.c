@@ -310,3 +310,15 @@ char *get3GControlDevice(void)
 	insmod("option");
 	return ttsdevice;
 }
+/*
+//future
+typedef struct {
+char *devicename;
+int vendorid;
+int productid;
+char *drivers;
+char *3gdata;
+char *controldevice;
+int iconswitch;
+}3GDEVICE;
+*/
