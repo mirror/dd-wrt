@@ -1956,7 +1956,7 @@ static void do_stylecss_ie(struct mime_handler *handler, char *url,
 static void do_trial_logo(struct mime_handler *handler, char *url,
 			  webs_t stream, char *query)
 {
-#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM)
+#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS)
 	do_file(handler, url, stream, query);
 #else
 	if (!isregistered_real()) {

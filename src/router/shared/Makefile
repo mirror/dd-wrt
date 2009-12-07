@@ -164,11 +164,17 @@ ifeq ($(CONFIG_DIR300),y)
   CFLAGS += -DHAVE_FONERA
 endif
 endif
+ifeq ($(CONFIG_MYNETWAY),y)
+  CFLAGS += -DHAVE_MYNETWAY
+endif
 ifeq ($(CONFIG_FONERA),y)
   CFLAGS += -DHAVE_FONERA
 endif
 ifeq ($(CONFIG_TRIMAX),y)
   CFLAGS += -DHAVE_TRIMAX
+endif
+ifeq ($(CONFIG_WIKINGS),y)
+  CFLAGS += -DHAVE_WIKINGS
 endif
 ifeq ($(CONFIG_MERAKI),y)
   CFLAGS += -DHAVE_MERAKI
