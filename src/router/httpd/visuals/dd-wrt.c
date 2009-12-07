@@ -2768,7 +2768,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 		if (!strcmp(prefix, "wl1"))
 			instance = 1;
-#if 0
+/* 
+#if 0 
 		if (type == 1 && !nvram_match(wl_net_mode, "g-only")
 		    && !nvram_match(wl_net_mode, "a-only")
 		    && !nvram_match(wl_net_mode, "na-only")
@@ -2805,12 +2806,17 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			}
 
 		} else
-#endif
+#endif 
+*/
 		{
 
 			unsigned int chanlist[128];
 			char *ifn = get_wl_instance_name(instance);
 			int chancount = getchannels(chanlist, ifn);
+			int net_is_a = 0;
+			
+			if (chanlist[0] > 25)
+				net_is_a = 1;
 
 //          websWrite( wp, "var max_channel = %d;\n", chancount );
 //          websWrite( wp, "var wl%d_channel = '%s';\n", instance, nvram_safe_get( wl_channel ) );
@@ -2850,7 +2856,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				int showit = 1;
 
 				if (nvram_match(wl_net_mode, "a-only")
-				    || nvram_match(wl_net_mode, "na-only")) {
+				    || nvram_match(wl_net_mode, "na-only")
+				    || (net_is_a && nvram_match(wl_net_mode, "mixed"))) {
 					if (chanlist[i] < 25)
 						showit = 0;
 				} else {
@@ -2858,7 +2865,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						showit = 0;
 				}
 
-				if (nvram_match(wl_net_mode, "na-only")
+				if ((nvram_match(wl_net_mode, "na-only") || (net_is_a && nvram_match(wl_net_mode, "mixed")))
 				    && nvram_match(wl_nbw, "40")) {
 					showit = 0;
 					j = 0;
@@ -2888,7 +2895,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 
 				if ((nvram_match(wl_net_mode, "n-only")
-				     || nvram_match(wl_net_mode, "mixed"))
+				     || (!net_is_a && nvram_match(wl_net_mode, "mixed")))
 				    && nvram_match(wl_nbw, "40")) {
 					showit = 0;
 					if (nvram_nmatch
