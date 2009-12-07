@@ -522,7 +522,7 @@ wext_process_wpa_ie(struct wext_driver_data *drv, struct sta_info *sta)
 	struct hostapd_data *hapd = drv->hapd;
 	struct iwreq iwr;
 	int ielen, res;
-	u8 iebuf[WEXT_WPA_IE_LEN];
+	static u8 iebuf[WEXT_WPA_IE_LEN];
 
 	wpa_printf(MSG_DEBUG,
 		"%s: addr=%s\n", __func__, ether_sprintf(sta->addr));
@@ -762,7 +762,7 @@ wext_wireless_event_rtm_newlink(struct wext_driver_data *drv,
 static void
 wext_wireless_event_receive(int sock, void *eloop_ctx, void *sock_ctx)
 {
-	char buf[256];
+	static char buf[256];
 	int left;
 	struct sockaddr_nl from;
 	socklen_t fromlen;
@@ -906,7 +906,7 @@ wext_send_eapol(void *priv, const u8 *addr, const u8 *data, size_t data_len,
 		   int encrypt, const u8 *own_addr)
 {
 	struct wext_driver_data *drv = priv;
-	unsigned char buf[3000];
+	static unsigned char buf[3000];
 	unsigned char *bp = buf;
 	struct l2_ethhdr *eth;
 	size_t len;
