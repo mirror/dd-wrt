@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.24.111
-# Wed Aug 19 23:52:33 2009
+# Sun Dec  6 14:44:15 2009
 #
 CONFIG_MIPS=y
 
@@ -167,7 +167,7 @@ CONFIG_SYSVIPC_SYSCTL=y
 # CONFIG_AUDIT is not set
 # CONFIG_IKCONFIG is not set
 CONFIG_LOG_BUF_SHIFT=14
-# CONFIG_SYSFS_DEPRECATED is not set
+CONFIG_SYSFS_DEPRECATED=y
 # CONFIG_RELAY is not set
 # CONFIG_BLK_DEV_INITRD is not set
 # CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
@@ -625,7 +625,6 @@ CONFIG_MTD_CFI_UTIL=y
 #
 # CONFIG_MTD_COMPLEX_MAPPINGS is not set
 # CONFIG_MTD_PHYSMAP is not set
-# CONFIG_MTD_PCI is not set
 # CONFIG_MTD_PLATRAM is not set
 # CONFIG_MTD_AR531X is not set
 # CONFIG_MTD_EOC5610 is not set
@@ -972,7 +971,7 @@ CONFIG_USB=m
 #
 CONFIG_USB_DEVICEFS=y
 CONFIG_USB_DEVICE_CLASS=y
-CONFIG_USB_DYNAMIC_MINORS=y
+# CONFIG_USB_DYNAMIC_MINORS is not set
 # CONFIG_USB_OTG is not set
 
 #
