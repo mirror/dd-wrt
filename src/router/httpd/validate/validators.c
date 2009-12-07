@@ -1759,7 +1759,8 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("2", "%s_nband", prefix);
+		if (!nvram_nmatch("1", "%s_nband", prefix) || !nvram_nmatch("2", "%s_nband", prefix))
+			nvram_nset("2", "%s_nband", prefix);
 	} else if (!strcmp(value, "bg-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
