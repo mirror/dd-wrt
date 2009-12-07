@@ -652,7 +652,7 @@ char *strcat_r(const char *s1, const char *s2, char *buf)
 
 int isListed(char *listname, char *value)
 {
-	char *next, word[32];
+	static char *next, word[32];
 	char *list = nvram_get(listname);
 
 	if (!list)
