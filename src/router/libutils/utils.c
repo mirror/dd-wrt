@@ -462,6 +462,10 @@ void setRouter(char *name)
 	if (name)
 		nvram_set("DD_BOARD2", name);
 	nvram_set(NVROUTER, "Trimax Wireless");
+#elif HAVE_WIKINGS
+	if (name)
+		nvram_set("DD_BOARD2", name);
+	nvram_set(NVROUTER, "Obelix Series");
 #else
 	if (name)
 		nvram_set(NVROUTER, name);

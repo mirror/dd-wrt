@@ -255,6 +255,8 @@ ifeq ($(CONFIG_WIKINGS),y)
 	cp wikings/style.css $(INSTALLDIR)/www/style/wikings
 	cp wikings/images/* $(INSTALLDIR)/www/images
 	cp wikings/help/* $(INSTALLDIR)/www/help
+	cp wikings/common.js $(INSTALLDIR)/www
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
 endif
 ifeq ($(CONFIG_ALLNETWRT),y)
 	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png

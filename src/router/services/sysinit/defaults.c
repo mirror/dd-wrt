@@ -656,6 +656,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_TRIMAX)
 	{"wl0_ssid", "trimax", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "trimax", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_WIKINGS)
+	{"wl0_ssid", "wikings", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "wikings", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
@@ -1144,6 +1147,8 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #elif  HAVE_TRIMAX
 	{"router_name", "TRIMAX", 0},
+#elif  HAVE_WIKINGS
+	{"router_name", "WIKINGS", 0},
 #elif  HAVE_DDLAN
 	{"router_name", "WDSL-Modem XXX", 0},
 #elif  HAVE_TMK
@@ -1901,6 +1906,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"snmpd_sysname", "anonymous", 0},
 #elif defined(HAVE_TRIMAX)
 	{"snmpd_sysname", "trimax", 0},
+#elif defined(HAVE_WIKINGS)
+	{"snmpd_sysname", "wikings", 0},
 #else
 	{"snmpd_sysname", "dd-wrt", 0},
 #endif
