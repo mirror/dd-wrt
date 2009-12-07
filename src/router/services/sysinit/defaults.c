@@ -568,12 +568,19 @@ struct nvram_tuple srouter_defaults[] = {
 	 */
 
 	{"wl0_nbw", "20", 0},	/* N-BW */
+	{"wl1_nbw", "20", 0},	/* N-BW */
 	{"wl0_nctrlsb", "lower", 0},	/* N-CTRL SB */
+	{"wl1_nctrlsb", "lower", 0},	/* N-CTRL SB */
 	{"wl0_nband", "2", 0},	/* N-BAND */
+	{"wl1_nband", "2", 0},	/* N-BAND */	
 	{"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
+	{"wl1_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
 	{"wl0_nmode", "-1", 0},	/* N-mode */
+	{"wl1_nmode", "-1", 0},	/* N-mode */
 	{"wl0_nreqd", "0", 0},	/* Require 802.11n support */
+	{"wl1_nreqd", "0", 0},	/* Require 802.11n support */
 	{"wl0_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
+	{"wl1_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
 	{"wl0_leddc", "0x640000", 0},	/* 100% duty cycle for LED on router */
 	{"wl_rxstreams", "0", 0},	/* 802.11n Rx Streams, 0 is invalid, WLCONF will
 					 * change it to a radio appropriate default
