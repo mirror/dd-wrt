@@ -1393,6 +1393,9 @@ static void configure_single(int count)
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "trimax_vap"));
+#elif defined(HAVE_WIKINGS)
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "wikings_vap"));
 #elif defined(HAVE_TMK)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "KMT_vap"));
@@ -1472,6 +1475,9 @@ static void configure_single(int count)
 #elif defined(HAVE_TRIMAX)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "trimax"));
+#elif defined(HAVE_WIKINGS)
+	sysprintf("iwconfig %s essid -- \"%s\"", dev,
+		  nvram_default_get(ssid, "wikings"));
 #elif defined(HAVE_TMK)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "KMT"));
@@ -1515,6 +1521,9 @@ static void configure_single(int count)
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "trimax"));
+#elif defined(HAVE_WIKINGS)
+		sysprintf("iwconfig %s essid -- \"%s\"", dev,
+			  nvram_default_get(ssid, "wikings"));
 #elif defined(HAVE_TMK)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "KMT"));

@@ -1688,6 +1688,8 @@ void add_vifs_single(char *prefix, int device)
 #endif
 #elif defined(HAVE_TRIMAX)
 	nvram_set(v2, "trimax_vap");
+#elif defined(HAVE_WIKINGS)
+	nvram_set(v2, "wikings_vap");
 #elif defined(HAVE_TMK)
 	nvram_set(v2, "KMT_vap");
 #elif defined(HAVE_CORENET)
@@ -2442,7 +2444,18 @@ static void save_prefix(webs_t wp, char *prefix)
 		char *sl = websGetVar(wp, n, NULL);
 
 		if (sl) {
-			int txpower = atoi(sl) - wifi_gettxpoweroffset(prefix);
+			int base = atoi(sl);
+#ifdef HAVE_WIKINGS
+			#ifdef HAVE_SUB3
+			if (base>25)
+			    base=25;
+			#endif
+			#ifdef HAVE_SUB6
+			if (base>22)
+			    base=22;
+			#endif
+#endif
+			int txpower = atoi(base) - wifi_gettxpoweroffset(prefix);
 
 			if (txpower < 1)
 				txpower = 1;

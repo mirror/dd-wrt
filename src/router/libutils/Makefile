@@ -253,6 +253,9 @@ endif
 ifeq ($(CONFIG_TRIMAX),y)
   CFLAGS += -DHAVE_TRIMAX
 endif
+ifeq ($(CONFIG_WIKINGS),y)
+  CFLAGS += -DHAVE_WIKINGS
+endif
 ifeq ($(CONFIG_MYNETWAY),y)
   CFLAGS += -DHAVE_MYNETWAY
 endif
