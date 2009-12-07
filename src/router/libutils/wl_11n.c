@@ -97,7 +97,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	for (i = 0; i < achans.ic_nchans; i++) {
 
 		// filter out A channels if mode isnt A-Only or mixed
-		if (IEEE80211_IS_CHAN_A(&achans.ic_chans[i])) {
+		if (IEEE80211_IS_CHAN_5GHZ(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "na-only"))
