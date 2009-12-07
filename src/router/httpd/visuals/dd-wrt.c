@@ -6021,6 +6021,7 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv,
 			   int instance, int cnt);
 void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 {
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	int cnt = 0;
 	int c = get_wl_instances();
 	int i;
@@ -6028,6 +6029,7 @@ void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		cnt = ej_active_wds_instance(wp, argc, argv, i, cnt);
 	}
+#endif
 }
 
 int
@@ -7505,7 +7507,7 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 					   var) ? "selected=\"selected\"" :
 			  "", var);
 	}
-
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	int cnt = get_wl_instances();
 	int c;
 
@@ -7516,6 +7518,7 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 							   nvram_safe_get(var))
 			  ? "selected=\"selected\"" : "", c);
 	}
+#endif
 
 	char *wanif = nvram_safe_get("wan_ifname");
 

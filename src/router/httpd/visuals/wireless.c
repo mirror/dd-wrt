@@ -398,12 +398,14 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		nv_count = 0;	// init mac list
 
 		char *iface;
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		if (!strcmp(ifname, "wl0"))
 			iface = get_wl_instance_name(0);
 		else if (!strcmp(ifname, "wl1"))
 			iface = get_wl_instance_name(1);
 		else
-			iface = nvram_safe_get("wl0_ifname");
+#endif
+		iface = nvram_safe_get("wl0_ifname");
 
 #ifdef HAVE_MADWIFI
 		char *maclist = nvram_safe_get("ath0_maclist");
