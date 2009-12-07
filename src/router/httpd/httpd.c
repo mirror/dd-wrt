@@ -1375,7 +1375,8 @@ int main(int argc, char **argv)
 		ct_syslog(LOG_ERR, httpd_level, "Can't bind to any address");
 		exit(errno);
 	}
-#if !defined(DEBUG)
+// #if !defined(DEBUG)
+#if 0
 	{
 		FILE *pid_fp;
 
