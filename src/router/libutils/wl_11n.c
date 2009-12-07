@@ -101,25 +101,29 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "na-only"))
+				{
+				printf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags)
 				continue;
+				}
 		}
-		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i])) {
+		if (IEEE80211_IS_CHAN_11NA_HT20(&achans.ic_chans[i]) && nvram_invmatch(wl_mode,"a-only")) {
 			if (nvram_invmatch(wl_mode, "na-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
+				printf(stderr,"11na ht20 Ghz %d is not compatible to na-only/mixed/n-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags)
 				continue;
 			}
 		}
-		if (IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i])
-		    || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i])) {
+		if ((IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]) || IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i]))  && nvram_invmatch(wl_mode,"a-only")) {
 			if (nvram_invmatch(wl_mode, "na-only")
 			    && nvram_invmatch(wl_mode, "mixed")
+			    && nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_turbo, "40")
 			    && nvram_invmatch(wl_turbo, "2040")) {
 				continue;
-			}
+			    }
 			if (up
 			    && !IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.
 								ic_chans[i]))
@@ -129,7 +133,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 								 ic_chans[i]))
 				continue;
 		}
-		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i])) {
+		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i]) && nvram_invmatch(wl_mode,"b-only") && nvram_invmatch(wl_mode,"g-only")) {
 			if (nvram_invmatch(wl_mode, "ng-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "g-only")
@@ -139,8 +143,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				continue;
 			}
 		}
-		if (IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i])
-		    || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i])) {
+		if ((IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i])
+		    || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i]))  && nvram_invmatch(wl_mode,"b-only") && nvram_invmatch(wl_mode,"g-only")) {
 			if (nvram_invmatch(wl_mode, "ng-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_turbo, "40")
