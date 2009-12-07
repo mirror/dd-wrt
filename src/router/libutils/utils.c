@@ -836,6 +836,16 @@ int internal_getRouterBrand()
 #elif HAVE_BWRG1000
 	setRouter("Bountiful BWRG-1000");
 	return ROUTER_BOARD_LS2;
+#elif HAVE_WHRHPG300N
+	setRouter("Buffalo WHR-HP-G300N");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WHRHPGN
+	setRouter("Buffalo WHR-HP-GN");
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_UBNTM
 	FILE *fp =
 	    fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device", "rb");
@@ -2806,6 +2816,11 @@ int led_control(int type, int act)
 		diag_gpio = 0x107;
 		connected_gpio = 0x109;
 		ses_gpio = 0x10e;
+		break;
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x101;
+		connected_gpio = 0x106;
+		ses_gpio = 0x100;
 		break;
 	case ROUTER_BUFFALO_WBR54G:
 		diag_gpio = 0x107;

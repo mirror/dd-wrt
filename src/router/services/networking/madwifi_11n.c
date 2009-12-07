@@ -442,13 +442,15 @@ static void set_netmode(char *wif, char *dev, char *use)
 	    ("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
 	sysprintf("iwpriv %s ampdu 1", use);
 	sysprintf("iwpriv %s ampdulimit 50000", use);
-	sysprintf("iwpriv %s rx_chainmask %s", use,
-		  nvram_default_get(rxantenna, "7"));
-	sysprintf("iwpriv %s tx_chainmask %s", use,
-		  nvram_default_get(txantenna, "5"));
-	sysprintf("iwpriv %s tx_cm_legacy %s", use,
-		  nvram_default_get(txantenna, "5"));
-
+#ifdef HAVE_WHRHPGN
+	sysprintf("iwpriv %s rx_chainmask %s", use,nvram_default_get(rxantenna, "3"));
+	sysprintf("iwpriv %s tx_chainmask %s", use,nvram_default_get(txantenna, "3"));
+	sysprintf("iwpriv %s tx_cm_legacy %s", use,nvram_default_get(txantenna, "3"));
+#else
+	sysprintf("iwpriv %s rx_chainmask %s", use,nvram_default_get(rxantenna, "7"));
+	sysprintf("iwpriv %s tx_chainmask %s", use,nvram_default_get(txantenna, "5"));
+	sysprintf("iwpriv %s tx_cm_legacy %s", use,nvram_default_get(txantenna, "5"));
+#endif
 }
 
 static void setRTS(char *use)
