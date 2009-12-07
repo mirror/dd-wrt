@@ -1,7 +1,7 @@
 /*
- * sysinit-pb42.c
+ * sysinit-ubntm.c
  *
- * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
