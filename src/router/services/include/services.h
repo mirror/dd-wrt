@@ -171,3 +171,7 @@ int br_set_bridge_forward_delay(const char *br, int sec);
 int br_set_bridge_prio(const char *br, char *prio);
 
 void reset_hwaddr(char *ifname);
+void start_force_to_dial(void);
+
+
+#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
