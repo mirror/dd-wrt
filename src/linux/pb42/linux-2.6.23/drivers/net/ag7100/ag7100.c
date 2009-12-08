@@ -251,7 +251,6 @@ ag7100_open(struct net_device *dev)
     ag7100_check_link(mac);
 
     dev->trans_start = jiffies;
-    napi_enable(&mac->mac_napi);
 
     ag7100_int_enable(mac);
     ag7100_rx_start(mac);
@@ -280,7 +279,6 @@ ag7100_stop(struct net_device *dev)
     netif_carrier_off(dev);
 
     ag7100_hw_stop(mac);
-    napi_disable(&mac->mac_napi);
     free_irq(mac->mac_irq, dev);
 
    /* 
@@ -543,7 +541,6 @@ howl_10baset_war(ag7100_mac_t *mac)
     mac->speed_10t = 1;
     while(i-- && mac->speed_10t) {
         netif_carrier_on(dev);
-        napi_enable(&mav->mac_napi);
         netif_start_queue(dev);
 
         mdelay(100);
@@ -551,7 +548,6 @@ howl_10baset_war(ag7100_mac_t *mac)
 
         netif_carrier_off(dev);
         netif_stop_queue(dev);
-        napi_disable(&mac->mac_napi);
     }
     return ;
 }
@@ -890,7 +886,6 @@ ag7100_handle_tx_full(ag7100_mac_t *mac)
     mac->mac_net_stats.tx_fifo_errors ++;
 
     netif_stop_queue(mac->mac_dev);
-    napi_disable(&mac->mac_napi);
 
     spin_lock_irqsave(&mac->mac_lock, flags);
     ag7100_intr_enable_tx(mac);

@@ -308,9 +308,7 @@ ag7240_open(struct net_device *dev)
     /*
      * Keep carrier off while initialization and switch it once the link is up.
      */
-    napi_enable(&mac->mac_napi);
     netif_carrier_off(dev);
-    napi_disable(&mac->mac_napi);
     netif_stop_queue(dev);
 
  
@@ -337,7 +335,6 @@ ag7240_stop(struct net_device *dev)
 
     spin_lock_irqsave(&mac->mac_lock, flags);
     mac->mac_ifup = 0;
-    napi_disable(&mac->mac_napi);
     netif_stop_queue(dev);
     netif_carrier_off(dev);
 
@@ -995,7 +992,6 @@ ag7240_handle_tx_full(ag7240_mac_t *mac)
 
     mac->mac_net_stats.tx_fifo_errors ++;
 
-    napi_disable(&mac->mac_napi);
     netif_stop_queue(mac->mac_dev);
 
     spin_lock_irqsave(&mac->mac_lock, flags);

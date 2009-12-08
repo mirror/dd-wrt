@@ -302,3 +302,7 @@ obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
 obj-$(CONFIG_AR2313) += ar2313/
 obj-$(CONFIG_AG7100) += ag7100/
 obj-$(CONFIG_AG7240) += ag7240/
+
+
+#obj-$(CONFIG_AG7100) += ag71xx/
+#obj-$(CONFIG_AG7240) += ag71xx/
