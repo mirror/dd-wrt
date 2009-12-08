@@ -40,12 +40,6 @@ static struct {
 static int gpio_init_flag = 0;
 static int __init gpio_init(void);
 
-#define WNR3500V2_WPS_LED_GPIO			1
-#define WNR3500V2_CONNECTED_LED_GPIO	2
-#define WNR3500V2_PWR_LED_GPIO			3  //pwr led green
-#define WNR3500V2_DIAG_LED_GPIO			7  //pwr led amber
-#define WNR3500V2_USB_PSU_GPIO			12
-
 static int
 gpio_open(struct inode *inode, struct file * file)
 {
@@ -154,9 +148,6 @@ static struct file_operations gpio_fops = {
 
 extern int iswrt350n;
 extern int iswrt300n11;
-extern int iswnr3500v2;
-extern int iswrt320n;
-extern int iswrt160nv3;
 static struct class *gpio_class = NULL;
 
 static int __init
@@ -187,6 +178,7 @@ gpio_init(void)
 		
 	}
 gpio_init_flag=1;
+int gpios = 0;
 
 if (iswrt350n)
 {
@@ -211,50 +203,49 @@ if (iswrt350n)
 		si_gpioouten(gpio_sih, 0x4, 0x4, GPIO_HI_PRIORITY);
 		si_gpioout(gpio_sih, 0x4, 0x4, GPIO_HI_PRIORITY);
 }
-if (iswnr3500v2)
+
+if ((nvram_match("boardnum", "1") || nvram_match("boardnum", "3500"))
+	    && nvram_match("boardtype", "0x04CF")
+	    && (nvram_match("boardrev", "0x1213") || nvram_match("boardrev", "02")))
 {
 		printk(KERN_EMERG "WNR3500V2 GPIO Init\n");
-		si_gpioreserve(gpio_sih, 1 << WNR3500V2_WPS_LED_GPIO, GPIO_APP_PRIORITY);
-		si_gpioreserve(gpio_sih, 1 << WNR3500V2_CONNECTED_LED_GPIO, GPIO_APP_PRIORITY);
-		si_gpioreserve(gpio_sih, 1 << WNR3500V2_PWR_LED_GPIO, GPIO_APP_PRIORITY);
-		si_gpioreserve(gpio_sih, 1 << WNR3500V2_DIAG_LED_GPIO, GPIO_APP_PRIORITY);
-//		si_gpioreserve(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
-//		si_gpioouten(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
-//		si_gpioout(gpio_sih, 1 << WNR3500V2_USB_PSU_GPIO, 1 << WNR3500V2_USB_PSU_GPIO, GPIO_HI_PRIORITY);
-	
-}
-if (iswrt320n)
-{
-		printk(KERN_EMERG "WRT320N GPIO Init\n");
-		si_gpioreserve(gpio_sih, 1 << 2, GPIO_APP_PRIORITY); //diag led
-		si_gpioreserve(gpio_sih, 1 << 3, GPIO_APP_PRIORITY); //wps_led
-		si_gpioreserve(gpio_sih, 1 << 4, GPIO_APP_PRIORITY); //wps_status_led
+		gpios = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 7;
 }
 
-if (iswrt160nv3)
+if ((nvram_match("boardnum", "42") || nvram_match("boardnum", "66"))
+		&& nvram_match("boardtype", "0x04EF")
+		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305")))
+{
+		printk(KERN_EMERG "WRT320N GPIO Init\n");
+		gpios = 1 << 2 | 1 << 3 | 1 << 4;
+}
+
+if (nvram_match("boardnum", "42") && nvram_match("boot_hw_model", "WRT160N")
+		&& nvram_match("boot_hw_ver", "3.0"))
 {
 		printk(KERN_EMERG "WRT160Nv3 GPIO Init\n");
-		si_gpioreserve(gpio_sih, 1 << 1, GPIO_APP_PRIORITY); //pwr led		
-		si_gpioreserve(gpio_sih, 1 << 2, GPIO_APP_PRIORITY); //ses_orange
-		si_gpioreserve(gpio_sih, 1 << 4, GPIO_APP_PRIORITY); //ses_white
+		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
 if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
-	    && nvram_match("boardtype", "0x048e") && nvram_match("melco_id", "32093"))
+		&& nvram_match("boardtype", "0x048e")
+		&& (nvram_match("melco_id", "32093") || nvram_match("melco_id", "32064")))
 {
-		printk(KERN_EMERG "WHR-G125 GPIO Init\n");
-		si_gpioreserve(gpio_sih, 1 << 1, GPIO_APP_PRIORITY);	
-		si_gpioreserve(gpio_sih, 1 << 6, GPIO_APP_PRIORITY);
-		si_gpioreserve(gpio_sih, 1 << 7, GPIO_APP_PRIORITY);
+		printk(KERN_EMERG "WHR-G125 / WHR-HP-G125 GPIO Init\n");
+		gpios = 1 << 1 | 1 << 6 | 1 << 7;
+}
+
+if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x13")
+	    && nvram_match("boardtype", "0x467"))
+{
+		printk(KERN_EMERG "WHR-G54S / WHR-HP-G54 GPIO Init\n");
+		gpios = 1 << 1 | 1 << 6 | 1 << 7;
 }
 
 if (nvram_match("boardtype", "0x04cf") && nvram_match("boot_hw_model", "WRT610N"))
 {
 		printk(KERN_EMERG "WRT610Nv2 GPIO Init\n");
-		si_gpioreserve(gpio_sih, 1 << 0, GPIO_APP_PRIORITY);	
-		si_gpioreserve(gpio_sih, 1 << 3, GPIO_APP_PRIORITY);
-		si_gpioreserve(gpio_sih, 1 << 5, GPIO_APP_PRIORITY);
-		si_gpioreserve(gpio_sih, 1 << 7, GPIO_APP_PRIORITY);
+		gpios = 1 << 0 | 1 << 3 | 1 << 5 | 1 << 7;
 }
 /*if (iswrt300n11)
 {
@@ -266,6 +257,13 @@ if (nvram_match("boardtype", "0x04cf") && nvram_match("boot_hw_model", "WRT610N"
 		sb_gpioout(gpio_sbh, reset, reset, GPIO_DRV_PRIORITY);
 		bcm_mdelay(20);	
 }*/
+
+	for (i = 0; i < 16; i++)
+	{
+		if (gpios&1)
+			si_gpioreserve(gpio_sih, 1 << i, GPIO_APP_PRIORITY);
+		gpios>>=1;
+	}
 
 	return 0;
 }
