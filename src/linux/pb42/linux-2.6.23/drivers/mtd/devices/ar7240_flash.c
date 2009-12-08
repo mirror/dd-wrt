@@ -185,9 +185,9 @@ static struct mtd_partition dir_parts[] = {
 				//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x50000, size:0x790000,},
 #else
-      {name: "uboot", offset: 0x30000, size:0x10000,},
+      {name: "uboot", offset: 0, size:0x40000,},
 				//, mask_flags: MTD_WRITEABLE, },
-      {name: "linux", offset: 0x50000, size:0x390000,},
+      {name: "linux", offset: 0x40000, size:0x3a0000,},
 #endif
       {name: "rootfs", offset: 0x0, size:0x2b0000,},
 				//must be detected
@@ -290,7 +290,11 @@ static int __init ar7240_flash_init(void)
 				dir_parts[4].size = mtd->erasesize;
 				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
+#ifdef CONFIG_MTD_FLASH_8MB
 				dir_parts[1].offset = 0x50000;
+#else
+				dir_parts[1].offset = 0x40000;
+#endif
 				dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
 				//now scan for linux offset
 				break;
