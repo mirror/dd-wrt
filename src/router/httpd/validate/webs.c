@@ -2455,7 +2455,7 @@ static void save_prefix(webs_t wp, char *prefix)
 			    base=22;
 			#endif
 #endif
-			int txpower = atoi(base) - wifi_gettxpoweroffset(prefix);
+			int txpower = base - wifi_gettxpoweroffset(prefix);
 
 			if (txpower < 1)
 				txpower = 1;
