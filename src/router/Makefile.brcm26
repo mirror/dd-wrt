@@ -108,6 +108,8 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
 
+drop-sections	= .comment
+strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 
 #
 # Basic rules
@@ -151,7 +153,7 @@ endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) modules
-	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) -g $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
@@ -338,6 +340,7 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/core
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2
 #	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
