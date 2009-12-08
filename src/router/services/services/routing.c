@@ -603,12 +603,19 @@ void stop_zebra(void)
 		killall("ripd", SIGTERM);
 		killall("ospfd", SIGTERM);
 		killall("bgpd", SIGTERM);
-
-		while (!(killall("zebra", SIGTERM) && killall("ripd", SIGTERM)
-			 && killall("ospfd", SIGTERM)
-			 && killall("bgpd", SIGTERM)))
+		int maxcount = 5;
+		if ((pidof("zebra") > 0 || pidof("ripd") > 0
+		     || pidof("ospfd") > 0 || pidof("bgpd") > 0)
+		    && (maxcount--) > 0) {
 			sleep(1);
-
+		}
+		if (!maxcount) {
+			//okay. strange, now we must kill them
+			killall("zebra", SIGKILL);
+			killall("ripd", SIGKILL);
+			killall("ospfd", SIGKILL);
+			killall("bgpd", SIGKILL);
+		}
 		cprintf("done\n");
 	}
 	return;
