@@ -1,6 +1,6 @@
 #include "compat.h"
 
-#ifndef linux
+#if !defined(__linux__) && !defined(__GLIBC__)
 #include <stdlib.h>
 #include <string.h>
 

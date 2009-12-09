@@ -225,7 +225,7 @@ ohs_cmd_link(const char *args)
   struct ohs_connection *src, *dst;
   struct in_addr iaddr;
   int qual;
-  struct ohs_ip_link *link, *inv_link;
+  struct ohs_ip_link *my_link, *inv_link;
 
   args += get_next_token(args, tok_buf, TOK_BUF_SIZE);
 
@@ -303,23 +303,23 @@ ohs_cmd_link(const char *args)
       struct ipaddr_str srcaddrstr, dstaddrstr;
 
       if (src != dst) {
-        link = get_link(src, &dst->ip_addr);
+        my_link = get_link(src, &dst->ip_addr);
         inv_link = bi ? get_link(dst, &src->ip_addr) : NULL;
         if (qual == 100) {
           /* Remove link entry */
-          if (link) {
-            remove_link(src, link);
+          if (my_link) {
+            remove_link(src, my_link);
           }
           if (inv_link) {
             remove_link(dst, inv_link);
           }
         } else {
-          if (!link) {
+          if (!my_link) {
             /* Create new link */
-            link = add_link(src, dst);
+            my_link = add_link(src, dst);
           }
 
-          link->quality = qual;
+          my_link->quality = qual;
 
           if (bi) {
             if (!inv_link) {

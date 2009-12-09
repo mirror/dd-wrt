@@ -123,7 +123,7 @@ IsOlsrOrBmfPacket(unsigned char *ipPacket)
    * OLSR-Autodetect probe packets are UDP - port 51698 */
 
   /* Check if UDP */
-  ipHeader = (struct ip *)ipPacket;
+  ipHeader = (struct ip *)(ARM_NOWARN_ALIGN)ipPacket;
   if (ipHeader->ip_p != SOL_UDP) {
     /* Not UDP */
     return 0;
@@ -137,7 +137,7 @@ IsOlsrOrBmfPacket(unsigned char *ipPacket)
   }
 
   /* Go into the UDP header and check port number */
-  udpHeader = (struct udphdr *)(ipPacket + ipHeaderLen);
+  udpHeader = (struct udphdr *)(ARM_NOWARN_ALIGN)(ipPacket + ipHeaderLen);
   destPort = ntohs(udpHeader->dest);
 
   if (destPort == olsr_cnf->olsrport || destPort == BMF_ENCAP_PORT || destPort == 51698)

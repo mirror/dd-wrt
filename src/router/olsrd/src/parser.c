@@ -261,7 +261,7 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
   if (count < MIN_PACKET_SIZE(olsr_cnf->ip_version))
     return;
 
-  if (ntohs(olsr->olsr_packlen) != size) {
+  if (ntohs(olsr->olsr_packlen) !=(uint16_t) size) {
     struct ipaddr_str buf;
     OLSR_PRINTF(1, "Size error detected in received packet.\nRecieved %d, in packet %d\n", size, ntohs(olsr->olsr_packlen));
 
@@ -305,13 +305,37 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
   for (; count > 0; m = (union olsr_message *)((char *)m + (msgsize))) {
     bool forward = true;
 
-    if (count < MIN_PACKET_SIZE(olsr_cnf->ip_version))
+    if (count < MIN_PACKET_SIZE(olsr_cnf->ip_version) + 8)
       break;
 
     if (olsr_cnf->ip_version == AF_INET)
       msgsize = ntohs(m->v4.olsr_msgsize);
     else
       msgsize = ntohs(m->v6.olsr_msgsize);
+
+    if ((msgsize % 4) != 0) {
+      struct ipaddr_str buf;
+      union olsr_ip_addr *msgorig = (union olsr_ip_addr *) &m->v4.originator;
+      OLSR_PRINTF(1, "Error, OLSR message from %s (type %d) must be"
+          " longword aligned, but has a length of %d bytes\n",
+          olsr_ip_to_string(&buf, msgorig), m->v4.olsr_msgtype, msgsize);
+      olsr_syslog(OLSR_LOG_ERR, "Error, OLSR message from %s (type %d) must be"
+          " longword aligned, but has a length of %d bytes",
+          olsr_ip_to_string(&buf, msgorig), m->v4.olsr_msgtype, msgsize);
+      break;
+    }
+
+    if (msgsize > count) {
+      struct ipaddr_str buf;
+      union olsr_ip_addr *msgorig = (union olsr_ip_addr *) &m->v4.originator;
+      OLSR_PRINTF(1, "Error, OLSR message from %s (type %d) says"
+          " length=%d, but only %d bytes left\n",
+          olsr_ip_to_string(&buf, msgorig), m->v4.olsr_msgtype, msgsize, count);
+      olsr_syslog(OLSR_LOG_ERR, "Error, OLSR message from %s (type %d) says"
+          " length=%d, but only %d bytes left",
+          olsr_ip_to_string(&buf, msgorig), m->v4.olsr_msgtype, msgsize, count);
+      break;
+    }
 
     count -= msgsize;
 
@@ -382,9 +406,7 @@ olsr_input(int fd)
   cpu_overload_exit = 0;
 
   for (;;) {
-#ifdef DEBUG
     struct ipaddr_str buf;
-#endif
     /* sockaddr_in6 is bigger than sockaddr !!!! */
     struct sockaddr_storage from;
     socklen_t fromlen;
@@ -428,7 +450,6 @@ olsr_input(int fd)
       return;
 
     if ((olsr_in_if = if_ifwithsock(fd)) == NULL) {
-      struct ipaddr_str buf;
       OLSR_PRINTF(1, "Could not find input interface for message from %s size %d\n", olsr_ip_to_string(&buf, &from_addr), cc);
       olsr_syslog(OLSR_LOG_ERR, "Could not find input interface for message from %s size %d\n", olsr_ip_to_string(&buf, &from_addr),
                   cc);

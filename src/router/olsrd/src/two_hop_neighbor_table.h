@@ -71,7 +71,7 @@ extern struct neighbor_2_entry two_hop_neighbortable[HASHSIZE];
 
 void olsr_init_two_hop_table(void);
 
-void olsr_delete_neighbor_pointer(struct neighbor_2_entry *, const union olsr_ip_addr *);
+void olsr_delete_neighbor_pointer(struct neighbor_2_entry *, struct neighbor_entry *);
 
 void olsr_delete_two_hop_neighbor_table(struct neighbor_2_entry *);
 

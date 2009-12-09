@@ -321,7 +321,7 @@ static bool
 parserFunc(union olsr_message *msg, struct interface *inInt __attribute__ ((unused)), union olsr_ip_addr *neighIntAddr)
 {
   char *mess = (char *)msg;
-  union olsr_ip_addr *orig = (union olsr_ip_addr *)(mess + 4);
+  union olsr_ip_addr *orig = (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)(mess + 4);
   int len = (mess[2] << 8) | mess[3];
   char *service, *string;
   int i;

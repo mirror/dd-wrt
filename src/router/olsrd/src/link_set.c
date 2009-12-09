@@ -42,6 +42,7 @@
 /*
  * Link sensing database for the OLSR routing daemon
  */
+#include <assert.h>
 
 #include "defs.h"
 #include "link_set.h"
@@ -50,6 +51,7 @@
 #include "mpr.h"
 #include "neighbor_table.h"
 #include "olsr.h"
+#include "log.h"
 #include "scheduler.h"
 #include "olsr_spf.h"
 #include "net_olsr.h"
@@ -286,9 +288,11 @@ set_loss_link_multiplier(struct link_entry *entry)
   struct olsr_lq_mult *mult;
   uint32_t val = 0;
   union olsr_ip_addr null_addr;
+  struct ipaddr_str buf;
 
   /* find the interface for the link */
-  inter = if_ifwithaddr(&entry->local_iface_addr);
+  assert(entry->if_name);
+  inter = if_ifwithname(entry->if_name);
 
   /* find the interface configuration for the interface */
   for (cfg_inter = olsr_cnf->interfaces; cfg_inter; cfg_inter = cfg_inter->next) {
@@ -307,7 +311,7 @@ set_loss_link_multiplier(struct link_entry *entry)
      * use the default multiplier only if there isn't any entry that
      * has a matching IP address.
      */
-    if ((ipequal(&mult->addr, &null_addr) && val < 0.0) || ipequal(&mult->addr, &entry->neighbor_iface_addr)) {
+    if ((ipequal(&mult->addr, &null_addr) && val == 0) || ipequal(&mult->addr, &entry->neighbor_iface_addr)) {
       val = mult->value;
     }
   }
@@ -319,6 +323,9 @@ set_loss_link_multiplier(struct link_entry *entry)
 
   /* store the multiplier */
   entry->loss_link_multiplier = val;
+
+  OLSR_PRINTF(1, "Set linkloss multiplier for %s on %s to %d\n",
+      olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), cfg_inter->name, val);
 }
 
 /*
@@ -352,7 +359,6 @@ olsr_delete_link_entry(struct link_entry *link)
   link->link_hello_timer = NULL;
   olsr_stop_timer(link->link_loss_timer);
   link->link_loss_timer = NULL;
-
   list_remove(&link->link_list);
 
   free(link->if_name);
@@ -381,6 +387,7 @@ olsr_delete_link_entry_by_ip(const union olsr_ip_addr *int_addr)
   OLSR_FOR_ALL_LINK_ENTRIES_END(link);
 }
 
+
 /**
  * Callback for the link loss timer.
  */
@@ -397,6 +404,7 @@ olsr_expire_link_loss_timer(void *context)
   /* next timeout in 1.0 x htime */
   olsr_change_timer(link->link_loss_timer, link->loss_helloint, OLSR_LINK_LOSS_JITTER, OLSR_TIMER_PERIODIC);
 }
+
 
 /**
  * Callback for the link SYM timer.
@@ -749,7 +757,8 @@ check_link_status(const struct hello_message *message, const struct interface *i
      * Note: If a neigh has 2 cards we can reach, the neigh
      * will send a Hello with the same IP mentined twice
      */
-    if (ipequal(&neighbors->address, &in_if->ip_addr)) {
+    if (ipequal(&neighbors->address, &in_if->ip_addr) &&
+        neighbors->link != UNSPEC_LINK) {
       ret = neighbors->link;
       if (SYM_LINK == ret) {
         break;
@@ -794,7 +803,7 @@ olsr_update_packet_loss_hello_int(struct link_entry *entry, olsr_reltime loss_he
 }
 
 void
-olsr_update_packet_loss(struct link_entry *entry)
+olsr_received_hello_handler(struct link_entry *entry)
 {
   olsr_update_packet_loss_worker(entry, false);
 

@@ -74,11 +74,11 @@ olsr_init_two_hop_table(void)
  */
 
 void
-olsr_delete_neighbor_pointer(struct neighbor_2_entry *two_hop_entry, const union olsr_ip_addr *address)
+olsr_delete_neighbor_pointer(struct neighbor_2_entry *two_hop_entry, struct neighbor_entry *neigh)
 {
   struct neighbor_list_entry *entry = two_hop_entry->neighbor_2_nblist.next;
   while (entry != &two_hop_entry->neighbor_2_nblist) {
-    if (ipequal(&entry->neighbor->neighbor_main_addr, address)) {
+    if (entry->neighbor == neigh) {
       struct neighbor_list_entry *entry_to_delete = entry;
       entry = entry->next;
 
@@ -111,7 +111,7 @@ olsr_delete_two_hop_neighbor_table(struct neighbor_2_entry *two_hop_neighbor)
     struct neighbor_entry *one_hop_entry = one_hop_list->neighbor;
     struct neighbor_list_entry *entry_to_delete = one_hop_list;
 
-    olsr_delete_neighbor_2_pointer(one_hop_entry, &two_hop_neighbor->neighbor_2_addr);
+    olsr_delete_neighbor_2_pointer(one_hop_entry, two_hop_neighbor);
     one_hop_list = one_hop_list->next;
     /* no need to dequeue */
     free(entry_to_delete);

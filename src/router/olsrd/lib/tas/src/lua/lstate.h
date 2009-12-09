@@ -170,7 +170,7 @@ union GCObject {
 #define gcototh(o)	check_exp((o)->gch.tt == LUA_TTHREAD, &((o)->th))
 
 /* macro to convert any value into a GCObject */
-#define valtogco(v)	(cast(GCObject *, (v)))
+#define valtogco(v)	(cast_align(GCObject *, (v)))
 
 lua_State *luaE_newthread(lua_State * L);
 void luaE_freethread(lua_State * L, lua_State * L1);

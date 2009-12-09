@@ -57,7 +57,7 @@ struct dup_entry {
   uint16_t seqnr;
   uint16_t too_low_counter;
   uint32_t array;
-  clock_t valid_until;
+  uint32_t valid_until;
 };
 
 AVLNODE2STRUCT(duptree2dupentry, struct dup_entry, avl);

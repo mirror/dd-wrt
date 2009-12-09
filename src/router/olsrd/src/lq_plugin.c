@@ -134,24 +134,8 @@ activate_lq_handler(const char *name)
 olsr_linkcost
 olsr_calc_tc_cost(const struct tc_edge_entry * tc_edge)
 {
-  assert((const char *)tc_edge + sizeof(*tc_edge) == (const char *)tc_edge->linkquality);
+  assert((const char *)tc_edge + sizeof(*tc_edge) >= (const char *)tc_edge->linkquality);
   return active_lq_handler->calc_tc_cost(tc_edge->linkquality);
-}
-
-/*
- * olsr_is_relevant_costchange
- *
- * decides if the difference between two costs is relevant
- * (for changing the route for example)
- *
- * @param first linkcost value
- * @param second linkcost value
- * @return boolean
- */
-bool
-olsr_is_relevant_costchange(olsr_linkcost c1, olsr_linkcost c2)
-{
-  return active_lq_handler->is_relevant_costchange(c1, c2);
 }
 
 /*
@@ -167,7 +151,7 @@ olsr_is_relevant_costchange(olsr_linkcost c1, olsr_linkcost c2)
 int
 olsr_serialize_hello_lq_pair(unsigned char *buff, struct lq_hello_neighbor *neigh)
 {
-  assert((const char *)neigh + sizeof(*neigh) == (const char *)neigh->linkquality);
+  assert((const char *)neigh + sizeof(*neigh) >= (const char *)neigh->linkquality);
   return active_lq_handler->serialize_hello_lq(buff, neigh->linkquality);
 }
 
@@ -183,7 +167,7 @@ olsr_serialize_hello_lq_pair(unsigned char *buff, struct lq_hello_neighbor *neig
 void
 olsr_deserialize_hello_lq_pair(const uint8_t ** curr, struct hello_neighbor *neigh)
 {
-  assert((const char *)neigh + sizeof(*neigh) == (const char *)neigh->linkquality);
+  assert((const char *)neigh + sizeof(*neigh) >= (const char *)neigh->linkquality);
   active_lq_handler->deserialize_hello_lq(curr, neigh->linkquality);
   neigh->cost = active_lq_handler->calc_hello_cost(neigh->linkquality);
 }
@@ -201,7 +185,7 @@ olsr_deserialize_hello_lq_pair(const uint8_t ** curr, struct hello_neighbor *nei
 int
 olsr_serialize_tc_lq_pair(unsigned char *buff, struct tc_mpr_addr *neigh)
 {
-  assert((const char *)neigh + sizeof(*neigh) == (const char *)neigh->linkquality);
+  assert((const char *)neigh + sizeof(*neigh) >= (const char *)neigh->linkquality);
   return active_lq_handler->serialize_tc_lq(buff, neigh->linkquality);
 }
 
@@ -216,7 +200,7 @@ olsr_serialize_tc_lq_pair(unsigned char *buff, struct tc_mpr_addr *neigh)
 void
 olsr_deserialize_tc_lq_pair(const uint8_t ** curr, struct tc_edge_entry *edge)
 {
-  assert((const char *)edge + sizeof(*edge) == (const char *)edge->linkquality);
+  assert((const char *)edge + sizeof(*edge) >= (const char *)edge->linkquality);
   active_lq_handler->deserialize_tc_lq(curr, edge->linkquality);
 }
 
@@ -233,24 +217,8 @@ olsr_deserialize_tc_lq_pair(const uint8_t ** curr, struct tc_edge_entry *edge)
 void
 olsr_update_packet_loss_worker(struct link_entry *entry, bool lost)
 {
-  olsr_linkcost lq;
-  assert((const char *)entry + sizeof(*entry) == (const char *)entry->linkquality);
-  lq = active_lq_handler->packet_loss_handler(entry, entry->linkquality, lost);
-
-  if (olsr_is_relevant_costchange(lq, entry->linkcost)) {
-    entry->linkcost = lq;
-
-    if (olsr_cnf->lq_dlimit > 0) {
-      changes_neighborhood = true;
-      changes_topology = true;
-    }
-
-    else
-      OLSR_PRINTF(3, "Skipping Dijkstra (1)\n");
-
-    /* XXX - we should check whether we actually announce this neighbour */
-    signal_link_changes(true);
-  }
+  assert((const char *)entry + sizeof(*entry) >= (const char *)entry->linkquality);
+  active_lq_handler->packet_loss_handler(entry, entry->linkquality, lost);
 }
 
 /*
@@ -266,9 +234,9 @@ olsr_update_packet_loss_worker(struct link_entry *entry, bool lost)
 void
 olsr_memorize_foreign_hello_lq(struct link_entry *local, struct hello_neighbor *foreign)
 {
-  assert((const char *)local + sizeof(*local) == (const char *)local->linkquality);
+  assert((const char *)local + sizeof(*local) >= (const char *)local->linkquality);
   if (foreign) {
-    assert((const char *)foreign + sizeof(*foreign) == (const char *)foreign->linkquality);
+    assert((const char *)foreign + sizeof(*foreign) >= (const char *)foreign->linkquality);
     active_lq_handler->memorize_foreign_hello(local->linkquality, foreign->linkquality);
   } else {
     active_lq_handler->memorize_foreign_hello(local->linkquality, NULL);
@@ -290,7 +258,7 @@ olsr_memorize_foreign_hello_lq(struct link_entry *local, struct hello_neighbor *
 const char *
 get_link_entry_text(struct link_entry *entry, char separator, struct lqtextbuffer *buffer)
 {
-  assert((const char *)entry + sizeof(*entry) == (const char *)entry->linkquality);
+  assert((const char *)entry + sizeof(*entry) >= (const char *)entry->linkquality);
   return active_lq_handler->print_hello_lq(entry->linkquality, separator, buffer);
 }
 
@@ -309,7 +277,7 @@ get_link_entry_text(struct link_entry *entry, char separator, struct lqtextbuffe
 const char *
 get_tc_edge_entry_text(struct tc_edge_entry *entry, char separator, struct lqtextbuffer *buffer)
 {
-  assert((const char *)entry + sizeof(*entry) == (const char *)entry->linkquality);
+  assert((const char *)entry + sizeof(*entry) >= (const char *)entry->linkquality);
   return active_lq_handler->print_tc_lq(entry->linkquality, separator, buffer);
 }
 
@@ -353,9 +321,9 @@ get_linkcost_text(olsr_linkcost cost, bool route, struct lqtextbuffer *buffer)
 void
 olsr_copy_hello_lq(struct lq_hello_neighbor *target, struct link_entry *source)
 {
-  assert((const char *)target + sizeof(*target) == (const char *)target->linkquality);
-  assert((const char *)source + sizeof(*source) == (const char *)source->linkquality);
-  memcpy(target->linkquality, source->linkquality, active_lq_handler->hello_lq_size);
+  assert((const char *)target + sizeof(*target) >= (const char *)target->linkquality);
+  assert((const char *)source + sizeof(*source) >= (const char *)source->linkquality);
+  active_lq_handler->copy_link_lq_into_neigh(target->linkquality, source->linkquality);
 }
 
 /*
@@ -370,8 +338,8 @@ olsr_copy_hello_lq(struct lq_hello_neighbor *target, struct link_entry *source)
 void
 olsr_copylq_link_entry_2_tc_mpr_addr(struct tc_mpr_addr *target, struct link_entry *source)
 {
-  assert((const char *)target + sizeof(*target) == (const char *)target->linkquality);
-  assert((const char *)source + sizeof(*source) == (const char *)source->linkquality);
+  assert((const char *)target + sizeof(*target) >= (const char *)target->linkquality);
+  assert((const char *)source + sizeof(*source) >= (const char *)source->linkquality);
   active_lq_handler->copy_link_lq_into_tc(target->linkquality, source->linkquality);
 }
 
@@ -387,8 +355,8 @@ olsr_copylq_link_entry_2_tc_mpr_addr(struct tc_mpr_addr *target, struct link_ent
 void
 olsr_copylq_link_entry_2_tc_edge_entry(struct tc_edge_entry *target, struct link_entry *source)
 {
-  assert((const char *)target + sizeof(*target) == (const char *)target->linkquality);
-  assert((const char *)source + sizeof(*source) == (const char *)source->linkquality);
+  assert((const char *)target + sizeof(*target) >= (const char *)target->linkquality);
+  assert((const char *)source + sizeof(*source) >= (const char *)source->linkquality);
   active_lq_handler->copy_link_lq_into_tc(target->linkquality, source->linkquality);
 }
 
@@ -402,7 +370,7 @@ olsr_copylq_link_entry_2_tc_edge_entry(struct tc_edge_entry *target, struct link
 void
 olsr_clear_tc_lq(struct tc_mpr_addr *target)
 {
-  assert((const char *)target + sizeof(*target) == (const char *)target->linkquality);
+  assert((const char *)target + sizeof(*target) >= (const char *)target->linkquality);
   active_lq_handler->clear_tc(target->linkquality);
 }
 
@@ -423,7 +391,7 @@ olsr_malloc_hello_neighbor(const char *id)
 
   h = olsr_malloc(sizeof(struct hello_neighbor) + active_lq_handler->hello_lq_size, id);
 
-  assert((const char *)h + sizeof(*h) == (const char *)h->linkquality);
+  assert((const char *)h + sizeof(*h) >= (const char *)h->linkquality);
   active_lq_handler->clear_hello(h->linkquality);
   return h;
 }
@@ -445,7 +413,7 @@ olsr_malloc_tc_mpr_addr(const char *id)
 
   t = olsr_malloc(sizeof(struct tc_mpr_addr) + active_lq_handler->tc_lq_size, id);
 
-  assert((const char *)t + sizeof(*t) == (const char *)t->linkquality);
+  assert((const char *)t + sizeof(*t) >= (const char *)t->linkquality);
   active_lq_handler->clear_tc(t->linkquality);
   return t;
 }
@@ -467,7 +435,7 @@ olsr_malloc_lq_hello_neighbor(const char *id)
 
   h = olsr_malloc(sizeof(struct lq_hello_neighbor) + active_lq_handler->hello_lq_size, id);
 
-  assert((const char *)h + sizeof(*h) == (const char *)h->linkquality);
+  assert((const char *)h + sizeof(*h) >= (const char *)h->linkquality);
   active_lq_handler->clear_hello(h->linkquality);
   return h;
 }
@@ -489,9 +457,29 @@ olsr_malloc_link_entry(const char *id)
 
   h = olsr_malloc(sizeof(struct link_entry) + active_lq_handler->hello_lq_size, id);
 
-  assert((const char *)h + sizeof(*h) == (const char *)h->linkquality);
+  assert((const char *)h + sizeof(*h) >= (const char *)h->linkquality);
   active_lq_handler->clear_hello(h->linkquality);
   return h;
+}
+
+/**
+ * This function should be called whenever the current linkcost
+ * value changed in a relevant way.
+ *
+ * @param link pointer to current link
+ * @param newcost new cost of this link
+ */
+void olsr_relevant_linkcost_change(void) {
+  if (olsr_cnf->lq_dlimit > 0) {
+    changes_neighborhood = true;
+    changes_topology = true;
+  }
+  else {
+    OLSR_PRINTF(3, "Skipping Dijkstra (1)\n");
+  }
+
+  /* XXX - we should check whether we actually announce this neighbour */
+  signal_link_changes(true);
 }
 
 /*

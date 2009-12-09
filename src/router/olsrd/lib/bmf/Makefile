@@ -41,7 +41,7 @@ include $(TOPDIR)/Makefile.inc
 
 LIBS +=	$(OS_LIB_PTHREAD)
 
-ifneq ($(OS),linux)
+ifneq ($(OS),$(filter $(OS),linux android))
 
 default_target install clean: 
 	@echo "*** BMF Plugin only supported on Linux, sorry!"

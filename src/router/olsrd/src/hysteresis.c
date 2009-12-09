@@ -40,6 +40,7 @@
  */
 
 #include <time.h>
+#include <stdlib.h>
 
 #include "olsr_protocol.h"
 #include "hysteresis.h"

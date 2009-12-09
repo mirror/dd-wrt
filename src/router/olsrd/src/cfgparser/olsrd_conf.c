@@ -232,10 +232,14 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
   }
 
   /* TC redundancy */
-
-  if (                          //cnf->tc_redundancy < MIN_TC_REDUNDANCY ||
-       cnf->tc_redundancy > MAX_TC_REDUNDANCY) {
-    fprintf(stderr, "TC redundancy %d is not allowed\n", cnf->tc_redundancy);
+  if (cnf->tc_redundancy != 2) {
+    fprintf(stderr, "Sorry, tc-redundancy 0/1 are not working on 0.5.6. "
+        "It was discovered late in the stable tree development and cannot "
+        "be solved without a difficult change in the dijkstra code. "
+        "Feel free to contact the olsr-user mailinglist "
+        "(http://www.olsr.org/?q=mailing-lists) to learn more "
+        "about the problem. The next version of OLSR will have working "
+        "tc-redundancy again.\n");
     return -1;
   }
 
@@ -275,8 +279,18 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     return -1;
   }
 
+  if (cnf->min_tc_vtime < 0.0) {
+	fprintf(stderr, "Error, negative minimal tc time not allowed.\n");
+	return -1;
+  }
+  if (cnf->min_tc_vtime > 0.0) {
+	  fprintf(stderr, "Warning, you are using the min_tc_vtime hack. We hope you know what you are doing... contact olsr.org otherwise.\n");
+  }
+
   /* Interfaces */
   while (in) {
+    struct olsr_lq_mult *mult;
+
     io = in->cnf;
 
     if (in->name == NULL || !strlen(in->name)) {
@@ -311,6 +325,10 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
       return -1;
     }
 
+    if (cnf->min_tc_vtime > 0.0 && (io->tc_params.validity_time / io->tc_params.emission_interval) < 128) {
+      fprintf(stderr, "Please use a tc vtime at least 128 times the emission interval while using the min_tc_vtime hack.\n");
+      return -1;
+    }
     /* MID interval */
     if (io->mid_params.emission_interval < cnf->pollrate || io->mid_params.emission_interval > io->mid_params.validity_time) {
       fprintf(stderr, "Bad MID parameters! (em: %0.2f, vt: %0.2f)\n", io->mid_params.emission_interval,
@@ -325,6 +343,15 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
       return -1;
     }
 
+    for (mult = io->lq_mult; mult; mult=mult->next) {
+      if (mult->value > LINK_LOSS_MULTIPLIER) {
+        struct ipaddr_str buf;
+
+        fprintf(stderr, "Bad Linkquality multiplier ('%s' on IP %s: %0.2f)\n",
+            in->name, olsr_ip_to_string(&buf, &mult->addr), (float)mult->value / (float)LINK_LOSS_MULTIPLIER);
+        return -1;
+      }
+    }
     in = in->next;
   }
 
@@ -432,7 +459,7 @@ set_default_cnf(struct olsrd_config *cnf)
   cnf->rtnl_s = 0;
 #endif
 
-#if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
   cnf->rts = 0;
 #endif
 }
@@ -553,7 +580,7 @@ olsrd_print_cnf(struct olsrd_config *cnf)
       } else {
         printf("\tIPv4 broadcast           : AUTO\n");
       }
-      
+
       if (in->cnf->mode==IF_MODE_ETHER){
         printf("\tMode           : ether\n");
       } else {

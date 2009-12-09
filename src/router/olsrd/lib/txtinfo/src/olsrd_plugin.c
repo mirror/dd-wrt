@@ -60,7 +60,8 @@
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
 #define PLUGIN_INTERFACE_VERSION 5
 
-union olsr_ip_addr ipc_accept_ip;
+union olsr_ip_addr txtinfo_accept_ip;
+union olsr_ip_addr txtinfo_listen_ip;
 int ipc_port;
 int nompr;
 
@@ -79,9 +80,11 @@ my_init(void)
   /* defaults for parameters */
   ipc_port = 2006;
   if (olsr_cnf->ip_version == AF_INET) {
-    ipc_accept_ip.v4.s_addr = htonl(INADDR_LOOPBACK);
+    txtinfo_accept_ip.v4.s_addr = htonl(INADDR_LOOPBACK);
+    txtinfo_listen_ip.v4.s_addr = htonl(INADDR_ANY);
   } else {
-    ipc_accept_ip.v6 = in6addr_loopback;
+    txtinfo_accept_ip.v6 = in6addr_loopback;
+    txtinfo_listen_ip.v6 = in6addr_any;
   }
 
   /* highlite neighbours by default */
@@ -111,7 +114,8 @@ olsrd_plugin_interface_version(void)
 
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &ipc_port},
-  {.name = "accept",.set_plugin_parameter = &set_plugin_ipaddress,.data = &ipc_accept_ip},
+  {.name = "accept",.set_plugin_parameter = &set_plugin_ipaddress,.data = &txtinfo_accept_ip},
+  {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &txtinfo_listen_ip},
 };
 
 void
