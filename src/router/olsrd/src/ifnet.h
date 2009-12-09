@@ -60,6 +60,8 @@ void check_interface_updates(void *);
 
 int chk_if_changed(struct olsr_if *);
 
+void RemoveInterface(struct olsr_if *, bool);
+
 int chk_if_up(struct olsr_if *, int);
 
 int add_hemu_if(struct olsr_if *);

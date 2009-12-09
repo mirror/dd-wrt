@@ -55,6 +55,12 @@ int olsr_ioctl_del_route6(const struct rt_entry *);
 
 #if LINUX_POLICY_ROUTING
 int olsr_netlink_rule(uint8_t, uint8_t, uint16_t);
+
+#if LINUX_RTNETLINK_LISTEN
+int rtnetlink_register_socket(int);
+void rtnetlink_read(int);
+#endif /*LINUX_RTNETLINK_LISTEN*/
+
 #endif
 
 #endif

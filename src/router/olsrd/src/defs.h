@@ -50,7 +50,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <errno.h>
 #include <time.h>
 
@@ -95,13 +94,13 @@ extern FILE *debug_handle;
  * Provides a timestamp s1 milliseconds in the future according
  * to system ticks returned by times(2)
 */
-#define GET_TIMESTAMP(s1)	(now_times + ((s1) / olsr_cnf->system_tick_divider))
+#define GET_TIMESTAMP(s1)	olsr_getTimestamp(s1)
 
 /* Compute the time in milliseconds when a timestamp will expire. */
-#define TIME_DUE(s1)   ((int)((s1) * olsr_cnf->system_tick_divider) - now_times)
+#define TIME_DUE(s1)   olsr_getTimeDue(s1)
 
 /* Returns TRUE if a timestamp is expired */
-#define TIMED_OUT(s1)	((int)((s1) - now_times) < 0)
+#define TIMED_OUT(s1)	olsr_isTimedOut(s1)
 
 #define ARRAYSIZE(x)	(sizeof(x)/sizeof(*(x)))
 #ifndef MAX
@@ -114,6 +113,15 @@ extern FILE *debug_handle;
 #define INLINE inline __attribute__((always_inline))
 
 /*
+ * On ARM, the compiler spits out additional warnings if called
+ * with -Wcast-align if you cast e.g. char* -> int*. While this
+ * is fine, most of that warnings are un-critical. Also the ARM
+ * CPU will throw BUS_ERROR if alignment does not fit. For this,
+ * we add an additional cast to (void *) to prevent the warning.
+ */
+#define ARM_NOWARN_ALIGN void *
+
+/*
  * A somewhat safe version of strncpy and strncat. Note, that
  * BSD/Solaris strlcpy()/strlcat() differ in implementation, while
  * the BSD compiler prints out a warning if you use plain strcpy().
@@ -124,8 +132,6 @@ strscpy(char *dest, const char *src, size_t size)
 {
   register size_t l = 0;
 #if !defined(NODEBUG) && defined(DEBUG)
-  if (sizeof(dest) == size)
-    fprintf(stderr, "Warning: probably sizeof(pointer) in strscpy(%p, %s, %d)!\n", dest, src, size);
   if (NULL == dest)
     fprintf(stderr, "Warning: dest is NULL in strscpy!\n");
   if (NULL == src)
@@ -174,21 +180,14 @@ strscat(char *dest, const char *src, size_t size)
 extern struct olsrd_config *olsr_cnf;
 
 /* Timer data */
-extern clock_t now_times;              /* current idea of times(2) reported uptime */
+extern uint32_t now_times;              /* current idea of times(2) reported uptime */
 
 #if defined WIN32
 extern bool olsr_win32_end_request;
 extern bool olsr_win32_end_flag;
 #endif
 
-/*
- * a wrapper around times(2). times(2) has the problem, that it may return -1
- * in case of an err (e.g. EFAULT on the parameter) or immediately before an
- * overrun (though it is not en error) just because the jiffies (or whatever
- * the underlying kernel calls the smallest accountable time unit) are
- * inherently "unsigned" (and always incremented).
- */
-clock_t olsr_times(void);
+uint32_t olsr_times(void);
 
 /*
  *IPC functions

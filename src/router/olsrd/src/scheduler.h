@@ -66,7 +66,7 @@
  */
 struct timer_entry {
   struct list_node timer_list;         /* memory pooling, or wheel membership */
-  clock_t timer_clock;                 /* when timer shall fire (absolute time) */
+  uint32_t timer_clock;                 /* when timer shall fire (absolute time) */
   unsigned int timer_period;           /* set for periodical timers (relative time) */
   olsr_cookie_t timer_cookie;          /* used for diag stuff */
   uint8_t timer_jitter_pct;            /* the jitter expressed in percent */
@@ -90,18 +90,22 @@ LISTNODE2STRUCT(list2timer, struct timer_entry, timer_list);
 
 /* Timers */
 void olsr_init_timers(void);
-void olsr_walk_timers(clock_t *);
+void olsr_walk_timers(uint32_t *);
 void olsr_set_timer(struct timer_entry **, unsigned int, uint8_t, bool, void (*)(void *), void *, olsr_cookie_t);
 struct timer_entry *olsr_start_timer(unsigned int, uint8_t, bool, void (*)(void *), void *, olsr_cookie_t);
 void olsr_change_timer(struct timer_entry *, unsigned int, uint8_t, bool);
 void olsr_stop_timer(struct timer_entry *);
 
 /* Printing timestamps */
-const char *olsr_clock_string(clock_t);
+const char *olsr_clock_string(uint32_t);
 const char *olsr_wallclock_string(void);
 
 /* Main scheduler loop */
 void olsr_scheduler(void) __attribute__ ((noreturn));
+
+uint32_t olsr_getTimestamp (uint32_t s);
+int32_t olsr_getTimeDue (uint32_t s);
+bool olsr_isTimedOut (uint32_t s);
 
 #endif
 

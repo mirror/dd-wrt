@@ -58,7 +58,6 @@
 #define strerror(x) StrError(x)
 #endif
 
-static struct list_node add_kernel_list;
 static struct list_node chg_kernel_list;
 static struct list_node del_kernel_list;
 
@@ -97,7 +96,7 @@ void
 olsr_init_export_route(void)
 {
   /* the add/chg/del kernel queues */
-  list_head_init(&add_kernel_list);
+  //list_head_init(&add_kernel_list);
   list_head_init(&chg_kernel_list);
   list_head_init(&del_kernel_list);
 
@@ -202,26 +201,6 @@ olsr_add_kernel_route(struct rt_entry *rt)
 }
 
 /**
- * process the kernel add list.
- * the routes are already ordered such that nexthop routes
- * are on the head of the queue.
- * nexthop routes need to be added first and therefore
- * the queue needs to be traversed from head to tail.
- */
-static void
-olsr_add_kernel_routes(struct list_node *head_node)
-{
-  struct rt_entry *rt;
-
-  while (!list_is_empty(head_node)) {
-    rt = changelist2rt(head_node->next);
-    olsr_add_kernel_route(rt);
-
-    list_remove(&rt->rt_change_node);
-  }
-}
-
-/**
  * process the kernel change list.
  * the routes are already ordered such that nexthop routes
  * are on the head of the queue.
@@ -232,29 +211,20 @@ static void
 olsr_chg_kernel_routes(struct list_node *head_node)
 {
   struct rt_entry *rt;
-  struct list_node *node;
 
   if (list_is_empty(head_node)) {
     return;
   }
 
   /*
-   * First pass.
-   * traverse from the end to the beginning of the list,
-   * such that nexthop routes are deleted last.
-   */
-  for (node = head_node->prev; head_node != node; node = node->prev) {
-    rt = changelist2rt(node);
-    olsr_delete_kernel_route(rt);
-  }
-
-  /*
-   * Second pass.
    * Traverse from the beginning to the end of the list,
    * such that nexthop routes are added first.
    */
   while (!list_is_empty(head_node)) {
     rt = changelist2rt(head_node->next);
+
+    if (rt->rt_nexthop.iif_index > -1) olsr_delete_kernel_route(rt);
+
     olsr_add_kernel_route(rt);
 
     list_remove(&rt->rt_change_node);
@@ -275,7 +245,10 @@ olsr_del_kernel_routes(struct list_node *head_node)
 
   while (!list_is_empty(head_node)) {
     rt = changelist2rt(head_node->prev);
-    olsr_delete_kernel_route(rt);
+#if LINUX_POLICY_ROUTING
+    if (rt->rt_nexthop.iif_index >= 0)
+#endif /*LINUX_POLICY_ROUTING*/
+      olsr_delete_kernel_route(rt);
 
     list_remove(&rt->rt_change_node);
     olsr_cookie_free(rt_mem_cookie, rt);
@@ -355,15 +328,8 @@ olsr_update_rib_routes(void)
     if (olsr_nh_change(&rt->rt_best->rtp_nexthop, &rt->rt_nexthop)
         || (FIBM_CORRECT == olsr_cnf->fib_metric && olsr_hopcount_change(&rt->rt_best->rtp_metric, &rt->rt_metric))) {
 
-      if (0 > rt->rt_nexthop.iif_index) {
-
-        /* fresh routes do have an interface index of -1. */
-        olsr_enqueue_rt(&add_kernel_list, rt);
-      } else {
-
-        /* this is a route change. */
+        /* this is a route add or change. */
         olsr_enqueue_rt(&chg_kernel_list, rt);
-      }
     }
   }
   OLSR_FOR_ALL_RT_ENTRIES_END(rt);
@@ -381,9 +347,6 @@ olsr_update_kernel_routes(void)
 
   /* route changes */
   olsr_chg_kernel_routes(&chg_kernel_list);
-
-  /* route additions */
-  olsr_add_kernel_routes(&add_kernel_list);
 
 #if DEBUG
   olsr_print_routing_table(&routingtree);

@@ -115,7 +115,7 @@ typedef struct lua_TObject {
 
 #define sethvalue(obj,x) \
   { TObject *i_o=(obj); i_o->tt=LUA_TTABLE; \
-    i_o->value.gc=cast(GCObject *, (x)); \
+    i_o->value.gc=cast_align(GCObject *, (x)); \
     lua_assert(i_o->value.gc->gch.tt == LUA_TTABLE); }
 
 #define setnilvalue(obj) ((obj)->tt=LUA_TNIL)

@@ -198,6 +198,8 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_LQ_MULT
 %token TOK_CLEAR_SCREEN
 %token TOK_PLPARAM
+%token TOK_MIN_TC_VTIME
+%token TOK_LOCK_FILE
 
 %token TOK_HOSTLABEL
 %token TOK_NETLABEL
@@ -259,6 +261,8 @@ stmt:       idebug
           | alq_aging
           | bclear_screen
           | vcomment
+          | amin_tc_vtime
+          | alock_file
 ;
 
 block:      TOK_HNA4 hna4body
@@ -1043,6 +1047,21 @@ alq_aging: TOK_LQ_AGING TOK_FLOAT
 }
 ;
 
+amin_tc_vtime: TOK_MIN_TC_VTIME TOK_FLOAT
+{
+  PARSER_DEBUG_PRINTF("Minimum TC validity time %f\n", $2->floating);
+  olsr_cnf->min_tc_vtime = $2->floating;
+  free($2);
+}
+;
+
+alock_file: TOK_LOCK_FILE TOK_STRING
+{
+  PARSER_DEBUG_PRINTF("Lock file %s\n", $2->string);
+  olsr_cnf->lock_file = $2->string;
+  free($2);
+}
+;
 alq_plugin: TOK_LQ_PLUGIN TOK_STRING
 {
   olsr_cnf->lq_algorithm = $2->string;

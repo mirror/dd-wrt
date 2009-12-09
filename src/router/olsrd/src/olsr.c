@@ -66,6 +66,7 @@
 
 #include <stdarg.h>
 #include <signal.h>
+#include <unistd.h>
 
 bool changes_topology;
 bool changes_neighborhood;

@@ -53,7 +53,7 @@ mallocstate(lua_State * L)
     return NULL;
   else {
     block += EXTRASPACE;
-    return cast(lua_State *, block);
+    return cast_align(lua_State *, block);
   }
 }
 

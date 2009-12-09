@@ -11,6 +11,7 @@
 #include <stddef.h>
 
 #include "lua.h"
+#include "defs.h" /* ARM_NOWARN_ALIGN */
 
 /*
 ** try to find number of bits in an integer
@@ -100,6 +101,10 @@ typedef LUA_UACNUMBER l_uacNumber;
 
 #ifndef cast
 #define cast(t, exp)	((t)(exp))
+#endif
+
+#ifndef cast_align
+#define cast_align(t, exp)	((t)(ARM_NOWARN_ALIGN)(exp))
 #endif
 
 /*

@@ -39,7 +39,7 @@
  *
  */
 
-#if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
 #define ifr_netmask ifr_addr
 #endif
 
@@ -144,7 +144,7 @@ check_interface_updates(void *foo __attribute__ ((unused)))
 int
 chk_if_changed(struct olsr_if *iface)
 {
-  struct interface *ifp, *tmp_ifp;
+  struct interface *ifp;
   struct ifreq ifr;
   struct sockaddr_in6 tmp_saddr6;
   int if_changes;
@@ -240,9 +240,7 @@ chk_if_changed(struct olsr_if *iface)
 
   /* IP version 6 */
   if (olsr_cnf->ip_version == AF_INET6) {
-#ifdef DEBUG
     struct ipaddr_str buf;
-#endif
     /* Get interface address */
 
     if (get_ipv6_address(ifr.ifr_name, &tmp_saddr6, iface->cnf->ipv6_addrtype) <= 0) {
@@ -258,7 +256,6 @@ chk_if_changed(struct olsr_if *iface)
 #endif
 
     if (memcmp(&tmp_saddr6.sin6_addr, &ifp->int6_addr.sin6_addr, olsr_cnf->ipsize) != 0) {
-      struct ipaddr_str buf;
       OLSR_PRINTF(1, "New IP address for %s:\n", ifr.ifr_name);
       OLSR_PRINTF(1, "\tOld: %s\n", ip6_to_string(&buf, &ifp->int6_addr.sin6_addr));
       OLSR_PRINTF(1, "\tNew: %s\n", ip6_to_string(&buf, &tmp_saddr6.sin6_addr));
@@ -295,14 +292,14 @@ chk_if_changed(struct olsr_if *iface)
 #endif
 
     if (memcmp
-        (&((struct sockaddr_in *)&ifp->int_addr)->sin_addr.s_addr, &((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr,
+        (&((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifp->int_addr)->sin_addr.s_addr, &((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_addr)->sin_addr.s_addr,
          olsr_cnf->ipsize) != 0) {
       /* New address */
       OLSR_PRINTF(1, "IPv4 address changed for %s\n", ifr.ifr_name);
       OLSR_PRINTF(1, "\tOld:%s\n", ip4_to_string(&buf, ifp->int_addr.sin_addr));
       OLSR_PRINTF(1, "\tNew:%s\n", sockaddr4_to_string(&buf, &ifr.ifr_addr));
 
-      ifp->int_addr = *(struct sockaddr_in *)&ifr.ifr_addr;
+      ifp->int_addr = *(struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_addr;
       /* deactivated to prevent change of originator IP */
 #if 0
       if (memcmp(&olsr_cnf->main_addr, &ifp->ip_addr, olsr_cnf->ipsize) == 0) {
@@ -311,7 +308,7 @@ chk_if_changed(struct olsr_if *iface)
         memcpy(&olsr_cnf->main_addr, &((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, olsr_cnf->ipsize);
       }
 #endif
-      memcpy(&ifp->ip_addr, &((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, olsr_cnf->ipsize);
+      memcpy(&ifp->ip_addr, &((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_addr)->sin_addr.s_addr, olsr_cnf->ipsize);
 
       if_changes = 1;
     }
@@ -326,15 +323,14 @@ chk_if_changed(struct olsr_if *iface)
 #endif
 
     if (memcmp
-        (&((struct sockaddr_in *)&ifp->int_netmask)->sin_addr.s_addr, &((struct sockaddr_in *)&ifr.ifr_netmask)->sin_addr.s_addr,
+        (&((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifp->int_netmask)->sin_addr.s_addr, &((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_netmask)->sin_addr.s_addr,
          olsr_cnf->ipsize) != 0) {
-      struct ipaddr_str buf;
       /* New address */
       OLSR_PRINTF(1, "IPv4 netmask changed for %s\n", ifr.ifr_name);
       OLSR_PRINTF(1, "\tOld:%s\n", ip4_to_string(&buf, ifp->int_netmask.sin_addr));
       OLSR_PRINTF(1, "\tNew:%s\n", sockaddr4_to_string(&buf, &ifr.ifr_netmask));
 
-      ifp->int_netmask = *(struct sockaddr_in *)&ifr.ifr_netmask;
+      ifp->int_netmask = *(struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_netmask;
 
       if_changes = 1;
     }
@@ -349,14 +345,13 @@ chk_if_changed(struct olsr_if *iface)
       OLSR_PRINTF(3, "\tBroadcast address:%s\n", sockaddr4_to_string(&buf, &ifr.ifr_broadaddr));
 #endif
 
-      if (ifp->int_broadaddr.sin_addr.s_addr != ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr.s_addr) {
-        struct ipaddr_str buf;
+      if (ifp->int_broadaddr.sin_addr.s_addr != ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_broadaddr)->sin_addr.s_addr) {
         /* New address */
         OLSR_PRINTF(1, "IPv4 broadcast changed for %s\n", ifr.ifr_name);
         OLSR_PRINTF(1, "\tOld:%s\n", ip4_to_string(&buf, ifp->int_broadaddr.sin_addr));
         OLSR_PRINTF(1, "\tNew:%s\n", sockaddr4_to_string(&buf, &ifr.ifr_broadaddr));
 
-        ifp->int_broadaddr = *(struct sockaddr_in *)&ifr.ifr_broadaddr;
+        ifp->int_broadaddr = *(struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_broadaddr;
         if_changes = 1;
       }
     }
@@ -368,6 +363,20 @@ chk_if_changed(struct olsr_if *iface)
   return if_changes;
 
 remove_interface:
+
+RemoveInterface(iface, false);
+
+return 0;
+}
+
+/*should move to interfaces.c*/
+void 
+RemoveInterface(struct olsr_if * iface, bool went_down)
+{
+  struct interface *ifp, *tmp_ifp;
+  struct rt_entry *rt;
+  ifp = iface->interf;
+
   OLSR_PRINTF(1, "Removing interface %s\n", iface->name);
   olsr_syslog(OLSR_LOG_INFO, "Removing interface %s\n", iface->name);
 
@@ -377,6 +386,16 @@ remove_interface:
    *Call possible ifchange functions registered by plugins
    */
   run_ifchg_cbs(ifp, IFCHG_IF_REMOVE);
+
+  /*remove all routes*/
+    if (went_down) {
+    OLSR_FOR_ALL_RT_ENTRIES(rt) {
+      if (rt->rt_nexthop.iif_index == ifp->if_index) {
+	rt->rt_nexthop.iif_index=-1;//marks route as unexisting in kernel, do this better !?
+      }
+    }
+    OLSR_FOR_ALL_RT_ENTRIES_END(rt);
+  }
 
   /* Dequeue */
   if (ifp == ifnet) {
@@ -432,8 +451,6 @@ remove_interface:
     olsr_cnf->exit_value = EXIT_FAILURE;
     kill(getpid(), SIGINT);
   }
-
-  return 0;
 
 }
 
@@ -584,6 +601,8 @@ add_hemu_if(struct olsr_if *iface)
   ifp->valtimes.mid = reltime_to_me(iface->cnf->mid_params.validity_time * MSEC_PER_SEC);
   ifp->valtimes.hna = reltime_to_me(iface->cnf->hna_params.validity_time * MSEC_PER_SEC);
 
+  ifp->mode = iface->cnf->mode;
+
   return 1;
 }
 
@@ -704,7 +723,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
       return 0;
     }
 
-    ifs.int_addr = *(struct sockaddr_in *)&ifr.ifr_addr;
+    ifs.int_addr = *(struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_addr;
 
     /* Find netmask */
 
@@ -713,7 +732,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
       return 0;
     }
 
-    ifs.int_netmask = *(struct sockaddr_in *)&ifr.ifr_netmask;
+    ifs.int_netmask = *(struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_netmask;
 
     /* Find broadcast address */
     if (iface->cnf->ipv4_broadcast.v4.s_addr) {
@@ -726,7 +745,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
         return 0;
       }
 
-      ifs.int_broadaddr = *(struct sockaddr_in *)&ifr.ifr_broadaddr;
+      ifs.int_broadaddr = *(struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_broadaddr;
     }
 
     /* Deactivate IP spoof filter */
@@ -902,6 +921,8 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   ifp->valtimes.tc = reltime_to_me(iface->cnf->tc_params.validity_time * MSEC_PER_SEC);
   ifp->valtimes.mid = reltime_to_me(iface->cnf->mid_params.validity_time * MSEC_PER_SEC);
   ifp->valtimes.hna = reltime_to_me(iface->cnf->hna_params.validity_time * MSEC_PER_SEC);
+
+  ifp->mode = iface->cnf->mode;
 
   /*
    *Call possible ifchange functions registered by plugins

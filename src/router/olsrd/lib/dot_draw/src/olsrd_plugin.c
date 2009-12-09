@@ -60,6 +60,7 @@
 #define PLUGIN_INTERFACE_VERSION 5
 
 union olsr_ip_addr ipc_accept_ip;
+union olsr_ip_addr ipc_listen_ip;
 int ipc_port;
 
 static void my_init(void) __attribute__ ((constructor));
@@ -77,6 +78,7 @@ my_init(void)
   /* defaults for parameters */
   ipc_port = 2004;
   ipc_accept_ip.v4.s_addr = htonl(INADDR_LOOPBACK);
+  ipc_listen_ip.v4.s_addr = htonl(INADDR_ANY);
 }
 
 /**
@@ -103,6 +105,7 @@ olsrd_plugin_interface_version(void)
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &ipc_port},
   {.name = "accept",.set_plugin_parameter = &set_plugin_ipaddress,.data = &ipc_accept_ip},
+  {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &ipc_listen_ip},
 };
 
 void

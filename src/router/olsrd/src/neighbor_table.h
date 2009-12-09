@@ -85,7 +85,7 @@ extern struct neighbor_entry neighbortable[HASHSIZE];
 
 void olsr_init_neighbor_table(void);
 
-int olsr_delete_neighbor_2_pointer(struct neighbor_entry *, union olsr_ip_addr *);
+int olsr_delete_neighbor_2_pointer(struct neighbor_entry *, struct neighbor_2_entry *);
 
 struct neighbor_2_list_entry *olsr_lookup_my_neighbors(const struct neighbor_entry *, const union olsr_ip_addr *);
 

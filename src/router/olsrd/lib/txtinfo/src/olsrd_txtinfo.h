@@ -51,7 +51,11 @@
 #include "olsrd_plugin.h"
 #include "plugin_util.h"
 
-extern union olsr_ip_addr ipc_accept_ip;
+/* uncomment this to include VTime values into Link/Topology command */
+/* #define ACTIVATE_VTIME_TXTINFO */
+
+extern union olsr_ip_addr txtinfo_accept_ip;
+extern union olsr_ip_addr txtinfo_listen_ip;
 extern int ipc_port;
 extern int nompr;
 
@@ -59,6 +63,12 @@ int olsrd_plugin_interface_version(void);
 int olsrd_plugin_init(void);
 void olsr_plugin_exit(void);
 void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
+
+#ifdef android
+#define IN6ADDR_ANY_INIT { { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } }
+static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+static const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
+#endif
 
 #endif
 

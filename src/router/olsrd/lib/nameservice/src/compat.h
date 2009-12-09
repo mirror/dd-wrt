@@ -3,7 +3,9 @@
 
 #include <sys/types.h>
 
+#if !defined(__linux__) && !defined(__GLIBC__)
 char *strndup(const char *ptr, size_t size);
+#endif
 
 #endif
 

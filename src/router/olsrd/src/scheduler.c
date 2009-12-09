@@ -58,17 +58,99 @@
 #include "olsr_cookie.h"
 
 /* Timer data, global. Externed in defs.h */
-clock_t now_times;                     /* current idea of times(2) reported uptime */
+uint32_t now_times;                    /* relative time compared to startup (in milliseconds */
+struct timeval first_tv;               /* timevalue during startup */
+struct timeval last_tv;                /* timevalue used for last olsr_times() calculation */
 
 /* Hashed root of all timers */
-struct list_node timer_wheel[TIMER_WHEEL_SLOTS];
-clock_t timer_last_run;                /* remember the last timeslot walk */
+static struct list_node timer_wheel[TIMER_WHEEL_SLOTS];
+static uint32_t timer_last_run;                /* remember the last timeslot walk */
 
 /* Pool of timers to avoid malloc() churn */
-struct list_node free_timer_list;
+static struct list_node free_timer_list;
 
 /* Statistics */
 unsigned int timers_running;
+
+uint32_t
+olsr_times(void)
+{
+  struct timeval tv;
+  uint32_t t;
+
+  if (gettimeofday(&tv, NULL) != 0) {
+    OLSR_PRINTF(0, "OS clock is not working, have to shut down OLSR (%s)\n", strerror(errno));
+    exit(0);
+  }
+
+  /* test if time jumped backward or more than 60 seconds forward */
+  if (tv.tv_sec < last_tv.tv_sec || (tv.tv_sec == last_tv.tv_sec && tv.tv_usec < last_tv.tv_usec)
+      || tv.tv_sec - last_tv.tv_sec > 60) {
+    OLSR_PRINTF(3, "Time jump (%d.%06d to %d.%06d)\n",
+              (int32_t) (last_tv.tv_sec), (int32_t) (last_tv.tv_usec), (int32_t) (tv.tv_sec), (int32_t) (tv.tv_usec));
+
+    t = (last_tv.tv_sec - first_tv.tv_sec) * 1000 + (last_tv.tv_usec - first_tv.tv_usec) / 1000;
+    t++;                        /* advance time by one millisecond */
+
+    first_tv = tv;
+    first_tv.tv_sec -= (t / 1000);
+    first_tv.tv_usec -= ((t % 1000) * 1000);
+
+    if (first_tv.tv_usec < 0) {
+      first_tv.tv_sec--;
+      first_tv.tv_usec += 1000000;
+    }
+    last_tv = tv;
+    return t;
+  }
+  last_tv = tv;
+  return (tv.tv_sec - first_tv.tv_sec) * 1000 + (tv.tv_usec - first_tv.tv_usec) / 1000;
+}
+
+/**
+ * Returns a timestamp s seconds in the future
+ */
+uint32_t
+olsr_getTimestamp(uint32_t s)
+{
+  return now_times + s;
+}
+
+/**
+ * Returns the number of milliseconds until the timestamp will happen
+ */
+
+int32_t
+olsr_getTimeDue(uint32_t s)
+{
+  uint32_t diff;
+  if (s > now_times) {
+    diff = s - now_times;
+
+    /* overflow ? */
+    if (diff > (1u << 31)) {
+      return -(int32_t) (0xffffffff - diff);
+    }
+    return (int32_t) (diff);
+  }
+
+  diff = now_times - s;
+  /* overflow ? */
+  if (diff > (1u << 31)) {
+    return (int32_t) (0xffffffff - diff);
+  }
+  return -(int32_t) (diff);
+}
+
+bool
+olsr_isTimedOut(uint32_t s)
+{
+  if (s > now_times) {
+    return s - now_times > (1u << 31);
+  }
+
+  return now_times - s <= (1u << 31);
+}
 
 /**
  * Sleep until the next scheduling interval.
@@ -77,7 +159,7 @@ unsigned int timers_running;
  * @return nada
  */
 static void
-olsr_scheduler_sleep(unsigned long scheduler_runtime)
+olsr_scheduler_sleep(uint32_t scheduler_runtime)
 {
   struct timespec remainder_spec, sleeptime_spec;
   struct timeval sleeptime_val, time_used, next_interval;
@@ -90,7 +172,7 @@ olsr_scheduler_sleep(unsigned long scheduler_runtime)
   next_interval.tv_usec = next_interval_usec % USEC_PER_SEC;
 
   /* Determine used runtime */
-  milliseconds_used = scheduler_runtime * olsr_cnf->system_tick_divider;
+  milliseconds_used = scheduler_runtime;
   time_used.tv_sec = milliseconds_used / MSEC_PER_SEC;
   time_used.tv_usec = (milliseconds_used % MSEC_PER_SEC) * USEC_PER_MSEC;
 
@@ -187,8 +269,8 @@ olsr_scheduler(void)
  * @param cached result of random() at system init.
  * @return the absolute timer in system clock tick units
  */
-static clock_t
-olsr_jitter(unsigned int rel_time, uint8_t jitter_pct, unsigned int random)
+static uint32_t
+olsr_jitter(unsigned int rel_time, uint8_t jitter_pct, unsigned int random_val)
 {
   unsigned int jitter_time;
 
@@ -204,7 +286,7 @@ olsr_jitter(unsigned int rel_time, uint8_t jitter_pct, unsigned int random)
    * Play some tricks to avoid overflows with integer arithmetic.
    */
   jitter_time = (jitter_pct * rel_time) / 100;
-  jitter_time = random / (1 + RAND_MAX / jitter_time);
+  jitter_time = random_val / (1 + RAND_MAX / jitter_time);
 
 #if 0
   OLSR_PRINTF(3, "TIMER: jitter %u%% rel_time %ums to %ums\n", jitter_pct, rel_time, rel_time - jitter_time);
@@ -283,14 +365,14 @@ void
 olsr_init_timers(void)
 {
   struct list_node *timer_head_node;
-  int index;
+  int idx;
 
   OLSR_PRINTF(5, "TIMER: init timers\n");
 
   memset(timer_wheel, 0, sizeof(timer_wheel));
 
   timer_head_node = timer_wheel;
-  for (index = 0; index < TIMER_WHEEL_SLOTS; index++) {
+  for (idx = 0; idx < TIMER_WHEEL_SLOTS; idx++) {
     list_head_init(timer_head_node);
     timer_head_node++;
   }
@@ -299,6 +381,13 @@ olsr_init_timers(void)
    * Reset the last timer run.
    */
   timer_last_run = now_times;
+
+  if (gettimeofday(&first_tv, NULL)) {
+    OLSR_PRINTF(0, "OS clock is not working, have to shut down OLSR (%d)\n", errno);
+    exit(1);
+  }
+  last_tv = first_tv;
+  now_times = olsr_times();
 
   /* Timer memory pooling */
   list_head_init(&free_timer_list);
@@ -310,7 +399,7 @@ olsr_init_timers(void)
  * Callback the provided function with the context pointer.
  */
 void
-olsr_walk_timers(clock_t * last_run)
+olsr_walk_timers(uint32_t * last_run)
 {
   static struct timer_entry *timer;
   struct list_node *timer_head_node;
@@ -502,22 +591,20 @@ olsr_wallclock_string(void)
  * @return buffer to a formatted system time string.
  */
 const char *
-olsr_clock_string(clock_t clock)
+olsr_clock_string(uint32_t clk)
 {
   static char buf[4][sizeof("00:00:00.000")];
   static int idx = 0;
   char *ret;
-  clock_t sec, msec;
+  unsigned int msec = clk % 1000;
+  unsigned int sec = clk / 1000;
 
-  ret = buf[idx];
-  idx = (idx + 1) & 3;
-
-  /* On most systems a clocktick is a 10ms quantity. */
-  msec = olsr_cnf->system_tick_divider * (clock_t)(clock - now_times);
-  sec = msec / MSEC_PER_SEC;
 
   if ((long)sec<0)
     sec = 0;
+
+  ret = buf[idx];
+  idx = (idx + 1) & 3;
 
   snprintf(ret, sizeof(buf) / 4, "%02u:%02u:%02u.%03u", sec / 3600, (sec % 3600) / 60, (sec % 60), (msec % MSEC_PER_SEC));
 
@@ -652,23 +739,17 @@ void
 olsr_set_timer(struct timer_entry **timer_ptr, unsigned int rel_time, uint8_t jitter_pct, bool periodical,
                void (*timer_cb_function) (void *), void *context, olsr_cookie_t cookie)
 {
-
-  if (!*timer_ptr) {
-
+  if (rel_time == 0) {
+    /* No good future time provided, kill it. */
+    olsr_stop_timer(*timer_ptr);
+    *timer_ptr = NULL;
+  }
+  else if ((*timer_ptr) == NULL) {
     /* No timer running, kick it. */
     *timer_ptr = olsr_start_timer(rel_time, jitter_pct, periodical, timer_cb_function, context, cookie);
-  } else {
-
-    if (!rel_time) {
-
-      /* No good future time provided, kill it. */
-      olsr_stop_timer(*timer_ptr);
-      *timer_ptr = NULL;
-    } else {
-
-      /* Time is ok and timer is running, change it ! */
-      olsr_change_timer(*timer_ptr, rel_time, jitter_pct, periodical);
-    }
+  }
+  else {
+    olsr_change_timer(*timer_ptr, rel_time, jitter_pct, periodical);
   }
 }
 

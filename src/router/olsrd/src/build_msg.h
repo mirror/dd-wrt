@@ -46,9 +46,9 @@
 #include "olsr_protocol.h"
 #include <time.h>               /* For clock_t */
 
-void set_empty_tc_timer(clock_t);
+void set_empty_tc_timer(uint32_t);
 
-clock_t get_empty_tc_timer(void);
+uint32_t get_empty_tc_timer(void);
 
 bool queue_hello(struct hello_message *, struct interface *);
 

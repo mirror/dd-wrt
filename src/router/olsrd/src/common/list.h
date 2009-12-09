@@ -85,7 +85,7 @@ static inline structname * funcname (struct list_node *ptr)\
 {\
   return( \
     ptr ? \
-      (structname *) (((uint8_t *) ptr) - offsetof(structname, listnodename)) : \
+      (structname *) (((size_t) ptr) - offsetof(structname, listnodename)) : \
       NULL); \
 }
 

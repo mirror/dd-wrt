@@ -110,13 +110,13 @@ netmask_to_prefix(const uint8_t * adr, int len)
       prefix += 8;
       break;                    /* Shouldn't happen */
     default:
-      OLSR_PRINTF(0, "%s: Got bogus netmask %s\n", __func__, olsr_ip_to_string(&buf, (const union olsr_ip_addr *)adr));
+      OLSR_PRINTF(0, "%s: Got bogus netmask %s\n", __func__, olsr_ip_to_string(&buf, (const union olsr_ip_addr *)(const void *)adr));
       prefix = UCHAR_MAX;
       break;
     }
   }
 #ifdef DEBUG
-  OLSR_PRINTF(3, "Netmask: %s = Prefix %d\n", olsr_ip_to_string(&buf, (const union olsr_ip_addr *)adr), prefix);
+  OLSR_PRINTF(3, "Netmask: %s = Prefix %d\n", olsr_ip_to_string(&buf, (const union olsr_ip_addr *)(const void *)adr), prefix);
 #endif
   return prefix;
 }

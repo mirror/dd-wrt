@@ -136,7 +136,7 @@ static inline structname * funcname (struct avl_node *ptr)\
 {\
   return( \
     ptr ? \
-      (structname *) (((uint8_t *) ptr) - offsetof(structname, avlnodename)) : \
+      (structname *) (((size_t) ptr) - offsetof(structname, avlnodename)) : \
       NULL); \
 }
 

@@ -63,16 +63,119 @@ static int delete_all_inet_gws(void);
 #include <linux/types.h>
 #include <linux/rtnetlink.h>
 
+extern struct rtnl_handle rth;
+
 struct olsr_rtreq {
   struct nlmsghdr n;
   struct rtmsg r;
   char buf[512];
 };
 
+#if LINUX_RTNETLINK_LISTEN
+#include "ifnet.h"
+#include "socket_parser.h"
+
+int rtnetlink_register_socket(int rtnl_mgrp)
+{
+  int sock = socket(AF_NETLINK,SOCK_RAW,NETLINK_ROUTE);
+  struct sockaddr_nl addr;
+
+  if (sock<0) {
+    OLSR_PRINTF(1,"could not create rtnetlink socket! %d",sock);
+  }
+  else {
+    addr.nl_family = AF_NETLINK;
+    addr.nl_pid = 0; //kernel will assign appropiate number instead of pid (which is already used by primaray rtnetlink socket to add/delete routes)
+    addr.nl_groups = rtnl_mgrp;
+    if (bind(sock,(struct sockaddr *)&addr,sizeof(addr))<0) {
+      OLSR_PRINTF(1,"could not bind socket! (%d %s)",errno,strerror(errno));
+    }
+    else {
+      add_olsr_socket(sock, &rtnetlink_read);
+    }
+    fcntl(sock, F_SETFL, O_NONBLOCK);
+  }
+  return sock;
+}
+
+static void netlink_process_link(struct nlmsghdr *h)
+{
+  struct ifinfomsg *ifi = (struct ifinfomsg *) NLMSG_DATA(h);
+  struct interface *iface;
+  struct olsr_if *tmp_if;
+
+  iface = if_ifwithindex(ifi->ifi_index);
+  if (iface == NULL) {
+    return;
+  }
+  
+  //all IFF flags: LOOPBACK,BROADCAST;POINTOPOINT;MULTICAST;NOARP;ALLMULTI;PROMISC;MASTER;SLAVE;DEBUG;DYNAMIC;AUTOMEDIA;PORTSEL;NOTRAILERS;UP;LOWER_UP;DORMANT
+  /* check if interface is up and running? (a not running interface keeps its routes, so better not react like on ifdown!!??) */
+  if (ifi->ifi_flags&IFF_UP) {
+    OLSR_PRINTF(3,"interface %s changed but is still up! ", iface->int_name);
+    return; //we are currently only interested in interfaces that are/go down
+  } else {
+    OLSR_PRINTF(1,"interface %s is down! ", iface->int_name);
+  }
+
+  //only for still configured interfaces (ifup has to be detected with regular interface polling)
+  for (tmp_if = olsr_cnf->interfaces; tmp_if != NULL; tmp_if = tmp_if->next) {
+    if (tmp_if->interf==iface) {
+      OLSR_PRINTF(1,"-> removing %s from olsr config! ", iface->int_name);
+      RemoveInterface(tmp_if,true);
+      break;
+    }
+  }
+}
+
+
+void rtnetlink_read(int sock)
+{
+  int len, plen;
+  struct iovec iov;
+  struct sockaddr_nl nladdr;
+  struct msghdr msg = {
+    &nladdr,
+    sizeof(nladdr),
+    &iov,
+    1,
+    NULL,
+    0,
+    0
+  };
+
+  char buffer[4096];
+  struct nlmsghdr *nlh = (struct nlmsghdr *)(ARM_NOWARN_ALIGN) buffer;
+  int ret;
+
+  iov.iov_base = (void *) buffer;
+  iov.iov_len = sizeof(buffer);
+
+  while (true) { //read until ret<0;
+    ret=recvmsg(sock, &msg, 0);
+    if (ret<0) {
+      if (errno != EAGAIN) OLSR_PRINTF(1,"\nnetlink listen error %u - %s",errno,strerror(errno));
+      return;
+    }
+    /*check message*/
+    len = nlh->nlmsg_len;
+    plen = len - sizeof(nlh);
+    if (len > ret || plen < 0) {
+      OLSR_PRINTF(1,"Malformed netlink message: "
+             "len=%d left=%d plen=%d",
+              len, ret, plen);
+      return;
+    }
+    if ( (nlh->nlmsg_type == RTM_NEWLINK) || ( nlh->nlmsg_type == RTM_DELLINK) ) netlink_process_link(nlh);
+  }
+}
+
+#endif /*linux_rtnetlink_listen*/
+
 static void
 olsr_netlink_addreq(struct olsr_rtreq *req, int type, const void *data, int len)
 {
-  struct rtattr *rta = (struct rtattr *)(((char *)req) + NLMSG_ALIGN(req->n.nlmsg_len));
+  struct rtattr *rta = (struct rtattr *)(ARM_NOWARN_ALIGN)(((char *)req) + NLMSG_ALIGN(req->n.nlmsg_len));
   req->n.nlmsg_len = NLMSG_ALIGN(req->n.nlmsg_len) + RTA_LENGTH(len);
   assert(req->n.nlmsg_len < sizeof(struct olsr_rtreq));
   rta->rta_type = type;
@@ -103,14 +206,26 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
     0,
     0
   };
-  uint32_t metric = ((cmd != RTM_NEWRULE) | (cmd != RTM_DELRULE)) ?
-    FIBM_FLAT != olsr_cnf->fib_metric ? 
-      ((RTM_NEWROUTE == cmd) ? rt->rt_best->rtp_metric.hops : rt->rt_metric.hops) 
-      : RT_METRIC_DEFAULT
-      : 0;
-  const struct rt_nexthop *nexthop = ( ( cmd != RTM_NEWRULE ) | ( cmd != RTM_DELRULE ) ) ? 
-                                       ( RTM_NEWROUTE == cmd ) ? &rt->rt_best->rtp_nexthop : &rt->rt_nexthop 
-                                       : NULL;
+
+  uint32_t metric = 0;
+  const struct rt_nexthop *nexthop = NULL;
+  if ( ( cmd != RTM_NEWRULE ) && ( cmd != RTM_DELRULE ) ) {
+    if (FIBM_FLAT == olsr_cnf->fib_metric) {
+      metric = RT_METRIC_DEFAULT;
+    }
+    else {
+      metric = (RTM_NEWROUTE == cmd) ? rt->rt_best->rtp_metric.hops : rt->rt_metric.hops;
+    }
+
+    if (( RTM_NEWROUTE == cmd ) ||
+        (( RTM_DELROUTE == cmd ) && ( RT_DELETE_SIMILAR_ROUTE == flag || RT_DELETE_SIMILAR_AUTO_ROUTE == flag ))) {
+      nexthop = &rt->rt_best->rtp_nexthop;
+    }
+    else {
+      nexthop = &rt->rt_nexthop;
+    }
+  }
+
   memset(&req, 0, sizeof(req));
 
   req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtmsg));
@@ -118,16 +233,22 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
   req.n.nlmsg_type = cmd;
   req.r.rtm_family = family;
   req.r.rtm_table = rttable;
-  /* RTN_UNSPEC would be the wildcard, but blackhole broadcast or nat roules should usually not conflict */
-  req.r.rtm_type = RTN_UNICAST; /* -> olsr only adds deletes unicast routes */
-  req.r.rtm_protocol = RTPROT_UNSPEC; /* wildcard to delete routes of all protos if no simlar-delete correct proto will get set below */
-  req.r.rtm_scope = RT_SCOPE_NOWHERE; /* as wildcard for deletion */
 
-  if (( cmd != RTM_NEWRULE ) & ( cmd != RTM_DELRULE ) ) {
+  /* RTN_UNSPEC would be the wildcard, but blackhole broadcast or nat roules should usually not conflict */
+  /* -> olsr only adds deletes unicast routes */
+  req.r.rtm_type = RTN_UNICAST;
+
+  /* wildcard to delete routes of all protos if no simlar-delete correct proto will get set below */
+  req.r.rtm_protocol = RTPROT_UNSPEC;
+
+  /* as wildcard for deletion */
+  req.r.rtm_scope = RT_SCOPE_NOWHERE;
+
+  if ( ( cmd != RTM_NEWRULE ) && ( cmd != RTM_DELRULE ) ) {
     req.r.rtm_dst_len = rt->rt_dst.prefix_len;
 
     /* do not specify much as we wanna delete similar/conflicting routes */
-    if ( ( flag != RT_DELETE_SIMILAR_ROUTE ) & ( flag != RT_DELETE_SIMILAR_AUTO_ROUTE )) {
+    if ( ( flag != RT_DELETE_SIMILAR_ROUTE ) && ( flag != RT_DELETE_SIMILAR_AUTO_ROUTE )) {
       /* 0 gets replaced by OS-specifc default (3)
        * 1 is reserved so we take 0 instead (this really makes some sense)
        * other numbers are used 1:1 */
@@ -137,11 +258,15 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
       /*add interface*/
       olsr_netlink_addreq(&req, RTA_OIF, &nexthop->iif_index, sizeof(nexthop->iif_index));
 
-      #if SOURCE_IP_ROUTES
+#if SOURCE_IP_ROUTES
       /* source ip here is based on now static olsr_cnf->main_addr in this olsr-0.5.6-r4, should be based on orignator-id in newer olsrds */
-      if (AF_INET == family) olsr_netlink_addreq(&req, RTA_PREFSRC, &olsr_cnf->main_addr.v4.s_addr, sizeof(olsr_cnf->main_addr.v4.s_addr));
-      else olsr_netlink_addreq(&req, RTA_PREFSRC, &olsr_cnf->main_addr.v6.s6_addr, sizeof(olsr_cnf->main_addr.v6.s6_addr));
-      #endif
+      if (AF_INET == family) {
+        olsr_netlink_addreq(&req, RTA_PREFSRC, &olsr_cnf->main_addr.v4.s_addr, sizeof(olsr_cnf->main_addr.v4.s_addr));
+      }
+      else {
+        olsr_netlink_addreq(&req, RTA_PREFSRC, &olsr_cnf->main_addr.v6.s6_addr, sizeof(olsr_cnf->main_addr.v6.s6_addr));
+      }
+#endif
     }
 
     /* metric is specified always as we can only delete one route per iteration, and wanna hit the correct one first */
@@ -150,31 +275,35 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
     }
 
     /* make sure that netmask = /32 as this is an autogenarated route */
-    if (( flag == RT_AUTO_ADD_GATEWAY_ROUTE ) | (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) ) req.r.rtm_dst_len = 32;
+    if (( flag == RT_AUTO_ADD_GATEWAY_ROUTE ) || (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) ) {
+      req.r.rtm_dst_len = 32;
+    }
 
     /* for ipv4 or ipv6 we add gateway if one is specified, 
     * or leave gateway away if we want to delete similar routes aswell, 
     * or even use the gateway as target if we add a auto-generated route, 
     * or if delete-similar to make insertion of auto-generated route possible */
     if (AF_INET == family) {
-      if ( ( flag != RT_AUTO_ADD_GATEWAY_ROUTE ) & (flag != RT_DELETE_SIMILAR_ROUTE) & 
-           ( flag != RT_DELETE_SIMILAR_AUTO_ROUTE) & (rt->rt_dst.prefix.v4.s_addr != nexthop->gateway.v4.s_addr) ) {
+      if ( ( flag != RT_AUTO_ADD_GATEWAY_ROUTE ) && (flag != RT_DELETE_SIMILAR_ROUTE) && 
+           ( flag != RT_DELETE_SIMILAR_AUTO_ROUTE) && (rt->rt_dst.prefix.v4.s_addr != nexthop->gateway.v4.s_addr) ) {
         olsr_netlink_addreq(&req, RTA_GATEWAY, &nexthop->gateway.v4, sizeof(nexthop->gateway.v4));
         req.r.rtm_scope = RT_SCOPE_UNIVERSE;
       }
-      olsr_netlink_addreq(&req, RTA_DST, ( (flag == RT_AUTO_ADD_GATEWAY_ROUTE) | (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) ) ? 
+      olsr_netlink_addreq(&req, RTA_DST, ( (flag == RT_AUTO_ADD_GATEWAY_ROUTE) || (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) ) ? 
                           &nexthop->gateway.v4 : &rt->rt_dst.prefix.v4, sizeof(rt->rt_dst.prefix.v4));
     } else {
-      if ( ( flag != RT_AUTO_ADD_GATEWAY_ROUTE ) & (flag != RT_DELETE_SIMILAR_ROUTE ) & ( flag != RT_DELETE_SIMILAR_AUTO_ROUTE) 
-          & (0 != memcmp(&rt->rt_dst.prefix.v6, &nexthop->gateway.v6, sizeof(nexthop->gateway.v6))) ) {
+      if ( ( flag != RT_AUTO_ADD_GATEWAY_ROUTE ) && (flag != RT_DELETE_SIMILAR_ROUTE ) && ( flag != RT_DELETE_SIMILAR_AUTO_ROUTE) 
+          && (0 != memcmp(&rt->rt_dst.prefix.v6, &nexthop->gateway.v6, sizeof(nexthop->gateway.v6))) ) {
         olsr_netlink_addreq(&req, RTA_GATEWAY, &nexthop->gateway.v6, sizeof(nexthop->gateway.v6));
         req.r.rtm_scope = RT_SCOPE_UNIVERSE;
       }
-      olsr_netlink_addreq(&req, RTA_DST, ( (flag == RT_AUTO_ADD_GATEWAY_ROUTE) | (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) ) ? 
+      olsr_netlink_addreq(&req, RTA_DST, ( (flag == RT_AUTO_ADD_GATEWAY_ROUTE) || (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) ) ? 
                           &nexthop->gateway.v6 : &rt->rt_dst.prefix.v6, sizeof(rt->rt_dst.prefix.v6));
     }
-  } else {//add or delete a rule
+  } else {
+    /* add or delete a rule */
     static uint32_t priority = 65535;
+
     req.r.rtm_scope = RT_SCOPE_UNIVERSE;
     olsr_netlink_addreq(&req, RTA_PRIORITY, &priority, sizeof(priority));
   }
@@ -187,10 +316,10 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
     iov.iov_base = req.buf;
     iov.iov_len = sizeof(req.buf);
     if (0 < (ret = recvmsg(olsr_cnf->rtnl_s, &msg, 0))) {
-      struct nlmsghdr *h = (struct nlmsghdr *)req.buf;
+      struct nlmsghdr *h = (struct nlmsghdr *)(ARM_NOWARN_ALIGN)req.buf;
       while (NLMSG_OK(h, (unsigned int)ret)) {
         if (NLMSG_DONE == h->nlmsg_type) {
-          //seems to reached never
+          /* seems to reached never */
           olsr_syslog(OLSR_LOG_INFO, "_received NLMSG_DONE");
           break;
         }
@@ -201,9 +330,10 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
             struct nlmsgerr *l_err = (struct nlmsgerr *)NLMSG_DATA(h);
             errno = -l_err->error;
             if (0 != errno) {
-            const char *const err_msg = strerror(errno);
+              const char *const err_msg = strerror(errno);
               struct ipaddr_str buf;
               rt_ret = -1;
+
               /* syslog debug output for various situations */
               if ( cmd == RTM_NEWRULE ) {
                 olsr_syslog(OLSR_LOG_ERR,"Error '%s' (%d) on inserting empty policy rule aimed to activate RtTable %u!", err_msg, errno, rttable);
@@ -212,112 +342,168 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
                 olsr_syslog(OLSR_LOG_ERR,"Error '%s' (%d) on deleting empty policy rule aimed to activate rtTable %u!", err_msg, errno, rttable);
               }
               else if ( flag <= RT_RETRY_AFTER_DELETE_SIMILAR ) {
-                if (rt->rt_dst.prefix.v4.s_addr!=nexthop->gateway.v4.s_addr)
-                  olsr_syslog(OLSR_LOG_ERR, "error '%s' (%d) %s route to %s/%d via %s dev %s", err_msg, errno, (cmd == RTM_NEWROUTE) ? "add" : "del",
-                              olsr_ip_to_string(&ibuf,&rt->rt_dst.prefix), req.r.rtm_dst_len,
-                              olsr_ip_to_string(&gbuf,&nexthop->gateway), if_ifwithindex_name(nexthop->iif_index));
-                else olsr_syslog(OLSR_LOG_ERR, "error '%s' (%d) %s route to %s/%d dev %s", err_msg, errno, (cmd == RTM_NEWROUTE) ? "add" : "del",
-                                 olsr_ip_to_string(&ibuf,&rt->rt_dst.prefix), req.r.rtm_dst_len, if_ifwithindex_name(nexthop->iif_index));
+                if (rt->rt_dst.prefix.v4.s_addr!=nexthop->gateway.v4.s_addr) {
+                  olsr_syslog(OLSR_LOG_ERR, "error '%s' (%d) %s route to %s/%d via %s dev %s",
+                      err_msg, errno, (cmd == RTM_NEWROUTE) ? "add" : "del",
+                      olsr_ip_to_string(&ibuf,&rt->rt_dst.prefix), req.r.rtm_dst_len,
+                      olsr_ip_to_string(&gbuf,&nexthop->gateway), if_ifwithindex_name(nexthop->iif_index));
+                }
+                else {
+                  olsr_syslog(OLSR_LOG_ERR, "error '%s' (%d) %s route to %s/%d dev %s",
+                      err_msg, errno, (cmd == RTM_NEWROUTE) ? "add" : "del",
+                      olsr_ip_to_string(&ibuf,&rt->rt_dst.prefix), req.r.rtm_dst_len, if_ifwithindex_name(nexthop->iif_index));
+                }
               }
-              else if (flag == RT_AUTO_ADD_GATEWAY_ROUTE) 
-                       olsr_syslog(OLSR_LOG_ERR, ". error '%s' (%d) auto-add route to %s dev %s", err_msg, errno,
-                                   olsr_ip_to_string(&ibuf,&nexthop->gateway), if_ifwithindex_name(nexthop->iif_index));
-              else if (flag == RT_DELETE_SIMILAR_ROUTE) 
-                       olsr_syslog(OLSR_LOG_ERR, ". error '%s' (%d) auto-delete route to %s dev %s", err_msg, errno,
-                                   olsr_ip_to_string(&ibuf,&rt->rt_dst.prefix), if_ifwithindex_name(nexthop->iif_index));
-              else if (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) 
-                       olsr_syslog(OLSR_LOG_ERR, ". . error '%s' (%d) auto-delete similar route to %s dev %s", err_msg, errno,
-                                   olsr_ip_to_string(&ibuf,&nexthop->gateway), if_ifwithindex_name(nexthop->iif_index));
-              else { /* should never happen */
+              else if (flag == RT_AUTO_ADD_GATEWAY_ROUTE) {
+                olsr_syslog(OLSR_LOG_ERR, ". error '%s' (%d) auto-add route to %s dev %s", err_msg, errno,
+                    olsr_ip_to_string(&ibuf,&nexthop->gateway), if_ifwithindex_name(nexthop->iif_index));
+              }
+              else if (flag == RT_DELETE_SIMILAR_ROUTE) {
+                olsr_syslog(OLSR_LOG_ERR, ". error '%s' (%d) auto-delete route to %s dev %s", err_msg, errno,
+                    olsr_ip_to_string(&ibuf,&rt->rt_dst.prefix), if_ifwithindex_name(nexthop->iif_index));
+              }
+              else if (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) {
+                olsr_syslog(OLSR_LOG_ERR, ". . error '%s' (%d) auto-delete similar route to %s dev %s", err_msg, errno,
+                    olsr_ip_to_string(&ibuf,&nexthop->gateway), if_ifwithindex_name(nexthop->iif_index));
+              }
+              else {
+                /* should never happen */
                 olsr_syslog(OLSR_LOG_ERR, "# invalid internal route delete/add flag (%d) used!", flag);
               }
             }
-            else { /* netlink acks requests with an errno=0 NLMSG_ERROR response! */
+            else {
+              /* netlink acks requests with an errno=0 NLMSG_ERROR response! */
               rt_ret = 1;
             }
 
             /* resolve "File exist" (17) propblems (on orig and autogen routes)*/	
-            if ((errno == 17) & ((flag == RT_ORIG_REQUEST) | (flag == RT_AUTO_ADD_GATEWAY_ROUTE)) & (cmd == RTM_NEWROUTE)) {
+            if ((errno == 17) && (cmd == RTM_NEWROUTE) && ((flag == RT_ORIG_REQUEST) || (flag == RT_AUTO_ADD_GATEWAY_ROUTE))) {
               /* a similar route going over another gateway may be present, which has to be deleted! */
               olsr_syslog(OLSR_LOG_ERR, ". auto-deleting similar routes to resolve 'File exists' (17) while adding route!");
               rt_ret = RT_DELETE_SIMILAR_ROUTE; /* processing will contiune after this loop */
             }
             /* report success on "No such process" (3) */
-            else if ((errno == 3) & (cmd == RTM_DELROUTE) & (flag == RT_ORIG_REQUEST)) {
+            else if ((errno == 3) && (cmd == RTM_DELROUTE) && (flag == RT_ORIG_REQUEST)) {
               /* another similar (but slightly different) route may be present at this point
               * , if so this will get solved when adding new route to this destination */
               olsr_syslog(OLSR_LOG_ERR, ". ignoring 'No such process' (3) while deleting route!");
               rt_ret = 0;
             }
             /* insert route to gateway on the fly if "Network unreachable" (128) on 2.4 kernels
-             * or on 2.6 kernel No such process (3) is reported in rtnetlink response
+             * or on 2.6 kernel No such process (3) or Network unreachable (101) is reported in rtnetlink response
              * do this only with flat metric, as using metric values inherited from 
              * a target behind the gateway is really strange, and could lead to multiple routes!
              * anyways if invalid gateway ips may happen we are f*cked up!!
              * but if not, these on the fly generated routes are no problem, and will only get used when needed */
-            else if ( ((errno == 3)|(errno == 128)) & (flag == RT_ORIG_REQUEST) & (FIBM_FLAT == olsr_cnf->fib_metric) 
-                     & (cmd == RTM_NEWROUTE) & (rt->rt_dst.prefix.v4.s_addr!=nexthop->gateway.v4.s_addr)) {
-              if (errno == 128) olsr_syslog(OLSR_LOG_ERR, ". autogenerating route to handle 'Network unreachable' (128) while adding route!");
-              else olsr_syslog(OLSR_LOG_ERR, ". autogenerating route to handle 'No such process' (3) while adding route!");
+            else if ( ( (errno == 3) || (errno == 101) || (errno == 128) )
+                && (flag == RT_ORIG_REQUEST) && (FIBM_FLAT == olsr_cnf->fib_metric)
+                     && (cmd == RTM_NEWROUTE) && (rt->rt_dst.prefix.v4.s_addr!=nexthop->gateway.v4.s_addr)) {
+              if (errno == 128)  {
+                olsr_syslog(OLSR_LOG_ERR, ". autogenerating route to handle 'Network unreachable' (128) while adding route!");
+              }
+              else if (errno == 101) {
+                olsr_syslog(OLSR_LOG_ERR, ". autogenerating route to handle 'Network unreachable' (101) while adding route!");
+              }
+              else {
+                olsr_syslog(OLSR_LOG_ERR, ". autogenerating route to handle 'No such process' (3) while adding route!");
+              }
 
-              rt_ret = RT_AUTO_ADD_GATEWAY_ROUTE; /* processing will contiune after this loop */
+              /* processing will contiune after this loop */
+              rt_ret = RT_AUTO_ADD_GATEWAY_ROUTE;
             }
           }
           /* report invalid message size */
-          else olsr_syslog(OLSR_LOG_INFO,"_received invalid netlink message size %lu != %u",(unsigned long int)sizeof(struct nlmsgerr), h->nlmsg_len);
+          else {
+            olsr_syslog(OLSR_LOG_INFO,"_received invalid netlink message size %lu != %u",
+                (unsigned long int)sizeof(struct nlmsgerr), h->nlmsg_len);
+          }
         }
         /* log all other messages */
-        else olsr_syslog(OLSR_LOG_INFO,"_received %u Byte rtnetlink response of type %u with seqnr %u and flags %u from %u (%u)",
-                         h->nlmsg_len, h->nlmsg_type, h->nlmsg_seq, h->nlmsg_flags, h->nlmsg_pid, NLMSG_ERROR);
-        h = NLMSG_NEXT(h, ret);
+        else {
+          olsr_syslog(OLSR_LOG_INFO,"_received %u Byte rtnetlink response of type %u with seqnr %u and flags %u from %u (%u)",
+              h->nlmsg_len, h->nlmsg_type, h->nlmsg_seq, h->nlmsg_flags, h->nlmsg_pid, NLMSG_ERROR);
+        }
+/*
+ * The ARM compile complains about alignment. Copied
+ * from /usr/include/linux/netlink.h and adapted for ARM
+ */
+#define MY_NLMSG_NEXT(nlh,len)	 ((len) -= NLMSG_ALIGN((nlh)->nlmsg_len), \
+				  (struct nlmsghdr*)(ARM_NOWARN_ALIGN)(((char*)(nlh)) + NLMSG_ALIGN((nlh)->nlmsg_len)))
+        h = MY_NLMSG_NEXT(h, ret);
       }
     }
   }
-  if ( rt_ret == RT_DELETE_SIMILAR_ROUTE ) {//delete all routes that may collide
+  if ( rt_ret == RT_DELETE_SIMILAR_ROUTE ) {
+    /* delete all routes that may collide */
+
     /* recursive call to delete simlar routes, using flag 2 to invoke deletion of similar, not only exact matches*/
     rt_ret = olsr_netlink_route_int(rt, family, rttable, RTM_DELROUTE, 
-                                    flag == RT_AUTO_ADD_GATEWAY_ROUTE ? RT_DELETE_SIMILAR_AUTO_ROUTE : RT_DELETE_SIMILAR_ROUTE);
+        flag == RT_AUTO_ADD_GATEWAY_ROUTE ? RT_DELETE_SIMILAR_AUTO_ROUTE : RT_DELETE_SIMILAR_ROUTE);
 
     /* retry insert original route, if deleting similar succeeded, using flag=1 to prevent recursions */
-    if (rt_ret > 0) rt_ret = olsr_netlink_route_int(rt, family, rttable, RTM_NEWROUTE, RT_RETRY_AFTER_DELETE_SIMILAR);
-    else olsr_syslog(OLSR_LOG_ERR, ". failed on auto-deleting similar route conflicting with above route!");
+    if (rt_ret > 0) {
+      rt_ret = olsr_netlink_route_int(rt, family, rttable, RTM_NEWROUTE, RT_RETRY_AFTER_DELETE_SIMILAR);
+    }
+    else {
+      olsr_syslog(OLSR_LOG_ERR, ". failed on auto-deleting similar route conflicting with above route!");
+    }
 
     /* set appropriate return code for original request, while returning simple -1/1 if called recursive */
     if (flag != RT_AUTO_ADD_GATEWAY_ROUTE) {
-      if (rt_ret > 0) rt_ret = 0; /* successful recovery */
-      else rt_ret = -1; /* unrecoverable error */
+      if (rt_ret > 0) {
+        /* successful recovery */
+        rt_ret = 0;
+      }
+      else {
+        /* unrecoverable error */
+        rt_ret = -1;
+      }
     }
   }
-  if ( rt_ret == RT_AUTO_ADD_GATEWAY_ROUTE ) { /* autoadd route via gateway */
+  if ( rt_ret == RT_AUTO_ADD_GATEWAY_ROUTE ) {
+    /* autoadd route via gateway */
+
     /* recursive call to invoke creation of a route to the gateway */
     rt_ret = olsr_netlink_route_int(rt, family, rttable, RTM_NEWROUTE, RT_AUTO_ADD_GATEWAY_ROUTE);
 
     /* retry insert original route, if above succeeded without problems */
-    if (rt_ret > 0) rt_ret = olsr_netlink_route_int(rt, family, rttable, RTM_NEWROUTE, RT_RETRY_AFTER_ADD_GATEWAY);
-    else olsr_syslog(OLSR_LOG_ERR, ". failed on inserting auto-generated route to gateway of above route!");
+    if (rt_ret > 0) {
+      rt_ret = olsr_netlink_route_int(rt, family, rttable, RTM_NEWROUTE, RT_RETRY_AFTER_ADD_GATEWAY);
+    }
+    else {
+      olsr_syslog(OLSR_LOG_ERR, ". failed on inserting auto-generated route to gateway of above route!");
+    }
 
     /* set appropriate return code for original request*/
-    if (rt_ret > 0) rt_ret = 0; /* successful recovery */
-    else rt_ret = -1; /* unrecoverable error */
+    if (rt_ret > 0) {
+      /* successful recovery */
+      rt_ret = 0;
+    }
+    else {
+      /* unrecoverable error */
+      rt_ret = -1;
+    }
   }
-  //send ipc update on success
-  if ( ( cmd != RTM_NEWRULE ) & ( cmd != RTM_DELRULE ) & (flag = RT_ORIG_REQUEST) & (0 <= rt_ret && olsr_cnf->ipc_connections > 0)) {
-    ipc_route_send_rtentry(&rt->rt_dst.prefix, &nexthop->gateway, metric, RTM_NEWROUTE == cmd,
-                             if_ifwithindex_name(nexthop->iif_index));
+  /* send ipc update on success */
+  if ( ( cmd != RTM_NEWRULE ) && ( cmd != RTM_DELRULE )
+      && (flag = RT_ORIG_REQUEST) && (0 <= rt_ret && olsr_cnf->ipc_connections > 0) ) {
+    ipc_route_send_rtentry(&rt->rt_dst.prefix, &nexthop->gateway, metric,
+        RTM_NEWROUTE == cmd, if_ifwithindex_name(nexthop->iif_index));
   }
-  if (rt_ret == -2) olsr_syslog(OLSR_LOG_ERR,"no rtnetlink response! (no system ressources left?, everything may happen now ...)");
+  if (rt_ret == -2) {
+    olsr_syslog(OLSR_LOG_ERR,"no rtnetlink response! (no system ressources left?, everything may happen now ...)");
+  }
   return rt_ret;
 }
 
-/*external wrapper function for above patched multi purpose rtnetlink function*/
+/* external wrapper function for above patched multi purpose rtnetlink function */
 int
 olsr_netlink_rule(uint8_t family, uint8_t rttable, uint16_t cmd)
 {
-  struct rt_entry rt;
-  return olsr_netlink_route_int(&rt, family, rttable, cmd, RT_ORIG_REQUEST);
+  return olsr_netlink_route_int(NULL, family, rttable, cmd, RT_ORIG_REQUEST);
 }
 
-/*internal wrapper function for above patched function*/
+/* internal wrapper function for above patched function */
 static int
 olsr_netlink_route(const struct rt_entry *rt, uint8_t family, uint8_t rttable, __u16 cmd)
 {
@@ -395,10 +581,12 @@ olsr_ioctl_add_route(const struct rt_entry *rt)
      */
     olsr_netlink_route(rt, AF_INET, 253, RTM_NEWROUTE);
   }
-  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0)
+  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0) {
     return olsr_netlink_route(rt, AF_INET, olsr_cnf->rttable_default, RTM_NEWROUTE);
-  else
+  }
+  else {
     return olsr_netlink_route(rt, AF_INET, olsr_cnf->rttable, RTM_NEWROUTE);
+  }
 #endif /* LINUX_POLICY_ROUTING */
 }
 
@@ -443,13 +631,14 @@ olsr_ioctl_add_route6(const struct rt_entry *rt)
     ipc_route_send_rtentry(&rt->rt_dst.prefix, &rt->rt_best->rtp_nexthop.gateway, rt->rt_best->rtp_metric.hops, 1,
                            if_ifwithindex_name(rt->rt_best->rtp_nexthop.iif_index));
   }
-
   return rslt;
 #else /* !LINUX_POLICY_ROUTING */
-  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0)
+  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0) {
     return olsr_netlink_route(rt, AF_INET6, olsr_cnf->rttable_default, RTM_NEWROUTE);
-  else
+  }
+  else {
     return olsr_netlink_route(rt, AF_INET6, olsr_cnf->rttable, RTM_NEWROUTE);
+  }
 #endif /* LINUX_POLICY_ROUTING */
 }
 
@@ -514,10 +703,12 @@ olsr_ioctl_del_route(const struct rt_entry *rt)
      */
     olsr_netlink_route(rt, AF_INET, 253, RTM_DELROUTE);
   }
-  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0)
+  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0) {
     return olsr_netlink_route(rt, AF_INET, olsr_cnf->rttable_default, RTM_DELROUTE);
-  else
+  }
+  else {
     return olsr_netlink_route(rt, AF_INET, olsr_cnf->rttable, RTM_DELROUTE);
+  }
 #endif /* LINUX_POLICY_ROUTING */
 }
 
@@ -559,10 +750,12 @@ olsr_ioctl_del_route6(const struct rt_entry *rt)
 
   return rslt;
 #else /* !LINUX_POLICY_ROUTING */
-  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0)
+  if (0 == rt->rt_dst.prefix_len && olsr_cnf->rttable_default != 0) {
     return olsr_netlink_route(rt, AF_INET6, olsr_cnf->rttable_default, RTM_DELROUTE);
-  else
+  }
+  else {
     return olsr_netlink_route(rt, AF_INET6, olsr_cnf->rttable, RTM_DELROUTE);
+  }
 #endif /* LINUX_POLICY_ROUTING */
 }
 
