@@ -76,10 +76,12 @@ WARNINGS +=	-Wwrite-strings
 WARNINGS +=	-Wbad-function-cast
 WARNINGS +=	-Wpointer-arith
 WARNINGS +=	-Wcast-qual
-# the following 5 do not work yet and need more work on it
-#WARNINGS +=	-Wshadow
-#WARNINGS +=	-Wpointer-arith
-#WARNINGS +=	-Wcast-align
+WARNINGS +=	-Wshadow
+WARNINGS +=	-Wformat-2
+WARNINGS +=	-Wsequence-point
+WARNINGS +=	-Wpointer-arith
+WARNINGS +=	-Wcast-align
+# the following 2 do not work yet and need more work on it
 #WARNINGS +=	-Wconversion
 #WARNINGS +=	-Wredundant-decls
 ifeq ($(MUDFLAP),0)
@@ -92,6 +94,7 @@ WARNINGS +=	-Winline
 WARNINGS +=	-Wdisabled-optimization
 #WARNINGS +=	-Werror
 WARNINGS +=	-finline-functions-called-once
+WARNINGS +=	-funit-at-a-time
 WARNINGS +=	-fearly-inlining
 ifeq ($(DEBUG),0)
 WARNINGS +=	-fomit-frame-pointer

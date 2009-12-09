@@ -39,6 +39,10 @@
  *
  */
 
+#if defined __FreeBSD_kernel__
+#define _GNU_SOURCE 1
+#endif
+
 #include "../defs.h"
 #include "../net_os.h"
 #include "../ipcalc.h"
@@ -73,6 +77,9 @@
 
 #ifdef __NetBSD__
 #include <net/if_ether.h>
+#include <netinet6/in6_var.h>   /* For struct in6_ifreq */
+#include <net80211/ieee80211_ioctl.h>
+#include <ifaddrs.h>
 #endif
 
 #ifdef __OpenBSD__
@@ -89,11 +96,11 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif
 
-#ifdef __FreeBSD__
-#include <ifaddrs.h>
+#if defined __FreeBSD__ || __FreeBSD_kernel__
 #include <net/if_var.h>
 #include <net/ethernet.h>
 #include <netinet/in_var.h>
+#include <ifaddrs.h>
 #ifndef FBSD_NO_80211
 #include <net80211/ieee80211.h>
 #include <net80211/ieee80211_ioctl.h>
@@ -127,7 +134,7 @@ static int
 set_sysctl_int(const char *name, int new)
 {
   int old;
-#if __MacOSX__ || __OpenBSD__
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__MacOSX__) || defined(__OpenBSD__) || defined(__NetBSD__)
   size_t len = sizeof(old);
 #else
   unsigned int len = sizeof(old);
@@ -191,14 +198,14 @@ disable_redirects_global(int version)
 
   /* do not accept ICMP redirects */
 
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__NetBSD__)
   if (version == AF_INET)
     name = "net.inet.icmp.rediraccept";
   else
     name = "net.inet6.icmp6.rediraccept";
 
   ignore_redir = set_sysctl_int(name, 0);
-#elif defined __FreeBSD__ || defined __MacOSX__
+#elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__
   if (version == AF_INET) {
     name = "net.inet.icmp.drop_redirect";
     ignore_redir = set_sysctl_int(name, 1);
@@ -270,7 +277,7 @@ restore_settings(int version)
 
 #ifdef __OpenBSD__
   name = version == AF_INET ? "net.inet.icmp.rediraccept" : "net.inet6.icmp6.rediraccept";
-#elif defined __FreeBSD__ || defined __MacOSX__
+#elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__
   name = version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.rediraccept";
 #else
   name = version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.drop_redirect";
@@ -537,7 +544,7 @@ get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, int scope_in)
         break;
       }
       ifr6.ifr_addr = *sin6;
-      if (ioctl(s6, SIOCGIFAFLAG_IN6, (int)&ifr6) < 0) {
+      if (ioctl(s6, SIOCGIFAFLAG_IN6, &ifr6) < 0) {
         OLSR_PRINTF(3, "ioctl(SIOCGIFAFLAG_IN6)");
         close(s6);
         break;
@@ -731,9 +738,11 @@ olsr_recvfrom(int s, void *buf, size_t len, int flags __attribute__ ((unused)), 
               inet_ntop(olsr_cnf->ip_version, olsr_cnf->ip_version == AF_INET6 ? (char *)&sin6->sin6_addr : (char *)&sin->sin_addr,
                         addrstr, sizeof(addrstr)), ifc->int_name, iname);
 
+#ifndef __NetBSD__
   if (strcmp(ifc->int_name, iname) != 0) {
     return (0);
   }
+#endif
 
   return (count);
 }
@@ -751,14 +760,14 @@ olsr_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, s
 int
 check_wireless_interface(char *ifname)
 {
-#if defined __FreeBSD__ &&  !defined FBSD_NO_80211
+#if (defined __FreeBSD__ || defined __FreeBSD_kernel__ ) &&  !defined FBSD_NO_80211
 
 /* From FreeBSD ifconfig/ifieee80211.c ieee80211_status() */
   struct ieee80211req ireq;
   u_int8_t data[32];
 
   memset(&ireq, 0, sizeof(ireq));
-  strlcpy(ireq.i_name, ifname, sizeof(ireq.i_name));
+  strscpy(ireq.i_name, ifname, sizeof(ireq.i_name));
   ireq.i_data = &data;
   ireq.i_type = IEEE80211_IOC_SSID;
   ireq.i_val = -1;
@@ -766,8 +775,20 @@ check_wireless_interface(char *ifname)
 #elif defined __OpenBSD__
   struct ieee80211_nodereq nr;
   bzero(&nr, sizeof(nr));
-  strlcpy(nr.nr_ifname, ifname, sizeof(nr.nr_ifname));
+  strscpy(nr.nr_ifname, ifname, sizeof(nr.nr_ifname));
   return (ioctl(olsr_cnf->ioctl_s, SIOCG80211FLAGS, &nr) >= 0) ? 1 : 0;
+#elif defined __NetBSD__
+  struct ifreq ireq;
+  struct ieee80211_nwid data;
+  int ret;
+
+  memset(&ireq, 0, sizeof(ireq));
+  strscpy(ireq.ifr_name, ifname, sizeof(ireq.ifr_name));
+  ireq.ifr_data = &data;
+  ret = ioctl(olsr_cnf->ioctl_s, SIOCG80211NWID, &ireq);
+  if(ret == 0)
+	  return 1;
+  return 0;
 #else
   ifname = NULL;                /* squelsh compiler warning */
   return 0;
@@ -789,7 +810,7 @@ calculate_if_metric(char *ifname)
     struct ifmediareq ifm;
 
     memset(&ifm, 0, sizeof(ifm));
-    strlcpy(ifm.ifm_name, ifname, sizeof(ifm.ifm_name));
+    strscpy(ifm.ifm_name, ifname, sizeof(ifm.ifm_name));
 
     if (ioctl(olsr_cnf->ioctl_s, SIOCGIFMEDIA, &ifm) < 0) {
       OLSR_PRINTF(1, "Error SIOCGIFMEDIA(%s)\n", ifm.ifm_name);

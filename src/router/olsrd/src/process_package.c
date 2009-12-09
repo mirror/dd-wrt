@@ -54,6 +54,7 @@
 #include "scheduler.h"
 #include "net_olsr.h"
 #include "lq_plugin.h"
+#include "log.h"
 
 #include <stddef.h>
 
@@ -75,9 +76,6 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
   struct hello_neighbor *message_neighbors;
 
   for (message_neighbors = message->neighbors; message_neighbors != NULL; message_neighbors = message_neighbors->next) {
-#ifdef DEBUG
-    struct ipaddr_str buf;
-#endif
     union olsr_ip_addr *neigh_addr;
     struct neighbor_2_entry *two_hop_neighbor;
 
@@ -99,9 +97,7 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
 
     if (((message_neighbors->status == SYM_NEIGH) || (message_neighbors->status == MPR_NEIGH))) {
       struct neighbor_2_list_entry *two_hop_neighbor_yet = olsr_lookup_my_neighbors(neighbor, &message_neighbors->address);
-#ifdef DEBUG
-      OLSR_PRINTF(7, "\tProcessing %s\n", olsr_ip_to_string(&buf, &message_neighbors->address));
-#endif
+
       if (two_hop_neighbor_yet != NULL) {
         /* Updating the holding time for this neighbor */
         olsr_set_timer(&two_hop_neighbor_yet->nbr2_list_timer, message->vtime, OLSR_NBR2_LIST_JITTER, OLSR_TIMER_ONESHOT,
@@ -137,9 +133,6 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
       } else {
         two_hop_neighbor = olsr_lookup_two_hop_neighbor_table(&message_neighbors->address);
         if (two_hop_neighbor == NULL) {
-#ifdef DEBUG
-          OLSR_PRINTF(5, "Adding 2 hop neighbor %s\n\n", olsr_ip_to_string(&buf, &message_neighbors->address));
-#endif
           changes_neighborhood = true;
           changes_topology = true;
 
@@ -236,17 +229,15 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
               walker->second_hop_linkcost = new_second_hop_linkcost;
               walker->path_linkcost = new_path_linkcost;
 
-              if (olsr_is_relevant_costchange(new_path_linkcost, walker->saved_path_linkcost)) {
-                walker->saved_path_linkcost = new_path_linkcost;
+              walker->saved_path_linkcost = new_path_linkcost;
 
-                if (olsr_cnf->lq_dlimit > 0) {
-                  changes_neighborhood = true;
-                  changes_topology = true;
-                }
-
-                else
-                  OLSR_PRINTF(3, "Skipping Dijkstra (3)\n");
+              if (olsr_cnf->lq_dlimit > 0) {
+                changes_neighborhood = true;
+                changes_topology = true;
               }
+
+              else
+                OLSR_PRINTF(3, "Skipping Dijkstra (3)\n");
             }
           }
         }
@@ -309,9 +300,10 @@ lookup_mpr_status(const struct hello_message *message, const struct interface *i
   struct hello_neighbor *neighbors;
 
   for (neighbors = message->neighbors; neighbors; neighbors = neighbors->next) {
-    if (olsr_cnf->ip_version ==
-        AF_INET ? ip4equal(&neighbors->address.v4, &in_if->ip_addr.v4) : ip6equal(&neighbors->address.v6,
-                                                                                  &in_if->int6_addr.sin6_addr)) {
+    if ( neighbors->link != UNSPEC_LINK
+        && (olsr_cnf->ip_version == AF_INET
+            ? ip4equal(&neighbors->address.v4, &in_if->ip_addr.v4)
+            : ip6equal(&neighbors->address.v6, &in_if->int6_addr.sin6_addr))) {
 
       if (neighbors->link == SYM_LINK && neighbors->status == MPR_NEIGH) {
         return true;
@@ -326,11 +318,14 @@ lookup_mpr_status(const struct hello_message *message, const struct interface *i
 static int
 deserialize_hello(struct hello_message *hello, const void *ser)
 {
-  const unsigned char *limit;
+  const unsigned char *curr, *limit;
   uint8_t type;
   uint16_t size;
+  struct ipaddr_str buf;
 
-  const unsigned char *curr = ser;
+  memset (hello, 0, sizeof(*hello));
+
+  curr = ser;
   pkt_get_u8(&curr, &type);
   if (type != HELLO_MESSAGE && type != LQ_HELLO_MESSAGE) {
     /* No need to do anything more */
@@ -349,21 +344,26 @@ deserialize_hello(struct hello_message *hello, const void *ser)
   pkt_get_u8(&curr, &hello->willingness);
 
   hello->neighbors = NULL;
+
   limit = ((const unsigned char *)ser) + size;
   while (curr < limit) {
-    const struct lq_hello_info_header *info_head = (const struct lq_hello_info_header *)curr;
-    const unsigned char *limit2 = curr + ntohs(info_head->size);
+    const unsigned char *limit2 = curr;
+    uint8_t link_code;
+    uint16_t size2;
 
-    curr = (const unsigned char *)(info_head + 1);
+    pkt_get_u8(&curr, &link_code);
+    pkt_ignore_u8(&curr);
+    pkt_get_u16(&curr, &size2);
+
+    limit2 += size2;
     while (curr < limit2) {
       struct hello_neighbor *neigh = olsr_malloc_hello_neighbor("HELLO deserialization");
       pkt_get_ipaddress(&curr, &neigh->address);
-
       if (type == LQ_HELLO_MESSAGE) {
         olsr_deserialize_hello_lq_pair(&curr, neigh);
       }
-      neigh->link = EXTRACT_LINK(info_head->link_code);
-      neigh->status = EXTRACT_STATUS(info_head->link_code);
+      neigh->link = EXTRACT_LINK(link_code);
+      neigh->status = EXTRACT_STATUS(link_code);
 
       neigh->next = hello->neighbors;
       hello->neighbors = neigh;
@@ -417,22 +417,52 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if, const uni
    */
   struct link_entry *lnk = update_link_entry(&in_if->ip_addr, from_addr, message, in_if);
 
+  /*check alias message->source_addr*/
+  if (!ipequal(&message->source_addr,from_addr)){
+    /*new alias of new neighbour are thrown in the mid table to speed up routing*/
+    if (olsr_validate_address(from_addr)) {
+      union olsr_ip_addr * main_addr = mid_lookup_main_addr(from_addr);
+      if ((main_addr==NULL)||(ipequal(&message->source_addr, main_addr))){
+        /*struct ipaddr_str srcbuf, origbuf;
+        olsr_syslog(OLSR_LOG_INFO, "got hello from unknown alias ip of direct neighbour: ip: %s main-ip: %s",
+                    olsr_ip_to_string(&origbuf,&message->source_addr),
+                    olsr_ip_to_string(&srcbuf,from_addr));*/
+        insert_mid_alias(&message->source_addr, from_addr, message->vtime);
+      }
+      else
+      {
+        struct ipaddr_str srcbuf, origbuf;
+        olsr_syslog(OLSR_LOG_INFO, "got hello with invalid from and originator adress pair (%s, %s) Duplicate Ips?\n",
+                    olsr_ip_to_string(&origbuf,&message->source_addr),
+                    olsr_ip_to_string(&srcbuf,from_addr));
+      }
+    }
+  }
+
   if (olsr_cnf->lq_level > 0) {
     struct hello_neighbor *walker;
     /* just in case our neighbor has changed its HELLO interval */
     olsr_update_packet_loss_hello_int(lnk, message->htime);
 
     /* find the input interface in the list of neighbor interfaces */
-    for (walker = message->neighbors; walker != NULL; walker = walker->next)
-      if (ipequal(&walker->address, &in_if->ip_addr))
+    for (walker = message->neighbors; walker != NULL; walker = walker->next) {
+      if (walker->link != UNSPEC_LINK
+          && ipequal(&walker->address, &in_if->ip_addr)) {
         break;
+      }
+    }
 
-    // memorize our neighbour's idea of the link quality, so that we
-    // know the link quality in both directions
+    /*
+     * memorize our neighbour's idea of the link quality, so that we
+     * know the link quality in both directions
+     *
+     * walker is NULL if there the current interface was not included in
+     * the message (or was included as an UNSPEC_LINK)
+     */
     olsr_memorize_foreign_hello_lq(lnk, walker);
 
     /* update packet loss for link quality calculation */
-    olsr_update_packet_loss(lnk);
+    olsr_received_hello_handler(lnk);
   }
 
   neighbor = lnk->neighbor;

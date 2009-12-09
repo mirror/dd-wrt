@@ -44,9 +44,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#ifdef linux
-#include <linux/in_route.h>
-#endif
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
@@ -100,7 +97,7 @@ MD5_checksum(const uint8_t * data, const uint16_t data_len, uint8_t * hashbuf)
 #ifdef linux
 #define OS "GNU/Linux"
 #endif
-#ifdef __FreeBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__
 #define OS "FreeBSD"
 #endif
 
@@ -117,8 +114,8 @@ struct stamp {
   int diff;
   uint32_t challenge;
   uint8_t validated;
-  clock_t valtime;                     /* Validity time */
-  clock_t conftime;                    /* Reconfiguration time */
+  uint32_t valtime;                     /* Validity time */
+  uint32_t conftime;                    /* Reconfiguration time */
   struct stamp *prev;
   struct stamp *next;
 };
@@ -316,7 +313,7 @@ add_signature(uint8_t * pck, int *size)
   olsr_printf(2, "[ENC]Adding signature for packet size %d\n", *size);
   fflush(stdout);
 
-  msg = (struct s_olsrmsg *)&pck[*size];
+  msg = (struct s_olsrmsg *)(ARM_NOWARN_ALIGN)&pck[*size];
   /* Update size */
   ((struct olsr *)pck)->olsr_packlen = htons(*size + sizeof(struct s_olsrmsg));
 
@@ -394,7 +391,7 @@ validate_packet(struct interface *olsr_if, const char *pck, int *size)
   if (packetsize < 4)
     return 0;
 
-  sig = (const struct s_olsrmsg *)&pck[packetsize];
+  sig = (const struct s_olsrmsg *)(const ARM_NOWARN_ALIGN)&pck[packetsize];
 
   //olsr_printf(1, "Size: %d\n", packetsize);
 
@@ -625,7 +622,7 @@ parse_cres(struct interface *olsr_if, char *in_msg)
   struct stamp *entry;
   struct ipaddr_str buf;
 
-  msg = (struct c_respmsg *)in_msg;
+  msg = (struct c_respmsg *)(ARM_NOWARN_ALIGN)in_msg;
 
   olsr_printf(1, "[ENC]Challenge-response message received\n");
   olsr_printf(3, "[ENC]To: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->destination));
@@ -660,7 +657,6 @@ parse_cres(struct interface *olsr_if, char *in_msg)
 
   /* Now to check the digest from the emitted challenge */
   if ((entry = lookup_timestamp_entry((const union olsr_ip_addr *)&msg->originator)) == NULL) {
-    struct ipaddr_str buf;
     olsr_printf(1, "[ENC]Received challenge-response from non-registered node %s!\n",
                 olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator));
     return 0;
@@ -681,7 +677,6 @@ parse_cres(struct interface *olsr_if, char *in_msg)
   }
 
   if (memcmp(msg->res_sig, sha1_hash, SIGNATURE_SIZE) != 0) {
-    struct ipaddr_str buf;
     olsr_printf(1, "[ENC]Error in challenge signature from %s!\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator));
 
     return 0;
@@ -715,7 +710,7 @@ parse_rres(char *in_msg)
   struct stamp *entry;
   struct ipaddr_str buf;
 
-  msg = (struct r_respmsg *)in_msg;
+  msg = (struct r_respmsg *)(ARM_NOWARN_ALIGN)in_msg;
 
   olsr_printf(1, "[ENC]Response-response message received\n");
   olsr_printf(3, "[ENC]To: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->destination));
@@ -748,7 +743,6 @@ parse_rres(char *in_msg)
 
   /* Now to check the digest from the emitted challenge */
   if ((entry = lookup_timestamp_entry((const union olsr_ip_addr *)&msg->originator)) == NULL) {
-    struct ipaddr_str buf;
     olsr_printf(1, "[ENC]Received response-response from non-registered node %s!\n",
                 olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator));
     return 0;
@@ -769,7 +763,6 @@ parse_rres(char *in_msg)
   }
 
   if (memcmp(msg->res_sig, sha1_hash, SIGNATURE_SIZE) != 0) {
-    struct ipaddr_str buf;
     olsr_printf(1, "[ENC]Error in response signature from %s!\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator));
 
     return 0;
@@ -801,7 +794,7 @@ parse_challenge(struct interface *olsr_if, char *in_msg)
   uint32_t hash;
   struct ipaddr_str buf;
 
-  msg = (struct challengemsg *)in_msg;
+  msg = (struct challengemsg *)(ARM_NOWARN_ALIGN)in_msg;
 
   olsr_printf(1, "[ENC]Challenge message received\n");
   olsr_printf(3, "[ENC]To: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->destination));
@@ -1044,15 +1037,15 @@ timeout_timestamps(void *foo __attribute__ ((unused)))
 {
   struct stamp *tmp_list;
   struct stamp *entry_to_delete;
-  int index;
+  int idx;
 
   /* Update our local timestamp */
   gettimeofday(&now, NULL);
 
-  for (index = 0; index < HASHSIZE; index++) {
-    tmp_list = timestamps[index].next;
+  for (idx = 0; idx < HASHSIZE; idx++) {
+    tmp_list = timestamps[idx].next;
     /*Traverse MID list */
-    while (tmp_list != &timestamps[index]) {
+    while (tmp_list != &timestamps[idx]) {
       /*Check if the entry is timed out */
       if ((TIMED_OUT(tmp_list->valtime)) && (TIMED_OUT(tmp_list->conftime))) {
         struct ipaddr_str buf;

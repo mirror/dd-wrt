@@ -239,24 +239,26 @@ MprCoverage	3
 # LoadPlugin "olsrd_httpinfo.dll"
 LoadPlugin "olsrd_httpinfo.so.0.1"
 {
-    # port number the txtinfo plugin will be listening
-    PlParam     "port"   "8000"
+    # port number the httpinfo plugin will be listening, default 1978
+#   PlParam     "port"   "8000"
     
     # ip address that can access the plugin, use "0.0.0.0"
     # to allow everyone
-#   PlParam     "Host"   "127.0.0.1"
+    PlParam     "Host"   "127.0.0.1"
 #   PlParam     "Host"   "80.23.53.22"
     
     # networks that can access the plugin (ip/netmask)
-    PlParam     "Net"    "0.0.0.0 0.0.0.0"
-#   PlParam     "Net"    "192.168.0.0 255.255.0.0"
+    # careful with 0.0.0.0/0, makes (ddos) attacks poss.
+#   PlParam     "Net"    "0.0.0.0 0.0.0.0"
+    PlParam     "Net"    "104.0.0.0 255.255.0.0"
+    PlParam     "Net"    "192.168.0.0 255.255.0.0"
 }
 
 # LoadPlugin "olsrd_txtinfo.dll"
 LoadPlugin "olsrd_txtinfo.so.0.1"
 {
-    # port number the txtinfo plugin will be listening
-    PlParam     "port"   "81"
+    # port number the txtinfo plugin will be listening, default 2006
+#   PlParam     "port"   "81"
     # ip address that can access the plugin, use "0.0.0.0"
     # to allow everyone
     PlParam     "Accept"   "127.0.0.1"
@@ -302,7 +304,7 @@ LoadPlugin "olsrd_txtinfo.so.0.1"
 # Omitted options will be set to the
 # default values.
 # multiple interfaces can be speicified
-Interface "eth0" "ath0"
+Interface "wlan0" "ath0"
 {
 
     # IPv4 broadcast address to use. The
@@ -400,8 +402,8 @@ Interface "eth0" "ath0"
 }
 
 # another Interface (with different configs)
-Interface "eth1"
-{
+#Interface "eth1"
+#{
     # IPv4 broadcast address to use. 
     # One usefull example would be 255.255.255.255
     # If not defined the broadcastaddress of
@@ -409,12 +411,12 @@ Interface "eth1"
     # The second useful value would be to 
     # specify the peer adress of an ptp-tunnel
 
-    Ip4Broadcast	192.168.255.255
+#    Ip4Broadcast	192.168.255.255
 
     # Interface Mode is used to prevent unnecessary
     # packet forwardin on switched ethernet interfaces
     # valid Modes are "mesh" and "ether"
     # The default value is mesh!
 
-    Mode "ether"
-}
+#    Mode "ether"
+#}

@@ -18,6 +18,24 @@ PATCHES and BUGFIXES from Henning Rogge <rogge@fgan.de>
 - fix segfault in parsing HNA package with bad netmask
 - fix avl_comparator for route_paths
 - fix alignment problem in packet buffers
+- fix: segfault in neighbor/neighbor-2 table
+- fix: lqmult default parsing
+- HACK: MinTCVTime parameter hack for Berlin FF network...
+  feel free to ask on the mailing list.
+- add Watchdog plugin
+- add explicit runtime lock for OLSR.
+- remove lq-hysteresis for tc on the receiver side.
+- enhance protection against malformed packages to prevent
+  OLSR parsing uninitialized data. Thank you Markus and Keks for the LONG
+  debugging session
+- block tc-redundancy 0/1, it doesn't work with the current dijkstra code
+- convert httpinfo/txtinfo/dotdraw to nonblocking and autobuf to
+  prevent blocking outgoing connections
+- fix some bugs with lq-mult
+- fix bug in duplicate set sequencenumber handling
+- add Debian/KFreeBSD support (Thanks to Holger Levsen and friends for help)
+- fix segfault in 'interface lost' monitor
+- add LQ hysteresis to etx-ff metric
 
 PATCH from Markus Kittenberger <Markus.Kittenberger@gmx.at>:
 - txtinfo plugin: add more http options
@@ -31,6 +49,9 @@ PATCH from Markus Kittenberger <Markus.Kittenberger@gmx.at>:
 - fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
 - fix several compiler warnings
 - fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
+- create policy rule later during startup
+- send MID also with one interface, if its ip different from originator-id
+- linux rtnetlink code cleanup
 - workaround: generate routes to single hop neighbours on the fly when inserting routes via them
     (active only with fib_metric=flat)
 - testing: insert routes with source-ip set to originator ip
@@ -39,6 +60,12 @@ PATCH from Markus Kittenberger <Markus.Kittenberger@gmx.at>:
 Testing features must be activated in olsr_cfg.h before compiling olsrd.
 This features are used to run a test network in Vienna parallel to the existing
 OLSR network.
+- more RT-Netlink cleanups and fixes
+- backport of timejump patch from TIP
+- Add detection for vanishing interfaces to Linux netlink code
+- fix incorret route sorting on new neighbours. use only delete and add/change avl tree,
+  instead of 3 trees
+- learn neighbours interface alias adress from received hellos
 
 PATCHES from Hannes Gredler <hannes@gredler.at>:
 - add small valgrind howto
@@ -55,6 +82,7 @@ PATCHES from Hannes Gredler <hannes@gredler.at>:
 - log RIB add/del transactions only if there is an actual route change
 - fix to to always insert a HNA Net when receiving a HNA refresh
 - fix delete all routes if the last IP address is gone
+- reduce TC vtime jitter from 25% down to 5%
 
 PATCHES and BUGFIXES from Sven-Ola Tuecke <sven-ola@gmx.de>:
 - add a fixed-point math implementation, which saves
@@ -65,11 +93,29 @@ PATCHES and BUGFIXES from Sven-Ola Tuecke <sven-ola@gmx.de>:
 - fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
 - fix several compiler warnings
 - fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
+- add makefile support for google android
+- fix default olsrd.conf examples
 
 PATCHES and BUGFIXES from Aaron Kaplan <aaron@lo-res.org>:
 - fix openbsd warnings / compile errors about sprintf strcpy
 - fix string overflow in dyn_gw plugin
 - fix string overflow in pgraph plugin
+- fix openbsd/osx coompile errors
+
+BUGFIX by Peter Tarjan <peter.tarjan@birdtelecom.hu>:
+- Do not remember LQ information UNSPEC_LINK neighbors in Hellos.
+- ignore UNSPEC link for linktype if there is an ASYM/LOST/SYM Link in the
+  same Hello message
+- ignore UNSPEC_LINKS during MPR lookup
+- broken MID route handling: we also check the data structures for routing,
+  even if a MID entry exists.
+
+BUGFIX by John Hay <jhay@meraka.org.za>:
+- FIX: IPv6 MTU in BSD
+- Another BSD ipv6 Patch by John Hay
+- fixes for 64 Bit FreeBSD
+- fixes for NetBSD
+
 
 BUGFIX from Erik Tromp <erik_tromp@hotmail.com>:
 - update in bmf due to new flags field in tc_edge_entry
@@ -86,8 +132,14 @@ PATCH from Hagen Paul Pfeifer <hagen@jauu.net>:
 PATCH from Andres Ambrois <andresambrois@gmail.com>:
 - nameservice plugin: add parameters for SIGHUPing other daemons, or calling scripts
 
-BUGFIX by John Hay <jhay@meraka.org.za>:
-- FIX: IPv6 MTU in BSD
+BUGFIX by Benny Tops <b.tops@mindef.nl>:
+- fix wrong order of drop_tc checkt in olsr_input_tc
+
+Felix (OpenWRT NBD):
+- fix bison problem for OpenWRT
+
+Sebastian Harl:
+- add LISTEN parameter for httpinfo/txtinfo/dotdraw
 
 0.5.5 ---------------------------------------------------------------------
 

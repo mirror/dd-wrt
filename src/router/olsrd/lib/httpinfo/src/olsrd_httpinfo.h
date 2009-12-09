@@ -73,6 +73,7 @@ struct http_stats {
 };
 
 extern struct olsrd_config *olsr_cfg;
+extern union olsr_ip_addr httpinfo_listen_ip;
 
 /* Destructor function */
 void olsr_plugin_exit(void);

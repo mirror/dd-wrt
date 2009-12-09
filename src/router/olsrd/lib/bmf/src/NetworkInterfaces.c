@@ -415,7 +415,6 @@ FindNeighbors(struct TBestNeighbors *neighbors, struct link_entry **bestNeighbor
       /* Consider only neighbors with an IP address that differs from the
        * passed IP addresses (if passed). Rely on short-circuit boolean evaluation. */
       if (source != NULL && ipequal(neighborMainIp, MainAddressOf(source))) {
-        struct ipaddr_str buf;
         OLSR_PRINTF(9, "%s: ----> Not forwarding to %s: is source of pkt\n", PLUGIN_NAME_SHORT,
                     olsr_ip_to_string(&buf, &walker->neighbor_iface_addr));
 
@@ -424,7 +423,6 @@ FindNeighbors(struct TBestNeighbors *neighbors, struct link_entry **bestNeighbor
 
       /* Rely on short-circuit boolean evaluation */
       if (forwardedBy != NULL && ipequal(neighborMainIp, MainAddressOf(forwardedBy))) {
-        struct ipaddr_str buf;
         OLSR_PRINTF(9, "%s: ----> Not forwarding to %s: is the node that forwarded the pkt\n", PLUGIN_NAME_SHORT,
                     olsr_ip_to_string(&buf, &walker->neighbor_iface_addr));
 
@@ -433,7 +431,6 @@ FindNeighbors(struct TBestNeighbors *neighbors, struct link_entry **bestNeighbor
 
       /* Rely on short-circuit boolean evaluation */
       if (forwardedTo != NULL && ipequal(neighborMainIp, MainAddressOf(forwardedTo))) {
-        struct ipaddr_str buf;
         OLSR_PRINTF(9, "%s: ----> Not forwarding to %s: is the node to which the pkt was forwarded\n", PLUGIN_NAME_SHORT,
                     olsr_ip_to_string(&buf, &walker->neighbor_iface_addr));
 
@@ -689,13 +686,11 @@ FindNeighbors(struct TBestNeighbors *neighbors, struct link_entry **bestNeighbor
 
       if (walker != bestLinkToNeighbor) {
         if (bestLinkToNeighbor == NULL) {
-          struct ipaddr_str buf;
           OLSR_PRINTF(9, "%s: ----> Not forwarding to %s: no link found\n", PLUGIN_NAME_SHORT,
                       olsr_ip_to_string(&buf, &walker->neighbor_iface_addr));
         } else {
 #ifndef NODEBUG
           struct interface *bestIntf = if_ifwithaddr(&bestLinkToNeighbor->local_iface_addr);
-          struct ipaddr_str buf;
           struct lqtextbuffer lqbuffer;
 #endif
           OLSR_PRINTF(9, "%s: ----> Not forwarding to %s: \"%s\" gives a better link to this neighbor, costing %s\n",
@@ -1068,15 +1063,15 @@ CreateLocalEtherTunTap(void)
     EtherTunTapIp = ETHERTUNTAPDEFAULTIP;
   }
 
-  ((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr.s_addr = htonl(EtherTunTapIp);
+  ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifreq.ifr_addr)->sin_addr.s_addr = htonl(EtherTunTapIp);
   ioctlres = ioctl(ioctlSkfd, SIOCSIFADDR, &ifreq);
   if (ioctlres >= 0) {
     /* Set net mask */
-    ((struct sockaddr_in *)&ifreq.ifr_netmask)->sin_addr.s_addr = htonl(EtherTunTapIpMask);
+    ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifreq.ifr_netmask)->sin_addr.s_addr = htonl(EtherTunTapIpMask);
     ioctlres = ioctl(ioctlSkfd, SIOCSIFNETMASK, &ifreq);
     if (ioctlres >= 0) {
       /* Set broadcast IP */
-      ((struct sockaddr_in *)&ifreq.ifr_broadaddr)->sin_addr.s_addr = htonl(EtherTunTapIpBroadcast);
+      ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifreq.ifr_broadaddr)->sin_addr.s_addr = htonl(EtherTunTapIpBroadcast);
       ioctlres = ioctl(ioctlSkfd, SIOCSIFBRDADDR, &ifreq);
       if (ioctlres >= 0) {
         /* Bring EtherTunTap interface up (if not already) */
@@ -1250,7 +1245,7 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
       newIf->intAddr.v4.s_addr = inet_addr("0.0.0.0");
     } else {
       /* Downcast to correct sockaddr subtype */
-      newIf->intAddr.v4 = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
+      newIf->intAddr.v4 = ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_addr)->sin_addr;
     }
 
     /* For a non-OLSR interface, retrieve the IP broadcast address ourselves */
@@ -1263,7 +1258,7 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
       newIf->broadAddr.v4.s_addr = inet_addr("0.0.0.0");
     } else {
       /* Downcast to correct sockaddr subtype */
-      newIf->broadAddr.v4 = ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr;
+      newIf->broadAddr.v4 = ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_broadaddr)->sin_addr;
     }
   }
 
@@ -1363,7 +1358,7 @@ CreateBmfNetworkInterfaces(struct interface *skipThisIntf)
     }
 
     /* ...find the OLSR interface structure, if any */
-    ipAddr.v4 = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr;
+    ipAddr.v4 = ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr->ifr_addr)->sin_addr;
     olsrIntf = if_ifwithaddr(&ipAddr);
 
     if (skipThisIntf != NULL && olsrIntf == skipThisIntf) {
@@ -1571,7 +1566,7 @@ CheckAndUpdateLocalBroadcast(unsigned char *ipPacket, union olsr_ip_addr *broadA
 
   assert(ipPacket != NULL && broadAddr != NULL);
 
-  iph = (struct iphdr *)ipPacket;
+  iph = (struct iphdr *)(ARM_NOWARN_ALIGN)ipPacket;
   destIp.v4.s_addr = iph->daddr;
   if (!IsMulticast(&destIp)) {
     u_int32_t origDaddr, newDaddr;
@@ -1597,7 +1592,7 @@ CheckAndUpdateLocalBroadcast(unsigned char *ipPacket, union olsr_ip_addr *broadA
       /* Re-calculate UDP/IP checksum for new destination */
 
       int ipHeaderLen = GetIpHeaderLength(ipPacket);
-      struct udphdr *udph = (struct udphdr *)(ipPacket + ipHeaderLen);
+      struct udphdr *udph = (struct udphdr *)(ARM_NOWARN_ALIGN)(ipPacket + ipHeaderLen);
 
       /* RFC 1624, Eq. 3: HC' = ~(~HC - m + m') */
 
@@ -1635,13 +1630,13 @@ AddMulticastRoute(void)
 
   memset(&kernel_route, 0, sizeof(struct rtentry));
 
-  ((struct sockaddr_in *)&kernel_route.rt_dst)->sin_family = AF_INET;
-  ((struct sockaddr_in *)&kernel_route.rt_gateway)->sin_family = AF_INET;
-  ((struct sockaddr_in *)&kernel_route.rt_genmask)->sin_family = AF_INET;
+  ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_dst)->sin_family = AF_INET;
+  ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_gateway)->sin_family = AF_INET;
+  ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_genmask)->sin_family = AF_INET;
 
   /* 224.0.0.0/4 */
-  ((struct sockaddr_in *)&kernel_route.rt_dst)->sin_addr.s_addr = htonl(0xE0000000);
-  ((struct sockaddr_in *)&kernel_route.rt_genmask)->sin_addr.s_addr = htonl(0xF0000000);
+  ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_dst)->sin_addr.s_addr = htonl(0xE0000000);
+  ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_genmask)->sin_addr.s_addr = htonl(0xF0000000);
 
   kernel_route.rt_metric = 0;
   kernel_route.rt_flags = RTF_UP;
@@ -1678,13 +1673,13 @@ DeleteMulticastRoute(void)
 
     memset(&kernel_route, 0, sizeof(struct rtentry));
 
-    ((struct sockaddr_in *)&kernel_route.rt_dst)->sin_family = AF_INET;
-    ((struct sockaddr_in *)&kernel_route.rt_gateway)->sin_family = AF_INET;
-    ((struct sockaddr_in *)&kernel_route.rt_genmask)->sin_family = AF_INET;
+    ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_dst)->sin_family = AF_INET;
+    ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_gateway)->sin_family = AF_INET;
+    ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_genmask)->sin_family = AF_INET;
 
     /* 224.0.0.0/4 */
-    ((struct sockaddr_in *)&kernel_route.rt_dst)->sin_addr.s_addr = htonl(0xE0000000);
-    ((struct sockaddr_in *)&kernel_route.rt_genmask)->sin_addr.s_addr = htonl(0xF0000000);
+    ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_dst)->sin_addr.s_addr = htonl(0xE0000000);
+    ((struct sockaddr_in *)(ARM_NOWARN_ALIGN)&kernel_route.rt_genmask)->sin_addr.s_addr = htonl(0xF0000000);
 
     kernel_route.rt_metric = 0;
     kernel_route.rt_flags = RTF_UP;

@@ -95,8 +95,8 @@ add_del_route(const struct rt_entry *rt, int add)
   sin4.sin_len = sizeof(sin4);
   sin4.sin_family = AF_INET;
 
-  sin_size = 1 + ((sizeof(struct sockaddr_in) - 1) | 3);
-  sdl_size = 1 + ((sizeof(struct sockaddr_dl) - 1) | 3);
+  sin_size = 1 + ((sizeof(struct sockaddr_in) - 1) | (sizeof(long) - 1));
+  sdl_size = 1 + ((sizeof(struct sockaddr_dl) - 1) | (sizeof(long) - 1));
 
   /**********************************************************************
    *                  FILL THE ROUTING MESSAGE HEADER
@@ -176,7 +176,9 @@ add_del_route(const struct rt_entry *rt, int add)
       memcpy(walker, sdl, sdl->sdl_len);
       walker += sdl_size;
       rtm->rtm_addrs |= RTA_GATEWAY;
+#ifdef RTF_CLONING
       rtm->rtm_flags |= RTF_CLONING;
+#endif
 #ifndef _WRS_KERNEL
       rtm->rtm_flags &= ~RTF_HOST;
 #endif
@@ -250,8 +252,8 @@ add_del_route6(const struct rt_entry *rt, int add)
   sdl.sdl_len = sizeof(sdl);
   sdl.sdl_family = AF_LINK;
 
-  sin_size = 1 + ((sizeof(struct sockaddr_in6) - 1) | 3);
-  sdl_size = 1 + ((sizeof(struct sockaddr_dl) - 1) | 3);
+  sin_size = 1 + ((sizeof(struct sockaddr_in6) - 1) | (sizeof(long) - 1));
+  sdl_size = 1 + ((sizeof(struct sockaddr_dl) - 1) | (sizeof(long) - 1));
 
   /**********************************************************************
    *                  FILL THE ROUTING MESSAGE HEADER
@@ -295,7 +297,7 @@ add_del_route6(const struct rt_entry *rt, int add)
 #endif
     memcpy(walker, &sin6, sizeof(sin6));
     walker += sin_size;
-    rtm->rtm_addrs = RTA_GATEWAY;
+    rtm->rtm_addrs |= RTA_GATEWAY;
   }
   else {
     /*
@@ -313,7 +315,7 @@ add_del_route6(const struct rt_entry *rt, int add)
 #endif
     memcpy(walker, &sin6, sizeof(sin6));
     walker += sin_size;
-    rtm->rtm_addrs = RTA_GATEWAY;
+    rtm->rtm_addrs |= RTA_GATEWAY;
     rtm->rtm_flags |= RTF_GATEWAY;
   }
 

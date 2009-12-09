@@ -96,7 +96,7 @@ olsr_message_is_duplicate(union olsr_message *m)
   struct dup_entry *entry;
   int diff;
   void *mainIp;
-  clock_t valid_until;
+  uint32_t valid_until;
   struct ipaddr_str buf;
   uint16_t seqnr;
   void *ip;
@@ -136,6 +136,9 @@ olsr_message_is_duplicate(union olsr_message *m)
   // overflow ?
   if (diff > (1 << 15)) {
     diff -= (1 << 16);
+  }
+  else if (diff < -(1 << 15)) {
+      diff += (1 << 16);
   }
 
   if (diff < -31) {

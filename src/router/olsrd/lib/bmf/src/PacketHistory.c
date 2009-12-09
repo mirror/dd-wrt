@@ -51,6 +51,7 @@
 /* OLSRD includes */
 #include "defs.h"               /* GET_TIMESTAMP, TIMED_OUT */
 #include "olsr.h"               /* olsr_printf */
+#include "scheduler.h"
 
 /* Plugin includes */
 #include "Packet.h"
@@ -177,7 +178,7 @@ PacketCrc32(unsigned char *ipPacket, ssize_t len)
 
   SaveTtlAndChecksum(ipPacket, &sttl);
 
-  ipHeader = (struct ip *)ipPacket;
+  ipHeader = (struct ip *)(ARM_NOWARN_ALIGN)ipPacket;
   ipHeader->ip_ttl = 0xFF;      /* fixed value of TTL for CRC-32 calculation */
   ipHeader->ip_sum = 0x5A5A;    /* fixed value of IP header checksum for CRC-32 calculation */
 
@@ -233,19 +234,19 @@ InitPacketHistory(void)
 int
 CheckAndMarkRecentPacket(u_int32_t crc32)
 {
-  u_int32_t index;
+  u_int32_t idx;
   struct TDupEntry *walker;
   struct TDupEntry *newEntry;
 
-  index = Hash(crc32);
-  assert(index < HISTORY_HASH_SIZE);
+  idx = Hash(crc32);
+  assert(idx < HISTORY_HASH_SIZE);
 
-  for (walker = PacketHistory[index]; walker != NULL; walker = walker->next) {
+  for (walker = PacketHistory[idx]; walker != NULL; walker = walker->next) {
     if (walker->crc32 == crc32) {
       /* Found duplicate entry */
 
       /* Always mark as "seen recently": refresh time-out */
-      walker->timeOut = GET_TIMESTAMP(HISTORY_HOLD_TIME);
+      walker->timeOut = olsr_getTimestamp(HISTORY_HOLD_TIME);
 
       return 1;
     }                           /* if */
@@ -258,8 +259,8 @@ CheckAndMarkRecentPacket(u_int32_t crc32)
     newEntry->timeOut = GET_TIMESTAMP(HISTORY_HOLD_TIME);
 
     /* Add new entry at the front of the list */
-    newEntry->next = PacketHistory[index];
-    PacketHistory[index] = newEntry;
+    newEntry->next = PacketHistory[idx];
+    PacketHistory[idx] = newEntry;
   }
 
   return 0;
