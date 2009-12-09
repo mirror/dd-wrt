@@ -125,10 +125,8 @@ void start_sysinit(void)
 			copy[0], copy[1],
 			copy[2], copy[3],
 			copy[4], copy[5]);
-		MAC_ADD(mac);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
-		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}
