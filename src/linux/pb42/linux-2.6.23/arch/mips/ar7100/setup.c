@@ -91,7 +91,7 @@ ar7100_power_off(void)
 	(*(volatile u32 *)KSEG1ADDR(phys))
 
 
-int is_ar9000;
+int is_ar9000=0;
 const char 
 *get_system_type(void)
 {
@@ -398,7 +398,7 @@ void __init plat_mem_setup(void)
 #if 0
 	serial_setup();
 #endif
-
+	printk(KERN_INFO "booting platform %s\n",get_system_type());
 #ifdef CONFIG_AR9100
     ar7100_gpio_config_output(6);
     ar7100_gpio_out_val(6, 1);
