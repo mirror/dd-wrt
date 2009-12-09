@@ -755,9 +755,9 @@ ag7100_check_link(ag7100_mac_t *mac)
         if (carrier)
         {
             printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
+    	    napi_disable(&mac->mac_napi);
             netif_carrier_off(dev);
             netif_stop_queue(dev);
-            napi_disable(&mac->mac_napi);
         }
         goto done;
     }
@@ -789,9 +789,9 @@ ag7100_check_link(ag7100_mac_t *mac)
     /*
     * in business
     */
+    napi_enable(&mac->mac_napi);
     netif_carrier_on(dev);
     netif_start_queue(dev);
-    napi_enable(&mac->mac_napi);
 
 done:
     mod_timer(&mac->mac_phy_timer, jiffies + AG7100_PHY_POLL_SECONDS*HZ);

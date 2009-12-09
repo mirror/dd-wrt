@@ -840,8 +840,8 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
             ag7240_intr_disable_tx(mac);
 
             netif_carrier_off(dev);
-            napi_disable(&mac->mac_napi);
             netif_stop_queue(dev);
+            napi_disable(&mac->mac_napi);
 #ifdef  ETH_SOFT_LED
        PLedCtrl.ledlink[phyUnit] = 0;
        s26_wr_phy(phyUnit,0x19,0x0);
@@ -893,9 +893,9 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
        /*
        * in business
        */
+       napi_enable(&mac->mac_napi);
        netif_carrier_on(dev);
        netif_start_queue(dev);
-       napi_enable(&mac->mac_napi);
        /* 
         * WAR: Enable link LED to glow if speed is negotiated as 10 Mbps 
        */
