@@ -314,6 +314,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "b-only")) {
 				sysprintf("iwpriv %s mode 2", use);
+				sysprintf("iwpriv %s pureb 1", use);
 				setup_channel(dev, use);
 			}
 			if (!strcmp(netmode, "g-only")) {
@@ -348,6 +349,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 	if (nvram_default_match(bw, "40", "20")) {
 		if (!strcmp(netmode, "g-only")) {
 			sysprintf("iwpriv %s mode 6", use);
+			sysprintf("iwpriv %s pureg 1", use);
 			setup_channel(dev, use);
 		}
 		if (!strcmp(netmode, "a-only")) {
