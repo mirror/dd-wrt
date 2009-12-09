@@ -680,6 +680,8 @@ int internal_getRouterBrand()
 #elif HAVE_DIR600
 #ifdef HAVE_DIR300
 	setRouter("Dlink-DIR300 rev b");
+#elif HAVE_DIR615
+	setRouter("Dlink-DIR615 rev d2");
 #else
 	setRouter("Dlink-DIR600 rev b");
 #endif
