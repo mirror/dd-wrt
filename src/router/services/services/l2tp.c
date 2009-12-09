@@ -54,7 +54,6 @@
 #include <syslog.h>
 #include <services.h>
 
-
 #ifdef HAVE_L2TP
 void start_l2tp(int status)
 {

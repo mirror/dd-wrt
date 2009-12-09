@@ -54,7 +54,6 @@
 #include <syslog.h>
 #include <services.h>
 
-
 void start_cron(void)
 {
 	int ret = 0;
