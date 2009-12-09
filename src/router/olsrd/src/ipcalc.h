@@ -151,8 +151,12 @@ const char *olsr_ip_prefix_to_string(const struct olsr_ip_prefix *prefix);
 static INLINE const char *
 sockaddr4_to_string(struct ipaddr_str *const buf, const struct sockaddr *const addr)
 {
-  const struct sockaddr_in *const addr4 = (const struct sockaddr_in *)addr;
-  return ip4_to_string(buf, addr4->sin_addr);
+  union {
+    const struct sockaddr *a_sockaddr;
+    const struct sockaddr_in *a_sockaddr_in;
+  } nowarn;
+  nowarn.a_sockaddr = addr;
+  return ip4_to_string(buf, nowarn.a_sockaddr_in->sin_addr);
 }
 
 /* we need to handle one value specifically since shifting 32 bits of a 32 bit integer is the same as shifting 0 bits.

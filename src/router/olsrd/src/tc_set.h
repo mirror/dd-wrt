@@ -97,7 +97,7 @@ struct tc_entry {
 #define OLSR_TC_EDGE_GC_TIME (2*1000)   /* milliseconds */
 #define OLSR_TC_EDGE_GC_JITTER 5        /* percent */
 
-#define OLSR_TC_VTIME_JITTER 25 /* percent */
+#define OLSR_TC_VTIME_JITTER 5          /* percent */
 
 AVLNODE2STRUCT(vertex_tree2tc, struct tc_entry, vertex_node);
 AVLNODE2STRUCT(cand_tree2tc, struct tc_entry, cand_tree_node);

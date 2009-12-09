@@ -162,7 +162,7 @@ struct interface {
   olsr_reltime hello_etime;
   struct vtimes valtimes;
 
-  clock_t fwdtimer;                    /* Timeout for OLSR forwarding on this if */
+  uint32_t fwdtimer;                    /* Timeout for OLSR forwarding on this if */
 
   struct olsr_netbuf netbuf;           /* the buffer to construct the packet data */
 

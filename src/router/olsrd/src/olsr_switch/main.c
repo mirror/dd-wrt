@@ -99,10 +99,10 @@ static void ohs_listen_loop(void);
 
 #ifdef WIN32
 int __stdcall
-ohs_close(unsigned long signal __attribute__ ((unused)))
+ohs_close(unsigned long signo __attribute__ ((unused)))
 #else
 void
-ohs_close(int signal __attribute__ ((unused)))
+ohs_close(int signo __attribute__ ((unused)))
 #endif
 {
   printf("OHS: exit\n");

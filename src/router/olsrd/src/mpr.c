@@ -87,15 +87,15 @@ static struct neighbor_2_list_entry *
 olsr_find_2_hop_neighbors_with_1_link(int willingness)
 {
 
-  uint8_t index;
+  uint8_t idx;
   struct neighbor_2_list_entry *two_hop_list_tmp = NULL;
   struct neighbor_2_list_entry *two_hop_list = NULL;
   struct neighbor_entry *dup_neighbor;
   struct neighbor_2_entry *two_hop_neighbor = NULL;
 
-  for (index = 0; index < HASHSIZE; index++) {
+  for (idx = 0; idx < HASHSIZE; idx++) {
 
-    for (two_hop_neighbor = two_hop_neighbortable[index].next; two_hop_neighbor != &two_hop_neighbortable[index];
+    for (two_hop_neighbor = two_hop_neighbortable[idx].next; two_hop_neighbor != &two_hop_neighbortable[idx];
          two_hop_neighbor = two_hop_neighbor->next) {
 
       //two_hop_neighbor->neighbor_2_state=0;
@@ -292,11 +292,11 @@ olsr_check_mpr_changes(void)
 static void
 olsr_clear_two_hop_processed(void)
 {
-  int index;
+  int idx;
 
-  for (index = 0; index < HASHSIZE; index++) {
+  for (idx = 0; idx < HASHSIZE; idx++) {
     struct neighbor_2_entry *neighbor_2;
-    for (neighbor_2 = two_hop_neighbortable[index].next; neighbor_2 != &two_hop_neighbortable[index]; neighbor_2 = neighbor_2->next) {
+    for (neighbor_2 = two_hop_neighbortable[idx].next; neighbor_2 != &two_hop_neighbortable[idx]; neighbor_2 = neighbor_2->next) {
       /* Clear */
       neighbor_2->processed = 0;
     }
@@ -465,7 +465,7 @@ olsr_optimize_mpr_set(void)
 {
   struct neighbor_entry *a_neighbor, *dup_neighbor;
   struct neighbor_2_list_entry *two_hop_list;
-  int i, remove;
+  int i, removeit;
 
 #if 0
   printf("\n**MPR OPTIMIZING**\n\n");
@@ -480,7 +480,7 @@ olsr_optimize_mpr_set(void)
       }
 
       if (a_neighbor->is_mpr) {
-        remove = 1;
+        removeit = 1;
 
         for (two_hop_list = a_neighbor->neighbor_2_list.next; two_hop_list != &a_neighbor->neighbor_2_list;
              two_hop_list = two_hop_list->next) {
@@ -493,11 +493,11 @@ olsr_optimize_mpr_set(void)
           //printf("\t[%s] coverage %d\n", olsr_ip_to_string(&buf, &two_hop_list->neighbor_2->neighbor_2_addr), two_hop_list->neighbor_2->mpr_covered_count);
           /* Do not remove if we find a entry which need this MPR */
           if (two_hop_list->neighbor_2->mpr_covered_count <= olsr_cnf->mpr_coverage) {
-            remove = 0;
+            removeit = 0;
           }
         }
 
-        if (remove) {
+        if (removeit) {
           struct ipaddr_str buf;
           OLSR_PRINTF(3, "MPR OPTIMIZE: removiong mpr %s\n\n", olsr_ip_to_string(&buf, &a_neighbor->neighbor_main_addr));
           a_neighbor->is_mpr = false;

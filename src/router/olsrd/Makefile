@@ -39,7 +39,7 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.5.6-r4
+VERS =		0.5.6-r7
 
 TOPDIR = .
 include Makefile.inc
@@ -123,10 +123,12 @@ install_olsrd:	install_bin
 		@echo Edit $(CFGFILE) before running olsrd!!
 		@echo -------------------------------------------
 		@echo Installing manpages $(EXENAME)\(8\) and $(CFGNAME)\(5\)
+ifneq ($(MANDIR),)
 		mkdir -p $(MANDIR)/man8/
 		cp files/olsrd.8.gz $(MANDIR)/man8/$(EXENAME).8.gz
 		mkdir -p $(MANDIR)/man5/
 		cp files/olsrd.conf.5.gz $(MANDIR)/man5/$(CFGNAME).5.gz
+endif
 
 tags:
 		$(TAGCMD) -o $(TAGFILE) $(TAG_SRCS)
@@ -148,7 +150,12 @@ else
 ifeq ($(OS),win32)
 SUBDIRS := dot_draw httpinfo mini pgraph secure txtinfo
 else
-SUBDIRS := bmf dot_draw dyn_gw dyn_gw_plain httpinfo mini nameservice pgraph secure txtinfo
+ifeq ($(OS),android)
+# nameservice: no regex
+SUBDIRS := bmf dot_draw dyn_gw_plain httpinfo mini quagga secure tas txtinfo watchdog
+else
+SUBDIRS := bmf dot_draw dyn_gw dyn_gw_plain httpinfo mini nameservice pgraph secure txtinfo watchdog
+endif
 endif
 endif
 
@@ -228,6 +235,11 @@ arprefresh:
 		$(MAKECMD) -C lib/arprefresh clean
 		$(MAKECMD) -C lib/arprefresh
 		$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) install
+
+watchdog:
+		$(MAKECMD) -C lib/watchdog clean
+		$(MAKECMD) -C lib/watchdog
+		$(MAKECMD) -C lib/watchdog DESTDIR=$(DESTDIR) install
 
 build_all:	all switch libs
 install_all:	install install_libs

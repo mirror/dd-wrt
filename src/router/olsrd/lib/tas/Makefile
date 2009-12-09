@@ -50,7 +50,7 @@ ifneq ($(OS),win32)
 LIBS +=		-lm
 endif
 
-ifneq ($(OS),linux)
+ifneq ($(OS),$(filter $(OS),linux android))
 
 default_target install clean: 
 	@echo "*** TAS Plugin only supported on Linux, sorry!"

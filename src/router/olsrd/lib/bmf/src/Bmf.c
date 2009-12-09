@@ -55,6 +55,7 @@
 #include <signal.h>             /* sigset_t, sigfillset(), sigdelset(), SIGINT */
 #include <netinet/ip.h>         /* struct ip */
 #include <netinet/udp.h>        /* struct udphdr */
+#include <unistd.h>             /* struct udphdr */
 
 /* OLSRD includes */
 #include "plugin_util.h"        /* set_plugin_int */
@@ -970,13 +971,13 @@ DoBmf(void)
 
         /* if (pktAddr.sll_pkttype ...) */
         /* Check if the received packet is UDP - BMF port */
-        ipHeader = (struct ip *)rxBuffer;
+        ipHeader = (struct ip *)(ARM_NOWARN_ALIGN)rxBuffer;
         if (ipHeader->ip_p != SOL_UDP) {
           /* Not UDP */
           continue;             /* for */
         }
 
-        udpHeader = (struct udphdr *)(rxBuffer + GetIpHeaderLength(rxBuffer));
+        udpHeader = (struct udphdr *)(ARM_NOWARN_ALIGN)(rxBuffer + GetIpHeaderLength(rxBuffer));
         destPort = ntohs(udpHeader->dest);
         if (destPort != BMF_ENCAP_PORT) {
           /* Not BMF */

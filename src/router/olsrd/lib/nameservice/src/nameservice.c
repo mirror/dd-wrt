@@ -36,6 +36,8 @@
  * Dynamic linked library for UniK OLSRd
  */
 
+#define _GNU_SOURCE 1
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -588,7 +590,7 @@ olsr_namesvc_gen(void *foo __attribute__ ((unused)))
     message->v4.hopcnt = 0;
     message->v4.seqno = htons(get_msg_seqno());
 
-    namesize = encap_namemsg((struct namemsg *)&message->v4.message);
+    namesize = encap_namemsg((struct namemsg *)(ARM_NOWARN_ALIGN)&message->v4.message);
     namesize = namesize + sizeof(struct olsrmsg);
 
     message->v4.olsr_msgsize = htons(namesize);
@@ -601,7 +603,7 @@ olsr_namesvc_gen(void *foo __attribute__ ((unused)))
     message->v6.hopcnt = 0;
     message->v6.seqno = htons(get_msg_seqno());
 
-    namesize = encap_namemsg((struct namemsg *)&message->v6.message);
+    namesize = encap_namemsg((struct namemsg *)(ARM_NOWARN_ALIGN)&message->v6.message);
     namesize = namesize + sizeof(struct olsrmsg6);
 
     message->v6.olsr_msgsize = htons(namesize);
@@ -646,11 +648,11 @@ olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unuse
   if (olsr_cnf->ip_version == AF_INET) {
     vtime = me_to_reltime(m->v4.olsr_vtime);
     size = ntohs(m->v4.olsr_msgsize);
-    namemessage = (struct namemsg *)&m->v4.message;
+    namemessage = (struct namemsg *)(ARM_NOWARN_ALIGN)&m->v4.message;
   } else {
     vtime = me_to_reltime(m->v6.olsr_vtime);
     size = ntohs(m->v6.olsr_msgsize);
-    namemessage = (struct namemsg *)&m->v6.message;
+    namemessage = (struct namemsg *)(ARM_NOWARN_ALIGN)&m->v6.message;
   }
 
   /* Check if message originated from this node.
@@ -690,22 +692,22 @@ encap_namemsg(struct namemsg *msg)
 
   // names
   for (my_name = my_names; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)pos, my_name);
+    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
     i++;
   }
   // forwarders
   for (my_name = my_forwarders; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)pos, my_name);
+    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
     i++;
   }
   // services
   for (my_name = my_services; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)pos, my_name);
+    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
     i++;
   }
   // macs
   for (my_name = my_macs; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)pos, my_name);
+    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
     i++;
   }
   // latlon
@@ -727,7 +729,7 @@ encap_namemsg(struct namemsg *msg)
     e.type = NAME_LATLON;
     e.name = s;
     lookup_defhna_latlon(&e.ip);
-    pos = create_packet((struct name *)pos, &e);
+    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, &e);
     i++;
   }
   // write the namemsg header with the number of announced entries and the protocol version
@@ -874,7 +876,7 @@ update_name_entry(union olsr_ip_addr *originator, struct namemsg *msg, int msg_s
   end_pos = pos + msg_size - sizeof(struct name *);     // at least one struct name has to be left
 
   for (i = ntohs(msg->nr_names); i > 0 && pos < end_pos; i--) {
-    from_packet = (struct name *)pos;
+    from_packet = (struct name *)(ARM_NOWARN_ALIGN)pos;
 
     switch (ntohs(from_packet->type)) {
     case NAME_HOST:

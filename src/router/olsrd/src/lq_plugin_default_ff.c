@@ -53,16 +53,36 @@
 #include "scheduler.h"
 #include "log.h"
 
+static void default_lq_initialize_ff(void);
+
+static olsr_linkcost default_lq_calc_cost_ff(const void *lq);
+
+static void default_lq_packet_loss_worker_ff(struct link_entry *link, void *lq, bool lost);
+static void default_lq_memorize_foreign_hello_ff(void *local, void *foreign);
+
+static int default_lq_serialize_hello_lq_pair_ff(unsigned char *buff, void *lq);
+static void default_lq_deserialize_hello_lq_pair_ff(const uint8_t ** curr, void *lq);
+static int default_lq_serialize_tc_lq_pair_ff(unsigned char *buff, void *lq);
+static void default_lq_deserialize_tc_lq_pair_ff(const uint8_t ** curr, void *lq);
+
+static void default_lq_copy_link2neigh_ff(void *t, void *s);
+static void default_lq_copy_link2tc_ff(void *target, void *source);
+static void default_lq_clear_ff(void *target);
+static void default_lq_clear_ff_hello(void *target);
+
+static const char *default_lq_print_ff(void *ptr, char separator, struct lqtextbuffer *buffer);
+static const char *default_lq_print_cost_ff(olsr_linkcost cost, struct lqtextbuffer *buffer);
+
 /* etx lq plugin (freifunk fpm version) settings */
 struct lq_handler lq_etx_ff_handler = {
   &default_lq_initialize_ff,
   &default_lq_calc_cost_ff,
   &default_lq_calc_cost_ff,
 
-  &default_lq_is_relevant_costchange_ff,
   &default_lq_packet_loss_worker_ff,
 
   &default_lq_memorize_foreign_hello_ff,
+  &default_lq_copy_link2neigh_ff,
   &default_lq_copy_link2tc_ff,
   &default_lq_clear_ff_hello,
   &default_lq_clear_ff,
@@ -79,6 +99,74 @@ struct lq_handler lq_etx_ff_handler = {
   sizeof(struct default_lq_ff_hello),
   sizeof(struct default_lq_ff)
 };
+
+static void
+default_lq_ff_handle_lqchange(void) {
+  struct default_lq_ff_hello *lq;
+  struct ipaddr_str buf;
+  struct link_entry *link;
+
+  bool triggered = false;
+
+  OLSR_FOR_ALL_LINK_ENTRIES(link) {
+    bool relevant = false;
+    lq = (struct default_lq_ff_hello *)link->linkquality;
+
+#if 0
+  fprintf(stderr, "%s: old = %u/%u   new = %u/%u\n", olsr_ip_to_string(&buf, &link->neighbor_iface_addr),
+      lq->smoothed_lq.valueLq, lq->smoothed_lq.valueNlq,
+      lq->lq.valueLq, lq->lq.valueNlq);
+#endif
+
+    if (lq->smoothed_lq.valueLq < lq->lq.valueLq) {
+      if (lq->lq.valueLq == 255 || lq->lq.valueLq - lq->smoothed_lq.valueLq > lq->smoothed_lq.valueLq/10) {
+        relevant = true;
+      }
+    }
+    else if (lq->smoothed_lq.valueLq > lq->lq.valueLq) {
+      if (lq->smoothed_lq.valueLq - lq->lq.valueLq > lq->smoothed_lq.valueLq/10) {
+        relevant = true;
+      }
+    }
+    if (lq->smoothed_lq.valueNlq < lq->lq.valueNlq) {
+      if (lq->lq.valueNlq == 255 || lq->lq.valueNlq - lq->smoothed_lq.valueNlq > lq->smoothed_lq.valueNlq/10) {
+        relevant = true;
+      }
+    }
+    else if (lq->smoothed_lq.valueNlq > lq->lq.valueNlq) {
+      if (lq->smoothed_lq.valueNlq - lq->lq.valueNlq > lq->smoothed_lq.valueNlq/10) {
+        relevant = true;
+      }
+    }
+
+    if (relevant) {
+      memcpy(&lq->smoothed_lq, &lq->lq, sizeof(struct default_lq_ff));
+      link->linkcost = default_lq_calc_cost_ff(&lq->smoothed_lq);
+      triggered = true;
+    }
+  } OLSR_FOR_ALL_LINK_ENTRIES_END(link)
+
+  if (!triggered) {
+    return;
+  }
+
+  OLSR_FOR_ALL_LINK_ENTRIES(link) {
+    lq = (struct default_lq_ff_hello *)link->linkquality;
+
+    if (lq->smoothed_lq.valueLq == 255 && lq->smoothed_lq.valueNlq == 255) {
+      continue;
+    }
+
+    if (lq->smoothed_lq.valueLq == lq->lq.valueLq && lq->smoothed_lq.valueNlq == lq->lq.valueNlq) {
+      continue;
+    }
+
+    memcpy(&lq->smoothed_lq, &lq->lq, sizeof(struct default_lq_ff));
+    link->linkcost = default_lq_calc_cost_ff(&lq->smoothed_lq);
+  } OLSR_FOR_ALL_LINK_ENTRIES_END(link)
+
+  olsr_relevant_linkcost_change();
+}
 
 static void
 default_lq_parser_ff(struct olsr *olsr, struct interface *in_if, union olsr_ip_addr *from_addr)
@@ -119,22 +207,24 @@ default_lq_parser_ff(struct olsr *olsr, struct interface *in_if, union olsr_ip_a
   }
 
   lq->received[lq->activePtr]++;
-  lq->lost[lq->activePtr] += (seq_diff - 1);
+  lq->total[lq->activePtr] += seq_diff;
 
   lq->last_seq_nr = olsr->olsr_seqno;
+  lq->missed_hellos = 0;
 }
 
 static void
 default_lq_ff_timer(void __attribute__ ((unused)) * context)
 {
   struct link_entry *link;
+
   OLSR_FOR_ALL_LINK_ENTRIES(link) {
     struct default_lq_ff_hello *tlq = (struct default_lq_ff_hello *)link->linkquality;
     fpm ratio;
-    uint16_t i, received, lost;
+    int i, received, total;
 
     received = 0;
-    lost = 0;
+    total = 0;
 
     /* enlarge window if still in quickstart phase */
     if (tlq->windowSize < LQ_FF_WINDOW) {
@@ -142,40 +232,53 @@ default_lq_ff_timer(void __attribute__ ((unused)) * context)
     }
     for (i = 0; i < tlq->windowSize; i++) {
       received += tlq->received[i];
-      lost += tlq->lost[i];
+      total += tlq->total[i];
     }
 
     /* calculate link quality */
-    if (received + lost == 0) {
+    if (received + total == 0) {
       tlq->lq.valueLq = 0;
     } else {
       // start with link-loss-factor
-      ratio = fpmidiv(itofpm(link->loss_link_multiplier), 65536);
+      ratio = fpmidiv(itofpm(link->loss_link_multiplier), LINK_LOSS_MULTIPLIER);
 
-      // calculate received/(received + loss) factor
-      ratio = fpmmuli(ratio, (int)received);
-      ratio = fpmidiv(ratio, (int)(received + lost));
+      /* keep missed hello periods in mind (round up hello interval to seconds) */
+      if (tlq->missed_hellos > 1) {
+        int penalty = received * tlq->missed_hellos * link->inter->hello_etime/1000 / LQ_FF_WINDOW;
+
+        if (penalty < 0) {
+          received = 0;
+        }
+        else {
+          received -= penalty;
+        }
+      }
+
+      // calculate received/total factor
+      ratio = fpmmuli(ratio, received);
+      ratio = fpmidiv(ratio, total);
       ratio = fpmmuli(ratio, 255);
 
       tlq->lq.valueLq = (uint8_t) (fpmtoi(ratio));
     }
-    link->linkcost = default_lq_calc_cost_ff(tlq);
 
     // shift buffer
     tlq->activePtr = (tlq->activePtr + 1) % LQ_FF_WINDOW;
-    tlq->lost[tlq->activePtr] = 0;
+    tlq->total[tlq->activePtr] = 0;
     tlq->received[tlq->activePtr] = 0;
   } OLSR_FOR_ALL_LINK_ENTRIES_END(link);
+
+  default_lq_ff_handle_lqchange();
 }
 
-void
+static void
 default_lq_initialize_ff(void)
 {
   olsr_packetparser_add_function(&default_lq_parser_ff);
   olsr_start_timer(1000, 0, OLSR_TIMER_PERIODIC, &default_lq_ff_timer, NULL, 0);
 }
 
-olsr_linkcost
+static olsr_linkcost
 default_lq_calc_cost_ff(const void *ptr)
 {
   const struct default_lq_ff *lq = ptr;
@@ -194,7 +297,7 @@ default_lq_calc_cost_ff(const void *ptr)
   return cost;
 }
 
-int
+static int
 default_lq_serialize_hello_lq_pair_ff(unsigned char *buff, void *ptr)
 {
   struct default_lq_ff *lq = ptr;
@@ -207,7 +310,7 @@ default_lq_serialize_hello_lq_pair_ff(unsigned char *buff, void *ptr)
   return 4;
 }
 
-void
+static void
 default_lq_deserialize_hello_lq_pair_ff(const uint8_t ** curr, void *ptr)
 {
   struct default_lq_ff *lq = ptr;
@@ -217,16 +320,7 @@ default_lq_deserialize_hello_lq_pair_ff(const uint8_t ** curr, void *ptr)
   pkt_ignore_u16(curr);
 }
 
-bool
-default_lq_is_relevant_costchange_ff(olsr_linkcost c1, olsr_linkcost c2)
-{
-  if (c1 > c2) {
-    return c2 - c1 > LQ_PLUGIN_RELEVANT_COSTCHANGE_FF;
-  }
-  return c1 - c2 > LQ_PLUGIN_RELEVANT_COSTCHANGE_FF;
-}
-
-int
+static int
 default_lq_serialize_tc_lq_pair_ff(unsigned char *buff, void *ptr)
 {
   struct default_lq_ff *lq = ptr;
@@ -239,7 +333,7 @@ default_lq_serialize_tc_lq_pair_ff(unsigned char *buff, void *ptr)
   return 4;
 }
 
-void
+static void
 default_lq_deserialize_tc_lq_pair_ff(const uint8_t ** curr, void *ptr)
 {
   struct default_lq_ff *lq = ptr;
@@ -249,53 +343,68 @@ default_lq_deserialize_tc_lq_pair_ff(const uint8_t ** curr, void *ptr)
   pkt_ignore_u16(curr);
 }
 
-olsr_linkcost
-default_lq_packet_loss_worker_ff(struct link_entry
-                                 __attribute__ ((unused)) * link, void
-                                 __attribute__ ((unused)) * ptr, bool __attribute__ ((unused)) lost)
+static void
+default_lq_packet_loss_worker_ff(struct link_entry *link,
+    void __attribute__ ((unused)) *ptr, bool lost)
 {
-  return link->linkcost;
+  struct default_lq_ff_hello *tlq = (struct default_lq_ff_hello *)link->linkquality;
+
+  if (lost) {
+    tlq->missed_hellos++;
+  }
+  return;
 }
 
-void
+static void
 default_lq_memorize_foreign_hello_ff(void *ptrLocal, void *ptrForeign)
 {
-  struct default_lq_ff *local = ptrLocal;
+  struct default_lq_ff_hello *local = ptrLocal;
   struct default_lq_ff *foreign = ptrForeign;
 
   if (foreign) {
-    local->valueNlq = foreign->valueLq;
+    local->lq.valueNlq = foreign->valueLq;
   } else {
-    local->valueNlq = 0;
+    local->lq.valueNlq = 0;
   }
 }
 
-void
-default_lq_copy_link2tc_ff(void *target, void *source)
+static void
+default_lq_copy_link2neigh_ff(void *t, void *s)
 {
-  memcpy(target, source, sizeof(struct default_lq_ff));
+  struct default_lq_ff *target = t;
+  struct default_lq_ff_hello *source = s;
+  *target = source->smoothed_lq;
 }
 
-void
+static void
+default_lq_copy_link2tc_ff(void *t, void *s)
+{
+  struct default_lq_ff *target = t;
+  struct default_lq_ff_hello *source = s;
+  *target = source->smoothed_lq;
+}
+
+static void
 default_lq_clear_ff(void *target)
 {
   memset(target, 0, sizeof(struct default_lq_ff));
 }
 
-void
+static void
 default_lq_clear_ff_hello(void *target)
 {
   struct default_lq_ff_hello *local = target;
   int i;
 
   default_lq_clear_ff(&local->lq);
+  default_lq_clear_ff(&local->smoothed_lq);
   local->windowSize = LQ_FF_QUICKSTART_INIT;
   for (i = 0; i < LQ_FF_WINDOW; i++) {
-    local->lost[i] = 3;
+    local->total[i] = 3;
   }
 }
 
-const char *
+static const char *
 default_lq_print_ff(void *ptr, char separator, struct lqtextbuffer *buffer)
 {
   struct default_lq_ff *lq = ptr;
@@ -305,7 +414,7 @@ default_lq_print_ff(void *ptr, char separator, struct lqtextbuffer *buffer)
   return buffer->buf;
 }
 
-const char *
+static const char *
 default_lq_print_cost_ff(olsr_linkcost cost, struct lqtextbuffer *buffer)
 {
   snprintf(buffer->buf, sizeof(buffer->buf), "%s", fpmtoa(cost));

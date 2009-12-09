@@ -226,7 +226,7 @@ plugin_ipc_init(void)
       perror("SO_REUSEADDR failed");
       return 0;
     }
-#ifdef __FreeBSD__
+#if defined __FreeBSD__
     if (setsockopt(ipc_socket, SOL_SOCKET, SO_NOSIGPIPE, (char *)&yes, sizeof(yes)) < 0) {
       perror("SO_NOSIGPIPE failed");
       return 0;
@@ -301,7 +301,7 @@ ipc_action(int fd __attribute__ ((unused)))
  *Scheduled event
  */
 static int
-pcf_event(int changes_neighborhood, int changes_topology, int changes_hna __attribute__ ((unused)))
+pcf_event(int my_changes_neighborhood, int my_changes_topology, int my_changes_hna __attribute__ ((unused)))
 {
   int res;
   struct neighbor_entry *neighbor_table_tmp;
@@ -310,7 +310,7 @@ pcf_event(int changes_neighborhood, int changes_topology, int changes_hna __attr
 
   res = 0;
 
-  if (changes_neighborhood || changes_topology) {
+  if (my_changes_neighborhood || my_changes_topology) {
     /* Print tables to IPC socket */
 
     //ipc_send("start ", strlen("start "));
@@ -385,7 +385,7 @@ ipc_send(const char *data, int size)
   if (ipc_connection == -1)
     return 0;
 
-#if defined __FreeBSD__ || defined __MacOSX__ || __OpenBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__ || __OpenBSD__
 #define FLAG 0
 #else
 #define FLAG MSG_NOSIGNAL

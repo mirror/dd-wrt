@@ -154,7 +154,7 @@ IpcConnect
 # Fisheye mechanism for TC messages 0=off, 1=on
 # default is 0
 
-# LinkQualityFishEye	1
+LinkQualityFishEye	1
 
 # Wether to use hysteresis or not
 # Hysteresis adds more robustness to the
@@ -222,7 +222,7 @@ TcRedundancy	2
 #
 # defaults to 1
 
-MprCoverage	3
+MprCoverage	7
 
 
 # Olsrd plugins to load
@@ -239,24 +239,26 @@ MprCoverage	3
 # LoadPlugin "olsrd_httpinfo.dll"
 LoadPlugin "olsrd_httpinfo.so.0.1"
 {
-    # port number the txtinfo plugin will be listening
+    # port number the httpinfo plugin will be listening, default 1978
     PlParam     "port"   "8000"
     
     # ip address that can access the plugin, use "0.0.0.0"
     # to allow everyone
-#   PlParam     "Host"   "127.0.0.1"
+    PlParam     "Host"   "127.0.0.1"
 #   PlParam     "Host"   "80.23.53.22"
     
     # networks that can access the plugin (ip/netmask)
-    PlParam     "Net"    "0.0.0.0 0.0.0.0"
-#   PlParam     "Net"    "192.168.0.0 255.255.0.0"
+    # careful with 0.0.0.0/0, makes (ddos) attacks poss.
+#   PlParam     "Net"    "0.0.0.0 0.0.0.0"
+    PlParam     "Net"    "104.0.0.0 255.255.0.0"
+    PlParam     "Net"    "192.168.0.0 255.255.0.0"
 }
 
 # LoadPlugin "olsrd_txtinfo.dll"
 LoadPlugin "olsrd_txtinfo.so.0.1"
 {
-    # port number the txtinfo plugin will be listening
-    PlParam     "port"   "81"
+    # port number the txtinfo plugin will be listening, default 2006
+#   PlParam     "port"   "81"
     # ip address that can access the plugin, use "0.0.0.0"
     # to allow everyone
     PlParam     "Accept"   "127.0.0.1"
@@ -302,7 +304,7 @@ LoadPlugin "olsrd_txtinfo.so.0.1"
 # Omitted options will be set to the
 # default values.
 # multiple interfaces can be speicified
-Interface "eth0" "ath0"
+Interface "wlan0" "ath0"
 {
 
     # IPv4 broadcast address to use. The
@@ -344,28 +346,28 @@ Interface "eth0" "ath0"
     # be used in most cases.
 
     # Hello interval in seconds(float)
-    # HelloInterval    5.0
+    HelloInterval       3.0
 
     # HELLO validity time
-    # HelloValidityTime	60.0
+    HelloValidityTime	125.0
 
     # TC interval in seconds(float)
-    # TcInterval        2.0
+    TcInterval          2.0
 
     # TC validity time
-    # TcValidityTime	200.0
+    TcValidityTime	500.0
 
     # MID interval in seconds(float)
-    # MidInterval	5.0
+    MidInterval		25.0
 
     # MID validity time
-    # MidValidityTime	60.0
+    MidValidityTime	500.0
 
     # HNA interval in seconds(float)
-    # HnaInterval	5.0
+    HnaInterval		125.0
 
     # HNA validity time
-    # HnaValidityTime 	60.0
+    HnaValidityTime 	125.0
     
     # When multiple links exist between hosts
     # the weight of interface is used to determine
@@ -400,8 +402,8 @@ Interface "eth0" "ath0"
 }
 
 # another Interface (with different configs)
-Interface "eth1"
-{
+#Interface "eth1"
+#{
     # IPv4 broadcast address to use. 
     # One usefull example would be 255.255.255.255
     # If not defined the broadcastaddress of
@@ -409,12 +411,12 @@ Interface "eth1"
     # The second useful value would be to 
     # specify the peer adress of an ptp-tunnel
 
-    Ip4Broadcast	192.168.255.255
+#    Ip4Broadcast	192.168.255.255
 
     # Interface Mode is used to prevent unnecessary
     # packet forwardin on switched ethernet interfaces
     # valid Modes are "mesh" and "ether"
     # The default value is mesh!
 
-    Mode "ether"
-}
+#    Mode "ether"
+#}

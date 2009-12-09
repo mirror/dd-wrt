@@ -360,8 +360,12 @@ static void
 olsr_expire_tc_entry(void *context)
 {
   struct tc_entry *tc;
+  struct ipaddr_str buf;
 
   tc = (struct tc_entry *)context;
+
+  OLSR_PRINTF(3, "TC: expire node entry %s\n", olsr_ip_to_string(&buf, &tc->addr));
+
   tc->validity_timer = NULL;
 
   olsr_delete_tc_entry(tc);
@@ -377,8 +381,12 @@ static void
 olsr_expire_tc_edge_gc(void *context)
 {
   struct tc_entry *tc;
+  struct ipaddr_str buf;
 
   tc = (struct tc_entry *)context;
+
+  OLSR_PRINTF(3, "TC: expire edge entry %s\n", olsr_ip_to_string(&buf, &tc->addr));
+
   tc->edge_gc_timer = NULL;
 
   if (olsr_delete_outdated_tc_edges(tc)) {
@@ -402,13 +410,12 @@ olsr_calc_tc_edge_entry_etx(struct tc_edge_entry *tc_edge)
    * Some sanity check before recalculating the etx.
    */
   if (olsr_cnf->lq_level < 1) {
-    return 0;
+    return false;
   }
 
   old = tc_edge->cost;
   tc_edge->cost = olsr_calc_tc_cost(tc_edge);
-
-  return olsr_is_relevant_costchange(old, tc_edge->cost);
+  return true;
 }
 
 /**
@@ -792,6 +799,16 @@ olsr_input_tc(union olsr_message * msg, struct interface * input_if __attribute_
     return false;
   }
 
+  /*
+   * If the sender interface (NB: not originator) of this message
+   * is not in the symmetric 1-hop neighborhood of this node, the
+   * message MUST be discarded.
+   */
+  if (check_neighbor_link(from_addr) != SYM_LINK) {
+    OLSR_PRINTF(2, "Received TC from NON SYM neighbor %s\n", olsr_ip_to_string(&buf, from_addr));
+    return false;
+  }
+
   pkt_get_reltime(&curr, &vtime);
   pkt_get_u16(&curr, &size);
 
@@ -808,6 +825,10 @@ olsr_input_tc(union olsr_message * msg, struct interface * input_if __attribute_
   pkt_get_u8(&curr, &upper_border);
 
   tc = olsr_lookup_tc_entry(&originator);
+
+  if (vtime < (olsr_reltime)(olsr_cnf->min_tc_vtime*1000)) {
+	  vtime = (olsr_reltime)(olsr_cnf->min_tc_vtime*1000);
+  }
 
   if (tc && 0 != tc->edge_tree.count) {
     if (olsr_seq_inrange_high((int)tc->msg_seq - TC_SEQNO_WINDOW, tc->msg_seq, msg_seq)
@@ -856,16 +877,6 @@ olsr_input_tc(union olsr_message * msg, struct interface * input_if __attribute_
   tc->ansn = ansn;
   tc->ignored = 0;
   tc->err_seq_valid = false;
-
-  /*
-   * If the sender interface (NB: not originator) of this message
-   * is not in the symmetric 1-hop neighborhood of this node, the
-   * message MUST be discarded.
-   */
-  if (check_neighbor_link(from_addr) != SYM_LINK) {
-    OLSR_PRINTF(2, "Received TC from NON SYM neighbor %s\n", olsr_ip_to_string(&buf, from_addr));
-    return false;
-  }
 
   OLSR_PRINTF(1, "Processing TC from %s, seq 0x%04x\n", olsr_ip_to_string(&buf, &originator), tc->msg_seq);
 

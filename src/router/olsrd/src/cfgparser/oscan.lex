@@ -59,7 +59,6 @@
 int yyget_lineno(void);
 FILE * yyget_in(void);
 FILE* yyget_out(void);
-int yyget_leng(void);
 char *yyget_text(void);
 void yyset_lineno(int);
 void yyset_in(FILE *);
@@ -418,6 +417,16 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 "LinkQualityMult" {
     yylval = NULL;
     return TOK_LQ_MULT;
+}
+
+"MinTCVTime" {
+    yylval = NULL;
+    return TOK_MIN_TC_VTIME;
+}
+
+"LockFile" {
+    yylval = NULL;
+    return TOK_LOCK_FILE;
 }
 
 "ClearScreen" {

@@ -59,6 +59,7 @@
 int http_port = 0;
 int resolve_ip_addresses = 0;
 struct allowed_net *allowed_nets = NULL;
+union olsr_ip_addr httpinfo_listen_ip;
 
 static void my_init(void) __attribute__ ((constructor));
 static void my_fini(void) __attribute__ ((destructor));
@@ -87,6 +88,7 @@ my_init(void)
 {
   /* Print plugin info to stdout */
   printf("%s\n", MOD_DESC);
+  httpinfo_listen_ip.v4.s_addr = htonl(INADDR_ANY);
 }
 
 /**
@@ -119,7 +121,7 @@ olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *
 }
 
 static int
-insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net **allowed_nets)
+insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net **my_allowed_nets)
 {
   struct allowed_net *an;
 
@@ -133,8 +135,8 @@ insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net 
     free(an);
     return 1;
   }
-  an->next = *allowed_nets;
-  *allowed_nets = an;
+  an->next = *my_allowed_nets;
+  *my_allowed_nets = an;
   return 0;
 }
 

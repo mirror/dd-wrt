@@ -43,7 +43,6 @@
 
 /* System includes */
 #include <sys/types.h>          /* ssize_t */
-#include <sys/times.h>          /* clock_t */
 
 #define N_HASH_BITS 12
 #define HISTORY_HASH_SIZE (1 << N_HASH_BITS)
@@ -53,7 +52,7 @@
 
 struct TDupEntry {
   u_int32_t crc32;
-  clock_t timeOut;
+  u_int32_t timeOut;
   struct TDupEntry *next;
 };
 

@@ -62,7 +62,7 @@
 bool lq_tc_pending = false;
 
 static uint32_t msg_buffer_aligned[(MAXMESSAGESIZE - OLSR_HEADERSIZE) / sizeof(uint32_t) + 1];
-static unsigned char *msg_buffer = (unsigned char *)msg_buffer_aligned;
+static unsigned char *const msg_buffer = (unsigned char *)msg_buffer_aligned;
 
 static void
 create_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
@@ -292,7 +292,7 @@ serialize_common(struct olsr_common *comm)
 {
   if (olsr_cnf->ip_version == AF_INET) {
     // serialize an IPv4 OLSR message header
-    struct olsr_header_v4 *olsr_head_v4 = (struct olsr_header_v4 *)msg_buffer;
+    struct olsr_header_v4 *olsr_head_v4 = (struct olsr_header_v4 *)(ARM_NOWARN_ALIGN)msg_buffer;
 
     olsr_head_v4->type = comm->type;
     olsr_head_v4->vtime = reltime_to_me(comm->vtime);
@@ -305,7 +305,7 @@ serialize_common(struct olsr_common *comm)
     olsr_head_v4->seqno = htons(get_msg_seqno());
   } else {
     // serialize an IPv6 OLSR message header
-    struct olsr_header_v6 *olsr_head_v6 = (struct olsr_header_v6 *)msg_buffer;
+    struct olsr_header_v6 *olsr_head_v6 = (struct olsr_header_v6 *)(ARM_NOWARN_ALIGN)msg_buffer;
 
     olsr_head_v6->type = comm->type;
     olsr_head_v6->vtime = reltime_to_me(comm->vtime);
@@ -335,7 +335,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
 
   // initialize the LQ_HELLO header
 
-  struct lq_hello_header *head = (struct lq_hello_header *)(msg_buffer + off);
+  struct lq_hello_header *head = (struct lq_hello_header *)(ARM_NOWARN_ALIGN)(msg_buffer + off);
 
   head->reserved = 0;
   head->htime = reltime_to_me(lq_hello->htime);
@@ -444,7 +444,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
         // create a new info header
 
         if (is_first) {
-          info_head = (struct lq_hello_info_header *)(buff + size);
+          info_head = (struct lq_hello_info_header *)(ARM_NOWARN_ALIGN)(buff + size);
           size += sizeof(struct lq_hello_info_header);
 
           info_head->reserved = 0;
@@ -526,7 +526,7 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 
   // initialize the LQ_TC header
 
-  head = (struct lq_tc_header *)(msg_buffer + off);
+  head = (struct lq_tc_header *)(ARM_NOWARN_ALIGN)(msg_buffer + off);
 
   head->ansn = htons(lq_tc->ansn);
   head->lower_border = 0;
@@ -598,7 +598,7 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
     genipcopy(buff + size, &neigh->address);
 
     // remember last ip
-    last_ip = (union olsr_ip_addr *)(buff + size);
+    last_ip = (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)(buff + size);
 
     size += olsr_cnf->ipsize;
 
