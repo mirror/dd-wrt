@@ -372,6 +372,9 @@ endif
 ifneq ($(CONFIG_JFFS2),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2
 endif
+ifneq ($(CONFIG_ADM6996),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/switch/switch-adm.ko
+endif
 
 #ifeq ($(CONFIG_PCMCIA),y)
 #	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
