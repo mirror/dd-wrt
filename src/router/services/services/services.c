@@ -59,9 +59,6 @@
 #define TXPWR_MAX 251
 #define TXPWR_DEFAULT 70
 
-
-
-
 static int alreadyInHost(char *host)
 {
 	FILE *in = fopen("/tmp/hosts", "rb");
@@ -104,7 +101,6 @@ void addHost(char *host, char *ip)
 		return;
 	sysprintf("echo \"%s\t%s\">>/tmp/hosts", ip, newhost);
 }
-
 
 /*
  * AhMan March 18 2005 
@@ -238,9 +234,6 @@ void stop_iptqueue(void)
 	return;
 }
 
-
-
-
 #ifdef HAVE_IPV6
 void start_ipv6(void)
 {
@@ -283,7 +276,6 @@ void stop_dhcpc(void)
 }
 
 // =====================================================================================================
-
 
 void stop_wland(void)
 {
@@ -457,33 +449,3 @@ void start_force_to_dial(void)
 
 	return;
 }
-
-#ifdef HAVE_CPUTEMP
-
-#ifdef HAVE_GATEWORX
-#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028"
-// #define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
-#define TEMP_PREFIX "temp"
-#define TEMP_MUL 100
-#else
-#ifdef HAVE_X86
-#define TEMP_PATH "/sys/devices/platform/i2c-1/1-0048"
-#else
-#define TEMP_PATH "/sys/devices/platform/i2c-0/0-0048"
-#endif
-#define TEMP_PREFIX "temp1"
-#define TEMP_MUL 1000
-#endif
-
-void start_hwmon(void)
-{
-	int temp_max = atoi(nvram_safe_get("hwmon_temp_max")) * TEMP_MUL;
-	int temp_hyst = atoi(nvram_safe_get("hwmon_temp_hyst")) * TEMP_MUL;
-
-	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
-	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
-		  TEMP_PREFIX);
-	dd_syslog(LOG_INFO, "hwmon successfully started\n");
-}
-
-#endif

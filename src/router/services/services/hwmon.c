@@ -1,5 +1,5 @@
 /*
- * syslog.c
+ * hwmon.c
  *
  * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -54,40 +54,32 @@
 #include <syslog.h>
 #include <services.h>
 
-#ifdef HAVE_SYSLOG
-void start_syslog(void)
+#ifdef HAVE_CPUTEMP
+
+#ifdef HAVE_GATEWORX
+#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028"
+// #define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
+#define TEMP_PREFIX "temp"
+#define TEMP_MUL 100
+#else
+#ifdef HAVE_X86
+#define TEMP_PATH "/sys/devices/platform/i2c-1/1-0048"
+#else
+#define TEMP_PATH "/sys/devices/platform/i2c-0/0-0048"
+#endif
+#define TEMP_PREFIX "temp1"
+#define TEMP_MUL 1000
+#endif
+
+void start_hwmon(void)
 {
-	int ret1 = 0, ret2 = 0;
+	int temp_max = atoi(nvram_safe_get("hwmon_temp_max")) * TEMP_MUL;
+	int temp_hyst = atoi(nvram_safe_get("hwmon_temp_hyst")) * TEMP_MUL;
 
-	if (!nvram_invmatch("syslogd_enable", "0"))
-		return;
-
-	if (strlen(nvram_safe_get("syslogd_rem_ip")) > 0)
-		ret1 = eval("syslogd", "-R", nvram_safe_get("syslogd_rem_ip"));
-	else
-		ret1 = eval("syslogd", "-L");
-
-	dd_syslog(LOG_INFO, "syslogd : syslog daemon successfully started\n");
-	ret2 = eval("klogd");
-	dd_syslog(LOG_INFO, "klogd : klog daemon successfully started\n");
-
-	return;
+	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
+	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
+		  TEMP_PREFIX);
+	dd_syslog(LOG_INFO, "hwmon successfully started\n");
 }
 
-void stop_syslog(void)
-{
-
-	if (pidof("klogd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "klogd : klog daemon successfully stopped\n");
-		killall("klogd", SIGKILL);
-	}
-	if (pidof("syslogd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "syslogd : syslog daemon successfully stopped\n");
-		killall("syslogd", SIGKILL);
-	}
-	cprintf("done\n");
-	return;
-}
 #endif
