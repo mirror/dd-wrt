@@ -313,57 +313,60 @@
 // Linksys WRT310N v1 (BCM4705 cpu, fccid: Linksys Q87-WRT310N)
 #define ROUTER_WRT310N 0x4d16
 
+// Linksys WRT310N v2 (BCM4716 cpu, fccid: Linksys Q87-WRT310NV2)
+#define ROUTER_WRT310NV2 0x4e16
+
 // D-Link DIR330 (BCM5836 cpu, fccid: D Link KA2DIR330A1)
-#define ROUTER_DLINK_DIR330 0x4e13
+#define ROUTER_DLINK_DIR330 0x4f13
 
 // Netgear WNDR3300 (BCM4704 cpu, BCM5325F switch, dual radio 2.4-N and 5 GHz 
 // Broadcom, fccid: Netgear PY307300072)
-#define ROUTER_NETGEAR_WNDR3300 0x4f16
+#define ROUTER_NETGEAR_WNDR3300 0x5016
 
 // Asus WL-330GE (BCM5354, no switch, fccid: MSQWL330GE)
-#define ROUTER_ASUS_330GE 0x5012
+#define ROUTER_ASUS_330GE 0x5112
 
 // Linksys WRT54Gv8.1 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV81)
-#define ROUTER_WRT54G_V81 0x5117
+#define ROUTER_WRT54G_V81 0x5217
 
 // Netgear WGR614L (BCM5354 cpu, 4M serial flash - 16M ram, fccid: Netgear PY306400057)
 // Netgear WGR614 v8 - same -
 // Netgear WGR614 WW - same -
-#define ROUTER_NETGEAR_WGR614L 0x5217
+#define ROUTER_NETGEAR_WGR614L 0x5317
 
 // Netgear WGR614L (BCM5354 cpu, 2M serial flash - 8M ram, fccid: Netgear PY306400057)
-#define ROUTER_NETGEAR_WGR614V9 0x5317
+#define ROUTER_NETGEAR_WGR614V9 0x5417
 
 // Netgear WNR834Bv2 (BCM4704 cpu, BCM5325 switch, fccid: Netgear
 // PY307100061)
-#define ROUTER_NETGEAR_WNR834BV2 0x5416
+#define ROUTER_NETGEAR_WNR834BV2 0x5516
 
 // Asus WL-500g Premium v2 (BCM5354 cpu, fccid: Asus MSQWL500GPV2)
-#define ROUTER_ASUS_WL500G_PRE_V2 0x5512
+#define ROUTER_ASUS_WL500G_PRE_V2 0x5612
 
 // Wistron CA8-PRO (RDAA-81)
-#define ROUTER_BOARD_CA8PRO 0x5606
+#define ROUTER_BOARD_CA8PRO 0x5706
 
 // Askey board RT2205D-D56 / RT2206D-D56 (BCM4704 cpu, mini-pci)
 // Belkin MIMO F5D8230_v2 or F5D8230_v1001ea (fccid: Airgo networks Inc.
 // SA3-AGN0901AP0100)
-#define ROUTER_ASKEY_RT220XD 0x5717
+#define ROUTER_ASKEY_RT220XD 0x5817
 
 // U.S.Robotics USR5455 (BCM5354 cpu, no switch, fccid: Universal Scientific
 // Industrial Co. IXM-APGBR03)
 // U.S.Robotics USR5465 (BCM5354 cpu, fccid: Universal Scientific Industrial
 // Co. IXM-RTGBR03)
-#define ROUTER_USR_5465 0x580f
+#define ROUTER_USR_5465 0x590f
 
-#define ROUTER_ALLNET01 0x5913
+#define ROUTER_ALLNET01 0x5a13
 
 // Linksys WRT610N (BCM4785 cpu, Gigabit switch, dual radio 2.4 and 5 GHz
 // Broadcom, fccid: Linksys Q87-WRT610N)
-#define ROUTER_WRT610N 0x5a16
+#define ROUTER_WRT610N 0x5b16
 
 // Linksys WRT610Nv2 (BCM4718 cpu, Gigabit switch, dual radio 2.4 and 5 GHz
 // Broadcom, fccid: Linksys Q87-WRT610NV2)
-#define ROUTER_WRT610NV2 0x5b16
+#define ROUTER_WRT610NV2 0x5c16
 
 // Belkin F5D7230 v3000 (BCM5350 cpu, flash ?? , fccid: Belkin PD5F5D72304)
 #define ROUTER_BELKIN_F5D7230_V3000 0x6011
