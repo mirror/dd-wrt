@@ -395,7 +395,11 @@ static int handle_port_media_write(void *driver, char *buf, int nr)
 	
 	reg &= ~((1 << 1) | (1 << 2) | (1 << 3));
 	if (media & SWITCH_MEDIA_AUTO)
+		{
 		reg |= 1 << 1;
+		reg |= 1 << 2;
+		reg |= 1 << 3;
+		}
 	if (media & SWITCH_MEDIA_100)
 		reg |= 1 << 2;
 	if (media & SWITCH_MEDIA_FD)
