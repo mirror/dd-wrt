@@ -29,10 +29,8 @@ void start_hotplug_usb(void)
 	char *action;
 	int class, subclass, protocol;
 
-
 	if (!(nvram_match("usb_automnt", "1")))
 		return;
-
 
 	if (!(action = getenv("ACTION")) || !(device = getenv("TYPE")))
 		return;
@@ -44,7 +42,6 @@ void start_hotplug_usb(void)
 			return;
 		sscanf(interface, "%d/%d/%d", &class, &subclass, &protocol);
 	}
-
 
 	/* 
 	 * If a new USB device is added and it is of storage class 
@@ -130,131 +127,135 @@ static int usb_add_ufd()
 	struct stat tmp_stat;
 	int i, found = 0;
 
-	for (i = 1; i < 16; i++ ) {  //it needs some time for disk to settle down and /dev/discs is created
+	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
 		if ((dir = opendir("/dev/discs")) != NULL) {
 			break;
-		}
-		else {
-			sleep (1);
+		} else {
+			sleep(1);
 		}
 	}
-		if (i == 15)
-			return EINVAL;
+	if (i == 15)
+		return EINVAL;
 
 	/* 
 	 * Scan through entries in the directories 
 	 */
 
-	for (i = 1; i < 16; i++ ) {  //it needs some time for disk to settle down and /dev/discs/discs%d is created
+	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
 			if ((strncmp(entry->d_name, "disc", 4)))
 				continue;
 			else
 				found = 1;
 
-		/* 
-		 * Files created when the UFD is inserted are not removed when
-		 * it is removed. Verify the device  is still inserted.  Strip
-		 * the "disc" and pass the rest of the string.  
-		 */
-
-		if (usb_ufd_connected(entry->d_name + 4) == FALSE)
-			continue;
-
-		sprintf(path, "/dev/discs/%s/disc", entry->d_name);
-
-		sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
-
-		/* 
-		 * Check if it has file system 
-		 */
-		if ((fp = fopen(DUMPFILE, "r"))) {
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				if (strstr(line, "Partition"))
-					is_part = 1;
-
-				if (strstr(line, "file system")) {
-					if (strstr(line, "FAT")) {
-						fs = "vfat";
-						break;
-					} else if (strstr(line, "Ext2")) {
-						fs = "ext2";
-						break;
-					} else if (strstr(line, "Ext3")) {
-#ifdef HAVE_USB_ADVANCED
-						fs = "ext3";
-#else
-						fs = "ext2";
-#endif
-						break;
-					}
-				}
-
-			}
-			fclose(fp);
-		}
-
-		if (fs) {
 			/* 
-			 * If it is partioned, mount first partition else raw disk 
+			 * Files created when the UFD is inserted are not removed when
+			 * it is removed. Verify the device  is still inserted.  Strip
+			 * the "disc" and pass the rest of the string.  
 			 */
-			if (is_part) {
-				partitions =
-				    "part1 part2 part3 part4 part5 part6";
-				foreach(part, partitions, next) {
-					sprintf(path, "/dev/discs/%s/%s",
-						entry->d_name, part);
-					if (stat(path, &tmp_stat))
-						continue;
-					if (usb_process_path(path, fs) == 0) {
-						is_mounted = 1;
-						break;
+
+			if (usb_ufd_connected(entry->d_name + 4) == FALSE)
+				continue;
+
+			sprintf(path, "/dev/discs/%s/disc", entry->d_name);
+
+			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
+
+			/* 
+			 * Check if it has file system 
+			 */
+			if ((fp = fopen(DUMPFILE, "r"))) {
+				while (fgets(line, sizeof(line), fp) != NULL) {
+					if (strstr(line, "Partition"))
+						is_part = 1;
+
+					if (strstr(line, "file system")) {
+						if (strstr(line, "FAT")) {
+							fs = "vfat";
+							break;
+						} else if (strstr(line, "Ext2")) {
+							fs = "ext2";
+							break;
+						} else if (strstr(line, "Ext3")) {
+#ifdef HAVE_USB_ADVANCED
+							fs = "ext3";
+#else
+							fs = "ext2";
+#endif
+							break;
+						}
 					}
+
 				}
-			} else {
-				if (usb_process_path(path, fs) == 0)
-					is_mounted = 1;
+				fclose(fp);
 			}
 
-		}
+			if (fs) {
+				/* 
+				 * If it is partioned, mount first partition else raw disk 
+				 */
+				if (is_part) {
+					partitions =
+					    "part1 part2 part3 part4 part5 part6";
+					foreach(part, partitions, next) {
+						sprintf(path,
+							"/dev/discs/%s/%s",
+							entry->d_name, part);
+						if (stat(path, &tmp_stat))
+							continue;
+						if (usb_process_path(path, fs)
+						    == 0) {
+							is_mounted = 1;
+							break;
+						}
+					}
+				} else {
+					if (usb_process_path(path, fs) == 0)
+						is_mounted = 1;
+				}
 
-		if ((fp = fopen(DUMPFILE, "a"))) {
-			if (fs && is_mounted)
-				fprintf(fp, "Status: <b>Mounted on /%s</b>\n",
-					nvram_safe_get("usb_mntpoint"));
-			else if (fs)
-				fprintf(fp, "Status: <b>Not mounted</b>\n");
-			else
-				fprintf(fp,
-					"Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n");
-			fclose(fp);
-		}
+			}
 
-		if (is_mounted && !nvram_match("usb_runonmount", "")) {
-			sprintf(path, "%s", nvram_safe_get("usb_runonmount"));
-			if (stat(path, &tmp_stat) == 0)	//file exists
-			{
-				setenv("PATH",
-				       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
-				       1);
-				setenv("LD_LIBRARY_PATH",
-				       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
-				       1);
-			
-				       	system(path);
+			if ((fp = fopen(DUMPFILE, "a"))) {
+				if (fs && is_mounted)
+					fprintf(fp,
+						"Status: <b>Mounted on /%s</b>\n",
+						nvram_safe_get("usb_mntpoint"));
+				else if (fs)
+					fprintf(fp,
+						"Status: <b>Not mounted</b>\n");
+				else
+					fprintf(fp,
+						"Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n");
+				fclose(fp);
+			}
+
+			if (is_mounted && !nvram_match("usb_runonmount", "")) {
+				sprintf(path, "%s",
+					nvram_safe_get("usb_runonmount"));
+				if (stat(path, &tmp_stat) == 0)	//file exists
+				{
+					setenv("PATH",
+					       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
+					       1);
+					setenv("LD_LIBRARY_PATH",
+					       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
+					       1);
+
+					system(path);
+				}
+			}
+
+			if (is_mounted) {	//temp. fix: only mount 1st mountable part, then exit
+				closedir(dir);
+				return 0;
 			}
 		}
-
-		if (is_mounted)	{ //temp. fix: only mount 1st mountable part, then exit
-			closedir (dir);
-			return 0;
-			}
+		if (!found)
+			sleep(1);
+		else
+			break;
 	}
-	if (!found)
-		sleep (1);
-	else
-		break;
-	}
-	closedir (dir);
+	closedir(dir);
 	return 0;
 }

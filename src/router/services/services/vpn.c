@@ -54,7 +54,6 @@
 #include <syslog.h>
 #include <services.h>
 
-
 void start_vpn_modules(void)
 {
 #if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_RT2880)
@@ -116,4 +115,3 @@ void stop_vpn_modules(void)
 
 #endif
 }
-

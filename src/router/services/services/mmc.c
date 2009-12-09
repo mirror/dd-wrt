@@ -94,7 +94,7 @@ void start_mmc(void)
 		sprintf(dddo, "DDDO=0x%X", 1 << mmc_do);
 		sprintf(ddclk, "DDCLK=0x%X", 1 << mmc_clk);
 		sprintf(ddcs, "DDCS=0x%X", 1 << mmc_cs);
-*/		
+*/
 		sprintf(dddi, "din=%d", mmc_di);
 		sprintf(dddo, "dout=%d", mmc_do);
 		sprintf(ddclk, "clk=%d", mmc_clk);

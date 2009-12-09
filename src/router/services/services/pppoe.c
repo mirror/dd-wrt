@@ -59,7 +59,6 @@
  */
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-
 // =========================================tallest============================================
 /*
  * AhMan March 18 2005 Start the Original Linksys PPPoE 
@@ -141,7 +140,6 @@ void start_tmp_ppp(int num)
 	cprintf("done session %d\n", num);
 	return;
 }
-
 
 void start_pppoe(int pppoe_num)
 {
@@ -264,6 +262,7 @@ void start_pppoe(int pppoe_num)
 	cprintf("done. session %d\n", pppoe_num);
 	return;
 }
+
 void stop_pppoe(void)
 {
 
@@ -306,6 +305,4 @@ void stop_single_pppoe(int pppoe_num)
 	return;
 }
 
-
 #endif
-

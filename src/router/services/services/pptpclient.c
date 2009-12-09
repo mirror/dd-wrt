@@ -54,8 +54,6 @@
 #include <syslog.h>
 #include <services.h>
 
-
-
 #ifdef HAVE_PPTP
 
 static void create_pptp_config(char *servername, char *username)
@@ -292,4 +290,3 @@ void stop_pptp(void)
 }
 
 #endif
-
