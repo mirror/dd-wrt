@@ -1555,6 +1555,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys WRT310N");
 			return ROUTER_WRT310N;
+		} else if (nvram_match("boot_hw_model", "WRT310N")
+			   && nvram_match("boot_hw_ver", "2.0")) {
+			setRouter("Linksys WRT310Nv2");
+			return ROUTER_WRT310NV2;		
 		}
 	}
 
@@ -2995,14 +2999,20 @@ int led_control(int type, int act)
 		// diag_gpio = 0x11; //power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_WRT310N:
-		connected_gpio = 0x103;
+		//connected_gpio = 0x103;
+		//power_gpio = 0x001;
+		//diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
+		//ses2_gpio = 0x103;	// ses orange
+		break;
+	case ROUTER_WRT310NV2:
+		connected_gpio = 0x102; // ses orange
 		power_gpio = 0x001;
 		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
-		ses2_gpio = 0x103;	// ses orange
+		ses_gpio = 0x104;	// ses blue
+		break;
 	case ROUTER_WRT160N:
 		power_gpio = 0x001;
 		diag_gpio = 0x101;	// power led blink / off to indicate fac.def. 
-		// 
 		connected_gpio = 0x103;	// ses orange
 		ses_gpio = 0x105;	// ses blue
 		break;
