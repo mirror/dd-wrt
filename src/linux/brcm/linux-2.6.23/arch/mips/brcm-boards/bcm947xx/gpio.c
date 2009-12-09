@@ -227,6 +227,13 @@ if (nvram_match("boardnum", "42") && nvram_match("boot_hw_model", "WRT160N")
 		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
+if (nvram_match("boardnum", "42") && nvram_match("boot_hw_model", "WRT310N")
+		&& nvram_match("boot_hw_ver", "2.0"))
+{
+		printk(KERN_EMERG "WRT310Nv2 GPIO Init\n");
+		gpios = 1 << 1 | 1 << 2 | 1 << 4;
+}
+
 if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 		&& nvram_match("boardtype", "0x048e")
 		&& (nvram_match("melco_id", "32093") || nvram_match("melco_id", "32064")))
