@@ -4924,7 +4924,6 @@ STATIC int bcm5700_change_mtu(struct net_device *dev, int new_mtu)
 		if (memcmp(dev->dev_addr, pDevice->NodeAddress, 6)) {
 			LM_SetMacAddress(pDevice, dev->dev_addr);
 		}
-		napi_enable(&pDevice->sc_napi);
 		netif_start_queue(dev);
 		bcm5700_intr_on(pUmDevice);
 	}
