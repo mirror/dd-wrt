@@ -216,4 +216,68 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 
 }
 
+extern float wifi_getrate(char *ifname);
+
+#define KILO	1e3
+#define MEGA	1e6
+#define GIGA	1e9
+
+void ej_get_currate(webs_t wp, int argc, char_t ** argv)
+{
+	char mode[32];
+	int state = get_radiostate("wl0");
+
+	if (state == 0 || state == -1) {
+		websWrite(wp, "%s", live_translate("share.disabled"));
+		return;
+	}
+	float rate = wifi_getrate("ra0");
+	char scale;
+	int divisor;
+
+	if (rate >= GIGA) {
+		scale = 'G';
+		divisor = GIGA;
+	} else {
+		if (rate >= MEGA) {
+			scale = 'M';
+			divisor = MEGA;
+		} else {
+			scale = 'k';
+			divisor = KILO;
+		}
+	}
+	if (rate > 0.0) {
+		websWrite(wp, "%g %cb/s", rate / divisor, scale);
+	} else
+		websWrite(wp, "%s", live_translate("share.auto"));
+
+}
+
+void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
+{
+	return;
+}
+
+void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
+{
+	return;
+}
+
+void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
+{
+	int channel = wifi_getchannel("ra0");
+
+	if (channel > 0 && channel < 1000) {
+		websWrite(wp, "%d (%d Mhz)", channel, wifi_getfreq("ra0"));
+	} else
+		// websWrite (wp, "unknown");
+		websWrite(wp, "%s", live_translate("share.unknown"));
+	return;
+}
+
+void ej_active_wds(webs_t wp, int argc, char_t ** argv)
+{
+}
+
 #endif
