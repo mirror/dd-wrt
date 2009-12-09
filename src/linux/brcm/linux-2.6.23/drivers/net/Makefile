@@ -310,4 +310,4 @@ obj-$(CONFIG_FS_ENET) += fs_enet/
 obj-$(CONFIG_NETXEN_NIC) += netxen/
 obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
 obj-$(CONFIG_AR2313) += ar2313/
-#obj-y += switch/
+obj-y += switch/
