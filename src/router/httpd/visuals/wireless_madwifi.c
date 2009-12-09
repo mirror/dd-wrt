@@ -259,4 +259,145 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
+
+int get_distance(void)
+{
+	char path[64];
+	int ifcount, distance = 0;
+
+	strcpy(path, nvram_safe_get("wifi_display"));
+	sscanf(path, "ath%d", &ifcount);
+	sprintf(path, "/proc/sys/dev/wifi%d/distance", ifcount);
+	FILE *in = fopen(path, "rb");
+
+	if (in != NULL) {
+		fscanf(in, "%d", &distance);
+		fclose(in);
+	}
+
+/*	sprintf(path, "/proc/sys/dev/wifi%d/timingoffset", ifcount);
+	in = fopen(path, "rb");
+
+	if (in != NULL) {
+		fscanf(in, "%d", &tim);
+		fclose(in);
+	}
+	ack -= tim * 2;
+*/
+	return distance;
+}
+
+int get_acktiming(void)
+{
+	char path[64];
+	int ifcount, ack = 0;
+
+	strcpy(path, nvram_safe_get("wifi_display"));
+	sscanf(path, "ath%d", &ifcount);
+	sprintf(path, "/proc/sys/dev/wifi%d/acktimeout", ifcount);
+	FILE *in = fopen(path, "rb");
+
+	if (in != NULL) {
+		fscanf(in, "%d", &ack);
+		fclose(in);
+	}
+
+/*	sprintf(path, "/proc/sys/dev/wifi%d/timingoffset", ifcount);
+	in = fopen(path, "rb");
+
+	if (in != NULL) {
+		fscanf(in, "%d", &tim);
+		fclose(in);
+	}
+	ack -= tim * 2;
+*/
+	return ack;
+}
+
+void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\">%s</div>\n",
+		  live_translate("share.acktiming"));
+	int ack = get_acktiming();
+	int distance = get_distance();
+
+	websWrite(wp, "<span id=\"wl_ack\">%d&#181;s (%dm)</span> &nbsp;\n",
+		  ack, distance);
+	websWrite(wp, "</div>\n");
+}
+
+void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
+{
+	int ack = get_acktiming();
+	int distance = get_distance();
+
+	websWrite(wp, "%d&#181;s (%dm)", ack, distance);
+}
+
+extern float wifi_getrate(char *ifname);
+
+#define KILO	1e3
+#define MEGA	1e6
+#define GIGA	1e9
+
+void ej_get_currate(webs_t wp, int argc, char_t ** argv)
+{
+	char mode[32];
+	int state = get_radiostate(nvram_safe_get("wifi_display"));
+
+	if (state == 0 || state == -1) {
+		websWrite(wp, "%s", live_translate("share.disabled"));
+		return;
+	}
+	float rate = wifi_getrate(nvram_safe_get("wifi_display"));
+	char scale;
+	int divisor;
+
+	if (rate >= GIGA) {
+		scale = 'G';
+		divisor = GIGA;
+	} else {
+		if (rate >= MEGA) {
+			scale = 'M';
+			divisor = MEGA;
+		} else {
+			scale = 'k';
+			divisor = KILO;
+		}
+	}
+	sprintf(mode, "%s_channelbw", nvram_safe_get("wifi_display"));
+	if (nvram_match(mode, "40"))
+		rate *= 2;
+	if (rate > 0.0) {
+		websWrite(wp, "%g %cb/s", rate / divisor, scale);
+	} else
+		websWrite(wp, "%s", live_translate("share.auto"));
+
+}
+
+
+void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
+{
+	int channel = wifi_getchannel(nvram_safe_get("wifi_display"));
+
+	if (channel > 0 && channel < 1000) {
+		websWrite(wp, "%d (%d Mhz)", channel,
+			  get_wififreq(nvram_safe_get("wifi_display"),
+				       wifi_getfreq(nvram_safe_get
+						    ("wifi_display"))));
+	} else
+		// websWrite (wp, "unknown");
+		websWrite(wp, "%s", live_translate("share.unknown"));
+	return;
+}
+
+
+void ej_active_wds(webs_t wp, int argc, char_t ** argv)
+{
+}
+
+
+
+
 #endif
