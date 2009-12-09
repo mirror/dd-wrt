@@ -282,6 +282,31 @@ void stop_pppoe(void)
 	return;
 }
 
+static void stop_dns_clear_resolv(void)
+{
+	FILE *fp_w;
+
+	if (pidof("dnsmasq") > 0) {
+		dd_syslog(LOG_INFO,
+			  "dnsmasq : dnsmasq daemon successfully stopped\n");
+		killall("dnsmasq", SIGTERM);
+	}
+	/*
+	 * Save DNS to resolv.conf 
+	 */
+	if (!(fp_w = fopen(RESOLV_FILE, "w"))) {
+		perror(RESOLV_FILE);
+		return;
+	}
+	fprintf(fp_w, " ");
+	fclose(fp_w);
+
+	cprintf("done\n");
+	return;
+}
+
+
+
 void stop_single_pppoe(int pppoe_num)
 {
 	int ret;
