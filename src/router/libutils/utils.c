@@ -2999,10 +2999,10 @@ int led_control(int type, int act)
 		// diag_gpio = 0x11; //power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_WRT310N:
-		//connected_gpio = 0x103;
-		//power_gpio = 0x001;
-		//diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
-		//ses2_gpio = 0x103;	// ses orange
+		connected_gpio = 0x103;
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
+		ses2_gpio = 0x103;	// ses orange
 		break;
 	case ROUTER_WRT310NV2:
 		connected_gpio = 0x102; // ses orange
