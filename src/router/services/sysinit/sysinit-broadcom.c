@@ -237,6 +237,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
 	case ROUTER_WRT310N:
+	case ROUTER_WRT310NV2:	
 	case ROUTER_WRT320N:
 	case ROUTER_WRT350N:
 	case ROUTER_BUFFALO_WZRG144NH:
@@ -246,6 +247,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNDR3300:
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_ASUS_WL500W:
+	case ROUTER_WRT610NV2:
 
 		break;
 	case ROUTER_WRT600N:
@@ -703,6 +705,7 @@ void start_sysinit(void)
 
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_WRT320N:
+	case ROUTER_ASUS_RTN16:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("wan_ifname2", "vlan2");
@@ -715,23 +718,13 @@ void start_sysinit(void)
 		}
 		break;
 		
-	case ROUTER_ASUS_RTN16:
+	case ROUTER_WRT160NV3:
+	case ROUTER_WRT310NV2:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("wan_ifname2", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		nvram_set("vlan2hwname", "et0");
-		if (nvram_match("vlan2ports", "0 8u")) {
-			nvram_set("vlan2ports", "0 8");
-			need_reboot = 1;
-		}
-		break;
-
-	case ROUTER_WRT160NV3:
-		nvram_set("lan_ifnames", "vlan1 eth1");
-		nvram_set("wan_ifname", "vlan2");
-		nvram_set("wan_ifname2", "vlan2");
-		nvram_set("wl0_ifname", "eth1");
 		break;
 
 	case ROUTER_NETGEAR_WNDR3300:
@@ -1339,6 +1332,7 @@ void start_sysinit(void)
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
 			case ROUTER_WRT310N:
+			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
 			case ROUTER_WRT350N:
 			case ROUTER_WRT600N:
@@ -1418,6 +1412,7 @@ void start_sysinit(void)
 		} else {
 			switch (brand) {
 			case ROUTER_WRT310N:
+			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
 			case ROUTER_WRT350N:
 			case ROUTER_WRT600N:
