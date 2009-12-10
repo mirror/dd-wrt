@@ -3,11 +3,15 @@ export LD_LIBRARY_PATH=/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/jffs/usr/local/lib
 export PS1='\u@\h:\w\$ '
 
 reboot() {
-  echo "$(nvram get rc_shutdown)" > /tmp/.rc_shutdown  
+  for f in /opt/etc/init.d/K* ; do
+    [ -x "$f" ] && "$f" stop
+  done
+  echo "$(nvram get rc_shutdown)" > /tmp/.rc_shutdown
   if [ -f /tmp/.rc_shutdown ]; then
     chmod +x /tmp/.rc_shutdown
     /tmp/.rc_shutdown
   fi
   /sbin/reboot
   }
+
  
