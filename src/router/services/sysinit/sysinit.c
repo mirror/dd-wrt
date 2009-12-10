@@ -1098,6 +1098,7 @@ void start_restore_defaults(void)
 		break;
 	case ROUTER_WRT160NV3:
 	case ROUTER_WRT320N:
+	case ROUTER_WRT310NV2:	
 		linux_overrides = wrt320vlan;
 		break;
 	case ROUTER_WRT350N:
