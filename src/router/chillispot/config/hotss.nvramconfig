@@ -6,3 +6,4 @@
  "hotss_operatorid" "oper id" "NULL" "TRUE" "0"
  "hotss_locationid" "location id" "NULL" "TRUE" "0"
  "hotss_nowifibridge" "no bridge" "CHOICE" "2" "0" "1" "TRUE" "0"
+ "hotss_net" "net" "NULL" "TRUE" "0"
