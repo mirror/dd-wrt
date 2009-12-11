@@ -45,6 +45,7 @@ void stop_chilli(void);
 void start_chilli(void)
 {
 	int ret = 0;
+	FILE *fp;
 
 	stop_chilli();		//ensure that its stopped
 
@@ -53,13 +54,17 @@ void start_chilli(void)
 	if (nvram_match("chilli_enable", "1")
 	    && nvram_match("chilli_def_enable", "0")
 	    && !nvram_match("hotss_enable", "1")) {
+		nvram_unset("chilli_def_enable");		
 		nvram_set("chilli_enable", "0");
 		return;
 	}
 
 	if (!nvram_match("chilli_enable", "1")
 	    && !nvram_match("hotss_enable", "1"))
+	    {
+		nvram_unset("chilli_def_enable");		    
 		return;
+		}
 
 	if (nvram_match("hotss_enable", "1")) {
 		if (!nvram_match("chilli_enable", "1")) {
@@ -81,8 +86,15 @@ void start_chilli(void)
 
 	ret = killall("chilli", SIGTERM);
 	ret = killall("chilli", SIGKILL);
-	ret = eval("chilli", "-c", "/tmp/chilli.conf");
-	dd_syslog(LOG_INFO, "chilli : chilli daemon successfully started\n");
+	if (fp = fopen("/tmp/hotss.conf", "r")) {
+		fclose(fp);
+		ret = eval("chilli", "-c", "/tmp/hotss.conf");
+		dd_syslog(LOG_INFO, "hotspotsystem : chilli daemon successfully started\n");
+	}
+	else {
+		ret = eval("chilli", "-c", "/tmp/chilli.conf");
+		dd_syslog(LOG_INFO, "chilli : chilli daemon successfully started\n");		
+	}
 
 	cprintf("done\n");
 	return;
@@ -90,11 +102,21 @@ void start_chilli(void)
 
 void stop_chilli(void)
 {
-
+	FILE *fp;
+	
 	if (pidof("chilli") > 0) {
-		syslog(LOG_INFO,
-		       "chilli : chilli daemon successfully stopped\n");
+		if (fp = fopen("/tmp/hotss.conf", "r")) {
+			fclose(fp);
+			syslog(LOG_INFO,
+		 	      "hotspotsystem : chilli daemon successfully stopped\n");
+	 	}
+	 	else {
+			syslog(LOG_INFO,
+		 	      "chilli : chilli daemon successfully stopped\n");
+	 	}
 		killall("chilli", SIGKILL);
+		unlink("/tmp/chilli.conf");
+		unlink("/tmp/hotss.conf"); 
 	}
 	cprintf("done\n");
 	return;
@@ -227,8 +249,8 @@ void hotspotsys_config(void)
 	char *dnslist;
 	int i;
 
-	if (!(fp = fopen("/tmp/chilli.conf", "w"))) {
-		perror("/tmp/chilli.conf");
+	if (!(fp = fopen("/tmp/hotss.conf", "w"))) {
+		perror("/tmp/hotss.conf");
 		return;
 	}
 
@@ -236,8 +258,11 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
 
-	if (nvram_match("hotss_nowifibridge", "1"))
+	if (nvram_match("hotss_nowifibridge", "1")) {
 		fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
+		if (nvram_invmatch("hotss_net", ""))
+			fprintf(fp, "net %s\n", nvram_get("hotss_net"));		
+	}
 	else
 		fprintf(fp, "dhcpif br0\n");
 
@@ -272,19 +297,19 @@ void hotspotsys_config(void)
 	fprintf(fp, "uamsecret hotsys123\n");
 	fprintf(fp, "uamanydns\n");
 
-	if (nvram_invmatch("hotss_uamallowed", "")
-	    && nvram_match("hotss_uamenable", "1"))
-		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
-
 	fprintf(fp, "radiusnasid %s_%s\n", nvram_get("hotss_operatorid"),
 		nvram_get("hotss_locationid"));
-
 	fprintf(fp,
 		"uamhomepage https://customer.hotspotsystem.com/customer/index.php?operator=%s&location=%s\n",
 		nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
 	fprintf(fp, "coaport 3799\n");
 	fprintf(fp, "coanoipcheck\n");
 	fprintf(fp, "domain key.chillispot.info\n");
+	
+	if (nvram_invmatch("hotss_uamallowed", "")
+	    && nvram_match("hotss_uamenable", "1"))
+		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
+	
 	fprintf(fp,
 		"uamallowed hotspotsystem.com,customer.hotspotsystem.com\n");
 	fprintf(fp,
