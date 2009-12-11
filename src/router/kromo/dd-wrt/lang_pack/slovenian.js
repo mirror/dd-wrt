@@ -789,6 +789,7 @@ hotspotsys.allowuam="UAM dopu¹èeni";
 hotspotsys.operatorid="ID operatorja";
 hotspotsys.locationid="ID lokacije";
 hotspotsys.dhcp="DHCP vmesnik";
+hotspotsys.net="Oddaljena mre¾a";
 
 
 anchorfree.anchorfree="AnchorFree";
