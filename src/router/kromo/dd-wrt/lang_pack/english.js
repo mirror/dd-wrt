@@ -789,6 +789,7 @@ hotspotsys.allowuam="UAM Allowed";
 hotspotsys.operatorid="Operator ID";
 hotspotsys.locationid="Location ID";
 hotspotsys.dhcp="DHCP Interface";
+hotspotsys.net="Remote Network";
 
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
