@@ -46,6 +46,10 @@ function setHotss(val) {
 		setElementsActive("chilli_enable", "chilli_additional", true);
 		show_layer_ext(this, 'idhotspotsys', false);
 		show_layer_ext(this, 'idchilli', <% nvram_else_match("chilli_enable", "1", "1", "0"); %> == 1);
+		if (<% nvram_else_match("chilli_def_enable", "0", "1", "0"); %> == 1) {
+			show_layer_ext(this, 'idchilli', false);
+			setElementsActive("chilli_enable", "chilli_additional", false);
+			}
 		}
 }
 
