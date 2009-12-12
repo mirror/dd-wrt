@@ -36,6 +36,9 @@ ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_bcmmodern_mini busybox/.config
 else
 	cp busybox/.config_bcmmodern_std busybox/.config
+ifeq ($(CONFIG_BBOX),"mini")
+	cp busybox/.config_bcmmodern_mini busybox/.config
+endif
 endif
 endif
 	cd busybox && make oldconfig
