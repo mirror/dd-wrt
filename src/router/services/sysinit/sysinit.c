@@ -1699,6 +1699,9 @@ void start_drivers(void)
 				cprintf("loading usb_fs_fat\n");
 				insmod("nls_base");
 				insmod("nls_cp437");
+				insmod("nls_iso8859-1");				
+				insmod("nls_iso8859-2");	
+				insmod("nls_utf8");							
 				insmod("fat");
 				cprintf("loading usb_fs_vfat\n");
 				insmod("vfat");
