@@ -30,7 +30,6 @@
 #include <bcmdevs.h>
 #include <net/route.h>
 #include <cy_conf.h>
-#include <bcmdevs.h>
 #include <linux/if_ether.h>
 // #include <linux/mii.h>
 #include <linux/sockios.h>
@@ -64,29 +63,31 @@ int getcpurev(void)
 			cnt++;
 		if (cnt == 3) {
 			getc(fp);
-			char cpurev[16];
+			char cpurev[32];
 			int i = 0;
 
-			for (i = 0; i < 13; i++)
+			for (i = 0; i < 32; i++) {
 				cpurev[i] = getc(fp);
+				if (cpurev[i] == '\n') break;
+			}
 			cpurev[i] = 0;
 			fclose(fp);
-			if (!strncmp(cpurev, "BCM4710 V0.0", 12))	// BCM4702, BCM4710
+			if (strstr(cpurev, "BCM4710 V0.0"))	// BCM4702, BCM4710
 				// (old 125 MHz)
 				return 0;
-			if (!strncmp(cpurev, "BCM3302 V0.6", 12))	// BCM4704
+			if (strstr(cpurev, "BCM3302 V0.6"))	// BCM4704
 				return 6;
-			if (!strncmp(cpurev, "BCM3302 V0.7", 12))	// BCM4712, BCM5365
+			if (strstr(cpurev, "BCM3302 V0.7"))	// BCM4712, BCM5365
 				return 7;
-			if (!strncmp(cpurev, "BCM3302 V0.8", 12))	// BCM5350, BCM5352
+			if (strstr(cpurev, "BCM3302 V0.8"))	// BCM5350, BCM5352
 				return 8;
-			if (!strncmp(cpurev, "BCM3302 V2.9", 12))	// BCM5354
+			if (strstr(cpurev, "BCM3302 V2.9"))	// BCM5354
 				return 29;
-			if (!strncmp(cpurev, "BCM3302 V1.10", 13))	// BCM4785 (BCM3302 V1.10)
+			if (strstr(cpurev, "BCM3302 V1.10"))	// BCM4785 (BCM3302 V1.10)
 				return 110;
-			if (!strncmp(cpurev, "MIPS 74K V4.0", 13))	// BCM4718 (Broadcom BCM4716 chip rev 1)
+			if (strstr(cpurev, "MIPS 74K V4.0"))	// BCM4718 (Broadcom BCM4716 chip rev 1)
 				return 40;
-			if (!strncmp(cpurev, "MIPS 74K V4.9", 13))	// BCM4716B0 (Broadcom BCMB83A chip rev 0) 
+			if (strstr(cpurev, "MIPS 74K V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0) 
 				return 49;				
 			return -1;
 		}
@@ -97,11 +98,13 @@ int getcpurev(void)
 
 int cpu_plltype(void)
 {
+#if defined(HAVE_BUFFALO) || defined(BUFFALO_JP)
 	if (nvram_match("DD_BOARD", "Buffalo WHR-G54S") ||	//
 	    nvram_match("DD_BOARD", "Buffalo WHR-HP-G54") ||	//
 	    nvram_match("DD_BOARD", "Buffalo AS-A100") ||	//
 	    nvram_match("DD_BOARD", "Buffalo WHR-HP-G54DD"))	//
 		return 0;
+#endif
 
 	int cpurev = getcpurev();
 	int cputype = check_hw_type();
