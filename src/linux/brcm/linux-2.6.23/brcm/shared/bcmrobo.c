@@ -1110,7 +1110,37 @@ vlan_setup:
 		         (7 << 21));	/* 7 -> 7 */
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_PMAP, &val32, sizeof(val32));
 	}
+	
+	if (robo->devid == DEVID53115) {
+		/* Configure the priority system to use to determine the TC of
+		 * ingress frames. Use DiffServ TC mapping, otherwise 802.1p
+		 * TC mapping, otherwise MAC based TC mapping.
+		 */
+		val8 = ((0 << 6) |		/* Disable port based QoS */
+	                (2 << 2));		/* QoS priority selection */
+		robo->ops->write_reg(robo, 0x30, 0, &val8, sizeof(val8));
 
+		/* Configure tx queues scheduling mechanism */
+		val8 = (3 << 0);		/* Strict priority */
+		robo->ops->write_reg(robo, 0x30, 0x80, &val8, sizeof(val8));
+
+		/* Enable 802.1p Priority to TC mapping for individual ports */
+		val16 = 0x11f;
+		robo->ops->write_reg(robo, 0x30, 0x4, &val16, sizeof(val16));
+
+		/* Configure the TC to COS mapping. This determines the egress
+		 * transmit queue.
+		 */
+		val16 = ((1 << 0)  |	/* Pri 0 mapped to TXQ 1 */
+			 (0 << 2)  |	/* Pri 1 mapped to TXQ 0 */
+			 (0 << 4)  |	/* Pri 2 mapped to TXQ 0 */
+			 (1 << 6)  |	/* Pri 3 mapped to TXQ 1 */
+			 (2 << 8)  |	/* Pri 4 mapped to TXQ 2 */
+			 (2 << 10) |	/* Pri 5 mapped to TXQ 2 */
+			 (3 << 12) |	/* Pri 6 mapped to TXQ 3 */
+			 (3 << 14));	/* Pri 7 mapped to TXQ 3 */
+		robo->ops->write_reg(robo, 0x30, 0x62, &val16, sizeof(val16));
+	}
 
 	/* Disable management interface access */
 	if (robo->ops->disable_mgmtif)
