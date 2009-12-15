@@ -102,7 +102,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "na-only"))
 				{
-				fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags)
+				fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
 				continue;
 				}
 		}
@@ -112,7 +112,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
-				fprintf(stderr,"11na ht20 Ghz %d is not compatible to na-only/mixed/n-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags)
+				fprintf(stderr,"11na ht20 Ghz %d is not compatible to na-only/mixed/n-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
 				continue;
 			}
 		}
