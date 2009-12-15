@@ -54,6 +54,8 @@
 #include <syslog.h>
 #include <services.h>
 
+void stop_cron(void);
+
 void start_cron(void)
 {
 	int ret = 0;
@@ -62,9 +64,8 @@ void start_cron(void)
 
 	if (nvram_match("cron_enable", "0"))
 		return;
-
-	if (pidof("cron") > 0)	//cron already running
-		return;
+		
+	stop_cron();
 
 	/*
 	 * Create cron's database directory 
@@ -97,7 +98,7 @@ void start_cron(void)
 	    && nvram_match("schedule_hour_time", "2")) {
 
 		fp = fopen("/tmp/cron.d/check_schedules", "w");
-		fprintf(fp, "%s %s * * %s root /sbin/reboot\n",
+		fprintf(fp, "%s %s * * %s root startservice run_rc_shutdown; /sbin/reboot\n",
 			nvram_safe_get("schedule_minutes"),
 			nvram_safe_get("schedule_hours"),
 			nvram_safe_get("schedule_weekdays"));
@@ -125,8 +126,7 @@ void start_cron(void)
 	eval("cp", "-af", "/mmc/mycron.d/*", "/tmp/cron.d/");
 
 	cprintf("starting cron\n");
-	if (pidof("cron") > 0)	//cron already running
-		return;
+
 	ret = eval("cron");
 	dd_syslog(LOG_INFO, "cron : cron daemon successfully started\n");
 
@@ -141,8 +141,8 @@ void stop_cron(void)
 		dd_syslog(LOG_INFO,
 			  "cron : cron daemon successfully stopped\n");
 		killall("cron", SIGKILL);
-		eval("rm", "-rf", "/tmp/cron.d");
 	}
+		eval("rm", "-rf", "/tmp/cron.d");
 	cprintf("done\n");
 	return;
 }
