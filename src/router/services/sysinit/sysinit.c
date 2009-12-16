@@ -1261,7 +1261,10 @@ void start_restore_defaults(void)
 	}
 #endif
 	int nvcnt = 0;
-
+	
+#ifndef HAVE_MADWIFI
+	int icnt = get_wl_instances();
+#endif
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {
@@ -1276,6 +1279,10 @@ void start_restore_defaults(void)
 				if (!u || !u->name) {
 					nvcnt++;
 					nvram_set(t->name, t->value);
+#ifndef HAVE_MADWIFI
+					if (icnt == 1 && startswith(t->name, "wl1_")) //unset wl1_xx if we have single radio only
+						nvram_unset(t->name);
+#endif
 				}
 			}
 		}
