@@ -6,7 +6,7 @@
  * Copyright (c) 2005 Herbert Xu <herbert@gondor.apana.org.au>
  *
  * Portions derived from Cryptoapi, by Alexander Kjeldaas <astor@fast.no>
- * and Nettle, by Niels Möller.
+ * and Nettle, by Niels MÃ¶ller.
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -30,12 +30,21 @@
  */
 #define CRYPTO_ALG_TYPE_MASK		0x0000000f
 #define CRYPTO_ALG_TYPE_CIPHER		0x00000001
-#define CRYPTO_ALG_TYPE_DIGEST		0x00000002
-#define CRYPTO_ALG_TYPE_HASH		0x00000003
+#define CRYPTO_ALG_TYPE_COMPRESS	0x00000002
+#define CRYPTO_ALG_TYPE_AEAD		0x00000003
 #define CRYPTO_ALG_TYPE_BLKCIPHER	0x00000004
-#define CRYPTO_ALG_TYPE_COMPRESS	0x00000005
+#define CRYPTO_ALG_TYPE_ABLKCIPHER	0x00000005
+#define CRYPTO_ALG_TYPE_GIVCIPHER	0x00000006
+#define CRYPTO_ALG_TYPE_DIGEST		0x00000008
+#define CRYPTO_ALG_TYPE_HASH		0x00000008
+#define CRYPTO_ALG_TYPE_SHASH		0x00000009
+#define CRYPTO_ALG_TYPE_AHASH		0x0000000a
+#define CRYPTO_ALG_TYPE_RNG		0x0000000c
+#define CRYPTO_ALG_TYPE_PCOMPRESS	0x0000000f
 
 #define CRYPTO_ALG_TYPE_HASH_MASK	0x0000000e
+#define CRYPTO_ALG_TYPE_AHASH_MASK	0x0000000c
+#define CRYPTO_ALG_TYPE_BLKCIPHER_MASK	0x0000000c
 
 #define CRYPTO_ALG_LARVAL		0x00000010
 #define CRYPTO_ALG_DEAD			0x00000020
@@ -49,12 +58,24 @@
 #define CRYPTO_ALG_NEED_FALLBACK	0x00000100
 
 /*
+ * This bit is set for symmetric key ciphers that have already been wrapped
+ * with a generic IV generator to prevent them from being wrapped again.
+ */
+#define CRYPTO_ALG_GENIV		0x00000200
+
+/*
+ * Set if the algorithm has passed automated run-time testing.  Note that
+ * if there is no run-time testing for a given algorithm it is considered
+ * to have passed.
+ */
+
+#define CRYPTO_ALG_TESTED		0x00000400
+
+/*
  * Transform masks and values (for crt_flags).
  */
 #define CRYPTO_TFM_REQ_MASK		0x000fff00
 #define CRYPTO_TFM_RES_MASK		0xfff00000
-
-
 
 #define CRYPTO_TFM_REQ_WEAK_KEY		0x00000100
 #define CRYPTO_TFM_REQ_MAY_SLEEP	0x00000200
@@ -82,22 +103,24 @@
 #define CRYPTO_MINALIGN ARCH_KMALLOC_MINALIGN
 #elif defined(ARCH_SLAB_MINALIGN)
 #define CRYPTO_MINALIGN ARCH_SLAB_MINALIGN
+#else
+#define CRYPTO_MINALIGN __alignof__(unsigned long long)
 #endif
 
-#ifdef CRYPTO_MINALIGN
 #define CRYPTO_MINALIGN_ATTR __attribute__ ((__aligned__(CRYPTO_MINALIGN)))
-#else
-#define CRYPTO_MINALIGN_ATTR
-#endif
 
 struct scatterlist;
 struct crypto_ablkcipher;
 struct crypto_async_request;
+struct crypto_aead;
 struct crypto_blkcipher;
 struct crypto_hash;
-struct crypto_queue;
+struct crypto_ahash;
+struct crypto_rng;
 struct crypto_tfm;
 struct crypto_type;
+struct aead_givcrypt_request;
+struct skcipher_givcrypt_request;
 
 typedef void (*crypto_completion_t)(struct crypto_async_request *req, int err);
 
@@ -117,6 +140,42 @@ struct ablkcipher_request {
 
 	void *info;
 
+	struct scatterlist *src;
+	struct scatterlist *dst;
+
+	void *__ctx[] CRYPTO_MINALIGN_ATTR;
+};
+
+struct ahash_request {
+	struct crypto_async_request base;
+
+	unsigned int nbytes;
+	struct scatterlist *src;
+	u8		   *result;
+
+	void *__ctx[] CRYPTO_MINALIGN_ATTR;
+};
+
+/**
+ *	struct aead_request - AEAD request
+ *	@base: Common attributes for async crypto requests
+ *	@assoclen: Length in bytes of associated data for authentication
+ *	@cryptlen: Length of data to be encrypted or decrypted
+ *	@iv: Initialisation vector
+ *	@assoc: Associated data
+ *	@src: Source data
+ *	@dst: Destination data
+ *	@__ctx: Start of private context data
+ */
+struct aead_request {
+	struct crypto_async_request base;
+
+	unsigned int assoclen;
+	unsigned int cryptlen;
+
+	u8 *iv;
+
+	struct scatterlist *assoc;
 	struct scatterlist *src;
 	struct scatterlist *dst;
 
@@ -151,12 +210,41 @@ struct ablkcipher_alg {
 	              unsigned int keylen);
 	int (*encrypt)(struct ablkcipher_request *req);
 	int (*decrypt)(struct ablkcipher_request *req);
+	int (*givencrypt)(struct skcipher_givcrypt_request *req);
+	int (*givdecrypt)(struct skcipher_givcrypt_request *req);
 
-	struct crypto_queue *queue;
+	const char *geniv;
 
 	unsigned int min_keysize;
 	unsigned int max_keysize;
 	unsigned int ivsize;
+};
+
+struct ahash_alg {
+	int (*init)(struct ahash_request *req);
+	int (*reinit)(struct ahash_request *req);
+	int (*update)(struct ahash_request *req);
+	int (*final)(struct ahash_request *req);
+	int (*digest)(struct ahash_request *req);
+	int (*setkey)(struct crypto_ahash *tfm, const u8 *key,
+			unsigned int keylen);
+
+	unsigned int digestsize;
+};
+
+struct aead_alg {
+	int (*setkey)(struct crypto_aead *tfm, const u8 *key,
+	              unsigned int keylen);
+	int (*setauthsize)(struct crypto_aead *tfm, unsigned int authsize);
+	int (*encrypt)(struct aead_request *req);
+	int (*decrypt)(struct aead_request *req);
+	int (*givencrypt)(struct aead_givcrypt_request *req);
+	int (*givdecrypt)(struct aead_givcrypt_request *req);
+
+	const char *geniv;
+
+	unsigned int ivsize;
+	unsigned int maxauthsize;
 };
 
 struct blkcipher_alg {
@@ -168,6 +256,8 @@ struct blkcipher_alg {
 	int (*decrypt)(struct blkcipher_desc *desc,
 		       struct scatterlist *dst, struct scatterlist *src,
 		       unsigned int nbytes);
+
+	const char *geniv;
 
 	unsigned int min_keysize;
 	unsigned int max_keysize;
@@ -213,12 +303,24 @@ struct compress_alg {
 			      unsigned int slen, u8 *dst, unsigned int *dlen);
 };
 
+struct rng_alg {
+	int (*rng_make_random)(struct crypto_rng *tfm, u8 *rdata,
+			       unsigned int dlen);
+	int (*rng_reset)(struct crypto_rng *tfm, u8 *seed, unsigned int slen);
+
+	unsigned int seedsize;
+};
+
+
 #define cra_ablkcipher	cra_u.ablkcipher
+#define cra_aead	cra_u.aead
 #define cra_blkcipher	cra_u.blkcipher
 #define cra_cipher	cra_u.cipher
 #define cra_digest	cra_u.digest
 #define cra_hash	cra_u.hash
+#define cra_ahash	cra_u.ahash
 #define cra_compress	cra_u.compress
+#define cra_rng		cra_u.rng
 
 struct crypto_alg {
 	struct list_head cra_list;
@@ -239,11 +341,14 @@ struct crypto_alg {
 
 	union {
 		struct ablkcipher_alg ablkcipher;
+		struct aead_alg aead;
 		struct blkcipher_alg blkcipher;
 		struct cipher_alg cipher;
 		struct digest_alg digest;
 		struct hash_alg hash;
+		struct ahash_alg ahash;
 		struct compress_alg compress;
+		struct rng_alg rng;
 	} cra_u;
 
 	int (*cra_init)(struct crypto_tfm *tfm);
@@ -262,26 +367,7 @@ int crypto_unregister_alg(struct crypto_alg *alg);
 /*
  * Algorithm query interface.
  */
-
-#ifdef CONFIG_CRYPTO
-int crypto_alg_available(const char *name, u32 flags)
-	__deprecated_for_modules;
 int crypto_has_alg(const char *name, u32 type, u32 mask);
-#else
-static int crypto_alg_available(const char *name, u32 flags)
-	__deprecated_for_modules;
-static inline int crypto_alg_available(const char *name, u32 flags)
-{
-	return 0;
-}
-
-static inline int crypto_has_alg(const char *name, u32 type, u32 mask)
-{
-	return 0;
-}
-#endif
-
-
 
 /*
  * Transforms: user-instantiated objects which encapsulate algorithms
@@ -294,7 +380,27 @@ struct ablkcipher_tfm {
 	              unsigned int keylen);
 	int (*encrypt)(struct ablkcipher_request *req);
 	int (*decrypt)(struct ablkcipher_request *req);
+	int (*givencrypt)(struct skcipher_givcrypt_request *req);
+	int (*givdecrypt)(struct skcipher_givcrypt_request *req);
+
+	struct crypto_ablkcipher *base;
+
 	unsigned int ivsize;
+	unsigned int reqsize;
+};
+
+struct aead_tfm {
+	int (*setkey)(struct crypto_aead *tfm, const u8 *key,
+	              unsigned int keylen);
+	int (*encrypt)(struct aead_request *req);
+	int (*decrypt)(struct aead_request *req);
+	int (*givencrypt)(struct aead_givcrypt_request *req);
+	int (*givdecrypt)(struct aead_givcrypt_request *req);
+
+	struct crypto_aead *base;
+
+	unsigned int ivsize;
+	unsigned int authsize;
 	unsigned int reqsize;
 };
 
@@ -327,6 +433,18 @@ struct hash_tfm {
 	unsigned int digestsize;
 };
 
+struct ahash_tfm {
+	int (*init)(struct ahash_request *req);
+	int (*update)(struct ahash_request *req);
+	int (*final)(struct ahash_request *req);
+	int (*digest)(struct ahash_request *req);
+	int (*setkey)(struct crypto_ahash *tfm, const u8 *key,
+			unsigned int keylen);
+
+	unsigned int digestsize;
+	unsigned int reqsize;
+};
+
 struct compress_tfm {
 	int (*cot_compress)(struct crypto_tfm *tfm,
 	                    const u8 *src, unsigned int slen,
@@ -336,11 +454,20 @@ struct compress_tfm {
 	                      u8 *dst, unsigned int *dlen);
 };
 
+struct rng_tfm {
+	int (*rng_gen_random)(struct crypto_rng *tfm, u8 *rdata,
+			      unsigned int dlen);
+	int (*rng_reset)(struct crypto_rng *tfm, u8 *seed, unsigned int slen);
+};
+
 #define crt_ablkcipher	crt_u.ablkcipher
+#define crt_aead	crt_u.aead
 #define crt_blkcipher	crt_u.blkcipher
 #define crt_cipher	crt_u.cipher
 #define crt_hash	crt_u.hash
+#define crt_ahash	crt_u.ahash
 #define crt_compress	crt_u.compress
+#define crt_rng		crt_u.rng
 
 struct crypto_tfm {
 
@@ -348,11 +475,16 @@ struct crypto_tfm {
 	
 	union {
 		struct ablkcipher_tfm ablkcipher;
+		struct aead_tfm aead;
 		struct blkcipher_tfm blkcipher;
 		struct cipher_tfm cipher;
 		struct hash_tfm hash;
+		struct ahash_tfm ahash;
 		struct compress_tfm compress;
+		struct rng_tfm rng;
 	} crt_u;
+
+	void (*exit)(struct crypto_tfm *tfm);
 	
 	struct crypto_alg *__crt_alg;
 
@@ -360,6 +492,10 @@ struct crypto_tfm {
 };
 
 struct crypto_ablkcipher {
+	struct crypto_tfm base;
+};
+
+struct crypto_aead {
 	struct crypto_tfm base;
 };
 
@@ -379,14 +515,22 @@ struct crypto_hash {
 	struct crypto_tfm base;
 };
 
+struct crypto_rng {
+	struct crypto_tfm base;
+};
+
 enum {
 	CRYPTOA_UNSPEC,
 	CRYPTOA_ALG,
 	CRYPTOA_TYPE,
+	CRYPTOA_U32,
 	__CRYPTOA_MAX,
 };
 
 #define CRYPTOA_MAX (__CRYPTOA_MAX - 1)
+
+/* Maximum number of (rtattr) parameters for each template. */
+#define CRYPTO_MAX_ATTRS 32
 
 struct crypto_attr_alg {
 	char name[CRYPTO_MAX_ALG_NAME];
@@ -397,13 +541,23 @@ struct crypto_attr_type {
 	u32 mask;
 };
 
+struct crypto_attr_u32 {
+	u32 num;
+};
+
 /* 
  * Transform user interface.
  */
  
-struct crypto_tfm *crypto_alloc_tfm(const char *alg_name, u32 tfm_flags);
 struct crypto_tfm *crypto_alloc_base(const char *alg_name, u32 type, u32 mask);
-void crypto_free_tfm(struct crypto_tfm *tfm);
+void crypto_destroy_tfm(void *mem, struct crypto_tfm *tfm);
+
+static inline void crypto_free_tfm(struct crypto_tfm *tfm)
+{
+	return crypto_destroy_tfm(tfm, tfm);
+}
+
+int alg_test(const char *driver, const char *alg, u32 type, u32 mask);
 
 /*
  * Transform helpers which query the underlying algorithm.
@@ -478,16 +632,22 @@ static inline struct crypto_ablkcipher *__crypto_ablkcipher_cast(
 	return (struct crypto_ablkcipher *)tfm;
 }
 
-static inline struct crypto_ablkcipher *crypto_alloc_ablkcipher(
-	const char *alg_name, u32 type, u32 mask)
+static inline u32 crypto_skcipher_type(u32 type)
 {
-	type &= ~CRYPTO_ALG_TYPE_MASK;
+	type &= ~(CRYPTO_ALG_TYPE_MASK | CRYPTO_ALG_GENIV);
 	type |= CRYPTO_ALG_TYPE_BLKCIPHER;
-	mask |= CRYPTO_ALG_TYPE_MASK;
-
-	return __crypto_ablkcipher_cast(
-		crypto_alloc_base(alg_name, type, mask));
+	return type;
 }
+
+static inline u32 crypto_skcipher_mask(u32 mask)
+{
+	mask &= ~(CRYPTO_ALG_TYPE_MASK | CRYPTO_ALG_GENIV);
+	mask |= CRYPTO_ALG_TYPE_BLKCIPHER_MASK;
+	return mask;
+}
+
+struct crypto_ablkcipher *crypto_alloc_ablkcipher(const char *alg_name,
+						  u32 type, u32 mask);
 
 static inline struct crypto_tfm *crypto_ablkcipher_tfm(
 	struct crypto_ablkcipher *tfm)
@@ -503,11 +663,8 @@ static inline void crypto_free_ablkcipher(struct crypto_ablkcipher *tfm)
 static inline int crypto_has_ablkcipher(const char *alg_name, u32 type,
 					u32 mask)
 {
-	type &= ~CRYPTO_ALG_TYPE_MASK;
-	type |= CRYPTO_ALG_TYPE_BLKCIPHER;
-	mask |= CRYPTO_ALG_TYPE_MASK;
-
-	return crypto_has_alg(alg_name, type, mask);
+	return crypto_has_alg(alg_name, crypto_skcipher_type(type),
+			      crypto_skcipher_mask(mask));
 }
 
 static inline struct ablkcipher_tfm *crypto_ablkcipher_crt(
@@ -554,7 +711,9 @@ static inline void crypto_ablkcipher_clear_flags(struct crypto_ablkcipher *tfm,
 static inline int crypto_ablkcipher_setkey(struct crypto_ablkcipher *tfm,
 					   const u8 *key, unsigned int keylen)
 {
-	return crypto_ablkcipher_crt(tfm)->setkey(tfm, key, keylen);
+	struct ablkcipher_tfm *crt = crypto_ablkcipher_crt(tfm);
+
+	return crt->setkey(crt->base, key, keylen);
 }
 
 static inline struct crypto_ablkcipher *crypto_ablkcipher_reqtfm(
@@ -577,7 +736,8 @@ static inline int crypto_ablkcipher_decrypt(struct ablkcipher_request *req)
 	return crt->decrypt(req);
 }
 
-static inline int crypto_ablkcipher_reqsize(struct crypto_ablkcipher *tfm)
+static inline unsigned int crypto_ablkcipher_reqsize(
+	struct crypto_ablkcipher *tfm)
 {
 	return crypto_ablkcipher_crt(tfm)->reqsize;
 }
@@ -585,7 +745,7 @@ static inline int crypto_ablkcipher_reqsize(struct crypto_ablkcipher *tfm)
 static inline void ablkcipher_request_set_tfm(
 	struct ablkcipher_request *req, struct crypto_ablkcipher *tfm)
 {
-	req->base.tfm = crypto_ablkcipher_tfm(tfm);
+	req->base.tfm = crypto_ablkcipher_tfm(crypto_ablkcipher_crt(tfm)->base);
 }
 
 static inline struct ablkcipher_request *ablkcipher_request_cast(
@@ -633,6 +793,146 @@ static inline void ablkcipher_request_set_crypt(
 	req->info = iv;
 }
 
+static inline struct crypto_aead *__crypto_aead_cast(struct crypto_tfm *tfm)
+{
+	return (struct crypto_aead *)tfm;
+}
+
+struct crypto_aead *crypto_alloc_aead(const char *alg_name, u32 type, u32 mask);
+
+static inline struct crypto_tfm *crypto_aead_tfm(struct crypto_aead *tfm)
+{
+	return &tfm->base;
+}
+
+static inline void crypto_free_aead(struct crypto_aead *tfm)
+{
+	crypto_free_tfm(crypto_aead_tfm(tfm));
+}
+
+static inline struct aead_tfm *crypto_aead_crt(struct crypto_aead *tfm)
+{
+	return &crypto_aead_tfm(tfm)->crt_aead;
+}
+
+static inline unsigned int crypto_aead_ivsize(struct crypto_aead *tfm)
+{
+	return crypto_aead_crt(tfm)->ivsize;
+}
+
+static inline unsigned int crypto_aead_authsize(struct crypto_aead *tfm)
+{
+	return crypto_aead_crt(tfm)->authsize;
+}
+
+static inline unsigned int crypto_aead_blocksize(struct crypto_aead *tfm)
+{
+	return crypto_tfm_alg_blocksize(crypto_aead_tfm(tfm));
+}
+
+static inline unsigned int crypto_aead_alignmask(struct crypto_aead *tfm)
+{
+	return crypto_tfm_alg_alignmask(crypto_aead_tfm(tfm));
+}
+
+static inline u32 crypto_aead_get_flags(struct crypto_aead *tfm)
+{
+	return crypto_tfm_get_flags(crypto_aead_tfm(tfm));
+}
+
+static inline void crypto_aead_set_flags(struct crypto_aead *tfm, u32 flags)
+{
+	crypto_tfm_set_flags(crypto_aead_tfm(tfm), flags);
+}
+
+static inline void crypto_aead_clear_flags(struct crypto_aead *tfm, u32 flags)
+{
+	crypto_tfm_clear_flags(crypto_aead_tfm(tfm), flags);
+}
+
+static inline int crypto_aead_setkey(struct crypto_aead *tfm, const u8 *key,
+				     unsigned int keylen)
+{
+	struct aead_tfm *crt = crypto_aead_crt(tfm);
+
+	return crt->setkey(crt->base, key, keylen);
+}
+
+int crypto_aead_setauthsize(struct crypto_aead *tfm, unsigned int authsize);
+
+static inline struct crypto_aead *crypto_aead_reqtfm(struct aead_request *req)
+{
+	return __crypto_aead_cast(req->base.tfm);
+}
+
+static inline int crypto_aead_encrypt(struct aead_request *req)
+{
+	return crypto_aead_crt(crypto_aead_reqtfm(req))->encrypt(req);
+}
+
+static inline int crypto_aead_decrypt(struct aead_request *req)
+{
+	return crypto_aead_crt(crypto_aead_reqtfm(req))->decrypt(req);
+}
+
+static inline unsigned int crypto_aead_reqsize(struct crypto_aead *tfm)
+{
+	return crypto_aead_crt(tfm)->reqsize;
+}
+
+static inline void aead_request_set_tfm(struct aead_request *req,
+					struct crypto_aead *tfm)
+{
+	req->base.tfm = crypto_aead_tfm(crypto_aead_crt(tfm)->base);
+}
+
+static inline struct aead_request *aead_request_alloc(struct crypto_aead *tfm,
+						      gfp_t gfp)
+{
+	struct aead_request *req;
+
+	req = kmalloc(sizeof(*req) + crypto_aead_reqsize(tfm), gfp);
+
+	if (likely(req))
+		aead_request_set_tfm(req, tfm);
+
+	return req;
+}
+
+static inline void aead_request_free(struct aead_request *req)
+{
+	kfree(req);
+}
+
+static inline void aead_request_set_callback(struct aead_request *req,
+					     u32 flags,
+					     crypto_completion_t complete,
+					     void *data)
+{
+	req->base.complete = complete;
+	req->base.data = data;
+	req->base.flags = flags;
+}
+
+static inline void aead_request_set_crypt(struct aead_request *req,
+					  struct scatterlist *src,
+					  struct scatterlist *dst,
+					  unsigned int cryptlen, u8 *iv)
+{
+	req->src = src;
+	req->dst = dst;
+	req->cryptlen = cryptlen;
+	req->iv = iv;
+}
+
+static inline void aead_request_set_assoc(struct aead_request *req,
+					  struct scatterlist *assoc,
+					  unsigned int assoclen)
+{
+	req->assoc = assoc;
+	req->assoclen = assoclen;
+}
+
 static inline struct crypto_blkcipher *__crypto_blkcipher_cast(
 	struct crypto_tfm *tfm)
 {
@@ -649,9 +949,9 @@ static inline struct crypto_blkcipher *crypto_blkcipher_cast(
 static inline struct crypto_blkcipher *crypto_alloc_blkcipher(
 	const char *alg_name, u32 type, u32 mask)
 {
-	type &= ~(CRYPTO_ALG_TYPE_MASK | CRYPTO_ALG_ASYNC);
+	type &= ~CRYPTO_ALG_TYPE_MASK;
 	type |= CRYPTO_ALG_TYPE_BLKCIPHER;
-	mask |= CRYPTO_ALG_TYPE_MASK | CRYPTO_ALG_ASYNC;
+	mask |= CRYPTO_ALG_TYPE_MASK;
 
 	return __crypto_blkcipher_cast(crypto_alloc_base(alg_name, type, mask));
 }
@@ -669,9 +969,9 @@ static inline void crypto_free_blkcipher(struct crypto_blkcipher *tfm)
 
 static inline int crypto_has_blkcipher(const char *alg_name, u32 type, u32 mask)
 {
-	type &= ~(CRYPTO_ALG_TYPE_MASK | CRYPTO_ALG_ASYNC);
+	type &= ~CRYPTO_ALG_TYPE_MASK;
 	type |= CRYPTO_ALG_TYPE_BLKCIPHER;
-	mask |= CRYPTO_ALG_TYPE_MASK | CRYPTO_ALG_ASYNC;
+	mask |= CRYPTO_ALG_TYPE_MASK;
 
 	return crypto_has_alg(alg_name, type, mask);
 }
@@ -873,12 +1173,6 @@ static inline void crypto_cipher_decrypt_one(struct crypto_cipher *tfm,
 						dst, src);
 }
 
-void crypto_digest_init(struct crypto_tfm *tfm) __deprecated_for_modules;
-void crypto_digest_update(struct crypto_tfm *tfm,
-			  struct scatterlist *sg, unsigned int nsg)
-	__deprecated_for_modules;
-void crypto_digest_final(struct crypto_tfm *tfm, u8 *out)
-	__deprecated_for_modules;
 void crypto_digest_digest(struct crypto_tfm *tfm,
 			  struct scatterlist *sg, unsigned int nsg, u8 *out)
 	__deprecated_for_modules;
@@ -895,18 +1189,11 @@ static inline struct crypto_hash *crypto_hash_cast(struct crypto_tfm *tfm)
 	return __crypto_hash_cast(tfm);
 }
 
-static int crypto_digest_setkey(struct crypto_tfm *tfm, const u8 *key,
-				unsigned int keylen) __deprecated;
-static inline int crypto_digest_setkey(struct crypto_tfm *tfm,
-                                       const u8 *key, unsigned int keylen)
-{
-	return tfm->crt_hash.setkey(crypto_hash_cast(tfm), key, keylen);
-}
-
 static inline struct crypto_hash *crypto_alloc_hash(const char *alg_name,
 						    u32 type, u32 mask)
 {
 	type &= ~CRYPTO_ALG_TYPE_MASK;
+	mask &= ~CRYPTO_ALG_TYPE_MASK;
 	type |= CRYPTO_ALG_TYPE_HASH;
 	mask |= CRYPTO_ALG_TYPE_HASH_MASK;
 
@@ -926,6 +1213,7 @@ static inline void crypto_free_hash(struct crypto_hash *tfm)
 static inline int crypto_has_hash(const char *alg_name, u32 type, u32 mask)
 {
 	type &= ~CRYPTO_ALG_TYPE_MASK;
+	mask &= ~CRYPTO_ALG_TYPE_MASK;
 	type |= CRYPTO_ALG_TYPE_HASH;
 	mask |= CRYPTO_ALG_TYPE_HASH_MASK;
 
@@ -950,12 +1238,6 @@ static inline unsigned int crypto_hash_alignmask(struct crypto_hash *tfm)
 static inline unsigned int crypto_hash_digestsize(struct crypto_hash *tfm)
 {
 	return crypto_hash_crt(tfm)->digestsize;
-}
-
-static inline unsigned int crypto_tfm_alg_digestsize(struct crypto_tfm *tfm)
-{
-	BUG_ON(crypto_tfm_alg_type(tfm) != CRYPTO_ALG_TYPE_DIGEST);
-	return tfm->__crt_alg->cra_digest.dia_digestsize;
 }
 
 static inline u32 crypto_hash_get_flags(struct crypto_hash *tfm)

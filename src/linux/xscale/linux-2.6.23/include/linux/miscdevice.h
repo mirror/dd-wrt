@@ -30,6 +30,7 @@
 #define MISC_DYNAMIC_MINOR 255
 
 #define TUN_MINOR	     200
+#define RED_MINOR		201
 #define	HPET_MINOR	     228
 #define KVM_MINOR            232
 
