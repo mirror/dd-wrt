@@ -177,7 +177,7 @@ static struct platform_device *avila_devices[] __initdata = {
 typedef unsigned char cyg_uint8;
 
 // returns non-zero if ACK bit seen
-static int
+static int __init
 eeprom_start(cyg_uint8 b)
 {
     int i;
@@ -215,7 +215,7 @@ eeprom_start(cyg_uint8 b)
 }
 
 
-static void
+static void __init
 eeprom_stop(void)
 {
     hal_delay_us(5);
@@ -232,7 +232,7 @@ eeprom_stop(void)
 }
 
 
-static int
+static int __init
 eeprom_putb(cyg_uint8 b)
 {
     int i;
@@ -263,7 +263,7 @@ eeprom_putb(cyg_uint8 b)
 }
 
 
-static cyg_uint8
+static cyg_uint8 __init
 eeprom_getb(int more)
 {
     int i;
@@ -364,6 +364,7 @@ static void __init avila_init(void)
 	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 	if (!strncmp(model,"GW2369",6))
 	{
+	/* required for 32 mb flash access. do not enable cf driver here, this will collide with each other */
 	avila_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
 	}else
 	{
