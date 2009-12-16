@@ -105,6 +105,7 @@ int endswith(char *str, char *cmp)
 void runStartup(char *folder, char *extension)
 {
 	struct dirent **entry;
+	struct stat filestat
 	DIR *directory;
 	int num, n = 0;
 
@@ -114,23 +115,25 @@ void runStartup(char *folder, char *extension)
 	}
 	closedir(directory);
 	
-    num = scandir(folder, &entry, 0, alphasort);
-    if (num < 0)
-        return;
+	num = scandir(folder, &entry, 0, alphasort);
+	if (num < 0)
+		return;
 	// list all files in this directory 
 	while (n < num) {
 		if (!strcmp(extension, "K**") && strlen(entry[n]->d_name) > 3
 			&& startswith(entry[n]->d_name, "K") && strspn(entry[n]->d_name, "K1234567890") == 3) {  // K* scripts
-			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
-				  entry[n]->d_name);
+			if (stat(entry[n]->d_name, &filestat) == 0 && (filestat.st_mode & S_IXUSR))
+				sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
+				  	entry[n]->d_name);
 			free(entry[n]);
 			n++;
 			continue;
 		}		
 		if (!strcmp(extension, "S**")  && strlen(entry[n]->d_name) > 3 
 			&& startswith(entry[n]->d_name, "S") && strspn(entry[n]->d_name, "S1234567890") == 3) {  // S* scripts
-			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
-				  entry[n]->d_name);
+			if (stat(entry[n]->d_name, &filestat) == 0 && (filestat.st_mode & S_IXUSR))
+				sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
+					  entry[n]->d_name);
 			free(entry[n]);
 			n++;
 			continue;
