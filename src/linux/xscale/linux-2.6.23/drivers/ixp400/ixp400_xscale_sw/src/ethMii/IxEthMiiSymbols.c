@@ -56,9 +56,10 @@
 EXPORT_SYMBOL(ixEthMiiPhyScan);
 EXPORT_SYMBOL(ixEthMiiPhyReset);
 EXPORT_SYMBOL(ixEthMiiPhyConfig);
-EXPORT_SYMBOL(ixEthMiiLinkStatus);
+EXPORT_SYMBOL(ixEthMiiLinkStatus);/*
 EXPORT_SYMBOL(ixEthMiiPhyShow);
 EXPORT_SYMBOL(ixEthMiiPhyLoopbackEnable);
 EXPORT_SYMBOL(ixEthMiiPhyLoopbackDisable);
+*/
 #endif /* __linux */
 

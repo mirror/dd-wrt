@@ -54,23 +54,24 @@
 #include <IxEthDB.h>
 #include <include/IxEthDB_p.h>
 
+/*
 EXPORT_SYMBOL(ixEthDBFilteringStaticEntryProvision);
 EXPORT_SYMBOL(ixEthDBFilteringDynamicEntryProvision);
 EXPORT_SYMBOL(ixEthDBFilteringEntryDelete);
 EXPORT_SYMBOL(ixEthDBFilteringPortSearch);
 EXPORT_SYMBOL(ixEthDBFilteringDatabaseSearch);
-EXPORT_SYMBOL(ixEthDBFilteringPortUpdatingSearch);
+EXPORT_SYMBOL(ixEthDBFilteringPortUpdatingSearch);*/
 EXPORT_SYMBOL(ixEthDBPortAgingDisable);
 EXPORT_SYMBOL(ixEthDBPortAgingEnable);
-EXPORT_SYMBOL(ixEthDBDatabaseMaintenance);
-EXPORT_SYMBOL(ixEthDBEventProcessorPauseModeSet);
+EXPORT_SYMBOL(ixEthDBDatabaseMaintenance);/*
+EXPORT_SYMBOL(ixEthDBEventProcessorPauseModeSet);*/
 
-EXPORT_SYMBOL(ixEthDBFilteringPortMaximumFrameSizeSet);
+EXPORT_SYMBOL(ixEthDBFilteringPortMaximumFrameSizeSet);/*
 EXPORT_SYMBOL(ixEthDBFilteringPortMaximumTxFrameSizeSet);
 EXPORT_SYMBOL(ixEthDBFilteringPortMaximumRxFrameSizeSet);
 
-EXPORT_SYMBOL(ixEthDBInit);
-EXPORT_SYMBOL(ixEthDBUnload);
+EXPORT_SYMBOL(ixEthDBInit);*/
+EXPORT_SYMBOL(ixEthDBUnload);/*
 EXPORT_SYMBOL(ixEthDBPortInit);
 EXPORT_SYMBOL(ixEthDBPortEnable);
 EXPORT_SYMBOL(ixEthDBPortDisable);
@@ -140,7 +141,7 @@ EXPORT_SYMBOL(ixEthDBFirewallTableDownload);
 EXPORT_SYMBOL(ixEthDBUserFieldSet);
 EXPORT_SYMBOL(ixEthDBUserFieldGet);
 
-EXPORT_SYMBOL(mac2string); /* used by codelet display */
-EXPORT_SYMBOL(ixEthDBPortInfo); /* used by the integration code */
-
+EXPORT_SYMBOL(mac2string);
+EXPORT_SYMBOL(ixEthDBPortInfo);
+*/
 #endif /* __linux */

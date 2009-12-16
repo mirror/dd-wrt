@@ -53,7 +53,7 @@
 #if defined (__ixp46X) || defined (__ixp43X)
 #include <linux/module.h>
 #include "IxSspAcc.h"
-
+/*
 EXPORT_SYMBOL(ixSspAccInit);
 EXPORT_SYMBOL(ixSspAccUninit);
 EXPORT_SYMBOL(ixSspAccFIFODataSubmit);
@@ -82,5 +82,6 @@ EXPORT_SYMBOL(ixSspAccSSPBusyCheck);
 EXPORT_SYMBOL(ixSspAccTxFIFOLevelGet);
 EXPORT_SYMBOL(ixSspAccRxFIFOLevelGet);
 EXPORT_SYMBOL(ixSspAccRxFIFOOverrunCheck);
+*/
 #endif /* __ixp46X || __ixp43X */
 #endif /* __linux */

@@ -48,11 +48,11 @@
 
 #include <linux/module.h>
 #include "IxOsal.h"
-
-EXPORT_SYMBOL (ixOsalIrqBind);
+/*
+EXPORT_SYMBOL (ixOsalIrqBind);*/
 EXPORT_SYMBOL (ixOsalIrqUnbind);
 EXPORT_SYMBOL (ixOsalIrqLock);
-EXPORT_SYMBOL (ixOsalIrqUnlock);
+EXPORT_SYMBOL (ixOsalIrqUnlock);/*
 EXPORT_SYMBOL (ixOsalIrqLevelSet);
 EXPORT_SYMBOL (ixOsalIrqEnable);
 EXPORT_SYMBOL (ixOsalIrqDisable);
@@ -74,4 +74,5 @@ EXPORT_SYMBOL (ixOsalPciConfigWriteByte);
 EXPORT_SYMBOL (ixOsalPciConfigWriteShort);
 EXPORT_SYMBOL (ixOsalPciConfigWriteLong);
 EXPORT_SYMBOL (ixOsalPciDeviceFree);
-#endif /* ENABLE_PCI */
+#endif
+*/

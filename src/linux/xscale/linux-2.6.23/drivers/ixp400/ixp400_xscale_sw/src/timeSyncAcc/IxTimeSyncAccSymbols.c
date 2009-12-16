@@ -54,7 +54,7 @@
 #include <linux/module.h>
 #include "IxTimeSyncAcc.h"
 
-EXPORT_SYMBOL(ixTimeSyncAccPTPPortConfigSet);
+/*EXPORT_SYMBOL(ixTimeSyncAccPTPPortConfigSet);
 EXPORT_SYMBOL(ixTimeSyncAccPTPPortConfigGet);
 EXPORT_SYMBOL(ixTimeSyncAccPTPRxPoll);
 EXPORT_SYMBOL(ixTimeSyncAccPTPTxPoll);
@@ -75,6 +75,6 @@ EXPORT_SYMBOL(ixTimeSyncAccStatsGet);
 EXPORT_SYMBOL(ixTimeSyncAccStatsReset);
 EXPORT_SYMBOL(ixTimeSyncAccShow);
 EXPORT_SYMBOL(ixTimeSyncAccUnInit);
-
+*/
 #endif /* end of #ifdef __linux */
 #endif /* __ixp46X */

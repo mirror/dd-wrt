@@ -54,7 +54,7 @@
 #include <linux/module.h>
 #include "IxI2cDrv.h"
 
-EXPORT_SYMBOL(ixI2cDrvInit);
+/*EXPORT_SYMBOL(ixI2cDrvInit);
 EXPORT_SYMBOL(ixI2cDrvUninit);
 EXPORT_SYMBOL(ixI2cDrvSlaveAddrSet);
 EXPORT_SYMBOL(ixI2cDrvBusScan);
@@ -67,6 +67,6 @@ EXPORT_SYMBOL(ixI2cDrvSlaveOrGenCallBufReplenish);
 EXPORT_SYMBOL(ixI2cDrvStatsGet);
 EXPORT_SYMBOL(ixI2cDrvStatsReset);
 EXPORT_SYMBOL(ixI2cDrvShow);
-EXPORT_SYMBOL(ixI2cDrvDelayTypeSelect);
+EXPORT_SYMBOL(ixI2cDrvDelayTypeSelect);*/
 #endif /* __ixp46X */
 #endif /* __linux */
