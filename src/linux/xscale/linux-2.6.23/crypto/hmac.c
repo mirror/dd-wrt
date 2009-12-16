@@ -16,7 +16,8 @@
  *
  */
 
-#include <crypto/algapi.h>
+#include <crypto/internal/hash.h>
+#include <crypto/scatterwalk.h>
 #include <linux/err.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -56,14 +57,35 @@ static int hmac_setkey(struct crypto_hash *parent,
 	if (keylen > bs) {
 		struct hash_desc desc;
 		struct scatterlist tmp;
+		int tmplen;
 		int err;
 
 		desc.tfm = tfm;
 		desc.flags = crypto_hash_get_flags(parent);
 		desc.flags &= CRYPTO_TFM_REQ_MAY_SLEEP;
-		sg_set_buf(&tmp, inkey, keylen);
 
-		err = crypto_hash_digest(&desc, &tmp, keylen, digest);
+		err = crypto_hash_init(&desc);
+		if (err)
+			return err;
+
+		tmplen = bs * 2 + ds;
+		sg_init_one(&tmp, ipad, tmplen);
+
+		for (; keylen > tmplen; inkey += tmplen, keylen -= tmplen) {
+			memcpy(ipad, inkey, tmplen);
+			err = crypto_hash_update(&desc, &tmp, tmplen);
+			if (err)
+				return err;
+		}
+
+		if (keylen) {
+			memcpy(ipad, inkey, keylen);
+			err = crypto_hash_update(&desc, &tmp, keylen);
+			if (err)
+				return err;
+		}
+
+		err = crypto_hash_final(&desc, digest);
 		if (err)
 			return err;
 
@@ -96,7 +118,7 @@ static int hmac_init(struct hash_desc *pdesc)
 
 	desc.tfm = ctx->child;
 	desc.flags = pdesc->flags & CRYPTO_TFM_REQ_MAY_SLEEP;
-	sg_set_buf(&tmp, ipad, bs);
+	sg_init_one(&tmp, ipad, bs);
 
 	err = crypto_hash_init(&desc);
 	if (unlikely(err))
@@ -131,7 +153,7 @@ static int hmac_final(struct hash_desc *pdesc, u8 *out)
 
 	desc.tfm = ctx->child;
 	desc.flags = pdesc->flags & CRYPTO_TFM_REQ_MAY_SLEEP;
-	sg_set_buf(&tmp, opad, bs + ds);
+	sg_init_one(&tmp, opad, bs + ds);
 
 	err = crypto_hash_final(&desc, digest);
 	if (unlikely(err))
@@ -158,9 +180,11 @@ static int hmac_digest(struct hash_desc *pdesc, struct scatterlist *sg,
 	desc.tfm = ctx->child;
 	desc.flags = pdesc->flags & CRYPTO_TFM_REQ_MAY_SLEEP;
 
+	sg_init_table(sg1, 2);
 	sg_set_buf(sg1, ipad, bs);
-	sg1[1].page = (void *)sg;
-	sg1[1].length = 0;
+	scatterwalk_sg_chain(sg1, 2, sg);
+
+	sg_init_table(sg2, 1);
 	sg_set_buf(sg2, opad, bs + ds);
 
 	err = crypto_hash_digest(&desc, sg1, nbytes + bs, digest);
@@ -202,6 +226,7 @@ static struct crypto_instance *hmac_alloc(struct rtattr **tb)
 	struct crypto_instance *inst;
 	struct crypto_alg *alg;
 	int err;
+	int ds;
 
 	err = crypto_check_attr_type(tb, CRYPTO_ALG_TYPE_HASH);
 	if (err)
@@ -210,7 +235,16 @@ static struct crypto_instance *hmac_alloc(struct rtattr **tb)
 	alg = crypto_get_attr_alg(tb, CRYPTO_ALG_TYPE_HASH,
 				  CRYPTO_ALG_TYPE_HASH_MASK);
 	if (IS_ERR(alg))
-		return ERR_PTR(PTR_ERR(alg));
+		return ERR_CAST(alg);
+
+	inst = ERR_PTR(-EINVAL);
+	ds = alg->cra_type == &crypto_hash_type ?
+	     alg->cra_hash.digestsize :
+	     alg->cra_type ?
+	     __crypto_shash_alg(alg)->digestsize :
+	     alg->cra_digest.dia_digestsize;
+	if (ds > alg->cra_blocksize)
+		goto out_put_alg;
 
 	inst = crypto_alloc_instance("hmac", alg);
 	if (IS_ERR(inst))
@@ -222,14 +256,10 @@ static struct crypto_instance *hmac_alloc(struct rtattr **tb)
 	inst->alg.cra_alignmask = alg->cra_alignmask;
 	inst->alg.cra_type = &crypto_hash_type;
 
-	inst->alg.cra_hash.digestsize =
-		(alg->cra_flags & CRYPTO_ALG_TYPE_MASK) ==
-		CRYPTO_ALG_TYPE_HASH ? alg->cra_hash.digestsize :
-				       alg->cra_digest.dia_digestsize;
+	inst->alg.cra_hash.digestsize = ds;
 
 	inst->alg.cra_ctxsize = sizeof(struct hmac_ctx) +
-				ALIGN(inst->alg.cra_blocksize * 2 +
-				      inst->alg.cra_hash.digestsize,
+				ALIGN(inst->alg.cra_blocksize * 2 + ds,
 				      sizeof(void *));
 
 	inst->alg.cra_init = hmac_init_tfm;
