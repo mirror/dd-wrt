@@ -24,6 +24,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 #include <revision.h>
+#include <shutils.h>
 
 void (*do_ej_buffer) (char *buffer, webs_t stream) = NULL;
 int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
@@ -1132,12 +1133,8 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 
 		if (web == NULL) {
 			sprintf(buf, "/www/style/%s/style.css", entry->d_name);
-			FILE *test = fopen(buf, "rb");
-
-			if (test == NULL) {
+			if (!f_exists(buf))
 				continue;
-				}
-			fclose(test);
 		}
 		fclose(web);
 
