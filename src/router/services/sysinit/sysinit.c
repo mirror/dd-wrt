@@ -105,7 +105,7 @@ int endswith(char *str, char *cmp)
 void runStartup(char *folder, char *extension)
 {
 	struct dirent **entry;
-	struct stat filestat
+	struct stat filestat;
 	DIR *directory;
 	int num, n = 0;
 
