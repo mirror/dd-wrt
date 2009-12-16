@@ -209,7 +209,7 @@ static int update_bitmap(int mode, int seq)
 	 * Read active-rule bitmap 
 	 */
 	if ((fd = fopen(IPTABLES_RULE_STAT, "r")) == NULL) {
-		printf("Can't open %s\n", IPTABLES_RULE_STAT);
+		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
 		exit(1);
 	}
 	fgets(buf, sizeof(buf), fd);
@@ -246,7 +246,7 @@ static int update_bitmap(int mode, int seq)
 	 * Write back active-rule bitmap 
 	 */
 	if ((fd = fopen(IPTABLES_RULE_STAT, "w")) == NULL) {
-		printf("Can't open %s\n", IPTABLES_RULE_STAT);
+		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
 		exit(1);
 	}
 	for (k = 1; k < i; k++)
@@ -1551,7 +1551,7 @@ static void lan2wan_chains(void)
 	 * keep the status using bitmap 
 	 */
 	if ((ifd = fopen(IPTABLES_RULE_STAT, "w")) == NULL) {
-		printf("Can't open %s\n", IPTABLES_RULE_STAT);
+		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
 		exit(1);
 	}
 
@@ -1559,7 +1559,7 @@ static void lan2wan_chains(void)
 	 * Open the crontab file for modification 
 	 */
 	if ((cfd = fopen(CRONTAB, "w")) == NULL) {
-		printf("Can't open %s\n", CRONTAB);
+		cprintf("Can't open %s\n", CRONTAB);
 		exit(1);
 	}
 	// fprintf (cfd, "PATH=/sbin:/bin:/usr/sbin:/usr/bin\n\n");

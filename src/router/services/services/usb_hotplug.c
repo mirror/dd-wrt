@@ -82,8 +82,7 @@ static bool usb_ufd_connected(char *str)
 	//in 2.6 kernels its a little bit different; find 1st
 	for (i = 0; i < 16; i++) {
 		sprintf(proc_file, "/proc/scsi/usb-storage/%d", i);
-		if ((fp = fopen(proc_file, "r"))) {
-			fclose(fp);
+		if (f_exists(proc_file)) {
 			return TRUE;
 		}
 	}
