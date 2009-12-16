@@ -38,13 +38,11 @@ void start_gen_radius_cert(void)
 {
 	if (nvram_match("cert_running", "1") && pidof("openssl") > 0)
 		return;		//already running
-	FILE *fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
-	if (NULL == fp) {
+	if (!f_exists("/jffs/etc/freeradius/radiusd.conf")) {
 		//prepare files
 		system("mkdir -p /jffs/etc/freeradius");
 		system("cp -r /etc/freeradius /jffs/etc");
-	} else
-		fclose(fp);
+	}
 
 	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER,
 		 nvram_safe_get("radius_common"),
@@ -89,13 +87,11 @@ void start_freeradius(void)
 	if (!nvram_match("jffs_mounted", "1"))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
 #endif
-	fp = fopen("/jffs/etc/freeradius/radiusd.conf", "rb");
-	if (NULL == fp) {
+	if (!f_exists("/jffs/etc/freeradius/radiusd.conf")) {
 		//prepare files
 		system("mkdir -p /jffs/etc/freeradius");
 		system("cp -r /etc/freeradius /jffs/etc");
-	} else
-		fclose(fp);
+	}
 
 	sysprintf
 	    ("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",
@@ -104,12 +100,11 @@ void start_freeradius(void)
 	    ("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf",
 	     nvram_safe_get("radius_passphrase"));
 
-	fp = fopen("/jffs/etc/freeradius/certs/server.pem", "rb");
-	if (NULL == fp) {
+	if (!f_exists("/jffs/etc/freeradius/certs/server.pem")) {
 		//prepare certificates
 		start_gen_radius_cert();
-	} else
-		fclose(fp);
+	} 
+
 	int i;
 
 	/* generate clients */

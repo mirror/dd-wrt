@@ -128,22 +128,15 @@ err:
 
 static char *getPhyDev()
 {
-	FILE *in = fopen("/proc/switch/eth0/enable", "rb");
-
-	if (in) {
-		fclose(in);
+	if (f_exists("/proc/switch/eth0/enable"))
 		return "eth0";
-	}
-	in = fopen("/proc/switch/eth1/enable", "rb");
-	if (in) {
-		fclose(in);
+		
+	if (f_exists("/proc/switch/eth1/enable"))
 		return "eth1";
-	}
-	in = fopen("/proc/switch/eth2/enable", "rb");
-	if (in) {
-		fclose(in);
-		return "eth2";
-	}
+		
+	if (f_exists("/proc/switch/eth2/enable"))
+		return "eth2";		
+		
 	return "eth0";
 }
 

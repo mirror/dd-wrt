@@ -3335,11 +3335,8 @@ void start_wan_done(char *wan_ifname)
 	    || nvram_match("wan_proto", "3g")) {
 		if (nvram_match("ppp_demand", "1")) {	// ntp and ddns will trigger DOD, so we must
 			// stop them when wan is unavaile.
-			FILE *fp;
-
-			if ((fp = fopen("/tmp/ppp/link", "r"))) {
+			if (f_exists("/tmp/ppp/link")) {
 				start_wan_service();
-				fclose(fp);
 			}
 		} else {
 			start_wan_service();
