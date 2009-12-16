@@ -53,7 +53,7 @@
 #include <linux/module.h>
 #include "IxOsalBackward.h"
 
-EXPORT_SYMBOL (ixOsServIntBind);
+/*EXPORT_SYMBOL (ixOsServIntBind);
 EXPORT_SYMBOL (ixOsServIntUnbind);
 EXPORT_SYMBOL (ixOsServIntLock);
 EXPORT_SYMBOL (ixOsServIntUnlock);
@@ -74,6 +74,6 @@ EXPORT_SYMBOL (ixOsServUnload);
 EXPORT_SYMBOL (ixOsServYield);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardPoolInit);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardMbufPoolGet);
-
+*/
 #endif /* __linux */
 

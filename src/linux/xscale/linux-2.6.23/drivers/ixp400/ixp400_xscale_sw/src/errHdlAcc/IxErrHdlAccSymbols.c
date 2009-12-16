@@ -53,24 +53,31 @@
 #include <IxErrHdlAcc.h>
 
 EXPORT_SYMBOL(ixErrHdlAccEnableConfigSet);
-EXPORT_SYMBOL(ixErrHdlAccNPEReset);
+/*
+EXPORT_SYMBOL(ixErrHdlAccNPEReset);*/
 EXPORT_SYMBOL(ixErrHdlAccInit);
+
 EXPORT_SYMBOL(ixErrHdlAccUnload);
 EXPORT_SYMBOL(ixErrHdlAccErrorHandlerGet);
-EXPORT_SYMBOL(ixErrHdlAccStatusSet);
+/*
+EXPORT_SYMBOL(ixErrHdlAccStatusSet);*/
 EXPORT_SYMBOL(ixErrHdlAccStatusGet);
+
 EXPORT_SYMBOL(ixErrHdlAccCallbackRegister);
+/*
 EXPORT_SYMBOL(ixErrHdlAccStatisticsClear);
 EXPORT_SYMBOL(ixErrHdlAccStatisticsShow);
 EXPORT_SYMBOL(ixErrHdlAccStatisticsGet);
 EXPORT_SYMBOL(ixErrHdlAccEnableConfigGet);
-
+*/
 extern IX_STATUS ixErrHdlAccQMEventHandler(void);
 extern IX_STATUS ixErrHdlAccNPEAEventHandler(void);
 extern IX_STATUS ixErrHdlAccNPEBEventHandler(void);
 extern IX_STATUS ixErrHdlAccNPECEventHandler(void);
+/*
 EXPORT_SYMBOL(ixErrHdlAccQMEventHandler);
 EXPORT_SYMBOL(ixErrHdlAccNPEAEventHandler);
 EXPORT_SYMBOL(ixErrHdlAccNPEBEventHandler);
 EXPORT_SYMBOL(ixErrHdlAccNPECEventHandler);
+*/
 #endif /* __linux */

@@ -53,7 +53,7 @@
 
 #include "IxOsal.h"
 
-
+/*
 EXPORT_SYMBOL (ixOsalMemAlloc);
 EXPORT_SYMBOL (ixOsalMemFree);
 EXPORT_SYMBOL (ixOsalMemCopy);
@@ -70,7 +70,7 @@ EXPORT_SYMBOL (ixOsalThreadResume);
 
 #ifdef IX_OSAL_THREAD_EXIT_GRACEFULLY
 EXPORT_SYMBOL (ixOsalThreadStopCheck);
-#endif /* IX_OSAL_THREAD_EXIT_GRACEFULLY */
+#endif 
 
 EXPORT_SYMBOL (ixOsalMessageQueueCreate);
 EXPORT_SYMBOL (ixOsalMessageQueueDelete);
@@ -94,8 +94,8 @@ EXPORT_SYMBOL (ixOsalSemaphoreTryWait);
 EXPORT_SYMBOL (ixOsalSemaphoreGetValue);
 EXPORT_SYMBOL (ixOsalSemaphoreDestroy);
 
-EXPORT_SYMBOL (ixOsalYield);
-EXPORT_SYMBOL (ixOsalSleep);
+EXPORT_SYMBOL (ixOsalYield);*/
+EXPORT_SYMBOL (ixOsalSleep);/*
 EXPORT_SYMBOL (ixOsalBusySleep);
 EXPORT_SYMBOL (ixOsalTimeGet);
 EXPORT_SYMBOL (ixOsalTimevalToTicks);
@@ -112,7 +112,7 @@ EXPORT_SYMBOL (ixOsalOsNameGet);
 EXPORT_SYMBOL (ixOsalOsVersionGet);
 
 #ifdef IX_OSAL_OSSL_SHIMLAYER_SUPPORT
-/* New Functions */
+
 EXPORT_SYMBOL (ixOsalThreadGetId);
 EXPORT_SYMBOL (ixOsalThreadSetPolicyAndPriority);
 
@@ -121,7 +121,7 @@ EXPORT_SYMBOL (ixOsalSemaphorePostWakeup);
 EXPORT_SYMBOL (ixOsalSemaphoreFlush);
 EXPORT_SYMBOL (ixOsalSleepTick);
 EXPORT_SYMBOL (ixOsalSleepUninterruptible);
-#endif /* IX_OSAL_OSSL_SHIMLAYER_SUPPORT */
+#endif 
 
 #ifdef ENABLE_SPINLOCK
 
@@ -131,8 +131,9 @@ EXPORT_SYMBOL (ixOsalSpinLockUnlock);
 EXPORT_SYMBOL (ixOsalSpinLockTry);
 EXPORT_SYMBOL (ixOsalSpinLockDestroy);
 
-#endif /* ENABLE_SPINLOCK */
+#endif
 
+*/
 
 #ifdef IX_OSAL_MODULE
 

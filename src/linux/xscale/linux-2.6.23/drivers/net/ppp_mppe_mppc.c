@@ -1261,11 +1261,11 @@ int __init mppe_module_init(void)
 {
     int answer;
 
-    if (!(crypto_alg_available("arc4", 0) && crypto_alg_available("sha1", 0))) {
-	printk(KERN_ERR "Kernel doesn't provide ARC4 and/or SHA1 algorithms "
-	       "required by MPPE/MPPC. Check CryptoAPI configuration.\n");
-	return -ENODEV;
-    }
+//    if (!(crypto_alg_available("arc4", 0) && crypto_alg_available("sha1", 0))) {
+//	printk(KERN_ERR "Kernel doesn't provide ARC4 and/or SHA1 algorithms "
+//	       "required by MPPE/MPPC. Check CryptoAPI configuration.\n");
+//	return -ENODEV;
+//    }
 
     /* Allocate space for SHAPad1, SHAPad2 and ... */
     sha_pad = kmalloc(sizeof(struct sha_pad), GFP_KERNEL);

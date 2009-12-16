@@ -53,7 +53,7 @@
 #include <linux/module.h>
 #include <IxHssAcc.h>
 
-EXPORT_SYMBOL(ixHssAccPortInit);
+/*EXPORT_SYMBOL(ixHssAccPortInit);
 EXPORT_SYMBOL(ixHssAccLastErrorRetrievalInitiate);
 EXPORT_SYMBOL(ixHssAccInit);
 EXPORT_SYMBOL(ixHssAccPktPortConnect);
@@ -73,5 +73,5 @@ EXPORT_SYMBOL(ixHssAccStatsInit);
 EXPORT_SYMBOL(ixHssAccChanTslotSwitchEnable);
 EXPORT_SYMBOL(ixHssAccChanTslotSwitchDisable);
 EXPORT_SYMBOL(ixHssAccChanTslotSwitchGctDownload);
-EXPORT_SYMBOL(ixHssAccUninit);
+EXPORT_SYMBOL(ixHssAccUninit);*/
 #endif /* __linux */

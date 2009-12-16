@@ -53,19 +53,20 @@
 #include <linux/module.h>
 #include <IxNpeDl.h>
 
-EXPORT_SYMBOL(ixNpeDlNpeStopAndReset);
+EXPORT_SYMBOL(ixNpeDlNpeStopAndReset);/*
 EXPORT_SYMBOL(ixNpeDlNpeExecutionStart);
 EXPORT_SYMBOL(ixNpeDlNpeExecutionStop);
 EXPORT_SYMBOL(ixNpeDlStatsShow);
 EXPORT_SYMBOL(ixNpeDlStatsReset);
-EXPORT_SYMBOL(ixNpeDlUnload);
-EXPORT_SYMBOL(ixNpeDlNpeInitAndStart);
-EXPORT_SYMBOL(ixNpeDlCustomImageNpeInitAndStart);
-EXPORT_SYMBOL(ixNpeDlLoadedImageFunctionalityGet);
+EXPORT_SYMBOL(ixNpeDlUnload);*/
+EXPORT_SYMBOL(ixNpeDlNpeInitAndStart);/*
+EXPORT_SYMBOL(ixNpeDlCustomImageNpeInitAndStart);*/
+EXPORT_SYMBOL(ixNpeDlLoadedImageFunctionalityGet);/*
 EXPORT_SYMBOL(ixNpeDlDataMemRead);
 EXPORT_SYMBOL(ixNpeDlLoadedImageGet);
+*/
 extern IX_STATUS ixNpeDlNpeMgrNpeStop (IxNpeDlNpeId npeId);
-EXPORT_SYMBOL(ixNpeDlNpeMgrNpeStop);
+//EXPORT_SYMBOL(ixNpeDlNpeMgrNpeStop);
 #endif /* __linux */
 
 

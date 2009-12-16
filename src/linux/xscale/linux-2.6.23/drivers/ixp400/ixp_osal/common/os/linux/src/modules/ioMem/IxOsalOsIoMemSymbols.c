@@ -50,7 +50,9 @@
 #include "IxOsal.h"
 
 /* EXPORT_SYMBOL(ixOsalCoreWordSwap); */
+/*
 EXPORT_SYMBOL (ixOsalIoMemMap);
 EXPORT_SYMBOL (ixOsalIoMemUnmap);
 EXPORT_SYMBOL (ixOsalIoMemVirtToPhys);
 EXPORT_SYMBOL (ixOsalIoMemPhysToVirt);
+*/

@@ -49,7 +49,7 @@
 #include <linux/module.h>
 #include "IxOsal.h"
 
-EXPORT_SYMBOL (ixOsalOemFastMutexTryLock);
+/*EXPORT_SYMBOL (ixOsalOemFastMutexTryLock);
 EXPORT_SYMBOL (ixOsalOemInit);
 EXPORT_SYMBOL (ixOsalOemUnload);
 EXPORT_SYMBOL (ixOsalOsIxp400TimestampGet);
@@ -59,3 +59,4 @@ EXPORT_SYMBOL (ixOsalOsIxp400SysClockRateGet);
 EXPORT_SYMBOL (ixOsalLinuxMemMap);
 EXPORT_SYMBOL (ixOsalLinuxMemUnmap);
 #endif /*  ENABLE_IOMEM */
+*/

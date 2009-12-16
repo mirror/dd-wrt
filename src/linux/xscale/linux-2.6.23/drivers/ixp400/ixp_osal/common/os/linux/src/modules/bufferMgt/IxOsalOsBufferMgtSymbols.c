@@ -49,14 +49,15 @@
 #include <linux/module.h>
 #include "IxOsal.h"
 
-EXPORT_SYMBOL (ixOsalBuffPoolMbufAreaSizeGet);
-EXPORT_SYMBOL (ixOsalBuffPoolDataAreaSizeGet);
-EXPORT_SYMBOL (ixOsalPoolInit);
-EXPORT_SYMBOL (ixOsalNoAllocPoolInit);
+/*EXPORT_SYMBOL (ixOsalBuffPoolMbufAreaSizeGet);
+EXPORT_SYMBOL (ixOsalBuffPoolDataAreaSizeGet);*/
+EXPORT_SYMBOL (ixOsalPoolInit);/*
+EXPORT_SYMBOL (ixOsalNoAllocPoolInit);*/
 EXPORT_SYMBOL (ixOsalMbufAlloc);
-EXPORT_SYMBOL (ixOsalMbufFree);
+EXPORT_SYMBOL (ixOsalMbufFree);/*
 EXPORT_SYMBOL (ixOsalMbufChainFree);
 EXPORT_SYMBOL (ixOsalMbufDataPtrReset);
 EXPORT_SYMBOL (ixOsalMbufPoolShow);
 EXPORT_SYMBOL (ixOsalBuffPoolUninit);
 EXPORT_SYMBOL (ixOsalBuffPoolFreeCountGet);
+*/
