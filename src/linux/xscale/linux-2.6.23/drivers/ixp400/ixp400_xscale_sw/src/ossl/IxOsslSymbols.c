@@ -53,7 +53,7 @@
 #include <linux/module.h>
 #include <ix_ossl.h>
 
-EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslThreadCreate);
+/*EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslThreadCreate);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslThreadKill);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslThreadSetPriority);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslTickGet);
@@ -67,7 +67,7 @@ EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslMutexUnlock);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslMutexDestroy);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslSleepTick);
 EXPORT_SYMBOL (ixOsalOsIxp400BackwardOsslTimeGet);
-
+*/
 
 
 #endif /* __linux */

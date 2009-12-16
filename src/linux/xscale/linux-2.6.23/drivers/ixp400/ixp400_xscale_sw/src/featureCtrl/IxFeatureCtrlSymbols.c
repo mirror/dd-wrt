@@ -55,12 +55,14 @@
 
 EXPORT_SYMBOL(ixFeatureCtrlRead);
 EXPORT_SYMBOL(ixFeatureCtrlWrite);
+/*
 EXPORT_SYMBOL(ixFeatureCtrlHwCapabilityRead);
 EXPORT_SYMBOL(ixFeatureCtrlComponentCheck);
-EXPORT_SYMBOL(ixFeatureCtrlProductIdRead);
+EXPORT_SYMBOL(ixFeatureCtrlProductIdRead);*/
 EXPORT_SYMBOL(ixFeatureCtrlSwConfigurationWrite);
-EXPORT_SYMBOL(ixFeatureCtrlSwConfigurationCheck);
+EXPORT_SYMBOL(ixFeatureCtrlSwConfigurationCheck);/*
 EXPORT_SYMBOL(ixFeatureCtrlSwVersionShow);
 EXPORT_SYMBOL(ixFeatureCtrlDeviceRead);
 EXPORT_SYMBOL(ixFeatureCtrlSoftwareBuildGet);
+*/
 #endif /* __linux */

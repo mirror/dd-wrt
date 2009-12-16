@@ -54,9 +54,10 @@
 #include <IxOsal.h>
 #include <IxUART.h>
 
+/*
 EXPORT_SYMBOL(ixUARTInit);
 EXPORT_SYMBOL(ixUARTPollOutput);
 EXPORT_SYMBOL(ixUARTPollInput);
 EXPORT_SYMBOL(ixUARTIoctl);
-
+*/
 #endif /* __linux */

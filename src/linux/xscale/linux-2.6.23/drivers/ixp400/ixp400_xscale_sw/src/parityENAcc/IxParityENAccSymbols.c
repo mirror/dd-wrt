@@ -54,18 +54,23 @@
 #include <linux/module.h>
 #include "IxParityENAcc.h"
 
+
 EXPORT_SYMBOL(ixParityENAccInit);
-EXPORT_SYMBOL(ixParityENAccUnload);
+/*
+EXPORT_SYMBOL(ixParityENAccUnload);*/
 EXPORT_SYMBOL(ixParityENAccCallbackRegister);
 EXPORT_SYMBOL(ixParityENAccParityDetectionConfigure);
 EXPORT_SYMBOL(ixParityENAccParityDetectionQuery);
+
 EXPORT_SYMBOL(ixParityENAccParityErrorContextGet);
+/*
 EXPORT_SYMBOL(ixParityENAccParityErrorInterruptClear);
 EXPORT_SYMBOL(ixParityENAccStatsGet);
 EXPORT_SYMBOL(ixParityENAccStatsShow);
 EXPORT_SYMBOL(ixParityENAccStatsReset);
 EXPORT_SYMBOL(ixParityENAccParityNPEConfigReUpdate);
 EXPORT_SYMBOL(ixParityENAccNPEParityErrorCheck);
+*/
 
 #endif /* end of #ifdef __linux */
 #endif /* __ixp46X || __ixp43X */

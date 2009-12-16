@@ -54,7 +54,7 @@
 #include <usb.h>
 #include <usbprivatedata.h>
 
-EXPORT_SYMBOL(ixUSBBufferAlloc);
+/*EXPORT_SYMBOL(ixUSBBufferAlloc);
 EXPORT_SYMBOL(ixUSBDriverInit);
 EXPORT_SYMBOL(ixUSBDeviceEnable);
 EXPORT_SYMBOL(ixUSBEndpointStall);
@@ -72,5 +72,5 @@ EXPORT_SYMBOL(ixUSBErrorStringGet);
 EXPORT_SYMBOL(ixUSBEndpointInfoShow);
 EXPORT_SYMBOL(EPDescriptorTable);
 EXPORT_SYMBOL(ixUSBMblkFree);
-
+*/
 #endif /* __linux */

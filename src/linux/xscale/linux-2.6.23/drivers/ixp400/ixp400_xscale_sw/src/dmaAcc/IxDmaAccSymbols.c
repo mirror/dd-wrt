@@ -52,9 +52,9 @@
 #include <linux/module.h>
 #include <IxDmaAcc.h>
 
-EXPORT_SYMBOL(ixDmaAccInit);
+/*EXPORT_SYMBOL(ixDmaAccInit);
 EXPORT_SYMBOL(ixDmaAccDmaTransfer);
 EXPORT_SYMBOL(ixDmaAccShow);
 EXPORT_SYMBOL(ixDmaAccUninit);
-
+*/
 #endif /* __linux */

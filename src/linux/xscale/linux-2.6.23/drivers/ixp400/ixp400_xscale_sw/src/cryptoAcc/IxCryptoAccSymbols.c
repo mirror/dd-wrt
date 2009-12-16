@@ -53,29 +53,29 @@
 #include <linux/module.h>
 #include <IxCryptoAcc.h>
 #include "IxCryptoAccQAccess_p.h"
-
-EXPORT_SYMBOL(ixCryptoAccConfig);
+/*
+EXPORT_SYMBOL(ixCryptoAccConfig);*/
 EXPORT_SYMBOL(ixCryptoAccInit);
-EXPORT_SYMBOL(ixCryptoAccCtxRegister);
-EXPORT_SYMBOL(ixCryptoAccShowWithId);
-EXPORT_SYMBOL(ixCryptoAccCtxUnregister);
-EXPORT_SYMBOL(ixCryptoAccShow);
-EXPORT_SYMBOL(ixCryptoAccAuthCryptPerform);
+EXPORT_SYMBOL(ixCryptoAccCtxRegister);/*
+EXPORT_SYMBOL(ixCryptoAccShowWithId);*/
+EXPORT_SYMBOL(ixCryptoAccCtxUnregister);/*
+EXPORT_SYMBOL(ixCryptoAccShow);*/
+EXPORT_SYMBOL(ixCryptoAccAuthCryptPerform);/*
 EXPORT_SYMBOL(ixCryptoQAccessReqDoneQMgrCallback);
 EXPORT_SYMBOL(ixCryptoQAccessWepReqDoneQMgrCallback);
 EXPORT_SYMBOL(ixCryptoAccNpeWepPerform);
-EXPORT_SYMBOL(ixCryptoAccXScaleWepPerform);
-EXPORT_SYMBOL(ixCryptoAccHashKeyGenerate);
+EXPORT_SYMBOL(ixCryptoAccXScaleWepPerform);*/
+EXPORT_SYMBOL(ixCryptoAccHashKeyGenerate);/*
 EXPORT_SYMBOL(ixCryptoAccCtxCipherKeyUpdate);
 EXPORT_SYMBOL(ixCryptoAccUninit);
-
+*/
 #if defined(__ixp46X)     /* PKE codes symbol only applicable for IXP46X platform */
-
+/*
 EXPORT_SYMBOL(ixCryptoAccPkePseudoRandomNumberGet);
 EXPORT_SYMBOL(ixCryptoAccPkeHashPerform);
 EXPORT_SYMBOL(ixCryptoAccPkeEauPerform);
 EXPORT_SYMBOL(ixCryptoAccPkeEauExpConfig);
-
+*/
 #endif /* __ixp46X */
 
 #endif /* __linux */

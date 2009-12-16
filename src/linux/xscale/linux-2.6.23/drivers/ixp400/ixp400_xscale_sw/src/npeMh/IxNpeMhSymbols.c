@@ -53,15 +53,15 @@
 #include <linux/module.h>
 #include <IxNpeMh.h>
 
-EXPORT_SYMBOL(ixNpeMhInitialize);
+EXPORT_SYMBOL(ixNpeMhInitialize);/*
 EXPORT_SYMBOL(ixNpeMhUnload);
 EXPORT_SYMBOL(ixNpeMhUnsolicitedCallbackRegister);
 EXPORT_SYMBOL(ixNpeMhUnsolicitedCallbackForRangeRegister);
 EXPORT_SYMBOL(ixNpeMhMessageSend);
-EXPORT_SYMBOL(ixNpeMhMessageWithResponseSend);
-EXPORT_SYMBOL(ixNpeMhMessagesReceive);
+EXPORT_SYMBOL(ixNpeMhMessageWithResponseSend);*/
+EXPORT_SYMBOL(ixNpeMhMessagesReceive);/*
 EXPORT_SYMBOL(ixNpeMhShow);
 EXPORT_SYMBOL(ixNpeMhShowReset);
 EXPORT_SYMBOL(ixNpeMhConfigStateRestore);
-
+*/
 #endif /* __linux */
