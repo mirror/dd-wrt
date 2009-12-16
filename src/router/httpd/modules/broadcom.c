@@ -1143,8 +1143,8 @@ static struct gozila_action gozila_actions[] = {
 	{"Wireless_WDS-ath2", "save", "wireless_2", 0, REFRESH, "save_wds"},
 	{"Wireless_WDS-ath3", "save", "wireless_2", 0, REFRESH, "save_wds"},
 #endif
-	{"Ping", "startup", "", 1, SYS_RESTART, "ping_startup"},
-	{"Ping", "shutdown", "", 1, SYS_RESTART, "ping_shutdown"},
+	{"Ping", "startup", "", 1, REFRESH, "ping_startup"},
+	{"Ping", "shutdown", "", 1, REFRESH, "ping_shutdown"},
 	{"Ping", "firewall", "", 1, SYS_RESTART, "ping_firewall"},
 	{"Ping", "custom", "", 0, REFRESH, "ping_custom"},
 	{"QoS", "add_svc", "", 0, REFRESH, "qos_add_svc"},
