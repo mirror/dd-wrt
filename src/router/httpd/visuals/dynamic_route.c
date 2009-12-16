@@ -7,7 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <net/route.h>
-
+#include <shutils.h>
 #include <broadcom.h>
 
 /*
@@ -17,7 +17,7 @@
 void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 {
 	int count = 0;
-	FILE *fp, *fp1;
+	FILE *fp;
 	int flgs, ref, use, metric;
 	unsigned long dest, gw, netmask;
 	char line[256];
@@ -93,11 +93,8 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 			 * Don't show pseudo interface 
 			 */
 			if (!strncmp(line, "ppp", 3)) {
-				fp1 = fopen("/tmp/ppp/link", "r");
-				if (!fp1)
+				if (!f_exist("/tmp/ppp/link"))
 					debug = 1;
-				else
-					fclose(fp1);
 			}
 			char *ifname = line;
 
