@@ -45,7 +45,6 @@ void stop_chilli(void);
 void start_chilli(void)
 {
 	int ret = 0;
-	FILE *fp;
 
 	stop_chilli();		//ensure that its stopped
 
@@ -86,8 +85,7 @@ void start_chilli(void)
 
 	ret = killall("chilli", SIGTERM);
 	ret = killall("chilli", SIGKILL);
-	if (fp = fopen("/tmp/hotss.conf", "r")) {
-		fclose(fp);
+	if (f_exists("/tmp/hotss.conf")) {
 		ret = eval("chilli", "-c", "/tmp/hotss.conf");
 		dd_syslog(LOG_INFO, "hotspotsystem : chilli daemon successfully started\n");
 	}
@@ -102,11 +100,9 @@ void start_chilli(void)
 
 void stop_chilli(void)
 {
-	FILE *fp;
 	
 	if (pidof("chilli") > 0) {
-		if (fp = fopen("/tmp/hotss.conf", "r")) {
-			fclose(fp);
+		if (f_exists("/tmp/hotss.conf")) {
 			syslog(LOG_INFO,
 		 	      "hotspotsystem : chilli daemon successfully stopped\n");
 	 	}
