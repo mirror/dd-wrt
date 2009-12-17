@@ -270,6 +270,13 @@ if (nvram_match("boardnum", "45") && nvram_match("boardrev", "0x1201")
 		printk(KERN_EMERG "RT-N12 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 2;
 }
+
+if (nvram_match("boardnum", "45") && nvram_match("boardrev", "0x1218")
+		&& nvram_match("boardtype", "0x04cf"))
+{
+		printk(KERN_EMERG "RT-N16 GPIO Init\n");
+		gpios = 1 << 1;
+}
 /*if (iswrt300n11)
 {
 	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
