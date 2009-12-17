@@ -1316,6 +1316,7 @@ void start_restore_defaults(void)
 			break;
 		case ROUTER_MOTOROLA:
 		case ROUTER_WRT54G_V8:
+		case ROUTER_ASUS_RTN12:
 			nvram_set("vlan0ports", "3 2 1 0 5*");
 			nvram_set("vlan1ports", "4 5");
 			break;
