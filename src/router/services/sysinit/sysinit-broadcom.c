@@ -719,6 +719,19 @@ void start_sysinit(void)
 		}
 		break;
 		
+	case ROUTER_ASUS_RTN12:
+		nvram_set("lan_ifnames", "vlan0 eth1");
+		nvram_set("wan_ifname", "vlan1");
+		nvram_set("wan_ifname2", "vlan1");
+		nvram_set("wl0_ifname", "eth1");
+		if (nvram_match("vlan1ports", "0 1 2 3 5*")
+		    || nvram_match("vlan2ports", "4 5u")) {
+			nvram_set("vlan1ports", "3 2 1 0 5*");
+			nvram_set("vlan2ports", "4 5");
+			need_reboot = 1;
+		}
+		break;
+		
 	case ROUTER_WRT160NV3:
 	case ROUTER_WRT310NV2:
 		nvram_set("lan_ifnames", "vlan1 eth1");
