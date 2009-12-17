@@ -3109,7 +3109,12 @@ int led_control(int type, int act)
 		connected_gpio = 0x104;	//ses orange
 		break;
 	case ROUTER_ASUS_RTN12:
+		power_gpio = 0x102;
 		diag_gpio = 0x002;	// power blink
+		break;
+	case ROUTER_ASUS_RTN16:
+		power_gpio = 0x101;
+		diag_gpio = 0x001;	// power blink
 		break;
 #endif
 	}
