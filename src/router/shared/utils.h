@@ -432,12 +432,15 @@
 #define ROUTER_BOARD_NS2M 0x871c	//nanostation 2m
 #define ROUTER_BOARD_NS5M 0x881c	//nanostation 5m
 
+// Asus RT-N12 (BCM4716B0 cpu, 4MB serial flash / 32MB ram, 5325E switch, fccid: Asus MSQ-RTN12)
+#define ROUTER_ASUS_RTN12 0x8911
+
 // Asus RT-N16 (BCM4718A cpu, 32MB flash / 128MB ram, BCM53115 giga switch, fccid: Asus MSQRTN16)
-#define ROUTER_ASUS_RTN16 0x8916
+#define ROUTER_ASUS_RTN16 0x8a16
 
-#define ROUTER_BOARD_BR6574N 0x8a1a
+#define ROUTER_BOARD_BR6574N 0x901a
 
-#define ROUTER_BOARD_WHRHPGN 0x8b1b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x911b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 
 #define NVROUTER "DD_BOARD"
 
