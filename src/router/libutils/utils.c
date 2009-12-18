@@ -1115,6 +1115,13 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_WL500GD;
 	}
 
+	if (boardnum == 45 && nvram_match("boardtype", "0x04EC")
+	    && nvram_match("boardrev", "0x1402")) {
+		cprintf("router is Asus RT-N10\n");
+		setRouter("Asus RT-N10");
+		return ROUTER_ASUS_RTN10;
+	}
+	
 	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
 	    && nvram_match("boardrev", "0x1201")) {
 		cprintf("router is Asus RT-N12\n");
