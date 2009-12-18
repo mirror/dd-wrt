@@ -237,6 +237,18 @@ sflash_mtd_init(void)
 	{
 	do_support = 1;  //Linksys WRT160Nv3
 	}
+	
+  if (boardnum == 45 && nvram_match( "boardtype", "0x04EC" )
+	&& nvram_match( "boardrev", "0x1402" ))
+	{
+	do_support = 1;  //Asus RT-N10
+	}
+
+  if (boardnum == 45 && nvram_match( "boardtype", "0x04CD" )
+	&& nvram_match( "boardrev", "0x1201" ))
+	{
+	do_support = 1;  //Asus RT-N12
+	}
 
 	
   if (!do_support)
