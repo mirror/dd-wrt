@@ -432,11 +432,14 @@
 #define ROUTER_BOARD_NS2M 0x871c	//nanostation 2m
 #define ROUTER_BOARD_NS5M 0x881c	//nanostation 5m
 
+// Asus RT-N10 (BCM5356 cpu, 4MB serial flash / 16MB ram, fccid: Asus MSQ-RTN10)
+#define ROUTER_ASUS_RTN10 0x8913
+
 // Asus RT-N12 (BCM4716B0 cpu, 4MB serial flash / 32MB ram, 5325E switch, fccid: Asus MSQ-RTN12)
-#define ROUTER_ASUS_RTN12 0x8911
+#define ROUTER_ASUS_RTN12 0x8a11
 
 // Asus RT-N16 (BCM4718A cpu, 32MB flash / 128MB ram, BCM53115 giga switch, fccid: Asus MSQRTN16)
-#define ROUTER_ASUS_RTN16 0x8a16
+#define ROUTER_ASUS_RTN16 0x8b16
 
 #define ROUTER_BOARD_BR6574N 0x901a
 
