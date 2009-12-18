@@ -724,6 +724,7 @@ void start_sysinit(void)
 		nvram_set("wan_ifname", "vlan1");
 		nvram_set("wan_ifname2", "vlan1");
 		nvram_set("wl0_ifname", "eth1");
+		eval("gpio", "enable", "0");
 		if (nvram_match("vlan0ports", "0 1 2 3 5*")
 		    || nvram_match("vlan1ports", "4 5u")) {
 			nvram_set("vlan0ports", "3 2 1 0 5*");
