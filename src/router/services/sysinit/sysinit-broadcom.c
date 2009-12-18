@@ -519,6 +519,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_USR_5465:
+	case ROUTER_ASUS_RTN10:
 		nvram_set("lan_ifnames", "vlan0 eth1");
 		nvram_set("wan_ifname", "vlan1");
 		nvram_set("wl0_ifname", "eth1");
@@ -725,6 +726,12 @@ void start_sysinit(void)
 		nvram_set("wan_ifname2", "vlan1");
 		nvram_set("wl0_ifname", "eth1");
 		eval("gpio", "enable", "0");
+		if (!nvram_match("ledbh0", "0")
+		    || !nvram_match("ledbh1", "0")) {		
+			nvram_set("ledbh0", "0");
+			nvram_set("ledbh1", "0");
+			need_reboot = 1;		
+		}		
 		if (nvram_match("vlan0ports", "0 1 2 3 5*")
 		    || nvram_match("vlan1ports", "4 5u")) {
 			nvram_set("vlan0ports", "3 2 1 0 5*");
