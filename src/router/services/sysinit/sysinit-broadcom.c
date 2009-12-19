@@ -953,10 +953,6 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_MOTOROLA_V1:
-		nvram_set("wan_ifname", "eth1");
-		eval("gpio", "disable", "7");
-		break;
-
 	case ROUTER_BUFFALO_WZRG300N:
 	case ROUTER_NETGEAR_WNR834B:
 	case ROUTER_WRT150N:
@@ -1103,10 +1099,6 @@ void start_sysinit(void)
 		nvram_unset("gpio6");
 		break;
 
-	case ROUTER_WRT54G_V8:
-		nvram_set("reset_gpio", "7");
-		break;
-
 	case ROUTER_ASUS_WL520G:
 	case ROUTER_ASUS_WL500G_PRE_V2:
 	case ROUTER_WRT54G_V81:
@@ -1232,6 +1224,26 @@ void start_sysinit(void)
 				eval("ifconfig", "eth0", "hw", "ether", macstr);
 			}
 		}
+		break;
+	}
+	
+	/*
+	 * Must have stuff 
+	 */
+	switch (brand) {
+	case ROUTER_WRT320N:
+		if (!nvram_match("reset_gpio", "5") {
+			nvram_set("reset_gpio", "5");
+			need_reboot = 1;
+		}
+		break;
+
+	case ROUTER_MOTOROLA_V1:
+		eval("gpio", "disable", "7");
+		break;
+
+	case ROUTER_WRT54G_V8:
+		nvram_set("reset_gpio", "7");
 		break;
 	}
 
