@@ -1232,7 +1232,7 @@ void start_sysinit(void)
 	 */
 	switch (brand) {
 	case ROUTER_WRT320N:
-		if (!nvram_match("reset_gpio", "5") {
+		if (!nvram_match("reset_gpio", "5")) {
 			nvram_set("reset_gpio", "5");
 			need_reboot = 1;
 		}
