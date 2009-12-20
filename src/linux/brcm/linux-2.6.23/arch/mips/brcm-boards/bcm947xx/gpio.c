@@ -179,6 +179,7 @@ gpio_init(void)
 	}
 gpio_init_flag=1;
 int gpios = 0;
+uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 
 if (iswrt350n)
 {
@@ -204,7 +205,7 @@ if (iswrt350n)
 		si_gpioout(gpio_sih, 0x4, 0x4, GPIO_HI_PRIORITY);
 }
 
-if ((nvram_match("boardnum", "1") || nvram_match("boardnum", "3500"))
+if ((boardnum == 1 || boardnum == 3500)
 	    && nvram_match("boardtype", "0x04CF")
 	    && (nvram_match("boardrev", "0x1213") || nvram_match("boardrev", "02")))
 {
@@ -212,7 +213,7 @@ if ((nvram_match("boardnum", "1") || nvram_match("boardnum", "3500"))
 		gpios = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 7;
 }
 
-if ((nvram_match("boardnum", "42") || nvram_match("boardnum", "66"))
+if ((boardnum == 42 || nvram_match("boardnum", "66"))
 		&& nvram_match("boardtype", "0x04EF")
 		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305")))
 {
@@ -220,14 +221,14 @@ if ((nvram_match("boardnum", "42") || nvram_match("boardnum", "66"))
 		gpios = 1 << 2 | 1 << 3 | 1 << 4;
 }
 
-if (nvram_match("boardnum", "42") && nvram_match("boot_hw_model", "WRT160N")
+if (boardnum == 42 && nvram_match("boot_hw_model", "WRT160N")
 		&& nvram_match("boot_hw_ver", "3.0"))
 {
 		printk(KERN_EMERG "WRT160Nv3 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
-if (nvram_match("boardnum", "42") && nvram_match("boot_hw_model", "WRT310N")
+if (boardnum == 42 && nvram_match("boot_hw_model", "WRT310N")
 		&& nvram_match("boot_hw_ver", "2.0"))
 {
 		printk(KERN_EMERG "WRT310Nv2 GPIO Init\n");
@@ -255,7 +256,7 @@ if (nvram_match("boardtype", "0x04cf") && nvram_match("boot_hw_model", "WRT610N"
 		gpios = 1 << 0 | 1 << 3 | 1 << 5 | 1 << 7;
 }
 
-if (nvram_match("boardnum", "42") && nvram_match("boardrev", "0x10")
+if (boardnum == 42 && nvram_match("boardrev", "0x10")
 	    && (nvram_match("boardtype", "0x0467")
 	    	|| nvram_match("boardtype", "0x0708")
 	    	|| nvram_match("boardtype", "0x0101")))
@@ -264,25 +265,37 @@ if (nvram_match("boardnum", "42") && nvram_match("boardrev", "0x10")
 		gpios = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 7;
 }
 
-if (nvram_match("boardnum", "45") && nvram_match("boardrev", "0x1402")
+if (boardnum == 45 && nvram_match("boardrev", "0x1402")
 		&& nvram_match("boardtype", "0x04EC"))
 {
 		printk(KERN_EMERG "RT-N10 GPIO Init\n");
 		gpios = 1 << 1;
 }
 
-if (nvram_match("boardnum", "45") && nvram_match("boardrev", "0x1201")
+if (boardnum == 45 && nvram_match("boardrev", "0x1201")
 	    && nvram_match("boardtype", "0x04CD"))
 {
 		printk(KERN_EMERG "RT-N12 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 2;
 }
 
-if (nvram_match("boardnum", "45") && nvram_match("boardrev", "0x1218")
+if (boardnum == 45 && nvram_match("boardrev", "0x1218")
 		&& nvram_match("boardtype", "0x04cf"))
 {
 		printk(KERN_EMERG "RT-N16 GPIO Init\n");
 		gpios = 1 << 1;
+}
+
+if (boardnum == 1 && nvram_match("boardrev", "0x23")
+		&& nvram_match("boardtype", "0x0472"))
+{
+		if (nvram_match("cardbus", "1")) {
+		printk(KERN_EMERG "WNR324v2 GPIO Init\n");
+		gpios = 1 << 2 | 1 << 3 | 1 << 7;
+		} else {
+		printk(KERN_EMERG "WNDR3300 GPIO Init\n");
+		gpios = 1 << 5 | 1 << 7;
+		}
 }
 /*if (iswrt300n11)
 {
