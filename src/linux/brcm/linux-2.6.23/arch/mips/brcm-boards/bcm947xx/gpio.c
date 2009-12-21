@@ -213,7 +213,7 @@ if ((boardnum == 1 || boardnum == 3500)
 		gpios = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 7;
 }
 
-if ((boardnum == 42 || nvram_match("boardnum", "66"))
+if ((boardnum == 42 || boardnum == 66)
 		&& nvram_match("boardtype", "0x04EF")
 		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305")))
 {
