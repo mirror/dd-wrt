@@ -100,6 +100,9 @@ int getbuttonstate()
 #elif defined(HAVE_WRT54G2)
 	int ret = get_gpio(7);
 	return 1 - ret;
+#elif defined(HAVE_RTG32)
+	int ret = get_gpio(6);
+	return ret;
 #elif defined(HAVE_EOC5610)
 	int ret = get_gpio(6);
 	return 1 - ret;
