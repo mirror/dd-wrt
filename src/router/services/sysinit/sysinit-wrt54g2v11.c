@@ -142,8 +142,8 @@ void start_sysinit(void)
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set vlan 1");
 #ifdef HAVE_RTG32
-	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 5\"");
-	system("swconfig dev eth0 vlan 2 set ports \"0t 4\"");
+	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
+	system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
 #else
 	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
@@ -211,9 +211,9 @@ char *enable_dtag_vlan(int enable)
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set vlan 1");
 #ifdef HAVE_RTG32
-		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 5\"");
-		system("swconfig dev eth0 vlan 7 set ports \"0t 4t\"");
-		system("swconfig dev eth0 vlan 8 set ports \"0t 4t\"");
+		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
+		system("swconfig dev eth0 vlan 7 set ports \"0t 5t\"");
+		system("swconfig dev eth0 vlan 8 set ports \"0t 5t\"");
 #else
 		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 		system("swconfig dev eth0 vlan 7 set ports \"0t 1t\"");
@@ -225,8 +225,8 @@ char *enable_dtag_vlan(int enable)
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set vlan 1");
 #ifdef HAVE_RTG32
-		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 5\"");
-		system("swconfig dev eth0 vlan 2 set ports \"0t 4\"");
+		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
 #else
 		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
