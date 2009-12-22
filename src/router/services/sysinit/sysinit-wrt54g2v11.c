@@ -1,5 +1,5 @@
 /*
- * sysinit-fonera.c
+ * sysinit-wrt54g2v11.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
