@@ -841,8 +841,8 @@ void start_sysinit(void)
 			{"pa5glw0a1", "0xFF5B", 0},
 			{"ledbh3", "11", 0},
 			{"ledbh4", "11", 0},
-			{"ledbh5", "11", 0},
-			{"ledbh6", "8", 0},
+			{"ledbh5", "5", 0},
+			{"ledbh6", "7", 0},
 			{"ledbh7", "11", 0},
 			{"mcs2gpo0", "0x6666", 0},
 			{"mcs2gpo1", "0x6666", 0},
@@ -921,7 +921,7 @@ void start_sysinit(void)
 			{"wl0gpio0", "11", 0},
 			{"wl0gpio1", "11", 0},
 			{"wl0gpio2", "11", 0},
-			{"wl0gpio3", "8", 0},
+			{"wl0gpio3", "7", 0},
 			{"sromrev", "2", 0},
 			{0, 0, 0}
 		};
