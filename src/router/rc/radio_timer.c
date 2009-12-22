@@ -159,17 +159,26 @@ int main(int argc, char **argv)
 					syslog(LOG_DEBUG,
 					       "Turning radio 0 on\n");
 #ifdef HAVE_MADWIFI
+					if (!nvram_match("ath0_net_mode", "disabled")) 
+					{
 					eval("ifconfig", "ath0", "up");
+					}
 #elif HAVE_RT2880
+					if (!nvram_match("wl0_net_mode", "disabled")) 
+					{
 					eval("iwpriv", "ra0", "set",
 					     "RadioOn=1");
+					}
 #else
 					stop_service("nas");
+					if (!nvram_match("wl0_net_mode", "disabled")) 
+					{
 					eval("wl", "-i",
 					     get_wl_instance_name(0), "radio",
 					     "on");
 					eval("startservice", "nas");
 					start_service("guest_nas");
+					}
 #endif
 					break;
 
@@ -199,17 +208,26 @@ int main(int argc, char **argv)
 					syslog(LOG_DEBUG,
 					       "Turning radio 1 on\n");
 #ifdef HAVE_MADWIFI
+					if (!nvram_match("ath1_net_mode", "disabled")) 
+					{
 					eval("ifconfig", "ath1", "up");
+					}
 #elif HAVE_RT2880
+					if (!nvram_match("wl1_net_mode", "disabled")) 
+					{
 					eval("iwpriv", "ra1", "set",
 					     "RadioOn=1");
+					}
 #else
 					stop_service("nas");
+					if (!nvram_match("wl1_net_mode", "disabled")) 
+					{
 					eval("wl", "-i",
 					     get_wl_instance_name(1), "radio",
 					     "on");
 					eval("startservice", "nas");
 					start_service("guest_nas");
+					}
 #endif
 					break;
 

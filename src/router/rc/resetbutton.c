@@ -663,9 +663,11 @@ void period_check(int sig)
 					eval("stopservice", "nas");
 				}
 				for (ii = 0; ii < cc; ii++) {
+					if (!nvram_nmatch("disabled", "wl%d_net_mode", ii)) {
 					eval("wl", "-i",
 					     get_wl_instance_name(ii), "radio",
 					     "on");
+				     }
 				}
 				eval("startservice", "nas");
 				eval("startservice", "guest_nas");
