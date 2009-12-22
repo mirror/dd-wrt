@@ -198,11 +198,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #if defined(HAVE_NOP8670) || defined(HAVE_TONZE)
 	eval("fischecksum");
 #endif
-#ifdef HAVE_MAKSAT
-	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro"))
-#else
-	if (nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro"))
-#endif
+	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro") || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro"))
 		eval("fischecksum");
 	if (nvram_match("DD_BOARD", "Netgear WG302v2"))
 		eval("fischecksum");
