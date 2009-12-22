@@ -176,9 +176,9 @@ int main(int argc, char **argv)
 					eval("wl", "-i",
 					     get_wl_instance_name(0), "radio",
 					     "on");
+					}
 					eval("startservice", "nas");
 					start_service("guest_nas");
-					}
 #endif
 					break;
 
@@ -225,9 +225,9 @@ int main(int argc, char **argv)
 					eval("wl", "-i",
 					     get_wl_instance_name(1), "radio",
 					     "on");
+					}
 					eval("startservice", "nas");
 					start_service("guest_nas");
-					}
 #endif
 					break;
 
