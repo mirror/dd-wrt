@@ -1,7 +1,7 @@
 /*
  * sysinit-wrt54g2v11.c
  *
- * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2008 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -141,8 +141,13 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "up");	// wan
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set vlan 1");
+#ifdef HAVE_RTG32
+	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 5\"");
+	system("swconfig dev eth0 vlan 2 set ports \"0t 4\"");
+#else
 	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+#endif
 	system("swconfig dev eth0 set apply");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
@@ -169,8 +174,13 @@ void start_sysinit(void)
 		close(s);
 	}
 	eval("gpio", "enable", "1");
+#ifdef HAVE_RTG32
+	system2("echo 7 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#else
 	system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#endif
 	/*
 	 * Set a sane date 
 	 */
@@ -200,15 +210,27 @@ char *enable_dtag_vlan(int enable)
 	if (enable) {
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set vlan 1");
+#ifdef HAVE_RTG32
+		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 5\"");
+		system("swconfig dev eth0 vlan 7 set ports \"0t 4t\"");
+		system("swconfig dev eth0 vlan 8 set ports \"0t 4t\"");
+#else
 		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 		system("swconfig dev eth0 vlan 7 set ports \"0t 1t\"");
 		system("swconfig dev eth0 vlan 8 set ports \"0t 1t\"");
+
+#endif
 		system("swconfig dev eth0 set apply");
 	} else {
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set vlan 1");
+#ifdef HAVE_RTG32
+		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 5\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0t 4\"");
+#else
 		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+#endif
 		system("swconfig dev eth0 set apply");
 
 	}
