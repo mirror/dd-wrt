@@ -446,11 +446,7 @@ void start_sysinit(void)
 		}
 		fclose(file);
 	}
-#ifdef HAVE_MAKSAT
-	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro"))
-#else
-	if (nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro"))
-#endif
+	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro") || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro"))
 	{
 		fprintf(stderr, "Pronghorn Metro detected\n");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
