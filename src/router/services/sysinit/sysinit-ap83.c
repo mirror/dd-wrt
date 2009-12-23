@@ -51,6 +51,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include "devices/wireless.c"
 
 void start_sysinit(void)
 {
@@ -150,18 +151,7 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
-	fprintf(stderr, "load ATH 802.11n Driver\n");
-	insmod("/lib/80211n/ath_mimo_hal.ko");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		insmod("/lib/80211n/ath_mimo_ahb.ko");
-//              eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("/lib/80211n/ath_mimo_ahb.ko");
-	}
-	// insmod("ath_mimo_pci");
+	detect_wireless_devices();
 
 #ifdef HAVE_RS
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");

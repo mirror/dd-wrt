@@ -51,6 +51,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include "devices/wireless.c"
 
 void start_sysinit(void)
 {

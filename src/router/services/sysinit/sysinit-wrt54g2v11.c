@@ -54,6 +54,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <cymac.h>
+#include "devices/wireless.c"
 
 extern void vlan_init(int num);
 
@@ -128,15 +129,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	insmod("ar2313");
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_ahb", rate);
-	} else {
-		insmod("ath_ahb");
-	}
+	detect_wireless_devices();
 
 	eval("ifconfig", "eth0", "up");	// wan
 	system("swconfig dev eth0 set reset 1");

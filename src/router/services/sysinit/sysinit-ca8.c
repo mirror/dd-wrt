@@ -56,6 +56,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <cymac.h>
+#include "devices/wireless.c"
 
 extern void vlan_init(int num);
 
@@ -156,16 +157,7 @@ void start_sysinit(void)
 	vlan_init(0xff);	// 4 lan + 1 wan
 #endif
 
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_ahb", rate);
-	} else {
-		insmod("ath_ahb");
-	}
-	// eval ("ifconfig", "wifi0", "up");
+	detect_wireless_devices();
 
 	insmod("ipv6");
 

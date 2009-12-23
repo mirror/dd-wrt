@@ -46,6 +46,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <cymac.h>
+#include "devices/wireless.c"
 
 void start_sysinit(void)
 {
@@ -138,30 +139,7 @@ void start_sysinit(void)
 	system2("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
 #endif
 
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("ath_pci");
-	}
-
-#ifdef HAVE_MADWIFI_MIMO
-	insmod("ath_mimo_pci");
-#endif
-	// insmod("ath_pci", "rfkill=0", "autocreate=none");
-
-	/*
-	 * if (ifexists ("wifi0")) eval ("ifconfig", "wifi0", "up"); if (ifexists 
-	 * ("wifi1")) eval ("ifconfig", "wifi1", "up"); if (ifexists ("wifi2"))
-	 * eval ("ifconfig", "wifi2", "up"); if (ifexists ("wifi3")) eval
-	 * ("ifconfig", "wifi3", "up"); if (ifexists ("wifi4")) eval ("ifconfig", 
-	 * "wifi4", "up"); if (ifexists ("wifi5")) eval ("ifconfig", "wifi5",
-	 * "up"); 
-	 */
-
+	detect_wireless_devices();
 	/*
 	 * Configure mac addresses by reading data from eeprom 
 	 */

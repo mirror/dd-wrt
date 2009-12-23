@@ -54,6 +54,7 @@
 #include <wlutils.h>
 #include <cymac.h>
 #include <services.h>
+#include "devices/wireless.c"
 
 #define sys_restart() eval("event","3","1","1")
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
@@ -323,17 +324,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		}
 
 	}
-#ifdef HAVE_MADWIFI
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("ath_pci");
-	}
-#endif
+	detect_wireless_devices();
 	return;
 }
 

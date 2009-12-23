@@ -43,6 +43,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include "devices/wireless.c"
 
 void start_sysinit(void)
 {
@@ -124,33 +125,8 @@ void start_sysinit(void)
 	 * insmod("des"); insmod("michael_mic"); insmod("cast5");
 	 * insmod("crypto_null"); 
 	 */
-	// insmod("ath_hal");
-	// insmod("wlan");
-	// insmod("ath_rate_sample");
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
+	detect_wireless_devices();
 
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("ath_pci");
-	}
-
-	/*
-	 * insmod("wlan_acl"); insmod("wlan_ccmp"); insmod("wlan_tkip");
-	 * insmod("wlan_wep"); insmod("wlan_xauth"); insmod("wlan_scan_ap");
-	 * insmod("wlan_scan_sta"); 
-	 */
-	/*
-	 * eval ("ifconfig", "wifi0", "up"); eval ("ifconfig", "wifi1", "up");
-	 * eval ("ifconfig", "wifi2", "up"); eval ("ifconfig", "wifi3", "up");
-	 * eval ("ifconfig", "wifi4", "up"); eval ("ifconfig", "wifi5", "up"); 
-	 */
-
-	/*
-	 * insmod("mii"); insmod("korina"); insmod("via-rhine"); insmod("ipv6");
-	 */
 	/*
 	 * Set a sane date 
 	 */
