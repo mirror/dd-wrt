@@ -50,19 +50,8 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include "devices/ethernet.c"
 
-static int detect(char *devicename)
-{
-	char devcall[128];
-	int res;
-
-	sprintf(devcall, "/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l", devicename);
-	FILE *in = popen(devcall, "rb");
-
-	fscanf(in, "%d", &res);
-	pclose(in);
-	return res > 0 ? 1 : 0;
-}
 
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
@@ -220,33 +209,8 @@ void start_sysinit(void)
 #endif
 	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
-	if (detect("82541"))	// Intel Gigabit
-	{
-		nvram_set("intel_eth", "1");
-		insmod("e1000");
-	}
-	if (detect("8139"))	// Intel Gigabit
-	{
-		nvram_set("intel_eth", "1");
-		insmod("8139too");
-	} else if (detect("8139"))	// Realtek 8139 Adapter (various notebooks) 
-	{
-		nvram_set("intel_eth", "1");
-		insmod("8139too");
-	} else if (detect("DFE-690TXD"))	// Realtek 8139 Adapter (various
-	{
-		// notebooks) 
-		nvram_set("intel_eth", "1");
-		insmod("8139too");
-	} else if (detect("SMC2-1211TX"))	// Realtek 8139 Adapter (various
-	{			// notebooks) 
-		nvram_set("intel_eth", "1");
-		insmod("8139too");
-	} else if (detect("Robotics"))	// Realtek 8139 Adapter (various
-	{			// notebooks) 
-		nvram_set("intel_eth", "1");
-		insmod("8139too");
-	}
+	if (detect_ethernet_devices())
+	    nvram_set("intel_eth","1");
 #ifndef HAVE_NOWIFI
 	fprintf(stderr, "load HAL Driver\n");
 	insmod("ath_hal");
