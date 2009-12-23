@@ -52,6 +52,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/ethernet.c"
+#include "devices/wireless.c"
 
 static int getdiscindex(void)	// works only for squashfs 
 {
@@ -205,36 +206,7 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
-#ifndef HAVE_NOWIFI
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("ath_pci");
-	}
-#ifdef HAVE_MADWIFI_MIMO
-	fprintf(stderr, "load ATH 802.11n Driver\n");
-	insmod("/lib/80211n/ath_mimo_hal.ko");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-		eval("insmod", "ath_mimo_pci");
-	} else {
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-	}
-#endif
-
-	/*
-	 * eval ("ifconfig", "wifi0", "up"); eval ("ifconfig", "wifi1", "up");
-	 * eval ("ifconfig", "wifi2", "up"); eval ("ifconfig", "wifi3", "up");
-	 * eval ("ifconfig", "wifi4", "up"); eval ("ifconfig", "wifi5", "up");
-	 */
-#endif
+	detect_wireless_devices();
 
 	insmod("ipv6");
 	eval("mknod", "/dev/rtc", "c", "253", "0");

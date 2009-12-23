@@ -51,6 +51,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/ethernet.c"
+#include "devices/wireless.c"
 
 
 #ifndef HAVE_TONZE
@@ -211,32 +212,10 @@ void start_sysinit(void)
 	nvram_set("intel_eth", "0");
 	if (detect_ethernet_devices())
 	    nvram_set("intel_eth","1");
-#ifndef HAVE_NOWIFI
-	fprintf(stderr, "load HAL Driver\n");
-	insmod("ath_hal");
-	fprintf(stderr, "load ATH Driver\n");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
 
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("ath_pci");
-	}
-#endif
-#ifdef HAVE_MADWIFI_MIMO
-	fprintf(stderr, "load ATH 802.11n Driver\n");
-	insmod("/lib/80211n/ath_mimo_hal.ko");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
+	detect_wireless_devices();
 
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-		eval("insmod", "ath_mimo_pci");
-	} else {
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-	}
-#endif
+
 
 #if 1
 	fprintf(stderr, "load IXP helper\n");

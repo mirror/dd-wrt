@@ -51,6 +51,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include "devices/wireless.c"
 
 void start_sysinit(void)
 {
@@ -132,15 +133,7 @@ void start_sysinit(void)
 		close(s);
 	}
 
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("ath_pci");
-	}
+	detect_wireless_devices();
 
 	insmod("ipv6");
 
