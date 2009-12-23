@@ -852,6 +852,38 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_UBNTM
+	typedef struct UBNTDEV {
+		char *devicename;
+		unsigned short devid;
+		char *rxchain;
+		char *txchain;
+		int dddev;
+	};
+
+	struct UBNTDEV dev[] = {
+		{"Ubiquiti Nanostation M2", 0xe002, "3", "3",
+		 ROUTER_BOARD_NS2M},
+		{"Ubiquiti Nanostation M2", 0xe012, "3", "3",
+		 ROUTER_BOARD_NS2M},
+		{"Ubiquiti Nanostation M5", 0xe005, "3", "3",
+		 ROUTER_BOARD_NS5M},
+		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M},
+		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M},
+		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M},
+		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M},
+		{"Ubiquiti Bullet M5", 0xe202, "1", "1", ROUTER_BOARD_BS5M},
+		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M},
+		{"Ubiquiti Airgrid 5M", 0xe215, "1", "1", ROUTER_BOARD_BS5M},
+		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M},
+		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M},
+		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M},
+		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M},
+		{"Ubiquiti Litestation M25", 0xe115, "3", "3",
+		 ROUTER_BOARD_NS5M},
+		{"Ubiquiti AP 1000N", 0xe402, "3", "3", ROUTER_BOARD_R2M},
+		{NULL, 0, NULL, NULL, 0},
+	};
+
 	FILE *fp =
 	    fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device", "rb");
 	if (fp == NULL)
@@ -859,106 +891,18 @@ int internal_getRouterBrand()
 	int device;
 	fscanf(fp, "0x%04X", &device);
 	fclose(fp);
-	switch (device) {
-	case 0xe002:
-		setRouter("Ubiquiti Nanostation M2");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_NS2M;
-		break;
-	case 0xe012:
-		setRouter("Ubiquiti Nanostation M2");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_NS2M;
-		break;
-	case 0xe005:
-		setRouter("Ubiquiti Nanostation M5");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_NS5M;
-		break;
-	case 0xe102:
-		setRouter("Ubiquiti Rocket M2");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_R2M;
-		break;
-	case 0xe112:
-		setRouter("Ubiquiti Rocket M2");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_R2M;
-		break;
-	case 0xe105:
-		setRouter("Ubiquiti Rocket M5");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_R5M;
-		break;
-	case 0xe202:
-		setRouter("Ubiquiti Bullet M2");
-		nvram_default_get("ath0_rxantenna", "1");
-		nvram_default_get("ath0_txantenna", "1");
-		return ROUTER_BOARD_BS2M;
-		break;
-	case 0xe205:
-		setRouter("Ubiquiti Bullet M5");
-		nvram_default_get("ath0_rxantenna", "1");
-		nvram_default_get("ath0_txantenna", "1");
-		return ROUTER_BOARD_BS5M;
-		break;
-	case 0xe212:
-		setRouter("Ubiquiti Airgrid 2M");	//identical with Bullet M2 Spec
-		nvram_default_get("ath0_rxantenna", "1");
-		nvram_default_get("ath0_txantenna", "1");
-		return ROUTER_BOARD_BS2M;
-		break;
-	case 0xe215:
-		setRouter("Ubiquiti Airgrid 5M");
-		nvram_default_get("ath0_rxantenna", "1");
-		nvram_default_get("ath0_txantenna", "1");
-		return ROUTER_BOARD_BS5M;
-		break;
-	case 0xe302:
-		setRouter("Ubiquiti Pico M2");
-		nvram_default_get("ath0_rxantenna", "1");
-		nvram_default_get("ath0_txantenna", "1");
-		return ROUTER_BOARD_BS2M;
-		break;
-	case 0xe305:
-		setRouter("Ubiquiti Pico M5");
-		nvram_default_get("ath0_rxantenna", "1");
-		nvram_default_get("ath0_txantenna", "1");
-		return ROUTER_BOARD_BS5M;
-		break;
-	case 0xe405:
-		setRouter("Ubiquiti Airwire");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_BS5M;
-		break;
-	case 0xe0A5:
-		setRouter("Ubiquiti Loco M5");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_NS5M;
-		break;
-	case 0xe115:
-		setRouter("Ubiquiti Litestation M25");
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		return ROUTER_BOARD_NS5M;
-		break;
-	case 0xe402:
-		setRouter("Ubiquiti AP 1000N");
-		return ROUTER_BOARD_R2M;
-		break;
-
-	default:
-		setRouter("Ubiquiti Unknown Model");
-		return ROUTER_BOARD_PB42;
+	int devcnt = 0;
+	while (dev[devcnt].devicename != NULL) {
+		if (dev[devcnt].devid == device) {
+			nvram_set("ath0_rxantenna", dev[devcnt].rxchain);
+			nvram_set("ath0_txantenna", dev[devcnt].txchain);
+			setRouter(dev[devcnt].devicename);
+			return dev[devcnt].dddev;
+		}
+		devcnt++;
 	}
+	setRouter("Ubiquiti Unknown Model");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_NS2
 	setRouter("Ubiquiti Nanostation 2");
 	return ROUTER_BOARD_LS2;
@@ -1124,14 +1068,14 @@ int internal_getRouterBrand()
 		setRouter("Asus RT-N10");
 		return ROUTER_ASUS_RTN10;
 	}
-	
+
 	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
 	    && nvram_match("boardrev", "0x1201")) {
 		cprintf("router is Asus RT-N12\n");
 		setRouter("Asus RT-N12");
 		return ROUTER_ASUS_RTN12;
 	}
-	
+
 	if (boardnum == 45 && nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boardrev", "0x1218")) {
 		cprintf("router is Asus RT-N16\n");
@@ -1442,7 +1386,7 @@ int internal_getRouterBrand()
 	if (boardnum == 2 && (gemteknum == 10 || gemteknum == 11) &&
 	    (startswith(et0, "00:0C:E5") ||
 	     startswith(et0, "00:0c:e5") ||
-		 startswith(et0, "00:11:22") ||
+	     startswith(et0, "00:11:22") ||
 	     startswith(et0, "00:0C:10") ||
 	     startswith(et0, "00:0c:10") ||
 	     startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11"))) {
@@ -1577,7 +1521,7 @@ int internal_getRouterBrand()
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "2.0")) {
 			setRouter("Linksys WRT310Nv2");
-			return ROUTER_WRT310NV2;		
+			return ROUTER_WRT310NV2;
 		}
 	}
 
@@ -1615,7 +1559,7 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT610N");
 		return ROUTER_WRT610N;
 	}
-	
+
 	if (nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boot_hw_model", "WRT610N")) {
 		cprintf("router is Linksys WRT610Nv2\n");
@@ -3028,7 +2972,7 @@ int led_control(int type, int act)
 		ses2_gpio = 0x103;	// ses orange
 		break;
 	case ROUTER_WRT310NV2:
-		connected_gpio = 0x102; // ses orange
+		connected_gpio = 0x102;	// ses orange
 		power_gpio = 0x001;
 		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
 		ses_gpio = 0x104;	// ses blue
