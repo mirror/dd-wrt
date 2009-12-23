@@ -131,7 +131,6 @@ void start_overclock(void)	// hidden feature. must be called with
 
 	fseek(in, 0xcb, SEEK_SET);
 	int vipermul = getc(in);
-
 	fseek(in, 0x1e3, SEEK_SET);
 	int div = getc(in);
 
@@ -174,6 +173,15 @@ void start_overclock(void)	// hidden feature. must be called with
 	fseek(in, 0x76f, SEEK_SET);
 	int dir300mul6 = getc(in);
 
+	//asus rt-g32
+	fseek(in, 0x8f, SEEK_SET);
+	int dir300div7 = getc(in);
+
+	fseek(in, 0x9b, SEEK_SET);
+	int dir300mul7 = getc(in);
+
+
+
 	fseek(in, 0xdb, SEEK_SET);
 	int isalfa1 = getc(in);
 	int isalfa = 0;
@@ -186,6 +194,7 @@ void start_overclock(void)	// hidden feature. must be called with
 	int dir3004 = 0;
 	int dir3005 = 0;
 	int dir3006 = 0;
+	int dir3007 = 0;
 
 	if (dir300div == 0x3 && dir300mul == 0x5c) {
 		dir300 = 1;
@@ -264,6 +273,20 @@ void start_overclock(void)	// hidden feature. must be called with
 		mul = dir300mul6;
 	}
 
+
+	if (dir300div7 == 0x3 && dir300mul7 == 0x5c) {
+		dir3007 = 1;
+		div = dir300div7;
+		mul = dir300mul7;
+	}
+	if (dir300div7 == 0x1
+	    && (dir300mul7 == 0x28 || dir300mul7 == 0x2c
+		|| dir300mul7 == 0x30)) {
+		dir3007 = 1;
+		div = dir300div7;
+		mul = dir300mul7;
+	}
+
 	if (div == 0x3 && mul == 0x5c) {
 		fprintf(stderr,
 			"ap51/ap61/ap65 (ar2315/ar2316/ar2317/ar2318) found\n");
@@ -279,6 +302,8 @@ void start_overclock(void)	// hidden feature. must be called with
 			fseek(in, 0x75f, SEEK_SET);
 		else if (dir3006)
 			fseek(in, 0x763, SEEK_SET);
+		else if (dir3007)
+			fseek(in, 0x8f, SEEK_SET);
 		else
 			fseek(in, 0x1e3, SEEK_SET);
 		putc(0x1, in);
@@ -294,6 +319,8 @@ void start_overclock(void)	// hidden feature. must be called with
 			fseek(in, 0x76b, SEEK_SET);
 		else if (dir3006)
 			fseek(in, 0x76f, SEEK_SET);
+		else if (dir3007)
+			fseek(in, 0x9b, SEEK_SET);
 		else
 			fseek(in, 0x1ef, SEEK_SET);
 		if (clk == 200) {
@@ -361,6 +388,8 @@ void start_overclock(void)	// hidden feature. must be called with
 			fseek(in, 0x75f, SEEK_SET);
 		else if (dir3006)
 			fseek(in, 0x763, SEEK_SET);
+		else if (dir3007)
+			fseek(in, 0x8f, SEEK_SET);
 		else
 			fseek(in, 0x1e3, SEEK_SET);
 		if (clk == 184)
@@ -380,6 +409,8 @@ void start_overclock(void)	// hidden feature. must be called with
 			fseek(in, 0x76b, SEEK_SET);
 		else if (dir3006)
 			fseek(in, 0x76f, SEEK_SET);
+		else if (dir3007)
+			fseek(in, 0x9b, SEEK_SET);
 		else
 			fseek(in, 0x1ef, SEEK_SET);
 		if (clk == 184) {
