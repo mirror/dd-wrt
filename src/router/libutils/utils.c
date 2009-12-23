@@ -909,13 +909,13 @@ int internal_getRouterBrand()
 		return ROUTER_BOARD_BS5M;
 		break;
 	case 0xe212:
-		setRouter("Ubiquiti Airgrid M2");	//identical with Bullet M2 Spec
+		setRouter("Ubiquiti Airgrid 2M");	//identical with Bullet M2 Spec
 		nvram_default_get("ath0_rxantenna", "1");
 		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS2M;
 		break;
 	case 0xe215:
-		setRouter("Ubiquiti Airgrid M5");
+		setRouter("Ubiquiti Airgrid 5M");
 		nvram_default_get("ath0_rxantenna", "1");
 		nvram_default_get("ath0_txantenna", "1");
 		return ROUTER_BOARD_BS5M;
