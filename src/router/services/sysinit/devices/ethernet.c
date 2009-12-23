@@ -1,5 +1,10 @@
 
-#define insmod(module) sysprintf("insmod %s",module); returncode=1;
+static int try_module(char *module)
+{
+sysprintf("insmod %s",module); 
+return 1;
+}
+#define insmod(module) returncode=try_module(module);
 
 static int detect(char *devicename)
 {
