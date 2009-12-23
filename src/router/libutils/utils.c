@@ -853,35 +853,31 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_UBNTM
 	typedef struct UBNTDEV {
-		char *devicename;
-		unsigned short devid;
-		char *rxchain;
-		char *txchain;
-		int dddev;
+		char *devicename;	// device name 
+		unsigned short devid;	// pci subdevice id
+		char *rxchain;	// rx chainmask
+		char *txchain;	// tx chainmask
+		int dddev;	// dd-wrt device id
 	};
 
 	struct UBNTDEV dev[] = {
-		{"Ubiquiti Nanostation M2", 0xe002, "3", "3",
-		 ROUTER_BOARD_NS2M},
-		{"Ubiquiti Nanostation M2", 0xe012, "3", "3",
-		 ROUTER_BOARD_NS2M},
-		{"Ubiquiti Nanostation M5", 0xe005, "3", "3",
-		 ROUTER_BOARD_NS5M},
-		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M},
-		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M},
-		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M},
-		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M},
-		{"Ubiquiti Bullet M5", 0xe202, "1", "1", ROUTER_BOARD_BS5M},
-		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M},
-		{"Ubiquiti Airgrid 5M", 0xe215, "1", "1", ROUTER_BOARD_BS5M},
-		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M},
-		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M},
-		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M},
-		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M},
-		{"Ubiquiti Litestation M25", 0xe115, "3", "3",
-		 ROUTER_BOARD_NS5M},
-		{"Ubiquiti AP 1000N", 0xe402, "3", "3", ROUTER_BOARD_R2M},
-		{NULL, 0, NULL, NULL, 0},
+		{"Ubiquiti Nanostation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M},	//
+		{"Ubiquiti Nanostation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M},	//
+		{"Ubiquiti Nanostation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M},	//
+		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M},	//
+		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M},	//
+		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M},	//
+		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M},	//
+		{"Ubiquiti Bullet M5", 0xe202, "1", "1", ROUTER_BOARD_BS5M},	//
+		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M},	//
+		{"Ubiquiti Airgrid 5M", 0xe215, "1", "1", ROUTER_BOARD_BS5M},	//
+		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M},	//
+		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M},	//
+		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M},	//
+		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M},	//
+		{"Ubiquiti Litestation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M},	//
+		{"Ubiquiti AP 1000N", 0xe402, "3", "3", ROUTER_BOARD_R2M},	//
+		{NULL, 0, NULL, NULL, 0},	//
 	};
 
 	FILE *fp =
