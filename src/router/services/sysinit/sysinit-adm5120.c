@@ -52,6 +52,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <cymac.h>
+#include "devices/wireless.c"
 
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
 
@@ -411,15 +412,7 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("ath_pci");
-	}
+	detect_wireless_devices();
 
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");

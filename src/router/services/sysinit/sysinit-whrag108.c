@@ -51,6 +51,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include "devices/wireless.c"
 
 // highly experimental
 
@@ -212,15 +213,7 @@ void start_sysinit(void)
 	 */
 	insmod("ar2313");
 
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_ahb", rate);
-	} else {
-		insmod("ath_ahb");
-	}
+	detect_wireless_devices();
 
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");

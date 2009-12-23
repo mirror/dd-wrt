@@ -56,6 +56,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <cymac.h>
+#include "devices/wireless.c"
 
 // highly experimental
 
@@ -124,16 +125,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	insmod("ar2313");
-	insmod("ath_hal");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		eval("insmod", "ath_ahb", rate);
-	} else {
-		insmod("ath_ahb");
-	}
-	// eval ("ifconfig", "wifi0", "up");
+	detect_wireless_devices();
 	if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
 		system2("echo 7 >/proc/sys/dev/wifi0/ledpin");
 		system2("echo 1 >/proc/sys/dev/wifi0/softled");
