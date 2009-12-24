@@ -23,12 +23,12 @@ else
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils  -ldl
 CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils -fpic
 
-ifneq ($(ARCHITECTURE),lsx)
+#ifneq ($(ARCHITECTURE),lsx)
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
-endif
-ifeq ($(ARCHITECTURE),lsx)
-CFLAGS += -fomit-frame-pointer 
-endif
+#endif
+#ifeq ($(ARCHITECTURE),lsx)
+#CFLAGS += -fomit-frame-pointer 
+#endif
 endif
 
 cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
@@ -700,11 +700,11 @@ endif
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless
 	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
-ifeq ($(CONFIG_LSX),y)
-	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
-else
+#ifeq ($(CONFIG_LSX),y)
+#	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
+#else
 	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils
-endif
+#endif
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
