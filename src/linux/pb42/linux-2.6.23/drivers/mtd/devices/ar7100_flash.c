@@ -176,9 +176,13 @@ static struct mtd_partition dir_parts[] = {
 				//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x30000, size:0xf90000,},
 #elif CONFIG_MTD_FLASH_8MB
+#ifdef CONFIG_AR7100_LOW
+      {name: "RedBoot", offset: 0, size:0x50000,},
+      {name: "linux", offset: 0x50000, size:0x770000,},
+#else				//, mask_flags: MTD_WRITEABLE, },
       {name: "RedBoot", offset: 0, size:0x30000,},
-				//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x30000, size:0x790000,},
+#endif
 #else
       {name: "RedBoot", offset: 0, size:0x40000,},
 				//, mask_flags: MTD_WRITEABLE, },
@@ -378,8 +382,8 @@ else
 					break;
 				}
 			}
-			offset += mtd->erasesize;
-			buf += mtd->erasesize;
+			offset += 4096;
+			buf += 4096;
 		}
 	      def:;
 		dir_parts[7].offset = 0;	// linux + nvram = phy size

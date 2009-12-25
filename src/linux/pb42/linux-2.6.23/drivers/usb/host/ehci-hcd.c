@@ -935,7 +935,7 @@ MODULE_DESCRIPTION (DRIVER_INFO);
 MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 
-#if defined(CONFIG_PCI) && !defined(CONFIG_USB_EHCI_9130)
+#if defined(CONFIG_PCI) && !defined(CONFIG_USB_EHCI_9130) && !defined(CONFIG_USB_EHCI_AR7100)
 #include "ehci-pci.c"
 #define	PCI_DRIVER		ehci_pci_driver
 #endif

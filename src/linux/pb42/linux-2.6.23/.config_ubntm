@@ -3,6 +3,7 @@
 # Linux kernel version: 2.6.22.19
 # Fri Nov 20 06:46:41 2009
 #
+# CONFIG_AR7240_DEFAULT_GPIO is not set
 CONFIG_HSO=m
 
 CONFIG_MIPS=y
