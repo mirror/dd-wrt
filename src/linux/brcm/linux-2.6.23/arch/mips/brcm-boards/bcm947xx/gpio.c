@@ -310,7 +310,7 @@ if (boardnum == 1 && nvram_match("boardrev", "0x23")
 		bcm_mdelay(20);	
 }*/
 	//should be safe to enable gpio 0-7 on all routers.
-	gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7;
+	gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11;
 	printk(KERN_EMERG "GPIO 0-7 init\n");
 
 	for (i = 0; i < 16; i++)
