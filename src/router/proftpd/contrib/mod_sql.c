@@ -23,7 +23,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql.c,v 1.151.2.1 2009/04/28 22:20:17 castaglia Exp $
+ * $Id: mod_sql.c,v 1.151.2.2 2009/08/19 18:32:16 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1032,8 +1032,8 @@ static struct passwd *_sql_addpasswd(cmd_rec *cmd, char *username,
   pwd->pw_name = username;
 
   /* check to make sure the entry doesn't exist in the cache */
-  if (((cached = (struct passwd *) cache_findvalue(passwd_name_cache,
-      pwd))!= NULL)) {
+  cached = (struct passwd *) cache_findvalue(passwd_name_cache, pwd);
+  if (cached != NULL) {
     pwd = cached;
     sql_log(DEBUG_INFO, "cache hit for user '%s'", pwd->pw_name);
 
@@ -1051,6 +1051,7 @@ static struct passwd *_sql_addpasswd(cmd_rec *cmd, char *username,
    
     if (shell) 
       pwd->pw_shell = pstrdup(sql_pool, shell);
+
     if (dir)
       pwd->pw_dir = pstrdup(sql_pool, dir);
     
@@ -1091,11 +1092,17 @@ static struct passwd *_sql_getpasswd(cmd_rec *cmd, struct passwd *p) {
       !cmap.defaulthomedir)
     return NULL;
 
-  /* check to see if the passwd already exists in one of the passwd caches */
-  if (((pwd = (struct passwd *) 
-	 cache_findvalue(passwd_name_cache, p)) != NULL) ||
-       ((pwd = (struct passwd *) 
-	 cache_findvalue(passwd_uid_cache, p)) != NULL)) {
+  /* Check to see if the passwd already exists in one of the passwd caches.
+   * Give preference to name-based lookups, as opposed to UID-based lookups.
+   */
+  if (p->pw_name != NULL) {
+    pwd = (struct passwd *) cache_findvalue(passwd_name_cache, p);
+
+  } else {
+    pwd = (struct passwd *) cache_findvalue(passwd_uid_cache, p);
+  }
+
+  if (pwd != NULL) {
     sql_log(DEBUG_AUTH, "cache hit for user '%s'", pwd->pw_name);
 
     /* Check for negatively cached passwds, which will have NULL

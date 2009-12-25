@@ -24,7 +24,7 @@
 
 /*
  * Expression API tests
- * $Id: expr.c,v 1.1 2008/10/06 18:16:50 castaglia Exp $
+ * $Id: expr.c,v 1.1.2.1 2009/12/09 23:40:20 castaglia Exp $
  */
 
 #include "tests.h"
@@ -267,8 +267,10 @@ START_TEST (expr_eval_group_and_test) {
   fail_unless(res == TRUE, "Expected TRUE, got FALSE");
 
   session.group = NULL;
-  session.groups = make_array(p, 1, sizeof(char *));
+  session.groups = make_array(p, 2, sizeof(char *));
   *((char **) push_array(session.groups)) = "test";
+  *((char **) push_array(session.groups)) = NULL;
+  *((char **) push_array(session.groups)) = "spank";
 
   res = pr_expr_eval_group_and(names1);
   fail_unless(res == FALSE, "Expected FALSE, got TRUE");

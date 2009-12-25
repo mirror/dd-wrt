@@ -26,7 +26,7 @@
 
 /* Data transfer module for ProFTPD
  *
- * $Id: mod_xfer.c,v 1.250.2.2 2009/07/01 00:27:56 castaglia Exp $
+ * $Id: mod_xfer.c,v 1.250.2.3 2009/09/01 18:39:27 castaglia Exp $
  */
 
 #include "conf.h"
@@ -78,7 +78,7 @@ static unsigned long xfer_prio_flags = 0;
 static int xfer_prio_adjust(void);
 static int xfer_prio_restore(void);
 
-/* Used for MaxTransferPerHost and TransferRate */
+/* Used for MaxTransfersPerHost and TransferRate */
 static int xfer_parse_cmdlist(const char *, config_rec *, char *);
 
 module xfer_module;
@@ -411,7 +411,7 @@ static int xfer_check_limit(cmd_rec *cmd) {
       return -1;
     }
 
-    c = find_config_next(c, c->next, CONF_PARAM, "MaxTransferPerHost", FALSE);
+    c = find_config_next(c, c->next, CONF_PARAM, "MaxTransfersPerHost", FALSE);
   }
 
   c = find_config(CURRENT_CONF, CONF_PARAM, "MaxTransfersPerUser", FALSE);
@@ -483,7 +483,7 @@ static int xfer_check_limit(cmd_rec *cmd) {
       return -1;
     }
 
-    c = find_config_next(c, c->next, CONF_PARAM, "MaxTransferPerHost", FALSE);
+    c = find_config_next(c, c->next, CONF_PARAM, "MaxTransfersPerUser", FALSE);
   }
 
   return 0;
@@ -2531,7 +2531,7 @@ MODRET set_maxfilesize(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: MaxTransferPerHost cmdlist count [msg] */
+/* usage: MaxTransfersPerHost cmdlist count [msg] */
 MODRET set_maxtransfersperhost(cmd_rec *cmd) {
   config_rec *c = NULL;
   int count = 0;
@@ -2565,7 +2565,7 @@ MODRET set_maxtransfersperhost(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: MaxTransferPerUser cmdlist count [msg] */
+/* usage: MaxTransfersPerUser cmdlist count [msg] */
 MODRET set_maxtransfersperuser(cmd_rec *cmd) {
   config_rec *c = NULL;
   int count = 0;
