@@ -1,3 +1,2934 @@
+2009-12-10 10:33  castaglia
+
+	* NEWS, contrib/dist/rpm/proftpd.spec, include/version.h:
+	  Preparing to release 1.3.2c today.
+
+2009-12-10 10:24  castaglia
+
+	* NEWS, tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Bug#3352 - mod_sftp does not reject/close connections that have
+	  been rejected by mod_wrap.
+
+2009-12-10 09:59  castaglia
+
+	* contrib/mod_wrap.c:
+	  Specify the module version data in the module structure for
+	  mod_wrap.
+
+2009-12-10 09:45  castaglia
+
+	* NEWS, modules/mod_auth.c, modules/mod_auth_file.c:
+	  Backported fixes for Bug#3347 and Bug#3351.
+
+2009-12-10 09:45  castaglia
+
+	* NEWS, modules/mod_auth.c:
+	  Bug#3351 - Nonchrooted logins on HPUX do not get proper UID/GID.
+
+2009-12-10 09:40  castaglia
+
+	* NEWS, modules/mod_auth_file.c, tests/tests.pl,
+	  tests/t/config/authgroupfile.t,
+	  tests/t/lib/ProFTPD/Tests/Config/AuthGroupFile.pm:
+	  Bug#3347 - mod_auth_file handles 'getgroups' request incorrectly.
+
+2009-12-10 08:26  castaglia
+
+	* src/: support.c:
+	  Updated fix for Bug#3350.
+
+2009-12-10 07:52  castaglia
+
+	* NEWS, src/support.c:
+	  Bug#3350 - Segfault caused by scrubbing zero-length portion of
+	  memory.
+
+2009-12-09 15:45  castaglia
+
+	* src/expr.c:
+	  Fix the logic for iterating over the session.groups list, and
+	  handling NULL names, in the pr_expr_eval_group_or() function as
+	  well.
+
+2009-12-09 15:44  castaglia
+
+	* src/expr.c:
+	  Fix the logic for iterating over session.groups, and handling
+	  NULL names, in the pr_expr_eval_group_or() function as well.
+
+2009-12-09 15:41  castaglia
+
+	* src/expr.c, tests/api/expr.c:
+	  Fix segfault uncovered by Michael, where the
+	  pr_expr_eval_group_and() function would not handling NULL names
+	  in the session.groups list.  This also makes the code which
+	  iterates over the session.groups list look much saner.
+
+2009-12-09 15:40  castaglia
+
+	* src/expr.c, tests/api/expr.c:
+	  Fix a segfault uncovered by Michael, where the
+	  pr_expr_eval_group_and() function didn't handle a NULL group name
+	  in the middle of the session.groups list.
+
+2009-12-09 13:39  castaglia
+
+	* NEWS, contrib/mod_tls.c:
+	  Bug#3349 - SSL_SESSION_cmp not available in OpenSSL 1.0.0 betas.
+
+2009-12-09 11:55  castaglia
+
+	* contrib/mod_tls.c:
+	  Backport of a mod_tls fix to handle checking of "is this a
+	  renegotiation" only for control connections, not data
+	  connections.
+
+2009-12-09 11:52  castaglia
+
+	* contrib/mod_tls.c:
+	  Found another place where we want to do the "is this a
+	  renegotiation" check only for control connections, not for data
+	  connections.
+
+	  Also quell a compiler warning using a typecast;
+	  OpenSSL-1.0.0-betaN uses more const'd types than previously.
+
+2009-12-09 11:49  castaglia
+
+	* contrib/mod_tls.c:
+	  Make sure that mod_tls can compile against OpenSSL-1.0.0-betaN,
+	  which does not have the UNSAFE_LEGACY_RENEGOTIATION flag (it uses
+	  something different).
+
+2009-12-09 09:25  castaglia
+
+	* contrib/mod_tls.c:
+	  Make sure that mod_tls can be compiled using OpenSSL-1.0.0-betaN;
+	  the UNSAFE_LEGACY_RENEGOTIATONS flag was changed after
+	  OpenSSL-0.9.8l.
+
+2009-12-08 16:51  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add unit test using a combined mod_sftp+mod_wrap2 configuration,
+	  for use in preventing regressions in the interactions between
+	  these modules.
+
+2009-12-07 16:24  castaglia
+
+	* doc/contrib/mod_ban.html:
+	  Add a FAQ about creating whitelists for mod_ban.
+
+2009-12-07 15:24  castaglia
+
+	* modules/mod_xfer.c:
+	  Additional change necessary for fixing Bug#3345.  Use of trace
+	  logging (or not) affects the errno value, and we need to make
+	  sure that the original errno value is preserved.
+
+2009-12-07 15:02  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/: Commands/ALLO.pm, Commands/APPE.pm,
+	  Commands/CDUP.pm, Commands/EPRT.pm, Commands/EPSV.pm,
+	  Commands/MDTM.pm, Commands/MODE.pm, Commands/NOOP.pm,
+	  Commands/PASS.pm, Commands/PASV.pm, Commands/PWD.pm,
+	  Commands/QUIT.pm, Commands/RNFR.pm, Commands/RNTO.pm,
+	  Commands/SIZE.pm, Commands/STOU.pm, Commands/STRU.pm,
+	  Config/DeleteAbortedStores.pm, Config/FTPAccess/DELE.pm,
+	  Commands/SYST.pm, Commands/TYPE.pm, Commands/USER.pm:
+	  Updating more testsuite tests to use the consistent `tests.log'
+	  log file.
+
+2009-12-07 14:33  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/: Config/AllowOverwrite.pm,
+	  Config/GroupOwner.pm, Config/MaxInstances.pm,
+	  Config/MaxRetrieveFileSize.pm, Config/MaxStoreFileSize.pm,
+	  Config/Order.pm, Config/RequireValidShell.pm,
+	  Config/StoreUniquePrefix.pm, Config/TimeoutNoTransfer.pm,
+	  Config/TimeoutSession.pm, Config/TimeoutStalled.pm,
+	  Config/UseFtpUsers.pm, Config/UserOwner.pm, Signals/ABRT.pm,
+	  Signals/HUP.pm, Signals/SEGV.pm, Signals/TERM.pm:
+	  Updating more of the testsuite tests to use `tests.log' as their
+	  output logging file, for consistency.
+
+2009-12-07 08:44  castaglia
+
+	* RELEASE_NOTES:
+	  Work on preparing the release notes for 1.3.3rc3.
+
+2009-12-07 08:20  castaglia
+
+	* contrib/dist/rpm/proftpd.spec:
+	  Correct the %description sections in proftpd.spec.
+
+2009-12-06 09:19  castaglia
+
+	* src/auth.c:
+	  When resolving '~' paths, the lookup is done via getpwnam(), not
+	  by using getpwuid().	Thus there is little gain (and there is a
+	  cost in terms of performance, since getpwuid() is used when
+	  listing directories) in calling pr_auth_get_home() from
+	  pr_auth_getpwuid().
+
+2009-12-06 09:08  castaglia
+
+	* NEWS, modules/mod_auth.c, src/auth.c,
+	  tests/t/lib/ProFTPD/Tests/Config/RewriteHome.pm:
+	  Bug#3348 - Rewriting of home directories via RewriteHome does not
+	  work for chrooted sessions.
+
+2009-12-05 15:48  castaglia
+
+	* doc/contrib/mod_sql_passwd.html:
+	  Updated the mod_sql_passwd doc to mention support of SHA256 and
+	  SHA512 passwords.
+
+2009-12-05 15:46  castaglia
+
+	* NEWS, RELEASE_NOTES, contrib/mod_sql_passwd.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_passwd.pm:
+	  Bug#3344 - Support SHA256, SHA512 passwords in databases.
+
+2009-12-03 13:45  castaglia
+
+	* utils/scoreboard.c:
+	  Fix an "unreachable code" compiler warning, and clean up the code
+	  stylistically.
+
+2009-12-02 19:57  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Add unit tests showing that even when using SSL/TLS, resuming
+	  downloads of
+	  >2GB/4GB files via REST works properly.
+
+2009-12-02 19:30  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/REST.pm:
+	  Add a test for resuming downloads of >4GB files as well.
+
+2009-12-02 18:49  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/REST.pm:
+	  Add unit test for FileZilla's REST behavior over 2GB.
+
+	  Modify all tests to output to the 'tests.log' file.
+
+2009-12-01 20:45  castaglia
+
+	* modules/mod_xfer.c:
+	  Typos.
+
+2009-12-01 20:38  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_ban.pm:
+	  Fix broken mod_ban+mod_ifsession test.
+
+2009-12-01 19:59  castaglia
+
+	* src/display.c:
+	  The displaying of multiline Display files was leaving off the
+	  last line in the file; now fixed.
+
+2009-12-01 19:56  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/DELE.pm:
+	  Fix the DELE unit tests to handle different strerror(3) strings.
+
+2009-12-01 11:39  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/RMD.pm:
+	  Fix broken RMD test.	Rename the output log file to the
+	  'tests.log' that is being used elsewhere in the testsuite.
+
+2009-12-01 10:10  castaglia
+
+	* tests/t/lib/ProFTPD/: TestSuite/FTP.pm, Tests/Commands/RMD.pm,
+	  Tests/Config/HideFiles.pm:
+	  Make the TestSuite::FTP client default to using passive data
+	  transfers, not active data transfers.  Fix up some warnings in
+	  the testsuite.
+
+2009-11-30 09:26  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Handle multiple SFTPAcceptEnv directives if configured.
+
+	  Add docs for the SFTPAcceptEnv directive.
+
+2009-11-26 10:47  castaglia
+
+	* modules/mod_xfer.c:
+	  Make sure that the PRE_CMD handlers for RETR, APPE, and STOR set
+	  appropriate errno values.
+
+	  Remove some code that would never be executed.
+
+2009-11-26 10:38  castaglia
+
+	* NEWS, tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Bug#3345 - mod_sftp returns EACCES rather than ENOENT for an OPEN
+	  request for a nonexistent file.
+
+2009-11-24 09:29  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Added SFTPAcceptEnv directive, for configuring which environment
+	  variables can be set by the client.
+
+2009-11-23 14:35  castaglia
+
+	* src/dirtree.c:
+	  Added note for myself for the future, about why <Directory>
+	  patterns aren't matching as I had assumed they would.
+
+2009-11-22 13:44  castaglia
+
+	* modules/mod_auth.c:
+	  Close the scoreboard descriptor at session exit.
+
+2009-11-22 11:34  castaglia
+
+	* modules/mod_delay.c:
+	  While running mod_sftp through Valgrind, I found that mod_delay
+	  leaks an fd: it never closes the fd to the DelayTable, even after
+	  the table has been unloaded from memory.  Fix this.
+
+2009-11-20 20:55  castaglia
+
+	* contrib/mod_tls.c, tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Fix up some issues found in mod_tls when running its test cases.
+
+	  First, as per Bug#3325, make the TLSRequired/AllowPerUser check a
+	  little smarter, so that the published AllowPerUser example in the
+	  TLS howto works properly, but the check still retains its
+	  validity.
+
+	  When checking for client-initiated renegotiations, make sure we
+	  don't punish the client for *new* sessions for *data*
+	  connections.
+
+	  Make sure that "TLSRequired auth" is enforced properly if the
+	  client is NOT using SSL/TLS.
+
+	  Include MLSD in the list of commands which can trigger data
+	  transfers, and thus fall under the "TLSRequired data" checks.
+
+2009-11-20 06:40  jwm
+
+	* contrib/mod_ldap.c: release 2.8.21, with backports from bzr
+	  trunk:
+
+	  CHANGES: * Implement an internal failover mechanism instead of
+	  relying on the LDAP	SDK's built-in failover (if any). Fixes
+	  failover regression introduced   in v2.8.19 when
+	  ldap_initialize() was first used.  * Multiple LDAP URL arguments
+	  may now be passed to LDAPServer:
+
+	    LDAPServer ldap://127.0.0.1/??sub ldap://172.16.0.1/??sub
+	  * When setting whether to dereference LDAP aliases after
+	  connecting to   the LDAP server, treat failure as a hard failure
+	  and refuse to continue   with that LDAP server. Previously,
+	  failure when specifying whether to   dereference aliases would be
+	  logged but the connection to that server   would continue.
+
+	  bzr r71:   - only log that we've successfully unbound if we've
+	  successfully unbound	 - pr_ldap_connect() should always unbind
+	  on failure   - treat dereference option set failure in
+	  pr_ldap_connect() as a   - connection     failure; don't warn and
+	  keep plowing on
+
+	  bzr r77, r78:   Bug 3301 -  LDAP server failover does not work
+	  when ldap_initialize() is   available
+
+	    fix LDAP server failover by implementing our own failover
+	  mechanism instead
+	    of relying on the LDAP SDK's.
+
+	    ldap server failover (space-separated list of hostnames in the
+	  argument to
+	    LDAPServer) has been broken since 2.8.19 when ldap_init() was
+	  replaced with
+	    ldap_initialize(), if available. as of that commit, a LDAP URL
+	  is
+	    constructed if simple hostname(s) are passed to LDAPServer, so:
+
+	      'LDAPServer "127.0.0.1 172.16.0.5"
+
+	    was passed to ldap_initailize() as:
+
+	      ldap://127.0.0.1 172.16.0.5/
+
+	    Unfortunately, ldap_url_parse() treats this as a valid URL, but
+	    ldap_intiailize() will not fail over to subsequent LDAP servers
+	    should the first be unreachable.
+
+	    ldap_initialize() *will* take a whitespace-separated list of
+	  LDAP URLs and
+	    will fail over successfully, just not when whitespace-separated
+	  hostname
+	    are passed to a *single* url (even if the whitespace in the
+	  hostname
+	    portion of the URL is urlencoded as %20).
+
+	    forget all of this SDK-based failover and implement our own
+	  failover support,
+	    since afaict Sun's ancient LDAP SDK doesn't implement failover
+	  and it's nice
+	    to be able to control it ourselves.
+
+	    for that matter, we *need* to control it ourselves since we
+	  need to use the
+	    search scope indicated by the URL at hand. chances are, the
+	  search scope
+	    will be the same for all URLs passed to LDAPServer, but to be
+	  completely
+	    correct, we should use the scope corresponding to the current
+	  URL and
+	    ldap_initialize() provides no way to tell what URL it wound up
+	  connecting
+	    to.
+
+2009-11-19 21:10  castaglia
+
+	* modules/mod_ls.c, tests/t/lib/ProFTPD/Tests/Commands/LIST.pm:
+	  Revisit the fix put in place for Bug#2367.  First, add the test
+	  case to the LIST testsuite, for regressions.	Then look at a
+	  different fix, a simpler one: remove the GLOB_PERIOD flag from
+	  the flags used when globbing.  This causes the test case to pass.
+
+	  This is done in order to make possible another case: list a
+	  directory whose name legitimately contains a glob character ('['
+	  in the case of one of the users in the online forums).  The
+	  previous fix for Bug#2367 prevented the proper listing of such a
+	  directory.  The newer, simpler fix handles this legitimate
+	  directory name properly, while still preserving behavior which
+	  matches that of the shell.
+
+2009-11-19 20:53  castaglia
+
+	* modules/mod_ls.c:
+	  Fix up some of the code style in mod_ls.
+
+	  Add handling of signals in the while() loops which iterate over
+	  globbed paths.
+
+	  Removed the '{' character from the glob character checks; it is
+	  not a glob(3) character.
+
+2009-11-19 15:09  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Try to make the requirement of using ssh-keygen to convert public
+	  keys to RFC4716 format clearer.
+
+2009-11-19 10:55  castaglia
+
+	* NEWS, src/bindings.c:
+	  Bug#3306 - ECONNREFUSED while handling SIGHUP.
+
+2009-11-18 21:29  castaglia
+
+	* lib/libltdl/.cvsignore:
+	  More auto-generated files to ignore.
+
+2009-11-18 19:04  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-18 18:58  castaglia
+
+	* configure.in:
+	  Handle empty CONFIG_SHELL values.
+
+2009-11-18 18:47  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-18 18:45  castaglia
+
+	* configure.in:
+	  Although it looks like LTDL_INIT(convenience) and
+	  LTDL_CONVENIENCE are the same, they are not.	So we need to use
+	  both.
+
+2009-11-18 18:18  castaglia
+
+	* Makefile.in:
+	  Comment out the target that might cause the machine to re-run
+	  autoconf.
+
+2009-11-18 17:47  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-18 17:40  castaglia
+
+	* configure.in:
+	  More libtool-2.2.4 tweaking fun.
+
+2009-11-18 17:33  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-18 13:51  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-18 13:48  castaglia
+
+	* Make.rules.in, configure.in:
+	  More libtool-2.2.4 tweaks, with help from Bob Friesenhahn.
+
+2009-11-18 13:46  castaglia
+
+	* aclocal.m4:
+	  Re-create our aclocal.m4 using the aclocal tool.
+
+2009-11-18 09:48  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-18 09:45  castaglia
+
+	* configure.in, modules/Makefile.in:
+	  Export the LTDLINCL variable from the configure script, so that
+	  we are no longer hardcoding the path to the directory containing
+	  the ltdl.h header.
+
+2009-11-18 09:39  castaglia
+
+	* Makefile.in, configure.in:
+	  More wrestling with libtool-2.2.4.  I am *really* not liking this
+	  2.2.x release series.
+
+2009-11-17 22:38  castaglia
+
+	* NEWS, modules/mod_core.c:
+	  Bug#3342 - FEAT response contains LF without preceding CR.
+
+2009-11-17 20:08  castaglia
+
+	* tests/: tests.pl, t/lib/ProFTPD/Tests/Config/Limit/RMD.pm,
+	  t/config/limit/rmd.t:
+	  Add regression test demonstrating how to make an undeletable
+	  directory using the <Limit> + Filter approach.
+
+2009-11-17 16:52  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Update mod_sftp doc so that it's hopefully less confusing.
+
+2009-11-17 14:55  castaglia
+
+	* NEWS, contrib/mod_wrap2/mod_wrap2.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_wrap2_sql.pm:
+	  Bug#3341 - mod_wrap2 segfaults when a valid user retries the USER
+	  command.
+
+2009-11-17 11:28  castaglia
+
+	* NEWS:
+	  Bug#3331 - Update bundled libtool to 2.2.4.
+
+2009-11-17 11:27  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-17 11:20  castaglia
+
+	* Makefile.in, configure.in, modules/Makefile.in:
+	  More tweaks to the build files to make sure that mod_dso builds
+	  properly with the new version of libltdl/libtool.
+
+2009-11-17 11:19  castaglia
+
+	* lib/libltdl/.cvsignore:
+	  One more libtool file to ignore.
+
+2009-11-17 11:18  castaglia
+
+	* lib/libltdl/.cvsignore:
+	  More files to ignore with this new version of libtool.
+
+2009-11-17 10:46  castaglia
+
+	* lib/libltdl/ltdl.c:
+	  Backport the patch for the bugs found in libtool-2.2.6 to this
+	  2.2.4 version.
+
+2009-11-17 10:44  castaglia
+
+	* lib/libltdl/: Makefile.in, acinclude.m4, argz.c, config.guess,
+	  config.sub, install-sh, ltmain.sh, missing:
+	  Bug#3331 - Update bundled libtool to 2.2.4.
+
+2009-11-17 10:33  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-17 10:25  castaglia
+
+	* lib/libltdl/Makefile.am, lib/libltdl/Makefile.in,
+	  lib/libltdl/README, lib/libltdl/aclocal.m4, lib/libltdl/argz_.h,
+	  lib/libltdl/config-h.in, lib/libltdl/configure,
+	  lib/libltdl/configure.ac, lib/libltdl/lt__alloc.c,
+	  lib/libltdl/lt__dirent.c, lib/libltdl/lt__strl.c,
+	  lib/libltdl/lt_dlloader.c, lib/libltdl/lt_error.c,
+	  lib/libltdl/ltdl.c, lib/libltdl/ltdl.h, lib/libltdl/slist.c,
+	  aclocal.m4, ltmain.sh, configure.in, modules/mod_dso.c:
+	  Bug#3331 - Update bundled libtool to 2.2.4.
+
+2009-11-17 10:12  castaglia
+
+	* config.guess, config.sub:
+	  Updating the config.guess and config.sub helper scripts.
+
+2009-11-17 10:01  castaglia
+
+	* install-sh:
+	  Updated the install-sh script.
+
+2009-11-17 09:36  castaglia
+
+	* doc/howto/Timestamps.html:
+	  Mention MFMT in the Timestamps howto.
+
+2009-11-16 20:38  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Add the SFTP Extensions Draft to the list.
+
+2009-11-15 19:56  castaglia
+
+	* src/dirtree.c:
+	  Simpler fix for Bug#3337.
+
+2009-11-14 16:27  castaglia
+
+	* NEWS, src/dirtree.c:
+	  Bug#3337 - <Directory> sections with a trailing directory name of
+	  one character have <Limit> problems.	This is a regression caused
+	  by Bug#3146.
+
+2009-11-14 16:23  castaglia
+
+	* NEWS, src/dirtree.c,
+	  tests/t/lib/ProFTPD/Tests/Config/Directory/Limits.pm:
+	  Bug#3337 - <Directory> sections with a trailing directory name of
+	  one character have <Limit> problems.	This is a regression caused
+	  by Bug#3146.
+
+2009-11-14 12:40  castaglia
+
+	* configure:
+	  Updated configure script.
+
+2009-11-14 12:37  castaglia
+
+	* configure.in:
+	  Add use of the -Wunreachable-code compiler flag, where supported,
+	  when --enable-devel is used.
+
+	  Make the use of the AC_DEFINE macro more consistent by providing
+	  the optional message in more places.
+
+2009-11-14 10:23  castaglia
+
+	* modules/mod_core.c:
+	  Add trace logging of the pr_netacl_t objects created via other
+	  config directives.
+
+2009-11-13 10:59  castaglia
+
+	* doc/contrib/mod_sql.html:
+	  Fix typo in mod_sql docs.
+
+	  Add description of the interaction between the
+	  useNormalizedGroupSchema SQLOption and custom SQLGroupInfo
+	  queries.
+
+2009-11-13 10:29  castaglia
+
+	* contrib/mod_sql_mysql.c:
+	  Typo.
+
+2009-11-13 10:26  castaglia
+
+	* NEWS, contrib/mod_sql_mysql.c:
+	  Bug#3333 - mod_sql_mysql should support calling stored procedures
+	  better.
+
+2009-11-13 09:19  castaglia
+
+	* NEWS, contrib/mod_wrap.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_wrap.pm:
+	  Bug#3332 - Segfault in mod_wrap when TCPAccessFiles do not exist
+	  and client sends USER for account which does not exist.
+
+2009-11-12 18:29  castaglia
+
+	* NEWS, RELEASE_NOTES, doc/contrib/mod_sftp.html:
+	  Bug#3329 - Support the "vendor-id" SFTP extension.
+
+2009-11-12 09:24  castaglia
+
+	* doc/contrib/mod_ban.html:
+	  Adding a mod_ban FAQ, cleaning up a minor nit.
+
+2009-11-11 09:51  castaglia
+
+	* doc/contrib/mod_sql.html:
+	  Make a note in the description of the Crypt SQLAuthType that
+	  crypt(3) only uses the first 8 characters of a password; this can
+	  have some surprising (depressing?) consequences for the unwary.
+
+2009-11-10 09:32  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/Limit/SubDirectories.pm:
+	  Add more tests for the fix for Bug#3077.
+
+2009-11-10 09:23  castaglia
+
+	* NEWS, modules/mod_core.c:
+	  Bug#3307 - Transparently handle the X-variant commands when
+	  checking <Limit> permissions.  The fix for this issue has been
+	  reimplemented to be more transparent; some existing
+	  configurations were broken by the previous implementation.
+
+2009-11-09 22:11  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_sql.pm:
+	  For completeness, add a mod_quotatab unit test for RETR and the
+	  files_out limit.
+
+2009-11-09 21:02  castaglia
+
+	* contrib/mod_site_misc.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_site_misc.pm:
+	  Make sure that SITE SYMLINK fails if the source path does not
+	  exist on the filesystem.  I thought that the symlink(2) system
+	  call would handle this for us, but apparently not (at least it
+	  doesn't on Mac OSX 10.4, and thus potentially other platforms).
+
+2009-11-09 17:08  castaglia
+
+	* contrib/mod_quotatab.c:
+	  Add comment for my future self about why the have_quota_update
+	  flag is cleared before writing to the tally table, instead of
+	  after.
+
+2009-11-09 17:03  castaglia
+
+	* NEWS, contrib/mod_quotatab.c:
+	  Bug#3328 - Failed database transaction can cause mod_quotatab to
+	  loop endlessly.
+
+2009-11-09 16:40  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_sql.pm:
+	  Add mod_quotatab test for RETR byte limits.
+
+2009-11-09 14:09  castaglia
+
+	* src/main.c:
+	  Make sure that the LC_NUMERIC locale category is always "C",
+	  regardless of what's in the environment when proftpd starts.
+
+2009-11-09 09:26  castaglia
+
+	* contrib/mod_tls.c:
+	  Backport the change to mod_tls that removes the daemon-exit
+	  listener from the session process.
+
+2009-11-08 22:46  castaglia
+
+	* contrib/mod_quotatab.c:
+	  Before a copy, apply any QuotaExcludeFilter to the source path;
+	  the destination may not exist.  After a copy, apply any
+	  QuotaExcludeFilter to the destination path.  It's a little odd,
+	  but I think it makes sense this way.
+
+2009-11-08 22:41  castaglia
+
+	* contrib/mod_quotatab.c:
+	  Give mod_quotatab the ability to track (and enforce) quota
+	  changes due to the copying of files now possible via mod_sftp's
+	  copy-file SFTP extension.  For testing this, I had to use a SITE
+	  COPY implementation.
+
+2009-11-08 20:40  castaglia
+
+	* contrib/mod_site_misc.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_site_misc.pm:
+	  Advertise the supported SITE commands provided by mod_site_misc
+	  in the FEAT response.
+
+2009-11-08 19:51  castaglia
+
+	* contrib/mod_quotatab.c:
+	  In the pre-APPE handler, make sure to exclude files which match
+	  any configured QuotaExcludeFilter before checking the quota
+	  limits/tallies; if a file is excluded by the filter, it shouldn't
+	  run afoul of those limits/tallies.
+
+2009-11-08 19:47  castaglia
+
+	* contrib/mod_quotatab.c:
+	  Add checking of the path against a QuotaExcludeFilter in a few
+	  more places.	Add the setting of HAVE_WRITE_UPDATE in the
+	  pre-APPE handler, just as is done in the pre-STOR handler.
+
+2009-11-08 18:18  castaglia
+
+	* contrib/mod_tls.c:
+	  Remove the daemon-exit listener for the 'core.exit' event in the
+	  session process; when the session process exits, it shouldn't
+	  send a 'core.exit' event to the daemon-exit listener.
+
+2009-11-08 17:27  castaglia
+
+	* RELEASE_NOTES, doc/contrib/mod_sftp.html:
+	  Mention the new SFTP extensions, and the SFTPExtensions
+	  directive, in the release notes.
+
+	  Update the mod_sftp doc to cover the SFTPExtensions directive.
+
+2009-11-08 16:50  castaglia
+
+	* modules/mod_core.c:
+	  Fix minor issue where DELE on a symlink would cause the wrong
+	  size to be logged (the size of the target file, not the symlink,
+	  would be logged).
+
+2009-11-08 16:48  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/DELE.pm:
+	  Add unit test for DELEs on symlinks.
+
+2009-11-08 12:43  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Update the list of SFTP extensions supported by mod_sftp.
+
+2009-11-08 12:37  castaglia
+
+	* NEWS:
+	  Bug#3320 - Support the "copy-file" SFTP extension.
+
+2009-11-08 11:58  castaglia
+
+	* src/fsio.c:
+	  Fix some issues found in pr_fs_copy_file():	- return an error
+	  if closing the destination file returned an error   - use
+	  nonblocking opens, in case the source/destination paths are FIFOs
+
+	  Also some stylistic changes.
+
+2009-11-08 11:20  castaglia
+
+	* NEWS:
+	  Bug#3321 - Support the "check-file-name" and "check-file-handle"
+	  SFTP extensions.
+
+2009-11-07 14:34  castaglia
+
+	* NEWS:
+	  Bug#3322 - Support the "version-select" SFTP extension.
+
+2009-11-07 12:11  castaglia
+
+	* NEWS, contrib/mod_tls_shmcache.c:
+	  Bug#3326 - Shared memory segment used for session cache should be
+	  protected via mlock(2).
+
+2009-11-07 11:46  castaglia
+
+	* NEWS, contrib/mod_tls_shmcache.c:
+	  Bug#3327 - Clear external SSL session caches on server
+	  restart/shutdown.
+
+2009-11-06 19:45  castaglia
+
+	* NEWS, RELEASE_NOTES, contrib/mod_tls.c:
+	  Bug#3324 - Vulnerability in SSL/TLS protocol during renegotiation
+	  (CVE-2009-3555).
+
+2009-11-06 19:44  castaglia
+
+	* RELEASE_NOTES:
+	  Typo.
+
+2009-11-06 19:41  castaglia
+
+	* doc/contrib/mod_tls.html:
+	  Mention that server-initiated SSL session renegotiations are
+	  still honored when possible.
+
+2009-11-06 19:39  castaglia
+
+	* configure:
+	  Updated configure for Bug#3311.  Also added automatic detection
+	  of build requests for mod_sql_passwd, so that the USE_OPENSSL
+	  flag can be automatically set when that module is requested, just
+	  as is done for mod_tls and mod_sftp.
+
+2009-11-06 19:36  castaglia
+
+	* NEWS, configure.in:
+	  Bug#3311 - configure script should automatically detect when -ldl
+	  is needed by OpenSSL.
+
+2009-11-06 18:42  castaglia
+
+	* contrib/mod_tls.c:
+	  Add the changes from Bug#3324 to deal with server-initiated
+	  session renegotiations when using OpenSSL 0.9.8l or later.
+
+2009-11-06 18:01  castaglia
+
+	* contrib/mod_tls.c:
+	  Handle signals in the diagnostic callback.
+
+2009-11-06 17:52  castaglia
+
+	* contrib/mod_tls.c:
+	  More work towards Bug#3324 - allow server-initiated session
+	  renegotiations whilst rejecting client-initiated session
+	  renegotiations.
+
+2009-11-06 17:11  castaglia
+
+	* doc/contrib/mod_tls.html:
+	  Document the new AllowClientRenegotiations TLSOption.
+
+2009-11-06 17:06  castaglia
+
+	* RELEASE_NOTES:
+	  Update the release notes.
+
+2009-11-06 16:55  castaglia
+
+	* NEWS, contrib/mod_tls.c:
+	  Bug#3324 - Vulnerability in SSL/TLS protocol during renegotiation
+	  (CVE-2009-3555).
+
+2009-11-06 16:53  castaglia
+
+	* doc/howto/TLS.html:
+	  Add a TLS FAQ, inspired by Bug#3247 (and its ensuing duplicates).
+
+2009-11-06 10:57  castaglia
+
+	* contrib/mod_tls.c, doc/howto/TLS.html:
+	  Remove the "TLSRenegotiate off" synonym; I had simply confused
+	  myself with the bad example config I'd written in the TLS howto
+	  (now fixed as well).
+
+2009-11-06 10:52  castaglia
+
+	* contrib/mod_tls.c:
+	  Allow "TLSRenegotiate off" as a synonym for "TLSRenegotiate
+	  none".
+
+2009-11-06 10:46  castaglia
+
+	* contrib/mod_tls.c:
+	  Include in the end-of-session EnableDiags-enabled stats the
+	  number of times a session was removed from the cache because the
+	  cache size was exceeded.
+
+2009-11-06 10:12  castaglia
+
+	* contrib/mod_tls.c:
+	  Ignore EAGAIN errors when the EnableDiags TLSOption is used; they
+	  just clutter up the TLSLog.
+
+2009-11-06 07:47  castaglia
+
+	* contrib/mod_tls.c:
+	  Remove spurious ""SSL_shutdown error: ZERO_RETURN" logging; it is
+	  not actually an error to encounter an SSL_ERROR_ZERO_RETURN value
+	  when shutting down the SSL/TLS session.
+
+2009-11-05 16:09  castaglia
+
+	* contrib/mod_tls.c:
+	  Minor reordering of the logged SSL/TLS end-of-connection stats;
+	  this way the cache-related stats appear together.
+
+2009-11-05 10:24  castaglia
+
+	* modules/mod_ls.c:
+	  Make sure that we can handle symlinks whose target paths are long
+	  (e.g.  longer than 1K).
+
+2009-11-05 09:46  castaglia
+
+	* contrib/mod_sql_passwd.c, include/fsio.h, modules/mod_auth.c,
+	  modules/mod_log.c, src/fsio.c, src/log.c, src/xferlog.c:
+	  Switch to using nonblocking open(2) calls in many places,
+	  especially when handling log files.  This is to deal with the
+	  case where the log files configured are actually FIFOs; if the
+	  other end of the FIFO is not running, then a blocking open(2)
+	  would block indefinitely.  For example, configuring a FIFO for
+	  TransferLog, and not having the FIFO reader running, would hang
+	  the client session.  Now by using nonblocking open(2), we can
+	  detect such cases and handle them.  The opened fds are returned
+	  to blocking mode, assuming a successful open.
+
+2009-11-05 09:40  castaglia
+
+	* contrib/mod_sftp_pam.c:
+	  Clean up a few warts and warnings.
+
+2009-11-04 21:37  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/LIST.pm:
+	  Adding unit test for LIST output of a symlink when ShowSymlinks
+	  is enabled.
+
+2009-11-04 18:19  castaglia
+
+	* modules/mod_core.c, src/class.c, src/netacl.c:
+	  Add more trace logging about how <Class> rules are parsed and
+	  compared.  Fix some rule parsing cases which were not being
+	  handled properly.
+
+2009-11-04 18:17  castaglia
+
+	* tests/: tests.pl, t/config/classes.t,
+	  t/lib/ProFTPD/Tests/Config/Classes.pm:
+	  Adding unit tests for various <Class> configurations and rules.
+
+2009-11-04 15:24  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/UserPassword.pm:
+	  Add regression test for using UserPassword in an <Anonymous>
+	  section to create an effectively virtual user account.
+
+2009-11-04 15:02  castaglia
+
+	* RELEASE_NOTES, doc/modules/mod_cap.html, modules/mod_cap.c:
+	  Support adding the CAP_FOWNER capability.
+
+2009-11-04 13:09  castaglia
+
+	* RELEASE_NOTES:
+	  Mention support for the OpenSSH extensions in the release notes.
+
+2009-11-04 13:07  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Added support for the posix-rename@openssh.com OpenSSH SFTP
+	  extension.
+
+2009-11-04 12:27  castaglia
+
+	* doc/howto/Chroot.html:
+	  Add an example of constructing symlinks using relative paths;
+	  these types of symlinks stand a better chance of working properly
+	  within chrooted sessions.
+
+2009-11-04 12:19  castaglia
+
+	* NEWS, contrib/mod_wrap.c, include/log.h, src/log.c:
+	  Bug#3317 - mod_wrap/libwrap should honor SyslogFacility setting.
+
+2009-11-04 11:07  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Update the mod_sftp doc to mention that the most up-to-date
+	  version is distributed with the ProFTPD source code.
+
+	  Mention the support for OpenSSH's "statvfs@openssh.com" and
+	  "fstatvfs@openssh.com" SFTP extensions.
+
+2009-11-04 10:49  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Document the use of the SSH_CONNECTION environment variable.
+
+2009-11-04 09:50  castaglia
+
+	* NEWS, contrib/mod_sftp_pam.c:
+	  Bug#3316 - Messages from PAM modules are ignored when
+	  authenticating SSH clients via 'keyboard-interactive'.
+
+2009-11-03 11:12  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Mention the %u variable in the SFTPAuthorizedUserKeys directive
+	  description.
+
+2009-11-03 11:03  castaglia
+
+	* NEWS, tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Bug#3315 - Support the %u variable in SFTPAuthorizedUserKeys
+	  paths.
+
+2009-11-03 10:15  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-11-03 10:09  castaglia
+
+	* configure.in:
+	  Add some more gcc warning flags to the list when --enable-devel
+	  is used, specifically -Wformat-security, -Wstack-protector, and
+	  -fstack-protector-all.
+
+2009-11-02 22:39  castaglia
+
+	* NEWS:
+	  Pedantic correction: lseek(2), not lseek(3).
+
+2009-11-02 22:37  castaglia
+
+	* NEWS, modules/mod_xfer.c:
+	  Bug#3314 - Downloading from FIFOs via SFTP/SCP fails.
+
+2009-11-02 22:35  castaglia
+
+	* NEWS:
+	  Bug#3313 - Uploading via SFTP to FIFOs fails due to illegal
+	  lseek(3), truncate(2) calls.
+
+2009-11-02 22:32  castaglia
+
+	* NEWS:
+	  Bug#3312 - Uploading via SFTP/SCP to FIFO whose reader is closed
+	  causes session to hang.
+
+2009-11-02 22:28  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  On some platforms, ENXIO has a string representation of "Device
+	  not configured".
+
+2009-11-02 19:53  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Remove duplicate unit test entry from the list.
+
+2009-11-02 19:48  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add regression test proving that setting a mode which contains
+	  S{G,U}ID bits is properly supported via SFTP.
+
+2009-11-02 19:22  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Adding unit tests for Bug#3314.  These tests rely on having a
+	  FIFO-writing program open at /tmp/test.fifo, and thus do not run
+	  automatically as part of the testsuite.
+
+2009-11-02 19:01  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Adding unit tests for Bug#3313.  These particular tests are a
+	  little odd in that they will have to be run manually; they
+	  require a FIFO-reading process to be running at /tmp/test.fifo
+	  (and I didn't feel like wrestling with Perl in order to fork off
+	  more processes in these tests).
+
+2009-11-02 17:28  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Adding regression tests for Bug#3312.  Note that I still need to
+	  run these tests on other platforms (Solaris, FreeBSD, Mac OSX),
+	  as I suspect that the errno value returned from a failed open(2)
+	  of a FIFO will vary quite a bit across the platforms.
+
+2009-11-02 16:26  castaglia
+
+	* modules/mod_xfer.c:
+	  Allow uploading to /dev/full on Linux; this is useful for testing
+	  how clients handle out-of-disk situations/errors.
+
+2009-11-02 16:26  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add unit test for uploading to /dev/full (Linux only), to
+	  simulate an out-of-disk situation.  (Turns out that Net::SSH2
+	  does not propagate the WRITE/CLOSE error to the calling code; I
+	  need to file a bug with the module maintainer about this.)
+
+2009-11-02 16:25  castaglia
+
+	* tests/t/lib/ProFTPD/TestSuite/Utils.pm:
+	  Add support for os_* tags to tests, so that certain tests can be
+	  targeted for specific OS/platforms (as determined by Perl's $^O
+	  variable).
+
+2009-10-30 16:36  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_wrap.pm:
+	  Adding unit tests for more of mod_wrap's directives.
+
+2009-10-30 15:37  castaglia
+
+	* tests/: tests.pl, t/lib/ProFTPD/Tests/Modules/mod_wrap.pm,
+	  t/modules/mod_wrap.t:
+	  Start of unit tests for the mod_wrap module.
+
+2009-10-30 10:30  castaglia
+
+	* locale/fr_FR.po:
+	  Bug#3309 - Fix whitespace in MLST response when using the fr_FR
+	  locale.
+
+2009-10-29 09:53  castaglia
+
+	* RELEASE_NOTES, locale/Makefile.in, locale/zh_TW.po:
+	  Wei-Lun Chao contributed a Taiwan translation for proftpd.
+
+2009-10-29 09:52  castaglia
+
+	* RELEASE_NOTES:
+	  Mention new Taiwan translation in release notes.
+
+2009-10-29 09:52  castaglia
+
+	* locale/: Makefile.in, zh_TW.po:
+	  Wei-Lun Chao contributed a Taiwanese translation for proftpd.
+
+2009-10-28 14:48  castaglia
+
+	* src/auth.c:
+	  Fixing another part of Bug#3307.
+
+2009-10-28 14:46  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Logins.pm:
+	  Adding more regression tests (and improving existing tests) for
+	  Bug#3307.
+
+2009-10-27 09:45  castaglia
+
+	* NEWS, src/auth.c, tests/t/lib/ProFTPD/Tests/Logins.pm:
+	  Bug#3307 - All FTP logins treated as anonymous logins.
+
+2009-10-26 16:01  castaglia
+
+	* contrib/mod_sql.c, modules/mod_log.c:
+	  Increasing the size of a couple more buffers in order to avoid
+	  inadvertently truncating file names.
+
+2009-10-26 15:12  castaglia
+
+	* modules/mod_log.c:
+	  Add some additional room for other ExtendedLog data.
+
+2009-10-26 15:09  castaglia
+
+	* modules/mod_log.c, src/log.c, src/main.c:
+	  Make the buffers used for logging and for reading client data
+	  depend on PR_TUNABLE_PATH_MAX, which in turn depends on
+	  MAXPATHLEN (if defined by the OS).  This makes sure that the
+	  buffers are at least large enough to deal with the longest path
+	  supported by the OS (e.g. 4K on a Linux 2.6 kernel).
+
+2009-10-26 08:39  castaglia
+
+	* doc/howto/: Nonroot.html, index.html:
+	  Add the nonroot howto to the collection.
+
+2009-10-23 09:28  castaglia
+
+	* NEWS, lib/pr-syslog.c:
+	  Bug#3305 - Emulate Solaris 10 syslog "header" on Solaris 10
+	  servers.
+
+2009-10-23 09:16  castaglia
+
+	* src/main.c:
+	  Initialize the xerrno variable, to quell a compiler warning.
+
+2009-10-21 17:40  castaglia
+
+	* src/inet.c:
+	  Pedantic comment typo correction.
+
+2009-10-21 10:26  castaglia
+
+	* tests/: tests.pl, t/config/hidenoaccess.t,
+	  t/lib/ProFTPD/Tests/Config/HideNoAccess.pm:
+	  Add unit test for the HideNoAccess directive.
+
+2009-10-21 09:42  castaglia
+
+	* doc/howto/Scoreboard.html:
+	  Add scoreboard FAQ about "bad version (too old)" errors.
+
+2009-10-21 09:39  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Added mod_sftp FAQ about ListOptions.
+
+2009-10-21 08:05  castaglia
+
+	* contrib/mod_tls.c:
+	  Cleanly shutdown the SSL/TLS session (if there is one) for
+	  TimeoutLogin as well.
+
+2009-10-20 18:41  castaglia
+
+	* src/main.c:
+	  Stash the errno value if select(), in the main loop, returns -1;
+	  this makes for better errno logging/reporting.  Also avoid trying
+	  to accept(2) a connection if the select() return value is -1.
+
+2009-10-20 17:24  castaglia
+
+	* NEWS, contrib/mod_tls.c:
+	  Bug#3303 - FileZilla reports "Server did not properly shut down
+	  TLS connection" after TimeoutIdle triggered..
+
+2009-10-20 14:58  castaglia
+
+	* doc/contrib/mod_tls.html:
+	  Markup error.
+
+2009-10-20 14:47  castaglia
+
+	* include/version.h:
+	  Bumped version to what will become 1.3.3rc3.
+
+2009-10-20 14:13  castaglia
+
+	* contrib/dist/rpm/proftpd.spec, include/version.h:
+	  Getting versions ready for 1.3.3rc2 release.
+
+2009-10-20 14:11  castaglia
+
+	* NEWS:
+	  Mention the release date for 1.3.3rc2.
+
+2009-10-20 11:52  castaglia
+
+	* RELEASE_NOTES:
+	  Typos, corrections.
+
+2009-10-20 11:46  castaglia
+
+	* ChangeLog:
+	  Updated the ChangeLog.
+
+2009-10-20 10:58  castaglia
+
+	* ChangeLog:
+	  Updated the ChangeLog.
+
+2009-10-20 10:30  castaglia
+
+	* NEWS, RELEASE_NOTES, contrib/dist/rpm/proftpd.spec,
+	  include/version.h:
+	  Readying the release of 1.3.2b.
+
+2009-10-20 10:03  castaglia
+
+	* RELEASE_NOTES:
+	  Adding more to the release notes, getting them ready for the
+	  release of RC2.
+
+2009-10-19 18:11  castaglia
+
+	* contrib/mod_sql_postgres.c:
+	  Minor tweaks to the Postgres NLS/encoding code.
+
+2009-10-19 17:19  castaglia
+
+	* RELEASE_NOTES:
+	  Point out a potential hazard with the delayed-open database
+	  connection policy and logging-only database configs.
+
+2009-10-19 15:07  castaglia
+
+	* contrib/mod_sql_postgres.c:
+	  The get_postgres_encoding() function is specific to
+	  mod_sql_postgres; no need to have its symbol be exported/visible
+	  outside of this file.
+
+2009-10-19 14:58  castaglia
+
+	* contrib/mod_sql_postgres.c:
+	  Quell minor compiler warning about the get_postgres_encoding()
+	  function when --enable-nls is used by providing a function
+	  prototype.
+
+2009-10-19 14:08  castaglia
+
+	* doc/howto/NAT.html:
+	  Fixed URL to IP Masquerade howto doc.
+
+2009-10-14 16:45  castaglia
+
+	* modules/mod_facts.c, tests/t/lib/ProFTPD/Tests/Commands/MLSD.pm:
+	  Make sure that mod_facts uses 'cdir' or 'pdir' as the type in a
+	  MLSD response, rather than just 'dir', where appropriate.
+
+2009-10-14 11:49  castaglia
+
+	* modules/mod_auth_unix.c:
+	  Helps if we provide the data type for variables.
+
+2009-10-14 11:35  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/MLSD.pm:
+	  Add a test for when a session is chrooted, and fix the regexes
+	  used throughout these tests.
+
+2009-10-14 11:31  castaglia
+
+	* modules/mod_facts.c:
+	  Do a little resolution on the given MLSD path, trying to find a
+	  fuller, better path.	(This is particularly important for
+	  mod_vroot to function properly.)
+
+2009-10-14 10:54  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/MLSD.pm:
+	  Fixing quietly broken MLSD unit tests; they were using the wrong
+	  regex.
+
+2009-10-13 08:30  castaglia
+
+	* modules/: mod_core.c, mod_xfer.c:
+	  Found a few more cases where errno could be trampled by
+	  pr_trace_msg(), and thus requires brief caching.
+
+2009-10-12 16:52  jwm
+
+	* contrib/mod_ldap.c: mod_ldap bzr r70:   2.8.20 release
+
+2009-10-12 16:51  jwm
+
+	* contrib/mod_ldap.c: mod_ldap bzr r68:   ldap_server and ldap_port
+	  should be defined in the !(openldap	LDAP_VENDOR_VERSION >= 192)
+	  case
+
+	  mod_ldap bzr r67:   bump version date
+
+	  mod_ldap bzr r66:   fix reversed logic when keeping server/port
+	  settings for	 non-ldap_initialize() SDKs.
+
+	  mod_ldap bzr r65:   looks like ldap_{initialize,unbind_ext_s} are
+	  openldap-specific. spleunk in   the openldap cvs repo and only
+	  use these functions when building against   openldap and the
+	  vendor version is at least that in which each of these
+	  functions was introduced.
+
+	  mod_ldap bzr r64:   id tag doesn't make much sense with bazaar,
+	  but we'll keep it there for	when mod_ldap is committed to
+	  proftpd cvs
+
+2009-10-12 16:11  castaglia
+
+	* modules/mod_lang.c:
+	  When a locale is set, make sure to set it for the LC_COLLATE,
+	  LC_CTYPE, and LC_MONETARY categories as well.
+
+2009-10-07 13:38  castaglia
+
+	* NEWS, modules/mod_auth_unix.c:
+	  Bug#3300 - Support disabling use of S_RLOGIN when calling AIX
+	  loginrestrictions().
+
+2009-10-07 11:37  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Add a little more description of the sftpUTF8ProtocolVersion
+	  config setting.
+
+2009-10-06 08:44  castaglia
+
+	* doc/howto/ServerType.html:
+	  Add a FAQ about another cause of slow/timed out logins.
+
+2009-10-05 16:26  castaglia
+
+	* contrib/mod_sql.c:
+	  Add more info to the mod_sql logs when handling (and looking up)
+	  named queries.
+
+2009-10-05 15:52  castaglia
+
+	* contrib/mod_sql.c:
+	  When processing named queries, log the named query being
+	  processed.
+
+2009-10-05 15:47  castaglia
+
+	* contrib/: mod_shaper.c, mod_rewrite.c:
+	  Quell compiler warnings.
+
+2009-10-05 15:23  castaglia
+
+	* modules/mod_lang.c:
+	  Prevent segfault on second SIGHUP because the lang_aliases table
+	  was allocated out of a pool which no longer exists.  The fix is
+	  simple: when the memory pool is cleared, make sure to reset the
+	  lang_aliases pointer as well.
+
+2009-10-05 14:21  castaglia
+
+	* modules/mod_core.c:
+	  Just to be defensive, make sure that the EISDIR errno value
+	  exists before using it.
+
+2009-10-05 14:07  castaglia
+
+	* modules/mod_core.c, tests/t/lib/ProFTPD/Tests/Commands/DELE.pm:
+	  If a client tries to use DELE to remove a directory, return a
+	  better error message than "Opermation not permitted", i.e. use
+	  EISDIR.
+
+2009-10-05 13:57  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_file.pm:
+	  Uncomment line to delete log file.
+
+2009-10-05 09:59  castaglia
+
+	* src/main.c:
+	  Fix the settings displayed so that we show either ncurses or
+	  ncursesw, but not both (related to Bug#3213).
+
+2009-10-05 09:52  castaglia
+
+	* contrib/mod_sql.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_sqlite.pm:
+	  If the %T variable is used in a SQLLog query, AND the command in
+	  question uses session.xfer.p BUT does not involve a data transfer
+	  (e.g. RNFR), then a bad time value would be used.  Fix this.
+
+2009-10-04 18:06  castaglia
+
+	* modules/mod_facts.c:
+	  The recent change to using pr_response_add() for the MLST
+	  response lines means that we no longer need to explicitly add a
+	  leading space; that is handled automatically in the Response API.
+
+2009-10-04 12:52  castaglia
+
+	* NEWS, src/scoreboard.c, utils/ftptop.c:
+	  Bug#3214 - ftpwho/ftptop truncate UTF8 strings due to byte,
+	  versus character, lengths.
+
+2009-10-04 12:51  castaglia
+
+	* configure:
+	  Updated configure (for Bug#3213).
+
+2009-10-04 12:47  castaglia
+
+	* NEWS, config.h.in, configure.in, src/main.c:
+	  Bug#3213 - Use locale-sensitive libncursesw library for ftptop
+	  where available.
+
+2009-10-03 17:54  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Add unit test for the iPAddressRequired TLSOption.
+
+2009-10-03 17:41  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Add a unit test demonstrating that when an FTPS client offers a
+	  cert, and the StdEnvVars TLSOption is used, the expected
+	  TLS_CLIENT_ environment variables are populated.
+
+2009-10-03 17:23  castaglia
+
+	* modules/mod_log.c:
+	  When parsing any potential log class names in an ExtendedLog
+	  directive, parse the names at parse time, rather than at
+	  connection time.  This way if there are unknown names configured,
+	  we can flag it as a configuration error, rather than (relatively)
+	  silently logging and ignoring the misconfiguration.
+
+2009-10-03 12:46  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Add a unit test for the StdEnvVars TLSOption.
+
+2009-10-03 12:35  castaglia
+
+	* modules/mod_log.c:
+	  Fix a minor bug where mod_log would skip a character if the
+	  LogFormat looked like a variable, but was in fact not one.  (I
+	  tried using "%{env:FOO}" instead of "%{FOO}e", and noticed that a
+	  character was being skipped in the handling of that
+	  "%{env:FOO}".)
+
+2009-10-03 12:03  castaglia
+
+	* modules/mod_log.c:
+	  Found a potential NULL pointer dereference when handling the
+	  ExtendedLog directive; added some signal handling and clarified
+	  the code while I was there.
+
+2009-10-03 09:35  castaglia
+
+	* contrib/mod_sql_passwd.c:
+	  Quell compiler warnings, too.
+
+2009-10-03 09:34  castaglia
+
+	* contrib/mod_sql_passwd.c:
+	  Typo.
+
+2009-10-02 16:38  castaglia
+
+	* NEWS, contrib/mod_ban.c, modules/mod_auth.c, src/main.c,
+	  src/scoreboard.c, tests/t/lib/ProFTPD/Tests/Modules/mod_ban.pm:
+	  Bug#3281 - TimeoutLogin not handled properly by mod_ban.
+
+2009-10-02 14:26  castaglia
+
+	* RELEASE_NOTES, doc/contrib/mod_sql.html:
+	  Update docs to reflect Bug#3290.
+
+2009-10-02 14:22  castaglia
+
+	* NEWS, contrib/mod_sql.c, contrib/mod_sql.h,
+	  contrib/mod_sql_mysql.c, contrib/mod_sql_odbc.c,
+	  contrib/mod_sql_postgres.c, contrib/mod_sql_sqlite.c:
+	  Bug#3290 - Change default mod_sql connection policy to open
+	  database connection on first use.
+
+2009-10-01 14:38  castaglia
+
+	* doc/contrib/mod_ban.html:
+	  Forgot to mention MaxLoginAttempts as one of the events handled
+	  by BanOnEvent.
+
+2009-10-01 09:18  castaglia
+
+	* doc/contrib/mod_quotatab.html:
+	  Clarify the string to which a configured QuotaExcludeFilter is
+	  applied.
+
+2009-10-01 09:13  castaglia
+
+	* NEWS, contrib/mod_quotatab.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_sql.pm:
+	  Bug#3298 - QuotaExcludeFilter directive ignored by mod_quotatab.
+
+2009-10-01 08:45  castaglia
+
+	* doc/contrib/mod_quotatab.html:
+	  Typo.
+
+2009-10-01 08:25  castaglia
+
+	* contrib/mod_sql_passwd.c, doc/contrib/mod_sql_passwd.html,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_passwd.pm:
+	  While thinking about the salt last night, I decided that using
+	  "prepend" vs "append" as the config parameter names are a little
+	  clearer than "prefix" vs "suffix".  Time and users will tell how
+	  wise/clueless this was.
+
+2009-09-30 17:33  castaglia
+
+	* locale/files.txt:
+	  Remove a few duplicates (caused by symlinks and a working copy)
+	  from the list.
+
+2009-09-30 17:26  castaglia
+
+	* locale/: Makefile.in, files.txt:
+	  Updated locale/files.txt.
+
+2009-09-30 17:12  castaglia
+
+	* contrib/mod_rewrite.c:
+	  Quell compiler warning.
+
+2009-09-30 15:23  castaglia
+
+	* doc/contrib/mod_sql_passwd.html:
+	  Provide an example config using a salt file in the Usage section.
+
+2009-09-30 15:21  castaglia
+
+	* contrib/mod_sql_passwd.c:
+	  Fix bad grammar in a comment.
+
+2009-09-30 15:18  castaglia
+
+	* contrib/mod_sql_passwd.c, doc/contrib/mod_sql_passwd.html,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_passwd.pm:
+	  Make the use of a salt configurable in terms of whether the salt
+	  is used as a prefix or a suffix of the data to be hashed.
+
+2009-09-30 14:05  castaglia
+
+	* doc/contrib/mod_sql_passwd.html:
+	  Document the SQLPasswordSaltFile directive.
+
+2009-09-30 13:51  castaglia
+
+	* contrib/mod_sql_passwd.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_passwd.pm:
+	  Add a SQLPasswordSaltFile directive to the new mod_sql_passwd
+	  module; it is used to configure salts for the hashed passwords
+	  that mod_sql_passwd handles.	Doc update coming next.
+
+2009-09-30 11:03  castaglia
+
+	* contrib/mod_tls.c:
+	  Make sure that mod_tls does not cleanup OpenSSL if mod_sql_passwd
+	  is in use.
+
+2009-09-29 14:46  castaglia
+
+	* NEWS, contrib/mod_quotatab.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_sql.pm:
+	  Bug#3296 - mod_quotatab should reject an upload via APPE if the
+	  quota is already exceeded.
+
+2009-09-29 13:53  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/CWD.pm:
+	  Update regression test function names to match the names listed.
+
+2009-09-29 13:50  castaglia
+
+	* NEWS, src/fsio.c:
+	  Bug#3297 - Symlinks to directories which end in trailing slashes
+	  may not be handled properly.
+
+2009-09-29 13:49  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/CWD.pm:
+	  Regression tests for Bug#3297.
+
+2009-09-29 10:09  castaglia
+
+	* doc/howto/Timestamps.html:
+	  Attempt to highlight that unexpected timestamps in directory
+	  listings are affected by the TimesGMT directive, not by chrooted
+	  processes.
+
+2009-09-28 14:27  castaglia
+
+	* NEWS, modules/mod_ls.c:
+	  Bug#3295 - proftpd segfaults when STAT is used with ListOptions
+	  "-1".
+
+2009-09-28 14:24  castaglia
+
+	* tests/: tests.pl, t/lib/ProFTPD/Tests/Commands/STAT.pm,
+	  t/commands/stat.t:
+	  Adding unit tests for the STAT command.
+
+2009-09-28 14:22  castaglia
+
+	* modules/mod_auth.c:
+	  If we have trouble resolving the chroot path, make sure we log
+	  the reason why.
+
+2009-09-24 17:42  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Mention the 3des-ctr cipher in the SFTPCiphers doc.
+
+2009-09-23 09:19  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/MLST.pm:
+	  Add unit test for the MLST command using an example of Greek
+	  letters, from one of the online forums threads.
+
+2009-09-23 09:01  castaglia
+
+	* RELEASE_NOTES:
+	  Mention custom HiddenStores prefixes in the release notes.
+
+2009-09-23 09:00  castaglia
+
+	* NEWS, modules/mod_xfer.c,
+	  tests/t/lib/ProFTPD/Tests/Config/HiddenStores.pm:
+	  Bug#3294 - Support configurable HiddenStores prefixes.
+
+2009-09-21 16:50  castaglia
+
+	* src/inet.c:
+	  Pre-emptively update the code for Mac OSX 10.6 machines.
+
+2009-09-21 15:55  castaglia
+
+	* modules/mod_facts.c:
+	  Use pr_response_add() instead of pr_response_send_raw(), and let
+	  the Response API handle the multi-line formatting of the
+	  response, rather than having to do it ourselves in mod_facts.
+
+2009-09-21 14:06  castaglia
+
+	* src/main.c:
+	  In the `proftpd -V' output, use two different strings to
+	  differentiate between the cases where uname(2) is not available
+	  on the platform, and where uname(2) returns an error for some
+	  reason (e.g. EPERM on virtualized servers).
+
+2009-09-18 14:15  castaglia
+
+	* tests/t/lib/ProFTPD/TestSuite/FTP.pm:
+	  Cut-n-pasto.
+
+2009-09-17 14:33  castaglia
+
+	* tests/: tests.pl, t/config/limit/anonymous.t,
+	  t/lib/ProFTPD/Tests/Config/Limit/Anonymous.pm:
+	  Add some unit tests for an <Anonymous> configuration using <Limit
+	  WRITE>; a forums post suggested that the limit might not be being
+	  applied as expected.
+
+2009-09-17 13:54  castaglia
+
+	* doc/howto/Chroot.html:
+	  Add FAQ about using multiple DefaultRoot directives at the same
+	  time.
+
+2009-09-16 22:57  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Make sure that blowfish-ctr is listed in the docs.
+
+2009-09-16 20:57  castaglia
+
+	* tests/t/lib/ProFTPD/TestSuite/FTP.pm:
+	  Add support for issuing the HOST command in the testsuite client.
+
+2009-09-16 10:26  castaglia
+
+	* NEWS:
+	  Bug#3293 - SFTPCipher arcfour256 does not work properly.
+
+2009-09-16 09:32  castaglia
+
+	* src/privs.c:
+	  Make the "SETUP PRIVS" log message be at DEBUG9, like the other
+	  debug log messages generated when manipulating privs.
+
+2009-09-16 08:09  castaglia
+
+	* NEWS:
+	  Fix bug in mod_sftp's handling of AES CTR ciphers when an OpenSSL
+	  version between 0.9.7a and 0.9.7d is used; those versions of
+	  OpenSSL had buggy handling of the IV for the AES CTR (i.e. the IV
+	  was not handled in a big-endian fashion).
+
+2009-09-15 23:12  castaglia
+
+	* configure:
+	  Updated configure.
+
+2009-09-15 23:09  castaglia
+
+	* Make.rules.in, configure.in:
+	  Create an ADDL_CPPFLAGS variable in Make.rules, specifically so
+	  that contrib modules' Makefiles (for those contrib modules which
+	  have their own Makefile) can use any CPPFLAGS that may have been
+	  specified via environment variable.  Without this new variable, a
+	  contrib module Makefile would end up having duplicated/redundant
+	  CPPFLAGS values, or wouldn't have those CPPFLAGS propagated
+	  properly for the contrib module code.
+
+2009-09-15 16:18  castaglia
+
+	* modules/mod_core.c, src/dirtree.c, src/modules.c:
+	  Various stylistic cleanups generated while pursuing strange
+	  segfault.
+
+2009-09-15 16:10  castaglia
+
+	* src/auth.c:
+	  The previous change to populate the pool and tmp_pool fields for
+	  the cmd_rec that's dispatched to Auth callbacks had subtle and
+	  bad side effects.  Instead of using the given pool as that pool,
+	  create a subpool.
+
+2009-09-15 08:17  castaglia
+
+	* src/auth.c:
+	  Make sure that cmd->pool and cmd->tmp_pool are not NULL for the
+	  cmd_rec that is dispatched for the Auth callbacks.
+
+2009-09-14 23:28  castaglia
+
+	* tests/t/: commands/host.t, lib/ProFTPD/Tests/Commands/HOST.pm:
+	  Start working on unit tests for the HOST command, as part of
+	  Bug#3289.
+
+2009-09-14 13:44  castaglia
+
+	* src/session.c:
+	  When marking a session as idle, make sure that session.user is
+	  non-NULL; if not, using "(authenticating)".
+
+2009-09-14 11:58  castaglia
+
+	* src/dirtree.c, tests/t/lib/ProFTPD/Tests/Config/Limit/Filters.pm:
+
+	  Set the errno appropriately for implicit denies.
+
+2009-09-14 10:46  castaglia
+
+	* doc/howto/Filters.html:
+	  Add example config for using AllowFilter to only allow specific
+	  filename extensions in a directory.
+
+2009-09-14 10:15  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/Limit/Filters.pm:
+	  Fix the broken AllowFilter unit test.  To make this particular
+	  config work, the Order directive is needed.
+
+2009-09-11 22:05  castaglia
+
+	* modules/mod_dso.c:
+	  Add more trace logging to help debug failed loading of DSO
+	  modules where the module symbol does not match the expected
+	  symbol name.
+
+2009-09-09 16:44  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/Limit/Filters.pm:
+	  Add a unit test for the AllowFilter functionality that is
+	  <Limit>-section specific.  This unit test tests the STOR command,
+	  and a <Limit> section within a <Directory> section -- and the
+	  test fails.  So I still need to fix this before releasing
+	  1.3.3rc2.
+
+2009-09-09 16:27  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Looks like newer libssh2 versions have addressed some issues,
+	  though not all.
+
+2009-09-09 14:15  castaglia
+
+	* doc/contrib/mod_sql_passwd.html:
+	  Be sure to list the additional SQLAuthTypes provided by
+	  mod_sql_passwd.
+
+2009-09-09 11:47  castaglia
+
+	* RELEASE_NOTES, doc/contrib/mod_sql_passwd.html:
+	  Adding documentation for mod_sql_passwd.
+
+2009-09-09 11:45  castaglia
+
+	* doc/contrib/mod_sql.html:
+	  Adding the required notice for using OpenSSL.
+
+2009-09-09 11:22  castaglia
+
+	* tests/: tests.pl, t/lib/ProFTPD/Tests/Modules/mod_sql_passwd.pm,
+	  t/modules/mod_sql_passwd.t:
+	  Added unit tests for the mod_sql_passwd module.
+
+2009-09-09 11:17  castaglia
+
+	* NEWS, RELEASE_NOTES, contrib/mod_sql.c, contrib/mod_sql.h,
+	  contrib/mod_sql_passwd.c:
+	  Bug#2368 -  Allow contrib modules to extend mod_sql's
+	  SQLAuthTypes.  This also includes a new mod_sql_passwd contrib
+	  module which can handle hex- and base64-encoded MD5 and SHA1
+	  passwords, without the leading "{digest}" prefix required by the
+	  mod_sql OpenSSL SQLAuthType.
+
+2009-09-08 13:39  castaglia
+
+	* contrib/mod_sftp_pam.c:
+	  Remove the mod_auth_pam module from the auth-only module list
+	  before we add mod_sftp_pam to that list, to ensure that
+	  mod_sftp_pam is the module that is used.
+
+2009-09-08 13:35  castaglia
+
+	* modules/mod_auth.c:
+	  Clear the auth-only module list after authentication has
+	  succeeded.
+
+2009-09-08 13:34  castaglia
+
+	* include/auth.h, src/auth.c:
+	  Add functions for removing a module from the auth-only module
+	  list, and for clearing the entire auth-only module list.
+
+2009-09-08 11:39  castaglia
+
+	* src/bindings.c:
+	  The fix for Bug#2680 checks for DefaultServer too early; we want
+	  to check for any INADDR_ANY vhosts first, before resorting to
+	  using the DefaultServer (if configured).
+
+2009-09-08 10:28  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_lang.pm:
+	  Add unit tests to ensure than the use of ".UTF-8" aliases work
+	  properly for the LangDefault directive (and thus, by extension,
+	  for the LANG command).
+
+2009-09-08 10:25  castaglia
+
+	* modules/mod_lang.c:
+	  Skip the "." and ".." directory entries when scanning the
+	  LangPath directory.
+
+2009-09-07 15:21  castaglia
+
+	* NEWS:
+	  Forgot to update the NEWS file.
+
+2009-09-07 15:20  castaglia
+
+	* src/inet.c:
+	  Don't re-declare a variable that's already in scope.
+
+	  Be paranoid, and only avoid ENOPROTOOPT errors if that errno is
+	  actually defined on the system.
+
+2009-09-07 15:17  castaglia
+
+	* src/inet.c:
+	  Needed to revert the fix for Bug#3237, as it was causing a
+	  regression on FreeBSD.  Instead, I opted to ignore the
+	  ENOPROTOOPT error, which was the original cause of the reporting
+	  of Bug#3237.
+
+2009-09-06 19:03  castaglia
+
+	* contrib/mod_quotatab.c:
+	  Quell a few compiler printf warnings by using explicit typecasts.
+
+2009-09-06 18:37  castaglia
+
+	* include/encode.h, modules/mod_lang.c, src/encode.c, src/main.c:
+	  Bug#3229 - LangDefault does not accept any setting on FreeBSD.
+
+	  There were multiple issues involved in this one.  First, mod_lang
+	  needed to handle setlocale(3) where the translated files shipped
+	  with proftpd (which do not have ".UTF-8" in their names) did not
+	  match the languages accepted by setlocale() on the platform (e.g.
+	  where setlocale() expected names which *did* end in ".UTF-8");
+	  this is handled by populating a table of language aliases.
+
+	  Second, the initial setlocale(LC_ALL, "") call, to pick up/honor
+	  the various environment variables as one would expect from a Unix
+	  program, was happening in quite a few places in mod_lang.  Not
+	  good.  So this was moved into the main() function, as part of the
+	  initial startup.  And yes, it does check that the setlocale()
+	  function call succeeds, and warns about badly configured
+	  environment variables if not.
+
+	  Last, we had to always set the LANG environment variable, in
+	  order to ensure that gettext used the translated files of the
+	  language to which we had switched.  While the old code would work
+	  on Linux (and on Solaris...I think), it would NOT work on FreeBSD
+	  (and possibly other BSD-related platforms).  It was a long
+	  arduous slog to finding that using LANG was required.  Ugh.
+
+2009-09-06 18:24  castaglia
+
+	* contrib/mod_sql_mysql.c:
+	  In the midst of investigating/fixing Bug#3229, I found out why
+	  MySQL never seemed to use anything other than 'latin1' as its
+	  character set name.  Mostly it was due to bugs in the proftpd
+	  Encode API, but it was also partly caused by an API impedance
+	  mismatch in mod_sql_mysql.  This change fixes that (and yes, I've
+	  tested it using a UTF-8 language setting, and saw that MySQL
+	  reported using a 'utf8' character set).
+
+2009-09-04 22:39  castaglia
+
+	* src/encode.c:
+	  Need to set the LC_NUMERIC locale back to "C" after calling
+	  setlocale() using LC_ALL.
+
+2009-09-04 22:35  castaglia
+
+	* src/encode.c:
+	  Make sure we do an explicit setlocale() call before calling
+	  nl_langinfo().  This needs to happen in the parent/daemon process
+	  (i.e. when encode_init() is first called), since the child
+	  processes will inherit the pointers in memory to the retrieved
+	  nl_langinfo string.
+
+2009-09-04 15:26  castaglia
+
+	* doc/howto/ConfigFile.html:
+	  Specifically mention that proftpd switches to the UID/GID of the
+	  logged-in user.
+
+2009-09-04 15:02  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_lang.pm:
+	  Add unit test proving that the FEAT output does not include UTF8
+	  if the LangEngine directive is set to 'off'.
+
+2009-09-04 15:01  castaglia
+
+	* src/encode.c:
+	  Fix segfault found by the mod_lang unit tests.
+
+2009-09-04 10:16  castaglia
+
+	* RELEASE_NOTES:
+	  Update release notes with note about scoreboard format change;
+	  need to expand on this at release time, of course.
+
+2009-09-04 10:13  castaglia
+
+	* NEWS, include/scoreboard.h, modules/mod_auth.c, src/scoreboard.c,
+	  src/session.c, utils/ftptop.1.in, utils/ftptop.c, utils/ftpwho.c,
+	  utils/utils.h:
+	  Bug#2013 - Track RFC2228 sessions in scoreboard.  The scoreboard
+	  entry format now has a 'protocol' field, for tracking 'ftp' and
+	  'ftps'.
+
+	  Bug#3286 - Client command field in scoreboard entry too short for
+	  SSH2/SFTP commands.
+
+	  These changes are combined in one change, in order to rev the
+	  scoreboard format version only once for these format changes.
+
+2009-09-02 10:58  castaglia
+
+	* include/proftpd.h, include/session.h, modules/mod_auth.c,
+	  src/data.c, src/main.c, src/session.c:
+	  Move the session_set_idle() into the session.c file, and make it
+	  a pr_ function.  This also updates mod_sftp to automatically mark
+	  the session as "idle" whenever it is waiting to read the next
+	  SSH2 message.
+
+2009-09-01 11:39  castaglia
+
+	* NEWS, modules/mod_xfer.c:
+	  Bug#3287 - MaxTransfersPerHost, MaxTransfersPerUser directives
+	  not supported properly.
+
+2009-09-01 10:18  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Add SFTP FAQ about CBC cipher mode attacks.
+
+2009-08-31 13:40  castaglia
+
+	* doc/howto/Controls.html:
+	  Updating URLs and such in Controls howto.
+
+2009-08-30 11:49  castaglia
+
+	* src/session.c:
+	  Getting ready to support the "publickey" SSH2 subsystem
+	  (RFC4819).
+
+2009-08-28 10:33  castaglia
+
+	* NEWS, RELEASE_NOTES, src/dirtree.c:
+	  Bug#3279 - .ftpaccess configurations not merged properly with
+	  existing configuration.
+
+2009-08-28 09:14  castaglia
+
+	* modules/mod_auth.c:
+	  Make sure that mod_sftp registers event listeners for the various
+	  MaxClients and MaxConnections directive.  That way, just before
+	  mod_auth breaks the TCP connection, mod_sftp can send an SSH2
+	  message to the client about the reason for the disconnection.
+
+2009-08-28 07:50  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Typos, updating wording about channel window sizes (I now know
+	  why SSH2 has its own built-in flow control mechanisms, in
+	  addition to TCP's flow control).
+
+2009-08-27 11:46  castaglia
+
+	* src/inet.c:
+	  Update the copyright year range, since we just updated this file.
+
+2009-08-27 11:45  castaglia
+
+	* NEWS, src/inet.c:
+	  Bug#3284 - Slower transfers of multiple small file transfers
+	  after upgrade from 1.3.0a to 1.3.2a.
+
+2009-08-27 11:38  castaglia
+
+	* NEWS, src/inet.c:
+	  Bug#3284 - Slower transfers of multiple small file transfers
+	  after upgrade from 1.3.0a to 1.3.2a.
+
+2009-08-25 09:59  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/STOR.pm:
+	  Add unit test showing that using STOR to upload a file whose name
+	  contains multiple consecutive periods does indeed work as
+	  expected.  A user in the online forums is having an issue with
+	  this scenario; I suspect it is due to something in the
+	  proftpd.conf.
+
+2009-08-23 16:58  castaglia
+
+	* src/pidfile.c:
+	  In the mod_sftp unit test for handling SIGTERM, I noticed that
+	  one of the configured SFTPHostKey files kept disappearing (as in,
+	  being deleted) once the server was shut down.  Another mod_sftp
+	  user has reported seeing the same symptoms, only intermittently.
+	  I was finally able to track down the cause.
+
+	  Turns that the PidFile handling code was not being very careful
+	  about making sure that the static pidfile_path pointer kept
+	  pointing to the same memory.	The pointer used for looking up the
+	  PidFile directive was the same pointer; and if the lookup
+	  failed/changed, the pointer could change.  And, say, point at
+	  some other file.  Then, when the server shut down and deleted its
+	  PidFile, well, that other file might be deleted.  Not desirable
+	  behavior.
+
+2009-08-19 14:18  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add unit test for DefaultChdir config in mod_sftp.
+
+2009-08-19 11:30  castaglia
+
+	* NEWS, contrib/mod_sql.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_sqlite.pm:
+	  Bug#3282 - With "SQLNegativeCache on", mod_sql will look up wrong
+	  cached user value for subsequent USER commands.
+
+2009-08-14 19:55  castaglia
+
+	* tests/: tests.pl, t/config/ftpaccess/merging.t,
+	  t/lib/ProFTPD/Tests/Config/FTPAccess/Empty.pm,
+	  t/lib/ProFTPD/Tests/Config/FTPAccess/Merging.pm:
+	  Adding unit tests derived from investigations into Bug#3279.
+
+2009-08-14 19:43  castaglia
+
+	* src/dirtree.c:
+	  Sigh; fix the spacing in these HideFiles log messages again.
+
+2009-08-14 18:57  castaglia
+
+	* modules/mod_ls.c:
+	  The tweaks to mod_ls' option parsing code for Bug#3268 were not
+	  quite sufficient; they would cause erroneous errors (e.g. on PPC
+	  machines) in some cases.
+
+2009-08-14 08:46  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/HideFiles.pm:
+	  Add another unit test related to Bug#3276, this one demonstrating
+	  that "HideFiles none" works as expected.
+
+2009-08-14 07:36  castaglia
+
+	* src/dirtree.c:
+	  Fix the spacing of the log messages about negated (or not)
+	  HideFiles directives.
+
+2009-08-13 14:31  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/HideFiles.pm:
+	  Add another unit test for Bug#3276, this one using DefaultRoot
+	  and a LIST command which doesn't specify the target directory
+	  (i.e. list the current directory).
+
+2009-08-13 14:12  castaglia
+
+	* NEWS, contrib/mod_radius.c, modules/mod_xfer.c, src/data.c:
+	  Bug#3278 - Aborted data transfers not reflected in RADIUS
+	  accounting.
+
+2009-08-13 13:54  castaglia
+
+	* tests/t/: lib/ProFTPD/Tests/Modules/mod_radius.pm,
+	  modules/mod_radius.t:
+	  Add unit tests for mod_radius.  I won't add these to the default
+	  testsuite (i.e. when mod_radius is enabled in the built proftpd),
+	  since they currently require that you're running a RADIUS server
+	  (e.g. FreeRADIUS).  But these help for when I need to work on
+	  mod_radius.
+
+2009-08-13 12:09  castaglia
+
+	* contrib/mod_radius.c:
+	  Fix compiler warnings about signedness mismatches.
+
+2009-08-12 15:16  castaglia
+
+	* modules/mod_core.c, src/dirtree.c:
+	  Add some additional debug logging of handling of HideFiles
+	  directive, and include the negation flag in the logging.
+	  (Switched to using 'negated' rather than 'inverted'; the former
+	  is more applicable, I think.)
+
+2009-08-12 15:13  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/HideFiles.pm:
+	  Add HideFiles test using negation; used this test when
+	  investigating a HideFiles issue reported on forums.proftpd.org
+	  which is quite similar to Bug#3276.
+
+2009-08-12 14:16  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Remove mention of the GB/MB suffixes for channelPacketSize; this
+	  size cannot exceed the protocol maximum of 35000 bytes.
+
+2009-08-11 08:27  castaglia
+
+	* doc/howto/Authentication.html:
+	  Orthographic correction.
+
+2009-08-10 10:05  castaglia
+
+	* NEWS:
+	  Had the bug number wrong; should be Bug#3252, not Bug#3272.
+
+2009-08-10 10:01  castaglia
+
+	* NEWS, src/fsio.c:
+	  Bug#3272 - %F/%f Display variables can report wrong size on
+	  64-bit systems.
+
+2009-08-06 10:27  castaglia
+
+	* contrib/mod_tls.c:
+	  Add a function to get a printable version of a suspicious dNSName
+	  value; related to Bug#3275.
+
+2009-08-06 09:58  castaglia
+
+	* NEWS, contrib/mod_tls.c,
+	  tests/t/etc/modules/mod_tls/ca-nul-subjaltname.pem,
+	  tests/t/etc/modules/mod_tls/cert-nul-subjaltname.pem,
+	  tests/t/etc/modules/mod_tls/key-nul-subjaltname.pem,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Bug#3275 - Improper SSL/TLS certificate subjectAltName
+	  verification.
+
+2009-08-05 15:08  castaglia
+
+	* src/encode.c:
+	  When comparing the local and remote charsets, in some cases we
+	  don't need to check for null pointers (already checked earlier in
+	  the function in those cases), and in other cases we *do* need to
+	  check for null pointers.
+
+2009-08-05 15:03  castaglia
+
+	* src/encode.c: [no log message]
+
+2009-08-05 14:03  castaglia
+
+	* modules/mod_lang.c:
+	  Try to make for better, more informative error messages if we
+	  fail to set the locale.
+
+2009-08-05 10:31  castaglia
+
+	* src/data.c:
+	  We handle signals in pr_data_xfer() when writiing; we should do
+	  the same when reading.
+
+2009-08-05 08:07  castaglia
+
+	* modules/mod_lang.c:
+	  Declaring the curr_locale variable in the right scope helps to
+	  make the code actually compile properly.
+
+2009-08-05 06:34  castaglia
+
+	* modules/mod_lang.c:
+	  When scanning the LangPath directory, we don't need to
+	  save/restore the current locale on each file found in the
+	  directory.  Just do the save/restore once for the entire scan
+	  loop.
+
+2009-08-04 10:34  castaglia
+
+	* doc/contrib/mod_sql.html:
+	  Document the new "noReconnect" SQLOption added as part of
+	  Bug#3270.
+
+2009-08-04 10:32  castaglia
+
+	* NEWS, contrib/mod_sql.c, contrib/mod_sql.h,
+	  contrib/mod_sql_mysql.c, contrib/mod_sql_postgres.c:
+	  Bug#3270 - Lost connections to databases not correctly handled.
+
+2009-08-04 08:59  castaglia
+
+	* NEWS, src/encode.c:
+	  Bug#3272 - Avoid encoding if to/from charsets are the same.
+
+2009-08-04 08:53  castaglia
+
+	* NEWS, src/support.c:
+	  Bug#3274 - Timestamp formatting in TransferLog needs padded
+	  day-of-month.
+
+2009-08-02 15:08  castaglia
+
+	* contrib/mod_sql_postgres.c:
+	  Log the Postgres client version to the SQLLogFile, and log it at
+	  the same time as we log the server version.  This will make
+	  finding/reporting these versions easier.
+
+2009-08-02 14:44  castaglia
+
+	* contrib/: mod_sql_mysql.c, mod_sql_postgres.c:
+	  Report on the database client and server versions, when known.
+
+2009-07-29 13:59  castaglia
+
+	* NEWS, modules/mod_ls.c, src/fsio.c,
+	  tests/t/lib/ProFTPD/Tests/Commands/NLST.pm:
+	  Bug#3254 - NLST/LIST and symbolic link problem.
+
+2009-07-28 21:41  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/LIST.pm:
+	  Add unit test for LIST command for Bug#3254.
+
+2009-07-27 08:29  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Fix unit test which broke due to changes in mod_sftp's SCP
+	  support for the %F variable.	(The test code was broken, not the
+	  source code.)
+
+2009-07-24 10:31  castaglia
+
+	* contrib/mod_sql.c:
+	  To help find out why configurations may not work as expected, log
+	  when we search for a SQLNamedQuery and don't find it.  I just saw
+	  a config which had mismatched names between the configured
+	  SQLNamedQuery, and the name used in a SQLShowInfo parameter.
+
+2009-07-23 10:45  castaglia
+
+	* modules/mod_delay.c:
+	  Add a long explanatory comment about the DELAY_NPROTO value.
+	  Also, the value of 4 was too high; we currently only support
+	  three protocols in the DelayTable: ftp, ftps, and ssh2.  No need
+	  to allocate empty rows in the table.
+
+2009-07-23 08:18  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_sql.pm:
+	  Fix the broken test for Bug#3164 by adding a slight delay, to
+	  give our out-of-band update to the SQLite database time to be
+	  applied.
+
+2009-07-23 08:07  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_sql.pm:
+	  Add unit test for handling of DELE in mod_quotatab.
+
+2009-07-23 08:04  castaglia
+
+	* doc/howto/Quotas.html:
+	  Add another quota FAQ.
+
+2009-07-23 07:37  castaglia
+
+	* contrib/mod_rewrite.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_rewrite.pm:
+	  Clean up dead code in mod_rewrite.c.	Check for bad/unknown
+	  RewriteCondition flags, and handle them as a configuration error.
+
+	  Add unit test for the "[NC]" RewriteCondition flags.
+
+2009-07-22 20:11  castaglia
+
+	* NEWS, contrib/mod_rewrite.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_rewrite.pm:
+	  Bug#3269 - RewriteCondition OR/ornext flag does not work.
+
+2009-07-22 19:34  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_rewrite.pm:
+	  Add a unit test showing that mod_rewrite's handling of
+	  RewriteConditions's OR flag is broken.
+
+2009-07-22 14:37  castaglia
+
+	* src/display.c:
+	  Fix a regression in the 1.3.3rc1 code, where a DisplayConnect
+	  file would be sent to the client -- and then an extra line with a
+	  220 response code would be sent.  This, in addition to the 220
+	  line with the normal banner.	The extra 220 response line was
+	  confusing some clients (and rightly so).
+
+2009-07-22 09:57  castaglia
+
+	* modules/mod_delay.c:
+	  Add paranoid check that an array pointer is non-null before we
+	  use it.
+
+2009-07-21 16:38  castaglia
+
+	* contrib/mod_sql.c:
+	  Add handling of signals in the loops which process the various
+	  info directives (e.g. SQLShowInfo, SQLLog, etc).  Also use
+	  check_response() more throughout the code; this function checks
+	  for unrecoverable backend errors and -- depending on the config
+	  -- will disconnect the session if such an error occurs.
+
+2009-07-21 16:21  castaglia
+
+	* contrib/mod_sql.c:
+	  Make sure that mod_sql logs the corresponding "leaving func"
+	  message in some cases; it wasn't doing so.
+
+2009-07-21 15:06  castaglia
+
+	* contrib/dist/rpm/proftpd.spec:
+	  If mod_sftp is built using the RPM .spec file, then we need to
+	  take into account some of the config files that mod_sftp includes
+	  (e.g. blacklist.dat and dhparams.pem).
+
+2009-07-21 09:26  castaglia
+
+	* contrib/dist/rpm/proftpd.spec:
+	  Attempt to add support for mod_sftp to the .spec file.
+
+2009-07-21 08:47  castaglia
+
+	* NEWS, RELEASE_NOTES, modules/mod_log.c,
+	  tests/t/lib/ProFTPD/Tests/Logging/ExtendedLog.pm:
+	  Bug#1908 - ExtendedLog to work properly in <Anonymous> context.
+
+2009-07-20 21:58  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add a unit test for the %f/%F LogFormat variables when used for
+	  an SCP upload; I'm trying to reproduce a reported issue when
+	  using these variables and uploading via SCP, but to no avail as
+	  yet.
+
+2009-07-20 21:32  castaglia
+
+	* NEWS, modules/mod_ls.c,
+	  tests/t/lib/ProFTPD/Tests/Commands/LIST.pm,
+	  tests/t/lib/ProFTPD/Tests/Commands/NLST.pm:
+	  Bug#3268 - Files whose names start with whitespace are not listed
+	  properly.
+
+2009-07-20 14:07  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  The STAT, FSTAT, and LSTAT SFTP requests are no longer limited
+	  when using <Limit READ>.  Instead, each of these requests can be
+	  limited by using the request name directly.
+
+2009-07-20 11:43  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add a unit test using the %s LogFormat variable for write
+	  requests in an SFTP session; this complements the existing %s
+	  LogFormat variable test for SFTP read requests.
+
+2009-07-20 08:41  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Removed duplicated text.
+
+2009-07-19 18:13  castaglia
+
+	* tests/tests.pl:
+	  Add support for a --verbose command-line option to the tests.pl
+	  testsuite driver.  Using --verbose will set the TEST_VERBOSE
+	  environment variable.  This is particularly useful when running
+	  the testsuite (or individual test files) as root using sudo; sudo
+	  (depending on the version) prevents environment variables from
+	  being communicated to the executed program.
+
+2009-07-19 17:18  castaglia
+
+	* NEWS, src/auth.c:
+	  Bug#2070 - AuthAliasOnly off in <Global> section kills anonymous
+	  logins.
+
+2009-07-19 17:17  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_exec.pm:
+	  Fix up minor issues in the test code found by the Perl
+	  interpreter in strict mode.
+
+2009-07-19 17:08  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/: Config/Limit/SubDirectories.pm,
+	  Logging/ExtendedLog.pm:
+	  Fix variable redeclarations, and soothe the savage Perl
+	  interpreter beast.
+
+2009-07-19 16:35  castaglia
+
+	* tests/: tests.pl, t/config/authaliasonly.t,
+	  t/lib/ProFTPD/Tests/Config/AuthAliasOnly.pm:
+	  Add unit tests for the AuthAliasOnly directive, including a test
+	  which reproduces Bug#2070.
+
+2009-07-19 15:23  castaglia
+
+	* tests/: tests.pl, t/config/authusingalias.t,
+	  t/lib/ProFTPD/Tests/Config/AuthUsingAlias.pm:
+	  Add unit tests for the AuthUsingAlias directive.
+
+2009-07-19 14:24  castaglia
+
+	* tests/tests.pl:
+	  Start adding unit tests for the ftpwho utility.
+
+2009-07-19 13:18  castaglia
+
+	* tests/tests.pl:
+	  Start of unit tests for the ftpcount utility.
+
+2009-07-19 12:11  castaglia
+
+	* contrib/mod_exec.c:
+	  When executing the command and the 'useStdin' ExecOption has been
+	  used, we should at least provide the first command-line argument,
+	  which, by convention, is the name of the file being executed.
+
+2009-07-19 12:07  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_exec.pm:
+	  Add unit test for the ExecOnRestart directive.
+
+2009-07-19 12:06  castaglia
+
+	* contrib/mod_exec.c:
+	  Add handling of signals to some while() loops.
+
+2009-07-18 15:58  castaglia
+
+	* contrib/mod_exec.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_exec.pm:
+	  Added unit tests for the various ExecOptions values.	Along the
+	  way, I found (and fixed) several bugs in mod_exec.  Three cheers
+	  for testing!
+
+2009-07-18 12:50  castaglia
+
+	* doc/contrib/mod_exec.html:
+	  Fix typos, update mod_exec doc to point to local copy of Logging
+	  howto.
+
+2009-07-18 12:38  castaglia
+
+	* tests/: tests.pl, t/config/useglobbing.t,
+	  t/lib/ProFTPD/Tests/Config/UseGlobbing.pm:
+	  Add unit test for the UseGlobbing directive.
+
+2009-07-18 12:29  castaglia
+
+	* tests/: tests.pl, t/config/userpassword.t,
+	  t/lib/ProFTPD/Tests/Config/UserPassword.pm:
+	  Add unit test for the UserPassword directive.
+
+2009-07-17 18:51  castaglia
+
+	* doc/howto/TLS.html:
+	  Update the TLS howto FAQ regarding implicit FTPS to reflect the
+	  addition of implicit FTPS support (in Bug#3266).
+
+2009-07-17 18:48  castaglia
+
+	* NEWS, contrib/mod_tls.c, doc/contrib/mod_tls.html,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Bug#3266 - Support "implicit" FTPS.
+
+2009-07-17 09:35  castaglia
+
+	* modules/mod_dso.c:
+	  If mod_dso can't load a module because the module doesn't exist
+	  in the expected ModulePath, it emits a warn.	Log that at the
+	  INFO level, rather than at a DEBUG level.
+
+2009-07-16 18:16  castaglia
+
+	* modules/mod_ctrls.c:
+	  If ControlsEngine is set to 'off', then we should not try to
+	  listen on the ControlsSocket.
+
+2009-07-16 18:10  castaglia
+
+	* modules/mod_dso.c:
+	  Improve on the errors reported by mod_dso when a module can't be
+	  loaded.  The cause of the infamous "error loading ...: Permission
+	  denied" error is actually most likely to be a ModulePath that is
+	  an empty directory, but you would have no way of knowing/guessing
+	  that from the emitted error.
+
+2009-07-16 14:28  castaglia
+
+	* configure:
+	  Forgot to check in the updated configure script.
+
+2009-07-16 13:47  castaglia
+
+	* doc/howto/Umask.html:
+	  Add a FAQ to the Umask howto explaining why proftpd does not
+	  allow uploading of files with execute permissions.
+
+2009-07-16 11:15  castaglia
+
+	* tests/: tests.pl, t/lib/ProFTPD/Tests/Modules/mod_shaper.pm,
+	  t/modules/mod_shaper.t:
+	  Start adding unit/regression tests for the mod_shaper module.
+
+2009-07-16 10:52  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/CreateHome.pm:
+	  Add unit test for CreateHome's 'dirmode' parameter.
+
+2009-07-15 14:59  castaglia
+
+	* config.h.in, configure.in, src/main.c:
+	  Add an autoconf check for the uname() function, in case the
+	  platform does not actually provide one.  (Handy for older and/or
+	  more esoteric platforms).
+
+2009-07-15 14:25  castaglia
+
+	* src/main.c:
+	  Use uname(2) to get more platform details (OS and version,
+	  machine/CPU type) for the -V settings.  Easier than asking people
+	  about the platform they're running proftpd on; just ask for the
+	  -V output.
+
+2009-07-14 22:59  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_exec.pm:
+	  Add unit test demonstrating, via mod_exec, a use of the new
+	  %{bytes_xfer} variable.
+
+2009-07-14 22:58  castaglia
+
+	* modules/mod_core.c:
+	  Add support for a %{bytes_xfer} variable.  Similar to the
+	  existing %{total_bytes_xfer} variable, only this new variable
+	  only shows the number of bytes in the recent data transfer (if
+	  any), rather than the cumulated count of bytes transferred during
+	  the lifetime of the session.
+
+2009-07-14 15:40  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add unit test for the %s LogFormat variable in ExtendedLogs for
+	  SFTP requests.
+
+2009-07-14 11:46  castaglia
+
+	* contrib/mod_exec.c:
+	  Handle signals/interruptions in the potentially
+	  long/time-consuming loop as we close any open file descriptors
+	  before exec'ing the configured command.
+
+2009-07-14 09:27  castaglia
+
+	* tests/t/lib/ProFTPD/TestSuite/FTP.pm:
+	  Add a quote() method to the TestSuite::FTP class, for quoting
+	  raw/arbitrary commands to send to the server.
+
+2009-07-09 00:18  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_exec.pm:
+	  Add unit tests for ExecOnError.
+
+2009-07-09 00:17  castaglia
+
+	* contrib/mod_exec.c:
+	  Guard against having getrlimit(2) return an obscenely high number
+	  of maximum open file descriptions (e.g. RLIMIT_INFINITY); this
+	  was causing mod_exec to not work as expected on Mac OSX 10.4.
+
+2009-07-08 18:32  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_exec.pm:
+	  Add unit test for ExecOnExit.
+
+2009-07-08 18:29  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_exec.pm:
+	  Adding more mod_exec unit tests, including one for the "%{...}"
+	  variable support.
+
+2009-07-08 18:27  castaglia
+
+	* contrib/mod_exec.c:
+	  Add support for the Variables API-style "%{...}" variables to
+	  mod_exec's variable interpolation.  For example, you could now
+	  do:
+
+	    ExecOnExit /bin/bash -c "echo %{total_bytes_out} >>
+	  bytes-downloaded.txt"
+
+	  and it would work properly.
+
+2009-07-08 18:12  castaglia
+
+	* contrib/mod_exec.c:
+	  Fix off-by-one error which caused mod_exec to log all but the
+	  last parameter when calling exec.
+
+2009-07-08 18:11  castaglia
+
+	* tests/: tests.pl, t/lib/ProFTPD/Tests/Modules/mod_exec.pm,
+	  t/modules/mod_exec.t:
+	  Start working on unit tests for the mod_exec module.
+
+2009-07-08 16:43  castaglia
+
+	* lib/sstrncpy.c:
+	  Catch a possible null pointer exception in sstrncpy(), if the src
+	  pointer provided by the caller is null.
+
+2009-07-08 13:29  castaglia
+
+	* tests/t/lib/ProFTPD/TestSuite/Utils.pm:
+	  Allow the Port that appears in the testsuite proftpd.conf files
+	  to be settable directly by the unit test.
+
+2009-07-06 08:28  castaglia
+
+	* NEWS, src/dirtree.c:
+	  Bug#3221 - Fixed regression causing command-line -D/--define
+	  options not to work.
+
+2009-07-05 20:13  castaglia
+
+	* NEWS, modules/mod_auth.c:
+	  Bug#2758 - ProFTPD doesn't always pay attention to AccessDenyMsg.
+
+2009-07-05 20:11  castaglia
+
+	* tests/: tests.pl, t/config/accessdenymsg.t,
+	  t/lib/ProFTPD/Tests/Config/AccessDenyMsg.pm:
+	  Add unit tests for the AccessDenyMsg config directive.
+
+2009-07-05 19:35  castaglia
+
+	* tests/: tests.pl, t/config/accessgrantmsg.t,
+	  t/lib/ProFTPD/Tests/Config/AccessGrantMsg.pm:
+	  Add unit tests for the AccessGrantMsg config directive.
+
+2009-07-05 19:15  castaglia
+
+	* tests/: tests.pl, t/config/useralias.t,
+	  t/lib/ProFTPD/Tests/Config/UserAlias.pm:
+	  Add unit tests for the UserAlias config directive.
+
+2009-07-04 18:48  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  The mod_sftp module was not honoring a configuration like:
+
+	    <Limit WRITE>
+	      DenyAll
+	    </Limit>
+
+	    <Directory ~/*/*>
+	      <Limit STOR>
+		AllowAll
+	      </Limit>
+	    </Directory>
+
+	  the same way between SFTP and SCP uploads.  SFTP uploads were
+	  allowed properly, but SCP uploads were not.  Turned out to be a
+	  problem with the path that was being used in the dir_check()
+	  calls in the SCP code; the full path was not being used as it
+	  should.
+
+	  Also fixed a problem where an SCP client might send duplicate
+	  filename info (once in the channel request, once in the fileinfo
+	  control message).
+
+2009-07-03 18:33  castaglia
+
+	* src/main.c:
+	  Install our signal handlers earlier in the startup process.  The
+	  driving force behind this change is to get our SIGSEGV handler
+	  installed prior to parsing the config file; this way if a
+	  segfault occurs AND --enable-devel=stacktrace has been used, we
+	  can get the stack trace for a parsing segfault.
+
+	  By the time the signal handlers were being installed (i.e. after
+	  parsing) this would not have been possible.
+
+2009-07-03 18:02  castaglia
+
+	* doc/howto/Filters.html:
+	  When compiling POSIX regular expressions using patterns which
+	  include character classes like 'blank' et al, you DO need to use
+	  two square brackets, not just one.
+
+2009-07-03 17:34  castaglia
+
+	* NEWS, tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Bug#3265 - SFTP requests are logged to ExtendedLog without regard
+	  to classes.
+
+	  The cmd_rec.class field needed to be set on the SSH2 and SFTP
+	  cmd_recs used.
+
+2009-07-03 16:02  castaglia
+
+	* NEWS:
+	  Bug#3263 - Supplying optional SFTPRekey timeout parameter causes
+	  segmentation fault.
+
+2009-07-01 11:18  castaglia
+
+	* doc/contrib/mod_sql.html:
+	  Mention that --enable-openssl can be used to enable the OpenSSL
+	  SQLAuthType.
+
+2009-06-30 20:22  castaglia
+
+	* include/version.h:
+	  Update the version.h file for the next RC release.
+
+2009-06-30 19:50  castaglia
+
+	* ChangeLog:
+	  Updated ChangeLog.
+
+2009-06-30 19:50  castaglia
+
+	* NEWS, RELEASE_NOTES, contrib/dist/rpm/proftpd.spec,
+	  include/version.h:
+	  Updating the files for the release of 1.3.3rc1.
+
+2009-06-30 18:43  castaglia
+
+	* ChangeLog:
+	  Updated change log for 1.3.2a.
+
 2009-06-30 18:41  castaglia
 
 	* contrib/dist/rpm/proftpd.spec:
@@ -20719,7 +23650,7 @@
 2003-06-11 19:08  castaglia
 
 	* src/: inet.c, modules.c:
-	  Missing $Id: ChangeLog,v 1.140.2.1 2009/07/01 01:43:28 castaglia Exp $ keyword.
+	  Missing $Id: ChangeLog,v 1.140.2.3 2009/12/10 18:34:39 castaglia Exp $ keyword.
 
 2003-06-11 15:45  castaglia
 
@@ -21898,7 +24829,7 @@
 
 	* contrib/: mod_sql.c, mod_sql.h, mod_sql_mysql.c,
 	  mod_sql_postgres.c:
-	  Adding $Id: ChangeLog,v 1.140.2.1 2009/07/01 01:43:28 castaglia Exp $ tags to the mod_sql files.
+	  Adding $Id: ChangeLog,v 1.140.2.3 2009/12/10 18:34:39 castaglia Exp $ tags to the mod_sql files.
 
 2003-03-14 07:54  castaglia
 
@@ -22417,12 +25348,12 @@
 
 	* src/netio.c, src/pool.c, src/sets.c, include/ident.h,
 	  include/timers.h:
-	  Adding more $Id: ChangeLog,v 1.140.2.1 2009/07/01 01:43:28 castaglia Exp $ keywords.
+	  Adding more $Id: ChangeLog,v 1.140.2.3 2009/12/10 18:34:39 castaglia Exp $ keywords.
 
 2003-02-11 23:34  castaglia
 
 	* src/feat.c:
-	  Added $Id: ChangeLog,v 1.140.2.1 2009/07/01 01:43:28 castaglia Exp $ keyword.
+	  Added $Id: ChangeLog,v 1.140.2.3 2009/12/10 18:34:39 castaglia Exp $ keyword.
 
 2003-02-10 15:34  castaglia
 

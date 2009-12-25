@@ -24,7 +24,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lwrap -lnsl$
- * $Id: mod_wrap.c,v 1.18 2008/01/25 01:53:34 castaglia Exp $
+ * $Id: mod_wrap.c,v 1.18.2.1 2009/11/13 17:19:18 castaglia Exp $
  */
 
 #define MOD_WRAP_VERSION "mod_wrap/1.2.3"
@@ -107,6 +107,11 @@ static char *wrap_get_user_table(cmd_rec *cmd, char *user,
   struct passwd *pw = NULL;
 
   pw = pr_auth_getpwnam(cmd->pool, user);
+
+  /* Handle the case where the given user does not exist. */
+  if (pw == NULL) {
+    return NULL;
+  }
 
   /* For the dir_realpath() function to work, some session members need to
    * be set.

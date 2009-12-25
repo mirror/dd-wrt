@@ -25,7 +25,7 @@
  */
 
 /* Read configuration file(s), and manage server/configuration structures.
- * $Id: dirtree.c,v 1.205.2.3 2009/04/28 22:33:57 castaglia Exp $
+ * $Id: dirtree.c,v 1.205.2.5 2009/11/15 00:27:31 castaglia Exp $
  */
 
 #include "conf.h"
@@ -575,6 +575,17 @@ unsigned char pr_define_exists(const char *definition) {
     }
   }
 
+  if (defines_perm_list) {
+    char **defines = defines_perm_list->elts;
+    register unsigned int i = 0;
+
+    for (i = 0; i < defines_perm_list->nelts; i++) {
+      if (defines[i] &&
+          strcmp(defines[i], definition) == 0)
+        return TRUE;
+    }
+  }
+
   errno = ENOENT;
   return FALSE;
 }
@@ -769,12 +780,14 @@ static config_rec *recur_match_path(pool *p, xaset_t *s, char *path) {
        */
       path_len = strlen(tmp_path);
       if (path_len > 2 &&
-          tmp_path[path_len-2] != '/' &&
-          tmp_path[path_len-1] != '*') {
+          ((tmp_path[path_len-2] != '/' && tmp_path[path_len-1] != '*') ||
+           (tmp_path[path_len-2] == '/' && tmp_path[path_len-1] != '*') ||
+           (tmp_path[path_len-2] != '/' && tmp_path[path_len-1] == '*'))) {
 
         /* Trim a trailing path separator, if present. */
         if (*tmp_path && *(tmp_path + path_len - 1) == '/' && path_len > 1) {
           *(tmp_path + path_len - 1) = '\0';
+          path_len--;
 
           if (strcmp(tmp_path, path) == 0) {
             pr_trace_msg("directory", 8,

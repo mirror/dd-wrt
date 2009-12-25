@@ -28,7 +28,7 @@
  * ftp://pooh.urbanrage.com/pub/c/.  This module, however, has been written
  * from scratch to implement quotas in a different way.
  *
- * $Id: mod_quotatab.c,v 1.36.2.1 2009/04/28 21:52:12 castaglia Exp $
+ * $Id: mod_quotatab.c,v 1.36.2.2 2009/11/10 01:04:54 castaglia Exp $
  */
 
 #include "mod_quotatab.h"
@@ -2755,17 +2755,17 @@ static void quotatab_exit_ev(const void *event_data, void *user_data) {
 
     switch (have_quota_update) {
       case QUOTA_HAVE_READ_UPDATE:
+        have_quota_update = 0;
         QUOTATAB_TALLY_WRITE(0, session.xfer.total_bytes,
           session.xfer.total_bytes, 0, 1, 1)
         break;
 
       case QUOTA_HAVE_WRITE_UPDATE:
+        have_quota_update = 0;
         QUOTATAB_TALLY_WRITE(session.xfer.total_bytes, 0,
           session.xfer.total_bytes, 1, 0, 1)
         break;
     }
-
-    have_quota_update = 0;
   }
 
   if (use_quotas &&

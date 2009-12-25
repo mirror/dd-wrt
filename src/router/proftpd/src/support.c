@@ -27,7 +27,7 @@
 /* Various basic support routines for ProFTPD, used by all modules
  * and not specific to one or another.
  *
- * $Id: support.c,v 1.98 2009/01/22 00:30:14 castaglia Exp $
+ * $Id: support.c,v 1.98.2.2 2009/12/10 16:26:21 castaglia Exp $
  */
 
 #include "conf.h"
@@ -595,6 +595,11 @@ unsigned char memscrub_ctr = 0;
 
 void pr_memscrub(void *ptr, size_t ptrlen) {
 #if defined(PR_USE_OPENSSL) && OPENSSL_VERSION_NUMBER > 0x000907000L
+  if (ptr == NULL ||
+      ptrlen == 0) {
+    return;
+  }
+
   /* Just use OpenSSL's function for this.  They have optimized it for
    * performance in later OpenSSL releases.
    */
@@ -604,7 +609,8 @@ void pr_memscrub(void *ptr, size_t ptrlen) {
   unsigned char *p;
   size_t loop;
 
-  if (!ptr || ptrlen == 0) {
+  if (ptr == NULL ||
+      ptrlen == 0) {
     return;
   }
 

@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.975.2.15 2009/06/30 17:00:11 castaglia Exp $
+$Id: NEWS,v 1.975.2.30 2009/12/10 18:33:44 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -8,6 +8,35 @@ $Id: NEWS,v 1.975.2.15 2009/06/30 17:00:11 castaglia Exp $
 
   where `N' is the bug number.
 -----------------------------------------------------------------------------
+
+1.3.2c - Released 10-Dec-2009
+--------------------------------
+- Bug 3324 - Vulnerability in SSL/TLS protocol during renegotiation
+  (CVE-2009-3555).
+- Bug 3328 - Failed database transaction can cause mod_quotatab to loop
+  endlessly.
+- Bug 3332 - Segfault in mod_wrap when TCPAccessFiles do not exist and client
+  sends USER for account which does not exist.
+- Bug 3337 - <Directory> sections with a trailing directory name of one
+  character have <Limit> problems.  This is a regression caused by Bug#3146.
+- Bug 3341 - mod_wrap2 segfaults when a valid user retries the USER command.
+- Bug 3350 - Segfault caused by scrubbing zero-length portion of memory.
+- Bug 3347 - mod_auth_file handles 'getgroups' request incorrectly.
+- Bug 3351 - Nonchrooted logins on HPUX do not get proper UID/GID.
+
+1.3.2b - Released 20-Oct-2009
+--------------------------------
+- Bug 3221 - Fixed regression causing command-line -D/--define options not
+  to work.
+- Bug 3275 - Improper SSL/TLS certificate subjectAltName verification.
+- Bug 3282 - With "SQLNegativeCache on", mod_sql will look up wrong cached user
+  value for subsequent USER commands.
+- Bug 3284 - Slower transfers of multiple small file transfers after upgrade
+  from 1.3.0a to 1.3.2a.
+- Bug 3287 - MaxTransfersPerHost, MaxTransfersPerUser directives not supported
+  properly.
+- Bug 3297 - Symlinks to directories which end in trailing slashes may not be
+  handled properly.
 
 1.3.2a - Released 30-Jun-2009
 --------------------------------
