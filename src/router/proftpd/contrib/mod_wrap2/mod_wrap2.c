@@ -185,22 +185,25 @@ static int wrap2_close_table(wrap2_table_t *tab) {
 }
 
 static wrap2_table_t *wrap2_open_table(char *name) {
-  char *info = NULL;
+  char *info = NULL, *ptr = NULL;
   unsigned char have_type = FALSE;
   register wrap2_regtab_t *regtab = NULL;
   wrap2_table_t *tab = NULL;
 
-  info = strchr(name, ':');
+  info = ptr = strchr(name, ':');
   *info++ = '\0';
 
   /* Look up the table source open routine by name, and invoke it */
   for (regtab = wrap2_regtab_list; regtab; regtab = regtab->next) {
     if (strcmp(regtab->regtab_name, name) == 0) {
       tab = regtab->regtab_open(wrap2_pool, info);
-      if (tab == NULL)
+      if (tab == NULL) {
+        *ptr = ':';
         return NULL;
+      }
 
       have_type = TRUE;
+      *ptr = ':';
       break;
     }
   }
@@ -1591,6 +1594,18 @@ MODRET wrap2_post_pass(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+MODRET wrap2_post_pass_err(cmd_rec *cmd) {
+  if (!wrap2_engine)
+    return PR_DECLINED(cmd);
+
+  wrap2_ctxt = NULL;
+  wrap2_allow_table = NULL;
+  wrap2_deny_table = NULL;
+  wrap2_client_name = NULL;
+
+  return PR_DECLINED(cmd);
+}
+
 /* Event handlers
  */
 
@@ -1692,8 +1707,9 @@ static conftable wrap2_conftab[] = {
 };
 
 static cmdtable wrap2_cmdtab[] = {
-  { PRE_CMD,	C_PASS,	G_NONE,	wrap2_pre_pass,	FALSE,	FALSE },
-  { POST_CMD,	C_PASS,	G_NONE,	wrap2_post_pass,FALSE,	FALSE },
+  { PRE_CMD,	C_PASS,	G_NONE,	wrap2_pre_pass,		FALSE,	FALSE },
+  { POST_CMD,	C_PASS,	G_NONE,	wrap2_post_pass,	FALSE,	FALSE },
+  { POST_CMD_ERR,C_PASS,G_NONE,	wrap2_post_pass_err,	FALSE,	FALSE },
   { 0, NULL }
 };
 

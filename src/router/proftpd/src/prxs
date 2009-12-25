@@ -28,15 +28,15 @@ Getopt::Long::Configure("no_ignorecase");
 
 my $prog = basename($0);
 
-my $compiler = q(gcc);
-my $cflags = q( -DLINUX -O2 -Wall -DPR_SHARED_MODULE);
+my $compiler = q(mips-linux-uclibc-gcc);
+my $cflags = q( -DLINUX -Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time  -Wall -DPR_SHARED_MODULE);
 my $cppflags = q();
 my $ltdl_ldflags = q();
-my $sbindir = q(/usr/local/sbin);
-my $includedir = q(/usr/local/include);
+my $sbindir = q(/tmp/proftpd/sbin);
+my $includedir = q(/tmp/proftpd/include);
 my $installer = q(/usr/bin/install -c);
 my $install_strip = q(-s);
-my $libexecdir = q(/usr/local/libexec);
+my $libexecdir = q(/tmp/proftpd/libexec);
 my $libtool = 'libtool';
 
 if (!defined($ENV{LIBTOOL})) {
@@ -48,7 +48,7 @@ if (!defined($ENV{LIBTOOL})) {
   $libtool = $ENV{LIBTOOL};
 }
 
-my $shell = q(/bin/bash);
+my $shell = q(/bin/sh);
 
 my $opts = {};
 GetOptions($opts, 'c|compile', 'i|install', 'd|clean', 'name=s', 'D=s@',
