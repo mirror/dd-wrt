@@ -972,6 +972,9 @@ int internal_getRouterBrand()
 #elif HAVE_WZRG300NH
 	setRouter("Buffalo WZR-G300NH");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_DIR825
+	setRouter("Dlink DIR-825");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_AP83
 	setRouter("Atheros AP83");
 	return ROUTER_BOARD_PB42;
@@ -2684,6 +2687,10 @@ int led_control(int type, int act)
 #ifdef HAVE_WP543
 		diag_gpio = 0x107;
 		connected_gpio = 0x106;
+#endif
+#ifdef HAVE_DIR825
+		diag_gpio = 0x104;
+		connected_gpio = 0x10b;
 #endif
 		break;
 	case ROUTER_ALLNET01:
