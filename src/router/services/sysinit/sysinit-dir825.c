@@ -110,9 +110,21 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7100_mod");
-	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
-	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
-
+	char mac1[32];
+	char mac2[32];
+	FILE *fp = fopen("/dev/mtdblock/7", "rb");
+	if (fp) {
+		fseek(fp, 0x66ffa0, SEEK_SET);
+		fread(mac1, 18, 1, fp);
+		fseek(fp, 0x66ffb4, SEEK_SET);
+		fread(mac2, 18, 1, fp);
+		fclose(fp);
+	} else {
+		sprintf(mac1, "00:11:22:33:44:55");
+		sprintf(mac2, "00:11:22:33:44:66");
+	}
+	eval("ifconfig", "eth0", "hw", "ether", mac1);
+	eval("ifconfig", "eth1", "hw", "ether", mac2);
 
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
@@ -133,6 +145,8 @@ void start_sysinit(void)
 		close(s);
 	}
 	detect_wireless_devices();
+	eval("ifconfig", "wifi0", "hw", "ether", mac1);
+	eval("ifconfig", "wifi1", "hw", "ether", mac1);
 
 /*#ifdef HAVE_RS
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
@@ -146,7 +160,6 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif*/
 	insmod("ipv6");
-
 
 	/*
 	 * Set a sane date 
