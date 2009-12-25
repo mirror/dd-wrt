@@ -543,7 +543,7 @@ static dev_ops_t mdcmdio = {
 	"MII (MDC/MDIO)"
 };
 
-static int iswrt610n=0;
+static int iswrt610nv1=0;
 
 /* High level switch configuration functions. */
 
@@ -569,6 +569,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	robo->miiwr = miiwr;
 	robo->page = -1;
 	char *boothwmodel = nvram_get("boot_hw_model");
+	char *boothwver = nvram_get("boot_hw_ver");
 	if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))rreset = GPIO_PIN_NOTDEFINED;
 
 	/* Trigger external reset by nvram variable existance */
@@ -622,7 +623,8 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		 * a write to bit 0 of pseudo phy register 16 is done we are
 		 * unable to talk to the switch on a customer ref design.
 		 */
-		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N"))
+		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N")
+			&& boothwver!=NULL && !strcmp(boothwver,"1.0"))
 		{
 		if (tmp == 0xffff) {
 			miiwr(h, PSEUDO_PHYAD, 16, 1);
@@ -660,10 +662,11 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 			nvram_set("switch_type", "BCM53115S");
 		else
 			nvram_set("switch_type", "unknown");						
-	if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
-		iswrt610n=1;
+		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N")
+			&& boothwver!=NULL && !strcmp(boothwver,"1.0"))
+		iswrt610nv1=1;
 
-	if (!iswrt610n)
+	if (!iswrt610nv1)
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
 	    (robo->devid == DEVID5398) ||
@@ -848,7 +851,7 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 	        (3 << 5));		/* individual VLAN learning mode */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
 
-if (iswrt610n)
+if (iswrt610nv1)
 	val8 |= ((1 << 2) |		/* enable RSV multicast V Fwdmap */
 		(1 << 3));		/* enable RSV multicast V Untagmap */		
 else
