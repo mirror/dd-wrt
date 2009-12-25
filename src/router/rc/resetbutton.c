@@ -140,6 +140,16 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_DIR825)
+int getbuttonstate()
+{
+	FILE *in;
+	int ret = get_gpio(3);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
