@@ -266,6 +266,7 @@ ag7100_open(struct net_device *dev)
 
     dev->trans_start = jiffies;
 
+    napi_enable(&mac->mac_napi);
     ag7100_int_enable(mac);
     ag7100_rx_start(mac);
 
@@ -289,6 +290,7 @@ ag7100_stop(struct net_device *dev)
     int flags;
 
     spin_lock_irqsave(&mac->mac_lock, flags);
+    napi_disable(&mac->mac_napi);
     netif_stop_queue(dev);
     netif_carrier_off(dev);
 
@@ -790,7 +792,6 @@ ag7100_check_link(ag7100_mac_t *mac)
         if (carrier)
         {
             printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
-    	    napi_disable(&mac->mac_napi);
             netif_carrier_off(dev);
             netif_stop_queue(dev);
         }
@@ -824,7 +825,6 @@ ag7100_check_link(ag7100_mac_t *mac)
     /*
     * in business
     */
-    napi_enable(&mac->mac_napi);
     netif_carrier_on(dev);
     netif_start_queue(dev);
 
@@ -1165,8 +1165,8 @@ ag7100_intr(int cpl, void *dev_id)
         else
         {
             printk(MODULE_NAME ": driver bug! interrupt while in poll\n");
-    //        assert(0);
-    //        ag7100_intr_disable_recv(mac);
+            assert(0);
+            ag7100_intr_disable_recv(mac);
         }
         /*ag7100_recv_packets(dev, mac, 200, &budget);*/
     }
@@ -1256,15 +1256,15 @@ ag7100_poll(struct net_device *dev, int *budget)
 	if (work_done < budget)
 		{
     		netif_rx_complete(dev, napi);
-		if (likely(ret == AG7100_RX_STATUS_DONE))
-		{
     		ag7100_intr_enable_recv(mac);
-    		}
     		}
 #else
     dev->quota  -= work_done;
     *budget     -= work_done;
+    if (likely(ret == AG7100_RX_STATUS_DONE))
+    {
     netif_rx_complete(dev);
+    }
 #endif
 #ifdef CONFIG_AR9100
     if(ret == AG7100_RX_DMA_HANG)
