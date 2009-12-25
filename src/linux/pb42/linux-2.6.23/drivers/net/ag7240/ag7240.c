@@ -1280,8 +1280,8 @@ ag7240_intr(int cpl, void *dev_id)
         else
         {
             printk(MODULE_NAME ": driver bug! interrupt while in poll\n");
-            assert(0);
-            ag7240_intr_disable_recv(mac);
+//            assert(0);
+//            ag7240_intr_disable_recv(mac);
         }
         /*ag7240_recv_packets(dev, mac, 200, &budget);*/
     }
@@ -1345,24 +1345,29 @@ ag7240_poll(struct net_device *dev, int *budget)
 
     ag7240_rx_status_t  ret;
     u32                 flags;
+spin_lock_irqsave(&mac->mac_lock, flags);
 
     ret = ag7240_recv_packets(dev, mac, max_work, &work_done);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	if (work_done < budget)
+		{
     		netif_rx_complete(dev, napi);
+		if (likely(ret == AG7240_RX_STATUS_DONE))
+		{
+    		ag7240_intr_enable_recv(mac);
+		}
+    		}
 #else
     dev->quota  -= work_done;
     *budget     -= work_done;
     netif_rx_complete(dev);
-#endif
     if (likely(ret == AG7240_RX_STATUS_DONE))
     {
-        spin_lock_irqsave(&mac->mac_lock, flags);
         ag7240_intr_enable_recv(mac);
-        spin_unlock_irqrestore(&mac->mac_lock, flags);
     }
-    else if (likely(ret == AG7240_RX_STATUS_NOT_DONE))
+#endif
+    if (likely(ret == AG7240_RX_STATUS_NOT_DONE))
     {
         /*
         * We have work left
@@ -1377,6 +1382,7 @@ ag7240_poll(struct net_device *dev, int *budget)
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
     }
+spin_unlock_irqrestore(&mac->mac_lock, flags);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	return work_done;

@@ -17,7 +17,7 @@ obj-phy-$(CONFIG_ATHRS16_PHY) 	=	athrs16_phy.o
 obj-phy-$(CONFIG_AG7100_GENERIC_PHY)    = generic_phy.o
 obj-phy-$(CONFIG_VITESSE_8601_PHY)      = vsc8601_phy.o
 obj-phy-$(CONFIG_VITESSE_8601_7395_PHY) = vsc8601_phy.o generic_i2c.o generic_spi.o vsc73xx.o
-obj-phy-$(CONFIG_CAMEO_REALTEK_PHY)   = rtl8366sr_phy.o
+obj-phy-$(CONFIG_CAMEO_REALTEK_PHY)   = rtl8366sr_phy.o rtl8366_smi.o 
 
 # { append by BUFFALO
 RTL8366S_PATH=RTL8366S_DRIVER
@@ -28,14 +28,13 @@ obj-phy-$(CONFIG_CAMEO_REALTEK_PHY) += \
 	$(RTL8366S_PATH)/rtl8366s_greenethernet.o 
 
 RTL8366RB_PATH=RTL8366RB_DRIVER
-
+ifeq ($(CONFIG_BUFFALO),y)
 obj-phy-$(CONFIG_CAMEO_REALTEK_PHY) += \
 	$(RTL8366RB_PATH)/rtl8366rb_api.o \
 	$(RTL8366RB_PATH)/rtl8368s_asicdrv.o
 
-obj-phy-$(CONFIG_CAMEO_REALTEK_PHY)     += \
-	rtl8366_smi.o rtl8366rb_phy.o
-
+obj-phy-$(CONFIG_CAMEO_REALTEK_PHY)     += rtl8366rb_phy.o
+endif
 
 #EXTRA_CFLAGS += -DCONFIG_BUFFALO
 

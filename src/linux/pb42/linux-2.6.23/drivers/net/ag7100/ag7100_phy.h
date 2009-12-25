@@ -121,6 +121,15 @@ ag7100_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
   return 0;
 }
 #else
+#include "rtl8366sr_phy.h"
+
+enum
+{
+	CHIP_TYPE_RTL8366SR,
+	CHIP_TYPE_RTL8366RB,
+	CHIP_TYPE_UNKNOWN
+};
+
 
 #define ag7100_phy_is_up(unit)          rtl8366sr_phy_is_up(unit)
 #define ag7100_phy_speed(unit)          rtl8366sr_phy_speed(unit)
@@ -135,13 +144,8 @@ ag7100_phy_setup(int unit)
 static inline unsigned int
 ag7100_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
 {
-
-//  printk("linkstatus1: %d %d %d %d\n", unit, *link, *fdx, *speed);
-  *link=ag7100_phy_is_up(unit);
-  *fdx=ag7100_phy_is_fdx(unit);
-  *speed=ag7100_phy_speed(unit);
-  //printk("linkstatus2: %d %d %d %d\n", unit, *link, *fdx, *speed);
-  return 0;
+    rtl8366sr_get_link_status(unit, link, fdx, speed);
+    return 0;
 }
 #endif // CONFIG_BUFFALO //
 
