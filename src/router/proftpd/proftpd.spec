@@ -1,4 +1,4 @@
-# $Id: proftpd.spec,v 1.59.2.1 2009/07/01 01:41:53 castaglia Exp $
+# $Id: proftpd.spec,v 1.59.2.3 2009/12/10 18:33:44 castaglia Exp $
 
 # You can specify additional modules on the RPM build line by specifying
 # flags like:
@@ -43,7 +43,7 @@
 # rpmbuild -ba --with ctrls --with mod_facl --with mod_tls --with nls \
 #	--with ipv6 --with dso proftpd.spec
 
-%define proftpd_version 1.3.2a
+%define proftpd_version 1.3.2c
 %define usecvsversion             0%{?_with_cvs:1}
 %define proftpd_cvs_version_main  1.2
 %define proftpd_cvs_version_date  20070929

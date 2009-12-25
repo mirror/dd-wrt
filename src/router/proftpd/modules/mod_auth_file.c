@@ -23,7 +23,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: mod_auth_file.c,v 1.33 2007/06/12 17:41:50 castaglia Exp $
+ * $Id: mod_auth_file.c,v 1.33.2.1 2009/12/10 17:45:55 castaglia Exp $
  */
 
 #include "conf.h"
@@ -730,11 +730,17 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
   array_header *gids = NULL, *groups = NULL;
   char *name = cmd->argv[0];
 
-  if (af_setpwent() < 0)
+  if (name == NULL) {
     return PR_DECLINED(cmd);
+  }
 
-  if (af_setgrent() < 0)
+  if (af_setpwent() < 0) {
     return PR_DECLINED(cmd);
+  }
+
+  if (af_setgrent() < 0) {
+    return PR_DECLINED(cmd);
+  }
 
   /* Check for NULLs */
   if (cmd->argv[1])
@@ -744,16 +750,20 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
     groups = (array_header *) cmd->argv[2];
 
   /* Retrieve the necessary info. */
-  if (!name || !(pwd = af_getpwnam(name)))
-    return mod_create_error(cmd, -1);
+  pwd = af_getpwnam(name);
+  if (pwd == NULL) {
+    return PR_DECLINED(cmd);
+  }
 
   /* Populate the first group ID and name. */
-  if (gids)
+  if (gids) {
     *((gid_t *) push_array(gids)) = pwd->pw_gid;
+  }
 
   if (groups &&
-      (grp = af_getgrgid(pwd->pw_gid)) != NULL)
+      (grp = af_getgrgid(pwd->pw_gid)) != NULL) {
     *((char **) push_array(groups)) = pstrdup(session.pool, grp->gr_name);
+  }
 
   af_setgrent();
 
@@ -763,6 +773,8 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
   while ((grp = af_getgrent()) != NULL &&
       grp->gr_mem) {
     char **gr_mems = NULL;
+
+    pr_signals_handle();
 
     /* Loop through each member name listed */
     for (gr_mems = grp->gr_mem; *gr_mems; gr_mems++) {
@@ -780,11 +792,12 @@ MODRET authfile_getgroups(cmd_rec *cmd) {
     }
   }
 
-  if (gids && gids->nelts > 0)
+  if (gids && gids->nelts > 0) {
     return mod_create_data(cmd, (void *) &gids->nelts);
 
-  else if (groups && groups->nelts > 0)
+  } else if (groups && groups->nelts > 0) {
     return mod_create_data(cmd, (void *) &groups->nelts);
+  }
 
   return PR_DECLINED(cmd);
 }
