@@ -549,6 +549,16 @@ void start_restore_defaults(void)
 		{"wan_default", "eth1", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_AP94
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 eth1 ath0", 0},
+		{"wan_ifname", "eth1", 0},
+		{"wan_ifname2", "eth1", 0},
+		{"wan_ifnames", "eth1", 0},
+		{"wan_default", "eth1", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_UBNTM
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
