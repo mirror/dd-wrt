@@ -102,7 +102,21 @@ int mii1_if = AG7100_MII1_INTERFACE;
 module_param(mii1_if, int, 0);
 MODULE_PARM_DESC(mii1_if, "mii1 connect");
 #ifndef CONFIG_AR9100
+#ifdef CONFIG_CAMEO_REALTEK_PHY
+int gige_pll = 0x11110000;
+int rtl_chip_type_select(void);
+#else
 int gige_pll = 0x0110000;
+#endif
+unsigned int e1000sr_pll[2]	= { 0x1e000100ul, 0x1e000100ul };
+unsigned int e1000rb_pll[2]	= { 0x1f000000ul, 0x00000100ul };
+unsigned int e100sr_pll[2]	= { 0x13000a44ul, 0x13000a44ul };
+unsigned int e100rb_pll[2]	= { 0x13000a44ul, 0x13000a44ul };
+unsigned int e10sr_pll[2]	= { 0x13000a44ul, 0x00441099ul };
+unsigned int e10rb_pll[2]	= { 0x13000a44ul, 0x00441099ul };
+unsigned int * e1000_pll;
+unsigned int * e100_pll;
+unsigned int * e10_pll;
 #else
 #ifdef	CONFIG_BUFFALO
 unsigned int e1000sr_pll[2]	= { 0x1e000100ul, 0x1e000100ul };
@@ -640,7 +654,12 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
         }
 #endif
 #else
+
+#ifdef	CONFIG_BUFFALO
+        ag7100_set_pll(mac, e1000_pll[mac->mac_unit ? 1 : 0]);
+#else
         ag7100_set_pll(mac, gige_pll);
+#endif
 #endif
         ag7100_reg_rmw_set(mac, AG7100_MAC_FIFO_CFG_5, (1 << 19));
         break;
@@ -667,7 +686,15 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
         }
 #endif
 #else
+#ifdef	CONFIG_BUFFALO
+        ag7100_set_pll(mac, e100_pll[mac->mac_unit ? 1 : 0]);
+#else
+#ifdef CONFIG_CAMEO_REALTEK_PHY
         ag7100_set_pll(mac, 0x0001099);
+#else
+        ag7100_set_pll(mac, 0x0001099);
+#endif
+#endif
 #endif
 #endif
         ag7100_reg_rmw_clear(mac, AG7100_MAC_FIFO_CFG_5, (1 << 19));
@@ -694,7 +721,15 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
         }
 #endif
 #else
+#ifdef	CONFIG_BUFFALO
+        ag7100_set_pll(mac, e10_pll[mac->mac_unit ? 1 : 0]);
+#else
+#ifdef CONFIG_CAMEO_REALTEK_PHY
         ag7100_set_pll(mac, 0x00991099);
+#else
+        ag7100_set_pll(mac, 0x00991099);
+#endif
+#endif
 #endif
 #if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
         if((speed == AG7100_PHY_SPEED_10T) && !mac->speed_10t) {
@@ -1130,8 +1165,8 @@ ag7100_intr(int cpl, void *dev_id)
         else
         {
             printk(MODULE_NAME ": driver bug! interrupt while in poll\n");
-            assert(0);
-            ag7100_intr_disable_recv(mac);
+    //        assert(0);
+    //        ag7100_intr_disable_recv(mac);
         }
         /*ag7100_recv_packets(dev, mac, 200, &budget);*/
     }
@@ -1212,19 +1247,25 @@ ag7100_poll(struct net_device *dev, int *budget)
 #endif
     ag7100_rx_status_t  ret;
     u32                 flags;
+    spin_lock_irqsave(&mac->mac_lock, flags);
 
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	if (work_done < budget)
+		{
     		netif_rx_complete(dev, napi);
+		if (likely(ret == AG7100_RX_STATUS_DONE))
+		{
+    		ag7100_intr_enable_recv(mac);
+    		}
+    		}
 #else
     dev->quota  -= work_done;
     *budget     -= work_done;
     netif_rx_complete(dev);
 #endif
-
 #ifdef CONFIG_AR9100
     if(ret == AG7100_RX_DMA_HANG)
     {
@@ -1232,13 +1273,8 @@ ag7100_poll(struct net_device *dev, int *budget)
         ag7100_dma_reset(mac);
     }
 #endif
-    if (likely(ret == AG7100_RX_STATUS_DONE))
-    {
-        spin_lock_irqsave(&mac->mac_lock, flags);
-        ag7100_intr_enable_recv(mac);
-        spin_unlock_irqrestore(&mac->mac_lock, flags);
-    }
-    else if (likely(ret == AG7100_RX_STATUS_NOT_DONE))
+
+    if (likely(ret == AG7100_RX_STATUS_NOT_DONE))
     {
         /*
         * We have work left
@@ -1253,6 +1289,7 @@ ag7100_poll(struct net_device *dev, int *budget)
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
     }
+    spin_unlock_irqrestore(&mac->mac_lock, flags);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	return work_done;
@@ -2039,8 +2076,11 @@ ag7100_init(void)
 			e10_pll = e10sr_pll;
 			break;
 	}
-#endif //CONFIG_BUFFALO //
-
+#else //CONFIG_BUFFALO //
+#ifdef CONFIG_CAMEO_REALTEK_PHY
+    rtl_chip_type_select();
+#endif
+#endif
         ag7100_get_default_macaddr(mac, dev->dev_addr);
 
         if (register_netdev(dev))
