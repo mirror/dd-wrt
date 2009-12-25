@@ -403,4 +403,8 @@ void writeserial(char *str,int count)
   return;
 }
 
+unsigned int getCPUClock(void)
+{
+    return ar7240_cpu_freq/1000000;
+}
 

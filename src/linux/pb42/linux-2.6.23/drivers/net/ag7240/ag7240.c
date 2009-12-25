@@ -310,6 +310,7 @@ ag7240_open(struct net_device *dev)
      */
     netif_carrier_off(dev);
     netif_stop_queue(dev);
+    napi_enable(&mac->mac_napi);
 
  
     mac->mac_ifup = 1;
@@ -335,6 +336,7 @@ ag7240_stop(struct net_device *dev)
 
     spin_lock_irqsave(&mac->mac_lock, flags);
     mac->mac_ifup = 0;
+    napi_disable(&mac->mac_napi);
     netif_stop_queue(dev);
     netif_carrier_off(dev);
 
@@ -841,7 +843,6 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
 
             netif_carrier_off(dev);
             netif_stop_queue(dev);
-            napi_disable(&mac->mac_napi);
 #ifdef  ETH_SOFT_LED
        PLedCtrl.ledlink[phyUnit] = 0;
        s26_wr_phy(phyUnit,0x19,0x0);
@@ -893,7 +894,6 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
        /*
        * in business
        */
-       napi_enable(&mac->mac_napi);
        netif_carrier_on(dev);
        netif_start_queue(dev);
        /* 
@@ -1353,10 +1353,7 @@ spin_lock_irqsave(&mac->mac_lock, flags);
 	if (work_done < budget)
 		{
     		netif_rx_complete(dev, napi);
-		if (likely(ret == AG7240_RX_STATUS_DONE))
-		{
     		ag7240_intr_enable_recv(mac);
-		}
     		}
 #else
     dev->quota  -= work_done;

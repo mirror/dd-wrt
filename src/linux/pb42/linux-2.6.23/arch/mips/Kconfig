@@ -638,6 +638,10 @@ config  MACH_AR7240
 	select SYS_SUPPORTS_BIG_ENDIAN
     select HW_HAS_PCI
 
+config AR7240_DEFAULT_GPIO
+    bool "use default gpios for wireless?"
+    depends on MACH_AR7240
+
 config AR7240_EMULATION
     bool "build system for AR7240 emulation board?"
     depends on MACH_AR7240
