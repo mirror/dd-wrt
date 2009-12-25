@@ -191,8 +191,10 @@ sflash_mtd_init(void)
 	struct mtd_partition *parts;
 	int i;
 #endif
-
+/* should be safe to enable sflash on all routers */
+/*
   int do_support = 0;
+  
   uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 
   if (boardnum == 1 && nvram_match( "boardtype", "0x048e" )
@@ -250,13 +252,14 @@ sflash_mtd_init(void)
 	do_support = 1;  //Asus RT-N12
 	}
 
-	
+
+  	
   if (!do_support)
 	{
 	    printk(KERN_ERR "sflash not supported on this router\n");
 	    return -ENODEV;
 	}
-
+*/
 
 
 
