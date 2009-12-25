@@ -142,8 +142,8 @@ struct ethtool_eeprom {
 #define BCM_TASKLET 1
 
 #if HAVE_NETIF_RECEIVE_SKB
-#define BCM_NAPI_RXPOLL 1
-#undef BCM_TASKLET
+//#define BCM_NAPI_RXPOLL 1
+//#undef BCM_TASKLET
 #endif
 
 #if defined(CONFIG_PPC64)
