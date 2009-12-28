@@ -2894,6 +2894,8 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 static void show_netmode(webs_t wp, char *prefix)
 {
 	char wl_net_mode[16];
+	int count;
+	sscanf(prefix, "ath%d", &count);
 
 	sprintf(wl_net_mode, "%s_net_mode", prefix);
 
@@ -2911,7 +2913,7 @@ static void show_netmode(webs_t wp, char *prefix)
 		  nvram_match(wl_net_mode,
 			      "mixed") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_MADWIFI
-	if (has_mimo(prefix))
+	if (has_mimo(prefix) && if (has_2ghz(count))
 #else
 	if (has_mimo(prefix) && !nvram_nmatch("a", "%s_bandlist", prefix))
 #endif
@@ -2930,7 +2932,10 @@ static void show_netmode(webs_t wp, char *prefix)
 #endif
 #ifndef HAVE_MADWIFI
 			if (!nvram_nmatch("a", "%s_bandlist", prefix))
+#else
+	if (has_2ghz(count))
 #endif
+
 			{
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
@@ -2939,6 +2944,9 @@ static void show_netmode(webs_t wp, char *prefix)
 					  "selected=\\\"selected\\\"" : "");
 			}
 #ifdef HAVE_MADWIFI
+	if (has_2ghz(count))
+	{
+	
 #ifdef HAVE_WHRAG108
 	if (!strcmp(prefix, "ath1"))
 #endif
@@ -2963,6 +2971,7 @@ static void show_netmode(webs_t wp, char *prefix)
 					      "bg-mixed") ?
 				  "selected=\\\"selected\\\"" : "");
 #endif
+    }
 #else
 #ifdef HAVE_WHRAG108
 	if (!strcmp(prefix, "ath1"))
@@ -2970,6 +2979,8 @@ static void show_netmode(webs_t wp, char *prefix)
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 #ifndef HAVE_MADWIFI
 		if (!nvram_nmatch("a", "%s_bandlist", prefix))
+#else
+	if (has_2ghz(count))
 #endif
 		{
 			websWrite(wp,
@@ -3024,18 +3035,20 @@ static void show_netmode(webs_t wp, char *prefix)
 #ifdef HAVE_TW6600
 		if (!strcmp(prefix, "ath0"))
 #endif
-			websWrite(wp,
+		if (has_5ghz(count))	{		
+		websWrite(wp,
 				  "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
 				  nvram_match(wl_net_mode,
 					      "a-only") ?
 				  "selected=\\\"selected\\\"" : "");
+		}
 #endif
 
 #endif
 #ifdef HAVE_MADWIFI_MIMO
-	int count;
-	sscanf(prefix, "ath%d", &count);
 	if (is_ar5008(count)) {
+			if (has_2ghz(count))
+			{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
 				  nvram_match(wl_net_mode,
@@ -3046,6 +3059,9 @@ static void show_netmode(webs_t wp, char *prefix)
 				  nvram_match(wl_net_mode,
 					      "n2-only") ?
 				  "selected=\\\"selected\\\"" : "");
+			}
+			if (has_5ghz(count))
+			{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
 				  nvram_match(wl_net_mode,
@@ -3056,6 +3072,7 @@ static void show_netmode(webs_t wp, char *prefix)
 				  nvram_match(wl_net_mode,
 					      "n5-only") ?
 				  "selected=\\\"selected\\\"" : "");
+			}
 	}
 #endif
 
