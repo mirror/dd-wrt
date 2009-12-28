@@ -712,7 +712,11 @@ netconf_append_target(struct ipt_entry **pentry, const char *name, size_t target
  * @return	TRUE on success and 0 on failure
  */
 static int
+#ifdef LINUX26
+insert_entry(const char *chain, const char *target_name, struct ipt_entry *entry, iptc_handle_t *handle)
+#else /* LINUX26 */
 insert_entry(const char *chain, struct ipt_entry *entry, iptc_handle_t *handle)
+#endif /* LINUX26 */
 {
 	int i;
 	struct ipt_ip blank;
@@ -728,14 +732,23 @@ insert_entry(const char *chain, struct ipt_entry *entry, iptc_handle_t *handle)
 		return iptc_append_entry(chain, entry, handle);
 
 	/* If dropping insert at the beginning of the chain */
+#ifdef LINUX26
+	if (!strcmp(target_name, "DROP") ||
+	    !strcmp(target_name, "logdrop"))
+		return iptc_insert_entry(chain, entry, 0, handle);
+	/* If accepting insert after the last drop but before the first default policy */
+	else if (!strcmp(target_name, "ACCEPT") ||
+		 !strcmp(target_name, "DNAT") ||	// by honor, let UPnP Forwarding is prior to DMZ
+		 !strcmp(target_name, "logaccept")) {
+#else /* LINUX26 */
 	if (!strcmp(iptc_get_target(entry, handle), "DROP") ||
 	    !strcmp(iptc_get_target(entry, handle), "logdrop"))
 		return iptc_insert_entry(chain, entry, 0, handle);
-
 	/* If accepting insert after the last drop but before the first default policy */
 	else if (!strcmp(iptc_get_target(entry, handle), "ACCEPT") ||
 		 !strcmp(iptc_get_target(entry, handle), "DNAT") ||	// by honor, let UPnP Forwarding is prior to DMZ
 		 !strcmp(iptc_get_target(entry, handle), "logaccept")) {
+#endif /* LINUX26 */
 		for (i = 0, rule = iptc_first_rule(chain, handle); rule; i++, rule = iptc_next_rule(rule, handle)) {
 			if ((strcmp(iptc_get_target(rule, handle), "DROP") &&
 			     strcmp(iptc_get_target(rule, handle), "logdrop")) ||
@@ -946,7 +959,11 @@ netconf_add_fw(netconf_fw_t *fw)
 			goto err;
 		}
 
+#ifdef LINUX26
+		if (!insert_entry(ipt_filter_chain_name[filter->dir], ipt_target_name[fw->target], entry, &handle)) {
+#else /* LINUX26 */
 		if (!insert_entry(ipt_filter_chain_name[filter->dir], entry, &handle)) {
+#endif /* LINUX26 */
 			fprintf(stderr, "%s\n", iptc_strerror(errno));
 			goto err;
 		}
@@ -979,7 +996,11 @@ netconf_add_fw(netconf_fw_t *fw)
 			range->flags |= IP_NAT_RANGE_PROTO_SPECIFIED;
 		}
 
+#ifdef LINUX26
+		if (!insert_entry(ipt_nat_chain_name[fw->target], ipt_target_name[fw->target], entry, &handle)) {
+#else /* LINUX26 */
 		if (!insert_entry(ipt_nat_chain_name[fw->target], entry, &handle)) {
+#endif /* LINUX26 */
 			fprintf(stderr, "%s\n", iptc_strerror(errno));
 			goto err;
 		}
@@ -994,7 +1015,11 @@ netconf_add_fw(netconf_fw_t *fw)
 		info->to[0] = app->to[0];
 		info->to[1] = app->to[1];
 
+#ifdef LINUX26
+		if (!insert_entry("PREROUTING", ipt_target_name[fw->target], entry, &handle)) {
+#else /* LINUX26 */
 		if (!insert_entry("PREROUTING", entry, &handle)) {
+#endif /* LINUX26 */
 			fprintf(stderr, "%s\n", iptc_strerror(errno));
 			goto err;
 		}
