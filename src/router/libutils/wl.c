@@ -1253,18 +1253,27 @@ int getAssocMAC(char *ifname, char *mac)
 	return ret;
 }
 
-int is_ar5008(int devnum)
-{
-	char sys[64];
-
-	sprintf(sys, "/proc/sys/dev/wifi%d/mimo", devnum);
-	FILE *tmp = fopen(sys, "rb");
-
-	if (tmp == NULL)
-		return 0;
-	fclose(tmp);
-	return 1;
-}
+    HAL_MODE_11A              = 0x00001,      /* 11a channels */
+    HAL_MODE_TURBO            = 0x00002,      /* 11a turbo-only channels */
+    HAL_MODE_11B              = 0x00004,      /* 11b channels */
+    HAL_MODE_PUREG            = 0x00008,      /* 11g channels (OFDM only) */
+#ifdef notdef                 
+    HAL_MODE_11G              = 0x00010,      /* 11g channels (OFDM/CCK) */
+#else                         
+    HAL_MODE_11G              = 0x00008,      /* XXX historical */
+#endif                        
+    HAL_MODE_108G             = 0x00020,      /* 11a+Turbo channels */
+    HAL_MODE_108A             = 0x00040,      /* 11g+Turbo channels */
+    HAL_MODE_XR               = 0x00100,      /* XR channels */
+    HAL_MODE_11A_HALF_RATE    = 0x00200,      /* 11A half rate channels */
+    HAL_MODE_11A_QUARTER_RATE = 0x00400,      /* 11A quarter rate channels */
+    HAL_MODE_11NG_HT20        = 0x00800,      /* 11N-G HT20 channels */
+    HAL_MODE_11NA_HT20        = 0x01000,      /* 11N-A HT20 channels */
+    HAL_MODE_11NG_HT40PLUS    = 0x02000,      /* 11N-G HT40 + channels */
+    HAL_MODE_11NG_HT40MINUS   = 0x04000,      /* 11N-G HT40 - channels */
+    HAL_MODE_11NA_HT40PLUS    = 0x08000,      /* 11N-A HT40 + channels */
+    HAL_MODE_11NA_HT40MINUS   = 0x10000,      /* 11N-A HT40 - channels */
+    HAL_MODE_ALL              = 0xffffffff
 
 int is_wifar5008(char *dev)
 {
@@ -1278,6 +1287,51 @@ int is_wifar5008(char *dev)
 	fclose(tmp);
 	return 1;
 }
+
+
+int is_ar5008(int devnum)
+{
+	char sys[64];
+
+	sprintf(sys, "/proc/sys/dev/wifi%d/mimo", devnum);
+	FILE *tmp = fopen(sys, "rb");
+
+	if (tmp == NULL)
+		return 0;
+	fclose(tmp);
+	return 1;
+}
+
+int has_athmask(int devnum,int mask)
+{
+	char sys[64];
+	int modes;
+
+	sprintf(sys, "/proc/sys/dev/wifi%d/wirelessmodes", devnum);
+	FILE *tmp = fopen(sys, "rb");
+
+	if (tmp == NULL)
+		return 0;
+	fscanf(tmp,"%d",&modes);
+	fclose(tmp);
+	if ((modes&mask) == mask)
+	return 1;
+	else
+	return 0;
+}
+
+
+int has_5ghz(int devnum)
+{
+	return has_athmask(devnum,0x1);
+}
+
+int has_2ghz(int devnum)
+{
+	return has_athmask(devnum,0x8);
+}
+
+
 
 static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 {
