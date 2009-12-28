@@ -100,6 +100,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		if (IEEE80211_IS_CHAN_5GHZ(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_mode, "mixed")
+			    && nvram_invmatch(wl_mode, "n5-only")
 			    && nvram_invmatch(wl_mode, "na-only"))
 				{
 				fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
@@ -110,6 +111,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "na-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "a-only")
+			    && nvram_invmatch(wl_mode, "n5-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
 				fprintf(stderr,"11na ht20 Ghz %d is not compatible to na-only/mixed/n-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
@@ -120,6 +122,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "na-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "a-only")
+			    && nvram_invmatch(wl_mode, "n5-only")
 			    && nvram_invmatch(wl_turbo, "40")
 			    && nvram_invmatch(wl_turbo, "2040")) {
 				continue;
@@ -165,6 +168,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "g-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "b-only")
+			    && nvram_invmatch(wl_mode, "n2-only")
 			    && nvram_invmatch(wl_mode, "bg-mixed")
 			    && nvram_invmatch(wl_mode, "ng-only"))
 				continue;
