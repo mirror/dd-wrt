@@ -1253,27 +1253,6 @@ int getAssocMAC(char *ifname, char *mac)
 	return ret;
 }
 
-    HAL_MODE_11A              = 0x00001,      /* 11a channels */
-    HAL_MODE_TURBO            = 0x00002,      /* 11a turbo-only channels */
-    HAL_MODE_11B              = 0x00004,      /* 11b channels */
-    HAL_MODE_PUREG            = 0x00008,      /* 11g channels (OFDM only) */
-#ifdef notdef                 
-    HAL_MODE_11G              = 0x00010,      /* 11g channels (OFDM/CCK) */
-#else                         
-    HAL_MODE_11G              = 0x00008,      /* XXX historical */
-#endif                        
-    HAL_MODE_108G             = 0x00020,      /* 11a+Turbo channels */
-    HAL_MODE_108A             = 0x00040,      /* 11g+Turbo channels */
-    HAL_MODE_XR               = 0x00100,      /* XR channels */
-    HAL_MODE_11A_HALF_RATE    = 0x00200,      /* 11A half rate channels */
-    HAL_MODE_11A_QUARTER_RATE = 0x00400,      /* 11A quarter rate channels */
-    HAL_MODE_11NG_HT20        = 0x00800,      /* 11N-G HT20 channels */
-    HAL_MODE_11NA_HT20        = 0x01000,      /* 11N-A HT20 channels */
-    HAL_MODE_11NG_HT40PLUS    = 0x02000,      /* 11N-G HT40 + channels */
-    HAL_MODE_11NG_HT40MINUS   = 0x04000,      /* 11N-G HT40 - channels */
-    HAL_MODE_11NA_HT40PLUS    = 0x08000,      /* 11N-A HT40 + channels */
-    HAL_MODE_11NA_HT40MINUS   = 0x10000,      /* 11N-A HT40 - channels */
-    HAL_MODE_ALL              = 0xffffffff
 
 int is_wifar5008(char *dev)
 {
