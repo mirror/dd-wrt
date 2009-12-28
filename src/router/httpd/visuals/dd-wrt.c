@@ -2913,7 +2913,7 @@ static void show_netmode(webs_t wp, char *prefix)
 		  nvram_match(wl_net_mode,
 			      "mixed") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_MADWIFI
-	if (has_mimo(prefix) && if (has_2ghz(count))
+	if (has_mimo(prefix) && has_2ghz(count))
 #else
 	if (has_mimo(prefix) && !nvram_nmatch("a", "%s_bandlist", prefix))
 #endif
