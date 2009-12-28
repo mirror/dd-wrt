@@ -203,8 +203,10 @@ if (iswrt350n)
 		si_gpioouten(gpio_sih, 0x4, 0x4, GPIO_HI_PRIORITY);
 		si_gpioout(gpio_sih, 0x4, 0x4, GPIO_HI_PRIORITY);
 }
-/*
+
 uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+
+gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11;
 
 if ((boardnum == 1 || boardnum == 3500)
 	    && nvram_match("boardtype", "0x04CF")
@@ -218,7 +220,6 @@ if ((boardnum == 42 || boardnum == 66)
 		&& nvram_match("boardtype", "0x04EF")
 		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305")))
 {
-		printk(KERN_EMERG "WRT320N GPIO Init\n");
 		gpios = 1 << 2 | 1 << 3 | 1 << 4;
 }
 
@@ -298,7 +299,7 @@ if (boardnum == 1 && nvram_match("boardrev", "0x23")
 		gpios = 1 << 5 | 1 << 7;
 		}
 }
-*/
+
 /*if (iswrt300n11)
 {
 	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
@@ -309,14 +310,12 @@ if (boardnum == 1 && nvram_match("boardrev", "0x23")
 		sb_gpioout(gpio_sbh, reset, reset, GPIO_DRV_PRIORITY);
 		bcm_mdelay(20);	
 }*/
-	//should be safe to enable gpio 0-7 on all routers.
-	gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11;
-	printk(KERN_EMERG "GPIO 0-7 init\n");
-
+	
 	for (i = 0; i < 16; i++)
 	{
-		if (gpios&1)
+		if (gpios&1) {
 			si_gpioreserve(gpio_sih, 1 << i, GPIO_APP_PRIORITY);
+		}
 		gpios>>=1;
 	}
 
