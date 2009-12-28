@@ -24,7 +24,7 @@ else
 CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v23 -I$(LINUXDIR)/include -Wall
 endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s $(COPTS)
+CFLAGS	+= -s $(COPTS) -fPIC
 
 ifeq ($(CONFIG_BCMMODERN),y)
 LDFLAGS = -L. -L$(TOP)/iptables/libiptc/
