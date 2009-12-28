@@ -14,13 +14,23 @@
 include $(TOP)/.config
 
 ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BCMMODERN),y)
+CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
+CFLAGS += -DLINUX26
+else
 CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
+endif
 else
 CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v23 -I$(LINUXDIR)/include -Wall
 endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s -O2
+CFLAGS	+= -s $(COPTS)
+
+ifeq ($(CONFIG_BCMMODERN),y)
+LDFLAGS = -L. -L$(TOP)/iptables/libiptc/
+else
 LDFLAGS = -L. -L$(TOP)/iptables.linksys/libiptc/
+endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
