@@ -33,7 +33,7 @@ void start_httpd(void)
 	stop_httpd();
 
 	if (nvram_invmatch("http_enable", "0")
-	    && !is_exist("/var/run/httpd.pid")) {
+	    && !f_exists("/var/run/httpd.pid")) {
 		chdir("/www");
 		cprintf("[HTTPD Starting on /www]\n");
 		if (nvram_invmatch("http_lanport", "")) {
@@ -49,10 +49,10 @@ void start_httpd(void)
 	}
 #ifdef HAVE_HTTPS
 	if (nvram_invmatch("https_enable", "0")
-	    && !is_exist("/var/run/httpsd.pid")) {
+	    && !f_exists("/var/run/httpsd.pid")) {
 
 		// Generate a new certificate
-		// if(!is_exist("/tmp/cert.pem") || !is_exist("/tmp/key.pem"))
+		// if(!f_exists("/tmp/cert.pem") || !f_exists("/tmp/key.pem"))
 		// eval("gencert.sh", BUILD_SECS); 
 
 		chdir("/www");
