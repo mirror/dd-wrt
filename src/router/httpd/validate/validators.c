@@ -1797,8 +1797,8 @@ void convert_wl_gmode(char *value, char *prefix)
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
-/* n-only */
-	} else if (!strcmp(value, "n-only")) {
+/* n-only or n2-only */
+	} else if (!strcmp(value, "n-only") || !strcmp(value, "n2-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
 		nvram_nset("2", "%s_nmode", prefix);
@@ -1807,11 +1807,20 @@ void convert_wl_gmode(char *value, char *prefix)
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
 		nvram_nset("2", "%s_nband", prefix);
-/* na-only */
-	} else if (!strcmp(value, "na-only")) {
+/* n5-only */
+	} else if (!strcmp(value, "n5-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("2", "%s_nmode", prefix);
 		nvram_nset("1", "%s_nreqd", prefix);
+		nvram_nset("off", "%s_afterburner", prefix);	// From
+		// 3.61.13.0
+		nvram_nset("n", "%s_phytype", prefix);
+		nvram_nset("1", "%s_nband", prefix);
+/* na-mixed */
+	} else if (!strcmp(value, "na-only")) {
+		nvram_nset(value, "%s_net_mode", prefix);
+		nvram_nset("2", "%s_nmode", prefix);
+		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);	// From
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
