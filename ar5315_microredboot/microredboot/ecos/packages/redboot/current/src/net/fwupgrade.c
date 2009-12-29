@@ -24,6 +24,7 @@ extern void fis_update_directory(void);
 #define TRACE
 
 #define TRX_MAGIC	0x30524448	/* "HDR0" */
+#define TRX_MAGIC_BOOT	0x30524449	/* "HDR0" */
 #define TRX_VERSION	1
 #define TRX_MAX_LEN	0x8A0000
 #define TRX_NO_HEADER	1	/* Do not write TRX header */
@@ -88,10 +89,12 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 	trx.magic = STORE32_LE(&trx.magic);
 	trx.len = STORE32_LE(&trx.len);
 	trx.crc32 = STORE32_LE(&trx.crc32);
-	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
+	if (trx.magic != TRX_MAGIC && trx.magic != TRX_MAGIC_BOOT || trx.len < sizeof(struct trx_header)) {
 		diag_printf("DD-WRT_FW: Bad trx header\n");
 		return -1;
 	}
+	if (trx.magic == TRX_MAGIC_BOOT)
+	    diag_printf("DD-WRT_FW: Bootloader update\n");
 //if (STORE32_LE(&trx.flag_version) & TRX_NO_HEADER)
 	trx.len -= sizeof(struct trx_header);
 
@@ -120,7 +123,10 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 		struct fis_image_desc *img = NULL;
 		int i, stat;
 		img = fis_lookup("RedBoot", &i);
-		unsigned int flash_addr = img->flash_base + img->size;
+		unsigned int flash_addr	= img->flash_base;
+		if (trx.magic == TRX_MAGIC)
+			flash_addr += img->size;
+		    
 		diag_printf("DD-WRT_FW: flash base is 0x%08X\n", flash_addr);
 
 		if ((stat = flash_erase((void *)flash_addr, trx.len,
@@ -146,9 +152,11 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 			     err_addr, flash_errmsg(stat));
 			return -1;
 		}
-		addPartition("linux", flash_addr, 0x80041000, 0x80041000,
-			     trx.len, trx.len);
-		fis_update_directory();
+		if (trx.magic == TRX_MAGIC)
+		{
+		    addPartition("linux", flash_addr, 0x80041000, 0x80041000,trx.len, trx.len);
+		    fis_update_directory();
+		}
 		diag_printf("DD-WRT_FW: flashing done\n");
 	}
 	return 0;
