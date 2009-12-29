@@ -1743,12 +1743,15 @@ void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 
 void convert_wl_gmode(char *value, char *prefix)
 {
+/* disabled */
 	if (!strcmp(value, "disabled")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("-1", "%s_gmode", prefix);
 		nvram_nset("-1", "%s_nmode", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("2", "%s_nband", prefix);
+		if (!nvram_nmatch("1", "%s_nband", prefix) && !nvram_nmatch("2", "%s_nband", prefix))
+			nvram_nset("2", "%s_nband", prefix);
+/* mixed */
 	} else if (!strcmp(value, "mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
@@ -1761,6 +1764,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("0", "%s_nreqd", prefix);
 		if (!nvram_nmatch("1", "%s_nband", prefix) && !nvram_nmatch("2", "%s_nband", prefix))
 			nvram_nset("2", "%s_nband", prefix);
+/* bg-mixed */
 	} else if (!strcmp(value, "bg-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
@@ -1772,6 +1776,7 @@ void convert_wl_gmode(char *value, char *prefix)
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
+/* g-only */
 	} else if (!strcmp(value, "g-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("0", "%s_nmode", prefix);
@@ -1779,8 +1784,8 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
-
 		nvram_nset("2", "%s_nband", prefix);
+/* b-only */
 	} else if (!strcmp(value, "b-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("0", "%s_gmode", prefix);
@@ -1792,6 +1797,7 @@ void convert_wl_gmode(char *value, char *prefix)
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
+/* n-only */
 	} else if (!strcmp(value, "n-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
@@ -1801,6 +1807,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
 		nvram_nset("2", "%s_nband", prefix);
+/* na-only */
 	} else if (!strcmp(value, "na-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("2", "%s_nmode", prefix);
@@ -1809,6 +1816,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
 		nvram_nset("1", "%s_nband", prefix);
+/* a-only */
 	} else if (!strcmp(value, "a-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("0", "%s_nmode", prefix);
