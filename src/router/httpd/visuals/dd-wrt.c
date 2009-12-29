@@ -2431,10 +2431,6 @@ showDynOption(webs_t wp, char *propname, char *nvname, char *options[],
 static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 {
 	char wl_mode[16];
-#ifdef HAVE_MADWIFI_MIMO
-	int count;
-	sscanf(prefix, "ath%d", &count);
-#endif
 
 	sprintf(wl_mode, "%s_mode", prefix);
 	char wl_net_mode[16];
@@ -2472,7 +2468,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char fr[32];
 
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count))
+	if (is_ar5008(prefix))
 	{
 		chan = list_channels_11n(prefix);
 		if (chan == NULL)
@@ -2894,8 +2890,6 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 static void show_netmode(webs_t wp, char *prefix)
 {
 	char wl_net_mode[16];
-	int count;
-	sscanf(prefix, "ath%d", &count);
 
 	sprintf(wl_net_mode, "%s_net_mode", prefix);
 
@@ -2912,11 +2906,8 @@ static void show_netmode(webs_t wp, char *prefix)
 		  "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
 		  nvram_match(wl_net_mode,
 			      "mixed") ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_MADWIFI
-	if (has_mimo(prefix) && has_2ghz(count))
-#else
-	if (has_mimo(prefix) && !nvram_nmatch("a", "%s_bandlist", prefix))
-#endif
+
+	if (has_mimo(prefix) && has_2ghz(prefix))
 	{
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
@@ -2930,12 +2921,8 @@ static void show_netmode(webs_t wp, char *prefix)
 #ifdef HAVE_TW6600
 		if (!strcmp(prefix, "ath1"))
 #endif
-#ifndef HAVE_MADWIFI
-			if (!nvram_nmatch("a", "%s_bandlist", prefix))
-#else
-	if (has_2ghz(count))
-#endif
 
+	if (has_2ghz(prefix))
 			{
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
@@ -2944,7 +2931,7 @@ static void show_netmode(webs_t wp, char *prefix)
 					  "selected=\\\"selected\\\"" : "");
 			}
 #ifdef HAVE_MADWIFI
-	if (has_2ghz(count))
+	if (has_2ghz(prefix))
 	{
 	
 #ifdef HAVE_WHRAG108
@@ -2977,11 +2964,8 @@ static void show_netmode(webs_t wp, char *prefix)
 	if (!strcmp(prefix, "ath1"))
 #endif
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
-#ifndef HAVE_MADWIFI
-		if (!nvram_nmatch("a", "%s_bandlist", prefix))
-#else
-	if (has_2ghz(count))
-#endif
+
+	if (has_2ghz(prefix))
 		{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
@@ -2991,42 +2975,43 @@ static void show_netmode(webs_t wp, char *prefix)
 		}
 #endif
 #endif
-	if (has_mimo(prefix) && !nvram_nmatch("a", "%s_bandlist", prefix)) {
+	if (has_mimo(prefix)) {
+		if (has_5ghz(prefix)) {
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
+			  nvram_match(wl_net_mode,
+				      "n2-only") ? "selected=\\\"selected\\\"" :
+			  "");
+		}
+		else {
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
 			  nvram_match(wl_net_mode,
 				      "n-only") ? "selected=\\\"selected\\\"" :
 			  "");
+		}			
 	}
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifndef HAVE_MADWIFI
 
-	if (nvram_nmatch("ga", "%s_phytypes", prefix)
-	    || nvram_nmatch("a", "%s_phytypes", prefix))
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
-			  nvram_match(wl_net_mode,
-				      "a-only") ? "selected=\\\"selected\\\"" :
-			  "");
-
-	if (has_mimo(prefix)) {
-		char band[64];
-
-		sprintf(band, "%s_bandlist", prefix);
-		char *b = nvram_safe_get(band);
-
-		if (contains(b, 'a')) {
+	if (has_5ghz(prefix)) {
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
 				  nvram_match(wl_net_mode,
 					      "a-only") ?
 				  "selected=\\\"selected\\\"" : "");
+	}
+	if (has_mimo(prefix) && has_5ghz(prefix)) {
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
 				  nvram_match(wl_net_mode,
 					      "na-only") ?
 				  "selected=\\\"selected\\\"" : "");
-		}
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
+				  nvram_match(wl_net_mode,
+					      "n5-only") ?
+				  "selected=\\\"selected\\\"" : "");
 	}
 #else
 #if HAVE_WHRAG108
@@ -3035,7 +3020,7 @@ static void show_netmode(webs_t wp, char *prefix)
 #ifdef HAVE_TW6600
 		if (!strcmp(prefix, "ath0"))
 #endif
-		if (has_5ghz(count))	{		
+		if (has_5ghz(prefix))	{		
 		websWrite(wp,
 				  "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
 				  nvram_match(wl_net_mode,
@@ -3046,8 +3031,8 @@ static void show_netmode(webs_t wp, char *prefix)
 
 #endif
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count)) {
-			if (has_2ghz(count))
+	if (is_ar5008(prefix)) {
+			if (has_2ghz(prefix))
 			{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
@@ -3060,7 +3045,7 @@ static void show_netmode(webs_t wp, char *prefix)
 					      "n2-only") ?
 				  "selected=\\\"selected\\\"" : "");
 			}
-			if (has_5ghz(count))
+			if (has_5ghz(prefix))
 			{
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
@@ -3600,10 +3585,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_mode[16];
 	char wl_macaddr[16];
 	char wl_ssid[16];
-#ifdef HAVE_MADWIFI_MIMO
-	int count;
-	sscanf(prefix, "ath%d", &count);
-#endif
 
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
@@ -3927,7 +3908,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 
 #ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(count))
+	if (!is_ar5008(prefix))
 #endif
 	{
 	showAutoOption(wp, "wl_basic.intmit", wl_intmit);
@@ -3969,7 +3950,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	show_rates(wp, prefix, 1);
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
 #ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(count))
+	if (!is_ar5008(prefix))
 #endif
 	{
 	showRadio(wp, "wl_basic.extrange", wl_xr);
@@ -3989,7 +3970,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count)) {
+	if (is_ar5008(prefix)) {
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
 		  nvram_match(wl_width,
@@ -4106,7 +4087,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 #else
 #ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(count))
+	if (!is_ar5008(prefix))
 #endif
 	{
 	showRadio(wp, "wl_basic.diversity", wl_diversity);
@@ -4250,7 +4231,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 #endif
 #ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(count))
+	if (!is_ar5008(prefix))
 #endif
 	{
 	sprintf(wmm, "%s_wmm", prefix);
@@ -4346,7 +4327,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 			show_channel(wp, prefix, prefix, 0);
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count) && (nvram_match(wl_width,"40") || nvram_match(wl_width,"2040")))
+	if (is_ar5008(prefix) && (nvram_match(wl_width,"40") || nvram_match(wl_width,"2040")))
 	{
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp,
