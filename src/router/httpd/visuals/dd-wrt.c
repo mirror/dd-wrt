@@ -2604,7 +2604,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				int showit = 1;
 
 				if (nvram_match(wl_net_mode, "a-only")
-				    || nvram_match(wl_net_mode, "na-only")
+				    || nvram_match(wl_net_mode, "na-only") || nvram_match(wl_net_mode, "n5-only")
 				    || (net_is_a && nvram_match(wl_net_mode, "mixed"))) {
 					if (chanlist[i] < 25)
 						showit = 0;
@@ -2613,7 +2613,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						showit = 0;
 				}
 
-				if ((nvram_match(wl_net_mode, "na-only") || (net_is_a && nvram_match(wl_net_mode, "mixed")))
+				if ((nvram_match(wl_net_mode, "na-only") || (net_is_a && nvram_match(wl_net_mode, "mixed"))
+					|| nvram_match(wl_net_mode, "n5-only"))
 				    && nvram_match(wl_nbw, "40")) {
 					showit = 0;
 					j = 0;
@@ -2642,7 +2643,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					}
 				}
 
-				if ((nvram_match(wl_net_mode, "n-only")
+				if ((nvram_match(wl_net_mode, "n-only") || nvram_match(wl_net_mode, "n2-only")
 				     || (!net_is_a && nvram_match(wl_net_mode, "mixed")))
 				    && nvram_match(wl_nbw, "40")) {
 					showit = 0;
