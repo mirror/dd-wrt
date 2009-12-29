@@ -59,6 +59,22 @@ char *getRADev(char *prefix)
 		return prefix;
 }
 
+int has_5ghz(char *prefix)
+{
+	if (strstr(nvram_nget("%s_bandlist", prefix), "a"))
+		return 1;
+
+	return 0;
+}
+
+int has_2ghz(char *prefix)
+{
+	if (strstr(nvram_nget("%s_bandlist", prefix), "b"))
+		return 1;
+
+	return 0;
+}
+
 int getchannels(unsigned int *list, char *ifname)
 {
 	list[0] = 1;
@@ -493,6 +509,22 @@ int getchannels(unsigned int *list, char *ifname)
 #else
 	return count;
 #endif
+}
+
+int has_5ghz(char *prefix)
+{
+	if (strstr(nvram_nget("%s_bandlist", prefix), "a"))
+		return 1;
+
+	return 0;
+}
+
+int has_2ghz(char *prefix)
+{
+	if (strstr(nvram_nget("%s_bandlist", prefix), "b"))
+		return 1;
+
+	return 0;
 }
 
 int wl_getbssid(char *wl, char *mac)
@@ -1254,34 +1286,21 @@ int getAssocMAC(char *ifname, char *mac)
 }
 
 
-int is_wifar5008(char *dev)
+int is_ar5008(char *prefix)
 {
 	char sys[64];
-
-	sprintf(sys, "/proc/sys/dev/%s/mimo", dev);
-	FILE *tmp = fopen(sys, "rb");
-
-	if (tmp == NULL)
-		return 0;
-	fclose(tmp);
-	return 1;
-}
-
-
-int is_ar5008(int devnum)
-{
-	char sys[64];
+	int devnum;
+	sscanf(prefix, "ath%d", &devnum)
 
 	sprintf(sys, "/proc/sys/dev/wifi%d/mimo", devnum);
-	FILE *tmp = fopen(sys, "rb");
-
-	if (tmp == NULL)
-		return 0;
-	fclose(tmp);
-	return 1;
+	
+	if (f_exists(sys))
+		return 1;
+		
+	return 0;
 }
 
-int has_athmask(int devnum,int mask)
+int has_athmask(int devnum, int mask)
 {
 	char sys[64];
 	int modes;
@@ -1300,13 +1319,19 @@ int has_athmask(int devnum,int mask)
 }
 
 
-int has_5ghz(int devnum)
+int has_5ghz(char *prefix)
 {
+	int devnum;
+	sscanf(prefix, "ath%d", &devnum)
+
 	return has_athmask(devnum,0x1);
 }
 
-int has_2ghz(int devnum)
+int has_2ghz(char *prefix)
 {
+	int devnum;
+	sscanf(prefix, "ath%d", &devnum)
+
 	return has_athmask(devnum,0x8);
 }
 
