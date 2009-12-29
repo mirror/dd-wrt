@@ -855,17 +855,6 @@ int check_hw_type(void)
 		return NO_DEFINE_CHIP;
 }
 
-int is_exist(char *filename)
-{
-	FILE *fp;
-
-	if ((fp = fopen(filename, "r"))) {
-		fclose(fp);
-		return 1;
-	}
-	return 0;
-}
-
 int ct_openlog(const char *ident, int option, int facility, char *log_name)
 {
 	int level = atoi(nvram_safe_get(log_name));
