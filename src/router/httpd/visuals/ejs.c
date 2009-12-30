@@ -2413,6 +2413,10 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Capture(wl_basic.na)");
 	if (nvram_match(mode, "ng-only"))
 		websWrite(wp, "Capture(wl_basic.ng)");
+	if (nvram_match(mode, "n2-only"))
+		websWrite(wp, "Capture(wl_basic.n2)");
+	if (nvram_match(mode, "n5-only"))
+		websWrite(wp, "Capture(wl_basic.n5)");
 	websWrite(wp, "</script>&nbsp;\n");
 }
 
