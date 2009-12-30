@@ -2973,6 +2973,13 @@ static void show_netmode(webs_t wp, char *prefix)
 					      "g-only") ?
 				  "selected=\\\"selected\\\"" : "");
 		}
+		if (has_mimo(prefix) && has_2ghz(prefix)) {
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
+				  nvram_match(wl_net_mode,
+					      "ng-only") ?
+				  "selected=\\\"selected\\\"" : "");
+		}
 #endif
 #endif
 	if (has_mimo(prefix)) {
