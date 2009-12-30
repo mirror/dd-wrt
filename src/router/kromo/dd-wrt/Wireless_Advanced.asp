@@ -566,40 +566,40 @@ addEvent(window, "unload", function() {
 											<td align="center"><%% tran("wl_adv.col6"); %%></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row1"); %%><input type="hidden" name="wl_wme_ap_bk" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_bk0" value="<%% nvram_list("wl_wme_ap_bk", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_bk1" value="<%% nvram_list("wl_wme_ap_bk", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_bk2" value="<%% nvram_list("wl_wme_ap_bk", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_bk3" value="<%% nvram_list("wl_wme_ap_bk", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_bk4" value="<%% nvram_list("wl_wme_ap_bk", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_ap_bk5" value="<%% nvram_list("wl_wme_ap_bk", 5); %%>" /><input type="checkbox" name="_wl_wme_ap_bk5" <%% wme_match_op("wl_wme_ap_bk", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_ap_bk5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row1"); %%><input type="hidden" name="%s_wme_ap_bk" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_bk0" value="<%% nvram_list("%s_wme_ap_bk", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_bk1" value="<%% nvram_list("%s_wme_ap_bk", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_bk2" value="<%% nvram_list("%s_wme_ap_bk", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_bk3" value="<%% nvram_list("%s_wme_ap_bk", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_bk4" value="<%% nvram_list("%s_wme_ap_bk", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_ap_bk5" value="<%% nvram_list("%s_wme_ap_bk", 5); %%>" /><input type="checkbox" name="_%s_wme_ap_bk5" <%% wme_match_op("%s_wme_ap_bk", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_ap_bk5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row2"); %%><input type="hidden" name="wl_wme_ap_be" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_be0" value="<%% nvram_list("wl_wme_ap_be", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_be1" value="<%% nvram_list("wl_wme_ap_be", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_be2" value="<%% nvram_list("wl_wme_ap_be", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_be3" value="<%% nvram_list("wl_wme_ap_be", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_be4" value="<%% nvram_list("wl_wme_ap_be", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_ap_be5" value="<%% nvram_list("wl_wme_ap_be", 5); %%>" /><input type="checkbox" name="_wl_wme_ap_be5" <%% wme_match_op("wl_wme_ap_be", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_ap_be5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row2"); %%><input type="hidden" name="%s_wme_ap_be" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_be0" value="<%% nvram_list("%s_wme_ap_be", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_be1" value="<%% nvram_list("%s_wme_ap_be", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_be2" value="<%% nvram_list("%s_wme_ap_be", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_be3" value="<%% nvram_list("%s_wme_ap_be", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_be4" value="<%% nvram_list("%s_wme_ap_be", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_ap_be5" value="<%% nvram_list("%s_wme_ap_be", 5); %%>" /><input type="checkbox" name="_%s_wme_ap_be5" <%% wme_match_op("%s_wme_ap_be", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_ap_be5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row3"); %%><input type="hidden" name="wl_wme_ap_vi" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vi0" value="<%% nvram_list("wl_wme_ap_vi", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vi1" value="<%% nvram_list("wl_wme_ap_vi", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vi2" value="<%% nvram_list("wl_wme_ap_vi", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vi3" value="<%% nvram_list("wl_wme_ap_vi", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vi4" value="<%% nvram_list("wl_wme_ap_vi", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_ap_vi5" value="<%% nvram_list("wl_wme_ap_vi", 5); %%>" /><input type="checkbox" name="_wl_wme_ap_vi5" <%% wme_match_op("wl_wme_ap_vi", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_ap_vi5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row3"); %%><input type="hidden" name="%s_wme_ap_vi" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vi0" value="<%% nvram_list("%s_wme_ap_vi", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vi1" value="<%% nvram_list("%s_wme_ap_vi", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vi2" value="<%% nvram_list("%s_wme_ap_vi", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vi3" value="<%% nvram_list("%s_wme_ap_vi", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vi4" value="<%% nvram_list("%s_wme_ap_vi", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_ap_vi5" value="<%% nvram_list("%s_wme_ap_vi", 5); %%>" /><input type="checkbox" name="_%s_wme_ap_vi5" <%% wme_match_op("%s_wme_ap_vi", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_ap_vi5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row4"); %%><input type="hidden" name="wl_wme_ap_vo" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vo0" value="<%% nvram_list("wl_wme_ap_vo", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vo1" value="<%% nvram_list("wl_wme_ap_vo", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vo2" value="<%% nvram_list("wl_wme_ap_vo", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vo3" value="<%% nvram_list("wl_wme_ap_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_ap_vo4" value="<%% nvram_list("wl_wme_ap_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_ap_vo5" value="<%% nvram_list("wl_wme_ap_vo", 5); %%>" /><input type="checkbox" name="_wl_wme_ap_vo5" <%% wme_match_op("wl_wme_ap_vo", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_ap_vo5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row4"); %%><input type="hidden" name="%s_wme_ap_vo" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vo0" value="<%% nvram_list("%s_wme_ap_vo", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vo1" value="<%% nvram_list("%s_wme_ap_vo", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vo2" value="<%% nvram_list("%s_wme_ap_vo", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vo3" value="<%% nvram_list("%s_wme_ap_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_ap_vo4" value="<%% nvram_list("%s_wme_ap_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_ap_vo5" value="<%% nvram_list("%s_wme_ap_vo", 5); %%>" /><input type="checkbox" name="_%s_wme_ap_vo5" <%% wme_match_op("%s_wme_ap_vo", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_ap_vo5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 									</table>
 									<table cellspacing="5" summary="edca sta parameters">
@@ -616,40 +616,40 @@ addEvent(window, "unload", function() {
 											<td align="center"><%% tran("wl_adv.col6"); %%></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row1"); %%><input type="hidden" name="wl_wme_sta_bk" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_bk0" value="<%% nvram_list("wl_wme_sta_bk", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_bk1" value="<%% nvram_list("wl_wme_sta_bk", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_bk2" value="<%% nvram_list("wl_wme_sta_bk", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_bk3" value="<%% nvram_list("wl_wme_sta_bk", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_bk4" value="<%% nvram_list("wl_wme_sta_bk", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_sta_bk5" value="<%% nvram_list("wl_wme_sta_bk", 5); %%>" /><input type="checkbox" name="_wl_wme_sta_bk5" <%% wme_match_op("wl_wme_sta_bk", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_sta_bk5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row1"); %%><input type="hidden" name="%s_wme_sta_bk" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_bk0" value="<%% nvram_list("%s_wme_sta_bk", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_bk1" value="<%% nvram_list("%s_wme_sta_bk", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_bk2" value="<%% nvram_list("%s_wme_sta_bk", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_bk3" value="<%% nvram_list("%s_wme_sta_bk", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_bk4" value="<%% nvram_list("%s_wme_sta_bk", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_sta_bk5" value="<%% nvram_list("%s_wme_sta_bk", 5); %%>" /><input type="checkbox" name="_%s_wme_sta_bk5" <%% wme_match_op("%s_wme_sta_bk", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_sta_bk5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row2"); %%><input type="hidden" name="wl_wme_sta_be" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_be0" value="<%% nvram_list("wl_wme_sta_be", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_be1" value="<%% nvram_list("wl_wme_sta_be", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_be2" value="<%% nvram_list("wl_wme_sta_be", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_be3" value="<%% nvram_list("wl_wme_sta_be", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_be4" value="<%% nvram_list("wl_wme_sta_be", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_sta_be5" value="<%% nvram_list("wl_wme_sta_be", 5); %%>" /><input type="checkbox" name="_wl_wme_sta_be5" <%% wme_match_op("wl_wme_sta_be", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_sta_be5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row2"); %%><input type="hidden" name="%s_wme_sta_be" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_be0" value="<%% nvram_list("%s_wme_sta_be", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_be1" value="<%% nvram_list("%s_wme_sta_be", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_be2" value="<%% nvram_list("%s_wme_sta_be", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_be3" value="<%% nvram_list("%s_wme_sta_be", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_be4" value="<%% nvram_list("%s_wme_sta_be", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_sta_be5" value="<%% nvram_list("%s_wme_sta_be", 5); %%>" /><input type="checkbox" name="_%s_wme_sta_be5" <%% wme_match_op("%s_wme_sta_be", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_sta_be5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row3"); %%><input type="hidden" name="wl_wme_sta_vi" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vi0" value="<%% nvram_list("wl_wme_sta_vi", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vi1" value="<%% nvram_list("wl_wme_sta_vi", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vi2" value="<%% nvram_list("wl_wme_sta_vi", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vi3" value="<%% nvram_list("wl_wme_sta_vi", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vi4" value="<%% nvram_list("wl_wme_sta_vi", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_sta_vi5" value="<%% nvram_list("wl_wme_sta_vi", 5); %%>" /><input type="checkbox" name="_wl_wme_sta_vi5" <%% wme_match_op("wl_wme_sta_vi", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_sta_vi5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row3"); %%><input type="hidden" name="%s_wme_sta_vi" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vi0" value="<%% nvram_list("%s_wme_sta_vi", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vi1" value="<%% nvram_list("%s_wme_sta_vi", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vi2" value="<%% nvram_list("%s_wme_sta_vi", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vi3" value="<%% nvram_list("%s_wme_sta_vi", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vi4" value="<%% nvram_list("%s_wme_sta_vi", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_sta_vi5" value="<%% nvram_list("%s_wme_sta_vi", 5); %%>" /><input type="checkbox" name="_%s_wme_sta_vi5" <%% wme_match_op("%s_wme_sta_vi", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_sta_vi5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row4"); %%><input type="hidden" name="wl_wme_sta_vo" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vo0" value="<%% nvram_list("wl_wme_sta_vo", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vo1" value="<%% nvram_list("wl_wme_sta_vo", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vo2" value="<%% nvram_list("wl_wme_sta_vo", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vo3" value="<%% nvram_list("wl_wme_sta_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_sta_vo4" value="<%% nvram_list("wl_wme_sta_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-											<td align="center"><input type="hidden" name="wl_wme_sta_vo5" value="<%% nvram_list("wl_wme_sta_vo", 5); %%>" /><input type="checkbox" name="_wl_wme_sta_vo5" <%% wme_match_op("wl_wme_sta_vo", "on", "checked='checked'"); %%> onchange="this.form.wl_wme_sta_vo5.value = (this.checked ? 'on' : 'off');" /></td>
+											<td><%% tran("wl_adv.row4"); %%><input type="hidden" name="%s_wme_sta_vo" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vo0" value="<%% nvram_list("%s_wme_sta_vo", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vo1" value="<%% nvram_list("%s_wme_sta_vo", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vo2" value="<%% nvram_list("%s_wme_sta_vo", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vo3" value="<%% nvram_list("%s_wme_sta_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_sta_vo4" value="<%% nvram_list("%s_wme_sta_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="%s_wme_sta_vo5" value="<%% nvram_list("%s_wme_sta_vo", 5); %%>" /><input type="checkbox" name="_%s_wme_sta_vo5" <%% wme_match_op("%s_wme_sta_vo", "on", "checked='checked'"); %%> onchange="this.form.%s_wme_sta_vo5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 									</table>
 									<table class="table center" cellspacing="5" summary="WMM Tx retry limits">
@@ -665,36 +665,36 @@ addEvent(window, "unload", function() {
 											<td align="center"><%% tran("wl_adv.txpcol5"); %%></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row1"); %%><input type="hidden" name="wl_wme_txp_bk" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_bk0" value="<%% nvram_list("wl_wme_txp_bk", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_bk1" value="<%% nvram_list("wl_wme_txp_bk", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_bk2" value="<%% nvram_list("wl_wme_txp_bk", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_bk3" value="<%% nvram_list("wl_wme_txp_bk", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_bk4" value="<%% nvram_list("wl_wme_txp_bk", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td><%% tran("wl_adv.row1"); %%><input type="hidden" name="%s_wme_txp_bk" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_bk0" value="<%% nvram_list("%s_wme_txp_bk", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_bk1" value="<%% nvram_list("%s_wme_txp_bk", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_bk2" value="<%% nvram_list("%s_wme_txp_bk", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_bk3" value="<%% nvram_list("%s_wme_txp_bk", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_bk4" value="<%% nvram_list("%s_wme_txp_bk", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row2"); %%><input type="hidden" name="wl_wme_txp_be" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_be0" value="<%% nvram_list("wl_wme_txp_be", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_be1" value="<%% nvram_list("wl_wme_txp_be", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_be2" value="<%% nvram_list("wl_wme_txp_be", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_be3" value="<%% nvram_list("wl_wme_txp_be", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_be4" value="<%% nvram_list("wl_wme_txp_be", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td><%% tran("wl_adv.row2"); %%><input type="hidden" name="%s_wme_txp_be" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_be0" value="<%% nvram_list("%s_wme_txp_be", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_be1" value="<%% nvram_list("%s_wme_txp_be", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_be2" value="<%% nvram_list("%s_wme_txp_be", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_be3" value="<%% nvram_list("%s_wme_txp_be", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_be4" value="<%% nvram_list("%s_wme_txp_be", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row3"); %%><input type="hidden" name="wl_wme_txp_vi" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vi0" value="<%% nvram_list("wl_wme_txp_vi", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vi1" value="<%% nvram_list("wl_wme_txp_vi", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vi2" value="<%% nvram_list("wl_wme_txp_vi", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vi3" value="<%% nvram_list("wl_wme_txp_vi", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vi4" value="<%% nvram_list("wl_wme_txp_vi", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td><%% tran("wl_adv.row3"); %%><input type="hidden" name="%s_wme_txp_vi" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vi0" value="<%% nvram_list("%s_wme_txp_vi", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vi1" value="<%% nvram_list("%s_wme_txp_vi", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vi2" value="<%% nvram_list("%s_wme_txp_vi", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vi3" value="<%% nvram_list("%s_wme_txp_vi", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vi4" value="<%% nvram_list("%s_wme_txp_vi", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
 										</tr>
 										<tr>
-											<td><%% tran("wl_adv.row4"); %%><input type="hidden" name="wl_wme_txp_vo" value="5" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vo0" value="<%% nvram_list("wl_wme_txp_vo", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vo1" value="<%% nvram_list("wl_wme_txp_vo", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vo2" value="<%% nvram_list("wl_wme_txp_vo", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vo3" value="<%% nvram_list("wl_wme_txp_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="wl_wme_txp_vo4" value="<%% nvram_list("wl_wme_txp_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td><%% tran("wl_adv.row4"); %%><input type="hidden" name="%s_wme_txp_vo" value="5" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vo0" value="<%% nvram_list("%s_wme_txp_vo", 0); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol1)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vo1" value="<%% nvram_list("%s_wme_txp_vo", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vo2" value="<%% nvram_list("%s_wme_txp_vo", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vo3" value="<%% nvram_list("%s_wme_txp_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vo4" value="<%% nvram_list("%s_wme_txp_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
 										</tr>
 									</table>
 								</div>
