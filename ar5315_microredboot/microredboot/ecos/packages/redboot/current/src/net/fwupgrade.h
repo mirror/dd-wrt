@@ -11,6 +11,7 @@ extern int fw_check_image_wili(unsigned char *addr, unsigned long maxlen,
 			       int do_flash);
 extern int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 				int do_flash);
+extern int erase_and_flash(char *fwname, void *flash_addr, void *base, int maxlen);
 
 #define MAX_IMAGE_SIZE		0x7E0000	/* 4mb - 64k */
 

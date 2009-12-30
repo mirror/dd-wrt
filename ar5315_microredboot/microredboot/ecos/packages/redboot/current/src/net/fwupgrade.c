@@ -7,7 +7,7 @@ firmware upgrade code for DD-WRT webflash images
 #include <fis.h>
 #include <flash_config.h>
 #include "fwupgrade.h"
-
+//#include "pc1crypt.c"
 /* some variables from flash.c */
 extern void *flash_start, *flash_end;
 extern int flash_block_size, flash_num_blocks;
@@ -20,6 +20,37 @@ extern int fisdir_size;		// Size of FIS directory.
 extern void fis_update_directory(void);
 
 //#define TRACE diag_printf("DBG: %s:%d\n", __FUNCTION__, __LINE__)
+
+
+int erase_and_flash(char *fwname, void *flash_addr, void *base, int maxlen)
+{
+
+		void *err_addr;
+		int stat;
+		if ((stat =
+		     flash_erase((void *)flash_addr, maxlen,
+				 (void **)&err_addr)) != 0) {
+			diag_printf("%s: Can't erase region at %p: %s\n",fwname,
+				    err_addr, flash_errmsg(stat));
+			_sleep(1000);
+			if ((stat = flash_erase((void *)flash_addr, maxlen,
+						(void **)&err_addr)) != 0) {
+				diag_printf
+				    ("%s: Can't erase region at %p: %s\n",fwname,
+				     err_addr, flash_errmsg(stat));
+				return -1;
+			}
+		}
+		if ((stat =
+		     flash_program((void *)flash_addr,
+				   (void *)(base),
+				   maxlen, (void **)&err_addr)) != 0) {
+			diag_printf
+			    ("%s: Can't program region at %p: %s\n",fwname,
+			     err_addr, flash_errmsg(stat));
+			return -1;
+		}
+}
 
 #define TRACE
 
@@ -85,16 +116,21 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 {
 	struct trx_header *base = (struct trx_header *)addr;
 	struct trx_header trx;
+//	struct pc1_ctx pc1;
 	memcpy(&trx, base, sizeof(trx));
 	trx.magic = STORE32_LE(&trx.magic);
 	trx.len = STORE32_LE(&trx.len);
 	trx.crc32 = STORE32_LE(&trx.crc32);
-	if (trx.magic != TRX_MAGIC && trx.magic != TRX_MAGIC_BOOT || trx.len < sizeof(struct trx_header)) {
+	if ((trx.magic != TRX_MAGIC && trx.magic != TRX_MAGIC_BOOT) || trx.len < sizeof(struct trx_header)) {
 		diag_printf("DD-WRT_FW: Bad trx header\n");
 		return -1;
 	}
-	if (trx.magic == TRX_MAGIC_BOOT)
-	    diag_printf("DD-WRT_FW: Bootloader update\n");
+/*	if (trx.magic == TRX_MAGIC_BOOT)
+	    {
+	    pc1_init(&pc1);
+	    pc1_decrypt_buf(&pc1, addr + sizeof(struct trx_header), trx.len); // decrypt before crc check is done
+	    pc1_finish(&pc1);
+	    }*/
 //if (STORE32_LE(&trx.flag_version) & TRX_NO_HEADER)
 	trx.len -= sizeof(struct trx_header);
 
@@ -115,6 +151,10 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 		return -1;
 	}
 	if (do_flash) {
+	if (trx.magic == TRX_MAGIC_BOOT)
+	    {
+	    diag_printf("DD-WRT_FW: Performing Bootloader upgrade\n");
+	    }
 		char *arg[] = { "fis", "init" };
 		fis_init(2, arg, 1);
 		void *err_addr;
@@ -128,30 +168,7 @@ int fw_check_image_ddwrt(unsigned char *addr, unsigned long maxlen,
 			flash_addr += img->size;
 		    
 		diag_printf("DD-WRT_FW: flash base is 0x%08X\n", flash_addr);
-
-		if ((stat = flash_erase((void *)flash_addr, trx.len,
-					(void **)&err_addr)) != 0) {
-			diag_printf
-			    ("DD-WRT_FW: Can't erase region at %p: %s\ntry a second time after 1 second\n",
-			     err_addr, flash_errmsg(stat));
-			_sleep(1000);
-			if ((stat = flash_erase((void *)flash_addr, trx.len,
-						(void **)&err_addr)) != 0) {
-				diag_printf
-				    ("DD-WRT_FW: Can't erase region at %p: %s\n",
-				     err_addr, flash_errmsg(stat));
-				return -1;
-			}
-		}
-		if ((stat =
-		     flash_program((void *)flash_addr,
-				   (void *)(addr + sizeof(struct trx_header)),
-				   trx.len, (void **)&err_addr)) != 0) {
-			diag_printf
-			    ("DD-WRT_FW: Can't program region at %p: %s\n",
-			     err_addr, flash_errmsg(stat));
-			return -1;
-		}
+		stat = erase_and_flash("DD-WRT_FW",flash_addr,(void *)(addr + sizeof(struct trx_header)),trx.len);
 		if (trx.magic == TRX_MAGIC)
 		{
 		    addPartition("linux", flash_addr, 0x80041000, 0x80041000,trx.len, trx.len);
