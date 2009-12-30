@@ -664,6 +664,29 @@ void copytonv2(webs_t wp, char *prefix_get, char *prefix_set, char *name)
 		nvram_set(tmpname, wl);
 }
 
+void copytonv2_wme (webs_t wp, char *prefix_get, char *prefix_set, char *name, int maxindex)
+{
+	char tmpvalue[128]="";
+	char tmpname[64];
+	char *next;
+	char *wl;
+	int i;
+	
+	for(i = 0; i <= maxindex; i++) {
+		sprintf(tmpname, "%s_%s%d", prefix_get, name, i);
+		wl = websGetVar(wp, tmpname, NULL);	
+		if (wl) {
+			strcat(tmpvalue, wl);
+			strcat(tmpvalue, " ");
+		}
+	}
+
+	sprintf(tmpname, "%s_%s", prefix_set, name);
+	strtrim_right(tmpvalue, ' ');
+	nvram_set(tmpname, tmpvalue);
+}
+
+
 extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr);
 
 static void save_secprefix(webs_t wp, char *prefix)
@@ -1076,18 +1099,18 @@ void save_wireless_advanced(webs_t wp)
 	copytonv2(wp, prefix, set_prefix, "btc_mode");
 	copytonv2(wp, prefix, set_prefix, "wme");
 	copytonv2(wp, prefix, set_prefix, "wme_no_ack");
-//    copytonv2( wp, prefix, set_prefix, "wme_ap_bk" );
-//    copytonv2( wp, prefix, set_prefix, "wme_ap_be" );
-//    copytonv2( wp, prefix, set_prefix, "wme_ap_vi" );
-//    copytonv2( wp, prefix, set_prefix, "wme_ap_vo" );
-//    copytonv2( wp, prefix, set_prefix, "wme_sta_bk" );
-//    copytonv2( wp, prefix, set_prefix, "wme_sta_be" );
-//    copytonv2( wp, prefix, set_prefix, "wme_sta_vi" );
-//    copytonv2( wp, prefix, set_prefix, "wme_sta_vo" );
-//    copytonv2( wp, prefix, set_prefix, "wme_txp_bk" );
-//    copytonv2( wp, prefix, set_prefix, "wme_txp_be" );
-//    copytonv2( wp, prefix, set_prefix, "wme_txp_vi" );
-//    copytonv2( wp, prefix, set_prefix, "wme_txp_vo" );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_bk", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_be", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_vi", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_vo", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_bk", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_be", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_vi", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_vo", 5 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_bk", 4 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_be", 4 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_vi", 4 );
+    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_vo", 4 );
 
 	return;
 
