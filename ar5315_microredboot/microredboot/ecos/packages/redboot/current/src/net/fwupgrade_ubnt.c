@@ -184,34 +184,9 @@ int fw_check_image_ubnt(unsigned char *addr, unsigned long maxlen, int do_flash)
 			}
 #endif
 			base |= CYGNUM_FLASH_BASE;
-			if ((stat =
-			     flash_erase((void *)base,
-					 ntohl(fwp->header->part_size),
-					 (void **)&err_addr)) != 0) {
-				diag_printf
-				    ("UBNT_FW: Can't erase region at %p: %s\n",
-				     err_addr, flash_errmsg(stat));
-				_sleep(1000);
-				if ((stat =
-				     flash_erase((void *)base,
-						 ntohl(fwp->header->part_size),
-						 (void **)&err_addr)) != 0) {
-					diag_printf
-					    ("UBNT_FW: Can't erase region at %p: %s\n",
-					     err_addr, flash_errmsg(stat));
-					return -1;
-				}
-			}
-			if ((stat =
-			     flash_program((void *)base,
-					   (void *)fwp->data,
-					   ntohl(fwp->data_size),
-					   (void **)&err_addr)) != 0) {
-				diag_printf
-				    ("UBNT_FW: Can't program region at %p: %s\n",
-				     err_addr, flash_errmsg(stat));
-				return -1;
-			}
+
+			stat = erase_and_flash("UBNT_FW",base,(void *)(void *)fwp->data,ntohl(fwp->header->part_size));
+
 			addPartition(fwp->header->name, base,
 				     ntohl(fwp->header->memaddr),
 				     ntohl(fwp->header->entryaddr),

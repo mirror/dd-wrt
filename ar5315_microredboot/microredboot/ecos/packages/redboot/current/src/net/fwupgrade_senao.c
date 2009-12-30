@@ -51,29 +51,9 @@ int fw_check_image_senao(unsigned char *addr, unsigned long maxlen,
 		int i, stat;
 		img = fis_lookup("RedBoot", &i);
 		unsigned int flash_addr = img->flash_base + img->size;
-		if ((stat =
-		     flash_erase((void *)flash_addr, maxlen,
-				 (void **)&err_addr)) != 0) {
-			diag_printf("SENAO_FW: Can't erase region at %p: %s\n",
-				    err_addr, flash_errmsg(stat));
-			_sleep(1000);
-			if ((stat = flash_erase((void *)flash_addr, maxlen,
-						(void **)&err_addr)) != 0) {
-				diag_printf
-				    ("SENAO_FW: Can't erase region at %p: %s\n",
-				     err_addr, flash_errmsg(stat));
-				return -1;
-			}
-		}
-		if ((stat =
-		     flash_program((void *)flash_addr,
-				   (void *)(base),
-				   maxlen, (void **)&err_addr)) != 0) {
-			diag_printf
-			    ("SENAO_FW: Can't program region at %p: %s\n",
-			     err_addr, flash_errmsg(stat));
-			return -1;
-		}
+
+		stat = erase_and_flash("SENAO_FW",flash_addr,(void *)base,maxlen);
+
 		img = (struct fis_image_desc *)fis_work_block;
 		for (i = 0; i < fisdir_size / sizeof(*img); i++, img++) {
 			if (img->name[0] == (unsigned char)0xFF) {
