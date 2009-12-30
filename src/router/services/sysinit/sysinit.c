@@ -1584,7 +1584,19 @@ void start_restore_defaults(void)
 	
 	if (restore_defaults && brand == ROUTER_ASUS_RTN16) {
 		nvram_set("wl0_txpwr", "17");
-	}	
+	}
+	if (restore_defaults && brand == ROUTER_ASUS_RTN12) {
+		nvram_set("wl0_txpwr", "17");
+	}
+#ifndef HAVE_BUFFALO
+	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S
+		&& nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
+		nvram_set("wl0_txpwr", "28");
+	}
+#endif
+	if (restore_defaults && brand == ROUTER_BUFFALO_WLI_TX4_G54HP) {
+		nvram_set("wl0_txpwr", "28");
+	}
 	
 	/*
 	 * Always set OS defaults 
