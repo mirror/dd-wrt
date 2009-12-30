@@ -93,7 +93,7 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 			 * Don't show pseudo interface 
 			 */
 			if (!strncmp(line, "ppp", 3)) {
-				if (!f_exist("/tmp/ppp/link"))
+				if (!f_exists("/tmp/ppp/link"))
 					debug = 1;
 			}
 			char *ifname = line;
