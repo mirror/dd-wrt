@@ -78,16 +78,16 @@ static void deconfigure_single(int count)
 	char dev[16];
 	char var[80];
 	char wifivifs[16];
+	sprintf(wifivifs, "ath%d_vifs", count);
+	sprintf(dev, "ath%d", count);
+	char vifs[128];
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count)) {
+	if (is_ar5008(dev)) {
 		deconfigure_single_11n(count);
 		return;
 	}
 #endif
 
-	sprintf(wifivifs, "ath%d_vifs", count);
-	sprintf(dev, "ath%d", count);
-	char vifs[128];
 
 	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
 		dev, dev, dev, dev, dev, dev, dev);
@@ -677,7 +677,7 @@ void start_hostapdwan(void)
 		if (nvram_nmatch("ap", "%s_mode", ath)
 		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
 #ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(i))
+			if (is_ar5008(ath))
 				setupHostAP(ath, "wext", 1);
 			else
 #endif
@@ -688,7 +688,7 @@ void start_hostapdwan(void)
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
 #ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(i))
+			if (is_ar5008(ath))
 				setupHostAP(var, "wext", 1);
 			else
 #endif
@@ -968,12 +968,6 @@ void setMacFilter(char *iface)
 static void configure_single(int count)
 {
 
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(count)) {
-		configure_single_11n(count);
-		return;
-	}
-#endif
 	char *next;
 	static char var[80];
 	static char mode[80];
@@ -1002,6 +996,12 @@ static void configure_single(int count)
 
 	sprintf(wif, "wifi%d", count);
 	sprintf(dev, "ath%d", count);
+#ifdef HAVE_MADWIFI_MIMO
+	if (is_ar5008(dev)) {
+		configure_single_11n(count);
+		return;
+	}
+#endif
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(wl, "ath%d_mode", count);
 #ifdef HAVE_REGISTER
