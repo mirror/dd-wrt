@@ -4274,6 +4274,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 		if (has_mimo(prefix)
 		    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("ng-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
 			|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
