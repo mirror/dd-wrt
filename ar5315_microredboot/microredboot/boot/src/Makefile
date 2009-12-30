@@ -115,6 +115,9 @@ arch/head-ar531x.o: arch/head-ar531x.S include/linux/autoconf.h
 arch/head-ar5315.o: arch/head-ar5315.S include/linux/autoconf.h
 		$(CC) $(AFLAGS) -Iinclude -c arch/head-ar5315.S -o arch/head-ar5315.o
 
+arch/head-ar7100.o: arch/head-ar7100.S include/linux/autoconf.h
+		$(CC) $(AFLAGS) -Iinclude -c arch/head-ar7100.S -o arch/head-ar7100.o
+
 payload.o:	$(SYSTEM) __payload.o
 		$(OBJCOPY) -O binary -R .note -R .comment -S $(SYSTEM) payload
 		lzma e -lc1 -lp2 -pb2 payload payload.gz
