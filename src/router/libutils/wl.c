@@ -1285,7 +1285,6 @@ int getAssocMAC(char *ifname, char *mac)
 	return ret;
 }
 
-
 int is_ar5008(char *prefix)
 {
 	char sys[64];
@@ -1293,10 +1292,10 @@ int is_ar5008(char *prefix)
 	sscanf(prefix, "ath%d", &devnum);
 
 	sprintf(sys, "/proc/sys/dev/wifi%d/mimo", devnum);
-	
+
 	if (f_exists(sys))
 		return 1;
-		
+
 	return 0;
 }
 
@@ -1310,21 +1309,20 @@ int has_athmask(int devnum, int mask)
 
 	if (tmp == NULL)
 		return 0;
-	fscanf(tmp,"%d",&modes);
+	fscanf(tmp, "%d", &modes);
 	fclose(tmp);
-	if ((modes&mask) == mask)
-	return 1;
+	if ((modes & mask) == mask)
+		return 1;
 	else
-	return 0;
+		return 0;
 }
-
 
 int has_5ghz(char *prefix)
 {
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
 
-	return has_athmask(devnum,0x1);
+	return has_athmask(devnum, 0x1);
 }
 
 int has_2ghz(char *prefix)
@@ -1332,10 +1330,8 @@ int has_2ghz(char *prefix)
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
 
-	return has_athmask(devnum,0x8);
+	return has_athmask(devnum, 0x8);
 }
-
-
 
 static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 {
