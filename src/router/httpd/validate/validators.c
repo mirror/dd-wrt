@@ -1751,7 +1751,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("0", "%s_nreqd", prefix);
 		if (!nvram_nmatch("1", "%s_nband", prefix) && !nvram_nmatch("2", "%s_nband", prefix))
 			nvram_nset("2", "%s_nband", prefix);
-/* mixed */
+/* bgn-mixed */
 	} else if (!strcmp(value, "mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("1", "%s_gmode", prefix);
@@ -1762,8 +1762,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
-		if (!nvram_nmatch("1", "%s_nband", prefix) && !nvram_nmatch("2", "%s_nband", prefix))
-			nvram_nset("2", "%s_nband", prefix);
+		nvram_nset("2", "%s_nband", prefix);
 /* bg-mixed */
 	} else if (!strcmp(value, "bg-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
@@ -1783,6 +1782,13 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("2", "%s_gmode", prefix);
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
+		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("2", "%s_nband", prefix);
+/* ng-only */
+	} else if (!strcmp(value, "ng-only")) {
+		nvram_nset(value, "%s_net_mode", prefix);
+		nvram_nset("2", "%s_nmode", prefix);
+		nvram_nset("2", "%s_gmode", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
 /* b-only */
