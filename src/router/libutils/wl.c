@@ -1290,7 +1290,7 @@ int is_ar5008(char *prefix)
 {
 	char sys[64];
 	int devnum;
-	sscanf(prefix, "ath%d", &devnum)
+	sscanf(prefix, "ath%d", &devnum);
 
 	sprintf(sys, "/proc/sys/dev/wifi%d/mimo", devnum);
 	
@@ -1322,7 +1322,7 @@ int has_athmask(int devnum, int mask)
 int has_5ghz(char *prefix)
 {
 	int devnum;
-	sscanf(prefix, "ath%d", &devnum)
+	sscanf(prefix, "ath%d", &devnum);
 
 	return has_athmask(devnum,0x1);
 }
@@ -1330,7 +1330,7 @@ int has_5ghz(char *prefix)
 int has_2ghz(char *prefix)
 {
 	int devnum;
-	sscanf(prefix, "ath%d", &devnum)
+	sscanf(prefix, "ath%d", &devnum);
 
 	return has_athmask(devnum,0x8);
 }
