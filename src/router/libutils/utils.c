@@ -1836,6 +1836,13 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT320N");
 		return ROUTER_WRT320N;
 	}
+	
+	if (boardnum == 94703 && nvram_match("boardtype", "0x04c0")
+	    && nvram_match("boardrev", "0x1100")) {
+		cprintf("router Dynex DX-NRUTER\n");
+		setRouter("Dynex DX-NRUTER");
+		return ROUTER_DYNEX_DX_NRUTER;
+	}
 
 	setRouter("Linksys WRT54G/GL/GS");
 	cprintf("router is wrt54g\n");
@@ -2678,6 +2685,7 @@ int led_control(int type, int act)
 	int sec0_gpio = 0x0ff;	// security leds, wrt600n
 	int sec1_gpio = 0x0ff;
 	int v1func = 0;
+	int connblue = nvram_match ("connblue", "1") ? 1 : 0;
 
 	switch (getRouterBrand())	// gpio definitions here: 0xYZ,
 		// Y=0:normal, Y=1:inverted, Z:gpio
@@ -3079,6 +3087,12 @@ int led_control(int type, int act)
 		power_gpio = 0x101;
 		diag_gpio = 0x001;	// power blink
 		break;
+	case ROUTER_DYNEX_DX_NRUTER:
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power blink
+		connected_gpio = 0x100;
+		sec0_gpio = 0x103;
+		break;
 #endif
 	}
 	if (type == LED_DIAG && v1func == 1) {
@@ -3099,7 +3113,7 @@ int led_control(int type, int act)
 		use_gpio = dmz_gpio;
 		break;
 	case LED_CONNECTED:
-		use_gpio = connected_gpio;
+		use_gpio = connblue ? ses2_gpio : connected_gpio;
 		break;
 	case LED_BRIDGE:
 		use_gpio = bridge_gpio;
@@ -3111,7 +3125,7 @@ int led_control(int type, int act)
 		use_gpio = ses_gpio;
 		break;
 	case LED_SES2:
-		use_gpio = ses2_gpio;
+		use_gpio = connblue ? connected_gpio : ses2_gpio;
 		break;
 	case LED_WLAN:
 		use_gpio = wlan_gpio;
