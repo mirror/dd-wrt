@@ -169,12 +169,6 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	part->name = "rootfs";
 	i++;
 	
-	part = &trx_parts[i];
-	part->name = "nvram";
-	part->offset = mtd->size-mtd->erasesize;
-	part->size = mtd->erasesize;
-	
-	trx_nr_parts++;
 
 //	for (i=0;i<3;i++)
 //	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
@@ -184,13 +178,22 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	*/
 	mtd->read(mtd,0xff90-2,32, &retlen, buf);
 	int bootmul=2;
-	if (strcmp(buf,"OSBRiDGE 5XLi")==0)
+	if (strncmp(buf,"OSBRiDGE 5XLi",13)==0)
 	    {
 	    printk(KERN_EMERG "found osbridge 5XLi");
 	    bootmul=1;
-	    trx_parts[0].offset = 0x10000;
-	    trx_parts[0].size = (mtd->size-mtd->erasesize) - trx_parts[0].offset;
+	    trx_parts[0].offset = 0x20000;
+	    trx_parts[0].size = (mtd->size-mtd->size-mtd->erasesize) - trx_parts[0].offset;
 	    }
+
+	part = &trx_parts[i];
+	part->name = "nvram";
+	part->offset = mtd->size-mtd->erasesize;
+	part->size = mtd->erasesize;
+	
+	trx_nr_parts++;
+
+
 	boot.name="boot";
 	boot.offset=0;
 #ifdef CONFIG_ADM5120_COMPEX_WP54G
