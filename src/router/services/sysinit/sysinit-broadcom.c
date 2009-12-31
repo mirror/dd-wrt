@@ -249,6 +249,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_WRT610NV2:
+	case ROUTER_DYNEX_DX_NRUTER:
 
 		break;
 	case ROUTER_WRT600N:
@@ -1076,6 +1077,17 @@ void start_sysinit(void)
 		if (nvram_match("vlan1ports", "4 5u"))
 			nvram_set("vlan1ports", "4 5");
 		break;
+		
+	case ROUTER_DYNEX_DX_NRUTER:
+		nvram_set("lan_ifnames", "vlan0 eth2");
+		nvram_set("wan_ifname", "vlan1");
+		nvram_set("wl0_ifname", "eth2");
+		if (nvram_match("vlan1ports", "\"4 5*\"")) {
+			nvram_set("vlan0ports", "0 1 2 3 5*");
+			nvram_set("vlan1ports", "4 5");
+			need_reboot = 1;
+		}
+		break;	
 
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:	// we must fix cfe defaults
 		// with CR added
