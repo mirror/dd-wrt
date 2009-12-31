@@ -445,6 +445,9 @@
 
 #define ROUTER_BOARD_WHRHPGN 0x911b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 
+// Dynex DX-NRUTER (BCM4703 cpu, 4MB flash / 32MB ram, BCM5325E switch, fccid: Belkin K7SDXNRUTER)
+#define ROUTER_DYNEX_DX_NRUTER 0x9212
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
