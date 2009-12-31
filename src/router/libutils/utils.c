@@ -503,7 +503,8 @@ int internal_getRouterBrand()
 	setRouter("Compex WP54G");
 	return ROUTER_BOARD_WP54G;
 #elif HAVE_ADM5120
-	setRouter("Tonze AP-120");
+	if (!nvram_match("DD_BOARD","OSBRiDGE 5LXi"))
+	    setRouter("Tonze AP-120");
 	return ROUTER_BOARD_ADM5120;
 #elif HAVE_RB500
 	setRouter("Mikrotik RB500");
