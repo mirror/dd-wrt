@@ -2646,6 +2646,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 				if ((nvram_match(wl_net_mode, "n-only")
 				     || nvram_match(wl_net_mode, "n2-only")
+				     || nvram_match(wl_net_mode, "ng-only")
 				     || (!net_is_a
 					 && nvram_match(wl_net_mode, "mixed")))
 				    && nvram_match(wl_nbw, "40")) {
