@@ -3113,7 +3113,7 @@ int led_control(int type, int act)
 		use_gpio = dmz_gpio;
 		break;
 	case LED_CONNECTED:
-		use_gpio = connblue ? ses2_gpio : connected_gpio;
+		use_gpio = connblue ? ses_gpio : connected_gpio;
 		break;
 	case LED_BRIDGE:
 		use_gpio = bridge_gpio;
@@ -3122,10 +3122,10 @@ int led_control(int type, int act)
 		use_gpio = vpn_gpio;
 		break;
 	case LED_SES:
-		use_gpio = ses_gpio;
+		use_gpio = connblue ? connected_gpio : ses_gpio;
 		break;
 	case LED_SES2:
-		use_gpio = connblue ? connected_gpio : ses2_gpio;
+		use_gpio = ses2_gpio;
 		break;
 	case LED_WLAN:
 		use_gpio = wlan_gpio;
