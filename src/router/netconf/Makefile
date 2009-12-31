@@ -13,34 +13,17 @@
 #
 include $(TOP)/.config
 
-ifeq ($(CONFIG_MSSID),y)
-ifeq ($(CONFIG_BCMMODERN),y)
 CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
 CFLAGS += -DLINUX26
-else
-CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
-endif
-else
-CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v23 -I$(LINUXDIR)/include -Wall
-endif
-#CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s $(COPTS) -fPIC
 
-ifeq ($(CONFIG_BCMMODERN),y)
 LDFLAGS = -L. -L$(TOP)/iptables/libiptc/
-else
-LDFLAGS = -L. -L$(TOP)/iptables.linksys/libiptc/
-endif
 
-ifeq ($(CONFIG_MAGICBOX),y)
-CFLAGS += -fpic
-endif
-
-all: libnetconf.so libnetconf.a netconf 
+all: libnetconf.a 
 
 install: all
-	install -D libnetconf.so $(INSTALLDIR)/usr/lib/libnetconf.so
+#	install -D libnetconf.so $(INSTALLDIR)/usr/lib/libnetconf.so
 #$(STRIP) $(INSTALLDIR)/usr/lib/libnetconf.so
+	@true
 
 clean:
 	rm -f *.o *.a *.so netconf
@@ -51,5 +34,5 @@ libnetconf.so: netconf_linux.o
 libnetconf.a: netconf_linux.o
 	 $(AR) arc -o $@ $^
 
-netconf: main.o libnetconf.so
+netconf: main.o libnetconf.a
 	$(CC) -o $@ $< $(LDFLAGS) -lnetconf

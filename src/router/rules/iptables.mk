@@ -1,9 +1,7 @@
 iptables-clean:
-	$(MAKE) -C iptables.linksys clean
 	$(MAKE) -C iptables clean
 
 iptables:
-	$(MAKE) -j 4 -C iptables.linksys clean
 	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
 
 iptables-devel:
