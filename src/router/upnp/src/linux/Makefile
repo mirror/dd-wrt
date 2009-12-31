@@ -73,8 +73,8 @@ SOURCES.OBJ := $(SOURCES)
 SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
 
 TARGET = upnp
-LIBS = -L$(UPNPBASE) -L$(SRCBASE)/router/netconf -L$(TOP)/libutils \
-	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lutils -lnvram -lshared
+LIBS = -L$(UPNPBASE) -L$(SRCBASE)/router/netconf -L$(TOP)/libutils -L$(TOP)/iptables/libiptc \
+	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lutils -lnvram -lshared -liptc
 
 all : $(OBJDIR) $(TARGET)
 
