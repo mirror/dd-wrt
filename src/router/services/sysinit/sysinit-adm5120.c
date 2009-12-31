@@ -272,6 +272,7 @@ void start_sysinit(void)
 			if (strcmp(os, "OSBRiDGE 5XLi") == 0) {
 				foundmac = 1;
 				fprintf(stderr, "found OSBRiDGE 5XLi\n");
+				nvram_set("DD_BOARD","OSBRiDGE 5LXi");
 				fseek(fp, 0xff82, SEEK_SET);
 				fread(os, 12, 1, fp);
 				int i;
