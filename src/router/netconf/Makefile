@@ -14,7 +14,7 @@
 include $(TOP)/.config
 
 CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
-CFLAGS += -DLINUX26
+CFLAGS += $(COPTS) -DLINUX26 -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 LDFLAGS = -L. -L$(TOP)/iptables/libiptc/
 
