@@ -1082,7 +1082,7 @@ void start_sysinit(void)
 		nvram_set("lan_ifnames", "vlan0 eth2");
 		nvram_set("wan_ifname", "vlan1");
 		nvram_set("wl0_ifname", "eth2");
-		nvram set("pci/1/1/ledbh0", "136");
+		nvram_set("pci/1/1/ledbh0", "136");
 		if (nvram_match("vlan1ports", "\"4 5*\"")) {
 			nvram_set("vlan0ports", "3 2 1 0 5*");
 			nvram_set("vlan1ports", "4 5");
