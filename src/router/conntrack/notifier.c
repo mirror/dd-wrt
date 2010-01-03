@@ -38,6 +38,8 @@ typedef struct linkedlist {
 void addEntry(struct linkedlist *list, char *name, char *port, int value)
 {
 	struct linkedlist *first = list;
+	if (nvram_match("wan_ipaddr",name)) // silently ignore the wan ip
+	    return;
 	int p = atoi(port);
 	if (list == NULL)
 		return;
