@@ -94,8 +94,8 @@ void checknas(void)		// for broadcom v24 only
 	if (strlen(buf) != count_processes("nas"))	// restart all nas
 		// processes
 	{
-		eval("stopservice", "nas");
-		eval("startservice_f", "nas");
+		sysprintf("stopservice nas");
+		sysprintf("startservice_f nas");
 	}
 
 	return;
@@ -165,19 +165,19 @@ void checkupgrade(void)
 
 	if (in != NULL) {
 		fclose(in);
-		eval("rm", "/tmp/cron.d/check_ps");	// deleting cron file to
+		system("rm /tmp/cron.d/check_ps");	// deleting cron file to
 		// prevent double call of
 		// this
 		fprintf(stderr,
 			"found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
 		sleep(30);
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
-		eval("write", "/tmp/firmware.bin", "rootfs");
+		system("write /tmp/firmware.bin rootfs");
 #else
-		eval("write", "/tmp/firmware.bin", "linux");
+		system("write /tmp/firmware.bin linux");
 #endif
 		fprintf(stderr, "done. rebooting now\n");
-		eval("killall", "-3", "init");
+		system("killall -3 init");
 	}
 #endif
 }
@@ -209,9 +209,9 @@ int do_mon(void)
 
 			printf("Maybe %s had died, we need to re-exec it\n",
 			       v->name);
-			eval("stopservice", v->name);
+			sysprintf("stopservice %s", v->name);
 			killall(v->name, SIGKILL);
-			eval("startservice_f", v->name);
+			sysprintf("startservice_f %s", v->name);
 		}
 		printf("checking for %s done\n", v->name);
 	}
