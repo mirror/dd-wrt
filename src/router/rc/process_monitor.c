@@ -88,36 +88,36 @@ int main(int argc, char **argv)
 
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && nvram_match("cron_enable", "1")) {
-			eval("stopservice", "cron");
+			sysprintf("stopservice cron");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting cron\n");
-			eval("startservice_f", "cron");
+			sysprintf("startservice_f cron");
 
 		}
 #ifdef HAVE_SNMP
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && nvram_match("snmpd_enable", "1")) {
-			eval("stopservice", "snmp");
+			sysprintf("stopservice snmp");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting snmpd\n");
-			eval("startservice_f", "snmp");
+			sysprintf("startservice_f snmp");
 
 		}
 #endif
 #ifdef HAVE_WIFIDOG		// dirty fix for wifidog
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && nvram_match("wd_enable", "1")) {
-			eval("stopservice", "wifidog");
+			sysprintf("stopservice wifidog");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting Wifidog daemon\n");
-			eval("startservice_f", "wifidog");
+			sysprintf("startservice_f wifidog");
 		}
 #endif
 		// give user a chance to use resetbutton for first 4 min even if
 		// disabled and time is not synched
 		if (then.tv_sec > 240 && nvram_match("resetbutton_enable", "0")
 		    && pidof("resetbutton") > 0) {
-			eval("stopservice", "resetbutton");
+			sysprintf("stopservice resetbutton");
 		}
 
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n",
