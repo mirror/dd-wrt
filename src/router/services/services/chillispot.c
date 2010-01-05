@@ -53,17 +53,16 @@ void start_chilli(void)
 	if (nvram_match("chilli_enable", "1")
 	    && nvram_match("chilli_def_enable", "0")
 	    && !nvram_match("hotss_enable", "1")) {
-		nvram_unset("chilli_def_enable");		
+		nvram_unset("chilli_def_enable");
 		nvram_set("chilli_enable", "0");
 		return;
 	}
 
 	if (!nvram_match("chilli_enable", "1")
-	    && !nvram_match("hotss_enable", "1"))
-	    {
-		nvram_unset("chilli_def_enable");		    
+	    && !nvram_match("hotss_enable", "1")) {
+		nvram_unset("chilli_def_enable");
 		return;
-		}
+	}
 
 	if (nvram_match("hotss_enable", "1")) {
 		if (!nvram_match("chilli_enable", "1")) {
@@ -87,11 +86,12 @@ void start_chilli(void)
 	ret = killall("chilli", SIGKILL);
 	if (f_exists("/tmp/hotss.conf")) {
 		ret = eval("chilli", "-c", "/tmp/hotss.conf");
-		dd_syslog(LOG_INFO, "hotspotsystem : chilli daemon successfully started\n");
-	}
-	else {
+		dd_syslog(LOG_INFO,
+			  "hotspotsystem : chilli daemon successfully started\n");
+	} else {
 		ret = eval("chilli", "-c", "/tmp/chilli.conf");
-		dd_syslog(LOG_INFO, "chilli : chilli daemon successfully started\n");		
+		dd_syslog(LOG_INFO,
+			  "chilli : chilli daemon successfully started\n");
 	}
 
 	cprintf("done\n");
@@ -100,19 +100,18 @@ void start_chilli(void)
 
 void stop_chilli(void)
 {
-	
+
 	if (pidof("chilli") > 0) {
 		if (f_exists("/tmp/hotss.conf")) {
 			syslog(LOG_INFO,
-		 	      "hotspotsystem : chilli daemon successfully stopped\n");
-	 	}
-	 	else {
+			       "hotspotsystem : chilli daemon successfully stopped\n");
+		} else {
 			syslog(LOG_INFO,
-		 	      "chilli : chilli daemon successfully stopped\n");
-	 	}
+			       "chilli : chilli daemon successfully stopped\n");
+		}
 		killall("chilli", SIGKILL);
 		unlink("/tmp/chilli.conf");
-		unlink("/tmp/hotss.conf"); 
+		unlink("/tmp/hotss.conf");
 	}
 	cprintf("done\n");
 	return;
@@ -257,13 +256,16 @@ void hotspotsys_config(void)
 	if (nvram_match("hotss_nowifibridge", "1")) {
 		fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
 		if (nvram_invmatch("hotss_net", ""))
-			fprintf(fp, "net %s\n", nvram_get("hotss_net"));		
-	}
-	else
+			fprintf(fp, "net %s\n", nvram_get("hotss_net"));
+	} else
 		fprintf(fp, "dhcpif br0\n");
 
+	char *uamdomain = "customer.hotspotsystem.com";
+	if (!nvram_match("hotss_customuam", "")) {
+		uamdomain = nvram_safe_get("hotss_customuam");
+	}
 	fprintf(fp,
-		"uamserver https://www.hotspotsystem.com/customer/hotspotlogin.php\n");
+		"uamserver https://%s/customer/hotspotlogin.php\n", uamdomain);
 
 	if (nvram_invmatch("wan_get_dns", "0.0.0.0")
 	    && nvram_invmatch("wan_get_dns", "")) {
@@ -296,18 +298,18 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiusnasid %s_%s\n", nvram_get("hotss_operatorid"),
 		nvram_get("hotss_locationid"));
 	fprintf(fp,
-		"uamhomepage https://customer.hotspotsystem.com/customer/index.php?operator=%s&location=%s\n",
-		nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
+		"uamhomepage https://%s/customer/index.php?operator=%s&location=%s\n",
+		uamdomain, nvram_get("hotss_operatorid"),
+		nvram_get("hotss_locationid"));
 	fprintf(fp, "coaport 3799\n");
 	fprintf(fp, "coanoipcheck\n");
 	fprintf(fp, "domain key.chillispot.info\n");
-	
+
 	if (nvram_invmatch("hotss_uamallowed", "")
 	    && nvram_match("hotss_uamenable", "1"))
 		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
-	
-	fprintf(fp,
-		"uamallowed hotspotsystem.com,customer.hotspotsystem.com\n");
+
+	fprintf(fp, "uamallowed hotspotsystem.com,%s\n", uamdomain);
 	fprintf(fp,
 		"uamallowed 194.149.46.0/24,198.241.128.0/17,66.211.128.0/17,216.113.128.0/17\n");
 	fprintf(fp,
@@ -320,7 +322,8 @@ void hotspotsys_config(void)
 	fprintf(fp,
 		"uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
 	fprintf(fp,
-		"uamallowed www.hotspotsystem.com,customer.hotspotsystem.com,tech.hotspotsystem.com\n");
+		"uamallowed www.hotspotsystem.com,%s,tech.hotspotsystem.com\n",
+		uamdomain);
 	fprintf(fp,
 		"uamallowed a1.hotspotsystem.com,a2.hotspotsystem.com,a3.hotspotsystem.com,a4.hotspotsystem.com,a5.hotspotsystem.com,a6.hotspotsystem.com\n");
 	fprintf(fp,
