@@ -786,6 +786,7 @@ hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Separate Wifi from LAN Bridge";
 hotspotsys.uamenable="UAM";
 hotspotsys.allowuam="UAM Allowed";
+hotspotsys.whitelabel="white label domain";
 hotspotsys.operatorid="Operator ID";
 hotspotsys.locationid="Location ID";
 hotspotsys.dhcp="DHCP Interface";
