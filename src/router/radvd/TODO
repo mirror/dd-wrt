@@ -1,4 +1,4 @@
-$Id: TODO,v 1.30 2008/10/14 08:01:21 psavola Exp $
+$Id: TODO,v 1.32 2009/06/19 07:35:17 psavola Exp $
 
                        NOTE WELL
                        =========
@@ -66,3 +66,11 @@ The restrictions of the (privilege separation) master process could
 be restricted as currently it basically only needs to write to /proc,
 do some logging and nothing else.
 
+Known problems (probably can't do anything about these):
+ - If interface MAC address changes, radvd will keep sending the old MAC
+   in its LL option (until HUP signal).  The kernel will keep sending
+   Ethernet frames with the old MAC until interface is flapped.
+   More: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=508466
+
+Prefix/clients/route/RDNSS configurations must be given in exactly this
+order.  This should really be more flexible, likely minor work in gram.y.

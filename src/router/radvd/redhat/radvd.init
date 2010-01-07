@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: radvd.init,v 1.5 2008/02/27 13:02:59 psavola Exp $
+# $Id: radvd.init,v 1.6 2009/05/25 06:17:28 psavola Exp $
 #
 ### BEGIN INIT INFO
 # provides: radvd
@@ -28,12 +28,6 @@
 
 [ -f /etc/sysconfig/radvd ] && . /etc/sysconfig/radvd
 
-if [ "$1" == "status" ]; then
-	[ -f /usr/sbin/radvd ] || exit 4
-else 
-	[ -f /usr/sbin/radvd ] || exit 1
-fi
-
 RETVAL=0
 PROG="radvd"
 LOCKFILE=/var/lock/subsys/radvd
@@ -41,10 +35,14 @@ LOCKFILE=/var/lock/subsys/radvd
 # See how we were called.
 case "$1" in
   start)
-
-	# Check that networking is up.	
-	[ "${NETWORKING_IPV6}" = "yes" ] || exit 1
-
+	if [ ! -f /etc/radvd.conf ]; then
+		echo $"Configuration file /etc/radvd.conf missing" 1>&2
+		exit 6
+	fi
+	if [ `id -u` -ne 0 ]; then
+		echo $"Insufficient privilege" 1>&2
+		exit 4
+	fi
 	echo -n $"Starting $PROG: "
 	daemon radvd $OPTIONS
 	RETVAL=$?
