@@ -1,11 +1,11 @@
 /*
  *	matrixCommon.h
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *	
  *	Public common header file
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -41,6 +41,11 @@ extern "C" {
 
 /******************************************************************************/
 /*
+	Platform integer sizes
+*/
+
+/******************************************************************************/
+/*
 	Helpers
 */
 #ifndef VXWORKS
@@ -71,16 +76,16 @@ extern "C" {
 /*
 	Typdefs required for public apis.  From an end user perspective, the 
 	sslBuf_t and sslCertInfo_t types have internal fields that are public,
-	but ssl_t, sslKeys_t, sslRsaCert_t,and sslSessionId_t do not.  Defining
+	but ssl_t, sslKeys_t, sslCert_t,and sslSessionId_t do not.  Defining
 	those as 'int32' requires it to be treated as an opaque data type to be
 	passed to public apis
 */
 #ifndef _h_EXPORT_SYMBOLS
 
-typedef int		ssl_t;
-typedef int		sslKeys_t;
-typedef int		sslSessionId_t;
-typedef int		sslRsaCert_t;
+typedef int32		ssl_t;
+typedef int32		sslKeys_t;
+typedef int32		sslSessionId_t;
+typedef int32		sslCert_t;
 
 /******************************************************************************/
 /*
@@ -132,7 +137,7 @@ typedef struct {
 	unsigned char	*buf;	/* Pointer to the start of the buffer */
 	unsigned char	*start;	/* Pointer to start of valid data */
 	unsigned char	*end;	/* Pointer to first byte of invalid data */
-	int			size;	/* Size of buffer in bytes */
+	int32			size;	/* Size of buffer in bytes */
 } sslBuf_t;
 
 
@@ -141,8 +146,6 @@ typedef struct {
 	Information provided to user callback for validating certificates.
 	Register callback with call to matrixSslSetCertValidator
 */
-
-
 typedef struct {
 	char	*country;
 	char	*state;
@@ -152,27 +155,27 @@ typedef struct {
 	char	*commonName;
 } sslDistinguishedName_t;
 
-typedef struct {
-	char	*dns;
-	char	*uri;
-	char	*email;
+typedef struct sslSubjectAltNameEntry {
+	int32							id;
+	unsigned char					name[16];
+	unsigned char					*data;
+	int32							dataLen;
+	struct sslSubjectAltNameEntry	*next;
 } sslSubjectAltName_t;
 
-
 typedef struct sslCertInfo {
-	int					verified;
+	int32					verified;
 	unsigned char			*serialNumber;
-	int					serialNumberLen;
+	int32					serialNumberLen;
 	char					*notBefore;
 	char					*notAfter;
 	char					*sigHash;
-	int					sigHashLen;
-	sslSubjectAltName_t		subjectAltName;
+	int32					sigHashLen;
+	sslSubjectAltName_t		*subjectAltName;
 	sslDistinguishedName_t	subject;
 	sslDistinguishedName_t	issuer;
 	struct sslCertInfo		*next;
 } sslCertInfo_t;
-
 
 /******************************************************************************/
 

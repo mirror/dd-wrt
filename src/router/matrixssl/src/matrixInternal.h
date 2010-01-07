@@ -1,12 +1,12 @@
 /*
  *	matrixInternal.h
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	Internal header file used for the MatrixSSL implementation.
  *	Only modifiers of the library should be intersted in this file
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -106,6 +106,7 @@ extern "C" {
 #define TLS_MIN_VER		1
 
 
+
 /*
 	SSL cipher suite values
 */
@@ -176,7 +177,7 @@ typedef struct {
 	unsigned char	remSeq[8];
 
 #ifdef USE_CLIENT_SIDE_SSL
-	sslRsaCert_t	*cert;
+	sslCert_t		*cert;
 	int32 (*validateCert)(sslCertInfo_t *certInfo, void *arg);
 	void			*validateCertArg;
 	int32				certMatch;
@@ -203,6 +204,12 @@ typedef struct {
 		unsigned char *out, int32 len);
 	int32 (*decrypt)(sslCipherContext_t *ctx, unsigned char *in,
 		unsigned char *out, int32 len);
+	int32 (*encryptPriv)(psPool_t *pool, sslRsaKey_t *key,	
+		unsigned char *in, int32 inlen,
+		unsigned char *out, int32 outlen);
+	int32 (*decryptPub)(psPool_t *pool, sslRsaKey_t *key,	
+		unsigned char *in, int32 inlen,
+		unsigned char *out, int32 outlen);	
 	int32 (*encryptPub)(psPool_t *pool, sslRsaKey_t *key, 
 		unsigned char *in, int32 inlen,
 		unsigned char *out, int32 outlen);
@@ -243,6 +250,12 @@ typedef struct ssl {
 	int32 (*decrypt)(sslCipherContext_t *ctx, unsigned char *in,
 		unsigned char *out, int32 len);
 	/* Public key ciphers */
+	int32 (*encryptPriv)(psPool_t *pool, sslRsaKey_t *key, 
+		unsigned char *in, int32 inlen,
+		unsigned char *out, int32 outlen);
+	int32 (*decryptPub)(psPool_t *pool, sslRsaKey_t *key, 
+		unsigned char *in, int32 inlen,
+		unsigned char *out, int32 outlen);
 	int32 (*encryptPub)(psPool_t *pool, sslRsaKey_t *key, 
 		unsigned char *in, int32 inlen,
 		unsigned char *out, int32 outlen);
@@ -272,8 +285,8 @@ typedef struct ssl {
 	unsigned char	reqMinVer;
 	unsigned char	majVer;
 	unsigned char	minVer;
-	int32				recordHeadLen;
-	int32				hshakeHeadLen;
+	int32			recordHeadLen;
+	int32			hshakeHeadLen;
 } ssl_t;
 
 typedef struct {
@@ -316,7 +329,7 @@ extern int32 sslActivatePublicCipher(ssl_t *ssl);
 extern int32 sslUpdateHSHash(ssl_t *ssl, unsigned char *in, int32 len);
 extern int32 sslInitHSHash(ssl_t *ssl);
 extern int32 sslSnapshotHSHash(ssl_t *ssl, unsigned char *out, int32 senderFlag);
-
+extern int32 sslWritePad(unsigned char *p, unsigned char padLen);
 extern void sslResetContext(ssl_t *ssl);
 
 #ifdef USE_SERVER_SIDE_SSL
@@ -357,6 +370,8 @@ extern int32 ssl3HMACMd5(unsigned char *key, unsigned char *seq,
 #endif /* USE_MD5_MAC */
 
 
+
+
 /******************************************************************************/
 
 #ifdef __cplusplus
@@ -366,8 +381,5 @@ extern int32 ssl3HMACMd5(unsigned char *key, unsigned char *seq,
 #endif /* _h_MATRIXINTERNAL */
 
 /******************************************************************************/
-
-
-
 
 

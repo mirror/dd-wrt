@@ -1,12 +1,12 @@
 /*
  *	matrixConfig.h
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	Configuration settings for building the MatrixSSL library.
  *	These options affect the size and algorithms present in the library.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -86,16 +86,30 @@ extern "C" {
 /*
 	Support for multithreading environment.  This should be enabled
 	if multiple SSL sessions will be active at the same time in 
-	different threads.  The library will still be single threaded,
-	but will serialize access to the session cache with a mutex.
+	different threads. The library will serialize access to the session 
+	cache and memory pools with a mutex.
+	By default this is off, so that on POSIX platforms, pthreads isn't req'd
 */
-//#define USE_MULTITHREADING
+/* #define USE_MULTITHREADING */
 
 /******************************************************************************/
 /*
 	Support for file system.
 */
 #define USE_FILE_SYSTEM
+
+
+/******************************************************************************/
+/*
+    Allow servers to proceed with rehandshakes.
+
+    SECURITY: A protocol flaw has been demonstrated in which an "authentication
+    gap" is possible during rehandshakes that enable a man-in-the-middle to
+    inject plain-text HTTP traffic into an authenticated client-server session
+
+    It is advised to leave this disabled if you are using HTTPS
+*/
+/* #define ALLOW_SERVER_REHANDSHAKES */
 
 #ifdef __cplusplus
 }
