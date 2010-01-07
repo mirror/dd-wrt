@@ -77,6 +77,9 @@
 
 #endif /* OPENSSL_DOING_MAKEDEPEND */
 
+#ifndef OPENSSL_THREADS
+# define OPENSSL_THREADS
+#endif
 #ifndef OPENSSL_NO_ERR
 # define OPENSSL_NO_ERR
 #endif
