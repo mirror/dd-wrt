@@ -1,6 +1,6 @@
 /*
  *	matrixPki.h
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *	
  *	Public header file for MatrixPKI extension
  *	Implementations interacting with the PKI portion of the
@@ -8,7 +8,7 @@
  *	used in this file.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -65,7 +65,7 @@ MATRIXPUBLIC void matrixPkiClose(void);
 	Private key reading and conversions
 */
 #ifdef USE_FILE_SYSTEM
-MATRIXPUBLIC int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
+MATRIXPUBLIC int32 matrixX509ReadPrivKey(psPool_t *pool, const char *fileName,
 								  const char *password, unsigned char **out,
 								  int32 *outLen);
 #endif /* USE_FILE_SYSTEM */
@@ -81,17 +81,17 @@ MATRIXPUBLIC int32 matrixRsaConvertToPublicKey(psPool_t *pool,
 	USE_X509 adds certificate support
 */
 #ifdef USE_X509
-MATRIXPUBLIC int32 matrixRsaReadKeysMem(sslKeys_t **keys,
+MATRIXPUBLIC int32 matrixX509ReadKeysMem(sslKeys_t **keys,
 						unsigned char *certBuf, int32 certLen,
 						unsigned char *privBuf, int32 privLen,
 						unsigned char *trustedCABuf, int32 trustedCALen);
 MATRIXPUBLIC void	matrixRsaFreeKeys(sslKeys_t *keys);
 
 #ifdef USE_FILE_SYSTEM
-MATRIXPUBLIC int32	matrixRsaReadKeys(sslKeys_t **keys, const char *certFile,
+MATRIXPUBLIC int32	matrixX509ReadKeys(sslKeys_t **keys, const char *certFile,
 						const char *privFile, const char *privPass,
 						const char *trustedCAFile);
-MATRIXPUBLIC int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys,
+MATRIXPUBLIC int32 matrixX509ReadKeysEx(psPool_t *pool, sslKeys_t **keys,
 				const char *certFile, const char *privFile,
 				const char *privPass, const char *trustedCAFiles);
 MATRIXPUBLIC int32 matrixX509ReadCert(psPool_t *pool, const char *fileName,
@@ -105,18 +105,18 @@ MATRIXPUBLIC int32 matrixRsaParseKeysMem(psPool_t *pool, sslKeys_t **keys,
 			unsigned char *certBuf, int32 certLen, unsigned char *privBuf,
 			int32 privLen, unsigned char *trustedCABuf, int32 trustedCALen);
 MATRIXPUBLIC int32 matrixX509ParseCert(psPool_t *pool, unsigned char *certBuf, 
-							   int32 certlen, sslRsaCert_t **cert);
-MATRIXPUBLIC void matrixX509FreeCert(sslRsaCert_t *cert);
+							   int32 certlen, sslCert_t **cert);
+MATRIXPUBLIC void matrixX509FreeCert(sslCert_t *cert);
 MATRIXPUBLIC int32 matrixX509ParsePubKey(psPool_t *pool, unsigned char *certBuf,
 									int32 certLen, sslRsaKey_t **key);
 MATRIXPUBLIC int32 matrixX509ValidateCert(psPool_t *pool,
-						sslRsaCert_t *subjectCert, sslRsaCert_t *issuerCert,
+						sslCert_t *subjectCert, sslCert_t *issuerCert,
 						int32 *valid);
 MATRIXPUBLIC int32 matrixX509ValidateCertChain(psPool_t *pool,
-						sslRsaCert_t *chain, sslRsaCert_t **subjectCert,
+						sslCert_t *chain, sslCert_t **subjectCert,
 						int32 *valid);
 MATRIXPUBLIC int32 matrixX509UserValidator(psPool_t *pool, 
-						sslRsaCert_t *subjectCert,
+						sslCert_t *subjectCert,
 						int32 (*certValidator)(sslCertInfo_t *t, void *arg),
 						void *arg);
 #endif /* USE_X509 */
@@ -124,6 +124,8 @@ MATRIXPUBLIC int32 matrixX509UserValidator(psPool_t *pool,
 
 
 #endif /* USE_RSA */
+	
+	
 /******************************************************************************/
 
 #ifdef __cplusplus

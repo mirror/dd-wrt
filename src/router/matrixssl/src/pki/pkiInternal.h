@@ -1,6 +1,6 @@
 /*
  *	pkiInternal.h
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *	
  *	Public header file for MatrixSSL PKI extension
  *	Implementations interacting with the PKI portion of the
@@ -8,7 +8,7 @@
  *	used in this file.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -83,6 +83,7 @@ enum {
 	ASN_BMPSTRING = 30
 };
 
+
 extern int32 getBig(psPool_t *pool, unsigned char **pp, int32 len, mp_int *big);
 extern int32 getSerialNum(psPool_t *pool, unsigned char **pp, int32 len, 
 						unsigned char **sn, int32 *snLen);
@@ -110,8 +111,6 @@ extern int32 getImplicitBitString(psPool_t *pool, unsigned char **pp, int32 len,
 	The USE_RSA define is primarily for future compat when more key exchange
 	protocols are added.  Crypto should always define this for now.
 */
-#ifdef USE_RSA
-
 #define OID_RSA_MD2		646
 #define OID_RSA_MD5		648
 #define OID_RSA_SHA1	649
@@ -130,6 +129,7 @@ typedef struct {
 	char	hash[SSL_SHA1_HASH_SIZE];
 } DNattributes_t;
 
+
 #ifdef USE_X509
 
 typedef struct {
@@ -138,13 +138,7 @@ typedef struct {
 } extBasicConstraints_t;
 
 typedef struct {
-	unsigned char	*dns;
-	unsigned char	*uri;
-	unsigned char	*email;
-} extSubjectAltName_t;
-
-typedef struct {
-	int32				len;
+	int32			len;
 	unsigned char	*id;
 } extSubjectKeyId_t;
 
@@ -152,7 +146,7 @@ typedef struct {
 	int32			keyLen;
 	unsigned char	*keyId;
 	DNattributes_t	attribs;
-		int32		serialNumLen;
+	int32			serialNumLen;
 	unsigned char	*serialNum;
 } extAuthKeyId_t;
 /*
@@ -160,15 +154,16 @@ typedef struct {
 */
 typedef struct {
 	extBasicConstraints_t	bc;
-	extSubjectAltName_t		san;
+	sslSubjectAltName_t		*san;
 #ifdef USE_FULL_CERT_PARSE
 	extSubjectKeyId_t		sk;
 	extAuthKeyId_t			ak;
-	unsigned char			keyUsage;
+	unsigned char			*keyUsage;
+	int32					keyUsageLen;
 #endif /* USE_FULL_CERT_PARSE */
 } v3extensions_t;
 
-typedef struct sslRsaCert {
+typedef struct sslCert {
 	int32			version;
 	int32			valid;
 	unsigned char	*serialNumber;
@@ -189,24 +184,26 @@ typedef struct sslRsaCert {
 	unsigned char	*uniqueSubjectId;
 	int32			uniqueSubjectIdLen;
 	v3extensions_t	extensions;
-	struct sslRsaCert	*next;
-} sslRsaCert_t;
+	struct sslCert	*next;
+} sslCert_t;
 
 typedef struct sslLocalCert {
 	sslRsaKey_t			*privKey;
 	unsigned char		*certBin;
-	uint32		certLen;
+	uint32				certLen;
 	struct sslLocalCert	*next;
 } sslLocalCert_t;
 
 typedef struct {
-	sslLocalCert_t		cert;
+	sslLocalCert_t	cert;
 #ifdef USE_CLIENT_SIDE_SSL
-	sslRsaCert_t		*caCerts;
+	sslCert_t		*caCerts;
 #endif /* USE_CLIENT_SIDE_SSL */
 } sslKeys_t;
 
 #endif /* USE_X509 */
+
+
 
 /*
 	Helpers for inter-pki communications
@@ -219,8 +216,6 @@ extern int32 getDNAttributes(psPool_t *pool, unsigned char **pp, int32 len,
 extern int32 getPubKey(psPool_t *pool, unsigned char **pp, int32 len,
 					   sslRsaKey_t *pubKey);
 extern void psFreeDNStruct(DNattributes_t *dn);
-
-#endif /* USE_RSA */
 
 #ifdef USE_FILE_SYSTEM
 extern int32 readCertChain(psPool_t *pool, const char *certFiles,

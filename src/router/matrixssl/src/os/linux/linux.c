@@ -1,13 +1,13 @@
 /*
  *	linux.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	Linux compatibility layer
  *	Other UNIX like operating systems should also be able to use this
  *	implementation without change.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -68,11 +68,13 @@ static 	int32	randfd	= -1;
 
 int32 sslOpenOsdep(void)
 {
+#if defined(USE_RDTSCLL_TIME) || defined(RDTSC)
 	FILE		*cpuInfo;
 	double		mhz;
 	char		line[80] = "";
 	char		*tmpstr;
 	int32 		c;
+#endif 
 /*
 	Open /dev/random access non-blocking.
 */

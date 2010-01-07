@@ -46,7 +46,7 @@ DFLAGS	= -g -Wall -Winline -Wdisabled-optimization -DDEBUG
 STRIP	= test
 else
 #DFLAGS	= -Os
-DFLAGS	= $(COPTS) 
+DFLAGS	= $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 
 ifdef MATRIXSSL_PROFILE

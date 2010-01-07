@@ -1,9 +1,9 @@
 /*
  *	debug.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 */
 #ifdef DEBUG
 
-/* message should contain one %s */
+/* message should contain one %s, unless value is NULL */
 void matrixStrDebugMsg(char *message, char *value)
 {
 	if (value) {
