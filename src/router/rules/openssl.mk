@@ -1,5 +1,5 @@
 openssl:
-	$(MAKE) -j 4 -C openssl CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc 
+	$(MAKE) -j 4 -C openssl CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc 
 #ifeq ($(ARCH),mipsel)
 #ifneq ($(ARCHITECTURE),rb532)
 #	rm -f openssl/libcrypto.so.0.9.8
