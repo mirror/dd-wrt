@@ -1,5 +1,5 @@
 /*
- *   $Id: process.c,v 1.16 2008/03/31 09:18:15 psavola Exp $
+ *   $Id: process.c,v 1.19 2009/09/07 07:59:57 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -192,7 +192,7 @@ process_rs(int sock, struct Interface *iface, unsigned char *msg, int len,
  	
 	if (iface->UnicastOnly) {
 		mdelay(delay);
-		send_ra(sock, iface, &addr->sin6_addr);
+		send_ra_forall(sock, iface, &addr->sin6_addr);
 	}
 	else if ((tv.tv_sec + tv.tv_usec / 1000000.0) - (iface->last_multicast_sec +
 	          iface->last_multicast_usec / 1000000.0) < iface->MinDelayBetweenRAs) {
@@ -205,10 +205,10 @@ process_rs(int sock, struct Interface *iface, unsigned char *msg, int len,
 	else {
 		/* no RA sent in a while, send an immediate multicast reply */
 		clear_timer(&iface->tm);
-		send_ra(sock, iface, NULL);
-		
-		next = rand_between(iface->MinRtrAdvInterval, iface->MaxRtrAdvInterval); 
-		set_timer(&iface->tm, next);
+		if (send_ra_forall(sock, iface, NULL) == 0) {
+			next = rand_between(iface->MinRtrAdvInterval, iface->MaxRtrAdvInterval); 
+			set_timer(&iface->tm, next);
+		}
 	}
 }
 

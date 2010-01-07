@@ -1,5 +1,5 @@
 /*
- *   $Id: device-common.c,v 1.9 2007/12/01 08:59:49 psavola Exp $
+ *   $Id: device-common.c,v 1.10 2009/06/19 07:28:06 psavola Exp $
  *
  *   Authors:
  *    Lars Fenneberg		<lf@elemental.net>	 
@@ -46,7 +46,7 @@ check_device(int sock, struct Interface *iface)
                 	flog(LOG_ERR, "interface %s is not RUNNING", iface->Name);
 		return (-1);
 	}
-	
+
 	if (! iface->UnicastOnly && !(ifr.ifr_flags & IFF_MULTICAST))
 	{
 		flog(LOG_WARNING, "interface %s does not support multicast",

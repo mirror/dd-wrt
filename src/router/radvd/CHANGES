@@ -1,4 +1,39 @@
-$Id: CHANGES,v 1.78 2008/10/28 16:35:43 psavola Exp $
+$Id: CHANGES,v 1.90 2009/09/10 11:48:09 psavola Exp $
+
+10/09/2009	Release 1.5.
+
+07/09/2009	Fix infinite loop/segmentation fault problems when cable
+		plugged out/plugged back in, caused by reload_config()
+		and subsequent timer list corruption.  Slightly modified
+		patch from Teemu Torma.  For more information, see
+		http://lists.litech.org/pipermail/radvd-devel-l/2009-August/000416.html
+
+07/09/2009	Fix IgnoreIfMissing when cable is unplugged at startup.
+		Radvd would keep skipping the interface.  Patch from
+		Reuben Hawkins.
+
+25/08/2009	Fix parallel make, from Robert Buchholz / Gentoo.
+
+03/08/2009	Release 1.4.  Only restores original behaviour changed in
+		1.3: RAs were accidentally often unicast to solicitors
+		instead of being multicast.
+
+07/07/2009	Release 1.3.
+
+24/06/2009	Work around unaligned traps on Alpha, patch from:
+		http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=456205
+
+19/06/2009	Fixes and enhancements from Michael Stapelberg.  Add a new
+		'clients' interface definition to allow configuring which
+		address to send advertisements and accept from. Use
+		getifaddrs() on BSD because ioctl didn't work on NetBSD 5.
+		Use int instead of bool to make NetBSD 5 happy.
+
+21/01/2009	Add a workaround for Linux in scenarios where libc is
+		providing IPV6_RECV(PKTINFO|HOPLIMIT) has renumbered IPV6_PKTINFO,
+		but kernel doesn't support it yet (<2.6.14).  Found out by
+		Freetz (special thanks to Paul Oranje) and OpenWrt projects.
+		See the source code and CVS changelog for more.
 
 28/10/2008	Release 1.2.
 
@@ -12,7 +47,7 @@ $Id: CHANGES,v 1.78 2008/10/28 16:35:43 psavola Exp $
 		Define _GNU_SOURCE on Linux, otherwise glibc >= 2.8
 		compilation fails.
 
-		Remove -Wconversion from default CFLAGS as its very noisy.
+		Remove -Wconversion from default CFLAGS as it is very noisy.
 		Fix some warnings, from Jim Paris.
 
 31/03/2008	Update references to RFCs.  Give pointer to the "two hour rule".
