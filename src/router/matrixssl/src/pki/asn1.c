@@ -1,11 +1,11 @@
 /*
  *	asn1.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	DER/BER coding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -97,7 +97,7 @@ int32 getBig(psPool_t *pool, unsigned char **pp, int32 len, mp_int *big)
 	int32			vlen;
 
 	if (len < 1 || *(p++) != ASN_INTEGER ||
-			asnParseLength(&p, len - 1, &vlen) < 0) {
+			asnParseLength(&p, len - 1, &vlen) < 0 || (len -1) < vlen) {
 		matrixStrDebugMsg("ASN getBig failed\n", NULL);
 		return -1;
 	}
@@ -131,7 +131,7 @@ int32 getSerialNum(psPool_t *pool, unsigned char **pp, int32 len,
 	}
 	p++;
 
-	if (len < 1 || asnParseLength(&p, len - 1, &vlen) < 0) {
+	if (len < 1 || asnParseLength(&p, len - 1, &vlen) < 0 || (len - 1) < vlen) {
 		matrixStrDebugMsg("ASN getSerialNumber failed\n", NULL);
 		return -1;
 	}
@@ -233,11 +233,12 @@ int32 getAlgorithmIdentifier(unsigned char **pp, int32 len, int32 *oi,
 		return -1;
 	}
 /*
-	List of expected (currently supported) OIDs
+	List of expected (currently supported) OIDs  - RFC 3279
 	algorithm				  summed	length		hex
 	sha1						 88		05		2b0e03021a
 	md2							646		08		2a864886f70d0202
 	md5							649		08		2a864886f70d0205
+	
 	rsaEncryption				645		09		2a864886f70d010101
 	md2WithRSAEncryption:		646		09		2a864886f70d010102
 	md5WithRSAEncryption		648		09		2a864886f70d010104

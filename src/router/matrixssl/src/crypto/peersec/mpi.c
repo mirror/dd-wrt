@@ -1,11 +1,11 @@
 /*	
  *	mpi.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	multiple-precision integer library
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -31,6 +31,8 @@
 
 #include "../cryptoLayer.h"
 #include <stdarg.h>
+
+#ifndef USE_MPI2
 
 static int32 mp_exptmod_fast (psPool_t *pool, mp_int * G, mp_int * X,
 				mp_int * P, mp_int * Y, int32 redmode);
@@ -1370,9 +1372,6 @@ int32 mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
 int32 fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 {
 	int32		ix, res, olduse;
-/*
-	FUTURE - lower this stack usage, this is around 1K!.
- */
 	mp_word		W[MP_WARRAY];
 
 /*
@@ -3130,12 +3129,11 @@ int32 s_mp_add (mp_int * a, mp_int * b, mp_int * c)
 }
 
 /******************************************************************************/
-#ifdef USE_SMALL_WORD
 /*
-	FUTURE - this is never needed, SLOW or not, because RSA exponents are
-	always odd.
+	FUTURE - this is only needed by the SSH code, SLOW or not, because RSA
+	exponents are always odd.
 */
-int32 mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
+int32 mp_invmodSSH(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 {
 	mp_int		x, y, u, v, A, B, C, D;
 	int32			res;
@@ -3320,7 +3318,6 @@ top:
 LBL_ERR:_mp_clear_multi(&x, &y, &u, &v, &A, &B, &C, &D);
 	return res;
 }
-#endif /* USE_SMALL_WORD */
 
 /******************************************************************************/
 
@@ -3667,4 +3664,4 @@ int32 mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 
 /******************************************************************************/
 
-
+#endif /* USE_MPI2 */

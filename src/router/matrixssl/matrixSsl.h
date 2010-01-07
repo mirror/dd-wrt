@@ -1,13 +1,13 @@
 /*
  *	matrixSsl.h
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *	
  *	Public header file for MatrixSSL
  *	Implementations interacting with the matrixssl library should
  *	only use the APIs and definitions used in this file.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -92,59 +92,61 @@ extern "C" {
 /*
  *	Public API set
  */
-MATRIXPUBLIC int	matrixSslOpen(void);
+MATRIXPUBLIC int32	matrixSslOpen(void);
 MATRIXPUBLIC void	matrixSslClose(void);
 
 MATRIXPUBLIC int32	matrixSslReadKeys(sslKeys_t **keys, const char *certFile,
 						const char *privFile, const char *privPass,
 						const char *trustedCAFile);
 
-MATRIXPUBLIC int	matrixSslReadKeysMem(sslKeys_t **keys,
-						unsigned char *certBuf, int certLen,
-						unsigned char *privBuf, int privLen,
-						unsigned char *trustedCABuf, int trustedCALen);
+MATRIXPUBLIC int32	matrixSslReadKeysMem(sslKeys_t **keys,
+						unsigned char *certBuf, int32 certLen,
+						unsigned char *privBuf, int32 privLen,
+						unsigned char *trustedCABuf, int32 trustedCALen);
 
 MATRIXPUBLIC void	matrixSslFreeKeys(sslKeys_t *keys);
 
-MATRIXPUBLIC int	matrixSslNewSession(ssl_t **ssl, sslKeys_t *keys,
-						sslSessionId_t *session, int flags);
+MATRIXPUBLIC int32	matrixSslNewSession(ssl_t **ssl, sslKeys_t *keys,
+						sslSessionId_t *session, int32 flags);
 MATRIXPUBLIC void	matrixSslDeleteSession(ssl_t *ssl);
 
-MATRIXPUBLIC int	matrixSslDecode(ssl_t *ssl, sslBuf_t *in, sslBuf_t *out, 
+MATRIXPUBLIC int32	matrixSslDecode(ssl_t *ssl, sslBuf_t *in, sslBuf_t *out, 
 						unsigned char *error, unsigned char *alertLevel,
 						unsigned char *alertDescription);
-MATRIXPUBLIC int	matrixSslEncode(ssl_t *ssl, unsigned char *in, int inlen,
+MATRIXPUBLIC int32	matrixSslEncode(ssl_t *ssl, unsigned char *in, int32 inlen,
 						sslBuf_t *out);
-MATRIXPUBLIC int	matrixSslEncodeClosureAlert(ssl_t *ssl, sslBuf_t *out);
+MATRIXPUBLIC int32	matrixSslEncodeClosureAlert(ssl_t *ssl, sslBuf_t *out);
 
-MATRIXPUBLIC int	matrixSslHandshakeIsComplete(ssl_t *ssl);
+MATRIXPUBLIC int32	matrixSslHandshakeIsComplete(ssl_t *ssl);
 
 MATRIXPUBLIC void	matrixSslSetCertValidator(ssl_t *ssl,
-						int (*certValidator)(sslCertInfo_t *, void *arg),
+						int32 (*certValidator)(sslCertInfo_t *, void *arg),
 						void *arg);
 
-MATRIXPUBLIC void	matrixSslSetSessionOption(ssl_t *ssl, int option,
+MATRIXPUBLIC void	matrixSslSetSessionOption(ssl_t *ssl, int32 option,
 						void *arg);
-MATRIXPUBLIC void	matrixSslGetAnonStatus(ssl_t *ssl, int *anonArg);
+MATRIXPUBLIC void	matrixSslGetAnonStatus(ssl_t *ssl, int32 *anonArg);
 MATRIXPUBLIC void	matrixSslAssignNewKeys(ssl_t *ssl, sslKeys_t *keys);
 
 /*
 	Client side APIs
 */
-MATRIXPUBLIC int	matrixSslEncodeClientHello(ssl_t *ssl, sslBuf_t *out,
+MATRIXPUBLIC int32	matrixSslEncodeClientHello(ssl_t *ssl, sslBuf_t *out,
 						unsigned short cipherSpec);
 
-MATRIXPUBLIC int	matrixSslGetSessionId(ssl_t *ssl,
+MATRIXPUBLIC int32	matrixSslGetSessionId(ssl_t *ssl,
 						sslSessionId_t **sessionId);
 MATRIXPUBLIC void	matrixSslFreeSessionId(sslSessionId_t *sessionId);
+
 
 /*
 	Server side APIs
 */
-MATRIXPUBLIC int	matrixSslEncodeHelloRequest(ssl_t *ssl, sslBuf_t *out);
+MATRIXPUBLIC int32	matrixSslEncodeHelloRequest(ssl_t *ssl, sslBuf_t *out);
 
-MATRIXPUBLIC int matrixSslSetResumptionFlag(ssl_t *ssl, char flag);
-MATRIXPUBLIC int matrixSslGetResumptionFlag(ssl_t *ssl, char *flag);
+MATRIXPUBLIC int32 matrixSslSetResumptionFlag(ssl_t *ssl, char flag);
+MATRIXPUBLIC int32 matrixSslGetResumptionFlag(ssl_t *ssl, char *flag);
+
 
 
 

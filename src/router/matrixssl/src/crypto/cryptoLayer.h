@@ -1,6 +1,6 @@
 /*
  *	cryptoLayer.h
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	Cryptography provider layered header.  This layer decouples
  *	the cryptography implementation from the SSL protocol implementation.
@@ -8,7 +8,7 @@
  *	externed below.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -126,8 +126,6 @@ extern "C" {
 	Addtional crypt support
 */
 /* #define USE_MD2 */
-/* #define USE_SHA256 */
-/* #define USE_AES */
 
 /*
 	Now that we've set up the required defines, include the crypto provider

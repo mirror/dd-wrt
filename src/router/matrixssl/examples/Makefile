@@ -1,7 +1,9 @@
 #
 #	MatrixSSL example applications makefile
-#	Builds optimized by default, see comments below for debug.
-#	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved
+#   'make' builds debug (Default).
+#   'make gold' builds optimized.
+#
+#	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved
 #
 
 CC 	= gcc
@@ -20,11 +22,7 @@ CLIENT_EXE	= httpsClient$(E)
 CLIENT_OBJS = httpsClient$(O) sslSocket$(O)
 
 #
-#	Debug flags (Define MATRIXSSL_DEBUG in shell to build debug) 
-#	bash:	export MATRIXSSL_DEBUG=1
-#			unset MATRIXSSL_DEBUG
-#	tcsh:	setenv MATRIXSSL_DEBUG 1
-#			unsetenv MATRIXSSL_DEBUG
+# This is set by the debug target below
 #
 ifdef MATRIXSSL_DEBUG
 DFLAGS  = -g -Wall -DDEBUG
@@ -36,6 +34,17 @@ endif
 ifdef MATRIXSSL_PROFILE
 DFLAGS	+= -g -pg
 endif
+
+debug:
+	@$(MAKE) compile "MATRIXSSL_DEBUG = 1"
+
+profile:
+	@$(MAKE) compile "MATRIXSSL_PROFILE = 1"
+
+gold:
+	@$(MAKE) compile
+
+default: debug
 
 #
 #   Override variables for compilation on x86-64 (AMD64, Nacona, etc)
@@ -58,6 +67,7 @@ CC  = cc
 SO  = .dylib
 CFLAGS += -DOSX -isystem -I/usr/include
 LDFLAGS =
+MACLINK = ln -f $(LIBRARIES) .
 endif
 
 #
@@ -70,7 +80,7 @@ endif
 
 all: compile
 
-compile: $(REF_OBJS) $(REF_EXE) $(CLIENT_OBJS) $(CLIENT_EXE) 
+compile: $(REF_OBJS) $(REF_EXE) $(CLIENT_OBJS) $(CLIENT_EXE)
 
 #
 # Manual dependencies
@@ -79,6 +89,7 @@ compile: $(REF_OBJS) $(REF_EXE) $(CLIENT_OBJS) $(CLIENT_EXE)
 
 $(REF_EXE):$(REF_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBRARIES)
+	$(MACLINK)
 
 $(CLIENT_EXE):$(CLIENT_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBRARIES)
@@ -88,4 +99,5 @@ $(CLIENT_EXE):$(CLIENT_OBJS)
 #
 clean:
 	rm -f $(REF_EXE) $(REF_OBJS) \
-		$(CLIENT_EXE) $(CLIENT_OBJS) 
+		$(CLIENT_EXE) $(CLIENT_OBJS) \
+		*$(SO)

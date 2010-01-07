@@ -1,11 +1,11 @@
 /*
  *	rsaPki.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	RSA key and cert reading
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -110,10 +110,11 @@ int32 psGetFileBin(psPool_t *pool, const char *fileName, unsigned char **bin,
 		return -7; /* FILE_NOT_FOUND */
 	}
 
-	*bin = psMalloc(pool, fstat.st_size);
+	*bin = psMalloc(pool, fstat.st_size + 1);
 	if (*bin == NULL) {
 		return -8; /* SSL_MEM_ERROR */
 	}
+	memset(*bin, 0x0, fstat.st_size + 1);
 	while (((tmp = fread(*bin + *binLen, sizeof(char), 512, fp)) > 0) &&
 			(*binLen < fstat.st_size)) { 
 		*binLen += (int32)tmp;
@@ -130,10 +131,11 @@ int32 psGetFileBin(psPool_t *pool, const char *fileName, unsigned char **bin,
  *	If password is provided, we only deal with 3des cbc encryption
  *	Function allocates key on success.  User must free.
  */
-int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
+int32 matrixX509ReadPrivKey(psPool_t *pool, const char *fileName,
 				const char *password, unsigned char **keyMem, int32 *keyMemLen)
 {
-	unsigned char	*keyBuf, *DERout, *start, *end;
+	unsigned char	*keyBuf, *DERout;
+	char			*start, *end, *endTmp;
 	int32			keyBufLen, rc, DERlen, PEMlen = 0;
 #ifdef USE_3DES
 	sslCipherContext_t	ctx;
@@ -154,17 +156,23 @@ int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
 /*
  *	Check header and encryption parameters.
  */
-	if ((start = strstr(keyBuf, "-----BEGIN RSA PRIVATE KEY-----")) == NULL) {
+	if (((start = strstr((char*)keyBuf, "-----BEGIN")) != NULL) && 
+			((start = strstr((char*)keyBuf, "PRIVATE KEY-----")) != NULL) &&
+			((end = strstr(start, "-----END")) != NULL) &&
+			((endTmp = strstr(end, "PRIVATE KEY-----")) != NULL)) {
+		start += strlen("PRIVATE KEY-----");
+		while (*start == '\r' || *start == '\n') {
+			start++;
+		}
+		PEMlen = (int32)(end - start);
+	} else {
 		matrixStrDebugMsg("Error parsing private key buffer\n", NULL);
 		psFree(keyBuf);
 		return -1;
 	}
-	start += strlen("-----BEGIN RSA PRIVATE KEY-----");
-	while (*start == '\r' || *start == '\n') {
-		start++;
-	}
 
-	if (strstr(keyBuf, "Proc-Type:") && strstr(keyBuf, "4,ENCRYPTED")) {
+	if (strstr((char*)keyBuf, "Proc-Type:") &&
+			strstr((char*)keyBuf, "4,ENCRYPTED")) {
 #ifdef USE_3DES
 		encrypted++;
 		if (password == NULL) {
@@ -173,7 +181,7 @@ int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
 			psFree(keyBuf);
 			return -1;
 		}
-		if ((start = strstr(keyBuf, encryptHeader)) == NULL) {
+		if ((start = strstr((char*)keyBuf, encryptHeader)) == NULL) {
 			matrixStrDebugMsg("Unrecognized private key file encoding\n",
 				NULL);
 			psFree(keyBuf);
@@ -190,6 +198,7 @@ int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
 		start += tmp;
 		generate3DESKey((unsigned char*)password, (int32)strlen(password),
 			cipherIV, (unsigned char*)passKey);
+		PEMlen = (int32)(end - start);
 #else  /* !USE_3DES */
 /*
  *		The private key is encrypted, but 3DES support has been turned off
@@ -200,13 +209,6 @@ int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
 #endif /* USE_3DES */
 	}
 
-	if ((end = strstr(keyBuf, "-----END RSA PRIVATE KEY-----")) == NULL) {
-		matrixStrDebugMsg("Error parsing private key buffer\n", NULL);
-		psFree(keyBuf);
-		return -1;
-	}
-	PEMlen = (int32)(end - start);
-
 /*
 	Take the raw input and do a base64 decode
  */
@@ -215,7 +217,8 @@ int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
 		return -8; /* SSL_MEM_ERROR */
 	}
 	DERlen = PEMlen;
-	if (ps_base64_decode(start, PEMlen, DERout, (uint32*)&DERlen) != 0) {
+	if (ps_base64_decode((unsigned char*)start, PEMlen, DERout,
+			(uint32*)&DERlen) != 0) {
 		psFree(DERout);
 		psFree(keyBuf);
 		matrixStrDebugMsg("Unable to base64 decode private key\n", NULL);
@@ -310,11 +313,27 @@ int32 matrixRsaParsePrivKey(psPool_t *pool, unsigned char *keyBuf,
 
 /******************************************************************************/
 /*
-	Binary to struct helper for RSA public keys
+	Binary to struct helper for RSA public keys.
 */
 int32 matrixRsaParsePubKey(psPool_t *pool, unsigned char *keyBuf,
 							  int32 keyBufLen, sslRsaKey_t **key)
 {
+	unsigned char	*p, *end;
+	int32			len;
+
+	p = keyBuf;
+	end = p + keyBufLen;
+/*
+	Supporting both the PKCS#1 RSAPublicKey format and the
+	X.509 SubjectPublicKeyInfo format.  If encoding doesn't start with
+	the SEQUENCE identifier for the SubjectPublicKeyInfo format, jump down
+	to the RSAPublicKey subset parser and try that
+*/
+	if (getSequence(&p, (int32)(end - p), &len) == 0) {
+		if (getAlgorithmIdentifier(&p, (int32)(end - p), &len, 1) < 0) {
+			return -1;
+		}
+	}
 /*
 	Now have the DER stream to extract from in asnp
  */
@@ -323,8 +342,7 @@ int32 matrixRsaParsePubKey(psPool_t *pool, unsigned char *keyBuf,
 		return -8; /* SSL_MEM_ERROR */
 	}
 	memset(*key, 0x0, sizeof(sslRsaKey_t));
-
-	if (getPubKey(pool, &keyBuf, keyBufLen, *key) < 0) {
+	if (getPubKey(pool, &p, (int32)(end - p), *key) < 0) {
 		matrixRsaFreeKey(*key);
 		*key = NULL;
 		matrixStrDebugMsg("Unable to ASN parse public key\n", NULL);
@@ -523,8 +541,8 @@ int32 getDNAttributes(psPool_t *pool, unsigned char **pp, int32 len,
 */
 		stringType = (int32)*p++;
 
-		asnParseLength(&p, (int32)(dnEnd - p), &llen);
-		if (dnEnd - p < llen) {
+		if (asnParseLength(&p, (int32)(dnEnd - p), &llen) < 0 ||
+				dnEnd - p < llen) {
 			return -1;
 		}
 		switch (stringType) {
@@ -539,6 +557,15 @@ int32 getDNAttributes(psPool_t *pool, unsigned char **pp, int32 len,
 				}
 				memcpy(stringOut, p, llen);
 				stringOut[llen] = '\0';
+/*
+                Catch any hidden \0 chars in these members to address the
+                issue of www.goodguy.com\0badguy.com
+*/
+                if (strlen(stringOut) != llen) {
+                    psFree(stringOut);
+                    return -1;
+                }
+
 				p = p + llen;
 				break;
 			default:
