@@ -1,1 +1,1 @@
-./privsep-linux.c
+privsep-linux.c

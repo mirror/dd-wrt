@@ -1,5 +1,5 @@
 #
-#   $Id: Makefile.am,v 1.6 2008/10/14 14:03:29 psavola Exp $
+#   $Id: Makefile.am,v 1.7 2009/08/25 05:41:56 psavola Exp $
 #
 #   Authors:
 #    Lars Fenneberg		<lf@elemental.net>	 
@@ -61,3 +61,5 @@ dist-hook:
 	mkdir $(distdir)/redhat
 	cp -p $(srcdir)/redhat/radvd.init $(srcdir)/redhat/radvd.spec \
 		$(srcdir)/redhat/radvd.sysconfig $(distdir)/redhat
+
+scanner.o: gram.h

@@ -1,5 +1,5 @@
 /*
- *   $Id: device-bsd44.c,v 1.22 2006/10/08 19:25:29 psavola Exp $
+ *   $Id: device-bsd44.c,v 1.23 2009/06/19 07:28:06 psavola Exp $
  *
  *   Authors:
  *    Craig Metz		<cmetz@inner.net>
@@ -146,64 +146,52 @@ ret:
 	return -1;
 }
 
+/*
+ * Saves the first link local address seen on the specified interface to iface->if_addr
+ *
+ */
 int setup_linklocal_addr(int sock, struct Interface *iface)
 {
-	struct ifconf ifconf;
-	unsigned int nlen;
-	uint8_t *p, *end;
-	int index = 0;
+	struct ifaddrs *addresses, *ifa;
 
-	/* just allocate 8192 bytes, should be more than enough.. */
-	if (!(ifconf.ifc_buf = malloc(ifconf.ifc_len = (32 << 8))))
+	if (getifaddrs(&addresses) != 0)
 	{
-		flog(LOG_CRIT, "malloc failed: %s", strerror(errno));
+		flog(LOG_ERR, "getifaddrs failed: %s(%d)", strerror(errno), errno);
 		goto ret;
 	}
 
-	if (ioctl(sock, SIOCGIFCONF, &ifconf) < 0)
+	for (ifa = addresses; ifa != NULL; ifa = ifa->ifa_next)
 	{
-		flog(LOG_ERR, "ioctl(SIOCGIFCONF) failed: %s(%d)", strerror(errno), errno);
-		goto ret;
-	}
+		if (strcmp(ifa->ifa_name, iface->Name) != 0)
+			continue;
 
-	p = (uint8_t *)ifconf.ifc_buf;
-	end = p + ifconf.ifc_len;
-	nlen = strlen(iface->Name);
+		if (ifa->ifa_addr == NULL)
+			continue;
 
-	while(p < end)
-  	{
-		p += IFNAMSIZ;
-	
-		if ((p + 2) >= end)
-			break;
-			
-		if ((p + *p) >= end)
-			break;
-			
-		if ((*(p + 1) == AF_LINK) &&
-		    (((struct sockaddr_dl *)p)->sdl_nlen == nlen) &&
-		    (!memcmp(iface->Name, ((struct sockaddr_dl *)p)->sdl_data, nlen)))
-		{
-			index = ((struct sockaddr_dl *)p)->sdl_index;
+		if (ifa->ifa_addr->sa_family == AF_LINK) {
+			struct sockaddr_dl *dl = (struct sockaddr_dl*)ifa->ifa_addr;
+			if (memcmp(iface->Name, dl->sdl_data, dl->sdl_nlen) == 0)
+				iface->if_index = dl->sdl_index;
+			continue;
 		}
-		
-   	 	if (index && (*(p + 1) == AF_INET6))
-		  if (!memcmp(&((struct sockaddr_in6 *)p)->sin6_addr, ll_prefix, sizeof(ll_prefix)))
-		  {
-			memcpy(&iface->if_addr, &((struct sockaddr_in6 *)p)->sin6_addr, sizeof(struct in6_addr));
-			iface->if_index = index;
 
-			free(ifconf.ifc_buf);
-			return 0;
-      	  	  }
-      	  
-		p += *p;
+		if (ifa->ifa_addr->sa_family != AF_INET6)
+			continue;
 
+		struct sockaddr_in6 *a6 = (struct sockaddr_in6*)ifa->ifa_addr;
+
+		/* Skip if it is not a linklocal address */
+		if (memcmp(&(a6->sin6_addr), ll_prefix, sizeof(ll_prefix)) != 0)
+			continue;
+
+		memcpy(&iface->if_addr, &(a6->sin6_addr), sizeof(struct in6_addr));
+		freeifaddrs(addresses);
+		return 0;
 	}
+	freeifaddrs(addresses);
 
 ret:
 	flog(LOG_ERR, "no linklocal address configured for %s", iface->Name);
-	free(ifconf.ifc_buf);
 	return -1;
 }
 

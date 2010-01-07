@@ -1,5 +1,5 @@
 .\"
-.\"   $Id: radvd.conf.5.man,v 1.26 2008/03/31 09:37:31 psavola Exp $
+.\"   $Id: radvd.conf.5.man,v 1.27 2009/06/19 07:34:07 psavola Exp $
 .\"
 .\"   Authors:
 .\"    Lars Fenneberg		<lf@elemental.net>
@@ -14,7 +14,7 @@
 .\"
 .\"
 .\"
-.TH RADVD.CONF 5 "24 Jan 2008" "radvd @VERSION@" ""
+.TH RADVD.CONF 5 "19 Jun 2009" "radvd @VERSION@" ""
 .SH NAME
 radvd.conf \- configuration file of the router advertisement daemon
 .B radvd
@@ -23,12 +23,13 @@ This file describes the information which is included in the router
 advertisement (RA) of a specific interface.
 .P
 The file contains one or more interface definitions of the form
-(NOTE: the prefix/route/RDNSS definitions must be in this order):
+(NOTE: the prefix/clients/route/RDNSS definitions must be in this order):
 
 .nf
 .BR "interface " "name " {
 	list of interface specific options
 	list of prefix definitions
+	list of clients (IPv6 addresses) to advertise to
 	list of route definitions
 	list of RDNSS definitions
 .B };
@@ -80,6 +81,21 @@ RDNSS (Recursive DNS server) definitions are of the form:
 .nf
 .BR "RDNSS " "ip [ip] [ip] " {
 	list of rdnss specific options
+.B };
+.fi
+
+By default radvd will send route advertisements so that every node on the link can use them.
+The list of clients (IPv6 address) to advertise to, and accept route solicitations from can be configured.
+If done, radvd does not send send messages to the multicast addresses but
+to the configured unicast addresses only.  Solicitations from other addresses are refused.
+This is similar to UnicastOnly but includes periodic messages and incoming client access
+configuration.  See examples section for a use case of this.
+
+The definitions are of the form:
+
+.nf
+.BR "clients " {
+        list of IPv6 addresses
 .B };
 .fi
 
@@ -561,6 +577,30 @@ In this specific case, the configuration scripts may send HUP signal to
 radvd when taking bnep0 up or down to notify about the status; in the
 current radvd releases, sending HUP is no longer mandatory when the link
 comes back up.
+
+.nf
+interface eth0
+{
+        AdvSendAdvert on;
+        prefix 2001:db8:0:1::/64
+        {
+                AdvOnLink on;
+                AdvAutonomous on;
+        };
+        clients
+        {
+                fe80::21f:16ff:fe06:3aab;
+                fe80::21d:72ff:fe96:aaff;
+        };
+};
+.fi
+
+This configuration would only announce the prefix to fe80::21f:16ff:fe06:3aab and fe80::21d:72ff:fe96:aaff.
+Furthermore, all RA requests of other clients are denied.
+
+This may come in handy if you want to roll out IPv6 only partially because
+some clients are broken or untested.
+
 
 .SH FILES
 
