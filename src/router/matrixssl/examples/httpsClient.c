@@ -1,12 +1,12 @@
 /*
  *	httpClient.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	Simple example program for MatrixSSL
  *	Sends a HTTPS request and echos the response back to the sender.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -263,9 +263,11 @@ readMore:
 */
 		if (j++ < requests) {
 			fprintf(stdout, "R");
+			fflush(stdout);
 			continue;
 		} else {
 			fprintf(stdout, "C");
+			fflush(stdout);
 		}
 /*
 		Reuse the session.  Comment out these two lines to test the entire

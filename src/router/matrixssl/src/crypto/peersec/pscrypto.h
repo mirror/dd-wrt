@@ -1,11 +1,11 @@
 /*
  *	pscrypto.h
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	Internal definitions for PeerSec Networks MatrixSSL cryptography provider
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -77,6 +77,7 @@ typedef struct {
 } sslRsaKey_t;
 
 #endif /* USE_RSA */
+
 
 
 /*
@@ -166,13 +167,7 @@ struct md2_state {
 };
 #endif /* USE_MD2 */
 
-#ifdef USE_SHA256
-struct sha256_state {
-	ulong64 length;
-	ulong32 state[8], curlen;
-	unsigned char buf[64];
-};
-#endif /* USE_SHA256 */
+
 
 typedef union {
 	struct sha1_state	sha1;
@@ -180,9 +175,6 @@ typedef union {
 #ifdef USE_MD2
 	struct md2_state	md2;
 #endif /* USE_MD2 */
-#ifdef USE_SHA256
-	struct sha256_state sha256;
-#endif
 } hash_state;
 
 typedef hash_state sslSha1Context_t;
@@ -190,9 +182,6 @@ typedef hash_state sslMd5Context_t;
 #ifdef USE_MD2
 typedef hash_state sslMd2Context_t;
 #endif /* USE_MD2 */
-#ifdef USE_SHA256
-typedef hash_state sslSha256Context_t;
-#endif /* USE_SHA256 */
 
 typedef struct {
 	unsigned char	pad[64];
@@ -252,6 +241,7 @@ extern void des_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
 		 des3_CBC *key);
 
 #endif /* USE_3DES */
+
 
 
 typedef union {

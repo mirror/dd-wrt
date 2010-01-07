@@ -1,238 +1,338 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="9.00"
 	Name="matrixSslStatic"
 	ProjectGUID="{8DBF200C-313A-485B-97D8-892158882E16}"
-	Keyword="Win32Proj">
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
-			ConfigurationType="4">
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG;_WIN32_WINNT=0x0500"
-				MinimalRebuild="TRUE"
-				ExceptionHandling="FALSE"
+				MinimalRebuild="true"
+				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
-				SmallerTypeCheck="TRUE"
-				RuntimeLibrary="5"
-				BufferSecurityCheck="TRUE"
-				EnableFunctionLevelLinking="TRUE"
+				SmallerTypeCheck="true"
+				RuntimeLibrary="1"
+				BufferSecurityCheck="true"
+				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
-				CompileAs="1"/>
+				CompileAs="1"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libmatrixstatic.lib"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Force dependency change for projects linking to libmatrixssl.lib"
-				CommandLine="copy &quot;$(OutDir)\arc4.obj&quot; &quot;$(OutDir)\libmatrixssl.lib&quot;
-del &quot;$(OutDir)\libmatrixssl.lib&quot;
-"/>
+				CommandLine="copy &quot;$(OutDir)\arc4.obj&quot; &quot;$(OutDir)\libmatrixssl.lib&quot;&#x0D;&#x0A;del &quot;$(OutDir)\libmatrixssl.lib&quot;&#x0D;&#x0A;"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/libmatrixstatic.lib"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
-			ConfigurationType="4">
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="3"
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
-				OmitFramePointers="TRUE"
+				OmitFramePointers="true"
 				PreprocessorDefinitions="WIN32;_WIN32_WINNT=0x0500"
-				StringPooling="TRUE"
-				ExceptionHandling="FALSE"
-				RuntimeLibrary="4"
-				CompileAs="1"/>
+				StringPooling="true"
+				ExceptionHandling="0"
+				RuntimeLibrary="0"
+				CompileAs="1"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libmatrixstatic.lib"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Force dependency change for projects linking to libmatrixssl.lib"
-				CommandLine="copy &quot;$(OutDir)\arc4.obj&quot; &quot;$(OutDir)\libmatrixssl.lib&quot;
-del &quot;$(OutDir)\libmatrixssl.lib&quot;
-"/>
+				CommandLine="copy &quot;$(OutDir)\arc4.obj&quot; &quot;$(OutDir)\libmatrixssl.lib&quot;&#x0D;&#x0A;del &quot;$(OutDir)\libmatrixssl.lib&quot;&#x0D;&#x0A;"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/libmatrixstatic.lib"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="src"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm"
+			>
 			<File
-				RelativePath="cipherSuite.c">
+				RelativePath="cipherSuite.c"
+				>
 			</File>
 			<File
-				RelativePath="matrixConfig.h">
+				RelativePath="matrixConfig.h"
+				>
 			</File>
 			<File
-				RelativePath="matrixInternal.h">
+				RelativePath="matrixInternal.h"
+				>
 			</File>
 			<File
-				RelativePath="matrixSsl.c">
+				RelativePath="matrixSsl.c"
+				>
 			</File>
 			<File
-				RelativePath="sslDecode.c">
+				RelativePath="sslDecode.c"
+				>
 			</File>
 			<File
-				RelativePath="sslEncode.c">
+				RelativePath="sslEncode.c"
+				>
 			</File>
 			<File
-				RelativePath="sslv3.c">
+				RelativePath="sslv3.c"
+				>
 			</File>
 			<Filter
 				Name="crypto"
-				Filter="">
+				>
 				<File
-					RelativePath="crypto\cryptoLayer.h">
+					RelativePath="crypto\cryptoLayer.h"
+					>
 				</File>
 				<File
-					RelativePath="crypto\matrixCrypto.h">
+					RelativePath="crypto\matrixCrypto.h"
+					>
 				</File>
 				<Filter
 					Name="peersec"
-					Filter="">
+					>
 					<File
-						RelativePath="crypto\peersec\arc4.c">
+						RelativePath="crypto\peersec\arc4.c"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\base64.c">
+						RelativePath="crypto\peersec\base64.c"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\des3.c">
+						RelativePath="crypto\peersec\des3.c"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\md2.c">
+						RelativePath="crypto\peersec\md2.c"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\md5.c">
+						RelativePath="crypto\peersec\md5.c"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\mpi.c">
+						RelativePath="crypto\peersec\mpi.c"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\mpi.h">
+						RelativePath="crypto\peersec\mpi.h"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\pscrypto.h">
+						RelativePath="crypto\peersec\pscrypto.h"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\rsa.c">
+						RelativePath="crypto\peersec\rsa.c"
+						>
 					</File>
 					<File
-						RelativePath="crypto\peersec\sha1.c">
+						RelativePath="crypto\peersec\sha1.c"
+						>
 					</File>
 				</Filter>
 			</Filter>
 			<Filter
 				Name="os"
-				Filter="">
+				>
 				<File
-					RelativePath="os\debug.c">
+					RelativePath="os\debug.c"
+					>
 				</File>
 				<File
-					RelativePath="os\osLayer.h">
+					RelativePath="os\osLayer.h"
+					>
 				</File>
 				<File
-					RelativePath="os\psMalloc.h">
+					RelativePath="os\psMalloc.h"
+					>
 				</File>
 				<Filter
 					Name="linux"
-					Filter="">
+					>
 					<File
-						RelativePath="os\linux\linux.c">
+						RelativePath="os\linux\linux.c"
+						>
 						<FileConfiguration
 							Name="Debug|Win32"
-							ExcludedFromBuild="TRUE">
+							ExcludedFromBuild="true"
+							>
 							<Tool
-								Name="VCCLCompilerTool"/>
+								Name="VCCLCompilerTool"
+							/>
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Win32"
-							ExcludedFromBuild="TRUE">
+							ExcludedFromBuild="true"
+							>
 							<Tool
-								Name="VCCLCompilerTool"/>
+								Name="VCCLCompilerTool"
+							/>
 						</FileConfiguration>
 					</File>
 				</Filter>
 				<Filter
 					Name="win"
-					Filter="">
+					>
 					<File
-						RelativePath="os\win\win.c">
+						RelativePath="os\win\win.c"
+						>
 					</File>
 				</Filter>
 			</Filter>
 			<Filter
 				Name="pki"
-				Filter="">
+				>
 				<File
-					RelativePath="pki\asn1.c">
+					RelativePath="pki\asn1.c"
+					>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+							ObjectFile="$(IntDir)/$(InputName)1.obj"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+							ObjectFile="$(IntDir)/$(InputName)1.obj"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="pki\matrixPki.h">
+					RelativePath="pki\matrixPki.h"
+					>
 				</File>
 				<File
-					RelativePath="pki\pkiInternal.h">
+					RelativePath="pki\pkiInternal.h"
+					>
 				</File>
 				<File
-					RelativePath="pki\rsaPki.c">
+					RelativePath="pki\rsaPki.c"
+					>
 				</File>
 				<File
-					RelativePath="pki\x509.c">
+					RelativePath="pki\x509.c"
+					>
 				</File>
 			</Filter>
 		</Filter>
 		<File
-			RelativePath="..\matrixSsl.h">
+			RelativePath="..\matrixSsl.h"
+			>
 		</File>
 	</Files>
 	<Globals>

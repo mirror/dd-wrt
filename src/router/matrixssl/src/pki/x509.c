@@ -1,11 +1,11 @@
 /*
  *	x509.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	DER/BER coding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -41,6 +41,9 @@
 #define IMPLICIT_SUBJECT_ID		2
 #define EXPLICIT_EXTENSION		3
 
+#define	RSA_SIG					1
+#define DSA_SIG					2
+
 #define OID_SHA1				88
 #define OID_MD2					646
 #define OID_MD5					649
@@ -75,9 +78,8 @@ static const struct {
 static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp, 
 								 int32 len, int32 expVal,
 								 v3extensions_t *extensions);
-static int32 matrixX509ValidateCertInternal(psPool_t *pool, 
-						sslRsaCert_t *subjectCert, 
-						sslRsaCert_t *issuerCert, int32 chain);
+static int32 matrixX509ValidateCertInternal(psPool_t *pool,
+				sslCert_t *subjectCert, sslCert_t *issuerCert, int32 chain);
 #ifdef USE_FILE_SYSTEM
 static int32 parseList(psPool_t *pool, const char *list, const char *sep,
 					   char **item);
@@ -93,18 +95,18 @@ static int32 parseList(psPool_t *pool, const char *list, const char *sep,
 	The private key is stored in a crypto provider specific structure
 */
 #ifdef USE_FILE_SYSTEM
-int32 matrixRsaReadKeys(sslKeys_t **keys, const char *certFile,
+int32 matrixX509ReadKeys(sslKeys_t **keys, const char *certFile,
 						const char *privFile, const char *privPass,
 						const char *trustedCAFiles)
 {
-	return matrixRsaReadKeysEx(PEERSEC_BASE_POOL, keys, certFile, privFile,
+	return matrixX509ReadKeysEx(PEERSEC_BASE_POOL, keys, certFile, privFile,
 		privPass, trustedCAFiles);
 }
 #else /* USE_FILE_SYSTEM */
-int32 matrixRsaReadKeys(sslKeys_t **keys, char *certFile, char *privFile,
+int32 matrixX509ReadKeys(sslKeys_t **keys, char *certFile, char *privFile,
 					 char *privPass, char *trustedCAFile)
 {
-	matrixStrDebugMsg("Error: Calling matrixRsaReadKeys against a library " \
+	matrixStrDebugMsg("Error: Calling matrixX509ReadKeys against a library " \
 					  "built without USE_FILE_SYSTEM defined\n", NULL);
 	return -1;
 }
@@ -112,7 +114,7 @@ int32 matrixRsaReadKeys(sslKeys_t **keys, char *certFile, char *privFile,
 
 /******************************************************************************/
 /*
-	In memory version of matrixRsaReadKeys.  The buffers are the ASN.1 raw
+	In memory version of matrixX509ReadKeys.  The buffers are the ASN.1 raw
 	stream (ie. not base64 PEM encoded)
 
 	API CHANGE: 1.7 changed this protoype and buffer formats (ASN.1 now) but
@@ -120,7 +122,7 @@ int32 matrixRsaReadKeys(sslKeys_t **keys, char *certFile, char *privFile,
 	this function on their own and are using it will need to convert to this
 	new	version.
 */
-int32 matrixRsaReadKeysMem(sslKeys_t **keys, unsigned char *certBuf,
+int32 matrixX509ReadKeysMem(sslKeys_t **keys, unsigned char *certBuf,
 			int32 certLen, unsigned char *privBuf, int32 privLen,
 			unsigned char *trustedCABuf, int32 trustedCALen)
 {
@@ -172,7 +174,7 @@ void matrixRsaFreeKeys(sslKeys_t *keys)
 	expose this API at the matrixSsl.h level due to the pool parameter. This
 	is strictly an API that commerical users will have access to
 */
-int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys,
+int32 matrixX509ReadKeysEx(psPool_t *pool, sslKeys_t **keys,
 				const char *certFile, const char *privFile,
 				const char *privPass, const char *trustedCAFiles)
 {
@@ -180,7 +182,7 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys,
 	unsigned char	*privKeyMem;
 	int32			rc, privKeyMemLen;
 #ifdef USE_CLIENT_SIDE_SSL
-	sslRsaCert_t	*currCert, *prevCert = NULL;
+	sslCert_t		*currCert, *prevCert = NULL;
 	unsigned char	*caCert, *caStream;
 	sslChainLen_t	chain;
 	int32			caCertLen, first, i;
@@ -205,7 +207,7 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys,
 	private key. 
 */
 	if (privFile) {
-		rc = matrixRsaReadPrivKey(pool, privFile, privPass, &privKeyMem,
+		rc = matrixX509ReadPrivKey(pool, privFile, privPass, &privKeyMem,
 			&privKeyMemLen);
 		if (rc < 0) {
 			matrixStrDebugMsg("Error reading private key file: %s\n",
@@ -213,8 +215,8 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys,
 			matrixRsaFreeKeys(lkeys);
 			return rc;
 		}
-		rc = matrixRsaParsePrivKey(pool, privKeyMem, privKeyMemLen,
-			&lkeys->cert.privKey);
+			rc = matrixRsaParsePrivKey(pool, privKeyMem, privKeyMemLen,
+				&lkeys->cert.privKey);
 		if (rc < 0) {
 			matrixStrDebugMsg("Error parsing private key file: %s\n",
 				(char*)privFile);
@@ -224,7 +226,7 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys,
 		}
 		psFree(privKeyMem);
 	}
-
+	
 #ifdef USE_CLIENT_SIDE_SSL
 /*
 	Now deal with Certificate Authorities
@@ -293,7 +295,7 @@ int32 matrixX509ReadCert(psPool_t *pool, const char *fileName,
 	int32			certBufLen, rc, certChainLen, i;
 	unsigned char	*oneCert[MAX_CHAIN_LENGTH];
 	unsigned char	*certPtr, *tmp;
-	char			*certFile, *start, *end, *certBuf;
+	char			*certFile, *start, *end, *certBuf, *endTmp;
 	const char		sep[] = ";";
 
 /*
@@ -331,16 +333,18 @@ int32 matrixX509ReadCert(psPool_t *pool, const char *fileName,
 		}
 		psFree(certFile);
 		certPtr = (unsigned char*)certBuf;
-		start = end = certBuf;
+		start = end = endTmp = certBuf;
 
 		while (certBufLen > 0) {
-			if (((start = strstr(certBuf, "-----BEGIN")) != NULL) && 
+			if (((start = strstr(certBuf, "-----BEGIN")) != NULL) &&
 					((start = strstr(certBuf, "CERTIFICATE-----")) != NULL) &&
-					(end = strstr(start, "-----END")) != NULL) {
+					((end = strstr(start, "-----END")) != NULL) &&
+					((endTmp = strstr(end,"CERTIFICATE-----")) != NULL)) {
 				start += strlen("CERTIFICATE-----");
 				(*chain)[i] = (int32)(end - start);
-				end += strlen("-----END CERTIFICATE-----");
-				while (*end == '\r' || *end == '\n' || *end == '\t' || *end == ' ') {
+				end = endTmp + strlen("CERTIFICATE-----");
+                while (*end == '\r' || *end == '\n' || *end == '\t'
+						|| *end == ' ') {
 					end++;
 				}
 			} else {
@@ -539,7 +543,7 @@ int32 matrixRsaParseKeysMem(psPool_t *pool, sslKeys_t **keys,
 	unsigned char	*binPtr;
 	int32			len, lenOh, i;
 #ifdef USE_CLIENT_SIDE_SSL
-	sslRsaCert_t	*currentCA, *nextCA;
+	sslCert_t		*currentCA, *nextCA;
 #endif /* USE_CLIENT_SIDE_SSL */
 
 	*keys = lkeys = psMalloc(pool, sizeof(sslKeys_t));
@@ -630,6 +634,7 @@ int32 matrixRsaParseKeysMem(psPool_t *pool, sslKeys_t **keys,
 			trustedCABuf -= lenOh;
 
 			if (matrixX509ParseCert(pool, trustedCABuf, len, &currentCA) < 0) {
+				matrixX509FreeCert(currentCA);
 				matrixStrDebugMsg("Error parsing CA cert\n", NULL);
 				matrixRsaFreeKeys(lkeys);
 				return -1;
@@ -667,7 +672,7 @@ int32 matrixX509ParsePubKey(psPool_t *pool, unsigned char *certBuf,
 							int32 certLen, sslRsaKey_t **key)
 {
 	sslRsaKey_t		*lkey;
-	sslRsaCert_t	*certStruct;
+	sslCert_t		*certStruct;
 	int32			err;
 
 	if (matrixX509ParseCert(pool, certBuf, certLen, &certStruct) < 0) {
@@ -703,9 +708,9 @@ int32 matrixX509ParsePubKey(psPool_t *pool, unsigned char *certBuf,
 	http://www.faqs.org/rfcs/rfc2459.html section 4.1
 */
 int32 matrixX509ParseCert(psPool_t *pool, unsigned char *pp, int32 size, 
-						sslRsaCert_t **outcert)
+						sslCert_t **outcert)
 {
-	sslRsaCert_t		*cert;
+	sslCert_t			*cert;
 	sslMd5Context_t		md5Ctx;
 	sslSha1Context_t	sha1Ctx;
 	unsigned char		*p, *end, *certStart, *certEnd;
@@ -720,11 +725,11 @@ int32 matrixX509ParseCert(psPool_t *pool, unsigned char *pp, int32 size,
 	memset is important because the test for NULL is what is used
 	to determine what to free
 */
-	*outcert = cert = psMalloc(pool, sizeof(sslRsaCert_t));
+	*outcert = cert = psMalloc(pool, sizeof(sslCert_t));
 	if (cert == NULL) {
 		return -8; /* SSL_MEM_ERROR */
 	}
-	memset(cert, '\0', sizeof(sslRsaCert_t));
+	memset(cert, '\0', sizeof(sslCert_t));
 
 	p = pp;
 	end = p + size;
@@ -771,7 +776,7 @@ int32 matrixX509ParseCert(psPool_t *pool, unsigned char *pp, int32 size,
 			matrixStrDebugMsg("ASN version parse error\n", NULL);
 			return -1;
 		}
-		if (cert->version != 2) {
+		if (cert->version != 2) {		
 			matrixIntDebugMsg("Warning: non-v3 certificate version: %d\n",
 			cert->version);
 		}
@@ -838,9 +843,11 @@ int32 matrixX509ParseCert(psPool_t *pool, unsigned char *pp, int32 size,
 				&cert->pubKeyAlgorithm, 1) < 0) {
 			return -1;
 		}
-		if (getPubKey(pool, &p, (int32)(end - p), &cert->publicKey) < 0) {
-			return -1;
-		}
+
+			if (getPubKey(pool, &p, (int32)(end - p), &cert->publicKey) < 0) {
+				return -1;
+			}
+
 /*
 		As the next three values are optional, we can do a specific test here
 */
@@ -908,9 +915,9 @@ int32 matrixX509ParseCert(psPool_t *pool, unsigned char *pp, int32 size,
 		feature addition.  Chaining in MatrixSSL is handled internally.
 */
 		if (p != end) {
-			cert->next = psMalloc(pool, sizeof(sslRsaCert_t));
+			cert->next = psMalloc(pool, sizeof(sslCert_t));
 			cert = cert->next;
-			memset(cert, '\0', sizeof(sslRsaCert_t));
+			memset(cert, '\0', sizeof(sslCert_t));
 		} else {
 			parsing = 0;
 		}
@@ -924,9 +931,10 @@ int32 matrixX509ParseCert(psPool_t *pool, unsigned char *pp, int32 size,
 	User must call after all calls to matrixX509ParseCert
 	(we violate the coding standard a bit here for clarity)
 */
-void matrixX509FreeCert(sslRsaCert_t *cert)
+void matrixX509FreeCert(sslCert_t *cert)
 {
-	sslRsaCert_t	*curr, *next;
+	sslCert_t			*curr, *next;
+	sslSubjectAltName_t	*active, *inc;
 
 	curr = cert;
 	while (curr) {
@@ -940,10 +948,20 @@ void matrixX509FreeCert(sslRsaCert_t *cert)
 		if (curr->signature)			psFree(curr->signature);
 		if (curr->uniqueUserId)			psFree(curr->uniqueUserId);
 		if (curr->uniqueSubjectId)		psFree(curr->uniqueSubjectId);
-		if (curr->extensions.san.dns)	psFree(curr->extensions.san.dns);
-		if (curr->extensions.san.uri)	psFree(curr->extensions.san.uri);
-		if (curr->extensions.san.email)	psFree(curr->extensions.san.email);
+
+		if (curr->extensions.san) {
+			active = curr->extensions.san;
+			while (active != NULL) {
+				inc = active->next;
+				psFree(active->data);
+				psFree(active);
+				active = inc;
+			}
+		}
+
+
 #ifdef USE_FULL_CERT_PARSE
+		if (curr->extensions.keyUsage)	psFree(curr->extensions.keyUsage);
 		if (curr->extensions.sk.id)		psFree(curr->extensions.sk.id);
 		if (curr->extensions.ak.keyId)	psFree(curr->extensions.ak.keyId);
 		if (curr->extensions.ak.serialNum)
@@ -1059,9 +1077,10 @@ static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp,
 {
 	unsigned char		*p = *pp, *end;
 	unsigned char		*extEnd, *extStart;
-	int32				len, noid, tmpLen, critical, fullExtLen;
+	int32				len, noid, critical, fullExtLen;
 	unsigned char		oid[SSL_MD5_HASH_SIZE];
 	sslMd5Context_t		md5ctx;
+	sslSubjectAltName_t	*activeName, *prevName;
 
 	end = p + inlen;
 	if (inlen < 1) {
@@ -1165,16 +1184,18 @@ static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp,
 				if (len == 0) {
 					break;
 				}
-				if (extEnd - p < 3) {
-					return -1;
+/*
+				Have seen some certs that don't include a cA bool.
+*/
+				if (*p == ASN_BOOLEAN) {
+					p++;
+					if (*p++ != 1) {
+						return -1;
+					}
+					extensions->bc.ca = *p++;
+				} else {
+					extensions->bc.ca = 0;
 				}
-				if (*p++ != ASN_BOOLEAN) {
-					return -1;
-				}
-				if (*p++ != 1) {
-					return -1;
-				}
-				extensions->bc.ca = *p++;
 /*
 				Now need to check if there is a path constraint. Only makes
 				sense if cA is true.  If it's missing, there is no limit to
@@ -1210,53 +1231,76 @@ static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp,
 					registeredID					[8]		OBJECT IDENTIFIER }
 */
 				while (len > 0) {
-					if (*p == (ASN_CONTEXT_SPECIFIC | ASN_PRIMITIVE | 2)) {
-						p++;
-						tmpLen = *p++;
-						if (extEnd - p < tmpLen) {
-							return -1;
-						}
-						extensions->san.dns = psMalloc(pool, tmpLen + 1);
-						if (extensions->san.dns == NULL) {
-							return -8; /* SSL_MEM_ERROR */
-						}
-						memset(extensions->san.dns, 0x0, tmpLen + 1);
-						memcpy(extensions->san.dns, p, tmpLen);
-					} else if (*p == (ASN_CONTEXT_SPECIFIC | ASN_PRIMITIVE | 6)) {
-						p++;
-						tmpLen = *p++;
-						if (extEnd - p < tmpLen) {
-							return -1;
-						}
-						extensions->san.uri = psMalloc(pool, tmpLen + 1);
-						if (extensions->san.uri == NULL) {
-							return -8; /* SSL_MEM_ERROR */
-						}
-						memset(extensions->san.uri, 0x0, tmpLen + 1);
-						memcpy(extensions->san.uri, p, tmpLen);
-					} else if (*p == (ASN_CONTEXT_SPECIFIC | ASN_PRIMITIVE | 1)) {
-						p++;
-						tmpLen = *p++;
-						if (extEnd - p < tmpLen) {
-							return -1;
-						}
-						extensions->san.email = psMalloc(pool, tmpLen + 1);
-						if (extensions->san.email == NULL) {
-							return -8; /* SSL_MEM_ERROR */
-						}
-						memset(extensions->san.email, 0x0, tmpLen + 1);
-						memcpy(extensions->san.email, p, tmpLen);
+					if (extensions->san == NULL) {
+						activeName = extensions->san = psMalloc(pool,
+							sizeof(sslSubjectAltName_t));
 					} else {
-						matrixStrDebugMsg("Unsupported subjectAltName type.n",
-							NULL);
-						p++;
-						tmpLen = *p++;
-						if (extEnd - p < tmpLen) {
-							return -1;
+/*
+						Find the end
+*/
+						prevName = extensions->san;
+						activeName = prevName->next;
+						while (activeName != NULL) {
+							prevName = activeName;
+							activeName = prevName->next;
 						}
+						prevName->next = psMalloc(pool,
+							sizeof(sslSubjectAltName_t));
+						activeName = prevName->next;
 					}
-					p = p + tmpLen;
-					len -= tmpLen + 2; /* the magic 2 is the type and length */
+					activeName->next = NULL;
+					activeName->data = NULL;
+					memset(activeName->name, '\0', 16);
+
+					activeName->id = *p & 0xF;
+					switch (activeName->id) {
+						case 0:
+							memcpy(activeName->name, "other", 5);
+							break;
+						case 1:
+							memcpy(activeName->name, "email", 5);
+							break;
+						case 2:
+							memcpy(activeName->name, "DNS", 3);
+							break;
+						case 3:
+							memcpy(activeName->name, "x400Address", 11);
+							break;
+						case 4:
+							memcpy(activeName->name, "directoryName", 13);
+							break;
+						case 5:
+							memcpy(activeName->name, "ediPartyName", 12);
+							break;
+						case 6:
+							memcpy(activeName->name, "URI", 3);
+							break;
+						case 7:
+							memcpy(activeName->name, "iPAddress", 9);
+							break;
+						case 8:
+							memcpy(activeName->name, "registeredID", 12);
+							break;
+						default:
+							memcpy(activeName->name, "unknown", 7);
+							break;
+					}
+	
+					p++;
+					activeName->dataLen = *p++;
+					if (extEnd - p < activeName->dataLen) {
+						return -1;
+					}
+					activeName->data = psMalloc(pool, activeName->dataLen + 1);
+					if (activeName->data == NULL) {
+						return -8; /* SSL_MEM_ERROR */
+					}
+					memset(activeName->data, 0x0, activeName->dataLen + 1);
+					memcpy(activeName->data, p, activeName->dataLen);
+					
+					p = p + activeName->dataLen;
+					/* the magic 2 is the type and length */
+					len -= activeName->dataLen + 2; 
 				}
 				break;
 #ifdef USE_FULL_CERT_PARSE
@@ -1354,13 +1398,16 @@ static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp,
 						extEnd - p < len) {
 					return -1;
 				}
-				if (len != 2) {
-					return -1;
-				}
 /*
-				Assure all unused bits are 0 and store away
+				We'd expect a length of 3 with the first byte being '07' to
+				account for the trailing ignore bits in the second byte.
+				But it doesn't appear all certificates adhere to the ASN.1
+				encoding standard very closely.  Just set it all aside for 
+				user to interpret as necessary.
 */
-				extensions->keyUsage = (*(p + 1)) & ~((1 << *p) -1);
+				extensions->keyUsage = psMalloc(pool, len);
+				memcpy(extensions->keyUsage, p, len);
+				extensions->keyUsageLen = len;
 				p = p + len;
 				break;
 			case EXT_SUBJ_KEY_ID:
@@ -1419,10 +1466,10 @@ static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp,
 	member of the chain as the subjectCert that can then be validated against
 	the CAs.  The subjectCert points into the chain param (no need to free)
 */
-int32 matrixX509ValidateCertChain(psPool_t *pool, sslRsaCert_t *chain, 
-							sslRsaCert_t **subjectCert, int32 *valid)
+int32 matrixX509ValidateCertChain(psPool_t *pool, sslCert_t *chain, 
+							sslCert_t **subjectCert, int32 *valid)
 {
-	sslRsaCert_t	*ic;
+	sslCert_t	*ic;
 
 	*subjectCert = chain;
 	*valid = 1;
@@ -1449,8 +1496,8 @@ int32 matrixX509ValidateCertChain(psPool_t *pool, sslRsaCert_t *chain,
 	of the validation is returned in the 'valid' param of the subjectCert.
 	1 if the issuerCert	signed the subject cert. -1 if not
 */
-int32 matrixX509ValidateCert(psPool_t *pool, sslRsaCert_t *subjectCert, 
-						   sslRsaCert_t *issuerCert, int32 *valid)
+int32 matrixX509ValidateCert(psPool_t *pool, sslCert_t *subjectCert, 
+						   sslCert_t *issuerCert, int32 *valid)
 {
 	if (matrixX509ValidateCertInternal(pool, subjectCert, issuerCert, 0) < 0) {
 		*valid = -1;
@@ -1460,12 +1507,12 @@ int32 matrixX509ValidateCert(psPool_t *pool, sslRsaCert_t *subjectCert,
 	return 0;
 }
 
-static int32 matrixX509ValidateCertInternal(psPool_t *pool, sslRsaCert_t *subjectCert, 
-						   sslRsaCert_t *issuerCert, int32 chain)
+static int32 matrixX509ValidateCertInternal(psPool_t *pool,
+				sslCert_t *subjectCert, sslCert_t *issuerCert, int32 chain)
 {
-	sslRsaCert_t	*ic;
+	sslCert_t		*ic;
 	unsigned char	sigOut[10 + SSL_SHA1_HASH_SIZE + 5];	/* See below */
-	int32			sigLen;
+	int32			sigLen, sigType, rc;
 
 	subjectCert->valid = -1;
 /*
@@ -1487,7 +1534,7 @@ static int32 matrixX509ValidateCertInternal(psPool_t *pool, sslRsaCert_t *subjec
 	while (ic) {
 		if (subjectCert != ic) {
 /*
-			Certificate authority contraint32 only available in version 3 certs
+			Certificate authority constraint only available in version 3 certs
 */
 			if ((ic->version > 1) && (ic->extensions.bc.ca <= 0)) {
 				if (chain) {
@@ -1517,20 +1564,31 @@ static int32 matrixX509ValidateCertInternal(psPool_t *pool, sslRsaCert_t *subjec
 */
 		if (subjectCert->sigAlgorithm ==  OID_RSA_MD5 ||
 				subjectCert->sigAlgorithm == OID_RSA_MD2) {
+			sigType = RSA_SIG;
 			sigLen = 10 + SSL_MD5_HASH_SIZE + 8;	/* See above */
 		} else if (subjectCert->sigAlgorithm == OID_RSA_SHA1) {
 			sigLen = 10 + SSL_SHA1_HASH_SIZE + 5;	/* See above */
+			sigType = RSA_SIG;
 		} else {
 			matrixStrDebugMsg("Unsupported signature algorithm\n", NULL);
 			return -1;
 		}
-		sslAssert(sigLen <= sizeof(sigOut));
-		matrixRsaDecryptPub(pool, &(ic->publicKey), subjectCert->signature,
-			subjectCert->signatureLen, sigOut, sigLen);
+		
+		if (sigType == RSA_SIG) {
+			sslAssert(sigLen <= sizeof(sigOut));
+
+			if (matrixRsaDecryptPub(pool, &(ic->publicKey),
+					subjectCert->signature,	subjectCert->signatureLen, sigOut,
+					sigLen) < 0) {
+				matrixStrDebugMsg("Unable to RSA decrypt signature\n", NULL);
+				return -1;					
+			}
+			rc = psAsnConfirmSignature(subjectCert->sigHash, sigOut, sigLen);
+		}
 /*
 		If this is a chain test, fail on any gaps in the chain
 */
-		if (psAsnConfirmSignature(subjectCert->sigHash, sigOut, sigLen) < 0) {
+		if (rc < 0) {
 			if (chain) {
 				return -1;
 			}
@@ -1551,7 +1609,7 @@ static int32 matrixX509ValidateCertInternal(psPool_t *pool, sslRsaCert_t *subjec
 	Calls a user defined callback to allow for manual validation of the
 	certificate.
 */
-int32 matrixX509UserValidator(psPool_t *pool, sslRsaCert_t *subjectCert,
+int32 matrixX509UserValidator(psPool_t *pool, sslCert_t *subjectCert,
 			int32 (*certValidator)(sslCertInfo_t *t, void *arg), void *arg)
 {
 	sslCertInfo_t	*cert, *current, *next;
@@ -1590,10 +1648,8 @@ int32 matrixX509UserValidator(psPool_t *pool, sslRsaCert_t *subjectCert,
 		current->notBefore = subjectCert->notBefore;
 		current->notAfter = subjectCert->notAfter;
 
-		current->subjectAltName.dns = (char*)subjectCert->extensions.san.dns;
-		current->subjectAltName.uri = (char*)subjectCert->extensions.san.uri;
-		current->subjectAltName.email = (char*)subjectCert->extensions.san.email;
-	
+		current->subjectAltName = subjectCert->extensions.san;
+
 		if (subjectCert->certAlgorithm == OID_RSA_MD5 ||
 				subjectCert->certAlgorithm == OID_RSA_MD2) {
 			current->sigHashLen = SSL_MD5_HASH_SIZE;

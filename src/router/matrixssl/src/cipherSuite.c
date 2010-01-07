@@ -1,13 +1,13 @@
 /*
  *	cipherSuite.c
- *	Release $Name: MATRIXSSL_1_8_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_8_OPEN $
  *
  *	Wrappers for the various cipher suites.
  *	Contributors should add additional cipher suites here.
  *	Enable specific suites at compile time in matrixConfig.h
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2009. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -101,6 +101,8 @@ static sslCipherSpec_t	supportedCiphers[] = {
 		matrixCipherAInit,
 		matrix3desEncrypt, 
 		matrix3desDecrypt, 
+		NULL,
+		matrixRsaDecryptPub,
 		matrixRsaEncryptPub, 
 		matrixRsaDecryptPriv, 
 		sha1GenerateMac, 
@@ -115,6 +117,8 @@ static sslCipherSpec_t	supportedCiphers[] = {
 		matrixCipher5Init,
 		matrixArc4, 
 		matrixArc4, 
+		NULL,
+		matrixRsaDecryptPub,
 		matrixRsaEncryptPub, 
 		matrixRsaDecryptPriv, 
 		sha1GenerateMac, 
@@ -129,6 +133,8 @@ static sslCipherSpec_t	supportedCiphers[] = {
 		matrixCipher4Init,
 		matrixArc4, 
 		matrixArc4, 
+		NULL,
+		matrixRsaDecryptPub,
 		matrixRsaEncryptPub, 
 		matrixRsaDecryptPriv, 
 		md5GenerateMac, 
@@ -147,6 +153,8 @@ static sslCipherSpec_t	supportedCiphers[] = {
 		nullInit,
 		nullEncrypt, 
 		nullDecrypt, 
+		matrixRsaEncryptPriv,
+		matrixRsaDecryptPub,
 		matrixRsaEncryptPub, 
 		matrixRsaDecryptPriv, 
 		md5GenerateMac, 
@@ -161,6 +169,8 @@ static sslCipherSpec_t	supportedCiphers[] = {
 		nullInit,
 		nullEncrypt, 
 		nullDecrypt, 
+		matrixRsaEncryptPriv,
+		matrixRsaDecryptPub,
 		matrixRsaEncryptPub, 
 		matrixRsaDecryptPriv, 
 		sha1GenerateMac, 
@@ -177,6 +187,8 @@ static sslCipherSpec_t	supportedCiphers[] = {
 		nullInit,
 		nullEncrypt, 
 		nullDecrypt, 
+		nullEncryptPub,
+		nullDecryptPriv,
 		nullEncryptPub, 
 		nullDecryptPriv, 
 		nullGenerateMac, 
@@ -353,6 +365,7 @@ static int32 matrixCipherAInit(sslSec_t *sec, int32 type)
 }
 #endif /* USE_SSL_RSA_WITH_3DES_EDE_CBC_SHA */
 
+
 /******************************************************************************/
 /*
 	SSL_NULL_WITH_NULL_NULL cipher functions
@@ -422,6 +435,7 @@ static int32 nullVerifyMac(void *ssl, unsigned char type, unsigned char *data,
 {
 	return 0;
 }
+
 
 
 /******************************************************************************/
