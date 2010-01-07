@@ -13,7 +13,7 @@ interface eth0
 	AdvSendAdvert on;
 
 # This may be needed on some interfaces which are not active when
-# radvd starts, but becomoe available later on; see man page for details.
+# radvd starts, but become available later on; see man page for details.
 
 	# IgnoreIfMissing on;
 
@@ -92,7 +92,9 @@ interface eth0
 	};
 #
 # example of a more specific route
-# NOTE: This feature is still being specified and is not widely supported!
+# NOTE: This feature is not very widely supported! You may also need to
+# enable it manually (e.g. on Linux, change the value of
+# sysctl accept_ra_rt_info_max_plen to 48 or 64)
 #
 	route 2001:db0:fff::/48
 	{
@@ -102,12 +104,14 @@ interface eth0
 
 #
 # RDNSS
-# NOTE: This feature is still a draft has no IANA number type for the moment
+# NOTE: This feature is not very widely implemented.
 #
         RDNSS 2001:db8::1 2001:db8::2
         {
                 AdvRDNSSPreference 8;
-                AdvRDNSSOpen off;
+		### AdvRDNSSOpen was removed from the final specification but
+		### may be used for experimental purposes.
+                # AdvRDNSSOpen off;
                 AdvRDNSSLifetime 30;
         };
 

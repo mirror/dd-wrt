@@ -1,5 +1,5 @@
 /*
- *   $Id: gram.y,v 1.19 2007/10/25 19:29:40 psavola Exp $
+ *   $Id: gram.y,v 1.22 2009/09/07 07:56:02 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -50,12 +50,13 @@ static void yyerror(char *msg);
 %token		T_PREFIX
 %token		T_ROUTE
 %token		T_RDNSS
+%token		T_CLIENTS
 
 %token	<str>	STRING
 %token	<num>	NUMBER
 %token	<snum>	SIGNEDNUMBER
 %token	<dec>	DECIMAL
-%token	<bool>	SWITCH
+%token	<num>	SWITCH
 %token	<addr>	IPV6ADDR
 %token 		INFINITY
 
@@ -103,6 +104,7 @@ static void yyerror(char *msg);
 
 %type	<str>	name
 %type	<pinfo> optional_prefixlist prefixdef prefixlist
+%type	<ainfo> optional_clientslist clientslist v6addrlist
 %type	<rinfo>	optional_routelist routedef routelist
 %type	<rdnssinfo> optional_rdnsslist rdnssdef rdnsslist
 %type   <num>	number_or_infinity
@@ -111,12 +113,12 @@ static void yyerror(char *msg);
 	unsigned int		num;
 	int			snum;
 	double			dec;
-	int			bool;
 	struct in6_addr		*addr;
 	char			*str;
 	struct AdvPrefix	*pinfo;
 	struct AdvRoute		*rinfo;
 	struct AdvRDNSS		*rdnssinfo;
+	struct Clients		*ainfo;
 };
 
 %%
@@ -144,7 +146,6 @@ ifacedef	: ifacehead '{' ifaceparams  '}' ';'
 			if (check_device(sock, iface) < 0) {
 				if (iface->IgnoreIfMissing) {
 					dlog(LOG_DEBUG, 4, "interface %s did not exist, ignoring the interface", iface->Name);
-					goto skip_interface;
 				}
 				else {
 					flog(LOG_ERR, "interface %s does not exist", iface->Name);
@@ -152,20 +153,23 @@ ifacedef	: ifacehead '{' ifaceparams  '}' ';'
 				}
 			}
 			if (setup_deviceinfo(sock, iface) < 0)
+				if (!iface->IgnoreIfMissing)
 				ABORT;
 			if (check_iface(iface) < 0)
+				if (!iface->IgnoreIfMissing)
 				ABORT;
 			if (setup_linklocal_addr(sock, iface) < 0)
+				if (!iface->IgnoreIfMissing)
 				ABORT;
 			if (setup_allrouters_membership(sock, iface) < 0)
+				if (!iface->IgnoreIfMissing)
 				ABORT;
+
+			dlog(LOG_DEBUG, 4, "interface definition for %s is ok", iface->Name);
 
 			iface->next = IfaceList;
 			IfaceList = iface;
 
-			dlog(LOG_DEBUG, 4, "interface definition for %s is ok", iface->Name);
-
-skip_interface:
 			iface = NULL;
 		};
 
@@ -191,11 +195,12 @@ name		: STRING
 		}
 		;
 
-ifaceparams	: optional_ifacevlist optional_prefixlist optional_routelist optional_rdnsslist
+ifaceparams	: optional_ifacevlist optional_prefixlist optional_clientslist optional_routelist optional_rdnsslist
 		{
 			iface->AdvPrefixList = $2;
-			iface->AdvRouteList = $3;
-			iface->AdvRDNSSList = $4;
+			iface->ClientList = $3;
+			iface->AdvRouteList = $4;
+			iface->AdvRDNSSList = $5;
 		}
 		;
 
@@ -208,6 +213,13 @@ optional_prefixlist: /* empty */
 			$$ = NULL;
 		}
 		| prefixlist
+		;
+
+optional_clientslist: /* empty */
+		{
+			$$ = NULL;
+		}
+		| clientslist
 		;
 
 optional_routelist: /* empty */
@@ -325,7 +337,39 @@ ifaceval	: T_MinRtrAdvInterval NUMBER ';'
 			iface->AdvMobRtrSupportFlag = $2;
 		}
 		;
-		
+
+clientslist	: T_CLIENTS '{' v6addrlist '}' ';'
+		{
+			$$ = $3;
+		}
+		;
+
+v6addrlist	: IPV6ADDR ';'
+		{
+			struct Clients *new = calloc(1, sizeof(struct Clients));
+			if (new == NULL) {
+				flog(LOG_CRIT, "calloc failed: %s", strerror(errno));
+				ABORT;
+			}
+
+			memcpy(&(new->Address), $1, sizeof(struct in6_addr));
+			$$ = new;
+		}
+		| v6addrlist IPV6ADDR ';'
+		{
+			struct Clients *new = calloc(1, sizeof(struct Clients));
+			if (new == NULL) {
+				flog(LOG_CRIT, "calloc failed: %s", strerror(errno));
+				ABORT;
+			}
+
+			memcpy(&(new->Address), $2, sizeof(struct in6_addr));
+			new->next = $1;
+			$$ = new;
+		}
+		;
+
+
 prefixlist	: prefixdef optional_prefixlist
 		{
 			$1->next = $2;
