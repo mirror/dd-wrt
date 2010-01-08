@@ -118,13 +118,13 @@ ar7240_pci_read_config(struct pci_bus *bus, unsigned int devfn, int where,
             break;
         case 4:
             *value = ar7240_reg_rd(AR7240_PCI_DEV_CFGBASE + where);
-        if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) != AR7241_REV_1_0) {
-            /*
-             * WAR for BAR issue - We are unable to access the PCI device spac 
-             * if we set the BAR with proper base address 
-             */
-            if(where == 0x10)
-                ar7240_reg_wr((AR7240_PCI_DEV_CFGBASE + where),0xffff);
+            if (is_ar7240()) {
+                /*
+                 * WAR for BAR issue - We are unable to access the PCI device spac 
+                 * if we set the BAR with proper base address 
+                 */
+                if(where == 0x10)
+                    ar7240_reg_wr((AR7240_PCI_DEV_CFGBASE + where),0xffff);
             }
             break;
         default:
