@@ -251,15 +251,18 @@ enum CountryCode {
 	CTRY_AUSTRALIA = 36,	/* Australia */
 	CTRY_AUSTRIA = 40,	/* Austria */
 	CTRY_AZERBAIJAN = 31,	/* Azerbaijan */
-	CTRY_BANGLADESH = 50,	/* Bangladesh */
 	CTRY_BAHRAIN = 48,	/* Bahrain */
+	CTRY_BANGLADESH = 50,	/* Bangladesh */
+	CTRY_BARBADOS = 52,	/* Barbados */
 	CTRY_BELARUS = 112,	/* Belarus */
 	CTRY_BELGIUM = 56,	/* Belgium */
 	CTRY_BELIZE = 84,	/* Belize */
 	CTRY_BOLIVIA = 68,	/* Bolivia */
+	CTRY_BOSNIA_HERZ = 70,	/* Bosnia and Herzegowina */
 	CTRY_BRAZIL = 76,	/* Brazil */
 	CTRY_BRUNEI_DARUSSALAM = 96,	/* Brunei Darussalam */
 	CTRY_BULGARIA = 100,	/* Bulgaria */
+	CTRY_CAMBODIA = 116,	/* Cambodia */
 	CTRY_CANADA = 124,	/* Canada */
 	CTRY_CHILE = 152,	/* Chile */
 	CTRY_CHINA = 156,	/* People's Republic of China */
@@ -281,9 +284,13 @@ enum CountryCode {
 	CTRY_GEORGIA = 268,	/* Georgia */
 	CTRY_GERMANY = 276,	/* Germany */
 	CTRY_GERMANY_BFWA = 277,	/* Germany */
-	CTRY_EGALISTAN = 278,	/* Germany */
+	CTRY_EGALISTAN = 278,
 	CTRY_GREECE = 300,	/* Greece */
+	CTRY_GREENLAND = 304,	/* Greenland */
+	CTRY_GRENADA = 308,	/* Grenada */
+	CTRY_GUAM = 316,	/* Guam */
 	CTRY_GUATEMALA = 320,	/* Guatemala */
+	CTRY_HAITI = 332,	/* Haiti */
 	CTRY_HONDURAS = 340,	/* Honduras */
 	CTRY_HONG_KONG = 344,	/* Hong Kong S.A.R., P.R.C. */
 	CTRY_HUNGARY = 348,	/* Hungary */
@@ -297,37 +304,6 @@ enum CountryCode {
 	CTRY_ITALY = 380,	/* Italy */
 	CTRY_JAMAICA = 388,	/* Jamaica */
 	CTRY_JAPAN = 392,	/* Japan */
-	CTRY_JAPAN1 = 393,	/* Japan (JP1) */
-	CTRY_JAPAN2 = 394,	/* Japan (JP0) */
-	CTRY_JAPAN3 = 395,	/* Japan (JP1-1) */
-	CTRY_JAPAN4 = 396,	/* Japan (JE1) */
-	CTRY_JAPAN5 = 397,	/* Japan (JE2) */
-	CTRY_JAPAN6 = 399,	/* Japan (JP6) */
-
-	CTRY_JAPAN7 = 4007,	/* Japan (J7) */
-	CTRY_JAPAN8 = 4008,	/* Japan (J8) */
-	CTRY_JAPAN9 = 4009,	/* Japan (J9) */
-
-	CTRY_JAPAN10 = 4010,	/* Japan (J10) */
-	CTRY_JAPAN11 = 4011,	/* Japan (J11) */
-	CTRY_JAPAN12 = 4012,	/* Japan (J12) */
-
-	CTRY_JAPAN13 = 4013,	/* Japan (J13) */
-	CTRY_JAPAN14 = 4014,	/* Japan (J14) */
-	CTRY_JAPAN15 = 4015,	/* Japan (J15) */
-
-	CTRY_JAPAN16 = 4016,	/* Japan (J16) */
-	CTRY_JAPAN17 = 4017,	/* Japan (J17) */
-	CTRY_JAPAN18 = 4018,	/* Japan (J18) */
-
-	CTRY_JAPAN19 = 4019,	/* Japan (J19) */
-	CTRY_JAPAN20 = 4020,	/* Japan (J20) */
-	CTRY_JAPAN21 = 4021,	/* Japan (J21) */
-
-	CTRY_JAPAN22 = 4022,	/* Japan (J22) */
-	CTRY_JAPAN23 = 4023,	/* Japan (J23) */
-	CTRY_JAPAN24 = 4024,	/* Japan (J24) */
-
 	CTRY_JORDAN = 400,	/* Jordan */
 	CTRY_KAZAKHSTAN = 398,	/* Kazakhstan */
 	CTRY_KENYA = 404,	/* Kenya */
@@ -345,12 +321,15 @@ enum CountryCode {
 	CTRY_MACAU = 446,	/* Macau */
 	CTRY_MACEDONIA = 807,	/* the Former Yugoslav Republic of Macedonia */
 	CTRY_MALAYSIA = 458,	/* Malaysia */
+	CTRY_MALDIVES = 462,	/* Maldives */
 	CTRY_MALTA = 470,	/* Malta */
 	CTRY_MEXICO = 484,	/* Mexico */
 	CTRY_MONACO = 492,	/* Principality of Monaco */
 	CTRY_MOROCCO = 504,	/* Morocco */
-	CTRY_NEPAL = 524,	/* Nepal  */
+	CTRY_NEPAL = 524,	/* Nepal */
 	CTRY_NETHERLANDS = 528,	/* Netherlands */
+	CTRY_NETHERLANDS_ANTILLES = 530,	/* Netherlands-Antilles */
+	CTRY_ARUBA = 533,	/* Aruba */
 	CTRY_NEW_ZEALAND = 554,	/* New Zealand */
 	CTRY_NICARAGUA = 558,	/* Nicaragua */
 	CTRY_NORWAY = 578,	/* Norway */
@@ -369,11 +348,13 @@ enum CountryCode {
 	CTRY_ROMANIA = 642,	/* Romania */
 	CTRY_RUSSIA = 643,	/* Russia */
 	CTRY_SAUDI_ARABIA = 682,	/* Saudi Arabia */
+	CTRY_SERBIA_MONTENEGRO = 891,	/* Serbia and Montenegro */
 	CTRY_SINGAPORE = 702,	/* Singapore */
 	CTRY_SLOVAKIA = 703,	/* Slovak Republic */
 	CTRY_SLOVENIA = 705,	/* Slovenia */
 	CTRY_SOUTH_AFRICA = 710,	/* South Africa */
 	CTRY_SPAIN = 724,	/* Spain */
+	CTRY_SRI_LANKA = 144,	/* Sri Lanka */
 	CTRY_SWEDEN = 752,	/* Sweden */
 	CTRY_SWITZERLAND = 756,	/* Switzerland */
 	CTRY_SYRIA = 760,	/* Syria */
@@ -387,13 +368,87 @@ enum CountryCode {
 	CTRY_UNITED_KINGDOM = 826,	/* United Kingdom */
 	CTRY_UNITED_KINGDOM_BFWA = 827,	/* United Kingdom */
 	CTRY_UNITED_STATES = 840,	/* United States */
+	CTRY_UNITED_STATES2 = 841,	/* United States for AP */
 	CTRY_UNITED_STATES_FCC49 = 842,	/* United States (Public Safety) */
 	CTRY_URUGUAY = 858,	/* Uruguay */
 	CTRY_UZBEKISTAN = 860,	/* Uzbekistan */
 	CTRY_VENEZUELA = 862,	/* Venezuela */
 	CTRY_VIET_NAM = 704,	/* Viet Nam */
 	CTRY_YEMEN = 887,	/* Yemen */
-	CTRY_ZIMBABWE = 716	/* Zimbabwe */
+	CTRY_ZIMBABWE = 716,	/* Zimbabwe */
+
+	/*
+	 ** Japan special codes.  Boy, do they have a lot
+	 */
+
+	CTRY_JAPAN1 = 393,	/* Japan (JP1) */
+	CTRY_JAPAN2 = 394,	/* Japan (JP0) */
+	CTRY_JAPAN3 = 395,	/* Japan (JP1-1) */
+	CTRY_JAPAN4 = 396,	/* Japan (JE1) */
+	CTRY_JAPAN5 = 397,	/* Japan (JE2) */
+	CTRY_JAPAN6 = 4006,	/* Japan (JP6) */
+	CTRY_JAPAN7 = 4007,	/* Japan (J7) */
+	CTRY_JAPAN8 = 4008,	/* Japan (J8) */
+	CTRY_JAPAN9 = 4009,	/* Japan (J9) */
+	CTRY_JAPAN10 = 4010,	/* Japan (J10) */
+	CTRY_JAPAN11 = 4011,	/* Japan (J11) */
+	CTRY_JAPAN12 = 4012,	/* Japan (J12) */
+	CTRY_JAPAN13 = 4013,	/* Japan (J13) */
+	CTRY_JAPAN14 = 4014,	/* Japan (J14) */
+	CTRY_JAPAN15 = 4015,	/* Japan (J15) */
+	CTRY_JAPAN16 = 4016,	/* Japan (J16) */
+	CTRY_JAPAN17 = 4017,	/* Japan (J17) */
+	CTRY_JAPAN18 = 4018,	/* Japan (J18) */
+	CTRY_JAPAN19 = 4019,	/* Japan (J19) */
+	CTRY_JAPAN20 = 4020,	/* Japan (J20) */
+	CTRY_JAPAN21 = 4021,	/* Japan (J21) */
+	CTRY_JAPAN22 = 4022,	/* Japan (J22) */
+	CTRY_JAPAN23 = 4023,	/* Japan (J23) */
+	CTRY_JAPAN24 = 4024,	/* Japan (J24) */
+	CTRY_JAPAN25 = 4025,	/* Japan (J25) */
+	CTRY_JAPAN26 = 4026,	/* Japan (J26) */
+	CTRY_JAPAN27 = 4027,	/* Japan (J27) */
+	CTRY_JAPAN28 = 4028,	/* Japan (J28) */
+	CTRY_JAPAN29 = 4029,	/* Japan (J29) */
+	CTRY_JAPAN30 = 4030,	/* Japan (J30) */
+	CTRY_JAPAN31 = 4031,	/* Japan (J31) */
+	CTRY_JAPAN32 = 4032,	/* Japan (J32) */
+	CTRY_JAPAN33 = 4033,	/* Japan (J33) */
+	CTRY_JAPAN34 = 4034,	/* Japan (J34) */
+	CTRY_JAPAN35 = 4035,	/* Japan (J35) */
+	CTRY_JAPAN36 = 4036,	/* Japan (J36) */
+	CTRY_JAPAN37 = 4037,	/* Japan (J37) */
+	CTRY_JAPAN38 = 4038,	/* Japan (J38) */
+	CTRY_JAPAN39 = 4039,	/* Japan (J39) */
+	CTRY_JAPAN40 = 4040,	/* Japan (J40) */
+	CTRY_JAPAN41 = 4041,	/* Japan (J41) */
+	CTRY_JAPAN42 = 4042,	/* Japan (J42) */
+	CTRY_JAPAN43 = 4043,	/* Japan (J43) */
+	CTRY_JAPAN44 = 4044,	/* Japan (J44) */
+	CTRY_JAPAN45 = 4045,	/* Japan (J45) */
+	CTRY_JAPAN46 = 4046,	/* Japan (J46) */
+	CTRY_JAPAN47 = 4047,	/* Japan (J47) */
+	CTRY_JAPAN48 = 4048,	/* Japan (J48) */
+	CTRY_JAPAN49 = 4049,	/* Japan (J49) */
+	CTRY_JAPAN50 = 4050,	/* Japan (J50) */
+	CTRY_JAPAN51 = 4051,	/* Japan (J51) */
+	CTRY_JAPAN52 = 4052,	/* Japan (J52) */
+	CTRY_JAPAN53 = 4053,	/* Japan (J53) */
+	CTRY_JAPAN54 = 4054,	/* Japan (J54) */
+	CTRY_JAPAN55 = 4055,	/* Japan (J55) */
+	CTRY_JAPAN56 = 4056,	/* Japan (J56) */
+	CTRY_JAPAN57 = 4057,	/* Japan (J57) */
+	CTRY_JAPAN58 = 4058,	/* Japan (J58) */
+	CTRY_JAPAN59 = 4059,	/* Japan (J59) */
+
+	/*
+	 ** "Special" codes for multiply defined countries, with the exception
+	 ** of Japan and US.
+	 */
+
+	CTRY_AUSTRALIA2 = 5000,	/* Australia for AP only */
+	CTRY_CANADA2 = 5001,	/* Canada for AP only */
+	CTRY_BELGIUM2 = 5002	/* Belgium/Cisco implementation */
 };
 
 typedef struct {
@@ -416,10 +471,12 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_ALGERIA, NULL1_WORLD, "DZ", "ALGERIA", YES, NO, YES, 7000},
 	{CTRY_ARGENTINA, APL3_WORLD, "AR", "ARGENTINA", NO, NO, NO, 7000},
 	{CTRY_ARMENIA, ETSI4_WORLD, "AM", "ARMENIA", YES, NO, YES, 7000},
+	{CTRY_ARUBA, ETSI1_WORLD, "AW", "ARUBA", YES, NO, YES, 7000},
 	{CTRY_AUSTRALIA, FCC2_WORLD, "AU", "AUSTRALIA", YES, YES, YES, 7000},
 	{CTRY_AUSTRIA, ETSI1_WORLD, "AT", "AUSTRIA", YES, NO, YES, 7000},
 	{CTRY_AZERBAIJAN, ETSI4_WORLD, "AZ", "AZERBAIJAN", YES, YES, YES, 7000},
 	{CTRY_BANGLADESH, NULL1_WORLD, "BD", "BANGLADESH", YES, NO, YES, 7000},
+	{CTRY_BARBADOS, FCC2_WORLD, "BB", "BARBADOS", YES, NO, YES, 7000},
 	{CTRY_BAHRAIN, APL6_WORLD, "BH", "BAHRAIN", YES, NO, YES, 7000},
 	{CTRY_BELARUS, NULL1_WORLD, "BY", "BELARUS", YES, NO, YES, 7000},
 	{CTRY_BELGIUM, ETSI1_WORLD, "BE", "BELGIUM", YES, NO, YES, 7000},
@@ -430,6 +487,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	 YES,
 	 YES, 7000},
 	{CTRY_BULGARIA, ETSI6_WORLD, "BG", "BULGARIA", YES, NO, YES, 7000},
+	{CTRY_CAMBODIA, ETSI1_WORLD, "KH", "CAMBODIA", YES, NO, YES, 7000},
 	{CTRY_CANADA, FCC2_FCCA, "CA", "CANADA", YES, YES, YES, 7000},
 	{CTRY_CHILE, APL6_WORLD, "CL", "CHILE", YES, YES, YES, 7000},
 	{CTRY_CHINA, APL1_WORLD, "CN", "CHINA", YES, YES, YES, 7000},
@@ -455,7 +513,11 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_GERMANY, ETSI1_WORLD, "DE", "GERMANY", YES, YES, YES, 7000},
 	{CTRY_GERMANY_BFWA, BFWA, "DE_BFWA", "GERMANY_BFWA", NO, YES, NO, 7000},
 	{CTRY_GREECE, ETSI1_WORLD, "GR", "GREECE", YES, NO, YES, 7000},
+	{CTRY_GREENLAND, ETSI1_WORLD, "GL", "GREENLAND", YES, NO, YES, 7000},
+	{CTRY_GRENADA, FCC3_FCCA, "GD", "GRENADA", YES, NO, YES, 7000},
+	{CTRY_GUAM, FCC1_FCCA, "GU", "GUAM", YES, NO, YES, 7000},
 	{CTRY_GUATEMALA, FCC1_FCCA, "GT", "GUATEMALA", YES, YES, YES, 7000},
+	{CTRY_HAITI, ETSI1_WORLD, "HT", "HAITI", YES, NO, YES, 7000},
 	{CTRY_HONDURAS, NULL1_WORLD, "HN", "HONDURAS", YES, NO, YES, 7000},
 	{CTRY_HONG_KONG, FCC2_WORLD, "HK", "HONG_KONG", YES, YES, YES, 7000},
 	{CTRY_HUNGARY, ETSI1_WORLD, "HU", "HUNGARY", YES, NO, YES, 7000},
