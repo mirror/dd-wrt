@@ -140,7 +140,7 @@ static struct pci_controller ar7100_pci_controller = {
 
 
 irqreturn_t 
-ar7100_pci_core_intr(int cpl, void *dev_id, struct pt_regs *regs)
+ar7100_pci_core_intr(int cpl, void *dev_id)
 {
 	printk("PCI error intr\n");
 	ar7100_check_error(1);

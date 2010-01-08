@@ -359,7 +359,7 @@ typedef unsigned int ar7100_reg_t;
  * Interrupts connected to the Misc->GPIO line
  */
 #define AR7100_GPIO_IRQn(_gpio)             AR7100_GPIO_IRQ_BASE+(_gpio)
-#define AR7100_GPIO_IRQ_COUNT                 16
+#define AR7100_GPIO_IRQ_COUNT                 22
 
 void ar7100_gpio_irq_init(int irq_base);
 
@@ -395,7 +395,7 @@ unsigned int ar7100_misc_get_irq_status (void);
 void ar7100_pci_irq_init(int irq_base); /* ??? */
 
 
-#define AR7100_GPIO_COUNT                   16
+#define AR7100_GPIO_COUNT                   22
 
 /*
  * GPIO Function Enables

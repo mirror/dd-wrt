@@ -206,16 +206,19 @@ DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar724x_pci_fixup);
 static int __init ar7240_pcibios_init(void)
 {
 
-    /*
-     * Check if the WLAN PCI-E H/W is present, If the
-     * WLAN H/W is not present, skip the PCI 
-     * initialization code and just return.
-     */
+	/*
+	 * Check if the WLAN PCI-E H/W is present, If the
+	 * WLAN H/W is not present, skip the PCI
+	 * initialization code and just return.
+	 */
 
-    if (((ar7240_reg_rd(AR7240_PCI_LCL_RESET)) & 0x1) == 0x0) {
-        printk("***** Warning *****: PCIe WLAN H/W not found !!!\n");
-        return 0;
-    }
+	if (((ar7240_reg_rd(AR7240_PCI_LCL_RESET)) & 0x1) == 0x0) {
+		printk("***** Warning *****: PCIe WLAN H/W not found !!!\n");
+		return 0;
+	}
+        if ((is_ar7241() || is_ar7242()))
+		ar7240_reg_wr(AR7240_PCI_LCL_APP, (ar7240_reg_rd(AR7240_PCI_LCL_APP) | (0x1 << 16)));
+
     if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0)
 	ar7240_reg_wr(AR7240_PCI_LCL_APP, (ar7240_reg_rd(AR7240_PCI_LCL_APP) | (0x1 << 16)));
 
