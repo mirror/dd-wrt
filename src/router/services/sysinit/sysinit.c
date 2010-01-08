@@ -1694,6 +1694,7 @@ void start_drivers(void)
 		if (nvram_match("usb_uhci", "1")) {
 			cprintf("loading usb-uhci\n");
 			insmod("usb-uhci");
+			insmod("uhci-hcd");
 		}
 
 		if (nvram_match("usb_ohci", "1")) {
