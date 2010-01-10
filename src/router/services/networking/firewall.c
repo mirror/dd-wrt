@@ -1650,8 +1650,8 @@ static int update_filter(int mode, int seq)
 		DEBUG("iptables -I lan2wan %s -j %s\n", order, target_ip);
 		eval("iptables", "-I", "lan2wan", order, "-j", target_ip);
 	} else {		/* delete */
-		DEBUG("iptables -D lan2wan -j %s\n", target_ip);
-		eval("iptables", "-D", "lan2wan", "-j", target_ip);
+		DEBUG("iptables -D lan2wan %s\n", order);
+		eval("iptables", "-D", "lan2wan", order);
 	}
 
 	cprintf("done\n");
