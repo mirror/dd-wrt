@@ -158,6 +158,10 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	if (!skb)
 		goto out;
 
+#ifdef CONFIG_ARCH_IXP4XX
+	gfp_mask |= GFP_DMA;
+#endif
+
 	size = SKB_DATA_ALIGN(size);
 	data = kmalloc_node_track_caller(size + sizeof(struct skb_shared_info),
 			gfp_mask, node);
