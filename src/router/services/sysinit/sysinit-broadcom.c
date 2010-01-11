@@ -1242,6 +1242,14 @@ void start_sysinit(void)
 		}
 		break;
 
+	case ROUTER_WRT310NV2:
+		if (nvram_match("clkfreq", "300,150,75")
+		    || nvram_match("clkfreq", "300,150")) {
+			nvram_set("clkfreq", "354,177");  //fix switch problem
+			need_reboot = 1;
+		}
+		break;
+
 	case ROUTER_MOTOROLA_V1:
 		eval("gpio", "disable", "7");
 		break;
