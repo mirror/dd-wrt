@@ -132,7 +132,7 @@ void start_cron(void)
 
 		fp = fopen("/tmp/cron.d/hotss_checkalive", "w");
 		
-		fprintf(fp, "%d 1/* * * * root /usr/bin/wget http://tech.hotspotsystem.com/up.php?mac={%s|sed s/:/-/g}\&nasid=%s_%s\&os_date={%s|sed s/\" \"/-/g}\&install=2\&uptime=`uptime|sed s/" "/\\%%20/g|sed s/:/\\%%3A/g|sed s/,/\\%%2C/g`  -O /tmp/lastup.html\n",
+		fprintf(fp, "%d * * * * root /usr/bin/wget http://tech.hotspotsystem.com/up.php?mac={%s|sed s/:/-/g}\\&nasid=%s_%s\\&os_date={%s|sed s/\" \"/-/g}\&install=2\\&uptime=`uptime|sed s/" "/\\%%20/g|sed s/:/\\%%3A/g|sed s/,/\\%%2C/g`  -O /tmp/lastup.html\n",
 			(currtime->tm_min + 3) % 60,
 			nvram_get("wl0_hwaddr"),
 			nvram_get("hotss_operatorid"),
