@@ -43,39 +43,18 @@ RCSID("$Id$")
 
 #define USEC (1000000)
 
-typedef enum detail_state_t {
-  STATE_UNOPENED = 0,
-  STATE_UNLOCKED,
-  STATE_HEADER,
-  STATE_READING,
-  STATE_QUEUED,
-  STATE_RUNNING,
-  STATE_NO_REPLY,
-  STATE_REPLIED
-} detail_state_t;
+static FR_NAME_NUMBER state_names[] = {
+	{ "unopened", STATE_UNOPENED },
+	{ "unlocked", STATE_UNLOCKED },
+	{ "header", STATE_HEADER },
+	{ "reading", STATE_READING },
+	{ "queued", STATE_QUEUED },
+	{ "running", STATE_RUNNING },
+	{ "no-reply", STATE_NO_REPLY },
+	{ "replied", STATE_REPLIED },
 
-typedef struct listen_detail_t {
-	fr_event_t	*ev;	/* has to be first entry (ugh) */
-	int		delay_time;
-	char		*filename;
-	char		*filename_work;
-	VALUE_PAIR	*vps;
-	FILE		*fp;
-	detail_state_t 	state;
-	time_t		timestamp;
-	fr_ipaddr_t	client_ip;
-	int		load_factor; /* 1..100 */
-	int		signal;
-	int		poll_interval;
-	int		retry_interval;
-
-	int		has_rtt;
-	int		srtt;
-	int		rttvar;
-	struct timeval  last_packet;
-	RADCLIENT	detail_client;
-} listen_detail_t;
-
+	{ NULL, 0 }
+};
 
 /*
  *	If we're limiting outstanding packets, then mark the response
@@ -98,12 +77,16 @@ int detail_send(rad_listen_t *listener, REQUEST *request)
 		data->delay_time = data->retry_interval * USEC;
 		data->signal = 1;
 		data->state = STATE_NO_REPLY;
+
+		RDEBUG("Detail - No response configured for request %d.  Will retry in %d seconds",
+		       request->number, data->retry_interval);
+
 		radius_signal_self(RADIUS_SIGNAL_SELF_DETAIL);
 		return 0;
 	}
 
 	/*
-	 *	We call gettimeofday a lot.  But here it should be OK,
+	 *	We call gettimeofday a lot.  But it should be OK,
 	 *	because there's nothing else to do.
 	 */
 	gettimeofday(&now, NULL);
@@ -161,18 +144,16 @@ int detail_send(rad_listen_t *listener, REQUEST *request)
 	 *	rtt / (rtt + delay) = load_factor / 100
 	 */
 	data->delay_time = (data->srtt * (100 - data->load_factor)) / (data->load_factor);
-	if (data->delay_time == 0) data->delay_time = USEC / 10;
 
 	/*
 	 *	Cap delay at 4 packets/s.  If the end system can't
 	 *	handle this, then it's very broken.
 	 */
 	if (data->delay_time > (USEC / 4)) data->delay_time= USEC / 4;
-
-#if 0
-	DEBUG2("RTT %d\tdelay %d", data->srtt, data->delay_time);
-#endif
-
+	
+	RDEBUG3("Received response for request %d.  Will read the next packet in %d seconds",
+		request->number, data->delay_time / USEC);
+	
 	data->last_packet = now;
 	data->signal = 1;
 	data->state = STATE_REPLIED;
@@ -225,7 +206,8 @@ static int detail_open(rad_listen_t *this)
 		 */
 		if (stat(filename, &st) < 0) {
 #ifdef HAVE_GLOB_H
-			int i, found;
+			unsigned int i;
+			int found;
 			time_t chtime;
 			glob_t files;
 
@@ -264,7 +246,7 @@ static int detail_open(rad_listen_t *this)
 		 */
 		this->fd = open(filename, O_RDWR);
 		if (this->fd < 0) {
-			radlog(L_ERR, "Failed to open %s: %s",
+			radlog(L_ERR, "Detail - Failed to open %s: %s",
 			       filename, strerror(errno));
 			if (filename != data->filename) free(filename);
 			return 0;
@@ -273,7 +255,7 @@ static int detail_open(rad_listen_t *this)
 		/*
 		 *	Rename detail to detail.work
 		 */
-		DEBUG("detail_recv: Renaming %s -> %s", filename, data->filename_work);
+		DEBUG("Detail - Renaming %s -> %s", filename, data->filename_work);
 		if (rename(filename, data->filename_work) < 0) {
 			if (filename != data->filename) free(filename);
 			close(this->fd);
@@ -313,7 +295,7 @@ static int detail_open(rad_listen_t *this)
 int detail_recv(rad_listen_t *listener,
 		RAD_REQUEST_FUNP *pfun, REQUEST **prequest)
 {
-	char		key[256], value[1024];
+	char		key[256], op[8], value[1024];
 	VALUE_PAIR	*vp, **tail;
 	RADIUS_PACKET	*packet;
 	char		buffer[2048];
@@ -405,6 +387,8 @@ int detail_recv(rad_listen_t *listener,
 			 */
 			if (feof(data->fp)) {
 			cleanup:
+				DEBUG("Detail - unlinking %s",
+				      data->filename_work);
 				unlink(data->filename_work);
 				if (data->fp) fclose(data->fp);
 				data->fp = NULL;
@@ -434,11 +418,18 @@ int detail_recv(rad_listen_t *listener,
 			goto alloc_packet;
 
 			/*
-			 *	We still have an outstanding packet.
-			 *	Don't read any more.
+			 *	Periodically check what's going on.
+			 *	If the request is taking too long,
+			 *	retry it.
 			 */
 		case STATE_RUNNING:
-			return 0;
+			if (time(NULL) < (data->running + data->retry_interval)) {
+				return 0;
+			}
+
+			DEBUG("No response to detail request.  Retrying");
+			data->state = STATE_NO_REPLY;
+			/* FALL-THROUGH */
 
 			/*
 			 *	If there's no reply, keep
@@ -506,9 +497,16 @@ int detail_recv(rad_listen_t *listener,
 		 *
 		 *	FIXME: print an error for badly formatted attributes?
 		 */
-		if (sscanf(buffer, "%255s = %1023s", key, value) != 2) {
+		if (sscanf(buffer, "%255s %8s %1023s", key, op, value) != 3) {
+			DEBUG2("WARNING: Skipping badly formatted line %s",
+			       buffer);
 			continue;
 		}
+
+		/*
+		 *	Should be =, :=, +=, ...
+		 */
+		if (!strchr(op, '=')) continue;
 
 		/*
 		 *	Skip non-protocol attributes.
@@ -697,6 +695,7 @@ int detail_recv(rad_listen_t *listener,
 	}
 
 	data->state = STATE_RUNNING;
+	data->running = packet->timestamp;
 
 	return 1;
 }
@@ -746,10 +745,22 @@ int detail_encode(rad_listen_t *this, UNUSED REQUEST *request)
 		 */
 		delay += (USEC * 3) / 4;
 		delay += fr_rand() % (USEC / 2);
+
+		DEBUG2("Detail listener %s state %s signalled %d waiting %d.%06d sec",
+		       data->filename,
+		       fr_int2str(state_names, data->state, "?"), data->signal,
+		       (delay / USEC), delay % USEC);
+
 		return delay;
 	}
 
 	data->signal = 0;
+	
+	DEBUG2("Detail listener %s state %s signalled %d waiting %d.%06d sec",
+	       data->filename, fr_int2str(state_names, data->state, "?"),
+	       data->signal,
+	       data->delay_time / USEC,
+	       data->delay_time % USEC);
 
 	return data->delay_time;
 }

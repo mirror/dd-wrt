@@ -239,6 +239,11 @@ static const char * const comp2str[] = {
 	"pre-proxy",
 	"post-proxy",
 	"post-auth"
+#ifdef WITH_COA
+	,
+	"recv-coa",
+	"send-coa"
+#endif
 };
 
 #ifdef HAVE_PTHREAD_H
@@ -276,6 +281,12 @@ static int call_modsingle(int component, modsingle *sp, REQUEST *request)
 	RDEBUG3("  modsingle[%s]: calling %s (%s) for request %d",
 	       comp2str[component], sp->modinst->name,
 	       sp->modinst->entry->name, request->number);
+
+	if (sp->modinst->dead) {
+		myresult = RLM_MODULE_FAIL;
+		goto fail;
+	}
+
 	safe_lock(sp->modinst);
 
 	/*
@@ -288,6 +299,8 @@ static int call_modsingle(int component, modsingle *sp, REQUEST *request)
 
 	request->module = "";
 	safe_unlock(sp->modinst);
+
+ fail:
 	RDEBUG3("  modsingle[%s]: returned from %s (%s) for request %d",
 	       comp2str[component], sp->modinst->name,
 	       sp->modinst->entry->name, request->number);
@@ -304,7 +317,12 @@ static int default_component_results[RLM_COMPONENT_COUNT] = {
 	RLM_MODULE_FAIL,	/* SESS */
 	RLM_MODULE_NOOP,	/* PRE_PROXY */
 	RLM_MODULE_NOOP,	/* POST_PROXY */
-	RLM_MODULE_NOOP		/* POST_AUTH */
+	RLM_MODULE_NOOP       	/* POST_AUTH */
+#ifdef WITH_COA
+	,
+	RLM_MODULE_NOOP,       	/* RECV_COA_TYPE */
+	RLM_MODULE_NOOP		/* SEND_COA_TYPE */
+#endif
 };
 
 
@@ -362,6 +380,7 @@ int modcall(int component, modcallable *c, REQUEST *request)
 	stack.pointer = 0;
 	stack.priority[0] = 0;
 	stack.children[0] = c;
+	stack.start[0] = NULL;
 	myresult = stack.result[0] = default_component_results[component];
 	was_if = if_taken = FALSE;
 
@@ -1178,6 +1197,87 @@ defaultactions[RLM_COMPONENT_COUNT][GROUPTYPE_COUNT][RLM_MODULE_NUMCODES] =
 			MOD_ACTION_RETURN	/* updated  */
 		}
 	}
+#ifdef WITH_COA
+	,
+	/* recv-coa */
+	{
+		/* group */
+		{
+			MOD_ACTION_RETURN,	/* reject   */
+			MOD_ACTION_RETURN,	/* fail     */
+			3,			/* ok       */
+			MOD_ACTION_RETURN,	/* handled  */
+			MOD_ACTION_RETURN,	/* invalid  */
+			MOD_ACTION_RETURN,	/* userlock */
+			1,			/* notfound */
+			2,			/* noop     */
+			4			/* updated  */
+		},
+		/* redundant */
+		{
+			MOD_ACTION_RETURN,	/* reject   */
+			1,			/* fail     */
+			MOD_ACTION_RETURN,	/* ok       */
+			MOD_ACTION_RETURN,	/* handled  */
+			MOD_ACTION_RETURN,	/* invalid  */
+			MOD_ACTION_RETURN,	/* userlock */
+			MOD_ACTION_RETURN,	/* notfound */
+			MOD_ACTION_RETURN,	/* noop     */
+			MOD_ACTION_RETURN	/* updated  */
+		},
+		/* append */
+		{
+			MOD_ACTION_RETURN,	/* reject   */
+			1,			/* fail     */
+			MOD_ACTION_RETURN,	/* ok       */
+			MOD_ACTION_RETURN,	/* handled  */
+			MOD_ACTION_RETURN,	/* invalid  */
+			MOD_ACTION_RETURN,	/* userlock */
+			2,			/* notfound */
+			MOD_ACTION_RETURN,	/* noop     */
+			MOD_ACTION_RETURN	/* updated  */
+		}
+	},
+	/* send-coa */
+	{
+		/* group */
+		{
+			MOD_ACTION_RETURN,	/* reject   */
+			MOD_ACTION_RETURN,	/* fail     */
+			3,			/* ok       */
+			MOD_ACTION_RETURN,	/* handled  */
+			MOD_ACTION_RETURN,	/* invalid  */
+			MOD_ACTION_RETURN,	/* userlock */
+			1,			/* notfound */
+			2,			/* noop     */
+			4			/* updated  */
+		},
+		/* redundant */
+		{
+			MOD_ACTION_RETURN,	/* reject   */
+			1,			/* fail     */
+			MOD_ACTION_RETURN,	/* ok       */
+			MOD_ACTION_RETURN,	/* handled  */
+			MOD_ACTION_RETURN,	/* invalid  */
+			MOD_ACTION_RETURN,	/* userlock */
+			MOD_ACTION_RETURN,	/* notfound */
+			MOD_ACTION_RETURN,	/* noop     */
+			MOD_ACTION_RETURN	/* updated  */
+		},
+		/* append */
+		{
+			MOD_ACTION_RETURN,	/* reject   */
+			1,			/* fail     */
+			MOD_ACTION_RETURN,	/* ok       */
+			MOD_ACTION_RETURN,	/* handled  */
+			MOD_ACTION_RETURN,	/* invalid  */
+			MOD_ACTION_RETURN,	/* userlock */
+			2,			/* notfound */
+			MOD_ACTION_RETURN,	/* noop     */
+			MOD_ACTION_RETURN	/* updated  */
+		}
+	}
+#endif
 };
 
 
@@ -1261,6 +1361,7 @@ static modcallable *do_compile_modupdate(modcallable *parent,
 		    (vp->operator != T_OP_SUB) &&
 		    (vp->operator != T_OP_LE) &&
 		    (vp->operator != T_OP_GE) &&
+		    (vp->operator != T_OP_CMP_FALSE) &&
 		    (vp->operator != T_OP_SET)) {
 			pairfree(&head);
 			pairfree(&vp);

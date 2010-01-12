@@ -11,7 +11,7 @@ include Make.inc
 
 .PHONY: all clean install
 
-SUBDIRS		= $(LTDL_SUBDIRS) src raddb scripts doc
+SUBDIRS		= $(LTDL_SUBDIRS) $(wildcard src raddb scripts doc)
 WHAT_TO_MAKE	= all
 
 all:
@@ -155,13 +155,13 @@ certs:
 #
 ######################################################################
 freeradius-server-$(RADIUSD_VERSION).tar.gz: .git
-	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION)/ stable | gzip > $@
+	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION)/ v2.1.x | gzip > $@
 
 freeradius-server-$(RADIUSD_VERSION).tar.gz.sig: freeradius-server-$(RADIUSD_VERSION).tar.gz
 	gpg --default-key aland@freeradius.org -b $<
 
 freeradius-server-$(RADIUSD_VERSION).tar.bz2: .git
-	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION)/ stable | bzip2 > $@
+	git archive --format=tar --prefix=freeradius-server-$(RADIUSD_VERSION)/ v2.1.x | bzip2 > $@
 
 freeradius-server-$(RADIUSD_VERSION).tar.bz2.sig: freeradius-server-$(RADIUSD_VERSION).tar.bz2
 	gpg --default-key aland@freeradius.org -b $<
@@ -181,7 +181,7 @@ dist-check: redhat/freeradius.spec suse/freeradius.spec debian/changelog
 		echo suse/freeradius.spec 'Version' needs to be updated; \
 		exit 1; \
 	fi
-	@if [ `head -n 1 debian/changelog | sed 's/.*(//;s/-0).*//;s/-1).*//;'`  != "$(RADIUSD_VERSION)" ]; then \
+	@if [ `head -n 1 debian/changelog | sed 's/.*(//;s/\+.*).*//;s/-1).*//;'`  != "$(RADIUSD_VERSION)" ]; then \
 		echo debian/changelog needs to be updated; \
 		exit 1; \
 	fi

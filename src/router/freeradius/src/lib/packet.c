@@ -154,6 +154,30 @@ int fr_packet_cmp(const RADIUS_PACKET *a, const RADIUS_PACKET *b)
 }
 
 
+static int fr_inaddr_any(fr_ipaddr_t *ipaddr)
+{
+
+	if (ipaddr->af == AF_INET) {
+		if (ipaddr->ipaddr.ip4addr.s_addr == INADDR_ANY) {
+			return 1;
+		}
+
+#ifdef HAVE_STRUCT_SOCKADDR_IN6
+	} else if (ipaddr->af == AF_INET6) {
+		if (IN6_IS_ADDR_UNSPECIFIED(&(ipaddr->ipaddr.ip6addr))) {
+			return 1;
+		}
+#endif
+
+	} else {
+		fr_strerror_printf("Unknown address family");
+		return -1;
+	}
+
+	return 0;
+}
+
+
 /*
  *	Create a fake "request" from a reply, for later lookup.
  */
@@ -224,6 +248,30 @@ int fr_socket(fr_ipaddr_t *ipaddr, int port)
 #endif /* IPV6_V6ONLY */
 	}
 #endif /* HAVE_STRUCT_SOCKADDR_IN6 */
+
+	if (ipaddr->af == AF_INET) {
+		UNUSED int flag;
+		
+#if defined(IP_MTU_DISCOVER) && defined(IP_PMTUDISC_DONT)
+		/*
+		 *	Disable PMTU discovery.  On Linux, this
+		 *	also makes sure that the "don't fragment"
+		 *	flag is zero.
+		 */
+		flag = IP_PMTUDISC_DONT;
+		setsockopt(sockfd, IPPROTO_IP, IP_MTU_DISCOVER,
+			   &flag, sizeof(flag));
+#endif
+
+#if defined(IP_DONTFRAG)
+		/*
+		 *	Ensure that the "don't fragment" flag is zero.
+		 */
+		flag = 0;
+		setsockopt(sockfd, IPPROTO_IP, IP_DONTFRAG,
+			   &flag, sizeof(flag));
+#endif
+	}
 
 	if (bind(sockfd, (struct sockaddr *) &salocal, salen) < 0) {
 		close(sockfd);
@@ -607,12 +655,38 @@ int fr_packet_list_num_elements(fr_packet_list_t *pl)
 int fr_packet_list_id_alloc(fr_packet_list_t *pl,
 			      RADIUS_PACKET *request)
 {
-	int i, id, start;
+	int i, id, start, fd;
+	int src_any = 0;
 	uint32_t free_mask;
 	fr_packet_dst2id_t my_pd, *pd;
 	fr_packet_socket_t *ps;
 
 	if (!pl || !pl->alloc_id || !request) return 0;
+
+	/*
+	 *	Error out if no destination is specified.
+	 */
+	if ((request->dst_ipaddr.af == AF_UNSPEC) ||
+	    (request->dst_port == 0)) {
+		fr_strerror_printf("No destination address/port specified");
+		return 0;
+	}
+
+	/*
+	 *	Special case: unspec == "don't care"
+	 */
+	if (request->src_ipaddr.af == AF_UNSPEC) {
+		memset(&request->src_ipaddr, 0, sizeof(request->src_ipaddr));
+		request->src_ipaddr.af = request->dst_ipaddr.af;
+	}
+
+	src_any = fr_inaddr_any(&request->src_ipaddr);
+	if (src_any < 0) return 0;
+
+	/*
+	 *	MUST specify a destination address.
+	 */
+	if (fr_inaddr_any(&request->dst_ipaddr) != 0) return 0;
 
 	my_pd.dst_ipaddr = request->dst_ipaddr;
 	my_pd.dst_port = request->dst_port;
@@ -647,6 +721,7 @@ int fr_packet_list_id_alloc(fr_packet_list_t *pl,
 	id = start = (int) fr_rand() & 0xff;
 
 	while (pd->id[id] == pl->mask) { /* all sockets are using this ID */
+	redo:
 		id++;
 		id &= 0xff;
 		if (id == start) return 0;
@@ -657,6 +732,23 @@ int fr_packet_list_id_alloc(fr_packet_list_t *pl,
 	start = -1;
 	for (i = 0; i < MAX_SOCKETS; i++) {
 		if (pl->sockets[i].sockfd == -1) continue; /* paranoia */
+
+		ps = &(pl->sockets[i]);
+
+		/*
+		 *	We're sourcing from *, and they asked for a
+		 *	specific source address: ignore it.
+		 */
+		if (ps->inaddr_any && !src_any) continue;
+
+		/*
+		 *	We're sourcing from a specific IP, and they
+		 *	asked for a source IP that isn't us: ignore
+		 *	it.
+		 */
+		if (!ps->inaddr_any && !src_any &&
+		    (fr_ipaddr_cmp(&request->src_ipaddr,
+				   &ps->ipaddr) != 0)) continue;
 
 		if ((free_mask & (1 << i)) == 0) {
 			start = i;
