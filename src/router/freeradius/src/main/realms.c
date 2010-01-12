@@ -276,6 +276,7 @@ void realms_free(void)
 #ifdef WITH_PROXY
 static struct in_addr hs_ip4addr;
 static struct in6_addr hs_ip6addr;
+static char *hs_srcipaddr = NULL;
 static char *hs_type = NULL;
 static char *hs_check = NULL;
 static char *hs_virtual_server = NULL;
@@ -297,8 +298,13 @@ static CONF_PARSER home_server_config[] = {
 	{ "secret",  PW_TYPE_STRING_PTR,
 	  offsetof(home_server,secret), NULL,  NULL},
 
+	{ "src_ipaddr",  PW_TYPE_STRING_PTR,
+	  0, &hs_srcipaddr,  NULL },
+
 	{ "response_window", PW_TYPE_INTEGER,
 	  offsetof(home_server,response_window), NULL,   "30" },
+	{ "no_response_fail", PW_TYPE_BOOLEAN,
+	  offsetof(home_server,no_response_fail), NULL,   NULL },
 	{ "max_outstanding", PW_TYPE_INTEGER,
 	  offsetof(home_server,max_outstanding), NULL,   "65536" },
 	{ "require_message_authenticator",  PW_TYPE_BOOLEAN,
@@ -431,6 +437,8 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs, int pool_type)
 		hs_type = NULL;
 		free(hs_check);
 		hs_check = NULL;
+		free(hs_srcipaddr);
+		hs_srcipaddr = NULL;
 		return 0;
 	}
 
@@ -540,6 +548,19 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs, int pool_type)
 		goto error;
 	}
 
+	/*
+	 *	Look up the name using the *same* address family as
+	 *	for the home server.
+	 */
+	if (hs_srcipaddr && (home->ipaddr.af != AF_UNSPEC)) {
+		if (ip_hton(hs_srcipaddr, home->ipaddr.af, &home->src_ipaddr) < 0) {
+			cf_log_err(cf_sectiontoitem(cs), "Failed parsing src_ipaddr");
+			goto error;
+		}
+	}
+	free(hs_srcipaddr);
+	hs_srcipaddr = NULL;
+
 	if (!rbtree_insert(home_servers_byname, home)) {
 		cf_log_err(cf_sectiontoitem(cs),
 			   "Internal error %d adding home server %s.",
@@ -570,16 +591,16 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs, int pool_type)
 	}
 #endif
 
-	if (home->response_window < 5) home->response_window = 5;
-	if (home->response_window > 60) home->response_window = 60;
-
 	if (home->max_outstanding < 8) home->max_outstanding = 8;
 	if (home->max_outstanding > 65536*16) home->max_outstanding = 65536*16;
 
 	if (home->ping_interval < 6) home->ping_interval = 6;
 	if (home->ping_interval > 120) home->ping_interval = 120;
 
-	if (home->zombie_period < 20) home->zombie_period = 20;
+	if (home->response_window < 1) home->response_window = 1;
+	if (home->response_window > 60) home->response_window = 60;
+
+	if (home->zombie_period < 1) home->zombie_period = 1;
 	if (home->zombie_period > 120) home->zombie_period = 120;
 
 	if (home->zombie_period < home->response_window) {
@@ -1545,11 +1566,20 @@ static int realm_add(realm_config_t *rc, CONF_SECTION *cs)
 }
 
 #ifdef WITH_COA
-static int pool_peek_type(CONF_SECTION *cs)
+static const FR_NAME_NUMBER home_server_types[] = {
+	{ "auth", HOME_TYPE_AUTH },
+	{ "auth+acct", HOME_TYPE_AUTH },
+	{ "acct", HOME_TYPE_ACCT },
+	{ "coa", HOME_TYPE_COA },
+	{ NULL, 0 }
+};
+
+static int pool_peek_type(CONF_SECTION *config, CONF_SECTION *cs)
 {
-	const char *name;
+	int home;
+	const char *name, *type;
 	CONF_PAIR *cp;
-	home_server *home;
+	CONF_SECTION *server_cs;
 
 	cp = cf_pair_find(cs, "home_server");
 	if (!cp) {
@@ -1563,13 +1593,31 @@ static int pool_peek_type(CONF_SECTION *cs)
 		return HOME_TYPE_INVALID;
 	}
 
-	home = home_server_byname(name);
-	if (!home) {
+	server_cs = cf_section_sub_find_name2(config, "home_server", name);
+	if (!server_cs) {
 		cf_log_err(cf_pairtoitem(cp), "home_server \"%s\" does not exist", name);
 		return HOME_TYPE_INVALID;
 	}
 
-	return home->type;
+	cp = cf_pair_find(server_cs, "type");
+	if (!cp) {
+		cf_log_err(cf_sectiontoitem(server_cs), "home_server %s does not contain a \"type\" entry", name);
+		return HOME_TYPE_INVALID;
+	}
+
+	type = cf_pair_value(cp);
+	if (!type) {
+		cf_log_err(cf_sectiontoitem(server_cs), "home_server %s contains an empty \"type\" entry", name);
+		return HOME_TYPE_INVALID;
+	}
+
+	home = fr_str2int(home_server_types, type, HOME_TYPE_INVALID);
+	if (home == HOME_TYPE_INVALID) {
+		cf_log_err(cf_sectiontoitem(server_cs), "home_server %s contains an invalid \"type\" entry of value \"%s\"", name, type);
+		return HOME_TYPE_INVALID;
+	}
+
+	return home;		/* 'cause we miss it so much */
 }
 #endif
 
@@ -1650,9 +1698,12 @@ int realms_init(CONF_SECTION *config)
 	     cs = cf_subsection_find_next(config, cs, "home_server_pool")) {
 		int type;
 
+		/*
+		 *	Pool was already loaded.
+		 */
 		if (cf_data_find(cs, "home_server_pool")) continue;
 
-		type = pool_peek_type(cs);
+		type = pool_peek_type(config, cs);
 		if (type == HOME_TYPE_INVALID) return 0;
 
 		if (!server_pool_add(rc, cs, type, TRUE)) {
@@ -1764,6 +1815,7 @@ home_server *home_server_ldb(const char *realmname,
 	int		start;
 	int		count;
 	home_server	*found = NULL;
+	home_server	*zombie = NULL;
 	VALUE_PAIR	*vp;
 
 	/*
@@ -1847,6 +1899,9 @@ home_server *home_server_ldb(const char *realmname,
 
 		if (!home) continue;
 
+		/*
+		 *	Skip dead home servers.
+		 */
 		if (home->state == HOME_STATE_IS_DEAD) {
 			continue;
 		}
@@ -1872,9 +1927,19 @@ home_server *home_server_ldb(const char *realmname,
 #endif
 
 		/*
+		 *	It's zombie, so we remember the first zombie
+		 *	we find, but we don't mark it as a "live"
+		 *	server.
+		 */
+		if (home->state == HOME_STATE_ZOMBIE) {
+			if (!zombie) zombie = home;
+			continue;
+		}
+
+		/*
 		 *	We've found the first "live" one.  Use that.
 		 */
-		if (pool->type == HOME_POOL_FAIL_OVER) {
+		if (pool->type != HOME_POOL_LOAD_BALANCE) {
 			found = home;
 			break;
 		}
@@ -1923,6 +1988,15 @@ home_server *home_server_ldb(const char *realmname,
 	} /* loop over the home servers */
 
 	/*
+	 *	We have no live servers, BUT we have a zombie.  Use
+	 *	the zombie as a last resort.
+	 */
+	if (!found && zombie) {
+		found = zombie;
+		zombie = NULL;
+	}
+
+	/*
 	 *	There's a fallback if they're all dead.
 	 */
 	if (!found && pool->fallback) {
@@ -1967,6 +2041,11 @@ home_server *home_server_ldb(const char *realmname,
 			 *	the 'hints' file.
 			 */
 			request->proxy->vps =  paircopy(request->packet->vps);
+
+			/*
+			 *	Set the source IP address for proxying.
+			 */
+			request->proxy->src_ipaddr = found->src_ipaddr;
 		}
 
 		/*
@@ -2060,11 +2139,12 @@ home_server *home_server_find(fr_ipaddr_t *ipaddr, int port)
 }
 
 #ifdef WITH_COA
-home_server *home_server_byname(const char *name)
+home_server *home_server_byname(const char *name, int type)
 {
 	home_server myhome;
 
 	memset(&myhome, 0, sizeof(myhome));
+	myhome.type = type;
 	myhome.name = name;
 
 	return rbtree_finddata(home_servers_byname, &myhome);
@@ -2094,4 +2174,55 @@ home_pool_t *home_pool_byname(const char *name, int type)
 	return rbtree_finddata(home_pools_byname, &mypool);
 }
 
+#endif
+
+#ifdef WITH_PROXY
+static int home_server_create_callback(void *ctx, void *data)
+{
+	rad_listen_t *head = ctx;
+	home_server *home = data;
+	rad_listen_t *this;
+
+	/*
+	 *	If there WAS a src address defined, ensure that a
+	 *	proxy listener has been defined.
+	 */
+	if (home->src_ipaddr.af != AF_UNSPEC) {
+		this = proxy_new_listener(&home->src_ipaddr, TRUE);
+
+		/*
+		 *	Failed to create it: Die
+		 */
+		if (!this) return 1;
+
+		this->next = head->next;
+		head->next = this;
+	}
+
+	return 0;
+}
+
+/*
+ *	Taking a void* here solves some header issues.
+ */
+int home_server_create_listeners(void *ctx)
+{
+	rad_listen_t *head = ctx;
+
+	if (!home_servers_byaddr) return 0;
+
+	rad_assert(head != NULL);
+
+	/*
+	 *	Add the listeners to the TAIL of the list.
+	 */
+	while (head->next) head = head->next;
+
+	if (rbtree_walk(home_servers_byaddr, InOrder,
+			home_server_create_callback, head) != 0) {
+		return -1;
+	}
+
+	return 0;
+}
 #endif

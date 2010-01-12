@@ -23,6 +23,22 @@
 
 #ifdef WITH_DHCP
 
+/*
+ *	Same layout, etc. as listen_socket_t.
+ */
+typedef struct dhcp_socket_t {
+	/*
+	 *	For normal sockets.
+	 */
+	fr_ipaddr_t	ipaddr;
+	int		port;
+#ifdef SO_BINDTODEVICE
+	const char	*interface;
+#endif
+	int		suppress_responses;
+	RADCLIENT	dhcp_client;
+} dhcp_socket_t;
+
 static int dhcp_process(REQUEST *request)
 {
 	int rcode;
@@ -40,17 +56,84 @@ static int dhcp_process(REQUEST *request)
 	}
 
 	/*
-	 *	Look for Relay attribute, and forward it if so...
+	 *	Look for Relay attribute, and forward it if necessary.
 	 */
+	vp = pairfind(request->config_items, DHCP2ATTR(270));
+	if (vp) {
+		VALUE_PAIR *giaddr;
+		RADIUS_PACKET relayed;
+		
+		request->reply->code = 0; /* don't reply to the client */
+
+		/*
+		 *	Find the original giaddr.
+		 *	FIXME: Maybe look in the original packet?
+		 *
+		 *	It's invalid to have giaddr=0 AND a relay option
+		 */
+		giaddr = pairfind(request->packet->vps, 266);
+		if (giaddr && (giaddr->vp_ipaddr == htonl(INADDR_ANY))) {
+			if (pairfind(request->packet->vps, DHCP2ATTR(82))) {
+				RDEBUG("DHCP: Received packet with giaddr = 0 and containing relay option: Discarding packet");
+				return 1;
+			}
+
+			/*
+			 *	FIXME: Add cache by XID.
+			 */
+			RDEBUG("DHCP: Cannot yet relay packets with giaddr = 0");
+			return 1;
+		}
+
+		if (request->packet->data[3] > 10) {
+			RDEBUG("DHCP: Number of hops is greater than 10: not relaying");
+			return 1;
+		}
+
+		/*
+		 *	Forward it VERBATIM to the next server, rather
+		 *	than to the client.
+		 */
+		memcpy(&relayed, request->packet, sizeof(relayed));
+
+		relayed.dst_ipaddr.af = AF_INET;
+		relayed.dst_ipaddr.ipaddr.ip4addr.s_addr = vp->vp_ipaddr;
+		relayed.dst_port = request->packet->dst_port;
+
+		relayed.src_ipaddr = request->packet->dst_ipaddr;
+		relayed.src_port = request->packet->dst_port;
+
+		relayed.data = rad_malloc(relayed.data_len);
+		memcpy(relayed.data, request->packet->data, request->packet->data_len);
+		relayed.vps = NULL;
+
+		/*
+		 *	The only field that changes is the number of hops
+		 */
+		relayed.data[3]++; /* number of hops */
+		
+		/*
+		 *	Forward the relayed packet VERBATIM, don't
+		 *	respond to the client, and forget completely
+		 *	about this request.
+		 */
+		fr_dhcp_send(&relayed);
+		free(relayed.data);
+		return 1;
+	}
 
 	vp = pairfind(request->reply->vps, DHCP2ATTR(53)); /* DHCP-Message-Type */
 	if (vp) {
 		request->reply->code = vp->vp_integer;
+		if ((request->reply->code != 0) &&
+		    (request->reply->code < PW_DHCP_OFFSET)) {
+			request->reply->code += PW_DHCP_OFFSET;
+		}
 	}
 	else switch (rcode) {
 	case RLM_MODULE_OK:
 	case RLM_MODULE_UPDATED:
-		if (request->packet->code == (PW_DHCP_DISCOVER)) {
+		if (request->packet->code == PW_DHCP_DISCOVER) {
 			request->reply->code = PW_DHCP_OFFER;
 			break;
 
@@ -81,7 +164,9 @@ static int dhcp_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 {
 	int rcode;
 	int on = 1;
-	listen_socket_t *sock;
+	dhcp_socket_t *sock;
+	RADCLIENT *client;
+	CONF_PAIR *cp;
 
 	rcode = common_socket_parse(cs, this);
 	if (rcode != 0) return rcode;
@@ -103,6 +188,34 @@ static int dhcp_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		return -1;
 	}
 
+	/*
+	 *	Undocumented extension for testing without
+	 *	destroying your network!
+	 */
+	sock->suppress_responses = FALSE;
+	cp = cf_pair_find(cs, "suppress_responses");
+	if (cp) {
+		const char *value;
+
+		value = cf_pair_value(cp);
+
+		if (value && (strcmp(value, "yes") == 0)) {
+			sock->suppress_responses = TRUE;
+		}
+	}
+
+	/*
+	 *	Initialize the fake client.
+	 */
+	client = &sock->dhcp_client;
+	memset(client, 0, sizeof(*client));
+	client->ipaddr.af = AF_INET;
+	client->ipaddr.ipaddr.ip4addr.s_addr = INADDR_NONE;
+	client->prefix = 0;
+	client->longname = client->shortname = "dhcp";
+	client->secret = client->shortname;
+	client->nastype = strdup("none");
+
 	return 0;
 }
 
@@ -117,7 +230,7 @@ static int dhcp_socket_recv(rad_listen_t *listener,
 			    RAD_REQUEST_FUNP *pfun, REQUEST **prequest)
 {
 	RADIUS_PACKET	*packet;
-	RADCLIENT	*client;
+	dhcp_socket_t	*sock;
 
 	packet = fr_dhcp_recv(listener->fd);
 	if (!packet) {
@@ -125,14 +238,8 @@ static int dhcp_socket_recv(rad_listen_t *listener,
 		return 0;
 	}
 
-	if ((client = client_listener_find(listener,
-					   &packet->src_ipaddr,
-					   packet->src_port)) == NULL) {
-		rad_free(&packet);
-		return 0;
-	}
-
-	if (!received_request(listener, packet, prequest, client)) {
+	sock = listener->data;
+	if (!received_request(listener, packet, prequest, &sock->dhcp_client)) {
 		rad_free(&packet);
 		return 0;
 	}
@@ -148,6 +255,8 @@ static int dhcp_socket_recv(rad_listen_t *listener,
  */
 static int dhcp_socket_send(rad_listen_t *listener, REQUEST *request)
 {
+	dhcp_socket_t	*sock;
+
 	rad_assert(request->listener == listener);
 	rad_assert(listener->send == dhcp_socket_send);
 
@@ -157,6 +266,12 @@ static int dhcp_socket_send(rad_listen_t *listener, REQUEST *request)
 		return -1;
 	}
 
+	sock = listener->data;
+	if (sock->suppress_responses) return 0;
+
+	/*
+	 *	Don't send anything
+	 */
 	return fr_dhcp_send(request->reply);
 }
 

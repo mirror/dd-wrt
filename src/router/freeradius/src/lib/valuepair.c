@@ -950,6 +950,8 @@ VALUE_PAIR *pairparsevalue(VALUE_PAIR *vp, const char *value)
 			break;
 
 		case PW_TYPE_BYTE:
+			vp->length = 1;
+
 			/*
 			 *	Note that ALL integers are unsigned!
 			 */
@@ -959,60 +961,35 @@ VALUE_PAIR *pairparsevalue(VALUE_PAIR *vp, const char *value)
 					fr_strerror_printf("Byte value \"%s\" is larger than 255", value);
 					return NULL;
 				}
-				vp->length = 1;
 				break;
 			}
-
-			/*
-			 *	Look for the named value for the given
-			 *	attribute.
-			 */
-			if ((dval = dict_valbyname(vp->attribute, value)) == NULL) {
-				fr_strerror_printf("Unknown value %s for attribute %s",
-					   value, vp->name);
-				return NULL;
-			}
-			vp->vp_integer = dval->value;
-			vp->length = 1;
-			break;
+			goto check_for_value;
 
 		case PW_TYPE_SHORT:
 			/*
 			 *	Note that ALL integers are unsigned!
 			 */
 			vp->vp_integer = getint(value, &p);
+			vp->length = 2;
 			if (!*p) {
 				if (vp->vp_integer > 65535) {
 					fr_strerror_printf("Byte value \"%s\" is larger than 65535", value);
 					return NULL;
 				}
-				vp->length = 2;
 				break;
 			}
 
-			/*
-			 *	Look for the named value for the given
-			 *	attribute.
-			 */
-			if ((dval = dict_valbyname(vp->attribute, value)) == NULL) {
-				fr_strerror_printf("Unknown value %s for attribute %s",
-					   value, vp->name);
-				return NULL;
-			}
-			vp->vp_integer = dval->value;
-			vp->length = 2;
-			break;
+			goto check_for_value;
 
 		case PW_TYPE_INTEGER:
 			/*
 			 *	Note that ALL integers are unsigned!
 			 */
 			vp->vp_integer = getint(value, &p);
-			if (!*p) {
-				vp->length = 4;
-				break;
-			}
+			vp->length = 4;
+			if (!*p) break;
 
+	check_for_value:
 			/*
 			 *	Look for the named value for the given
 			 *	attribute.
@@ -1023,7 +1000,6 @@ VALUE_PAIR *pairparsevalue(VALUE_PAIR *vp, const char *value)
 				return NULL;
 			}
 			vp->vp_integer = dval->value;
-			vp->length = 4;
 			break;
 
 		case PW_TYPE_DATE:
@@ -1497,13 +1473,12 @@ VALUE_PAIR *pairmake(const char *attribute, const char *value, int operator)
 	if (value && (*value == ':' && da->flags.has_tag)) {
 	        /* If we already found a tag, this is invalid */
 	        if(found_tag) {
-		        pairbasicfree(vp);
 			fr_strerror_printf("Duplicate tag %s for attribute %s",
 				   value, vp->name);
 			DEBUG("Duplicate tag %s for attribute %s\n",
 				   value, vp->name);
+		        pairbasicfree(vp);
 			return NULL;
-
 		}
 	        /* Colon found and attribute allows a tag */
 	        if (value[1] == '*' && value[2] == ':') {
@@ -1546,6 +1521,13 @@ VALUE_PAIR *pairmake(const char *attribute, const char *value, int operator)
 		 */
 	case T_OP_REG_EQ:	/* =~ */
 	case T_OP_REG_NE:	/* !~ */
+		if (!value) {
+			fr_strerror_printf("No regular expression found in %s",
+					   vp->name);
+		        pairbasicfree(vp);
+			return NULL;
+		}
+	  
 		strlcpy(vp->vp_strvalue, value, sizeof(vp->vp_strvalue));
 		vp->length = strlen(vp->vp_strvalue);
 		/*
@@ -1644,7 +1626,7 @@ VALUE_PAIR *pairread(const char **ptr, FR_TOKEN *eol)
 	/*
 	 *	We may have Foo-Bar:= stuff, so back up.
 	 */
-	if (attr[len - 1] == ':') {
+	if ((len > 0) && (attr[len - 1] == ':')) {
 		p--;
 		len--;
 	}

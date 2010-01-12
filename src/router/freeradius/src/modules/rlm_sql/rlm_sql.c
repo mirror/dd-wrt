@@ -29,7 +29,6 @@ RCSID("$Id$")
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/rad_assert.h>
-#include <ltdl.h>
 
 #include <sys/stat.h>
 
@@ -108,6 +107,12 @@ static const CONF_PARSER module_config[] = {
 	 offsetof(SQL_CONFIG,allowed_chars), NULL,
 	"@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_: /"},
 
+	/*
+	 *	This only works for a few drivers.
+	 */
+	{"query_timeout", PW_TYPE_INTEGER,
+	 offsetof(SQL_CONFIG,query_timeout), NULL, NULL},
+	 
 	{NULL, -1, 0, NULL, NULL}
 };
 
@@ -821,7 +826,12 @@ static int rlm_sql_detach(void *instance)
 			free(*p);
 			*p = NULL;
 		}
-		allowed_chars = NULL;
+		/*
+		 *	Catch multiple instances of the module.
+		 */
+		if (allowed_chars == inst->config->allowed_chars) {
+			allowed_chars = NULL;
+		}
 		free(inst->config);
 		inst->config = NULL;
 	}
@@ -1311,9 +1321,9 @@ static int rlm_sql_accounting(void *instance, REQUEST * request) {
 
 						if (acctsessiontime <= 0) {
 							radius_xlat(logstr, sizeof(logstr), "stop packet with zero session length. [user '%{User-Name}', nas '%{NAS-IP-Address}']", request, NULL);
-							radlog_request(L_ERR, 0, request, "%s", logstr);
+							radlog_request(L_DBG, 0, request, "%s", logstr);
 							sql_release_socket(inst, sqlsocket);
-							ret = RLM_MODULE_NOOP;
+							return RLM_MODULE_NOOP;
 						}
 #endif
 

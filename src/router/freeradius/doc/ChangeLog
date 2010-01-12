@@ -1,4 +1,127 @@
-FreeRADIUS 2.1.6 Mon May 18 10:00:00 CEST 2009;  , urgency=medium
+FreeRADIUS 2.1.8 Wed 30 Dec 16:44:50 CEST 2009, urgency=medium
+	Feature improvements
+	* Print more descriptive error message for too many EAP sessions.
+	  This gives hints on what to do when "failed to store handler"
+	* Commands received from radmin are now printed on stdout when
+	  in debugging mode.
+	* Allow accounting packets to be written to a detail file, even
+	  if they were read from a different detail file.
+	* Added OpenSSL license exception (src/LICENSE.openssl)
+
+	Bug fixes
+	* DHCP sockets can now set the broadcast flag before binding to a
+	  socket.  You need to set "broadcast = yes" in the DHCP listener.
+	* Be more restrictive on string parsing in the config files
+	* Fix password length in scripts/create-users.pl
+	* Be more flexible about parsing the detail file.  This allows
+	  it to read files where the attributes have been edited.
+	* Ensure that requests read from the detail file are cleaned up
+	  (i.e. don't leak) if they are proxied without a response.
+	* Write the PID file after opening sockets, not before
+	  (closes bug #29)
+	* Proxying large numbers of packets no longer gives error
+	  "unable to open proxy socket".
+	* Avoid mutex locks in libc after fork
+	* Retry packet from detail file if there was no response.
+	* Allow old-style dictionary formats, where the vendor name is the
+	  last field in an ATTRIBUTE definition.
+	* Removed all recursive use of mutexes.  Some systems just don't
+	  support this.
+	* Allow !* to work as documented.
+	* make templates work (see templates.conf)
+	* Enabled "allow_core_dumps" to work again
+	* Print better errors when reading invalid dictionaries
+	* Sign client certificates with CA, rather than server certs.
+	* Fix potential crash in rlm_passwd when file was closed
+	* Fixed corner cases in conditional dynamic expansion.
+	* Use InnoDB for MySQL IP Pools, to gain transactional support
+	* Apply patch to libltdl for CVE-2009-3736.
+	* Fixed a few issues found by LLVM's static checker
+	* Keep track of "bad authenticators" for accounting packets
+	* Keep track of "dropped packets" for auth/acct packets
+	* Synced the "debian" directory with upstream
+	* Made "unlang" use unsigned 32-bit integers, to match the
+	  dictionaries.
+
+FreeRADIUS 2.1.7 Mon Sept 14 11:20:00 CEST 2009;  , urgency=medium
+	Feature improvements
+	* Full support for CoA and Disconnect packets as per RFC 3576
+	  and RFC 5176.  Both receiving and proxying CoA is supported.
+	* Added "src_ipaddr" configuration to "home_server".  See
+	  proxy.conf for details.
+	* radsniff now accepts -I, to read from a filename instead of
+	  a device.
+	* radsniff also prints matching requests and any responses to those
+	  requests when '-r' is used.
+	* Added example of attr_filter for Access-Challenge packets
+	* Added support for udpfromto in DHCP code
+	* radmin can now selectively mark modules alive/dead.
+	  See "set module state".
+	* Added customizable messages on login success/fail.
+	  See msg_goodpass && msg_badpass in log{} section of radiusd.conf
+	* Document "chase_referrals" and "rebind" in raddb/modules/ldap
+	* Preliminary implementation of DHCP relay.
+	* Made thread pool section optional.  If it doesn't exist,
+	  the server will run single-threaded.
+	* Added sample radrelay.conf for people upgrading from 1.x
+	* Made proxying more stable by failing over, rather than
+	  rejecting the first request.  See "response_window" in proxy.conf
+	* Allow home_server_pools to exist without realms.
+	* Add dictionary.iea (closes bug #7)
+	* Added support for RFC 5580
+	* Added experimental sql_freetds module from Gabriel Blanchard.
+	* Updated dictionary.foundry
+	* Added sample configuration for MySQL cluster in raddb/sql/ndb
+	  See the README file for explanations.
+
+	Bug fixes
+	* Fixed corner case where proxied packets could have extra
+	  character in User-Password attribute.  Fix from Niko Tyni.
+	* Extended size of "attribute" field in SQL to 64.
+	* Fixes to ruby module to be more careful about when it builds.
+	* Updated Perl module "configure" script to check for broken
+	  Perl installations.
+	* Fix "status_check = none".  It would still send packets
+	  in some cases.
+	* Set recursive flag on the proxy mutex, which enables safer
+	  cleanup on some platforms.
+	* Copy the EAP username verbatim, rather than escaping it.
+	* Update handling so that robust-proxy-accounting works when
+	  all home servers are down for extended periods of time.
+	* Look for DHCP option 53 anywhere in the packet, not just 
+	  at the start.
+	* Fix processing of proxy fail handler with virtual servers.
+	* DHCP code now prints out correct src/dst IP addresses
+	  when sending packets.
+	* Removed requirement for DHCP to have clients
+	* Fixed handling of DHCP packets with message-type buried in the packet
+	* Fixed corner case with negation in unlang.
+	* Minor fixes to default MySQL & PostgreSQL schemas
+	* Suppress MSCHAP complaints in debugging mode.
+	* Fix SQL module for multiple instance, and possible crash on HUP
+	* Fix permissions for radius.log for sites that change user/group,
+	  but which don't create the file before starting radiusd.
+	* Fix double counting of packets when proxying
+	* Make %l work
+	* Fix pthread keys in rlm_perl
+	* Log reasons for EAP failure (closes bug #8)
+	* Load home servers and pools that aren't referenced from a realm.
+	* Handle return codes from virtual attributes in "unlang"
+	  (e.g. LDAP-Group).  This makes "!(expr)" work for them.
+	* Enable VMPS to see contents of virtual server again
+	* Fix WiMAX module to be consistent with examples.  (closes bug #10)
+	* Fixed crash with policies dependent on NAS-Port comparisons
+	* Allowed vendor IDs to be be higher than 32767.
+	* Fix crash on startup with certain regexes in "hints" file.
+	* Fix crash in attr_filter module when packets don't exist
+	* Allow detail file reader to be faster when "load_factor = 100"
+	* Add work-around for build failures with errors related to
+	  lt__PROGRAM__LTX_preloaded_symbols.  libltdl / libtool are horrible.
+	* Made ldap module "rebind" option aware of older, incompatible
+	  versions of OpenLDAP.
+	* Check value of Fall-Through in attr_filter module.
+
+FreeRADIUS 2.1.6 Mon May 18 10:00:00 CEST 2009;   urgency=medium
 	Feature improvements
 	* radclient exits with 0 on successful (accept / ack), and 1
 	  otherwise (no response / reject)

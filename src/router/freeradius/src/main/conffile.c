@@ -1462,12 +1462,19 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 
 	       if (strcasecmp(buf1, "$template") == 0) {
 		       CONF_ITEM *ci;
-		       CONF_SECTION *parentcs;
+		       CONF_SECTION *parentcs, *templatecs;
 		       t2 = getword(&ptr, buf2, sizeof(buf2));
 
 		       parentcs = cf_top_section(current);
 
-		       ci = cf_reference_item(parentcs, this, buf2);
+		       templatecs = cf_section_sub_find(parentcs, "templates");
+		       if (!templatecs) {
+				radlog(L_ERR, "%s[%d]: No \"templates\" section for reference \"%s\"",
+				       filename, *lineno, buf2);
+				return -1;
+		       }
+
+		       ci = cf_reference_item(parentcs, templatecs, buf2);
 		       if (!ci || (ci->type != CONF_ITEM_SECTION)) {
 				radlog(L_ERR, "%s[%d]: Reference \"%s\" not found",
 				       filename, *lineno, buf2);
@@ -1511,6 +1518,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 		case T_OP_SUB:
 		case T_OP_LE:
 		case T_OP_GE:
+		case T_OP_CMP_FALSE:
 			if (!this || (strcmp(this->name1, "update") != 0)) {
 				radlog(L_ERR, "%s[%d]: Invalid operator in assignment",
 				       filename, *lineno);
@@ -1521,6 +1529,12 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 		case T_OP_SET:
 		do_set:
 			t3 = getstring(&ptr, buf3, sizeof(buf3));
+			if (t3 == T_OP_INVALID) {
+				radlog(L_ERR, "%s[%d]: Parse error: %s",
+				       filename, *lineno,
+				       fr_strerror());
+				return -1;
+			}
 
 			/*
 			 *	Handle variable substitution via ${foo}
