@@ -236,16 +236,23 @@ listen {
 	#               raddb/sites-available/copy-acct-to-home-server
 	#	status  listen for Status-Server packets.  For examples,
 	#		see raddb/sites-available/status
+	#	coa     listen for CoA-Request and Disconnect-Request
+	#		packets.  For examples, see the file
+	#		raddb/sites-available/coa-server
 	#
 	type = auth
 
 	#  Note: "type = proxy" lets you control the source IP used for
 	#        proxying packets, with some limitations:
 	#
-	#    * Only ONE proxy listener can be defined.
 	#    * A proxy listener CANNOT be used in a virtual server section.
 	#    * You should probably set "port = 0".
 	#    * Any "clients" configuration will be ignored.
+	#
+	#  See also proxy.conf, and the "src_ipaddr" configuration entry
+	#  in the sample "home_server" section.  When you specify the
+	#  source IP address for packets sent to a home server, the
+	#  proxy listeners are automatically created.
 
 	#  IP address on which to listen.
 	#  Allowed values are:
@@ -432,6 +439,18 @@ log {
 	#
 	auth_badpass = no
 	auth_goodpass = no
+
+	#  Log additional text at the end of the "Login OK" messages.
+	#  for these to work, the "auth" and "auth_goopass" or "auth_badpass"
+	#  configurations above have to be set to "yes".
+	#
+	#  The strings below are dynamically expanded, which means that
+	#  you can put anything you want in them.  However, note that
+	#  this expansion can be slow, and can negatively impact server
+	#  performance.
+	#
+#	msg_goodpass = ""
+#	msg_badpass = ""
 }
 
 # SECURITY CONFIGURATION

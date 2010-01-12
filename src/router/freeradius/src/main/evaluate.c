@@ -303,7 +303,7 @@ static int radius_do_cmp(REQUEST *request, int *presult,
 			 int cflags, int modreturn)
 {
 	int result;
-	int lint, rint;
+	uint32_t lint, rint;
 	VALUE_PAIR *vp = NULL;
 #ifdef HAVE_REGEX_H
 	char buffer[1024];
@@ -358,9 +358,10 @@ static int radius_do_cmp(REQUEST *request, int *presult,
 				if (da && radius_find_compare(da->attr)) {
 					VALUE_PAIR *check = pairmake(pleft, pright, token);
 					*presult = (radius_callback_compare(request, NULL, check, NULL, NULL) == 0);
+					RDEBUG3("  Callback returns %d",
+						*presult);
 					pairfree(&check);
-					if (*presult)  return TRUE;
-					return FALSE;
+					return TRUE;
 				}
 				
 				RDEBUG2("    (Attribute %s was not found)",
@@ -390,6 +391,7 @@ static int radius_do_cmp(REQUEST *request, int *presult,
 
 			myvp.operator = token;
 			*presult = paircmp(&myvp, vp);
+			RDEBUG3("  paircmp -> %d", *presult);
 			return TRUE;
 		} /* else it's not a VP in a list */
 	}
@@ -406,12 +408,12 @@ static int radius_do_cmp(REQUEST *request, int *presult,
 			RDEBUG2("    (Right field is not a number at: %s)", pright);
 			return FALSE;
 		}
-		rint = atoi(pright);
+		rint = strtoul(pright, NULL, 0);
 		if (!all_digits(pleft)) {
 			RDEBUG2("    (Left field is not a number at: %s)", pleft);
 			return FALSE;
 		}
-		lint = atoi(pleft);
+		lint = strtoul(pleft, NULL, 0);
 		break;
 		
 	default:
@@ -425,7 +427,7 @@ static int radius_do_cmp(REQUEST *request, int *presult,
 		 *	Check for truth or falsehood.
 		 */
 		if (all_digits(pleft)) {
-			lint = atoi(pleft);
+			lint = strtoul(pleft, NULL, 0);
 			result = (lint != 0);
 			
 		} else {
@@ -585,8 +587,14 @@ int radius_evaluate_condition(REQUEST *request, int modreturn, int depth,
 		 *	! EXPR
 		 */
 		if (!found_condition && (*p == '!')) {
-			RDEBUG4(">>> INVERT");
-			invert = TRUE;
+			/*
+			 *	Don't change the results if we're not
+			 *	evaluating the condition.
+			 */
+			if (evaluate_next_condition) {
+				RDEBUG4(">>> INVERT");
+				invert = TRUE;
+			}
 			p++;
 
 			while ((*p == ' ') || (*p == '\t')) p++;
@@ -611,13 +619,13 @@ int radius_evaluate_condition(REQUEST *request, int modreturn, int depth,
 			}
 
 			if (invert) {
-				if (evaluate_next_condition)
-				RDEBUG2("%.*s Converting !%s -> %s",
-				       depth, filler,
-				       (result != FALSE) ? "TRUE" : "FALSE",
-				       (result == FALSE) ? "TRUE" : "FALSE");
-
-				result = (result == FALSE);
+				if (evaluate_next_condition) {
+					RDEBUG2("%.*s Converting !%s -> %s",
+						depth, filler,
+						(result != FALSE) ? "TRUE" : "FALSE",
+						(result == FALSE) ? "TRUE" : "FALSE");
+					result = (result == FALSE);
+				}
 				invert = FALSE;
 			}
 
@@ -766,8 +774,7 @@ int radius_evaluate_condition(REQUEST *request, int modreturn, int depth,
 		 */
 		token = gettoken(&p, comp, sizeof(comp));
 		if ((token < T_OP_NE) || (token > T_OP_CMP_EQ) ||
-		    (token == T_OP_CMP_TRUE) ||
-		    (token == T_OP_CMP_FALSE)) {
+		    (token == T_OP_CMP_TRUE)) {
 			radlog(L_ERR, "Expected comparison at: %s", comp);
 			return FALSE;
 		}
@@ -826,6 +833,7 @@ int radius_evaluate_condition(REQUEST *request, int modreturn, int depth,
 					   rt, pright, cflags, modreturn)) {
 				return FALSE;
 			}
+			RDEBUG4(">>> Comparison returned %d", result);
 
 			if (invert) {
 				RDEBUG4(">>> INVERTING result");
@@ -971,7 +979,7 @@ void radius_pairmove(REQUEST *request, VALUE_PAIR **to, VALUE_PAIR *from)
 
 		found = FALSE;
 		for (j = 0; j < to_count; j++) {
-			if (edited[j] || !to_list[j]) continue;
+			if (edited[j] || !to_list[j] || !from_list[i]) continue;
 
 			/*
 			 *	Attributes aren't the same, skip them.
@@ -1307,6 +1315,12 @@ int radius_update_attrlist(REQUEST *request, CONF_SECTION *cs,
 		}
 
 		cp = cf_itemtopair(ci);
+
+#ifndef NDEBUG
+		if (debug_flag && radius_find_compare(vp->attribute)) {
+			DEBUG("WARNING: You are modifying the value of virtual attribute %s.  This is not supported.", vp->name);
+		}
+#endif
 
 		/*
 		 *	The VP && CF lists should be in sync.  If they're

@@ -3,7 +3,7 @@ License:      GPL, LGPL
 Group:        Productivity/Networking/Radius/Servers
 Provides:     radiusd
 Conflicts:    freeradius
-Version: 2.1.6
+Version: 2.1.8
 Release:      0
 URL:          http://www.freeradius.org/
 Summary:      The world's most popular RADIUS Server
@@ -304,8 +304,6 @@ rm -rf $RPM_BUILD_ROOT
 /etc/init.d/freeradius-relay
 %config /etc/pam.d/radiusd
 %config /etc/logrotate.d/radiusd
-/usr/sbin/rcfreeradius
-/usr/sbin/rcfreeradius-relay
 %dir %attr(755,radiusd,radiusd) /var/lib/radiusd
 # configs
 %dir %attr(750,-,radiusd) /etc/raddb
@@ -314,6 +312,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/raddb/acct_users
 %config(noreplace) /etc/raddb/attrs
 %config(noreplace) /etc/raddb/attrs.access_reject
+%config(noreplace) /etc/raddb/attrs.access_challenge
 %config(noreplace) /etc/raddb/attrs.accounting_response
 %config(noreplace) /etc/raddb/attrs.pre-proxy
 %attr(640,-,radiusd) %config(noreplace) /etc/raddb/clients.conf
@@ -328,6 +327,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(640,-,radiusd) /etc/raddb/sql
 %attr(640,-,radiusd) %config(noreplace) /etc/raddb/sql/*/*.conf
 %attr(640,-,radiusd) %config(noreplace) /etc/raddb/sql/*/*.sql
+%attr(640,-,radiusd) %config(noreplace) /etc/raddb/sql/*/README
 %attr(640,-,radiusd) %config(noreplace) /etc/raddb/sql/oracle/msqlippool.txt
 %attr(640,-,radiusd) %config(noreplace) /etc/raddb/users
 %attr(640,-,radiusd) %config(noreplace) /etc/raddb/experimental.conf

@@ -84,10 +84,20 @@ static int eap_handler_cmp(const void *a, const void *b)
 	if (one->eap_id < two->eap_id) return -1;
 	if (one->eap_id > two->eap_id) return +1;
 
-	rcode = fr_ipaddr_cmp(&one->src_ipaddr, &two->src_ipaddr);
+	rcode = memcmp(one->state, two->state, sizeof(one->state));
 	if (rcode != 0) return rcode;
 
-	return memcmp(one->state, two->state, sizeof(one->state));
+	/*
+	 *	As of 2.1.8, we don't key off of source IP.  This
+	 *	a NAS to send packets load-balanced (or fail-over)
+	 *	across multiple intermediate proxies, and still have
+	 *	EAP work.
+	 */
+	if (fr_ipaddr_cmp(&one->src_ipaddr, &two->src_ipaddr) != 0) {
+		DEBUG("WARNING: EAP packets are arriving from two different upstream servers.  Has there been a proxy fail-over?");
+	}
+
+	return 0;
 }
 
 
@@ -411,8 +421,11 @@ static int eap_authenticate(void *instance, REQUEST *request)
 		 */
 		vp = pairfind(request->reply->vps, PW_USER_NAME);
 		if (!vp) {
-			vp = pairmake("User-Name", request->username->vp_strvalue,
+			vp = pairmake("User-Name", "",
 				      T_OP_EQ);
+			strlcpy(vp->vp_strvalue, request->username->vp_strvalue,
+				sizeof(vp->vp_strvalue));
+			vp->length = request->username->length;
 			rad_assert(vp != NULL);
 			pairadd(&(request->reply->vps), vp);
 		}
@@ -489,6 +502,8 @@ static int eap_authorize(void *instance, REQUEST *request)
 	    (vp->vp_integer != PW_AUTHTYPE_REJECT)) {
 		vp = pairmake("Auth-Type", inst->xlat_name, T_OP_EQ);
 		if (!vp) {
+			RDEBUG2("Failed to create Auth-Type %s: %s\n",
+				inst->xlat_name, fr_strerror());
 			return RLM_MODULE_FAIL;
 		}
 		pairadd(&request->config_items, vp);
@@ -509,6 +524,11 @@ static int eap_post_proxy(void *inst, REQUEST *request)
 	size_t		len;
 	VALUE_PAIR	*vp;
 	EAP_HANDLER	*handler;
+
+	/*
+	 *	Just in case the admin lists EAP in post-proxy-type Fail.
+	 */
+	if (!request->proxy_reply) return RLM_MODULE_NOOP;
 
 	/*
 	 *	If there was a handler associated with this request,
@@ -548,7 +568,7 @@ static int eap_post_proxy(void *inst, REQUEST *request)
 		 *	We are done, wrap the EAP-request in RADIUS to send
 		 *	with all other required radius attributes
 		 */
-		rcode = eap_compose(handler);
+		eap_compose(handler);
 
 		/*
 		 *	Add to the list only if it is EAP-Request, OR if
@@ -591,7 +611,6 @@ static int eap_post_proxy(void *inst, REQUEST *request)
 	} else {
 		RDEBUG2("No pre-existing handler found");
 	}
-
 
 	/*
 	 *	There may be more than one Cisco-AVPair.

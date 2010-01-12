@@ -169,6 +169,9 @@ typedef enum RAD_LISTEN_TYPE {
 #ifdef WITH_COMMAND_SOCKET
 	RAD_LISTEN_COMMAND,
 #endif
+#ifdef WITH_COA
+	RAD_LISTEN_COA,
+#endif
 	RAD_LISTEN_MAX
 } RAD_LISTEN_TYPE;
 
@@ -365,6 +368,8 @@ typedef struct main_config_t {
 	radlog_dest_t	radlog_dest;
 	CONF_SECTION	*config;
 	const char	*name;
+	const char	*auth_badpass_msg;
+	const char	*auth_goodpass_msg;
 } MAIN_CONFIG_T;
 
 #define DEBUG	if(debug_flag)log_debug
@@ -588,7 +593,7 @@ void		xlat_unregister(const char *module, RAD_XLAT_FUNC func);
 void		xlat_free(void);
 
 /* threads.c */
-extern		int thread_pool_init(CONF_SECTION *cs, int spawn_flag);
+extern		int thread_pool_init(CONF_SECTION *cs, int *spawn_flag);
 extern		int thread_pool_addrequest(REQUEST *, RAD_REQUEST_FUNP);
 extern		pid_t rad_fork(void);
 extern		pid_t rad_waitpid(pid_t pid, int *status);
@@ -616,7 +621,7 @@ void fr_suid_down_permanent(void);
 /* listen.c */
 void listen_free(rad_listen_t **head);
 int listen_init(CONF_SECTION *cs, rad_listen_t **head);
-rad_listen_t *proxy_new_listener(void);
+rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists);
 RADCLIENT *client_listener_find(const rad_listen_t *listener,
 				const fr_ipaddr_t *ipaddr, int src_port);
 #ifdef WITH_STATS
