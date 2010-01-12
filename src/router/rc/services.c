@@ -391,19 +391,37 @@ static void handle_anchorfree(void)
 static void handle_hotspot(void)
 {
 	void *handle = NULL;
-
+	handle = stop_service_nofree("cron", handle);
 #ifdef HAVE_WIFIDOG
 	handle = startstop_nofree_f("wifidog", handle);
 #endif
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
-#ifdef HAVE_CHILLI
-	handle = startstop_nofree_f("chilli", handle);
-#endif
 #ifdef HAVE_SPUTNIK_APD
 	handle = startstop_nofree_f("sputnik", handle);
 #endif
+
+#ifdef HAVE_CHILLI
+	handle = stop_service_nofree("radio_timer", handle);
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	handle = stop_service_nofree("nas", handle);
+	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
+	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
+#endif
+	handle = startstop_nofree_f("chilli", handle);
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	handle = start_service_nofree("nas", handle);
+	handle = start_service_nofree("guest_nas", handle);
+#endif
+	handle = start_service_nofree_f("radio_timer", handle);
+	handle = stop_service_nofree("lan", handle);
+	handle = start_service_nofree("lan", handle);
+#ifdef HAVE_DNSMASQ
+	handle = startstop_nofree_f("dnsmasq", handle);
+#endif
+#endif
+	handle = start_service_nofree_f("cron", handle);
 //    if( handle )
 //      dlclose( handle );
 	FORK(eval("/etc/config/http-redirect.firewall"));
