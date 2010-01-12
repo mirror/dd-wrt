@@ -2,6 +2,9 @@
  * accessed from anywhere else.
  *
  * Version: $Id$ */
+#ifndef FR_MODPRIV_H
+#define FR_MODPRIV_H
+
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 
@@ -12,12 +15,12 @@ typedef void *lt_dlhandle;
 
 lt_dlhandle lt_dlopenext(const char *name);
 void *lt_dlsym(lt_dlhandle handle, const char *symbol);
+int lt_dlclose(lt_dlhandle handle);
+const char *lt_dlerror(void);
 
 #define LTDL_SET_PRELOADED_SYMBOLS(_x)
 #define lt_dlinit(_x) (0)
-#define lt_dlclose(_x)
 #define lt_dlexit(_x)
-#define lt_dlerror(foo) "Internal error"
 #define lt_dlsetsearchpath(_x)
 #endif
 
@@ -45,9 +48,11 @@ typedef struct module_instance_t {
 	pthread_mutex_t		*mutex;
 #endif
 	CONF_SECTION		*cs;
+	int			dead;
 	fr_module_hup_t	       	*mh;
 } module_instance_t;
 
 module_instance_t *find_module_instance(CONF_SECTION *, const char *instname,
 					int do_link);
 int module_hup_module(CONF_SECTION *cs, module_instance_t *node, time_t when);
+#endif	/* FR_MODPRIV_H */

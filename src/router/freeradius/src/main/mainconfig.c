@@ -78,8 +78,8 @@ static cached_config_t	*cs_cache = NULL;
 /*
  *	Systems that have set/getresuid also have setuid.
  */
-uid_t server_uid;
-static gid_t server_gid;
+static uid_t server_uid = 0;
+static gid_t server_gid = 0;
 static const char *uid_name = NULL;
 static const char *gid_name = NULL;
 #endif
@@ -192,6 +192,8 @@ static const CONF_PARSER log_config_nodest[] = {
 	{ "auth", PW_TYPE_BOOLEAN, 0, &mainconfig.log_auth, "no" },
 	{ "auth_badpass", PW_TYPE_BOOLEAN, 0, &mainconfig.log_auth_badpass, "no" },
 	{ "auth_goodpass", PW_TYPE_BOOLEAN, 0, &mainconfig.log_auth_goodpass, "no" },
+	{ "msg_badpass", PW_TYPE_STRING_PTR, 0, &mainconfig.auth_badpass_msg, NULL},
+	{ "msg_goodpass", PW_TYPE_STRING_PTR, 0, &mainconfig.auth_goodpass_msg, NULL},
 
 	{ NULL, -1, 0, NULL, NULL }
 };
@@ -220,8 +222,6 @@ static const CONF_PARSER server_config[] = {
 #ifdef DELETE_BLOCKED_REQUESTS
 	{ "delete_blocked_requests", PW_TYPE_INTEGER, 0, &mainconfig.kill_unresponsive_children, Stringify(FALSE) },
 #endif
-	{ "allow_core_dumps", PW_TYPE_BOOLEAN, 0, &allow_core_dumps, "no" },
-
 	{ "pidfile", PW_TYPE_STRING_PTR, 0, &mainconfig.pid_file, "${run_dir}/radiusd.pid"},
 	{ "checkrad", PW_TYPE_STRING_PTR, 0, &mainconfig.checkrad, "${sbindir}/checkrad" },
 
@@ -249,6 +249,17 @@ static const CONF_PARSER server_config[] = {
 
 	{ NULL, -1, 0, NULL, NULL }
 };
+
+static const CONF_PARSER bootstrap_config[] = {
+	{ "user",  PW_TYPE_STRING_PTR, 0, &uid_name, NULL },
+	{ "group",  PW_TYPE_STRING_PTR, 0, &gid_name, NULL },
+	{ "chroot",  PW_TYPE_STRING_PTR, 0, &chroot_dir, NULL },
+	{ "allow_core_dumps", PW_TYPE_BOOLEAN, 0, &allow_core_dumps, "no" },
+
+	{ NULL, -1, 0, NULL, NULL }
+};
+
+
 
 #define MAX_ARGV (256)
 
@@ -413,7 +424,7 @@ static int r_mkdir(const char *part)
 
 
 #ifdef HAVE_SETUID
-int did_setuid = FALSE;
+static int doing_setuid = FALSE;
 
 #if defined(HAVE_SETRESUID) && defined (HAVE_GETRESUID)
 void fr_suid_up(void)
@@ -438,7 +449,7 @@ void fr_suid_up(void)
 
 void fr_suid_down(void)
 {
-	if (!did_setuid) return;
+	if (!doing_setuid) return;
 
 	if (setresuid(-1, server_uid, geteuid()) < 0) {
 		fprintf(stderr, "%s: Failed switching to uid %s: %s\n",
@@ -455,14 +466,7 @@ void fr_suid_down(void)
 
 void fr_suid_down_permanent(void)
 {
-	uid_t ruid, euid, suid;
-
-	if (!did_setuid) return;
-
-	if (getresuid(&ruid, &euid, &suid) < 0) {
-		radlog(L_ERR, "Failed getting saved uid's");
-		_exit(1);
-	}
+	if (!doing_setuid) return;
 
 	if (setresuid(server_uid, server_uid, server_uid) < 0) {
 		radlog(L_ERR, "Failed in permanent switch to uid %s: %s",
@@ -472,13 +476,6 @@ void fr_suid_down_permanent(void)
 
 	if (geteuid() != server_uid) {
 		radlog(L_ERR, "Switched to unknown uid");
-		_exit(1);
-	}
-
-
-	if (getresuid(&ruid, &euid, &suid) < 0) {
-		radlog(L_ERR, "Failed getting saved uid's: %s",
-		       strerror(errno));
 		_exit(1);
 	}
 }
@@ -502,7 +499,20 @@ void fr_suid_down(void)
 void fr_suid_down_permanent(void)
 {
 }
-#endif
+#endif /* HAVE_SETRESUID && HAVE_GETRESUID */
+#else  /* HAVE_SETUID */
+void fr_suid_up(void)
+{
+}
+void fr_suid_down(void)
+{
+}
+void fr_suid_down_permanent(void)
+{
+}
+#endif /* HAVE_SETUID */
+ 
+#ifdef HAVE_SETUID
 
 /*
  *  Do chroot, if requested.
@@ -511,8 +521,6 @@ void fr_suid_down_permanent(void)
  */
 static int switch_users(CONF_SECTION *cs)
 {
-	CONF_PAIR *cp;
-
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rlimit core_limits;
 #endif
@@ -523,14 +531,17 @@ static int switch_users(CONF_SECTION *cs)
 	 */
 	if (debug_flag && (getuid() != 0)) return 1;
 
+	if (cf_section_parse(cs, NULL, bootstrap_config) < 0) {
+		fprintf(stderr, "radiusd: Error: Failed to parse user/group information.\n");
+		return 0;
+	}
+
+
 #ifdef HAVE_GRP_H
 	/*  Set GID.  */
-	cp = cf_pair_find(cs, "group");
-	if (cp) gid_name = cf_pair_value(cp);
 	if (gid_name) {
 		struct group *gr;
 
-		DEBUG2("group = %s", gid_name);
 		gr = getgrnam(gid_name);
 		if (gr == NULL) {
 			fprintf(stderr, "%s: Cannot get ID for group %s: %s\n",
@@ -545,35 +556,35 @@ static int switch_users(CONF_SECTION *cs)
 
 #ifdef HAVE_PWD_H
 	/*  Set UID.  */
-	cp = cf_pair_find(cs, "user");
-	if (cp) uid_name = cf_pair_value(cp);
 	if (uid_name) {
 		struct passwd *pw;
 		
-		DEBUG2("user = %s", uid_name);
 		pw = getpwnam(uid_name);
 		if (pw == NULL) {
 			fprintf(stderr, "%s: Cannot get passwd entry for user %s: %s\n",
 				progname, uid_name, strerror(errno));
 			return 0;
 		}
-		server_uid = pw->pw_uid;
+
+		if (getuid() == pw->pw_uid) {
+			uid_name = NULL;
+		} else {
+
+			server_uid = pw->pw_uid;
 #ifdef HAVE_INITGROUPS
-		if (initgroups(uid_name, server_gid) < 0) {
-			fprintf(stderr, "%s: Cannot initialize supplementary group list for user %s: %s\n",
-				progname, uid_name, strerror(errno));
-			return 0;
-		}
+			if (initgroups(uid_name, server_gid) < 0) {
+				fprintf(stderr, "%s: Cannot initialize supplementary group list for user %s: %s\n",
+					progname, uid_name, strerror(errno));
+				return 0;
+			}
 #endif
+		}
 	} else {
 		server_uid = getuid();
 	}
 #endif
 
-	cp = cf_pair_find(cs, "chroot");
-	if (cp) chroot_dir = cf_pair_value(cp);
 	if (chroot_dir) {
-		DEBUG2("chroot = %s", chroot_dir);
 		if (chroot(chroot_dir) < 0) {
 			fprintf(stderr, "%s: Failed to perform chroot %s: %s",
 				progname, chroot_dir, strerror(errno));
@@ -607,39 +618,41 @@ static int switch_users(CONF_SECTION *cs)
 	}
 #endif
 
-#ifdef HAVE_PWD_H
+#ifdef HAVE_SETUID
+	/*
+	 *	Just before losing root permissions, ensure that the
+	 *	log files have the correct owner && group.
+	 */
+	if (uid_name || gid_name) {
+		if ((mainconfig.radlog_dest == RADLOG_FILES) &&
+		    (mainconfig.log_file != NULL)) {
+			int fd = open(mainconfig.log_file,
+				      O_WRONLY | O_APPEND | O_CREAT, 0640);
+			if (fd < 0) {
+				fprintf(stderr, "%s: Cannot write to log file %s: %s\n",
+					progname, mainconfig.log_file, strerror(errno));
+				return 0;
+			}
+			close(fd);
+		
+			if (chown(mainconfig.log_file, server_uid, server_gid) < 0) {
+			  fprintf(stderr, "%s: Cannot change ownership of log file %s: %s\n", 
+				  progname, mainconfig.log_file, strerror(errno));
+			  return 0;
+			}
+		}
+	}		
+
 	if (uid_name) {
+		doing_setuid = TRUE;
+
 		fr_suid_down();
 
 		/*
 		 *	Now core dumps are disabled on most secure systems.
 		 */
-		
-		did_setuid = TRUE;
 	}
 #endif
-
-	/*
-	 *	Double check that we can write to the log directory.
-	 *
-	 *	If we can't, don't start, as we can't log any errors!
-	 */
-	if ((mainconfig.radlog_dest == RADLOG_FILES) &&
-	    (mainconfig.log_file != NULL)) {
-		int fd = open(mainconfig.log_file,
-			      O_WRONLY | O_APPEND | O_CREAT, 0640);
-		if (fd < 0) {
-			fprintf(stderr, "%s: Cannot write to log file %s: %s\n",
-				progname, mainconfig.log_file, strerror(errno));
-			return 0;
-		}
-		close(fd);
-
-		/*
-		 *	After this it's safe to call radlog(), as it's going
-		 *	to the right place.
-		 */
-	}
 
 #ifdef HAVE_SYS_RESOURCE_H
 	/*  Get the current maximum for core files.  */
@@ -657,7 +670,7 @@ static int switch_users(CONF_SECTION *cs)
 	 *	Otherwise, disable core dumps for security.
 	 *	
 	 */
-	if (!(debug_flag || allow_core_dumps || did_setuid)) {
+	if (!(debug_flag || allow_core_dumps || doing_setuid)) {
 #ifdef HAVE_SYS_RESOURCE_H
 		struct rlimit no_core;
 
@@ -676,7 +689,7 @@ static int switch_users(CONF_SECTION *cs)
 		 *	running as a daemon, AND core dumps are
 		 *	allowed, AND we changed UID's.
 		 */
-	} else if ((debug_flag == 0) && allow_core_dumps && did_setuid) {
+	} else if ((debug_flag == 0) && allow_core_dumps && doing_setuid) {
 		/*
 		 *	Set the dumpable flag.
 		 */
@@ -713,7 +726,7 @@ static int switch_users(CONF_SECTION *cs)
 
 	return 1;
 }
-#endif
+#endif	/* HAVE_SETUID */
 
 
 static const FR_NAME_NUMBER str2dest[] = {
@@ -877,7 +890,6 @@ int read_mainconfig(int reload)
 
 	/*  Reload the modules.  */
 	if (setup_modules(reload, mainconfig.config) < 0) {
-		radlog(L_ERR, "Errors initializing modules");
 		return -1;
 	}
 
@@ -945,6 +957,15 @@ void hup_mainconfig(void)
 	cc = rad_malloc(sizeof(*cc));
 	memset(cc, 0, sizeof(*cc));
 
+	/*
+	 *	Save the current configuration.  Note that we do NOT
+	 *	free older ones.  We should probably do so at some
+	 *	point.  Doing so will require us to mark which modules
+	 *	are still in use, and which aren't.  Modules that
+	 *	can't be HUPed always use the original configuration.
+	 *	Modules that can be HUPed use one of the newer
+	 *	configurations.
+	 */
 	cc->created = time(NULL);
 	cc->cs = cs;
 	cc->next = cs_cache;
@@ -960,5 +981,5 @@ void hup_mainconfig(void)
 	 */
 	virtual_servers_load(cs);
 
-	virtual_servers_free(cc->created - 120);
+	virtual_servers_free(cc->created - mainconfig.max_request_time * 4);
 }

@@ -98,8 +98,10 @@ static fr_packet_list_t *proxy_list = NULL;
  *	We keep the proxy FD's here.  The RADIUS Id's are marked
  *	"allocated" per Id, via a bit per proxy FD.
  */
+static int		proxy_all_used = FALSE;
 static int		proxy_fds[32];
 static rad_listen_t	*proxy_listeners[32];
+static void check_for_zombie_home_server(REQUEST *request);
 #else
 #define remove_from_proxy_hash(foo)
 #endif
@@ -130,8 +132,8 @@ static void tv_add(struct timeval *tv, int usec_delay)
 	tv->tv_usec += usec_delay;
 
 	if (tv->tv_usec > USEC) {
-		tv->tv_usec -= USEC;
-		tv->tv_sec++;
+		tv->tv_sec += tv->tv_usec / USEC;
+		tv->tv_usec %= USEC;
 	}
 }
 
@@ -282,14 +284,16 @@ static int proxy_id_alloc(REQUEST *request, RADIUS_PACKET *packet)
 
 	if (fr_packet_list_id_alloc(proxy_list, packet)) return 1;
 
+	if (proxy_all_used) return 0;
+
 	/*
 	 *	Allocate a new proxy fd.  This function adds
 	 *	it to the tail of the list of listeners.  With
 	 *	some care, this can be thread-safe.
 	 */
-	proxy_listener = proxy_new_listener();
+	proxy_listener = proxy_new_listener(&packet->src_ipaddr, FALSE);
 	if (!proxy_listener) {
-		RDEBUG2("ERROR: Failed to create a new socket for proxying requests.");
+		radlog(L_PROXY, "Failed to create a new socket for proxying requests.");
 		return 0;
 	}
 	
@@ -310,7 +314,13 @@ static int proxy_id_alloc(REQUEST *request, RADIUS_PACKET *packet)
 			break;
 		}
 	}
-	rad_assert(found >= 0);
+	if (found < 0) {
+		proxy_all_used = TRUE;
+		listen_free(&proxy_listener);
+		radlog(L_ERR, "Failed creating new proxy socket: server is too busy and home servers appear to be down");
+		return 0;
+	}
+
 	
 	if (!fr_packet_list_socket_add(proxy_list, proxy_listener->fd)) {
 			RDEBUG2("ERROR: Failed to create a new socket for proxying requests.");
@@ -349,7 +359,6 @@ static int insert_into_proxy_hash(REQUEST *request, int retransmit)
 	 */
 	if (request->home_server) {
 		request->home_server->currently_outstanding++;
-		request->home_server->stats.total_requests++;
 	}
 
 	if (retransmit) {
@@ -434,8 +443,9 @@ static void wait_for_proxy_id_to_expire(void *ctx)
 	request->when = request->proxy_when;
 
 #ifdef WITH_COA
-	if ((request->proxy->code == PW_COA_REQUEST) ||
-	    (request->proxy->code == PW_DISCONNECT_REQUEST)) {
+	if (((request->proxy->code == PW_COA_REQUEST) ||
+	     (request->proxy->code == PW_DISCONNECT_REQUEST)) &&
+	    (request->packet->code != request->proxy->code)) {
 		request->when.tv_sec += request->home_server->coa_mrd;
 	} else
 #endif
@@ -468,12 +478,27 @@ static void wait_for_child_to_die(void *ctx)
 
 	rad_assert(request->magic == REQUEST_MAGIC);
 
-	if ((request->child_state == REQUEST_QUEUED) |
-	    (request->child_state == REQUEST_RUNNING)) {
-		request->delay += (request->delay >> 1);
-		tv_add(&request->when, request->delay);
+	/*
+	 *	If it's still queued (waiting for a thread to pick it
+	 *	up) OR, it's running AND there's still a child thread
+	 *	handling it, THEN delay some more.
+	 */
+	if ((request->child_state == REQUEST_QUEUED) ||
+	    ((request->child_state == REQUEST_RUNNING) &&
+	     (pthread_equal(request->child_pid, NO_SUCH_CHILD_PID) == 0))) {
 
-		RDEBUG2("Child is still stuck for request %d", request->number);
+		/*
+		 *	Cap delay at five minutes.
+		 */
+		if (request->delay < (USEC * 60 * 5)) {
+			request->delay += (request->delay >> 1);
+			radlog(L_INFO, "WARNING: Child is hung for request %d.",
+			       request->number);
+		} else {
+			RDEBUG2("Child is still stuck for request %d",
+				request->number);
+		}
+		tv_add(&request->when, request->delay);
 
 		INSERT_EVENT(wait_for_child_to_die, request);
 		return;
@@ -519,66 +544,6 @@ static void cleanup_delay(void *ctx)
 
 
 /*
- *	FIXME: Put into a libradius function.
- */
-#define MAX_PACKET_CODE (52)
-static const char *packet_codes[] = {
-  "",
-  "Access-Request",
-  "Access-Accept",
-  "Access-Reject",
-  "Accounting-Request",
-  "Accounting-Response",
-  "Accounting-Status",
-  "Password-Request",
-  "Password-Accept",
-  "Password-Reject",
-  "Accounting-Message",
-  "Access-Challenge",
-  "Status-Server",
-  "Status-Client",
-  "14",
-  "15",
-  "16",
-  "17",
-  "18",
-  "19",
-  "20",
-  "Resource-Free-Request",
-  "Resource-Free-Response",
-  "Resource-Query-Request",
-  "Resource-Query-Response",
-  "Alternate-Resource-Reclaim-Request",
-  "NAS-Reboot-Request",
-  "NAS-Reboot-Response",
-  "28",
-  "Next-Passcode",
-  "New-Pin",
-  "Terminate-Session",
-  "Password-Expired",
-  "Event-Request",
-  "Event-Response",
-  "35",
-  "36",
-  "37",
-  "38",
-  "39",
-  "Disconnect-Request",
-  "Disconnect-ACK",
-  "Disconnect-NAK",
-  "CoA-Request",
-  "CoA-ACK",
-  "CoA-NAK",
-  "46",
-  "47",
-  "48",
-  "49",
-  "IP-Address-Allocate",
-  "IP-Address-Release"
-};
-
-
-/*
  *	In daemon mode, AND this request has debug flags set.
  */
 #define DEBUG_PACKET if (!debug_flag && request->options && request->radlog) debug_packet
@@ -593,7 +558,6 @@ static void debug_packet(REQUEST *request, RADIUS_PACKET *packet, int direction)
 
 	if (!packet) return;
 
-	rad_assert(debug_flag != 0);
 	rad_assert(request->radlog != NULL);
 
 	if (direction == 0) {
@@ -615,9 +579,9 @@ static void debug_packet(REQUEST *request, RADIUS_PACKET *packet, int direction)
 	 *
 	 *	This really belongs in a utility library
 	 */
-	if ((packet->code > 0) && (packet->code < MAX_PACKET_CODE)) {
+	if ((packet->code > 0) && (packet->code < FR_MAX_PACKET_CODE)) {
 		RDEBUG("%s %s packet %s host %s port %d, id=%d, length=%d",
-		       received, packet_codes[packet->code], from,
+		       received, fr_packet_codes[packet->code], from,
 		       inet_ntop(ip->af, &ip->ipaddr, buffer, sizeof(buffer)),
 		       port, packet->id, packet->data_len);
 	} else {
@@ -669,7 +633,7 @@ void revive_home_server(void *ctx)
 	 */
 	if (home->ev) fr_event_delete(el, &home->ev);
 
-	radlog(L_INFO, "PROXY: Marking home server %s port %d alive again... we have no idea if it really is alive or not.",
+	radlog(L_PROXY, "Marking home server %s port %d alive again... we have no idea if it really is alive or not.",
 	       inet_ntop(home->ipaddr.af, &home->ipaddr.ipaddr,
 			 buffer, sizeof(buffer)),
 	       home->port);
@@ -688,12 +652,14 @@ static void no_response_to_ping(void *ctx)
 	home = request->home_server;
 	home->num_received_pings = 0;
 
-	RDEBUG2("No response to status check %d from home server %s port %d",
+	radlog(L_ERR, "No response to status check %d for home server %s port %d",
 	       request->number,
 	       inet_ntop(request->proxy->dst_ipaddr.af,
 			 &request->proxy->dst_ipaddr.ipaddr,
 			 buffer, sizeof(buffer)),
 	       request->proxy->dst_port);
+
+	check_for_zombie_home_server(request);
 
 	wait_for_proxy_id_to_expire(request);
 }
@@ -709,7 +675,7 @@ static void received_response_to_ping(REQUEST *request)
 	home = request->home_server;
 	home->num_received_pings++;
 
-	RDEBUG2("Received response to status check %d (%d in current sequence)",
+	radlog(L_PROXY, "Received response to status check %d (%d in current sequence)",
 	       request->number, home->num_received_pings);
 
 	/*
@@ -743,7 +709,7 @@ static void received_response_to_ping(REQUEST *request)
 		RDEBUG2("Hmm... no event for home server.  Oh well.");
 	}
 
-	radlog(L_INFO, "PROXY: Marking home server %s port %d alive",
+	radlog(L_PROXY, "Marking home server %s port %d alive",
 	       inet_ntop(request->proxy->dst_ipaddr.af,
 			 &request->proxy->dst_ipaddr.ipaddr,
 			 buffer, sizeof(buffer)),
@@ -762,8 +728,9 @@ static void ping_home_server(void *ctx)
 	REQUEST *request;
 	VALUE_PAIR *vp;
 
-	if (home->state == HOME_STATE_ALIVE) {
-		radlog(L_INFO, "Suspicious proxy state... continuing");
+	if ((home->state == HOME_STATE_ALIVE) ||
+	    (home->ping_check == HOME_PING_CHECK_NONE) ||
+	    (home->ev != NULL)) {
 		return;
 	}
 
@@ -834,6 +801,8 @@ static void ping_home_server(void *ctx)
 
 	request->next_callback = NULL;
 	request->child_state = REQUEST_PROXIED;
+	gettimeofday(&request->when, NULL);
+	home->when = request->when;
 	request->when.tv_sec += home->ping_timeout;;
 
 	INSERT_EVENT(no_response_to_ping, request);
@@ -859,7 +828,7 @@ void mark_home_server_dead(home_server *home, struct timeval *when)
 	int previous_state = home->state;
 	char buffer[128];
 
-	radlog(L_INFO, "PROXY: Marking home server %s port %d as dead.",
+	radlog(L_PROXY, "Marking home server %s port %d as dead.",
 	       inet_ntop(home->ipaddr.af, &home->ipaddr.ipaddr,
 			 buffer, sizeof(buffer)),
 	       home->port);
@@ -958,6 +927,8 @@ static int setup_post_proxy_fail(REQUEST *request)
 	DICT_VALUE *dval = NULL;
 	VALUE_PAIR *vp;
 
+	request->child_state = REQUEST_RUNNING;
+
 	if (request->packet->code == PW_AUTHENTICATION_REQUEST) {
 		dval = dict_valbyname(PW_POST_PROXY_TYPE, "Fail-Authentication");
 
@@ -1023,7 +994,6 @@ static void post_proxy_fail_handler(REQUEST *request)
 	 *	to do next.
 	 */
 	if (!setup_post_proxy_fail(request)) {
-		request->child_state = REQUEST_RUNNING;
 		request_post_handler(request);
 
 	} else {
@@ -1082,18 +1052,30 @@ static void no_response_to_proxied_request(void *ctx)
 		return;
 	}
 
-	radlog(L_ERR, "Rejecting request %d due to lack of any response from home server %s port %d",
-	       request->number,
-	       inet_ntop(request->proxy->dst_ipaddr.af,
-			 &request->proxy->dst_ipaddr.ipaddr,
-			 buffer, sizeof(buffer)),
-	       request->proxy->dst_port);
-
 	check_for_zombie_home_server(request);
 
 	home = request->home_server;
 
-	post_proxy_fail_handler(request);
+	/*
+	 *	The default as of 2.1.7 is to allow requests to
+	 *	fail-over to a backup home server when this one does
+	 *	not respond.  The old behavior can be configured as
+	 *	well.
+	 */
+	if (home->no_response_fail) {
+		radlog(L_ERR, "Rejecting request %d (proxy Id %d) due to lack of any response from home server %s port %d",
+		       request->number, request->proxy->id,
+		       inet_ntop(request->proxy->dst_ipaddr.af,
+				 &request->proxy->dst_ipaddr.ipaddr,
+				 buffer, sizeof(buffer)),
+		       request->proxy->dst_port);
+
+		post_proxy_fail_handler(request);
+	} else {
+		rad_assert(request->ev == NULL);
+		request->child_state = REQUEST_RUNNING;
+		wait_a_bit(request);
+	}
 
 	/*
 	 *	Don't touch request due to race conditions
@@ -1109,12 +1091,13 @@ static void no_response_to_proxied_request(void *ctx)
 	 *	of the zombie period.
 	 */
 	if (home->state == HOME_STATE_ALIVE) {
-		radlog(L_ERR, "PROXY: Marking home server %s port %d as zombie (it looks like it is dead).",
+		home->state = HOME_STATE_ZOMBIE;
+		home->zombie_period_start = now;	
+
+		radlog(L_PROXY, "Marking home server %s port %d as zombie (it looks like it is dead).",
 		       inet_ntop(home->ipaddr.af, &home->ipaddr.ipaddr,
 				 buffer, sizeof(buffer)),
 		       home->port);
-		home->state = HOME_STATE_ZOMBIE;
-		home->zombie_period_start = now;
 
 		/*
 		 *	Start pinging the home server.
@@ -1193,31 +1176,21 @@ static void wait_a_bit(void *ctx)
 			break;
 		}
 
-#if defined(HAVE_PTHREAD_H)
+	stop_processing:
+#if defined(HAVE_PTHREAD_H) || defined(WITH_PROXY)
 		/*
 		 *	A child thread MAY still be running on the
 		 *	request.  Ask the thread to stop working on
 		 *	the request.
 		 */
-		if (have_children) {
-			/* FIXME: kill unresponsive children? */
-
-			/*
-			 *	Print this error message ONLY if
-			 *	there's a child currently processing
-			 *	the request.  As we don't have thread
-			 *	locks here, there may be race
-			 *	conditions on this check.  But it's
-			 *	just an error message, so that's OK.
-			 */
-			if (!pthread_equal(request->child_pid, NO_SUCH_CHILD_PID)) {
-				radlog(L_ERR, "WARNING: Unresponsive child for request %d, in module %s component %s",
-				       request->number,
-				       request->module ? request->module : "<server core>",
-				       request->component ? request->component : "<server core>");
-			}
-
+		if (have_children &&
+		    (pthread_equal(request->child_pid, NO_SUCH_CHILD_PID) == 0)) {
 			request->master_state = REQUEST_STOP_PROCESSING;
+
+			radlog(L_ERR, "WARNING: Unresponsive child for request %d, in module %s component %s",
+			       request->number,
+			       request->module ? request->module : "<server core>",
+			       request->component ? request->component : "<server core>");
 			
 			request->delay = USEC / 4;
 			tv_add(&request->when, request->delay);
@@ -1227,12 +1200,12 @@ static void wait_a_bit(void *ctx)
 #endif
 
 		/*
-		 *	Else there are no child threads.  We probably
-		 *	should have just marked the request as 'done'
-		 *	elsewhere, like in the post-proxy-fail
-		 *	handler.  But doing that would involve
-		 *	checking for max_request_time in multiple
-		 *	places, so this may be simplest.
+		 *	Else no child thread is processing the
+		 *	request.  We probably should have just marked
+		 *	the request as 'done' elsewhere, like in the
+		 *	post-proxy-fail handler.  But doing that would
+		 *	involve checking for max_request_time in
+		 *	multiple places, so this may be simplest.
 		 */
 		request->child_state = REQUEST_DONE;
 		/* FALL-THROUGH */
@@ -1459,17 +1432,23 @@ static int originated_coa_request(REQUEST *request)
 	rad_assert(!request->in_proxy_hash);
 	rad_assert(request->proxy_reply == NULL);
 
+	/*
+	 *	Check whether we want to originate one, or cancel one.
+	 */
 	vp = pairfind(request->config_items, PW_SEND_COA_REQUEST);
-	if (!vp && request->coa) vp = pairfind(request->coa->proxy->vps, PW_SEND_COA_REQUEST);
+	if (!vp && request->coa) {
+		vp = pairfind(request->coa->proxy->vps, PW_SEND_COA_REQUEST);
+	}
+
 	if (vp) {
 		if (vp->vp_integer == 0) {
 			ev_request_free(&request->coa);
 			return 1;	/* success */
 		}
-
-		if (!request->coa) request_alloc_coa(request);
-		if (!request->coa) return 0;
 	}
+
+	if (!request->coa) request_alloc_coa(request);
+	if (!request->coa) return 0;
 
 	coa = request->coa;
 
@@ -1824,7 +1803,8 @@ static int request_pre_handler(REQUEST *request)
 	}
 
 	if (rcode < 0) {
-		radlog(L_ERR, "%s Dropping packet without response.", fr_strerror());
+		RDEBUG("%s Dropping packet without response.", fr_strerror());
+		request->reply->offset = -2; /* bad authenticator */
 		request->child_state = REQUEST_DONE;
 		return 0;
 	}
@@ -1949,23 +1929,36 @@ static int proxy_to_virtual_server(REQUEST *request)
 
 	RDEBUG2(">>> Sending proxied request internally to virtual server.");
 	radius_handle_request(fake, fun);
-	RDEBUG2("<<< Received proxied response from internal virtual server.");
+	RDEBUG2("<<< Received proxied response code %d from internal virtual server.", fake->reply->code);
 
-	request->proxy_reply = fake->reply;
-	fake->reply = NULL;
+	if (fake->reply->code != 0) {
+		request->proxy_reply = fake->reply;
+		fake->reply = NULL;
+	} else {
+		/*
+		 *	There was no response
+		 */
+		setup_post_proxy_fail(request);
+	}
 
 	ev_request_free(&fake);
 
 	process_proxy_reply(request);
 
-	if (request->server) RDEBUG("server %s {",
-				    request->server != NULL ?
-				    request->server : ""); 
-	fun(request);
-	
-	if (request->server) RDEBUG("} # server %s",
-				    request->server != NULL ?
-				    request->server : "");
+	/*
+	 *	Process it through the normal section again, but ONLY
+	 *	if we received a proxy reply..
+	 */
+	if (request->proxy_reply) {
+		if (request->server) RDEBUG("server %s {",
+					    request->server != NULL ?
+					    request->server : ""); 
+		fun(request);
+		
+		if (request->server) RDEBUG("} # server %s",
+					    request->server != NULL ?
+					    request->server : "");
+	}
 
 	return 2;		/* success, but NOT '1' !*/
 }
@@ -1992,13 +1985,50 @@ static int successfully_proxied_request(REQUEST *request)
 	 *
 	 *	FIXME: This should really be a serious error.
 	 */
-	if (request->in_proxy_hash) {
+	if (request->in_proxy_hash ||
+	    (request->proxy_reply && (request->proxy_reply->code != 0))) {
 		return 0;
 	}
 
 	realmpair = pairfind(request->config_items, PW_PROXY_TO_REALM);
 	if (!realmpair || (realmpair->length == 0)) {
-		return 0;
+		int pool_type;
+
+		vp = pairfind(request->config_items, PW_HOME_SERVER_POOL);
+		if (!vp) return 0;
+
+		switch (request->packet->code) {
+		case PW_AUTHENTICATION_REQUEST:
+			pool_type = HOME_TYPE_AUTH;
+			break;
+
+#ifdef WITH_ACCOUNTING
+		case PW_ACCOUNTING_REQUEST:
+			pool_type = HOME_TYPE_ACCT;
+			break;
+#endif
+
+#ifdef WITH_COA
+		case PW_COA_REQUEST:
+		case PW_DISCONNECT_REQUEST:
+			pool_type = HOME_TYPE_COA;
+			break;
+#endif
+
+		default:
+			return 0;
+		}
+
+		pool = home_pool_byname(vp->vp_strvalue, pool_type);
+		if (!pool) {
+			RDEBUG2("ERROR: Cannot proxy to unknown pool %s",
+				vp->vp_strvalue);
+			return 0;
+		}
+
+		realmname = NULL; /* no realms */
+		realm = NULL;
+		goto found_pool;
 	}
 
 	realmname = (char *) realmpair->vp_strvalue;
@@ -2020,6 +2050,12 @@ static int successfully_proxied_request(REQUEST *request)
 		pool = realm->acct_pool;
 #endif
 
+#ifdef WITH_COA
+	} else if ((request->packet->code == PW_COA_REQUEST) ||
+		   (request->packet->code == PW_DISCONNECT_REQUEST)) {
+		pool = realm->acct_pool;
+#endif
+
 	} else {
 		rad_panic("Internal sanity check failed");
 	}
@@ -2030,6 +2066,7 @@ static int successfully_proxied_request(REQUEST *request)
 		return 0;
 	}
 
+found_pool:
 	home = home_server_ldb(realmname, pool, request);
 	if (!home) {
 		RDEBUG2("ERROR: Failed to find live home server for realm %s",
@@ -2048,8 +2085,8 @@ static int successfully_proxied_request(REQUEST *request)
 	/*
 	 *	Remember that we sent the request to a Realm.
 	 */
-	pairadd(&request->packet->vps,
-		pairmake("Realm", realmname, T_OP_EQ));
+	if (realmname) pairadd(&request->packet->vps,
+			       pairmake("Realm", realmname, T_OP_EQ));
 
 	/*
 	 *	Strip the name, if told to.
@@ -2057,7 +2094,7 @@ static int successfully_proxied_request(REQUEST *request)
 	 *	Doing it here catches the case of proxied tunneled
 	 *	requests.
 	 */
-	if (realm->striprealm == TRUE &&
+	if (realm && (realm->striprealm == TRUE) &&
 	   (strippedname = pairfind(request->proxy->vps, PW_STRIPPED_USER_NAME)) != NULL) {
 		/*
 		 *	If there's a Stripped-User-Name attribute in
@@ -2096,7 +2133,8 @@ static int successfully_proxied_request(REQUEST *request)
 	 *	since we can't use the request authenticator
 	 *	anymore - we changed it.
 	 */
-	if (pairfind(request->proxy->vps, PW_CHAP_PASSWORD) &&
+	if ((request->packet->code == PW_AUTHENTICATION_REQUEST) &&
+	    pairfind(request->proxy->vps, PW_CHAP_PASSWORD) &&
 	    pairfind(request->proxy->vps, PW_CHAP_CHALLENGE) == NULL) {
 		vp = radius_paircreate(request, &request->proxy->vps,
 				       PW_CHAP_CHALLENGE, PW_TYPE_OCTETS);
@@ -2223,7 +2261,11 @@ static void request_post_handler(REQUEST *request)
 	}
 #endif
 
-	if ((request->reply->code == 0) &&
+	/*
+	 *	Catch Auth-Type := Reject BEFORE proxying the packet.
+	 */
+	if ((request->packet->code == PW_AUTHENTICATION_REQUEST) &&
+	    (request->reply->code == 0) &&
 	    ((vp = pairfind(request->config_items, PW_AUTH_TYPE)) != NULL) &&
 	    (vp->vp_integer == PW_AUTHTYPE_REJECT)) {
 		request->reply->code = PW_AUTHENTICATION_REJECT;
@@ -2355,6 +2397,10 @@ static void request_post_handler(REQUEST *request)
 			}
 		}
 
+#ifdef WITH_COA
+	case PW_COA_REQUEST:
+	case PW_DISCONNECT_REQUEST:
+#endif
 		request->next_when.tv_sec += request->root->cleanup_delay;
 		request->next_callback = cleanup_delay;
 		child_state = REQUEST_CLEANUP_DELAY;
@@ -2375,14 +2421,9 @@ static void request_post_handler(REQUEST *request)
 		break;
 
 	default:
-		if ((request->packet->code > 1024) &&
-		    (request->packet->code < (1024 + 254 + 1))) {
-			request->next_callback = NULL;
-			child_state = REQUEST_DONE;
-			break;
-		}
-
-		radlog(L_ERR, "Unknown packet type %d", request->packet->code);
+		/*
+		 *	DHCP, VMPS, etc.
+		 */
 		request->next_callback = NULL;
 		child_state = REQUEST_DONE;
 		break;
@@ -2652,10 +2693,21 @@ static void received_conflicting_request(REQUEST *request,
 #endif
 
 		/*
+		 *	Catch race conditions.  It may have switched
+		 *	from running to done while this code is being
+		 *	executed.
+		 */
+	case REQUEST_REJECT_DELAY:
+	case REQUEST_CLEANUP_DELAY:
+	case REQUEST_DONE:
+		break;
+
+		/*
 		 *	It's in some other state, and therefore also
 		 *	in the event queue.  At some point, the
 		 *	child will notice, and we can then delete it.
 		 */
+	case REQUEST_PROXIED:
 	default:
 		rad_assert(request->ev != NULL);
 		break;
@@ -2968,8 +3020,15 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 	 *	Having it here means that late or duplicate proxy
 	 *	replies no longer get the home server marked as
 	 *	"alive".  This might be good for stability, though.
+	 *
+	 *	FIXME: Do we really want to do this whenever we
+	 *	receive a packet?  Setting this here means that we
+	 *	mark it alive on *any* packet, even if it's lost all
+	 *	of the *other* packets in the last 10s.
 	 */
-	request->home_server->state = HOME_STATE_ALIVE;
+	if (request->proxy->code != PW_STATUS_SERVER) {
+		request->home_server->state = HOME_STATE_ALIVE;
+	}
 	
 #ifdef WITH_COA
 	/*
@@ -3120,7 +3179,7 @@ void event_new_fd(rad_listen_t *this)
 		if (just_started) {
 			DEBUG("Listening on %s", buffer);
 		} else {
-			DEBUG2(" ... adding new socket %s", buffer);
+			radlog(L_INFO, " ... adding new socket %s", buffer);
 		}
 		if (!fr_event_fd_insert(el, 0, this->fd,
 					event_socket_handler, this)) {
@@ -3133,7 +3192,7 @@ void event_new_fd(rad_listen_t *this)
 	}
 	
 	if (this->status == RAD_LISTEN_STATUS_CLOSED) {
-		DEBUG2(" ... closing socket %s", buffer);
+		radlog(L_INFO, " ... closing socket %s", buffer);
 		
 		fr_event_fd_delete(el, 0, this->fd);
 		this->status = RAD_LISTEN_STATUS_FINISH;
@@ -3168,7 +3227,7 @@ static void handle_signal_self(int flag)
 		time_t when;
 		static time_t last_hup = 0;
 
-		DEBUG("Received HUP signal.");
+		radlog(L_INFO, "Received HUP signal.");
 
 		when = time(NULL);
 		if ((int) (when - last_hup) < 5) {
@@ -3292,9 +3351,6 @@ static void event_socket_handler(fr_event_list_t *xel, UNUSED int fd,
 	}
 }
 
-typedef struct listen_detail_t {
-	fr_event_t	*ev;
-} listen_detail_t;
 
 /*
  *	This function is called periodically to see if this detail
@@ -3330,7 +3386,8 @@ static void event_poll_detail(void *ctx)
 	when = now;
 
 	/*
-	 *	Backdoor API to get the delay until the next poll time.
+	 *	Backdoor API to get the delay until the next poll
+	 *	time.
 	 */
 	delay = this->encode(this, NULL);
 	tv_add(&when, delay);
@@ -3358,7 +3415,7 @@ static void event_status(struct timeval *wake)
 	}
 
 	if (!wake) {
-		DEBUG("Ready to process requests.");
+		radlog(L_INFO, "Ready to process requests.");
 
 	} else if ((wake->tv_sec != 0) ||
 		   (wake->tv_usec >= 100000)) {
@@ -3405,13 +3462,6 @@ int radius_event_init(CONF_SECTION *cs, int spawn_flag)
 
 	request_num_counter = 0;
 
-	/*
-	 *	Move all of the thread calls to this file?
-	 *
-	 *	It may be best for the mutexes to be in this file...
-	 */
-	have_children = spawn_flag;
-
 #ifdef WITH_PROXY
 	if (mainconfig.proxy_requests) {
 		/*
@@ -3443,10 +3493,22 @@ int radius_event_init(CONF_SECTION *cs, int spawn_flag)
 #else
 	NO_SUCH_CHILD_PID = pthread_self(); /* not a child thread */
 #endif
-	if (thread_pool_init(cs, spawn_flag) < 0) {
+	/*
+	 *	Initialize the threads ONLY if we're spawning, AND
+	 *	we're running normally.
+	 */
+	if (spawn_flag && !check_config &&
+	    (thread_pool_init(cs, &spawn_flag) < 0)) {
 		exit(1);
 	}
 #endif
+
+	/*
+	 *	Move all of the thread calls to this file?
+	 *
+	 *	It may be best for the mutexes to be in this file...
+	 */
+	have_children = spawn_flag;
 
 	if (check_config) {
 		DEBUG("%s: #### Skipping IP addresses and Ports ####",
@@ -3609,9 +3671,7 @@ void radius_event_free(void)
 	 *	referenced from anywhere else.  Remove them first.
 	 */
 	if (proxy_list) {
-		PTHREAD_MUTEX_LOCK(&proxy_mutex);
 		fr_packet_list_walk(proxy_list, NULL, proxy_hash_cb);
-		PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
 		fr_packet_list_free(proxy_list);
 		proxy_list = NULL;
 	}

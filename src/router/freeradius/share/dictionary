@@ -78,6 +78,7 @@ $INCLUDE dictionary.rfc4679
 $INCLUDE dictionary.rfc4818
 $INCLUDE dictionary.rfc4849
 $INCLUDE dictionary.rfc5176
+$INCLUDE dictionary.rfc5580
 
 #
 #	Include vendor dictionaries after the standard ones.
@@ -86,8 +87,10 @@ $INCLUDE dictionary.3com
 $INCLUDE dictionary.3gpp
 $INCLUDE dictionary.3gpp2
 $INCLUDE dictionary.acc
+$INCLUDE dictionary.acme
 $INCLUDE dictionary.airespace
 $INCLUDE dictionary.alcatel
+$INCLUDE dictionary.alcatel.sr
 $INCLUDE dictionary.alteon
 $INCLUDE dictionary.alvarion
 $INCLUDE dictionary.apc
@@ -98,6 +101,7 @@ $INCLUDE dictionary.bay
 $INCLUDE dictionary.bintec
 $INCLUDE dictionary.cablelabs
 $INCLUDE dictionary.cabletron
+$INCLUDE dictionary.chillispot
 $INCLUDE dictionary.cisco
 #
 #	 The Cisco VPN300 dictionary is the same as the altiga one.
@@ -124,6 +128,7 @@ $INCLUDE dictionary.gemtek
 $INCLUDE dictionary.h3c
 $INCLUDE dictionary.hp
 $INCLUDE dictionary.huawei
+$INCLUDE dictionary.iea
 $INCLUDE dictionary.infonet
 $INCLUDE dictionary.issanni
 $INCLUDE dictionary.itk
@@ -175,6 +180,7 @@ $INCLUDE dictionary.telebit
 $INCLUDE dictionary.trapeze
 $INCLUDE dictionary.tropos
 $INCLUDE dictionary.t_systems_nova
+$INCLUDE dictionary.unix
 $INCLUDE dictionary.usr
 $INCLUDE dictionary.utstarcom
 $INCLUDE dictionary.valemount
