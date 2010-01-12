@@ -195,6 +195,22 @@ int site_survey_main_11n(int argc, char *argv[])
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
 
+	char channel[16];
+	char wl[16];
+	sprintf(channel, "ath%s_channel", sta);
+	sprintf(wl, "ath%s_mode", sta);
+	char *apm = nvram_default_get(wl, "ap");
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
+		cprintf("set channel\n");
+		char *ch = nvram_default_get(channel, "0");
+
+		if (strcmp(ch, "0") == 0) {
+			sysprintf("iwconfig %s channel 0", sta);
+		} else {
+			sysprintf("iwconfig %s freq %sM", sta, ch);
+		}
+	}
+
 	if (len == -1) {
 		fprintf(stderr, "unable to get scan results");
 		return -1;
