@@ -53,6 +53,7 @@
 #include <nvparse.h>
 #include <syslog.h>
 #include <services.h>
+#include <time.h>
 
 void stop_cron(void);
 
@@ -117,6 +118,30 @@ void start_cron(void)
 		fprintf(fp, "\n");	// extra new line at the end
 		fclose(fp);
 	}
+
+#ifdef HAVE_HOTSPOT
+	struct tm *currtime;
+	long tloc;
+	
+	time(&tloc);
+	currtime = localtime(&tloc);
+
+	unlink("/tmp/cron.d/hotss_checkalive");
+
+	if (nvram_match("hotss_enable", "1")) {
+
+		fp = fopen("/tmp/cron.d/hotss_checkalive", "w");
+		
+		fprintf(fp, "%d 1/* * * * root /usr/bin/wget http://tech.hotspotsystem.com/up.php?mac={%s|sed s/:/-/g}\&nasid=%s_%s\&os_date={%s|sed s/\" \"/-/g}\&install=2\&uptime=`uptime|sed s/" "/\\%%20/g|sed s/:/\\%%3A/g|sed s/,/\\%%2C/g`  -O /tmp/lastup.html\n",
+			(currtime->tm_min + 3) % 60,
+			nvram_get("wl0_hwaddr"),
+			nvram_get("hotss_operatorid"),
+			nvram_get("hotss_locationid"),
+			nvram_get("os_date"));
+
+		fclose(fp);
+	}
+#endif
 
 	/*
 	 * Custom cron files 

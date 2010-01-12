@@ -45,6 +45,7 @@ void stop_chilli(void);
 void start_chilli(void)
 {
 	int ret = 0;
+	char ssid[128];
 
 	stop_chilli();		//ensure that its stopped
 
@@ -68,6 +69,9 @@ void start_chilli(void)
 		if (!nvram_match("chilli_enable", "1")) {
 			nvram_set("chilli_enable", "1");	// to get care of firewall, network, etc.
 			nvram_set("chilli_def_enable", "0");
+			sprintf(ssid, "HotSpotSystem.com-%s_%s", nvram_get("hotss_operatorid"),
+				nvram_get("hotss_locationid"));
+			nvram_set("wl0_ssid", ssid);
 		}
 		hotspotsys_config();
 	} else if (nvram_match("chilli_enable", "1")) {
