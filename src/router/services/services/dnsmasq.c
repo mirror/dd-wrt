@@ -148,7 +148,9 @@ void start_dnsmasq(void)
 //    fprintf(fp, "bind-interfaces\n");
 	if (nvram_match("fon_enable", "1")
 	    || (nvram_match("chilli_nowifibridge", "1")
-		&& nvram_match("chilli_enable", "1"))) {
+		&& nvram_match("chilli_enable", "1"))
+		|| (nvram_match("hotss_nowifibridge", "1")
+		&& nvram_match("hotss_enable", "1"))) {
 		if (canlan())
 			fprintf(fp, "interface=%s,br0",
 				nvram_safe_get("wl0_ifname"));
