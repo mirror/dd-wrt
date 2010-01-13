@@ -159,8 +159,8 @@ static __init int
 register_proc (void)
 {
   unsigned char i, flag = 0;
-  char proc_name[16];
-  int gpiocount = 16;
+  char proc_name[22];
+  int gpiocount = 22;
 
   /* create directory gpio */
   gpio_dir = proc_mkdir ("gpio", NULL);
@@ -220,8 +220,8 @@ static void
 cleanup_proc (void)
 {
   unsigned char i;
-  char proc_name[16];
-  int gpiocount=16;
+  char proc_name[22];
+  int gpiocount=22;
 
   for (i = 0; i < gpiocount; i++)
     {
