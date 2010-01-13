@@ -30,12 +30,17 @@
 	</div>
 	<div id="idhotssuam">
 		<div class="setting">
-			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
-			<input class="text" maxLength="500" size="25" name="hotss_uamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
+			<div class="label"><% tran("hotspotsys.whitelabelproto"); %></div>
+			<input class="spaceradio" type="radio" value="http" name="hotss_customuamproto" <% nvram_selmatch("hotss_customuamproto","http", "checked"); %>  />http&nbsp;
+			<input class="spaceradio" type="radio" value="https" name="hotss_customuamproto" <% nvram_selmatch("hotss_customuamproto","https", "checked"); %> />https
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.whitelabel"); %></div>
 			<input class="text" maxLength="64" size="25" name="hotss_customuam" value="<% nvram_get("hotss_customuam"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
+			<input class="text" maxLength="500" size="25" name="hotss_uamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
 		</div>
 	</div>	
 		<div class="setting">
