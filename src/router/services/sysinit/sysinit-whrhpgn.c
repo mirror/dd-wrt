@@ -163,7 +163,8 @@ void start_sysinit(void)
 	}
 	// insmod("ath_mimo_pci");
 
-	system2("echo 0 >/proc/sys/dev/wifi0/softled");
+	system2("echo 1 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	insmod("ipv6");
 
 	/*
