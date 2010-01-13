@@ -790,6 +790,7 @@ hotspotsys.whitelabelproto="White label protokol";
 hotspotsys.whitelabel="White label domena";
 hotspotsys.operatorid="ID operatorja";
 hotspotsys.locationid="ID lokacije";
+hotspotsys.dhcp="DHCP vmesnik";
 hotspotsys.net="Oddaljena mre¾a";
 
 
