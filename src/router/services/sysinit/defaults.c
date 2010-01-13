@@ -1564,14 +1564,13 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_HOTSPOT
 	{"hotss_enable", "0", 0},
-	{"hotss_interface", "br0", 0},
 	{"hotss_radiusnasid", "", 0},
 	{"hotss_uamenable", "0", 0},
 	{"hotss_uamallowed", "", 0},
 	{"hotss_operatorid", "", 0},
 	{"hotss_locationid", "", 0},
-	{"hotss_nowifibridge", "0", 0},
-	{"hotss_net", "", 0},
+	{"hotss_nowifibridge", "1", 0},
+	{"hotss_net", "192.168.182.0/24", 0},
 	{"hotss_customuam", "", 0},
 	{"hotss_customuamproto", "https", 0},
 #endif
