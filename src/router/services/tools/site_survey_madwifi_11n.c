@@ -112,6 +112,13 @@ static struct site_survey_list {
 	  (((const u_int8_t *)(p))[2] << 16) |		\
 	  (((const u_int8_t *)(p))[3] << 24)))
 
+#define BE_READ_4(p)                    \
+    ((u_int32_t)                    \
+     ((((const u_int8_t *)(p))[0] << 24) |      \
+      (((const u_int8_t *)(p))[1] << 16) |      \
+      (((const u_int8_t *)(p))[2] <<  8) |      \
+      (((const u_int8_t *)(p))[3]      )))
+
 static __inline int iswpaoui(const unsigned char *frm)
 {
 	return frm[1] > 3
@@ -135,6 +142,21 @@ static int __inline ismtikoui(const unsigned char *frm)
 	return frm[1] > 3 && LE_READ_4(frm + 2) == MTIK_OUI;
 }
 
+__inline static int ishtcap(const u_int8_t *frm)
+{
+    return frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|51);
+}
+
+__inline static int ishtinfo(const u_int8_t *frm)
+{
+    return frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|52);
+}
+
+__inline static int ishtinfoana(const u_int8_t *frm)
+{
+    return frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|61);
+}
+
 static void fillenc(char *encinfo, unsigned char *vp, int ielen)
 {
 	memset(encinfo, 0, 128);
@@ -149,6 +171,8 @@ static void fillenc(char *encinfo, unsigned char *vp, int ielen)
 				strcat(encinfo, "ATH ");
 			else if (ismtikoui(vp))
 				strcat(encinfo, "MTIK ");
+			else if (ishtcap(vp))
+				strcat(encinfo, "11N");
 			break;
 		case IEEE80211_ELEMID_RSN:
 			strcat(encinfo, "WPA2 ");
