@@ -157,8 +157,9 @@ __inline static int ishtinfoana(const u_int8_t *frm)
     return frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|61);
 }
 
-static void fillenc(char *encinfo, unsigned char *vp, int ielen)
+static int fillenc(char *encinfo, unsigned char *vp, int ielen)
 {
+int r =0;
 	memset(encinfo, 0, 128);
 	while (ielen > 0) {
 		switch (vp[0]) {
@@ -172,7 +173,10 @@ static void fillenc(char *encinfo, unsigned char *vp, int ielen)
 			else if (ismtikoui(vp))
 				strcat(encinfo, "MTIK ");
 			else if (ishtcap(vp))
+				{
 				strcat(encinfo, "11N");
+				r=300;
+				}
 			break;
 		case IEEE80211_ELEMID_RSN:
 			strcat(encinfo, "WPA2 ");
@@ -185,7 +189,7 @@ static void fillenc(char *encinfo, unsigned char *vp, int ielen)
 	}
 	if (strlen(encinfo) > 0)
 		encinfo[strlen(encinfo) - 1] = 0;
-
+return r;
 }
 
 static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
@@ -268,9 +272,9 @@ int site_survey_main_11n(int argc, char *argv[])
 		site_survey_lists[i].capability = sr->isr_capinfo;
 		// site_survey_lists[i].athcaps = sr->isr_athflags;
 		site_survey_lists[i].rate_count = sr->isr_nrates;
-		fillenc(site_survey_lists[i].ENCINFO,
-			(unsigned char *)(vp + sr->isr_ssid_len),
-			sr->isr_ie_len);
+		int n11 = fillenc(site_survey_lists[i].ENCINFO,(unsigned char *)(vp + sr->isr_ssid_len),sr->isr_ie_len);
+		if (n11)
+		    site_survey_lists[i].rate_count = n11; 
 		cp += sr->isr_len, len -= sr->isr_len;
 		i++;
 	}
