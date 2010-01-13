@@ -28,14 +28,14 @@
 		<input class="spaceradio" type="radio" value="1" name="hotss_uamenable" <% nvram_selmatch("hotss_uamenable","1", "checked"); %> onclick="show_layer_ext(this, 'idhotssuam', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="hotss_uamenable" <% nvram_selmatch("hotss_uamenable","0", "checked"); %> onclick="show_layer_ext(this, 'idhotssuam', false)" /><% tran("share.disable"); %>
 	</div>
-	<div class="setting">
-		<div class="label"><% tran("hotspotsys.whitelabel"); %></div>
-		<input class="text" maxLength="64" size="25" name="hotss_customuam" value="<% nvram_get("hotss_customuam"); %>" />
-	</div>
 	<div id="idhotssuam">
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
 			<input class="text" maxLength="500" size="25" name="hotss_uamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.whitelabel"); %></div>
+			<input class="text" maxLength="64" size="25" name="hotss_customuam" value="<% nvram_get("hotss_customuam"); %>" />
 		</div>
 	</div>	
 		<div class="setting">
