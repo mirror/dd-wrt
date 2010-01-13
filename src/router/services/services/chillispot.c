@@ -49,9 +49,9 @@ void start_chilli(void)
 
 	stop_chilli();		//ensure that its stopped
 
-	if(!strlen(nvram_safe_get("chilli_interface")) 
+	if(!strlen(nvram_safe_get("chilli_interface"))) 
 		nvram_set("chilli_interface", get_wdev());
-	if(!strlen(nvram_safe_get("hotss_interface")) 
+	if(!strlen(nvram_safe_get("hotss_interface")))
 		nvram_set("hotss_interface", get_wdev());
 
 #ifdef HAVE_HOTSPOT
