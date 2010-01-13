@@ -49,6 +49,11 @@ void start_chilli(void)
 
 	stop_chilli();		//ensure that its stopped
 
+	if(!strlen(nvram_safe_get("chilli_interface")) 
+		nvram_set("chilli_interface", get_wdev());
+	if(!strlen(nvram_safe_get("hotss_interface")) 
+		nvram_set("hotss_interface", get_wdev());
+
 #ifdef HAVE_HOTSPOT
 
 	if (nvram_match("chilli_enable", "1")
@@ -260,7 +265,7 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiussecret hotsys123\n");
 
 	if (nvram_match("hotss_nowifibridge", "1")) {
-		fprintf(fp, "dhcpif %s\n", get_wdev());
+		fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
 		if (nvram_invmatch("hotss_net", ""))
 			fprintf(fp, "net %s\n", nvram_get("hotss_net"));
 	} else
