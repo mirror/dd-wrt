@@ -1570,6 +1570,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"hotss_operatorid", "", 0},
 	{"hotss_locationid", "", 0},
 	{"hotss_nowifibridge", "1", 0},
+	{"hotss_interface", "", 0},
 	{"hotss_net", "192.168.182.0/24", 0},
 	{"hotss_customuam", "", 0},
 	{"hotss_customuamproto", "https", 0},
