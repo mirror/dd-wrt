@@ -271,7 +271,7 @@ void hotspotsys_config(void)
 		uamdomain = nvram_safe_get("hotss_customuam");
 	}
 	fprintf(fp,
-		"uamserver https://%s/customer/hotspotlogin.php\n", uamdomain);
+		"uamserver %s://%s/customer/hotspotlogin.php\n", nvram_defaut_get("hotss_customuamproto", "https"), uamdomain);
 
 	if (nvram_invmatch("wan_get_dns", "0.0.0.0")
 	    && nvram_invmatch("wan_get_dns", "")) {
