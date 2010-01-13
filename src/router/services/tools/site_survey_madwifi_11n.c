@@ -172,7 +172,7 @@ int r =0;
 				strcat(encinfo, "ATH ");
 			else if (ismtikoui(vp))
 				strcat(encinfo, "MTIK ");
-			else if (ishtcap(vp))
+			else if (ishtinfoana(vp))
 				{
 				strcat(encinfo, "11N");
 				r=300;
