@@ -149,12 +149,45 @@ __inline static int ishtcap(const u_int8_t *frm)
 
 __inline static int ishtinfo(const u_int8_t *frm)
 {
-    return frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|52);
+    int isht = frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|52);
+    if (!isht)
+	isht = frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|61);
+    return isht;
 }
 
-__inline static int ishtinfoana(const u_int8_t *frm)
+
+# if __BYTE_ORDER == __BIG_ENDIAN
+# define __bswap_16(x) \
+    (__extension__							      \
+     ({ unsigned short int __bsx = (x);					      \
+        ((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8)); }))
+#define	le16toh(_x)	__bswap_16(_x)
+# elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define	le16toh(_x)	_x
+#endif
+
+
+__inline static int isht20(const u_int8_t *frm)
 {
-    return frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|61);
+    if (ishtcap(frm))
+	{
+	struct ieee80211_ie_htcap_cmn *htcap = (struct ieee80211_ie_htcap_cmn *)frm+6;
+	u_int16_t cap = le16toh(htcap->hc_cap);
+	if (!(cap & IEEE80211_HTCAP_C_CHWIDTH40))
+	    return 1;
+	else 
+	    return 0;
+	}
+    return 0;
+}
+
+__inline static int isht40(const u_int8_t *frm)
+{
+    if (ishtcap(frm))
+	{
+	    return 1-isht20(frm);
+	}
+    return 0;
 }
 
 static int fillenc(char *encinfo, unsigned char *vp, int ielen)
@@ -166,15 +199,20 @@ int r =0;
 		case IEEE80211_ELEMID_VENDOR:
 			if (iswpaoui(vp))
 				strcat(encinfo, "WPA ");
-			else if (iswmeoui(vp))
+			if (iswmeoui(vp))
 				strcat(encinfo, "WME ");
-			else if (isatherosoui(vp))
+			if (isatherosoui(vp))
 				strcat(encinfo, "ATH ");
-			else if (ismtikoui(vp))
+			if (ismtikoui(vp))
 				strcat(encinfo, "MTIK ");
-			else if (ishtinfoana(vp))
+			if (isht20(vp))
 				{
-				strcat(encinfo, "11N");
+				strcat(encinfo, "HT20 ");
+				r=150;
+				}
+			else if (isht40(vp))
+				{
+				strcat(encinfo, "HT40 ");
 				r=300;
 				}
 			break;
