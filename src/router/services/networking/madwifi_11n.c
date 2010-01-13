@@ -1046,7 +1046,7 @@ void configure_single_11n(int count)
 
 	// setup encryption
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
-		setupHostAP(dev, "wext", 0);
+		setupHostAP(dev, "madwifi", 0);
 	else
 		setupSupplicant(dev, NULL);
 	vifs = nvram_safe_get(wifivifs);
@@ -1056,7 +1056,7 @@ void configure_single_11n(int count)
 		char *vapm = nvram_default_get(mode, "ap");
 		if (strcmp(vapm, "sta") && strcmp(vapm, "wdssta")
 		    && strcmp(vapm, "wet"))
-			setupHostAP(var, "wext", 0);
+			setupHostAP(var, "madwifi", 0);
 		else
 			setupSupplicant(var, NULL);
 		}

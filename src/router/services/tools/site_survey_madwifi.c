@@ -184,19 +184,17 @@ int site_survey_main(int argc, char *argv[])
 
 	unlink(SITE_SURVEY_DB);
 	int ap = 0, oldap = 0;
-	unsigned char *buf = malloc(24 * 1024);
 
 	char ssid[31];
 	unsigned char *cp;
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
 #ifdef HAVE_MADWIFI_MIMO
-	int count;
-	sscanf(sta, "ath%d", &count);
-	if (is_ar5008(count)) {
+	if (is_ar5008(sta)) {
 	    return site_survey_main_11n(argc,argv);
 	    }
 #endif
+	unsigned char *buf = malloc(24 * 1024);
 
 	memset(site_survey_lists, sizeof(site_survey_lists), 0);
 	memset(buf, 24 * 1024, 0);
