@@ -790,6 +790,7 @@ hotspotsys.whitelabelproto="White Label Protocol";
 hotspotsys.whitelabel="White Label Domain";
 hotspotsys.operatorid="Operator ID";
 hotspotsys.locationid="Location ID";
+hotspotsys.dhcp="DHCP Interface";
 hotspotsys.net="Remote Network";
 
 var anchorfree = new Object();
