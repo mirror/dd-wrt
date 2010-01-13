@@ -72,6 +72,8 @@ void start_chilli(void)
 			sprintf(ssid, "HotSpotSystem.com-%s_%s", nvram_get("hotss_operatorid"),
 				nvram_get("hotss_locationid"));
 			nvram_set("wl0_ssid", ssid);
+			nvram_set("time_zone", "+00");
+			nvram_set("daylight_time", "1");
 		}
 		hotspotsys_config();
 	} else if (nvram_match("chilli_enable", "1")) {
