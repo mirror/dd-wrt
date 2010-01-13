@@ -15,10 +15,6 @@
 		</div>
 	<div id="idhotssdhcp">
 		<div class="setting">
-			<div class="label"><% tran("hotspotsys.dhcp"); %></div>
-			<% show_ifselect("hotss_interface"); %>
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("hotspotsys.net"); %></div>
 			<input class="text" maxLength="20" size="20" name="hotss_net" value="<% nvram_get("hotss_net"); %>" />
 		</div>
