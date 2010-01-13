@@ -744,15 +744,28 @@ static void nat_postrouting(void)
 	if ((nvram_match("chilli_enable", "1"))
 	    && (nvram_match("wan_proto", "disabled"))) {
 		if (nvram_match("wk_mode", "gateway")) {
-			if (strlen(nvram_safe_get("chilli_net")) > 0)
-				save2file
-				    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-				     nvram_safe_get("chilli_net"),
-				     nvram_safe_get("lan_ipaddr"));
-			else
-				save2file
-				    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-				     nvram_safe_get("lan_ipaddr"));
+			if (nvram_match("hotss_enable", "1")) {
+				if (strlen(nvram_safe_get("hotss_net")) > 0) 
+					save2file
+				   	 ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+				     	nvram_safe_get("hotss_net"),
+				     	nvram_safe_get("lan_ipaddr"));
+				else
+					save2file
+				    	("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+				     	nvram_safe_get("lan_ipaddr"));
+			}
+			else {
+				if (strlen(nvram_safe_get("chilli_net")) > 0) 
+					save2file
+				   	 ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+				     	nvram_safe_get("chilli_net"),
+				     	nvram_safe_get("lan_ipaddr"));
+				else
+					save2file
+				    	("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+				     	nvram_safe_get("lan_ipaddr"));				
+			}
 		}
 	}
 #ifdef HAVE_PPPOESERVER
