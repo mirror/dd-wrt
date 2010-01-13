@@ -786,6 +786,7 @@ hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Loèi WiFi od LAN mosta";
 hotspotsys.uamenable="UAM";
 hotspotsys.allowuam="UAM dopu¹èeni";
+hotspotsys.whitelabelproto="White label protokol";
 hotspotsys.whitelabel="White label domena";
 hotspotsys.operatorid="ID operatorja";
 hotspotsys.locationid="ID lokacije";
