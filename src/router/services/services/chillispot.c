@@ -260,7 +260,7 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiussecret hotsys123\n");
 
 	if (nvram_match("hotss_nowifibridge", "1")) {
-		fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
+		fprintf(fp, "dhcpif %s\n", get_wdev());
 		if (nvram_invmatch("hotss_net", ""))
 			fprintf(fp, "net %s\n", nvram_get("hotss_net"));
 	} else
