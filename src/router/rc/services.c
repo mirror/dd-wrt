@@ -391,7 +391,32 @@ static void handle_anchorfree(void)
 static void handle_hotspot(void)
 {
 	void *handle = NULL;
-	handle = stop_service_nofree("cron", handle);
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+	handle = stop_service_nofree("zebra", handle);
+#endif
+
+	handle = stop_service_nofree("radio_timer", handle);
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	handle = stop_service_nofree("nas", handle);
+	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
+	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
+#endif
+#ifdef HAVE_MADWIFI
+	handle = stop_service_nofree("stabridge", handle);
+#endif
+	handle = stop_service_nofree("ttraff", handle);
+	handle = stop_service_nofree("wan", handle);
+#ifdef HAVE_VLANTAGGING
+	handle = stop_service_nofree("bridgesif", handle);
+	handle = stop_service_nofree("vlantagging", handle);
+#endif
+#ifdef HAVE_BONDING
+	handle = stop_service_nofree("bonding", handle);
+#endif
+	handle = stop_service_nofree("lan", handle);
+#ifdef HAVE_VLANTAGGING
+	handle = stop_service_nofree("bridging", handle);
+#endif
 #ifdef HAVE_WIFIDOG
 	handle = startstop_nofree_f("wifidog", handle);
 #endif
@@ -401,29 +426,43 @@ static void handle_hotspot(void)
 #ifdef HAVE_SPUTNIK_APD
 	handle = startstop_nofree_f("sputnik", handle);
 #endif
-
 #ifdef HAVE_CHILLI
-	handle = stop_service_nofree("radio_timer", handle);
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree("nas", handle);
-	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
-	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
-#endif
 	handle = startstop_nofree_f("chilli", handle);
+#endif
+#ifdef HAVE_VLANTAGGING
+	handle = start_service_nofree("bridging", handle);
+#endif
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	handle = start_service_nofree("wlconf", handle);
+#endif
+	handle = start_service_nofree("lan", handle);
+#ifdef HAVE_BONDING
+	handle = start_service_nofree("bonding", handle);
+#endif
+	handle = start_service_nofree_f("wan", handle);
+	handle = start_service_nofree_f("ttraff", handle);
+#ifdef HAVE_MADWIFI
+	handle = start_service_nofree_f("stabridge", handle);
+#endif
+#ifdef HAVE_VLANTAGGING
+	handle = start_service_nofree("vlantagging", handle);
+	handle = start_service_nofree("bridgesif", handle);
+#endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("nas", handle);
 	handle = start_service_nofree("guest_nas", handle);
 #endif
 	handle = start_service_nofree_f("radio_timer", handle);
-	handle = stop_service_nofree("lan", handle);
-	handle = start_service_nofree("lan", handle);
+	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
+	handle = startstop_nofree_f("udhcpd", handle);
 #ifdef HAVE_DNSMASQ
 	handle = startstop_nofree_f("dnsmasq", handle);
 #endif
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+	handle = start_service_nofree("zebra", handle);
 #endif
-	handle = start_service_nofree_f("cron", handle);
-//    if( handle )
-//      dlclose( handle );
+	startstop_f("httpd");	// httpd will not accept connection anymore
+	
 	FORK(eval("/etc/config/http-redirect.firewall"));
 	FORK(eval("/etc/config/smtp-redirect.firewall"));
 #ifdef HAVE_ZEROIP
