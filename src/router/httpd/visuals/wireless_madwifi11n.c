@@ -55,7 +55,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 
 int
 ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
-		      char *ifname, int cnt, int turbo, int macmask)
+			  char *ifname, int cnt, int turbo, int macmask)
 {
 	// unsigned char buf[24 * 1024];
 
@@ -128,19 +128,33 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		}
 		int qual = (si->isi_noise + si->isi_rssi) * 124 + 11600;
 		qual /= 10;
-
-		if (si->isi_rates
-		    && ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) !=
-			0)
-		    && ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) !=
-			0)) {
+		if (si->isi_txrateKbps && si->isi_rxrateKbps) {
 			websWrite(wp,
 				  "'%s','%s','%s','%3dM','%3dM','%d','%d','%d','%d'",
 				  mac, ifname, UPTIME(si->isi_uptime),
-				  ((si->isi_rates[si->isi_txrate] &
-				    IEEE80211_RATE_VAL) / 2) * turbo,
-				  ((si->isi_rates[si->isi_rxrate] &
-				    IEEE80211_RATE_VAL) / 2) * turbo,
+				  si->isi_txrateKbps, si->isi_rxrateKbps,
+				  si->isi_noise + si->isi_rssi + bias,
+				  si->isi_noise + bias, si->isi_rssi, qual);
+		} else if (si->isi_rates
+			   &&
+			   ((si->
+			     isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) !=
+			    0)
+			   &&
+			   ((si->
+			     isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) !=
+			    0)) {
+			websWrite(wp,
+				  "'%s','%s','%s','%3dM','%3dM','%d','%d','%d','%d'",
+				  mac, ifname, UPTIME(si->isi_uptime),
+				  ((si->
+				    isi_rates[si->
+					      isi_txrate] & IEEE80211_RATE_VAL)
+				   / 2) * turbo,
+				  ((si->
+				    isi_rates[si->
+					      isi_rxrate] & IEEE80211_RATE_VAL)
+				   / 2) * turbo,
 				  si->isi_noise + si->isi_rssi + bias,
 				  si->isi_noise + bias, si->isi_rssi, qual);
 		} else {
@@ -159,6 +173,5 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 
 	return cnt;
 }
-
 
 #endif

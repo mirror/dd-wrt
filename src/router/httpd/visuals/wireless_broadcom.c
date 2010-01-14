@@ -176,7 +176,6 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
 	channel_info_t ci;
@@ -214,9 +213,6 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	return;
 
 }
-
-
-
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
 int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv,
