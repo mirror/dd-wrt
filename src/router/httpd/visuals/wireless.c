@@ -405,7 +405,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			iface = get_wl_instance_name(1);
 		else
 #endif
-		iface = nvram_safe_get("wl0_ifname");
+			iface = nvram_safe_get("wl0_ifname");
 
 #ifdef HAVE_MADWIFI
 		char *maclist = nvram_safe_get("ath0_maclist");
