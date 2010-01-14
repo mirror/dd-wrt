@@ -131,9 +131,9 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		int rxrate = si->isi_txrateKbps/1000;
 		int txrate = si->isi_rxrateKbps/1000;
 		if (!rxrate)
-		    si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL;
+		    rxrate = si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL;
 		if (!txrate)
-		    si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL;
+		    txrate = si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL;
 		
 		char rx[32];
 		char tx[32];
