@@ -29,6 +29,10 @@ config  ICPLUS_PHY
         bool "100PHY"
         depends on !RALINK_RT3052
 
+config  RTL8366_SWITCH
+        bool "100PHY"
+        depends on !RALINK_RT3052
+
 config  MAC_TO_MAC_MODE
         bool "VITESSE"
         depends on !RALINK_RT3052
