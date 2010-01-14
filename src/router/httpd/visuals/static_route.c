@@ -15,8 +15,9 @@ static char word[256];
 void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
-	char *next=NULL, *page=NULL;
-	char *ipaddr=NULL, *netmask=NULL, *gateway=NULL, *metric=NULL, *ifname=NULL;
+	char *next = NULL, *page = NULL;
+	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric =
+	    NULL, *ifname = NULL;
 	static char ifnamecopy[32];
 	static char bufferif[512];
 
