@@ -128,8 +128,8 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		}
 		int qual = (si->isi_noise + si->isi_rssi) * 124 + 11600;
 		qual /= 10;
-		int rxrate = si->isi_txrateKbps/1000;
-		int txrate = si->isi_rxrateKbps/1000;
+		int rxrate = si->isi_rxrateKbps/1000;
+		int txrate = si->isi_txrateKbps/1000;
 		if (!rxrate)
 		    rxrate = si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL;
 		if (!txrate)
