@@ -1827,6 +1827,11 @@ int __init ra2882eth_init(void)
 	sysRegWrite(MDIO_CFG, 0x1F01DC01);
 
 // RT2880 + 100PHY
+#elif defined (CONFIG_RTL8366_SWITCH)
+
+        printk("Rtl8366 Phy Init...");
+        sysRegWrite(MDIO_CFG, 0x0000dc01);
+
 #elif defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_ICPLUS_PHY)
 
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_ICPLUS_PHY_INIT_VALUE);
