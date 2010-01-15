@@ -142,7 +142,7 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		if (rxrate)
 			sprintf(rx, "%3dM", rxrate);
 		else
-			sprintf(tx, "N/A");
+			sprintf(rx, "N/A");
 		if (txrate)
 			sprintf(tx, "%3dM", txrate);
 		else
