@@ -128,29 +128,31 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		}
 		int qual = (si->isi_noise + si->isi_rssi) * 124 + 11600;
 		qual /= 10;
-		int rxrate = si->isi_rxrateKbps/1000;
-		int txrate = si->isi_txrateKbps/1000;
+		int rxrate = si->isi_rxrateKbps / 1000;
+		int txrate = si->isi_txrateKbps / 1000;
 		if (!rxrate)
-		    rxrate = si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL;
+			rxrate =
+			    si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL;
 		if (!txrate)
-		    txrate = si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL;
-		
+			txrate =
+			    si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL;
+
 		char rx[32];
 		char tx[32];
 		if (rxrate)
-		    sprintf(rx,"%3dM",rxrate);
+			sprintf(rx, "%3dM", rxrate);
 		else
-		    sprintf(tx,"N/A");
+			sprintf(tx, "N/A");
 		if (txrate)
-		    sprintf(tx,"%3dM",txrate);
+			sprintf(tx, "%3dM", txrate);
 		else
-		    sprintf(tx,"N/A");
-			websWrite(wp,
-				  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'",
-				  mac, ifname, UPTIME(si->isi_uptime),
-				  tx, rx,
-				  si->isi_noise + si->isi_rssi + bias,
-				  si->isi_noise + bias, si->isi_rssi, qual);
+			sprintf(tx, "N/A");
+		websWrite(wp,
+			  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'",
+			  mac, ifname, UPTIME(si->isi_uptime),
+			  tx, rx,
+			  si->isi_noise + si->isi_rssi + bias,
+			  si->isi_noise + bias, si->isi_rssi, qual);
 		cp += si->isi_len;
 		len -= si->isi_len;
 	}
