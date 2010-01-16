@@ -115,19 +115,35 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			pos++;
 		}
 		// end fix for " in SSID
+		if (site_survey_lists[i].channel < 15) {
+			if (site_survey_lists[i].rate_count == 4)
+				rates = "11(b)";
+			else if (site_survey_lists[i].rate_count == 12)
+				rates = "54(b/g)";
+			else if (site_survey_lists[i].rate_count == 300)
+				rates = "300(b/g/n)";
+			else if (site_survey_lists[i].rate_count == 150)
+				rates = "150(b/g/n)";
+			else {
+				rates = buf;
+				snprintf(rates, 9, "%d",
+					 site_survey_lists[i].rate_count);
+			}
+		} else {
+			if (site_survey_lists[i].rate_count == 4)
+				rates = "11(b)"; //bogus, never shown. but if, its definitly b with weired channel setting
+			else if (site_survey_lists[i].rate_count == 12)
+				rates = "54(a)";
+			else if (site_survey_lists[i].rate_count == 300)
+				rates = "300(a/n)";
+			else if (site_survey_lists[i].rate_count == 150)
+				rates = "150(a/n)";
+			else {
+				rates = buf;
+				snprintf(rates, 9, "%d",
+					 site_survey_lists[i].rate_count);
+			}
 
-		if (site_survey_lists[i].rate_count == 4)
-			rates = "11(b)";
-		else if (site_survey_lists[i].rate_count == 12)
-			rates = "54(b/g)";
-		else if (site_survey_lists[i].rate_count == 300)
-			rates = "300(b/g/n)";
-		else if (site_survey_lists[i].rate_count == 150)
-			rates = "150(b/g/n)";
-		else {
-			rates = buf;
-			snprintf(rates, 9, "%d",
-				 site_survey_lists[i].rate_count);
 		}
 
 		/*
