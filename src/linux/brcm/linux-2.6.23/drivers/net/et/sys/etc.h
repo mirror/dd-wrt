@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: etc.h,v 1.66.96.2 2008/08/25 03:16:33 Exp $
+ * $Id: etc.h,v 1.66.96.2.12.1 2009/03/13 00:45:23 Exp $
  */
 
 #ifndef _etc_h_
@@ -242,5 +242,8 @@ extern void etc_qos(etc_info_t *etc, uint on);
 extern void etc_dump(etc_info_t *etc, struct bcmstrbuf *b);
 extern void etc_watchdog(etc_info_t *etc);
 extern uint etc_totlen(etc_info_t *etc, void *p);
+#ifdef ETROBO
+extern void *etc_bcm53115_war(etc_info_t *etc, void *p);
+#endif /* ETROBO */
 
 #endif	/* _etc_h_ */

@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: et_linux.c,v 1.113.14.1.14.6 2009/01/15 07:46:43 Exp $
+ * $Id: et_linux.c,v 1.113.14.1.14.9 2009/04/21 19:51:30 Exp $
  */
 
 #define __UNDEF_NO_VERSION__
@@ -129,9 +129,6 @@ static int et_poll(struct net_device *dev, int *budget);
 static void et_dpc(ulong data);
 #endif /* BCM_NAPI */
 static void et_sendup(et_info_t *et, struct sk_buff *skb);
-#ifdef BCMDBG
-static void et_dumpet(et_info_t *et, struct bcmstrbuf *b);
-#endif /* BCMDBG */
 
 /* recognized PCI IDs */
 static struct pci_device_id et_id_table[] __devinitdata = {
@@ -155,10 +152,6 @@ static struct pci_device_id et_id_table[] __devinitdata = {
 };
 MODULE_DEVICE_TABLE(pci, et_id_table);
 
-#if defined(BCMDBG)
-static uint32 msglevel = 0xdeadbeef;
-module_param(msglevel, uint, 0644);
-#endif /* defined(BCMDBG) */
 
 static int __devinit
 et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
@@ -168,14 +161,6 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	osl_t *osh;
 	char name[128];
 	int i, unit = et_found, err;
-
-#if defined(BCMDBG)
-	if (msglevel != 0xdeadbeef) {
-		et_msg_level = msglevel;
-
-		printf("et%d: et_probe: et_msg_level set to 0x%x\n", unit, msglevel);
-	}
-#endif /* defined(BCMDBG) */
 
 	ET_TRACE(("et%d: et_probe: bus %d slot %d func %d irq %d\n", unit,
 	          pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), pdev->irq));
@@ -263,7 +248,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 #endif /* BCM_NAPI */
 
 	/* register our interrupt handler */
-	if (request_irq(pdev->irq, et_isr, IRQF_SHARED|IRQF_SAMPLE_RANDOM, dev->name, et)) {
+	if (request_irq(pdev->irq, et_isr, IRQF_SHARED, dev->name, et)) {
 		ET_ERROR(("et%d: request_irq() failed\n", unit));
 		goto fail;
 	}
@@ -386,6 +371,7 @@ static struct pci_driver et_pci_driver = {
 static int __init
 et_module_init(void)
 {
+
 	return pci_module_init(&et_pci_driver);
 }
 
@@ -462,6 +448,7 @@ et_open(struct net_device *dev)
 	ET_TRACE(("et%d: et_open\n", et->etc->unit));
 
 	et->etc->promisc = (dev->flags & IFF_PROMISC)? TRUE: FALSE;
+	et->etc->allmulti = (dev->flags & IFF_ALLMULTI)? TRUE: et->etc->promisc;
 
 	ET_LOCK(et);
 	et_up(et);
@@ -482,6 +469,7 @@ et_close(struct net_device *dev)
 	ET_TRACE(("et%d: et_close\n", et->etc->unit));
 
 	et->etc->promisc = FALSE;
+	et->etc->allmulti = FALSE;
 
 	ET_LOCK(et);
 	et_down(et, 1);
@@ -956,7 +944,7 @@ et_set_multicast_list(struct net_device *dev)
 
 	if (etc->up) {
 		etc->promisc = (dev->flags & IFF_PROMISC)? TRUE: FALSE;
-		etc->allmulti = (dev->flags & IFF_ALLMULTI)? TRUE: FALSE;
+		etc->allmulti = (dev->flags & IFF_ALLMULTI)? TRUE: etc->promisc;
 
 		/* copy the list of multicasts into our private table */
 		for (i = 0, mclist = dev->mc_list; mclist && (i < dev->mc_count);
@@ -1254,21 +1242,8 @@ et_dump(et_info_t *et, struct bcmstrbuf *b)
 	bcm_bprintf(b, "et%d: %s %s version %s\n", et->etc->unit,
 		__DATE__, __TIME__, EPI_VERSION_STR);
 
-#ifdef BCMDBG
-	et_dumpet(et, b);
-	etc_dump(et->etc, b);
-#endif /* BCMDBG */
 }
 
-#ifdef BCMDBG
-static void
-et_dumpet(et_info_t *et, struct bcmstrbuf *b)
-{
-	bcm_bprintf(b, "et %p dev %p name %s tbusy %d txq[0].qlen %d malloced %d\n",
-		et, et->dev, et->dev->name, (uint)netif_queue_stopped(et->dev), et->txq[0].qlen,
-		MALLOCED(et->osh));
-}
-#endif	/* BCMDBG */
 
 void
 et_link_up(et_info_t *et)

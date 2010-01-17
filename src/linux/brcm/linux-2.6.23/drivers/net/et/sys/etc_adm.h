@@ -23,8 +23,5 @@ extern adm_info_t *adm_attach(si_t *sih, char *vars);
 extern void adm_detach(adm_info_t *adm);
 extern int adm_enable_device(adm_info_t *adm);
 extern int adm_config_vlan(adm_info_t *adm);
-#ifdef BCMDBG
-extern char *adm_dump_regs(adm_info_t *adm, char *buf);
-#endif
 
 #endif /* _adm_h_ */
