@@ -2229,6 +2229,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	char lease_hwaddr[32] = "leasexxx_hwaddr";
 	char lease_hostname[32] = "leasexxx_hostname";
 	char lease_ip[32] = "leasexxx_ip";
+	char lease_time[32] = "leasexxx_time";
 	char *sln = nvram_safe_get("static_leasenum");
 	char *hwaddr;
 
@@ -2265,6 +2266,9 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 		snprintf(lease_ip, 31, "lease%d_ip", i);
 		char *ip = websGetVar(wp, lease_ip, "");
 
+		snprintf(lease_time, 31, "lease%d_time", i);
+		char *time = websGetVar(wp, lease_time, "");
+
 		if (hostname == NULL || strlen(hostname) == 0 || ip == NULL
 		    || strlen(ip) == 0)
 			break;
@@ -2272,6 +2276,8 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 		strcat(leases, hostname);
 		strcat(leases, "=");
 		strcat(leases, ip);
+		strcat(leases, "=");
+		strcat(leases, time);
 		strcat(leases, " ");
 	}
 	nvram_set("static_leases", leases);
