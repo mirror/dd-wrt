@@ -9,8 +9,7 @@ typedef struct _l7filters	// l7 and p2p filters
 {
 
 	char *name;
-
-	char *protocol;
+	int protocol;  // 1=p2p, 0=l7
 
 } l7filters;
 
@@ -19,396 +18,506 @@ typedef struct _l7filters	// l7 and p2p filters
 l7filters filters_list[] = {
 
 	{
-	 "100bao", "l7"},	// 100bao - a Chinese P2P protocol/program -
+	 "100bao", 0},	// 100bao - a Chinese P2P protocol/program -
 	// http://www.100bao.com
 	{
-	 "aim", "l7"},		// AIM - AOL instant messenger (OSCAR and
+	 "aim", 0},		// AIM - AOL instant messenger (OSCAR and
 	// TOC)
 	{
-	 "aimwebcontent", "l7"},	// AIM web content - ads/news content
+	 "aimwebcontent", 0},	// AIM web content - ads/news content
 	// downloaded by AOL Instant Messenger
 	{
-	 "applejuice", "p2p"},	// Apple Juice - P2P filesharing -
+	 "applejuice", 1},	// Apple Juice - P2P filesharing -
 	// http://www.applejuicenet.de
 	{
-	 "ares", "p2p"},	// Ares - P2P filesharing -
+	 "ares", 1},	// Ares - P2P filesharing -
 	// http://aresgalaxy.sf.net
 	{
-	 "armagetron", "l7"},	// Armagetron Advanced - open source
+	 "armagetron", 0},	// Armagetron Advanced - open source
 	// Tron/snake based multiplayer game
 	{
-	 "audiogalaxy", "l7"},	// Audiogalaxy - (defunct) Peer to Peer
+	 "audiogalaxy", 0},	// Audiogalaxy - (defunct) Peer to Peer
 	// filesharing
 	{
-	 "battlefield1942", "l7"},	// Battlefield 1942 - An EA game
+	 "battlefield1942", 0},	// Battlefield 1942 - An EA game
 	{
-	 "battlefield2", "l7"},	// Battlefield 2 - An EA game.
+	 "battlefield2", 0},	// Battlefield 2 - An EA game.
 	{
-	 "battlefield2142", "l7"},	// Battlefield 2142 - An EA game.
+	 "battlefield2142", 0},	// Battlefield 2142 - An EA game.
 	{
-	 "bgp", "l7"},		// BGP - Border Gateway Protocol - RFC 1771
+	 "bgp", 0},		// BGP - Border Gateway Protocol - RFC 1771
 	{
-	 "biff", "l7"},		// Biff - new mail notification
+	 "biff", 0},		// Biff - new mail notification
 	{
-	 "bittorrent", "p2p"},	// Bittorrent - P2P filesharing / publishing
+	 "bittorrent", 1},	// Bittorrent - P2P filesharing / publishing
 	// tool - http://www.bittorrent.com
 	{
-	 "chikka", "l7"},	// Chikka - SMS service which can be used
+	 "bt", 1},
+	{
+	 "bt1", 1},
+	{
+	 "bt2", 1},
+	{
+	 "bt3", 1},	 
+	{
+	 "chikka", 0},	// Chikka - SMS service which can be used
 	// without phones - http://chikka.com
 	{
-	 "cimd", "l7"},		// Computer Interface to Message
+	 "cimd", 0},		// Computer Interface to Message
 	// Distribution, an SMSC protocol by Nokia
 	{
-	 "ciscovpn", "l7"},	// Cisco VPN - VPN client software to a Cisco 
+	 "ciscovpn", 0},	// Cisco VPN - VPN client software to a Cisco 
 	// VPN server
 	{
-	 "citrix", "l7"},	// Citrix ICA - proprietary remote desktop
+	 "citrix", 0},	// Citrix ICA - proprietary remote desktop
 	// application - http://citrix.com
 	{
-	 "code_red", "l7"},	// Code Red - a worm that attacks Microsoft
+	 "clubbox", 0},
+	{
+	 "code_red", 0},	// Code Red - a worm that attacks Microsoft
 	// IIS web servers
 	{
-	 "counterstrike-source", "l7"},	// Counterstrike (using the new
+	 "counterstrike-source", 0},	// Counterstrike (using the new
 	// "Source" engine) - network game
 	{
-	 "cvs", "l7"},		// CVS - Concurrent Versions System
+	 "cvs", 0},		// CVS - Concurrent Versions System
 	{
-	 "dayofdefeat-source", "l7"},	// Day of Defeat: Source - game
+	 "dayofdefeat-source", 0},	// Day of Defeat: Source - game
 	// (Half-Life 2 mod) -
 	// http://www.valvesoftware.com
 	{
-	 "dazhihui", "l7"}, // Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	 "dazhihui", 0}, // Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 	{
-	 "dhcp", "l7"},		// DHCP - Dynamic Host Configuration Protocol 
+	 "dhcp", 0},		// DHCP - Dynamic Host Configuration Protocol 
 	// - RFC 1541
 	{
-	 "directconnect", "p2p"},	// Direct Connect - P2P filesharing -
+	 "directconnect", 1},	// Direct Connect - P2P filesharing -
 	// http://www.neo-modus.com
 	{
-	 "dns", "l7"},		// DNS - Domain Name System - RFC 1035
+	 "dns", 0},		// DNS - Domain Name System - RFC 1035
 	{
-	 "doom3", "l7"},	// Doom 3 - computer game
+	 "doom3", 0},	// Doom 3 - computer game
 	{
-	 "edonkey", "p2p"},	// eDonkey2000 - P2P filesharing -
+	 "edonkey", 1},	// eDonkey2000 - P2P filesharing -
 	// http://edonkey2000.com and others
 	{
-	 "exe", "l7"},		// Executable - Microsoft PE file format.
+	 "exe", 0},		// Executable - Microsoft PE file format.
 	{
-	 "fasttrack", "l7"},	// FastTrack - P2P filesharing (Kazaa,
+	 "fasttrack", 0},	// FastTrack - P2P filesharing (Kazaa,
 	// Morpheus, iMesh, Grokster, etc)
 	{
-	 "finger", "l7"},	// Finger - User information server - RFC
+	 "finger", 0},	// Finger - User information server - RFC
 	// 1288
 	{
-	 "flash", "l7"},	// Flash - Macromedia Flash.
+	 "flash", 0},	// Flash - Macromedia Flash.
 	{
-	 "freenet", "l7"},	// Freenet - Anonymous information retrieval
+	 "freenet", 0},	// Freenet - Anonymous information retrieval
 	// - http://freenetproject.org
 	{
-	 "ftp", "l7"},		// FTP - File Transfer Protocol - RFC 959
+	 "freegate_dns", 0},
 	{
-	 "gif", "l7"},		// GIF - Popular Image format.
+	 "freegate_http", 0},
 	{
-	 "gkrellm", "l7"},	// Gkrellm - a system monitor -
+	 "ftp", 0},		// FTP - File Transfer Protocol - RFC 959
+	{
+	 "gif", 0},		// GIF - Popular Image format.
+	{
+	 "gkrellm", 0},	// Gkrellm - a system monitor -
 	// http://gkrellm.net
 	{
-	 "gnucleuslan", "l7"},	// GnucleusLAN - LAN-only P2P filesharing
+	 "gnucleuslan", 0},	// GnucleusLAN - LAN-only P2P filesharing
 	{
-	 "gnutella", "p2p"},	// Gnutella - P2P filesharing
+	 "gnutella", 1},	// Gnutella - P2P filesharing
 	{
-	 "goboogy", "l7"},	// GoBoogy - a Korean P2P protocol
+	 "goboogy", 0},	// GoBoogy - a Korean P2P protocol
 	{
-	 "gopher", "l7"},	// Gopher - A precursor to HTTP - RFC 1436
+	 "gogobox", 0},
 	{
-	 "gtalk", "l7"},    // GTalk, a Jabber (XMPP) client
+	 "gopher", 0},	// Gopher - A precursor to HTTP - RFC 1436
 	{
-	 "guildwars", "l7"},	// Guild Wars - online game - http://guildwars.com
+	 "gtalk", 0},    // GTalk, a Jabber (XMPP) client
 	{
-	 "h323", "l7"},		// H.323 - Voice over IP.
+	 "gtalk1", 0},
 	{
-	 "halflife2-deathmatch", "l7"},	// Half-Life 2 Deathmatch - popular
+	 "gtalk2", 0},
+	{
+	 "gtalk_file", 0},
+	{
+	 "gtalk_file_1", 0},
+	{
+	 "gtalk_vista", 0},
+	{
+	 "guildwars", 0},	// Guild Wars - online game - http://guildwars.com
+	{
+	 "h323", 0},		// H.323 - Voice over IP.
+	{
+	 "hamachi1", 0},
+	{
+	 "halflife2-deathmatch", 0},	// Half-Life 2 Deathmatch - popular
 	// computer game
 	{
-	 "hddtemp", "l7"},	// hddtemp - Hard drive temperature
+	 "hddtemp", 0},	// hddtemp - Hard drive temperature
 	// reporting
 	{
-	 "hotline", "l7"},	// Hotline - An old P2P filesharing protocol
+	 "hotline", 0},	// Hotline - An old P2P filesharing protocol
 	{
-	 "html", "l7"},		// (X)HTML - (Extensible) Hypertext Markup
+	 "hotspot-shield", 0},
+	{
+	 "html", 0},		// (X)HTML - (Extensible) Hypertext Markup
 	// Language - http://w3.org
 	{
-	 "http-rtsp", "l7"},	// RTSP tunneled within HTTP
+	 "http-rtsp", 0},	// RTSP tunneled within HTTP
 	{
-	 "http", "l7"},		// HTTP - HyperText Transfer Protocol - RFC
+	 "http", 0},		// HTTP - HyperText Transfer Protocol - RFC
 	// 2616
 	{
-	 "http-dap", "l7"},	// HTTP by Download Accelerator Plus -
+	 "http-dap", 0},	// HTTP by Download Accelerator Plus -
 	// http://www.speedbit.com
 	{
-	 "http-freshdownload", "l7"},	// HTTP by Fresh Download -
+	 "http-freshdownload", 0},	// HTTP by Fresh Download -
 	// http://www.freshdevices.com
 	{
-	 "http-itunes", "l7"},	// HTTP - iTunes (Apple's music program)
+	 "http-itunes", 0},	// HTTP - iTunes (Apple's music program)
 	{
-	 "httpaudio", "l7"},	// HTTP - Audio over HyperText Transfer
+	 "httpaudio", 0},	// HTTP - Audio over HyperText Transfer
 	// Protocol (RFC 2616)
 	{
-	 "httpcachehit", "l7"},	// HTTP - Proxy Cache hit for HyperText
+	 "httpcachehit", 0},	// HTTP - Proxy Cache hit for HyperText
 	// Transfer Protocol (RFC 2616)
 	{
-	 "httpcachemiss", "l7"},	// HTTP - Proxy Cache miss for HyperText
+	 "httpcachemiss", 0},	// HTTP - Proxy Cache miss for HyperText
 	// Transfer Protocol (RFC 2616)
 	{
-	 "httpvideo", "l7"},	// HTTP - Video over HyperText Transfer
+	 "httpvideo", 0},	// HTTP - Video over HyperText Transfer
 	// Protocol (RFC 2616)
 	{
-	 "ident", "l7"},	// Ident - Identification Protocol - RFC
+	 "icq_file", 0},
+	{
+	 "icq_file_1", 0},
+	{
+	 "icq_file_2", 0},
+	{
+	 "icq_login", 0},
+	{
+	 "ident", 0},	// Ident - Identification Protocol - RFC
 	// 1413
 	{
-	 "imap", "l7"},		// IMAP - Internet Message Access Protocol (A 
+	 "imap", 0},		// IMAP - Internet Message Access Protocol (A 
 	// common e-mail protocol)
 	{
-	 "imesh", "l7"},	// iMesh - the native protocol of iMesh, a
+	 "imesh", 0},	// iMesh - the native protocol of iMesh, a
 	// P2P application - http://imesh.com
 	{
-	 "ipp", "l7"},		// IP printing - a new standard for UNIX
+	 "ipp", 0},		// IP printing - a new standard for UNIX
 	// printing - RFC 2911
 	{
-	 "irc", "l7"},		// IRC - Internet Relay Chat - RFC 1459
+	 "irc", 0},		// IRC - Internet Relay Chat - RFC 1459
 	{
-	 "jabber", "l7"},	// Jabber (XMPP) - open instant messenger
+	 "jabber", 0},	// Jabber (XMPP) - open instant messenger
 	// protocol - RFC 3920 - http://jabber.org
 	{
-	 "jpeg", "l7"},		// JPEG - Joint Picture Expert Group image
+	 "jpeg", 0},		// JPEG - Joint Picture Expert Group image
 	// format.
 	{
-	 "kugoo", "l7"},	// KuGoo - a Chinese P2P program -
+	 "kugoo", 0},	// KuGoo - a Chinese P2P program -
 	// http://www.kugoo.com
 	{
-	 "live365", "l7"},	// live365 - An Internet radio site -
+	 "live365", 0},	// live365 - An Internet radio site -
 	// http://live365.com
 	{
-	 "liveforspeed", "l7"},	// Live For Speed - A racing game.
+	 "liveforspeed", 0},	// Live For Speed - A racing game.
 	{
-	 "lpd", "l7"},		// LPD - Line Printer Daemon Protocol
+	 "lpd", 0},		// LPD - Line Printer Daemon Protocol
 	// (old-style UNIX printing) - RFC 1179
 	{
-	 "mohaa", "l7"},	// Medal of Honor Allied Assault - an
+	 "mohaa", 0},	// Medal of Honor Allied Assault - an
 	// Electronic Arts game
 	{
-	 "mp3", "L7"},		// MP3 - Moving Picture Experts Group Audio
+	 "mp3", 0},		// MP3 - Moving Picture Experts Group Audio
 	// Layer III
 	{
-	 "msn-filetransfer", "l7"},	// MSN (Micosoft Network) Messenger file
+	 "msn-filetransfer", 0},	// MSN (Micosoft Network) Messenger file
 	// transfers (MSNFTP and MSNSLP)
 	{
-	 "msnmessenger", "l7"},	// MSN Messenger - Microsoft Network chat
+	 "msnmessenger", 0},	// MSN Messenger - Microsoft Network chat
 	// client
 	{
-	 "mute", "p2p"},	// MUTE - P2P filesharing -
+	 "mute", 1},	// MUTE - P2P filesharing -
 	// http://mute-net.sourceforge.net
 	{
-	 "napster", "l7"},	// Napster - P2P filesharing
+	 "napster", 0},	// Napster - P2P filesharing
 	{
-	 "nbns", "l7"},		// NBNS - NetBIOS name service
+	 "nbns", 0},		// NBNS - NetBIOS name service
 	{
-	 "ncp", "l7"},		// NCP - Novell Core Protocol
+	 "ncp", 0},		// NCP - Novell Core Protocol
 	{
-	 "netbios", "l7"},	// NetBIOS - Network Basic Input Output
+	 "netbios", 0},	// NetBIOS - Network Basic Input Output
 	// System
 	{
-	 "nimda", "l7"},	// Nimda - a worm that attacks Microsoft IIS
+	 "nimda", 0},	// Nimda - a worm that attacks Microsoft IIS
 	// web servers, and MORE!
 	{
-	 "nntp", "l7"},		// NNTP - Network News Transfer Protocol -
+	 "nntp", 0},		// NNTP - Network News Transfer Protocol -
 	// RFCs 977 and 2980
 	{
-	 "ntp", "l7"},		// (S)NTP - (Simple) Network Time Protocol -
+	 "ntp", 0},		// (S)NTP - (Simple) Network Time Protocol -
 	// RFCs 1305 and 2030
 	{
-	 "ogg", "l7"},		// Ogg - Ogg Vorbis music format (not any ogg 
+	 "ogg", 0},		// Ogg - Ogg Vorbis music format (not any ogg 
 	// file, just vorbis)
 	{
-	 "openft", "l7"},	// OpenFT - P2P filesharing (implemented in
+	 "openft", 0},	// OpenFT - P2P filesharing (implemented in
 	// giFT library)
 	{
-	 "pcanywhere", "l7"},	// pcAnywhere - Symantec remote access
+	 "pcanywhere", 0},	// pcAnywhere - Symantec remote access
 	// program
 	{
-	 "pdf", "l7"},		// PDF - Portable Document Format -
+	 "pdf", 0},		// PDF - Portable Document Format -
 	// Postscript-like format by Adobe
 	{
-	 "perl", "l7"},		// Perl - A scripting language by Larry
+	 "perl", 0},		// Perl - A scripting language by Larry
 	// Wall.
 	{
-	 "poco", "l7"},		// POCO and PP365 - Chinese P2P filesharing - 
+	 "png", 0},		// PNG - Portable Network Graphics, a popular 
+	// image format
+	 "poco", 0},		// POCO and PP365 - Chinese P2P filesharing - 
 	// http://pp365.com http://poco.cn
 	{
-	 "png", "l7"},		// PNG - Portable Network Graphics, a popular 
-	// image format
-	{
-	 "pop3", "l7"},		// POP3 - Post Office Protocol version 3
+	 "pop3", 0},		// POP3 - Post Office Protocol version 3
 	// (popular e-mail protocol) - RFC 1939
 	{
-	 "postscript", "l7"},	// Postscript - Printing Language
+	 "postscript", 0},	// Postscript - Printing Language
 	{
-	 "pplive", "l7"},	// PPLive - Chinese P2P streaming video - http://pplive.com
+	 "pplive", 0},	// PPLive - Chinese P2P streaming video - http://pplive.com
 	{
-	 "pressplay", "l7"},	// pressplay - A legal music distribution
+	 "pre_icq_login", 0},
 	{
-	 "qq", "l7"},		// Tencent QQ Protocol - Chinese instant
+	 "pre_msn_login", 0},
+	{
+	 "pre_urlblock", 0},
+	{
+	 "pre_yahoo_login", 0},
+	{
+	 "pressplay", 0},	// pressplay - A legal music distribution
+	{
+	 "qianlong", 0},
+	{
+	 "qq", 0},		// Tencent QQ Protocol - Chinese instant
 	// messenger protocol - http://www.qq.com
 	// site - http://pressplay.com
 	{
-	 "quake-halflife", "l7"},	// Half Life 1 engine games (HL 1, Quake
+	 "qq_login", 0},
+	{
+	 "qq_login_1", 0},
+	{
+	 "qq_tcp_file", 0},
+	{
+	 "qq_udp_file", 0},
+	{
+	 "qqdownload_1", 0},
+	{
+	 "qqdownload_2", 0},
+	{
+	 "qqdownload_3", 0},
+	{
+	 "qqfile", 0},
+	{
+	 "qqgame", 0},
+	{
+	 "qqlive", 0},
+	{
+	 "qqlive2", 0},
+	{
+	 "quake-halflife", 0},	// Half Life 1 engine games (HL 1, Quake
 	// 2/3/World, Counterstrike 1.6, etc.)
 	{
-	 "quake1", "l7"},	// Quake 1 - A popular computer game.
+	 "quake1", 0},	// Quake 1 - A popular computer game.
 	{
-	 "quicktime", "l7"},	// Quicktime HTTP
+	 "quicktime", 0},	// Quicktime HTTP
 	{
-	 "radmin", "l7"},	// Famatech Remote Administrator - remote
+	 "radmin", 0},	// Famatech Remote Administrator - remote
 	// desktop for MS Windows
 	{
-	 "rar", "l7"},		// RAR - The WinRAR archive format
+	 "rar", 0},		// RAR - The WinRAR archive format
 	{
-	 "rdp", "l7"},		// RDP - Remote Desktop Protocol (used in
+	 "rdp", 0},		// RDP - Remote Desktop Protocol (used in
 	// Windows Terminal Services)
 	{
-	 "replaytv-ivs", "l7"},	// ReplayTV Internet Video Sharing - Digital
+	 "replaytv-ivs", 0},	// ReplayTV Internet Video Sharing - Digital
 	// Video Recorder - http://replaytv.com
 	{
-	 "rlogin", "l7"},	// rlogin - remote login - RFC 1282
+	 "rlogin", 0},	// rlogin - remote login - RFC 1282
 	{
-	 "rpm", "l7"},		// RPM - Redhat Package Management packages
+	 "rpm", 0},		// RPM - Redhat Package Management packages
 	{
-	 "rtf", "l7"},		// RTF - Rich Text Format - an open document
+	 "rtf", 0},		// RTF - Rich Text Format - an open document
 	// format
 	{
-	 "rtp", "l7"},		// RTP - Real-time Transport Protocol - RFC
+	 "rtp", 0},		// RTP - Real-time Transport Protocol - RFC
 	// 3550
 	{
-	 "rtsp", "l7"},		// RTSP - Real Time Streaming Protocol -
+	 "rtsp", 0},		// RTSP - Real Time Streaming Protocol -
 	// http://www.rtsp.org - RFC 2326
 	{
-	 "runesofmagic", "l7"},  // Runes of Magic - game - http://www.runesofmagic.com
+	 "runesofmagic", 0},  // Runes of Magic - game - http://www.runesofmagic.com
 	{
-	 "shoutcast", "l7"},	// Shoutcast and Icecast - streaming audio
+	 "shoutcast", 0},	// Shoutcast and Icecast - streaming audio
 	{
-	 "sip", "l7"},		// SIP - Session Initiation Protocol -
+	 "sip", 0},		// SIP - Session Initiation Protocol -
 	// Internet telephony - RFC 3261
 	{
-	 "skypeout", "l7"},	// Skype to phone - UDP voice call (program
+	 "skypeout", 0},	// Skype to phone - UDP voice call (program
 	// to POTS phone) - http://skype.com
 	{
-	 "skypetoskype", "l7"},	// Skype to Skype - UDP voice call (program
+	 "skypetoskype", 0},	// Skype to Skype - UDP voice call (program
 	// to program) - http://skype.com
 	{
-	 "smb", "l7"},		// Samba/SMB - Server Message Block -
+	 "smb", 0},		// Samba/SMB - Server Message Block -
 	// Microsoft Windows filesharing
 	{
-	 "smtp", "l7"},		// SMTP - Simple Mail Transfer Protocol - RFC 
+	 "smtp", 0},		// SMTP - Simple Mail Transfer Protocol - RFC 
 	// 2821 (See also RFC 1869)
 	{
-	 "snmp", "l7"},		// SNMP - Simple Network Management Protocol
+	 "snmp", 0},		// SNMP - Simple Network Management Protocol
 	// - RFC 1157
 	{
-	 "snmp-mon", "l7"},	// SNMP Monitoring - Simple Network
+	 "snmp-mon", 0},	// SNMP Monitoring - Simple Network
 	// Management Protocol (RFC1157)
 	{
-	 "snmp-trap", "l7"},	// SNMP Traps - Simple Network Management
+	 "snmp-trap", 0},	// SNMP Traps - Simple Network Management
 	// Protocol (RFC1157)
 	{
-	 "socks", "l7"},	// SOCKS Version 5 - Firewall traversal
+	 "socks", 0},	// SOCKS Version 5 - Firewall traversal
 	// protocol - RFC 1928
 	{
-	 "soribada", "l7"},	// Soribada - A Korean P2P filesharing
+	 "soribada", 0},	// Soribada - A Korean P2P filesharing
 	// program/protocol -
 	// http://www.soribada.com
 	{
-	 "soulseek", "p2p"},	// Soulseek - P2P filesharing -
+	 "soulseek", 1},	// Soulseek - P2P filesharing -
 	// http://slsknet.org
 	{
-	 "ssdp", "l7"},		// SSDP - Simple Service Discovery Protocol - 
+	 "ssdp", 0},		// SSDP - Simple Service Discovery Protocol - 
 	// easy discovery of network devices
 	{
-	 "ssh", "l7"},		// SSH - Secure SHell
+	 "ssh", 0},		// SSH - Secure SHell
 	{
-	 "ssl", "l7"},		// SSL and TLS - Secure Socket Layer /
+	 "ssl", 0},		// SSL and TLS - Secure Socket Layer /
 	// Transport Layer Security - RFC 2246
 	{
-	 "stun", "l7"},		// STUN - Simple Traversal of UDP Through NAT 
+	 "stun", 0},		// STUN - Simple Traversal of UDP Through NAT 
 	// - RFC 3489
 	{
-	 "subspace", "l7"},	// Subspace - 2D asteroids-style space game - 
+	 "subspace", 0},	// Subspace - 2D asteroids-style space game - 
 	// http://sscentral.com
 	{
-	 "subversion", "l7"},	// Subversion - a version control system
+	 "subversion", 0},	// Subversion - a version control system
 	{
-	 "tar", "l7"},		// Tar - tape archive. Standard UNIX file
+	 "tar", 0},		// Tar - tape archive. Standard UNIX file
 	// archiver, not just for tapes.
 	{
-	 "teamfortress2", "l7"},	// Team Fortress 2 - network game -
+	 "teamfortress2", 0},	// Team Fortress 2 - network game -
 	// http://www.valvesoftware.com
 	{
-	 "teamspeak", "l7"},	// TeamSpeak - VoIP application -
+	 "teamspeak", 0},	// TeamSpeak - VoIP application -
 	// http://goteamspeak.com
 	{
-	 "telnet", "l7"},	// Telnet - Insecure remote login - RFC 854
+	 "teamviewer", 0},
 	{
-	 "tesla", "l7"},	// Tesla Advanced Communication - P2P
+	 "teamviewer1", 0},
+	{
+	 "telnet", 0},	// Telnet - Insecure remote login - RFC 854
+	{
+	 "tesla", 0},	// Tesla Advanced Communication - P2P
 	// filesharing (?)
 	{
-	 "tftp", "l7"},		// TFTP - Trivial File Transfer Protocol -
+	 "tftp", 0},		// TFTP - Trivial File Transfer Protocol -
 	// used for bootstrapping - RFC 1350
 	{
-	 "thecircle", "l7"},	// The Circle - P2P application -
+	 "thecircle", 0},	// The Circle - P2P application -
 	// http://thecircle.org.au
-	{"tonghuashun", "l7"},  // Tonghuashun - stock analysis and trading; Chinese - http://www.10jqka.com.cn
-
 	{
-	 "tor", "l7"},		// Tor - The Onion Router - used for
+	 "thunder5_see", 0},
+	{
+	 "thunder5_tcp", 0},
+	{
+	 "tonghuashun", 0},  // Tonghuashun - stock analysis and trading; Chinese - http://www.10jqka.com.cn
+	{
+	 "tor", 0},		// Tor - The Onion Router - used for
 	// anonymization - http://tor.eff.org
 	{
-	 "tsp", "l7"},		// TSP - Berkely UNIX Time Synchronization
+	 "tsp", 0},		// TSP - Berkely UNIX Time Synchronization
 	// Protocol
 	{
-	 "unknown", "l7"},	// -
+	 "unknown", 0},	// -
 	{
-	 "uucp", "l7"},		// UUCP - Unix to Unix Copy
+	 "uucp", 0},		// UUCP - Unix to Unix Copy
 	{
-	 "validcertssl", "l7"},	// Valid certificate SSL
+	 "validcertssl", 0},	// Valid certificate SSL
 	{
-	 "ventrilo", "l7"},	// Ventrilo - VoIP - http://ventrilo.com
+	 "ventrilo", 0},	// Ventrilo - VoIP - http://ventrilo.com
 	{
-	 "vnc", "l7"},		// VNC - Virtual Network Computing. Also
+	 "vnc", 0},		// VNC - Virtual Network Computing. Also
 	// known as RFB - Remote Frame Buffer
 	{
-	 "whois", "l7"},	// Whois - query/response system, usually
+	 "webmail_163", 0},
+	{
+	 "webmail_gmail", 0},
+	{
+	 "webmail_hinet", 0},
+	{
+	 "webmail_hotmail", 0},
+	{
+	 "webmail_pchome", 0},
+	{
+	 "webmail_qq", 0},
+	{
+	 "webmail_seednet", 0},
+	{
+	 "webmail_sina", 0},
+	{
+	 "webmail_sohu", 0},
+	{
+	 "webmail_tom", 0},
+	{
+	 "webmail_url", 0},
+	{
+	 "webmail_yahoo", 0},
+	{
+	 "webmail_yam", 0},
+	{
+	 "whois", 0},	// Whois - query/response system, usually
 	// used for domain name info - RFC 3912
 	{
-	 "winmx", "p2p"},	// Whois - query/response system, usually
-
+	 "winmx", 1},	// Whois - query/response system, usually
 	{
-	 "worldofwarcraft", "l7"},	// World of Warcraft - popular network game - 
+	 "worldofwarcraft", 0},	// World of Warcraft - popular network game - 
 	// http://blizzard.com/
 	{
-	 "x11", "l7"},		// X Windows Version 11 - Networked GUI
+	 "x11", 0},		// X Windows Version 11 - Networked GUI
 	// system used in most Unices
 	{
-	 "xboxlive", "l7"},	// XBox Live - Console gaming
+	 "xboxlive", 0},	// XBox Live - Console gaming
 	{
-	 "xdcc", "p2p"},	// XBox Live - Console gaming
+	 "xdcc", 1},	// XBox Live - Console gaming
 	{
-	 "xunlei", "l7"},	// Xunlei - Chinese P2P filesharing -
+	 "xunlei", 0},	// Xunlei - Chinese P2P filesharing -
 	// http://xunlei.com
 	{
-	 "yahoo", "l7"},	// Yahoo messenger - an instant messenger
+	 "yahoo", 0},	// Yahoo messenger - an instant messenger
 	// protocol - http://yahoo.com
 	{
-	 "zip", "l7"},		// ZIP - (PK|Win)Zip archive format
+	 "yahoo_camera", 0}
 	{
-	 "zmaap", "l7"},	// ZMAAP - Zeroconf Multicast Address
+	 "yahoo_file", 0}
+	{
+	 "yahoo_login", 0}
+	{
+	 "yahoo_voice", 0}
+	{
+	 "zip", 0},		// ZIP - (PK|Win)Zip archive format
+	{
+	 "zmaap", 0},	// ZMAAP - Zeroconf Multicast Address
 	// Allocation Protocol
 	{
 	 0, 0}
