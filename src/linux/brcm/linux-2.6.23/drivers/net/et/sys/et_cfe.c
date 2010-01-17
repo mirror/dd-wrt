@@ -122,9 +122,6 @@ et_down(et_info_t *et, int reset)
 void
 et_dump(et_info_t *et, struct bcmstrbuf *b)
 {
-#ifdef BCMDBG
-	etc_dump(et->etc, b);
-#endif
 }
 
 et_info_t *et_phyfind(et_info_t *et, uint coreunit);

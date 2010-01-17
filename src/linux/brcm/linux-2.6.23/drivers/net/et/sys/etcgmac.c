@@ -10,7 +10,7 @@
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: etcgmac.c,v 1.2.2.3.14.9 2009/01/15 07:46:43 Exp $
+ * $Id: etcgmac.c,v 1.2.2.3.14.15 2009/04/09 08:03:38 Exp $
  */
 
 #include <typedefs.h>
@@ -24,9 +24,11 @@
 #include <proto/802.1d.h>
 #include <siutils.h>
 #include <sbhnddma.h>
+#include <sbchipc.h>
 #include <hnddma.h>
 #include <et_dbg.h>
 #include <hndsoc.h>
+#include <hndpmu.h>
 #include <bcmgmacmib.h>
 #include <gmac_core.h>
 #include <et_export.h>		/* for et_phyxx() routines */
@@ -101,9 +103,6 @@ static void chipphyinit(ch_t *ch, uint phyaddr);
 static void chipphyor(ch_t *ch, uint phyaddr, uint reg, uint16 v);
 static void chipphyforce(ch_t *ch, uint phyaddr);
 static void chipphyadvertise(ch_t *ch, uint phyaddr);
-#ifdef BCMDBG
-static void chipdumpregs(ch_t *ch, gmacregs_t *regs, struct bcmstrbuf *b);
-#endif /* BCMDBG */
 static void gmac_mf_cleanup(ch_t *ch);
 static int gmac_speed(ch_t *ch, uint32 speed);
 static void gmac_miiconfig(ch_t *ch);
@@ -444,122 +443,8 @@ chiplongname(ch_t *ch, char *buf, uint bufsize)
 static void
 chipdump(ch_t *ch, struct bcmstrbuf *b)
 {
-#ifdef BCMDBG
-	int32 i;
-
-	bcm_bprintf(b, "regs 0x%lx etphy 0x%lx ch->intstatus 0x%x intmask 0x%x\n",
-		(ulong)ch->regs, (ulong)ch->etphy, ch->intstatus, ch->intmask);
-	bcm_bprintf(b, "\n");
-
-	/* dma engine state */
-	for (i = 0; i < NUMTXQ; i++) {
-		dma_dump(ch->di[i], b, TRUE);
-		bcm_bprintf(b, "\n");
-	}
-
-	/* registers */
-	chipdumpregs(ch, ch->regs, b);
-	bcm_bprintf(b, "\n");
-
-	/* switch registers */
-#ifdef ETROBO
-	if (ch->etc->robo)
-		robo_dump_regs(ch->etc->robo, b);
-#endif /* ETROBO */
-#ifdef ETADM
-	if (ch->adm)
-		adm_dump_regs(ch->adm, b->buf);
-#endif /* ETADM */
-#endif	/* BCMDBG */
 }
 
-#ifdef BCMDBG
-
-#define	PRREG(name)	bcm_bprintf(b, #name " 0x%x ", R_REG(ch->osh, &regs->name))
-#define	PRMIBREG(name)	bcm_bprintf(b, #name " 0x%x ", R_REG(ch->osh, &regs->mib.name))
-
-static void
-chipdumpregs(ch_t *ch, gmacregs_t *regs, struct bcmstrbuf *b)
-{
-	uint phyaddr;
-
-	phyaddr = ch->etc->phyaddr;
-
-	PRREG(devcontrol); PRREG(devstatus);
-	bcm_bprintf(b, "\n");
-	PRREG(biststatus);
-	bcm_bprintf(b, "\n");
-	PRREG(intstatus); PRREG(intmask); PRREG(gptimer);
-	bcm_bprintf(b, "\n");
-	PRREG(intrecvlazy);
-	bcm_bprintf(b, "\n");
-	PRREG(flowctlthresh); PRREG(wrrthresh); PRREG(gmac_idle_cnt_thresh);
-	bcm_bprintf(b, "\n");
-	PRREG(phyaccess); PRREG(phycontrol);
-	bcm_bprintf(b, "\n");
-	PRREG(txqctl); PRREG(rxqctl);
-	bcm_bprintf(b, "\n");
-	PRREG(gpioselect); PRREG(gpio_output_en);
-	bcm_bprintf(b, "\n");
-	PRREG(clk_ctl_st); PRREG(pwrctl);
-	bcm_bprintf(b, "\n");
-
-	/* unimac registers */
-	PRREG(unimacversion); PRREG(hdbkpctl);
-	bcm_bprintf(b, "\n");
-	PRREG(cmdcfg);
-	bcm_bprintf(b, "\n");
-	PRREG(macaddrhigh); PRREG(macaddrlow);
-	bcm_bprintf(b, "\n");
-	PRREG(rxmaxlength); PRREG(pausequanta); PRREG(macmode);
-	bcm_bprintf(b, "\n");
-	PRREG(outertag); PRREG(innertag); PRREG(txipg); PRREG(pausectl);
-	bcm_bprintf(b, "\n");
-	PRREG(txflush); PRREG(rxstatus); PRREG(txstatus);
-	bcm_bprintf(b, "\n");
-
-	/* mib registers */
-	PRMIBREG(tx_good_octets); PRMIBREG(tx_good_pkts); PRMIBREG(tx_octets); PRMIBREG(tx_pkts);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(tx_broadcast_pkts); PRMIBREG(tx_multicast_pkts);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(tx_jabber_pkts); PRMIBREG(tx_oversize_pkts); PRMIBREG(tx_fragment_pkts);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(tx_underruns); PRMIBREG(tx_total_cols); PRMIBREG(tx_single_cols);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(tx_multiple_cols); PRMIBREG(tx_excessive_cols); PRMIBREG(tx_late_cols);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(tx_defered); PRMIBREG(tx_carrier_lost); PRMIBREG(tx_pause_pkts);
-	bcm_bprintf(b, "\n");
-
-	PRMIBREG(rx_good_octets); PRMIBREG(rx_good_pkts); PRMIBREG(rx_octets); PRMIBREG(rx_pkts);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(rx_broadcast_pkts); PRMIBREG(rx_multicast_pkts);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(rx_jabber_pkts); PRMIBREG(rx_oversize_pkts); PRMIBREG(rx_fragment_pkts);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(rx_missed_pkts); PRMIBREG(rx_crc_align_errs); PRMIBREG(rx_undersize);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(rx_crc_errs); PRMIBREG(rx_align_errs); PRMIBREG(rx_symbol_errs);
-	bcm_bprintf(b, "\n");
-	PRMIBREG(rx_pause_pkts); PRMIBREG(rx_nonpause_pkts);
-	bcm_bprintf(b, "\n");
-	if (phyaddr != EPHY_NOREG) {
-		/* print a few interesting phy registers */
-		bcm_bprintf(b, "phy0 0x%x phy1 0x%x phy2 0x%x phy3 0x%x\n",
-		               chipphyrd(ch, phyaddr, 0),
-		               chipphyrd(ch, phyaddr, 1),
-		               chipphyrd(ch, phyaddr, 2),
-		               chipphyrd(ch, phyaddr, 3));
-		bcm_bprintf(b, "phy4 0x%x phy5 0x%x phy24 0x%x phy25 0x%x\n",
-		               chipphyrd(ch, phyaddr, 4),
-		               chipphyrd(ch, phyaddr, 5),
-		               chipphyrd(ch, phyaddr, 24),
-		               chipphyrd(ch, phyaddr, 25));
-	}
-
-}
-#endif	/* BCMDBG */
 
 static void
 gmac_clearmib(ch_t *ch)
@@ -744,7 +629,7 @@ gmac_loopback(ch_t *ch, uint32 mode)
 static void
 gmac_enable(ch_t *ch)
 {
-	uint32 cmdcfg, rxqctl;
+	uint32 cmdcfg, rxqctl, bp_clk, mdp, mode;
 	gmacregs_t *regs;
 
 	regs = ch->regs;
@@ -771,15 +656,24 @@ gmac_enable(ch_t *ch)
 	/* assert rx_ena and tx_ena when out of reset to enable the mac */
 	W_REG(ch->osh, &regs->cmdcfg, cmdcfg);
 
-	/* request ht clock */
-	W_REG(ch->osh, &regs->clk_ctl_st, 0x2);
+	/* WAR to not force ht for 47162 when gmac is in rev mii mode */
+	mode = ((R_REG(ch->osh, &regs->devstatus) & DS_MM_MASK) >> DS_MM_SHIFT);
+	if ((CHIPID(ch->sih->chip) != BCM47162_CHIP_ID) || (mode != 0))
+		/* request ht clock */
+		OR_REG(ch->osh, &regs->clk_ctl_st, CS_FH);
 
-	/* init the mac data period to 9. this is the optimal value for
-	 * gmac to work at all backplane clock speeds
+	if ((CHIPID(ch->sih->chip) == BCM47162_CHIP_ID) && (mode == 2))
+		si_pmu_chipcontrol(ch->sih, PMU_CHIPCTL1, PMU_CC1_RXC_DLL_BYPASS,
+		                   PMU_CC1_RXC_DLL_BYPASS);
+
+	/* init the mac data period. the value is set according to expr
+	 * ((128ns / bp_clk) - 3).
 	 */
 	rxqctl = R_REG(ch->osh, &regs->rxqctl);
 	rxqctl &= ~RC_MDP_MASK;
-	W_REG(ch->osh, &regs->rxqctl, rxqctl | (RC_MAC_DATA_PERIOD << RC_MDP_SHIFT));
+	bp_clk = si_clock(ch->sih) / 1000000;
+	mdp = ((bp_clk * 128) / 1000) - 3;
+	W_REG(ch->osh, &regs->rxqctl, rxqctl | (mdp << RC_MDP_SHIFT));
 
 	return;
 }
@@ -938,9 +832,6 @@ gmac_mf_add(ch_t *ch, struct ether_addr *mcaddr)
 {
 	uint32 hash;
 	mflist_t *entry;
-#ifdef BCMDBG
-	char mac[ETHER_ADDR_STR_LEN];
-#endif /* BCMDBG */
 
 	/* add multicast addresses only */
 	if (!ETHER_ISMULTI(mcaddr)) {
@@ -1085,6 +976,18 @@ chiptx(ch_t *ch, void *p0)
 
 	ET_TRACE(("et%d: chiptx\n", ch->etc->unit));
 	ET_LOG("et%d: chiptx", ch->etc->unit, 0);
+
+#ifdef ETROBO
+	if ((ch->etc->robo != NULL) &&
+	    (((robo_info_t *)ch->etc->robo)->devid == DEVID53115)) {
+		void *p = p0;
+
+	    	if ((p0 = etc_bcm53115_war(ch->etc, p)) == NULL) {
+			PKTFREE(ch->osh, p, TRUE);
+			return FALSE;
+		}
+	}
+#endif /* ETROBO */
 
 	len = PKTLEN(ch->osh, p0);
 
@@ -1544,28 +1447,29 @@ chipphyreset(ch_t *ch, uint phyaddr)
 static void
 chipphyinit(ch_t *ch, uint phyaddr)
 {
-	int i, sflags;
-	
-	/* Temporary WAR for 5356 */
-	if ((sflags = si_core_sflags(ch->sih, 0, 0)) & SISF_SW_ATTACHED) {
+	int i;
+
+	if (CHIPID(ch->sih->chip) == BCM5356_CHIP_ID && ch->sih->chiprev == 0) {
 		for (i = 0; i < 5; i++) {
 			if (i != 2) {
-				/* WAR for 5356A0, only 10Mbps works now */
 				chipphywr(ch, i, 0x04, 0x0461);
 			}
-
-			/* ephy registers tuning */
 			chipphywr(ch, i, 0x1f, 0x008b);
 			chipphywr(ch, i, 0x1d, 0x0100);
-
 			if (i == 2) {
-				/* WAR for 5356A0 fib port */
 				chipphywr(ch, 2, 0x1f, 0xf);
 				chipphywr(ch, 2, 0x13, 0xa842);
 			}
-
 			chipphywr(ch, i, 0x1f, 0x000b);
 			OSL_DELAY(300000);
+		}
+	} else if (CHIPID(ch->sih->chip) == BCM5356_CHIP_ID && ch->sih->chiprev > 0) {
+		for (i = 0; i < 5; i++) {
+			chipphywr(ch, i, 0x1f, 0x008b);
+			chipphywr(ch, i, 0x15, 0x0100);
+			chipphywr(ch, i, 0x1f, 0x000f);
+			chipphywr(ch, i, 0x12, 0x2aaa);
+			chipphywr(ch, i, 0x1f, 0x000b);
 		}
 	}
 
