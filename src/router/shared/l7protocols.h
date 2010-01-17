@@ -280,6 +280,7 @@ l7filters filters_list[] = {
 	{
 	 "png", 0},		// PNG - Portable Network Graphics, a popular 
 	// image format
+	{
 	 "poco", 0},		// POCO and PP365 - Chinese P2P filesharing - 
 	// http://pp365.com http://poco.cn
 	{
