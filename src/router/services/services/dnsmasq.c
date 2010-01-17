@@ -392,7 +392,7 @@ void start_dnsmasq(void)
 					mac, host, ip);
 				else
 				fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n",
-					mac, host, ip);
+					mac, host, ip,time);
 				
 				addHost(host, ip);
 			}
