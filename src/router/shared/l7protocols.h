@@ -508,13 +508,13 @@ l7filters filters_list[] = {
 	 "yahoo", 0},	// Yahoo messenger - an instant messenger
 	// protocol - http://yahoo.com
 	{
-	 "yahoo_camera", 0}
+	 "yahoo_camera", 0},
 	{
-	 "yahoo_file", 0}
+	 "yahoo_file", 0},
 	{
-	 "yahoo_login", 0}
+	 "yahoo_login", 0},
 	{
-	 "yahoo_voice", 0}
+	 "yahoo_voice", 0},
 	{
 	 "zip", 0},		// ZIP - (PK|Win)Zip archive format
 	{
