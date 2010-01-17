@@ -69,11 +69,6 @@
 #define REG_CTRL_SRST	0x79	/* Software reset control register */
 
 #define REG_DEVICE_ID	0x30	/* 539x Device id: */
-#define	DEVID5325	0x25	/*  5325 (Not really be we fake it) */
-#define	DEVID5395	0x95	/*  5395 */
-#define	DEVID5397	0x97	/*  5397 */
-#define	DEVID5398	0x98	/*  5398 */
-#define	DEVID53115	0x3115	/*  53115 */
 
 /* VLAN page registers */
 #define REG_VLAN_CTRL0	0x00	/* VLAN Control 0 register */
@@ -669,8 +664,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	if (!iswrt610nv1)
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
-	    (robo->devid == DEVID5398) ||
-	    (robo->devid == DEVID53115)) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
+	    (robo->devid == DEVID5398)) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
 		uint8 srst_ctrl;
 
 		/* If it is a 539x switch, use the soft reset register */
