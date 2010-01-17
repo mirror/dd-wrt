@@ -10,7 +10,7 @@
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: etc.c,v 1.105.2.2 2008/08/25 03:16:33 Exp $
+ * $Id: etc.c,v 1.105.2.2.12.1 2009/03/13 00:45:23 Exp $
  */
 
 #include <typedefs.h>
@@ -36,17 +36,10 @@ typedef const struct si_pub  si_t;
 #endif /* ETROBO */
 
 uint32 et_msg_level =
-#ifdef BCMDBG
-	1;
-#else
 	0;
-#endif /* BCMDBG */
 
 /* local prototypes */
 static void etc_loopback(etc_info_t *etc, int on);
-#ifdef BCMDBG
-static void etc_dumpetc(etc_info_t *etc, struct bcmstrbuf *b);
-#endif /* BCMDBG */
 
 /* 802.1d priority to traffic class mapping. queues correspond one-to-one
  * with traffic classes.
@@ -244,14 +237,6 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 	case ETCDUMP:
 		if (et_msg_level & 0x10000)
 			bcmdumplog((char *)arg, 4096);
-#ifdef BCMDBG
-		else
-		{
-			struct bcmstrbuf b;
-			bcm_binit(&b, (char*)arg, 4096);
-			et_dump(etc->et, &b);
-		}
-#endif /* BCMDBG */
 		break;
 
 	case ETCSETMSGLEVEL:
@@ -518,72 +503,83 @@ etc_qos(etc_info_t *etc, uint on)
 	et_init(etc->et, ET_INIT_DEF_OPTIONS);
 }
 
-#ifdef BCMDBG
-void
-etc_dump(etc_info_t *etc, struct bcmstrbuf *b)
+/* WAR: BCM53115 switch is not retaining the tag while forwarding
+ * the vlan/priority tagged frames even when tag status preserve
+ * is enabled. This problem can be only worked around by doing
+ * double tagging for priority tagged frames. This will trick the
+ * switch in to just removing the outer tag on the egress. Inner
+ * tag remains which contains the prio.
+ */
+#ifdef ETROBO
+void *
+etc_bcm53115_war(etc_info_t *etc, void *p)
 {
-	etc_dumpetc(etc, b);
-	(*etc->chops->dump)(etc->ch, b);
-}
+	struct ethervlan_header *evh;
+	uint16 vlan_tag;
+	int vlan_prio;
+	uint8 *data = PKTDATA(etc->osh, p);
 
-static void
-etc_dumpetc(etc_info_t *etc, struct bcmstrbuf *b)
-{
-	char perm[32], cur[32];
-	uint i;
+	evh = (struct ethervlan_header *)data;
+	if (evh->vlan_type != hton16(ETHER_TYPE_8021Q))
+		return (p);
 
-	bcm_bprintf(b, "etc 0x%x et 0x%x unit %d msglevel %d speed/duplex %d%s\n",
-		(ulong)etc, (ulong)etc->et, etc->unit, et_msg_level,
-		etc->speed, (etc->duplex ? "full": "half"));
-	bcm_bprintf(b, "up %d promisc %d loopbk %d forcespeed %d advertise 0x%x "
-	               "advertise2 0x%x needautoneg %d\n",
-	               etc->up, etc->promisc, etc->loopbk, etc->forcespeed,
-	               etc->advertise, etc->advertise2, etc->needautoneg);
-	bcm_bprintf(b, "piomode %d pioactive 0x%x nmulticast %d allmulti %d qos %d\n",
-		etc->piomode, (ulong)etc->pioactive, etc->nmulticast, etc->allmulti, etc->qos);
-	bcm_bprintf(b, "vendor 0x%x device 0x%x rev %d coreunit %d phyaddr %d mdcport %d\n",
-		etc->vendorid, etc->deviceid, etc->chiprev,
-		etc->coreunit, etc->phyaddr, etc->mdcport);
+	vlan_tag = evh->vlan_tag;
+	vlan_prio = vlan_tag & hton16(VLAN_PRI_MASK << VLAN_PRI_SHIFT);
 
-	bcm_bprintf(b, "perm_etheraddr %s cur_etheraddr %s\n",
-		bcm_ether_ntoa(&etc->perm_etheraddr, perm),
-		bcm_ether_ntoa(&etc->cur_etheraddr, cur));
+	/* No need to do anything for priority 0 */
+	if (vlan_prio == 0)
+		return (p);
 
-	if (etc->nmulticast) {
-		bcm_bprintf(b, "multicast: ");
-		for (i = 0; i < etc->nmulticast; i++)
-			bcm_bprintf(b, "%s ", bcm_ether_ntoa(&etc->multicast[i], cur));
-		bcm_bprintf(b, "\n");
+	/* If the packet is shared or there is not enough headroom
+	 * then allocate new header buffer and link the original
+	 * buffer to it.
+	 */
+	if ((PKTHEADROOM(etc->osh, p) < VLAN_TAG_LEN) || PKTSHARED(p)) {
+		void *pkt;
+		uint16 ether_type;
+
+		if ((pkt = PKTGET(etc->osh, VLAN_TAG_LEN +
+		                  ETHERVLAN_HDR_LEN, TRUE)) == NULL) {
+			ET_ERROR(("et%d: PKTGET of size %d failed during expand head\n",
+			          etc->unit, VLAN_TAG_LEN + ETHERVLAN_HDR_LEN));
+			return (NULL);
+		}
+
+		/* Assign priority of original frame */
+		PKTSETPRIO(pkt, ntoh16(vlan_prio) >> VLAN_PRI_SHIFT);
+
+		ether_type = evh->ether_type;
+
+		/* Copy the vlan header to the first buffer */
+		memcpy(PKTDATA(etc->osh, pkt), data, ETHERVLAN_HDR_LEN);
+		PKTPULL(etc->osh, p, ETHERVLAN_HDR_LEN);
+
+		/* Align the pointer to initialize the inner vlan tag and type
+		 * fields.
+		 */
+		evh = (struct ethervlan_header *)(PKTDATA(etc->osh, pkt) + VLAN_TAG_LEN);
+		evh->vlan_tag = vlan_tag;
+		evh->ether_type = ether_type;
+
+		/* Chain the original buffer to new header buffer */
+		PKTSETNEXT(etc->osh, pkt, p);
+
+		p = pkt;
+	} else {
+		data = PKTPUSH(etc->osh, p, VLAN_TAG_LEN);
+		ETHERVLAN_MOVE_HDR(data, data + VLAN_TAG_LEN);
+		evh = (struct ethervlan_header *)(data + VLAN_TAG_LEN);
 	}
 
-	bcm_bprintf(b, "linkstate %d\n", etc->linkstate);
-	bcm_bprintf(b, "\n");
+	evh->vlan_type = hton16(ETHER_TYPE_8021Q);
 
-	/* refresh stat counters */
-	(*etc->chops->statsupd)(etc->ch);
+	/* Clear the vlan id in the inner tag */
+	evh->vlan_tag &= ~(hton16(VLAN_VID_MASK));
 
-	/* summary stat counter line */
-	/* use sw frame and byte counters -- hw mib counters wrap too quickly */
-	bcm_bprintf(b, "txframe %d txbyte %d txerror %d rxframe %d rxbyte %d rxerror %d\n",
-		etc->txframe, etc->txbyte, etc->txerror,
-		etc->rxframe, etc->rxbyte, etc->rxerror);
-
-	/* transmit & receive stat counters */
-	/* hardware mib pkt and octet counters wrap too quickly to be useful */
-	(*etc->chops->dumpmib)(etc->ch, b);
-
-	bcm_bprintf(b, "txnobuf %d reset %d dmade %d dmada %d dmape %d\n",
-	               etc->txnobuf, etc->reset, etc->dmade, etc->dmada, etc->dmape);
-
-	/* hardware mib pkt and octet counters wrap too quickly to be useful */
-	bcm_bprintf(b, "rxnobuf %d rxdmauflo %d rxoflo %d rxbadlen %d "
-	               "rxgiants %d rxoflodiscards %d\n",
-	               etc->rxnobuf, etc->rxdmauflo, etc->rxoflo, etc->rxbadlen,
-	               etc->rxgiants, etc->rxoflodiscards);
-
-	bcm_bprintf(b, "\n");
+	return (p);
 }
-#endif /* BCMDBG */
+#endif /* ETROBO */
+
 
 uint
 etc_totlen(etc_info_t *etc, void *p)
@@ -595,32 +591,3 @@ etc_totlen(etc_info_t *etc, void *p)
 		total += PKTLEN(etc->osh, p);
 	return (total);
 }
-
-#ifdef BCMDBG
-void
-etc_prhdr(char *msg, struct ether_header *eh, uint len, int unit)
-{
-	char da[32], sa[32];
-
-	if (msg && (msg[0] != '\0'))
-		printf("et%d: %s: ", unit, msg);
-	else
-		printf("et%d: ", unit);
-
-	printf("dst %s src %s type 0x%x len %d\n",
-		bcm_ether_ntoa((struct ether_addr *)eh->ether_dhost, da),
-		bcm_ether_ntoa((struct ether_addr *)eh->ether_shost, sa),
-		ntoh16(eh->ether_type),
-		len);
-}
-void
-etc_prhex(char *msg, uchar *buf, uint nbytes, int unit)
-{
-	if (msg && (msg[0] != '\0'))
-		printf("et%d: %s:\n", unit, msg);
-	else
-		printf("et%d:\n", unit);
-
-	prhex(NULL, buf, nbytes);
-}
-#endif /* BCMDBG */
