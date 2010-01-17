@@ -8,7 +8,7 @@
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: gmac_core.h,v 13.1.4.1.14.1 2008/11/11 04:18:40 Exp $
+ * $Id: gmac_core.h,v 13.1.4.1.14.2 2009/03/12 01:14:08 Exp $
  */
 
 #ifndef	_gmac_core_h_
@@ -211,6 +211,20 @@ typedef volatile struct _gmacregs {
 /* gpio output enable */
 #define	GS_GOE_MASK		0x0000ffff
 #define	GS_GOE_SHIFT		0
+
+/* clk control status */
+#define CS_FA			0x00000001
+#define CS_FH			0x00000002
+#define CS_FI			0x00000004
+#define CS_AQ			0x00000008
+#define CS_HQ			0x00000010
+#define CS_FC			0x00000020
+#define CS_ER			0x00000100
+#define CS_AA			0x00010000
+#define CS_HA			0x00020000
+#define CS_BA			0x00040000
+#define CS_BH			0x00080000
+#define CS_ES			0x01000000
 
 /* command config */
 #define	CC_TE			0x00000001

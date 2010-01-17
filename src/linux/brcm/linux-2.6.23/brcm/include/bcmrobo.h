@@ -16,6 +16,10 @@
 #define _bcm_robo_h_
 
 #define DEVID5325   0x25    /* 5325 (Not really be we fake it) */
+#define	DEVID5395	0x95	/* 5395 */
+#define	DEVID5397	0x97	/* 5397 */
+#define	DEVID5398	0x98	/* 5398 */
+#define	DEVID53115	0x3115	/* 53115 */
 
 /* Forward declaration */
 typedef struct robo_info_s robo_info_t;

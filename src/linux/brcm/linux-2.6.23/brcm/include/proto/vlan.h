@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: vlan.h,v 9.4 2007/02/24 02:03:45 Exp $
+ * $Id: vlan.h,v 9.4.248.1 2009/03/13 00:47:34 Exp $
  */
 
 #ifndef _vlan_h_
@@ -48,5 +48,12 @@ struct ethervlan_header {
 #if !defined(__GNUC__)
 #pragma pack()
 #endif
+
+#define ETHERVLAN_MOVE_HDR(d, s) \
+do { \
+	struct ethervlan_header t; \
+	t = *(struct ethervlan_header *)(s); \
+	*(struct ethervlan_header *)(d) = t; \
+} while (0)
 
 #endif /* _vlan_h_ */

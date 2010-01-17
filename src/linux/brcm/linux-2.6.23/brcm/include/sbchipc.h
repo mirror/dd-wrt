@@ -858,6 +858,14 @@ typedef volatile struct {
 /* PMU resource number limit */
 #define PMURES_MAX_RESNUM	30
 
+
+/* PMU chip control0 register */
+#define	PMU_CHIPCTL0		0
+
+/* PMU chip control1 register */
+#define	PMU_CHIPCTL1		1
+#define	PMU_CC1_RXC_DLL_BYPASS	0x00010000
+
 /* PMU corerev and chip specific PLL controls.
  * PMU<rev>_PLL<num>_XXXX where <rev> is PMU corerev and <num> is an arbitary number
  * to differentiate different PLLs controlled by the same PMU rev.
