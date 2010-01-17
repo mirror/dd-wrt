@@ -230,6 +230,11 @@
 #define BFL2_SKWRKFEM_BRD	0x00000100  /* 4321mcm93 board uses Skyworks FEM */
 #define BFL2_SPUR_WAR		0x00000200  /* Board has a WAR for clock-harmonic spurs */
 #define BFL2_GPLL_WAR	        0x00000400  /* Flag to implement alternative G-band PLL settings */
+#define BFL2_TRISTATE_LED	0x00000800  /* Tri-state the LED */
+#define BFL2_SINGLEANT_CCK	0x00001000  /* Tx CCK pkts on Ant 0 only */
+#define BFL2_2G_SPUR_WAR	0x00002000  /* Board has a WAR to reduce and avoid clock-harmonic */
+#define BFL2_BPHY_ALL_TXCORES	0x00004000  /* Transmit bphy frames using all tx cores */
+#define BFL2_FCC_BANDEDGE_WAR	0x00008000  /* using 40Mhz LPF for 20Mhz bandedge channels */
 
 /* board specific GPIO assignment, gpio 0-3 are also customer-configurable led */
 #define	BOARD_GPIO_BTC3W_IN	0x850	/* bit 4 is RF_ACTIVE, bit 6 is STATUS, bit 11 is PRI */
