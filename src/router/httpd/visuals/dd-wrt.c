@@ -1007,9 +1007,13 @@ void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"24\" maxlength=\"24\" onblur=\"valid_name(this,share.hostname,SPACE_NO)\" /></td>",
 			  i, sep != NULL ? sep : "");
-		sep = strsep(&leases, " ");
+		sep = strsep(&leases, "=");
 		websWrite(wp,
 			  "<td><input name=\"lease%d_ip\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" onblur=\"valid_name(this,share.ip,SPACE_NO)\" /></td></tr>\n",
+			  i, sep != NULL ? sep : "");
+		sep = strsep(&leases, " ");
+		websWrite(wp,
+			  "<td><input name=\"lease%d_time\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" /></td></tr>\n",
 			  i, sep != NULL ? sep : "");
 	}
 	free(originalpointer);

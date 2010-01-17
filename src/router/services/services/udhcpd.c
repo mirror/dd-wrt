@@ -332,7 +332,8 @@ void start_udhcpd(void)
 		for (i = 0; i < leasenum; i++) {
 			char *mac = strsep(&leasebuf, "=");
 			char *host = strsep(&leasebuf, "=");
-			char *ip = strsep(&leasebuf, " ");
+			char *ip = strsep(&leasebuf, "=");
+			char *time = strsep(&leasebuf, " ");
 
 			if (mac == NULL || host == NULL || ip == NULL)
 				continue;
