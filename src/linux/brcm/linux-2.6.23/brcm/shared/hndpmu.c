@@ -1320,7 +1320,7 @@ BCMINITFN(si_pmu_alp_clock)(si_t *sih, osl_t *osh)
 static uint32
 BCMINITFN(si_pmu5_clock)(si_t *sih, osl_t *osh, chipcregs_t *cc, uint pll0, uint m)
 {
-	uint32 tmp, div, ndiv, p1, p2, fc;
+	uint32 tmp, div, ndiv, fdiv, p1, p2, fc;
 
 	if ((pll0 & 3) || (pll0 > PMU4716_MAINPLL_PLL0)) {
 		PMU_ERROR(("%s: Bad pll0: %d\n", __FUNCTION__, pll0));
@@ -1349,12 +1349,18 @@ BCMINITFN(si_pmu5_clock)(si_t *sih, osl_t *osh, chipcregs_t *cc, uint pll0, uint
 	tmp = R_REG(osh, &cc->pllcontrol_data);
 	ndiv = (tmp & PMU5_PLL_NDIV_MASK) >> PMU5_PLL_NDIV_SHIFT;
 
+	W_REG(osh, &cc->pllcontrol_addr, pll0 + PMU5_PLL_FMAB_OFF);
+	(void)R_REG(osh, &cc->pllcontrol_addr);
+	tmp = R_REG(osh, &cc->pllcontrol_data);
+	fdiv = tmp & PMU5_PLL_FDIV_MASK;
+
 	/* Do calculation in Mhz */
 	fc = si_pmu_alp_clock(sih, osh) / 1000000;
-	fc = (p1 * ndiv * fc) / p2;
+	fc = (ndiv * fc) + ((fdiv * fc) / (1 << 24));
+	fc = (p1 * fc) / p2;
 
-	PMU_NONE(("%s: p1=%d, p2=%d, ndiv=%d(0x%x), m%d=%d; fc=%d, clock=%d\n",
-	          __FUNCTION__, p1, p2, ndiv, ndiv, m, div, fc, fc / div));
+	PMU_NONE(("%s: p1=%d, p2=%d, ndiv=%d(0x%x), fdiv=%d(0x%x), m%d=%d; fc=%d, clock=%d\n",
+	          __FUNCTION__, p1, p2, ndiv, ndiv, fdiv, fdiv, m, div, fc, fc / div));
 
 	/* Return clock in Hertz */
 	return ((fc / div) * 1000000);
