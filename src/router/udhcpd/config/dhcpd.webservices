@@ -57,6 +57,7 @@
 			<th width="33%"><% tran("share.mac"); %></th>
 			<th width="34%"><% tran("share.hostname"); %></th>
 			<th width="33%"><% tran("share.ip"); %></th>
+			<th width="33%"><% tran("idx.dhcp_lease"); %></th>
 		</tr>
 			<% show_staticleases(); %>
 	</table><br />

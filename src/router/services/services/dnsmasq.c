@@ -382,13 +382,18 @@ void start_dnsmasq(void)
 			for (i = 0; i < leasenum; i++) {
 				char *mac = strsep(&leasebuf, "=");
 				char *host = strsep(&leasebuf, "=");
-				char *ip = strsep(&leasebuf, " ");
+				char *ip = strsep(&leasebuf, "=");
+				char *time = strsep(&leasebuf, " ");
 
 				if (mac == NULL || host == NULL || ip == NULL)
 					continue;
-
+				if (!time||strlen(time)==0)
 				fprintf(fp, "dhcp-host=%s,%s,%s,infinite\n",
 					mac, host, ip);
+				else
+				fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n",
+					mac, host, ip);
+				
 				addHost(host, ip);
 			}
 			free(cp);
