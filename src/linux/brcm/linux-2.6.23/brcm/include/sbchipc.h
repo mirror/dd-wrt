@@ -1025,6 +1025,7 @@ typedef volatile struct {
 
 #define PMU7_PLL_PLLCTL7                7
 #define PMU7_PLL_PLLCTL8                8
+#define PMU7_PLL_PLLCTL11		11
 
 /* PLL usage in 4716/47162 */
 #define	PMU4716_MAINPLL_PLL0		12

@@ -360,9 +360,10 @@ static const sromvar_t perpath_pci_sromvars[] = {
 	{NULL,		0,		0,		0, 			0}
 };
 
-#if !(defined(PHY_TYPE_N) && defined(PHY_TYPE_LP))
+#if !(defined(PHY_TYPE_N) && defined(PHY_TYPE_LP) && defined(PHY_TYPE_SSN))
 #define	PHY_TYPE_N		4	/* N-Phy value */
 #define	PHY_TYPE_LP		5	/* LP-Phy value */
+#define	PHY_TYPE_SSN		6	/* SSLPN-Phy value */
 #endif /* !(defined(PHY_TYPE_N) && defined(PHY_TYPE_LP)) */
 #if !defined(PHY_TYPE_NULL)
 #define	PHY_TYPE_NULL		0xf	/* Invalid Phy value */
@@ -390,6 +391,11 @@ static const pavars_t pavars[] = {
 	{PHY_TYPE_LP, WL_CHAN_FREQ_RANGE_5GL, 0, "pa1lob0 pa1lob1 pa1lob2"},
 	{PHY_TYPE_LP, WL_CHAN_FREQ_RANGE_5GM, 0, "pa1b0 pa1b1 pa1b2"},
 	{PHY_TYPE_LP, WL_CHAN_FREQ_RANGE_5GH, 0, "pa1hib0 pa1hib1 pa1hib2"},
+	/* SSLPNPHY */
+	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_2G,  0, "pa0b0 pa0b1 pa0b2"},
+	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_5GL, 0, "pa1lob0 pa1lob1 pa1lob2"},
+	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_5GM, 0, "pa1b0 pa1b1 pa1b2"},
+	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_5GH, 0, "pa1hib0 pa1hib1 pa1hib2"},
 	{PHY_TYPE_NULL, 0, 0, ""}
 };
 
