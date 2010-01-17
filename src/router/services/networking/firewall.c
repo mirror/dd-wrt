@@ -1339,16 +1339,13 @@ void fw_get_filter_services(char *services)
 {
 
 	l7filters *filters = filters_list;
-	int namelen, protolen;
 	char temp[128] = "";
 
 	while (filters->name)	// add l7 and p2p filters
 	{
-		namelen = strlen(filters->name);
-		protolen = strlen(filters->protocol);
-
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
-			namelen, filters->name, protolen, filters->protocol);
+			strlen(filters->name), filters->name, filters->protocol == 1 ? 3 : 2, 
+			filters->protocol == 1 ? "p2p" : "l7");
 		strcat(services, temp);
 		filters++;
 	}
