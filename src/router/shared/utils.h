@@ -448,6 +448,8 @@
 // Dynex DX-NRUTER (BCM4703 cpu, 4MB flash / 32MB ram, BCM5325E switch, fccid: Belkin K7SDXNRUTER)
 #define ROUTER_DYNEX_DX_NRUTER 0x9212
 
+#define ROUTER_BOARD_OPENRISC 0x930f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

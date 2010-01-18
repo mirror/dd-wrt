@@ -326,6 +326,12 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "300");
 	return;
 }
+#elif HAVE_OPENRISC
+void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "166");
+	return;
+}
 #elif HAVE_RT3052
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
