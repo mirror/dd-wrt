@@ -887,6 +887,8 @@ typedef struct {
 #define	WLC_PHY_TYPE_B		1
 #define	WLC_PHY_TYPE_G		2
 #define	WLC_PHY_TYPE_N		4
+#define	WLC_PHY_TYPE_LP		5
+#define	WLC_PHY_TYPE_SSN	6	/* SSLPN-Phy value */
 #define	WLC_PHY_TYPE_NULL	0xf
 
 /* MAC list modes */
