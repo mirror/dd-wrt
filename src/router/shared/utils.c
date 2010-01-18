@@ -337,7 +337,7 @@ int has_mimo(char *prefix)
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
-	if (contains(phy, 'n'))
+	if (contains(phy, 'n') || contains(phy, 's'))
 		return 1;
 	else
 		return 0;
