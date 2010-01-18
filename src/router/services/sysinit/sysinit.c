@@ -162,7 +162,7 @@ void runStartup(char *folder, char *extension)
 				}
 			}
 #endif
-			sysprintf("%s/%s 2>&1 > /dev/null&\n", folder,
+			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
 				  entry[n]->d_name);
 			// execute script 
 		}
