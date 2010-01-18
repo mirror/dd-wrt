@@ -1377,6 +1377,8 @@ void start_sysinit(void)
 
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
+			case ROUTER_ASUS_RTN10:
+				break;			
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
@@ -1457,6 +1459,8 @@ void start_sysinit(void)
 			}
 		} else {
 			switch (brand) {
+			case ROUTER_ASUS_RTN10:
+				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
