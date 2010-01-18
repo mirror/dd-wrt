@@ -29,6 +29,7 @@
 #define	PHY_TYPE_G		2
 #define	PHY_TYPE_N		4
 #define	PHY_TYPE_LP		5
+#define PHY_TYPE_SSN	6	/* SSLPN-Phy value */
 #define	PHY_TYPE_NULL		0xf
 
 /* how many times to attempt to bring up a virtual i/f when
@@ -486,11 +487,13 @@ wlconf_auto_chanspec(char *name,char *prefix)
 #define WLCONF_PHYTYPE2STR(phy)	((phy) == PHY_TYPE_A ? "a" : \
 				 (phy) == PHY_TYPE_B ? "b" : \
 				 (phy) == PHY_TYPE_LP ? "l" : \
-				 (phy) == PHY_TYPE_G ? "g" : "n")
+				 (phy) == PHY_TYPE_G ? "g" : \
+				 (phy) == PHY_TYPE_SSN ? "s" : "n")
 #define WLCONF_STR2PHYTYPE(phy)	((phy) && (phy)[0] == 'a' ? PHY_TYPE_A : \
 				 (phy) && (phy)[0] == 'b' ? PHY_TYPE_B : \
 				 (phy) && (phy)[0] == 'l' ? PHY_TYPE_LP : \
-				 (phy) && (phy)[0] == 'g' ? PHY_TYPE_G : PHY_TYPE_N)
+				 (phy) && (phy)[0] == 'g' ? PHY_TYPE_G : \
+				 (phy) && (phy)[0] == 's' ? PHY_TYPE_SSN : PHY_TYPE_N)
 
 
 #define PREFIX_LEN 32			/* buffer size for wlXXX_ prefix */
@@ -1101,7 +1104,7 @@ cprintf("get phy flags %s\n",name);
 		/* Switch to band */
 		phy[0] = var[i];
 		val = WLCONF_STR2PHYTYPE(phy);
-		if (val == PHY_TYPE_N) {
+		if (val == PHY_TYPE_N || val == PHY_TYPE_SSN) {
 			WL_GETINT(name, WLC_GET_BAND, &val);
 		} else
 			val = WLCONF_PHYTYPE2BAND(val);
@@ -1119,7 +1122,7 @@ cprintf("set nband %s\n",name);
 	str = nvram_get(strcat_r(prefix, "phytype", tmp));
 	val = WLCONF_STR2PHYTYPE(str);
 	/* For NPHY use band value from NVRAM */
-	if (val == PHY_TYPE_N) {
+	if (val == PHY_TYPE_N || val == PHY_TYPE_SSN) {
 		str = nvram_get(strcat_r(prefix, "nband", tmp));
 		if (str)
 			val = atoi(str);
@@ -1155,7 +1158,7 @@ cprintf("get core rev %s\n",name);
 	/* Manual Channel Selection - when channel # is not 0 */
 cprintf("set channel %s\n",name);
 	val = atoi(nvram_default_get(strcat_r(prefix, "channel", tmp),"0"));
-	if (val && phytype != PHY_TYPE_N) {
+	if (val && phytype != PHY_TYPE_N && phytype != PHY_TYPE_SSN) {
 		WL_SETINT(name, WLC_SET_CHANNEL, val);
 		if (ret) {
 			/* Use current channel (card may have changed) */
@@ -1163,7 +1166,7 @@ cprintf("set channel %s\n",name);
 			snprintf(buf, sizeof(buf), "%d", ci.target_channel);
 			nvram_set(strcat_r(prefix, "channel", tmp), buf);
 		}
-	} else if (val && phytype == PHY_TYPE_N) {
+	} else if (val && (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN)) {
 		chanspec_t chanspec = 0;
 		uint channel;
 		uint nbw;
@@ -1222,7 +1225,7 @@ cprintf("set channel %s\n",name);
 	}
 
 	/* Set up number of Tx and Rx streams */
-	if (phytype == PHY_TYPE_N) {
+	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
 		int count;
 		int streams;
 
@@ -1294,7 +1297,7 @@ cprintf("set g mode %s\n",name);
 
 cprintf("set n prot mode %s\n",name);
 	/* Set nmode_protectoin */
-	if (phytype == PHY_TYPE_N) {
+	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
 		int override = WLC_PROTECTION_OFF;
 		int control = WLC_PROTECTION_CTL_OFF;
 		int nmode = AUTO;
@@ -1409,15 +1412,17 @@ cprintf("get caps %s\n",name);
 	}
 cprintf("set btc mode %s\n",name);
 
-	/* Set BTC mode */
-	if (!wl_iovar_setint(name, "btc_mode", btc_mode)) {
-		if (btc_mode == WL_BTC_PREMPT) {
-			wl_rateset_t rs_tmp = rs;
-			/* remove 1Mbps and 2 Mbps from rateset */
-			for (i = 0, rs.count = 0; i < rs_tmp.count; i++) {
-				if ((rs_tmp.rates[i] & 0x7f) == 2 || (rs_tmp.rates[i] & 0x7f) == 4)
-					continue;
-				rs.rates[rs.count++] = rs_tmp.rates[i];
+	if (phytype != PHY_TYPE_SSN) {
+		/* Set BTC mode */
+		if (!wl_iovar_setint(name, "btc_mode", btc_mode)) {
+			if (btc_mode == WL_BTC_PREMPT) {
+				wl_rateset_t rs_tmp = rs;
+				/* remove 1Mbps and 2 Mbps from rateset */
+				for (i = 0, rs.count = 0; i < rs_tmp.count; i++) {
+					if ((rs_tmp.rates[i] & 0x7f) == 2 || (rs_tmp.rates[i] & 0x7f) == 4)
+						continue;
+					rs.rates[rs.count++] = rs_tmp.rates[i];
+				}
 			}
 		}
 	}
@@ -1428,8 +1433,10 @@ cprintf("set rate set %s\n",name);
 
 cprintf("set plcphdr %s\n",name);
 	/* Allow short preamble override for b cards */
-	if (phytype == PHY_TYPE_B ||
-	    (phytype == PHY_TYPE_G && (gmode == GMODE_LEGACY_B || gmode == GMODE_AUTO))) {
+	if (phytype == PHY_TYPE_B || ((phytype == PHY_TYPE_N) && (bandtype == WLC_BAND_2G)) ||
+	    ((phytype == PHY_TYPE_SSN) && (bandtype == WLC_BAND_2G)) ||
+	    ((phytype == PHY_TYPE_G || phytype == PHY_TYPE_LP) &&
+	     (gmode == GMODE_LEGACY_B || gmode == GMODE_AUTO))) {
 		strcat_r(prefix, "plcphdr", tmp);
 		if (nvram_default_match(tmp, "long","long"))
 			val = WLC_PLCP_AUTO;
@@ -1443,7 +1450,7 @@ cprintf("set plcphdr %s\n",name);
 
 
 	/* Convert Auto mcsidx to Auto rate */
-	if (phytype == PHY_TYPE_N) {
+	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
 		int mcsidx = atoi(nvram_default_get(strcat_r(prefix, "nmcsidx", tmp),"-1"));
 		/* -1 mcsidx used to designate AUTO rate */
 		if (mcsidx == -1)
@@ -1472,7 +1479,7 @@ cprintf("set get rates %s\n",name);
 	}
 
 	/* For N-Phy, check if nrate needs to be applied */
-	if (phytype == PHY_TYPE_N) {
+	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
 		uint32 nrate = 0;
 		int mcsidx = atoi(nvram_safe_get(strcat_r(prefix, "nmcsidx", tmp)));
 		bool ismcs = (mcsidx >= 0);
@@ -1576,7 +1583,7 @@ cprintf("set wframeburst %s\n",name);
 
 cprintf("set rifs mode %s\n",name);
 	/* Set RIFS mode based on framebursting */
-	if (phytype == PHY_TYPE_N) {
+	if (phytype == PHY_TYPE_N  || phytype == PHY_TYPE_SSN) {
 		char *nvram_str = nvram_safe_get(strcat_r(prefix, "rifs", tmp));
 		if (!strcmp(nvram_str, "on"))
 			wl_iovar_setint(name, "rifs", ON);
@@ -1610,7 +1617,7 @@ cprintf("set antdiv mode %s\n",name);
 	 */
 	if (ap || apsta) {
 		if (!(val = atoi(nvram_default_get(strcat_r(prefix, "channel", tmp),"0")))) {
-			if (phytype == PHY_TYPE_N) {
+			if (phytype == PHY_TYPE_N  || phytype == PHY_TYPE_SSN) {
 				chanspec_t chanspec = wlconf_auto_chanspec(name,prefix);
 				if (chanspec != 0)
 					{
