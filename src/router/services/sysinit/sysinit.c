@@ -609,6 +609,16 @@ void start_restore_defaults(void)
 		{"wan_default", "", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_OPENRISC
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 eth1 eth2 eth3 ath0", 0},
+		{"wan_ifname", "", 0},
+		{"wan_ifname2", "", 0},
+		{"wan_ifnames", "", 0},
+		{"wan_default", "", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_WP54G
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -981,6 +991,16 @@ void start_restore_defaults(void)
 		restore_defaults = 1;
 	}
 #elif HAVE_DANUBE
+	linux_overrides = generic;
+	int brand = getRouterBrand();
+
+	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
+		// nvram_invmatch("os_name", 
+		// "linux"))
+	{
+		restore_defaults = 1;
+	}
+#elif HAVE_OPENRISC
 	linux_overrides = generic;
 	int brand = getRouterBrand();
 

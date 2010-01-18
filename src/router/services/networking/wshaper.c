@@ -74,6 +74,7 @@ void svqos_reset_ports(void)
 #ifndef HAVE_LSX
 #ifndef HAVE_DANUBE
 #ifndef HAVE_STORM
+#ifndef HAVE_OPENRISC
 #ifndef HAVE_ADM5120
 #ifndef HAVE_TW6600
 	if (nvram_match("portprio_support", "1")) {
@@ -129,6 +130,7 @@ void svqos_reset_ports(void)
 #endif
 #endif
 #endif
+#endif
 }
 
 int svqos_set_ports(void)
@@ -148,6 +150,7 @@ int svqos_set_ports(void)
 #ifndef HAVE_LSX
 #ifndef HAVE_DANUBE
 #ifndef HAVE_STORM
+#ifndef HAVE_OPENRISC
 #ifndef HAVE_ADM5120
 	if (nvram_match("portprio_support", "1")) {
 		int loop = 1;
@@ -178,6 +181,7 @@ int svqos_set_ports(void)
 			     atoi(level) / 10 - 1, loop);
 		}
 	}
+#endif
 #endif
 #endif
 #endif
@@ -737,6 +741,12 @@ void stop_wshaper(void)
 	ret = eval(script_name, "stop", "XX", "ath0");
 #elif HAVE_STORM
 	ret = eval(script_name, "stop", "XX", "eth0");
+	ret = eval(script_name, "stop", "XX", "ath0");
+#elif HAVE_OPENRISC
+	ret = eval(script_name, "stop", "XX", "eth0");
+	ret = eval(script_name, "stop", "XX", "eth1");
+	ret = eval(script_name, "stop", "XX", "eth2");
+	ret = eval(script_name, "stop", "XX", "eth3");
 	ret = eval(script_name, "stop", "XX", "ath0");
 #elif HAVE_ADM5120
 	ret = eval(script_name, "stop", "XX", "eth0");
