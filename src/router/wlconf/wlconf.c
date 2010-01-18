@@ -29,7 +29,7 @@
 #define	PHY_TYPE_G		2
 #define	PHY_TYPE_N		4
 #define	PHY_TYPE_LP		5
-#define PHY_TYPE_SSN	6	/* SSLPN-Phy value */
+#define PHY_TYPE_SSN		6
 #define	PHY_TYPE_NULL		0xf
 
 /* how many times to attempt to bring up a virtual i/f when
@@ -489,11 +489,12 @@ wlconf_auto_chanspec(char *name,char *prefix)
 				 (phy) == PHY_TYPE_LP ? "l" : \
 				 (phy) == PHY_TYPE_G ? "g" : \
 				 (phy) == PHY_TYPE_SSN ? "s" : "n")
-#define WLCONF_STR2PHYTYPE(phy)	((phy) && (phy)[0] == 'a' ? PHY_TYPE_A : \
-				 (phy) && (phy)[0] == 'b' ? PHY_TYPE_B : \
-				 (phy) && (phy)[0] == 'l' ? PHY_TYPE_LP : \
-				 (phy) && (phy)[0] == 'g' ? PHY_TYPE_G : \
-				 (phy) && (phy)[0] == 's' ? PHY_TYPE_SSN : PHY_TYPE_N)
+#define WLCONF_STR2PHYTYPE(ch)	((ch) == 'a' ? PHY_TYPE_A : \
+				 (ch) == 'b' ? PHY_TYPE_B : \
+				 (ch) == 'l' ? PHY_TYPE_LP : \
+				 (ch) == 'g' ? PHY_TYPE_G : \
+				 (ch) == 's' ? PHY_TYPE_SSN : PHY_TYPE_N)
+
 
 
 #define PREFIX_LEN 32			/* buffer size for wlXXX_ prefix */
@@ -1184,7 +1185,7 @@ cprintf("set channel %s\n",name);
 		if (nvram_match(strcat_r(prefix, "net_mode", tmp),"b-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"g-only") || nvram_match(strcat_r(prefix, "net_mode", tmp),"a-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"bg-mixed"))
 			val = 20;
 		
-		fprintf(stderr,"channel %d, val %d\n",channel,val);
+//		fprintf(stderr,"channel %d, val %d\n",channel,val);
 		switch (val) {
 		case 40:
 			val = WL_CHANSPEC_BW_40;
@@ -1216,10 +1217,10 @@ cprintf("set channel %s\n",name);
 		}
 
 		/* band | BW | CTRL SB | Channel */
-		fprintf(stderr,"%X, %X, %X\n",nbw,nctrlsb,channel);
+//		fprintf(stderr,"%X, %X, %X\n",nbw,nctrlsb,channel);
 		chanspec |= ((bandtype << WL_CHANSPEC_BAND_SHIFT) |
 		             (nbw | nctrlsb | channel));
-		fprintf(stderr,"spec %X\n",chanspec);
+//		fprintf(stderr,"spec %X\n",chanspec);
 
 		WL_IOVAR_SETINT(name, "chanspec", (uint32)chanspec);
 	}
@@ -1413,30 +1414,28 @@ cprintf("get caps %s\n",name);
 cprintf("set btc mode %s\n",name);
 
 	if (phytype != PHY_TYPE_SSN) {
-		/* Set BTC mode */
-		if (!wl_iovar_setint(name, "btc_mode", btc_mode)) {
-			if (btc_mode == WL_BTC_PREMPT) {
-				wl_rateset_t rs_tmp = rs;
-				/* remove 1Mbps and 2 Mbps from rateset */
-				for (i = 0, rs.count = 0; i < rs_tmp.count; i++) {
-					if ((rs_tmp.rates[i] & 0x7f) == 2 || (rs_tmp.rates[i] & 0x7f) == 4)
-						continue;
-					rs.rates[rs.count++] = rs_tmp.rates[i];
-				}
+	/* Set BTC mode */
+	if (!wl_iovar_setint(name, "btc_mode", btc_mode)) {
+		if (btc_mode == WL_BTC_PREMPT) {
+			wl_rateset_t rs_tmp = rs;
+			/* remove 1Mbps and 2 Mbps from rateset */
+			for (i = 0, rs.count = 0; i < rs_tmp.count; i++) {
+				if ((rs_tmp.rates[i] & 0x7f) == 2 || (rs_tmp.rates[i] & 0x7f) == 4)
+					continue;
+				rs.rates[rs.count++] = rs_tmp.rates[i];
 			}
 		}
 	}
-
+	
+	}
 cprintf("set rate set %s\n",name);
 	/* Set rateset */
 	WL_IOCTL(name, WLC_SET_RATESET, &rs, sizeof(wl_rateset_t));
 
 cprintf("set plcphdr %s\n",name);
 	/* Allow short preamble override for b cards */
-	if (phytype == PHY_TYPE_B || ((phytype == PHY_TYPE_N) && (bandtype == WLC_BAND_2G)) ||
-	    ((phytype == PHY_TYPE_SSN) && (bandtype == WLC_BAND_2G)) ||
-	    ((phytype == PHY_TYPE_G || phytype == PHY_TYPE_LP) &&
-	     (gmode == GMODE_LEGACY_B || gmode == GMODE_AUTO))) {
+	if (phytype == PHY_TYPE_B ||
+	    (phytype == PHY_TYPE_G && (gmode == GMODE_LEGACY_B || gmode == GMODE_AUTO))) {
 		strcat_r(prefix, "plcphdr", tmp);
 		if (nvram_default_match(tmp, "long","long"))
 			val = WLC_PLCP_AUTO;
@@ -1583,7 +1582,7 @@ cprintf("set wframeburst %s\n",name);
 
 cprintf("set rifs mode %s\n",name);
 	/* Set RIFS mode based on framebursting */
-	if (phytype == PHY_TYPE_N  || phytype == PHY_TYPE_SSN) {
+	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
 		char *nvram_str = nvram_safe_get(strcat_r(prefix, "rifs", tmp));
 		if (!strcmp(nvram_str, "on"))
 			wl_iovar_setint(name, "rifs", ON);
@@ -1617,7 +1616,7 @@ cprintf("set antdiv mode %s\n",name);
 	 */
 	if (ap || apsta) {
 		if (!(val = atoi(nvram_default_get(strcat_r(prefix, "channel", tmp),"0")))) {
-			if (phytype == PHY_TYPE_N  || phytype == PHY_TYPE_SSN) {
+			if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
 				chanspec_t chanspec = wlconf_auto_chanspec(name,prefix);
 				if (chanspec != 0)
 					{
