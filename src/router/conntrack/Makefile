@@ -53,6 +53,9 @@ endif
 ifeq ($(CONFIG_STORM),y)
 MODULE:=conntrack.26
 endif
+ifeq ($(CONFIG_OPENRISC),y)
+MODULE:=conntrack.26
+endif
 ifeq ($(CONFIG_ADM5120),y)
 MODULE:=conntrack.26
 endif
