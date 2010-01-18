@@ -28,12 +28,12 @@
 /* #define _LZMA_OUT_READ */
 /* Use read function for output data */
 
-/* #define _LZMA_PROB32 */
+#define _LZMA_PROB32
 /* It can increase speed on some 32-bit CPUs, 
    but memory usage will be doubled in that case */
 
-/* #define _LZMA_LOC_OPT */
-/* Enable local speed optimizations inside code */
+#define _LZMA_LOC_OPT
+//Enable local speed optimizations inside code
 
 #ifndef UInt32
 #ifdef _LZMA_UINT32_IS_ULONG
@@ -53,7 +53,6 @@
 #define LZMA_RESULT_DATA_ERROR 1
 #define LZMA_RESULT_NOT_ENOUGH_MEM 2
 
-
 #define LZMA_BASE_SIZE 1846
 #define LZMA_LIT_SIZE 768
 
@@ -65,20 +64,16 @@ but if specify _LZMA_PROB_32, CProb will be UInt32(unsigned int)
 */
 
 #ifdef _LZMA_OUT_READ
-int LzmaDecoderInit(
-    unsigned char *buffer, UInt32 bufferSize,
-    int lc, int lp, int pb,
-    unsigned char *dictionary, UInt32 dictionarySize,
-);
+static int LzmaDecoderInit(unsigned char *buffer, UInt32 bufferSize,
+			   int lc, int lp, int pb,
+			   unsigned char *dictionary, UInt32 dictionarySize,);
 #endif
 
-int LzmaDecode(
-    unsigned char *buffer, 
-  #ifndef _LZMA_OUT_READ
-    UInt32 bufferSize,
-    int lc, int lp, int pb,
-  #endif
-    unsigned char *outStream, UInt32 outSize,
-    UInt32 *outSizeProcessed);
+static int LzmaDecode(unsigned char *buffer,
+#ifndef _LZMA_OUT_READ
+		      UInt32 bufferSize, int lc, int lp, int pb,
+#endif
+		      unsigned char *outStream, UInt32 outSize,
+		      UInt32 * outSizeProcessed);
 
 #endif
