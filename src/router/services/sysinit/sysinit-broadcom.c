@@ -154,6 +154,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WG602_V3:
 	case ROUTER_RT480W:
 	case ROUTER_USR_5465:
+	case ROUTER_ASUS_RTN10:
 		nvram_set("wl0gpio0", "136");
 		break;
 	case ROUTER_WAP54G_V3:
