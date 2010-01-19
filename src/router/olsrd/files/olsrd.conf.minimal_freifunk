@@ -1,0 +1,10 @@
+#
+# OLSR.org routing daemon config file
+#
+# Lines starting with a # are discarded
+#
+
+Interface "wlan0"
+{
+}
+
