@@ -50,6 +50,7 @@ struct mid_address {
   union olsr_ip_addr alias;
   struct mid_entry *main_entry;
   struct mid_address *next_alias;
+  uint32_t vtime;
 
   /* These are for the reverse list */
   struct mid_address *prev;
@@ -75,13 +76,13 @@ extern struct mid_address reverse_mid_set[HASHSIZE];
 struct mid_alias;
 
 int olsr_init_mid_set(void);
-void insert_mid_tuple(union olsr_ip_addr *, struct mid_address *, olsr_reltime);
+void olsr_delete_all_mid_entries(void);
+void olsr_cleanup_mid(union olsr_ip_addr *);
 void insert_mid_alias(union olsr_ip_addr *, const union olsr_ip_addr *, olsr_reltime);
 union olsr_ip_addr *mid_lookup_main_addr(const union olsr_ip_addr *);
 struct mid_address *mid_lookup_aliases(const union olsr_ip_addr *);
 struct mid_entry *mid_lookup_entry_bymain(const union olsr_ip_addr *);
 void olsr_print_mid_set(void);
-void olsr_prune_aliases(const union olsr_ip_addr *, struct mid_alias *);
 int olsr_update_mid_table(const union olsr_ip_addr *, olsr_reltime);
 void olsr_delete_mid_entry(struct mid_entry *);
 bool olsr_input_mid(union olsr_message *, struct interface *, union olsr_ip_addr *);

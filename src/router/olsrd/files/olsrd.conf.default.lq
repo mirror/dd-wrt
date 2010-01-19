@@ -16,11 +16,11 @@ IpVersion	4
 # FIBMetric ("flat", "correct", or "approx")
 # Just use "flat", the others don't work very well
 
-FIBMetric "flat"
+# FIBMetric "flat"
 
 # Clear the screen each time the internal state changes
 
-ClearScreen     yes
+# ClearScreen     yes
 
 # HNA IPv4 routes
 # syntax: netaddr netmask
@@ -58,7 +58,7 @@ Hna4
 # valid values are 1 .. 254
 # (freifunkfirmware uses 111 for its policy routing)
 
-# RtTable 111
+RtTable 111
 
 #you may specify another table for the default route only
 #if used no policy route will get auto-installed for this table, 
@@ -66,7 +66,7 @@ Hna4
 #(the last table used in default linux policy routing)
 #valid tables are the same as for RtTable
 
-# RtTableDefault 112
+RtTableDefault 112
 
 # Specify the proto tag to be used for routes olsr inserts into kernel
 # currently only implemented for linux, defaults to 0 which gets replaced
@@ -79,7 +79,7 @@ Hna4
 # 4 STATIC 
 # 8 .. 15 various routing daemons (gated, zebra, bird, & co)
 
-# RtProto 111
+# RtProto 0
 
 # For testing purposes it may be nice to use another port for olsrd
 # for using another port than the IANA assigned one 
@@ -94,7 +94,7 @@ Hna4
 # for a PCMCIA/USB hotswap environment.
 # "yes" OR "no"
 
-AllowNoInt	yes
+# AllowNoInt	yes
 
 # TOS(type of service) value for
 # the IP header of control traffic.
@@ -106,7 +106,7 @@ AllowNoInt	yes
 # If not set willingness will be calculated
 # dynammically based on battery/power status
 
-#Willingness    	4
+# Willingness    	3
 
 # Allow processes like the GUI front-end
 # to connect to the daemon.
@@ -117,13 +117,13 @@ IpcConnect
      # IPC connections that will be allowed
      # Setting this to 0 disables IPC
 
-     MaxConnections  0
+     # MaxConnections  0
 
      # By default only 127.0.0.1 is allowed
      # to connect. Here allowed hosts can
      # be added
 
-     Host            127.0.0.1
+     # Host            127.0.0.1
      # Host            10.0.0.5
 
      # Specify entire net-ranges that are 
@@ -141,27 +141,28 @@ IpcConnect
 #LinkQualityLevel	2
 
 # Link quality algorithm (only for lq level 1 or 2)
-# Defaults to "etx_fpm" for fixpoint based etx algorithm
+# Defaults to "etx_ff", a etx variant developed at Freifunk
 
-# LinkQualityAlgorithm    "etx_fpm"
+# LinkQualityAlgorithm    "etx_ff"
 
 # Link quality aging factor
 # Defaults to 0.05, smaller values mean larger LQ window size
 # Link quality aging does only apply to lq level 1 and 2
+# This parameter is not used for etx_ff
 
 # LinkQualityAging 0.1 
 
 # Fisheye mechanism for TC messages 0=off, 1=on
-# default is 0
+# default is 1
 
-# LinkQualityFishEye	0
+LinkQualityFishEye	0
 
 # Wether to use hysteresis or not
 # Hysteresis adds more robustness to the
 # link sensing but delays neighbor registration.
 # Used by default. 'yes' or 'no'
 
-UseHysteresis	no
+# UseHysteresis	no
 
 # Hysteresis parameters
 # Do not alter these unless you know 
@@ -185,7 +186,7 @@ UseHysteresis	no
 # Interval to poll network interfaces for configuration 
 # changes. Defaults to 2.5 seconds
 
-NicChgsPollInt  3.0
+# NicChgsPollInt  2.5
 
 
 # TC redundancy
@@ -196,9 +197,9 @@ NicChgsPollInt  3.0
 # 1 - send MPR selectors and MPRs
 # 2 - send all neighbors
 #
-# defaults to 0
+# defaults to 2
 
-TcRedundancy	2
+# TcRedundancy	2
 
 #
 # NatThreshold 
@@ -211,7 +212,7 @@ TcRedundancy	2
 # The configured route gets multiplied by the treshhold, 
 # before comparing which route is better
 
-# NatThreshold  0.9
+# NatThreshold  0.5
 
 #
 # MPR coverage
@@ -219,10 +220,10 @@ TcRedundancy	2
 # try select to reach every 2 hop neighbor
 #
 # Can be set to any integer >0
-#
-# defaults to 1
+# 
+# MPR selection is broken at the moment, just keep 7
 
-MprCoverage	3
+# MprCoverage	7
 
 
 # Olsrd plugins to load
@@ -272,7 +273,7 @@ LoadPlugin "olsrd_txtinfo.so.0.1"
 #   PlParam     "Keyfile"   "/etc/olsr-keyfile.txt"
 #}
 
-#LoadPlugin "olsrd_dyn_gw.so.0.1"
+#LoadPlugin "olsrd_dyn_gw.so.0.4"
 #{
     # Here parameters are set to be sent to the
     # plugin. Theese are on the form "key" "value".
@@ -306,16 +307,6 @@ LoadPlugin "olsrd_txtinfo.so.0.1"
 # multiple interfaces can be speicified
 Interface "wlan0" "ath0"
 {
-
-    # IPv4 broadcast address to use. The
-    # one usefull example would be 255.255.255.255
-    # If not defined the broadcastaddress
-    # every card is configured with is used
-    # The second useful value would be to
-    # specify the peer adress of an ptp-tunnel
- 
-    # Ip4Broadcast      255.255.255.255
-
     # Interface Mode is used to prevent unnecessary
     # packet forwarding on switched ethernet interfaces
     # valid Modes are "mesh" and "ether"
@@ -323,24 +314,31 @@ Interface "wlan0" "ath0"
 
     # Mode "mesh"
 
-    # IPv6 address scope to use.
-    # Must be 'site-local' or 'global'
+    # IPv4 broadcast address to use. The
+    # one usefull example would be 255.255.255.255
+    # If not defined the broadcastaddress
+    # every card is configured with is used
+    # The second useful value would be to
+    # specify the peer adress of an ptp-tunnel.
+    # another name of this parameter is "IPv4Multicast"
+ 
+    # Ip4Broadcast      0.0.0.0  (use interface broadcast)
 
-    # Ip6AddrType		site-local
+    # IPv6 multicast address
+    # If not defined, FF02::1 is used
 
-    # IPv6 multicast address to use when
-    # using site-local addresses.
-    # If not defined, ff05::15 is used
+    # IPv6Multicast	FF02::1
 
-    # Ip6MulticastSite	ff05::11
-
-    # IPv6 multicast address to use when
-    # using global addresses
-    # If not defined, ff0e::1 is used
-
-    # Ip6MulticastGlobal	ff0e::1
-
-
+		# IPv4 src address
+    # If not defined (0.0.0.0), the interface IP is used
+		
+		# IPv4Src 0.0.0.0
+		
+		# IPv6 src prefix.
+		# If not defined (::/0), a not-linklocal interface IP is used
+		
+		# IPv6Src ::/0
+		
     # Emission intervals.
     # If not defined, RFC proposed values will
     # be used in most cases.
@@ -355,19 +353,19 @@ Interface "wlan0" "ath0"
     # TcInterval        5.0
 
     # TC validity time
-    # TcValidityTime	30.0
+    # TcValidityTime	300.0
 
     # MID interval in seconds(float)
     # MidInterval	5.0
 
     # MID validity time
-    # MidValidityTime	30.0
+    # MidValidityTime	300.0
 
     # HNA interval in seconds(float)
     # HnaInterval	5.0
 
     # HNA validity time
-    # HnaValidityTime 	30.0
+    # HnaValidityTime 	300.0
     
     # When multiple links exist between hosts
     # the weight of interface is used to determine
@@ -395,10 +393,10 @@ Interface "wlan0" "ath0"
     # Link quality multiplier is used only when
     # LinkQualityLevel is > 0.
 
-    # LinkQualityMult 192.168.0.1 0.5
+    # Example 1: LinkQualityMult 192.168.0.1 0.5
 
     # This multiplier applies to all other nodes 
-    # LinkQualityMult default 0.8
+    # Example 2: LinkQualityMult default 0.8
 }
 
 # another Interface (with different configs)
@@ -411,7 +409,7 @@ Interface "wlan0" "ath0"
     # The second useful value would be to 
     # specify the peer adress of an ptp-tunnel
 
-#    Ip4Broadcast	192.168.255.255
+#    IPv4Multicast	192.168.255.255
 
     # Interface Mode is used to prevent unnecessary
     # packet forwardin on switched ethernet interfaces

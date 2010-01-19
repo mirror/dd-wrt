@@ -61,6 +61,15 @@ olsr_init_duplicate_set(void)
                  &olsr_cleanup_duplicate_entry, NULL, 0);
 }
 
+void olsr_cleanup_duplicates(union olsr_ip_addr *orig) {
+  struct dup_entry *entry;
+
+  entry = (struct dup_entry *)avl_find(&duplicate_set, orig);
+  if (entry != NULL) {
+    entry->too_low_counter = DUP_MAX_TOO_LOW - 2;
+  }
+}
+
 struct dup_entry *
 olsr_create_duplicate_entry(void *ip, uint16_t seqnr)
 {
@@ -145,7 +154,7 @@ olsr_message_is_duplicate(union olsr_message *m)
     entry->too_low_counter++;
 
     // client did restart with a lower number ?
-    if (entry->too_low_counter > 16) {
+    if (entry->too_low_counter > DUP_MAX_TOO_LOW) {
       entry->too_low_counter = 0;
       entry->seqnr = seqnr;
       entry->array = 1;

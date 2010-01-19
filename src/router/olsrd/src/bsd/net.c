@@ -49,6 +49,7 @@
 #include "../parser.h"          /* dnc: needed for call to packet_parser() */
 #include "../olsr_protocol.h"
 #include "../olsr_cfg.h"
+#include "../olsr.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -185,7 +186,7 @@ enable_ip_forwarding(int version)
   gateway = set_sysctl_int(name, 1);
   if (gateway < 0) {
     fprintf(stderr, "Cannot enable IP forwarding. Please enable IP forwarding manually." " Continuing in 3 seconds...\n");
-    sleep(3);
+    olsr_startup_sleep(3);
   }
 
   return 1;
@@ -225,7 +226,7 @@ disable_redirects_global(int version)
   if (ignore_redir < 0) {
     fprintf(stderr,
             "Cannot disable incoming ICMP redirect messages. " "Please disable them manually. Continuing in 3 seconds...\n");
-    sleep(3);
+    olsr_startup_sleep(3);
   }
 
   /* do not send ICMP redirects */
@@ -239,7 +240,7 @@ disable_redirects_global(int version)
   if (send_redir < 0) {
     fprintf(stderr,
             "Cannot disable outgoing ICMP redirect messages. " "Please disable them manually. Continuing in 3 seconds...\n");
-    sleep(3);
+    olsr_startup_sleep(3);
   }
 
   return 1;
@@ -329,7 +330,7 @@ gethemusocket(struct sockaddr_in *pin)
 }
 
 int
-getsocket(int bufspace, char *int_name __attribute__ ((unused)))
+getsocket(int bufspace, struct interface *ifp __attribute__ ((unused)))
 {
   struct sockaddr_in sin;
   int on;
@@ -366,20 +367,26 @@ getsocket(int bufspace, char *int_name __attribute__ ((unused)))
     return -1;
   }
 
-  for (on = bufspace;; on -= 1024) {
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&on, sizeof(on)) == 0)
-      break;
-    if (on <= 8 * 1024) {
-      perror("setsockopt");
-      syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
-      break;
+  if(bufspace > 0) {
+    for (on = bufspace;; on -= 1024) {
+      if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&on, sizeof(on)) == 0)
+        break;
+      if (on <= 8 * 1024) {
+        perror("setsockopt");
+        syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
+        break;
+      }
     }
   }
 
   memset(&sin, 0, sizeof(sin));
   sin.sin_family = AF_INET;
   sin.sin_port = htons(olsr_cnf->olsrport);
-  sin.sin_addr.s_addr = INADDR_ANY;
+
+  if(bufspace <= 0) {
+    sin.sin_addr.s_addr = ifp->int_addr.sin_addr.s_addr;
+  }
+
   if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
     perror("bind");
     syslog(LOG_ERR, "bind: %m");
@@ -399,7 +406,7 @@ getsocket(int bufspace, char *int_name __attribute__ ((unused)))
 }
 
 int
-getsocket6(int bufspace, char *int_name __attribute__ ((unused)))
+getsocket6(int bufspace, struct interface *ifp __attribute__ ((unused)))
 {
   struct sockaddr_in6 sin;
   int on;
@@ -411,13 +418,15 @@ getsocket6(int bufspace, char *int_name __attribute__ ((unused)))
     return -1;
   }
 
-  for (on = bufspace;; on -= 1024) {
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&on, sizeof(on)) == 0)
-      break;
-    if (on <= 8 * 1024) {
-      perror("setsockopt");
-      syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
-      break;
+  if(bufspace > 0) {
+    for (on = bufspace;; on -= 1024) {
+      if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *)&on, sizeof(on)) == 0)
+        break;
+      if (on <= 8 * 1024) {
+        perror("setsockopt");
+        syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
+        break;
+      }
     }
   }
 
@@ -449,6 +458,11 @@ getsocket6(int bufspace, char *int_name __attribute__ ((unused)))
   memset(&sin, 0, sizeof(sin));
   sin.sin6_family = AF_INET6;
   sin.sin6_port = htons(olsr_cnf->olsrport);
+
+  if(bufspace <= 0) {
+    memcpy(&sin.sin6_addr, &ifp->int6_addr.sin6_addr, sizeof(struct in6_addr));
+  }
+
   if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
     perror("bind");
     syslog(LOG_ERR, "bind: %m");
@@ -519,10 +533,11 @@ join_mcast(struct interface *ifs, int sock)
 }
 
 int
-get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, int scope_in)
+get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, struct olsr_ip_prefix *prefix)
 {
   struct ifaddrs *ifap, *ifa;
   const struct sockaddr_in6 *sin6 = NULL;
+  const union olsr_ip_addr *tmp_ip;
   struct in6_ifreq ifr6;
   int found = 0;
   int s6;
@@ -553,18 +568,13 @@ get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, int scope_in)
       flags6 = ifr6.ifr_ifru.ifru_flags6;
       if ((flags6 & IN6_IFF_ANYCAST) != 0)
         continue;
-      if (IN6_IS_ADDR_SITELOCAL(&sin6->sin6_addr)) {
-        if (scope_in) {
-          memcpy(&saddr6->sin6_addr, &sin6->sin6_addr, sizeof(struct in6_addr));
-          found = 1;
-          break;
-        }
-      } else {
-        if (scope_in == 0) {
-          memcpy(&saddr6->sin6_addr, &sin6->sin6_addr, sizeof(struct in6_addr));
-          found = 1;
-          break;
-        }
+
+      tmp_ip = (const union olsr_ip_addr *) &sin6->sin6_addr;
+      if ((prefix == NULL && !IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr))
+          || (prefix != NULL && ip_in_net(tmp_ip, prefix))) {
+        memcpy(&saddr6->sin6_addr, &sin6->sin6_addr, sizeof(struct in6_addr));
+        found = 1;
+        break;
       }
     }
   }

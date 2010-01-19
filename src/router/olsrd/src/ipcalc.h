@@ -47,6 +47,7 @@
 
 #include <limits.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 struct ipaddr_str {
   char buf[MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
@@ -77,13 +78,6 @@ ip6equal(const struct in6_addr *a, const struct in6_addr *b)
   return ip6cmp(a, b) == 0;
 }
 
-#if 0
-static INLINE int
-ipcmp(const union olsr_ip_addr *a, const union olsr_ip_addr *b)
-{
-  return olsr_cnf->ip_version == AF_INET ? ip4cmp(&a->v4, &b->v4) : ip6cmp(&a->v6, &b->v6);
-}
-#endif
 static INLINE int
 ipequal(const union olsr_ip_addr *a, const union olsr_ip_addr *b)
 {
@@ -146,7 +140,11 @@ olsr_ip_to_string(struct ipaddr_str *const buf, const union olsr_ip_addr *addr)
   return inet_ntop(olsr_cnf->ip_version, addr, buf->buf, sizeof(buf->buf));
 }
 
-const char *olsr_ip_prefix_to_string(const struct olsr_ip_prefix *prefix);
+const char *
+olsr_ip_prefix_to_string(const struct olsr_ip_prefix *prefix);
+
+int
+olsr_string_to_prefix(int ipversion, struct olsr_ip_prefix *dst, const char *buf);
 
 static INLINE const char *
 sockaddr4_to_string(struct ipaddr_str *const buf, const struct sockaddr *const addr)

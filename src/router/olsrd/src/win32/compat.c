@@ -109,7 +109,7 @@ nanosleep(struct timespec *Req, struct timespec *Rem)
   return 0;
 }
 
-void
+int
 gettimeofday(struct timeval *TVal, void *TZone __attribute__ ((unused)))
 {
   SYSTEMTIME SysTime;
@@ -125,6 +125,7 @@ gettimeofday(struct timeval *TVal, void *TZone __attribute__ ((unused)))
 
   TVal->tv_sec = (unsigned int)(Ticks / 10000000);
   TVal->tv_usec = (unsigned int)(Ticks % 10000000) / 10;
+  return 0;
 }
 
 long
@@ -526,7 +527,7 @@ write(int fd, const void *buf, unsigned int count)
 {
   size_t written = 0;
   while (written < count) {
-    ssize_t rc = send(fd, (const unsigned char *)buf + written,
+    ssize_t rc = send(fd, (const char *)buf + written,
                       min(count - written, CHUNK_SIZE), 0);
     if (rc <= 0) {
       break;

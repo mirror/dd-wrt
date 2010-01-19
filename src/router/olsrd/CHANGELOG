@@ -1,5 +1,32 @@
 This file states changes as of version 0.2.4:
 
+0.5.6-r8 ---------------------------------------------------------------------
+
+Alina Friedrichsen <x-alina@gmx.net>
+- patch for using deticated output socket for OLSR packages. This allows
+  to set the src-ip of OLSR packages, which is useful for interfaces
+  with multiple IPs
+
+Bruce Ford <fordbr@gmail.com>
+- fixes for compiling olsrd for win32
+
+Henning Rogge <henning.rogge@fkie.fraunhofer.de>
+- fix for memoryleak during MID processing
+- patch series for "network logoff" of OLSRd, other nodes now get
+  notified if an OLSR node switch down to remove it from their database.
+- cleanup of naming conventions for settings src/dst-ips of OLSR-packets
+  for ipv4/6. See example config files. 
+- patch to ignore HNA4 for IPv6 and HNA6 for IPv4
+
+Markus Kittenberg <Markus.Kittenberger@gmx.at>
+- patch series for MID handling cleanup
+- compiletime switch for txtinfo to always allow localhost access
+- add "InterfaceDefaults" section to config files to allow setting values
+  which are shared by all interfaces but can be overwritten in specific
+  config file settings
+- patch series to allow OLSRd handle multiple config files
+  (multiple "-f <cfgfile>" options)
+
 0.5.6 ---------------------------------------------------------------------
 
 PATCHES and BUGFIXES from Henning Rogge <rogge@fgan.de>

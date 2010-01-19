@@ -250,7 +250,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
   union olsr_message *m;
   struct hellomsg *h;
   struct hellinfo *hinfo;
-  union olsr_ip_addr *haddr;
+  char *haddr;
   int i, j;
   bool first_entry;
 
@@ -273,7 +273,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
 
   h = &m->v4.message.hello;
   hinfo = h->hell_info;
-  haddr = (union olsr_ip_addr *)hinfo->neigh_addr;
+  haddr = (char *)hinfo->neigh_addr;
 
   /* Fill message header */
   m->v4.ttl = message->ttl;
@@ -292,10 +292,10 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
 
   /*
    *Loops trough all possible neighbor statuses
-   *The negbor list is grouped by status
+   *The neighbor list is grouped by status
    *
    */
-  /* Nighbor statuses */
+  /* Neighbor statuses */
   for (i = 0; i <= MAX_NEIGH; i++) {
     /* Link statuses */
     for (j = 0; j <= MAX_LINK; j++) {
@@ -314,6 +314,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
       for (nb = message->neighbors; nb != NULL; nb = nb->next) {
         if ((nb->status != i) || (nb->link != j))
           continue;
+
 
 #ifdef DEBUG
         OLSR_PRINTF(BMSG_DBGLVL, "\t%s - ", olsr_ip_to_string(&buf, &nb->address));
@@ -349,7 +350,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
 
             h = &m->v4.message.hello;
             hinfo = h->hell_info;
-            haddr = (union olsr_ip_addr *)hinfo->neigh_addr;
+            haddr = (char *)hinfo->neigh_addr;
             /* Make sure typeheader is added */
             first_entry = true;
           }
@@ -369,10 +370,10 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
           curr_size += 4;       /* HELLO type section header */
         }
 
-        *haddr = nb->address;
+        *((union olsr_ip_addr *)haddr) = nb->address;
 
         /* Point to next address */
-        haddr += sizeof(haddr->v4);
+        haddr += olsr_cnf->ipsize;
         curr_size += olsr_cnf->ipsize;  /* IP address added */
 
         first_entry = false;
@@ -380,8 +381,10 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
 
       if (!first_entry) {
         hinfo->size = htons((char *)haddr - (char *)hinfo);
+
         hinfo = (struct hellinfo *)((char *)haddr);
-        haddr = (union olsr_ip_addr *)&hinfo->neigh_addr;
+        haddr = (char *)hinfo->neigh_addr;
+
       }
     }                           /* for j */
   }                             /* for i */
@@ -785,7 +788,7 @@ serialize_tc6(struct tc_message *message, struct interface *ifp)
 static bool
 serialize_mid4(struct interface *ifp)
 {
-  uint16_t remainsize, curr_size;
+  uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
   struct midaddr *addrs;
@@ -800,8 +803,14 @@ serialize_mid4(struct interface *ifp)
 
   curr_size = OLSR_MID_IPV4_HDRSIZE;
 
+  /* calculate size needed for HNA */
+  needsize = curr_size;
+  for (ifs = ifnet; ifs != NULL; ifs = ifs->int_next) {
+    needsize += olsr_cnf->ipsize*2;
+  }
+
   /* Send pending packet if not room in buffer */
-  if (curr_size > remainsize) {
+  if (needsize > remainsize) {
     net_output(ifp);
     remainsize = net_outbuffer_bytes_left(ifp);
   }
@@ -873,7 +882,7 @@ serialize_mid4(struct interface *ifp)
 static bool
 serialize_mid6(struct interface *ifp)
 {
-  uint16_t remainsize, curr_size;
+  uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
   struct midaddr6 *addrs6;
@@ -888,8 +897,14 @@ serialize_mid6(struct interface *ifp)
 
   curr_size = OLSR_MID_IPV6_HDRSIZE;
 
+  /* calculate size needed for HNA */
+  needsize = curr_size;
+  for (ifs = ifnet; ifs != NULL; ifs = ifs->int_next) {
+    needsize += olsr_cnf->ipsize*2;
+  }
+
   /* Send pending packet if not room in buffer */
-  if (curr_size > remainsize) {
+  if (needsize > remainsize) {
     net_output(ifp);
     remainsize = net_outbuffer_bytes_left(ifp);
   }
@@ -960,7 +975,7 @@ serialize_mid6(struct interface *ifp)
 static bool
 serialize_hna4(struct interface *ifp)
 {
-  uint16_t remainsize, curr_size;
+  uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
   struct hnapair *pair;
@@ -982,8 +997,17 @@ serialize_hna4(struct interface *ifp)
 
   curr_size = OLSR_HNA_IPV4_HDRSIZE;
 
+  /* calculate size needed for HNA */
+  needsize = curr_size;
+  while (h) {
+    needsize += olsr_cnf->ipsize*2;
+    h = h->next;
+  }
+
+  h = olsr_cnf->hna_entries;
+
   /* Send pending packet if not room in buffer */
-  if (curr_size > remainsize) {
+  if (needsize > remainsize) {
     net_output(ifp);
     remainsize = net_outbuffer_bytes_left(ifp);
   }
@@ -1046,7 +1070,7 @@ serialize_hna4(struct interface *ifp)
 static bool
 serialize_hna6(struct interface *ifp)
 {
-  uint16_t remainsize, curr_size;
+  uint16_t remainsize, curr_size, needsize;
   /* preserve existing data in output buffer */
   union olsr_message *m;
   struct hnapair6 *pair6;
@@ -1061,8 +1085,17 @@ serialize_hna6(struct interface *ifp)
 
   curr_size = OLSR_HNA_IPV6_HDRSIZE;
 
+  /* calculate size needed for HNA */
+  needsize = curr_size;
+  while (h) {
+    needsize += olsr_cnf->ipsize*2;
+    h = h->next;
+  }
+
+  h = olsr_cnf->hna_entries;
+
   /* Send pending packet if not room in buffer */
-  if (curr_size > remainsize) {
+  if (needsize > remainsize) {
     net_output(ifp);
     remainsize = net_outbuffer_bytes_left(ifp);
   }
