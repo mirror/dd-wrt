@@ -1602,10 +1602,10 @@ void start_restore_defaults(void)
 			nvram_set("boardflags2", "0");
 	}
 	
-	if (restore_defaults && brand == ROUTER_ASUS_RTN16) {
-		nvram_set("wl0_txpwr", "17");
-	}
-	if (restore_defaults && brand == ROUTER_ASUS_RTN12) {
+	if (restore_defaults && 
+		(brand == ROUTER_ASUS_RTN10
+		|| brand == ROUTER_ASUS_RTN12
+		|| brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
 #ifndef HAVE_BUFFALO
