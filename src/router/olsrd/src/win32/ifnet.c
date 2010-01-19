@@ -39,6 +39,9 @@
  *
  */
 
+#include <stdlib.h>
+#define random() rand()
+#define srandom(x) srand(x)
 #include <winsock2.h>
 #include "interfaces.h"
 #include "olsr.h"
@@ -881,8 +884,8 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
   AddrIn->sin_port = 0;
   AddrIn->sin_addr.s_addr = Info.Broad;
 
-  if (IntConf->cnf->ipv4_broadcast.v4.s_addr != 0)
-    AddrIn->sin_addr = IntConf->cnf->ipv4_broadcast.v4;
+  if (IntConf->cnf->ipv4_multicast.v4.s_addr != 0)
+    AddrIn->sin_addr = IntConf->cnf->ipv4_multicast.v4;
 
   New->int_flags = 0;
 
@@ -924,7 +927,8 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
 
   OLSR_PRINTF(3, "\tKernel index: %08x\n", New->if_index);
 
-  New->olsr_socket = getsocket(BUFSPACE, New->int_name);
+  New->olsr_socket = getsocket(BUFSPACE, New);
+  New->send_socket = getsocket(0, New);
 
   if (New->olsr_socket < 0) {
     fprintf(stderr, "Could not initialize socket... exiting!\n\n");
@@ -973,7 +977,7 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
   New->valtimes.mid = reltime_to_me(IntConf->cnf->mid_params.validity_time * MSEC_PER_SEC);
   New->valtimes.hna = reltime_to_me(IntConf->cnf->hna_params.validity_time * MSEC_PER_SEC);
 
-  New->mode = iface->cnf->mode;
+  New->mode = IntConf->cnf->mode;
 
   run_ifchg_cbs(New, IFCHG_IF_ADD);
 

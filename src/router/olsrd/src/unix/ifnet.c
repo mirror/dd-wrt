@@ -192,7 +192,7 @@ chk_if_changed(struct olsr_if *iface)
    */
 
   /* Check broadcast */
-  if ((olsr_cnf->ip_version == AF_INET) && !iface->cnf->ipv4_broadcast.v4.s_addr &&     /* Skip if fixed bcast */
+  if ((olsr_cnf->ip_version == AF_INET) && !iface->cnf->ipv4_multicast.v4.s_addr &&     /* Skip if fixed bcast */
       (!(ifp->int_flags & IFF_BROADCAST))) {
     OLSR_PRINTF(3, "\tNo broadcast - removing\n");
     goto remove_interface;
@@ -241,18 +241,15 @@ chk_if_changed(struct olsr_if *iface)
   /* IP version 6 */
   if (olsr_cnf->ip_version == AF_INET6) {
     struct ipaddr_str buf;
-    /* Get interface address */
+    /* Get dst interface address */
 
-    if (get_ipv6_address(ifr.ifr_name, &tmp_saddr6, iface->cnf->ipv6_addrtype) <= 0) {
-      if (iface->cnf->ipv6_addrtype == IPV6_ADDR_SITELOCAL)
-        OLSR_PRINTF(3, "\tCould not find site-local IPv6 address for %s\n", ifr.ifr_name);
-      else
-        OLSR_PRINTF(3, "\tCould not find global IPv6 address for %s\n", ifr.ifr_name);
-
+    if (0 == get_ipv6_address(iface->name, &tmp_saddr6, (iface->cnf->ipv6_src.prefix_len == 0) ? NULL : (&iface->cnf->ipv6_src))) {
+      OLSR_PRINTF(3, "\tCould not find ip address for %s with prefix %s.\n", ifr.ifr_name, olsr_ip_prefix_to_string(&iface->cnf->ipv6_src));
       goto remove_interface;
     }
+
 #ifdef DEBUG
-    OLSR_PRINTF(3, "\tAddress: %s\n", ip6_to_string(&buf, &tmp_saddr6.sin6_addr));
+    OLSR_PRINTF(3, "\tAddress: %s\n", ip6_to_string(&buf, &iface->cnf->ipv6_multicast.v6));
 #endif
 
     if (memcmp(&tmp_saddr6.sin6_addr, &ifp->int6_addr.sin6_addr, olsr_cnf->ipsize) != 0) {
@@ -335,7 +332,7 @@ chk_if_changed(struct olsr_if *iface)
       if_changes = 1;
     }
 
-    if (!iface->cnf->ipv4_broadcast.v4.s_addr) {
+    if (!iface->cnf->ipv4_multicast.v4.s_addr) {
       /* Check broadcast address */
       if (ioctl(olsr_cnf->ioctl_s, SIOCGIFBRDADDR, &ifr) < 0) {
         olsr_syslog(OLSR_LOG_ERR, "%s: ioctl (get broadaddr)", ifr.ifr_name);
@@ -663,7 +660,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   }
 
   /* Check broadcast */
-  if ((olsr_cnf->ip_version == AF_INET) && !iface->cnf->ipv4_broadcast.v4.s_addr &&     /* Skip if fixed bcast */
+  if ((olsr_cnf->ip_version == AF_INET) && !iface->cnf->ipv4_multicast.v4.s_addr &&     /* Skip if fixed bcast */
       (!(ifs.int_flags & IFF_BROADCAST))) {
     OLSR_PRINTF(debuglvl, "\tNo broadcast - skipping\n");
     return 0;
@@ -688,16 +685,12 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   if (olsr_cnf->ip_version == AF_INET6) {
     /* Get interface address */
     struct ipaddr_str buf;
-    if (get_ipv6_address(ifr.ifr_name, &ifs.int6_addr, iface->cnf->ipv6_addrtype) <= 0) {
-      if (iface->cnf->ipv6_addrtype == IPV6_ADDR_SITELOCAL)
-        OLSR_PRINTF(debuglvl, "\tCould not find site-local IPv6 address for %s\n", ifr.ifr_name);
-      else
-        OLSR_PRINTF(debuglvl, "\tCould not find global IPv6 address for %s\n", ifr.ifr_name);
 
+    if (0 == get_ipv6_address(iface->name, &ifs.int6_addr, (iface->cnf->ipv6_src.prefix_len == 0) ? NULL : (&iface->cnf->ipv6_src))) {
+      OLSR_PRINTF(3, "\tCould not find ip address for %s with prefix %s.\n", ifr.ifr_name, olsr_ip_prefix_to_string(&iface->cnf->ipv6_src));
       return 0;
     }
-
-    OLSR_PRINTF(debuglvl, "\tAddress: %s\n", ip6_to_string(&buf, &ifs.int6_addr.sin6_addr));
+    OLSR_PRINTF(debuglvl, "\tAddress: %s\n", ip6_to_string(&buf, &iface->cnf->ipv6_multicast.v6));
 
     /* Multicast */
     memset(&ifs.int6_multaddr, 0, sizeof(ifs.int6_multaddr));
@@ -705,8 +698,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     ifs.int6_multaddr.sin6_flowinfo = htonl(0);
     ifs.int6_multaddr.sin6_scope_id = if_nametoindex(ifr.ifr_name);
     ifs.int6_multaddr.sin6_port = htons(olsr_cnf->olsrport);
-    ifs.int6_multaddr.sin6_addr =
-      (iface->cnf->ipv6_addrtype == IPV6_ADDR_SITELOCAL) ? iface->cnf->ipv6_multi_site.v6 : iface->cnf->ipv6_multi_glbl.v6;
+    ifs.int6_multaddr.sin6_addr =  iface->cnf->ipv6_multicast.v6;
 
 #ifdef __MacOSX__
     ifs.int6_multaddr.sin6_scope_id = 0;
@@ -735,9 +727,9 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     ifs.int_netmask = *(struct sockaddr_in *)(ARM_NOWARN_ALIGN)&ifr.ifr_netmask;
 
     /* Find broadcast address */
-    if (iface->cnf->ipv4_broadcast.v4.s_addr) {
+    if (iface->cnf->ipv4_multicast.v4.s_addr) {
       /* Specified broadcast */
-      memcpy(&((struct sockaddr_in *)&ifs.int_broadaddr)->sin_addr.s_addr, &iface->cnf->ipv4_broadcast.v4, sizeof(uint32_t));
+      memcpy(&((struct sockaddr_in *)&ifs.int_broadaddr)->sin_addr.s_addr, &iface->cnf->ipv4_multicast.v4, sizeof(uint32_t));
     } else {
       /* Autodetect */
       if (ioctl(olsr_cnf->ioctl_s, SIOCGIFBRDADDR, &ifr) < 0) {
@@ -830,7 +822,8 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
      *on what interface the message is transmitted
      */
 
-    ifp->olsr_socket = getsocket(BUFSPACE, ifp->int_name);
+    ifp->olsr_socket = getsocket(BUFSPACE, ifp);
+    ifp->send_socket = getsocket(0, ifp);
 
     if (ifp->olsr_socket < 0) {
       fprintf(stderr, "Could not initialize socket... exiting!\n\n");
@@ -849,7 +842,8 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
      *on what interface the message is transmitted
      */
 
-    ifp->olsr_socket = getsocket6(BUFSPACE, ifp->int_name);
+    ifp->olsr_socket = getsocket6(BUFSPACE, ifp);
+    ifp->send_socket = getsocket6(0, ifp);
 
     join_mcast(ifp, ifp->olsr_socket);
 

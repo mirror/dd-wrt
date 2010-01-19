@@ -54,8 +54,6 @@
 #include "olsr_types.h"
 #include "mantissa.h"
 
-#define _PATH_PROCNET_IFINET6           "/proc/net/if_inet6"
-
 #define IPV6_ADDR_ANY		0x0000U
 
 #define IPV6_ADDR_UNICAST      	0x0001U
@@ -135,6 +133,7 @@ struct interface {
   int is_hcif;                         /* Is this a emulated host-client if? */
 
   int olsr_socket;                     /* The broadcast socket for this interface */
+  int send_socket;                     /* The send socket for this interface */
 
   int int_metric;                      /* metric of interface */
   int int_mtu;                         /* MTU of interface */
@@ -187,6 +186,7 @@ struct interface {
 extern struct interface *ifnet;
 
 int ifinit(void);
+void olsr_delete_interfaces(void);
 
 void run_ifchg_cbs(struct interface *, int);
 

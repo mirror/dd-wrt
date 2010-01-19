@@ -333,8 +333,9 @@ add_signature(uint8_t * pck, int *size)
 
   /* Add timestamp */
   msg->sig.timestamp = htonl(now.tv_sec);
+#ifndef WIN32
   olsr_printf(3, "[ENC]timestamp: %lld\n", (long long)now.tv_sec);
-
+#endif
   /* Set the new size */
   *size += sizeof(struct s_olsrmsg);
 
@@ -483,9 +484,9 @@ one_checksum_SHA:
                 olsr_ip_to_string(&buf, (const union olsr_ip_addr *)&sig->originator));
     return 0;
   }
-
+#ifndef WIN32
   olsr_printf(1, "[ENC]Received timestamp %lld diff: %lld\n", (long long)rec_time, (long long)now.tv_sec - (long long)rec_time);
-
+#endif
   /* Remove signature message */
   *size = packetsize;
   return 1;
@@ -894,7 +895,9 @@ send_cres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
 
   /* set timestamp */
   crmsg.timestamp = now.tv_sec;
+#ifndef WIN32
   olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)crmsg.timestamp);
+#endif
 
   /* Fill subheader */
   memcpy(&crmsg.destination, to, olsr_cnf->ipsize);
@@ -962,8 +965,10 @@ send_rres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
 
   /* set timestamp */
   rrmsg.timestamp = now.tv_sec;
-  olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)rrmsg.timestamp);
 
+#ifndef WIN32
+  olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)rrmsg.timestamp);
+#endif
   /* Fill subheader */
   memcpy(&rrmsg.destination, to, olsr_cnf->ipsize);
 

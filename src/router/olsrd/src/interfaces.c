@@ -253,7 +253,7 @@ queue_if(const char *name, int hemu)
 
   /* check if the inerfaces already exists */
   while (interf_n != NULL) {
-    if (memcmp(interf_n->name, name, strlen(name)) == 0) {
+    if (strcmp(interf_n->name, name) == 0) {
       fprintf(stderr, "Duplicate interfaces defined... not adding %s\n", name);
       return NULL;
     }
@@ -264,13 +264,16 @@ queue_if(const char *name, int hemu)
 
   name_size = strlen(name) + 1;
   interf_n->name = olsr_malloc(name_size, "queue interface name");
-  interf_n->cnf = NULL;
-  interf_n->interf = NULL;
-  interf_n->configured = 0;
+  strscpy(interf_n->name, name, name_size);
+
+  interf_n->cnf = olsr_malloc(sizeof(*interf_n->cnf), "queue cnf");
+
+  interf_n->cnfi = olsr_malloc(sizeof(*interf_n->cnfi), "queue cnfi");
+  memset(interf_n->cnfi, 0xFF, sizeof(*interf_n->cnfi));
+  interf_n->cnfi->orig_lq_mult_cnt=0;
 
   interf_n->host_emul = hemu ? true : false;
 
-  strscpy(interf_n->name, name, name_size);
   interf_n->next = olsr_cnf->interfaces;
   olsr_cnf->interfaces = interf_n;
 

@@ -70,8 +70,12 @@ init_lq_handler_tree(void)
   register_lq_handler(&lq_etx_float_handler, LQ_ALGORITHM_ETX_FLOAT_NAME);
   register_lq_handler(&lq_etx_fpm_handler, LQ_ALGORITHM_ETX_FPM_NAME);
   register_lq_handler(&lq_etx_ff_handler, LQ_ALGORITHM_ETX_FF_NAME);
-  if (activate_lq_handler(olsr_cnf->lq_algorithm)) {
-    activate_lq_handler(LQ_ALGORITHM_ETX_FPM_NAME);
+
+  if (olsr_cnf->lq_algorithm == NULL) {
+    activate_lq_handler(LQ_ALGORITHM_ETX_FF_NAME);
+  }
+  else {
+    activate_lq_handler(olsr_cnf->lq_algorithm);
   }
 }
 
@@ -102,25 +106,20 @@ register_lq_handler(struct lq_handler *handler, const char *name)
   avl_insert(&lq_handler_tree, &node->node, false);
 }
 
-int
+void
 activate_lq_handler(const char *name)
 {
   struct lq_handler_node *node;
-  if (name == NULL) {
-    return 1;
-  }
 
   node = (struct lq_handler_node *)avl_find(&lq_handler_tree, name);
   if (node == NULL) {
     OLSR_PRINTF(1, "Error, unknown lq_handler '%s'\n", name);
-    return 1;
+    olsr_exit("", 1);
   }
 
   OLSR_PRINTF(1, "Using '%s' algorithm for lq calculation.\n", name);
   active_lq_handler = node->handler;
   active_lq_handler->initialize();
-
-  return 0;
 }
 
 /*
@@ -358,6 +357,11 @@ olsr_copylq_link_entry_2_tc_edge_entry(struct tc_edge_entry *target, struct link
   assert((const char *)target + sizeof(*target) >= (const char *)target->linkquality);
   assert((const char *)source + sizeof(*source) >= (const char *)source->linkquality);
   active_lq_handler->copy_link_lq_into_tc(target->linkquality, source->linkquality);
+}
+
+/* clear the lq of a link set entry */
+void olsr_clear_hello_lq(struct link_entry *link) {
+  active_lq_handler->clear_hello(link->linkquality);
 }
 
 /*

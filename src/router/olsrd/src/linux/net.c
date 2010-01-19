@@ -45,6 +45,7 @@
 
 #include "../net_os.h"
 #include "../ipcalc.h"
+#include "../olsr.h"
 
 #include <net/if.h>
 
@@ -56,11 +57,18 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#define IPV6_ADDR_LOOPBACK      0x0010U
+#define IPV6_ADDR_LINKLOCAL     0x0020U
+#define IPV6_ADDR_SITELOCAL     0x0040U
+
 /* Redirect proc entry */
 #define REDIRECT_PROC "/proc/sys/net/ipv4/conf/%s/send_redirects"
 
 /* IP spoof proc entry */
 #define SPOOF_PROC "/proc/sys/net/ipv4/conf/%s/rp_filter"
+
+/* list of IPv6 interfaces */
+#define PATH_PROCNET_IFINET6           "/proc/net/if_inet6"
 
 /*
  *Wireless definitions for ioctl calls
@@ -122,7 +130,7 @@ enable_ip_forwarding(int version)
               "WARNING! Could not open the %s file to check/enable IP forwarding!\nAre you using the procfile filesystem?\nDoes your system support IPv6?\nI will continue(in 3 sec) - but you should mannually ensure that IP forwarding is enabeled!\n\n",
               procfile);
 
-    sleep(3);
+    olsr_startup_sleep(3);
     return 0;
   }
 
@@ -134,7 +142,7 @@ enable_ip_forwarding(int version)
     if ((proc_fwd = fopen(procfile, "w")) == NULL) {
       fprintf(stderr, "Could not open %s for writing!\n", procfile);
       fprintf(stderr, "I will continue(in 3 sec) - but you should mannually ensure that IP forwarding is enabeled!\n\n");
-      sleep(3);
+      olsr_startup_sleep(3);
       return 0;
     } else {
       syslog(LOG_INFO, "Writing \"1\" to %s\n", procfile);
@@ -159,7 +167,7 @@ disable_redirects_global(int version)
             "WARNING! Could not open the %s file to check/disable ICMP redirects!\nAre you using the procfile filesystem?\nDoes your system support IPv4?\nI will continue(in 3 sec) - but you should mannually ensure that ICMP redirects are disabled!\n\n",
             procfile);
 
-    sleep(3);
+    olsr_startup_sleep(3);
     return -1;
   }
   orig_global_redirect_state = fgetc(proc_redirect);
@@ -171,7 +179,7 @@ disable_redirects_global(int version)
   if ((proc_redirect = fopen(procfile, "w")) == NULL) {
     fprintf(stderr, "Could not open %s for writing!\n", procfile);
     fprintf(stderr, "I will continue(in 3 sec) - but you should mannually ensure that ICMP redirect is disabeled!\n\n");
-    sleep(3);
+    olsr_startup_sleep(3);
     return 0;
   }
   syslog(LOG_INFO, "Writing \"0\" to %s", procfile);
@@ -200,7 +208,7 @@ disable_redirects(const char *if_name, struct interface *iface, int version)
     fprintf(stderr,
             "WARNING! Could not open the %s file to check/disable ICMP redirects!\nAre you using the procfile filesystem?\nDoes your system support IPv4?\nI will continue(in 3 sec) - but you should mannually ensure that ICMP redirects are disabled!\n\n",
             procfile);
-    sleep(3);
+    olsr_startup_sleep(3);
     return 0;
   }
   iface->nic_state.redirect = fgetc(proc_redirect);
@@ -209,7 +217,7 @@ disable_redirects(const char *if_name, struct interface *iface, int version)
   if ((proc_redirect = fopen(procfile, "w")) == NULL) {
     fprintf(stderr, "Could not open %s for writing!\n", procfile);
     fprintf(stderr, "I will continue(in 3 sec) - but you should mannually ensure that ICMP redirect is disabeled!\n\n");
-    sleep(3);
+    olsr_startup_sleep(3);
     return 0;
   }
   syslog(LOG_INFO, "Writing \"0\" to %s", procfile);
@@ -239,7 +247,7 @@ deactivate_spoof(const char *if_name, struct interface *iface, int version)
             "WARNING! Could not open the %s file to check/disable the IP spoof filter!\nAre you using the procfile filesystem?\nDoes your system support IPv4?\nI will continue(in 3 sec) - but you should mannually ensure that IP spoof filtering is disabled!\n\n",
             procfile);
 
-    sleep(3);
+    olsr_startup_sleep(3);
     return 0;
   }
   iface->nic_state.spoof = fgetc(proc_spoof);
@@ -248,7 +256,7 @@ deactivate_spoof(const char *if_name, struct interface *iface, int version)
   if ((proc_spoof = fopen(procfile, "w")) == NULL) {
     fprintf(stderr, "Could not open %s for writing!\n", procfile);
     fprintf(stderr, "I will continue(in 3 sec) - but you should mannually ensure that IP spoof filtering is disabeled!\n\n");
-    sleep(3);
+    olsr_startup_sleep(3);
     return 0;
   }
   syslog(LOG_INFO, "Writing \"0\" to %s", procfile);
@@ -379,7 +387,7 @@ gethemusocket(struct sockaddr_in *pin)
  *@return the FD of the socket or -1 on error.
  */
 int
-getsocket(int bufspace, char *int_name)
+getsocket(int bufspace, struct interface *ifp)
 {
   struct sockaddr_in sin;
   int on;
@@ -406,13 +414,15 @@ getsocket(int bufspace, char *int_name)
     return -1;
   }
 #ifdef SO_RCVBUF
-  for (on = bufspace;; on -= 1024) {
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &on, sizeof(on)) == 0)
-      break;
-    if (on <= 8 * 1024) {
-      perror("setsockopt");
-      syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
-      break;
+  if(bufspace > 0) {
+    for (on = bufspace;; on -= 1024) {
+      if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &on, sizeof(on)) == 0)
+        break;
+      if (on <= 8 * 1024) {
+        perror("setsockopt");
+        syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
+        break;
+      }
     }
   }
 #endif
@@ -422,7 +432,7 @@ getsocket(int bufspace, char *int_name)
    */
 
   /* Bind to device */
-  if (bind_socket_to_device(sock, int_name) < 0) {
+  if (bind_socket_to_device(sock, ifp->int_name) < 0) {
     fprintf(stderr, "Could not bind socket to device... exiting!\n\n");
     syslog(LOG_ERR, "Could not bind socket to device... exiting!\n\n");
     close(sock);
@@ -432,7 +442,11 @@ getsocket(int bufspace, char *int_name)
   memset(&sin, 0, sizeof(sin));
   sin.sin_family = AF_INET;
   sin.sin_port = htons(olsr_cnf->olsrport);
-  sin.sin_addr.s_addr = INADDR_ANY;
+
+  if(bufspace <= 0) {
+    sin.sin_addr.s_addr = ifp->int_addr.sin_addr.s_addr;
+  }
+
   if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
     perror("bind");
     syslog(LOG_ERR, "bind: %m");
@@ -457,7 +471,7 @@ getsocket(int bufspace, char *int_name)
  *@return the FD of the socket or -1 on error.
  */
 int
-getsocket6(int bufspace, char *int_name)
+getsocket6(int bufspace, struct interface *ifp)
 {
   struct sockaddr_in6 sin;
   int on;
@@ -488,13 +502,15 @@ getsocket6(int bufspace, char *int_name)
   //#endif
 
 #ifdef SO_RCVBUF
-  for (on = bufspace;; on -= 1024) {
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &on, sizeof(on)) == 0)
-      break;
-    if (on <= 8 * 1024) {
-      perror("setsockopt");
-      syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
-      break;
+  if(bufspace > 0) {
+    for (on = bufspace;; on -= 1024) {
+      if (setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &on, sizeof(on)) == 0)
+        break;
+      if (on <= 8 * 1024) {
+        perror("setsockopt");
+        syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
+        break;
+      }
     }
   }
 #endif
@@ -510,7 +526,7 @@ getsocket6(int bufspace, char *int_name)
    */
 
   /* Bind to device */
-  if (bind_socket_to_device(sock, int_name) < 0) {
+  if (bind_socket_to_device(sock, ifp->int_name) < 0) {
     fprintf(stderr, "Could not bind socket to device... exiting!\n\n");
     syslog(LOG_ERR, "Could not bind socket to device... exiting!\n\n");
     close(sock);
@@ -520,7 +536,11 @@ getsocket6(int bufspace, char *int_name)
   memset(&sin, 0, sizeof(sin));
   sin.sin6_family = AF_INET6;
   sin.sin6_port = htons(olsr_cnf->olsrport);
-  //(addrsock6.sin6_addr).s_addr = IN6ADDR_ANY_INIT;
+
+  if(bufspace <= 0) {
+    memcpy(&sin.sin6_addr, &ifp->int6_addr.sin6_addr, sizeof(struct in6_addr));
+  }
+
   if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
     perror("bind");
     syslog(LOG_ERR, "bind: %m");
@@ -587,28 +607,33 @@ join_mcast(struct interface *ifs, int sock)
  *
  */
 int
-get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, int scope_in)
+get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, struct olsr_ip_prefix *prefix)
 {
   char addr6[40], devname[IFNAMSIZ];
   char addr6p[8][5];
   int plen, scope, dad_status, if_idx;
   FILE *f;
-  struct sockaddr_in6 tmp_sockaddr6;
+  union olsr_ip_addr tmp_ip;
 
-  if ((f = fopen(_PATH_PROCNET_IFINET6, "r")) != NULL) {
+  if ((f = fopen(PATH_PROCNET_IFINET6, "r")) != NULL) {
     while (fscanf
            (f, "%4s%4s%4s%4s%4s%4s%4s%4s %02x %02x %02x %02x %20s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
             addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
       if (!strcmp(devname, ifname)) {
+        bool isNetWide = false;
         sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4], addr6p[5], addr6p[6],
                 addr6p[7]);
         OLSR_PRINTF(5, "\tinet6 addr: %s\n", addr6);
         OLSR_PRINTF(5, "\tScope: %d\n", scope);
-        if (scope == scope_in) {
+
+        inet_pton(AF_INET6, addr6, &tmp_ip.v6);
+
+        isNetWide = (scope != IPV6_ADDR_LOOPBACK) && (scope != IPV6_ADDR_LINKLOCAL) && (scope != IPV6_ADDR_SITELOCAL);
+
+        if ((prefix == NULL && isNetWide) || (prefix != NULL && ip_in_net(&tmp_ip, prefix))) {
           OLSR_PRINTF(4, "Found addr: %s:%s:%s:%s:%s:%s:%s:%s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4], addr6p[5],
                       addr6p[6], addr6p[7]);
-          inet_pton(AF_INET6, addr6, &tmp_sockaddr6);
-          memcpy(&saddr6->sin6_addr, &tmp_sockaddr6, sizeof(struct in6_addr));
+          memcpy(&saddr6->sin6_addr, &tmp_ip.v6, sizeof(struct in6_addr));
           fclose(f);
           return 1;
         }

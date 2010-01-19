@@ -44,6 +44,9 @@
 
 #include "olsr_types.h"
 
+/*set to 1 to collect all startup sleep into one sleep (just as long as the longest sleep) useful if many errors on many interfaces*/
+#define OLSR_COLLECT_STARTUP_SLEEP 1
+
 /* set to 1 to enable a second rtnetlink socket 
  * used for listening and reating on interface change events
  * (requires LINUX_POLICY_ROUTING to be enabled aswell) */
@@ -64,7 +67,8 @@
 /* Default values not declared in olsr_protocol.h */
 #define DEF_POLLRATE        0.05
 #define DEF_NICCHGPOLLRT    2.5
-#define DEF_WILL_AUTO       true
+#define DEF_WILL_AUTO       false
+#define DEF_WILLINGNESS     3
 #define DEF_ALLOW_NO_INTS   true
 #define DEF_TOS             16
 #define DEF_DEBUGLVL        1
@@ -72,12 +76,12 @@
 #define DEF_USE_HYST        false
 #define DEF_FIB_METRIC      FIBM_FLAT
 #define DEF_LQ_LEVEL        2
-#define DEF_LQ_FISH         0
+#define DEF_LQ_FISH         1
 #define DEF_LQ_DIJK_LIMIT   255
 #define DEF_LQ_DIJK_INTER   0.0
-#define DEF_LQ_NAT_THRESH   1.0
+#define DEF_LQ_NAT_THRESH   0.5
 #define DEF_LQ_AGING        0.1
-#define DEF_CLEAR_SCREEN    false
+#define DEF_CLEAR_SCREEN    true
 #define DEF_OLSRPORT        698
 #define DEF_RTPROTO         0 /* 0 means OS-specific default */
 #define DEF_RTTABLE         254
@@ -136,28 +140,31 @@ struct olsr_if_weight {
 };
 
 struct if_config_options {
-  union olsr_ip_addr ipv4_broadcast;
+  union olsr_ip_addr ipv4_multicast;
+  union olsr_ip_addr ipv6_multicast;
+
+  union olsr_ip_addr ipv4_src;
+  struct olsr_ip_prefix ipv6_src;
+
   int mode;
-  int ipv6_addrtype;
-  union olsr_ip_addr ipv6_multi_site;
-  union olsr_ip_addr ipv6_multi_glbl;
+
   struct olsr_if_weight weight;
   struct olsr_msg_params hello_params;
   struct olsr_msg_params tc_params;
   struct olsr_msg_params mid_params;
   struct olsr_msg_params hna_params;
   struct olsr_lq_mult *lq_mult;
+  int orig_lq_mult_cnt;
   bool autodetect_chg;
 };
 
 struct olsr_if {
   char *name;
-  char *config;
   bool configured;
   bool host_emul;
   union olsr_ip_addr hemu_ip;
   struct interface *interf;
-  struct if_config_options *cnf;
+  struct if_config_options *cnf, *cnfi;
   struct olsr_if *next;
 };
 
@@ -214,6 +221,7 @@ struct olsrd_config {
   struct plugin_entry *plugins;
   struct ip_prefix_list *hna_entries;
   struct ip_prefix_list *ipc_nets;
+  struct if_config_options *interface_defaults;
   struct olsr_if *interfaces;
   float pollrate;
   float nic_chgs_pollrate;
@@ -269,7 +277,7 @@ extern "C" {
  * Interface to parser
  */
 
-  struct olsrd_config *olsrd_parse_cnf(const char *);
+  int olsrd_parse_cnf(const char *);
 
   int olsrd_sanity_check_cnf(struct olsrd_config *);
 

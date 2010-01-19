@@ -73,6 +73,37 @@ bool changes_neighborhood;
 bool changes_hna;
 bool changes_force;
 
+/*COLLECT startup sleeps caused by warnings*/
+
+#ifdef OLSR_COLLECT_STARTUP_SLEEP
+static int max_startup_sleep = 0;
+#endif
+static int sum_startup_sleep = 0;
+
+void olsr_startup_sleep(int s)
+{
+  sum_startup_sleep += s;
+#ifdef OLSR_COLLECT_STARTUP_SLEEP
+  if (s > max_startup_sleep) max_startup_sleep=s;
+#else
+  sleep(s);
+#endif
+}
+
+void olsr_do_startup_sleep(void)
+{
+#ifdef OLSR_COLLECT_STARTUP_SLEEP
+  if (sum_startup_sleep > max_startup_sleep)
+    printf("OLSR encountered multiple problems on startup, which should delay startup by %i seconds.\nAs this is quite much time, OLSR will sleep only %i seconds.\nBUT YOU SHOULD FIX ABOVE PROBLEMS!\n",
+           sum_startup_sleep,max_startup_sleep);
+  sleep(max_startup_sleep);
+#else
+  if (sum_startup_sleep > 0) 
+    printf("olsrd startup was delayed %i seconds due to various nasty error messages.\nYOU SHOULD REALLY FIX ABOVE PROBLEMS!\n",
+           sum_startup_sleep);
+#endif
+}
+
 /**
  * Process changes functions
  */

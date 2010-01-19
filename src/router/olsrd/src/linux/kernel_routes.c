@@ -84,6 +84,8 @@ int rtnetlink_register_socket(int rtnl_mgrp)
     OLSR_PRINTF(1,"could not create rtnetlink socket! %d",sock);
   }
   else {
+    memset(&addr, 0, sizeof(addr));
+
     addr.nl_family = AF_NETLINK;
     addr.nl_pid = 0; //kernel will assign appropiate number instead of pid (which is already used by primaray rtnetlink socket to add/delete routes)
     addr.nl_groups = rtnl_mgrp;
@@ -274,9 +276,9 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
       olsr_netlink_addreq(&req, RTA_PRIORITY, &metric, sizeof(metric));
     }
 
-    /* make sure that netmask = /32 as this is an autogenarated route */
+    /* make sure that netmask = maxplen (32 or 128) as this is an autogenarated (host)route */
     if (( flag == RT_AUTO_ADD_GATEWAY_ROUTE ) || (flag == RT_DELETE_SIMILAR_AUTO_ROUTE) ) {
-      req.r.rtm_dst_len = 32;
+      req.r.rtm_dst_len = olsr_cnf->maxplen;
     }
 
     /* for ipv4 or ipv6 we add gateway if one is specified, 
@@ -486,7 +488,7 @@ olsr_netlink_route_int(const struct rt_entry *rt, uint8_t family, uint8_t rttabl
   }
   /* send ipc update on success */
   if ( ( cmd != RTM_NEWRULE ) && ( cmd != RTM_DELRULE )
-      && (flag = RT_ORIG_REQUEST) && (0 <= rt_ret && olsr_cnf->ipc_connections > 0) ) {
+      && (flag == RT_ORIG_REQUEST) && (0 <= rt_ret && olsr_cnf->ipc_connections > 0) ) {
     ipc_route_send_rtentry(&rt->rt_dst.prefix, &nexthop->gateway, metric,
         RTM_NEWROUTE == cmd, if_ifwithindex_name(nexthop->iif_index));
   }
