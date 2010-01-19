@@ -2377,7 +2377,9 @@ void get_broadcast(char *ipaddr, char *netmask)
 char *get_wan_face(void)
 {
 	static char localwanface[IFNAMSIZ];
-
+	if (nvram_match("wan_proto", "disabled"))
+	    return "br0";
+	
 	/*
 	 * if (nvram_match ("pptpd_client_enable", "1")) { strncpy (localwanface, 
 	 * "ppp0", IFNAMSIZ); return localwanface; }
