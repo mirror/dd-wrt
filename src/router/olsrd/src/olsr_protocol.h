@@ -54,8 +54,7 @@
 
 /* Default IPv6 multicast addresses */
 
-#define OLSR_IPV6_MCAST_SITE_LOCAL "ff05::15"
-#define OLSR_IPV6_MCAST_GLOBAL     "ff0e::1"
+#define OLSR_IPV6_MCAST "FF02::1"
 
 #define OLSR_HEADERSIZE (sizeof(uint16_t) + sizeof(uint16_t))
 
@@ -79,14 +78,14 @@
 #define TC_JITTER            25 /* percent */
 
 /*
- *Holding Time
+ * Default Holding Time (for large scale community networks)
  */
 
-#define NEIGHB_HOLD_TIME      3 * REFRESH_INTERVAL
-#define TOP_HOLD_TIME         3 * TC_INTERVAL
+#define NEIGHB_HOLD_TIME      10 * REFRESH_INTERVAL
+#define TOP_HOLD_TIME         60 * TC_INTERVAL
 #define DUP_HOLD_TIME         30
-#define MID_HOLD_TIME         3 * MID_INTERVAL
-#define HNA_HOLD_TIME         3 * HNA_INTERVAL
+#define MID_HOLD_TIME         60 * MID_INTERVAL
+#define HNA_HOLD_TIME         60 * HNA_INTERVAL
 
 /*
  *Message Types
@@ -147,7 +146,7 @@
  *Redundancy defaults
  */
 #define TC_REDUNDANCY         2
-#define MPR_COVERAGE          1
+#define MPR_COVERAGE          7
 
 /*
  *Misc. Constants

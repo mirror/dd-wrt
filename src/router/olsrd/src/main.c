@@ -57,6 +57,8 @@
 #include "net_os.h"
 #include "build_msg.h"
 #include "net_olsr.h"
+#include "mid_set.h"
+#include "mpr_selector_set.h"
 
 #if LINUX_POLICY_ROUTING
 #include <linux/types.h>
@@ -65,6 +67,7 @@
 #endif
 
 #ifdef WIN32
+#include <winbase.h>
 #define close(x) closesocket(x)
 int __stdcall SignalHandler(unsigned long signo) __attribute__ ((noreturn));
 void ListInterfaces(void);
@@ -96,7 +99,9 @@ static char
         "The olsr.org Optimized Link-State Routing daemon(olsrd) Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org) All rights reserved.";
 
 /* Data for OLSR locking */
+#ifndef WIN32
 static int lock_fd = 0;
+#endif
 static char lock_file_name[FILENAME_MAX];
 
 /*
@@ -109,6 +114,23 @@ static char lock_file_name[FILENAME_MAX];
  * locking file.
  */
 static void olsr_create_lock_file(void) {
+#ifdef WIN32
+  HANDLE lck = CreateEvent(NULL, TRUE, FALSE, lock_file_name);
+  if (NULL == lck || ERROR_ALREADY_EXISTS == GetLastError()) {
+    if (NULL == lck) {
+      fprintf(stderr,
+          "Error, cannot create OLSR lock '%s'.\n",
+          lock_file_name);
+    } else {
+      CloseHandle(lck);
+      fprintf(stderr,
+          "Error, cannot aquire OLSR lock '%s'.\n"
+          "Another OLSR instance might be running.\n",
+          lock_file_name);
+    }
+    olsr_exit("", EXIT_FAILURE);
+  }
+#else
   struct flock lck;
 
   /* create file for lock */
@@ -136,7 +158,29 @@ static void olsr_create_lock_file(void) {
         lock_file_name);
     olsr_exit("", EXIT_FAILURE);
   }
+#endif
   return;
+}
+
+/**
+ * loads a config file
+ * @return <0 if load failed, 0 otherwise
+ */
+static int
+olsrmain_load_config(char *file) {
+  struct stat statbuf;
+
+  if (stat(file, &statbuf) < 0) {
+    fprintf(stderr, "Could not find specified config file %s!\n%s\n\n",
+        file, strerror(errno));
+    return -1;
+  }
+
+  if (olsrd_parse_cnf(file) < 0) {
+    fprintf(stderr, "Error while reading config file %s!\n", file);
+    return -1;
+  }
+  return 0;
 }
 
 /**
@@ -147,6 +191,8 @@ int main(int argc, char *argv[]) {
   struct if_config_options *default_ifcnf;
   char conf_file_name[FILENAME_MAX];
   struct ipaddr_str buf;
+  bool loadedConfig = false;
+  int i;
 #ifdef WIN32
   WSADATA WsaData;
   size_t len;
@@ -215,33 +261,34 @@ int main(int argc, char *argv[]) {
   strscpy(conf_file_name, OLSRD_GLOBAL_CONF_FILE, sizeof(conf_file_name));
 #endif
 
-  if ((argc > 1) && (strcmp(argv[1], "-f") == 0)) {
-    struct stat statbuf;
+  olsr_cnf = olsrd_get_default_cnf();
+  for (i=1; i < argc-1;) {
+    if (strcmp(argv[i], "-f") == 0) {
+      loadedConfig = true;
 
-    argv++;
-    argc--;
-    if (argc == 1) {
-      fprintf(stderr, "You must provide a filename when using the -f switch!\n");
-      exit(EXIT_FAILURE);
+      if (olsrmain_load_config(argv[i+1]) < 0) {
+        exit(EXIT_FAILURE);
+      }
+
+      if (i+2 < argc) {
+        memmove(&argv[i], &argv[i+2], sizeof(*argv) * (argc-i-1));
+      }
+      argc -= 2;
     }
-
-    if (stat(argv[1], &statbuf) < 0) {
-      fprintf(stderr, "Could not find specified config file %s!\n%s\n\n",
-          argv[1], strerror(errno));
-      exit(EXIT_FAILURE);
+    else {
+      i++;
     }
-
-    strscpy(conf_file_name, argv[1], sizeof(conf_file_name));
-    argv++;
-    argc--;
-
   }
 
   /*
    * set up configuration prior to processing commandline options
    */
-  if (NULL == (olsr_cnf = olsrd_parse_cnf(conf_file_name))) {
-    printf("Using default config values(no configfile)\n");
+  if (!loadedConfig && olsrmain_load_config(conf_file_name) == 0) {
+    loadedConfig = true;
+  }
+
+  if (!loadedConfig) {
+    olsrd_free_cnf(olsr_cnf);
     olsr_cnf = olsrd_get_default_cnf();
   }
 
@@ -302,7 +349,9 @@ int main(int argc, char *argv[]) {
    */
   olsr_cnf->ioctl_s = socket(olsr_cnf->ip_version, SOCK_DGRAM, 0);
   if (olsr_cnf->ioctl_s < 0) {
+#ifndef WIN32
     olsr_syslog(OLSR_LOG_ERR, "ioctl socket: %m");
+#endif
     olsr_exit(__func__, 0);
   }
 #if LINUX_POLICY_ROUTING
@@ -374,12 +423,14 @@ int main(int argc, char *argv[]) {
       fprintf(
           stderr,
           "No interfaces detected! This might be intentional, but it also might mean that your configuration is fubar.\nI will continue after 5 seconds...\n");
-      sleep(5);
+      olsr_startup_sleep(5);
     } else {
       fprintf(stderr, "No interfaces detected!\nBailing out!\n");
       olsr_exit(__func__, EXIT_FAILURE);
     }
   }
+
+  olsr_do_startup_sleep();
 
   /* Print heartbeat to stdout */
 
@@ -501,6 +552,27 @@ void olsr_reconfigure(int signo __attribute__ ((unused))) {
 }
 #endif
 
+static void olsr_shutdown_messages(void) {
+  struct interface *ifn;
+
+  /* send TC reset */
+  for (ifn = ifnet; ifn; ifn = ifn->int_next) {
+    /* clean output buffer */
+    net_output(ifn);
+
+    /* send 'I'm gone' messages */
+    if (olsr_cnf->lq_level > 0) {
+      olsr_output_lq_tc(ifn);
+      olsr_output_lq_hello(ifn);
+    }
+    else {
+      generate_tc(ifn);
+      generate_hello(ifn);
+    }
+    net_output(ifn);
+  }
+}
+
 /**
  *Function called at shutdown. Signal handler
  *
@@ -514,6 +586,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
 #endif
 {
   struct interface *ifn;
+  int exit_value;
 
   OLSR_PRINTF(1, "Received signal %d - shutting down\n", (int)signo);
 
@@ -528,7 +601,31 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
   OLSR_PRINTF(1, "Scheduler stopped.\n");
 #endif
 
+  /* clear all links and send empty hellos/tcs */
+  olsr_reset_all_links();
+
+  /* deactivate fisheye and immediate TCs */
+  olsr_cnf->lq_fish = 0;
+  for (ifn = ifnet; ifn; ifn = ifn->int_next) {
+    ifn->immediate_send_tc = false;
+  }
+  increase_local_ansn();
+
+  /* send first shutdown message burst */
+  olsr_shutdown_messages();
+
+  /* delete all routes */
   olsr_delete_all_kernel_routes();
+
+  /* send second shutdown message burst */
+  olsr_shutdown_messages();
+
+  /* now try to cleanup the rest of the mess */
+  olsr_delete_all_tc_entries();
+
+  olsr_delete_all_mid_entries();
+
+  olsr_destroy_parser();
 
   OLSR_PRINTF(1, "Closing sockets...\n");
 
@@ -538,8 +635,10 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
   }
 
   /* OLSR sockets */
-  for (ifn = ifnet; ifn; ifn = ifn->int_next)
+  for (ifn = ifnet; ifn; ifn = ifn->int_next) {
     close(ifn->olsr_socket);
+    close(ifn->send_socket);
+  }
 
   /* Closing plug-ins */
   olsr_close_plugins();
@@ -565,13 +664,17 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
 #endif
 
   /* Free cookies and memory pools attached. */
+  OLSR_PRINTF(0, "Free all memory...\n");
   olsr_delete_all_cookies();
 
   olsr_syslog(OLSR_LOG_INFO, "%s stopped", olsrd_version);
 
   OLSR_PRINTF(1, "\n <<<< %s - terminating >>>>\n           http://www.olsr.org\n", olsrd_version);
 
-  exit(olsr_cnf->exit_value);
+  exit_value = olsr_cnf->exit_value;
+  olsrd_free_cnf(olsr_cnf);
+
+  exit(exit_value);
 }
 
 /**
@@ -670,7 +773,7 @@ static int olsr_process_arguments(int argc, char *argv[],
         printf("Invalid broadcast address! %s\nSkipping it!\n", *argv);
         continue;
       }
-      memcpy(&ifcnf->ipv4_broadcast.v4, &in.s_addr, sizeof(uint32_t));
+      memcpy(&ifcnf->ipv4_multicast.v4, &in.s_addr, sizeof(ifcnf->ipv4_multicast.v4));
       continue;
     }
 
@@ -854,7 +957,7 @@ static int olsr_process_arguments(int argc, char *argv[],
         exit(EXIT_FAILURE);
       }
 
-      memcpy(&ifcnf->ipv6_multi_glbl, &in6, sizeof(struct in6_addr));
+      memcpy(&ifcnf->ipv6_multicast, &in6, sizeof(struct in6_addr));
 
       continue;
     }

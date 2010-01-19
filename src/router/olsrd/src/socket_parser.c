@@ -161,7 +161,8 @@ olsr_poll_sockets(void)
   /* Adding file-descriptors to FD set */
 
   for (olsr_sockets = olsr_socket_entries; olsr_sockets; olsr_sockets = olsr_sockets->next) {
-    FD_SET((unsigned int)olsr_sockets->fd, &ibits);     /* And we cast here since we get a warning on Win32 */
+    /* And we cast here since we get a warning on Win32 */
+    FD_SET((unsigned int)olsr_sockets->fd, &ibits);
   }
 
   /* Runnig select on the FD set */

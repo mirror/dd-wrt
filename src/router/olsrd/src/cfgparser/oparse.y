@@ -46,6 +46,7 @@
 #include "../ipcalc.h"
 #include "../net_olsr.h"
 #include "../link_set.h"
+#include "../olsr.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -59,10 +60,19 @@
 #define PARSER_DEBUG 0
 
 #if PARSER_DEBUG
-#define PARSER_DEBUG_PRINTF(x, ...)   printf(x, ##args)
+#define PARSER_DEBUG_PRINTF(x, args...)   printf(x, ##args)
 #else
-#define PARSER_DEBUG_PRINTF(x, ...)   do { } while (0)
+#define PARSER_DEBUG_PRINTF(x, args...)   do { } while (0)
 #endif
+
+static char interface_defaults_name[] = "[InterfaceDefaults]";
+
+#define SET_IFS_CONF(ifs, ifcnt, field, value) do { \
+	for (; ifcnt>0; ifs=ifs->next, ifcnt--) { \
+    ifs->cnfi->field = (value); \
+    ifs->cnf->field = (value); \
+	} \
+} while (0)
 
 #define YYSTYPE struct conf_token *
 
@@ -71,7 +81,6 @@ int yylex(void);
 
 static int ifs_in_curr_cfg = 0;
 
-static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg);
 static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg);
 
 static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
@@ -107,7 +116,9 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
     mult->value = (uint32_t)(mult_arg->floating * LINK_LOSS_MULTIPLIER);
 
     mult->next = walker->cnf->lq_mult;
-    walker->cnf->lq_mult = mult;
+    walker->cnfi->lq_mult = walker->cnf->lq_mult = mult;
+    walker->cnf->orig_lq_mult_cnt++;
+    walker->cnfi->orig_lq_mult_cnt=walker->cnf->orig_lq_mult_cnt;
 
     walker = walker->next;
   }
@@ -128,23 +139,23 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
   PARSER_DEBUG_PRINTF("HNA IPv6 entry: %s/%d\n", ipaddr_arg->string, prefixlen_arg->integer);
 
   if (olsr_cnf->ip_version != AF_INET6) {
-    fprintf(stderr, "IPv6 addresses can only be used if \"IpVersion\" == 6\n");
-    return 1;
+    fprintf(stderr, "IPv6 addresses can only be used if \"IpVersion\" == 6, skipping HNA6.\n");
+    olsr_startup_sleep(3);
   }
+	else {
+	  if(inet_pton(AF_INET6, ipaddr_arg->string, &ipaddr) <= 0) {
+      fprintf(stderr, "ihna6entry: Failed converting IP address %s\n", ipaddr_arg->string);
+      return 1;
+    }
 
-  if(inet_pton(AF_INET6, ipaddr_arg->string, &ipaddr) <= 0) {
-    fprintf(stderr, "ihna6entry: Failed converting IP address %s\n", ipaddr_arg->string);
-    return 1;
-  }
+		if (prefixlen_arg->integer > 128) {
+			fprintf(stderr, "ihna6entry: Illegal IPv6 prefix length %d\n", prefixlen_arg->integer);
+			return 1;
+		}
 
-  if (prefixlen_arg->integer > 128) {
-    fprintf(stderr, "ihna6entry: Illegal IPv6 prefix length %d\n", prefixlen_arg->integer);
-    return 1;
-  }
-
-  /* Queue */
-  ip_prefix_list_add(&olsr_cnf->hna_entries, &ipaddr, prefixlen_arg->integer);
-
+		/* Queue */
+		ip_prefix_list_add(&olsr_cnf->hna_entries, &ipaddr, prefixlen_arg->integer);
+	}
   free(ipaddr_arg->string);
   free(ipaddr_arg);
   free(prefixlen_arg);
@@ -163,13 +174,14 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_FLOAT
 %token TOK_BOOLEAN
 
-%token TOK_IP6TYPE
+%token TOK_IPV6TYPE
 
 %token TOK_DEBUGLEVEL
 %token TOK_IPVERSION
 %token TOK_HNA4
 %token TOK_HNA6
 %token TOK_PLUGIN
+%token TOK_INTERFACE_DEFAULTS
 %token TOK_INTERFACE
 %token TOK_NOINT
 %token TOK_TOS
@@ -205,11 +217,12 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_NETLABEL
 %token TOK_MAXIPC
 
-%token TOK_IP4BROADCAST
 %token TOK_IFMODE
-%token TOK_IP6ADDRTYPE
-%token TOK_IP6MULTISITE
-%token TOK_IP6MULTIGLOBAL
+%token TOK_IPV4BROADCAST
+%token TOK_IPV4MULTICAST
+%token TOK_IPV6MULTICAST
+%token TOK_IPV4SRC
+%token TOK_IPV6SRC
 %token TOK_IFWEIGHT
 %token TOK_HELLOINT
 %token TOK_HELLOVAL
@@ -221,8 +234,8 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_HNAVAL
 %token TOK_AUTODETCHG
 
-%token TOK_IP4_ADDR
-%token TOK_IP6_ADDR
+%token TOK_IPV4_ADDR
+%token TOK_IPV6_ADDR
 %token TOK_DEFAULT
 
 %token TOK_COMMENT
@@ -268,6 +281,7 @@ stmt:       idebug
 block:      TOK_HNA4 hna4body
           | TOK_HNA6 hna6body
           | TOK_IPCCON ipcbody
+          | ifdblock ifbody
           | ifblock ifbody
           | plblock plbody
 ;
@@ -318,11 +332,12 @@ ifstmts:   | ifstmts ifstmt
 
 ifstmt:      vcomment
              | iifweight
-             | isetip4br
              | isetifmode
-             | isetip6addrt
-             | isetip6mults
-             | isetip6multg
+             | isetipv4br
+             | isetipv4mc
+             | isetipv6mc
+             | isetipv4src
+             | isetipv6src
              | isethelloint
              | isethelloval
              | isettcint
@@ -345,6 +360,34 @@ plstmt:     plparam
           | vcomment
 ;
 
+ifdblock: TOK_INTERFACE_DEFAULTS
+{
+  struct olsr_if *in = malloc(sizeof(*in));
+
+  if (in == NULL) {
+    fprintf(stderr, "Out of memory(ADD IF)\n");
+    YYABORT;
+  }
+
+  in->cnf = get_default_if_config();
+  in->cnfi = get_default_if_config();
+
+  if (in->cnf == NULL || in->cnfi == NULL) {
+    fprintf(stderr, "Out of memory(ADD DEFIFRULE)\n");
+    YYABORT;
+  }
+
+  in->name = strdup(interface_defaults_name);
+
+  olsr_cnf->interface_defaults = in->cnf;
+
+  /* Queue */
+  in->next = olsr_cnf->interfaces;
+  olsr_cnf->interfaces = in;
+  ifs_in_curr_cfg=1;
+}
+;
+
 imaxipc: TOK_MAXIPC TOK_INTEGER
 {
   olsr_cnf->ipc_connections = $2->integer;
@@ -352,7 +395,7 @@ imaxipc: TOK_MAXIPC TOK_INTEGER
 }
 ;
 
-ipchost: TOK_HOSTLABEL TOK_IP4_ADDR
+ipchost: TOK_HOSTLABEL TOK_IPV4_ADDR
 {
   union olsr_ip_addr ipaddr;
   PARSER_DEBUG_PRINTF("\tIPC host: %s\n", $2->string);
@@ -369,7 +412,7 @@ ipchost: TOK_HOSTLABEL TOK_IP4_ADDR
 }
 ;
 
-ipcnet: TOK_NETLABEL TOK_IP4_ADDR TOK_IP4_ADDR
+ipcnet: TOK_NETLABEL TOK_IPV4_ADDR TOK_IPV4_ADDR
 {
   union olsr_ip_addr ipaddr, netmask;
 
@@ -392,7 +435,7 @@ ipcnet: TOK_NETLABEL TOK_IP4_ADDR TOK_IP4_ADDR
   free($3->string);
   free($3);
 }
-        |       TOK_NETLABEL TOK_IP4_ADDR TOK_SLASH TOK_INTEGER
+        |       TOK_NETLABEL TOK_IPV4_ADDR TOK_SLASH TOK_INTEGER
 {
   union olsr_ip_addr ipaddr;
 
@@ -426,36 +469,13 @@ iifweight:       TOK_IFWEIGHT TOK_INTEGER
   while (ifcnt) {
     ifs->cnf->weight.value = $2->integer;
     ifs->cnf->weight.fixed = true;
+    ifs->cnfi->weight.value = $2->integer;
+    ifs->cnfi->weight.fixed = true;
 
     ifs = ifs->next;
     ifcnt--;
   }
 
-  free($2);
-}
-;
-
-isetip4br: TOK_IP4BROADCAST TOK_IP4_ADDR
-{
-  struct in_addr in;
-  int ifcnt = ifs_in_curr_cfg;
-  struct olsr_if *ifs = olsr_cnf->interfaces;
-
-  PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $2->string);
-
-  if (inet_aton($2->string, &in) == 0) {
-    fprintf(stderr, "isetip4br: Failed converting IP address %s\n", $2->string);
-    YYABORT;
-  }
-
-  while (ifcnt) {
-    ifs->cnf->ipv4_broadcast.v4 = in;
-
-    ifs = ifs->next;
-    ifcnt--;
-  }
-
-  free($2->string);
   free($2);
 }
 ;
@@ -464,97 +484,117 @@ isetifmode: TOK_IFMODE TOK_STRING
 {
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
+	int mode = (strcmp($2->string, "ether") == 0)?IF_MODE_ETHER:IF_MODE_MESH;
 
-  PARSER_DEBUG_PRINTF("\tMode: %d\n", $2->string);
-    while (ifcnt) {
-      ifs->cnf->mode = (strcmp($2->string, "ether") == 0)?IF_MODE_ETHER:IF_MODE_MESH;
+  PARSER_DEBUG_PRINTF("\tMode: %s\n", $2->string);
 
-      ifs = ifs->next;
-      ifcnt--;
-    }
+	SET_IFS_CONF(ifs, ifcnt, mode, mode);
+	
+  free($2->string);
+  free($2);
+}
+;
+
+isetipv4br: TOK_IPV4BROADCAST TOK_IPV4_ADDR
+{
+  struct in_addr in;
+  int ifcnt = ifs_in_curr_cfg;
+  struct olsr_if *ifs = olsr_cnf->interfaces;
+
+  PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $2->string);
+
+  if (inet_aton($2->string, &in) == 0) {
+    fprintf(stderr, "isetipv4br: Failed converting IP address %s\n", $2->string);
+    YYABORT;
+  }
+
+	SET_IFS_CONF(ifs, ifcnt, ipv4_multicast.v4, in);
 
   free($2->string);
   free($2);
 }
 ;
 
-
-isetip6addrt: TOK_IP6ADDRTYPE TOK_IP6TYPE
+isetipv4mc: TOK_IPV4MULTICAST TOK_IPV4_ADDR
 {
+  struct in_addr in;
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  if ($2->boolean) {
-    while (ifcnt) {
-      ifs->cnf->ipv6_addrtype = IPV6_ADDR_SITELOCAL;
-	  
-      ifs = ifs->next;
-      ifcnt--;
-    }
-  } else {
-    while (ifcnt) {
-      ifs->cnf->ipv6_addrtype = 0;
-	  
-      ifs = ifs->next;
-      ifcnt--;
-    }
+  PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $2->string);
+
+  if (inet_aton($2->string, &in) == 0) {
+    fprintf(stderr, "isetipv4br: Failed converting IP address %s\n", $2->string);
+    YYABORT;
   }
 
+	SET_IFS_CONF(ifs, ifcnt, ipv4_multicast.v4, in);
+
+  free($2->string);
   free($2);
 }
 ;
 
-isetip6mults: TOK_IP6MULTISITE TOK_IP6_ADDR
+isetipv6mc: TOK_IPV6MULTICAST TOK_IPV6_ADDR
 {
   struct in6_addr in6;
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tIPv6 site-local multicast: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPv6 multicast: %s\n", $2->string);
 
   if (inet_pton(AF_INET6, $2->string, &in6) <= 0) {
-    fprintf(stderr, "isetip6mults: Failed converting IP address %s\n", $2->string);
+    fprintf(stderr, "isetipv6mc: Failed converting IP address %s\n", $2->string);
     YYABORT;
   }
 
-  while (ifcnt) {
-    ifs->cnf->ipv6_multi_site.v6 = in6;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+	SET_IFS_CONF(ifs, ifcnt, ipv6_multicast.v6, in6);
 
   free($2->string);
   free($2);
 }
 ;
 
-
-isetip6multg: TOK_IP6MULTIGLOBAL TOK_IP6_ADDR
+isetipv4src: TOK_IPV4SRC TOK_IPV4_ADDR
 {
-  struct in6_addr in6;
+  struct in_addr in;
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tIPv6 global multicast: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPv4 src: %s\n", $2->string);
 
-  if (inet_pton(AF_INET6, $2->string, &in6) <= 0) {
-    fprintf(stderr, "isetip6multg: Failed converting IP address %s\n", $2->string);
+  if (inet_aton($2->string, &in) == 0) {
+    fprintf(stderr, "isetipv4src: Failed converting IP address %s\n", $2->string);
     YYABORT;
   }
 
-  while (ifcnt) {
-    //memcpy(&ifs->cnf->ipv6_multi_glbl.v6, &in6, sizeof(struct in6_addr));
-    ifs->cnf->ipv6_multi_glbl.v6 = in6;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+	SET_IFS_CONF(ifs, ifcnt, ipv4_src.v4, in);
 
   free($2->string);
   free($2);
 }
 ;
+
+isetipv6src: TOK_IPV6SRC TOK_IPV6_ADDR
+{
+  struct olsr_ip_prefix pr6;
+  int ifcnt = ifs_in_curr_cfg;
+  struct olsr_if *ifs = olsr_cnf->interfaces;
+
+  PARSER_DEBUG_PRINTF("\tIPv6 src prefix: %s\n", $2->string);
+
+  if (olsr_string_to_prefix(AF_INET6, &pr6, $2->string) <= 0) {
+    fprintf(stderr, "isetipv6src: Failed converting IP prefix %s\n", $2->string);
+    YYABORT;
+  }
+
+	SET_IFS_CONF(ifs, ifcnt, ipv6_src, pr6);
+
+  free($2->string);
+  free($2);
+}
+;
+
 isethelloint: TOK_HELLOINT TOK_FLOAT
 {
   int ifcnt = ifs_in_curr_cfg;
@@ -562,12 +602,7 @@ isethelloint: TOK_HELLOINT TOK_FLOAT
 
   PARSER_DEBUG_PRINTF("\tHELLO interval: %0.2f\n", $2->floating);
 
-  while (ifcnt) {
-    ifs->cnf->hello_params.emission_interval = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+	SET_IFS_CONF(ifs, ifcnt, hello_params.emission_interval, $2->floating);
 
   free($2);
 }
@@ -579,12 +614,7 @@ isethelloval: TOK_HELLOVAL TOK_FLOAT
 
   PARSER_DEBUG_PRINTF("\tHELLO validity: %0.2f\n", $2->floating);
 
-  while (ifcnt) {
-    ifs->cnf->hello_params.validity_time = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+	SET_IFS_CONF(ifs, ifcnt, hello_params.validity_time, $2->floating);
 
   free($2);
 }
@@ -596,12 +626,8 @@ isettcint: TOK_TCINT TOK_FLOAT
 
   PARSER_DEBUG_PRINTF("\tTC interval: %0.2f\n", $2->floating);
 
-  while (ifcnt) {
-    ifs->cnf->tc_params.emission_interval = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+	SET_IFS_CONF(ifs, ifcnt, tc_params.emission_interval, $2->floating);
+
   free($2);
 }
 ;
@@ -611,12 +637,8 @@ isettcval: TOK_TCVAL TOK_FLOAT
   struct olsr_if *ifs = olsr_cnf->interfaces;
   
   PARSER_DEBUG_PRINTF("\tTC validity: %0.2f\n", $2->floating);
-  while (ifcnt) {
-    ifs->cnf->tc_params.validity_time = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+  
+ SET_IFS_CONF(ifs, ifcnt, tc_params.validity_time, $2->floating);
 
   free($2);
 }
@@ -628,12 +650,8 @@ isetmidint: TOK_MIDINT TOK_FLOAT
 
 
   PARSER_DEBUG_PRINTF("\tMID interval: %0.2f\n", $2->floating);
-  while (ifcnt) {
-    ifs->cnf->mid_params.emission_interval = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+  
+  SET_IFS_CONF(ifs, ifcnt, mid_params.emission_interval, $2->floating);
 
   free($2);
 }
@@ -644,12 +662,8 @@ isetmidval: TOK_MIDVAL TOK_FLOAT
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
   PARSER_DEBUG_PRINTF("\tMID validity: %0.2f\n", $2->floating);
-  while (ifcnt) {
-    ifs->cnf->mid_params.validity_time = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+  
+  SET_IFS_CONF(ifs, ifcnt, mid_params.validity_time, $2->floating);
 
   free($2);
 }
@@ -660,12 +674,8 @@ isethnaint: TOK_HNAINT TOK_FLOAT
   struct olsr_if *ifs = olsr_cnf->interfaces;
   
   PARSER_DEBUG_PRINTF("\tHNA interval: %0.2f\n", $2->floating);
-  while (ifcnt) {
-    ifs->cnf->hna_params.emission_interval = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+
+  SET_IFS_CONF(ifs, ifcnt, hna_params.emission_interval, $2->floating);
 
   free($2);
 }
@@ -676,12 +686,8 @@ isethnaval: TOK_HNAVAL TOK_FLOAT
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
   PARSER_DEBUG_PRINTF("\tHNA validity: %0.2f\n", $2->floating);
-  while (ifcnt) {
-    ifs->cnf->hna_params.validity_time = $2->floating;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+
+  SET_IFS_CONF(ifs, ifcnt, hna_params.validity_time, $2->floating);
 
   free($2);
 }
@@ -692,12 +698,8 @@ isetautodetchg: TOK_AUTODETCHG TOK_BOOLEAN
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
   PARSER_DEBUG_PRINTF("\tAutodetect changes: %s\n", $2->boolean ? "YES" : "NO");
-  while (ifcnt) {
-    ifs->cnf->autodetect_chg = $2->boolean;
-      
-    ifs = ifs->next;
-    ifcnt--;
-  }
+
+  SET_IFS_CONF(ifs, ifcnt, autodetect_chg, $2->boolean);
 
   free($2);
 }
@@ -710,14 +712,14 @@ isetlqmult: TOK_LQ_MULT TOK_DEFAULT TOK_FLOAT
   }
 }
 
-          | TOK_LQ_MULT TOK_IP4_ADDR TOK_FLOAT
+          | TOK_LQ_MULT TOK_IPV4_ADDR TOK_FLOAT
 {
   if (lq_mult_helper($2, $3) < 0) {
     YYABORT;
   }
 }
 
-          | TOK_LQ_MULT TOK_IP6_ADDR TOK_FLOAT
+          | TOK_LQ_MULT TOK_IPV6_ADDR TOK_FLOAT
 {
   if (lq_mult_helper($2, $3) < 0) {
     YYABORT;
@@ -756,7 +758,7 @@ iipversion:    TOK_IPVERSION TOK_INTEGER
 
 fibmetric:    TOK_FIBMETRIC TOK_STRING
 {
-  PARSER_DEBUG_PRINTF("FIBMetric: %d\n", $2->string);
+  PARSER_DEBUG_PRINTF("FIBMetric: %s\n", $2->string);
   if (strcmp($2->string, CFG_FIBM_FLAT) == 0) {
       olsr_cnf->fib_metric = FIBM_FLAT;
   } else if (strcmp($2->string, CFG_FIBM_CORRECT) == 0) {
@@ -773,78 +775,83 @@ fibmetric:    TOK_FIBMETRIC TOK_STRING
 }
 ;
 
-ihna4entry:     TOK_IP4_ADDR TOK_IP4_ADDR
+ihna4entry:     TOK_IPV4_ADDR TOK_IPV4_ADDR
 {
   union olsr_ip_addr ipaddr, netmask;
 
-  PARSER_DEBUG_PRINTF("HNA IPv4 entry: %s/%s\n", $1->string, $2->string);
-
-  if (olsr_cnf->ip_version != AF_INET) {
-    fprintf(stderr, "IPv4 addresses can only be used if \"IpVersion\" == 4\n");
-    YYABORT;
+  if (olsr_cnf->ip_version == AF_INET6) {
+    fprintf(stderr, "IPv4 addresses can only be used if \"IpVersion\" == 4, skipping HNA.\n");
+    olsr_startup_sleep(3);
   }
+  else {
+    PARSER_DEBUG_PRINTF("HNA IPv4 entry: %s/%s\n", $1->string, $2->string);
 
-  if (inet_pton(AF_INET, $1->string, &ipaddr.v4) <= 0) {
-    fprintf(stderr, "ihna4entry: Failed converting IP address %s\n", $1->string);
-    YYABORT;
+    if (inet_pton(AF_INET, $1->string, &ipaddr.v4) <= 0) {
+      fprintf(stderr, "ihna4entry: Failed converting IP address %s\n", $1->string);
+      YYABORT;
+    }
+    if (inet_pton(AF_INET, $2->string, &netmask.v4) <= 0) {
+      fprintf(stderr, "ihna4entry: Failed converting IP address %s\n", $1->string);
+      YYABORT;
+    }
+
+    /* check that the given IP address is actually a network address */
+    if ((ipaddr.v4.s_addr & ~netmask.v4.s_addr) != 0) {
+      fprintf(stderr, "ihna4entry: The ipaddress \"%s\" is not a network address!\n", $1->string);
+      YYABORT;
+    }
+
+    /* Queue */
+    ip_prefix_list_add(&olsr_cnf->hna_entries, &ipaddr, olsr_netmask_to_prefix(&netmask));
   }
-  if (inet_pton(AF_INET, $2->string, &netmask.v4) <= 0) {
-    fprintf(stderr, "ihna4entry: Failed converting IP address %s\n", $1->string);
-    YYABORT;
-  }
-
-  /* check that the given IP address is actually a network address */
-  if ((ipaddr.v4.s_addr & ~netmask.v4.s_addr) != 0) {
-    fprintf(stderr, "ihna4entry: The ipaddress \"%s\" is not a network address!\n", $1->string);
-    YYABORT;
-  }
-
-  /* Queue */
-  ip_prefix_list_add(&olsr_cnf->hna_entries, &ipaddr, olsr_netmask_to_prefix(&netmask));
-
   free($1->string);
   free($1);
   free($2->string);
   free($2);
 }
-        |       TOK_IP4_ADDR TOK_SLASH TOK_INTEGER
+        |       TOK_IPV4_ADDR TOK_SLASH TOK_INTEGER
 {
   union olsr_ip_addr ipaddr, netmask;
 
-  PARSER_DEBUG_PRINTF("HNA IPv4 entry: %s/%d\n", $1->string, $3->integer);
-
-  if (inet_pton(AF_INET, $1->string, &ipaddr.v4) <= 0) {
-    fprintf(stderr, "ihna4entry: Failed converting IP address %s\n", $1->string);
-    YYABORT;
+  if (olsr_cnf->ip_version == AF_INET6) {
+    fprintf(stderr, "IPv4 addresses can only be used if \"IpVersion\" == 4, skipping HNA.\n");
+    olsr_startup_sleep(3);
   }
-  if ($3->integer > olsr_cnf->maxplen) {
-    fprintf(stderr, "ihna4entry: Prefix len %u > %d is not allowed!\n", $3->integer, olsr_cnf->maxplen);
-    YYABORT;
+  else {
+    PARSER_DEBUG_PRINTF("HNA IPv4 entry: %s/%d\n", $1->string, $3->integer);
+
+    if (inet_pton(AF_INET, $1->string, &ipaddr.v4) <= 0) {
+      fprintf(stderr, "ihna4entry: Failed converting IP address %s\n", $1->string);
+      YYABORT;
+    }
+    if ($3->integer > olsr_cnf->maxplen) {
+      fprintf(stderr, "ihna4entry: Prefix len %u > %d is not allowed!\n", $3->integer, olsr_cnf->maxplen);
+      YYABORT;
+    }
+
+    /* check that the given IP address is actually a network address */
+    olsr_prefix_to_netmask(&netmask, $3->integer);
+    if ((ipaddr.v4.s_addr & ~netmask.v4.s_addr) != 0) {
+      fprintf(stderr, "ihna4entry: The ipaddress \"%s\" is not a network address!\n", $1->string);
+      YYABORT;
+    }
+
+    /* Queue */
+    ip_prefix_list_add(&olsr_cnf->hna_entries, &ipaddr, $3->integer);
   }
-
-  /* check that the given IP address is actually a network address */
-  olsr_prefix_to_netmask(&netmask, $3->integer);
-  if ((ipaddr.v4.s_addr & ~netmask.v4.s_addr) != 0) {
-    fprintf(stderr, "ihna4entry: The ipaddress \"%s\" is not a network address!\n", $1->string);
-    YYABORT;
-  }
-
-  /* Queue */
-  ip_prefix_list_add(&olsr_cnf->hna_entries, &ipaddr, $3->integer);
-
   free($1->string);
   free($1);
   free($3);
 }
 ;
 
-ihna6entry:     TOK_IP6_ADDR TOK_INTEGER
+ihna6entry:     TOK_IPV6_ADDR TOK_INTEGER
 {
   if (add_ipv6_addr($1, $2)) {
     YYABORT;
   }
 }
-        |       TOK_IP6_ADDR TOK_SLASH TOK_INTEGER
+        |       TOK_IPV6_ADDR TOK_SLASH TOK_INTEGER
 {
   if (add_ipv6_addr($1, $3)) {
     YYABORT;
@@ -861,22 +868,52 @@ ifstart: TOK_INTERFACE
 
 ifnick: TOK_STRING
 {
-  struct olsr_if *in = malloc(sizeof(*in));
-  
-  if (in == NULL) {
-    fprintf(stderr, "Out of memory(ADD IF)\n");
-    YYABORT;
+  struct olsr_if *in, *last;
+  in = olsr_cnf->interfaces;
+  last = NULL;
+  while (in != NULL) {
+    if (strcmp(in->name, $1->string) == 0) {
+      free ($1->string);
+      break;
+    }
+    last = in;
+    in = in->next;
   }
 
-  in->cnf = get_default_if_config();
-
-  if (in->cnf == NULL) {
-    fprintf(stderr, "Out of memory(ADD IFRULE)\n");
-    YYABORT;
+  if (in != NULL) {
+    /* remove old interface from list to add it later at the beginning */
+    if (last) {
+      last->next = in->next;
+    }
+    else {
+      olsr_cnf->interfaces = in->next;
+    }
   }
+  else {
+    in = malloc(sizeof(*in));
+    if (in == NULL) {
+      fprintf(stderr, "Out of memory(ADD IF)\n");
+      YYABORT;
+    }
+    memset(in, 0, sizeof(*in));
 
-  in->name = $1->string;
+    in->cnf = malloc(sizeof(*in->cnf));
+    if (in->cnf == NULL) {
+      fprintf(stderr, "Out of memory(ADD IFRULE)\n");
+      YYABORT;
+    }
+    memset(in->cnf, 0x00, sizeof(*in->cnf));
 
+    in->cnfi = malloc(sizeof(*in->cnfi));
+    if (in->cnf == NULL) {
+      fprintf(stderr, "Out of memory(ADD IFRULE)\n");
+      YYABORT;
+    }
+    memset(in->cnfi, 0xFF, sizeof(*in->cnfi));
+    in->cnfi->orig_lq_mult_cnt=0;
+
+    in->name = $1->string;
+  }
   /* Queue */
   in->next = olsr_cnf->interfaces;
   olsr_cnf->interfaces = in;
@@ -1088,18 +1125,42 @@ bclear_screen: TOK_CLEAR_SCREEN TOK_BOOLEAN
 
 plblock: TOK_PLUGIN TOK_STRING
 {
-  struct plugin_entry *pe = malloc(sizeof(*pe));
+  struct plugin_entry *pe, *last;
   
-  if (pe == NULL) {
-    fprintf(stderr, "Out of memory(ADD PL)\n");
-    YYABORT;
+  pe = olsr_cnf->plugins;
+  last = NULL;
+  while (pe != NULL) {
+    if (strcmp(pe->name, $2->string) == 0) {
+      free ($2->string);
+      break;
+    }
+    last = pe;
+    pe = pe->next;
   }
 
-  pe->name = $2->string;
-  pe->params = NULL;
-  
-  PARSER_DEBUG_PRINTF("Plugin: %s\n", $2->string);
+  if (pe != NULL) {
+    /* remove old plugin from list to add it later at the beginning */
+    if (last) {
+      last->next = pe->next;
+    }
+    else {
+      olsr_cnf->plugins = pe->next;
+    }
+  }
+  else {
+    pe = malloc(sizeof(*pe));
 
+    if (pe == NULL) {
+      fprintf(stderr, "Out of memory(ADD PL)\n");
+      YYABORT;
+    }
+
+    pe->name = $2->string;
+    pe->params = NULL;
+
+    PARSER_DEBUG_PRINTF("Plugin: %s\n", $2->string);
+  }
+  
   /* Queue */
   pe->next = olsr_cnf->plugins;
   olsr_cnf->plugins = pe;

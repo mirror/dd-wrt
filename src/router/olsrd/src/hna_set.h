@@ -73,14 +73,17 @@ struct hna_entry {
 { \
   int _idx; \
   for (_idx = 0; _idx < HASHSIZE; _idx++) { \
+    struct hna_entry *_next; \
     for(hna = hna_set[_idx].next; \
         hna != &hna_set[_idx]; \
-        hna = hna->next)
-#define OLSR_FOR_ALL_HNA_ENTRIES_END(hna) }}
+        hna = _next) { \
+      _next = hna->next;
+#define OLSR_FOR_ALL_HNA_ENTRIES_END(hna) }}}
 
 extern struct hna_entry hna_set[HASHSIZE];
 
 int olsr_init_hna_set(void);
+void olsr_cleanup_hna(union olsr_ip_addr *orig);
 
 struct hna_net *olsr_lookup_hna_net(const struct hna_net *, const union olsr_ip_addr *, uint8_t);
 

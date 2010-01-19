@@ -56,6 +56,9 @@ struct conf_token {
   char *string;
 };
 
+#define DEFAULT_STR(val) \
+(((!defcnf) && ((*((uint8_t *)(&cnfi->val)))==0))?" (d)":"")
+
 void set_default_cnf(struct olsrd_config *);
 
 #endif

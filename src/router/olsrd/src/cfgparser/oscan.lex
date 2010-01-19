@@ -144,17 +144,17 @@ IPV4ADDR {QUAD}\.{QUAD}\.{QUAD}\.{QUAD}
 
 HEX16 {HEX8}{1,4}
 
-IP6PAT2 ({HEX16}:){1}:({HEX16}:){0,5}{HEX16}
-IP6PAT3 ({HEX16}:){2}:({HEX16}:){0,4}{HEX16}
-IP6PAT4 ({HEX16}:){3}:({HEX16}:){0,3}{HEX16}
-IP6PAT5 ({HEX16}:){4}:({HEX16}:){0,2}{HEX16}
-IP6PAT6 ({HEX16}:){5}:({HEX16}:){0,1}{HEX16}
-IP6PAT7 ({HEX16}:){6}:({HEX16})
-IP6PAT1 ({HEX16}:){7}{HEX16}
-IP6PAT8 ({HEX16}:){1,7}:
-IP6PAT9 ::
+IPV6PAT2 ({HEX16}:){1}:({HEX16}:){0,5}{HEX16}
+IPV6PAT3 ({HEX16}:){2}:({HEX16}:){0,4}{HEX16}
+IPV6PAT4 ({HEX16}:){3}:({HEX16}:){0,3}{HEX16}
+IPV6PAT5 ({HEX16}:){4}:({HEX16}:){0,2}{HEX16}
+IPV6PAT6 ({HEX16}:){5}:({HEX16}:){0,1}{HEX16}
+IPV6PAT7 ({HEX16}:){6}:({HEX16})
+IPV6PAT1 ({HEX16}:){7}{HEX16}
+IPV6PAT8 ({HEX16}:){1,7}:
+IPV6PAT9 ::
 
-IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{IP6PAT8}|{IP6PAT9}
+IPV6ADDR {IPV6PAT1}|{IPV6PAT2}|{IPV6PAT3}|{IPV6PAT4}|{IPV6PAT5}|{IPV6PAT6}|{IPV6PAT7}|{IPV6PAT8}|{IPV6PAT9}
 
 %%
 
@@ -201,14 +201,14 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
     if (yylval == NULL) {
         yyterminate();
     }
-    return TOK_IP4_ADDR;
+    return TOK_IPV4_ADDR;
 }
 {IPV6ADDR} {
     yylval = get_string_token(yytext, yyleng + 1);
     if (yylval == NULL) {
         yyterminate();
     }
-    return TOK_IP6_ADDR;
+    return TOK_IPV6_ADDR;
 }
 
 "default" {
@@ -230,16 +230,6 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 "no" {
     yylval = get_boolean_token(false);
     return TOK_BOOLEAN;
-}
-
-"site-local" {
-    yylval = get_boolean_token(true);
-    return TOK_IP6TYPE;
-}
-
-"global" {
-    yylval = get_boolean_token(false);
-    return TOK_IP6TYPE;
 }
 
 "Host" {
@@ -295,6 +285,10 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 "Interface" {
     yylval = NULL;
     return TOK_INTERFACE;
+}
+"InterfaceDefaults" {
+    yylval = NULL;
+    return TOK_INTERFACE_DEFAULTS;
 }
 
 "AllowNoInt" {
@@ -441,23 +435,27 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 
 "Ip4Broadcast" {
     yylval = NULL;
-    return TOK_IP4BROADCAST;
+    return TOK_IPV4BROADCAST;
+}
+"IPv4Multicast" {
+    yylval = NULL;
+    return TOK_IPV4MULTICAST;
 }
 "Mode" {
     yylval = NULL;
     return TOK_IFMODE;
 }
-"Ip6AddrType" {
+"IPv6Multicast" {
     yylval = NULL;
-    return TOK_IP6ADDRTYPE;
+    return TOK_IPV6MULTICAST;
 }
-"Ip6MulticastSite" {
-    yylval = NULL;
-    return TOK_IP6MULTISITE;
+"IPv4Src" {
+		yylval = NULL;
+		return TOK_IPV4SRC;
 }
-"Ip6MulticastGlobal" {
-    yylval = NULL;
-    return TOK_IP6MULTIGLOBAL;
+"IPv6Src" {
+		yylval = NULL;
+		return TOK_IPV6SRC;
 }
 "HelloInterval" {
     yylval = NULL;

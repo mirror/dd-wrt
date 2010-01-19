@@ -59,6 +59,7 @@
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #undef errno
 #define errno WSAGetLastError()
+char *StrError(unsigned int ErrNo);
 #undef strerror
 #define strerror(x) StrError(x)
 #endif
@@ -99,6 +100,26 @@ olsr_init_parser(void)
   /* Initialize the packet functions */
   olsr_init_package_process();
 
+}
+
+void
+olsr_destroy_parser(void) {
+  struct parse_function_entry *pe, *pe_next;
+  struct preprocessor_function_entry *ppe, *ppe_next;
+  struct packetparser_function_entry *pae, *pae_next;
+
+  for (pe = parse_functions; pe; pe = pe_next) {
+    pe_next = pe->next;
+    free (pe);
+  }
+  for (ppe = preprocessor_functions; ppe; ppe = ppe_next) {
+    ppe_next = ppe->next;
+    free (ppe);
+  }
+  for (pae = packetparser_functions; pae; pae = pae_next) {
+    pae_next = pae->next;
+    free(pae);
+  }
 }
 
 void
@@ -423,7 +444,9 @@ olsr_input(int fd)
     if (cc <= 0) {
       if (cc < 0 && errno != EWOULDBLOCK) {
         OLSR_PRINTF(1, "error recvfrom: %s", strerror(errno));
+#ifndef WIN32
         olsr_syslog(OLSR_LOG_ERR, "error recvfrom: %m");
+#endif
       }
       break;
     }
@@ -501,7 +524,7 @@ olsr_input_hostemu(int fd)
   /* Host emulator receives IP address first to emulate
      direct link */
 
-  int cc = recv(fd, from_addr.v6.s6_addr, olsr_cnf->ipsize, 0);
+  int cc = recv(fd, (void*)from_addr.v6.s6_addr, olsr_cnf->ipsize, 0);
   if (cc != (int)olsr_cnf->ipsize) {
     fprintf(stderr, "Error receiving host-client IP hook(%d) %s!\n", cc, strerror(errno));
     memcpy(&from_addr, &((struct olsr *)inbuf)->olsr_msg->originator, olsr_cnf->ipsize);
