@@ -239,8 +239,8 @@ olsrd_write_cnf(struct olsrd_config *cnf, const char *fname)
       fprintf(fd,
               "    # IPv4 broadcast address to use. The\n    # one usefull example would be 255.255.255.255\n    # If not defined the broadcastaddress\n    # every card is configured with is used\n\n");
 
-      if (in->cnf->ipv4_broadcast.v4.s_addr) {
-        fprintf(fd, "    Ip4Broadcast\t%s\n\n", inet_ntoa(in->cnf->ipv4_broadcast.v4));
+      if (in->cnf->ipv4_multicast.v4.s_addr) {
+        fprintf(fd, "    Ip4Broadcast\t%s\n\n", inet_ntoa(in->cnf->ipv4_multicast.v4));
       } else {
         fprintf(fd, "    #Ip4Broadcast\t255.255.255.255\n\n");
       }
@@ -254,18 +254,17 @@ olsrd_write_cnf(struct olsrd_config *cnf, const char *fname)
         fprintf(fd, "    Mode\tEther\n\n");
       }
 
-      fprintf(fd, "    # IPv6 address scope to use.\n    # Must be 'site-local' or 'global'\n\n");
-      if (in->cnf->ipv6_addrtype)
-        fprintf(fd, "    Ip6AddrType \tsite-local\n\n");
-      else
-        fprintf(fd, "    Ip6AddrType \tglobal\n\n");
+      fprintf(fd,
+              "    # IPv6 multicast address.\n    # If not defined, "OLSR_IPV6_MCAST" is used\n");
+      fprintf(fd, "    IPv6Multicast\t%s\n\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multicast.v6, ipv6_buf, sizeof(ipv6_buf)));
 
       fprintf(fd,
-              "    # IPv6 multicast address to use when\n    # using site-local addresses.\n    # If not defined, ff05::15 is used\n");
-      fprintf(fd, "    Ip6MulticastSite\t%s\n\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_site.v6, ipv6_buf, sizeof(ipv6_buf)));
+              "    # IPv4 src address.\n    # If not defined, the interface IP is used\n");
+      fprintf(fd, "    IPv4Src\t%s\n\n", inet_ntop(AF_INET6, &in->cnf->ipv4_src.v4, ipv6_buf, sizeof(ipv6_buf)));
+
       fprintf(fd,
-              "    # IPv6 multicast address to use when\n    # using global addresses\n    # If not defined, ff0e::1 is used\n");
-      fprintf(fd, "    Ip6MulticastGlobal\t%s\n\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_glbl.v6, ipv6_buf, sizeof(ipv6_buf)));
+              "    # IPv6 src prefix.\n    # If not defined, a not-linklocal interface IP is used\n");
+      fprintf(fd, "    IPv6Src\t%s\n\n", olsr_ip_prefix_to_string(&in->cnf->ipv6_src));
 
       fprintf(fd,
               "    # Olsrd can autodetect changes in\n    # interface configurations. Enabled by default\n    # turn off to save CPU.\n    AutoDetectChanges: %s\n",
@@ -527,17 +526,6 @@ olsrd_write_cnf_buf(struct olsrd_config *cnf, char *buf, uint32_t bufsize)
 
       if (first)
         WRITE_TO_BUF
-          ("    # IPv4 broadcast address to use. The\n    # one usefull example would be 255.255.255.255\n    # If not defined the broadcastaddress\n    # every card is configured with is used\n\n");
-
-      if (in->cnf->ipv4_broadcast.v4.s_addr) {
-        WRITE_TO_BUF("    Ip4Broadcast\t%s\n", inet_ntoa(in->cnf->ipv4_broadcast.v4));
-      } else {
-        if (first)
-          WRITE_TO_BUF("    #Ip4Broadcast\t255.255.255.255\n");
-      }
-
-      if (first)
-        WRITE_TO_BUF
           ("   # Interface Mode to use. Defines\n    # forward behaviour depending on\n    # interface type\n    # valid option are [mesh] and ether\n\n");
 
       if (in->cnf->mode!=1) {
@@ -551,25 +539,34 @@ olsrd_write_cnf_buf(struct olsrd_config *cnf, char *buf, uint32_t bufsize)
         WRITE_TO_BUF("\n");
 
       if (first)
-        WRITE_TO_BUF("    # IPv6 address scope to use.\n    # Must be 'site-local' or 'global'\n\n");
-      if (in->cnf->ipv6_addrtype)
-        WRITE_TO_BUF("    Ip6AddrType \tsite-local\n");
-      else
-        WRITE_TO_BUF("    Ip6AddrType \tglobal\n");
+        WRITE_TO_BUF
+          ("    # IPv4 broadcast address to use. The\n    # one usefull example would be 255.255.255.255\n    # If not defined the broadcastaddress\n    # every card is configured with is used\n\n");
 
+      if (in->cnf->ipv4_multicast.v4.s_addr) {
+        WRITE_TO_BUF("    Ip4Broadcast\t%s\n", inet_ntoa(in->cnf->ipv4_multicast.v4));
+      } else {
+        if (first)
+          WRITE_TO_BUF("    #Ip4Broadcast\t255.255.255.255\n");
+      }
+
+      if (first)
+        WRITE_TO_BUF
+          ("    # IPv6 multicast address.\n    # If not defined, "OLSR_IPV6_MCAST" is used\n");
+      WRITE_TO_BUF("    IPv6Multicast\t%s\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multicast.v6, ipv6_buf, sizeof(ipv6_buf)));
       if (first)
         WRITE_TO_BUF("\n");
 
       if (first)
         WRITE_TO_BUF
-          ("    # IPv6 multicast address to use when\n    # using site-local addresses.\n    # If not defined, ff05::15 is used\n");
-      WRITE_TO_BUF("    Ip6MulticastSite\t%s\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_site.v6, ipv6_buf, sizeof(ipv6_buf)));
+          ("    # IPv4 src address.\n    # If not defined, the interface IP is used\n");
+      WRITE_TO_BUF("    IPv6Multicast\t%s\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multicast.v6, ipv6_buf, sizeof(ipv6_buf)));
       if (first)
         WRITE_TO_BUF("\n");
+
       if (first)
         WRITE_TO_BUF
-          ("    # IPv6 multicast address to use when\n    # using global addresses\n    # If not defined, ff0e::1 is used\n");
-      WRITE_TO_BUF("    Ip6MulticastGlobal\t%s\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_glbl.v6, ipv6_buf, sizeof(ipv6_buf)));
+          ("    # IPv6 src prefix.\n    # If not defined, a not-linklocal interface IP is used\n");
+      WRITE_TO_BUF("    IPv6Src\t%s\n", olsr_ip_prefix_to_string(&in->cnf->ipv6_src));
       if (first)
         WRITE_TO_BUF("\n");
 

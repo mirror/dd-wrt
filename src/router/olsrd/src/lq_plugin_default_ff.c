@@ -236,7 +236,7 @@ default_lq_ff_timer(void __attribute__ ((unused)) * context)
     }
 
     /* calculate link quality */
-    if (received + total == 0) {
+    if (total == 0) {
       tlq->lq.valueLq = 0;
     } else {
       // start with link-loss-factor
@@ -244,14 +244,7 @@ default_lq_ff_timer(void __attribute__ ((unused)) * context)
 
       /* keep missed hello periods in mind (round up hello interval to seconds) */
       if (tlq->missed_hellos > 1) {
-        int penalty = received * tlq->missed_hellos * link->inter->hello_etime/1000 / LQ_FF_WINDOW;
-
-        if (penalty < 0) {
-          received = 0;
-        }
-        else {
-          received -= penalty;
-        }
+        received = received - received * tlq->missed_hellos * link->inter->hello_etime/1000 / LQ_FF_WINDOW;
       }
 
       // calculate received/total factor

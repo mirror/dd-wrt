@@ -148,6 +148,23 @@ olsr_ip_prefix_to_string(const struct olsr_ip_prefix *prefix)
   return rv;
 }
 
+int
+olsr_string_to_prefix(int ipversion, struct olsr_ip_prefix *dst, const char *string) {
+  static char buf[MAX(INET6_ADDRSTRLEN + 1 + 3, INET_ADDRSTRLEN + 1 + INET_ADDRSTRLEN)];
+  char *prefix;
+
+  strscpy(buf, string, sizeof(buf));
+  dst->prefix_len = ipversion == AF_INET ? 32 : 128;
+
+  prefix = strchr(buf, '/');
+  if (prefix) {
+    *prefix++ = 0;
+    dst->prefix_len = atoi(prefix);
+  }
+
+  return inet_pton(ipversion, buf, &dst->prefix);
+}
+
 /* see if the ipaddr is in the net. That is equivalent to the fact that the net part
  * of both are equal. So we must compare the first <prefixlen> bits.
  */

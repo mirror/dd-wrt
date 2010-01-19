@@ -50,6 +50,7 @@
 #define DUPLICATE_CLEANUP_INTERVAL 15000
 #define DUPLICATE_CLEANUP_JITTER 25
 #define DUPLICATE_VTIME 120000
+#define DUP_MAX_TOO_LOW 16
 
 struct dup_entry {
   struct avl_node avl;
@@ -63,6 +64,7 @@ struct dup_entry {
 AVLNODE2STRUCT(duptree2dupentry, struct dup_entry, avl);
 
 void olsr_init_duplicate_set(void);
+void olsr_cleanup_duplicates(union olsr_ip_addr *orig);
 struct dup_entry *olsr_create_duplicate_entry(void *ip, uint16_t seqnr);
 int olsr_message_is_duplicate(union olsr_message *m);
 void olsr_print_duplicate_table(void);

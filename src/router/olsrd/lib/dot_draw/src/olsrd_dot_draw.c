@@ -288,7 +288,8 @@ dotdraw_write_data(void *foo __attribute__ ((unused))) {
   struct timeval tv;
 
   FD_ZERO(&set);
-  FD_SET(outbuffer_socket, &set);
+  /* prevent warning on WIN32 */
+  FD_SET((unsigned int)outbuffer_socket, &set);
 
   tv.tv_sec = 0;
   tv.tv_usec = 0;
@@ -299,7 +300,7 @@ dotdraw_write_data(void *foo __attribute__ ((unused))) {
   }
 
   if (FD_ISSET(outbuffer_socket, &set)) {
-    result = write(outbuffer_socket, outbuffer.buf, outbuffer.len);
+    result = send(outbuffer_socket, outbuffer.buf, outbuffer.len, 0);
     if (result > 0)
       abuf_pull(&outbuffer, result);
 

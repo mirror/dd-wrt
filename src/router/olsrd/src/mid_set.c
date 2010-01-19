@@ -38,6 +38,7 @@
  * the copyright holders.
  *
  */
+#include <assert.h>
 
 #include "ipcalc.h"
 #include "defs.h"
@@ -79,6 +80,24 @@ olsr_init_mid_set(void)
   return 1;
 }
 
+void olsr_delete_all_mid_entries(void) {
+  int hash;
+
+  for (hash = 0; hash < HASHSIZE; hash++) {
+    while (mid_set[hash].next != &mid_set[hash]) {
+      olsr_delete_mid_entry(mid_set[hash].next);
+    }
+  }
+}
+
+void olsr_cleanup_mid(union olsr_ip_addr *orig) {
+  struct mid_entry *mid;
+  mid = mid_lookup_entry_bymain(orig);
+  if (mid) {
+    olsr_delete_mid_entry(mid);
+  }
+}
+
 /**
  * Wrapper for the timer callback.
  */
@@ -113,7 +132,7 @@ olsr_set_mid_timer(struct mid_entry *mid, olsr_reltime rel_timer)
   if (mid->mid_timer != NULL) willFireIn = olsr_getTimeDue(mid->mid_timer->timer_clock);
   
   if (willFireIn < 0 || (olsr_reltime)willFireIn < rel_timer) {
-    olsr_set_timer(&mid->mid_timer, rel_timer, OLSR_MID_JITTER, OLSR_TIMER_ONESHOT, &olsr_expire_mid_entry, mid, 0);
+    olsr_set_timer(&mid->mid_timer, rel_timer, 0, OLSR_TIMER_ONESHOT, &olsr_expire_mid_entry, mid, 0);
   }
 }
 
@@ -124,10 +143,10 @@ olsr_set_mid_timer(struct mid_entry *mid, olsr_reltime rel_timer)
  *
  * @param m_addr the main address of the node
  * @param alias the alias address to insert
- * @return nada
+ * @return false if mid_address is unnecessary, true otherwise
  */
 
-void
+static bool
 insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias, olsr_reltime vtime)
 {
   struct mid_entry *tmp;
@@ -147,9 +166,8 @@ insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias, olsr_rel
   /* Check if alias is already registered with m_addr */
   registered_m_addr = mid_lookup_main_addr(&alias->alias);
   if (registered_m_addr != NULL && ipequal(registered_m_addr, m_addr)) {
-
     /* Alias is already registered with main address. Nothing to do here. */
-    return;
+    return false;
   }
 
   /*
@@ -223,6 +241,7 @@ insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias, olsr_rel
     }
     tmp_adr = tmp_adr->next_alias;
   }
+  return true;
 }
 
 /**
@@ -284,7 +303,9 @@ insert_mid_alias(union olsr_ip_addr *main_add, const union olsr_ip_addr *alias, 
     }
   }
 
-  insert_mid_tuple(main_add, adr, vtime);
+  if (!insert_mid_tuple(main_add, adr, vtime)) {
+    free(adr);
+  }
 
   /*
    *Recalculate topology
@@ -387,9 +408,11 @@ olsr_update_mid_table(const union olsr_ip_addr *adr, olsr_reltime vtime)
  * @param declared_aliases the list of declared aliases for the MID entry
  * @return nada
  */
-void
-olsr_prune_aliases(const union olsr_ip_addr *m_addr, struct mid_alias *declared_aliases)
+static void
+olsr_prune_aliases(struct mid_message *message)
 {
+  const union olsr_ip_addr *m_addr = &message->mid_origaddr;
+  struct mid_alias * declared_aliases = message->mid_addr;
   struct mid_entry *entry;
   uint32_t hash;
   struct mid_address *registered_aliases;
@@ -421,6 +444,12 @@ olsr_prune_aliases(const union olsr_ip_addr *m_addr, struct mid_alias *declared_
     while (declared_aliases != 0 && !ipequal(&current_alias->alias, &declared_aliases->alias_addr)) {
       declared_aliases = declared_aliases->next;
     }
+
+    if (declared_aliases == NULL) {
+      /*do not remove alias if vtime still valid (so we assigned something != NULL to declared_aliases)*/
+      if (!olsr_isTimedOut(current_alias->vtime)) declared_aliases = save_declared_aliases;
+    }
+    else current_alias->vtime=olsr_getTimestamp(message->vtime);
 
     if (declared_aliases == NULL) {
       struct ipaddr_str buf;
@@ -573,7 +602,7 @@ olsr_input_mid(union olsr_message *m, struct interface *in_if __attribute__ ((un
     tmp_adr = tmp_adr->next;
   }
 
-  olsr_prune_aliases(&message.mid_origaddr, message.mid_addr);
+  olsr_prune_aliases(&message);
   olsr_free_mid_packet(&message);
 
   /* Forward the message */

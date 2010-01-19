@@ -35,3 +35,9 @@ make
 make install
 
 - Andreas T
+
+olsr-topology-view.pl is a simple script to visualize the dotdraw data
+on your computer. You will find some more explanations about the script at
+http://br1.einfach.org/OlsrTopologyVisualization
+
+- Henning Rogge

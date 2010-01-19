@@ -371,11 +371,16 @@ olsr_calculate_routing_table(void)
    */
   OLSR_FOR_ALL_NBR_ENTRIES(neigh) {
 
-    if (neigh->status == SYM) {
-
+    if (neigh->status != SYM) {
+      tc_edge = olsr_lookup_tc_edge(tc_myself, &neigh->neighbor_main_addr);
+      if (tc_edge) {
+        olsr_delete_tc_edge_entry(tc_edge);
+      }
+    }
+    else {
       tc_edge = olsr_lookup_tc_edge(tc_myself, &neigh->neighbor_main_addr);
       link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
-      if (!link) {
+      if (!link || lookup_link_status(link) == LOST_LINK) {
 
         /*
          * If there is no best link to this neighbor

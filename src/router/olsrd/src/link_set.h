@@ -121,6 +121,7 @@ extern bool link_changes;
 
 void olsr_set_link_timer(struct link_entry *, unsigned int);
 void olsr_init_link_set(void);
+void olsr_reset_all_links(void);
 void olsr_delete_link_entry_by_ip(const union olsr_ip_addr *);
 void olsr_expire_link_hello_timer(void *);
 void signal_link_changes(bool);        /* XXX ugly */

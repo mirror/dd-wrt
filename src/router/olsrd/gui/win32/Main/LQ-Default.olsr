@@ -148,28 +148,37 @@ LoadPlugin "olsrd_httpinfo.dll" {
 # interfaces(e.g. Interface "eth0" "eth2"
 
 Interface "GUI" {
+    # Interface Mode is used to prevent unnecessary
+    # packet forwarding on switched ethernet interfaces
+    # valid Modes are "mesh" and "ether"
+    # The default value is mesh!
+
+    # Mode "mesh"
 
     # IPv4 broadcast address to use. The
     # one usefull example would be 255.255.255.255
     # If not defined the broadcastaddress
     # every card is configured with is used
+    # The second useful value would be to
+    # specify the peer adress of an ptp-tunnel.
+    # another name of this parameter is "IPv4Multicast"
+ 
+    # Ip4Broadcast      255.255.255.255
 
-    #Ip4Broadcast	255.255.255.255
+    # IPv6 multicast address
+    # If not defined, FF02::1 is used
 
-    # IPv6 address scope to use.
-    # Must be 'site-local' or 'global'
+    # IPv6Multicast	FF02::1
 
-    Ip6AddrType 	global
+    # IPv4 src address
+    # If not defined (0.0.0.0), the interface IP is used
 
-    # IPv6 multicast address to use when
-    # using site-local addresses.
-    # If not defined, ff05::15 is used
-    Ip6MulticastSite	ff05::15
+    # IPv4Src 0.0.0.0
 
-    # IPv6 multicast address to use when
-    # using global addresses
-    # If not defined, ff0e::1 is used
-    Ip6MulticastGlobal	ff0e::1
+    # IPv6 src prefix.
+    # If not defined (::/0), a not-linklocal interface IP is used
+
+    # IPv6Src ::/0
 
     # Olsrd can autodetect changes in
     # interface configurations. Enabled by default

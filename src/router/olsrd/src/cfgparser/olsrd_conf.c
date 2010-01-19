@@ -46,6 +46,7 @@
 #include "net_olsr.h"
 #include "olsr.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -100,38 +101,25 @@ main(int argc, char *argv[])
 
 #endif
 
-struct olsrd_config *
+int
 olsrd_parse_cnf(const char *filename)
 {
   struct olsr_if *in, *new_ifqueue;
   int rc;
 
-  /* Initialize the global varibles - oparse.y needs it there */
-  olsr_cnf = malloc(sizeof(*olsr_cnf));
-  if (olsr_cnf == NULL) {
-    fprintf(stderr, "Out of memory %s\n", __func__);
-    return NULL;
-  }
-
-  set_default_cnf(olsr_cnf);
-
-  printf("Parsing file: \"%s\"\n", filename);
+  fprintf(stderr, "Parsing file: \"%s\"\n", filename);
 
   yyin = fopen(filename, "r");
   if (yyin == NULL) {
     fprintf(stderr, "Cannot open configuration file '%s': %s.\n", filename, strerror(errno));
-    olsrd_free_cnf(olsr_cnf);
-    olsr_cnf = NULL;
-    return NULL;
+    return -1;
   }
 
   current_line = 1;
   rc = yyparse();
   fclose(yyin);
   if (rc != 0) {
-    olsrd_free_cnf(olsr_cnf);
-    olsr_cnf = NULL;
-    return NULL;
+    return -1;
   }
 
   /* Reverse the queue (added by user request) */
@@ -154,7 +142,47 @@ olsrd_parse_cnf(const char *filename)
     in->interf = NULL;
     in->host_emul = false;
   }
-  return olsr_cnf;
+  return 0;
+}
+
+/* prints an interface (and checks it againt the default config) and the inverted config */
+static void
+olsrd_print_interface_cnf(struct if_config_options *cnf, struct if_config_options *cnfi, bool defcnf)
+{
+  struct olsr_lq_mult *mult;
+  int lq_mult_cnt = 0;
+  char ipv6_buf[INET6_ADDRSTRLEN];                  /* buffer for IPv6 inet_htop */
+
+  if (cnf->ipv4_multicast.v4.s_addr) {
+    printf("\tIPv4 broadcast/multicast : %s%s\n", inet_ntoa(cnf->ipv4_multicast.v4),DEFAULT_STR(ipv4_multicast.v4.s_addr));
+  } else {
+    printf("\tIPv4 broadcast/multicast : AUTO%s\n",DEFAULT_STR(ipv4_multicast.v4.s_addr));
+  }
+
+  if (cnf->mode==IF_MODE_ETHER){
+    printf("\tMode           : ether%s\n",DEFAULT_STR(mode));
+  } else {
+    printf("\tMode           : mesh%s\n",DEFAULT_STR(mode));
+  }
+
+  printf("\tIPv6 multicast           : %s%s\n", inet_ntop(AF_INET6, &cnf->ipv6_multicast.v6, ipv6_buf, sizeof(ipv6_buf)),DEFAULT_STR(ipv6_multicast.v6));
+
+  printf("\tHELLO emission/validity  : %0.2f%s/%0.2f%s\n", cnf->hello_params.emission_interval, DEFAULT_STR(hello_params.emission_interval),
+         cnf->hello_params.validity_time,DEFAULT_STR(hello_params.validity_time));
+  printf("\tTC emission/validity     : %0.2f%s/%0.2f%s\n", cnf->tc_params.emission_interval, DEFAULT_STR(tc_params.emission_interval),
+         cnf->tc_params.validity_time,DEFAULT_STR(tc_params.validity_time));
+  printf("\tMID emission/validity    : %0.2f%s/%0.2f%s\n", cnf->mid_params.emission_interval, DEFAULT_STR(mid_params.emission_interval),
+         cnf->mid_params.validity_time,DEFAULT_STR(mid_params.validity_time));
+  printf("\tHNA emission/validity    : %0.2f%s/%0.2f%s\n", cnf->hna_params.emission_interval, DEFAULT_STR(hna_params.emission_interval),
+         cnf->hna_params.validity_time,DEFAULT_STR(hna_params.validity_time));
+
+  for (mult = cnf->lq_mult; mult != NULL; mult = mult->next) {
+    lq_mult_cnt++;
+    printf("\tLinkQualityMult          : %s %0.2f %s\n", inet_ntop(olsr_cnf->ip_version, &mult->addr, ipv6_buf, sizeof(ipv6_buf)),
+      (float)(mult->value) / 65536.0, ((lq_mult_cnt > cnf->orig_lq_mult_cnt)?" (d)":""));
+  }
+
+  printf("\tAutodetect changes       : %s%s\n", cnf->autodetect_chg ? "yes" : "no",DEFAULT_STR(autodetect_chg));
 }
 
 int
@@ -287,11 +315,68 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
 	  fprintf(stderr, "Warning, you are using the min_tc_vtime hack. We hope you know what you are doing... contact olsr.org otherwise.\n");
   }
 
+  if (cnf->interface_defaults == NULL) {
+    /* get a default configuration if the user did not specify one */
+    cnf->interface_defaults = get_default_if_config();
+  }
+
   /* Interfaces */
   while (in) {
-    struct olsr_lq_mult *mult;
+    struct olsr_lq_mult *mult, *mult_orig;
 
     io = in->cnf;
+
+    olsrd_print_interface_cnf(in->cnf, in->cnfi, false);
+
+    /*apply defaults (if this is not the default interface stub)*/
+    if (in->cnf != cnf->interface_defaults)
+    {
+      size_t pos;
+      struct olsr_lq_mult *mult_temp, *mult_orig_walk;
+      uint8_t *cnfptr = (uint8_t*)in->cnf;
+      uint8_t *cnfiptr = (uint8_t*)in->cnfi;
+      uint8_t *defptr = (uint8_t*)cnf->interface_defaults;
+
+      /*save interface specific lqmults, as they are merged togehter later*/
+      mult_orig = io->lq_mult;
+
+      assert(in->cnf);
+      assert(in->cnfi);
+      for (pos = 0; pos < sizeof(*in->cnf); pos++) {
+        if (cnfptr[pos] != cnfiptr[pos]) {
+          cnfptr[pos] = defptr[pos]; cnfiptr[pos]=0x00;
+        }
+        else cnfiptr[pos]=0xFF;
+      }
+
+      io->lq_mult=NULL;
+      /*copy default lqmults into this interface*/
+      for (mult = cnf->interface_defaults->lq_mult; mult; mult=mult->next) {
+        /*search same lqmult in orig_list*/
+        for (mult_orig_walk = mult_orig; mult_orig_walk; mult_orig_walk=mult_orig_walk->next) {
+          if (ipequal(&mult_orig_walk->addr,&mult->addr)) {
+            break;
+          }
+        }
+        if (mult_orig_walk == NULL) {
+          mult_temp=malloc(sizeof(struct olsr_lq_mult));
+          memcpy(mult_temp,mult,sizeof(struct olsr_lq_mult));
+          mult_temp->next=io->lq_mult;
+          io->lq_mult=mult_temp;
+        }
+      }
+    }
+    else
+    { /* check if there are no lqmults
+       *  as copying the pointer to the interfaces, 
+       *  would lead 1. to unexpected results if this interface defines its own lqmults 
+       *  2. to problems when freeing lqmult structures them) 
+      if (io->lq_mult!=NULL) {
+        fprintf(stderr, "LinkQualityMult directives are not supported within InterfaceDefaults section!\n", in->name);
+        return -1;
+      }*/
+      mult_orig = NULL;
+    }
 
     if (in->name == NULL || !strlen(in->name)) {
       fprintf(stderr, "Interface has no name!\n");
@@ -314,14 +399,15 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     }
 
     if (io->hello_params.emission_interval < cnf->pollrate || io->hello_params.emission_interval > io->hello_params.validity_time) {
-      fprintf(stderr, "Bad HELLO parameters! (em: %0.2f, vt: %0.2f)\n", io->hello_params.emission_interval,
-              io->hello_params.validity_time);
+      fprintf(stderr, "Bad HELLO parameters! (em: %0.2f, vt: %0.2f) for dev %s\n", io->hello_params.emission_interval,
+              io->hello_params.validity_time, in->name);
       return -1;
     }
 
     /* TC interval */
     if (io->tc_params.emission_interval < cnf->pollrate || io->tc_params.emission_interval > io->tc_params.validity_time) {
-      fprintf(stderr, "Bad TC parameters! (em: %0.2f, vt: %0.2f)\n", io->tc_params.emission_interval, io->tc_params.validity_time);
+      fprintf(stderr, "Bad TC parameters! (em: %0.2f, vt: %0.2f) for dev %s\n", io->tc_params.emission_interval,
+          io->tc_params.validity_time, in->name);
       return -1;
     }
 
@@ -331,16 +417,29 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     }
     /* MID interval */
     if (io->mid_params.emission_interval < cnf->pollrate || io->mid_params.emission_interval > io->mid_params.validity_time) {
-      fprintf(stderr, "Bad MID parameters! (em: %0.2f, vt: %0.2f)\n", io->mid_params.emission_interval,
-              io->mid_params.validity_time);
+      fprintf(stderr, "Bad MID parameters! (em: %0.2f, vt: %0.2f) for dev %s\n", io->mid_params.emission_interval,
+              io->mid_params.validity_time, in->name);
       return -1;
     }
 
     /* HNA interval */
     if (io->hna_params.emission_interval < cnf->pollrate || io->hna_params.emission_interval > io->hna_params.validity_time) {
-      fprintf(stderr, "Bad HNA parameters! (em: %0.2f, vt: %0.2f)\n", io->hna_params.emission_interval,
-              io->hna_params.validity_time);
+      fprintf(stderr, "Bad HNA parameters! (em: %0.2f, vt: %0.2f) for dev %s\n", io->hna_params.emission_interval,
+              io->hna_params.validity_time, in->name);
       return -1;
+    }
+
+    /*merge lqmults*/
+    if (mult_orig!=NULL) {
+      io->orig_lq_mult_cnt=1;
+      /*search last of interface specific lqmults*/
+      mult = mult_orig;
+      while (mult->next!=NULL) {
+        mult=mult->next;
+      }
+      /*append default lqmults ath the end of the interface specific (to ensure they can overwrite them)*/
+      mult->next=io->lq_mult;
+      io->lq_mult=mult_orig;
     }
 
     for (mult = io->lq_mult; mult; mult=mult->next) {
@@ -379,10 +478,11 @@ olsrd_free_cnf(struct olsrd_config *cnf)
     }
 
     free(in->cnf);
+    free(in->cnfi);
+
     ind = in;
     in = in->next;
-    free(ind->name);
-    free(ind->config);
+
     free(ind);
   }
 
@@ -427,6 +527,7 @@ set_default_cnf(struct olsrd_config *cnf)
   cnf->rtproto = DEF_RTPROTO;
   cnf->rttable_default = 0;
   cnf->willingness_auto = DEF_WILL_AUTO;
+  cnf->willingness = DEF_WILLINGNESS;
   cnf->ipc_connections = DEF_IPC_CONNECTIONS;
   cnf->fib_metric = DEF_FIB_METRIC;
 
@@ -477,20 +578,13 @@ get_default_if_config(void)
 
   memset(io, 0, sizeof(*io));
 
-  io->ipv6_addrtype = 1;        /* XXX - FixMe */
-
-  inet_pton(AF_INET6, OLSR_IPV6_MCAST_SITE_LOCAL, &in6);
-  io->ipv6_multi_site.v6 = in6;
-
-  inet_pton(AF_INET6, OLSR_IPV6_MCAST_GLOBAL, &in6);
-  io->ipv6_multi_glbl.v6 = in6;
+  inet_pton(AF_INET6, OLSR_IPV6_MCAST, &in6);
+  io->ipv6_multicast.v6 = in6;
 
   io->lq_mult = NULL;
 
   io->weight.fixed = false;
   io->weight.value = 0;
-
-  io->ipv6_addrtype = 0;        /* global */
 
   io->hello_params.emission_interval = HELLO_INTERVAL;
   io->hello_params.validity_time = NEIGHB_HOLD_TIME;
@@ -513,8 +607,6 @@ olsrd_print_cnf(struct olsrd_config *cnf)
   struct olsr_if *in = cnf->interfaces;
   struct plugin_entry *pe = cnf->plugins;
   struct ip_prefix_list *ie = cnf->ipc_nets;
-  struct olsr_lq_mult *mult;
-  char ipv6_buf[100];                  /* buffer for IPv6 inet_htop */
 
   printf(" *** olsrd configuration ***\n");
 
@@ -571,44 +663,18 @@ olsrd_print_cnf(struct olsrd_config *cnf)
 
   /* Interfaces */
   if (in) {
-    printf("Interfaces:\n");
-    while (in) {
-      printf(" dev: \"%s\"\n", in->name);
+    /*print interface default config*/
+    printf(" InterfaceDefaults: \n");
+    olsrd_print_interface_cnf(cnf->interface_defaults, cnf->interface_defaults, true);
 
-      if (in->cnf->ipv4_broadcast.v4.s_addr) {
-        printf("\tIPv4 broadcast           : %s\n", inet_ntoa(in->cnf->ipv4_broadcast.v4));
-      } else {
-        printf("\tIPv4 broadcast           : AUTO\n");
+    while (in)
+    { 
+      if (cnf->interface_defaults!=in->cnf)
+      {
+        printf(" dev: \"%s\"\n", in->name);
+
+        olsrd_print_interface_cnf(in->cnf, in->cnfi, false);
       }
-
-      if (in->cnf->mode==IF_MODE_ETHER){
-        printf("\tMode           : ether\n");
-      } else {
-        printf("\tMode           : mesh\n");
-      }
-
-      printf("\tIPv6 addrtype            : %s\n", in->cnf->ipv6_addrtype ? "site-local" : "global");
-
-      //union olsr_ip_addr       ipv6_multi_site;
-      //union olsr_ip_addr       ipv6_multi_glbl;
-      printf("\tIPv6 multicast site/glbl : %s", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_site.v6, ipv6_buf, sizeof(ipv6_buf)));
-      printf("/%s\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_glbl.v6, ipv6_buf, sizeof(ipv6_buf)));
-
-      printf("\tHELLO emission/validity  : %0.2f/%0.2f\n", in->cnf->hello_params.emission_interval,
-             in->cnf->hello_params.validity_time);
-      printf("\tTC emission/validity     : %0.2f/%0.2f\n", in->cnf->tc_params.emission_interval, in->cnf->tc_params.validity_time);
-      printf("\tMID emission/validity    : %0.2f/%0.2f\n", in->cnf->mid_params.emission_interval,
-             in->cnf->mid_params.validity_time);
-      printf("\tHNA emission/validity    : %0.2f/%0.2f\n", in->cnf->hna_params.emission_interval,
-             in->cnf->hna_params.validity_time);
-
-      for (mult = in->cnf->lq_mult; mult != NULL; mult = mult->next) {
-        printf("\tLinkQualityMult          : %s %0.2f\n", inet_ntop(cnf->ip_version, &mult->addr, ipv6_buf, sizeof(ipv6_buf)),
-               (float)(mult->value) / 65536.0);
-      }
-
-      printf("\tAutodetetc changes       : %s\n", in->cnf->autodetect_chg ? "yes" : "no");
-
       in = in->next;
     }
   }

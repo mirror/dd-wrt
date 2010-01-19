@@ -89,7 +89,7 @@ struct timespec {
 
 int nanosleep(struct timespec *Req, struct timespec *Rem);
 
-void gettimeofday(struct timeval *TVal, void *TZone);
+int gettimeofday(struct timeval *TVal, void *TZone);
 
 #endif
 

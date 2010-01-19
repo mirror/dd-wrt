@@ -142,6 +142,7 @@ extern struct avl_tree tc_tree;
 extern struct tc_entry *tc_myself;
 
 void olsr_init_tc(void);
+void olsr_delete_all_tc_entries(void);
 void olsr_change_myself_tc(void);
 void olsr_print_tc_table(void);
 void olsr_time_out_tc_set(void);

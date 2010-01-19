@@ -17,6 +17,13 @@ OPTIMIZE ?= $(COPTS)
 # you need a recent enough gcc and the libmudflap installed
 MUDFLAP ?= 0
 
+# OS detection
+ifeq ($(OS),Windows_NT)
+OS := win32
+endif
+ifeq ($(OS),)
+OS := $(shell sh $(TOPDIR)/make/guess_os.sh)
+endif
 
 ######################
 #
@@ -125,12 +132,19 @@ endif
 ifdef OLSRD_PLUGIN
 # c and ld flags for libraries (plugins)
 CPPFLAGS +=	-DOLSR_PLUGIN
+ifeq ($(OS),win32)
+  LDFLAGS +=	-Wl,-export-all-symbols,--enable-auto-import
+endif
 LDFLAGS +=	-shared
 LDFLAGS +=	-Wl,-soname,$(PLUGIN_NAME)
 LDFLAGS +=	-Wl,--version-script=version-script.txt 
 else
 # c and ld flags for main
-LDFLAGS +=	-Wl,-export-dynamic 
+ifeq ($(OS),win32)
+  LDFLAGS +=	-Wl,-export-all-symbols
+else 
+  LDFLAGS +=	-Wl,-export-dynamic 
+endif
 LDFLAGS +=	-Wl,-rpath,$(LIBDIR)
 endif
 # LDFLAGS for all 
@@ -161,13 +175,6 @@ CPPFLAGS +=     -DUSE_FPM
 SRCS +=		$(wildcard src/common/*.c src/*.c *.c)
 HDRS +=		$(wildcard src/common/*.h src/*.h *.h)
 
-# OS detection
-ifeq ($(OS),Windows_NT)
-OS := win32
-endif
-ifeq ($(OS),)
-OS := $(shell sh $(TOPDIR)/make/guess_os.sh)
-endif
 ifeq ($(OS),UNKNOWN)
 all: help
 else

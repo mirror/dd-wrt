@@ -111,7 +111,7 @@ int avl_strcasecmp(const void *str1, const void *str2);
 void init_lq_handler_tree(void);
 
 void register_lq_handler(struct lq_handler *handler, const char *name);
-int activate_lq_handler(const char *name);
+void activate_lq_handler(const char *name);
 
 olsr_linkcost olsr_calc_tc_cost(const struct tc_edge_entry *);
 
@@ -127,6 +127,7 @@ const char *get_link_entry_text(struct link_entry *entry, char separator, struct
 const char *get_tc_edge_entry_text(struct tc_edge_entry *entry, char separator, struct lqtextbuffer *buffer);
 const char *get_linkcost_text(olsr_linkcost cost, bool route, struct lqtextbuffer *buffer);
 
+void olsr_clear_hello_lq(struct link_entry *link);
 void olsr_copy_hello_lq(struct lq_hello_neighbor *target, struct link_entry *source);
 void olsr_copylq_link_entry_2_tc_mpr_addr(struct tc_mpr_addr *target, struct link_entry *source);
 void olsr_copylq_link_entry_2_tc_edge_entry(struct tc_edge_entry *target, struct link_entry *source);

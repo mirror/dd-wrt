@@ -54,6 +54,7 @@
 #include "olsr_cookie.h"
 
 #ifdef WIN32
+char *StrError(unsigned int ErrNo);
 #undef strerror
 #define strerror(x) StrError(x)
 #endif
