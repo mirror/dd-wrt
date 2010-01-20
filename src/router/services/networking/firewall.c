@@ -745,26 +745,25 @@ static void nat_postrouting(void)
 	    && (nvram_match("wan_proto", "disabled"))) {
 		if (nvram_match("wk_mode", "gateway")) {
 			if (nvram_match("hotss_enable", "1")) {
-				if (strlen(nvram_safe_get("hotss_net")) > 0) 
+				if (strlen(nvram_safe_get("hotss_net")) > 0)
 					save2file
-				   	 ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-				     	nvram_safe_get("hotss_net"),
-				     	nvram_safe_get("lan_ipaddr"));
+					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					     nvram_safe_get("hotss_net"),
+					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-				    	("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-				     	nvram_safe_get("lan_ipaddr"));
-			}
-			else {
-				if (strlen(nvram_safe_get("chilli_net")) > 0) 
+					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					     nvram_safe_get("lan_ipaddr"));
+			} else {
+				if (strlen(nvram_safe_get("chilli_net")) > 0)
 					save2file
-				   	 ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-				     	nvram_safe_get("chilli_net"),
-				     	nvram_safe_get("lan_ipaddr"));
+					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					     nvram_safe_get("chilli_net"),
+					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-				    	("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-				     	nvram_safe_get("lan_ipaddr"));				
+					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					     nvram_safe_get("lan_ipaddr"));
 			}
 		}
 	}
@@ -1346,7 +1345,8 @@ void fw_get_filter_services(char *services)
 	while (filters->name)	// add l7 and p2p filters
 	{
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
-			strlen(filters->name), filters->name, filters->protocol == 1 ? 3 : 2, 
+			strlen(filters->name), filters->name,
+			filters->protocol == 1 ? 3 : 2,
 			filters->protocol == 1 ? "p2p" : "l7");
 		strcat(services, temp);
 		filters++;
@@ -1491,21 +1491,32 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				if (!strcasecmp(realname, "xdcc"))
 					proto = "xdcc";
 				insmod("ipt_ipp2p");
-				save2file("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n",seq, proto, log_drop);
-				if (!strcmp(proto,"bit"))
-				    {
+				save2file
+				    ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n",
+				     seq, proto, log_drop);
+				if (!strcmp(proto, "bit")) {
 					/* bittorrent detection enhanced */
-					#ifdef HAVE_MICRO
-					save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s",seq,proto,log_drop);
-					#else
-					save2file("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s",seq,proto,log_drop);
-					#endif
-					save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s",seq,proto,log_drop);
-					save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s",seq,proto,log_drop);
-					#ifndef HAVE_MICRO
-					save2file("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s",seq,proto,log_drop);
-					#endif 
-				    }
+#ifdef HAVE_MICRO
+					save2file
+					    ("-A advgrp_%d -m layer7 --l7proto bt -j %s",
+					     seq, proto, log_drop);
+#else
+					save2file
+					    ("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s",
+					     seq, proto, log_drop);
+#endif
+					save2file
+					    ("-A advgrp_%d -m layer7 --l7proto bt1 -j %s",
+					     seq, proto, log_drop);
+					save2file
+					    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s",
+					     seq, proto, log_drop);
+#ifndef HAVE_MICRO
+					save2file
+					    ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s",
+					     seq, proto, log_drop);
+#endif
+				}
 
 			}
 		}
@@ -2371,51 +2382,60 @@ static void filter_table(void)
 		}
 	}
 
-	/*
-	 * Does it disable the filter? 
-	 */
-	if (nvram_match("filter", "off")
-	    || !nvram_match("wk_mode", "gateway")) {
+	if (!nvram_match("wan_proto", "disabled")) {
+		/*
+		 * Does it disable the filter? 
+		 */
+		if (nvram_match("filter", "off")
+		    || !nvram_match("wk_mode", "gateway")) {
 
-		/*
-		 * Make sure remote management ports are filtered if it is disabled 
-		 */
-		if (!remotemanage && strlen(wanface)) {
-			save2file("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
-				  wanface, nvram_safe_get("http_wanport"));
-			save2file("-A INPUT -p tcp -i %s --dport 80 -j DROP\n",
-				  wanface);
-			save2file("-A INPUT -p tcp -i %s --dport 443 -j DROP\n",
-				  wanface);
-			save2file("-A INPUT -p tcp -i %s --dport 69 -j DROP\n",
-				  wanface);
-		}
-		/*
-		 * Make sure remote ssh/telnet port is filtered if it is disabled :
-		 * Botho 03-05-2006 
-		 */
+			/*
+			 * Make sure remote management ports are filtered if it is disabled 
+			 */
+			if (!remotemanage && strlen(wanface)) {
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
+				     wanface, nvram_safe_get("http_wanport"));
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport 80 -j DROP\n",
+				     wanface);
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport 443 -j DROP\n",
+				     wanface);
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n",
+				     wanface);
+			}
+			/*
+			 * Make sure remote ssh/telnet port is filtered if it is disabled :
+			 * Botho 03-05-2006 
+			 */
 #ifdef HAVE_SSHD
-		if (!remotessh && strlen(wanface) > 0) {
-			save2file("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
-				  wanface, nvram_safe_get("sshd_wanport"));
-			save2file("-A INPUT -p tcp -i %s --dport 22 -j DROP\n",
-				  wanface);
-		}
+			if (!remotessh && strlen(wanface) > 0) {
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
+				     wanface, nvram_safe_get("sshd_wanport"));
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport 22 -j DROP\n",
+				     wanface);
+			}
 #endif
-		if (!remotetelnet && strlen(wanface) > 0) {
-			save2file("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
-				  wanface, nvram_safe_get("telnet_wanport"));
-			save2file("-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
-				  wanface);
+			if (!remotetelnet && strlen(wanface) > 0) {
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
+				     wanface, nvram_safe_get("telnet_wanport"));
+				save2file
+				    ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
+				     wanface);
+			}
+			filter_forward();
+
+		} else {
+
+			filter_input();
+			filter_output();
+			filter_forward();
 		}
-
-		filter_forward();
-
-	} else {
-
-		filter_input();
-		filter_output();
-		filter_forward();
 	}
 
 	/*
@@ -2993,12 +3013,12 @@ void start_firewall(void)
 	if (isregistered_real())
 #endif
 		runStartup("/jffs/etc/config", ".prewall");	// if available
-		runStartup("/mmc/etc/config", ".prewall");	// if available
-		runStartup("/tmp/etc/config", ".prewall");	// if available
-		if (create_rc_file(RC_FIREWALL) == 0) {
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-			system2("/tmp/.rc_firewall");
-		}
+	runStartup("/mmc/etc/config", ".prewall");	// if available
+	runStartup("/tmp/etc/config", ".prewall");	// if available
+	if (create_rc_file(RC_FIREWALL) == 0) {
+		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+		system2("/tmp/.rc_firewall");
+	}
 	runStartup("/etc/config", ".firewall");
 
 	cprintf("Ready\n");
