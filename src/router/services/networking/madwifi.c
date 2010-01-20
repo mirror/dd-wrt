@@ -1143,6 +1143,7 @@ static void configure_single(int count)
 	int disablescan = 0;
 
 	set_scanlist(dev, wif);
+	sleep(1);
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
 		char *ch = nvram_default_get(channel, "0");
 
@@ -1152,6 +1153,7 @@ static void configure_single(int count)
 			sysprintf("iwconfig %s freq %sM", dev, ch);
 		}
 	}
+	sleep(1);
 
 	if (useif)
 		set_netmode(wif, dev, useif);
@@ -1369,7 +1371,8 @@ static void configure_single(int count)
 		char *mvap = nvram_default_get(mode, "ap");
 		set_scanlist(dev, wif);
 		setRTS(var);
-
+		sleep(1);
+		sysprintf("iwpriv %s bgscan 0", var);
 		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta")
 		    && strcmp(mvap, "wet")) {
 			cprintf("set channel\n");
@@ -1381,7 +1384,7 @@ static void configure_single(int count)
 				sysprintf("iwconfig %s freq %sM", var, ch);
 			}
 		}
-		sysprintf("iwpriv %s bgscan 0", var);
+		sleep(1);
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
@@ -1564,6 +1567,7 @@ static void configure_single(int count)
 		}
 	}
 
+	sleep(1);
 	apm = nvram_default_get(wl, "ap");
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
 		cprintf("set channel\n");
@@ -1575,6 +1579,7 @@ static void configure_single(int count)
 			sysprintf("iwconfig %s freq %sM", dev, ch);
 		}
 	}
+	sleep(1);
 
 	if (strcmp(apm, "sta")) {
 		char bridged[32];
