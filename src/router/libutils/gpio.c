@@ -507,6 +507,8 @@ void set_gpio(int pin, int value)
 		cmd = GPIO_CMD_SET_BUZZER;
 		break;
 	}
+	if (pin > 4 && pin < 16)
+		return;
 	fd = open(GPIO_DEV, O_RDONLY);
 	if (fd < 0) {
 		perror(GPIO_DEV);
@@ -550,6 +552,8 @@ int get_gpio(int pin)
 		cmd = GPIO_CMD_GET_BUZZER;
 		break;
 	}
+	if (pin > 4 && pin < 16)
+		return 0;
 	fd = open(GPIO_DEV, O_RDONLY);
 	if (fd < 0) {
 		perror(GPIO_DEV);
