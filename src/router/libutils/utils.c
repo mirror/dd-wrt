@@ -2675,7 +2675,7 @@ int led_control(int type, int act)
  * LED_SES, LED_SES2, LED_WLAN act: LED_ON, LED_OFF, LED_FLASH 
  */
 {
-#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5) || defined(HAVE_OPENRISC) )  && (!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_RTG32) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
+#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_RTG32) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
 	return 0;
 #else
 	int use_gpio = 0x0ff;
@@ -2801,6 +2801,8 @@ int led_control(int type, int act)
 		diag_gpio = 0x10d;
 		connected_gpio = 0x108;
 		break;
+	case ROUTER_BOARD_OPENRISC:
+		diag_gpio = 0x003;
 #endif
 	case ROUTER_BOARD_WHRG300N:
 		diag_gpio = 0x107;
