@@ -455,6 +455,136 @@ int get_gpio(int pin)
 	return value;
 }
 
+#elif HAVE_OPENRISC
+
+#define GPIO_CMD_GET_BTN_RST	1
+#define GPIO_CMD_SET_BTN_RST	2
+#define GPIO_CMD_GET_LEDS		3
+#define GPIO_CMD_SET_LEDS		4
+#define GPIO_CMD_SET_LED_POWER	5
+#define GPIO_CMD_SET_LED_BLUE	6
+#define GPIO_CMD_SET_LED_GREEN	7
+#define GPIO_CMD_SET			8
+#define GPIO_CMD_GET			9
+#define GPIO_CMD_SET_CTRL		10
+#define GPIO_CMD_GET_CTRL		11
+#define GPIO_CMD_SET_IRQMASK	12
+#define GPIO_CMD_GET_IRQMASK	13
+#define GPIO_CMD_SET_CHANGE		14	//!< obsolete
+#define GPIO_CMD_GET_CHANGE		15
+#define GPIO_CMD_SET_CHANGES	16	//!< obsolete
+#define GPIO_CMD_GET_CHANGES	17
+#define GPIO_CMD_SET_BUZZER		18
+#define GPIO_CMD_GET_BUZZER		19
+#define GPIO_CMD_SET_BUZZER_FRQ	20
+#define GPIO_CMD_GET_BUZZER_FRQ	21
+
+struct gpio_struct {
+	unsigned long mask;
+	unsigned long value;
+};
+
+#define GPIO_DEV	"/dev/misc/gpio"
+void set_gpio(int pin, int value)
+{
+	int fd, req;
+	int cmd;
+
+	switch (pin) {
+	case 0:
+		cmd = GPIO_CMD_SET_BTN_RST;
+		break;
+	case 1:
+		cmd = GPIO_CMD_SET_LED_BLUE;
+		break;
+	case 2:
+		cmd = GPIO_CMD_SET_LED_POWER;
+		break;
+	case 3:
+		cmd = GPIO_CMD_SET_LED_GREEN;
+		break;
+	case 4:
+		cmd = GPIO_CMD_SET_BUZZER;
+		break;
+	}
+	fd = open(GPIO_DEV, O_RDONLY);
+	if (fd < 0) {
+		perror(GPIO_DEV);
+		return;
+	}
+	if (pin > 16 && pin < 128) {
+		cmd = GPIO_CMD_SET;
+		struct gpio_struct set;
+		set.mask = 1 << pin;
+		set.value = value;
+		if (ioctl(fd, cmd, &set) < 0) {
+			perror("ioctl");
+			close(fd);
+			return;
+		}
+	} else {
+		if (ioctl(fd, cmd, &value) < 0) {
+			perror("ioctl");
+			close(fd);
+			return;
+		}
+	}
+	close(fd);
+}
+
+int get_gpio(int pin)
+{
+	int fd, req;
+	int cmd, value;
+
+	switch (pin) {
+	case 0:
+		cmd = GPIO_CMD_GET_BTN_RST;
+		break;
+	case 1:
+	case 2:
+	case 3:
+		cmd = GPIO_CMD_GET_LEDS;
+		break;
+	case 4:
+		cmd = GPIO_CMD_GET_BUZZER;
+		break;
+	}
+	fd = open(GPIO_DEV, O_RDONLY);
+	if (fd < 0) {
+		perror(GPIO_DEV);
+		return -1;
+	}
+	if (pin > 16 && pin < 128) {
+		cmd = GPIO_CMD_GET;
+		if (ioctl(fd, cmd, &value) < 0) {
+			perror("ioctl");
+			close(fd);
+			return -1;
+		}
+		value = (1 << pin) & value;
+	} else {
+		if (ioctl(fd, cmd, &value) < 0) {
+			perror("ioctl");
+			close(fd);
+			return -1;
+		}
+		if (cmd >= 1 && cmd <= 3) {
+			close(fd);
+			if ((value & 0x2) && cmd == 1)
+				return 1;
+			if ((value & 0x1) && cmd == 2)
+				return 1;
+			if ((value & 0x4) && cmd == 3)
+				return 1;
+			return 0;
+		}
+		return value;
+	}
+	close(fd);
+	return value;
+}
+
 #else
 
 void set_gpio(int pin, int value)
