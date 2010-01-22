@@ -818,12 +818,15 @@ static int spiflash_probe(struct platform_device *pdev)
 		    printk(KERN_EMERG "found RedBoot partition at [0x%08lX]\n",fis->flash_base);
 		    dir_parts[0].size=fis->size;
 		    dir_parts[7].offset=0;
+		    dir_parts[1].offset=fis->size;
 		    }
 		if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel"))
 		    {
 		    printk(KERN_EMERG "found linux partition at [0x%08lX]\n",fis->flash_base);
-		    dir_parts[1].offset=fis->flash_base&(mtd->size-1);
-		    dir_parts[1].size=(dir_parts[2].offset-dir_parts[1].offset)+rootsize;
+		    if (dir_parts[2].offset==dir_parts[1].offset) // image begins with rootfs instead of kernel
+			dir_parts[1].size=fis->size+rootsize;		    
+		    else
+			dir_parts[1].size=(dir_parts[2].offset-dir_parts[1].offset)+rootsize;
 		    dir_parts[7].size=mtd->size; // linux + nvram = phy size
 		    }
 		p+=sizeof(struct fis_image_desc);
