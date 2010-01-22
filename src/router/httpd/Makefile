@@ -169,6 +169,9 @@ endif
 ifeq ($(CONFIG_BONDING),y)
   CFLAGS += -DHAVE_BONDING
 endif
+ifeq ($(CONFIG_RTG32),y)
+  CFLAGS += -DHAVE_RTG32
+endif
 
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
