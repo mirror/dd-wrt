@@ -41,6 +41,9 @@ ifeq ($(CONFIG_MADWIFI_MIMO),y)
 UTILS += wl_atheros
 endif
 endif
+ifeq ($(CONFIG_RT2880),y)
+UTILS += wl_rt2880
+endif
 ifeq ($(CONFIG_CA8),y)
 UTILS += fischecksum
 endif
