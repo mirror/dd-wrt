@@ -5,7 +5,7 @@ include $(AC_ROOT)/common.mak
 TEST_DIR	= $(AC_ROOT)/test
 
 LDFLAGS		+= -L$(TOP)/openssl -L$(TOP)/zlib
-CFLAGS		+= -Iinclude -I$(TOP)/openssl/include -I$(TOP)/zlib
+CFLAGS		+= -Dlinux -Iinclude -I$(TOP)/openssl/include -I$(TOP)/zlib
 
 iCC             = $(shell find /opt/intel/cc/*/bin/icc)
 iCFLAGS         = -w -mcpu=pentiumpro -march=pentiumpro $(COMMON_CFLAGS)
