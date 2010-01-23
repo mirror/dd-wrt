@@ -1828,20 +1828,26 @@ void rep(char *in, char from, char to)
 }
 
 #include "l7protocols.h"
-void get_filter_services(char *services)
+void get_filter_services(char *services,int maxsize)
 {
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-
+	int size=0;
 	while (filters->name)	// add l7 and p2p filters
 	{
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
+		size+=sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
 			strlen(filters->name), filters->name, filters->protocol == 1 ? 3 : 2, 
 			filters->protocol == 1 ? "p2p" : "l7");
+		if (size>maxsize-64)
+		    {
+		    fprintf(stderr,"%s:max size exceeded\n",__func__);
+		    break;
+		    }
 		strcat(services, temp);
 		filters++;
 	}
+	fprintf(stderr,"filter size = %d\n",size);
 
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
