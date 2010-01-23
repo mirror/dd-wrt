@@ -1329,6 +1329,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			if (nvram_invmatch(br1ipaddr, "0.0.0.0")) {
 				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr),
 					 nvram_safe_get(br1netmask));
+				eval("ifconfig","br1","promisc");
 
 				if (nvram_match("lan_stp", "0"))
 					br_set_stp_state("br1", 0);	// eval ("brctl",

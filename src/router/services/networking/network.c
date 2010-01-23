@@ -1473,6 +1473,7 @@ void start_lan(void)
 
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		br_add_bridge(lan_ifname);
+		eval("ifconfig",lan_ifname,"promisc");
 		if (nvram_match("lan_stp", "0"))
 			br_set_stp_state(lan_ifname, 0);
 		else
@@ -1830,6 +1831,7 @@ void start_lan(void)
 		 * Bring up interface 
 		 */
 		ifconfig(lan_ifname, IFUP, NULL, NULL);
+		eval("ifconfig",lan_ifname,"promisc");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		/*
 		 * config wireless i/f 
@@ -1864,6 +1866,7 @@ void start_lan(void)
 	 */
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"),
 		 nvram_safe_get("lan_netmask"));
+	eval("ifconfig",lan_ifname,"promisc");
 
 	char staticlan[32];
 
