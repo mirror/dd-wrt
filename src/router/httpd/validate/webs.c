@@ -1143,11 +1143,11 @@ int get_svc(char *svc, char *protocol, char *ports)
 {
 	char word[1024], *next;
 	char delim[] = "<&nbsp;>";
-	char services[8192];
+	char services[16384];
 
 	// services = nvram_safe_get("filter_services");
-	memset(services, 0, 8192);
-	get_filter_services(services);
+	memset(services, 0, sizeof(services));
+	get_filter_services(services,16384);
 
 	split(word, services, next, delim) {
 		int len = 0;
