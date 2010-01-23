@@ -41,6 +41,8 @@
 #include <getopt.h>
 #include "airdecloak-ng.h"
 #include "version.h"
+#include "osdep/radiotap/radiotap-parser.h"
+#include "osdep/radiotap/ieee80211_radiotap.h"
 
 uchar buffer[65536];
 
@@ -187,7 +189,8 @@ FILE * open_existing_pcap(const char * filename) {
 
     if( _pfh_in.linktype != LINKTYPE_IEEE802_11 &&
         _pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
-        _pfh_in.linktype != LINKTYPE_RADIOTAP_HDR )
+        _pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+        _pfh_in.linktype != LINKTYPE_PPI_HDR )
     {
         printf( "\"%s\" isn't a regular 802.11 "
                 "(wireless) capture.\n", filename );
@@ -196,7 +199,11 @@ FILE * open_existing_pcap(const char * filename) {
     }
     else if (_pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
     {
-		printf("Radiotap not yet supported\n");
+		printf("Radiotap header found. Parsing Radiotap is experimental.\n");
+	}
+    else if (_pfh_in.linktype == LINKTYPE_PPI_HDR)
+    {
+		printf("PPI not yet supported\n");
 		fclose(f);
         return NULL;
 	}
@@ -267,13 +274,13 @@ struct packet_elt * getPacketNr(int position) {
 
 char * iv2string(unsigned char * iv) {
 	char * string = (char *)malloc(9);
-	sprintf(string, "%02X %02X %02X", iv[0], iv[1], iv[2]);
+	snprintf(string, 9, "%02X %02X %02X", iv[0], iv[1], iv[2]);
 	return string;
 }
 
 char * icv2string(unsigned char * icv) {
 	char * string = (char *)malloc(12);
-	sprintf(string, "%02X %02X %02X %02X", icv[0], icv[1], icv[2], icv[3]);
+	snprintf(string, 12, "%02X %02X %02X %02X", icv[0], icv[1], icv[2], icv[3]);
 	return string;
 }
 
@@ -301,6 +308,27 @@ void print_packet(struct packet_elt * packet) {
 	printf("Signal: %d - Retry bit: %d - is cloaked: %d\n", packet->signal_quality, packet->retry_bit, packet->is_cloaked);
 }
 
+int get_rtap_signal(int caplen)
+{
+	struct ieee80211_radiotap_iterator iterator;
+	struct ieee80211_radiotap_header *rthdr;
+
+	rthdr = (struct ieee80211_radiotap_header *)buffer;
+
+	if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen) < 0)
+	return 0;
+
+	while (ieee80211_radiotap_iterator_next(&iterator) >= 0) {
+		if (iterator.this_arg_index == IEEE80211_RADIOTAP_DBM_ANTSIGNAL)
+			return *iterator.this_arg;
+		if (iterator.this_arg_index == IEEE80211_RADIOTAP_DB_ANTSIGNAL)
+			return *iterator.this_arg;
+		if (iterator.this_arg_index == IEEE80211_RADIOTAP_LOCK_QUALITY)
+			return *iterator.this_arg;
+	}
+	return 0;
+}
+
 // !!!! WDS not yet implemented
 BOOLEAN read_packets(void)
 {
@@ -320,17 +348,21 @@ BOOLEAN read_packets(void)
 			start = 144; // based on madwifi-ng
 			break;
 		case LINKTYPE_RADIOTAP_HDR:
-			// No idea
+			start = (int)(buffer[2]); // variable length!
+			break;
 		case LINKTYPE_IEEE802_11:
 			// 0
+		case LINKTYPE_PPI_HDR:
+			// ?
 		default:
 			start = 0;
 			break;
 	}
 
 	// Show link type
-	printf("Link type (Prism: %d - Radiotap: %d - 80211: %d): ",
-			LINKTYPE_PRISM_HEADER, LINKTYPE_RADIOTAP_HDR, LINKTYPE_IEEE802_11);
+	printf("Link type (Prism: %d - Radiotap: %d - 80211: %d - PPI - %d): ",
+			LINKTYPE_PRISM_HEADER, LINKTYPE_RADIOTAP_HDR,
+			LINKTYPE_IEEE802_11, LINKTYPE_PPI_HDR);
 
 	switch (_pfh_in.linktype) {
 		case LINKTYPE_PRISM_HEADER:
@@ -342,6 +374,8 @@ BOOLEAN read_packets(void)
 		case LINKTYPE_IEEE802_11:
 			puts("802.11");
 			break;
+		case LINKTYPE_PPI_HDR:
+			puts("PPI");
 		default:
 			printf("Unknown (%d)\n", _pfh_in.linktype);
 			break;
@@ -608,7 +642,8 @@ BOOLEAN read_packets(void)
 			_packet_elt_head->current->signal_quality = buffer[0x44];
 		}
 		else if (_pfh_in.linktype == LINKTYPE_RADIOTAP_HDR) {
-			// No idea atm (+ check email with different fields used) + check OSdep
+			_packet_elt_head->current->signal_quality = get_rtap_signal(
+				_packet_elt_head->current->header.caplen);
 		}
 		#ifdef DEBUG
 		printf("Signal quality: %d\n", _packet_elt_head->current->signal_quality);
@@ -1094,23 +1129,24 @@ int CFC_filter_duplicate_iv() {
 }
 
 char * status_format(int status) {
-	char * ret = (char *) calloc(1, 50);
+	size_t len = 19;
+	char * ret = (char *) calloc(1, (len + 1) * sizeof(char));
 
 	switch (status) {
 		case VALID_FRAME_UNCLOAKED:
-			strcpy(ret, "uncloacked");
+			strncpy(ret, "uncloacked", len);
 			break;
 		case CLOAKED_FRAME:
-			strcpy(ret, "cloaked");
+			strncpy(ret, "cloaked", len);
 			break;
 		case POTENTIALLY_CLOAKED_FRAME:
-			strcpy(ret, "potentially cloaked");
+			strncpy(ret, "potentially cloaked", len);
 			break;
 		case UKNOWN_FRAME_CLOAKING_STATUS:
-			strcpy(ret, "unknown cloaking");
+			strncpy(ret, "unknown cloaking", len);
 			break;
 		default:
-			sprintf(ret,"type %d", status);
+			snprintf(ret, len + 1,"type %d", status);
 			break;
 	}
 
@@ -1512,14 +1548,14 @@ int main( int argc, char *argv[] )
 
 	// No extension
 	if (temp == 0) {
-		sprintf(_filename_output_cloaked, "%s-cloaked.pcap", input_filename);
-		sprintf(_filename_output_filtered, "%s-filtered.pcap", input_filename);
+		snprintf(_filename_output_cloaked, strlen( input_filename ) + 9 + 5, "%s-cloaked.pcap", input_filename);
+		snprintf(_filename_output_filtered, strlen( input_filename ) + 10 + 5, "%s-filtered.pcap", input_filename);
 	}
 	else {
-		strncpy(_filename_output_cloaked, input_filename, temp);
-		strncpy(_filename_output_filtered, input_filename, temp);
-		strcat(_filename_output_cloaked, "-cloaked.pcap");
-		strcat(_filename_output_filtered, "-filtered.pcap");
+		strncpy(_filename_output_cloaked, input_filename, strlen( input_filename ) + 9 + 5 - 1);
+		strncpy(_filename_output_filtered, input_filename, strlen( input_filename ) + 10 + 5 - 1);
+		strncat(_filename_output_cloaked, "-cloaked.pcap", 14);
+		strncat(_filename_output_filtered, "-filtered.pcap", 15);
 	}
 
 

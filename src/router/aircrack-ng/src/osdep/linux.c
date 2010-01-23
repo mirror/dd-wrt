@@ -40,7 +40,7 @@
 #include <dirent.h>
 #include <sys/utsname.h>
 
-#include "radiotap-parser.h"
+#include "radiotap/radiotap-parser.h"
         /* radiotap-parser defines types like u8 that
          * ieee80211_radiotap.h needs
          *
@@ -49,11 +49,12 @@
          * - since we can't support extensions we don't understand
          * - since linux does not include it in userspace headers
          */
-#include "ieee80211_radiotap.h"
+#include "radiotap/ieee80211_radiotap.h"
 #include "osdep.h"
 #include "pcap.h"
 #include "crctable_osdep.h"
 #include "common.h"
+#include "byteorder.h"
 
 #define uchar unsigned char
 
@@ -675,6 +676,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
     int ret, usedrtap=0;
     unsigned char tmpbuf[4096];
     unsigned char rate;
+    unsigned short int *p_rtlen;
 
     unsigned char u8aRadiotap[] = {
         0x00, 0x00, // <-- radiotap version
@@ -684,6 +686,9 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         0x00, // <-- padding for natural alignment
         0x18, 0x00, // <-- TX flags
     };
+
+    /* Pointer to the radiotap header length field for later use. */
+    p_rtlen = (unsigned short int*)(u8aRadiotap+2);
 
 
     if((unsigned) count > sizeof(tmpbuf)-22) return -1;
@@ -775,8 +780,9 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         return( -1 );
     }
 
+    /* radiotap header length is stored little endian on all systems */
     if(usedrtap)
-        ret-=9;
+        ret-=letoh16(*p_rtlen);
 
     if( ret < 0 )
     {
@@ -1639,11 +1645,11 @@ static int do_linux_open(struct wif *wi, char *iface)
 
         //use name in buf as new iface and set original iface as main iface
         dev->main_if = (char*) malloc(strlen(iface)+1);
-        bzero(dev->main_if, strlen(iface)+1);
+        memset(dev->main_if, 0, strlen(iface)+1);
         strncpy(dev->main_if, iface, strlen(iface));
 
         iface=(char*)malloc(strlen(buf)+1);
-        bzero(iface, strlen(buf)+1);
+        memset(iface, 0, strlen(buf)+1);
         strncpy(iface, buf, strlen(buf));
     }
 

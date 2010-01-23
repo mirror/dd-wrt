@@ -50,6 +50,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
@@ -61,14 +62,99 @@
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
-//#include "crctable.h"
 #include "crypto.h"
-
 #include "osdep/osdep.h"
-
 #include "airodump-ng.h"
 #include "osdep/common.h"
+#include "common.h"
 
+char * get_manufacturer_from_string(char * buffer) {
+	char * manuf = NULL;
+	char * buffer_manuf;
+	if (buffer != NULL && strlen(buffer) > 0) {
+		buffer_manuf = strstr(buffer, "(hex)");
+		if (buffer_manuf != NULL) {
+			buffer_manuf += 6; // skip '(hex)' and one more character (there's at least one 'space' character after that string)
+			while (*buffer_manuf == '\t' || *buffer_manuf == ' ') {
+				++buffer_manuf;
+			}
+
+			// Did we stop at the manufacturer
+			if (*buffer_manuf != '\0') {
+
+				// First make sure there's no end of line
+				if (buffer_manuf[strlen(buffer_manuf) - 1] == '\n' || buffer_manuf[strlen(buffer_manuf) - 1] == '\r') {
+					buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
+					if (*buffer_manuf != '\0' && (buffer_manuf[strlen(buffer_manuf) - 1] == '\n' || buffer[strlen(buffer_manuf) - 1] == '\r')) {
+						buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
+					}
+				}
+				if (*buffer_manuf != '\0') {
+					if ((manuf = (char *)malloc((strlen(buffer_manuf) + 1) * sizeof(char))) == NULL) {
+						perror("malloc failed");
+						return NULL;
+					}
+					snprintf(manuf, strlen(buffer_manuf) + 1, "%s", buffer_manuf);
+				}
+			}
+		}
+	}
+
+	return manuf;
+}
+
+struct oui * load_oui_file(void) {
+	FILE *fp;
+	char * manuf;
+	char buffer[BUFSIZ];
+	unsigned char a[2];
+	unsigned char b[2];
+	unsigned char c[2];
+	struct oui *oui_ptr = NULL, *oui_head = NULL;
+
+	if (!(fp = fopen(OUI_PATH, "r")))
+		return NULL;
+
+	memset(buffer, 0x00, sizeof(buffer));
+	while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+		if (!(strstr(buffer, "(hex)")))
+			continue;
+
+		memset(a, 0x00, sizeof(a));
+		memset(b, 0x00, sizeof(b));
+		memset(c, 0x00, sizeof(c));
+		if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3) {
+			if (oui_ptr == NULL) {
+				if (!(oui_ptr = (struct oui *)malloc(sizeof(struct oui)))) {
+					perror("malloc failed");
+					return NULL;
+				}
+			} else {
+				if (!(oui_ptr->next = (struct oui *)malloc(sizeof(struct oui)))) {
+					perror("malloc failed");
+									return NULL;
+				}
+				oui_ptr = oui_ptr->next;
+			}
+			memset(oui_ptr->id, 0x00, sizeof(oui_ptr->id));
+			memset(oui_ptr->manuf, 0x00, sizeof(oui_ptr->manuf));
+			snprintf(oui_ptr->id, sizeof(oui_ptr->id), "%c%c:%c%c:%c%c", a[0], a[1], b[0], b[1], c[0], c[1]);
+			manuf = get_manufacturer_from_string(buffer);
+			if (manuf != NULL) {
+				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "%s", manuf);
+				free(manuf);
+			} else {
+				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "Unknown");
+			}
+			if (oui_head == NULL)
+				oui_head = oui_ptr;
+			oui_ptr->next = NULL;
+		}
+	}
+
+	fclose(fp);
+	return oui_head;
+}
 
 int check_shared_key(unsigned char *h80211, int caplen)
 {
@@ -246,7 +332,9 @@ char usage[] =
 "                            are received (Default: 120 seconds)\n"
 "      -r           <file> : Read packets from that file\n"
 "      -x          <msecs> : Active Scanning Simulation\n"
-"      --nocap             : Don't write pcap/ivs file (require -w)\n"
+"      --output-format\n"
+"                <formats> : Output format. Possible values:\n"
+"                            pcap, ivs, csv, gps, kismet, netxml\n"
 "\n"
 "  Filter options:\n"
 "      --encrypt   <suite> : Filter APs by cipher suite\n"
@@ -410,31 +498,34 @@ int dump_initialize( char *prefix, int ivs_only )
 
     /* create the output CSV file */
 
-	memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len, "%s-%02d.%s",
-              prefix, G.f_index, AIRODUMP_NG_CSV_EXT );
+	if (G.output_format_csv) {
+		memset(ofn, 0, ofn_len);
+		snprintf( ofn,  ofn_len, "%s-%02d.%s",
+				  prefix, G.f_index, AIRODUMP_NG_CSV_EXT );
 
-    if( ( G.f_txt = fopen( ofn, "wb+" ) ) == NULL )
-    {
-        perror( "fopen failed" );
-        fprintf( stderr, "Could not create \"%s\".\n", ofn );
-        free( ofn );
-        return( 1 );
-    }
+		if( ( G.f_txt = fopen( ofn, "wb+" ) ) == NULL )
+		{
+			perror( "fopen failed" );
+			fprintf( stderr, "Could not create \"%s\".\n", ofn );
+			free( ofn );
+			return( 1 );
+		}
+	}
 
     /* create the output Kismet CSV file */
+	if (G.output_format_kismet_csv) {
+		memset(ofn, 0, ofn_len);
+		snprintf( ofn,  ofn_len, "%s-%02d.%s",
+				  prefix, G.f_index, KISMET_CSV_EXT );
 
-    memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len, "%s-%02d.%s",
-              prefix, G.f_index, KISMET_CSV_EXT );
-
-    if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
-    {
-        perror( "fopen failed" );
-        fprintf( stderr, "Could not create \"%s\".\n", ofn );
-        free( ofn );
-        return( 1 );
-    }
+		if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
+		{
+			perror( "fopen failed" );
+			fprintf( stderr, "Could not create \"%s\".\n", ofn );
+			free( ofn );
+			return( 1 );
+		}
+	}
 
 	/* create the output GPS file */
 
@@ -455,27 +546,22 @@ int dump_initialize( char *prefix, int ivs_only )
 
     /* Create the output kismet.netxml file */
 
-    memset(ofn, 0, ofn_len);
-    snprintf( ofn,  ofn_len, "%s-%02d.%s",
-              prefix, G.f_index, KISMET_NETXML_EXT );
+	if (G.output_format_kismet_netxml) {
+		memset(ofn, 0, ofn_len);
+		snprintf( ofn,  ofn_len, "%s-%02d.%s",
+				  prefix, G.f_index, KISMET_NETXML_EXT );
 
-    if( ( G.f_kis_xml = fopen( ofn, "wb+" ) ) == NULL )
-    {
-        perror( "fopen failed" );
-        fprintf( stderr, "Could not create \"%s\".\n", ofn );
-        free( ofn );
-        return( 1 );
-    }
-
-    /* create the output packet capture file */
-
-	if ( G.dont_write_cap_file )
-	{
-        free( ofn );
-        return( 0 );
+		if( ( G.f_kis_xml = fopen( ofn, "wb+" ) ) == NULL )
+		{
+			perror( "fopen failed" );
+			fprintf( stderr, "Could not create \"%s\".\n", ofn );
+			free( ofn );
+			return( 1 );
+		}
 	}
 
-    if( ivs_only == 0 )
+    /* create the output packet capture file */
+    if( G.output_format_pcap )
     {
         struct pcap_file_header pfh;
 
@@ -509,7 +595,7 @@ int dump_initialize( char *prefix, int ivs_only )
             perror( "fwrite(pcap file header) failed" );
             return( 1 );
         }
-    } else {
+    } else if ( ivs_only ) {
         struct ivs2_filehdr fivs2;
 
         fivs2.version = IVS2_VERSION;
@@ -851,6 +937,9 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
             ap_prv->next  = ap_cur;
 
         memcpy( ap_cur->bssid, bssid, 6 );
+		if (ap_cur->manuf == NULL) {
+			ap_cur->manuf = get_manufacturer(ap_cur->bssid[0], ap_cur->bssid[1], ap_cur->bssid[2]);
+		}
 
         ap_cur->prev = ap_prv;
 
@@ -1052,6 +1141,10 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
             st_prv->next  = st_cur;
 
         memcpy( st_cur->stmac, stmac, 6 );
+
+		if (st_cur->manuf == NULL) {
+			st_cur->manuf = get_manufacturer(st_cur->stmac[0], st_cur->stmac[1], st_cur->stmac[2]);
+		}
 
         st_cur->prev = st_prv;
 
@@ -2723,7 +2816,7 @@ int dump_write_csv( void )
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
 
-    if (! G.record_data)
+    if (! G.record_data || !G.output_format_csv)
     	return 0;
 
     fseek( G.f_txt, 0, SEEK_SET );
@@ -2926,21 +3019,145 @@ int dump_write_csv( void )
     return 0;
 }
 
+char * sanitize_xml(unsigned char * text, int length)
+{
+	int i;
+	size_t len;
+	char * pos;
+	char * newpos;
+	char * newtext = NULL;
+	if (text != NULL && length > 0) {
+		len = 5 * length;
+		newtext = (char *)calloc(1, (len + 1) * sizeof(char)); // Make sure we have enough space
+		pos = (char *)text;
+		for (i = 0; i < length; ++i, ++pos) {
+			switch (*pos) {
+				case '&':
+					strncat(newtext, "&amp;", len);
+					break;
+				case '<':
+					strncat(newtext, "&lt;", len);
+					break;
+				case '>':
+					strncat(newtext, "&gt;", len);
+					break;
+				default:
+					if (isprint((int)(*pos))) {
+						newtext[strlen(newtext)] = *pos;
+					} else {
+						newtext[strlen(newtext)] = '\\';
+						newpos = newtext + strlen(newtext);
+						snprintf(newpos, strlen(newpos) + 1, "%3u", *pos);
+					}
+					break;
+			}
+		}
+		newtext = (char *) realloc(newtext, strlen(newtext) + 1);
+	}
+
+	return newtext;
+}
+
+
+#define OUI_STR_SIZE 8
+#define MANUF_SIZE 128
+char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2) {
+	char oui[OUI_STR_SIZE + 1];
+	char *manuf;
+	//char *buffer_manuf;
+	char * manuf_str;
+	struct oui *ptr;
+	FILE *fp;
+	char buffer[BUFSIZ];
+	char temp[OUI_STR_SIZE + 1];
+	unsigned char a[2];
+	unsigned char b[2];
+	unsigned char c[2];
+	int found = 0;
+
+	if ((manuf = (char *)calloc(1, MANUF_SIZE * sizeof(char))) == NULL) {
+		perror("calloc failed");
+		return NULL;
+	}
+
+	snprintf(oui, sizeof(oui), "%02X:%02X:%02X", mac0, mac1, mac2 );
+
+	if (G.manufList != NULL) {
+		// Search in the list
+		ptr = G.manufList;
+		while (ptr != NULL) {
+			found = ! strncasecmp(ptr->id, oui, OUI_STR_SIZE);
+			if (found) {
+				memcpy(manuf, ptr->manuf, MANUF_SIZE);
+				break;
+			}
+			ptr = ptr->next;
+		}
+	} else {
+		// If the file exist, then query it each time we need to get a manufacturer.
+		fp = fopen(OUI_PATH, "r");
+		if (fp != NULL) {
+
+			memset(buffer, 0x00, sizeof(buffer));
+			while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+				if (strstr(buffer, "(hex)") == NULL) {
+					continue;
+				}
+
+				memset(a, 0x00, sizeof(a));
+				memset(b, 0x00, sizeof(b));
+				memset(c, 0x00, sizeof(c));
+				if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3) {
+					snprintf(temp, sizeof(temp), "%c%c:%c%c:%c%c", a[0], a[1], b[0], b[1], c[0], c[1] );
+					found = !memcmp(temp, oui, strlen(oui));
+					if (found) {
+						manuf_str = get_manufacturer_from_string(buffer);
+						if (manuf_str != NULL) {
+							snprintf(manuf, MANUF_SIZE, "%s", manuf_str);
+							free(manuf_str);
+						}
+
+						break;
+					}
+				}
+				memset(buffer, 0x00, sizeof(buffer));
+			}
+
+			fclose(fp);
+		}
+	}
+
+	// Not found, use "Unknown".
+	if (!found || *manuf == '\0') {
+		memcpy(manuf, "Unknown", 7);
+		manuf[strlen(manuf)] = '\0';
+	}
+
+	manuf = (char *)realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
+
+	return manuf;
+}
+#undef OUI_STR_SIZE
+#undef MANUF_SIZE
+
+
 #define KISMET_NETXML_HEADER_BEGIN "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<!DOCTYPE detection-run SYSTEM \"http://kismetwireless.net/kismet-3.1.0.dtd\">\n\n<detection-run kismet-version=\"airodump-ng-1.0\" start-time=\""
 #define KISMET_NETXML_HEADER_END "\">\n\n"
 
 #define KISMET_NETXML_TRAILER "</detection-run>"
 
+#define TIME_STR_LENGTH 255
 int dump_write_kismet_netxml( void )
 {
-    int network_number, average_power, ssid_cloaked, unused, client_nbr, i;
-    int client_max_rate;
+    int network_number, average_power, client_nbr;
+    int client_max_rate, unused;
     struct AP_info *ap_cur;
     struct ST_info *st_cur;
-    char first_time[255];
-    char last_time[255];
+    char first_time[TIME_STR_LENGTH];
+    char last_time[TIME_STR_LENGTH];
+    char * essid = NULL;
 
-    if (! G.record_data)
+    if (! G.record_data || !G.output_format_kismet_netxml)
     	return 0;
 
     fseek( G.f_kis_xml, 0, SEEK_SET );
@@ -2977,10 +3194,10 @@ int dump_write_kismet_netxml( void )
         }
 
 		++network_number; // Network Number
-		strcpy(first_time, ctime(&ap_cur->tinit));
+		strncpy(first_time, ctime(&ap_cur->tinit), TIME_STR_LENGTH - 1);
 		first_time[strlen(first_time) - 1] = 0; // remove new line
 
-		strcpy(last_time, ctime(&ap_cur->tlast));
+		strncpy(last_time, ctime(&ap_cur->tlast), TIME_STR_LENGTH - 1);
 		last_time[strlen(last_time) - 1] = 0; // remove new line
 
 		fprintf(G.f_kis_xml, "\t<wireless-network number=\"%d\" type=\"infrastructure\" ",
@@ -3003,56 +3220,38 @@ int dump_write_kismet_netxml( void )
 			if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis_xml, "OPN " );
 		}
 
-		if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 )
+		if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) != 0 )
 		{
-			fprintf( G.f_kis_xml, "None,");
-		}
-		else
-		{
-			if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis_xml, "AES-CCM ");
-			if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis_xml, "WRAP ");
-			if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis_xml, "TKIP ");
+			if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis_xml, "AES-CCM");
+			if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis_xml, "WRAP");
+			if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis_xml, "TKIP");
 			if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis_xml, "WEP104");
-			if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis_xml, "WEP40 ");
-/*      	if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP ");*/
+			if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis_xml, "WEP40");
+/*      	if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP");*/
 		}
 		fprintf(G.f_kis_xml, "</encryption>\n");
 
 		/* ESSID */
-		ssid_cloaked = 1;
-		if ( ap_cur->ssid_length > 0 )
-		{
-			for(i = 0; i < ap_cur->ssid_length; ++i)
-			{
-				if (ap_cur->essid[i] != 0)
-				{
-					ssid_cloaked = 0;
-					break;
-				}
-			}
-		}
-
-		fprintf(G.f_kis_xml, "\t\t\t<essid cloaked=\"%s\">", (ssid_cloaked) ? "true" : "false");
-		for(i = 0; i < ap_cur->ssid_length; ++i)
-		{
-			/* fputc is used on purpose: to be sure that if the ESSID
-			   contains null characters, all of them are written */
-			unused = fputc( ap_cur->essid[i], G.f_kis_xml );
+		fprintf(G.f_kis_xml, "\t\t\t<essid cloaked=\"%s\">",
+					(ap_cur->essid[0] == 0) ? "true" : "false");
+		essid = sanitize_xml(ap_cur->essid, ap_cur->ssid_length);
+		if (essid != NULL) {
+			fprintf(G.f_kis_xml, "%s", essid);
+			free(essid);
 		}
 		fprintf(G.f_kis_xml, "</essid>\n");
 
 		/* End of SSID tag */
 		fprintf(G.f_kis_xml, "\t\t</SSID>\n");
 
-		/* BSSID and manufacturer */
+		/* BSSID */
 		fprintf( G.f_kis_xml, "\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
 					 ap_cur->bssid[0], ap_cur->bssid[1],
 					 ap_cur->bssid[2], ap_cur->bssid[3],
 					 ap_cur->bssid[4], ap_cur->bssid[5] );
 
-		/* Manufacturer
-		   XXX: Needs the MAC Address list file */
-		fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", "Unknown");
+		/* Manufacturer, if set using standard oui list */
+		fprintf(G.f_kis_xml, "\t\t<manuf>%s</manuf>\n", (ap_cur->manuf != NULL) ? ap_cur->manuf : "Unknown");
 
 		/* Channel
 		   FIXME: Take G.freqoption in account */
@@ -3121,9 +3320,8 @@ int dump_write_kismet_netxml( void )
 						 st_cur->stmac[2], st_cur->stmac[3],
 						 st_cur->stmac[4], st_cur->stmac[5] );
 
-			/* Manufacturer
-			   XXX: Needs the MAC Address list file */
-			fprintf(G.f_kis_xml, "\t\t\t<client-manuf>%s</client-manuf>\n", "Unknown");
+			/* Manufacturer, if set using standard oui list */
+			fprintf(G.f_kis_xml, "\t\t\t<client-manuf>%s</client-manuf>\n", (st_cur->manuf != NULL) ? st_cur->manuf : "Unknown");
 
 			/* Channel
 			   FIXME: Take G.freqoption in account */
@@ -3270,8 +3468,14 @@ int dump_write_kismet_netxml( void )
     fprintf( G.f_kis_xml, "%s\n", KISMET_NETXML_TRAILER );
 
     fflush( G.f_kis_xml );
+
+    /* Sometimes there can be crap at the end of the file, so truncating is a good idea.
+       XXX: Is this really correct, I hope fileno() won't have any side effect */
+	unused = ftruncate(fileno(G.f_kis_xml), ftell( G.f_kis_xml ) );
+
     return 0;
 }
+#undef TIME_STR_LENGTH
 
 #define KISMET_HEADER "Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;MaxRate;MaxSeenRate;Beacon;LLC;Data;Crypt;Weak;Total;Carrier;Encoding;FirstTime;LastTime;BestQuality;BestSignal;BestNoise;GPSMinLat;GPSMinLon;GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
 
@@ -3283,7 +3487,7 @@ int dump_write_kismet_csv( void )
 /*    char ssid_list[512];*/
     struct AP_info *ap_cur;
 
-    if (! G.record_data)
+    if (! G.record_data || !G.output_format_kismet_csv)
     	return 0;
 
     fseek( G.f_kis, 0, SEEK_SET );
@@ -4325,7 +4529,7 @@ int detect_frequencies(struct wif *wi)
     printf("Checking available frequencies, this could take few seconds.\n");
 
     frequencies = (int*) malloc((max_freq_num+1) * sizeof(int)); //field for frequencies supported
-    bzero(frequencies, (max_freq_num+1) * sizeof(int));
+    memset(frequencies, 0, (max_freq_num+1) * sizeof(int));
     for(freq=start_freq; freq<=end_freq; freq+=5)
     {
         if(wi_set_freq(wi, freq) == 0)
@@ -4388,7 +4592,7 @@ int rearrange_frequencies()
     pos = 0;
 
     freqs = malloc(sizeof(int) * (count + 1));
-    bzero(freqs, sizeof(int) * (count + 1));
+    memset(freqs, 0, sizeof(int) * (count + 1));
     round_done = 0;
 
     while(left > 0)
@@ -4426,6 +4630,7 @@ int rearrange_frequencies()
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time, cycle_time2;
+    char * output_format_string;
     int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count, unused;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, found;
@@ -4437,10 +4642,12 @@ int main( int argc, char *argv[] )
     char ifnam[64];
     int wi_read_failed=0;
     int n = 0;
+    int output_format_first_time = 1;
 
     struct AP_info *ap_cur, *ap_prv, *ap_next;
     struct ST_info *st_cur, *st_next;
     struct NA_info *na_cur, *na_next;
+    struct oui *oui_cur, *oui_next;
 
     struct pcap_pkthdr pkh;
 
@@ -4485,7 +4692,7 @@ int main( int argc, char *argv[] )
         {"nodecloak",0, 0, 'D'},
         {"showack",  0, 0, 'A'},
         {"detect-anomaly", 0, 0, 'E'},
-        {"nocap",    0, 0, 'n'},
+        {"output-format",  1, 0, 'o'},
         {0,          0, 0,  0 }
     };
 
@@ -4543,7 +4750,12 @@ int main( int argc, char *argv[] )
     G.f_cap_in     =  NULL;
     G.detect_anomaly = 0;
     G.airodump_start_time = NULL;
-    G.dont_write_cap_file = 0;
+	G.manufList = NULL;
+
+	G.output_format_pcap = 1;
+    G.output_format_csv = 1;
+    G.output_format_kismet_csv = 1;
+    G.output_format_kismet_netxml = 1;
 
     memset(G.sharedkey, '\x00', 512*3);
     memset(G.message, '\x00', sizeof(G.message));
@@ -4619,7 +4831,7 @@ int main( int argc, char *argv[] )
         option_index = 0;
 
         option = getopt_long( argc, argv,
-                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:nx:",
+                        "b:c:egiw:s:t:u:m:d:aHDB:Ahf:r:EC:o:x:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -4748,6 +4960,22 @@ int main( int argc, char *argv[] )
 
             case 'i':
 
+				// Reset output format if it's the first time the option is specified
+				if (output_format_first_time) {
+					output_format_first_time = 0;
+
+					G.output_format_pcap = 0;
+					G.output_format_csv = 0;
+					G.output_format_kismet_csv = 0;
+    				G.output_format_kismet_netxml = 0;
+				}
+
+ 				if (G.output_format_pcap) {
+					printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+					fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
+					return( 1 );
+				}
+
                 ivs_only = 1;
                 break;
 
@@ -4863,9 +5091,73 @@ int main( int argc, char *argv[] )
                 set_encryption_filter(optarg);
                 break;
 
-			case 'n':
+			case 'o':
 
-				G.dont_write_cap_file = 1;
+				// Reset output format if it's the first time the option is specified
+				if (output_format_first_time) {
+					output_format_first_time = 0;
+
+					G.output_format_pcap = 0;
+					G.output_format_csv = 0;
+					G.output_format_kismet_csv = 0;
+    				G.output_format_kismet_netxml = 0;
+				}
+
+				// Parse the value
+				output_format_string = strtok(optarg, ",");
+				while (output_format_string != NULL) {
+					if (strlen(output_format_string) != 0) {
+						if (strncasecmp(output_format_string, "csv", 3) == 0
+							|| strncasecmp(output_format_string, "txt", 3) == 0) {
+							G.output_format_csv = 1;
+						} else if (strncasecmp(output_format_string, "pcap", 4) == 0
+							|| strncasecmp(output_format_string, "cap", 3) == 0) {
+                            if (ivs_only) {
+                                printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+                                fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
+                                return( 1 );
+                            }
+							G.output_format_pcap = 1;
+						} else if (strncasecmp(output_format_string, "ivs", 3) == 0) {
+                            if (G.output_format_pcap) {
+                                printf( usage, getVersion("Airodump-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
+                                fprintf(stderr, "Invalid output format: IVS and PCAP format cannot be used together.\n");
+                                return( 1 );
+                            }
+							ivs_only = 1;
+						} else if (strncasecmp(output_format_string, "kismet", 6) == 0) {
+							G.output_format_kismet_csv = 1;
+						} else if (strncasecmp(output_format_string, "gps", 3) == 0) {
+							G.usegpsd  = 1;
+						} else if (strncasecmp(output_format_string, "netxml", 6) == 0
+							|| strncasecmp(output_format_string, "newcore", 7) == 0
+							|| strncasecmp(output_format_string, "kismet-nc", 9) == 0
+							|| strncasecmp(output_format_string, "kismet_nc", 9) == 0
+							|| strncasecmp(output_format_string, "kismet-newcore", 14) == 0
+							|| strncasecmp(output_format_string, "kismet_newcore", 14) == 0) {
+							G.output_format_kismet_netxml = 1;
+						} else if (strncasecmp(output_format_string, "default", 6) == 0) {
+							G.output_format_pcap = 1;
+							G.output_format_csv = 1;
+							G.output_format_kismet_csv = 1;
+							G.output_format_kismet_netxml = 1;
+						} else if (strncasecmp(output_format_string, "none", 6) == 0) {
+							G.output_format_pcap = 0;
+							G.output_format_csv = 0;
+							G.output_format_kismet_csv = 0;
+    						G.output_format_kismet_netxml = 0;
+
+							G.usegpsd  = 0;
+							ivs_only = 0;
+						} else {
+							// Display an error if it does not match any value
+							fprintf(stderr, "Invalid output format: <%s>\n", output_format_string);
+							exit(1);
+						}
+					}
+					output_format_string = strtok(NULL, ",");
+				}
+
 				break;
 
             case 'H':
@@ -4909,13 +5201,6 @@ usage:
     if( ( memcmp(G.f_netmask, NULL_MAC, 6) != 0 ) && ( memcmp(G.f_bssid, NULL_MAC, 6) == 0 ) )
     {
         printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
-        printf("\"%s --help\" for help.\n", argv[0]);
-        return( 1 );
-    }
-
-    if ( (G.dont_write_cap_file && !G.record_data )
-          || ( ivs_only && !G.record_data ) ) {
-        printf( "Missing dump prefix (-w)\n" );
         printf("\"%s --help\" for help.\n", argv[0]);
         return( 1 );
     }
@@ -5075,7 +5360,9 @@ usage:
             SWAP32(G.pfh_in.linktype);
 
         if( G.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
-            G.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+            G.pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
+            G.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+            G.pfh_in.linktype != LINKTYPE_PPI_HDR )
         {
             fprintf( stderr, "Wrong linktype from pcap file header "
                              "(expected LINKTYPE_IEEE802_11) -\n"
@@ -5097,6 +5384,11 @@ usage:
     signal( SIGWINCH, sighandler );
 
     sighandler( SIGWINCH );
+
+    /* fill oui struct if ram is greater than 32 MB */
+    if (get_ram_size()  > MIN_RAM_SIZE_LOAD_OUI_RAM) {
+        G.manufList = load_oui_file();
+	}
 
     /* start the GPS tracker */
 
@@ -5127,11 +5419,11 @@ usage:
     G.batt     = getBatteryString();
 
     G.elapsed_time = (char *) calloc( 1, 4 );
-    strncpy(G.elapsed_time, "0 s", 4-1);
+    strncpy(G.elapsed_time, "0 s", 4 - 1);
 
 	/* Create start time string for kismet netxml file */
     G.airodump_start_time = (char *) calloc( 1, 1000 * sizeof(char) );
-    strcpy(G.airodump_start_time, ctime( & start_time ) );
+    strncpy(G.airodump_start_time, ctime( & start_time ), 1000 - 1);
 	G.airodump_start_time[strlen(G.airodump_start_time) - 1] = 0; // remove new line
 	G.airodump_start_time = (char *) realloc( G.airodump_start_time, sizeof(char) * (strlen(G.airodump_start_time) + 1) );
 
@@ -5142,14 +5434,14 @@ usage:
             break;
         }
 
-        if( time( NULL ) - tt1 >= 20 )
+        if( time( NULL ) - tt1 >= 5 )
         {
             /* update the csv stats file */
 
             tt1 = time( NULL );
-            dump_write_csv();
-            dump_write_kismet_csv();
-            dump_write_kismet_netxml();
+            if (G. output_format_csv)  dump_write_csv();
+            if (G.output_format_kismet_csv) dump_write_kismet_csv();
+            if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
 
             /* sort the APs by power */
 
@@ -5252,6 +5544,41 @@ usage:
                     n = *(int *)( h80211 + 4 );
 
                 if( n < 8 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( G.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+            {
+                /* remove the radiotap header */
+
+                n = *(unsigned short *)( h80211 + 2 );
+
+                if( n <= 0 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( G.pfh_in.linktype == LINKTYPE_PPI_HDR )
+            {
+                /* remove the PPI header */
+
+                n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+                if( n <= 0 || n>= (int) caplen )
+                    continue;
+
+                /* for a while Kismet logged broken PPI headers */
+                if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                    n = 32;
+
+                if( n <= 0 || n>= (int) caplen )
                     continue;
 
                 memcpy( tmpbuf, h80211, caplen );
@@ -5414,20 +5741,20 @@ usage:
         wi_close(wi[i]);
 
     if (G.record_data) {
-        dump_write_csv();
-        dump_write_kismet_csv();
-        dump_write_kismet_netxml();
+        if ( G. output_format_csv)  dump_write_csv();
+        if ( G.output_format_kismet_csv) dump_write_kismet_csv();
+        if ( G.output_format_kismet_netxml) dump_write_kismet_netxml();
 
-        if( G.f_txt != NULL ) fclose( G.f_txt );
-        if( G.f_kis != NULL ) fclose( G.f_kis );
-        if( G.f_kis_xml != NULL )
+        if ( G. output_format_csv || G.f_txt != NULL ) fclose( G.f_txt );
+        if ( G.output_format_kismet_csv || G.f_kis != NULL ) fclose( G.f_kis );
+        if ( G.output_format_kismet_netxml || G.f_kis_xml != NULL )
         {
 			fclose( G.f_kis_xml );
 			free(G.airodump_start_time);
 		}
-        if( G.f_gps != NULL ) fclose( G.f_gps );
-        if( G.f_cap != NULL ) fclose( G.f_cap );
-        if( G.f_ivs != NULL ) fclose( G.f_ivs );
+        if ( G.f_gps != NULL ) fclose( G.f_gps );
+        if ( G.output_format_pcap ||  G.f_cap != NULL ) fclose( G.f_cap );
+        if ( G.f_ivs != NULL ) fclose( G.f_ivs );
     }
 
     if( ! G.save_gps )
@@ -5446,7 +5773,10 @@ usage:
 
         list_tail_free(&(ap_cur->packets));
 
-		if (G.detect_anomaly)
+	if (G.manufList)
+		free(ap_cur->manuf);
+
+	if (G.detect_anomaly)
         	data_wipe(ap_cur->data_root);
 
         ap_prv = ap_cur;
@@ -5472,6 +5802,8 @@ usage:
     while(st_cur != NULL)
     {
         st_next = st_cur->next;
+	if (G.manufList)
+		free(st_cur->manuf);
         free(st_cur);
         st_cur = st_next;
     }
@@ -5484,6 +5816,15 @@ usage:
         na_next = na_cur->next;
         free(na_cur);
         na_cur = na_next;
+    }
+
+    if (G.manufList) {
+        oui_cur = G.manufList;
+        while (oui_cur != NULL) {
+            oui_next = oui_cur->next;
+	    free(oui_cur);
+	    oui_cur = oui_next;
+        }
     }
 
     fprintf( stderr, "\33[?25h" );
