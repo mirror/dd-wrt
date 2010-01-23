@@ -893,7 +893,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 
 	char services[16384];
 
-	memset(services, 0, 16384);
+	memset(services, 0, sizeof(services));
 
 	// get_filter_services (services);
 
