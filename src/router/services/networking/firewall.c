@@ -1336,7 +1336,7 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable)
 	}
 }
 
-void fw_get_filter_services(char *services)
+void fw_get_filter_services(char *services,int maxsize)
 {
 
 	l7filters *filters = filters_list;
@@ -1377,7 +1377,7 @@ void fw_get_filter_services(char *services)
 static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 {
 	char *wordlist, word[1024], *next;
-	char services[8192], srv[1024], *next2;
+	char services[16384], srv[1024], *next2;
 	char delim[] = "<&nbsp;>";
 
 	cprintf("add advgrp_chain\n");
@@ -1390,7 +1390,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	// //nvram_safe_get("filter_services");
 
 	memset(services, 0, 8192);
-	fw_get_filter_services(services);
+	fw_get_filter_services(services,sizeof(services));
 
 	/*
 	 * filter_port_grp5=My ICQ<&nbsp;>Game boy 
