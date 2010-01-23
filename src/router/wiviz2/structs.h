@@ -67,6 +67,37 @@ typedef struct prism_hdr {
   //char dids[0];
   } prism_hdr;
 
+#ifdef HAVE_MADWIFI
+typedef struct prism_did {
+  u_int did;
+  u_short status1;
+  u_short length;
+  u_int data;
+  //int value[0];
+  } prism_did;
+
+/*	DIDmsg_lnxind_wlansniffrm		= 0x00000044,
+	DIDmsg_lnxind_wlansniffrm_hosttime	= 0x00010044,
+	DIDmsg_lnxind_wlansniffrm_mactime	= 0x00020044,
+	DIDmsg_lnxind_wlansniffrm_channel	= 0x00030044,
+	DIDmsg_lnxind_wlansniffrm_rssi		= 0x00040044,
+	DIDmsg_lnxind_wlansniffrm_sq		= 0x00050044,
+	DIDmsg_lnxind_wlansniffrm_signal	= 0x00060044,
+	DIDmsg_lnxind_wlansniffrm_noise		= 0x00070044,
+	DIDmsg_lnxind_wlansniffrm_rate		= 0x00080044,
+	DIDmsg_lnxind_wlansniffrm_istx		= 0x00090044,
+	DIDmsg_lnxind_wlansniffrm_frmlen	= 0x000A0044
+*/
+typedef enum prism_did_num {
+  pdn_host_time = 0x00010044,
+  pdn_mac_time = 0x00020044,
+  pdn_rssi = 0x00040044,
+  pdn_sq = 0x00050044,
+  pdn_datarate = 0x00080044,
+  pdn_framelen = 0x000a0044
+  } prism_did_num;
+#else
+
 typedef struct prism_did {
   u_short did;
   u_short status1;
@@ -83,7 +114,7 @@ typedef enum prism_did_num {
   pdn_datarate = 0x8041,
   pdn_framelen = 0xa041
   } prism_did_num;
-
+#endif
 
 
 //Structure definitions for data collection
