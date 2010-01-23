@@ -1377,7 +1377,7 @@ void fw_get_filter_services(char *services,int maxsize)
 static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 {
 	char *wordlist, word[1024], *next;
-	char services[16384], srv[1024], *next2;
+	char services[11000], srv[1024], *next2;
 	char delim[] = "<&nbsp;>";
 
 	cprintf("add advgrp_chain\n");
