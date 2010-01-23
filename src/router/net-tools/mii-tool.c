@@ -378,18 +378,17 @@ static void watch_one_xcvr(int skfd, char *ifname, int index)
 
 /*--------------------------------------------------------------------*/
 
-const char *usage =
-"usage: %s [-VvRrwl] [-A media,... | -F media] [interface ...]
-       -V, --version               display version information
-       -v, --verbose               more verbose output
-       -R, --reset                 reset MII to poweron state
-       -r, --restart               restart autonegotiation
-       -w, --watch                 monitor for link status changes
-       -l, --log                   with -w, write events to syslog
-       -A, --advertise=media,...   advertise only specified media
-       -F, --force=media           force specified media technology
-media: 100baseT4, 100baseTx-FD, 100baseTx-HD, 10baseT-FD, 10baseT-HD,
-       (to advertise both HD and FD) 100baseTx, 10baseT\n";
+const char *usage = "usage: %s [-VvRrwl] [-A media,... | -F media] [interface ...]\n"
+     "  -V, --version               display version information\n"
+     "  -v, --verbose               more verbose output\n"
+     "  -R, --reset                 reset MII to poweron state\n"
+     "  -r, --restart               restart autonegotiation\n"
+     "  -w, --watch                 monitor for link status changes\n"
+     "  -l, --log                   with -w, write events to syslog\n"
+     "  -A, --advertise=media,...   advertise only specified media\n"
+     "  -F, --force=media           force specified media technology\n"
+     "media: 100baseT4, 100baseTx-FD, 100baseTx-HD, 10baseT-FD, 10baseT-HD,\n"
+     "  (to advertise both HD and FD) 100baseTx, 10baseT\n";
 
 int main(int argc, char **argv)
 {
