@@ -67,6 +67,8 @@
 #include "uniqueiv.h"
 #include "aircrack-ng.h"
 #include "sha1-sse2.h"
+#include "osdep/byteorder.h"
+#include "common.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -132,14 +134,6 @@ static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
 #define K15_IV	0x00040000
 #define K16_IV	0x00080000
 #define K17_IV	0x00100000
-
-/*
-typedef struct
-{
-	unsigned int used;
-}used_iv;
-used_iv* all_ivs;
-*/
 
 typedef struct
 {
@@ -245,7 +239,7 @@ void clean_exit(int ret)
 	int child_pid;
 
 	char tmpbuf[128];
-	bzero(tmpbuf, 128);
+	memset(tmpbuf, 0, 128);
 
 	if(ret && !opt.is_quiet)
 	{
@@ -738,7 +732,7 @@ void read_thread( void *arg )
 	memset( &rb, 0, sizeof( rb ) );
 	ap_cur = NULL;
 
-	bzero(&pfh, sizeof(struct pcap_file_header));
+	memset(&pfh, 0, sizeof(struct pcap_file_header));
 
 	if( ( buffer = (uchar *) malloc( 65536 ) ) == NULL )
 	{
@@ -800,7 +794,8 @@ void read_thread( void *arg )
 
 		if( pfh.linktype != LINKTYPE_IEEE802_11 &&
 			pfh.linktype != LINKTYPE_PRISM_HEADER &&
-			pfh.linktype != LINKTYPE_RADIOTAP_HDR )
+			pfh.linktype != LINKTYPE_RADIOTAP_HDR &&
+			pfh.linktype != LINKTYPE_PPI_HDR)
 		{
 			fprintf( stderr, "This file is not a regular "
 				"802.11 (wireless) capture.\n" );
@@ -944,6 +939,25 @@ void read_thread( void *arg )
 				n = *(unsigned short *)( h80211 + 2 );
 
 				if( n <= 0 || n >= (int) pkh.caplen )
+					continue;
+
+				h80211 += n; pkh.caplen -= n;
+			}
+
+			if( pfh.linktype == LINKTYPE_PPI_HDR )
+			{
+				/* Remove the PPI header */
+
+				n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+				if( n <= 0 || n>= (int) pkh.caplen )
+					continue;
+
+				/* for a while Kismet logged broken PPI headers */
+				if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+					n = 32;
+
+				if( n <= 0 || n>= (int) pkh.caplen )
 					continue;
 
 				h80211 += n; pkh.caplen -= n;
@@ -1401,8 +1415,8 @@ void read_thread( void *arg )
                                     dlen -=6;
                                 }
 
-				bzero(weight, sizeof(weight));
-				bzero(clear, sizeof(clear));
+				memset(weight, 0, sizeof(weight));
+				memset(clear, 0, sizeof(clear));
 
 				/* calculate keystream */
 				k = known_clear(clear, &clearsize, weight, h80211, dlen);
@@ -1702,7 +1716,8 @@ void check_thread( void *arg )
 
 		if( pfh.linktype != LINKTYPE_IEEE802_11 &&
 			pfh.linktype != LINKTYPE_PRISM_HEADER &&
-			pfh.linktype != LINKTYPE_RADIOTAP_HDR )
+			pfh.linktype != LINKTYPE_RADIOTAP_HDR &&
+			pfh.linktype != LINKTYPE_PPI_HDR )
 		{
 			fprintf( stderr, "This file is not a regular "
 				"802.11 (wireless) capture.\n" );
@@ -1827,6 +1842,25 @@ void check_thread( void *arg )
 				n = *(unsigned short *)( h80211 + 2 );
 
 				if( n <= 0 || n >= (int) pkh.caplen )
+					continue;
+
+				h80211 += n; pkh.caplen -= n;
+			}
+
+			if( pfh.linktype == LINKTYPE_PPI_HDR )
+			{
+				/* Remove the PPI header */
+
+				n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+				if( n <= 0 || n>= (int) pkh.caplen )
+					continue;
+
+				/* for a whole Kismet logged broken PPI headers */
+				if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+					n = 32;
+
+				if( n <= 0 || n>= (int) pkh.caplen )
 					continue;
 
 				h80211 += n; pkh.caplen -= n;
@@ -4532,7 +4566,7 @@ int main( int argc, char *argv[] )
 
 	/*
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
-	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
+	memset(all_ivs, 0, (256*256*256)*sizeof(used_iv));
 	*/
 
 	forceptw = 0;
@@ -4791,14 +4825,14 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'l' :
-				opt.logKeyToFile = (char *)malloc(strlen(optarg) + 1);
+				opt.logKeyToFile = (char *)calloc(1, strlen(optarg) + 1);
 				if (opt.logKeyToFile == NULL)
 				{
 					printf("Error allocating memory\n");
 					return( FAILURE );
 				}
 
-				strcpy(opt.logKeyToFile, optarg);
+				strncpy(opt.logKeyToFile, optarg, strlen(optarg));
 				break;
 
 			case 'M' :

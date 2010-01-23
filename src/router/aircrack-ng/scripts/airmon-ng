@@ -8,8 +8,9 @@ IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 USE_IW=0
-IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.11.tar.bz2"
+IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.17.tar.bz2"
 IW_ERROR=""
+UDEV_ISSUE=0
 
 if [ -f "`which iw 2>&1`" ]
 then
@@ -265,6 +266,11 @@ getChipset() {
         CHIPSET="Intel 4965AGN"
     fi
 
+    if [ x$DRIVER = "xiwlagn" ]
+    then
+        CHIPSET="Intel 4965/5xxx"
+    fi
+
     if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" -o x$DRIVER = "xath9k" ]
     then
         CHIPSET="Atheros "
@@ -398,14 +404,15 @@ do
         IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=madwifi_g,$iface,Atheros" >>$KISMET
-        ifconfig $iface up
+        ifconfig $iface up 2>/dev/null >/dev/null
         if [ $CH -lt 1000 ]
         then
-            iwconfig $IFACE channel $CH
+            iwconfig $IFACE channel $CH 2>/dev/null >/dev/null
         else
-            iwconfig $IFACE freq "$CH"000000
+            iwconfig $IFACE freq "$CH"000000 2>/dev/null >/dev/null
         fi
-        ifconfig $IFACE up
+        ifconfig $IFACE up 2>/dev/null >/dev/null
+        UDEV_ISSUE=$?
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
@@ -441,7 +448,7 @@ do
             IW_ERROR=`iw dev $iface interface add $MONDEV type monitor 2>&1 | grep "nl80211 not found"`
             if [ x$IW_ERROR = "x" ]
             then
-                sleep 0.1
+                sleep 1s
 		if [ ! -z $3 ]
                 then
             	    if [ $3 -lt 1000 ]
@@ -457,7 +464,7 @@ do
                 if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
                 then
                     echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-                    sleep 0.1
+                    sleep 1s
                     if [ $3 -lt 1000 ]
                     then
                         iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
@@ -474,7 +481,7 @@ do
             if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
             then
                 echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-                sleep 0.1
+                sleep 1s
                 if [ $3 -lt 1000 ]
                 then
                     iwconfig $MONDEV mode Monitor channel $3 >/dev/null 2>&1
@@ -1113,3 +1120,9 @@ printf "$iface\t\tUnknown\t\tUnknown (MONITOR MODE NOT SUPPORTED)\n"
 done
 
 echo
+
+if [ $UDEV_ISSUE != 0 ] ; then
+	echo udev renamed the interface. Read the following for a solution:
+	echo http://www.aircrack-ng.org/doku.php?id=airmon-ng#interface_athx_number_rising_ath0_ath1_ath2...._ath45
+	echo 
+fi

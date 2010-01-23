@@ -33,6 +33,28 @@
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
 
+int get_ram_size(void) {
+	FILE *fp;
+	char str[256];
+	int val = 0;
+	int ret = -1;
+
+	if (!(fp = fopen("/proc/meminfo", "r"))) {
+		perror("fopen fails");
+		return ret;
+	}
+
+	memset(str, 0x00, sizeof(str));
+	while ((fscanf(fp, "%s %d", str, &val)) != 0 && ret == -1) {
+		if (!(strncmp(str, "MemTotal", 8))) {
+			ret = val;
+		}
+	}
+
+	fclose(fp);
+	return ret;
+}
+
 /* Return the version number */
 char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc)
 {
@@ -138,7 +160,7 @@ int maccmp(unsigned char *mac1, unsigned char *mac2)
 char * mac2string(unsigned char *mac_address )
 {
 	char * mac_string = (char *)malloc(sizeof(char)*18);
-	sprintf(mac_string, "%02X:%02X:%02X:%02X:%02X:%02X", *mac_address,
+	snprintf(mac_string, 18, "%02X:%02X:%02X:%02X:%02X:%02X", *mac_address,
 						*(mac_address+1), *(mac_address+2), *(mac_address+3),
 						*(mac_address+4), *(mac_address+5));
 	return mac_string;

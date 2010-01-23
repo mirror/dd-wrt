@@ -1,3 +1,45 @@
+Version 1.0 (changes from aircrack-ng 1.0-rc4) - Released 08 September 2009:
+* airserv-ng: Now works fine between 32 and 64bit OSes.
+* wesside-ng: Fixed some endianness bugs
+* airodump-ng-oui-update: Make sure the user is root when updating the file.
+* airmon-ng: Updated iw download link (0.9.17).
+* All: Fixed compilation with some gcc.
+* patches: Added missing patches from patches.aircrack-ng.org: mac80211_2.6.28-rc4-wl_frag+ack_v3.patch
+* manpage: Updated aireplay-ng manpage.
+* INSTALLING: Removed (now) useless requirement for OSX installation.
+* GUI (windows): Fixed 2nd selection of a capture file.
+
+Version 1.0-rc4 (changes from aircrack-ng 1.0-rc3) - Released 27 July 2009:
+* airodump-ng: Decreased time before writing text files to 5 sec (instead of 20).
+* airodump-ng: New option --output-format option (to replace --nocap): specify output files.
+* airodump-ng: Fixed encryption tag value in kismet netxml files.
+* airodump-ng: Sanitize essid before writing it into kismet netxml files.
+* airodump-ng: Log manufacturer into kismet netxml files.
+* aireplay-ng: Fake auth: reduce the number of ACKs to 2 per packet.
+* aireplay-ng: Added possibility to stop sending fake auth requests after n retry failures.
+* aircrack-ng: Fixed compilation on FreeBSD.
+* aircrack-ng: Fixed aircrack-ng --help on OSX.
+* airmon-ng: Updated iw download link (0.9.15).
+* airmon-ng: Fix chipset detection for iwlagn (show "Intel 4965/5xxx" instead of "Unknown").
+* airmon-ng: Display a message when udev rename madwifi-ng VAPs.
+* airmon-ng: sleep 1s instead of 0.1 (0.1 is not supported by all distro).
+* airolib-ng: Fixed locked database counter.
+* airdriver-ng: Updated to rt2570 k2wrlz v1.6.3
+* airdriver-ng: Updated r8187 patch.
+* aircrack-ng, airdecap-ng, ivstools, airodump-ng, airbase-ng, aireplay-ng, airtun-ng, packetforge-ng, tkiptun-ng: Added support for PPI captures support (Thanks to dragorn).
+* airdecap-ng: Fixed segfault on some capture files.
+* wesside-ng, easside-ng: "ERROR: Packet length changed while transmitting (XX instead of YY)" should finaly be fixed.
+* All: Added compatibility file for functions like cpu_to_le32. That should fix compilation on a lot of OSes.
+* All: Temporary fix to allow compilation with recent gcc (Error message: "dereferencing type-punned pointer will break strict-aliasing rules"). I hope it doesn't break anything. A cleaner fix will be applied later.
+* INSTALLING: OSX patch for Intel CPU isn't required anymore
+* INSTALLING: Updated instructions to compile sqlite on cygwin for 3.6.16.
+* patches: Updated sqlite (v3.6.13) patch for cygwin.
+* patches: Updated wlanng patch for 2.6.28.
+* patches: Updated madwifi-ng patch to r4073
+* packages: Fixed spec (RPM) file.
+* GUI (windows): Use last used directory when selecting another file to crack.
+* GUI (windows): Allow .pcap files too (next to .cap, ...). 
+
 Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released 26 March 2009:
 * airodump-ng: Added Active Scanning Simulation.
 * airodump-ng: Added support for kismet-newcore netxml files (DTD v3.1.0)
@@ -13,7 +55,7 @@ Version 1.0-rc3 (changes from aircrack-ng 1.0-rc2) - Released 26 March 2009:
 * aircrack-ng: Fixed errors when compiling on OS X 10.5.6 PPC.
 * aircrack-ng: Added an option to write the key to a file.
 * airolib-ng: Fixed a bug where database is created even if parameters are not correct.
-* airmon-ng: Added wifibox to the list of network manager.
+* airmon-ng: Added wifibox to the list of network managers.
 * airmon-ng: Updated iw download link (0.9.11).
 * airmon-ng and airdriver-ng: Move them in script/ directory.
 * airmon-ng: Bypass interface checks when ps command returns an error. Needed for BusyBox limited ps command.

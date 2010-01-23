@@ -43,6 +43,8 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
+#include "osdep/byteorder.h"
+#include "common.h"
 
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
@@ -491,7 +493,8 @@ usage:
 
     if( pfh.linktype != LINKTYPE_IEEE802_11 &&
         pfh.linktype != LINKTYPE_PRISM_HEADER &&
-        pfh.linktype != LINKTYPE_RADIOTAP_HDR )
+        pfh.linktype != LINKTYPE_RADIOTAP_HDR &&
+		pfh.linktype != LINKTYPE_PPI_HDR )
     {
         printf( "\"%s\" isn't a regular 802.11 "
                 "(wireless) capture.\n", argv[optind] );
@@ -657,6 +660,25 @@ usage:
 
             h80211 += n; pkh.caplen -= n;
         }
+
+		if( linktype == LINKTYPE_PPI_HDR )
+		{
+			/* Remove the PPI header */
+
+			n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+			if( n <= 0 || n>= (int) pkh.caplen )
+				continue;
+
+			/* for a while Kismet logged broken PPI headers */
+			if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+				n = 32;
+
+			if( n <= 0 || n>= (int) pkh.caplen )
+				continue;
+
+			h80211 += n; pkh.caplen -= n;
+		}
 
         /* remove the FCS if present (madwifi) */
 
@@ -869,6 +891,8 @@ usage:
 
                 if( write_packet( f_out, &pkh, h80211 ) != 0 )
                     break;
+				else
+					continue;
             }
 
             z += 2;
