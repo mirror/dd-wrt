@@ -10,5 +10,10 @@ fi
 trap "/usr/sbin/scantidy ${1}"  1 2 3 6
 mode=`nvram get ath${1}_net_mode`
 
-/usr/sbin/wlanconfig mon${1} create wlandev wifi${1} wlanmode monitor
+
+if test -e "/proc/sys/dev/wifi${1}/mimo"; then 
+	/usr/sbin/80211n_wlanconfig mon${1} create wlandev wifi${1} wlanmode monitor
+else
+	/usr/sbin/wlanconfig mon${1} create wlandev wifi${1} wlanmode monitor
+fi
 /usr/sbin/airodump-ng mon${1} ${2} ${3}

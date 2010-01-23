@@ -4,7 +4,12 @@ then
         echo "Usage $0 interfacenumber [frequency]"
 fi
 mode=`nvram get ath${1}_net_mode`
-/usr/sbin/wlanconfig mon${1} destroy
+
+if test -e "/proc/sys/dev/wifi${1}/mimo"; then 
+	/usr/sbin/80211n_wlanconfig mon${1} destroy
+else
+	/usr/sbin/wlanconfig mon${1} destroy
+fi
 #restore mode
 /sbin/ifconfig ath${1} down
 if test mode = "mixed"
