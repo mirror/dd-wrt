@@ -5,10 +5,6 @@
 
 #define MAX_IE_ELEMENT_SIZE 256
 
-#define ARPHRD_IEEE80211        801
-#define ARPHRD_IEEE80211_PRISM  802
-#define ARPHRD_IEEE80211_FULL   803
-
 #define REFRESH_RATE 100000  /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250  /* default delay in ms between channel hopping */
 #define DEFAULT_CWIDTH  20 /* 20 MHz channels by default */
@@ -39,12 +35,6 @@
 #define	QLT_TIME	5
 #define	QLT_COUNT	25
 
-#ifdef MAX
-#undef MAX
-#endif
-#define	MAX(a,b)	((a)>(b)?(a):(b))
-#define ABS(a)          ((a)>=0?(a):(-(a)))
-
 #define RATES           \
     "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
@@ -57,6 +47,8 @@
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
+extern int get_ram_size(void);
+char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 
 #define AIRODUMP_NG_CSV_EXT "csv"
 #define KISMET_CSV_EXT "kismet.csv"
@@ -77,6 +69,9 @@ static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
+
+#define OUI_PATH "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt"
+#define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
 
 int read_pkts=0;
 
@@ -113,8 +108,14 @@ struct pkt_buf
     struct timeval  ctime;      /* capture time */
 };
 
-/* linked list of detected access points */
+/* oui struct for list management */
+struct oui {
+	char id[9]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3] (later) with the value (hex ascii will have to be converted) */
+	char manuf[128]; /* TODO: Switch to a char * later to improve memory usage */
+	struct oui *next;
+};
 
+/* linked list of detected access points */
 struct AP_info
 {
     struct AP_info *prev;     /* prev. AP in list         */
@@ -146,6 +147,7 @@ struct AP_info
     struct timeval tv;        /* time for data per second */
 
     unsigned char bssid[6];   /* the access point's MAC   */
+    char *manuf;              /* the access point's manufacturer */
     unsigned char essid[MAX_IE_ELEMENT_SIZE];
                               /* ascii network identifier */
 
@@ -201,6 +203,7 @@ struct ST_info
     time_t tinit, tlast;     /* first and last time seen  */
     unsigned long nb_pkt;    /* total number of packets   */
     unsigned char stmac[6];  /* the client's MAC address  */
+    char *manuf;             /* the client's manufacturer */
     int probe_index;         /* probed ESSIDs ring index  */
     char probes[NB_PRB][MAX_IE_ELEMENT_SIZE];
                              /* probed ESSIDs ring buffer */
@@ -242,6 +245,7 @@ struct globals
     struct AP_info *ap_1st, *ap_end;
     struct ST_info *st_1st, *st_end;
     struct NA_info *na_1st, *na_end;
+    struct oui *manufList;
 
     unsigned char prev_bssid[6];
     unsigned char f_bssid[6];
@@ -345,7 +349,10 @@ struct globals
     /* Airodump-ng start time: for kismet netxml file */
     char * airodump_start_time;
 
-    int dont_write_cap_file;
+    int output_format_pcap;
+    int output_format_csv;
+    int output_format_kismet_csv;
+    int output_format_kismet_netxml;
 }
 G;
 

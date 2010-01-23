@@ -61,25 +61,14 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
+#include "common.h"
 
 #include "osdep/osdep.h"
 
 static struct wif *_wi_in, *_wi_out;
 
-#define ARPHRD_IEEE80211        801
-#define ARPHRD_IEEE80211_PRISM  802
-#define ARPHRD_IEEE80211_FULL   803
-
-#ifndef ETH_P_80211_RAW
-#define ETH_P_80211_RAW 25
-#endif
-
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
-
-#ifndef MAX
-#define MAX(x,y) ( (x)>(y) ? (x) : (y) )
-#endif
 
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
@@ -222,7 +211,7 @@ int addFrag(unsigned char* packet, unsigned char* smac, int len)
     if(rFragment == NULL)
         return -1;
 
-    bzero(frame, 4096);
+    memset(frame, 0, 4096);
     memcpy(frame, packet, len);
 
     z = ( ( frame[1] & 3 ) != 3 ) ? 24 : 30;
@@ -581,10 +570,6 @@ int msleep( int msec )
 
     return 0;
 }
-
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
 int read_prga(unsigned char **dest, char *file)
 {
@@ -1029,7 +1014,7 @@ int main( int argc, char *argv[] )
     memset( &dev, 0, sizeof( dev ) );
 
     rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
-    bzero(rFragment, sizeof(struct Fragment_list));
+    memset(rFragment, 0, sizeof(struct Fragment_list));
 
     opt.r_nbpps = 100;
     opt.tods    = 0;
@@ -1391,7 +1376,9 @@ usage:
             SWAP32(dev.pfh_in.linktype);
 
         if( dev.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
-            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
+            dev.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+            dev.pfh_in.linktype != LINKTYPE_PPI_HDR )
         {
             fprintf( stderr, "Wrong linktype from pcap file header "
                              "(expected LINKTYPE_IEEE802_11) -\n"
@@ -1471,6 +1458,41 @@ usage:
                     n = *(int *)( h80211 + 4 );
 
                 if( n < 8 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+            {
+                /* remove the radiotap header */
+
+                n = *(unsigned short *)( h80211 + 2 );
+
+                if( n <= 0 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_PPI_HDR )
+            {
+                /* remove the PPI header */
+
+                n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+                if( n <= 0 || n>= (int) caplen )
+                    continue;
+
+                /* for a while Kismet logged broken PPI headers */
+                if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                    n = 32;
+
+                if( n <= 0 || n>= (int) caplen )
                     continue;
 
                 memcpy( tmpbuf, h80211, caplen );

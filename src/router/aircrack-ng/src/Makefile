@@ -74,10 +74,7 @@ OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
 OBJS_AR		= aireplay-ng.o common.o crypto.o
 OBJS_ADU	= airodump-ng.o common.o crypto.o uniqueiv.o
-ifeq ($(OSNAME), cygwin)
-	OBJS_ADU	+= osdep/common.o
-endif
-ifeq ($(OSNAME), Darwin)
+ifneq ($(OSNAME), Linux)
 	OBJS_ADU	+= osdep/common.o
 endif
 OBJS_AT		= airtun-ng.o common.o crypto.o
@@ -89,7 +86,7 @@ OBJS_ES		= easside-ng.o common.o
 OBJS_BUDDY	= buddy-ng.o common.o
 OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
 OBJS_AB		= airbase-ng.o common.o crypto.o
-OBJS_AU		= airdecloak-ng.o common.o
+OBJS_AU		= airdecloak-ng.o common.o osdep/radiotap/radiotap-parser.o
 OBJS_TT		= tkiptun-ng.o common.o crypto.o
 
 

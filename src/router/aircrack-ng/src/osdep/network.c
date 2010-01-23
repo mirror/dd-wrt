@@ -30,24 +30,6 @@
 #include <sys/select.h>
 #include <errno.h>
 
-#ifdef __MACH__
-#include <libkern/OSByteOrder.h>
-#elif defined(__FreeBSD__)
-#include <machine/endian.h>
-#if BYTE_ORDER == BIG_ENDIAN
-# define __be32_to_cpu(x)       (x)
-# define __be64_to_cpu(x)       (x)
-#elif BYTE_ORDER == LITTLE_ENDIAN
-# define __be32_to_cpu(x)       __bswap32(x)
-# define __be64_to_cpu(x)       __bswap64(x)
-#endif
-#elif defined (__sun) && defined (__sparc) /* Solaris SPARC, not Solaris x86 */
-#include <sys/byteorder.h>
-#else
-#include <asm/byteorder.h>
-#endif /* __MACH__ */
-
-
 #include "osdep.h"
 #include "network.h"
 
@@ -120,8 +102,10 @@ int net_read_exact(int s, void *arg, int len)
 		rc = recv(s, buf, (len - rlen), 0);
 
 		if (rc < 1) {
-			if (rc == -1 && (rc == EAGAIN || rc == EINTR))
+			if (rc == -1 && (errno == EAGAIN || errno == EINTR)) {
+				usleep(100);
 				continue;
+			}
 
 			return -1;
 		}
@@ -286,8 +270,8 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 		    struct rx_info *ri)
 {
 	struct priv_net *pn = wi_priv(wi);
-	struct rx_info *pri;
-	unsigned char buf[2048];
+	uint32_t buf[512]; // 512 * 4 = 2048
+	unsigned char *bufc = (unsigned char*)buf;
 	int cmd;
 	int sz = sizeof(*ri);
 	int l;
@@ -302,36 +286,25 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 		if (cmd == -1)
 			return -1;
 		if (cmd == NET_RC)
-			return ntohl(*((uint32_t*)buf));
+			return ntohl(buf[0]);
 		assert(cmd == NET_PACKET);
 	}
 
-	pri = (struct rx_info*)buf;
-
-#ifdef __MACH__
-	pri->ri_mactime = OSSwapBigToHostInt64(pri->ri_mactime);
-	pri->ri_power = OSSwapBigToHostInt32(pri->ri_power);
-	pri->ri_noise = OSSwapBigToHostInt32(pri->ri_noise);
-	pri->ri_channel = OSSwapBigToHostInt32(pri->ri_channel);
-	pri->ri_rate = OSSwapBigToHostInt32(pri->ri_rate);
-	pri->ri_antenna = OSSwapBigToHostInt32(pri->ri_antenna);
-#else
-	pri->ri_mactime = __be64_to_cpu(pri->ri_mactime);
-	pri->ri_power = __be32_to_cpu(pri->ri_power);
-	pri->ri_noise = __be32_to_cpu(pri->ri_noise);
-	pri->ri_channel = __be32_to_cpu(pri->ri_channel);
-	pri->ri_rate = __be32_to_cpu(pri->ri_rate);
-	pri->ri_antenna = __be32_to_cpu(pri->ri_antenna);
-#endif /* __MACH__ */
-
 	/* XXX */
-	if (ri)
-		memcpy(ri, buf, sz);
+	if (ri) {
+		// re-assemble 64-bit integer
+		ri->ri_mactime = __be64_to_cpu((uint64_t)buf[0] << 32 || buf[1] );
+		ri->ri_power = __be32_to_cpu(buf[2]);
+		ri->ri_noise = __be32_to_cpu(buf[3]);
+		ri->ri_channel = __be32_to_cpu(buf[4]);
+		ri->ri_rate = __be32_to_cpu(buf[5]);
+		ri->ri_antenna = __be32_to_cpu(buf[6]);
+	}
 	l -= sz;
 	assert(l > 0);
 	if (l > len)
 		l = len;
-	memcpy(h80211, &buf[sz], l);
+	memcpy(h80211, &bufc[sz], l);
 
 	return l;
 }
@@ -339,9 +312,9 @@ static int net_read(struct wif *wi, unsigned char *h80211, int len,
 static int net_get_mac(struct wif *wi, unsigned char *mac)
 {
 	struct priv_net *pn = wi_priv(wi);
-	unsigned char buf[6];
+	uint32_t buf[2]; // only need 6 bytes, this provides 8
 	int cmd;
-	int sz = sizeof(buf);
+	int sz = 6;
 
 	if (net_send(pn->pn_s, NET_GET_MAC, NULL, 0) == -1)
 		return -1;
@@ -350,9 +323,9 @@ static int net_get_mac(struct wif *wi, unsigned char *mac)
 	if (cmd == -1)
 		return -1;
 	if (cmd == NET_RC)
-		return ntohl(*((uint32_t*)buf));
+		return ntohl(buf[0]);
 	assert(cmd == NET_MAC);
-	assert(sz == sizeof(buf));
+	assert(sz == 6);
 
 	memcpy(mac, buf, 6);
 

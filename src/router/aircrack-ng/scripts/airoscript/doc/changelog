@@ -1,11 +1,16 @@
 Changelog for 2.2 (Not yet released)
+- Updated licenses on all documents (closes: )
+- Bugfixes (lots) on airoscfunc.sh 
+- Added airoswordlist.pl for automatising wordlist creation.
+- Added airosconf.sh for airoscript configuration modify trought command line
+- Modified makefile to use airosconf to autoconfigure airosperl on install.
+- Added a initial display message advertising of airoscript use.
 - Added support for airserv-ng
 - Added tkiptun basic support
-- Bugfixes (again) for $clean
 - Support for a different interface for injection
 - iwconfig is not anymore called directly, binary can be configured trought conffile.
-- Compatibility with cygwin 
 - Added documentation about cygwin-compatibility.
+- Compatibility with cygwin 
 - Makefile adapted to auto-detect os.
 - Updated documentation for tkiptun-ng
 - Added interactive option to conffile, that way airoscript is more interactive on some attacks.
@@ -17,9 +22,6 @@ Changelog for 2.2 (Not yet released)
 version is now called 2.2 and now I use dates too.
 - Corrected a bug with interatively part on airoscript, airoscript didn't
 properly set default value for from/to destination bit.
-- Added GUI (airosperl) (Not yet finished, as soon as it's finished and
-aircrack-ng 1.0-rc3 released I will rename this version to 3.0)
-
 
 Changelog for 2.1
 - Bugfixes on terminal titles.
