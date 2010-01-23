@@ -29,6 +29,9 @@ endif
 ifeq ($(CONFIG_FONERA),y)
 MODULE:=conntrack.26
 endif
+ifeq ($(CONFIG_UBNTM),y)
+MODULE:=conntrack.26
+endif
 ifeq ($(CONFIG_LS2),y)
 MODULE:=conntrack.26
 endif
@@ -63,6 +66,12 @@ ifeq ($(CONFIG_TW6600),y)
 MODULE:=conntrack.26
 endif
 ifeq ($(CONFIG_CA8),y)
+MODULE:=conntrack.26
+endif
+ifeq ($(CONFIG_AP83),y)
+MODULE:=conntrack.26
+endif
+ifeq ($(CONFIG_AP94),y)
 MODULE:=conntrack.26
 endif
 
