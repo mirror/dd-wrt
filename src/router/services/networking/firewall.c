@@ -1389,7 +1389,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	// services = fw_get_filter_services ();
 	// //nvram_safe_get("filter_services");
 
-	memset(services, 0, 8192);
+	memset(services, 0, sizeof(services));
 	fw_get_filter_services(services,sizeof(services));
 
 	/*
