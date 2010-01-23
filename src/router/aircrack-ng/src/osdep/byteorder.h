@@ -22,25 +22,25 @@
 #define _AIRCRACK_NG_BYTEORDER_H_
 
 	#define ___my_swab16(x) \
-	((u_int16_t)( \
-			(((u_int16_t)(x) & (u_int16_t)0x00ffU) << 8) | \
-			(((u_int16_t)(x) & (u_int16_t)0xff00U) >> 8) ))
+	((uint16_t)( \
+			(((uint16_t)(x) & (uint16_t)0x00ffU) << 8) | \
+			(((uint16_t)(x) & (uint16_t)0xff00U) >> 8) ))
 	#define ___my_swab32(x) \
-	((u_int32_t)( \
-			(((u_int32_t)(x) & (u_int32_t)0x000000ffUL) << 24) | \
-			(((u_int32_t)(x) & (u_int32_t)0x0000ff00UL) <<  8) | \
-			(((u_int32_t)(x) & (u_int32_t)0x00ff0000UL) >>  8) | \
-			(((u_int32_t)(x) & (u_int32_t)0xff000000UL) >> 24) ))
+	((uint32_t)( \
+			(((uint32_t)(x) & (uint32_t)0x000000ffUL) << 24) | \
+			(((uint32_t)(x) & (uint32_t)0x0000ff00UL) <<  8) | \
+			(((uint32_t)(x) & (uint32_t)0x00ff0000UL) >>  8) | \
+			(((uint32_t)(x) & (uint32_t)0xff000000UL) >> 24) ))
 	#define ___my_swab64(x) \
-	((u_int64_t)( \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0x00000000000000ffULL) << 56) | \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0x000000000000ff00ULL) << 40) | \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0x0000000000ff0000ULL) << 24) | \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0x00000000ff000000ULL) <<  8) | \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0x000000ff00000000ULL) >>  8) | \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0x0000ff0000000000ULL) >> 24) | \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0x00ff000000000000ULL) >> 40) | \
-			(u_int64_t)(((u_int64_t)(x) & (u_int64_t)0xff00000000000000ULL) >> 56) ))
+	((uint64_t)( \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0x00000000000000ffULL) << 56) | \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0x000000000000ff00ULL) << 40) | \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0x0000000000ff0000ULL) << 24) | \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0x00000000ff000000ULL) <<  8) | \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0x000000ff00000000ULL) >>  8) | \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0x0000ff0000000000ULL) >> 24) | \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0x00ff000000000000ULL) >> 40) | \
+			(uint64_t)(((uint64_t)(x) & (uint64_t)0xff00000000000000ULL) >> 56) ))
 
 
 	/*
