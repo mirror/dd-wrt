@@ -662,7 +662,7 @@ extern void milkfish_sip_message(webs_t wp);
 extern void ej_show_registrations(webs_t wp, int argc, char_t ** argv);
 #endif
 
-extern void get_filter_services(char *services);
+extern void get_filter_services(char *services,int maxsize);
 
 #ifdef HAVE_RFLOW
 extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
