@@ -36,6 +36,10 @@ UTILS += showmac setmac fischecksum
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 UTILS += wl_atheros
+else
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+UTILS += wl_atheros
+endif
 endif
 ifeq ($(CONFIG_CA8),y)
 UTILS += fischecksum
