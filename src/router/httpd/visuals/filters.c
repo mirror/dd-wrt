@@ -891,7 +891,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 	type = argv[0];
 	which = atoi(argv[1]);
 
-	char services[16384];
+	char services[11000];
 
 	memset(services, 0, sizeof(services));
 

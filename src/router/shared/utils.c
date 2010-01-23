@@ -1847,7 +1847,6 @@ void get_filter_services(char *services,int maxsize)
 		strcat(services, temp);
 		filters++;
 	}
-	fprintf(stderr,"filter size = %d\n",size);
 
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
