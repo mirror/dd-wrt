@@ -450,6 +450,9 @@
 
 #define ROUTER_BOARD_OPENRISC 0x930f
 
+#define ROUTER_BOARD_ASUS_RTN13U 0x941a
+
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
