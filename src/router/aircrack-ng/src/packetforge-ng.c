@@ -43,6 +43,8 @@
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
+#include "osdep/byteorder.h"
+#include "common.h"
 
 #define ARP_REQ \
     "\x08\x00\x02\x01\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC" \
@@ -228,6 +230,41 @@ int capture_ask_packet( int *caplen )
                 n = *(int *)( h80211 + 4 );
 
             if( n < 8 || n >= (int) *caplen )
+                continue;
+
+            memcpy( tmpbuf, h80211, *caplen );
+            *caplen -= n;
+            memcpy( h80211, tmpbuf + n, *caplen );
+        }
+
+        if( dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+        {
+            /* remove the radiotap header */
+
+            n = *(unsigned short *)( h80211 + 2 );
+
+            if( n <= 0 || n >= (int) *caplen )
+                continue;
+
+            memcpy( tmpbuf, h80211, *caplen );
+            *caplen -= n;
+            memcpy( h80211, tmpbuf + n, *caplen );
+        }
+
+        if( dev.pfh_in.linktype == LINKTYPE_PPI_HDR )
+        {
+            /* remove the PPI header */
+
+            n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+            if( n <= 0 || n>= (int) *caplen )
+                continue;
+
+            /* for a while Kismet logged broken PPI headers */
+            if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                n = 32;
+
+            if( n <= 0 || n>= (int) *caplen )
                 continue;
 
             memcpy( tmpbuf, h80211, *caplen );
@@ -1397,7 +1434,9 @@ int main(int argc, char* argv[])
             SWAP32(dev.pfh_in.linktype);
 
         if( dev.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
-            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
+            dev.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+            dev.pfh_in.linktype != LINKTYPE_PPI_HDR )
         {
             fprintf( stderr, "Wrong linktype from pcap file header "
                              "(expected LINKTYPE_IEEE802_11) -\n"

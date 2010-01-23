@@ -70,14 +70,7 @@
 #include "pcap.h"
 #include "osdep/osdep.h"
 #include "crypto.h"
-
-#define ARPHRD_IEEE80211        801
-#define ARPHRD_IEEE80211_PRISM  802
-#define ARPHRD_IEEE80211_FULL   803
-
-#ifndef ETH_P_80211_RAW
-#define ETH_P_80211_RAW 25
-#endif
+#include "common.h"
 
 #define RTC_RESOLUTION  8192
 
@@ -113,10 +106,6 @@
 #define PROBE_REQ       \
     "\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"  \
     "\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
-
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
 #define RATE_NUM 12
 
@@ -183,6 +172,7 @@ char usage[] =
 "      -o npckts : number of packets per burst (0=auto, default: 1)\n"
 "      -q sec    : seconds between keep-alives\n"
 "      -y prga   : keystream for shared key auth\n"
+"      -T n      : exit after retry fake auth request n time\n"
 "\n"
 "      Arp Replay attack options:\n"
 "\n"
@@ -265,6 +255,7 @@ struct options
     int a_mode;
     int a_count;
     int a_delay;
+	int f_retry;
 
     int ringbuffer;
     int ghost;
@@ -909,12 +900,49 @@ int capture_ask_packet( int *caplen, int just_grab )
 
             if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
             {
+                /* remove the prism header */
+
                 if( h80211[7] == 0x40 )
                     n = 64;
                 else
                     n = *(int *)( h80211 + 4 );
 
                 if( n < 8 || n >= (int) *caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, *caplen );
+                *caplen -= n;
+                memcpy( h80211, tmpbuf + n, *caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+            {
+                /* remove the radiotap header */
+
+                n = *(unsigned short *)( h80211 + 2 );
+
+                if( n <= 0 || n >= (int) *caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, *caplen );
+                *caplen -= n;
+                memcpy( h80211, tmpbuf + n, *caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_PPI_HDR )
+            {
+                /* remove the PPI header */
+
+                n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+                if( n <= 0 || n>= (int) *caplen )
+                    continue;
+
+                /* for a while Kismet logged broken PPI headers */
+                if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                    n = 32;
+
+                if( n <= 0 || n>= (int) *caplen )
                     continue;
 
                 memcpy( tmpbuf, h80211, *caplen );
@@ -1366,9 +1394,9 @@ int do_attack_fake_auth( void )
     int i, n, state, caplen, z;
     int mi_b, mi_s, mi_d;
     int x_send;
-//     int ret;
     int kas;
     int tries;
+    int retry = 0;
     int abort;
     int gotack = 0;
     uchar capa[2];
@@ -1428,6 +1456,13 @@ int do_attack_fake_auth( void )
         switch( state )
         {
             case 0:
+				if (opt.f_retry > 0) {
+					if (retry == opt.f_retry) {
+						abort = 1;
+						return 1;
+					}
+					++retry;
+				}
 
                 if(ska && keystreamlen == 0)
                 {
@@ -1486,18 +1521,6 @@ int do_attack_fake_auth( void )
                     if( send_packet( h80211, 30 ) < 0 )
                         return( 1 );
 
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
                     usleep(10);
 
                     if( send_packet( ackbuf, 14 ) < 0 )
@@ -1621,18 +1644,6 @@ int do_attack_fake_auth( void )
 
                     if( send_packet( ackbuf, 14 ) < 0 )
                         return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
                 }
 
                 break;
@@ -1719,18 +1730,6 @@ int do_attack_fake_auth( void )
                     if( send_packet( h80211, 46 + n ) < 0 )
                         return( 1 );
 
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
-                    usleep(10);
-
-                    if( send_packet( ackbuf, 14 ) < 0 )
-                        return( 1 );
                     usleep(10);
 
                     if( send_packet( ackbuf, 14 ) < 0 )
@@ -2034,7 +2033,7 @@ int do_attack_fake_auth( void )
                 }
 
                 aid=( ( (h80211[29] << 8) || (h80211[28]) ) & 0x3FFF);
-                printf( "Association successful :-) (AID: %d)", aid );
+                printf( "Association successful :-) (AID: %d)\n", aid );
                 deauth_wait = 3;
                 fflush( stdout );
 
@@ -2403,12 +2402,49 @@ int do_attack_arp_resend( void )
 
             if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
             {
+                /* remove the prism header */
+
                 if( h80211[7] == 0x40 )
                     n = 64;
                 else
                     n = *(int *)( h80211 + 4 );
 
                 if( n < 8 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+            {
+                /* remove the radiotap header */
+
+                n = *(unsigned short *)( h80211 + 2 );
+
+                if( n <= 0 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_PPI_HDR )
+            {
+                /* remove the PPI header */
+
+                n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+                if( n <= 0 || n>= (int) caplen )
+                    continue;
+
+                /* for a while Kismet logged broken PPI headers */
+                if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                    n = 32;
+
+                if( n <= 0 || n>= (int) caplen )
                     continue;
 
                 memcpy( tmpbuf, h80211, caplen );
@@ -2777,12 +2813,49 @@ int do_attack_caffe_latte( void )
 
             if( dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER )
             {
+                /* remove the prism header */
+
                 if( h80211[7] == 0x40 )
                     n = 64;
                 else
                     n = *(int *)( h80211 + 4 );
 
                 if( n < 8 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+            {
+                /* remove the radiotap header */
+
+                n = *(unsigned short *)( h80211 + 2 );
+
+                if( n <= 0 || n >= (int) caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, caplen );
+                caplen -= n;
+                memcpy( h80211, tmpbuf + n, caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_PPI_HDR )
+            {
+                /* remove the PPI header */
+
+                n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+                if( n <= 0 || n>= (int) caplen )
+                    continue;
+
+                /* for a while Kismet logged broken PPI headers */
+                if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                    n = 32;
+
+                if( n <= 0 || n>= (int) caplen )
                     continue;
 
                 memcpy( tmpbuf, h80211, caplen );
@@ -2908,7 +2981,7 @@ add_arp:
                     return( 1 );
                 }
 
-                bzero(flip, 4096);
+                memset(flip, 0, 4096);
 
 //                 flip[49-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender MAC
 //                 flip[53-24-4] ^= ((rand() % 255)+1); //flip random bits in last byte of sender IP
@@ -3086,13 +3159,13 @@ read_packets:
             break;
     }
 
-    bzero(clear, 4096);
-    bzero(final, 4096);
-    bzero(flip, 4096);
-    bzero(frag1, 128);
-    bzero(frag2, 128);
-    bzero(frag3, 128);
-    bzero(keystream, 128);
+    memset(clear, 0, 4096);
+    memset(final, 0, 4096);
+    memset(flip, 0, 4096);
+    memset(frag1, 0, 128);
+    memset(frag2, 0, 128);
+    memset(frag3, 0, 128);
+    memset(keystream, 0, 128);
 
     /* check if it's a potential ARP request */
 
@@ -3378,7 +3451,7 @@ int do_attack_chopchop( void )
     if( opt.r_smac_set == 1 )
     {
         //handle picky APs (send one valid packet before all the invalid ones)
-        bzero(packet, sizeof(packet));
+        memset(packet, 0, sizeof(packet));
 
         memcpy( packet, NULL_DATA, 24 );
         memcpy( packet +  4, "\xFF\xFF\xFF\xFF\xFF\xFF", 6 );
@@ -5655,11 +5728,11 @@ int main( int argc, char *argv[] )
     opt.f_iswep   = -1; opt.ringbuffer  =  8;
 
     opt.a_mode    = -1; opt.r_fctrl     = -1;
-    opt.ghost     =  0; 
+    opt.ghost     =  0;
     opt.delay     = 15; opt.bittest     =  0;
     opt.fast      =  0; opt.r_smac_set  =  0;
     opt.npackets  =  1; opt.nodetect    =  0;
-    opt.rtc       =  1;
+    opt.rtc       =  1; opt.f_retry	=  0;
 
 /* XXX */
 #if 0
@@ -5698,7 +5771,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBDR",
+                        "b:d:s:m:n:u:v:t:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBDR",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -5792,6 +5865,15 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
                 break;
+
+            case 'T' :
+		ret = sscanf(optarg, "%d", &opt.f_retry);
+		if ((opt.f_retry < 1) || (opt.f_retry > 65535) || (ret != 1)) {
+			printf("Invalid retry setting. [1-65535]\n");
+			printf("\"%s --help\" for help.\n", argv[0]);
+			return(1);
+		}
+		break;
 
             case 't' :
 
@@ -6302,7 +6384,9 @@ usage:
             SWAP32(dev.pfh_in.linktype);
 
         if( dev.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
-            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
+            dev.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+            dev.pfh_in.linktype != LINKTYPE_PPI_HDR )
         {
             fprintf( stderr, "Wrong linktype from pcap file header "
                              "(expected LINKTYPE_IEEE802_11) -\n"

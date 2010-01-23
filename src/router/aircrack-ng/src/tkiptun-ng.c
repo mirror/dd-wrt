@@ -69,14 +69,7 @@
 #include "pcap.h"
 #include "osdep/osdep.h"
 #include "crypto.h"
-
-#define ARPHRD_IEEE80211        801
-#define ARPHRD_IEEE80211_PRISM  802
-#define ARPHRD_IEEE80211_FULL   803
-
-#ifndef ETH_P_80211_RAW
-#define ETH_P_80211_RAW 25
-#endif
+#include "common.h"
 
 #define RTC_RESOLUTION  8192
 
@@ -112,10 +105,6 @@
 #define PROBE_REQ       \
     "\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"  \
     "\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
-
-#define PCT { struct tm *lt; time_t tc = time( NULL ); \
-              lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
-              lt->tm_hour, lt->tm_min, lt->tm_sec ); }
 
 #define RATE_NUM 12
 
@@ -1138,6 +1127,41 @@ int capture_ask_packet( int *caplen, int just_grab )
                     n = *(int *)( h80211 + 4 );
 
                 if( n < 8 || n >= (int) *caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, *caplen );
+                *caplen -= n;
+                memcpy( h80211, tmpbuf + n, *caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR )
+            {
+                /* remove the radiotap header */
+
+                n = *(unsigned short *)( h80211 + 2 );
+
+                if( n <= 0 || n >= (int) *caplen )
+                    continue;
+
+                memcpy( tmpbuf, h80211, *caplen );
+                *caplen -= n;
+                memcpy( h80211, tmpbuf + n, *caplen );
+            }
+
+            if( dev.pfh_in.linktype == LINKTYPE_PPI_HDR )
+            {
+                /* remove the PPI header */
+
+                n = le16_to_cpu(*(unsigned short *)( h80211 + 2));
+
+                if( n <= 0 || n>= (int) *caplen )
+                    continue;
+
+                /* for a while Kismet logged broken PPI headers */
+                if ( n == 24 && le16_to_cpu(*(unsigned short *)(h80211 + 8)) == 2 )
+                    n = 32;
+
+                if( n <= 0 || n>= (int) *caplen )
                     continue;
 
                 memcpy( tmpbuf, h80211, *caplen );
@@ -2205,7 +2229,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
 //     if( opt.r_smac_set == 1 )
 //     {
 //         //handle picky APs (send one valid packet before all the invalid ones)
-//         bzero(packet, sizeof(packet));
+//         memset(packet, 0, sizeof(packet));
 //
 //         memcpy( packet, NULL_DATA, 24 );
 //         memcpy( packet +  4, "\xFF\xFF\xFF\xFF\xFF\xFF", 6 );
@@ -2246,7 +2270,7 @@ int do_attack_tkipchop( uchar* src_packet, int src_packet_len )
             printf("%02X:", rc4key[i]);
         printf("%02X\n", rc4key[15]);
 
-        bzero(keystream, 4096);
+        memset(keystream, 0, 4096);
 
         keystream_len = caplen - z - 8;
         encrypt_wep(keystream, keystream_len, rc4key, 16);
@@ -4191,7 +4215,9 @@ usage:
             SWAP32(dev.pfh_in.linktype);
 
         if( dev.pfh_in.linktype != LINKTYPE_IEEE802_11 &&
-            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER )
+            dev.pfh_in.linktype != LINKTYPE_PRISM_HEADER &&
+            dev.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR &&
+            dev.pfh_in.linktype != LINKTYPE_PPI_HDR )
         {
             fprintf( stderr, "Wrong linktype from pcap file header "
                              "(expected LINKTYPE_IEEE802_11) -\n"
@@ -4224,7 +4250,7 @@ usage:
 
     /* DO MICHAEL TEST */
 
-    bzero(buf, 128);
+    memset(buf, 0, 128);
     memcpy(buf, "M", 1);
     i = michael_test((unsigned char*)"\x82\x92\x5c\x1c\xa1\xd1\x30\xb8", (unsigned char*)buf, strlen(buf), (unsigned char*)"\x43\x47\x21\xca\x40\x63\x9b\x3f");
     PCT; printf("Michael Test: %s\n", i ? "Successful" : "Failed");

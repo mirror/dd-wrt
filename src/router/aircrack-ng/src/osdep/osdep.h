@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
+#include "byteorder.h"
 #include "packed.h"
 
 /* For all structures, when adding new fields, always append them to the end.
