@@ -450,10 +450,8 @@ int noise;
   i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
 #ifdef HAVE_MADWIFI
   while ((int)i < (int)hWifi) {
-    fprintf(stderr,"did = %X\n",i->did);
     if (i->did == pdn_rssi) {
 	    rssi = i->data;
-	    fprintf(stderr,"rssi = %d\n",i->data);
 	    }
     i = (prism_did *) (((unsigned char*)&i->data) + i->length);
     }
