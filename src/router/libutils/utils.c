@@ -687,6 +687,9 @@ int internal_getRouterBrand()
 	setRouter("Dlink-DIR600 rev b");
 #endif
 	return ROUTER_BOARD_DIR600B;
+#elif HAVE_ASUSRTN13U
+	setRouter("Asus RT-N13U");
+	return ROUTER_BOARD_WHRG300N;
 #elif HAVE_WHRG300N
 	setRouter("Buffalo WHR-G300N");
 	return ROUTER_BOARD_WHRG300N;
