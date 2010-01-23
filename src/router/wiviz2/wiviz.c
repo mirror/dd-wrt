@@ -411,7 +411,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
   ap_enc_type encType = aetUnknown;
   if (!packet) return;
 
-#ifdef HAVE_MADWIFI
+#if 0 //HAVE_MADWIFI  (use prism now here too)
 int noise;
   if (packet[0]>0)
     {
@@ -438,6 +438,7 @@ int noise;
   //Parse the prism DIDs
   i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
   while ((int)i < (int)hWifi) {
+    fprintf(stderr,"did = %X\n",i->did);
     if (i->did == pdn_rssi) rssi = *(int *)(i+1);
     i = (prism_did *) ((int)(i+1) + i->length);
     }
