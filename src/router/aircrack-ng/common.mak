@@ -18,7 +18,7 @@ PIC		=
 SQLITE		= false
 else
 EXE		=
-PIC		= -fPIC
+PIC		= -fPIC -Dlinux
 ifndef SQLITE
 SQLITE		= true
 endif
