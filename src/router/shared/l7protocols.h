@@ -421,7 +421,6 @@ l7filters filters_list[] = {
 	// http://www.valvesoftware.com
 	{
 	 "teamspeak", 0},	// TeamSpeak - VoIP application -
-	// http://goteamspeak.com
 	{
 	 "teamviewer", 0},
 	{
