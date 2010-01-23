@@ -153,9 +153,9 @@ int br_add_bridge(const char *brname)
 	    && !nvram_match(netmask, "0.0.0.0")) {
 		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask",
 		     nvram_safe_get(netmask), "mtu", getBridgeMTU(brname),
-		     "up");
+		     "up","promisc");
 	} else
-		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
+		eval("ifconfig", brname, "mtu", getBridgeMTU(brname),"promisc");
 
 	return ret < 0 ? errno : 0;
 }
