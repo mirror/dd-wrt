@@ -95,7 +95,13 @@ if (!strcmp(argv[1],"terminate"))
   sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",get_wdev()));
   sleep(1);
   sysprintf("ifconfig %s down",get_monitor());
-  sysprintf("wlanconfig %s destroy",get_monitor());
+  if (is_ar5008(nvram_safe_get("wifi_display")))
+    {
+     sysprintf("80211n_wlanconfig %s destroy",get_monitor());
+    }else
+    {
+     sysprintf("wlanconfig %s destroy",get_monitor());    
+    }
 #elif HAVE_RT2880
   nvram_set("wl0_mode",nvram_safe_get("wl0_oldmode"));
   sysprintf("startservice configurewifi");
@@ -146,7 +152,12 @@ if (!strcmp(argv[1],"terminate"))
 	  sysprintf("iwconfig ra0 mode monitor");
 	  cfg.readFromWl = 1;
 #else
+  if (is_ar5008(nvram_safe_get("wifi_display")))
+    {
+	  sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(get_wdev()));
+    }else{
 	  sysprintf("wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(get_wdev()));
+    }
 	  sysprintf("ifconfig %s up",get_monitor());
 	  cfg.readFromWl = 1;
 #endif
@@ -437,11 +448,22 @@ int noise;
 
   //Parse the prism DIDs
   i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
+#ifdef HAVE_MADWIFI
   while ((int)i < (int)hWifi) {
     fprintf(stderr,"did = %X\n",i->did);
+    if (i->did == pdn_rssi) {
+	    rssi = i->data;
+	    fprintf(stderr,"rssi = %d\n",i->data);
+	    }
+    i = (prism_did *) (((unsigned char*)&i->data) + i->length);
+    }
+#else
+  while ((int)i < (int)hWifi) {
     if (i->did == pdn_rssi) rssi = *(int *)(i+1);
     i = (prism_did *) ((int)(i+1) + i->length);
     }
+
+#endif
 #endif
 
   //Establish the frame type
