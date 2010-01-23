@@ -4,7 +4,7 @@ include $(AC_ROOT)/common.mak
 RTAP		= radiotap
 
 LIB		= libosdep.a 
-CFLAGS		+= $(PIC) -I.. $(LIBAIRPCAP)
+CFLAGS		+= $(PIC) -Dlinux -I.. $(LIBAIRPCAP) 
 
 OBJS_NET	= network.o
 OBJS		= osdep.o $(OBJS_NET)
