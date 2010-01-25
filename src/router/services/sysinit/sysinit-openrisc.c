@@ -114,8 +114,10 @@ static void install_sdcard(void)
 	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
 	eval("umount", "/tmp/install");
 	eval("sync");
-	fprintf(stderr,"rebooting...\n");
-	sysprintf("reboot");
+	fprintf(stderr,"signal installation complete\n");
+	eval("gpio","enable","4");
+	sleep(1);
+	eval("gpio","disable","4");
 }
 
 void start_sysinit(void)
