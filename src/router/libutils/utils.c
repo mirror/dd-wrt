@@ -2806,6 +2806,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BOARD_OPENRISC:
 		diag_gpio = 0x003;
+		break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
 		diag_gpio = 0x107;
