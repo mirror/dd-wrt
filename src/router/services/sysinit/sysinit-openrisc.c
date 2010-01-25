@@ -73,7 +73,7 @@ static void install_sdcard(void)
 		fp = fopen("/dev/discs/disc1/disc", "rb");
 		fseek(fp, 0, SEEK_END);
 		long size = ftell(fp);
-		size -= 65536;
+		size -= 65536*16;
 		size /= 4096;
 		char newsize[32];
 		sprintf(newsize, "%d", size);
