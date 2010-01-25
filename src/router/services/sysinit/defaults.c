@@ -1156,7 +1156,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif  HAVE_TRIMAX
 	{"router_name", "TRIMAX", 0},
 #elif  HAVE_WIKINGS
-	{"router_name", "WIKINGS", 0},
+	{"router_name", "Excel Networks", 0},
 #elif  HAVE_DDLAN
 	{"router_name", "WDSL-Modem XXX", 0},
 #elif  HAVE_TMK
