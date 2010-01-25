@@ -442,9 +442,8 @@ int noise;
   prism_hdr * hPrism;
   prism_did * i;
   if (pktlen < sizeof(prism_hdr) + sizeof(ieee802_11_hdr)) return;
-  if (pktlen < hPrism->msg_length + sizeof(ieee802_11_hdr)) return; // bogus packet
-
   hPrism = (prism_hdr *) packet;
+  if (pktlen < hPrism->msg_length + sizeof(ieee802_11_hdr)) return; // bogus packet
   hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
  i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
   //Parse the prism DIDs
