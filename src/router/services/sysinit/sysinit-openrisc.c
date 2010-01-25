@@ -97,6 +97,7 @@ static void install_sdcard(void)
 	eval("mkdir", "/tmp/install/dev");
 	eval("mkdir", "/tmp/install/sys");
 	eval("mkdir", "/tmp/install/proc");
+	eval("mkdir", "/tmp/install/tmp");
 	sysprintf("echo \"blank\" > /tmp/install/boot/.installed");
 	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
 	eval("umount", "/tmp/install");
