@@ -668,7 +668,10 @@ void print_host(FILE * outf, wiviz_host * host) {
   if (!host->occupied) return;
   fprintf(outf, "h.mac = '");
   fprint_mac(outf, host->mac, "';\n");
-  fprintf(outf, "h.rssi = -%i;\nh.type = '", host->RSSI / 100);
+  if (host->RSSI<0)
+     fprintf(outf, "h.rssi = %i;\nh.type = '", host->RSSI / 100);
+  else     
+     fprintf(outf, "h.rssi = -%i;\nh.type = '", host->RSSI / 100);
   switch (host->type) {
     case typeAP:  fprintf(outf, "ap"); break;
     case typeSta: fprintf(outf, "sta"); break;
