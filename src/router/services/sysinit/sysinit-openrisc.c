@@ -76,22 +76,26 @@ if (fp!=NULL) // already locally installed?
 	sprintf(newsize,"%d",size);
 	eval("mke2fs","-b","4096","-N","65536","-L","dd-wrt","/dev/discs/disc1/disc",newsize);
 	mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
-	eval("cp","-r","-d","/boot","/tmp/install");
-	eval("cp","-r","-d","/bin","/tmp/install");
-	eval("cp","-r","-d","/etc","/tmp/install");
-	eval("cp","-r","-d","/jffs","/tmp/install");
-	eval("cp","-r","-d","/lib","/tmp/install");
-	eval("cp","-r","-d","/mmc","/tmp/install");
-	eval("cp","-r","-d","/mnt","/tmp/install");
-	eval("cp","-r","-d","/opt","/tmp/install");
-	eval("cp","-r","-d","/sbin","/tmp/install");
-	eval("cp","-r","-d","/usr","/tmp/install");
-	eval("cp","-r","-d","/www","/tmp/install");
-	eval("cp","-r","-d","/var","/tmp/install");
+	}
+	eval("cp","-r","-d","-f","/boot","/tmp/install");
+	eval("cp","-r","-d","-f","/bin","/tmp/install");
+	eval("cp","-r","-d","-f","/etc","/tmp/install");
+	eval("cp","-r","-d","-f","/jffs","/tmp/install");
+	eval("cp","-r","-d","-f","/lib","/tmp/install");
+	eval("cp","-r","-d","-f","/mmc","/tmp/install");
+	eval("cp","-r","-d","-f","/mnt","/tmp/install");
+	eval("cp","-r","-d","-f","/opt","/tmp/install");
+	eval("cp","-r","-d","-f","/sbin","/tmp/install");
+	eval("cp","-r","-d","-f","/usr","/tmp/install");
+	eval("cp","-r","-d","-f","/www","/tmp/install");
+	eval("cp","-r","-d","-f","/var","/tmp/install");
 	eval("mkdir","/tmp/install/dev");
 	eval("mkdir","/tmp/install/sys");
 	eval("mkdir","/tmp/install/proc");
 	sysprintf("echo \"blank\" > /tmp/install/boot/.installed");
+	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
+	eval("umount","/tmp/install");
+	eval("sync");
 	sys_reboot();
 	}
 }
