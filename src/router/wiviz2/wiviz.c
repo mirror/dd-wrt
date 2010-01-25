@@ -466,6 +466,8 @@ int noise;
     }
     if (!received) // bogus, no prism data
 	return;
+    if (!rssi) // no rssi? can't be a packet
+	return;
 #else
   while ((int)i < (int)hWifi) {
     if (i->did == pdn_rssi) rssi = *(int *)(i+1);
