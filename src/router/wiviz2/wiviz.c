@@ -442,26 +442,38 @@ int noise;
   prism_hdr * hPrism;
   prism_did * i;
   if (pktlen < sizeof(prism_hdr) + sizeof(ieee802_11_hdr)) return;
+  if (pktlen < hPrism->msg_length + sizeof(ieee802_11_hdr)) return; // bogus packet
 
   hPrism = (prism_hdr *) packet;
   hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
-
+ i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
   //Parse the prism DIDs
-  i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
 #ifdef HAVE_MADWIFI
+  int received=0;
   while ((int)i < (int)hWifi) {
     if (i->did == pdn_rssi) {
+	    received=1;
 	    rssi = i->data;
 	    }
-    i = (prism_did *) (((unsigned char*)&i->data) + i->length);
+    if (i->did == pdn_signal) {
+	    rssi = (int)i->data+rssi;
+	    }
+    if (i->did == 0) //skip bogus empty value from atheros sequence counter
+	{ 
+	i = (prism_did *) (((unsigned char*)&i->data) + 4);
+	}else{
+	i = (prism_did *) (((unsigned char*)&i->data) + i->length);
+	}
     }
+    if (!received) // bogus, no prism data
+	return;
 #else
   while ((int)i < (int)hWifi) {
     if (i->did == pdn_rssi) rssi = *(int *)(i+1);
     i = (prism_did *) ((int)(i+1) + i->length);
     }
-
 #endif
+
 #endif
 
   //Establish the frame type
