@@ -465,7 +465,13 @@ void setRouter(char *name)
 #elif HAVE_WIKINGS
 	if (name)
 		nvram_set("DD_BOARD2", name);
-	nvram_set(NVROUTER, "Obelix Series");
+	#ifdef HAVE_SUB3
+	    nvram_set(NVROUTER, "ExcelMin");
+	#elif HAVE_SUB6
+	    nvram_set(NVROUTER, "ExcelMed");	
+	#else
+	    nvram_set(NVROUTER, "Excellent");
+	#endif
 #else
 	if (name)
 		nvram_set(NVROUTER, name);
