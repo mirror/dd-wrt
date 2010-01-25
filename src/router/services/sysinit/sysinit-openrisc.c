@@ -53,6 +53,8 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
+#define sys_reboot() sysprintf("startservice run_rc_shutdown"); eval("sync"); eval("event","3","1","15")
+
 static void install_sdcard(void)
 {
 	FILE *fp = fopen("/boot/.installed", "rb");
@@ -98,7 +100,6 @@ static void install_sdcard(void)
 	sysprintf("echo \"blank\" > /tmp/install/boot/.installed");
 	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
 	eval("umount", "/tmp/install");
-	eval("sync");
 	sys_reboot();
 }
 
