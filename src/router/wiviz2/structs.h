@@ -93,6 +93,7 @@ typedef enum prism_did_num {
   pdn_mac_time = 0x00020044,
   pdn_rssi = 0x00040044,
   pdn_sq = 0x00050044,
+  pdn_signal = 0x00060044,
   pdn_datarate = 0x00080044,
   pdn_framelen = 0x000a0044
   } prism_did_num;
