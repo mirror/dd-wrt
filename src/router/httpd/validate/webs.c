@@ -2469,6 +2469,8 @@ static void save_prefix(webs_t wp, char *prefix)
 		if (sl) {
 			int base = atoi(sl);
 #ifdef HAVE_WIKINGS
+			if (base>28)
+			    base=28;
 			#ifdef HAVE_SUB3
 			if (base>25)
 			    base=25;
