@@ -101,7 +101,8 @@ static void install_sdcard(void)
 	sysprintf("echo \"blank\" > /tmp/install/boot/.installed");
 	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
 	eval("umount", "/tmp/install");
-	sys_reboot();
+	eval("sync");
+	sysprintf("reboot");
 }
 
 void start_sysinit(void)
