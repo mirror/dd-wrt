@@ -55,49 +55,51 @@
 
 static void install_sdcard(void)
 {
-FILE *fp = fopen("/boot/.installed","rb");
-if (fp!=NULL) // already locally installed?
-    {
-    fclose(fp);
-    return;
-    }
-    sleep(5); //give some time until sd is up
-    fprintf(stderr,"installing firmware to internal SD Card\n");
-    eval("mkdir","/tmp/install");
-    int check = mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
-    if (check!=0)
+	FILE *fp = fopen("/boot/.installed", "rb");
+	if (fp != NULL)		// already locally installed?
 	{
-	fp = fopen("/dev/discs/disc1/disc","rb");
-	fseek(fp,0,SEEK_END);
-	long size = ftell(fp);
-	size-=65536;
-	size/=4096;
-	char newsize[32];
-	sprintf(newsize,"%d",size);
-	eval("mke2fs","-b","4096","-N","65536","-L","dd-wrt","/dev/discs/disc1/disc",newsize);
-	mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
+		fclose(fp);
+		return;
 	}
-	eval("cp","-r","-d","-f","/boot","/tmp/install");
-	eval("cp","-r","-d","-f","/bin","/tmp/install");
-	eval("cp","-r","-d","-f","/etc","/tmp/install");
-	eval("cp","-r","-d","-f","/jffs","/tmp/install");
-	eval("cp","-r","-d","-f","/lib","/tmp/install");
-	eval("cp","-r","-d","-f","/mmc","/tmp/install");
-	eval("cp","-r","-d","-f","/mnt","/tmp/install");
-	eval("cp","-r","-d","-f","/opt","/tmp/install");
-	eval("cp","-r","-d","-f","/sbin","/tmp/install");
-	eval("cp","-r","-d","-f","/usr","/tmp/install");
-	eval("cp","-r","-d","-f","/www","/tmp/install");
-	eval("cp","-r","-d","-f","/var","/tmp/install");
-	eval("mkdir","/tmp/install/dev");
-	eval("mkdir","/tmp/install/sys");
-	eval("mkdir","/tmp/install/proc");
+	sleep(5);		//give some time until sd is up
+	fprintf(stderr, "installing firmware to internal SD Card\n");
+	eval("mkdir", "/tmp/install");
+	int check =
+	    mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL,
+		  NULL);
+	if (check != 0) {
+		fp = fopen("/dev/discs/disc1/disc", "rb");
+		fseek(fp, 0, SEEK_END);
+		long size = ftell(fp);
+		size -= 65536;
+		size /= 4096;
+		char newsize[32];
+		sprintf(newsize, "%d", size);
+		eval("mke2fs", "-b", "4096", "-N", "65536", "-L", "dd-wrt",
+		     "/dev/discs/disc1/disc", newsize);
+		mount("/dev/discs/disc1/disc", "/tmp/install", "ext2",
+		      MS_MGC_VAL, NULL);
+	}
+	eval("cp", "-r", "-d", "-f", "/boot", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/bin", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/etc", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/jffs", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/lib", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/mmc", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/mnt", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/opt", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/sbin", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/usr", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/www", "/tmp/install");
+	eval("cp", "-r", "-d", "-f", "/var", "/tmp/install");
+	eval("mkdir", "/tmp/install/dev");
+	eval("mkdir", "/tmp/install/sys");
+	eval("mkdir", "/tmp/install/proc");
 	sysprintf("echo \"blank\" > /tmp/install/boot/.installed");
 	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
-	eval("umount","/tmp/install");
+	eval("umount", "/tmp/install");
 	eval("sync");
 	sys_reboot();
-	}
 }
 
 void start_sysinit(void)
@@ -127,7 +129,7 @@ void start_sysinit(void)
 	eval("mknod", "/dev/gpio", "c", "127", "0");
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
-	eval("mkdir", "-p","/usr/local/nvram");
+	eval("mkdir", "-p", "/usr/local/nvram");
 
 	unlink("/tmp/nvram/.lock");
 	eval("mkdir", "/tmp/nvram");
@@ -142,7 +144,7 @@ void start_sysinit(void)
 	mkdir("/var/tmp", 0777);
 	install_sdcard();
 	cprintf("sysinit() setup console\n");
-	eval("insmod","ks8695_wdt","wdt_time=30"); // load watchdog module with 30 seconds timeout
+	eval("insmod", "ks8695_wdt", "wdt_time=30");	// load watchdog module with 30 seconds timeout
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 	/*
