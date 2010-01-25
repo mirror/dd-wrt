@@ -148,6 +148,9 @@ endif
 ifeq ($(CONFIG_BONDING),y)
 CFLAGS += -DHAVE_BONDING
 endif
+ifeq ($(CONFIG_WIKINGS),y)
+CFLAGS += -DHAVE_WIKINGS
+endif
 ifeq ($(CONFIG_WIFIDOG),y)
 CFLAGS += -DHAVE_WIFIDOG
 endif

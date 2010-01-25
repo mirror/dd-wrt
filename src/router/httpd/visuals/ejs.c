@@ -1872,8 +1872,12 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp,
 		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
+#ifdef HAVE_WIKINGS
+	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
+#else
 	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"),
 		  SVN_REVISION);
+#endif
 	if (strlen(argv[0]) != 0) {
 		websWrite(wp, " - %s", live_translate(argv[0]));
 	}
