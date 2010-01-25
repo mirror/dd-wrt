@@ -448,6 +448,7 @@ int noise;
  i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
   //Parse the prism DIDs
 #ifdef HAVE_MADWIFI
+
   int received=0;
   while ((int)i < (int)hWifi) {
     if (i->did == pdn_rssi) {
