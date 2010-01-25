@@ -92,6 +92,7 @@ static void install_sdcard(void)
 		      MS_MGC_VAL, NULL);
 	}
 	fprintf(stderr,"copy files to SD Card\n");
+	eval("cp","-f","/tmp/install/usr/local/nvram/nvram.bin","/tmp/install/usr/local/nvram/nvram.bak");
 	eval("cp", "-r", "-d", "-f", "/boot", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/bin", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/etc", "/tmp/install");
@@ -104,6 +105,7 @@ static void install_sdcard(void)
 	eval("cp", "-r", "-d", "-f", "/usr", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/www", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/var", "/tmp/install");
+	eval("mv","-f","/tmp/install/usr/local/nvram/nvram.bak","/tmp/install/usr/local/nvram/nvram.bin");
 	eval("mkdir", "/tmp/install/dev");
 	eval("mkdir", "/tmp/install/sys");
 	eval("mkdir", "/tmp/install/proc");
