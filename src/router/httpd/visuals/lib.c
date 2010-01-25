@@ -45,14 +45,39 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Click here to ACTIVATE %d Hour Trial",
 			  getTrialCount());
 	} else {
-		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
-			  nvram_safe_get("dist_type"), DIST_OPT);
-	}
-
+#ifdef HAVE_WIKINGS
+#ifdef HAVE_SUB3
+#define V "ExcelMed"
+#elif HAVE_SUB6
+#define V "ExcelMin"
+#else
+#define V "Excellent"
+#endif
+	websWrite(wp, "Excel Networks (%s series) V 1.10", V);
+#undef V
 #else
 
 	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
 		  nvram_safe_get("dist_type"), DIST_OPT);
+#endif
+	}
+
+#else
+#ifdef HAVE_WIKINGS
+#ifdef HAVE_SUB3
+#define V "ExcelMed"
+#elif HAVE_SUB6
+#define V "ExcelMin"
+#else
+#define V "Excellent"
+#endif
+	websWrite(wp, "Excel Networks (%s series) V 1.10", V);
+#undef V
+#else
+
+	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
+		  nvram_safe_get("dist_type"), DIST_OPT);
+#endif
 #endif
 #endif
 }
