@@ -37,7 +37,7 @@ typedef struct ieee802_11_hdr {
   u_char addr2[6];
   u_char addr3[6];
   u_short frag_and_seq;
-  } ieee802_11_hdr;
+  } __attribute__((packed)) ieee802_11_hdr;
 
 typedef struct {
   u_char timestamp[8];
@@ -46,12 +46,12 @@ typedef struct {
 #define MGT_CAPS_AP 0x1
 #define MGT_CAPS_IBSS 0x2
 #define MGT_CAPS_WEP 0x10
-  } ieee_802_11_mgt_frame;
+  } __attribute__((packed)) ieee_802_11_mgt_frame;
 
 typedef struct {
   u_char tag;
   u_char length;
-  } ieee_802_11_tag;
+  } __attribute__((packed)) ieee_802_11_tag;
 
 typedef enum {
   tagSSID = 0,
@@ -65,7 +65,7 @@ typedef struct prism_hdr {
   u_int msg_length;
   char cap_device[16];
   //char dids[0];
-  } prism_hdr;
+  } __attribute__((packed)) prism_hdr;
 
 #ifdef HAVE_MADWIFI
 typedef struct prism_did {
@@ -74,7 +74,7 @@ typedef struct prism_did {
   u_short length;
   u_int data;
   //int value[0];
-  } prism_did;
+  } __attribute__((packed)) prism_did;
 
 /*	DIDmsg_lnxind_wlansniffrm		= 0x00000044,
 	DIDmsg_lnxind_wlansniffrm_hosttime	= 0x00010044,
@@ -105,7 +105,7 @@ typedef struct prism_did {
   u_short status2;
   u_short length;
   //int value[0];
-  } prism_did;
+  }__attribute__((packed)) prism_did;
 
 typedef enum prism_did_num {
   pdn_host_time = 0x1041,
