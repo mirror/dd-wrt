@@ -76,6 +76,10 @@ config MVSWITCH_PHY
 	---help---
 	  Currently supports the Marvell 88E6060 switch.
 
+config RTL8306_PHY
+	tristate "Driver for Realtek RTL8306S switches"
+	select SWCONFIG
+
 config FIXED_PHY
 	tristate "Drivers for PHY emulation on fixed speed/link"
 	---help---
