@@ -237,7 +237,7 @@ int mtd_write(const char *path, const char *mtd)
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	else
 		return -1;
-	memcpy(&trx,&etrx,sizeof(struct trx_header));
+	memcpy(&trx,&etrx.trx,sizeof(struct trx_header));
 #else
 	if ((fp = fopen(path, "r")))
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
