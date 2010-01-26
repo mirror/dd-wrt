@@ -387,9 +387,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 			cprintf("code pattern correct!\n");
 			*total -= count;
+			#ifdef HAVE_WRT160NL
+			safe_fwrite(buf, 1, count, fifo);
+			#else
 			safe_fwrite(&buf[sizeof(struct code_header)], 1,
 				    count - sizeof(struct code_header), fifo);
-
+			#endif
 			i++;
 			continue;
 		}
