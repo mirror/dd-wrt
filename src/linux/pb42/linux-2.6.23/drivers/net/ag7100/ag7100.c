@@ -2051,6 +2051,7 @@ ag7100_init(void)
 #endif
         dev->tx_timeout      =  ag7100_tx_timeout;
         dev->priv            =  mac;
+        
 #ifdef CONFIG_BUFFALO   // { append by BUFFALO 2008.09.19
 	switch(rtl_chip_type_select())
 	{
@@ -2088,6 +2089,10 @@ ag7100_init(void)
             printk(MODULE_NAME ": register netdev failed\n");
             goto failed;
         }
+#ifdef CONFIG_PHY_LAYER
+        ag7100_mdiobus_setup(i,dev);
+#endif
+
 	netif_carrier_off(dev);
 
 #ifdef CONFIG_AR9100
