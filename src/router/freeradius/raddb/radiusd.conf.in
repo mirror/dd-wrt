@@ -279,7 +279,7 @@ listen {
 	#  If your system does not support this feature, you will
 	#  get an error if you try to use it.
 	#
-	interface = br0
+#	interface = br0
 
 	#  Per-socket lists of clients.  This is a very useful feature.
 	#
