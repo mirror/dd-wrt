@@ -178,12 +178,12 @@ struct code_header {
 	char res2;
 	unsigned short flags;
 	unsigned char res3[10];
-} ;
+} __attribute__((packed));
 
 struct etrx_header {
 	struct code_header code;
 	struct trx_header trx;
-};
+} __attribute__((packed));
 
 #define SQUASHFS_MAGIC			0x74717368
 
@@ -233,6 +233,7 @@ int mtd_write(const char *path, const char *mtd)
 	 * Examine TRX header 
 	 */
 #ifdef HAVE_WRT160NL
+	fprintf(stderr,"size of ETRX header = %d\n",sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r")))
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	else
@@ -454,7 +455,11 @@ int mtd_write(const char *path, const char *mtd)
 		/* 
 		 * Check CRC before writing if possible 
 		 */
-		if (count == trx.len) {
+		#ifdef HAVE_WRT160NL
+		if (count == trx.len + sizeof(struct code_header)) {
+		#else
+		if (count == trx.len) {		
+		#endif
 			if (crc != trx.crc32) {
 				fprintf(stderr, "%s: Bad CRC\n", path);
 				goto fail;
