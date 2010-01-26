@@ -167,6 +167,11 @@ struct img_info {
 	uint32_t CRC;
 };
 
+struct etrx_header {
+	struct code_header code;
+	struct trx_header trx;
+};
+
 #define SQUASHFS_MAGIC			0x74717368
 
 int mtd_write(const char *path, const char *mtd)
@@ -176,6 +181,9 @@ int mtd_write(const char *path, const char *mtd)
 	struct erase_info_user erase_info;
 
 	struct sysinfo info;
+#ifdef HAVE_WRT160NL
+	struct trx_header etrx;
+#endif
 	struct trx_header trx;
 	unsigned long crc;
 	int squashfound = 0;
@@ -211,10 +219,19 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Examine TRX header 
 	 */
+#ifdef HAVE_WRT160NL
+	if ((fp = fopen(path, "r")))
+		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
+	else
+		return -1;
+	memcpy(&trx,&etrx,sizeof(struct trx_header));
+#else
 	if ((fp = fopen(path, "r")))
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 	else
 		return -1;
+
+#endif
 	// count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
 	if (count < sizeof(struct trx_header)) {
 		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path,
@@ -372,8 +389,13 @@ int mtd_write(const char *path, const char *mtd)
 		    || erase_info.start)
 			count = off = 0;
 		else {
+		#ifdef HAVE_WRT160NL
+			count = off = sizeof(struct etrx_header);
+			memcpy(buf, &etrx, sizeof(struct etrx_header));
+		#else
 			count = off = sizeof(struct trx_header);
 			memcpy(buf, &trx, sizeof(struct trx_header));
+		#endif
 		}
 		// if (fp)
 		count += safe_fread(&buf[off], 1, len - off, fp);
