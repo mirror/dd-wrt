@@ -167,6 +167,19 @@ struct img_info {
 	uint32_t CRC;
 };
 
+
+struct code_header {
+	char magic[4];
+	char res1[4];	// for extra magic
+	char fwdate[3];
+	char fwvern[3];
+	char id[4];	// U2ND
+	char hw_ver;    // 0) for 4702, 1) for 4712, 2) for 4712L, 3) for 4704
+	char res2;
+	unsigned short flags;
+	unsigned char res3[10];
+} ;
+
 struct etrx_header {
 	struct code_header code;
 	struct trx_header trx;
