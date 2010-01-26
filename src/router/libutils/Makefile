@@ -156,6 +156,9 @@ endif
 ifeq ($(CONFIG_OLED),y)
 CFLAGS += -DHAVE_OLED
 endif
+ifeq ($(CONFIG_WRT160NL),y)
+CFLAGS += -DHAVE_WRT160NL
+endif
 ifeq ($(CONFIG_ECB9750),y)
   CFLAGS += -DHAVE_ECB9750
 endif
@@ -210,6 +213,9 @@ ifeq ($(CONFIG_MR3201A),y)
 endif
 ifeq ($(CONFIG_WRK54G),y)
   CFLAGS += -DHAVE_WRK54G
+endif
+ifeq ($(CONFIG_WRT160NL),y)
+CFLAGS += -DHAVE_WRT160NL
 endif
 ifeq ($(CONFIG_WZRG300NH),y)
   CFLAGS += -DHAVE_WZRG300NH
