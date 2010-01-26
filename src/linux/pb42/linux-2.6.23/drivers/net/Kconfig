@@ -2278,6 +2278,10 @@ config ATHRS16_PHY
 config VITESSE_PHY
     bool "Vitesse GigE Phy 8201"
 
+config PHY_LAYER
+    bool "use linux phy layer"
+    depends on PHYLIB
+
 config CAMEO_REALTEK_PHY
     bool "Cameo Realtek Phy"
 
