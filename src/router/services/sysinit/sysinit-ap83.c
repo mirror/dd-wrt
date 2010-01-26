@@ -143,6 +143,7 @@ void start_sysinit(void)
 	fclose(fp);
 		fprintf(stderr, "configure eth0 to %s\n",buf2);
 		eval("ifconfig", "eth0", "hw", "ether", buf2);
+		MAC_ADD(buf2);
 		fprintf(stderr, "configure eth1 to %s\n", buf2);
 		eval("ifconfig", "eth1", "hw", "ether", buf2);
 	}
@@ -167,6 +168,7 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 #ifdef HAVE_WRT160NL
+	MAC_ADD(buf2);
 	fprintf(stderr, "configure wifi0 to %s\n",buf2);
 	eval("ifconfig", "wifi0", "hw", "ether", buf2);
 	led_control(LED_POWER, LED_ON);
