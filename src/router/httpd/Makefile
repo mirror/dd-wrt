@@ -166,6 +166,9 @@ endif
 ifeq ($(CONFIG_THOM),y)
   CFLAGS += -DHAVE_THOM
 endif
+ifeq ($(CONFIG_WRT160NL),y)
+  CFLAGS += -DHAVE_WRT160NL
+endif
 ifeq ($(CONFIG_BONDING),y)
   CFLAGS += -DHAVE_BONDING
 endif
