@@ -195,7 +195,7 @@ int mtd_write(const char *path, const char *mtd)
 
 	struct sysinfo info;
 #ifdef HAVE_WRT160NL
-	struct trx_header etrx;
+	struct etrx_header etrx;
 #endif
 	struct trx_header trx;
 	unsigned long crc;
