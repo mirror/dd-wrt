@@ -93,9 +93,9 @@ int mdiobus_register(struct mii_bus *bus)
 			phydev->dev.bus = &mdio_bus_type;
 			phydev->dev.release = mdio_dev_release;
 			snprintf(phydev->dev.bus_id, BUS_ID_SIZE, PHY_ID_FMT, bus->id, i);
-
+		
 			phydev->bus = bus;
-
+			phy_scan_fixups(phydev);
 			err = device_register(&phydev->dev);
 
 			if (err)
