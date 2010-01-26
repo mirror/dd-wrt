@@ -175,6 +175,63 @@ ag7100_print_link_status(int unit)
 {
    return vsc_phy_print_link_status(unit);
 }
+#elif defined(CONFIG_PHY_LAYER)
+#include <linux/phy.h>
+
+#define ag7100_phy_is_up(unit)          1
+#define ag7100_phy_speed(unit)          AG7100_PHY_SPEED_100TX
+#define ag7100_phy_is_fdx(unit)         1
+static inline unsigned int 
+ag7100_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
+{
+*fdx = 1;
+*speed = AG7100_PHY_SPEED_100TX;
+*link = 1;
+return 0;
+}
+
+
+static int ag71xx_mdio_read(struct mii_bus *bus, int addr, int reg)
+{
+	return ag7100_mii_read(0, addr, reg);
+}
+
+static int ag71xx_mdio_write(struct mii_bus *bus, int addr, int reg, u16 val)
+{
+	ag7100_mii_write(0, addr, reg, val);
+	return 0;
+}
+
+
+
+static inline int 
+ag7100_phy_setup(int unit)
+{
+    return 0;
+}
+
+
+static inline int ag7100_mdiobus_setup(int unit,struct net_device *dev)
+{
+  int i;
+  struct mii_bus *mii_bus = kzalloc(sizeof(struct mii_bus),GFP_KERNEL);
+  mii_bus->id=unit;
+  if (unit==0)
+  mii_bus->phy_mask=0x01;
+  else
+  mii_bus->phy_mask=0x10;
+  mii_bus->priv = dev;
+  mii_bus->name = "ag7100_mii";
+  mii_bus->read = ag71xx_mdio_read;
+  mii_bus->write = ag71xx_mdio_write;
+  mii_bus->irq = kmalloc(sizeof(int) * PHY_MAX_ADDR, GFP_KERNEL);
+  for (i = 0; i < PHY_MAX_ADDR; i++)
+	    mii_bus->irq[i] = PHY_POLL;
+  mdiobus_register(mii_bus);
+  return (0);
+}
+
+
 
 #elif defined(CONFIG_VITESSE_8601_PHY)
 

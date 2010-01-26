@@ -494,5 +494,11 @@ static inline void ag7100_set_mac_speed(ag7100_mac_t *mac, int is100)
 uint16_t ag7100_mii_read(int unit, uint32_t phy_addr, uint8_t reg);
 void ag7100_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data);
 void phy_mode_setup(void);
+#if defined(CONFIG_ATHRS26_PHY)
+int
+#else
+static int
+#endif
+ag7100_hard_start(struct sk_buff *skb, struct net_device *dev);
 
 #endif
