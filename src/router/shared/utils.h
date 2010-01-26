@@ -452,6 +452,8 @@
 
 #define ROUTER_BOARD_ASUS_RTN13U 0x941a
 
+#define ROUTER_BOARD_WRT160NL 0x9501  // fake id, reset button is gpio 21
+
 
 #define NVROUTER "DD_BOARD"
 

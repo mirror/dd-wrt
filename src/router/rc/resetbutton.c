@@ -150,6 +150,16 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WRT160NL)
+int getbuttonstate()
+{
+	FILE *in;
+	int ret = get_gpio(21);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
