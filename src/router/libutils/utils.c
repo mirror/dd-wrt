@@ -2716,6 +2716,10 @@ int led_control(int type, int act)
 	{
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_PB42:
+#ifdef HAVE_WRT160NL
+		power_gpio = 0x10e;
+		connected_gpio = 0x109;
+#endif
 #ifdef HAVE_WP543
 		diag_gpio = 0x107;
 		connected_gpio = 0x106;
