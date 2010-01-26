@@ -856,6 +856,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WHRG300NV2
+	setRouter("Buffalo WHR-G300N");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRHPGN
 	setRouter("Buffalo WHR-HP-GN");
 	nvram_default_get("ath0_rxantenna", "1");
