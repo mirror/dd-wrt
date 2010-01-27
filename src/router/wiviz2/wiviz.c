@@ -525,6 +525,8 @@ int noise;
   memset(src,0,6);
   memset(dst,0,6);
   type =typeUnknown;
+if (!(hWifi->frame_control & 0xC)) // only accept management frames (type 0)
+{
   switch (hWifi->frame_control & 0xF0) {
     //case mgt_assocRequest: //fc = 0 can be a broken frame too, no check possible here
     case mgt_reassocRequest:
@@ -543,6 +545,7 @@ int noise;
       type = typeAP;
       break;
     }
+}
 #ifdef DEBUG
 	fprintf(stderr,"fc: %X",hWifi->frame_control);
 	fprintf(stderr," type: %d",wfType);
