@@ -40,7 +40,6 @@ typedef struct ieee802_11_hdr {
   u_char addr2[6];
   u_char addr3[6];
   u_short frag_and_seq;
-  u_char addr4[6]; // for wds frames
   } __attribute__((packed)) ieee802_11_hdr;
 
 typedef struct {
