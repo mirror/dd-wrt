@@ -586,7 +586,7 @@ if (!fctype) // only accept management frames (type 0)
   if (type == typeUnknown) return;
 
   //Parse the 802.11 tags
-  if (fc == mgt_probeResponse || fc == mgt_beacon || fc == mgt_probeRequest) {
+  if (!fctype && (fc == mgt_probeResponse || fc == mgt_beacon || fc == mgt_probeRequest)) {
     m = (ieee_802_11_mgt_frame *) (hWifi + 1);
     if (swap16(m->caps) & MGT_CAPS_IBSS) {
       type = typeSta;
@@ -658,9 +658,9 @@ if (!fctype) // only accept management frames (type 0)
         if (encType != aetUnknown) emergebss->apInfo->encryption = encType;
         }
       }
-    if (fc == mgt_probeRequest && host->staInfo->state == ssUnknown) 
+    if (!fctype && fc == mgt_probeRequest && host->staInfo->state == ssUnknown) 
       host->staInfo->state = ssUnassociated;
-    if (fc == mgt_probeRequest && ssidlen > 0 && ssidlen <= 32) {
+    if (!fctype && fc == mgt_probeRequest && ssidlen > 0 && ssidlen <= 32) {
       memcpy(host->staInfo->lastssid, ssid, ssidlen);
       host->staInfo->lastssid[ssidlen] = 0;
       host->staInfo->lastssidlen = ssidlen;
