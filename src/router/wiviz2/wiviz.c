@@ -784,11 +784,11 @@ void print_host(FILE * outf, wiviz_host * host) {
     switch (host->apInfo->encryption) {
       case aetUnknown: fprintf(outf, "'unknown';\n"); break;
       case aetUnencrypted: fprintf(outf, "'no';\n"); break;
-      case aetEncUnknown: fprintf(outf, "'yes'; h.enctype = 'unknown';\n"); break;
-      case aetEncWEP: fprintf(outf, "'yes'; h.enctype = 'wep';\n"); break;
-      case aetEncWPA: fprintf(outf, "'yes'; h.enctype = 'wpa';\n"); break;
-      case aetEncWPA2: fprintf(outf, "'yes'; h.enctype = 'wpa2';\n"); break;
-      case aetEncWPAmix: fprintf(outf, "'yes'; h.enctype = 'wpa wpa2';\n"); break;
+      case aetEncUnknown: fprintf(outf, "'yes';\nh.enctype = 'unknown';\n"); break;
+      case aetEncWEP: fprintf(outf, "'yes';\nh.enctype = 'wep';\n"); break;
+      case aetEncWPA: fprintf(outf, "'yes';\nh.enctype = 'wpa';\n"); break;
+      case aetEncWPA2: fprintf(outf, "'yes';\nh.enctype = 'wpa2';\n"); break;
+      case aetEncWPAmix: fprintf(outf, "'yes';\nh.enctype = 'wpa wpa2';\n"); break;
       }
     }
   if (host->type == typeWDS) {
@@ -797,11 +797,11 @@ void print_host(FILE * outf, wiviz_host * host) {
     switch (host->apInfo->encryption) {
       case aetUnknown: fprintf(outf, "'unknown';\n"); break;
       case aetUnencrypted: fprintf(outf, "'no';\n"); break;
-      case aetEncUnknown: fprintf(outf, "'yes'; h.enctype = 'unknown';\n"); break;
-      case aetEncWEP: fprintf(outf, "'yes'; h.enctype = 'wep';\n"); break;
-      case aetEncWPA: fprintf(outf, "'yes'; h.enctype = 'wpa';\n"); break;
-      case aetEncWPA2: fprintf(outf, "'yes'; h.enctype = 'wpa2';\n"); break;
-      case aetEncWPAmix: fprintf(outf, "'yes'; h.enctype = 'wpa wpa2';\n"); break;
+      case aetEncUnknown: fprintf(outf, "'yes';\nh.enctype = 'unknown';\n"); break;
+      case aetEncWEP: fprintf(outf, "'yes';\nh.enctype = 'wep';\n"); break;
+      case aetEncWPA: fprintf(outf, "'yes';\nh.enctype = 'wpa';\n"); break;
+      case aetEncWPA2: fprintf(outf, "'yes';\nh.enctype = 'wpa2';\n"); break;
+      case aetEncWPAmix: fprintf(outf, "'yes';\nh.enctype = 'wpa wpa2';\n"); break;
       }
     }
   fprintf(outf, "h.age = %i;\n", time(0) - host->lastSeen);
