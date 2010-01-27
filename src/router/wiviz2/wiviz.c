@@ -41,6 +41,9 @@ To add:
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
+#include <endian.h>
+#include <unistd.h>
+#include <stdint.h>
 
 #define HOST_TIMEOUT 300
 
@@ -56,7 +59,22 @@ To add:
 #define __cdecl
 #endif
 
+
 #define nonzeromac(x) memcmp(x, "\0\0\0\0\0\0", 6)
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define swap16(x) x
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define swap16(x) \
+	((uint16_t)( \
+			(((uint16_t)(x) & (uint16_t)0x00ffU) << 8) | \
+			(((uint16_t)(x) & (uint16_t)0xff00U) >> 8) ))
+#else
+#error "no endian type"
+#endif
+
+
+
 
 int openMonitorSocket(char * dev);
 void dealWithPacket(wiviz_cfg * cfg, int len, const u_char * packet);
@@ -79,10 +97,12 @@ int main(int argc, char * * argv) {
   int i;
   int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
   int s, one;
+  memset(&cfg,0,sizeof(cfg));
 #ifdef HAVE_RT2880
   wl_dev="ra0";
+#elif HAVE_MADWIFI
+  wl_dev = nvram_safe_get( "wifi_display" );
 #else
-//  wl_dev=get_wdev();
   char tmp[32];
   sprintf( tmp, "%s_ifname", nvram_safe_get( "wifi_display" ) );
   wl_dev = nvram_safe_get( tmp );
@@ -207,6 +227,8 @@ if (!strcmp(argv[1],"terminate"))
   return 0;
   }
 
+
+
 ////////////////////////////////////////////////////////////////////////////////
 int openMonitorSocket(char * dev) {
   //Open the socket
@@ -277,6 +299,19 @@ void writeJavascript() {
   fprintf(outf, "}");
   fclose(outf);
   }
+
+
+
+
+static const char *ntoa(const uint8_t mac[6])
+{
+	static char a[18];
+	int i;
+
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
+		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	return (i < 17 ? NULL : a);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void reloadConfig() {
@@ -400,6 +435,9 @@ void __cdecl signal_handler(int signum) {
   if (signum == SIGUSR2) reloadConfig();
   if (signum == SIGTERM) stop=1;
   }
+  static unsigned char i_src[6];// = "\0\0\0\0\0\0";
+  static unsigned char i_dst[6];// = "\0\0\0\0\0\0";
+  static unsigned char i_bss[6];// = "\0\0\0\0\0\0";
 
 ////////////////////////////////////////////////////////////////////////////////
 void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
@@ -412,16 +450,18 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
   int to_ds, from_ds;
   ieee_802_11_tag * e;
   ieee_802_11_mgt_frame * m;
-  char * src = "\0\0\0\0\0\0";
-  char * dst = "\0\0\0\0\0\0";
-  char * bss = "\0\0\0\0\0\0";
+  unsigned char *src;// = "\0\0\0\0\0\0";
+  unsigned char *dst;// = "\0\0\0\0\0\0";
+  unsigned char *bss;// = "\0\0\0\0\0\0";
   char * ssid = "";
   int channel = 0;
   int adhocbeacon = 0;
   u_char ssidlen = 0;
   ap_enc_type encType = aetUnknown;
   if (!packet) return;
-
+  src=i_src;
+  dst=i_dst;
+  bss=i_bss;
 #if 0 //HAVE_MADWIFI  (use prism now here too)
 int noise;
   if (packet[0]>0)
@@ -441,9 +481,9 @@ int noise;
 #else
   prism_hdr * hPrism;
   prism_did * i;
-  if (pktlen < sizeof(prism_hdr) + sizeof(ieee802_11_hdr)) return;
+  if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr)-6)) return;
   hPrism = (prism_hdr *) packet;
-  if (pktlen < hPrism->msg_length + sizeof(ieee802_11_hdr)) return; // bogus packet
+  if (pktlen < hPrism->msg_length + (sizeof(ieee802_11_hdr)-6)) return; // bogus packet
   hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
  i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
   //Parse the prism DIDs
@@ -477,12 +517,16 @@ int noise;
 #endif
 
 #endif
-
+  
   //Establish the frame type
   wfType = ((hWifi->frame_control & 0xF0) >> 4) + ((hWifi->frame_control & 0xC) << 2);
 
-  switch (wfType) {
-    case mgt_assocRequest:
+  memset(bss,0,6);
+  memset(src,0,6);
+  memset(dst,0,6);
+  type =typeUnknown;
+  switch (hWifi->frame_control & 0xF0) {
+    //case mgt_assocRequest: //fc = 0 can be a broken frame too, no check possible here
     case mgt_reassocRequest:
     case mgt_probeRequest:
       type = typeSta;
@@ -499,28 +543,54 @@ int noise;
       type = typeAP;
       break;
     }
+#ifdef DEBUG
+	fprintf(stderr,"fc: %X",hWifi->frame_control);
+	fprintf(stderr," type: %d",wfType);
+	fprintf(stderr," src:");
+	fprintf(stderr,"%s",ntoa(src));
+	fprintf(stderr," dst:");
+	fprintf(stderr,"%s",ntoa(dst));
+	fprintf(stderr," bss:");
+	fprintf(stderr,"%s\n",ntoa(src));
+#endif
   to_ds = hWifi->flags & IEEE80211_TO_DS;
   from_ds = hWifi->flags & IEEE80211_FROM_DS;
-  if ((wfType & 0xF0) == 0x20 && (wfType & 0xF) < 4) {
+  unsigned char subtype = ((hWifi->frame_control & 0xF0) >> 4);
+  if ((hWifi->frame_control & 0x0c) == 0x8 && (subtype==0 || subtype==0x80)) {
     //Data frame
     src=hWifi->addr2;
     dst=hWifi->addr1;
-    if (!from_ds) type = typeSta;
-      else type = typeAP;
+    if (!from_ds) 
+	type = typeSta;
+    else if (from_ds && to_ds) 
+	type = typeWDS;
+    else 
+	type = typeAP;
     if (!to_ds && !from_ds) bss = hWifi->addr3;
     if (to_ds && !from_ds) bss = hWifi->addr1;
     if (!to_ds && from_ds) bss = hWifi->addr2;
+    if (to_ds && from_ds) bss = hWifi->addr1; // wds frame
+#ifdef DEBUG
+	fprintf(stderr,"addr1:");
+	fprintf(stderr,"%s",ntoa(hWifi->addr1));
+	fprintf(stderr," addr2:");
+	fprintf(stderr,"%s",ntoa(hWifi->addr2));
+	fprintf(stderr," addr3:");
+	fprintf(stderr,"%s",ntoa(hWifi->addr3));
+	fprintf(stderr," bss:");
+	fprintf(stderr,"%s\n",ntoa(bss));
+#endif
     }
   if (type == typeUnknown) return;
 
   //Parse the 802.11 tags
   if (wfType == mgt_probeResponse || wfType == mgt_beacon || wfType == mgt_probeRequest) {
     m = (ieee_802_11_mgt_frame *) (hWifi + 1);
-    if (m->caps & MGT_CAPS_IBSS) {
+    if (swap16(m->caps) & MGT_CAPS_IBSS) {
       type = typeSta;
       adhocbeacon = 1;
       }
-    if (m->caps & MGT_CAPS_WEP) encType = aetEncWEP;
+    if (swap16(m->caps) & MGT_CAPS_WEP) encType = aetEncWEP;
     else encType = aetUnencrypted;
     e = (ieee_802_11_tag *) ((int) m + sizeof(ieee_802_11_mgt_frame));
     while ((u_int)e < (u_int)packet + pktlen) {
@@ -594,6 +664,11 @@ int noise;
       host->staInfo->lastssidlen = ssidlen;
       }
     }
+  if (type == typeWDS) {
+    if (nonzeromac(bss)) {
+      memcpy(host->apInfo->bssid, bss, 6);
+      }
+  }
   if (type == typeAP) {
     if (nonzeromac(bss)) {
       memcpy(host->apInfo->bssid, bss, 6);
@@ -640,18 +715,20 @@ wiviz_host * gotHost(wiviz_cfg * cfg, u_char * mac, host_type type) {
       }
     if (c > MAX_PROBES) break;
     } 
+#ifdef DEBUG
   if (!h->occupied) {
-    printf( "New host, ");
-    #ifdef NEED_PRINTF
-    fprint_mac(stdout, mac, ", type=");
-    #endif
-    printf( "%s\n", (type==typeAP) ? "AP" : ((type==typeSta) ? "Sta" : "Unk"));
+    fprintf(stderr, "New host %s\n",ntoa(mac));
     }
+#endif
   h->occupied = 1;
   h->lastSeen = time(NULL);
   h->type = type;
   memcpy(h->mac, mac, 6);
   if (h->type == typeAP && !h->apInfo) {
+    h->apInfo = (ap_info *) malloc(sizeof(ap_info));
+    memset(h->apInfo, 0, sizeof(ap_info));
+    }
+  if (h->type == typeWDS && !h->apInfo) {
     h->apInfo = (ap_info *) malloc(sizeof(ap_info));
     memset(h->apInfo, 0, sizeof(ap_info));
     }
@@ -675,6 +752,7 @@ void print_host(FILE * outf, wiviz_host * host) {
      fprintf(outf, "h.rssi = -%i;\nh.type = '", host->RSSI / 100);
   switch (host->type) {
     case typeAP:  fprintf(outf, "ap"); break;
+    case typeWDS:  fprintf(outf, "wds"); break;
     case typeSta: fprintf(outf, "sta"); break;
     case typeAdhocHub: fprintf(outf, "adhoc"); break;
     }
@@ -700,6 +778,19 @@ void print_host(FILE * outf, wiviz_host * host) {
     for (i = 0; i < host->apInfo->ssidlen; i++) {
       fprintf(outf, "&#%04i;", *((char *)host->apInfo->ssid + i) & 0xFF);
       }
+    fprintf(outf, "';\nh.encrypted = ");
+    switch (host->apInfo->encryption) {
+      case aetUnknown: fprintf(outf, "'unknown';\n"); break;
+      case aetUnencrypted: fprintf(outf, "'no';\n"); break;
+      case aetEncUnknown: fprintf(outf, "'yes'; h.enctype = 'unknown';\n"); break;
+      case aetEncWEP: fprintf(outf, "'yes'; h.enctype = 'wep';\n"); break;
+      case aetEncWPA: fprintf(outf, "'yes'; h.enctype = 'wpa';\n"); break;
+      case aetEncWPA2: fprintf(outf, "'yes'; h.enctype = 'wpa2';\n"); break;
+      case aetEncWPAmix: fprintf(outf, "'yes'; h.enctype = 'wpa wpa2';\n"); break;
+      }
+    }
+  if (host->type == typeWDS) {
+    fprintf(outf, "h.channel = %i;\nh.ssid = '", host->apInfo->channel & 0xFF);
     fprintf(outf, "';\nh.encrypted = ");
     switch (host->apInfo->encryption) {
       case aetUnknown: fprintf(outf, "'unknown';\n"); break;
