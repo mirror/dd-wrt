@@ -204,7 +204,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #if defined(HAVE_NOP8670) || defined(HAVE_TONZE)
 	eval("fischecksum");
 #endif
-	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro") || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro"))
+	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro")
+	    || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro"))
 		eval("fischecksum");
 	if (nvram_match("DD_BOARD", "Netgear WG302v2"))
 		eval("fischecksum");
@@ -347,6 +348,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			 * 
 			 * i++; continue; }
 			 */
+#ifdef HAVE_WRT160NL
+			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4)) {
+				cprintf("code pattern error!\n");
+				goto err;	// must be there, otherwise fail here
+			}
+#else
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT54G, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRT54GS, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRH54G, 4)
@@ -361,11 +368,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			    && memcmp(&buf[0], &CODE_PATTERN_WRT54G3GV, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRT610N, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRT54GSV4, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT320N, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4)) {
+			    && memcmp(&buf[0], &CODE_PATTERN_WRT320N, 4)) {
 				cprintf("code pattern error!\n");
 				goto write_data;
 			}
+#endif
 			if (type != 1 && check_flash()) {
 				/*
 				 * if (ver1 == -1 || ver2 == -1 || ver1 < ver2) { cprintf
@@ -387,12 +394,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 			cprintf("code pattern correct!\n");
 			*total -= count;
-			#ifdef HAVE_WRT160NL
-			safe_fwrite(buf, 1, count, fifo);
-			#else
+#ifdef HAVE_WRT160NL
+			safe_fwrite(buf, 1, count, fifo);	// we have to write the whole header to flash too
+#else
 			safe_fwrite(&buf[sizeof(struct code_header)], 1,
 				    count - sizeof(struct code_header), fifo);
-			#endif
+#endif
 			i++;
 			continue;
 		}
