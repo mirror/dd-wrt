@@ -481,9 +481,9 @@ int noise;
 #else
   prism_hdr * hPrism;
   prism_did * i;
-  if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr)-6)) return;
+  if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr))) return;
   hPrism = (prism_hdr *) packet;
-  if (pktlen < hPrism->msg_length + (sizeof(ieee802_11_hdr)-6)) return; // bogus packet
+  if (pktlen < hPrism->msg_length + (sizeof(ieee802_11_hdr))) return; // bogus packet
   hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
  i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
   //Parse the prism DIDs
@@ -527,7 +527,7 @@ int noise;
   type =typeUnknown;
 if (!fctype) // only accept management frames (type 0)
 {
-  switch (hWifi->frame_control & 0xF0) {
+  switch (fc) {
     //case mgt_assocRequest: //fc = 0 can be a broken frame too, no check possible here
     case mgt_reassocRequest:
     case mgt_probeRequest:
@@ -557,8 +557,8 @@ if (!fctype) // only accept management frames (type 0)
 }
   to_ds = hWifi->flags & IEEE80211_TO_DS;
   from_ds = hWifi->flags & IEEE80211_FROM_DS;
-  unsigned char subtype = ((hWifi->frame_control & 0xF0) >> 4);
-  if ((hWifi->frame_control & 0x0c) == 0x8 && (subtype==0 || subtype==0x80)) {
+  unsigned char subtype = hWifi->frame_control & 0xF0;
+  if (fctype == 0x8 && subtype==0) {
     //Data frame
     src=hWifi->addr2;
     dst=hWifi->addr1;
