@@ -9,17 +9,20 @@ typedef unsigned int u_int;
 #endif
 
 typedef enum {
-  mgt_assocRequest = 0,
-  mgt_assocResponse = 1,
-  mgt_reassocRequest = 2,
-  mgt_reassocResponse = 3,
-  mgt_probeRequest = 4,
-  mgt_probeResponse = 5,
-  mgt_beacon = 8,
-  mgt_disassoc = 10,
-  mgt_auth = 11,
-  mgt_deauth = 12
+  mgt_assocRequest = 0x00,
+  mgt_assocResponse = 0x10,
+  mgt_reassocRequest = 0x20,
+  mgt_reassocResponse = 0x30,
+  mgt_probeRequest = 0x40,
+  mgt_probeResponse = 0x50,
+  mgt_beacon = 0x80,
+  mgt_atim = 0x90,
+  mgt_disassoc = 0xa0,
+  mgt_auth = 0xb0,
+  mgt_deauth = 0xc0
   } wifi_frametype;
+
+
 
 typedef struct ieee802_11_hdr {
   u_char frame_control;
@@ -37,6 +40,7 @@ typedef struct ieee802_11_hdr {
   u_char addr2[6];
   u_char addr3[6];
   u_short frag_and_seq;
+  u_char addr4[6]; // for wds frames
   } __attribute__((packed)) ieee802_11_hdr;
 
 typedef struct {
@@ -123,6 +127,7 @@ typedef enum prism_did_num {
 typedef enum {
   typeUnknown,
   typeAP,
+  typeWDS,
   typeSta,
   typeAdhocHub
   } host_type;
