@@ -524,8 +524,9 @@ int noise;
   memset(bss,0,6);
   memset(src,0,6);
   memset(dst,0,6);
+  int fc = (hWifi->frame_control & 0xC);
   type =typeUnknown;
-if (!(hWifi->frame_control & 0xC)) // only accept management frames (type 0)
+if (!fc) // only accept management frames (type 0)
 {
   switch (hWifi->frame_control & 0xF0) {
     //case mgt_assocRequest: //fc = 0 can be a broken frame too, no check possible here
@@ -545,7 +546,6 @@ if (!(hWifi->frame_control & 0xC)) // only accept management frames (type 0)
       type = typeAP;
       break;
     }
-}
 #ifdef DEBUG
 	fprintf(stderr,"fc: %X",hWifi->frame_control);
 	fprintf(stderr," type: %d",wfType);
@@ -556,6 +556,7 @@ if (!(hWifi->frame_control & 0xC)) // only accept management frames (type 0)
 	fprintf(stderr," bss:");
 	fprintf(stderr,"%s\n",ntoa(src));
 #endif
+}
   to_ds = hWifi->flags & IEEE80211_TO_DS;
   from_ds = hWifi->flags & IEEE80211_FROM_DS;
   unsigned char subtype = ((hWifi->frame_control & 0xF0) >> 4);
@@ -587,7 +588,7 @@ if (!(hWifi->frame_control & 0xC)) // only accept management frames (type 0)
   if (type == typeUnknown) return;
 
   //Parse the 802.11 tags
-  if (wfType == mgt_probeResponse || wfType == mgt_beacon || wfType == mgt_probeRequest) {
+  if (fc == mgt_probeResponse || fc == mgt_beacon || fc == mgt_probeRequest) {
     m = (ieee_802_11_mgt_frame *) (hWifi + 1);
     if (swap16(m->caps) & MGT_CAPS_IBSS) {
       type = typeSta;
@@ -659,9 +660,9 @@ if (!(hWifi->frame_control & 0xC)) // only accept management frames (type 0)
         if (encType != aetUnknown) emergebss->apInfo->encryption = encType;
         }
       }
-    if (wfType == mgt_probeRequest && host->staInfo->state == ssUnknown) 
+    if (fc == mgt_probeRequest && host->staInfo->state == ssUnknown) 
       host->staInfo->state = ssUnassociated;
-    if (wfType == mgt_probeRequest && ssidlen > 0 && ssidlen <= 32) {
+    if (fc == mgt_probeRequest && ssidlen > 0 && ssidlen <= 32) {
       memcpy(host->staInfo->lastssid, ssid, ssidlen);
       host->staInfo->lastssid[ssidlen] = 0;
       host->staInfo->lastssidlen = ssidlen;
