@@ -203,3 +203,260 @@ struct wifi_channels *list_channels_11n(char *devnr)
 	 * list; 
 	 */
 }
+
+int getassoclist_11n(char *ifname, unsigned char *list)
+{
+	unsigned char *buf;
+
+	buf = malloc(24 * 1024);
+	memset(buf, 0, 1024 * 24);
+	unsigned char *cp;
+	int len;
+	struct iwreq iwr;
+	int s;
+	char type[32];
+	char netmode[32];
+	unsigned int *count = (unsigned int *)list;
+
+	sprintf(type, "%s_mode", ifname);
+	sprintf(netmode, "%s_net_mode", ifname);
+	if (nvram_match(netmode, "disabled")) {
+		free(buf);
+		return 0;
+	}
+	int mincount = 0;
+
+	if (nvram_match(type, "wdssta") || nvram_match(type, "sta")
+	    || nvram_match(type, "wet")) {
+		int assoc = isAssociated(ifname);
+
+		if (!assoc) {
+			free(buf);
+			return 0;
+		}
+		char mac[6];
+
+		getAssocMAC(ifname, mac);
+		memcpy(&list[4], mac, 6);
+		count[0] = 1;
+		mincount = 1;
+	}
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		free(buf);
+		mincount = 1;
+		return mincount;
+	}
+	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.length = 1024 * 24;
+	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
+		close(s);
+		free(buf);
+		return mincount;
+	}
+	len = iwr.u.data.length;
+	if (len < sizeof(struct ieee80211req_sta_info)) {
+		close(s);
+		free(buf);
+		return mincount;
+	}
+
+	cp = buf;
+	unsigned char *l = (unsigned char *)list;
+
+	count[0] = 0;
+	l += 4;
+	do {
+		struct ieee80211req_sta_info *si;
+
+		si = (struct ieee80211req_sta_info *)cp;
+		memcpy(l, &si->isi_macaddr[0], 6);
+		if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0
+		    && l[4] == 0 && l[5] == 0)
+			break;
+		l += 6;
+		count[0]++;
+		cp += si->isi_len;
+		len -= si->isi_len;
+	}
+	while (len >= sizeof(struct ieee80211req_sta_info));
+	close(s);
+	free(buf);
+
+	return mincount > count[0] ? mincount : count[0];
+}
+
+
+int getRssi_11n(char *ifname, unsigned char *mac)
+{
+	unsigned char *buf = malloc(24 * 1024);
+
+	memset(buf, 0, 1024 * 24);
+	unsigned char *cp;
+	int len;
+	struct iwreq iwr;
+	int s;
+	char nb[32];
+	sprintf(nb, "%s_bias", ifname);
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		free(buf);
+		return 0;
+	}
+	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.length = 1024 * 24;
+	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
+		close(s);
+		free(buf);
+		fprintf(stderr, "stainfo error\n");
+		return 0;
+	}
+	len = iwr.u.data.length;
+	if (len < sizeof(struct ieee80211req_sta_info))
+		return 0;
+
+	cp = buf;
+	char maccmp[6];
+
+	memset(maccmp, 0, 6);
+	do {
+		struct ieee80211req_sta_info *si;
+
+		si = (struct ieee80211req_sta_info *)cp;
+		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
+			close(s);
+			int rssi = si->isi_noise + si->isi_rssi;
+
+			free(buf);
+
+			return rssi + atoi(nvram_default_get(nb, "0"));
+		}
+		if (!memcmp(&si->isi_macaddr[0], mac, 6))
+			break;
+		cp += si->isi_len;
+		len -= si->isi_len;
+	}
+	while (len >= sizeof(struct ieee80211req_sta_info));
+	close(s);
+	free(buf);
+	return 0;
+}
+
+int getUptime_11n(char *ifname, unsigned char *mac)
+{
+	unsigned char *buf = malloc(24 * 1024);
+
+	memset(buf, 0, 24 * 1024);
+	unsigned char *cp;
+	int len;
+	struct iwreq iwr;
+	int s;
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		free(buf);
+		return 0;
+	}
+	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.length = 24 * 1024;
+	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
+		close(s);
+		free(buf);
+		return 0;
+	}
+	len = iwr.u.data.length;
+	if (len < sizeof(struct ieee80211req_sta_info))
+		return -1;
+
+	cp = buf;
+	char maccmp[6];
+
+	memset(maccmp, 0, 6);
+	do {
+		struct ieee80211req_sta_info *si;
+
+		si = (struct ieee80211req_sta_info *)cp;
+		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
+			close(s);
+			int uptime = si->isi_uptime;
+
+			free(buf);
+			return uptime;
+		}
+		if (!memcmp(&si->isi_macaddr[0], mac, 6))
+			break;
+		cp += si->isi_len;
+		len -= si->isi_len;
+	}
+	while (len >= sizeof(struct ieee80211req_sta_info));
+	close(s);
+	free(buf);
+	return 0;
+}
+
+int getNoise_11n(char *ifname, unsigned char *mac)
+{
+	unsigned char *buf = malloc(24 * 1024);
+
+	memset(buf, 0, 24 * 1024);
+	unsigned char *cp;
+	int len;
+	struct iwreq iwr;
+	int s;
+	char nb[32];
+	sprintf(nb, "%s_bias", ifname);
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		free(buf);
+		return 0;
+	}
+	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.length = 24 * 1024;
+	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
+		close(s);
+		free(buf);
+		return 0;
+	}
+	len = iwr.u.data.length;
+	if (len < sizeof(struct ieee80211req_sta_info))
+		return -1;
+
+	cp = buf;
+	char maccmp[6];
+
+	memset(maccmp, 0, 6);
+	do {
+		struct ieee80211req_sta_info *si;
+
+		si = (struct ieee80211req_sta_info *)cp;
+		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
+			close(s);
+			int noise = si->isi_noise;
+
+			free(buf);
+			return noise + atoi(nvram_default_get(nb, "0"));
+		}
+		if (!memcmp(&si->isi_macaddr[0], mac, 6))
+			break;
+		cp += si->isi_len;
+		len -= si->isi_len;
+	}
+	while (len >= sizeof(struct ieee80211req_sta_info));
+	close(s);
+	free(buf);
+	return 0;
+}

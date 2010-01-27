@@ -1440,6 +1440,9 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 
 struct wifi_channels *list_channels(char *devnr)
 {
+
+
+
 	return list_channelsext(devnr, 1);
 	/*
 	 * char csign[64]; char channel[64]; char ppp[64]; char freq[64]; char
@@ -1469,6 +1472,11 @@ int getdevicecount(void)
 
 int getRssi(char *ifname, unsigned char *mac)
 {
+#ifdef HAVE_MADWIFI_MIMO
+		if (is_ar5008(ifname)) {
+			return getRssi_11n(ifname,mac);
+		} 
+#endif
 	unsigned char *buf = malloc(24 * 1024);
 
 	memset(buf, 0, 1024 * 24);
@@ -1528,6 +1536,11 @@ int getRssi(char *ifname, unsigned char *mac)
 
 int getUptime(char *ifname, unsigned char *mac)
 {
+#ifdef HAVE_MADWIFI_MIMO
+		if (is_ar5008(ifname)) {
+			return getUptime_11n(ifname,mac);
+		} 
+#endif
 	unsigned char *buf = malloc(24 * 1024);
 
 	memset(buf, 0, 24 * 1024);
@@ -1583,6 +1596,11 @@ int getUptime(char *ifname, unsigned char *mac)
 
 int getNoise(char *ifname, unsigned char *mac)
 {
+#ifdef HAVE_MADWIFI_MIMO
+		if (is_ar5008(ifname)) {
+			return getNoise_11n(ifname,mac);
+		} 
+#endif
 	unsigned char *buf = malloc(24 * 1024);
 
 	memset(buf, 0, 24 * 1024);
@@ -1640,6 +1658,11 @@ int getNoise(char *ifname, unsigned char *mac)
 
 int getassoclist(char *ifname, unsigned char *list)
 {
+#ifdef HAVE_MADWIFI_MIMO
+		if (is_ar5008(ifname)) {
+			return getassoclist_11n(ifname,list);
+		} 
+#endif
 	unsigned char *buf;
 
 	buf = malloc(24 * 1024);
