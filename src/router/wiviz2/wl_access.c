@@ -34,6 +34,9 @@
 #include <unistd.h>
 
 #include "wl_access.h"
+
+
+
 #ifndef HAVE_MADWIFI
 
 #ifdef HAVE_RT2880
@@ -73,10 +76,11 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 #else
 
 
+
 char *get_monitor(void)
 {
 int devcount;
-char *ifname = get_wdev();
+char *ifname = nvram_safe_get("wifi_display");
 sscanf( ifname, "ath%d", &devcount );
 static char mon[32];
 sprintf(mon,"mon%d",devcount);

@@ -38,6 +38,7 @@
 #include "structs.h"
 
 
+
 void ch_sig_handler(int i) {
 
   }
@@ -80,6 +81,7 @@ u_int ieee80211_ieee2mhz(u_int chan, u_int flags)
 	}
 }
 
+char *get_monitor(void);
 
 int set_channel(char *dev,int channel)
 {
@@ -135,7 +137,7 @@ void channelHopper(wiviz_cfg * cfg) {
     //Set the channel
 #ifdef HAVE_MADWIFI
     printf("set channel %d\n",nc);
-    int ret = set_channel(get_wdev(),nc);
+    int ret = set_channel(nvram_safe_get("wifi_display"),nc);
     if (ret==-1)
 	continue;
 #elif HAVE_RT2880
