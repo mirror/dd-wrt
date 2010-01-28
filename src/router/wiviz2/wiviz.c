@@ -75,6 +75,7 @@ To add:
 
 
 
+char *get_monitor(void);
 
 int openMonitorSocket(char * dev);
 void dealWithPacket(wiviz_cfg * cfg, int len, const u_char * packet);
@@ -112,7 +113,7 @@ if (!strcmp(argv[1],"terminate"))
     {
 #ifdef HAVE_MADWIFI
   // return to original channel
-  sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",get_wdev()));
+  sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",nvram_safe_get("wifi_display")));
   sleep(1);
   sysprintf("ifconfig %s down",get_monitor());
   if (is_ar5008(nvram_safe_get("wifi_display")))
@@ -174,9 +175,9 @@ if (!strcmp(argv[1],"terminate"))
 #else
   if (is_ar5008(nvram_safe_get("wifi_display")))
     {
-	  sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(get_wdev()));
+	  sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(nvram_safe_get("wifi_display")));
     }else{
-	  sysprintf("wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(get_wdev()));
+	  sysprintf("wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(nvram_safe_get("wifi_display")));
     }
 	  sysprintf("ifconfig %s up",get_monitor());
 	  cfg.readFromWl = 1;
@@ -603,6 +604,15 @@ if (!fctype) // only accept management frames (type 0)
       if (e->tag == tagChannel) {
         channel = *(char *)(e + 1);
         }
+      if (e->tag == tagRSN) {
+          if (encType != aetEncWPAmix)
+          {
+          if (encType==aetEncWPA)
+          encType = aetEncWPAmix;
+            else
+          encType = aetEncWPA2;
+          }      
+      }
       if (e->tag == tagVendorSpecific) {
         if (e->length >= 4 && memcmp(e + 1, "\x00\x50\xf2\x01", 4) == 0) {
           //WPA encryption
