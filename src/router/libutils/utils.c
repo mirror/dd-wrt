@@ -2203,13 +2203,13 @@ static char *stalist[] = {
 
 char *getWifi(char *ifname)
 {
-	if (!strcmp(ifname, "ath0"))
+	if (!strncmp(ifname, "ath0",4))
 		return "wifi0";
-	if (!strcmp(ifname, "ath1"))
+	if (!strncmp(ifname, "ath1",4))
 		return "wifi1";
-	if (!strcmp(ifname, "ath2"))
+	if (!strncmp(ifname, "ath2",4))
 		return "wifi2";
-	if (!strcmp(ifname, "ath3"))
+	if (!strncmp(ifname, "ath3",4))
 		return "wifi3";
 	return NULL;
 }
