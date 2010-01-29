@@ -179,10 +179,14 @@ static struct mtd_partition dir_parts[] = {
 #ifdef CONFIG_AR7100_LOW
       {name: "RedBoot", offset: 0, size:0x50000,},
       {name: "linux", offset: 0x50000, size:0x770000,},
+#elif CONFIG_AR9100				//, mask_flags: MTD_WRITEABLE, }
+      {name: "RedBoot", offset: 0, size:0x40000,},
+      {name: "linux", offset: 0x40000, size:0x7a0000,},
 #else				//, mask_flags: MTD_WRITEABLE, },
       {name: "RedBoot", offset: 0, size:0x30000,},
       {name: "linux", offset: 0x30000, size:0x790000,},
 #endif
+
 #else
       {name: "RedBoot", offset: 0, size:0x40000,},
 				//, mask_flags: MTD_WRITEABLE, },
@@ -316,6 +320,9 @@ static int __init ar7100_flash_init(void)
 #endif
 				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
+#elif CONFIG_AR9100
+				dir_parts[5].offset = dir_parts[6].offset;	//fis config
+				dir_parts[5].size = mtd->erasesize;
 #elif CONFIG_MTD_FLASH_8MB
 				dir_parts[5].offset = dir_parts[6].offset;	//fis config
 				dir_parts[5].size = mtd->erasesize;
@@ -328,9 +335,13 @@ if (compex)
 else
 				dir_parts[4].offset = dir_parts[5].offset - mtd->erasesize;	//nvram
 				dir_parts[4].size = mtd->erasesize;
-				dir_parts[3].size =
-				    dir_parts[4].offset - dir_parts[3].offset;
+				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
+#ifdef CONFIG_AR9100
+					dir_parts[1].offset = 0x40000;
+					dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
+					break;
+#else
 				//now scan for linux offset
 				if (compex) {
 					dir_parts[1].offset = 0x30000;
@@ -355,11 +366,11 @@ else
 							dir_parts[7].offset =
 							    dir_parts[0].size;
 						}
-						if (!strcmp(fis->name, "linux")
+						if (!strncmp(fis->name, "linux",5)
 						    || !strncmp(fis->name,
 								"vmlinux", 7)
-						    || !strcmp(fis->name,
-							       "kernel")) {
+						    || !strncmp(fis->name,
+							       "kernel",6)) {
 							printk(KERN_EMERG
 							       "found linux partition at [0x%08lX]\n",
 							       fis->flash_base);
@@ -381,6 +392,7 @@ else
 					}
 					break;
 				}
+			    #endif
 			}
 			offset += 4096;
 			buf += 4096;
