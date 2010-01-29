@@ -164,7 +164,7 @@ int getbuttonstate()
 int getbuttonstate()
 {
 	FILE *in;
-	int ret = get_gpio(24); // nxp multiplexer connected
+	int ret = get_gpio(24);	// nxp multiplexer connected
 
 	if (ret == 0)
 		return 1;
@@ -479,6 +479,12 @@ void period_check(int sig)
 
 #if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) | defined(HAVE_OPENRISC)
 	state = val;
+	sesgpio = 0xff;
+	int push;
+#ifdef HAVE_WZRG300NH
+	sesgpio = 0x117;
+	val |= get_gpio(23) << 23;	//aoss pushbutton
+#endif
 #else
 	if ((brand & 0x000f) != 0x000f)
 		gpio = 1 << (brand & 0x000f);	// calculate gpio value.
@@ -612,6 +618,8 @@ void period_check(int sig)
 						  "Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 					led_control(LED_DIAG, LED_ON);
+#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH)
+					led_control(LED_DIAG, LED_ON);
 #endif
 					ACTION("ACT_HW_RESTORE");
 					alarmtimer(0, 0);	/* Stop the timer alarm */
@@ -654,7 +662,10 @@ void period_check(int sig)
 					// was pressed and
 					// we're restoring
 					// defaults.
+#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH)
+					led_control(LED_DIAG, LED_ON);
 #endif
+
 					eval("erase", "nvram");
 #endif
 
@@ -665,11 +676,9 @@ void period_check(int sig)
 				}
 			}
 		}
-	}
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_STORM) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G) && !defined(HAVE_SOLO51) && !defined(HAVE_ADM5120) && !defined(HAVE_X86) && !defined(HAVE_OPENRISC)
-	else if ((sesgpio != 0xff)
-		 && (((sesgpio & 0x10) == 0 && (val & push))
-		     || ((sesgpio & 0x10) == 0x10 && !(val & push)))) {
+	} else if ((sesgpio != 0xff)
+		   && (((sesgpio & 0x10) == 0 && (val & push))
+		       || ((sesgpio & 0x10) == 0x10 && !(val & push)))) {
 		runStartup("/etc/config", ".sesbutton");
 		runStartup("/jffs/etc/config", ".sesbutton");	// if available
 		runStartup("/mmc/etc/config", ".sesbutton");	// if available
@@ -678,8 +687,6 @@ void period_check(int sig)
 		if (ses_mode == 1) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 			// SES (AOSS) led
-#ifndef HAVE_MADWIFI
-
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")) {
 #ifndef HAVE_BUFFALO
@@ -689,21 +696,8 @@ void period_check(int sig)
 				dd_syslog(LOG_DEBUG,
 					  "AOSS button: turning radio(s) on\n");
 #endif
-				if (pidof("nas") > 0
-				    || pidof("wrt-radauth") > 0) {
-					eval("stopservice", "nas");
-				}
-				for (ii = 0; ii < cc; ii++) {
-					if (!nvram_nmatch("disabled", "wl%d_net_mode", ii)) {
-					eval("wl", "-i",
-					     get_wl_instance_name(ii), "radio",
-					     "on");
-				     }
-				}
-				eval("startservice", "nas");
-				eval("startservice", "guest_nas");
+				sysprintf("startservice radio_off");
 			}
-#endif
 #endif
 
 			ses_mode = 0;
@@ -711,7 +705,6 @@ void period_check(int sig)
 		} else if (ses_mode == 0) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink SES
 			// (AOSS) led
-#ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")) {
 #ifndef HAVE_BUFFALO
@@ -721,54 +714,15 @@ void period_check(int sig)
 				dd_syslog(LOG_DEBUG,
 					  "AOSS button: turning radio(s) off\n");
 #endif
-				if (pidof("nas") > 0
-				    || pidof("wrt-radauth") > 0) {
-					eval("stopservice", "nas");
-				}
-				for (ii = 0; ii < cc; ii++) {
-					eval("wl", "-i",
-					     get_wl_instance_name(ii), "radio",
-					     "off");
-				}
+				sysprintf("startservice radio_off");
 			}
-#endif
 #endif
 
 			ses_mode = 1;
 
 		}
-		/* 
-		 * else if (ses_mode == 2) { #ifdef HAVE_RADIOOFF if (nvram_match
-		 * ("radiooff_button", "1")) eval ("wl", "radio", "on"); #endif
-		 * 
-		 * led_control (LED_SES, LED_ON); //both leds on led_control
-		 * (LED_SES2, LED_ON);
-		 * 
-		 * ses_mode = 3;
-		 * 
-		 * } else if (ses_mode == 3) { #ifdef HAVE_RADIOOFF if (nvram_match
-		 * ("radiooff_button", "1")) eval ("wl", "radio", "off"); #endif
-		 * led_control (LED_SES, LED_OFF); //both leds off led_control
-		 * (LED_SES2, LED_OFF);
-		 * 
-		 * ses_mode = 0;
-		 * 
-		 * } 
-		 */
 
-		/* 
-		 * char *led_argv[] = { "check_ses_led", SES_LED_CHECK_TIMES,
-		 * SES_LED_CHECK_INTERVAL, NULL }; pid_t pid;
-		 * 
-		 * if(!is_exist("/tmp/EnablePushButton")) return;
-		 * 
-		 * ses_mode = 1; eval("killall", "check_ses_led"); _eval(led_argv,
-		 * NULL, 0, &pid); 
-		 */
-
-	}
-#endif
-	else {
+	} else {
 
 		/* 
 		 * Although it's unpushed now, it had ever been pushed 
@@ -782,14 +736,6 @@ void period_check(int sig)
 			}
 			service_restart();
 		}
-		/* 
-		 * if( ses_mode == 1 ){ cprintf("Release SES push button\n");
-		 * eval("sendudp", "-i", nvram_safe_get("lan_ifname"), "-s",
-		 * nvram_safe_get("lan_ipaddr"), "-d",
-		 * nvram_safe_get("http_client_ip"), "-m",
-		 * nvram_safe_get("lan_hwaddr"), "-p", "9999", "LED TEST FINISH");
-		 * ses_mode = 0; } 
-		 */
 	}
 }
 
