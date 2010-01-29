@@ -148,6 +148,9 @@ endif
 ifeq ($(CONFIG_WZRG300NH),y)
   CFLAGS += -DHAVE_WZRG300NH
 endif
+ifeq ($(CONFIG_AOSS),y)
+  CFLAGS += -DHAVE_AOSS
+endif
 
 ifeq ($(CONFIG_BONDING),y)
 CFLAGS += -DHAVE_BONDING

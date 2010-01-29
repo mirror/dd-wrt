@@ -479,7 +479,7 @@ void period_check(int sig)
 
 #if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) | defined(HAVE_OPENRISC)
 	state = val;
-	sesgpio = 0xff;
+	int sesgpio = 0xfff;
 	int push;
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
@@ -513,18 +513,18 @@ void period_check(int sig)
 	case ROUTER_BUFFALO_WZRRSG54:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 	case ROUTER_ASUS_RTN12:
-		sesgpio = 0x10;	// gpio 0, inversed
+		sesgpio = 0x100;	// gpio 0, inversed
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
 	case ROUTER_ASUS_RTN10:
-		sesgpio = 0x12;	// gpio 2, inversed
+		sesgpio = 0x102;	// gpio 2, inversed
 		break;
 	case ROUTER_BUFFALO_WBR2G54S:
-		sesgpio = 0x04;	// gpio 4, normal
+		sesgpio = 0x004;	// gpio 4, normal
 		break;
 #ifndef HAVE_BUFFALO
 	case ROUTER_LINKSYS_WTR54GS:
-		sesgpio = 0x12;	// gpio 2, inversed
+		sesgpio = 0x102;	// gpio 2, inversed
 		break;
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
@@ -536,54 +536,54 @@ void period_check(int sig)
 	case ROUTER_WRT610NV2:
 	case ROUTER_ASKEY_RT220XD:	// not soldered
 	case ROUTER_DYNEX_DX_NRUTER:
-		sesgpio = 0x14;	// gpio 4, inversed
+		sesgpio = 0x104;	// gpio 4, inversed
 		break;
 	case ROUTER_ASUS_WL500G_PRE:
-		sesgpio = 0x04;	// gpio 4, normal
+		sesgpio = 0x004;	// gpio 4, normal
 		break;
 	case ROUTER_ASUS_WL550GE:
-		sesgpio = 0x0f;	// gpio 15, normal
+		sesgpio = 0x00f;	// gpio 15, normal
 		break;
 	case ROUTER_WRT310N:
 	case ROUTER_WRT350N:
 	case ROUTER_WRT610N:
 	case ROUTER_ASUS_RTN16:
-		sesgpio = 0x18;	// gpio 8, inversed
+		sesgpio = 0x108;	// gpio 8, inversed
 		break;
 	case ROUTER_ASUS_WL500W:
-		sesgpio = 0x07;	// gpio 7, normal
+		sesgpio = 0x007;	// gpio 7, normal
 		break;
 	case ROUTER_DLINK_DIR330:
-		sesgpio = 0x17;	// gpio 7, inversed
+		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 	case ROUTER_ASUS_WL520GUGC:
 	case ROUTER_ASUS_WL500G_PRE_V2:
-		sesgpio = 0x13;	// gpio 3, inversed
+		sesgpio = 0x103;	// gpio 3, inversed
 		break;
 	case ROUTER_WAP54G_V3:
-		sesgpio = 0x1e;	// gpio 14, inversed
+		sesgpio = 0x10e;	// gpio 14, inversed
 		break;
 	case ROUTER_NETGEAR_WNDR3300:
-		sesgpio = 0x11;	// gpio 1, inversed
+		sesgpio = 0x101;	// gpio 1, inversed
 		break;
 	case ROUTER_WRT54G_V81:
 	case ROUTER_DLINK_DIR320:
 	case ROUTER_WRT600N:
 	case ROUTER_NETGEAR_WNR3500L:
-		sesgpio = 0x16;	// gpio 6, inversed
+		sesgpio = 0x106;	// gpio 6, inversed
 		break;
 	case ROUTER_WRT320N:
 	case ROUTER_WRT160NV3:
 	case ROUTER_WRT310NV2:
-		sesgpio = 0x15;	// gpio 5, inversed
+		sesgpio = 0x105;	// gpio 5, inversed
 		break;
 
 #endif
 	default:
-		sesgpio = 0xff;	// gpio unknown, disabled
+		sesgpio = 0xfff;	// gpio unknown, disabled
 	}
 
-	push = 1 << (sesgpio & 0x0f);	// calculate push value from ses gpio 
+	push = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio 
 	// 
 	// 
 	// 
@@ -676,14 +676,17 @@ void period_check(int sig)
 				}
 			}
 		}
-	} else if ((sesgpio != 0xff)
-		   && (((sesgpio & 0x10) == 0 && (val & push))
-		       || ((sesgpio & 0x10) == 0x10 && !(val & push)))) {
+	} else if ((sesgpio != 0xfff)
+		   && (((sesgpio & 0x100) == 0 && (val & push))
+		       || ((sesgpio & 0x100) == 0x100 && !(val & push)))) {
 		runStartup("/etc/config", ".sesbutton");
 		runStartup("/jffs/etc/config", ".sesbutton");	// if available
 		runStartup("/mmc/etc/config", ".sesbutton");	// if available
 		runStartup("/tmp/etc/config", ".sesbutton");	// if available
 
+#ifdef HAVE_AOSS
+		sysprintf("startservice aoss");
+#else
 		if (ses_mode == 1) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 			// SES (AOSS) led
@@ -696,7 +699,7 @@ void period_check(int sig)
 				dd_syslog(LOG_DEBUG,
 					  "AOSS button: turning radio(s) on\n");
 #endif
-				sysprintf("startservice radio_off");
+				sysprintf("startservice radio_on");
 			}
 #endif
 
@@ -719,7 +722,7 @@ void period_check(int sig)
 #endif
 
 			ses_mode = 1;
-
+#endif
 		}
 
 	} else {
