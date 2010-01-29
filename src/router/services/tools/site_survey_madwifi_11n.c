@@ -125,6 +125,12 @@ static __inline int iswpaoui(const unsigned char *frm)
 	    && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | WPA_OUI);
 }
 
+static __inline int isrsnoui(const unsigned char *frm)
+{
+	return frm[1] > 3
+	    && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | RSN_OUI);
+}
+
 static __inline int iswmeoui(const unsigned char *frm)
 {
 	return frm[1] > 3
@@ -199,6 +205,8 @@ int r =0;
 		case IEEE80211_ELEMID_VENDOR:
 			if (iswpaoui(vp))
 				strcat(encinfo, "WPA ");
+			if (isrsnoui(vp))
+				strcat(encinfo, "WPA2 ");
 			if (iswmeoui(vp))
 				strcat(encinfo, "WME ");
 			if (isatherosoui(vp))
