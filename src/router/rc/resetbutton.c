@@ -685,6 +685,7 @@ void period_check(int sig)
 		runStartup("/tmp/etc/config", ".sesbutton");	// if available
 
 #ifdef HAVE_AOSS
+		led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 		sysprintf("startservice aoss");
 #else
 		if (ses_mode == 1) {
