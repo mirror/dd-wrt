@@ -315,7 +315,7 @@ unsigned int ar7240_misc_get_irq_status (void);
 void ar7240_pci_irq_init(int irq_base); /* ??? */
 
 
-#define AR7240_GPIO_COUNT                   16
+#define AR7240_GPIO_COUNT                   64
 
 /*
  * GPIO Function Enables
