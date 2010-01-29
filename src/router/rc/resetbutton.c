@@ -485,6 +485,10 @@ void period_check(int sig)
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
 #endif
+#ifdef HAVE_WRT160NL
+	sesgpio = 0x107;
+	val |= get_gpio(7) << 7;	//wps/ses pushbutton
+#endif
 #else
 	if ((brand & 0x000f) != 0x000f)
 		gpio = 1 << (brand & 0x000f);	// calculate gpio value.

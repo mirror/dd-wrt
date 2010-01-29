@@ -2724,6 +2724,7 @@ int led_control(int type, int act)
 #ifdef HAVE_WRT160NL
 		power_gpio = 0x10e;
 		connected_gpio = 0x109;
+		ses_gpio = 0x108;
 #endif
 #ifdef HAVE_WP543
 		diag_gpio = 0x107;
