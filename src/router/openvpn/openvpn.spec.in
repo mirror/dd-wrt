@@ -52,6 +52,9 @@ Requires:      openssl       >= 0.9.6
 %{!?without_pam:BuildRequires: pam-devel}
 %{!?without_pam:Requires:      pam}
 
+%{!?with_pkcs11:BuildRequires: pkcs11-helper-devel}
+%{!?with_pkcs11:Requires:      pkcs11-helper}
+
 #
 # Description
 #
@@ -220,9 +223,14 @@ fi
 %endif
 
 # Install extra %doc stuff
-%doc contrib/ easy-rsa/ management/ sample-*/ plugin/README.*
+%doc contrib/ easy-rsa/ sample-*/ plugin/README.*
 
 %changelog
+* Thu Jul 30 2009 David Sommerseth <dazo@users.sourceforge.net>
+- Removed management/ directory from %doc
+
+* Thu Dec 14 2006 Alon Bar-Lev
+- Added with_pkcs11
 
 * Mon Aug 2 2005 James Yonan
 - Fixed build problem with --define 'without_pam 1'

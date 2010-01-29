@@ -596,8 +596,8 @@ SHELL=${CONFIG_SHELL-/bin/sh}
 # Identity of this package.
 PACKAGE_NAME='OpenVPN'
 PACKAGE_TARNAME='openvpn'
-PACKAGE_VERSION='2.1_rc22'
-PACKAGE_STRING='OpenVPN 2.1_rc22'
+PACKAGE_VERSION='2.1.1'
+PACKAGE_STRING='OpenVPN 2.1.1'
 PACKAGE_BUGREPORT='openvpn-users@lists.sourceforge.net'
 
 ac_unique_file="syshead.h"
@@ -1346,7 +1346,7 @@ if test "$ac_init_help" = "long"; then
   # Omit some internal or obsolete options to make the list less imposing.
   # This message is too long to be a string in the A/UX 3.1 sh.
   cat <<_ACEOF
-\`configure' configures OpenVPN 2.1_rc22 to adapt to many kinds of systems.
+\`configure' configures OpenVPN 2.1.1 to adapt to many kinds of systems.
 
 Usage: $0 [OPTION]... [VAR=VALUE]...
 
@@ -1417,7 +1417,7 @@ fi
 
 if test -n "$ac_init_help"; then
   case $ac_init_help in
-     short | recursive ) echo "Configuration of OpenVPN 2.1_rc22:";;
+     short | recursive ) echo "Configuration of OpenVPN 2.1.1:";;
    esac
   cat <<\_ACEOF
 
