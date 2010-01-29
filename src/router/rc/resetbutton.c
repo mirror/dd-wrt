@@ -585,6 +585,7 @@ void period_check(int sig)
 	default:
 		sesgpio = 0xfff;	// gpio unknown, disabled
 	}
+#endif
 
 	push = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio 
 	// 
@@ -592,7 +593,6 @@ void period_check(int sig)
 	// 
 	// pin no.
 
-#endif
 	/* 
 	 * The value is zero during button-pushed. 
 	 */
