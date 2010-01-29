@@ -1759,7 +1759,7 @@ void radio_off(void)
     int cc = getdevicecount();
     int i;
     for (i=0;i<cc;i++)
-	sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent",i);
+	sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent",i);
 }
 
 void radio_on(void)
@@ -1767,7 +1767,7 @@ void radio_on(void)
     int cc = getdevicecount();
     int i;
     for (i=0;i<cc;i++)
-	sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent",i);
+	sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent",i);
 }
 
 #endif
