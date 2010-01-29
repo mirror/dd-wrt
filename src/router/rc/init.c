@@ -701,23 +701,17 @@ int main(int argc, char **argv)
 			start_service("bridgesif");
 #endif
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")
 			    && nvram_match("radiooff_boot_off", "1")) {
-				for (c = 0; c < cnt; c++) {
-					sysprintf("wl -i %s radio off",
-						  get_wl_instance_name(c));
-				}
+				start_service("radio_off");
 				led_control(LED_SEC0, LED_OFF);
 				led_control(LED_SEC1, LED_OFF);
 			} else
 #endif
 			{
-				start_service("nas");
-				start_service("guest_nas");
+				start_service("radio_on");
 			}
-#endif
 
 			start_service_f("radio_timer");
 
