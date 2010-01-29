@@ -65,6 +65,12 @@ endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
 endif
+ifeq ($(CONFIG_WZRG300NH),y)
+CFLAGS += -DHAVE_WZRG300NH
+endif
+ifeq ($(CONFIG_WHRHPGN),y)
+CFLAGS += -DHAVE_WHRHPGN
+endif
 
 vpath %.c $(SRCBASE)/shared/nvram
 

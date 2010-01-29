@@ -225,7 +225,11 @@ int nvram_commit(void)
 		fprintf(stderr, "not allowed, flash process in progress");
 		exit(1);
 	}
-#ifndef HAVE_LSX
+#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN)
+	system("/sbin/ledtool 1");
+#elif HAVE_LSX
+	//nothing
+#else
 	system("/sbin/ledtool 1");
 #endif
 	lock();
