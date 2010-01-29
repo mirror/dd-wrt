@@ -395,8 +395,7 @@ unsigned int ar7100_misc_get_irq_status (void);
 void ar7100_pci_irq_init(int irq_base); /* ??? */
 
 
-#define AR7100_GPIO_COUNT                   22
-
+#define AR7100_GPIO_COUNT                   64
 /*
  * GPIO Function Enables
  */

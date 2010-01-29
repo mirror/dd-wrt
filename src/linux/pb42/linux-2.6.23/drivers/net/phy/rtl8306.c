@@ -926,7 +926,6 @@ rtl8306_fixup(struct phy_device *pdev)
 {
 	struct rtl_priv priv;
 	u16 chipid;
-
 	/* Attach to primary LAN port and WAN port */
 	if (pdev->addr != 0 && pdev->addr != 4)
 		return 0;

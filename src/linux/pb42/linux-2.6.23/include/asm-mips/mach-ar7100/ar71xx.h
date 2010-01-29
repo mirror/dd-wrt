@@ -175,7 +175,7 @@ extern void ar71xx_add_device_usb(void) __init;
 #define GPIO_FUNC_USB_OC_EN	BIT(4)
 #define GPIO_FUNC_USB_CLK_EN	BIT(0)
 
-#define AR71XX_GPIO_COUNT	16
+#define AR71XX_GPIO_COUNT	64
 
 extern void __iomem *ar71xx_gpio_base;
 
