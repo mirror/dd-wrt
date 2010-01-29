@@ -722,8 +722,8 @@ void period_check(int sig)
 #endif
 
 			ses_mode = 1;
-#endif
 		}
+#endif
 
 	} else {
 
