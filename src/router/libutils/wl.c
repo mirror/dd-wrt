@@ -481,14 +481,15 @@ int getUptime(char *ifname, unsigned char *mac)
 {
 	return 0;
 }
-void radio_off(void)
+
+void radio_off(int idx)
 {
-   // dummy
+	eval("iwpriv", "ra0", "set", "RadioOn=0");
 }
 
-void radio_on(void)
+void radio_on(int idx)
 {
-   // dummy
+	eval("iwpriv", "ra0", "set", "RadioOn=1");
 }
 
 #else
@@ -1450,8 +1451,6 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 struct wifi_channels *list_channels(char *devnr)
 {
 
-
-
 	return list_channelsext(devnr, 1);
 	/*
 	 * char csign[64]; char channel[64]; char ppp[64]; char freq[64]; char
@@ -1482,9 +1481,9 @@ int getdevicecount(void)
 int getRssi(char *ifname, unsigned char *mac)
 {
 #ifdef HAVE_MADWIFI_MIMO
-		if (is_ar5008(ifname)) {
-			return getRssi_11n(ifname,mac);
-		} 
+	if (is_ar5008(ifname)) {
+		return getRssi_11n(ifname, mac);
+	}
 #endif
 	unsigned char *buf = malloc(24 * 1024);
 
@@ -1546,9 +1545,9 @@ int getRssi(char *ifname, unsigned char *mac)
 int getUptime(char *ifname, unsigned char *mac)
 {
 #ifdef HAVE_MADWIFI_MIMO
-		if (is_ar5008(ifname)) {
-			return getUptime_11n(ifname,mac);
-		} 
+	if (is_ar5008(ifname)) {
+		return getUptime_11n(ifname, mac);
+	}
 #endif
 	unsigned char *buf = malloc(24 * 1024);
 
@@ -1606,9 +1605,9 @@ int getUptime(char *ifname, unsigned char *mac)
 int getNoise(char *ifname, unsigned char *mac)
 {
 #ifdef HAVE_MADWIFI_MIMO
-		if (is_ar5008(ifname)) {
-			return getNoise_11n(ifname,mac);
-		} 
+	if (is_ar5008(ifname)) {
+		return getNoise_11n(ifname, mac);
+	}
 #endif
 	unsigned char *buf = malloc(24 * 1024);
 
@@ -1668,9 +1667,9 @@ int getNoise(char *ifname, unsigned char *mac)
 int getassoclist(char *ifname, unsigned char *list)
 {
 #ifdef HAVE_MADWIFI_MIMO
-		if (is_ar5008(ifname)) {
-			return getassoclist_11n(ifname,list);
-		} 
+	if (is_ar5008(ifname)) {
+		return getassoclist_11n(ifname, list);
+	}
 #endif
 	unsigned char *buf;
 
@@ -1754,59 +1753,77 @@ int getassoclist(char *ifname, unsigned char *list)
 
 	return mincount > count[0] ? mincount : count[0];
 }
-void radio_off(void)
+
+void radio_off(int idx)
 {
-    int cc = getdevicecount();
-    int i;
-    for (i=0;i<cc;i++)
-	sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent",i);
+	if (idx != -1)
+		sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", idx);
+	else {
+		int cc = getdevicecount();
+		int i;
+		for (i = 0; i < cc; i++)
+			sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", i);
+	}
 }
 
-void radio_on(void)
+void radio_on(int idx)
 {
-    int cc = getdevicecount();
-    int i;
-    for (i=0;i<cc;i++)
-	sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent",i);
+	if (idx != -1)
+		sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent", idx);
+	else {
+		int cc = getdevicecount();
+		int i;
+		for (i = 0; i < cc; i++)
+			sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent", i);
+	}
 }
 
 #endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 
-
-void radio_off(void)
+void radio_off(int idx)
 {
-    int cc = get_wl_instances();
-    int ii;
-				if (pidof("nas") > 0
-				    || pidof("wrt-radauth") > 0) {
-					eval("stopservice", "nas");
-				}
-				for (ii = 0; ii < cc; ii++) {
-					eval("wl", "-i",
-					     get_wl_instance_name(ii), "radio",
-					     "off");
-				}
+	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
+		eval("stopservice", "nas");
+	}
+	if (idx != 1) {
+		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
+
+	} else {
+
+		int cc = get_wl_instances();
+		int ii;
+
+		for (ii = 0; ii < cc; ii++) {
+			eval("wl", "-i",
+			     get_wl_instance_name(ii), "radio", "off");
+		}
+	}
 }
 
 void radio_on(void)
 {
-    int cc = get_wl_instances();
-    int ii;
-				if (pidof("nas") > 0
-				    || pidof("wrt-radauth") > 0) {
-					eval("stopservice", "nas");
-				}
-				for (ii = 0; ii < cc; ii++) {
-					if (!nvram_nmatch("disabled", "wl%d_net_mode", ii)) {
-					eval("wl", "-i",
-					     get_wl_instance_name(ii), "radio",
-					     "on");
-				     }
-				}
-				eval("startservice", "nas");
-				eval("startservice", "guest_nas");
+	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
+		eval("stopservice", "nas");
+	}
+	if (idx != 1) {
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx))
+			eval("wl", "-i",
+			     get_wl_instance_name(idx), "radio", "on");
+
+	} else {
+		int cc = get_wl_instances();
+		int ii;
+		for (ii = 0; ii < cc; ii++) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", ii)) {
+				eval("wl", "-i",
+				     get_wl_instance_name(ii), "radio", "on");
+			}
+		}
+	}
+	eval("startservice", "nas");
+	eval("startservice", "guest_nas");
 }
 
 /*
@@ -1873,9 +1890,8 @@ int wl_get_int(char *name, char *var, int *val)
 }
 
 // #else
-int
-wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen,
-		void *bufptr, int buflen)
+int wl_iovar_getbuf(char *ifname, char *iovar, void *param,
+		    int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint namelen;
@@ -1898,9 +1914,8 @@ wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen,
 	return (err);
 }
 
-int
-wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen,
-		void *bufptr, int buflen)
+int wl_iovar_setbuf(char *ifname, char *iovar, void *param,
+		    int paramlen, void *bufptr, int buflen)
 {
 	uint namelen;
 	uint iolen;
@@ -1971,8 +1986,8 @@ int wl_iovar_getint(char *ifname, char *iovar, int *val)
  * format a bsscfg indexed iovar buffer
  */
 static int
-wl_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen,
-		  void *bufptr, int buflen, unsigned int *plen)
+wl_bssiovar_mkbuf(char *iovar, int bssidx, void *param,
+		  int paramlen, void *bufptr, int buflen, unsigned int *plen)
 {
 	char *prefix = "bsscfg:";
 	int8 *p;
@@ -2025,16 +2040,15 @@ wl_bssiovar_mkbuf(char *iovar, int bssidx, void *param, int paramlen,
 /*
  * set named & bss indexed driver variable to buffer value
  */
-int
-wl_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param,
-		   int paramlen, void *bufptr, int buflen)
+int wl_bssiovar_setbuf(char *ifname, char *iovar, int bssidx,
+		       void *param, int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint iolen;
 
 	err =
-	    wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen,
-			      &iolen);
+	    wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr,
+			      buflen, &iolen);
 	if (err)
 		return err;
 
@@ -2044,16 +2058,15 @@ wl_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param,
 /*
  * get named & bss indexed driver variable buffer value
  */
-int
-wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx, void *param,
-		   int paramlen, void *bufptr, int buflen)
+int wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx,
+		       void *param, int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint iolen;
 
 	err =
-	    wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr, buflen,
-			      &iolen);
+	    wl_bssiovar_mkbuf(iovar, bssidx, param, paramlen, bufptr,
+			      buflen, &iolen);
 	if (err)
 		return err;
 
@@ -2063,21 +2076,20 @@ wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx, void *param,
 /*
  * set named & bss indexed driver variable to buffer value
  */
-int
-wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param,
-		int paramlen)
+int wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param,
+		    int paramlen)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
 
-	return wl_bssiovar_setbuf(ifname, iovar, bssidx, param, paramlen, smbuf,
-				  sizeof(smbuf));
+	return wl_bssiovar_setbuf(ifname, iovar, bssidx, param,
+				  paramlen, smbuf, sizeof(smbuf));
 }
 
 /*
  * get named & bss indexed driver variable buffer value
  */
-int
-wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf, int len)
+int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf,
+		    int len)
 {
 	char smbuf[WLC_IOCTL_SMLEN];
 	int err;
@@ -2087,13 +2099,13 @@ wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf, int len)
 	 */
 	if (len > (int)sizeof(smbuf)) {
 		err =
-		    wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, outbuf,
-				       len);
+		    wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0,
+				       outbuf, len);
 	} else {
 		memset(smbuf, 0, sizeof(smbuf));
 		err =
-		    wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, smbuf,
-				       sizeof(smbuf));
+		    wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0,
+				       smbuf, sizeof(smbuf));
 		if (err == 0)
 			memcpy(outbuf, smbuf, len);
 	}
