@@ -481,6 +481,15 @@ int getUptime(char *ifname, unsigned char *mac)
 {
 	return 0;
 }
+void radio_off(void)
+{
+   // dummy
+}
+
+void radio_on(void)
+{
+   // dummy
+}
 
 #else
 int getchannels(unsigned int *list, char *ifname)
@@ -1745,10 +1754,60 @@ int getassoclist(char *ifname, unsigned char *list)
 
 	return mincount > count[0] ? mincount : count[0];
 }
+void radio_off(void)
+{
+    int cc = getdevicecount();
+    int i;
+    for (i=0;i<cc;i++)
+	sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent",i);
+}
+
+void radio_on(void)
+{
+    int cc = getdevicecount();
+    int i;
+    for (i=0;i<cc;i++)
+	sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent",i);
+}
 
 #endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+
+
+void radio_off(void)
+{
+    int cc = get_wl_instances();
+    int ii;
+				if (pidof("nas") > 0
+				    || pidof("wrt-radauth") > 0) {
+					eval("stopservice", "nas");
+				}
+				for (ii = 0; ii < cc; ii++) {
+					eval("wl", "-i",
+					     get_wl_instance_name(ii), "radio",
+					     "off");
+				}
+}
+
+void radio_on(void)
+{
+    int cc = get_wl_instances();
+    int ii;
+				if (pidof("nas") > 0
+				    || pidof("wrt-radauth") > 0) {
+					eval("stopservice", "nas");
+				}
+				for (ii = 0; ii < cc; ii++) {
+					if (!nvram_nmatch("disabled", "wl%d_net_mode", ii)) {
+					eval("wl", "-i",
+					     get_wl_instance_name(ii), "radio",
+					     "on");
+				     }
+				}
+				eval("startservice", "nas");
+				eval("startservice", "guest_nas");
+}
 
 /*
  * int wl_probe (char *name) { int ret, val;
