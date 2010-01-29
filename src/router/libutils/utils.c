@@ -2733,6 +2733,12 @@ int led_control(int type, int act)
 		diag_gpio = 0x104;
 		connected_gpio = 0x10b;
 #endif
+#ifdef HAVE_WZRG300NH
+		diag_gpio = 0x101;
+		connected_gpio = 0x112;
+		usb_gpio = 0x100;
+		ses_gpio = 0x111;
+#endif
 		break;
 	case ROUTER_ALLNET01:
 		connected_gpio = 0x100;
@@ -2824,6 +2830,15 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BOARD_OPENRISC:
 		diag_gpio = 0x003;
+		break;
+#else
+	case ROUTER_BOARD_PB42:
+#ifdef HAVE_WZRG300NH
+		diag_gpio = 0x101;
+		connected_gpio = 0x112;
+		usb_gpio = 0x100;
+		ses_gpio = 0x111;
+#endif
 		break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
