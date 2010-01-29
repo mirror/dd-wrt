@@ -158,46 +158,14 @@ int main(int argc, char **argv)
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG,
 					       "Turning radio 0 on\n");
-#ifdef HAVE_MADWIFI
-					if (!nvram_match("ath0_net_mode", "disabled")) 
-					{
-					eval("ifconfig", "ath0", "up");
-					}
-#elif HAVE_RT2880
-					if (!nvram_match("wl0_net_mode", "disabled")) 
-					{
-					eval("iwpriv", "ra0", "set",
-					     "RadioOn=1");
-					}
-#else
-					stop_service("nas");
-					if (!nvram_match("wl0_net_mode", "disabled")) 
-					{
-					eval("wl", "-i",
-					     get_wl_instance_name(0), "radio",
-					     "on");
-					}
-					eval("startservice", "nas");
-					start_service("guest_nas");
-#endif
+					start_service("radio_on_0");
+					
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG,
 					       "Turning radio 0 off\n");
-#ifdef HAVE_MADWIFI
-					eval("ifconfig", "ath0", "down");
-#elif HAVE_RT2880
-					eval("iwpriv", "ra0", "set",
-					     "RadioOn=0");
-#else
-					stop_service("nas");
-					eval("wl", "-i",
-					     get_wl_instance_name(0), "radio",
-					     "off");
-					eval("startservice", "nas");
-					start_service("guest_nas");
-#endif
+					start_service("radio_off_0");
 					break;
 				}
 				switch (radiotime1) {
@@ -207,46 +175,13 @@ int main(int argc, char **argv)
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG,
 					       "Turning radio 1 on\n");
-#ifdef HAVE_MADWIFI
-					if (!nvram_match("ath1_net_mode", "disabled")) 
-					{
-					eval("ifconfig", "ath1", "up");
-					}
-#elif HAVE_RT2880
-					if (!nvram_match("wl1_net_mode", "disabled")) 
-					{
-					eval("iwpriv", "ra1", "set",
-					     "RadioOn=1");
-					}
-#else
-					stop_service("nas");
-					if (!nvram_match("wl1_net_mode", "disabled")) 
-					{
-					eval("wl", "-i",
-					     get_wl_instance_name(1), "radio",
-					     "on");
-					}
-					eval("startservice", "nas");
-					start_service("guest_nas");
-#endif
+					start_service("radio_on_1");
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG,
 					       "Turning radio 1 off\n");
-#ifdef HAVE_MADWIFI
-					eval("ifconfig", "ath1", "down");
-#elif HAVE_RT2880
-					eval("iwpriv", "ra1", "set",
-					     "RadioOn=0");
-#else
-					stop_service("nas");
-					eval("wl", "-i",
-					     get_wl_instance_name(1), "radio",
-					     "off");
-					eval("startservice", "nas");
-					start_service("guest_nas");
-#endif
+					start_service("radio_off_1");
 					break;
 				}
 				needchange = 0;
