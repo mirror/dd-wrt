@@ -70,9 +70,9 @@ void start_freeradius(void)
 	stop_freeradius();
 	nvram_default_get("radius_country", "DE");
 	nvram_default_get("radius_state", "Saxon");
-	nvram_default_get("radius_locality", "");
+	nvram_default_get("radius_locality", "none");
 	nvram_default_get("radius_expiration", "365");
-	nvram_default_get("radius_passphrase", "whatever");
+	nvram_default_get("radius_passphrase", "changeme");
 	nvram_default_get("radius_organisation", "DD-WRT");
 	nvram_default_get("radius_email", "info@dd-wrt.com");
 	nvram_default_get("radius_common", "DD-WRT FreeRadius Certificate");
