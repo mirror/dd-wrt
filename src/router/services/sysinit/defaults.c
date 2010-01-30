@@ -1556,7 +1556,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"chilli_backup", "0.0.0.0", 0},
 	{"chilli_pass", "", 0},
 	{"chilli_dns1", "0.0.0.0", 0},
-	{"chilli_interface", "br0", 0},
+	{"chilli_interface", "", 0},
 	{"chilli_radiusnasid", "", 0},
 	{"chilli_uamsecret", "", 0},
 	{"chilli_uamanydns", "0", 0},
