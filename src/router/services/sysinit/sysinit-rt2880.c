@@ -263,33 +263,11 @@ void start_sysinit(void)
 		close(s);
 	}
 
-/*
-
-	switch reg w 14 405555
-	switch reg w 50 2001
-	switch reg w 98 7f3f
-	if [ "$CONFIG_ESW_DOUBLE_VLAN_TAG" == "y" ]; then
-		switch reg w e4 3f
-	fi
-	if [ "$1" = "LLLLW" ]; then
-		switch reg w 40 1001
-		switch reg w 44 1001
-		switch reg w 48 1002
-		switch reg w 70 ffff506f
-	elif [ "$1" = "WLLLL" ]; then
-		switch reg w 40 1002
-		switch reg w 44 1001
-		switch reg w 48 1001
-		switch reg w 70 ffff417e
-	elif [ "$1" = "GW" ]; then
-		switch reg w 40 1001
-		switch reg w 44 1001
-		switch reg w 48 2001
-		switch reg w 70 ffff605f
-	fi
-
-
-*/
+	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
 	return;
 }
 
