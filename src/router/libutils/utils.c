@@ -1769,9 +1769,9 @@ int internal_getRouterBrand()
 	if (boardnum == 1 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x35")
 	    && nvram_match("parefldovoltage", "0x28")) {
-		cprintf("router is netcore nw618\n");
-		setRouter("NetCore NW618");
-		return ROUTER_WRT54G;
+		cprintf("NetCore NW618 / Rosewill RNX-GX4\n");
+		setRouter("NetCore NW618 / Rosewill RNX-GX4");
+		return ROUTER_NETCORE_NW618;
 	}
 
 	if (boardnum == 42 && nvram_match("boardtype", "0x048E")
