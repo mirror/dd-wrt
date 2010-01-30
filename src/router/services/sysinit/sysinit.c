@@ -1298,6 +1298,8 @@ void start_restore_defaults(void)
 	
 #ifndef HAVE_MADWIFI
 	int icnt = get_wl_instances();
+#else
+	int icnt = getdevicecount();
 #endif
 	// if (!nvram_match("default_init","1"))
 	{
@@ -1313,10 +1315,8 @@ void start_restore_defaults(void)
 				if (!u || !u->name) {
 					nvcnt++;
 					nvram_set(t->name, t->value);
-#ifndef HAVE_MADWIFI
 					if (icnt == 1 && startswith(t->name, "wl1_")) //unset wl1_xx if we have single radio only
 						nvram_unset(t->name);
-#endif
 				}
 			}
 		}
