@@ -457,6 +457,7 @@ extern void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qossvcs2(webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosips2(webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosmacs2(webs_t wp, int argc, char_t ** argv);
+extern void ej_show_defwpower(webs_t wp, int argc, char_t ** argv);
 
 // extern void ej_get_services_options (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_infopage(webs_t wp, int argc, char_t ** argv);
