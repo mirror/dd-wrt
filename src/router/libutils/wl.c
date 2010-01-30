@@ -61,18 +61,12 @@ char *getRADev(char *prefix)
 
 int has_5ghz(char *prefix)
 {
-	if (strstr(nvram_nget("%s_bandlist", prefix), "a"))
-		return 1;
-
 	return 0;
 }
 
 int has_2ghz(char *prefix)
 {
-	if (strstr(nvram_nget("%s_bandlist", prefix), "b"))
-		return 1;
-
-	return 0;
+	return 1;
 }
 
 int getchannels(unsigned int *list, char *ifname)
