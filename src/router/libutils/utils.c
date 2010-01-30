@@ -2828,7 +2828,7 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_DIR600B:
 		diag_gpio = 0x10d;
 		connected_gpio = 0x108;
-		power_gpio = 0x009;
+		power_gpio = 0x109;
 		break;
 	case ROUTER_BOARD_OPENRISC:
 		diag_gpio = 0x003;
