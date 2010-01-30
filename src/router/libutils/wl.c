@@ -1802,7 +1802,7 @@ void radio_off(int idx)
 	}
 }
 
-void radio_on(void)
+void radio_on(int idx)
 {
 	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
 		eval("stopservice", "nas");
