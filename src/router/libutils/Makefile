@@ -68,6 +68,8 @@ else
 CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
 endif
 WLDFLAGS = ../wireless-tools/libiw.so.29
+else
+WLDFLAGS = -lutils
 endif
 OBJS += country.o
 
