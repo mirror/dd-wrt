@@ -841,17 +841,17 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 
 	/* setup global vlan configuration */
 	/* VLAN Control 0 Register (Page 0x34, Address 0) */
-	val8 = ((1 << 7) |		/* enable 802.1Q VLAN */
-	        (3 << 5));		/* individual VLAN learning mode */
+	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
+	val8 |= ((1 << 7) |		/* enable 802.1Q VLAN */
+	         (3 << 5));		/* individual VLAN learning mode */
+	if (robo->devid == DEVID5325)
+		val8 &= ~(1 << 1);	/* must clear reserved bit 1 */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
 
-if (iswrt610nv1)
+	/* VLAN Control 1 Register (Page 0x34, Address 1) */
+	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));
 	val8 |= ((1 << 2) |		/* enable RSV multicast V Fwdmap */
-		(1 << 3));		/* enable RSV multicast V Untagmap */		
-else
-	val8 = ((1 << 2) |		/* enable RSV multicast V Fwdmap */
-		(1 << 3));		/* enable RSV multicast V Untagmap */		
-
+		 (1 << 3));		/* enable RSV multicast V Untagmap */
 	if (robo->devid == DEVID5325)
 		val8 |= (1 << 1);	/* enable RSV multicast V Tagging */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));
