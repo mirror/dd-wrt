@@ -1787,7 +1787,7 @@ void radio_off(int idx)
 	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
 		eval("stopservice", "nas");
 	}
-	if (idx != 1) {
+	if (idx != -1) {
 		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
 
 	} else {
@@ -1807,7 +1807,7 @@ void radio_on(int idx)
 	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
 		eval("stopservice", "nas");
 	}
-	if (idx != 1) {
+	if (idx != -1) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx))
 			eval("wl", "-i",
 			     get_wl_instance_name(idx), "radio", "on");
