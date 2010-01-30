@@ -504,6 +504,7 @@ void start_sysinit(void)
 
 	case ROUTER_BELKIN_F5D7231:
 	case ROUTER_USR_5461:
+	case ROUTER_NETCORE_NW618:
 		nvram_set("lan_ifnames", "vlan0 eth1");
 		nvram_set("wan_ifname", "vlan1");
 		nvram_set("wl0_ifname", "eth1");
