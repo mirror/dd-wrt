@@ -5274,6 +5274,25 @@ void show_wep(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 }
 
+void ej_show_defwpower(webs_t wp, int argc, char_t ** argv)
+{
+	switch (getRouterBrand())
+	{
+		case ROUTER_ASUS_RTN10:
+		case ROUTER_ASUS_RTN12:
+		case ROUTER_ASUS_RTN16:
+			websWrite(wp, "17");
+			break;
+		case ROUTER_BUFFALO_WHRG54S:
+		case ROUTER_BUFFALO_WLI_TX4_G54HP:
+			websWrite(wp, "28");
+			break;
+		default:
+			websWrite(wp, "71");
+			break;
+	}
+}
+
 void ej_get_wds_mac(webs_t wp, int argc, char_t ** argv)
 {
 	int mac = -1, wds_idx = -1, mac_idx = -1;
