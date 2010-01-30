@@ -1539,7 +1539,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"telnetd_enable", "0", 0},
 #elif HAVE_WRK54G
 	{"telnetd_enable", "0", 0},
-#elif HAVE_ADM5120
+#elif defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
 	{"telnetd_enable", "0", 0},
 #else
 	{"telnetd_enable", "1", 0},
