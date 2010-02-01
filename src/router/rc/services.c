@@ -174,6 +174,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_FREERADIUS
 	handle = start_service_nofree_f("freeradius", handle);
 #endif
+#ifdef HAVE_AP_SERV
+	handle = start_service_nofree_f("ap_serv", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 
@@ -186,6 +189,9 @@ int stop_services_main(int argc, char **argv)
 	void *handle = NULL;
 
 	// stop_ses();
+#ifdef HAVE_AP_SERV
+	handle = stop_service_nofree("ap_serv", handle);
+#endif
 #ifdef HAVE_FREERADIUS
 	handle = stop_service_nofree("freeradius", handle);
 #endif
@@ -474,6 +480,9 @@ static void handle_services(void)
 {
 	void *handle = NULL;
 
+#ifdef HAVE_AP_SERV
+	handle = startstop_nofree_f("ap_serv", handle);
+#endif
 #ifdef HAVE_PPPOERELAY
 	handle = startstop_nofree_f("pppoerelay", handle);
 #endif

@@ -26,7 +26,7 @@ HCFLAGS  += -fpic -I$(TOP)/services/include
 
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
        bridgetools.o igmp.o wpa.o vlantagging.o httpd.o setuserpw.o anchorfree.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o radvd.o	\
-       pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o
+       pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o apserv.o
 
 
 ifeq ($(CONFIG_WHRAG108),y)
@@ -223,6 +223,9 @@ CFLAGS_EXTRA += -DHAVE_GW700
 endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS_EXTRA += -DHAVE_WIVIZ
+endif
+ifeq ($(CONFIG_AP_SERV),y)
+CFLAGS_EXTRA += -DHAVE_AP_SERV
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS_EXTRA += -DHAVE_REGISTER
