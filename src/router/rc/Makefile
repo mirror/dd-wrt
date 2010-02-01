@@ -151,6 +151,9 @@ endif
 ifeq ($(CONFIG_AOSS),y)
   CFLAGS += -DHAVE_AOSS
 endif
+ifeq ($(CONFIG_AP_SERV),y)
+  CFLAGS += -DHAVE_AP_SERV
+endif
 
 ifeq ($(CONFIG_BONDING),y)
 CFLAGS += -DHAVE_BONDING
