@@ -192,6 +192,8 @@ include rules/radvd.mk
 include rules/nprobe.mk
 include rules/mtr.mk
 include rules/snoop.mk
+include rules/aoss.mk
+include rules/ap-serv.mk
 # Generic rules
 #
 
