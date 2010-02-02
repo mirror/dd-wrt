@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.24.111
-# Wed Dec  2 19:33:36 2009
+# Tue Feb  2 17:46:40 2010
 #
 CONFIG_MIPS=y
 
@@ -44,7 +44,9 @@ CONFIG_MIPS=y
 # CONFIG_TOSHIBA_RBTX4938 is not set
 # CONFIG_WR_PPMC is not set
 # CONFIG_MACH_AR7100 is not set
+# CONFIG_AR7100_USB_GPIO_LED is not set
 CONFIG_MACH_AR7240=y
+# CONFIG_AR7240_DEFAULT_GPIO is not set
 # CONFIG_AR7240_EMULATION is not set
 CONFIG_RWSEM_GENERIC_SPINLOCK=y
 # CONFIG_ARCH_HAS_ILOG2_U32 is not set
@@ -94,7 +96,7 @@ CONFIG_CPU_MIPS32=y
 CONFIG_CPU_MIPSR2=y
 CONFIG_SYS_SUPPORTS_32BIT_KERNEL=y
 CONFIG_CPU_SUPPORTS_32BIT_KERNEL=y
-# CONFIG_AR7240_DEFAULT_GPIO is not set
+
 #
 # Kernel type
 #
@@ -751,6 +753,7 @@ CONFIG_AG7100_LEN_PER_TX_DS=1536
 # CONFIG_USB_CATC is not set
 # CONFIG_USB_KAWETH is not set
 # CONFIG_USB_PEGASUS is not set
+CONFIG_USB_HSO=m
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_USBNET_MII is not set
 # CONFIG_USB_USBNET is not set
@@ -1257,8 +1260,6 @@ CONFIG_MAGIC_SYSRQ=y
 # CONFIG_DEBUG_KERNEL is not set
 # CONFIG_CROSSCOMPILE is not set
 CONFIG_CMDLINE="console=ttyS0,115200 root=1f02 rootfstype=squashfs noinitrd  init=/sbin/init"
-
-CONFIG_USB_HSO=m
 
 #
 # Security options
