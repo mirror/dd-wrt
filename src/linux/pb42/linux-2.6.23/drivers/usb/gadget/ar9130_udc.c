@@ -1969,22 +1969,41 @@ static int ar9130_udc_probe(struct platform_device *pdev)
 #if 0 /*Setting to 8-bit 6th March*/
     ar9130_reg_rmw_clear(AR9130_RESET,AR9130_RESET_USB_HOST);
     ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USB_PHY);  //PHY RESET
+#endif
+
+    if (is_ar7242() || is_ar7241()) {
+        ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE);
+        mdelay(10);
+        ar9130_reg_wr(AR9130_RESET,((ar9130_reg_rd(AR9130_RESET) & ~(AR9130_RESET_USB_HOST)) |
+                                                                  AR9130_RESET_USBSUS_OVRIDE));
+        mdelay(10);
+        ar9130_reg_wr(AR9130_RESET,((ar9130_reg_rd(AR9130_RESET) & ~(AR9130_RESET_USB_PHY)) |
+                                                                   AR9130_RESET_USBSUS_OVRIDE));
+        mdelay(10);
+    }
+    else {
+
+        ar9130_reg_rmw_clear(AR9130_RESET,AR9130_RESET_USB_PHY);//PHY CLEAR RESET
+        ar9130_debug_dev("AR9130_RESET %x \n",ar9130_reg_rd(AR9130_RESET));
+        mdelay(10);
+        ar9130_reg_rmw_clear(AR9130_RESET,AR9130_RESET_USB_HOST); // 6th March 
+        mdelay(10);
+    }
 
     /* Setting 16-bit mode */
     ar9130_reg_rmw_set(&udc->op_base->portscx[0],(1 <<28)); 
     ar9130_debug_dev("PORT_STATUS[0] %x\n",readl(&udc->op_base->portscx[0]));
     mdelay(10);
-#endif
-    ar9130_reg_rmw_clear(AR9130_RESET,AR9130_RESET_USB_PHY);//PHY CLEAR RESET
-    ar9130_debug_dev("AR9130_RESET %x \n",ar9130_reg_rd(AR9130_RESET));
-    mdelay(10);
 
-    ar9130_reg_rmw_clear(AR9130_RESET,AR9130_RESET_USB_HOST); // 6th March 
-    mdelay(10);
 
 
     /* Clear Host Mode */
-    ar9130_reg_rmw_clear(AR9130_USB_CONFIG,(1 << 2));
+    if (is_ar7242() || is_ar7241()) {
+        ar9130_reg_rmw_clear(AR9130_USB_CONFIG,(1 << 8));
+    }
+    else {
+         ar9130_reg_rmw_clear(AR9130_USB_CONFIG,(1 << 2));
+    }
     ar9130_debug_dev("Usb Config Reg %x\n",ar9130_reg_rd(AR9130_USB_CONFIG));
     mdelay(10);
 
