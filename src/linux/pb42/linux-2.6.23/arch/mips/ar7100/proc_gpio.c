@@ -64,6 +64,26 @@ int ar7100_get_gpio(int gpio)
 EXPORT_SYMBOL(ar7100_set_gpio);
 EXPORT_SYMBOL(ar7100_get_gpio);
 
+#define USB_LED_OFF 1
+#define USB_LED_ON 0
+
+void ap_usb_led_on(void)
+{
+#ifdef AP_USB_LED_GPIO
+	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_ON);
+#endif
+}
+EXPORT_SYMBOL(ap_usb_led_on);
+
+void ap_usb_led_off(void)
+{
+#ifdef AP_USB_LED_GPIO
+	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_OFF);
+#endif
+}
+EXPORT_SYMBOL(ap_usb_led_off);
+
+
 #define NXP_74HC153_NUM_GPIOS	8
 #define NXP_74HC153_S0_MASK	0x1
 #define NXP_74HC153_S1_MASK	0x2
@@ -114,7 +134,7 @@ gpio_proc_read(char *buf, char **start, off_t offset,
 	unsigned int pin = (unsigned int)data & PIN_MASK;
 	if (pin >= 23 && pin <= 31) {
 		val = nxp_74hc153_get_value(pin - 23);
-		printk(KERN_EMERG "value for pin %d = %d\n", pin, val);
+	//	printk(KERN_EMERG "value for pin %d = %d\n", pin, val);
 		if (val)
 			buf[0] = '1';
 		else
