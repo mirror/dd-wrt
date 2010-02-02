@@ -1125,6 +1125,9 @@ static void autoconfig(struct uart_8250_port *up, unsigned int probeflags)
 	if (up->port.type == PORT_16550A && up->port.iotype == UPIO_AU)
 		up->bugs |= UART_BUG_NOMSR;
 #endif
+#if defined(CONFIG_AR9100) || defined(CONFIG_MACH_AR7240)
+     up->bugs |= UART_BUG_NOMSR;
+#endif
 
 	serial_outp(up, UART_LCR, save_lcr);
 
