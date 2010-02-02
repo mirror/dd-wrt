@@ -1031,6 +1031,9 @@ unsigned short __ar7100_readw(const volatile void __iomem *p);
 void enable_wmac_led(void);
 void disable_wmac_led(void);
 #endif
+void ap_usb_led_on(void);
+void ap_usb_led_off(void);
+
 #define AR9100_ETH_PLL_CONFIG           AR7100_PLL_BASE+0x4
 
 #define AR9100_ETH_INT0_CLK             AR7100_PLL_BASE+0x14
