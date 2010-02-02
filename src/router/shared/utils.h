@@ -455,7 +455,7 @@
 #define ROUTER_BOARD_WRT160NL 0x9501  // fake id, reset button is gpio 21
 
 // NetCore NW618 / Rosewill RNX-GX4 (BCM5354 cpu, 4MB serial flash / 16MB ram, fccid: Rosewill W6RRNX-GX4)
-#define ROUTER_NETCORE_NW618 0x960f
+#define ROUTER_NETCORE_NW618 0x9616
 
 
 #define NVROUTER "DD_BOARD"
