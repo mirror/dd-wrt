@@ -818,5 +818,7 @@ int ar7240_local_write_config(int where, int size, u32 value);
 int ar7240_check_error(int verbose);
 unsigned char __ar7240_readb(const volatile void __iomem *p);
 unsigned short __ar7240_readw(const volatile void __iomem *p);
+void ap_usb_led_on(void);
+void ap_usb_led_off(void);
 
 #endif
