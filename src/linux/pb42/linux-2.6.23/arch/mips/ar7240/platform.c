@@ -113,18 +113,40 @@ static struct platform_device ar7240_uart = {
 
 };
 
+static struct platform_device *ar7241_platform_devices[] __initdata = {
+#ifdef CONFIG_USB_EHCI_AR9130
+ &ar7240_usb_ehci_device
+#endif
+};
+
 static struct platform_device *ar7240_platform_devices[] __initdata = {
-	&ar7240_usb_ohci_device,
-	&ar7240_usb_ehci_device,
-    &ar7240_uart
+#ifdef CONFIG_USB_OHCI_AR7240
+	&ar7240_usb_ohci_device
+#endif
+};
+
+static struct platform_device *ar724x_platform_devices[] __initdata = {
+	&ar7240_uart
 };
 
 int __init ar7240_platform_init(void)
 {
         /* need to set clock appropriately */
         ar7240_uart_data[0].uartclk = ar7240_ahb_freq; 
-	return platform_add_devices(ar7240_platform_devices, 
-                                ARRAY_SIZE(ar7240_platform_devices));
+	ret = platform_add_devices(ar724x_platform_devices, 
+                                ARRAY_SIZE(ar724x_platform_devices));
+
+        if (ret < 0)
+		return ret; 
+
+	if (is_ar7241() || is_ar7242()) {
+	    return (platform_add_devices(ar7241_platform_devices, 
+                                ARRAY_SIZE(ar7241_platform_devices)));
+        }
+        if (is_ar7240()) {
+	    return (platform_add_devices(ar7240_platform_devices, 
+                                ARRAY_SIZE(ar7240_platform_devices)));
+        }
 }
 
 arch_initcall(ar7240_platform_init);

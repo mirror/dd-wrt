@@ -29,3 +29,6 @@ obj-y	+=	prom.o	\
 
 
 #EXTRA_CFLAGS				+=	-fno-schedule-insns -fno-schedule-insns2
+ifdef AP_USB_LED_GPIO
+CFLAGS_proc_gpio.o += -DAP_USB_LED_GPIO=$(AP_USB_LED_GPIO)
+endif

@@ -154,13 +154,32 @@ else
 EXPORT_SYMBOL(ar7100_set_gpio);
 EXPORT_SYMBOL(ar7100_get_gpio);
 
+#define USB_LED_OFF 1
+#define USB_LED_ON 0
+
+
+void ap_usb_led_on(void)
+{
+#ifdef AP_USB_LED_GPIO
+	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_ON);
+#endif
+}
+EXPORT_SYMBOL(ap_usb_led_on);
+
+void ap_usb_led_off(void)
+{
+#ifdef AP_USB_LED_GPIO
+	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_OFF);
+#endif
+}
+EXPORT_SYMBOL(ap_usb_led_off);
 
 static __init int
 register_proc (void)
 {
   unsigned char i, flag = 0;
-  char proc_name[22];
-  int gpiocount = 22;
+  char proc_name[64];
+  int gpiocount = 64;
 
   /* create directory gpio */
   gpio_dir = proc_mkdir ("gpio", NULL);
@@ -220,8 +239,8 @@ static void
 cleanup_proc (void)
 {
   unsigned char i;
-  char proc_name[22];
-  int gpiocount=22;
+  char proc_name[64];
+  int gpiocount=64;
 
   for (i = 0; i < gpiocount; i++)
     {
