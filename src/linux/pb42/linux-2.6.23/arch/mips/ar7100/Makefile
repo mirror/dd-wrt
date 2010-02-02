@@ -20,7 +20,6 @@
 
 obj-y	+=	prom.o	\
 			proc_gpio.o	\
-			gpio.o \
 			irq.o	\
 			setup.o	\
 			ar7100.o \
@@ -29,3 +28,7 @@ obj-y	+=	prom.o	\
 #obj-$(CONFIG_AR9100)	+= wdt.o
 
 #EXTRA_CFLAGS				+=	-fno-schedule-insns -fno-schedule-insns2
+
+ifdef AP_USB_LED_GPIO
+CFLAGS_proc_gpio.o += -DAP_USB_LED_GPIO=$(AP_USB_LED_GPIO)
+endif
