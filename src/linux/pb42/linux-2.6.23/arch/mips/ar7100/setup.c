@@ -164,13 +164,15 @@ enable_wmac_led()
 }
 EXPORT_SYMBOL(enable_wmac_led);
 
-void ar7100_gpio_out_val(int gpio, int val);
+
+extern void ar7100_set_gpio(int gpio, int val);
 
 void
 disable_wmac_led()
 {
     ar7100_reg_rmw_clear(AR7100_GPIO_FUNCTIONS, AR7100_GPIO_FUNCTION_WMAC_LED);
-    ar7100_gpio_out_val(6, 1);
+    
+    ar7100_set_gpio(6,1);
 }
 EXPORT_SYMBOL(disable_wmac_led);
 
@@ -400,8 +402,7 @@ void __init plat_mem_setup(void)
 #endif
 	printk(KERN_INFO "booting platform %s\n",get_system_type());
 #ifdef CONFIG_AR9100
-    ar7100_gpio_config_output(6);
-    ar7100_gpio_out_val(6, 1);
+    ar7100_set_gpio(6,1);
     ar7100_reg_wr(AR9100_OBS_GPIO_1, 0x16);
     ar7100_reg_wr(AR9100_OBS_OE, 0x40);
 #endif
