@@ -96,8 +96,10 @@ obj-$(CONFIG_OPENVPN) += openvpn
 obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_FDISK) += fdisk
 ifneq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_MADWIFI_MIMO),y)
 obj-$(CONFIG_NAS) += nas
 obj-$(CONFIG_WLCONF) += wlconf
+endif
 endif
 obj-$(CONFIG_UTILS) += utils
 obj-$(CONFIG_MTR) += mtr
@@ -178,6 +180,8 @@ obj-$(CONFIG_SWCONFIG) += swconfig
 obj-$(CONFIG_NPROBE) += nprobe
 obj-$(CONFIG_MTR) += mtr
 obj-$(CONFIG_SNOOP) += snoop
+obj-$(CONFIG_AOSS) += aoss
+obj-$(CONFIG_AP_SERV) += ap-serv
 
 obj-y+=anchorfree
 obj-y+=ttraff
