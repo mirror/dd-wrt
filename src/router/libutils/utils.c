@@ -2731,8 +2731,9 @@ int led_control(int type, int act)
 		connected_gpio = 0x106;
 #endif
 #ifdef HAVE_DIR825
-		diag_gpio = 0x104;
+		diag_gpio = 0x101;
 		connected_gpio = 0x10b;
+		ses_gpio = 0x104;
 #endif
 #ifdef HAVE_WZRG300NH
 		diag_gpio = 0x101;
