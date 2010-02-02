@@ -3136,6 +3136,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_ASUS_RTN16:
+	case ROUTER_NETCORE_NW618:
 		power_gpio = 0x101;
 		diag_gpio = 0x001;	// power blink
 		break;
