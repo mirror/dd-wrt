@@ -19,3 +19,6 @@ obj-$(CONFIG_USB)	+= usbcore.o
 ifeq ($(CONFIG_USB_DEBUG),y)
 EXTRA_CFLAGS += -DDEBUG
 endif
+ifdef AP_USB_LED_GPIO
+CFLAGS_hub.o += -DAP_USB_LED_GPIO
+endif
