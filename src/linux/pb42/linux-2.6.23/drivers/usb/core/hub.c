@@ -31,6 +31,9 @@
 #include "hcd.h"
 #include "hub.h"
 
+void ap_usb_led_on(void);
+void ap_usb_led_off(void);
+
 #ifdef	CONFIG_USB_PERSIST
 #define	USB_PERSIST	1
 #else
