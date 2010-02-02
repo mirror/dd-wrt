@@ -483,7 +483,6 @@ void period_check(int sig)
 #elif defined(HAVE_WHRHPGN)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
-#endif
 #elif defined(HAVE_DIR825)
 	sesgpio = 0x108;
 	val |= get_gpio(8) << 8;	//aoss pushbutton
