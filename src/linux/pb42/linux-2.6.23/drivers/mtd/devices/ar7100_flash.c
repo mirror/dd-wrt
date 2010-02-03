@@ -169,7 +169,27 @@ ar7100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	*retlen = len;
 	return 0;
 }
-
+int guessbootsize(void *offset,unsigned int maxscan)
+{
+unsigned int i;
+unsigned int *ofs = (unsigned int *)offset;
+maxscan-=65536;
+maxscan/=4;
+for (i=0;i<maxscan;i+=16384)
+    {
+    if (ofs[i] == 0x6d000080)
+	{
+	printk(KERN_EMERG "redboot or compatible detected\n");
+	return i; // redboot, lzma image
+	}
+    if (ofs[i] == 0x27051956)
+	{
+	printk(KERN_EMERG "uboot detected\n");
+	return i; // uboot, lzma image
+	}
+    }
+return -1;
+}
 static struct mtd_partition dir_parts[] = {
 #ifdef CONFIG_MTD_FLASH_16MB
       {name: "RedBoot", offset: 0, size:0x40000,},
@@ -273,16 +293,6 @@ static int __init ar7100_flash_init(void)
 
 		int compex = 0;
 		if (!strncmp((char *)(buf + 0x295a), "myloram.bin", 11)) {
-/*        { name: "RedBoot", offset: 0, size: 0x40000, },//, mask_flags: MTD_WRITEABLE, },
-        { name: "linux", offset: 0x40000, size: 0x390000, },
-#endif
-        { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
-        { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
-        { name: "nvram", offset: 0x3d0000, size: 0x10000, },
-        { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
-        { name: "board_config", offset: 0x3f0000, size: 0x10000, },
-        { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
-        { name: NULL, },*/
 			printk(KERN_EMERG "Compex WP543 device detected\n");
 			dir_parts[0].size = 0x30000;
 			dir_parts[0].offset = 0;
@@ -292,6 +302,17 @@ static int __init ar7100_flash_init(void)
 			dir_parts[6].size = mtd->erasesize;
 			dir_parts[6].offset = mtd->size - mtd->erasesize;
 			compex = 1;
+		}else{
+		int guess = guessbootsize(buf,mtd->size);
+		if (guess>0)
+		    {
+		    printk(KERN_EMERG "bootloader size = %X\n",guess);
+		    dir_parts[0].size = guess;
+		    dir_parts[0].offset = 0;
+		    dir_parts[1].offset = guess;
+		    dir_parts[1].size = 0;
+		    }
+		
 		}
 
 		while ((offset + mtd->erasesize) < mtd->size) {
@@ -338,7 +359,7 @@ else
 				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
 #ifdef CONFIG_AR9100
-					dir_parts[1].offset = 0x40000;
+//					dir_parts[1].offset = 0x40000;
 					dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
 					break;
 #else
