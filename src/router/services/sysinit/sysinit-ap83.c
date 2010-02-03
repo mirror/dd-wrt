@@ -158,6 +158,7 @@ void start_sysinit(void)
 		memset(config, 0, 65536);
 		fread(config, 65536, 1, in);
 		int len = sizeof("lan_mac=");
+		int i;
 		for (i = 0; i < 65535 - 18; i++) {
 			if (!strncmp(&config[i], "lan_mac=", 8))
 			{
