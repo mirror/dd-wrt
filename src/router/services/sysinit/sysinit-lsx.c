@@ -116,7 +116,7 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	unsigned char buf2[256];
 	fseek(fp,0,SEEK_END);
-	int totalsize = =ftell(fp);
+	int totalsize = ftell(fp);
 	rewind(fp);
 	fseek(fp, totalsize-0x1000, SEEK_SET);
 	fread(buf2, 256, 1, fp);
