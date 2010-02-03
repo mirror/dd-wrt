@@ -170,6 +170,16 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_TEW632BRP)
+int getbuttonstate()
+{
+	FILE *in;
+	int ret = get_gpio(21);	// nxp multiplexer connected
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
@@ -490,6 +500,10 @@ void period_check(int sig)
 #ifdef HAVE_WRT160NL
 	sesgpio = 0x107;
 	val |= get_gpio(7) << 7;	//wps/ses pushbutton
+#endif
+#ifdef HAVE_TEW632BRP
+	sesgpio = 0x10c;
+	val |= get_gpio(12) << 12;	//wps/ses pushbutton
 #endif
 #else
 	if ((brand & 0x000f) != 0x000f)
