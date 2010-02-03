@@ -154,6 +154,7 @@ void start_sysinit(void)
 	FILE *in = fopen("/dev/mtdblock/0", "rb");
 	char *lanmac=NULL;
 	if (in != NULL) {
+		fseek(in,0x20000,SEEK_SET);
 		unsigned char *config = malloc(65536);
 		memset(config, 0, 65536);
 		fread(config, 65536, 1, in);
