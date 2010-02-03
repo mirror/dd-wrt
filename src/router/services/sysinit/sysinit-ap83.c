@@ -148,6 +148,61 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "hw", "ether", buf2);
 	}
 #endif
+#ifdef HAVE_TEW632BRP
+	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
+	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
+	FILE *in = fopen("/dev/mtdblock/0", "rb");
+	char *lanmac=NULL;
+	if (in != NULL) {
+		unsigned char *config = malloc(65536);
+		memset(config, 0, 65536);
+		fread(config, 65536, 1, in);
+		int len = sizeof("lan_mac=");
+		for (i = 0; i < 65535 - 18; i++) {
+			if (!strncmp(&config[i], "lan_mac=", 8))
+			{
+				char *mac = &config[i + 8];
+				if (mac[0] == '"')
+					mac++;
+				mac[17] = 0;
+				lanmac = malloc(32);
+				strcpy(lanmac,mac);
+				eval("ifconfig", "eth0", "hw", "ether", mac);
+				nvram_set("et0macaddr_safe", mac);
+				break;
+			}
+			if (!strncmp(&config[i], "wan_mac=", 8))
+			{
+				char *mac = &config[i + 8];
+				if (mac[0] == '"')
+					mac++;
+				mac[17] = 0;
+				eval("ifconfig", "eth1", "hw", "ether", mac);
+				nvram_set("et0macaddr_safe", mac);
+				break;
+			}
+		}
+		free(config);
+		fclose(in);
+	}
+
+
+
+//fake it. testing only
+/*	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	unsigned char buf2[256];
+	if (fp)
+	{
+	fseek(fp, 0x3f288, SEEK_SET);
+	fread(buf2, 19, 1, fp);
+	fclose(fp);
+		fprintf(stderr, "configure eth0 to %s\n",buf2);
+		eval("ifconfig", "eth0", "hw", "ether", buf2);
+		MAC_ADD(buf2);
+		fprintf(stderr, "configure eth1 to %s\n", buf2);
+		eval("ifconfig", "eth1", "hw", "ether", buf2);
+	}*/
+#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;
@@ -173,6 +228,15 @@ void start_sysinit(void)
 	eval("ifconfig", "wifi0", "hw", "ether", buf2);
 	led_control(LED_POWER, LED_ON);
 #endif
+#ifdef HAVE_TEW632BRP
+	if (lanmac!=NULL)
+	{
+	    fprintf(stderr, "configure wifi0 to %s\n",lanmac);
+	    eval("ifconfig", "wifi0", "hw", "ether", lanmac);
+	    free(lanmac);
+	}
+	led_control(LED_POWER, LED_ON);
+#endif
 
 #ifdef HAVE_RS
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
@@ -181,7 +245,6 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 	system2("echo 2 >/proc/sys/dev/wifi2/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi2/softled");
-
 #elif HAVE_WRT160NL
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
@@ -189,6 +252,9 @@ void start_sysinit(void)
 	system("swconfig dev eth0 set vlan 1");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4 5\"");
 #elif HAVE_WZRG300NH
+	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#elif HAVE_TEW632BRP
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #else
