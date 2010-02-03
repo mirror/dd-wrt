@@ -160,9 +160,12 @@ void start_sysinit(void)
 		fread(config, 65536, 1, in);
 		int len = sizeof("lan_mac=");
 		int i;
+		int haslan=0;
+		int haswan=0;
 		for (i = 0; i < 65535 - 18; i++) {
-			if (!strncmp(&config[i], "lan_mac=", 8))
+			if (!haslan && !strncmp(&config[i], "lan_mac=", 8))
 			{
+				haslan=1;
 				char *mac = &config[i + 8];
 				if (mac[0] == '"')
 					mac++;
@@ -171,17 +174,20 @@ void start_sysinit(void)
 				strcpy(lanmac,mac);
 				eval("ifconfig", "eth0", "hw", "ether", mac);
 				nvram_set("et0macaddr_safe", mac);
-				break;
+				if (haswan)
+				    break;
 			}
-			if (!strncmp(&config[i], "wan_mac=", 8))
+			if (!haswan && !strncmp(&config[i], "wan_mac=", 8))
 			{
+				haswan=1;
 				char *mac = &config[i + 8];
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
 				eval("ifconfig", "eth1", "hw", "ether", mac);
 				nvram_set("et0macaddr_safe", mac);
-				break;
+				if (haslan)
+				    break;
 			}
 		}
 		free(config);
