@@ -540,6 +540,9 @@ endif
 ifeq ($(CONFIG_TEW632BRP),y)
 CFLAGS += -DHAVE_TEW632BRP
 endif
+ifeq ($(CONFIG_TEW652BRP),y)
+CFLAGS += -DHAVE_TEW652BRP
+endif
 
 
 ifeq ($(CONFIG_MACBIND),y)
