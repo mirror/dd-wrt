@@ -57,6 +57,7 @@ EXPORT_SYMBOL(ar7100_flash_spi_up);
 #define AR7100_FLASH_SECTOR_SIZE_64KB  (64*1024)
 #define AR7100_FLASH_PG_SIZE_256B       256
 #define AR7100_FLASH_NAME               "ar7100-nor0"
+
 /*
  * bank geometry
  */
@@ -123,19 +124,19 @@ ar7100_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	uint32_t addr = from | 0xbf000000;
 
-//	printk(KERN_EMERG "read block %X:%X\n",from,len);
+//      printk(KERN_EMERG "read block %X:%X\n",from,len);
 	if (!len)
 		return (0);
 	if (from + len > mtd->size)
 		return (-EINVAL);
 
-//	ar7100_flash_spi_down();
+//      ar7100_flash_spi_down();
 
 	memcpy(buf, (uint8_t *) (addr), len);
 	*retlen = len;
 
-//	ar7100_flash_spi_up();
-//	printk(KERN_EMERG "read block %X:%X done\n",from,len);
+//      ar7100_flash_spi_up();
+//      printk(KERN_EMERG "read block %X:%X done\n",from,len);
 
 	return 0;
 }
@@ -147,7 +148,7 @@ ar7100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	int total = 0, len_this_lp, bytes_this_page;
 	uint32_t addr = 0;
 	u_char *mem;
-//	printk(KERN_EMERG "write block %X:%X\n",to,len);
+//      printk(KERN_EMERG "write block %X:%X\n",to,len);
 
 	ar7100_flash_spi_down();
 
@@ -169,42 +170,67 @@ ar7100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	*retlen = len;
 	return 0;
 }
-int guessbootsize(void *offset,unsigned int maxscan)
+
+int guessbootsize(void *offset, unsigned int maxscan)
 {
-unsigned int i;
-unsigned int *ofs = (unsigned int *)offset;
-maxscan-=65536;
-maxscan/=4;
-for (i=0;i<maxscan;i+=16384)
-    {
-    if (ofs[i] == 0x6d000080)
-	{
-	printk(KERN_EMERG "redboot or compatible detected\n");
-	return i; // redboot, lzma image
+	unsigned int i;
+	unsigned int *ofs = (unsigned int *)offset;
+	maxscan -= 65536;
+	maxscan /= 4;
+	for (i = 0; i < maxscan; i += 16384) {
+		if (ofs[i] == 0x6d000080) {
+			printk(KERN_EMERG "redboot or compatible detected\n");
+			return i * 4;	// redboot, lzma image
+		}
+		if (ofs[i] == 0x27051956) {
+			printk(KERN_EMERG "uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
+		if (ofs[i + 7] == 0x27051956) {
+			printk(KERN_EMERG "WRT160NL uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
 	}
-    if (ofs[i] == 0x27051956)
-	{
-	printk(KERN_EMERG "uboot detected\n");
-	return i; // uboot, lzma image
-	}
-    if (ofs[i+7] == 0x27051956)
-	{
-	printk(KERN_EMERG "WRT160NL uboot detected\n");
-	return i; // uboot, lzma image
-	}
-    }
-return -1;
+	return -1;
 }
+
+static unsigned int guessflashsize(void *base)
+{
+	unsigned int size;
+	unsigned int *guess = (unsigned int *)base;
+	unsigned int max = 16 << 20;
+//check 3 patterns since we can't write. 
+	unsigned int p1 = guess[0];
+	unsigned int p2 = guess[4096];
+	unsigned int p3 = guess[8192];
+	unsigned int c1;
+	unsigned int c2;
+	unsigned int c3;
+	for (size = 2 << 20; size <= (max >> 1); size <<= 1) {
+		unsigned int ofs = size / 4;
+		c1 = guess[ofs];
+		c2 = guess[ofs + 4096];
+		c3 = guess[ofs + 8192];
+		if (p1 == c1 && p2 == c2 && p3 == c3)	// mirror found
+		{
+			break;
+		}
+	}
+	printk(KERN_EMERG "guessed flashsize = %dM\n", size >> 20);
+	return size;
+
+}
+
 static struct mtd_partition dir_parts[] = {
 #ifdef CONFIG_MTD_FLASH_16MB
       {name: "RedBoot", offset: 0, size:0x40000,},
-				//, mask_flags: MTD_WRITEABLE, },
+	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x30000, size:0xf90000,},
 #elif CONFIG_MTD_FLASH_8MB
 #ifdef CONFIG_AR7100_LOW
       {name: "RedBoot", offset: 0, size:0x50000,},
       {name: "linux", offset: 0x50000, size:0x770000,},
-#elif CONFIG_AR9100				//, mask_flags: MTD_WRITEABLE, }
+#elif CONFIG_AR9100		//, mask_flags: MTD_WRITEABLE, }
       {name: "RedBoot", offset: 0, size:0x40000,},
       {name: "linux", offset: 0x40000, size:0x7a0000,},
 #else				//, mask_flags: MTD_WRITEABLE, },
@@ -214,13 +240,13 @@ static struct mtd_partition dir_parts[] = {
 
 #else
       {name: "RedBoot", offset: 0, size:0x40000,},
-				//, mask_flags: MTD_WRITEABLE, },
+	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x40000, size:0x390000,},
 #endif
       {name: "rootfs", offset: 0x0, size:0x2b0000,},
-				//must be detected
+	//must be detected
       {name: "ddwrt", offset: 0x0, size:0x2b0000,},
-				//must be detected
+	//must be detected
       {name: "nvram", offset: 0x3d0000, size:0x10000,},
       {name: "FIS directory", offset: 0x3e0000, size:0x10000,},
       {name: "board_config", offset: 0x3f0000, size:0x10000,},
@@ -262,6 +288,10 @@ static int __init ar7100_flash_init(void)
 	init_MUTEX(&ar7100_flash_sem);
 
 	ar7100_reg_wr_nf(AR7100_SPI_CLOCK, 0x43);
+
+	buf = 0xbf000000;
+	int fsize = guessflashsize(buf);
+
 	for (i = 0; i < AR7100_FLASH_MAX_BANKS; i++) {
 
 		index = ar7100_flash_probe();
@@ -282,7 +312,7 @@ static int __init ar7100_flash_init(void)
 		mtd->name = AR7100_FLASH_NAME;
 		mtd->type = MTD_NORFLASH;
 		mtd->flags = (MTD_CAP_NORFLASH | MTD_WRITEABLE);
-		mtd->size = geom->size;
+		mtd->size = fsize;;
 		mtd->erasesize = geom->sector_size;
 		mtd->numeraseregions = 0;
 		mtd->eraseregions = NULL;
@@ -294,7 +324,6 @@ static int __init ar7100_flash_init(void)
 		printk(KERN_EMERG "scanning for root partition\n");
 
 		offset = 0;
-		buf = 0xbf000000;
 
 		int compex = 0;
 		if (!strncmp((char *)(buf + 0x295a), "myloram.bin", 11)) {
@@ -307,17 +336,17 @@ static int __init ar7100_flash_init(void)
 			dir_parts[6].size = mtd->erasesize;
 			dir_parts[6].offset = mtd->size - mtd->erasesize;
 			compex = 1;
-		}else{
-		int guess = guessbootsize(buf,mtd->size);
-		if (guess>0)
-		    {
-		    printk(KERN_EMERG "bootloader size = %X\n",guess);
-		    dir_parts[0].size = guess;
-		    dir_parts[0].offset = 0;
-		    dir_parts[1].offset = guess;
-		    dir_parts[1].size = 0;
-		    }
-		
+		} else {
+			int guess = guessbootsize(buf, mtd->size);
+			if (guess > 0) {
+				printk(KERN_EMERG "bootloader size = %X\n",
+				       guess);
+				dir_parts[0].size = guess;
+				dir_parts[0].offset = 0;
+				dir_parts[1].offset = guess;
+				dir_parts[1].size = 0;
+			}
+
 		}
 
 		while ((offset + mtd->erasesize) < mtd->size) {
@@ -356,27 +385,32 @@ static int __init ar7100_flash_init(void)
 				dir_parts[5].offset = dir_parts[6].offset - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
 #endif
-if (compex)
-				dir_parts[4].offset = mtd->size - mtd->erasesize;	//nvram
-else
-				dir_parts[4].offset = dir_parts[5].offset - mtd->erasesize;	//nvram
+				if (compex)
+					dir_parts[4].offset = mtd->size - mtd->erasesize;	//nvram
+				else
+					dir_parts[4].offset = dir_parts[5].offset - mtd->erasesize;	//nvram
 				dir_parts[4].size = mtd->erasesize;
-				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
+				dir_parts[3].size =
+				    dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
 #ifdef CONFIG_AR9100
-//					dir_parts[1].offset = 0x40000;
-					dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
-					break;
+//                                      dir_parts[1].offset = 0x40000;
+				dir_parts[1].size =
+				    (dir_parts[2].offset -
+				     dir_parts[1].offset) + rootsize;
+				break;
 #else
 				//now scan for linux offset
 				if (compex) {
 					dir_parts[1].offset = 0x30000;
-					dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
+					dir_parts[1].size =
+					    (dir_parts[2].offset -
+					     dir_parts[1].offset) + rootsize;
 					break;
 				} else {
 					p = (unsigned char *)(0xbf000000 +
-							      dir_parts[5].
-							      offset);
+							      dir_parts
+							      [5].offset);
 					fis = (struct fis_image_desc *)p;
 					while (1) {
 						if (fis->name[0] == 0xff) {
@@ -392,24 +426,24 @@ else
 							dir_parts[7].offset =
 							    dir_parts[0].size;
 						}
-						if (!strncmp(fis->name, "linux",5)
+						if (!strncmp
+						    (fis->name, "linux", 5)
 						    || !strncmp(fis->name,
 								"vmlinux", 7)
 						    || !strncmp(fis->name,
-							       "kernel",6)) {
+								"kernel", 6)) {
 							printk(KERN_EMERG
 							       "found linux partition at [0x%08lX]\n",
 							       fis->flash_base);
 							dir_parts[1].offset =
-							    fis->
-							    flash_base & (mtd->
-									  size -
-									  1);
+							    fis->flash_base &
+							    (mtd->size - 1);
 							dir_parts[1].size =
-							    (dir_parts[2].
-							     offset -
-							     dir_parts[1].
-							     offset) + rootsize;
+							    (dir_parts[2].offset
+							     -
+							     dir_parts
+							     [1].offset) +
+							    rootsize;
 						}
 						p += sizeof(struct
 							    fis_image_desc);
@@ -418,7 +452,7 @@ else
 					}
 					break;
 				}
-			    #endif
+#endif
 			}
 			offset += 4096;
 			buf += 4096;
