@@ -187,6 +187,11 @@ for (i=0;i<maxscan;i+=16384)
 	printk(KERN_EMERG "uboot detected\n");
 	return i; // uboot, lzma image
 	}
+    if (ofs[i+7] == 0x27051956)
+	{
+	printk(KERN_EMERG "WRT160NL uboot detected\n");
+	return i; // uboot, lzma image
+	}
     }
 return -1;
 }
