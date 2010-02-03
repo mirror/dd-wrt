@@ -999,6 +999,9 @@ int internal_getRouterBrand()
 #elif HAVE_DIR825
 	setRouter("Dlink DIR-825");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_TEW632BRP
+	setRouter("Trendnet TEW-632BRP");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_AP83
 	setRouter("Atheros AP83");
 	return ROUTER_BOARD_PB42;
@@ -2725,6 +2728,10 @@ int led_control(int type, int act)
 		power_gpio = 0x10e;
 		connected_gpio = 0x109;
 		ses_gpio = 0x108;
+#endif
+#ifdef HAVE_TEW632BRP
+		diag_gpio = 0x101;
+		ses_gpio = 0x103;
 #endif
 #ifdef HAVE_WP543
 		diag_gpio = 0x107;

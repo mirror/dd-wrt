@@ -537,6 +537,9 @@ endif
 ifeq ($(CONFIG_WHRHPG300N),y)
 CFLAGS += -DHAVE_WHRHPG300N
 endif
+ifeq ($(CONFIG_TEW632BRP),y)
+CFLAGS += -DHAVE_TEW632BRP
+endif
 
 
 ifeq ($(CONFIG_MACBIND),y)
