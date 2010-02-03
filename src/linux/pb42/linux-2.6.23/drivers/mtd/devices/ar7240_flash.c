@@ -90,6 +90,56 @@ static int ar7240_flash_probe()
 	return 0;
 }
 
+int guessbootsize(void *offset, unsigned int maxscan)
+{
+	unsigned int i;
+	unsigned int *ofs = (unsigned int *)offset;
+	maxscan -= 65536;
+	maxscan /= 4;
+	for (i = 0; i < maxscan; i += 16384) {
+		if (ofs[i] == 0x6d000080) {
+			printk(KERN_EMERG "redboot or compatible detected\n");
+			return i * 4;	// redboot, lzma image
+		}
+		if (ofs[i] == 0x27051956) {
+			printk(KERN_EMERG "uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
+		if (ofs[i + 7] == 0x27051956) {
+			printk(KERN_EMERG "WRT160NL uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
+	}
+	return -1;
+}
+
+static unsigned int guessflashsize(void *base)
+{
+	unsigned int size;
+	unsigned int *guess = (unsigned int *)base;
+	unsigned int max = 16 << 20;
+//check 3 patterns since we can't write. 
+	unsigned int p1 = guess[0];
+	unsigned int p2 = guess[4096];
+	unsigned int p3 = guess[8192];
+	unsigned int c1;
+	unsigned int c2;
+	unsigned int c3;
+	for (size = 2 << 20; size <= (max >> 1); size <<= 1) {
+		unsigned int ofs = size / 4;
+		c1 = guess[ofs];
+		c2 = guess[ofs + 4096];
+		c3 = guess[ofs + 8192];
+		if (p1 == c1 && p2 == c2 && p3 == c3)	// mirror found
+		{
+			break;
+		}
+	}
+	printk(KERN_EMERG "guessed flashsize = %dM\n", size >> 20);
+	return size;
+
+}
+
 static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int nsect, s_curr, s_last;
@@ -128,19 +178,19 @@ ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	uint32_t addr = from | 0xbf000000;
 
-//	printk(KERN_EMERG "read block %X:%X\n",from,len);
+//      printk(KERN_EMERG "read block %X:%X\n",from,len);
 	if (!len)
 		return (0);
 	if (from + len > mtd->size)
 		return (-EINVAL);
 
-//	ar7240_flash_spi_down();
+//      ar7240_flash_spi_down();
 
 	memcpy(buf, (uint8_t *) (addr), len);
 	*retlen = len;
 
-//	ar7240_flash_spi_up();
-//	printk(KERN_EMERG "read block %X:%X done\n",from,len);
+//      ar7240_flash_spi_up();
+//      printk(KERN_EMERG "read block %X:%X done\n",from,len);
 
 	return 0;
 }
@@ -152,7 +202,7 @@ ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	int total = 0, len_this_lp, bytes_this_page;
 	uint32_t addr = 0;
 	u_char *mem;
-//	printk(KERN_EMERG "write block %X:%X\n",to,len);
+//      printk(KERN_EMERG "write block %X:%X\n",to,len);
 
 	ar7240_flash_spi_down();
 
@@ -178,21 +228,21 @@ ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 static struct mtd_partition dir_parts[] = {
 #ifdef CONFIG_MTD_FLASH_16MB
       {name: "uboot", offset: 0x30000, size:0x10000,},
-				//, mask_flags: MTD_WRITEABLE, },
+	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x50000, size:0xf90000,},
 #elif CONFIG_MTD_FLASH_8MB
       {name: "uboot", offset: 0x30000, size:0x10000,},
-				//, mask_flags: MTD_WRITEABLE, },
+	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x50000, size:0x790000,},
 #else
       {name: "uboot", offset: 0, size:0x40000,},
-				//, mask_flags: MTD_WRITEABLE, },
+	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x40000, size:0x3a0000,},
 #endif
       {name: "rootfs", offset: 0x0, size:0x2b0000,},
-				//must be detected
+	//must be detected
       {name: "ddwrt", offset: 0x0, size:0x2b0000,},
-				//must be detected
+	//must be detected
       {name: "nvram", offset: 0x3d0000, size:0x10000,},
       {name: "board_config", offset: 0x3f0000, size:0x10000,},
       {name: "fullflash", offset: 0x3f0000, size:0x10000,},
@@ -234,6 +284,8 @@ static int __init ar7240_flash_init(void)
 	init_MUTEX(&ar7240_flash_sem);
 
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
+	buf = 0xbf000000;
+	int fsize = guessflashsize(buf);
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
 
 		index = ar7240_flash_probe();
@@ -254,7 +306,7 @@ static int __init ar7240_flash_init(void)
 		mtd->name = AR7240_FLASH_NAME;
 		mtd->type = MTD_NORFLASH;
 		mtd->flags = (MTD_CAP_NORFLASH | MTD_WRITEABLE);
-		mtd->size = geom->size;
+		mtd->size = fsize;
 		mtd->erasesize = geom->sector_size;
 		mtd->numeraseregions = 0;
 		mtd->eraseregions = NULL;
@@ -266,11 +318,19 @@ static int __init ar7240_flash_init(void)
 		printk(KERN_EMERG "scanning for root partition\n");
 
 		offset = 0;
-		buf = 0xbf000000;
 
 		int compex = 0;
+		int guess = guessbootsize(buf, mtd->size);
+		if (guess > 0) {
+			printk(KERN_EMERG "guessed bootloader size = %X\n",
+			       guess);
+			dir_parts[0].size = guess;
+			dir_parts[0].offset = 0;
+			dir_parts[1].offset = guess;
+			dir_parts[1].size = 0;
+		}
 		while ((offset + mtd->erasesize) < mtd->size) {
-//			printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
+//                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",
 				       offset);
@@ -281,21 +341,21 @@ static int __init ar7240_flash_init(void)
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
-				dir_parts[2].size = (len & 0xffffff) - dir_parts[2].offset;
-				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
+				dir_parts[2].size =
+				    (len & 0xffffff) - dir_parts[2].offset;
+				dir_parts[3].offset =
+				    dir_parts[2].offset + dir_parts[2].size;
 
-				dir_parts[5].offset =mtd->size - mtd->erasesize;	//fis config
+				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
 				dir_parts[4].offset = dir_parts[5].offset - mtd->erasesize;	//nvram
 				dir_parts[4].size = mtd->erasesize;
-				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
+				dir_parts[3].size =
+				    dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
-#ifdef CONFIG_MTD_FLASH_8MB
-				dir_parts[1].offset = 0x50000;
-#else
-				dir_parts[1].offset = 0x40000;
-#endif
-				dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
+				dir_parts[1].size =
+				    (dir_parts[2].offset -
+				     dir_parts[1].offset) + rootsize;
 				//now scan for linux offset
 				break;
 			}
