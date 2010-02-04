@@ -151,6 +151,27 @@ void start_sysinit(void)
 #ifdef HAVE_TG2521
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
+	FILE *fp = fopen("/dev/mtdblock/7", "rb");
+	char mac[32];
+	if (fp)
+	{
+	unsigned char buf2[256];
+	fseek(fp, 0x7f1000, SEEK_SET);
+	fread(buf2, 6, 1, fp);
+	fclose(fp);
+	unsigned int copy[256];
+	int i;
+	for (i = 0; i < 6; i++)
+		copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1],
+			copy[2], copy[3],
+			copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
+		eval("ifconfig", "eth1", "hw", "ether", mac);
+	}
 #endif
 #ifdef HAVE_TEW632BRP
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
@@ -246,6 +267,13 @@ void start_sysinit(void)
 	    fprintf(stderr, "configure wifi0 to %s\n",lanmac);
 	    eval("ifconfig", "wifi0", "hw", "ether", lanmac);
 	    free(lanmac);
+	}
+	led_control(LED_POWER, LED_ON);
+#endif
+#ifdef HAVE_TG2521
+	{
+	    fprintf(stderr, "configure wifi0 to %s\n",mac);
+	    eval("ifconfig", "wifi0", "hw", "ether", mac);
 	}
 	led_control(LED_POWER, LED_ON);
 #endif
