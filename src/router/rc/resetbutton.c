@@ -123,7 +123,6 @@ int getbuttonstate()
 #elif defined(HAVE_UBNTM)
 int getbuttonstate()
 {
-	FILE *in;
 	int ret = get_gpio(12);
 
 	if (ret == 0)
@@ -133,7 +132,6 @@ int getbuttonstate()
 #elif defined(HAVE_WHRHPGN)
 int getbuttonstate()
 {
-	FILE *in;
 	int ret = get_gpio(11);
 
 	if (ret == 0)
@@ -143,7 +141,6 @@ int getbuttonstate()
 #elif defined(HAVE_DIR825)
 int getbuttonstate()
 {
-	FILE *in;
 	int ret = get_gpio(3);
 
 	if (ret == 0)
@@ -153,7 +150,6 @@ int getbuttonstate()
 #elif defined(HAVE_WRT160NL)
 int getbuttonstate()
 {
-	FILE *in;
 	int ret = get_gpio(21);
 
 	if (ret == 0)
@@ -163,12 +159,15 @@ int getbuttonstate()
 #elif defined(HAVE_TG2521)
 int getbuttonstate()
 {
+	int ret = get_gpio(21);
+
+	if (ret == 0)
+		return 1;
 	return 0;
 }
 #elif defined(HAVE_WZRG300NH)
 int getbuttonstate()
 {
-	FILE *in;
 	int ret = get_gpio(24);	// nxp multiplexer connected
 
 	if (ret == 0)
@@ -178,7 +177,6 @@ int getbuttonstate()
 #elif defined(HAVE_TEW632BRP)
 int getbuttonstate()
 {
-	FILE *in;
 	int ret = get_gpio(21);	// nxp multiplexer connected
 
 	if (ret == 0)
@@ -188,7 +186,6 @@ int getbuttonstate()
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
-	FILE *in;
 	int ret = get_gpio(8);
 
 	if (ret == 0)
@@ -501,6 +498,9 @@ void period_check(int sig)
 #elif defined(HAVE_DIR825)
 	sesgpio = 0x108;
 	val |= get_gpio(8) << 8;	//aoss pushbutton
+#elif defined(HAVE_TG2521)
+	sesgpio = 0x10c;
+	val |= get_gpio(12) << 12;	//aoss pushbutton
 #endif
 #ifdef HAVE_WRT160NL
 	sesgpio = 0x107;
