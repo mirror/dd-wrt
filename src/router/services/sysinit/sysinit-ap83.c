@@ -169,8 +169,10 @@ void start_sysinit(void)
 			copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
+		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
+		MAC_SUB(mac);
 	}
 #endif
 #ifdef HAVE_TEW632BRP
