@@ -894,8 +894,8 @@ int internal_getRouterBrand()
 		{"Ubiquiti AP 1000N", 0xe402, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M},	//
-		{"Ubiquiti NanoBridge M5", 0xe235, "1", "1", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti NanoBridge M2", 0xe232, "1", "1", ROUTER_BOARD_BS2M},	//
+		{"Ubiquiti NanoBridge M5", 0xe235, "3", "3", ROUTER_BOARD_BS5M},	//
+		{"Ubiquiti NanoBridge M2", 0xe232, "3", "3", ROUTER_BOARD_BS2M},	//
 		{"Ubiquiti Rocket M3", 0xe1b3, "3", "3", ROUTER_BOARD_R5M},	//
 		{"Ubiquiti Rocket M900", 0xe1b9, "3", "3", ROUTER_BOARD_R2M},	//
 		{NULL, 0, NULL, NULL, 0},	//
