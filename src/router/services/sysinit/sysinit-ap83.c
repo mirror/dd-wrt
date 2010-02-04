@@ -276,6 +276,7 @@ void start_sysinit(void)
 	    eval("ifconfig", "wifi0", "hw", "ether", mac);
 	}
 	led_control(LED_POWER, LED_ON);
+	eval("gpio","disable","5"); // enable usb port
 #endif
 
 #ifdef HAVE_RS
