@@ -160,6 +160,11 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_TG2521)
+int getbuttonstate()
+{
+	return 0;
+}
 #elif defined(HAVE_WZRG300NH)
 int getbuttonstate()
 {
