@@ -156,7 +156,7 @@ void start_sysinit(void)
 	if (fp)
 	{
 	unsigned char buf2[256];
-	fseek(fp, 0x7f1000, SEEK_SET);
+	fseek(fp, 0x7d08c3, SEEK_SET); // mac location
 	fread(buf2, 6, 1, fp);
 	fclose(fp);
 	unsigned int copy[256];
@@ -218,23 +218,6 @@ void start_sysinit(void)
 		free(config);
 		fclose(in);
 	}
-
-
-
-//fake it. testing only
-/*	FILE *fp = fopen("/dev/mtdblock/0", "rb");
-	unsigned char buf2[256];
-	if (fp)
-	{
-	fseek(fp, 0x3f288, SEEK_SET);
-	fread(buf2, 19, 1, fp);
-	fclose(fp);
-		fprintf(stderr, "configure eth0 to %s\n",buf2);
-		eval("ifconfig", "eth0", "hw", "ether", buf2);
-		MAC_ADD(buf2);
-		fprintf(stderr, "configure eth1 to %s\n", buf2);
-		eval("ifconfig", "eth1", "hw", "ether", buf2);
-	}*/
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
