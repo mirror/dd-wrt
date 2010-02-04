@@ -148,6 +148,10 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "hw", "ether", buf2);
 	}
 #endif
+#ifdef HAVE_TG2521
+	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
+	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
+#endif
 #ifdef HAVE_TEW632BRP
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
