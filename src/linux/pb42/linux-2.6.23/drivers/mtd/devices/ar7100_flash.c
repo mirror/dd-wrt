@@ -170,13 +170,15 @@ ar7100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	*retlen = len;
 	return 0;
 }
-
+static int zcom=0;
+static unsigned int zcomoffset = 0;
 int guessbootsize(void *offset, unsigned int maxscan)
 {
-	unsigned int i;
+	unsigned int i,a;
 	unsigned int *ofs = (unsigned int *)offset;
 	maxscan -= 65536;
 	maxscan /= 4;
+	zcom=0;
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
 			printk(KERN_EMERG "redboot or compatible detected\n");
@@ -190,6 +192,19 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "WRT160NL uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
+		if (ofs[i] == SQUASHFS_MAGIC) {
+			printk(KERN_EMERG "ZCom quirk found\n");
+			zcom=1;
+			for (a = i; a < maxscan; a += 16384) {
+					if (ofs[a] == 0x27051956) {
+					    printk(KERN_EMERG "ZCom quirk kernel offset %d\n",a*4);
+					    zcomoffset = a * 4;
+					}
+    	
+			}
+			return i * 4;	// filesys starts earlier
+		}
+		
 	}
 	return -1;
 }
@@ -395,9 +410,24 @@ static int __init ar7100_flash_init(void)
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
 #ifdef CONFIG_AR9100
 //                                      dir_parts[1].offset = 0x40000;
-				dir_parts[1].size =
-				    (dir_parts[2].offset -
-				     dir_parts[1].offset) + rootsize;
+				dir_parts[1].size = (dir_parts[2].offset -dir_parts[1].offset) + rootsize;
+				if (zcom)
+				    {
+				    dir_parts[1].size = 0x7d0000 - 0x50000;
+				    dir_parts[1].offset = 0x50000;
+				    dir_parts[2].size = sb->bytes_used;
+				    dir_parts[2].offset = 0x50000;
+				    len = dir_parts[2].offset + dir_parts[2].size;
+				    len += (mtd->erasesize - 1);
+				    len &= ~(mtd->erasesize - 1);
+				    dir_parts[2].size = (len & 0xffffff) - dir_parts[2].offset;
+				    dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
+				    dir_parts[3].size = 0x7d0000 - dir_parts[3].offset;
+				    dir_parts[6].offset = mtd->size - mtd->erasesize;	// board config
+				    dir_parts[6].size = mtd->erasesize;
+				    dir_parts[5].offset = dir_parts[6].offset;	//fis config
+				    dir_parts[4].offset = dir_parts[5].offset - mtd->erasesize;	//nvram				    
+				    }
 				break;
 #else
 				//now scan for linux offset
