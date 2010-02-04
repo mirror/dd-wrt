@@ -2740,6 +2740,7 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_TG2521
 		ses_gpio = 0x103;
+		diag_gpio = 0x103;
 #endif
 #ifdef HAVE_TEW632BRP
 		diag_gpio = 0x101;
