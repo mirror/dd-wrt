@@ -2969,6 +2969,8 @@ void start_wan(int status)
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
 			fprintf(fp, "nomppe\n");
+		if (nvram_match("ppp_mlppp", "1"))
+			fprintf(fp, "mp\n");
 		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n",
 			username, passwd);
 
