@@ -213,6 +213,15 @@ void start_sysinit(void)
 		sysprintf("switch reg w 44 1001");
 		sysprintf("switch reg w 48 1001");
 		sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_W502U
+		sysprintf("switch reg w 14 405555");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 98 7f3f");
+		sysprintf("switch reg w e4 3f");
+		sysprintf("switch reg w 40 1002");
+		sysprintf("switch reg w 44 1001");
+		sysprintf("switch reg w 48 1001");
+		sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_AR670W
 		sysprintf("mii_mgr -s -p 29 -r 23 -v 0x07c2");
 		sysprintf("mii_mgr -s -p 29 -r 22 -v 0x8420");
@@ -222,7 +231,7 @@ void start_sysinit(void)
 		sysprintf("mii_mgr -s -p 29 -r 26 -v 0x1");
 		sysprintf("mii_mgr -s -p 29 -r 27 -v 0x1");
 		sysprintf("mii_mgr -s -p 29 -r 28 -v 0x2");
-		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
+    		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
 		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
 		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
 #elif HAVE_BR6574N
@@ -314,6 +323,11 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_W502U
+			sysprintf("switch reg w 40 1007");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1001");
+			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_AR670W
 
 #elif HAVE_BR6574N
@@ -347,6 +361,11 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_ACXNR22
+			sysprintf("switch reg w 40 1002");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1001");
+			sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_W502U
 			sysprintf("switch reg w 40 1002");
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");

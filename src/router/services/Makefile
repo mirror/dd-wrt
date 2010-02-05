@@ -146,6 +146,9 @@ endif
 ifeq ($(CONFIG_DLM101),y)
   CFLAGS += -DHAVE_DLM101
 endif
+ifeq ($(CONFIG_W502U),y)
+  CFLAGS += -DHAVE_W502U
+endif
 ifeq ($(CONFIG_MMC),y)
 CFLAGS_EXTRA += -DHAVE_MMC
 OBJS += mmc.o

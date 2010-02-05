@@ -457,6 +457,7 @@
 // NetCore NW618 / Rosewill RNX-GX4 (BCM5354 cpu, 4MB serial flash / 16MB ram, fccid: Rosewill W6RRNX-GX4)
 #define ROUTER_NETCORE_NW618 0x9616
 
+#define ROUTER_BOARD_W502U 0x971a
 
 #define NVROUTER "DD_BOARD"
 
