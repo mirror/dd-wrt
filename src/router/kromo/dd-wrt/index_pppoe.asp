@@ -37,6 +37,11 @@
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
 	<input size="27" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvram_get("ppp_mppe"); %>" />
 </div>
+<div class="setting">
+	<div class="label"><% tran("share.mlppp"); %></div>
+	<input type="checkbox" value="1" name="_ppp_mlppp" <% nvram_checked("ppp_mlppp", "1"); %>/>
+</div>
+
 <!--
 <div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>

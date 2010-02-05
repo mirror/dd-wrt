@@ -19,6 +19,7 @@ share.usrname="Nutzername";
 share.passwd="Passwort";
 share.hostname="Hostname";
 share.vdslvlan8="VLAN 8 Unterstützung";
+share.mlppp="Multi Link";
 share.domainname="Domainname";
 share.wandomainname="WAN Domain Name";
 share.landomainname="LAN Domain Name";
