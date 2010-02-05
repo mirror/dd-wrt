@@ -201,31 +201,23 @@ function SelDHCPFWD(num,F) {
 function submitcheck(F) {
 	if(valid_value(F)) {
 		if(F._dhcp_dnsmasq) {
-			if(F._dhcp_dnsmasq.checked == false)
-				F.dhcp_dnsmasq.value = 0;
-			else
-				F.dhcp_dnsmasq.value = 1;
+			F.dhcp_dnsmasq.value = F._dhcp_dnsmasq ? 1 : 0;
 		}
 
 		if(F._dns_dnsmasq) {
-			if(F._dns_dnsmasq.checked == false)
-				F.dns_dnsmasq.value = 0;
-			else
-				F.dns_dnsmasq.value = 1;
+			F.dns_dnsmasq.value = F._dns_dnsmasq ? 1 : 0;
 		}
 
 		if(F._auth_dnsmasq) {
-			if(F._auth_dnsmasq.checked == false)
-				F.auth_dnsmasq.value = 0;
-			else
-				F.auth_dnsmasq.value = 1;
+			F.auth_dnsmasq.value = F._auth_dnsmasq ? 1 : 0;
 		}
 		
 		if(F._fullswitch) {
-			if(F._fullswitch.checked == false)
-				F.fullswitch.value = 0;
-			else
-				F.fullswitch.value = 1;
+			F.fullswitch.value = F._fullswitch ? 1 : 0;
+		}
+		
+		if(F._ppp_mlppp) {
+			F.ppp_mlppp.value = F._ppp_mlppp ? 1 : 0;
 		}
 		
 		F.submit_type.value = "";
