@@ -26,6 +26,7 @@ share.vdsl="T-Home VDSL 7 VLAN oznaèevanje";
 share.vdslvlan8="VLAN 8 podpora";
 share.wan_vlantag="ID VLAN znaèke";
 share.compression="PPP kompresija";
+share.mlppp="Multi Link";
 share.domainname="Domensko ime";
 share.wandomainname="WAN domensko ime";
 share.landomainname="LAN domensko ime";
