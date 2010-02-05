@@ -2854,6 +2854,9 @@ int led_control(int type, int act)
 		connected_gpio = 0x108;
 		power_gpio = 0x109;
 		break;
+	case ROUTER_BOARD_W502U:
+		connected_gpio = 0x10d;
+		break;
 	case ROUTER_BOARD_OPENRISC:
 		diag_gpio = 0x003;
 		break;
