@@ -552,6 +552,9 @@ endif
 ifeq ($(CONFIG_TG2521),y)
 CFLAGS += -DHAVE_TG2521
 endif
+ifeq ($(CONFIG_WR1043),y)
+CFLAGS += -DHAVE_WR1043
+endif
 
 
 ifeq ($(CONFIG_MACBIND),y)
