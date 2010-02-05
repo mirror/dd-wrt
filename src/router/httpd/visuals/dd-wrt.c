@@ -1019,7 +1019,7 @@ void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 			  i, sep != NULL ? sep : "");
 		sep = strsep(&leases, " ");
 		websWrite(wp,
-			  "<td><input name=\"lease%d_time\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" /></td></tr>\n",
+			  "<td><input name=\"lease%d_time\" value=\"%s\" size=\"10\" maxlength=\"10\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" /><script type=\"text/javascript\">Capture(share.minutes)</script></td></tr>\n",
 			  i, sep != NULL ? sep : "");
 	}
 	free(originalpointer);
