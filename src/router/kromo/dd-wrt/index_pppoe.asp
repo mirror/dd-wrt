@@ -39,7 +39,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.mlppp"); %></div>
-	<input type="checkbox" value="1" name="_ppp_mlppp" <% nvram_checked("ppp_mlppp", "1"); %>/>
+	<input type="checkbox" value="1" name="_ppp_mlppp" <% nvram_checked("ppp_mlppp", "1"); %> />
 </div>
 
 <!--
