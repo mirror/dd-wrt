@@ -570,6 +570,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ppp_get_srv", "", 0},	/* PPPoE Server service name */
 	{"ppp_compression", "0", 0},	/* PPPoE compr. */
 	{"ppp_mppe", "", 0},	/* PPPoE mppe parameters */
+	{"ppp_mlppp", "0", 0},	/* ML-PPP */
 
 	/*
 	 * Wireless parameters 
