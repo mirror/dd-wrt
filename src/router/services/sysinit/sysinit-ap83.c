@@ -133,6 +133,29 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}
 #endif
+#ifdef HAVE_WR1043
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	if (fp)
+	{
+	unsigned char buf2[256];
+	fseek(fp, 0x1fc00, SEEK_SET);
+	fread(buf2, 256, 1, fp);
+	fclose(fp);
+	char mac[32];
+	unsigned int copy[256];
+	int i;
+	for (i = 0; i < 256; i++)
+		copy[i] = buf2[i] & 0xff;
+	sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1],
+			copy[2], copy[3],
+			copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
+		eval("ifconfig", "eth1", "hw", "ether", mac);
+	}
+#endif
 #ifdef HAVE_WRT160NL
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	unsigned char buf2[256];
@@ -282,6 +305,9 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #elif HAVE_TEW632BRP
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#elif HAVE_WR1043
+	system2("echo 9 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #else
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
