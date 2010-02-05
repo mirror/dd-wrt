@@ -153,18 +153,18 @@ void start_dnsmasq(void)
 		&& nvram_match("hotss_enable", "1"))) {
 		if (canlan())
 			fprintf(fp, "interface=%s,br0",
-				nvram_safe_get("wl0_ifname"));
+				get_wdev());
 		else
 			fprintf(fp, "interface=%s",
-				nvram_safe_get("wl0_ifname"));
+				get_wdev());
 	} else {
 		if (nvram_match("chilli_enable", "1")) {
 			if (canlan())
 				fprintf(fp, "interface=%s",
-					nvram_safe_get("wl0_ifname"));
+					get_wdev());
 			else
 				fprintf(fp, "interface=%s,",
-					nvram_safe_get("wl0_ifname"));
+					get_wdev());
 		} else if (nvram_match("pptpd_enable", "1")) {
 			if (canlan())
 				fprintf(fp, "listen-address=%s,%s", "127.0.0.1",
