@@ -201,23 +201,23 @@ function SelDHCPFWD(num,F) {
 function submitcheck(F) {
 	if(valid_value(F)) {
 		if(F._dhcp_dnsmasq) {
-			F.dhcp_dnsmasq.value = F._dhcp_dnsmasq ? 1 : 0;
+			F.dhcp_dnsmasq.value = F._dhcp_dnsmasq.checked ? 1 : 0;
 		}
 
 		if(F._dns_dnsmasq) {
-			F.dns_dnsmasq.value = F._dns_dnsmasq ? 1 : 0;
+			F.dns_dnsmasq.value = F._dns_dnsmasq.checked ? 1 : 0;
 		}
 
 		if(F._auth_dnsmasq) {
-			F.auth_dnsmasq.value = F._auth_dnsmasq ? 1 : 0;
+			F.auth_dnsmasq.value = F._auth_dnsmasq.checked ? 1 : 0;
 		}
 		
 		if(F._fullswitch) {
-			F.fullswitch.value = F._fullswitch ? 1 : 0;
+			F.fullswitch.value = F._fullswitch.checked ? 1 : 0;
 		}
 		
 		if(F._ppp_mlppp) {
-			F.ppp_mlppp.value = F._ppp_mlppp ? 1 : 0;
+			F.ppp_mlppp.value = F._ppp_mlppp.checked ? 1 : 0;
 		}
 		
 		F.submit_type.value = "";
@@ -292,6 +292,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="dns_dnsmasq" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="fullswitch" value="0" />
+							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 							
 							<% ifdef("WET", "<!--"); %>
