@@ -1946,7 +1946,7 @@ char *enable_dtag_vlan(int enable)
 		return eth;
 	}
 
-	if (nvram_match("switch_type", "BCM5325"))	// special condition
+	if (nvram_match("switch_type", "BCM5325") && (getRouterBrand() != ROUTER_WRT160NV3))	// special condition
 		// for Broadcom
 		// Gigabit Phy
 		// routers 
@@ -2028,32 +2028,48 @@ char *enable_dtag_vlan(int enable)
 		} else
 			eth = "eth0";
 	}
-
+	
+	char *vlan_lan_ports = nvram_save_get("vlan0ports");
+	char *vlan_wan_ports = nvram_save_get("vlan1ports");
+	int lan_vlan_num = 0;
+	int wan_vlan_num = 1;
+	
+	if (nvram_match("vlan2ports", "0 5") || nvram_match("vlan2ports", "4 5")) { //e.g wrt160nv3
+		vlan_lan_ports = nvram_save_get("vlan1ports");
+		vlan_wan_ports = nvram_save_get("vlan2ports");
+		lan_vlan_num = 1;
+		wan_vlan_num = 2;
+		if (nvram_match("vlan2ports", "4 5"))
+			vlan7ports = "4t 5";
+		else
+			vlan7ports = "0t 5";			
+	}
+	
 	if (!donothing) {
 		sysprintf("echo 1 > /proc/switch/%s/reset", eth);
 		if (enable) {
 			fprintf(stderr, "enable vlan port mapping %s/%s\n",
-				nvram_safe_get("vlan0ports"), vlan7ports);
+				vlan_lan_ports, vlan7ports);
 			if (!nvram_match("dtag_vlan8", "1")
 			    || nvram_match("wan_vdsl", "0")) {
 				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/0/ports",
-				     nvram_safe_get("vlan0ports"), eth);
+				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
+				     vlan_lan_ports, eth, lan_vlan_num);
 				start_setup_vlans();
 				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/1/ports",
-				     "", eth);
+				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
+				     "", eth, wan_vlan_num);
 				sysprintf
 				    ("echo \"%s\" > /proc/switch/%s/vlan/7/ports",
 				     vlan7ports, eth);
 			} else {
 				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/0/ports",
-				     nvram_safe_get("vlan0ports"), eth);
+				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
+				     vlan_lan_ports, eth, lan_vlan_num);
 				start_setup_vlans();
 				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/1/ports",
-				     "", eth);
+				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
+				     "", eth, wan_vlan_num);
 				sysprintf
 				    ("echo \"%s\" > /proc/switch/%s/vlan/7/ports",
 				     vlan7ports, eth);
@@ -2063,16 +2079,16 @@ char *enable_dtag_vlan(int enable)
 			}
 		} else {
 			fprintf(stderr, "disable vlan port mapping %s/%s\n",
-				nvram_safe_get("vlan0ports"),
-				nvram_safe_get("vlan1ports"));
+				vlan_lan_ports,
+				vlan_wan_ports);
 			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/8/ports",
 				  "", eth);
 			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/7/ports",
 				  "", eth);
-			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/0/ports",
-				  nvram_safe_get("vlan0ports"), eth);
-			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/1/ports",
-				  nvram_safe_get("vlan1ports"), eth);
+			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
+				  vlan_lan_ports, eth, lan_vlan_num);
+			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
+				  vlan_wan_ports, eth, wan_vlan_num);
 			start_setup_vlans();
 		}
 	}
