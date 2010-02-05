@@ -684,6 +684,9 @@ int internal_getRouterBrand()
 #elif HAVE_ACXNR22
 	setRouter("Aceex NR22");
 	return ROUTER_BOARD_ACXNR22;
+#elif HAVE_W502U
+	setRouter("Alfa W502U");
+	return ROUTER_BOARD_W502U;
 #elif HAVE_DIR600
 #ifdef HAVE_DIR300
 	setRouter("Dlink-DIR300 rev b");
