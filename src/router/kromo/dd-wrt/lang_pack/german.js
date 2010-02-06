@@ -114,9 +114,9 @@ share.srv="Service-Name";
 share.port_range="Port-Bereich";
 share.priority="Priorität";
 share.gateway="Gateway";
-share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
-share.pintrface="Physical Interface";
-share.vintrface="Virtual Interfaces";
+share.intrface="Schnittstelle";  //don't use share.interface, Mozilla problem!!!
+share.pintrface="Physische Schnittstelle";
+share.vintrface="Virtuelle Schnittstellen";
 share.router="Router";
 share.static_lease="Statische Zuweisungen";
 share.srvip="Server-IP";
@@ -626,7 +626,7 @@ hotspot.pserver="Primärer RADIUS-Server IP/DNS";
 hotspot.bserver="Sekundärer RADIUS-Server IP/DNS";
 hotspot.dns="DNS-IP";
 hotspot.url="Umleitungs-URL";
-hotspot.dhcp="DHCP-Interface";
+hotspot.dhcp="DHCP-Schnittstelle";
 hotspot.radnas="RADIUS NAS ID";
 hotspot.uam="UAM Secret";
 hotspot.uamdns="UAM Any DNS";
@@ -1020,18 +1020,47 @@ routetbl.th1="Ziel-LAN-Netz";
 
 route.titl="Routing";
 route.h2="Erweitertes Routing";
+route.metric="Metrik";
 route.mod="Betriebsmodus";
 route.bgp_legend="BGP-Einstellungen";
 route.bgp_own_as="BGP Eigner AS#";
 route.bgp_ip="Nachbar-IP";
 route.bgp_as="Nachbar-AS#";
 route.rip2_mod="RIP2-Router";
+route.olsrd_mod="OLSR Router";
+route.olsrd_legend="OLSR Routing (Optimiertes Link Status Routing)";
+route.olsrd_poll="Abfrage Rate";
+route.olsrd_gateway="Gateway Modus";
+route.olsrd_hna="Host Net Announce";
+route.olsrd_tc="TC Redundanz";
+route.olsrd_mpr="MPR Abdeckung";
+route.olsrd_lqfe="Link Quality Fish Eye";
+route.olsrd_lqag="Link Quality Aging";
+route.olsrd_lqdmin="Link Quality Dijkstra Min";
+route.olsrd_lqdmax="Link Quality Dijkstra Max";
+route.olsrd_lqlvl="Link Quality Level";
+route.olsrd_hysteresis="Hysteresis";
+route.olsrd_newiface="Neue Schnittstelle";
+route.zebra_legend="Zebra Konfiguration";
+route.zebra_log="Zebra Log";
+route.zebra_copt="Zebra Konfigurationsmodus";
+route.bird_legend="Bird Konfiguration";
+route.bird_log="Bird Log";
+route.bird_copt="Bird Konfigurationsmodus";
+
 route.ospf_mod="OSPF-Router";
+route.ospf_legend="OSPF Routing";
+route.ospf_conf="OSPF Konfiguration";
+route.ospf_copt="OSPF Konfigurationsmodus";
+route.copt_gui="GUI";
+route.copt_vtysh="Vtysh";
 route.gateway_legend="Dynamisches Routing";
 route.static_legend="Statisches Routing";
 route.static_setno="Wähle Set-Nummer";
 route.static_name="Routen-Name";
 route.static_ip="Ziel-LAN-Netz";
+
+
 
 //help container
 
@@ -1280,7 +1309,7 @@ status_band.titl="Bandbreiten Monitor";
 status_band.h2="Bandbreiten Monitor";
 status_band.chg_unit="Wechseln zu ";
 status_band.chg_scale="Automatische Anpassung";
-status_band.chg_error="Die Daten des Interfaces sind nicht ermittelbar";
+status_band.chg_error="Die Daten der Schnittstelle sind nicht ermittelbar";
 status_band.chg_collect_initial="Initiale Datenerfassung...";
 status_band.strin="Eingang";
 status_band.strout="Ausgang";
@@ -1386,7 +1415,7 @@ status_wireless.wds="WDS-Knotenpunkte";
 //help container
 
 hstatus_wireless.right2="Dies ist die Router-MAC-Adresse, wie sie in Ihrem lokalen WLAN Netzwerk sichbar ist.";
-hstatus_wireless.right4="Wie auf dem WLAN-Tab angegeben, zeigt Ihnen dies den Modus Ihres WLAN-Interface an (Mixed, Nur-G, or ausgeschaltet).";
+hstatus_wireless.right4="Wie auf dem WLAN-Tab angegeben, zeigt Ihnen dies den Modus Ihrer WLAN-Schnittstelle an (Mixed, Nur-G, or ausgeschaltet).";
 
 
 
@@ -1735,7 +1764,7 @@ wl_basic.radio="WLAN Schaltuhr";
 wl_basic.radio_on="WLAN ist An";
 wl_basic.radio_off="WLAN ist Aus";
 
-wl_basic.h2_v24="Drahtloses Physisikalisches Interface";
+wl_basic.h2_v24="Drahtlose Physisikalische Schnittstelle";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="Sendeleistung";
 wl_basic.diversity="Diversity";
