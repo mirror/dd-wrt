@@ -1651,7 +1651,7 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 		show_legend(wp, "route.olsrd_legend", 1);
 		websWrite(wp,"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_gateway)</script></div>\n");
 		websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"olsrd_gateway\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",nvram_default_match("olsrd_gateway", "1","0") ? "checked=\"checked\"" :"");
-		websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"olsrd_gateway\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",vvar, var, nvram_default_match("olsrd_gateway", "0","0") ? "checked=\"checked\"" :"");
+		websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"olsrd_gateway\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n", nvram_default_match("olsrd_gateway", "0","0") ? "checked=\"checked\"" :"");
 		websWrite(wp, "</div>\n");
 
 
