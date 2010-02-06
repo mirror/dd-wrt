@@ -1142,6 +1142,7 @@ route.rip2_mod="RIP2 Router";
 route.olsrd_mod="OLSR Router";
 route.olsrd_legend="OLSR Routing (Optimized Link State Routing)";
 route.olsrd_poll="Poll Rate";
+route.olsrd_gateway="Gateway Mode";
 route.olsrd_hna="Host Net Announce";
 route.olsrd_tc="TC Redundancy";
 route.olsrd_mpr="MPR Coverage";

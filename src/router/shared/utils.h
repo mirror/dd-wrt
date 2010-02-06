@@ -769,7 +769,7 @@ int isEMP(char *ifname);
 int isXR36(char *ifname);
 char *get3GControlDevice(void);
 char *getIsoName(const char *country);
-
+int has_gateway(void); // return 1 if nat/gateway mode is enabled for wan
 #ifdef HAVE_RT2880
 char *getRADev(char *prefix);
 #endif
