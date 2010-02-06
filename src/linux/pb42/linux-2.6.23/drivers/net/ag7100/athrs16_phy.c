@@ -34,7 +34,7 @@ typedef enum {
 
 #define DRV_LOG(DBG_SW, X0, X1, X2, X3, X4, X5, X6)
 #define DRV_MSG(x,a,b,c,d,e,f)
-#define DRV_PRINT(DBG_SW,X)
+#define DRV_PRINT(DBG_SW,X) printk X;
 
 #define ATHR_LAN_PORT_VLAN          1
 #define ATHR_WAN_PORT_VLAN          2
@@ -81,9 +81,9 @@ typedef struct {
 static athrPhyInfo_t athrPhyInfo[] = {
     {TRUE,   /* phy port 0 -- LAN port 0 */
      FALSE,
-     ENET_UNIT_WAN,
+     ENET_UNIT_LAN,
      0,
-     ATHR_PHY4_ADDR,
+     ATHR_PHY0_ADDR,
      ATHR_LAN_PORT_VLAN
     },
 
@@ -91,7 +91,7 @@ static athrPhyInfo_t athrPhyInfo[] = {
      FALSE,
      ENET_UNIT_LAN,
      0,
-     ATHR_PHY0_ADDR,
+     ATHR_PHY1_ADDR,
      ATHR_LAN_PORT_VLAN
     },
 
@@ -99,7 +99,7 @@ static athrPhyInfo_t athrPhyInfo[] = {
      FALSE,
      ENET_UNIT_LAN,
      0,
-     ATHR_PHY1_ADDR, 
+     ATHR_PHY2_ADDR, 
      ATHR_LAN_PORT_VLAN
     },
 
@@ -107,15 +107,15 @@ static athrPhyInfo_t athrPhyInfo[] = {
      FALSE,
      ENET_UNIT_LAN,
      0,
-     ATHR_PHY2_ADDR, 
+     ATHR_PHY3_ADDR, 
      ATHR_LAN_PORT_VLAN
     },
 
     {TRUE,   /* phy port 4 -- WAN port or LAN port 4 */
      FALSE,
-     ENET_UNIT_LAN,
+     ENET_UNIT_WAN,
      0,
-     ATHR_PHY3_ADDR, 
+     ATHR_PHY4_ADDR, 
      ATHR_LAN_PORT_VLAN   /* Send to all ports */
     },
     
@@ -128,7 +128,7 @@ static athrPhyInfo_t athrPhyInfo[] = {
     },
 };
 
-static uint8_t athr16_init_flag = 1;
+static uint8_t athr16_init_flag = 0;
 
 //#define ATHR_PHY_MAX (sizeof(ipPhyInfo) / sizeof(ipPhyInfo[0]))
 #define ATHR_PHY_MAX 5
@@ -157,12 +157,10 @@ BOOL athrs16_phy_is_link_alive(int phyUnit);
 static uint32_t athrs16_reg_read(uint32_t reg_addr);
 static void athrs16_reg_write(uint32_t reg_addr, uint32_t reg_val);
 
-void phy_mode_setup(void) 
+void phy_mode_setup() 
 {
-//#define show_phy(a,ofs) printk(KERN_INFO "phy reg 0x%08X ofs %d = 0x08X\n",phy_reg_read(ATHR_PHYBASE(a), ATHR_PHYADDR(a), ofs));
     printk("phy_mode_setup\n");
-//    show_phy(ATHR_IND_PHY,29);
-   return;
+
     /*work around for phy4 rgmii mode*/
     phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 18);     
     phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x480c);    
@@ -181,24 +179,7 @@ void athrs16_reg_init()
 {
     /* if using header for register configuration, we have to     */
     /* configure s16 register after frame transmission is enabled */
-//   if (athr16_init_flag)
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x208,athrs16_reg_read(0x208));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x108,athrs16_reg_read(0x108));
-
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x8,athrs16_reg_read(0x8));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x100,athrs16_reg_read(0x100));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x200,athrs16_reg_read(0x200));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x300,athrs16_reg_read(0x300));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x400,athrs16_reg_read(0x400));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x500,athrs16_reg_read(0x500));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x600,athrs16_reg_read(0x600));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x2c,athrs16_reg_read(0x2c));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x104,athrs16_reg_read(0x104));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x204,athrs16_reg_read(0x204));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x304,athrs16_reg_read(0x304));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x404,athrs16_reg_read(0x404));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x504,athrs16_reg_read(0x504));
-    printk(KERN_INFO "reg 0x%04X = 0x%08X\n",0x604,athrs16_reg_read(0x604));
+    if (athr16_init_flag)
         return;
 
     /*Power on strip mode setup*/
@@ -298,7 +279,7 @@ athrs16_phy_setup(int ethUnit)
     uint32_t  phyBase = 0;
     BOOL      foundPhy = FALSE;
     uint32_t  phyAddr = 0;
-    return TRUE;
+    
 
     /* See if there's any configuration data for this enet */
     /* start auto negogiation on each phy */
@@ -397,7 +378,6 @@ athrs16_phy_setup(int ethUnit)
                          ATHR_PHYADDR(phyUnit),
                          ATHR_PHY_SPEC_STATUS)));
     }
-    
     phy_mode_setup();    
     return (liveLinks > 0);
 }
@@ -434,10 +414,12 @@ athrs16_phy_is_fdx(int ethUnit)
             phyAddr = ATHR_PHYADDR(phyUnit);
 
             do {
-                phyHwStatus = ag7100_mii_read (phyBase, phyAddr, 
+                phyHwStatus = phy_reg_read (phyBase, phyAddr, 
                                                ATHR_PHY_SPEC_STATUS);
+		if(phyHwStatus & ATHR_STATUS_RESOVLED)
+			break;
                 mdelay(10);
-            } while((!(phyHwStatus & ATHR_STATUS_RESOVLED)) && --ii);
+            } while(--ii);
             
             if (phyHwStatus & ATHER_STATUS_FULL_DEPLEX)
                 return TRUE;
@@ -446,7 +428,6 @@ athrs16_phy_is_fdx(int ethUnit)
 
     return FALSE;
 }
-
 
 /******************************************************************************
 *
@@ -466,42 +447,58 @@ athrs16_phy_speed(int ethUnit)
     uint32_t  phyBase;
     uint32_t  phyAddr;
     int       ii = 200;
+    ag7100_phy_speed_t phySpeed;
 
-    if (ethUnit == ENET_UNIT_LAN)
-        return AG7100_PHY_SPEED_1000T;
-        
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;
         }
 
+        phyBase = ATHR_PHYBASE(phyUnit);
+        phyAddr = ATHR_PHYADDR(phyUnit);
+        phySpeed = AG7100_PHY_SPEED_10T;
+
         if (athrs16_phy_is_link_alive(phyUnit)) {
 
-            phyBase = ATHR_PHYBASE(phyUnit);
-            phyAddr = ATHR_PHYADDR(phyUnit);
             do {
-                phyHwStatus = ag7100_mii_read(phyBase, phyAddr, 
+                phyHwStatus = phy_reg_read(phyBase, phyAddr, 
                                               ATHR_PHY_SPEC_STATUS);
+		        if(phyHwStatus & ATHR_STATUS_RESOVLED)
+			        break;
                 mdelay(10);
-            }while((!(phyHwStatus & ATHR_STATUS_RESOVLED)) && --ii);
+            }while(--ii);
             
             phyHwStatus = ((phyHwStatus & ATHER_STATUS_LINK_MASK) >>
                            ATHER_STATUS_LINK_SHIFT);
 
             switch(phyHwStatus) {
             case 0:
-                return AG7100_PHY_SPEED_10T;
+                phySpeed = AG7100_PHY_SPEED_10T;
+                break;
             case 1:
-                return AG7100_PHY_SPEED_100TX;
+                phySpeed = AG7100_PHY_SPEED_100TX;
+                break;
             case 2:
-                return AG7100_PHY_SPEED_1000T;
+                phySpeed = AG7100_PHY_SPEED_1000T;
+                break;
             default:
                 printk("Unkown speed read!\n");
             }
+        } 
+
+        phy_reg_write(phyBase, phyAddr, ATHR_DEBUG_PORT_ADDRESS, 0x18);
+        
+        if(phySpeed == AG7100_PHY_SPEED_100TX) {
+            phy_reg_write(phyBase, phyAddr, ATHR_DEBUG_PORT_DATA, 0xba8);
+        } else {            
+            phy_reg_write(phyBase, phyAddr, ATHR_DEBUG_PORT_DATA, 0x2ea);
         }
     }
 
-    return AG7100_PHY_SPEED_10T;
+    if (ethUnit == ENET_UNIT_LAN)
+         phySpeed = AG7100_PHY_SPEED_1000T;
+
+    return phySpeed;
 }
 
 /*****************************************************************************
@@ -612,7 +609,7 @@ athrs16_reg_read(uint32_t reg_addr)
 
     return reg_val;   
 }
-#if 1
+
 static void
 athrs16_reg_write(uint32_t reg_addr, uint32_t reg_val)
 {
@@ -648,7 +645,7 @@ athrs16_reg_write(uint32_t reg_addr, uint32_t reg_val)
     phy_val = (uint16_t) (reg_val & 0xffff);
     phy_reg_write(0, phy_addr, phy_reg, phy_val); 
 }
-#endif
+
 int
 athr_ioctl(uint32_t *args, int cmd)
 {

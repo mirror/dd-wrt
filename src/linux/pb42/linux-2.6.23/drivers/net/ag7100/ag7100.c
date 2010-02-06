@@ -55,10 +55,10 @@ static int ag7100_poll(struct napi_struct *napi, int budget);
 static int ag7100_poll(struct net_device *dev, int *budget);
 #endif
 static void ag7100_buffer_free(struct sk_buff *skb);
-#ifdef CONFIG_AR9100
+//#ifdef CONFIG_AR9100
 void ag7100_dma_reset(ag7100_mac_t *mac);
 int board_version;
-#endif
+//#endif
 int  ag7100_recv_packets(struct net_device *dev, ag7100_mac_t *mac,
     int max_work, int *work_done);
 static irqreturn_t ag7100_intr(int cpl, void *dev_id);
@@ -829,6 +829,11 @@ ag7100_check_link(ag7100_mac_t *mac)
     netif_start_queue(dev);
 
 done:
+#if defined(CONFIG_ATHRS26_PHY) || defined(CONFIG_ATHRS16_PHY)    
+    if(!phy_up)    
+        mod_timer(&mac->mac_phy_timer, jiffies + AG7100_PHY_POLL_SECONDS*HZ/4);
+    else
+#endif        
     mod_timer(&mac->mac_phy_timer, jiffies + AG7100_PHY_POLL_SECONDS*HZ);
 
     return 0;
@@ -954,12 +959,12 @@ ag7100_get_tx_ds(ag7100_mac_t *mac, int *len, unsigned char **start)
 
     ag7100_trc_new(ds,"ds addr");
     ag7100_trc_new(ds,"ds len");
-#ifdef CONFIG_AR9100
+//#ifdef CONFIG_AR9100
     if(ag7100_tx_owned_by_dma(ds))
         ag7100_dma_reset(mac);
-#else
-    assert(!ag7100_tx_owned_by_dma(ds));
-#endif
+//#else
+//    assert(!ag7100_tx_owned_by_dma(ds));
+//#endif
 
     ds->pkt_size       = len_this_ds;
     ds->pkt_start_addr = virt_to_phys(*start);
@@ -1205,7 +1210,7 @@ ag7100_intr(int cpl, void *dev_id)
   * will be removed once we have a hardware fix. 
   */
 
-#ifdef CONFIG_AR9100
+#if 1//def CONFIG_AR9100
 
 void ag7100_dma_reset(ag7100_mac_t *mac)
 {
@@ -1266,7 +1271,7 @@ ag7100_poll(struct net_device *dev, int *budget)
     netif_rx_complete(dev);
     }
 #endif
-#ifdef CONFIG_AR9100
+#if 1//def CONFIG_AR9100
     if(ret == AG7100_RX_DMA_HANG)
     {
         status = 0;
@@ -1361,7 +1366,7 @@ process_pkts:
 
         if (ag7100_rx_owned_by_dma(ds))
         {
-#ifdef CONFIG_AR9100
+#if 1//def CONFIG_AR9100
             if(quota == iquota)
             {
                 *work_done = quota = 0;
@@ -1479,13 +1484,13 @@ process_pkts:
     r->ring_head   =  head;
 
     rep = ag7100_rx_replenish(mac);
-#ifdef CONFIG_AR9100
+//#ifdef CONFIG_AR9100
     if(rep < 0)
     {
         *work_done =0 ;
         return AG7100_RX_DMA_HANG;
     }
-#endif
+//#endif
     /*
     * let's see what changed while we were slogging.
     * ack Rx in the loop above is no flush version. It will get flushed now.
@@ -1567,7 +1572,8 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
         ds                  = &r->ring_desc[tail];
 
         ag7100_trc(ds,"ds");
-#ifdef CONFIG_AR9100
+#if 1// CONFIG_AR9100
+
         if(ag7100_rx_owned_by_dma(ds))
         {
             return -1;
@@ -1619,7 +1625,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
     ag7100_trc_new(tail,"tl");
 
     ar7100_flush_ge(mac->mac_unit);
-
+    spin_lock_irqsave(&mac->mac_lock, flags);
     while(tail != head)
     {
         ds   = &r->ring_desc[tail];
@@ -1648,6 +1654,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
         reaped ++;
     }
+    spin_unlock_irqrestore(&mac->mac_lock, flags);
 
     r->ring_tail = tail;
 
