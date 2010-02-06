@@ -710,7 +710,7 @@ static void nat_prerouting(void)
 	suspense = malloc(1);
 	*suspense = 0;
 
-	if (nvram_match("wk_mode", "gateway")) {
+	if (has_gateway()) {
 		/*
 		 * Port forwarding 
 		 */
@@ -743,7 +743,7 @@ static void nat_postrouting(void)
 {
 	if ((nvram_match("chilli_enable", "1"))
 	    && (nvram_match("wan_proto", "disabled"))) {
-		if (nvram_match("wk_mode", "gateway")) {
+		if (has_gateway()) {
 			if (nvram_match("hotss_enable", "1")) {
 				if (strlen(nvram_safe_get("hotss_net")) > 0)
 					save2file
@@ -776,7 +776,7 @@ static void nat_postrouting(void)
 			  nvram_safe_get("pppoeserver_remotemask"),
 			  nvram_safe_get("wan_ipaddr"));
 #endif
-	if (nvram_match("wk_mode", "gateway")) {
+	if (has_gateway()) {
 		// if (strlen (wanface) > 0)
 		// save2file
 		// ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j
@@ -2116,7 +2116,7 @@ static void filter_forward(void)
 	/*
 	 * Sveasoft add - log invalid packets 
 	 */
-	if (nvram_invmatch("wk_mode", "gateway"))
+	if (!has_gateway())
 		save2file("-A FORWARD -m state --state INVALID -j logdrop\n");
 
 	/*
@@ -2371,7 +2371,7 @@ static void filter_table(void)
 		save2file(":advgrp_%d - [0:0]\n", seq);
 	}
 	if (nvram_match("chilli_enable", "1")) {
-		if (nvram_match("wk_mode", "gateway")) {
+		if (has_gateway()) {
 			save2file
 			    ("-I INPUT -m state --state NEW -i tun0 -j ACCEPT\n");
 			save2file
@@ -2387,7 +2387,7 @@ static void filter_table(void)
 		 * Does it disable the filter? 
 		 */
 		if (nvram_match("filter", "off")
-		    || !nvram_match("wk_mode", "gateway")) {
+		    || !has_gateway()) {
 
 			/*
 			 * Make sure remote management ports are filtered if it is disabled 
@@ -2462,7 +2462,7 @@ static void filter_table(void)
 	/*
 	 * logdrop chain 
 	 */
-	if (nvram_match("wk_mode", "gateway")) {
+	if (has_gateway()) {
 		if ((nvram_match("log_enable", "1"))
 		    && (nvram_match("log_dropped", "1")))
 			save2file
@@ -2928,7 +2928,7 @@ void start_firewall(void)
 	/*
 	 * Run DMZ forwarding ? 
 	 */
-	if (nvram_match("wk_mode", "gateway")
+	if (has_gateway()
 	    && nvram_match("dmz_enable", "1")
 	    && nvram_invmatch("dmz_ipaddr", "")
 	    && nvram_invmatch("dmz_ipaddr", "0"))
