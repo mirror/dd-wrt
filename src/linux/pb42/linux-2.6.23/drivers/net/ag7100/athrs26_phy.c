@@ -118,7 +118,7 @@ static athrPhyInfo_t athrPhyInfo[] = {
     },
 };
 
-static uint8_t athr26_init_flag = 1;
+static uint8_t athr26_init_flag = 0;
 
 static cmd_resp_t cmd_resp;
 static DECLARE_WAIT_QUEUE_HEAD (hd_conf_wait);
@@ -589,10 +589,12 @@ athrs26_phy_is_fdx(int ethUnit)
             phyAddr = ATHR_PHYADDR(phyUnit);
 
             do {
-                phyHwStatus = ag7100_mii_read (phyBase, phyAddr, 
+                phyHwStatus = phy_reg_read (phyBase, phyAddr, 
                                                ATHR_PHY_SPEC_STATUS);
+		        if(phyHwStatus & ATHR_STATUS_RESOVLED)
+			        break;
                 mdelay(10);
-            } while((!(phyHwStatus & ATHR_STATUS_RESOVLED)) && --ii);
+            } while(--ii);
             
             if (phyHwStatus & ATHER_STATUS_FULL_DEPLEX)
                 return TRUE;
@@ -601,7 +603,6 @@ athrs26_phy_is_fdx(int ethUnit)
 
     return FALSE;
 }
-
 
 /******************************************************************************
 *
@@ -621,42 +622,58 @@ athrs26_phy_speed(int ethUnit)
     uint32_t  phyBase;
     uint32_t  phyAddr;
     int       ii = 200;
-
-    if (ethUnit == ENET_UNIT_LAN)
-        return AG7100_PHY_SPEED_100TX;
+    ag7100_phy_speed_t phySpeed;
 
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;
         }
 
+        phyBase = ATHR_PHYBASE(phyUnit);
+        phyAddr = ATHR_PHYADDR(phyUnit);
+        phySpeed = AG7100_PHY_SPEED_10T;
+
         if (athrs26_phy_is_link_alive(phyUnit)) {
 
-            phyBase = ATHR_PHYBASE(phyUnit);
-            phyAddr = ATHR_PHYADDR(phyUnit);
             do {
-                phyHwStatus = ag7100_mii_read(phyBase, phyAddr, 
+                phyHwStatus = phy_reg_read(phyBase, phyAddr, 
                                               ATHR_PHY_SPEC_STATUS);
+		        if(phyHwStatus & ATHR_STATUS_RESOVLED)
+			        break;
                 mdelay(10);
-            }while((!(phyHwStatus & ATHR_STATUS_RESOVLED)) && --ii);
+            }while(--ii);
             
             phyHwStatus = ((phyHwStatus & ATHER_STATUS_LINK_MASK) >>
                            ATHER_STATUS_LINK_SHIFT);
 
             switch(phyHwStatus) {
             case 0:
-                return AG7100_PHY_SPEED_10T;
+                phySpeed = AG7100_PHY_SPEED_10T;
+                break;
             case 1:
-                return AG7100_PHY_SPEED_100TX;
+                phySpeed = AG7100_PHY_SPEED_100TX;
+                break;
             case 2:
-                return AG7100_PHY_SPEED_1000T;
+                phySpeed = AG7100_PHY_SPEED_1000T;
+                break;
             default:
                 printk("Unkown speed read!\n");
             }
+        } 
+
+        phy_reg_write(phyBase, phyAddr, ATHR_DEBUG_PORT_ADDRESS, 0x18);
+        
+        if(phySpeed == AG7100_PHY_SPEED_100TX) {
+            phy_reg_write(phyBase, phyAddr, ATHR_DEBUG_PORT_DATA, 0xba8);
+        } else {            
+            phy_reg_write(phyBase, phyAddr, ATHR_DEBUG_PORT_DATA, 0x2ea);
         }
     }
 
-    return AG7100_PHY_SPEED_10T;
+    if (ethUnit == ENET_UNIT_LAN)
+         phySpeed = AG7100_PHY_SPEED_100TX;
+
+    return phySpeed;
 }
 
 /*****************************************************************************
