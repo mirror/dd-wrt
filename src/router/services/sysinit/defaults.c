@@ -2620,6 +2620,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"olsrd_pollsize", "0.1", 0},
 	{"olsrd_redundancy", "2", 0},
 	{"olsrd_coverage", "7", 0},
+	{"olsrd_gateway", "1", 0},
 	{"olsrd_lqfisheye", "1", 0},
 	{"olsrd_lqaging", "0.1", 0},
 	{"olsrd_lqdijkstramin", "0", 0},

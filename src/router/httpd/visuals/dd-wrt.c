@@ -1649,6 +1649,12 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 	if (!strcmp(var, "olsr")) {
 		websWrite(wp, "<fieldset>\n");
 		show_legend(wp, "route.olsrd_legend", 1);
+		websWrite(wp,"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_gateway)</script></div>\n");
+		websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"olsrd_gateway\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",nvram_default_match("olsrd_gateway", "1","0") ? "checked=\"checked\"" :"");
+		websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"olsrd_gateway\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",vvar, var, nvram_default_match("olsrd_gateway", "0","0") ? "checked=\"checked\"" :"");
+		websWrite(wp, "</div>\n");
+
+
 		show_inputlabel(wp, "route.olsrd_hna", "olsrd_hna", 32, "num",
 				32);
 		show_inputlabel(wp, "route.olsrd_poll", "olsrd_pollsize", 5,
@@ -3184,7 +3190,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		nvram_default_get(mcastvar, "0");
 		showRadio(wp, "wl_basic.multicast", mcastvar);
 	}
-	if (nvram_match("wk_mode", "gateway")) {
+	if (has_gateway()) {
 		char natvar[32];
 		sprintf(natvar, "%s_nat", var);
 		nvram_default_get(natvar, "1");
@@ -6700,7 +6706,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		nvram_default_get(mcast, "0");
 		showRadio(wp, "wl_basic.multicast", mcast);
 
-		if (nvram_match("wk_mode", "gateway")) {
+		if (has_gateway()) {
 			sprintf(mcast, "%s_nat", var);
 			nvram_default_get(mcast, "1");
 			showRadio(wp, "wl_basic.masquerade", mcast);

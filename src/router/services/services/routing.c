@@ -456,7 +456,7 @@ int bird_init(void)
 	/*
 	 * compatibitly for old nvram style (site needs to be enhanced)
 	 */
-	if (nvram_match("wk_mode", "gateway"))
+	if (has_gateway())
 		return 0;
 	nvram_set("routing_ospf", "off");
 	nvram_set("routing_bgp", "off");

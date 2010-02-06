@@ -465,13 +465,13 @@ void setRouter(char *name)
 #elif HAVE_WIKINGS
 	if (name)
 		nvram_set("DD_BOARD2", name);
-	#ifdef HAVE_SUB3
-	    nvram_set(NVROUTER, "ExcelMin");
-	#elif HAVE_SUB6
-	    nvram_set(NVROUTER, "ExcelMed");	
-	#else
-	    nvram_set(NVROUTER, "Excellent");
-	#endif
+#ifdef HAVE_SUB3
+	nvram_set(NVROUTER, "ExcelMin");
+#elif HAVE_SUB6
+	nvram_set(NVROUTER, "ExcelMed");
+#else
+	nvram_set(NVROUTER, "Excellent");
+#endif
 #else
 	if (name)
 		nvram_set(NVROUTER, name);
@@ -509,8 +509,8 @@ int internal_getRouterBrand()
 	setRouter("Compex WP54G");
 	return ROUTER_BOARD_WP54G;
 #elif HAVE_ADM5120
-	if (!nvram_match("DD_BOARD","OSBRiDGE 5LXi"))
-	    setRouter("Tonze AP-120");
+	if (!nvram_match("DD_BOARD", "OSBRiDGE 5LXi"))
+		setRouter("Tonze AP-120");
 	return ROUTER_BOARD_ADM5120;
 #elif HAVE_RB500
 	setRouter("Mikrotik RB500");
@@ -1877,7 +1877,7 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT320N");
 		return ROUTER_WRT320N;
 	}
-	
+
 	if (boardnum == 94703 && nvram_match("boardtype", "0x04c0")
 	    && nvram_match("boardrev", "0x1100")) {
 		cprintf("router Dynex DX-NRUTER\n");
@@ -2218,13 +2218,13 @@ static char *stalist[] = {
 
 char *getWifi(char *ifname)
 {
-	if (!strncmp(ifname, "ath0",4))
+	if (!strncmp(ifname, "ath0", 4))
 		return "wifi0";
-	if (!strncmp(ifname, "ath1",4))
+	if (!strncmp(ifname, "ath1", 4))
 		return "wifi1";
-	if (!strncmp(ifname, "ath2",4))
+	if (!strncmp(ifname, "ath2", 4))
 		return "wifi2";
-	if (!strncmp(ifname, "ath3",4))
+	if (!strncmp(ifname, "ath3", 4))
 		return "wifi3";
 	return NULL;
 }
@@ -2410,8 +2410,8 @@ char *get_wan_face(void)
 {
 	static char localwanface[IFNAMSIZ];
 	if (nvram_match("wan_proto", "disabled"))
-	    return "br0";
-	
+		return "br0";
+
 	/*
 	 * if (nvram_match ("pptpd_client_enable", "1")) { strncpy (localwanface, 
 	 * "ppp0", IFNAMSIZ); return localwanface; }
@@ -2728,7 +2728,7 @@ int led_control(int type, int act)
 	int sec0_gpio = 0x0ff;	// security leds, wrt600n
 	int sec1_gpio = 0x0ff;
 	int v1func = 0;
-	int connblue = nvram_match ("connblue", "1") ? 1 : 0;
+	int connblue = nvram_match("connblue", "1") ? 1 : 0;
 
 	switch (getRouterBrand())	// gpio definitions here: 0xYZ,
 		// Y=0:normal, Y=1:inverted, Z:gpio
@@ -2766,7 +2766,7 @@ int led_control(int type, int act)
 #ifdef HAVE_WZRG300NH
 		diag_gpio = 0x101;
 		connected_gpio = 0x112;
-//		usb_gpio = 0x100;
+//              usb_gpio = 0x100;
 		ses_gpio = 0x111;
 #endif
 		break;
@@ -3062,7 +3062,7 @@ int led_control(int type, int act)
 		// diag_gpio = 0x11; //power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_WRT310N:
-		connected_gpio = 0x103;  //ses orange
+		connected_gpio = 0x103;	//ses orange
 		power_gpio = 0x001;
 		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
 		ses_gpio = 0x109;	// ses blue
@@ -3547,4 +3547,13 @@ char *zencrypt(char *passwd)
 	crypt_make_salt(salt + 3, 4, 0);
 	return md5_crypt(passout, (unsigned char *)passwd,
 			 (unsigned char *)salt);
+}
+
+int has_gateway(void)
+{
+	if (nvram_match("wk_mode", "gateway"))
+		return 1;
+	if (nvram_match("wk_mode", "olsr") && nvram_match("olsrd_gateway", "1"))
+		return 1;
+	return 0;
 }
