@@ -2029,14 +2029,14 @@ char *enable_dtag_vlan(int enable)
 			eth = "eth0";
 	}
 	
-	char *vlan_lan_ports = nvram_save_get("vlan0ports");
-	char *vlan_wan_ports = nvram_save_get("vlan1ports");
+	char *vlan_lan_ports = nvram_safe_get("vlan0ports");
+	char *vlan_wan_ports = nvram_safe_get("vlan1ports");
 	int lan_vlan_num = 0;
 	int wan_vlan_num = 1;
 	
 	if (nvram_match("vlan2ports", "0 5") || nvram_match("vlan2ports", "4 5")) { //e.g wrt160nv3
-		vlan_lan_ports = nvram_save_get("vlan1ports");
-		vlan_wan_ports = nvram_save_get("vlan2ports");
+		vlan_lan_ports = nvram_safe_get("vlan1ports");
+		vlan_wan_ports = nvram_safe_get("vlan2ports");
 		lan_vlan_num = 1;
 		wan_vlan_num = 2;
 		if (nvram_match("vlan2ports", "4 5"))
