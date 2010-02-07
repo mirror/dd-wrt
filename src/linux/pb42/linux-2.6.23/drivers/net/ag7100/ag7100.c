@@ -764,7 +764,7 @@ static int
 ag7100_check_link(ag7100_mac_t *mac)
 {
     struct net_device  *dev     = mac->mac_dev;
-    int                 carrier = netif_carrier_ok(dev), fdx, phy_up;
+    int                 carrier = netif_carrier_ok(dev), fdx, phy_up=1;
     ag7100_phy_speed_t  speed;
     int                 rc;
 

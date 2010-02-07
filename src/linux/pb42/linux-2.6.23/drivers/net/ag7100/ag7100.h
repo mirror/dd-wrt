@@ -105,9 +105,7 @@ typedef enum {
     AG7100_RX_STATUS_DONE,
     AG7100_RX_STATUS_NOT_DONE,
     AG7100_RX_STATUS_OOM,
-#ifdef CONFIG_AR9100
     AG7100_RX_DMA_HANG
-#endif
 }ag7100_rx_status_t;
 
 /*
