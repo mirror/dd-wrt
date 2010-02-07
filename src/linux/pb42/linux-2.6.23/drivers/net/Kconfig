@@ -2288,6 +2288,10 @@ config CAMEO_REALTEK_PHY
 config BUFFALO
     bool "WHR G300NH support"
     depends on CAMEO_REALTEK_PHY
+
+config TPLINK
+    bool "TPLink Support"
+    depends on BUFFALO
         
 config VITESSE_8601_PHY
     bool "Vitesse Gige Phy 8601 on MAC0 and optionally on MAC1"
