@@ -116,21 +116,18 @@ void start_sysinit(void)
 	insmod("ag7100_mod");
 #ifdef HAVE_WZRG300NH
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
-	if (fp)
-	{
-	unsigned char buf2[256];
-	fseek(fp, 0x1ff120c, SEEK_SET);
-	fread(buf2, 256, 1, fp);
-	fclose(fp);
-	char mac[32];
-	unsigned int copy[256];
-	int i;
-	for (i = 0; i < 256; i++)
-		copy[i] = buf2[i] & 0xff;
-	sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1],
-			copy[2], copy[3],
-			copy[4], copy[5]);
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 0x1ff120c, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		char mac[32];
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
@@ -138,45 +135,49 @@ void start_sysinit(void)
 	}
 #endif
 #ifdef HAVE_WR1043
+
+	insmod("usbcore");
+	insmod("ehci-hcd");
+	insmod("scsi_mod");
+	insmod("scsi_wait_scan");
+	insmod("sd_mod");
+	insmod("sr_mod");
+	insmod("usb-storage");
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
-	if (fp)
-	{
-	unsigned char buf2[256];
-	fseek(fp, 0x1fc00, SEEK_SET);
-	fread(buf2, 256, 1, fp);
-	fclose(fp);
-	unsigned int copy[256];
-	int i;
-	for (i = 0; i < 256; i++)
-		copy[i] = buf2[i] & 0xff;
-	sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1],
-			copy[2], copy[3],
-			copy[4], copy[5]);
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 0x1fc00, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-	eval("ifconfig", "eth0", "hw", "ether", mac);
-	eval("ifconfig","eth0","up");
-	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-	eval("vconfig", "add", "eth0", "1");
-	eval("vconfig", "add", "eth0", "2");
-	fprintf(stderr, "configure vlan1 to %s\n", mac);
-	eval("ifconfig", "vlan1", "hw", "ether", mac);
-	MAC_ADD(mac);
-	fprintf(stderr, "configure vlan2 to %s\n", mac);
-	eval("ifconfig", "vlan2", "hw", "ether", mac);
-	MAC_SUB(mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		eval("ifconfig", "eth0", "up");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		fprintf(stderr, "configure vlan1 to %s\n", mac);
+		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		MAC_ADD(mac);
+		fprintf(stderr, "configure vlan2 to %s\n", mac);
+		eval("ifconfig", "vlan2", "hw", "ether", mac);
+		MAC_SUB(mac);
 	}
 #endif
 #ifdef HAVE_WRT160NL
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	unsigned char buf2[256];
-	if (fp)
-	{
-	fseek(fp, 0x3f288, SEEK_SET);
-	fread(buf2, 19, 1, fp);
-	fclose(fp);
-		fprintf(stderr, "configure eth0 to %s\n",buf2);
+	if (fp) {
+		fseek(fp, 0x3f288, SEEK_SET);
+		fread(buf2, 19, 1, fp);
+		fclose(fp);
+		fprintf(stderr, "configure eth0 to %s\n", buf2);
 		eval("ifconfig", "eth0", "hw", "ether", buf2);
 		MAC_ADD(buf2);
 		fprintf(stderr, "configure eth1 to %s\n", buf2);
@@ -188,20 +189,17 @@ void start_sysinit(void)
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	char mac[32];
-	if (fp)
-	{
-	unsigned char buf2[256];
-	fseek(fp, 0x7d08c3, SEEK_SET); // mac location
-	fread(buf2, 6, 1, fp);
-	fclose(fp);
-	unsigned int copy[256];
-	int i;
-	for (i = 0; i < 6; i++)
-		copy[i] = buf2[i] & 0xff;
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 0x7d08c3, SEEK_SET);	// mac location
+		fread(buf2, 6, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 6; i++)
+			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1],
-			copy[2], copy[3],
-			copy[4], copy[5]);
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		MAC_ADD(mac);
@@ -214,34 +212,32 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
 	FILE *in = fopen("/dev/mtdblock/0", "rb");
-	char *lanmac=NULL;
+	char *lanmac = NULL;
 	if (in != NULL) {
-		fseek(in,0x20000,SEEK_SET);
+		fseek(in, 0x20000, SEEK_SET);
 		unsigned char *config = malloc(65536);
 		memset(config, 0, 65536);
 		fread(config, 65536, 1, in);
 		int len = sizeof("lan_mac=");
 		int i;
-		int haslan=0;
-		int haswan=0;
+		int haslan = 0;
+		int haswan = 0;
 		for (i = 0; i < 65535 - 18; i++) {
-			if (!haslan && !strncmp(&config[i], "lan_mac=", 8))
-			{
-				haslan=1;
+			if (!haslan && !strncmp(&config[i], "lan_mac=", 8)) {
+				haslan = 1;
 				char *mac = &config[i + 8];
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
 				lanmac = malloc(32);
-				strcpy(lanmac,mac);
+				strcpy(lanmac, mac);
 				eval("ifconfig", "eth0", "hw", "ether", mac);
 				nvram_set("et0macaddr_safe", mac);
 				if (haswan)
-				    break;
+					break;
 			}
-			if (!haswan && !strncmp(&config[i], "wan_mac=", 8))
-			{
-				haswan=1;
+			if (!haswan && !strncmp(&config[i], "wan_mac=", 8)) {
+				haswan = 1;
 				char *mac = &config[i + 8];
 				if (mac[0] == '"')
 					mac++;
@@ -249,7 +245,7 @@ void start_sysinit(void)
 				eval("ifconfig", "eth1", "hw", "ether", mac);
 				nvram_set("et0macaddr_safe", mac);
 				if (haslan)
-				    break;
+					break;
 			}
 		}
 		free(config);
@@ -277,31 +273,30 @@ void start_sysinit(void)
 	detect_wireless_devices();
 #ifdef HAVE_WRT160NL
 	MAC_ADD(buf2);
-	fprintf(stderr, "configure wifi0 to %s\n",buf2);
+	fprintf(stderr, "configure wifi0 to %s\n", buf2);
 	eval("ifconfig", "wifi0", "hw", "ether", buf2);
 	led_control(LED_POWER, LED_ON);
 #endif
 #ifdef HAVE_TEW632BRP
-	if (lanmac!=NULL)
-	{
-	    fprintf(stderr, "configure wifi0 to %s\n",lanmac);
-	    eval("ifconfig", "wifi0", "hw", "ether", lanmac);
-	    free(lanmac);
+	if (lanmac != NULL) {
+		fprintf(stderr, "configure wifi0 to %s\n", lanmac);
+		eval("ifconfig", "wifi0", "hw", "ether", lanmac);
+		free(lanmac);
 	}
 	led_control(LED_POWER, LED_ON);
 #endif
 #ifdef HAVE_TG2521
 	{
-	    fprintf(stderr, "configure wifi0 to %s\n",mac);
-	    eval("ifconfig", "wifi0", "hw", "ether", mac);
+		fprintf(stderr, "configure wifi0 to %s\n", mac);
+		eval("ifconfig", "wifi0", "hw", "ether", mac);
 	}
 	led_control(LED_POWER, LED_ON);
-	eval("gpio","disable","5"); // enable usb port
+	eval("gpio", "disable", "5");	// enable usb port
 #endif
 #ifdef HAVE_WR1043
 	{
-	    fprintf(stderr, "configure wifi0 to %s\n",mac);
-	    eval("ifconfig", "wifi0", "hw", "ether", mac);
+		fprintf(stderr, "configure wifi0 to %s\n", mac);
+		eval("ifconfig", "wifi0", "hw", "ether", mac);
 	}
 	led_control(LED_POWER, LED_ON);
 #endif
@@ -333,7 +328,6 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
 	insmod("ipv6");
-
 
 	/*
 	 * Set a sane date 
