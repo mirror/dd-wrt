@@ -1008,6 +1008,9 @@ int internal_getRouterBrand()
 #elif HAVE_DIR615C1
 	setRouter("D-Link DIR-615-C1");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_DIR615E
+	setRouter("D-Link DIR-615-E1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_TEW652BRP
 	setRouter("Trendnet TEW-652BRP");
 	return ROUTER_BOARD_PB42;
@@ -2767,6 +2770,16 @@ int led_control(int type, int act)
 		ses_gpio = 0x104;
 #endif
 #ifdef HAVE_WZRG300NH
+		diag_gpio = 0x101;
+		connected_gpio = 0x112;
+		ses_gpio = 0x111;
+#endif
+#ifdef HAVE_DIR615E
+		power_gpio = 0x006;
+		diag_gpio = 0x001;
+		connected_gpio = 0x007;
+		ses_gpio = 0x100;
+		
 		diag_gpio = 0x101;
 		connected_gpio = 0x112;
 //              usb_gpio = 0x100;
