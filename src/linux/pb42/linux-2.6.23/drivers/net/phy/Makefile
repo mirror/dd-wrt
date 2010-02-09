@@ -17,3 +17,4 @@ obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
 obj-$(CONFIG_FIXED_PHY)		+= fixed.o
 obj-$(CONFIG_RTL8306_PHY)	+= swconfig.o rtl8306.o
 obj-$(CONFIG_AR8216_PHY)	+= swconfig.o ar8216.o
+obj-$(CONFIG_RTL8366RB_SMI)	+= rtl8366rb_smi.o

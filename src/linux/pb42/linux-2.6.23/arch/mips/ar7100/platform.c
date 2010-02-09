@@ -11,6 +11,7 @@
  *  under the terms of the GNU General Public License version 2 as published
  *  by the Free Software Foundation.
  */
+#include <linux/autoconf.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/kernel.h>
@@ -26,6 +27,7 @@
 #include <linux/serial_8250.h>
 
 #include <asm/mach-ar7100/ar7100.h>
+#include <linux/rtl8366rb_smi.h>
 
 extern uint32_t ar71xx_ahb_freq;
 
@@ -124,11 +126,33 @@ static struct platform_device ar7100_uart = {
 
 };
 
+#define TL_WR1043ND_GPIO_RTL8366_SDA    18
+#define TL_WR1043ND_GPIO_RTL8366_SCK    19
+
+
+static struct rtl8366rb_smi_platform_data tl_wr1043nd_rtl8366_smi_data = {
+	.gpio_sda        = TL_WR1043ND_GPIO_RTL8366_SDA,
+	.gpio_sck        = TL_WR1043ND_GPIO_RTL8366_SCK,
+};
+
+static struct platform_device tl_wr1043nd_rtl8366_smi_device = {
+	.name		= "rtl8366rb-smi",
+	.id		= -1,
+	.dev = {
+		.platform_data	= &tl_wr1043nd_rtl8366_smi_data,
+	}
+};
+
+
+
 static struct platform_device *ar7100_platform_devices[] __initdata = {
 	&ar7100_usb_ohci_device,
 	&ar7100_usb_ehci_device,
 	&ar7100_uart
+
 };
+
+
 
 #define AR71XX_USB_RESET_MASK \
 	(RESET_MODULE_USB_HOST | RESET_MODULE_USB_PHY \
@@ -142,7 +166,15 @@ int __init ar7100_platform_init(void)
         /* need to set clock appropriately */
         ar7100_uart_data[0].uartclk = ar71xx_ahb_freq; 
 
-	return platform_add_devices(ar7100_platform_devices,ARRAY_SIZE(ar7100_platform_devices));
+	platform_add_devices(ar7100_platform_devices,ARRAY_SIZE(ar7100_platform_devices));
+
+#ifdef CONFIG_RTL8366RB_SMI 
+	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
+#endif
+#ifdef CONFIG_RTL8366RB_SMI_MODULE
+	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
+#endif
+return 0;
 }
 
 arch_initcall(ar7100_platform_init);
