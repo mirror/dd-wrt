@@ -139,6 +139,7 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_WR1043
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	char mac[32];
 	if (fp)
 	{
 	unsigned char buf2[256];
@@ -155,16 +156,17 @@ void start_sysinit(void)
 			copy[2], copy[3],
 			copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+	eval("ifconfig", "eth0", "hw", "ether", mac);
 	eval("ifconfig","eth0","up");
-
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 	fprintf(stderr, "configure vlan1 to %s\n", mac);
 	eval("ifconfig", "vlan1", "hw", "ether", mac);
+	MAC_ADD(mac);
 	fprintf(stderr, "configure vlan2 to %s\n", mac);
 	eval("ifconfig", "vlan2", "hw", "ether", mac);
+	MAC_SUB(mac);
 	}
 #endif
 #ifdef HAVE_WRT160NL
@@ -296,6 +298,13 @@ void start_sysinit(void)
 	}
 	led_control(LED_POWER, LED_ON);
 	eval("gpio","disable","5"); // enable usb port
+#endif
+#ifdef HAVE_WR1043
+	{
+	    fprintf(stderr, "configure wifi0 to %s\n",mac);
+	    eval("ifconfig", "wifi0", "hw", "ether", mac);
+	}
+	led_control(LED_POWER, LED_ON);
 #endif
 
 #ifdef HAVE_RS
