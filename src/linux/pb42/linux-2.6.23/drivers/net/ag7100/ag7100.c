@@ -120,7 +120,12 @@ unsigned int * e10_pll;
 #else
 #ifdef	CONFIG_BUFFALO
 unsigned int e1000sr_pll[2]	= { 0x1e000100ul, 0x1e000100ul };
+#ifdef CONFIG_TPLINK
+unsigned int e1000rb_pll[2]	= { 0x1a000000ul, 0x1a000000ul };
+#else
 unsigned int e1000rb_pll[2]	= { 0x1f000000ul, 0x00000100ul };
+#endif
+
 unsigned int e100sr_pll[2]	= { 0x13000a44ul, 0x13000a44ul };
 unsigned int e100rb_pll[2]	= { 0x13000a44ul, 0x13000a44ul };
 unsigned int e10sr_pll[2]	= { 0x13000a44ul, 0x00441099ul };
@@ -129,7 +134,14 @@ unsigned int * e1000_pll;
 unsigned int * e100_pll;
 unsigned int * e10_pll;
 #endif	// CONFIG_BUFFALO //
+#ifdef CONFIG_RTL8366RB_SMI
+#define SW_PLL 0x1a000000ul
+#elif defined(CONFIG_RTL8366RB_SMI_MODULE)
+#define SW_PLL 0x1a000000ul
+#else
 #define SW_PLL 0x1f000000ul
+#endif
+
 int gige_pll = 0x1a000000;
 #endif
 module_param(gige_pll, int, 0);
@@ -2060,6 +2072,33 @@ ag7100_init(void)
         dev->priv            =  mac;
         
 #ifdef CONFIG_BUFFALO   // { append by BUFFALO 2008.09.19
+
+#ifdef CONFIG_TPLINK
+	switch(rtl_chip_type_select())
+	{
+		case CHIP_TYPE_RTL8366SR:
+			rtl_funcs.phy_setup = rtl8366sr_phy_setup;
+			rtl_funcs.phy_is_up = rtl8366sr_phy_is_up;
+			rtl_funcs.phy_speed = rtl8366sr_phy_speed;
+			rtl_funcs.phy_is_fdx = rtl8366sr_phy_is_fdx;
+			rtl_funcs.get_link_status = rtl8366sr_get_link_status;
+			e1000_pll = e1000sr_pll;
+			e100_pll = e100sr_pll;
+			e10_pll = e10sr_pll;
+			break;
+		case CHIP_TYPE_RTL8366RB:
+		default:
+			rtl_funcs.phy_setup = rtl8366rb_phy_setup;
+			rtl_funcs.phy_is_up = rtl8366rb_phy_is_up;
+			rtl_funcs.phy_speed = rtl8366rb_phy_speed;
+			rtl_funcs.phy_is_fdx = rtl8366rb_phy_is_fdx;
+			rtl_funcs.get_link_status = rtl8366rb_get_link_status;
+			e1000_pll = e1000rb_pll;
+			e100_pll = e100rb_pll;
+			e10_pll = e10rb_pll;
+			break;
+	}
+#else
 	switch(rtl_chip_type_select())
 	{
 		case CHIP_TYPE_RTL8366RB:
@@ -2084,6 +2123,9 @@ ag7100_init(void)
 			e10_pll = e10sr_pll;
 			break;
 	}
+
+
+#endif
 #else //CONFIG_BUFFALO //
 #ifdef CONFIG_CAMEO_REALTEK_PHY
     rtl_chip_type_select();

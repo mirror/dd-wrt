@@ -116,7 +116,7 @@ ag7100_phy_setup(int unit)
 static inline unsigned int
 ag7100_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
 {
-
+  
   rtl_funcs.get_link_status(unit, link, fdx, speed);
   return 0;
 }
@@ -179,13 +179,25 @@ ag7100_print_link_status(int unit)
 #include <linux/phy.h>
 
 #define ag7100_phy_is_up(unit)          1
+#ifdef CONFIG_RTL8366RB_SMI
+#define ag7100_phy_speed(unit)          AG7100_PHY_SPEED_1000T
+#elif CONFIG_RTL8366RB_SMI_MODULE
+#define ag7100_phy_speed(unit)          AG7100_PHY_SPEED_1000T
+#else
 #define ag7100_phy_speed(unit)          AG7100_PHY_SPEED_100TX
+#endif
 #define ag7100_phy_is_fdx(unit)         1
 static inline unsigned int 
 ag7100_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
 {
 *fdx = 1;
+#ifdef CONFIG_RTL8366RB_SMI
+*speed = AG7100_PHY_SPEED_1000T;
+#elif defined(CONFIG_RTL8366RB_SMI_MODULE)
+*speed = AG7100_PHY_SPEED_1000T;
+#else
 *speed = AG7100_PHY_SPEED_100TX;
+#endif
 *link = 1;
 return 0;
 }
@@ -221,7 +233,6 @@ static inline int ag7100_mdiobus_setup(int unit,struct net_device *dev)
   struct phy_device *phydev = NULL;
   struct mii_bus *mii_bus = kzalloc(sizeof(struct mii_bus),GFP_KERNEL);
   mii_bus->id=unit;
-  mii_bus->phy_mask=0;
   mii_bus->phy_mask=0;
   mii_bus->priv = dev;
   mii_bus->name = "ag7100_mii";

@@ -61,8 +61,46 @@ int ar7100_get_gpio(int gpio)
 		return 0;
 }
 
+void
+ar7100_gpio_config_output(int gpio)
+{
+    ar7100_reg_rmw_set(AR7100_GPIO_OE, (1 << gpio));
+    (void)ar7100_reg_rd(AR7100_GPIO_OE);	/* flush write to hardware */
+}
+
+void
+ar7100_gpio_config_input(int gpio)
+{
+    ar7100_reg_rmw_clear(AR7100_GPIO_OE, (1 << gpio));
+    (void)ar7100_reg_rd(AR7100_GPIO_OE);	/* flush write to hardware */
+}
+
+void
+ar7100_gpio_out_val(int gpio, int val)
+{
+    if (val & 0x1) {
+        ar7100_reg_rmw_set(AR7100_GPIO_OUT, (1 << gpio));
+    }
+    else {
+        ar7100_reg_rmw_clear(AR7100_GPIO_OUT, (1 << gpio));
+    }
+    (void)ar7100_reg_rd(AR7100_GPIO_OUT);	/* flush write to hardware */
+}
+
+int
+ar7100_gpio_in_val(int gpio)
+{
+    return((1 << gpio) & (ar7100_reg_rd(AR7100_GPIO_IN)));
+}
+
+
+
 EXPORT_SYMBOL(ar7100_set_gpio);
 EXPORT_SYMBOL(ar7100_get_gpio);
+EXPORT_SYMBOL(ar7100_gpio_config_output);
+EXPORT_SYMBOL(ar7100_gpio_config_input);
+EXPORT_SYMBOL(ar7100_gpio_in_val);
+EXPORT_SYMBOL(ar7100_gpio_out_val);
 
 #define USB_LED_OFF 1
 #define USB_LED_ON 0
@@ -82,6 +120,8 @@ void ap_usb_led_off(void)
 #endif
 }
 EXPORT_SYMBOL(ap_usb_led_off);
+
+
 
 
 #define NXP_74HC153_NUM_GPIOS	8

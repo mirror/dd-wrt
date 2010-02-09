@@ -80,6 +80,11 @@ config RTL8306_PHY
 	tristate "Driver for Realtek RTL8306S switches"
 	select SWCONFIG
 
+config RTL8366RB_SMI
+	tristate "Support for RTL8366RB switch via SMI interface"
+
+ 
+
 config FIXED_PHY
 	tristate "Drivers for PHY emulation on fixed speed/link"
 	---help---
