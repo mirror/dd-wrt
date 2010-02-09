@@ -164,6 +164,10 @@ endif
 ifeq ($(CONFIG_WGT624),y)
   CFLAGS_EXTRA += -DHAVE_WGT624
 endif
+ifeq ($(CONFIG_DIR615E),y)
+CFLAGS += -DHAVE_DIR615E
+endif
+
 ifeq ($(CONFIG_DIR600),y)
   CFLAGS_EXTRA += -DHAVE_DIR600
 endif

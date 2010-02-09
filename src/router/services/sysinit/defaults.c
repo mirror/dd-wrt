@@ -283,6 +283,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_WHRHPGN
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_DIR615E
+	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_DIR400
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_WRT54G2
