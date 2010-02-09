@@ -92,6 +92,7 @@ ar7100_power_off(void)
 
 
 int is_ar9000=0;
+EXPORT_SYMBOL(is_ar9000);
 const char 
 *get_system_type(void)
 {
