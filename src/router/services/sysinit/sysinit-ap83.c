@@ -208,7 +208,7 @@ void start_sysinit(void)
 		MAC_SUB(mac);
 	}
 #endif
-#ifdef HAVE_TEW632BRP
+#if defined(HAVE_TEW632BRP) || defined(HAVE_DIR615E)
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
 	FILE *in = fopen("/dev/mtdblock/0", "rb");
@@ -277,7 +277,7 @@ void start_sysinit(void)
 	eval("ifconfig", "wifi0", "hw", "ether", buf2);
 	led_control(LED_POWER, LED_ON);
 #endif
-#ifdef HAVE_TEW632BRP
+#ifdef defined(HAVE_TEW632BRP) || defined(HAVE_DIR615E)
 	if (lanmac != NULL) {
 		fprintf(stderr, "configure wifi0 to %s\n", lanmac);
 		eval("ifconfig", "wifi0", "hw", "ether", lanmac);
