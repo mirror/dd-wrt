@@ -108,6 +108,10 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
+#ifdef HAVE_WR1043
+	fprintf(stderr, "load RTL Switch Driver\n");
+	insmod("rtl8366rb_smi");
+#endif
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7100_mod");
 #ifdef HAVE_WZRG300NH
@@ -152,8 +156,15 @@ void start_sysinit(void)
 			copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
-		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+	eval("ifconfig","eth0","up");
+
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth0", "1");
+	eval("vconfig", "add", "eth0", "2");
+	fprintf(stderr, "configure vlan1 to %s\n", mac);
+	eval("ifconfig", "vlan1", "hw", "ether", mac);
+	fprintf(stderr, "configure vlan2 to %s\n", mac);
+	eval("ifconfig", "vlan2", "hw", "ether", mac);
 	}
 #endif
 #ifdef HAVE_WRT160NL
