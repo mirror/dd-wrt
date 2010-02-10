@@ -147,6 +147,10 @@ void start_sysinit(void)
 	detect_wireless_devices();
 	eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	eval("ifconfig", "wifi1", "hw", "ether", mac1);
+	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 
 /*#ifdef HAVE_RS
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
