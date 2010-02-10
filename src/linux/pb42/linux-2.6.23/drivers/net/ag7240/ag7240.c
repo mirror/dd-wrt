@@ -545,6 +545,10 @@ ag7240_hw_stop(ag7240_mac_t *mac)
  * XXX Need defines for them -
  * XXX FIFO settings based on the mode
  */
+extern void ar7100_set_gpio(int gpio, int val);
+extern int ar7100_get_gpio(int gpio);
+
+
 static void
 ag7240_set_mac_from_link(ag7240_mac_t *mac, ag7240_phy_speed_t speed, int fdx)
 {
@@ -618,6 +622,9 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                 cnt = cnt + athrs26_reg_read(reg_addr);
 
                 if (cnt == 0) {
+                #ifdef CONFIG_DIR615E
+            	    ar7100_set_gpio(13+i,1);
+                #endif
                     s26_wr_phy(i,0x19,(s26_rd_phy(i,0x19) | (0x3c0)));
                     continue;
                 }
@@ -626,14 +633,19 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                 }
                 while (bRateTab++) {
                     if (cnt <= bRateTab->rate) {
-                        s26_wr_phy(i,0x18,((bRateTab->timeOn << 12)|
-                            (bRateTab->timeOff << 8)));
-                        s26_wr_phy(i,0x19,(s26_rd_phy(i,0x19) & ~(0x280)));
+                #ifdef CONFIG_DIR615E
+            		ar7100_set_gpio(13+i,0);
+                #endif
+                        s26_wr_phy(i,0x18,((bRateTab->timeOn << 12)|(bRateTab->timeOff << 8)));
+                        s26_wr_phy(i,0x19,(s26_rd_phy(i,0x19) & ~(0x280)));                
                         break;
                     }
                 }
             } else {
-                s26_wr_phy(i,0x19,0x0);
+                #ifdef CONFIG_DIR615E
+            	    ar7100_set_gpio(13+i,1);
+            	#endif
+            	    s26_wr_phy(i,0x19,0x0);
             }
         }
         /* Flush all LAN MIB counters */
@@ -651,6 +663,9 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                            ag7240_reg_rd(mac,AG7240_TX_BYTES_CNTR);
 
             if (ag7240_get_diff(pkt_count,cnt) == 0) {
+                #ifdef CONFIG_DIR615E
+            	ar7100_set_gpio(17,1);                
+                #endif
                 s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) | (0x3c0)));
                 goto done;
             }
@@ -659,14 +674,19 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
             }
             while (bRateTab++) {
                 if (ag7240_get_diff(pkt_count,cnt) <= bRateTab->rate) {
-                    s26_wr_phy(4,0x18,((bRateTab->timeOn << 12)|
-                        (bRateTab->timeOff << 8)));
+                #ifdef CONFIG_DIR615E
+            	    ar7100_set_gpio(17,0);
+                #endif
+                    s26_wr_phy(4,0x18,((bRateTab->timeOn << 12)|(bRateTab->timeOff << 8)));
                     s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) & ~(0x280)));
                     break;
                 }
             }
             pkt_count = cnt;
         } else {
+            #ifdef CONFIG_DIR615E
+            ar7100_set_gpio(17,1);            
+            #endif
             s26_wr_phy(4,0x19,0x0);
         }
     }

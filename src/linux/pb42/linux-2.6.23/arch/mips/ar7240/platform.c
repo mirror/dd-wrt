@@ -131,6 +131,7 @@ static struct platform_device *ar724x_platform_devices[] __initdata = {
 
 int __init ar7240_platform_init(void)
 {
+	int ret;
         /* need to set clock appropriately */
         ar7240_uart_data[0].uartclk = ar7240_ahb_freq; 
 	ret = platform_add_devices(ar724x_platform_devices, 
@@ -147,6 +148,7 @@ int __init ar7240_platform_init(void)
 	    return (platform_add_devices(ar7240_platform_devices, 
                                 ARRAY_SIZE(ar7240_platform_devices)));
         }
+        return ret;
 }
 
 arch_initcall(ar7240_platform_init);
