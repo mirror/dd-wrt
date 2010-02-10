@@ -687,11 +687,12 @@ int internal_getRouterBrand()
 #elif HAVE_W502U
 	setRouter("Alfa W502U");
 	return ROUTER_BOARD_W502U;
+#elif HAVE_DIR615
+	setRouter("Dlink-DIR615 rev d");
+	return ROUTER_BOARD_DIR615D;
 #elif HAVE_DIR600
 #ifdef HAVE_DIR300
 	setRouter("Dlink-DIR300 rev b");
-#elif HAVE_DIR615
-	setRouter("Dlink-DIR615 rev d2");
 #else
 	setRouter("Dlink-DIR600 rev b");
 #endif
@@ -2867,6 +2868,11 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BOARD_DIR600B:
 		diag_gpio = 0x10d;
+		connected_gpio = 0x108;
+		power_gpio = 0x109;
+		break;
+	case ROUTER_BOARD_DIR615D:
+		diag_gpio = 0x10b;
 		connected_gpio = 0x108;
 		power_gpio = 0x109;
 		break;
