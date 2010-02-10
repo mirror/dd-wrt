@@ -65,10 +65,60 @@ ar7240_power_off(void)
         ar7240_halt();
 }
 
+
 const char 
 *get_system_type(void)
 {
-    return "Atheros AR7240 (Python)";
+char *chip;
+u32 id;
+u32 rev=0;
+static char str[64];
+id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
+
+switch (id) {
+	case AR7240_REV_ID_AR7130:
+		chip = "7130";
+		break;
+	case AR7240_REV_ID_AR7141:
+		chip = "7141";
+		break;
+	case AR7240_REV_ID_AR7161:
+		chip = "7161";
+		break;
+	case AR7240_REV_1_0:
+		chip = "7240";
+		rev = 0;
+		break;
+	case AR7240_REV_1_1:
+		chip = "7240";
+		rev = 1;
+		break;
+	case AR7240_REV_1_2:
+		chip = "7240";
+		rev = 2;
+		break;
+	case AR7241_REV_1_0:
+		chip = "7241";
+		rev = 0;
+		break;
+	case AR7242_REV_1_0:
+		chip = "7242";
+		rev = 0;
+		break;
+	case AR7241_REV_1_1:
+		chip = "7241";
+		rev = 1;
+		break;
+	case AR7242_REV_1_1:
+		chip = "7242";
+		rev = 1;
+		break;
+	default:
+		chip = "724x";
+	}
+sprintf(str, "Atheros AR%s rev 1.%u (0x%04x)",
+		chip, rev, id);
+return str;
 }
 
 EXPORT_SYMBOL(get_system_type);
