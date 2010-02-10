@@ -103,7 +103,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "n5-only")
 			    && nvram_invmatch(wl_mode, "na-only"))
 				{
-				fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
+//				fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
 				continue;
 				}
 		}
@@ -114,7 +114,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "n5-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
-				fprintf(stderr,"11na ht20 Ghz %d is not compatible to na-only/mixed/n-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
+//				fprintf(stderr,"11na ht20 Ghz %d is not compatible to na-only/mixed/n-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
 				continue;
 			}
 		}
@@ -136,21 +136,20 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 								 ic_chans[i]))
 				continue;
 		}
-		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i]) && nvram_invmatch(wl_mode,"b-only") && nvram_invmatch(wl_mode,"g-only")) {
+		if (IEEE80211_IS_CHAN_11NG_HT20(&achans.ic_chans[i]) && nvram_invmatch(wl_mode,"b-only") && nvram_invmatch(wl_mode,"g-only")  && nvram_invmatch(wl_mode,"bg-mixed")) {
 			if (nvram_invmatch(wl_mode, "ng-only")
 			    && nvram_invmatch(wl_mode, "mixed")
-			    && nvram_invmatch(wl_mode, "g-only")
-			    && nvram_invmatch(wl_mode, "bg-mixed")
-			    && nvram_invmatch(wl_mode, "b-only")
+			    && nvram_invmatch(wl_mode, "n2-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
 				continue;
 			}
 		}
 		if ((IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i])
-		    || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i]))  && nvram_invmatch(wl_mode,"b-only") && nvram_invmatch(wl_mode,"g-only")) {
+		    || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i]))  && nvram_invmatch(wl_mode,"b-only") && nvram_invmatch(wl_mode,"g-only") && nvram_invmatch(wl_mode,"bg-mixed")) {
 			if (nvram_invmatch(wl_mode, "ng-only")
 			    && nvram_invmatch(wl_mode, "mixed")
+			    && nvram_invmatch(wl_mode, "n2-only")
 			    && nvram_invmatch(wl_turbo, "40")
 			    && nvram_invmatch(wl_turbo, "2040")) {
 				continue;
