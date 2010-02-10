@@ -633,6 +633,7 @@ config AR7100_USB_GPIO_LED
     depends on MACH_AR7100 || MACH_AR7240
     default n
 
+
 config AP_USB_LED_GPIO
     int "gpio number"
     depends on AR7100_USB_GPIO_LED
@@ -651,6 +652,11 @@ config  MACH_AR7240
 config AR7240_DEFAULT_GPIO
     bool "use default gpios for wireless?"
     depends on MACH_AR7240
+
+config DIR615E
+    bool "dir615e support?"
+    depends on MACH_AR7240
+    default n
 
 config AR7240_EMULATION
     bool "build system for AR7240 emulation board?"
