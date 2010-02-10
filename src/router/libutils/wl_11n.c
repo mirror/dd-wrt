@@ -140,6 +140,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "ng-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "g-only")
+			    && nvram_invmatch(wl_mode, "bg-mixed")
 			    && nvram_invmatch(wl_mode, "b-only")
 			    && nvram_invmatch(wl_turbo, "20")
 			    && nvram_invmatch(wl_turbo, "2040")) {
