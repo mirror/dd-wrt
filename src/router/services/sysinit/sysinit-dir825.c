@@ -163,6 +163,12 @@ void start_sysinit(void)
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif*/
+	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
+
 	insmod("ipv6");
 
 	/*
