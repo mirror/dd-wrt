@@ -3711,7 +3711,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "%s_regdomain", prefix);
-	if (nvram_match("ath_regulatory", "1") || !issuperchannel()) {
+	if (nvram_nmatch("1","%s_regulatory", prefix) || !issuperchannel()) {
 		websWrite(wp,
 			  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 		char *list = getCountryList();
@@ -3732,7 +3732,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// power adjustment
 	sprintf(power, "%s_txpwrdbm", prefix);
 	// sprintf (maxpower, "%s_maxpower", prefix);
-	if (!strcmp(prefix, "ath0") && issuperchannel())	// show
+	if (issuperchannel())	// show
 		// client
 		// only on
 		// first
@@ -3743,11 +3743,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp,
 			  " 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
 		websWrite(wp,
-			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  nvram_match("ath_regulatory", "0") ? "checked" : "");
+			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",prefix,
+			  nvram_nmatch("1","%s_regulatory", prefix) ? "checked" : "");
 		websWrite(wp,
-			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-			  nvram_match("ath_regulatory", "1") ? "checked" : "");
+			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",prefix,
+			  nvram_nmatch("1","%s_regulatory", prefix) ? "checked" : "");
 		websWrite(wp, " 	</div>\n");
 
 	}
@@ -3759,7 +3759,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
-	if (nvram_match("ath_regulatory", "1"))
+	if (nvram_nmatch("1","%s_regulatory", prefix))
 #endif
 	{
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -3987,7 +3987,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-	if (nvram_match("ath_regulatory", "1") || !issuperchannel()) {
+	if (nvram_nmatch("1","%s_regulatory", prefix) || !issuperchannel()) {
 		showRadio(wp, "wl_basic.outband", wl_outdoor);
 	}
 #endif

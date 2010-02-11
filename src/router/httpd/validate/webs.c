@@ -2489,7 +2489,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 	copytonv(wp, "%s_antgain", prefix);
-	copytonv(wp, "ath_regulatory");
+	copytonv(wp, "%s_regulatory", prefix);
 	sprintf(n, "%s_scanlist", prefix);
 	{
 		char *sl = websGetVar(wp, n, NULL);
