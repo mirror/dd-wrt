@@ -33,11 +33,14 @@ RTL8366_FUNCS rtl_funcs =
 };
 #endif //CONFIG_BUFFALO //
 
+unsigned int rx_hang_detect_pkt_cnt_all[2], rx_hang_detect_pkt_cnt_valid[2],rx_hang_detected[2];
+int set_mac_from_link_flag = 0;
 static ag7100_mac_t *ag7100_macs[2];
 static void ag7100_hw_setup(ag7100_mac_t *mac);
 static void ag7100_hw_stop(ag7100_mac_t *mac);
 static void ag7100_oom_timer(unsigned long data);
 static int  ag7100_check_link(ag7100_mac_t *mac);
+static int  check_for_dma_hang(ag7100_mac_t *mac);
 static int  ag7100_tx_alloc(ag7100_mac_t *mac);
 static int  ag7100_rx_alloc(ag7100_mac_t *mac);
 static void ag7100_rx_free(ag7100_mac_t *mac);
@@ -55,10 +58,8 @@ static int ag7100_poll(struct napi_struct *napi, int budget);
 static int ag7100_poll(struct net_device *dev, int *budget);
 #endif
 static void ag7100_buffer_free(struct sk_buff *skb);
-//#ifdef CONFIG_AR9100
 void ag7100_dma_reset(ag7100_mac_t *mac);
 int board_version;
-//#endif
 int  ag7100_recv_packets(struct net_device *dev, ag7100_mac_t *mac,
     int max_work, int *work_done);
 static irqreturn_t ag7100_intr(int cpl, void *dev_id);
@@ -271,6 +272,10 @@ ag7100_open(struct net_device *dev)
     /*
     * phy link mgmt
     */
+    rx_hang_detect_pkt_cnt_all[mac->mac_unit] = ag7100_get_rx_count(mac);	    
+    rx_hang_detect_pkt_cnt_valid[mac->mac_unit] = mac->net_rx_packets;
+    rx_hang_detected[mac->mac_unit] = 0;
+
     init_timer(&mac->mac_phy_timer);
     mac->mac_phy_timer.data     = (unsigned long)mac;
     mac->mac_phy_timer.function = ag7100_check_link;
@@ -762,12 +767,70 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
         athrs26_phy_on(mac);
 #endif
 
-    printk(MODULE_NAME ": cfg_1: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_1));
-    printk(MODULE_NAME ": cfg_2: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_2));
-    printk(MODULE_NAME ": cfg_3: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_3));
-    printk(MODULE_NAME ": cfg_4: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_4));
-    printk(MODULE_NAME ": cfg_5: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_5));
+    printk(MODULE_NAME ": CPU PhaseLockLoop      : %#x\n", *(volatile int *) 0xb8050000);  //set CPU PhaseLockLoop configuration
+    printk(MODULE_NAME ": Secondary PhaseLockLoop: %#x\n", *(volatile int *) 0xb8050004);  //set secondary PhaseLockLoop configuration
+    printk(MODULE_NAME ": Ethernet Internal Clock Control: %#x\n", *(volatile int *) 0xb8050010);  //set Ethernet Internal Clock Control
+    printk(MODULE_NAME ": mii: %#x\n", ar7100_reg_rd(mii_reg(mac)));
+    printk(MODULE_NAME ": cfg1: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_CFG1));
+    printk(MODULE_NAME ": cfg2: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_CFG2));        
+    printk(MODULE_NAME ": fcfg_0: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_0));
+    printk(MODULE_NAME ": fcfg_1: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_1));
+    printk(MODULE_NAME ": fcfg_2: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_2));
+    printk(MODULE_NAME ": fcfg_3: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_3));
+    printk(MODULE_NAME ": fcfg_4: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_4));
+    printk(MODULE_NAME ": fcfg_5: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_5));
 }
+
+static void copy_txdescs(ag7100_mac_t *mac, int start, int end)
+{
+    ag7100_ring_t      *r   = &mac->mac_txring;
+    ag7100_ring_t      *tr   = &mac->mac_txring_cache;
+    ag7100_desc_t      *tds, *fds;
+
+    if (end >= r->ring_nelem) end -= r->ring_nelem;
+    while (start != end)
+    {
+        fds = &r->ring_desc[start];
+        tds = &tr->ring_desc[start];
+        memcpy(tds, fds, 8); /* just the first two words of the desc */
+        ag7100_ring_incr(start);
+    }
+}
+
+static int check_for_dma_hang(ag7100_mac_t *mac) {
+
+    ag7100_ring_t   *r     = &mac->mac_txring;
+    int              head  = r->ring_head, tail = r->ring_tail;
+    ag7100_desc_t   *ds;
+#if 1//DMA tx hang
+    ag7100_buffer_t *bf;
+#endif
+    ag7100_buffer_t *bp;
+
+    ar7100_flush_ge(mac->mac_unit);
+
+    while (tail != head)
+    {
+        ds   = &r->ring_desc[tail];
+        bp   =  &r->ring_buffer[tail];
+
+        if(ag7100_tx_owned_by_dma(ds)) {
+                        if ((jiffies - bp->trans_start) > (1 * HZ)) {
+                printk(MODULE_NAME ": Tx Dma status : %s\n",
+                ag7100_tx_stopped(mac) ? "inactive" : "active");
+#if 0
+                printk(MODULE_NAME ": timestamp:%u jiffies:%u diff:%d\n",bp->trans_start,jiffies,
+                             (jiffies - bp->trans_start));
+#endif
+               ag7100_dma_reset(mac);
+                           return 1;
+           }
+        }
+        ag7100_ring_incr(tail);
+    }
+    return 0;
+}
+
 
 /*
  * phy link state management
@@ -779,6 +842,10 @@ ag7100_check_link(ag7100_mac_t *mac)
     int                 carrier = netif_carrier_ok(dev), fdx, phy_up=1;
     ag7100_phy_speed_t  speed;
     int                 rc;
+
+    /* workaround for dma hang, seen on DIR-825 */
+    if(check_for_dma_hang(mac))
+        goto done;
 
     /* The vitesse switch uses an indirect method to communicate phy status
     * so it is best to limit the number of calls to what is necessary.
@@ -847,6 +914,52 @@ done:
     else
 #endif        
     mod_timer(&mac->mac_phy_timer, jiffies + AG7100_PHY_POLL_SECONDS*HZ);
+
+/* "Hydra WAN + RealTek PHY with a specific NetGear Hub" Rx hang workaround */
+#if 1//DMA mac hang
+     {
+        unsigned int perf_cnt = ag7100_get_rx_count(mac);
+        if (perf_cnt == 0xffffffff) {
+            /* we have saturated the counter. let it overflow to 0 */
+            if (mac->mac_unit == 0) {
+                ar7100_reg_wr(AR7100_PERF0_COUNTER, 0);
+            }
+            else {
+                ar7100_reg_wr(AR7100_PERF1_COUNTER, 0);
+            }
+        }
+		int status;
+		status = ag7100_reg_rd(mac, AG7100_DMA_RX_STATUS);
+        /* perf_cnt increments on every rx pkt including runts.
+         * so, the rx hang occurred when perf_cnt incremented, but
+         * valid rx pkts didn't get incremented. this could result
+         * in a false positive but the likelihood that over a 2sec
+         * period all pkts received were runts appears to me
+         * to be very low -JK.
+         */
+	
+		if ((perf_cnt > rx_hang_detect_pkt_cnt_all[mac->mac_unit]) &&
+            (mac->net_rx_packets == rx_hang_detect_pkt_cnt_valid[mac->mac_unit]) &&
+	    (!(status & AG7100_RX_STATUS_PKT_RCVD)) &&
+	    (!((status & AG7100_RX_STATUS_PKTCNT_MASK )>>16))) {
+	     	rx_hang_detected[mac->mac_unit] += 1;
+	     	if ( mac->mac_unit == 1 )	     
+            	printk(MODULE_NAME ": WAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
+	    	 else
+				printk(MODULE_NAME ": LAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
+            rx_hang_detect_pkt_cnt_all[mac->mac_unit] = perf_cnt;
+	    	rx_hang_detect_pkt_cnt_valid[mac->mac_unit] = mac->net_rx_packets;
+
+	    	if (rx_hang_detected[mac->mac_unit] >= 2)
+		     	ag7100_dma_reset(mac);
+        }
+        else {
+            rx_hang_detect_pkt_cnt_all[mac->mac_unit] = perf_cnt;
+            rx_hang_detect_pkt_cnt_valid[mac->mac_unit] = mac->net_rx_packets;
+	    	rx_hang_detected[mac->mac_unit] = 0;
+        }
+    }
+#endif
 
     return 0;
 }
@@ -957,6 +1070,7 @@ ag7100_get_tx_ds(ag7100_mac_t *mac, int *len, unsigned char **start)
     ag7100_desc_t      *ds;
     int                len_this_ds;
     ag7100_ring_t      *r   = &mac->mac_txring;
+    ag7100_buffer_t    *bp;
 
     /* force extra pkt if remainder less than 4 bytes */
     if (*len > tx_len_per_ds)
@@ -971,12 +1085,8 @@ ag7100_get_tx_ds(ag7100_mac_t *mac, int *len, unsigned char **start)
 
     ag7100_trc_new(ds,"ds addr");
     ag7100_trc_new(ds,"ds len");
-//#ifdef CONFIG_AR9100
     if(ag7100_tx_owned_by_dma(ds))
         ag7100_dma_reset(mac);
-//#else
-//    assert(!ag7100_tx_owned_by_dma(ds));
-//#endif
 
     ds->pkt_size       = len_this_ds;
     ds->pkt_start_addr = virt_to_phys(*start);
@@ -984,6 +1094,9 @@ ag7100_get_tx_ds(ag7100_mac_t *mac, int *len, unsigned char **start)
 
     *len   -= len_this_ds;
     *start += len_this_ds;
+
+     bp = &r->ring_buffer[r->ring_head];
+     bp->trans_start = jiffies; /*Time stamp each packet */
 
     ag7100_ring_incr(r->ring_head);
 
@@ -1283,13 +1396,11 @@ ag7100_poll(struct net_device *dev, int *budget)
     netif_rx_complete(dev);
     }
 #endif
-#if 1//def CONFIG_AR9100
     if(ret == AG7100_RX_DMA_HANG)
     {
         status = 0;
         ag7100_dma_reset(mac);
     }
-#endif
 
     if (likely(ret == AG7100_RX_STATUS_NOT_DONE))
     {
@@ -1378,15 +1489,11 @@ process_pkts:
 
         if (ag7100_rx_owned_by_dma(ds))
         {
-#if 1//def CONFIG_AR9100
             if(quota == iquota)
             {
                 *work_done = quota = 0;
                 return AG7100_RX_DMA_HANG;
             }
-#else
-            assert(quota != iquota); /* WCL */
-#endif
             break;
         }
         ag7100_intr_ack_rx(mac);
@@ -1492,17 +1599,20 @@ process_pkts:
         ag7100_ring_incr(head);
     }
 
-    assert(iquota != quota);
+    if(quota == iquota)
+    {
+        *work_done = quota = 0;
+        return AG7100_RX_DMA_HANG;
+    }
+
     r->ring_head   =  head;
 
     rep = ag7100_rx_replenish(mac);
-//#ifdef CONFIG_AR9100
     if(rep < 0)
     {
         *work_done =0 ;
         return AG7100_RX_DMA_HANG;
     }
-//#endif
     /*
     * let's see what changed while we were slogging.
     * ack Rx in the loop above is no flush version. It will get flushed now.
@@ -1584,15 +1694,11 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
         ds                  = &r->ring_desc[tail];
 
         ag7100_trc(ds,"ds");
-#if 1// CONFIG_AR9100
 
         if(ag7100_rx_owned_by_dma(ds))
         {
             return -1;
         }
-#else		
-        assert(!ag7100_rx_owned_by_dma(ds));
-#endif
         assert(!bf->buf_pkt);
 
         bf->buf_pkt         = ag7100_buffer_alloc();
