@@ -147,15 +147,9 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			}
 		}
 		if ((IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i])
-		    || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i]))  && nvram_invmatch(wl_mode,"b-only") && nvram_invmatch(wl_mode,"g-only") && nvram_invmatch(wl_mode,"bg-mixed")) {
-			if (nvram_invmatch(wl_mode, "ng-only")
-			    && nvram_invmatch(wl_mode, "mixed")
-			    && nvram_invmatch(wl_mode, "n2-only")
-			    && nvram_invmatch(wl_turbo, "40")
-			    && nvram_invmatch(wl_turbo, "2040")) {
-				fprintf(stderr,"%s:%d\n",__func__,__LINE__);
-				continue;
-			}
+		    || IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i]))  && 
+		     (nvram_match(wl_turbo,"40") || nvram_match(wl_turbo,"2040"))  && 
+		     (nvram_match(wl_mode,"n-only") || nvram_match(wl_mode,"n2-only") || nvram_match(wl_mode,"mixed") || nvram_match(wl_mode,"ng-only") ) ) {
 			if (nvram_match(wl_turbo,"40"))
 			{
 			if (up
