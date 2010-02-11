@@ -34,6 +34,7 @@ typedef struct {
     struct sk_buff *buf_pkt;        /*ptr to skb*/
     int             buf_nds;        /*no. of desc for this skb*/
     ag7100_desc_t  *buf_lastds;     /*the last desc. (for convenience)*/
+    unsigned long   trans_start;    /*  descriptor time stamp */
 }ag7100_buffer_t;
 
 /*
@@ -84,6 +85,8 @@ typedef struct {
     ag7100_phy_speed_t      mac_speed;
     int                     mac_fdx;
     struct timer_list       mac_phy_timer;
+    struct timer_list       mac_dbg_timer;
+    ag7100_ring_t           mac_txring_cache;
 #if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
     int                     speed_10t;
 #endif
