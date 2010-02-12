@@ -90,12 +90,15 @@ static int ar7240_flash_probe()
 	return 0;
 }
 
+static int zcom=0;
+static unsigned int zcomoffset = 0;
 int guessbootsize(void *offset, unsigned int maxscan)
 {
-	unsigned int i;
+	unsigned int i,a;
 	unsigned int *ofs = (unsigned int *)offset;
 	maxscan -= 65536;
 	maxscan /= 4;
+	zcom=0;
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
 			printk(KERN_EMERG "redboot or compatible detected\n");
@@ -105,10 +108,27 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
-		if (ofs[i + 7] == 0x27051956) {
+		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x44442d57) {
+			printk(KERN_EMERG "tplink uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
+		if (ofs[i + 15] == 0x27051956) {
 			printk(KERN_EMERG "WRT160NL uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
+		if (ofs[i] == SQUASHFS_MAGIC) {
+			printk(KERN_EMERG "ZCom quirk found\n");
+			zcom=1;
+			for (a = i; a < maxscan; a += 16384) {
+					if (ofs[a] == 0x27051956) {
+					    printk(KERN_EMERG "ZCom quirk kernel offset %d\n",a*4);
+					    zcomoffset = a * 4;
+					}
+    	
+			}
+			return i * 4;	// filesys starts earlier
+		}
+		
 	}
 	return -1;
 }
@@ -324,14 +344,14 @@ static int __init ar7240_flash_init(void)
 		if (guess > 0) {
 			printk(KERN_EMERG "guessed bootloader size = %X\n",
 			       guess);
-			if (guess>0x30000)
-			{
-			dir_parts[0].size = guess-0x30000;
-			dir_parts[0].offset = 0x30000;
-			}else{
-			dir_parts[0].offset = 0;
-			dir_parts[0].size = guess;			
-			}
+//			if (guess>0x30000)
+//			{
+//			dir_parts[0].size = guess-0x30000;
+//			dir_parts[0].offset = 0x30000;
+//			}else{
+//			dir_parts[0].offset = 0;
+//			dir_parts[0].size = guess;			
+//			}
 			dir_parts[7].size = guess;			
 			dir_parts[1].offset = guess;
 			dir_parts[1].size = 0;
