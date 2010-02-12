@@ -382,8 +382,12 @@ static int __init ar7100_flash_init(void)
 				len &= ~(mtd->erasesize - 1);
 				dir_parts[2].size =
 				    (len & 0xffffff) - dir_parts[2].offset;
+#ifdef CONFIG_DIR825
+				dir_parts[3].offset = 0x670000;
+#else
 				dir_parts[3].offset =
 				    dir_parts[2].offset + dir_parts[2].size;
+#endif
 				dir_parts[6].offset = mtd->size - mtd->erasesize;	// board config
 				dir_parts[6].size = mtd->erasesize;
 #ifdef CONFIG_MTD_FLASH_16MB
@@ -409,8 +413,7 @@ static int __init ar7100_flash_init(void)
 				else
 					dir_parts[4].offset = dir_parts[5].offset - mtd->erasesize;	//nvram
 				dir_parts[4].size = mtd->erasesize;
-				dir_parts[3].size =
-				    dir_parts[4].offset - dir_parts[3].offset;
+				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
 #ifdef CONFIG_AR9100
 //                                      dir_parts[1].offset = 0x40000;
