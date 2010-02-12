@@ -244,6 +244,7 @@ configs-checkout:
 	svn co svn://svn.dd-wrt.com/private/designs/wts $(TOP)/kromo/dd-wrt/wts
 	svn co svn://svn.dd-wrt.com/private/designs/mynetway $(TOP)/kromo/dd-wrt/mynetway
 	svn co svn://svn.dd-wrt.com/private/designs/wikings $(TOP)/kromo/dd-wrt/wikings
+	svn co svn://svn.dd-wrt.com/private/designs/nextmedia $(TOP)/kromo/dd-wrt/nextmedia
 		
 
 configs-update:
@@ -272,6 +273,7 @@ configs-update:
 	svn update $(TOP)/kromo/dd-wrt/wts
 	svn update $(TOP)/kromo/dd-wrt/mynetway
 	svn update $(TOP)/kromo/dd-wrt/wikings
+	svn update $(TOP)/kromo/dd-wrt/nextmedia
 
 configs-clean:
 	@true
