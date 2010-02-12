@@ -129,7 +129,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 				continue;
 				}
-			if (nvram_match(wl_turbo,"40") && (nvram_match(wl_mode, "n2-only") || nvram_match(wl_mode, "mixed") || nvram_match(wl_mode, "ng-only"))
+			if (nvram_match(wl_turbo,"40") && (nvram_match(wl_mode, "n2-only") || nvram_match(wl_mode, "mixed") || nvram_match(wl_mode, "ng-only")))
 			{
 			if (up
 			    && !IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.
