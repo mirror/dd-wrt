@@ -195,6 +195,15 @@ int nvram_set(const char *name, const char *value)
 	extern struct nvram_convert nvram_converts[];
 	struct nvram_convert *v;
 	int ret;
+#ifdef HAVE_NOWIFI
+	if (!strcmp(name, "ip_conntrack_max") && value != NULL) {
+		int val = atoi(value);
+		if (val > 4096) {
+			return _nvram_set(name, "4096");
+		}
+
+	}
+#endif
 	ret = _nvram_set(name, value);
 
 	for (v = nvram_converts; v->name; v++) {
