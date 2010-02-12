@@ -33,6 +33,8 @@ else
 	install profile $(INSTALLDIR)/etc
 endif
 ifndef CONFIG_MAKSAT
+ifndef CONFIG_WIKINGS
+ifndef CONFIG_NEXTMEDIA
 ifdef CONFIG_TMK
 	install motd.kmt $(INSTALLDIR)/etc/motd
 else
@@ -43,11 +45,13 @@ else
 endif
 endif
 endif
+endif
+endif
 
 ifdef CONFIG_XSCALE
 	install convert $(INSTALLDIR)/etc
 	install kendin $(INSTALLDIR)/etc
-	cp firmware/*.dat $(INSTALLDIR)/usr/lib/firmware
+#	cp firmware/*.dat $(INSTALLDIR)/usr/lib/firmware
 ifndef CONFIG_WP18
 ifndef CONFIG_WG302
 ifndef CONFIG_NOP8670
