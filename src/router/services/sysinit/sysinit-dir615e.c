@@ -112,7 +112,7 @@ void start_sysinit(void)
 	insmod("ag7240_mod");
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
-	FILE *in = fopen("/dev/mtdblock/0", "rb");
+	FILE *in = fopen("/dev/mtdblock/6", "rb");
 	char *lanmac = NULL;
 	if (in != NULL) {
 		fseek(in, 0x30000, SEEK_SET);
