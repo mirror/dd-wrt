@@ -259,6 +259,14 @@ ifeq ($(CONFIG_WIKINGS),y)
 	cp wikings/About.htm $(INSTALLDIR)/www
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 endif
+ifeq ($(CONFIG_NEXTMEDIA),y)
+	mkdir $(INSTALLDIR)/www/style/nextmedia
+	cp wikings/common.css $(INSTALLDIR)/www/style/
+	cp wikings/style.css $(INSTALLDIR)/www/style/nextmedia
+	cp wikings/images/* $(INSTALLDIR)/www/images
+	cp wikings/help/* $(INSTALLDIR)/www/help
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
+endif
 ifeq ($(CONFIG_ALLNETWRT),y)
 	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
