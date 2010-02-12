@@ -1713,6 +1713,8 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "trimax_vap");
 #elif defined(HAVE_WIKINGS)
 	nvram_set(v2, "Excel Networks_vap");
+#elif defined(HAVE_NEXTMEDIA)
+	nvram_set(v2, "nextmedia_vap");
 #elif defined(HAVE_TMK)
 	nvram_set(v2, "KMT_vap");
 #elif defined(HAVE_CORENET)
