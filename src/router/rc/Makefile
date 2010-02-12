@@ -161,6 +161,9 @@ endif
 ifeq ($(CONFIG_WIKINGS),y)
 CFLAGS += -DHAVE_WIKINGS
 endif
+ifeq ($(CONFIG_NEXTMEDIA),y)
+CFLAGS += -DHAVE_NEXTMEDIA
+endif
 ifeq ($(CONFIG_WIFIDOG),y)
 CFLAGS += -DHAVE_WIFIDOG
 endif
