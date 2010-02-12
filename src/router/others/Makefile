@@ -34,6 +34,7 @@ else
 endif
 ifndef CONFIG_MAKSAT
 ifndef CONFIG_WIKINGS
+ifndef CONFIG_ERC
 ifndef CONFIG_NEXTMEDIA
 ifdef CONFIG_TMK
 	install motd.kmt $(INSTALLDIR)/etc/motd
@@ -42,6 +43,7 @@ ifdef CONFIG_MSSID
 	install motd $(INSTALLDIR)/etc
 else
 	install motd.v23 $(INSTALLDIR)/etc/motd
+endif
 endif
 endif
 endif
