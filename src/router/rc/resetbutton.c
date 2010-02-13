@@ -473,6 +473,8 @@ void period_check(int sig)
 		val = get_gpio(0);
 	} else if (brand == ROUTER_BOARD_AR670W) {
 		val = get_gpio(9) << 9;
+	} else if (brand == ROUTER_BOARD_AR690W) {
+		val = get_gpio(9) << 9;
 	} else if (brand == ROUTER_BOARD_BR6574N) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_ACXNR22) {
