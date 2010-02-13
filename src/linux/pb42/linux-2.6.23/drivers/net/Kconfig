@@ -2292,6 +2292,10 @@ config BUFFALO
 config TPLINK
     bool "TPLink Support"
     depends on BUFFALO
+
+config DIR825
+    bool "DIR825 Support"
+    depends on CAMEO_REALTEK_PHY
         
 config VITESSE_8601_PHY
     bool "Vitesse Gige Phy 8601 on MAC0 and optionally on MAC1"
