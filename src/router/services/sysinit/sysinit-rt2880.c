@@ -130,26 +130,26 @@ void start_sysinit(void)
 	sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
 	sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
 #endif
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
 		unsigned char *config = malloc(65536);
 		memset(config, 0, 65536);
 		fread(config, 65536, 1, in);
-#ifdef HAVE_AR670W
+#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
 		int len = sizeof("lanmac=");
 #else
 		int len = sizeof("ethaddr=");
 #endif
 		int i;
 		for (i = 0; i < 65535 - 18; i++) {
-#ifdef HAVE_AR670W
+#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
 			if (!strncmp(&config[i], "lanmac=", 7))
 #else
 			if (!strncmp(&config[i], "ethaddr=", 8))
 #endif
 			{
-#ifdef HAVE_AR670W
+#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
 				char *mac = &config[i + 7];
 #else
 				char *mac = &config[i + 8];
@@ -234,6 +234,8 @@ void start_sysinit(void)
     		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
 		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
 		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
+#elif HAVE_AR690W
+
 #elif HAVE_BR6574N
 
 #elif HAVE_EAP9550
@@ -329,7 +331,6 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_AR670W
-
 #elif HAVE_BR6574N
 
 #else
@@ -371,6 +372,7 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_BR6574N
+#elif HAVE_AR690W
 #elif HAVE_AR670W
 #else
 			sysprintf("switch reg w 40 1001");
