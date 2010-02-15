@@ -61,6 +61,11 @@ NOBJS += wl_11n.o
 NFILES += wl_11n.c
 endif
 
+REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
+REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
+REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
+
+
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
