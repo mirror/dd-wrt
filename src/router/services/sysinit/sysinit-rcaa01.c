@@ -126,6 +126,7 @@ void start_sysinit(void)
 	 */
 	insmod("ar2313");
 	detect_wireless_devices();
+	int s;
 	if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
 		system2("echo 7 >/proc/sys/dev/wifi0/ledpin");
 		system2("echo 1 >/proc/sys/dev/wifi0/softled");
@@ -139,7 +140,6 @@ void start_sysinit(void)
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
 		struct ifreq ifr;
-		int s;
 
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
@@ -149,8 +149,8 @@ void start_sysinit(void)
 			char macaddr[32];
 
 			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.
-					  ifr_hwaddr.sa_data, eabuf));
+			       ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					  sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 //          MAC_ADD( macaddr );
 			ether_atoe(macaddr,
@@ -163,6 +163,20 @@ void start_sysinit(void)
 		system2("echo 1 >/proc/sys/dev/wifi0/softled");
 		system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
 		system2("echo 1 >/proc/sys/dev/wifi1/softled");
+	}
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		char macaddr[32];
+
+		strcpy(macaddr,
+		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				  eabuf));
+		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
+		close(s);
 	}
 
 	insmod("ipv6");

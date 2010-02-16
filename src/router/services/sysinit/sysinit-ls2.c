@@ -127,7 +127,7 @@ void start_sysinit(void)
 	 */
 	insmod("ar2313");
 	detect_wireless_devices();
-	
+
 #ifdef HAVE_BWRG1000
 	eval("ifconfig", "eth0", "up");	// wan
 #ifdef HAVE_SWCONFIG
@@ -158,7 +158,6 @@ void start_sysinit(void)
 #endif
 	struct ifreq ifr;
 	int s;
-
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
 
@@ -170,6 +169,7 @@ void start_sysinit(void)
 		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
 				  eabuf));
 		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
 		// MAC_ADD (macaddr);
 		ether_atoe(macaddr, (unsigned char *)ifr.ifr_hwaddr.sa_data);
 		strncpy(ifr.ifr_name, "vlan2", IFNAMSIZ);
@@ -179,6 +179,20 @@ void start_sysinit(void)
 #endif
 #endif
 #endif
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		char macaddr[32];
+
+		strcpy(macaddr,
+		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				  eabuf));
+		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
+		close(s);
+	}
 #if defined(HAVE_MS2)
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");

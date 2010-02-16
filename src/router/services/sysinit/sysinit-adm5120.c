@@ -272,7 +272,7 @@ void start_sysinit(void)
 			if (strcmp(os, "OSBRiDGE 5XLi") == 0) {
 				foundmac = 1;
 				fprintf(stderr, "found OSBRiDGE 5XLi\n");
-				nvram_set("DD_BOARD","OSBRiDGE 5LXi");
+				nvram_set("DD_BOARD", "OSBRiDGE 5LXi");
 				fseek(fp, 0xff82, SEEK_SET);
 				fread(os, 12, 1, fp);
 				int i;
@@ -296,8 +296,8 @@ void start_sysinit(void)
 				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.
-					       ifr_hwaddr.sa_data, mac, 6);
+					memcpy((unsigned char *)ifr.ifr_hwaddr.
+					       sa_data, mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
@@ -307,8 +307,9 @@ void start_sysinit(void)
 					ioctl(s, SIOCGIFHWADDR, &ifr);
 					nvram_set("et0macaddr_safe",
 						  ether_etoa((unsigned char *)
-							     ifr.ifr_hwaddr.
-							     sa_data, eabuf));
+							     ifr.
+							     ifr_hwaddr.sa_data,
+							     eabuf));
 					close(s);
 				}
 			}
@@ -343,10 +344,7 @@ void start_sysinit(void)
 						nvram_set("et0macaddr_safe",
 							  ether_etoa((unsigned
 								      char *)
-								     ifr.
-								     ifr_hwaddr.
-								     sa_data,
-								     eabuf));
+								     ifr.ifr_hwaddr.sa_data, eabuf));
 						close(s);
 					}
 				}
@@ -380,9 +378,8 @@ void start_sysinit(void)
 				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.
-					       ifr_hwaddr.sa_data,
-					       params.addr[0].mac, 6);
+					memcpy((unsigned char *)ifr.ifr_hwaddr.
+					       sa_data, params.addr[0].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
@@ -390,9 +387,8 @@ void start_sysinit(void)
 				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.
-					       ifr_hwaddr.sa_data,
-					       params.addr[1].mac, 6);
+					memcpy((unsigned char *)ifr.ifr_hwaddr.
+					       sa_data, params.addr[1].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
@@ -402,8 +398,9 @@ void start_sysinit(void)
 					ioctl(s, SIOCGIFHWADDR, &ifr);
 					nvram_set("et0macaddr_safe",
 						  ether_etoa((unsigned char *)
-							     ifr.ifr_hwaddr.
-							     sa_data, eabuf));
+							     ifr.
+							     ifr_hwaddr.sa_data,
+							     eabuf));
 					close(s);
 				}
 

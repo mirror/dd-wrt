@@ -53,7 +53,6 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
-
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
 
@@ -211,11 +210,9 @@ void start_sysinit(void)
 	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
 	if (detect_ethernet_devices())
-	    nvram_set("intel_eth","1");
+		nvram_set("intel_eth", "1");
 
 	detect_wireless_devices();
-
-
 
 #if 1
 	fprintf(stderr, "load IXP helper\n");
@@ -389,8 +386,8 @@ void start_sysinit(void)
 		}
 		fclose(file);
 	}
-	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro") || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro"))
-	{
+	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro")
+	    || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro")) {
 		fprintf(stderr, "Pronghorn Metro detected\n");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
 		     "-r", "npe_eth0_esa");
@@ -405,8 +402,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -425,8 +422,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -478,8 +475,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}

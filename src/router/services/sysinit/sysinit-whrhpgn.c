@@ -111,21 +111,18 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7240_mod");
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
-	if (fp)
-	{
-	unsigned char buf2[256];
-	fseek(fp, 0x03f120c, SEEK_SET);
-	fread(buf2, 256, 1, fp);
-	fclose(fp);
-	char mac[32];
-	unsigned int copy[256];
-	int i;
-	for (i = 0; i < 256; i++)
-		copy[i] = buf2[i] & 0xff;
-	sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1],
-			copy[2], copy[3],
-			copy[4], copy[5]);
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 0x03f120c, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		char mac[32];
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
