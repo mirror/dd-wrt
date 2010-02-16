@@ -121,6 +121,7 @@ void start_sysinit(void)
 	 */
 	insmod("ar2313");
 	int s;
+	struct ifreq ifr;
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];

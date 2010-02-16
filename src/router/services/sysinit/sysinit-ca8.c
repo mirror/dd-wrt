@@ -126,12 +126,12 @@ void start_sysinit(void)
 	 */
 	insmod("ar2313");
 	int s;
+	struct ifreq ifr;
 	if (getRouterBrand() == ROUTER_BOARD_CA8PRO) {
 		eval("ifconfig", "eth0", "up", "promisc");	// required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
-		struct ifreq ifr;
 
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];

@@ -127,6 +127,7 @@ void start_sysinit(void)
 	insmod("ar2313");
 	detect_wireless_devices();
 	int s;
+	struct ifreq ifr;
 	if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
 		system2("echo 7 >/proc/sys/dev/wifi0/ledpin");
 		system2("echo 1 >/proc/sys/dev/wifi0/softled");
@@ -139,7 +140,6 @@ void start_sysinit(void)
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
-		struct ifreq ifr;
 
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
