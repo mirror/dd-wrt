@@ -64,7 +64,7 @@ static void install_sdcard(void)
 		return;
 	}
 	sleep(10);		//give some time until sd is up
-	fprintf(stderr,"check if secondary device is available\n");
+	fprintf(stderr, "check if secondary device is available\n");
 	fp = fopen("/dev/discs/disc1/disc", "rb");
 	if (fp == NULL)		// no cf disc installed or no sd card. doesnt matter, we exit if no secondary device is in
 	{
@@ -78,11 +78,11 @@ static void install_sdcard(void)
 	    mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL,
 		  NULL);
 	if (check != 0) {
-		fprintf(stderr,"device isnt formated, use EXT2\n");
+		fprintf(stderr, "device isnt formated, use EXT2\n");
 		fp = fopen("/dev/discs/disc1/disc", "rb");
 		fseek(fp, 0, SEEK_END);
 		long size = ftell(fp);
-		size -= 65536*16;
+		size -= 65536 * 16;
 		size /= 4096;
 		char newsize[32];
 		sprintf(newsize, "%d", size);
@@ -91,8 +91,9 @@ static void install_sdcard(void)
 		mount("/dev/discs/disc1/disc", "/tmp/install", "ext2",
 		      MS_MGC_VAL, NULL);
 	}
-	fprintf(stderr,"copy files to SD Card\n");
-	eval("cp","-f","/tmp/install/usr/local/nvram/nvram.bin","/tmp/install/usr/local/nvram/nvram.bak");
+	fprintf(stderr, "copy files to SD Card\n");
+	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin",
+	     "/tmp/install/usr/local/nvram/nvram.bak");
 	eval("cp", "-r", "-d", "-f", "/boot", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/bin", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/etc", "/tmp/install");
@@ -105,7 +106,8 @@ static void install_sdcard(void)
 	eval("cp", "-r", "-d", "-f", "/usr", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/www", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/var", "/tmp/install");
-	eval("mv","-f","/tmp/install/usr/local/nvram/nvram.bak","/tmp/install/usr/local/nvram/nvram.bin");
+	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak",
+	     "/tmp/install/usr/local/nvram/nvram.bin");
 	eval("mkdir", "/tmp/install/dev");
 	eval("mkdir", "/tmp/install/sys");
 	eval("mkdir", "/tmp/install/proc");
@@ -114,10 +116,10 @@ static void install_sdcard(void)
 	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
 	eval("umount", "/tmp/install");
 	eval("sync");
-	fprintf(stderr,"signal installation complete\n");
-	eval("gpio","enable","4");
+	fprintf(stderr, "signal installation complete\n");
+	eval("gpio", "enable", "4");
 	sleep(1);
-	eval("gpio","disable","4");
+	eval("gpio", "disable", "4");
 }
 
 void start_sysinit(void)

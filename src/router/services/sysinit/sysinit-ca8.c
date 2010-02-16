@@ -125,13 +125,13 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	insmod("ar2313");
+	int s;
 	if (getRouterBrand() == ROUTER_BOARD_CA8PRO) {
 		eval("ifconfig", "eth0", "up", "promisc");	// required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
 		struct ifreq ifr;
-		int s;
 
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
@@ -141,8 +141,8 @@ void start_sysinit(void)
 			char macaddr[32];
 
 			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.
-					  ifr_hwaddr.sa_data, eabuf));
+			       ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					  sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 //          MAC_ADD( macaddr );
 			ether_atoe(macaddr,
@@ -151,6 +151,20 @@ void start_sysinit(void)
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			close(s);
 		}
+	}
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		char macaddr[32];
+
+		strcpy(macaddr,
+		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				  eabuf));
+		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
+		close(s);
 	}
 #ifdef HAVE_SOLO51
 	eval("ifconfig", "eth0", "up");	// wan

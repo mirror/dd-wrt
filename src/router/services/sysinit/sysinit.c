@@ -100,7 +100,7 @@ int endswith(char *str, char *cmp)
 
 #ifdef HAVE_MACBIND
 #include "../../../opt/mac.h"
-#endif 
+#endif
 
 void runStartup(char *folder, char *extension)
 {
@@ -115,30 +115,30 @@ void runStartup(char *folder, char *extension)
 		return;
 	}
 	closedir(directory);
-	
+
 	num = scandir(folder, &entry, 0, alphasort);
 	if (num < 0)
 		return;
 	// list all files in this directory 
 	while (n < num) {
-		if (!strcmp(extension, "K**") && strlen(entry[n]->d_name) > 3
-			&& startswith(entry[n]->d_name, "K") && strspn(entry[n]->d_name, "K1234567890") == 3) {  // K* scripts
-			sprintf (fullname, "%s/%s", folder, entry[n]->d_name);					
-			if (!stat(fullname, &filestat) && (filestat.st_mode & S_IXUSR))
+		if (!strcmp(extension, "K**") && strlen(entry[n]->d_name) > 3 && startswith(entry[n]->d_name, "K") && strspn(entry[n]->d_name, "K1234567890") == 3) {	// K* scripts
+			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
+			if (!stat(fullname, &filestat)
+			    && (filestat.st_mode & S_IXUSR))
 				sysprintf("%s 2>&1 > /dev/null\n", fullname);
 			free(entry[n]);
 			n++;
 			continue;
-		}		
-		if (!strcmp(extension, "S**")  && strlen(entry[n]->d_name) > 3 
-			&& startswith(entry[n]->d_name, "S") && strspn(entry[n]->d_name, "S1234567890") == 3) {  // S* scripts
-			sprintf (fullname, "%s/%s", folder, entry[n]->d_name);					
-			if (!stat(fullname, &filestat) && (filestat.st_mode & S_IXUSR))
+		}
+		if (!strcmp(extension, "S**") && strlen(entry[n]->d_name) > 3 && startswith(entry[n]->d_name, "S") && strspn(entry[n]->d_name, "S1234567890") == 3) {	// S* scripts
+			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
+			if (!stat(fullname, &filestat)
+			    && (filestat.st_mode & S_IXUSR))
 				sysprintf("%s 2>&1 > /dev/null\n", fullname);
 			free(entry[n]);
 			n++;
 			continue;
-		}		
+		}
 		if (endswith(entry[n]->d_name, extension)) {
 #ifdef HAVE_REGISTER
 			if (!isregistered_real()) {
@@ -149,13 +149,14 @@ void runStartup(char *folder, char *extension)
 					continue;
 				}
 				if (endswith
-				    (entry[n]->d_name, "schedulerb.startup")) { 
+				    (entry[n]->d_name, "schedulerb.startup")) {
 					free(entry[n]);
 					n++;
 					continue;
 				}
 				if (endswith
-				    (entry[n]->d_name, "proxywatchdog.startup")) {
+				    (entry[n]->d_name,
+				     "proxywatchdog.startup")) {
 					free(entry[n]);
 					n++;
 					continue;
@@ -209,25 +210,24 @@ void start_wanup(void)
 void start_run_rc_startup(void)
 {
 	DIR *directory;
-	int count = 36;  // 36 * 5 s = 180s
+	int count = 36;		// 36 * 5 s = 180s
 
 	create_rc_file(RC_STARTUP);
-	
+
 	if (f_exists("/tmp/.rc_startup"))
 		system("/tmp/.rc_startup");
 
-	while (count > 0) {		
+	while (count > 0) {
 		directory = opendir("/opt/etc/init.d");
 		if (directory == NULL) {
-			sleep (5);
+			sleep(5);
 			count--;
-		}
-		else {
-			closedir(directory);	
+		} else {
+			closedir(directory);
 			runStartup("/opt/etc/init.d", "S**");	// if available; run S** startup scripts
 			return;
 		}
-	}	
+	}
 }
 
 void start_run_rc_shutdown(void)
@@ -808,7 +808,7 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
-	
+
 	struct nvram_tuple wrt6102vlan[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "vlan1 eth1 eth2", 0},
@@ -1152,7 +1152,7 @@ void start_restore_defaults(void)
 		break;
 	case ROUTER_WRT160NV3:
 	case ROUTER_WRT320N:
-	case ROUTER_WRT310NV2:	
+	case ROUTER_WRT310NV2:
 		linux_overrides = wrt320vlan;
 		break;
 	case ROUTER_WRT350N:
@@ -1315,7 +1315,7 @@ void start_restore_defaults(void)
 	}
 #endif
 	int nvcnt = 0;
-	
+
 #ifndef HAVE_MADWIFI
 	int icnt = get_wl_instances();
 #else
@@ -1335,7 +1335,7 @@ void start_restore_defaults(void)
 				if (!u || !u->name) {
 					nvcnt++;
 					nvram_set(t->name, t->value);
-					if (icnt == 1 && startswith(t->name, "wl1_")) //unset wl1_xx if we have single radio only
+					if (icnt == 1 && startswith(t->name, "wl1_"))	//unset wl1_xx if we have single radio only
 						nvram_unset(t->name);
 				}
 			}
@@ -1621,23 +1621,22 @@ void start_restore_defaults(void)
 		if (!nvram_get("boardflags2"))
 			nvram_set("boardflags2", "0");
 	}
-	
-	if (restore_defaults && 
-		(brand == ROUTER_ASUS_RTN10
-		|| brand == ROUTER_ASUS_RTN12
-		|| brand == ROUTER_ASUS_RTN16)) {
+
+	if (restore_defaults &&
+	    (brand == ROUTER_ASUS_RTN10
+	     || brand == ROUTER_ASUS_RTN12 || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
 #ifndef HAVE_BUFFALO
 	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S
-		&& nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
+	    && nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
 		nvram_set("wl0_txpwr", "28");
 	}
 #endif
 	if (restore_defaults && brand == ROUTER_BUFFALO_WLI_TX4_G54HP) {
 		nvram_set("wl0_txpwr", "28");
 	}
-	
+
 	/*
 	 * Always set OS defaults 
 	 */
@@ -1774,9 +1773,9 @@ void start_drivers(void)
 				cprintf("loading usb_fs_fat\n");
 				insmod("nls_base");
 				insmod("nls_cp437");
-				insmod("nls_iso8859-1");				
-				insmod("nls_iso8859-2");	
-				insmod("nls_utf8");							
+				insmod("nls_iso8859-1");
+				insmod("nls_iso8859-2");
+				insmod("nls_utf8");
 				insmod("fat");
 				cprintf("loading usb_fs_vfat\n");
 				insmod("vfat");
