@@ -113,6 +113,23 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	insmod("ag7100_mod");
+	int s;
+	struct ifreq ifr;
+
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		char macaddr[32];
+
+		strcpy(macaddr,
+		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				  eabuf));
+		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
+		close(s);
+	}
 
 	// insmod("ath_pci", "autocreate=none");
 	insmod("ath_mimo_pci");

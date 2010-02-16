@@ -114,6 +114,23 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	insmod("ar2313");
+	int s;
+	struct ifreq ifr;
+
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		char macaddr[32];
+
+		strcpy(macaddr,
+		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				  eabuf));
+		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
+		close(s);
+	}
 	detect_wireless_devices();
 #ifdef HAVE_WRK54G
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
