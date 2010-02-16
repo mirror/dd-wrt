@@ -61,6 +61,8 @@ void start_sysinit(void)
 	struct utsname name;
 	struct stat tmp_stat;
 	time_t tm = 0;
+	struct ifreq ifr;
+	int s;
 
 	unlink("/etc/nvram/.lock");
 	cprintf("sysinit() proc\n");
@@ -156,8 +158,6 @@ void start_sysinit(void)
 	system2("echo 7 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
-	struct ifreq ifr;
-	int s;
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
 
