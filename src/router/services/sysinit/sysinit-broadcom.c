@@ -239,7 +239,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
 	case ROUTER_WRT310N:
-	case ROUTER_WRT310NV2:	
+	case ROUTER_WRT310NV2:
 	case ROUTER_WRT320N:
 	case ROUTER_WRT350N:
 	case ROUTER_BUFFALO_WZRG144NH:
@@ -713,7 +713,7 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
+
 	case ROUTER_ASUS_RTN12:
 		nvram_set("lan_ifnames", "vlan0 eth1");
 		nvram_set("wan_ifname", "vlan1");
@@ -721,11 +721,11 @@ void start_sysinit(void)
 		nvram_set("wl0_ifname", "eth1");
 		eval("gpio", "enable", "0");
 		if (!nvram_match("ledbh0", "0")
-		    || !nvram_match("ledbh1", "0")) {		
+		    || !nvram_match("ledbh1", "0")) {
 			nvram_set("ledbh0", "0");
 			nvram_set("ledbh1", "0");
-			need_reboot = 1;		
-		}		
+			need_reboot = 1;
+		}
 		if (nvram_match("vlan0ports", "0 1 2 3 5*")
 		    || nvram_match("vlan1ports", "4 5u")) {
 			nvram_set("vlan0ports", "3 2 1 0 5*");
@@ -733,7 +733,7 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
+
 	case ROUTER_WRT160NV3:
 	case ROUTER_WRT310NV2:
 		nvram_set("lan_ifnames", "vlan1 eth1");
@@ -1009,25 +1009,24 @@ void start_sysinit(void)
 			}
 		}
 		break;
-		
+
 	case ROUTER_WRT610NV2:
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("pci/1/1/ledbh2", "8");
 		nvram_set("sb/1/ledbh1", "8");
 
-			if (startswith
-				(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
-			    || startswith(nvram_safe_get("pci/1/1/macaddr"),
-					  "00:90:4c")) {
-				unsigned char mac[20];
-				strcpy(mac, nvram_safe_get("et0macaddr"));
-				MAC_ADD(mac);
-				MAC_ADD(mac);
-				MAC_ADD(mac);
-				nvram_set("pci/1/1/macaddr", mac);
-				need_reboot = 1;
-			}
+		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+		    || startswith(nvram_safe_get("pci/1/1/macaddr"),
+				  "00:90:4c")) {
+			unsigned char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			need_reboot = 1;
+		}
 		break;
 
 	case ROUTER_WRT300NV11:
@@ -1079,7 +1078,7 @@ void start_sysinit(void)
 		if (nvram_match("vlan1ports", "4 5u"))
 			nvram_set("vlan1ports", "4 5");
 		break;
-		
+
 	case ROUTER_DYNEX_DX_NRUTER:
 		nvram_set("lan_ifnames", "vlan0 eth2");
 		nvram_set("wan_ifname", "vlan1");
@@ -1090,7 +1089,7 @@ void start_sysinit(void)
 			nvram_set("vlan1ports", "4 5");
 			need_reboot = 1;
 		}
-		break;	
+		break;
 
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:	// we must fix cfe defaults
 		// with CR added
@@ -1232,7 +1231,7 @@ void start_sysinit(void)
 		}
 		break;
 	}
-	
+
 	/*
 	 * Must have stuff 
 	 */
@@ -1372,7 +1371,7 @@ void start_sysinit(void)
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
 			case ROUTER_ASUS_RTN10:
-				break;			
+				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
@@ -2028,13 +2027,13 @@ char *enable_dtag_vlan(int enable)
 		} else
 			eth = "eth0";
 	}
-	
+
 	char *vlan_lan_ports = nvram_safe_get("vlan0ports");
 	char *vlan_wan_ports = nvram_safe_get("vlan1ports");
 	int lan_vlan_num = 0;
 	int wan_vlan_num = 1;
-	
-	if (nvram_match("vlan2ports", "0 5") || nvram_match("vlan2ports", "4 5")) { //e.g wrt160nv3
+
+	if (nvram_match("vlan2ports", "0 5") || nvram_match("vlan2ports", "4 5")) {	//e.g wrt160nv3
 		vlan_lan_ports = nvram_safe_get("vlan1ports");
 		vlan_wan_ports = nvram_safe_get("vlan2ports");
 		lan_vlan_num = 1;
@@ -2042,9 +2041,9 @@ char *enable_dtag_vlan(int enable)
 		if (nvram_match("vlan2ports", "4 5"))
 			vlan7ports = "4t 5";
 		else
-			vlan7ports = "0t 5";			
+			vlan7ports = "0t 5";
 	}
-	
+
 	if (!donothing) {
 		sysprintf("echo 1 > /proc/switch/%s/reset", eth);
 		if (enable) {
@@ -2079,8 +2078,7 @@ char *enable_dtag_vlan(int enable)
 			}
 		} else {
 			fprintf(stderr, "disable vlan port mapping %s/%s\n",
-				vlan_lan_ports,
-				vlan_wan_ports);
+				vlan_lan_ports, vlan_wan_ports);
 			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/8/ports",
 				  "", eth);
 			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/7/ports",
