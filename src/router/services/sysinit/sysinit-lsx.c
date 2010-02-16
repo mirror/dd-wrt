@@ -111,14 +111,13 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7100_mod");
 
-
 	// sleep(1);
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	unsigned char buf2[256];
-	fseek(fp,0,SEEK_END);
+	fseek(fp, 0, SEEK_END);
 	int totalsize = ftell(fp);
 	rewind(fp);
-	fseek(fp, totalsize-0x1000, SEEK_SET);
+	fseek(fp, totalsize - 0x1000, SEEK_SET);
 	fread(buf2, 256, 1, fp);
 	fclose(fp);
 	int i;
@@ -164,7 +163,7 @@ void start_sysinit(void)
 		}
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
-	}else{
+	} else {
 		// no mac found, use default
 		eval("ifconfig", "eth0", "hw", "ether", "00:15:6D:FE:00:00");
 		eval("ifconfig", "eth1", "hw", "ether", "00:15:6D:FE:00:01");

@@ -231,7 +231,7 @@ void start_sysinit(void)
 		sysprintf("mii_mgr -s -p 29 -r 26 -v 0x1");
 		sysprintf("mii_mgr -s -p 29 -r 27 -v 0x1");
 		sysprintf("mii_mgr -s -p 29 -r 28 -v 0x2");
-    		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
+		sysprintf("mii_mgr -s -p 30 -r 9 -v 0x1089");
 		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
 		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
 #elif HAVE_AR690W
