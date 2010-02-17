@@ -70,21 +70,15 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-		// routing, 
-		// just 
-		// in 
-		// case 
-		// that 
-		// a
-		// target 
-		// route 
-		// exists
+		"echo $1 $5 $6 $PEERNAME >> /tmp/pppoe_connected\n"
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"iptables -I INPUT -i $1 -j ACCEPT\n"
 		"iptables -I FORWARD -i $1 -j ACCEPT\n");
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n"
+		"grep -v $1  /tmp/pppoe_connected > /tmp/pppoe_connected.new\n"
+		"mv /tmp/pppoe_connected.new /tmp/pppoe_connected\n"
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"iptables -D INPUT -i $1 -j ACCEPT\n"
 		"iptables -D FORWARD -i $1 -j ACCEPT\n");
