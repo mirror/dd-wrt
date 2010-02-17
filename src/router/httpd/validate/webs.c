@@ -119,7 +119,9 @@ void delete_pptp(webs_t wp)
 	char *iface;
 	iface = websGetVar(wp, "if_del", NULL);
 	if (iface) {
-		FILE *fp = popen("ps|grep %s|grep pppd", "rb");
+		char command[32];
+		sprintf(command,"ps|grep %s|grep pppd",iface);
+		FILE *fp = popen(command, "rb");
 		if (fp) {
 			char pid[32];
 			fscanf(fp, "%s", &pid);

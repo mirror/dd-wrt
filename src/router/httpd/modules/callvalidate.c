@@ -70,8 +70,8 @@
 //#define SERVICE_MODULE "/tmp/validate.so"
 //#define VISSERVICE_MODULE "/tmp/visuals.so"
 
-// #define SERVICE_MODULE "/tmp/validate.so"
-// #define cprintf(fmt, args...)
+ #define SERVICE_MODULE "/tmp/validate.so"
+ #define cprintf(fmt, args...)
 
 #ifndef cprintf
 #define cprintf(fmt, args...) do { \
