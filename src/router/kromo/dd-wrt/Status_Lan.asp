@@ -123,6 +123,7 @@ addEvent(window, "load", function() {
 	setDHCPTable(<% dumpleases(0); %>);
 <% ifndef("PPTPD", "<!--"); %>
 	setPPTPTable(<% dumppptp(); %>);
+	setElementVisible("pptp", "<% nvram_get("pptpd_enable"); %>" == "1");
 <% ifndef("PPTPD", "-->"); %>
 	setARPTable(<% dumparptable(0); %>);
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
