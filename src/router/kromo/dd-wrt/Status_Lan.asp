@@ -42,7 +42,7 @@ function setPPTPTable() {
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err581;
-		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i] + "') })");
+		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 1] + "') })");
 	}
 }
 
