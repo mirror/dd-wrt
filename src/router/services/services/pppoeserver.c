@@ -70,7 +70,7 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-		"echo $1 $5 $PEERNAME >> /tmp/pppoe_connected\n"
+		"echo $PPPD_PID $1 $5 $PEERNAME >> /tmp/pppoe_connected\n"
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"iptables -I INPUT -i $1 -j ACCEPT\n"
 		"iptables -I FORWARD -i $1 -j ACCEPT\n");
