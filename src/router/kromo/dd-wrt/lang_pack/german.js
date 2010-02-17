@@ -307,6 +307,7 @@ errmsg.err57="Eintrag löschen ?";
 
 // Status_Lan.asp error messages
 errmsg.err58="Klicken um die Zuweisung zu löschen";
+errmsg.err581="Klicken um die Verbindung zu trennen";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Nicht verfügbar! Bitte schalten sie das WLAN-Netzwerk an.";
