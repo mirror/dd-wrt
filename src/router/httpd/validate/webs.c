@@ -112,12 +112,21 @@ void delete_leases(webs_t wp)
 
 	sysprintf("dhcp_release %s %s %s", iface, ip, mac);
 }
+
 #ifdef HAVE_PPTPD
 void delete_pptp(webs_t wp)
 {
 	char *iface;
 	iface = websGetVar(wp, "if_del", NULL);
-	sysprintf("ifconfig %s down", iface);
+	if (iface) {
+		FILE *fp = popen("ps|grep %s|grep pppd", "rb");
+		if (fp) {
+			char pid[32];
+			fscanf(fp, "%s", &pid);
+			fclose(fp);
+			sysprintf("kill %s", pid);
+		}
+	}
 }
 #endif
 void save_wifi(webs_t wp)
@@ -672,17 +681,18 @@ void copytonv2(webs_t wp, char *prefix_get, char *prefix_set, char *name)
 		nvram_set(tmpname, wl);
 }
 
-void copytonv2_wme (webs_t wp, char *prefix_get, char *prefix_set, char *name, int maxindex)
+void copytonv2_wme(webs_t wp, char *prefix_get, char *prefix_set, char *name,
+		   int maxindex)
 {
-	char tmpvalue[128]="";
+	char tmpvalue[128] = "";
 	char tmpname[64];
 	char *next;
 	char *wl;
 	int i;
-	
-	for(i = 0; i <= maxindex; i++) {
+
+	for (i = 0; i <= maxindex; i++) {
 		sprintf(tmpname, "%s_%s%d", prefix_get, name, i);
-		wl = websGetVar(wp, tmpname, NULL);	
+		wl = websGetVar(wp, tmpname, NULL);
 		if (wl) {
 			strcat(tmpvalue, wl);
 			strcat(tmpvalue, " ");
@@ -693,7 +703,6 @@ void copytonv2_wme (webs_t wp, char *prefix_get, char *prefix_set, char *name, i
 	strtrim_right(tmpvalue, ' ');
 	nvram_set(tmpname, tmpvalue);
 }
-
 
 extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr);
 
@@ -1107,18 +1116,18 @@ void save_wireless_advanced(webs_t wp)
 	copytonv2(wp, prefix, set_prefix, "btc_mode");
 	copytonv2(wp, prefix, set_prefix, "wme");
 	copytonv2(wp, prefix, set_prefix, "wme_no_ack");
-    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_bk", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_be", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_vi", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_ap_vo", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_bk", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_be", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_vi", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_sta_vo", 5 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_bk", 4 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_be", 4 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_vi", 4 );
-    copytonv2_wme( wp, prefix, set_prefix, "wme_txp_vo", 4 );
+	copytonv2_wme(wp, prefix, set_prefix, "wme_ap_bk", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_ap_be", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_ap_vi", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_ap_vo", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_sta_bk", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_sta_be", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_sta_vi", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_sta_vo", 5);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_txp_bk", 4);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_txp_be", 4);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_txp_vi", 4);
+	copytonv2_wme(wp, prefix, set_prefix, "wme_txp_vo", 4);
 
 	return;
 
@@ -1155,7 +1164,7 @@ int get_svc(char *svc, char *protocol, char *ports)
 
 	// services = nvram_safe_get("filter_services");
 	memset(services, 0, sizeof(services));
-	get_filter_services(services,16384);
+	get_filter_services(services, 16384);
 
 	split(word, services, next, delim) {
 		int len = 0;
@@ -2479,16 +2488,16 @@ static void save_prefix(webs_t wp, char *prefix)
 		if (sl) {
 			int base = atoi(sl);
 #ifdef HAVE_WIKINGS
-			if (base>28)
-			    base=28;
-			#ifdef HAVE_SUB3
-			if (base>25)
-			    base=25;
-			#endif
-			#ifdef HAVE_SUB6
-			if (base>22)
-			    base=22;
-			#endif
+			if (base > 28)
+				base = 28;
+#ifdef HAVE_SUB3
+			if (base > 25)
+				base = 25;
+#endif
+#ifdef HAVE_SUB6
+			if (base > 22)
+				base = 22;
+#endif
 #endif
 			int txpower = base - wifi_gettxpoweroffset(prefix);
 
@@ -3028,7 +3037,7 @@ void ddns_save_value(webs_t wp)
 	case 3:		// zoneedit
 	case 4:		// no-ip
 	case 8:		// tzo
-	case 9: 	// dynSIP
+	case 9:		// dynSIP
 		snprintf(_username, sizeof(_username), "ddns_username_%s",
 			 enable);
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
