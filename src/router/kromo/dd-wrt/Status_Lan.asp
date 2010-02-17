@@ -161,7 +161,7 @@ addEvent(window, "load", function() {
 <% ifndef("PPPOESERVER", "<!--"); %>
 	setTable(<% dumppppoe(); %>);
 	setElementVisible("pppoe", "<% nvram_get("pppoeserver_enabled"); %>" == "1");
-<% ifndef("PPPPOESERVER", "-->"); %>
+<% ifndef("PPPOESERVER", "-->"); %>
 	setARPTable(<% dumparptable(0); %>);
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
