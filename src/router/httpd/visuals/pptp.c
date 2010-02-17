@@ -19,16 +19,14 @@ void ej_dumppptp(webs_t wp, int argc, char_t ** argv)
 	if (!in)
 	    return;
 	char ifname[32];
-	char dev[32];
-	char speed[32];
-	char server[32];
 	char local[32];
 	char remote[32];
+	char peer[64];
 	int count=0;
-	while(fscanf(in,"%s %s %s %s %s %s",ifname,dev,speed,server,local,remote)==6)
+	while(fscanf(in,"%s %s %s %s %s %s",ifname,local,remote,peer)==6)
 	    {
-	    websWrite(wp,"%c\"%s\",\"%s\",\"%s\"",
-					  count ? ',' : ' ',ifname,local,remote);
+	    websWrite(wp,"%c\"%s\","%s\",\"%s\",\"%s\"",
+					  count ? ',' : ' ',ifname,peer,local,remote);
 	    count++;
 	    if (feof(in))
 		break;
