@@ -1297,6 +1297,8 @@ status_lan.h22="Dynamic Host Configuration Protokoll";
 status_lan.legend2="DHCP-Status";
 status_lan.legend3="DHCP-Clients";
 status_lan.legend4="Active Clients";
+status_lan.legend5="Verbundene PPTP Clients";
+status_lan.legend6="Verbundene PPPOE Clients";
 
 //help container
 

@@ -23,7 +23,7 @@ function setPPTPTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 4;
+		cell.colSpan = 5;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
@@ -35,14 +35,47 @@ function setPPTPTable() {
 		
 		row.insertCell(-1).innerHTML = val[i]; // interface
 		
-		row.insertCell(-1).innerHTML = val[i+1]; // local ip
+		row.insertCell(-1).innerHTML = val[i+1]; // peer name
 
-		row.insertCell(-1).innerHTML = val[i+2]; // remote ip
+		row.insertCell(-1).innerHTML = val[i+2]; // local ip
+
+		row.insertCell(-1).innerHTML = val[i+3]; // remote ip
 				
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err581;
-		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 1] + "') })");
+		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 2] + "') })");
+	}
+}
+
+function setPPPOETable() {
+	var val = arguments;
+	var table = document.getElementById("pppoe_table");
+	cleanTable(table);
+	if(!val.length) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 5;
+		cell.align = "center";
+		cell.innerHTML = "- " + share.none + " -";
+		return;
+	}
+	for(var i = 0; i < val.length; i = i + 4) {
+	
+		var row = table.insertRow(-1);
+		row.style.height = "15px";
+		
+		row.insertCell(-1).innerHTML = val[i]; // interface
+		
+		row.insertCell(-1).innerHTML = val[i+1]; // peer name
+
+		row.insertCell(-1).innerHTML = val[i+2]; // local ip
+
+		row.insertCell(-1).innerHTML = val[i+3]; // remote ip
+				
+		var cell = row.insertCell(-1);
+		cell.className = "bin";
+		cell.title = errmsg.err581;
+		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 2] + "') })");
 	}
 }
 
@@ -122,9 +155,13 @@ addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
 	setDHCPTable(<% dumpleases(0); %>);
 <% ifndef("PPTPD", "<!--"); %>
-	setPPTPTable(<% dumppptp(); %>);
+	setTable(<% dumppptp(); %>);
 	setElementVisible("pptp", "<% nvram_get("pptpd_enable"); %>" == "1");
 <% ifndef("PPTPD", "-->"); %>
+<% ifndef("PPPOESERVER", "<!--"); %>
+	setTable(<% dumppppoe(); %>);
+	setElementVisible("pppoe", "<% nvram_get("pppoeserver_enabled"); %>" == "1");
+<% ifndef("PPPPOESERVER", "-->"); %>
 	setARPTable(<% dumparptable(0); %>);
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
@@ -146,6 +183,11 @@ addEvent(window, "load", function() {
 		eval('setPPTPTable(' + u.pptp_leases + ')');
 	});
 <% ifndef("PPTPD", "-->"); %>
+<% ifndef("PPPOESERVER", "<!--"); %>
+	update.onUpdate("pppoe_leases", function(u) {
+		eval('setPPPOETable(' + u.pppoe_leases + ')');
+	});
+<% ifndef("PPPOESERVER", "-->"); %>
 	update.onUpdate("arp_table", function(u) {
 		eval('setARPTable(' + u.arp_table + ')');
 	});
@@ -283,9 +325,10 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend5"); %></legend>
 									<table class="table center" cellspacing="6" id="pptp_table" summary="pptp table">
 										<tr>
-											<th width="20%"><% tran("share.intrface"); %></th>
-											<th width="40%"><% tran("share.localip"); %></th>
-											<th width="40%"><% tran("share.remoteip"); %></th>
+											<th width="15%"><% tran("share.intrface"); %></th>
+											<th width="45%"><% tran("share.username"); %></th>
+											<th width="20%"><% tran("share.localip"); %></th>
+											<th width="20%"><% tran("share.remoteip"); %></th>
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>
@@ -297,6 +340,27 @@ addEvent(window, "unload", function() {
 								</fieldset><br />
 							</div>
 <% ifndef("PPTPD", "-->"); %>
+<% ifndef("PPPOESERVER", "<!--"); %>
+							<div id="pppoe" style="display:none">
+								<fieldset>
+									<legend><% tran("status_lan.legend6"); %></legend>
+									<table class="table center" cellspacing="6" id="pppoe_table" summary="pppoe table">
+										<tr>
+											<th width="15%"><% tran("share.intrface"); %></th>
+											<th width="45%"><% tran("share.username"); %></th>
+											<th width="20%"><% tran("share.localip"); %></th>
+											<th width="20%"><% tran("share.remoteip"); %></th>
+											<th><% tran("share.del"); %></th>
+										</tr>
+									</table>
+									<script type="text/javascript">
+									//<![CDATA[
+									var t = new SortableTable(document.getElementById('pppoe_table'), 1000);
+									//]]>
+									</script>
+								</fieldset><br />
+							</div>
+<% ifndef("PPPOESERVER", "-->"); %>
 
 							<div class="submitFooter">
 								<script type="text/javascript">
