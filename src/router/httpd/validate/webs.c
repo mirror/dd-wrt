@@ -112,7 +112,14 @@ void delete_leases(webs_t wp)
 
 	sysprintf("dhcp_release %s %s %s", iface, ip, mac);
 }
-
+#ifdef HAVE_PPTPD
+void delete_pptp(webs_t wp)
+{
+	char *iface;
+	iface = websGetVar(wp, "if_del", NULL);
+	sysprintf("ifconfig %s down", iface);
+}
+#endif
 void save_wifi(webs_t wp)
 {
 	// fprintf (stderr, "save wifi\n");

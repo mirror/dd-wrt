@@ -5,9 +5,48 @@
 function deleteLease(val, val2) {
 	document.forms[0].ip_del.value = val;
 	document.forms[0].mac_del.value = val2;
+	document.forms[0].submit_type = "delete";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
 }
+
+function deletepptp(val) {
+	document.forms[0].if_del.value = val;
+	document.forms[0].submit_type = "deletepptp";
+	document.forms[0].change_action.value="gozila_cgi";
+	document.forms[0].submit();
+}
+
+function setPPTPTable() {
+	var val = arguments;
+	var table = document.getElementById("pptp_table");
+	cleanTable(table);
+	if(!val.length) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 4;
+		cell.align = "center";
+		cell.innerHTML = "- " + share.none + " -";
+		return;
+	}
+	for(var i = 0; i < val.length; i = i + 4) {
+	
+		var row = table.insertRow(-1);
+		row.style.height = "15px";
+		
+		row.insertCell(-1).innerHTML = val[i]; // interface
+		
+		row.insertCell(-1).innerHTML = val[i+1]; // local ip
+
+		row.insertCell(-1).innerHTML = val[i+2]; // remote ip
+				
+		var cell = row.insertCell(-1);
+		cell.className = "bin";
+		cell.title = errmsg.err581;
+		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i+1] + "') })");
+	}
+}
+
+
 
 function setDHCPTable() {
 	var val = arguments;
@@ -82,6 +121,9 @@ var update;
 addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
 	setDHCPTable(<% dumpleases(0); %>);
+<% ifndef("PPTPD", "<!--"); %>
+	setPPTPTable(<% dumppptp(); %>);
+<% ifndef("PPTPD", "-->"); %>
 	setARPTable(<% dumparptable(0); %>);
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
@@ -98,6 +140,11 @@ addEvent(window, "load", function() {
 	update.onUpdate("dhcp_leases", function(u) {
 		eval('setDHCPTable(' + u.dhcp_leases + ')');
 	});
+<% ifndef("PPTPD", "<!--"); %>
+	update.onUpdate("pptp_leases", function(u) {
+		eval('setPPTPTable(' + u.pptp_leases + ')');
+	});
+<% ifndef("PPTPD", "-->"); %>
 	update.onUpdate("arp_table", function(u) {
 		eval('setARPTable(' + u.arp_table + ')');
 	});
@@ -129,6 +176,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" value="delete" />
 							<input type="hidden" name="next_page" value="Status_Lan.asp" />
 							
+							<input type="hidden" name="if_del" />
 							<input type="hidden" name="ip_del" />
 							<input type="hidden" name="mac_del" />
 							
@@ -227,6 +275,27 @@ addEvent(window, "unload", function() {
 									</script>
 								</fieldset><br />
 							</div>
+
+<% ifndef("PPTPD", "<!--"); %>
+							<div id="pptp" style="display:none">
+								<fieldset>
+									<legend><% tran("status_lan.legend5"); %></legend>
+									<table class="table center" cellspacing="6" id="pptp_table" summary="pptp table">
+										<tr>
+											<th width="20%"><% tran("share.intrface"); %></th>
+											<th width="40%"><% tran("share.localip"); %></th>
+											<th width="40%"><% tran("share.remoteip"); %></th>
+											<th><% tran("share.del"); %></th>
+										</tr>
+									</table>
+									<script type="text/javascript">
+									//<![CDATA[
+									var t = new SortableTable(document.getElementById('pptp_table'), 1000);
+									//]]>
+									</script>
+								</fieldset><br />
+							</div>
+<% ifndef("PPTPD", "-->); %>
 
 							<div class="submitFooter">
 								<script type="text/javascript">
