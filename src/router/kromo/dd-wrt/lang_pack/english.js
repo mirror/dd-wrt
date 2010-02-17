@@ -1437,7 +1437,8 @@ status_lan.h22="Dynamic Host Configuration Protocol";
 status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Clients";
 status_lan.legend4="Active Clients";
-status_lan.legend5="PPTP Clients";
+status_lan.legend5="Connected PPTP Clients";
+status_lan.legend6="Connected PPPOE Clients";
 status_lan.concount="Conn. Count";
 status_lan.conratio="Ratio";
 
