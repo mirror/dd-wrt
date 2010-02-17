@@ -554,6 +554,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_SSHD
 	"SSHD",
 #endif
+#ifdef HAVE_PPTPD
+	"PPTPD",
+#endif
 #ifdef HAVE_QUAGGA
 	"QUAGGA",
 #endif
