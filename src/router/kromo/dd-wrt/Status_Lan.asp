@@ -326,7 +326,7 @@ addEvent(window, "unload", function() {
 									<table class="table center" cellspacing="6" id="pptp_table" summary="pptp table">
 										<tr>
 											<th width="15%"><% tran("share.intrface"); %></th>
-											<th width="45%"><% tran("share.username"); %></th>
+											<th width="45%"><% tran("share.usrname"); %></th>
 											<th width="20%"><% tran("share.localip"); %></th>
 											<th width="20%"><% tran("share.remoteip"); %></th>
 											<th><% tran("share.del"); %></th>
@@ -347,7 +347,7 @@ addEvent(window, "unload", function() {
 									<table class="table center" cellspacing="6" id="pppoe_table" summary="pppoe table">
 										<tr>
 											<th width="15%"><% tran("share.intrface"); %></th>
-											<th width="45%"><% tran("share.username"); %></th>
+											<th width="45%"><% tran("share.usrname"); %></th>
 											<th width="20%"><% tran("share.localip"); %></th>
 											<th width="20%"><% tran("share.remoteip"); %></th>
 											<th><% tran("share.del"); %></th>
