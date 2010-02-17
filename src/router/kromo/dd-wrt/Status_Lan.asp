@@ -152,14 +152,14 @@ var update;
 addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
 	setDHCPTable(<% dumpleases(0); %>);
-<% ifndef("PPTPD", "<!--"); %>
+<% ifndef("PPTPD", "/*"); %>
 	setPPTPTable(<% dumppptp(); %>);
 	setElementVisible("pptp", "<% nvram_get("pptpd_enable"); %>" == "1");
-<% ifndef("PPTPD", "-->"); %>
-<% ifndef("PPPOESERVER", "<!--"); %>
+<% ifndef("PPTPD", "*/"); %>
+<% ifndef("PPPOESERVER", "/*"); %>
 	setPPPOETable(<% dumppppoe(); %>);
 	setElementVisible("pppoe", "<% nvram_get("pppoeserver_enabled"); %>" == "1");
-<% ifndef("PPPOESERVER", "-->"); %>
+<% ifndef("PPPOESERVER", "*/"); %>
 	setARPTable(<% dumparptable(0); %>);
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
@@ -176,16 +176,16 @@ addEvent(window, "load", function() {
 	update.onUpdate("dhcp_leases", function(u) {
 		eval('setDHCPTable(' + u.dhcp_leases + ')');
 	});
-<% ifndef("PPTPD", "<!--"); %>
+<% ifndef("PPTPD", "/*"); %>
 	update.onUpdate("pptp_leases", function(u) {
 		eval('setPPTPTable(' + u.pptp_leases + ')');
 	});
-<% ifndef("PPTPD", "-->"); %>
-<% ifndef("PPPOESERVER", "<!--"); %>
+<% ifndef("PPTPD", "*/"); %>
+<% ifndef("PPPOESERVER", "/*"); %>
 	update.onUpdate("pppoe_leases", function(u) {
 		eval('setPPPOETable(' + u.pppoe_leases + ')');
 	});
-<% ifndef("PPPOESERVER", "-->"); %>
+<% ifndef("PPPOESERVER", "*/"); %>
 	update.onUpdate("arp_table", function(u) {
 		eval('setARPTable(' + u.arp_table + ')');
 	});
