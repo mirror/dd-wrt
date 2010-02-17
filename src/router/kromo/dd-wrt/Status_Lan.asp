@@ -69,8 +69,6 @@ function setPPPOETable() {
 		row.insertCell(-1).innerHTML = val[i+1]; // peer name
 
 		row.insertCell(-1).innerHTML = val[i+2]; // local ip
-
-		row.insertCell(-1).innerHTML = val[i+3]; // remote ip
 				
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
@@ -348,8 +346,7 @@ addEvent(window, "unload", function() {
 										<tr>
 											<th width="15%"><% tran("share.intrface"); %></th>
 											<th width="45%"><% tran("share.usrname"); %></th>
-											<th width="20%"><% tran("share.localip"); %></th>
-											<th width="20%"><% tran("share.remoteip"); %></th>
+											<th width="40%"><% tran("share.localip"); %></th>
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>

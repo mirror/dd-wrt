@@ -17,10 +17,10 @@ void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
 	char remote[32];
 	char peer[64];
 	int count=0;
-	while(fscanf(in,"%s %s %s %s",ifname,local,remote,peer)==4)
+	while(fscanf(in,"%s %s %s",ifname,local,peer)==3)
 	    {
-	    websWrite(wp,"%c\"%s\",\"%s\",\"%s\",\"%s\"",
-					  count ? ',' : ' ',ifname,peer,local,remote);
+	    websWrite(wp,"%c\"%s\",\"%s\",\"%s\"",
+					  count ? ',' : ' ',ifname,peer,local);
 	    count++;
 	    if (feof(in))
 		break;
