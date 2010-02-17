@@ -155,11 +155,11 @@ addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
 	setDHCPTable(<% dumpleases(0); %>);
 <% ifndef("PPTPD", "<!--"); %>
-	setTable(<% dumppptp(); %>);
+	setPPTPTable(<% dumppptp(); %>);
 	setElementVisible("pptp", "<% nvram_get("pptpd_enable"); %>" == "1");
 <% ifndef("PPTPD", "-->"); %>
 <% ifndef("PPPOESERVER", "<!--"); %>
-	setTable(<% dumppppoe(); %>);
+	setPPPOETable(<% dumppppoe(); %>);
 	setElementVisible("pppoe", "<% nvram_get("pppoeserver_enabled"); %>" == "1");
 <% ifndef("PPPOESERVER", "-->"); %>
 	setARPTable(<% dumparptable(0); %>);
