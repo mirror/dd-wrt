@@ -28,7 +28,7 @@ function setPPTPTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 4) {
+	for(var i = 0; i < val.length; i = i + 5) {
 	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
@@ -44,7 +44,7 @@ function setPPTPTable() {
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err581;
-		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 2] + "') })");
+		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 4] + "') })");
 	}
 }
 
@@ -54,7 +54,7 @@ function setPPPOETable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 5;
+		cell.colSpan = 4;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
@@ -73,7 +73,7 @@ function setPPPOETable() {
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err581;
-		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 2] + "') })");
+		eval("addEvent(cell, 'click', function() { deletepptp('" + val[i + 3] + "') })");
 	}
 }
 
