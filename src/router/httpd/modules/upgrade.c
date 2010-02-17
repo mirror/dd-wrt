@@ -348,6 +348,23 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			 * 
 			 * i++; continue; }
 			 */
+#ifdef HAVE_WIKINGS
+#ifdef HAVE_SUB3
+#define V "XMED"
+#elif HAVE_SUB6
+#define V "XMIN"
+#else
+#define V "XMAX"
+#endif
+			if (memcmp(&buf[0], V, 4)) {
+				cprintf("code pattern error!\n");
+				goto err;	// must be there, otherwise fail here
+			}
+#undef V
+#endif
+
+
+
 #ifdef HAVE_WRT160NL
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4)) {
 				cprintf("code pattern error!\n");
