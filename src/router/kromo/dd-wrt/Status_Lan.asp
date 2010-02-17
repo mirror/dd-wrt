@@ -5,14 +5,14 @@
 function deleteLease(val, val2) {
 	document.forms[0].ip_del.value = val;
 	document.forms[0].mac_del.value = val2;
-	document.forms[0].submit_type = "delete";
+	document.forms[0].submit_type.value = "delete";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
 }
 
 function deletepptp(val) {
 	document.forms[0].if_del.value = val;
-	document.forms[0].submit_type = "deletepptp";
+	document.forms[0].submit_type.value = "deletepptp";
 	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
 }

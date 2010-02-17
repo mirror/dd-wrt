@@ -27,7 +27,7 @@ void ej_dumppptp(webs_t wp, int argc, char_t ** argv)
 	int count=0;
 	while(fscanf(in,"%s %s %s %s %s %s",ifname,dev,speed,server,local,remote)==6)
 	    {
-	    websWrite(wp,"%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"",
+	    websWrite(wp,"%c\"%s\",\"%s\",\"%s\"",
 					  count ? ',' : ' ',ifname,local,remote);
 	    count++;
 	    if (feof(in))
