@@ -35,6 +35,8 @@ share.start="Zaèetek";
 share.end="Konec";
 share.proto="Protokol";
 share.ip="IP naslov";
+share.localip="Lokalni IP";
+share.remoteip="Oddaljeni IP";
 share.mac="MAC naslov";
 share.none="Nobeden";
 share.none2="niè";
@@ -347,6 +349,7 @@ errmsg.err103=" mora biti manj¹i kot ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Kliknite za brisanje zakupa";
+errmsg.err581="Kliknite za izvr¾bo pptp odjemalca";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Ni na voljo! Prosimo, da omogoèite brez¾ièno omre¾je.";
@@ -1433,6 +1436,7 @@ status_lan.h22="DHCP - Protokol za dinamicènego konfiguracijo gostitelja";
 status_lan.legend2="DHCP status";
 status_lan.legend3="DHCP odjemalci";
 status_lan.legend4="Aktivni odjemalci";
+status_lan.legend5="PPTP odjemalci";
 status_lan.concount="©t. zvez";
 status_lan.conratio="Dele¾";
 
