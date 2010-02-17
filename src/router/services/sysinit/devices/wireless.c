@@ -24,6 +24,7 @@
 
 static void detect_wireless_devices(void)
 {
+	nvram_default_get("rate_control","minstrel");
 #ifndef HAVE_NOWIFI
 #ifdef HAVE_MADWIFI
 	fprintf(stderr, "load ATH 802.11 a/b/g Driver\n");

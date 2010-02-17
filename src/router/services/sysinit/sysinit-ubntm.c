@@ -129,18 +129,7 @@ void start_sysinit(void)
 		close(s);
 	}
 
-	fprintf(stderr, "load ATH 802.11n Driver\n");
-	insmod("/lib/80211n/ath_mimo_hal.ko");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
-
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-//              eval("insmod", "ath_pci", rate);
-	} else {
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-	}
-	// insmod("ath_mimo_pci");
+	detect_wireless_devices();
 
 	system2("echo 0 >/proc/sys/dev/wifi0/softled");
 	insmod("ipv6");
