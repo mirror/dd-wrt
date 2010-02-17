@@ -113,22 +113,13 @@ void delete_leases(webs_t wp)
 	sysprintf("dhcp_release %s %s %s", iface, ip, mac);
 }
 
-#ifdef HAVE_PPTPD
+#if defined(HAVE_PPTPD) || defined(HAVE_PPPOESERVER)
 void delete_pptp(webs_t wp)
 {
 	char *iface;
 	iface = websGetVar(wp, "if_del", NULL);
-	if (iface) {
-		char command[32];
-		sprintf(command,"ps|grep %s|grep pppd",iface);
-		FILE *fp = popen(command, "rb");
-		if (fp) {
-			char pid[32];
-			fscanf(fp, "%s", &pid);
-			fclose(fp);
-			sysprintf("kill %s", pid);
-		}
-	}
+	if (iface)
+		sysprintf("kill %s", iface);
 }
 #endif
 void save_wifi(webs_t wp)
