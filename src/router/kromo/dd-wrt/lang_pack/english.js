@@ -35,6 +35,8 @@ share.start="Start";
 share.end="End";
 share.proto="Protocol";
 share.ip="IP Address";
+share.localip="Local IP";
+share.remoteip="Remote IP";
 share.mac="MAC Address";
 share.none="None";
 share.none2="no";
@@ -347,6 +349,7 @@ errmsg.err103=" must be lower than ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Click to delete lease";
+errmsg.err581="Click to kick pptp client";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Not available! Please enable Wireless Network.";
@@ -1434,6 +1437,7 @@ status_lan.h22="Dynamic Host Configuration Protocol";
 status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Clients";
 status_lan.legend4="Active Clients";
+status_lan.legend5="PPTP Clients";
 status_lan.concount="Conn. Count";
 status_lan.conratio="Ratio";
 

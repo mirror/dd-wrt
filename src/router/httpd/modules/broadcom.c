@@ -1072,6 +1072,9 @@ static struct gozila_action gozila_actions[] = {
 	{"WanMAC", "clone_mac", "", 1, REFRESH, "clone_mac"},	// for cisco
 	// style
 	{"DHCPTable", "delete", "", 2, REFRESH, "delete_leases"},
+#ifdef HAVE_PPTPD
+	{"DHCPTable", "deletepptp", "", 2, REFRESH, "delete_pptp"},
+#endif
 	{"Info", "refresh", "", 0, REFRESH, "save_wifi"},
 	{"Status_Wireless", "refresh", "", 0, REFRESH, "save_wifi"},
 	// {"Status", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},
