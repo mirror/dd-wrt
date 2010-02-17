@@ -296,7 +296,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</fieldset><br />
 							</div>
-<% ifndef("PPTPD", "-->); %>
+<% ifndef("PPTPD", "-->"); %>
 
 							<div class="submitFooter">
 								<script type="text/javascript">
