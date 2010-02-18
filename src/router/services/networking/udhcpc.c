@@ -344,17 +344,20 @@ static int bound(void)
 					  "255.255.255.255");
 			free(dns_list);
 		}
-//              route_add(wan_ifname, 0, "0.0.0.0",
-//                        nvram_safe_get("wan_gateway"), "0.0.0.0");
+                route_add(wan_ifname, 0, "0.0.0.0",
+                        nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		/*
 		 * Backup the default gateway. It should be used if L2TP connection
 		 * is broken 
 		 */
 		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
-
+		sleep(1);
 		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip);
+
 		nvram_set("l2tp_server_ip", l2tpip);
+                
+                route_del(wan_ifname, 0, "0.0.0.0",nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		route_add(wan_ifname, 0,
 			  nvram_safe_get("l2tp_server_ip"),
