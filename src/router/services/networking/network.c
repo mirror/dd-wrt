@@ -3169,7 +3169,7 @@ void start_wan(int status)
 			wan_ifname = getSTA();
 		} else
 			wan_ifname = pppoe_wan_ifname;
-
+		nvram_set("wan_get_dns", "");
 		start_dhcpc(wan_ifname);
 	}
 #endif
