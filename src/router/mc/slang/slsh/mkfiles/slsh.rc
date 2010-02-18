@@ -1,0 +1,8 @@
+// This file is in this directory because I do not want to confuse it with
+// a file of the same name in ../lib
+// defined here because not used by slsh.exe
+#define IDI_ICON1 101
+#define IDI_ICON2 102
+
+IDI_ICON1 ICON DISCARDABLE "slsh.ico"
+IDI_ICON2 ICON DISCARDABLE "sldoc.ico"

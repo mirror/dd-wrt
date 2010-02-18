@@ -1,0 +1,7 @@
+This directory contains the makefile used to build modules under the
+various DOS/Windows C compilers.
+
+See the README in ../../src/mkfiles/ for more information.  The exact
+same comments apply.  The only difference is that the module build
+involves a recursive make.  This means that the name of the makefile
+must be Makefile.

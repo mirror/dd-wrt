@@ -1,0 +1,18 @@
+CC = gcc
+CFLAGS = -Wall -O6
+GO32 = C:\djgpp\bin\go32.exe
+SLIB = ../src#
+LFLAGS = -L$(SLIB) -lslang -lpc
+
+SUFFIXES = .c
+.SUFFIXES: $(SUFFIXES)
+
+.c.o:
+	$(CC) -c $(CFLAGS) -I$(SLIB) $*.c
+
+
+slhelp: slhelp.o
+	$(CC) slhelp.o $(LFLAGS) -o slhelp.386
+	coff2exe -s $(GO32) slhelp.386
+
+	

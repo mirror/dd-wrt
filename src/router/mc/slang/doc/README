@@ -1,0 +1,25 @@
+The documentation here is provided in text format.  Documentation in
+SGML, HTML, TeX, and postscript formats are also available from
+<ftp://space.mit.edu/pub/davis/slang/v2.0/slang-doc.tar.gz> as well as the
+mirror sites.  In addition, the documentation is available on-line from
+<http://www.jedsoft.org/slang/docs.html>.
+
+The text subdirectory contains:
+
+   text/slang.txt    Documentation describing the slang language
+   text/cslang.txt   C programmer's guide to the library
+   text/cref.txt     Reference Manual for the C functions
+   text/slangfun.txt Reference Manual for the slang intrinsic functions
+
+There may be additional subdirectories:
+
+   tm/               Text-Macro source for documentation
+   html/             Documentation in HTML form
+   text/             Documentation in text form
+   ps/               Documentation in postscript (from LaTeX)
+   pdf/              Documentation in postscript (from pdflatex)
+
+The documentation was created by linuxdoc-tools from an SGML format,
+which itself was created from text-macro source.  The LaTeX2e output
+produced by linuxdoc-tools needed some additional tweaking by the
+script tm/fixtex.sl.

@@ -1,0 +1,6 @@
+This directory contains the makefile used to build slsh under the
+various DOS/Windows C compilers.
+
+See the README in ../../src/mkfiles/ for more information.  The exact
+same comments apply.  The mkmake.exe executable may be found in that
+directory.
