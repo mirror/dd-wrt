@@ -581,6 +581,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_USB
 	"USB",
 #endif
+#ifdef HAVE_RADIUSPLUGIN
+	"RADIUSPLUGIN",
+#endif
 #ifdef HAVE_PPPOESERVER
 	"PPPOESERVER",
 #endif

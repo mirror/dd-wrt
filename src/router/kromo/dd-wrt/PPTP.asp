@@ -104,6 +104,7 @@ addEvent(window, "unload", function() {
 			//]]>
 			</script>
 		</div>
+<% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("radius.legend"); %></div>
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
@@ -141,6 +142,7 @@ addEvent(window, "unload", function() {
 	</fieldset>
 		</div>
 	</div>
+<% ifndef("RADIUSPLUGIN", "-->"); %>
 </fieldset><br/>
 
 
