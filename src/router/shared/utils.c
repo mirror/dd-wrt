@@ -1718,6 +1718,16 @@ static int sockaddr_to_dotted(struct sockaddr *saddr, char *buf)
 	}
 	return -1;
 }
+
+
+static int sockaddr_to_dotted_n(char *sin_addr, char *buf)
+{
+		inet_ntop(AF_INET, sin_addr,
+			  buf, 128);
+		return 0;
+}
+
+
 #define DIE_ON_ERROR AI_CANONNAME
 
 void getIPFromName(char *name, char *ip)
@@ -1728,9 +1738,7 @@ void getIPFromName(char *name, char *ip)
 	struct hostent *hp = gethostbyname(name);
 	if (hp!=NULL)
 	    {
-		sockaddr_to_dotted(hp->h_addr_list[0], ip);
-		fprintf(stderr,"return ip %s\n",ip);
-		return;
+		sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
 	    }
 	res_init();
 	memset(&hint, 0, sizeof(hint));
@@ -1738,16 +1746,22 @@ void getIPFromName(char *name, char *ip)
 	hint.ai_socktype = SOCK_STREAM;
 	hint.ai_flags = DIE_ON_ERROR;
 	rc = getaddrinfo(name, NULL, &hint, &result);
-	fprintf(stderr,"errorcode %d\n",rc);
 	if (!result)		// give it a second try
 		rc = getaddrinfo(name, NULL, &hint, &result);
-	fprintf(stderr,"errorcode2 %d\n",rc);
 
 	if (result) {
 		sockaddr_to_dotted(result->ai_addr, ip);
 		freeaddrinfo(result);
-	} else
+	} else {
+	struct hostent *hp = gethostbyname(name);
+	if (hp!=NULL)
+	    {
+		sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
+	    }else
 		sprintf(ip, "0.0.0.0");
+	}
+
+	
 }
 
 /*
