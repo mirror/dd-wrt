@@ -1,0 +1,70 @@
+# ---------------------------------------------------
+# po.syntax
+# GNU Gettext PO files syntax highlighting template.
+# Syntax highlighting rules for files produced with
+# Gettext tools as used in Midnight Commander and
+# Cooledit editors.
+#
+# It highlights:
+#   - Original and translated messages   (blue/green)
+#   - Generic comments added by Gettext  (white)
+#   - C-style format modifiers,
+#      as in c.syntax                    (brightgreen)
+#   - Messages marked as "fuzzy"         (brightred)
+#   - Untranslated messages              (brightred)
+#   - Unused messages                    (red)
+#
+# Author: David Martin <dmartina@excite.es>
+# August 17, 2001
+# ---------------------------------------------------
+
+context default
+    keyword linestart msgstr\s\"\"\n\n brightred
+    keyword linestart msgid brightcyan
+    keyword linestart msgstr brightcyan
+
+context linestart #,\sfuzzy \n\n brightred
+
+context linestart #: \n white
+
+context linestart #, \n white
+    keyword c-format yellow
+
+context linestart #~ \n red
+
+context linestart # \n brown
+    spellcheck
+
+context exclusive linestart msgid \n cyan
+    spellcheck
+    keyword \"\n\"
+    keyword \\" brightgreen
+    keyword \\\n brightgreen
+    keyword %% brightgreen
+    keyword %\[#0\s-\+,\]\[0123456789\]\[.\]\[0123456789\]\[L\]\{eEfgG\} brightgreen
+    keyword %\[0\s-\+,\]\[0123456789\]\[.\]\[0123456789\]\[hl\]\{diouxX\} brightgreen
+    keyword %\[hl\]n brightgreen
+    keyword %\[.\]\[0123456789\]s brightgreen
+    keyword %[*] brightgreen
+    keyword %c brightgreen
+    keyword \\\{0123\}\{01234567\}\{01234567\} brightgreen
+    keyword \\\\ brightgreen
+    keyword \\' brightgreen
+    keyword \\\{abtnvfr\} brightgreen
+
+context exclusive linestart msgstr \n green
+    spellcheck
+    keyword \"\n\"
+    keyword \\" brightgreen
+    keyword \\\n brightgreen
+    keyword %% brightgreen
+    keyword %\[#0\s-\+,\]\[0123456789\]\[.\]\[0123456789\]\[L\]\{eEfgG\} brightgreen
+    keyword %\[0\s-\+,\]\[0123456789\]\[.\]\[0123456789\]\[hl\]\{diouxX\} brightgreen
+    keyword %\[hl\]n brightgreen
+    keyword %\[.\]\[0123456789\]s brightgreen
+    keyword %[*] brightgreen
+    keyword %c brightgreen
+    keyword \\\{0123\}\{01234567\}\{01234567\} brightgreen
+    keyword \\\\ brightgreen
+    keyword \\' brightgreen
+    keyword \\\{abtnvfr\} brightgreen
