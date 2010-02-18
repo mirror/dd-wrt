@@ -338,8 +338,6 @@ static int bound(void)
 					  "255.255.255.255");
 			free(dns_list);
 		}
-                route_add(wan_ifname, 0, "0.0.0.0",
-                        nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		/*
 		 * Backup the default gateway. It should be used if L2TP connection
