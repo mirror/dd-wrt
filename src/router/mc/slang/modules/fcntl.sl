@@ -1,0 +1,2 @@
+import("fcntl");
+provide("fcntl");

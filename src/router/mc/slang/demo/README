@@ -1,0 +1,43 @@
+What's here?
+
+Each C file in this directory are heavily commented examples that illustrate
+only one or two S-Lang features.  Some C files are accompanied by a .sl file
+that contains S-Lang code relevant to the example.
+
+If you find these demos confusing, please let me know so I can work on
+improving them.
+
+Please note that these demos WILL NOT WORK under msdos unless the S-lang
+library is compiled with the -DFLOAT_TYPE option.
+
+---------------------------------------------------------------------------
+pager.c:    A simple file pager demo.  Use pageup/down keys to scroll
+            through the file.  It illustrates the SLsmg, SLsig, SLkp,
+	    and SLscroll routines of the S-Lang library.  This example
+	    should be contrasted with the curses demo ../src/curses/view.c.
+	    
+keypad.c:   Illustrates the slkeypad facility.
+
+simple.c:   This file contains slightly more than the miniumum required to
+	    embed S-Lang.  It loads a file specified on the command line.
+
+simple.sl:  An S-Lang script that prompts for a filename and returns
+            information about the file.  Use this with the `simple'
+	    executable.
+	    
+array.c:    This example shows how to embed a C array into S-Lang allowing
+            access to the array from a S-Lang script.  
+array.sl:   This script reads and writes the array specified in array.c.
+
+useropen.c  This example shows how to specify an object that S-Lang will
+	    interpret.  S-lang already knows how to interpret code contained
+	    in strings and files.  Interpreting code from a `readline'
+	    structure is illustrated here.  The demo in ../src/calc.c uses
+	    this technique to interpret data from S-Lang's readline routines.
+	    
+complex.c   Adding an application defined data type is the focus of this
+            example.  Specifically, a complex number type is added and the
+	    binary and unary operators are overloaded to work with the new
+	    type. 
+complex.sl  A script that manipulates the complex number type defined in
+            complex.c.

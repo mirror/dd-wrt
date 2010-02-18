@@ -1,0 +1,71 @@
+context default
+    keyword $$ brightcyan
+    keyword $(*) yellow
+    keyword ${*} brightgreen
+# GNU Makefiles
+    keyword whole linestart define magenta
+    keyword whole linestart endef magenta
+    keyword whole linestart include magenta
+    keyword whole linestart ifdef magenta
+    keyword whole linestart ifndef magenta
+    keyword whole linestart endif magenta
+    keyword whole linestart if magenta
+    keyword whole linestart ifeq magenta
+    keyword whole linestart ifneq magenta
+    keyword whole linestart else magenta
+# BSD Makefiles
+    keyword whole linestart .\[\s\t\]elif magenta
+    keyword whole linestart .\[\s\t\]else magenta
+    keyword whole linestart .\[\s\t\]endfor magenta
+    keyword whole linestart .\[\s\t\]endif magenta
+    keyword whole linestart .\[\s\t\]for magenta
+    keyword whole linestart .\[\s\t\]if magenta
+    keyword whole linestart .\[\s\t\]include magenta
+    keyword whole linestart .\[\s\t\]undef magenta
+
+    keyword linestart \t lightgray red
+    keyword whole .PHONY white
+    keyword whole .SUFFIXES white
+    keyword whole .DEFAULT white
+    keyword whole .PRECIOUS white
+    keyword whole .INTERMEDIATE white
+    keyword whole .SECONDARY white
+    keyword whole .DELETE_ON_ERROR white
+    keyword whole .IGNORE white
+    keyword whole .LOW_RESOLUTION_TIME white
+    keyword whole .SILENT white
+    keyword whole .EXPORT_ALL_VARIABLES white
+    keyword whole .NOTPARALLEL white
+    keyword whole .NOEXPORT white
+    keyword = white
+    keyword : yellow
+    keyword \\\n yellow
+# this handles strange cases like @something@@somethingelse@ properly
+    keyword whole @+@ brightmagenta black
+    keyword @+@ brightmagenta black
+
+# comment
+context linestart # \n brown
+    spellcheck
+    keyword whole @+@ brightmagenta black
+    keyword @+@ brightmagenta black
+
+# right part of an assignment
+context exclusive = \n brightcyan
+    keyword \\\n yellow
+    keyword $$ brightcyan
+    keyword $(*) yellow
+    keyword ${*} brightgreen
+    keyword linestart \t lightgray red
+    keyword whole @+@ brightmagenta black
+    keyword @+@ brightmagenta black
+
+# shell code
+context exclusive linestart \t \n
+    keyword \\\n yellow
+    keyword $$ brightcyan
+    keyword $(*) yellow
+    keyword ${*} brightgreen
+    keyword linestart \t lightgray red
+    keyword whole @+@ brightmagenta black
+    keyword @+@ brightmagenta black

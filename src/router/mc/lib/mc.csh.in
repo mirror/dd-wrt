@@ -1,0 +1,1 @@
+alias mc 'source @suppbindir@/mc-wrapper.csh'

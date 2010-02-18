@@ -1,0 +1,70 @@
+#================ JED makefile for DMAKE 3.8 ======================
+# This makefile is for DMAKE, either under DOS or OS/2
+# The following OS/Compiler combinations are supported:
+#
+# Target       Compiler    Command                Compiler
+# Operating    Mnemoic     Line
+# System                   
+#-----------------------------------------------------------------------
+# OS2            MSC       OS=OS2 COMP=MSC        Microsoft C
+# OS2            EMX       OS=OS2 COMP=EMX        emx/gcc
+#-----------------------------------------------------------------------
+MODEL = L
+#-----------------------------------------------------------------------
+# default setup for EMX under OS/2, optimized version
+# change values below or override with -e switch on command line
+#-----------------------------------------------------------------------
+OS=OS2
+COMP=EMX
+OPT=Y
+#-----------------------------------------------------------------------
+.IF $(TOS) == $(NULL)
+    TOS = $(OS)
+.END
+.IF $(OS) == OS2
+#========================================================================
+#========================= OS2 - MSC ====================================
+#========================================================================
+    .IF $(COMP) == MSC
+        CC        = cl -nologo -MT
+        LIB_CMD   = lib
+        .IF $(OPT) == N
+            CDBUG = -Od -Zi -W2
+            LDEBUG = -Zi
+        .ELSE
+            CDBUG = 
+            LDEBUG =
+        .END
+	CDEBUG = $(CDBUG)
+        O = .obj
+	LFLAGS2 = setargv.obj $(SLANG).lib $(SLIB)os2sl16.def -link /NOE $(SLIB)
+#========================================================================
+#========================= OS2 - EMX ====================================
+#========================================================================
+    .ELIF $(COMP) == EMX
+        CC        = gcc -Zmtd
+        .IF $(OPT) == N
+            CDEBUG =-g
+            LDEBUG =
+        .ELSE
+            CDEBUG = -O
+            LDEBUG = 
+        .END
+	O = .o
+	LFLAGS2 = $(SLIB)os2sl.def -L$(SLIB) -l$(SLANG)
+    .ENDIF
+.ENDIF
+
+CFLAGS=$(CDEBUG) -I$(SLIB) -DHAS_MEMSET
+LFLAGS = $(LDEBUG)
+
+SLIB = ..\src\\
+SLANG = slang
+
+.c$O:
+	$(CC) -c $(CFLAGS) $*.c
+
+slhelp : slhelp.exe
+
+slhelp.exe: slhelp$O
+	$(CC) $(LFLAGS) -o $@ slhelp$O $(LFLAGS2)

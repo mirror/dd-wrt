@@ -1,0 +1,643 @@
+#!/usr/bin/env slsh
+% The unicode database contains 15 fields
+
+private define usage ()
+{
+   () = fprintf (stderr, "Usage: %s UnicodeData.txt EastAsianWidth.txt\n", __argv[0]);
+   exit (1);
+}
+
+if (__argc != 3)
+  usage ();
+
+private variable Unicode_Data_File = __argv[1];
+private variable East_Asian_File = __argv[2];
+
+private define make_char_def_table (num)
+{
+   variable s = struct 
+     {
+	code_point,
+	char_name,
+	general_cat,
+	combining_class,
+	bidirectional_cat,
+	char_decomp_map,
+	decimal_digit_val,
+	digit_val,
+	numeric_val,
+	is_mirrored,
+	unicode1_name,
+	iso10646_comment,
+	uppercase_mapping,
+	lowercase_mapping,
+	titlecase_mapping,
+	east_asian_prop,
+     };
+
+   s.code_point = Int32_Type[num]; s.code_point[*] = [0:num-1];
+   s.char_name = String_Type[num]; s.char_name[*] = "";
+   s.general_cat = String_Type[num];  s.general_cat[*] = "";
+   s.combining_class = String_Type[num]; s.combining_class[*] = "";
+   s.bidirectional_cat = String_Type[num]; s.bidirectional_cat[*] = "";
+   s.char_decomp_map = String_Type[num]; s.char_decomp_map[*] = "";
+   s.decimal_digit_val = String_Type[num];
+   s.digit_val = String_Type[num];
+   s.numeric_val = String_Type[num];
+   s.is_mirrored = Char_Type[num];
+   s.unicode1_name = String_Type[num];
+   s.iso10646_comment = String_Type[num];
+   s.lowercase_mapping = Int32_Type[num];
+   s.uppercase_mapping = Int32_Type[num];
+   s.titlecase_mapping = Int32_Type[num];
+   s.east_asian_prop = String_Type[num]; s.east_asian_prop[*] = "";   
+   return s;
+}
+
+
+private define fixup_ranges (starts, stops, s)
+{
+   variable nranges = length (starts);
+
+   foreach (get_struct_field_names (s))
+     {
+	variable field_name = ();
+
+	if (field_name == "code_point")
+	  continue;
+
+	variable field = get_struct_field (s, field_name);
+	_for (0, nranges-1, 1)
+	  {
+	     variable i = ();
+	     variable start = starts[i];
+	     variable stop = stops[i];
+
+	     field[[start+1:stop-1]] = field[start];
+	  }
+     }
+}
+
+private define hexstr_to_int (s)
+{
+   return integer (strcat ("0x0", strtrim (s)));
+}
+
+		  
+private define read_file (file)
+{
+   variable lines = fgetslines (fopen (file, "r"));
+
+   % Get the code point of the last line since it determines the number of 
+   % code points
+   variable num = 1+hexstr_to_int (strchop (lines[-1], ';', 0)[0]);
+
+   variable s = make_char_def_table (num);
+   variable is_range = Char_Type[num];
+   variable i, j;
+
+   foreach (lines)
+     {
+	variable line = ();
+	variable fields = strchop (line, ';', 0);
+
+	if (fields[2] == "Cs")
+	  continue;		       %  surrogate
+
+	i = hexstr_to_int (fields[0]);
+
+	variable field = fields[1];
+	s.char_name[i] = field;
+	% A range is specified if the field is of the form <xxx, First> 
+	% or <xxx, Last>
+	if (field[0] == '<')
+	  {
+	     if (string_match (field, ", First>$", 1))
+	       is_range [i] = 1;
+	     else if (string_match (field, ", Last>$", 1))
+	       is_range[i] = -1;
+	  }
+
+	s.general_cat[i] = fields[2];
+	s.combining_class[i] = fields[3];
+	s.bidirectional_cat[i] = fields[4];
+	s.char_decomp_map[i] = fields[5];
+	s.decimal_digit_val[i] = fields[6];
+	s.digit_val[i] = fields[7];
+	s.numeric_val[i] = fields[8];
+	s.is_mirrored[i] = (fields[9] == "Y");
+	s.unicode1_name[i] = fields[10];
+	s.iso10646_comment[i] = fields[11];
+	s.uppercase_mapping[i] = hexstr_to_int (fields[12]);
+	s.lowercase_mapping[i] = hexstr_to_int (fields[13]);
+	s.titlecase_mapping[i] = hexstr_to_int (fields[14]);
+     }
+
+   i = where (is_range == 1);
+   if (length (i))
+     {
+	j = where (is_range == -1);
+	if (length (i) != length (j))
+	  verror ("First and Last ranges do not match");
+
+	fixup_ranges (i, j, s);
+     }
+
+   i = where (s.lowercase_mapping == 0);
+   s.lowercase_mapping[i] = s.code_point[i]; 
+   i = where (s.uppercase_mapping == 0);
+   s.uppercase_mapping[i] = s.code_point[i];
+   i = where (s.titlecase_mapping == 0);
+   s.titlecase_mapping[i] = s.code_point[i];
+   
+   return s;
+}
+
+private define read_east_asian_file (s, file)
+{
+   foreach (fopen (file, "r")) using ("line")
+     {
+	variable line = ();
+	if (line[0] == '#')
+	  continue;
+	line = strtrim (line);
+	!if (strlen (line))
+	  continue;
+	variable code, prop;
+	variable fields = strtok (line, "; ");
+	code = fields[0];
+	if (is_substr (code, ".."))
+	  {
+	     code = strtok (code, ".");
+	     variable code_start = hexstr_to_int (code[0]);
+	     variable code_stop = hexstr_to_int (code[1]);
+	     prop = fields[1];
+	     _for (code_start, code_stop, 1)
+	       {
+		  code = ();
+		  s.east_asian_prop[code] = prop;
+	       }
+	     continue;
+	  }
+	code = hexstr_to_int (code);
+	s.east_asian_prop[code] = fields[1];
+     }
+}
+
+private variable LOWER	= 0x0001;
+private variable UPPER	= 0x0002;
+private variable ALPHA	= 0x0004;
+private variable XDIGIT	= 0x0008;
+private variable SPACE	= 0x0010;
+private variable BLANK	= 0x0020;
+private variable CNTRL	= 0x0040;
+private variable PRINT	= 0x0080;
+
+private variable DIGIT	= 0x0100;
+private variable GRAPH	= 0x0200;
+private variable ALNUM	= 0x0400;
+private variable PUNCT	= 0x0800;
+private variable ASCII	= 0x1000;
+
+private variable Classification_C_Table_Type = "_pSLuint16_Type";
+private variable Classification_C_Table_Format = "0x%04X";
+
+private define init_file (file)
+{
+   variable fp = fopen (file, "w");
+
+   () = fprintf (fp, "/* This file was automatically created by %s */\n", __argv[0]);
+   
+   return fp;
+}
+
+private define check_data_type (datatype, s, what, table_name)
+{
+   variable min_val, max_val;
+
+   switch (datatype)
+     {
+      case "char":
+	min_val = -128; max_val = 127;
+     }
+     {
+	case "unsigned char":
+	min_val = 0; max_val = 255;
+     }
+     {
+      case "_pSLint16_Type":
+	min_val = -32768; max_val = 32767;
+     }
+     {
+      case "_pSLuint16_Type":
+	min_val = 0; max_val = 0xFFFF;
+     }
+     {
+      case "_pSLint32_Type":
+	min_val = -2147483648; 
+	max_val = 0x7FFFFFFF;
+     }
+     {
+      case "_pSLuint32_Type":
+	min_val = 0; max_val = 0xFFFFFFFFUL;
+     }
+     {
+      case "bit":
+	return;
+     }
+     {
+	() = fprintf (stderr, "check_data_type: %s not supported\n", datatype);
+	return;
+     }
+   
+   variable i = wherenot (min_val <= what <= max_val);
+   if (length (i) == 0)
+     return;
+   
+   () = fprintf (stderr, "***WARNING: table for %s needs a larger type for char 0x%04X\n", table_name, s.code_point[i[0]]);
+}
+
+
+private define write_toxxx_table (fp, s, what, datatype, 
+				 table_name, format, shift_bits,
+				 greater_than_max_value)
+{
+   variable ch = s.code_point;
+   variable use_bitmap = 0;
+   variable i, j, k;
+   variable bits_per_value;
+
+   check_data_type (datatype, s, what, table_name);
+
+   if (datatype == "bit")
+     {
+	variable max_what = max(what);
+	bits_per_value = -1;
+	variable shift_bits_offset = 4;
+	foreach ([1,2,4,8]) % 7, 3, 1, 0
+	    {
+	       i = ();
+	       shift_bits_offset--;
+	       if (max_what >=  (1 shl i))
+		 continue;
+	       
+	       bits_per_value = i;
+	       break;
+	    }
+	
+	if (bits_per_value == -1)
+	  verror ("bit data type cannot represent this object\n");
+	     
+	datatype = "unsigned char";
+	use_bitmap = 1;
+     }
+   
+   if (use_bitmap)
+     {
+	variable num_values_per_8bits = 8/bits_per_value;
+	ch = ch/num_values_per_8bits;
+     }
+
+   % Take advantage of the sparseness of the table.  To this end, write
+   % N tables with nentries per table.
+   variable nentries = (1 shl shift_bits);
+   variable ntables = max(ch)/nentries + 1;
+
+   variable data = Int_Type[ntables * nentries];
+   
+   if (use_bitmap)
+     {
+	i = length(what)/num_values_per_8bits;
+	if (i * num_values_per_8bits < length(what))
+	  i++;
+
+	if (greater_than_max_value)
+	  {
+	     vmessage ("Padding table: num_values_per_8bits = %d", num_values_per_8bits);
+	     variable new_what = @Array_Type(_typeof(what), [i*num_values_per_8bits]);
+	     new_what[[0:length(what)-1]] = what;
+	     new_what[[length(what):]] = greater_than_max_value;
+	     what = new_what;
+	  }
+	variable bitmap = UChar_Type[i];
+	
+	% Fillout the bitmap with the correct values for characters beyond the
+	% tabulated range.
+
+	variable bit = 0;
+	_for (0, num_values_per_8bits-1, 1)
+	  {
+	     variable b = ();
+	     variable values = what[[b::num_values_per_8bits]];
+	     _for (0, bits_per_value-1, 1)
+	       {
+		  k = ();
+		  i = where (values & (1 shl k));
+		  bitmap[i] |= (1 shl bit);
+		  bit++;
+	       }
+	  }
+	what = bitmap;
+     }
+   
+   data[[0:max(ch)]] = what;
+   
+   variable unique_tables = Array_Type[ntables];
+   variable tables = Int_Type[ntables];
+
+   variable num_unique = 0;
+   unique_tables[0] = [1:nentries]*0;
+   num_unique = 1;
+
+   _for (0, ntables-1, 1)
+     {
+	i = ();
+	variable table = data[nentries*i + [0:nentries-1]];
+
+	j = 0;
+	while (j < num_unique)
+	  {
+	     if (0 == length (where (unique_tables[j] != table)))
+	       break;
+	     j++;
+	  }
+
+	tables[i] = j;
+	if (j == num_unique)
+	  {
+	     unique_tables[num_unique] = table;
+	     num_unique++;
+	  }
+     }
+
+   % How many tables do we really need?
+   i = where (tables != 0);
+   ntables = 1 + i[-1];
+   
+   if (typeof (fp) == String_Type)
+     fp = init_file (fp);
+
+   variable bitmap_multiplier = 1;
+   if (use_bitmap)
+     bitmap_multiplier = num_values_per_8bits;
+
+   variable table_lookup_name = sprintf ("SL_%s_LOOKUP", strup(table_name));
+   variable max_char_name = sprintf ("SL_%s_MAX_CHAR", strup(table_name));
+   variable assign_lookup_name = sprintf ("SL_%s_ALOOKUP", strup(table_name));
+
+   table_name = sprintf ("_pSLwc_%s_Table", table_name);
+   
+   () = fprintf (fp, "#define %s 0x%Xul\n\n", max_char_name,
+		 bitmap_multiplier * ntables * nentries);
+
+   if (use_bitmap == 0)
+     {
+	() = fprintf (fp, "#define %s(x) \\\n", table_lookup_name);
+	() = fprintf (fp, "  (((unsigned)(x)>=%s)?%d:(%s[(unsigned)(x)>>%d][(unsigned)(x)&0x%X]))\n\n",
+		      max_char_name, greater_than_max_value, table_name, shift_bits, nentries-1);
+     }
+   else if (num_values_per_8bits == 8) %  boolean (0 or 1)
+     {
+	()=fprintf(fp, "#define %s(y,x) \\\n", assign_lookup_name);
+	()=fprintf(fp, "{ \\\n");
+	()=fprintf(fp, "   const %s *_t; \\\n", datatype);
+	()=fprintf(fp, "   (y) = (((unsigned)(x) < %s) \\\n", max_char_name);
+	()=fprintf(fp, "	  && (NULL != (_t = %s[(unsigned)(x)>>%d])) \\\n",
+		   table_name, shift_bits_offset + shift_bits);
+	()=fprintf(fp, "	  && (_t[(unsigned)((x)>>%d)&0x%X] & (%d << ((x)&%d)))); \\\n",
+		   shift_bits_offset, nentries - 1, int(2^bits_per_value-1), num_values_per_8bits-1);
+	()=fprintf(fp, "}\n");
+     }
+   else % bit mapped with num_values_per_8bits = 1,2, or 4
+     {
+	()=fprintf(fp, "#define %s(y,x) \\\n", assign_lookup_name);
+	()=fprintf(fp, "{ \\\n");
+	()=fprintf(fp, "   const %s *_t; \\\n", datatype);
+	()=fprintf(fp, "   (y) = (((unsigned)(x) < %s) \\\n", max_char_name);
+	()=fprintf(fp, "	  && (NULL != (_t = %s[(unsigned)(x)>>%d])) \\\n",
+		   table_name, shift_bits_offset + shift_bits);
+	()=fprintf(fp, "	  ? ((_t[(unsigned)((x)>>%d)&0x%X]>>(%d*((x)&%d)))&%d) : %d); \\\n",
+		   shift_bits_offset, nentries - 1, bits_per_value,
+		   num_values_per_8bits-1, int(2^bits_per_value-1),
+		   greater_than_max_value);
+	()=fprintf(fp, "}\n");
+     }
+
+   () = fprintf (fp, "extern const %s *%s[%d];\n\n", datatype, table_name, ntables);
+
+   () = fprintf (fp, "#ifdef DEFINE%s\n", strup (table_name));
+
+   format = [format, format, format, format, format, format, format, format];
+   format = strcat ("  /*0x%02X-0x%02X*/ ", strjoin (format, ", "));
+
+   _for (0, num_unique-1, 1)
+     {
+	i = ();
+	if ((i == 0) and use_bitmap)
+	  continue;
+
+	() = fprintf (fp, "static const %s Table_%02d[%d] =\n{\n", 
+		      datatype, i, nentries);
+	
+	table = unique_tables[i];
+	_for (0, nentries-1, 8)
+	  {
+	     j = ();
+	     if (j) 
+	       () = fputs (",\n", fp);
+	     () = fprintf (fp, format, 
+			   j, (j+7),
+			   table[j], table[j+1], table[j+2], table[j+3],
+			   table[j+4], table[j+5], table[j+6], table[j+7]);
+	  }
+	() = fputs ("\n};\n\n", fp);
+     }
+   
+   () = fprintf (fp, "const %s *%s[%d] =\n{", datatype, table_name, ntables);
+   i = 0;
+   while (i < ntables)
+     {
+	if (i) () = fputs (",", fp);
+
+	!if (i mod 6)
+	  () = fputs ("\n", fp);
+	
+	if (use_bitmap and (tables[i] == 0))
+	  () = fprintf (fp, "      NULL");
+	else
+	  () = fprintf (fp, "  Table_%02d", tables[i]);
+
+	i++;
+     }
+   () = fputs ("\n};\n", fp);
+   () = fprintf (fp, "#endif /* DEFINE%s */\n", strup(table_name));
+
+   () = fclose (fp);
+   
+   variable size;
+
+   if (is_substr (datatype, "char"))
+     size = 1;
+   else if (is_substr (datatype, "short"))
+     size = 2;
+   else size = 4;
+
+   if (use_bitmap == 0)
+     {
+	vmessage ("Estimated table size: %d bytes", 
+		  4*ntables + size*nentries*num_unique);
+     }
+   else
+     {
+	vmessage ("Estimated table size: %d bytes", 
+		  4*ntables + size*nentries*(num_unique-1));
+     }
+}
+
+
+private define make_char_classes (s)
+{
+   variable i;
+   variable code_point = s.code_point;
+   variable gcat0 = int (s.general_cat);
+   variable char_classes = UShort_Type[length(code_point)];
+#iftrue
+   % LOWER
+   i = where (((code_point == s.lowercase_mapping)
+	       and (code_point != s.uppercase_mapping)));
+   char_classes[i] |= LOWER;
+   
+   % UPPER
+   i = where (((code_point == s.uppercase_mapping)
+	       or (code_point == s.titlecase_mapping))
+	      and (code_point != s.lowercase_mapping));
+   char_classes[i] |= UPPER;
+#else
+   % LOWER
+   i = where (s.general_cat == "Ll");
+   char_classes[i] |= LOWER;
+   
+   % UPPER
+   i = where (s.general_cat == "Lu");
+   char_classes[i] |= UPPER;
+#endif
+
+   % ALPHA
+   i = where ((char_classes & (UPPER|LOWER)) or (gcat0 == 'L'));
+   char_classes[i] |= ALPHA;
+
+   % XDIGIT
+   i = where (((code_point >= '0') and (code_point <= '9'))
+	      or ((code_point >= 'A') and (code_point <= 'F'))
+	      or ((code_point >= 'a') and (code_point <= 'f')));
+   char_classes[i] |= XDIGIT;
+
+   % SPACE, BLANK
+   char_classes[' '] |= SPACE|BLANK;
+   char_classes['\t'] |= SPACE|BLANK;
+   char_classes['\n'] |= SPACE;
+   char_classes['\r'] |= SPACE;
+   char_classes['\f'] |= SPACE;
+   char_classes['\v'] |= SPACE;
+   % char_classes [where (s.bidirectional_cat == "WS")] |= SPACE;
+   i = where ((gcat0 == 'Z') 
+	      and not array_map (Int_Type, &is_substr, s.char_decomp_map, "<noBreak>"));
+   char_classes [i] |= SPACE;
+   
+   % CNTRL
+   char_classes[where(s.char_name == "<control>")] |= CNTRL;
+      
+   % PRINT
+   char_classes[where((s.char_name != "") and not (char_classes & CNTRL))]
+     |= PRINT;
+
+   % DIGIT
+   i = where ((char_classes & XDIGIT) and not (char_classes & ALPHA));
+   char_classes[i] |= DIGIT;
+
+   % GRAPH
+   char_classes[where ((char_classes & PRINT) and not (char_classes & SPACE))]
+     |= GRAPH;
+   
+   % ALNUM
+   char_classes[where (char_classes & (ALPHA|DIGIT))] |= ALNUM;
+
+   % PUNCT
+   char_classes[where ((char_classes & GRAPH) and not (char_classes & ALNUM))]
+     |= PUNCT;
+   
+   % ASCII
+   char_classes[where (code_point < 0x80)] |= ASCII;
+   return char_classes;
+}
+
+private define write_char_classes (file, s, char_classes)
+{
+   variable fp = init_file (file);
+   () = fprintf (fp, "#define SLCHARCLASS_LOWER\t0x%04X\n", LOWER);
+   () = fprintf (fp, "#define SLCHARCLASS_UPPER\t0x%04X\n", UPPER);
+   () = fprintf (fp, "#define SLCHARCLASS_ALPHA\t0x%04X\n", ALPHA);
+   () = fprintf (fp, "#define SLCHARCLASS_XDIGIT\t0x%04X\n", XDIGIT);
+   () = fprintf (fp, "#define SLCHARCLASS_SPACE\t0x%04X\n", SPACE);
+   () = fprintf (fp, "#define SLCHARCLASS_BLANK\t0x%04X\n", BLANK);
+   () = fprintf (fp, "#define SLCHARCLASS_CNTRL\t0x%04X\n", CNTRL);
+   () = fprintf (fp, "#define SLCHARCLASS_PRINT\t0x%04X\n", PRINT);
+   () = fprintf (fp, "#define SLCHARCLASS_DIGIT\t0x%04X\n", DIGIT);
+   () = fprintf (fp, "#define SLCHARCLASS_GRAPH\t0x%04X\n", GRAPH);
+   () = fprintf (fp, "#define SLCHARCLASS_ALNUM\t0x%04X\n", ALNUM);
+   () = fprintf (fp, "#define SLCHARCLASS_PUNCT\t0x%04X\n", PUNCT);
+   () = fprintf (fp, "#define SLCHARCLASS_ASCII\t0x%04X\n", ASCII);
+   () = fprintf (fp, "\n\n");
+   write_toxxx_table (fp, s, char_classes, Classification_C_Table_Type,
+		      "Classification", Classification_C_Table_Format, 8, 0);
+}
+
+private define main ()
+{
+   variable s = read_file (Unicode_Data_File);
+   read_east_asian_file (s, East_Asian_File);
+
+   variable char_classes = make_char_classes (s);
+   variable ch = s.code_point;
+   variable is_combining = ((s.general_cat == "Mn") or (s.general_cat == "Me"));
+   % Note: "Mc" (combining, yet spacing) is omitted here since I do
+   % not know what that means.
+
+   % Apparantly Hangul (Conjoining Jamo) characters 0x1160 - 0x11FF
+   % _behave_ like combining characters, but are not flagged as such in
+   % the database. 
+   is_combining[[0x1160:0x11FF]] = 1;
+#ifnfalse
+   variable width = UChar_Type[length(ch)];
+   width[*] = 1;
+   width[where (s.east_asian_prop == "W")] = 2;
+   width[where (s.east_asian_prop == "F")] = 2;
+   width[where (s.east_asian_prop == "A")] = 3;   %  ambiguous
+
+   width[where (s.general_cat == "Cf")] = 0;
+   width[0xAD] = 3;		       %  SOFT-HYPHEN -- mark is as ambiguous
+
+   width[where(is_combining)] = 0;
+   %width[where (s.bidirectional_cat == "NSM")] = 0;
+   width[where (0 == array_map (Int_Type, &strncmp, s.char_name, 
+				"ZERO WIDTH", 10))]
+     = 0;
+
+   width[[0x80:0x9F]] = 4;	       %  displayed as <xx> by SLsmg
+
+   write_toxxx_table ("slwcwidth.h", s, width, "bit",
+		      "Width", "0x%02X", 8, 1);
+#endif
+   write_toxxx_table ("slcombin.h", s, 
+		      is_combining,
+		      "bit", "Combining", "0x%02X", 6, 0);
+   write_toxxx_table ("sllower.h", s, s.lowercase_mapping-ch, "_pSLint32_Type",
+		      "Tolower", "% 5d", 7, 0);
+   variable tmp = s.lowercase_mapping-ch;
+   write_toxxx_table ("slupper.h", s, s.uppercase_mapping-ch, "_pSLint32_Type",
+		      "Toupper", "% 5d", 7, 0);
+   write_char_classes ("slischar.h", s, char_classes);
+   
+}
+
+main();

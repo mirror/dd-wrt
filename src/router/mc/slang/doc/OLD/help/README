@@ -1,0 +1,3 @@
+The program this directory `slhelp' is capable of reading VMS style help
+files.  The program `texconv' in ../doc is able to convert the TeX documents
+there to produce VMS style help files.
