@@ -102,6 +102,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
+							<input type="hidden" name="hotss_preconfig" value="0"/>
 							
 							<h2><% tran("hotspot.h2"); %></h2>
 							<% show_modules(".webhotspot"); %>
