@@ -68,11 +68,17 @@ extern int wl_probe(char *name);
  * Returns the list of associated stations in the pre-existing buffer list 
  */
 int getchannels(unsigned int *list, char *ifname);
-int getassoclist(char *name, unsigned char *list);
 int getwdslist(char *name, unsigned char *list);
+
+int getassoclist(char *name, unsigned char *list);
 int getNoise(char *ifname, unsigned char *mac);
 int getUptime(char *ifname, unsigned char *mac);
 int getRssi(char *ifname, unsigned char *mac);
+
+int getassoclist_11n(char *name, unsigned char *list);
+int getNoise_11n(char *ifname, unsigned char *mac);
+int getUptime_11n(char *ifname, unsigned char *mac);
+int getRssi_11n(char *ifname, unsigned char *mac);
 
 #ifdef HAVE_MADWIFI
 int get_radiostate(char *ifname);
