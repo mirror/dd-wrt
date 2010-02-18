@@ -2551,7 +2551,7 @@ void start_wan(int status)
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
 #endif
-#ifdef HAVE_L2TP
+#ifdef HAVE_PPTP
 	if (nvram_match("wan_proto", "pptp"))
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
