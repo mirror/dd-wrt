@@ -49,9 +49,9 @@ void start_chilli(void)
 
 	stop_chilli();		//ensure that its stopped
 
-	if(!strlen(nvram_safe_get("chilli_interface"))) 
+	if (!strlen(nvram_safe_get("chilli_interface")))
 		nvram_set("chilli_interface", get_wdev());
-	if(!strlen(nvram_safe_get("hotss_interface")))
+	if (!strlen(nvram_safe_get("hotss_interface")))
 		nvram_set("hotss_interface", get_wdev());
 
 #ifdef HAVE_HOTSPOT
@@ -75,16 +75,16 @@ void start_chilli(void)
 			nvram_set("chilli_enable", "1");	// to get care of firewall, network, etc.
 			nvram_set("chilli_def_enable", "0");
 		}
-			sprintf(ssid, "HotSpotSystem.com-%s_%s", nvram_get("hotss_operatorid"),
-				nvram_get("hotss_locationid"));
-			nvram_set("wl0_ssid", ssid);
-			nvram_set("time_zone", "+00");
-			nvram_set("daylight_time", "1");
-		hotspotsys_config();
-	} else if (nvram_match("chilli_enable", "1")) {
-		nvram_unset("chilli_def_enable");
-		chilli_config();
-	}
+		if (!nvram_match("hotss_preconfig", "1") {
+		    nvram_set("hotss_preconfig", "1");
+		    sprintf(ssid, "HotSpotSystem.com-%s_%s",
+			    nvram_get("hotss_operatorid"),
+			    nvram_get("hotss_locationid"));
+		    nvram_set("wl0_ssid", ssid); nvram_set("time_zone", "+00");
+		    nvram_set("daylight_time", "1");}
+		    hotspotsys_config();} else
+		    if (nvram_match("chilli_enable", "1")) {
+		    nvram_unset("chilli_def_enable"); chilli_config();}
 #else
 	if (!nvram_match("chilli_enable", "1"))
 		return;
@@ -276,7 +276,8 @@ void hotspotsys_config(void)
 		uamdomain = nvram_safe_get("hotss_customuam");
 	}
 	fprintf(fp,
-		"uamserver %s://%s/customer/hotspotlogin.php\n", nvram_default_get("hotss_customuamproto", "https"), uamdomain);
+		"uamserver %s://%s/customer/hotspotlogin.php\n",
+		nvram_default_get("hotss_customuamproto", "https"), uamdomain);
 
 	if (nvram_invmatch("wan_get_dns", "0.0.0.0")
 	    && nvram_invmatch("wan_get_dns", "")) {
