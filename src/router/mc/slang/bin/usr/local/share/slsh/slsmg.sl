@@ -1,0 +1,2 @@
+import("slsmg");
+provide("slsmg");
