@@ -321,20 +321,14 @@ static int bound(void)
 #endif
 #ifdef HAVE_L2TP
 	else if (nvram_match("wan_proto", "l2tp")) {
-		int i = 0;
 		char l2tpip[64];
-
-		/*
-		 * Delete all default routes 
-		 */
-		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0
-		       || i++ < 10) ;
-
 		struct dns_lists *dns_list = NULL;
 
 		dns_to_resolv();
 
 		dns_list = get_dns_list();
+
+		int i=0;
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
@@ -352,13 +346,11 @@ static int bound(void)
 		 * is broken 
 		 */
 		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
-		sleep(1);
+
 		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip);
 
 		nvram_set("l2tp_server_ip", l2tpip);
                 
-                route_del(wan_ifname, 0, "0.0.0.0",nvram_safe_get("wan_gateway"), "0.0.0.0");
-
 		route_add(wan_ifname, 0,
 			  nvram_safe_get("l2tp_server_ip"),
 			  nvram_safe_get("wan_gateway"), "255.255.255.255");
