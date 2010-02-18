@@ -463,7 +463,7 @@ uninstall-man: uninstall-man1
 
 
 mc.hlp.pl: mc.1 $(srcdir)/xnc.hlp $(top_builddir)/src/man2hlp
-	- $(top_builddir)/src/man2hlp mc.1 $(srcdir)/xnc.hlp mc.hlp.pl
+	- $(top_builddir)/src/man2hlp_ mc.1 $(srcdir)/xnc.hlp mc.hlp.pl
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
