@@ -38,6 +38,12 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <net/if.h>
+
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
 
 #include <bcmnvram.h>
 #include <shutils.h>
