@@ -1732,6 +1732,9 @@ static int sockaddr_to_dotted_n(char *sin_addr, char *buf)
 
 void getIPFromName(char *name, char *ip)
 {
+int count=5;
+while(count--)
+{
 	struct addrinfo *result = NULL;
 	int rc;
 	struct addrinfo hint;
@@ -1739,7 +1742,8 @@ void getIPFromName(char *name, char *ip)
 	if (hp!=NULL)
 	    {
 		sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
-		return;
+		if (strcmp(ip,"0.0.0.0"))
+		    break;
 	    }
 	res_init();
 	memset(&hint, 0, sizeof(hint));
@@ -1761,7 +1765,10 @@ void getIPFromName(char *name, char *ip)
 	    }else
 		sprintf(ip, "0.0.0.0");
 	}
-
+	if (strcmp(ip,"0.0.0.0"))
+	    break;
+	sleep(1);
+}
 	
 }
 
