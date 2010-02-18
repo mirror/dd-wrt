@@ -9,3 +9,4 @@
  "hotss_nowifibridge" "no bridge" "CHOICE" "2" "0" "1" "TRUE" "0"
  "hotss_interface" "hotspotsys Interface" "NULL" "FALSE" "0"
  "hotss_net" "net" "NULL" "TRUE" "0"
+ "hotss_preconfig" "preconfig" "NULL" "TRUE" "0"
