@@ -75,16 +75,20 @@ void start_chilli(void)
 			nvram_set("chilli_enable", "1");	// to get care of firewall, network, etc.
 			nvram_set("chilli_def_enable", "0");
 		}
-		if (!nvram_match("hotss_preconfig", "1") {
-		    nvram_set("hotss_preconfig", "1");
-		    sprintf(ssid, "HotSpotSystem.com-%s_%s",
-			    nvram_get("hotss_operatorid"),
-			    nvram_get("hotss_locationid"));
-		    nvram_set("wl0_ssid", ssid); nvram_set("time_zone", "+00");
-		    nvram_set("daylight_time", "1");}
-		    hotspotsys_config();} else
-		    if (nvram_match("chilli_enable", "1")) {
-		    nvram_unset("chilli_def_enable"); chilli_config();}
+		if (!nvram_match("hotss_preconfig", "1")) {
+			nvram_set("hotss_preconfig", "1");
+			sprintf(ssid, "HotSpotSystem.com-%s_%s",
+				nvram_get("hotss_operatorid"),
+				nvram_get("hotss_locationid"));
+			nvram_set("wl0_ssid", ssid);
+			nvram_set("time_zone", "+00");
+			nvram_set("daylight_time", "1");
+		}
+		hotspotsys_config();
+	} else if (nvram_match("chilli_enable", "1")) {
+		nvram_unset("chilli_def_enable");
+		chilli_config();
+	}
 #else
 	if (!nvram_match("chilli_enable", "1"))
 		return;
