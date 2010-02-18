@@ -1718,19 +1718,30 @@ static int sockaddr_to_dotted(struct sockaddr *saddr, char *buf)
 	}
 	return -1;
 }
+#define DIE_ON_ERROR AI_CANONNAME
 
 void getIPFromName(char *name, char *ip)
 {
 	struct addrinfo *result = NULL;
 	int rc;
 	struct addrinfo hint;
+	struct hostent *hp = gethostbyname(name);
+	if (hp!=NULL)
+	    {
+		sockaddr_to_dotted(hp->h_addr_list[0], ip);
+		fprintf(stderr,"return ip %s\n",ip);
+		return;
+	    }
 	res_init();
-
 	memset(&hint, 0, sizeof(hint));
+	hint.ai_family = AF_INET;
 	hint.ai_socktype = SOCK_STREAM;
+	hint.ai_flags = DIE_ON_ERROR;
 	rc = getaddrinfo(name, NULL, &hint, &result);
+	fprintf(stderr,"errorcode %d\n",rc);
 	if (!result)		// give it a second try
 		rc = getaddrinfo(name, NULL, &hint, &result);
+	fprintf(stderr,"errorcode2 %d\n",rc);
 
 	if (result) {
 		sockaddr_to_dotted(result->ai_addr, ip);
