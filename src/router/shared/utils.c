@@ -1739,6 +1739,7 @@ void getIPFromName(char *name, char *ip)
 	if (hp!=NULL)
 	    {
 		sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
+		return;
 	    }
 	res_init();
 	memset(&hint, 0, sizeof(hint));
