@@ -171,6 +171,7 @@ include rules/microcom.mk
 include rules/nvtlstatus.mk
 include rules/ctorrent.mk
 include rules/milkfish.mk
+include rules/mc.mk
 include rules/quagga.mk
 include rules/bmon.mk
 include rules/ethtool.mk
