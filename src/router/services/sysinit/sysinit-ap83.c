@@ -277,7 +277,7 @@ void start_sysinit(void)
 	eval("ifconfig", "wifi0", "hw", "ether", buf2);
 	led_control(LED_POWER, LED_ON);
 #endif
-#ifdef defined(HAVE_TEW632BRP) || defined(HAVE_DIR615E)
+#if defined(HAVE_TEW632BRP) || defined(HAVE_DIR615E)
 	if (lanmac != NULL) {
 		fprintf(stderr, "configure wifi0 to %s\n", lanmac);
 		eval("ifconfig", "wifi0", "hw", "ether", lanmac);
