@@ -349,7 +349,7 @@ errmsg.err103=" mora biti manj¹i kot ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Kliknite za brisanje zakupa";
-errmsg.err581="Kliknite za izvr¾bo pptp odjemalca";
+errmsg.err581="Kliknite za prekinitev pptp odjemalca";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Ni na voljo! Prosimo, da omogoèite brez¾ièno omre¾je.";
@@ -435,7 +435,7 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish SIP Usmerjalnik";
+bmenu.servicesMilkfish="Milkfish SIP usmerjalnik";
 bmenu.servicesAnchorFree="Moja Ad mre¾a";
 
 bmenu.statu="Status";
@@ -547,7 +547,7 @@ dmz.host="DMZ gostiteljev IP naslov";
 
 //help container
 
-hdmz.right2="Omogoèanje te mo¾nosti bo izpostavilo gostitelja medmre¾ju. Vsa vrata bodo dostopna z medmre¾ja.";
+hdmz.right2="Omogoèanje te mo¾nosti bo izpostavilo gostitelja internetu. Vsa vrata bodo dostopna z interneta.";
 
 
 // ** Factory_Defaults.asp **//
@@ -581,7 +581,7 @@ filter.legend="Smernica dostopa";
 filter.pol="Smernica";
 filter.polname="Ime smernice";
 filter.pcs="Odjemalci";
-filter.polallow="Dostop do medmre¾ja med izbranimi dnevi in urami.";
+filter.polallow="Dostop do interneta med izbranimi dnevi in urami.";
 filter.legend2="Dnevi";
 filter.time="Ure";
 filter.h24="24 ur";
@@ -684,7 +684,7 @@ usb.usb_ehci="USB 2.0 podpora";
 usb.usb_storage="USB podpora za shranjevanje datotek";
 usb.usb_extfs="ext2 / ext3 datoteèni sistem";
 usb.usb_fatfs="FAT datoteèni sistem";
-usb.usb_printer="USB printer";
+usb.usb_printer="USB tiskalnik";
 usb.usb_automnt="Samodejni priklop diska";
 usb.usb_mntpoint="Priklopna toèka";
 usb.usb_runonmount="Run-on-mount ime skripta";
@@ -1025,13 +1025,13 @@ management.lang_chinese_simplified="poenostavljena kitaj¹èina";
 management.lang_croatian="hrva¹èina";
 management.lang_czech="èe¹èina";
 management.lang_dutch="nizozem¹èina";
-management.lang_portuguese_braz="braziljska portugal¹èina";
+management.lang_portuguese_braz="brazilska portugal¹èina";
 management.lang_english="angle¹èina";
 management.lang_polish="polj¹èina";
 management.lang_french="franco¹èina";
 management.lang_german="nem¹èina";
 management.lang_italian="italijan¹èina";
-management.lang_brazilian="braziljska portugal¹èina";
+management.lang_brazilian="brazilska portugal¹èina";
 management.lang_russian="rusèina";
 management.lang_slovenian="sloven¹èina";
 management.lang_spanish="¹pan¹èina";
@@ -1093,8 +1093,8 @@ qos.h2="Kakovost storitev (QoS)";
 qos.legend="QoS nastavitve";
 qos.srv="Za¾eni QoS";
 qos.type="Paketni naèrt";
-qos.uplink="Hitrost prenosa od vas (Kbit/s)";
-qos.dnlink="Hitrost prenosa k vam (Kbit/s)";
+qos.uplink="Hitrost prenosa od vas (kbit/s)";
+qos.dnlink="Hitrost prenosa k vam (kbit/s)";
 qos.gaming="Optimiziraj za igre";
 qos.legend2="Prioriteta storitev";
 qos.prio_x="Exempt";
@@ -1103,14 +1103,14 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Prioriteta maske omre¾ja";
 qos.ipmask="IP/maska";
-qos.maxrate_b="Maks. Kbit/s";
-qos.maxuprate_b="Maks. Kbits od vas";
-qos.maxdownrate_b="Maks. Kbits k vam";
+qos.maxrate_b="Maks. kbit/s";
+qos.maxuprate_b="Maks. kbit/s od vas";
+qos.maxdownrate_b="Maks. kbit/s k vam";
 qos.maxrate_o="Najveèja hitrost";
 qos.legend4="MAC prioriteta";
 qos.legend5="Prioriteta ethernet vrat";
 qos.legend6="Privzeti nivo pasovne ¹irine";
-qos.bandwidth="Pasovna ¹irina v Kbit/s";
+qos.bandwidth="Pasovna ¹irina v kbit/s";
 
 //help container
 
@@ -1175,7 +1175,7 @@ route.static_ip="Ciljni LAN IP";
 
 //help container
 
-hroute.right2="Èe usmerjalnik gosti va¹o povezavo v medmere¾je, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
+hroute.right2="Èe usmerjalnik gosti va¹o povezavo v internet, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
 hroute.right4="To je edinstvena ¹tevilka; doloèite lahko do 50 smeri.";
 hroute.right6="Vnesite ime, ki ga doloèite za smer.";
 hroute.right8="To je oddaljeni gostitelj do katerage doloèate statièno smer.";
@@ -1710,7 +1710,7 @@ wanmac.wlan="Kloniraj brez¾ièni MAC";
 
 //help container
 
-hwanmac.right2="Nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC naslov. Èe ne ¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je ¾e prijavljen pri va¹em ponudniku medmere¾ja.";
+hwanmac.right2="Nekateri ponudniki interneta zahtevajo, da prijavite va¹ MAC naslov. Èe ne ¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je ¾e prijavljen pri va¹em ponudniku interneta.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
@@ -1997,7 +1997,7 @@ wl_basic.mtikie="Zdru¾ljivojst z MTik";
 wl_basic.csma="Zaznavanje nosilca";
 //help container
 
-hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
+hwl_basic.right2="Èe ¾elite onemogoèiti dostop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèi</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
 hwl_basic.right4="Prilagodi ACK uèasenje. 0 onemogoèi ACK uèasenje na Broadcomovi strojni programski opremi, na Atherosovi pa 0 vkljuèi samodejno ACK uèasenje";
 hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
@@ -2017,7 +2017,7 @@ success.success_noreboot="Nastavitve so uspele.";
 success.success_reboot=success.success_noreboot + "<br />Ponovni zagon naprave. Prosimo, da poèakate trenutek...";
 
 success.alert_reset="Vse nastavitve so bile nastavljene na privezete vrednosti.<br /><br />";
-success.alert1="Pred ponovnim priklopom, prosimo, da preverite nasledje:";
+success.alert1="Pred ponovnim priklopom, prosimo, da preverite naslednje:";
 success.alert2="Èe ste spremenili usmerjalnikov IP naslov, morate tudi sprostiti/obnoviti odjemalèeve IP naslove.";
 success.alert3="Èe ste povezani brez¾ièno, se morate ponovno povezati v omre¾je, in nato klikniti <em>Nadaljuj</em>.";
 
