@@ -1103,14 +1103,14 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Netmask Priority";
 qos.ipmask="IP/Mask";
-qos.maxrate_b="Max Kbits";
-qos.maxuprate_b="Max Kbits Up";
-qos.maxdownrate_b="Max Kbits Down";
+qos.maxrate_b="Max kbits";
+qos.maxuprate_b="Max kbits Up";
+qos.maxdownrate_b="Max kbits Down";
 qos.maxrate_o="Max Rate";
 qos.legend4="MAC Priority";
 qos.legend5="Ethernet Port Priority";
 qos.legend6="Default Bandwidth Level";
-qos.bandwidth="Bandwidth in Kbits";
+qos.bandwidth="Bandwidth in kbits";
 
 //help container
 var hqos = new Object();
