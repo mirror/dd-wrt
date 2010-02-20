@@ -257,6 +257,7 @@ ifeq ($(CONFIG_WIKINGS),y)
 	cp wikings/help/* $(INSTALLDIR)/www/help
 	cp wikings/common.js $(INSTALLDIR)/www
 	cp wikings/About.htm $(INSTALLDIR)/www
+	cp wikings/*.asp $(INSTALLDIR)/www
 	rm -f $(INSTALLDIR)/www/About.htm
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 endif
