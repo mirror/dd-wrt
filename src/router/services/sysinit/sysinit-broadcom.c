@@ -1913,7 +1913,7 @@ char *enable_dtag_vlan(int enable)
 				eth = "eth0";
 				break;
 			case ROUTER_WRT600N:
-			case ROUTER_WRT610N
+			case ROUTER_WRT610N:
 				eth = "eth2";
 				break;
 			default:
