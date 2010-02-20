@@ -78,6 +78,7 @@ obj-$(CONFIG_MC) += mc
 obj-$(CONFIG_NOCAT) += nocat
 obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_SAMBA) += samba
+obj-$(CONFIG_SAMBA3) += samba3
 obj-$(CONFIG_RADAUTH) += radauth
 ifneq ($(CONFIG_FONERA),y)
 ifneq ($(CONFIG_XSCALE),y)
