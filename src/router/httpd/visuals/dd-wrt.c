@@ -3739,6 +3739,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		// interface
 	{
 
+		char regulatory[32];
+		sprintf(regulatory,"%s_regulatory",prefix);
+		nvram_default_get(regulatory,"0");
 		websWrite(wp, " 	<div class=\"setting\">\n");
 		websWrite(wp,
 			  " 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
