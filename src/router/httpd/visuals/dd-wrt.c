@@ -3747,10 +3747,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			  " 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",prefix,
-			  nvram_nmatch("1","%s_regulatory", prefix) ? "checked" : "");
+			  nvram_match(regulatory,"1") ? "checked" : "");
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",prefix,
-			  nvram_nmatch("1","%s_regulatory", prefix) ? "checked" : "");
+			  nvram_match(regulatory,"1") ? "checked" : "");
 		websWrite(wp, " 	</div>\n");
 
 	}
