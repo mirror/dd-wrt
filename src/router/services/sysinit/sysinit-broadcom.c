@@ -1889,11 +1889,8 @@ char *enable_dtag_vlan(int enable)
 		// routers 
 		// 
 	{
-#ifdef HAVE_MADWIFI
-		char *eth = "eth0";
-#else
-		char *eth = "eth1";
-#endif
+		char *eth = NULL;
+
 		vlan7ports = "0t 8";
 		int vlanswap = 0;
 
@@ -1903,10 +1900,26 @@ char *enable_dtag_vlan(int enable)
 		}
 		char *save_ports2 = nvram_safe_get("vlan2ports");
 		char *save_ports1 = nvram_safe_get("vlan1ports");
-#ifndef HAVE_MADWIFI
-		if (getRouterBrand() == ROUTER_WRT600N
-		    || getRouterBrand() == ROUTER_WRT610N)
-			eth = "eth2";
+#ifdef HAVE_MADWIFI		
+		eth = "eth0";
+#else
+		switch (getRouterBrand())
+		{
+			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_WRT320N:
+			case ROUTER_ASUS_RTN16:
+			case ROUTER_WRT310NV2:
+			case ROUTER_WRT610NV2:
+				eth = "eth0";
+				break;
+			case ROUTER_WRT600N:
+			case ROUTER_WRT610N
+				eth = "eth2";
+				break;
+			default:
+				eth = "eth1";
+				break;
+		}		
 #endif
 		if (donothing) {
 			nvram_set("fromvdsl", "0");
