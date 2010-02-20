@@ -1,7 +1,3 @@
-#export samba_cv_CC_NEGATIVE_ENUM_VALUES=no
-
-samba3-configure:
-#	cd samba3/source3 && ./configure --prefix=/usr --host=$(ARCH)-linux CC="$(ARCH-linux-uclibc-gcc)" CFLAGS="$(COPTS) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" CPPFLAGS="$(COPTS) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC"
 
 samba3:
 	CC="$(ARCH)-linux-uclibc-gcc" \
