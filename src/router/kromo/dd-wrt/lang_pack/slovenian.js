@@ -90,7 +90,7 @@ share.range="Obseg";
 share.use="Uporabi";
 share.mins="Min.";
 share.secs="Sek.";
-share.routername="Ime usmerjalnika";
+share.routername="Ime usmerjevalnika";
 share.manual="Roèno";
 share.port="Vrata";
 share.ssid="SSID";
@@ -130,7 +130,7 @@ share.intrface="Vmesnik";  //don't use share.interface, Mozilla problem!!!
 share.ccq="CCQ";
 share.pintrface="Fizièni vmesnik";
 share.vintrface="Navidezni vmesniki";
-share.router="Usmerjalnik";
+share.router="Usmerjevalnik";
 share.static_lease="Statièni zakupi";
 share.srvip="IP stre¾nika";
 share.srvipname="IP ali ime stre¾nika";
@@ -235,7 +235,7 @@ sbutton.summary="Povzetek";
 sbutton.filterIP="Uredi seznam odjemalcev";
 sbutton.filterMac="Uredi seznam filtra MAC";
 sbutton.filterSer="Dodaj/uredi storitev";
-sbutton.reboot="Ponovni zagon usmerjalnika";
+sbutton.reboot="Ponovni zagon usmerjevalnika";
 sbutton.help="   Pomoè  ";
 sbutton.wl_client_mac="Seznam MAC brez¾iènih odjamalcev";
 sbutton.update_filter="Posodobi seznam filtra";
@@ -243,7 +243,7 @@ sbutton.join="Pove¾i";
 sbutton.log_in="Vhodni dnevnik";
 sbutton.log_out="Izhodni dnevnik";
 sbutton.edit_srv="Dodaj/uredi storitev";
-sbutton.routingtab="Poka¾i usmerjalno tabelo";
+sbutton.routingtab="Poka¾i usmerjevalno tabelo";
 sbutton.wanmac="Prika¾i trenutni PCjev MAC naslov";
 sbutton.dhcprel="Sprosti DHCP";
 sbutton.dhcpren="Obnovi DHCP";
@@ -259,7 +259,7 @@ sbutton.download="Prenos";
 // ** COMMON ERROR MESSAGES  **//
 
 errmsg.err0="Vnesti morate uporabni¹ko ime.";
-errmsg.err1="Vnesti morate ime usmerjalnika.";
+errmsg.err1="Vnesti morate ime usmerjevalnika.";
 errmsg.err2="Izven dovoljenega obmoèja. Prosimo, do popravite zaèetni IP naslov ali ¹tevilo uporabnikov.";
 errmsg.err3="Izbrati morate vsaj dan."
 errmsg.err4="Konèni èas mora biti kasnej¹i od zaèetnega èasa.";
@@ -323,7 +323,7 @@ errmsg.err44="Skupno ¹tevilo je preseglo 128.";
 errmsg.err47="nepravilen SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS ni zdru¾ljiv s trenutno konfiguracijo usmerjalnika. Prosimo, da preverite naslednje :\n * Brez¾ièni naèin mora biti AP \n * WPA2 ni podprta pod WDS \n * Bre¾ièno omre¾je v naèinu samo-B ni podprto pod WDS";
+errmsg.err48="WDS ni zdru¾ljiv s trenutno konfiguracijo usmerjevalnika. Prosimo, da preverite naslednje :\n * Brez¾ièni naèin mora biti AP \n * WPA2 ni podprta pod WDS \n * Bre¾ièno omre¾je v naèinu samo-B ni podprto pod WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius je na volju samo v naèinu AP.";
@@ -332,7 +332,7 @@ errmsg.err49="Radius je na volju samo v naèinu AP.";
 errmsg.err50="Vnesti morate SSID.";
 
 // Management.asp error messages
-errmsg.err51="Usmerjalnik trenutno uporablja privzeto geslo. Zaradi varnosti morate spremeniti geslo preden omogoèite oddaljeni dostop. Kliknite gumb OK za spremembo gesla. Kliknite gumb Preklièi za onemogoèen oddaljeni dostop.";
+errmsg.err51="Usmerjevalnik trenutno uporablja privzeto geslo. Zaradi varnosti morate spremeniti geslo preden omogoèite oddaljeni dostop. Kliknite gumb OK za spremembo gesla. Kliknite gumb Preklièi za onemogoèen oddaljeni dostop.";
 errmsg.err52="Geslo se ne ujema.";
 
 // Port_Services.asp error messages
@@ -372,7 +372,7 @@ bmenu.setup="Namestitev";
 bmenu.setupbasic="Osnovna namestitev";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Kloniranje MAC naslova";
-bmenu.setuprouting="Napredno usmerjanje";
+bmenu.setuprouting="Napredno usmerjevanje";
 bmenu.setupvlan="VLAN";
 bmenu.setupeop="EoIP tunel";
 bmenu.networking="Omre¾enje";
@@ -435,11 +435,11 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish SIP usmerjalnik";
+bmenu.servicesMilkfish="Milkfish SIP usmerjevalnik";
 bmenu.servicesAnchorFree="Moja Ad mre¾a";
 
 bmenu.statu="Status";
-bmenu.statuRouter="Usmerjalnik";
+bmenu.statuRouter="Usmerjevalnik";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
@@ -467,7 +467,7 @@ alive.port="Proksi vrata";
 
 //help container
 
-halive.right2="Izbira ponovnega zagona usmerjalnika. Cron mora biti omogoèen pod zavihkom Upravljanje.";
+halive.right2="Izbira ponovnega zagona usmerjevalnika. Cron mora biti omogoèen pod zavihkom Upravljanje.";
 halive.right4="Dovoljeni so najveè trije IP naslovi loèeni s <em>PRESLEDEK</em>.<BR/>Format IP je xxx.xxx.xxx.xxx.";
 
 
@@ -481,11 +481,11 @@ config.h22="Obnovi konfiguracijo";
 config.legend2="Obnovi nastavitve";
 config.mess2="Izberite datoteko za obnovitev";
 config.mess3="O P O Z O R I L O";
-config.mess4="Obnovitev je mo¾na samo z datoteko ustvarjeno na istem modelu usmerjalnika in isto verzijo strojne programske opreme.<br />Ne nalagajte datotek, ki niso bile ustvarjene s tem uporabni¹kim vmesnikom!";
+config.mess4="Obnovitev je mo¾na samo z datoteko ustvarjeno na istem modelu usmerjevalnika in isto verzijo strojne programske opreme.<br />Ne nalagajte datotek, ki niso bile ustvarjene s tem uporabni¹kim vmesnikom!";
 
 //help container
 
-hconfig.right2="Varnostno kopijo lahko naredite v primeru, da morate usmerjalnik ponastaviti na tovarni¹ko privzete nastavitve.<br /><br />Kliknite gumb <em>Varnostno kopiranje</em> za varnostno kopiranje trenutne konfiguracije.";
+hconfig.right2="Varnostno kopijo lahko naredite v primeru, da morate usmerjevalnik ponastaviti na tovarni¹ko privzete nastavitve.<br /><br />Kliknite gumb <em>Varnostno kopiranje</em> za varnostno kopiranje trenutne konfiguracije.";
 hconfig.right4="Kliknite gumb <em>Browse... (Prebrskaj...)</em> za iskanje varnostne kopije, ki je trenutno na va¹em PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
 
 
@@ -554,7 +554,7 @@ hdmz.right2="Omogoèanje te mo¾nosti bo izpostavilo gostitelja internetu. Vsa vra
 
 factdef.titl="Privzete nastavitve";
 factdef.h2="Privzete nastavitve";
-factdef.legend="Ponastavi nastavitve usmerjalnika";
+factdef.legend="Ponastavi nastavitve usmerjevalnika";
 factdef.restore="Obnovi privzete nastavitve";
 factdef.mess1="Opozorilo! Èe kliknete OK, bodo nastavljene privzete nastavitve in vse prej¹nje nastavitve bodo izbrisane.";
 
@@ -644,7 +644,7 @@ prforward.app="Aplikacija";
 
 //help container
 
-hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z WAN pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
+hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z WAN pride zahteva za doloèena vrata, bo usmerjevalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 
 // ** P2P.asp **//
@@ -671,7 +671,7 @@ pforward.to="Do vrat";
 
 //help container
 
-hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z WAN pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
+hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z WAN pride zahteva za doloèena vrata, bo usmerjevalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 // ** USB.asp **//
 
@@ -745,7 +745,7 @@ hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="Izloèi vrata";
 hotspot.nocat_timeout="Èasovna omejitev prijave";
 hotspot.nocat_verbose="Ob¹irnost";
-hotspot.nocat_route="Samo usmerjanje";
+hotspot.nocat_route="Samo usmerjevanje";
 hotspot.nocat_MAClist="Seznam dovoljenih MAC naslovov";
 hotspot.smtp_legend="Preusmeritev SMTP";
 hotspot.smtp_srv="Preusmeritev SMTP";
@@ -890,7 +890,7 @@ idx.stp_mess="(onemogoèi za COMCAST ISP)";
 idx.optional="Dodatne nastavitve";
 idx.mtu="MTU";
 idx.h23="Nastavitev mre¾e";
-idx.routerip="IP naslov usmerjalnika";
+idx.routerip="IP naslov usmerjevalnika";
 idx.lanip="Lokalni IP naslov";
 idx.legend2="WAN vrata";
 idx.wantoswitch="dodeli WAN vrata k stikalu";
@@ -929,12 +929,12 @@ idx.ntp_client="NTP odjemalec";
 hidx.right2="Ta nastavitev se pogosto uporablja za kabelske ponudnike (ISP).";
 hidx.right4="Vnesi uporabni¹ko ime dodeljeno s strani va¹ega ISP.";
 hidx.right6="Vnesi domensko ime dodeljeno s strani va¹ega ISP.";
-hidx.right8="To je naslov usmerjalnika.";
-hidx.right10="To je maska podmre¾e usmerjalnika.";
-hidx.right12="Dovoli usmerjalniku, da upravlja z va¹imi IP naslovi.";
+hidx.right8="To je naslov usmerjevalnika.";
+hidx.right10="To je maska podmre¾e usmerjevalnika.";
+hidx.right12="Dovoli usmerjevalniku, da upravlja z va¹imi IP naslovi.";
 hidx.right14="®eljeni zaèetni naslov.";
-hidx.right16="Omejite lahko ¹tevilo naslovov, ki jih dodeli va¹ usmerjalnik. 0 pomeni, da bo router dodelil le vnaprej doloèene statiène zakupe.";
-hidx.right18="Izberite va¹o èasovno cono in obdobje poletnega èasa. Usmerjalnik lahko uparablja lokalni èas ali èas UTC.";
+hidx.right16="Omejite lahko ¹tevilo naslovov, ki jih dodeli va¹ usmerjevalnik. 0 pomeni, da bo router dodelil le vnaprej doloèene statiène zakupe.";
+hidx.right18="Izberite va¹o èasovno cono in obdobje poletnega èasa. Usmerjevalnik lahko uparablja lokalni èas ali èas UTC.";
 
 
 // ** Join.asp **//
@@ -976,11 +976,11 @@ log.accept="Sprejeti";
 // ** Management.asp **//
 
 management.titl="Administracija";
-management.h2="Upravljanje usmerjalnika";
-management.changepassword="Va¹ usmerjalnik trenutno uprablja privzeto uporabni¹ko ime in geslo, kar ni varno. Prosimo, da ju èimprej spremenite!";
-management.psswd_legend="Geslo usmerjalnika";
-management.psswd_user="Uporabni¹ko ime usmerjalnika";
-management.psswd_pass="Geslo usmerjalnika";
+management.h2="Upravljanje usmerjevalnika";
+management.changepassword="Va¹ usmerjevalnik trenutno uprablja privzeto uporabni¹ko ime in geslo, kar ni varno. Prosimo, da ju èimprej spremenite!";
+management.psswd_legend="Geslo usmerjevalnika";
+management.psswd_user="Uporabni¹ko ime usmerjevalnika";
+management.psswd_pass="Geslo usmerjevalnika";
 management.pass_conf="Ponovno vnesi za potrditev";
 management.remote_legend="Oddaljeni dostop";
 management.remote_gui="Upravljanje uporabni¹kega vmesnika";
@@ -1008,8 +1008,8 @@ management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
 management.rst_legend="Gumb za ponastavitev";
 management.rst_srv="Gumb za ponastavitev";
-management.routing_legend="Usmerjanje";
-management.routing_srv="Usmerjanje";
+management.routing_legend="Usmerjevanje";
+management.routing_srv="Usmerjevanje";
 management.ipv6_legend="IPv6 podpora";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd omogoèen";
@@ -1058,7 +1058,7 @@ management.samba_stscript="Zaèetni skript";
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP vrata";
 management.SIPatH_domain="SIP domena";
-management.gui_style="Stil usmerjalnikovega uporabni¹kega vmesnika";
+management.gui_style="Stil usmerjevalnikovega uporabni¹kega vmesnika";
 
 //help container
 
@@ -1126,24 +1126,24 @@ hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na katera fi¾ièn
 
 // ** RouteTable.asp **//
 
-routetbl.titl="Usmerjalna tabela";
-routetbl.h2="Seznam vnosov v usmerjalno tabelo";
+routetbl.titl="Usmerjevalna tabela";
+routetbl.h2="Seznam vnosov v usmerjevalno tabelo";
 routetbl.th1="Ciljni LAN IP";
 
 
 // ** Routing.asp **//
 
-route.titl="Usmerjanje";
-route.h2="Napredno usmerjanje";
+route.titl="Usmerjevanje";
+route.h2="Napredno usmerjevanje";
 route.metric="Metrika";
 route.mod="Naèin";
 route.bgp_legend="BGP nastavitve";
 route.bgp_ip="Sosednji IP";
 route.bgp_own_as="BGP lasten AS#";
 route.bgp_as="Sosednji AS#";
-route.rip2_mod="RIP2 usmerjalnik";
-route.olsrd_mod="OLSR usmerjalnik";
-route.olsrd_legend="OLSR usmerjanje (Optimized Link State Routing)";
+route.rip2_mod="RIP2 usmerjevalnik";
+route.olsrd_mod="OLSR usmerjevalnik";
+route.olsrd_legend="OLSR usmerjevanje (Optimized Link State Routing)";
 route.olsrd_poll="Poll Rate";
 route.olsrd_hna="Host Net Announce";
 route.olsrd_tc="TC Redundancy";
@@ -1161,21 +1161,21 @@ route.zebra_copt="Zebra naèin konfiguracije";
 route.bird_legend="Bird konfiguracija";
 route.bird_log="Bird dnevnik";
 route.bird_copt="Bird naèin konfiguracije";
-route.ospf_mod="OSPF usmerjalnik";
-route.ospf_legend="OSPF usmerjanje";
+route.ospf_mod="OSPF usmerjevalnik";
+route.ospf_legend="OSPF usmerjevanje";
 route.ospf_conf="OSPF konfiguracija";
 route.ospf_copt="OSPF naèin konfiguracije";
 route.copt_gui="GUI";
 route.copt_vtysh="Vtysh";
-route.gateway_legend="Dinamièno usmerjanje";
-route.static_legend="Statièno usmerjanje";
+route.gateway_legend="Dinamièno usmerjevanje";
+route.static_legend="Statièno usmerjevanje";
 route.static_setno="Izberi ¹t. niza";
 route.static_name="Ime smeri";
 route.static_ip="Ciljni LAN IP";
 
 //help container
 
-hroute.right2="Èe usmerjalnik gosti va¹o povezavo v internet, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
+hroute.right2="Èe usmerjevalnik gosti va¹o povezavo v internet, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
 hroute.right4="To je edinstvena ¹tevilka; doloèite lahko do 50 smeri.";
 hroute.right6="Vnesite ime, ki ga doloèite za smer.";
 hroute.right8="To je oddaljeni gostitelj do katerage doloèate statièno smer.";
@@ -1442,10 +1442,10 @@ status_lan.conratio="Dele¾";
 
 //help container
 
-hstatus_lan.right2="To je usmerjalnikov MAC naslov, kot je viden v va¹i lokalni mre¾i.";
-hstatus_lan.right4="To je usmerjalnikov IP naslov, kot je viden v va¹i lokalni mre¾i.";
-hstatus_lan.right6="To je maska podmre¾e, kadar jo usmerjalnik uporablja.";
-hstatus_lan.right8="Kadar uporabljate usmerjalnik kot DHCP stre¾nik, je to vidno tukaj.";
+hstatus_lan.right2="To je usmerjevalnikov MAC naslov, kot je viden v va¹i lokalni mre¾i.";
+hstatus_lan.right4="To je usmerjevalnikov IP naslov, kot je viden v va¹i lokalni mre¾i.";
+hstatus_lan.right6="To je maska podmre¾e, kadar jo usmerjevalnik uporablja.";
+hstatus_lan.right8="Kadar uporabljate usmerjevalnik kot DHCP stre¾nik, je to vidno tukaj.";
 hstatus_lan.right10="S klikom na MAC naslov boste dobili ime iz Organizationally Unique Identifier of the network interface (IEEE Standards OUI baze podatkov).";
 
 
@@ -1470,10 +1470,10 @@ hstatus_band.right2="Klikni na oznako za izbiro merila.";
 
 // ** Status_Router.asp **//
 
-status_router.titl="Status usmerjalnika";
-status_router.h2="Informacije usmerjalnika";
+status_router.titl="Status usmerjevalnika";
+status_router.h2="Informacije usmerjevalnika";
 status_router.legend="Sistem";
-status_router.sys_model="Model usmerjalnika";
+status_router.sys_model="Model usmerjevalnika";
 status_router.sys_firmver="Verzija strojne programske opreme";
 status_router.sys_time="Trenutni èas";
 status_router.sys_up="Neprekinjeno delovanje";
@@ -1500,9 +1500,9 @@ status_router.cputemp="Temperatura procesorja";
 
 //help container
 
-hstatus_router.right2="To je ime usmerjalnika, kot ste ga doloèili v zavihku <i>Nemestitev</i>.";
-hstatus_router.right4="To je usmerjalnikov MAC naslov, kot ga vidi va¹ ponudnik interneta.";
-hstatus_router.right6="To je usmerjalnikova trenutna verzija strojne programske opreme.";
+hstatus_router.right2="To je ime usmerjevalnika, kot ste ga doloèili v zavihku <i>Nemestitev</i>.";
+hstatus_router.right4="To je usmerjevalnikov MAC naslov, kot ga vidi va¹ ponudnik interneta.";
+hstatus_router.right6="To je usmerjevalnikova trenutna verzija strojne programske opreme.";
 hstatus_router.right8="To je trenutni èas prejet z ntp stre¾nika nastavljenega v zavihku <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
 hstatus_router.right10="To je èas neprekinjenega delovanja.";
 hstatus_router.right12="To so povpreène obremenitve v zadnji 1, 5 in 15 minutah.";
@@ -1529,7 +1529,7 @@ status_inet.delete_confirm="POZOR! Vsi podaki bodo izbrisani. Nadaljujem?";
 //help container
 
 hstatus_inet.right2="To ka¾e podatke, potrebne za prikljuèitev v internet. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
-hstatus_inet.right4="To ka¾e kolièino prene¹enih podatkov od zadnjega zagona usmerjalnika.";
+hstatus_inet.right4="To ka¾e kolièino prene¹enih podatkov od zadnjega zagona usmerjevalnika.";
 hstatus_inet.right6="To ka¾e kolièino prene¹enih podatkov po mesecih. Za prikaz dnevnih podatkov se zapeljite z mi¹ko po grafu. Podatki so spravljeni v nvramu.";
 
 
@@ -1550,7 +1550,7 @@ status_sputnik.license="SCC ¹t. licence.";
 
 hstatus_sputnik.right1="Status Sputnik agenta";
 hstatus_sputnik.right2="Ta zaslon prikazuje status Sputnik agenta.";
-hstatus_sputnik.right4="Sputnikov kontrolni center na katerega je ta usmerjalnik povezan.";
+hstatus_sputnik.right4="Sputnikov kontrolni center na katerega je ta usmerjevalnik povezan.";
 hstatus_sputnik.right6="Trenutni status Sputnik agenta.";
 hstatus_sputnik.right8="©t. licence va¹ega Sputnik kontrolnega centra.";
 
@@ -1581,7 +1581,7 @@ status_gpsi.sat="Vidni sateliti";
 
 //help container
 
-hstatus_wireless.right2="To je usmerjalnikov MAC naslov, kot je viden v va¹i lokalni brez¾ièni mre¾i..";
+hstatus_wireless.right2="To je usmerjevalnikov MAC naslov, kot je viden v va¹i lokalni brez¾ièni mre¾i..";
 hstatus_wireless.right4="Tu je prikazan uporabljeni brez¾ièni naèin, kot je izbran v zavihku Brez¾ièno (Me¹ano, Samo-G, Samo-B ali Onemogoèeno).";
 
 
@@ -1618,7 +1618,7 @@ upgrad.resetOff="Brez ponastavitve";
 upgrad.resetOn="Privzete nastavitve";
 upgrad.file="Izberite datoteko za posodobitev";
 upgrad.warning="O P O Z O R I L O";
-upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izkljuèujte usmerjalnika in ne pritiskajte na gumb za ponastavitev!";
+upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izkljuèujte usmerjevalnika in ne pritiskajte na gumb za ponastavitev!";
 
 //help container
 
@@ -1695,7 +1695,7 @@ wol.pass="SecureOn geslo";
 
 //help container
 
-hwol.right2="Ta stran omogoèa da <em>zbudite</em> na va¹i lokalni mre¾i (t.j. prikljuèene na va¹ usmerjalnik).";
+hwol.right2="Ta stran omogoèa da <em>zbudite</em> na va¹i lokalni mre¾i (t.j. prikljuèene na va¹ usmerjevalnik).";
 hwol.right4="MAC naslove vnesite v formatu xx:xx:xx:xx:xx:xx (t.j. 01:23:45:67:89:AB)";
 hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mre¾o. Lahko pa je oddaljeni naslov, èe gostitelj ni prikljuèenj na va¹o lokalno mre¾o."
 
@@ -2018,7 +2018,7 @@ success.success_reboot=success.success_noreboot + "<br />Ponovni zagon naprave. 
 
 success.alert_reset="Vse nastavitve so bile nastavljene na privezete vrednosti.<br /><br />";
 success.alert1="Pred ponovnim priklopom, prosimo, da preverite naslednje:";
-success.alert2="Èe ste spremenili usmerjalnikov IP naslov, morate tudi sprostiti/obnoviti odjemalèeve IP naslove.";
+success.alert2="Èe ste spremenili usmerjevalnikov IP naslov, morate tudi sprostiti/obnoviti odjemalèeve IP naslove.";
 success.alert3="Èe ste povezani brez¾ièno, se morate ponovno povezati v omre¾je, in nato klikniti <em>Nadaljuj</em>.";
 
 // ** Logout.asp  **//
