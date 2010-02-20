@@ -108,6 +108,7 @@ include rules/rtp-proxy.mk
 include rules/shat.mk
 include rules/radauth.mk
 include rules/samba.mk
+include rules/samba3.mk
 include rules/mmc.mk
 include rules/mmc-fonera.mk
 include rules/mmc-ixp4xx.mk
