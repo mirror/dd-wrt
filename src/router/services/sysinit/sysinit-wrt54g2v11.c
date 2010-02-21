@@ -125,6 +125,21 @@ void start_sysinit(void)
 	 * Modules 
 	 */
 	uname(&name);
+#ifdef HAVE_RTG32
+	insmod("zlib_inflate");
+	insmod("zlib_deflate");
+	insmod("slhc");
+	insmod("ppp_generic");
+	insmod("ppp_deflate");
+	insmod("bsd_comp");
+	insmod("ppp_async");
+	insmod("ppp_synctty");
+	insmod("ppp_mppe_mppc ");
+	insmod("pppox");
+	insmod("pppoe");
+
+#endif
+
 	/*
 	 * network drivers 
 	 */
