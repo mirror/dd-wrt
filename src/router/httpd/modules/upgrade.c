@@ -339,15 +339,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			ver2 = convert_ver(INTEL_FLASH_SUPPORT_VERSION_FROM);
 			ver3 = convert_ver(BCM4712_CHIP_SUPPORT_VERSION_FROM);
 
-			cprintf
-			    ("upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
+			
+			fprintf(stderr,"upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
 			     ver, ver1, ver2, ver3);
-			/*
-			 * if (!memcmp(&buf[0], "RECOVER",7)) { *total -= count;
-			 * safe_fwrite (&buf[7], 1, count - 7, fifo);
-			 * 
-			 * i++; continue; }
-			 */
 #ifdef HAVE_WIKINGS
 #ifdef HAVE_SUB3
 #define V "XMED"
@@ -357,14 +351,14 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #define V "XMAX"
 #endif
 			if (memcmp(&buf[0], V, 4)) {
-				cprintf("code pattern error!\n");
+				fprintf(stderr, "code pattern error!\n");
 				goto err;	// must be there, otherwise fail here
 			}
 #undef V
 #endif
 
 
-
+#ifndef HAVE_WIKINGS
 #ifdef HAVE_WRT160NL
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4)) {
 				cprintf("code pattern error!\n");
@@ -390,32 +384,21 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				goto write_data;
 			}
 #endif
-			if (type != 1 && check_flash()) {
-				/*
-				 * if (ver1 == -1 || ver2 == -1 || ver1 < ver2) { cprintf
-				 * ("The old firmware version cann't support intel flash\n");
-				 * cprintf ("Can't downgrade to this old firmware version
-				 * (%s), must be above %s(included)\n", ver,
-				 * INTEL_FLASH_SUPPORT_VERSION_FROM); goto write_data; } 
-				 */
-			}
+#endif
 
 			if (check_hw_type() == BCM4712_CHIP && ver1 < ver3) {
-				cprintf
-				    ("The old firmware version can't support bcm4712 chipset\n");
-				cprintf
-				    ("Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
+				fprintf(stderr,"The old firmware version can't support bcm4712 chipset\n");
+				fprintf(stderr,"Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
 				     ver, BCM4712_CHIP_SUPPORT_VERSION_FROM);
 				goto write_data;
 			}
 
-			cprintf("code pattern correct!\n");
+			fprintf(stderr,"code pattern correct!\n");
 			*total -= count;
 #ifdef HAVE_WRT160NL
 			safe_fwrite(buf, 1, count, fifo);	// we have to write the whole header to flash too
 #else
-			safe_fwrite(&buf[sizeof(struct code_header)], 1,
-				    count - sizeof(struct code_header), fifo);
+			safe_fwrite(&buf[sizeof(struct code_header)], 1,count - sizeof(struct code_header), fifo);
 #endif
 			i++;
 			continue;
