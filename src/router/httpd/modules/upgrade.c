@@ -352,7 +352,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 			if (memcmp(&buf[0], V, 4)) {
 				fprintf(stderr, "code pattern error!\n");
-				goto err;	// must be there, otherwise fail here
+				goto write_data;	// must be there, otherwise fail here
 			}
 #undef V
 #endif
