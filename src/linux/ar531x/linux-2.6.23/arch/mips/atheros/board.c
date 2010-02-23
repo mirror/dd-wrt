@@ -271,7 +271,7 @@ const char *get_arch_type(void)
 	}
 	return "Atheros (unknown)";
 }
-
+EXPORT_SYMBOL(get_arch_type);
 
 void __init plat_timer_setup(struct irqaction *irq)
 {

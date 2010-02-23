@@ -182,9 +182,9 @@ ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	}
 
 
-	skb_push(skb, 2);
-	skb->data[0] = 0x10;
-	skb->data[1] = 0x80;
+	buf = skb_push(skb, 2);
+	buf[0] = 0x10;
+	buf[1] = 0x80;
 
 send:
 	return priv->hardstart(skb, dev);
@@ -440,7 +440,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 			AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
 			AR8216_PORT_CTRL_HEADER | AR8216_PORT_CTRL_LEARN_LOCK,
 			AR8216_PORT_CTRL_LEARN |
-			  (i == AR8216_PORT_CPU ? AR8216_PORT_CTRL_HEADER : 0) |
+			  (priv->vlan && i == AR8216_PORT_CPU ? AR8216_PORT_CTRL_HEADER : 0) |
 			  (egress << AR8216_PORT_CTRL_VLAN_MODE_S) |
 			  (AR8216_PORT_STATE_FORWARD << AR8216_PORT_CTRL_STATE_S));
 
@@ -489,11 +489,11 @@ ar8216_reset_switch(struct switch_dev *dev)
 	}
 	/* XXX: undocumented magic from atheros, required! */
 	priv->write(priv, 0x38, 0xc000050e);
-	priv->write(priv,0x60, 0xffffffff);
+/*	priv->write(priv,0x60, 0xffffffff);
 	priv->write(priv,0x64, 0xaaaaaaaa);
 	priv->write(priv,0x68, 0x55555555);    
 	priv->write(priv,0x6c, 0x0);    
-	priv->write(priv,0x70, 0x41af);
+	priv->write(priv,0x70, 0x41af);*/
 
  	/* set mtu */
  	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,AR8216_GCTRL_MTU,1716 ); //     1500 + 4 /* vlan */ + 2 /* header */);
@@ -549,7 +549,7 @@ ar8216_read_status(struct phy_device *phydev)
 
 	phydev->speed = SPEED_100;
 	phydev->duplex = DUPLEX_FULL;
-	phydev->state = PHY_UP;
+	phydev->link = 1;
 
 	/* flush the address translation unit */
 	if (ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0))
