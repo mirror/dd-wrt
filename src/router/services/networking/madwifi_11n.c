@@ -557,6 +557,9 @@ void configure_single_11n(int count)
 	static int vapcount = 0;
 	if (count == 0)
 		vapcount = 0;
+#ifdef HAVE_DIR825
+	sysprintf("echo 1 >/proc/sys/dev/wifi%d/ledpin",count); //switch off led before configuring to prevent solid led
+#endif
 
 	sprintf(wif, "wifi%d", count);
 	sprintf(dev, "ath%d", count);
