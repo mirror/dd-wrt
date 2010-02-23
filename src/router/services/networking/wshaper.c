@@ -733,6 +733,10 @@ void stop_wshaper(void)
 #elif HAVE_WR1043
 	ret = eval(script_name, "stop", "XX", "vlan1");
 	ret = eval(script_name, "stop", "XX", "vlan2");
+#elif HAVE_WHRHPGN
+	ret = eval(script_name, "stop", "XX", "eth0");
+	ret = eval(script_name, "stop", "XX", "eth1");
+	ret = eval(script_name, "stop", "XX", "ath0");
 #elif HAVE_LSX
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "eth1");
