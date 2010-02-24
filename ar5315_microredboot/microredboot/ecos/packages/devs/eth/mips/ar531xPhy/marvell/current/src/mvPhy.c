@@ -49,7 +49,9 @@
 * This module is intended to be largely OS and platform-independent.
 */
 
-#if defined(linux)
+#if defined(__ECOS)
+#include "ae531xecos.h"
+#elif defined(linux)
 #include <linux/config.h>
 #include <linux/types.h>
 #include <linux/netdevice.h>
@@ -57,10 +59,6 @@
 #include <linux/delay.h>
 
 #include "ar531xlnx.h"
-#endif
-
-#if defined(__ECOS)
-#include "ae531xecos.h"
 #endif
 
 
