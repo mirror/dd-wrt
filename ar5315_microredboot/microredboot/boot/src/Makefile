@@ -29,8 +29,8 @@ REWRITE_REVISION_H2 := $(shell svnversion -n ../ >> revision.h)
 REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 
 
-CC = /xfs/toolchains/staging_dir_mips/bin/mips-linux-gcc
-LD = /xfs/toolchains/staging_dir_mips/bin/mips-linux-ld
+CC = /xfs/toolchains/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.30.1/usr/bin/mips-linux-gcc
+LD = /xfs/toolchains/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.30.1/usr/bin/mips-linux-ld
 #CC = /home/seg/DEV/broadcom/ar5315_microredboot/microredboot/tools/ecos_build/gnutools/mipsisa32-elf/bin/mipsisa32-elf-gcc
 #LD = /home/seg/DEV/broadcom/ar5315_microredboot/microredboot/tools/ecos_build/gnutools/mipsisa32-elf/bin/mipsisa32-elf-ld
 OBJCOPY = /xfs/toolchains/staging_dir_mips/bin/mips-linux-objcopy 
