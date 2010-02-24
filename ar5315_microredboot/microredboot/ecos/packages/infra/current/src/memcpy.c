@@ -93,8 +93,8 @@ void *
 _memcpy( void *s1, const void *s2, size_t n )
 {
 #if defined(CYGIMP_INFRA_PREFER_SMALL_TO_FAST_MEMCPY) || defined(__OPTIMIZE_SIZE__)
-    char *dst = (char *) s1;
-    const char *src = (const char *) s2;
+    volatile char *dst = (volatile char *) s1;
+    const volatile char *src = (const volatile char *) s2;
     
 #ifdef CYG_TRACING_FIXED
     CYG_REPORT_FUNCNAMETYPE( "_memcpy", "returning %08x" );
