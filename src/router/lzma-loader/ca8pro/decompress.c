@@ -77,13 +77,16 @@ static __inline__ void blast_dcache(unsigned long size, unsigned long lsize)
 	}
 }
 
-unsigned char *data;
-
+static unsigned char *data;
+static unsigned int datacount=0;
 static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
 {
 	*bufferSize = 1;
 	*buffer = data;
 	++data;
+	if (!(datacount%16384))
+	    puts(".");
+	datacount++;
 	return LZMA_RESULT_OK;
 }
 
@@ -120,6 +123,10 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	ILzmaInCallback callback;
 	CLzmaDecoderState vs;
 	callback.Read = read_byte;
+        puts("Atheros WiSOC DD-WRT LZMA Kernel Loader (");
+	puts(__DATE__);
+	puts(")\n");
+        puts("decompressing");
 
 	data = lzma_start;
 
@@ -148,6 +155,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	if ((i = LzmaDecode(&vs, &callback,
 	(unsigned char*)KERNEL_ENTRY, osize, &osize)) == LZMA_RESULT_OK)
 	{
+    		puts("\ndone.\njump to kernel...\n");
 		blast_dcache(dcache_size, dcache_lsize);
 		blast_icache(icache_size, icache_lsize);
 
@@ -155,4 +163,5 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
          	((void (*)(unsigned long, unsigned long, unsigned long)) KERNEL_ENTRY)
 		(linux_args[0], linux_args[1], linux_args[2]);
 	}
+        puts("Fatal error while decompressing!\n");
 }
