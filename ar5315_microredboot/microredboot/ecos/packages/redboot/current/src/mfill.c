@@ -97,17 +97,17 @@ do_mfill(int argc, char *argv[])
     if (set_8bit) {
         // Fill 8 bits at a time
         while ((len -= sizeof(cyg_uint8)) >= 0) {
-            *((cyg_uint8 *)base)++ = (cyg_uint8)pat;
+            *((cyg_uint8 *)(base++)) = (cyg_uint8)pat;
         }
     } else if (set_16bit) {
         // Fill 16 bits at a time
         while ((len -= sizeof(cyg_uint16)) >= 0) {
-            *((cyg_uint16 *)base)++ = (cyg_uint16)pat;
+            *((cyg_uint16 *)(base++)) = (cyg_uint16)pat;
         }
     } else {
         // Default - 32 bits
         while ((len -= sizeof(cyg_uint32)) >= 0) {
-            *((cyg_uint32 *)base)++ = (cyg_uint32)pat;
+            *((cyg_uint32 *)(base++)) = (cyg_uint32)pat;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
-firmware upgrade code for DD-WRT webflash images
+firmware upgrade code for Wiligear images
 */
 
 #include <redboot.h>
