@@ -1,0 +1,317 @@
+/*
+ * This file is subject to the terms and conditions of the GNU General Public
+ * License.  See the file "COPYING" in the main directory of this archive
+ * for more details.
+ *
+ * Copyright MontaVista Software Inc
+ * Copyright © 2003 Atheros Communications, Inc.,  All Rights Reserved.
+ */
+
+/*
+ * Basic support for polled character input/output
+ * using the AR531X's serial port.
+ */
+
+//#define CONFIG_AR5315 1
+
+
+typedef unsigned int u32;
+typedef unsigned short u16;
+typedef unsigned char u8;
+
+typedef unsigned char u_char;
+typedef unsigned long u_long;
+typedef char * va_list;
+#include "ar531x.h"
+
+#define         BASE                    AR531X_UART0 
+
+/* distance in bytes between two serial registers */
+#define         REG_OFFSET              4
+
+/*
+ *  * the default baud rate *if* we do serial init
+ *   */
+#define         BAUD_DEFAULT            UART16550_BAUD_9600
+
+/* === END OF CONFIG === */
+
+#define         UART16550_BAUD_2400             2400
+#define         UART16550_BAUD_4800             4800
+#define         UART16550_BAUD_9600             9600
+#define         UART16550_BAUD_19200            19200
+#define         UART16550_BAUD_38400            38400
+#define         UART16550_BAUD_57600            57600
+#define         UART16550_BAUD_115200           115200
+
+#define         UART16550_PARITY_NONE           0
+#define         UART16550_PARITY_ODD            0x08
+#define         UART16550_PARITY_EVEN           0x18
+#define         UART16550_PARITY_MARK           0x28
+#define         UART16550_PARITY_SPACE          0x38
+
+#define         UART16550_DATA_5BIT             0x0
+#define         UART16550_DATA_6BIT             0x1
+#define         UART16550_DATA_7BIT             0x2
+#define         UART16550_DATA_8BIT             0x3
+
+#define         UART16550_STOP_1BIT             0x0
+#define         UART16550_STOP_2BIT             0x4
+
+/* register offset */
+#define         OFS_RCV_BUFFER          (0*REG_OFFSET)
+#define         OFS_TRANS_HOLD          (0*REG_OFFSET)
+#define         OFS_SEND_BUFFER         (0*REG_OFFSET)
+#define         OFS_INTR_ENABLE         (1*REG_OFFSET)
+#define         OFS_INTR_ID             (2*REG_OFFSET)
+#define         OFS_DATA_FORMAT         (3*REG_OFFSET)
+#define         OFS_LINE_CONTROL        (3*REG_OFFSET)
+#define         OFS_MODEM_CONTROL       (4*REG_OFFSET)
+#define         OFS_RS232_OUTPUT        (4*REG_OFFSET)
+#define         OFS_LINE_STATUS         (5*REG_OFFSET)
+#define         OFS_MODEM_STATUS        (6*REG_OFFSET)
+#define         OFS_RS232_INPUT         (6*REG_OFFSET)
+#define         OFS_SCRATCH_PAD         (7*REG_OFFSET)
+
+#define         OFS_DIVISOR_LSB         (0*REG_OFFSET)
+#define         OFS_DIVISOR_MSB         (1*REG_OFFSET)
+
+
+/* memory-mapped read/write of the port */
+#define         UART16550_READ(y)    (*((volatile u8*)(BASE + y)))
+#define         UART16550_WRITE(y, z)  ((*((volatile u8*)(BASE + y))) = z)
+
+#define NULL ((void*)0)
+
+#define	__va_size(type) \
+	(((sizeof(type) + sizeof(long) - 1) / sizeof(long)) * sizeof(long))
+
+#define	va_start(ap, last) \
+	((ap) = (va_list)&(last) + __va_size(last))
+
+#define	va_arg(ap, type) \
+	(*(type *)((ap) += __va_size(type), (ap) - __va_size(type)))
+
+#define	va_end(ap)	((void)0)
+
+static void
+putDebugChar(char byte)
+{
+#ifdef AR531X
+	while ((UART16550_READ(OFS_LINE_STATUS) &0x20) == 0);
+	UART16550_WRITE(OFS_SEND_BUFFER, byte);
+#endif
+}
+
+
+
+/*
+ * Print a number (base <= 16) in reverse order,
+ * using specified putch function and associated pointer putdat.
+ */
+static void
+printnum(void (*putch)(int, void*), void *putdat,
+	 unsigned long long num, unsigned base, int width, int padc)
+{
+	// first recursively print all preceding (more significant) digits
+	if (num >= base) {
+		printnum(putch, putdat, num / 16 /*base*/, base, width-1, padc);
+	} else {
+		// print any needed pad characters before first digit
+		while (--width > 0)
+			putch(padc, putdat);
+	}
+
+	// then print this (the least significant) digit
+	putch("0123456789abcdef"[num % 16 /*base*/], putdat);
+}
+
+// Get an int of various possible sizes from a varargs list,
+// depending on the lflag parameter.
+static unsigned long long
+getint(va_list *ap, int lflag)
+{
+	if (lflag >= 2)
+		return va_arg(*ap, unsigned long long);
+	else if (lflag)
+		return va_arg(*ap, unsigned long);
+	else
+		return va_arg(*ap, unsigned int);
+}
+
+
+// Main function to format and print a string.
+void
+printfmt(void (*putch)(int, void*), void *putdat, const char *fmt, ...);
+
+void
+vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
+{
+	register char *p;
+	register int ch;
+	unsigned long long num;
+	int base, lflag, width;
+	char padc;
+
+	for (;;) {
+		while ((ch = *(u_char *) fmt++) != '%') {
+			if (ch == '\0')
+				return;
+			putch(ch, putdat);
+		}
+
+		// Process a %-escape sequence
+		padc = ' ';
+		width = 0;
+		lflag = 0;
+	reswitch:
+		switch (ch = *(u_char *) fmt++) {
+
+		// flag to pad with 0's instead of spaces
+		case '0':
+			padc = '0';
+			goto reswitch;
+
+		// width field
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			for (width = 0;; ++fmt) {
+				width = width * 10 + ch - '0';
+				ch = *fmt;
+				if (ch < '0' || ch > '9')
+					break;
+			}
+			goto reswitch;
+
+		// long flag (doubled for long long)
+		case 'l':
+			lflag++;
+			goto reswitch;
+
+		// character
+		case 'c':
+			putch(va_arg(ap, int), putdat);
+			break;
+
+		// string
+		case 's':
+			if ((p = va_arg(ap, char *)) == NULL)
+					p = "(null)";
+			while ((ch = *p++) != '\0')
+				putch(ch, putdat);
+			break;
+
+		// (signed) decimal
+		case 'd':
+			num = getint(&ap, lflag);
+			if ((long long)num < 0) {
+				putch('-', putdat);
+				num = -(long long) num;
+			}
+			base = 10;
+			goto number;
+
+		// unsigned decimal
+		case 'u':
+			num = getint(&ap, lflag);
+			base = 10;
+			goto number;
+
+		// (unsigned) octal
+		case 'o':
+#if SOL >= 1
+			num = getint(&ap, lflag);
+			base = 8;
+			goto number;
+#else
+			// Replace this with your code.
+			putch('X', putdat);
+			putch('X', putdat);
+			putch('X', putdat);
+			break;
+#endif
+
+		// pointer
+		case 'p':
+			putch('0', putdat);
+			putch('x', putdat);
+			num = (unsigned long long)
+				(u_long)va_arg(ap, void *);
+			base = 16;
+			goto number;
+
+		// (unsigned) hexadecimal
+		case 'x':
+			num = getint(&ap, lflag);
+			base = 16;
+		number:
+			printnum(putch, putdat, num, base, width, padc);
+			break;
+
+		// unrecognized escape sequence - just print it literally
+		default:
+			putch('%', putdat);
+			while (lflag-- > 0)
+				putch('l', putdat);
+			/* FALLTHROUGH */
+
+		// escaped '%' character
+		case '%':
+			putch(ch, putdat);
+		}
+	}
+}
+
+void
+printfmt(void (*putch)(int, void*), void *putdat, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vprintfmt(putch, putdat, fmt, ap);
+	va_end(ap);
+}
+
+static void
+putch(int ch, void *b)
+{
+	if (ch == '\n')
+		putDebugChar('\r');
+	putDebugChar((char)ch);
+}
+
+
+void puts(char *str)
+{
+int i;
+while (str[i]!=0)
+    putch(str[i],NULL);
+}
+
+int
+vprintf(const char *fmt, va_list ap)
+{
+	vprintfmt((void*)putch, 0, fmt, ap);
+	// just lie, we aren't actually keeping track
+	return 1;
+}
+
+int
+printf(const char *fmt, ...)
+{
+	va_list ap;
+	int cnt;
+
+	va_start(ap, fmt);
+	cnt = vprintf(fmt, ap);
+	va_end(ap);
+
+	return cnt;
+}
