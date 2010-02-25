@@ -37,7 +37,7 @@ TFTPPATH=/tftpboot
 endif
 
 export ECOS_REPOSITORY=$(PWD)/ecos/packages
-PATH:=${PATH}:/xfs/toolchains/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.30.1/usr/bin:$(PWD)/ecos/tools/bin
+PATH:=${PATH}:${ATH_ROOT}/tools/ecos_build/gnutools/mipsisa32-elf/bin:$(PWD)/ecos/tools/bin
 #PATH:=${PATH}:${ATH_ROOT}/gnutools/mipsisa32-elf/bin:$(PWD)/ecos/tools/bin
 REDBOOT_DIR=$(PWD)
 

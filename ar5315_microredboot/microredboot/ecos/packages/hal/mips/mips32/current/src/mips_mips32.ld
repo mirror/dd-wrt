@@ -39,8 +39,8 @@
 
 #include <pkgconf/system.h>
 
-OUTPUT_FORMAT("elf32-tradbigmips", "elf32-tradbigmips",
-              "elf32-tradlittlemips")
+OUTPUT_FORMAT("elf32-bigmips", "elf32-bigmips",
+              "elf32-littlemips")
 /* The preprocessor defines mips, but we know we're mips :-) */
 #undef mips
 OUTPUT_ARCH(mips:isa32)
