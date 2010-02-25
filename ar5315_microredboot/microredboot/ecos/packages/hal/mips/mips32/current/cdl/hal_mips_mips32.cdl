@@ -139,8 +139,8 @@ cdl_package CYGPKG_HAL_MIPS_MIPS32 {
             display "Global command prefix"
             flavor  data
             no_define
-#            default_value { "mipsisa32-elf" }
-            default_value { "mips-linux" }
+            default_value { "mipsisa32-elf" }
+#            default_value { "mips-linux" }
             description "
                 This option specifies the command prefix used when
                 invoking the build tools."
