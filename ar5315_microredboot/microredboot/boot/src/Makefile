@@ -34,6 +34,7 @@ LD = /xfs/toolchains/toolchain-mips_gcc-4.3.3+cs_uClibc-0.9.30.1/usr/bin/mips-li
 #CC = /home/seg/DEV/broadcom/ar5315_microredboot/microredboot/tools/ecos_build/gnutools/mipsisa32-elf/bin/mipsisa32-elf-gcc
 #LD = /home/seg/DEV/broadcom/ar5315_microredboot/microredboot/tools/ecos_build/gnutools/mipsisa32-elf/bin/mipsisa32-elf-ld
 OBJCOPY = /xfs/toolchains/staging_dir_mips/bin/mips-linux-objcopy 
+STRIP = /xfs/toolchains/staging_dir_mips/bin/mips-linux-strip
 CFLAGS = -Os -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -Iinclude -Iarch -Ilib -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32 -D__KERNEL__
 CFLAGS+= -DCONFIG_MIPS_L1_CACHE_SHIFT=5 -DCONFIG_PAGE_SIZE_4KB -DCONFIG_32BIT -DCONFIG_BOOTLOADER
 AFLAGS = -D__ASSEMBLY__ -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -Iinclude -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32
@@ -81,15 +82,10 @@ ZBSSADDR	= 0x80700000	# Workspace for decompression @ 7MB
 ZCACHEADDR	= 0x80800000    # decompression cache @ 8 MB
 #endif
 ZRELADDR	= 0x80000400  # 0x80002000
-ifeq ($(PLATFORM),pb42)
-BOOTBASE	= 0xbfc00000
-else
-BOOTBASE	= 0xbf000000
-endif
 
 
-AFLAGS+= -DBOOTBASE=$(BOOTBASE) -DZCACHEADDR=$(ZCACHEADDR)
-CFLAGS+= -DBOOTBASE=$(BOOTBASE) -DZCACHEADDR=$(ZCACHEADDR)
+AFLAGS+= -DZCACHEADDR=$(ZCACHEADDR)
+CFLAGS+= -DZCACHEADDR=$(ZCACHEADDR)
 
 SEDFLAGS	= s/@@TEXTADDR@@/$(ZTEXTADDR)/;s/@@LOADADDR@@/$(ZRELADDR)/;
 
@@ -105,6 +101,7 @@ all:		vmlinuz
 
 vmlinuz:	$(OBJS) $(HEAD) $(MEMCPY) payload.o ld.script
 		$(LD) $(ZLDFLAGS) $(HEAD) $(OBJS) $(MEMCPY) payload.o $(LIBGCC) -o vmlinuz 
+		$(STRIP) -g -R .pdr -R .gnu.attributes -R .reginfo -R .mdebug -R .comment -R .note -R .options -R .MIPS.options -R .bss $@
 
 $(HEAD): 	$(HEAD:.o=.S) include/linux/autoconf.h
 		$(CC) $(AFLAGS) -Iinclude -c $(HEAD:.o=.S) -o $(HEAD) 

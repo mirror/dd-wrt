@@ -104,19 +104,21 @@
 	nop
 
 
-        .macro  lar     reg,addr
-        .set    noat
-        move    $at,ra                  # save ra
-        la      \reg,\addr              # get address into register
-        la      ra,x\@                  # get linked address of label
-        subu    \reg,\reg,ra            # subtract it from value
-        bal     x\@                     # branch and link to label
-        nop                             #  to get current actual address
-x\@:
-        addu    \reg,\reg,ra            # add actual address
-        move    ra,$at                  # restore ra
-        .set    at
-        .endm
+	.macro  lar     reg,addr
+	.set    noat
+	.set	noreorder
+	move    $at,ra                  # save ra
+	la      \reg,\addr              # get address into register
+	la      ra,x\@                  # get linked address of label
+	subu    \reg,\reg,ra            # subtract it from value
+	bal     x\@                     # branch and link to label
+	nop                             #  to get current actual address
+	x\@:
+	addu    \reg,\reg,ra            # add actual address
+	move    ra,$at                  # restore ra
+	.set    at
+	.set	reorder
+	.endm
 
 
 
@@ -834,9 +836,7 @@ __AR7100_reboot:
 	nop
 	
         la      t0,_text               # dest addr
-#       la      t1,_text          # source addr
-#	lar	t1,__AR7100_start
-        la      t1,_text-0x80400000+BOOTBASE          # source addr
+	lar		t1, _text			# source addr
         la      t3,_text+0x10000       # end dest addr
 3:      
         lw      v0,0(t1)                # get word
