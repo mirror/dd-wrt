@@ -2095,14 +2095,6 @@ This package provides 7zip decompression support."
 }
 
 
-package CYGPKG_POWER {
-	alias 		{ "Power Management support" power }
-	directory	services/power/common
-	script		power.cdl
-	description "
-This package provides some generic support for power management."
-}
-
 package CYGPKG_CRC {
         alias           { "CRC support" crc }
         directory       services/crc
@@ -2297,13 +2289,6 @@ package CYGPKG_REDBOOT {
     description     "
         This package creates the RedBoot \[stand-alone bootstrap & debug monitor\]
         using eCos as the underlying board support mechanism."
-}
-
-package CYGPKG_MICROWINDOWS {
-	alias 		{ "Microwindows" mw }
-	directory	services/gfx/mw
-	script		microwindows.cdl
-        description     "Microwindows."
 }
 
 package CYGPKG_HAL_SH_SH7750_DREAMCAST {

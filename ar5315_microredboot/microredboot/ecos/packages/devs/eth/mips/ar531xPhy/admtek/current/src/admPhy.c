@@ -51,7 +51,9 @@
  * in software.
  */
 
-#if defined(linux)
+#if defined(__ECOS)
+#include "ae531xecos.h"
+#elif defined(linux)
 #include <linux/config.h>
 #include <linux/types.h>
 #include <linux/netdevice.h>
@@ -59,10 +61,6 @@
 #include <linux/delay.h>
 
 #include "ar531xlnx.h"
-#endif
-
-#if defined(__ECOS)
-#include "ae531xecos.h"
 #endif
 
 extern UINT16 ae531x_MiiRead(UINT32 phyBase, UINT32 phyAddr, UINT8 reg);
