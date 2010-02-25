@@ -1599,11 +1599,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 			if (!wifi && wimaxwifi
 			    && !strcmp(menu[i][0], "Wireless_Basic.asp"))
 				websWrite(wp,
-					  "   <li class=\"current\"><span><div><script type=\"text/javascript\">Capture(bmenu.wimax)</script></div></span>\n");
+					  "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
 			else
 #endif
 				websWrite(wp,
-					  "   <li class=\"current\"><span><div><script type=\"text/javascript\">Capture(bmenu.%s)</script></div></span>\n",
+					  "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n",
 					  menuname[i][0]);
 			websWrite(wp, "    <div id=\"menuSub\">\n");
 			websWrite(wp, "     <ul id=\"menuSubList\">\n");
@@ -1755,13 +1755,13 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 						   "Wireless_Basic.asp")
 					&& !wifi && wimaxwifi)) {
 					websWrite(wp,
-						  "      <li><span><div><script type=\"text/javascript\">Capture(bmenu.wimax)</script></div></span></li>\n");
+						  "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span></li>\n");
 				}
 #endif
 				else if (!strcmp(menu[i][j], submenu)
 					 && (strlen(menu[i][j]))) {
 					websWrite(wp,
-						  "      <li><span><div><script type=\"text/javascript\">Capture(bmenu.%s)</script></div></span></li>\n",
+						  "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n",
 						  menuname[i][j + 1]);
 				}
 #ifdef HAVE_HTTPS		// until https will allow upgrade and backup
@@ -1787,12 +1787,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 						    "Wireless_Basic.asp")
 					 && !wifi && wimaxwifi) {
 					websWrite(wp,
-						  "      <li><a href=\"WiMAX.asp\"><div><script type=\"text/javascript\">Capture(bmenu.wimax)</script></div></a></li>\n");
+						  "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 				}
 #endif
 				else if (strlen(menu[i][j])) {
 					websWrite(wp,
-						  "      <li><a href=\"%s\"><div><script type=\"text/javascript\">Capture(bmenu.%s)</script></div></a></li>\n",
+						  "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n",
 						  menu[i][j],
 						  menuname[i][j + 1]);
 				}
@@ -1805,12 +1805,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		else if (!strcmp(menu[i][0], "Wireless_Basic.asp") && !wifi
 			 && wimaxwifi) {
 			websWrite(wp,
-				  "      <li><a href=\"WiMAX.asp\"><div><script type=\"text/javascript\">Capture(bmenu.wimax)</script></div></a></li>\n");
+				  "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 		}
 #endif
 		else {
 			websWrite(wp,
-				  "   <li><a href=\"%s\"><div><script type=\"text/javascript\">Capture(bmenu.%s)</script></div></a></li>\n",
+				  "   <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n",
 				  menu[i][0], menuname[i][0]);
 		}
 	}
