@@ -321,6 +321,7 @@ romReserved:
 
         .macro  lar     reg,addr
         .set    noat
+        .set	noreorder
         move    $at,ra                  # save ra
         la      \reg,\addr              # get address into register
         la      ra,x\@                  # get linked address of label
@@ -331,6 +332,7 @@ x\@:
         addu    \reg,\reg,ra            # add actual address
         move    ra,$at                  # restore ra
         .set    at
+        .set	reorder
         .endm
 
 
@@ -870,22 +872,20 @@ __AR531X_reboot:
 	sb	t0, MCR<<2(a0)		# no flow ctrl
 	nop
 	
-        la      t0,_text               # dest addr
-#       la      t1,_text          # source addr
-#	lar	t1,__AR531X_start
-        la      t1,_text-0x80400000+BOOTBASE          # source addr
-        la      t3,_text+0x10000       # end dest addr
-3:      
-        lw      v0,0(t1)                # get word
-        sw      v0,0(t0)                # write word
-        addiu   t1,t1,4
-        addiu   t0,t0,4
-        bne     t0,t3,3b
-        nop
-        la      v0,4f                   # RAM address to go to
-        jr      v0
-        nop
-4:       
+	la      t0,_text	       # dest addr
+	lar     t1, _text		# source addr
+	la      t3,_text+0x10000       # end dest addr
+3:
+	lw      v0,0(t1)		# get word
+	sw      v0,0(t0)		# write word
+	addiu   t1,t1,4
+	addiu   t0,t0,4
+	bne     t0,t3,3b
+	nop
+	la      v0,4f		   # RAM address to go to
+	jr      v0
+	nop
+4:
 	nop
 	j	main
 	nop
