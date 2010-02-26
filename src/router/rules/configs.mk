@@ -196,8 +196,6 @@ obj-checkout := $(foreach obj,$(obj-y) $(obj-n),$(obj)-checkout)
 obj-update := $(foreach obj,$(obj-y) $(obj-n),$(obj)-update)
 
 configs-checkout:
-	rm -rf $(TOP)/configs
-	svn co svn://svn.dd-wrt.com/private/configs $(TOP)/configs
 	rm -rf $(TOP)/kromo/dd-wrt/34telecom
 	rm -rf $(TOP)/kromo/dd-wrt/3com
 	rm -rf $(TOP)/kromo/dd-wrt/alfa
@@ -250,7 +248,6 @@ configs-checkout:
 		
 
 configs-update:
-	svn update $(TOP)/configs
 	svn update $(TOP)/kromo/dd-wrt/34telecom
 	svn update $(TOP)/kromo/dd-wrt/3com
 	svn update $(TOP)/kromo/dd-wrt/alfa
