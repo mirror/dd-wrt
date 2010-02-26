@@ -1,7 +1,7 @@
 
 <fieldset>
 	<legend><% tran("hotspotsys.legend"); %></legend>
-	<div class="center"><img src="images/hotspotsystem.png" alt="hotspotsystem logo" /></div><br />
+	<div class="center"><a href="http://www.hotspotsystem.com/"><img src="images/hotspotsystem.png" alt="hotspotsystem logo" /></a></div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspotsys.legend"); %></div>
 		<input class="spaceradio" type="radio" value="1" name="hotss_enable" <% nvram_selmatch("hotss_enable","1", "checked"); %> onclick="setHotss(this.value);" /><% tran("share.enable"); %>&nbsp;
