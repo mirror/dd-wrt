@@ -35,6 +35,11 @@
 			<input class="spaceradio" type="radio" value="https" name="hotss_customuamproto" <% nvram_selmatch("hotss_customuamproto","https", "checked"); %> />https
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("hotspotsys.loginonsplash"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="hotss_loginonsplash" <% nvram_selmatch("hotss_loginonsplash","1", "checked"); %>  /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="hotss_loginonsplash" <% nvram_selmatch("hotss_loginonsplash","0", "checked"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspotsys.whitelabel"); %></div>
 			<input class="text" maxLength="64" size="25" name="hotss_customuam" value="<% nvram_get("hotss_customuam"); %>" />
 		</div>
