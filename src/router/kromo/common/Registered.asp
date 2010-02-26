@@ -20,16 +20,16 @@ document.title = "<% nvram_get("router_name"); %> - Activation";
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><span><% tran("bmenu.setup"); %></span></li>
-								<li><span><% tran("bmenu.wireless"); %></span></li>
+								<li><span><strong><% tran("bmenu.setup"); %></strong></span></li>
+								<li><span><strong><% tran("bmenu.wireless"); %></strong></span></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><span><% tran("bmenu.sipath"); %></span></li>
+								<li><span><strong><% tran("bmenu.sipath"); %></strong></span></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><span><% tran("bmenu.security"); %></span></li>
-								<li><span><% tran("bmenu.accrestriction"); %></span></li>
-								<li><span><% tran("bmenu.applications"); %></span></li>
-								<li><span><% tran("bmenu.admin"); %></span></li>
-								<li><span><% tran("bmenu.statu"); %></span></li>
+								<li><span><strong><% tran("bmenu.security"); %></strong></span></li>
+								<li><span><strong><% tran("bmenu.accrestriction"); %></strong></span></li>
+								<li><span><strong><% tran("bmenu.applications"); %></strong></span></li>
+								<li><span><strong><% tran("bmenu.admin"); %></strong></span></li>
+								<li><span><strong><% tran("bmenu.statu"); %></strong></span></li>
 							</ul>
 						</div>
 					</div>
