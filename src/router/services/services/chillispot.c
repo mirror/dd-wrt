@@ -315,10 +315,13 @@ void hotspotsys_config(void)
 
 	fprintf(fp, "radiusnasid %s_%s\n", nvram_get("hotss_operatorid"),
 		nvram_get("hotss_locationid"));
-	fprintf(fp,
-		"uamhomepage %s://%s/customer/index.php?operator=%s&location=%s\n",nvram_safe_get("hotss_customuamproto"),
-		uamdomain, nvram_get("hotss_operatorid"),
-		nvram_get("hotss_locationid"));
+	if (!nvram_match("hotss_loginonsplash", "1")) {
+		fprintf(fp,
+			"uamhomepage %s://%s/customer/index.php?operator=%s&location=%s\n",
+			nvram_safe_get("hotss_customuamproto"), uamdomain,
+			nvram_get("hotss_operatorid"),
+			nvram_get("hotss_locationid"));
+	}
 	fprintf(fp, "coaport 3799\n");
 	fprintf(fp, "coanoipcheck\n");
 	fprintf(fp, "domain key.chillispot.info\n");

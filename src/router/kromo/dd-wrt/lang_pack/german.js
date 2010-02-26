@@ -691,6 +691,7 @@ var hotspotsys = new Object();
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Entferne WLAN von der LAN-Bridge";
 hotspotsys.uamenable="Spezielle Domains";
+hotspotsys.loginonsplash="Login auf Splash Seite";
 hotspotsys.allowuam="UAM Erlaubt";
 hotspotsys.whitelabelproto="White Label Protocol";
 hotspotsys.whitelabel="White Label Domain";

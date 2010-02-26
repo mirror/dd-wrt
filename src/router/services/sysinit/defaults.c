@@ -1580,6 +1580,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"hotss_enable", "0", 0},
 	{"hotss_radiusnasid", "", 0},
 	{"hotss_uamenable", "0", 0},
+	{"hotss_loginonsplash", "0", 0},
 	{"hotss_uamallowed", "", 0},
 	{"hotss_operatorid", "", 0},
 	{"hotss_locationid", "", 0},
