@@ -101,7 +101,7 @@ ifeq ($(CONFIG_BUFFALO),y)
 	mkdir $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/images/* $(INSTALLDIR)/www/images
-
+	cp buffalo/help/* $(INSTALLDIR)/www/help
 endif
 
 ifeq ($(CONFIG_CORENET),y)
