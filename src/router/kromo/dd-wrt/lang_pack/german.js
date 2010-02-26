@@ -686,6 +686,20 @@ hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 hotspot.wifidog_config="Firewall Regeln";
 
+// ** Hotspotsystem **//
+var hotspotsys = new Object();
+hotspotsys.legend="Hotspot System";
+hotspotsys.nobridge="Entferne WLAN von der LAN-Bridge";
+hotspotsys.uamenable="Spezielle Domains";
+hotspotsys.allowuam="UAM Erlaubt";
+hotspotsys.whitelabelproto="White Label Protocol";
+hotspotsys.whitelabel="White Label Domain";
+hotspotsys.operatorid="Betreiber ID";
+hotspotsys.locationid="Standort ID";
+hotspotsys.dhcp="DHCP Interface";
+hotspotsys.net="Entferntes Netzwerk";
+
+
 // **************************************************************** AnchorFree.asp *********************************************************//
 
 var anchorfree = new Object();
