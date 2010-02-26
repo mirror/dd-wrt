@@ -71,6 +71,7 @@ void start_chilli(void)
 	}
 
 	if (nvram_match("hotss_enable", "1")) {
+		stop_cron();
 		if (!nvram_match("chilli_enable", "1")) {
 			nvram_set("chilli_enable", "1");	// to get care of firewall, network, etc.
 			nvram_set("chilli_def_enable", "0");
@@ -85,6 +86,7 @@ void start_chilli(void)
 			nvram_set("daylight_time", "1");
 		}
 		hotspotsys_config();
+		start_cron();
 	} else if (nvram_match("chilli_enable", "1")) {
 		nvram_unset("chilli_def_enable");
 		chilli_config();
