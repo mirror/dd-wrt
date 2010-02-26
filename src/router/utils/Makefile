@@ -82,11 +82,7 @@ all:
 #	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
 else
 all: $(UTILS)
-ifeq ($(CONFIG_BUFFALO),y)
-	make -C src
-else
 	if test -e "src/Makefile"; then make -C src; fi
-endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 	make -C wprobe
