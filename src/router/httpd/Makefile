@@ -705,7 +705,15 @@ endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS += -DHAVE_WHRG300N
 endif
-
+ifeq ($(CONFIG_WHRHPGN),y)
+CFLAGS += -DHAVE_WHRHPGN
+endif
+ifeq ($(CONFIG_WHRG300NV2),y)
+CFLAGS += -DHAVE_WHRG300NV2
+endif
+ifeq ($(CONFIG_WHRHPG300N),y)
+CFLAGS += -DHAVE_WHRHPG300N
+endif
 
 #use this do disable number of arguments checking (less code and faster exec)
 CFLAGS += -DFASTWEB
