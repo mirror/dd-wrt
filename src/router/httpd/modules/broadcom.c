@@ -68,8 +68,10 @@ int debug_value = 0;
 // tofu
 
 char *live_translate(char *tran);
-void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *query);
-
+#ifdef HAVE_BUFFALO
+void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream,
+		 char *query);
+#endif
 /*
  * Deal with side effects before committing 
  */
@@ -1960,7 +1962,7 @@ static void do_stylecss_ie(struct mime_handler *handler, char *url,
 static void do_trial_logo(struct mime_handler *handler, char *url,
 			  webs_t stream, char *query)
 {
-#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA) 
+#if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
 	do_file(handler, url, stream, query);
 #else
 	if (!isregistered_real()) {
@@ -1983,34 +1985,34 @@ static void do_trial_logo(struct mime_handler *handler, char *url,
  */
 
 static void do_mypage(struct mime_handler *handler, char *url,
-		       webs_t stream, char *query)
+		      webs_t stream, char *query)
 {
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
 	char sname[128];
 	int qnum;
 	int i = 1;
-	
+
 	if (query == NULL || strlen(query) == 0)
 		qnum = 1;
 	else
 		qnum = atoi(query);
-	
+
 	foreach(sname, snamelist, next) {
 		if (qnum == i) {
-			strcat (sname, " > /tmp/mypage.tmp");
+			strcat(sname, " > /tmp/mypage.tmp");
 			system2(sname);
-			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
+			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL,
+				       "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
-	i++;
+		i++;
 	}
 
 	return;
-	
+
 }
- 
- 
+
 static void do_fetchif(struct mime_handler *handler, char *url,
 		       webs_t stream, char *query)
 {
@@ -2436,7 +2438,9 @@ struct mime_handler mime_handlers[] = {
 	{"lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
 	 NULL, 0},
 #endif
-	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, do_auth, 1}, 
+#ifdef HAVE_BUFFALO
+	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, do_auth, 1},
+#endif
 	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1},
 #ifdef HAVE_SKYTRON
 	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
@@ -2662,80 +2666,62 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	return 1;
 }
 
+#ifdef HAVE_BUFFALO
 void do_vsp_page(struct mime_handler *handler, char *url,
-			  webs_t stream, char *query)
+		 webs_t stream, char *query)
 {
-	
+
 #ifdef HAVE_MADWIFI
-	char *authmode = nvram_safe_get("ath0_security_mode");
-	char *encrypt = nvram_safe_get("ath0_crypto");
-	char *wpakey = nvram_safe_get("ath0_wpa_psk ");
-	
-	if (!strcmp(encrypt, "tkip"))
-		{
-			encrypt = "TKIP";
-		}		
-	else if (!strcmp(authmode, "aes"))
-		{
-			encrypt = "AES";
-		}
-	else if (!strcmp(authmode, "tkip+aes"))
-		{
-			encrypt = "TKIP-AES-MIX";
-		}
-	else 
-		{
-			encrypt = "";
-		}	
-	
-	
-	if (!strcmp(authmode, "disabled"))
-		{
-			authmode = "NONE";
-			encrypt = "";
-			wpakey = "";
-		}		
-	else if (!strcmp(authmode, "wep"))
-		{
-			authmode = "WEP";
-			encrypt = "";
-			wpakey = "";
-		}
-	else if (!strcmp(authmode, "radius") 
-			|| !strcmp(authmode, "wpa")
-			|| !strcmp(authmode, "wpa2")
-			|| !strcmp(authmode, "wpa wpa2"))
-		{
-			authmode = "RADIUS";
-			encrypt = "";
-			wpakey = "";
-		}
-	else if (!strcmp(authmode, "8021X"))
-		{
-			authmode = "802.1X";
-			encrypt = "";
-			wpakey = "";
-		}
-	else if (!strcmp(authmode, "psk"))
-		{
-			authmode = "WPA";
-		}
-	else if (!strcmp(authmode, "psk2"))
-		{
-			authmode = "WPA2";
-		}
-	else if (!strcmp(authmode, "psk psk2"))
-		{
-			authmode = "WPA-WPA2-MIX";
-		}
-	else 
-		{
-			authmode = "UNKNOWN";
-			encrypt = "";
-			wpakey = "";
-		}
-	
-	
+	char *ifname = "ath0";
+#else
+	char *ifname = "wl0";
+#endif
+
+	char *authmode = nvram_nget("%s_security_mode", ifname);
+	char *encrypt = nvram_nget("%s_crypto", ifname);
+	char *wpakey = nvram_nget("%s_wpa_psk ", ifname);
+
+	if (!strcmp(encrypt, "tkip")) {
+		encrypt = "TKIP";
+	} else if (!strcmp(authmode, "aes")) {
+		encrypt = "AES";
+	} else if (!strcmp(authmode, "tkip+aes")) {
+		encrypt = "TKIP-AES-MIX";
+	} else {
+		encrypt = "";
+	}
+
+	if (!strcmp(authmode, "disabled")) {
+		authmode = "NONE";
+		encrypt = "";
+		wpakey = "";
+	} else if (!strcmp(authmode, "wep")) {
+		authmode = "WEP";
+		encrypt = "";
+		wpakey = "";
+	} else if (!strcmp(authmode, "radius")
+		   || !strcmp(authmode, "wpa")
+		   || !strcmp(authmode, "wpa2")
+		   || !strcmp(authmode, "wpa wpa2")) {
+		authmode = "RADIUS";
+		encrypt = "";
+		wpakey = "";
+	} else if (!strcmp(authmode, "8021X")) {
+		authmode = "802.1X";
+		encrypt = "";
+		wpakey = "";
+	} else if (!strcmp(authmode, "psk")) {
+		authmode = "WPA";
+	} else if (!strcmp(authmode, "psk2")) {
+		authmode = "WPA2";
+	} else if (!strcmp(authmode, "psk psk2")) {
+		authmode = "WPA-WPA2-MIX";
+	} else {
+		authmode = "UNKNOWN";
+		encrypt = "";
+		wpakey = "";
+	}
+
 	websWrite(stream, "<html>\n");
 	websWrite(stream, "<head>\n");
 	websWrite(stream, "<title>VSP</title>\n");
@@ -2743,34 +2729,15 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 	websWrite(stream, "<body>\n");
 	websWrite(stream, "<pre>\n");
 
+	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
+	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
 #ifdef HAVE_WHRHPG300N
-	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
-	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
 	websWrite(stream, "DEVICE_MODEL=WHR-HP-G300N DDWRT<br>\n");
-	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
-	websWrite(stream, "<br>\n");
-	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
-	websWrite(stream, "<br>\n");
-	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
-	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
-	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);	
-	
 #elif HAVE_WHRG300NV2
-	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
-	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
 	websWrite(stream, "DEVICE_MODEL=WHR-G300N DDWRT<br>\n");
-	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
-	websWrite(stream, "<br>\n");
-	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
-	websWrite(stream, "<br>\n");
-	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
-	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
-	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
-
 #elif HAVE_WHRHPGN
-	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
-	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
 	websWrite(stream, "DEVICE_MODEL=WHR-HP-GN DDWRT<br>\n");
+#endif
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
 	websWrite(stream, "<br>\n");
 	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
@@ -2778,17 +2745,8 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
 	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
 	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
-
-#else
-	// ...
-
-#endif
-	
-	
 	websWrite(stream, "</pre>\n");
 	websWrite(stream, "</body>\n");
 	websWrite(stream, "</html>\n");
-	
-#endif
-
 }
+#endif
