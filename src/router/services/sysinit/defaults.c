@@ -2683,8 +2683,12 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_AP_SERV
 	{"apserv_enable", "1", 0},
 #endif
+#ifdef HAVE_AOSS
+	{"aoss_enable", "1", 0},
+#endif
 	{"warn_enabled", "0", 0},
 	{"warn_connlimit", "500", 0},
+	
 	{0, 0, 0}
 };
 #else
