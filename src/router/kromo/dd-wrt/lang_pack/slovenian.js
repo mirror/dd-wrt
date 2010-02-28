@@ -788,7 +788,8 @@ hotspot.wifidog_auth="HTTP stre¾nik: podpora overjanju";
 
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Loèi WiFi od LAN mosta";
-hotspotsys.uamenable="UAM";
+hotspotsys.uamenable="Posebne domene";
+hotspotsys.loginonsplash="Prijava na splash strani";
 hotspotsys.allowuam="UAM dopu¹èeni";
 hotspotsys.whitelabelproto="White label protokol";
 hotspotsys.whitelabel="White label domena";
