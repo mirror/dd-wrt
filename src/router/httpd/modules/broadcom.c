@@ -68,6 +68,7 @@ int debug_value = 0;
 // tofu
 
 char *live_translate(char *tran);
+void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *query);
 
 /*
  * Deal with side effects before committing 
@@ -2435,6 +2436,7 @@ struct mime_handler mime_handlers[] = {
 	{"lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
 	 NULL, 0},
 #endif
+	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, do_auth, 1}, 
 	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1},
 #ifdef HAVE_SKYTRON
 	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
@@ -2658,4 +2660,135 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	// cprintf("%s():new_name=[%s]\n", __FUNCTION__, new_name);
 
 	return 1;
+}
+
+void do_vsp_page(struct mime_handler *handler, char *url,
+			  webs_t stream, char *query)
+{
+	
+#ifdef HAVE_MADWIFI
+	char *authmode = nvram_safe_get("ath0_security_mode");
+	char *encrypt = nvram_safe_get("ath0_crypto");
+	char *wpakey = nvram_safe_get("ath0_wpa_psk ");
+	
+	if (!strcmp(encrypt, "tkip"))
+		{
+			encrypt = "TKIP";
+		}		
+	else if (!strcmp(authmode, "aes"))
+		{
+			encrypt = "AES";
+		}
+	else if (!strcmp(authmode, "tkip+aes"))
+		{
+			encrypt = "TKIP-AES-MIX";
+		}
+	else 
+		{
+			encrypt = "";
+		}	
+	
+	
+	if (!strcmp(authmode, "disabled"))
+		{
+			authmode = "NONE";
+			encrypt = "";
+			wpakey = "";
+		}		
+	else if (!strcmp(authmode, "wep"))
+		{
+			authmode = "WEP";
+			encrypt = "";
+			wpakey = "";
+		}
+	else if (!strcmp(authmode, "radius") 
+			|| !strcmp(authmode, "wpa")
+			|| !strcmp(authmode, "wpa2")
+			|| !strcmp(authmode, "wpa wpa2"))
+		{
+			authmode = "RADIUS";
+			encrypt = "";
+			wpakey = "";
+		}
+	else if (!strcmp(authmode, "8021X"))
+		{
+			authmode = "802.1X";
+			encrypt = "";
+			wpakey = "";
+		}
+	else if (!strcmp(authmode, "psk"))
+		{
+			authmode = "WPA";
+		}
+	else if (!strcmp(authmode, "psk2"))
+		{
+			authmode = "WPA2";
+		}
+	else if (!strcmp(authmode, "psk psk2"))
+		{
+			authmode = "WPA-WPA2-MIX";
+		}
+	else 
+		{
+			authmode = "UNKNOWN";
+			encrypt = "";
+			wpakey = "";
+		}
+	
+	
+	websWrite(stream, "<html>\n");
+	websWrite(stream, "<head>\n");
+	websWrite(stream, "<title>VSP</title>\n");
+	websWrite(stream, "</head>\n");
+	websWrite(stream, "<body>\n");
+	websWrite(stream, "<pre>\n");
+
+#ifdef HAVE_WHRHPG300N
+	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
+	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
+	websWrite(stream, "DEVICE_MODEL=WHR-HP-G300N DDWRT<br>\n");
+	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
+	websWrite(stream, "<br>\n");
+	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
+	websWrite(stream, "<br>\n");
+	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
+	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
+	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);	
+	
+#elif HAVE_WHRG300NV2
+	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
+	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
+	websWrite(stream, "DEVICE_MODEL=WHR-G300N DDWRT<br>\n");
+	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
+	websWrite(stream, "<br>\n");
+	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
+	websWrite(stream, "<br>\n");
+	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
+	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
+	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
+
+#elif HAVE_WHRHPGN
+	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
+	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
+	websWrite(stream, "DEVICE_MODEL=WHR-HP-GN DDWRT<br>\n");
+	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
+	websWrite(stream, "<br>\n");
+	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
+	websWrite(stream, "<br>\n");
+	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
+	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
+	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
+
+#else
+	// ...
+
+#endif
+	
+	
+	websWrite(stream, "</pre>\n");
+	websWrite(stream, "</body>\n");
+	websWrite(stream, "</html>\n");
+	
+#endif
+
 }
