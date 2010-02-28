@@ -1481,8 +1481,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
 	       "Networking.asp", "eop-tunnel.asp", "", "", "", ""},
 	{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp",
-	 "Wireless_radauth.asp", "WL_WPATable.asp", "Wireless_MAC.asp",
-	 "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},
+	 "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp","Wireless_MAC.asp",
+	 "Wireless_Advanced.asp", "Wireless_WDS.asp", "", ""},
 	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp",
 	 "USB.asp", "NAS.asp",
 	 "Hotspot.asp", "Milkfish.asp", "AnchorFree.asp", "",
@@ -1505,8 +1505,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	       "setuprouting", "setupvlan", "networking", "setupeop", "", "",
 	       ""},
 	{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
-	 "wirelessRadius", "wirelessSecurity", "wirelessMac",
-	 "wirelessAdvanced", "wirelessWds", "", "", ""},
+	 "wirelessRadius", "wirelessSecurity", "wirelessAoss", "wirelessMac",
+	 "wirelessAdvanced", "wirelessWds", "", ""},
 	{"services", "servicesServices", "servicesRadius", "servicesPppoesrv",
 	 "servicesPptp",
 	 "servicesUSB", "servicesNAS", "servicesHotspot", "servicesMilkfish",
@@ -1645,6 +1645,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!wimaxwifi && !strcmp(menu[i][j], "WiMAX.asp"))	// jump 
 					// over 
 					// WiMAX
+					j++;
+#endif
+#ifndef HAVE_AOSS
+				if (!strcmp(menu[i][j], "AOSS.asp"))	// jump over
+					// AOSS
 					j++;
 #endif
 #ifdef HAVE_MADWIFI
