@@ -244,6 +244,9 @@ endif
 ifeq ($(CONFIG_AP_SERV),y)
 CFLAGS_EXTRA += -DHAVE_AP_SERV
 endif
+ifeq ($(CONFIG_AOSS),y)
+CFLAGS_EXTRA += -DHAVE_AOSS
+endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS_EXTRA += -DHAVE_REGISTER
 endif
