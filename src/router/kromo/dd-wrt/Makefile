@@ -26,6 +26,10 @@ endif
 	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
 endif
 
+ifneq ($(CONFIG_AOSS),y)
+	rm -f $(INSTALLDIR)/www/AOSS.asp
+endif
+
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/logo.png
