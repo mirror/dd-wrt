@@ -383,6 +383,7 @@ bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Wireless Security";
+bmenu.wirelessAoss="AOSS";
 bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Advanced Settings";
 bmenu.wirelessAdvancedwl0="WL0-Advanced Sett.";
@@ -1732,6 +1733,22 @@ wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
+
+
+var aoss = new Object();
+aoss.titl="AOSS Security";
+aoss.aoss="AOSS";
+aoss.service="AOSS Service";
+aoss.enable="Enable AOSS";
+aoss.start="Start AOSS negotiation";
+aoss.securitymodes="Security Modes";
+aoss.wpaaes="WPA / WPA2 AES";
+aoss.wpatkip="WPA / WPA2 TKIP";
+aoss.wep="WEP64 / 128";
+aoss.client_name="Client Name";
+aoss.security="Security";
+aoss.connectivity="Connectivity";
+aoss.clients="AOSS Clients";
 
 var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
