@@ -9,6 +9,14 @@
 	</div>
 	<div id="idhotspotsys">
 		<div class="setting">
+			<div class="label"><% tran("hotspotsys.operatorid"); %></div>
+			<input class="text" maxLength="500" size="25" name="hotss_operatorid" value="<% nvram_get("hotss_operatorid"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspotsys.locationid"); %></div>
+			<input class="text" maxLength="500" size="25" name="hotss_locationid" value="<% nvram_get("hotss_locationid"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspotsys.nobridge"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="hotss_nowifibridge" <% nvram_selmatch("hotss_nowifibridge","1", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="hotss_nowifibridge" <% nvram_selmatch("hotss_nowifibridge","0", "checked"); %> onclick="show_layer_ext(this, 'idhotssdhcp', false)" /><% tran("share.disable"); %>
@@ -35,26 +43,22 @@
 			<input class="spaceradio" type="radio" value="https" name="hotss_customuamproto" <% nvram_selmatch("hotss_customuamproto","https", "checked"); %> />https
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("hotspotsys.whitelabel"); %></div>
+			<input class="text" maxLength="64" size="25" name="hotss_customuam" value="<% nvram_get("hotss_customuam"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspotsys.loginonsplash"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="hotss_loginonsplash" <% nvram_selmatch("hotss_loginonsplash","1", "checked"); %>  /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="hotss_loginonsplash" <% nvram_selmatch("hotss_loginonsplash","0", "checked"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("hotspotsys.whitelabel"); %></div>
-			<input class="text" maxLength="64" size="25" name="hotss_customuam" value="<% nvram_get("hotss_customuam"); %>" />
+			<div class="label"><% tran("hotspotsys.customsplash"); %></div>
+			<input type="checkbox" value="1" name="_hotss_customsplash" <% nvram_checked("hotss_customsplash", "1"); %> />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
 			<input class="text" maxLength="500" size="25" name="hotss_uamallowed" value="<% nvram_get("hotss_uamallowed"); %>" />
 		</div>
 	</div>	
-		<div class="setting">
-			<div class="label"><% tran("hotspotsys.operatorid"); %></div>
-			<input class="text" maxLength="500" size="25" name="hotss_operatorid" value="<% nvram_get("hotss_operatorid"); %>" />
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("hotspotsys.locationid"); %></div>
-			<input class="text" maxLength="500" size="25" name="hotss_locationid" value="<% nvram_get("hotss_locationid"); %>" />
-		</div>
 	</div>
 </fieldset><br />
