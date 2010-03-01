@@ -7,51 +7,113 @@
 		<div id="content">
 			<h2><% tran("hotspot.h2"); %></h2>
 			<dl>
-				<dd>You can use the router as an Hotspot gateway (Chillispot solution) with authentication, accounting (Radius). ChilliSpot is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite radius server.</dd>
-				
-				<dt><% tran("hotspot.pserver"); %></dt>
-				<dd>The IP addresses of radius server 1 and 2.</dd>
-				
-				<dt><% tran("hotspot.dns"); %></dt>
-				<dd>DNS Server IP. It is used to inform the client about the DNS address to use for host name resolution. If this option is not given the system primary DNS is used.</dd>
-				
-				<dt><% tran("hotspot.url"); %></dt>
-				<dd>URL of web server to use for authenticating clients.</dd>
-				
-				<dt><% tran("share.share_key"); %></dt>
-				<dd>Radius shared secret for both servers. This secret should be changed in order not to compromise security.</dd>
-				
-				<dt><% tran("hotspot.dhcp"); %></dt>
-				<dd>Ethernet interface to listen to for the downlink interface. This option must be specified.</dd>
-				
-				<dt><% tran("hotspot.radnas"); %></dt>
-				<dd>Network access server identifier.</dd>
-				
-				<dt><% tran("hotspot.uam"); %></dt>
-				<dd>Shared secret between uamserver and chilli. This secret should be set in order not to compromise security.</dd>
-				
-				<dt><% tran("hotspot.uamdns"); %></dt>
-				<dd>Allow any DNS server. Normally unauthenticated clients are only allowed to communicate with the DNS servers specified by the dns1 and dns2 options. This option will allow the client to use all DNS servers. This is convenient for clients which are configured to use a fixed set of DNS servers.<br/><br/>
-					<div class="note">
-						<h4>Note</h4>
-						<div>For security reasons this option should be combined with a destination NAT firewall rule which forwards all DNS requests to a given DNS server.</div>
-					</div>
-				</dd>
-				
-				<dt><% tran("hotspot.allowuam"); %></dt>
-				<dd>IP addresses or network segments the client can access without first authenticating (Comma separated list of domain names). Example: www.chillispot.org,10.11.12.0/24 </dd>
-				
-				<dt><% tran("hotspot.macauth"); %></dt>
-				<dd>If this option is given ChilliSpot will try to authenticate all users based on their mac address alone.</dd>
-				
-				<dt><% tran("hotspot.option"); %></dt>
-				<dd>You can specify here additional Options.<br/><br/>
-					<div class="note">
-						<h4>Note</h4>
-						<div>For more informations about the different options : <a href="http://www.chillispot.org/chilli.html">www.chillispot.org</a>.</div>
-					</div>
-				</dd>
-				
+<dd>You can use the router as an Hotspot gateway (Chillispot solution)
+with authentication, accounting (Radius). ChilliSpot is an open source
+captive portal or wireless LAN access point controller. It is used for
+authenticating users of a wireless LAN. It supports web based login
+which is today's standard for public HotSpots and it supports Wireless
+Protected Access (WPA) which is the standard of the future.
+Authentication, authorization and accounting (AAA) is handled by your
+favorite radius server.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.hotspotsystem)</script>Hotspot System</dt>
+<dd>You can have your hotspot portal managed by HotspotSystem.com. 
+They provide free and pay-per-use hotspot solutions with billing. 
+For more information please visit <a href="http://www.hotspotsystem.com">www.hotspotsystem.com</a></dd>
+
+<dt><script type="text/javascript">Capture(hotspot.opid)</script>Operator Username</dt>
+<dd>The Operator Username which you have registered at <a href="http://www.hotspotsystem.com">www.hotspotsystem.com</a></dd>
+
+<dt><script type="text/javascript">Capture(hotspot.locid)</script>Location ID</dt>
+<dd>The number of the location you would like to set up.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.separatewifilan)</script>Separate Wifi from the LAN Bridge</dt>
+<dd>If this option is enabled (default), then Wifi and LAN are handled separately. 
+For example you can forward Wifi users to a splash page, while LAN ports remain completly free. 
+If you set this to disable, then all ports are handled together.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.dhcp)</script>DHCP Interface</dt>
+<dd>This has to be the interface you would like to use for the hotspot portal. 
+</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.remotenetwork)</script>Remote Network</dt>
+<dd>Network mask where you wish to run the hotspot service.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.specsettings)</script>Special Settings</dt>
+<dd>Here you can make changes on your splash page. You can add more sites for free browsing.
+If you are a White Label operator you can use your own domain name on your splash pages. 
+Options are:
+<ul>
+<li>White Label Protocol: choose https if you have an SSL certificate installed on the White Label domain.</li>
+<li>White Label Domain: Put your White Label domain here or other servers 
+(for example asia server) provided by HotspotSystem.com</li>
+<li>Login on Splash Page: You can have the login box displayed on the main splash page. 
+You also need to set this behavior in HotspotSystem.com Control Center, 
+on Manage > Locations > click on location > Modify Hotspot Settings > Splash Page Settings!</li>
+<li>Custom Splash Page (Walled Garden): You can forward users to your own splash page first.
+For this option you have to add your domain to the UAM allowed list below, and 
+set it in the Control Center. You also have to put a backlink to our splash page 
+so your customers will be able to log in or buy access/use a voucher.</li>
+<li>UAM Allowed: IP addresses or network segments the client can access without
+first authenticating (Comma separated list of domain names). Example:
+www.chillispot.info,10.11.12.0/24</li>
+</ul>
+</dd>
+
+
+
+<dt><script type="text/javascript">Capture(hotspot.pserver)</script>Primary Radius Server IP/DNS</dt>
+<dd>The IP addresses of radius server 1 and 2.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.dns)</script>DNS IP</dt>
+<dd>DNS Server IP. It is used to inform the client about the DNS
+address to use for host name resolution. If this option is not given
+the system primary DNS is used.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.url)</script>Redirect URL</dt>
+<dd>URL of web server to use for authenticating clients.</dd>
+
+<dt><script type="text/javascript">Capture(share.share_key)</script>Shared Key</dt>
+<dd>Radius shared secret for both servers. This secret should be changed in order not to compromise security.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.dhcp)</script>DHCP Interface</dt>
+<dd>Ethernet interface to listen to for the downlink interface. This option must be specified.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.radnas)</script>Radius NAS ID</dt>
+<dd>Network access server identifier.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.uam)</script>UAM Secret</dt>
+<dd>Shared secret between uamserver and chilli. This secret should be set in order not to compromise security.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.uamdns)</script>UAM Any DNS</dt>
+<dd>Allow any DNS server. Normally unauthenticated clients are only
+allowed to communicate with the DNS servers specified by the dns1 and
+dns2 options. This option will allow the client to use all DNS servers.
+This is convenient for clients which are configured to use a fixed set
+of DNS servers.<br><br>
+<div class="note">
+<h4>Note</h4>
+<div>For security reasons this option should be combined with a
+destination NAT firewall rule which forwards all DNS requests to a
+given DNS server.</div>
+</div>
+</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.allowuam)</script>UAM Allowed</dt>
+<dd>IP addresses or network segments the client can access without
+first authenticating (Comma separated list of domain names). Example:
+www.chillispot.info,10.11.12.0/24 </dd>
+
+<dt><script type="text/javascript">Capture(hotspot.macauth)</script>MACauth</dt>
+<dd>If this option is given ChilliSpot will try to authenticate all users based on their mac address alone.</dd>
+
+<dt><script type="text/javascript">Capture(hotspot.option)</script>Additional Chillispot Options</dt>
+<dd>You can specify here additional Options.<br><br>
+<div class="note">
+<h4>Note</h4>
+<div>For more informations about the different options : <a href="http://www.chillispot.info/chilli.html">www.chillispot.info</a>.</div>
+</div>
+</dd>
 				<dt><% tran("hotspot.nocat_legend"); %></dt>
 				<dd>Enabling the use of NoCatSplash allows you to redirect a client to a specific web page when connecting via wireless or wired.</dd>
 				
