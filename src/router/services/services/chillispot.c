@@ -317,10 +317,12 @@ void hotspotsys_config(void)
 		nvram_get("hotss_locationid"));
 	if (!nvram_match("hotss_loginonsplash", "1")) {
 		fprintf(fp,
-			"uamhomepage %s://%s/customer/index.php?operator=%s&location=%s\n",
+			"uamhomepage %s://%s/customer/index.php?operator=%s&location=%s%s\n",
 			nvram_safe_get("hotss_customuamproto"), uamdomain,
 			nvram_get("hotss_operatorid"),
-			nvram_get("hotss_locationid"));
+			nvram_get("hotss_locationid"),
+			nvram_match("hotss_customsplash",
+				    "1") ? "&forward=1" : "");
 	}
 	fprintf(fp, "coaport 3799\n");
 	fprintf(fp, "coanoipcheck\n");
