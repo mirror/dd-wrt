@@ -2745,6 +2745,8 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
 	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
 	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
+	websWrite(stream, "DEVICE_URL_GET=/vsp.html\n");
+	websWrite(stream, "DEVICE_URL_SET=/vsp.html\n");
 	websWrite(stream, "</pre>\n");
 	websWrite(stream, "</body>\n");
 	websWrite(stream, "</html>\n");
