@@ -2731,13 +2731,7 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 
 	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
 	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
-#ifdef HAVE_WHRHPG300N
-	websWrite(stream, "DEVICE_MODEL=WHR-HP-G300N DDWRT<br>\n");
-#elif HAVE_WHRG300NV2
-	websWrite(stream, "DEVICE_MODEL=WHR-G300N DDWRT<br>\n");
-#elif HAVE_WHRHPGN
-	websWrite(stream, "DEVICE_MODEL=WHR-HP-GN DDWRT<br>\n");
-#endif
+	websWrite(stream, "DEVICE_MODEL=%s DDWRT<br>\n",nvram_safe_get("DD_BOARD"));
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
 	websWrite(stream, "<br>\n");
 	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
