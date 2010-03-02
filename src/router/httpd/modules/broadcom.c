@@ -2439,7 +2439,7 @@ struct mime_handler mime_handlers[] = {
 	 NULL, 0},
 #endif
 #ifdef HAVE_BUFFALO
-	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, do_auth, 1},
+	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1},
 #endif
 	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1},
 #ifdef HAVE_SKYTRON
