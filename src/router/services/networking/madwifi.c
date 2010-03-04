@@ -937,7 +937,6 @@ void setMacFilter(char *iface)
 	sprintf(nvvar, "%s_macmode", iface);
 	if (nvram_match(nvvar, "deny")) {
 		sysprintf("iwpriv %s maccmd 2", iface);
-		sysprintf("ifconfig %s up", iface);
 		char nvlist[32];
 
 		sprintf(nvlist, "%s_maclist", iface);
@@ -947,7 +946,6 @@ void setMacFilter(char *iface)
 		}
 	} else if (nvram_match(nvvar, "allow")) {
 		sysprintf("iwpriv %s maccmd 1", iface);
-		sysprintf("ifconfig %s up", iface);
 
 		char nvlist[32];
 
@@ -956,9 +954,6 @@ void setMacFilter(char *iface)
 		foreach(var, nvram_safe_get(nvlist), next) {
 			sysprintf("iwpriv %s addmac %s", iface, var);
 		}
-	} else {
-		//undefined condition
-		sysprintf("ifconfig %s up", iface);
 	}
 
 }
@@ -1143,18 +1138,6 @@ static void configure_single(int count)
 	int disablescan = 0;
 
 	set_scanlist(dev, wif);
-	sleep(1);
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
-		char *ch = nvram_default_get(channel, "0");
-
-		if (strcmp(ch, "0") == 0) {
-			sysprintf("iwconfig %s channel 0", dev);
-		} else {
-			sysprintf("iwconfig %s freq %sM", dev, ch);
-		}
-	}
-	sleep(1);
-
 	if (useif)
 		set_netmode(wif, dev, useif);
 	set_netmode(wif, dev, dev);
