@@ -1026,7 +1026,7 @@ int internal_getRouterBrand()
 	setRouter("Dlink DIR-825");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WRT400
-	setRouter("Linksys WRT400");
+	setRouter("Linksys WRT400N");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615C1
 	setRouter("D-Link DIR-615-C1");
