@@ -4,6 +4,9 @@ endif
 ifeq ($(ARCH),arm)
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 endif
+ifeq ($(ARCH),i386)
+export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="ax86-elf.o aes_cbc.o"
+endif
 
 openssl:
 	$(MAKE) -j 4 -C openssl CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
