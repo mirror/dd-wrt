@@ -112,6 +112,10 @@ static int detect_ethernet_devices(void)
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
+	} else if (detect("82574"))	// Intel Gigabit 
+	{
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
 	}
 	if (detect("Tolapai"))	// Realtek 8169 Adapter (various notebooks) 
 	{
