@@ -5,7 +5,8 @@ ifeq ($(ARCH),arm)
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 endif
 ifeq ($(ARCH),i386)
-export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="ax86-elf.o aes_cbc.o"
+export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="ax86-elf.o aes_cbc.o" 
+export OPENSSL_CMAKEFLAGS := -DOPENSSL_FIPS_AES_ASM=1 
 endif
 
 openssl:
@@ -50,11 +51,13 @@ OPENSSL_OPTIONS:= no-ec no-err no-hw threads zlib-dynamic \
 					no-engines no-sse2 no-perlasm
 endif
 
+
+
 openssl-configure:
 	cd openssl && ./Configure linux-openwrt \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
-			$(COPTS) \
+			$(COPTS) $(OPENSSL_CMAKEFLAGS) \
 			$(TARGET_LDFLAGS) -ldl \
 			-DOPENSSL_SMALL_FOOTPRINT \
 			$(OPENSSL_NO_CIPHERS) \
