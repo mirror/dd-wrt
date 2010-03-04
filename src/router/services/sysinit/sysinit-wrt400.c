@@ -114,7 +114,6 @@ void start_sysinit(void)
 	char mac2[32];
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	if (fp) {
-#ifdef HAVE_WRT400
 		char mactmp[6];
 		int copy[6];
 		int i;
@@ -124,21 +123,14 @@ void start_sysinit(void)
 		    if (++mactmp[i] != 0x00) break; // dont know what this is 
 		for (i = 0; i < 6 ; i++)
 		    copy[i] = mactmp[i];
+		for (i = 0; i < 6 ; i++)
+		    copy[i] &= 0xff;
 		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 				copy[1], copy[2], copy[3], copy[4], copy[5]);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 				copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
 
-#else
-		fseek(fp, 0x66ffa0, SEEK_SET);
-		fread(mac1, 18, 1, fp);
-		fseek(fp, 0x66ffb4, SEEK_SET);
-		fread(mac2, 18, 1, fp);
-		fclose(fp);
-
-
-#endif
 	} else {
 		sprintf(mac1, "00:11:22:33:44:55");
 		sprintf(mac2, "00:11:22:33:44:66");
@@ -165,22 +157,13 @@ void start_sysinit(void)
 		close(s);
 	}
 	detect_wireless_devices();
-#ifdef HAVE_WRT400
 //	eval("ifconfig", "wifi0", "hw", "ether", mac1);
 //	eval("ifconfig", "wifi1", "hw", "ether", mac1);
-	system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-	system2("echo 0 >/proc/sys/dev/wifi1/ledpin");
+	system2("echo 6 >/proc/sys/dev/wifi1/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 
-#else
-	eval("ifconfig", "wifi0", "hw", "ether", mac1);
-	eval("ifconfig", "wifi1", "hw", "ether", mac1);
-	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi1/softled");
-#endif
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
