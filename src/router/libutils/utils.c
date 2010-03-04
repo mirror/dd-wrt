@@ -1025,6 +1025,9 @@ int internal_getRouterBrand()
 #elif HAVE_DIR825
 	setRouter("Dlink DIR-825");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WRT400
+	setRouter("Linksys WRT400");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615C1
 	setRouter("D-Link DIR-615-C1");
 	return ROUTER_BOARD_PB42;
@@ -2800,6 +2803,12 @@ int led_control(int type, int act)
 		diag_gpio = 0x001;
 		connected_gpio = 0x007;
 		ses_gpio = 0x100;
+#endif
+#ifdef HAVE_WRT400
+		power_gpio = 0x001;
+		diag_gpio = 0x105;
+		ses_gpio = 0x104;
+		connected_gpio = 0x007;
 #endif
 		break;
 	case ROUTER_ALLNET01:
