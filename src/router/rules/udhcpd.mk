@@ -21,4 +21,10 @@ ifeq ($(CONFIG_UDHCPD),y)
 endif
 	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
 	install -m 777 -D udhcpc/scripts/cidrroute.sh $(INSTALLDIR)/udhcpd/etc/cidrroute.sh
+ifeq ($(CONFIG_DIST),"micro")
+	rm -f $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
+endif
+ifeq ($(CONFIG_DIST),"micro-special")
+	rm -f $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
+endif
 
