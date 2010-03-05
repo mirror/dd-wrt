@@ -136,7 +136,6 @@ void start_sysinit(void)
 
 	// eval ("ifconfig", "wifi0", "up");
 
-	insmod("ipv6");
 
 	/*
 	 * Set a sane date 

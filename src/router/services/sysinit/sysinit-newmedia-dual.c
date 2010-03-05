@@ -130,7 +130,6 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-	insmod("ipv6");
 	// load_drivers(); //load madwifi drivers
 	/*
 	 * Set a sane date 

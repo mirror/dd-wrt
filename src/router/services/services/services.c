@@ -220,7 +220,20 @@ void start_ipv6(void)
 	if (!nvram_invmatch("ipv6_enable", "0"))
 		return;
 
-	ret = insmod("ipv6");
+	insmod("ipv6");
+	insmod("sit");
+	insmod("esp6");
+	insmod("ah6");
+	insmod("mip6");
+	insmod("tunnel6");
+	insmod("ip6_tunnel");
+	insmod("xfrm6_mode_beet");
+	insmod("xfrm6_mode_ro");
+	insmod("xfrm6_mode_transport");
+	insmod("xfrm6_mode_tunnel");
+	insmod("xfrm6_tunnel");
+	insmod("ipcomp6");
+	
 	dd_syslog(LOG_INFO, "ipv6 successfully started\n");
 
 	cprintf("done\n");

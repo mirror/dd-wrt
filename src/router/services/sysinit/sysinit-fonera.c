@@ -192,7 +192,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 		close(s);
 	}
-	// insmod("ipv6");
 
 	/*
 	 * Set a sane date 

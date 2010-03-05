@@ -208,7 +208,6 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 
-	insmod("ipv6");
 	eval("mknod", "/dev/rtc", "c", "253", "0");
 #ifdef HAVE_CPUTEMP
 	// insmod("nsc_gpio");
