@@ -35,9 +35,6 @@ function checked(F) {
 	if (F._nstx_log) {
 		(F._nstx_log.checked == true) ? F.nstx_log.value = 1 : F.nstx_log.value = 0;
 	}
-	if(F._hotss_customsplash) {
-		F.hotss_customsplash.value = F._hotss_customsplash.checked ? 1 : 0;
-	}
 	
 }
 
