@@ -25,6 +25,9 @@ function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
+	if(F._hotss_customsplash) {
+		F.hotss_customsplash.value = F._hotss_customsplash.checked ? 1 : 0;
+	}
 	apply(F);
 }
 function to_apply(F) {
@@ -32,6 +35,9 @@ function to_apply(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
+	if(F._hotss_customsplash) {
+		F.hotss_customsplash.value = F._hotss_customsplash.checked ? 1 : 0;
+	}
 	applytake(F);
 }
 
