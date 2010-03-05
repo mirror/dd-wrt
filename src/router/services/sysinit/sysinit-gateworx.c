@@ -248,7 +248,6 @@ void start_sysinit(void)
 	 * "up"); 
 	 */
 
-	// insmod("ipv6");
 
 	fprintf(stderr, "Load Sensor Driver\n");
 	insmod("ad7418");	// temp / voltage sensor

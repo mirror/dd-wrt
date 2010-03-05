@@ -295,7 +295,6 @@ void start_sysinit(void)
 			close(s);
 		}
 	}
-	// insmod("ipv6");
 
 	/*
 	 * Set a sane date 

@@ -201,7 +201,6 @@ void start_sysinit(void)
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
-	// insmod("ipv6");
 
 	/*
 	 * Set a sane date 

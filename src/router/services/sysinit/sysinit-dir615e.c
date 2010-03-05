@@ -177,7 +177,6 @@ void start_sysinit(void)
 		free(lanmac);
 	}
 	led_control(LED_POWER, LED_ON);
-	insmod("ipv6");
 
 	/*
 	 * Set a sane date 

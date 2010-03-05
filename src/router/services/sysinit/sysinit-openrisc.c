@@ -210,7 +210,6 @@ void start_sysinit(void)
 
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 
-	insmod("ipv6");
 
 	/*
 	 * Set a sane date 
