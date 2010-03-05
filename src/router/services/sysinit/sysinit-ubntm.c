@@ -132,7 +132,6 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 	system2("echo 0 >/proc/sys/dev/wifi0/softled");
-	insmod("ipv6");
 
 	/*
 	 * Set a sane date 

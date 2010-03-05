@@ -124,7 +124,6 @@ void start_sysinit(void)
 	 */
 	detect_wireless_devices();
 
-	insmod("ipv6");
 	struct ifreq ifr;
 	int s;
 
