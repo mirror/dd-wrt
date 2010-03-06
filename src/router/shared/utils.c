@@ -1549,28 +1549,6 @@ void getinterfacelist(const char *ifprefix, char *buffer)
 	}
 }
 
-/*
- *     the following code was taken from:
- *
- *      Copyright (C) 2006 Jonathan Zarate
- *
- *      Licensed under GNU GPL v2 or later.     
- */
-
-int isGrep(char *string, char *cmp)
-{
-	char devcall[128];
-	int res;
-
-	sprintf(devcall, "%s|grep \"%s\"|/bin/wc -l", string, cmp);
-	// system(devcall);
-	FILE *in = popen(devcall, "rb");
-
-	fscanf(in, "%d", &res);
-	pclose(in);
-	return res > 0 ? 1 : 0;
-
-}
 
 int softkill(char *name)
 {
