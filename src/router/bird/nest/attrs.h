@@ -9,6 +9,8 @@
 #ifndef _BIRD_ATTRS_H_
 #define _BIRD_ATTRS_H_
 
+#include <stdint.h>
+
 /* a-path.c */
 
 #define AS_PATH_SET		1	/* Types of path segments */

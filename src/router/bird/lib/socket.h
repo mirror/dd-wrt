@@ -50,7 +50,19 @@ int sk_send_to(sock *, unsigned len, ip_addr to, unsigned port); /* sk_send to g
 void sk_reallocate(sock *);		/* Free and allocate tbuf & rbuf */
 void sk_dump_all(void);
 int sk_set_ttl(sock *s, int ttl);	/* Set TTL for given socket */
-int sk_set_md5_auth(sock *s, ip_addr a, char *passwd);	/* Add or remove security associations for given passive socket */
+
+/* Add or remove security associations for given passive socket */
+int sk_set_md5_auth(sock *s, ip_addr a, char *passwd);
+int sk_rx_ready(sock *s);
+
+/* Prepare UDP or IP socket to multicasting. s->iface and s->ttl must be set */
+int sk_setup_multicast(sock *s);	
+int sk_join_group(sock *s, ip_addr maddr);
+int sk_leave_group(sock *s, ip_addr maddr);
+
+#ifdef IPV6
+int sk_set_ipv6_checksum(sock *s, int offset);
+#endif
 
 static inline int
 sk_send_buffer_empty(sock *sk)
@@ -71,20 +83,23 @@ sk_send_buffer_empty(sock *sk)
 #define SK_TCP_PASSIVE	0	   /* ?  *  -  -  -  ?   -	*/
 #define SK_TCP_ACTIVE	1          /* ?  ?  *  *  -  ?   -	*/
 #define SK_TCP		2
-#define SK_UDP		3          /* ?  ?  -  -  -  ?   ?	*/
-#define SK_UDP_MC       4          /* ?  ?  *  *  *  *   -	*/
-#define SK_IP		5          /* ?  -  -  *  -  ?   ?	*/
-#define SK_IP_MC	6          /* ?  -  *  *  *  *   -	*/
+#define SK_UDP		3          /* ?  ?  ?  ?  ?  ?   ?	*/
+#define SK_IP		5          /* ?  -  ?  *  ?  ?   ?	*/
 #define SK_MAGIC	7	   /* Internal use by sysdep code */
 #define SK_UNIX_PASSIVE	8
 #define SK_UNIX		9
 
 /*
- *  Multicast sockets are slightly different from the other ones:
- *  If you want to send packets only, just set the destination
- *  address to the corresponding multicast group and iface to
- *  the interface to be used. If you also want receiving, set
- *  source address to the same multicast group as well.
+ *  For SK_UDP or SK_IP sockets setting DA/DP allows to use sk_send(),
+ *  otherwise sk_send_to() must be used.
+ *
+ *  For SK_IP sockets setting DP specifies protocol number, which is used
+ *  for both receiving and sending.
+ *
+ *  For multicast on SK_UDP or SK_IP sockets set IF and TTL,
+ *  call sk_setup_multicast() to enable multicast on that socket,
+ *  and then use sk_join_group() and sk_leave_group() to manage
+ *  a set of received multicast groups.
  */
 
 #endif

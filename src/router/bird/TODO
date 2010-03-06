@@ -21,7 +21,6 @@ Globals
 
 Various ideas
 ~~~~~~~~~~~~~
-- client: paging of output
 - client: Ctrl-R eats one more enter
 - bgp: timing of updates?
 - netlink: realms
@@ -50,5 +49,4 @@ OSPF
 	- RFC2370 opaque LSA's
 	- Limit export rate of external LSAs (like Gated does)
 	- Bugfix in link state retransmission list (aging)
-	- Rewrite the "dirty patch" in OSPF database (LSA_T_NET)
 	- Graceful OSPF restart - RFC3623

@@ -131,7 +131,11 @@ WHITE [ \t]
   return NUM;
 }
 
-{ALPHA}{ALNUM}* {
+({ALPHA}{ALNUM}*|[']({ALNUM}|[-])*[']) {
+  if(*yytext == '\'') {
+    yytext[yyleng-1] = 0;
+    yytext++;
+  }
   unsigned int h = cf_hash(yytext);
   struct keyword *k = kw_hash[h & (KW_HASH_SIZE-1)];
   while (k)

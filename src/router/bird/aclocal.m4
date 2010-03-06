@@ -26,6 +26,7 @@ for size in 1 2 4 ; do
 	done
 ])
 
+dnl BIRD_CHECK_ENDIAN is unused and obsolete
 AC_DEFUN(BIRD_CHECK_ENDIAN,
 [AC_CACHE_CHECK([CPU endianity], bird_cv_c_endian,[
 AC_TRY_RUN([

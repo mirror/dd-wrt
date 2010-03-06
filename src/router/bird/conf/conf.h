@@ -20,12 +20,20 @@ struct config {
   list protos;				/* Configured protocol instances (struct proto_config) */
   list tables;				/* Configured routing tables (struct rtable_config) */
   list logfiles;			/* Configured log fils (sysdep) */
+  int mrtdump_file;			/* Configured MRTDump file (sysdep, fd in unix) */
   struct rtable_config *master_rtc;	/* Configuration of master routing table */
+
   u32 router_id;			/* Our Router ID */
   ip_addr listen_bgp_addr;		/* Listening BGP socket should use this address */
   unsigned listen_bgp_port;		/* Listening BGP socket should use this port (0 is default) */
   u32 listen_bgp_flags;			/* Listening BGP socket should use these flags */
-  unsigned int proto_default_debug;	/* Default protocol debug mask */
+  unsigned proto_default_debug;		/* Default protocol debug mask */
+  unsigned proto_default_mrtdump;	/* Default protocol mrtdump mask */
+  struct timeformat tf_route;		/* Time format for 'show route' */
+  struct timeformat tf_proto;		/* Time format for 'show protocol' */
+  struct timeformat tf_log;		/* Time format for the logfile */
+  struct timeformat tf_base;		/* Time format for other purposes */
+
   int cli_debug;			/* Tracing of CLI connections and commands */
   char *err_msg;			/* Parser error message */
   int err_lino;				/* Line containing error */

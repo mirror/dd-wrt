@@ -20,6 +20,7 @@ static struct nbma_node *this_nbma;
 static struct area_net_config *this_pref;
 static struct ospf_stubnet_config *this_stubnet; 
 
+#ifdef OSPFv2
 static void
 finish_iface_config(struct ospf_iface_patt *ip)
 {
@@ -31,16 +32,26 @@ finish_iface_config(struct ospf_iface_patt *ip)
   if ((ip->autype == OSPF_AUTH_NONE) && (ip->passwords != NULL))
     log(L_WARN "Password option without authentication option does not make sense");
 }
+#endif
+
+#ifdef OSPFv3
+static void
+finish_iface_config(struct ospf_iface_patt *ip)
+{
+  if ((ip->autype != OSPF_AUTH_NONE) || (get_passwords() != NULL))
+    cf_error("Authentication not supported in OSPFv3");
+}
+#endif
 
 CF_DECLS
 
-CF_KEYWORDS(OSPF, AREA, OSPF_METRIC1, OSPF_METRIC2, OSPF_TAG, BROADCAST)
-CF_KEYWORDS(NEIGHBORS, RFC1583COMPAT, STUB, TICK, COST, RETRANSMIT)
+CF_KEYWORDS(OSPF, AREA, OSPF_METRIC1, OSPF_METRIC2, OSPF_TAG, OSPF_ROUTER_ID)
+CF_KEYWORDS(BROADCAST, NEIGHBORS, RFC1583COMPAT, STUB, TICK, COST, RETRANSMIT)
 CF_KEYWORDS(HELLO, TRANSMIT, PRIORITY, DEAD, NONBROADCAST, POINTOPOINT, TYPE)
 CF_KEYWORDS(NONE, SIMPLE, AUTHENTICATION, STRICT, CRYPTOGRAPHIC)
 CF_KEYWORDS(ELIGIBLE, POLL, NETWORKS, HIDDEN, VIRTUAL, LINK)
 CF_KEYWORDS(RX, BUFFER, LARGE, NORMAL, STUBNET, HIDDEN, SUMMARY)
-CF_KEYWORDS(WAIT, DELAY)
+CF_KEYWORDS(WAIT, DELAY, LSADB)
 
 %type <t> opttext
 
@@ -293,6 +304,7 @@ opttext:
 CF_ADDTO(dynamic_attr, OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); })
 CF_ADDTO(dynamic_attr, OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); })
 CF_ADDTO(dynamic_attr, OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); })
+CF_ADDTO(dynamic_attr, OSPF_ROUTER_ID { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_ROUTER_ID); })
 
 CF_CLI(SHOW OSPF, optsym, [<name>], [[Show information about OSPF protocol]])
 { ospf_sh(proto_get_named($3, &proto_ospf)); };
@@ -308,6 +320,9 @@ CF_CLI(SHOW OSPF TOPOLOGY, optsym opttext, [<name>], [[Show information about OS
 
 CF_CLI(SHOW OSPF STATE, optsym opttext, [<name>], [[Show information about OSPF network state]])
 { ospf_sh_state(proto_get_named($4, &proto_ospf), 1); };
+
+CF_CLI(SHOW OSPF LSADB, optsym opttext, [<name>], [[Show content of OSPF LSA database]])
+{ ospf_sh_lsadb(proto_get_named($4, &proto_ospf)); };
 
 CF_CODE
 

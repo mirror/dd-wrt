@@ -43,15 +43,13 @@ AC_SUBST(srcdir_rel_mf)
 if test "$enable_ipv6" = yes ; then
 	ip=ipv6
 	SUFFIX6=6
-	if test "$with_protocols" = all ; then
-		with_protocols=bgp,pipe,rip,static
-	fi
 else
 	ip=ipv4
 	SUFFIX6=""
-	if test "$with_protocols" = all ; then
-		with_protocols=bgp,ospf,pipe,rip,static
-	fi
+fi
+
+if test "$with_protocols" = all ; then
+	with_protocols=bgp,ospf,pipe,rip,static
 fi
 
 AC_SEARCH_LIBS(clock_gettime,[c rt posix4])
@@ -125,6 +123,10 @@ else
 				;;
 		ipv4:freebsd*)	sysdesc=bsd
 				;;
+		ipv6:kfreebsd*) sysdesc=bsd-v6
+				;;
+		ipv4:kfreebsd*) sysdesc=bsd
+				;;
 		ipv6:openbsd*)	sysdesc=bsd-v6
 				;;
 		ipv4:openbsd*)	sysdesc=bsd
@@ -179,8 +181,10 @@ AC_TRY_COMPILE([#include <sys/types.h>
   AC_DEFINE(HAVE_SIN_LEN,,sin_len)],
   AC_MSG_RESULT(no))
 
+AC_C_BIGENDIAN([AC_DEFINE(CPU_BIG_ENDIAN)], [AC_DEFINE(CPU_LITTLE_ENDIAN)],
+		 [AC_MSG_ERROR([Cannot determine CPU endianity.])])
+
 BIRD_CHECK_INTEGERS
-BIRD_CHECK_ENDIAN
 BIRD_CHECK_STRUCT_ALIGN
 BIRD_CHECK_TIME_T
 BIRD_CHECK_STRUCT_IP_MREQN

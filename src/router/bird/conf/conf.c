@@ -57,7 +57,7 @@ static jmp_buf conf_jmpbuf;
 
 struct config *config, *new_config, *old_config, *future_config;
 static event *config_event;
-int shutting_down;
+int shutting_down, future_type;
 bird_clock_t boot_time;
 
 /**
@@ -75,10 +75,13 @@ config_alloc(byte *name)
   linpool *l = lp_new(p, 4080);
   struct config *c = lp_allocz(l, sizeof(struct config));
 
+  c->mrtdump_file = -1; /* Hack, this should be sysdep-specific */
   c->pool = p;
   cfg_mem = c->mem = l;
   c->file_name = cfg_strdup(name);
   c->load_time = now;
+  c->tf_base.fmt1 = c->tf_log.fmt1 = "%d-%m-%Y %T";
+
   if (!boot_time)
     boot_time = now;
   return c;
@@ -198,6 +201,7 @@ config_do_commit(struct config *c, int type)
   config = new_config = c;
   if (old_config)
     old_config->obstacle_count++;
+
   DBG("sysdep_commit\n");
   force_restart = sysdep_commit(c, old_config);
   DBG("global_commit\n");
@@ -235,8 +239,8 @@ config_done(void *unused UNUSED)
 	break;
       c = future_config;
       future_config = NULL;
-      log(L_INFO "Switching to queued configuration...");
-      if (!config_do_commit(c, RECONFIG_HARD))
+      log(L_INFO "Reconfiguring to queued configuration");
+      if (!config_do_commit(c, future_type))
 	break;
     }
 }
@@ -287,8 +291,13 @@ config_commit(struct config *c, int type)
       else
 	log(L_INFO "Queued new configuration");
       future_config = c;
+      future_type = type;
       return CONF_QUEUED;
     }
+
+  if (!shutting_down)
+    log(L_INFO "Reconfiguring");
+
   if (config_do_commit(c, type))
     {
       config_done(NULL);

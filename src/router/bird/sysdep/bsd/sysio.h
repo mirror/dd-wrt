@@ -27,48 +27,55 @@ set_inaddr(struct in_addr * ia, ip_addr a)
 }
 
 static inline char *
-sysio_mcast_setup(sock * s)
+sysio_setup_multicast(sock *s)
 {
-	u8              zero = 0;
-	u8		one = 1;
+	struct in_addr m;
+	u8 zero = 0;
+	u8 ttl = s->ttl;
 
-	if (ipa_nonzero(s->daddr)) {
+	if (setsockopt(s->fd, IPPROTO_IP, IP_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
+		return "IP_MULTICAST_LOOP";
 
-		if (setsockopt(s->fd, IPPROTO_IP, IP_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
-			return "IP_MULTICAST_LOOP";
+	if (setsockopt(s->fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0)
+		return "IP_MULTICAST_TTL";
 
-		if (setsockopt(s->fd, IPPROTO_IP, IP_MULTICAST_TTL, &one, sizeof(one)) < 0)
-			return "IP_MULTICAST_TTL";
-	}
+	/* This defines where should we send _outgoing_ multicasts */
+        set_inaddr(&m, s->iface->addr->ip);
+	if (setsockopt(s->fd, IPPROTO_IP, IP_MULTICAST_IF, &m, sizeof(m)) < 0)
+		return "IP_MULTICAST_IF";
+
 	return NULL;
 }
 
 
 static inline char *
-sysio_mcast_join(sock * s)
+sysio_join_group(sock *s, ip_addr maddr)
 {
-	struct in_addr  m;
 	struct ip_mreq  mreq;
-	char   *err;
-
-        set_inaddr(&m, s->iface->addr->ip );
 
 	bzero(&mreq, sizeof(mreq));
 	set_inaddr(&mreq.imr_interface, s->iface->addr->ip);
-	set_inaddr(&mreq.imr_multiaddr, s->daddr);
+	set_inaddr(&mreq.imr_multiaddr, maddr);
 
 	/* And this one sets interface for _receiving_ multicasts from */
-	if (ipa_nonzero(s->daddr) &&
-            setsockopt(s->fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
+	if (setsockopt(s->fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
 		return "IP_ADD_MEMBERSHIP";
 
+	return NULL;
+}
 
-	/* This defines where should we send _outgoing_ multicasts */
-	if (ipa_nonzero(s->daddr) && setsockopt(s->fd, IPPROTO_IP, IP_MULTICAST_IF, &m, sizeof(m)) < 0)
-		return "IP_MULTICAST_IF";
+static inline char *
+sysio_leave_group(sock *s, ip_addr maddr)
+{
+	struct ip_mreq mreq;
 
-	if (err = sysio_mcast_setup(s))
-		return err;
+	bzero(&mreq, sizeof(mreq));
+	set_inaddr(&mreq.imr_interface, s->iface->addr->ip);
+	set_inaddr(&mreq.imr_multiaddr, maddr);
+
+	/* And this one sets interface for _receiving_ multicasts from */
+	if (setsockopt(s->fd, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
+		return "IP_DROP_MEMBERSHIP";
 
 	return NULL;
 }

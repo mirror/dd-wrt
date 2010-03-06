@@ -390,7 +390,6 @@ nl_parse_addr(struct nlmsghdr *h)
   else
     {
       ip_addr netmask = ipa_mkmask(ifa.pxlen);
-      ip_addr xbrd;
       ifa.prefix = ipa_and(ifa.ip, netmask);
       ifa.brd = ipa_or(ifa.ip, ipa_not(netmask));
 #ifndef IPV6
@@ -398,6 +397,7 @@ nl_parse_addr(struct nlmsghdr *h)
 	ifa.opposite = ipa_opposite(ifa.ip, i->ifa_prefixlen);
       if ((ifi->flags & IF_BROADCAST) && a[IFA_BROADCAST])
 	{
+	  ip_addr xbrd;
 	  memcpy(&xbrd, RTA_DATA(a[IFA_BROADCAST]), sizeof(xbrd));
 	  ipa_ntoh(xbrd);
 	  if (ipa_equal(xbrd, ifa.prefix) || ipa_equal(xbrd, ifa.brd))
@@ -472,6 +472,9 @@ krt_capable(rte *e)
   switch (a->dest)
     {
     case RTD_ROUTER:
+      if (ipa_has_link_scope(a->gw) && (a->iface == NULL))
+	return 0;
+
     case RTD_DEVICE:
     case RTD_BLACKHOLE:
     case RTD_UNREACHABLE:
@@ -514,6 +517,11 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
     case RTD_ROUTER:
       r.r.rtm_type = RTN_UNICAST;
       nl_add_attr_ipa(&r.h, sizeof(r), RTA_GATEWAY, a->gw);
+
+      /* a->iface != NULL checked in krt_capable() */
+      if (ipa_has_link_scope(a->gw))
+	nl_add_attr_u32(&r.h, sizeof(r), RTA_OIF, a->iface->index);
+
       break;
     case RTD_DEVICE:
       if (!a->iface)
@@ -678,16 +686,39 @@ nl_parse_route(struct nlmsghdr *h, int scan)
 	}
       if (a[RTA_GATEWAY])
 	{
+	  struct iface *ifa = if_find_by_index(oif);
 	  neighbor *ng;
 	  ra.dest = RTD_ROUTER;
 	  memcpy(&ra.gw, RTA_DATA(a[RTA_GATEWAY]), sizeof(ra.gw));
 	  ipa_ntoh(ra.gw);
-	  ng = neigh_find(&p->p, &ra.gw, 0);
-	  if (ng && ng->scope)
-	    ra.iface = ng->iface;
+
+	  if (i->rtm_flags & RTNH_F_ONLINK)
+	    {
+	      /* route with 'onlink' attribute */
+	      ra.iface = if_find_by_index(oif);
+	      if (ra.iface == NULL)
+		{
+		  log(L_WARN "Kernel told us to use unknown interface %u for %I/%d",
+		      oif, net->n.prefix, net->n.pxlen);
+		  return;
+		}
+	    }
 	  else
-	    /* FIXME: Remove this warning? Handle it somehow... */
-	    log(L_WARN "Kernel told us to use non-neighbor %I for %I/%d", ra.gw, net->n.prefix, net->n.pxlen);
+	    {
+	      ng = neigh_find2(&p->p, &ra.gw, ifa, 0);
+	      if (ng && ng->scope)
+		{
+		  if (ng->iface != ifa)
+		    log(L_WARN "KRT: Route with unexpected iface for %I/%d", net->n.prefix, net->n.pxlen);
+		  ra.iface = ng->iface;
+		}
+	      else
+		{
+		  log(L_WARN "Kernel told us to use non-neighbor %I for %I/%d", ra.gw, net->n.prefix, net->n.pxlen);
+		  return;
+		}
+
+	    }
 	}
       else
 	{

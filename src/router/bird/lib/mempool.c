@@ -19,6 +19,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "nest/bird.h"
 #include "lib/resource.h"

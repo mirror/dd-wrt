@@ -1073,6 +1073,25 @@ startup code.
 
 <HR><H3>Function</H3>
 <P><I>void</I>
+<B>proto_request_feeding</B>
+(<I>struct proto *</I> <B>p</B>) --  request feeding routes to the protocol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>given protocol 
+</DL>
+<H3>Description</H3>
+<P>Sometimes it is needed to send again all routes to the
+protocol. This is called feeding and can be requested by this
+function. This would cause protocol core state transition
+to FS_FEEDING (during feeding) and when completed, it will
+switch back to FS_HAPPY. This function can be called even
+when feeding is already running, in that case it is restarted.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
 <B>proto_notify_state</B>
 (<I>struct proto *</I> <B>p</B>, <I>unsigned</I> <B>ps</B>) --  notify core about protocol state change
 <P>

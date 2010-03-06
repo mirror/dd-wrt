@@ -49,13 +49,17 @@ do { if ((p->debug & D_PACKETS) || OSPF_FORCE_DEBUG) \
 #include "lib/string.h"
 
 #define OSPF_PROTO 89
+
 #ifndef IPV6
+#define OSPFv2 1
 #define OSPF_VERSION 2
 #define AllSPFRouters ipa_from_u32(0xe0000005)	/* 224.0.0.5 */
 #define AllDRouters ipa_from_u32(0xe0000006)	/* 224.0.0.6 */
-#define DEFAULTDES ipa_from_u32(0)
 #else
-#error OSPF for IPv6 is not implemented (mail to Feela <feela@network.cz>)
+#define OSPFv3 1
+#define OSPF_VERSION 3
+#define AllSPFRouters _MI(0xFF020000, 0, 0, 5)	/* FF02::5 */
+#define AllDRouters   _MI(0xFF020000, 0, 0, 6)	/* FF02::6 */
 #endif
 
 
@@ -118,32 +122,37 @@ struct ospf_area_config
   list stubnet_list;
 };
 
-struct obits
-{
-#ifdef CPU_BIG_ENDIAN
-  u8 unused2:2;
-  u8 dc:1;
-  u8 ea:1;
-  u8 np:1;
-  u8 mc:1;
-  u8 e:1;
-  u8 unused1:1;
-#else
-  u8 unused1:1;
-  u8 e:1;
-  u8 mc:1;
-  u8 np:1;
-  u8 ea:1;
-  u8 dc:1;
-  u8 unused2:2;
-#endif
-};
 
-union options
-{
-  u8 byte;
-  struct obits bit;
-};
+/* Option flags */
+
+#define OPT_E	0x02
+#define OPT_N	0x08
+#define OPT_DC	0x20
+
+#ifdef OSPFv2
+#define OPT_EA	0x10
+
+/* VEB flags are are stored independently in 'u16 options' */
+#define OPT_RT_B  (0x01 << 8)
+#define OPT_RT_E  (0x02 << 8)
+#define OPT_RT_V  (0x04 << 8)
+#endif
+
+#ifdef OSPFv3
+#define OPT_V6	0x01
+#define OPT_R	0x10
+
+/* VEB flags are are stored together with options in 'u32 options' */
+#define OPT_RT_B  (0x01 << 24)
+#define OPT_RT_E  (0x02 << 24)
+#define OPT_RT_V  (0x04 << 24)
+#define OPT_RT_NT (0x10 << 24)
+
+#define OPT_PX_NU 0x01
+#define OPT_PX_LA 0x02
+#define OPT_PX_P  0x08
+#define OPT_PX_DN 0x10
+#endif
 
 
 struct ospf_iface
@@ -152,9 +161,7 @@ struct ospf_iface
   struct iface *iface;		/* Nest's iface */
   struct ospf_area *oa;
   struct object_lock *lock;
-  sock *hello_sk;		/* Hello socket */
-  sock *dr_sk;			/* For states DR or BACKUP */
-  sock *ip_sk;			/* IP socket (for DD ...) */
+  sock *sk;			/* IP socket (for DD ...) */
   list neigh_list;		/* List of neigbours */
   u32 cost;			/* Cost of iface */
   u32 waitint;			/* number of sec before changing state from wait */
@@ -167,15 +174,27 @@ struct ospf_iface
   u16 inftransdelay;		/* The estimated number of seconds it takes to
 				   transmit a Link State Update Packet over this
 				   interface.  LSAs contained in the update */
-  u16 autype;
   u16 helloint;			/* number of seconds between hello sending */
+
+#ifdef OSPFv2
   list *passwords;
+  u16 autype;
   u32 csn;                      /* Last used crypt seq number */
   bird_clock_t csn_use;         /* Last time when packet with that CSN was sent */
+#endif
+
   ip_addr drip;			/* Designated router */
   u32 drid;
   ip_addr bdrip;		/* Backup DR */
   u32 bdrid;
+
+#ifdef OSPFv3
+  u32 dr_iface_id;		/* if drid is valid, this is iface_id of DR (for connecting network) */
+  u8 instance_id;		/* Used to differentiate between more OSPF
+				   instances on one interface */
+  ip_addr lladdr;		/* Used link-local addr */
+#endif
+
   u8 type;			/* OSPF view of type */
 #define OSPF_IT_BCAST 0
 #define OSPF_IT_NBMA 1
@@ -206,15 +225,21 @@ struct ospf_iface
 #define HELLOINT_D 10
 #define POLLINT_D 20
 #define DEADC_D 4
-#define WAIT_DMH 4		/* Value of Wait timer - not found it in RFC 
-				 * - using 4*HELLO
-				 */
-  struct top_hash_entry *nlsa;	/* Originated net lsa */
-  int orignet;			/* Schedule network LSA origination */
-  int fadj;			/* Number of full adjacent neigh */
+#define WAIT_DMH 4		
+  /* Value of Wait timer - not found it in RFC * - using 4*HELLO */
+
+  struct top_hash_entry *net_lsa;	/* Originated network LSA */
+  int orignet;				/* Schedule network LSA origination */
+#ifdef OSPFv3
+  int origlink;				/* Schedule link LSA origination */
+  struct top_hash_entry *link_lsa;	/* Originated link LSA */
+  struct top_hash_entry *pxn_lsa;	/* Originated prefix LSA */
+#endif
+  int fadj;				/* Number of full adjacent neigh */
   list nbma_list;
-  u8 priority;			/* A router priority for DR election */
+  u8 priority;				/* A router priority for DR election */
   u8 ioprob;
+  u8 dr_up;				/* Socket is a member of DRouters group */
   u32 rxbuf;
 };
 
@@ -232,35 +257,17 @@ union ospf_auth
   struct ospf_md5 md5;
 };
 
-struct ospf_packet
-{
-  u8 version;
-  u8 type;
+
+/* Packet types */
 #define HELLO_P 1		/* Hello */
 #define DBDES_P 2		/* Database description */
 #define LSREQ_P 3		/* Link state request */
 #define LSUPD_P 4		/* Link state update */
 #define LSACK_P 5		/* Link state acknowledgement */
-  u16 length;
-  u32 routerid;
-  u32 areaid;
-#define BACKBONE 0
-  u16 checksum;
-  u16 autype;
-  union ospf_auth u;
-};
 
-struct ospf_hello_packet
-{
-  struct ospf_packet ospf_packet;
-  ip_addr netmask;
-  u16 helloint;
-  u8 options;
-  u8 priority;
-  u32 deadint;
-  ip_addr dr;
-  ip_addr bdr;
-};
+/* Area IDs */
+#define BACKBONE 0
+
 
 struct immsb
 {
@@ -282,18 +289,44 @@ union imms
   u8 byte;
   struct immsb bit;
 };
-
-struct ospf_dbdes_packet
-{
-  struct ospf_packet ospf_packet;
-  u16 iface_mtu;
-  u8 options;
-  union imms imms;		/* I, M, MS bits */
 #define DBDES_MS 1
 #define DBDES_M 2
 #define DBDES_I 4
-  u32 ddseq;
+
+
+#ifdef OSPFv2
+
+struct ospf_packet
+{
+  u8 version;
+  u8 type;
+  u16 length;
+  u32 routerid;
+  u32 areaid;
+  u16 checksum;
+  u16 autype;
+  union ospf_auth u;
 };
+
+
+#else /* OSPFv3 packet descriptions */
+
+struct ospf_packet
+{
+  u8 version;
+  u8 type;
+  u16 length;
+  u32 routerid;
+  u32 areaid;
+  u16 checksum;
+  u8 instance_id;
+  u8 zero;
+};
+
+
+#endif
+
+
 
 
 struct ospf_lsa_header
@@ -302,144 +335,280 @@ struct ospf_lsa_header
 #define LSA_MAXAGE 3600		/* 1 hour */
 #define LSA_CHECKAGE 300	/* 5 minutes */
 #define LSA_MAXAGEDIFF 900	/* 15 minutes */
+
+#ifdef OSPFv2
   u8 options;
   u8 type;
+
+#define LSA_T_RT	1
+#define LSA_T_NET	2
+#define LSA_T_SUM_NET	3
+#define LSA_T_SUM_RT	4
+#define LSA_T_EXT	5
+
+#define LSA_SCOPE_AREA	0x2000
+#define LSA_SCOPE_AS	0x4000
+
+#define LSA_SCOPE(lsa)	(((lsa)->type == LSA_T_EXT) ? LSA_SCOPE_AS : LSA_SCOPE_AREA)
+
+#else /* OSPFv3 */
+  u16 type;
+
+#define LSA_T_RT	0x2001
+#define LSA_T_NET	0x2002
+#define LSA_T_SUM_NET	0x2003
+#define LSA_T_SUM_RT	0x2004
+#define LSA_T_EXT	0x4005
+#define LSA_T_LINK	0x0008
+#define LSA_T_PREFIX	0x2009
+
+#define LSA_UBIT	0x8000
+
+#define LSA_SCOPE_LINK	0x0000
+#define LSA_SCOPE_AREA	0x2000
+#define LSA_SCOPE_AS	0x4000
+#define LSA_SCOPE_RES	0x6000
+#define LSA_SCOPE_MASK	0x6000
+
+#define LSA_SCOPE(lsa)	((lsa)->type & LSA_SCOPE_MASK)
+#endif
+
   u32 id;
-#define LSA_T_RT 1
-#define LSA_T_NET 2
-#define LSA_T_SUM_NET 3
-#define LSA_T_SUM_RT 4
-#define LSA_T_EXT 5
   u32 rt;			/* Advertising router */
   s32 sn;			/* LS Sequence number */
-#define LSA_INITSEQNO 0x80000001
-#define LSA_MAXSEQNO 0x7fffffff
+#define LSA_INITSEQNO ((s32) 0x80000001)
+#define LSA_MAXSEQNO ((s32) 0x7fffffff)
   u16 checksum;
   u16 length;
 };
 
-struct vebb
-{
-#ifdef CPU_BIG_ENDIAN
-  u8 padding:5;
-  u8 v:1;
-  u8 e:1;
-  u8 b:1;
-#else
-  u8 b:1;
-  u8 e:1;
-  u8 v:1;
-  u8 padding:5;
-#endif
-};
 
-union veb
-{
-  u8 byte;
-  struct vebb bit;
-};
+#define LSART_PTP 1
+#define LSART_NET 2
+#define LSART_STUB 3
+#define LSART_VLNK 4
+
+
+#ifdef OSPFv2
 
 struct ospf_lsa_rt
 {
-  union veb veb;
-  u8 padding;
+#ifdef CPU_BIG_ENDIAN
+  u16 options;	/* VEB flags only */
   u16 links;
+#else
+  u16 links;
+  u16 options;	/* VEB flags only */
+#endif
 };
 
 struct ospf_lsa_rt_link
 {
   u32 id;
   u32 data;
+#ifdef CPU_BIG_ENDIAN
   u8 type;
-#define LSART_PTP 1
-#define LSART_NET 2
-#define LSART_STUB 3
-#define LSART_VLNK 4
-  u8 notos;
-  u16 metric;
-};
-
-struct ospf_lsa_rt_link_tos
-{				/* Actually we ignore TOS. This is useless */
-  u8 tos;
   u8 padding;
   u16 metric;
+#else
+  u16 metric;
+  u8 padding;
+  u8 type;
+#endif
 };
 
 struct ospf_lsa_net
 {
   ip_addr netmask;
+  u32 routers[];
 };
 
 struct ospf_lsa_sum
 {
   ip_addr netmask;
+  u32 metric;
 };
-
 
 struct ospf_lsa_ext
 {
   ip_addr netmask;
-};
-
-struct ospf_lsa_ext_etos 
-{
-#ifdef CPU_BIG_ENDIAN
-  u8 ebit:1;
-  u8 tos:7;
-  u8 padding1;
-  u16 padding2;
-#else
-  u16 padding2;
-  u8 padding1;
-  u8 tos:7;
-  u8 ebit:1;
-#endif
-};
-
-#define METRIC_MASK 0x00FFFFFF
-struct ospf_lsa_sum_tos 
-{
-#ifdef CPU_BIG_ENDIAN
-  u8 tos;
-  u8 padding1;
-  u16 padding2;
-#else
-  u16 padding2;
-  u8 padding1;
-  u8 tos;
-#endif
-};
-
-union ospf_lsa_sum_tm
-{
-  struct ospf_lsa_sum_tos tos;
   u32 metric;
-};
-
-union ospf_lsa_ext_etm
-{
-  struct ospf_lsa_ext_etos etos;
-  u32 metric;
-};
-
-struct ospf_lsa_ext_tos
-{
-  union ospf_lsa_ext_etm etm;
   ip_addr fwaddr;
   u32 tag;
 };
 
-struct ospf_lsreq_packet
+#define LSA_SUM_TOS  0xFF000000
+#define LSA_EXT_TOS  0x7F000000
+#define LSA_EXT_EBIT 0x80000000
+
+/* Endianity swap for lsa->type */
+#define ntoht(x) x
+#define htont(x) x
+
+
+#else  /* OSPFv3 */
+
+struct ospf_lsa_rt
 {
-  struct ospf_packet ospf_packet;
+  u32 options;
 };
+
+struct ospf_lsa_rt_link
+{
+#ifdef CPU_BIG_ENDIAN
+  u8 type;
+  u8 padding;
+  u16 metric;
+#else
+  u16 metric;
+  u8 padding;
+  u8 type;
+#endif
+  u32 lif;	/* Local interface ID */
+  u32 nif;	/* Neighbor interface ID */
+  u32 id;	/* Neighbor router ID */
+};
+
+struct ospf_lsa_net
+{
+  u32 options;
+  u32 routers[];
+};
+
+struct ospf_lsa_sum_net
+{
+  u32 metric;
+  u32 prefix[];
+};
+
+struct ospf_lsa_sum_rt
+{
+  u32 options;
+  u32 metric;
+  u32 drid;
+};
+
+struct ospf_lsa_ext
+{
+  u32 metric;
+  u32 rest[];
+};
+
+struct ospf_lsa_link
+{
+  u32 options;
+  ip_addr lladdr;
+  u32 pxcount;
+  u32 rest[];
+};
+
+struct ospf_lsa_prefix
+{
+#ifdef CPU_BIG_ENDIAN
+  u16 pxcount;
+  u16 ref_type;
+#else
+  u16 ref_type;
+  u16 pxcount;
+#endif
+  u32 ref_id;
+  u32 ref_rt;
+  u32 rest[];
+};
+
+#define LSA_EXT_EBIT 0x4000000
+#define LSA_EXT_FBIT 0x2000000
+#define LSA_EXT_TBIT 0x1000000
+
+/* Endianity swap for lsa->type */
+#define ntoht(x) ntohs(x)
+#define htont(x) htons(x)
+
+#endif
+
+#define METRIC_MASK  0x00FFFFFF
+#define OPTIONS_MASK 0x00FFFFFF
+
+static inline unsigned
+lsa_rt_count(struct ospf_lsa_header *lsa)
+{
+  return (lsa->length - sizeof(struct ospf_lsa_header) - sizeof(struct ospf_lsa_rt))
+    / sizeof(struct ospf_lsa_rt_link);
+}
+
+static inline unsigned
+lsa_net_count(struct ospf_lsa_header *lsa)
+{
+  return (lsa->length - sizeof(struct ospf_lsa_header) - sizeof(struct ospf_lsa_net))
+    / sizeof(u32);
+}
+
+
+#ifdef OSPFv3
+
+#define IPV6_PREFIX_SPACE(x) ((((x) + 63) / 32) * 4)
+#define IPV6_PREFIX_WORDS(x) (((x) + 63) / 32)
+
+static inline u32 *
+lsa_get_ipv6_prefix(u32 *buf, ip_addr *addr, int *pxlen, u8 *pxopts, u16 *rest)
+{
+  u8 pxl = (*buf >> 24);
+  *pxopts = (*buf >> 16);
+  *rest = *buf;
+  *pxlen = pxl;
+  buf++;
+
+  *addr = IPA_NONE;
+
+  if (pxl > 0)
+    _I0(*addr) = *buf++;
+  if (pxl > 32)
+    _I1(*addr) = *buf++;
+  if (pxl > 64)
+    _I2(*addr) = *buf++;
+  if (pxl > 96)
+    _I3(*addr) = *buf++;
+
+  return buf;
+}
+
+static inline u32 *
+lsa_get_ipv6_addr(u32 *buf, ip_addr *addr)
+{
+  *addr = *(ip_addr *) buf;
+  return buf + 4;
+}
+
+static inline u32 *
+put_ipv6_prefix(u32 *buf, ip_addr addr, u8 pxlen, u8 pxopts, u16 lh)
+{
+  *buf++ = ((pxlen << 24) | (pxopts << 16) | lh);
+
+  if (pxlen > 0)
+    *buf++ = _I0(addr);
+  if (pxlen > 32)
+    *buf++ = _I1(addr);
+  if (pxlen > 64)
+    *buf++ = _I2(addr);
+  if (pxlen > 96)
+    *buf++ = _I3(addr);
+  return buf;
+}
+
+static inline u32 *
+put_ipv6_addr(u32 *buf, ip_addr addr)
+{
+  *(ip_addr *) buf = addr;
+  return buf + 4;
+}
+
+#endif
+
+
 
 struct ospf_lsreq_header
 {
-  u16 padd1;
-  u8 padd2;
-  u8 type;
+  u32 type;
   u32 id;
   u32 rt;			/* Advertising router */
 };
@@ -448,17 +617,6 @@ struct l_lsr_head
 {
   node n;
   struct ospf_lsreq_header lsh;
-};
-
-struct ospf_lsupd_packet
-{
-  struct ospf_packet ospf_packet;
-  u32 lsano;			/* Number of LSA's */
-};
-
-struct ospf_lsack_packet
-{
-  struct ospf_packet ospf_packet;
 };
 
 
@@ -484,10 +642,18 @@ struct ospf_neighbor
   u32 rid;			/* Router ID */
   ip_addr ip;			/* IP of it's interface */
   u8 priority;			/* Priority */
-  u8 options;			/* Options received */
-  ip_addr dr;			/* Neigbour's idea of DR */
-  ip_addr bdr;			/* Neigbour's idea of BDR */
   u8 adj;			/* built adjacency? */
+  u32 options;			/* Options received */
+
+  /* dr and bdr store IP address in OSPFv2 and router ID in OSPFv3,
+     we use the same type to simplify handling */
+  u32 dr;			/* Neigbour's idea of DR */
+  u32 bdr;			/* Neigbour's idea of BDR */
+
+#ifdef OSPFv3
+  u32 iface_id;			/* ID of Neighbour's iface connected to common network */
+#endif
+
   siterator dbsi;		/* Database summary list iterator */
   slist lsrql;			/* Link state request */
   struct top_graph *lsrqh;	/* LSA graph */
@@ -535,13 +701,14 @@ struct ospf_area
   struct ospf_area_config *ac;	/* Related area config */
   int origrt;			/* Rt lsa origination scheduled? */
   struct top_hash_entry *rt;	/* My own router LSA */
+  struct top_hash_entry *pxr_lsa; /* Originated prefix LSA */
   list cand;			/* List of candidates for RT calc. */
   struct fib net_fib;		/* Networks to advertise or not */
   int stub;
   int trcap;			/* Transit capability? */
+  u32 options;			/* Optional features */
   struct proto_ospf *po;
   struct fib rtr;		/* Routing tables for routers */
-  union options opt;            /* RFC2328 - A.2 */
 };
 
 struct proto_ospf
@@ -551,7 +718,8 @@ struct proto_ospf
   unsigned tick;
   struct top_graph *gr;		/* LSA graph */
   slist lsal;			/* List of all LSA's */
-  int calcrt;			/* Routing table calculation scheduled? */
+  int calcrt;			/* Routing table calculation scheduled?
+				   0=no, 1=normal, 2=forced reload */
   int cleanup;                  /* Should I cleanup after RT calculation? */
   list iface_list;		/* Interfaces we really use */
   list area_list;
@@ -562,6 +730,7 @@ struct proto_ospf
   struct ospf_area *backbone;	/* If exists */
   void *lsab;			/* LSA buffer used when originating router LSAs */
   int lsab_size, lsab_used;
+  u32 router_id;
 };
 
 struct ospf_iface_patt
@@ -577,20 +746,28 @@ struct ospf_iface_patt
   u32 deadc;
   u32 dead;
   u32 type;
-  u32 autype;
   u32 strictnbma;
   u32 stub;
   u32 vid;
-#define OSPF_AUTH_NONE 0
-#define OSPF_AUTH_SIMPLE 1
-#define OSPF_AUTH_CRYPT 2
-#define OSPF_AUTH_CRYPT_SIZE 16
   u32 rxbuf;
 #define OSPF_RXBUF_NORMAL 0
 #define OSPF_RXBUF_LARGE 1
 #define OSPF_RXBUF_MINSIZE 256	/* Minimal allowed size */
-  list *passwords;
   list nbma_list;
+
+  u32 autype;			  /* Not really used in OSPFv3 */
+#define OSPF_AUTH_NONE 0
+#define OSPF_AUTH_SIMPLE 1
+#define OSPF_AUTH_CRYPT 2
+#define OSPF_AUTH_CRYPT_SIZE 16
+
+#ifdef OSPFv2
+  list *passwords;
+#endif
+
+#ifdef OSPFv3
+  u8 instance_id;
+#endif
 };
 
 int ospf_import_control(struct proto *p, rte **new, ea_list **attrs,
@@ -600,6 +777,13 @@ void ospf_store_tmp_attrs(struct rte *rt, struct ea_list *attrs);
 void schedule_rt_lsa(struct ospf_area *oa);
 void schedule_rtcalc(struct proto_ospf *po);
 void schedule_net_lsa(struct ospf_iface *ifa);
+
+#ifdef OSPFv3
+void schedule_link_lsa(struct ospf_iface *ifa);
+#else
+static inline void schedule_link_lsa(struct ospf_iface *ifa) {}
+#endif
+
 void ospf_sh_neigh(struct proto *p, char *iff);
 void ospf_sh(struct proto *p);
 void ospf_sh_iface(struct proto *p, char *iff);
@@ -609,6 +793,7 @@ void ospf_sh_state(struct proto *p, int verbose);
 #define EA_OSPF_METRIC1	EA_CODE(EAP_OSPF, 0)
 #define EA_OSPF_METRIC2	EA_CODE(EAP_OSPF, 1)
 #define EA_OSPF_TAG	EA_CODE(EAP_OSPF, 2)
+#define EA_OSPF_ROUTER_ID EA_CODE(EAP_OSPF, 3)
 
 #include "proto/ospf/rt.h"
 #include "proto/ospf/hello.h"

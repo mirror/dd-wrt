@@ -58,7 +58,7 @@ protocols to be incorporated easily. Among other features, BIRD supports:
 <LI>multiple routing tables</LI>
 <LI>the Border Gateway Protocol (BGPv4)</LI>
 <LI>the Routing Information Protocol (RIPv2)</LI>
-<LI>the Open Shortest Path First protocol (OSPFv2)</LI>
+<LI>the Open Shortest Path First protocol (OSPFv2, OSPFv3)</LI>
 <LI>a virtual protocol for exchange of routes between different routing tables on a single host</LI>
 <LI>a command-line interface allowing on-line control and inspection
 of status of the daemon</LI>
@@ -110,7 +110,10 @@ options. The most important ones are:
 <P>
 <DT><CODE>-d</CODE><DD><P>enable debug messages and run bird in foreground.
 <P>
-<DT><CODE>-D <I>filename of debug log</I></CODE><DD><P>log debugging information to given file instead of stderr
+<DT><CODE>-D <I>filename of debug log</I></CODE><DD><P>log debugging information to given file instead of stderr.
+<P>
+<DT><CODE>-p</CODE><DD><P>just parse the config file and exit. Return value is zero if the config file is valid,
+nonzero if there are some errors.
 <P>
 <DT><CODE>-s <I>name of communication socket</I></CODE><DD><P>use given filename for a  socket for communications with the client, default is <I>prefix</I>/var/run/bird.ctl.
 </DL>
