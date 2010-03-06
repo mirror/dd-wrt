@@ -3,6 +3,7 @@ export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
 
 dnsmasq:
+	$(MAKE) -C dnsmasq clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
 	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
