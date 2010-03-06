@@ -8,6 +8,14 @@
 
 #include "ospf.h"
 
+
+struct ospf_lsreq_packet
+{
+  struct ospf_packet ospf_packet;
+  struct ospf_lsreq_header lsh[];
+};
+
+
 static void ospf_dump_lsreq(struct proto *p, struct ospf_lsreq_packet *pkt)
 {
   struct ospf_packet *op = &pkt->ospf_packet;
@@ -15,15 +23,13 @@ static void ospf_dump_lsreq(struct proto *p, struct ospf_lsreq_packet *pkt)
   ASSERT(op->type == LSREQ_P);
   ospf_dump_common(p, op);
 
-  struct ospf_lsreq_header *plsr = (void *) (pkt + 1);
-  int i, j;
-
-  j = (ntohs(op->length) - sizeof(struct ospf_dbdes_packet)) /
+  unsigned int i, j;
+  j = (ntohs(op->length) - sizeof(struct ospf_lsreq_packet)) /
     sizeof(struct ospf_lsreq_header);
 
   for (i = 0; i < j; i++)
-    log(L_TRACE "%s:     LSR      Id: %R, Rt: %R, Type: %u",
-	p->name, htonl(plsr[i].id), htonl(plsr[i].rt), plsr[i].type);
+    log(L_TRACE "%s:     LSR      Type: %04x, Id: %R, Rt: %R", p->name,
+	htonl(pkt->lsh[i].type), htonl(pkt->lsh[i].id), htonl(pkt->lsh[i].rt));
 }
 
 void
@@ -38,8 +44,8 @@ ospf_lsreq_send(struct ospf_neighbor *n)
   int i, j;
   struct proto *p = &n->ifa->oa->po->proto;
 
-  pk = (struct ospf_lsreq_packet *) n->ifa->ip_sk->tbuf;
-  op = (struct ospf_packet *) n->ifa->ip_sk->tbuf;
+  pk = (struct ospf_lsreq_packet *) n->ifa->sk->tbuf;
+  op = (struct ospf_packet *) n->ifa->sk->tbuf;
 
   ospf_pkt_fill_hdr(n->ifa, pk, LSREQ_P);
 
@@ -53,14 +59,12 @@ ospf_lsreq_send(struct ospf_neighbor *n)
 
   i = j = (ospf_pkt_maxsize(n->ifa) - sizeof(struct ospf_lsreq_packet)) /
     sizeof(struct ospf_lsreq_header);
-  lsh = (struct ospf_lsreq_header *) (pk + 1);
+  lsh = pk->lsh;
 
   for (; i > 0; i--)
   {
     en = (struct top_hash_entry *) sn;
-    lsh->padd1 = 0;
-    lsh->padd2 = 0;
-    lsh->type = en->lsa.type;
+    lsh->type = htonl(en->lsa.type);
     lsh->rt = htonl(en->lsa.rt);
     lsh->id = htonl(en->lsa.id);
     DBG("Requesting %uth LSA: Type: %u, ID: %R, RT: %R, SN: 0x%x, Age %u\n",
@@ -78,25 +82,32 @@ ospf_lsreq_send(struct ospf_neighbor *n)
 					i) * sizeof(struct ospf_lsreq_header);
   op->length = htons(length);
 
-  OSPF_PACKET(ospf_dump_lsreq, (struct ospf_lsreq_packet *) n->ifa->ip_sk->tbuf,
+  OSPF_PACKET(ospf_dump_lsreq, (struct ospf_lsreq_packet *) n->ifa->sk->tbuf,
 	      "LSREQ packet sent to %I via %s", n->ip, n->ifa->iface->name);
-  ospf_send_to(n->ifa->ip_sk, n->ip, n->ifa);
+  ospf_send_to(n->ifa, n->ip);
 }
 
 void
-ospf_lsreq_receive(struct ospf_lsreq_packet *ps,
-		   struct ospf_iface *ifa, struct ospf_neighbor *n)
+ospf_lsreq_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
+		   struct ospf_neighbor *n)
 {
+  struct ospf_area *oa = ifa->oa;
+  struct proto_ospf *po = oa->po;
+  struct proto *p = &po->proto;
   struct ospf_lsreq_header *lsh;
   struct l_lsr_head *llsh;
   list uplist;
   slab *upslab;
-  unsigned int size = ntohs(ps->ospf_packet.length);
   int i, lsano;
-  struct ospf_area *oa = ifa->oa;
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;
 
+  unsigned int size = ntohs(ps_i->length);
+  if (size < sizeof(struct ospf_lsreq_packet))
+  {
+    log(L_ERR "Bad OSPF LSREQ packet from %I -  too short (%u B)", n->ip, size);
+    return;
+  }
+
+  struct ospf_lsreq_packet *ps = (void *) ps_i;
   OSPF_PACKET(ospf_dump_lsreq, ps, "LSREQ packet received from %I via %s", n->ip, ifa->iface->name);
 
   if (n->state < NEIGHBOR_EXCHANGE)
@@ -104,7 +115,7 @@ ospf_lsreq_receive(struct ospf_lsreq_packet *ps,
 
   ospf_neigh_sm(n, INM_HELLOREC);
 
-  lsh = (void *) (ps + 1);
+  lsh = ps->lsh;
   init_list(&uplist);
   upslab = sl_new(n->pool, sizeof(struct l_lsr_head));
 
@@ -114,18 +125,18 @@ ospf_lsreq_receive(struct ospf_lsreq_packet *ps,
   {
     u32 hid = ntohl(lsh->id);
     u32 hrt = ntohl(lsh->rt);
+    u32 htype = ntohl(lsh->type);
+    u32 dom = ospf_lsa_domain(htype, ifa);
     DBG("Processing requested LSA: Type: %u, ID: %R, RT: %R\n", lsh->type, hid, hrt);
     llsh = sl_alloc(upslab);
     llsh->lsh.id = hid;
     llsh->lsh.rt = hrt;
-    llsh->lsh.type = lsh->type;
+    llsh->lsh.type = htype;
     add_tail(&uplist, NODE llsh);
-    if (ospf_hash_find(po->gr, oa->areaid, llsh->lsh.id, llsh->lsh.rt,
-		       llsh->lsh.type) == NULL)
+    if (ospf_hash_find(po->gr, dom, hid, hrt, htype) == NULL)
     {
-      log(L_WARN
-	  "Received bad LS req from: %I looking: Type: %u, ID: %R, RT: %R",
-	  n->ip, lsh->type, hid, hrt);
+      log(L_WARN "Received bad LSREQ from %I: Type: %04x, Id: %R, Rt: %R",
+	  n->ip, htype, hid, hrt);
       ospf_neigh_sm(n, INM_BADLSREQ);
       rfree(upslab);
       return;

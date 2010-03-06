@@ -110,11 +110,27 @@ neighbor which is connected at most <I>number</I> hops far and to which
 we should route via our direct neighbor with address <I>ip</I>.
 Default: switched off.
 <P>
-<DT><CODE>next hop self</CODE><DD><P>Avoid calculation of the Next Hop attribute
-and always advertise our own source address (see below) as a next hop.
-This needs to be used only
-occasionally to circumvent misconfigurations of other routers.
+<DT><CODE>next hop self</CODE><DD><P>Avoid calculation of the Next Hop
+attribute and always advertise our own source address (see
+below) as a next hop.  This needs to be used only occasionally
+to circumvent misconfigurations of other routers.
 Default: disabled.
+<P>
+<DT><CODE>missing lladdr self|drop|ignore</CODE><DD><P>Next Hop attribute
+in BGP-IPv6 sometimes contains just the global IPv6 address,
+but sometimes it has to contain both global and link-local
+IPv6 addresses. This option specifies what to do if BIRD have
+to send both addresses but does not know link-local address.
+This situation might happen when routes from other protocols
+are exported to BGP, or when improper updates are received
+from BGP peers.  <CODE>self</CODE> means that BIRD advertises its own
+local address instead. <CODE>drop</CODE> means that BIRD skips that
+prefixes and logs error. <CODE>ignore</CODE> means that BIRD ignores
+the problem and sends just the global address (and therefore
+forms improper BGP update). Default: <CODE>self</CODE>, unless BIRD
+is configured as a route server (option <CODE>rs client</CODE>), in
+that case default is <CODE>drop</CODE>, because route servers usually
+does not forward packets ifselves.
 <P>
 <DT><CODE>source address <I>ip</I></CODE><DD><P>Define local address we should use
 for next hop calculation. Default: the address of the local end
@@ -123,6 +139,11 @@ of the interface our neighbor is connected to.
 <DT><CODE>password <I>string</I></CODE><DD><P>Use this password for MD5 authentication
 of BGP sessions. Default: no authentication. Password has to be set by
 external utility (e.g. setkey(8)) on BSD systems.
+<P>
+<DT><CODE>passive <I>switch</I></CODE><DD><P>Standard BGP behavior is both
+initiating outgoing connections and accepting incoming
+connections. In passive mode, outgoing connections are not
+initiated. Default: off.
 <P>
 <DT><CODE>rr client</CODE><DD><P>Be a route reflector and treat the neighbor as
 a route reflection client. Default: disabled.
@@ -138,10 +159,32 @@ id and this option is not allowed for them. Default: the same as router id.
 as a route server client. A route server is used as a
 replacement for full mesh EBGP routing in Internet exchange
 points in a similar way to route reflectors used in IBGP routing.
-Bird does not implement obsoleted RFC 1863, but uses ad-hoc implementation,
+BIRD does not implement obsoleted RFC 1863, but uses ad-hoc implementation,
 which behaves like plain EBGP but reduces modifications to advertised route
 attributes to be transparent (for example does not prepend its AS number to
 AS PATH attribute and keep MED attribute). Default: disabled.
+<P>
+<DT><CODE>enable route refresh <I>switch</I></CODE><DD><P>When BGP speaker
+changes its import filter, it has to re-examine all routes
+received from its neighbor against the new filter. As these
+routes might not be available, there is a BGP protocol
+extension Route Refresh (specified in RFC 2918) that allows
+BGP speaker to request re-advertisement of all routes from its
+neighbor. This option specifies whether BIRD advertises this
+capability and accepts such requests. Even when disabled, BIRD
+can send route refresh requests. Default: on.
+<P>
+<DT><CODE>interpret communities <I>switch</I></CODE><DD><P>RFC 1997 demands
+that BGP speaker should process well-known communities like
+no-export (65535, 65281) or no-advertise (65535, 65282). For
+example, received route carrying a no-adverise community
+should not be advertised to any of its neighbors. If this
+option is enabled (which is by default), BIRD has such
+behavior automatically (it is evaluated when a route is
+exported to the protocol just before the export filter).
+Otherwise, this integrated processing of well-known
+communities is disabled. In that case, similar behavior can be
+implemented in the export filter.  Default: on.
 <P>
 <DT><CODE>enable as4 <I>switch</I></CODE><DD><P>BGP protocol was designed to use 2B AS numbers
 and was extended later to allow 4B AS number. BIRD supports 4B AS extension,
@@ -203,13 +246,21 @@ increase exponentially. Default: 300 seconds.
 <DT><CODE>path metric <I>switch</I></CODE><DD><P>Enable comparison of path lengths
 when deciding which BGP route is the best one. Default: on.
 <P>
+<DT><CODE>prefer older <I>switch</I></CODE><DD><P>Standard route selection algorithm
+breaks ties by comparing router IDs. This changes the behavior
+to prefer older routes (when both are external and from different
+peer). For details, see RFC 5004. Default: off.
+<P>
 <DT><CODE>default bgp_med <I>number</I></CODE><DD><P>Value of the Multiple Exit
 Discriminator to be used during route selection when the MED attribute
 is missing. Default: 0.
 <P>
-<DT><CODE>default bgp_local_pref <I>number</I></CODE><DD><P>Value of the Local Preference
-to be used during route selection when the Local Preference attribute
-is missing. Default: 0.
+<DT><CODE>default bgp_local_pref <I>number</I></CODE><DD><P>A default value
+for the Local Preference attribute. It is used when a new
+Local Preference attribute is attached to a route by the BGP
+protocol itself (for example, if a route is received through
+eBGP and therefore does not have such attribute). Default: 100
+(0 in pre-1.2.0 versions of BIRD).
 </DL>
 <P>
 <H3>Attributes</H3>
@@ -457,15 +508,16 @@ protocol kernel {               # Secondary routing table
 <H3>Introduction</H3>
 
 <P>Open Shortest Path First (OSPF) is a quite complex interior gateway
-protocol. The current IPv4 version (OSPFv2) is defined
-in RFC 2328
-<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt</A>. It's a link
-state (a.k.a. shortest path first) protocol -- each router maintains a database
-describing the autonomous system's topology. Each participating router
-has an identical copy of the database and all routers run the same algorithm
-calculating a shortest path tree with themselves as a root.
-OSPF chooses the least cost path as the best path.
-(OSPFv3 - OSPF for IPv6 is not supported yet.)
+protocol. The current IPv4 version (OSPFv2) is defined in RFC
+2328
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt</A> and
+the current IPv6 version (OSPFv3) is defined in RFC 5340
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc5340.txt">ftp://ftp.rfc-editor.org/in-notes/rfc5340.txt</A>  It's a link state
+(a.k.a. shortest path first) protocol -- each router maintains a
+database describing the autonomous system's topology. Each participating
+router has an identical copy of the database and all routers run the
+same algorithm calculating a shortest path tree with themselves as a
+root. OSPF chooses the least cost path as the best path.
 <P>
 <P>In OSPF, the autonomous system can be split to several areas in order
 to reduce the amount of resources consumed for exchanging the routing
@@ -527,7 +579,7 @@ protocol ospf &lt;name&gt; {
                         rx buffer [normal|large|&lt;num&gt;];
                         type [broadcast|nonbroadcast|pointopoint];
                         strict nonbroadcast &lt;switch&gt;;
-                        authentication [none|simple|cryptographics];
+                        authentication [none|simple|cryptographic];
                         password "&lt;text&gt;";
                         password "&lt;text&gt;" {
                                 id &lt;num&gt;;
@@ -547,7 +599,7 @@ protocol ospf &lt;name&gt; {
                         wait &lt;num&gt;;
                         dead count &lt;num&gt;;
                         dead &lt;num&gt;;
-                        authentication [none|simple];
+                        authentication [none|simple|cryptographic];
                         password "&lt;text&gt;";
                 };
         };
@@ -575,7 +627,7 @@ is not performed when a single link state
 change arrives. To lower the CPU utilization, it's processed later
 at periodical intervals of <I>num</I> seconds. The default value is 1.
 <P>
-<DT><CODE>networks { <I>set</I> }</CODE><DD><P>Definition of area IP ranges. This is used in summary lsa origination.
+<DT><CODE>networks { <I>set</I> }</CODE><DD><P>Definition of area IP ranges. This is used in summary LSA origination.
 Hidden networks are not propagated into other areas.
 <P>
 <DT><CODE>stubnet <I>prefix</I> { <I>options</I> }</CODE><DD><P>Stub networks are networks that are not transit networks
@@ -649,7 +701,7 @@ is performed there which reduces the number of messages sent.
 separately because of lack of multicast capabilities.
 <P>
 <DT><CODE>strict nonbroadcast <I>switch</I></CODE><DD><P>If set, don't send hello to any undefined neighbor. This switch
-is ignored on on any non-NBMA network. Default is No.
+is ignored on any non-NBMA network. Default is No.
 <P>
 <DT><CODE>authentication none</CODE><DD><P>No passwords are sent in OSPF packets. This is the default value.
 <P>
@@ -659,7 +711,7 @@ very weak.
 <P>
 <DT><CODE>authentication cryptographic</CODE><DD><P>16-byte long MD5 digest is appended to every packet. For the digest
 generation 16-byte long passwords are used. Those passwords are 
-not sent via network, so this mechanismus is quite secure.
+not sent via network, so this mechanism is quite secure.
 Packets can still be read by an attacker.
 <P>
 <DT><CODE>password "<I>text</I>"</CODE><DD><P>An 8-byte or 16-byte password used for authentication.
@@ -673,7 +725,7 @@ are to be sent. Some of them could be marked as eligible.
 <P>
 <H3>Attributes</H3>
 
-<P>OSPF defines three route attributes. Each internal route has a <CODE>metric</CODE>
+<P>OSPF defines four route attributes. Each internal route has a <CODE>metric</CODE>.
 Metric is ranging from 1 to infinity (65535).
 External routes use <CODE>metric type 1</CODE> or <CODE>metric type 2</CODE>.
 A <CODE>metric of type 1</CODE> is comparable with internal <CODE>metric</CODE>, a
@@ -683,6 +735,8 @@ If you specify both metrics only metric1 is used.
 Each external route can also carry a <CODE>tag</CODE> which is a 32-bit
 integer which is used when exporting routes to other protocols;
 otherwise, it doesn't affect routing inside the OSPF domain at all.
+The fourth attribute is a <CODE>router_id</CODE> of the router advertising
+that route/network. This attribute is read-only.
 Default is <CODE>metric of type 2 = 10000</CODE> and <CODE>tag = 0</CODE>.
 <P>
 <H3>Example</H3>
@@ -692,7 +746,7 @@ Default is <CODE>metric of type 2 = 10000</CODE> and <CODE>tag = 0</CODE>.
 <HR>
 <PRE>
 protocol ospf MyOSPF {
-        rfc1583compatibility yes;
+        rfc1583compat yes;
         tick 2;
         export filter {
                 if source = RTS_BGP then {
@@ -898,9 +952,7 @@ not currently supported. RIPv4 MD5 authentication (RFC 2082
 <P>
 <P>RIP is a very simple protocol, and it has a lot of shortcomings. Slow
 convergence, big network load and inability to handle larger networks
-makes it pretty much obsolete in IPv4 world. (It is still usable on
-very small networks.) It is widely used in IPv6 networks,
-because there are no good implementations of OSPFv3.
+makes it pretty much obsolete. (It is still usable on very small networks.)
 <P>
 <H3>Configuration</H3>
 

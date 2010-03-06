@@ -100,13 +100,21 @@ if_connected(ip_addr *a, struct iface *i) /* -1=error, 1=match, 0=no match */
  * IP address, neigh_find() returns %NULL.
  */
 
+
 neighbor *
 neigh_find(struct proto *p, ip_addr *a, unsigned flags)
+{
+  return neigh_find2(p, a, NULL, flags);
+}
+
+
+neighbor *
+neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags)
 {
   neighbor *n;
   int class, scope = SCOPE_HOST;
   unsigned int h = neigh_hash(p, a);
-  struct iface *i, *j;
+  struct iface *i;
 
   WALK_LIST(n, neigh_hash_table[h])	/* Search the cache */
     if (n->proto == p && ipa_equal(*a, n->addr))
@@ -115,27 +123,31 @@ neigh_find(struct proto *p, ip_addr *a, unsigned flags)
   class = ipa_classify(*a);
   if (class < 0)			/* Invalid address */
     return NULL;
-  if ((class & IADDR_SCOPE_MASK) < SCOPE_SITE ||
+  if (((class & IADDR_SCOPE_MASK) == SCOPE_HOST) ||
+      (((class & IADDR_SCOPE_MASK) == SCOPE_LINK) && (ifa == NULL)) ||
       !(class & IADDR_HOST))
     return NULL;			/* Bad scope or a somecast */
 
-  j = NULL;
-  WALK_LIST(i, iface_list)
-    if ((scope = if_connected(a, i)) >= 0)
-      {
-	j = i;
-	break;
-      }
-  if (!j && !(flags & NEF_STICKY))
+  if (ifa)
+    scope = if_connected(a, ifa);
+  else
+    WALK_LIST(i, iface_list)
+      if ((scope = if_connected(a, i)) >= 0)
+	{
+	  ifa = i;
+	  break;
+	}
+
+  if (!ifa && !(flags & NEF_STICKY))
     return NULL;
 
   n = sl_alloc(neigh_slab);
   n->addr = *a;
-  n->iface = j;
-  if (j)
+  n->iface = ifa;
+  if (ifa)
     {
       add_tail(&neigh_hash_table[h], &n->n);
-      add_tail(&j->neighbors, &n->if_n);
+      add_tail(&ifa->neighbors, &n->if_n);
     }
   else
     {

@@ -73,6 +73,10 @@ proto_relink(struct proto *p)
   rem_node(&p->n);
   switch (p->core_state)
     {
+    case FS_HUNGRY:
+      l = &inactive_proto_list;
+      break;
+    case FS_FEEDING:
     case FS_HAPPY:
       l = &active_proto_list;
       break;
@@ -80,7 +84,7 @@ proto_relink(struct proto *p)
       l = &flush_proto_list;
       break;
     default:
-      l = &inactive_proto_list;
+      ASSERT(0);
     }
   proto_enqueue(l, p);
 }
@@ -107,6 +111,7 @@ proto_new(struct proto_config *c, unsigned size)
 
   p->cf = c;
   p->debug = c->debug;
+  p->mrtdump = c->mrtdump;
   p->name = c->name;
   p->preference = c->preference;
   p->disabled = c->disabled;
@@ -197,6 +202,7 @@ proto_config_new(struct protocol *pr, unsigned size)
   c->out_filter = FILTER_REJECT;
   c->table = c->global->master_rtc;
   c->debug = new_config->proto_default_debug;
+  c->mrtdump = new_config->proto_default_mrtdump;
   return c;
 }
 
@@ -263,6 +269,71 @@ proto_init(struct proto_config *c)
   return q;
 }
 
+static int
+proto_reconfigure(struct proto *p, struct proto_config *oc, struct proto_config *nc, int type)
+{
+  /* If the protocol is DOWN, we just restart it */
+  if (p->proto_state == PS_DOWN)
+    return 0;
+
+  /* If there is a too big change in core attributes, ... */
+  if ((nc->protocol != oc->protocol) ||
+      (nc->disabled != oc->disabled) ||
+      (nc->table->table != oc->table->table) ||
+      (proto_get_router_id(nc) != proto_get_router_id(oc)))
+    return 0;
+
+  int import_changed = (type != RECONFIG_SOFT) && ! filter_same(nc->in_filter, oc->in_filter);
+  int export_changed = (type != RECONFIG_SOFT) && ! filter_same(nc->out_filter, oc->out_filter);
+
+  /* We treat a change in preferences by reimporting routes */
+  if (nc->preference != oc->preference)
+    import_changed = 1;
+
+  /* If the protocol in not UP, it has no routes and we can ignore such changes */
+  if (p->proto_state != PS_UP)
+    import_changed = export_changed = 0;
+
+  /* Without this hook we cannot reload routes and have to restart the protocol */
+  if (import_changed && ! p->reload_routes)
+    return 0;
+
+  p->debug = nc->debug;
+  p->mrtdump = nc->mrtdump;
+
+  /* Execute protocol specific reconfigure hook */
+  if (! (p->proto->reconfigure && p->proto->reconfigure(p, nc)))
+    return 0;
+
+  DBG("\t%s: same\n", oc->name);
+  PD(p, "Reconfigured");
+  p->cf = nc;
+  p->name = nc->name;
+  p->in_filter = nc->in_filter;
+  p->out_filter = nc->out_filter;
+  p->preference = nc->preference;
+
+  if (import_changed || export_changed)
+    log(L_INFO "Reloading protocol %s", p->name);
+
+  if (import_changed && ! p->reload_routes(p))
+    {
+      /* Now, the protocol is reconfigured. But route reload failed
+	 and we have to do regular protocol restart. */
+      log(L_INFO "Restarting protocol %s", p->name);
+      p->disabled = 1;
+      proto_rethink_goal(p);
+      p->disabled = 0;
+      proto_rethink_goal(p);
+      return 1;
+    }
+
+  if (export_changed)
+    proto_request_feeding(p);
+
+  return 1;
+}
+
 /**
  * protos_commit - commit new protocol configuration
  * @new: new configuration
@@ -307,39 +378,29 @@ protos_commit(struct config *new, struct config *old, int force_reconfig, int ty
 	  if (sym && sym->class == SYM_PROTO && !new->shutdown)
 	    {
 	      /* Found match, let's check if we can smoothly switch to new configuration */
+	      /* No need to check description */
 	      nc = sym->def;
-	      if (!force_reconfig
-		  && nc->protocol == oc->protocol
-		  && nc->preference == oc->preference
-		  && nc->disabled == oc->disabled
-		  && nc->table->table == oc->table->table
-		  && ((type == RECONFIG_SOFT) || filter_same(nc->in_filter, oc->in_filter))
-		  && ((type == RECONFIG_SOFT) || filter_same(nc->out_filter, oc->out_filter))
-		  && p->proto_state != PS_DOWN)
-		{
-		  /* Generic attributes match, try converting them and then ask the protocol */
-		  p->debug = nc->debug;
-		  if (p->proto->reconfigure && p->proto->reconfigure(p, nc))
-		    {
-		      DBG("\t%s: same\n", oc->name);
-		      PD(p, "Reconfigured");
-		      p->cf = nc;
-		      p->name = nc->name;
-		      p->in_filter = nc->in_filter;
-		      p->out_filter = nc->out_filter;
-		      nc->proto = p;
-		      continue;
-		    }
-		}
-	      /* Unsuccessful, force reconfig */
-	      DBG("\t%s: power cycling\n", oc->name);
-	      PD(p, "Reconfiguration failed, restarting");
-	      p->cf_new = nc;
 	      nc->proto = p;
+
+	      /* We will try to reconfigure protocol p */
+	      if (! force_reconfig && proto_reconfigure(p, oc, nc, type))
+		continue;
+
+	      /* Unsuccessful, we will restart it */
+	      if (!p->disabled && !nc->disabled)
+		log(L_INFO "Restarting protocol %s", p->name);
+	      else if (p->disabled && !nc->disabled)
+		log(L_INFO "Enabling protocol %s", p->name);
+	      else if (!p->disabled && nc->disabled)
+		log(L_INFO "Disabling protocol %s", p->name);
+
+	      PD(p, "Restarting");
+	      p->cf_new = nc;
 	    }
 	  else
 	    {
-	      DBG("\t%s: deleting\n", oc->name);
+	      if (!shutting_down)
+		log(L_INFO "Removing protocol %s", p->name);
 	      PD(p, "Unconfigured");
 	      p->cf_new = NULL;
 	    }
@@ -352,7 +413,8 @@ protos_commit(struct config *new, struct config *old, int force_reconfig, int ty
   WALK_LIST(nc, new->protos)
     if (!nc->proto)
       {
-	DBG("\t%s: adding\n", nc->name);
+	if (old_config)		/* Not a first-time configuration */
+	  log(L_INFO "Adding protocol %s", nc->name);
 	proto_init(nc);
       }
   DBG("\tdone\n");
@@ -547,7 +609,7 @@ proto_feed_more(void *P)
 }
 
 static void
-proto_feed(void *P)
+proto_feed_initial(void *P)
 {
   struct proto *p = P;
 
@@ -575,13 +637,48 @@ proto_schedule_flush(struct proto *p)
 }
 
 static void
-proto_schedule_feed(struct proto *p)
+proto_schedule_feed(struct proto *p, int initial)
 {
   DBG("%s: Scheduling meal\n", p->name);
   p->core_state = FS_FEEDING;
+  p->refeeding = !initial;
+
+  /* Hack: reset exp_routes during refeed, and do not decrease it later */
+  if (!initial)
+    p->stats.exp_routes = 0;
+
   proto_relink(p);
-  p->attn->hook = proto_feed;
+  p->attn->hook = initial ? proto_feed_initial : proto_feed_more;
   ev_schedule(p->attn);
+}
+
+/**
+ * proto_request_feeding - request feeding routes to the protocol
+ * @p: given protocol 
+ *
+ * Sometimes it is needed to send again all routes to the
+ * protocol. This is called feeding and can be requested by this
+ * function. This would cause protocol core state transition
+ * to FS_FEEDING (during feeding) and when completed, it will
+ * switch back to FS_HAPPY. This function can be called even
+ * when feeding is already running, in that case it is restarted.
+ */
+void
+proto_request_feeding(struct proto *p)
+{
+  ASSERT(p->proto_state == PS_UP);
+
+  /* If we are already feeding, we want to restart it */
+  if (p->core_state == FS_FEEDING)
+    {
+      /* Unless feeding is in initial state */
+      if (p->attn->hook == proto_feed_initial)
+	return;
+
+      rt_feed_baby_abort(p);
+    }
+
+  proto_schedule_feed(p, 0);
 }
 
 /**
@@ -613,7 +710,7 @@ proto_notify_state(struct proto *p, unsigned ps)
   switch (ps)
     {
     case PS_DOWN:
-      if ((cs = FS_FEEDING) || (cs == FS_HAPPY))
+      if ((cs == FS_FEEDING) || (cs == FS_HAPPY))
 	proto_schedule_flush(p);
 
       neigh_prune(); // FIXME convert neighbors to resource?
@@ -633,10 +730,10 @@ proto_notify_state(struct proto *p, unsigned ps)
     case PS_UP:
       ASSERT(ops == PS_DOWN || ops == PS_START);
       ASSERT(cs == FS_HUNGRY);
-      proto_schedule_feed(p);
+      proto_schedule_feed(p, 1);
       break;
     case PS_STOP:
-      if ((cs = FS_FEEDING) || (cs == FS_HAPPY))
+      if ((cs == FS_FEEDING) || (cs == FS_HAPPY))
 	proto_schedule_flush(p);
       break;
     default:
@@ -686,21 +783,23 @@ proto_state_name(struct proto *p)
 static void
 proto_do_show(struct proto *p, int verbose)
 {
-  byte buf[256], reltime[TM_RELTIME_BUFFER_SIZE];
+  byte buf[256], tbuf[TM_DATETIME_BUFFER_SIZE];
 
   buf[0] = 0;
   if (p->proto->get_status)
     p->proto->get_status(p, buf);
-  tm_format_reltime(reltime, p->last_state_change);
-  cli_msg(-1002, "%-8s %-8s %-8s %-5s %-5s  %s",
+  tm_format_datetime(tbuf, &config->tf_proto, p->last_state_change);
+  cli_msg(-1002, "%-8s %-8s %-8s %-5s  %-10s  %s",
 	  p->name,
 	  p->proto->name,
 	  p->table->name,
 	  proto_state_name(p),
-	  reltime,
+	  tbuf,
 	  buf);
   if (verbose)
     {
+      if (p->cf->dsc)
+	cli_msg(-1006, "  Description:    %s", p->cf->dsc);
       cli_msg(-1006, "  Preference:     %d", p->preference);
       cli_msg(-1006, "  Input filter:   %s", filter_name(p->in_filter));
       cli_msg(-1006, "  Output filter:  %s", filter_name(p->out_filter));
@@ -736,7 +835,7 @@ proto_show(struct symbol *s, int verbose)
       cli_msg(9002, "%s is not a protocol", s->name);
       return;
     }
-  cli_msg(-2002, "name     proto    table    state since  info");
+  cli_msg(-2002, "name     proto    table    state  since       info");
   if (s)
     proto_do_show(((struct proto_config *)s->def)->proto, verbose);
   else
@@ -787,39 +886,77 @@ proto_xxable(char *pattern, int xx)
 	cnt++;
 	switch (xx)
 	  {
-	  case 0:
+	  case XX_DISABLE:
 	    if (p->disabled)
 	      cli_msg(-8, "%s: already disabled", p->name);
 	    else
 	      {
-		cli_msg(-9, "%s: disabled", p->name);
+		log(L_INFO "Disabling protocol %s", p->name);
 		p->disabled = 1;
+		proto_rethink_goal(p);
+		cli_msg(-9, "%s: disabled", p->name);
 	      }
 	    break;
-	  case 1:
+
+	  case XX_ENABLE:
 	    if (!p->disabled)
 	      cli_msg(-10, "%s: already enabled", p->name);
 	    else
 	      {
-		cli_msg(-11, "%s: enabled", p->name);
+		log(L_INFO "Enabling protocol %s", p->name);
 		p->disabled = 0;
+		proto_rethink_goal(p);
+		cli_msg(-11, "%s: enabled", p->name);
 	      }
 	    break;
-	  case 2:
+
+	  case XX_RESTART:
 	    if (p->disabled)
 	      cli_msg(-8, "%s: already disabled", p->name);
 	    else
 	      {
+		log(L_INFO "Restarting protocol %s", p->name);
 		p->disabled = 1;
 		proto_rethink_goal(p);
 		p->disabled = 0;
+		proto_rethink_goal(p);
 		cli_msg(-12, "%s: restarted", p->name);
 	      }
 	    break;
+
+	  case XX_RELOAD:
+	  case XX_RELOAD_IN:
+	  case XX_RELOAD_OUT:
+	    if (p->disabled)
+	      {
+		cli_msg(-8, "%s: already disabled", p->name);
+		break;
+	      }
+
+	    /* If the protocol in not UP, it has no routes */
+	    if (p->proto_state != PS_UP)
+	      break;
+
+	    log(L_INFO "Reloading protocol %s", p->name);
+
+	    /* re-importing routes */
+	    if (xx != XX_RELOAD_OUT)
+	      if (! (p->reload_routes && p->reload_routes(p)))
+		{
+		  cli_msg(-8006, "%s: reload failed", p->name);
+		  break;
+		}
+		 
+	    /* re-exporting routes */
+	    if (xx != XX_RELOAD_IN)
+	      proto_request_feeding(p);
+
+	    cli_msg(-15, "%s: reloading", p->name);
+	    break;
+
 	  default:
 	    ASSERT(0);
 	  }
-	proto_rethink_goal(p);
       }
   WALK_PROTO_LIST_END;
   if (!cnt)
@@ -829,14 +966,17 @@ proto_xxable(char *pattern, int xx)
 }
 
 void
-proto_debug(char *pattern, unsigned int mask)
+proto_debug(char *pattern, int which, unsigned int mask)
 {
   int cnt = 0;
   WALK_PROTO_LIST(p)
     if (patmatch(pattern, p->name))
       {
 	cnt++;
-	p->debug = mask;
+	if (which == 0)
+	  p->debug = mask;
+	else
+	  p->mrtdump = mask;
       }
   WALK_PROTO_LIST_END;
   if (!cnt)

@@ -31,7 +31,7 @@
 #include "pipe.h"
 
 static void
-pipe_send(struct pipe_proto *p, rtable *dest, net *n, rte *new, rte *old, ea_list *attrs)
+pipe_send(struct pipe_proto *p, rtable *src_table, rtable *dest, net *n, rte *new, rte *old, ea_list *attrs)
 {
   struct proto *src;
   net *nn;
@@ -62,11 +62,14 @@ pipe_send(struct pipe_proto *p, rtable *dest, net *n, rte *new, rte *old, ea_lis
       a.eattrs = attrs;
       e = rte_get_temp(&a);
       e->net = nn;
+      e->pflags = 0;
 
       if (p->mode == PIPE_TRANSPARENT)
 	{
 	  /* Copy protocol specific embedded attributes. */
 	  memcpy(&(e->u), &(new->u), sizeof(e->u));
+	  e->pref = new->pref;
+	  e->pflags = new->pflags;
 	}
 
       src = new->attrs->proto;
@@ -77,9 +80,9 @@ pipe_send(struct pipe_proto *p, rtable *dest, net *n, rte *new, rte *old, ea_lis
       src = old->attrs->proto;
     }
 
-  dest->pipe_busy = 1;
+  src_table->pipe_busy = 1;
   rte_update(dest, nn, &p->p, (p->mode == PIPE_OPAQUE) ? &p->p : src, e);
-  dest->pipe_busy = 0;
+  src_table->pipe_busy = 0;
 }
 
 static void
@@ -88,7 +91,7 @@ pipe_rt_notify_pri(struct proto *P, net *net, rte *new, rte *old, ea_list *attrs
   struct pipe_proto *p = (struct pipe_proto *) P;
 
   DBG("PIPE %c> %I/%d\n", (new ? '+' : '-'), net->n.prefix, net->n.pxlen);
-  pipe_send(p, p->peer, net, new, old, attrs);
+  pipe_send(p, p->p.table, p->peer, net, new, old, attrs);
 }
 
 static void
@@ -97,7 +100,7 @@ pipe_rt_notify_sec(struct proto *P, net *net, rte *new, rte *old, ea_list *attrs
   struct pipe_proto *p = ((struct pipe_proto *) P)->phantom;
 
   DBG("PIPE %c< %I/%d\n", (new ? '+' : '-'), net->n.prefix, net->n.pxlen);
-  pipe_send(p, p->p.table, net, new, old, attrs);
+  pipe_send(p, p->peer, p->p.table, net, new, old, attrs);
 }
 
 static int
@@ -108,6 +111,19 @@ pipe_import_control(struct proto *P, rte **ee, ea_list **ea UNUSED, struct linpo
   if (pp == P || pp == &((struct pipe_proto *) P)->phantom->p)
     return -1;	/* Avoid local loops automatically */
   return 0;
+}
+
+static int
+pipe_reload_routes(struct proto *P)
+{
+  /*
+   * Because the pipe protocol feeds routes from both routing tables
+   * together, both directions are reloaded during refeed and 'reload
+   * out' command works like 'reload' command. For symmetry, we also
+   * request refeed when 'reload in' command is used.
+   */
+  proto_request_feeding(P);
+  return 1;
 }
 
 static int
@@ -131,7 +147,20 @@ pipe_start(struct proto *P)
   ph->p.rt_notify = pipe_rt_notify_sec;
   ph->p.proto_state = PS_UP;
   ph->p.core_state = ph->p.core_goal = FS_HAPPY;
-  ph->p.in_filter = ph->p.out_filter = FILTER_ACCEPT;	/* We do all filtering on the local end */
+
+  /*
+   *  Routes should be filtered in the do_rte_announce() (export
+   *  filter for protocols). Reverse direction is handled by putting
+   *  specified import filter to out_filter field of the phantom
+   *  protocol.
+   *
+   *  in_filter fields are not important, there is an exception in
+   *  rte_update() to ignore it for pipes. We cannot just set
+   *  P->in_filter to FILTER_ACCEPT, because that would break other
+   *  things (reconfiguration, show-protocols command).
+   */
+  ph->p.in_filter = FILTER_ACCEPT;
+  ph->p.out_filter = P->in_filter;
 
   /*
    *  Connect the phantom protocol to the peer routing table, but
@@ -167,6 +196,7 @@ pipe_init(struct proto_config *C)
   P->accept_ra_types = (p->mode == PIPE_OPAQUE) ? RA_OPTIMAL : RA_ANY;
   P->rt_notify = pipe_rt_notify_pri;
   P->import_control = pipe_import_control;
+  P->reload_routes = pipe_reload_routes;
   return P;
 }
 
@@ -190,12 +220,18 @@ pipe_get_status(struct proto *P, byte *buf)
 }
 
 static int
-pipe_reconfigure(struct proto *p, struct proto_config *new)
+pipe_reconfigure(struct proto *P, struct proto_config *new)
 {
-  struct pipe_config *o = (struct pipe_config *) p->cf;
+  struct pipe_proto *p = (struct pipe_proto *) P;
+  struct pipe_config *o = (struct pipe_config *) P->cf;
   struct pipe_config *n = (struct pipe_config *) new;
 
-  return (o->peer == n->peer) && (o->mode == n->mode);
+  if ((o->peer->table != n->peer->table) || (o->mode != n->mode))
+    return 0;
+
+  /* Update also the filter in the phantom protocol */
+  p->phantom->p.out_filter = new->in_filter;
+  return 1;
 }
 
 struct protocol proto_pipe = {

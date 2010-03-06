@@ -414,7 +414,7 @@ and conserves memory.
 <P>router LSA and routing table cleanup
 <H3>Description</H3>
 <P>It invokes aging and when <B>ospf_area</B>-&gt;origrt is set to 1, start
-function for origination of router LSA and network LSAs.
+function for origination of router, network LSAs.
 
 
 <HR><H3>Function</H3>
@@ -518,32 +518,6 @@ In other case, new instance of network LSA is originated.
 
 
 <HR><H3>Function</H3>
-<P><I>int</I>
-<B>max_ext_lsa</B>
-(<I>unsigned</I> <B>pxlen</B>) --  calculate the maximum amount of external networks
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>unsigned</I> <B>pxlen</B><DD><P>network prefix length
-</DL>
-<H3>Description</H3>
-<P>This is a fix for the previous static use of MAXNETS which did
-only work correct if MAXNETS &lt; possible IPs for given prefix.
-This solution is kind of a hack as there can now only be one
-route for /32 type entries but this is better than the crashes
-I did experience whith close together /32 routes originating
-on different hosts.
-<H3>Description</H3>
-<P>This is a fix for the previous static use of MAXNETS which did
-only work correct if MAXNETS &lt; possible IPs for given prefix.
-This solution is kind of a hack as there can now only be one
-route for /32 type entries but this is better than the crashes
-I did experience whith close together /32 routes originating
-on different hosts.
-
-
-<HR><H3>Function</H3>
 <P><I>void</I>
 <B>originate_ext_lsa</B>
 (<I>net *</I> <B>n</B>, <I>rte *</I> <B>e</B>, <I>struct proto_ospf *</I> <B>po</B>, <I>struct ea_list *</I> <B>attrs</B>) --  new route received from nest and filters
@@ -576,7 +550,7 @@ origination is necessary.
 <DT><I>pool *</I> <B>pool</B><DD><P>-- undescribed --
 </DL>
 <H3>Description</H3>
-<P>This dynamically hashed structure is often used for keeping LSAs. Mainly
+<P>this dynamically hashed structure is often used for keeping lsas. mainly
 its used in <B>ospf_area</B> structure.
 
 
@@ -703,16 +677,33 @@ table calculation results.
 
 
 <HR><H3>Function</H3>
-<P><I>struct top_hash_entry *</I>
-<B>lsa_install_new</B>
-(<I>struct ospf_lsa_header *</I> <B>lsa</B>, <I>void *</I> <B>body</B>, <I>struct ospf_area *</I> <B>oa</B>) --  install new LSA into database
+<P><I>int</I>
+<B>lsa_validate</B>
+(<I>struct ospf_lsa_header *</I> <B>lsa</B>, <I>void *</I> <B>body</B>) --  check whether given LSA is valid
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct ospf_lsa_header *</I> <B>lsa</B><DD><P>LSA header
 <DT><I>void *</I> <B>body</B><DD><P>pointer to LSA body
-<DT><I>struct ospf_area *</I> <B>oa</B><DD><P>current ospf_area
+</DL>
+<H3>Description</H3>
+<P>Checks internal structure of given LSA body (minimal length,
+consistency). Returns true if valid.
+
+
+<HR><H3>Function</H3>
+<P><I>struct top_hash_entry *</I>
+<B>lsa_install_new</B>
+(<I>struct proto_ospf *</I> <B>po</B>, <I>struct ospf_lsa_header *</I> <B>lsa</B>, <I>u32</I> <B>domain</B>, <I>void *</I> <B>body</B>) --  install new LSA into database
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto_ospf *</I> <B>po</B><DD><P>OSPF protocol
+<DT><I>struct ospf_lsa_header *</I> <B>lsa</B><DD><P>LSA header
+<DT><I>u32</I> <B>domain</B><DD><P>domain of LSA
+<DT><I>void *</I> <B>body</B><DD><P>pointer to LSA body
 </DL>
 <H3>Description</H3>
 <P>This function ensures installing new LSA into LSA database. Old instance is
@@ -732,7 +723,7 @@ calculation is necessary. This is described in 13.2 of RFC 2328.
 <DT><I>int</I> <B>next</B><DD><P>whether to send a next packet in a sequence (1) or to retransmit the old one (0)
 </DL>
 <H3>Description</H3>
-<P>Sending of a database description packet is described in 10.6 of RFC 2328.
+<P>Sending of a database description packet is described in 10.8 of RFC 2328.
 Reception of each packet is acknowledged in the sequence number of another.
 When I send a packet to a neighbor I keep a copy in a buffer. If the neighbor
 does not reply, I don't create a new packet but just send the content
@@ -767,7 +758,7 @@ This function is invoked from <B>ospf_disp()</B>.
 </DL>
 <H3>Description</H3>
 <P>After routing table for any area is calculated, calculation of external
-path is invoked. This process is described in 16.6 of RFC 2328.
+path is invoked. This process is described in 16.4 of RFC 2328.
 Inter- and Intra-area paths are always prefered over externals.
 
 <H2><A NAME="ss5.3">5.3</A> <A HREF="prog.html#toc5.3">Pipe</A>

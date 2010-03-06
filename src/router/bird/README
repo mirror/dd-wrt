@@ -63,7 +63,7 @@ What do we support:
 	o  Multiple routing tables
 	o  BGP
 	o  RIP
-	o  OSPF (IPv4 only)
+	o  OSPF
 	o  Static routes
 	o  Inter-table protocol
 	o  Command-line interface (using the `birdc' client; to get
@@ -77,7 +77,6 @@ What do we support:
 
 What is missing:
 
-	o  OSPF for IPv6
 	o  See the TODO list
 
 Good Luck and enjoy the BIRD :)

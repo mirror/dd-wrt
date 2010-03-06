@@ -16,8 +16,8 @@ struct lsah_n
   struct ospf_lsa_header lsa;
 };
 
-void ospf_lsack_receive(struct ospf_lsack_packet *ps,
-			struct ospf_iface *ifa, struct ospf_neighbor *n);
+void ospf_lsack_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
+			struct ospf_neighbor *n);
 void ospf_lsack_send(struct ospf_neighbor *n, int queue);
 void ospf_lsack_enqueue(struct ospf_neighbor *n, struct ospf_lsa_header *h,
 			int queue);

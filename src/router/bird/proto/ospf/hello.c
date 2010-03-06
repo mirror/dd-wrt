@@ -8,22 +8,65 @@
 
 #include "ospf.h"
 
-void
-ospf_hello_receive(struct ospf_hello_packet *ps,
-		   struct ospf_iface *ifa, struct ospf_neighbor *n, ip_addr faddr)
+
+#ifdef OSPFv2
+struct ospf_hello_packet
 {
+  struct ospf_packet ospf_packet;
+  ip_addr netmask;
+  u16 helloint;
+  u8 options;
+  u8 priority;
+  u32 deadint;
+  u32 dr;
+  u32 bdr;
+};
+#endif
+
+
+#ifdef OSPFv3
+struct ospf_hello_packet
+{
+  struct ospf_packet ospf_packet;
+  u32 iface_id;
+  u8 priority;
+  u8 options3;
+  u8 options2;
+  u8 options;
+  u16 helloint;
+  u16 deadint;
+  u32 dr;
+  u32 bdr;
+};
+#endif
+
+
+void
+ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
+		   struct ospf_neighbor *n, ip_addr faddr)
+{
+  struct proto_ospf *po = ifa->oa->po;
+  struct proto *p = &po->proto;
+  char *beg = "Bad OSPF HELLO packet from ", *rec = " received: ";
+  unsigned int size, i, twoway, oldpriority, eligible, peers;
+  u32 olddr, oldbdr, oldiface_id, tmp;
   u32 *pnrid;
-  ip_addr olddr, oldbdr;
-  ip_addr mask;
-  char *beg = "Bad OSPF hello packet from ", *rec = " received: ";
-  struct proto *p = (struct proto *) ifa->oa->po;
-  unsigned int size = ntohs(ps->ospf_packet.length), i, twoway, oldpriority, eligible = 0, peers;
+
+  size = ntohs(ps_i->length);
+  if (size < sizeof(struct ospf_hello_packet))
+  {
+    log(L_ERR "%s%I -  too short (%u B)", beg, faddr, size);
+    return;
+  }
+
+  struct ospf_hello_packet *ps = (void *) ps_i;
 
   OSPF_TRACE(D_PACKETS, "HELLO packet received from %I via %s%s", faddr,
       (ifa->type == OSPF_IT_VLINK ? "vlink-" : ""), ifa->iface->name);
-  mask = ps->netmask;
-  ipa_ntoh(mask);
 
+#ifdef OSPFv2
+  ip_addr mask = ps->netmask;
+  ipa_ntoh(mask);
   if (ifa->type != OSPF_IT_VLINK)
     {
       char *msg = L_WARN "Received HELLO packet %s (%I) is inconsistent "
@@ -50,24 +93,30 @@ ospf_hello_receive(struct ospf_hello_packet *ps,
 	  return;
 	}
     }
+#endif
 
-  if (ntohs(ps->helloint) != ifa->helloint)
+  tmp = ntohs(ps->helloint);
+  if (tmp != ifa->helloint)
   {
-    log(L_ERR "%s%I%shello interval mismatch (%d).", beg, faddr, rec,
-	ntohs(ps->helloint));
+    log(L_ERR "%s%I%shello interval mismatch (%d).", beg, faddr, rec, tmp);
     return;
   }
 
-  if (ntohl(ps->deadint) != ifa->dead)
+#ifdef OSPFv2
+  tmp = ntohl(ps->deadint);
+#else /* OSPFv3 */
+  tmp = ntohs(ps->deadint);
+#endif
+  if (tmp != ifa->dead)
   {
-    log(L_ERR "%s%I%sdead interval mismatch (%d).", beg, faddr, rec,
-	ntohl(ps->deadint));
+    log(L_ERR "%s%I%sdead interval mismatch (%d).", beg, faddr, rec, tmp);
     return;
   }
 
-  if (ps->options != ifa->oa->opt.byte)
+  tmp = !(ps->options & OPT_E);
+  if (tmp != ifa->oa->stub)
   {
-    log(L_ERR "%s%I%soptions mismatch (0x%x).", beg, faddr, rec, ps->options);
+    log(L_ERR "%s%I%sstub area flag mismatch (%d).", beg, faddr, rec, tmp);
     return;
   }
 
@@ -111,12 +160,12 @@ ospf_hello_receive(struct ospf_hello_packet *ps,
 
     n->rid = ntohl(((struct ospf_packet *) ps)->routerid);
     n->ip = faddr;
-    n->dr = ps->dr;
-    ipa_ntoh(n->dr);
-    n->bdr = ps->bdr;
-    ipa_ntoh(n->bdr);
+    n->dr = ntohl(ps->dr);
+    n->bdr = ntohl(ps->bdr);
     n->priority = ps->priority;
-    n->options = ps->options;
+#ifdef OSPFv3
+    n->iface_id = ntohl(ps->iface_id);
+#endif
   }
   ospf_neigh_sm(n, INM_HELLOREC);
 
@@ -127,7 +176,7 @@ ospf_hello_receive(struct ospf_hello_packet *ps,
   twoway = 0;
   for (i = 0; i < peers; i++)
   {
-    if (ntohl(*(pnrid + i)) == p->cf->global->router_id)
+    if (ntohl(pnrid[i]) == po->router_id)
     {
       DBG("%s: Twoway received from %I\n", p->name, faddr);
       ospf_neigh_sm(n, INM_2WAYREC);
@@ -140,35 +189,54 @@ ospf_hello_receive(struct ospf_hello_packet *ps,
     ospf_neigh_sm(n, INM_1WAYREC);
 
   olddr = n->dr;
-  n->dr = ipa_ntoh(ps->dr);
   oldbdr = n->bdr;
-  n->bdr = ipa_ntoh(ps->bdr);
   oldpriority = n->priority;
+#ifdef OSPFv3
+  oldiface_id = n->iface_id;
+#endif
+
+  n->dr = ntohl(ps->dr);
+  n->bdr = ntohl(ps->bdr);
   n->priority = ps->priority;
+#ifdef OSPFv3
+  n->iface_id = ntohl(ps->iface_id);
+#endif
+
 
   /* Check priority change */
   if (n->state >= NEIGHBOR_2WAY)
   {
+#ifdef OSPFv2
+    u32 neigh = ipa_to_u32(n->ip);
+#else /* OSPFv3 */
+    u32 neigh = n->rid;
+#endif
+
     if (n->priority != oldpriority)
       ospf_iface_sm(ifa, ISM_NEICH);
 
-    /* Router is declaring itself ad DR and there is no BDR */
-    if (ipa_equal(n->ip, n->dr) && (ipa_to_u32(n->bdr) == 0)
+#ifdef OSPFv3
+    if (n->iface_id != oldiface_id)
+      ospf_iface_sm(ifa, ISM_NEICH);
+#endif
+
+    /* Neighbor is declaring itself ad DR and there is no BDR */
+    if ((n->dr == neigh) && (n->bdr == 0)
 	&& (n->state != NEIGHBOR_FULL))
       ospf_iface_sm(ifa, ISM_BACKS);
 
     /* Neighbor is declaring itself as BDR */
-    if (ipa_equal(n->ip, n->bdr) && (n->state != NEIGHBOR_FULL))
+    if ((n->bdr == neigh) && (n->state != NEIGHBOR_FULL))
       ospf_iface_sm(ifa, ISM_BACKS);
 
     /* Neighbor is newly declaring itself as DR or BDR */
-    if ((ipa_equal(n->ip, n->dr) && (!ipa_equal(n->dr, olddr)))
-	|| (ipa_equal(n->ip, n->bdr) && (!ipa_equal(n->bdr, oldbdr))))
+    if (((n->dr == neigh) && (n->dr != olddr))
+	|| ((n->bdr == neigh) && (n->bdr != oldbdr)))
       ospf_iface_sm(ifa, ISM_NEICH);
 
     /* Neighbor is no more declaring itself as DR or BDR */
-    if ((ipa_equal(n->ip, olddr) && (!ipa_equal(n->dr, olddr)))
-	|| (ipa_equal(n->ip, oldbdr) && (!ipa_equal(n->bdr, oldbdr))))
+    if (((olddr == neigh) && (n->dr != olddr))
+	|| ((oldbdr == neigh) && (n->bdr != oldbdr)))
       ospf_iface_sm(ifa, ISM_NEICH);
   }
 
@@ -181,7 +249,7 @@ ospf_hello_receive(struct ospf_hello_packet *ps,
 }
 
 void
-ospf_hello_send(timer * timer, int poll, struct ospf_neighbor *dirn)
+ospf_hello_send(timer *timer, int poll, struct ospf_neighbor *dirn)
 {
   struct ospf_iface *ifa;
   struct ospf_hello_packet *pkt;
@@ -207,34 +275,41 @@ ospf_hello_send(timer * timer, int poll, struct ospf_neighbor *dirn)
   p = (struct proto *) (ifa->oa->po);
   DBG("%s: Hello/Poll timer fired on interface %s.\n",
       p->name, ifa->iface->name);
-  /* Now we should send a hello packet */
-  /* First a common packet header */
-  if ((ifa->type == OSPF_IT_NBMA) || (ifa->type == OSPF_IT_VLINK))
-  {
-    pkt = (struct ospf_hello_packet *) (ifa->ip_sk->tbuf);
-  }
-  else
-  {
-    pkt = (struct ospf_hello_packet *) (ifa->hello_sk->tbuf);
-  }
 
-  /* Now fill ospf_hello header */
+  /* Now we should send a hello packet */
+  pkt = (struct ospf_hello_packet *) (ifa->sk->tbuf);
   op = (struct ospf_packet *) pkt;
 
+  /* Now fill ospf_hello header */
   ospf_pkt_fill_hdr(ifa, pkt, HELLO_P);
 
+#ifdef OSPFv2
   pkt->netmask = ipa_mkmask(ifa->iface->addr->pxlen);
   ipa_hton(pkt->netmask);
   if ((ifa->type == OSPF_IT_VLINK) || (ifa->type == OSPF_IT_PTP))
     pkt->netmask = IPA_NONE;
+#endif
+
   pkt->helloint = ntohs(ifa->helloint);
-  pkt->options = ifa->oa->opt.byte;
   pkt->priority = ifa->priority;
+
+#ifdef OSPFv3
+  pkt->iface_id = htonl(ifa->iface->index);
+
+  pkt->options3 = ifa->oa->options >> 16;
+  pkt->options2 = ifa->oa->options >> 8;
+#endif
+  pkt->options = ifa->oa->options;
+
+#ifdef OSPFv2
   pkt->deadint = htonl(ifa->dead);
-  pkt->dr = ifa->drip;
-  ipa_hton(pkt->dr);
-  pkt->bdr = ifa->bdrip;
-  ipa_hton(pkt->bdr);
+  pkt->dr = htonl(ipa_to_u32(ifa->drip));
+  pkt->bdr = htonl(ipa_to_u32(ifa->bdrip));
+#else /* OSPFv3 */
+  pkt->deadint = htons(ifa->dead);
+  pkt->dr = htonl(ifa->drid);
+  pkt->bdr = htonl(ifa->bdrid);
+#endif
 
   /* Fill all neighbors */
   i = 0;
@@ -258,7 +333,7 @@ ospf_hello_send(timer * timer, int poll, struct ospf_neighbor *dirn)
     case OSPF_IT_NBMA:
       if (timer == NULL)		/* Response to received hello */
       {
-        ospf_send_to(ifa->ip_sk, dirn->ip, ifa);
+        ospf_send_to(ifa, dirn->ip);
       }
       else
       {
@@ -283,7 +358,7 @@ ospf_hello_send(timer * timer, int poll, struct ospf_neighbor *dirn)
           if ((poll == 1) && (send))
           {
             if (toall || (meeli && nb->eligible))
-              ospf_send_to(ifa->ip_sk, nb->ip, ifa);
+              ospf_send_to(ifa, nb->ip);
           }
         }
         if (poll == 0)
@@ -292,16 +367,16 @@ ospf_hello_send(timer * timer, int poll, struct ospf_neighbor *dirn)
           {
             if (toall || (n1->rid == ifa->drid) || (n1->rid == ifa->bdrid) ||
                 (meeli && (n1->priority > 0)))
-              ospf_send_to(ifa->ip_sk, n1->ip, ifa);
+              ospf_send_to(ifa, n1->ip);
           }
         }
       }
       break;
     case OSPF_IT_VLINK:
-      ospf_send_to(ifa->ip_sk, ifa->vip, ifa);
+      ospf_send_to(ifa, ifa->vip);
       break;
     default:
-      ospf_send_to(ifa->hello_sk, IPA_NONE, ifa);
+      ospf_send_to(ifa, AllSPFRouters);
   }
 
   OSPF_TRACE(D_PACKETS, "HELLO packet sent via %s%s",

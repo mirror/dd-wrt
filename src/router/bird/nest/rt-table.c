@@ -158,12 +158,14 @@ rte_trace_out(unsigned int flag, struct proto *p, rte *e, char *msg)
 }
 
 static inline void
-do_rte_announce(struct announce_hook *a, int type, net *net, rte *new, rte *old, ea_list *tmpa, int class)
+do_rte_announce(struct announce_hook *a, int type, net *net, rte *new, rte *old, ea_list *tmpa, int class, int refeed)
 {
   struct proto *p = a->proto;
   rte *new0 = new;
   rte *old0 = old;
   int ok;
+
+  int fast_exit_hack = 0;
 
   if (new)
     {
@@ -174,6 +176,7 @@ do_rte_announce(struct announce_hook *a, int type, net *net, rte *new, rte *old,
 	{
 	  p->stats.exp_updates_rejected++;
 	  drop_reason = "out of scope";
+	  fast_exit_hack = 1;
 	}
       else if ((ok = p->import_control ? p->import_control(p, &new, &tmpa, rte_update_pool) : 0) < 0)
 	{
@@ -199,7 +202,32 @@ do_rte_announce(struct announce_hook *a, int type, net *net, rte *new, rte *old,
   else
     p->stats.exp_withdraws_received++;
 
-  if (old)
+  /* Hack: This is here to prevent 'spurious withdraws'
+     for loopback addresses during reload. */
+  if (fast_exit_hack)
+    return;
+
+  /*
+   * This is a tricky part - we don't know whether route 'old' was
+   * exported to protocol 'p' or was filtered by the export filter.
+   * We try tu run the export filter to know this to have a correct
+   * value in 'old' argument of rt_update (and proper filter value)
+   *
+   * FIXME - this is broken because 'configure soft' may change
+   * filters but keep routes. Refeed is expected to be called after
+   * change of the filters and with old == new, therefore we do not
+   * even try to run the filter on an old route, This may lead to 
+   * 'spurious withdraws' but ensure that there are no 'missing
+   * withdraws'.
+   *
+   * This is not completely safe as there is a window between
+   * reconfiguration and the end of refeed - if a newly filtered
+   * route disappears during this period, proper withdraw is not
+   * sent (because old would be also filtered) and the route is
+   * not refeeded (because it disappeared before that).
+   */
+
+  if (old && !refeed)
     {
       if (p->out_filter == FILTER_REJECT)
 	old = NULL;
@@ -216,6 +244,7 @@ do_rte_announce(struct announce_hook *a, int type, net *net, rte *new, rte *old,
 	}
     }
 
+  /* FIXME - This is broken because of incorrect 'old' value (see above) */
   if (!new && !old)
     return;
 
@@ -224,9 +253,11 @@ do_rte_announce(struct announce_hook *a, int type, net *net, rte *new, rte *old,
   else
     p->stats.exp_withdraws_accepted++;
 
+  /* Hack: We do not decrease exp_routes during refeed, we instead
+     reset exp_routes at the start of refeed. */
   if (new)
     p->stats.exp_routes++;
-  if (old)
+  if (old && !refeed)
     p->stats.exp_routes--;
 
   if (p->debug & D_ROUTES)
@@ -304,7 +335,7 @@ rte_announce(rtable *tab, int type, net *net, rte *new, rte *old, ea_list *tmpa)
     {
       ASSERT(a->proto->core_state == FS_HAPPY || a->proto->core_state == FS_FEEDING);
       if (a->proto->accept_ra_types == type)
-	do_rte_announce(a, type, net, new, old, tmpa, class);
+	do_rte_announce(a, type, net, new, old, tmpa, class, 0);
     }
 }
 
@@ -394,6 +425,26 @@ rte_recalculate(rtable *table, net *net, struct proto *p, struct proto *src, rte
     {
       if (old->attrs->proto == src)
 	{
+	  /* If there is the same route in the routing table but from
+	   * a different sender, then there are two paths from the
+	   * source protocol to this routing table through transparent
+	   * pipes, which is not allowed.
+	   *
+	   * We log that and ignore the route. If it is withdraw, we
+	   * ignore it completely (there might be 'spurious withdraws',
+	   * see FIXME in do_rte_announce())
+	   */
+	  if (old->sender != p)
+	    {
+	      if (new)
+		{
+		  log(L_ERR "Pipe collision detected when sending %I/%d to table %s",
+		      net->n.prefix, net->n.pxlen, table->name);
+		  rte_free_quick(new);
+		}
+	      return;
+	    }
+
 	  if (new && rte_same(old, new))
 	    {
 	      /* No changes, ignore the new route */
@@ -495,11 +546,10 @@ rte_recalculate(rtable *table, net *net, struct proto *p, struct proto *src, rte
       net->routes->next = new;
       rte_trace_in(D_ROUTES, p, new, "added");
     }
-  else if (old && (p->debug & D_ROUTES))
-    {
-      /* Not really a case - the list of routes is correct, we just
-	 log the route removal */
 
+  /* Log the route removal */
+  if (!new && old && (p->debug & D_ROUTES))
+    {
       if (old != old_best)
 	rte_trace_in(D_ROUTES, p, old, "removed");
       else if (net->routes)
@@ -589,11 +639,12 @@ rte_update(rtable *table, net *net, struct proto *p, struct proto *src, rte *new
       new->sender = p;
       struct filter *filter = p->in_filter;
 
-	/* Do not filter routes going to the secondary side of the pipe, 
-	   that should only go through export filter.
-	   FIXME Make a better check whether p is really a pipe. */
-      if (p->table != table)
+      /* Do not filter routes going through the pipe, 
+	 they are filtered in the export filter only. */
+#ifdef CONFIG_PIPE
+      if (p->proto == &proto_pipe)
 	filter = FILTER_ACCEPT;
+#endif
 
       p->stats.imp_updates_received++;
       if (!rte_validate(new))
@@ -636,6 +687,7 @@ rte_update(rtable *table, net *net, struct proto *p, struct proto *src, rte *new
 
 drop:
   rte_free(new);
+  rte_recalculate(table, net, p, src, NULL, NULL);
   rte_update_unlock();
 }
 
@@ -943,7 +995,7 @@ do_feed_baby(struct proto *p, int type, struct announce_hook *h, net *n, rte *e)
 
   rte_update_lock();
   tmpa = q->make_tmp_attrs ? q->make_tmp_attrs(e, rte_update_pool) : NULL;
-  do_rte_announce(h, type, n, e, NULL, tmpa, ipa_classify(n->n.prefix));
+  do_rte_announce(h, type, n, e, p->refeeding ? e : NULL, tmpa, ipa_classify(n->n.prefix), p->refeeding);
   rte_update_unlock();
 }
 
@@ -1062,11 +1114,12 @@ static void
 rt_show_rte(struct cli *c, byte *ia, rte *e, struct rt_show_data *d, ea_list *tmpa)
 {
   byte via[STD_ADDRESS_P_LENGTH+32], from[STD_ADDRESS_P_LENGTH+6];
-  byte tm[TM_RELTIME_BUFFER_SIZE], info[256];
+  byte tm[TM_DATETIME_BUFFER_SIZE], info[256];
   rta *a = e->attrs;
+  int primary = (e->net->routes == e);
 
   rt_format_via(e, via);
-  tm_format_reltime(tm, e->lastmod);
+  tm_format_datetime(tm, &config->tf_route, e->lastmod);
   if (ipa_nonzero(a->from) && !ipa_equal(a->from, a->gw))
     bsprintf(from, " from %I", a->from);
   else
@@ -1084,7 +1137,8 @@ rt_show_rte(struct cli *c, byte *ia, rte *e, struct rt_show_data *d, ea_list *tm
     a->proto->proto->get_route_info(e, info, tmpa);
   else
     bsprintf(info, " (%d)", e->pref);
-  cli_printf(c, -1007, "%-18s %s [%s %s%s]%s", ia, via, a->proto->name, tm, from, info);
+  cli_printf(c, -1007, "%-18s %s [%s %s%s]%s%s", ia, via, a->proto->name,
+	     tm, from, primary ? " *" : "", info);
   if (d->verbose)
     rta_show(c, a, tmpa);
 }
@@ -1121,6 +1175,11 @@ rt_show_net(struct cli *c, net *n, struct rt_show_data *d)
 	    ok = 0;
 	  else if (!ic && d->export_mode > 1)
 	    {
+	      /* FIXME - this shows what should be exported according
+		 to current filters, but not what was really exported.
+		 'configure soft' command may change the export filter
+		 and do not update routes */
+
 	      if (p1->out_filter == FILTER_REJECT ||
 		  p1->out_filter && f_run(p1->out_filter, &e, &tmpa, rte_update_pool, FF_FORCE_TMPATTR) > F_ACCEPT)
 		ok = 0;

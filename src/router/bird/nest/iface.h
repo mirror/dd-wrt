@@ -99,6 +99,7 @@ typedef struct neighbor {
 #define NEF_STICKY 1
 
 neighbor *neigh_find(struct proto *, ip_addr *, unsigned flags);
+neighbor *neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags);
 
 static inline int neigh_connected_to(struct proto *p, ip_addr *a, struct iface *i)
 {

@@ -89,6 +89,7 @@ int filter_same(struct filter *new, struct filter *old);
 int i_same(struct f_inst *f1, struct f_inst *f2);
 void f_prefix_get_bounds(struct f_prefix *px, int *l, int *h);
 
+void f_prefix_get_bounds(struct f_prefix *px, int *l, int *h);
 int val_compare(struct f_val v1, struct f_val v2);
 void val_print(struct f_val v);
 

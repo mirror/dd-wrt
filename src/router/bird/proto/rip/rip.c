@@ -684,7 +684,7 @@ new_iface(struct proto *p, struct iface *new, unsigned long flags, struct iface_
     DBG( "Doing multicasts!\n" );
 
   rif->sock = sk_new( p->pool );
-  rif->sock->type = rif->multicast?SK_UDP_MC:SK_UDP;
+  rif->sock->type = SK_UDP;
   rif->sock->sport = P_CF->port;
   rif->sock->rx_hook = rip_rx;
   rif->sock->data = rif;
@@ -721,19 +721,37 @@ new_iface(struct proto *p, struct iface *new, unsigned long flags, struct iface_
   if (!ipa_nonzero(rif->sock->daddr)) {
     if (rif->iface)
       log( L_WARN "%s: interface %s is too strange for me", p->name, rif->iface->name );
-  } else if (sk_open(rif->sock)<0) {
-    log( L_ERR "%s: could not create socket for %s", p->name, rif->iface ? rif->iface->name : "(dummy)" );
-    if (rif->iface) {
-      rfree(rif->sock);
-      mb_free(rif);
-      return NULL;
-    }
-    /* On dummy, we just return non-working socket, so that user gets error every time anyone requests table */
+  } else {
+
+    if (sk_open(rif->sock)<0)
+      goto err;
+
+    if (rif->multicast)
+      {
+	if (sk_setup_multicast(rif->sock) < 0)
+	  goto err;
+	if (sk_join_group(rif->sock, rif->sock->daddr) < 0)
+	  goto err;
+      }
+    else
+      {
+	if (sk_set_broadcast(rif->sock, 1) < 0)
+	  goto err;
+      }
   }
 
   TRACE(D_EVENTS, "Listening on %s, port %d, mode %s (%I)", rif->iface ? rif->iface->name : "(dummy)", P_CF->port, rif->multicast ? "multicast" : "broadcast", rif->sock->daddr );
   
   return rif;
+
+ err:
+  log( L_ERR "%s: could not create socket for %s", p->name, rif->iface ? rif->iface->name : "(dummy)" );
+  if (rif->iface) {
+    rfree(rif->sock);
+    mb_free(rif);
+    return NULL;
+  }
+  /* On dummy, we just return non-working socket, so that user gets error every time anyone requests table */
 }
 
 static void
