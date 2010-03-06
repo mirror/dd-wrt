@@ -50,7 +50,6 @@
 #include <code_pattern.h>
 #include <utils.h>
 #include <shutils.h>
-#include <md5.h>
 #include <sys/time.h>
 
 #ifdef HAVE_OPENSSL
@@ -257,19 +256,13 @@ static int auth_check(char *user, char *pass, char *dirname,
 	char *enc1;
 	char *enc2;
 
-	if (user[0] == '$' && user[1] == '1' && user[2] == '$')
-		enc1 = md5_crypt(buf1, authinfo, (unsigned char *)user);
-	else
-		enc1 = crypt(authinfo, (unsigned char *)user);
+	enc1 = crypt(authinfo, (unsigned char *)user);
 
 	if (strcmp(enc1, user)) {
 		return 0;
 	}
 
-	if (pass[0] == '$' && pass[1] == '1' && pass[2] == '$')
-		enc2 = md5_crypt(buf2, authpass, (unsigned char *)pass);
-	else
-		enc2 = crypt(authpass, (unsigned char *)pass);
+	enc2 = crypt(authpass, (unsigned char *)pass);
 	if (strcmp(enc2, pass)) {
 		return 0;
 	}
