@@ -3592,8 +3592,8 @@ char *zencrypt(char *passwd)
 
 	strcpy(salt, "$1$");
 	crypt_make_salt(salt + 3, 4, 0);
-	return md5_crypt(passout, (unsigned char *)passwd,
-			 (unsigned char *)salt);
+	strcpy(passout,crypt(passout, (unsigned char *)passwd,(unsigned char *)salt));
+	return passout;
 }
 
 int has_gateway(void)
