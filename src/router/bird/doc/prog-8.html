@@ -611,50 +611,19 @@ and converts it to the corresponding value of type <I>bird_clock_t</I>.
 
 <HR><H3>Function</H3>
 <P><I>void</I>
-<B>tm_format_date</B>
-(<I>char *</I> <B>x</B>, <I>bird_clock_t</I> <B>t</B>) --     convert date to textual representation
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>char *</I> <B>x</B><DD><P>destination buffer of size <I>TM_DATE_BUFFER_SIZE</I>
-<DT><I>bird_clock_t</I> <B>t</B><DD><P>time
-</DL>
-<H3>Description</H3>
-<P>This function formats the given relative time value <B>t</B> to a textual
-date representation (dd-mm-yyyy) in real time..
-
-
-<HR><H3>Function</H3>
-<P><I>void</I>
 <B>tm_format_datetime</B>
-(<I>char *</I> <B>x</B>, <I>bird_clock_t</I> <B>t</B>) --     convert date and time to textual representation
+(<I>char *</I> <B>x</B>, <I>struct timeformat *</I> <B>fmt_spec</B>, <I>bird_clock_t</I> <B>t</B>) --     convert date and time to textual representation
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>char *</I> <B>x</B><DD><P>destination buffer of size <I>TM_DATETIME_BUFFER_SIZE</I>
+<DT><I>struct timeformat *</I> <B>fmt_spec</B><DD><P>-- undescribed --
 <DT><I>bird_clock_t</I> <B>t</B><DD><P>time
 </DL>
 <H3>Description</H3>
 <P>This function formats the given relative time value <B>t</B> to a textual
 date/time representation (dd-mm-yyyy hh:mm:ss) in real time.
-
-
-<HR><H3>Function</H3>
-<P><I>void</I>
-<B>tm_format_reltime</B>
-(<I>char *</I> <B>x</B>, <I>bird_clock_t</I> <B>t</B>) --     convert date and time to relative textual representation
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>char *</I> <B>x</B><DD><P>destination buffer of size <I>TM_RELTIME_BUFFER_SIZE</I>
-<DT><I>bird_clock_t</I> <B>t</B><DD><P>time
-</DL>
-<H3>Description</H3>
-<P>This function formats the given relative time value <B>t</B> to a short
-textual representation in real time, relative to the current time.
 
 <H2><A NAME="ss8.8">8.8</A> <A HREF="prog.html#toc8.8">Sockets</A>
 </H2>

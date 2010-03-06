@@ -15,9 +15,9 @@ unsigned ospf_pkt_maxsize(struct ospf_iface *ifa);
 int ospf_rx_hook(sock * sk, int size);
 void ospf_tx_hook(sock * sk);
 void ospf_err_hook(sock * sk, int err);
-void ospf_send_to_agt(sock * sk, struct ospf_iface *ifa, u8 state);
-void ospf_send_to_bdr(sock * sk, struct ospf_iface *ifa);
-void ospf_send_to(sock *sk, ip_addr ip, struct ospf_iface *ifa);
+void ospf_send_to_agt(struct ospf_iface *ifa, u8 state);
+void ospf_send_to_bdr(struct ospf_iface *ifa);
+void ospf_send_to(struct ospf_iface *ifa, ip_addr ip);
 
 
 #endif /* _BIRD_OSPF_PACKET_H_ */

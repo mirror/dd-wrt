@@ -13,6 +13,7 @@
 #include "nest/protocol.h"
 #include "nest/route.h"
 #include "nest/attrs.h"
+#include "nest/mrtdump.h"
 #include "conf/conf.h"
 #include "lib/unaligned.h"
 #include "lib/socket.h"
@@ -22,6 +23,84 @@
 #include "bgp.h"
 
 static struct rate_limit rl_rcv_update,  rl_snd_update;
+
+/*
+ * MRT Dump format is not semantically specified.
+ * We will use these values in appropriate fields:
+ *
+ * Local AS, Remote AS - configured AS numbers for given BGP instance.
+ * Local IP, Remote IP - IP addresses of the TCP connection (0 if no connection)
+ *
+ * We dump two kinds of MRT messages: STATE_CHANGE (for BGP state
+ * changes) and MESSAGE (for received BGP messages).
+ *
+ * STATE_CHANGE uses always AS4 variant, but MESSAGE uses AS4 variant
+ * only when AS4 session is established and even in that case MESSAGE
+ * does not use AS4 variant for initial OPEN message. This strange
+ * behavior is here for compatibility with Quagga and Bgpdump,
+ */
+
+static byte *
+mrt_put_bgp4_hdr(byte *buf, struct bgp_conn *conn, int as4)
+{
+  struct bgp_proto *p = conn->bgp;
+  ip_addr local_addr;
+
+  if (as4)
+    {
+      put_u32(buf+0, p->remote_as);
+      put_u32(buf+4, p->local_as);
+      buf+=8;
+    }
+  else
+    {
+      put_u16(buf+0, (p->remote_as <= 0xFFFF) ? p->remote_as : AS_TRANS);
+      put_u16(buf+2, (p->local_as <= 0xFFFF)  ? p->local_as  : AS_TRANS);
+      buf+=4;
+    }
+
+  put_u16(buf+0, p->neigh->iface->index);
+  put_u16(buf+2, BGP_AF);
+  buf+=4;
+  buf = ipa_put_addr(buf, conn->sk ? conn->sk->daddr : IPA_NONE);
+  buf = ipa_put_addr(buf, conn->sk ? conn->sk->saddr : IPA_NONE);
+
+  return buf;
+}
+
+static void
+mrt_dump_bgp_packet(struct bgp_conn *conn, byte *pkt, unsigned len)
+{
+  byte buf[BGP_MAX_PACKET_LENGTH + 128];
+  byte *bp = buf + MRTDUMP_HDR_LENGTH;
+  int as4 = conn->bgp->as4_session;
+
+  bp = mrt_put_bgp4_hdr(bp, conn, as4);
+  memcpy(bp, pkt, len);
+  bp += len;
+  mrt_dump_message(&conn->bgp->p, BGP4MP, as4 ? BGP4MP_MESSAGE_AS4 : BGP4MP_MESSAGE,
+		   buf, bp-buf);
+}
+
+static inline u16
+convert_state(unsigned state)
+{
+  /* Convert state from our BS_* values to values used in MRTDump */
+  return (state == BS_CLOSE) ? 1 : state + 1;
+}
+
+void
+mrt_dump_bgp_state_change(struct bgp_conn *conn, unsigned old, unsigned new)
+{
+  byte buf[128];
+  byte *bp = buf + MRTDUMP_HDR_LENGTH;
+
+  bp = mrt_put_bgp4_hdr(bp, conn, 1);
+  put_u16(bp+0, convert_state(old));
+  put_u16(bp+2, convert_state(new));
+  bp += 4;
+  mrt_dump_message(&conn->bgp->p, BGP4MP, BGP4MP_STATE_CHANGE_AS4, buf, bp-buf);
+}
 
 static byte *
 bgp_create_notification(struct bgp_conn *conn, byte *buf)
@@ -64,6 +143,14 @@ bgp_put_cap_ipv4(struct bgp_conn *conn UNUSED, byte *buf)
 #endif
 
 static byte *
+bgp_put_cap_rr(struct bgp_conn *conn UNUSED, byte *buf)
+{
+  *buf++ = 2;		/* Capability 2: Support for route refresh */
+  *buf++ = 0;		/* Capability data length */
+  return buf;
+}
+
+static byte *
 bgp_put_cap_as4(struct bgp_conn *conn, byte *buf)
 {
   *buf++ = 65;		/* Capability 65: Support for 4-octet AS number */
@@ -104,6 +191,9 @@ bgp_create_open(struct bgp_conn *conn, byte *buf)
 #ifdef IPV6
   cap = bgp_put_cap_ipv6(conn, cap);
 #endif
+
+  if (p->cf->enable_refresh)
+    cap = bgp_put_cap_rr(conn, cap);
 
   if (conn->want_as4_support)
     cap = bgp_put_cap_as4(conn, cap);
@@ -199,7 +289,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 
 	  if (a_size < 0)
 	    {
-	      log(L_ERR "%s: Attribute list too long, skipping corresponding route group", p->p.name);
+	      log(L_ERR "%s: Attribute list too long, skipping corresponding routes", p->p.name);
 	      bgp_flush_prefixes(p, buck);
 	      rem_node(&buck->send_node);
 	      bgp_free_bucket(p, buck);
@@ -234,9 +324,9 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 {
   struct bgp_proto *p = conn->bgp;
   struct bgp_bucket *buck;
-  int size;
+  int size, second, rem_stored;
   int remains = BGP_MAX_PACKET_LENGTH - BGP_HEADER_LENGTH - 4;
-  byte *w, *tmp, *tstart;
+  byte *w, *w_stored, *tmp, *tstart;
   ip_addr *ipp, ip, ip_ll;
   ea_list *ea;
   eattr *nh;
@@ -272,27 +362,26 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	    }
 
 	  DBG("Processing bucket %p\n", buck);
-	  size = bgp_encode_attrs(p, w, buck->eattrs, 2048);
+	  rem_stored = remains;
+	  w_stored = w;
 
+	  size = bgp_encode_attrs(p, w, buck->eattrs, 2048);
 	  if (size < 0)
 	    {
-	      log(L_ERR "%s: Attribute list too long, ignoring corresponding route group", p->p.name);
+	      log(L_ERR "%s: Attribute list too long, skipping corresponding routes", p->p.name);
 	      bgp_flush_prefixes(p, buck);
 	      rem_node(&buck->send_node);
 	      bgp_free_bucket(p, buck);
 	      continue;
 	    }
-
 	  w += size;
 	  remains -= size;
-	  tstart = tmp = bgp_attach_attr_wa(&ea, bgp_linpool, BA_MP_REACH_NLRI, remains-8);
-	  *tmp++ = 0;
-	  *tmp++ = BGP_AF_IPV6;
-	  *tmp++ = 1;
+
+	  /* We have two addresses here in NEXT_HOP eattr. Really.
+	     Unless NEXT_HOP was modified by filter */
 	  nh = ea_find(buck->eattrs, EA_CODE(EAP_BGP, BA_NEXT_HOP));
 	  ASSERT(nh);
-
-	  /* We have two addresses here in 'nh'. Really. */
+	  second = (nh->u.ptr->length == NEXT_HOP_LENGTH);
 	  ipp = (ip_addr *) nh->u.ptr->data;
 	  ip = ipp[0];
 	  ip_ll = IPA_NONE;
@@ -316,15 +405,35 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	      n = neigh_find(&p->p, &ip, 0);
 	      if (n && n->iface == p->neigh->iface)
 		{
-		  if (ipa_nonzero(ipp[1]))
+		  if (second && ipa_nonzero(ipp[1]))
 		    ip_ll = ipp[1];
 		  else
 		    {
-		      ip = p->source_addr;
-		      ip_ll = p->local_link;
+		      switch (p->cf->missing_lladdr)
+			{
+			case MLL_SELF:
+			  ip = p->source_addr;
+			  ip_ll = p->local_link;
+			  break;
+			case MLL_DROP:
+			  log(L_ERR "%s: Missing link-local next hop address, skipping corresponding routes", p->p.name);
+			  w = w_stored;
+			  remains = rem_stored;
+			  bgp_flush_prefixes(p, buck);
+			  rem_node(&buck->send_node);
+			  bgp_free_bucket(p, buck);
+			  continue;
+			case MLL_IGNORE:
+			  break;
+			}
 		    }
 		}
 	    }
+
+	  tstart = tmp = bgp_attach_attr_wa(&ea, bgp_linpool, BA_MP_REACH_NLRI, remains-8);
+	  *tmp++ = 0;
+	  *tmp++ = BGP_AF_IPV6;
+	  *tmp++ = 1;
 
 	  if (ipa_nonzero(ip_ll))
 	    {
@@ -366,6 +475,19 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 }
 
 #endif
+
+static byte *
+bgp_create_route_refresh(struct bgp_conn *conn, byte *buf)
+{
+  struct bgp_proto *p = conn->bgp;
+  BGP_TRACE(D_PACKETS, "Sending ROUTE-REFRESH");
+
+  *buf++ = 0;
+  *buf++ = BGP_AF;
+  *buf++ = 0;		/* RFU */
+  *buf++ = 1;		/* and SAFI 1 */
+  return buf;
+}
 
 static void
 bgp_create_header(byte *buf, unsigned int len, unsigned int type)
@@ -427,6 +549,12 @@ bgp_fire_tx(struct bgp_conn *conn)
       s &= ~(1 << PKT_OPEN);
       type = PKT_OPEN;
       end = bgp_create_open(conn, pkt);
+    }
+  else if (s & (1 << PKT_ROUTE_REFRESH))
+    {
+      s &= ~(1 << PKT_ROUTE_REFRESH);
+      type = PKT_ROUTE_REFRESH;
+      end = bgp_create_route_refresh(conn, pkt);
     }
   else if (s & (1 << PKT_UPDATE))
     {
@@ -498,7 +626,13 @@ bgp_parse_capabilities(struct bgp_conn *conn, byte *opt, int len)
 
       switch (opt[0])
 	{
-	case 65:
+	case 2:	/* Route refresh capability, RFC 2918 */
+	  if (cl != 0)
+	    goto err;
+	  conn->peer_refresh_support = 1;
+	  break;
+
+	case 65: /* AS4 capability, RFC 4893 */ 
 	  if (cl != 4)
 	    goto err;
 	  conn->peer_as4_support = 1;
@@ -600,7 +734,17 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
     log(L_WARN "%s: Peer advertised inconsistent AS numbers", p->p.name);
 
   if (conn->advertised_as != p->remote_as)
-    { bgp_error(conn, 2, 2, (byte *) &(conn->advertised_as), -4); return; }
+    {
+      if (conn->peer_as4_support)
+	{
+	  u32 val = htonl(conn->advertised_as);
+	  bgp_error(conn, 2, 2, (byte *) &val, 4);
+	}
+      else
+	bgp_error(conn, 2, 2, pkt+20, 2);
+
+      return;
+    }
 
   /* Check the other connection */
   other = (conn == &p->outgoing_conn) ? &p->incoming_conn : &p->outgoing_conn;
@@ -640,7 +784,7 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
 
   bgp_schedule_packet(conn, PKT_KEEPALIVE);
   bgp_start_timer(conn->hold_timer, conn->hold_time);
-  conn->state = BS_OPENCONFIRM;
+  bgp_conn_enter_openconfirm_state(conn);
 }
 
 #define DECODE_PREFIX(pp, ll) do {		\
@@ -857,6 +1001,10 @@ bgp_rx_update(struct bgp_conn *conn, byte *pkt, int len)
 
   BGP_TRACE_RL(&rl_rcv_update, D_PACKETS, "Got UPDATE");
 
+  /* Workaround for some BGP implementations that skip initial KEEPALIVE */
+  if (conn->state == BS_OPENCONFIRM)
+    bgp_conn_enter_established_state(conn);
+
   if (conn->state != BS_ESTABLISHED)
     { bgp_error(conn, 5, 0, NULL, 0); return; }
   bgp_start_timer(conn->hold_timer, conn->hold_time);
@@ -972,11 +1120,19 @@ bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned 
     {
       *t++ = ':';
       *t++ = ' ';
+
+      if ((code == 2) && (subcode == 2) && ((len == 2) || (len == 4)))
+	{
+	  /* Bad peer AS - we would like to print the AS */
+	  t += bsprintf(t, "%d", (len == 2) ? get_u16(data) : get_u32(data));
+	  goto done;
+	}
       if (len > 16)
 	len = 16;
       for (i=0; i<len; i++)
 	t += bsprintf(t, "%02x", data[i]);
     }
+ done:
   *t = 0;
   log(L_REMOTE "%s: %s: %s%s", p->p.name, msg, name, argbuf);
 }
@@ -1047,6 +1203,30 @@ bgp_rx_keepalive(struct bgp_conn *conn)
     }
 }
 
+static void
+bgp_rx_route_refresh(struct bgp_conn *conn, byte *pkt, int len)
+{
+  struct bgp_proto *p = conn->bgp;
+
+  BGP_TRACE(D_PACKETS, "Got ROUTE-REFRESH");
+
+  if (conn->state != BS_ESTABLISHED)
+    { bgp_error(conn, 5, 0, NULL, 0); return; }
+
+  if (!p->cf->enable_refresh)
+    { bgp_error(conn, 1, 3, pkt+18, 1); return; }
+
+  if (len != (BGP_HEADER_LENGTH + 4))
+    { bgp_error(conn, 1, 2, pkt+16, 2); return; }
+
+  /* FIXME - we ignore AFI/SAFI values, as we support
+     just one value and even an error code for an invalid
+     request is not defined */
+
+  proto_request_feeding(&p->p);
+}
+
+
 /**
  * bgp_rx_packet - handle a received packet
  * @conn: BGP connection
@@ -1059,13 +1239,20 @@ bgp_rx_keepalive(struct bgp_conn *conn)
 static void
 bgp_rx_packet(struct bgp_conn *conn, byte *pkt, unsigned len)
 {
-  DBG("BGP: Got packet %02x (%d bytes)\n", pkt[18], len);
-  switch (pkt[18])
+  byte type = pkt[18];
+
+  DBG("BGP: Got packet %02x (%d bytes)\n", type, len);
+
+  if (conn->bgp->p.mrtdump & MD_MESSAGES)
+    mrt_dump_bgp_packet(conn, pkt, len);
+
+  switch (type)
     {
     case PKT_OPEN:		return bgp_rx_open(conn, pkt, len);
     case PKT_UPDATE:		return bgp_rx_update(conn, pkt, len);
     case PKT_NOTIFICATION:      return bgp_rx_notification(conn, pkt, len);
     case PKT_KEEPALIVE:		return bgp_rx_keepalive(conn);
+    case PKT_ROUTE_REFRESH:	return bgp_rx_route_refresh(conn, pkt, len);
     default:			bgp_error(conn, 1, 3, pkt+18, 1);
     }
 }

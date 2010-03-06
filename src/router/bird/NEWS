@@ -1,3 +1,55 @@
+Version 1.2.1 (2010-02-11)
+  o Option 'interpret communities' allows to override implicit handling
+    of well-known communities.
+  o 'configure' command uses route reload when filters change.
+  o Adds router ID of advertising router as OSPF route attribute.
+  o 'show route' command indicates primary route and shows OSPF Router ID.
+  o Configurable date/time formats.
+  o Symbol names can be enclosed by '' and so include hyphen and start with number.
+  o Several minor bugfixes.
+
+Version 1.2.0 (2010-01-05)
+  o Implements OSPFv3 (IPv6 support for OSPF). Because the code is
+    shared with OSPFv2 and there were deep changes in it, we suggest
+    caution during upgrade to OSPF users. Some advanced features
+    (like NSSA, vlinks and authentication) are not yet implemented.
+  o Implements MRTdump - binary logging protocol compatible with other
+    routing daemons. Only BGP part of MRTdump is yet implemented.
+  o Changes default value of BGP attribute LOCAL_PREF from 0 to 100.
+    Use 'default bgp_local_pref 0' BGP protocol option for the old
+    behavior. The new value is suggested by RFC 4277.
+  o Changes default mode of pipes from opaque to transparent.
+    Use 'mode opaque' protocol option if the old behavior is needed.
+    Opaque pipe mode is deprecated and might be removed in the future.
+
+Version 1.1.7 (2009-12-20)
+  o Implements BGP Route Refresh (RFC 2918).
+  o Implements route reload command.
+  o Deep changes and bugfixes in pipe protocol.
+  o Bugfix in OSPF premature aging of LSA.
+  o Bugfix in OSPF next hop calculation.
+  o Bugfix in core related to route withdraws.
+  o Several minor bugfixes.
+
+Version 1.1.6 (2009-11-19)
+  o Implements RFC 5004 - prefer older external routes.
+  o There is a change how route servers handle missing IPv6 link
+    local addresses in next hop atribute - see 'missing lladdr'
+    option.
+  o Several minor features (description field, parse check option).
+  o Several minor bugfixes.
+
+Version 1.1.5 (2009-10-29)
+  o Better scalability of BGP.
+  o New accessors for AS path - first and last.
+  o Allows to set protocol-specific router ID.
+  o Allows import kernel 'onlink' routes.
+  o Endianity check in buildsystem changed.
+
+Version 1.1.4 (2009-10-02)
+  o BGP passive option.
+  o Several minor bugfixes.
+
 Version 1.1.3 (2009-09-11)
   o Bugfix in core
   o Bugfix in BGP related to AS2->AS4 conversion.

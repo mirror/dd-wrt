@@ -42,6 +42,7 @@ CF_DECLS
   void *g;
   bird_clock_t time;
   struct prefix px;
+  struct timeformat *tf;
 }
 
 %token END CLI_MARKER INVALID_TOKEN
@@ -60,7 +61,8 @@ CF_DECLS
 %type <t> text_or_none
 
 %nonassoc PREFIX_DUMMY
-%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ AND OR PO PC
+%left AND OR
+%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ PO PC
 %left '+' '-'
 %left '*' '/' '%'
 %left '!'

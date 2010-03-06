@@ -291,7 +291,6 @@ static struct rte **f_rte, *f_rte_old;
 static struct linpool *f_pool;
 static struct ea_list **f_tmp_attrs;
 static int f_flags;
-static rta *f_rta_copy;
 
 /*
  * rta_cow - prepare rta for modification by filter
@@ -299,8 +298,8 @@ static rta *f_rta_copy;
 static void
 rta_cow(void)
 {
-  if (!f_rta_copy) {
-    f_rta_copy = lp_alloc(f_pool, sizeof(rta));
+  if ((*f_rte)->attrs->aflags & RTAF_CACHED) {
+    rta *f_rta_copy = lp_alloc(f_pool, sizeof(rta));
     memcpy(f_rta_copy, (*f_rte)->attrs, sizeof(rta));
     f_rta_copy->aflags = 0;
     *f_rte = rte_cow(*f_rte);
@@ -354,6 +353,7 @@ interpret(struct f_inst *what)
   struct f_val v1, v2, res;
   unsigned u1, u2;
   int i;
+  u32 as;
 
   res.type = T_VOID;
   if (!what)
@@ -665,6 +665,7 @@ interpret(struct f_inst *what)
 	struct adata *ad = lp_alloc(f_pool, sizeof(struct adata) + len);
 	ad->length = len;
 	(* (ip_addr *) ad->data) = v1.val.px.ip;
+	l->attrs[0].u.ptr = ad;
 	break;
       case EAF_TYPE_AS_PATH:
 	if (v1.type != T_PATH)
@@ -686,8 +687,8 @@ interpret(struct f_inst *what)
 
       if (!(what->aux & EAF_TEMP) && (!(f_flags & FF_FORCE_TMPATTR))) {
 	rta_cow();
-	l->next = f_rta_copy->eattrs;
-	f_rta_copy->eattrs = l;
+	l->next = (*f_rte)->attrs->eattrs;
+	(*f_rte)->attrs->eattrs = l;
       } else {
 	l->next = (*f_tmp_attrs);
 	(*f_tmp_attrs) = l;
@@ -702,6 +703,8 @@ interpret(struct f_inst *what)
     ONEARG;
     if (v1.type != T_INT)
       runtime( "Can't set preference to non-integer" );
+    if ((v1.val.i < 0) || (v1.val.i > 0xFFFF))
+      runtime( "Setting preference value out of bounds" );
     *f_rte = rte_cow(*f_rte);
     (*f_rte)->pref = v1.val.i;
     break;
@@ -724,6 +727,26 @@ interpret(struct f_inst *what)
     case T_IP: res.val.px.ip = v1.val.px.ip; break;
     default: bug( "Unknown prefix to conversion" );
     }
+    break;
+  case P('a','f'):	/* Get first ASN from AS PATH */
+    ONEARG;
+    if (v1.type != T_PATH)
+      runtime( "AS path expected" );
+
+    as = 0;
+    as_path_get_first(v1.val.ad, &as);
+    res.type = T_INT;
+    res.val.i = as;
+    break;
+  case P('a','l'):	/* Get last ASN from AS PATH */
+    ONEARG;
+    if (v1.type != T_PATH)
+      runtime( "AS path expected" );
+
+    as = 0;
+    as_path_get_last(v1.val.ad, &as);
+    res.type = T_INT;
+    res.val.i = as;
     break;
   case 'r':
     ONEARG;
@@ -919,6 +942,8 @@ i_same(struct f_inst *f1, struct f_inst *f2)
   case P('i','M'): TWOARGS; break;
   case P('A','p'): TWOARGS; break;
   case P('C','a'): TWOARGS; break;
+  case P('a','f'):
+  case P('a','l'): ONEARG; break;
   default:
     bug( "Unknown instruction %d in same (%c)", f1->code, f1->code & 0xff);
   }
@@ -944,7 +969,6 @@ f_run(struct filter *filter, struct rte **rte, struct ea_list **tmp_attrs, struc
   f_tmp_attrs = tmp_attrs;
   f_rte = rte;
   f_rte_old = *rte;
-  f_rta_copy = NULL;
   f_pool = tmp_pool;
   inst = filter->root;
   res = interpret(inst);
@@ -965,7 +989,6 @@ f_eval_int(struct f_inst *expr)
   f_tmp_attrs = NULL;
   f_rte = NULL;
   f_rte_old = NULL;
-  f_rta_copy = NULL;
   f_pool = cfg_mem;
   res = interpret(expr);
   if (res.type != T_INT)

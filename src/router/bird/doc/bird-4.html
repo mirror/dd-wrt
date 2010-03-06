@@ -77,17 +77,33 @@ export filter of the protocol is skipped.
 number of networks, number of routes before and after filtering). If
 you use <CODE>count</CODE> instead, only the statistics will be printed.
 <P>
-<DT><CODE>enable|disable|restart <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Enable, disable or restart a given protocol instance, instances matching the <CODE><I>pattern</I></CODE> or <CODE>all</CODE> instances.
-<P>
 <DT><CODE>configure [soft] ["<I>config file</I>"]</CODE><DD><P>Reload configuration from a given file. BIRD will smoothly
 switch itself to the new configuration, protocols are
 reconfigured if possible, restarted otherwise. Changes in
-filters usualy lead to restart of affected protocols. If
-<CODE>soft> option is used, changes in filters does not cause
+filters usually lead to restart of affected protocols. If
+<CODE>soft</CODE> option is used, changes in filters does not cause
 BIRD to restart affected protocols, therefore already accepted
 routes (according to old filters) would be still propagated,
 but new routes would be processed according to the new
-filters.</CODE>
+filters.
+<P>
+<DT><CODE>enable|disable|restart <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Enable, disable or restart a given protocol instance, instances matching the <CODE><I>pattern</I></CODE> or <CODE>all</CODE> instances.
+<P>
+<DT><CODE>reload [in|out] <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Reload a given protocol instance, that means re-import routes
+from the protocol instance and re-export preferred routes to
+the instance. If <CODE>in</CODE> or <CODE>out</CODE> options are used, the
+command is restricted to one direction (re-import or
+re-export).
+<P>This command is useful if appropriate filters have changed but
+the protocol instance was not restarted (or reloaded),
+therefore it still propagates the old set of routes. For example
+when <CODE>configure soft</CODE> command was used to change filters.
+<P>Re-export always succeeds, but re-import is protocol-dependent
+and might fail (for example, if BGP neighbor does not support
+route-refresh extension). In that case, re-export is also
+skipped. Note that for the pipe protocol, both directions are
+always reloaded together (<CODE>in</CODE> or <CODE>out</CODE> options are
+ignored in that case).
 <P>
 <DT><CODE>down</CODE><DD><P>Shut BIRD down.
 <P>

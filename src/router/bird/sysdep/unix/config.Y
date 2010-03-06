@@ -14,10 +14,12 @@ CF_HDR
 CF_DECLS
 
 CF_KEYWORDS(LOG, SYSLOG, ALL, DEBUG, TRACE, INFO, REMOTE, WARNING, ERROR, AUTH, FATAL, BUG, STDERR, SOFT)
+CF_KEYWORDS(TIMEFORMAT, ISO, SHORT, LONG, BASE)
 
 %type <i> log_mask log_mask_list log_cat
 %type <g> log_file
 %type <t> cfg_name
+%type <tf> timeformat_which
 
 CF_GRAMMAR
 
@@ -61,6 +63,37 @@ log_cat:
  | AUTH { $$ = L_AUTH[0]; }
  | FATAL { $$ = L_FATAL[0]; }
  | BUG { $$ = L_BUG[0]; }
+ ;
+
+
+CF_ADDTO(conf, mrtdump_base)
+
+mrtdump_base:
+   MRTDUMP PROTOCOLS mrtdump_mask ';' { new_config->proto_default_mrtdump = $3; }
+ | MRTDUMP TEXT ';' {
+     FILE *f = tracked_fopen(new_config->pool, $2, "a");
+     if (!f) cf_error("Unable to open MRTDump file '%s': %m", $2);
+     new_config->mrtdump_file = fileno(f);
+   }
+ ;
+
+CF_ADDTO(conf, timeformat_base)
+
+timeformat_which:
+   ROUTE { $$ = &new_config->tf_route; }
+ | PROTOCOL { $$ = &new_config->tf_proto; }
+ | BASE { $$ = &new_config->tf_base; }
+ | LOG { $$ = &new_config->tf_log; }
+
+timeformat_spec:
+   timeformat_which TEXT { *$1 = (struct timeformat){$2, NULL, 0}; }
+ | timeformat_which TEXT expr TEXT { *$1 = (struct timeformat){$2, $4, $3}; }
+ | timeformat_which ISO SHORT { *$1 = (struct timeformat){"%T", "%F", 20*3600}; }
+ | timeformat_which ISO LONG  { *$1 = (struct timeformat){"%F %T", NULL, 0}; }
+ ;
+
+timeformat_base:
+   TIMEFORMAT timeformat_spec ';'
  ;
 
 /* Unix specific commands */

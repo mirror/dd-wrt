@@ -25,7 +25,7 @@ CF_ADDTO(proto, pipe_proto '}')
 pipe_proto_start: proto_start PIPE {
      this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config));
      this_proto->preference = DEF_PREF_PIPE;
-     PIPE_CFG->mode = PIPE_OPAQUE;
+     PIPE_CFG->mode = PIPE_TRANSPARENT;
   }
  ;
 

@@ -313,8 +313,9 @@ async_shutdown(void)
 void
 sysdep_shutdown_done(void)
 {
-  unlink(PATH_CONTROL_SOCKET);
-  die("System shutdown completed");
+  unlink(path_control_socket);
+  log_msg(L_FATAL "Shutdown completed");
+  exit(0);
 }
 
 /*
@@ -364,14 +365,16 @@ signal_init(void)
  *	Parsing of command-line arguments
  */
 
-static char *opt_list = "c:dD:s:";
+static char *opt_list = "c:dD:ps:";
 
 static void
 usage(void)
 {
-  fprintf(stderr, "Usage: bird [-c <config-file>] [-d] [-D <debug-file>] [-s <control-socket>]\n");
+  fprintf(stderr, "Usage: bird [-c <config-file>] [-d] [-D <debug-file>] [-p] [-s <control-socket>]\n");
   exit(1);
 }
+
+int parse_and_exit;
 
 static void
 parse_args(int argc, char **argv)
@@ -401,6 +404,9 @@ parse_args(int argc, char **argv)
 	log_init_debug(optarg);
 	debug_flag |= 2;
 	break;
+      case 'p':
+	parse_and_exit = 1;
+	break;
       case 's':
 	path_control_socket = optarg;
 	break;
@@ -428,7 +434,8 @@ main(int argc, char **argv)
     log_init_debug("");
   log_init(debug_flag, 1);
 
-  test_old_bird(path_control_socket);
+  if (!parse_and_exit)
+    test_old_bird(path_control_socket);
 
   DBG("Initializing.\n");
   resource_init();
@@ -442,6 +449,9 @@ main(int argc, char **argv)
   proto_build(&proto_unix_iface);
 
   read_config();
+
+  if (parse_and_exit)
+    exit(0);
 
   if (!debug_flag)
     {
@@ -466,6 +476,7 @@ main(int argc, char **argv)
   async_dump_flag = 1;
 #endif
 
+  log(L_INFO "Started");
   DBG("Entering I/O loop.\n");
 
   io_loop();
