@@ -172,6 +172,28 @@ fib_find(struct fib *f, ip_addr *a, int len)
   return e;
 }
 
+/*
+int
+fib_histogram(struct fib *f)
+{
+  log(L_WARN "Histogram dump start %d %d", f->hash_size, f->entries);
+
+  int i, j;
+  struct fib_node *e;
+
+  for (i = 0; i < f->hash_size; i++)
+    {
+      j = 0;
+      for (e = f->hash_table[i]; e != NULL; e = e->next)
+	j++;
+      if (j > 0)
+        log(L_WARN "Histogram line %d: %d", i, j);
+    }
+
+  log(L_WARN "Histogram dump end");
+}
+*/
+
 /**
  * fib_get - find or create a FIB node
  * @f: FIB to work with
@@ -187,6 +209,7 @@ fib_get(struct fib *f, ip_addr *a, int len)
   unsigned int h = ipa_hash(*a);
   struct fib_node **ee = f->hash_table + (h >> f->hash_shift);
   struct fib_node *g, *e = *ee;
+  u32 uid = h << 16;
 
   while (e && (e->pxlen != len || !ipa_equal(*a, e->prefix)))
     e = e->next;
@@ -196,17 +219,31 @@ fib_get(struct fib *f, ip_addr *a, int len)
   if (len < 0 || len > BITS_PER_IP_ADDRESS || !ip_is_prefix(*a,len))
     bug("fib_get() called for invalid address");
 #endif
+
+  while ((g = *ee) && g->uid < uid)
+    ee = &g->next;
+  while ((g = *ee) && g->uid == uid)
+    {
+      ee = &g->next;
+      uid++;
+    }
+
+  if ((uid >> 16) != h)
+    log(L_ERR "FIB hash table chains are too long");
+
+  // log (L_WARN "FIB_GET %I %x %x", *a, h, uid);
+
   e = sl_alloc(f->fib_slab);
   e->prefix = *a;
   e->pxlen = len;
-  while ((g = *ee) && ipa_hash(g->prefix) < h)
-    ee = &g->next;
   e->next = *ee;
+  e->uid = uid;
   *ee = e;
   e->readers = NULL;
   f->init(e);
   if (f->entries++ > f->entries_max)
     fib_rehash(f, HASH_HI_STEP);
+
   return e;
 }
 

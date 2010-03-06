@@ -16,53 +16,36 @@
 #include "filter/filter.h"
 
 
-/* Global AS4 support, shared by all BGP instances.
- * This specifies whether BA_AS_PATH attributes contain 2 or 4 B per ASN
- */
+// static inline void put_as(byte *data, u32 as) { put_u32(data, as); }
+// static inline u32 get_as(byte *data) { return get_u32(data); }
 
-int bgp_as4_support = 1;
-
-static void
-put_as(byte *data, u32 as)
-{
-  if (bgp_as4_support)
-    put_u32(data, as);
-  else if (as <= 0xFFFF)
-    put_u16(data, as);
-  else
-    bug("put_as: Try to put 32bit AS to 16bit AS Path");
-}
-
-static inline u32
-get_as(byte *data)
-{
-  return bgp_as4_support ? get_u32(data) : get_u16(data);
-}
+#define put_as put_u32
+#define get_as get_u32
+#define BS  4
 
 struct adata *
 as_path_prepend(struct linpool *pool, struct adata *olda, u32 as)
 {
-  int bs = bgp_as4_support ? 4 : 2;
   struct adata *newa;
 
   if (olda->length && olda->data[0] == AS_PATH_SEQUENCE && olda->data[1] < 255)
     /* Starting with sequence => just prepend the AS number */
     {
-      int nl = olda->length + bs;
+      int nl = olda->length + BS;
       newa = lp_alloc(pool, sizeof(struct adata) + nl);
       newa->length = nl;
       newa->data[0] = AS_PATH_SEQUENCE;
       newa->data[1] = olda->data[1] + 1;
-      memcpy(newa->data + bs + 2, olda->data + 2, olda->length - 2);
+      memcpy(newa->data + BS + 2, olda->data + 2, olda->length - 2);
     }
   else /* Create new path segment */
     {
-      int nl = olda->length + bs + 2;
+      int nl = olda->length + BS + 2;
       newa = lp_alloc(pool, sizeof(struct adata) + nl);
       newa->length = nl;
       newa->data[0] = AS_PATH_SEQUENCE;
       newa->data[1] = 1;
-      memcpy(newa->data + bs + 2, olda->data, olda->length);
+      memcpy(newa->data + BS + 2, olda->data, olda->length);
     }
   put_as(newa->data + 2, as);
   return newa;
@@ -144,7 +127,6 @@ as_path_convert_to_new(struct adata *path, byte *dst, int req_as)
 void
 as_path_format(struct adata *path, byte *buf, unsigned int size)
 {
-  int bs = bgp_as4_support ? 4 : 2;
   byte *p = path->data;
   byte *e = p + path->length;
   byte *end = buf + size - 16;
@@ -172,7 +154,7 @@ as_path_format(struct adata *path, byte *buf, unsigned int size)
 	  if (!sp)
 	    *buf++ = ' ';
 	  buf += bsprintf(buf, "%u", get_as(p));
-	  p += bs;
+	  p += BS;
 	  sp = 0;
 	}
       if (isset)
@@ -188,8 +170,7 @@ as_path_format(struct adata *path, byte *buf, unsigned int size)
 int
 as_path_getlen(struct adata *path)
 {
-  int bs = bgp_as4_support ? 4 : 2;
-  return as_path_getlen_int(path, bs);
+  return as_path_getlen_int(path, BS);
 }
 
 int
@@ -213,9 +194,8 @@ as_path_getlen_int(struct adata *path, int bs)
 }
 
 int
-as_path_get_first(struct adata *path, u32 *orig_as)
+as_path_get_last(struct adata *path, u32 *orig_as)
 {
-  int bs = bgp_as4_support ? 4 : 2;
   int found = 0;
   u32 res = 0;
   u8 *p = path->data;
@@ -229,29 +209,29 @@ as_path_get_first(struct adata *path, u32 *orig_as)
 	case AS_PATH_SET:
 	  if (len = *p++)
 	    {
-	      found = 1;
-	      res = get_as(p);
-	      p += bs * len;
+	      found = 0;
+	      p += BS * len;
 	    }
 	  break;
 	case AS_PATH_SEQUENCE:
 	  if (len = *p++)
 	    {
 	      found = 1;
-	      res = get_as(p + bs * (len - 1));
-	      p += bs * len;
+	      res = get_as(p + BS * (len - 1));
+	      p += BS * len;
 	    }
 	  break;
 	default: bug("as_path_get_first: Invalid path segment");
 	}
     }
 
-  *orig_as = res;
+  if (found)
+    *orig_as = res;
   return found;
 }
 
 int
-as_path_get_last(struct adata *path, u32 *last_as)
+as_path_get_first(struct adata *path, u32 *last_as)
 {
   u8 *p = path->data;
 
@@ -267,7 +247,6 @@ as_path_get_last(struct adata *path, u32 *last_as)
 int
 as_path_is_member(struct adata *path, u32 as)
 {
-  int bs = bgp_as4_support ? 4 : 2;
   u8 *p = path->data;
   u8 *q = p+path->length;
   int i, n;
@@ -280,7 +259,7 @@ as_path_is_member(struct adata *path, u32 as)
 	{
 	  if (get_as(p) == as)
 	    return 1;
-	  p += bs;
+	  p += BS;
 	}
     }
   return 0;
@@ -301,7 +280,6 @@ struct pm_pos
 static int
 parse_path(struct adata *path, struct pm_pos *pos)
 {
-  int bs = bgp_as4_support ? 4 : 2;
   u8 *p = path->data;
   u8 *q = p + path->length;
   struct pm_pos *opos = pos;
@@ -316,7 +294,7 @@ parse_path(struct adata *path, struct pm_pos *pos)
 	pos->mark = 0;
 	pos->val.sp = p;
 	len = *p;
-	p += 1 + bs * len;
+	p += 1 + BS * len;
 	pos++;
 	break;
       
@@ -327,7 +305,7 @@ parse_path(struct adata *path, struct pm_pos *pos)
 	    pos->set = 0;
 	    pos->mark = 0;
 	    pos->val.asn = get_as(p);
-	    p += bs;
+	    p += BS;
 	    pos++;
 	  }
 	break;
@@ -346,13 +324,12 @@ pm_match(struct pm_pos *pos, u32 asn)
   if (! pos->set)
     return pos->val.asn == asn;
 
-  int bs = bgp_as4_support ? 4 : 2;
   u8 *p = pos->val.sp;
   int len = *p++;
   int i;
 
   for (i = 0; i < len; i++)
-    if (get_as(p + i * bs) == asn)
+    if (get_as(p + i * BS) == asn)
       return 1;
 
   return 0;

@@ -165,6 +165,22 @@ bgp_check_next_hop(struct bgp_proto *p UNUSED, byte *a, int len)
 #endif
 }
 
+static void
+bgp_format_next_hop(eattr *a, byte *buf, int buflen UNUSED)
+{
+  ip_addr *ipp = (ip_addr *) a->u.ptr->data;
+#ifdef IPV6
+  /* in IPv6, we might have two addresses in NEXT HOP */
+  if ((a->u.ptr->length == NEXT_HOP_LENGTH) && ipa_nonzero(ipp[1]))
+    {
+      bsprintf(buf, "%I %I", ipp[0], ipp[1]);
+      return;
+    }
+#endif
+
+  bsprintf(buf, "%I", ipp[0]);
+}
+
 static int
 bgp_check_aggregator(struct bgp_proto *p, byte *a UNUSED, int len)
 {
@@ -180,16 +196,8 @@ bgp_format_aggregator(eattr *a, byte *buf, int buflen UNUSED)
   byte *data = ad->data;
   u32 as;
 
-  if (bgp_as4_support)
-    {
-      as = get_u32(data);
-      data += 4;
-    }
-  else
-    {
-      as = get_u16(data);
-      data += 2;
-    }
+  as = get_u32(data);
+  data += 4;
 
   bsprintf(buf, "%d.%d.%d.%d AS%d", data[0], data[1], data[2], data[3], as);
 }
@@ -234,7 +242,7 @@ static struct attr_desc bgp_attr_table[] = {
   { "as_path", -1, BAF_TRANSITIVE, EAF_TYPE_AS_PATH, 1,				/* BA_AS_PATH */
     NULL, NULL }, /* is checked by validate_as_path() as a special case */
   { "next_hop", 4, BAF_TRANSITIVE, EAF_TYPE_IP_ADDRESS, 1,			/* BA_NEXT_HOP */
-    bgp_check_next_hop, NULL },
+    bgp_check_next_hop, bgp_format_next_hop },
   { "med", 4, BAF_OPTIONAL, EAF_TYPE_INT, 1,					/* BA_MULTI_EXIT_DISC */
     NULL, NULL },
   { "local_pref", 4, BAF_TRANSITIVE, EAF_TYPE_INT, 0,				/* BA_LOCAL_PREF */
@@ -263,9 +271,8 @@ static struct attr_desc bgp_attr_table[] = {
     NULL, NULL }
 };
 
-/* BA_AS4_PATH is type EAF_TYPE_OPAQUE and not type EAF_TYPE_AS_PATH because
- * EAF_TYPE_AS_PATH is supposed to have different format (2 or 4 B for each ASN)
- * depending on bgp_as4_support variable.
+/* BA_AS4_PATH is type EAF_TYPE_OPAQUE and not type EAF_TYPE_AS_PATH.
+ * It does not matter as this attribute does not appear on routes in the routing table.
  */
 
 #define ATTR_KNOWN(code) ((code) < ARRAY_SIZE(bgp_attr_table) && bgp_attr_table[code].name)
@@ -433,7 +440,7 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
        * we have to convert our 4B AS_PATH to 2B AS_PATH and send our AS_PATH 
        * as optional AS4_PATH attribute.
        */
-      if ((code == BA_AS_PATH) && bgp_as4_support && (! p->as4_session))
+      if ((code == BA_AS_PATH) && (! p->as4_session))
 	{
 	  len = a->u.ptr->length;
 
@@ -475,7 +482,7 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
 	}
 
       /* The same issue with AGGREGATOR attribute */
-      if ((code == BA_AGGREGATOR) && bgp_as4_support && (! p->as4_session))
+      if ((code == BA_AGGREGATOR) && (! p->as4_session))
 	{
 	  int new_used;
 
@@ -657,44 +664,8 @@ bgp_new_bucket(struct bgp_proto *p, ea_list *new, unsigned hash)
   return b;
 }
 
-static int
-bgp_export_check(struct bgp_proto *p, ea_list *new)
-{
-  eattr *a;
-  struct adata *d;
-
-  /* Check if next hop is valid */
-  a = ea_find(new, EA_CODE(EAP_BGP, BA_NEXT_HOP));
-  if (!a || ipa_equal(p->next_hop, *(ip_addr *)a->u.ptr))
-    {
-      DBG("\tInvalid NEXT_HOP\n");
-      return 0;
-    }
-
-  /* Check if we aren't forbidden to export the route by communities */
-  a = ea_find(new, EA_CODE(EAP_BGP, BA_COMMUNITY));
-  if (a)
-    {
-      d = a->u.ptr;
-      if (int_set_contains(d, BGP_COMM_NO_ADVERTISE))
-	{
-	  DBG("\tNO_ADVERTISE\n");
-	  return 0;
-	}
-      if (!p->is_internal &&
-	  (int_set_contains(d, BGP_COMM_NO_EXPORT) ||
-	   int_set_contains(d, BGP_COMM_NO_EXPORT_SUBCONFED)))
-	{
-	  DBG("\tNO_EXPORT\n");
-	  return 0;
-	}
-    }
-
-  return 1;
-}
-
 static struct bgp_bucket *
-bgp_get_bucket(struct bgp_proto *p, ea_list *attrs, int originate)
+bgp_get_bucket(struct bgp_proto *p, net *n, ea_list *attrs, int originate)
 {
   ea_list *new;
   unsigned i, cnt, hash, code;
@@ -771,12 +742,17 @@ bgp_get_bucket(struct bgp_proto *p, ea_list *attrs, int originate)
   for(i=0; i<ARRAY_SIZE(bgp_mandatory_attrs); i++)
     if (!(seen & (1 << bgp_mandatory_attrs[i])))
       {
-	log(L_ERR "%s: Mandatory attribute %s missing", p->p.name, bgp_attr_table[bgp_mandatory_attrs[i]].name);
+	log(L_ERR "%s: Mandatory attribute %s missing in route %I/%d", p->p.name, bgp_attr_table[bgp_mandatory_attrs[i]].name, n->n.prefix, n->n.pxlen);
 	return NULL;
       }
 
-  if (!bgp_export_check(p, new))
-    return NULL;
+  /* Check if next hop is valid */
+  a = ea_find(new, EA_CODE(EAP_BGP, BA_NEXT_HOP));
+  if (!a || ipa_equal(p->next_hop, *(ip_addr *)a->u.ptr->data))
+    {
+      log(L_ERR "%s: Invalid NEXT_HOP attribute in route %I/%d", p->p.name, n->n.prefix, n->n.pxlen);
+      return NULL;
+    }
 
   /* Create new bucket */
   DBG("Creating bucket.\n");
@@ -806,7 +782,7 @@ bgp_rt_notify(struct proto *P, net *n, rte *new, rte *old UNUSED, ea_list *attrs
 
   if (new)
     {
-      buck = bgp_get_bucket(p, attrs, new->attrs->source != RTS_BGP);
+      buck = bgp_get_bucket(p, n, attrs, new->attrs->source != RTS_BGP);
       if (!buck)			/* Inconsistent attribute list */
 	return;
     }
@@ -848,25 +824,23 @@ bgp_create_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *p
     bgp_set_attr_wa(ea->attrs+1, pool, BA_AS_PATH, 0);
   else
     {
-      z = bgp_set_attr_wa(ea->attrs+1, pool, BA_AS_PATH, bgp_as4_support ? 6 : 4);
+      z = bgp_set_attr_wa(ea->attrs+1, pool, BA_AS_PATH, 6);
       z[0] = AS_PATH_SEQUENCE;
       z[1] = 1;				/* 1 AS */
-
-      if (bgp_as4_support)
-	put_u32(z+2, p->local_as);
-      else
-	put_u16(z+2, p->local_as);
+      put_u32(z+2, p->local_as);
     }
 
   z = bgp_set_attr_wa(ea->attrs+2, pool, BA_NEXT_HOP, NEXT_HOP_LENGTH);
   if (p->cf->next_hop_self ||
       rta->dest != RTD_ROUTER ||
-      (!p->is_internal && (e->attrs->iface != p->neigh->iface)))
+      ipa_equal(e->attrs->gw, IPA_NONE) ||
+      ipa_has_link_scope(rta->gw) ||
+      (!p->is_internal && (rta->iface != p->neigh->iface)))
     set_next_hop(z, p->source_addr);
   else
-    set_next_hop(z, e->attrs->gw);
+    set_next_hop(z, rta->gw);
 
-  bgp_set_attr(ea->attrs+3, BA_LOCAL_PREF, 0);
+  bgp_set_attr(ea->attrs+3, BA_LOCAL_PREF, p->cf->default_local_pref);
 
   return 0;				/* Leave decision to the filters */
 }
@@ -958,6 +932,34 @@ bgp_update_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *p
   return 0;				/* Leave decision to the filters */
 }
 
+static int
+bgp_community_filter(struct bgp_proto *p, rte *e)
+{
+  eattr *a;
+  struct adata *d;
+
+  /* Check if we aren't forbidden to export the route by communities */
+  a = ea_find(e->attrs->eattrs, EA_CODE(EAP_BGP, BA_COMMUNITY));
+  if (a)
+    {
+      d = a->u.ptr;
+      if (int_set_contains(d, BGP_COMM_NO_ADVERTISE))
+	{
+	  DBG("\tNO_ADVERTISE\n");
+	  return 1;
+	}
+      if (!p->is_internal &&
+	  (int_set_contains(d, BGP_COMM_NO_EXPORT) ||
+	   int_set_contains(d, BGP_COMM_NO_EXPORT_SUBCONFED)))
+	{
+	  DBG("\tNO_EXPORT\n");
+	  return 1;
+	}
+    }
+
+  return 0;
+}
+
 int
 bgp_import_control(struct proto *P, rte **new, ea_list **attrs, struct linpool *pool)
 {
@@ -972,6 +974,9 @@ bgp_import_control(struct proto *P, rte **new, ea_list **attrs, struct linpool *
       /* We should check here for cluster list loop, because the receiving BGP instance
 	 might have different cluster ID  */
       if (bgp_cluster_list_loopy(p, e->attrs))
+	return -1;
+
+      if (p->cf->interpret_communities && bgp_community_filter(p, e))
 	return -1;
 
       if (p->local_as == new_bgp->local_as && p->is_internal && new_bgp->is_internal)
@@ -996,7 +1001,7 @@ bgp_get_neighbor(rte *r)
   eattr *e = ea_find(r->attrs->eattrs, EA_CODE(EAP_BGP, BA_AS_PATH));
   u32 as;
 
-  if (e && as_path_get_last(e->u.ptr, &as))
+  if (e && as_path_get_first(e->u.ptr, &as))
     return as;
   else
     return ((struct bgp_proto *) r->attrs->proto)->remote_as;
@@ -1044,7 +1049,6 @@ bgp_rte_better(rte *new, rte *old)
     return 0;
 
   /* RFC 4271 9.1.2.2. c) Compare MED's */
-
   if (bgp_get_neighbor(new) == bgp_get_neighbor(old))
     {
       x = ea_find(new->attrs->eattrs, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC));
@@ -1082,11 +1086,18 @@ bgp_rte_better(rte *new, rte *old)
   y = ea_find(old->attrs->eattrs, EA_CODE(EAP_BGP, BA_ORIGINATOR_ID));
   n = x ? x->u.data : new_bgp->remote_id;
   o = y ? y->u.data : old_bgp->remote_id;
+
+  /* RFC 5004 - prefer older routes */
+  /* (if both are external and from different peer) */
+  if ((new_bgp->cf->prefer_older || old_bgp->cf->prefer_older) &&
+      !new_bgp->is_internal && n != o)
+    return 0;
+
+  /* rest of RFC 4271 9.1.2.2. f) */
   if (n < o)
     return 1;
   if (n > o)
     return 0;
-
 
   /* RFC 4271 9.1.2.2. g) Compare peer IP adresses */
   return (ipa_compare(new_bgp->cf->remote_ip, old_bgp->cf->remote_ip) < 0);
@@ -1394,11 +1405,10 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
   /* When receiving attributes from non-AS4-aware BGP speaker,
    * we have to reconstruct 4B AS_PATH and AGGREGATOR attributes
    */
-  if (bgp_as4_support && (! bgp->as4_session))
+  if (! bgp->as4_session)
     bgp_reconstruct_4b_atts(bgp, a, pool);
 
-  if (bgp_as4_support)
-    bgp_remove_as4_attrs(bgp, a);
+  bgp_remove_as4_attrs(bgp, a);
 
   /* If the AS path attribute contains our AS, reject the routes */
   if (bgp_as_path_loopy(bgp, a))
@@ -1411,7 +1421,7 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
 
   /* If there's no local preference, define one */
   if (!(seen[0] & (1 << BA_LOCAL_PREF)))
-    bgp_attach_attr(&a->eattrs, pool, BA_LOCAL_PREF, 0);
+    bgp_attach_attr(&a->eattrs, pool, BA_LOCAL_PREF, bgp->cf->default_local_pref);
 
   return a;
 
@@ -1470,7 +1480,7 @@ bgp_get_route_info(rte *e, byte *buf, ea_list *attrs)
   u32 origas;
 
   buf += bsprintf(buf, " (%d) [", e->pref);
-  if (p && as_path_get_first(p->u.ptr, &origas))
+  if (p && as_path_get_last(p->u.ptr, &origas))
     buf += bsprintf(buf, "AS%u", origas);
   if (o)
     buf += bsprintf(buf, "%c", "ie?"[o->u.data]);

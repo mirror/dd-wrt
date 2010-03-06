@@ -36,14 +36,14 @@ CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
 	LEN,
 	DEFINED,
 	ADD, DELETE, CONTAINS, RESET,
-	PREPEND, MATCH,
+	PREPEND, FIRST, LAST, MATCH,
 	EMPTY,
 	FILTER, WHERE, EVAL)
 
 %nonassoc THEN
 %nonassoc ELSE
 
-%type <x> term block cmds cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
+%type <x> term block cmds cmds_int cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
 %type <f> filter filter_body where_filter
 %type <i> type break_command cpair
 %type <e> set_item set_items switch_body
@@ -191,15 +191,15 @@ function_def:
 
 /* Programs */
 
+/* Hack: $$ of cmds_int is the last node.
+   $$->next of cmds_int is temporary used for the first node */
+
 cmds: /* EMPTY */ { $$ = NULL; }
- | cmd cmds {
-     if ($1) {
-       if ($1->next)
-	 bug("Command has next already set");
-       $1->next = $2;
-       $$ = $1;
-     } else $$ = $2;
-   }
+ | cmds_int { $$ = $1->next; $1->next = NULL; }
+ ;
+
+cmds_int: cmd { $$ = $1; $1->next = $1; }
+ | cmds_int cmd { $$ = $2; $2->next = $1->next ; $1->next = $2; }
  ;
 
 block:
@@ -448,6 +448,8 @@ term:
  | term '.' IP { $$ = f_new_inst(); $$->code = P('c','p'); $$->a1.p = $1; $$->aux = T_IP; }
  | term '.' LEN { $$ = f_new_inst(); $$->code = 'L'; $$->a1.p = $1; }
  | term '.' MASK '(' term ')' { $$ = f_new_inst(); $$->code = P('i','M'); $$->a1.p = $1; $$->a2.p = $5; }
+ | term '.' FIRST { $$ = f_new_inst(); $$->code = P('a','f'); $$->a1.p = $1; }
+ | term '.' LAST  { $$ = f_new_inst(); $$->code = P('a','l'); $$->a1.p = $1; }
 
 /* Communities */
 /* This causes one shift/reduce conflict

@@ -22,6 +22,7 @@
 
 #include "nest/bird.h"
 #include "nest/cli.h"
+#include "nest/mrtdump.h"
 #include "lib/string.h"
 #include "lib/lists.h"
 #include "lib/unix.h"
@@ -78,21 +79,13 @@ vlog(int class, char *msg, va_list args)
 	continue;
       if (l->fh)
 	{
-	  time_t now = time(NULL);
-	  struct tm *tm = localtime(&now);
-
 	  if (l->terminal_flag)
 	    fputs("bird: ", l->fh);
 	  else
 	    {
-	      fprintf(l->fh, "%02d-%02d-%04d %02d:%02d:%02d <%s> ",
-		       tm->tm_mday,
-		       tm->tm_mon+1,
-		       tm->tm_year+1900,
-		       tm->tm_hour,
-		       tm->tm_min,
-		       tm->tm_sec,
-		       class_names[class]);
+	      byte tbuf[TM_DATETIME_BUFFER_SIZE];
+	      tm_format_datetime(tbuf, &config->tf_log, now);
+	      fprintf(l->fh, "%s <%s> ", tbuf, class_names[class]);
 	    }
 	  fputs(buf, l->fh);
 	  fputc('\n', l->fh);
@@ -260,4 +253,17 @@ log_init_debug(char *f)
     log(L_ERR "Error opening debug file `%s': %m", f);
   if (dbgf)
     setvbuf(dbgf, NULL, _IONBF, 0);
+}
+
+void
+mrt_dump_message(struct proto *p, u16 type, u16 subtype, byte *buf, u32 len)
+{
+  /* Prepare header */
+  put_u32(buf+0, now_real);
+  put_u16(buf+4, type);
+  put_u16(buf+6, subtype);
+  put_u32(buf+8, len - MRTDUMP_HDR_LENGTH);
+
+  if (p->cf->global->mrtdump_file != -1)
+    write(p->cf->global->mrtdump_file, buf, len);
 }

@@ -13,7 +13,8 @@
 #router id 62.168.0.1;
 
 # You can define your own symbols...
-#define xyzzy = 120+10;
+#define xyzzy = (120+10);
+#define '1a-a1' = (30+40);
 
 # Define a route filter...
 filter test_filter {
@@ -162,6 +163,7 @@ protocol static {
 
 #protocol bgp {
 #	disabled;
+#	description "My BGP uplink"
 #	local as 65000;
 #	neighbor 62.168.0.130 as 5588;
 #	multihop 20 via 62.168.0.13;

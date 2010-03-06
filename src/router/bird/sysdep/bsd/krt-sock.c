@@ -172,8 +172,10 @@ krt_sock_send(int cmd, rte *e)
     case RTD_DEVICE:
       if(i)
       {
+#ifdef RTF_CLONING
         if (cmd == RTM_ADD && (i->flags & IF_MULTIACCESS) != IF_MULTIACCESS)	/* PTP */
           msg.rtm.rtm_flags |= RTF_CLONING;
+#endif
 
         if(!i->addr) {
           log(L_ERR "KIF: interface \"%s\" has no IP addess", i->name);
@@ -339,7 +341,10 @@ krt_read_rt(struct ks_msg *msg, struct krt_proto *p, int scan)
     if (ng && ng->scope)
       a.iface = ng->iface;
     else
-      log(L_WARN "Kernel told us to use non-neighbor %I for %I/%d", igate, net->n.prefix, net->n.pxlen);
+      {
+	log(L_WARN "Kernel told us to use non-neighbor %I for %I/%d", igate, net->n.prefix, net->n.pxlen);
+	return;
+      }
 
     a.dest = RTD_ROUTER;
     a.gw = igate;

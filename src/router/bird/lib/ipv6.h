@@ -1,3 +1,4 @@
+
 /*
  *	BIRD -- IP Addresses et Cetera for IPv6
  *
@@ -13,6 +14,7 @@
 #include <netinet/in.h>
 #include "lib/string.h"
 #include "lib/bitops.h"
+#include "lib/unaligned.h"
 
 typedef struct ipv6_addr {
   u32 addr[4];
@@ -59,6 +61,7 @@ typedef struct ipv6_addr {
 #define ipa_hton(x) ipv6_hton(&(x))
 #define ipa_ntoh(x) ipv6_ntoh(&(x))
 #define ipa_classify(x) ipv6_classify(&(x))
+#define ipa_has_link_scope(x) ipv6_has_link_scope(&(x))
 /* ipa_opposite and ipa_class_mask don't make sense with IPv6 */
 /* ipa_from_u32 and ipa_to_u32 replaced by ipa_build */
 #define ipa_build(a,b,c,d) _MI(a,b,c,d)
@@ -66,7 +69,11 @@ typedef struct ipv6_addr {
 /* ipa_pxlen() requires that x != y */
 #define ipa_pxlen(x, y) ipv6_pxlen(x, y)
 #define ipa_getbit(x, y) ipv6_getbit(x, y)
+#define ipa_put_addr(x, y) ipv6_put_addr(x, y)
 #define ipa_absolutize(x,y) ipv6_absolutize(x,y)
+
+/* In IPv6, SOCK_RAW does not return packet header */
+#define ip_skip_header(x, y) x
 
 ip_addr ipv6_mkmask(unsigned);
 unsigned ipv6_mklen(ip_addr *);
@@ -76,6 +83,11 @@ void ipv6_ntoh(ip_addr *);
 int ipv6_compare(ip_addr, ip_addr);
 int ipv4_pton_u32(char *, u32 *);
 void ipv6_absolutize(ip_addr *, ip_addr *);
+
+static inline int ipv6_has_link_scope(ip_addr *a)
+{
+  return ((a->addr[0] & 0xffc00000) == 0xfe800000);
+}
 
 /*
  *  This hash function looks well, but once IPv6 enters
@@ -103,6 +115,15 @@ static inline u32 ipv6_pxlen(ip_addr a, ip_addr b)
   i+= (a.addr[i] == b.addr[i]);
   i+= (a.addr[i] == b.addr[i]);
   return 32 * i + 31 - u32_log2(a.addr[i] ^ b.addr[i]);
+}
+
+static inline byte * ipv6_put_addr(byte *buf, ip_addr a)
+{
+  put_u32(buf+0,  _I0(a));
+  put_u32(buf+4,  _I1(a));
+  put_u32(buf+8,  _I2(a));
+  put_u32(buf+12, _I3(a));
+  return buf+16;
 }
 
 /*

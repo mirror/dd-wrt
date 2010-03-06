@@ -38,27 +38,33 @@ set_inaddr(struct in_addr *ia, ip_addr a)
  *  ways. Horrible.
  */
 
-static inline char *sysio_mcast_setup(sock *s)
-{
-  int zero = 0;
 
-  if (ipa_nonzero(s->daddr))
-    {
-      if (
-#ifdef IP_DEFAULT_MULTICAST_TTL
-	  s->ttl != IP_DEFAULT_MULTICAST_TTL &&
-#endif
-	  setsockopt(s->fd, SOL_IP, IP_MULTICAST_TTL, &s->ttl, sizeof(s->ttl)) < 0)
-	return "IP_MULTICAST_TTL";
-      if (
-#ifdef IP_DEFAULT_MULTICAST_LOOP
-	  IP_DEFAULT_MULTICAST_LOOP &&
-#endif
-	  setsockopt(s->fd, SOL_IP, IP_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
-	return "IP_MULTICAST_LOOP";
-    }
-  return NULL;
+#if defined(CONFIG_LINUX_MC_MREQ) || defined(CONFIG_LINUX_MC_MREQ_BIND)
+/*
+ *  Older kernels support only struct mreq which matches interfaces by their
+ *  addresses and thus fails on unnumbered devices. On newer 2.0 kernels
+ *  we can use SO_BINDTODEVICE to circumvent this problem.
+ */
+
+#define MREQ_IFA struct in_addr
+#define MREQ_GRP struct ip_mreq
+static inline void fill_mreq_ifa(struct in_addr *m, struct iface *ifa, UNUSED ip_addr maddr)
+{
+  set_inaddr(m, ifa->addr->ip);
 }
+
+static inline void fill_mreq_grp(struct ip_mreq *m, struct iface *ifa, ip_addr maddr)
+{
+  bzero(m, sizeof(*m));
+#ifdef CONFIG_LINUX_MC_MREQ_BIND
+  m->imr_interface.s_addr = INADDR_ANY;
+#else
+  set_inaddr(&m->imr_interface, ifa->addr->ip);
+#endif
+  set_inaddr(&m->imr_multiaddr, maddr);
+}
+#endif
+
 
 #ifdef CONFIG_LINUX_MC_MREQN
 /*
@@ -76,69 +82,77 @@ struct ip_mreqn
 };
 #endif
 
-static inline char *sysio_mcast_join(sock *s)
-{
-  struct ip_mreqn mreq;
-  char *err;
-  struct ifreq ifr;
+#define MREQ_IFA struct ip_mreqn
+#define MREQ_GRP struct ip_mreqn
+#define fill_mreq_ifa fill_mreq
+#define fill_mreq_grp fill_mreq
 
-  if (err = sysio_mcast_setup(s))
-    return err;
-  strcpy(ifr.ifr_name, s->iface->name);
-  if (setsockopt(s->fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
-    return "SO_BINDTODEVICE";
-  mreq.imr_ifindex = s->iface->index;
-  set_inaddr(&mreq.imr_address, s->iface->addr->ip);
-  set_inaddr(&mreq.imr_multiaddr, s->daddr);
-  /* This defines where should we send _outgoing_ multicasts */
-  if (ipa_nonzero(s->daddr) && setsockopt(s->fd, SOL_IP, IP_MULTICAST_IF, &mreq, sizeof(mreq)) < 0)
-    return "IP_MULTICAST_IF";
-  /* And this one sets interface for _receiving_ multicasts from */
-  if (ipa_nonzero(s->saddr) && setsockopt(s->fd, SOL_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
-    return "IP_ADD_MEMBERSHIP";
-  return NULL;
+static inline fill_mreq(struct ip_mreqn *m, struct iface *ifa, ip_addr maddr)
+{
+  bzero(m, sizeof(*m));
+  m->imr_ifindex = ifa->index;
+  set_inaddr(&m->imr_address, ifa->addr->ip);
+  set_inaddr(&m->imr_multiaddr, maddr);
 }
 #endif
 
-#if defined(CONFIG_LINUX_MC_MREQ) || defined(CONFIG_LINUX_MC_MREQ_BIND)
-/*
- *  Older kernels support only struct mreq which matches interfaces by their
- *  addresses and thus fails on unnumbered devices. On newer 2.0 kernels
- *  we can use SO_BINDTODEVICE to circumvent this problem.
- */
-
-static inline char *sysio_mcast_join(sock *s)
+static inline char *
+sysio_setup_multicast(sock *s)
 {
-  struct in_addr mreq;
-  struct ip_mreq mreq_add;
-  char *err;
+  MREQ_IFA m;
+  int zero = 0;
 
-  if (err = sysio_mcast_setup(s))
-    return err;
-  set_inaddr(&mreq, s->iface->addr->ip);
-#ifdef CONFIG_LINUX_MC_MREQ_BIND
+  if (setsockopt(s->fd, SOL_IP, IP_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
+    return "IP_MULTICAST_LOOP";
+
+  if (setsockopt(s->fd, SOL_IP, IP_MULTICAST_TTL, &s->ttl, sizeof(s->ttl)) < 0)
+    return "IP_MULTICAST_TTL";
+
+  /* This defines where should we send _outgoing_ multicasts */
+  fill_mreq_ifa(&m, s->iface, IPA_NONE);
+  if (setsockopt(s->fd, SOL_IP, IP_MULTICAST_IF, &m, sizeof(m)) < 0)
+    return "IP_MULTICAST_IF";
+
+#if defined(CONFIG_LINUX_MC_MREQ_BIND) || defined(CONFIG_LINUX_MC_MREQN) 
   {
     struct ifreq ifr;
     strcpy(ifr.ifr_name, s->iface->name);
     if (setsockopt(s->fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
       return "SO_BINDTODEVICE";
-    mreq_add.imr_interface.s_addr = INADDR_ANY;
   }
-#else
-  mreq_add.imr_interface = mreq;
-#endif
-  set_inaddr(&mreq_add.imr_multiaddr, s->daddr);
-  /* This defines where should we send _outgoing_ multicasts */
-  if (ipa_nonzero(s->daddr) && setsockopt(s->fd, SOL_IP, IP_MULTICAST_IF, &mreq, sizeof(mreq)) < 0)
-    return "IP_MULTICAST_IF";
-  /* And this one sets interface for _receiving_ multicasts from */
-  if (ipa_nonzero(s->saddr) && setsockopt(s->fd, SOL_IP, IP_ADD_MEMBERSHIP, &mreq_add, sizeof(mreq_add)) < 0)
-    return "IP_ADD_MEMBERSHIP";
-  return NULL;
-}
 #endif
 
+  return NULL;
+}
+
+static inline char *
+sysio_join_group(sock *s, ip_addr maddr)
+{
+  MREQ_GRP m;
+
+  /* And this one sets interface for _receiving_ multicasts from */
+  fill_mreq_grp(&m, s->iface, maddr);
+  if (setsockopt(s->fd, SOL_IP, IP_ADD_MEMBERSHIP, &m, sizeof(m)) < 0)
+    return "IP_ADD_MEMBERSHIP";
+
+  return NULL;
+}
+
+static inline char *
+sysio_leave_group(sock *s, ip_addr maddr)
+{
+  MREQ_GRP m;
+
+  /* And this one sets interface for _receiving_ multicasts from */
+  fill_mreq_grp(&m, s->iface, maddr);
+  if (setsockopt(s->fd, SOL_IP, IP_DROP_MEMBERSHIP, &m, sizeof(m)) < 0)
+    return "IP_DROP_MEMBERSHIP";
+
+  return NULL;
+}
+
 #endif
+
 
 #include <linux/socket.h>
 #include <linux/tcp.h>

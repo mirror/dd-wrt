@@ -103,8 +103,10 @@ krt_parse_entry(byte *ent, struct krt_proto *p)
       if (ng && ng->scope)
 	a.iface = ng->iface;
       else
-	/* FIXME: Remove this warning? Handle it somehow... */
-	log(L_WARN "Kernel told us to use non-neighbor %I for %I/%d", gw, net->n.prefix, net->n.pxlen);
+	{
+	  log(L_WARN "Kernel told us to use non-neighbor %I for %I/%d", gw, net->n.prefix, net->n.pxlen);
+	  return;
+	}
       a.dest = RTD_ROUTER;
       a.gw = gw;
     }

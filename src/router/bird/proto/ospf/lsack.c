@@ -8,6 +8,14 @@
 
 #include "ospf.h"
 
+
+struct ospf_lsack_packet
+{
+  struct ospf_packet ospf_packet;
+  struct ospf_lsa_header lsh[];
+};
+
+
 char *s_queue[] = { "direct", "delayed" };
 
 
@@ -18,14 +26,12 @@ static void ospf_dump_lsack(struct proto *p, struct ospf_lsack_packet *pkt)
   ASSERT(op->type == LSACK_P);
   ospf_dump_common(p, op);
 
-  struct ospf_lsa_header *plsa = (void *) (pkt + 1);
-  int i, j;
-
+  unsigned int i, j;
   j = (ntohs(op->length) - sizeof(struct ospf_lsack_packet)) /
     sizeof(struct ospf_lsa_header);
 
   for (i = 0; i < j; i++)
-    ospf_dump_lsahdr(p, plsa + i);
+    ospf_dump_lsahdr(p, pkt->lsh + i);
 }
 
 
@@ -51,7 +57,6 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
 {
   struct ospf_packet *op;
   struct ospf_lsack_packet *pk;
-  sock *sk;
   u16 len, i = 0;
   struct ospf_lsa_header *h;
   struct lsah_n *no;
@@ -61,24 +66,19 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
   if (EMPTY_LIST(n->ackl[queue]))
     return;
 
-  if (ifa->type == OSPF_IT_BCAST)
-    sk = ifa->hello_sk;
-  else
-    sk = ifa->ip_sk;
-
-  pk = (struct ospf_lsack_packet *) sk->tbuf;
-  op = (struct ospf_packet *) sk->tbuf;
+  pk = (struct ospf_lsack_packet *) ifa->sk->tbuf;
+  op = (struct ospf_packet *) ifa->sk->tbuf;
 
   ospf_pkt_fill_hdr(n->ifa, pk, LSACK_P);
-  h = (struct ospf_lsa_header *) (pk + 1);
+  h = pk->lsh;
 
   while (!EMPTY_LIST(n->ackl[queue]))
   {
     no = (struct lsah_n *) HEAD(n->ackl[queue]);
     memcpy(h + i, &no->lsa, sizeof(struct ospf_lsa_header));
-    i++;
-    DBG("Iter %u ID: %R, RT: %R, Type: %u\n", i, ntohl((h + i)->id),
+    DBG("Iter %u ID: %R, RT: %R, Type: %04x\n", i, ntohl((h + i)->id),
 	ntohl((h + i)->rt), (h + i)->type);
+    i++;
     rem_node(NODE no);
     mb_free(no);
     if ((i * sizeof(struct ospf_lsa_header) +
@@ -92,22 +92,22 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
 	op->length = htons(len);
 	DBG("Sending and continuing! Len=%u\n", len);
 
-	OSPF_PACKET(ospf_dump_lsack, (struct ospf_lsack_packet *) sk->tbuf,
+	OSPF_PACKET(ospf_dump_lsack, (struct ospf_lsack_packet *) ifa->sk->tbuf,
 		    "LSACK packet sent via %s", ifa->iface->name);
 
 	if (ifa->type == OSPF_IT_BCAST)
 	{
 	  if ((ifa->state == OSPF_IS_DR) || (ifa->state == OSPF_IS_BACKUP))
-	    ospf_send_to(sk, AllSPFRouters, ifa);
+	    ospf_send_to(ifa, AllSPFRouters);
 	  else
-	    ospf_send_to(sk, AllDRouters, ifa);
+	    ospf_send_to(ifa, AllDRouters);
 	}
 	else
 	{
 	  if ((ifa->state == OSPF_IS_DR) || (ifa->state == OSPF_IS_BACKUP))
-	    ospf_send_to_agt(sk, ifa, NEIGHBOR_EXCHANGE);
+	    ospf_send_to_agt(ifa, NEIGHBOR_EXCHANGE);
 	  else
-	    ospf_send_to_bdr(sk, ifa);
+	    ospf_send_to_bdr(ifa);
 	}
 
 	ospf_pkt_fill_hdr(n->ifa, pk, LSACK_P);
@@ -120,36 +120,37 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
   op->length = htons(len);
   DBG("Sending! Len=%u\n", len);
 
-  OSPF_PACKET(ospf_dump_lsack, (struct ospf_lsack_packet *) sk->tbuf,
+  OSPF_PACKET(ospf_dump_lsack, (struct ospf_lsack_packet *) ifa->sk->tbuf,
 	      "LSACK packet sent via %s", ifa->iface->name);
 
   if (ifa->type == OSPF_IT_BCAST)
   {
     if ((ifa->state == OSPF_IS_DR) || (ifa->state == OSPF_IS_BACKUP))
-    {
-      ospf_send_to(sk, AllSPFRouters, ifa);
-    }
+      ospf_send_to(ifa, AllSPFRouters);
     else
-    {
-      ospf_send_to(sk, AllDRouters, ifa);
-    }
+      ospf_send_to(ifa, AllDRouters);
   }
   else
-  {
-    ospf_send_to_agt(sk, ifa, NEIGHBOR_EXCHANGE);
-  }
+    ospf_send_to_agt(ifa, NEIGHBOR_EXCHANGE);
 }
 
 void
-ospf_lsack_receive(struct ospf_lsack_packet *ps,
-		   struct ospf_iface *ifa, struct ospf_neighbor *n)
+ospf_lsack_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
+		   struct ospf_neighbor *n)
 {
-  struct ospf_lsa_header lsa, *plsa;
-  u16 nolsa;
-  struct top_hash_entry *en;
   struct proto *p = &ifa->oa->po->proto;
-  unsigned int size = ntohs(ps->ospf_packet.length), i;
+  struct ospf_lsa_header lsa;
+  struct top_hash_entry *en;
+  unsigned int i, lsano;
 
+  unsigned int size = ntohs(ps_i->length);
+  if (size < sizeof(struct ospf_lsack_packet))
+  {
+    log(L_ERR "Bad OSPF LSACK packet from %I -  too short (%u B)", n->ip, size);
+    return;
+  }
+
+  struct ospf_lsack_packet *ps = (void *) ps_i;
   OSPF_PACKET(ospf_dump_lsack, ps, "LSACK packet received from %I via %s", n->ip, ifa->iface->name);
 
   ospf_neigh_sm(n, INM_HELLOREC);
@@ -157,22 +158,13 @@ ospf_lsack_receive(struct ospf_lsack_packet *ps,
   if (n->state < NEIGHBOR_EXCHANGE)
     return;
 
-  nolsa = (size - sizeof(struct ospf_lsack_packet)) /
+  lsano = (size - sizeof(struct ospf_lsack_packet)) /
     sizeof(struct ospf_lsa_header);
-
-  if ((nolsa < 1) || ((size - sizeof(struct ospf_lsack_packet)) !=
-		      (nolsa * sizeof(struct ospf_lsa_header))))
+  for (i = 0; i < lsano; i++)
   {
-    log(L_ERR "Received corrupted LS ack from %I", n->ip);
-    return;
-  }
-
-  plsa = (struct ospf_lsa_header *) (ps + 1);
-
-  for (i = 0; i < nolsa; i++)
-  {
-    ntohlsah(plsa + i, &lsa);
-    if ((en = ospf_hash_find_header(n->lsrth, n->ifa->oa->areaid, &lsa)) == NULL)
+    ntohlsah(ps->lsh + i, &lsa);
+    u32 dom = ospf_lsa_domain(lsa.type, n->ifa);
+    if ((en = ospf_hash_find_header(n->lsrth, dom, &lsa)) == NULL)
       continue;			/* pg 155 */
 
     if (lsa_comp(&lsa, &en->lsa) != CMP_SAME)	/* pg 156 */
@@ -180,12 +172,12 @@ ospf_lsack_receive(struct ospf_lsack_packet *ps,
       if ((lsa.sn == LSA_MAXSEQNO) && (lsa.age == LSA_MAXAGE))
 	continue;
 
-      OSPF_TRACE(D_PACKETS, "Strange LS acknoledgement from %I", n->ip);
-      OSPF_TRACE(D_PACKETS, "Id: %R, Rt: %R, Type: %u",
-		 lsa.id, lsa.rt, lsa.type);
-      OSPF_TRACE(D_PACKETS, "I have: Age: %4u, Seqno: 0x%08x, Sum: %u",
+      OSPF_TRACE(D_PACKETS, "Strange LSACK from %I", n->ip);
+      OSPF_TRACE(D_PACKETS, "Type: %04x, Id: %R, Rt: %R",
+		 lsa.type, lsa.id, lsa.rt);
+      OSPF_TRACE(D_PACKETS, "I have: Age: %4u, Seq: %08x, Sum: %04x",
 		 en->lsa.age, en->lsa.sn, en->lsa.checksum);
-      OSPF_TRACE(D_PACKETS, "He has: Age: %4u, Seqno: 0x%08x, Sum: %u",
+      OSPF_TRACE(D_PACKETS, "He has: Age: %4u, Seq: %08x, Sum: %04x",
 		 lsa.age, lsa.sn, lsa.checksum);
       continue;
     }

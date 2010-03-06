@@ -30,11 +30,16 @@
 #include "lib/unix.h"
 #include "lib/sysio.h"
 
-/* Maximum number of calls of rx/tx handler for one socket in one
+/* Maximum number of calls of tx handler for one socket in one
  * select iteration. Should be small enough to not monopolize CPU by
  * one protocol instance.
  */
 #define MAX_STEPS 4
+
+/* Maximum number of calls of rx handler for all sockets in one select
+   iteration. RX callbacks are often much more costly so we limit
+   this to gen small latencies */
+#define MAX_RX_STEPS 4
 
 /*
  *	Tracked Files
@@ -405,22 +410,21 @@ tm_parse_date(char *x)
   return t;
 }
 
-/**
- * tm_format_date - convert date to textual representation
- * @x: destination buffer of size %TM_DATE_BUFFER_SIZE
- * @t: time
- *
- * This function formats the given relative time value @t to a textual
- * date representation (dd-mm-yyyy) in real time..
- */
-void
-tm_format_date(char *x, bird_clock_t t)
+static void
+tm_format_reltime(char *x, struct tm *tm, bird_clock_t delta)
 {
-  struct tm *tm;
+  static char *month_names[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+				   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
-  tm = localtime(&t);
-  bsprintf(x, "%02d-%02d-%04d", tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900);
+  if (delta < 20*3600)
+    bsprintf(x, "%02d:%02d", tm->tm_hour, tm->tm_min);
+  else if (delta < 360*86400)
+    bsprintf(x, "%s%02d", month_names[tm->tm_mon], tm->tm_mday);
+  else
+    bsprintf(x, "%d", tm->tm_year+1900);
 }
+
+#include "conf/conf.h"
 
 /**
  * tm_format_datetime - convert date and time to textual representation
@@ -431,39 +435,25 @@ tm_format_date(char *x, bird_clock_t t)
  * date/time representation (dd-mm-yyyy hh:mm:ss) in real time.
  */
 void
-tm_format_datetime(char *x, bird_clock_t t)
+tm_format_datetime(char *x, struct timeformat *fmt_spec, bird_clock_t t)
 {
+  const char *fmt_used;
   struct tm *tm;
   bird_clock_t delta = now - t;
   t = now_real - delta;
   tm = localtime(&t);
-  if (strftime(x, TM_DATETIME_BUFFER_SIZE, "%d-%m-%Y %H:%M:%S", tm) == TM_DATETIME_BUFFER_SIZE)
-    strcpy(x, "<too-long>");
-}
 
-/**
- * tm_format_reltime - convert date and time to relative textual representation
- * @x: destination buffer of size %TM_RELTIME_BUFFER_SIZE
- * @t: time
- *
- * This function formats the given relative time value @t to a short
- * textual representation in real time, relative to the current time.
- */
-void
-tm_format_reltime(char *x, bird_clock_t t)
-{
-  struct tm *tm;
-  static char *month_names[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+  if (fmt_spec->fmt1 == NULL)
+    return tm_format_reltime(x, tm, delta);
 
-  bird_clock_t delta = now - t;
-  t = now_real - delta;
-  tm = localtime(&t);
-  if (delta < 20*3600)
-    bsprintf(x, "%02d:%02d", tm->tm_hour, tm->tm_min);
-  else if (delta < 360*86400)
-    bsprintf(x, "%s%02d", month_names[tm->tm_mon], tm->tm_mday);
+  if ((fmt_spec->limit == 0) || (delta < fmt_spec->limit))
+    fmt_used = fmt_spec->fmt1;
   else
-    bsprintf(x, "%d", tm->tm_year+1900);
+    fmt_used = fmt_spec->fmt2;
+
+  int rv = strftime(x, TM_DATETIME_BUFFER_SIZE, fmt_used, tm);
+  if (((rv == 0) && fmt_used[0]) || (rv == TM_DATETIME_BUFFER_SIZE))
+    strcpy(x, "<too-long>");
 }
 
 /**
@@ -487,12 +477,9 @@ tm_format_reltime(char *x, bird_clock_t t)
 #define SOL_IPV6 IPPROTO_IPV6
 #endif
 
-#ifndef IPV6_ADD_MEMBERSHIP
-#define IPV6_ADD_MEMBERSHIP IP_ADD_MEMBERSHIP
-#endif
-
 static list sock_list;
 static struct birdsock *current_sock;
+static struct birdsock *stored_sock;
 static int sock_recalc_fdsets_p;
 
 static inline sock *
@@ -541,6 +528,8 @@ sk_free(resource *r)
       close(s->fd);
       if (s == current_sock)
 	current_sock = sk_next(s);
+      if (s == stored_sock)
+	stored_sock = sk_next(s);
       rem_node(&s->n);
       sock_recalc_fdsets_p = 1;
     }
@@ -619,6 +608,12 @@ fill_in_sockaddr(sockaddr *sa, ip_addr a, unsigned port)
   set_inaddr(&sa->sin6_addr, a);
 }
 
+static inline void
+fill_in_sockifa(sockaddr *sa, struct iface *ifa)
+{
+  sa->sin6_scope_id = ifa ? ifa->index : 0;
+}
+
 void
 get_sockaddr(struct sockaddr_in6 *sa, ip_addr *a, unsigned *port, int check)
 {
@@ -644,6 +639,11 @@ fill_in_sockaddr(sockaddr *sa, ip_addr a, unsigned port)
   set_inaddr(&sa->sin_addr, a);
 }
 
+static inline void
+fill_in_sockifa(sockaddr *sa, struct iface *ifa)
+{
+}
+
 void
 get_sockaddr(struct sockaddr_in *sa, ip_addr *a, unsigned *port, int check)
 {
@@ -662,8 +662,7 @@ sk_set_ttl_int(sock *s)
 {
   int one = 1;
 #ifdef IPV6
-  if (s->type != SK_UDP_MC && s->type != SK_IP_MC &&
-      setsockopt(s->fd, SOL_IPV6, IPV6_UNICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_UNICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
     return "IPV6_UNICAST_HOPS";
 #else
   if (setsockopt(s->fd, SOL_IP, IP_TTL, &s->ttl, sizeof(s->ttl)) < 0)
@@ -760,6 +759,149 @@ sk_set_md5_auth(sock *s, ip_addr a, char *passwd)
   return sk_set_md5_auth_int(s, &sa, passwd);
 }
 
+int
+sk_set_broadcast(sock *s, int enable)
+{
+  if (setsockopt(s->fd, SOL_SOCKET, SO_BROADCAST, &enable, sizeof(enable)) < 0)
+    {
+      log(L_ERR "sk_set_broadcast: SO_BROADCAST: %m");
+      return -1;
+    }
+
+  return 0;
+}
+
+
+#ifdef IPV6
+
+int
+sk_set_ipv6_checksum(sock *s, int offset)
+{
+  if (setsockopt(s->fd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) < 0)
+    {
+      log(L_ERR "sk_set_ipv6_checksum: IPV6_CHECKSUM: %m");
+      return -1;
+    }
+
+  return 0;
+}
+
+int
+sk_setup_multicast(sock *s)
+{
+  char *err;
+  int zero = 0;
+  int index;
+
+  ASSERT(s->iface && s->iface->addr);
+
+  index = s->iface->index;
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
+    ERR("IPV6_MULTICAST_HOPS");
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
+    ERR("IPV6_MULTICAST_LOOP");
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_IF, &index, sizeof(index)) < 0)
+    ERR("IPV6_MULTICAST_IF");
+
+  return 0;
+
+bad:
+  log(L_ERR "sk_setup_multicast: %s: %m", err);
+  return -1;
+}
+
+int
+sk_join_group(sock *s, ip_addr maddr)
+{
+  struct ipv6_mreq mreq;
+	
+  set_inaddr(&mreq.ipv6mr_multiaddr, maddr);
+
+#ifdef CONFIG_IPV6_GLIBC_20
+  mreq.ipv6mr_ifindex = s->iface->index;
+#else
+  mreq.ipv6mr_interface = s->iface->index;
+#endif
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) < 0)
+    {
+      log(L_ERR "sk_join_group: IPV6_JOIN_GROUP: %m");
+      return -1;
+    }
+
+  return 0;
+}
+
+int
+sk_leave_group(sock *s, ip_addr maddr)
+{
+  struct ipv6_mreq mreq;
+	
+  set_inaddr(&mreq.ipv6mr_multiaddr, maddr);
+
+#ifdef CONFIG_IPV6_GLIBC_20
+  mreq.ipv6mr_ifindex = s->iface->index;
+#else
+  mreq.ipv6mr_interface = s->iface->index;
+#endif
+
+  if (setsockopt(s->fd, SOL_IPV6, IPV6_LEAVE_GROUP, &mreq, sizeof(mreq)) < 0)
+    {
+      log(L_ERR "sk_leave_group: IPV6_LEAVE_GROUP: %m");
+      return -1;
+    }
+
+  return 0;
+}
+
+#else /* IPV4 */
+
+int
+sk_setup_multicast(sock *s)
+{
+  char *err;
+
+  ASSERT(s->iface && s->iface->addr);
+
+  if (err = sysio_setup_multicast(s))
+    {
+      log(L_ERR "sk_setup_multicast: %s: %m", err);
+      return -1;
+    }
+
+  return 0;
+}
+
+int
+sk_join_group(sock *s, ip_addr maddr)
+{
+ char *err;
+
+ if (err = sysio_join_group(s, maddr))
+    {
+      log(L_ERR "sk_join_group: %s: %m", err);
+      return -1;
+    }
+
+  return 0;
+}
+
+int
+sk_leave_group(sock *s, ip_addr maddr)
+{
+ char *err;
+
+ if (err = sysio_leave_group(s, maddr))
+    {
+      log(L_ERR "sk_leave_group: %s: %m", err);
+      return -1;
+    }
+
+  return 0;
+}
+
+#endif 
+
 
 static void
 sk_tcp_connected(sock *s)
@@ -784,7 +926,14 @@ sk_passive_connected(sock *s, struct sockaddr *sa, int al, int type)
       t->rbsize = s->rbsize;
       t->tbsize = s->tbsize;
       if (type == SK_TCP)
-	get_sockaddr((sockaddr *) sa, &t->daddr, &t->dport, 1);
+	{
+	  sockaddr lsa;
+	  int lsa_len = sizeof(lsa);
+	  if (getsockname(fd, (struct sockaddr *) &lsa, &lsa_len) == 0)
+	    get_sockaddr(&lsa, &t->saddr, &t->sport, 1);
+
+	  get_sockaddr((sockaddr *) sa, &t->daddr, &t->dport, 1);
+	}
       sk_insert(t);
       if (err = sk_setup(t))
 	{
@@ -833,11 +982,9 @@ sk_open(sock *s)
       fd = socket(BIRD_PF, SOCK_STREAM, IPPROTO_TCP);
       break;
     case SK_UDP:
-    case SK_UDP_MC:
       fd = socket(BIRD_PF, SOCK_DGRAM, IPPROTO_UDP);
       break;
     case SK_IP:
-    case SK_IP_MC:
       fd = socket(BIRD_PF, SOCK_RAW, s->dport);
       break;
     case SK_MAGIC:
@@ -853,61 +1000,11 @@ sk_open(sock *s)
   if (err = sk_setup(s))
     goto bad;
 
-  switch (type)
-    {
-    case SK_UDP:
-    case SK_IP:
-      if (s->iface)			/* It's a broadcast socket */
-#ifdef IPV6
-	bug("IPv6 has no broadcasts");
-#else
-	if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one)) < 0)
-	  ERR("SO_BROADCAST");
-#endif
-      break;
-    case SK_UDP_MC:
-    case SK_IP_MC:
-      {
-#ifdef IPV6
-	/* Fortunately, IPv6 socket interface is recent enough and therefore standardized */
-	ASSERT(s->iface && s->iface->addr);
-	if (ipa_nonzero(s->daddr))
-	  {
-	    int t = s->iface->index;
-	    int zero = 0;
-	    if (setsockopt(fd, SOL_IPV6, IPV6_MULTICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
-	      ERR("IPV6_MULTICAST_HOPS");
-	    if (setsockopt(fd, SOL_IPV6, IPV6_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
-	      ERR("IPV6_MULTICAST_LOOP");
-	    if (setsockopt(fd, SOL_IPV6, IPV6_MULTICAST_IF, &t, sizeof(t)) < 0)
-	      ERR("IPV6_MULTICAST_IF");
-	  }
-	if (has_src)
-	  {
-	    struct ipv6_mreq mreq;
-	    set_inaddr(&mreq.ipv6mr_multiaddr, s->daddr);
-#ifdef CONFIG_IPV6_GLIBC_20
-	    mreq.ipv6mr_ifindex = s->iface->index;
-#else
-	    mreq.ipv6mr_interface = s->iface->index;
-#endif /* CONFIG_IPV6_GLIBC_20 */
-	    if (setsockopt(fd, SOL_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
-	      ERR("IPV6_ADD_MEMBERSHIP");
-	  }
-#else
-	/* With IPv4 there are zillions of different socket interface variants. Ugh. */
-	ASSERT(s->iface && s->iface->addr);
-	if (err = sysio_mcast_join(s))
-	  goto bad;
-#endif /* IPV6 */
-      break;
-      }
-    }
   if (has_src)
     {
       int port;
 
-      if (type == SK_IP || type == SK_IP_MC)
+      if (type == SK_IP)
 	port = 0;
       else
 	{
@@ -916,12 +1013,8 @@ sk_open(sock *s)
 	    ERR("SO_REUSEADDR");
 	}
       fill_in_sockaddr(&sa, s->saddr, port);
-#ifdef CONFIG_SKIP_MC_BIND
-      if ((type != SK_UDP_MC) && (type != SK_IP_MC) &&
-	  bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
-#else
+      fill_in_sockifa(&sa, s->iface);
       if (bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
-#endif
 	ERR("bind");
     }
   fill_in_sockaddr(&sa, s->daddr, s->dport);
@@ -1042,16 +1135,15 @@ sk_maybe_write(sock *s)
       s->ttx = s->tpos = s->tbuf;
       return 1;
     case SK_UDP:
-    case SK_UDP_MC:
     case SK_IP:
-    case SK_IP_MC:
       {
 	sockaddr sa;
 
 	if (s->tbuf == s->tpos)
 	  return 1;
-	fill_in_sockaddr(&sa, s->faddr, s->fport);
 
+	fill_in_sockaddr(&sa, s->faddr, s->fport);
+	fill_in_sockifa(&sa, s->iface);
 	e = sendto(s->fd, s->tbuf, s->tpos - s->tbuf, 0, (struct sockaddr *) &sa, sizeof(sa));
 	if (e < 0)
 	  {
@@ -1069,6 +1161,29 @@ sk_maybe_write(sock *s)
     default:
       bug("sk_maybe_write: unknown socket type %d", s->type);
     }
+}
+
+int
+sk_rx_ready(sock *s)
+{
+  fd_set rd, wr;
+  struct timeval timo;
+  int rv;
+
+  FD_ZERO(&rd);
+  FD_ZERO(&wr);
+  FD_SET(s->fd, &rd);
+
+  timo.tv_sec = 0;
+  timo.tv_usec = 0;
+
+ redo:
+  rv = select(s->fd+1, &rd, &wr, NULL, &timo);
+  
+  if ((rv < 0) && (errno == EINTR || errno == EAGAIN))
+    goto redo;
+
+  return rv;
 }
 
 /**
@@ -1241,6 +1356,9 @@ io_init(void)
   srandom((int) now_real);
 }
 
+static int short_loops = 0;
+#define SHORT_LOOP_MAX 10
+
 void
 io_loop(void)
 {
@@ -1319,8 +1437,8 @@ io_loop(void)
 	}
 
       /* And finally enter select() to find active sockets */
-
       hi = select(hi+1, &rd, &wr, NULL, &timo);
+
       if (hi < 0)
 	{
 	  if (errno == EINTR || errno == EAGAIN)
@@ -1329,13 +1447,17 @@ io_loop(void)
 	}
       if (hi)
 	{
-	  current_sock = SKIP_BACK(sock, n, HEAD(sock_list));	/* guaranteed to be non-empty */
+	  /* guaranteed to be non-empty */
+	  current_sock = SKIP_BACK(sock, n, HEAD(sock_list));
+
 	  while (current_sock)
 	    {
 	      sock *s = current_sock;
 	      int e;
-	      int steps = MAX_STEPS;
-	      if (FD_ISSET(s->fd, &rd) && s->rx_hook)
+	      int steps;
+
+	      steps = MAX_STEPS;
+	      if ((s->type >= SK_MAGIC) && FD_ISSET(s->fd, &rd) && s->rx_hook)
 		do
 		  {
 		    steps--;
@@ -1358,6 +1480,35 @@ io_loop(void)
 	      current_sock = sk_next(s);
 	    next: ;
 	    }
+
+	  short_loops++;
+	  if (events && (short_loops < SHORT_LOOP_MAX))
+	    continue;
+	  short_loops = 0;
+
+	  int count = 0;
+	  current_sock = stored_sock;
+	  if (current_sock == NULL)
+	    current_sock = SKIP_BACK(sock, n, HEAD(sock_list));
+
+	  while (current_sock && count < MAX_RX_STEPS)
+	    {
+	      sock *s = current_sock;
+	      int e;
+	      int steps;
+
+	      if ((s->type < SK_MAGIC) && FD_ISSET(s->fd, &rd) && s->rx_hook)
+		{
+		  count++;
+		  e = sk_read(s);
+		  if (s != current_sock)
+		      goto next2;
+		}
+	      current_sock = sk_next(s);
+	    next2: ;
+	    }
+
+	  stored_sock = current_sock;
 	}
     }
 }

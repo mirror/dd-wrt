@@ -9,6 +9,7 @@
 #ifndef _BIRD_BGP_H_
 #define _BIRD_BGP_H_
 
+#include <stdint.h>
 #include "nest/route.h"
 
 struct linpool;
@@ -22,16 +23,21 @@ struct bgp_config {
   ip_addr multihop_via;			/* Multihop: address to route to */
   ip_addr source_addr;			/* Source address to use */
   int next_hop_self;			/* Always set next hop to local IP address */
+  int missing_lladdr;			/* What we will do when we don' know link-local addr, see MLL_* */
   int compare_path_lengths;		/* Use path lengths when selecting best route */
+  int prefer_older;			/* Prefer older routes according to RFC 5004 */
   u32 default_local_pref;		/* Default value for LOCAL_PREF attribute */
   u32 default_med;			/* Default value for MULTI_EXIT_DISC attribute */
   int capabilities;			/* Enable capability handshake [RFC3392] */
+  int enable_refresh;			/* Enable local support for route refresh [RFC2918] */
   int enable_as4;			/* Enable local support for 4B AS numbers [RFC4893] */
   u32 rr_cluster_id;			/* Route reflector cluster ID, if different from local ID */
   int rr_client;			/* Whether neighbor is RR client of me */
   int rs_client;			/* Whether neighbor is RS client of me */
   int advertise_ipv4;			/* Whether we should add IPv4 capability advertisement to OPEN message */
   u32 route_limit;			/* Number of routes that may be imported, 0 means disable limit */
+  int passive;				/* Do not initiate outgoing connection */
+  int interpret_communities;		/* Hardwired handling of well-known communities */
   unsigned connect_retry_time;
   unsigned hold_time, initial_hold_time;
   unsigned keepalive_time;
@@ -42,6 +48,10 @@ struct bgp_config {
   unsigned disable_after_error;		/* Disable the protocol when error is detected */
   char *password;			/* Password used for MD5 authentication */
 };
+
+#define MLL_SELF 1
+#define MLL_DROP 2
+#define MLL_IGNORE 3
 
 struct bgp_conn {
   struct bgp_proto *bgp;
@@ -58,6 +68,7 @@ struct bgp_conn {
   int start_state;			/* protocol start_state snapshot when connection established */
   int want_as4_support;			/* Connection tries to establish AS4 session */
   int peer_as4_support;			/* Peer supports 4B AS numbers [RFC4893] */
+  int peer_refresh_support;		/* Peer supports route refresh [RFC2918] */
   unsigned hold_time, keepalive_time;	/* Times calculated from my and neighbor's requirements */
 };
 
@@ -122,14 +133,13 @@ struct bgp_bucket {
 
 extern struct linpool *bgp_linpool;
 
-extern int bgp_as4_support;
-
 
 void bgp_start_timer(struct timer *t, int value);
 void bgp_check(struct bgp_config *c);
 void bgp_error(struct bgp_conn *c, unsigned code, unsigned subcode, byte *data, int len);
 void bgp_close_conn(struct bgp_conn *c);
 void bgp_update_startup_delay(struct bgp_proto *p);
+void bgp_conn_enter_openconfirm_state(struct bgp_conn *conn);
 void bgp_conn_enter_established_state(struct bgp_conn *conn);
 void bgp_conn_enter_close_state(struct bgp_conn *conn);
 void bgp_conn_enter_idle_state(struct bgp_conn *conn);
@@ -181,6 +191,7 @@ inline static void bgp_attach_attr_ip(struct ea_list **to, struct linpool *pool,
 
 /* packets.c */
 
+void mrt_dump_bgp_state_change(struct bgp_conn *conn, unsigned old, unsigned new);
 void bgp_schedule_packet(struct bgp_conn *conn, int type);
 void bgp_kick_tx(void *vconn);
 void bgp_tx(struct birdsock *sk);
@@ -194,6 +205,7 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 #define PKT_UPDATE		0x02
 #define PKT_NOTIFICATION	0x03
 #define PKT_KEEPALIVE		0x04
+#define PKT_ROUTE_REFRESH	0x05
 #define PKT_SCHEDULE_CLOSE	0x1f	/* Used internally to schedule socket close */
 
 /* Attributes */
@@ -284,5 +296,11 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 
 #define BGP_AF_IPV4		1
 #define BGP_AF_IPV6		2
+
+#ifdef IPV6
+#define BGP_AF BGP_AF_IPV6
+#else
+#define BGP_AF BGP_AF_IPV4
+#endif
 
 #endif

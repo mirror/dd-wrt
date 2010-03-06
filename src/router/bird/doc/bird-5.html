@@ -160,7 +160,7 @@ IP address) whose prefix length is 20 to 24, <CODE>[ 1.2.3.4/32- ]</CODE> matche
 <CODE>1.2.3.4</CODE>. <CODE>1.2.0.0/16 ~ [ 1.0.0.0/8{15,17} ]</CODE> is true,
 but <CODE>1.0.0.0/16 ~ [ 1.0.0.0/8- ]</CODE> is false.
 <P>Cisco-style patterns like <CODE>10.0.0.0/8 ge 16 le 24</CODE> can be expressed
-in Bird as <CODE>10.0.0.0/8{16,24}</CODE>, <CODE>192.168.0.0/16 le 24</CODE> as 
+in BIRD as <CODE>10.0.0.0/8{16,24}</CODE>, <CODE>192.168.0.0/16 le 24</CODE> as 
 <CODE>192.168.0.0/16{16,24}</CODE> and <CODE>192.168.0.0/16 ge 24</CODE> as
 <CODE>192.168.0.0/16{24,32}</CODE>.
 <P>
@@ -169,6 +169,16 @@ variables of such type, but some route attributes are of enumeration
 type. Enumeration types are incompatible with each other.
 <P>
 <DT><CODE>bgppath</CODE><DD><P>BGP path is a list of autonomous system numbers. You can't write literals of this type.
+There are several special operators on bgppaths:
+<P><CODE><I>P</I>.first</CODE> returns the first ASN (the neighbor ASN) in path <I>P</I>.
+<P><CODE><I>P</I>.last</CODE> returns the last ASN (the source ASN) in path <I>P</I>.
+<P>Both <CODE>first</CODE> and <CODE>last</CODE> return zero if there is no appropriate ASN,
+for example if the path contains an AS set element as the first (or the last) part.
+<P><CODE><I>P</I>.len</CODE> returns the length of path <I>P</I>.
+<P><CODE>prepend(<I>P</I>,<I>A</I>)</CODE> prepends ASN <I>A</I> to path <I>P</I> and returns the result.
+Statement <CODE><I>P</I> = prepend(<I>P</I>, <I>A</I>);</CODE> can be shortened to
+<CODE><I>P</I>.prepend(<I>A</I>);</CODE> if <I>P</I> is appropriate route attribute
+(for example <CODE>bgp_path</CODE>).
 <P>
 <DT><CODE>bgpmask</CODE><DD><P>BGP masks are patterns used for BGP path matching
 (using <CODE>path ~ [= 2 3 5 * =]</CODE> syntax). The masks
@@ -181,9 +191,16 @@ For example, if <CODE>bgp_path</CODE> is 4 3 2 1, then:
 BGP mask expressions can also contain integer expressions enclosed in parenthesis
 and integer variables, for example <CODE>[= * 4 (1+2) a =]</CODE>.
 There is also old syntax that uses / .. / instead of [= .. =] and ? instead of *.
+<P>
 <DT><CODE>clist</CODE><DD><P>Community list is similar to set of pairs,
 except that unlike other sets, it can be modified.
 There exist no literals of this type.
+There are two special operators on clists:
+<P><CODE>add(<I>C</I>,<I>P</I>)</CODE> adds pair <I>P</I> to clist <I>C</I> and returns the result.
+<P><CODE>delete(<I>C</I>,<I>P</I>)</CODE> deletes pair <I>P</I> from clist <I>C</I> and returns the result.
+<P>Statement <CODE><I>C</I> = add(<I>C</I>, <I>P</I>);</CODE> can be shortened to
+<CODE><I>C</I>.add(<I>P</I>);</CODE> if <I>C</I> is appropriate route attribute
+(for example <CODE>bgp_community</CODE>). Similarly for <CODE>delete</CODE>.
 <P>
 </DL>
 <P>
@@ -244,7 +261,7 @@ defined by using the <CODE>defined( <I>attribute</I> )</CODE> operator.
 <P>
 <DT><CODE><I>enum</I> scope</CODE><DD><P>Address scope of the network (<CODE>SCOPE_HOST</CODE> for addresses local to this host, <CODE>SCOPE_LINK</CODE> for those specific for a physical link, <CODE>SCOPE_SITE</CODE> and <CODE>SCOPE_ORGANIZATION</CODE> for private addresses, <CODE>SCOPE_UNIVERSE</CODE> for globally visible addresses).
 <P>
-<DT><CODE><I>int</I> preference</CODE><DD><P>Preference of the route. (See the chapter about routing tables.)
+<DT><CODE><I>int</I> preference</CODE><DD><P>Preference of the route. Valid values are 0-65535. (See the chapter about routing tables.)
 <P>
 <DT><CODE><I>ip</I> from</CODE><DD><P>The router which the route has originated from. Read-only.
 <P>
