@@ -100,8 +100,8 @@ x86_64-gcc.o:	asm/x86_64-gcc.c
 x86_64-mont.s:	asm/x86_64-mont.pl
 	$(PERL) asm/x86_64-mont.pl $@
 
-armv4-mont.s:	asm/armv4-mont.pl
-	$(PERL) asm/armv4-mont.pl $@
+armv4-mont.s: asm/armv4-mont.pl
+	$(PERL) $^ > $@
 
 bn-ia64.s:	asm/ia64.S
 	$(CC) $(CFLAGS) -E asm/ia64.S > $@
