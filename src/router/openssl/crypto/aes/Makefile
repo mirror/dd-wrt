@@ -53,15 +53,14 @@ aes-armv4.s: asm/aes-armv4.pl
 aes-ia64.s: asm/aes-ia64.S
 	$(CC) $(CFLAGS) -E asm/aes-ia64.S > $@
 
-ax86-elf.s: asm/aes-586.pl ../perlasm/x86asm.pl
-	(cd asm; $(PERL) aes-586.pl elf $(CFLAGS) $(PROCESSOR) > ../$@)
-ax86-cof.s: asm/aes-586.pl ../perlasm/x86asm.pl
-	(cd asm; $(PERL) aes-586.pl coff $(CFLAGS) $(PROCESSOR) > ../$@)
-ax86-out.s: asm/aes-586.pl ../perlasm/x86asm.pl
-	(cd asm; $(PERL) aes-586.pl a.out $(CFLAGS) $(PROCESSOR) > ../$@)
+aes-586.s:	asm/aes-586.pl ../perlasm/x86asm.pl
+	$(PERL) asm/aes-586.pl elf $(CFLAGS) $(PROCESSOR) > $@
 
 aes-x86_64.s: asm/aes-x86_64.pl
 	$(PERL) asm/aes-x86_64.pl $@
+
+aes-ppc.s:	asm/aes-ppc.pl
+	$(PERL) asm/aes-ppc.pl $(PERLASM_SCHEME) $@
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO

@@ -39,7 +39,7 @@ sub ::asciz
 # Integer-only code [being equipped with dedicated squaring procedure]
 # gives ~40% on rsa512 sign benchmark...
 
-push(@INC,"perlasm","../../perlasm");
+push(@INC,"perlasm","../perlasm");
 require "x86asm.pl";
 
 &asm_init($ARGV[0],$0);

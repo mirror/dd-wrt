@@ -26,6 +26,7 @@ EX_LIBS=
 CFLAGS= $(INCLUDE) $(CFLAG)
 ASFLAGS= $(INCLUDE) $(ASFLAG)
 AFLAGS=$(ASFLAGS)
+CPUID_OBJ=mem_clr.o
 
 LIBS=
 
@@ -34,7 +35,7 @@ GENERAL=Makefile README crypto-lib.com install.com
 LIB= $(TOP)/libcrypto.a
 SHARED_LIB= libcrypto$(SHLIB_EXT)
 LIBSRC=	cryptlib.c dyn_lck.c mem.c mem_clr.c mem_dbg.c cversion.c ex_data.c tmdiff.c cpt_err.c ebcdic.c uid.c o_time.c o_str.c o_dir.c o_init.c fips_err.c
-LIBOBJ= cryptlib.o dyn_lck.o mem.o mem_clr.o mem_dbg.o cversion.o ex_data.o tmdiff.o cpt_err.o ebcdic.o uid.o o_time.o o_str.o o_dir.o o_init.o fips_err.o $(CPUID_OBJ)
+LIBOBJ= cryptlib.o dyn_lck.o mem.o mem_dbg.o cversion.o ex_data.o tmdiff.o cpt_err.o ebcdic.o uid.o o_time.o o_str.o o_dir.o o_init.o fips_err.o $(CPUID_OBJ)
 
 SRC= $(LIBSRC)
 
@@ -57,12 +58,9 @@ buildinf.h: ../Makefile
 	echo "  #define DATE \"`LC_ALL=C LC_TIME=C date`\""; \
 	echo '#endif' ) >buildinf.h
 
-x86cpuid-elf.s:	x86cpuid.pl perlasm/x86asm.pl
+x86cpuid.s:	x86cpuid.pl perlasm/x86asm.pl
 	$(PERL) x86cpuid.pl elf $(CFLAGS) $(PROCESSOR) > $@
-x86cpuid-cof.s: x86cpuid.pl perlasm/x86asm.pl
-	$(PERL) x86cpuid.pl coff $(CFLAGS) $(PROCESSOR) > $@
-x86cpuid-out.s: x86cpuid.pl perlasm/x86asm.pl
-	$(PERL) x86cpuid.pl a.out $(CFLAGS) $(PROCESSOR) > $@
+
 
 uplink.o:	../ms/uplink.c
 	$(CC) $(CFLAGS) -c -o $@ ../ms/uplink.c
