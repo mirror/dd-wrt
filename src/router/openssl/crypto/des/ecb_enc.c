@@ -57,7 +57,6 @@
  */
 
 #include "des_locl.h"
-//#include "spr.h"
 
 void DES_ecb_encrypt(const_DES_cblock *input, DES_cblock *output,
 		     DES_key_schedule *ks, int enc)
