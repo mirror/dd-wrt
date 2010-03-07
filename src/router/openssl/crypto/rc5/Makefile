@@ -44,15 +44,8 @@ lib:	$(LIBOBJ)
 	$(RANLIB) $(LIB) || echo Never mind.
 	@touch lib
 
-# ELF
-r586-elf.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) rc5-586.pl elf $(CFLAGS) > ../$@)
-# COFF
-r586-cof.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) rc5-586.pl coff $(CFLAGS) > ../$@)
-# a.out
-r586-out.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) rc5-586.pl a.out $(CFLAGS) > ../$@)
+rc5-586.s: asm/rc5-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
+	$(PERL) asm/rc5-586.pl elf $(CFLAGS) > $@
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO

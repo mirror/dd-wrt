@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 
-push(@INC,"perlasm","../../perlasm");
+push(@INC,"perlasm","../perlasm");
 require "x86asm.pl";
 
 &asm_init($ARGV[0],$0);
