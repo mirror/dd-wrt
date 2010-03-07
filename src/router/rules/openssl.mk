@@ -8,8 +8,8 @@ export OPENSSL_TARGET := linux-armv4
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 endif
 ifeq ($(ARCH),i386)
-export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="ax86-elf.o aes_cbc.o" 
-export OPENSSL_CMAKEFLAGS := -DOPENSSL_FIPS_AES_ASM=1 
+export OPENSSL_TARGET := linux-i386
+export OPENSSL_CMAKEFLAGS := -DOPENSSL_FIPS_AES_ASM=1 -DOPENSSL_BN_ASM_PART_WORDS 
 endif
 
 openssl:
