@@ -1,7 +1,10 @@
+export OPENSSL_TARGET := linux-openwrt
 ifeq ($(ARCH),armeb)
+export OPENSSL_TARGET := linux-armv4
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 endif
 ifeq ($(ARCH),arm)
+export OPENSSL_TARGET := linux-armv4
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 endif
 ifeq ($(ARCH),i386)
@@ -54,7 +57,7 @@ endif
 
 
 openssl-configure:
-	cd openssl && ./Configure linux-openwrt \
+	cd openssl && ./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
 			$(COPTS) $(OPENSSL_CMAKEFLAGS) \
