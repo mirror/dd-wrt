@@ -29,9 +29,6 @@
 #ifndef OPENSSL_NO_ECDSA
 # define OPENSSL_NO_ECDSA
 #endif
-#ifndef OPENSSL_NO_ENGINES
-# define OPENSSL_NO_ENGINES
-#endif
 #ifndef OPENSSL_NO_GMP
 # define OPENSSL_NO_GMP
 #endif
@@ -118,9 +115,6 @@
 # endif
 # if defined(OPENSSL_NO_ECDSA) && !defined(NO_ECDSA)
 #  define NO_ECDSA
-# endif
-# if defined(OPENSSL_NO_ENGINES) && !defined(NO_ENGINES)
-#  define NO_ENGINES
 # endif
 # if defined(OPENSSL_NO_GMP) && !defined(NO_GMP)
 #  define NO_GMP

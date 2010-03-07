@@ -68,6 +68,12 @@ sha512-ia64.s: asm/sha512-ia64.pl
 sha256-armv4.s: asm/sha256-armv4.pl
 	$(PERL) $< $@
 
+sha512-armv4.s: asm/sha512-armv4.pl
+	$(PERL) $< $@
+
+sha1-armv4-large.s: asm/sha1-armv4-large.pl
+	$(PERL) $< $@
+
 
 # Solaris make has to be explicitly told
 sha1-x86_64.s:	asm/sha1-x86_64.pl;	$(PERL) asm/sha1-x86_64.pl $@
