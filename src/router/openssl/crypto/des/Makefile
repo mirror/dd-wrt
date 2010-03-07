@@ -64,21 +64,11 @@ des: des.o cbc3_enc.o lib
 des_enc-sparc.S:	asm/des_enc.m4
 	m4 -B 8192 asm/des_enc.m4 > des_enc-sparc.S
 
-# ELF
-dx86-elf.s:	asm/des-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) des-586.pl elf $(CFLAGS) > ../$@)
-yx86-elf.s:	asm/crypt586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) crypt586.pl elf $(CFLAGS) > ../$@)
-# COFF
-dx86-cof.s: asm/des-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) des-586.pl coff $(CFLAGS) > ../$@)
-yx86-cof.s: asm/crypt586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) crypt586.pl coff $(CFLAGS) > ../$@)
-# a.out
-dx86-out.s: asm/des-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) des-586.pl a.out $(CFLAGS) > ../$@)
-yx86-out.s: asm/crypt586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
-	(cd asm; $(PERL) crypt586.pl a.out $(CFLAGS) > ../$@)
+des-586.s:	asm/des-586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
+	$(PERL) asm/des-586.pl elf $(CFLAGS) > $@
+crypt586.s:	asm/crypt586.pl ../perlasm/x86asm.pl ../perlasm/cbc.pl
+	$(PERL) asm/crypt586.pl elf $(CFLAGS) > $@
+
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
