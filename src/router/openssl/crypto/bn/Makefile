@@ -106,6 +106,9 @@ aix_ppc64.s: asm/ppc.pl;	$(PERL) asm/ppc.pl $@
 osx_ppc32.s: asm/ppc.pl;	$(PERL) $< $@
 osx_ppc64.s: asm/ppc.pl;	$(PERL) $< $@
 
+bn-ppc.s:	asm/ppc.pl;	$(PERL) asm/ppc.pl linux32 $@
+ppc-mont.s:	asm/ppc-mont.pl;$(PERL) asm/ppc-mont.pl linux32 $@
+
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
 

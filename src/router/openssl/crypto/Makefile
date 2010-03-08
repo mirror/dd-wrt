@@ -62,6 +62,7 @@ x86cpuid.s:	x86cpuid.pl perlasm/x86asm.pl
 	$(PERL) x86cpuid.pl elf $(CFLAGS) $(PROCESSOR) > $@
 
 
+
 uplink.o:	../ms/uplink.c
 	$(CC) $(CFLAGS) -c -o $@ ../ms/uplink.c
 
@@ -72,6 +73,8 @@ x86_64cpuid.s: x86_64cpuid.pl
 	$(PERL) x86_64cpuid.pl $@
 ia64cpuid.s: ia64cpuid.S
 	$(CC) $(CFLAGS) -E ia64cpuid.S > $@
+
+ppccpuid.s:		ppccpuid.pl;	$(PERL) ppccpuid.pl linux32 > $@
 
 testapps:
 	[ -z "$(THIS)" ] || (	if echo ${SDIRS} | fgrep ' des '; \
