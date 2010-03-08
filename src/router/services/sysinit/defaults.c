@@ -271,6 +271,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_MAGICBOX
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_RB600
+	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_TW6600
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_XSCALE
@@ -1272,6 +1274,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"remote_management", "0", 0},	/* Remote Management [1|0] */
 #elif HAVE_MAGICBOX
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_RB600
+	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_XSCALE
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_FONERA
@@ -1609,6 +1613,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"sshd_enable", "1", 0},
 #elif HAVE_MAGICBOX
 	{"sshd_enable", "1", 0},
+#elif HAVE_RB600
+	{"sshd_enable", "1", 0},
 #elif HAVE_WHRAG108
 	{"sshd_enable", "1", 0},
 #elif HAVE_TW6600
@@ -1633,6 +1639,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"sshd_dss_host_key", "", 0},
 	{"sshd_authorized_keys", "", 0},
 #ifdef HAVE_MAGICBOX
+	{"remote_mgt_ssh", "1", 0},
+#elif HAVE_RB600
 	{"remote_mgt_ssh", "1", 0},
 #elif HAVE_GGEW
 	{"remote_mgt_ssh", "0", 0},
@@ -2042,6 +2050,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ip_conntrack_max", "32768", 0},
 #endif
 #elif HAVE_MAGICBOX
+	{"ip_conntrack_max", "32768", 0},
+#elif HAVE_RB600
 	{"ip_conntrack_max", "32768", 0},
 #elif HAVE_MERAKI
 	{"ip_conntrack_max", "32768", 0},
