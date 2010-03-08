@@ -36,6 +36,10 @@ ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
 
 endif
+ifeq ($(CONFIG_RB600),y)
+CFLAGS += -fpic
+
+endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD

@@ -449,6 +449,40 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "unknown");
 	return;
 }
+#elif HAVE_RB600
+void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *fp = fopen("/proc/cpuinfo", "rb");
+
+	if (fp == NULL) {
+		websWrite(wp, "unknown");
+		return;
+	}
+	int cnt = 0;
+	int b = 0;
+
+	while (b != EOF) {
+		b = getc(fp);
+		if (b == ':')
+			cnt++;
+		if (cnt == 3) {
+			getc(fp);
+			char cpuclk[4];
+
+			cpuclk[0] = getc(fp);
+			cpuclk[1] = getc(fp);
+			cpuclk[2] = getc(fp);
+			cpuclk[3] = 0;
+			websWrite(wp, cpuclk);
+			fclose(fp);
+			return;
+		}
+	}
+
+	fclose(fp);
+	websWrite(wp, "unknown");
+	return;
+}
 #elif defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_ADM5120) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_CA8)
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
