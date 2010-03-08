@@ -345,7 +345,7 @@ $code.=<<___;
 	lwz	$s2,8($inp)
 	lwz	$s3,12($inp)
 	bl	LAES_Te
-	bl	Lppc_AES_encrypt_compact
+	bl	Lppc_AES_encrypt
 	stw	$s0,0($out)
 	stw	$s1,4($out)
 	stw	$s2,8($out)
@@ -694,7 +694,7 @@ Lenc_compact_done:
 	lwz	$s2,8($inp)
 	lwz	$s3,12($inp)
 	bl	LAES_Td
-	bl	Lppc_AES_decrypt_compact
+	bl	Lppc_AES_decrypt
 	stw	$s0,0($out)
 	stw	$s1,4($out)
 	stw	$s2,8($out)
