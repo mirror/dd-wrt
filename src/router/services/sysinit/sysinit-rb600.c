@@ -77,11 +77,11 @@ void start_sysinit(void)
 	// fix for linux kernel 2.6
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "-p", "/usr/local/nvram");
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mkdir", "/tmp/www");
 	eval("mount","-o","remount,rw","/dev/root");
+	eval("mkdir", "-p", "/usr/local/nvram");
 	unlink("/tmp/nvram/.lock");
 	eval("mkdir", "/tmp/nvram");
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
