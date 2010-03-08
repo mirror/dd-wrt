@@ -441,27 +441,29 @@
 // Asus RT-N16 (BCM4718A cpu, 32MB flash / 128MB ram, BCM53115 giga switch, fccid: Asus MSQRTN16)
 #define ROUTER_ASUS_RTN16 0x8b16
 
-#define ROUTER_BOARD_BR6574N 0x901a
+#define ROUTER_BOARD_BR6574N 0x8c1a
 
-#define ROUTER_BOARD_WHRHPGN 0x911b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#define ROUTER_BOARD_WHRHPGN 0x8d1b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 
 // Dynex DX-NRUTER (BCM4703 cpu, 4MB flash / 32MB ram, BCM5325E switch, fccid: Belkin K7SDXNRUTER)
-#define ROUTER_DYNEX_DX_NRUTER 0x9212
+#define ROUTER_DYNEX_DX_NRUTER 0x8e12
 
-#define ROUTER_BOARD_OPENRISC 0x930f
+#define ROUTER_BOARD_OPENRISC 0x8f0f
 
-#define ROUTER_BOARD_ASUS_RTN13U 0x941a
+#define ROUTER_BOARD_ASUS_RTN13U 0x901a
 
-#define ROUTER_BOARD_WRT160NL 0x9501  // fake id, reset button is gpio 21
+#define ROUTER_BOARD_WRT160NL 0x9101  // fake id, reset button is gpio 21
 
 // NetCore NW618 / Rosewill RNX-GX4 (BCM5354 cpu, 4MB serial flash / 16MB ram, fccid: Rosewill W6RRNX-GX4)
-#define ROUTER_NETCORE_NW618 0x9616
+#define ROUTER_NETCORE_NW618 0x9216
 
-#define ROUTER_BOARD_W502U 0x971a
+#define ROUTER_BOARD_W502U 0x931a
 
-#define ROUTER_BOARD_DIR615D 0x981a
+#define ROUTER_BOARD_DIR615D 0x941a
 
-#define ROUTER_BOARD_AR690W 0x9919
+#define ROUTER_BOARD_AR690W 0x9519
+
+#define ROUTER_BOARD_RB600 0x960f
 
 #define NVROUTER "DD_BOARD"
 
