@@ -41,6 +41,9 @@ WOBJS := wl.o wl_macfuncs.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
 endif
+ifeq ($(CONFIG_RB600),y)
+CFLAGS += -fpic
+endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 OBJS += $(TOP)/register/register_check.o
@@ -211,6 +214,9 @@ ifeq ($(CONFIG_3G),y)
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
+endif
+ifeq ($(CONFIG_RB600),y)
+  CFLAGS += -DHAVE_RB600
 endif
 ifeq ($(CONFIG_FREERADIUS),y)
   CFLAGS += -DHAVE_FREERADIUS

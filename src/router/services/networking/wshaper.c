@@ -62,6 +62,7 @@ void svqos_reset_ports(void)
 {
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
+#ifndef HAVE_RB600
 #ifndef HAVE_FONERA
 #ifndef HAVE_RT2880
 #ifndef HAVE_LS2
@@ -131,12 +132,14 @@ void svqos_reset_ports(void)
 #endif
 #endif
 #endif
+#endif
 }
 
 int svqos_set_ports(void)
 {
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
+#ifndef HAVE_RB600
 #ifndef HAVE_FONERA
 #ifndef HAVE_RT2880
 #ifndef HAVE_LS2
@@ -181,6 +184,7 @@ int svqos_set_ports(void)
 			     atoi(level) / 10 - 1, loop);
 		}
 	}
+#endif
 #endif
 #endif
 #endif
@@ -661,6 +665,18 @@ void stop_wshaper(void)
 #elif HAVE_MAGICBOX
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "ath0");
+#elif HAVE_RB600
+	ret = eval(script_name, "stop", "XX", "eth0");
+	ret = eval(script_name, "stop", "XX", "eth1");
+	ret = eval(script_name, "stop", "XX", "eth2");
+	ret = eval(script_name, "stop", "XX", "ath0");
+	ret = eval(script_name, "stop", "XX", "ath1");
+	ret = eval(script_name, "stop", "XX", "ath2");
+	ret = eval(script_name, "stop", "XX", "ath3");
+	ret = eval(script_name, "stop", "XX", "ath4");
+	ret = eval(script_name, "stop", "XX", "ath5");
+	ret = eval(script_name, "stop", "XX", "ath6");
+	ret = eval(script_name, "stop", "XX", "ath7");
 #elif HAVE_NS2
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "ath0");

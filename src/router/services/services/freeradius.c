@@ -83,11 +83,13 @@ void start_freeradius(void)
 		return;
 
 #ifndef HAVE_OPENRISC
+#ifndef HAVE_RB600
 #ifdef HAVE_X86
 	system("mount -t ext2 /dev/discs/disc0/part3 /jffs");
 #else
 	if (!nvram_match("jffs_mounted", "1"))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
+#endif
 #endif
 #endif
 	if (!f_exists("/jffs/etc/freeradius/radiusd.conf")) {
