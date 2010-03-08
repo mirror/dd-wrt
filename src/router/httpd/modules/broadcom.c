@@ -2670,7 +2670,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 void do_vsp_page(struct mime_handler *handler, char *url,
 		 webs_t stream, char *query)
 {
-
+/*
 #ifdef HAVE_MADWIFI
 	char *ifname = "ath0";
 #else
@@ -2721,7 +2721,7 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 		encrypt = "";
 		wpakey = "";
 	}
-
+*/
 	websWrite(stream, "<html>\n");
 	websWrite(stream, "<head>\n");
 	websWrite(stream, "<title>VSP</title>\n");
@@ -2731,16 +2731,15 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 
 	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
 	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
-	websWrite(stream, "DEVICE_MODEL=%s DDWRT<br>\n",nvram_safe_get("DD_BOARD"));
+	websWrite(stream, "DEVICE_MODEL=%s DDWRT<br>\n", nvram_safe_get("DD_BOARD"));
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
-	websWrite(stream, "<br>\n");
 	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
-	websWrite(stream, "<br>\n");
-	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
-	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
-	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
-	websWrite(stream, "DEVICE_URL_GET=/vsp.html\n");
-	websWrite(stream, "DEVICE_URL_SET=/vsp.html\n");
+//	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
+//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
+//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
+	websWrite(stream, "DEVICE_URL_GET=/vsp.html<br>\n");
+	websWrite(stream, "DEVICE_URL_SET=/vsp.html<br>\n");
+
 	websWrite(stream, "</pre>\n");
 	websWrite(stream, "</body>\n");
 	websWrite(stream, "</html>\n");
