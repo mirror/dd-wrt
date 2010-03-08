@@ -1467,7 +1467,7 @@ int getdevicecount(void)
 {
 	int count = getifcount("wifi");
 
-	if (count < 16 && count > 0)
+	if (count > 0)
 		return count;
 	return 0;
 }
