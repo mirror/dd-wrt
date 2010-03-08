@@ -60,7 +60,7 @@ aes-x86_64.s: asm/aes-x86_64.pl
 	$(PERL) asm/aes-x86_64.pl $@
 
 aes-ppc.s:	asm/aes-ppc.pl
-	$(PERL) asm/aes-ppc.pl $(PERLASM_SCHEME) $@
+	$(PERL) asm/aes-ppc.pl linux32 $@
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
