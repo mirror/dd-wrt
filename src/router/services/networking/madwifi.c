@@ -1823,34 +1823,6 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 				// cards
 {
 	deconfigure_wifi();
-	/*
-	 * int s; int existed=0; for (s=0;s<10;s++) { char wif[32];
-	 * sprintf(wif,"wifi%d",s); if (ifexists(wif)) {
-	 * eval("ifconfig",wif,"down"); existed=1; } } #if defined(HAVE_FONERA)
-	 * || defined(HAVE_WHRAG108) eval("rmmod","ath_ahb"); insmod("ath_ahb",
-	 * "autocreate=none"); #else eval("rmmod","ath_pci"); insmod("ath_pci",
-	 * "autocreate=none"); #endif for (s=0;s<10;s++) { char wif[32];
-	 * sprintf(wif,"wifi%d",s); if (ifexists(wif)) eval("ifconfig",wif,"up");
-	 * } 
-	 */
-
-	// bridge the virtual interfaces too
-	/*
-	 * char countrycode[64]; char xchanmode[64]; char outdoor[64];
-	 * 
-	 * if (strlen (nvram_safe_get ("wl_countrycode")) > 0) sprintf
-	 * (countrycode, "countrycode=%s", nvram_safe_get ("wl_countrycode"));
-	 * else sprintf (countrycode, "countrycode=0");
-	 * 
-	 * if (strlen (nvram_safe_get ("wl_xchanmode")) > 0) sprintf (xchanmode,
-	 * "xchanmode=%s", nvram_safe_get ("wl_xchanmode")); else sprintf
-	 * (xchanmode, "xchanmode=0");
-	 * 
-	 * if (strlen (nvram_safe_get ("wl_outdoor")) > 0) sprintf (outdoor,
-	 * "outdoor=%s", nvram_safe_get ("wl_outdoor")); else sprintf (outdoor,
-	 * "outdoor=0"); 
-	 */
-
 	int c = getdevicecount();
 	int i;
 	int changed = 0;
