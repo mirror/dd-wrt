@@ -115,6 +115,7 @@ void start_sysinit(void)
 
 	//for extension board
 	insmod("via-rhine");
+	insmod("tulip");
 	struct ifreq ifr;
 	int s;
 
