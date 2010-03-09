@@ -26,6 +26,9 @@ endif
 ifeq ($(CONFIG_MAGICBOX),y)
 MODULE:=conntrack.26
 endif
+ifeq ($(CONFIG_RB600),y)
+MODULE:=conntrack.26
+endif
 ifeq ($(CONFIG_FONERA),y)
 MODULE:=conntrack.26
 endif
