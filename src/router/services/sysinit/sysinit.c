@@ -422,7 +422,7 @@ void start_restore_defaults(void)
 #elif HAVE_RB600
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "eth0 eth1 eth2 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7",
+		{"lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7",
 		 0},
 		{"wan_ifname", "eth0", 0},
 		{"wan_ifname2", "eth0", 0},

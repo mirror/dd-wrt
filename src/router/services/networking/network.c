@@ -836,10 +836,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_RB600
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
 		PORTSETUPWAN("eth0");
 	}
 
