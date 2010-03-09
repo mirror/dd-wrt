@@ -80,10 +80,10 @@ void start_sysinit(void)
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mkdir", "/tmp/www");
-	eval("mount","-o","remount,rw","/dev/root");
+	eval("mount", "-o", "remount,rw", "/dev/root");
 	unlink("/tmp/nvram/.lock");
 	eval("mkdir", "/tmp/nvram");
-	sleep(1); //give some time for remount
+	sleep(1);		//give some time for remount
 	eval("mkdir", "-p", "/usr/local/nvram");
 	cprintf("sysinit() var\n");
 
@@ -112,13 +112,37 @@ void start_sysinit(void)
 	 * Modules 
 	 */
 	uname(&name);
+
+	//for extension board
+	insmod("via-rhine");
+	struct ifreq ifr;
+	int s;
+
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		char macbase[32];
+		sprintf(macbase, "%s",
+			ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				   eabuf));
+		close(s);
+		MAC_ADD(macbase);
+		int i;
+		for (i = 3; i < 9; i++) {
+			char ifname[32];
+			sprintf(ifname, "eth%d", i);
+			eval("ifconfig", ifname, "hw", "ether", macbase);
+			MAC_ADD(macbase);
+		}
+	}
+
 	/*
 	 * network drivers 
 	 */
 	detect_wireless_devices();
 
-	struct ifreq ifr;
-	int s;
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
