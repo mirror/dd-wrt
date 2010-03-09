@@ -583,6 +583,9 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 {
+#ifdef HAVE_RB600
+	websWrite(wp, "FreeScale MPC8343");
+#else
 	FILE *fcpu = fopen("/proc/cpuinfo", "r");
 
 	if (fcpu == NULL) {
@@ -636,6 +639,7 @@ void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, buf);
 	fclose(fcpu);
 	return;
+#endif
 }
 
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
