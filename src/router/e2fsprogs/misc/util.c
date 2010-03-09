@@ -129,14 +129,14 @@ void check_plausibility(const char *device)
 #define SCSI_BLK_MAJOR(M)  ((M) == SCSI_DISK_MAJOR || (M) == SCSI_CDROM_MAJOR)
 #endif /* defined(SCSI_DISK0_MAJOR) */
 #endif /* defined(SCSI_BLK_MAJOR) */
-	if (((MAJOR(s.st_rdev) == HD_MAJOR &&
+/*	if (((MAJOR(s.st_rdev) == HD_MAJOR &&
 	      MINOR(s.st_rdev)%64 == 0) ||
 	     (SCSI_BLK_MAJOR(MAJOR(s.st_rdev)) &&
 	      MINOR(s.st_rdev)%16 == 0))) {
 		printf(_("%s is entire device, not just one partition!\n"),
 		       device);
 		proceed_question();
-	}
+	}*/
 #endif
 }
 
