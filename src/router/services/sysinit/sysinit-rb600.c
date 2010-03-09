@@ -81,18 +81,10 @@ void start_sysinit(void)
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mkdir", "/tmp/www");
 	eval("mount","-o","remount,rw","/dev/root");
-	eval("mkdir", "-p", "/usr/local/nvram");
 	unlink("/tmp/nvram/.lock");
 	eval("mkdir", "/tmp/nvram");
-	eval("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
-	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");
-
-	if (in != NULL) {
-		fclose(in);
-		eval("/usr/sbin/convertnvram");
-		eval("/sbin/mtd", "erase", "nvram");
-		nvram_commit();
-	}
+	sleep(1); //give some time for remount
+	eval("mkdir", "-p", "/usr/local/nvram");
 	cprintf("sysinit() var\n");
 
 	/*
