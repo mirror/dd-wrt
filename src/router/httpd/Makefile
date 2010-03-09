@@ -256,6 +256,9 @@ ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_X86
 OBJS += upgrade_x86.o
 endif
+ifeq ($(CONFIG_RB600),y)
+CFLAGS += -DHAVE_RB600
+endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -DHAVE_MAGICBOX
