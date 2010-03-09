@@ -585,7 +585,7 @@ static void handle_management(void)
 	handle = start_service_nofree_f("udhcpd", handle);
 	handle = start_service_nofree_f("cron", handle);
 #ifdef HAVE_IPV6
-	handle = start_service_nofree_f("ipv6", handle);
+	FORK(eval("/etc/config/ipv6.startup"));
 #endif
 #ifdef HAVE_RADVD
 	handle = startstop_nofree_f("radvd", handle);
