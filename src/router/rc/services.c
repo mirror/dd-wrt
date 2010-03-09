@@ -468,7 +468,7 @@ static void handle_hotspot(void)
 	handle = start_service_nofree("zebra", handle);
 #endif
 	startstop_f("httpd");	// httpd will not accept connection anymore
-	
+
 	FORK(eval("/etc/config/http-redirect.firewall"));
 	FORK(eval("/etc/config/smtp-redirect.firewall"));
 #ifdef HAVE_ZEROIP
@@ -585,7 +585,13 @@ static void handle_management(void)
 	handle = start_service_nofree_f("udhcpd", handle);
 	handle = start_service_nofree_f("cron", handle);
 #ifdef HAVE_IPV6
-	FORK(eval("/etc/config/ipv6.startup"));
+	eval("/etc/config/ipv6.startup");
+	if (nvram_match("need_reboot", "1")) {
+		nvram_set("need_reboot", "0");
+		nvram_set("need_commit", "0");
+		nvram_commit();
+		handle = start_service_nofree_f("ipv6", handle);
+	}
 #endif
 #ifdef HAVE_RADVD
 	handle = startstop_nofree_f("radvd", handle);
