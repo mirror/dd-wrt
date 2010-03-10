@@ -218,6 +218,9 @@ endif
 ifeq ($(CONFIG_RB600),y)
   CFLAGS += -DHAVE_RB600
 endif
+ifeq ($(CONFIG_RB1000),y)
+  CFLAGS += -DHAVE_RB1000
+endif
 ifeq ($(CONFIG_FREERADIUS),y)
   CFLAGS += -DHAVE_FREERADIUS
   OBJS += radius.o
