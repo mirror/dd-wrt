@@ -727,6 +727,9 @@ int internal_getRouterBrand()
 #elif HAVE_RB1000
 	setRouter("Mikrotik RB1000");
 	return ROUTER_BOARD_RB600;
+#elif HAVE_RB800
+	setRouter("Mikrotik RB800");
+	return ROUTER_BOARD_RB600;
 #elif HAVE_RB600
 	setRouter("Mikrotik RB600");
 	return ROUTER_BOARD_RB600;
