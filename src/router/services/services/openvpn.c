@@ -77,9 +77,8 @@ void stop_openvpnserver(void)
 	if (pidof("openvpn") > 0)
 	    killall("openvpn", SIGKILL);
 	int max=5;
-	while(max--)
+	while(max-- && pidof("openvpn")>0)
 	    {
-	    if (pidof("openvpn")>0)
 		sleep(1);
 	    }
 	return;
