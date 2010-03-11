@@ -3587,7 +3587,7 @@ void start_wan_done(char *wan_ifname)
 
 #ifdef HAVE_OPENVPN
 	cprintf("starting openvpn\n");
-	stop_openvpn();
+	stop_openvpn_wandone();
 	start_openvpn();
 	cprintf("done\n");
 
@@ -3681,7 +3681,7 @@ void stop_wan(void)
 	cprintf("%s %s\n", wan_ifname, nvram_safe_get("wan_proto"));
 #ifdef HAVE_OPENVPN
 	stop_openvpnserverwan();
-	stop_openvpn();
+	stop_openvpn_wandone();
 #endif
 #ifdef HAVE_DHCPFORWARD
 	stop_dhcpfwd();
