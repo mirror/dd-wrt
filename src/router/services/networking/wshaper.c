@@ -328,7 +328,8 @@ int svqos_iptables(void)
 		char *next, *wordlist;
 
 		foreach(word, iflist, next) {
-			if (nvram_nmatch("0", "%s_bridged", word)) {
+			if (nvram_nmatch("0", "%s_bridged", word)
+			    && strcmp(word, "br0") && strcmp(word, dev)) {
 				sysprintf
 				    ("iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0",
 				     word);
@@ -361,12 +362,14 @@ int svqos_iptables(void)
 			}
 			if (!bridge || !stp)
 				break;
-			sysprintf
-			    ("iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
-			     bridge);
-			sysprintf
-			    ("iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
-			     bridge);
+			if (strcmp(bridge, "br0")) {
+				sysprintf
+				    ("iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
+				     bridge);
+				sysprintf
+				    ("iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
+				     bridge);
+			}
 		}
 
 	}
