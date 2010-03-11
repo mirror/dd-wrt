@@ -147,6 +147,7 @@ void start_freeradius(void);
 void stop_freeradius(void);
 void start_openvpn(void);
 void stop_openvpn(void);
+void stop_openvpn_wandone(void);
 void start_anchorfree(void);
 void start_anchorfreednat(void);
 void start_openvpnserverwan(void);
