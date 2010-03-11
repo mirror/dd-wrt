@@ -87,16 +87,15 @@ static inline void ack_r4ktimer(unsigned int newval)
 	write_c0_compare(newval);
 }
 
+extern void ralink_gpio_control(int gpio,int level);
+
 void mips_timer_interrupt(void)
 {
-	/*
-	if ((timer_tick_count++ % HZ) == 0) {
-		mips_display_message(&display_string[display_count++]);
-		if (display_count == MAX_DISPLAY_COUNT)
-		        display_count = 0;
-
-	}
-	*/
+// stupid workaround for hardware watchdog
+#ifdef CONFIG_EAP9550
+	ralink_gpio_control(11,0);
+	ralink_gpio_control(11,1);
+#endif
 
 	ll_timer_interrupt(RALINK_CPU_TIMER_IRQ);
 }

@@ -152,6 +152,10 @@ config  RALINK_TIMER_WDG_RESET_OUTPUT
         bool "Ralink WatchDog Reset Output"
         depends on RALINK_TIMER_WDG
 
+config  EAP9550
+	bool "EAP 9550 watchdog workaround"
+	depends on RALINK_RT3052
+
 config  RALINK_WDG_TIMER
         int "WatchDog Timer (Unit:1Sec, Max=30Sec)"
         default 10
