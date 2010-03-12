@@ -183,6 +183,7 @@ static void __init vsopenrisc_init(void)
 	/* Add devices */
 	ks8695_add_device_wan();	/* eth0 = WAN */
 	ks8695_add_device_lan();	/* eth1 = LAN */
+//	ks8695_add_device_hpna();	/* eth2 = HPNA */
 
 //	i2c_register_board_info(0, &vsopenrisc_i2c_rtc, 1);
 //	platform_device_register(&vsopenrisc_pca_device);
