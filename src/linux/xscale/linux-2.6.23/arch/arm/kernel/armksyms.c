@@ -107,6 +107,9 @@ EXPORT_SYMBOL(memset);
 EXPORT_SYMBOL(memcpy);
 EXPORT_SYMBOL(memmove);
 EXPORT_SYMBOL(memchr);
+#undef memcmp
+extern int memcmp(const void *cs, const void *ct, size_t count);
+EXPORT_SYMBOL(memcmp);
 EXPORT_SYMBOL(__memzero);
 
 	/* user mem (segment) */
