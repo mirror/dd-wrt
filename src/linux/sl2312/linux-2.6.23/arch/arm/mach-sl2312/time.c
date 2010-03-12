@@ -36,22 +36,12 @@ static irqreturn_t sl2312_timer_interrupt(int irq, void *dev_id)
 {
 //        unsigned int led;
 	// ...clear the interrupt
-#ifdef FIQ_PLUS
+/*#ifdef FIQ_PLUS
 	*((volatile unsigned int *)FIQ_CLEAR(IO_ADDRESS(SL2312_INTERRUPT_BASE))) |= (unsigned int)(IRQ_TIMER1_MASK);
 #else
 	*((volatile unsigned int *)IRQ_CLEAR(IO_ADDRESS(SL2312_INTERRUPT_BASE))) |= (unsigned int)(IRQ_TIMER2_MASK);
-#endif
+#endif*/
 
-#if 0
-        if(!(jiffies % HZ))
-        {
-            led = jiffies / HZ;
-//            printk("ticks %x \n", led);
-	    }
-	do_leds();
-	do_timer(regs);
-	do_profile(regs);
-#endif
     timer_tick();
     return IRQ_HANDLED;
 }
@@ -66,6 +56,7 @@ unsigned long sl2312_gettimeoffset (void)
 {
     return 0L;
 }
+#define REG_TO_AHB_SPEED(reg)		((((reg) >> 15) & 0x7) * 10 + 130)
 
 /*
  * Set up timer interrupt, and return the current time in seconds.
@@ -76,15 +67,20 @@ void __init sl2312_time_init(void)
 	unsigned int tick_rate=0;
 
 #ifdef CONFIG_SL3516_ASIC
-	unsigned int clock_rate_base = 130000000;
+//	unsigned int clock_rate_base = 130000000;
 	unsigned int reg_v=0;
 
 	//--> Add by jason for clock adjust
-	reg_v = readl(IO_ADDRESS((SL2312_GLOBAL_BASE+GLOBAL_STATUS)));
-	reg_v >>= 15;
-	tick_rate = (clock_rate_base + (reg_v & 0x07)*10000000);
+
+	reg_v = __raw_readl(IO_ADDRESS((SL2312_GLOBAL_BASE + GLOBAL_STATUS)));
+	tick_rate = REG_TO_AHB_SPEED(reg_v) * 1000000;
+
+//	reg_v = readl(IO_ADDRESS((SL2312_GLOBAL_BASE+GLOBAL_STATUS)));
+//	reg_v >>= 15;
+//	tick_rate = (clock_rate_base + (reg_v & 0x07)*10000000);
 
 	//  FPGA use AHB bus tick rate
+
 	printk("Bus: %dMHz",tick_rate/1000000);
 
 	tick_rate /= 6;				// APB bus run AHB*(1/6)
