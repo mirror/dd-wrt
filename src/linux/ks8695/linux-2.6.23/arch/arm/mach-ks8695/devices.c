@@ -145,14 +145,14 @@ void __init ks8695_add_device_lan(void)
 	platform_device_register(&ks8695_lan_device);
 }
 
-void __init ks8696_add_device_hpna(void)
+void __init ks8695_add_device_hpna(void)
 {
 	platform_device_register(&ks8695_hpna_device);
 }
 #else
 void __init ks8695_add_device_wan(void) {}
 void __init ks8695_add_device_lan(void) {}
-void __init ks8696_add_device_hpna(void) {}
+void __init ks8695_add_device_hpna(void) {}
 #endif
 
 
