@@ -14,9 +14,29 @@ extern char * strchr(const char * s, int c);
 
 #define __HAVE_ARCH_MEMCPY
 extern void * memcpy(void *, const void *, __kernel_size_t);
+#define memcpy(dst, src, len)					\
+({								\
+	size_t __len = (len);					\
+	void *__ret;						\
+	if (__builtin_constant_p(len) && __len >= 64)		\
+		__ret = memcpy((dst), (src), __len);		\
+	else							\
+		__ret = __builtin_memcpy((dst), (src), __len);	\
+	__ret;							\
+})
 
 #define __HAVE_ARCH_MEMMOVE
 extern void * memmove(void *, const void *, __kernel_size_t);
+#define memmove(dst, src, len)					\
+({								\
+	size_t __len = (len);					\
+	void *__ret;						\
+	if (__builtin_constant_p(len) && __len >= 64)		\
+		__ret = memmove((dst), (src), __len);		\
+	else							\
+		__ret = __builtin_memmove((dst), (src), __len);	\
+	__ret;							\
+})
 
 #define __HAVE_ARCH_MEMCHR
 extern void * memchr(const void *, int, __kernel_size_t);
@@ -46,5 +66,8 @@ extern void __memzero(void *ptr, __kernel_size_t n);
 	 		__memzero((__p),(__n)); 			\
 	 	(__p); 							\
 	 })
+
+#define __HAVE_ARCH_MEMCMP
+#define memcmp(src1, src2, len) __builtin_memcmp((src1), (src2), (len))
 
 #endif
