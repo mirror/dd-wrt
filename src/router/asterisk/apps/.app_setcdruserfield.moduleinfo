@@ -1,2 +1,0 @@
-<member name="app_setcdruserfield" displayname="CDR user field apps" remove_on_change="apps/app_setcdruserfield.o apps/app_setcdruserfield.so">
-</member>
