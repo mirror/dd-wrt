@@ -1167,35 +1167,6 @@ ieee802_1x_search_radius_identifier(struct hostapd_data *hapd, u8 identifier)
 
 
 #ifdef HAVE_AQOS
-int stricmp(char *a,char *b)
-{
-int l1 = strlen(a);
-int l2 = strlen(b);
-if (l2>l1)
-    return -1;
-int i;
-int i2=0;
-for (i=0;i<l2;i++)
-    {
-    if (i2==strlen(b))
-	{
-	return -1;
-	break;
-	}
-    if (a[i]==' ')
-	continue;
-    if (b[i2]==' ')
-	{
-	i2++;
-	i--;
-	continue;
-	}
-    if (toupper(a[i])!=toupper(b[i2]))
-	return -1;
-    i2++;
-    }
-return 0;
-}
 extern void add_usermac( char *mac, int idx, char *upstream,
 			 char *downstream );
 extern char *nvram_safe_get(const char *name);
@@ -1214,7 +1185,7 @@ int addrule(char *mac, char *upstream, char *downstream)
 		do {
 			if(sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2, type) < 4)
 				break;
-			if (!stricmp(data,mac)) {
+			if (!strcasecmp(data,mac)) {
 				sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");
 				if (!strcmp(level,upstream) && !strcmp(level2,downstream))
 					ret = 1;
