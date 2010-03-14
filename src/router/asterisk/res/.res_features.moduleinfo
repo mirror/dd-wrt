@@ -1,3 +1,0 @@
-<member name="res_features" displayname="Call Features Resource" remove_on_change="res/res_features.o res/res_features.so">
-        <depend>chan_local</depend>
-</member>

@@ -1,3 +1,0 @@
-<member name="chan_sip" displayname="Session Initiation Protocol (SIP)" remove_on_change="channels/chan_sip.o channels/chan_sip.so">
-        <depend>res_features</depend>
-</member>

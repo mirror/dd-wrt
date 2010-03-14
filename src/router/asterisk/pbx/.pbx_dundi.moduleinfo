@@ -1,3 +1,0 @@
-<member name="pbx_dundi" displayname="Distributed Universal Number Discovery (DUNDi)" remove_on_change="pbx/pbx_dundi.o pbx/pbx_dundi.so">
-	<depend>zlib</depend>
-</member>

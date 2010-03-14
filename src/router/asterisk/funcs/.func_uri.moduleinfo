@@ -1,2 +1,0 @@
-<member name="func_uri" displayname="URI encode/decode dialplan functions" remove_on_change="funcs/func_uri.o funcs/func_uri.so">
-</member>
