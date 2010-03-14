@@ -1,0 +1,5 @@
+<member name="app_rpt" displayname="Radio Repeater/Remote Base Application" remove_on_change="apps/app_rpt.o apps/app_rpt.so">
+	<depend>dahdi</depend>
+	<depend>tonezone</depend>
+	<defaultenabled>no</defaultenabled>
+</member>

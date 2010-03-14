@@ -1,0 +1,3 @@
+<member name="res_config_ldap" displayname="LDAP realtime interface" remove_on_change="res/res_config_ldap.o res/res_config_ldap.so">
+	<depend>ldap</depend>
+</member>

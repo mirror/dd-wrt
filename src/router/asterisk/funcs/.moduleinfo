@@ -1,0 +1,86 @@
+<category name="MENUSELECT_FUNCS" displayname="Dialplan Functions" remove_on_change="funcs/modules.link">
+<member name="func_aes" displayname="AES dialplan functions" remove_on_change="funcs/func_aes.o funcs/func_aes.so">
+</member>
+<member name="func_audiohookinherit" displayname="Audiohook inheritance function" remove_on_change="funcs/func_audiohookinherit.o funcs/func_audiohookinherit.so">
+</member>
+<member name="func_base64" displayname="base64 encode/decode dialplan functions" remove_on_change="funcs/func_base64.o funcs/func_base64.so">
+</member>
+<member name="func_blacklist" displayname="Look up Caller*ID name/number from blacklist database" remove_on_change="funcs/func_blacklist.o funcs/func_blacklist.so">
+</member>
+<member name="func_callerid" displayname="Caller ID related dialplan functions" remove_on_change="funcs/func_callerid.o funcs/func_callerid.so">
+</member>
+<member name="func_cdr" displayname="Call Detail Record (CDR) dialplan function" remove_on_change="funcs/func_cdr.o funcs/func_cdr.so">
+</member>
+<member name="func_channel" displayname="Channel information dialplan functions" remove_on_change="funcs/func_channel.o funcs/func_channel.so">
+</member>
+<member name="func_config" displayname="Asterisk configuration file variable access" remove_on_change="funcs/func_config.o funcs/func_config.so">
+</member>
+<member name="func_curl" displayname="Load external URL" remove_on_change="funcs/func_curl.o funcs/func_curl.so">
+	<depend>curl</depend>
+</member>
+<member name="func_cut" displayname="Cut out information from a string" remove_on_change="funcs/func_cut.o funcs/func_cut.so">
+</member>
+<member name="func_db" displayname="Database (astdb) related dialplan functions" remove_on_change="funcs/func_db.o funcs/func_db.so">
+</member>
+<member name="func_devstate" displayname="Gets or sets a device state in the dialplan" remove_on_change="funcs/func_devstate.o funcs/func_devstate.so">
+</member>
+<member name="func_dialgroup" displayname="Dialgroup dialplan function" remove_on_change="funcs/func_dialgroup.o funcs/func_dialgroup.so">
+</member>
+<member name="func_dialplan" displayname="Dialplan Context/Extension/Priority Checking Functions" remove_on_change="funcs/func_dialplan.o funcs/func_dialplan.so">
+</member>
+<member name="func_enum" displayname="ENUM related dialplan functions" remove_on_change="funcs/func_enum.o funcs/func_enum.so">
+</member>
+<member name="func_env" displayname="Environment/filesystem dialplan functions" remove_on_change="funcs/func_env.o funcs/func_env.so">
+</member>
+<member name="func_extstate" displayname="Gets an extension's state in the dialplan" remove_on_change="funcs/func_extstate.o funcs/func_extstate.so">
+</member>
+<member name="func_global" displayname="Variable dialplan functions" remove_on_change="funcs/func_global.o funcs/func_global.so">
+</member>
+<member name="func_groupcount" displayname="Channel group dialplan functions" remove_on_change="funcs/func_groupcount.o funcs/func_groupcount.so">
+</member>
+<member name="func_iconv" displayname="Charset conversions" remove_on_change="funcs/func_iconv.o funcs/func_iconv.so">
+    <depend>iconv</depend>
+</member>
+<member name="func_lock" displayname="Dialplan mutexes" remove_on_change="funcs/func_lock.o funcs/func_lock.so">
+</member>
+<member name="func_logic" displayname="Logical dialplan functions" remove_on_change="funcs/func_logic.o funcs/func_logic.so">
+</member>
+<member name="func_math" displayname="Mathematical dialplan function" remove_on_change="funcs/func_math.o funcs/func_math.so">
+</member>
+<member name="func_md5" displayname="MD5 digest dialplan functions" remove_on_change="funcs/func_md5.o funcs/func_md5.so">
+</member>
+<member name="func_module" displayname="Checks if Asterisk module is loaded in memory" remove_on_change="funcs/func_module.o funcs/func_module.so">
+</member>
+<member name="func_odbc" displayname="ODBC lookups" remove_on_change="funcs/func_odbc.o funcs/func_odbc.so">
+	<depend>res_odbc</depend>
+</member>
+<member name="func_rand" displayname="Random number dialplan function" remove_on_change="funcs/func_rand.o funcs/func_rand.so">
+</member>
+<member name="func_realtime" displayname="Read/Write/Store/Destroy values from a RealTime repository" remove_on_change="funcs/func_realtime.o funcs/func_realtime.so">
+</member>
+<member name="func_sha1" displayname="SHA-1 computation dialplan function" remove_on_change="funcs/func_sha1.o funcs/func_sha1.so">
+</member>
+<member name="func_shell" displayname="Returns the output of a shell command" remove_on_change="funcs/func_shell.o funcs/func_shell.so">
+</member>
+<member name="func_speex" displayname="Noise reduction and Automatic Gain Control (AGC)" remove_on_change="funcs/func_speex.o funcs/func_speex.so">
+	<depend>speex</depend>
+	<depend>speex_preprocess</depend>
+	<use>speexdsp</use>
+</member>
+<member name="func_sprintf" displayname="SPRINTF dialplan function" remove_on_change="funcs/func_sprintf.o funcs/func_sprintf.so">
+</member>
+<member name="func_strings" displayname="String handling dialplan functions" remove_on_change="funcs/func_strings.o funcs/func_strings.so">
+</member>
+<member name="func_sysinfo" displayname="System information related functions" remove_on_change="funcs/func_sysinfo.o funcs/func_sysinfo.so">
+</member>
+<member name="func_timeout" displayname="Channel timeout dialplan functions" remove_on_change="funcs/func_timeout.o funcs/func_timeout.so">
+</member>
+<member name="func_uri" displayname="URI encode/decode dialplan functions" remove_on_change="funcs/func_uri.o funcs/func_uri.so">
+</member>
+<member name="func_version" displayname="Get Asterisk Version/Build Info" remove_on_change="funcs/func_version.o funcs/func_version.so">
+</member>
+<member name="func_vmcount" displayname="Indicator for whether a voice mailbox has messages in a given folder." remove_on_change="funcs/func_vmcount.o funcs/func_vmcount.so">
+</member>
+<member name="func_volume" displayname="Technology independent volume control" remove_on_change="funcs/func_volume.o funcs/func_volume.so">
+</member>
+</category>

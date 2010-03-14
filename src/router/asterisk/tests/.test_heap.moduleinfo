@@ -1,0 +1,3 @@
+<member name="test_heap" displayname="Heap test module" remove_on_change="tests/test_heap.o tests/test_heap.so">
+	<defaultenabled>no</defaultenabled>
+</member>

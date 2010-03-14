@@ -1,0 +1,2 @@
+<member name="format_sln" displayname="Raw Signed Linear Audio support (SLN)" remove_on_change="formats/format_sln.o formats/format_sln.so">
+</member>

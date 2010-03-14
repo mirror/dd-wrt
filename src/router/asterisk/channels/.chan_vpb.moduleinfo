@@ -1,0 +1,3 @@
+<member name="chan_vpb" displayname="Voicetronix API driver" remove_on_change="channels/chan_vpb.oo channels/chan_vpb.so">
+	<depend>vpb</depend>
+</member>

@@ -1,0 +1,2 @@
+<member name="app_getcpeid" displayname="Get ADSI CPE ID" remove_on_change="apps/app_getcpeid.o apps/app_getcpeid.so">
+</member>

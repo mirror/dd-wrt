@@ -1,0 +1,2 @@
+<member name="func_version" displayname="Get Asterisk Version/Build Info" remove_on_change="funcs/func_version.o funcs/func_version.so">
+</member>

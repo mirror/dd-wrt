@@ -1,0 +1,3 @@
+<member name="app_dahdiscan" displayname="Scan DAHDI channels application" remove_on_change="apps/app_dahdiscan.o apps/app_dahdiscan.so">
+	<depend>dahdi</depend>
+</member>

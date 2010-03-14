@@ -1,0 +1,2 @@
+<member name="app_channelredirect" displayname="Redirects a given channel to a dialplan target" remove_on_change="apps/app_channelredirect.o apps/app_channelredirect.so">
+</member>

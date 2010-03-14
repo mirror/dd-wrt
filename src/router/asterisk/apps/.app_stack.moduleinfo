@@ -1,0 +1,3 @@
+<member name="app_stack" displayname="Dialplan subroutines (Gosub, Return, etc)" remove_on_change="apps/app_stack.o apps/app_stack.so">
+	<use>res_agi</use>
+</member>

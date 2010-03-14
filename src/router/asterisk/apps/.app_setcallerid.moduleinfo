@@ -1,0 +1,2 @@
+<member name="app_setcallerid" displayname="Set CallerID Presentation Application" remove_on_change="apps/app_setcallerid.o apps/app_setcallerid.so">
+</member>

@@ -1,0 +1,2 @@
+<member name="app_zapateller" displayname="Block Telemarketers with Special Information Tone" remove_on_change="apps/app_zapateller.o apps/app_zapateller.so">
+</member>

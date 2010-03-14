@@ -1,0 +1,4 @@
+<member name="res_odbc" displayname="ODBC resource" remove_on_change="res/res_odbc.o res/res_odbc.so">
+	<depend>generic_odbc</depend>
+	<depend>ltdl</depend>
+</member>

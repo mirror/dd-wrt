@@ -1,0 +1,2 @@
+<member name="format_sln16" displayname="Raw Signed Linear 16KHz Audio support (SLN16)" remove_on_change="formats/format_sln16.o formats/format_sln16.so">
+</member>

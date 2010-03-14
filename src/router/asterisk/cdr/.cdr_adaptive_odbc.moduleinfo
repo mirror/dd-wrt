@@ -1,0 +1,4 @@
+<member name="cdr_adaptive_odbc" displayname="Adaptive ODBC CDR backend" remove_on_change="cdr/cdr_adaptive_odbc.o cdr/cdr_adaptive_odbc.so">
+	<depend>generic_odbc</depend>
+	<depend>ltdl</depend>
+</member>
