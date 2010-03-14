@@ -1,0 +1,3 @@
+<member name="codec_resample" displayname="SLIN Resampling Codec" remove_on_change="codecs/codec_resample.o codecs/codec_resample.so">
+	<depend>resample</depend>
+</member>

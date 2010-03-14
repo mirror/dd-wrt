@@ -1,0 +1,2 @@
+<member name="format_wav" displayname="Microsoft WAV format (8000Hz Signed Linear)" remove_on_change="formats/format_wav.o formats/format_wav.so">
+</member>

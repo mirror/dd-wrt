@@ -1,0 +1,2 @@
+<member name="format_siren14" displayname="ITU G.722.1 Annex C (Siren14, licensed from Polycom)" remove_on_change="formats/format_siren14.o formats/format_siren14.so">
+</member>

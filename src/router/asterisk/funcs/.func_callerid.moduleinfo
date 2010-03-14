@@ -1,0 +1,2 @@
+<member name="func_callerid" displayname="Caller ID related dialplan functions" remove_on_change="funcs/func_callerid.o funcs/func_callerid.so">
+</member>

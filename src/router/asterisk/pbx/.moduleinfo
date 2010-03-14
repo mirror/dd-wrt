@@ -1,0 +1,24 @@
+<category name="MENUSELECT_PBX" displayname="PBX Modules" remove_on_change="pbx/modules.link">
+<member name="pbx_ael" displayname="Asterisk Extension Language Compiler" remove_on_change="pbx/pbx_ael.o pbx/pbx_ael.so">
+	<depend>res_ael_share</depend>
+</member>
+<member name="pbx_config" displayname="Text Extension Configuration" remove_on_change="pbx/pbx_config.o pbx/pbx_config.so">
+</member>
+<member name="pbx_dundi" displayname="Distributed Universal Number Discovery (DUNDi)" remove_on_change="pbx/pbx_dundi.o pbx/pbx_dundi.so">
+	<depend>zlib</depend>
+	<use>crypto</use>
+</member>
+<member name="pbx_gtkconsole" displayname="GTK Console" remove_on_change="pbx/pbx_gtkconsole.o pbx/pbx_gtkconsole.so">
+	<depend>gtk</depend>
+	<defaultenabled>no</defaultenabled>
+</member>
+<member name="pbx_loopback" displayname="Loopback Switch" remove_on_change="pbx/pbx_loopback.o pbx/pbx_loopback.so">
+</member>
+<member name="pbx_lua" displayname="Lua PBX Switch" remove_on_change="pbx/pbx_lua.o pbx/pbx_lua.so">
+	<depend>lua</depend>
+</member>
+<member name="pbx_realtime" displayname="Realtime Switch" remove_on_change="pbx/pbx_realtime.o pbx/pbx_realtime.so">
+</member>
+<member name="pbx_spool" displayname="Outgoing Spool Support" remove_on_change="pbx/pbx_spool.o pbx/pbx_spool.so">
+</member>
+</category>

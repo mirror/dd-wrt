@@ -1,0 +1,3 @@
+<member name="app_fax" displayname="Simple FAX Application" remove_on_change="apps/app_fax.o apps/app_fax.so">
+	 <depend>spandsp</depend>
+</member>

@@ -1,0 +1,76 @@
+<category name="MENUSELECT_RES" displayname="Resource Modules" remove_on_change="res/modules.link">
+<member name="res_adsi" displayname="ADSI Resource" remove_on_change="res/res_adsi.o res/res_adsi.so">
+</member>
+<member name="res_ael_share" displayname="share-able code for AEL" remove_on_change="res/res_ael_share.o res/res_ael_share.so">
+</member>
+<member name="res_agi" displayname="Asterisk Gateway Interface (AGI)" remove_on_change="res/res_agi.o res/res_agi.so">
+</member>
+<member name="res_ais" displayname="SAForum AIS" remove_on_change="res/res_ais.o res/res_ais.so">
+	<depend>ais</depend>
+</member>
+<member name="res_clialiases" displayname="CLI Aliases" remove_on_change="res/res_clialiases.o res/res_clialiases.so">
+</member>
+<member name="res_clioriginate" displayname="Call origination and redirection from the CLI" remove_on_change="res/res_clioriginate.o res/res_clioriginate.so">
+</member>
+<member name="res_config_curl" displayname="Realtime Curl configuration" remove_on_change="res/res_config_curl.o res/res_config_curl.so">
+	<depend>curl</depend>
+</member>
+<member name="res_config_ldap" displayname="LDAP realtime interface" remove_on_change="res/res_config_ldap.o res/res_config_ldap.so">
+	<depend>ldap</depend>
+</member>
+<member name="res_config_odbc" displayname="Realtime ODBC configuration" remove_on_change="res/res_config_odbc.o res/res_config_odbc.so">
+	<depend>res_odbc</depend>
+</member>
+<member name="res_config_pgsql" displayname="PostgreSQL RealTime Configuration Driver" remove_on_change="res/res_config_pgsql.o res/res_config_pgsql.so">
+	<depend>pgsql</depend>
+</member>
+<member name="res_config_sqlite" displayname="Realtime SQLite configuration" remove_on_change="res/res_config_sqlite.o res/res_config_sqlite.so">
+	<depend>sqlite</depend>
+</member>
+<member name="res_convert" displayname="File format conversion CLI command" remove_on_change="res/res_convert.o res/res_convert.so">
+</member>
+<member name="res_crypto" displayname="Cryptographic Digital Signatures" remove_on_change="res/res_crypto.o res/res_crypto.so">
+	<depend>openssl</depend>
+</member>
+<member name="res_curl" displayname="cURL Resource Module" remove_on_change="res/res_curl.o res/res_curl.so">
+	<depend>curl</depend>
+</member>
+<member name="res_http_post" displayname="HTTP POST support" remove_on_change="res/res_http_post.o res/res_http_post.so">
+	<depend>gmime</depend>
+</member>
+<member name="res_jabber" displayname="AJI - Asterisk Jabber Interface" remove_on_change="res/res_jabber.o res/res_jabber.so">
+	<depend>iksemel</depend>
+	<use>openssl</use>
+</member>
+<member name="res_limit" displayname="Resource limits" remove_on_change="res/res_limit.o res/res_limit.so">
+</member>
+<member name="res_monitor" displayname="Call Monitoring Resource" remove_on_change="res/res_monitor.o res/res_monitor.so">
+</member>
+<member name="res_musiconhold" displayname="Music On Hold Resource" remove_on_change="res/res_musiconhold.o res/res_musiconhold.so">
+	<conflict>win32</conflict>
+	<use>dahdi</use>
+</member>
+<member name="res_odbc" displayname="ODBC resource" remove_on_change="res/res_odbc.o res/res_odbc.so">
+	<depend>generic_odbc</depend>
+	<depend>ltdl</depend>
+</member>
+<member name="res_phoneprov" displayname="HTTP Phone Provisioning" remove_on_change="res/res_phoneprov.o res/res_phoneprov.so">
+</member>
+<member name="res_realtime" displayname="Realtime Data Lookup/Rewrite" remove_on_change="res/res_realtime.o res/res_realtime.so">
+</member>
+<member name="res_smdi" displayname="Simplified Message Desk Interface (SMDI) Resource" remove_on_change="res/res_smdi.o res/res_smdi.so">
+</member>
+<member name="res_snmp" displayname="SNMP [Sub]Agent for Asterisk" remove_on_change="res/res_snmp.o res/res_snmp.so">
+	<depend>netsnmp</depend>
+</member>
+<member name="res_speech" displayname="Generic Speech Recognition API" remove_on_change="res/res_speech.o res/res_speech.so">
+</member>
+<member name="res_timing_dahdi" displayname="DAHDI Timing Interface" remove_on_change="res/res_timing_dahdi.o res/res_timing_dahdi.so">
+	<depend>dahdi</depend>
+</member>
+<member name="res_timing_pthread" displayname="pthread Timing Interface" remove_on_change="res/res_timing_pthread.o res/res_timing_pthread.so">
+</member>
+<member name="res_timing_timerfd" displayname="Timerfd Timing Interface" remove_on_change="res/res_timing_timerfd.o res/res_timing_timerfd.so">
+	<depend>timerfd</depend>
+</member>
+</category>

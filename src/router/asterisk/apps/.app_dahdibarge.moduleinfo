@@ -1,0 +1,3 @@
+<member name="app_dahdibarge" displayname="Barge in on DAHDI channel application" remove_on_change="apps/app_dahdibarge.o apps/app_dahdibarge.so">
+	<depend>dahdi</depend>
+</member>
