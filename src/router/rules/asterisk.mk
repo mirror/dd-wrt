@@ -72,11 +72,12 @@ asterisk-install:
 #	sed 's|/var/lib/asterisk|/usr/lib/asterisk|g' $(INSTALLDIR)/asterisk/etc/asterisk/musiconhold.conf
 	rm -rf $(INSTALLDIR)/asterisk/usr/include
 	rm -rf $(INSTALLDIR)/asterisk/usr/share
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/static-http
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/sounds
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/images
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/documentation
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/agi-bin
+	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/static-http
+	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/sounds
+	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/images
+	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/documentation
+	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/agi-bin
+	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/moh
 	rm -rf $(INSTALLDIR)/asterisk/var
 	rm -f $(INSTALLDIR)/asterisk/usr/lib/*.a
 
