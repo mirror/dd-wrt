@@ -1202,44 +1202,36 @@ extern char *nvram_safe_get(const char *name);
 
 int addrule(char *mac, char *upstream, char *downstream)
 {
-    char *qos_mac = nvram_safe_get( "svqos_macs" );
-    int ret = 0;
-    if (strlen(qos_mac)>0)
-    {
-    char *newqos = malloc(strlen(qos_mac)*2);
-    memset(newqos,0,strlen(qos_mac)*2);
-    char level[32], level2[32], data[32], type[32];
-    do
-    {
-	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
-	    break;
-	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
-	    {
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
-	    ret |=1;
-	    }
-	    else
-	    {
-	    if (!stricmp(data,mac))
-	    {
-	    ret |=2;
-	    }
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");	    
-//	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
-	    }
-    }
-    while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
-    nvram_set("svqos_macs",newqos);
-    free(newqos);
-    }else
-    {
-    char newqos[128];
-    sprintf(newqos,"%s %s %s %s |",mac,upstream,downstream,"hostapd");	    
-    nvram_set("svqos_macs",newqos);    
-    }
-return ret;
+	char *qos_mac = nvram_safe_get( "svqos_macs" );
+	char *newqos;
+	int ret = 0;
+	int len = strlen(qos_mac);
 
+	newqos = malloc(len + 128);
+	memset(newqos, 0, len + 128);
+	if (len > 0) {
+		char level[32], level2[32], data[32], type[32];
+		do {
+			if(sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2, type) < 4)
+				break;
+			if (!stricmp(data,mac)) {
+				sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");
+				if (!strcmp(level,upstream) && !strcmp(level2,downstream))
+					ret = 1;
+				else
+					ret = 2;
+			} else
+				sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);
+		} while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
+	}
+
+	if (!ret)
+		sprintf(newqos,"%s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd");
+
+	nvram_set("svqos_macs",newqos);
+	free(newqos);
 }
+
 #endif
 /* Process the RADIUS frames from Authentication Server */
 static RadiusRxResult
