@@ -1,0 +1,4 @@
+<member name="res_jabber" displayname="AJI - Asterisk Jabber Interface" remove_on_change="res/res_jabber.o res/res_jabber.so">
+	<depend>iksemel</depend>
+	<use>openssl</use>
+</member>

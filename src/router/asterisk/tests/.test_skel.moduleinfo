@@ -1,0 +1,3 @@
+<member name="test_skel" displayname="Skeleton (sample) Test" remove_on_change="tests/test_skel.o tests/test_skel.so">
+	<defaultenabled>no</defaultenabled>
+</member>

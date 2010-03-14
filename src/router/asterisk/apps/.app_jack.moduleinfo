@@ -1,0 +1,4 @@
+<member name="app_jack" displayname="JACK Interface" remove_on_change="apps/app_jack.o apps/app_jack.so">
+	<depend>jack</depend>
+	<depend>resample</depend>
+</member>

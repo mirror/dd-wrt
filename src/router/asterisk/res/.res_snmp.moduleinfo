@@ -1,0 +1,3 @@
+<member name="res_snmp" displayname="SNMP [Sub]Agent for Asterisk" remove_on_change="res/res_snmp.o res/res_snmp.so">
+	<depend>netsnmp</depend>
+</member>

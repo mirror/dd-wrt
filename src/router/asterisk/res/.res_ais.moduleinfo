@@ -1,0 +1,3 @@
+<member name="res_ais" displayname="SAForum AIS" remove_on_change="res/res_ais.o res/res_ais.so">
+	<depend>ais</depend>
+</member>

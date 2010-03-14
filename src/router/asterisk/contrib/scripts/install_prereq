@@ -1,0 +1,144 @@
+#! /bin/sh
+#
+# $Id: install_prereq 208889 2009-07-26 14:07:46Z mvanbaak $
+#
+
+# install_prereq: a script to install distribution-specific
+# prerequirements
+
+set -e
+
+usage() {
+  echo "$0: a script to install distribution-specific prerequirement"
+  echo 'Revision: $Id: install_prereq 208889 2009-07-26 14:07:46Z mvanbaak $'
+  echo ""
+  echo "Usage: $0:         Shows this message."
+  echo "Usage: $0 test     Prints commands it is about to run."
+  echo "Usage: $0 install  Really install."
+}
+
+# Basic build system:
+PACKAGES_DEBIAN="build-essential"
+# Asterisk: basic requirements:
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libncurses-dev libz-dev libssl-dev libxml2-dev"
+# Asterisk: very useful addons:
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libcurl-dev libspeex-dev libogg-dev libvorbis-dev libasound2-dev"
+# Asterisk: nice-to-have addons:
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libpq-dev unixodbc-dev libsqlite-dev"
+# Not so nice addon:
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libopenh323-dev"
+# Extras for 1.4:
+PACKAGES_DEBIAN="$PACKAGES_DEBIAN libsnmp-dev libiksemel-dev "
+
+PACKAGES_RH="gcc gcc-c++ ncurses-devel openssl-devel"
+
+PACKAGES_OBSD="popt gmake wget libxml libogg libvorbis curl iksemel spandsp speex iodbc freetds-0.63p1-msdblib gmime sqlite sqlite3 jack"
+
+KVERS=`uname -r`
+
+case "$1" in
+test)    testcmd=echo ;;
+install) testcmd='' ;;
+'') usage; exit 0 ;;
+*) usage; exit 1 ;;
+esac
+
+in_test_mode() {
+  test "$testcmd" != ''
+}
+
+check_installed_debs() {
+	aptitude -F '%c %p' search "$@" 2>/dev/null \
+	| awk '/^p/{print $2}'
+}
+
+# parsing the output of yum is close to impossible.
+# We'll use rpm and hope for the best:
+check_installed_rpms() {
+	for pack in "$@"
+	do
+		if ! rpm -q $pack >/dev/null 2>/dev/null
+		then echo $pack
+		fi
+	done
+}
+
+check_installed_pkgs() {
+	for pack in "$@"
+	do
+		if [ `pkg_info -a | grep $pack | wc -l` = 0 ]; then
+		echo $pack
+		fi
+	done
+}
+
+handle_debian() {
+	# echo "# Distribution is Debian or compatible"
+	extra_packs=`check_installed_debs $PACKAGES_DEBIAN`
+	$testcmd aptitude install -y $extra_packs
+}
+
+handle_rh() {
+	# echo "# Distribution is RedHat-based or compatible"
+	extra_packs=`check_installed_rpms $PACKAGES_RH`
+        # FIXME: is there yum with RHEL 4?
+	$testcmd yum install -y $extra_packs
+}
+
+handle_obsd() {
+	# echo "# Distribution is OpenBSD or compatible"
+	extra_packs=`check_installed_pkgs $PACKAGES_OBSD`
+	$testcmd pkg_add $extra_packs
+}
+
+if in_test_mode; then
+	echo "#############################################"
+	echo "## $1: test mode."
+	echo "## Use the commands here to install your system."
+	echo "#############################################"
+fi
+
+OS=`uname -s`
+unsupported_distro=''
+
+# A number of distributions we don't (yet?) support.
+if [ "$OS" != 'Linux' -a "$OS" != 'OpenBSD' ]; then
+  echo >&2 "$0: Your OS ($OS) is currently not supported. Aborting."
+  exit 1
+fi
+
+if [ -f /etc/gentoo-release ]; then
+  unsupported_distro='Gentoo'
+fi
+
+if [ -f /etc/mandrake-release ]; then
+  unsupported_distro='Mandriva'
+fi
+
+if [ -f /etc/SuSE-release ]; then
+  unsupported_distro='SUSE'
+fi
+
+if [ -f /etc/slackware-version ]; then
+  unsupported_distro='Slackware'
+fi
+
+if [ "$unsupported_distro" != '' ]; then
+  echo >&2 "$0: Your distribution ($unsupported_distro) is currently not supported. Aborting."
+  exit 1
+fi
+
+# The distributions we do support:
+if [ -r /etc/debian_version ]; then
+  handle_debian
+elif [ -r /etc/redhat-release ]; then
+  handle_rh
+elif [ "$OS" = 'OpenBSD' ]; then
+  handle_obsd
+fi
+
+if ! in_test_mode; then
+  echo "#############################################"
+  echo "## $1 completed successfully"
+  echo "#############################################"
+fi

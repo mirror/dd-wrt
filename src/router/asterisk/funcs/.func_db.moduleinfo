@@ -1,0 +1,2 @@
+<member name="func_db" displayname="Database (astdb) related dialplan functions" remove_on_change="funcs/func_db.o funcs/func_db.so">
+</member>

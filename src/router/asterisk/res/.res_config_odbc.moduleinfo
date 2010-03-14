@@ -1,0 +1,3 @@
+<member name="res_config_odbc" displayname="Realtime ODBC configuration" remove_on_change="res/res_config_odbc.o res/res_config_odbc.so">
+	<depend>res_odbc</depend>
+</member>

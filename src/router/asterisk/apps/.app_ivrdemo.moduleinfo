@@ -1,0 +1,3 @@
+<member name="app_ivrdemo" displayname="IVR Demo Application" remove_on_change="apps/app_ivrdemo.o apps/app_ivrdemo.so">
+	<defaultenabled>no</defaultenabled>
+</member>

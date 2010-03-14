@@ -1,0 +1,2 @@
+<member name="func_aes" displayname="AES dialplan functions" remove_on_change="funcs/func_aes.o funcs/func_aes.so">
+</member>

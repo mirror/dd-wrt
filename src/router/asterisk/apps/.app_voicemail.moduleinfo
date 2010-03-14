@@ -1,0 +1,2 @@
+<member name="app_voicemail" displayname="Comedian Mail (Voicemail System)" remove_on_change="apps/app_voicemail.o apps/app_voicemail.so">
+</member>

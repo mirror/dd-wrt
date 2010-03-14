@@ -1,0 +1,2 @@
+<member name="bridge_multiplexed" displayname="Multiplexed two channel bridging module" remove_on_change="bridges/bridge_multiplexed.o bridges/bridge_multiplexed.so">
+</member>

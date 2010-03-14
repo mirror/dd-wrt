@@ -1,0 +1,2 @@
+<member name="cdr_manager" displayname="Asterisk Manager Interface CDR Backend" remove_on_change="cdr/cdr_manager.o cdr/cdr_manager.so">
+</member>
