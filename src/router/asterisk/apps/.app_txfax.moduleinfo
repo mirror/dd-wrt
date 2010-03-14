@@ -1,3 +1,0 @@
-<member name="app_txfax" displayname="Trivial FAX Transmit Application" remove_on_change="apps/app_txfax.o apps/app_txfax.so">
-         <depend>spandsp</depend>
-</member>

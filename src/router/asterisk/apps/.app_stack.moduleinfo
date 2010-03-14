@@ -1,2 +1,0 @@
-<member name="app_stack" displayname="Stack Routines" remove_on_change="apps/app_stack.o apps/app_stack.so">
-</member>

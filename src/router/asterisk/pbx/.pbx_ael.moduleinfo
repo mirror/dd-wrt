@@ -1,2 +1,0 @@
-<member name="pbx_ael" displayname="Asterisk Extension Language Compiler" remove_on_change="pbx/pbx_ael.o pbx/pbx_ael.so">
-</member>

@@ -1,2 +1,0 @@
-<member name="res_clioriginate" displayname="Call origination from the CLI" remove_on_change="res/res_clioriginate.o res/res_clioriginate.so">
-</member>

@@ -1,2 +1,0 @@
-<member name="func_language" displayname="Channel language dialplan function" remove_on_change="funcs/func_language.o funcs/func_language.so">
-</member>

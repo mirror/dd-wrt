@@ -1,2 +1,0 @@
-<member name="app_channelredirect" displayname="Channel Redirect" remove_on_change="apps/app_channelredirect.o apps/app_channelredirect.so">
-</member>
