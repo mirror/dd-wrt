@@ -1,0 +1,2 @@
+<member name="func_blacklist" displayname="Look up Caller*ID name/number from blacklist database" remove_on_change="funcs/func_blacklist.o funcs/func_blacklist.so">
+</member>

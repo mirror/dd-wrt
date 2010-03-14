@@ -1,0 +1,3 @@
+<member name="test_sched" displayname="ast_sched performance test module" remove_on_change="tests/test_sched.o tests/test_sched.so">
+	<defaultenabled>no</defaultenabled>
+</member>

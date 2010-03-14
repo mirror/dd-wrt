@@ -1,0 +1,2 @@
+<member name="bridge_softmix" displayname="Multi-party software based channel mixing" remove_on_change="bridges/bridge_softmix.o bridges/bridge_softmix.so">
+</member>

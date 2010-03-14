@@ -1,0 +1,3 @@
+<member name="chan_phone" displayname="Linux Telephony API Support" remove_on_change="channels/chan_phone.o channels/chan_phone.so">
+	<depend>ixjuser</depend>
+</member>

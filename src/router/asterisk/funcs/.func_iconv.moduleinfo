@@ -1,0 +1,3 @@
+<member name="func_iconv" displayname="Charset conversions" remove_on_change="funcs/func_iconv.o funcs/func_iconv.so">
+    <depend>iconv</depend>
+</member>

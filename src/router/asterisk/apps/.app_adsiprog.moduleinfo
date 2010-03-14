@@ -1,0 +1,3 @@
+<member name="app_adsiprog" displayname="Asterisk ADSI Programming Application" remove_on_change="apps/app_adsiprog.o apps/app_adsiprog.so">
+	<depend>res_adsi</depend>
+</member>

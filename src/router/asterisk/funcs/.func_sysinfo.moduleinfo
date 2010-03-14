@@ -1,0 +1,2 @@
+<member name="func_sysinfo" displayname="System information related functions" remove_on_change="funcs/func_sysinfo.o funcs/func_sysinfo.so">
+</member>

@@ -1,0 +1,2 @@
+<member name="app_minivm" displayname="Mini VoiceMail (A minimal Voicemail e-mail System)" remove_on_change="apps/app_minivm.o apps/app_minivm.so">
+</member>

@@ -1,0 +1,3 @@
+<member name="app_queue" displayname="True Call Queueing" remove_on_change="apps/app_queue.o apps/app_queue.so">
+	<depend>res_monitor</depend>
+</member>

@@ -1,0 +1,4 @@
+<member name="app_osplookup" displayname="Open Settlement Protocol Applications" remove_on_change="apps/app_osplookup.o apps/app_osplookup.so">
+	<depend>osptk</depend>
+	<depend>openssl</depend>
+</member>

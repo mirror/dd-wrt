@@ -1,0 +1,177 @@
+<category name="MENUSELECT_APPS" displayname="Applications" remove_on_change="apps/modules.link">
+<member name="app_adsiprog" displayname="Asterisk ADSI Programming Application" remove_on_change="apps/app_adsiprog.o apps/app_adsiprog.so">
+	<depend>res_adsi</depend>
+</member>
+<member name="app_alarmreceiver" displayname="Alarm Receiver for Asterisk" remove_on_change="apps/app_alarmreceiver.o apps/app_alarmreceiver.so">
+</member>
+<member name="app_amd" displayname="Answering Machine Detection Application" remove_on_change="apps/app_amd.o apps/app_amd.so">
+</member>
+<member name="app_authenticate" displayname="Authentication Application" remove_on_change="apps/app_authenticate.o apps/app_authenticate.so">
+</member>
+<member name="app_cdr" displayname="Tell Asterisk to not maintain a CDR for the current call" remove_on_change="apps/app_cdr.o apps/app_cdr.so">
+</member>
+<member name="app_chanisavail" displayname="Check channel availability" remove_on_change="apps/app_chanisavail.o apps/app_chanisavail.so">
+</member>
+<member name="app_channelredirect" displayname="Redirects a given channel to a dialplan target" remove_on_change="apps/app_channelredirect.o apps/app_channelredirect.so">
+</member>
+<member name="app_chanspy" displayname="Listen to the audio of an active channel" remove_on_change="apps/app_chanspy.o apps/app_chanspy.so">
+</member>
+<member name="app_confbridge" displayname="Conference Bridge Application" remove_on_change="apps/app_confbridge.o apps/app_confbridge.so">
+</member>
+<member name="app_controlplayback" displayname="Control Playback Application" remove_on_change="apps/app_controlplayback.o apps/app_controlplayback.so">
+</member>
+<member name="app_dahdibarge" displayname="Barge in on DAHDI channel application" remove_on_change="apps/app_dahdibarge.o apps/app_dahdibarge.so">
+	<depend>dahdi</depend>
+</member>
+<member name="app_dahdiras" displayname="DAHDI ISDN Remote Access Server" remove_on_change="apps/app_dahdiras.o apps/app_dahdiras.so">
+	<depend>dahdi</depend>
+</member>
+<member name="app_dahdiscan" displayname="Scan DAHDI channels application" remove_on_change="apps/app_dahdiscan.o apps/app_dahdiscan.so">
+	<depend>dahdi</depend>
+</member>
+<member name="app_db" displayname="Database Access Functions" remove_on_change="apps/app_db.o apps/app_db.so">
+</member>
+<member name="app_dial" displayname="Dialing Application" remove_on_change="apps/app_dial.o apps/app_dial.so">
+	<depend>chan_local</depend>
+</member>
+<member name="app_dictate" displayname="Virtual Dictation Machine" remove_on_change="apps/app_dictate.o apps/app_dictate.so">
+</member>
+<member name="app_directed_pickup" displayname="Directed Call Pickup Application" remove_on_change="apps/app_directed_pickup.o apps/app_directed_pickup.so">
+</member>
+<member name="app_directory" displayname="Extension Directory" remove_on_change="apps/app_directory.o apps/app_directory.so">
+	<depend>app_voicemail</depend>
+</member>
+<member name="app_disa" displayname="DISA (Direct Inward System Access) Application" remove_on_change="apps/app_disa.o apps/app_disa.so">
+</member>
+<member name="app_dumpchan" displayname="Dump Info About The Calling Channel" remove_on_change="apps/app_dumpchan.o apps/app_dumpchan.so">
+</member>
+<member name="app_echo" displayname="Simple Echo Application" remove_on_change="apps/app_echo.o apps/app_echo.so">
+</member>
+<member name="app_exec" displayname="Executes dialplan applications" remove_on_change="apps/app_exec.o apps/app_exec.so">
+</member>
+<member name="app_externalivr" displayname="External IVR Interface Application" remove_on_change="apps/app_externalivr.o apps/app_externalivr.so">
+</member>
+<member name="app_fax" displayname="Simple FAX Application" remove_on_change="apps/app_fax.o apps/app_fax.so">
+	 <depend>spandsp</depend>
+</member>
+<member name="app_festival" displayname="Simple Festival Interface" remove_on_change="apps/app_festival.o apps/app_festival.so">
+</member>
+<member name="app_flash" displayname="Flash channel application" remove_on_change="apps/app_flash.o apps/app_flash.so">
+	<depend>dahdi</depend>
+</member>
+<member name="app_followme" displayname="Find-Me/Follow-Me Application" remove_on_change="apps/app_followme.o apps/app_followme.so">
+	<depend>chan_local</depend>
+</member>
+<member name="app_forkcdr" displayname="Fork The CDR into 2 separate entities" remove_on_change="apps/app_forkcdr.o apps/app_forkcdr.so">
+</member>
+<member name="app_getcpeid" displayname="Get ADSI CPE ID" remove_on_change="apps/app_getcpeid.o apps/app_getcpeid.so">
+</member>
+<member name="app_ices" displayname="Encode and Stream via icecast and ices" remove_on_change="apps/app_ices.o apps/app_ices.so">
+</member>
+<member name="app_image" displayname="Image Transmission Application" remove_on_change="apps/app_image.o apps/app_image.so">
+</member>
+<member name="app_ivrdemo" displayname="IVR Demo Application" remove_on_change="apps/app_ivrdemo.o apps/app_ivrdemo.so">
+	<defaultenabled>no</defaultenabled>
+</member>
+<member name="app_jack" displayname="JACK Interface" remove_on_change="apps/app_jack.o apps/app_jack.so">
+	<depend>jack</depend>
+	<depend>resample</depend>
+</member>
+<member name="app_macro" displayname="Extension Macros" remove_on_change="apps/app_macro.o apps/app_macro.so">
+</member>
+<member name="app_meetme" displayname="MeetMe conference bridge" remove_on_change="apps/app_meetme.o apps/app_meetme.so">
+	<depend>dahdi</depend>
+</member>
+<member name="app_milliwatt" displayname="Digital Milliwatt (mu-law) Test Application" remove_on_change="apps/app_milliwatt.o apps/app_milliwatt.so">
+</member>
+<member name="app_minivm" displayname="Mini VoiceMail (A minimal Voicemail e-mail System)" remove_on_change="apps/app_minivm.o apps/app_minivm.so">
+</member>
+<member name="app_mixmonitor" displayname="Mixed Audio Monitoring Application" remove_on_change="apps/app_mixmonitor.o apps/app_mixmonitor.so">
+</member>
+<member name="app_morsecode" displayname="Morse code" remove_on_change="apps/app_morsecode.o apps/app_morsecode.so">
+</member>
+<member name="app_mp3" displayname="Silly MP3 Application" remove_on_change="apps/app_mp3.o apps/app_mp3.so">
+</member>
+<member name="app_nbscat" displayname="Silly NBS Stream Application" remove_on_change="apps/app_nbscat.o apps/app_nbscat.so">
+</member>
+<member name="app_originate" displayname="Originate call" remove_on_change="apps/app_originate.o apps/app_originate.so">
+</member>
+<member name="app_osplookup" displayname="Open Settlement Protocol Applications" remove_on_change="apps/app_osplookup.o apps/app_osplookup.so">
+	<depend>osptk</depend>
+	<depend>openssl</depend>
+</member>
+<member name="app_page" displayname="Page Multiple Phones" remove_on_change="apps/app_page.o apps/app_page.so">
+	<depend>dahdi</depend>
+	<depend>app_meetme</depend>
+</member>
+<member name="app_parkandannounce" displayname="Call Parking and Announce Application" remove_on_change="apps/app_parkandannounce.o apps/app_parkandannounce.so">
+</member>
+<member name="app_playback" displayname="Sound File Playback Application" remove_on_change="apps/app_playback.o apps/app_playback.so">
+</member>
+<member name="app_playtones" displayname="Playtones Application" remove_on_change="apps/app_playtones.o apps/app_playtones.so">
+</member>
+<member name="app_privacy" displayname="Require phone number to be entered, if no CallerID sent" remove_on_change="apps/app_privacy.o apps/app_privacy.so">
+</member>
+<member name="app_queue" displayname="True Call Queueing" remove_on_change="apps/app_queue.o apps/app_queue.so">
+	<depend>res_monitor</depend>
+</member>
+<member name="app_read" displayname="Read Variable Application" remove_on_change="apps/app_read.o apps/app_read.so">
+</member>
+<member name="app_readexten" displayname="Read and evaluate extension validity" remove_on_change="apps/app_readexten.o apps/app_readexten.so">
+</member>
+<member name="app_readfile" displayname="Stores output of file into a variable" remove_on_change="apps/app_readfile.o apps/app_readfile.so">
+</member>
+<member name="app_record" displayname="Trivial Record Application" remove_on_change="apps/app_record.o apps/app_record.so">
+</member>
+<member name="app_rpt" displayname="Radio Repeater/Remote Base Application" remove_on_change="apps/app_rpt.o apps/app_rpt.so">
+	<depend>dahdi</depend>
+	<depend>tonezone</depend>
+	<defaultenabled>no</defaultenabled>
+</member>
+<member name="app_sayunixtime" displayname="Say time" remove_on_change="apps/app_sayunixtime.o apps/app_sayunixtime.so">
+</member>
+<member name="app_senddtmf" displayname="Send DTMF digits Application" remove_on_change="apps/app_senddtmf.o apps/app_senddtmf.so">
+</member>
+<member name="app_sendtext" displayname="Send Text Applications" remove_on_change="apps/app_sendtext.o apps/app_sendtext.so">
+</member>
+<member name="app_setcallerid" displayname="Set CallerID Presentation Application" remove_on_change="apps/app_setcallerid.o apps/app_setcallerid.so">
+</member>
+<member name="app_skel" displayname="Skeleton (sample) Application" remove_on_change="apps/app_skel.o apps/app_skel.so">
+	<defaultenabled>no</defaultenabled>
+</member>
+<member name="app_sms" displayname="SMS/PSTN handler" remove_on_change="apps/app_sms.o apps/app_sms.so">
+</member>
+<member name="app_softhangup" displayname="Hangs up the requested channel" remove_on_change="apps/app_softhangup.o apps/app_softhangup.so">
+</member>
+<member name="app_speech_utils" displayname="Dialplan Speech Applications" remove_on_change="apps/app_speech_utils.o apps/app_speech_utils.so">
+</member>
+<member name="app_stack" displayname="Dialplan subroutines (Gosub, Return, etc)" remove_on_change="apps/app_stack.o apps/app_stack.so">
+	<use>res_agi</use>
+</member>
+<member name="app_system" displayname="Generic System() application" remove_on_change="apps/app_system.o apps/app_system.so">
+</member>
+<member name="app_talkdetect" displayname="Playback with Talk Detection" remove_on_change="apps/app_talkdetect.o apps/app_talkdetect.so">
+</member>
+<member name="app_test" displayname="Interface Test Application" remove_on_change="apps/app_test.o apps/app_test.so">
+</member>
+<member name="app_transfer" displayname="Transfers a caller to another extension" remove_on_change="apps/app_transfer.o apps/app_transfer.so">
+</member>
+<member name="app_url" displayname="Send URL Applications" remove_on_change="apps/app_url.o apps/app_url.so">
+</member>
+<member name="app_userevent" displayname="Custom User Event Application" remove_on_change="apps/app_userevent.o apps/app_userevent.so">
+</member>
+<member name="app_verbose" displayname="Send verbose output" remove_on_change="apps/app_verbose.o apps/app_verbose.so">
+</member>
+<member name="app_voicemail" displayname="Comedian Mail (Voicemail System)" remove_on_change="apps/app_voicemail.o apps/app_voicemail.so">
+</member>
+<member name="app_waitforring" displayname="Waits until first ring after time" remove_on_change="apps/app_waitforring.o apps/app_waitforring.so">
+</member>
+<member name="app_waitforsilence" displayname="Wait For Silence" remove_on_change="apps/app_waitforsilence.o apps/app_waitforsilence.so">
+</member>
+<member name="app_waituntil" displayname="Wait until specified time" remove_on_change="apps/app_waituntil.o apps/app_waituntil.so">
+</member>
+<member name="app_while" displayname="While Loops and Conditional Execution" remove_on_change="apps/app_while.o apps/app_while.so">
+</member>
+<member name="app_zapateller" displayname="Block Telemarketers with Special Information Tone" remove_on_change="apps/app_zapateller.o apps/app_zapateller.so">
+</member>
+</category>

@@ -1,0 +1,2 @@
+<member name="func_vmcount" displayname="Indicator for whether a voice mailbox has messages in a given folder." remove_on_change="funcs/func_vmcount.o funcs/func_vmcount.so">
+</member>

@@ -1,0 +1,2 @@
+<member name="func_rand" displayname="Random number dialplan function" remove_on_change="funcs/func_rand.o funcs/func_rand.so">
+</member>

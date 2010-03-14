@@ -1,0 +1,2 @@
+<member name="codec_adpcm" displayname="Adaptive Differential PCM Coder/Decoder" remove_on_change="codecs/codec_adpcm.o codecs/codec_adpcm.so">
+</member>

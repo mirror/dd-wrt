@@ -1,0 +1,2 @@
+<member name="format_pcm" displayname="Raw/Sun uLaw/ALaw 8KHz (PCM,PCMA,AU), G.722 16Khz" remove_on_change="formats/format_pcm.o formats/format_pcm.so">
+</member>

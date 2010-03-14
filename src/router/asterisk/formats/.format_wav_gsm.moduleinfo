@@ -1,0 +1,2 @@
+<member name="format_wav_gsm" displayname="Microsoft WAV format (Proprietary GSM)" remove_on_change="formats/format_wav_gsm.o formats/format_wav_gsm.so">
+</member>

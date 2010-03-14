@@ -1,0 +1,2 @@
+<member name="func_extstate" displayname="Gets an extension's state in the dialplan" remove_on_change="funcs/func_extstate.o funcs/func_extstate.so">
+</member>

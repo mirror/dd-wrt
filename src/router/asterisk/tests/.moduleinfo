@@ -1,0 +1,14 @@
+<category name="MENUSELECT_TEST" displayname="Test Modules" remove_on_change="tests/modules.link">
+<member name="test_dlinklists" displayname="Test Doubly-Linked Lists" remove_on_change="tests/test_dlinklists.o tests/test_dlinklists.so">
+	<defaultenabled>no</defaultenabled>
+</member>
+<member name="test_heap" displayname="Heap test module" remove_on_change="tests/test_heap.o tests/test_heap.so">
+	<defaultenabled>no</defaultenabled>
+</member>
+<member name="test_sched" displayname="ast_sched performance test module" remove_on_change="tests/test_sched.o tests/test_sched.so">
+	<defaultenabled>no</defaultenabled>
+</member>
+<member name="test_skel" displayname="Skeleton (sample) Test" remove_on_change="tests/test_skel.o tests/test_skel.so">
+	<defaultenabled>no</defaultenabled>
+</member>
+</category>

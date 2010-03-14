@@ -1,0 +1,2 @@
+<member name="pbx_realtime" displayname="Realtime Switch" remove_on_change="pbx/pbx_realtime.o pbx/pbx_realtime.so">
+</member>

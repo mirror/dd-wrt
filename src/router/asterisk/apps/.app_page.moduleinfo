@@ -1,0 +1,4 @@
+<member name="app_page" displayname="Page Multiple Phones" remove_on_change="apps/app_page.o apps/app_page.so">
+	<depend>dahdi</depend>
+	<depend>app_meetme</depend>
+</member>
