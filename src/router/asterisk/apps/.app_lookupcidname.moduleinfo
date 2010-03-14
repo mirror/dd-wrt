@@ -1,2 +1,0 @@
-<member name="app_lookupcidname" displayname="Look up CallerID Name from local database" remove_on_change="apps/app_lookupcidname.o apps/app_lookupcidname.so">
-</member>

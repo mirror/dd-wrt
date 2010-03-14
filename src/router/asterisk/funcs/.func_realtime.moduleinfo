@@ -1,2 +1,0 @@
-<member name="func_realtime" displayname="Read/Write values from a RealTime repository" remove_on_change="funcs/func_realtime.o funcs/func_realtime.so">
-</member>

@@ -1,2 +1,0 @@
-<member name="app_controlplayback" displayname="Control Playback Application" remove_on_change="apps/app_controlplayback.o apps/app_controlplayback.so">
-</member>

@@ -1,4 +1,0 @@
-<member name="res_odbc" displayname="ODBC Resource" remove_on_change="res/res_odbc.o res/res_odbc.so">
-	<depend>unixodbc</depend>
-	<depend>ltdl</depend>
-</member>
