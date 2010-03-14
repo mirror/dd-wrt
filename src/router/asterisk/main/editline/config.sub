@@ -1172,6 +1172,9 @@ case $os in
 		;;
 	-none)
 		;;
+	-uclibc)
+		os=-linux
+		;;
 	*)
 		# Get rid of the `-' at the beginning of $os.
 		os=`echo $os | sed 's/[^-]*-//'`
