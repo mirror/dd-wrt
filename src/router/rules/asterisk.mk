@@ -58,8 +58,8 @@ asterisk-install:
 		NOISY_BUILD="1" \
 		DEBUG="" \
 		OPTIMIZE="" \
-		DESTDIR=$(INSTALLDIR)/asterisk \
-		install
+		DESTDIR=/tmp/asterisk \
+		install samples
 	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
 	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
 	$(MAKE) -C asterisk \
@@ -67,17 +67,57 @@ asterisk-install:
 		NOISY_BUILD="1" \
 		DEBUG="" \
 		OPTIMIZE="" \
-		DESTDIR=$(INSTALLDIR)/asterisk \
+		DESTDIR=/tmp/asterisk \
 		adsi
 #	sed 's|/var/lib/asterisk|/usr/lib/asterisk|g' $(INSTALLDIR)/asterisk/etc/asterisk/musiconhold.conf
-	rm -rf $(INSTALLDIR)/asterisk/usr/include
-	rm -rf $(INSTALLDIR)/asterisk/usr/share
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/static-http
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/sounds
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/images
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/documentation
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/agi-bin
-	rm -rf $(INSTALLDIR)/asterisk/usr/lib/asterisk/moh
-	rm -rf $(INSTALLDIR)/asterisk/var
-	rm -f $(INSTALLDIR)/asterisk/usr/lib/*.a
+	$(INSTALL_DIR) -p $(INSTALLDIR)/asterisk/etc/asterisk
+	for f in asterisk extensions features \
+		logger manager modules \
+		sip sip_notify rtp; do \
+		$(CP) /tmp/asterisk/etc/asterisk/$$f.conf $(INSTALLDIR)/asterisk/etc/asterisk/ ; \
+	done
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	for f in app_dial app_echo app_playback app_macro \
+		chan_sip \
+		codec_ulaw codec_gsm \
+		format_gsm format_pcm format_wav format_wav_gsm \
+		pbx_config \
+		func_strings func_timeout func_callerid; do \
+		$(CP) /tmp/asterisk/usr/lib/asterisk/modules/$$f.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/ ; \
+	done
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/sbin
+	$(CP) /tmp/asterisk/usr/sbin/asterisk $(INSTALLDIR)/asterisk/usr/sbin/
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
+	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/voicemail.conf $(INSTALLDIR)/asterisk/etc/asterisk/
+	$(INSTALL_DIR)  $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/*voicemail.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/res_adsi.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+#	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/sounds/
+#	$(CP) /tmp/asterisk/usr/lib/asterisk/sounds/en/vm-*.gsm $(INSTALLDIR)/asterisk/usr/lib/asterisk/sounds/
+
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
+	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/iax.conf $(INSTALLDIR)/asterisk/etc/asterisk/
+	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/iaxprov.conf $(INSTALLDIR)/asterisk/etc/asterisk/
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/chan_iax2.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/chan_local.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/app_system.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/format_g729.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
+	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/cdr*.conf $(INSTALLDIR)/asterisk/etc/asterisk/
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/*cdr*.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
+	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/musiconhold.conf $(INSTALLDIR)/asterisk/etc/asterisk/
+	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/res_musiconhold.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+	rm -rf /tmp/asterisk
 
