@@ -1,6 +1,7 @@
 
 
 asterisk-configure:
+	-rm asterisk/menuselect.makeopts
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--without-curl \
 	--without-curses \
@@ -35,7 +36,6 @@ asterisk-configure:
 	--without-iksemel
 
 asterisk:
-	-rm asterisk/menuselect.makeopts
 	$(MAKE) -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
