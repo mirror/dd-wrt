@@ -909,7 +909,9 @@ int internal_getRouterBrand()
 		{"Ubiquiti Nanostation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M},	//
 		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M},	//
+		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M},	//
+		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M},	//
 		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M},	//
 		{"Ubiquiti Bullet M5", 0xe202, "1", "1", ROUTER_BOARD_BS5M},	//
 		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M},	//
