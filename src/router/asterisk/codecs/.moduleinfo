@@ -1,9 +1,9 @@
 <category name="MENUSELECT_CODECS" displayname="Codec Translators" remove_on_change="codecs/modules.link">
+<member name="codec_a_mu" displayname="A-law and Mulaw direct Coder/Decoder" remove_on_change="codecs/codec_a_mu.o codecs/codec_a_mu.so">
+</member>
 <member name="codec_adpcm" displayname="Adaptive Differential PCM Coder/Decoder" remove_on_change="codecs/codec_adpcm.o codecs/codec_adpcm.so">
 </member>
 <member name="codec_alaw" displayname="A-law Coder/Decoder" remove_on_change="codecs/codec_alaw.o codecs/codec_alaw.so">
-</member>
-<member name="codec_a_mu" displayname="A-law and Mulaw direct Coder/Decoder" remove_on_change="codecs/codec_a_mu.o codecs/codec_a_mu.so">
 </member>
 <member name="codec_dahdi" displayname="Generic DAHDI Transcoder Codec Translator" remove_on_change="codecs/codec_dahdi.o codecs/codec_dahdi.so">
 	<depend>dahdi</depend>
