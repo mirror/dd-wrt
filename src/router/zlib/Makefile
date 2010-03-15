@@ -18,7 +18,7 @@
 
 #CC=mipsel-linux-uclibc-gcc
 
-CFLAGS=$(COPTS) -DUSE_MMAP -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS=$(COPTS) -fPIC -DUSE_MMAP -ffunction-sections -fdata-sections -Wl,--gc-sections
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7
 #CFLAGS=-g -DDEBUG
 #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \
