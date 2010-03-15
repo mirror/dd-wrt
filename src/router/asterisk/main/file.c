@@ -730,6 +730,13 @@ enum fsread_res {
 	FSREAD_SUCCESS_NOSCHED,
 };
 
+static float round2f(float f)
+{
+f+=0.5f;
+int nr = (int)f;
+return (float)nr;
+}
+
 static int ast_fsread_audio(const void *data);
 
 static enum fsread_res ast_readaudio_callback(struct ast_filestream *s)
@@ -763,7 +770,7 @@ static enum fsread_res ast_readaudio_callback(struct ast_filestream *s)
 			float samp_rate = (float) ast_format_rate(s->fmt->format);
 			unsigned int rate;
 
-			rate = (unsigned int) roundf(samp_rate / ((float) whennext));
+			rate = (unsigned int) round2f(samp_rate / ((float) whennext));
 
 			ast_settimeout(s->owner, rate, ast_fsread_audio, s);
 		} else {
