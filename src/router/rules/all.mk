@@ -79,6 +79,11 @@ update: $(obj-update)
 $(LINUXDIR)/.config:
 	cp $(LINUXDIR)/arch/mips/defconfig-bcm947xx $@
 
+CP:=cp -fpR
+INSTALL_BIN:=install -m0755
+INSTALL_DIR:=install -d -m0755
+INSTALL_DATA:=install -m0644
+INSTALL_CONF:=install -m0600
 
 include rules/matrixssl.mk
 include rules/ntpd.mk
