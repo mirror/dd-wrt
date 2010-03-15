@@ -130,7 +130,6 @@ static int send_waveform_to_fd(char *waveform, int length, int fd)
 #ifdef __PPC__ 
 	int x;
 	char c;
-	int x;
 #endif
 
 	res = ast_safe_fork(0);
