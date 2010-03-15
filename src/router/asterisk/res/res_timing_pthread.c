@@ -148,7 +148,12 @@ static void pthread_timer_close(int handle)
 
 	ao2_ref(timer, -1);
 }
-
+static float round2f(float f)
+{
+f+=0.5f;
+int nr = (int)f;
+return (float)nr;
+}
 static int pthread_timer_set_rate(int handle, unsigned int rate)
 {
 	struct pthread_timer *timer;
@@ -168,7 +173,7 @@ static int pthread_timer_set_rate(int handle, unsigned int rate)
 	ao2_lock(timer);
 
 	if ((timer->rate = rate)) {
-		timer->interval = roundf(1000.0 / ((float) rate));
+		timer->interval = round2f(1000.0 / ((float) rate));
 		timer->start = ast_tvnow();
 		timer->state = TIMER_STATE_TICKING;
 	} else {
