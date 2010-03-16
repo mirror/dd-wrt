@@ -115,6 +115,9 @@ int getbuttonstate()
 #elif HAVE_NP25G
 	int ret = get_gpio(4);
 	return ret;
+#elif HAVE_WPE53G
+	int ret = get_gpio(4);
+	return ret;
 #else
 	int ret = get_gpio(6);
 	return ret;
