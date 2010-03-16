@@ -752,6 +752,9 @@ int internal_getRouterBrand()
 #elif HAVE_WGT624
 	setRouter("Netgear WGT624 v4");
 	return ROUTER_BOARD_FONERA;
+#elif HAVE_WPE53G
+	setRouter("Compex WPE53G");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_NP25G
 	setRouter("Compex NP25G");
 	return ROUTER_BOARD_FONERA;
