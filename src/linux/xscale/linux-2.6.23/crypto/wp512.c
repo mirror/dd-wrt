@@ -19,11 +19,12 @@
  * (at your option) any later version.
  *
  */
-#include <crypto/internal/hash.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <asm/byteorder.h>
+#include <asm/scatterlist.h>
+#include <linux/crypto.h>
 #include <linux/types.h>
 
 #define WP512_DIGEST_SIZE 64
@@ -980,8 +981,8 @@ static void wp512_process_buffer(struct wp512_ctx *wctx) {
 
 }
 
-static int wp512_init(struct shash_desc *desc) {
-	struct wp512_ctx *wctx = shash_desc_ctx(desc);
+static void wp512_init(struct crypto_tfm *tfm) {
+	struct wp512_ctx *wctx = crypto_tfm_ctx(tfm);
 	int i;
 
 	memset(wctx->bitLength, 0, 32);
@@ -990,14 +991,12 @@ static int wp512_init(struct shash_desc *desc) {
 	for (i = 0; i < 8; i++) {
 		wctx->hash[i] = 0L;
 	}
-
-	return 0;
 }
 
-static int wp512_update(struct shash_desc *desc, const u8 *source,
+static void wp512_update(struct crypto_tfm *tfm, const u8 *source,
 			 unsigned int len)
 {
-	struct wp512_ctx *wctx = shash_desc_ctx(desc);
+	struct wp512_ctx *wctx = crypto_tfm_ctx(tfm);
 	int sourcePos    = 0;
 	unsigned int bits_len = len * 8; // convert to number of bits
 	int sourceGap    = (8 - ((int)bits_len & 7)) & 7;
@@ -1053,12 +1052,11 @@ static int wp512_update(struct shash_desc *desc, const u8 *source,
 	wctx->bufferBits   = bufferBits;
 	wctx->bufferPos    = bufferPos;
 
-	return 0;
 }
 
-static int wp512_final(struct shash_desc *desc, u8 *out)
+static void wp512_final(struct crypto_tfm *tfm, u8 *out)
 {
-	struct wp512_ctx *wctx = shash_desc_ctx(desc);
+	struct wp512_ctx *wctx = crypto_tfm_ctx(tfm);
 	int i;
    	u8 *buffer      = wctx->buffer;
    	u8 *bitLength   = wctx->bitLength;
@@ -1087,112 +1085,106 @@ static int wp512_final(struct shash_desc *desc, u8 *out)
 		digest[i] = cpu_to_be64(wctx->hash[i]);
    	wctx->bufferBits   = bufferBits;
    	wctx->bufferPos    = bufferPos;
-
-	return 0;
 }
 
-static int wp384_final(struct shash_desc *desc, u8 *out)
+static void wp384_final(struct crypto_tfm *tfm, u8 *out)
 {
 	u8 D[64];
 
-	wp512_final(desc, D);
+	wp512_final(tfm, D);
 	memcpy (out, D, WP384_DIGEST_SIZE);
 	memset (D, 0, WP512_DIGEST_SIZE);
-
-	return 0;
 }
 
-static int wp256_final(struct shash_desc *desc, u8 *out)
+static void wp256_final(struct crypto_tfm *tfm, u8 *out)
 {
 	u8 D[64];
 
-	wp512_final(desc, D);
+	wp512_final(tfm, D);
 	memcpy (out, D, WP256_DIGEST_SIZE);
 	memset (D, 0, WP512_DIGEST_SIZE);
-
-	return 0;
 }
 
-static struct shash_alg wp512 = {
-	.digestsize	=	WP512_DIGEST_SIZE,
-	.init		=	wp512_init,
-	.update		=	wp512_update,
-	.final		=	wp512_final,
-	.descsize	=	sizeof(struct wp512_ctx),
-	.base		=	{
-		.cra_name	=	"wp512",
-		.cra_flags	=	CRYPTO_ALG_TYPE_SHASH,
-		.cra_blocksize	=	WP512_BLOCK_SIZE,
-		.cra_module	=	THIS_MODULE,
-	}
+static struct crypto_alg wp512 = {
+	.cra_name	=	"wp512",
+	.cra_flags	=	CRYPTO_ALG_TYPE_DIGEST,
+	.cra_blocksize	=	WP512_BLOCK_SIZE,
+	.cra_ctxsize	=	sizeof(struct wp512_ctx),
+	.cra_module	=	THIS_MODULE,
+	.cra_list       =       LIST_HEAD_INIT(wp512.cra_list),	
+	.cra_u		=	{ .digest = {
+	.dia_digestsize	=	WP512_DIGEST_SIZE,
+	.dia_init   	= 	wp512_init,
+	.dia_update 	=	wp512_update,
+	.dia_final  	=	wp512_final } }
 };
 
-static struct shash_alg wp384 = {
-	.digestsize	=	WP384_DIGEST_SIZE,
-	.init		=	wp512_init,
-	.update		=	wp512_update,
-	.final		=	wp384_final,
-	.descsize	=	sizeof(struct wp512_ctx),
-	.base		=	{
-		.cra_name	=	"wp384",
-		.cra_flags	=	CRYPTO_ALG_TYPE_SHASH,
-		.cra_blocksize	=	WP512_BLOCK_SIZE,
-		.cra_module	=	THIS_MODULE,
-	}
+static struct crypto_alg wp384 = {
+	.cra_name	=	"wp384",
+	.cra_flags	=	CRYPTO_ALG_TYPE_DIGEST,
+	.cra_blocksize	=	WP512_BLOCK_SIZE,
+	.cra_ctxsize	=	sizeof(struct wp512_ctx),
+	.cra_module	=	THIS_MODULE,
+	.cra_list       =       LIST_HEAD_INIT(wp384.cra_list),	
+	.cra_u		=	{ .digest = {
+	.dia_digestsize	=	WP384_DIGEST_SIZE,
+	.dia_init   	= 	wp512_init,
+	.dia_update 	=	wp512_update,
+	.dia_final  	=	wp384_final } }
 };
 
-static struct shash_alg wp256 = {
-	.digestsize	=	WP256_DIGEST_SIZE,
-	.init		=	wp512_init,
-	.update		=	wp512_update,
-	.final		=	wp256_final,
-	.descsize	=	sizeof(struct wp512_ctx),
-	.base		=	{
-		.cra_name	=	"wp256",
-		.cra_flags	=	CRYPTO_ALG_TYPE_SHASH,
-		.cra_blocksize	=	WP512_BLOCK_SIZE,
-		.cra_module	=	THIS_MODULE,
-	}
+static struct crypto_alg wp256 = {
+	.cra_name	=	"wp256",
+	.cra_flags	=	CRYPTO_ALG_TYPE_DIGEST,
+	.cra_blocksize	=	WP512_BLOCK_SIZE,
+	.cra_ctxsize	=	sizeof(struct wp512_ctx),
+	.cra_module	=	THIS_MODULE,
+	.cra_list       =       LIST_HEAD_INIT(wp256.cra_list),	
+	.cra_u		=	{ .digest = {
+	.dia_digestsize	=	WP256_DIGEST_SIZE,
+	.dia_init   	= 	wp512_init,
+	.dia_update 	=	wp512_update,
+	.dia_final  	=	wp256_final } }
 };
 
-static int __init wp512_mod_init(void)
+static int __init init(void)
 {
 	int ret = 0;
 
-	ret = crypto_register_shash(&wp512);
+	ret = crypto_register_alg(&wp512);
 
 	if (ret < 0)
 		goto out;
 
-	ret = crypto_register_shash(&wp384);
+	ret = crypto_register_alg(&wp384);
 	if (ret < 0)
 	{
-		crypto_unregister_shash(&wp512);
+		crypto_unregister_alg(&wp512);
 		goto out;
 	}
 
-	ret = crypto_register_shash(&wp256);
+	ret = crypto_register_alg(&wp256);
 	if (ret < 0)
 	{
-		crypto_unregister_shash(&wp512);
-		crypto_unregister_shash(&wp384);
+		crypto_unregister_alg(&wp512);
+		crypto_unregister_alg(&wp384);
 	}
 out:
 	return ret;
 }
 
-static void __exit wp512_mod_fini(void)
+static void __exit fini(void)
 {
-	crypto_unregister_shash(&wp512);
-	crypto_unregister_shash(&wp384);
-	crypto_unregister_shash(&wp256);
+	crypto_unregister_alg(&wp512);
+	crypto_unregister_alg(&wp384);
+	crypto_unregister_alg(&wp256);
 }
 
 MODULE_ALIAS("wp384");
 MODULE_ALIAS("wp256");
 
-module_init(wp512_mod_init);
-module_exit(wp512_mod_fini);
+module_init(init);
+module_exit(fini);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Whirlpool Message Digest Algorithm");
