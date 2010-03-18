@@ -1540,11 +1540,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int a;
 
 	for (a = 0; a < ifcount; a++) {
-		sprintf(&menu[1][a + 7][0], "Wireless_WDS-ath%d.asp", a);
+		sprintf(&menu[1][a + 8][0], "Wireless_WDS-ath%d.asp", a);
 		if (ifcount == 1)
-			sprintf(&menuname[1][a + 8][0], "wirelessWds");
+			sprintf(&menuname[1][a + 9][0], "wirelessWds");
 		else
-			sprintf(&menuname[1][a + 8][0], "wirelessWds%d", a);
+			sprintf(&menuname[1][a + 9][0], "wirelessWds%d", a);
 	}
 #else
 #ifdef HAVE_ERC
@@ -1555,19 +1555,19 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		int a;
 
 		for (a = 0; a < ifcount; a++) {
-			sprintf(&menu[1][a * 2 + 6][0],
+			sprintf(&menu[1][a * 2 + 7][0],
 				"Wireless_Advanced-wl%d.asp", a);
-			sprintf(&menu[1][a * 2 + 7][0], "Wireless_WDS-wl%d.asp",
+			sprintf(&menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp",
 				a);
 			if (ifcount == 1) {
-				sprintf(&menuname[1][a * 2 + 7][0],
-					"wirelessAdvanced");
 				sprintf(&menuname[1][a * 2 + 8][0],
+					"wirelessAdvanced");
+				sprintf(&menuname[1][a * 2 + 9][0],
 					"wirelessWds");
 			} else {
-				sprintf(&menuname[1][a * 2 + 7][0],
-					"wirelessAdvancedwl%d", a);
 				sprintf(&menuname[1][a * 2 + 8][0],
+					"wirelessAdvancedwl%d", a);
+				sprintf(&menuname[1][a * 2 + 9][0],
 					"wirelessWdswl%d", a);
 			}
 		}
@@ -1662,9 +1662,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 				if (!strcmp(menu[i][j], "Wireless_radauth.asp"))
 					j++;
-				if (!wifi
-				    && !strncmp(menu[i][j], "Wireless_MAC.asp",
-						8))
+				if (!wifi && !strncmp(menu[i][j], "Wireless_MAC.asp",8))
 					j++;
 				if (!strncmp
 				    (menu[i][j], "Wireless_Advanced", 17))
