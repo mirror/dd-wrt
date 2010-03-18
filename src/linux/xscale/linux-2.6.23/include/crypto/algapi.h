@@ -22,18 +22,9 @@ struct seq_file;
 
 struct crypto_type {
 	unsigned int (*ctxsize)(struct crypto_alg *alg, u32 type, u32 mask);
-	unsigned int (*extsize)(struct crypto_alg *alg,
-				const struct crypto_type *frontend);
 	int (*init)(struct crypto_tfm *tfm, u32 type, u32 mask);
-	int (*init_tfm)(struct crypto_tfm *tfm,
-		        const struct crypto_type *frontend);
+	void (*exit)(struct crypto_tfm *tfm);
 	void (*show)(struct seq_file *m, struct crypto_alg *alg);
-	struct crypto_alg *(*lookup)(const char *name, u32 type, u32 mask);
-
-	unsigned int type;
-	unsigned int maskclear;
-	unsigned int maskset;
-	unsigned int tfmsize;
 };
 
 struct crypto_instance {
@@ -100,11 +91,9 @@ struct blkcipher_walk {
 	u8 *iv;
 
 	int flags;
-	unsigned int blocksize;
 };
 
 extern const struct crypto_type crypto_ablkcipher_type;
-extern const struct crypto_type crypto_aead_type;
 extern const struct crypto_type crypto_blkcipher_type;
 extern const struct crypto_type crypto_hash_type;
 
@@ -120,17 +109,9 @@ void crypto_drop_spawn(struct crypto_spawn *spawn);
 struct crypto_tfm *crypto_spawn_tfm(struct crypto_spawn *spawn, u32 type,
 				    u32 mask);
 
-static inline void crypto_set_spawn(struct crypto_spawn *spawn,
-				    struct crypto_instance *inst)
-{
-	spawn->inst = inst;
-}
-
 struct crypto_attr_type *crypto_get_attr_type(struct rtattr **tb);
 int crypto_check_attr_type(struct rtattr **tb, u32 type);
-const char *crypto_attr_alg_name(struct rtattr *rta);
-struct crypto_alg *crypto_attr_alg(struct rtattr *rta, u32 type, u32 mask);
-int crypto_attr_u32(struct rtattr *rta, u32 *num);
+struct crypto_alg *crypto_get_attr_alg(struct rtattr **tb, u32 type, u32 mask);
 struct crypto_instance *crypto_alloc_instance(const char *name,
 					      struct crypto_alg *alg);
 
@@ -140,19 +121,12 @@ int crypto_enqueue_request(struct crypto_queue *queue,
 struct crypto_async_request *crypto_dequeue_request(struct crypto_queue *queue);
 int crypto_tfm_in_queue(struct crypto_queue *queue, struct crypto_tfm *tfm);
 
-/* These functions require the input/output to be aligned as u32. */
-void crypto_inc(u8 *a, unsigned int size);
-void crypto_xor(u8 *dst, const u8 *src, unsigned int size);
-
 int blkcipher_walk_done(struct blkcipher_desc *desc,
 			struct blkcipher_walk *walk, int err);
 int blkcipher_walk_virt(struct blkcipher_desc *desc,
 			struct blkcipher_walk *walk);
 int blkcipher_walk_phys(struct blkcipher_desc *desc,
 			struct blkcipher_walk *walk);
-int blkcipher_walk_virt_block(struct blkcipher_desc *desc,
-			      struct blkcipher_walk *walk,
-			      unsigned int blocksize);
 
 static inline void *crypto_tfm_ctx_aligned(struct crypto_tfm *tfm)
 {
@@ -186,32 +160,11 @@ static inline void *crypto_ablkcipher_ctx(struct crypto_ablkcipher *tfm)
 	return crypto_tfm_ctx(&tfm->base);
 }
 
-static inline void *crypto_ablkcipher_ctx_aligned(struct crypto_ablkcipher *tfm)
-{
-	return crypto_tfm_ctx_aligned(&tfm->base);
-}
-
-static inline struct aead_alg *crypto_aead_alg(struct crypto_aead *tfm)
-{
-	return &crypto_aead_tfm(tfm)->__crt_alg->cra_aead;
-}
-
-static inline void *crypto_aead_ctx(struct crypto_aead *tfm)
-{
-	return crypto_tfm_ctx(&tfm->base);
-}
-
-static inline struct crypto_instance *crypto_aead_alg_instance(
-	struct crypto_aead *aead)
-{
-	return crypto_tfm_alg_instance(&aead->base);
-}
-
 static inline struct crypto_blkcipher *crypto_spawn_blkcipher(
 	struct crypto_spawn *spawn)
 {
 	u32 type = CRYPTO_ALG_TYPE_BLKCIPHER;
-	u32 mask = CRYPTO_ALG_TYPE_MASK;
+	u32 mask = CRYPTO_ALG_TYPE_MASK | CRYPTO_ALG_ASYNC;
 
 	return __crypto_blkcipher_cast(crypto_spawn_tfm(spawn, type, mask));
 }
@@ -248,11 +201,6 @@ static inline struct crypto_hash *crypto_spawn_hash(struct crypto_spawn *spawn)
 	return __crypto_hash_cast(crypto_spawn_tfm(spawn, type, mask));
 }
 
-static inline void *crypto_hash_ctx(struct crypto_hash *tfm)
-{
-	return crypto_tfm_ctx(&tfm->base);
-}
-
 static inline void *crypto_hash_ctx_aligned(struct crypto_hash *tfm)
 {
 	return crypto_tfm_ctx_aligned(&tfm->base);
@@ -275,16 +223,16 @@ static inline struct crypto_async_request *crypto_get_backlog(
 	       container_of(queue->backlog, struct crypto_async_request, list);
 }
 
-static inline int ablkcipher_enqueue_request(struct crypto_queue *queue,
+static inline int ablkcipher_enqueue_request(struct ablkcipher_alg *alg,
 					     struct ablkcipher_request *request)
 {
-	return crypto_enqueue_request(queue, &request->base);
+	return crypto_enqueue_request(alg->queue, &request->base);
 }
 
 static inline struct ablkcipher_request *ablkcipher_dequeue_request(
-	struct crypto_queue *queue)
+	struct ablkcipher_alg *alg)
 {
-	return ablkcipher_request_cast(crypto_dequeue_request(queue));
+	return ablkcipher_request_cast(crypto_dequeue_request(alg->queue));
 }
 
 static inline void *ablkcipher_request_ctx(struct ablkcipher_request *req)
@@ -292,40 +240,10 @@ static inline void *ablkcipher_request_ctx(struct ablkcipher_request *req)
 	return req->__ctx;
 }
 
-static inline int ablkcipher_tfm_in_queue(struct crypto_queue *queue,
-					  struct crypto_ablkcipher *tfm)
+static inline int ablkcipher_tfm_in_queue(struct crypto_ablkcipher *tfm)
 {
-	return crypto_tfm_in_queue(queue, crypto_ablkcipher_tfm(tfm));
-}
-
-static inline void *aead_request_ctx(struct aead_request *req)
-{
-	return req->__ctx;
-}
-
-static inline void aead_request_complete(struct aead_request *req, int err)
-{
-	req->base.complete(&req->base, err);
-}
-
-static inline u32 aead_request_flags(struct aead_request *req)
-{
-	return req->base.flags;
-}
-
-static inline struct crypto_alg *crypto_get_attr_alg(struct rtattr **tb,
-						     u32 type, u32 mask)
-{
-	return crypto_attr_alg(tb[1], type, mask);
-}
-
-/*
- * Returns CRYPTO_ALG_ASYNC if type/mask requires the use of sync algorithms.
- * Otherwise returns zero.
- */
-static inline int crypto_requires_sync(u32 type, u32 mask)
-{
-	return (type ^ CRYPTO_ALG_ASYNC) & mask & CRYPTO_ALG_ASYNC;
+	return crypto_tfm_in_queue(crypto_ablkcipher_alg(tfm)->queue,
+				   crypto_ablkcipher_tfm(tfm));
 }
 
 #endif	/* _CRYPTO_ALGAPI_H */
