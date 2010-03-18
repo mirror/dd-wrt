@@ -23,6 +23,7 @@
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <asm/byteorder.h>
+#include <asm/scatterlist.h>
 #include <linux/crypto.h>
 #include <linux/types.h>
 
@@ -862,7 +863,7 @@ static struct crypto_alg khazad_alg = {
 	.cia_decrypt		=	khazad_decrypt } }
 };
 
-static int __init khazad_mod_init(void)
+static int __init init(void)
 {
 	int ret = 0;
 	
@@ -870,14 +871,14 @@ static int __init khazad_mod_init(void)
 	return ret;
 }
 
-static void __exit khazad_mod_fini(void)
+static void __exit fini(void)
 {
 	crypto_unregister_alg(&khazad_alg);
 }
 
 
-module_init(khazad_mod_init);
-module_exit(khazad_mod_fini);
+module_init(init);
+module_exit(fini);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Khazad Cryptographic Algorithm");

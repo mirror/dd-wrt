@@ -23,6 +23,7 @@
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <asm/byteorder.h>
+#include <asm/scatterlist.h>
 #include <linux/crypto.h>
 #include <linux/types.h>
 
@@ -267,7 +268,7 @@ static struct crypto_alg xeta_alg = {
 	.cia_decrypt		=	xeta_decrypt } }
 };
 
-static int __init tea_mod_init(void)
+static int __init init(void)
 {
 	int ret = 0;
 	
@@ -292,7 +293,7 @@ out:
 	return ret;
 }
 
-static void __exit tea_mod_fini(void)
+static void __exit fini(void)
 {
 	crypto_unregister_alg(&tea_alg);
 	crypto_unregister_alg(&xtea_alg);
@@ -302,8 +303,8 @@ static void __exit tea_mod_fini(void)
 MODULE_ALIAS("xtea");
 MODULE_ALIAS("xeta");
 
-module_init(tea_mod_init);
-module_exit(tea_mod_fini);
+module_init(init);
+module_exit(fini);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("TEA, XTEA & XETA Cryptographic Algorithms");
