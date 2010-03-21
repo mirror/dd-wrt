@@ -1616,6 +1616,8 @@ void getWANMac(char *newmac)
 {
 	strcpy(newmac, nvram_safe_get("et0macaddr"));
 #ifn defined(HAVE_BUFFALO) || defined(HAVE_WZRG300NH) || defined(HAVE_WHRHPGN)
+if (nvram_invmatch("wan_proto","disabled"))
+{
 	MAC_ADD(newmac);	// et0macaddr +1
 
 	if (nvram_match("port_swap", "1")) {
@@ -1630,6 +1632,7 @@ void getWANMac(char *newmac)
 			MAC_ADD(newmac);	// et0macaddr +2
 		}
 	}
+}
 #endif
 	return;
 }
