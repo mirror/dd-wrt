@@ -1615,7 +1615,7 @@ void getWirelessMac(char *newmac)
 void getWANMac(char *newmac)
 {
 	strcpy(newmac, nvram_safe_get("et0macaddr"));
-#ifndef HAVE_BUFFALO
+#ifn defined(HAVE_BUFFALO) || defined(HAVE_WZRG300NH) || defined(HAVE_WHRHPGN)
 	MAC_ADD(newmac);	// et0macaddr +1
 
 	if (nvram_match("port_swap", "1")) {
