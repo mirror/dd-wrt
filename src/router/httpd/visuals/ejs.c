@@ -1478,11 +1478,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	static char menu_t[8][11][32] =
-	    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
-	       "Networking.asp", "eop-tunnel.asp", "", "", "", ""},
-	{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp",
+	    { {"SetupAssistant.asp", "index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
+	       "Networking.asp", "eop-tunnel.asp", "", "", ""},
+	{"Wireless_Basic.asp", /*"SuperChannel.asp",*/ "WiMAX.asp",
 	 "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp","Wireless_MAC.asp",
-	 "Wireless_Advanced.asp", "Wireless_WDS.asp", "", ""},
+	 /*"Wireless_Advanced.asp", "Wireless_WDS.asp",*/ "", "", "", "", ""},
 	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp",
 	 "USB.asp", "NAS.asp",
 	 "Hotspot.asp", "Milkfish.asp", "AnchorFree.asp", "",
@@ -1501,12 +1501,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 * real name is bmenu.menuname[i][j] 
 	 */
 	static char menuname_t[8][12][32] =
-	    { {"setup", "setupbasic", "setupddns", "setupmacclone",
-	       "setuprouting", "setupvlan", "networking", "setupeop", "", "",
+	    { {"setup", "setupassistant", "setupbasic", "setupddns", "setupmacclone",
+	       "setuprouting", "setupvlan", "networking", "setupeop", "",
 	       ""},
-	{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
+	{"wireless", "wirelessBasic", /*"wirelessSuperchannel",*/ "wimax",
 	 "wirelessRadius", "wirelessSecurity", "wirelessAoss", "wirelessMac",
-	 "wirelessAdvanced", "wirelessWds", "", ""},
+	 /*"wirelessAdvanced", "wirelessWds",*/ "", "", "", "", ""},
 	{"services", "servicesServices", "servicesRadius", "servicesPppoesrv",
 	 "servicesPptp",
 	 "servicesUSB", "servicesNAS", "servicesHotspot", "servicesMilkfish",
