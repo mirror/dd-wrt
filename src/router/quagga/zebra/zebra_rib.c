@@ -93,34 +93,11 @@ vrf_alloc (const char *name)
   return vrf;
 }
 
-/* Free VRF.  */
-static void
-vrf_free (struct vrf *vrf)
-{
-  if (vrf->name)
-    XFREE (MTYPE_VRF_NAME, vrf->name);
-  XFREE (MTYPE_VRF, vrf);
-}
-
 /* Lookup VRF by identifier.  */
 struct vrf *
 vrf_lookup (u_int32_t id)
 {
   return vector_lookup (vrf_vector, id);
-}
-
-/* Lookup VRF by name.  */
-static struct vrf *
-vrf_lookup_by_name (char *name)
-{
-  unsigned int i;
-  struct vrf *vrf;
-
-  for (i = 0; i < vector_active (vrf_vector); i++)
-    if ((vrf = vector_slot (vrf_vector, i)) != NULL)
-      if (vrf->name && name && strcmp (vrf->name, name) == 0)
-	return vrf;
-  return NULL;
 }
 
 /* Initialize VRF.  */
@@ -362,7 +339,7 @@ nexthop_active_ipv4 (struct rib *rib, struct nexthop *nexthop, int set,
     {
       route_unlock_node (rn);
       
-      /* If lookup self prefix return immidiately. */
+      /* If lookup self prefix return immediately. */
       if (rn == top)
 	return 0;
 
@@ -463,7 +440,7 @@ nexthop_active_ipv6 (struct rib *rib, struct nexthop *nexthop, int set,
     {
       route_unlock_node (rn);
       
-      /* If lookup self prefix return immidiately. */
+      /* If lookup self prefix return immediately. */
       if (rn == top)
 	return 0;
 
@@ -791,7 +768,7 @@ rib_match_ipv6 (struct in6_addr *addr)
  * The return value is the final value of 'ACTIVE' flag.
  */
 
-static int
+static unsigned
 nexthop_active_check (struct route_node *rn, struct rib *rib,
 		      struct nexthop *nexthop, int set)
 {
@@ -905,7 +882,7 @@ static int
 nexthop_active_update (struct route_node *rn, struct rib *rib, int set)
 {
   struct nexthop *nexthop;
-  int prev_active, prev_index, new_active;
+  unsigned int prev_active, prev_index, new_active;
 
   rib->nexthop_active_num = 0;
   UNSET_FLAG (rib->flags, ZEBRA_FLAG_CHANGED);
@@ -1294,49 +1271,28 @@ rib_meta_queue_add (struct meta_queue *mq, struct route_node *rn)
 static void
 rib_queue_add (struct zebra_t *zebra, struct route_node *rn)
 {
-  char buf[INET_ADDRSTRLEN];
-  assert (zebra && rn);
   
   if (IS_ZEBRA_DEBUG_RIB_Q)
-    inet_ntop (AF_INET, &rn->p.u.prefix, buf, INET_ADDRSTRLEN);
-
-  /* Pointless to queue a route_node with no RIB entries to add or remove */
-  if (!rn->info)
     {
-      zlog_debug ("%s: called for route_node (%p, %d) with no ribs",
-                  __func__, rn, rn->lock);
-      zlog_backtrace(LOG_DEBUG);
-      return;
+      char buf[INET6_ADDRSTRLEN];
+
+      zlog_info ("%s: %s/%d: work queue added", __func__,
+		 inet_ntop (rn->p.family, &rn->p.u.prefix, buf, INET6_ADDRSTRLEN),
+		 rn->p.prefixlen);
     }
 
-  if (IS_ZEBRA_DEBUG_RIB_Q)
-    zlog_info ("%s: %s/%d: work queue added", __func__, buf, rn->p.prefixlen);
-
-  assert (zebra);
-
-  if (zebra->ribq == NULL)
-    {
-      zlog_err ("%s: work_queue does not exist!", __func__);
-      return;
-    }
-
-  /* The RIB queue should normally be either empty or holding the only work_queue_item
-   * element. In the latter case this element would hold a pointer to the meta queue
-   * structure, which must be used to actually queue the route nodes to process. So
-   * create the MQ holder, if necessary, then push the work into it in any case.
+  /*
+   * The RIB queue should normally be either empty or holding the only
+   * work_queue_item element. In the latter case this element would
+   * hold a pointer to the meta queue structure, which must be used to
+   * actually queue the route nodes to process. So create the MQ
+   * holder, if necessary, then push the work into it in any case.
    * This semantics was introduced after 0.99.9 release.
    */
-
-  /* Should I invent work_queue_empty() and use it, or it's Ok to do as follows? */
   if (!zebra->ribq->items->count)
     work_queue_add (zebra->ribq, zebra->mq);
 
   rib_meta_queue_add (zebra->mq, rn);
-
-  if (IS_ZEBRA_DEBUG_RIB_Q)
-    zlog_debug ("%s: %s/%d: rn %p queued", __func__, buf, rn->p.prefixlen, rn);
-
-  return;
 }
 
 /* Create new meta queue.
@@ -1364,8 +1320,6 @@ meta_queue_new (void)
 static void
 rib_queue_init (struct zebra_t *zebra)
 {
-  assert (zebra);
-  
   if (! (zebra->ribq = work_queue_new (zebra->master, 
                                        "route_node processing")))
     {
@@ -1381,11 +1335,7 @@ rib_queue_init (struct zebra_t *zebra)
   zebra->ribq->spec.hold = rib_process_hold_time;
   
   if (!(zebra->mq = meta_queue_new ()))
-  {
     zlog_err ("%s: could not initialise meta queue!", __func__);
-    return;
-  }
-  return;
 }
 
 /* RIB updates are processed via a queue of pointers to route_nodes.
@@ -1653,10 +1603,10 @@ void rib_dump (const char * func, const struct prefix_ipv4 * p, const struct rib
   zlog_debug ("%s: dumping RIB entry %p for %s/%d", func, rib, straddr1, p->prefixlen);
   zlog_debug
   (
-    "%s: refcnt == %lu, uptime == %u, type == %u, table == %d",
+    "%s: refcnt == %lu, uptime == %lu, type == %u, table == %d",
     func,
     rib->refcnt,
-    rib->uptime,
+    (unsigned long) rib->uptime,
     rib->type,
     rib->table
   );
@@ -2860,19 +2810,6 @@ rib_update (void)
         rib_queue_add (&zebrad, rn);
 }
 
-/* Interface goes up. */
-static void
-rib_if_up (struct interface *ifp)
-{
-  rib_update ();
-}
-
-/* Interface goes down. */
-static void
-rib_if_down (struct interface *ifp)
-{
-  rib_update ();
-}
 
 /* Remove all routes which comes from non main table.  */
 static void
