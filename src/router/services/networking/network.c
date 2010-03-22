@@ -836,10 +836,12 @@ void start_lan(void)
 #endif
 #ifdef HAVE_RB600
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
+		nvram_setz(lan_ifnames,
+			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
+		nvram_setz(lan_ifnames,
+			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
 		PORTSETUPWAN("eth0");
 	}
 
@@ -1519,7 +1521,7 @@ void start_lan(void)
 
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		br_add_bridge(lan_ifname);
-		eval("ifconfig",lan_ifname,"promisc");
+		eval("ifconfig", lan_ifname, "promisc");
 		if (nvram_match("lan_stp", "0"))
 			br_set_stp_state(lan_ifname, 0);
 		else
@@ -1690,8 +1692,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -1877,7 +1879,7 @@ void start_lan(void)
 		 * Bring up interface 
 		 */
 		ifconfig(lan_ifname, IFUP, NULL, NULL);
-		eval("ifconfig",lan_ifname,"promisc");
+		eval("ifconfig", lan_ifname, "promisc");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		/*
 		 * config wireless i/f 
@@ -1912,7 +1914,7 @@ void start_lan(void)
 	 */
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"),
 		 nvram_safe_get("lan_netmask"));
-	eval("ifconfig",lan_ifname,"promisc");
+	eval("ifconfig", lan_ifname, "promisc");
 
 	char staticlan[32];
 
@@ -2334,7 +2336,10 @@ static void vdsl_fuckup(char *ifname)
 		return;
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
-	strcpy(mac, ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	if (nvram_get("wan_hwaddr"))
+		strcpy(mac, nvram_safe_get("wan_hwaddr"));
+	else
+		strcpy(mac, ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	MAC_SUB(mac);
 	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -3630,8 +3635,10 @@ void start_wan_done(char *wan_ifname)
 #endif
 #else
 	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1") && nvram_match("chilli_enable", "1"))
-	    || (nvram_match("hotss_nowifibridge", "1") && nvram_match("hotss_enable", "1")) ) {
+	    || (nvram_match("chilli_nowifibridge", "1")
+		&& nvram_match("chilli_enable", "1"))
+	    || (nvram_match("hotss_nowifibridge", "1")
+		&& nvram_match("hotss_enable", "1"))) {
 		if (nvram_match("wl0_mode", "apsta")) {
 			br_del_interface(nvram_safe_get("lan_ifname"), "wl0.1");
 			ifconfig("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
@@ -3726,8 +3733,10 @@ void stop_wan(void)
 #endif
 #ifndef HAVE_FON
 	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1") && nvram_match("chilli_enable", "1"))
-	    || (nvram_match("hotss_nowifibridge", "1") && nvram_match("hotss_enable", "1")) ) 
+	    || (nvram_match("chilli_nowifibridge", "1")
+		&& nvram_match("chilli_enable", "1"))
+	    || (nvram_match("hotss_nowifibridge", "1")
+		&& nvram_match("hotss_enable", "1")))
 #endif
 	{
 #ifdef HAVE_MICRO
