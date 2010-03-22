@@ -328,7 +328,7 @@ static int bound(void)
 
 		dns_list = get_dns_list();
 
-		int i=0;
+		int i = 0;
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
@@ -348,7 +348,7 @@ static int bound(void)
 		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip);
 
 		nvram_set("l2tp_server_ip", l2tpip);
-                
+
 		route_add(wan_ifname, 0,
 			  nvram_safe_get("l2tp_server_ip"),
 			  nvram_safe_get("wan_gateway"), "255.255.255.255");
