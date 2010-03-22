@@ -88,7 +88,6 @@ static void deconfigure_single(int count)
 	}
 #endif
 
-
 	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
 		dev, dev, dev, dev, dev, dev, dev);
 	int s;
@@ -173,6 +172,10 @@ static void setupKey(char *prefix)
 		int i;
 		char bul[8];
 		char *authmode = nvram_nget("%s_authmode", prefix);
+		if (!strcmp(authmode, "shared"))
+			sysprintf("iwpriv %s authmode 2", prefix);
+		else
+			sysprintf("iwpriv %s authmode 1", prefix);
 		for (i = 1; i < 5; i++) {
 			char *athkey = nvram_nget("%s_key%d", prefix, i);
 
@@ -182,10 +185,6 @@ static void setupKey(char *prefix)
 		}
 		sysprintf("iwconfig %s key [%s]", prefix,
 			  nvram_nget("%s_key", prefix));
-		if (!strcmp(authmode, "shared"))
-			sysprintf("iwpriv %s authmode 2", prefix);
-		else
-			sysprintf("iwpriv %s authmode 1", prefix);
 	}
 
 }

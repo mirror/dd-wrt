@@ -1338,7 +1338,7 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable)
 	}
 }
 
-void fw_get_filter_services(char *services,int maxsize)
+void fw_get_filter_services(char *services, int maxsize)
 {
 
 	l7filters *filters = filters_list;
@@ -1392,7 +1392,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	// //nvram_safe_get("filter_services");
 
 	memset(services, 0, sizeof(services));
-	fw_get_filter_services(services,sizeof(services));
+	fw_get_filter_services(services, sizeof(services));
 
 	/*
 	 * filter_port_grp5=My ICQ<&nbsp;>Game boy 
