@@ -86,7 +86,7 @@ struct assegment_header
 };
 
 /* Hash for aspath.  This is the top level structure of AS path. */
-struct hash *ashash;
+static struct hash *ashash;
 
 /* Stream for SNMP. See aspath_snmp_pathseg */
 static struct stream *snmp_stream;
@@ -501,22 +501,6 @@ aspath_has_as4 (struct aspath *aspath)
   return 0;
 }
 
-/* Return number of as numbers in in path */
-unsigned int
-aspath_count_numas (struct aspath *aspath)
-{
-  struct assegment *seg = aspath->segments;
-  unsigned int num;
-  
-  num=0;
-  while (seg)
-    {
-      num += seg->length;
-      seg = seg->next;
-    }
-  return num;
-}
-
 /* Convert aspath structure to string expression. */
 static char *
 aspath_make_str_count (struct aspath *as)
@@ -728,8 +712,11 @@ assegments_parse (struct stream *s, size_t length, int use32bit)
       if ( ((bytes + seg_size) > length)
           /* 1771bis 4.3b: seg length contains one or more */
           || (segh.length == 0) 
-          /* Paranoia in case someone changes type of segment length */
-          || ((sizeof segh.length > 1) && (segh.length > AS_SEGMENT_MAX)) )
+          /* Paranoia in case someone changes type of segment length.
+           * Shift both values by 0x10 to make the comparison operate
+           * on more, than 8 bits (otherwise it's a warning, bug #564).
+           */
+          || ((sizeof segh.length > 1) && (0x10 + segh.length > 0x10 + AS_SEGMENT_MAX)) )
         {
           if (head)
             assegment_free_all (head);
