@@ -130,13 +130,13 @@ static char *getPhyDev()
 {
 	if (f_exists("/proc/switch/eth0/enable"))
 		return "eth0";
-		
+
 	if (f_exists("/proc/switch/eth1/enable"))
 		return "eth1";
-		
+
 	if (f_exists("/proc/switch/eth2/enable"))
-		return "eth2";		
-		
+		return "eth2";
+
 	return "eth0";
 }
 
@@ -302,8 +302,7 @@ void start_setup_vlans(void)
 		vlanmap[5] = 5;
 		vlanmap[0] = 1;
 		vlanmap[1] = 0;
-	}
-	else if (nvram_match("vlan2ports", "0 8")) {
+	} else if (nvram_match("vlan2ports", "0 8")) {
 		vlanmap[0] = 0;
 		vlanmap[5] = 8;
 		if (nvram_match("vlan1ports", "4 3 2 1 8*")) {
@@ -320,7 +319,7 @@ void start_setup_vlans(void)
 			vlanmap[2] = 1;
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
-		} 
+		}
 	}
 	// else ....
 
@@ -330,11 +329,12 @@ void start_setup_vlans(void)
 
 	if (strstr(lanifnames, "vlan1") && !strstr(lanifnames, "vlan0"))
 		asttemp = nvram_safe_get("vlan1ports");
-	else if (strstr(lanifnames, "vlan2") && !strstr(lanifnames, "vlan0") && !strstr(lanifnames, "vlan1"))
+	else if (strstr(lanifnames, "vlan2") && !strstr(lanifnames, "vlan0")
+		 && !strstr(lanifnames, "vlan1"))
 		asttemp = nvram_safe_get("vlan2ports");
 	else
 		asttemp = nvram_safe_get("vlan0ports");
-		
+
 	if (strstr(asttemp, "5*") || strstr(asttemp, "8*"))
 		ast = 1;
 
@@ -466,10 +466,12 @@ void start_setup_vlans(void)
 			    && tagged[atoi(vlan)])
 				sprintf(&portsettings[i][0], "%s %st",
 					&portsettings[i][0], vlan);
-			else if ((atoi(vlan) == 5 || atoi(vlan) == 8) && tagged[atoi(vlan)] && !ast)
+			else if ((atoi(vlan) == 5 || atoi(vlan) == 8)
+				 && tagged[atoi(vlan)] && !ast)
 				sprintf(&portsettings[i][0], "%s %st",
 					&portsettings[i][0], vlan);
-			else if ((atoi(vlan) == 5 || atoi(vlan) == 8) && tagged[atoi(vlan)] && ast)
+			else if ((atoi(vlan) == 5 || atoi(vlan) == 8)
+				 && tagged[atoi(vlan)] && ast)
 				sprintf(&portsettings[i][0], "%s %s*",
 					&portsettings[i][0], vlan);
 			else
