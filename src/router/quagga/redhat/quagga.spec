@@ -89,8 +89,8 @@
 
 Summary: Routing daemon
 Name:		quagga
-Version:	0.99.14
-Release:	20090811%{release_rev}
+Version:	0.99.16
+Release:	20100309%{release_rev}
 License:	GPL
 Group: System Environment/Daemons
 Source0:	http://www.quagga.net/snapshots/cvs/%{name}-%{version}.tar.gz

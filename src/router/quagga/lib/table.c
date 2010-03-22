@@ -125,7 +125,7 @@ route_table_free (struct route_table *rt)
 }
 
 /* Utility mask array. */
-static u_char maskbit[] = 
+static const u_char maskbit[] =
 {
   0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff
 };
@@ -165,37 +165,10 @@ route_common (struct prefix *n, struct prefix *p, struct prefix *new)
     }
 }
 
-/* Macro version of check_bit (). */
-#define CHECK_BIT(X,P) ((((u_char *)(X))[(P) / 8]) >> (7 - ((P) % 8)) & 1)
-
-/* Check bit of the prefix. */
-static int
-check_bit (u_char *prefix, u_char prefixlen)
-{
-  int offset;
-  int shift;
-  u_char *p = (u_char *)prefix;
-
-  assert (prefixlen <= 128);
-
-  offset = prefixlen / 8;
-  shift = 7 - (prefixlen % 8);
-  
-  return (p[offset] >> shift & 1);
-}
-
-/* Macro version of set_link (). */
-#define SET_LINK(X,Y) do { (X)->link[CHECK_BIT(&(Y)->p.u.prefix,(X)->p.prefixlen)] = (Y);\
-                      (Y)->parent = (X); } while (0)
-
 static void
 set_link (struct route_node *node, struct route_node *new)
 {
-  int bit;
-    
-  bit = check_bit (&new->p.u.prefix, node->p.prefixlen);
-
-  assert (bit == 0 || bit == 1);
+  unsigned int bit = prefix_bit (&new->p.u.prefix, node->p.prefixlen);
 
   node->link[bit] = new;
   new->parent = node;
@@ -219,26 +192,9 @@ route_unlock_node (struct route_node *node)
     route_node_delete (node);
 }
 
-/* Dump routing table. */
-static void __attribute__ ((unused))
-route_dump_node (struct route_table *t)
-{
-  struct route_node *node;
-  char buf[46];
-
-  for (node = route_top (t); node != NULL; node = route_next (node))
-    {
-      printf ("[%d] %p %s/%d\n", 
-	      node->lock,
-	      node->info,
-	      inet_ntop (node->p.family, &node->p.u.prefix, buf, 46),
-	      node->p.prefixlen);
-    }
-}
-
 /* Find matched prefix. */
 struct route_node *
-route_node_match (struct route_table *table, struct prefix *p)
+route_node_match (const struct route_table *table, const struct prefix *p)
 {
   struct route_node *node;
   struct route_node *matched;
@@ -253,7 +209,7 @@ route_node_match (struct route_table *table, struct prefix *p)
     {
       if (node->info)
 	matched = node;
-      node = node->link[check_bit(&p->u.prefix, node->p.prefixlen)];
+      node = node->link[prefix_bit(&p->u.prefix, node->p.prefixlen)];
     }
 
   /* If matched route found, return it. */
@@ -264,7 +220,8 @@ route_node_match (struct route_table *table, struct prefix *p)
 }
 
 struct route_node *
-route_node_match_ipv4 (struct route_table *table, struct in_addr *addr)
+route_node_match_ipv4 (const struct route_table *table,
+		       const struct in_addr *addr)
 {
   struct prefix_ipv4 p;
 
@@ -278,7 +235,8 @@ route_node_match_ipv4 (struct route_table *table, struct in_addr *addr)
 
 #ifdef HAVE_IPV6
 struct route_node *
-route_node_match_ipv6 (struct route_table *table, struct in6_addr *addr)
+route_node_match_ipv6 (const struct route_table *table,
+		       const struct in6_addr *addr)
 {
   struct prefix_ipv6 p;
 
@@ -305,7 +263,7 @@ route_node_lookup (struct route_table *table, struct prefix *p)
       if (node->p.prefixlen == p->prefixlen && node->info)
 	return route_lock_node (node);
 
-      node = node->link[check_bit(&p->u.prefix, node->p.prefixlen)];
+      node = node->link[prefix_bit(&p->u.prefix, node->p.prefixlen)];
     }
 
   return NULL;
@@ -330,7 +288,7 @@ route_node_get (struct route_table *table, struct prefix *p)
 	  return node;
 	}
       match = node;
-      node = node->link[check_bit(&p->u.prefix, node->p.prefixlen)];
+      node = node->link[prefix_bit(&p->u.prefix, node->p.prefixlen)];
     }
 
   if (node == NULL)
