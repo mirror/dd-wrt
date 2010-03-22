@@ -149,6 +149,10 @@ static void setupKey(char *prefix)
 		int i;
 		char bul[8];
 		char *authmode = nvram_nget("%s_authmode", prefix);
+		if (!strcmp(authmode, "shared"))
+			sysprintf("iwpriv %s authmode 2", prefix);
+		else
+			sysprintf("iwpriv %s authmode 1", prefix);
 		for (i = 1; i < 5; i++) {
 			char *athkey = nvram_nget("%s_key%d", prefix, i);
 
@@ -158,10 +162,6 @@ static void setupKey(char *prefix)
 		}
 		sysprintf("iwconfig %s key [%s]", prefix,
 			  nvram_nget("%s_key", prefix));
-		if (!strcmp(authmode, "shared"))
-			sysprintf("iwpriv %s authmode 2", prefix);
-		else
-			sysprintf("iwpriv %s authmode 1", prefix);
 	}
 
 }
@@ -435,20 +435,26 @@ static void set_netmode(char *wif, char *dev, char *use)
 		}
 	}
 	if (!strcmp(netmode, "n5-only") || !strcmp(netmode, "n2-only")) {
-			sysprintf("iwpriv %s puren 1", use);
+		sysprintf("iwpriv %s puren 1", use);
 	}
 	sysprintf
 	    ("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
 	sysprintf("iwpriv %s ampdu 1", use);
 	sysprintf("iwpriv %s ampdulimit 50000", use);
 #if defined(HAVE_WHRHPGN) || defined(HAVE_DIR615E)
-	sysprintf("iwpriv %s rx_chainmask %s", use,nvram_default_get(rxantenna, "3"));
-	sysprintf("iwpriv %s tx_chainmask %s", use,nvram_default_get(txantenna, "3"));
-	sysprintf("iwpriv %s tx_cm_legacy %s", use,nvram_default_get(txantenna, "3"));
+	sysprintf("iwpriv %s rx_chainmask %s", use,
+		  nvram_default_get(rxantenna, "3"));
+	sysprintf("iwpriv %s tx_chainmask %s", use,
+		  nvram_default_get(txantenna, "3"));
+	sysprintf("iwpriv %s tx_cm_legacy %s", use,
+		  nvram_default_get(txantenna, "3"));
 #else
-	sysprintf("iwpriv %s rx_chainmask %s", use,nvram_default_get(rxantenna, "7"));
-	sysprintf("iwpriv %s tx_chainmask %s", use,nvram_default_get(txantenna, "5"));
-	sysprintf("iwpriv %s tx_cm_legacy %s", use,nvram_default_get(txantenna, "5"));
+	sysprintf("iwpriv %s rx_chainmask %s", use,
+		  nvram_default_get(rxantenna, "7"));
+	sysprintf("iwpriv %s tx_chainmask %s", use,
+		  nvram_default_get(txantenna, "5"));
+	sysprintf("iwpriv %s tx_cm_legacy %s", use,
+		  nvram_default_get(txantenna, "5"));
 #endif
 }
 
@@ -558,7 +564,7 @@ void configure_single_11n(int count)
 	if (count == 0)
 		vapcount = 0;
 #if defined(HAVE_DIR825) || defined(HAVE_WRT400)
-	sysprintf("echo 1 >/proc/sys/dev/wifi%d/ledon",count); //switch off led before configuring to prevent solid led
+	sysprintf("echo 1 >/proc/sys/dev/wifi%d/ledon", count);	//switch off led before configuring to prevent solid led
 #endif
 
 	sprintf(wif, "wifi%d", count);
@@ -754,7 +760,6 @@ void configure_single_11n(int count)
 		}
 
 	}
-
 	// setup vif interfaces first
 	char chanshift_s[32];
 
