@@ -4700,10 +4700,10 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 
 		tf_webWriteESCNV(wp, var);
 		websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
-	}
 	websWrite(wp,
 		  "<input type=\"checkbox\" name=\"%s_radius2_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius2_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
+	}
 	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 	if (!showmacformat) {
