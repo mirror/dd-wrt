@@ -6,7 +6,7 @@ ifeq ($(CONFIG_QUAGGA_STABLE),y)
 else
 	cd quagga/readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr  CFLAGS="$(COPTS) -fPIC"
 	$(MAKE) -C quagga/readline
-	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --localstatedir=/tmp --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --disable-ipv6 --prefix=/usr  --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --enable-pie=no --with-libreadline=$(TOP)/quagga/readline CFLAGS="-I$(TOP)/quagga -Drpl_malloc=malloc -Drpl_realloc=realloc $(COPTS)" LDFLAGS="-L$(TOP)/quagga/readline -L$(TOP)/ncurses/lib -lncurses" 
+	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --localstatedir=/var/run --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --disable-ipv6 --prefix=/usr  --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --enable-pie=no --with-libreadline=$(TOP)/quagga/readline CFLAGS="-I$(TOP)/quagga -Drpl_malloc=malloc -Drpl_realloc=realloc $(COPTS)" LDFLAGS="-L$(TOP)/quagga/readline -L$(TOP)/ncurses/lib -lncurses" 
 endif
 
 quagga: ncurses
