@@ -1352,14 +1352,6 @@ void start_lan(void)
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 	}
 	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
-	/*
-	 * strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ); ioctl (s, SIOCGIFHWADDR,
-	 * &ifr); nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data,
-	 * eabuf)); strcpy (mac, nvram_safe_get ("et0macaddr")); MAC_ADD (mac);
-	 * ether_atoe (mac, ifr.ifr_hwaddr.sa_data); ifr.ifr_hwaddr.sa_family =
-	 * ARPHRD_ETHER; strncpy (ifr.ifr_name, "eth1", IFNAMSIZ); ioctl (s,
-	 * SIOCSIFHWADDR, &ifr); 
-	 */
 #endif
 #ifdef HAVE_X86
 	if (getSTA() || getWET()) {
@@ -1412,15 +1404,6 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
-
-	/*
-	 * strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ); ioctl (s, SIOCGIFHWADDR,
-	 * &ifr); nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data,
-	 * eabuf)); strcpy (mac, nvram_safe_get ("et0macaddr")); MAC_ADD (mac);
-	 * ether_atoe (mac, ifr.ifr_hwaddr.sa_data); ifr.ifr_hwaddr.sa_family =
-	 * ARPHRD_ETHER; strncpy (ifr.ifr_name, "eth1", IFNAMSIZ); ioctl (s,
-	 * SIOCSIFHWADDR, &ifr); 
-	 */
 #endif
 
 	if (!nvram_match("lan_ifname", lan_ifname)
