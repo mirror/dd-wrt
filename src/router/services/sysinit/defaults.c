@@ -173,6 +173,9 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_BUFFALO
+#ifdef BUFFALO_EU
+	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
+#endif	
 	{"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
 #elif HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
@@ -2020,7 +2023,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_WTS
 	{"language", "spanish", 0},
-#elif HAVE_BUFFALO
+#elif DEFAULT_LANGUAGE
 	{"language", DEFAULT_LANGUAGE, 0},
 #else
 	{"language", "english", 0},
