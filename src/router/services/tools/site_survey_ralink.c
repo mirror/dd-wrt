@@ -152,7 +152,7 @@ int site_survey_main(int argc, char *argv[])
 		b2[strlen(b2)] = 0;
 		for (c=0;c<32;c++)
 		    {
-		    b2[31-c]!=0x20)
+		    if (b2[31-c]!=0x20)
 			break;
 		    b2[31-c]=0;
 		    }
