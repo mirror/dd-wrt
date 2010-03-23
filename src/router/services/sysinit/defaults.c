@@ -2023,7 +2023,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_WTS
 	{"language", "spanish", 0},
-#elif DEFAULT_LANGUAGE
+#elif defined(DEFAULT_LANGUAGE)
 	{"language", DEFAULT_LANGUAGE, 0},
 #else
 	{"language", "english", 0},
