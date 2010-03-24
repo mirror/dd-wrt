@@ -70,7 +70,7 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 	int temp;
 	char ifname[32];
 	strcpy(ifname,ifname2);
-	rep(ifname,'X',',');
+	rep(ifname,'X','.');
 
 	if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
 		char var[32];
@@ -408,16 +408,16 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		else if (!strcmp(ifname, "wl1"))
 			iface = get_wl_instance_name(1);
 		else
-#endif
-			iface = nvram_safe_get("wl0_ifname");
-
-#ifdef HAVE_MADWIFI
-		char *maclist = nvram_safe_get("ath0_maclist");
+#elif !defined(HAVE_RT2880)
+			iface = ifname;		
 #else
+			iface = nvram_safe_get("wl0_ifname");
+#endif
+
 		char var[32];
 		sprintf(var, "%s_maclist", ifname);
 		char *maclist = nvram_safe_get(var);
-#endif
+
 		foreach(word, maclist, next) {
 			snprintf(wl_client_macs[nv_count].hwaddr,
 				 sizeof(wl_client_macs[nv_count].hwaddr), "%s",
@@ -426,8 +426,13 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			wl_client_macs[nv_count].check = 1;	// checked
 			nv_count++;
 		}
-		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD,
-			  ASSOCLIST_TMP);
+#ifdef HAVE_MADWIFI
+		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
+#elif HAVE_RT2880
+		sysprintf("wl_rt2880 -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
+#else
+		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
+#endif
 
 		if ((fp = fopen(ASSOCLIST_TMP, "r"))) {
 			while (fgets(line, sizeof(line), fp) != NULL) {
