@@ -452,7 +452,7 @@
 
 #define ROUTER_BOARD_ASUS_RTN13U 0x901a
 
-#define ROUTER_BOARD_WRT160NL 0x9101  // fake id, reset button is gpio 21
+#define ROUTER_BOARD_WRT160NL 0x9101	// fake id, reset button is gpio 21
 
 // NetCore NW618 / Rosewill RNX-GX4 (BCM5354 cpu, 4MB serial flash / 16MB ram, fccid: Rosewill W6RRNX-GX4)
 #define ROUTER_NETCORE_NW618 0x9216
@@ -502,6 +502,7 @@ extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
 
 extern int check_wan_link(int num);
+extern char *get_wan_ipaddr(void);
 extern char *get_complete_ip(char *from, char *to);
 extern char *get_complete_lan_ip(char *ip);
 extern int get_int_len(int num);
@@ -775,7 +776,7 @@ int isEMP(char *ifname);
 int isXR36(char *ifname);
 char *get3GControlDevice(void);
 char *getIsoName(const char *country);
-int has_gateway(void); // return 1 if nat/gateway mode is enabled for wan
+int has_gateway(void);		// return 1 if nat/gateway mode is enabled for wan
 #ifdef HAVE_RT2880
 char *getRADev(char *prefix);
 #endif

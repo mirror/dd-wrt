@@ -310,6 +310,7 @@ char *get3GControlDevice(void)
 	insmod("option");
 	return ttsdevice;
 }
+
 /*
 //future
 typedef struct {

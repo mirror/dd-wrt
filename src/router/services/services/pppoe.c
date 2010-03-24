@@ -305,8 +305,6 @@ static void stop_dns_clear_resolv(void)
 	return;
 }
 
-
-
 void stop_single_pppoe(int pppoe_num)
 {
 	int ret;

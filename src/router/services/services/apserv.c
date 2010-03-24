@@ -42,8 +42,8 @@ void start_apserv(void)
 	 * Make sure its not running first 
 	 */
 	ret = killall("ap_serv", SIGUSR1);
-	ret = eval("ap_serv","-i",nvram_safe_get("lan_ifname"));
-	dd_syslog(LOG_INFO,"ap_serv : ap_serv daemon successfully started\n");
+	ret = eval("ap_serv", "-i", nvram_safe_get("lan_ifname"));
+	dd_syslog(LOG_INFO, "ap_serv : ap_serv daemon successfully started\n");
 	cprintf("done\n");
 	return;
 }
@@ -59,6 +59,5 @@ void stop_apserv(void)
 	}
 	return;
 }
-
 
 #endif

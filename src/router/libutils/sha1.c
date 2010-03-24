@@ -51,7 +51,7 @@ typedef struct sha1_ctx_t {
 		e = d; d = c; c = rotl32(b, 30); b = t; \
 	} while (0)
 
-static void sha1_compile(sha1_ctx_t *ctx)
+static void sha1_compile(sha1_ctx_t * ctx)
 {
 	uint32_t w[80], i, a, b, c, d, e, t;
 
@@ -93,7 +93,7 @@ static void sha1_compile(sha1_ctx_t *ctx)
 	ctx->hash[4] += e;
 }
 
-void sha1_begin(sha1_ctx_t *ctx)
+void sha1_begin(sha1_ctx_t * ctx)
 {
 	ctx->count[0] = ctx->count[1] = 0;
 	ctx->hash[0] = 0x67452301;
@@ -105,7 +105,7 @@ void sha1_begin(sha1_ctx_t *ctx)
 
 /* SHA1 hash data in an array of bytes into hash buffer and call the        */
 /* hash_compile function as required.                                       */
-void sha1_hash(const void *data, unsigned int length, sha1_ctx_t *ctx)
+void sha1_hash(const void *data, unsigned int length, sha1_ctx_t * ctx)
 {
 	uint32_t pos = (uint32_t) (ctx->count[0] & SHA1_MASK);
 	uint32_t freeb = SHA1_BLOCK_SIZE - pos;
@@ -115,7 +115,7 @@ void sha1_hash(const void *data, unsigned int length, sha1_ctx_t *ctx)
 		++(ctx->count[1]);
 
 	while (length >= freeb) {	/* tranfer whole blocks while possible  */
-		memcpy(((unsigned char *) ctx->wbuf) + pos, sp, freeb);
+		memcpy(((unsigned char *)ctx->wbuf) + pos, sp, freeb);
 		sp += freeb;
 		length -= freeb;
 		freeb = SHA1_BLOCK_SIZE;
@@ -123,18 +123,22 @@ void sha1_hash(const void *data, unsigned int length, sha1_ctx_t *ctx)
 		sha1_compile(ctx);
 	}
 
-	memcpy(((unsigned char *) ctx->wbuf) + pos, sp, length);
+	memcpy(((unsigned char *)ctx->wbuf) + pos, sp, length);
 }
 
-void* sha1_end(void *resbuf, sha1_ctx_t *ctx)
+void *sha1_end(void *resbuf, sha1_ctx_t * ctx)
 {
 	/* SHA1 Final padding and digest calculation  */
 #if __BYTE_ORDER == __BIG_ENDIAN
-	static uint32_t mask[4] = { 0x00000000, 0xff000000, 0xffff0000, 0xffffff00 };
-	static uint32_t bits[4] = { 0x80000000, 0x00800000, 0x00008000, 0x00000080 };
+	static uint32_t mask[4] =
+	    { 0x00000000, 0xff000000, 0xffff0000, 0xffffff00 };
+	static uint32_t bits[4] =
+	    { 0x80000000, 0x00800000, 0x00008000, 0x00000080 };
 #else
-	static uint32_t mask[4] = { 0x00000000, 0x000000ff, 0x0000ffff, 0x00ffffff };
-	static uint32_t bits[4] = { 0x00000080, 0x00008000, 0x00800000, 0x80000000 };
+	static uint32_t mask[4] =
+	    { 0x00000000, 0x000000ff, 0x0000ffff, 0x00ffffff };
+	static uint32_t bits[4] =
+	    { 0x00000080, 0x00008000, 0x00800000, 0x80000000 };
 #endif
 
 	uint8_t *hval = resbuf;
@@ -146,7 +150,7 @@ void* sha1_end(void *resbuf, sha1_ctx_t *ctx)
 	/* endian machines they will be at the bottom. Hence the AND    */
 	/* and OR masks above are reversed for little endian systems    */
 	ctx->wbuf[cnt >> 2] =
-		(ctx->wbuf[cnt >> 2] & mask[cnt & 3]) | bits[cnt & 3];
+	    (ctx->wbuf[cnt >> 2] & mask[cnt & 3]) | bits[cnt & 3];
 
 	/* we need 9 or more empty positions, one for the padding byte  */
 	/* (above) and eight for the length count.  If there is not     */
@@ -156,14 +160,14 @@ void* sha1_end(void *resbuf, sha1_ctx_t *ctx)
 			ctx->wbuf[15] = 0;
 		sha1_compile(ctx);
 		cnt = 0;
-	} else				/* compute a word index for the empty buffer positions  */
+	} else			/* compute a word index for the empty buffer positions  */
 		cnt = (cnt >> 2) + 1;
 
 	while (cnt < 14)	/* and zero pad all but last two positions      */
 		ctx->wbuf[cnt++] = 0;
 
 	/* assemble the eight byte counter in the buffer in big-endian  */
-	/* format					                */
+	/* format                                                       */
 
 	ctx->wbuf[14] = htonl((ctx->count[1] << 3) | (ctx->count[0] >> 29));
 	ctx->wbuf[15] = htonl(ctx->count[0] << 3);
@@ -174,7 +178,7 @@ void* sha1_end(void *resbuf, sha1_ctx_t *ctx)
 	/* misaligned for 32-bit words                                  */
 
 	for (i = 0; i < SHA1_DIGEST_SIZE; ++i)
-		hval[i] = (unsigned char) (ctx->hash[i >> 2] >> 8 * (~i & 3));
+		hval[i] = (unsigned char)(ctx->hash[i >> 2] >> 8 * (~i & 3));
 
 	return resbuf;
 }

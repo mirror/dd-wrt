@@ -42,7 +42,6 @@ int get_wl_instance(char *name)
 	return 1;
 }
 
-
 #else
 char *get_wl_instance_name(int instance)
 {
