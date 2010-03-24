@@ -413,7 +413,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 #else
 			iface = nvram_safe_get("wl0_ifname");
 #endif
-
+		iface = nvram_safe_get("wl0_ifname");
 		char var[32];
 		sprintf(var, "%s_maclist", ifname);
 		char *maclist = nvram_safe_get(var);
