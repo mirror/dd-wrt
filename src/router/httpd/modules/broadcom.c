@@ -644,6 +644,7 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 
 	fread(webfile, len, 1, web);
 	webfile[len] = 0;
+	rep(ifname,'.','X');
 	sprintf(temp, webfile, ifname, ifname, ifname, ifname, ifname, ifname);
 	free(webfile);
 	fclose(web);

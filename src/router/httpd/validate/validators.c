@@ -1244,7 +1244,10 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		return;		//out of memory
 	char *cur = buf;
 	unsigned int m[6];
-	char *ifname = websGetVar(wp, "ifname", NULL);	// 64 or 128
+	char *ifname2 = websGetVar(wp, "ifname", NULL);	// 64 or 128
+	char ifname[32];
+	strcpy(ifname,ifname2)
+	rep(ifname,'X','.');
 	memset(buf, 0, 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
 	if (ifname == NULL) {
 		free(buf);
@@ -1256,7 +1259,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		char *mac = NULL;
 		char mac1[20];
 
-		snprintf(filter_mac, sizeof(filter_mac), "%s%s%d", ifname,
+		snprintf(filter_mac, sizeof(filter_mac), "%s%s%d", ifname2,
 			 "_mac", i);
 
 		mac = websGetVar(wp, filter_mac, NULL);
