@@ -2014,7 +2014,7 @@ int check_wan_link(int num)
 char *get_wan_ipaddr(void)
 {
 	char *wan_ipaddr;
-	wan_link = check_wan_link(0);
+	int wan_link = check_wan_link(0);
 
 	if (nvram_match("wan_proto", "pptp")) {
 		wan_ipaddr =
