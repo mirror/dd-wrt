@@ -183,8 +183,7 @@ static void setupKey(char *prefix)
 				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey);	// setup wep
 			}
 		}
-		sysprintf("iwconfig %s key [%s]", prefix,
-			  nvram_nget("%s_key", prefix));
+		sysprintf("iwconfig %s key [%s]", prefix,nvram_nget("%s_key", prefix));
 	}
 
 }
