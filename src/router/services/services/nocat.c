@@ -259,7 +259,7 @@ void start_splashd(void)
 	 * Irving - make sure our WAN link is up first. if not, check_ps will
 	 * start us later 
 	 */
-	if (nvram_match("wan_ipaddr", "0.0.0.0"))
+	if (!strcmp(get_wan_ipaddr(), "0.0.0.0"))
 		return;
 	insmod("ipt_mark");
 	insmod("ipt_mac");

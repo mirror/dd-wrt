@@ -643,7 +643,7 @@ int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 
 extern void show_preshared(webs_t wp, char *prefix);
-extern void show_radius(webs_t wp, char *prefix, int showmac,int backup);
+extern void show_radius(webs_t wp, char *prefix, int showmac, int backup);
 extern void show_wparadius(webs_t wp, char *prefix);
 extern void show_wep(webs_t wp, char *prefix);
 extern char *get_wep_value(char *buf, char *type, char *_bit, char *prefix);
@@ -663,7 +663,7 @@ extern void milkfish_sip_message(webs_t wp);
 extern void ej_show_registrations(webs_t wp, int argc, char_t ** argv);
 #endif
 
-extern void get_filter_services(char *services,int maxsize);
+extern void get_filter_services(char *services, int maxsize);
 
 #ifdef HAVE_RFLOW
 extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);

@@ -65,7 +65,7 @@ void start_cron(void)
 
 	if (nvram_match("cron_enable", "0"))
 		return;
-		
+
 	stop_cron();
 
 	/*
@@ -99,7 +99,8 @@ void start_cron(void)
 	    && nvram_match("schedule_hour_time", "2")) {
 
 		fp = fopen("/tmp/cron.d/check_schedules", "w");
-		fprintf(fp, "%s %s * * %s root startservice run_rc_shutdown; /sbin/reboot\n",
+		fprintf(fp,
+			"%s %s * * %s root startservice run_rc_shutdown; /sbin/reboot\n",
 			nvram_safe_get("schedule_minutes"),
 			nvram_safe_get("schedule_hours"),
 			nvram_safe_get("schedule_weekdays"));
@@ -118,11 +119,10 @@ void start_cron(void)
 		fprintf(fp, "\n");	// extra new line at the end
 		fclose(fp);
 	}
-
 #ifdef HAVE_HOTSPOT
 	struct tm *currtime;
 	long tloc;
-	
+
 	time(&tloc);
 	currtime = localtime(&tloc);
 
@@ -131,8 +131,9 @@ void start_cron(void)
 	if (nvram_match("hotss_enable", "1")) {
 
 		fp = fopen("/tmp/cron.d/hotss_checkalive", "w");
-		
-		fprintf(fp, "%d * * * * root /usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&nasid=%s_%s\\&os_date=`nvram get os_date|sed s/\" \"/-/g`\\&install=2\\&uptime=`uptime|sed s/\" \"/\\%%20/g|sed s/:/\\%%3A/g|sed s/,/\\%%2C/g`  -O /tmp/lastup.html\n",
+
+		fprintf(fp,
+			"%d * * * * root /usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&nasid=%s_%s\\&os_date=`nvram get os_date|sed s/\" \"/-/g`\\&install=2\\&uptime=`uptime|sed s/\" \"/\\%%20/g|sed s/:/\\%%3A/g|sed s/,/\\%%2C/g`  -O /tmp/lastup.html\n",
 			(currtime->tm_min + 3) % 60,
 			nvram_get("hotss_operatorid"),
 			nvram_get("hotss_locationid"));
@@ -165,7 +166,7 @@ void stop_cron(void)
 			  "cron : cron daemon successfully stopped\n");
 		killall("cron", SIGKILL);
 	}
-		eval("rm", "-rf", "/tmp/cron.d");
+	eval("rm", "-rf", "/tmp/cron.d");
 	cprintf("done\n");
 	return;
 }

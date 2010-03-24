@@ -9,7 +9,7 @@ typedef struct _l7filters	// l7 and p2p filters
 {
 
 	char *name;
-	int protocol;  // 1=p2p, 0=l7
+	int protocol;		// 1=p2p, 0=l7
 
 } l7filters;
 
@@ -18,7 +18,7 @@ typedef struct _l7filters	// l7 and p2p filters
 l7filters filters_list[] = {
 
 	{
-	 "100bao", 0},	// 100bao - a Chinese P2P protocol/program -
+	 "100bao", 0},		// 100bao - a Chinese P2P protocol/program -
 	// http://www.100bao.com
 	{
 	 "aim", 0},		// AIM - AOL instant messenger (OSCAR and
@@ -30,7 +30,7 @@ l7filters filters_list[] = {
 	 "applejuice", 1},	// Apple Juice - P2P filesharing -
 	// http://www.applejuicenet.de
 	{
-	 "ares", 1},	// Ares - P2P filesharing -
+	 "ares", 1},		// Ares - P2P filesharing -
 	// http://aresgalaxy.sf.net
 	{
 	 "armagetron", 0},	// Armagetron Advanced - open source
@@ -58,9 +58,9 @@ l7filters filters_list[] = {
 	{
 	 "bt2", 1},
 	{
-	 "bt3", 1},	 
+	 "bt3", 1},
 	{
-	 "chikka", 0},	// Chikka - SMS service which can be used
+	 "chikka", 0},		// Chikka - SMS service which can be used
 	// without phones - http://chikka.com
 	{
 	 "cimd", 0},		// Computer Interface to Message
@@ -69,7 +69,7 @@ l7filters filters_list[] = {
 	 "ciscovpn", 0},	// Cisco VPN - VPN client software to a Cisco 
 	// VPN server
 	{
-	 "citrix", 0},	// Citrix ICA - proprietary remote desktop
+	 "citrix", 0},		// Citrix ICA - proprietary remote desktop
 	// application - http://citrix.com
 	{
 	 "clubbox", 0},
@@ -86,7 +86,7 @@ l7filters filters_list[] = {
 	// (Half-Life 2 mod) -
 	// http://www.valvesoftware.com
 	{
-	 "dazhihui", 0}, // Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	 "dazhihui", 0},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 	{
 	 "dhcp", 0},		// DHCP - Dynamic Host Configuration Protocol 
 	// - RFC 1541
@@ -96,9 +96,9 @@ l7filters filters_list[] = {
 	{
 	 "dns", 0},		// DNS - Domain Name System - RFC 1035
 	{
-	 "doom3", 0},	// Doom 3 - computer game
+	 "doom3", 0},		// Doom 3 - computer game
 	{
-	 "edonkey", 1},	// eDonkey2000 - P2P filesharing -
+	 "edonkey", 1},		// eDonkey2000 - P2P filesharing -
 	// http://edonkey2000.com and others
 	{
 	 "exe", 0},		// Executable - Microsoft PE file format.
@@ -106,12 +106,12 @@ l7filters filters_list[] = {
 	 "fasttrack", 0},	// FastTrack - P2P filesharing (Kazaa,
 	// Morpheus, iMesh, Grokster, etc)
 	{
-	 "finger", 0},	// Finger - User information server - RFC
+	 "finger", 0},		// Finger - User information server - RFC
 	// 1288
 	{
-	 "flash", 0},	// Flash - Macromedia Flash.
+	 "flash", 0},		// Flash - Macromedia Flash.
 	{
-	 "freenet", 0},	// Freenet - Anonymous information retrieval
+	 "freenet", 0},		// Freenet - Anonymous information retrieval
 	// - http://freenetproject.org
 	{
 	 "freegate_dns", 0},
@@ -122,20 +122,20 @@ l7filters filters_list[] = {
 	{
 	 "gif", 0},		// GIF - Popular Image format.
 	{
-	 "gkrellm", 0},	// Gkrellm - a system monitor -
+	 "gkrellm", 0},		// Gkrellm - a system monitor -
 	// http://gkrellm.net
 	{
 	 "gnucleuslan", 0},	// GnucleusLAN - LAN-only P2P filesharing
 	{
 	 "gnutella", 1},	// Gnutella - P2P filesharing
 	{
-	 "goboogy", 0},	// GoBoogy - a Korean P2P protocol
+	 "goboogy", 0},		// GoBoogy - a Korean P2P protocol
 	{
 	 "gogobox", 0},
 	{
-	 "gopher", 0},	// Gopher - A precursor to HTTP - RFC 1436
+	 "gopher", 0},		// Gopher - A precursor to HTTP - RFC 1436
 	{
-	 "gtalk", 0},    // GTalk, a Jabber (XMPP) client
+	 "gtalk", 0},		// GTalk, a Jabber (XMPP) client
 	{
 	 "gtalk1", 0},
 	{
@@ -156,10 +156,10 @@ l7filters filters_list[] = {
 	 "halflife2-deathmatch", 0},	// Half-Life 2 Deathmatch - popular
 	// computer game
 	{
-	 "hddtemp", 0},	// hddtemp - Hard drive temperature
+	 "hddtemp", 0},		// hddtemp - Hard drive temperature
 	// reporting
 	{
-	 "hotline", 0},	// Hotline - An old P2P filesharing protocol
+	 "hotline", 0},		// Hotline - An old P2P filesharing protocol
 	{
 	 "hotspot-shield", 0},
 	{
@@ -199,13 +199,13 @@ l7filters filters_list[] = {
 	{
 	 "icq_login", 0},
 	{
-	 "ident", 0},	// Ident - Identification Protocol - RFC
+	 "ident", 0},		// Ident - Identification Protocol - RFC
 	// 1413
 	{
 	 "imap", 0},		// IMAP - Internet Message Access Protocol (A 
 	// common e-mail protocol)
 	{
-	 "imesh", 0},	// iMesh - the native protocol of iMesh, a
+	 "imesh", 0},		// iMesh - the native protocol of iMesh, a
 	// P2P application - http://imesh.com
 	{
 	 "ipp", 0},		// IP printing - a new standard for UNIX
@@ -213,16 +213,16 @@ l7filters filters_list[] = {
 	{
 	 "irc", 0},		// IRC - Internet Relay Chat - RFC 1459
 	{
-	 "jabber", 0},	// Jabber (XMPP) - open instant messenger
+	 "jabber", 0},		// Jabber (XMPP) - open instant messenger
 	// protocol - RFC 3920 - http://jabber.org
 	{
 	 "jpeg", 0},		// JPEG - Joint Picture Expert Group image
 	// format.
 	{
-	 "kugoo", 0},	// KuGoo - a Chinese P2P program -
+	 "kugoo", 0},		// KuGoo - a Chinese P2P program -
 	// http://www.kugoo.com
 	{
-	 "live365", 0},	// live365 - An Internet radio site -
+	 "live365", 0},		// live365 - An Internet radio site -
 	// http://live365.com
 	{
 	 "liveforspeed", 0},	// Live For Speed - A racing game.
@@ -230,7 +230,7 @@ l7filters filters_list[] = {
 	 "lpd", 0},		// LPD - Line Printer Daemon Protocol
 	// (old-style UNIX printing) - RFC 1179
 	{
-	 "mohaa", 0},	// Medal of Honor Allied Assault - an
+	 "mohaa", 0},		// Medal of Honor Allied Assault - an
 	// Electronic Arts game
 	{
 	 "mp3", 0},		// MP3 - Moving Picture Experts Group Audio
@@ -242,19 +242,19 @@ l7filters filters_list[] = {
 	 "msnmessenger", 0},	// MSN Messenger - Microsoft Network chat
 	// client
 	{
-	 "mute", 1},	// MUTE - P2P filesharing -
+	 "mute", 1},		// MUTE - P2P filesharing -
 	// http://mute-net.sourceforge.net
 	{
-	 "napster", 0},	// Napster - P2P filesharing
+	 "napster", 0},		// Napster - P2P filesharing
 	{
 	 "nbns", 0},		// NBNS - NetBIOS name service
 	{
 	 "ncp", 0},		// NCP - Novell Core Protocol
 	{
-	 "netbios", 0},	// NetBIOS - Network Basic Input Output
+	 "netbios", 0},		// NetBIOS - Network Basic Input Output
 	// System
 	{
-	 "nimda", 0},	// Nimda - a worm that attacks Microsoft IIS
+	 "nimda", 0},		// Nimda - a worm that attacks Microsoft IIS
 	// web servers, and MORE!
 	{
 	 "nntp", 0},		// NNTP - Network News Transfer Protocol -
@@ -266,7 +266,7 @@ l7filters filters_list[] = {
 	 "ogg", 0},		// Ogg - Ogg Vorbis music format (not any ogg 
 	// file, just vorbis)
 	{
-	 "openft", 0},	// OpenFT - P2P filesharing (implemented in
+	 "openft", 0},		// OpenFT - P2P filesharing (implemented in
 	// giFT library)
 	{
 	 "pcanywhere", 0},	// pcAnywhere - Symantec remote access
@@ -289,7 +289,7 @@ l7filters filters_list[] = {
 	{
 	 "postscript", 0},	// Postscript - Printing Language
 	{
-	 "pplive", 0},	// PPLive - Chinese P2P streaming video - http://pplive.com
+	 "pplive", 0},		// PPLive - Chinese P2P streaming video - http://pplive.com
 	{
 	 "pre_icq_login", 0},
 	{
@@ -332,11 +332,11 @@ l7filters filters_list[] = {
 	 "quake-halflife", 0},	// Half Life 1 engine games (HL 1, Quake
 	// 2/3/World, Counterstrike 1.6, etc.)
 	{
-	 "quake1", 0},	// Quake 1 - A popular computer game.
+	 "quake1", 0},		// Quake 1 - A popular computer game.
 	{
 	 "quicktime", 0},	// Quicktime HTTP
 	{
-	 "radmin", 0},	// Famatech Remote Administrator - remote
+	 "radmin", 0},		// Famatech Remote Administrator - remote
 	// desktop for MS Windows
 	{
 	 "rar", 0},		// RAR - The WinRAR archive format
@@ -347,7 +347,7 @@ l7filters filters_list[] = {
 	 "replaytv-ivs", 0},	// ReplayTV Internet Video Sharing - Digital
 	// Video Recorder - http://replaytv.com
 	{
-	 "rlogin", 0},	// rlogin - remote login - RFC 1282
+	 "rlogin", 0},		// rlogin - remote login - RFC 1282
 	{
 	 "rpm", 0},		// RPM - Redhat Package Management packages
 	{
@@ -360,7 +360,7 @@ l7filters filters_list[] = {
 	 "rtsp", 0},		// RTSP - Real Time Streaming Protocol -
 	// http://www.rtsp.org - RFC 2326
 	{
-	 "runesofmagic", 0},  // Runes of Magic - game - http://www.runesofmagic.com
+	 "runesofmagic", 0},	// Runes of Magic - game - http://www.runesofmagic.com
 	{
 	 "shoutcast", 0},	// Shoutcast and Icecast - streaming audio
 	{
@@ -388,7 +388,7 @@ l7filters filters_list[] = {
 	 "snmp-trap", 0},	// SNMP Traps - Simple Network Management
 	// Protocol (RFC1157)
 	{
-	 "socks", 0},	// SOCKS Version 5 - Firewall traversal
+	 "socks", 0},		// SOCKS Version 5 - Firewall traversal
 	// protocol - RFC 1928
 	{
 	 "soribada", 0},	// Soribada - A Korean P2P filesharing
@@ -426,9 +426,9 @@ l7filters filters_list[] = {
 	{
 	 "teamviewer1", 0},
 	{
-	 "telnet", 0},	// Telnet - Insecure remote login - RFC 854
+	 "telnet", 0},		// Telnet - Insecure remote login - RFC 854
 	{
-	 "tesla", 0},	// Tesla Advanced Communication - P2P
+	 "tesla", 0},		// Tesla Advanced Communication - P2P
 	// filesharing (?)
 	{
 	 "tftp", 0},		// TFTP - Trivial File Transfer Protocol -
@@ -441,7 +441,7 @@ l7filters filters_list[] = {
 	{
 	 "thunder5_tcp", 0},
 	{
-	 "tonghuashun", 0},  // Tonghuashun - stock analysis and trading; Chinese - http://www.10jqka.com.cn
+	 "tonghuashun", 0},	// Tonghuashun - stock analysis and trading; Chinese - http://www.10jqka.com.cn
 	{
 	 "tor", 0},		// Tor - The Onion Router - used for
 	// anonymization - http://tor.eff.org
@@ -449,7 +449,7 @@ l7filters filters_list[] = {
 	 "tsp", 0},		// TSP - Berkely UNIX Time Synchronization
 	// Protocol
 	{
-	 "unknown", 0},	// -
+	 "unknown", 0},		// -
 	{
 	 "uucp", 0},		// UUCP - Unix to Unix Copy
 	{
@@ -486,10 +486,10 @@ l7filters filters_list[] = {
 	{
 	 "webmail_yam", 0},
 	{
-	 "whois", 0},	// Whois - query/response system, usually
+	 "whois", 0},		// Whois - query/response system, usually
 	// used for domain name info - RFC 3912
 	{
-	 "winmx", 1},	// Whois - query/response system, usually
+	 "winmx", 1},		// Whois - query/response system, usually
 	{
 	 "worldofwarcraft", 0},	// World of Warcraft - popular network game - 
 	// http://blizzard.com/
@@ -499,12 +499,12 @@ l7filters filters_list[] = {
 	{
 	 "xboxlive", 0},	// XBox Live - Console gaming
 	{
-	 "xdcc", 1},	// XBox Live - Console gaming
+	 "xdcc", 1},		// XBox Live - Console gaming
 	{
-	 "xunlei", 0},	// Xunlei - Chinese P2P filesharing -
+	 "xunlei", 0},		// Xunlei - Chinese P2P filesharing -
 	// http://xunlei.com
 	{
-	 "yahoo", 0},	// Yahoo messenger - an instant messenger
+	 "yahoo", 0},		// Yahoo messenger - an instant messenger
 	// protocol - http://yahoo.com
 	{
 	 "yahoo_camera", 0},
@@ -517,7 +517,7 @@ l7filters filters_list[] = {
 	{
 	 "zip", 0},		// ZIP - (PK|Win)Zip archive format
 	{
-	 "zmaap", 0},	// ZMAAP - Zeroconf Multicast Address
+	 "zmaap", 0},		// ZMAAP - Zeroconf Multicast Address
 	// Allocation Protocol
 	{
 	 0, 0}

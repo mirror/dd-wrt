@@ -54,7 +54,6 @@
 #include <syslog.h>
 #include <services.h>
 
-
 void stop_wland(void)
 {
 	if (pidof("wland") > 0) {
@@ -84,4 +83,3 @@ void start_wland(void)
 	cprintf("done\n");
 	return;
 }
-

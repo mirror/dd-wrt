@@ -124,7 +124,6 @@ int write_nvram(char *name, char *nv)
 
 int usejffs = 0;
 
-
 #if 0
 void start_ntpc(void)
 {
@@ -233,7 +232,7 @@ void start_ipv6(void)
 	insmod("xfrm6_mode_tunnel");
 	insmod("xfrm6_tunnel");
 	insmod("ipcomp6");
-	
+
 	dd_syslog(LOG_INFO, "ipv6 successfully started\n");
 
 	cprintf("done\n");
@@ -265,7 +264,6 @@ void stop_dhcpc(void)
 	cprintf("done\n");
 	return;
 }
-
 
 extern void start_heartbeat_boot(void);
 

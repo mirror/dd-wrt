@@ -420,10 +420,9 @@ int zebra_bgp_init(void)
 			nvram_safe_get("routing_bgp_as"));
 		fprintf(fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"),
 			get_net(nvram_safe_get("lan_netmask")));
-		if (wf && strlen(wf) > 0
-		    && !nvram_match("wan_ipaddr", "0.0.0.0"))
+		if (wf && strlen(wf) > 0 && strcmp(get_wan_ipaddr(), "0.0.0.0"))
 			fprintf(fp, "  network %s/%s\n",
-				nvram_safe_get("wan_ipaddr"),
+				get_wan_ipaddr(),
 				nvram_safe_get("wan_netmask"));
 		fprintf(fp, "neighbor %s local-as %s\n", lf,
 			nvram_safe_get("routing_bgp_as"));

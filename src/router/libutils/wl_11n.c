@@ -101,21 +101,24 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			if (nvram_invmatch(wl_mode, "a-only")
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "n5-only")
-			    && nvram_invmatch(wl_mode, "na-only"))
-				{
-//				fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
+			    && nvram_invmatch(wl_mode, "na-only")) {
+//                              fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
 				continue;
-				}
-			if (nvram_match(wl_turbo,"40") && (nvram_match(wl_mode, "n5-only") || nvram_match(wl_mode, "mixed")  || nvram_match(wl_mode, "na-only")))
-			{
-			if (up
-			    && !IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.
-								ic_chans[i]))
-				continue;
-			if (!up
-			    && !IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.
-								 ic_chans[i]))
-				continue;
+			}
+			if (nvram_match(wl_turbo, "40")
+			    && (nvram_match(wl_mode, "n5-only")
+				|| nvram_match(wl_mode, "mixed")
+				|| nvram_match(wl_mode, "na-only"))) {
+				if (up
+				    &&
+				    !IEEE80211_IS_CHAN_11NA_HT40PLUS
+				    (&achans.ic_chans[i]))
+					continue;
+				if (!up
+				    &&
+				    !IEEE80211_IS_CHAN_11NA_HT40MINUS
+				    (&achans.ic_chans[i]))
+					continue;
 			}
 		}
 		// filter out B/G channels if mode isnt g-only, b-only or mixed
@@ -125,24 +128,29 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "b-only")
 			    && nvram_invmatch(wl_mode, "n2-only")
 			    && nvram_invmatch(wl_mode, "bg-mixed")
-			    && nvram_invmatch(wl_mode, "ng-only")){
-				fprintf(stderr,"%s:%d\n",__func__,__LINE__);
+			    && nvram_invmatch(wl_mode, "ng-only")) {
+				fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 				continue;
+			}
+			if (nvram_match(wl_turbo, "40")
+			    && (nvram_match(wl_mode, "n2-only")
+				|| nvram_match(wl_mode, "mixed")
+				|| nvram_match(wl_mode, "ng-only"))) {
+				if (up
+				    &&
+				    !IEEE80211_IS_CHAN_11NG_HT40PLUS
+				    (&achans.ic_chans[i])) {
+					fprintf(stderr, "%s:%d\n", __func__,
+						__LINE__);
+					continue;
 				}
-			if (nvram_match(wl_turbo,"40") && (nvram_match(wl_mode, "n2-only") || nvram_match(wl_mode, "mixed") || nvram_match(wl_mode, "ng-only")))
-			{
-			if (up
-			    && !IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.
-								ic_chans[i]))
-								{
-				fprintf(stderr,"%s:%d\n",__func__,__LINE__);
-				continue;
-				}
-			if (!up
-			    && !IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.
-								 ic_chans[i])){
-				fprintf(stderr,"%s:%d\n",__func__,__LINE__);
-				continue;
+				if (!up
+				    &&
+				    !IEEE80211_IS_CHAN_11NG_HT40MINUS
+				    (&achans.ic_chans[i])) {
+					fprintf(stderr, "%s:%d\n", __func__,
+						__LINE__);
+					continue;
 				}
 			}
 		}
@@ -261,7 +269,6 @@ int getassoclist_11n(char *ifname, unsigned char *list)
 
 	return mincount > count[0] ? mincount : count[0];
 }
-
 
 int getRssi_11n(char *ifname, unsigned char *mac)
 {
