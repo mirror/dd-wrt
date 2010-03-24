@@ -149,22 +149,18 @@ void start_dnsmasq(void)
 	if (nvram_match("fon_enable", "1")
 	    || (nvram_match("chilli_nowifibridge", "1")
 		&& nvram_match("chilli_enable", "1"))
-		|| (nvram_match("hotss_nowifibridge", "1")
+	    || (nvram_match("hotss_nowifibridge", "1")
 		&& nvram_match("hotss_enable", "1"))) {
 		if (canlan())
-			fprintf(fp, "interface=%s,br0",
-				get_wdev());
+			fprintf(fp, "interface=%s,br0", get_wdev());
 		else
-			fprintf(fp, "interface=%s",
-				get_wdev());
+			fprintf(fp, "interface=%s", get_wdev());
 	} else {
 		if (nvram_match("chilli_enable", "1")) {
 			if (canlan())
-				fprintf(fp, "interface=%s",
-					get_wdev());
+				fprintf(fp, "interface=%s", get_wdev());
 			else
-				fprintf(fp, "interface=%s,",
-					get_wdev());
+				fprintf(fp, "interface=%s,", get_wdev());
 		} else if (nvram_match("pptpd_enable", "1")) {
 			if (canlan())
 				fprintf(fp, "listen-address=%s,%s", "127.0.0.1",
@@ -387,13 +383,14 @@ void start_dnsmasq(void)
 
 				if (mac == NULL || host == NULL || ip == NULL)
 					continue;
-				if (!time||strlen(time)==0)
-				fprintf(fp, "dhcp-host=%s,%s,%s,infinite\n",
-					mac, host, ip);
+				if (!time || strlen(time) == 0)
+					fprintf(fp,
+						"dhcp-host=%s,%s,%s,infinite\n",
+						mac, host, ip);
 				else
-				fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n",
-					mac, host, ip,time);
-				
+					fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n",
+						mac, host, ip, time);
+
 				addHost(host, ip);
 			}
 			free(cp);

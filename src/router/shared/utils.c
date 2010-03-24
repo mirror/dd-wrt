@@ -68,7 +68,8 @@ int getcpurev(void)
 
 			for (i = 0; i < 32; i++) {
 				cpurev[i] = getc(fp);
-				if (cpurev[i] == '\n') break;
+				if (cpurev[i] == '\n')
+					break;
 			}
 			cpurev[i] = 0;
 			fclose(fp);
@@ -88,7 +89,7 @@ int getcpurev(void)
 			if (strstr(cpurev, "MIPS 74K V4.0"))	// BCM4718 (Broadcom BCM4716 chip rev 1)
 				return 40;
 			if (strstr(cpurev, "MIPS 74K V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0)
-				return 49;							// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
+				return 49;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
 			return -1;
 		}
 	}
@@ -415,9 +416,8 @@ struct dns_lists *get_dns_list(void)
 			if (!match) {
 				snprintf(dns_list->dns_server
 					 [dns_list->num_servers],
-					 sizeof(dns_list->
-						dns_server[dns_list->
-							   num_servers]), "%s",
+					 sizeof(dns_list->dns_server
+						[dns_list->num_servers]), "%s",
 					 word);
 				dns_list->num_servers++;
 			}
@@ -1549,7 +1549,6 @@ void getinterfacelist(const char *ifprefix, char *buffer)
 	}
 }
 
-
 int softkill(char *name)
 {
 	killall(name, SIGKILL);
@@ -1616,23 +1615,22 @@ void getWANMac(char *newmac)
 {
 	strcpy(newmac, nvram_safe_get("et0macaddr"));
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
-if (nvram_invmatch("wan_proto","disabled"))
-{
-	MAC_ADD(newmac);	// et0macaddr +1
+	if (nvram_invmatch("wan_proto", "disabled")) {
+		MAC_ADD(newmac);	// et0macaddr +1
 
-	if (nvram_match("port_swap", "1")) {
-		if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
-			// maybe
-			// et1macaddr 
-			// not there?
-		{
-			strcpy(newmac, nvram_safe_get("et1macaddr"));
-			MAC_ADD(newmac);	// et1macaddr +1 
-		} else {
-			MAC_ADD(newmac);	// et0macaddr +2
+		if (nvram_match("port_swap", "1")) {
+			if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
+				// maybe
+				// et1macaddr 
+				// not there?
+			{
+				strcpy(newmac, nvram_safe_get("et1macaddr"));
+				MAC_ADD(newmac);	// et1macaddr +1 
+			} else {
+				MAC_ADD(newmac);	// et0macaddr +2
+			}
 		}
 	}
-}
 #endif
 	return;
 }
@@ -1700,57 +1698,51 @@ static int sockaddr_to_dotted(struct sockaddr *saddr, char *buf)
 	return -1;
 }
 
-
 static int sockaddr_to_dotted_n(char *sin_addr, char *buf)
 {
-		inet_ntop(AF_INET, sin_addr,
-			  buf, 128);
-		return 0;
+	inet_ntop(AF_INET, sin_addr, buf, 128);
+	return 0;
 }
-
 
 #define DIE_ON_ERROR AI_CANONNAME
 
 void getIPFromName(char *name, char *ip)
 {
-int count=5;
-while(count--)
-{
-	struct addrinfo *result = NULL;
-	int rc;
-	struct addrinfo hint;
-	struct hostent *hp = gethostbyname(name);
-	if (hp!=NULL)
-	    {
-		sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
-		if (strcmp(ip,"0.0.0.0"))
-		    break;
-	    }
-	res_init();
-	memset(&hint, 0, sizeof(hint));
-	hint.ai_family = AF_INET;
-	hint.ai_socktype = SOCK_STREAM;
-	hint.ai_flags = DIE_ON_ERROR;
-	rc = getaddrinfo(name, NULL, &hint, &result);
-	if (!result)		// give it a second try
+	int count = 5;
+	while (count--) {
+		struct addrinfo *result = NULL;
+		int rc;
+		struct addrinfo hint;
+		struct hostent *hp = gethostbyname(name);
+		if (hp != NULL) {
+			sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
+			if (strcmp(ip, "0.0.0.0"))
+				break;
+		}
+		res_init();
+		memset(&hint, 0, sizeof(hint));
+		hint.ai_family = AF_INET;
+		hint.ai_socktype = SOCK_STREAM;
+		hint.ai_flags = DIE_ON_ERROR;
 		rc = getaddrinfo(name, NULL, &hint, &result);
+		if (!result)	// give it a second try
+			rc = getaddrinfo(name, NULL, &hint, &result);
 
-	if (result) {
-		sockaddr_to_dotted(result->ai_addr, ip);
-		freeaddrinfo(result);
-	} else {
-	struct hostent *hp = gethostbyname(name);
-	if (hp!=NULL)
-	    {
-		sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
-	    }else
-		sprintf(ip, "0.0.0.0");
+		if (result) {
+			sockaddr_to_dotted(result->ai_addr, ip);
+			freeaddrinfo(result);
+		} else {
+			struct hostent *hp = gethostbyname(name);
+			if (hp != NULL) {
+				sockaddr_to_dotted_n(hp->h_addr_list[0], ip);
+			} else
+				sprintf(ip, "0.0.0.0");
+		}
+		if (strcmp(ip, "0.0.0.0"))
+			break;
+		sleep(1);
 	}
-	if (strcmp(ip,"0.0.0.0"))
-	    break;
-	sleep(1);
-}
-	
+
 }
 
 /*
@@ -1842,22 +1834,24 @@ void rep(char *in, char from, char to)
 }
 
 #include "l7protocols.h"
-void get_filter_services(char *services,int maxsize)
+void get_filter_services(char *services, int maxsize)
 {
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	int size=0;
+	int size = 0;
 	while (filters->name)	// add l7 and p2p filters
 	{
-		size+=sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
-			strlen(filters->name), filters->name, filters->protocol == 1 ? 3 : 2, 
-			filters->protocol == 1 ? "p2p" : "l7");
-		if (size>maxsize-64)
-		    {
-		    fprintf(stderr,"%s:max size exceeded\n",__func__);
-		    break;
-		    }
+		size +=
+		    sprintf(temp,
+			    "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
+			    strlen(filters->name), filters->name,
+			    filters->protocol == 1 ? 3 : 2,
+			    filters->protocol == 1 ? "p2p" : "l7");
+		if (size > maxsize - 64) {
+			fprintf(stderr, "%s:max size exceeded\n", __func__);
+			break;
+		}
 		strcat(services, temp);
 		filters++;
 	}
