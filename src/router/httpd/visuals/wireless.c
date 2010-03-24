@@ -63,11 +63,14 @@ struct lease_table {
 	char hwaddr[20];
 } *dhcp_lease_table;
 
-char *wl_filter_mac_get(char *ifname, char *type, int which)
+char *wl_filter_mac_get(char *ifname2, char *type, int which)
 {
 	static char word[50];
 	char *wordlist, *next;
 	int temp;
+	char ifname[32];
+	strcpy(ifname,ifname2);
+	rep(ifname,'X',',');
 
 	if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
 		char var[32];
@@ -382,10 +385,11 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 	char list[2][20];
 	char line[80];
 	int dhcp_table_count;
-	char *type, *ifname;
-
-	ejArgs(argc, argv, "%s %s", &type, &ifname);
-
+	char *type, *ifname2;
+	char ifname[32];
+	ejArgs(argc, argv, "%s %s", &type, &ifname2);
+	strcpy(ifname,ifname2);
+	rep(ifname,'X','.');
 	if (!strcmp(type, "online")) {
 		for (i = 0; i < MAX_LEASES; i++) {	// init value
 			strcpy(wl_client_macs[i].hostname, "");
