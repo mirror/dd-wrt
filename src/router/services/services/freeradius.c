@@ -108,7 +108,7 @@ void start_freeradius(void)
 	if (!f_exists("/jffs/etc/freeradius/certs/server.pem")) {
 		//prepare certificates
 		start_gen_radius_cert();
-	} 
+	}
 
 	int i;
 

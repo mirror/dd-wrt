@@ -1675,8 +1675,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -3519,7 +3519,7 @@ void start_wan_done(char *wan_ifname)
 	uint32 wanip;
 	uint32 wannm;
 
-	inet_aton(nvram_safe_get("wan_ipaddr"), (struct in_addr *)&wanip);
+	inet_aton(get_wan_ipaddr(), (struct in_addr *)&wanip);
 	inet_aton(nvram_safe_get("wan_netmask"), (struct in_addr *)&wannm);
 	uint32 lanip;
 	uint32 lannm;
@@ -3555,8 +3555,7 @@ void start_wan_done(char *wan_ifname)
 	led_control(LED_CONNECTED, LED_ON);
 
 	if (!nvram_match("wan_proto", "disabled"))
-		dd_syslog(LOG_INFO, "WAN is up. IP: %s\n",
-			  nvram_safe_get("wan_ipaddr"));
+		dd_syslog(LOG_INFO, "WAN is up. IP: %s\n", get_wan_ipaddr());
 
 	float sys_uptime;
 	FILE *up;

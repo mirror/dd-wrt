@@ -2011,6 +2011,31 @@ int check_wan_link(int num)
 	return wan_link;
 }
 
+char *get_wan_ipaddr(void)
+{
+	char *wan_ipaddr;
+	wan_link = check_wan_link(0);
+
+	if (nvram_match("wan_proto", "pptp")) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("pptp_get_ip") :
+		    nvram_safe_get("wan_ipaddr");
+	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	} else if (nvram_match("wan_proto", "l2tp")) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("l2tp_get_ip") :
+		    nvram_safe_get("wan_ipaddr");
+	} else {
+		wan_ipaddr = nvram_safe_get("wan_ipaddr");
+	}
+	return wan_ipaddr;
+}
+
 /*
  * Find process name by pid from /proc directory 
  */
@@ -2782,7 +2807,7 @@ int led_control(int type, int act)
 #ifdef HAVE_WR1043
 		diag_gpio = 0x102;
 		ses_gpio = 0x005;
-//		usb_gpio = 0x101;
+//              usb_gpio = 0x101;
 #endif
 #ifdef HAVE_WRT160NL
 		power_gpio = 0x10e;
@@ -3606,7 +3631,7 @@ char *zencrypt(char *passwd)
 
 	strcpy(salt, "$1$");
 	crypt_make_salt(salt + 3, 4, 0);
-	strcpy(passout,crypt((unsigned char *)passwd,(unsigned char *)salt));
+	strcpy(passout, crypt((unsigned char *)passwd, (unsigned char *)salt));
 	return passout;
 }
 
