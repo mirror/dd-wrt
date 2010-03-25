@@ -334,8 +334,8 @@ bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSecurity="WLAN-Sicherheit";
 bmenu.wirelessMac="MAC-Filter";
 bmenu.wirelessAdvanced="Erweiterte Einstellungen";
-bmenu.wirelessAdvancedwl0="WL0-Erweiterte Einst.";
-bmenu.wirelessAdvancedwl1="WL1-Erweiterte Einst.";
+bmenu.wirelessAdvancedwl0="WL0-Erweitert";
+bmenu.wirelessAdvancedwl1="WL1-Erweitert";
 bmenu.wirelessWds="WDS";
 
 bmenu.security="Sicherheit";
