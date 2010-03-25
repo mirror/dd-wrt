@@ -1138,6 +1138,7 @@ void configure_single_11n(int count)
 			}
 		}
 	}
+	int hasnawds=0;
 
 	for (s = 1; s <= 10; s++) {
 		char wdsvarname[32] = { 0 };
@@ -1156,11 +1157,14 @@ void configure_single_11n(int count)
 			continue;
 		hwaddr = nvram_get(wdsmacname);
 		if (hwaddr != NULL) {
-			sysprintf("80211n_wlanconfig %s nawdslist %s", primary,
+			hasnawds = 1;
+			sysprintf("80211n_wlanconfig %s nawdslist set 1 %s", primary,
 				  hwaddr);
 			set_rate(dev, primary);
 		}
 	}
+	if (hasnawds)
+		sysprintf("iwpriv ath0 nawds 1");
 
 	for (s = 1; s <= 10; s++) {
 		char wdsvarname[32] = { 0 };
