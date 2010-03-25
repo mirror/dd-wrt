@@ -1,9 +1,11 @@
-//////////////////////////////////////////////////////////////////////////////////////////////////
-// HR	Croatian reference translation file - DD-WRT V23 SP1 by vpritiskovic 23/03/2010	v1.0	//
+ï»¿//////////////////////////////////////////////////////////////////////////////////////////////////
+//	HR - Croatian Language file - DD-WRT V23 SP1 - by vpritiskovic	25/03/2010	v1.1.0	//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
-lang_charset.set="iso-8859-2";
+
+lang_charset.set="UTF-8";
+
 
 share.apn="APN";
 share.pin="PIN";
@@ -11,20 +13,20 @@ share.dial="String Biranja";
 share.firmware="Firmware";
 share.time="Vrijeme";
 share.interipaddr="WAN IP Adresa";
-share.more="Vi¹e...";
-share.help="Pomoæ";
-share.enable="Omoguæi";
-share.enabled="Omoguæeno";
-share.disable="Onemoguæi";
-share.disabled="Onemoguæeno";
+share.more="ViÅ¡e...";
+share.help="PomoÄ‡";
+share.enable="OmoguÄ‡i";
+share.enabled="OmoguÄ‡eno";
+share.disable="OnemoguÄ‡i";
+share.disabled="OnemoguÄ‡eno";
 share.usrname="Ime Korisnika";
 share.passwd="Lozinka";
 share.hostname="Ime Hosta";
 share.vdsl="T-Home VDSL 7 VLAN Tagging";
-share.vdslvlan8="VLAN 8 podr¹ka";
+share.vdslvlan8="VLAN 8 podrÅ¡ka";
 share.wan_vlantag="VLAN Oznaka ID";
-share.compression="PPP Kompresija";
-share.mlppp="Vi¹estruka Veza";
+share.compression="PPP SaÅ¾imanje";
+share.mlppp="ViÅ¡estruka PPP Veza";
 share.domainname="Ime Domene";
 share.wandomainname="Ime WAN Domene";
 share.landomainname="Ime LAN Domene";
@@ -39,8 +41,8 @@ share.mac="MAC Adresa";
 share.none="Nijedno";
 share.none2="ne";
 share.both="Oboje";
-share.del="Brisati";
-share.remove="Remove";
+share.del="BriÅ¡i";
+share.remove="Ukloni";
 share.descr="Opis";
 share.from="Od";
 share.to="Do";
@@ -58,18 +60,18 @@ share.tue_s1="U";
 share.wed="Srijeda";
 share.wed_s="Sri";
 share.wed_s1="W";
-share.thu="Èetvrtak";
-share.thu_s="Èet";
-share.thu_s1="È";
+share.thu="ÄŒetvrtak";
+share.thu_s="ÄŒet";
+share.thu_s1="ÄŒ";
 share.fri="Petak";
 share.fri_s="Pet";
 share.fri_s1="P";
 share.sat="Subota";
 share.sat_s="Sub";
 share.sat_s1="S";
-share.jan="Sijeèanj";
-share.feb="Veljaèa";
-share.mar="O¾ujak";
+share.jan="SijeÄanj";
+share.feb="VeljaÄa";
+share.mar="OÅ¾ujak";
 share.apr="Travanj";
 share.may="Svibanj";
 share.jun="Lipanj";
@@ -79,7 +81,7 @@ share.sep="Rujan";
 share.oct="Listopad";
 share.nov="Studeni";
 share.dec="Prosinac";
-share.expires="Istièe";
+share.expires="IstiÄe";
 share.yes="Da";
 share.no="Ne";
 share.filter="Filter";
@@ -88,14 +90,14 @@ share.range="Rang";
 share.use="Upotrebljeno";
 share.mins="Min.";
 share.secs="Sec.";
-share.routername="Ime Usmjerivaèa";
-share.manual="Ruèno";
+share.routername="Ime UsmjerivaÄa";
+share.manual="RuÄno";
 share.port="Port";
 share.ssid="SSID";
 share.channel="Kanal";
 share.rssi="Rssi";
 share.signal="Signal";
-share.noise="©um";
+share.noise="Å um";
 share.beacon="Sinh. Okvir";
 share.openn="Otvoreno";
 share.dtim="dtim";
@@ -109,16 +111,16 @@ share.high="Visoko";
 share.option="Opcije";
 share.rule="Pravilo";
 share.lan="LAN";
-share.point2point="Toèka k Toèci";
+share.point2point="ToÄka u ToÄku";
 share.nat="NAT";
-share.subnet="Maska Podmre¾e";
-share.unmask="Odmaskiraj";
+share.subnet="Maska PodmreÅ¾e";
+share.unmask="PrikaÅ¾i";
 share.deflt="Zadano";  //don't use share.default !!!
 share.all="Sve";
 share.auto="Auto";
 share.right="Desno";
 share.left="Lijevo";
-share.share_key="Dijeljeni Kljuè";
+share.share_key="Dijeljeni KljuÄ";
 share.inter="Interval (u sekundama)";
 share.srv="Ime Servisa";
 share.port_range="Port Raspon";
@@ -126,130 +128,130 @@ share.priority="Prioritet";
 share.gateway="Putokaz";
 share.intrface="Adapter";  //don't use share.interface, Mozilla problem!!!
 share.ccq="CCQ"; 
-share.pintrface="Fizièki Adapter";
+share.pintrface="FiziÄki Adapter";
 share.vintrface="Virtualni Adapter";
-share.router="Usmjerivaè";
-share.static_lease="Statiène Leases";
+share.router="UsmjerivaÄ";
+share.static_lease="StatiÄni Najam";
 share.srvip="IP Servera";
 share.srvipname="IP/Ime Servera";
 share.localdns="Lokalni DNS";
 share.minutes="minuta";
-share.oui="OUI Tra¾enje";
-share.sttic="Statièno";
+share.oui="OUI TraÅ¾enje";
+share.sttic="StatiÄno";
 share.connecting="Spajanje";
 share.connect="Spoj";
 share.connected="Spojeno";
 share.disconnect="Odspoj";
-share.disconnected="Ospojeno";
+share.disconnected="Odspojeno";
 share.info="Informacija";
 share.state="Stanje";
 share.mode="Modus";
 share.encrypt="Enkripcija";
-share.key="Kljuè";
-share.wireless="Be¾ièno";
+share.key="KljuÄ";
+share.wireless="BeÅ¾iÄno";
 share.dhcp="DHCP";
 share.styl="Stil";
-share.err="gre¹ka";
-share.errs="gre¹ke";
+share.err="greÅ¡ka";
+share.errs="greÅ¡ke";
 share.meters="metri";
-share.dynamicturbo="Dinamièki (20/40 MHz)";
+share.dynamicturbo="DinamiÄki (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
 share.full="Potpun (20 MHz)";
 share.half="Pola (10 MHz)";
 share.quarter="Kvarat (5 MHz)";
-share.subquarter="©esnaestina (2.5 MHz)";
-share.seealso="Vidi isto";
+share.subquarter="Å¡esnaestina (2.5 MHz)";
+share.seealso="Vidi takoÄ‘er";
 share.never="nikad";
 share.unknown="Nepoznato";
 share.expired="isteklo";
 share.logout="odjava";
 share.nmounted="Nije montirano";
-share.fssize="Ukupno / Slobodno Velièina";
+share.fssize="Ukupno / Slobodno VeliÄina";
 share.src="Izvorna Adresa";
 share.dst="Udaljena Adresa";
-share.name_resolution="Razluèivanje Imena";
+share.name_resolution="RazluÄivanje Imena";
 share.timeout="Timeout (s)";
 share.detail="Klikni za detalje";
 share.tmpmem="Privremena Memorija";
 share._1h="Svaki sat";
-share._2h="Svaka 2 sata";
-share._3h="Svaka 3 sata";
-share._4h="Svaka 4 sata";
+share._2h="Svakih 2 sata";
+share._3h="Svakih 3 sata";
+share._4h="Svakih 4 sata";
 share._5h="Svakih 5 sati";
 share._6h="Svakih 6 sati";
-share._12h="Svakih 12 hours";
-share._24h="Svaki day";
-share._48h="Svaka 2 days";
+share._12h="Svakih 12 sati";
+share._24h="Svaki dan";
+share._48h="Svaka 2 dana";
 share._168h="Svaki tjedan";
 share.days="Dana";
 share.from2=share.from;
 share.to2=share.to;
 share.days_genetive=share.days;
 share.standard="Standard";
-share.execscript="Izvr¹i skriptu";
+share.execscript="IzvrÅ¡i skriptu";
 share.user="Korisnik";
-share.privatekey="Privatni Kljuè";
+share.privatekey="Privatni KljuÄ";
 share.bytes="bajta";
 share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Timing";
-share.broadcast="Ppodr¹ka Objavi";
+share.broadcast="PodrÅ¡ka Objave";
 share.secondcharacter="s";
 share.change="Izmjena Lozinke";
 
 sbutton.save="Snimi";
-sbutton.savetitle="Samo Snimi Postavke bez uèinka";
+sbutton.savetitle="Samo Snimi Postavke bez uÄinka";
 sbutton.apply="Primjeni Postavke";
 sbutton.applytitle="Primjeni Postavke odmah";
 sbutton.saving="Snimi";
-sbutton.cmd="Izvr¹avanje";
-sbutton.cancel="Otka¾i Promjene";
-sbutton.canceltitle="Otka¾i promjene samo u ovoj formi";
-sbutton.refres="Osvje¾i";
+sbutton.cmd="IzvrÅ¡avnje";
+sbutton.cancel="OtkaÅ¾i Promjene";
+sbutton.canceltitle="OtkaÅ¾i promjene samo u ovoj formi";
+sbutton.refres="OsvjeÅ¾i";
 sbutton.clos="Zatvori";
-sbutton.del="Bri¹i";
+sbutton.del="BriÅ¡i";
 sbutton.continu="Nastavi";
 sbutton.add="Dodaj";
 sbutton.remove="Remove";
 sbutton.modify="Modificiraj";
 sbutton.deleted="Izbrisano";
-sbutton.delall="Bri¹i Sve";
-sbutton.autorefresh="Auto-Obnova je Ukljuèena";
-sbutton.backup="Saèuvati";
-sbutton.restore="Povratiti";
-sbutton.cptotext="A¾uriraj";
-sbutton.runcmd="Izvr¹i Naredbe";
+sbutton.delall="BriÅ¡i Sve";
+sbutton.autorefresh="Auto-Obnova je UkljuÄena";
+sbutton.backup="PriÄuva";
+sbutton.restore="Povrat";
+sbutton.cptotext="AÅ¾uriraj";
+sbutton.runcmd="IzvrÅ¡i Naredbe";
 sbutton.startup="Snimi Pokretanje";
-sbutton.shutdown="Snimi Ga¹enje";
+sbutton.shutdown="Snimi GaÅ¡enje";
 sbutton.firewall="Snimi Vatrozid";
 sbutton.custom="Snimi Posebnu Skriptu";
 sbutton.wol="Probudi Se";
 sbutton.add_wol="Dodaj Host";
-sbutton.manual_wol="Ruèno Budi";
+sbutton.manual_wol="RuÄno Budi";
 sbutton.summary="Zbirno";
 sbutton.filterIP="Uredi Listu Klijenata";
 sbutton.filterMac="Uredi Listu MAC Filtera";
 sbutton.filterSer="Dodaj/Uredi Servis";
-sbutton.reboot="Restartaj Usmjerivaè";
-sbutton.help="   Pomoæ  ";
-sbutton.wl_client_mac="Lista Be¾iènih MAC Klijenata";
-sbutton.update_filter="Osvje¾i Listu Filtera";
-sbutton.join="Pridru¾i";
+sbutton.reboot="Ponovo Pokreni UsmjerivaÄ";
+sbutton.help="   PomoÄ‡  ";
+sbutton.wl_client_mac="Lista BeÅ¾iÄnih MAC Klijenata";
+sbutton.update_filter="Obnovi Listu Filtera";
+sbutton.join="PridruÅ¾i";
 sbutton.log_in="Dolazni Zapis";
 sbutton.log_out="Izlazni Zapis";
 sbutton.edit_srv="Dodaj/Uredi Servis";
-sbutton.routingtab="Poka¾i Tablicu Smjerova";
+sbutton.routingtab="PokaÅ¾i Tablicu Smjerova";
 sbutton.wanmac="Dobavi Trenutnu MAC Adresu PC-ja";
 sbutton.dhcprel="Otpusti DHCP";
 sbutton.dhcpren="Obnovi DHCP";
 sbutton.survey="Mjesni Pregled Stanja";
-sbutton.upgrading="Nadograğivanje";
+sbutton.upgrading="NadograÄ‘ivanje";
 sbutton.upgrade="Nadogradnja";
 sbutton.preview="Pregled";
 sbutton.allways_on="Uvijek Podignuta";
-sbutton.allways_off="Uvijek Spu¹tena";
+sbutton.allways_off="Uvijek SpuÅ¡tena";
 sbutton.download="Skidanje";
 
 
@@ -370,14 +372,14 @@ bmenu.setupmacclone="Kloniranje MAC Adrese";
 bmenu.setuprouting="Napredno Usmjeravanje";
 bmenu.setupvlan="VLANovi";
 bmenu.setupeop="EoIP Tunel";
-bmenu.networking="Mre¾a";
+bmenu.networking="MreÅ¾a";
 
-bmenu.wireless="Be¾ièno";
+bmenu.wireless="BeÅ¾iÄno";
 bmenu.wirelessBasic="Osnovne Postavke";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
-bmenu.wirelessSecurity="Be¾ièna Sigurnost";
+bmenu.wirelessSecurity="BeÅ¾iÄna Sigurnost";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Napredne Postavke";
@@ -395,13 +397,13 @@ bmenu.security="Sigurnost";
 bmenu.firwall="Vatrozid";
 bmenu.vpn="VPN Propusnost";
 
-bmenu.accrestriction="Ogranièenje Pristupa";
+bmenu.accrestriction="OgraniÄenje Pristupa";
 bmenu.webaccess="WAN Pristup";
 
 
 bmenu.applications="NAT / QoS";
-bmenu.applicationsprforwarding="Proslijeğivanje Raspona Port";
-bmenu.applicationspforwarding="Proslijeğivanje Porta";
+bmenu.applicationsprforwarding="ProslijeÄ‘ivanje Raspona Portova";
+bmenu.applicationspforwarding="ProslijeÄ‘ivanje Porta";
 bmenu.applicationsptriggering="Aktiviranje po Portu";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
@@ -415,66 +417,67 @@ bmenu.sipathstatus="Status";
 
 bmenu.admin="Administracija";
 bmenu.adminManagement="Upravljanje";
-bmenu.adminAlive="Dr¾i ®ivo";
+bmenu.adminAlive="DrÅ¾i Å¾ivo";
 bmenu.adminLog="Zapis";
 bmenu.adminDiag="Naredbe";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Tvornièki Zadano";
+bmenu.adminFactory="TvorniÄki Zadano";
 bmenu.adminUpgrade="Nadogradnja Firmwarea";
-bmenu.adminBackup="Backup";
+bmenu.adminBackup="PriÄuva";
 
-bmenu.services="Services";
-bmenu.servicesServices="Services";
+bmenu.services="Servisi";
+bmenu.servicesServices="Servisi";
 bmenu.servicesRadius="FreeRadius";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish SIP Router";
-bmenu.servicesAnchorFree="My Ad Network";
+bmenu.servicesMilkfish="Milkfish SIP UsmjerivaÄ";
+bmenu.servicesAnchorFree="Moja Reklamna MreÅ¾a";
 
 bmenu.statu="Status";
-bmenu.statuRouter="Router";
+bmenu.statuRouter="UsmjerivaÄ";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
-bmenu.statuWLAN="Wireless";
+bmenu.statuWLAN="BeÅ¾iÄno";
 bmenu.statuVPN="OpenVPN";
-bmenu.statuBand="Bandwidth";
-bmenu.statuSysInfo="Sys-Info";
-bmenu.statuActivate="Activate";
-bmenu.statuMyPage="My Page";
+bmenu.statuBand="Pojasna Å irina";
+bmenu.statuSysInfo="Informacije o Sustavu";
+bmenu.statuActivate="Aktiviraj";
+bmenu.statuMyPage="Moja Stranica";
 
 // ** Alive.asp **//
-alive.titl="Keep Alive";
-alive.h2="Keep Alive";
-alive.legend="Schedule Reboot";
-alive.sevr1="Schedule Reboot";
-alive.hour="At a set Time";
-alive.legend2="WDS/Connection Watchdog";
-alive.sevr2="Enable Watchdog";
-alive.IP="IP Addresses";
-alive.legend3="Proxy/Connection Watchdog";
-alive.sevr3="Enable Proxy Watchdog";
-alive.IP2="Proxy IP Address";
+alive.titl="DrÅ¾i Å½ivo";
+alive.h2="DrÅ¾i Å¾ivo";
+alive.legend="OdgoÄ‘eno Pokretanje";
+alive.sevr1="OdgoÄ‘eno Pokretanje";
+alive.hour="U Zadano Vrijeme";
+alive.legend2="WDS/Veza Watchdog";
+alive.sevr2="OmoguÄ‡i Watchdog";
+alive.IP="IP Adrese";
+alive.legend3="Proxy/Veza Watchdog";
+alive.sevr3="OmoguÄ‡i Proxy Watchdog";
+alive.IP2="Proxy IP Adresa";
 alive.port="Proxy Port";
 
 //help container
+
 halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
 halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
-config.titl="Backup & Restore";
-config.h2="Backup Configuration";
-config.legend="Backup Settings";
-config.mess1="Click the \"" + sbutton.backup + "\" button to download the configuration backup file to your computer.";
-config.h22="Restore Configuration";
-config.legend2="Restore Settings";
-config.mess2="Please select a file to restore";
-config.mess3="W A R N I N G";
-config.mess4="Only upload files backed up using this firmware and from the same model of router.<br />Do not upload any files that were not created by this interface!";
+config.titl="PriÄuva & Povrat";
+config.h2="Konfiguracija PriÄuve";
+config.legend="Postavke Povrata";
+config.mess1="Klikni na \"" + sbutton.backup + "\" dugme za skidanje konfiguracijske priÄuvne datoteke na vaÅ¡e raÄunalo.";
+config.h22="Povrati Konfiguraciju";
+config.legend2="Postavke Povrata";
+config.mess2="Odaberi datoteku za povrat";
+config.mess3="P O Z O R";
+config.mess4="Samo uÄitajte datoteke koje su priÄuvane koristeÄ‡i ovaj firmware i ovaj model usmjerivaÄa.<br />Ne uÄitavajte datoteke koje nisu stvorene ovim suÄeljem!";
 
 //help container
 hconfig.right2="You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to backup your current configuration.";
@@ -482,28 +485,28 @@ hconfig.right4="Click the <em>Browse...</em> button to browse for a configuratio
 
 
 // ** DDNS.asp **//
-ddns.titl="Dynamic DNS";
-ddns.h2="Dynamic Domain Name System (DDNS)";
+ddns.titl="DinamiÄki DNS";
+ddns.h2="DinamiÄki Domain Name System (DDNS)";
 ddns.legend="DDNS";
-ddns.srv="DDNS Service";
-ddns.emailaddr="E-mail Address";
-ddns.typ="Type";
-ddns.dynamic="Dynamic";
-ddns.custom="Custom";
+ddns.srv="DDNS Servis";
+ddns.emailaddr="E-mail Adresa";
+ddns.typ="Tip";
+ddns.dynamic="DinamiÄki";
+ddns.custom="Posebno";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
-ddns.system="DYNDNS Server";
-ddns.options="Additional DDNS Options";
-ddns.forceupd="Force Update Interval";
-ddns.wanip="Do not use external ip check";
+ddns.system="DYNDNS PosluÅ¾itelj";
+ddns.options="Dodatne DDNS Opcije";
+ddns.forceupd="Nasilni Interval Obnove";
+ddns.wanip="Ne koristi vanjsku IP provjeru";
 
-ddnsm.all_closed="DDNS server is currently closed";
-ddnsm.all_resolving="Resolving domain name";
-ddnsm.all_errresolv="Domain name resolv failed";
-ddnsm.all_connecting="Connecting to server";
-ddnsm.all_connectfail="Connect to server failed";
-ddnsm.all_disabled="DDNS function is disabled";
-ddnsm.all_noip="No WAN connection";
+ddnsm.all_closed="DDNS posluÅ¾itelj je trenutno zatvoren";
+ddnsm.all_resolving="RazluÄivanje imena domene nije uspjelo";
+ddnsm.all_errresolv="Ime Domene ";
+ddnsm.all_connecting="Spajanje na posluÅ¾itelj";
+ddnsm.all_connectfail="Spajanje na posluÅ¾itelj nije uspjelo";
+ddnsm.all_disabled="DDNS funkcija je onemoguÄ‡ena";
+ddnsm.all_noip="Nema WAN veze";
 
 //help container
 hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manages changing IP addresses and updates your domain information dynamically. You must sign up for service through DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com or Custom.";
@@ -511,8 +514,8 @@ hddns.right4="Type an integer number in the box to set the force update interval
 
 
 // ** Diagnostics.asp **//
-diag.titl="Diagnostics";
-diag.h2="Diagnostics";
+diag.titl="Dijagnostika";
+diag.h2="Dijagnostika";
 diag.legend="Command Shell";
 diag.cmd="Commands";
 diag.startup="Startup";
@@ -521,17 +524,15 @@ diag.firewall="Firewall";
 diag.custom="Custom Script";
 
 //help container
-
 hdiag.right2="You can run command lines via the web interface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
 
 
 // ** DMZ.asp **//
-
 dmz.titl="DMZ";
-dmz.h2="Demilitarized Zone (DMZ)";
+dmz.h2="Demilitarizirana Zona (DMZ)";
 dmz.legend="DMZ";
-dmz.serv="Use DMZ";
-dmz.host="DMZ Host IP Address";
+dmz.serv="Koristi DMZ";
+dmz.host="DMZ Host IP Adresa";
 
 //help container
 hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
@@ -1065,6 +1066,7 @@ qos.legend6="Default Bandwidth Level";
 qos.bandwidth="Bandwidth in kbits";
 
 //help container
+
 hqos.right1="Uplink:";
 hqos.right2="Set this to 80%-95% (max) of your total upload limit.";
 hqos.right3="Downlink:";
@@ -1274,7 +1276,7 @@ service.ses_toggleradio="Toggle Wireless";
 service.ses_script="Custom Script";
 
 //hwmon.webservices
-service.hwmon_legend="Hardware Monitoring";
+service.hwmon_legend="Nadzor Strojevine";
 service.hwmon_critemp="Critical Temperature (FAN Switch On)";
 service.hwmon_hystemp="Hysteresis Temperature (FAN Switch Off)";
 
