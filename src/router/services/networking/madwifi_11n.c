@@ -1166,7 +1166,7 @@ void configure_single_11n(int count)
 	if (hasnawds)
 		sysprintf("iwpriv ath0 nawds 1");
 
-	for (s = 1; s <= 10; s++) {
+/*	for (s = 1; s <= 10; s++) {
 		char wdsvarname[32] = { 0 };
 		char wdsdevname[32] = { 0 };
 		char wdsmacname[32] = { 0 };
@@ -1185,7 +1185,7 @@ void configure_single_11n(int count)
 		if (hwaddr != NULL) {
 			sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
 		}
-	}
+	}*/
 }
 
 extern void adjust_regulatory(int count);
