@@ -112,6 +112,7 @@ void start_sysinit(void)
 	insmod("ag7100_mod");
 	char mac1[32];
 	char mac2[32];
+#ifndef HAVE_WNDR3700
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	if (fp) {
 #ifdef HAVE_WRT400
@@ -136,10 +137,10 @@ void start_sysinit(void)
 		fseek(fp, 0x66ffb4, SEEK_SET);
 		fread(mac2, 18, 1, fp);
 		fclose(fp);
-
-
 #endif
-	} else {
+	} else 
+#endif
+	{
 		sprintf(mac1, "00:11:22:33:44:55");
 		sprintf(mac2, "00:11:22:33:44:66");
 	}
@@ -174,8 +175,11 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 
 #else
+
+#ifndef HAVE_WNDR3700
 	eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	eval("ifconfig", "wifi1", "hw", "ether", mac1);
+#endif
 	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
