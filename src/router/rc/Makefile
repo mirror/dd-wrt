@@ -145,6 +145,9 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
 endif
+ifeq ($(CONFIG_WNDR3700),y)
+CFLAGS += -DHAVE_WNDR3700
+endif
 ifeq ($(CONFIG_OLED),y)
 CFLAGS += -DHAVE_OLED
 endif
