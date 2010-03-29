@@ -1036,6 +1036,9 @@ int internal_getRouterBrand()
 	setRouter("Buffalo WZR-G300NH");
 #endif
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WNDR3700
+	setRouter("Netgear WNDR3700");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR825
 	setRouter("Dlink DIR-825");
 	return ROUTER_BOARD_PB42;
@@ -2830,6 +2833,12 @@ int led_control(int type, int act)
 		power_gpio = 0x102;
 		diag_gpio = 0x101;
 		connected_gpio = 0x10b;
+		ses_gpio = 0x104;
+#endif
+#ifdef HAVE_WNDR3700
+		power_gpio = 0x102;
+		diag_gpio = 0x101;
+		connected_gpio = 0x106;
 		ses_gpio = 0x104;
 #endif
 #ifdef HAVE_WZRG300NH
