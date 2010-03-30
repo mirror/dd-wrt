@@ -112,13 +112,40 @@ void start_sysinit(void)
 	insmod("ag7100_mod");
 	char mac1[32];
 	char mac2[32];
+	char wmac[32];
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	if (fp) {
 		char mactmp[6];
 		int copy[6];
 		int i;
+		#ifdef HAVE_WNDR3700
+		fseek(fp, 0x7f0000, SEEK_SET);
+		fread(mactmp, 6, 1, fp);
+		for (i = 0; i < 6 ; i++)
+		    copy[i] = mactmp[i];
+		for (i = 0; i < 6 ; i++)
+		    copy[i] &= 0xff;
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+				copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fread(mactmp, 6, 1, fp);
+		for (i = 0; i < 6 ; i++)
+		    copy[i] = mactmp[i];
+		for (i = 0; i < 6 ; i++)
+		    copy[i] &= 0xff;
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+				copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fread(mactmp, 6, 1, fp);
+		fclose(fp);
+		for (i = 0; i < 6 ; i++)
+		    copy[i] = mactmp[i];
+		for (i = 0; i < 6 ; i++)
+		    copy[i] &= 0xff;
+		sprintf(wmac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+				copy[1], copy[2], copy[3], copy[4], copy[5]);
+		#else
 		fseek(fp, 0x7f120c, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
+		fclose(fp);
 		for (i = 5; i >= 3; i--)
 		    if (++mactmp[i] != 0x00) break; // dont know what this is 
 		for (i = 0; i < 6 ; i++)
@@ -130,6 +157,7 @@ void start_sysinit(void)
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 				copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
+		#endif
 
 	} else {
 		sprintf(mac1, "00:11:22:33:44:55");
@@ -157,13 +185,18 @@ void start_sysinit(void)
 		close(s);
 	}
 	detect_wireless_devices();
-//	eval("ifconfig", "wifi0", "hw", "ether", mac1);
-//	eval("ifconfig", "wifi1", "hw", "ether", mac1);
+#ifndef HAVE_WNDR3700
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 6 >/proc/sys/dev/wifi1/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
-
+#else
+	eval("ifconfig", "wifi1", "hw", "ether", wmac);
+	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi1/softled");
+#endif
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
