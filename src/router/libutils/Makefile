@@ -46,11 +46,15 @@ CFLAGS += -fpic
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
+OBJS += $(TOP)/register/register_check.o
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
-endif
 OBJS += $(TOP)/register/register_check.o
+endif
+ifeq ($(CONFIG_MADWIFI),y)
+OBJS += $(TOP)/register/register_check.o
+endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
