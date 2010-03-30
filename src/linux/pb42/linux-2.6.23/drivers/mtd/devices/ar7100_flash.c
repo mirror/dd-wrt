@@ -170,6 +170,7 @@ ar7100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	*retlen = len;
 	return 0;
 }
+
 static int zcom=0;
 static unsigned int zcomoffset = 0;
 int guessbootsize(void *offset, unsigned int maxscan)
@@ -186,6 +187,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 		}
 		if (ofs[i] == 0x27051956) {
 			printk(KERN_EMERG "uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
+		if (ofs[i] == 0x33373030) {
+			printk(KERN_EMERG "WNDR3700 uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x44442d57) {
