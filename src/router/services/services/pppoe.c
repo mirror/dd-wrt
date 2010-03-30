@@ -282,7 +282,7 @@ void stop_pppoe(void)
 	return;
 }
 
-static void stop_dns_clear_resolv(void)
+void stop_dns_clear_resolv(void)
 {
 	FILE *fp_w;
 
