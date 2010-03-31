@@ -186,6 +186,7 @@ struct event_desc {
 #define OPT_TFTP_APREF     (1u<<29)
 #define OPT_NO_OVERRIDE    (1u<<30)
 #define OPT_NO_REBIND      (1u<<31)
+//#define OPT_NOMX           (1u<<28)
 
 struct all_addr {
   union {
