@@ -563,7 +563,7 @@ void configure_single_11n(int count)
 	static int vapcount = 0;
 	if (count == 0)
 		vapcount = 0;
-#if defined(HAVE_DIR825) || defined(HAVE_WRT400)
+#if defined(HAVE_DIR825) || defined(HAVE_WRT400) || defined(HAVE_WNDR3700)
 	sysprintf("echo 1 >/proc/sys/dev/wifi%d/ledon", count);	//switch off led before configuring to prevent solid led
 #endif
 
