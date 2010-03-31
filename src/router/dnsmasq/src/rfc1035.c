@@ -1447,6 +1447,13 @@ size_t answer_request(HEADER *header, char *limit, size_t qlen,
 			anscount++;
 		    }
 		}
+	    }else
+	    {
+		  ans = 1;
+		      if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, daemon->local_ttl, NULL, 
+					      T_MX, C_IN, "sd", 1, "127.0.0.1"))
+			anscount++;
+	    
 	    }  
 	    }
 	  	  
