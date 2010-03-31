@@ -2730,16 +2730,16 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 	websWrite(stream, "<body>\n");
 	websWrite(stream, "<pre>\n");
 
-	websWrite(stream, "DEVICE_VSP_VERSION=0.1<br>\n");
-	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.<br>\n");
-	websWrite(stream, "DEVICE_MODEL=%s DDWRT<br>\n", nvram_safe_get("DD_BOARD"));
-	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00<br>\n");
-	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1<br>\n");
-//	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s<br>\n", authmode);
-//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s<br>\n", encrypt);
-//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s<br>\n", wpakey);
-	websWrite(stream, "DEVICE_URL_GET=/vsp.html<br>\n");
-	websWrite(stream, "DEVICE_URL_SET=/vsp.html<br>\n");
+	websWrite(stream, "DEVICE_VSP_VERSION=0.1\n");
+	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.\n");
+	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n", nvram_safe_get("DD_BOARD"));
+	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00\n");
+	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1\n");
+//	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s\n", authmode);
+//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s\n", encrypt);
+//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s\n", wpakey);
+	websWrite(stream, "DEVICE_URL_GET=/vsp.html\n");
+	websWrite(stream, "DEVICE_URL_SET=/vsp.html\n");
 
 	websWrite(stream, "</pre>\n");
 	websWrite(stream, "</body>\n");
