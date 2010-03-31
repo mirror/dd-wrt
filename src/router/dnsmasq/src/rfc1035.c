@@ -1413,6 +1413,9 @@ size_t answer_request(HEADER *header, char *limit, size_t qlen,
 	  if (qtype == T_MX || qtype == T_ANY)
 	    {
 	      int found = 0;
+
+	    if (!(daemon->options & (OPT_SELFMX)))
+	    {
 	      for (rec = daemon->mxnames; rec; rec = rec->next)
 		if (!rec->issrv && hostname_isequal(name, rec->name))
 		  {
@@ -1430,7 +1433,7 @@ size_t answer_request(HEADER *header, char *limit, size_t qlen,
 			}
 		    }
 		  }
-	      
+
 	      if (!found && (daemon->options & (OPT_SELFMX | OPT_LOCALMX)) && 
 		  cache_find_by_name(NULL, name, now, F_HOSTS | F_DHCP))
 		{ 
@@ -1444,6 +1447,7 @@ size_t answer_request(HEADER *header, char *limit, size_t qlen,
 			anscount++;
 		    }
 		}
+	    }  
 	    }
 	  	  
 	  if (qtype == T_SRV || qtype == T_ANY)
