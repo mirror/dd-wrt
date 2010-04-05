@@ -468,7 +468,7 @@ alive.port="Proxy Port";
 
 //help container
 var halive = new Object();
-halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
+halive.right2="Choose when reboot the router. Cron must be enabled in the management tab.";
 halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
 
 
@@ -510,7 +510,7 @@ ddns.wanip="Do not use external ip check";
 var ddnsm = new Object();
 ddnsm.all_closed="DDNS server is currently closed";
 ddnsm.all_resolving="Resolving domain name";
-ddnsm.all_errresolv="Domain name resolv failed";
+ddnsm.all_errresolv="Domain name resolve failed";
 ddnsm.all_connecting="Connecting to server";
 ddnsm.all_connectfail="Connect to server failed";
 ddnsm.all_disabled="DDNS function is disabled";
@@ -519,7 +519,7 @@ ddnsm.all_noip="No WAN connection";
 //help container
 var hddns = new Object();
 hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manages changing IP addresses and updates your domain information dynamically. You must sign up for service through DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com or Custom.";
-hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automaticaly when your IP address has changed. Beware of your DDNS provider update abuse policy to avoid your hostname or domain to be blocked.";
+hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automatically when your IP address has changed. Beware of your DDNS provider update abuse policy to avoid your hostname or domain to be blocked.";
 
 
 // ** Diagnostics.asp **//
@@ -871,7 +871,7 @@ var idx_pptp = new Object();
 idx_pptp.srv="Use DHCP";
 idx_pptp.wan_ip="WAN IP Address";
 idx_pptp.gateway="Gateway (PPTP Server)";
-idx_pptp.encrypt="PPTP Encyption";
+idx_pptp.encrypt="PPTP Encryption";
 idx_pptp.reorder="Disable Packet Reordering";
 idx_pptp.addopt="Additional PPTP Options";
 
@@ -1069,7 +1069,7 @@ var hmanagement = new Object();
 hmanagement.right1="Auto-Refresh:";
 hmanagement.right2="Adjusts the Web GUI automatic refresh interval. 0 disables this feature completely.";
 
-// ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
+// ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 var portserv = new Object();
 portserv.titl="Port Services";
 portserv.h2="Port Services";
