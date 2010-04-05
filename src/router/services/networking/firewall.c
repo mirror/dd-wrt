@@ -3027,7 +3027,7 @@ void start_firewall(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		runStartup("/jffs/etc/config", ".prewall");	// if available
+	runStartup("/jffs/etc/config", ".prewall");	// if available
 	runStartup("/mmc/etc/config", ".prewall");	// if available
 	runStartup("/tmp/etc/config", ".prewall");	// if available
 	if (create_rc_file(RC_FIREWALL) == 0) {
