@@ -1105,6 +1105,9 @@ survey.thjoin="Netz beitreten";
 service.titl="Services";
 service.h2="Service-Management";
 
+service.apserv_legend="APServ Fernwartung";
+service.apserv="APServ";
+
 //kaid
 service.kaid_legend="XBOX-Kaid";
 service.kaid_srv="Start Kaid";
