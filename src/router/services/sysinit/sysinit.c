@@ -177,16 +177,21 @@ void runStartup(char *folder, char *extension)
 #ifdef HAVE_BUFFALO
 void *getUEnv(char *name)
 {
+#ifdef HAVE_WZRG300NH
+#define UOFFSET 0x40000
+#else
+#define UOFFSET 0x3E000
+#endif
 	static char res[64];
 	memset(res, 0, sizeof(res));
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	fseek(fp, 0, SEEK_END);
 	int size = ftell(fp);
-	fseek(fp, size - 65536, SEEK_SET);
-	char *mem = malloc(65536);
-	fread(mem, 65536, 1, fp);
+	fseek(fp, UOFFSET, SEEK_SET);
+	char *mem = malloc(0x2000);
+	fread(mem, 0x2000, 1, fp);
 	fclose(fp);
-	int s = 65535 - strlen(name);
+	int s = 0x2000 - strlen(name);
 	int i;
 	int l = strlen(name);
 	for (i = 0; i < s; i++) {
