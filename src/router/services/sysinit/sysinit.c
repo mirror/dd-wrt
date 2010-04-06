@@ -214,23 +214,33 @@ static void buffalo_defaults(int force)
 			if (!mode)
 				return;
 			if (!strcmp(mode, "psk"))
+				{
 				nvram_set("ath0_akm", "psk psk2");
+				nvram_set("ath0_security_mode",nvram_safe_get("ath0_akm"));
+				}
 			if (!strcmp(mode, "psk2"))
+				{
 				nvram_set("ath0_akm", "psk psk2");
+				nvram_set("ath0_security_mode",nvram_safe_get("ath0_akm"));
+				}
 		} else {
 			char *mode =
 			    getUEnv("DEF-p_wireless_ath0_11bg-authmode");
 			if (mode)
+				{
 				nvram_set("ath0_akm", mode);
+				nvram_set("ath0_security_mode",nvram_safe_get("ath0_akm"));
+				}
 			else
 				return;
 		}
+		nvram_set
 		char *crypto = getUEnv("DEF-p_wireless_ath0_11bg-crypto");
 		if (crypto)
 			nvram_set("ath0_crypto", crypto);
 		char *wpapsk = getUEnv("DEF-p_wireless_ath0_11bg-wpapsk");
 		if (wpapsk)
-			nvram_set("ath0_wpapsk", wpapsk);
+			nvram_set("ath0_wpa_psk", wpapsk);
 		struct ifreq ifr;
 		int s;
 
