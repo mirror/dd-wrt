@@ -175,7 +175,7 @@ void runStartup(char *folder, char *extension)
 }
 
 #ifdef HAVE_BUFFALO
-void *getUEnv(char *name)
+static void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
 #define UOFFSET 0x40000
@@ -195,7 +195,7 @@ void *getUEnv(char *name)
 	int i;
 	int l = strlen(name);
 	for (i = 0; i < s; i++) {
-		if (!strncmp(mem + i, name, l) == 0) {
+		if (!strncmp(mem + i, name, l)) {
 			strcpy(res, mem + i + l + 1);
 			free(mem);
 			fclose(fp);
@@ -207,7 +207,7 @@ void *getUEnv(char *name)
 	return NULL;
 }
 
-void buffalo_defaults(int force)
+static void buffalo_defaults(int force)
 {
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *mode_ex = getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
@@ -1431,6 +1431,9 @@ void start_restore_defaults(void)
 #else
 	int icnt = getdevicecount();
 #endif
+#ifdef HAVE_BUFFALO
+	buffalo_defaults(restore_defaults);
+#endif
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {
@@ -1452,9 +1455,6 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults();
-#ifdef HAVE_BUFFALO
-	buffalo_defaults(restore_defaults);
-#endif
 	if (strlen(nvram_safe_get("http_username")) == 0) {
 		nvram_set("http_username", zencrypt("root"));
 		nvram_set("http_passwd", zencrypt("admin"));
