@@ -72,17 +72,18 @@ int
 filter (char *m, char *source, char *dest, int len)
 {
     int i;
-
-    for (i = 0; i < len - strlen (source); i++)
+    int slen = strlen(source);
+    int dlen = strlen(dest);
+    for (i = 0; i < len - slen; i++)
     {
-        if (strncmp ((char *) &m[i], source, strlen (source)) == 0)
+        if (strncmp ((char *) &m[i], source, slen) == 0)
         {
-            memcpy (&m[i], dest, strlen (dest));
-            int delta = strlen (source) - strlen (dest);
-            memcpy (&m[i + strlen (dest)], &m[i + strlen (source)],
-                    len - (i + strlen (source)));
+            memcpy (&m[i], dest, dlen);
+            int delta = strlen (source) - dlen;
+            memcpy (&m[i + dlen], &m[i + slen],
+                    len - (i + slen));
             len -= delta;
-            i += strlen (dest);
+            i += dlen;
         }
     }
     return len;
