@@ -174,6 +174,82 @@ void runStartup(char *folder, char *extension)
 	return;
 }
 
+#ifdef HAVE_BUFFALO
+void *getUEnv(char *name)
+{
+	static char res[64];
+	memset(res, 0, sizeof(res));
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	fseek(fp, 0, SEEK_END);
+	int size = ftell(fp);
+	fseek(fp, size - 65536, SEEK_SET);
+	char *mem = malloc(65536);
+	fread(mem, 65536, 1, fp);
+	fclose(fp);
+	int s = 65535 - strlen(name);
+	int i;
+	int l = strlen(name);
+	for (i = 0; i < s; i++) {
+		if (!strncmp(mem + i, name, l) == 0) {
+			strcpy(res, mem + i + l + 1);
+			free(mem);
+			fclose(fp);
+			return res;
+		}
+	}
+	free(mem);
+	fclose(fp);
+	return NULL;
+}
+
+void buffalo_defaults(int force)
+{
+	if (nvram_get("ath0_akm") == NULL || force) {
+		char *mode_ex = getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
+		if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
+			char *mode =
+			    getUEnv("DEF-p_wireless_ath0_11bg-authmode");
+			if (!mode)
+				return;
+			if (!strcmp(mode, "psk"))
+				nvram_set("ath0_akm", "psk psk2");
+			if (!strcmp(mode, "psk2"))
+				nvram_set("ath0_akm", "psk psk2");
+		} else {
+			char *mode =
+			    getUEnv("DEF-p_wireless_ath0_11bg-authmode");
+			if (mode)
+				nvram_set("ath0_akm", mode);
+			else
+				return;
+		}
+		char *crypto = getUEnv("DEF-p_wireless_ath0_11bg-crypto");
+		if (crypto)
+			nvram_set("ath0_crypto", crypto);
+		char *wpapsk = getUEnv("DEF-p_wireless_ath0_11bg-wpapsk");
+		if (wpapsk)
+			nvram_set("ath0_wpapsk", wpapsk);
+		struct ifreq ifr;
+		int s;
+
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+			char eabuf[32];
+
+			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+			ioctl(s, SIOCGIFHWADDR, &ifr);
+			close(s);
+			unsigned char *edata =
+			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			sprintf(eabuf, "%02X%02X%02X%02X%02X%02X",
+				edata[0] & 0xff, edata[1] & 0xff,
+				edata[2] & 0xff, edata[3] & 0xff,
+				edata[4] & 0xff, edata[5] & 0xff);
+			nvram_set("ath0_ssid", eabuf);
+		}
+
+	}
+}
+#endif
 /*
  * SeG dd-wrt addition for module startup scripts 
  */
@@ -422,7 +498,8 @@ void start_restore_defaults(void)
 #elif HAVE_RB600
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7",
+		{"lan_ifnames",
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7",
 		 0},
 		{"wan_ifname", "eth0", 0},
 		{"wan_ifname2", "eth0", 0},
@@ -1370,6 +1447,9 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults();
+#ifdef HAVE_BUFFALO
+	buffalo_defaults(restore_defaults);
+#endif
 	if (strlen(nvram_safe_get("http_username")) == 0) {
 		nvram_set("http_username", zencrypt("root"));
 		nvram_set("http_passwd", zencrypt("admin"));
