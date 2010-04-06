@@ -2699,6 +2699,9 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_AOSS
 	{"aoss_enable", "1", 0},
+	{"aoss_tkip", "0", 0},
+	{"aoss_aes", "1", 0},
+	{"aoss_wep", "0", 0},
 #endif
 	{"warn_enabled", "0", 0},
 	{"warn_connlimit", "500", 0},
