@@ -234,7 +234,7 @@ static void buffalo_defaults(int force)
 			else
 				return;
 		}
-		nvram_set
+		
 		char *crypto = getUEnv("DEF-p_wireless_ath0_11bg-crypto");
 		if (crypto)
 			nvram_set("ath0_crypto", crypto);
