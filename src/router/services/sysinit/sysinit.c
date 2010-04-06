@@ -184,26 +184,23 @@ static void *getUEnv(char *name)
 #endif
 	static char res[64];
 	memset(res, 0, sizeof(res));
+//	fprintf(stderr,"%s\n",name);
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
-	fseek(fp, 0, SEEK_END);
-	int size = ftell(fp);
 	fseek(fp, UOFFSET, SEEK_SET);
 	char *mem = malloc(0x2000);
 	fread(mem, 0x2000, 1, fp);
 	fclose(fp);
-	int s = 0x2000 - strlen(name);
+	int s = (0x2000-1) - strlen(name);
 	int i;
 	int l = strlen(name);
 	for (i = 0; i < s; i++) {
 		if (!strncmp(mem + i, name, l)) {
 			strcpy(res, mem + i + l + 1);
 			free(mem);
-			fclose(fp);
 			return res;
 		}
 	}
 	free(mem);
-	fclose(fp);
 	return NULL;
 }
 
