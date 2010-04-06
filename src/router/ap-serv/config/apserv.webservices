@@ -1,6 +1,6 @@
 
 <fieldset>
-	<legend><% tran("service.radiooff_legend"); %></legend>
+	<legend><% tran("service.apserv_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.apserv"); %></div>
 		<input class="spaceradio" type="radio" value="1" name="apserv_enable" <% nvram_checked("apserv_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
