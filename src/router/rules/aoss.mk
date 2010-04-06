@@ -14,4 +14,4 @@ aoss-clean:
 	@true
 
 aoss-install:
-	@true
+	install -D aoss/src/aoss $(INSTALLDIR)/aoss/usr/sbin/aoss
