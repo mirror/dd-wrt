@@ -39,7 +39,7 @@ void start_aoss(void)
 	}
 	
 	killall("aoss", SIGTERM);
-	ret = eval("aoss", "-i", nvram_safe_get("lan_ifname"),"-m","-ap");
+	ret = eval("aoss", "-i", nvram_safe_get("lan_ifname"),"-m","ap");
 	dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
 	cprintf("done\n");
 	return;
