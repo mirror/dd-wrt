@@ -1,5 +1,5 @@
 /*
- * apserv.c
+ * aoss.c
  *
  * Copyright (C) 2010 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -19,7 +19,7 @@
  *
  * $Id:
  */
-#ifdef HAVE_AP_SERV
+#ifdef HAVE_AOSS
 #include <stdlib.h>
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -27,34 +27,30 @@
 #include <syslog.h>
 #include <signal.h>
 
-void stop_apserv(void);
+void stop_aoss(void);
 
-void start_apserv(void)
+void start_aoss(void)
 {
-	char *wan_ifname = get_wan_face();
 	int ret;
 
-	if (nvram_match("apserv_enable", "0")) {
-		stop_apserv();
+	if (nvram_match("aoss_enable", "0")) {
+		stop_aoss();
 		return;
 	}
-	/*
-	 * Make sure its not running first 
-	 */
-	ret = killall("ap_serv", SIGUSR1);
-	ret = eval("ap_serv", "-i", nvram_safe_get("lan_ifname"));
-	dd_syslog(LOG_INFO, "ap_serv : ap_serv daemon successfully started\n");
+	
+	killall("aoss", SIGTERM);
+	ret = eval("aoss", "-i", nvram_safe_get("lan_ifname"));
+	dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
 	cprintf("done\n");
 	return;
 }
 
-void stop_apserv(void)
+void stop_aoss(void)
 {
-	if (pidof("ap_serv") > 0) {
+	if (pidof("aoss") > 0) {
 		dd_syslog(LOG_INFO,
-			  "ap_serv : ap_serv daemon successfully stopped\n");
-		killall("ap_serv", SIGUSR1);
-		killall("ap_serv", SIGTERM);
+			  "aoss : aoss daemon successfully stopped\n");
+		killall("aoss", SIGTERM);
 		cprintf("done\n");
 	}
 	return;
