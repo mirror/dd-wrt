@@ -4,7 +4,7 @@
 
 // ** COMMON SHARE LABEL **//
 
-lang_charset.set="iso-8859-1"; //
+lang_charset.set="iso-8859-1";
 
 //lang_charset.set="x-IA5-Swedish";
 
@@ -245,7 +245,7 @@ sbutton.allways_off="Alltid Av";
 errmsg.err0="Du måste ange Användarnamn.";
 errmsg.err1="Du måste ange Routerns Namn.";
 errmsg.err2="Felaktigt Område, Vv Ändra start IP Adress eller user&#39;s nummer.";
-errmsg.err3="Du måste välja dag."
+errmsg.err3="Du måste välja dag.";
 errmsg.err4="Sluttid måste vara efter starttiden.";
 errmsg.err5="MAC Adressens längd är ej korrekt.";
 errmsg.err6="Du måste ange ett lösenord.";
@@ -265,7 +265,7 @@ errmsg.err15="WAN MAC Adressen är utanför intervall [00 - ff].";
 errmsg.err16="Andra Siffran av MAC Måste vara ett jämt nummer : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="Felaktig MAC Adress.";
 errmsg.err18="Felaktig MAC Adress.";
-errmsg.err19="MAC Adressen kan ej vara broadcast Adressen."
+errmsg.err19="MAC Adressen kan ej vara broadcast Adressen.";
 errmsg.err20="Skriv MAC Adressen i (xx:xx:xx:xx:xx:xx) format.";
 errmsg.err21="Felaktigt MAC Adress format.";
 errmsg.err22="WAN MAC Adress Felaktig.";
@@ -290,7 +290,7 @@ errmsg.err37="Du måste ange UDP port för start.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Ange Delad Nyckel!";
-errmsg.err39="Felaktig Nyckel, måste vara mellan 8 och 63 ASCII tecken eller 64 hexadecimal siffror"
+errmsg.err39="Felaktig Nyckel, måste vara mellan 8 och 63 ASCII tecken eller 64 hexadecimal siffror";
 errmsg.err40="Du måste ange nyckel för Nyckel ";
 errmsg.err41="Fel längd i nyckel ";
 errmsg.err43="Rekey intervall";
@@ -1509,7 +1509,7 @@ wol.pass="SecureOn Lösenord";
 //help container
 hwol.right2="Denna sida tillåter dig <em>Vakna Upp</em> på saker du har på ditt nätverk (ex. saker lokalt på din router). Du kan manuellt väcka genom att klicka <em>"+sbutton.wol+"</em> eller automatiskt väcka genom schemalagt "+wol.srv+".";
 hwol.right4="MAC Adress(er) skrivs xx:xx:xx:xx:xx:xx (ex. 01:23:45:67:89:AB) måste separeras med <em>MELLANSLAG</em>";
-hwol.right6="IP Adress är typiskt broadcast Adress för lokala nätet, men kan också vara en fjärr adress om din apparat inte är kopplad på det lokala nätet."
+hwol.right6="IP Adress är typiskt broadcast Adress för lokala nätet, men kan också vara en fjärr adress om din apparat inte är kopplad på det lokala nätet.";
 
 
 // ** WanMAC.asp **//
