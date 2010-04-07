@@ -782,8 +782,8 @@ management.lang_brazilian="Português (Brasil)";
 management.lang_slovenian="Esloveno";
 management.lang_spanish="Espanhol";
 management.lang_swedish="Sueco";
-management.lang_polish="polish";
-management.lang_japanese="japanese";
+management.lang_polish="Polish";
+management.lang_japanese="Japanese";
 
 management.net_legend="Configurações do Filtro de IP (ajustes para P2P)";
 management.net_port="Número Máximo de Portas";
