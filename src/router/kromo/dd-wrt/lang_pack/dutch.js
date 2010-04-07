@@ -125,7 +125,7 @@ share.port_range="Poortbereik";
 share.priority="Prioriteit";
 share.gateway="Gateway";
 share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
-share.ccq="CCQ"; 
+share.ccq="CCQ";
 share.pintrface="Fysieke Interface";
 share.vintrface="Virtuele Interface";
 share.router="Router";
@@ -258,7 +258,7 @@ sbutton.download="Download";
 errmsg.err0="U dient een gebruikersnaam op te geven.";
 errmsg.err1="U dient een Routernaam op te geven.";
 errmsg.err2="Buiten het bereik, gelieve het start IP-adres aan te passen of het gebruikers nr.";
-errmsg.err3="U dient tenminste een dag selecteren."
+errmsg.err3="U dient tenminste een dag selecteren.";
 errmsg.err4="De eindtijd dient groter te zijn dan de begintijd.";
 errmsg.err5="De MAC-Adres lengte is niet correct.";
 errmsg.err6="U dient een wachtwoord op te geven.";
@@ -278,7 +278,7 @@ errmsg.err15="De WAN MAC-Adres is buiten het bereik [00 - ff].";
 errmsg.err16="Het tweede karakter van de MAC-adres moet een even nummer zijn : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="Het MAC-Adres is niet correct.";
 errmsg.err18="De MAC-Adres lengte is niet correct.";
-errmsg.err19="Het MAC-Adres kan niet het broadcast adres zijn."
+errmsg.err19="Het MAC-Adres kan niet het broadcast adres zijn.";
 errmsg.err20="Geef het MAC-Adres in (xx:xx:xx:xx:xx:xx) formaat op.";
 errmsg.err21="Ongeldig MAC-Adres formaat.";
 errmsg.err22="Het WAN MAC-Adres is ongeldig.";
@@ -305,7 +305,7 @@ errmsg.err37="U dient een UDP poort op te geven voor verwerking.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Gelieve een gedeelde sleutel op te geven!";
-errmsg.err39="Ongeldige sleutel, lengte dient tussen de 8 en 63 ASCII karakters of 64 hexadecimal cijfers te liggen"
+errmsg.err39="Ongeldige sleutel, lengte dient tussen de 8 en 63 ASCII karakters of 64 hexadecimal cijfers te liggen";
 errmsg.err40="U dient een sleutelwaarde op te geven voor sleutel ";
 errmsg.err41="Ongeldige lengte in de sleutelwaarden ";
 errmsg.err43="Sleutel Vernieuwings interval";
@@ -1702,7 +1702,7 @@ wol.pass="VeiligAan Wachtwoord";
 
 hwol.right2="Op deze pagina kunt u hosten <em>Wekken</em> die verbonden zijn met uw netwerk (bv. lokaal verbonden met uw router). U kan handmatig een host wekken door op de <em>"+sbutton.wol+"</em> te klikken of u kunt een automatisch geplande wake-up programmeren dankzij "+wol.srv+".";
 hwol.right4="MAC-Adressen dienen ingevuld te worden volgens het formaat xx:xx:xx:xx:xx:xx (bv. 01:23:45:67:89:AB) en moeten gescheiden zijn door een <em>SPATIE</em>";
-hwol.right6="Het IP Adres is het broadcast adres van het netwerk, maar het kan ook een remote adres zijn indien het doel zich niet in het lokale bevindt." 
+hwol.right6="Het IP Adres is het broadcast adres van het netwerk, maar het kan ook een remote adres zijn indien het doel zich niet in het lokale bevindt.";
 
 
 

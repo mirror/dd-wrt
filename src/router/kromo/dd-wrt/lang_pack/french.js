@@ -240,7 +240,7 @@ sbutton.allways_off="Toujours désactivé";
 errmsg.err0="Vous devez saisir un nom d'utilisateur.";
 errmsg.err1="Vous devez saisir un nom de Routeur.";
 errmsg.err2="Hors de l\'intervalle, merci d\'ajuster l\'adresse IP de début ou le nombre d\'utilisateurs.";
-errmsg.err3="Vous devez sélectionner au moins un jour."
+errmsg.err3="Vous devez sélectionner au moins un jour.";
 errmsg.err4="L\'heure de fin doit être supérieure à l\'heure de départ.";
 errmsg.err5="La longueur de l\'adresse MAC est incorrecte.";
 errmsg.err6="Vous devez saisir un mot de passe.";
@@ -260,7 +260,7 @@ errmsg.err15="L\'adresse MAC WAN est en dehors de l\'intervalle [00 - ff].";
 errmsg.err16="Le deuxième caractère de l\'adresse MAC doit être un nombre pair : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="L\'adresse MAC est incorrecte.";
 errmsg.err18="La longueur de l\'adresse MAC est incorrecte.";
-errmsg.err19="L\'adresse MAC ne peut pas être identique à l\'adresse de diffusion."
+errmsg.err19="L\'adresse MAC ne peut pas être identique à l\'adresse de diffusion.";
 errmsg.err20="Sairir l\'adresse MAC au format (xx:xx:xx:xx:xx:xx).";
 errmsg.err21="Format d\'adresse MAC invalide.";
 errmsg.err22="L\'adresse MAC WAN est incorrecte.";
@@ -1454,7 +1454,7 @@ wol.pass="Mot de passe SecureOn";
 //help container
 hwol.right2="Cette fonctionnalité permet de <em>réveiller</em> à distance une machine de votre réseau local sans avoir à se déplacer. Vous pouvez réveiller un hôte manuellement en cliquant sur le bouton <em>"+sbutton.wol+"</em> ou programmer des réveils automatiques grâce au démon.";
 hwol.right4="Les adresses MAC doivent être saisies dans le format xx:xx:xx:xx:xxx:xx (ex. 01:23:45:67:89:AB) et séparé(es) par un <em>espace</em>.";
-hwol.right6="L'adresse IP désigne généralement l'adresse de broadcast du réseau local, mais peut également désigner une adresse IP si l'hôte n'est pas sur le réseau local connecté au routeur."
+hwol.right6="L'adresse IP désigne généralement l'adresse de broadcast du réseau local, mais peut également désigner une adresse IP si l'hôte n'est pas sur le réseau local connecté au routeur.";
 
 // ** WanMAC.asp **//
 wanmac.titl="Adresse MAC dupliquée";
