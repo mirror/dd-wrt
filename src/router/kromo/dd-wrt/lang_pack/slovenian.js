@@ -261,7 +261,7 @@ sbutton.download="Prenos";
 errmsg.err0="Vnesti morate uporabni¹ko ime.";
 errmsg.err1="Vnesti morate ime usmerjevalnika.";
 errmsg.err2="Izven dovoljenega obmoèja. Prosimo, do popravite zaèetni IP naslov ali ¹tevilo uporabnikov.";
-errmsg.err3="Izbrati morate vsaj dan."
+errmsg.err3="Izbrati morate vsaj dan.";
 errmsg.err4="Konèni èas mora biti kasnej¹i od zaèetnega èasa.";
 errmsg.err5="Dol¾ina naslova MAC ni pravilna.";
 errmsg.err6="Vnesti morate geslo.";
@@ -281,7 +281,7 @@ errmsg.err15="WAN MAC je izven dovoljenih meja [00 - FF].";
 errmsg.err16="drugi znak v MAC mora biti sodo ¹tevilo : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="MAC naslov ni pravilen.";
 errmsg.err18="Dol¾ina MAC naslova ni pravilna.";
-errmsg.err19="MAC naslov ne more biti broadcast naslov."
+errmsg.err19="MAC naslov ne more biti broadcast naslov.";
 errmsg.err20="Vnesite MAC naslov v (xx:xx:xx:xx:xx:xx) formatu.";
 errmsg.err21="Nepravilni format MAC naslova.";
 errmsg.err22="WAN MAC naslov ni pravilen.";
@@ -1700,9 +1700,9 @@ wol.pass="SecureOn geslo";
 
 //help container
 
-hwol.right2="Ta stran omogoèa da <em>zbudite</em> na va¹i lokalni mre¾i (t.j. prikljuèene na va¹ usmerjevalnik).";
+hwol.right2="Ta stran omogoèa, da <em>zbudite</em> raèunalnike na va¹i lokalni mre¾i (t.j. prikljuèene na va¹ usmerjevalnik).";
 hwol.right4="MAC naslove vnesite v formatu xx:xx:xx:xx:xx:xx (t.j. 01:23:45:67:89:AB)";
-hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mre¾o. Lahko pa je oddaljeni naslov, èe gostitelj ni prikljuèenj na va¹o lokalno mre¾o."
+hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mre¾o. Lahko pa je oddaljeni naslov, èe gostitelj ni prikljuèenj na va¹o lokalno mre¾o.";
 
 
 // ** WanMAC.asp **//
