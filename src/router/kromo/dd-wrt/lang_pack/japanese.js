@@ -18,7 +18,7 @@ share.disabled="無効";
 share.usrname="ユーザ名";
 share.passwd="パスワード";
 share.hostname="ホスト名";
-share.vdsl="DTAG VDSL Vlan Tagging";
+share.vdsl="T-Home VDSL 7 VLAN Tagging";
 share.compression="PPP圧縮";
 share.domainname="ドメイン名";
 share.wandomainname="インターネット側ドメイン名";
@@ -247,7 +247,7 @@ errmsg.err15="インターネット側MACアドレスの入力値の範囲が正
 errmsg.err16="2桁目のMACアドレスが正しくありません(Multicastアドレスは設定できません)。[0, 2, 4, 6, 8, A, C, E]のいずれかを指定する必要があります";
 errmsg.err17="MACアドレスの入力値が正しくありません";
 errmsg.err18="MACアドレスの入力長が正しくありません";
-errmsg.err19="ブロードキャストMACアドレスを使用することはできません"
+errmsg.err19="ブロードキャストMACアドレスを使用することはできません";
 errmsg.err20="MACアドレスの入力値のフォーマットが正しくありません";
 errmsg.err21="MACアドレスの入力値のフォーマットが正しくありません";
 errmsg.err22="インターネット側のMACアドレスが正しくありません";
@@ -1480,7 +1480,7 @@ wol.pass="SecureOn パスワード";
 
 hwol.right2="Wake-On-Lanは、LAN側ネットワークに存在するホストをこの機器から起動するための機能です。この機能を利用するためには、起動する機器の側もWake-On-Lanに対応している必要があります。「<em>"+sbutton.wol+"</em>」をクリックすると、指定した機器を起動させることができます。また、「"+wol.srv+"」をクリックすることにより、自動的にクライアントを起動させることもできます。";
 hwol.right4="「xx:xx:xx:xx:xx:xx」の形式で指定する必要があります(例：01:23:45:67:89:AB)。また、複数のMACアドレスを指定する場合は、アドレスの間にスペースを挿入してください。";
-hwol.right6="IPアドレスは通常ブロードキャストアドレスで指定する必要があります。但し、LAN側ネットワークに存在しない場合はUnicastアドレスを利用することもできます。"
+hwol.right6="IPアドレスは通常ブロードキャストアドレスで指定する必要があります。但し、LAN側ネットワークに存在しない場合はUnicastアドレスを利用することもできます。";
 
 
 // ** WanMAC.asp **//
