@@ -734,13 +734,24 @@ void start_sysinit(void)
 		}
 		break;
 
-	case ROUTER_WRT160NV3:
 	case ROUTER_WRT310NV2:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("wan_ifname2", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		nvram_set("vlan2hwname", "et0");
+		break;
+		
+	case ROUTER_WRT160NV3:
+		nvram_set("lan_ifnames", "vlan1 eth1");
+		nvram_set("wan_ifname", "vlan2");
+		nvram_set("wan_ifname2", "vlan2");
+		nvram_set("wl0_ifname", "eth1");
+		nvram_set("vlan2hwname", "et0");
+		//fix lan port numbering on CSE41, CSE51
+		if (nvram_match("clkdivsf", "4") && nvram_match("vlan1ports", "1 2 3 4 5*")) {
+			nvram_set("vlan1ports", "4 3 2 1 5*");
+		}
 		break;
 
 	case ROUTER_NETGEAR_WNDR3300:
