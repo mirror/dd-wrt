@@ -74,12 +74,12 @@ filter (char *m, char *source, char *dest, int len)
     int i;
     int slen = strlen(source);
     int dlen = strlen(dest);
-    for (i = 0; i < len - slen; i++)
+    for (i = 0; i <= len - slen; i++)
     {
         if (strncmp ((char *) &m[i], source, slen) == 0)
         {
             memcpy (&m[i], dest, dlen);
-            int delta = strlen (source) - dlen;
+            int delta = slen - dlen;
             memcpy (&m[i + dlen], &m[i + slen],
                     len - (i + slen));
             len -= delta;
