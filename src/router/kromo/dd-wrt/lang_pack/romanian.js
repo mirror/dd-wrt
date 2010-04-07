@@ -125,7 +125,7 @@ share.port_range="Interval Port";
 share.priority="Prioritate";
 share.gateway="Gateway";
 share.intrface="Interfaţă";  //don't use share.interface, Mozilla problem!!!
-share.ccq="CCQ"; 
+share.ccq="CCQ";
 share.pintrface="Interfaţă Fizică";
 share.vintrface="Interfaţă Virtuală";
 share.router="Ruter";
@@ -257,7 +257,7 @@ sbutton.download="Descarcă";
 errmsg.err0="Trebuie să introduci un nume de Utilizator.";
 errmsg.err1="Trebuie să introduci numele Ruterului.";
 errmsg.err2="În afara domeniului, te rog ajustează adresa IP de început sau numărul utilizator&#39;ilor.";
-errmsg.err3="Trebuie cel puţin să selectezi o zi."
+errmsg.err3="Trebuie cel puţin să selectezi o zi.";
 errmsg.err4="Timpul de sfârşit trebuie să fie mai mare decât timpul de început.";
 errmsg.err5="Lungimea adresei MAC nu este corectă.";
 errmsg.err6="Trebuie să introduci o parolă.";
@@ -277,7 +277,7 @@ errmsg.err15="Adresa MAC pentru WAN este în afara domeniului [00 - ff].";
 errmsg.err16="Al doilea caracter al adresei MAC trebuie să fie număr par : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="Adresa MAC nu este corectă.";
 errmsg.err18="Lungimea adresei MAC nu este corectă.";
-errmsg.err19="Adresa MAC nu poate fi adresa de broadcast."
+errmsg.err19="Adresa MAC nu poate fi adresa de broadcast.";
 errmsg.err20="Introduce adresa MAC în acest format (xx:xx:xx:xx:xx:xx).";
 errmsg.err21="Formatul adresei MAC nu este valid.";
 errmsg.err22="Adresa MAC pentru WAN nu este corectă.";
@@ -304,7 +304,7 @@ errmsg.err37="Trebuie să introduci un port UDP pentru executare.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Te rog introduce o Cheie Partajată!";
-errmsg.err39="Cheie nepermisă, trebuie să fie între 8 şi 63 caractere ASCII sau 64 cifre hexazecimale"
+errmsg.err39="Cheie nepermisă, trebuie să fie între 8 şi 63 caractere ASCII sau 64 cifre hexazecimale";
 errmsg.err40="Trebuie să introduci o cheie pentru Cheie ";
 errmsg.err41="Lungime nepermisă a cheii ";
 errmsg.err43="Interval auto-schimbare cheie";
@@ -1615,7 +1615,7 @@ wol.pass="Parolă SecureOn";
 //help container
 hwol.right2="Această pagină îţi permite să <em>Trezeşti</em> calculatoarele din reţeaua ta locală (ex. conectate local la ruter). Poţi trezi calculatoarele manual dând clic pe <em>"+sbutton.wol+"</em> sau poţi planifica trezirea mulţumită "+wol.srv+".";
 hwol.right4="Adresele MAC trebuie introduse în formatul xx:xx:xx:xx:xx:xx (ex. 01:23:45:67:89:AB) şi trebuie să fie separate de un <em>SPAŢIU</em>";
-hwol.right6="Adresa IP este de obicei adresa de broadcast pentru reţeaua locală, dar poate fi şi o adresă de la distanţă dacă calculatorul ţintă nu este conectat la reţeaua locală a ruterului."
+hwol.right6="Adresa IP este de obicei adresa de broadcast pentru reţeaua locală, dar poate fi şi o adresă de la distanţă dacă calculatorul ţintă nu este conectat la reţeaua locală a ruterului.";
 
 
 // ** WanMAC.asp **//
