@@ -259,9 +259,7 @@ errmsg.err49="Radius solo está disponible en modo AP.";
 errmsg.err50="Debes introducir una SSID.";
 
 // Management.asp error messages
-errmsg.err51="La clave del Router actual es la clave por defecto. \
-			Como medida de seguridad, debes cambiar la clave antes de que la Administración Remota esté activada. \
-			Click en el botón OK para cambiar la clave. Click en el botón Cancelar para dejar deshabilitada la Administración Remota.";
+errmsg.err51="La clave del Router actual es la clave por defecto. Como medida de seguridad, debes cambiar la clave antes de que la Administración Remota esté activada. Click en el botón OK para cambiar la clave. Click en el botón Cancelar para dejar deshabilitada la Administración Remota.";
 errmsg.err52="La confirmación de la clave no coincide.";
 
 // Port_Services.asp error messages
@@ -415,9 +413,7 @@ ddnsm.all_noip="No hay conexión a Internet";
 
 //help container
 
-hddns.right2="El DDNS te permite acceder a tu red usando nombres de dominio en lugar de direcciones IP. \
-	El servicio administra direcciones IP cambiantes y actualiza tu información de dominio dinámicamente. \
-	Debes estar logeado para usar el servicio a través de DynDNS.org, TZO.com ó ZoneEdit.com.";
+hddns.right2="El DDNS te permite acceder a tu red usando nombres de dominio en lugar de direcciones IP. El servicio administra direcciones IP cambiantes y actualiza tu información de dominio dinámicamente. Debes estar logeado para usar el servicio a través de DynDNS.org, TZO.com ó ZoneEdit.com.";
 
 
 
@@ -552,11 +548,7 @@ prforward.app="Aplicación";
 
 //help container
 
-hprforward.right2="En ocasiones, ciertas aplicaciones requieren que determinados puertos estén abiertos para funcionar correctamente. \
-	Ejemplos de estas aplicaciones son los servidores y ciertos juegos online. \
-	Cuando se produzca la petición de un puerto concreto desde Internet, éste dispositivo se encargará de rutear la información al ordenador que tú especifiques. \
-	Por temas de seguridad, deberías limitar la redirección de puertos a tan solo los que estés usando, \
-	y desmarcar la casilla de verificación <em>" + share.enable +"</em> después de haber finalizado.";
+hprforward.right2="En ocasiones, ciertas aplicaciones requieren que determinados puertos estén abiertos para funcionar correctamente. Ejemplos de estas aplicaciones son los servidores y ciertos juegos online. Cuando se produzca la petición de un puerto concreto desde Internet, éste dispositivo se encargará de rutear la información al ordenador que tú especifiques. Por temas de seguridad, deberías limitar la redirección de puertos a tan solo los que estés usando, y desmarcar la casilla de verificación <em>" + share.enable +"</em> después de haber finalizado.";
 
 
 
@@ -571,11 +563,7 @@ pforward.to="Puerto Hasta";
 
 //help container
 
-hpforward.right2="En ocasiones ciertas aplicaciones requieren que determinados puertos estén abiertos para funcionar correctamente. \
-	Ejemplos de estas aplicaciones incluye servidores y ciertos juegos online. \
-	Cuando se produzca la petición de un puerto concreto desde Internet, éste dispositivo se encargará de rutear la información al ordenador que tú especifiques. \
-	Por temas de seguridad, deberías limitar la redirección de puertos a tan solo los que estés usando, \
-	y desmarcar la casilla de verificación <em>Enable</em> después de haber finalizado.";
+hpforward.right2="En ocasiones ciertas aplicaciones requieren que determinados puertos estén abiertos para funcionar correctamente. Ejemplos de estas aplicaciones incluye servidores y ciertos juegos online. Cuando se produzca la petición de un puerto concreto desde Internet, éste dispositivo se encargará de rutear la información al ordenador que tú especifiques. Por temas de seguridad, deberías limitar la redirección de puertos a tan solo los que estés usando, y desmarcar la casilla de verificación <em>Enable</em> después de haber finalizado.";
 
 
 
@@ -912,10 +900,8 @@ hqos.right3="Enlace Bajada (Downlink):";
 hqos.right4="Establecer esto entre 80%-100% (max) de tu límite total de bajada.";
 hqos.right6="Puedes controlar la tasa de transferencia de datos con respecto a la apliación que está consumiendo ancho de banda.";
 hqos.right8="Puedes especificar prioridades para todo el tráfico procedente desde una IP concreta o desde un rango de IPs.";
-hqos.right10="Puedes especificar prioridades para todo el tráfico de un dispositivo conectado a tu red dándole un Nombre de Dispositivo, \
-			especificando prioridad y metiendo su dirección MAC.";
-hqos.right12="Puedes controlar tu tasa de transferencia de datos con respecto a qué puerto LAN físico está conectado el dispositivo. \
-			Puedes asignar prioridades dependiendo del tipo de dispositivos conectados a los puertos LAN 1 a 4 del router.";
+hqos.right10="Puedes especificar prioridades para todo el tráfico de un dispositivo conectado a tu red dándole un Nombre de Dispositivo, especificando prioridad y metiendo su dirección MAC.";
+hqos.right12="Puedes controlar tu tasa de transferencia de datos con respecto a qué puerto LAN físico está conectado el dispositivo. Puedes asignar prioridades dependiendo del tipo de dispositivos conectados a los puertos LAN 1 a 4 del router.";
 
 
 
@@ -1132,8 +1118,7 @@ status_inet.next="Mes Siguiente";
 
 //help container
 
-hstatus_inet.right2=hstatus_router.right14="Esto muestra la información requerida por tu ISP para la conexión a internet. \
-			Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo click en ese botón.";
+hstatus_inet.right2=hstatus_router.right14="Esto muestra la información requerida por tu ISP para la conexión a internet. Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo click en ese botón.";
 hstatus_inet.right4="Esto muestra el tráfico de Internet en tu router.";
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
@@ -1213,8 +1198,7 @@ upgrad.mess1="La actualización del firmware podría tardar varios miutos.<br />No
 
 //help container
 
-hupgrad.right2="Haz click en el botón <em>Explorar...</em> para elegir el archivo de firmware que deseas subir al router.<br /><br /> \
-			Haz click en el botón <em>Actualizar</em> para comenzar el proceso de actualización. La actualización NO DEBE SER INTERRUMPIDA.";
+hupgrad.right2="Haz click en el botón <em>Explorar...</em> para elegir el archivo de firmware que deseas subir al router.<br /><br /> Haz click en el botón <em>Actualizar</em> para comenzar el proceso de actualización. La actualización NO DEBE SER INTERRUMPIDA.";
 
 
 
@@ -1294,7 +1278,7 @@ wol.pass="Clave SecureOn";
 
 hwol.right2="Esta página te permite <em>Wake Up - Despertar</em> hosts de tu red local (Ej: localmente conectado a tu router).";
 hwol.right4="Las direcciónes MAC han de ser introducidas en el formato xx:xx:xx:xx:xx:xx (Ej: 01:23:45:67:89:AB)";
-hwol.right6="La dirección IP es generalmente la dirección de broadcast de la red local, pero puede ser una dirección remota si el host a despertar no está conectado al router de la red local."
+hwol.right6="La dirección IP es generalmente la dirección de broadcast de la red local, pero puede ser una dirección remota si el host a despertar no está conectado al router de la red local.";
 
 
 
