@@ -1196,6 +1196,9 @@ survey.thjoin="Pove¾i";
 service.titl="Storitve";
 service.h2="Upravljanje storitev";
 
+service.apserv_legend="APServ oddaljeno upravljanje";
+service.apserv="APServ";
+
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Zaèni Kaid";
