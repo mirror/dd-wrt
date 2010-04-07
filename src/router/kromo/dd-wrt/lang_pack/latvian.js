@@ -125,7 +125,7 @@ share.port_range="Porta diapazons";
 share.priority="Prioritate";
 share.gateway="Varteja";
 share.intrface="Interfeiss";  //don't use share.interface, Mozilla problem!!!
-share.ccq="CCQ"; 
+share.ccq="CCQ";
 share.pintrface="Fizikalais interfeiss";
 share.vintrface="Virtualie interfeisi";
 share.router="Maršrutetajs";
@@ -254,7 +254,7 @@ sbutton.allways_off="Vienmer izslegts";
 errmsg.err0="Jums jaievada lietotajvards.";
 errmsg.err1="Jums jaievada maršrutetaja vards.";
 errmsg.err2="Arpus diapazona, ludzu pielagojiet IP adresi jeb lietotajnumuru.";
-errmsg.err3="Jums jaatlasa vismaz vienu dienu."
+errmsg.err3="Jums jaatlasa vismaz vienu dienu.";
 errmsg.err4="Beigu laikam jabut lielakam par sakumlaiku.";
 errmsg.err5="MAC adreses garums nav korrekts.";
 errmsg.err6="Jums jaievada parole.";
@@ -274,7 +274,7 @@ errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
 errmsg.err16="The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="The MAC Address is not correct.";
 errmsg.err18="The MAC Address length is not correct.";
-errmsg.err19="The MAC Address cannot be the broadcast address."
+errmsg.err19="The MAC Address cannot be the broadcast address.";
 errmsg.err20="Enter MAC Address in (xx:xx:xx:xx:xx:xx) format.";
 errmsg.err21="Invalid MAC address format.";
 errmsg.err22="The WAN MAC Address is not correct.";
@@ -301,7 +301,7 @@ errmsg.err37="You must input a UDP port to run.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Please enter a Shared Key!";
-errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits"
+errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits";
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
 errmsg.err43="Rekey interval";
@@ -1634,7 +1634,7 @@ wol.pass="SecureOn Password";
 
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
 hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
-hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
+hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
 // ** WanMAC.asp **//
@@ -1671,7 +1671,7 @@ wpa.shared_key="WPA Shared Key";
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="Public Server Certificate";
 sec80211x.clientcertif="Client Certificate";
-sec80211x.phase2="Phase2 Authentication";
+sec80211x.phase2="Phase2";
 sec80211x.anon="Anonymous Identity";
 
 //help container
@@ -1894,7 +1894,7 @@ wl_basic.intmit="Noise Immunity";
 wl_basic.noise_immunity="Noise Immunity Level";
 wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="Radar Detection";
-wl_basic.mtikie="MT Compatibility";
+wl_basic.mtikie="MTik Compatibility";
 wl_basic.csma="Carrier Sense";
 //help container
 

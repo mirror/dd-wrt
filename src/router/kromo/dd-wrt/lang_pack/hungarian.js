@@ -192,7 +192,7 @@ sbutton.allways_off="Mindig Kikapcsolva";
 errmsg.err0="Adjon meg egy felhasznánevet!";
 errmsg.err1="Adjon meg egy Router nevet!";
 errmsg.err2="Tartományon kívül, kérem állítsa be a kezdõ IP címet vagy a felhasználók számát.";
-errmsg.err3="Legalább egy napot ki kell választania."
+errmsg.err3="Legalább egy napot ki kell választania.";
 errmsg.err4="A befejezés idõpontjának nagyobbnak kell lennie a kezdés idejénél";
 errmsg.err5="A MAC cím hossza nem megfelelõ";
 errmsg.err6="Adjon meg egy jelszót!";
@@ -213,7 +213,7 @@ errmsg.err15="A WAN MAC cím a megengedett tartományon kívül van [00 - ff].";
 errmsg.err16="A MAC cím második karakterének számnak kell lennie : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="A MAC cím helytelen.";
 errmsg.err18="A MAC cím hossza helytelen.";
-errmsg.err19="A MAC cím nem lehet a szórási cím."
+errmsg.err19="A MAC cím nem lehet a szórási cím.";
 errmsg.err20="A MAC címet az alábbi formában (xx:xx:xx:xx:xx:xx) adja meg.";
 errmsg.err21="Helytelen MAC cím formátum.";
 errmsg.err22="A WAN MAC címe helytelen.";
@@ -1372,7 +1372,7 @@ wol.pass="SecureOn jelszó";
 
 hwol.right2="Ezen az oldalon elindíthatja állomásait a helyi hálózatról (pl. melyek közvetlenül kapcsolódnak a routerhez.) Manuálisan elindíthatja az állomásokat, ha rákattint a <em>"+sbutton.wol+"</em> gombra, illetve automatikusan ütemezheti az indításukat.";
 hwol.right4="A MAC címet/címeket a következõ formátumban adja meg: xx:xx:xx:xx:xx:xx (p.l. 01:23:45:67:89:AB) (szóközzel tudja a címeket elválasztani)";
-hwol.right6="Az IP cím általában egy üzenetszórási cím a helyi hálózatban, de egy távoli kiszolgáló címe is lehet, amely nem kapcsolódik a helyi hálózathoz."
+hwol.right6="Az IP cím általában egy üzenetszórási cím a helyi hálózatban, de egy távoli kiszolgáló címe is lehet, amely nem kapcsolódik a helyi hálózathoz.";
 
 
 // **************************************************************** WanMAC.asp **********************************************************************//

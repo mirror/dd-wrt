@@ -243,7 +243,7 @@ sbutton.allways_off="Sempre Off";
 errmsg.err0="Devi inserire un nome utente.";
 errmsg.err1="Devi inserire un nome router.";
 errmsg.err2="Fuori Intervallo, modifica l'indirizzo IP o il numero degli utenti.";
-errmsg.err3="Devi almeno selezionare un giorno."
+errmsg.err3="Devi almeno selezionare un giorno.";
 errmsg.err4="L'ora finale deve essere maggiore di quella iniziale.";
 errmsg.err5="La lunghezza dell'indirizzo MAC non è corretta.";
 errmsg.err6="Devi inserire una password.";
@@ -263,7 +263,7 @@ errmsg.err15="L'indirizzo MAC della WAN è fuori intervallo [00 - ff].";
 errmsg.err16="Il secondo carattere del MAC deve essere pari : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="Indirizzo MAC errato.";
 errmsg.err18="La lunghezza MAC errata.";
-errmsg.err19="L'indirizzo del MAC non può essere quello di broadcast."
+errmsg.err19="L'indirizzo del MAC non può essere quello di broadcast.";
 errmsg.err20="Inserisci il MAC nel formato (xx:xx:xx:xx:xx:xx).";
 errmsg.err21="Formato dell'indirizzo MAC errato.";
 errmsg.err22="Indirizzo MAC della WAN errato.";
@@ -288,7 +288,7 @@ errmsg.err37="Devi inserire una porta UDP da usare.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Inserisci una Chiave Condivisa!";
-errmsg.err39="Chiave non valida, deve essere tra gli 8 e 63 caratteri ASCII o 64 cifre esagesimali"
+errmsg.err39="Chiave non valida, deve essere tra gli 8 e 63 caratteri ASCII o 64 cifre esagesimali";
 errmsg.err40="Devi inserire una chiave per il campo Chiave ";
 errmsg.err41="Chiave di lunghezza non valida ";
 errmsg.err43="Intervallo richiesta chiave";
@@ -1503,7 +1503,7 @@ wol.pass="SecureOn Password";
 //help container
 hwol.right2="Questa pagina permette di fare il <em>Wake Up</em> degli host sulla tua rete locale (cioè connessi localmente al tuo router).";
 hwol.right4="Gli indirizzi MAC sono inseriti nel formato xx:xx:xx:xx:xx:xx (cioè 01:23:45:67:89:AB)";
-hwol.right6="E' l'indirizzo IP di broadcast tipico per la rete locale, ma potrebbe essere un indirizzo remoto se host obiettivo non è connesso alla rete locale del router."
+hwol.right6="E' l'indirizzo IP di broadcast tipico per la rete locale, ma potrebbe essere un indirizzo remoto se host obiettivo non è connesso alla rete locale del router.";
 
 
 // ** WanMAC.asp **//

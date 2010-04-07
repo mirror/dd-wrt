@@ -219,7 +219,7 @@ sbutton.allways_off="Alles Aus";
 errmsg.err0="Sie müssen einen Nutzernamen angeben.";
 errmsg.err1="Sie müssen einen Routernamen angeben.";
 errmsg.err2="Auserhalb des zulässigen Bereichs, bitte verändern Sie die Start-IP-Adresse oder die anzahl der Nutzer.";
-errmsg.err3="Sie müssen einen Tag auswählen."
+errmsg.err3="Sie müssen einen Tag auswählen.";
 errmsg.err4="Die Endzeit muß nach der die Startzeit liegen.";
 errmsg.err5="Die MAC-Adressenlänge ist nicht korrekt.";
 errmsg.err6="Sie müssen einen Nutzernamen angeben.";
@@ -240,7 +240,7 @@ errmsg.err15="Die WAN-MAC-Adresse ist außerhalb des gültigen Bereichs [00 - ff].
 errmsg.err16="Der zweite Wert der MAC-Adresse muß eine gerade Zahl sein : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="Diese MAC-Adresse ist nicht korrekt.";
 errmsg.err18="Die Länge der MAC-Adresse ist nicht korrekt.";
-errmsg.err19="Die MAC-Adresse kann nicht die Broadcast-Adresse sein."
+errmsg.err19="Die MAC-Adresse kann nicht die Broadcast-Adresse sein.";
 errmsg.err20="Geben Sie die MAC-Adresse im Format (xx:xx:xx:xx:xx:xx) ein.";
 errmsg.err21="Ungültiges MAC-Adressen-Format.";
 errmsg.err22="Die WAN-MAC-Adresse ist nicht korrekt.";
@@ -1558,7 +1558,7 @@ wol.pass="SecureOn Password";
 
 hwol.right2="Diese Seite erlaubt Ihnen, definierte Hosts in Ihrem Netzwerk aufzuwecken (insofern Sie mit Ihrem Router lokal verbunden sind).";
 hwol.right4="Die MAC-Adressen werden in folgendem Format angegeben xx:xx:xx:xx:xx:xx (Bsp. 01:23:45:67:89:AB)";
-hwol.right6="IP-Adresse ist typischerweise die Broadcast-Adresse für Ihr lokales Netzwerk. Es kann aber auch eine Remote-Adresse sein wenn der Host nicht in Ihrem lokalen Netzwerk verbunden ist."
+hwol.right6="IP-Adresse ist typischerweise die Broadcast-Adresse für Ihr lokales Netzwerk. Es kann aber auch eine Remote-Adresse sein wenn der Host nicht in Ihrem lokalen Netzwerk verbunden ist.";
 
 // **************************************************************** WanMAC.asp **********************************************************************//
 
@@ -1570,8 +1570,7 @@ wanmac.wlan="Klone WLAN MAC";
 
 //help container
 
-hwanmac.right2="Manche Anbieter setzen eine Registrierung Ihrer MAC-Adresse vorraus. \
-			Wenn Sie Ihre MAC-Adresse nicht neu registrieren möchten, können Sie hier Ihre MAC-Adresse klonen, so wie sie bei Ihrem Anbieter registriert ist.";
+hwanmac.right2="Manche Anbieter setzen eine Registrierung Ihrer MAC-Adresse vorraus. Wenn Sie Ihre MAC-Adresse nicht neu registrieren möchten, können Sie hier Ihre MAC-Adresse klonen, so wie sie bei Ihrem Anbieter registriert ist.";
 
 
 // **************************************************************** WL_WPATable.asp **************************************************************//

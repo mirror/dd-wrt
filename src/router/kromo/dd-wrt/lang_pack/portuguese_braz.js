@@ -188,7 +188,7 @@ sbutton.preview="Pré-Visualizar";
 errmsg.err0="Você deve inserir um Nome de Usuário.";
 errmsg.err1="Você deve inserir o Nome do Roteador.";
 errmsg.err2="Endereço IP fora da classe, por favor ajuste o endereço IP inicial ou o número de usuários.";
-errmsg.err3="Você deve selecionar um dia no mínimo."
+errmsg.err3="Você deve selecionar um dia no mínimo.";
 errmsg.err4="O tempo final deve ser maior que o tempo inicial.";
 errmsg.err5="O tamanho do Endereço MAC não está correto.";
 errmsg.err6="Você deve inserir uma senha.";
@@ -209,7 +209,7 @@ errmsg.err15="O Endereço MAC da WAN estão fora de alcance [00 - ff].";
 errmsg.err16="O segundo caractere do Endereço MAC deve ser sempre um número: [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="O Endereço MAC não está correto.";
 errmsg.err18="O tamanho do Endereço MAC não está correto.";
-errmsg.err19="O Endereço MAC não pode ser o endereço de broadcast."
+errmsg.err19="O Endereço MAC não pode ser o endereço de broadcast.";
 errmsg.err20="Insira o Endereço MAC no formato (xx:xx:xx:xx:xx:xx).";
 errmsg.err21="Formato Inválido de Endereço MAC.";
 errmsg.err22="O Endereço MAC da WAN não está correto.";
@@ -234,7 +234,7 @@ errmsg.err37="Você deve inserir uma porta UDP para funcionar.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Por favor insira uma Chave Compartilhada!";
-errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais."
+errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais.";
 errmsg.err40="Você deve inserir uma chave no campo Chave ";
 errmsg.err41="Tamanho inválido na Chave ";
 errmsg.err43="Intervalo de Renovação de Chave";
@@ -258,9 +258,7 @@ errmsg.err49="Radius está disponível somente no modo Access Point.";
 errmsg.err50="Você deve inserir uma SSID.";
 
 // Management.asp error messages
-errmsg.err51="O Roteador está atualmente configurado com senha padrão. \
-			Como medida de segurança, você deve alterar a senha antes de habilitar o Gerenciamento Remoto. \
-			Clique em OK para mudar sua senha. Clique em Cancelar pra deixar o Gerenciamento Remoto desabilitado.";
+errmsg.err51="O Roteador está atualmente configurado com senha padrão. Como medida de segurança, você deve alterar a senha antes de habilitar o Gerenciamento Remoto. Clique em OK para mudar sua senha. Clique em Cancelar pra deixar o Gerenciamento Remoto desabilitado.";
 errmsg.err52="Verificação de Senha está incorreta.";
 
 // Port_Services.asp error messages
@@ -414,9 +412,7 @@ ddnsm.all_noip="Sem conexão à internet";
 
 
 
-hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domínios ao invés de endereços IPs. \
-	O serviço gerencia mudanças no endereço IP e atualiza as informações do seu domínio dinamicamente. \
-	Você deve se inscrever no serviço através de um dos sites: DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou Personalizado.";
+hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domínios ao invés de endereços IPs. O serviço gerencia mudanças no endereço IP e atualiza as informações do seu domínio dinamicamente. Você deve se inscrever no serviço através de um dos sites: DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou Personalizado.";
 
 
 // ******************************************* Diagnostics.asp *******************************************//
@@ -536,11 +532,7 @@ prforward.h2="Encaminhamento de Faixa de Portas";
 prforward.legend="Encaminhamentos";
 prforward.app="Aplicação";
 
-hprforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. \
-	Exemplos dessas aplicações incluem servidores e alguns jogos on-line. \
-	Quando uma requisição à uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. \
-	Devido à interesses em segurança, você pode limitar o encaminhamento de portas para somente às portas em uso, \
-	e desmarcar a opção <em>" + share.enable +"</em> após ter finalizado.";
+hprforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. Exemplos dessas aplicações incluem servidores e alguns jogos on-line. Quando uma requisição à uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. Devido à interesses em segurança, você pode limitar o encaminhamento de portas para somente às portas em uso, e desmarcar a opção <em>" + share.enable +"</em> após ter finalizado.";
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
@@ -554,11 +546,7 @@ pforward.to="Para a Porta";
 
 
 
-hpforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. \
-	Exemplos dessas aplicações incluem servidores e alguns jogos on-line. \
-	Quando uma requisição à uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. \
-	Devido à interesses em segurança, você pode limitar o encaminhamento de portas para somente às portas em uso, \
-	e desmarcar a opção <em>Habilitar</em> após ter finalizado.";
+hpforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. Exemplos dessas aplicações incluem servidores e alguns jogos on-line. Quando uma requisição à uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. Devido à interesses em segurança, você pode limitar o encaminhamento de portas para somente às portas em uso, e desmarcar a opção <em>Habilitar</em> após ter finalizado.";
 
 
 // ******************************************* Hotspot.asp *******************************************//
@@ -855,10 +843,8 @@ hqos.right3="Downlink:";
 hqos.right4="Defina para 80%~100% (máx) do seu limite total de download.";
 hqos.right6="Você pode controlar sua taxa de dados respeitando a aplicação que está consumindo a largura de banda.";
 hqos.right8="Você pode especificar a prioridade para todo o tráfego de um endereço IP ou faixa de endereços IP.";
-hqos.right10="Você pode especificar prioridades para todo o tráfego de um dispositivo de sua rede dando a ele um Nome de Dispositivo, \
-			especificando a prioridade e inserindo seu endereço MAC.";
-hqos.right12="Você pode controlar sua taxa de dados de acordo com qual porta LAN seu dispositivo está fisicamente conectado. \
-			Você pode atribuir prioridades de acordo com os dispositivos conectados nas portas LAN de 1 à 4.";
+hqos.right10="Você pode especificar prioridades para todo o tráfego de um dispositivo de sua rede dando a ele um Nome de Dispositivo, especificando a prioridade e inserindo seu endereço MAC.";
+hqos.right12="Você pode controlar sua taxa de dados de acordo com qual porta LAN seu dispositivo está fisicamente conectado. Você pode atribuir prioridades de acordo com os dispositivos conectados nas portas LAN de 1 à 4.";
 
 
 // ******************************************* RouteTable.asp *******************************************//
@@ -1042,8 +1028,7 @@ status_inet.next="Next Month";
 
 //help container
 
-hstatus_inet.right2="Exibe todas as informações necessárias pelo seu ISP para conexão com a Internet. \
-				Estas informações são fornecidas através da aba de <i>Configuração</i>. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
+hstatus_inet.right2="Exibe todas as informações necessárias pelo seu ISP para conexão com a Internet. Estas informações são fornecidas através da aba de <i>Configuração</i>. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
 hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
@@ -1114,8 +1099,7 @@ upgrad.mess1="A atualização do firmware pode levar alguns minutos.<br />Não desl
 
 
 
-hupgrad.right2="Clique no botão <em>Pesquisar...</em> para escolher o arquivo de firmware a ser carregado no roteador.<br /><br /> \
-			Clique no botão <em>Atualizar</em> para iniciar o processo de atualização. A atualização não deve ser interrompida.";
+hupgrad.right2="Clique no botão <em>Pesquisar...</em> para escolher o arquivo de firmware a ser carregado no roteador.<br /><br /> Clique no botão <em>Atualizar</em> para iniciar o processo de atualização. A atualização não deve ser interrompida.";
 
 
 // ******************************************* UPnP.asp *******************************************//
@@ -1185,7 +1169,7 @@ wol.pass="SecureOn Password";
 
 hwol.right2="Esta página lhe permite <em>Acordar</em> hosts na sua rede local (ex.: conectado localmente ao roteador).";
 hwol.right4="Endereços MAC são inseridos no formato xx:xx:xx:xx:xx:xx (ex.: 01:23:45:67:89:AB)";
-hwol.right6="O Endereço IP é tipicamente o endereço broadcast para a rede local, mas pode ser um endereço remoto se o host alvo não estiver conectado à rede local do roteador."
+hwol.right6="O Endereço IP é tipicamente o endereço broadcast para a rede local, mas pode ser um endereço remoto se o host alvo não estiver conectado à rede local do roteador.";
 
 
 // ******************************************* WanMAC.asp *******************************************//
