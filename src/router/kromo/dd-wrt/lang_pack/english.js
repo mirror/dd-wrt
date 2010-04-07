@@ -127,7 +127,7 @@ share.port_range="Port Range";
 share.priority="Priority";
 share.gateway="Gateway";
 share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
-share.ccq="CCQ"; 
+share.ccq="CCQ";
 share.pintrface="Physical Interface";
 share.vintrface="Virtual Interfaces";
 share.router="Router";
@@ -261,7 +261,7 @@ var errmsg = new Object();
 errmsg.err0="You must input a username.";
 errmsg.err1="You must input a Router Name.";
 errmsg.err2="Out of range, please adjust start IP address or user&#39;s numbers.";
-errmsg.err3="You must at least select a day."
+errmsg.err3="You must at least select a day.";
 errmsg.err4="The end time must be bigger than start time.";
 errmsg.err5="The MAC Address length is not correct.";
 errmsg.err6="You must input a password.";
@@ -281,7 +281,7 @@ errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
 errmsg.err16="The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="The MAC Address is not correct.";
 errmsg.err18="The MAC Address length is not correct.";
-errmsg.err19="The MAC Address cannot be the broadcast address."
+errmsg.err19="The MAC Address cannot be the broadcast address.";
 errmsg.err20="Enter MAC Address in (xx:xx:xx:xx:xx:xx) format.";
 errmsg.err21="Invalid MAC address format.";
 errmsg.err22="The WAN MAC Address is not correct.";
@@ -308,7 +308,7 @@ errmsg.err37="You must input a UDP port to run.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Please enter a Shared Key!";
-errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits"
+errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits";
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
 errmsg.err43="Rekey interval";
@@ -1706,7 +1706,7 @@ wol.pass="SecureOn Password";
 var hwol = new Object();
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
 hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
-hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
+hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
 // ** WanMAC.asp **//
