@@ -141,8 +141,9 @@ addEvent(window, "unload", function() {
 			</div>
 	</fieldset>
 		</div>
-	</div>
 <% ifndef("RADIUSPLUGIN", "-->"); %>
+	</div>
+
 </fieldset><br/>
 
 
