@@ -578,6 +578,12 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_ZIMBABWE, NULL1_WORLD, "ZW", "ZIMBABWE", YES, NO, YES, 7000}
 };
 
+static char regionCountryCodes[2][31][32] = {
+	{ "EU", "BG","HR","CY","CZ","DK","EE","FI","FR","F2","DE","GR","HU","IE","IT","LV","LI","LT","LU","MK","NL","NO","PL","PT","RO","SK","SI","ES","SE","CH","GB" },
+	{ "US", "US", "CA", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
+	{ "_D", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }
+};
+
 unsigned int getRegDomain(const char *country)
 {
 	int i;
@@ -608,21 +614,92 @@ char *getIsoName(const char *country)
 	return 0;
 }
 
+#ifdef HAVE_BUFFALO
+//char 
+static void *getUEnv(char *name)
+{
+#ifdef HAVE_WZRG300NH
+#define UOFFSET 0x40000
+#else
+#define UOFFSET 0x3E000
+#endif
+        static char res[64];
+        memset(res, 0, sizeof(res));
+	//fprintf(stderr,"[u-boot env]%s\n",name);
+        FILE *fp = fopen("/dev/mtdblock/0", "rb");
+        fseek(fp, UOFFSET, SEEK_SET);
+        char *mem = malloc(0x2000);
+        fread(mem, 0x2000, 1, fp);
+        fclose(fp);
+        int s = (0x2000-1) - strlen(name);
+        int i;
+        int l = strlen(name);
+        for (i = 0; i < s; i++) {
+                if (!strncmp(mem + i, name, l)) {
+                        strcpy(res, mem + i + l + 1);
+                        free(mem);
+                        return res;
+                }
+        }
+        free(mem);
+        return NULL;
+}
+#endif
+
+static int isValidCountry(char *region, char *country) {
+	int i, j;
+	for(i = 0; i < 3; i++) {
+		if(!strcmp(region, regionCountryCodes[i][0])) {
+			for(j = 1; j < 31; j++) {
+				//fprintf(stderr, "[%s] %s\n", country, regionCountryCodes[i][j]);
+				if(!strcmp(country, regionCountryCodes[i][j])) {
+					return 1;
+				}
+			}
+			return 0;
+		}
+	}
+	// fallback
+	if(strcmp(region, "US") && !strcmp(country, "US")) {
+		return 1;
+	}
+	return 0;
+}
+
 static char *countries = NULL;
 char *getCountryList(void)
 {
 	int i;
+	char country[80];
+	char *region = getUEnv("region");
+	if( region == NULL) {
+		region = "_D";
+	}
 	if (countries == NULL) {
 		int count = 0;
 		for (i = 0; i < N(allCountries); i++) {
-			count += strlen(allCountries[i].name) + 1;
+#ifdef HAVE_BUFFALO
+			sprintf(country, "%s", allCountries[i].isoName);
+			if(isValidCountry(region, country)) {
+#endif
+				count += strlen(allCountries[i].name) + 1;
+#ifdef HAVE_BUFFALO
+			}
+#endif
 		}
 		count++;
 		countries = malloc(count);
 		memset(countries, 0, count);
 		for (i = 0; i < N(allCountries); i++) {
-			strcat(countries, allCountries[i].name);
-			strcat(countries, " ");
+#ifdef HAVE_BUFFALO
+                        sprintf(country, "%s", allCountries[i].isoName);
+                        if(isValidCountry(region, country)) {
+#endif
+				strcat(countries, allCountries[i].name);
+				strcat(countries, " ");
+#ifdef HAVE_BUFFALO
+                        }
+#endif
 		}
 	}
 	return countries;
