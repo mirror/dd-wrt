@@ -177,6 +177,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #endif	
 	{"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
+	{"dhcp_start", "2", 0},			/* DHCP Start IP */
+	{"dhcp_num", "64", 0},			/* DHCP Start IP */
 #elif HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
 	{"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
