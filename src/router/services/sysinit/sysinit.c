@@ -259,6 +259,16 @@ static void buffalo_defaults(int force)
 			nvram_set("ath0_ssid", eabuf);
 		}
 
+		char *region = getUEnv("region");
+		if(region == NULL) {
+			region = "US";
+		}
+		if(!strcmp(region, "US")) {
+			nvram_set("ath0_regdomain", "UNITED_STATES");
+		} else if(!strcmp(region, "EU")) {
+			nvram_set("ath0_regdomain", "GERMANY");
+		}
+
 	}
 }
 #endif
