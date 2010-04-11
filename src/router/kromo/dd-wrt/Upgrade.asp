@@ -9,6 +9,17 @@ function process_aborted(F) {
 	return false;
 }
 
+
+function extcheck(IMAGE, ext)
+{
+	for (i=0; i < 4; i++)	{
+		if (ext[i] != IMAGE.charAt(len-4+i)){
+			return false;
+		}
+	}
+	return true;
+}
+
 function upgrade(F,id) {
 	if (F.file.value == "")	{
 		alert(errmsg.err60);
@@ -16,12 +27,11 @@ function upgrade(F,id) {
 	}
 	var len = F.file.value.length;
 	var ext = new Array('.','b','i','n');
+	var ext2 = new Array('.','e','n','c');
 	var IMAGE = F.file.value.toLowerCase();
-	for (i=0; i < 4; i++)	{
-		if (ext[i] != IMAGE.charAt(len-4+i)){
+	if (!extcheck(IMAGE,ext) && !extcheck(IMAGE,ext2)) {
 			alert(errmsg.err61);
-			return false;
-		}
+			return false;	
 	}
 
 	choose_disable(F.Upgrade_b);
