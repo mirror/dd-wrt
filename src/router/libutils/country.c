@@ -644,7 +644,6 @@ static void *getUEnv(char *name)
         free(mem);
         return NULL;
 }
-#endif
 
 static int isValidCountry(char *region, char *country) {
 	int i, j;
@@ -665,16 +664,19 @@ static int isValidCountry(char *region, char *country) {
 	}
 	return 0;
 }
+#endif
 
 static char *countries = NULL;
 char *getCountryList(void)
 {
 	int i;
 	char country[80];
+#ifdef HAVE_BUFFALO
 	char *region = getUEnv("region");
 	if( region == NULL) {
 		region = "_D";
 	}
+#endif
 	if (countries == NULL) {
 		int count = 0;
 		for (i = 0; i < N(allCountries); i++) {
