@@ -7,12 +7,13 @@ buffalo_flash-update:
 
 
 buffalo_flash: 
-	if test -e "buffalo_flash/src/Makefile"; then make -C buffalo_flash/src; fi
+	if test -e "buffalo_flash/Makefile"; then make -C buffalo_flash; fi
 	@true
+
 buffalo_flash-clean:
-	if test -e "buffalo_flash/src/Makefile"; then make -C buffalo_flash/src clean; fi
+	if test -e "buffalo_flash/Makefile"; then make -C buffalo_flash clean; fi
 	@true
 
 buffalo_flash-install:
-	if test -e "buffalo_flash/src/Makefile"; then make -C buffalo_flash/src install; fi
+	if test -e "buffalo_flash/Makefile"; then make -C buffalo_flash install; fi
 	@true
