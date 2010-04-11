@@ -329,6 +329,48 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		}
 
 		if (i == 0) {	// check code pattern, the first data must
+#ifdef HAVE_BUFFALO
+			if (!strncmp(buf, "bgn", 3)) {
+				char *write_argv_buf[4];
+				write_argv_buf[0] = "buffalo_flash";
+				write_argv_buf[1] = upload_fifo;
+				write_argv_buf[2] = NULL;
+
+				if (!mktemp(upload_fifo) ||
+				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret =
+				     _evalpid(write_argv_buf, NULL, 0, &pid))
+				    || !(fifo = fopen(upload_fifo, "w"))) {
+					if (!ret)
+						ret = errno;
+					goto err;
+				}
+				goto write_data;
+			} else {
+				if (!mktemp(upload_fifo) ||
+				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
+				    (ret = _evalpid(write_argv, NULL, 0, &pid))
+				    || !(fifo = fopen(upload_fifo, "w"))) {
+					if (!ret)
+						ret = errno;
+					goto err;
+				}
+
+			}
+
+#else
+			/*
+			 * Feed write from a temporary FIFO 
+			 */
+			if (!mktemp(upload_fifo) ||
+			    mkfifo(upload_fifo, S_IRWXU) < 0 ||
+			    (ret = _evalpid(write_argv, NULL, 0, &pid)) ||
+			    !(fifo = fopen(upload_fifo, "w"))) {
+				if (!ret)
+					ret = errno;
+				goto err;
+			}
+#endif
 			// have code pattern
 			char ver[40];
 			long ver1, ver2, ver3;
@@ -339,9 +381,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			ver2 = convert_ver(INTEL_FLASH_SUPPORT_VERSION_FROM);
 			ver3 = convert_ver(BCM4712_CHIP_SUPPORT_VERSION_FROM);
 
-			
-			fprintf(stderr,"upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
-			     ver, ver1, ver2, ver3);
+			fprintf(stderr,
+				"upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
+				ver, ver1, ver2, ver3);
 #ifdef HAVE_WIKINGS
 #ifdef HAVE_SUB3
 #define V "XMED"
@@ -356,7 +398,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			}
 #undef V
 #endif
-
 
 #ifndef HAVE_WIKINGS
 #ifdef HAVE_WRT160NL
@@ -387,18 +428,21 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 
 			if (check_hw_type() == BCM4712_CHIP && ver1 < ver3) {
-				fprintf(stderr,"The old firmware version can't support bcm4712 chipset\n");
-				fprintf(stderr,"Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
-				     ver, BCM4712_CHIP_SUPPORT_VERSION_FROM);
+				fprintf(stderr,
+					"The old firmware version can't support bcm4712 chipset\n");
+				fprintf(stderr,
+					"Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
+					ver, BCM4712_CHIP_SUPPORT_VERSION_FROM);
 				goto write_data;
 			}
 
-			fprintf(stderr,"code pattern correct!\n");
+			fprintf(stderr, "code pattern correct!\n");
 			*total -= count;
 #ifdef HAVE_WRT160NL
 			safe_fwrite(buf, 1, count, fifo);	// we have to write the whole header to flash too
 #else
-			safe_fwrite(&buf[sizeof(struct code_header)], 1,count - sizeof(struct code_header), fifo);
+			safe_fwrite(&buf[sizeof(struct code_header)], 1,
+				    count - sizeof(struct code_header), fifo);
 #endif
 			i++;
 			continue;
