@@ -201,6 +201,7 @@ include rules/mtr.mk
 include rules/snoop.mk
 include rules/aoss.mk
 include rules/ap-serv.mk
+include rules/buffalo_flash.mk
 # Generic rules
 #
 
