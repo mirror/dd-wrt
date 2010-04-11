@@ -260,17 +260,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		ACTION("ACT_WEB_UPGRADE");
 	int uploadcount = 0;
 
-	/*
-	 * Feed write from a temporary FIFO 
-	 */
-	if (!mktemp(upload_fifo) ||
-	    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-	    (ret = _evalpid(write_argv, NULL, 0, &pid)) ||
-	    !(fifo = fopen(upload_fifo, "w"))) {
-		if (!ret)
-			ret = errno;
-		goto err;
-	}
 
 	/*
 	 * Set nonblock on the socket so we can timeout 
