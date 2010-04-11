@@ -184,6 +184,7 @@ obj-$(CONFIG_MTR) += mtr
 obj-$(CONFIG_SNOOP) += snoop
 obj-$(CONFIG_AOSS) += aoss
 obj-$(CONFIG_AP_SERV) += ap-serv
+obj-$(CONFIG_BUFFALO) += buffalo_flash
 
 obj-y+=anchorfree
 obj-y+=ttraff
