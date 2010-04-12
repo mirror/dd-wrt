@@ -43,6 +43,7 @@ int (*wfputs) (char *buf, webs_t fp) = NULL;
 char *(*live_translate) (char *tran) = NULL;
 websRomPageIndexType *websRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
+void (*validate_cgi) (webs_t fp) = NULL;
 
 #ifdef HAVE_HTTPS
 int do_ssl;
@@ -82,6 +83,7 @@ void initWeb(struct Webenvironment *env)
 	cprintf("set live_translate\n");
 	live_translate = env->Plive_translate;
 	GOZILA_GET = env->PGOZILA_GET;
+	validate_cgi = env->Pvalidate_cgi;
 }
 
 struct onload onloads[] = {
@@ -589,6 +591,9 @@ static char *s_conditions[] = {
 #endif
 #ifdef HAVE_MILKFISH
 	"MILKFISH",
+#endif
+#ifdef HAVE_BUFFALO
+	"HAVE_BUFFALO",
 #endif
 	NULL
 };
