@@ -3671,6 +3671,15 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	return 0;
 }
 
+void ej_getdefaultindex(webs_t wp, int argc, char_t ** argv)
+{
+#ifdef HAVE_BUFFALO
+websWrite(wp,"SetupAssistant.asp");
+#else
+websWrite(wp,"index.asp");
+#endif
+}
+
 void ej_showad(webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_FON
