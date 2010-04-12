@@ -2872,6 +2872,7 @@ void start_firewall(void)
 	 * Block obviously spoofed IP addresses 
 	 */
 	DEBUG("start firewall()...........\n");
+#if 0
 	if (!(dir = opendir("/proc/sys/net/ipv4/conf")))
 		perror("/proc/sys/net/ipv4/conf");
 	while (dir && (file = readdir(dir))) {
@@ -2888,6 +2889,7 @@ void start_firewall(void)
 		}
 	}
 	closedir(dir);
+#endif
 	/*
 	 * Determine LOG level 
 	 */
