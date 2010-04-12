@@ -1513,9 +1513,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 					    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
 					     seq, log_drop);
 #ifndef HAVE_MICRO
-					save2file
-					    ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
-					     seq, log_drop);
+//					save2file
+//					    ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
+//					     seq, log_drop);
 #endif
 				}
 
@@ -1546,9 +1546,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 					    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
 					     seq, log_drop);
 #ifndef HAVE_MICRO
-					save2file
-					    ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
-					     seq, log_drop);
+//					save2file
+//					    ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
+//					     seq, log_drop);
 #endif
 	}
 	/*
@@ -1895,7 +1895,11 @@ static void filter_input(void)
 		}
 	}
 #endif
-
+/*#ifdef HAVE_AP_SERV
+	save2file("-A INPUT -i %s -p udp --dport 22359 -j ACCEPT\n",lanface);
+	save2file("-A INPUT -i %s -p udp --sport 22359 -j ACCEPT\n",lanface);
+	save2file("-A OUTPUT -p udp --sport 22359 -j ACCEPT\n");
+#endif*/
 	/*
 	 * Routing protocol, RIP, accept 
 	 */
