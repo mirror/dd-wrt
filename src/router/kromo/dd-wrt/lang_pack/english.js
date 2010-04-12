@@ -366,6 +366,12 @@ errmsg.err100="Processing...<br/>Please, wait.";
 errmsg.err101="Restoring configuration file...<br/>Please, wait.";
 errmsg.err102="Upgrading firmware...<br/>Please, wait";
 
+var sas = new Object();
+sas.internet_connection="Internet Connection";
+sas.network_settings="Network Settings";
+sas.wireless_settings="Wireless Settings";
+sas.other_settings="Other Settings";
+
 // **  COMMON MENU ENTRIES  **//
 var bmenu= new Object();
 bmenu.setup="Setup";
@@ -2055,6 +2061,18 @@ success.alert3="If you are connected via WLAN, please join the network and then 
 var logout = new Object();
 logout.message="You have successfully logged out.<br />Thank you for using DD-WRT !";
 
+// ** Setup Assistant **//
+var sas = new Object();
+var hsas = new Object();
+sbutton.next = "Next &raquo;";
+sbutton.prev = "&laquo; Previous";
+sas.title = "Setup Assistant";
+hidx.sas = "The Setup Assistant guides you through the basic setup steps to configure your router.";
+hsas.wan = 'The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to "disabled".';
+
+// ** AOSS **//
+var haoss = new Object();
+haoss.basic = 'The "AirStation One-Touch Secure System" AOSS allows you to connect AOSS capable clients to your access point without requiring manual configuration.';
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//

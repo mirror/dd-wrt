@@ -550,6 +550,12 @@ endif
 ifneq ($(CONFIG_L2TP),y)
 	rm -f $(INSTALLDIR)/www/index_l2tp.asp
 endif
+ifneq ($(CONFIG_AOSS),y)
+	rm -f $(INSTALLDIR)/www/AOSS.asp
+endif
+ifneq ($(CONFIG_BUFFALO),y)
+	rm -f $(INSTALLDIR)/www/SetupAssistant.asp
+endif
 ifneq ($(CONFIG_3G),y)
 	rm -f $(INSTALLDIR)/www/index_3g.asp
 endif
@@ -639,7 +645,7 @@ endif
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
 	../../../../tools/strip $(INSTALLDIR)/www/help/*.asp
-	../../../../tools/process_langfile $(INSTALLDIR)/www/lang_pack/english.js $(INSTALLDIR)/www/lang_pack/*.js
+#	../../../../tools/process_langfile $(INSTALLDIR)/www/lang_pack/english.js $(INSTALLDIR)/www/lang_pack/*.js
 	
 ifeq ($(CONFIG_SER),y)	
 	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install	
