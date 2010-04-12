@@ -142,6 +142,7 @@ struct Webenvironment {
 	int (*Pwfputs) (char *buf, webs_t fp);
 	char *(*PGOZILA_GET) (webs_t wp, char *name);
 	char *(*Plive_translate) (char *tran);
+	void (*Pvalidate_cgi) (webs_t fp);
 	websRomPageIndexType *PwebsRomPageIndex;
 #ifdef HAVE_HTTPS
 	int Pdo_ssl;
