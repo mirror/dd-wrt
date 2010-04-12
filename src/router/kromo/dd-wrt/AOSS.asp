@@ -86,7 +86,7 @@ addEvent(window, "unload", function() {
 <legend><% tran("aoss.securitymodes"); %></legend>
 <div class="setting">
 <div class="label"><% tran("aoss.wpaaes"); %></div>
-<input type="checkbox" name="aoss_aes" value="1"<% isChecked("aoss_aes", "1"); %></input>
+<input type="checkbox" name="aoss_aes" value="1"<% isChecked("aoss_aes", "1"); %>></input>
 </div>
 <div class="setting">
 <div class="label"><% tran("aoss.wpatkip"); %></div>
