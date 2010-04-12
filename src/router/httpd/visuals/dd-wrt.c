@@ -3578,7 +3578,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 // BUFFALO Advanced
 		char advanced_label[32];
 		char maskvar[32];
-		strcpy(maskvar,var)
+		strcpy(maskvar,var);
 		rep(maskvar,'.','X');
 		sprintf(advanced_label, "%s_wl_advanced", maskvar);
 		websWrite(wp,
