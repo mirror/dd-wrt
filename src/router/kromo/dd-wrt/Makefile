@@ -555,6 +555,7 @@ ifneq ($(CONFIG_AOSS),y)
 endif
 ifneq ($(CONFIG_BUFFALO),y)
 	rm -f $(INSTALLDIR)/www/SetupAssistant.asp
+	rm -f $(INSTALLDIR)/www/sas_*.asp
 endif
 ifneq ($(CONFIG_3G),y)
 	rm -f $(INSTALLDIR)/www/index_3g.asp
