@@ -1,4 +1,4 @@
-#ifdef HAVE_BUFFALO
+#ifdef HAVE_AOSS
 #define VALIDSOURCE 1
 
 #ifdef WEBS
