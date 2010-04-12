@@ -1158,11 +1158,11 @@ void configure_single_11n(int count)
 			continue;
 		hwaddr = nvram_get(wdsmacname);
 		if (hwaddr != NULL) {
+			if (!hasnawds)
+			    sleep(10);
 			hasnawds = 1;
-			sleep(3);
 			sysprintf("80211n_wlanconfig %s nawdslist set 1 %s", primary,
 				  hwaddr);
-			set_rate(dev, primary);
 		}
 	}
 	if (hasnawds)
