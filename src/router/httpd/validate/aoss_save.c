@@ -83,7 +83,7 @@ int aoss_status(void) {
 void aoss_start(webs_t wp) {
 	fprintf(stderr, "[AOSS] start\n");
 	if(!aoss_status()) {
-		system("startservice aoss");
+		system("startservice_f aoss");
 		fprintf(stderr, "[AOSS] start\n");
 	}
 	return;
