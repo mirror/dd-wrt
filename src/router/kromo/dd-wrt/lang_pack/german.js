@@ -316,6 +316,10 @@ errmsg.err59="Nicht verfügbar! Bitte schalten sie das WLAN-Netzwerk an.";
 errmsg.err60="Bitte geben sie eine Datei zur Aktualisierung an.";
 errmsg.err61="Ungültiges Dateiformat.";
 
+sas.internet_connection="Internet Verbindung";
+sas.network_settings="Netzwerk Einstellungen";
+sas.wireless_settings="Drahtlos Einstellungen";
+sas.other_settings="Andere Einstellungen";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 

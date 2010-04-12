@@ -166,6 +166,14 @@ function vifs_remove_submit(F,I) {
 	F.submit();
 }
 
+function toggle_layer(checkbox, label) {
+	if(checkbox.checked) {
+		show_layer_ext(this,label,true);
+	} else {
+		show_layer_ext(this,label,false);
+	}
+}
+
 function submitcheck(F) {
 	if(F.wl0_ssid)
 		if(F.wl0_ssid.value == ""){
