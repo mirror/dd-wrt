@@ -645,7 +645,7 @@ endif
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
 	../../../../tools/strip $(INSTALLDIR)/www/help/*.asp
-#	../../../../tools/process_langfile $(INSTALLDIR)/www/lang_pack/english.js $(INSTALLDIR)/www/lang_pack/*.js
+	../../../../tools/process_langfile $(INSTALLDIR)/www/lang_pack/english.js $(INSTALLDIR)/www/lang_pack/*.js
 	
 ifeq ($(CONFIG_SER),y)	
 	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install	
