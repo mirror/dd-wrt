@@ -581,6 +581,9 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 static char regionCountryCodes[2][31][32] = {
 	{ "EU", "BG","HR","CY","CZ","DK","EE","FI","FR","F2","DE","GR","HU","IE","IT","LV","LI","LT","LU","MK","NL","NO","PL","PT","RO","SK","SI","ES","SE","CH","GB" },
 	{ "US", "US", "CA", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
+	{ "JP", "JP", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
+	{ "TW", "TW", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
+	{ "AP", "BD", "GU", "HK", "IN", "ID", "KP", "PK", "PG", "PH", "SG", "TH", "VN", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
 	{ "_D", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }
 };
 
@@ -647,7 +650,7 @@ static void *getUEnv(char *name)
 
 static int isValidCountry(char *region, char *country) {
 	int i, j;
-	for(i = 0; i < 3; i++) {
+	for(i = 0; i < 6; i++) {
 		if(!strcmp(region, regionCountryCodes[i][0])) {
 			for(j = 1; j < 31; j++) {
 				//fprintf(stderr, "[%s] %s\n", country, regionCountryCodes[i][j]);
