@@ -1004,7 +1004,7 @@ void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream,
 	do_ej_buffer(temp, stream);
 }
 
-static void validate_cgi(webs_t wp)
+void validate_cgi(webs_t wp)
 {
 	char *value;
 	int i;
@@ -1244,6 +1244,14 @@ static struct gozila_action gozila_actions[] = {
 	 "milkfish_alias_remove"},
 	{"Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART,
 	 "milkfish_sip_message"},
+#endif
+#ifdef HAVE_BUFFALO
+	{"SetupAssistant", "save", "setupassistant", 1, REFRESH, "setupassistant_save"},
+	{"SetupAssistant", "wep_key_generate", "setupassistant", 1, REFRESH, "generate_wep_key"},
+	{"SetupAssistant", "security", "setupassistant", 1, REFRESH, "set_security"},
+	{"SetupAssistant", "keysize", "setupassistant", 1, REFRESH, "security_save"},
+	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
+	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
 #endif
 };
 
@@ -2078,6 +2086,8 @@ char *live_translate(char *tran)
 	FILE *fp;
 	static char temp[256], temp1[256];
 	char *temp2;
+	if (tran==NULL || !strlen(tran))
+	    return "";
 	char *lang = getLanguageName();
 	char buf[64];
 

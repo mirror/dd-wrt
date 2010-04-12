@@ -146,6 +146,7 @@ struct wl_client_mac wl_client_macs[MAX_LEASES];
 // extern struct wl_client_mac *wl_client_macs;
 
 extern char *live_translate(char *tran);
+extern void validate_cgi(webs_t wp);
 
 static int initWeb(void *handle)
 {
@@ -177,6 +178,7 @@ static int initWeb(void *handle)
 	env->PwebsRomPageIndex = websRomPageIndex;
 	env->Plive_translate = live_translate;
 	env->PGOZILA_GET = GOZILA_GET;
+	env->Pvalidate_cgi = validate_cgi;
 	cprintf("call initWeb\n");
 	init(env);
 	free(env);
