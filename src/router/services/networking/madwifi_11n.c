@@ -1079,33 +1079,6 @@ void configure_single_11n(int count)
 		}
 
 	sleep(3);		//give some time to let hostapd initialize
-	int hasnawds=0;
-
-	for (s = 1; s <= 10; s++) {
-		char wdsvarname[32] = { 0 };
-		char wdsdevname[32] = { 0 };
-		char wdsmacname[32] = { 0 };
-		char *wdsdev;
-		char *hwaddr;
-
-		sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
-		sprintf(wdsdevname, "%s_wds%d_if", dev, s);
-		sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
-		wdsdev = nvram_safe_get(wdsdevname);
-		if (strlen(wdsdev) == 0)
-			continue;
-		if (nvram_match(wdsvarname, "0"))
-			continue;
-		hwaddr = nvram_get(wdsmacname);
-		if (hwaddr != NULL) {
-			hasnawds = 1;
-			sysprintf("80211n_wlanconfig %s nawdslist set 1 %s", primary,
-				  hwaddr);
-			set_rate(dev, primary);
-		}
-	}
-	if (hasnawds)
-		sysprintf("iwpriv ath0 nawds 1");
 
 	if (strcmp(apm, "sta")) {
 		char bridged[32];
@@ -1165,6 +1138,36 @@ void configure_single_11n(int count)
 			}
 		}
 	}
+
+	int hasnawds=0;
+
+	for (s = 1; s <= 10; s++) {
+		char wdsvarname[32] = { 0 };
+		char wdsdevname[32] = { 0 };
+		char wdsmacname[32] = { 0 };
+		char *wdsdev;
+		char *hwaddr;
+
+		sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
+		sprintf(wdsdevname, "%s_wds%d_if", dev, s);
+		sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
+		wdsdev = nvram_safe_get(wdsdevname);
+		if (strlen(wdsdev) == 0)
+			continue;
+		if (nvram_match(wdsvarname, "0"))
+			continue;
+		hwaddr = nvram_get(wdsmacname);
+		if (hwaddr != NULL) {
+			hasnawds = 1;
+			sleep(3);
+			sysprintf("80211n_wlanconfig %s nawdslist set 1 %s", primary,
+				  hwaddr);
+			set_rate(dev, primary);
+		}
+	}
+	if (hasnawds)
+		sysprintf("iwpriv ath0 nawds 1");
+
 
 /*	for (s = 1; s <= 10; s++) {
 		char wdsvarname[32] = { 0 };
