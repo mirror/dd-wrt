@@ -64,7 +64,7 @@ if (valid_password(F))
                     		<form name="changepassword" action="apply.cgi" method="post">
                   			<input type="hidden" name="submit_button" value="index" />
                   			<input type="hidden" name="submit_type" />
-                  			<input type="hidden" name="next_page" value="SetupAssistan.asp" />
+                  			<input type="hidden" name="next_page" value="<% getdefaultindex(); %>" />
                   			<input type="hidden" name="change_action" />
 					<input type="hidden" name="action" value="Apply" />
 
