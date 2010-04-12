@@ -714,6 +714,9 @@ extern int (*Uwfputs) (char *buf, webs_t fp);
 extern char *(*Ulive_translate) (char *tran);
 
 #define live_translate Ulive_translate
+extern void (*Uvalidate_cgi) (webs_t wp);
+
+#define validate_cgi Uvalidate_cgi
 extern websRomPageIndexType *UwebsRomPageIndex;
 
 #define websRomPageIndex UwebsRomPageIndex
