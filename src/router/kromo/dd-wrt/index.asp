@@ -294,7 +294,15 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
-							
+						
+							<% ifndef("HAVE_BUFFALO", "<!--"); %>
+							<h2><script type="text/javascript">Capture(sas.title);</script></h2>
+							<fieldset>
+								<legend><script type="text/javascript">Capture(sas.title);</script></legend>
+								<input type="button" name="start_sas" value="Start" class="button" onclick="document.location='SetupAssistant.asp'">
+							</fieldset>
+							<br />
+							<% ifndef("HAVE_BUFFALO", "-->"); %>	
 							<% ifdef("WET", "<!--"); %>
 							<% ifdef("STA", "<!--"); %>
 							<h2><script type="text/javascript">Capture(idx.h2);</script></h2>
@@ -447,6 +455,10 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
+							<% ifndef("HAVE_BUFFALO", "<!--"); %>
+							<dt class="term"><% tran("sas.title"); %>:</dt>
+							<dd class="definition"><% tran("hidx.sas"); %></dd>
+							<% ifndef("HAVE_BUFFALO", "-->"); %>
 							<dt class="term"><% tran("idx.dhcp"); %>:</dt>
 							<dd class="definition"><% tran("hidx.right2"); %></dd>
 							<dt class="term"><% tran("share.hostname"); %>:</dt>
