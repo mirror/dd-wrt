@@ -89,7 +89,10 @@ void aoss_save(webs_t wp)
 				sprintf(vbuf, "%s %s", vbuf, var);
 		}
 	}
-	nvram_set("ath0_vifs", vbuf);
+	if (strlen(vbuf) == 0)
+		nvram_unset("ath0_vifs");
+	else
+		nvram_set("ath0_vifs", vbuf);
 	nvram_unset("aoss_vifs");
 	nvram_commit();
 	// all other vars
