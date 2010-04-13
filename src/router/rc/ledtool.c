@@ -46,45 +46,41 @@ int main(int argc, char **argv)
 		type = atoi(argv[2]);
 
 	while (times > 0) {
-		int count = 3;
-		while (count > 0) {
-			switch(type)
-			{
-			case 1:
-				led_control(LED_CONNECTED, LED_ON);
-				usleep(500000);
-				led_control(LED_CONNECTED, LED_OFF);
-				usleep(500000);
+		switch (type) {
+		case 1:
+			led_control(LED_CONNECTED, LED_ON);
+			usleep(500000);
+			led_control(LED_CONNECTED, LED_OFF);
+			usleep(500000);
 			break;
-			case 2:
-				led_control(LED_SES	, LED_ON);
-				usleep(200000);
-				led_control(LED_SES	, LED_OFF);				
-				usleep(100000);
-				led_control(LED_SES	, LED_ON);
-				usleep(200000);
-				led_control(LED_SES	, LED_OFF);				
-				usleep(500000);
+		case 2:
+			led_control(LED_SES, LED_ON);
+			usleep(200000);
+			led_control(LED_SES, LED_OFF);
+			usleep(100000);
+			led_control(LED_SES, LED_ON);
+			usleep(200000);
+			led_control(LED_SES, LED_OFF);
+			usleep(500000);
 			break;
-			case 3:
-				led_control(LED_SES	, LED_ON);
-				usleep(100000);
-				led_control(LED_SES	, LED_OFF);				
-				usleep(100000);
+		case 3:
+			led_control(LED_SES, LED_ON);
+			usleep(100000);
+			led_control(LED_SES, LED_OFF);
+			usleep(100000);
 			break;
-			
-			default:
-				led_control(LED_DIAG, LED_ON);
-				usleep(500000);
-				led_control(LED_DIAG, LED_OFF);
-				usleep(500000);
+
+		default:
+			led_control(LED_DIAG, LED_ON);
+			usleep(500000);
+			led_control(LED_DIAG, LED_OFF);
+			usleep(500000);
+			if ((times % 3) == 0)
+				sleep(3);
+
 			break;
-			}
-			count--;
 		}
 		times--;
-		if (times > 0)
-			sleep(3);
 	}
 
 	return 0;
