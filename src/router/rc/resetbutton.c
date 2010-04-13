@@ -221,6 +221,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_JA76PF)
+int getbuttonstate()
+{
+	int ret = get_gpio(11);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
@@ -827,10 +836,6 @@ int main(int argc, char *argv[])
 {
 
 	brand = getRouterBrand();
-#ifdef HAVE_JA76PF
-		puts("sorry, your unit does not support resetbutton feature\n");
-		return 0;
-#endif
 #ifndef HAVE_MI424WR
 #if !defined(HAVE_NOP8670) && !defined(HAVE_TONZE)
 	if ((brand & 0x000f) == 0x000f)
