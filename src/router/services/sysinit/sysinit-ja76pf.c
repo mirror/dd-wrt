@@ -111,7 +111,7 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7100_mod");
 
-	fp = fopen("/dev/mtdblock/7", "r");
+	FILE *fp = fopen("/dev/mtdblock/7", "r");
 	if (fp) {
 		fseek(fp, 0x7f1000, SEEK_SET);
 			unsigned char buf[16];
