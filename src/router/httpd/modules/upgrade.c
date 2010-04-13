@@ -40,6 +40,8 @@ do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *que
 
 	if (upgrade_ret) {
 		do_ej(handler, "Fail_u_s.asp", stream, NULL);
+		killall("ledtool",SIGTERM);
+		led_control(LED_DIAG,LED_OFF);
 	} else {
 		do_ej(handler, "Success_u_s.asp", stream, NULL);
 	}
@@ -294,7 +296,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		ret = ENOMEM;
 		goto err;
 	}
-
+	system("ledtool 500");
 	/*
 	 * Pipe the rest to the FIFO 
 	 */
