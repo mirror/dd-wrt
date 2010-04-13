@@ -254,6 +254,8 @@ sbutton.preview="Predogled";
 sbutton.allways_on="Vedno vkljuèeno";
 sbutton.allways_off="Vedno izkljuèeno";
 sbutton.download="Prenos";
+sbutton.next="Naslednji &raquo;";
+sbutton.prev="&laquo; Prej¹nji";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -365,6 +367,13 @@ errmsg.err62=" je ¾e doloèen kot statièni zakup.";
 errmsg.err100="Obdelujem...<br/>Prosimo poèakajte.";
 errmsg.err101="Obnavljam nastavitve...<br/>Prosimo poèakajte.";
 errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo poèakajte";
+
+
+sas.title="Namestitveni pomoènik";
+sas.internet_connection="Naèin dostopa do interneta";
+sas.network_settings="Mre¾ne nastavitve";
+sas.wireless_settings="Brez¾iène nastavitve";
+sas.other_settings="Druge nastavitve";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -2030,6 +2039,13 @@ success.alert3="Èe ste povezani brez¾ièno, se morate ponovno povezati v omre¾je,
 
 logout.message="Uspe¹no ste se odjavili.<br />Hvala, da uporabljate DD-WRT !";
 
+// ** Setup Assistant **//
+
+hsas.wan="WAN vmesnik pove¾e vas usmerjevalnik v internet ali druge mre¾e. Èe je va¹a mre¾a povezana v internet in potrebujete le dostopno toèko, nastavite WAN naèin na \onemogoèeno\".";
+
+// ** AOSS **//
+
+haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogoèa, da pove¾ete AOSS sposobne odjemalce na va¹o dostopno toèko brez potrebe po roèni nastavitvi.";
 
 // *******************		OLD PAGES 	****************//
 // ********************** DHCPTable.asp ****************//
