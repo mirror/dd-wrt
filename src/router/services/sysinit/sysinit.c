@@ -216,12 +216,12 @@ static void buffalo_defaults(int force)
 			if (!strcmp(mode, "psk"))
 				{
 				nvram_set("ath0_akm", "psk psk2");
-				nvram_set("ath0_security_mode",nvram_safe_get("ath0_akm"));
+				nvram_set("ath0_security_mode","psk psk2");
 				}
 			if (!strcmp(mode, "psk2"))
 				{
 				nvram_set("ath0_akm", "psk psk2");
-				nvram_set("ath0_security_mode",nvram_safe_get("ath0_akm"));
+				nvram_set("ath0_security_mode","psk psk2");
 				}
 		} else {
 			char *mode =
@@ -229,7 +229,7 @@ static void buffalo_defaults(int force)
 			if (mode)
 				{
 				nvram_set("ath0_akm", mode);
-				nvram_set("ath0_security_mode",nvram_safe_get("ath0_akm"));
+				nvram_set("ath0_security_mode",mode);
 				}
 			else
 				return;
@@ -267,6 +267,10 @@ static void buffalo_defaults(int force)
 			nvram_set("ath0_regdomain", "UNITED_STATES");
 		} else if(!strcmp(region, "EU")) {
 			nvram_set("ath0_regdomain", "GERMANY");
+		} else if(!strcmp(region, "JP")) {
+			nvram_set("ath0_regdomain", "JAPAN");
+		} else if(!strcmp(region, "AP")) {
+			nvram_set("ath0_regdomain", "TAIWAN");
 		}
 
 	}
