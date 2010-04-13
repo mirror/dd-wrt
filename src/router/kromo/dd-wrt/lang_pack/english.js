@@ -2070,7 +2070,7 @@ logout.message="You have successfully logged out.<br />Thank you for using DD-WR
 
 // ** Setup Assistant **//
 var hsas = new Object();
-hsas.wan="The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to \"disabled\".";
+hsas.wan="The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to \"Disabled\".";
 
 // ** AOSS **//
 var haoss = new Object();
