@@ -1817,6 +1817,31 @@ void remove_vifs_single(char *prefix)
 		nvram_set(wif, copy);
 	}
 	// nvram_commit ();
+#ifdef HAVE_AOSS
+// must remove all aoss vap's if one of them is touched
+	char var[80];
+	char *next;
+	char var2[80];
+	char *next2;
+	char vbuf[128];
+	memset(vbuf, 0, 128);
+	foreach(var, nvram_safe_get("ath0_vifs"), next) {
+		int found = 0;
+
+		foreach(var2, nvram_safe_get("aoss_vifs"), next2) {
+			if (!strcmp(var, var2))
+				found = 1;
+		}
+		if (!found) {
+			if (!strlen(vbuf))
+				sprintf(vbuf, "%s", var);
+			else
+				sprintf(vbuf, "%s %s", vbuf, var);
+		}
+	}
+	nvram_set("ath0_vifs", vbuf);
+	nvram_unset("aoss_vifs");
+#endif
 }
 
 void remove_vifs(webs_t wp)
