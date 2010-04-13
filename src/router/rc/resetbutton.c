@@ -764,16 +764,11 @@ void period_check(int sig)
 		runStartup("/jffs/etc/config", ".sesbutton");	// if available
 		runStartup("/mmc/etc/config", ".sesbutton");	// if available
 		runStartup("/tmp/etc/config", ".sesbutton");	// if available
-
-#ifdef HAVE_AOSS
-		led_control(LED_SES, LED_FLASH);	// when pressed, blink white
-		sysprintf("startservice aoss");
-#else
-		if (ses_mode == 1) {
+		if (nvram_match("radiooff_button", "1")) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
-			// SES (AOSS) led
+			if (ses_mode == 1) {
+				// SES (AOSS) led
 #ifdef HAVE_RADIOOFF
-			if (nvram_match("radiooff_button", "1")) {
 #ifndef HAVE_BUFFALO
 				dd_syslog(LOG_DEBUG,
 					  "SES / AOSS / EZ-setup button: turning radio(s) on\n");
@@ -782,16 +777,13 @@ void period_check(int sig)
 					  "AOSS button: turning radio(s) on\n");
 #endif
 				sysprintf("startservice radio_on");
-			}
 #endif
 
-			ses_mode = 0;
+				ses_mode = 0;
 
-		} else if (ses_mode == 0) {
-			led_control(LED_SES, LED_FLASH);	// when pressed, blink SES
-			// (AOSS) led
+			} else if (ses_mode == 0) {
+				// (AOSS) led
 #ifdef HAVE_RADIOOFF
-			if (nvram_match("radiooff_button", "1")) {
 #ifndef HAVE_BUFFALO
 				dd_syslog(LOG_DEBUG,
 					  "SES / AOSS / EZ-setup button: turning radio(s) off\n");
@@ -800,11 +792,18 @@ void period_check(int sig)
 					  "AOSS button: turning radio(s) off\n");
 #endif
 				sysprintf("startservice radio_off");
-			}
 #endif
 
-			ses_mode = 1;
+				ses_mode = 1;
+			}
 		}
+#ifdef HAVE_AOSS
+		else if (nvram_match("radiooff_button", "2")) {
+
+			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
+			sysprintf("startservice aoss");
+		}
+#else
 #endif
 
 	} else {
