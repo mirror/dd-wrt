@@ -520,7 +520,7 @@ void start_sysinit(void)
 	fprintf(stderr, "Load Hardware Watchdog\n");
 	insmod("ixp4xx_wdt");
 	fprintf(stderr, "blink led\n");
-	eval("ledtool", "1", "1");	// blink the led 4 times
+	eval("ledtool", "4", "1");	// blink the led 4 times
 
 	fprintf(stderr, "Enable Watchdog\n");
 	if (!nvram_match("disable_watchdog", "1"))
