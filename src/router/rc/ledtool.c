@@ -47,19 +47,39 @@ int main(int argc, char **argv)
 
 	while (times > 0) {
 		int count = 3;
-
 		while (count > 0) {
-			if (type == 1)
+			switch(type)
+			{
+			case 1:
 				led_control(LED_CONNECTED, LED_ON);
-			else
-				led_control(LED_DIAG, LED_ON);
-
-			usleep(500000);
-			if (type == 1)
+				usleep(500000);
 				led_control(LED_CONNECTED, LED_OFF);
-			else
+				usleep(500000);
+			break;
+			case 2:
+				led_control(LED_SES	, LED_ON);
+				usleep(200000);
+				led_control(LED_SES	, LED_OFF);				
+				usleep(100000);
+				led_control(LED_SES	, LED_ON);
+				usleep(200000);
+				led_control(LED_SES	, LED_OFF);				
+				usleep(500000);
+			break;
+			case 3:
+				led_control(LED_SES	, LED_ON);
+				usleep(100000);
+				led_control(LED_SES	, LED_OFF);				
+				usleep(100000);
+			break;
+			
+			default:
+				led_control(LED_DIAG, LED_ON);
+				usleep(500000);
 				led_control(LED_DIAG, LED_OFF);
-			usleep(500000);
+				usleep(500000);
+			break;
+			}
 			count--;
 		}
 		times--;
