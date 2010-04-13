@@ -2041,7 +2041,7 @@ logout.message="Uspe¹no ste se odjavili.<br />Hvala, da uporabljate DD-WRT !";
 
 // ** Setup Assistant **//
 
-hsas.wan="WAN vmesnik pove¾e vas usmerjevalnik v internet ali druge mre¾e. Èe je va¹a mre¾a povezana v internet in potrebujete le dostopno toèko, nastavite WAN naèin na \onemogoèeno\".";
+hsas.wan="WAN vmesnik pove¾e vas usmerjevalnik v internet ali druge mre¾e. Èe je va¹a mre¾a povezana v internet in potrebujete le dostopno toèko, nastavite WAN naèin na \"Onemogoèeno\".";
 
 // ** AOSS **//
 
