@@ -1851,7 +1851,7 @@ logout.message="Sie wurden erfolgreich ausgeloggt.<br />Danke das Sie DD-WRT ben
 hsas.wan="Das WAN Interface verbindet ihren Router mit dem Internet oder anderen Netzwerken. Wenn Ihr Netzwerk bereits mit dem Internet verbinden ist und Sie nur einen Accesspoint benöigen, setzen Sie den WAN Modus auf \"Ausgeschaltet\".";
 
 // ** AOSS **//
-haoss.basic="Das \"AirStation One-Touch Secure System\" AOSS erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu Verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
+haoss.basic="Das \"AirStation One-Touch Secure System\" (AOSS) erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu Verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
 
 
 // *****************************************************		OLD PAGES 		************************************************************************//

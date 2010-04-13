@@ -2074,7 +2074,7 @@ hsas.wan="The WAN interface connects your router to the Internet or other networ
 
 // ** AOSS **//
 var haoss = new Object();
-haoss.basic="The \"AirStation One-Touch Secure System\" AOSS allows you to connect AOSS capable clients to your access point without requiring manual configuration.";
+haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS capable clients to your access point without requiring manual configuration.";
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
