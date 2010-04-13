@@ -980,13 +980,13 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_JA76PF
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 ath0");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "eth0 ath0");
-		PORTSETUPWAN("eth0");
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("eth1");
 	}
-	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -2482,6 +2482,10 @@ void start_wan(int status)
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+#elif HAVE_JA76PF
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ?
+	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_LSX
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
