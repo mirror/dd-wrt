@@ -782,7 +782,7 @@ _8021xprv
 
 	sprintf(n, "%s_authmode", prefix);
 	char *authmode = websGetVar(wp, n, "");
-	if (strlen(tx) == 0) {
+	if (strlen(authmode) == 0) {
 		nvram_set(n, "open");
 	} else {
 		copytonv(wp, n);
