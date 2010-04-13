@@ -1845,7 +1845,13 @@ success.alert2="Sie haben die IP-Adresse Ihres Routers geändert. Bitte erneuern 
 success.alert3="Wenn Sie via WLAN verbunden sind, treten Sie dem Netzwerk erneut bei und klicken Sie auf <em>fortfahren</em>.";
 
 
+logout.message="Sie wurden erfolgreich ausgeloggt.<br />Danke das Sie DD-WRT benutzen!";
 
+// ** Setup Assistant **//
+hsas.wan="Das WAN Interface verbindet ihren Router mit dem Internet oder anderen Netzwerken. Wenn Ihr Netzwerk bereits mit dem Internet verbinden ist und Sie nur einen Accesspoint benöigen, setzen Sie den WAN Modus auf \"Ausgeschaltet\".";
+
+// ** AOSS **//
+haoss.basic="Das \"AirStation One-Touch Secure System\" AOSS erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu Verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
 
 
 // *****************************************************		OLD PAGES 		************************************************************************//
