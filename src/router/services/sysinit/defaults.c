@@ -2388,8 +2388,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptpd_client_mtu", "1450", 0},
 	{"pptpd_client_mru", "1450", 0},
 #ifdef HAVE_RADIOOFF
+#ifdef HAVE_AOSS
+	{"radiooff_button", "2", 0},
+	{"radiooff_boot_off", "0", 0},
+#else
 	{"radiooff_button", "0", 0},
 	{"radiooff_boot_off", "0", 0},
+#endif
 #endif
 	{"radio0_on_time", "111111111111111111111111", 0},	/* Radio timer,
 								 * always on */
