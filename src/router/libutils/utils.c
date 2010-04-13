@@ -1031,9 +1031,9 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG300NH
 #ifdef HAVE_BUFFALO
-	setRouter("WZR-G300NH");
+	setRouter("WZR-HP-G300NH");
 #else
-	setRouter("Buffalo WZR-G300NH");
+	setRouter("Buffalo WZR-HP-G300NH");
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WNDR3700
