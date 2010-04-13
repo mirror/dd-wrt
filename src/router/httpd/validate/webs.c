@@ -1819,11 +1819,11 @@ void remove_vifs_single(char *prefix)
 	// nvram_commit ();
 #ifdef HAVE_AOSS
 // must remove all aoss vap's if one of them is touched
-	char var[80];
-	char *next;
-	char var2[80];
-	char *next2;
-	char vbuf[128];
+	static char var[80];
+	static char *next;
+	static char var2[80];
+	static char *next2;
+	static char vbuf[128];
 	memset(vbuf, 0, 128);
 	foreach(var, nvram_safe_get("ath0_vifs"), next) {
 		int found = 0;
@@ -1840,10 +1840,11 @@ void remove_vifs_single(char *prefix)
 		}
 	}
 	if (strlen(vbuf) == 0)
-		nvram_unset("ath0_vifs");
+		nvram_set("ath0_vifs","");
 	else
 		nvram_set("ath0_vifs", vbuf);
 	nvram_unset("aoss_vifs");
+	nvram_commit();
 #endif
 }
 
