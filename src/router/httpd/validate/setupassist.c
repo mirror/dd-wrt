@@ -6,7 +6,7 @@
 #include <webs.h>
 #include <uemf.h>
 #include <ej.h>
-#else                           /* !WEBS */
+#else				/* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +20,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif                          /* WEBS */
+#endif				/* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -45,14 +45,14 @@ struct variable **variables;
 
 void setupassistant_save(webs_t wp)
 {
-        fprintf(stderr, "[SetupAssistant Save]");
-	
+	fprintf(stderr, "[SetupAssistant Save]");
+
 	// wireless
 	wireless_save(wp);
-	
+
 	// security
 	security_save(wp);
-		
+
 	// all other vars
 	validate_cgi(wp);
 }

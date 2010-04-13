@@ -5,7 +5,7 @@
 #include <webs.h>
 #include <uemf.h>
 #include <ej.h>
-#else                           /* !WEBS */
+#else				/* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 #include <errno.h>
-#endif                          /* WEBS */
+#endif				/* WEBS */
 
 #include <proto/ethernet.h>
 #include <fcntl.h>
@@ -53,36 +53,61 @@ void aoss_save(webs_t wp)
 	sprintf(buf, "%s", websGetVar(wp, "aoss_aes", "0"));
 	fprintf(stderr, "[aoss_aes] %s\n", buf);
 	nvram_set("aoss_aes", buf);
-	
+
 	sprintf(buf, "%s", websGetVar(wp, "aoss_tkip", "0"));
 	fprintf(stderr, "[aoss_tkip] %s\n", buf);
 	nvram_set("aoss_tkip", buf);
-	
+
 	sprintf(buf, "%s", websGetVar(wp, "aoss_wep", "0"));
 	fprintf(stderr, "[aoss_wep] %s\n", buf);
 	nvram_set("aoss_wep", buf);
-		
+
 	// check if at least one value was set
-	if(!strcmp(websGetVar(wp, "aoss_aes", "0"), "0")
-	   && !strcmp(websGetVar(wp, "aoss_tkip", "0"), "0")
-	   && !strcmp(websGetVar(wp, "aoss_wep", "0"), "0")) {
+	if (!strcmp(websGetVar(wp, "aoss_aes", "0"), "0")
+	    && !strcmp(websGetVar(wp, "aoss_tkip", "0"), "0")
+	    && !strcmp(websGetVar(wp, "aoss_wep", "0"), "0")) {
 		fprintf(stderr, "[AOSS] no encryption\n");
 		nvram_set("aoss_aes", "1");
-	}	
+	}
+	char var[80];
+	char *next;
+	char var2[80];
+	char *next2;
+	char vbuf[128];
+	memset(vbuf, 0, 128);
+	foreach(var, nvram_safe_get("ath0_vifs"), next) {
+		int found = 0;
+
+		foreach(var2, nvram_safe_get("aoss_vifs"), next2) {
+			if (!strcmp(var, var2))
+				found = 1;
+		}
+		if (!found) {
+			if (!strlen(vbuf))
+				sprintf(vbuf, "%s", var);
+			else
+				sprintf(vbuf, "%s %s", vbuf, var);
+		}
+	}
+	nvram_set("ath0_vifs", vbuf);
+	nvram_unset("aoss_vifs");
+	nvram_commit();
 	// all other vars
 	//validate_cgi(wp);
 }
 
-int aoss_status(void) {
-	if(pidof("aoss") > 0) {
+int aoss_status(void)
+{
+	if (pidof("aoss") > 0) {
 		return 1;
 	}
 	return 0;
 }
 
-void aoss_start(webs_t wp) {
+void aoss_start(webs_t wp)
+{
 	fprintf(stderr, "[AOSS] start\n");
-	if(!aoss_status()) {
+	if (!aoss_status()) {
 		system("startservice_f aoss");
 		fprintf(stderr, "[AOSS] start\n");
 	}
