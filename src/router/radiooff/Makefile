@@ -4,8 +4,12 @@ include $(TOP)/.config
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
-
+ifeq ($(CONFIG_BUFFALO),y)
+MODULE:=radiooff_buffalo
+else
 MODULE:=radiooff
+endif
+
 
 clean:
 	@true

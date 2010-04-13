@@ -1212,7 +1212,10 @@ service.vpn_clikey="Privater Client-Schlüssel";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Druckknopf";
-service.radiooff_srv="Nutze SES um Wireless abzuschalten";
+service.radiooff_legend_aoss="AOSS Druckknopf";
+service.radiooff_srv="Nutze diesen Knopf zum Wireless abschalten";
+service.radiooff_srv_aoss="Nutze diesen Knopf für AOSS";
+service.radiooff_srv_disabled="Schalte diesen Knopf ab";
 service.radiooff_bootoff="Schalte Wireless Initial aus";
 
 //sshd.webservices
