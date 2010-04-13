@@ -69,11 +69,11 @@ void aoss_save(webs_t wp)
 		fprintf(stderr, "[AOSS] no encryption\n");
 		nvram_set("aoss_aes", "1");
 	}
-	char var[80];
-	char *next;
-	char var2[80];
-	char *next2;
-	char vbuf[128];
+	static char var[80];
+	static char *next;
+	static char var2[80];
+	static char *next2;
+	static char vbuf[128];
 	memset(vbuf, 0, 128);
 	foreach(var, nvram_safe_get("ath0_vifs"), next) {
 		int found = 0;
@@ -90,7 +90,7 @@ void aoss_save(webs_t wp)
 		}
 	}
 	if (strlen(vbuf) == 0)
-		nvram_unset("ath0_vifs");
+		nvram_set("ath0_vifs","");
 	else
 		nvram_set("ath0_vifs", vbuf);
 	nvram_unset("aoss_vifs");
