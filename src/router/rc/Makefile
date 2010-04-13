@@ -229,6 +229,9 @@ endif
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON
 endif
+ifeq ($(CONFIG_JA76PF),y)
+CFLAGS += -DHAVE_JA76PF
+endif
 
 ifeq ($(CONFIG_TFTP),y)
 CFLAGS += -DHAVE_TFTP

@@ -1066,6 +1066,9 @@ int internal_getRouterBrand()
 #elif HAVE_WP543
 	setRouter("Compex WP543");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_JA76PF
+	setRouter("JJPLUS JA76PF");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
 	setRouter("Ubiquiti Litestation-SR71");
 	return ROUTER_BOARD_PB42;

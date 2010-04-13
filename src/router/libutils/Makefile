@@ -450,6 +450,9 @@ endif
 ifeq ($(CONFIG_RSPRO),y)
   CFLAGS += -DHAVE_RSPRO
 endif
+ifeq ($(CONFIG_JA76PF),y)
+  CFLAGS += -DHAVE_JA76PF
+endif
 ifeq ($(CONFIG_AP83),y)
   CFLAGS += -DHAVE_AP83
 endif
