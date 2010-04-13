@@ -1331,7 +1331,10 @@ service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
+service.radiooff_legend_aoss="AOSS Button";
 service.radiooff_srv="Use this button for turning off radio";
+service.radiooff_srv_aoss="Use this button for AOSS";
+service.radiooff_srv_disabled="Disable this button";
 service.radiooff_bootoff="Turn radio off at boot";
 
 //ses.webservices ====> might replace the above radiooff_button

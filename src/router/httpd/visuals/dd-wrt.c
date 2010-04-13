@@ -6121,26 +6121,22 @@ void show_wep(webs_t wp, char *prefix)
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, get_wep_value(temp, "key1", bit,
-						     prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key1",prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, get_wep_value(temp, "key2", bit,
-						     prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key2",prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, get_wep_value(temp, "key3", bit,
-						     prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key3",prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, get_wep_value(temp, "key4", bit,
-						     prefix));
+		  prefix, mlen2, mlen, nvram_nget("%s_key4",prefix));
 	websWrite(wp, "</div>\n");
 }
 

@@ -604,6 +604,10 @@ void generate_wep_key(webs_t wp)
 		sprintf(var, "%s_wep_gen", prefix);
 
 		nvram_set(var, buf);
+		nvram_nset(key1, "%s_key1", prefix);
+		nvram_nset(key2, "%s_key2", prefix);
+		nvram_nset(key3, "%s_key3", prefix);
+		nvram_nset(key4, "%s_key4", prefix);
 	} else if (atoi(bit) == 128) {
 		char key1[27] = "";
 		char key2[27] = "";
@@ -640,6 +644,10 @@ void generate_wep_key(webs_t wp)
 		// nvram_set("wl_wep_gen_128",buf);
 		sprintf(var, "%s_wep_gen", prefix);
 		nvram_set(var, buf);
+		nvram_nset(key1, "%s_key1", prefix);
+		nvram_nset(key2, "%s_key2", prefix);
+		nvram_nset(key3, "%s_key3", prefix);
+		nvram_nset(key4, "%s_key4", prefix);
 	}
 
 	return;
@@ -771,7 +779,14 @@ _8021xprv
 #endif
 
 	copytonv(wp, "%s_radmactype", prefix);
-	copytonv(wp, "%s_authmode", prefix);
+
+	sprintf(n, "%s_authmode", prefix);
+	char *authmode = websGetVar(wp, n, "");
+	if (strlen(tx) == 0) {
+		nvram_set(n, "open");
+	} else {
+		copytonv(wp, n);
+	}
 	sprintf(n, "%s_key1", prefix);
 	char *key1 = websGetVar(wp, n, "");
 
@@ -794,8 +809,11 @@ _8021xprv
 	copytonv(wp, n);
 	sprintf(n, "%s_key", prefix);
 	char *tx = websGetVar(wp, n, "");
-
-	copytonv(wp, n);
+	if (strlen(tx) == 0) {
+		nvram_set(n, "1");
+	} else {
+		copytonv(wp, n);
+	}
 	sprintf(n, "%s_wep_bit", prefix);
 	copytonv(wp, n);
 	char buf[128];
