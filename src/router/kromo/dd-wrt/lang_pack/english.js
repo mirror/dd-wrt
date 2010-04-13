@@ -254,6 +254,8 @@ sbutton.preview="Preview";
 sbutton.allways_on="Always On";
 sbutton.allways_off="Always Off";
 sbutton.download="Download";
+sbutton.next="Next &raquo;";
+sbutton.prev="&laquo; Previous";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -367,6 +369,7 @@ errmsg.err101="Restoring configuration file...<br/>Please, wait.";
 errmsg.err102="Upgrading firmware...<br/>Please, wait";
 
 var sas = new Object();
+sas.title="Setup Assistant";
 sas.internet_connection="Internet Connection";
 sas.network_settings="Network Settings";
 sas.wireless_settings="Wireless Settings";
@@ -944,6 +947,7 @@ hidx.right12="Allows the router to manage your IP addresses.";
 hidx.right14="The address you would like to start with.";
 hidx.right16="You may limit the number of addresses your router hands out. 0 means only predefined static leases will be handed out.";
 hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
+hidx.sas="The Setup Assistant guides you through the basic setup steps to configure your router.";
 
 
 // ** Join.asp **//
@@ -2065,17 +2069,12 @@ var logout = new Object();
 logout.message="You have successfully logged out.<br />Thank you for using DD-WRT !";
 
 // ** Setup Assistant **//
-var sas = new Object();
 var hsas = new Object();
-sbutton.next = "Next &raquo;";
-sbutton.prev = "&laquo; Previous";
-sas.title = "Setup Assistant";
-hidx.sas = "The Setup Assistant guides you through the basic setup steps to configure your router.";
-hsas.wan = 'The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to "disabled".';
+hsas.wan="The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to \"disabled\".";
 
 // ** AOSS **//
 var haoss = new Object();
-haoss.basic = 'The "AirStation One-Touch Secure System" AOSS allows you to connect AOSS capable clients to your access point without requiring manual configuration.';
+haoss.basic="The \"AirStation One-Touch Secure System\" AOSS allows you to connect AOSS capable clients to your access point without requiring manual configuration.";
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
