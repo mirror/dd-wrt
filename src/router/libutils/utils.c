@@ -1075,6 +1075,9 @@ int internal_getRouterBrand()
 #elif HAVE_DANUBE
 	setRouter("Infineon Danube");
 	return ROUTER_BOARD_DANUBE;
+#elif HAVE_WBD222
+	setRouter("Wiligear WBD-222");
+	return ROUTER_BOARD_STORM;
 #elif HAVE_STORM
 	setRouter("Wiligear WBD-111");
 	return ROUTER_BOARD_STORM;

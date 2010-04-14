@@ -803,6 +803,13 @@ void stop_wshaper(void)
 #elif HAVE_DANUBE
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "ath0");
+#elif HAVE_WBD222
+	ret = eval(script_name, "stop", "XX", "eth0");
+	ret = eval(script_name, "stop", "XX", "eth1");
+	ret = eval(script_name, "stop", "XX", "eth2");
+	ret = eval(script_name, "stop", "XX", "ath0");
+	ret = eval(script_name, "stop", "XX", "ath1");
+	ret = eval(script_name, "stop", "XX", "ath2");
 #elif HAVE_STORM
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "ath0");
