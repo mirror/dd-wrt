@@ -1,5 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 //		Swedish Translation by Joensson Joergen	    //
+//		Updated By Shervin Babavand 2010-apr-14			//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -154,7 +155,7 @@ share.seealso="Se även";
 share.never="Aldrig";
 share.unknown="Okänd";
 share.expired="Löpt ut";
-share.logout="logga ut";
+share.logout="Logga ut";
 share.nmounted="Ej Kopplad";
 share.fssize="Total / Free Storlek";
 share.src="Lokal Adress";
@@ -247,13 +248,13 @@ errmsg.err1="Du måste ange Routerns Namn.";
 errmsg.err2="Felaktigt Område, Vv Ändra start IP Adress eller user&#39;s nummer.";
 errmsg.err3="Du måste välja dag.";
 errmsg.err4="Sluttid måste vara efter starttiden.";
-errmsg.err5="MAC Adressens längd är ej korrekt.";
+errmsg.err5="MAC Adressens längd är inte korrekt.";
 errmsg.err6="Du måste ange ett lösenord.";
 errmsg.err7="Du måste ange enhetens namn.";
 errmsg.err8="Du måste ange IP Adress eller Domännamn.";
 errmsg.err9="Ogiltig DMZ IP Adress.";
-errmsg.err10="Verifierat Lösenord matchar ej inskrivet Lösenord. Försök igen.";
-errmsg.err11="Mellanslag ej tillåtna i Lösenord";
+errmsg.err10="Verifierat Lösenord matchar inte inskrivet lösenord. Försök igen.";
+errmsg.err11="Mellanslag är inte tillåtna i lösenord";
 errmsg.err12="Du måste ange ett kommando.";
 errmsg.err13="Uppgraderingen Misslyckades.";
 errmsg.err45="Ej tillgänglig i HTTPS! Koppla upp i HTTP läge.";
@@ -265,7 +266,7 @@ errmsg.err15="WAN MAC Adressen är utanför intervall [00 - ff].";
 errmsg.err16="Andra Siffran av MAC Måste vara ett jämt nummer : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="Felaktig MAC Adress.";
 errmsg.err18="Felaktig MAC Adress.";
-errmsg.err19="MAC Adressen kan ej vara broadcast Adressen.";
+errmsg.err19="MAC Adressen kan inte vara broadcast Adressen.";
 errmsg.err20="Skriv MAC Adressen i (xx:xx:xx:xx:xx:xx) format.";
 errmsg.err21="Felaktigt MAC Adress format.";
 errmsg.err22="WAN MAC Adress Felaktig.";
@@ -278,9 +279,9 @@ errmsg.err28=" har ogiltiga tecken, måste vara [ 0 - 9 ].";
 errmsg.err29=" har ogiltig ascii kod.";
 errmsg.err30=" har ogiltig hexadecimal siffror.";
 errmsg.err31=" värde ogiltigt.";
-errmsg.err32="IP Adress & gateway är ej i samma subnet mask.";
-errmsg.err33="IP Adress & gateway kan ej vara samma.";
-errmsg.err34=" får ej innehålla mellanslag.";
+errmsg.err32="IP Adress & gateway är inte i samma subnet mask.";
+errmsg.err33="IP Adress & gateway kan inte vara likadana.";
+errmsg.err34="Får inte innehålla mellanslag.";
 
 //Wol.asp error messages
 errmsg.err35="Skriv in MAC Adress för start.";
@@ -305,7 +306,7 @@ errmsg.err44="Totala testen överskrider 128 gånger.";
 errmsg.err47="Felaktigt SSID.";
 
 //wireless_WDS.asp error messages
-errmsg.err48="WDS ej kompatibel med aktuell config av routern. Kontrollera följande punkter :\n * Trådlöst Mode satt till AP \n * WPA2 ej supporterat i WDS \n * Trådlöst Network B-Only mode ej supporterat i WDS";
+errmsg.err48="WDS är inte kompatibel med aktuell config av routern. Kontrollera följande punkter :\n * Trådlöst Mode satt till AP \n * WPA2 är inte supporterat i WDS \n * Trådlöst Network B-Only mode ej supporterat i WDS";
 
 //wireless_radauth.asp error messages
 errmsg.err49="Radius endast tillgängligt i AP mode.";
@@ -348,8 +349,8 @@ errmsg.err101="Återställer konfigurationsfil...<br/>Var vänlig, vänta.";
 errmsg.err102="Uppgraderar firmware...<br/>Var vänlig, vänta.";
 
 // **  COMMON MENU ENTRIES  **//
-bmenu.setup="Inställning";
-bmenu.setupbasic="Grund Inställning";
+bmenu.setup="Inställningar";
+bmenu.setupbasic="Grund Inställningar";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="MAC Adress Klon";
 bmenu.setuprouting="Avancerad Routing";
@@ -358,7 +359,7 @@ bmenu.setupeop="EoIP Tunnel";
 bmenu.networking="Nätverk";
 
 bmenu.wireless="Trådlöst";
-bmenu.wirelessBasic="Grundinställning";
+bmenu.wirelessBasic="Grundinställningar";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="Superkanal";
 bmenu.wirelessSecurity="Trådlöst säkerhet";
@@ -441,8 +442,8 @@ alive.IP2="Proxy IP Adress";
 alive.port="Proxy Port";
 
 //help container
-halive.right2="Välj när omstart av routern. Cron måste vara aktiverad i Administrations fliken.";
-halive.right4="Max 3 IP separerade med <em>MELLANSLAG</em> är tillåtna.<BR/>IPs Formatet är xxx.xxx.xxx.xxx.";
+halive.right2="Välj när du vill starta om routern med en schemalagd omstart. Cron måste vara aktiverat i Administrations fliken.";
+halive.right4="Max tre IP-adresser separerade med ett <em>MELLANSLAG</em> är tillåtna.<BR/>IPs Formatet är xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -454,11 +455,11 @@ config.h22="Återställ Konfigurationen";
 config.legend2="Återställ";
 config.mess2="Välj konfigurationsfil att återställa";
 config.mess3="V A R N I N G";
-config.mess4="Återställ endast med backuper gjorda med samma version och router.<br />Återställ ej med nån anna routers konfiguration!";
+config.mess4="Återställ endast med backuper gjorda med samma version och router.<br />Återställ inte med någon annan routers konfiguration!";
 
 //help container
-hconfig.right2="Ta en backup av din router ifall du tvingas återställa den till fabriksinställningen.<br /><br />Klicka på <em>Backup</em> knappen för att ta backup.";
-hconfig.right4="Klicka på <em>Bläddra...</em> knappen för att ange din konfigurationsfil.<br /><br />Klicka på <em>" + sbutton.restore + "</em> knappen fär att återställa dina inställningar från backupfilen.";
+hconfig.right2="Ta en backup av routerns inställningar ifall du tvingas återställa den till fabriksinställningen.<br /><br />Klicka på <em>Backup</em> knappen för att ta backup.";
+hconfig.right4="Klicka på <em>Bläddra...</em> knappen för att ange din konfigurationsfil.<br /><br />Klicka på <em>" + sbutton.restore + "</em> knappen för att återställa dina inställningar från backupfilen.";
 
 
 // ** DDNS.asp **//
@@ -476,17 +477,17 @@ ddns.system="DYNDNS Server";
 ddns.options="Extra DDNS val";
 ddns.forceupd="Tvinga uppdateringsintervall";
 
-ddnsm.all_closed="DDNS seerven stängd";
-ddnsm.all_resolving="Löser upp domän namn";
-ddnsm.all_errresolv="Domän namn upplösning misslyckad";
+ddnsm.all_closed="DDNS servern är för närvarande stängd";
+ddnsm.all_resolving="Letar upp domän namn";
+ddnsm.all_errresolv="Domän namn hittades inte";
 ddnsm.all_connecting="Kopplar till servern";
-ddnsm.all_connectfail="Serverkoppling misslyckad";
+ddnsm.all_connectfail="Serverkoppling misslyckades";
 ddnsm.all_disabled="DDNS funktionen avaktiverad";
 ddnsm.all_noip="Ingen WAN förbindelse";
 
 //help container
-hddns.right2="DDNS tillåter dig använda dns namn i stället för IP adresser. Tjänsten hanterar IP Adresses ändringar och uppdaterar din domän information dynamiskt. Du måste registrera dig hos DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com eller annan.";
-hddns.right4="Skriv in en siffra ( i dagar ). Uppdateringar skall endast behövas då din ipadress ändras. Kolla med din DDNS leverantör vad gäller deras policy för uppdateringar.";
+hddns.right2="DDNS tillåter dig använda DNS-namn i stället för IP-adresser. Tjänsten hanterar IP Adresser, ändrar och uppdaterar din domän information dynamiskt. Du måste registrera dig hos DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com eller annan DNS-tjänst.";
+hddns.right4="Skriv in en siffra ( i dagar ). Uppdateringar skall endast behövas då din IP-adress ändras. Kolla med din DDNS leverantör vad gäller deras policy för uppdateringar.";
 
 
 // ** Diagnostics.asp **//
@@ -499,7 +500,7 @@ diag.firewall="Brandvägg";
 diag.custom="Eget Script";
 
 //help container
-hdiag.right2="Du kan köra kommandon via webinterfacet. Fyll i kommandot i textrutan o klicka <em>" + sbutton.runcmd + "</em> för att köra.";
+hdiag.right2="Du kan köra kommandon via webinterfacet. Fyll i kommandot i textrutan och klicka <em>" + sbutton.runcmd + "</em> för att köra det.";
 
 
 // ** DMZ.asp **//
@@ -510,14 +511,14 @@ dmz.serv="Använd DMZ";
 dmz.host="DMZ Enhet IP Adress";
 
 //help container
-hdmz.right2="Om du aktiverar denna funktion så öppnas alla portar från internet till denna dator.";
+hdmz.right2="Om du aktiverar denna funktion så öppnas alla portar från internet till en specifik dator.";
 
 
 // ** Factory_Defaults.asp **//
-factdef.titl="Fabriksinställning";
-factdef.h2="Fabriksinställning";
+factdef.titl="Fabriksinställningar";
+factdef.h2="Fabriksinställningar";
 factdef.legend="Nollställ Routerinställningarna";
-factdef.restore="Återställ Fabriksinställning";
+factdef.restore="Återställ Fabriksinställningar";
 factdef.mess1="Varning! Om du klickar OK kommer systemet återställas till Fabriksinställningen.";
 
 //help container
@@ -546,8 +547,8 @@ filter.time="Tider";
 filter.h24="24 Timmar";
 filter.legend3="Blockerade Tjänster";
 filter.catchall="Från alla P2P Protokoll";
-filter.legend4="Web Blockering Via URL Adress";
-filter.legend5="Web Blockering Via Sökord";
+filter.legend4="Web Blockering via URL Adress";
+filter.legend5="Web Blockering via nyckelord";
 filter.mess1="Radera Policy?";
 filter.mess2="Välj minst en dag.";
 filter.mess3="Sluttid måste vara större än start tid.";
@@ -559,8 +560,8 @@ hfilter.right6="Namnge din policy.";
 hfilter.right8="Välj en veckodag som din policy skall gälla.";
 hfilter.right10="Välj en tid som din policy skall gälla.";
 hfilter.right12="Du kan välja att blockera vissa tjänster. Klicka <em>" + sbutton.filterSer + "</em> för att ändra detta.";
-hfilter.right14="Du kan välja att blockera vissa websiter genom att ange deras URL.";
-hfilter.right16="Du kan välja att blockera vissa websiter genom att ange nyckelord i deras sidor.";
+hfilter.right14="Du kan välja att blockera vissa hemsidor genom att ange deras URL.";
+hfilter.right16="Du kan välja att blockera vissa hemsidor genom att ange nyckelord i deras sidor.";
 
 
 // ** FilterSummary.asp **//
@@ -576,10 +577,10 @@ firewall.h2="Säkerhet";
 firewall.legend="Brandväggsskydd";
 firewall.firewall="SPI Brandvägg";
 firewall.legend2="Extra Filter";
-firewall.proxy="Filter Proxy";
-firewall.cookies="Filter Cookies";
-firewall.applet="Filter Java Applets";
-firewall.activex="Filter ActiveX";
+firewall.proxy="Filtrera Proxy";
+firewall.cookies="Filtrera Cookies";
+firewall.applet="Filtrera Java Applets";
+firewall.activex="Filtrera ActiveX";
 firewall.legend3="Blockera WAN Förfrågningar";
 firewall.ping="Blockera Anonym WAN Trafik (ping)";
 firewall.muticast="Filtrera Multicast";
@@ -597,7 +598,7 @@ prforward.legend="Forwards";
 prforward.app="Applikationer";
 
 //help container
-hprforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel på dessa är servrar o online spel. När ett förfrågan kommer från internet, routern kommer då släppa in den trafiken till sen dator du anger . beroende på säkerhetsaspekter, du skall bara forwarda portar du verkligen behöver, och avmarkera <em>" + share.enable +"</em> rutan efter du är klar med onlinespelet osv...";
+hprforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel på dessa är servrar och onlinespel. När en förfrågan kommer från internet kommer då routern släppa in den trafiken till sen dator du anger. Du skall bara forwarda portar du verkligen behöver och avmarkera <em>" + share.enable +"</em> rutan efter du är klar med applikationen, att ha öppna portar innebär en säkerhetsrisk!";
 
 
 // ** P2P.asp **//
@@ -619,7 +620,7 @@ pforward.from="Port från";
 pforward.to="Port till";
 
 //help container
-hpforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel på dessa är servrar o online spel. När ett förfrågan kommer från internet, routern kommer då släppa in den trafiken till sen dator du anger . beroende på säkerhetsaspekter, du skall bara forwarda portar du verkligen behöver, och avmarkera <em>" + share.enable +"</em> kryssrutan efter du är klar med onlinespelet osv...";
+hpforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel på dessa är servrar och onlinespel. När en förfrågan kommer från internet kommer då routern släppa in den trafiken till sen dator du anger. Du skall bara forwarda portar du verkligen behöver och avmarkera <em>" + share.enable +"</em> rutan efter du är klar med applikationen, att ha öppna portar innebär en säkerhetsrisk!";
 
 // ** USB.asp **//
 usb.titl="USB";
@@ -628,10 +629,28 @@ usb.usb_core="Core USB Stöd";
 usb.usb_uhci="USB 1.1 Stöd (UHCI)";
 usb.usb_ohci="USB 1.1 Stöd (OHCI)";
 usb.usb_ehci="USB 2.0 Stöd";
-usb.usb_storage="USB Minnes Stöd";
-usb.usb_extfs="ext2 / ext3 Fil System Stöd";
-usb.usb_fatfs="FAT File-Systems Stöd";
-usb.usb_printer="USB Printer Stöd";
+usb.usb_storage="Stöd för USB lagring";
+usb.usb_extfs="ext2 / ext3 Filsystem Stöd";
+usb.usb_fatfs="FAT Filsystem Stöd";
+usb.usb_printer="Stöd för USB skrivare";'
+usb.usb_automnt="Automatisk Montering";
+usb.usb_mntpoint="Monterings Punkt";
+usb.usb_runonmount="Script att köra vid Montering";
+usb.usb_diskinfo="Disk Info";
+
+// ** NAS.asp **//
+nas.titl="NAS";
+nas.proftpd_legend="FTP Server";
+nas.proftpd_srv="ProFTPD";
+nas.proftpd_port="Server Port";
+nas.proftpd_dir="Root Mapp";
+nas.proftpd_passw="Användarnamn och Lösenord";
+nas.proftpd_writeen="Tillåt Skrivrättigheter";
+nas.proftpd_anon="Anonym Inloggning (Skrivskyddat)";
+nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
+nas.sambasrv_legend="Samba Server";
+
+hnas.right2="Användarnamn och Lösenords lista: Skriv in ett Användarnamn och Lösenord per rad, måste separeras med ett mellanslag. Lösenorden kan vara i textformat eller MD5 krypterat.";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -661,7 +680,10 @@ hotspot.http_net="HTTP Käll Nätverk";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Gateway Namn";
+hotspot.nocat_gatewayaddr="Gateway IP Address";
 hotspot.nocat_home="Hemsida";
+hotspot.nocat_ifname="Interface";
+hotspot.nocat_redirect="Omdirigering av Hemsida";
 hotspot.nocat_allowweb="Tillåtna Web Enheter";
 hotspot.nocat_docroot="Dokument Root";
 hotspot.nocat_splash="Splash URL";
@@ -684,7 +706,7 @@ hotspot.sputnik_id="Sputnik Server ID";
 hotspot.sputnik_instant="Använd Sputnik Instant Setup";
 hotspot.sputnik_express="Använd SputnikNet Express";
 hotspot.sputnik_about="om Sputnik";
-hotspot.sputnik_learn="Lär mera";
+hotspot.sputnik_learn="Läs mer";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog Demon";
 hotspot.wifidog_id="Gateway ID";
@@ -692,7 +714,7 @@ hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Web Server namn";
 hotspot.wifidog_httpdconn="Max Användare";
-hotspot.wifidog_checkinter="Test Intervall ( i sec.)";
+hotspot.wifidog_checkinter="Test Intervall ( i sek.)";
 hotspot.wifidog_checktimeout="Klient Timeout";
 hotspot.wifidog_tmaclist="Betrodda MAC Adresser";
 hotspot.wifidog_authsrv="AuthServer Hostnamn";
@@ -700,6 +722,12 @@ hotspot.wifidog_authsrvssl="AuthServer SSL Tillgänglig";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Sökväg";
+hotspot.wifidog_config="Brandväggs Regler";
+hotspot.wifidog_messagefile="HTML Medeleande fil för Wifidog";
+hotspot.wifidog_realm="HTTP Server Realm";
+hotspot.wifidog_username="HTTP Server Användarnamn";
+hotspot.wifidog_password="HTTP Server Lösenord";
+hotspot.wifidog_auth="HTTP Server Autentiseringsstöd";
 
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="Mitt Ad Nätverk";
@@ -718,28 +746,27 @@ anchorfree.category="Kategori";
 anchorfree.publish="Publicera hotspot på den fria WiFi kartan";
 anchorfree.serviceid="Tjänst ID";
 anchorfree.servicestatus="Tjänst Status";
-anchorfree.agreement="Avtal o Villkor";
+anchorfree.agreement="Avtal och Villkor";
 anchorfree.agree="Jag ACCEPTERAR";
-anchorfree.validaddr="en giltig adress måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
-anchorfree.validcity="en giltig stad/postkod måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
-anchorfree.validcat="ange gällande kategori för din hotspot";
-anchorfree.validcountry="välj land för din hotspot";
-anchorfree.validterms="du måste acceptera avtal o villkor!";
+anchorfree.validaddr="En giltig adress måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
+anchorfree.validcity="En giltig stad/postkod måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
+anchorfree.validcat="Ange gällande kategori för din hotspot";
+anchorfree.validcountry="Välj land för din hotspot";
+anchorfree.validterms="Du måste acceptera avtal och villkor!";
 
 hanchorfree.right1="Anslut AnchorFree's hotspot reklam nätverk";
 hanchorfree.right2="AnchorFree skapar hotspot reklam nätverk tillåter DD-WRT kunder att generera extra inkomster.";
 hanchorfree.right3="Generera inkomster från AnchorFree";
-hanchorfree.right4="Genom att aktivera och skapa ett konto hos AnchorFree (gratis o enkelt), en bestående reklam sida startas i klientens web browser, som sen genererar pengar på ditt konto. Tjäna minst 25 dollar så kommer AnchorFree automatiskt betala ut på ditt konto.";
-
-
-hanchorfree.right5="För mer information så besöker du www.anchorfree.com";
-hanchorfree.right6="Activeringen är enkel";
-hanchorfree.right7="När du har aktiverat kommer AnchorFree sända mail till dig med instruktioner, FAQs, och annan information hur man kan tjäna pengar på din router. Genom denna bild, AnchorFree sätter in en tunn, reklam bild direkt in i web browsern när man surfar från denna router.";
+hanchorfree.right4="Genom att aktivera och skapa ett konto hos AnchorFree (gratis och enkelt), en bestående reklam sida startas i klientens web browser, som sen genererar pengar på ditt konto. Tjäna minst 25 dollar så kommer AnchorFree automatiskt betala ut på ditt konto.";
+hanchorfree.right5="För mer information besök www.anchorfree.com";
+hanchorfree.right6="Aktiveringen är enkel";
+hanchorfree.right7="När du har aktiverat kommer AnchorFree sända mail till dig med instruktioner, FAQs, och annan information om hur man kan tjäna pengar på din router. Genom denna bild, AnchorFree sätter in en tunn, reklam bild direkt in i web browsern när man surfar från denna router.";
 hanchorfree.right8="Kund support";
 hanchorfree.right9="Frågor? Kontakta oss på boxhelp@anchorfree.com";
 
 
 // ** Info.htm **
+info.titl="Info";
 info.h2="System Information";
 info.wlanmac="Trådlös MAC";
 info.srv="Tjänster";
@@ -767,6 +794,8 @@ idx_pptp.srv="Använd DHCP";
 idx_pptp.wan_ip="WAN IP Adress";
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Kryptering";
+idx_pptp.reorder="Inaktivera Packet Omnumreringen";
+idx_pptp.addopt="Extra PPTP Alternativ";
 
 
 // ** index_static.asp **//
@@ -808,8 +837,12 @@ idx.summt_opt1="ingen";
 idx.summt_opt2="första Sön Apr - sista Sön Okt";
 idx.summt_opt3="sista Sön Mar - sista Sön Okt";
 idx.summt_opt4="sista Sön Okt - sista Sön Mar";
-idx.summt_opt5="2nd Sön Mar - första Sön Nov";
-idx.summt_opt6="första Sön Okt - 3dje Sön Mar";
+idx.summt_opt5="2:a Sön Mar - första Sön Nov";
+idx.summt_opt6="första Sön Okt - 3:e Sön Mar";
+idx.summt_opt7="sista Sön Sep - första Sön Apr";
+idx.summt_opt8="3:e Sön Oct - 3:e Sön Mar";
+idx.summt_opt9="första Sön Oct - första Sön Apr";
+idx.summt_opt10="3:e Sun Oct - 3:e Sun Feb";
 idx.portsetup="Port Inställning";
 idx.wanport="WAN Port Tilldelning";
 idx.ntp_client="NTP Klient";
@@ -824,13 +857,14 @@ hidx.right12="Tillåter routern att hantera dina IP Adresser.";
 hidx.right14="Adressen du vill starta med att dela ut.";
 hidx.right16="Du bör begränsa adresser som routern delar ut. 0 delar bara ut fasta adresser.";
 hidx.right18="Välj tidzon som du har på sommartid, DST period. Routern kan hantera lokal tid eller UTC tid.";
+hidx.sas="Inställningsguiden kan guida dig genom de mest grundläggande inställningarna för din router.";
 
 
 // ** Join.asp **//
 
 //sshd.webTjänsts
 join.titl="Anslut";
-join.mess1="Lyckades ansluta till nätet som klient: ";
+join.mess1="Lyckades att ansluta till nätet som klient: ";
 
 
 // ** Log_incoming.asp **//
@@ -861,6 +895,7 @@ log.accept="Accepterade";
 // ** Management.asp **//
 management.titl="Administration";
 management.h2="Router Administration";
+management.changepassword="Din Router är för närvarande inte skyddad och använder sig utav ett osäkert användarnamn och lösenord, var god ändra detta!";
 management.psswd_legend="Router Lösenord";
 management.psswd_user="Router Användarnamn";
 management.psswd_pass="Router Lösenord";
@@ -873,6 +908,8 @@ management.remote_ssh="SSH Administration";
 management.remote_sshport="SSH Fjärr Port";
 management.remote_telnet="Telnet Administration";
 management.remote_telnetport="Telnet fjärr Port";
+management.remote_allowanyip="Tillåt alla fjärr IP-Adresser";
+management.remote_ip="Tillåt ett intervall av IP-Adresser ";
 management.web_legend="Web Access";
 management.web_refresh="Auto-Uppdatera ( i sek )";
 management.web_sysinfo="Aktivera Info Sidan";
@@ -900,24 +937,27 @@ management.jffs_srv="JFFS2";
 management.jffs_clean="Rensa JFFS2";
 management.lang_legend="Språkval";
 management.lang_srv="Språk";
-management.lang_bulgarian="bulgarian";
-management.lang_chinese_traditional="chinese traditional";
-management.lang_chinese_simplified="chinese simplified";
-management.lang_croatian="croatian";
-management.lang_czech="czech";
-management.lang_dutch="dutch";
-management.lang_portuguese_braz="portuguese (brazilian)";
-management.lang_english="english";
-management.lang_polish="polish";
-management.lang_french="french";
-management.lang_german="german";
-management.lang_italian="italian";
-management.lang_brazilian="brazilian";
-management.lang_slovenian="slovenian";
-management.lang_spanish="spanish";
-management.lang_swedish="swedish";
-management.lang_japanese="japanese";
-management.lang_hungarian="hungarian";
+management.lang_bulgarian="Bulgarian";
+management.lang_chinese_traditional="Chinese traditional";
+management.lang_chinese_simplified="Chinese simplified";
+management.lang_croatian="Croatian";
+management.lang_czech="Czech";
+management.lang_dutch="Dutch";
+management.lang_portuguese_braz="Portuguese (brazilian)";
+management.lang_english="English";
+management.lang_polish="Polish";
+management.lang_french="French";
+management.lang_german="German";
+management.lang_italian="Italian";
+management.lang_brazilian="Brazilian";
+management.lang_russian="Russian";
+management.lang_romanian="Romanian";
+management.lang_slovenian="Slovenian";
+management.lang_spanish="Spanish";
+management.lang_swedish="Swedish";
+management.lang_japanese="Japanese";
+management.lang_hungarian="Hungarian";
+management.lang_latvian="Latvian";
 management.net_legend="IP Filter Inställning (Justera för Peer-2-Peer)";
 management.net_port="Max Portar";
 management.net_tcptimeout="TCP Timeout ( i sek )";
@@ -929,6 +969,7 @@ management.mmc_legend="MMC/SD Kort Stöd";
 management.mmc_srv="MMC Enhet";
 management.mmc_gpiosel="GPIO pin val";
 management.mmc_gpiopins="GPIO pin";
+management.mmc_cardinfo="Kort Info";
 management.samba_legend="CIFS Automount";
 management.samba_srv="Internet Fil System";
 management.samba_share="Dela";
@@ -967,8 +1008,8 @@ qos.h2="Bandbreddskontroll (QoS)";
 qos.legend="QoS Inställning";
 qos.srv="Starta QoS";
 qos.type="Paket Schema";
-qos.uplink="Uplänk (kbps)";
-qos.dnlink="Nedlänk (kbps)";
+qos.uplink="Uppladdning (kbps)";
+qos.dnlink="Nerladdning (kbps)";
 qos.gaming="Optimera för Spel";
 qos.legend2="Tjänst Prioritet";
 qos.prio_x="Exempt";
@@ -987,9 +1028,9 @@ qos.legend6="Standard Bandbredds Nivå";
 qos.bandwidth="Bandbredd i Kbits";
 
 //help container
-hqos.right1="Upplänk:";
+hqos.right1="Uppladdning:";
 hqos.right2="Sätt detta till 80%-95% (max) av din totala uppladdnings gräns.";
-hqos.right3="Nedlänk:";
+hqos.right3="Nerladdning:";
 hqos.right4="Sätt detta till 80%-100% (max) av din totala nedladdnings gräns.";
 hqos.right6="Du kan kontrollera din datahastighet med hänsyn till de applikationer du har.";
 hqos.right8="Du kan ange prioritet för en given adress.";
@@ -1016,6 +1057,7 @@ route.rip2_mod="RIP2 Router";
 route.olsrd_mod="OLSR Router";
 route.olsrd_legend="OLSR Routing (Optimerad Link Status Routing)";
 route.olsrd_poll="Poll Hastighet";
+route.olsrd_gateway="Gateway Läge";
 route.olsrd_hna="Host Nät Annonsering";
 route.olsrd_tc="TC Redundancy";
 route.olsrd_mpr="MPR Täckning";
@@ -1026,9 +1068,18 @@ route.olsrd_lqdmax="Länk kvalitet Dijkstra Max";
 route.olsrd_lqlvl="Länk kvalitet Nivå";
 route.olsrd_hysteresis="Hysteresis";
 route.olsrd_newiface="Nytt Interface";
+route.zebra_legend="Zebra Konfiguration";
+route.zebra_log="Zebra Logg";
+route.zebra_copt="Zebra Konfigurations Stil";
+route.bird_legend="Bird Konfiguration";
+route.bird_log="Bird Logg";
+route.bird_copt="Bird Konfigurations Stil";
 route.ospf_mod="OSPF Router";
 route.ospf_legend="OSPF Routing";
 route.ospf_conf="OSPF Konfig";
+route.ospf_copt="OSPF Konfigurations Stil";
+route.copt_gui="GUI";
+route.copt_vtysh="Vtysh";
 route.gateway_legend="Dynamisk Routing";
 route.static_legend="Statisk Routing";
 route.static_setno="Välj Route Nr";
@@ -1036,11 +1087,11 @@ route.static_name="Route namn";
 route.static_ip="Destinations Nät";
 
 //help container
-hroute.right2="Om routern sköter din internetkoppling, välj <em>Gateway</em> mode. Om en annan router finns i ditt nät, välj <em>Router</em> mode.";
+hroute.right2="Om routern sköter din internetkoppling, välj <em>Gateway</em> läge. Om en annan router finns i ditt nät, välj <em>Router</em> läge.";
 hroute.right4="Detta är ett unikt route nummer, du kan ha upp till 50 routes.";
 hroute.right6="Namn för denna route.";
 hroute.right8="Fjärrdatorn du vill ange denna route till.";
-hroute.right10="Anger host o nätverksdel.";
+hroute.right10="Anger host och nätverksdel.";
 
 
 // ** Site_Survey.asp **//
@@ -1052,6 +1103,9 @@ survey.thjoin="Koppla Siten";
 // ** Tjänsts.asp **//
 service.titl="serviceer";
 service.h2="Tjänste Administration";
+
+service.apserv_legend="APServ Fjärr Konfiguration";
+service.apserv="APServ";
 
 //kaid
 service.kaid_legend="XBOX Kaid";
@@ -1080,6 +1134,7 @@ service.dnsmasq_opt="Extra DNSMasq Alternativ";
 //pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Server";
+service.pptp_forcemppe="Tvinga MPPE Kryptering";
 service.pptp_client="Klient IP(s)";
 service.pptp_chap="CHAP-Hemlighet";
 
@@ -1125,7 +1180,7 @@ service.pppoesrv_lcpef="LCP Echo Fel";
 service.pppoesrv_idlet="Vilotid";
 service.pppoesrv_auth="Behörighet";
 service.pppoesrv_radip="Radius Server IP";
-service.pppoesrv_radauthport="Radius Authentication Port";
+service.pppoesrv_radauthport="Radius Autentiserings Port";
 service.pppoesrv_radaccport="Radius Accounting Port";
 service.pppoesrv_radkey="Radius Delad Nyckel";
 service.pppoesrv_chaps="Local Användaradministration (CHAP Hemligheter)";
@@ -1133,25 +1188,38 @@ service.pppoesrv_chaps="Local Användaradministration (CHAP Hemligheter)";
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
-service.snmp_loc="Lokal";
+service.snmp_loc="Plats";
 service.snmp_contact="Kontakt";
-service.snmp_name="namn";
+service.snmp_name="Namn";
 service.snmp_read="RO Community";
 service.snmp_write="RW Community";
 
 //openvpn.webservices
 service.vpn_legend="OpenVPN Klient";
 service.vpn_srv="Starta OpenVPN";
+service.vpnd_starttype="Start Typ";
+service.vpnd_startWanup="WAN på";
+service.vpnd_startSystem="System";
+service.vpnd_crl="Certificate Revoke List";
+service.vpnd_config="OpenVPN Config";
+service.vpnd_dhpem="DH PEM";
+service.vpnd_tlsauth="OpenVPN TLS Auth";
+service.vpn_legend="OpenVPN Klient";
+service.vpn_srv="Start OpenVPN Klient";
 service.vpn_ipname="Server IP/namn";
 service.vpn_mtu="TUN MTU Inställning";
 service.vpn_mru="TUN MTU Extra";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="Använd LZO Kompression";
 service.vpn_tunnel="Tunnel Protokoll";
-service.vpn_srvcert="Publikt Server Cert";
+service.vpn_srvcert="CA Cert";
 service.vpn_clicert="Publikt Klient Cert";
 service.vpn_certtype="nsCertType";
+service.vpn_srvcert="Publikt Server Cert";
 service.vpn_clikey="Privat Klient Nyckel";
+
+service.vncrepeater_legend="VNC";
+service.vncrepeater="VNC Repeater";
 
 //sshd.webservices
 service.ssh_legend="Säkert Skal";
@@ -1162,8 +1230,11 @@ service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Knapp";
+service.radiooff_legend_aoss="AOSS Knapp Funktion";
 service.radiooff_srv="Använd denna knapp för att stoppa wifi";
-service.radiooff_bootoff="Stäng wifi vid uppstart";
+service.radiooff_srv_aoss="AOSS";
+service.radiooff_srv_disabled="Oanvänd";
+service.radiooff_bootoff="Stäng av wifi vid uppstart";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS / EZ-SETUP /WPS Knapp";
@@ -1198,7 +1269,7 @@ service.usb_ehci="USB 2.0 Stöd";
 service.usb_storage="USB Minnes Stöd";
 service.usb_extfs="ext2 / ext3 Fil System Stöd";
 service.usb_fatfs="FAT File-Systems Stöd";
-service.usb_printer="USB Printer Stöd";
+service.usb_printer="Stöd för USB skrivare";
 
 //ttraff.webservices
 service.ttraff_legend="Internet Trafik Räknare";
@@ -1240,7 +1311,7 @@ service.hmilkfish_right10="Skriv in ditt Milkfish Community Forum Lösenord - Reg
 service.hmilkfish_right12="Aktivera/Inaktivera grundlig SIP Spårning på din router";
 service.hmilkfish_right14="Lokala SIP Anknytningar är lokalt hanterade SIP Konton";
 service.hmilkfish_right16="Lokala SIP Alias är SIP Forwards liknande Email Forwards. kan användas för  alphanumerisk till numerisk telefon konton eller tvärsom";
-service.hmilkfish_right18="Aktivera/Inaktivera Dynamisk SIP (e.x. Homesip.net Tjänst) - Användarnamn o Lösenord måste vara uppsatta";
+service.hmilkfish_right18="Aktivera/Inaktivera Dynamisk SIP (e.x. Homesip.net Tjänst) - Användarnamn och Lösenord måste vara uppsatta";
 service.hmilkfish_right20="Ej implementerad än - lämna tomt";
 service.hmilkfish_right22="Ej implementerad än - lämna tomt";
 service.hmilkfish_right24="Ej implementerad än - lämna tomt";
@@ -1260,7 +1331,7 @@ eoip.passtos="TOS genomgång";
 eoip.frag="fragment";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
-eoip.bridging="Bridging";
+eoip.bridging="Bryggning";
 
 
 // ** Sipath.asp + cgi **//
@@ -1277,6 +1348,8 @@ status_lan.h22="DHCP Konfiguration";
 status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Klienter";
 status_lan.legend4="Aktiva Klienter";
+status_lan.legend5="Anslutna PPTP Klienter";
+status_lan.legend6="Anslutna PPPOE Klienter";
 status_lan.concount="Antal Kopplingar";
 status_lan.conratio="Ratio";
 
@@ -1301,9 +1374,9 @@ status_band.follow="Följ upp";
 status_band.up="upp";
 
 //help container
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
-hstatus_band.right1="Klicka namnet för att byta enhet (bytes/s eller bits/s).";
-hstatus_band.right2="Klicka namnet för att byta graf skalan.";
+hstatus_band.svg="Adobes SVG plugin krävs för att visa bandbredd grafer.";
+hstatus_band.right1="Klicka på namnet för att byta enhet (bytes/s eller bits/s).";
+hstatus_band.right2="Klicka på namnet för att byta graf skalan.";
 
 // ** Status_Router.asp **//
 status_router.titl="Router Status";
@@ -1335,8 +1408,8 @@ status_router.inpvolt="Inkommande Spänning";
 status_router.cputemp="CPU Temperatur";
 
 //help container
-hstatus_router.right2="Routerns specifika namn, som du sätter upp på <i>Setup</i> fliken.";
-hstatus_router.right4="Detta är routerns MAC Adress, som den ses utifrån internet.";
+hstatus_router.right2="Routerns specifika namn, Som du ställer in i inställnigar (fliken).";
+hstatus_router.right4="Detta är routerns MAC Adress, som ses utifrån internet.";
 hstatus_router.right6="Detta är routerns aktuella firmware.";
 hstatus_router.right8="Denna tid är mottagen från tidsservern som du angett på <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> fliken.";
 hstatus_router.right10="Denna tid har routern varit \"uppe\" och körts.";
@@ -1356,12 +1429,14 @@ status_inet.traffin="Inkommande";
 status_inet.traffout="Utgående";
 status_inet.previous="Föregående Månad";
 status_inet.next="Nästa Månad";
+status_inet.dataadmin="Data Administration";
+status_inet.delete_confirm="VARNING! Detta kommer att ta bort all trafik data, fortsätt?";
 
 
 //help container
 hstatus_inet.right2="Detta visar info som behövs för din ISP för att koppla upp internet. Denna info var inskriven på Setup fliken. Du kan <em>Koppla </em> eller <em>Frånkoppla </em> ditt internet genom att klicka detta.";
 hstatus_inet.right4="Detta visar din internettrafik sedan sista omstart.";
-hstatus_inet.right6="Detta visar din internettrafik per månad. För musen över grafen för att se daglig data. Data sparas i nvram.";
+hstatus_inet.right6="Detta visar din internettrafik per månad. För musen över grafen för att se daglig data. Trafikdata sparas i nvram.";
 
 
 // ** Status_Conntrack.asp **//
@@ -1439,10 +1514,10 @@ upgrad.resetOff="Återställ Ej";
 upgrad.resetOn="Fabriksinställningen";
 upgrad.file="Välj Firmwarefil";
 upgrad.warning="V A R N I N G";
-upgrad.mess1="Uppgraderingen kan ta tid.<br />Slå ej av strömmen eller tryck ej in resetknappen!";
+upgrad.mess1="Uppgraderingen kan ta tid.<br />Stäng inte av strömmen eller tryck på reset knappen!";
 
 //help container
-hupgrad.right2="Klicka på <em>Bläddra...</em> knappen för att välja firmware.<br /><br /> Klicka på <em>Upgradera </em> knappen för att starta uppgraderingen. Uppgraderingen får EJ bli avbruten.";
+hupgrad.right2="Klicka på <em>Bläddra...</em> knappen för att välja firmware.<br /><br /> Klicka på <em>Upgradera </em> knappen för att starta uppgraderingen. Uppgraderingen får INTE bli avbruten.";
 
 
 // ** UPnP.asp **//
@@ -1478,7 +1553,7 @@ vlan.titl="Virtuellt LAN";
 vlan.h2="Virtuellt Lokalt Nätverk (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Dedikerat till<br />Bryggan";
-vlan.tagged="Taggat";
+vlan.tagged="Taggad";
 vlan.negociate="Auto-Förhandla";
 vlan.aggregation="Link Aggregation<br>på Port 3 & 4";
 vlan.trunk="Trunk";
@@ -1492,7 +1567,7 @@ wep.passphrase="Lösenords Fras";
 // ** WOL.asp **//
 wol.titl="WOL";
 wol.h2="Wake-On-LAN";
-wol.legend="Tillgängliga nätenheter";
+wol.legend="Tillgängliga Apparater";
 wol.legend2="WOL Adresser";
 wol.legend3="Utdata";
 wol.legend4="Manuell WOL";
@@ -1507,9 +1582,9 @@ wol.srv="WOL tjänst";
 wol.pass="SecureOn Lösenord";
 
 //help container
-hwol.right2="Denna sida tillåter dig <em>Vakna Upp</em> på saker du har på ditt nätverk (ex. saker lokalt på din router). Du kan manuellt väcka genom att klicka <em>"+sbutton.wol+"</em> eller automatiskt väcka genom schemalagt "+wol.srv+".";
+hwol.right2="Denna sida tillåter dig att <em>starta upp</em> apparater du har på ditt nätverk (ex. saker lokalt på din router). Du kan manuellt väcka apparater genom att klicka <em>"+sbutton.wol+"</em> eller automatiskt väcka upp genom en schemalagd "+wol.srv+".";
 hwol.right4="MAC Adress(er) skrivs xx:xx:xx:xx:xx:xx (ex. 01:23:45:67:89:AB) måste separeras med <em>MELLANSLAG</em>";
-hwol.right6="IP Adress är typiskt broadcast Adress för lokala nätet, men kan också vara en fjärr adress om din apparat inte är kopplad på det lokala nätet.";
+hwol.right6="IP-adress är normalt broadcast-adressen för det lokala nätverket, men kan vara en avlägsen adress om apparaten inte är ansluten till routerns lokala nätverk";
 
 
 // ** WanMAC.asp **//
@@ -1520,7 +1595,7 @@ wanmac.wan="Klona WAN MAC";
 wanmac.wlan="Klona Trådlös MAC";
 
 //help container
-hwanmac.right2="Vissa ISPs kräver MAC Registrering. om du inte vill omregistrera MAC Adressen, så kan du klona MAC adressen som du registrerat hos din ISP.";
+hwanmac.right2="Vissa Internetleverantörer kräver MAC Registrering. Om du inte vill omregistrera MAC Adressen, så kan du klona MAC adressen som du registrerat hos din Internetleverantör.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
@@ -1539,9 +1614,27 @@ wpa.radius_key="RADIUS Nyckel";
 wpa.algorithms="WPA Algorithm";
 wpa.shared_key="WPA Delad Nyckel";
 
+//AOSS
+aoss.titl="AOSS Säkerhet";
+aoss.aoss="AOSS";
+aoss.service="AOSS Tjänst";
+aoss.enable="Aktivera AOSS";
+aoss.start="Starta AOSS Förhandling";
+aoss.securitymodes="Wifi Kryptering";
+aoss.wpaaes="WPA / WPA2 AES";
+aoss.wpatkip="WPA / WPA2 TKIP";
+aoss.wep="WEP64 / 128";
+aoss.client_name="Klient Namn";
+aoss.security="Säkerhet";
+aoss.connectivity="Anslutningar";
+aoss.clients="AOSS Klienter";
+
 sec80211x.xsuptype="XSupplicant Typ";
 sec80211x.servercertif="Publikt Server Certifikat";
 sec80211x.clientcertif="Klient Certificat";
+sec80211x.phase2="Phase2";
+sec80211x.anon="Anonym Identitet";
+sec80211x.options="Extra Nätverksinställningar";
 
 //help container
 hwpa.right2="Välj mellan Inaktivera, WEP, WPA Personal, WPA Enterprise, eller RADIUS. All trådlös utrustning måste köra samma säkerhetsmodell.";
@@ -1583,10 +1676,19 @@ radius.label="MAC Radius Klient";
 radius.label2="MAC Format";
 radius.label3="RADIUS Server Adress";
 radius.label4="RADIUS Server Port";
+radius.label7="RADIUS delad hemlighet";
+
+radius.label23="Radius Auth Backup Server Address";
+radius.label24="Radius Auth Backup Server Port";
+radius.label27="Radius Auth Backup Delade Hemligheter";
+
 radius.label5="Max Overifierade Användare";
 radius.label6="Lösenords Format";
-radius.label7="RADIUS delad hemlighet";
 radius.label8="Ignorera Radius om servern otillgänglig";
+radius.label13="Radius Acct Server Address";
+radius.label14="Radius Acct Server Port";
+radius.label17="Radius Acct Shared Secret";
+radius.label18="Radius Accounting";
 
 
 // ** Trådlöst_MAC.asp **//
@@ -1598,6 +1700,44 @@ wl_mac.label2="Filter Modell";
 wl_mac.deny="Nekar klienter listade från att komma in på Trådlöst nätverk";
 wl_mac.allow="Tillåt dessa klienter listade att komma in på Trådlöst nätverk";
 
+// ** WiMAX
+wl_wimax.titl="WiMAX";
+wl_wimax.h2="Worldwide Interoperability for Microwave Access";
+wl_wimax.downstream="Frekvens Nedströms";
+wl_wimax.upstream="Frekvens Uppströms";
+wl_wimax.width="Kanal bredd";
+wl_wimax.duplex="Duplex Läge";
+wl_wimax.mode="Operativt läge";
+wl_wimax.mac="Abonnent MAC Address";
+
+// ** FreeRadius.asp **//
+freeradius.titl="FreeRadius";
+freeradius.h2="FreeRadius";
+freeradius.certificate="Server Certifikat";
+freeradius.cert="Skapa Certifikat";
+freeradius.clientcert="Klient Certifikat";
+freeradius.settings="Inställnigar";
+freeradius.users="Användare";
+freeradius.clients="Klienter";
+freeradius.username="Användarnamn";
+freeradius.password="Lösenord";
+freeradius.downstream="Nedströms";
+freeradius.upstream="Uppströms";
+freeradius.sharedkey="Delad Nyckel";
+
+
+freeradius.countrycode="Lands kod";
+freeradius.state="Stat eller Län";
+freeradius.locality="Ort";
+freeradius.organisation="Organisation / Företag";
+freeradius.email="Email Address";
+freeradius.common="Vanliga Certifikat Namn";
+freeradius.expiration="Utlöpande (Dagar)";
+freeradius.passphrase="Lösenords Fras";
+freeradius.generate="Generera Certifikat";
+freeradius.cert_status="Certifikat Status";
+freeradius.port="Radius Port";
+
 // ** Trådlöst_Advanced.asp **//
 wl_adv.titl="Avancerade Trådlösa Inställningar";
 wl_adv.h2="Avancerade Trådlösa Inställningar";
@@ -1606,7 +1746,7 @@ wl_adv.legend2="Trådlös Multimedia Stöd Inställningar";
 wl_adv.label="Authentiseringstyp";
 wl_adv.label2="Bashastighet";
 wl_adv.label3="Överförings Hastighet";
-wl_adv.label4="CTS Skyddsmodell";
+wl_adv.label4="CTS Skyddsläge";
 wl_adv.label5="Frame Burst";
 wl_adv.label6="Beacon Intervall";
 wl_adv.label7="DTIM Intervall";
@@ -1625,14 +1765,31 @@ wl_adv.label19="Ingen-Acknowledgement";
 wl_adv.label20="Shortslot Ignorera";
 wl_adv.label21="Överföring Max Hastighet";
 wl_adv.label23="Överföring Min Hastighet";
-wl_adv.label22="Blåtand Coexistence Modell";
+wl_adv.label22="Bluetooth Samexistens Läge";
 wl_adv.label24="Antenn Inställning";
+wl_adv.label25="Antenn Output";
 wl_adv.table1="EDCA AP Parametrar (AP till Klient)";
+
+wl_adv.txchainmask="TX Antenn Kedjor";
+wl_adv.rxchainmask="RX Antenn Kedjor";
+
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
+
+wl_adv.table3="WMM Tx retry gränser, fallback gränser och max rate parametrar.";
+wl_adv.txpcol1="S. Retry";
+wl_adv.txpcol2="S. Fallbk";
+wl_adv.txpcol3="L. Retry";
+wl_adv.txpcol4="L. Fallbk";
+wl_adv.txpcol5="Max Rate";
+wl_adv.txprow1="AC BE TX Parametrar";
+wl_adv.txprow2="AC BK TX Parametrar";
+wl_adv.txprow3="AC VI TX Parametrar";
+wl_adv.txprow4="AC VO TX Parametrar";
+
 wl_adv.col6="Admin Tvingad";
 wl_adv.row1="Bakgrund";
 wl_adv.row2="Bästa Kostnad";
@@ -1643,11 +1800,12 @@ wl_adv.lng="Lång"; 					//************* don't use .long ! *************
 wl_adv.shrt="Kort"; 				//************* don't use .short ! **************
 
 //help container
-hwl_adv.right2="Du kan välja mellan Auto eller delad nyckel. Delad nyckel är säkrare, Men då måste alla enheter stödja detta.";
+hwl_adv.right2="Du kan välja mellan Auto eller delad nyckel. Delad nyckel är säkrare, Men då måste alla apparater stödja detta.";
 
 // ** Trådlöst_Basic.asp **//
 wl_basic.titl="Trådlöst";
 wl_basic.h2="Trådlöst";
+wl_basic.cardtype="Kort Typ";
 wl_basic.legend="Standard Inställning";
 wl_basic.label="Trådlöst Modell";
 wl_basic.label2="Trådlöst Nätverk Modell";
@@ -1655,7 +1813,11 @@ wl_basic.label3="Trådlöst Nätverks namn (SSID)";
 wl_basic.label4="Trådlöst Kanal";
 wl_basic.label5="Trådlöst SSID Broadcast";
 wl_basic.label6="Känslighets intervall (ACK Tid)";
+wl_basic.label7="802.11n Överföringsläge";
 wl_basic.scanlist="ScanLista";
+wl_basic.duallink="Dubbel Länk";
+wl_basic.parent="Parent IP";
+wl_basic.masquerade="Maskerad / NAT";
 wl_basic.ap="AP";
 wl_basic.client="Klient";
 wl_basic.repeater="Repeater";
@@ -1665,12 +1827,20 @@ wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixad";
+wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Kort Preamble";
 wl_basic.b="B-Endast";
 wl_basic.a="A-Endast";
+wl_basic.na="NA-Mixat";
+wl_basic.ng="NG-Mixat";
+wl_basic.n5="N-Endast (5 GHz)";
+wl_basic.n2="N-Endast (2.4 GHz)";
 wl_basic.g="G-Endast";
 wl_basic.bg="BG-Mixat";
 wl_basic.n="N-Endast";
+wl_basic.rts="RTS Threshold";
+wl_basic.rtsvalue="Threshold";
+wl_basic.protmode="Protection Mode";
 wl_basic.legend2="Radio Tidsbegränsning";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Schema";
@@ -1687,24 +1857,34 @@ wl_basic.secondary="Sekundär";
 wl_basic.vertical="Vertikal";
 wl_basic.horizontal="Horizontal";
 wl_basic.adaptive="Adaptive";
+wl_basic.internal="Internt";
 wl_basic.external="Extern";
+wl_basic.ghz24="2.4 GHz Output";
+wl_basic.ghz5="5 GHz Output";
 wl_basic.network="Nät Konfiguration";
 wl_basic.unbridged="Ej Bryggad";
 wl_basic.bridged="Bryggad";
-wl_basic.turbo="Turbo Modell";
-wl_basic.extintervall="Utökat intervall";
+wl_basic.turbo="Turbo Läge";
+wl_basic.extrange="Utökad Räckvidd";
 wl_basic.supergcomp="Super G Kompression";
 wl_basic.supergff="Super G Snabb Framing";
-wl_basic.extchannel="Utöka Kanal Modell";
+wl_basic.extchannel="Utöka Kanal Läge";
 wl_basic.outband="Utomhus Band";
-wl_basic.channel_width="Bandbredd";
-wl_basic.channel_wide="Bred Kanal";
+wl_basic.channel_width="Kanal bredd";
+wl_basic.channel_wide="Kontrol Kanal";
 wl_basic.regulatory="Superkanal";
+wl_basic.chanshift="Kanal Shifting";
 wl_basic.specialmode="2.3 GHz Modell";
 wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Tid";
 wl_basic.preambletime="OFDM Preamble Tid";
 wl_basic.multicast="Multicast forwarding";
+wl_basic.intmit="Brus Immunitet";
+wl_basic.noise_immunity="Brus Immunitet Grad";
+wl_basic.ofdm_weak_det="OFDM Weak Detection";
+wl_basic.radar="Radar Detection";
+wl_basic.mtikie="MTik Compatibility";
+wl_basic.csma="Carrier Sense";
 //help container
 hwl_basic.right2="Om du vill exkludera Trådlösa-G Klienter, Välj <em>B-Only</em>. Om du vill stänga av Trådlöst, välj <em>Inaktivera</em>.<br/><b>Notera :</b> När du ändrar Trådlöst mode, blir vissa avancerade funktioner ändrade (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Känslighets intervall: ";
@@ -1730,6 +1910,14 @@ success.alert3="Om du är kopplad via WLAN, Anslut nätet först sen klicka <em>For
 
 // ** Logout.asp  **//
 logout.message="Utloggning Lyckades.<br />Tack för att du använder DD-WRT !";
+
+// ** Setup Assistant **//
+var hsas = new Object();
+hsas.wan="WAN-porten ansluter routern till internet eller andra nätverk. Om ditt nätverk redan är anslutet till internet samt endast använder routern som en AP ställ in WAN som \"disabled\".";
+
+// ** AOSS **//
+var haoss = new Object();
+haoss.basic=" \"AirStation One-Touch Secure System\" Med AOSS kan du ansluta apparater som har stöd för AOSS till ditt nätverk utan manuell konfiguration.";
 
 
 // ************		OLD PAGES 		*******************************//
