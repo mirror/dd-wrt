@@ -619,34 +619,8 @@ char *getIsoName(const char *country)
 
 #ifdef HAVE_BUFFALO
 //char 
-static void *getUEnv(char *name)
-{
-#ifdef HAVE_WZRG300NH
-#define UOFFSET 0x40000
-#else
-#define UOFFSET 0x3E000
-#endif
-        static char res[64];
-        memset(res, 0, sizeof(res));
-	//fprintf(stderr,"[u-boot env]%s\n",name);
-        FILE *fp = fopen("/dev/mtdblock/0", "rb");
-        fseek(fp, UOFFSET, SEEK_SET);
-        char *mem = malloc(0x2000);
-        fread(mem, 0x2000, 1, fp);
-        fclose(fp);
-        int s = (0x2000-1) - strlen(name);
-        int i;
-        int l = strlen(name);
-        for (i = 0; i < s; i++) {
-                if (!strncmp(mem + i, name, l)) {
-                        strcpy(res, mem + i + l + 1);
-                        free(mem);
-                        return res;
-                }
-        }
-        free(mem);
-        return NULL;
-}
+
+extern void *getUEnv(char *name);
 
 static int isValidCountry(char *region, char *country) {
 	int i, j;
