@@ -1821,8 +1821,8 @@ void remove_vifs_single(char *prefix)
 // must remove all aoss vap's if one of them is touched
 	if (strlen(nvram_safe_get("aoss_vifs")))
 	    {
-	    nvram_set("ath0_vifs");
-	    nvram_set("aoss_vifs");
+	    nvram_set("ath0_vifs","");
+	    nvram_set("aoss_vifs","");
 	    }
 #endif
 }
