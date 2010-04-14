@@ -4898,12 +4898,23 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 #endif
 		}
+	}
+
 // wireless ssid
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 		  wl_ssid, nvram_safe_get(wl_ssid));
 
+#ifdef HAVE_RT2880
+	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
+	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta")
+	    || nvram_match(wl_mode, "apstawet"))
+#else
+	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
+	    || nvram_match(wl_mode, "infra"))
+#endif
+	{
 // ssid broadcast
 		char wl_closed[16];
 
