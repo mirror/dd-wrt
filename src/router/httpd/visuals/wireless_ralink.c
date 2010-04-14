@@ -269,7 +269,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	int channel = wifi_getchannel("ra0");
 
 	if (channel > 0 && channel < 1000) {
-		websWrite(wp, "%d (%d Mhz)", channel, wifi_getfreq("ra0"));
+		websWrite(wp, "%d (%d MHz)", channel, wifi_getfreq("ra0"));
 	} else
 		// websWrite (wp, "unknown");
 		websWrite(wp, "%s", live_translate("share.unknown"));
