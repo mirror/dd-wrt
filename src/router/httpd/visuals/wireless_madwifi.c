@@ -388,7 +388,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	int channel = wifi_getchannel(nvram_safe_get("wifi_display"));
 
 	if (channel > 0 && channel < 1000) {
-		websWrite(wp, "%d (%d Mhz)", channel,
+		websWrite(wp, "%d (%d MHz)", channel,
 			  get_wififreq(nvram_safe_get("wifi_display"),
 				       wifi_getfreq(nvram_safe_get
 						    ("wifi_display"))));

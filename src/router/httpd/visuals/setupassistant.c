@@ -649,7 +649,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
 #ifdef HAVE_RT2880
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 Mhz</option>\");\n//]]>\n</script>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 MHz</option>\");\n//]]>\n</script>\n",
 				  nvram_selnmatch(wp, "20", "%s_nbw",
 					       prefix) ?
 				  "selected=\\\"selected\\\"" : "");
@@ -1057,7 +1057,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type) {
 			
 			int i, j;
 			
-			// supported 5GHz channels for IEEE 802.11n 40Mhz
+			// supported 5GHz channels for IEEE 802.11n 40MHz
 			int na_upper[16] =
 			    { 40, 48, 56, 64, 104, 112, 120, 128, 136, 153, 161,
 			       0, 0, 0, 0, 0
