@@ -1091,6 +1091,19 @@ void start_lan(void)
 	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
+#ifdef HAVE_WBD222
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 ath0 ath1 ath2");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 ath0 ath1 ath2");
+		PORTSETUPWAN("eth0");
+	}
+	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+#endif
 #ifdef HAVE_STORM
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames, "eth0 ath0");
