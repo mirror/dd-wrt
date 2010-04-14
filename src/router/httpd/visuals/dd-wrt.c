@@ -2624,7 +2624,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 //      websWrite( wp, "var freq = new Array(\"Auto\"" );
 			int i, j;
 
-			// supported 5GHz channels for IEEE 802.11n 40Mhz
+			// supported 5GHz channels for IEEE 802.11n 40MHz
 			int na_upper[16] =
 			    { 40, 48, 56, 64, 104, 112, 120, 128, 136, 153, 161,
 				0, 0, 0, 0, 0
@@ -3374,7 +3374,7 @@ static void show_chanshift(webs_t wp, char *prefix)
 		if (nvram_match(wl_channelbw, "5")
 		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
-				  "document.write(\"<option value=\\\"-15\\\" %s >-15 Mhz</option>\");\n",
+				  "document.write(\"<option value=\\\"-15\\\" %s >-15 MHz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-15",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
@@ -3382,7 +3382,7 @@ static void show_chanshift(webs_t wp, char *prefix)
 		    || nvram_match(wl_channelbw, "10")
 		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
-				  "document.write(\"<option value=\\\"-10\\\" %s >-10 Mhz</option>\");\n",
+				  "document.write(\"<option value=\\\"-10\\\" %s >-10 MHz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-10",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
@@ -3390,12 +3390,12 @@ static void show_chanshift(webs_t wp, char *prefix)
 		    || nvram_match(wl_channelbw, "10")
 		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
-				  "document.write(\"<option value=\\\"-5\\\" %s >-5 Mhz</option>\");\n",
+				  "document.write(\"<option value=\\\"-5\\\" %s >-5 MHz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "-5",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		websWrite(wp,
-			  "document.write(\"<option value=\\\"0\\\" %s >0 Mhz</option>\");\n",
+			  "document.write(\"<option value=\\\"0\\\" %s >0 MHz</option>\");\n",
 			  nvram_default_match(wl_chanshift, "0",
 					      "0") ? "selected=\\\"selected\\\""
 			  : "");
@@ -3403,7 +3403,7 @@ static void show_chanshift(webs_t wp, char *prefix)
 		    || nvram_match(wl_channelbw, "10")
 		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
-				  "document.write(\"<option value=\\\"5\\\" %s >+5 Mhz</option>\");\n",
+				  "document.write(\"<option value=\\\"5\\\" %s >+5 MHz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "5",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
@@ -3411,14 +3411,14 @@ static void show_chanshift(webs_t wp, char *prefix)
 		    || nvram_match(wl_channelbw, "10")
 		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
-				  "document.write(\"<option value=\\\"10\\\" %s >+10 Mhz</option>\");\n",
+				  "document.write(\"<option value=\\\"10\\\" %s >+10 MHz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "10",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
 		if (nvram_match(wl_channelbw, "5")
 		    || nvram_match(wl_channelbw, "2"))
 			websWrite(wp,
-				  "document.write(\"<option value=\\\"15\\\" %s >+15 Mhz</option>\");\n",
+				  "document.write(\"<option value=\\\"15\\\" %s >+15 MHz</option>\");\n",
 				  nvram_default_match(wl_chanshift, "15",
 						      "0") ?
 				  "selected=\\\"selected\\\"" : "");
@@ -4449,7 +4449,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
 #ifdef HAVE_RT2880
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 Mhz</option>\");\n//]]>\n</script>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 MHz</option>\");\n//]]>\n</script>\n",
 				  nvram_nmatch("20", "%s_nbw",
 					       prefix) ?
 				  "selected=\\\"selected\\\"" : "");
@@ -4817,7 +4817,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
 #ifdef HAVE_RT2880
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 Mhz</option>\");\n//]]>\n</script>\n",
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 MHz</option>\");\n//]]>\n</script>\n",
 				  nvram_nmatch("20", "%s_nbw",
 					       prefix) ?
 				  "selected=\\\"selected\\\"" : "");
