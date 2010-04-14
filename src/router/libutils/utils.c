@@ -2039,7 +2039,7 @@ void *getUEnv(char *name)
 	int l = strlen(name);
 	for (i = 0; i < s; i++) {
 		if (!strncmp(mem + i, name, l)) {
-			strncpy(res, mem + i + l + 1,63);
+			strncpy(res, mem + i + l + 1,sizeof(res)-1);
 			free(mem);
 			return res;
 		}
