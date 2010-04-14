@@ -2919,11 +2919,11 @@ int led_control(int type, int act)
 		diag_gpio = 0x102;
 		wlan_gpio = 0x104;
 #else
-		if (nvram_match("DD_BOARD", "Cambria GW2350")
-		    || nvram_match("DD_BOARD2", "Cambria GW2350"))
-			connected_gpio = 0x115;
-		else if (nvram_match("DD_BOARD", "Cambria GW2358-4")
-			 || nvram_match("DD_BOARD2", "Cambria GW2358-4"))
+		if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
+		    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
+			connected_gpio = 0x105;
+		else if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
+			 || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4"))
 			connected_gpio = 0x118;
 		else
 			connected_gpio = 0x003;
