@@ -760,7 +760,6 @@ anchorfree.validcat="請選擇 hotspot 的廣告類別";
 anchorfree.validcountry="你的 hotspot 所在地";
 anchorfree.validterms="你必須同意條款和條件!";
 
-var hanchorfree = new Object();
 hanchorfree.right1="Join AnchorFree's hotspot advertising network";
 hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
 hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
