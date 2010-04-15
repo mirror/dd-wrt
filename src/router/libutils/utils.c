@@ -2933,8 +2933,10 @@ int led_control(int type, int act)
 		connected_gpio = 0x004;
 		break;
 	case ROUTER_BOARD_STORM:
+#ifndef HAVE_WBD222
 		connected_gpio = 0x005;
 		diag_gpio = 0x003;
+#endif
 		break;
 	case ROUTER_LINKSYS_WRH54G:
 		diag_gpio = 0x101;	// power led blink / off to indicate factory
