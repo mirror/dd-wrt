@@ -392,6 +392,7 @@ bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="SuperKanal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Brez¾ièna za¹èita";
+bmenu.wirelessAoss="AOSS";
 bmenu.wirelessMac="Filter MAC";
 bmenu.wirelessAdvanced="Napredne nastavitve";
 bmenu.wirelessAdvancedwl0="WL0-Napredno";
@@ -806,6 +807,7 @@ hotspotsys.operatorid="ID operatorja";
 hotspotsys.locationid="ID lokacije";
 hotspotsys.dhcp="DHCP vmesnik";
 hotspotsys.net="Oddaljena mre¾a";
+hotspotsys.customsplash="Splash Page po meri (Walled Garden)";
 
 
 anchorfree.anchorfree="AnchorFree";
@@ -865,7 +867,7 @@ idx_h.reconnect="Prisili ponovno povezovanje";
 
 // ** index_l2tp.asp **//
 
-idx_l.srv="L2TP stre¾nik";
+idx_l.srv="Prehod (L2TP stre¾nik)";
 
 
 // ** index_pppoe.asp **//
@@ -945,6 +947,7 @@ hidx.right12="Dovoli usmerjevalniku, da upravlja z va¹imi IP naslovi.";
 hidx.right14="®eljeni zaèetni naslov.";
 hidx.right16="Omejite lahko ¹tevilo naslovov, ki jih dodeli va¹ usmerjevalnik. 0 pomeni, da bo router dodelil le vnaprej doloèene statiène zakupe.";
 hidx.right18="Izberite va¹o èasovno cono in obdobje poletnega èasa. Usmerjevalnik lahko uparablja lokalni èas ali èas UTC.";
+hidx.sas="Nastavitveni pomoènik vas vodi po osnovnih korakih konfiguracije usmerjevalnika.";
 
 
 // ** Join.asp **//
@@ -1156,6 +1159,7 @@ route.rip2_mod="RIP2 usmerjevalnik";
 route.olsrd_mod="OLSR usmerjevalnik";
 route.olsrd_legend="OLSR usmerjevanje (Optimized Link State Routing)";
 route.olsrd_poll="Poll Rate";
+route.olsrd_gateway="Naèin Prehod";
 route.olsrd_hna="Host Net Announce";
 route.olsrd_tc="TC Redundancy";
 route.olsrd_mpr="MPR Coverage";
@@ -1331,7 +1335,10 @@ service.ssh_forwarding="SSH TCP posredovanje";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS gumb";
+service.radiooff_legend_aoss="Funkcija AOSS gumba";
 service.radiooff_srv="Uporabi ta gumb za izkljuèitev radia";
+service.radiooff_srv_aoss="AOSS";
+service.radiooff_srv_disabled="Neuporabljeno";
 service.radiooff_bootoff="Ob zagonu izkljuèi radio";
 
 //ses.webservices ====> might replace the above radiooff_button
@@ -1450,7 +1457,8 @@ status_lan.h22="DHCP - Protokol za dinamicènego konfiguracijo gostitelja";
 status_lan.legend2="DHCP status";
 status_lan.legend3="DHCP odjemalci";
 status_lan.legend4="Aktivni odjemalci";
-status_lan.legend5="PPTP odjemalci";
+status_lan.legend5="prikljuèeni PPTP odjemalci";
+status_lan.legend6="Prikljuèeni PPPOE odjemalci";
 status_lan.concount="©t. zvez";
 status_lan.conratio="Dele¾";
 
@@ -1470,7 +1478,7 @@ status_band.h2="Nadzor pasovne ¹irine";
 status_band.chg_unit="Preklopi na ";
 status_band.chg_scale="Samodejno merilo";
 status_band.chg_error="Ne morem zbrati podatkov o vmesniku";
-status_band.chg_collect_initial="Zbiram zacetne podatke, prosimo pocakajte...";
+status_band.chg_collect_initial="Zbiram zaèetne podatke, prosimo poèakajte...";
 status_band.strin="Noter";
 status_band.strout="Ven";
 status_band.follow="sledi";
@@ -1745,6 +1753,22 @@ wpa.algorithms="WPA algoritm";
 wpa.shared_key="WPA deljeni kljuè";
 
 
+
+aoss.titl="AOSS varnost";
+aoss.aoss="AOSS";
+aoss.service="AOSS servis";
+aoss.enable="Omogoèi AOSS";
+aoss.start="Zaèni AOSS pogajanje";
+aoss.securitymodes="Varnostni naèini";
+aoss.wpaaes="WPA / WPA2 AES";
+aoss.wpatkip="WPA / WPA2 TKIP";
+aoss.wep="WEP64 / 128";
+aoss.client_name="Ime odjemalca";
+aoss.security="Varnost";
+aoss.connectivity="Povezovanje";
+aoss.clients="AOSS odjemalci";
+
+
 sec80211x.xsuptype="Tip XSupplicanta";
 sec80211x.servercertif="Certifikat javnega stre¾nika";
 sec80211x.clientcertif="Certifikat odjemalca";
@@ -1895,6 +1919,11 @@ wl_adv.label24="Orientacija antene";
 wl_adv.label25="Izhod antene";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
 
+wl_adv.txchainmask="TX Antenna Chains";
+wl_adv.rxchainmask="RX Antenna Chains";
+
+
+
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmaks";
 wl_adv.col3="AIFSN";
@@ -1907,10 +1936,10 @@ wl_adv.txpcol2="S. Fallbk";
 wl_adv.txpcol3="L. Retry";
 wl_adv.txpcol4="L. Fallbk";
 wl_adv.txpcol5="Maks hitrost";
-wl_adv.txprow1="AC BE TX Parameteri";
-wl_adv.txprow2="AC BK TX Parameteri";
-wl_adv.txprow3="AC VI TX Parameteri";
-wl_adv.txprow4="AC VO TX Parameteri";
+wl_adv.txprow1="AC BE TX parameteri";
+wl_adv.txprow2="AC BK TX parameteri";
+wl_adv.txprow3="AC VI TX parameteri";
+wl_adv.txprow4="AC VO TX parameteri";
 
 wl_adv.col6="Upravni¹ko prisiljen";
 wl_adv.row1="Ozadje";
