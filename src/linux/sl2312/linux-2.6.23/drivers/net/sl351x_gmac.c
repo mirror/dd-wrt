@@ -239,6 +239,7 @@ void mac_set_MRxCRx(int mac, int rule, int ctrlreg, u32 data);
 /*----------------------------------------------------------------------
 *	Ethernet Driver init
 *----------------------------------------------------------------------*/
+static __init int sl351x_mac_address_init(void);
 
 static int mdio_read(struct net_device *dev, int phy_id, int location)
 {
@@ -253,6 +254,8 @@ static void mdio_write(struct net_device *dev, int phy_id, int location, int val
 {
 	mii_write(phy_id, location, value);
 }
+int __init gmacproc_init(void);
+int __init gmacproc_fini(void);
 
 static int __init gmac_init_module(void)
 {
@@ -338,7 +341,7 @@ static int __init gmac_init_module(void)
 		tp->dev = dev;
 
 		tp->mii.phy_id = tp->phy_addr;
-		tp->mii.phy_id_mask = 0x1F;
+		tp->mii.phy_id_mask = 0x1F; 
 		tp->mii.reg_num_mask = 0x1F;
 		tp->mii.dev = dev;
 		tp->mii.mdio_read = mdio_read;
@@ -384,7 +387,8 @@ static int __init gmac_init_module(void)
 		}
 	}
 
-
+	sl351x_mac_address_init();
+	gmacproc_init();
 //	FLAG_SWITCH = 0 ;
 //	FLAG_SWITCH = SPI_get_identifier();
 //	if(FLAG_SWITCH)
@@ -402,6 +406,7 @@ static int __init gmac_init_module(void)
 static void gmac_cleanup_module(void)
 {
     int i;
+gmacproc_fini();
 
 #ifdef SL351x_GMAC_WORKAROUND
 	del_timer(&gmac_workround_timer_obj);
@@ -456,6 +461,7 @@ void mac_init_drv(void)
 {
 	TOE_INFO_T			*toe;
 	int					i;
+	unsigned int v;
 	QUEUE_THRESHOLD_T	threshold;
 	u32					*destp;
 	unsigned int		chip_id,chip_version;
@@ -490,7 +496,7 @@ void mac_init_drv(void)
         toe->gmac[0].speed_cfg = GMAC_SPEED_1000;
         toe->gmac[1].speed_cfg = GMAC_SPEED_1000;
 #else
-		toe->gmac[0].speed_cfg = GMAC_SPEED_100;
+	toe->gmac[0].speed_cfg = GMAC_SPEED_100;
         toe->gmac[1].speed_cfg = GMAC_SPEED_100;
 #endif
         toe->gmac[0].full_duplex_cfg = 1;
@@ -499,25 +505,28 @@ void mac_init_drv(void)
         toe->gmac[0].phy_mode = GMAC_PHY_RGMII_1000;
         toe->gmac[1].phy_mode = GMAC_PHY_RGMII_1000;
 #else
-		toe->gmac[0].phy_mode = GMAC_PHY_RGMII_100;
+	toe->gmac[0].phy_mode = GMAC_PHY_RGMII_100;
         toe->gmac[1].phy_mode = GMAC_PHY_RGMII_100;
 #endif
         toe->gmac[0].port_id = GMAC_PORT0;
         toe->gmac[1].port_id = GMAC_PORT1;
         toe->gmac[0].phy_addr = 0x1;
-        toe->gmac[1].phy_addr = 2;
+        toe->gmac[1].phy_addr = 3;
 //      toe->gmac[0].irq = SL2312_INTERRUPT_GMAC0;
 		toe->gmac[0].irq =1;
 //      toe->gmac[1].irq = SL2312_INTERRUPT_GMAC1;
 		toe->gmac[1].irq =2;
         toe->gmac[0].mac_addr1 = &eth_mac[0][0];
         toe->gmac[1].mac_addr1 = &eth_mac[1][0];
-
+	
 		for (i=0; i<CONFIG_MAC_NUM; i++)
 		{
 			unsigned int data, phy_vendor;
 			gmac_write_reg(toe->gmac[i].base_addr, GMAC_STA_ADD2, 0x55aa55aa, 0xffffffff);
 			data = gmac_read_reg(toe->gmac[i].base_addr, GMAC_STA_ADD2);
+    			v=mii_read(toe->gmac[i].phy_addr, 0);
+			v |= (1 << 15);	// Reset PHY;
+			mii_write(toe->gmac[i].phy_addr, 0x00, v);
 			if (data == 0x55aa55aa)
 			{
 #ifdef VITESSE_G5SWITCH
@@ -526,10 +535,24 @@ void mac_init_drv(void)
 					break;
 				}
 #endif
+//#ifdef CONFIG_MACH_WBD222
+//			toe->gmac[i].existed = GMAC_EXISTED_FLAG;
+
+//#endif
+			v=20;
+			while(v--)
+			{
 				phy_vendor = gmac_get_phy_vendor(toe->gmac[i].phy_addr);
+				printk(KERN_EMERG "vendor return %X\n",phy_vendor);
 				if (phy_vendor != 0 && phy_vendor != 0xffffffff)
+				{
 					toe->gmac[i].existed = GMAC_EXISTED_FLAG;
+					goto next;
+				}
+			msleep(100);
 			}
+			}
+		    next:;
 		}
 
 		// Write GLOBAL_QUEUE_THRESHOLD_REG
@@ -918,6 +941,7 @@ static void toe_init_default_queue(void)
 	}
 	memset((void *)desc_ptr, 0, TOE_DEFAULT_Q1_DESC_NUM * sizeof(GMAC_RXDESC_T));
 	toe->gmac[1].default_desc_base = (unsigned int)desc_ptr;
+	printk("toe->gmac[1].default_desc_base_dma: %08X\n", toe->gmac[1].default_desc_base_dma);
 	toe->gmac[1].default_desc_num = TOE_DEFAULT_Q1_DESC_NUM;
 	qhdr = (volatile NONTOE_QHDR_T *)TOE_DEFAULT_Q1_HDR_BASE;
 	qhdr->word0.base_size = ((unsigned int)toe->gmac[1].default_desc_base_dma & NONTOE_QHDR0_BASE_MASK) | TOE_DEFAULT_Q1_DESC_POWER;
@@ -1194,7 +1218,7 @@ static void toe_init_gmac(struct net_device *dev)
 static void toe_gmac_sw_reset(void)
 {
 	unsigned int	reg_val;
-	reg_val = readl(GMAC_GLOBAL_BASE_ADDR+GLOBAL_RESET_REG) | 0x00000060;   /* GMAC0 S/W reset */
+    reg_val = readl(GMAC_GLOBAL_BASE_ADDR+GLOBAL_RESET_REG) | 0x00000060;   /* GMAC0 S/W reset */
     writel(reg_val,GMAC_GLOBAL_BASE_ADDR+GLOBAL_RESET_REG);
     udelay(100);
     return;
@@ -3273,6 +3297,20 @@ enum GPIO_REG
     GPIO_DATA_SET   = 0x10,
     GPIO_DATA_CLEAR = 0x14,
 };
+
+static void setGPIO(int gpio, int on)
+{
+unsigned int addr;
+unsigned int value;
+addr = (GPIO_BASE_ADDR + GPIO_DATA_OUT);
+value = __raw_readl(addr);
+if (on)
+    value|=gpio;
+else
+    value&=~gpio;
+__raw_writel(value,addr);
+
+}
 /***********************/
 /*    MDC : GPIO[31]   */
 /*    MDIO: GPIO[22]   */
@@ -3319,25 +3357,33 @@ void mii_serial_write(char bit_MDO) // write data into mii PHY
     unsigned int value;
 
     addr = GPIO_BASE_ADDR + GPIO_PIN_DIR;
-    value = readl(addr) | GPIO_MDC | GPIO_MDIO; /* set MDC/MDIO Pin to output */
-    writel(value,addr);
+    value = __raw_readl(addr) | GPIO_MDC | GPIO_MDIO; /* set MDC/MDIO Pin to output */
+    __raw_writel(value,addr);
     if(bit_MDO)
     {
-        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
-        writel(GPIO_MDIO,addr); /* set MDIO to 1 */
-        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
-        writel(GPIO_MDC,addr); /* set MDC to 1 */
-        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-        writel(GPIO_MDC,addr); /* set MDC to 0 */
+	setGPIO(GPIO_MDIO,1);
+	setGPIO(GPIO_MDC,1);
+	setGPIO(GPIO_MDC,0);
+	
+//        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
+//        writel(GPIO_MDIO,addr); /* set MDIO to 1 */
+//        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
+//        writel(GPIO_MDC,addr); /* set MDC to 1 */
+//        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+//        writel(GPIO_MDC,addr); /* set MDC to 0 */
     }
     else
     {
-        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-        writel(GPIO_MDIO,addr); /* set MDIO to 0 */
-        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
-        writel(GPIO_MDC,addr); /* set MDC to 1 */
-        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-        writel(GPIO_MDC,addr); /* set MDC to 0 */
+	setGPIO(GPIO_MDIO,0);
+	setGPIO(GPIO_MDC,1);
+	setGPIO(GPIO_MDC,0);
+	
+//        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+//        writel(GPIO_MDIO,addr); /* set MDIO to 0 */
+//        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
+//        writel(GPIO_MDC,addr); /* set MDC to 1 */
+//        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+//        writel(GPIO_MDC,addr); /* set MDC to 0 */
     }
 
 #endif
@@ -3376,16 +3422,18 @@ unsigned int mii_serial_read(void) // read data from mii PHY
     unsigned int value;
 
     addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_PIN_DIR);
-    value = readl(addr) & ~GPIO_MDIO; //0xffbfffff;   /* set MDC to output and MDIO to input */
-    writel(value,addr);
+    value = __raw_readl(addr) & ~GPIO_MDIO; //0xffbfffff;   /* set MDC to output and MDIO to input */
+    __raw_writel(value,addr);
 
-    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_SET);
-    writel(GPIO_MDC,addr); /* set MDC to 1 */
-    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-    writel(GPIO_MDC,addr); /* set MDC to 0 */
+    setGPIO(GPIO_MDC,1);
+    setGPIO(GPIO_MDC,0);
+//    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_SET);
+//    writel(GPIO_MDC,addr); /* set MDC to 1 */
+//    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+//    writel(GPIO_MDC,addr); /* set MDC to 0 */
 
     addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_IN);
-    value = readl(addr);
+    value = __raw_readl(addr);
     value = (value & (1<<GPIO_MDIO_PIN)) >> GPIO_MDIO_PIN;
     return(value);
 
@@ -3416,16 +3464,9 @@ static unsigned int mii_read(unsigned char phyad,unsigned char regad)
     unsigned int i,value;
     unsigned int bit;
 
-    if (phyad == GPHY_ADDR)
-    {
-        GPIO_MDC_PIN = G_MDC_PIN;   /* assigned MDC pin for giga PHY */
-        GPIO_MDIO_PIN = G_MDIO_PIN; /* assigned MDIO pin for giga PHY */
-    }
-    else
-    {
-        GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
-        GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
-    }
+    GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
+    GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
+    
     GPIO_MDC = (1<<GPIO_MDC_PIN);
     GPIO_MDIO = (1<<GPIO_MDIO_PIN);
 
@@ -3472,16 +3513,8 @@ static void mii_write(unsigned char phyad,unsigned char regad,unsigned int value
     unsigned int i;
     char bit;
 
-    if (phyad == GPHY_ADDR)
-    {
-        GPIO_MDC_PIN = G_MDC_PIN;   /* assigned MDC pin for giga PHY */
-        GPIO_MDIO_PIN = G_MDIO_PIN; /* assigned MDIO pin for giga PHY */
-    }
-    else
-    {
-        GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
-        GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
-    }
+    GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
+    GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
     GPIO_MDC = (1<<GPIO_MDC_PIN);
     GPIO_MDIO = (1<<GPIO_MDIO_PIN);
 
@@ -4380,6 +4413,8 @@ do_workaround:
 	for (i=0; i<GMAC_NUM; i++)
 	{
 		tp=(GMAC_INFO_T *)&toe->gmac[i];
+		if (tp->dev)
+		{
 		// old_operation[i] = tp->operation;
 		if (tp->operation)
 		{
@@ -4388,6 +4423,7 @@ do_workaround:
 			toe_gmac_disable_interrupt(tp->irq);
 			toe_gmac_disable_tx_rx(tp->dev);
 			toe_gmac_hw_stop(tp->dev);
+		}
 		}
 	}
 
@@ -4458,6 +4494,8 @@ do_workaround:
 	for (i=0; i<GMAC_NUM; i++)
 	{
 		tp=(GMAC_INFO_T *)&toe->gmac[i];
+		if (tp->dev)
+		{
  		if (tp->operation)
  		{
 			toe_gmac_enable_interrupt(tp->irq);
@@ -4465,6 +4503,7 @@ do_workaround:
 			toe_gmac_enable_tx_rx(tp->dev);
 			netif_wake_queue(tp->dev);
 			set_bit(__LINK_STATE_START, &tp->dev->state);
+		}
 		}
 	}
 
@@ -4539,6 +4578,7 @@ static void sl351x_gmac_release_swtx_q(void)
 	for (i=0; i<GMAC_NUM; i++, tp++)
 	{
 		if (!tp->existed) continue;
+		if (!tp->dev) continue;
 		swtxq = (GMAC_SWTXQ_T *)&tp->swtxq[0];
 		for (j=0; j<TOE_SW_TXQ_NUM; j++, swtxq++)
 		{
@@ -4591,6 +4631,7 @@ static void sl351x_gmac_release_rx_q(void)
 	for (i=0; i<GMAC_NUM; i++, tp++)
 	{
 		if (!tp->existed) continue;
+		if (!tp->dev)continue;
 		rwptr.bits32 = readl(&tp->default_qhdr->word1);
 		while (rwptr.bits.rptr != rwptr.bits.wptr)
 		{
@@ -4981,11 +5022,13 @@ static __init int sl351x_mac_address_init(void)
 
 	for (i = 0; i < GMAC_NUM; i++) {
 		tp = (GMAC_INFO_T *)&toe_private_data.gmac[i];
+		if (tp->dev!=NULL)
+		{
 		memcpy(&sock.sa_data[0],&eth_mac[tp->port_id][0],6);
 		gmac_set_mac_address(tp->dev,(void *)&sock);
+		}
 	}
 
         return 0;
 }
-late_initcall(sl351x_mac_address_init);
 

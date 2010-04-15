@@ -100,6 +100,7 @@ static inline int GETCPUID()
 #define SL2312_POWER_CTRL_BASE          0x4B000000
 #define SL2312_CIR_BASE                 0x4C000000
 #define SL2312_GPIO_BASE                0x4D000000
+#define GEMINI_GPIO_BASE(x)	(0x4D000000 + ((x) * 0x1000000))
 #define SL2312_GPIO_BASE1               0x4E000000
 #define SL2312_GPIO_BASE2               0x4F000000
 #define SL2312_PCI_IO_BASE              0x50000000
@@ -109,6 +110,7 @@ static inline int GETCPUID()
 #define SL2312_GMAC0_BASE               0x6000A000
 #define SL2312_GMAC1_BASE               0x6000E000
 #else
+#define SL2312_TOE_BASE                 0x60000000
 #define SL2312_GMAC0_BASE               0x60000000
 #define SL2312_GMAC1_BASE               0x61000000
 #endif

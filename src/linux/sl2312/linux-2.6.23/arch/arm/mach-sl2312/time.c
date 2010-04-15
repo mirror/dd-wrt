@@ -26,7 +26,6 @@
 #include <asm/mach/time.h>
 #define TIMER_TYPE (volatile unsigned int*)
 #include <asm/arch/timer.h>
-// #define FIQ_PLUS     1
 
 
 /*
@@ -65,7 +64,6 @@ void __init sl2312_time_init(void)
 {
 	// For clock rate adjusting
 	unsigned int tick_rate=0;
-
 #ifdef CONFIG_SL3516_ASIC
 //	unsigned int clock_rate_base = 130000000;
 	unsigned int reg_v=0;

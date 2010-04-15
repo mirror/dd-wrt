@@ -6,6 +6,8 @@
 
 #include <linux/sched.h>
 #include <asm/irq.h>
+#include <linux/io.h>
+#include <asm/hardware.h>
 
 /**
  * touch_nmi_watchdog - restart NMI watchdog timeout.
@@ -22,6 +24,17 @@ extern void acpi_nmi_enable(void);
 #else
 static inline void touch_nmi_watchdog(void)
 {
+#ifdef CONFIG_MACH_WBD222
+        int val;
+
+        val = __raw_readl(IO_ADDRESS(GEMINI_GPIO_BASE(0)) + 0x00);
+        if (val & 1 << 18)
+                val &= ~(1 << 18);
+        else
+                val |= 1 << 18;
+
+        __raw_writel(val, IO_ADDRESS(GEMINI_GPIO_BASE(0)) + 0x00);
+#endif
 	touch_softlockup_watchdog();
 }
 static inline void acpi_nmi_disable(void) { }

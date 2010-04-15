@@ -496,7 +496,7 @@ static int gmac_ct_seq_show(struct seq_file *s, void *v)
 /*----------------------------------------------------------------------
 * init
 *----------------------------------------------------------------------*/
-static int __init init(void)
+int __init gmacproc_init(void)
 {
 	struct proc_dir_entry *proc_gmac=NULL;
 
@@ -552,7 +552,7 @@ init_bad:
 /*----------------------------------------------------------------------
 * fini
 *----------------------------------------------------------------------*/
-static void __exit fini(void)
+void __exit gmacproc_fini(void)
 {
 	proc_net_remove(SL351x_GMAC_PROC_NAME);
 
@@ -572,7 +572,5 @@ static void __exit fini(void)
 /*----------------------------------------------------------------------
 * module
 *----------------------------------------------------------------------*/
-module_init(init);
-module_exit(fini);
 
 #endif	// CONFIG_PROC_FS

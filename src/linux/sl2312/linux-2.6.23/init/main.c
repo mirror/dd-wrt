@@ -63,6 +63,35 @@
 #include <asm/sections.h>
 #include <asm/cacheflush.h>
 
+#include <asm/hardware.h>
+
+static inline void wbd222_wdt_setup(void)
+{
+#ifdef CONFIG_MACH_WBD222
+        int val;
+
+        val = __raw_readl(IO_ADDRESS(GEMINI_GPIO_BASE(0)) + 0x08);
+        val |= 1 << 18;
+        __raw_writel(val, IO_ADDRESS(GEMINI_GPIO_BASE(0)) + 0x08);
+#endif
+}
+
+static inline void wbd222_wdt_touch(void)
+{
+#ifdef CONFIG_MACH_WBD222
+        int val;
+
+        val = __raw_readl(IO_ADDRESS(GEMINI_GPIO_BASE(0)) + 0x00);
+        if (val & 1 << 18)
+                val &= ~(1 << 18);
+        else
+                val |= 1 << 18;
+
+        __raw_writel(val, IO_ADDRESS(GEMINI_GPIO_BASE(0)) + 0x00);
+#endif
+}
+
+
 #ifdef CONFIG_X86_LOCAL_APIC
 #include <asm/smp.h>
 #endif
@@ -544,6 +573,8 @@ asmlinkage void __init start_kernel(void)
 	unwind_setup();
 	setup_per_cpu_areas();
 	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
+	wbd222_wdt_setup();
+	wbd222_wdt_touch();
 
 	/*
 	 * Set up the scheduler prior starting any interrupts (such as the
@@ -650,6 +681,7 @@ asmlinkage void __init start_kernel(void)
 	acpi_early_init(); /* before LAPIC and SMP init */
 
 	/* Do the rest non-__init'ed, we're now alive */
+	wbd222_wdt_touch();
 	rest_init();
 }
 
@@ -674,6 +706,7 @@ static void __init do_initcalls(void)
 		char *msg = NULL;
 		char msgbuf[40];
 		int result;
+		wbd222_wdt_touch();
 
 		if (initcall_debug) {
 			printk("Calling initcall 0x%p", *call);
