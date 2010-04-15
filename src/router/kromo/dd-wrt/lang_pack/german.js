@@ -618,7 +618,6 @@ hpforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt f
 	Aus Sicherheitsgründen sollten Sie die Weiterleitung auf diejenigen Ports beschränken, die Sie benötigen.";
 
 
-var hnas = new Object();
 hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
 
 
@@ -691,7 +690,6 @@ hotspot.wifidog_authsrvpath="AuthServer Path";
 hotspot.wifidog_config="Firewall Regeln";
 
 // ** Hotspotsystem **//
-var hotspotsys = new Object();
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Entferne WLAN von der LAN-Bridge";
 hotspotsys.uamenable="Spezielle Einstellungen";
@@ -707,7 +705,6 @@ hotspotsys.net="Entferntes Netzwerk";
 
 // **************************************************************** AnchorFree.asp *********************************************************//
 
-var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
 anchorfree.title="Mit Hotspot Geld verdienen";
 anchorfree.anchorfree_revenue="Durch AnchorFree Hotspot mit Werbung, Geld verdienen";

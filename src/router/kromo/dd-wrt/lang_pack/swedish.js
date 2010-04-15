@@ -1912,11 +1912,9 @@ success.alert3="Om du är kopplad via WLAN, Anslut nätet först sen klicka <em>For
 logout.message="Utloggning Lyckades.<br />Tack för att du använder DD-WRT !";
 
 // ** Setup Assistant **//
-var hsas = new Object();
 hsas.wan="WAN-porten ansluter routern till internet eller andra nätverk. Om ditt nätverk redan är anslutet till internet samt endast använder routern som en AP ställ in WAN som \"disabled\".";
 
 // ** AOSS **//
-var haoss = new Object();
 haoss.basic=" \"AirStation One-Touch Secure System\" Med AOSS kan du ansluta apparater som har stöd för AOSS till ditt nätverk utan manuell konfiguration.";
 
 
