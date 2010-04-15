@@ -125,7 +125,7 @@ void runStartup(char *folder, char *extension)
 			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
 			if (!stat(fullname, &filestat)
 			    && (filestat.st_mode & S_IXUSR))
-				sysprintf("%s 2>&1 > /dev/null\n", fullname);
+				sysprintf("%s 2>&1 > /dev/null", fullname);
 			free(entry[n]);
 			n++;
 			continue;
@@ -134,7 +134,7 @@ void runStartup(char *folder, char *extension)
 			sprintf(fullname, "%s/%s", folder, entry[n]->d_name);
 			if (!stat(fullname, &filestat)
 			    && (filestat.st_mode & S_IXUSR))
-				sysprintf("%s 2>&1 > /dev/null\n", fullname);
+				sysprintf("%s 2>&1 > /dev/null", fullname);
 			free(entry[n]);
 			n++;
 			continue;
@@ -163,7 +163,7 @@ void runStartup(char *folder, char *extension)
 				}
 			}
 #endif
-			sysprintf("%s/%s 2>&1 > /dev/null\n", folder,
+			sysprintf("%s/%s 2>&1 > /dev/null", folder,
 				  entry[n]->d_name);
 			// execute script 
 		}
