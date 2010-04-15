@@ -113,9 +113,12 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	// insmod("ag7100_mod");
+	insmod("sl351xgmac");
 	// sleep(1);
 	eval("ifconfig", "eth0", "up");
+#ifdef HAVE_WBD222
+	eval("ifconfig", "eth1", "up");
+#endif
 	struct ifreq ifr;
 	int s;
 
