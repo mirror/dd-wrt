@@ -1,6 +1,12 @@
 
 menu "SL2312"
 
+config MACH_WBD222
+        bool "Wiliboard WBD-222"
+        help
+          Say Y here if you intend to run this kernel on a
+          Wiliboard WBD-222.
+
 config SL3516_ASIC
 	bool "SL3516 ASIC version"
 	depends on ARCH_SL2312

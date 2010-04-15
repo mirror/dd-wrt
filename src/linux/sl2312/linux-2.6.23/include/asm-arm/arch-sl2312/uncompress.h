@@ -24,6 +24,8 @@
 #ifndef CONFIG_SERIAL_IT8712
 #include "asm/arch/uart.h"
 #endif
+#include <linux/io.h>
+
 extern unsigned int it8712_uart_base;
 
 /*
@@ -66,6 +68,32 @@ static inline void putc(int c)
 /*
  * nothing to do
  */
-#define arch_decomp_setup()
+static inline void arch_decomp_setup(void)
+{
+#ifdef CONFIG_MACH_WBD222
+	int val;
 
-#define arch_decomp_wdog()
+	val = __raw_readl(GEMINI_GPIO_BASE(0) + 0x08);
+	val |= 1 << 18;
+	__raw_writel(val, GEMINI_GPIO_BASE(0) + 0x08);
+
+	val = __raw_readl(GEMINI_GPIO_BASE(0) + 0x00);
+	val |= 1 << 18;
+	__raw_writel(val, GEMINI_GPIO_BASE(0) + 0x00);
+#endif
+}
+ 
+static inline void arch_decomp_wdog(void)
+{
+#ifdef CONFIG_MACH_WBD222
+	int val;
+
+	val = __raw_readl(GEMINI_GPIO_BASE(0) + 0x00);
+	if (val & 1 << 18)
+		val &= ~(1 << 18);
+	else
+		val |= 1 << 18;
+
+	__raw_writel(val, GEMINI_GPIO_BASE(0) + 0x00);
+#endif
+}

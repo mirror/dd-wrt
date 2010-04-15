@@ -442,6 +442,9 @@ int LzmaDecode(
   *outSizeProcessed = 0;
   while(nowPos < outSize)
   {
+#ifdef CONFIG_MACH_WBD222
+	arch_decomp_wdog();
+#endif
     int posState = (int)(
         (nowPos 
         #ifdef _LZMA_OUT_READ

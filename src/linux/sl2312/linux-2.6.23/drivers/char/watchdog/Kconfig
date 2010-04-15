@@ -171,6 +171,9 @@ config EP93XX_WATCHDOG
 	  To compile this driver as a module, choose M here: the
 	  module will be called ep93xx_wdt.
 
+config WBD222_WATCHDOG
+        tristate "WBD222 watchdog"
+
 config WATCHDOG_SL351X
 	tristate "SL351x Watchdog"
 	depends on WATCHDOG && ARCH_SL2312
