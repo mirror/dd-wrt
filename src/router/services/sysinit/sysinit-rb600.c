@@ -116,6 +116,7 @@ void start_sysinit(void)
 	//for extension board
 	insmod("via-rhine");
 	insmod("tulip");
+	insmod("atl1e"); //rb800 only as it seems
 	struct ifreq ifr;
 	int s;
 
