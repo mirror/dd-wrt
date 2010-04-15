@@ -295,9 +295,11 @@ obj-$(CONFIG_NETCONSOLE) += netconsole.o
 obj-$(CONFIG_FS_ENET) += fs_enet/
 
 
-obj-$(CONFIG_NET_SL351X)+= sl351x_gmac.o sl351x_nat.o sl351x_hash.o sl351x_crc16.o sl351x_proc.o sl_switch.o
-obj-$(CONFIG_NET_SL2312)+= sl2312_emac.o
+obj-$(CONFIG_NET_SL351X)+= sl351xgmac.o
+sl351xgmac-objs = sl351x_gmac.o sl351x_nat.o sl351x_hash.o sl351x_crc16.o sl351x_proc.o sl_switch.o
 
+obj-$(CONFIG_NET_SL2312)+= sl2312_emac.o
 
 obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
 obj-$(CONFIG_AR2313) += ar2313/
+#obj-$(CONFIG_GEMINI_NET_ENGINE_GMAC) += gemini_negmac/

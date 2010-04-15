@@ -254,9 +254,9 @@ static int sl351x_wdt_probe(struct platform_device *pdev)
 		wdcr &= ~WATCHDOG_WDENABLE_MSK;
 		writel(wdcr, wdt_base + _WATCHDOG_CR);
 	}
-
+#ifndef CONFIG_MACH_WBD222 // disable it for this board, since both cannot coexist. but it must be called to disable the watchdog
 	ret = misc_register(&wd_dev);
-
+#endif
 	return ret;
 }
 

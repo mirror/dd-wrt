@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.17
-# Wed Apr 14 15:41:12 2010
+# Wed Apr 14 15:39:31 2010
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -135,7 +135,7 @@ CONFIG_ARCH_SL2312=y
 #
 # SL2312
 #
-# CONFIG_MACH_WBD222 is not set
+CONFIG_MACH_WBD222=y
 CONFIG_SL3516_ASIC=y
 CONFIG_PCI=y
 # CONFIG_SL2312_LPC is not set
@@ -904,7 +904,7 @@ CONFIG_WATCHDOG=y
 # Watchdog Device Drivers
 #
 # CONFIG_SOFT_WATCHDOG is not set
-# CONFIG_WBD222_WATCHDOG is not set
+CONFIG_WBD222_WATCHDOG=y
 CONFIG_WATCHDOG_SL351X=y
 
 #
