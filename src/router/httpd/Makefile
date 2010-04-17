@@ -650,6 +650,9 @@ endif
 ifeq ($(CONFIG_RS),y)
 CFLAGS += -DHAVE_RS
 endif
+ifeq ($(CONFIG_JA76PF),y)
+  CFLAGS += -DHAVE_JA76PF
+endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS += -DHAVE_LSX
 endif
@@ -658,6 +661,9 @@ CFLAGS += -DHAVE_DANUBE
 endif
 ifeq ($(CONFIG_STORM),y)
 CFLAGS += -DHAVE_STORM
+endif
+ifeq ($(CONFIG_WBD222),y)
+  CFLAGS += -DHAVE_WBD222
 endif
 ifeq ($(CONFIG_OPENRISC),y)
 CFLAGS += -DHAVE_OPENRISC
