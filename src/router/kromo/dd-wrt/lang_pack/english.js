@@ -368,13 +368,6 @@ errmsg.err100="Processing...<br/>Please, wait.";
 errmsg.err101="Restoring configuration file...<br/>Please, wait.";
 errmsg.err102="Upgrading firmware...<br/>Please, wait";
 
-var sas = new Object();
-sas.title="Setup Assistant";
-sas.internet_connection="Internet Connection";
-sas.network_settings="Network Settings";
-sas.wireless_settings="Wireless Settings";
-sas.other_settings="Other Settings";
-
 // **  COMMON MENU ENTRIES  **//
 var bmenu= new Object();
 bmenu.setup="Setup";
@@ -1767,6 +1760,7 @@ aoss.client_name="Client Name";
 aoss.security="Security";
 aoss.connectivity="Connectivity";
 aoss.clients="AOSS Clients";
+aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is configured as AP or WDS AP.";
 
 var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
@@ -2069,8 +2063,29 @@ var logout = new Object();
 logout.message="You have successfully logged out.<br />Thank you for using DD-WRT !";
 
 // ** Setup Assistant **//
+var sas = new Object();
+sas.title="Setup Assistant";
+sas.internet_connection="Internet Connection";
+sas.network_settings="Network Settings";
+sas.wireless_settings="Wireless Settings";
+sas.other_settings="Other Settings";
+sas.hwan = "Internet (WAN) Setup";
+
 var hsas = new Object();
 hsas.wan="The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to \"Disabled\".";
+hsas.h_routerip = "Router IP";
+hsas.routerip = "This is the IP-address assigned to the router in your internal network. If you change this address you also have to use it to access the Router Management after applying the changes.";
+hsas.h_dhcp = "DHCP";
+hsas.dhcp = "Via DHCP computers and other networking devices can automatically obtain IP-adresses in your local network without requiring manual configuration. In case there is a DHCP-server running in your local network, please disable this option to avoid conflicts.";
+hsas.h_wireless_physical = "Wireless Radio Interface";
+hsas.wireless_physical = "The interface settings allow you to define the radio behavior of the router. You can define the main operation mode (Access Point, Client or Repeater), change the wireless network name and advanced settings like the channel width. In case you did change the wireless channel width from the 20MHz standard please take care that your wireless clients do support the channel width and are configured properly.";
+hsas.h_wireless_security = "Wireless Security";
+hsas.wireless_security = "To make it easier for you to configure client devices you can change the wireless wireless network password. Disabeling encryption or changing it to WEP is not recommended for security reasons.";
+hsas.h_routername = "Hostname";
+hsas.routername = "This name is communicated to other devices in your network and allows easier identification.";
+hsas.networking = "Networking help text";
+hsas.wireless = "Wireless help text";
+hsas.other = "Other Settings help text";
 
 // ** AOSS **//
 var haoss = new Object();
