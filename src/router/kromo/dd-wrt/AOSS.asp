@@ -64,42 +64,60 @@ addEvent(window, "unload", function() {
 				<input type="hidden" name="wl_wep_last" />
 				<input type="hidden" name="filter_mac_value" />
 				
-<!-- AOSS start -->
-<h2><% tran("aoss.aoss"); %></h2>
+				<!-- AOSS start -->
+				<h2><% tran("aoss.aoss"); %></h2>
 
-<fieldset>
-<legend><% tran("aoss.service"); %></legend>
-<div class="setting">
-<div class="label"><% tran("aoss.enable"); %></div>
-<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
-<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
-</div>
-<div id="aoss_button" class="setting" style="<% visible_css("aoss_enable", "1"); %>">
-<div class="label"><% tran("aoss.start"); %></div>
-<input type="button" class="aoss_enable" value="" onclick="startAOSS(this.form)">
-</div>
-</fieldset>
+				<% ifaoss_possible("yes", "<!--"); %>
+				<fieldset>
+					<legend><% tran("aoss.service"); %></legend>
+					<div class="setting">
+						<div class="label"><% tran("aoss.enable"); %></div>
+						<input class="spaceradio" type="radio" value="1" name="aoss_enable" disabled /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="0" name="aoss_enable" checked disabled /><% tran("share.disable"); %>
+					</div>
+				</fieldset>
+				<br />
+				<div class="warning">
+					<p>
+						<% tran("aoss.ap_mode_notice"); %>
+					</p>
+				</div>
+				<br />
+				<% ifaoss_possible("yes", "-->"); %>
+				<% ifaoss_possible("no", "<!--"); %>
+				<fieldset>
+					<legend><% tran("aoss.service"); %></legend>
+					<div class="setting">
+						<div class="label"><% tran("aoss.enable"); %></div>
+						<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
+					<div id="aoss_button" class="setting" style="<% visible_css("aoss_enable", "1"); %>">
+						<div class="label"><% tran("aoss.start"); %></div>
+						<input type="button" class="aoss_enable" value="" onclick="startAOSS(this.form)">
+					</div>
+				</fieldset>
 
-<br />
-<div id="aoss_options" style="<% visible_css("aoss_enable", "1"); %>">
-<fieldset>
-<legend><% tran("aoss.securitymodes"); %></legend>
-<div class="setting">
-<div class="label"><% tran("aoss.wpaaes"); %></div>
-<input type="checkbox" name="aoss_aes" value="1"<% isChecked("aoss_aes", "1"); %>></input>
-</div>
-<div class="setting">
-<div class="label"><% tran("aoss.wpatkip"); %></div>
-<input type="checkbox" name="aoss_tkip" value="1"<% isChecked("aoss_tkip", "1"); %>></input>
-</div>
-<div class="setting">
-<div class="label"><% tran("aoss.wep"); %></div>
-<input type="checkbox" name="aoss_wep" value="1"<% isChecked("aoss_wep", "1"); %>></input>
-</div>
-</fieldset>
+				<br />
+				<div id="aoss_options" style="<% visible_css("aoss_enable", "1"); %>">
+					<fieldset>
+						<legend><% tran("aoss.securitymodes"); %></legend>
+						<div class="setting">
+							<div class="label"><% tran("aoss.wpaaes"); %></div>
+							<input type="checkbox" name="aoss_aes" value="1"<% isChecked("aoss_aes", "1"); %>></input>
+						</div>
+						<div class="setting">
+							<div class="label"><% tran("aoss.wpatkip"); %></div>
+								<input type="checkbox" name="aoss_tkip" value="1"<% isChecked("aoss_tkip", "1"); %>></input>
+						</div>
+						<div class="setting">
+							<div class="label"><% tran("aoss.wep"); %></div>
+								<input type="checkbox" name="aoss_wep" value="1"<% isChecked("aoss_wep", "1"); %>></input>
+						</div>
+					</fieldset>
 
-<br />
-</div>
+					<br />
+				</div>
+				<% ifaoss_possible("no", "-->"); %>
 
 <!--fieldset>
 <legend><% tran("aoss.clients"); %></legend>

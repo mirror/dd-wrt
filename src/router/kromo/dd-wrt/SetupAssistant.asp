@@ -658,17 +658,7 @@ function submitSavePrevButtons() {
 							<input type="hidden" name="wl_wep_last" />
 							<input type="hidden" name="filter_mac_value" />
 							
-							<% ifdef("WET", "<!--"); %>
-							<% ifdef("STA", "<!--"); %>
-							<h2 style="<% sas_stage_visible_css("1"); %>"><script type="text/javascript">Capture(idx.h2);</script></h2>
-							<% ifdef("STA", "-->"); %>			
-							<% ifdef("WET", "-->"); %>
-							<% ifndef("WET", "<!--"); %>
-							<h2 style="<% sas_stage_visible_css("1"); %>"><script type="text/javascript">Capture(idx.h22);</script></h2>
-							<% ifndef("WET", "-->"); %>
-							<% ifndef("STA", "<!--"); %>
-							<h2 style="<% sas_stage_visible_css("1"); %>"><script type="text/javascript">Capture(idx.h22);</script></h2>
-							<% ifndef("STA", "-->"); %>
+							<h2 style="<% sas_stage_visible_css("1"); %>"><script type="text/javascript">Capture(sas.hwan);</script></h2>
 							
 							<!-- Internet Setup -->	
 							<fieldset style="<% sas_stage_visible_css("1"); %>">
@@ -785,14 +775,22 @@ function submitSavePrevButtons() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<!--dt class="term"><% tran("idx.dhcp"); %>:</dt>
-							<dd class="definition"><% tran("hidx.right2"); %></dd>
-							<dt class="term"><% tran("share.hostname"); %>:</dt>
-							<dd class="definition"><% tran("hidx.right4"); %></dd>
-							<dt class="term"><% tran("share.domainname"); %>:</dt>
-							<dd class="definition"><% tran("hidx.right6"); %></dd>
-							<dt class="term"><% tran("idx.lanip"); %>:</dt>
-							<dd class="definition"><% tran("hidx.right8"); %></dd-->
+							<dt class="term" style="<% sas_stage_visible_css("1"); %>"><% tran("sas.hwan"); %>:</dt>
+							<dd class="definition"  style="<% sas_stage_visible_css("1"); %>"><% tran("hsas.wan"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("2"); %>"><% tran("hsas.h_routerip"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("2"); %>"><% tran("hsas.routerip"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("2"); %>"><% tran("hsas.h_dhcp"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("2"); %>"><% tran("hsas.dhcp"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("3"); %>"><% tran("hsas.h_wireless_physical"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("3"); %>"><% tran("hsas.wireless_physical"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("3"); %>"><% tran("hsas.h_wireless_security"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("3"); %>"><% tran("hsas.wireless_security"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("hsas.h_routername"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("hsas.routername"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("share.hostname"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("hsas.hostname"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("share.domainname"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("hidx.right6"); %></dd>
 						</dl>
 						<br/>
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HSetup.asp');"><% tran("share.more"); %></a>
