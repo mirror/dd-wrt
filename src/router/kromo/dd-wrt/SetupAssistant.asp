@@ -501,6 +501,10 @@ function submitcheck(F) {
 //	}
 }
 
+function toggleAOSS(button, show) {
+        show_layer_ext(button, 'aoss_options', show);
+}
+
 /**
  * refreshes stage view
  */
@@ -720,6 +724,56 @@ function submitSavePrevButtons() {
 							<% sas_show_security("3"); %>
 								
 							<!-- Other Settings -->
+							<!-- AOSS start -->
+							<h2 style="<% sas_stage_visible_css("4"); %>"><% tran("aoss.aoss"); %></h2>
+
+							<% ifaoss_possible("yes", "<!--"); %>
+							<fieldset style="<% sas_stage_visible_css("4"); %>">
+								<legend><% tran("aoss.service"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("aoss.enable"); %></div>
+										<input class="spaceradio" type="radio" value="1" name="aoss_enable" disabled /><% tran("share.enable"); %>&nbsp;
+										<input class="spaceradio" type="radio" value="0" name="aoss_enable" checked disabled /><% tran("share.disable"); %>
+									</div>
+							</fieldset>
+							<br style="<% sas_stage_visible_css("4"); %>"/>
+							<div class="warning" style="<% sas_stage_visible_css("4"); %>">
+								<p>
+									<% tran("aoss.ap_mode_notice"); %>
+								</p>
+							</div>
+							<br style="<% sas_stage_visible_css("4"); %>" />
+							<% ifaoss_possible("yes", "-->"); %>
+							<% ifaoss_possible("no", "<!--"); %>
+							<fieldset style="<% sas_stage_visible_css("4"); %>">
+								<legend><% tran("aoss.service"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("aoss.enable"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
+							</fieldset>
+
+							<br style="<% sas_stage_visible_css("4"); %>"/>
+							<div id="aoss_options" style="<% visible_css("aoss_enable", "1"); %>" style="<% sas_stage_visible_css("4"); %>">
+							<fieldset style="<% sas_stage_visible_css("4"); %>">
+								<legend><% tran("aoss.securitymodes"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("aoss.wpaaes"); %></div>
+									<input type="checkbox" name="aoss_aes" value="1"<% isChecked("aoss_aes", "1"); %>></input>
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("aoss.wpatkip"); %></div>
+									<input type="checkbox" name="aoss_tkip" value="1"<% isChecked("aoss_tkip", "1"); %>></input>
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("aoss.wep"); %></div>
+									<input type="checkbox" name="aoss_wep" value="1"<% isChecked("aoss_wep", "1"); %>></input>
+								</div>
+							</fieldset>
+
+							<br  style="<% sas_stage_visible_css("4"); %>"/>
+							</div>
+							<% ifaoss_possible("no", "-->"); %>
 							<h2 style="<% sas_stage_visible_css("4"); %>"><% tran("idx.optional"); %></h2>
 							<fieldset style="<% sas_stage_visible_css("4"); %>">
 								<legend><% tran("idx.optional"); %></legend>
