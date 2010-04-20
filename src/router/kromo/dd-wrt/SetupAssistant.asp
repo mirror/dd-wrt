@@ -749,8 +749,8 @@ function submitSavePrevButtons() {
 								<legend><% tran("aoss.service"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("aoss.enable"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% sas_nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% sas_nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
 							</fieldset>
 
 							<br style="<% sas_stage_visible_css("4"); %>"/>
@@ -768,9 +768,14 @@ function submitSavePrevButtons() {
 								<div class="setting">
 									<div class="label"><% tran("aoss.wep"); %></div>
 									<input type="checkbox" name="aoss_wep" value="1"<% isChecked("aoss_wep", "1"); %>></input>
+									<div><% tran("aoss.wep_info"); %></div>
 								</div>
 							</fieldset>
-
+							<br  style="<% sas_stage_visible_css("4"); %>"/>
+							<div class="warning" style="<% sas_stage_visible_css("4"); %>">
+								<p><% tran("aoss.notice"); %></p>
+								<p><% tran("aoss.wep_notice"); %></p>
+							</div>
 							<br  style="<% sas_stage_visible_css("4"); %>"/>
 							</div>
 							<% ifaoss_possible("no", "-->"); %>
@@ -839,10 +844,14 @@ function submitSavePrevButtons() {
 							<dd class="definition" style="<% sas_stage_visible_css("3"); %>"><% tran("hsas.wireless_physical"); %></dd>
 							<dt class="term" style="<% sas_stage_visible_css("3"); %>"><% tran("hsas.h_wireless_security"); %>:</dt>
 							<dd class="definition" style="<% sas_stage_visible_css("3"); %>"><% tran("hsas.wireless_security"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("aoss.service"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("haoss.basic"); %></dd>
+							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("aoss.securitymodes"); %>:</dt>
+							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("haoss.securitymodes"); %></dd>
 							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("hsas.h_routername"); %>:</dt>
 							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("hsas.routername"); %></dd>
 							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("share.hostname"); %>:</dt>
-							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("hsas.hostname"); %></dd>
+							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("hidx.right4"); %></dd>
 							<dt class="term" style="<% sas_stage_visible_css("4"); %>"><% tran("share.domainname"); %>:</dt>
 							<dd class="definition" style="<% sas_stage_visible_css("4"); %>"><% tran("hidx.right6"); %></dd>
 						</dl>
