@@ -176,8 +176,10 @@ document.write("<\/tr>");
 			<div id="help">
 			   <div><h2><% tran("share.help"); %></h2></div>
 			   <dl>
-				 <dt class="term">AOSS:</dt>
+				 <dt class="term"><% tran("aoss.aoss"); %></dt>
 				 <dd class="definition"><% tran("haoss.basic"); %></dd>
+				 <dt class="term"><% tran("aoss.securitymodes"); %></dt>
+				 <dd class="definition"><% tran("haoss.securitymodes"); %></dd>
 			   </dl><br />
 			   <!--a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a-->
 			</div>
