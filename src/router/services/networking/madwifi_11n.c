@@ -1166,7 +1166,10 @@ void configure_single_11n(int count)
 		}
 	}
 	if (hasnawds)
+		{
+		sysprintf("iwpriv ath0 wds 1");
 		sysprintf("iwpriv ath0 nawds 1");
+		}
 
 
 /*	for (s = 1; s <= 10; s++) {
