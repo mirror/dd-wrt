@@ -1760,7 +1760,10 @@ aoss.client_name="Client Name";
 aoss.security="Security";
 aoss.connectivity="Connectivity";
 aoss.clients="AOSS Clients";
+aoss.notice="NOTICE";
 aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is configured as AP or WDS AP.";
+aoss.wep_notice="WEP security mode is insecure, therefore the use of WEP is not recommended.";
+aoss.wep_info="(required for most gaming consoles supporting AOSS)";
 
 var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
@@ -2081,7 +2084,7 @@ hsas.h_wireless_physical="Wireless Radio Interface";
 hsas.wireless_physical="The interface settings allow you to define the radio behavior of the router. You can define the main operation mode (Access Point, Client or Repeater), change the wireless network name and advanced settings like the channel width. In case you did change the wireless channel width from the 20MHz standard please take care that your wireless clients do support the channel width and are configured properly.";
 hsas.h_wireless_security="Wireless Security";
 hsas.wireless_security="To make it easier for you to configure client devices you can change the wireless wireless network password. Disabling encryption or changing it to WEP is not recommended for security reasons.";
-hsas.h_routername="Hostname";
+hsas.h_routername="Routername";
 hsas.routername="This name is communicated to other devices in your network and allows easier identification.";
 hsas.networking="Networking help text";
 hsas.wireless="Wireless help text";
@@ -2090,6 +2093,7 @@ hsas.other="Other Settings help text";
 // ** AOSS **//
 var haoss = new Object();
 haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS capable clients to your access point without requiring manual configuration.";
+haoss.securitymodes="The AOSS Security Modes define what client security modes are accepted for AOSS negotiation. If a Client only supports security modes that are not enabled it cannot connect.";
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
