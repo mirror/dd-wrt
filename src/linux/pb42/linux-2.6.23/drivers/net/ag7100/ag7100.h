@@ -483,7 +483,7 @@ static inline void ag7100_set_mac_if(ag7100_mac_t *mac, int is_1000)
         ag7100_reg_rmw_set(mac, AG7100_MAC_FIFO_CFG_5, AG7100_BYTE_PER_CLK_EN);                          
     }                                                                        
     else {                                                                   
-        ag7100_reg_rmw_set(mac, AG7100_MAC_CFG2, AG7100_MAC_CFG2_IF_10_100);
+        ag7100_reg_rmw_set(mac, AG7100_MAC_CFG2, AG7100_MAC_CFG2_IF_10_100 | AG7100_MAC_CFG2_HUGE_FRAME_EN );
         ag7100_reg_rmw_clear(mac,AG7100_MAC_FIFO_CFG_5, AG7100_BYTE_PER_CLK_EN);
     }                                                                        
 }

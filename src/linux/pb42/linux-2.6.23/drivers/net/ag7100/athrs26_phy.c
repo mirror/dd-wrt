@@ -179,26 +179,26 @@ void ag7100_ahb_feq_adjust(void)
 {
     unsigned int pll_fb = 0, ahb_div = 0, cpu_div = 0, mask = 0; 
 
-    mask = PLL_DIV_MASK << PLL_DIV_SHIFT;
-    get_field_val(AR7100_PLL_CONFIG, mask, PLL_DIV_SHIFT, pll_fb);
+    mask = AR71XX_PLL_DIV_MASK << AR71XX_PLL_DIV_SHIFT;
+    get_field_val(AR7100_PLL_CONFIG, mask, AR71XX_PLL_DIV_SHIFT, pll_fb);
 
-    mask = AHB_DIV_MASK << AHB_DIV_SHIFT;
-    get_field_val(AR7100_PLL_CONFIG, mask, AHB_DIV_SHIFT, old_ahb_div);
+    mask = AR71XX_AHB_DIV_MASK << AR71XX_AHB_DIV_SHIFT;
+    get_field_val(AR7100_PLL_CONFIG, mask, AR71XX_AHB_DIV_SHIFT, old_ahb_div);
 
-    mask = CPU_DIV_MASK << CPU_DIV_SHIFT;
-    get_field_val(AR7100_PLL_CONFIG, mask, CPU_DIV_SHIFT, cpu_div);
+    mask = AR71XX_CPU_DIV_MASK << AR71XX_CPU_DIV_SHIFT;
+    get_field_val(AR7100_PLL_CONFIG, mask, AR71XX_CPU_DIV_SHIFT, cpu_div);
     
     //ahb_div = ((((pll_fb + 1) * 40)*2/(200*(cpu_div + 1))) + 1)/2 - 1;
     ahb_div = ( (2*pll_fb + 2)/(5*cpu_div + 5) + 1)/2 - 1;
-    mask = AHB_DIV_MASK << AHB_DIV_SHIFT;
-    set_field_val(AR7100_PLL_CONFIG, mask, AHB_DIV_SHIFT, ahb_div);
+    mask = AR71XX_AHB_DIV_MASK << AR71XX_AHB_DIV_SHIFT;
+    set_field_val(AR7100_PLL_CONFIG, mask, AR71XX_AHB_DIV_SHIFT, ahb_div);
 }
 
 void ag7100_ahb_feq_restore(void)
 {
     unsigned int mask = 0;
-    mask = AHB_DIV_MASK << AHB_DIV_SHIFT;
-    set_field_val(AR7100_PLL_CONFIG, mask, AHB_DIV_SHIFT, old_ahb_div); 
+    mask = AR71XX_AHB_DIV_MASK << AR71XX_AHB_DIV_SHIFT;
+    set_field_val(AR7100_PLL_CONFIG, mask, AR71XX_AHB_DIV_SHIFT, old_ahb_div); 
 }
 #endif
 

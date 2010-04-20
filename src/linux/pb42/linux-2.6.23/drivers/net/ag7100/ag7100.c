@@ -17,6 +17,7 @@
 #include <asm/irq.h>
 #include <asm/io.h>
 #include <net/sch_generic.h>
+#include <asm/unaligned.h>
 
 #include "ag7100.h"
 #include "ag7100_phy.h"
@@ -618,8 +619,15 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
     }
 #endif
 #ifdef CONFIG_ATHRS16_PHY 
-    if(!is_setup_done && mac->mac_unit == 0 && (mac->mac_speed !=  speed || mac->mac_fdx !=  fdx)) 
+    if(!is_setup_done && 
+#ifndef CONFIG_PORT0_AS_SWITCH
+        mac->mac_unit == 0 && 
+#else
+        mac->mac_unit == 1 && 
+#endif
+        (mac->mac_speed !=  speed || mac->mac_fdx !=  fdx)) 
     {   
+       /* workaround for PHY4 port thru RGMII */
        phy_mode_setup();
        is_setup_done = 1;
     }
@@ -1436,7 +1444,7 @@ ag7100_recv_packets(struct net_device *dev, ag7100_mac_t *mac,
     struct sk_buff      *skb;
     ag7100_rx_status_t   ret   = AG7100_RX_STATUS_DONE;
     int head = r->ring_head, len, status, iquota = quota, more_pkts, rep;
-
+    int i;
     ag7100_trc(iquota,"iquota");
 #if !defined(CONFIG_AR9100)
     status = ag7100_reg_rd(mac, AG7100_DMA_RX_STATUS);
@@ -1536,6 +1544,15 @@ process_pkts:
 
                 mac->net_rx_packets ++;
                 mac->net_rx_bytes += skb->len;
+#if 0//def CONFIG_CAMEO_REALTEK_PHY
+		/* align the data to the ip header - should be faster than copying the entire packet */
+		for (i = len - (len % 4); i >= 0; i -= 4) {
+			put_unaligned(*((u32 *) (skb->data + i)), (u32 *) (skb->data + i + 2));
+		}
+		skb->data += 2;
+		skb->tail += 2;
+#endif
+
                 /*
                 * also pulls the ether header
                 */
@@ -1656,7 +1673,11 @@ static struct sk_buff *
 {
     struct sk_buff *skb;
 
+#if 0//def CONFIG_CAMEO_REALTEK_PHY
+    skb = dev_alloc_skb(AG7100_RX_BUF_SIZE+4);
+#else
     skb = dev_alloc_skb(AG7100_RX_BUF_SIZE);
+#endif
     if (unlikely(!skb))
         return NULL;
     skb_reserve(skb, AG7100_RX_RESERVE);
