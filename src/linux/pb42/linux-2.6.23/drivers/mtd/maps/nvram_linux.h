@@ -163,8 +163,12 @@ extern int nvram_getall(char *buf, int count);
 #define NVRAM_MAGIC			0x48534C46	/* 'NVFL' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	sizeof(struct nvram_header)
-#define NVRAM_SPACE			0x10000
 
+#ifdef CONFIG_WZR_HP_G300NH
+#define NVRAM_SPACE			0x20000
+#else
+#define NVRAM_SPACE			0x10000
+#endif
 #define	NVRAM_CRC_MASK		0x000000ff
 #define	NVRAM_CRC_SHIFT		0
 #define	NVRAM_VER_MASK		0x0000ff00
