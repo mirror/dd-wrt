@@ -107,6 +107,23 @@ static int sas_nvram_default_match(webs_t wp, char *var, char *match, char *def)
 	   return nvram_selmatch(wp, var, match); */
 }
 
+void ej_sas_nvram_checked(webs_t wp, int argc, char_t ** argv)
+{
+
+#ifdef FASTWEB
+        if (argc < 2) {
+                websError(wp, 400, "Insufficient args\n");
+                return;
+        }
+#endif
+
+        if (nvram_selmatch(wp, argv[0], argv[1])) {
+                websWrite(wp, "checked=\"checked\"");
+        }
+
+        return;
+}
+
 void ej_show_sas_stage(webs_t wp, int argc, char_t ** argv)
 {
 	do_ej(NULL, "sas_stage_1.asp", wp, NULL);
