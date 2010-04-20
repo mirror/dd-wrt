@@ -2275,6 +2275,10 @@ config ATHRS26_PHY
 config ATHRS16_PHY
     bool "Atheros S16 Phy"
 
+config PORT0_AS_SWITCH
+    bool "Atheros S16 Phy"
+    depends on ATHRS16_PHY
+
 config VITESSE_PHY
     bool "Vitesse GigE Phy 8201"
 
