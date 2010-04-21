@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 14.Apr.2010, svn 14258	//
+//				Slovenian translation DD-WRT by Eko, last revision: 21.Apr.2010, svn 14300	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -367,13 +367,6 @@ errmsg.err62=" je ¾e doloèen kot statièni zakup.";
 errmsg.err100="Obdelujem...<br/>Prosimo poèakajte.";
 errmsg.err101="Obnavljam nastavitve...<br/>Prosimo poèakajte.";
 errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo poèakajte";
-
-
-sas.title="Namestitveni pomoènik";
-sas.internet_connection="Naèin dostopa do interneta";
-sas.network_settings="Mre¾ne nastavitve";
-sas.wireless_settings="Brez¾iène nastavitve";
-sas.other_settings="Druge nastavitve";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -1767,6 +1760,10 @@ aoss.client_name="Ime odjemalca";
 aoss.security="Varnost";
 aoss.connectivity="Povezovanje";
 aoss.clients="AOSS odjemalci";
+aoss.notice="OBVESTILO";
+aoss.ap_mode_notice="OBVESTILO: AOSS se lahko uporablja samo kadar je brez¾ièno (prvi radio) v naèinu AP ali WDS AP..";
+aoss.wep_notice="naèin WEP ni dovolj varen, zato ga ne priporoèamo.";
+aoss.wep_info="(potrebno za veèino igralnih konzol, ki podpirajo AOSS)";
 
 
 sec80211x.xsuptype="Tip XSupplicanta";
@@ -2070,11 +2067,33 @@ logout.message="Uspe¹no ste se odjavili.<br />Hvala, da uporabljate DD-WRT !";
 
 // ** Setup Assistant **//
 
-hsas.wan="WAN vmesnik pove¾e vas usmerjevalnik v internet ali druge mre¾e. Èe je va¹a mre¾a povezana v internet in potrebujete le dostopno toèko, nastavite WAN naèin na \"Onemogoèeno\".";
+sas.title="Namestitveni pomoènik";
+sas.internet_connection="Naèin dostopa do interneta";
+sas.network_settings="Mre¾ne nastavitve";
+sas.wireless_settings="Brez¾iène nastavitve";
+sas.other_settings="Druge nastavitve";
+sas.hwan="Internet (WAN) nastavitev";
 
+// ** Setup Assistant **//
+
+hsas.wan="WAN vmesnik pove¾e va¹ usmerjevalnik v internet ali druge mre¾e. Èe je va¹a mre¾a povezana v internet in potrebujete le dostopno toèko, nastavite WAN naèin na \"Onemogoèeno\".";
+hsas.h_routerip="Usmerjevalnikov IP";
+hsas.routerip="To je IP naslov dodeljen va¹emu usmerjevalniku v lokalni mre¾i. Po spremembi tega naslova, morate za dostop do usmerjevalnikovega uporabni¹kega vmesnika uporabljati nov IP naslov.";
+hsas.h_dhcp="DHCP";
+hsas.dhcp="Raèunalniki in druge mre¾ne naprave v va¹i mre¾i lahko preko DHCP pridobijo IP naslove brez potrebe po roènih nastavitvah. Èe v va¹i mre¾i ze obstaja drug DHCP stre¾nik, prosimo, da onemogoèite to opcijo, da se izognete konfliktom";
+hsas.h_wireless_physical="Brez¾ièni vmesnik (radio)";
+hsas.wireless_physical="To so nastavitve brez¾iènega vmesnika. Tukaj nastavite naèin delovanja (Dostopna toèka, Odjemalec ali Prenosnik), spremenite ime mre¾e in napredne nastavitve kot npr. ¹irina kanala. Èe ste spremenili ¹irino kanala s standardnih 20 MHz, morajo tudi va¹i odjemalci podpirati novo ¹irino kanala in biti ustrezno konfigurirani.";
+hsas.h_wireless_security="Brez¾ièna za¹èita";
+hsas.wireless_security="Za la¾jo konfiguracijo odjemalcev lahko spremenite geslo brez¾iène mreze. Uporaba odprte mre¾e ali WEP se ne priporoèa zaradi varnostnih razlogov.";
+hsas.h_routername="Ime usmerjevalnika";
+hsas.routername="To ime je posredovano drugim napravam v va¹i mre¾i za la¾je razpoznavanje.";
+hsas.networking="Networking help text";
+hsas.wireless="Wireless help text";
+hsas.other="Other Settings help text";
 // ** AOSS **//
 
 haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogoèa, da pove¾ete AOSS sposobne odjemalce na va¹o dostopno toèko brez potrebe po roèni nastavitvi.";
+haoss.securitymodes="AOSS varnostni naèini doloèajo, kateri naèini so sprejeti za AOSS pogajanje. Èe odjemalec podpira samo naèine, ki niso omogoèeni, se ne more povezati.";
 
 // *******************		OLD PAGES 	****************//
 // ********************** DHCPTable.asp ****************//
