@@ -2828,6 +2828,7 @@ int led_control(int type, int act)
 	int diag_gpio = 0x0ff;
 	int dmz_gpio = 0x0ff;
 	int connected_gpio = 0x0ff;
+	int disconnected_gpio = 0x0ff;
 	int bridge_gpio = 0x0ff;
 	int vpn_gpio = 0x0ff;
 	int ses_gpio = 0x0ff;	// use for SES1 (Linksys), AOSS (Buffalo)
@@ -2871,6 +2872,7 @@ int led_control(int type, int act)
 		power_gpio = 0x102;
 		diag_gpio = 0x101;
 		connected_gpio = 0x10b;
+		disconnected_gpio = 0x106;
 		ses_gpio = 0x104;
 #endif
 #ifdef HAVE_WNDR3700
@@ -3331,7 +3333,14 @@ int led_control(int type, int act)
 		use_gpio = dmz_gpio;
 		break;
 	case LED_CONNECTED:
+		if (act == LED_ON)
+		    led_control(LED_DISCONNECTED,LED_OFF);
+		else
+		    led_control(LED_DISCONNECTED,LED_ON);
 		use_gpio = connblue ? ses_gpio : connected_gpio;
+		break;
+	case LED_DISCONNECTED:
+		use_gpio = disconnected_gpio;
 		break;
 	case LED_BRIDGE:
 		use_gpio = bridge_gpio;

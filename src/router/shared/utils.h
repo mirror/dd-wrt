@@ -533,7 +533,7 @@ extern void getWirelessMac(char *newmac);
 extern void getWANMac(char *newmac);
 
 extern int led_control(int type, int act);
-enum { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
+enum { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
 	LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1
 };
 enum { LED_ON, LED_OFF, LED_FLASH };
