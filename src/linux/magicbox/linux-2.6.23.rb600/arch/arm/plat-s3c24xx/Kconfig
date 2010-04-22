@@ -1,0 +1,49 @@
+# arch/arm/plat-s3c24xx/Kconfig
+#
+# Copyright 2007 Simtec Electronics
+#
+# Licensed under GPLv2
+
+config PLAT_S3C24XX
+	bool
+	depends on ARCH_S3C2410
+	default y if ARCH_S3C2410
+	select NO_IOPORT
+	help
+	  Base platform code for any Samsung S3C24XX device
+
+if PLAT_S3C24XX
+
+config CPU_S3C244X
+	bool
+	depends on ARCH_S3C2410 && (CPU_S3C2440 || CPU_S3C2442)
+	help
+	  Support for S3C2440 and S3C2442 Samsung Mobile CPU based systems.
+
+config PM_SIMTEC
+	bool
+	help
+	  Common power management code for systems that are
+	  compatible with the Simtec style of power management
+
+config S3C2410_DMA
+	bool "S3C2410 DMA support"
+	depends on ARCH_S3C2410
+	help
+	  S3C2410 DMA support. This is needed for drivers like sound which
+	  use the S3C2410's DMA system to move data to and from the
+	  peripheral blocks.
+
+config S3C2410_DMA_DEBUG
+	bool "S3C2410 DMA support debug"
+	depends on ARCH_S3C2410 && S3C2410_DMA
+	help
+	  Enable debugging output for the DMA code. This option sends info
+	  to the kernel log, at priority KERN_DEBUG.
+
+config MACH_SMDK
+	bool
+	help
+	  Common machine code for SMDK2410 and SMDK2440
+
+endif
