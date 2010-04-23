@@ -87,6 +87,22 @@ addEvent(window, "unload", function() {
 			<input class="spaceradio" type="radio" name="pptpd_forcemppe" value="0" <% nvram_checked("pptpd_forcemppe", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.dns1"); %></div>
+			<input size="25" name="pptpd_dns1" value="<% nvram_get("pptpd_dns1"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.dns2"); %></div>
+			<input size="25" name="pptpd_dns2" value="<% nvram_get("pptpd_dns2"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.wins1"); %></div>
+			<input size="25" name="pptpd_wins1" value="<% nvram_get("pptpd_dns1"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.wins2"); %></div>
+			<input size="25" name="pptpd_wins2" value="<% nvram_get("pptpd_wins2"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("share.srvip"); %></div>
 			<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" />
 		</div>

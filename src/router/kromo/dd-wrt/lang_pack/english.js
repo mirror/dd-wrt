@@ -1205,6 +1205,8 @@ service.h2="Services Management";
 service.apserv_legend="APServ Remote Configuration";
 service.apserv="APServ";
 
+
+
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Start Kaid";
@@ -1255,7 +1257,10 @@ service.pptpd_encry="MPPE Encryption";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
-
+service.dns1="DNS1";
+service.dns2="DNS2";
+service.wins1="WINS1";
+service.wins2="WINS2";
 //rflow.webservices
 service.rflow_legend="RFlow / MACupd";
 service.rflow_srv1="RFlow";
