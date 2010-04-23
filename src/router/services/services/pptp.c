@@ -87,6 +87,13 @@ void start_pptpd(void)
 	if (!nowins) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("wan_wins"));
 	}
+	if (strlen(nvram_safe_get("pptpd_wins1"))){
+		fprintf(fp, "ms-wins %s\n", nvram_safe_get("pptpd_wins1"));
+	}
+	if (strlen(nvram_safe_get("pptpd_wins2"))){
+		fprintf(fp, "ms-wins %s\n", nvram_safe_get("pptpd_wins2"));
+	}
+	
 	struct dns_lists *dns_list = get_dns_list();
 
 	if (nvram_match("dnsmasq_enable", "1")) {
@@ -130,6 +137,12 @@ void start_pptpd(void)
 	}
 	if (dns_list)
 		free(dns_list);
+	if (strlen(nvram_safe_get("pptpd_dns1"))){
+		fprintf(fp, "ms-wins %s\n", nvram_safe_get("pptpd_dns1"));
+	}
+	if (strlen(nvram_safe_get("pptpd_dns2"))){
+		fprintf(fp, "ms-wins %s\n", nvram_safe_get("pptpd_dns2"));
+	}
 
 	// Following is all crude and need to be revisited once testing confirms
 	// that it does work
