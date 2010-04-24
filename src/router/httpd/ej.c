@@ -7,6 +7,10 @@
 #include <ctype.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <endian.h>
+#include <unistd.h>
+#include <stdint.h>
+
 #include "httpd.h"
 
 //#define CDEBUG 1
@@ -132,6 +136,18 @@ static int decompress(webs_t stream, char *pattern, int len)
 	return 0;
 }
 
+
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define PATTERN '%<'
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define PATTERN '<%'
+#else
+#error "no endian type"
+#endif
+
+
+
 void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 {
 	void *handle = NULL;
@@ -161,7 +177,7 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 			if (ret)
 				continue;
 		}
-		if (!asp && !strncmp(pattern, "<%", len)) {
+		if (!asp && *((unsigned short*)pattern) == PATTERN) {  //!strncmp(pattern, "<%", len)
 			if (len == 2)
 				asp = pattern + 2;
 			continue;
@@ -232,7 +248,7 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 			if (ret)
 				continue;
 		}
-		if (!asp && !strncmp(pattern, "<%", len)) {
+		if (!asp && *((unsigned short*)pattern) == PATTERN) {  //!strncmp(pattern, "<%", len)
 			if (len == 2)
 				asp = pattern + 2;
 			continue;
