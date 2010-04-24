@@ -98,84 +98,36 @@ static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2
 
 static int decompress(webs_t stream, char *pattern, int len)
 {
+	typedef struct DECODE {
+		char *src;
+		char *dst;
+	};
 
-	if (!strncmp(pattern, "{i}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<input type=");
+	struct DECODE decode[] = {
+		{"{i}", "<input type="},	//
+		{"{c}", "<input class="},	//
+		{"{d}", "<input id="},	//
+		{"{e}", "<div class="},	//
+		{"{n}", "<div id="},	//
+		{"{j}", "<a href=\""},	//
+		{"{o}", "<option value="},	//
+		{"{s}", "<select name="},	//
+		{"{u}", "<span class="},	//
+		{"{z}", "<input name="},	//
+		{"{x}", "<document.write(\""},	//
+		{"{y}", "<document."},	//
+		{"{m}", "<script type=\"text/javascript\">"},	//
+	};
+	int i;
+	int l = sizeof(decode) / sizeof(struct DECODE);
+	for (i = 0; i < l; i++) {
+		if (!strncmp(pattern, decode[i].src, len)) {
+			if (len == 3) {
+				websWrite(stream, decode[i].dst);
+			}
+			return 1;
 		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{c}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<input class=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{d}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<input id=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{e}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<div class=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{n}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<div id=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{j}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<a href=\"");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{o}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<option value=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{s}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<select name=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{u}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<span class=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{z}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<input name=");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{x}", len)) {
-		if (len == 3) {
-			websWrite(stream, "document.write(\"");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{y}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<document.");
-		}
-		return 1;
-	}
-	if (!strncmp(pattern, "{m}", len)) {
-		if (len == 3) {
-			websWrite(stream, "<script type=\"text/javascript\">");
-		}
-		return 1;
+
 	}
 	return 0;
 }
@@ -356,8 +308,8 @@ FILE *getWebsFile(char *path)
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			FILE *web = fopen("/etc/www", "rb");
-			if (web==NULL)
-			    return NULL;
+			if (web == NULL)
+				return NULL;
 			fseek(web, websRomPageIndex[i].offset, 0);
 			cprintf("found %s\n", path);
 			return web;
