@@ -114,7 +114,7 @@ static int decompress(webs_t stream, char *pattern, int len)
 		{"{s}", "<select name="},	//
 		{"{u}", "<span class="},	//
 		{"{z}", "<input name="},	//
-		{"{x}", "<document.write(\""},	//
+		{"{x}", "document.write(\""},	//
 		{"{y}", "<document."},	//
 		{"{m}", "<script type=\"text/javascript\">"},	//
 	};
