@@ -411,7 +411,7 @@ static int b64_decode(const char *str, unsigned char *space, int size)
 /* Simple shell-style filename matcher.  Only does ? * and **, and multiple
 ** patterns separated by |.  Returns 1 or 0.
 */
-int match(const char *pattern, const char *string)
+static int match(const char *pattern, const char *string)
 {
 	const char *or;
 
