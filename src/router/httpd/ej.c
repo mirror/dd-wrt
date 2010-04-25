@@ -177,7 +177,7 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 			if (ret)
 				continue;
 		}
-		if (!asp && *((unsigned short*)pattern)&0xffff == PATTERN) {  //!strncmp(pattern, "<%", len)
+		if (!asp && pattern[0]=='<' && pattern[1]=='%') {  //!strncmp(pattern, "<%", len)
 			if (len == 2)
 				asp = pattern + 2;
 			continue;
@@ -248,7 +248,7 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 			if (ret)
 				continue;
 		}
-		if (!asp && *((unsigned short*)pattern)&0xffff == PATTERN) {  //!strncmp(pattern, "<%", len)
+		if (!asp && pattern[0]=='<' && pattern[1]=='%') {  //!strncmp(pattern, "<%", len)
 			if (len == 2)
 				asp = pattern + 2;
 			continue;
