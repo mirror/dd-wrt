@@ -139,9 +139,9 @@ static int decompress(webs_t stream, char *pattern, int len)
 
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#define PATTERN '0x253c
+#define PATTERN 0x253c
 #elif __BYTE_ORDER == __BIG_ENDIAN
-#define PATTERN '0x3c25
+#define PATTERN 0x3c25
 #else
 #error "no endian type"
 #endif
