@@ -33,7 +33,6 @@ extern BIO *bio_err;
 
 #include <bcmnvram.h>
 
-//typedef FILE *webs_t;
 
 typedef struct {
 	FILE *fp;
@@ -110,13 +109,10 @@ typedef char char_t;
 #define _TMPVAR(x) __TMPVAR(x)
 #define TMPVAR _TMPVAR(__LINE__)
 
-//#define websWrite(wp, fmt, args...) ({ int TMPVAR = wfprintf(wp, fmt, ## args); wfflush(wp); TMPVAR; })
 
 #define websDebugWrite(wp, fmt, args...)
-//#define websDebugWrite(wp, fmt, args...) ({ error_value = 1; wfputs("<!--", wp); int TMPVAR = wfprintf(wp, fmt, ## args); wfputs("-->", wp); wfflush(wp); TMPVAR; })
 #define websError(wp, code, msg, args...)
 
-//#define websError(wp, code, msg, args...) wfprintf(wp, msg, ## args)
 #define websHeader(wp) wfputs("<html lang=\"en\">", wp)
 #define websFooter(wp) wfputs("</html>", wp)
 #define websDone(wp, code) wfflush(wp)

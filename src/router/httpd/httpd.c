@@ -70,15 +70,10 @@
 //#include <xyssl_xface.h>
 #endif
 
-#ifdef HAVE_VFS
-#include <vfs.h>
-#endif
-
 #include <error.h>
 #include <sys/signal.h>
 
 #define SERVER_NAME "httpd"
-//#define SERVER_PORT 80
 #define PROTOCOL "HTTP/1.0"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 #define TIMEOUT	15
@@ -457,33 +452,9 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 	return 0;
 }
 
-static void
-//do_file(char *path, FILE *stream)
-do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
+static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
 {
 
-#ifdef HAVE_VFS
-	int c;
-	entry *e;
-
-	e = vfsopen(path, "r");
-	if (e == NULL) {
-		FILE *fp;
-
-		if (!(fp = fopen(path, "rb")))
-			return;
-		while ((c = getc(fp)) != EOF)
-			//fputc(c, stream);
-			wfputc(c, stream);	// jimmy, https, 8/4/2003
-		fclose(fp);
-	} else {
-
-		while ((c = vfsgetc(e)) != EOF)
-			//fputc(c, stream);
-			wfputc(c, stream);	// jimmy, https, 8/4/2003
-		vfsclose(e);
-	}
-#else
 	FILE *web = getWebsFile(path);
 
 	if (web == NULL) {
@@ -519,7 +490,6 @@ do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, 
 		wfwrite(buf, len, 1, stream);
 		fclose(web);
 	}
-#endif
 }
 
 void
@@ -530,9 +500,7 @@ do_file(struct mime_handler *handler, char *path, webs_t stream, char *query)	//
 	do_file_2(handler, path, stream, query, NULL);
 }
 
-void
-//do_file(char *path, FILE *stream)
-do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment)	//jimmy, https, 8/4/2003
+void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment)	//jimmy, https, 8/4/2003
 {
 
 	do_file_2(handler, path, stream, query, attachment);
@@ -600,21 +568,6 @@ static int check_connect_type(void)
 	return ret;
 }
 
-/*static void addEnv(const char *name_before_underline,
-			const char *name_after_underline, const char *value)
-{
-  char *s = NULL;
-  const char *underline;
-
-  if (!value)
-	value = "";
-  underline = *name_after_underline ? "_" : "";
-  asprintf(&s, "%s%s%s=%s", name_before_underline, underline,
-					name_after_underline, value);
-  if(s) {
-    putenv(s);
-  }
-}*/
 int containsstring(char *source, char *cmp)
 {
 	if (cmp == NULL || source == NULL)
@@ -658,7 +611,6 @@ static void handle_request(void)
 	int cl = 0, count, flags;
 	char line[LINE_LEN];
 
-	//   line =(char*)malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
 	bzero(line, sizeof line);
@@ -668,13 +620,11 @@ static void handle_request(void)
 	/* Parse the first line of the request. */
 	if (wfgets(line, LINE_LEN, conn_fp) == (char *)0) {	//jimmy,https,8/4/2003
 		send_error(400, "Bad Request", (char *)0, "No request found.");
-//          free(line);
 		return;
 	}
 
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
 	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4)) {
-//      free(line);
 		return;
 	}
 	method = path = line;
@@ -682,7 +632,6 @@ static void handle_request(void)
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
 		send_error(400, "Bad Request", (char *)0,
 			   "Can't parse request.");
-//      free(line);
 		return;
 	}
 	while (*path == ' ')
@@ -692,7 +641,6 @@ static void handle_request(void)
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
 		send_error(400, "Bad Request", (char *)0,
 			   "Can't parse request.");
-//      free(line);
 		return;
 	}
 	while (*protocol == ' ')
@@ -701,13 +649,9 @@ static void handle_request(void)
 	strsep(&cp, " ");
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
-	//while ( fgets( cur, line + sizeof(line) - cur, conn_fp ) != (char*) 0 )
-	//exec=fopen("/tmp/logweb.tmp","wb");
 
 	while (wfgets(cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
 	{
-		//    fwrite(cur,1,line + LINE_LEN - cur,exec);
-//      fprintf(stderr,"%s\n",cur);
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
 			break;
 		} else if (strncasecmp(cur, "Authorization:", 14) == 0) {
@@ -739,17 +683,14 @@ static void handle_request(void)
 		}
 
 	}
-	//fclose(exec);
 
 	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0) {
 		send_error(501, "Not Implemented", (char *)0,
 			   "That method is not implemented.");
-//      free(line);
 		return;
 	}
 	if (path[0] != '/') {
 		send_error(400, "Bad Request", (char *)0, "Bad filename.");
-//      free(line);
 		return;
 	}
 	file = &(path[1]);
@@ -759,7 +700,6 @@ static void handle_request(void)
 	    || strstr(file, "/../") != (char *)0
 	    || strcmp(&(file[len - 3]), "/..") == 0) {
 		send_error(400, "Bad Request", (char *)0, "Illegal filename.");
-//      free(line);
 		return;
 	}
 	int nodetect = 0;
@@ -960,7 +900,8 @@ static void handle_request(void)
 			      && nvram_match("http_passwd", DEFAULT_PASS))
 			     || nvram_match("http_username", "")
 			     || nvram_match("http_passwd", "admin"))
-			    && !endswith(file, "register.asp") && !endswith(file, "vsp.html")) {
+			    && !endswith(file, "register.asp")
+			    && !endswith(file, "vsp.html")) {
 				changepassword = 1;
 				if (endswith(file, ".asp"))
 					file = "changepass.asp";
@@ -1037,20 +978,17 @@ static void handle_request(void)
 					send_error(401, "Bad Request",
 						   (char *)0,
 						   "Can't use wireless interface to access GUI.");
-//                          free(line);
 					return;
 				}
 
 				if (auth_fail == 1) {
 					send_authenticate(auth_realm);
 					auth_fail = 0;
-//                          free(line);
 					return;
 				} else {
 					if (handler->send_headers)
 						send_headers(200, "Ok",
-							     handler->
-							     extra_header,
+							     handler->extra_header,
 							     handler->mime_type,
 							     0, NULL);
 				}
@@ -1067,7 +1005,6 @@ static void handle_request(void)
 		}
 
 	}
-//    free(line);
 }
 
 void				// add by honor 2003-04-16
@@ -1208,13 +1145,8 @@ int main(int argc, char **argv)
 
 	nvram_set("gozila_action", "0");
 
-#ifdef FILTER_DEBUG
-	debout = fopen("/tmp/filterdebug.log", "wb");
-#endif
-	cprintf("init nvram tab\n");
 /* SEG addition */
 	Initnvramtab();
-	cprintf("done()\n");
 #ifdef HAVE_OPENSSL
 	BIO *sbio;
 	SSL_CTX *ctx = NULL;
@@ -1345,10 +1277,6 @@ int main(int argc, char **argv)
 			printf("x509_read_keyfile failed\n");
 			exit(0);
 		}
-//              if (0 != xysslReadKeys(CERT_FILE, KEY_FILE)) {
-//                      fprintf(stderr, "Error reading or parsing %s.\n",KEY_FILE);
-//                      exit(0);
-//              }
 #endif
 
 #ifdef HAVE_MATRIXSSL
@@ -1412,9 +1340,6 @@ int main(int argc, char **argv)
 			sbio = BIO_new_socket(conn_fd, BIO_NOCLOSE);
 			ssl = SSL_new(ctx);
 
-//#ifdef DEBUG_CIPHER
-//              check_cipher();
-//#endif
 			SSL_set_bio(ssl, sbio, sbio);
 
 			if ((r = SSL_accept(ssl) <= 0)) {
@@ -1443,7 +1368,6 @@ int main(int argc, char **argv)
 				close(conn_fd);
 				continue;
 			}
-//              ret = xyssl_new_session(conn_fd);
 			ssl_set_endpoint(&ssl, SSL_IS_SERVER);
 			ssl_set_authmode(&ssl, SSL_VERIFY_NONE);
 			ssl_set_rng_func(&ssl, havege_rand, &hs);
@@ -1460,7 +1384,6 @@ int main(int argc, char **argv)
 				close(conn_fd);
 				continue;
 			}
-//              conn_fp = (FILE *)conn_fd;
 			conn_fp = (webs_t)(&ssl);
 #endif
 		} else
@@ -1571,7 +1494,6 @@ int wfprintf(webs_t wp, char *fmt, ...)
 	char buf[1024];
 	int ret;
 
-	//buf = (char*)malloc(1024);
 	va_start(args, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, args);
 #ifdef HAVE_HTTPS
@@ -1591,7 +1513,6 @@ int wfprintf(webs_t wp, char *fmt, ...)
 #endif
 		ret = fprintf(fp, "%s", buf);
 	va_end(args);
-	//free(buf);
 	return ret;
 }
 
@@ -1604,7 +1525,6 @@ int websWrite(webs_t wp, char *fmt, ...)
 
 	if (!wp || !fmt)
 		return -1;
-	//buf = (char*)malloc(1024);
 	va_start(args, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, args);
 #ifdef HAVE_HTTPS
@@ -1731,55 +1651,3 @@ int wfclose(webs_t wp)
 #endif
 		return fclose(fp);
 }
-
-#ifdef DEBUG_CIPHER
-void check_cipher(void)
-{
-	STACK_OF(SSL_CIPHER) * sk;
-	char buf[512];
-	BIO *STDout = NULL;
-	int i;
-	static BIO *bio_stdout = NULL;
-	X509 *peer;
-	static BIO *bio_s_out = NULL;
-	SSL_CIPHER *ciph;
-
-	if (set_ciphers) {
-		/* Set supported cipher lists */
-		SSL_set_cipher_list(ssl, set_ciphers);
-	}
-	if (get_ciphers) {
-		/* Show supported cipher lists */
-		sk = SSL_get_ciphers(ssl);
-
-		for (i = 0; i < sk_SSL_CIPHER_num(sk); i++) {
-			BIO_puts(STDout,
-				 SSL_CIPHER_description(sk_SSL_CIPHER_value
-							(sk, i), buf, 512));
-			printf("%d: %s", i, buf);
-		}
-		if (STDout != NULL)
-			BIO_free_all(STDout);
-	}
-	peer = SSL_get_peer_certificate(ssl);
-	if (peer != NULL) {
-		BIO_printf(bio_s_out, "Client certificate\n");
-		PEM_write_bio_X509(bio_s_out, peer);
-		X509_NAME_oneline(X509_get_subject_name(peer), buf, sizeof buf);
-		BIO_printf(bio_s_out, "subject=%s\n", buf);
-		X509_NAME_oneline(X509_get_issuer_name(peer), buf, sizeof buf);
-		BIO_printf(bio_s_out, "issuer=%s\n", buf);
-		X509_free(peer);
-	}
-
-	if (SSL_get_shared_ciphers(ssl, buf, sizeof buf) != NULL)
-		BIO_printf(bio_s_out, "Shared ciphers:%s\n", buf);
-
-	bio_stdout = BIO_new_fp(stdout, BIO_NOCLOSE);
-	ciph = SSL_get_current_cipher(ssl);
-	BIO_printf(bio_stdout, "%s%s, cipher %s %s\n",
-		   "",
-		   SSL_get_version(ssl),
-		   SSL_CIPHER_get_version(ciph), SSL_CIPHER_get_name(ciph));
-}
-#endif
