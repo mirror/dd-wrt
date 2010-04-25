@@ -164,22 +164,19 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 		/* Look for <% ... */
 //      LOG("look start");
 
-		if (!asp) {
-			if (pattern[0] == '{') {
-				ret = decompress(stream, pattern, len);
-				if (ret && len == 3) {
-					len = 0;
-					continue;
-				}
-				if (ret)
-					continue;
-			}
-			if (pattern[0] == '<') {	//!strncmp(pattern, "<%", len)
-				if (len == 2 && pattern[1] == '%')
-					asp = pattern + 2;
+		if (!asp && pattern[0] == '{') {
+			ret = decompress(stream, pattern, len);
+			if (ret && len == 3) {
+				len = 0;
 				continue;
 			}
-
+			if (ret)
+				continue;
+		}
+		if (!asp && !strncmp(pattern, "<%", len)) {
+			if (len == 2)
+				asp = pattern + 2;
+			continue;
 		}
 
 		/* Look for ... %> */
@@ -238,21 +235,19 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		/* Look for <% ... */
 //      LOG("look start");
 
-		if (!asp) {
-			if (pattern[0] == '{') {
-				ret = decompress(stream, pattern, len);
-				if (ret) {
-					if (len == 3)
-						len = 0;
-					continue;
-				}
-			}
-			if (!strncmp(pattern, "<%", len)) {
-				if (len == 2)
-					asp = pattern + 2;
+		if (!asp && pattern[0] == '{') {
+			ret = decompress(stream, pattern, len);
+			if (ret && len == 3) {
+				len = 0;
 				continue;
 			}
-
+			if (ret)
+				continue;
+		}
+		if (!asp && !strncmp(pattern, "<%", len)) {
+			if (len == 2)
+				asp = pattern + 2;
+			continue;
 		}
 		/* Look for ... %> */
 //      LOG("look end");
