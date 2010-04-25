@@ -241,15 +241,14 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		if (!asp) {
 			if (pattern[0] == '{') {
 				ret = decompress(stream, pattern, len);
-				if (ret && len == 3) {
-					len = 0;
+				if (ret) {
+					if (len == 3)
+						len = 0;
 					continue;
 				}
-				if (ret)
-					continue;
 			}
-			if (pattern[0] == '<') {	//!strncmp(pattern, "<%", len)
-				if (len == 2 && pattern[1] == '%')
+			if (!strncmp(pattern, "<%", len)) {
+				if (len == 2)
 					asp = pattern + 2;
 				continue;
 			}
@@ -282,6 +281,7 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
 		len = 0;
 	}
+
 	free(pattern);
 	if (handle)
 		dlclose(handle);
