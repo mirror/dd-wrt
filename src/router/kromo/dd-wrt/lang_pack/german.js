@@ -6,6 +6,9 @@
 
 lang_charset.set="iso-8859-1";
 
+share.apn="APN";
+share.pin="PIN";
+share.dial="Wähl Anweisung";
 share.firmware="Firmware";
 share.time="Zeit";
 share.interipaddr="WAN-IP-Addresse";
@@ -148,16 +151,41 @@ share.turbo="Turbo (40 MHz)";
 share.full="Voll (20 MHz)";
 share.half="Halbe (10 MHz)";
 share.quarter="Viertel (5 MHz)";
+share.subquarter="Achtel (2.5 MHz)";
 share.seealso="Siehe auch";
 share.never="niemals";
 share.unknown="Unbekannt";
 share.expired="abgelaufen";
+share.logout="Ausloggen";
+share.nmounted="Nicht gemounted";
+share.fssize="Total / Freier Speicher";
+share.src="Lokale Address";
+share.dst="Ziel Address";
+share.name_resolution="Namens Auflösung";
+share.timeout="Verfall (s)";
+share.detail="Klicke um mehr zu sehen";
+share.tmpmem="Temporärer Speicher";
+share._1h="Jede Stunde";
+share._2h="Alle 2 Stunden";
+share._3h="Alle 3 Stunden";
+share._4h="Alle 4 Stunden";
+share._5h="Alle 5 Stunden";
+share._6h="Alle 6 Stunden";
+share._12h="Alle 12 Stunden";
+share._24h="Jeden Tag";
+share._48h="Alle 2 Tage";
+share._168h="Jede Woche";
 share.days="Tage";
 share.from2 = share.from;
 share.to2 = share.to;
 share.days_genetive = share.days;
 share.standard="Standard";
 share.user="Nutzer";
+share.privatekey="Privater Schlüssel";
+share.bytes="bytes";
+share.kbytes="KB";
+share.mbytes="MB";
+share.gbytes="GB";
 share.preempt="Bevorzugung";
 share.broadcast="Broadcast Unterstützung";
 share.change="Nutzer Password ändern";
@@ -256,7 +284,8 @@ errmsg.err31=" ist ungültig.";
 errmsg.err32="IP-Adresse und Gateway sind nicht im selben Netzbereich.";
 errmsg.err33="IP-Adresse und Gateway können nicht die selben sein.";
 errmsg.err34=" darf keine Leerzeichen enthalten.";
-
+errmsg.err110="Die snd Nummer muß größer als die start Nummer sein";
+errmsg.err111="Ungültige IP Addresse";
 //Wol.asp error messages
 errmsg.err35="Sie müssen eine MAC-Adresse angeben um fortzufahren.";
 errmsg.err36="Sie müssen eine Netzwerk-Broadcast-Adresse angeben um fortzufahren.";
@@ -304,7 +333,7 @@ errmsg.err56="Port-Wert ist außerhalb des gültigen Bereichs [0 - 65535]";
 
 // Routing.asp error messages
 errmsg.err57="Eintrag löschen ?";
-
+errmsg.err103=" muß kleiner sein als ";
 // Status_Lan.asp error messages
 errmsg.err58="Klicken um die Zuweisung zu löschen";
 errmsg.err581="Klicken um die Verbindung zu trennen";
@@ -316,10 +345,15 @@ errmsg.err59="Nicht verfügbar! Bitte schalten sie das WLAN-Netzwerk an.";
 errmsg.err60="Bitte geben sie eine Datei zur Aktualisierung an.";
 errmsg.err61="Ungültiges Dateiformat.";
 
-sas.internet_connection="Internet Verbindung";
-sas.network_settings="Netzwerk Einstellungen";
-sas.wireless_settings="Drahtlos Einstellungen";
-sas.other_settings="Andere Einstellungen";
+
+errmsg.err62=" wurde bereits als statisces Lease definiert.";
+
+//Saving message
+errmsg.err100="In Bearbeitung...<br/>Bitte Warten.";
+errmsg.err101="Stelle Konfiguration wieder her...<br/>Bitte Warten.";
+errmsg.err102="Upgrade Firmware...<br/>Bitte Warten.";
+
+
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 
@@ -460,6 +494,8 @@ ddnsm.all_noip="Keine WAN-Verbindung";
 hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfename eines Domainnamens anstatt einer IP-Adresse. \
 	Der Service verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
 	Sie müssen sich für den Service bei TZO.com, ZoneEdit.com oder DynDNS.ORG anmelden.";
+hddns.right4="Geben Sie eine Zahl in der Box an um den Interval für das erzwungene Update anzugeben (in Tagen). Updates sollten nur Automatisch durchgeführt werden wenn sich Ihre IP ändert. Achten Sie darauf das Sie Updates nicht zu oft durchführen, da ihr DDNS provider Sie sonst Sperren könnte.";
+
 
 
 
@@ -617,6 +653,31 @@ hpforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt f
 	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
 	Aus Sicherheitsgründen sollten Sie die Weiterleitung auf diejenigen Ports beschränken, die Sie benötigen.";
 
+usb.titl="USB";
+usb.usb_legend="USB Unterstützung";
+usb.usb_core="USB Kern-Unterstützung";
+usb.usb_uhci="USB 1.1 Unterstützung (UHCI)";
+usb.usb_ohci="USB 1.1 Unterstützung (OHCI)";
+usb.usb_ehci="USB 2.0 Unterstützung";
+usb.usb_storage="USB Storage Unterstützung";
+usb.usb_extfs="ext2 / ext3 Datei System Unterstützung";
+usb.usb_fatfs="FAT Datei System Unterstützung";
+usb.usb_printer="USB Drucker Unterstützung";
+usb.usb_automnt="Automatisches Drive Mount";
+usb.usb_mntpoint="Disk Mount Punkt";
+usb.usb_runonmount="Ausführen-bei-mount Script Name";
+usb.usb_diskinfo="Disk Info";
+nas.titl="NAS";
+nas.proftpd_legend="FTP Server";
+nas.proftpd_srv="ProFTPD";
+nas.proftpd_port="Server Port";
+nas.proftpd_dir="Datei Verzeichniss";
+nas.proftpd_passw="Nutzer Passwort Liste";
+nas.proftpd_writeen="Schreiberlaubniss";
+nas.proftpd_anon="Anonymes Login (Nur-Lesen)";
+nas.proftpd_anon_subdir="Anonymes Heimat Unterverzeichniss";
+nas.sambasrv_legend="Samba Server";
+
 
 hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
 
@@ -671,7 +732,7 @@ hotspot.sputnik_id="Sputnik-Server-ID";
 hotspot.sputnik_instant="Nutze Sputnik Instant Setup";
 hotspot.sputnik_express="Nutze SputnikNet Express";
 hotspot.sputnik_about="über Sputnik";
-
+hotspot.sputnik_learn="Mehr Lernen";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
@@ -688,7 +749,11 @@ hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 hotspot.wifidog_config="Firewall Regeln";
-
+hotspot.wifidog_messagefile="HTML Nachrichten Datei für Wifidog";
+hotspot.wifidog_realm="HTTP Server Realm";
+hotspot.wifidog_username="HTTP Server Nutzername";
+hotspot.wifidog_password="HTTP Server Passwort";
+hotspot.wifidog_auth="HTTP Server Authentication Unterstützung";
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Entferne WLAN von der LAN-Bridge";
@@ -701,7 +766,7 @@ hotspotsys.operatorid="Nutzername des Betreibers";
 hotspotsys.locationid="Standort ID";
 hotspotsys.dhcp="DHCP Interface";
 hotspotsys.net="Entferntes Netzwerk";
-
+hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 
 // **************************************************************** AnchorFree.asp *********************************************************//
 
@@ -822,6 +887,8 @@ idx.summt_opt7="letzter Son Sep - erster Son Apr";
 idx.summt_opt8="dritter Son Okt - dritter Son Mär";
 idx.summt_opt9="erster Son Okt - erster Son Apr";
 idx.summt_opt10="dritter Son Okt - dritter Son Feb";
+idx.portsetup="Port Setup";
+idx.wanport="WAN Port Zuweisung";
 idx.ntp_client="NTP-Client";
 
 //help container
@@ -835,7 +902,7 @@ hidx.right12="Erlaubt dem Router, Ihre IP-Adressen zu verwalten.";
 hidx.right14="Die erste IP-Adresse die vergeben werden soll.";
 hidx.right16="Sie können hier die Anzahl der IP-Adressen einschränken, die der Router maximal vergeben kann. 0 bedeutet das nur vordefinierte statische Leases zur Vergabe verwendet werden.";
 hidx.right18="Wählen Sie hier Ihre Zeitzone und die Sommerzeit-Einstellungen. Der Router kann auch die Lokalzeit nutzen.";
-
+hidx.sas="Der Setup Assistent leitet Sie durch die Vereinfachten Einstellungen um ihren Router einzurichten.";
 
 
 // **************************************************************** Join.asp **********************************************************************//
@@ -965,7 +1032,9 @@ management.clock_support="Nicht unterstützt";
 
 management.mmc_legend="MMC/SD-Karten-Unterstützung";
 management.mmc_srv="MMC-Gerät";
-
+management.mmc_gpiosel="GPIO pins auswählen";
+management.mmc_gpiopins="GPIO pins";
+management.mmc_cardinfo="Karten Info";
 management.samba_legend="CIFS Automount";
 management.samba_srv="Common Internet File System";
 management.samba_share="Freigabe";
@@ -989,6 +1058,17 @@ hmanagement.right2="Steuert das automatische Auffrischen diverser GUI-Elemente. 
 portserv.titl="Port-Services";
 portserv.h2="Port-Services";
 
+networking.h2="VLAN Tagging";
+networking.legend="Tagging";
+networking.h22="Bridging";
+networking.legend2="Erstelle Bridge";
+networking.legend3="Weise Bridge zu";
+networking.legend4="Aktuelle Bridging Tabelle";
+networking.brname="Bridge Name";
+networking.stp="STP eingeschaltet";
+networking.iface="Schnittstelle";
+networking.h5="DHCPD";
+networking.legend5="Mehrere DHCP Server";
 
 
 // **************************************************************** QoS.asp **********************************************************************//
@@ -1164,12 +1244,13 @@ service.rflow_srv1="RFlow";
 service.rflow_srv2="MACupd";
 
 //pppoe-relay.webservices
-service.pppoe_legend="PPPOE-Relay";
+service.pppoe_legend="PPPoE-Relay";
 service.pppoe_srv="Relay";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
 service.pppoesrv_srv="RP-PPPoE Server Daemon";
+service.pppoesrv_srvopt="RP-PPPoE Server Optionen";
 service.pppoesrv_compr="Kompression";
 service.pppoesrv_remoteaddr="Entfernte Start IP";
 service.pppoesrv_remotenet="Remote Network IP";
@@ -1240,6 +1321,22 @@ service.nstx_srv="nstx Daemon";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 
+//ttraff.webservices
+service.ttraff_legend="WAN Traffic Counter";
+service.ttraff_daemon="ttraff Daemon";
+
+//notifier.webservices
+service.warn_legend="Verbindungs Warner";
+service.warn="Verbindungs Warner";
+service.warn_limit="Verbindungs Limit";
+service.warn_server="Email SMTP Server";
+service.warn_from="Email Addresse des Absenders";
+service.warn_fromfull="Voller Name des Absenders";
+service.warn_to="Email Addresse des Empfängers";
+service.warn_domain="Domain Name des Empfängers";
+service.warn_user="SMTP Auth Nutzername";
+service.warn_pass="SMTP Auth Passwort";
+
 
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
@@ -1295,6 +1392,7 @@ eoip.legend="Ethernet Über IP Tunneln";
 eoip.srv="EoIP Tunnel";
 eoip.remoteIP="Entfernte IP Address";
 eoip.tunnelID="Tunnel Nummer";
+eoip.comp="Kompression";
 eoip.passtos="TOS Durchleitung";
 eoip.frag="fragment";
 eoip.mssfix="mssfix";
@@ -1322,7 +1420,8 @@ status_lan.legend3="DHCP-Clients";
 status_lan.legend4="Active Clients";
 status_lan.legend5="Verbundene PPTP Clients";
 status_lan.legend6="Verbundene PPPOE Clients";
-
+status_lan.concount="Verb. Anzahl";
+status_lan.conratio="Ratio";
 //help container
 
 hstatus_lan.right2="Dies ist die Router-MAC-Adresse wie sie in Ihrem lokalen Ethernet-Netzwerk sichtbar ist.";
@@ -1395,13 +1494,14 @@ status_inet.www_loginstatus="Login-Status";
 status_inet.wanuptime="Connection Uptime";
 status_inet.leasetime="Verbleibende Lease Zeit";
 status_inet.traff="Traffic";
-status_inet.traff_tot="Total Traffic";
-status_inet.traff_mon="Traffic by Month";
-status_inet.traffin="Incoming";
-status_inet.traffout="Outgoing";
-status_inet.previous="Previous Month";
-status_inet.next="Next Month";
-
+status_inet.traff_tot="Gesammter Traffic";
+status_inet.traff_mon="Traffic pro Monat";
+status_inet.traffin="Eingehend";
+status_inet.traffout="Ausgehend";
+status_inet.previous="Vorhergehender Monat";
+status_inet.next="Nächster Monat";
+status_inet.dataadmin="Daten Administration";
+status_inet.delete_confirm="WARNUNG! Dies löscht alle ihre Traffic Daten. Fortfahren??";
 //help container
 
 hstatus_inet.right2="Dies zeigt die Informationen an, welche von Ihrem Anbieter zum Verbinden ins Internet benötigt werden. \
@@ -1596,10 +1696,29 @@ wpa.algorithms="WPA-Algorithmus";
 wpa.shared_key="WPA Shared Key";
 wpa.rekeyInt="Rekey Interval";
 
+aoss.titl="AOSS Sicherheit";
+aoss.aoss="AOSS";
+aoss.service="AOSS Service";
+aoss.enable="AOSS Einschalten";
+aoss.start="Starte AOSS Aushandlung";
+aoss.securitymodes="Sicherheits Einstellungen";
+aoss.wpaaes="WPA AES";
+aoss.wpatkip="WPA TKIP";
+aoss.wep="WEP64 / 128";
+aoss.client_name="Client Name";
+aoss.security="Sicherheit";
+aoss.connectivity="Verbindungen";
+aoss.clients="AOSS Clients";
+aoss.notice="Mitteilung";
+aoss.ap_mode_notice="Mitteilung: AOSS kann nur genutzt werden, wenn die Primäre WLAN Schnittstelle sich im AP oder WDS-AP Modus befindet.";
+aoss.wep_notice="Der WEP Modus ist unsicher, aus dem Grunde empfehlen wir Ihnen, diesen Nicht zu benutzen.";
+aoss.wep_info="(wird für einige Spielkonsolen die AOSS unterstützen, in Verbindung mit AOSS benötigt)";
 
 sec80211x.xsuptype="XSupplicant Typ";
 sec80211x.servercertif="Public Server Zertifikat";
 sec80211x.clientcertif="Client Zertifikat";
+sec80211x.anon="Anonyme Identität";
+sec80211x.options="Erweiterte Netzwerk Optionen";
 
 //help container
 
@@ -1650,13 +1769,17 @@ radius.label="Radius Client MAC";
 radius.label2="MAC-Format";
 radius.label3="Radius Auth Server IP";
 radius.label4="Radius Auth Server Port";
+radius.label23="Radius Auth Backup Server IP";
+radius.label24="Radius Auth Backup Server Port";
+radius.label27="Radius Auth Backup gemeinsames Passwort";
+
 radius.label5="Erlaubte unauthentifizierte Nutzer";
 radius.label6="Passwort-Format";
 radius.label7="Radius Auth Shared Secret";
 radius.label8="Umgehen, wenn Server nicht verfügbar";
 radius.label13="Radius Acct Server IP";
 radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct Shared Secret";
+radius.label17="Radius Acct gemeinsames Passwort";
 
 
 
@@ -1771,9 +1894,14 @@ wl_basic.label3="WLAN-Netzwerk-Name (SSID)";
 wl_basic.label4="WLAN-Kanal";
 wl_basic.label5="WLAN-SSID-Broadcast";
 wl_basic.label6="Empfindlichkeitsbereich (ACK Timing)";
+wl_basic.label6="Sensitivity Range (ACK Timing)";
+wl_basic.label7="802.11n Übertragungs Modus";
 wl_basic.parent="Partner IP";
+wl_basic.masquerade="Maskierung / NAT";
 wl_basic.ap="AP";
 wl_basic.client="Client";
+wl_basic.repeater="Repeater";
+wl_basic.repeaterbridge="Repeater Bridge";
 wl_basic.clientBridge="Client-Bridge";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Gemischt";
@@ -1788,12 +1916,15 @@ wl_basic.bg="BG-Gemischt";
 wl_basic.n="Nur-N";
 wl_basic.legend2="WLAN-Zeiteinschränkung";
 wl_basic.radio="WLAN Schaltuhr";
+wl_basic.radiotimer="WLAN Einteilung";
 wl_basic.radio_on="WLAN ist An";
 wl_basic.radio_off="WLAN ist Aus";
 
-wl_basic.h2_v24="Drahtlose Physisikalische Schnittstelle";
+wl_basic.h2_v24="Physisikalische WLAN Schnittstelle";
+wl_basic.h2_vi="Virtuelle Schnittstellen";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="Sendeleistung";
+wl_basic.AntGain="Antennenleistung";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primär";
 wl_basic.secondary="Sekundär";
@@ -1813,13 +1944,25 @@ wl_basic.extchannel="Erweiterter Kanal Modus";
 wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Kanal Breite";
 wl_basic.regulatory="SuperKanal";
-
+wl_basic.chanshift="Kanal Verschiebung";
+wl_basic.specialmode="2.3 GHz Modus";
+wl_basic.wifi_bonding="Wifi Bündelung";
+wl_basic.sifstime="OFDM SIFS Time";
+wl_basic.preambletime="OFDM Preamble Time";
+wl_basic.multicast="Multicast weiterleitung";
+wl_basic.intmit="Rausch Unempfindlichkeit";
+wl_basic.noise_immunity="Rausch Unempfindlichkeits Level";
+wl_basic.ofdm_weak_det="OFDM Problemerkennung";
+wl_basic.radar="Radar Erkennung";
+wl_basic.mtikie="MTik Kompatibilität";
+wl_basic.csma="Carrier Sense";
 
 //help container
 
 hwl_basic.right2="Wenn Sie G-Clients komplett ausschließen wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den WLAN Zugriff abschalten wollen, wählen Sie <em>abschalten</em>.";
 hwl_basic.right3="Empfindlichkeitsbereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing auf broadcom firmwares komplett ab. Auf Atheros wechselt es in den Auto ACK Timing modus";
+hwl_basic.right6="Klick auf irgendeine Stunde um das WLAN Signal An oder Abzuschalten (<em>Grün</em> zeigt den erlaubten Zugriff an, <em>Rot</em> Zeigt den blockierten Zugriff an)";
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
@@ -1844,11 +1987,28 @@ success.alert3="Wenn Sie via WLAN verbunden sind, treten Sie dem Netzwerk erneut
 
 logout.message="Sie wurden erfolgreich ausgeloggt.<br />Danke das Sie DD-WRT benutzen!";
 
+sas.internet_connection="Internet Verbindung";
+sas.network_settings="Netzwerk Einstellungen";
+sas.wireless_settings="WLAN Einstellungen";
+sas.other_settings="Andere Einstellungen";
 // ** Setup Assistant **//
 hsas.wan="Das WAN Interface verbindet ihren Router mit dem Internet oder anderen Netzwerken. Wenn Ihr Netzwerk bereits mit dem Internet verbinden ist und Sie nur einen Accesspoint benöigen, setzen Sie den WAN Modus auf \"Ausgeschaltet\".";
-
+hsas.h_routerip="Router IP";
+hsas.routerip="Dies ist die IP Addresse die dem Router in ihrem Internen Netzwerk zugewiesen ist. Wenn Sie diese Addresse ändern, müssen Sie auch diese Verwenden wenn Sie auf die Weboberfläche des Routers zugreifen wollen ";
+hsas.h_dhcp="DHCP";
+hsas.dhcp="Computer und andere Netzwerk Geräte können mit DHCP, IP-Addressen automatisch beziehen ohne das eine manuelle Konfiguration notwendig ist. In dem Fall das bereits ein DHCP Server in ihrem Netzwerk läuft, schalten Sie bitte diese Option ab um Konflikte zu vermeiden.";
+hsas.h_wireless_physical="WLAN Schnittstelle";
+hsas.wireless_physical="Die Schnittstellen Einstellungen erlaubt es Ihnen das Verhalten der WLAN Schnittstelle einzustellen. Sie können den Hauptbetriebsmodus einstellen (Access Point, Client or Repeater), den WLAN Netzwerk Namen ändern und auch erweiterte Einstellungen wie z.b. die Kanalbreite. In dem Fall das Sie die Kanalbreite von 20 Mhz auf einen anderen Wert ändern, achten Sie bitte darauf das ihr Client diese Kanalbreite auch tatsächlich unterstützt.";
+hsas.h_wireless_security="WLAN Sicherheit";
+hsas.wireless_security="Damit es ihnen leichter fällt ihren Client zu Konfigurieren, können Sie hier ihr Netzwerk Passwort ändern. Die Verschlüssel Abzuschalten oder auf WEP zu setzen wird nicht empfohlen, da dies ihre Sicherheit erheblich beeinträchtigt.";
+hsas.h_routername="Router Name";
+hsas.routername="Dieser Name wird anderen Geräten in ihrem Netzwerk mitgeteilt und erlaubt die einfachere Identifizierung.";
+hsas.networking="Netzwerk Hilfe Text";
+hsas.wireless="WLAN Hilfe Text";
+hsas.other="Andere Einstellungen Hilfe Text";
 // ** AOSS **//
 haoss.basic="Das \"AirStation One-Touch Secure System\" (AOSS) erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu Verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
+haoss.securitymodes="Die AOSS Sicherheits Modies definieren welche Sicherheits Einstellungen von Clients akzeptiert werden. Wenn ein Client nur Sicherheits Einstellungen unterstützt die nicht erlaubt sind, kann er sich nicht Verbinden.";
 
 
 // *****************************************************		OLD PAGES 		************************************************************************//
