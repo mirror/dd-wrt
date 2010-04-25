@@ -161,27 +161,25 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 		if (len == (PATTERN_BUFFER - 1))
 			goto release;
 
-		/* Look for <% ... */
-//      LOG("look start");
-
-		if (!asp && pattern[0] == '{') {
-			ret = decompress(stream, pattern, len);
-			if (ret && len == 3) {
-				len = 0;
-				continue;
+		if (!asp) {
+			if (pattern[0] == '{') {
+				ret = decompress(stream, pattern, len);
+				if (ret) {
+					if (len == 3)
+						len = 0;
+					continue;
+				}
 			}
-			if (ret)
-				continue;
-		}
-		if (!asp && !strncmp(pattern, "<%", len)) {
-			if (len == 2)
-				asp = pattern + 2;
-			continue;
-		}
-
-		/* Look for ... %> */
-//      LOG("look end");
-		if (asp) {
+			/* Look for <% ... */
+			if (pattern[0] == 0x3c) {
+				if (len == 1)
+					continue;
+				if (pattern[1] == 0x25) {
+					asp = pattern + 2;
+					continue;
+				}
+			}
+		} else {
 			if (unqstrstr(asp, "%>")) {
 				for (func = asp; func < &pattern[len];
 				     func = end) {
@@ -206,6 +204,7 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
 		len = 0;
 	}
+
 	free(pattern);
 	if (handle)
 		dlclose(handle);
@@ -232,26 +231,26 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		if (len == (PATTERN_BUFFER - 1))
 			goto release;
 
-		/* Look for <% ... */
-//      LOG("look start");
 
-		if (!asp && pattern[0] == '{') {
-			ret = decompress(stream, pattern, len);
-			if (ret && len == 3) {
-				len = 0;
-				continue;
+		if (!asp) {
+			if (pattern[0] == '{') {
+				ret = decompress(stream, pattern, len);
+				if (ret) {
+					if (len == 3)
+						len = 0;
+					continue;
+				}
 			}
-			if (ret)
-				continue;
-		}
-		if (!asp && !strncmp(pattern, "<%", len)) {
-			if (len == 2)
-				asp = pattern + 2;
-			continue;
-		}
-		/* Look for ... %> */
-//      LOG("look end");
-		if (asp) {
+			/* Look for <% ... */
+			if (pattern[0] == 0x3c) {
+				if (len == 1)
+					continue;
+				if (pattern[1] == 0x25) {
+					asp = pattern + 2;
+					continue;
+				}
+			}
+		} else {
 			if (unqstrstr(asp, "%>")) {
 				for (func = asp; func < &pattern[len];
 				     func = end) {
