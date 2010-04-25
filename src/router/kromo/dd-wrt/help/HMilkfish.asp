@@ -1,3 +1,5 @@
+<% do_hpagehead("bmenu.servicesMilkfish"); %>
+
 <!--##################################################################
 # This program is free software; you can redistribute it and/or      #
 # modify it under the terms of the GNU General Public License as     #
@@ -26,7 +28,7 @@
 # Please note that this software is under development and comes with #
 # absolutely no warranty, to the extend permitted by applicable law. #
 ###################################################################-->
-<% do_hpagehead("bmenu.servicesMilkfish"); %>
+
 	<body>
 		<div id="header">
 			<div class="logo"> </div>
