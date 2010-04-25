@@ -22,11 +22,8 @@
 #define cdebug(a)
 #endif
 static char *get_arg(char *args, char **next);
-//static void call(char *func, FILE *stream);
 static void *call(void *handle, char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
-
-#define LOG(a)			//fprintf(stderr,"%s\n",a);
 
 char *uqstrchr(char *buf, char find)
 {
@@ -200,7 +197,6 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 
 	      release:
 		/* Release pattern space */
-		//fputs(pattern, stream);
 		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
 		len = 0;
 	}
@@ -230,7 +226,6 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		pattern[len] = '\0';
 		if (len == (PATTERN_BUFFER - 1))
 			goto release;
-
 
 		if (!asp) {
 			if (pattern[0] == '{') {
@@ -271,7 +266,6 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 
 	      release:
 		/* Release pattern space */
-		//fputs(pattern, stream);
 		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
 		len = 0;
 	}
@@ -281,37 +275,10 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		dlclose(handle);
 }
 
-#ifdef HAVE_VFS
-#include <vfs.h>
-#endif
-
 #define WEBS_PAGE_ROM
 
 #include "html.c"
 
-/*
-#include <LzmaDecode.h>
-
-#define LZMA_LC 2
-#define LZMA_LP 0
-#define LZMA_PB 0
-
-#define LZMA_WORKSPACE_SIZE ((LZMA_BASE_SIZE + \
-      (LZMA_LIT_SIZE << (LZMA_LC + LZMA_LP))) * sizeof(CProb))
-*/
-
-/*
-char *decodeWebs(websRomPageIndexType *web)
-{
-unsigned char lzma_workspace[LZMA_WORKSPACE_SIZE];
-int bytes;
-char *buf;
-int len = web->size;
-buf = malloc(len);
-LzmaDecode(lzma_workspace, LZMA_WORKSPACE_SIZE, LZMA_LC, LZMA_LP, LZMA_PB, web->page, web->csize, buf, len, &bytes);
-return buf;
-}
-*/
 FILE *getWebsFile(char *path)
 {
 	cprintf("opening %s\n", path);
@@ -336,17 +303,6 @@ int getWebsFileLen(char *path)
 {
 	int len = 0;
 	int i = 0;
-/*char tmpfile[64];
-sprintf(tmpfile,"/tmp/%s",path);
-//fprintf(stderr,"read %s\n",path);
-FILE *web = fopen(tmpfile,"rb");
-if (web!=NULL)
-    {
-    fseek(web,0,SEEK_END);
-    len=ftell(web);
-    fclose(web);
-    return len;
-    }*/
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			len = websRomPageIndex[i].size;
@@ -359,18 +315,9 @@ if (web!=NULL)
 
 void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
-//fprintf(stderr,"load page %s\n",path);
-//open file and read into memory
 	FILE *fp = NULL;
-#ifdef HAVE_VFS
-	entry *e;
-#endif
 	int len;
 	int i;
-#ifdef DEBUGLOG
-	if (log == NULL)
-		log = fopen("/tmp/log.tmp", "wb");
-#endif
 
 	i = 0;
 	len = 0;
