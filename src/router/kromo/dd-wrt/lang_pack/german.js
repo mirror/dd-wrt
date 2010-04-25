@@ -753,7 +753,7 @@ hotspot.wifidog_messagefile="HTML Nachrichten Datei für Wifidog";
 hotspot.wifidog_realm="HTTP Server Realm";
 hotspot.wifidog_username="HTTP Server Nutzername";
 hotspot.wifidog_password="HTTP Server Passwort";
-hotspot.wifidog_auth="HTTP Server Authentication Unterstützung";
+hotspot.wifidog_auth="HTTP Authentication Unterstützung";
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Entferne WLAN von der LAN-Bridge";
