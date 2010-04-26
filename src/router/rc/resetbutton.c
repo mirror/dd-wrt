@@ -344,6 +344,14 @@ int isGW2369(void)
 	return 0;
 }
 
+int isGW2350(void)
+{
+	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
+	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
+		return 1;
+	return 0;
+}
+
 int getbuttonstate()
 {
 	FILE *in;
@@ -358,7 +366,10 @@ int getbuttonstate()
 #elif HAVE_MI424WR
 	ret = read_bit(10);
 #elif HAVE_CAMBRIA
-	ret = read_bit(20);
+	if (isGW2350())
+		ret = read_bit(4);
+	else
+		ret = read_bit(20);
 #else
 	if (isCompex())
 		ret = read_bit(0);
