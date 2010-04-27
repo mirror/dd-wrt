@@ -2090,6 +2090,7 @@ char *live_translate(char *tran)
 	    return "";
 	char *lang = getLanguageName();
 	char buf[64];
+	int start, filelen, pos;
 
 	memset(temp, 0, sizeof(temp));
 	memset(temp1, 0, sizeof(temp));
@@ -2103,13 +2104,36 @@ char *live_translate(char *tran)
 	int len = strlen(temp1);
 
 	fp = getWebsFile(buf);
+	if (fp)	{
+		start = ftell(fp);
+		filelen = getWebsFileLen(buf);
+
+		while (fgets(temp, 256, fp) != NULL) {
+			pos = ftell(fp);
+
+			if ((pos - start) > filelen)
+				break;
+			if ((memcmp(temp, temp1, len)) == 0) {
+				temp2 = strtok(temp, "\"");
+				temp2 = strtok(NULL, "\"");
+
+				fclose(fp);
+				return temp2;
+			}
+		}
+		fclose(fp);
+	}
+	
+	strcpy(buf, "lang_pack/english.js");  // if string not found, try english 
+	fp = getWebsFile(buf);
+
 	if (fp == NULL)
 		return "Error";
-	int start = ftell(fp);
-	int filelen = getWebsFileLen(buf);
+	start = ftell(fp);
+	filelen = getWebsFileLen(buf);
 
 	while (fgets(temp, 256, fp) != NULL) {
-		int pos = ftell(fp);
+		pos = ftell(fp);
 
 		if ((pos - start) > filelen)
 			break;
@@ -2122,22 +2146,7 @@ char *live_translate(char *tran)
 		}
 	}
 	fclose(fp);
-
-	fp = getWebsFile("lang_pack/english.js");	// if not found, try english
-	if (fp == NULL)
-		return "Error";
-
-	while (fgets(temp, 256, fp) != NULL) {
-		if ((memcmp(temp, temp1, len)) == 0) {
-			temp2 = strtok(temp, "\"");
-			temp2 = strtok(NULL, "\"");
-
-			fclose(fp);
-			return temp2;
-		}
-	}
-	fclose(fp);
-
+	
 	return "Error";		// not found
 
 }
