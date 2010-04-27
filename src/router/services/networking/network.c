@@ -1700,8 +1700,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -1831,40 +1831,27 @@ void start_lan(void)
 	if (nvram_match("mac_clone_enable", "1") &&
 	    nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
 	    nvram_invmatch("def_hwaddr", "")) {
-		ether_atoe(nvram_safe_get("def_whwaddr"),
-			   ifr.ifr_hwaddr.sa_data);
-		ifr.ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
 #ifdef HAVE_MADWIFI
 		char *wifi = "wifi0";
 #else
 		char *wifi = "ra0";
 #endif
-
-		strncpy(ifr.ifr_name, wifi, IFNAMSIZ);
 		eval("ifconfig", wifi, "down");
-		if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
-			perror("Write wireless mac fail : ");
-		else
-			cprintf("Write wireless mac successfully\n");
+		eval("ifconfig", wifi, "hw", "ether",
+		     nvram_safe_get("def_whwaddr"));
 		eval("ifconfig", wifi, "up");
 	}
 	if (nvram_match("mac_clone_enable", "1") &&
 	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 	    nvram_invmatch("def_whwaddr", "")) {
-		ether_atoe(nvram_safe_get("def_whwaddr"),
-			   ifr.ifr_hwaddr.sa_data);
-		ifr.ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
 #ifdef HAVE_MADWIFI
 		char *wifi = "wifi0";
 #else
 		char *wifi = "ra0";
 #endif
-		strncpy(ifr.ifr_name, wifi, IFNAMSIZ);
 		eval("ifconfig", wifi, "down");
-		if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
-			perror("Write wireless mac fail : ");
-		else
-			cprintf("Write wireless mac successfully\n");
+		eval("ifconfig", wifi, "hw", "ether",
+		     nvram_safe_get("def_whwaddr"));
 		eval("ifconfig", wifi, "up");
 	}
 	configure_wifi();
