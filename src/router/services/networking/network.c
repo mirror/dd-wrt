@@ -1700,8 +1700,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -3382,7 +3382,9 @@ void start_wan_done(char *wan_ifname)
 					    "pptp") ?
 		    nvram_safe_get("pptp_get_ip") :
 		    nvram_safe_get("wan_gateway");
-		if (strcmp(gateway, "0.0.0.0"))
+		if (strcmp(gateway, "0.0.0.0")) {
+			route_add(wan_ifname, 0, gateway, NULL,"255.255.255.255");
+
 			while (route_add
 			       (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 			       && timeout--) {
@@ -3395,23 +3397,9 @@ void start_wan_done(char *wan_ifname)
 					break;
 
 			}
+		}
 	}
 
-	/*
-	 * Delete all default routes 
-	 */
-//     while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0);
-
-	/*
-	 * Set default route to gateway if specified 
-	 */
-	/*
-	 * while (strcmp(nvram_safe_get("wan_proto"), "disabled") &&
-	 * route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("wan_gateway"),
-	 * "0.0.0.0") && timeout-- ){ if (nvram_match("wan_proto", "pppoe") &&
-	 * nvram_match("ppp_demand", "1")) { printf("Wait ppp interface to init
-	 * (3) ...\n"); sleep(1); } } 
-	 */
 	if (nvram_match("wan_proto", "pptp")) {
 		route_del(nvram_safe_get("wan_iface"), 0,
 			  nvram_safe_get("wan_gateway"), NULL,
@@ -3430,12 +3418,6 @@ void start_wan_done(char *wan_ifname)
 			  nvram_safe_get("l2tp_get_ip"), NULL,
 			  "255.255.255.255");
 		route_add(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");	// fixed 
-		// routing 
-		// problem 
-		// in 
-		// Israel 
-		// by 
-		// kanki
 	}
 
 	/*
