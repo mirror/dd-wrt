@@ -118,9 +118,9 @@ static void toe_init_free_queue(struct toe_private *toe)
 		sw_desc_ptr++;
 	}
 
-	dma_sync_single_for_device(toe->dev, toe->sw_freeq_desc_base_dma,
-				TOE_SW_FREEQ_DESC_NUM * sizeof(GMAC_RXDESC_T),
-				DMA_TO_DEVICE);
+	//dma_sync_single_for_device(toe->dev, toe->sw_freeq_desc_base_dma,
+	//			TOE_SW_FREEQ_DESC_NUM * sizeof(GMAC_RXDESC_T),
+	//			DMA_TO_DEVICE);
 
 	/* SW Free Queue Read/Write Pointer */
 	rwptr_reg.bits.wptr = TOE_SW_FREEQ_DESC_NUM - 1;
@@ -160,9 +160,9 @@ static void toe_init_swtx_queue(struct net_device *dev)
 		return;
 	}
 	memset(desc_buf, 0, TOE_GMAC_SWTXQ_DESC_NUM * TOE_SW_TXQ_NUM * sizeof(GMAC_TXDESC_T));
-	dma_sync_single_for_device(toe->dev, gmac->swtxq_desc_base_dma,
-				TOE_GMAC_SWTXQ_DESC_NUM * TOE_SW_TXQ_NUM * sizeof(GMAC_TXDESC_T),
-				DMA_TO_DEVICE);
+	//dma_sync_single_for_device(toe->dev, gmac->swtxq_desc_base_dma,
+	//			TOE_GMAC_SWTXQ_DESC_NUM * TOE_SW_TXQ_NUM * sizeof(GMAC_TXDESC_T),
+	//			DMA_TO_DEVICE);
 	__raw_writel((gmac->swtxq_desc_base_dma & DMA_Q_BASE_MASK) | TOE_GMAC_SWTXQ_DESC_POWER,
 			gmac->dma_base_addr + GMAC_SW_TX_QUEUE_BASE_REG);
 
@@ -202,9 +202,9 @@ static void toe_init_default_queue(struct net_device *dev)
 		return;
 	}
 	memset(desc_ptr, 0, TOE_DEFAULT_Q_DESC_NUM * sizeof(GMAC_RXDESC_T));
-	dma_sync_single_for_device(toe->dev, gmac->default_desc_base_dma,
-			TOE_DEFAULT_Q_DESC_NUM * sizeof(GMAC_RXDESC_T),
-			DMA_TO_DEVICE);
+	//dma_sync_single_for_device(toe->dev, gmac->default_desc_base_dma,
+	//		TOE_DEFAULT_Q_DESC_NUM * sizeof(GMAC_RXDESC_T),
+	//		DMA_TO_DEVICE);
 	gmac->default_desc_base = (unsigned int)desc_ptr;
 	qhdr = (volatile NONTOE_QHDR_T *)(toe->global_base + TOE_DEFAULT_Q_HDR_BASE(gmac->port_id));
 	qhdr->word0.base_size = ((unsigned int)gmac->default_desc_base_dma & NONTOE_QHDR0_BASE_MASK) | TOE_DEFAULT_Q_DESC_POWER;
@@ -380,6 +380,7 @@ static void toe_gmac_init_chip(struct net_device *dev)
 		dev_err(&dev->dev, "Unsupported MII interface\n");
 		return;
 	}
+//	status.bits.link = 1;
 
 	__raw_writel(status.bits32, dev->base_addr + GMAC_STATUS);
 }
@@ -533,7 +534,7 @@ static void toe_gmac_tx_complete(struct net_device *dev, unsigned int tx_qid)
 		if (rwptr.bits.rptr == swtxq->finished_idx)
 			break;
 		curr_desc = (GMAC_TXDESC_T *)swtxq->desc_base + swtxq->finished_idx;
-		dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+(swtxq->finished_idx*sizeof(GMAC_TXDESC_T)), sizeof(GMAC_TXDESC_T),DMA_FROM_DEVICE);
+		//dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+(swtxq->finished_idx*sizeof(GMAC_TXDESC_T)), sizeof(GMAC_TXDESC_T),DMA_FROM_DEVICE);
 		word0.bits32 = curr_desc->word0.bits32;
 		word1.bits32 = curr_desc->word1.bits32;
 
@@ -547,11 +548,11 @@ static void toe_gmac_tx_complete(struct net_device *dev, unsigned int tx_qid)
 			while (--desc_count) {
 				word0.bits.status_tx_ok = 0;
 				curr_desc->word0.bits32 = word0.bits32;
-				dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+swtxq->finished_idx * sizeof(GMAC_TXDESC_T),sizeof(GMAC_TXDESC_T),
-								DMA_TO_DEVICE);
+				//dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+swtxq->finished_idx * sizeof(GMAC_TXDESC_T),sizeof(GMAC_TXDESC_T),
+				//				DMA_TO_DEVICE);
 				swtxq->finished_idx = RWPTR_ADVANCE_ONE(swtxq->finished_idx, TOE_GMAC_SWTXQ_DESC_NUM);
 				curr_desc = (GMAC_TXDESC_T *)swtxq->desc_base + swtxq->finished_idx;
-				dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+swtxq->finished_idx * sizeof(GMAC_TXDESC_T),sizeof(GMAC_TXDESC_T),DMA_FROM_DEVICE);
+				//dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+swtxq->finished_idx * sizeof(GMAC_TXDESC_T),sizeof(GMAC_TXDESC_T),DMA_FROM_DEVICE);
 				word0.bits32 = curr_desc->word0.bits32;
 			}
 
@@ -560,8 +561,8 @@ static void toe_gmac_tx_complete(struct net_device *dev, unsigned int tx_qid)
 			swtxq->tx_skb[swtxq->finished_idx] = NULL;
 
 			curr_desc->word0.bits32 = word0.bits32;
-			dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+
-							swtxq->finished_idx * sizeof(GMAC_TXDESC_T),sizeof(GMAC_TXDESC_T),DMA_TO_DEVICE);
+			//dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+
+			//				swtxq->finished_idx * sizeof(GMAC_TXDESC_T),sizeof(GMAC_TXDESC_T),DMA_TO_DEVICE);
 			dev->stats.tx_packets++;
 			swtxq->finished_idx = RWPTR_ADVANCE_ONE(swtxq->finished_idx, TOE_GMAC_SWTXQ_DESC_NUM);
 		} else {
@@ -689,10 +690,10 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		curr_desc->word3.bits32 = word3;
 		free_desc--;
 
-		dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+
-						wptr * sizeof(GMAC_TXDESC_T),
-						sizeof(GMAC_TXDESC_T),
-						DMA_TO_DEVICE);
+		//dma_sync_single_for_device(toe->dev, swtxq->desc_base_dma+
+		//				wptr * sizeof(GMAC_TXDESC_T),
+		//				sizeof(GMAC_TXDESC_T),
+		//				DMA_TO_DEVICE);
 
 		wptr = RWPTR_ADVANCE_ONE(wptr, TOE_GMAC_SWTXQ_DESC_NUM);
 		frag_id++;
@@ -999,11 +1000,13 @@ static int gmac_open(struct net_device *dev)
 
 	toe_init_gmac(dev);
 
-//	netif_carrier_off(dev);
+	netif_carrier_on(dev);
 	if (gmac->phydev)
 	    phy_start(gmac->phydev);
 
 	netif_start_queue(dev);
+	enable_irq(dev->irq);
+	toe_gmac_enable_tx_rx(dev);
 
 	return 0;
 }
@@ -1089,7 +1092,10 @@ static void gmac_get_phy_status(struct net_device *dev)
 		mdelay(10);	/* let GMAC consume packet */
 		__raw_writel(status.bits32, dev->base_addr + GMAC_STATUS);
 		if (status.bits.link)
+			{
+			printk(KERN_INFO "enable link\n");
 			toe_gmac_enable_tx_rx(dev);
+			}
 	}
 }
 
