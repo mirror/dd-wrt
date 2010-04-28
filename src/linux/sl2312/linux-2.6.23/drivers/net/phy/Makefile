@@ -15,3 +15,5 @@ obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
 obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
 obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
 obj-$(CONFIG_FIXED_PHY)		+= fixed.o
+obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
+obj-$(CONFIG_MDIO_GPIO)		+= mdio-gpio.o
