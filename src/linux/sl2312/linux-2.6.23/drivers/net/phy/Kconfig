@@ -87,4 +87,22 @@ config FIXED_MII_100_FDX
 	bool "Emulation for 100M Fdx fixed PHY behavior"
 	depends on FIXED_PHY
 
+config MDIO_BITBANG
+	tristate "Support for bitbanged MDIO buses"
+	help
+	  This module implements the MDIO bus protocol in software,
+	  for use by low level drivers that export the ability to
+	  drive the relevant pins.
+	  If in doubt, say N.
+
+config MDIO_GPIO
+	tristate "Support for GPIO lib-based bitbanged MDIO buses"
+	depends on MDIO_BITBANG
+	---help---
+	  Supports GPIO lib-based MDIO busses.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called mdio-gpio.
+
+
 endif # PHYLIB

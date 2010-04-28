@@ -79,7 +79,7 @@
 // #define SL351x_TEST_WORKAROUND
 #ifdef CONFIG_SL351x_NAT
 #endif
-#define GMAX_TX_INTR_DISABLED			1
+// #define GMAX_TX_INTR_DISABLED			1
 // #define DO_HW_CHKSUM					1
 //#define ENABLE_TSO						1
 #define GMAC_USE_TXQ0					1
@@ -87,7 +87,7 @@
 // #define HW_RXBUF_BY_KMALLOC			1
 //#define _DUMP_TX_TCP_CONTENT	1
 #define	br_if_ioctl						1
-#define GMAC_LEN_1_2_ISSUE				1
+// #define GMAC_LEN_1_2_ISSUE				0
 
 #define GMAC_EXISTED_FLAG			0x5566abcd
 #define CONFIG_MAC_NUM				GMAC_NUM
@@ -524,9 +524,6 @@ void mac_init_drv(void)
 			unsigned int data, phy_vendor;
 			gmac_write_reg(toe->gmac[i].base_addr, GMAC_STA_ADD2, 0x55aa55aa, 0xffffffff);
 			data = gmac_read_reg(toe->gmac[i].base_addr, GMAC_STA_ADD2);
-    			v=mii_read(toe->gmac[i].phy_addr, 0);
-			v |= (1 << 15);	// Reset PHY;
-			mii_write(toe->gmac[i].phy_addr, 0x00, v);
 			if (data == 0x55aa55aa)
 			{
 #ifdef VITESSE_G5SWITCH
@@ -535,24 +532,10 @@ void mac_init_drv(void)
 					break;
 				}
 #endif
-//#ifdef CONFIG_MACH_WBD222
-//			toe->gmac[i].existed = GMAC_EXISTED_FLAG;
-
-//#endif
-			v=20;
-			while(v--)
-			{
 				phy_vendor = gmac_get_phy_vendor(toe->gmac[i].phy_addr);
-				printk(KERN_EMERG "vendor return %X\n",phy_vendor);
 				if (phy_vendor != 0 && phy_vendor != 0xffffffff)
-				{
 					toe->gmac[i].existed = GMAC_EXISTED_FLAG;
-					goto next;
-				}
-			msleep(100);
 			}
-			}
-		    next:;
 		}
 
 		// Write GLOBAL_QUEUE_THRESHOLD_REG
@@ -3297,20 +3280,6 @@ enum GPIO_REG
     GPIO_DATA_SET   = 0x10,
     GPIO_DATA_CLEAR = 0x14,
 };
-
-static void setGPIO(int gpio, int on)
-{
-unsigned int addr;
-unsigned int value;
-addr = (GPIO_BASE_ADDR + GPIO_DATA_OUT);
-value = __raw_readl(addr);
-if (on)
-    value|=gpio;
-else
-    value&=~gpio;
-__raw_writel(value,addr);
-
-}
 /***********************/
 /*    MDC : GPIO[31]   */
 /*    MDIO: GPIO[22]   */
@@ -3357,33 +3326,25 @@ void mii_serial_write(char bit_MDO) // write data into mii PHY
     unsigned int value;
 
     addr = GPIO_BASE_ADDR + GPIO_PIN_DIR;
-    value = __raw_readl(addr) | GPIO_MDC | GPIO_MDIO; /* set MDC/MDIO Pin to output */
-    __raw_writel(value,addr);
+    value = readl(addr) | GPIO_MDC | GPIO_MDIO; /* set MDC/MDIO Pin to output */
+    writel(value,addr);
     if(bit_MDO)
     {
-	setGPIO(GPIO_MDIO,1);
-	setGPIO(GPIO_MDC,1);
-	setGPIO(GPIO_MDC,0);
-	
-//        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
-//        writel(GPIO_MDIO,addr); /* set MDIO to 1 */
-//        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
-//        writel(GPIO_MDC,addr); /* set MDC to 1 */
-//        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-//        writel(GPIO_MDC,addr); /* set MDC to 0 */
+        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
+        writel(GPIO_MDIO,addr); /* set MDIO to 1 */
+        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
+        writel(GPIO_MDC,addr); /* set MDC to 1 */
+        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+        writel(GPIO_MDC,addr); /* set MDC to 0 */
     }
     else
     {
-	setGPIO(GPIO_MDIO,0);
-	setGPIO(GPIO_MDC,1);
-	setGPIO(GPIO_MDC,0);
-	
-//        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-//        writel(GPIO_MDIO,addr); /* set MDIO to 0 */
-//        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
-//        writel(GPIO_MDC,addr); /* set MDC to 1 */
-//        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-//        writel(GPIO_MDC,addr); /* set MDC to 0 */
+        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+        writel(GPIO_MDIO,addr); /* set MDIO to 0 */
+        addr = (GPIO_BASE_ADDR + GPIO_DATA_SET);
+        writel(GPIO_MDC,addr); /* set MDC to 1 */
+        addr = (GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+        writel(GPIO_MDC,addr); /* set MDC to 0 */
     }
 
 #endif
@@ -3422,18 +3383,16 @@ unsigned int mii_serial_read(void) // read data from mii PHY
     unsigned int value;
 
     addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_PIN_DIR);
-    value = __raw_readl(addr) & ~GPIO_MDIO; //0xffbfffff;   /* set MDC to output and MDIO to input */
-    __raw_writel(value,addr);
+    value = readl(addr) & ~GPIO_MDIO; //0xffbfffff;   /* set MDC to output and MDIO to input */
+    writel(value,addr);
 
-    setGPIO(GPIO_MDC,1);
-    setGPIO(GPIO_MDC,0);
-//    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_SET);
-//    writel(GPIO_MDC,addr); /* set MDC to 1 */
-//    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
-//    writel(GPIO_MDC,addr); /* set MDC to 0 */
+    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_SET);
+    writel(GPIO_MDC,addr); /* set MDC to 1 */
+    addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_CLEAR);
+    writel(GPIO_MDC,addr); /* set MDC to 0 */
 
     addr = (unsigned int *)(GPIO_BASE_ADDR + GPIO_DATA_IN);
-    value = __raw_readl(addr);
+    value = readl(addr);
     value = (value & (1<<GPIO_MDIO_PIN)) >> GPIO_MDIO_PIN;
     return(value);
 
@@ -3459,14 +3418,21 @@ void mii_pre_st(void)
 * phyad -> physical address
 * regad -> register address
 ***************************************** */
-static unsigned int mii_read(unsigned char phyad,unsigned char regad)
+unsigned int mii_read(unsigned char phyad,unsigned char regad)
 {
     unsigned int i,value;
     unsigned int bit;
 
-    GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
-    GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
-    
+    if (phyad == GPHY_ADDR)
+    {
+        GPIO_MDC_PIN = G_MDC_PIN;   /* assigned MDC pin for giga PHY */
+        GPIO_MDIO_PIN = G_MDIO_PIN; /* assigned MDIO pin for giga PHY */
+    }
+    else
+    {
+        GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
+        GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
+    }
     GPIO_MDC = (1<<GPIO_MDC_PIN);
     GPIO_MDIO = (1<<GPIO_MDIO_PIN);
 
@@ -3508,13 +3474,22 @@ static unsigned int mii_read(unsigned char phyad,unsigned char regad)
 * regad -> register address
 * value -> value to be write
 ***************************************** */
-static void mii_write(unsigned char phyad,unsigned char regad,unsigned int value)
+void mii_write(unsigned char phyad,unsigned char regad,unsigned int value)
 {
     unsigned int i;
     char bit;
 
-    GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
-    GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
+	printk("%s: phy_addr=0x%x reg_addr=0x%x value=0x%x \n",__func__,phyad,regad,value);
+    if (phyad == GPHY_ADDR)
+    {
+        GPIO_MDC_PIN = G_MDC_PIN;   /* assigned MDC pin for giga PHY */
+        GPIO_MDIO_PIN = G_MDIO_PIN; /* assigned MDIO pin for giga PHY */
+    }
+    else
+    {
+        GPIO_MDC_PIN = H_MDC_PIN;   /* assigned MDC pin for 10/100 PHY */
+        GPIO_MDIO_PIN = H_MDIO_PIN; /* assigned MDIO pin for 10/100 PHY */
+    }
     GPIO_MDC = (1<<GPIO_MDC_PIN);
     GPIO_MDIO = (1<<GPIO_MDIO_PIN);
 

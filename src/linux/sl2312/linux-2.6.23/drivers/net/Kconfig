@@ -2242,11 +2242,11 @@ config ACENIC_OMIT_TIGON_I
 
 	  The safe and default value for this is N.
 
-#config GEMINI_NET_ENGINE_GMAC
-#	tristate "Gemini Gigabit Ethernet support"
-#	select PHYLIB
-#	help
-#	  This driver supports Gemini TOE and NAT dual Gigabit Ethernet.
+config GEMINI_NET_ENGINE_GMAC
+	tristate "Gemini Gigabit Ethernet support"
+	select PHYLIB
+	help
+	  This driver supports Gemini TOE and NAT dual Gigabit Ethernet.
 
 
 config NET_GMAC
