@@ -1,0 +1,114 @@
+#!/bin/sh
+if [ "$(nvram get gps)" = "1" ]; then
+
+BOARD=$(nvram get DD_BOARD2 | cut -c-7)
+if test -z $BOARD
+then
+        BOARD=$(nvram get DD_BOARD | cut -c-7) 
+fi                                             
+if [ x$BOARD = xCambria ]
+then                     
+        TTY=/dev/tts/1
+else                  
+        TTY=/dev/tts/0
+fi           
+
+nvram set gps_status=0
+nvram set gps_status_text="GPS not Synchronized"
+nvram set gps_lat=""
+nvram set gps_lat_e=""
+nvram set gps_lon=""
+nvram set gps_lon_e=""
+nvram set gps_lat_text=""
+nvram set gps_lon_text=""
+nvram set gps_sat=""
+nvram set gps_alt=""
+
+/bin/stty 4800 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon -opost <${TTY}
+
+if [ "$(nvram get gps_type)" = "gateworks" ]; then
+	/usr/sbin/gpio enable 5
+fi
+
+
+/bin/cat >/tmp/gpsi << "EOF"
+#!/bin/sh
+BOARD=$(nvram get DD_BOARD2 | cut -c-7)
+if test -z $BOARD
+then
+        BOARD=$(nvram get DD_BOARD | cut -c-7) 
+fi                                             
+if [ x$BOARD = xCambria ]
+then                     
+        TTY=/dev/tts/1
+else                  
+        TTY=/dev/tts/0
+fi           
+GPSD=$(nvram get gps_gpsd) 
+if [ x$GPSD = x1 ]
+then
+	COMMAND="gpspipe -R 127.0.0.1:2947"
+else
+	COMMAND="cat ${TTY}"
+fi
+
+while true 
+do
+$COMMAND |  awk -F "," '
+function getgpstext(pos,extra)
+	{
+	deg=(int( int(pos)/100) )
+	min=int( pos - deg*100 )
+	sec=60*( pos - deg*100 - min)
+	#der einfache tick
+	tick=39
+	return(sprintf("%2dd %s%c %.2f%c%c %s",deg,min,tick,sec,tick,tick,extra))
+	}
+
+function setnvram(var,val)
+	{
+	system(sprintf("nvram set %s=\"%s\"",var,val))
+	}
+{
+if ($1 == "$GPGGA")
+	{
+	if (int($7) > 0)
+		{
+		setnvram("gps_status",int($7))
+		setnvram("gps_status_text","GPS Synchronized")
+
+		setnvram("gps_lat",$3)
+		setnvram("gps_lat_e",$4)
+
+		setnvram("gps_lon",$5)
+		setnvram("gps_lon_e",$6)
+
+		setnvram("gps_lat_text",getgpstext($3,$4) )
+		setnvram("gps_lon_text",getgpstext($5,$6) )
+	
+		setnvram("gps_sat",int($8))
+		setnvram("gps_alt",int($10))
+		exit
+		}
+	else if (int($7) == 0)
+		{
+		setnvram("gps_status",int($7))
+		setnvram("gps_status_text","GPS not Synchronized")
+		setnvram("gps_lat","");
+		setnvram("gps_lat_e","");
+		setnvram("gps_lon","");
+		setnvram("gps_lon_e","");
+		setnvram("gps_lat_text","");
+		setnvram("gps_lon_text","");
+		setnvram("gps_sat","");
+		setnvram("gps_alt","");
+		}
+	}
+}'
+#20 sekunden warten, wenn erfolgreich ausgelesen
+sleep 20
+done
+EOF
+/bin/chmod 755 /tmp/gpsi
+/usr/bin/nohup /tmp/gpsi >/dev/null 2>&1 &
+fi
