@@ -113,7 +113,11 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	insmod("sl351xgmac");
+//#ifdef HAVE_WBD222
+	insmod("gemini_negmac");
+//#else
+//	insmod("sl351xgmac");
+//#endif
 	// sleep(1);
 	eval("ifconfig", "eth0", "up");
 #ifdef HAVE_WBD222
