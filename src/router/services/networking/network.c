@@ -1103,8 +1103,7 @@ void start_lan(void)
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
-#endif
-#ifdef HAVE_STORM
+#elif HAVE_STORM
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
