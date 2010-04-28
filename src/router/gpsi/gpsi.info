@@ -1,0 +1,42 @@
+###
+
+#pos Name  	Example Data  	Description
+#1	Sentence Identifier 	$GPGGA 	Global Positioning System Fix Data
+#2	Time 	170834 	17:08:34 Z
+#3,4	Latitude 	4124.8963, N 	41d 24.8963' N or 41d 24' 54" N
+#5,6	Longitude 	08151.6838, W 	81d 51.6838' W or 81d 51' 41" W
+#7	Fix Quality:
+#	- 0 = Invalid
+#	- 1 = GPS fix
+#	- 2 = DGPS fix 	1 	Data is from a GPS fix
+#8	Number of Satellites 	05 	5 Satellites are in view
+#9	Horizontal Dilution of Precision (HDOP) 	1.5 	Relative accuracy of horizontal position
+#10	Altitude 	280.2, M 	280.2 meters above mean sea level
+#11	Height of geoid above WGS84 ellipsoid 	-34.0, M 	-34.0 meters
+#12	Time since last DGPS update 	blank 	No last update
+#13	DGPS reference station id 	blank 	No station id
+#14	Checksum 	*75 	Used by program to check for transmission errors
+#
+#Format of latitudes and longitudes
+#
+# Where a numeric latitude or longitude is given, the two digits immediately to the left of the decimal point are whole minutes, to the right are decimals of minutes, and the remaining digits to the left of the whole minutes are whole degrees.
+#
+#eg. 4533.35 is 45 degrees and 33.35 minutes. ".35" of a minute is exactly 21 seconds.
+#
+#eg. 16708.033 is 167 degrees and 8.033 minutes. ".033" of a minute is about 2 seconds.
+#
+#nvram:
+# gps 0 aus 1 ein
+# gps_type gateworks (setzt gpio 5 auf 1) Falls nicht gesetzt, sollten auch normal an der seriellen gehen
+#          manuell koennten wir benutzen um daten manuell einzutragen
+# gps_status -1 invalid, 0 startzustand, 1 valid
+# gps_status_text = "GPS Synchronized" / "GPS not Synchronized"
+# gps_lat
+# gps_lon
+# gps_lat_e
+# gps_lon_e
+# gps_lat_text (ggf. obselete, per javascript, spaeter!)
+# gps_lon_text (ggf. obselete, per javascript, spaeter!)
+# gps_alt - Hoehe ueber NN
+# gps_sat - 
+# 
