@@ -228,8 +228,10 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	if (retval)
 		return retval;
 
+#ifndef CONFIG_SL2312_USB
 	if (ehci_is_TDI(ehci))
 		tdi_reset (ehci);
+#endif
 
 	return retval;
 }
@@ -592,9 +594,9 @@ static int ehci_run (struct usb_hcd *hcd)
 	hcd->state = HC_STATE_RUNNING;
 #ifndef CONFIG_SL2312_USB
 	ehci_writel(ehci, FLAG_CF, &ehci->regs->configured_flag);
-#endif
 	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted writes */
 	msleep(5);
+#endif
 	up_write(&ehci_cf_port_reset_rwsem);
 
 	temp = HC_VERSION(ehci_readl(ehci, &ehci->caps->hc_capbase));

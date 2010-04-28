@@ -272,6 +272,17 @@ config PATA_EFAR
 
 	  If unsure, say N.
 
+config PATA_GEMINI
+	tristate "Gemini PATA support (Experimental)"
+	depends on EXPERIMENTAL
+	help
+	  This option enables support for the Gemini PATA-Controller.
+	  Note that the Gemini SoC has no native SATA-Controller but an
+	  onboard PATA-SATA bridge.
+
+	  If unsure, say N.
+
+
 config ATA_GENERIC
 	tristate "Generic ATA support"
 	depends on PCI
