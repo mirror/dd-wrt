@@ -100,6 +100,15 @@ config SATA_QSTOR
 
 	  If unsure, say N.
 
+config SATA_LEPUS
+	tristate "STORLINK SATA support"
+	depends on ARCH_SL2312
+	help
+	  This option enables support for LEPUS Serial ATA.
+
+	  If unsure, say N.
+
+
 config SATA_PROMISE
 	tristate "Promise SATA TX2/TX4 support"
 	depends on PCI

@@ -424,7 +424,7 @@ config BLK_DEV_RZ1000
 
 config BLK_DEV_IDEDMA_PCI
 	bool "Generic PCI bus-master DMA support"
-	depends on PCI && BLK_DEV_IDEPCI
+	depends on (PCI && BLK_DEV_IDEPCI) || ARCH_SL2312
 	---help---
 	  If your PCI system uses IDE drive(s) (as opposed to SCSI, say) and
 	  is capable of bus-master DMA operation (most Pentium PCI systems),
@@ -858,6 +858,28 @@ config BLK_DEV_IDE_RAPIDE
 	help
 	  Say Y here if you want to support the Yellowstone RapIDE controller
 	  manufactured for use with Acorn computers.
+
+config BLK_DEV_IDE_SL2312
+	tristate "SL2312 IDE interface support"
+	depends on ARM && ARCH_SL2312
+	help
+	  Say Y here if you want to support the Storlink IDE controller
+	  manufactured for use with Sword.
+
+config BLK_DEV_SL2312_IDE_CHANNEL_0
+	bool "Enable SL2312 IDE Channel 0"
+	depends on BLK_DEV_IDE_SL2312
+	help
+	  Say Y here if you want to enable IDE Channel 0 in
+	  the Storlink IDE driver.
+
+config BLK_DEV_SL2312_IDE_CHANNEL_1
+	bool "Enable SL2312 IDE Channel 1"
+	depends on BLK_DEV_IDE_SL2312
+	help
+	  Say Y here if you want to enable IDE Channel 1 in
+	  the Storlink IDE driver.
+
 
 config BLK_DEV_IDE_BAST
 	tristate "Simtec BAST / Thorcom VR1000 IDE support"

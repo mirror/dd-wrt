@@ -97,8 +97,6 @@ static struct platform_device sl351x_wdt = {
 };
 
 static struct platform_device *sata_devices[] __initdata = {
-	&sata_device,
-	&sata0_device,
 	&sl351x_wdt,
 };
 
