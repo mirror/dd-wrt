@@ -1000,12 +1000,12 @@ static int gmac_open(struct net_device *dev)
 
 	toe_init_gmac(dev);
 
-	netif_carrier_on(dev);
+//	netif_carrier_on(dev);
 	if (gmac->phydev)
 	    phy_start(gmac->phydev);
 
 	netif_start_queue(dev);
-	enable_irq(dev->irq);
+//	enable_irq(dev->irq);
 	toe_gmac_enable_tx_rx(dev);
 
 	return 0;
