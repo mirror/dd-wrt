@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////////////////////////
 //		Japanese l10n translated file - DD-WRT V24 by d-yama 2007/10/10                     //
 //		    - Contributed by BUFFALO Inc.                                                   //
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -6,6 +6,9 @@
 // ** COMMON SHARE LABEL **//
 lang_charset.set="utf-8";
 
+share.apn="APN";
+share.pin="PIN";
+share.dial="Dial String";
 share.firmware="Firmware";
 share.time="時間";
 share.interipaddr="インターネット側IPアドレス";
@@ -15,11 +18,14 @@ share.enable="有効";
 share.enabled="有効";
 share.disable="無効";
 share.disabled="無効";
-share.usrname="ユーザ名";
+share.usrname="ユーザー名";
 share.passwd="パスワード";
 share.hostname="ホスト名";
 share.vdsl="T-Home VDSL 7 VLAN Tagging";
+share.vdslvlan8="VLAN 8 support";
+share.wan_vlantag="VLAN Tag ID";
 share.compression="PPP圧縮";
+share.mlppp="Multi Link";
 share.domainname="ドメイン名";
 share.wandomainname="インターネット側ドメイン名";
 share.landomainname="LAN側ドメイン名";
@@ -27,7 +33,9 @@ share.statu="状態";
 share.start="開始";
 share.end="終了";
 share.proto="プロトコル";
-share.ip="IPアドレス";
+share.ip="IP Address";
+share.localip="Local IP";share.ip="IPアドレス";
+share.remoteip="Remote IP";
 share.mac="MACアドレス";
 share.none="無し";
 share.none2="ノー";
@@ -60,10 +68,22 @@ share.fri_s1="金";
 share.sat="土曜";
 share.sat_s="土";
 share.sat_s1="土";
+share.jan="1月";
+share.feb="2月";
+share.mar="3月";
+share.apr="4月";
+share.may="5月";
+share.jun="6月";
+share.jul="7月";
+share.aug="8月";
+share.sep="9月";
+share.oct="10月";
+share.nov="11月";
+share.dec="12月";
 share.expires="有効期限";
 share.yes="はい";
 share.no="いいえ";
-share.filter="Filter";
+share.filter="フィルター";
 share.deny="拒否";
 share.range="範囲";
 share.use="Use";
@@ -73,7 +93,7 @@ share.routername="機器名";
 share.manual="手動";
 share.port="ポート";
 share.ssid="SSID";
-share.channel="チャネル";
+share.channel="チャンネル";
 share.rssi="RSSI";
 share.signal="信号";
 share.noise="ノイズ";
@@ -82,6 +102,8 @@ share.openn="Open";
 share.dtim="DTIM";
 share.rates="Rate";
 share.rate="Rate";
+share.txrate="TX Rate";
+share.rxrate="RX Rate";
 share.low="低";
 share.medium="中";
 share.high="高";
@@ -104,12 +126,13 @@ share.port_range="ポート範囲";
 share.priority="プライオリティ";
 share.gateway="ゲートウェイ";
 share.intrface="インターフェース";  //don't use share.interface, Mozilla problem!!!
+share.ccq="CCQ";
 share.pintrface="物理インターフェース";
 share.vintrface="仮想インターフェース";
-share.router="ルータ";
+share.router="ルーター";
 share.static_lease="静的割り当て";
-share.srvip="サーバIP";
-share.srvipname="サーバIP";
+share.srvip="サーバーIP";
+share.srvipname="サーバーIP";
 share.localdns="LAN側DNS";
 share.minutes="分";
 share.oui="OUI 検索";
@@ -130,9 +153,12 @@ share.styl="Style";
 share.err="エラー";
 share.errs="エラー";
 share.meters="(m)";
+share.dynamicturbo="Dynamic (20/40 MHz)";
+share.turbo="Turbo (40 MHz)";
 share.full="Full (20 MHz)";
 share.half="Half (10 MHz)";
 share.quarter="Quarter (5 MHz)";
+share.subquarter="Eighth (2.5 MHz)";
 share.seealso="参照";
 share.never="しない";
 share.unknown="Unknown";
@@ -163,12 +189,17 @@ share.days_genetive = share.days;
 
 share.standard="Normal";
 share.execscript="実行スクリプト";
-share.user="ユーザ";
+share.user="ユーザー";
 share.privatekey="秘密鍵";
 share.kbytes="KB";
 share.bytes="bytes";
 share.mbytes="MB";
 share.gbytes="GB";
+share.preempt="Preemption";
+share.acktiming="ACK Timing";
+share.broadcast="Broadcast support";
+share.secondcharacter="s";
+share.change="User Password Change";
 
 sbutton.save="設定(保存のみ)";
 sbutton.savetitle="パラメータの保存のみ行います(動作には反映されません)";
@@ -193,6 +224,7 @@ sbutton.restore="設定の復元";
 sbutton.cptotext="編集";
 sbutton.runcmd="実行する";
 sbutton.startup="起動時スクリプトとして保存";
+sbutton.shutdown="Save Shutdown";
 sbutton.firewall="Firewallスクリプトとして保存";
 sbutton.custom="手動スクリプトとして保存";
 sbutton.wol="起動";
@@ -212,19 +244,22 @@ sbutton.log_out="Log出力";
 sbutton.edit_srv="サービスの追加・編集";
 sbutton.routingtab="ルーティングテーブルの表示";
 sbutton.wanmac="現在設定中の機器からMACアドレスを取得";
-sbutton.dhcprel="DHCP Release";
-sbutton.dhcpren="DHCP Renew";
+sbutton.dhcprel="DHCP開放";
+sbutton.dhcpren="DHCP再取得";
 sbutton.survey="サイトサーベイ";
 sbutton.upgrading="ファームウェアを更新しています";
 sbutton.upgrade="更新の実行";
 sbutton.preview="プレビュー";
 sbutton.allways_on="常時有効";
 sbutton.allways_off="常時無効";
+sbutton.download="ダウンロード";
+sbutton.next="次へ &raquo;";
+sbutton.prev="&laquo; 戻る";
 
 
 // ** COMMON ERROR MESSAGES  **//
 
-errmsg.err0="ユーザ名が入力されていません";
+errmsg.err0="ユーザー名が入力されていません";
 errmsg.err1="機器名が入力されていません";
 errmsg.err2="入力値が設定範囲外です。開始アドレスか、アドレス範囲を変更してください";
 errmsg.err3="少なくとも1日以上の有効時間が指定されている必要があります";
@@ -263,6 +298,8 @@ errmsg.err31="入力値が正しくありません";
 errmsg.err32="IPアドレスとゲートウェイの組合せが正しくありません";
 errmsg.err33="IPアドレスとゲートウェイの組合せが正しくありません(同一アドレスです)";
 errmsg.err34=" にスペース記号を含めることはできません";
+errmsg.err110="終了値は開始値より大きくなくてはいけません。";
+errmsg.err111="無効なIPアドレスです";
 
 //Wol.asp error messages
 errmsg.err35="実行するためにはMACアドレスを設定する必要があります";
@@ -287,7 +324,7 @@ errmsg.err44="いちどに128台以上のクライアントを指定すること
 errmsg.err47="入力したSSIDが正しくありません";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS接続は、次の場合に使用することができません：\n	* 無線LAN通信モードが「アクセスポイント」である必要があります\n	* 無線セキュリティにWPA2を使用することはできません\n * BSSモードが「B-Only」を使用することはできません";
+errmsg.err48="WDS接続は、次の場合に使用することができません：\n	* 無線LAN通信モードが「アクセスポイント」である必要があります\n	* 無線セキュリティーにWPA2を使用することはできません\n * BSSモードが「B-Only」を使用することはできません";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="RADIUS認証は無線LAN通信モードが「アクセスポイント」の場合のみ動作します";
@@ -301,7 +338,7 @@ errmsg.err52="確認パスワードが入力したパスワードと一致しま
 
 // Port_Services.asp error messages
 errmsg.err53="編集が完了してから、「設定」ボタンをクリックしてください";
-errmsg.err54="サービス名をにゅうりょくする必要があります";
+errmsg.err54="サービス名を入力する必要があります";
 errmsg.err55="入力したサービスは既に使用されています";
 
 // QoS.asp error messages
@@ -313,6 +350,7 @@ errmsg.err103=" は小さすぎます。最小値は次の値です： ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Leaseの削除";
+errmsg.err581="クリックでpptpクライアントを切断します";
 
 //Status_Wireless.asp error messages
 errmsg.err59="設定を有効にするためには無線LANを有効にする必要があります";
@@ -344,8 +382,10 @@ bmenu.wireless="無線LAN";
 bmenu.wirelessBasic="基本";
 bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
-bmenu.wirelessSecurity="無線LANセキュリティ";
-bmenu.wirelessMac="MACアドレスフィルタ";
+bmenu.wimax="WiMAX";
+bmenu.wirelessSecurity="無線LANセキュリティー";
+bmenu.wirelessAoss="AOSS";
+bmenu.wirelessMac="MACアドレスフィルター";
 bmenu.wirelessAdvanced="詳細";
 bmenu.wirelessAdvancedwl0="WL0-Advanced Sett.";
 bmenu.wirelessAdvancedwl1="WL1-Advanced Sett.";
@@ -354,8 +394,10 @@ bmenu.wirelessWds0="Ath0-WDS";
 bmenu.wirelessWds1="Ath1-WDS";
 bmenu.wirelessWds2="Ath2-WDS";
 bmenu.wirelessWds3="Ath3-WDS";
+bmenu.wirelessWdswl0="WL0-WDS";
+bmenu.wirelessWdswl1="WL1-WDS";
 
-bmenu.security="セキュリティ";
+bmenu.security="セキュリティー";
 bmenu.firwall="Firewall";
 bmenu.vpn="VPN パススルー";
 
@@ -388,11 +430,14 @@ bmenu.adminUpgrade="ファームウェア更新";
 bmenu.adminBackup="設定保存/復元";
 
 bmenu.services="ネットワーク";
-bmenu.servicesServices="サーバ/サービス";
-bmenu.servicesPppoesrv="PPPoEサーバ";
-bmenu.servicesPptp="PPTPサーバ/クライアント";
+bmenu.servicesServices="サーバー/サービス";
+bmenu.servicesPppoesrv="PPPoEサーバー";
+bmenu.servicesPptp="PPTPサーバー/クライアント";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="ホットスポット";
 bmenu.servicesMilkfish="Milkfish SIP Router";
+bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="機器診断";
 bmenu.statuRouter="機器情報";
@@ -403,6 +448,8 @@ bmenu.statuWLAN="無線 LAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="帯域パフォーマンス";
 bmenu.statuSysInfo="システム情報";
+bmenu.statuActivate="Activate";
+bmenu.statuMyPage="My Page";
 
 // ** Alive.asp **//
 
@@ -415,7 +462,7 @@ alive.legend2="WDSキープアライブ";
 alive.sevr2="WDS接続先への定期的な接続確認";
 alive.IP="IP アドレス";
 alive.legend3="プロキシ・キープアライブ";
-alive.sevr3="プロキシサーバへの定期的な接続確認";
+alive.sevr3="プロキシサーバーへの定期的な接続確認";
 alive.IP2="プロキシのIPアドレス";
 alive.port="プロキシのポート";
 
@@ -455,22 +502,23 @@ ddns.dynamic="動的";
 ddns.custom="手動設定";
 ddns.wildcard="ワイルドカードの利用";
 ddns.statu="DDNS 動作ステータス";
-ddns.system="DDNS サーバ";
+ddns.system="DDNS サーバー";
 ddns.options="追加オプション";
 ddns.forceupd="自動更新間隔";
+ddns.wanip="IPが変更されても更新しない";
 
 
-ddnsm.all_closed="DDNS サーバに接続されていません";
+ddnsm.all_closed="DDNS サーバーに接続されていません";
 ddnsm.all_resolving="ドメイン名を確認しています";
 ddnsm.all_errresolv="ドメイン名の確認に失敗しました";
-ddnsm.all_connecting="DDNSサーバへ接続しています";
-ddnsm.all_connectfail="DDNSサーバへの接続に失敗しました";
+ddnsm.all_connecting="DDNSサーバーへ接続しています";
+ddnsm.all_connectfail="DDNSサーバーへの接続に失敗しました";
 ddnsm.all_disabled="DDNS機能は無効になっています";
 ddnsm.all_noip="インターネットに接続されていません";
 
 //help container
 
-hddns.right2="DDNSは、外部からの機器(や内部のネットワーク)のアクセスを、IPアドレスの代わりにドメイン名で通信可能にする機能です。機器がIPアドレスを取得すると、DDNSサービスを行うサーバへ情報の更新を行い、DDNSサービスは常に最新のIPアドレスを他のホストへ通知します。DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com などに登録することによって、DDNS機能を利用できるようになります。";
+hddns.right2="DDNSは、外部からの機器(や内部のネットワーク)のアクセスを、IPアドレスの代わりにドメイン名で通信可能にする機能です。機器がIPアドレスを取得すると、DDNSサービスを行うサーバーへ情報の更新を行い、DDNSサービスは常に最新のIPアドレスを他のホストへ通知します。DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com などに登録することによって、DDNS機能を利用できるようになります。";
 hddns.right4="IPアドレス情報の更新を行う間隔を指定する子とができます。IPアドレスが変更されたときにはこの設定に関わらず自動的に更新が行われます。DDNSサービスの環境が不安定な場合などに利用します。";
 
 
@@ -481,6 +529,7 @@ diag.h2="コマンド実行";
 diag.legend="コンソール";
 diag.cmd="実行コマンド";
 diag.startup="起動時スクリプト";
+diag.shutdown="Shutdown";
 diag.firewall="Firewallスクリプト";
 diag.custom="手動スクリプト";
 
@@ -571,16 +620,16 @@ firewall.titl="Firewall";
 firewall.h2="Firewall設定";
 firewall.legend="Firewall保護";
 firewall.firewall="SPI Firewall";
-firewall.legend2="追加フィルタ";
-firewall.proxy="プロキシをフィルタする";
-firewall.cookies="Cookieをフィルタする";
-firewall.applet="Javaアプレットをフィルタする";
-firewall.activex="ActiveXをフィルタする";
+firewall.legend2="追加フィルター";
+firewall.proxy="プロキシをフィルターする";
+firewall.cookies="Cookieをフィルターする";
+firewall.applet="Javaアプレットをフィルターする";
+firewall.activex="ActiveXをフィルターする";
 firewall.legend3="インターネット側からのパケット遮断";
 firewall.ping="Pingに応答しない";
-firewall.muticast="マルチキャストをフィルタする";
-filter.nat="NATリダイレクションをフィルタする";
-filter.port113="IDENT (Port 113) をフィルタする";
+firewall.muticast="マルチキャストをフィルターする";
+filter.nat="NATリダイレクションをフィルターする";
+filter.port113="IDENT (Port 113) をフィルターする";
 
 //help container
 
@@ -596,7 +645,7 @@ prforward.app="アプリケーション名";
 
 //help container
 
-hprforward.right2="インターネットを利用するアプリケーション(ネットワークゲームなど)の中には、特定のポートに対して事前に使用するように設定しておかなければならないものもあります。ここでは、インターネット側からの特定のPortの通信を実際にアプリケーションが動作するクライアントへ転送させるよう予め設定することができます。セキュリティを確保するため、ここで指定するポートはアプリケーションを動作させるため最低限のもののみに制限し、またアプリケーションの使用が終ったら、「有効」チェックを外してPortを塞ぐようにすることを強くお勧めします。";
+hprforward.right2="インターネットを利用するアプリケーション(ネットワークゲームなど)の中には、特定のポートに対して事前に使用するように設定しておかなければならないものもあります。ここでは、インターネット側からの特定のPortの通信を実際にアプリケーションが動作するクライアントへ転送させるよう予め設定することができます。セキュリティーを確保するため、ここで指定するポートはアプリケーションを動作させるため最低限のもののみに制限し、またアプリケーションの使用が終ったら、「有効」チェックを外してPortを塞ぐようにすることを強くお勧めします。";
 
 
 // ** P2P.asp **//
@@ -623,7 +672,38 @@ pforward.to="LAN側ポート";
 
 //help container
 
-hpforward.right2="インターネットを利用するアプリケーション(ネットワークゲームなど)の中には、特定のポートに対して事前に使用するように設定しておかなければならないものもあります。ここでは、インターネット側からの特定のPortの通信を実際にアプリケーションが動作するクライアントへ転送させるよう予め設定することができます。セキュリティを確保するため、ここで指定するポートはアプリケーションを動作させるため最低限のもののみに制限し、またアプリケーションの使用が終ったら、「有効」チェックを外してPortを塞ぐようにすることを強くお勧めします。";
+hpforward.right2="インターネットを利用するアプリケーション(ネットワークゲームなど)の中には、特定のポートに対して事前に使用するように設定しておかなければならないものもあります。ここでは、インターネット側からの特定のPortの通信を実際にアプリケーションが動作するクライアントへ転送させるよう予め設定することができます。セキュリティーを確保するため、ここで指定するポートはアプリケーションを動作させるため最低限のもののみに制限し、またアプリケーションの使用が終ったら、「有効」チェックを外してPortを塞ぐようにすることを強くお勧めします。";
+
+usb.titl="USB";
+usb.usb_legend="USBサポート";
+usb.usb_core="コアUSBサポート";
+usb.usb_uhci="USB 1.1サポート(UHCI)";
+usb.usb_ohci="USB 1.1サポート(OHCI)";
+usb.usb_ehci="USB 2.0サポート";
+usb.usb_storage="USBストレージサポート";
+usb.usb_extfs="ext2 / ext3ファイルシステムサポート";
+usb.usb_fatfs="FATファイルシステムサポート";
+usb.usb_printer="USBプリンターサポート";
+usb.usb_automnt="自動ドライブマウント";
+usb.usb_mntpoint="ディスクマウントポイント";
+usb.usb_runonmount="Run-on-mount Script Name";
+usb.usb_diskinfo="ディスク情報";
+
+// ** NAS.asp **//
+
+nas.titl="NAS";
+nas.proftpd_legend="FTPサーバー";
+nas.proftpd_srv="ProFTPD";
+nas.proftpd_port="サーバーポート";
+nas.proftpd_dir="ディレクトリー";
+nas.proftpd_passw="ユーザーパスワードリスト";
+nas.proftpd_writeen="書き込み許可";
+nas.proftpd_anon="Anonymousログイン(リードオンリー)";
+nas.proftpd_anon_subdir="Anonymousホームサブディレクトリー";
+nas.sambasrv_legend="Sambaサーバー";
+
+var hnas = new Object();
+hnas.right2="ユーザーパスワードリスト:1行にひとつのユーザーパスワードを入力します。パスワードはプレーンテキストかMD5暗号で設定出来ます。";
 
 
 // ** Hotspot.asp **//
@@ -633,9 +713,9 @@ hotspot.h2="ホットスポットサービスの設定";
 hotspot.legend="Chillispot";
 hotspot.nowifibridge="LAN側ブリッジから無線 LANデバイスを分離";
 hotspot.hotspot="Chillispot";
-hotspot.pserver="メインRADIUSサーバのIPアドレス/DNSサーバ";
-hotspot.bserver="バックアップRADIUSサーバのIPアドレス/DNSサーバ";
-hotspot.dns="DNSサーバアドレス";
+hotspot.pserver="メインRADIUSサーバーのIPアドレス/DNSサーバー";
+hotspot.bserver="バックアップRADIUSサーバーのIPアドレス/DNSサーバー";
+hotspot.dns="DNSサーバーアドレス";
 hotspot.url="リダイレクト先のURL";
 hotspot.dhcp="DHCP インターフェース";
 hotspot.radnas="RADIUS NAS ID";
@@ -645,8 +725,8 @@ hotspot.uamdns="UAM Any DNS";
 hotspot.allowuam="UAM Allowed";
 hotspot.macauth="MACアドレス認証";
 hotspot.option="詳細設定";
-hotspot.fon_chilli="Chillispot ローカルユーザ管理";
-hotspot.fon_user="ユーザリスト";
+hotspot.fon_chilli="Chillispot ローカルユーザー管理";
+hotspot.fon_user="ユーザーリスト";
 hotspot.http_legend="HTTP リダイレクト";
 hotspot.http_srv="HTTP リダイレクト";
 hotspot.http_ip="HTTP 接続先 IP アドレス";
@@ -655,7 +735,10 @@ hotspot.http_net="HTTP Source ネットワーク";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="ゲートウェイ名";
+hotspot.nocat_gatewayaddr="Gateway IP Addr";
 hotspot.nocat_home="ホームページ";
+hotspot.nocat_ifname="Interface";
+hotspot.nocat_redirect="Homepage Redirection";
 hotspot.nocat_allowweb="許可したウェブサイト";
 hotspot.nocat_docroot="ドキュメントルート";
 hotspot.nocat_splash="スプラッシュページ";
@@ -674,7 +757,7 @@ hotspot.shat_srv2="ゼロ IP 設定：入";
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnikサービス";
 hotspot.sputnik_mode="Sputnik モード";
-hotspot.sputnik_id="Sputnik サーバ ID";
+hotspot.sputnik_id="Sputnik サーバー ID";
 hotspot.sputnik_instant="Sputnik Instant Setupを使う";
 hotspot.sputnik_express="SputnikNet Expressを使う";
 hotspot.sputnik_about="を参照ください";
@@ -684,30 +767,83 @@ hotspot.wifidog_srv="Wifidogサービス";
 hotspot.wifidog_id="ゲートウェイ ID";
 hotspot.wifidog_url="ポータルサイトのURL";
 hotspot.wifidog_port="ポート";
-hotspot.wifidog_httpdname="Web サーバ名";
-hotspot.wifidog_httpdconn="ユーザ最大数";
+hotspot.wifidog_httpdname="Web サーバー名";
+hotspot.wifidog_httpdconn="ユーザー最大数";
 hotspot.wifidog_checkinter="チェック間隔(秒)";
 hotspot.wifidog_checktimeout="チェック・タイムアウト";
 hotspot.wifidog_tmaclist="登録MACアドレスリスト";
-hotspot.wifidog_authsrv="認証サーバ";
-hotspot.wifidog_authsrvssl="認証サーバとの接続にSSLを利用";
-hotspot.wifidog_authsrvsslport="認証サーバのSSLポート";
-hotspot.wifidog_authsrvhttpport="認証サーバのHTTPポート";
-hotspot.wifidog_authsrvpath="認証サーバのディレクトリパス";
+hotspot.wifidog_authsrv="認証サーバー";
+hotspot.wifidog_authsrvssl="認証サーバーとの接続にSSLを利用";
+hotspot.wifidog_authsrvsslport="認証サーバーのSSLポート";
+hotspot.wifidog_authsrvhttpport="認証サーバーのHTTPポート";
+hotspot.wifidog_authsrvpath="認証サーバーのディレクトリパス";
+hotspot.wifidog_config="Firewall Ruleset";
+hotspot.wifidog_messagefile="HTML Message File for Wifidog";
+hotspot.wifidog_realm="HTTP Server Realm";
+hotspot.wifidog_username="HTTP Server Username";
+hotspot.wifidog_password="HTTP Server Password";
+hotspot.wifidog_auth="HTTP Server Authentication Support";
 
+hotspotsys.legend="Hotspot System";
+hotspotsys.nobridge="LAN BridgeからWi-Fiを隔離する";
+hotspotsys.uamenable="特殊設定";
+hotspotsys.loginonsplash="Login on splash page";
+hotspotsys.allowuam="UAM許可";
+hotspotsys.whitelabelproto="White Labelプロトコル";
+hotspotsys.whitelabel="White Labelドメイン";
+hotspotsys.operatorid="オペレーターユーザー名";
+hotspotsys.locationid="ロケーションID";
+hotspotsys.dhcp="DHCPインターフェース";
+hotspotsys.net="リモートネットワーク";
+hotspotsys.customsplash="カスタムスプラッシュ(Walled Garden)";
+
+anchorfree.anchorfree="AnchorFree";
+anchorfree.titl="My Ad Network";
+anchorfree.h2="AnchorFree Ad Network";
+anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
+anchorfree.email="Email to receive revenue reports";
+anchorfree.ssid="Use different SSID";
+anchorfree.ssid_name="SSID";
+anchorfree.address_1="Street Address";
+anchorfree.address_2="Street Address 2";
+anchorfree.city="City";
+anchorfree.zip="Postal or Zip Code";
+anchorfree.state="County/State/Province";
+anchorfree.country="Country";
+anchorfree.category="Category";
+anchorfree.publish="Publish this hotspot on the free WiFi map";
+anchorfree.serviceid="Service ID";
+anchorfree.servicestatus="Service Status";
+anchorfree.agreement="Terms and Conditions";
+anchorfree.agree="I ACCEPT AND AGREE";
+anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
+anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
+anchorfree.validcat="please select a advertising category for your hotspot";
+anchorfree.validcountry="please select a country for your hotspot";
+anchorfree.validterms="You must agree to the terms & conditions!";
+
+hanchorfree.right1="Join AnchorFree's hotspot advertising network";
+hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
+hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
+hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
+hanchorfree.right5="For more information please visit www.anchorfree.com";
+hanchorfree.right6="Activation is easy";
+hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
+hanchorfree.right8="Customer support";
+hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 
 // ** Info.htm **//
 
 info.titl="Info";
 info.h2="システム情報";
 info.wlanmac="無線LAN MACアドレス";
-info.srv="サーバ/サービス";
+info.srv="サーバー/サービス";
 info.ap="アクセスポイント";
 
 
 // ** index_heartbeat.asp **//
 
-idx_h.srv="HeartBeat サーバ名";
+idx_h.srv="HeartBeat サーバー名";
 idx_h.con_strgy="接続確認方法";
 idx_h.max_idle="オンデマンド接続：最大待ち時間";
 idx_h.alive="キープアライブ：問い合わせ間隔";
@@ -716,25 +852,27 @@ idx_h.reconnect="強制再接続";
 
 // ** index_l2tp.asp **//
 
-idx_l.srv="L2TP サーバ";
+idx_l.srv="L2TP サーバー";
 
 
 // ** index_pppoe.asp **//
 
-idx_pppoe.use_rp="PPPoEサーバを使用する";
+idx_pppoe.use_rp="PPPoEサーバーを使用する";
 
 
 // ** index_pptp.asp **//
 
-idx_pptp.srv="DHCPサーバを使用する";
+idx_pptp.srv="DHCPサーバーを使用する";
 idx_pptp.wan_ip="インターネット側IPアドレス";
-idx_pptp.gateway="ゲートウェイ (PPTPサーバ)";
+idx_pptp.gateway="ゲートウェイ (PPTPサーバー)";
 idx_pptp.encrypt="PPTP暗号化";
+idx_pptp.reorder="Disable Packet Reordering";
+idx_pptp.addopt="Additional PPTP Options";
 
 
 // ** index_static.asp **//
 
-idx_static.dns="DNSサーバ";
+idx_static.dns="DNSサーバー";
 
 
 // ** index.asp **//
@@ -760,8 +898,8 @@ idx.static_ip="手動設定";
 idx.dhcp="DHCP (IP自動取得)";
 idx.dhcp_legend="DHCP";
 idx.dhcp_type="LAN側DHCP";
-idx.dhcp_srv="DHCP サーバ";
-idx.dhcp_fwd="DHCP Relay サーバとして動作";
+idx.dhcp_srv="DHCP サーバー";
+idx.dhcp_fwd="DHCP Relay サーバーとして動作";
 idx.dhcp_start="割り当て開始アドレス";
 idx.dhcp_end="割り当て終了アドレス";		//used in Status_Lan.asp
 idx.dhcp_maxusers="最大DHCP割り当てアドレス";
@@ -770,27 +908,31 @@ idx.dhcp_dnsmasq="IPアドレスの割り当てに DNSMasq を使用";
 idx.dns_dnsmasq="DNSの割り当てに DNSMasq を使用";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.summt_opt1="なし";
-idx.summt_opt2="4月最終日曜〜10月最終日曜";
-idx.summt_opt3="3月最終日曜〜10月最終日曜";
-idx.summt_opt4="10月最終日曜〜3月最終日曜";
-idx.summt_opt5="3月第2日曜〜11月第1日曜";
-idx.summt_opt6="10月第1日曜〜3月第3日曜";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
+idx.summt_opt5="2nd Sun Mar - first Sun Nov";
+idx.summt_opt6="first Sun Oct - 3rd Sun Mar";
+idx.summt_opt7="last Sun Sep - first Sun Apr";
+idx.summt_opt8="3rd Sun Oct - 3rd Sun Mar";
+idx.summt_opt9="first Sun Oct - first Sun Apr";
+idx.summt_opt10="3rd Sun Oct - 3rd Sun Feb";
 idx.portsetup="Port 設定";
 idx.wanport="インターネット側 Port 設定";
 idx.ntp_client="NTP クライアント";
 
 //help container
 
-hidx.right2="DHCPサーバからIPアドレスを自動的に取得します。多くのCATV接続業者がこの方式を採用しています。ネットワーク機器側に何の設定も必要とせずモデム等と通信可能であった環境の場合は、インターネット接続業者がこの方式を採用している可能性が高いと考えられます。";
+hidx.right2="DHCPサーバーからIPアドレスを自動的に取得します。多くのCATV接続業者がこの方式を採用しています。ネットワーク機器側に何の設定も必要とせずモデム等と通信可能であった環境の場合は、インターネット接続業者がこの方式を採用している可能性が高いと考えられます。";
 hidx.right4="インターネット接続業者から指定されたコンピュータ名を入力します";
 hidx.right6="インターネット接続業者から指定されたドメイン名を入力します";
 hidx.right8="この機器のLAN側ネットワークのIPアドレスです。";
 hidx.right10="この機器のLAN側ネットワークのサブネットマスクです";
-hidx.right12="この機器がDHCPサーバとなり、LAN側ネットワーク内の機器のIPアドレスを管理します";
+hidx.right12="この機器がDHCPサーバーとなり、LAN側ネットワーク内の機器のIPアドレスを管理します";
 hidx.right14="他の機器に割り当てるIPアドレス範囲の開始点を入力します";
 hidx.right16="割り当てるIPアドレスの台数を入力します。開始アドレスから終了アドレス(開始アドレス＋最大割り当てアドレス数)は、LAN側ネットワークアドレスの範囲内である必要があります";
-hidx.right18="内部時計に設定されるタイムゾーン・サマータイム設定およびNTPサーバの設定を行います。";
-
+hidx.right18="内部時計に設定されるタイムゾーン・サマータイム設定およびNTPサーバーの設定を行います。";
+hidx.sas="Setup Assistantは簡単なセットアップ手順でルーター設定を案内します。";
 
 // ** Join.asp **//
 
@@ -832,8 +974,8 @@ log.accept="Acceptしたパケットを記録";
 
 management.titl="管理";
 management.h2="管理設定";
-management.psswd_legend="管理ユーザ";
-management.psswd_user="管理ユーザ名";
+management.psswd_legend="管理ユーザー";
+management.psswd_user="管理ユーザー名";
 management.psswd_pass="管理パスワード";
 management.pass_conf="管理パスワード(確認)";
 management.remote_legend="リモートアクセス";
@@ -842,6 +984,10 @@ management.remote_https="HTTPS(SSL)プロトコルを使う";
 management.remote_guiport="ポート";
 management.remote_ssh="SSH 管理インターフェース";
 management.remote_sshport="ポート";
+management.remote_telnet="Telnet管理";
+management.remote_telnetport="Telnetリモートポート";
+management.remote_allowanyip="全てのリモートIPを許可する";
+management.remote_ip="許可するリモートIPの範囲";
 management.web_legend="Web管理インターフェース";
 management.web_refresh="自動再表示間隔(秒)";
 management.web_sysinfo="システム情報の表示";
@@ -856,10 +1002,10 @@ management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1X";
 management.wifi_srv="802.1X";
-management.rst_legend="Reset Button";
-management.rst_srv="Reset Button";
-management.routing_legend="Routing";
-management.routing_srv="Routing";
+management.rst_legend="リセットボタン";
+management.rst_srv="リセットボタン";
+management.routing_legend="ルーティング";
+management.routing_srv="ルーティング";
 management.ipv6_legend="IPv6 のサポート";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd を使用中";
@@ -901,10 +1047,11 @@ management.mmc_legend="MMC/SD サポート";
 management.mmc_srv="MMC デバイス";
 management.mmc_gpiosel="GPIO ピン番号";
 management.mmc_gpiopins="GPIO ピン";
+management.mmc_cardinfo="Card Info";
 management.samba_legend="CIFS 自動Mount";
 management.samba_srv="Common Internet File System";
 management.samba_share="ファイル共有";
-management.samba_stscript="Startscript";
+management.samba_stscript="スタートスクリプト";
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP ポート";
 management.SIPatH_domain="SIP ドメイン";
@@ -932,12 +1079,14 @@ networking.legend4="現在のBridge";
 networking.brname="Bridge名";
 networking.stp="Spanning Tree有効";
 networking.iface="インターフェース";
+networking.h5="DHCPD";
+networking.legend5="Multiple DHCP Server";
 
 
 // ** QoS.asp **//
 
 qos.titl="Quality of Service";
-qos.h2="Quality Of Service (QoS) 設定";
+qos.h2="Quality of Service (QoS) 設定";
 qos.legend="QoS 設定";
 qos.srv="QoS機能";
 qos.type="スケジュール方式";
@@ -992,6 +1141,7 @@ route.rip2_mod="RIPv2";
 route.olsrd_mod="OLSR";
 route.olsrd_legend="OLSR(Optimized Link State Routing)設定";
 route.olsrd_poll="Poll Rate(秒)";
+route.olsrd_gateway="Gateway Mode";
 route.olsrd_hna="Host Net Announce";
 route.olsrd_tc="TC Redundancy";
 route.olsrd_mpr="MPR Coverage";
@@ -1002,9 +1152,18 @@ route.olsrd_lqdmax="Link Quality Dijkstra Max";
 route.olsrd_lqlvl="Link Quality Level";
 route.olsrd_hysteresis="Hysteresis";
 route.olsrd_newiface="New Interface";
+route.zebra_legend="Zebra Configuration";
+route.zebra_log="Zebra Log";
+route.zebra_copt="Zebra Config Style";
+route.bird_legend="Bird Configuration";
+route.bird_log="Bird Log";
+route.bird_copt="Bird Config Style";
 route.ospf_mod="OSPF";
 route.ospf_legend="OSPF設定";
 route.ospf_conf="OSPF設定";
+route.ospf_copt="OSPF Config Style";
+route.copt_gui="GUI";
+route.copt_vtysh="Vtysh";
 route.gateway_legend="動的経路を使用するインターフェース";
 route.static_legend="静的経路の登録";
 route.static_setno="エントリ番号";
@@ -1013,7 +1172,7 @@ route.static_ip="宛先アドレス";
 
 //help container
 
-hroute.right2="この機器のインターネット側ポートを通信に利用している場合は、<em>ゲートウェイ</em> を指定してください。この機器以外のルータを経路として利用している場合は<em>ルータ</em>を指定してください。";
+hroute.right2="この機器のインターネット側ポートを通信に利用している場合は、<em>ゲートウェイ</em> を指定してください。この機器以外のルーターを経路として利用している場合は<em>ルーター</em>を指定してください。";
 hroute.right4="経路毎に番号が指定されています。この機器では、20エントリまでの静的経路を指定することができます。";
 hroute.right6="エントリ毎に任意の名前をつけることができます。";
 hroute.right8="静的経路に登録する宛先ネットワークアドレスを入力します。";
@@ -1029,8 +1188,8 @@ survey.thjoin="Join Site";
 
 // ** Services.asp **//
 
-service.titl="サーバ/サービス";
-service.h2="サーバ/サービス設定";
+service.titl="サーバー/サービス";
+service.h2="サーバー/サービス設定";
 
 //kaid
 service.kaid_legend="XBOX Kaid";
@@ -1044,7 +1203,7 @@ service.kaid_orbdeepport="ORB Deep ポート";
 service.dhcp_legend="DHCP クライアント";
 service.dhcp_vendor="Vendor Class";
 service.dhcp_reqip="要求するIPアドレスを指定";
-service.dhcp_legend2="DHCP サーバ";
+service.dhcp_legend2="DHCP サーバー";
 service.dhcp_srv="DHCPサービス";
 service.dhcp_jffs2="Use JFFS2 for client lease DB";
 service.dhcp_nvramlease="Use NVRAM for client lease DB";
@@ -1058,14 +1217,14 @@ service.dnsmasq_opt="DNSMasqサービス 追加オプション";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP サーバ設定";
+service.pptp_srv="PPTP サーバー設定";
 service.pptp_client="クライアントIPアドレス";
 service.pptp_chap="CHAP-Secrets";
 
 //syslog.webservices
 service.syslog_legend="System Log";
 service.syslog_srv="syslog 送受信サービス";
-service.syslog_ip="転送サーバ";
+service.syslog_ip="転送サーバー";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
@@ -1074,7 +1233,7 @@ service.telnet_srv="Telnet サービス";
 //pptpd_client.webservices
 service.pptpd_legend="PPTP クライアント設定";
 service.pptpd_option="PPTP クライアント・オプション";
-service.pptpd_ipdns="PPTPサーバ名";
+service.pptpd_ipdns="PPTPサーバー名";
 service.pptpd_subnet="接続先のネットワークアドレス";
 service.pptpd_subnetmask="接続先のサブネットマスク";
 service.pptpd_encry="MPPE 暗号化";
@@ -1088,11 +1247,11 @@ service.rflow_srv1="RFlow";
 service.rflow_srv2="MACupd";
 
 //pppoe-relay.webservices
-service.pppoe_legend="PPPoE Relay";
-service.pppoe_srv="Relay";
+service.pppoe_legend="PPPoEリレー";
+service.pppoe_srv="リレー";
 
 //pppoe-server.webservices
-service.pppoesrv_legend="PPPoE サーバ設定";
+service.pppoesrv_legend="PPPoE サーバー設定";
 service.pppoesrv_srv="RP-PPPoE サービス";
 service.pppoesrv_srvopt="RP-PPPoE オプション";
 service.pppoesrv_compr="圧縮";
@@ -1103,11 +1262,11 @@ service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_idlet="Idle Time";
 service.pppoesrv_auth="認証";
-service.pppoesrv_radip="RADIUSサーバIPアドレス";
+service.pppoesrv_radip="RADIUSサーバーIPアドレス";
 service.pppoesrv_radauthport="RADIUS認証ポート";
 service.pppoesrv_radaccport="RADIUSアカウンティングポート";
 service.pppoesrv_radkey="RADIUS Shared Secret";
-service.pppoesrv_chaps="ローカルユーザ管理 (CHAP Secrets)";
+service.pppoesrv_chaps="ローカルユーザー管理 (CHAP Secrets)";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1118,20 +1277,32 @@ service.snmp_name="Name";
 service.snmp_read="Get Community";
 service.snmp_write="Get/Set Community";
 
-//openvpn.webservices
+//openvpn.webvpn
+service.vpnd_legend="OpenVPNデーモン";
+service.vpnd_srv="Start OpenVPNデーモン";
+service.vpnd_starttype="Start Type";
+service.vpnd_startWanup="WAN Up";
+service.vpnd_startSystem="System";
+service.vpnd_crl="Certificate Revoke List";
+service.vpnd_config="OpenVPN Config";
+service.vpnd_dhpem="DH PEM";
+service.vpnd_tlsauth="OpenVPN TLS Auth";
 service.vpn_legend="OpenVPN クライアント";
 service.vpn_srv="OpenVPNサービスを開始";
-service.vpn_ipname="OpenVPNサーバ名";
+service.vpn_ipname="OpenVPNサーバー名";
 service.vpn_mtu="TUN MTU Setting";
 service.vpn_mru="TUN MTU Extra";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="LZO 圧縮を使用";
 service.vpn_tunnel="トンネルプロトコル";
-service.vpn_srvcert="公開サーバ証明書";
+service.vpn_tuntap="Tunnel Device";
+service.vpn_srvcert="公開サーバー証明書";
 service.vpn_clicert="公開クライアント証明書";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Private Client Key";
 
+service.vncrepeater_legend="VNC";
+service.vncrepeater="VNCリピーター";
 //sshd.webservices
 service.ssh_legend="Secure Shell";
 service.ssh_srv="SSH サービス";
@@ -1140,12 +1311,15 @@ service.ssh_key="Authorized Keys";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS ボタン";
-service.radiooff_srv="このボタンで無線機能の有効/無効を制御する";
+service.radiooff_legend_aoss="AOSSボタン";
+service.radiooff_srv="無線の有効/無効を制御する";
+service.radiooff_srv_aoss="AOSS";
+service.radiooff_srv_disabled="未使用";
 service.radiooff_bootoff="起動時に無線機能を無効にする";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS / EZ-SETUP Button";
-service.ses_srv="Button 動作";
+service.ses_legend="SES / AOSS / EZ-SETUPボタン";
+service.ses_srv="ボタン動作";
 service.ses_toggleradio="無線機能の切り替え";
 service.ses_script="カスタムスクリプトを使用";
 
@@ -1159,17 +1333,34 @@ service.rstats_legend="帯域パフォーマンス";
 service.rstats_srv="rstats サービス";
 service.rstats_path="帯域データを保存する";
 service.rstats_time="保存間隔";
-service.rstats_usrdir="ユーザディレクトリ";
+service.rstats_usrdir="ユーザーディレクトリ";
 
 //nstx.webservices
-service.nstx_legend="IP over DNS Tunneling";
-service.nstx_srv="nstx Daemon";
+service.nstx_legend="IP over DNSトンネリング";
+service.nstx_srv="nstxデーモン";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 
+//ttraff.webservices
+service.ttraff_legend="WAN Traffic Counter";
+service.ttraff_daemon="ttraffデーモン";
+
+//notifier.webservices
+service.warn_legend="Connection Warning Notifier";
+service.warn="Warning Notifier";
+service.warn_limit="Connection Limit";
+service.warn_server="Email SMTP Server";
+service.warn_from="Senders Email Address";
+service.warn_fromfull="Senders Full Name";
+service.warn_to="Recipient Email Address";
+service.warn_domain="Recipient Domain Name";
+service.warn_user="SMTP Auth Username";
+service.warn_pass="SMTP Auth Password";
+
+
 //milkfish.webservices
-service.database_subscribers="Local Subscribers";
-service.database_aliases="Local Aliases";
+
+service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
 service.milkfish_mainswitch="Main Switch";
@@ -1177,16 +1368,24 @@ service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
 service.milkfish_username="Milkfish Username";
 service.milkfish_password="Milkfish Password";
-service.milkfish_siptrace="Milkfish SIP Trace";
+service.milkfish_audit="Milkfish Audit";
+service.milkfish_siptrace="SIP Trace";
 service.milkfish_subscribers="Local Subscribers";
 service.milkfish_aliases="Local Aliases";
 service.milkfish_dynsip="Dynamic SIP";
+service.milkfish_status="SIP Status";
+service.milkfish_database="SIP Database";
+service.milkfish_messaging="SIP Messaging";
+service.milkfish_phonebook="SIP Phonebook";
 service.milkfish_dynsipdomain="DynSIP Domain";
 service.milkfish_dynsipurl="DynSIP Update URL";
 service.milkfish_dsusername="DynSIP Username";
 service.milkfish_dspassword="DynSIP Password";
 service.milkfish_sipmessage="SIP Message";
 service.milkfish_destination="SIP Destination";
+service.milkfish_contact="Contact";
+service.milkfish_agent="User Agent";
+service.milkfish_registrations="Active Registrations";
 //service.milkfish_="";//
 service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
 service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
@@ -1206,14 +1405,14 @@ service.hmilkfish_right26="not implemented yet - leave empty";
 
 // ** eop-tunnel.asp **//
 
-eoip.titl="EoIP Tunnel";
-eoip.tunnel="Tunnel";
-eoip.legend="Ethernet Over IP Tunneling";
-eoip.srv="EoIP Tunnel";
-eoip.remoteIP="Remote IP Address";
-eoip.tunnelID="Tunnel ID";
-eoip.comp="Compression";
-eoip.passtos="TOS passthrough";
+eoip.titl="EoIPトンネル";
+eoip.tunnel="トンネル";
+eoip.legend="Ethernet Over IPトンネリング";
+eoip.srv="EoIPトンネル";
+eoip.remoteIP="リモートIPアドレス";
+eoip.tunnelID="トンネルID";
+eoip.comp="圧縮";
+eoip.passtos="TOSパススルー";
 eoip.frag="fragment";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
@@ -1232,10 +1431,12 @@ sipath.status_titl="Status";
 status_lan.titl="LAN";
 status_lan.h2="LAN側ネットワーク";
 status_lan.legend="LAN側アドレス";
-status_lan.h22="DHCPサーバ/クライアント";
-status_lan.legend2="DHCP サーバ";
+status_lan.h22="DHCPサーバー/クライアント";
+status_lan.legend2="DHCP サーバー";
 status_lan.legend3="DHCP クライアント";
 status_lan.legend4="利用中のクライアント";
+status_lan.legend5="Connected PPTP Clients";
+status_lan.legend6="Connected PPPOE Clients";
 status_lan.concount="接続数";
 status_lan.conratio="利用率";
 
@@ -1244,7 +1445,7 @@ status_lan.conratio="利用率";
 hstatus_lan.right2="この機器の有線LANに割り当てられているMACアドレスを表示します。";
 hstatus_lan.right4="この機器のLAN側IPアドレスを表示します。";
 hstatus_lan.right6="この機器のLAN側サブネットマスクを表示します。";
-hstatus_lan.right8="この機器がDHCPサーバとして動作している場合に、動作情報が表示されます。";
+hstatus_lan.right8="この機器がDHCPサーバーとして動作している場合に、動作情報が表示されます。";
 hstatus_lan.right10="クライアント表示部のMACアドレスをクリックすることにより、IEEEのOUI(Organizationally Unique Identifier)に関する情報を参照することができます。";
 
 
@@ -1256,16 +1457,16 @@ status_band.chg_unit="Switch to ";
 status_band.chg_scale="Autoscale";
 status_band.chg_error="インターフェース情報が取得できません";
 status_band.chg_collect_initial="初期化中です。しばらくお待ちください...";
-status_band.strin="In";
-status_band.strout="Out";
+status_band.strin="受信";
+status_band.strout="送信";
 status_band.follow="follow";
 status_band.up="up";
 
 //help container
 
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
-hstatus_band.right1="単位を切り替えることができます(bytes/s もしくは bits/s).";
-hstatus_band.right2="帯域軸の基準を変更する個とができます";
+hstatus_band.svg="帯域グラフを表示するにはAdobe SVGプラグインが必要です。";
+hstatus_band.right1="単位を切り替えることができます(bytes/s もしくは bits/s)。";
+hstatus_band.right2="帯域軸の基準を変更することができます。";
 
 // ** Status_Router.asp **//
 
@@ -1273,7 +1474,7 @@ status_router.titl="機器情報";
 status_router.h2="機器情報";
 status_router.legend="システム";
 status_router.sys_model="製品型番";
-status_router.sys_firmver="ファームウェアVersion";
+status_router.sys_firmver="ファームウェアバージョン";
 status_router.sys_time="現在時刻";
 status_router.sys_up="稼働時間";
 status_router.sys_load="CPU利用率";
@@ -1290,7 +1491,7 @@ status_router.mem_active="Active";
 status_router.mem_inactive="Inactive";
 status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
 status_router.legend4="ネットワーク";
-status_router.net_maxports="IP Filter 最大数";
+status_router.net_maxports="IPフィルター最大数";
 status_router.net_conntrack="利用中のセッション数";
 status_router.notavail="利用できません";
 status_router.legend6="空きスペース";
@@ -1302,30 +1503,34 @@ status_router.cputemp="CPU 温度";
 hstatus_router.right2="この機器に付けられている名称です。<i>基本</i> ページで設定を行うことができます。";
 hstatus_router.right4="インターネット側で使用されるMACアドレスです。ISPでは、このMACアドレスが識別に用いられます。";
 hstatus_router.right6="この機器に適用されているファームウェアの情報です";
-hstatus_router.right8="<em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> ページで設定されたNTPサーバから取得した現在時刻を表示します。";
+hstatus_router.right8="<em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> ページで設定されたNTPサーバーから取得した現在時刻を表示します。";
 hstatus_router.right10="機器が起動してからの時間です。";
 hstatus_router.right12="CPUの利用率を表示します。それぞれ1分、5分、15分それぞれの間の、CPU平均稼働率が表示されます";
 
 // ** Status_Internet.asp **//
 
-status_inet.titl="WAN Status";
+status_inet.titl="WAN";
 status_inet.h11="インターネット";
 status_inet.conft="インターネット接続方法";
 status_inet.www_loginstatus="セッション状態";
 status_inet.wanuptime="接続時間";
 status_inet.leasetime="残りリース時間";
-status_inet.traff="Traffic";
-status_inet.traff_tot="Total Traffic";
-status_inet.traff_mon="Traffic by Month";
-status_inet.traffin="Incoming";
-status_inet.traffout="Outgoing";
-status_inet.previous="Previous Month";
-status_inet.next="Next Month";
+status_inet.traff="トラフィック";
+status_inet.traff_tot="総トラフィック";
+status_inet.traff_mon="月次トラフィック";
+status_inet.traffin="受信";
+status_inet.traffout="送信";
+status_inet.previous="前月";
+status_inet.next="次月";
+status_inet.dataadmin="データー管理";
+status_inet.delete_confirm="警告！ 全てのトラフィックデーターが削除されます。続行しますか？";
+
 
 //help container
 
-hstatus_inet.right2="ISP(インターネット)との接続方法を表示しています。これらの情報は「基本」ページで設定する個とができます。<em>Connect</em>、<em>Disconnect</em>ボタンをクリックすることにより、接続の開始・切断ができます";
-hstatus_inet.right4="This shows your router's Internet traffic.";
+hstatus_inet.right2="ISP(インターネット)との接続方法を表示しています。これらの情報は「基本」ページで設定することができます。<em>Connect</em>、<em>Disconnect</em>ボタンをクリックすることにより、接続の開始・切断ができます";
+hstatus_inet.right4="リブートからのインターネットトラフィックを表示します。";
+hstatus_inet.right6="月次のインターネットトラフィックを表示します。マウスでグラフ上を動かすと日次データーを見ることが出来ます。データーはnvramに保存されます。";
 
 // ** Status_Conntrack.asp **//
 
@@ -1363,6 +1568,13 @@ status_wireless.h22="無線LANクライアント";
 status_wireless.legend3="クライアント";
 status_wireless.signal_qual="信号品質";
 status_wireless.wds="WDS 接続先";
+
+status_gpsi.legend="GPS Info";
+status_gpsi.status="Status";
+status_gpsi.lon="Longitude";
+status_gpsi.lat="Latitude";
+status_gpsi.alt="Altitude";
+status_gpsi.sat="Visible Satelites";
 
 //help container
 
@@ -1440,7 +1652,7 @@ vpn.l2tp="L2TP パススルー";
 
 //help container
 
-hvpn.right1="これらの機能を利用すると、LAN側ネットワークの機器がVPNプロトコルを用いて外部のサーバと通信できるようになります。";
+hvpn.right1="これらの機能を利用すると、LAN側ネットワークの機器がVPNプロトコルを用いて外部のサーバーと通信できるようになります。";
 
 
 // ** Vlan.asp **//
@@ -1501,8 +1713,8 @@ hwanmac.right2="一部のISPでは、接続機器のMACアドレスの登録が�
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 
-wpa.titl="無線LANセキュリティ";
-wpa.h2="セキュリティ設定";
+wpa.titl="無線LANセキュリティー";
+wpa.h2="セキュリティー設定";
 wpa.secmode="無線LAN認証";
 wpa.legend="無線LANの暗号化";
 wpa.auth_mode="Network Authentication";
@@ -1510,25 +1722,44 @@ wpa.wpa="WPA";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="GTK更新間隔(秒)";
 wpa.rekey="Key更新間隔(秒)";
-wpa.radius_ipaddr="RADIUS サーバアドレス";
-wpa.radius_port="RADIUS サーバポート";
+wpa.radius_ipaddr="RADIUS サーバーアドレス";
+wpa.radius_port="RADIUS サーバーポート";
 wpa.radius_key="RADIUS キー";
 wpa.algorithms="WPA アルゴリズム";
 wpa.shared_key="WPA 共有キー";
 
+aoss.titl="AOSSセキュリティー";
+aoss.aoss="AOSS";
+aoss.service="AOSSサービス";
+aoss.enable="AOSS";
+aoss.start="AOSSを開始します";
+aoss.securitymodes="セキュリティーモード";
+aoss.wpaaes="WPA AES";
+aoss.wpatkip="WPA TKIP";
+aoss.wep="WEP64 / 128";
+aoss.client_name="クライアント名";
+aoss.security="セキュリティー";
+aoss.connectivity="接続可否";
+aoss.clients="AOSSクライアント";
+aoss.notice="通知";
+aoss.ap_mode_notice="通知: AOSSはprimary radioがAPかWDS APの時にのみ使用できます。";
+aoss.wep_notice="WEPはセキュアではない為、WEPの使用はお奨めできません。";
+aoss.wep_info="(AOSSをサポートしたゲーム機との接続でご利用ください)";
 
 sec80211x.xsuptype="動作Type";
 sec80211x.servercertif="CA証明書";
 sec80211x.clientcertif="クライアント証明書";
-
+sec80211x.phase2="Phase2";
+sec80211x.anon="Anonymous Identity";
+sec80211x.options="Additional Network Options";
 //help container
 
-hwpa.right2="無線LANインターフェースのセキュリティを、無効, WEP, WPA Personal, WPA Enterprise, RADIUSのうちから選択します。同一インターフェース内のクライアントは全て同じセキュリティ方式でなければなりません。";
+hwpa.right2="無線LANインターフェースのセキュリティーを、無効, WEP, WPA Personal, WPA Enterprise, RADIUSのうちから選択します。同一インターフェース内のクライアントは全て同じセキュリティー方式でなければなりません。";
 
 
 // ** WL_FilterTable.asp **//
 
-wl_filter.titl="MACアドレスフィルタ";
+wl_filter.titl="MACアドレスフィルター";
 wl_filter.h2="MACアドレスリスト";
 wl_filter.h3="MACアドレスは次のフォーマットで入力してください：&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
@@ -1537,7 +1768,7 @@ wl_filter.h3="MACアドレスは次のフォーマットで入力してくださ
 
 wl_active.titl="無線LANクライアントリスト";
 wl_active.h2="無線LANクライアントリスト";
-wl_active.h3="フィルタを適用";
+wl_active.h3="フィルターを適用";
 wl_active.active="接続中のクライアント";
 wl_active.inactive="未接続クライアント";
 
@@ -1564,24 +1795,65 @@ radius.h2="MAC-RADIUS設定";
 radius.legend="MAC-RADIUS認証";
 radius.label="MAC-RADIUS認証";
 radius.label2="MACアドレスのフォーマット";
-radius.label3="RADIUS認証サーバ";
-radius.label4="RADIUS認証サーバポート";
+radius.label3="RADIUS認証サーバー";
+radius.label4="RADIUS認証サーバーポート";
 radius.label5="未認証で通信可能なクライアントの台数";
 radius.label6="認証パスワード";
 radius.label7="RADIUS Shared Secret";
-radius.label8="サーバと通信できない場合は認証を停止";
-
+radius.label23="Radius Auth Backup Server Address";
+radius.label24="Radius Auth Backup Server Port";
+radius.label27="Radius Auth Backup Shared Secret";
+radius.label8="サーバーと通信できない場合は認証を停止";
+radius.label13="Radius Acct Server Address";
+radius.label14="Radius Acct Server Port";
+radius.label17="Radius Acct Shared Secret";
+radius.label18="Radius Accounting";
 
 // ** Wireless_MAC.asp **//
 
-wl_mac.titl="MACアドレスフィルタ";
-wl_mac.h2="無線LAN MACフィルタ設定";
-wl_mac.legend="MACアドレスフィルタ";
-wl_mac.label="MACアドレスフィルタ";
-wl_mac.label2="フィルタ動作モード";
+wl_mac.titl="MACアドレスフィルター";
+wl_mac.h2="無線LAN MACフィルター設定";
+wl_mac.legend="MACアドレスフィルター";
+wl_mac.label="MACアドレスフィルター";
+wl_mac.label2="フィルター動作モード";
 wl_mac.deny="リストに登録されているクライアントの通信を拒否する";
 wl_mac.allow="リストに登録されているクライアントの通信を許可する";
 
+wl_wimax.titl="WiMAX";
+wl_wimax.h2="Worldwide Interoperability for Microwave Access";
+wl_wimax.downstream="Downstream Frequency";
+wl_wimax.upstream="Upstream Frequency";
+wl_wimax.width="Channel Width";
+wl_wimax.duplex="Duplex Mode";
+wl_wimax.mode="Operation Mode";
+wl_wimax.mac="Subscriber MAC Address";
+
+freeradius.titl="FreeRadius";
+freeradius.h2="FreeRadius";
+freeradius.certificate="サーバー証明書";
+freeradius.cert="証明書作成";
+freeradius.clientcert="クライアント証明書";
+freeradius.settings="設定";
+freeradius.users="ユーザー";
+freeradius.clients="クライアント";
+freeradius.username="ユーザー名";
+freeradius.password="パスワード";
+freeradius.downstream="ダウンストリーム";
+freeradius.upstream="アップストリーム";
+freeradius.sharedkey="共有キー";
+
+
+freeradius.countrycode="国コード";
+freeradius.state="州または都道府県";
+freeradius.locality="地域";
+freeradius.organisation="組織/会社";
+freeradius.email="E-mailアドレス";
+freeradius.common="証明書名";
+freeradius.expiration="有効期限(日)";
+freeradius.passphrase="パスフレーズ";
+freeradius.generate="証明書生成";
+freeradius.cert_status="証明書のステータス";
+freeradius.port="Radiusポート";
 // ** Wireless_Advanced.asp **//
 
 wl_adv.titl="詳細";
@@ -1608,13 +1880,30 @@ wl_adv.label17="無線LANからの設定画面のアクセス";
 wl_adv.label18="Wi-Fi WMM";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Contention Slot";
-wl_adv.label21="最大転送 Rate";
+wl_adv.label21="最大転送レート";
+wl_adv.label23="最低転送レート";
+wl_adv.label22="Bluetooth Coexistenceモード";
+wl_adv.label24="Antenna Alignment";
+wl_adv.label25="Antenna Output";
 wl_adv.table1="EDCA AP Parameters (AP → クライアント)";
+
+wl_adv.txchainmask="送信アンテナチェイン";
+wl_adv.rxchainmask="受信アンテナチェイン";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
+wl_adv.table3="WMM Tx retry limits, fallback limits and max rate parameters.";
+wl_adv.txpcol1="S. Retry";
+wl_adv.txpcol2="S. Fallbk";
+wl_adv.txpcol3="L. Retry";
+wl_adv.txpcol4="L. Fallbk";
+wl_adv.txpcol5="Max Rate";
+wl_adv.txprow1="AC BE TX Parameters";
+wl_adv.txprow2="AC BK TX Parameters";
+wl_adv.txprow3="AC VI TX Parameters";
+wl_adv.txprow4="AC VO TX Parameters";
 wl_adv.col6="ACM bit";
 wl_adv.row1="AC_BK(低い)";
 wl_adv.row2="AC_BE(通常)";
@@ -1626,7 +1915,7 @@ wl_adv.shrt="Short"; 				//************* don't use .short ! **************
 
 //help container
 
-hwl_adv.right2="「自動」もしくは「共有キー」のいずれかを指定します。「共有キー」を選択した場合はセキュリティにWEPを使用している必要があります。";
+hwl_adv.right2="「自動」もしくは「共有キー」のいずれかを指定します。「共有キー」を選択した場合はセキュリティーにWEPを使用している必要があります。";
 
 // ** Wireless_Basic.asp **//
 
@@ -1639,7 +1928,11 @@ wl_basic.label3="ネットワーク名 (SSID)";
 wl_basic.label4="無線チャンネル";
 wl_basic.label5="SSIDの公開";
 wl_basic.label6="通信距離の有効範囲 (ACK Timing)";
+wl_basic.label7="802.11n Transmission Mode";
 wl_basic.scanlist="Scanリスト";
+wl_basic.duallink="Dual Link";
+wl_basic.parent="Parent IP";
+wl_basic.masquerade="Masquerade / NAT";
 wl_basic.ap="AP";
 wl_basic.client="Client";
 wl_basic.repeater="Repeater";
@@ -1649,12 +1942,20 @@ wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixed";
-wl_basic.preamble="Short Preamble";
+wl_basic.greenfield="グリーンフィールド";
+wl_basic.preamble="ショートプリアンブル";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
+wl_basic.na="NA-Mixed";
+wl_basic.ng="NG-Mixed";
+wl_basic.n5="N-Only (5 GHz)";
+wl_basic.n2="N-Only (2.4 GHz)";
 wl_basic.g="G-Only";
 wl_basic.bg="BG-Mixed";
 wl_basic.n="N-Only";
+wl_basic.rts="RTS Threshold";
+wl_basic.rtsvalue="Threshold";
+wl_basic.protmode="プロテクションモード";
 wl_basic.legend2="無線LANタイマ";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="無線LANタイマ";
@@ -1668,6 +1969,13 @@ wl_basic.AntGain="アンテナゲイン";
 wl_basic.diversity="ダイバーシティ";
 wl_basic.primary="プライマリ";
 wl_basic.secondary="セカンダリ";
+wl_basic.vertical="Vertical";
+wl_basic.horizontal="Horizontal";
+wl_basic.adaptive="Adaptive";
+wl_basic.internal="Internal";
+wl_basic.external="External";
+wl_basic.ghz24="2.4 GHz Output";
+wl_basic.ghz5="5 GHz Output";
 wl_basic.network="ネットワーク設定";
 wl_basic.unbridged="Bridgeしない";
 wl_basic.bridged="Bridgeする";
@@ -1680,10 +1988,18 @@ wl_basic.outband="拡張Band";
 wl_basic.channel_width="チャンネル帯域";
 wl_basic.channel_wide="Wide チャンネル";
 wl_basic.regulatory="Superチャンネル";
+wl_basic.chanshift="Channel Shifting";
 wl_basic.specialmode="2.3 GHz モード";
 wl_basic.wifi_bonding="Wi-Fi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
+wl_basic.multicast="Multicast forwarding";
+wl_basic.intmit="Noise Immunity";
+wl_basic.noise_immunity="Noise Immunity Level";
+wl_basic.ofdm_weak_det="OFDM Weak Detection";
+wl_basic.radar="レーダー検出";
+wl_basic.mtikie="MTik Compatibility";
+wl_basic.csma="キャリアセンス";
 //help container
 
 hwl_basic.right2="接続する11gのクライアントを除外する場合は「B-Only」を選択してください。無線LANを使用しない場合は「無効」に設定してください。<br/><b>注意：</b>モードを切り替える場合は、幾つかのパラメータの使用に制限があります。(\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
@@ -1714,13 +2030,36 @@ success.alert3="無線LANから接続している場合は、クライアント�
 
 logout.message="ログアウトが完了しました。";
 
+sas.title="Setup Assistant";
+sas.internet_connection="インターネット接続";
+sas.network_settings="ネットワーク設定";
+sas.wireless_settings="無線設定";
+sas.other_settings="その他の設定";
+sas.hwan="インターネット(WAN)設定";
 
+hsas.wan="WANインターフェースはルーターをインターネットやその他のネットワークに接続します。もし、あなたのネットワークがインターネットに繋がっていて、アクセスポイントだけが必要ならばインターネット接続方法を\"無効\"にしてください。";
+hsas.h_routerip="LAN側接続";
+hsas.routerip="ルーターのLAN側ネットワークに設定されたIPアドレスです。もしこの設定を変更したなら、ルーター管理のアクセスには変更したIPアドレスを使用してください。";
+hsas.h_dhcp="DHCP";
+hsas.dhcp="DHCPを使うことで手動設定を必要とせずにコンピューターやその他のネットワークデバイスにIPアドレスを自動的に設定することが出来ます。DHCPサーバーが既にローカルネットワークに存在する場合は、競合を避けるためにこの設定を無効にしてください。";
+hsas.h_wireless_physical="無線LANインターフェース";
+hsas.wireless_physical="無線LANインターフェース設定でルーターの無線設定が出来ます。動作モードを設定し(アクセスポイント、クライアント、リピーター)、ネットワーク名(SSID)を変更し、チャンネル帯域等の拡張設定をしてください。チャンネル帯域を標準の20MHzから変更する場合は、無線クライアントが対象のチャンネル帯域に対応していて正しく設定出来る事を確認してください。";
+hsas.h_wireless_security="無線セキュリティー";
+hsas.wireless_security="クライアントデバイスを容易に設定する為に、無線ネットワークパスワードを変更することが出来ます。暗号化を無効にしたり、WEPに変更することはセキュリティー的にお奨めできません。";
+hsas.h_routername="機器名";
+hsas.routername="この名前はネットワーク上で他の機器と通信したり、容易に識別する為に使用します。";
+hsas.networking="Networking help text";
+hsas.wireless="Wireless help text";
+hsas.other="Other Settings help text";
+
+haoss.basic="\"AirStation One-Touch Secure System\"(AOSS)は手動設定を必要とせずにAOSSをサポートしたクライアントとアクセスポイントを接続することが出来ます。";
+haoss.securitymodes="AOSSセキュリティーモードはどのセキュリティーをAOSSで使用するかを設定します。もし、クライアントがサポートするセキュリティーモードが有効にされていない場合は接続出来ません。";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 
 dhcp.titl="DHCP 情報";
 dhcp.h2="DHCP リースIPアドレスリスト";
-dhcp.server="DHCP サーバ IP アドレス：";
+dhcp.server="DHCP サーバー IP アドレス：";
 dhcp.tclient="クライアント名";
 
 
