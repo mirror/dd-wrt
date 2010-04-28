@@ -302,4 +302,4 @@ obj-$(CONFIG_NET_SL2312)+= sl2312_emac.o
 
 obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
 obj-$(CONFIG_AR2313) += ar2313/
-#obj-$(CONFIG_GEMINI_NET_ENGINE_GMAC) += gemini_negmac/
+obj-$(CONFIG_GEMINI_NET_ENGINE_GMAC) += gemini_negmac/
