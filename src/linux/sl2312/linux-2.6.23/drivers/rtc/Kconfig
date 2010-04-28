@@ -157,6 +157,7 @@ config RTC_DRV_MAX6900
 	  This driver can also be built as a module. If so, the module
 	  will be called rtc-max6900.
 
+
 config RTC_DRV_RS5C372
 	tristate "Ricoh RS5C372A/B, RV5C386, RV5C387A"
 	help
@@ -282,6 +283,16 @@ config RTC_DRV_CMOS
 
 	  This driver can also be built as a module. If so, the module
 	  will be called rtc-cmos.
+
+config RTC_DRV_GEMINI
+	tristate "Gemini SoC RTC"
+	help
+	  If you say Y here you will get support for the
+	  RTC found on Gemini SoC's.
+
+	  This driver can also be built as a module. If so, the module
+	  will be called rtc-gemini.
+
 
 config RTC_DRV_DS1216
 	tristate "Dallas DS1216"
