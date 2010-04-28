@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.17
-# Wed Apr 28 05:38:59 2010
+# Wed Apr 28 21:47:27 2010
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -934,7 +934,7 @@ CONFIG_WATCHDOG_SL351X=y
 # CONFIG_HW_RANDOM is not set
 # CONFIG_NVRAM is not set
 CONFIG_RTC=y
-CONFIG_SL2312_RTC=y
+# CONFIG_SL2312_RTC is not set
 # CONFIG_R3964 is not set
 # CONFIG_APPLICOM is not set
 # CONFIG_DRM is not set
@@ -1155,6 +1155,7 @@ CONFIG_RTC_INTF_DEV=y
 # Platform RTC drivers
 #
 # CONFIG_RTC_DRV_CMOS is not set
+CONFIG_RTC_DRV_GEMINI=y
 # CONFIG_RTC_DRV_DS1553 is not set
 # CONFIG_RTC_DRV_STK17TA8 is not set
 # CONFIG_RTC_DRV_DS1742 is not set

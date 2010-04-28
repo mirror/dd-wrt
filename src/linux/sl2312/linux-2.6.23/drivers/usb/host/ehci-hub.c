@@ -756,7 +756,7 @@ static int ehci_hub_control (
 			/* restart schedule */
 			ehci_writel(ehci, ehci_readl(ehci, &ehci->regs->command)|(0x1),&ehci->regs->command);
 
-			hcd->state = HC_STATE_RUNNING;
+//			hcd->state = HC_STATE_RUNNING;
 
 			switch ((ehci_readl(ehci, hcd->regs + 0x80) >> 22) & 3) {
 				case 0:

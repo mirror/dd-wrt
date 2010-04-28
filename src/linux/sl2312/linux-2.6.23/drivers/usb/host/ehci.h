@@ -718,8 +718,14 @@ struct ehci_fstn {
 static inline unsigned int
 ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
 {
+
 	if (ehci_is_TDI(ehci)) {
+#ifndef CONFIG_SL2312_USB
+		portsc = readl(ehci_to_hcd(ehci)->regs + 0x80);
+		switch ((portsc>>22)&3) {
+#else
 		switch ((portsc>>26)&3) {
+#endif
 		case 0:
 			return 0;
 		case 1:
