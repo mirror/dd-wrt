@@ -79,6 +79,7 @@ void start_sysinit(void)
 	eval("mkdir", "/tmp/www");
 	eval("mknod", "/dev/gpio", "c", "127", "0");
 	eval("mknod", "/dev/nvram", "c", "229", "0");
+	eval("mknod", "/dev/rtc", "c", "254", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 
 	unlink("/tmp/nvram/.lock");
@@ -113,12 +114,11 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-//#ifdef HAVE_WBD222
 	insmod("gemini_negmac");
-//#else
-//	insmod("sl351xgmac");
-//#endif
-	// sleep(1);
+#ifdef HAVE_WBD222
+	insmod("libata");
+	insmod("pata_gemini");
+#endif
 	eval("ifconfig", "eth0", "up");
 #ifdef HAVE_WBD222
 	eval("ifconfig", "eth1", "up");
@@ -153,6 +153,8 @@ void start_sysinit(void)
 	eval("gpio", "disable", "2");
 	eval("gpio", "disable", "3");
 	eval("gpio", "disable", "5");
+
+	eval("hwclock", "-s");
 
 
 	return;
