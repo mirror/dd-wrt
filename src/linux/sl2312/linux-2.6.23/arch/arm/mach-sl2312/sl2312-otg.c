@@ -77,7 +77,9 @@ static struct platform_device ehci_device_2 = {
 
 static struct platform_device *devices[] __initdata = {
 	&ehci_device_1,
-	//&ehci_device_2,
+#ifdef CONFIG_MACH_WBD222
+	&ehci_device_2,
+#endif
 };
 
 static int __init sl2312_init(void)
