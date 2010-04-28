@@ -73,6 +73,53 @@ static struct scsi_host_template gemini_pata_sht = {
 	.dma_boundary	= 0xffffU,
 };
 
+#define SL2312_IDE_DMA_OFFSET			0x00
+#define SL2312_IDE_PIO_TIMING_OFFSET	0x10
+#define SL2312_IDE_MDMA_TIMING_OFFSET	0x11		// only support 1 multi-word DMA device
+#define SL2312_IDE_UDMA_TIMING0_OFFSET	0x12		// for master
+#define SL2312_IDE_UDMA_TIMING1_OFFSET	0x13		// for slave
+#define SL2312_IDE_CLK_MOD_OFFSET		0x14		
+#define SL2312_IDE_CMD_OFFSET			0x20
+#define SL2312_IDE_CTRL_OFFSET			0x36
+
+#define SATA_REG_PHY_STATUS0				0x08
+#define SATA_REG_PHY_STATUS1				0x0C
+
+
+void gemini_phy_reset (struct ata_port *ap)
+{
+	u32 status_p1,reg;
+	unsigned long timeout = jiffies + (HZ * 1);
+	reg = readl(IO_ADDRESS(SL2312_GLOBAL_BASE)+GLOBAL_RESET_REG);
+	reg |=RESET_SATA1;
+	writel(reg,IO_ADDRESS(SL2312_GLOBAL_BASE)+GLOBAL_RESET_REG);	// Reset SATA module
+		
+	msleep(10);
+	
+	do{
+		msleep(100);
+		status_p1 = inl(ap->ioaddr.scr_addr + SATA_REG_PHY_STATUS1);
+		if(status_p1&0x01)
+			break;
+	}while (time_before(jiffies, timeout));
+	if(!(status_p1&0x01)){
+//		ap->device[gemini_sata_probe_flag&0x00000001].class = ATA_DEV_NONE;
+		printk("PHY not ready!!\n");
+		return ;
+	}
+
+
+	if((status_p1&0x01))		// device attach and link estabilished
+		ata_port_probe(ap);
+	else
+		ata_port_disable(ap);
+	
+	ap->cbl = ATA_CBL_SATA;
+	
+	ata_bus_reset(ap);
+}
+
+
 static void gemini_set_dmamode(struct ata_port *ap, struct ata_device *adev)
 {
 	unsigned int udma	= adev->dma_mode;
@@ -127,6 +174,7 @@ static struct ata_port_operations gemini_pata_port_ops = {
 	.bmdma_start		= ata_bmdma_start,
 	.bmdma_stop		= ata_bmdma_stop,
 	.bmdma_status		= ata_bmdma_status,
+	.error_handler		= ata_bmdma_error_handler,
 	.qc_prep		= ata_qc_prep,
 	.freeze			= ata_bmdma_freeze,
 	.thaw			= ata_bmdma_thaw,
@@ -139,7 +187,9 @@ static struct ata_port_operations gemini_pata_port_ops = {
 	.set_dmamode		= gemini_set_dmamode,
 	.set_piomode		= gemini_set_piomode,
 	.qc_issue		= gemini_qc_issue,
-	.phy_reset		= ata_bus_reset,
+//	.scr_read		= gemini_sata_scr_read,
+//	.scr_write		= gemini_sata_scr_write,
+	.phy_reset		= gemini_phy_reset,
 };
 
 static struct ata_port_info gemini_pata_portinfo = {
@@ -178,6 +228,8 @@ static irqreturn_t gemini_pata_interrupt(int irq, void *dev)
 
 	return IRQ_RETVAL(handled);
 }
+
+
 
 static int gemini_pata_platform_probe(struct platform_device *pdev)
 {
