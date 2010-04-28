@@ -139,6 +139,7 @@ static struct ata_port_operations gemini_pata_port_ops = {
 	.set_dmamode		= gemini_set_dmamode,
 	.set_piomode		= gemini_set_piomode,
 	.qc_issue		= gemini_qc_issue,
+	.phy_reset		= ata_bus_reset,
 };
 
 static struct ata_port_info gemini_pata_portinfo = {
