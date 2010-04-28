@@ -1607,6 +1607,12 @@ static void __init probe_for_hwifs (void)
 #ifdef CONFIG_H8300
 	h8300_ide_init();
 #endif
+#if defined(CONFIG_BLK_DEV_IDE_SL2312)
+	{
+		extern void ide_init_sl2312(void);
+        ide_init_sl2312();
+    }    
+#endif /* CONFIG_BLK_DEV_IDE_SL2312 */
 }
 
 /*

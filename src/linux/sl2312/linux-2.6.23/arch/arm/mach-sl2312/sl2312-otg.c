@@ -176,7 +176,7 @@ static struct platform_device *devices[] __initdata = {
 static int __init sl2312_init(void)
 {
 #ifdef CONFIG_MACH_WBD222
-	platform_register_pata(0);
+	platform_register_pata(1);
 #endif
 	return platform_add_devices(devices, ARRAY_SIZE(devices));
 }
