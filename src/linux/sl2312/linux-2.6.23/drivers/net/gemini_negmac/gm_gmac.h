@@ -25,7 +25,11 @@
 #define GMAC_MAX_ETH_FRAME_SIZE		1514
 #define GMAC_TX_BUF_SIZE		((GMAC_MAX_ETH_FRAME_SIZE + 31) & (~31))
 
+#ifdef JUMBOFRAME
+#define SW_RX_BUF_SIZE			9234
+#else
 #define SW_RX_BUF_SIZE			1536
+#endif
 #define HW_RX_BUF_SIZE			1536
 
 #define GMAC_DEV_TX_TIMEOUT  		(10*HZ)
