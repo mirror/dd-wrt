@@ -1056,8 +1056,9 @@ function setElementMask(id, state) {
 	newInput.setAttribute('id', id);
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
-	newInput.setAttribute('onblur', val_onblur);
-
+	//newInput.setAttribute('onblur', val_onblur);
+	newInput.onblur = val_onblur;
+	
 	if (state == true)
 		newInput.setAttribute('type', 'text');
 	else
