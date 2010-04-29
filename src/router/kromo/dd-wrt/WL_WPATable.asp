@@ -201,7 +201,7 @@ addEvent(window, "unload", function() {
 				<input type="hidden" name="wl_wep_last" />
 				<input type="hidden" name="filter_mac_value" />
 				
-				<% show_security(); %><br />
+				<% show_security(); %>
 				
 				<div class="submitFooter">
 					<script type="text/javascript">

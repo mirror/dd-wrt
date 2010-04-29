@@ -767,8 +767,8 @@ function submitSavePrevButtons() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("aoss.wep"); %></div>
-									<input type="checkbox" name="aoss_wep" value="1"<% isChecked("aoss_wep", "1"); %>></input>
-									<div><% tran("aoss.wep_info"); %></div>
+									<input type="checkbox" name="aoss_wep" value="1"<% isChecked("aoss_wep", "1"); %> style="float: left;"></input>
+									<div style="float: left;"><% tran("aoss.wep_info"); %></div>
 								</div>
 							</fieldset>
 							<br  style="<% sas_stage_visible_css("4"); %>"/>
