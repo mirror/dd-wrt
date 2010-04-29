@@ -96,11 +96,16 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 
 							<h2><% tran("freeradius.h2"); %></h2>
-							<div class="setting">
-							<div class="label"><% tran("freeradius.h2"); %></div>
-							<input class="spaceradio" type="radio" name="radius_enabled" value="1" <% nvram_checked("radius_enabled", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
-							<input class="spaceradio" type="radio" name="radius_enabled" value="0" <% nvram_checked("radius_enabled", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
-							</div>
+							<fieldset>
+								<legend><% tran("freeradius.h2"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("freeradius.h2"); %></div>
+									<input class="spaceradio" type="radio" name="radius_enabled" value="1" <% nvram_checked("radius_enabled", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="radius_enabled" value="0" <% nvram_checked("radius_enabled", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
+								</div>
+							</fieldset>
+							<br />
+							
 							<div id="idradius">
 							<fieldset>
 							<legend><% tran("freeradius.certificate"); %></legend>
@@ -150,6 +155,7 @@ addEvent(window, "unload", function() {
 							</script>
 							</div>
 							</fieldset>
+							<br />
 
 
 							<fieldset>
@@ -158,7 +164,8 @@ addEvent(window, "unload", function() {
 								<span id="certificate_status"><% show_certificate_status(); %></span>&nbsp;
 							</div>
 							</fieldset>
-
+							<br />
+							
 							<fieldset>
 							<legend><% tran("freeradius.settings"); %></legend>
 							<div class="setting">
@@ -172,24 +179,24 @@ addEvent(window, "unload", function() {
 								</script></span>
 							</div>
 							</fieldset>
-
+							<br />
+							
 							<fieldset>
 							<legend><% tran("freeradius.clients"); %></legend>
 							<% show_radius_clients(); %>
 							</fieldset>
-
+							<br />
+							
 							<fieldset>
 							<legend><% tran("freeradius.users"); %></legend>
 							<% show_radius_users(); %>
 							</fieldset>
-
+							<br />
+							
 							</div>
 							
-							
-							
-				
-							 <div class="submitFooter">
-							 <script type="text/javascript">
+							<div class="submitFooter">
+							<script type="text/javascript">
 							 //<![CDATA[
 							 var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 							 submitFooterButton(1,1,0,autoref);
