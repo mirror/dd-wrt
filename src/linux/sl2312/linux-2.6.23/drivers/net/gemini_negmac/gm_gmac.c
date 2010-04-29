@@ -37,6 +37,8 @@
 #include <linux/udp.h>
 #include <linux/mdio-gpio.h>
 
+#define JUMBOFRAME 
+
 #include "gmac.h"
 
 #include "gm_gmac.h"
@@ -50,6 +52,11 @@
 /* #define GMAC_LEN_1_2_ISSUE */
 
 #define DEFAULT_RXQ_MAX_CNT			256
+
+
+#ifdef	JUMBOFRAME
+#define TCPHDRLEN(tcp_hdr2)  ((ntohs(*((__u16 *)tcp_hdr2 + 6)) >> 12) & 0x000F)
+#endif
 
 /* define chip information */
 #define DRV_VERSION			"0.2"
@@ -323,8 +330,11 @@ static void toe_gmac_init_chip(struct net_device *dev)
 	/* disable TX/RX and disable internal loop back */
 	config0.bits32 = __raw_readl(dev->base_addr + GMAC_CONFIG0);
 
+#ifdef JUMBOFRAME
+	config0.bits.max_len = 5;
+#else
 	config0.bits.max_len = 2;
-
+#endif
 	gmac->flow_control_enable = 0;
 
 	config0.bits.tx_fc_en = 0;	/* disable tx flow control */
@@ -588,6 +598,15 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	GMAC_SWTXQ_T		*swtxq;
 	register unsigned long	word0, word1, word2, word3;
 	unsigned short		wptr, rptr;
+#ifdef	JUMBOFRAME
+	int header_len = skb->len;
+	struct iphdr	*ip_hdr2;
+	struct tcphdr	*tcp_hdr2;
+	int             tcp_hdr_len;
+	unsigned char 	*ptr;
+	int             data_len,a;
+	unsigned int    val;
+#endif
 
 #ifdef GMAC_LEN_1_2_ISSUE
 	int			total_pages;
@@ -630,6 +649,26 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return 1;
 	}
 
+#ifdef	JUMBOFRAME
+		if (((ip_hdr(skb)->protocol & 0x00ff)  == IPPROTO_TCP))
+		{
+				tcp_hdr2 = tcp_hdr(skb);
+				tcp_hdr_len = TCPHDRLEN(tcp_hdr2) * 4;
+				tcp_hdr_len = TCPHDRLEN(tcp_hdr2) * 4;
+
+				if ((tcp_hdr2->syn) && (tcp_hdr_len > 20))
+				{
+					ptr = (unsigned char *)(tcp_hdr2+1);
+					if ((ptr[0] == 0x02) && (ptr[1] == 0x04) && (ptr[2] == 0x07) && (ptr[3] == 0xba)) // 0x07 aa=2016-54=1962  ,0x07ba=2032-54=1978
+					{
+						ptr[2]=0x20;	//23
+						ptr[3]=0x00;   	//00
+						printk("-----> Change MSS to 8K \n" );
+					}
+				}
+		}
+#endif
+
 	while (snd_pages) {
 		char *pkt_datap;
 
@@ -648,7 +687,11 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		word3 = (dev->mtu + 14) | EOFIE_BIT;
 
 #ifdef DO_HW_CHKSUM
+#ifdef	JUMBOFRAME
+		if (total_len >= (dev->mtu+14) && ip_hdr(skb) && (ip_hdr(skb)->protocol == 0x011) && (ip_hdr(skb)->frag_off & __constant_htons(0x3fff)))
+#else
 		if (total_len <= 1514 && ip_hdr(skb) && (ip_hdr(skb)->frag_off & __constant_htons(0x3fff)))
+#endif
 			word1  = total_len |
 					TSS_IP_CHKSUM_BIT  |
 					TSS_IPV6_ENABLE_BIT |
@@ -1147,7 +1190,45 @@ static void gmac_tx_timeout(struct net_device *dev)
 
 	dev_warn(&dev->dev, "TX timeout\n");
 }
+/*
+static int gmac_change_mtu(struct net_device *dev, int new_mtu)
+{
+	GMAC_INFO_T				*tp = (GMAC_INFO_T *)dev->priv;
+	int max_frame = new_mtu + ENET_HEADER_SIZE + ETHERNET_FCS_SIZE;
+	
+	
+	if((max_frame < 64) ||	(max_frame > 9100)) 
+	{
+		printk("Invalid MTU setting\n");
+		return -EINVAL;
+	}
 
+	dev->mtu = new_mtu;
+	if (new_mtu > 9100)
+	{
+		printk("MTU must <= %d \n",9100);
+		return -EINVAL;
+	}
+	else 
+	{
+		printk("Change MTU = %d\n",new_mtu);
+	}
+	if (!netif_running(dev))
+		goto out;
+	
+	netif_stop_queue(dev);
+	toe_gmac_disable_tx_rx(dev);
+	mdelay(30); // Let GMAC consume packet
+	
+	gmac_write_reg(tp->base_addr, GMAC_STATUS, 0x7c, 0x0000007f);
+	toe_gmac_enable_tx_rx(dev);
+			
+out:	
+	return 0;
+
+
+}
+*/
 
 static void __init mac_init_drv(struct toe_private *toe)
 {
