@@ -1190,11 +1190,11 @@ static void gmac_tx_timeout(struct net_device *dev)
 
 	dev_warn(&dev->dev, "TX timeout\n");
 }
-/*
+
 static int gmac_change_mtu(struct net_device *dev, int new_mtu)
 {
-	GMAC_INFO_T				*tp = (GMAC_INFO_T *)dev->priv;
-	int max_frame = new_mtu + ENET_HEADER_SIZE + ETHERNET_FCS_SIZE;
+	struct gmac_private *gmac = netdev_priv(dev);
+	int max_frame = new_mtu + 14 + 4;
 	
 	
 	if((max_frame < 64) ||	(max_frame > 9100)) 
@@ -1220,7 +1220,7 @@ static int gmac_change_mtu(struct net_device *dev, int new_mtu)
 	toe_gmac_disable_tx_rx(dev);
 	mdelay(30); // Let GMAC consume packet
 	
-	gmac_write_reg(tp->base_addr, GMAC_STATUS, 0x7c, 0x0000007f);
+	gmac_write_reg(dev->base_addr, GMAC_STATUS, 0x7c, 0x0000007f);
 	toe_gmac_enable_tx_rx(dev);
 			
 out:	
@@ -1228,7 +1228,7 @@ out:
 
 
 }
-*/
+
 
 static void __init mac_init_drv(struct toe_private *toe)
 {
@@ -1316,6 +1316,7 @@ static int __init gmac_init_eth(struct platform_device *pdev, unsigned int num)
 	dev->set_multicast_list = gmac_set_rx_mode;
 	dev->set_mac_address = gmac_set_mac_address;
 	dev->tx_timeout = gmac_tx_timeout;
+	dev->change_mtu = gmac_change_mtu;
 	//dev->netdev_ops = &gemini_gmac_ops;
 	dev->watchdog_timeo = GMAC_DEV_TX_TIMEOUT;
 	dev->tx_queue_len = TOE_GMAC_SWTXQ_DESC_NUM;
