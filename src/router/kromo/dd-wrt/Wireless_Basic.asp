@@ -311,7 +311,6 @@ addEvent(window, "unload", function() {
 				  		<script type="text/javascript">
 				  		//<![CDATA[
 				  		submitFooterButton(1,1);
-						document.forms['wireless'].elements['reset_button'].setAttribute('onclick', "document.location='Wireless_Basic.asp';");
 				  		//]]>
 				  		</script>
 				  	</div>
