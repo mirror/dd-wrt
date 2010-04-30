@@ -22,6 +22,11 @@
 #define ATHR_DEBUG_PORT_DATA             30
 
 /* ATHR_PHY_CONTROL fields */
+#define BITS(_s, _n)	(((1UL << (_n)) - 1) << _s)
+#define BIT(nr)			(1UL << (nr))
+#define AR8216_REG_GLOBAL_CTRL		0x0030
+#define AR8216_GCTRL_MTU		BITS(0, 10)
+
 #define ATHR_CTRL_SOFTWARE_RESET                    0x8000
 #define ATHR_CTRL_SPEED_LSB                         0x2000
 #define ATHR_CTRL_AUTONEGOTIATION_ENABLE            0x1000

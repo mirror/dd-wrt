@@ -315,6 +315,7 @@ void athrs26_reg_init()
 #ifdef FULL_FEATURE
     athena_init(0, 2);
 #endif
+    athrs26_reg_write(AR8216_REG_GLOBAL_CTRL,AR8216_GCTRL_MTU,1716 ); //     1500 + 4 /* vlan */ + 2 /* header */);
 
     athr26_init_flag = 1;
 }
