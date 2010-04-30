@@ -463,35 +463,35 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("filter.legend4"); %></legend>
 								<div class="setting center">
-									<input size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />
+									<input size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" class="three_column" />
+									<input size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" class="three_column" />
+									<input size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" class="three_column three_column_last" />
 								</div>
 								<div class="setting center">
-									<input size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="30" maxlength="79" name="host4" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","4"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="30" maxlength="79" name="host5" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","5"); %>" />
+									<input size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" class="three_column" />
+									<input size="30" maxlength="79" name="host4" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","4"); %>" class="three_column" />
+									<input size="30" maxlength="79" name="host5" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","5"); %>" class="three_column three_column_last" />
 								</div>
 								<div class="setting center">
-									<input size="30" maxlength="79" name="host6" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","6"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="30" maxlength="79" name="host7" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","7"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="30" maxlength="79" name="host8" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","8"); %>" />
+									<input size="30" maxlength="79" name="host6" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","6"); %>" class="three_column" />
+									<input size="30" maxlength="79" name="host7" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","7"); %>" class="three_column" />
+									<input size="30" maxlength="79" name="host8" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","8"); %>" class="three_column three_column_last" />
 								</div>
 							</fieldset><br />
 							
 							<fieldset>
 								<legend><% tran("filter.legend5"); %></legend>
 								<div class="setting center">
-									<input size="21" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="21" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="21" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="21" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />
+									<input size="21" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" class="four_column" />
+									<input size="21" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" class="four_column" />
+									<input size="21" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" class="four_column" />
+									<input size="21" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" class="four_column four_column_last" />
 								</div>
 								<div class="setting center">
-									<input size="21" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="21" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="21" maxlength="79" name="url6" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","6"); %>" />&nbsp;&nbsp;&nbsp;
-									<input size="21" maxlength="79" name="url7" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","7"); %>" />
+									<input size="21" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" class="four_column" />
+									<input size="21" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" class="four_column" />
+									<input size="21" maxlength="79" name="url6" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","6"); %>" class="four_column" />
+									<input size="21" maxlength="79" name="url7" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","7"); %>" class="four_column four_column_last" />
 								</div>
 							</fieldset><br />
 							
