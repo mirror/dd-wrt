@@ -1920,7 +1920,7 @@ wl_basic.radiotimer="WLAN Einteilung";
 wl_basic.radio_on="WLAN ist An";
 wl_basic.radio_off="WLAN ist Aus";
 
-wl_basic.h2_v24="Physisikalische WLAN Schnittstelle";
+wl_basic.h2_v24="Physische WLAN Schnittstelle";
 wl_basic.h2_vi="Virtuelle Schnittstellen";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="Sendeleistung";
