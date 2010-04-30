@@ -1106,11 +1106,11 @@ ag7240_hard_start(struct sk_buff *skb, struct net_device *dev)
     }
 #endif
 
-#ifdef CONFIG_AR7240_S26_VLAN_IGMP
+//#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     if(unlikely((skb->len <= 0) || (skb->len > (dev->mtu + ETH_VLAN_HLEN +6 ))))
-#else
-    if(unlikely((skb->len <= 0) || (skb->len > (dev->mtu + ETH_HLEN))))
-#endif
+//#else
+//    if(unlikely((skb->len <= 0) || (skb->len > (dev->mtu + ETH_HLEN))))
+//#endif
     {
         printk(MODULE_NAME ": bad skb, len %d\n", skb->len);
         goto dropit;

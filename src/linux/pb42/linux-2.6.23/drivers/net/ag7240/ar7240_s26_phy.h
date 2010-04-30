@@ -47,6 +47,12 @@
 #define ATHR_CTRL_SPEED_FULL_DUPLEX                 0x0100
 #define ATHR_CTRL_SPEED_MSB                         0x0040
 
+#define BITS(_s, _n)	(((1UL << (_n)) - 1) << _s)
+#define BIT(nr)			(1UL << (nr))
+#define AR8216_REG_GLOBAL_CTRL		0x0030
+#define AR8216_GCTRL_MTU		BITS(0, 10)
+
+
 #define ATHR_RESET_DONE(phy_control)                   \
     (((phy_control) & (ATHR_CTRL_SOFTWARE_RESET)) == 0)
     
