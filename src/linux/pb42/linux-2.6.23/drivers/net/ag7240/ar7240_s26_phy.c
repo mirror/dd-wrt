@@ -539,7 +539,6 @@ void athrs26_reg_init_lan(void)
     /* Disable WAN mac inside S26 after S26 Reset*/
 
     athrs26_reg_write(PORT_STATUS_REGISTER5,0x0);
-    athrs26_reg_write(AR8216_REG_GLOBAL_CTRL,AR8216_GCTRL_MTU,1716 ); //     1500 + 4 /* vlan */ + 2 /* header */);
 
 //#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     // Set Max MTU to 1518+6 for vlan and header space.
