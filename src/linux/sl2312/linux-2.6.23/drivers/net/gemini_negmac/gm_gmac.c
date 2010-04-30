@@ -1213,17 +1213,7 @@ static int gmac_change_mtu(struct net_device *dev, int new_mtu)
 	{
 		printk("Change MTU = %d\n",new_mtu);
 	}
-	if (!netif_running(dev))
-		goto out;
-	
-	netif_stop_queue(dev);
-	toe_gmac_disable_tx_rx(dev);
-	mdelay(30); // Let GMAC consume packet
-	
-	gmac_write_reg(dev->base_addr, GMAC_STATUS, 0x7c, 0x0000007f);
-	toe_gmac_enable_tx_rx(dev);
 			
-out:	
 	return 0;
 
 
