@@ -537,12 +537,14 @@ void athrs26_reg_init_lan(void)
 #endif
 
     /* Disable WAN mac inside S26 after S26 Reset*/
-    athrs26_reg_write(PORT_STATUS_REGISTER5,0x0);
 
-#ifdef CONFIG_AR7240_S26_VLAN_IGMP
+    athrs26_reg_write(PORT_STATUS_REGISTER5,0x0);
+    athrs26_reg_write(AR8216_REG_GLOBAL_CTRL,AR8216_GCTRL_MTU,1716 ); //     1500 + 4 /* vlan */ + 2 /* header */);
+
+//#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     // Set Max MTU to 1518+6 for vlan and header space.
-    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x5f4);
-#endif
+    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
+//#endif
 
 #if defined(CONFIG_ATHEROS_HEADER_EN)
    //Set CPU port0 to Atheros Header Enable.
