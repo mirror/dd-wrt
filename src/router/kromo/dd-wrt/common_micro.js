@@ -974,7 +974,8 @@ function setElementMask(id, state) {
 	newInput.setAttribute('id', id);
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
-	newInput.setAttribute('onblur', val_onblur);
+	//newInput.setAttribute('onblur', val_onblur);
+	newInput.onblur = val_onblur;
 
 	if (state == true)
 		newInput.setAttribute('type', 'text');
@@ -1100,8 +1101,14 @@ function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 		document.write("<input title=\"" + sbutton.savetitle + "\" class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
 	if(sub)
 		document.write("<input title=\"" + sbutton.applytitle + "\" class=\"button\" type=\"button\" name=\"apply_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");
-	if(res)
-		document.write("<input title=\"" + sbutton.canceltitle + "\" class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
+	if(res) {
+		if(document.forms[0].elements['submit_button'].value) {
+			var button_action = "document.location=document.forms[0].elements['submit_button'].value+'.asp';";
+		} else {
+			var button_action = "window.location.reload();";
+		}
+		document.write("<input title=\"" + sbutton.canceltitle + "\" class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"" + button_action + "\" />");
+	}
 	if(reb)
 		document.write("<input class=\"button\" type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form);\" />");
 	if(autoref)
