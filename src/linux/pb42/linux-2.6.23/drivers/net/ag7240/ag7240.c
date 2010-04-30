@@ -70,8 +70,8 @@ static int ag7240_poll(struct napi_struct *napi, int budget);
 #else
 static int ag7240_poll(struct net_device *dev, int *budget);
 #endif
-#ifdef CONFIG_AR7240_S26_VLAN_IGMP
 #define ETH_VLAN_HLEN 18
+#ifdef CONFIG_AR7240_S26_VLAN_IGMP
 int athr_ioctl(struct net_device *dev,uint32_t *args, int cmd);
 #else
 int athr_ioctl(uint32_t *args, int cmd);
