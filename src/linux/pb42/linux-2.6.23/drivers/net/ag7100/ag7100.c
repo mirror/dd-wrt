@@ -372,6 +372,7 @@ ag7100_hw_setup(ag7100_mac_t *mac)
 #endif
     ag7100_reg_rmw_set(mac, AG7100_MAC_CFG2, (AG7100_MAC_CFG2_PAD_CRC_EN |
         AG7100_MAC_CFG2_LEN_CHECK));
+    ag7100_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
     ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_0, 0x1f00);
     /*
