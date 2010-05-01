@@ -253,6 +253,9 @@ typedef enum {
 #define AG7240_MAC_CFG1             0x00
 #define AG7240_MAC_CFG2             0x04
 #define AG7240_MAC_IFCTL            0x38
+#define AG71XX_REG_MAC_IPG	  0x0008
+#define AG71XX_REG_MAC_HDX	  0x000c
+#define AG71XX_REG_MAC_MFL	  0x0010
 
 /*
  * fifo control registers
