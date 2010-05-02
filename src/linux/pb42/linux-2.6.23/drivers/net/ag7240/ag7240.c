@@ -1368,7 +1368,7 @@ ag7240_poll(struct net_device *dev, int *budget)
 
     ag7240_rx_status_t  ret;
     u32                 flags;
-spin_lock_irqsave(&mac->mac_lock, flags);
+    spin_lock_irqsave(&mac->mac_lock, flags);
 
     ret = ag7240_recv_packets(dev, mac, max_work, &work_done);
 
@@ -1462,6 +1462,7 @@ process_pkts:
 
         bp                  = &r->ring_buffer[head];
         len                 = ds->pkt_size;
+        printk(KERN_INFO "pkt_size=%d\n",len);
         skb                 = bp->buf_pkt;
 
         assert(skb);

@@ -304,5 +304,5 @@ obj-$(CONFIG_AG7100) += ag7100/
 obj-$(CONFIG_AG7240) += ag7240/
 
 
-#obj-$(CONFIG_AG7100) += ag71xx/
+#obj-$(CONFIG_AG71XX) += ag71xx/
 #obj-$(CONFIG_AG7240) += ag71xx/
