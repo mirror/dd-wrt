@@ -463,6 +463,8 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		if (!info->attrs[SWITCH_ATTR_OP_VLAN])
 			goto done;
 		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_VLAN]);
+		if (val->port_vlan >= dev->vlans)
+			goto done;
 		break;
 	case SWITCH_CMD_SET_PORT:
 	case SWITCH_CMD_GET_PORT:
@@ -473,6 +475,8 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		if (!info->attrs[SWITCH_ATTR_OP_PORT])
 			goto done;
 		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_PORT]);
+		if (val->port_vlan >= dev->ports)
+			goto done;
 		break;
 	default:
 		WARN_ON(1);
@@ -757,6 +761,7 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 	NLA_PUT_STRING(msg, SWITCH_ATTR_DEV_NAME, dev->devname);
 	NLA_PUT_U32(msg, SWITCH_ATTR_VLANS, dev->vlans);
 	NLA_PUT_U32(msg, SWITCH_ATTR_PORTS, dev->ports);
+	NLA_PUT_U32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port);
 
 	return genlmsg_end(msg, hdr);
 nla_put_failure:
