@@ -367,6 +367,7 @@ void athrs26_reg_init(void)
     rd_data = s26_rd_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_DATA);
     s26_wr_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_ADDRESS,0x3);
     s26_wr_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_DATA,(rd_data & 0xfffffeff) );
+    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
 
     athr26_init_flag = 1;
 }
@@ -496,6 +497,7 @@ void athrs26_reg_init_lan(void)
 #endif
 
    /* Tag Priority Mapping */
+//      athrs26_reg_write(0x70, 0x41af);
     athrs26_reg_write(0x70, 0xfa50);
 
    /* Enable ARP packets to CPU port */
