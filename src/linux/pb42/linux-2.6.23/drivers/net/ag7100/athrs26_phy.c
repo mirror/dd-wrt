@@ -303,7 +303,7 @@ void athrs26_reg_init()
     athrs26_reg_write(0x68, 0x55555555);    
     athrs26_reg_write(0x6c, 0x0);    
 
-    athrs26_reg_write(0x70, 0x41af);
+//    athrs26_reg_write(0x70, 0x41af);
 
 
 #if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
