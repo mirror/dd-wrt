@@ -405,7 +405,6 @@ ag7240_hw_setup(ag7240_mac_t *mac)
                     AG7240_MAC_CFG1_TX_EN));
         ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN |
             AG7240_MAC_CFG2_LEN_CHECK));
-    //    ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN));
     }
 
     ag7240_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
@@ -2084,6 +2083,7 @@ ag7240_init(void)
     * Compute the number of descriptors for an MTU 
     */
     tx_max_desc_per_ds_pkt =1;
+
 
     printk(MODULE_NAME ": Max segments per packet %d\n", tx_max_desc_per_ds_pkt);
     printk(MODULE_NAME ": Max tx descriptor count    %d\n", AG7240_TX_DESC_CNT);
