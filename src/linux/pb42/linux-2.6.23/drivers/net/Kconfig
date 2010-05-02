@@ -2171,6 +2171,7 @@ config NE_H8300
 
 source "drivers/net/fec_8xx/Kconfig"
 source "drivers/net/fs_enet/Kconfig"
+#source "drivers/net/ag71xx/Kconfig"
 
 config AG7100
     tristate "Atheros AR7100 GigE"
