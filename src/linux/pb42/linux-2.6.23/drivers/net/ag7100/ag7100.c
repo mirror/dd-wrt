@@ -211,6 +211,7 @@ static inline int ag7100_tx_ring_full(ag7100_mac_t *mac)
     return (ag7100_ndesc_unused(mac, r) < tx_max_desc_per_ds_pkt + 2);
 }
 
+
 static int
 ag7100_open(struct net_device *dev)
 {
@@ -336,6 +337,74 @@ ag7100_stop(struct net_device *dev)
     return 0;
 }
 
+#define FIFO_CFG0_WTM		BIT(0)	/* Watermark Module */
+#define FIFO_CFG0_RXS		BIT(1)	/* Rx System Module */
+#define FIFO_CFG0_RXF		BIT(2)	/* Rx Fabric Module */
+#define FIFO_CFG0_TXS		BIT(3)	/* Tx System Module */
+#define FIFO_CFG0_TXF		BIT(4)	/* Tx Fabric Module */
+#define FIFO_CFG0_ALL	(FIFO_CFG0_WTM | FIFO_CFG0_RXS | FIFO_CFG0_RXF \
+			| FIFO_CFG0_TXS | FIFO_CFG0_TXF)
+
+#define FIFO_CFG0_ENABLE_SHIFT	8
+
+#define FIFO_CFG4_DE		BIT(0)	/* Drop Event */
+#define FIFO_CFG4_DV		BIT(1)	/* RX_DV Event */
+#define FIFO_CFG4_FC		BIT(2)	/* False Carrier */
+#define FIFO_CFG4_CE		BIT(3)	/* Code Error */
+#define FIFO_CFG4_CR		BIT(4)	/* CRC error */
+#define FIFO_CFG4_LM		BIT(5)	/* Length Mismatch */
+#define FIFO_CFG4_LO		BIT(6)	/* Length out of range */
+#define FIFO_CFG4_OK		BIT(7)	/* Packet is OK */
+#define FIFO_CFG4_MC		BIT(8)	/* Multicast Packet */
+#define FIFO_CFG4_BC		BIT(9)	/* Broadcast Packet */
+#define FIFO_CFG4_DR		BIT(10)	/* Dribble */
+#define FIFO_CFG4_LE		BIT(11)	/* Long Event */
+#define FIFO_CFG4_CF		BIT(12)	/* Control Frame */
+#define FIFO_CFG4_PF		BIT(13)	/* Pause Frame */
+#define FIFO_CFG4_UO		BIT(14)	/* Unsupported Opcode */
+#define FIFO_CFG4_VT		BIT(15)	/* VLAN tag detected */
+#define FIFO_CFG4_FT		BIT(16)	/* Frame Truncated */
+#define FIFO_CFG4_UC		BIT(17)	/* Unicast Packet */
+
+#define FIFO_CFG5_DE		BIT(0)	/* Drop Event */
+#define FIFO_CFG5_DV		BIT(1)	/* RX_DV Event */
+#define FIFO_CFG5_FC		BIT(2)	/* False Carrier */
+#define FIFO_CFG5_CE		BIT(3)	/* Code Error */
+#define FIFO_CFG5_LM		BIT(4)	/* Length Mismatch */
+#define FIFO_CFG5_LO		BIT(5)	/* Length Out of Range */
+#define FIFO_CFG5_OK		BIT(6)	/* Packet is OK */
+#define FIFO_CFG5_MC		BIT(7)	/* Multicast Packet */
+#define FIFO_CFG5_BC		BIT(8)	/* Broadcast Packet */
+#define FIFO_CFG5_DR		BIT(9)	/* Dribble */
+#define FIFO_CFG5_CF		BIT(10)	/* Control Frame */
+#define FIFO_CFG5_PF		BIT(11)	/* Pause Frame */
+#define FIFO_CFG5_UO		BIT(12)	/* Unsupported Opcode */
+#define FIFO_CFG5_VT		BIT(13)	/* VLAN tag detected */
+#define FIFO_CFG5_LE		BIT(14)	/* Long Event */
+#define FIFO_CFG5_FT		BIT(15)	/* Frame Truncated */
+#define FIFO_CFG5_16		BIT(16)	/* unknown */
+#define FIFO_CFG5_17		BIT(17)	/* unknown */
+#define FIFO_CFG5_SF		BIT(18)	/* Short Frame */
+#define FIFO_CFG5_BM		BIT(19)	/* Byte Mode */
+
+
+#define FIFO_CFG0_INIT	(FIFO_CFG0_ALL << FIFO_CFG0_ENABLE_SHIFT)
+
+#define FIFO_CFG4_INIT	(FIFO_CFG4_DE | FIFO_CFG4_DV | FIFO_CFG4_FC | \
+			 FIFO_CFG4_CE | FIFO_CFG4_CR | FIFO_CFG4_LM | \
+			 FIFO_CFG4_LO | FIFO_CFG4_OK | FIFO_CFG4_MC | \
+			 FIFO_CFG4_BC | FIFO_CFG4_DR | FIFO_CFG4_LE | \
+			 FIFO_CFG4_CF | FIFO_CFG4_PF | FIFO_CFG4_UO | \
+			 FIFO_CFG4_VT)
+
+#define FIFO_CFG5_INIT	(FIFO_CFG5_DE | FIFO_CFG5_DV | FIFO_CFG5_FC | \
+			 FIFO_CFG5_CE | FIFO_CFG5_LO | FIFO_CFG5_OK | \
+			 FIFO_CFG5_MC | FIFO_CFG5_BC | FIFO_CFG5_DR | \
+			 FIFO_CFG5_CF | FIFO_CFG5_PF | FIFO_CFG5_VT | \
+			 FIFO_CFG5_LE | FIFO_CFG5_FT | FIFO_CFG5_16 | \
+			 FIFO_CFG5_17 | FIFO_CFG5_SF)
+
+
 static void
 ag7100_hw_setup(ag7100_mac_t *mac)
 {
@@ -374,7 +443,7 @@ ag7100_hw_setup(ag7100_mac_t *mac)
         AG7100_MAC_CFG2_LEN_CHECK));
     ag7100_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_0, 0x1f00);
+    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_0, FIFO_CFG0_INIT);
     /*
     * set the mii if type - NB reg not in the gigE space
     */
@@ -391,13 +460,8 @@ ag7100_hw_setup(ag7100_mac_t *mac)
     /*
     * Weed out junk frames (CRC errored, short collision'ed frames etc.)
     */
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_4, 0xffff);
-#ifdef CONFIG_AR9100
-    /* Drop CRC Errors and Pause Frames */
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_5, 0x7efef);
-#else
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_5, 0x7ffef); 
-#endif
+    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_4, FIFO_CFG4_INIT);
+    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_5, FIFO_CFG5_INIT);
 #endif
 
     t0  =  &tx->ring_desc[0];
@@ -1677,7 +1741,7 @@ static struct sk_buff *
 #if 0//def CONFIG_CAMEO_REALTEK_PHY
     skb = dev_alloc_skb(AG7100_RX_BUF_SIZE+4);
 #else
-    skb = dev_alloc_skb(AG7100_RX_BUF_SIZE);
+    skb = dev_alloc_skb(AG7100_RX_BUF_SIZE + AG7100_RX_RESERVE);
 #endif
     if (unlikely(!skb))
         return NULL;
