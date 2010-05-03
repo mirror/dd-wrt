@@ -44,7 +44,7 @@ char *getmdhcp(int count, int index)
 	int cnt = 0;
 	static char word[256];
 	char *next, *wordlist;
-
+	
 	wordlist = nvram_safe_get("mdhcpd");
 	foreach(word, wordlist, next) {
 		if (cnt < index) {
@@ -64,6 +64,11 @@ char *getmdhcp(int count, int index)
 		char *leasetime = max;
 
 		max = strsep(&leasetime, ">");
+		if (max==NULL)
+		    {
+		    max = leasetime;
+		    leasetime="3660";
+		    }
 		if (count == 0)
 			return interface;
 		if (count == 1)
