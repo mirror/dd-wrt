@@ -112,7 +112,11 @@ static int ar9100_flash_probe()
             break;
         }
     }
-
+if (flash_geom_tbl[i].name==NULL)
+    {
+    printk(KERN_EMERG "use default mapping for vendor %X, dev %X\n",venid,devid);
+    i=5; 
+    }
     printk("FLASH ID: %s ", flash_geom_tbl[i].name);
 
     if (flash_geom_tbl[i].size >= 0x100000)
