@@ -25,6 +25,7 @@ typedef struct {
     uint32_t    pkt_size       : 12;
 
     uint32_t    next_desc      ;
+    uint32_t 	pad;
 }ag7100_desc_t;
 
 /*
