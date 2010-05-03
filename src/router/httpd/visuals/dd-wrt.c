@@ -2057,6 +2057,11 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		char *leasetime = max;
 
 		max = strsep(&leasetime, ">");
+		if (max==NULL)
+		    {
+		    max=leasetime;
+		    leasetime="3660";
+		    }
 		if (!interface || !start || !dhcpon || !max || !leasetime)
 			break;
 		char vlan_name[32];
