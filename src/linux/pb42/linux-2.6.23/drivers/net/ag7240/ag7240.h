@@ -55,7 +55,7 @@
         ENET_AC_VO)
 #endif
 
-#define CHECK_DMA_STATUS 1
+//#define CHECK_DMA_STATUS 1
 #define ETH_SOFT_LED 1
 
 #ifdef AG7240_DEBUG
@@ -81,6 +81,7 @@ typedef struct {
     uint32_t    pkt_size       : 12;
 
     uint32_t    next_desc      ;
+    uint32_t 	pad;
 }ag7240_desc_t;
 
 /*
@@ -92,6 +93,9 @@ typedef struct {
     ag7240_desc_t  *buf_lastds;     /*the last desc. (for convenience)*/
 #ifdef CHECK_DMA_STATUS
     unsigned long   trans_start;    /*  descriptor time stamp */
+#else
+    uint32_t 	pad;
+
 #endif
 }ag7240_buffer_t;
 
@@ -132,7 +136,6 @@ typedef struct {
     uint32_t                mac_unit;
     uint32_t                mac_base;
     int                     mac_irq;
-    uint8_t                 mac_ifup;
 #ifdef CONFIG_AG7240_QOS
     ag7240_ring_t           mac_txring[ENET_NUM_AC];
 #else
@@ -148,11 +151,12 @@ typedef struct {
     int                     mac_fdx;
     struct timer_list       mac_phy_timer;
     ag7240_trc_t            tb;
-#ifdef CHECK_DMA_STATUS
-    uint8_t		    dma_check;
-#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
     struct napi_struct mac_napi;
+#endif
+    uint32_t                 mac_ifup;
+#ifdef CHECK_DMA_STATUS
+    uint32_t		    dma_check;
 #endif
 }ag7240_mac_t;
 
