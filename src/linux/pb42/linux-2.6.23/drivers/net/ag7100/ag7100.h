@@ -160,7 +160,7 @@ typedef enum {
 #define AG71XX_TX_MTU_LEN	1536
 #define AG7100_RX_RESERVE           (64)
 #define AG7100_RX_BUF_SIZE      \
-    (AG7100_RX_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETHERNET_FCS_SIZE + 4)
+    (AG7100_RX_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETHERNET_FCS_SIZE)
 
 
 #define ag7100_mac_base(_no)    (_no) ? AR7100_GE1_BASE    : AR7100_GE0_BASE
