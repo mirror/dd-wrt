@@ -13,7 +13,6 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/delay.h>
-#include <linux/gpio.h>
 #include <linux/spinlock.h>
 #include <linux/skbuff.h>
 #include <linux/phy.h>
@@ -59,8 +58,8 @@
 
 #define RTL8366RB_PHY_PAGE_MASK		(0xf << 5)
 
-#define RTL8366_SMI_ACK_RETRY_COUNT	5
-#define RTL8366_SMI_CLK_DELAY		10 /* nsec */
+#define RTL8366_SMI_ACK_RETRY_COUNT	10
+#define RTL8366_SMI_CLK_DELAY		2 /* nsec */
 #define RTL8368S_REGBITLENGTH		16
 
 // ADDED DEFINES
@@ -224,7 +223,53 @@ struct rtl8368s_user_vlan4kentry_s {
 
 static inline void rtl8366_smi_clk_delay(struct rtl8366_smi *smi)
 {
-	ndelay(RTL8366_SMI_CLK_DELAY);
+	udelay(RTL8366_SMI_CLK_DELAY);
+}
+
+
+
+static inline void gpio_direction_input(uint32_t gpio)
+{
+	*(volatile int *)(0xb8040000) &= ~(1<<gpio);//change to input	
+}
+
+static inline void gpio_direction_output(uint32_t gpio)
+{
+	*(volatile int *)(0xb8040000) |= (1<<gpio);//change to output	
+}
+
+static inline uint32_t gpio_get_value(uint32_t gpio)
+{	
+	 if((*(volatile unsigned long *)0xb8040004) & (1<<gpio))
+	 	return 1;
+	 else
+	 	return 0;			
+}
+
+static inline void gpio_set_value(uint32_t gpio, uint32_t v)
+{	
+	if (v) {//hifh		
+		*(volatile int *)(0xb8040008) |= 1<<gpio;
+	} else {//low		
+		*(volatile int *)(0xb8040008) &= ~(1<<gpio);		
+	}
+}
+
+
+static int init_smi = 0;
+
+static void rtl8366_smi_init(struct rtl8366_smi *smi)
+{
+	unsigned int sda = smi->pdata->gpio_sda;
+	unsigned int sck = smi->pdata->gpio_sck;
+	if(init_smi == 1)
+	{
+		return;
+	}
+	gpio_direction_input(sda);
+	gpio_direction_input(sck);
+	rtl8366_smi_clk_delay(smi);
+
 }
 
 static void rtl8366_smi_start(struct rtl8366_smi *smi)
@@ -236,10 +281,14 @@ static void rtl8366_smi_start(struct rtl8366_smi *smi)
 	 * Set GPIO pins to output mode, with initial state:
 	 * SCK = 0, SDA = 1
 	 */
-	gpio_direction_output(sck, 0);
-	gpio_direction_output(sda, 1);
+	gpio_direction_output(sck);
+	gpio_direction_output(sda);
 	rtl8366_smi_clk_delay(smi);
 
+	gpio_set_value(sck, 0);
+	gpio_set_value(sda, 1);
+	rtl8366_smi_clk_delay(smi);
+	
 	/* CLK 1: 0 -> 1, 1 -> 0 */
 	gpio_set_value(sck, 1);
 	rtl8366_smi_clk_delay(smi);
@@ -327,7 +376,7 @@ static void rtl8366_smi_read_bits(struct rtl8366_smi *smi, u32 len, u32 *data)
 		*data |= (u << (len - 1));
 	}
 
-	gpio_direction_output(sda, 0);
+	gpio_direction_output(sda);
 }
 
 static int rtl8366_smi_wait_for_ack(struct rtl8366_smi *smi)
@@ -394,8 +443,15 @@ static int rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 
 	rtl8366_smi_start(smi);
 
+	rtl8366_smi_write_bits(smi,0x0a, 4); 					/* CTRL code: 4'b1010 */
+
+	rtl8366_smi_write_bits(smi,0x4, 3);						/* CTRL code: 3'b100 */
+
+	rtl8366_smi_write_bits(smi,0x1, 1);						/* 1: issue READ command */
+
+	ret = rtl8366_smi_wait_for_ack(smi);
 	/* send READ command */
-	ret = rtl8366_smi_write_byte(smi, 0x0a << 4 | 0x04 << 1 | 0x01);
+//	ret = rtl8366_smi_write_byte(smi, 0x0a << 4 | 0x04 << 1 | 0x01);
 	if (ret)
 		goto out;
 
@@ -419,6 +475,8 @@ static int rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 	ret = 0;
 
  out:
+	if (ret)
+	    printk(KERN_EMERG "%s: no ack received\n",__func__);
 	rtl8366_smi_stop(smi);
 	spin_unlock_irqrestore(&smi->lock, flags);
 
@@ -435,7 +493,14 @@ static int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 	rtl8366_smi_start(smi);
 
 	/* send WRITE command */
-	ret = rtl8366_smi_write_byte(smi, 0x0a << 4 | 0x04 << 1 | 0x00);
+	rtl8366_smi_write_bits(smi,0x0a, 4); 					/* CTRL code: 4'b1010 */
+
+	rtl8366_smi_write_bits(smi,0x4, 3);						/* CTRL code: 3'b100 */
+
+	rtl8366_smi_write_bits(smi,0x0, 1);						/* 1: issue READ command */
+
+
+	ret = rtl8366_smi_wait_for_ack(smi);
 	if (ret)
 		goto out;
 
@@ -462,6 +527,8 @@ static int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 	ret = 0;
 
  out:
+	if (ret)
+	    printk(KERN_EMERG "%s: no ack received\n",__func__);
 	rtl8366_smi_stop(smi);
 	spin_unlock_irqrestore(&smi->lock, flags);
 
@@ -1619,7 +1686,7 @@ static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 	int ret;
 	int i;
 
-	smi->mii_bus = mdiobus_alloc();
+	smi->mii_bus = (struct mii_bus *)kzalloc(sizeof(struct mii_bus),GFP_KERNEL);
 	if (smi->mii_bus == NULL) {
 		ret = -ENOMEM;
 		goto err;
@@ -1630,9 +1697,8 @@ static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 	smi->mii_bus->name = "rtl8366-smi";
 	smi->mii_bus->read = rtl8366_smi_mii_read;
 	smi->mii_bus->write = rtl8366_smi_mii_write;
-	snprintf(smi->mii_bus->id, MII_BUS_ID_SIZE, "%s",
-			dev_name(&smi->pdev->dev));
-	smi->mii_bus->parent = &smi->pdev->dev;
+	smi->mii_bus->id = smi->pdev->id;
+	//smi->mii_bus->parent = &smi->pdev->dev;
 	smi->mii_bus->phy_mask = ~(0x1f);
 	smi->mii_bus->irq = smi->mii_irq;
 	for (i = 0; i < PHY_MAX_ADDR; i++)
@@ -1649,7 +1715,7 @@ static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 	return 0;
 
  err_free:
-	mdiobus_free(smi->mii_bus);
+	kfree(smi->mii_bus);
  err:
 	return ret;
 }
@@ -1657,20 +1723,25 @@ static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
 {
 	mdiobus_unregister(smi->mii_bus);
-	mdiobus_free(smi->mii_bus);
+	kfree(smi->mii_bus);
 }
 
 static int rtl8366_smi_setup(struct rtl8366_smi *smi)
 {
 	u32 t;
 	u32 chip_id = 0;
+	u32 chip2_id = 0;
 	u32 chip_ver = 0;
 	int ret;
+	rtl8366_smi_init(smi);
 
 	ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_ID_REG, &chip_id);
 		
 	if (chip_id != RTL8366S_CHIP_ID_8366)
 		ret = rtl8366_smi_read_reg(smi, RTL8366RB_CHIP_ID_REG, &chip_id);
+
+		ret = rtl8366_smi_read_reg(smi, RTL8366RB_CHIP_ID_REG, &chip_id);
+
 	
 	if (ret) {
 		dev_err(&smi->pdev->dev, "unable to read chip id\n");
@@ -1683,8 +1754,7 @@ static int rtl8366_smi_setup(struct rtl8366_smi *smi)
 		ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_VERSION_CTRL_REG,
 				   &chip_ver);
 		break;
-	case 
-		RTL8366RB_CHIP_ID_8366:
+	case RTL8366RB_CHIP_ID_8366:
 		ret = rtl8366_smi_read_reg(smi, RTL8366RB_CHIP_VERSION_CTRL_REG,
 				   &chip_ver);
 		break;
@@ -1731,7 +1801,7 @@ static int __init rtl8366rb_smi_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	err = gpio_request(pdata->gpio_sda, dev_name(&pdev->dev));
+/*	err = gpio_request(pdata->gpio_sda, dev_name(&pdev->dev));
 	if (err) {
 		dev_err(&pdev->dev, "gpio_request failed for %u, err=%d\n",
 			pdata->gpio_sda, err);
@@ -1743,7 +1813,7 @@ static int __init rtl8366rb_smi_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "gpio_request failed for %u, err=%d\n",
 			pdata->gpio_sck, err);
 		goto err_free_sda;
-	}
+	}*/
 
 	smi->pdev = pdev;
 	smi->pdata = pdata;
@@ -1771,9 +1841,7 @@ static int __init rtl8366rb_smi_probe(struct platform_device *pdev)
 
  err_clear_drvdata:
 	platform_set_drvdata(pdev, NULL);
-	gpio_free(pdata->gpio_sck);
  err_free_sda:
-	gpio_free(pdata->gpio_sda);
  err_free_smi:
 	kfree(smi);
  err_out:
@@ -1791,8 +1859,6 @@ static int __devexit rtl8366rb_smi_remove(struct platform_device *pdev)
 
 		rtl8366_smi_mii_cleanup(smi);
 		platform_set_drvdata(pdev, NULL);
-		gpio_free(pdata->gpio_sck);
-		gpio_free(pdata->gpio_sda);
 		kfree(smi);
 	}
 

@@ -18,30 +18,17 @@
 #define __AR8216_H
 
 #define BITS(_s, _n)	(((1UL << (_n)) - 1) << _s)
+#define BIT(nr)			(1UL << (nr))
 
 #define AR8216_PORT_CPU	0
 #define AR8216_NUM_PORTS	6
 #define AR8216_NUM_VLANS	16
-#define AR8316_NUM_VLANS	4096
-
-/* Atheros specific MII registers */
-#define MII_ATH_DBG_ADDR		0x1d
-#define MII_ATH_DBG_DATA		0x1e
 
 #define AR8216_REG_CTRL			0x0000
-#define   AR8216_CTRL_REVISION		BITS(0, 8)
-#define   AR8216_CTRL_REVISION_S	0
-#define   AR8216_CTRL_VERSION		BITS(8, 8)
-#define   AR8216_CTRL_VERSION_S		8
 #define   AR8216_CTRL_RESET		BIT(31)
 
-#define AR8216_REG_FLOOD_MASK		0x002C
-#define   AR8216_FM_UNI_DEST_PORTS	BITS(0, 6)
-#define   AR8216_FM_MULTI_DEST_PORTS	BITS(16, 6)
-
 #define AR8216_REG_GLOBAL_CTRL		0x0030
-#define   AR8216_GCTRL_MTU		BITS(0, 11)
-#define   AR8316_GCTRL_MTU		BITS(0, 14)
+#define   AR8216_GCTRL_MTU		BITS(0, 10)
 
 #define AR8216_REG_VTU			0x0040
 #define   AR8216_VTU_OP			BITS(0, 3)
@@ -76,24 +63,19 @@
 #define   AR8216_ATU_ACTIVE		BIT(3)
 #define   AR8216_ATU_PORT_NUM		BITS(8, 4)
 #define   AR8216_ATU_FULL_VIO		BIT(12)
-#define   AR8216_ATU_ADDR4		BITS(16, 8)
-#define   AR8216_ATU_ADDR5		BITS(24, 8)
+#define   AR8216_ATU_ADDR4		BIT(16, 8)
+#define   AR8216_ATU_ADDR5		BIT(24, 8)
 
 #define AR8216_REG_ATU_DATA		0x0054
-#define   AR8216_ATU_ADDR3		BITS(0, 8)
-#define   AR8216_ATU_ADDR2		BITS(8, 8)
-#define   AR8216_ATU_ADDR1		BITS(16, 8)
-#define   AR8216_ATU_ADDR0		BITS(24, 8)
+#define   AR8216_ATU_ADDR3		BIT(0, 8)
+#define   AR8216_ATU_ADDR2		BIT(8, 8)
+#define   AR8216_ATU_ADDR1		BIT(16, 8)
+#define   AR8216_ATU_ADDR0		BIT(24, 8)
 
-#define AR8216_REG_ATU_CTRL		0x005C
-#define   AR8216_ATU_CTRL_AGE_EN	BIT(17)
-#define   AR8216_ATU_CTRL_AGE_TIME	BITS(0, 16)
-#define   AR8216_ATU_CTRL_AGE_TIME_S	0
-
-#define AR8216_PORT_OFFSET(_i)		(0x0100 * (_i + 1))
+#define AR8216_PORT_OFFSET(_i)		(0x0100 * (i + 1))
 #define AR8216_REG_PORT_STATUS(_i)	(AR8216_PORT_OFFSET(_i) + 0x0000)
-#define   AR8216_PORT_STATUS_SPEED	BITS(0,2)
-#define   AR8216_PORT_STATUS_SPEED_S	0
+#define   AR8216_PORT_STATUS_SPEED	BIT(0)
+#define   AR8216_PORT_STATUS_SPEED_ERR	BIT(1)
 #define   AR8216_PORT_STATUS_TXMAC	BIT(2)
 #define   AR8216_PORT_STATUS_RXMAC	BIT(3)
 #define   AR8216_PORT_STATUS_TXFLOW	BIT(4)
@@ -145,14 +127,6 @@
 #define AR8216_REG_PORT_RATE(_i)	(AR8216_PORT_OFFSET(_i) + 0x000c)
 #define AR8216_REG_PORT_PRIO(_i)	(AR8216_PORT_OFFSET(_i) + 0x0010)
 
-/* port speed */
-enum {
-        AR8216_PORT_SPEED_10M = 0,
-        AR8216_PORT_SPEED_100M = 1,
-        AR8216_PORT_SPEED_1000M = 2,
-        AR8216_PORT_SPEED_ERR = 3,
-};
-
 /* ingress 802.1q mode */
 enum {
 	AR8216_IN_PORT_ONLY = 0,
@@ -175,13 +149,6 @@ enum {
 	AR8216_PORT_STATE_LISTEN = 2,
 	AR8216_PORT_STATE_LEARN = 3,
 	AR8216_PORT_STATE_FORWARD = 4
-};
-
-/* device */
-enum {
-  UNKNOWN = 0,
-  AR8216 = 8216,
-  AR8316 = 8316
 };
 
 #endif
