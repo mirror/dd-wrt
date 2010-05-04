@@ -1497,12 +1497,14 @@ process_pkts:
      * check will clear these bits if a hang condition is detected
      * on resetting the MAC.
      */ 
+#ifdef CHECK_DMA_STATUS
     if(mac->dma_check == 0) {
         assert((status & AG7240_RX_STATUS_PKT_RCVD));
         assert((status >> 16));
     }
     else
 	mac->dma_check = 0;
+#endif
     /*
     * Flush the DDR FIFOs for our gmac
     */
