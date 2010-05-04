@@ -161,12 +161,16 @@ static int getMaxPower(char *ifname)
 	return max;
 }
 
-static void setupKey(char *prefix)
+void setupKey(char *prefix)
 {
 	char akm[16];
+	char mode[16];
 
 	sprintf(akm, "%s_akm", prefix);
-	if (nvram_match(akm, "wep")) {
+	sprintf(mode, "%s_mode", prefix);
+	if (nvram_match(akm, "wep")
+	    && (nvram_match(mode, "ap") || nvram_match(mode, "wdsap")
+		|| nvram_match(mode, "adhoc"))) {
 		char key[16];
 		int cnt = 1;
 		int i;
@@ -183,7 +187,8 @@ static void setupKey(char *prefix)
 				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey);	// setup wep
 			}
 		}
-		sysprintf("iwconfig %s key [%s]", prefix,nvram_nget("%s_key", prefix));
+		sysprintf("iwconfig %s key [%s]", prefix,
+			  nvram_nget("%s_key", prefix));
 	}
 
 }
@@ -202,6 +207,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	char wmode[16];
 	char *background = "-B";
 	char *debug;
+	int i;
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	if (debug != NULL) {
 		if (!strcmp(debug, "1"))
@@ -215,10 +221,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
 	sprintf(bridged, "%s_bridged", prefix);
-	if (nvram_match(akm, "wep")) {
-		/* ignore */
-	} else if (nvram_match(akm, "psk") ||
-		   nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
+	if (nvram_match(akm, "psk") ||
+	    nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
 		char fstr[32];
 		char psk[16];
 
@@ -459,7 +463,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		else
 			eval("wpa_supplicant", background, "-Dmadwifi", psk,
 			     "-c", fstr);
-	} else if (nvram_match(akm, "disabled")) {
+	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
 		char fstr[32];
 		char psk[16];
 
@@ -477,6 +481,28 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=NONE\n");
+		if (nvram_match(akm, "wep")) {
+			int cnt = 0;
+			char *authmode = nvram_nget("%s_authmode", prefix);
+
+			if (!strcmp(authmode, "shared"))
+				fprintf(fp, "auth_alg=shared\n");
+			else
+				fprintf(fp, "auth_alg=open\n");
+
+			for (i = 1; i < 5; i++) {
+				char *athkey =
+				    nvram_nget("%s_key%d", prefix, i);
+
+				if (athkey != NULL && strlen(athkey) > 0) {
+					fprintf(fp, "wep_key%d=%s", cnt++, athkey);	// setup wep
+				}
+			}
+
+			fprintf(fp, "wep_tx_keyidx=%s\n",
+				nvram_nget("%s_key", prefix));
+
+		}
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
@@ -492,8 +518,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		else
 			eval("wpa_supplicant", background, "-Dmadwifi", psk,
 			     "-c", fstr);
-	
-	
+
 	}
 
 }
