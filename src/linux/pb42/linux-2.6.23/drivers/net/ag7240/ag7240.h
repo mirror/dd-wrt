@@ -145,7 +145,9 @@ typedef struct {
     ag7240_stats_t          mac_stats;
     spinlock_t              mac_lock;
     struct timer_list       mac_oom_timer;
+#ifdef CHECK_DMA_STATUS
     struct work_struct      mac_tx_timeout;
+#endif
     struct net_device_stats mac_net_stats;
     ag7240_phy_speed_t      mac_speed;
     int                     mac_fdx;
