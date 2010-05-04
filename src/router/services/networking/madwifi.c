@@ -476,7 +476,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tscan_ssid=1\n");
-
+		fprintf(fp, "\tkey_mgmt=NONE\n");
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
