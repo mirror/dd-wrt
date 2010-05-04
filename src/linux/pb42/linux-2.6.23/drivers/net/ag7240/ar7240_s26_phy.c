@@ -572,7 +572,6 @@ void athrs26_phy_off(ag7240_mac_t *mac)
         return;
         
     netif_carrier_off(dev);
-    netif_stop_queue(dev);
 
     phy_val_saved = s26_rd_phy(ATHR_PHY4_ADDR,ATHR_PHY_CONTROL);
     s26_wr_phy( ATHR_PHY4_ADDR, ATHR_PHY_CONTROL, phy_val_saved | 0x800);
