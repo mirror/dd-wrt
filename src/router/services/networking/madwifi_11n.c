@@ -1094,8 +1094,6 @@ void configure_single_11n(int count)
 				  nvram_nget("%s_ipaddr", dev),
 				  nvram_nget("%s_netmask", dev));
 		}
-		if (nvram_match(channel,"0"))
-		    sleep(10);
 	} else {
 		char bridged[32];
 
