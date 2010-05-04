@@ -125,10 +125,8 @@ extern int  LogLastErrno;         // last logged errno value
 extern char LogLastMsg[ 128 ];    // last logged message
 
 #define	    IF_DEBUG	if(0)
-//#define	    IF_DEBUG	if(Log2Stderr & LOG_DEBUG)
 
 #define log(s,e,fmt,...) 
-//void log( int Serverity, int Errno, const char *FmtSt, ... );
 
 /* ifvc.c
  */
