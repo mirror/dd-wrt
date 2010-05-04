@@ -495,7 +495,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				    nvram_nget("%s_key%d", prefix, i);
 
 				if (athkey != NULL && strlen(athkey) > 0) {
-					fprintf(fp, "wep_key%d=%s", cnt++, athkey);	// setup wep
+					fprintf(fp, "wep_key%d=%s\n", cnt++, athkey);	// setup wep
 				}
 			}
 
