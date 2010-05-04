@@ -1989,6 +1989,7 @@ ag7240_oom_timer(unsigned long data)
 #endif
 }
 
+#ifdef CHECK_DMA_STATUS
 static void
 ag7240_tx_timeout(struct net_device *dev)
 {
@@ -2008,6 +2009,7 @@ ag7240_tx_timeout_task(struct work_struct *work)
     ag7240_trc(mac,"mac");
     check_for_dma_status(mac);
 }
+#endif
 
 static void
 ag7240_get_default_macaddr(ag7240_mac_t *mac, u8 *mac_addr)
@@ -2193,7 +2195,9 @@ ag7240_init(void)
         * watchdog task
         */
 
+#ifdef CHECK_DMA_STATUS
         INIT_WORK(&mac->mac_tx_timeout, ag7240_tx_timeout_task);
+#endif
 
         dev = alloc_etherdev(0);
         if (!dev)
@@ -2216,7 +2220,9 @@ ag7240_init(void)
         dev->poll            =  ag7240_poll;
         dev->weight          =  AG7240_NAPI_WEIGHT;
 #endif
+#ifdef CHECK_DMA_STATUS
         dev->tx_timeout      =  ag7240_tx_timeout;
+#endif
         dev->priv            =  mac;
 
         ag7240_get_default_macaddr(mac, dev->dev_addr);
