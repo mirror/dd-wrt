@@ -459,6 +459,41 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		else
 			eval("wpa_supplicant", background, "-Dmadwifi", psk,
 			     "-c", fstr);
+	} else if (nvram_match(akm, "disabled")) {
+		char fstr[32];
+		char psk[16];
+
+		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
+		FILE *fp = fopen(fstr, "wb");
+
+		fprintf(fp, "ap_scan=1\n");
+		// fprintf (fp, "ctrl_interface_group=0\n");
+		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+
+		fprintf(fp, "network={\n");
+		if (!ssidoverride)
+			ssidoverride = nvram_nget("%s_ssid", prefix);
+		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
+		// fprintf (fp, "\tmode=0\n");
+		fprintf(fp, "\tscan_ssid=1\n");
+
+		fprintf(fp, "}\n");
+		char extra[32];
+		sprintf(extra, "%s_supplicantext", prefix);
+		if (nvram_invmatch(extra, ""))
+			fwritenvram(extra, fp);
+
+		fclose(fp);
+		sprintf(psk, "-i%s", prefix);
+		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
+		    && nvram_match(bridged, "1"))
+			eval("wpa_supplicant", "-b", getBridge(prefix),
+			     background, "-Dmadwifi", psk, "-c", fstr);
+		else
+			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			     "-c", fstr);
+	
+	
 	}
 
 }
