@@ -309,7 +309,6 @@ ag7240_open(struct net_device *dev)
      * Keep carrier off while initialization and switch it once the link is up.
      */
     netif_carrier_off(dev);
-    netif_stop_queue(dev);
     napi_enable(&mac->mac_napi);
 
  
@@ -317,7 +316,8 @@ ag7240_open(struct net_device *dev)
     ag7240_int_enable(mac);
     athrs26_enable_linkIntrs(mac->mac_unit);
 
-    ag7240_rx_start(mac);
+    ag7240_rx_start(mac);	
+    netif_start_queue(dev);
    
     return 0;
 
@@ -337,8 +337,8 @@ ag7240_stop(struct net_device *dev)
     spin_lock_irqsave(&mac->mac_lock, flags);
     mac->mac_ifup = 0;
     napi_disable(&mac->mac_napi);
-    netif_stop_queue(dev);
     netif_carrier_off(dev);
+    netif_stop_queue(dev);
 
     ag7240_hw_stop(mac);
     free_irq(mac->mac_irq, dev);
@@ -929,7 +929,6 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
             ag7240_intr_disable_tx(mac);
 
             netif_carrier_off(dev);
-            netif_stop_queue(dev);
 #ifdef  ETH_SOFT_LED
        PLedCtrl.ledlink[phyUnit] = 0;
        s26_wr_phy(phyUnit,0x19,0x0);
@@ -982,7 +981,6 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
        * in business
        */
        netif_carrier_on(dev);
-       netif_start_queue(dev);
        /* 
         * WAR: Enable link LED to glow if speed is negotiated as 10 Mbps 
        */
@@ -1078,8 +1076,8 @@ ag7240_handle_tx_full(ag7240_mac_t *mac)
     assert(!netif_queue_stopped(mac->mac_dev));
 
     mac->mac_net_stats.tx_fifo_errors ++;
-
     netif_stop_queue(mac->mac_dev);
+
 
     spin_lock_irqsave(&mac->mac_lock, flags);
     ag7240_intr_enable_tx(mac);
