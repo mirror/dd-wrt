@@ -138,34 +138,6 @@ static int getMaxPower(char *ifname)
 	return max;
 }
 
-static void setupKey(char *prefix)
-{
-	char akm[16];
-
-	sprintf(akm, "%s_akm", prefix);
-	if (nvram_match(akm, "wep")) {
-		char key[16];
-		int cnt = 1;
-		int i;
-		char bul[8];
-		char *authmode = nvram_nget("%s_authmode", prefix);
-		if (!strcmp(authmode, "shared"))
-			sysprintf("iwpriv %s authmode 2", prefix);
-		else
-			sysprintf("iwpriv %s authmode 1", prefix);
-		for (i = 1; i < 5; i++) {
-			char *athkey = nvram_nget("%s_key%d", prefix, i);
-
-			if (athkey != NULL && strlen(athkey) > 0) {
-				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey);	// setup wep
-			}
-		}
-		sysprintf("iwconfig %s key [%s]", prefix,
-			  nvram_nget("%s_key", prefix));
-	}
-
-}
-
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
 static void set_scanlist(char *dev, char *wif)
 {
