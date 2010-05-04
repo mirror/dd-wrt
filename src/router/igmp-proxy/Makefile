@@ -4,7 +4,7 @@ BINDIR=/usr/local/bin
 ETCDIR=/etc
 MANDIR=/usr/share/man
 
-CFLAGS=$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS=$(COPTS) -O2  -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS=  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
