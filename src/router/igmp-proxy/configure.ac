@@ -7,6 +7,7 @@ AC_PROG_CC_C99
 
 AC_CANONICAL_HOST
 case $host_os in
+	elf*) os=linux;;
 	linux*) os=linux;;
 	freebsd*) os=freebsd;;
 	netbsd*) os=netbsd;;
