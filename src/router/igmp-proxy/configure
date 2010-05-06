@@ -3722,7 +3722,6 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 case $host_os in
-	elf*) os=linux;;
 	linux*) os=linux;;
 	freebsd*) os=freebsd;;
 	netbsd*) os=netbsd;;
