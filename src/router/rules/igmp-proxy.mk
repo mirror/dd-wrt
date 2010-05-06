@@ -7,6 +7,6 @@ igmp-proxy-clean:
 igmp-proxy:
 	make -C igmp-proxy
 
-igmp-install:
+igmp-proxy-install:
 	install -D igmp-proxy/src/igmp-proxy $(INSTALLDIR)/igmp-proxy/usr/sbin
 
