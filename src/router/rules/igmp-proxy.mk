@@ -8,5 +8,5 @@ igmp-proxy:
 	make -C igmp-proxy
 
 igmp-proxy-install:
-	install -D igmp-proxy/src/igmp-proxy $(INSTALLDIR)/igmp-proxy/usr/sbin
+	install -D igmp-proxy/src/igmpproxy $(INSTALLDIR)/igmp-proxy/usr/sbin/igmprt
 
