@@ -1271,7 +1271,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 	else
 		strncpy(wanface, nvram_safe_get("ttraff_iface"),
 			sizeof(wanface));
-
+	strcat(wanface,":");
 	in = fopen("/proc/net/dev", "rb");
 	if (in == NULL)
 		return;
