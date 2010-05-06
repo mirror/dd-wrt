@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 	else
 		strncpy(wanface, nvram_safe_get("ttraff_iface"),
 			sizeof(wanface));
-
+	strcat(wanface,":");
 	/* 
 	 * now we can loop and collect data 
 	 */
