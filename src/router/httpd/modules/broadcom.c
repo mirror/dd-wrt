@@ -2028,6 +2028,9 @@ static void do_fetchif(struct mime_handler *handler, char *url,
 	char line[256];
 	int i, llen;
 	char buffer[256];
+	char querybuffer[32];
+	strncpy(querybuffer,query,30);
+	strcat(querybuffer,":");
 
 	if (query == NULL || strlen(query) == 0)
 		return;
@@ -2050,7 +2053,7 @@ static void do_fetchif(struct mime_handler *handler, char *url,
 	while (fgets(line, sizeof(line), in) != NULL) {
 		if (!strchr(line, ':'))
 			continue;
-		if (strstr(line, query)) {
+		if (strstr(line, querybuffer)) {
 			llen = strlen(line);
 			for (i = 0; i < llen; i++) {
 				buffer[strbuffer++] = line[i];
