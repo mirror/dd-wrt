@@ -33,7 +33,7 @@ void start_igmp_proxy(void)
 	int ret = 0;
 	pid_t pid;
 	char name[80], *next, *svbuf;
-	char *argv[] = { "igmprt", NULL };
+	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
 	int ifcount = 0;
 
