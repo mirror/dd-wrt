@@ -10,28 +10,10 @@ function process_aborted(F) {
 }
 
 
-function extcheck(IMAGE, ext, len)
-{
-	for (i=0; i < 4; i++)	{
-		if (ext[i] != IMAGE.charAt(len-4+i)){
-			return false;
-		}
-	}
-	return true;
-}
-
 function upgrade(F,id) {
 	if (F.file.value == "")	{
 		alert(errmsg.err60);
 		return false;
-	}
-	var len = F.file.value.length;
-	var ext = new Array('.','b','i','n');
-	var ext2 = new Array('.','e','n','c');
-	var IMAGE = F.file.value.toLowerCase();
-	if (!extcheck(IMAGE,ext,len) && !extcheck(IMAGE,ext2,len)) {
-			alert(errmsg.err61);
-			return false;	
 	}
 
 	choose_disable(F.Upgrade_b);
