@@ -198,8 +198,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	for (i = 0; i < linuxsize; i++)
 		putc(getc(fifo), out);
 	fclose(out);
-	sysprintf("sync|dd if=/tmp/flash of=/dev/discs/disc%d/disc|sync",
-		  getdiscindex());
+	sysprintf("sync");
+	sysprintf("dd if=/tmp/flash of=/dev/discs/disc%d/disc",getdiscindex());
+	sysprintf("sync");
 	/*
 	 * Wait for write to terminate 
 	 */
