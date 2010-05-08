@@ -138,11 +138,11 @@ void acceptIgmp(int recvlen) {
                     inetFmt(src, s1), inetFmt(dst, s2));
                 return;
             }
-            else if(!isAdressValidForIf(checkVIF, src)) {
+/*            else if(!isAdressValidForIf(checkVIF, src)) {
                 my_log(LOG_WARNING, 0, "The source address %s for group %s, is not in any valid net for upstream VIF.",
                     inetFmt(src, s1), inetFmt(dst, s2));
                 return;
-            }
+            }*/
             
             // Activate the route.
             my_log(LOG_DEBUG, 0, "Route activate request from %s to %s",
