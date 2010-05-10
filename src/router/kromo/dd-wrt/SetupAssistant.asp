@@ -6,7 +6,7 @@ var wan_proto = "<% nvram_selget("wan_proto"); %>";
 var dhcp_win = null;
 
 function pptpUseDHCP(F, val) {
-	setElementsActive("wan_ipaddr_0", "wan_netmask_3", val==0)
+	setElementsActive("wan_ipaddr_0", "wan_gateway_3", val==0)
 }
 
 function valid_mtu(I) {
@@ -545,6 +545,8 @@ function to_apply(F) {
     if(submitcheck(F)) {
     	F.submit_type.value = "save";
     	F.save_button.value = sbutton.saving;
+	F.next_page.disabled = false;
+	F.next_page.value = "index.asp";
     	applytake(F);
     }
 }
@@ -559,15 +561,16 @@ addEvent(window, "load", function() {
 	
 	// WAN
 	//mtu_enable_disable(document.setupassistant,'<% nvram_selget("mtu_enable"); %>');
-
+	
+	if (document.setupassistant.now_proto.value == "pptp")
+		pptpUseDHCP(document.setupassistant, '<% nvram_selget("pptp_use_dhcp"); %>');
+	    
 	if (document.setupassistant.now_proto.value == "pppoe" ||
 		document.setupassistant.now_proto.value == "pptp" ||
 		document.setupassistant.now_proto.value == "l2tp" ||
-		document.setupassistant.now_proto.value == "heartbeat")
-			ppp_enable_disable(document.setup,'<% nvram_selget("ppp_demand"); %>');
-	if (document.setupassistant.now_proto.value == "pptp")
-	    pptpUseDHCP(document.setupassistant, '<% nvram_selget("pptp_use_dhcp"); %>')
-	    
+		document.setupassistant.now_proto.value == "heartbeat") 
+			ppp_enable_disable(document.setupassistant,'<% nvram_selget("ppp_demand"); %>');
+	
 	dhcp_enable_disable(document.setupassistant,'<% nvram_selget("lan_proto"); %>');
 	setDNSMasq(document.setupassistant);
 	
@@ -645,6 +648,7 @@ function submitSavePrevButtons() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="next_page" disabled />
 							
 							<input type="hidden" name="sas_stage" value="<% print_sas_stage(); %>">
 							

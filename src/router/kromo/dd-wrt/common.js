@@ -893,16 +893,75 @@ function StatusbarUpdate() {
 
 }
 
+function invalidTextValue( value ) {
+	var needle = new Array(
+		'<',
+		'>'
+		);
+	
+	if( value ) {
+		var i = 0;
+		var chars = '';
+		
+		for(i = 0; i < needle.length; i++) {
+			re = new RegExp( needle[i] );
+			if( value.match( re ) ) {
+				if( chars.length ) {
+					chars = chars + ', ' + needle[i];
+				} else {
+					chars = needle[i];
+				}
+			}	
+		}
+		if(chars.length) {
+			return chars;
+		}
+	}
+	return false;
+}
+
+function getInputLabel( type, name ) {
+	var elements = document.getElementsByTagName( type );
+	for(var i = 0; i < elements.length; i++) {
+		if( elements[i].name == name && elements[i].parentNode.children ) {
+			if( elements[i].parentNode.children[0].className == "label" ) {
+				return elements[i].parentNode.children[0].innerHTML.match(/[^>]+$/);
+			}
+		}
+	}
+	return name;
+}
+
+function checkformelements( form ) {
+	var errors = null;
+	var i = 0;
+	for( i = 0; i < form.elements.length; i++ ) {
+		if( form.elements[i].type == 'text' ) {
+			if( chars = invalidTextValue(form.elements[i].value ) ) {
+				alert('Invalid input characters "' + chars + '" in field "' + getInputLabel( 'input', form.elements[i].name ) );
+				form.elements[i].style.border = "solid 2px #f00";
+				form.elements[i].focus();
+				return false;
+			}
+		}
+	}
+	return true;
+}
 
 // Gray all form when submitting
 function apply(form, text, delay) {
-	form.submit();
-	for (i = 0; i < form.elements.length; i++) {
-		if(defined(form.elements[i].disabled)) 
-			form.elements[i].disabled = true;
+	if( !checkformelements( form )) {
+		return false;
+	} else {
+		form.submit();
+		for (i = 0; i < form.elements.length; i++) {
+			if(defined(form.elements[i].disabled)) 
+				form.elements[i].disabled = true;
+		}
+		if (form.contents) document.getElementById("contents").style.color = '#999999';
 	}
-	if (form.contents) document.getElementById("contents").style.color = '#999999';
 }
+
 function applytake(form, text,seconds, delay) {
     form.action.value = "ApplyTake";
     if(!text)

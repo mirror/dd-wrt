@@ -45,14 +45,18 @@ struct variable **variables;
 
 void setupassistant_save(webs_t wp)
 {
-	fprintf(stderr, "[SetupAssistant Save]");
+	fprintf(stderr, "[SetupAssistant Save]\n");
 
 	// wireless
 	wireless_save(wp);
 
 	// security
 	security_save(wp);
-
+	
+	// aoss
+	fprintf(stderr, "[SetupAssistant Save] AOSS\n");
+	aoss_save(wp);
+	
 	// all other vars
 	validate_cgi(wp);
 }
