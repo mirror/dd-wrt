@@ -124,6 +124,54 @@ void ej_sas_nvram_checked(webs_t wp, int argc, char_t ** argv)
         return;
 }
 
+void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
+{
+        int i, st, en;
+        char ic[16];
+
+#ifndef FASTWEB
+        if (argc < 3) {
+                websError(wp, 400, "Insufficient args\n");
+                return;
+        }
+#endif
+
+        st = atoi(argv[1]);
+        en = atoi(argv[2]);
+
+        for (i = st; i <= en; i++) {
+                sprintf(ic, "%d", i);
+                websWrite(wp, "<option value=\"%d\" %s >%02d</option>\n", i,
+                          nvram_selmatch(wp, argv[0],
+                                      ic) ? "selected=\"selected\"" : "", i);
+        }
+
+        return;
+}
+
+/*
+ * Example:
+ * wan_proto=dhcp
+ * <% nvram_else_match("wan_proto", "dhcp", "0","1"); %> produces "0"
+ * <% nvram_else_match("wan_proto", "static", "0","1"); %> produces "1"
+ */
+void ej_sas_nvram_else_match(webs_t wp, int argc, char_t ** argv)
+{
+
+#ifndef FASTWEB
+        if (argc < 4) {
+                websError(wp, 400, "Insufficient args\n");
+                return;
+        }
+#endif
+        if (nvram_selmatch(wp, argv[0], argv[1])) {
+                websWrite(wp, argv[2]);
+        } else {
+                websWrite(wp, argv[3]);
+	}
+        return;
+}
+
 void ej_show_sas_stage(webs_t wp, int argc, char_t ** argv)
 {
 	do_ej(NULL, "sas_stage_1.asp", wp, NULL);
@@ -137,7 +185,7 @@ void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
 	if (type == NULL)
 		type = nvram_safe_get("wan_proto");
 	if (!strcmp(type, "static"))
-		do_ej(NULL, "index_static.asp", wp, NULL);
+		do_ej(NULL, "sas_static.asp", wp, NULL);
 #ifdef HAVE_PPPOE
 	else if (!strcmp(type, "pppoe"))
 		do_ej(NULL, "sas_pppoe.asp", wp, NULL);
@@ -148,15 +196,15 @@ void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_L2TP
 	else if (!strcmp(type, "l2tp"))
-		do_ej(NULL, "index_l2tp.asp", wp, NULL);
+		do_ej(NULL, "sas_l2tp.asp", wp, NULL);
 #endif
 #ifdef HAVE_HEARTBEAT
 	else if (!strcmp(type, "heartbeat"))
-		do_ej(NULL, "index_heartbeat.asp", wp, NULL);
+		do_ej(NULL, "sas_heartbeat.asp", wp, NULL);
 #endif
 #ifdef HAVE_3G
 	else if (!strcmp(type, "3g"))
-		do_ej(NULL, "index_3g.asp", wp, NULL);
+		do_ej(NULL, "sas_3g.asp", wp, NULL);
 #endif
 }
 
@@ -300,8 +348,11 @@ char *sas_get_single_ip(webs_t wp, char *label, int position)
 	if (nvram_match("gozila_action", "1")) {
 		sprintf(name, "%s_%i", label, position);
 		g = GOZILA_GET(wp, name);
+		fprintf(stderr, "[sas_get_single_ip] %s %s %i\n", name, g, position);
 		if (g) {
 			return g;
+		} else {
+			return "0";
 		}
 	}
 
@@ -353,16 +404,17 @@ void ej_sas_get_single_ip(webs_t wp, int argc, char_t ** argv)
 
 void ej_sas_get_single_nm(webs_t wp, int argc, char_t ** argv)
 {
-	char *c;
+/*	char *c;
 	char name[32];
-
+*/
 #ifndef FASTWEB
 	if (argc < 1) {
 		websError(wp, 400, "Insufficient args\n");
 		return;
 	}
 #endif
-	if (nvram_match("gozila_action", "1")) {
+	websWrite(wp, sas_get_single_ip(wp, argv[0], atoi(argv[1])));
+/*	if (nvram_match("gozila_action", "1")) {
 		sprintf(name, "%s_%i", argv[0], atoi(argv[1]));
 		websWrite(wp, GOZILA_GET(wp, name));
 		return;
@@ -373,7 +425,52 @@ void ej_sas_get_single_nm(webs_t wp, int argc, char_t ** argv)
 	} else
 		websWrite(wp, "0");
 
-	return;
+	return;*/
+}
+
+char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position) {
+	
+	int which;
+	char name[32];
+	char word[256], *next;
+	char d[32];
+	char *g;
+	
+	if (nvram_match("gozila_action", "1")) {
+		sprintf(name, "%s%i_%i", label, entry, position);
+		g = GOZILA_GET(wp, name);
+		if (g) {
+			return g;
+		}
+	}
+	
+        which = entry;
+        char *list = nvram_safe_get(label);
+	
+        foreach(word, list, next) {
+                if (which-- == 0) {
+                        sprintf(d, "%i", get_single_ip(word, position));
+			return d;
+                }
+        }
+
+        return "0";
+}
+
+/*
+ * Example: wan_dns = 168.95.1.1 210.66.161.125 168.95.192.1 <%
+ * get_dns_ip("wan_dns", "1", "2"); %> produces "161" <%
+ * get_dns_ip("wan_dns", "2", "3"); %> produces "1" 
+ */
+void ej_sas_get_dns_ip(webs_t wp, int argc, char_t ** argv)
+{
+#ifndef FASTWEB
+        if (argc < 3) {
+                websError(wp, 400, "Insufficient args\n");
+                return;
+        }
+#endif
+	websWrite(wp, "%s", sas_get_dns_ip(wp, argv[0], atoi(argv[1]), atoi(argv[2])));
 }
 
 #ifdef HAVE_MADWIFI
