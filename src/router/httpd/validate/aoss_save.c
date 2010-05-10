@@ -47,19 +47,19 @@ void aoss_save(webs_t wp)
 	fprintf(stderr, "[AOSS Save]");
 	char buf[1];
 	sprintf(buf, "%s", websGetVar(wp, "aoss_enable", "0"));
-	fprintf(stderr, "[aoss_enable] %s\n", buf);
+	fprintf(stderr, "[aoss_enable] save %s\n", buf);
 	nvram_set("aoss_enable", buf);
 
 	sprintf(buf, "%s", websGetVar(wp, "aoss_aes", "0"));
-	fprintf(stderr, "[aoss_aes] %s\n", buf);
+	fprintf(stderr, "[aoss_aes] save %s\n", buf);
 	nvram_set("aoss_aes", buf);
 
 	sprintf(buf, "%s", websGetVar(wp, "aoss_tkip", "0"));
-	fprintf(stderr, "[aoss_tkip] %s\n", buf);
+	fprintf(stderr, "[aoss_tkip] save %s\n", buf);
 	nvram_set("aoss_tkip", buf);
 
 	sprintf(buf, "%s", websGetVar(wp, "aoss_wep", "0"));
-	fprintf(stderr, "[aoss_wep] %s\n", buf);
+	fprintf(stderr, "[aoss_wep] save %s\n", buf);
 	nvram_set("aoss_wep", buf);
 
 	// check if at least one value was set
