@@ -91,7 +91,7 @@ int getbuttonstate()
 }
 #endif
 
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51)
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC)
 int getbuttonstate()
 {
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_EOC1650)
@@ -117,6 +117,9 @@ int getbuttonstate()
 	return ret;
 #elif HAVE_NP25G
 	int ret = get_gpio(4);
+	return ret;
+#elif HAVE_OPENRISC
+	int ret = get_gpio(0);
 	return ret;
 #else
 	int ret = get_gpio(6);
@@ -549,7 +552,7 @@ void period_check(int sig)
 
 	int state = 0;
 
-#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) | defined(HAVE_OPENRISC)
+#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC)
 	state = val;
 	int sesgpio = 0xfff;
 	int push;
@@ -577,6 +580,9 @@ void period_check(int sig)
 #elif defined(HAVE_TG2521)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
+#elif defined(HAVE_OPENRISC)
+	sesgpio = 0x005;
+	val |= get_gpio(5) << 5;	//aoss pushbutton
 #endif
 #ifdef HAVE_WRT160NL
 	sesgpio = 0x107;
