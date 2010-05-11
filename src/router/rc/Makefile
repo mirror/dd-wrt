@@ -154,6 +154,9 @@ endif
 ifeq ($(CONFIG_RB600),y)
 CFLAGS += -DHAVE_RB600
 endif
+ifeq ($(CONFIG_OPENRISC),y)
+CFLAGS += -DHAVE_OPENRISC
+endif
 ifeq ($(CONFIG_WZRG300NH),y)
   CFLAGS += -DHAVE_WZRG300NH
 endif
