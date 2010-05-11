@@ -478,6 +478,7 @@ int get_gpio(int pin)
 #define GPIO_CMD_GET_BUZZER		19
 #define GPIO_CMD_SET_BUZZER_FRQ	20
 #define GPIO_CMD_GET_BUZZER_FRQ	21
+#define GPIO_CMD_GET_BTN_WLAN	22
 
 struct gpio_struct {
 	unsigned long mask;
@@ -551,8 +552,11 @@ int get_gpio(int pin)
 	case 4:
 		cmd = GPIO_CMD_GET_BUZZER;
 		break;
+	case 5:
+		cmd = GPIO_CMD_GET_BTN_WLAN;
+		break;
 	}
-	if (pin > 4 && pin < 16)
+	if (pin > 5 && pin < 16)
 		return 0;
 	fd = open(GPIO_DEV, O_RDONLY);
 	if (fd < 0) {
