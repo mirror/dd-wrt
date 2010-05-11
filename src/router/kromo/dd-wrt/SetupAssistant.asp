@@ -399,7 +399,9 @@ function enable_idtls(ifname) {
  * check values before submitting
  */
 function submitcheck(F) {
-	
+	if( !checkformelements( F )) {
+		return false;
+	}	
 	switch(F.sas_stage.value) {
 		case '1':
 			// WAN connection
@@ -423,6 +425,8 @@ function submitcheck(F) {
 				if(F._ppp_mlppp) {
 					F.ppp_mlppp.value = F._ppp_mlppp.checked ? 1 : 0;
 				}
+			} else {
+				return false;
 			}
 			break;
 

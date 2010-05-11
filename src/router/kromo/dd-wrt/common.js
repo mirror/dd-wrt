@@ -963,16 +963,20 @@ function apply(form, text, delay) {
 }
 
 function applytake(form, text,seconds, delay) {
-    form.action.value = "ApplyTake";
-    if(!text)
-    	text=errmsg.err100;
-
-    Dialog.info(text, {windowParameters: {className:"ddwrt", width:250, height:100}, showProgress:true});
-    setTimeout(function(){form.submit();}, 2000);
-
-    if(delay) {
-    	setTimeout(function(){infoTimeout(text,seconds, delay);}, 1000);
-    }
+	if( !checkformelements( form )) {
+                return false;
+        } else {
+		form.action.value = "ApplyTake";
+		if(!text)
+			text=errmsg.err100;
+			
+		Dialog.info(text, {windowParameters: {className:"ddwrt", width:250, height:100}, showProgress:true});
+		setTimeout(function(){form.submit();}, 2000);
+		
+		if(delay) {
+			setTimeout(function(){infoTimeout(text,seconds, delay);}, 1000);
+    		}
+	}
 }
 
 function applyupdate(form, text,seconds, delay) {
