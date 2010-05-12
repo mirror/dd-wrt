@@ -1235,12 +1235,12 @@ ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 		websWrite(wp,
 			  "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
 			  IFMAP(var));
+		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
+		// contains html tag
 		sprintf(mac, "%s_hwaddr", var);
 		if (nvram_get(mac))
 		    websWrite(wp, "] HWAddr [%s", nvram_safe_get(mac));
 
-		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
-		// contains html tag
 		websWrite(wp, "]</legend>\n");
 		rep(var, '.', 'X');
 		show_security_prefix(wp, argc, argv, var, 0);
@@ -3468,11 +3468,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
 			  IFMAP(var));
 		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
+		// contains html tag
 		char wl_macaddr[16];
 		sprintf(wl_macaddr,"%s_hwaddr",var);
 		if (nvram_get(wl_macaddr))
 		    websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
-		// contains html tag
 		websWrite(wp, "]</legend>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 #ifndef HAVE_BUFFALO
