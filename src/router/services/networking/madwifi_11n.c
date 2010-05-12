@@ -1085,6 +1085,7 @@ void configure_single_11n(int count)
 		foreach(var, vifs, next) {
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_default_get(mode, "ap");
+			sleep(1);
 
 			if (strcmp(m2, "sta")) {
 				char bridged[32];
