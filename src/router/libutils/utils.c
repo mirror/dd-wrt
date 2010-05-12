@@ -1607,6 +1607,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "3.0")) {
 			setRouter("Linksys WRT160Nv3");
 			return ROUTER_WRT160NV3;
+		} else if (nvram_match("boot_hw_model", "M10")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys M10");  // renamed wrt160nv3
+			return ROUTER_WRT160NV3;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys WRT310N");
@@ -1614,6 +1618,10 @@ int internal_getRouterBrand()
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "2.0")) {
 			setRouter("Linksys WRT310Nv2");
+			return ROUTER_WRT310NV2;
+		} else if (nvram_match("boot_hw_model", "M20")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys M20");  // ranamed wrt310nv2
 			return ROUTER_WRT310NV2;
 		}
 	}
@@ -1657,6 +1665,13 @@ int internal_getRouterBrand()
 	    && nvram_match("boot_hw_model", "WRT610N")) {
 		cprintf("router is Linksys WRT610Nv2\n");
 		setRouter("Linksys WRT610Nv2");
+		return ROUTER_WRT610NV2;
+	}
+	
+	if (nvram_match("boardtype", "0x04cf")
+	    && nvram_match("boot_hw_model", "E300")) {
+		cprintf("router is Linksys E3000\n");
+		setRouter("Linksys E3000"); // renamed wrt610nv2
 		return ROUTER_WRT610NV2;
 	}
 
@@ -1927,6 +1942,13 @@ int internal_getRouterBrand()
 		|| nvram_match("boardrev", "0x1305"))) {
 		cprintf("router is wrt320n\n");
 		setRouter("Linksys WRT320N");
+		return ROUTER_WRT320N;
+	}
+	
+	if (boardnum == 42 && nvram_match("boardtype", "0x04EF")
+	    && nvram_match("boardrev", "0x1307")) {
+		cprintf("router is E2000n\n");
+		setRouter("Linksys E2000");  // renamed (and fixed reset button) wrt320n
 		return ROUTER_WRT320N;
 	}
 
