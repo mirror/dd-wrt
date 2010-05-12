@@ -314,6 +314,7 @@
 #define ROUTER_WRT310N 0x4d16
 
 // Linksys WRT310N v2 (BCM4716 cpu, fccid: Linksys Q87-WRT310NV2)
+// Linksys M20 (BCM4716 cpu, fccid: Linksys Q87-M20)
 #define ROUTER_WRT310NV2 0x4e16
 
 // D-Link DIR330 (BCM5836 cpu, fccid: D Link KA2DIR330A1)
@@ -366,6 +367,8 @@
 
 // Linksys WRT610Nv2 (BCM4718 cpu, Gigabit switch, dual radio 2.4 and 5 GHz
 // Broadcom, fccid: Linksys Q87-WRT610NV2)
+// Linksys E3000 (BCM4718 cpu, Gigabit switch, dual radio 2.4 and 5 GHz
+// Broadcom, fccid: Linksys Q87-E3000)
 #define ROUTER_WRT610NV2 0x5c16
 
 // Belkin F5D7230 v3000 (BCM5350 cpu, flash ?? , fccid: Belkin PD5F5D72304)
@@ -408,6 +411,7 @@
 #define ROUTER_NETGEAR_WNR3500L 0x7414	//(18)
 
 // Linksys WRT320N (BCM4717A cpu, 8MB serial flash, Gigabit switch, fccid: Linksys Q87-WRT320N)
+// Linksys E2000 (BCM4717A cpu, 8MB serial flash, Gigabit switch, fccid: Linksys Q87-E2000)
 #define ROUTER_WRT320N 0x7518
 
 #define ROUTER_BOARD_ESR9752 0x7610
@@ -424,6 +428,7 @@
 
 // Linksys WRT160Nv3 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-WRT160NV3)
 // CSE31 ports [W-1-2-3-4], CSE41 and CSE51 ports [W-4-3-2-1]
+// Linksys M10 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-M10)
 #define ROUTER_WRT160NV3 0x8216
 
 #define ROUTER_BOARD_BS2M 0x831c	//bullet 2m
@@ -453,6 +458,8 @@
 
 #define ROUTER_BOARD_ASUS_RTN13U 0x901a
 
+// Linksys WRT160NL (Atheros 9130, 8MB flash / 32MB ram, fccid: Linksys Q87-WRT160NL)
+// Linksys E2100L (Atheros 9130, 8MB flash / 32MB ram, fccid: Linksys Q87-E2100L)
 #define ROUTER_BOARD_WRT160NL 0x9101	// fake id, reset button is gpio 21
 
 // NetCore NW618 / Rosewill RNX-GX4 (BCM5354 cpu, 4MB serial flash / 16MB ram, fccid: Rosewill W6RRNX-GX4)
