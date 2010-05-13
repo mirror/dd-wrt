@@ -72,7 +72,7 @@ extern const char version[];
  * settings
  * ------------------------------------------------------------------- */
 
-extern const char seperator_line[];
+extern const char separator_line[];
 
 extern const char server_port[];
 
