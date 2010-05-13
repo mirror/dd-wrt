@@ -111,7 +111,7 @@ Client specific:\n\
   -t, --time      #        time in seconds to transmit for (default 10 secs)\n\
   -F, --fileinput <name>   input the data to be transmitted from a file\n\
   -I, --stdin              input the data to be transmitted from stdin\n\
-  -L, --listenport #       port to recieve bidirectional tests back on\n\
+  -L, --listenport #       port to receive bidirectional tests back on\n\
   -P, --parallel  #        number of parallel client threads to run\n\
   -T, --ttl       #        time-to-live, for multicast (default 1)\n\
   -Z, --linux-congestion <algo>  set TCP congestion control algorithm (Linux only)\n\
@@ -146,7 +146,7 @@ const char version[] =
  * settings
  * ------------------------------------------------------------------- */
 
-const char seperator_line[] =
+const char separator_line[] =
 "------------------------------------------------------------\n";
 
 const char server_port[] =
@@ -202,14 +202,14 @@ const char report_sum_bw_format[] =
 "[SUM] %4.1f-%4.1f sec  %ss  %ss/sec\n";
 
 const char report_bw_jitter_loss_header[] =
-"[ ID] Interval       Transfer     Bandwidth       Jitter   Lost/Total \
+"[ ID] Interval       Transfer     Bandwidth        Jitter   Lost/Total \
 Datagrams\n";
 
 const char report_bw_jitter_loss_format[] =
-"[%3d] %4.1f-%4.1f sec  %ss  %ss/sec  %5.3f ms %4d/%5d (%.2g%%)\n";
+"[%3d] %4.1f-%4.1f sec  %ss  %ss/sec  %6.3f ms %4d/%5d (%.2g%%)\n";
 
 const char report_sum_bw_jitter_loss_format[] =
-"[SUM] %4.1f-%4.1f sec  %ss  %ss/sec  %5.3f ms %4d/%5d (%.2g%%)\n";
+"[SUM] %4.1f-%4.1f sec  %ss  %ss/sec  %6.3f ms %4d/%5d (%.2g%%)\n";
 
 const char report_outoforder[] =
 "[%3d] %4.1f-%4.1f sec  %d datagrams received out-of-order\n";
