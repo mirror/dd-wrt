@@ -354,7 +354,7 @@ static void handle_index(void)
 	handle = start_service_nofree("guest_nas", handle);
 #endif
 	handle = start_service_nofree_f("radio_timer", handle);
-	handle = startstop_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 	handle = startstop_nofree_f("httpd", handle);	// httpd will not
 	// accept connection
 	// anymore on wan/lan 
@@ -498,7 +498,7 @@ static void handle_services(void)
 	handle = startstop_nofree_f("nstxd", handle);
 #endif
 #ifdef HAVE_PPPOESERVER
-	handle = startstop_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 	handle = startstop_nofree_f("pppoeserver", handle);
 #endif
 #ifdef HAVE_DNSMASQ
@@ -535,7 +535,7 @@ static void handle_services(void)
 #endif
 		handle = startstop_nofree_f("sshd", handle);
 #endif
-	handle = startstop_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 	handle = startstop_nofree_f("wshaper", handle);
 #ifdef HAVE_SYSLOG
 	handle = startstop_nofree_f("syslog", handle);
@@ -602,7 +602,7 @@ static void handle_management(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree_f("zebra", handle);
 #endif
-	handle = startstop_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 	handle = stop_service_nofree("wland", handle);
 	handle = startstop_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
@@ -686,7 +686,7 @@ static void handle_filters(void)
 	void *handle = NULL;
 
 	handle = stop_service_nofree("cron", handle);
-	handle = startstop_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 #ifdef HAVE_SYSLOG
 	handle = startstop_nofree_f("syslog", handle);
 #endif
@@ -712,7 +712,7 @@ static void handle_routing(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = stop_service_nofree("zebra", handle);
 #endif
-	handle = startstop_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 	handle = start_service_nofree_f("set_routes", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree_f("zebra", handle);
@@ -756,8 +756,7 @@ static void handle_forward(void)
 #ifdef HAVE_UPNP
 //    handle = stop_service_nofree( "upnp", handle );
 #endif
-	handle = stop_service_nofree("firewall", handle);
-	handle = start_service_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 #ifdef HAVE_UPNP
 //    handle = start_service_nofree( "upnp", handle );
 #endif
@@ -792,8 +791,7 @@ static void handle_forwardupnp(void)
 #ifdef HAVE_UPNP
 	handle = stop_service_nofree("upnp", handle);
 #endif
-	handle = stop_service_nofree("firewall", handle);
-	handle = start_service_nofree_f("firewall", handle);
+	handle = startstop_nofree("firewall", handle);
 #ifdef HAVE_UPNP
 	handle = start_service_nofree_f("upnp", handle);
 #endif
