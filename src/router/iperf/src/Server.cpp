@@ -92,7 +92,7 @@ void Server::Sig_Int( int inSigno ) {
 }
 
 /* ------------------------------------------------------------------- 
- * Receieve data from the (connected) TCP/UDP socket. 
+ * Receive data from the (connected) socket.
  * Sends termination flag several times at the end. 
  * Does not close the socket. 
  * ------------------------------------------------------------------- */ 

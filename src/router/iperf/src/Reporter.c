@@ -110,9 +110,8 @@ report_statistics multiple_reports[kReport_MAXIMUM] = {
 
 char buffer[64]; // Buffer for printing
 ReportHeader *ReportRoot = NULL;
-int threadWait = 0;
-int threadSleeping = 0;
 extern Condition ReportCond;
+extern Condition ReportDoneCond;
 int reporter_process_report ( ReportHeader *report );
 void process_report ( ReportHeader *report );
 int reporter_handle_packet( ReportHeader *report );
@@ -340,7 +339,7 @@ void ReportPacket( ReportHeader* agent, ReportStruct *packet ) {
             // item
             while ( index == 0 ) {
                 Condition_Signal( &ReportCond );
-                thread_rest();
+                Condition_Wait( &ReportDoneCond );
                 index = agent->reporterindex;
             }
             agent->agentindex = 0;
@@ -348,11 +347,9 @@ void ReportPacket( ReportHeader* agent, ReportStruct *packet ) {
         // Need to make sure that reporter is not about to be "lapped"
         while ( index - 1 == agent->agentindex ) {
             Condition_Signal( &ReportCond );
-            thread_rest();
+            Condition_Wait( &ReportDoneCond );
             index = agent->reporterindex;
         }
-	if (threadSleeping)
-           Condition_Signal( &ReportCond );
 
         // Put the information there
         memcpy( agent->data + agent->agentindex, packet, sizeof(ReportStruct) );
@@ -382,9 +379,6 @@ void CloseReport( ReportHeader *agent, ReportStruct *packet ) {
         packet->packetLen = 0;
         ReportPacket( agent, packet );
         packet->packetID = agent->report.cntDatagrams;
-	if (threadSleeping)
-           Condition_Signal( &ReportCond );
-
     }
 }
 
@@ -396,9 +390,6 @@ void CloseReport( ReportHeader *agent, ReportStruct *packet ) {
 void EndReport( ReportHeader *agent ) {
     if ( agent != NULL ) {
         int index = agent->reporterindex;
-	if (threadSleeping)
-           Condition_Signal( &ReportCond );
-
         while ( index != -1 ) {
             thread_rest();
             index = agent->reporterindex;
@@ -467,10 +458,6 @@ void ReportSettings( thread_Settings *agent ) {
              * Update the ReportRoot to include this report.
              */
             Condition_Lock( ReportCond );
-	    if ( isUDP(agent) )
-	      threadWait = 0;
-	    else
-	      threadWait = 1;
             reporthdr->next = ReportRoot;
             ReportRoot = reporthdr;
             Condition_Signal( &ReportCond );
@@ -567,6 +554,7 @@ void reporter_spawn( thread_Settings *thread ) {
         }
         Condition_Unlock ( ReportCond );
 
+again:
         if ( ReportRoot != NULL ) {
             ReportHeader *temp = ReportRoot;
             //Condition_Unlock ( ReportCond );
@@ -589,19 +577,12 @@ void reporter_spawn( thread_Settings *thread ) {
                 // finished with report so free it
                 free( temp );
                 Condition_Unlock ( ReportCond );
+                Condition_Signal( &ReportDoneCond );
+                if (ReportRoot)
+                    goto again;
             }
-            // yield control of CPU is another thread is waiting
-	    // sleep on a condition variable, as it is much cheaper
-	    // on most platforms than issuing schedyield or usleep
-	    // syscalls
-	    Condition_Lock ( ReportCond );
-	    if ( threadWait && ReportRoot != NULL) {
-	      threadSleeping = 1;
-	      Condition_TimedWait (& ReportCond, 1 );
-	      threadSleeping = 0;
-	    }
-	    Condition_Unlock ( ReportCond );
-	    
+            Condition_Signal( &ReportDoneCond );
+            usleep(10000);
         } else {
             //Condition_Unlock ( ReportCond );
         }
