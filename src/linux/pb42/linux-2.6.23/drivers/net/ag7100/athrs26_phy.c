@@ -337,7 +337,6 @@ void athrs26_phy_off(ag7100_mac_t *mac)
         return;
         
     netif_carrier_off(dev);
-    netif_stop_queue(dev);
     phy_val_saved = phy_reg_read(0, ATHR_PHY4_ADDR, ATHR_PHY_CONTROL);
     phy_reg_write(0, ATHR_PHY4_ADDR, ATHR_PHY_CONTROL, phy_val_saved | 0x800);
 }
