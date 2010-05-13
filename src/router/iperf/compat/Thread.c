@@ -405,12 +405,6 @@ int thread_numuserthreads( void ) {
 void thread_rest ( void ) {
 #if defined( HAVE_THREAD )
 #if defined( HAVE_POSIX_THREAD )
-#if defined( _POSIX_PRIORITY_SCHEDULING )
-    sched_yield();
-#else
-    usleep( 0 );
-#endif
-
 #else // Win32
     SwitchToThread( );
 #endif

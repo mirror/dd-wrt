@@ -67,6 +67,7 @@ extern "C" {
  * Prints transfer reports in default style
  */
 void reporter_printstats( Transfer_Info *stats ) {
+    static char header_printed = 0;
 
     byte_snprintf( buffer, sizeof(buffer)/2, (double) stats->TotalLen,
                    toupper( stats->mFormat));
@@ -76,13 +77,19 @@ void reporter_printstats( Transfer_Info *stats ) {
 
     if ( stats->mUDP != (char)kMode_Server ) {
         // TCP Reporting
-        printf( report_bw_header);
+        if( !header_printed ) {
+            printf( report_bw_header);
+            header_printed = 1;
+        }
         printf( report_bw_format, stats->transferID, 
                 stats->startTime, stats->endTime, 
                 buffer, &buffer[sizeof(buffer)/2] );
     } else {
         // UDP Reporting
-        printf( report_bw_jitter_loss_header);
+        if( !header_printed ) {
+            printf( report_bw_jitter_loss_header);
+            header_printed = 1;
+        }
         printf( report_bw_jitter_loss_format, stats->transferID, 
                 stats->startTime, stats->endTime, 
                 buffer, &buffer[sizeof(buffer)/2],
@@ -152,7 +159,7 @@ void reporter_reportsettings( ReporterData *data ) {
                   (data->mThreadMode == kMode_Listener ? 0 : 1) );
     win_requested = data->mTCPWin;
 
-    printf( seperator_line );
+    printf( separator_line );
     if ( data->mThreadMode == kMode_Listener ) {
         printf( server_port,
                 (isUDP( data ) ? "UDP" : "TCP"), 
@@ -191,7 +198,7 @@ void reporter_reportsettings( ReporterData *data ) {
         printf( warn_window_requested, buffer );
     }
     printf( "\n" );
-    printf( seperator_line );
+    printf( separator_line );
 }
 
 /*
