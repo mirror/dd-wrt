@@ -288,6 +288,7 @@ ag7100_open(struct net_device *dev)
     napi_enable(&mac->mac_napi);
     ag7100_int_enable(mac);
     ag7100_rx_start(mac);
+    netif_start_queue(dev);
 
     ag7100_start_rx_count(mac);
 
@@ -640,13 +641,11 @@ howl_10baset_war(ag7100_mac_t *mac)
     mac->speed_10t = 1;
     while(i-- && mac->speed_10t) {
         netif_carrier_on(dev);
-        netif_start_queue(dev);
 
         mdelay(100);
         ag7100_hard_start(dummy_pkt,dev); 
 
         netif_carrier_off(dev);
-        netif_stop_queue(dev);
     }
     return ;
 }
@@ -945,7 +944,6 @@ ag7100_check_link(ag7100_mac_t *mac)
         {
             printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
             netif_carrier_off(dev);
-            netif_stop_queue(dev);
         }
         goto done;
     }
@@ -978,7 +976,6 @@ ag7100_check_link(ag7100_mac_t *mac)
     * in business
     */
     netif_carrier_on(dev);
-    netif_start_queue(dev);
 
 done:
 #if defined(CONFIG_ATHRS26_PHY) || defined(CONFIG_ATHRS16_PHY)    
