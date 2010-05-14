@@ -102,8 +102,10 @@ ifeq ($(CONFIG_3COM),y)
 endif
 
 ifeq ($(CONFIG_BUFFALO),y)
+	
 	mkdir $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
 	cp buffalo/images/* $(INSTALLDIR)/www/images
 	cp buffalo/help/* $(INSTALLDIR)/www/help
 endif
