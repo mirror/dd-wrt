@@ -1699,8 +1699,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2931,7 +2931,7 @@ void start_wan(int status)
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
 					eval("udhcpc", "-i", vlannic, "-s",
-					     "/tmp/udhcpc_tv", "-q");
+					     "/tmp/udhcpc_tv", "-b");
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
@@ -2968,13 +2968,11 @@ void start_wan(int status)
 						eval("vconfig", "add",
 						     pppoe_wan_ifname, "8");
 						eval("ifconfig", vlannic, "up");
-						nvram_set("tvnicfrom", vlannic);
-						symlink("/sbin/rc",
-							"/tmp/udhcpc_tv");
-						eval("udhcpc", "-i", vlannic,
-						     "-s", "/tmp/udhcpc_tv",
-						     "-q");
 					}
+					nvram_set("tvnicfrom", vlannic);
+					symlink("/sbin/rc", "/tmp/udhcpc_tv");
+					eval("udhcpc", "-i", vlannic,
+					     "-s", "/tmp/udhcpc_tv", "-b");
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
