@@ -128,12 +128,12 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 			item = 0 * WL_FILTER_MAC_NUM + i + 1;
 
 			websWrite(wp,
-				  "<div>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+				  "<div class=\"setting\"><div class=\"label\" style=\"width: 17%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
 				  mac_mess, item, BOX_LEN, ifname, item - 1,
 				  wl_filter_mac_get(ifname, "mac", item - 1));
 
 			websWrite(wp,
-				  "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
+				  "<div class=\"label\" style=\"width: 17%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
 				  mac_mess, item + (WL_FILTER_MAC_NUM / 2),
 				  BOX_LEN, ifname,
 				  item + (WL_FILTER_MAC_NUM / 2) - 1,
@@ -153,12 +153,12 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 			item = 1 * WL_FILTER_MAC_NUM + i + 1;
 
 			websWrite(wp,
-				  "<div/>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+				  "<div class=\"setting\"><div class=\"label\" style=\"width: 17%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
 				  mac_mess, item, BOX_LEN, ifname, item - 1,
 				  wl_filter_mac_get(ifname, "mac", item - 1));
 
 			websWrite(wp,
-				  "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
+				  "<div class=\"label\" style=\"width: 17%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
 				  mac_mess, item + (WL_FILTER_MAC_NUM / 2),
 				  BOX_LEN, ifname,
 				  item + (WL_FILTER_MAC_NUM / 2) - 1,
