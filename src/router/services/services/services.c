@@ -255,11 +255,14 @@ void stop_3g(void)
 
 void stop_dhcpc(void)
 {
-
-	if (pidof("udhcpc") > 0) {
+	FILE *fp = fopen("/var/run/udhcpc.pid", "rb");
+	if (fp) {
+		int pid;
+		fscanf(fp, "%d", &pid);
+		fclose(fp);
 		dd_syslog(LOG_INFO,
 			  "udhcpc : udhcp client process successfully stopped\n");
-		killall("udhcpc", SIGTERM);
+		kill(pid, SIGTERM);
 	}
 	cprintf("done\n");
 	return;

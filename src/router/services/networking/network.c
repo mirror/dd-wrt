@@ -2935,6 +2935,7 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
+					killall("udhcpc", SIGTERM);
 					start_dhcpc(vlannic,
 						    "/var/run/udhcpc_tv.pid",
 						    "/tmp/udhcpc_tv");
@@ -2977,6 +2978,7 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
+					killall("udhcpc", SIGTERM);
 					start_dhcpc(vlannic,
 						    "/var/run/udhcpc_tv.pid",
 						    "/tmp/udhcpc_tv");
