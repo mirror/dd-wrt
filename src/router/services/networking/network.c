@@ -333,7 +333,7 @@ static int notify_nas(char *type, char *ifname, char *action);
 #endif
 #endif
 
-void start_dhcpc(char *wan_ifname)
+void start_dhcpc(char *wan_ifname, char *pidfile, char *script)
 {
 	pid_t pid;
 	char *wan_hostname = nvram_get("wan_hostname");
@@ -341,6 +341,10 @@ void start_dhcpc(char *wan_ifname)
 	char *requestip = nvram_get("dhcpc_requestip");
 
 	symlink("/sbin/rc", "/tmp/udhcpc");
+	if (!script)
+		script = "/tmp/udhcpc";
+	if (!pidfile)
+		pidfile = "/var/run/udhcpc.pid";
 
 	nvram_set("wan_get_dns", "");
 	nvram_set("wan_gateway", "");
@@ -351,8 +355,8 @@ void start_dhcpc(char *wan_ifname)
 
 	char *dhcp_argv[] = { "udhcpc",
 		"-i", wan_ifname,
-		"-p", "/var/run/udhcpc.pid",
-		"-s", "/tmp/udhcpc",
+		"-p", pidfile,
+		"-s", script,
 		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
@@ -361,27 +365,28 @@ void start_dhcpc(char *wan_ifname)
 
 	int i = 7;
 
-	if (vendorclass != NULL && strlen(vendorclass) > 0) {
-		dhcp_argv[i] = "-V";
-		i++;
-		dhcp_argv[i] = vendorclass;
-		i++;
-	}
+	if (!pidfile) {
+		if (vendorclass != NULL && strlen(vendorclass) > 0) {
+			dhcp_argv[i] = "-V";
+			i++;
+			dhcp_argv[i] = vendorclass;
+			i++;
+		}
 
-	if (requestip != NULL && strlen(requestip) > 0) {
-		dhcp_argv[i] = "-r";
-		i++;
-		dhcp_argv[i] = requestip;
-		i++;
-	}
+		if (requestip != NULL && strlen(requestip) > 0) {
+			dhcp_argv[i] = "-r";
+			i++;
+			dhcp_argv[i] = requestip;
+			i++;
+		}
 
-	if (wan_hostname != NULL && strlen(wan_hostname) > 0) {
-		dhcp_argv[i] = "-H";
-		i++;
-		dhcp_argv[i] = wan_hostname;
-		i++;
+		if (wan_hostname != NULL && strlen(wan_hostname) > 0) {
+			dhcp_argv[i] = "-H";
+			i++;
+			dhcp_argv[i] = wan_hostname;
+			i++;
+		}
 	}
-
 	_evalpid(dhcp_argv, NULL, 0, &pid);
 
 }
@@ -1699,8 +1704,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2930,8 +2935,9 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					eval("udhcpc", "-i", vlannic, "-s",
-					     "/tmp/udhcpc_tv", "-b");
+					start_dhcpc(vlannic,
+						    "/var/run/udhcpc_tv.pid",
+						    "/tmp/udhcpc_tv");
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
@@ -2971,8 +2977,9 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					eval("udhcpc", "-i", vlannic,
-					     "-s", "/tmp/udhcpc_tv", "-b");
+					start_dhcpc(vlannic,
+						    "/var/run/udhcpc_tv.pid",
+						    "/tmp/udhcpc_tv");
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
@@ -3184,7 +3191,7 @@ void start_wan(int status)
 	} else
 #endif
 	if (strcmp(wan_proto, "dhcp") == 0) {
-		start_dhcpc(wan_ifname);
+		start_dhcpc(wan_ifname, NULL, NULL);
 	}
 #ifdef HAVE_PPTP
 	else if (strcmp(wan_proto, "pptp") == 0) {
@@ -3199,12 +3206,12 @@ void start_wan(int status)
 		} else
 			wan_ifname = pppoe_wan_ifname;
 		nvram_set("wan_get_dns", "");
-		start_dhcpc(wan_ifname);
+		start_dhcpc(wan_ifname, NULL, NULL);
 	}
 #endif
 #ifdef HAVE_HEARTBEAT
 	else if (strcmp(wan_proto, "heartbeat") == 0) {
-		start_dhcpc(wan_ifname);
+		start_dhcpc(wan_ifname, NULL, NULL);
 	}
 #endif
 	else {
