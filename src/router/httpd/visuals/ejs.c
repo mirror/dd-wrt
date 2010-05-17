@@ -592,6 +592,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_MILKFISH
 	"MILKFISH",
 #endif
+#ifdef HAVE_LANGUAGE
+	"LANGUAGE",
+#endif
 #ifdef HAVE_BUFFALO
 	"HAVE_BUFFALO",
 #endif
