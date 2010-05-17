@@ -1254,6 +1254,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 	char line[256];
 	unsigned long rcvd, sent, megcounti, megcounto;
 	FILE *in;
+	int ifl;
 
 #ifndef FASTWEB
 	if (argc < 1) {
@@ -1271,24 +1272,26 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 	else
 		strncpy(wanface, nvram_safe_get("ttraff_iface"),
 			sizeof(wanface));
-	strcat(wanface,":");
+	strcat(wanface, ":");
+
 	in = fopen("/proc/net/dev", "rb");
 	if (in == NULL)
 		return;
 
+	/* eat first two lines */
+	fgets(line, sizeof(line), in);
+	fgets(line, sizeof(line), in);
 	while (fgets(line, sizeof(line), in) != NULL) {
-		int ifl = 0;
+		ifl = 0;
 
-		if (!strchr(line, ':'))
-			continue;
-		while (line[ifl] != ':')
-			ifl++;
-		line[ifl] = 0;	/* interface */
 		if (strstr(line, wanface)) {
+			while (line[ifl] != ':')
+				ifl++;
+			line[ifl] = 0;
+
 			sscanf(line + ifl + 1,
 			       "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
 			       &rcvd, &sent);
-
 		}
 	}
 
