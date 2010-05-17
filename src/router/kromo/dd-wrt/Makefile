@@ -627,7 +627,7 @@ ifeq ($(CONFIG_SKYTEL),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/skytel/ install
 else
 ifeq ($(CONFIG_ERC),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/erc/ install
+	$(MAKE) -C $(SRCBASE)/router/kromo/erc/common/ install
 else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
 endif
