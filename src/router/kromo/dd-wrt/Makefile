@@ -16,7 +16,9 @@ install:
 	
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
-	rm -f $(INSTALLDIR)/www/images/logo.png
+	rm -f $(INSTALLDIR)/www/images/dd-logo.png
+	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
+	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
 	cp common_micro.js $(INSTALLDIR)/www/common.js
 else
@@ -32,7 +34,9 @@ endif
 
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
-	rm -f $(INSTALLDIR)/www/images/logo.png
+	rm -f $(INSTALLDIR)/www/images/dd-logo.png
+	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
+	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
 	cp common_micro.js $(INSTALLDIR)/www/common.js
 else
@@ -70,11 +74,8 @@ endif
 	
 ifneq ($(CONFIG_LANGUAGE),y)
 	rm -f $(INSTALLDIR)/www/lang_pack/*.js
-	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
-	rm -f $(INSTALLDIR)/www/images/logo.png
-#	rm -f $(INSTALLDIR)/www/images/88*
-	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png	
 	cp lang_pack/english.js $(INSTALLDIR)/www/lang_pack/
+	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 endif
 	$(TOP)/tools/jsformat $(INSTALLDIR)/www/lang_pack/*.js
 	ln -s ../tmp/www $(INSTALLDIR)/www/user
@@ -466,7 +467,10 @@ endif
 
 ifeq ($(CONFIG_KROMO),y)
 	cp -a kromo $(INSTALLDIR)/www/style
+else
+	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif
 endif
+
 
 ifeq ($(CONFIG_BRAINSLAYER),y)
 	cp -a brainslayer $(INSTALLDIR)/www/style
