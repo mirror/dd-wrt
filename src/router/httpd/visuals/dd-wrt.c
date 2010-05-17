@@ -1423,7 +1423,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 	char var[32];
 	int count = getifcount("wifi");
 
-	if (count < 2)
+	if (count < 1)
 		return;
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
