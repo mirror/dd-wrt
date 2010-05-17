@@ -121,6 +121,7 @@ int main(int argc, char **argv)
 	int needcommit = 0;
 	int commited = 0;
 	int day, month, year;
+	int ifl;
 	FILE *in;
 
 	if (nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
@@ -128,7 +129,7 @@ int main(int argc, char **argv)
 	else
 		strncpy(wanface, nvram_safe_get("ttraff_iface"),
 			sizeof(wanface));
-	strcat(wanface,":");
+	strcat(wanface, ":");
 	/* 
 	 * now we can loop and collect data 
 	 */
@@ -143,15 +144,18 @@ int main(int argc, char **argv)
 		month = currtime->tm_mon + 1;	// 1 - 12
 		year = currtime->tm_year + 1900;
 		if ((in = fopen("/proc/net/dev", "rb")) != NULL) {
-			while (fgets(line, sizeof(line), in) != NULL) {
-				int ifl = 0;
+			/* eat first two lines */
+			fgets(line, sizeof(line), in);
+	    	fgets(line, sizeof(line), in);
 
-				if (!strchr(line, ':'))
-					continue;
-				while (line[ifl] != ':')
-					ifl++;
-				line[ifl] = 0;
+			while (fgets(line, sizeof(line), in) != NULL) {
+				ifl = 0;
+
 				if (strstr(line, wanface)) {
+					while (line[ifl] != ':')
+						ifl++;
+					line[ifl] = 0;
+				
 					sscanf(line + ifl + 1,
 					       "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
 					       &in_dev, &out_dev);
