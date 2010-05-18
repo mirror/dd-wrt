@@ -333,7 +333,7 @@ static int notify_nas(char *type, char *ifname, char *action);
 #endif
 #endif
 
-void start_dhcpc(char *wan_ifname, char *pidfile, char *script)
+void start_dhcpc(char *wan_ifname, char *pidfile, char *script,int fork)
 {
 	pid_t pid;
 	char *wan_hostname = nvram_get("wan_hostname");
@@ -345,7 +345,9 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script)
 		script = "/tmp/udhcpc";
 	if (!pidfile)
 		pidfile = "/var/run/udhcpc.pid";
-
+	char *flags="";
+	if (!fork)
+	    flags = "-q";
 	nvram_set("wan_get_dns", "");
 	nvram_set("wan_gateway", "");
 	nvram_set("wan_ipaddr", "");
@@ -357,13 +359,13 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script)
 		"-i", wan_ifname,
 		"-p", pidfile,
 		"-s", script,
+		flags, NULL,
 		NULL, NULL,
 		NULL, NULL,
-		NULL, NULL,
-		NULL
+		NULL, NULL
 	};
 
-	int i = 7;
+	int i = 8;
 
 	if (!pidfile) {
 		if (vendorclass != NULL && strlen(vendorclass) > 0) {
@@ -2954,8 +2956,7 @@ void start_wan(int status)
 					killall("udhcpc", SIGTERM);
 					start_dhcpc(vlannic,
 						    "/var/run/udhcpc_tv.pid",
-						    "/tmp/udhcpc_tv");
-					sleep(5);
+						    "/tmp/udhcpc_tv",0);
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
@@ -2998,8 +2999,7 @@ void start_wan(int status)
 					killall("udhcpc", SIGTERM);
 					start_dhcpc(vlannic,
 						    "/var/run/udhcpc_tv.pid",
-						    "/tmp/udhcpc_tv");
-					sleep(5);
+						    "/tmp/udhcpc_tv",0);
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
@@ -3211,7 +3211,7 @@ void start_wan(int status)
 	} else
 #endif
 	if (strcmp(wan_proto, "dhcp") == 0) {
-		start_dhcpc(wan_ifname, NULL, NULL);
+		start_dhcpc(wan_ifname, NULL, NULL,1);
 	}
 #ifdef HAVE_PPTP
 	else if (strcmp(wan_proto, "pptp") == 0) {
@@ -3226,12 +3226,12 @@ void start_wan(int status)
 		} else
 			wan_ifname = pppoe_wan_ifname;
 		nvram_set("wan_get_dns", "");
-		start_dhcpc(wan_ifname, NULL, NULL);
+		start_dhcpc(wan_ifname, NULL, NULL,1);
 	}
 #endif
 #ifdef HAVE_HEARTBEAT
 	else if (strcmp(wan_proto, "heartbeat") == 0) {
-		start_dhcpc(wan_ifname, NULL, NULL);
+		start_dhcpc(wan_ifname, NULL, NULL,1);
 	}
 #endif
 	else {
