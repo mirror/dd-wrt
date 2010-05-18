@@ -227,7 +227,7 @@ void start_pptp(int status)
 		nvram_set("wan_get_dns", "");
 		nvram_unset("dhcpc_done");
 		//dirty hack
-		start_dhcpc(wan_ifname,NULL,NULL);
+		start_dhcpc(wan_ifname,NULL,NULL,1);
 		int timeout;
 
 		for (timeout = 60; !nvram_match("dhcpc_done", "1") && timeout > 0; --timeout) {	/* wait for info from dhcp server */

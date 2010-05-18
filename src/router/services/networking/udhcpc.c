@@ -402,17 +402,20 @@ int udhcpc_main(int argc, char **argv)
 
 static int bound_tv(void)
 {
-	char *ifname = safe_getenv("interface");
-	char *ip = safe_getenv("ip");
-	char *net = safe_getenv("subnet");
-	char *cidr = safe_getenv("cidrroute");
+	static char *ifname;
+	ifname = safe_getenv("interface");
+	static char *ip;
+	ip = safe_getenv("ip");
+	static char *net;
+	net = safe_getenv("subnet");
+	static char *cidr;
+	cidr = safe_getenv("cidrroute");
 	if (ip && net && ifname) {
-		char bcast[32];
+		static char bcast[32];
 		strcpy(bcast, ip);
 		get_broadcast(bcast, net);
-		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast,
-		     "multi");
 		nvram_set("tvnicaddr", ip);
+		eval("ifconfig", ifname, nvram_safe_get("tvnicaddr"), "netmask", net, "broadcast", bcast,"multi");
 	}
 	if (cidr && ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
