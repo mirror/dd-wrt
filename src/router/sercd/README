@@ -1,0 +1,228 @@
+sercd: RFC 2217 Serial Communications Daemon
+============================================
+
+Introduction
+------------
+
+sercd is a serial port redirector that is compliant with the RFC 2217
+"Telnet Com Port Control Option" protocol. This protocol lets you
+share a serial port through the network. RFC 2217 was orginally
+implemented in Cisco Terminal Servers in IOS version 11.x.
+
+RFC 2217 clients include:
+
+ * C-Kermit 8.0 for Unix, VMS, and QNX
+   http://www.columbia.edu/kermit/ckermit.html
+
+ * DialOut/IP V2, a commercial Windows 95/98/NT client. 
+   www.tacticalsoftware.com
+
+ * cyclades-serial-client
+   http://www.lysator.liu.se/~astrand/projects/cyclades-serial-client/
+
+ * HW Virtual Serial Port (for Windows 2000 and XP)
+   http://www.hw-group.com/products/hw_vsp/index_en.html
+
+   Note: One person has reported success with this client, but others
+   have reported that client does NOT work correctly with sercd; nor
+   with other RFC2217 servers. As far as I can tell, the problem lies
+   in HW VSP; not in sercd. 
+
+* Java NVTCom library
+  http://www.viara.cn/en/nvtcom.htm
+
+* Lantronix Com Port Redirector
+  http://www.lantronix.com/device-networking/utilities-tools/com-port-redirector.html
+
+* Fabulatech Serial Port Redirector
+  http://www.serial-port-redirector.com
+
+
+
+Other known RFC2217 servers:
+
+* Extended socat
+  http://www.dest-unreach.org/socat/contrib/socat-rfc2217.html 
+  (also a client, apparently)
+
+* Java TS
+  http://www.viara.cn/en/jts.htm
+
+* ser2net
+  http://ser2net.sourceforge.net/
+
+* VPortPro
+  http://www.vportpro.com
+
+
+Compilation
+-----------
+
+Do "make". 
+
+
+Command line parameters
+-----------------------
+
+sercd takes three mandatory parameters and two optional parameters, 
+one at the beginning and one at the end of the command line.
+
+The mandatory parameters are:
+
+Log level: 0 to 7, 0 being no log and 7 being debug log. sercd uses
+the standard syslog facility for logging. Look at the syslog(3) man
+page for further information on the syslog facility and log levels.
+
+Device: the device complete path. Something like /dev/ttyS0 or /dev/modem.
+
+Lock file: the file to use for inter-application locking. This must
+match the one used by other applications, usually something like
+/var/lock/LCK..ttyS0 or /var/lock/LCK..modem for the devices considered
+above. sercd supports only HDB style (i.e. ASCII) file locking.
+
+The optional parameters are:
+
+- At the beginning of the command line:
+
+A -i option enables compatibility with the Cisco IOS wich has a small
+bug in the handling of the inbound flow control.
+
+- At the end of the command line:
+
+Poll interval: sercd checks for line state changes (DSR/CTS/DCD/RNG)
+on every single char sent on the serial line. To prevent losing state
+change when there's no traffic on the serial port, sercd also polls
+the line state when there's no traffic on the line for more than the
+poll interval. The value is in milliseconds and the default is 100
+milliseconds. Setting it to 0 disables the polling feature. This is
+also the maximum time data is left in the output buffer before sending
+it, even if the buffer isn't completely full, so the polling interval
+globally sets the maximum latency of any sercd action.
+
+
+Installation
+-------------
+
+Put the executable in a suitable directory (/usr/sbin or
+/usr/local/sbin).  sercd is designed to run under inetd control. The
+line in the inetd configuration file (usually /etc/inetd.conf) should
+look like this:
+
+sredir          stream  tcp     nowait  root    /usr/sbin/tcpd /usr/sbin/sercd -i 5 /dev/modem /var/lock/LCK..modem
+
+Of course, "sredir" should be defined in the services file (usually
+/etc/services, usual values start at port 7000) and "/dev/modem"
+should be substituted by the appropriate device. The lock and the
+device name must match for correct interlocking with other
+programs. The tcpd program is the usual tcp wrapper that's not needed
+for correct operation but is useful for security purposes. Don't
+forget to send a SIGHUP to the inetd daemon in order to force reload
+of the configuration file. The initial -i paramater is optional and
+enables compatibility with the Cisco IOS.
+
+
+Bugs
+----
+
+Report bugs using Bugzilla. A link is available from the sercd home page. 
+
+
+Outstanding issues
+------------------
+
+The RFC 2217 protocol is a rather complete protocol that provides a lot
+of features. Most of them are implemented in sercd but some seldom
+used options are missing:
+
+ * does not properly check implement BREAK handling.  Need to figure
+   out how to turn a BREAK on and then off based upon receipt of 
+   COM-PORT Subnegotiations
+
+ * does not properly use select to handle input, output and
+   errors on all devices.
+
+ * Lack of login processing
+
+ * Lack of Telnet START_TLS to protect the data stream
+
+ * Lack of Telnet AUTHENTICATION
+
+ * LineState processing is not implemented
+
+ * The code probably won't compile on most versions of Unix due to the
+   highly platform dependent nature of the serial apis.
+   The program has been tested only under Linux 2.0.36, gcc 2.7.2.1,
+   libc5 and RedHat 5.2/7.1 but should work on any POSIX compliant 
+   operating system.
+
+ * Use of polling to notify change on the serial control lines is not
+   desireable.  Anyone know of an event driven mechanism for discovering
+   modem and line signal changes?
+
+
+
+Implementation Notes
+--------------------
+
+ * Setting the port to 1.5 stop bits isn't supported. When requested,
+   1 stop bit is set and returned as the response value.
+
+ * Setting the parity to mark or space isn't supported.  When requested,
+   Parity is set to None and returned as the response value.
+
+ * DTR, DSR and DCD flow control isn't supported.  When requested, 
+   flow control is disabled and "no flow control" is returned as the
+   response value.
+
+ * RFC 2217 supports the ability for the Input and Output Parity and
+   Flow control settings to be independent of each other.  This is not
+   supported by the majority of serial port UARTs available on the market
+   and is not supported by sercd.  sercd ignores all requests to set
+   the Input Parity and Flow control.  The Output values are used for 
+   both input and output as specified in the RFC.
+
+ * DialOut/IP V2 version 2.0.0 has a known bug that prevent it from 
+   running at 115200 baud. If you ask for 115200 baud it sets the serial
+   line at 9600 baud. It also has some other small bugs that cause it to
+   crash or fail under some rare circumstances. Use Version 2.0.2 or 
+   higher to avoid this problem.
+
+
+Credits
+-------
+
+sercd is based on sredird, which got help and support from several
+people and organizations:
+
+
+Thanks to David Yon and Mike Krueger of Tactical Software for their help
+in the sredird developing process. Thanks also to Tactical Software for
+its wonderful DialOut/IP package and for choosing an open standard for it.
+Tactical Software provides also some other useful communication tools
+and an RFC 2217 compliant server for the Windows environment. Browse
+http://www.tacticalsoftware.com for more information.
+
+
+Implementation of the Telnet State Machines, corrections to RFC 2217,
+testing against various clients and comparison to hardware implementations
+in Cisco IOS software was performed by the Kermit Project at Columbia 
+University.  The Kermit Project provides the only known client implementation
+of RFC 2217 for Unix in its C-Kermit and Kermit 95 Telnet clients.  See
+http://www.columbia.edu/kermit/ for further details.
+
+
+Resources
+---------
+
+* The freshmet.net listing:
+
+  http://freshmeat.net/projects/sercd
+
+
+* The sercd homepage:
+  
+  http://www.lysator.liu.se/~astrand/projects/sercd/
+
+
+--
+Peter Åstrand <astrand@cendio.se>
