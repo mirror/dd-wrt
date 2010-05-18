@@ -170,7 +170,7 @@ static int bound(void)
 	nvram_unset("dhcpc_done");
 	char *wan_ifname = safe_getenv("interface");
 	char *value;
-	char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
+	static char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
 
 	if ((value = getenv("ip"))) {
