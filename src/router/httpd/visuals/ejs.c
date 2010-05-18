@@ -2719,6 +2719,42 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
+
+#ifdef HAVE_PPPOESERVER
+
+void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *in = fopen("/tmp/pppoe_connected","rb");
+	if (!in)
+	    return;
+	char pid[32];
+	char ifname[32];
+	char local[32];
+	char remote[32];
+	char peer[64];
+	int count=0;
+	while(fscanf(in,"%s %s %s %s",pid,ifname,local,peer)==4)
+	    {
+	    websWrite(wp,"%c\"%s\",\"%s\",\"%s\",\"%s\"",
+					  count ? ',' : ' ',ifname,peer,local,pid);
+	    count++;
+	    if (feof(in))
+		break;
+	    }    
+	    
+	fclose(in);
+	return;
+}
+
+#else
+
+void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
+{
+	return;
+}
+
+#endif
+
 #ifdef HAVE_EOP_TUNNEL
 
 void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
