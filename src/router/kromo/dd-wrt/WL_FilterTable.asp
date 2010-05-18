@@ -24,7 +24,7 @@ function to_apply(F) {
 			<input type="hidden" name="ifname" value="%s" />
 			<input type="hidden" name="%s_mac_list" />
 			<div id="main">
-				<div id="contentsInfo">
+				<div id="contentsInfo" style="padding-top: 0px;">
 					<h2><%% tran("wl_filter.h2"); %%></h2>
 					<table width="100%%" >
 						<tr>
