@@ -1857,7 +1857,7 @@ void start_lan(void)
 		eval("ifconfig", wifi, "down");
 		eval("ifconfig", wifi, "hw", "ether",
 		     nvram_safe_get("def_whwaddr"));
-		eval("ifconfig", wifi, "up");
+//		eval("ifconfig", wifi, "up");
 	}
 	if (nvram_match("mac_clone_enable", "1") &&
 	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
@@ -1870,7 +1870,7 @@ void start_lan(void)
 		eval("ifconfig", wifi, "down");
 		eval("ifconfig", wifi, "hw", "ether",
 		     nvram_safe_get("def_whwaddr"));
-		eval("ifconfig", wifi, "up");
+//		eval("ifconfig", wifi, "up");
 	}
 	configure_wifi();
 #endif
