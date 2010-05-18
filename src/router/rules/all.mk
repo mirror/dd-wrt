@@ -88,6 +88,7 @@ INSTALL_CONF:=install -m0600
 include rules/matrixssl.mk
 include rules/ntpd.mk
 include rules/gpsd.mk
+include rules/gpsi.mk
 include rules/php5.mk
 include rules/openssl.mk
 include rules/rp-l2tp.mk
@@ -106,6 +107,7 @@ include rules/netconf.mk
 include rules/pptpd.mk
 include rules/pipsec.mk
 include rules/snmp.mk
+include rules/tinysnmp.mk
 include rules/wifidog.mk
 include rules/wol.mk
 include rules/dhcp-forwarder.mk
@@ -180,6 +182,7 @@ include rules/milkfish.mk
 include rules/mc.mk
 include rules/quagga.mk
 include rules/bmon.mk
+include rules/sercd.mk
 include rules/ethtool.mk
 include rules/openlldp.mk
 include rules/ipsec-tools.mk

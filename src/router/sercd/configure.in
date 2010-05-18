@@ -1,0 +1,16 @@
+
+AC_INIT(sercd.c)
+AM_INIT_AUTOMAKE(sercd, 3.0.0)
+AC_PROG_CC 
+AC_CANONICAL_HOST
+
+os_is_win32=0
+case "$host_os" in
+        mingw*)
+        AC_DEFINE([OS_IS_WIN32], 1, [Build target is Windows.])
+        os_is_win32=1
+                ;;
+esac
+AM_CONDITIONAL(OS_IS_WIN32, test "x$os_is_win32" = "x1")
+
+AC_OUTPUT(Makefile)
