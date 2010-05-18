@@ -1,0 +1,17 @@
+# default: on
+# description: RFC 2217 compliant Telnet serial port redirector
+service sredir
+{
+	type		= UNLISTED
+	flags		= REUSE
+	socket_type	= stream 
+	protocol     	= tcp
+	wait		= no
+	user		= root
+	server		= /usr/local/sbin/sercd
+	server_args	= 5 /dev/modem /var/lock/LCK..modem
+	port 		= 7000
+	disable		= no
+# Some versions of xinetd does not work with only_from=localhost
+#	only_from	= localhost
+}
