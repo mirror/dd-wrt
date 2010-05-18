@@ -48,6 +48,9 @@ static int interval = 0;
 static int use_interval = 0;
 static int exit_only = 0;
 static int use_exit_only = 0;
+static int use_syslog = 0;
+char *syslog_text = "GPIOWATCHER";
+
 
 static void alarmtimer(unsigned long sec, unsigned long usec)
 {
@@ -66,6 +69,9 @@ void check_exit(int val)
 				{
    				if (debug) 
   					fprintf (stderr,"Gpio %d changed from %d to  %d\n", gpio, oldstate, val);
+				if (use_syslog)
+					dd_syslog(LOG_INFO,
+					  "%s gpio %d changed from %d to %d\n",syslog_text,gpio,oldstate,val);
 				fprintf(stdout, "%d",val);
 				exit(val);
 				}
@@ -75,6 +81,9 @@ void check_exit(int val)
 					{
    					if (debug) 
   						fprintf (stderr,"Gpio %d changed from %d to %d (exit_only)\n", gpio, oldstate, val);
+					if (use_syslog)
+						dd_syslog(LOG_INFO,
+						  "%s gpio %d changed from %d to %d\n",syslog_text,gpio,oldstate,val);
 					fprintf(stdout, "%d",val); 
 					exit(val);
 					}
@@ -107,7 +116,7 @@ void period_check(int sig)
 			if (++count > (interval * 10 )) 
 					{ 
    					if (debug) 
-  						fprintf (stderr,"Gpio %d changed from %d to %d (for %d seconds)                            \n", gpio, oldstate, val,interval);
+  						fprintf (stderr,"Gpio %d changed from %d to %d (%d seconds)                            \n", gpio, oldstate, val,interval);
 					check_exit(val);
 					}
 			else
@@ -150,7 +159,7 @@ void period_check(int sig)
 }
 
 void usage(void) {
-    fprintf(stderr,"\nUsage: gpiowatcher [-d] [-i interval] [-o exit_only_on_value] -g gpio  \n\n exit-value is the new gpio state, that is also printed\n");
+    fprintf(stderr,"\nUsage: gpiowatcher [-d] [-s] [-t <syslog_text>] [-i interval] [-o exit_only_on_value] -g gpio  \n\nuse -d for debug\n    -s to log changes syslog\n    -t <text> to change syslog loging text (default GPIOWATCHER) \n\n exit-value is the new gpio state, that is also printed\n");
     exit(1);
 	}
 
@@ -159,7 +168,7 @@ int main(int argc, char *argv[])
 {
 
 	int c;
-	while ((c = getopt (argc, argv, "dg:i:o:")) != -1)
+	while ((c = getopt (argc, argv, "dst:g:i:o:")) != -1)
          switch (c)
            {
            case 'd':
@@ -175,6 +184,12 @@ int main(int argc, char *argv[])
            case 'o':
 			 exit_only = atoi(optarg);
 			 use_exit_only=1;
+             break;
+           case 't':
+			 syslog_text = optarg;
+             break;
+           case 's':
+			 use_syslog=1;
              break;
            default:
 		   	usage();
