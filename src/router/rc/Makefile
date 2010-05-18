@@ -597,6 +597,9 @@ endif
 ifeq ($(CONFIG_TMK),y)
 CFLAGS += -DHAVE_TMK
 endif
+ifeq ($(CONFIG_BKM),y)
+CFLAGS += -DHAVE_BKM
+endif
 ifeq ($(CONFIG_FREERADIUS),y)
 CFLAGS += -DHAVE_FREERADIUS
 endif
@@ -630,6 +633,7 @@ ifneq ($(CONFIG_RT2880),y)
 endif
 	install process_monitor $(INSTALLDIR)/sbin	
 	install resetbutton $(INSTALLDIR)/sbin	
+	install gpiowatcher $(INSTALLDIR)/sbin	
 	install init $(INSTALLDIR)/sbin	
 	install check_ps $(INSTALLDIR)/sbin	
 	install nvram $(INSTALLDIR)/usr/sbin	
@@ -758,6 +762,7 @@ endif
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless
 	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
+	$(CC) $(CFLAGS) -o gpiowatcher gpiowatcher.c $(LDFLAGS)
 #ifeq ($(CONFIG_LSX),y)
 #	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
 #else
