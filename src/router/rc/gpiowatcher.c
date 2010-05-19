@@ -215,7 +215,7 @@ void period_check(int sig)
 }
 
 void usage(void) {
-    fprintf(stderr,"\nUsage: gpiowatcher [-d] [-s] [-t <syslog_text>] -[-I] [-i interval] [-w] [-o exit_only_on_value] [-c <script>] -g gpio  \n\nuse -d for debug\n   -n will not exit, just report on stdout/syslog\n    -w reports how long the status change (as a second value on stdout)\n-c <script> call a script with gpio value time\n   -I invert values (right now for script calls only!)\n    -s to log changes syslog\n    -t <text> to change syslog loging text (default GPIOWATCHER) \n\n exit-value is the new gpio state, that is also printed\n\nEverybody who does not like this help -> make it nicer and send it to me\n");
+    fprintf(stderr,"\nUsage: gpiowatcher [-h] [-d] [-s] [-t <syslog_text>] -[-I] [-i interval] [-w] [-o exit_only_on_value] [-c <script>] -g gpio  \n\n-h this ugly text \nuse -d for debug\n   -n will not exit, just report on stdout/syslog\n    -w reports how long the status change (as a second value on stdout)\n    -c <script> call a script with gpio value time\n   -I invert values (right now for script calls only!)\n    -s log to syslog\n    -t <text> to change syslog loging text (default GPIOWATCHER) \n\n exit-value is the new gpio state, that is also printed\n\nEverybody who does not like this help -> make it nicer and send it to me\n");
     exit(1);
 	}
 
@@ -224,9 +224,13 @@ int main(int argc, char *argv[])
 {
 
 	int c;
-	while ((c = getopt (argc, argv, "Idnswt:g:i:o:c:")) != -1)
+	while ((c = getopt (argc, argv, "hIdnswt:g:i:o:c:")) != -1)
          switch (c)
            {
+           case 'h':
+             usage();
+			exit (-1);
+             break;
            case 'd':
              debug = 1;
              break;
