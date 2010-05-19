@@ -20,7 +20,8 @@
  * $Id:
  */
 #ifdef HAVE_NAS
-
+#ifndef HAVE_MADWIFI
+#ifndef HAVE_RT2880
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -814,4 +815,7 @@ void stop_nas(void)
 	cprintf("done\n");
 	return;
 }
+
+#endif
+#endif
 #endif
