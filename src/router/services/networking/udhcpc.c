@@ -415,7 +415,7 @@ static int bound_tv(void)
 		strcpy(bcast, ip);
 		get_broadcast(bcast, net);
 		nvram_set("tvnicaddr", ip);
-		eval("ifconfig", ifname, nvram_safe_get("tvnicaddr"), "netmask", net, "broadcast", bcast,"multi");
+		eval("ifconfig", ifname, ip, "netmask", net,"broadcast",bcast,"multicast");
 	}
 	if (cidr && ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
