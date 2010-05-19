@@ -129,6 +129,7 @@ void set_gpio(int gpio, int value)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
+		close(file);
 		return;
 	}
 
@@ -143,7 +144,6 @@ void set_gpio(int gpio, int value)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
-		return;
 	}
 
 	close(file);
@@ -178,6 +178,7 @@ int get_gpio(int gpio)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
+		close(file);
 		return 1;
 	}
 
@@ -191,6 +192,7 @@ int get_gpio(int gpio)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
+		close(file);
 		return 1;
 	}
 
@@ -252,6 +254,7 @@ void set_gpio(int gpio, int value)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
+		close(file);
 		return;
 	}
 
@@ -266,7 +269,6 @@ void set_gpio(int gpio, int value)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
-		return;
 	}
 
 	close(file);
@@ -301,6 +303,7 @@ int get_gpio(int gpio)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
+		close(file);
 		return 1;
 	}
 
@@ -314,6 +317,7 @@ int get_gpio(int gpio)
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
+		close(file);
 		return 1;
 	}
 
@@ -522,14 +526,10 @@ void set_gpio(int pin, int value)
 		set.value = value;
 		if (ioctl(fd, cmd, &set) < 0) {
 			perror("ioctl");
-			close(fd);
-			return;
 		}
 	} else {
 		if (ioctl(fd, cmd, &value) < 0) {
 			perror("ioctl");
-			close(fd);
-			return;
 		}
 	}
 	close(fd);
@@ -577,8 +577,8 @@ int get_gpio(int pin)
 			close(fd);
 			return -1;
 		}
+		close(fd);
 		if (cmd >= 1 && cmd <= 3) {
-			close(fd);
 			if ((value & 0x2) && cmd == 1)
 				return 1;
 			if ((value & 0x1) && cmd == 2)
