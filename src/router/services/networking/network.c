@@ -2956,7 +2956,7 @@ void start_wan(int status)
 					killall("udhcpc", SIGTERM);
 					start_dhcpc(vlannic,
 						    "/var/run/udhcpc_tv.pid",
-						    "/tmp/udhcpc_tv",0);
+						    "/tmp/udhcpc_tv",1);
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
@@ -2999,7 +2999,7 @@ void start_wan(int status)
 					killall("udhcpc", SIGTERM);
 					start_dhcpc(vlannic,
 						    "/var/run/udhcpc_tv.pid",
-						    "/tmp/udhcpc_tv",0);
+						    "/tmp/udhcpc_tv",1);
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
