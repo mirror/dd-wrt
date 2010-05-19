@@ -44,12 +44,17 @@ static int count = 0;
 static int oldstate = 0;
 static int firstrun = 1;
 static int gpio = -1;
+static int no_exit = 0;
+static int invert = 0;
 static int interval = 0;
 static int use_interval = 0;
+static int use_wait = 0;
 static int exit_only = 0;
 static int use_exit_only = 0;
 static int use_syslog = 0;
 char *syslog_text = "GPIOWATCHER";
+static int use_call = 0;
+char *call = NULL;
 
 
 static void alarmtimer(unsigned long sec, unsigned long usec)
@@ -67,13 +72,47 @@ void check_exit(int val)
 	{
 			if (!use_exit_only)
 				{
+				if (use_wait) 
+					val=1-val;
    				if (debug) 
   					fprintf (stderr,"Gpio %d changed from %d to  %d\n", gpio, oldstate, val);
 				if (use_syslog)
-					dd_syslog(LOG_INFO,
-					  "%s gpio %d changed from %d to %d\n",syslog_text,gpio,oldstate,val);
+					{
+					if (use_wait)
+						{
+						dd_syslog(LOG_INFO,
+					  		"%s gpio %d changed from %d to %d for %d seconds\n",syslog_text,gpio,oldstate,val,count/10);
+						}
+					else
+						{
+						dd_syslog(LOG_INFO,
+					  		"%s gpio %d changed from %d to %d\n",syslog_text,gpio,oldstate,val);
+						}
+					}
 				fprintf(stdout, "%d",val);
-				exit(val);
+				if (use_wait) 
+					{
+						fprintf(stdout, " %d",count/10);
+					}
+				if (use_call)
+					{
+					char call_script[1024];
+					if (invert)
+						sprintf(call_script,"%s %d %d %d",call,gpio,val,count/10);
+					else
+						sprintf(call_script,"%s %d %d %d",call,gpio,1-val,count/10);
+   					if (debug) 
+  						fprintf (stderr,"CALL SCRIPT: %s\n", call_script);
+
+					system(call_script);
+					if (use_syslog)
+						dd_syslog(LOG_INFO,
+					  		"%s CALL SCRIPT: %s\n",syslog_text,call_script);
+					}
+				if (!no_exit) 
+					exit(val);
+				else
+					fprintf(stdout, "\n");
 				}
 			else
 				{
@@ -85,7 +124,8 @@ void check_exit(int val)
 						dd_syslog(LOG_INFO,
 						  "%s gpio %d changed from %d to %d\n",syslog_text,gpio,oldstate,val);
 					fprintf(stdout, "%d",val); 
-					exit(val);
+					if (!no_exit) 
+						exit(val);
 					}
 				else
 					{
@@ -110,7 +150,14 @@ void period_check(int sig)
 	val = get_gpio(gpio);
 	if (val != oldstate )
 		{
-		if (use_interval)
+		if (use_wait)
+			{
+			alarmtimer(0, URGENT_INTERVAL);
+   			if (debug) 
+  					fprintf (stderr,"Gpio %d changed from %d to %d (%d seconds)\r", gpio, oldstate, val,count/10);
+			++count;
+			}
+		else if (use_interval)
 			{
 			alarmtimer(0, URGENT_INTERVAL);
 			if (++count > (interval * 10 )) 
@@ -140,6 +187,15 @@ void period_check(int sig)
 		}
 	else
 		{
+		if (use_wait && count) 
+			{
+   			if (debug) 
+  					fprintf (stderr,"Gpio %d released to %d was %d seconds on %d                     \n", gpio, oldstate,count/10,1-oldstate);
+			check_exit(val);
+			// no exit might be set
+			count=0;
+			alarmtimer(NORMAL_INTERVAL, 0);
+			}
 		if (use_interval && count)
 			{
 			if (use_exit_only &&  val != exit_only )
@@ -152,14 +208,14 @@ void period_check(int sig)
    				if (debug) 
 					fprintf (stderr,"Gpio %d fall back to oldstate %d  before interval ended\n", gpio, oldstate);
 				}
-			alarmtimer(NORMAL_INTERVAL, 0);
 			count=0;
+			alarmtimer(NORMAL_INTERVAL, 0);
 			}
 		}
 }
 
 void usage(void) {
-    fprintf(stderr,"\nUsage: gpiowatcher [-d] [-s] [-t <syslog_text>] [-i interval] [-o exit_only_on_value] -g gpio  \n\nuse -d for debug\n    -s to log changes syslog\n    -t <text> to change syslog loging text (default GPIOWATCHER) \n\n exit-value is the new gpio state, that is also printed\n");
+    fprintf(stderr,"\nUsage: gpiowatcher [-d] [-s] [-t <syslog_text>] -[-I] [-i interval] [-w] [-o exit_only_on_value] [-c <script>] -g gpio  \n\nuse -d for debug\n   -n will not exit, just report on stdout/syslog\n    -w reports how long the status change (as a second value on stdout)\n-c <script> call a script with gpio value time\n   -I invert values (right now for script calls only!)\n    -s to log changes syslog\n    -t <text> to change syslog loging text (default GPIOWATCHER) \n\n exit-value is the new gpio state, that is also printed\n\nEverybody who does not like this help -> make it nicer and send it to me\n");
     exit(1);
 	}
 
@@ -168,18 +224,27 @@ int main(int argc, char *argv[])
 {
 
 	int c;
-	while ((c = getopt (argc, argv, "dst:g:i:o:")) != -1)
+	while ((c = getopt (argc, argv, "Idnswt:g:i:o:c:")) != -1)
          switch (c)
            {
            case 'd':
              debug = 1;
              break;
+           case 'n':
+			 no_exit = 1;
+             break;
            case 'g':
 			 gpio = atoi(optarg);
+             break;
+           case 'I':
+			 invert=1;
              break;
            case 'i':
 			 interval = atoi(optarg);
 			 use_interval=1;
+             break;
+           case 'w':
+			 use_wait=1;
              break;
            case 'o':
 			 exit_only = atoi(optarg);
@@ -187,6 +252,16 @@ int main(int argc, char *argv[])
              break;
            case 't':
 			 syslog_text = optarg;
+             break;
+           case 'c':
+		   	 if (strlen(optarg) > 1000 )
+				{
+  				fprintf (stderr,"1000 Bytes for script including path should do the job. nenenene\n");
+				usage();
+				exit (-1);
+				}
+			 call = optarg;
+			 use_call=1;
              break;
            case 's':
 			 use_syslog=1;
@@ -201,6 +276,13 @@ int main(int argc, char *argv[])
 		usage();
 		exit (-1);
 		}
+
+	if (use_interval && use_wait)
+			{
+  			fprintf (stderr,"Option -i and -w does not really make sense\n");
+			usage();
+			exit (-1);
+			}
 
    if (debug) 
   	fprintf (stderr,"g = %d, i = %d, o= %d\n", gpio, interval,exit_only);
