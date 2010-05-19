@@ -653,6 +653,9 @@ endif
 ifeq ($(CONFIG_JA76PF),y)
   CFLAGS += -DHAVE_JA76PF
 endif
+ifeq ($(CONFIG_JWAP003),y)
+  CFLAGS += -DHAVE_JWAP003
+endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS += -DHAVE_LSX
 endif
