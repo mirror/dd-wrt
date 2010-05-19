@@ -633,7 +633,9 @@ ifneq ($(CONFIG_RT2880),y)
 endif
 	install process_monitor $(INSTALLDIR)/sbin	
 	install resetbutton $(INSTALLDIR)/sbin	
+ifeq ($(CONFIG_GPIOWATCHER),y)
 	install gpiowatcher $(INSTALLDIR)/sbin	
+endif
 	install init $(INSTALLDIR)/sbin	
 	install check_ps $(INSTALLDIR)/sbin	
 	install nvram $(INSTALLDIR)/usr/sbin	
