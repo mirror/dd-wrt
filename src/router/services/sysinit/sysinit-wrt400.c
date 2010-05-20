@@ -1,5 +1,5 @@
 /*
- * sysinit-pb42.c
+ * sysinit-wrt400.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
