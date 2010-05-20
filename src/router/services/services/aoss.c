@@ -37,9 +37,9 @@ void start_aoss(void)
 		stop_aoss();
 		return;
 	}
-	
+
 	killall("aoss", SIGTERM);
-	ret = eval("aoss", "-i", nvram_safe_get("lan_ifname"),"-m","ap");
+	ret = eval("aoss", "-i", nvram_safe_get("lan_ifname"), "-m", "ap");
 	dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
 	cprintf("done\n");
 	return;
@@ -47,12 +47,7 @@ void start_aoss(void)
 
 void stop_aoss(void)
 {
-	if (pidof("aoss") > 0) {
-		dd_syslog(LOG_INFO,
-			  "aoss : aoss daemon successfully stopped\n");
-		killall("aoss", SIGTERM);
-		cprintf("done\n");
-	}
+	stop_process("aoss", "buffalo aoss daemon");
 	return;
 }
 

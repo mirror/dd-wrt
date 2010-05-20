@@ -62,13 +62,7 @@ void start_upnp(void)
 
 void stop_upnp(void)
 {
-	if (pidof("upnp") > 0) {
-		dd_syslog(LOG_INFO,
-			  "upnp : upnp daemon successfully stopped\n");
-		killall("upnp", SIGUSR1);
-		killall("upnp", SIGTERM);
-		cprintf("done\n");
-	}
+	stop_process("upnp", "upnp daemon");	// we dont need to take care about SIGUSR1 anymore
 	return;
 }
 

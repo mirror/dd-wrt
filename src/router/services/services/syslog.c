@@ -76,18 +76,8 @@ void start_syslog(void)
 
 void stop_syslog(void)
 {
-
-	if (pidof("klogd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "klogd : klog daemon successfully stopped\n");
-		killall("klogd", SIGKILL);
-	}
-	if (pidof("syslogd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "syslogd : syslog daemon successfully stopped\n");
-		killall("syslogd", SIGKILL);
-	}
-	cprintf("done\n");
+	stop_process("klogd", "kernel log daemon");
+	stop_process("syslogd", "syslog daemon");
 	return;
 }
 #endif

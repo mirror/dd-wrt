@@ -227,7 +227,7 @@ void start_pptp(int status)
 		nvram_set("wan_get_dns", "");
 		nvram_unset("dhcpc_done");
 		//dirty hack
-		start_dhcpc(wan_ifname,NULL,NULL,1);
+		start_dhcpc(wan_ifname, NULL, NULL, 1);
 		int timeout;
 
 		for (timeout = 60; !nvram_match("dhcpc_done", "1") && timeout > 0; --timeout) {	/* wait for info from dhcp server */
@@ -279,11 +279,9 @@ void stop_pptp(void)
 		  nvram_safe_get("pptp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
-	if (pidof("pppd") > 0) {
-		killall("pppd", SIGTERM);
-		killall("pptp", SIGKILL);
-		killall("listen", SIGKILL);
-	}
+	stop_process("pppd", "PPP daemon");
+	stop_process("pptp", "PPTP daemon");
+	stop_process("listen", "activity daemon");
 
 	cprintf("done\n");
 	return;

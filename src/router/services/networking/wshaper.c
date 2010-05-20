@@ -604,12 +604,12 @@ int svqos_iptables(void)
 				    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m layer7 --l7proto bt2 -j MARK --set-mark %s\n",
 				     level);
 #ifndef HAVE_MICRO
-//				sysprintf
-//				    ("iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j MARK --set-mark %s\n",
-//				     level);
-//				sysprintf
-//				    ("iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j MARK --set-mark %s\n",
-//				     level);
+//                              sysprintf
+//                                  ("iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j MARK --set-mark %s\n",
+//                                   level);
+//                              sysprintf
+//                                  ("iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j MARK --set-mark %s\n",
+//                                   level);
 #endif
 			}
 		}

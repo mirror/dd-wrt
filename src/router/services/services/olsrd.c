@@ -30,11 +30,7 @@
 
 void stop_olsrd(void)
 {
-	if (pidof("olsrd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "olsrd : OLSR daemon successfully stopped\n");
-		killall("olsrd", SIGTERM);
-	}
+	stop_process("olsrd", "OLSR daemon");
 }
 
 void start_olsrd(void)

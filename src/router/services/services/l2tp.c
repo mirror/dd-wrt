@@ -115,7 +115,7 @@ length bit = yes
 		fprintf(fp, "lns = %s\n", nvram_safe_get("l2tp_server_name"));
 		fprintf(fp, "require chap = yes\n");
 		fprintf(fp, "refuse pap = yes\n");
-		fprintf(fp, "redial = yes\n");	
+		fprintf(fp, "redial = yes\n");
 		fprintf(fp, "redial timeout = 15\n");
 		fprintf(fp, "require authentication = yes\n");
 		fprintf(fp, "name = %s\n", username);
@@ -278,15 +278,10 @@ void stop_l2tp(void)
 		  nvram_safe_get("l2tp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
-	// ret = killps("pppd","-9");
-	// ret += killps("l2tpd","-9");
-	// ret += killps("listen","-9");
 
-	if (pidof("pppd") > 0 || pidof("xl2tpd")) {
-		killall("pppd", SIGTERM);
-		killall("xl2tpd", SIGKILL);
-		killall("listen", SIGKILL);
-	}
+	stop_process("pppd", "ppp daemon");
+	stop_process("xl2tpd", "L2TP daemon");
+	stop_process("listen", "connectivity listener");
 	cprintf("done\n");
 	return;
 }

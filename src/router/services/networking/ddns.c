@@ -283,13 +283,8 @@ void start_ddns(void)
 void stop_ddns(void)
 {
 	int ret;
-
-	if (pidof("inadyn") > 0)
-		dd_syslog(LOG_INFO,
-			  "DDNS : inadyn daemon successfully stopped\n");
-
+	stop_process("inadyn", "dynamic dns daemon");
 	unlink("/tmp/ddns/ddns.log");
-	ret = killall("inadyn", SIGTERM);
 
 	cprintf("done\n");
 

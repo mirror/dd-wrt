@@ -79,12 +79,7 @@ void start_ttraff(void)
 
 void stop_ttraff(void)
 {
-
-	if (pidof("ttraff") > 0) {
-		dd_syslog(LOG_INFO,
-			  "ttraff : traffic counter daemon successfully stopped\n");
-		killall("ttraff", SIGKILL);
-	}
+	stop_process("ttraff", "traffic counter daemon");
 	cprintf("done\n");
 
 	return;
