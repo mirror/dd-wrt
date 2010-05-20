@@ -100,11 +100,7 @@ void start_radvd(void)
 void stop_radvd(void)
 {
 
-	if (pidof("radvd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "radvd : RADV daemon successfully stopped\n");
-		killall("radvd", SIGKILL);
-	}
+	stop_process("radvd", "RADV daemon");
 	unlink("/var/run/radvd.pid");
 
 	cprintf("done\n");

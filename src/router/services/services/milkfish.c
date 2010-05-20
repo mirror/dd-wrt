@@ -32,12 +32,9 @@ void start_milkfish_boot(void);
 
 void stop_milkfish(void)
 {
-	if (pidof("rtpproxy") > 0 || pidof("openser") > 0) {
-		dd_syslog(LOG_INFO, "Milkfish service successfully stopped\n");
 
-		killall("rtpproxy", SIGTERM);
-		killall("openser", SIGTERM);
-		// Stop the milkfish services
+	if (stop_process("rtpproxy", "rtpproxy")
+	    || stop_process("openser", "openser")) {
 		eval("milkfish_services", "stop");
 	}
 }

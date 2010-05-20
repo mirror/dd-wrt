@@ -56,12 +56,7 @@
 
 void stop_wland(void)
 {
-	if (pidof("wland") > 0) {
-		dd_syslog(LOG_INFO,
-			  "wland : WLAN daemon successfully stopped\n");
-		killall("wland", SIGKILL);
-	}
-	cprintf("done\n");
+	stop_process("wland", "WLAN daemon");
 	return;
 }
 

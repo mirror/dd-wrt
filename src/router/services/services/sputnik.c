@@ -50,14 +50,7 @@ void start_sputnik(void)
 
 void stop_sputnik(void)
 {
-
-	if (pidof("sputnik") > 0) {
-		dd_syslog(LOG_INFO,
-			  "sputnik : sputnik daemon successfully stopped\n");
-		killall("sputnik", SIGTERM);
-
-		cprintf("done\n");
-	}
+	stop_process("sputnik", "sputnik daemon");
 	return;
 }
 

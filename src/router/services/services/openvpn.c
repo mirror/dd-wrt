@@ -74,12 +74,7 @@ void start_openvpnserver(void)
 
 void stop_openvpnserver(void)
 {
-	if (pidof("openvpn") > 0)
-		killall("openvpn", SIGKILL);
-	int max = 5;
-	while (max-- && pidof("openvpn") > 0) {
-		sleep(1);
-	}
+	stop_process("openvpn", "OpenVPN daemon");
 	return;
 }
 
@@ -186,16 +181,14 @@ void start_openvpn(void)
 
 void stop_openvpn(void)
 {
-	if (pidof("openvpn") > 0)
-		killall("openvpn", SIGKILL);
+	stop_process("openvpn", "OpenVPN daemon");
 }
 
 void stop_openvpn_wandone(void)
 {
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
-	if (pidof("openvpn") > 0)
-		killall("openvpn", SIGKILL);
+	stop_process("openvpn", "OpenVPN daemon");
 }
 
 #endif

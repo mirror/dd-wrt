@@ -151,11 +151,7 @@ void start_ntpc(void)
 #endif
 void stop_ntpc(void)
 {
-	if (pidof("ntpclient") > 0) {
-		dd_syslog(LOG_INFO,
-			  "ntpclient : ntp client successfully stopped\n");
-		killall("ntpclient", SIGTERM);
-	}
+	stop_process("ntpclient", "Network Time Protocol client");
 	cprintf("done\n");
 	return;
 }
@@ -175,12 +171,7 @@ void start_resetbutton(void)
 
 void stop_resetbutton(void)
 {
-
-	if (pidof("resetbutton") > 0) {
-		dd_syslog(LOG_INFO,
-			  "reset button : resetbutton daemon successfully stopped\n");
-		killall("resetbutton", SIGKILL);
-	}
+	stop_process("resetbutton", "resetbutton daemon");
 	cprintf("done\n");
 	return;
 }
@@ -201,12 +192,7 @@ void start_iptqueue(void)
 
 void stop_iptqueue(void)
 {
-
-	if (pidof("iptqueue") > 0) {
-		dd_syslog(LOG_INFO,
-			  "iptqueue : iptqueue daemon successfully stopped\n");
-		killall("iptqueue", SIGKILL);
-	}
+	stop_process("iptqueue", "iptqueue daemon");
 	cprintf("done\n");
 	return;
 }
@@ -244,10 +230,7 @@ void start_ipv6(void)
 void stop_3g(void)
 {
 	unlink("/tmp/ppp/link");
-	if (pidof("pppd") > 0) {
-		dd_syslog(LOG_INFO, "3g/umts process successfully stopped\n");
-		killall("pppd", SIGTERM);
-	}
+	stop_process("pppd", "3g/umts process");
 	cprintf("done\n");
 }
 

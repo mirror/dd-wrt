@@ -204,11 +204,7 @@ void stop_freeradius(void)
 {
 
 	cprintf("done\n");
-	if (pidof("radiusd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "radiusd : FreeRadius daemon successfully stopped\n");
-		killall("radiusd", SIGKILL);
-	}
+	stop_process("radiusd", "FreeRadius daemon");
 	return;
 }
 #endif

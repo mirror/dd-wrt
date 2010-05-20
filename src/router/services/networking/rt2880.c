@@ -404,7 +404,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	MAC_ADD(mac);
 	MAC_ADD(mac);
 #endif
-	killall("rt2860apd", SIGTERM);
+	stop_process("rt2860apd", "RALINK radius authenticator");
 	eval("ifconfig", "ra0", "down");
 	eval("ifconfig", "ra1", "down");
 	eval("ifconfig", "ra2", "down");
@@ -1396,7 +1396,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 void start_hostapdwan(void)
 {
 	if (!isSTA() && startradius) {
-		killall("rt2860apd", SIGTERM);
+		stop_process("rt2860apd", "RALINK radius authenticator");
 		eval("rt2860apd");
 	}
 }

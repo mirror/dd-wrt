@@ -593,40 +593,14 @@ void stop_zebra(void)
 {
 
 #ifdef HAVE_QUAGGA
-
-	if (pidof("zebra") > 0 || pidof("ripd") > 0 || pidof("ospfd") > 0
-	    || pidof("bgpd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
-		killall("zebra", SIGTERM);
-		killall("ripd", SIGTERM);
-		killall("ospfd", SIGTERM);
-		killall("bgpd", SIGTERM);
-		int maxcount = 5;
-		if ((pidof("zebra") > 0 || pidof("ripd") > 0
-		     || pidof("ospfd") > 0 || pidof("bgpd") > 0)
-		    && (maxcount--) > 0) {
-			sleep(1);
-		}
-		if (!maxcount) {
-			//okay. strange, now we must kill them
-			killall("zebra", SIGKILL);
-			killall("ripd", SIGKILL);
-			killall("ospfd", SIGKILL);
-			killall("bgpd", SIGKILL);
-		}
-		cprintf("done\n");
-	}
+	stop_process("zebra", "zebra daemon");
+	stop_process("ripd", "rip daemon");
+	stop_process("ospfd", "ospf daemon");
+	stop_process("bgpd", "bgp daemon");
 	return;
 
 #elif defined(HAVE_BIRD)
-	if (pidof("bird") > 0) {
-		dd_syslog(LOG_INFO,
-			  "bird : bird daemon successfully stopped\n");
-		killall("bird", SIGTERM);
-
-		cprintf("done\n");
-	}
+	stop_process("bird", "bird daemon");
 	return;
 
 #else

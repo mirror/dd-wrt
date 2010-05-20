@@ -74,7 +74,7 @@ int ipup_main(int argc, char **argv)
 
 	cprintf("%s\n", argv[0]);
 
-	killall("listen", SIGKILL);
+	stop_process("listen", "activity listener");
 	nvram_set("wan_iface", wan_ifname);
 	if (check_action() != ACT_IDLE)
 		return -1;
@@ -236,7 +236,7 @@ int ipdown_main(int argc, char **argv)
 	if (nvram_match("ppp_demand", "1")
 	    && (nvram_match("wan_proto", "pptp")
 		|| nvram_match("wan_proto", "l2tp"))) {
-		killall("listen", SIGKILL);
+		stop_process("listen", "activity listener");
 		eval("listen", nvram_safe_get("lan_ifname"));
 	}
 

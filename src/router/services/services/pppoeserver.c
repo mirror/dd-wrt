@@ -436,12 +436,10 @@ void start_pppoeserver(void)
 
 void stop_pppoeserver(void)
 {
-	if (pidof("pppoe-server") > 0) {
-		dd_syslog(LOG_INFO,
-			  "rp-pppoe : pppoe server successfully stopped\n");
-		killall("pppoe-server", SIGTERM);
+	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
 	}
+
 }
 
 #endif

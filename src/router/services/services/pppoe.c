@@ -267,16 +267,11 @@ void stop_pppoe(void)
 {
 
 	unlink("/tmp/ppp/link");
-	if (pidof("pppd") > 0) {
-		dd_syslog(LOG_INFO, "pppoe process successfully stopped\n");
-		killall("pppd", SIGTERM);
-	}
+	stop_process("pppd", "pppoe process");
 	if (nvram_match("wan_vdsl", "1")) {
 		eval("ifconfig", nvram_safe_get("wan_iface"), "down");
 		eval("vconfig", "rem", nvram_safe_get("wan_iface"));
 	}
-	// ret += killall ("ip-up", SIGKILL);
-	// ret += killall ("ip-down", SIGKILL);
 
 	cprintf("done\n");
 	return;
@@ -285,12 +280,7 @@ void stop_pppoe(void)
 void stop_dns_clear_resolv(void)
 {
 	FILE *fp_w;
-
-	if (pidof("dnsmasq") > 0) {
-		dd_syslog(LOG_INFO,
-			  "dnsmasq : dnsmasq daemon successfully stopped\n");
-		killall("dnsmasq", SIGTERM);
-	}
+	stop_process("dnsmasq", "dnsmasq daemon");
 	/*
 	 * Save DNS to resolv.conf 
 	 */

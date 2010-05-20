@@ -125,13 +125,9 @@ static void deconfigure_single(int count)
 void deconfigure_wifi(void)
 {
 
-	killall("wrt-radauth", SIGTERM);
-	killall("hostapd", SIGTERM);
-	killall("wpa_supplicant", SIGTERM);
-	sleep(1);
-	killall("wrt-radauth", SIGKILL);
-	killall("hostapd", SIGKILL);
-	killall("wpa_supplicant", SIGKILL);
+	stop_process("wrt-radauth", "Radius daemon");
+	stop_process("hostapd", "hostapd daemon");
+	stop_process("wpa_supplicant", "wpa_supplicant daemon");
 
 	int c = getdevicecount();
 	int i;

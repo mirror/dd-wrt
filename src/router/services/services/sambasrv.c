@@ -51,10 +51,6 @@ void start_sambasrv(void)
 
 void stop_sambasrv(void)
 {
-
-	if (pidof("samba") > 0) {
-		syslog(LOG_INFO, "Samba : samba server successfully stopped\n");
-		killall("proftpd", SIGTERM);
-	}
+	stop_process("samba", "samba server");
 }
 #endif

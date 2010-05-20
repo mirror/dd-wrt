@@ -287,10 +287,7 @@ void start_splashd(void)
 void stop_splashd(void)
 {
 
-	if (pidof("splashd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "splashd : splash daemon successfully stopped\n");
-		killall("splashd", SIGTERM);
+	if (stop_process("splashd", "nocat daemon")) {
 		eval("/usr/libexec/nocat/clear.fw");
 		stop_firewall();	// evil
 		stop_wland();

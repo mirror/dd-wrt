@@ -137,8 +137,8 @@ void stop_heartbeat(void)
 {
 	int ret;
 
+	stop_process("bpalogin", "bpalogin");
 	unlink("/tmp/ppp/link");
-	ret = killall("bpalogin", SIGTERM);
 
 	cprintf("done\n");
 
