@@ -56,7 +56,7 @@
 
 void stop_redial(void)
 {
-	stop_proces("redial", "ppp redial daemon");
+	stop_process("redial", "ppp redial daemon");
 	cprintf("done\n");
 	return;
 }
