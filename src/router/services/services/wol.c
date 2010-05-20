@@ -37,12 +37,7 @@
 
 void stop_wol(void)
 {
-
-	if (pidof("wol") > 0)
-		killall("wol", SIGKILL);
-
-	cprintf("done\n");
-
+	stop_process("wol", "Wake On LAN Daemon");
 }
 
 void start_wol(void)

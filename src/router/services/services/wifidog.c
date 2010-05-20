@@ -102,10 +102,7 @@ void start_wifidog(void)
 
 void stop_wifidog(void)
 {
-	if (pidof("wifidog") > 0) {
-		dd_syslog(LOG_INFO, "wifidog successfully stopped\n");
-		killall("wifidog", SIGTERM);
-	}
+	stop_process("wifidog", "WiFiDOG");
 }
 
 #endif

@@ -117,16 +117,7 @@ void start_chilli(void)
 
 void stop_chilli(void)
 {
-
-	if (pidof("chilli") > 0) {
-		if (f_exists("/tmp/hotss.conf")) {
-			syslog(LOG_INFO,
-			       "hotspotsystem : chilli daemon successfully stopped\n");
-		} else {
-			syslog(LOG_INFO,
-			       "chilli : chilli daemon successfully stopped\n");
-		}
-		killall("chilli", SIGKILL);
+	if (stop_process("chilli", "chilli daemon")) {
 		unlink("/tmp/chilli.conf");
 		unlink("/tmp/hotss.conf");
 	}

@@ -144,10 +144,6 @@ void stop_ftpsrv(void)
 	unlink("/tmp/proftpd/etc/proftpd.conf");
 	unlink("/tmp/proftpd/etc/proftpd.scoreboard");
 
-	if (pidof("proftpd") > 0) {
-		syslog(LOG_INFO,
-		       "Proftpd : proftpd server successfully stopped\n");
-		killall("proftpd", SIGTERM);
-	}
+	stop_process("proftpd", "FTP Server");
 }
 #endif

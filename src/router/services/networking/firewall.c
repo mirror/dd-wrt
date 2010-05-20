@@ -1513,9 +1513,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 					    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
 					     seq, log_drop);
 #ifndef HAVE_MICRO
-//					save2file
-//					    ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
-//					     seq, log_drop);
+//                                      save2file
+//                                          ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
+//                                           seq, log_drop);
 #endif
 				}
 
@@ -1529,26 +1529,26 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		insmod("ipt_ipp2p");
 		save2file("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 			  log_drop);
-					/* bittorrent detection enhanced */
+		/* bittorrent detection enhanced */
 #ifdef HAVE_MICRO
-					save2file
-					    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
-					     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
+		     seq, log_drop);
 #else
-					save2file
-					    ("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s\n",
-					     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s\n",
+		     seq, log_drop);
 #endif
-					save2file
-					    ("-A advgrp_%d -m layer7 --l7proto bt1 -j %s\n",
-					     seq, log_drop);
-					save2file
-					    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
-					     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto bt1 -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
+		     seq, log_drop);
 #ifndef HAVE_MICRO
-//					save2file
-//					    ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
-//					     seq, log_drop);
+//                                      save2file
+//                                          ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
+//                                           seq, log_drop);
 #endif
 	}
 	/*
@@ -3033,12 +3033,12 @@ void start_firewall(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-	runStartup("/jffs/etc/config", ".prewall");	// if available
+		runStartup("/jffs/etc/config", ".prewall");	// if available
 	runStartup("/mmc/etc/config", ".prewall");	// if available
 	runStartup("/tmp/etc/config", ".prewall");	// if available
 	create_rc_file(RC_FIREWALL);
 	if (f_exists("/tmp/.rc_firewall")) {
-		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);		
+		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 		system("/tmp/.rc_firewall");
 	}
 	runStartup("/etc/config", ".firewall");

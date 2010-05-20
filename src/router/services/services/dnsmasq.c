@@ -44,7 +44,7 @@ char *getmdhcp(int count, int index)
 	int cnt = 0;
 	static char word[256];
 	char *next, *wordlist;
-	
+
 	wordlist = nvram_safe_get("mdhcpd");
 	foreach(word, wordlist, next) {
 		if (cnt < index) {
@@ -64,11 +64,10 @@ char *getmdhcp(int count, int index)
 		char *leasetime = max;
 
 		max = strsep(&leasetime, ">");
-		if (max==NULL)
-		    {
-		    max = leasetime;
-		    leasetime="3660";
-		    }
+		if (max == NULL) {
+			max = leasetime;
+			leasetime = "3660";
+		}
 		if (count == 0)
 			return interface;
 		if (count == 1)
@@ -422,15 +421,8 @@ void start_dnsmasq(void)
 
 void stop_dnsmasq(void)
 {
-
-	if (pidof("dnsmasq") > 0) {
-		syslog(LOG_INFO,
-		       "dnsmasq : dnsmasq daemon successfully stopped\n");
-		softkill("dnsmasq");
+	if (stop_process("dnsmasq", "dnsmasq daemon")) {
 		unlink("/tmp/resolv.dnsmasq");
-
-		cprintf("done\n");
 	}
-	return;
 }
 #endif

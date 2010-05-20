@@ -73,11 +73,7 @@ void start_process_monitor(void)
 
 void stop_process_monitor(void)
 {
-
-	if (pidof("process_monitor") > 0) {
-		dd_syslog(LOG_INFO, "process_monitor successfully stopped\n");
-		killall("process_monitor", SIGKILL);
-	}
+	stop_process("process_monitor", "Process Monitor");
 	cprintf("done\n");
 
 	return;

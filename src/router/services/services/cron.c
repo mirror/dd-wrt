@@ -160,12 +160,7 @@ void start_cron(void)
 
 void stop_cron(void)
 {
-
-	if (pidof("cron") > 0) {
-		dd_syslog(LOG_INFO,
-			  "cron : cron daemon successfully stopped\n");
-		killall("cron", SIGKILL);
-	}
+	stop_process("cron", "cron daemon");
 	eval("rm", "-rf", "/tmp/cron.d");
 	cprintf("done\n");
 	return;

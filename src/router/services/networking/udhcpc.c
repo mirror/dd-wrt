@@ -170,7 +170,8 @@ static int bound(void)
 	nvram_unset("dhcpc_done");
 	char *wan_ifname = safe_getenv("interface");
 	char *value;
-	static char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
+	static char temp_wan_ipaddr[16], temp_wan_netmask[16],
+	    temp_wan_gateway[16];
 	int changed = 0;
 
 	if ((value = getenv("ip"))) {
@@ -415,7 +416,8 @@ static int bound_tv(void)
 		strcpy(bcast, ip);
 		get_broadcast(bcast, net);
 		nvram_set("tvnicaddr", ip);
-		eval("ifconfig", ifname, ip, "netmask", net,"broadcast",bcast,"multicast");
+		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast,
+		     "multicast");
 	}
 	if (cidr && ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);

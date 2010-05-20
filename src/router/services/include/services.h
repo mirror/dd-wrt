@@ -174,5 +174,5 @@ int br_set_bridge_prio(const char *br, char *prio);
 void reset_hwaddr(char *ifname);
 void start_force_to_dial(void);
 
-
+int stop_process(char *name,char *desc);
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)

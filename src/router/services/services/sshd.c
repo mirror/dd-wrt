@@ -118,15 +118,7 @@ void start_sshd(void)
 
 void stop_sshd(void)
 {
-
-	if (pidof("dropbear") > 0) {
-		killall("dropbear", SIGTERM);
-		sleep(1);
-		killall("dropbear", SIGKILL);
-		dd_syslog(LOG_INFO,
-			  "dropbear : ssh daemon successfully stopped\n");
-	}
-
+	stop_process("dropbear", "ssh daemon");
 	cprintf("done\n");
 
 	return;
