@@ -56,13 +56,7 @@
 
 void stop_redial(void)
 {
-
-	if (pidof("redial") > 0) {
-		dd_syslog(LOG_INFO,
-			  "ppp_redial : redial daemon successfully stopped\n");
-		// ret = killps("redial","-9");
-		killall("redial", SIGKILL);
-	}
+	stop_proces("redial", "ppp redial daemon");
 	cprintf("done\n");
 	return;
 }

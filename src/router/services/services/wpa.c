@@ -762,27 +762,9 @@ void stop_nas(void)
 	led_control(LED_SEC0, LED_OFF);
 	led_control(LED_SEC1, LED_OFF);
 
-	if (pidof("nas") > 0)
-		dd_syslog(LOG_INFO, "NAS : NAS daemon successfully stopped\n");
+	stop_process("nas", "NAS daemon");
+	stop_process("wrt-radauth", "Radius daemon");
 
-	if (pidof("wrt-radauth") > 0) {
-		dd_syslog(LOG_INFO,
-			  "RADAUTH : RADAUTH daemon successfully stopped\n");
-		killall("wrt-radauth", SIGKILL);
-	}
-
-	int deadcount = 0;
-
-	while (pidof("nas") > 0 && (deadcount++) < 8) {
-		/*
-		 * NAS sometimes won't exit properly on a normal kill 
-		 */
-		// int ret = killps("nas",NULL);
-		ret = killall("nas", SIGTERM);
-		sleep(2);
-		// killps("nas","-9");
-		killall("nas", SIGKILL);
-	}
 #ifdef HAVE_WPA_SUPPLICANT
 	killall("wpa_supplicant", SIGKILL);
 #endif

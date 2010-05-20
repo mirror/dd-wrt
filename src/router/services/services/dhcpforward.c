@@ -143,19 +143,10 @@ void start_dhcpfwd(void)
 void stop_dhcpfwd(void)
 {
 #ifdef HAVE_DHCPFORWARD
-	if (pidof("dhcpfwd") > 0) {
-		syslog(LOG_INFO,
-		       "dhcpfwd : dhcp forwarder daemon successfully stopped\n");
-		killall("dhcpfwd", SIGTERM);	// kill also dhcp forwarder if
-		// available
-	}
+	stop_process("dhcpfwd", "dhcp forwarder");
 #endif
 #ifdef HAVE_DHCPRELAY
-	if (pidof("dhcrelay") > 0) {
-		syslog(LOG_INFO,
-		       "dhcrelay : dhcp relay successfully stopped\n");
-		killall("dhcrelay", SIGTERM);
-	}
+	stop_process("dhcrelay", "dhcp relay");
 #endif
 }
 #endif

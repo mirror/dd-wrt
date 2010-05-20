@@ -29,11 +29,7 @@
 
 void stop_nstxd(void)
 {
-	if (pidof("nstxd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "nstxd : nstx daemon successfully stopped\n");
-		killall("nstxd", SIGTERM);
-	}
+	stop_process("nstxd", "nstx daemon");
 }
 
 void start_nstxd(void)

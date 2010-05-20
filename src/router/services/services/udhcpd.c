@@ -371,12 +371,7 @@ void start_udhcpd(void)
 
 void stop_udhcpd(void)
 {
-	if (pidof("udhcpd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "udhcpd : udhcp daemon successfully stopped\n");
-		softkill("udhcpd");
-	}
-	cprintf("done\n");
+	stop_process("udhcpd", "DHCP daemon");
 	return;
 }
 

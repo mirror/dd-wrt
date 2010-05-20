@@ -59,12 +59,7 @@ void start_telnetd(void)
 
 void stop_telnetd(void)
 {
-
-	if (pidof("telnetd") > 0) {
-		dd_syslog(LOG_INFO,
-			  "telnetd : telnet daemon successfully stopped\n");
-		killall("telnetd", SIGTERM);
-	}
+	stop_process("telnetd", "telnet daemon");
 	cprintf("done\n");
 	return;
 }

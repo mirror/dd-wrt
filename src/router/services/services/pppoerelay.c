@@ -42,9 +42,6 @@ void start_pppoerelay(void)
 
 void stop_pppoerelay(void)
 {
-	if (pidof("pppoe-relay") > 0) {
-		dd_syslog(LOG_INFO, "pppoe-relay successfully stopped\n");
-		killall("pppoe-relay", SIGTERM);
-	}
+	stop_process("pppoe-relay", "pppoe relay");
 }
 #endif

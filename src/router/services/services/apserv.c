@@ -50,13 +50,7 @@ void start_apserv(void)
 
 void stop_apserv(void)
 {
-	if (pidof("ap_serv") > 0) {
-		dd_syslog(LOG_INFO,
-			  "ap_serv : ap_serv daemon successfully stopped\n");
-		killall("ap_serv", SIGUSR1);
-		killall("ap_serv", SIGTERM);
-		cprintf("done\n");
-	}
+	stop_process("ap_serv", "buffalo discovery daemon");
 	return;
 }
 

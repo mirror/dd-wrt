@@ -74,11 +74,6 @@ void start_vncrepeater(void)
 
 void stop_vncrepeater(void)
 {
-
-	if (pidof("repeater") > 0) {
-		syslog(LOG_INFO,
-		       "VNCRepeater : repeater successfully stopped\n");
-		killall("vncrepeater", SIGTERM);
-	}
+	stop_process("repeater", "VNCRepeater");
 }
 #endif

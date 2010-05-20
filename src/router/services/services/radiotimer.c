@@ -83,11 +83,7 @@ void start_radio_timer(void)
 void stop_radio_timer(void)
 {
 
-	if (pidof("radio_timer") > 0) {
-		dd_syslog(LOG_INFO,
-			  "radio_timer : radio timer daemon successfully stopped\n");
-		killall("radio_timer", SIGKILL);
-	}
+	stop_process("radio_timer", "radio timer daemon");
 	cprintf("done\n");
 
 	return;
