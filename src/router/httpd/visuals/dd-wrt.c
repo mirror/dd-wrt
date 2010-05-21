@@ -1426,7 +1426,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 	if (count < 1)
 		return;
 		
-	if (strlen(nvram_safe_get("ath0_vifs")) == 0)
+	if (count == 1 && strlen(nvram_safe_get("ath0_vifs")) == 0)
 		return;
 	
 	websWrite(wp, "<div class=\"setting\">\n");
