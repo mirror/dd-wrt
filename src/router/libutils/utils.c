@@ -907,9 +907,9 @@ int internal_getRouterBrand()
 	};
 
 	struct UBNTDEV dev[] = {
-		{"Ubiquiti Nanostation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M},	//
-		{"Ubiquiti Nanostation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M},	//
-		{"Ubiquiti Nanostation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M},	//
+		{"Ubiquiti NanoStation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M},	//
+		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M},	//
+		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M},	//
 		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M},	//
@@ -923,7 +923,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M},	//
 		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M},	//
 		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti Litestation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M},	//
+		{"Ubiquiti LiteStation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M},	//
 		{"Ubiquiti AP 1000N", 0xe402, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M},	//
 		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M},	//
@@ -954,19 +954,19 @@ int internal_getRouterBrand()
 	setRouter("Ubiquiti Unknown Model");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_NS2
-	setRouter("Ubiquiti Nanostation 2");
+	setRouter("Ubiquiti NanoStation 2");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_EOC5610
 	setRouter("Senao EOC-5610");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_NS5
-	setRouter("Ubiquiti Nanostation 5");
+	setRouter("Ubiquiti NanoStation 5");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_SOLO51
 	setRouter("Alfa SoLo48-N");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_NS3
-	setRouter("Ubiquiti Nanostation 3");
+	setRouter("Ubiquiti NanoStation 3");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_BS5
 	setRouter("Ubiquiti Bullet 5");
@@ -990,22 +990,22 @@ int internal_getRouterBrand()
 	setRouter("Ubiquiti Bullet 2 HP");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_LC2
-	setRouter("Ubiquiti Nanostation Loco 2");
+	setRouter("Ubiquiti NanoStation 2 Loco");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_LC5
-	setRouter("Ubiquiti Nanostation Loco 5");
+	setRouter("Ubiquiti NanoStation 5 Loco");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_PS2
-	setRouter("Ubiquiti Powerstation 2");
+	setRouter("Ubiquiti PowerStation 2");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_PS5
-	setRouter("Ubiquiti Powerstation 5");
+	setRouter("Ubiquiti PowerStation 5");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_LS2
-	setRouter("Ubiquiti Litestation 2");
+	setRouter("Ubiquiti LiteStation 2");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_LS5
-	setRouter("Ubiquiti Litestation 5");
+	setRouter("Ubiquiti LiteStation 5");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_WHRAG108
 	setRouter("Buffalo WHR-HP-AG108");
@@ -1073,7 +1073,7 @@ int internal_getRouterBrand()
 	setRouter("JJPLUS JWAP003");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
-	setRouter("Ubiquiti Litestation-SR71");
+	setRouter("Ubiquiti LiteStation-SR71");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DANUBE
 	setRouter("Infineon Danube");
