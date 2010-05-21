@@ -2324,26 +2324,33 @@ void ej_getencryptionstatus(webs_t wp, int argc, char_t ** argv)
 
 void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 {
-	char mode[32];
+	char var[32];
 	char m[32];
+	int showap = 0, showcli = 0;
 
 	strncpy(m, nvram_safe_get("wifi_display"), 4);
 	m[4] = 0;
-	sprintf(mode, "%s_mode", m);
+	sprintf(var, "%s_mode", m);
 
-	if (nvram_match(mode, "wet") || nvram_match(mode, "sta")
-	    || nvram_match(mode, "infra"))
+	if (nvram_match(var, "ap") || nvram_match(var, "wdsap")) {
+		showap = 1;  // "Clients"
+	}
+	else {
+		showcli = 1;  // "Access Point"
+		sprintf(var, "%s_vifs", m);
+		if (strlen(nvram_safe_get(var)) > 0)
+			showap = 1;  // " & Clients"
+	}
+
+	if (showcli)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">Capture(info.ap)</script>");
-	else if (nvram_match(mode, "apsta") || nvram_match(mode, "apstawet")) {
-		websWrite(wp,
-			  "<script type=\"text/javascript\">Capture(info.ap)</script>");
-		websWrite(wp, " & ");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
-	} else
-		websWrite(wp,
-			  "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
+	if (showcli && showap)
+		websWrite(wp, " & ");		  
+	if (showap)
+			websWrite(wp,
+			  "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");	
+	
 }
 
 void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
@@ -2358,11 +2365,8 @@ void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
 void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
-	char m[32];
-
-	strncpy(m, nvram_safe_get("wifi_display"), 4);
-	m[4] = 0;
-	sprintf(mode, "%s_mode", m);
+	
+	sprintf(mode, "%s_mode", nvram_safe_get("wifi_display"));
 
 	websWrite(wp, "<script type=\"text/javascript\">");
 	if (nvram_match(mode, "wet"))
