@@ -45,6 +45,7 @@
 #define Get_user(a,b)	get_user(a,b)
 #endif
 
+#define PROC_NAME_BTN_WLAN		   "vsopenrisc/wlan"
 #define PROC_NAME_BTN_RST		   "vsopenrisc/reset"
 #define PROC_NAME_LEDS			   "vsopenrisc/leds"
 #define PROC_NAME_BUZZER		   "vsopenrisc/buzzer"
@@ -94,9 +95,8 @@ int poll_flag = 0;	      // interrupt occurrence flag
 #include <asm/hardware.h>
 #include <asm/io.h>
 
-#define GPIO_DATA_INIT		(0xc000UL)	// reset high & power led on & blue led on
+#define GPIO_DATA_INIT		(BTN_RST_MASK|LED_POWER_MASK|LED_BTN_WLAN_MASK)	// reset high & power led on & blue led on
 #define GPIO_INPUTS			(0x800fUL)
-//#define GPIO_OUTPUTS		(0x7C00UL)
 #define GPIO_OUTPUTS		(MASK_LEDS | BUZZER_MASK)
 #define GPIO_DATA		(*(volatile unsigned long *)(KS8695_GPIO_VA + KS8695_GPIO_DATA))
 #define GPIO_MODE		(*(volatile unsigned long *)(KS8695_GPIO_VA + KS8695_GPIO_MODE))
@@ -113,12 +113,15 @@ static unsigned long gpio_ext_irq_changes[NUMBER_OF_GPIOS];
 static unsigned long gpio_last_changed = 0;
 
 #define BTN_RST_MASK		0x8000UL
+#define BTN_WLAN_MASK		0x100UL
+#define BTN_WLAN_INT_ACK_MASK 	0x0080UL
 
 #define BUZZER_MASK			0x0800UL
 
 #define LED_POWER_MASK		0x4000UL
 #define LED_BLUE_MASK		0x2000UL
 #define LED_GREEN_MASK		0x0400UL
+#define LED_BTN_WLAN_MASK	0x0200UL
 
 #define LED_POWER_STR_ON	"POWER"
 #define LED_POWER_STR_OFF	"power"
@@ -126,16 +129,20 @@ static unsigned long gpio_last_changed = 0;
 #define LED_BLUE_STR_OFF	"blue"
 #define LED_GREEN_STR_ON	"GREEN"
 #define LED_GREEN_STR_OFF	"green"
+#define LED_BTN_WLAN_STR_ON	"BUTTONWLAN"
+#define LED_BTN_WLAN_STR_OFF	"buttonwlan"
 
-#define MASK_LEDS			(LED_POWER_MASK | LED_BLUE_MASK | LED_GREEN_MASK)
-#define MASK_LEDS_OFF		0x0
+
+#define MASK_LEDS			(LED_POWER_MASK | LED_BLUE_MASK | LED_GREEN_MASK | LED_BTN_WLAN_MASK)
+#define MASK_LEDS_OFF		(0x0|LED_BTN_WLAN_MASK)
 
 #define BUZZER_STR_ON			"1"
 #define BUZZER_STR_OFF			"0"
 
 #define LEDS(v)				(((v & LED_POWER_MASK)?LED_POWER:0x00) | \
 						 	((v & LED_BLUE_MASK)?LED_BLUE:0x00) | \
-						 	((v & LED_GREEN_MASK)?LED_GREEN:0x00))
+						 	((v & LED_GREEN_MASK)?LED_GREEN:0x00) |\
+						 	((v & LED_BTN_WLAN_MASK)?0x00:LED_BTN_WLAN))
 
 #define DO_RESET() \
 	do { GPIO_MODE |= BTN_RST_MASK; \
@@ -144,6 +151,7 @@ static unsigned long gpio_last_changed = 0;
 		GPIO_MODE &= ~BTN_RST_MASK; } while(0)
 	
 #define BUTTON_RESET()		(!(GPIO_DATA & BTN_RST_MASK))
+#define BUTTON_WLAN()		((GPIO_DATA & BTN_WLAN_MASK))
 
 /****************************************************************************/
 /************************** Buzzer stuff ************************************/
@@ -160,7 +168,7 @@ static int buzzer_thread(void *unused);
 
 /****************************************************************************/
 
-static void
+void
 gpio_set(unsigned long mask, unsigned long value)
 {
 	unsigned long flags;
@@ -175,8 +183,7 @@ gpio_set(unsigned long mask, unsigned long value)
 	GPIO_DATA = val;
 	restore_flags(flags);
 }
-
-static unsigned long
+unsigned long
 gpio_get(void)
 {
 	unsigned long value;
@@ -195,7 +202,12 @@ static inline unsigned long led2reg(unsigned long val)
 		val2 |= LED_BLUE_MASK;
 	if (val & LED_GREEN)
 		val2 |= LED_GREEN_MASK;
-
+	if (vs_sysid == VS_SYSID_ARETE)
+	{
+	    if (val & LED_BTN_WLAN)
+		val2 &= ~LED_BTN_WLAN_MASK;
+	
+	}
 	return val2;
 }
 
@@ -308,6 +320,20 @@ gpio_ioctl(
 			if (copy_to_user((unsigned long *)arg, &val, sizeof(val)))
 		       	return -EFAULT;
 			break;
+		case GPIO_CMD_SET_LED_BTN_WLAN:
+			if (vs_sysid != VS_SYSID_ARETE)
+			    return -EFAULT;
+   			if (copy_from_user(&val, (unsigned long*)arg, sizeof(val)))
+	        	    return -EFAULT;
+	        	gpio_set(LED_BTN_WLAN_MASK,!val?LED_BTN_WLAN_MASK:0UL);
+			break;
+		case GPIO_CMD_GET_BTN_WLAN:
+			if (vs_sysid != VS_SYSID_ARETE)
+			    return -EFAULT;
+			val = BUTTON_WLAN();
+			if (copy_to_user((unsigned long *)arg, &val, sizeof(val)))
+		       	return -EFAULT;
+			break;
 		case GPIO_CMD_SET_LEDS:
    			if (copy_from_user(&val, (unsigned long*)arg, sizeof(val)))
 	        	return -EFAULT;
@@ -402,7 +428,7 @@ gpio_ioctl(
 		        	return -EFAULT;
 				
 			// relays are not to be switched to input and isolated inputs are not to be switched to output
-			if(vs_sysid == 2)
+			if(vs_sysid == VS_SYSID_ALENA)
 			{
 				if((set.mask & GPIO_BIT_0 && set.value & GPIO_BIT_0) || (set.mask & GPIO_BIT_1 && set.value & GPIO_BIT_1) ||
 				    (set.mask & GPIO_BIT_6 && !(set.value & GPIO_BIT_6)) || (set.mask & GPIO_BIT_7 && !(set.value & GPIO_BIT_7)))
@@ -603,6 +629,29 @@ static int proc_btn_rst_write(struct file *file, const char *buffer,
 	return count;
 }
 
+static int proc_btn_wlan_read(char *buffer, char **buffer_location, off_t offset,
+					int buffer_length, int *eof, void *data)
+{
+	int ret = 0;
+
+	if (!offset)
+	{
+		if (BUTTON_WLAN())
+			strcpy(buffer, "1\n");
+		else
+			strcpy(buffer, "0\n");
+		ret = 2;
+	}
+
+	return ret;
+}
+
+static int proc_btn_wlan_write(struct file *file, const char *buffer, 
+					unsigned long count, void *data)
+{
+	return 0;
+}
+
 static struct
 {
 	char on[16];
@@ -613,6 +662,7 @@ static struct
 	 { LED_POWER_STR_ON, LED_POWER_STR_OFF, LED_POWER_MASK }
 	,{ LED_BLUE_STR_ON, LED_BLUE_STR_OFF, LED_BLUE_MASK }
 	,{ LED_GREEN_STR_ON, LED_GREEN_STR_OFF, LED_GREEN_MASK }
+	,{ LED_BTN_WLAN_STR_OFF, LED_BTN_WLAN_STR_ON, LED_BTN_WLAN_MASK }
 };
 static int led_str_size = sizeof(led_str) / sizeof(led_str[0]);
 
@@ -625,10 +675,16 @@ static int proc_leds_read(char *buffer, char **buffer_location, off_t offset,
 	if (!offset)
 	{
 		unsigned long val = gpio_get();
-		ret = sprintf(buffer, "0x%02X\n%s %s %s\n", LEDS(val),
+		sprintf(buffer, "0x%02X\n%s %s %s", LEDS(val),
 						(val & LED_BLUE_MASK)?LED_BLUE_STR_ON:LED_BLUE_STR_OFF,
 						(val & LED_POWER_MASK)?LED_POWER_STR_ON:LED_POWER_STR_OFF,
 						(val & LED_GREEN_MASK)?LED_GREEN_STR_ON:LED_GREEN_STR_OFF);
+		if (vs_sysid == VS_SYSID_ARETE)
+		    {
+		    strcat(buffer,!(val & LED_BTN_WLAN_MASK) ? " "LED_BTN_WLAN_STR_ON : " "LED_BTN_WLAN_STR_OFF);
+		    }
+		strcat(buffer,"\n");
+		ret = strlen(buffer);
 	}
 
 	return ret;
@@ -966,6 +1022,7 @@ INIT_RET_TYPE gpio_init(void)
 #endif
 
 	proc_init(PROC_NAME_BTN_RST, proc_btn_rst_read, proc_btn_rst_write, NULL);
+	proc_init(PROC_NAME_BTN_WLAN, proc_btn_wlan_read, proc_btn_wlan_write, NULL);
 	proc_init(PROC_NAME_LEDS, proc_leds_read, proc_leds_write, NULL);
 	proc_init(PROC_NAME_BUZZER, proc_buzzer_read, proc_buzzer_write, NULL);
 	proc_init(PROC_NAME_BUZZER_FRQ, proc_buzzer_read_frq, proc_buzzer_write_frq, NULL);
