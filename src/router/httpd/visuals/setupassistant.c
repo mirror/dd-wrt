@@ -111,42 +111,42 @@ void ej_sas_nvram_checked(webs_t wp, int argc, char_t ** argv)
 {
 
 #ifdef FASTWEB
-        if (argc < 2) {
-                websError(wp, 400, "Insufficient args\n");
-                return;
-        }
+	if (argc < 2) {
+		websError(wp, 400, "Insufficient args\n");
+		return;
+	}
 #endif
 
-        if (nvram_selmatch(wp, argv[0], argv[1])) {
-                websWrite(wp, "checked=\"checked\"");
-        }
+	if (nvram_selmatch(wp, argv[0], argv[1])) {
+		websWrite(wp, "checked=\"checked\"");
+	}
 
-        return;
+	return;
 }
 
 void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
 {
-        int i, st, en;
-        char ic[16];
+	int i, st, en;
+	char ic[16];
 
 #ifndef FASTWEB
-        if (argc < 3) {
-                websError(wp, 400, "Insufficient args\n");
-                return;
-        }
+	if (argc < 3) {
+		websError(wp, 400, "Insufficient args\n");
+		return;
+	}
 #endif
 
-        st = atoi(argv[1]);
-        en = atoi(argv[2]);
+	st = atoi(argv[1]);
+	en = atoi(argv[2]);
 
-        for (i = st; i <= en; i++) {
-                sprintf(ic, "%d", i);
-                websWrite(wp, "<option value=\"%d\" %s >%02d</option>\n", i,
-                          nvram_selmatch(wp, argv[0],
-                                      ic) ? "selected=\"selected\"" : "", i);
-        }
+	for (i = st; i <= en; i++) {
+		sprintf(ic, "%d", i);
+		websWrite(wp, "<option value=\"%d\" %s >%02d</option>\n", i,
+			  nvram_selmatch(wp, argv[0],
+					 ic) ? "selected=\"selected\"" : "", i);
+	}
 
-        return;
+	return;
 }
 
 /*
@@ -159,17 +159,17 @@ void ej_sas_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 {
 
 #ifndef FASTWEB
-        if (argc < 4) {
-                websError(wp, 400, "Insufficient args\n");
-                return;
-        }
-#endif
-        if (nvram_selmatch(wp, argv[0], argv[1])) {
-                websWrite(wp, argv[2]);
-        } else {
-                websWrite(wp, argv[3]);
+	if (argc < 4) {
+		websError(wp, 400, "Insufficient args\n");
+		return;
 	}
-        return;
+#endif
+	if (nvram_selmatch(wp, argv[0], argv[1])) {
+		websWrite(wp, argv[2]);
+	} else {
+		websWrite(wp, argv[3]);
+	}
+	return;
 }
 
 void ej_show_sas_stage(webs_t wp, int argc, char_t ** argv)
@@ -348,7 +348,8 @@ char *sas_get_single_ip(webs_t wp, char *label, int position)
 	if (nvram_match("gozila_action", "1")) {
 		sprintf(name, "%s_%i", label, position);
 		g = GOZILA_GET(wp, name);
-		fprintf(stderr, "[sas_get_single_ip] %s %s %i\n", name, g, position);
+		fprintf(stderr, "[sas_get_single_ip] %s %s %i\n", name, g,
+			position);
 		if (g) {
 			return g;
 		} else {
@@ -428,14 +429,15 @@ void ej_sas_get_single_nm(webs_t wp, int argc, char_t ** argv)
 	return;*/
 }
 
-char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position) {
-	
+char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
+{
+
 	int which;
 	char name[32];
 	char word[256], *next;
 	char d[32];
 	char *g;
-	
+
 	if (nvram_match("gozila_action", "1")) {
 		sprintf(name, "%s%i_%i", label, entry, position);
 		g = GOZILA_GET(wp, name);
@@ -443,18 +445,18 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position) {
 			return g;
 		}
 	}
-	
-        which = entry;
-        char *list = nvram_safe_get(label);
-	
-        foreach(word, list, next) {
-                if (which-- == 0) {
-                        sprintf(d, "%i", get_single_ip(word, position));
-			return d;
-                }
-        }
 
-        return "0";
+	which = entry;
+	char *list = nvram_safe_get(label);
+
+	foreach(word, list, next) {
+		if (which-- == 0) {
+			sprintf(d, "%i", get_single_ip(word, position));
+			return d;
+		}
+	}
+
+	return "0";
 }
 
 /*
@@ -465,12 +467,13 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position) {
 void ej_sas_get_dns_ip(webs_t wp, int argc, char_t ** argv)
 {
 #ifndef FASTWEB
-        if (argc < 3) {
-                websError(wp, 400, "Insufficient args\n");
-                return;
-        }
+	if (argc < 3) {
+		websError(wp, 400, "Insufficient args\n");
+		return;
+	}
 #endif
-	websWrite(wp, "%s", sas_get_dns_ip(wp, argv[0], atoi(argv[1]), atoi(argv[2])));
+	websWrite(wp, "%s",
+		  sas_get_dns_ip(wp, argv[0], atoi(argv[1]), atoi(argv[2])));
 }
 
 #ifdef HAVE_MADWIFI
@@ -676,17 +679,30 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(prefix)) {
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
-			  nvram_selmatch(wp, wl_width,
-					 "2040") ? "selected=\\\"selected\\\"" :
-			  "");
+		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
+		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
+				  nvram_selmatch(wp, wl_width,
+						 "2040") ?
+				  "selected=\\\"selected\\\"" : "");
 	}
+	if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
+	     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+	     || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
+	     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+	     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+	     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
 #endif
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
-		  nvram_selmatch(wp, wl_width,
-				 "40") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
+			  nvram_selmatch(wp, wl_width,
+					 "40") ? "selected=\\\"selected\\\"" :
+			  "");
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
 		  nvram_selmatch(wp, wl_width,
