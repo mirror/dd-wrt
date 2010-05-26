@@ -256,7 +256,7 @@
 // Asus WL320gP/gE (BCM5352E cpu, 1 LAN only, fccid: Asus MSQWL320GP / MSQWL320GE)
 #define ROUTER_ASUS_WL550GE 0x3c01
 
-// Sitecom WL-111 (BCM4702 cpu, fccid: ?)
+// Sitecom WL-111 (BCM4702 cpu, fccid: MXF-R920220G)
 #define ROUTER_SITECOM_WL111 0x3d10
 
 // D-Link DIR-320 (BCM5354 cpu, fccid: D Link KA2DIR320A1)
