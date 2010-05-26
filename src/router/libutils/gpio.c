@@ -523,11 +523,21 @@ void set_gpio(int pin, int value)
 		perror(GPIO_DEV);
 		return;
 	}
-	if (pin > 16 && pin < 128) {
-		cmd = GPIO_CMD_SET;
+	if (pin >= 16 && pin < 128) {
+		pin-=16;
 		struct gpio_struct set;
 		set.mask = 1 << pin;
-		set.value = value;
+		cmd = GPIO_CMD_SET_CTRL;
+		set.value = 1 << pin;
+		if (ioctl(fd, cmd, &set) < 0) {
+			perror("ioctl");
+		}
+
+		cmd = GPIO_CMD_SET;
+		if (value)
+		set.value = value << pin;
+		else
+		set.value = 0;
 		if (ioctl(fd, cmd, &set) < 0) {
 			perror("ioctl");
 		}
@@ -567,14 +577,25 @@ int get_gpio(int pin)
 		perror(GPIO_DEV);
 		return -1;
 	}
-	if (pin > 16 && pin < 128) {
+	if (pin >= 16 && pin < 128) {
+		pin-=16;
+
+		struct gpio_struct set;
+		set.mask = 1 << pin;
+		cmd = GPIO_CMD_SET_CTRL;
+		set.value = 0;
+		if (ioctl(fd, cmd, &set) < 0) {
+			perror("ioctl");
+		}
 		cmd = GPIO_CMD_GET;
 		if (ioctl(fd, cmd, &value) < 0) {
 			perror("ioctl");
 			close(fd);
 			return -1;
 		}
-		value = (1 << pin) & value;
+		value = value & (1 << pin);
+		if (value)
+		    value=1;
 	} else {
 		if (ioctl(fd, cmd, &value) < 0) {
 			perror("ioctl");
@@ -590,6 +611,12 @@ int get_gpio(int pin)
 			if ((value & 0x4) && cmd == 3)
 				return 1;
 			return 0;
+		}
+		if (pin == 5) {
+			if (value)
+			    return 1;
+			else 
+			    return 0;
 		}
 		return value;
 	}
