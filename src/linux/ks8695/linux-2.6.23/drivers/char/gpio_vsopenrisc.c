@@ -49,7 +49,7 @@
 #define PROC_NAME_BTN_RST		   "vsopenrisc/reset"
 #define PROC_NAME_LEDS			   "vsopenrisc/leds"
 #define PROC_NAME_BUZZER		   "vsopenrisc/buzzer"
-#define PROC_NAME_BUZZER_FRQ	   "vsopenrisc/buzzer_frq"
+#define PROC_NAME_BUZZER_FRQ	   	   "vsopenrisc/buzzer_frq"
 
 static char *table_proc_name[] = { "vsopenrisc/gpio_data"
 								 , "vsopenrisc/gpio_ctrl"
@@ -96,8 +96,8 @@ int poll_flag = 0;	      // interrupt occurrence flag
 #include <asm/io.h>
 
 #define GPIO_DATA_INIT		(BTN_RST_MASK|LED_POWER_MASK|LED_BTN_WLAN_MASK)	// reset high & power led on & blue led on
-#define GPIO_INPUTS			(0x800fUL)
-#define GPIO_OUTPUTS		(MASK_LEDS | BUZZER_MASK)
+#define GPIO_INPUTS		(0x810fUL)
+#define GPIO_OUTPUTS		(MASK_LEDS | BUZZER_MASK | BTN_WLAN_INT_ACK_MASK)
 #define GPIO_DATA		(*(volatile unsigned long *)(KS8695_GPIO_VA + KS8695_GPIO_DATA))
 #define GPIO_MODE		(*(volatile unsigned long *)(KS8695_GPIO_VA + KS8695_GPIO_MODE))
 
