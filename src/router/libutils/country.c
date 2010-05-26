@@ -579,12 +579,20 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 };
 
 static char regionCountryCodes[2][31][32] = {
-	{ "EU", "BG","HR","CY","CZ","DK","EE","FI","FR","F2","DE","GR","HU","IE","IT","LV","LI","LT","LU","MK","NL","NO","PL","PT","RO","SK","SI","ES","SE","CH","GB" },
-	{ "US", "US", "CA", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
-	{ "JP", "JP", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
-	{ "TW", "TW", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
-	{ "AP", "BD", "GU", "HK", "IN", "ID", "KP", "PK", "PG", "PH", "SG", "TH", "VN", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" },
-	{ "_D", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }
+	{"EU", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "F2", "DE", "GR",
+	 "HU", "IE", "IT", "LV", "LI", "LT", "LU", "MK", "NL", "NO", "PL", "PT",
+	 "RO", "SK", "SI", "ES", "SE", "CH", "GB"},
+	{"US", "US", "CA", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	 "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"JP", "JP", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	 "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"TW", "TW", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	 "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"AP", "BD", "GU", "HK", "IN", "ID", "KP", "PK", "PG", "PH", "SG", "TH",
+	 "VN", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	 "", ""},
+	{"_D", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	 "", "", "", "", "", "", "", "", "", "", "", "", "", ""}
 };
 
 unsigned int getRegDomain(const char *country)
@@ -622,13 +630,14 @@ char *getIsoName(const char *country)
 
 extern void *getUEnv(char *name);
 
-static int isValidCountry(char *region, char *country) {
+static int isValidCountry(char *region, char *country)
+{
 	int i, j;
-	for(i = 0; i < 6; i++) {
-		if(!strcmp(region, regionCountryCodes[i][0])) {
-			for(j = 1; j < 31; j++) {
+	for (i = 0; i < 6; i++) {
+		if (!strcmp(region, regionCountryCodes[i][0])) {
+			for (j = 1; j < 31; j++) {
 				//fprintf(stderr, "[%s] %s\n", country, regionCountryCodes[i][j]);
-				if(!strcmp(country, regionCountryCodes[i][j])) {
+				if (!strcmp(country, regionCountryCodes[i][j])) {
 					return 1;
 				}
 			}
@@ -636,7 +645,7 @@ static int isValidCountry(char *region, char *country) {
 		}
 	}
 	// fallback
-	if(strcmp(region, "US") && !strcmp(country, "US")) {
+	if (strcmp(region, "US") && !strcmp(country, "US")) {
 		return 1;
 	}
 	return 0;
@@ -650,7 +659,7 @@ char *getCountryList(void)
 	char country[80];
 #ifdef HAVE_BUFFALO
 	char *region = getUEnv("region");
-	if( region == NULL) {
+	if (region == NULL) {
 		region = "_D";
 	}
 #endif
@@ -659,7 +668,7 @@ char *getCountryList(void)
 		for (i = 0; i < N(allCountries); i++) {
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
-			if(isValidCountry(region, country)) {
+			if (isValidCountry(region, country)) {
 #endif
 				count += strlen(allCountries[i].name) + 1;
 #ifdef HAVE_BUFFALO
@@ -671,13 +680,13 @@ char *getCountryList(void)
 		memset(countries, 0, count);
 		for (i = 0; i < N(allCountries); i++) {
 #ifdef HAVE_BUFFALO
-                        sprintf(country, "%s", allCountries[i].isoName);
-                        if(isValidCountry(region, country)) {
+			sprintf(country, "%s", allCountries[i].isoName);
+			if (isValidCountry(region, country)) {
 #endif
 				strcat(countries, allCountries[i].name);
 				strcat(countries, " ");
 #ifdef HAVE_BUFFALO
-                        }
+			}
 #endif
 		}
 	}

@@ -1612,7 +1612,7 @@ int internal_getRouterBrand()
 			return ROUTER_WRT160NV3;
 		} else if (nvram_match("boot_hw_model", "M10")
 			   && nvram_match("boot_hw_ver", "1.0")) {
-			setRouter("Linksys M10");  // renamed wrt160nv3
+			setRouter("Linksys M10");	// renamed wrt160nv3
 			return ROUTER_WRT160NV3;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
@@ -1624,7 +1624,7 @@ int internal_getRouterBrand()
 			return ROUTER_WRT310NV2;
 		} else if (nvram_match("boot_hw_model", "M20")
 			   && nvram_match("boot_hw_ver", "1.0")) {
-			setRouter("Linksys M20");  // ranamed wrt310nv2
+			setRouter("Linksys M20");	// ranamed wrt310nv2
 			return ROUTER_WRT310NV2;
 		}
 	}
@@ -1670,11 +1670,11 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT610Nv2");
 		return ROUTER_WRT610NV2;
 	}
-	
+
 	if (nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boot_hw_model", "E300")) {
 		cprintf("router is Linksys E3000\n");
-		setRouter("Linksys E3000"); // renamed wrt610nv2
+		setRouter("Linksys E3000");	// renamed wrt610nv2
 		return ROUTER_WRT610NV2;
 	}
 
@@ -1947,11 +1947,11 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT320N");
 		return ROUTER_WRT320N;
 	}
-	
+
 	if (boardnum == 42 && nvram_match("boardtype", "0x04EF")
 	    && nvram_match("boardrev", "0x1307")) {
 		cprintf("router is E2000n\n");
-		setRouter("Linksys E2000");  // renamed (and fixed reset button) wrt320n
+		setRouter("Linksys E2000");	// renamed (and fixed reset button) wrt320n
 		return ROUTER_WRT320N;
 	}
 
@@ -2045,7 +2045,6 @@ int check_wan_link(int num)
 	return wan_link;
 }
 
-
 #ifdef HAVE_BUFFALO
 void *getUEnv(char *name)
 {
@@ -2067,7 +2066,7 @@ void *getUEnv(char *name)
 	int l = strlen(name);
 	for (i = 0; i < s; i++) {
 		if (!strncmp(mem + i, name, l)) {
-			strncpy(res, mem + i + l + 1,sizeof(res)-1);
+			strncpy(res, mem + i + l + 1, sizeof(res) - 1);
 			free(mem);
 			return res;
 		}
@@ -2950,7 +2949,8 @@ int led_control(int type, int act)
 		    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
 			connected_gpio = 0x105;
 		else if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
-			 || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4"))
+			 || nvram_match("DD_BOARD2",
+					"Gateworks Cambria GW2358-4"))
 			connected_gpio = 0x118;
 		else
 			connected_gpio = 0x003;
@@ -3360,9 +3360,9 @@ int led_control(int type, int act)
 		break;
 	case LED_CONNECTED:
 		if (act == LED_ON)
-		    led_control(LED_DISCONNECTED,LED_OFF);
+			led_control(LED_DISCONNECTED, LED_OFF);
 		else
-		    led_control(LED_DISCONNECTED,LED_ON);
+			led_control(LED_DISCONNECTED, LED_ON);
 		use_gpio = connblue ? ses_gpio : connected_gpio;
 		break;
 	case LED_DISCONNECTED:
