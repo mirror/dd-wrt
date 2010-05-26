@@ -401,18 +401,6 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 
 		nv_count = 0;	// init mac list
 
-		char *iface;
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-		if (!strcmp(ifname, "wl0"))
-			iface = get_wl_instance_name(0);
-		else if (!strcmp(ifname, "wl1"))
-			iface = get_wl_instance_name(1);
-		else
-#elif !defined(HAVE_RT2880)
-			iface = ifname;		
-#else
-			iface = nvram_safe_get("wl0_ifname");
-#endif
 		char var[32];
 		sprintf(var, "%s_maclist", ifname);
 		char *maclist = nvram_safe_get(var);
@@ -425,11 +413,21 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			wl_client_macs[nv_count].check = 1;	// checked
 			nv_count++;
 		}
+		
+		char *iface;
 #ifdef HAVE_MADWIFI
+		iface = ifname;
 		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
 #elif HAVE_RT2880
+		iface = nvram_safe_get("wl0_ifname");
 		sysprintf("wl_rt2880 -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
 #else
+		if (!strcmp(ifname, "wl0"))
+			iface = get_wl_instance_name(0);
+		else if (!strcmp(ifname, "wl1"))
+			iface = get_wl_instance_name(1);
+		else
+			iface = nvram_safe_get("wl0_ifname");
 		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
 #endif
 

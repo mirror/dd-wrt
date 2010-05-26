@@ -3050,7 +3050,7 @@ static void show_netmode(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (has_mimo(prefix)) {
+	if (has_mimo(prefix) && has_2ghz(prefix)) {
 		if (has_5ghz(prefix)) {
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n",
