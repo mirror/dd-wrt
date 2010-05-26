@@ -3024,6 +3024,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BOARD_OPENRISC:
 		diag_gpio = 0x003;
+		ses_gpio = 0x005;
 		break;
 #else
 	case ROUTER_BOARD_PB42:
