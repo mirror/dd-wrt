@@ -562,7 +562,8 @@ static void alarm_handler(int i)
 						timersub(&
 							 ((*ppevent)->it_value),
 							 &(event->it_value),
-							 &((*ppevent)->it_value));
+							 &((*ppevent)->
+							   it_value));
 						break;
 					}
 					timersub(&(event->it_value),
