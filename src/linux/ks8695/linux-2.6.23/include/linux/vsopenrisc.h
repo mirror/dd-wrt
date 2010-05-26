@@ -24,6 +24,12 @@
 #ifndef _VSOPENRISC_H_
 #define _VSOPENRISC_H_
 
+
+#define VS_SYSID_ALEKTO 1
+#define VS_SYSID_ALENA 2
+#define VS_SYSID_ARETE 3
+#define VS_SYSID_BALIOS 11
+
 #define TIOCGEPLD	0x5470
 #define TIOCSEPLD	0x5471
 
@@ -94,6 +100,7 @@ void clear_dev_open_status(int dev_nr, unsigned char flag);
 #define LED_POWER				0x01	//!< power LED red
 #define LED_BLUE				0x02	//!< WLAN LED blue
 #define LED_GREEN				0x04	//!< LED green
+#define LED_BTN_WLAN				0x08	//!< LED button wlan (Arete)
 
 #define NUMBER_OF_GPIOS			8		//!< Number of digital IO channels
 
@@ -125,7 +132,9 @@ void clear_dev_open_status(int dev_nr, unsigned char flag);
 #define GPIO_CMD_GET_BUZZER		19
 #define GPIO_CMD_SET_BUZZER_FRQ	20
 #define GPIO_CMD_GET_BUZZER_FRQ	21
-#define GPIO_CMD_MAX			GPIO_CMD_GET_BUZZER_FRQ
+#define GPIO_CMD_SET_LED_BTN_WLAN	22
+#define GPIO_CMD_GET_BTN_WLAN	23
+#define GPIO_CMD_MAX			GPIO_CMD_GET_BTN_WLAN
 
 struct gpio_struct {
 	unsigned long mask;
