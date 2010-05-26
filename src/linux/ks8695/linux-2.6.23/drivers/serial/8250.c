@@ -2424,7 +2424,7 @@ static void __init serial8250_isa_init_ports(void)
 {
 	struct uart_8250_port *up;
 	static int first = 1;
-	unsigned char scratch;
+	unsigned char scratch,lsr;
 	unsigned long flags;
 	int i;
 #if defined(CONFIG_SERIAL_NETCOM_EPLD)
@@ -2521,8 +2521,9 @@ static void __init serial8250_isa_init_ports(void)
 	     i < ARRAY_SIZE(old_serial_port) && i < nr_uarts;
 	     i++, up++) 
 	{
+		lsr = serial_in(up,UART_LSR);
 		scratch = serial_in(up, UART_SCR);
-		if(scratch == 0xaa)
+		if(!(lsr & 0x60) || scratch == 0xaa)
 		{
 			sprintf(proc_name_epld, PROC_NAME_EPLD"%d", up->port.line);
 			printk(KERN_DEBUG "serial8250: remove /proc/%s entry\n", proc_name_epld);
