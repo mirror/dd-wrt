@@ -3014,10 +3014,11 @@ int led_control(int type, int act)
 		power_gpio = 0x109;
 		break;
 	case ROUTER_BOARD_DIR615D:
-		diag_gpio = 0x108;
-		connected_gpio = 0x10d;
+		diag_gpio = 0x109;
+		connected_gpio = 0x10c;
+		disconnected_gpio = 0x10e;
 		ses_gpio = 0x10b;
-		power_gpio = 0x109;
+		power_gpio = 0x108;
 		break;
 	case ROUTER_BOARD_W502U:
 		connected_gpio = 0x10d;
