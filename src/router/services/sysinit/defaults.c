@@ -1192,6 +1192,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "WDSL-Modem XXX", 0},
 #elif  HAVE_TMK
 	{"router_name", "KMT-WAS", 0},
+#elif  HAVE_ERC
+	{"router_name", "ServiceGaterouter", 0},
 #else
 	{"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -1452,7 +1454,11 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"rflow_enable", "0", 0},
 	{"status_auth", "1", 0},
+#ifdef HAVE_ERC
+	{"info_passwd", "1", 0},
+#else
 	{"info_passwd", "0", 0},
+#endif
 	{"macupd_enable", "0", 0},
 	{"wl_radauth", "0", 0},
 	{"rc_startup", "", 0},
@@ -2327,6 +2333,9 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_34TELECOM
 	{"newhttp_passwd", "hdslklas9a", 0},
+#endif
+#ifdef HAVE_ERC
+	{"newhttp_passwd", "$1$zj7Yy9j0$yUL536j6T3vLKvy2L/29J.", 0},
 #endif
 #ifdef HAVE_MADWIFI
 	/*
