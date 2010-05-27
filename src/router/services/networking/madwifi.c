@@ -1042,6 +1042,8 @@ static void configure_single(int count)
 	static char maxassoc[32];
 	static char wl_poll[32];
 	static int vapcount = 0;
+	static char inact[16];
+	static char inact_tick[16];
 	if (count == 0)
 		vapcount = 0;
 
@@ -1444,6 +1446,12 @@ static void configure_single(int count)
 #elif defined(HAVE_TMK)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "KMT_vap"));
+#elif defined(HAVE_BKM)
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "BKM_vap"));
+#elif defined(HAVE_ERC)
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "ERC_vap"));
 #elif defined(HAVE_CORENET)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "corenet.ap"));
@@ -1529,6 +1537,12 @@ static void configure_single(int count)
 #elif defined(HAVE_TMK)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "KMT"));
+#elif defined(HAVE_BKM)
+	sysprintf("iwconfig %s essid -- \"%s\"", dev,
+		  nvram_default_get(ssid, "BKM"));
+#elif defined(HAVE_ERC)
+	sysprintf("iwconfig %s essid -- \"%s\"", dev,
+		  nvram_default_get(ssid, "ERC"));
 #elif defined(HAVE_CORENET)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "corenet.ap"));
@@ -1578,6 +1592,12 @@ static void configure_single(int count)
 #elif defined(HAVE_TMK)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "KMT"));
+#elif defined(HAVE_BKM)
+		sysprintf("iwconfig %s essid -- \"%s\"", dev,
+			  nvram_default_get(ssid, "BKM"));
+#elif defined(HAVE_ERC)
+		sysprintf("iwconfig %s essid -- \"%s\"", dev,
+			  nvram_default_get(ssid, "ERC"));
 #elif defined(HAVE_CORENET)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "corenet.ap"));
@@ -1628,6 +1648,20 @@ static void configure_single(int count)
 		}
 	}
 	sleep(1);
+	// set inact inact tick (order is important!)
+	sprintf(inact_tick, "%s_inact_tick", dev);
+	sprintf(inact, "%s_inact", dev);
+#ifdef HAVE_MAKSAT
+	sysprintf("iwpriv %s inact_tick %s", dev,
+		nvram_default_get(inact_tick, "1"));
+	sysprintf("iwpriv %s inact %s", dev,
+		nvram_default_get(inact, "15"));
+#else
+	sysprintf("iwpriv %s inact_tick %s", dev,
+		nvram_default_get(inact_tick, "15"));
+	sysprintf("iwpriv %s inact %s", dev,
+		nvram_default_get(inact, "300"));
+#endif
 
 	if (strcmp(apm, "sta")) {
 		char bridged[32];
