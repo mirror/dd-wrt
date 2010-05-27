@@ -597,7 +597,7 @@ int get_gpio(int pin)
 	} else {
 		if (ioctl(fd, cmd, &value) < 0) {
 			close(fd); // silently ignore errors
-			return -1;
+			return 0;
 		}
 		close(fd);
 		if (cmd >= 1 && cmd <= 3) {
