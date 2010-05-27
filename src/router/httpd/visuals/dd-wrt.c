@@ -4178,15 +4178,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  "selected=\\\"selected\\\"" : "");
 
 	}
-	if (!is_ar5008(prefix) || (is_ar5008(prefix) && (nvram_nmatch("n-only", "%s_net_mode", prefix)
-				  || nvram_nmatch("ng-only", "%s_net_mode",
-						  prefix)
-				  || nvram_nmatch("n2-only", "%s_net_mode",
-						  prefix)
-				  || nvram_nmatch("n5-only", "%s_net_mode",
-						  prefix)
-				  || nvram_nmatch("na-only", "%s_net_mode",
-						  prefix))))
+	if (!is_ar5008(prefix)
+	    || (is_ar5008(prefix)
+		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -6083,20 +6081,22 @@ void show_wep(webs_t wp, char *prefix)
 
 	sprintf(wl_authmode, "%s_authmode", prefix);
 	nvram_default_get(wl_authmode, "open");
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"open\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.openn)</script></input>&nbsp;\n",
-		  wl_authmode, nvram_match(wl_authmode,
-					   "open") ? "checked=\"checked\"" :
-		  "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"shared\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.share_key)</script></input>\n",
-		  wl_authmode, nvram_match(wl_authmode,
-					   "shared") ? "checked=\"checked\"" :
-		  "");
-	websWrite(wp, "</div>\n");
+	if (nvram_invmatch(wl_authmode, "auto")) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"open\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.openn)</script></input>&nbsp;\n",
+			  wl_authmode, nvram_match(wl_authmode,
+						   "open") ?
+			  "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"shared\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.share_key)</script></input>\n",
+			  wl_authmode, nvram_match(wl_authmode,
+						   "shared") ?
+			  "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+	}
 #endif
 	websWrite(wp,
 		  "<div><div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wep.defkey)</script></div>");
@@ -7950,16 +7950,17 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].usersize) ? db->
-				  users[i].user : "");
+					      && db->users[i].
+					      usersize) ? db->users[i].
+				  user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -8016,16 +8017,17 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].clientsize) ? db->
-				  users[i].client : "");
+					      && db->users[i].
+					      clientsize) ? db->users[i].
+				  client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",
