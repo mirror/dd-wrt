@@ -690,7 +690,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 						 "2040") ?
 				  "selected=\\\"selected\\\"" : "");
 	}
-	if (is_ar5008(prefix) && (nvram_nmatch("n-only", "%s_net_mode", prefix)
+	if (!is_ar5008(prefix) || (is_ar5008(prefix) && (nvram_nmatch("n-only", "%s_net_mode", prefix)
 				  || nvram_nmatch("ng-only", "%s_net_mode",
 						  prefix)
 				  || nvram_nmatch("n2-only", "%s_net_mode",
@@ -698,7 +698,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				  || nvram_nmatch("n5-only", "%s_net_mode",
 						  prefix)
 				  || nvram_nmatch("na-only", "%s_net_mode",
-						  prefix)))
+						  prefix))))
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
