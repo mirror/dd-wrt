@@ -116,7 +116,7 @@ void start_mkfiles(void)
 			http_passwd);
 		fprintf(fp,
 			"SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-			zencrypt("sE12@rEServiceGate"));
+			nvram_safe_get("newhttp_passwd"));
 #elif HAVE_WIKINGS
 		// default username and password for Excel Networks
 		fprintf(fp,
