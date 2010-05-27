@@ -751,9 +751,9 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
             }
             pkt_count = cnt;
         } else {
-            #ifdef CONFIG_DIR615E
-            ar7100_set_gpio(17,1);            
-            #endif
+//            #ifdef CONFIG_DIR615E
+//            ar7100_set_gpio(17,1);            
+//            #endif
             s26_wr_phy(4,0x19,0x0);
         }
     }
