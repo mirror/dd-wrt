@@ -1177,6 +1177,7 @@ void usb_disconnect(struct usb_device **pdev)
 			usb_disconnect(&udev->children[i]);
 	}
 
+
 	/* deallocate hcd/hardware state ... nuking all pending urbs and
 	 * cleaning up all state associated with the current configuration
 	 * so that the hardware is now fully quiesced.
@@ -2359,7 +2360,6 @@ static void hub_port_connect_change(struct usb_hub *hub, int port1,
 {
 	struct usb_device *hdev = hub->hdev;
 	struct device *hub_dev = hub->intfdev;
-	struct usb_hcd *hcd = bus_to_hcd(hdev->bus);
 	u16 wHubCharacteristics = le16_to_cpu(hub->descriptor->wHubCharacteristics);
 	int status, i;
  
@@ -2520,16 +2520,9 @@ loop:
 		if ((status == -ENOTCONN) || (status == -ENOTSUPP))
 			break;
 	}
-	if (hub->hdev->parent ||
-			!hcd->driver->port_handed_over ||
-			!(hcd->driver->port_handed_over)(hcd, port1))
-		dev_err(hub_dev, "unable to enumerate USB device on port %d\n",
-				port1);
  
 done:
 	hub_port_disable(hub, port1, 1);
-	if (hcd->driver->relinquish_port && !hub->hdev->parent)
-		hcd->driver->relinquish_port(hcd, port1);
 }
 
 static void hub_events(void)
@@ -3065,3 +3058,5 @@ int usb_reset_composite_device(struct usb_device *udev,
 	return ret;
 }
 EXPORT_SYMBOL(usb_reset_composite_device);
+
+
