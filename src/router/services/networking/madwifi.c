@@ -174,7 +174,7 @@ void setupKey(char *prefix)
 		char *authmode = nvram_nget("%s_authmode", prefix);
 		if (!strcmp(authmode, "shared"))
 			sysprintf("iwpriv %s authmode 2", prefix);
-		if (!strcmp(authmode, "auto"))
+		else if (!strcmp(authmode, "auto"))
 			sysprintf("iwpriv %s authmode 4", prefix);
 		else
 			sysprintf("iwpriv %s authmode 1", prefix);
