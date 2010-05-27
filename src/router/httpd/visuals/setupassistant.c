@@ -690,15 +690,13 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 						 "2040") ?
 				  "selected=\\\"selected\\\"" : "");
 	}
-	if (!is_ar5008(prefix) || (is_ar5008(prefix) && (nvram_nmatch("n-only", "%s_net_mode", prefix)
-				  || nvram_nmatch("ng-only", "%s_net_mode",
-						  prefix)
-				  || nvram_nmatch("n2-only", "%s_net_mode",
-						  prefix)
-				  || nvram_nmatch("n5-only", "%s_net_mode",
-						  prefix)
-				  || nvram_nmatch("na-only", "%s_net_mode",
-						  prefix))))
+	if (!is_ar5008(prefix)
+	    || (is_ar5008(prefix)
+		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -2067,20 +2065,22 @@ void sas_show_wep(webs_t wp, char *prefix)
 
 	sprintf(wl_authmode, "%s_authmode", prefix);
 	sas_nvram_default_get(wp, wl_authmode, "open");
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"open\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.openn)</script></input>&nbsp;\n",
-		  wl_authmode, nvram_selmatch(wp, wl_authmode,
-					      "open") ? "checked=\"checked\"" :
-		  "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"shared\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.share_key)</script></input>\n",
-		  wl_authmode, nvram_selmatch(wp, wl_authmode,
-					      "shared") ? "checked=\"checked\""
-		  : "");
-	websWrite(wp, "</div>\n");
+	if (nvram_invmatch(wl_authmode, "auto")) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"open\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.openn)</script></input>&nbsp;\n",
+			  wl_authmode, nvram_selmatch(wp, wl_authmode,
+						      "open") ?
+			  "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"shared\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.share_key)</script></input>\n",
+			  wl_authmode, nvram_selmatch(wp, wl_authmode,
+						      "shared") ?
+			  "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+	}
 #endif
 	websWrite(wp,
 		  "<div><div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wep.defkey)</script></div>");
