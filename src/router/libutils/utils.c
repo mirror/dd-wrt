@@ -2913,7 +2913,8 @@ int led_control(int type, int act)
 #ifdef HAVE_DIR615E
 		power_gpio = 0x006;
 		diag_gpio = 0x001;
-		connected_gpio = 0x007;
+		connected_gpio = 0x111;
+		disconnected_gpio = 0x007;
 		ses_gpio = 0x100;
 #endif
 #ifdef HAVE_WRT400
