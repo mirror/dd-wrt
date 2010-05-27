@@ -152,7 +152,6 @@ static void __devinit quirk_usb_handoff_uhci(struct pci_dev *pdev)
 
 	for (i = 0; i < PCI_ROM_RESOURCE; i++)
 		if ((pci_resource_flags(pdev, i) & IORESOURCE_IO)) {
-			//base = pci_resource_start(pdev, i);
 			base = ioremap(pci_resource_start(pdev, i), pci_resource_len(pdev, i));
 			break;
 		}
