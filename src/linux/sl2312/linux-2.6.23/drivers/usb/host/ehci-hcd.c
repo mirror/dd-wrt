@@ -125,7 +125,7 @@ module_param (park, uint, S_IRUGO);
 MODULE_PARM_DESC (park, "park setting; 1-3 back-to-back async packets");
 
 /* for flakey hardware, ignore overcurrent indicators */
-static int ignore_oc = 1;
+static int ignore_oc = 0;
 module_param (ignore_oc, bool, S_IRUGO);
 MODULE_PARM_DESC (ignore_oc, "ignore bogus hardware overcurrent indications");
 
@@ -184,7 +184,7 @@ static int ehci_halt (struct ehci_hcd *ehci)
 	if ((temp & STS_HALT) != 0)
 		return 0;
 
-#ifndef CONFIG_SL2312_USB
+#ifndef CONFIG_ARCH_SL2312
 	temp = ehci_readl(ehci, &ehci->regs->command);
 	temp &= ~CMD_RUN;
 	ehci_writel(ehci, temp, &ehci->regs->command);
@@ -228,7 +228,7 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	if (retval)
 		return retval;
 
-#ifndef CONFIG_SL2312_USB
+#ifndef CONFIG_ARCH_SL2312
 	if (ehci_is_TDI(ehci))
 		tdi_reset (ehci);
 #endif
@@ -333,7 +333,7 @@ ehci_shutdown (struct usb_hcd *hcd)
 	(void) ehci_halt (ehci);
 	ehci_turn_off_all_ports(ehci);
 
-#ifndef CONFIG_SL2312_USB
+#ifndef CONFIG_ARCH_SL2312
 	/* make BIOS/etc use companion controller during reboot */
 	ehci_writel(ehci, 0, &ehci->regs->configured_flag);
 
@@ -414,10 +414,8 @@ static void ehci_stop (struct usb_hcd *hcd)
 	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
 	spin_unlock_irq(&ehci->lock);
 
-#ifndef CONFIG_SL2312_USB
 	/* let companion controllers work when we aren't */
 	ehci_writel(ehci, 0, &ehci->regs->configured_flag);
-#endif
 
 	remove_companion_file(ehci);
 	remove_debug_files (ehci);
@@ -556,7 +554,6 @@ static int ehci_run (struct usb_hcd *hcd)
 	 * host side drivers though.
 	 */
 	hcc_params = ehci_readl(ehci, &ehci->caps->hcc_params);
-#ifndef CONFIG_SL2312_USB
 	if (HCC_64BIT_ADDR(hcc_params)) {
 		ehci_writel(ehci, 0, &ehci->regs->segment);
 #if 0
@@ -565,12 +562,12 @@ static int ehci_run (struct usb_hcd *hcd)
 			ehci_info(ehci, "enabled 64bit DMA\n");
 #endif
 	}
-#endif
+
 
 	// Philips, Intel, and maybe others need CMD_RUN before the
 	// root hub will detect new devices (why?); NEC doesn't
 	ehci->command &= ~(CMD_LRESET|CMD_IAAD|CMD_PSE|CMD_ASE|CMD_RESET);
-#ifndef CONFIG_SL2312_USB
+#ifndef CONFIG_ARCH_SL2312
 	ehci->command |= CMD_RUN;
 #endif
 	ehci_writel(ehci, ehci->command, &ehci->regs->command);
@@ -592,7 +589,8 @@ static int ehci_run (struct usb_hcd *hcd)
 	 */
 	down_write(&ehci_cf_port_reset_rwsem);
 	hcd->state = HC_STATE_RUNNING;
-#ifndef CONFIG_SL2312_USB
+
+#ifndef CONFIG_ARCH_SL2312
 	ehci_writel(ehci, FLAG_CF, &ehci->regs->configured_flag);
 	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted writes */
 	msleep(5);
@@ -674,15 +672,17 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 	/* remote wakeup [4.3.1] */
 	if (status & STS_PCD) {
 		unsigned	i = HCS_N_PORTS (ehci->hcs_params);
+		pcd_status = status;
 
 		/* resume root hub? */
-		status = ehci_readl (ehci,&ehci->regs->command);
-#ifndef CONFIG_SL2312_USB
-		if (!(status & CMD_RUN))
-			ehci_writel (ehci,status | CMD_RUN, &ehci->regs->command);
+#ifndef CONFIG_ARCH_SL2312
+		if (!(ehci_readl(ehci, &ehci->regs->command) & CMD_RUN))
+			usb_hcd_resume_root_hub(hcd);
 #endif
+
 		while (i--) {
-			int pstatus = readl (&ehci->regs->port_status [i]);
+			int pstatus = ehci_readl(ehci,
+						 &ehci->regs->port_status [i]);
 
 			if (pstatus & PORT_OWNER)
 				continue;
@@ -695,19 +695,10 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 			 * stop that signaling.
 			 */
 			ehci->reset_done [i] = jiffies + msecs_to_jiffies (20);
-#ifdef CONFIG_SL2312_USB
-			mod_timer(&hcd->rh_timer, ehci->reset_done[i] + 1);
-#endif
 			ehci_dbg (ehci, "port %d remote wakeup\n", i + 1);
-			usb_hcd_resume_root_hub(hcd);
+			mod_timer(&hcd->rh_timer, ehci->reset_done[i]);
 		}
 	}
-
-#ifdef CONFIG_SL2312_USB
-	/* XXX */
-	if (unlikely ((status & STS_FATAL) != 0))
-		status = ehci_readl (ehci, &ehci->regs->status);
-#endif
 
 	/* PCI errors [4.15.2.4] */
 	if (unlikely ((status & STS_FATAL) != 0)) {
@@ -720,7 +711,7 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 			ehci_err (ehci, "fatal error\n");
 dead:
 			ehci_reset (ehci);
-#ifndef CONFIG_SL2312_USB
+#ifndef CONFIG_ARCH_SL2312
 			ehci_writel(ehci, 0, &ehci->regs->configured_flag);
 #endif
 			/* generic layer kills/unlinks all urbs, then
@@ -768,15 +759,7 @@ static int ehci_urb_enqueue (
 	// case PIPE_BULK:
 	default:
 		if (!qh_urb_transaction (ehci, urb, &qtd_list, mem_flags))
-#ifdef CONFIG_SL2312_USB
-		{
-			printk("urb_transaction: %p\n",
-			       qh_urb_transaction(ehci, urb, &qtd_list, mem_flags));
 			return -ENOMEM;
-		}
-#else
-			return -ENOMEM;
-#endif
 		return submit_async (ehci, ep, urb, &qtd_list, mem_flags);
 
 	case PIPE_INTERRUPT:
@@ -968,13 +951,13 @@ MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 
 #ifdef CONFIG_PCI
-#ifdef CONFIG_ARCH_SL2312
-#include "ehci-fotg2xx.c"
-#define	PLATFORM_DRIVER		fotg2xx_ehci_driver
-#else
 #include "ehci-pci.c"
 #define	PCI_DRIVER		ehci_pci_driver
 #endif
+
+#ifdef CONFIG_ARCH_SL2312
+#include "ehci-fotg2xx.c"
+#define PLATFORM_DRIVER		fotg2xx_ehci_driver
 #endif
 
 #ifdef CONFIG_USB_EHCI_FSL
@@ -996,6 +979,12 @@ MODULE_LICENSE ("GPL");
 #include "ehci-ppc-soc.c"
 #define	PLATFORM_DRIVER		ehci_ppc_soc_driver
 #endif
+
+#ifdef  CONFIG_CPU_IXP43X
+#include "ehci-ixp4xx.c"
+#define	PLATFORM_DRIVER		ixp4xx_ehci_driver
+#endif
+
 
 #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
     !defined(PS3_SYSTEM_BUS_DRIVER)

@@ -356,7 +356,6 @@ static int rh_call_control (struct usb_hcd *hcd, struct urb *urb)
 	const u8	*bufp = tbuf;
 	int		len = 0;
 	int		patch_wakeup = 0;
-	int		patch_protocol = 0;
 	unsigned long	flags;
 	int		status = 0;
 	int		n;
@@ -427,8 +426,6 @@ static int rh_call_control (struct usb_hcd *hcd, struct urb *urb)
 			else
 				goto error;
 			len = 18;
-			if (hcd->has_tt)
-				patch_protocol = 1;
 			break;
 		case USB_DT_CONFIG << 8:
 			if (hcd->driver->flags & HCD_USB2) {
@@ -523,12 +520,6 @@ error:
 						bmAttributes))
 			((struct usb_config_descriptor *)ubuf)->bmAttributes
 				|= USB_CONFIG_ATT_WAKEUP;
-		/* report whether RH hardware has an integrated TT */
-		if (patch_protocol &&
-				len > offsetof(struct usb_device_descriptor,
-						bDeviceProtocol))
-			((struct usb_device_descriptor *) ubuf)->
-					bDeviceProtocol = 1;
 	}
 
 	/* any errors get returned through the urb completion */
