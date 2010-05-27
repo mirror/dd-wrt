@@ -398,7 +398,6 @@ static int check_reset_complete (
 		return port_status;
 	}
 
-#ifndef CONFIG_SL2312_USB
 	/* if reset finished and it's still not enabled -- handoff */
 	if (!(port_status & PORT_PE)) {
 
@@ -420,7 +419,6 @@ static int check_reset_complete (
 
 	} else
 		ehci_dbg (ehci, "port %d high speed\n", index + 1);
-#endif
 
 	return port_status;
 }
@@ -457,11 +455,9 @@ ehci_hub_status_data (struct usb_hcd *hcd, char *buf)
 	 * always set, seem to clear PORT_OCC and PORT_CSC when writing to
 	 * PORT_POWER; that's surprising, but maybe within-spec.
 	 */
-#ifndef CONFIG_SL2312_USB
 	if (!ignore_oc)
 		mask = PORT_CSC | PORT_PEC | PORT_OCC;
 	else
-#endif
 		mask = PORT_CSC | PORT_PEC;
 	// PORT_RESUME from hardware ~= PORT_STAT_C_SUSPEND
 
@@ -612,24 +608,20 @@ static int ehci_hub_control (
 		case USB_PORT_FEAT_C_SUSPEND:
 			/* we auto-clear this feature */
 			break;
-#ifndef CONFIG_SL2312_USB
 		case USB_PORT_FEAT_POWER:
 			if (HCS_PPC (ehci->hcs_params))
 				ehci_writel(ehci,
 					  temp & ~(PORT_RWC_BITS | PORT_POWER),
 					  status_reg);
 			break;
-#endif
 		case USB_PORT_FEAT_C_CONNECTION:
 			ehci_writel(ehci, (temp & ~PORT_RWC_BITS) | PORT_CSC,
 					status_reg);
 			break;
-#ifndef CONFIG_SL2312_USB
 		case USB_PORT_FEAT_C_OVER_CURRENT:
 			ehci_writel(ehci, (temp & ~PORT_RWC_BITS) | PORT_OCC,
 					status_reg);
 			break;
-#endif
 		case USB_PORT_FEAT_C_RESET:
 			/* GetPortStatus clears reset */
 			break;
@@ -660,7 +652,6 @@ static int ehci_hub_control (
 		if (temp & PORT_PEC)
 			status |= 1 << USB_PORT_FEAT_C_ENABLE;
 
-#ifndef CONFIG_SL2312_USB
 		if ((temp & PORT_OCC) && !ignore_oc){
 			status |= 1 << USB_PORT_FEAT_C_OVER_CURRENT;
 
@@ -677,7 +668,6 @@ static int ehci_hub_control (
 					status_reg);
 			}
 		}
-#endif
 
 		/* whoever resumes must GetPortStatus to complete it!! */
 		if (temp & PORT_RESUME) {
@@ -701,11 +691,7 @@ static int ehci_hub_control (
 				/* stop resume signaling */
 				temp = ehci_readl(ehci, status_reg);
 				ehci_writel(ehci,
-#ifndef CONFIG_SL2312_USB
 					temp & ~(PORT_RWC_BITS | PORT_RESUME),
-#else
-					temp & ~(PORT_RESUME),
-#endif
 					status_reg);
 				retval = handshake(ehci, status_reg,
 					   PORT_RESUME, 0, 2000 /* 2msec */);
@@ -727,14 +713,6 @@ static int ehci_hub_control (
 			ehci->reset_done [wIndex] = 0;
 
 			/* force reset to complete */
-#ifdef CONFIG_SL2312_USB
-			ehci_writel(ehci, temp & ~(PORT_RESET),
-					status_reg);
-			do {
-				temp = ehci_readl(ehci, status_reg);
-				udelay(10);
-			} while (temp & PORT_RESET);
-#else
 			ehci_writel(ehci, temp & ~(PORT_RWC_BITS | PORT_RESET),
 					status_reg);
 			/* REVISIT:  some hardware needs 550+ usec to clear
@@ -747,34 +725,15 @@ static int ehci_hub_control (
 					wIndex + 1, retval);
 				goto error;
 			}
-#endif
 
 			/* see what we found out */
 			temp = check_reset_complete (ehci, wIndex, status_reg,
 					ehci_readl(ehci, status_reg));
-#ifdef CONFIG_SL2312_USB
+#ifdef CONFIG_ARCH_SL2312
 			/* restart schedule */
-			ehci_writel(ehci, ehci_readl(ehci, &ehci->regs->command)|(0x1),&ehci->regs->command);
+			ehci_writel(ehci, ehci_readl(ehci, &ehci->regs->command) | CMD_RUN, &ehci->regs->command);
 
 //			hcd->state = HC_STATE_RUNNING;
-
-			switch ((ehci_readl(ehci, hcd->regs + 0x80) >> 22) & 3) {
-				case 0:
-						printk("Full speed\n");
-						break;
-
-				case 1:
-						printk("Low speed\n");
-						break;
-
-				case 2:
-						printk("High speed\n");
-						break;
-				default:
-						printk("Speed detection error\n");
-						break;
-			}
-
 #endif
 		}
 
@@ -794,35 +753,21 @@ static int ehci_hub_control (
 		 * for PORT_POWER anyway).
 		 */
 
-#ifndef CONFIG_SL2312_USB
 		if (temp & PORT_CONNECT) {
 			status |= 1 << USB_PORT_FEAT_CONNECTION;
 			// status may be from integrated TT
 			status |= ehci_port_speed(ehci, temp);
 		}
-#else
-		if (temp & PORT_CONNECT) {
-			status |= 1 << USB_PORT_FEAT_CONNECTION;
-		if (((ehci_readl(ehci, hcd->regs + 0x80) >> 22) & 3) == 2)
-				status |= 1 << USB_PORT_FEAT_HIGHSPEED;
-		else if (((ehci_readl(ehci, hcd->regs + 0x80) >> 22) & 3) == 1)
-				status |= 1 << USB_PORT_FEAT_LOWSPEED;
-		}
-#endif
 		if (temp & PORT_PE)
 			status |= 1 << USB_PORT_FEAT_ENABLE;
 		if (temp & (PORT_SUSPEND|PORT_RESUME))
 			status |= 1 << USB_PORT_FEAT_SUSPEND;
-#ifndef CONFIG_SL2312_USB
 		if (temp & PORT_OC)
 			status |= 1 << USB_PORT_FEAT_OVER_CURRENT;
-#endif
 		if (temp & PORT_RESET)
 			status |= 1 << USB_PORT_FEAT_RESET;
-#ifndef CONFIG_SL2312_USB
 		if (temp & PORT_POWER)
 			status |= 1 << USB_PORT_FEAT_POWER;
-#endif
 
 #ifndef	EHCI_VERBOSE_DEBUG
 	if (status & ~0xffff)	/* only if wPortChange is interesting */
@@ -847,10 +792,8 @@ static int ehci_hub_control (
 			goto error;
 		wIndex--;
 		temp = ehci_readl(ehci, status_reg);
-#ifndef CONFIG_SL2312_USB
 		if (temp & PORT_OWNER)
 			break;
-#endif
 
 		temp &= ~PORT_RWC_BITS;
 		switch (wValue) {
@@ -865,14 +808,11 @@ static int ehci_hub_control (
 			ehci_writel(ehci, temp | PORT_SUSPEND, status_reg);
 			break;
 		case USB_PORT_FEAT_POWER:
-#ifndef CONFIG_SL2312_USB
 			if (HCS_PPC (ehci->hcs_params))
 				ehci_writel(ehci, temp | PORT_POWER,
 						status_reg);
-#endif
 			break;
 		case USB_PORT_FEAT_RESET:
-#ifndef CONFIG_SL2312_USB
 			if (temp & PORT_RESUME)
 				goto error;
 			/* line status bits may report this as low speed,
@@ -886,14 +826,10 @@ static int ehci_hub_control (
 					"port %d low speed --> companion\n",
 					wIndex + 1);
 				temp |= PORT_OWNER;
-			} else
-#endif
-			{
+			} else {
 				ehci_vdbg (ehci, "port %d reset\n", wIndex + 1);
 				temp |= PORT_RESET;
-#ifndef CONFIG_SL2312_USB
 				temp &= ~PORT_PE;
-#endif
 
 				/*
 				 * caller must wait, then call GetPortStatus
