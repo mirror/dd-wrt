@@ -200,52 +200,21 @@ struct ehci_caps {
 #define HC_LENGTH(p)		(((p)>>00)&0x00ff)	/* bits 7:0 */
 #define HC_VERSION(p)		(((p)>>16)&0xffff)	/* bits 31:16 */
 	u32		hcs_params;     /* HCSPARAMS - offset 0x4 */
-#ifndef CONFIG_SL2312_USB
 #define HCS_DEBUG_PORT(p)	(((p)>>20)&0xf)	/* bits 23:20, debug port? */
 #define HCS_INDICATOR(p)	((p)&(1 << 16))	/* true: has port indicators */
 #define HCS_N_CC(p)		(((p)>>12)&0xf)	/* bits 15:12, #companion HCs */
-#else
-#define HCS_DEBUG_PORT(p)	(0)
-#define HCS_INDICATOR(p)	(0)
-#define HCS_N_CC(p)		(0)
-#endif
-
 #define HCS_N_PCC(p)		(((p)>>8)&0xf)	/* bits 11:8, ports per CC */
-#ifndef CONFIG_SL2312_USB
 #define HCS_PORTROUTED(p)	((p)&(1 << 7))	/* true: port routing */
 #define HCS_PPC(p)		((p)&(1 << 4))	/* true: port power control */
-#else
-#define HCS_PORTROUTED(p)	(0)	/* true: port routing */
-#define HCS_PPC(p)		(0)	/* true: port power control */
-#endif
-
 #define HCS_N_PORTS(p)		(((p)>>0)&0xf)	/* bits 3:0, ports on HC */
 
 	u32		hcc_params;      /* HCCPARAMS - offset 0x8 */
-#ifndef CONFIG_SL2312_USB
 #define HCC_EXT_CAPS(p)		(((p)>>8)&0xff)	/* for pci extended caps */
-#else
-#define HCC_EXT_CAPS(p)		(0)	/* for pci extended caps */
-#endif
-
 #define HCC_ISOC_CACHE(p)       ((p)&(1 << 7))  /* true: can cache isoc frame */
-
-#ifndef CONFIG_SL2312_USB
 #define HCC_ISOC_THRES(p)       (((p)>>4)&0x7)  /* bits 6:4, uframes cached */
 #define HCC_CANPARK(p)		((p)&(1 << 2))  /* true: can park on async qh */
-#else
-#define HCC_ISOC_THRES(p)       (0)  /* bits 6:4, uframes cached */
-#define HCC_CANPARK(p)		(0)  /* true: can park on async qh */
-#endif
-
 #define HCC_PGM_FRAMELISTLEN(p) ((p)&(1 << 1))  /* true: periodic_size changes*/
-
-#ifndef CONFIG_SL2312_USB
 #define HCC_64BIT_ADDR(p)       ((p)&(1))       /* true: can use 64-bit addr */
-#else
-#define HCC_64BIT_ADDR(p)       (0)       /* true: can use 64-bit addr */
-#endif
-
 	u8		portroute [8];	 /* nibbles for routing - offset 0xC */
 } __attribute__ ((packed));
 
@@ -258,12 +227,7 @@ struct ehci_regs {
 /* 23:16 is r/w intr rate, in microframes; default "8" == 1/msec */
 #define CMD_PARK	(1<<11)		/* enable "park" on async qh */
 #define CMD_PARK_CNT(c)	(((c)>>8)&3)	/* how many transfers to park for */
-
-#ifndef CONFIG_SL2312_USB
 #define CMD_LRESET	(1<<7)		/* partial reset (no ports, etc) */
-#else
-#define CMD_LRESET	(0)
-#endif
 #define CMD_IAAD	(1<<6)		/* "doorbell" interrupt async advance */
 #define CMD_ASE		(1<<5)		/* async schedule enable */
 #define CMD_PSE		(1<<4)		/* periodic schedule enable */
@@ -291,34 +255,21 @@ struct ehci_regs {
 
 	/* FRINDEX: offset 0x0C */
 	u32		frame_index;	/* current microframe number */
-
-#ifdef CONFIG_SL2312_USB
-	u32		reserved1[1];
-#else
 	/* CTRLDSSEGMENT: offset 0x10 */
 	u32		segment;	/* address bits 63:32 if needed */
-#endif
 	/* PERIODICLISTBASE: offset 0x14 */
 	u32		frame_list;	/* points to periodic list */
 	/* ASYNCLISTADDR: offset 0x18 */
 	u32		async_next;	/* address of next async queue head */
 
-#ifdef CONFIG_SL2312_USB
-	u32		reserved2[1];
-#else
 	u32		reserved [9];
 
 	/* CONFIGFLAG: offset 0x40 */
 	u32		configured_flag;
 #define FLAG_CF		(1<<0)		/* true: we'll support "high speed" */
-#endif
 
 	/* PORTSC: offset 0x44 */
-#ifdef CONFIG_SL2312_USB
-	u32		port_status [1];	/* up to N_PORTS */
-#else
 	u32		port_status [0];	/* up to N_PORTS */
-#endif
 /* 31:23 reserved */
 #define PORT_WKOC_E	(1<<22)		/* wake on overcurrent (enable) */
 #define PORT_WKDISC_E	(1<<21)		/* wake on disconnect (enable) */
@@ -777,6 +728,10 @@ ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
 #if defined(CONFIG_PPC)
 #define readl_be(addr)		in_be32((__force unsigned *)addr)
 #define writel_be(val, addr)	out_be32((__force unsigned *)addr, val)
+#endif
+#if defined(CONFIG_ARM) && defined(CONFIG_ARCH_IXP4XX)
+#define readl_be(addr)		__raw_readl((__force unsigned *)addr)
+#define writel_be(val, addr)	__raw_writel(val, (__force unsigned *)addr)
 #endif
 
 static inline unsigned int ehci_readl(const struct ehci_hcd *ehci,
