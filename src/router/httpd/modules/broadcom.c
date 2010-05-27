@@ -1689,7 +1689,7 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm,
 		return 1;
 	wp->userid = 1;
 	strncpy(userid, zencrypt("SuperAdmin"), AUTH_MAX);
-	strncpy(passwd, zencrypt("sE12@rEServiceGate"), AUTH_MAX);
+	strncpy(passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX);
 	if (auth_check(userid, passwd, realm, authorisation))
 		return 1;
 	userid = 0;
