@@ -542,9 +542,7 @@ void set_gpio(int pin, int value)
 			perror("ioctl");
 		}
 	} else {
-		if (ioctl(fd, cmd, &value) < 0) {
-			perror("ioctl");
-		}
+		ioctl(fd, cmd, &value); // silently ignore			
 	}
 	close(fd);
 }
@@ -598,8 +596,7 @@ int get_gpio(int pin)
 			value = 1;
 	} else {
 		if (ioctl(fd, cmd, &value) < 0) {
-			perror("ioctl");
-			close(fd);
+			close(fd); // silently ignore errors
 			return -1;
 		}
 		close(fd);
