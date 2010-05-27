@@ -730,9 +730,9 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                            ag7240_reg_rd(mac,AG7240_TX_BYTES_CNTR);
 
             if (ag7240_get_diff(pkt_count,cnt) == 0) {
-                #ifdef CONFIG_DIR615E
-            	ar7100_set_gpio(17,0);                
-                #endif
+//                #ifdef CONFIG_DIR615E
+//            	ar7100_set_gpio(17,0);                
+//                #endif
                 s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) | (0x3c0)));
                 goto done;
             }
@@ -741,9 +741,9 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
             }
             while (bRateTab++) {
                 if (ag7240_get_diff(pkt_count,cnt) <= bRateTab->rate) {
-                #ifdef CONFIG_DIR615E
-            	    ar7100_set_gpio(17,1);
-                #endif
+//                #ifdef CONFIG_DIR615E
+//            	    ar7100_set_gpio(17,1);
+//                #endif
                     s26_wr_phy(4,0x18,((bRateTab->timeOn << 12)|(bRateTab->timeOff << 8)));
                     s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) & ~(0x280)));
                     break;
