@@ -462,10 +462,10 @@ static int fotg2xx_ehci_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, hcd);
 
 	/* set ChipEnable  */
-//	otg_set(0x100, BIT(5));
+	otg_set(0x100, BIT(5));
 
 	/* set HalfSpeedEnable */
-//	otg_set(0x100, BIT(1));
+	otg_set(0x100, BIT(1));
 
 	/* mask interrupts - peripheral, otg, host, hi-active (bits 0,1,2,3) */
 	//otg_clear(0xc4, BIT(3)); /* hi active */
