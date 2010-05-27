@@ -92,7 +92,6 @@ struct usb_hcd {
 	unsigned		poll_rh:1;	/* poll for rh status? */
 	unsigned		poll_pending:1;	/* status has changed? */
 	unsigned		wireless:1;	/* Wireless USB HCD */
-	unsigned		has_tt:1;	/* Integrated TT in root hub */
 
 	int			irq;		/* irq allocated */
 	void __iomem		*regs;		/* device memory/io */
@@ -205,10 +204,6 @@ struct hc_driver {
 	int		(*start_port_reset)(struct usb_hcd *, unsigned port_num);
 	void		(*hub_irq_enable)(struct usb_hcd *);
 		/* Needed only if port-change IRQs are level-triggered */
-		/* force handover of high-speed port to full-speed companion */
-	void	(*relinquish_port)(struct usb_hcd *, int);
-		/* has a port been handed over to a companion? */
-	int	(*port_handed_over)(struct usb_hcd *, int);
 };
 
 extern int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags);
