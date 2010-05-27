@@ -176,7 +176,13 @@ void start_sysinit(void)
 		eval("ifconfig", "wifi0", "hw", "ether", lanmac);
 		free(lanmac);
 	}
+
 	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_DIAG, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
 
 	/*
 	 * Set a sane date 
