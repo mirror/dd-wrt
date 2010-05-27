@@ -667,6 +667,8 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #elif HAVE_TMK
 	{"wl_ssid", "KMT", 0},	/* Service set ID (network name) */
+#elif HAVE_TMK
+	{"wl_ssid", "ERC", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #else
@@ -712,6 +714,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_TMK)
 	{"wl0_ssid", "KMT", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "KMT", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_ERC)
+	{"wl0_ssid", "ERC", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "ERC", 0},	/* Service set ID (network name) */
 #else
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
