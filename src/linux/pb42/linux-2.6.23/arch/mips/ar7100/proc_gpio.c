@@ -108,7 +108,7 @@ EXPORT_SYMBOL(ar7100_gpio_out_val);
 void ap_usb_led_on(void)
 {
 #ifdef CONFIG_WNDR3700
-	ar7100_reg_rmw_set(AR7100_RESET, AR7100_RESET_GE1_PHY);
+	ar7100_reg_rmw_clear(AR7100_RESET, AR7100_RESET_GE1_PHY);
 #else
 #ifdef AP_USB_LED_GPIO
 	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_ON);
@@ -120,7 +120,7 @@ EXPORT_SYMBOL(ap_usb_led_on);
 void ap_usb_led_off(void)
 {
 #ifdef CONFIG_WNDR3700
-	ar7100_reg_rmw_clear(AR7100_RESET, AR7100_RESET_GE1_PHY);
+	ar7100_reg_rmw_set(AR7100_RESET, AR7100_RESET_GE1_PHY);
 #else
 #ifdef AP_USB_LED_GPIO
 	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_OFF);
