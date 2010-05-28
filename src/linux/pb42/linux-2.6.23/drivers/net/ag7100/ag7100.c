@@ -1540,8 +1540,8 @@ process_pkts:
     * being a rx or rx overflow, we have packets to process.
     * So, we go ahead and receive the packets..
     */
-    assert((status & AG7100_RX_STATUS_PKT_RCVD));
-    assert((status >> 16));
+//    assert((status & AG7100_RX_STATUS_PKT_RCVD));
+//    assert((status >> 16));
 #endif
     /*
     * Flush the DDR FIFOs for our gmac
