@@ -183,7 +183,7 @@ typedef enum {
                                      : (AR7100_RESET_GE0_MAC)
 #else
 #ifdef CONFIG_WNDR3700
-#define ag7100_reset_mask(_no) (_no) ? (AR7100_RESET_GE1_MAC |  \
+#define ag7100_reset_mask(_no) (_no) ? (AR7100_RESET_GE1_MAC)  \
                                      : (AR7100_RESET_GE0_MAC |  \
                                         AR7100_RESET_GE0_PHY)
 
