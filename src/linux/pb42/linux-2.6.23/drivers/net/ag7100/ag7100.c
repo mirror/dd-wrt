@@ -2351,10 +2351,6 @@ ag7100_init(void)
         mdelay(100);
 
     }
-#ifdef CONFIG_WNDR3700
-    extern void ap_usb_led_off(void);
-    ap_usb_led_off();
-#endif
     ag7100_trc_init();
 
 #ifdef CONFIG_AR9100
