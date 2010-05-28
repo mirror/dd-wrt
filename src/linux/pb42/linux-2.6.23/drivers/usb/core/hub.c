@@ -1172,11 +1172,9 @@ void usb_disconnect(struct usb_device **pdev)
 	usb_set_device_state(udev, USB_STATE_NOTATTACHED);
 	dev_info (&udev->dev, "USB disconnect, address %d\n", udev->devnum);
 
-#ifdef AP_USB_LED_GPIO
         /* Turn USB LED off only if its a last device attached to root hub */
 	if(udev->parent == udev->bus->root_hub)
 		ap_usb_led_off();	
-#endif
 
 	usb_lock_device(udev);
 
@@ -2090,9 +2088,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 		goto fail;
 				/* success, speed is known */
 	retval = -ENODEV;
-#ifdef AP_USB_LED_GPIO
-			ap_usb_led_on();
-#endif
+	ap_usb_led_on();
 
 	if (oldspeed != USB_SPEED_UNKNOWN && oldspeed != udev->speed) {
 		dev_dbg(&udev->dev, "device reset changed speed!\n");
