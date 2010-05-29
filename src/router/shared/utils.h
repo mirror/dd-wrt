@@ -473,6 +473,11 @@
 
 #define ROUTER_BOARD_RB600 0x960f
 
+// Netgear WNR2000 v2 (BCM4716B0 cpu, 4MB serial flash / 32MB ram, fccid: Netgear PY309100105)
+#define ROUTER_NETGEAR_WNR2000V2 0x970f
+
+
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
