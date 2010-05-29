@@ -248,6 +248,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNR834BV2:
 	case ROUTER_NETGEAR_WNDR3300:
 	case ROUTER_NETGEAR_WNR3500L:
+	case ROUTER_NETGEAR_WNR2000V2:
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_WRT610NV2:
 	case ROUTER_DYNEX_DX_NRUTER:
@@ -710,6 +711,23 @@ void start_sysinit(void)
 		    || nvram_match("vlan2ports", "0 8u")) {
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 			nvram_set("vlan2ports", "0 8");
+			need_reboot = 1;
+		}
+		break;
+		
+	case ROUTER_NETGEAR_WNR2000V2:
+		nvram_set("lan_ifnames", "vlan0 eth1");	
+		nvram_set("wl0_ifname", "eth1");
+		if (nvram_match("force_vlan_supp", "enabled") {
+			nvram_set("wan_ifname", "vlan1");
+			nvram_set("wan_ifname2", "vlan1");
+		}		
+		else {
+			nvram_set("wan_ifname", "eth0");
+			nvram_set("wan_ifname2", "eth0");
+		}
+		if (nvram_match("vlan1ports", "0 5u")) {
+			nvram_set("vlan1ports", "0 5");
 			need_reboot = 1;
 		}
 		break;
