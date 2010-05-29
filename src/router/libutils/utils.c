@@ -1929,6 +1929,14 @@ int internal_getRouterBrand()
 		setRouter("Linksys WAP54G v3.x");
 		return ROUTER_WAP54G_V3;
 	}
+	
+	if (boardnum == 1
+	    && nvram_match("boardtype", "0xE4CD")
+	    && nvram_match("boardrev", "0x1700")) {
+		cprintf("router is wnr2000 v2\n");
+		setRouter("Netgear WNR2000 v2");
+		return ROUTER_NETGEAR_WNR2000V2;
+	}
 
 	if ((boardnum == 1 || boardnum == 3500)
 	    && nvram_match("boardtype", "0x04CF")
