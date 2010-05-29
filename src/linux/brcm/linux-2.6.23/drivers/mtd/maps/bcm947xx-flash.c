@@ -71,6 +71,7 @@ static struct mtd_info *bcm947xx_mtd;
 #define ROUTER_NETGEAR_WNR834B         2
 #define ROUTER_NETGEAR_WNDR3300        3
 #define ROUTER_NETGEAR_WNR3500L        4
+#define ROUTER_NETGEAR_WNR2000V2       5
 
 #define WGR614_CHECKSUM_BLOCK_START    0x003A0000
 #define WGR614_CHECKSUM_OFF            0x003AFFF8
@@ -105,6 +106,12 @@ static int get_router (void)
 	  && nvram_match ("boardtype", "0x04CF")
 	  && (nvram_match ("boardrev", "0x1213") || nvram_match ("boardrev", "02")) ) {	
 		return ROUTER_NETGEAR_WNR3500L;  //Netgear WNR3500v2/U/L
+	}
+	
+	if ( boardnum == 1
+	  && nvram_match ("boardtype", "0xE4CD")
+	  && nvram_match ("boardrev", "0x1700") ) {
+		return ROUTER_NETGEAR_WNR2000V2;  //Netgear WNR2000v2	
 	}
 	
 	return 0;
@@ -413,10 +420,13 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		case ROUTER_NETGEAR_WGR614L:
 		case ROUTER_NETGEAR_WNR834B:
 		case ROUTER_NETGEAR_WNDR3300:
-		case ROUTER_NETGEAR_WNR3500L:	
+		case ROUTER_NETGEAR_WNR3500L:
 			board_data_size = 4 * 0x10000;  //Netgear: checksum is @ 0x003AFFF8 for 4M flash
 			jffs_exclude_size = 0x10000;    //or checksum is @ 0x007AFFF8 for 8M flash
-			break;		
+			break;	
+		case ROUTER_NETGEAR_WNR2000V2:	
+			board_data_size = 0x10000;
+		break;
 	}
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
