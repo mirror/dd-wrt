@@ -3328,6 +3328,12 @@ int led_control(int type, int act)
 		ses_gpio = 0x001;	// WPS led green
 		connected_gpio = 0x002;	//wan led green
 		break;
+	case ROUTER_NETGEAR_WNR2000V2:
+		//power_gpio = ??;
+		//diag_gpio = ??;
+		ses_gpio = 0x007;  //WPS led
+		//connected_gpio = ??;
+		break;
 	case ROUTER_WRT320N:
 		power_gpio = 0x002;	//power/diag (disabled=blink)
 		ses_gpio = 0x103;	// ses blue
