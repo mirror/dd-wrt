@@ -252,9 +252,10 @@ if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x13")
 		gpios = 1 << 1 | 1 << 6 | 1 << 7;
 }
 
-if (nvram_match("boardtype", "0x04cf") && nvram_match("boot_hw_model", "WRT610N"))
+if (nvram_match("boardtype", "0x04cf") && (nvram_match("boot_hw_model", "WRT610N")
+	|| nvram_match("boot_hw_model", "E300")))
 {
-		printk(KERN_EMERG "WRT610Nv2 GPIO Init\n");
+		printk(KERN_EMERG "WRT610Nv2/E3000 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 3 | 1 << 5 | 1 << 7;
 }
 
