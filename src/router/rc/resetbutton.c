@@ -629,6 +629,7 @@ void period_check(int sig)
 	case ROUTER_BUFFALO_WZRRSG54:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 	case ROUTER_ASUS_RTN12:
+	case ROUTER_NETGEAR_WNR2000V2:
 		sesgpio = 0x100;	// gpio 0, inversed
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
