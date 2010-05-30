@@ -226,6 +226,9 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("ledbh0", "136");
 		nvram_set("ledbh1", "11");
 		break;
+	case ROUTER_NETGEAR_WNR2000V2:
+		nvram_set("ledbh5", "8");
+		break;
 	}
 
 	int boardflags;
@@ -718,14 +721,8 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_WNR2000V2:
 		nvram_set("lan_ifnames", "vlan0 eth1");	
 		nvram_set("wl0_ifname", "eth1");
-		if (nvram_match("force_vlan_supp", "enabled")) {
-			nvram_set("wan_ifname", "vlan1");
-			nvram_set("wan_ifname2", "vlan1");
-		}		
-		else {
-			nvram_set("wan_ifname", "eth0");
-			nvram_set("wan_ifname2", "eth0");
-		}
+		nvram_set("wan_ifname", "vlan1");
+		nvram_set("wan_ifname2", "vlan1");
 		if (nvram_match("vlan1ports", "0 5u")) {
 			nvram_set("vlan1ports", "0 5");
 			need_reboot = 1;
