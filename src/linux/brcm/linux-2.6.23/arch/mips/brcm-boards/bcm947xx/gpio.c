@@ -274,6 +274,13 @@ if (boardnum == 45 && nvram_match("boardrev", "0x1402")
 		gpios = 1 << 1;
 }
 
+if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
+		&& nvram_match("boardrev", "0x1700"))
+{
+		printk(KERN_EMERG "WNR2000v2 GPIO Init\n");
+		gpios = 1 << 2 | 1 << 6 | 1 << 7 | 1 << 8;
+}
+
 if (boardnum == 45 && nvram_match("boardrev", "0x1201")
 	    && nvram_match("boardtype", "0x04CD"))
 {
