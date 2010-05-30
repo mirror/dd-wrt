@@ -24,7 +24,7 @@ extern void runStartup(char *folder, char *extension);
 
 extern void shutdown_system(void);
 
-extern void start_dhcpc(char *wan_ifname,char *pidfile,char *script,int fork);
+extern void start_dhcpc(char *wan_ifname,char *pidfile,char *script);
 
 /*
  * ppp scripts 
