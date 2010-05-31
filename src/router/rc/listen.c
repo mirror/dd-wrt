@@ -65,7 +65,7 @@ struct iphdr {
 	u_int16_t check;
 	u_int8_t saddr[4];
 	u_int8_t daddr[4];
-};
+} __attribute__((packed));
 
 struct EthPacket {
 	u_int8_t dst_mac[6];
@@ -84,9 +84,9 @@ struct EthPacket {
 	u_int8_t daddr[4];
 
 	u_int8_t data[1500 - 20];
-};
+} __attribute__((packed));
 
-int
+static int
 read_interface(char *interface, int *ifindex, u_int32_t *addr,
 	       unsigned char *arp)
 {
@@ -125,7 +125,7 @@ read_interface(char *interface, int *ifindex, u_int32_t *addr,
 	return 0;
 }
 
-int raw_socket(int ifindex)
+static int raw_socket(int ifindex)
 {
 	int fd;
 	struct sockaddr_ll sock;
@@ -149,7 +149,7 @@ int raw_socket(int ifindex)
 
 }
 
-u_int16_t checksum(void *addr, int count)
+static u_int16_t checksum(void *addr, int count)
 {
 	/* 
 	 * Compute Internet Checksum for "count" bytes beginning at location
@@ -188,7 +188,7 @@ u_int16_t checksum(void *addr, int count)
 	return ~sum;
 }
 
-int listen_interface(char *interface)
+static int listen_interface(char *interface)
 {
 	int ifindex = 0;
 	fd_set rfds;
