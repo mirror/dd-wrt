@@ -477,6 +477,13 @@ void start_sysinit(void)
 		{"wl0_ifname", "eth2", 0},
 		{0, 0, 0}
 	};
+	
+	struct nvram_tuple vlan_0_1[] = {
+		{"lan_ifnames", "vlan0 eth1", 0},
+		{"wan_ifname", "vlan1", 0},
+		{"wl0_ifname", "eth1", 0},
+		{0, 0, 0}
+	};
 
 	switch (brand) {
 	case ROUTER_BUFFALO_WZRRSG54:
@@ -497,9 +504,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_BELKIN_F5D7231_V2000:
-		nvram_set("lan_ifnames", "vlan0 eth1");
-		nvram_set("wan_ifname", "vlan1");
-		nvram_set("wl0_ifname", "eth1");
+		basic_params = vlan_0_1;
 		if (nvram_match("vlan1ports", "0 5u")) {
 			nvram_set("vlan0ports", "3 2 1 0 5*");
 			nvram_set("vlan1ports", "4 5");
@@ -509,18 +514,14 @@ void start_sysinit(void)
 	case ROUTER_BELKIN_F5D7231:
 	case ROUTER_USR_5461:
 	case ROUTER_NETCORE_NW618:
-		nvram_set("lan_ifnames", "vlan0 eth1");
-		nvram_set("wan_ifname", "vlan1");
-		nvram_set("wl0_ifname", "eth1");
+		basic_params = vlan_0_1;
 		if (nvram_match("vlan1ports", "0 5u"))
 			nvram_set("vlan1ports", "0 5");
 		break;
 
 	case ROUTER_USR_5465:
 	case ROUTER_ASUS_RTN10:
-		nvram_set("lan_ifnames", "vlan0 eth1");
-		nvram_set("wan_ifname", "vlan1");
-		nvram_set("wl0_ifname", "eth1");
+		basic_params = vlan_0_1;
 		if (nvram_match("vlan1ports", "4 5u"))
 			nvram_set("vlan1ports", "4 5");
 		break;
@@ -707,7 +708,6 @@ void start_sysinit(void)
 	case ROUTER_ASUS_RTN16:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
-		nvram_set("wan_ifname2", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		nvram_set("vlan2hwname", "et0");
 		if (nvram_match("vlan1ports", "1 2 3 4 8*")
@@ -719,21 +719,17 @@ void start_sysinit(void)
 		break;
 		
 	case ROUTER_NETGEAR_WNR2000V2:
-		nvram_set("lan_ifnames", "vlan0 eth1");	
-		nvram_set("wl0_ifname", "eth1");
-		nvram_set("wan_ifname", "vlan1");
-		nvram_set("wan_ifname2", "vlan1");
-		if (nvram_match("vlan1ports", "0 5u")) {
+		basic_params = vlan_0_1;
+		if (nvram_match("vlan0ports", "1 2 3 4 5*")
+		    || nvram_match("vlan1ports", "0 5u")) {
+			nvram_set("vlan0ports", "4 3 2 1 5*");
 			nvram_set("vlan1ports", "0 5");
 			need_reboot = 1;
 		}
 		break;
 
 	case ROUTER_ASUS_RTN12:
-		nvram_set("lan_ifnames", "vlan0 eth1");
-		nvram_set("wan_ifname", "vlan1");
-		nvram_set("wan_ifname2", "vlan1");
-		nvram_set("wl0_ifname", "eth1");
+		basic_params = vlan_0_1;
 		eval("gpio", "enable", "0");
 		if (!nvram_match("ledbh0", "0")
 		    || !nvram_match("ledbh1", "0")) {
@@ -752,7 +748,6 @@ void start_sysinit(void)
 	case ROUTER_WRT310NV2:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
-		nvram_set("wan_ifname2", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		nvram_set("vlan2hwname", "et0");
 		break;
@@ -760,7 +755,6 @@ void start_sysinit(void)
 	case ROUTER_WRT160NV3:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
-		nvram_set("wan_ifname2", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		nvram_set("vlan2hwname", "et0");
 		//fix lan port numbering on CSE41, CSE51
@@ -1068,8 +1062,10 @@ void start_sysinit(void)
 		nvram_set("wan_ifname", "vlan1");	// fix for Asus WL500gPremium 
 		// 
 		// WAN problem.
-		if (nvram_match("vlan1ports", "0 5u"))
+		if (nvram_match("vlan1ports", "0 5u")) {
 			nvram_set("vlan1ports", "0 5");
+			need_reboot = 1;
+		}
 		break;
 
 	case ROUTER_ASUS_WL500GD:
@@ -1223,6 +1219,7 @@ void start_sysinit(void)
 	 * set wan_ifnames, pppoe_wan_ifname and pppoe_ifname 
 	 */
 	nvram_set("wan_ifname", wanifname);
+	nvram_set("wan_ifname2", wanifname);
 	nvram_set("wan_ifnames", wanifname);
 	nvram_set("wan_default", wanifname);
 	nvram_set("pppoe_wan_ifname", wanifname);
