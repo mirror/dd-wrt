@@ -1483,8 +1483,11 @@ int getRssi(char *ifname, unsigned char *mac)
 		return 0;
 	}
 	len = iwr.u.data.length;
-	if (len < sizeof(struct ieee80211req_sta_info))
+	if (len < sizeof(struct ieee80211req_sta_info)) {
+		close(s);
+		free(buf);
 		return 0;
+	}
 
 	cp = buf;
 	char maccmp[6];
@@ -1544,8 +1547,11 @@ int getUptime(char *ifname, unsigned char *mac)
 		return 0;
 	}
 	len = iwr.u.data.length;
-	if (len < sizeof(struct ieee80211req_sta_info))
+	if (len < sizeof(struct ieee80211req_sta_info)) {
+		close(s);
+		free(buf);
 		return -1;
+	}
 
 	cp = buf;
 	char maccmp[6];
@@ -1606,8 +1612,11 @@ int getNoise(char *ifname, unsigned char *mac)
 		return 0;
 	}
 	len = iwr.u.data.length;
-	if (len < sizeof(struct ieee80211req_sta_info))
+	if (len < sizeof(struct ieee80211req_sta_info)) {
+		close(s);
+		free(buf);
 		return -1;
+	}
 
 	cp = buf;
 	char maccmp[6];
