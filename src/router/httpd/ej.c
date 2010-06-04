@@ -148,7 +148,7 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
 	int len = 0;
 	int filecount = 0;
-
+	memdebug_enter();
 	pattern = (char *)malloc(PATTERN_BUFFER + 1);
 	while (((c = getc(fp)) != EOF) && filecount < filelen) {
 		filecount++;
@@ -201,9 +201,10 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 		len = 0;
 	}
 
-	free(pattern);
 	if (handle)
 		dlclose(handle);
+	free(pattern);
+	memdebug_leave();
 }
 
 void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
@@ -214,9 +215,10 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 	int len = 0;
 	char *filebuffer;
 	int filecount = 0;
-
+	
 	if (buffer == NULL)
 		return;
+	memdebug_enter();
 	filebuffer = buffer;
 	pattern = (char *)malloc(PATTERN_BUFFER + 1);
 	while ((c = filebuffer[filecount++]) != 0) {
@@ -270,9 +272,10 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		len = 0;
 	}
 
-	free(pattern);
 	if (handle)
 		dlclose(handle);
+	free(pattern);
+	memdebug_leave();
 }
 
 #define WEBS_PAGE_ROM

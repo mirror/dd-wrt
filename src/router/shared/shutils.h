@@ -128,6 +128,33 @@ extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
  */
 char *strcat_r(const char *s1, const char *s2, char *buf);
 
+
+#ifdef MEMDEBUG
+#define memdebug_enter()  \
+	struct sysinfo memdebuginfo; \
+	sysinfo(&memdebuginfo); \
+	long before = memdebuginfo.freeram; 
+
+#define memdebug_leave()  \
+	sysinfo(&memdebuginfo); \
+	long after = memdebuginfo.freeram; \
+	if ((before-after)>0) \
+	    { \
+	    fprintf(stderr,"function %s->%s:%d leaks %ld bytes memory (before: %ld, after: %ld\n",__FILE__,__func__,__LINE__,(before-after),before,after); \
+	    }
+#define memdebug_leave_info(a)  \
+	sysinfo(&memdebuginfo); \
+	long after = memdebuginfo.freeram; \
+	if ((before-after)>0) \
+	    { \
+	    fprintf(stderr,"function %s->%s:%d (%s) leaks %ld bytes memory (before: %ld, after: %ld\n",__FILE__,__func__,__LINE__,a,(before-after),before,after); \
+	    }
+#else
+#define memdebug_enter()
+#define memdebug_leave()
+#define memdebug_leave_info(a)
+#endif
+
 /*
  * Check for a blank character; that is, a space or a tab 
  */
