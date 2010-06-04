@@ -109,7 +109,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 	if (state == 0 || state == -1) {
 		return cnt;
 	}
-	s = socket(AF_INET, SOCK_DGRAM, 0);
+	s = getsocket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		return cnt;
 	}
@@ -187,7 +187,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 
 	}
 
-	close(s);
+	closesocket(s);
 	return cnt;
 }
 
