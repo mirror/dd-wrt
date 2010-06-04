@@ -32,16 +32,23 @@ typedef u_int8_t u8;
 #include <wlioctl.h>
 #include <wlutils.h>
 
+static int s_socket = -1;
 int getsocket(void)
 {
-	static int s = -1;
 
-	if (s < 0) {
-		s = socket(AF_INET, SOCK_DGRAM, 0);
-		if (s < 0)
+	if (s_socket < 0) {
+		s_socket = socket(AF_INET, SOCK_DGRAM, 0);
+		if (s_socket < 0)
 			err(1, "socket(SOCK_DGRAM)");
 	}
-	return s;
+	return s_socket;
+}
+
+void closesocket(void)
+{
+    if (s_socket >= 0) {
+    close(s_socket);
+    }
 }
 
 int wl_ioctl(char *name, int cmd, void *buf, int len)

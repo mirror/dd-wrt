@@ -158,7 +158,6 @@ int wifi_getchannel(char *ifname)
 
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
-
 	int i;
 
 	freq = (float)wrq.u.freq.m;
