@@ -75,7 +75,7 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		printf("IOCTL_STA_INFO radio %s not enabled!\n", ifname);
 		return cnt;
 	}
-	s = socket(AF_INET, SOCK_DGRAM, 0);
+	s = getsocket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		fprintf(stderr, "socket(SOCK_DRAGM)\n");
 		return cnt;
@@ -89,14 +89,14 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		fprintf(stderr, "IOCTL_STA_INFO for %s failed!\n", ifname);
 		free(buf);
-		close(s);
+		closesocket(s);
 		return cnt;
 	}
 	len = iwr.u.data.length;
 	if (len < sizeof(struct ieee80211req_sta_info)) {
 		// fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
 		free(buf);
-		close(s);
+		closesocket(s);
 		return cnt;
 	}
 	cp = buf;
@@ -158,7 +158,7 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 	}
 	while (len >= sizeof(struct ieee80211req_sta_info));
 	free(buf);
-	close(s);
+	closesocket(s);
 
 	return cnt;
 }
