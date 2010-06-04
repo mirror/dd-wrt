@@ -96,7 +96,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 	    nvram_safe_get(name);
 }
 
-void *load_visual_service(char *name)
+static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
 	void *handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY);
@@ -118,7 +118,7 @@ void *load_visual_service(char *name)
 	return handle;
 }
 
-void *load_service(char *name)
+static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
 	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY);
@@ -280,6 +280,7 @@ void *start_validator_nofree(char *name, void *handle, webs_t wp,
 
 void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 {
+
 	if (nvram_match("console_debug", "1")) {
 		fprintf(stderr, "call_ej %s\n", name);
 		int i = 0;
@@ -312,10 +313,12 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle,
 								    service);
 	cprintf("found. pointer is %p\n", fptr);
+	memdebug_enter();
 	if (fptr)
 		(*fptr) (wp, argc, argv);
 	else
 		fprintf(stderr, "function %s not found \n", service);
+	memdebug_leave_info(service);
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
 
