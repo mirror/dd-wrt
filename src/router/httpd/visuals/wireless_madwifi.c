@@ -88,15 +88,15 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 	iwr.u.data.length = 24 * 1024;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		fprintf(stderr, "IOCTL_STA_INFO for %s failed!\n", ifname);
-		close(s);
 		free(buf);
+		close(s);
 		return cnt;
 	}
 	len = iwr.u.data.length;
 	if (len < sizeof(struct ieee80211req_sta_info)) {
 		// fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
-		close(s);
 		free(buf);
+		close(s);
 		return cnt;
 	}
 	cp = buf;
