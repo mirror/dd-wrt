@@ -17,7 +17,8 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-BCFLAGS	= $(COPTS)  -fPIC -DMEMDEBUG
+BCFLAGS	= $(COPTS)  -fPIC 
+#-DMEMDEBUG
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
 BCFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -Imodules
