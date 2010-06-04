@@ -99,7 +99,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY);
+	void *handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY|RTLD_GLOBAL);
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
@@ -108,7 +108,7 @@ static void *load_visual_service(char *name)
 
 		sprintf(dl, "/lib/%s_visual.so", name);
 		cprintf("try to load %s\n", dl);
-		handle = dlopen(dl, RTLD_LAZY);
+		handle = dlopen(name, RTLD_LAZY|RTLD_GLOBAL);
 		if (handle == NULL) {
 			fprintf(stderr, "cannot load %s\n", dl);
 			return NULL;
@@ -121,7 +121,7 @@ static void *load_visual_service(char *name)
 static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY);
+	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY|RTLD_GLOBAL);
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
@@ -130,7 +130,7 @@ static void *load_service(char *name)
 
 		sprintf(dl, "/lib/%s_validate.so", name);
 		cprintf("try to load %s\n", dl);
-		handle = dlopen(dl, RTLD_LAZY);
+		handle = dlopen(dl, RTLD_LAZY|RTLD_GLOBAL);
 		if (handle == NULL) {
 			fprintf(stderr, "cannot load %s\n", dl);
 			return NULL;
