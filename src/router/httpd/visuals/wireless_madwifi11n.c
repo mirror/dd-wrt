@@ -69,8 +69,9 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
 	}
+	memdebug_enter();
 	int state = get_radiostate(ifname);
-
+	memdebug_leave();
 	if (state == 0 || state == -1) {
 		printf("IOCTL_STA_INFO radio %s not enabled!\n", ifname);
 		return cnt;
