@@ -47,7 +47,8 @@ int getsocket(void)
 void closesocket(void)
 {
     if (s_socket >= 0) {
-    close(s_socket);
+	close(s_socket);
+	s_socket = -1;
     }
 }
 
