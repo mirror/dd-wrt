@@ -151,7 +151,6 @@ extern void validate_cgi(webs_t wp);
 static int initWeb(void *handle)
 {
 	struct Webenvironment *env;
-	env = (struct Webenvironment *)malloc(sizeof(struct Webenvironment));
 	void (*init) (struct Webenvironment * env);
 
 	init = (void (*)(struct Webenvironment * env))dlsym(handle, "initWeb");
@@ -159,6 +158,7 @@ static int initWeb(void *handle)
 		fprintf(stderr, "error, initWeb not found\n");
 		return -1;
 	}
+	env = (struct Webenvironment *)malloc(sizeof(struct Webenvironment));
 	env->PwebsGetVar = websGetVar;
 	env->PwebsWrite = websWrite;
 	cprintf("httpd_filter_name %p:%d\n", httpd_filter_name,
@@ -290,11 +290,15 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 	char service[64];
 	int nohandle = 0;
 
+{
+	memdebug_enter();
 	if (!handle) {
 		cprintf("load visual_service\n");
 		handle = load_visual_service(name);
 		nohandle = 1;
 	}
+	memdebug_leave_info("loadviz");
+}
 	if (handle == NULL) {
 		cprintf("handle null\n");
 		return NULL;
@@ -303,22 +307,28 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 	void (*fptr) (webs_t wp, int argc, char_t ** argv);
 
 	sprintf(service, "ej_%s", name);
+{
+	memdebug_enter();
 	if (nohandle) {
 		cprintf("init web\n");
 		if (initWeb(handle) != 0) {
 			return handle;
 		}
 	}
+	memdebug_leave_info("initweb");
+}
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle,
 								    service);
 	cprintf("found. pointer is %p\n", fptr);
+{
 	memdebug_enter();
 	if (fptr)
 		(*fptr) (wp, argc, argv);
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	memdebug_leave_info(service);
+}
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
 

@@ -250,7 +250,7 @@ static int auth_check(char *user, char *pass, char *dirname,
 	char buf2[36];
 	char *enc1;
 	char *enc2;
-
+memdebug_enter();
 	enc1 = crypt(authinfo, (unsigned char *)user);
 
 	if (strcmp(enc1, user)) {
@@ -261,6 +261,7 @@ static int auth_check(char *user, char *pass, char *dirname,
 	if (strcmp(enc2, pass)) {
 		return 0;
 	}
+memdebug_leave();
 
 	if (strcmp(enc1, user) == 0 && strcmp(enc2, pass) == 0) {
 		return 1;
@@ -924,6 +925,8 @@ static void handle_request(void)
 #ifdef HAVE_REGISTER
 				if (registered)
 #endif
+{
+memdebug_enter();
 					if (!changepassword && handler->auth) {
 						int result =
 						    handler->auth(conn_fp,
@@ -940,13 +943,19 @@ static void handle_request(void)
 							return;
 						}
 					}
+memdebug_leave_info("auth");
+}
 				post = 0;
 				if (strcasecmp(method, "post") == 0) {
 					post = 1;
 				}
+{
+memdebug_enter();
 				if (handler->input)
 					handler->input(file, conn_fp, cl,
 						       boundary);
+memdebug_leave_info("input");
+}
 #if defined(linux)
 #ifdef HAVE_HTTPS
 				if (!do_ssl
@@ -974,13 +983,18 @@ static void handle_request(void)
 				}
 #endif
 #endif
+{
+memdebug_enter();
 				if (check_connect_type() < 0) {
 					send_error(401, "Bad Request",
 						   (char *)0,
 						   "Can't use wireless interface to access GUI.");
 					return;
 				}
-
+memdebug_leave_info("connect");
+}
+{
+memdebug_enter();
 				if (auth_fail == 1) {
 					send_authenticate(auth_realm);
 					auth_fail = 0;
@@ -992,11 +1006,18 @@ static void handle_request(void)
 							     handler->mime_type,
 							     0, NULL);
 				}
+memdebug_leave_info("auth_output");
+}
+
+{
+memdebug_enter();
 				if (handler->output) {
 					handler->output(handler, file, conn_fp,
 							query);
 				}
 				break;
+memdebug_leave_info("output");
+}
 			}
 
 			if (!handler->pattern)
@@ -1403,7 +1424,9 @@ int main(int argc, char **argv)
 			}
 		}
 		get_client_ip_mac(conn_fd);
+memdebug_enter();
 		handle_request();
+memdebug_leave_info("handle_request");
 		wfflush(conn_fp);	// jimmy, https, 8/4/2003
 #ifdef HAVE_HTTPS
 #ifdef XYSSL_SUPPORT
