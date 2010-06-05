@@ -320,6 +320,7 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 	FILE *fp = NULL;
 	int len;
 	int i;
+	memdebug_enter();
 
 	i = 0;
 	len = 0;
@@ -344,6 +345,7 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 		do_ej_file(fp, len, stream);
 	}
 	fclose(fp);
+	memdebug_leave_info(path);
 
 }
 
