@@ -1423,10 +1423,18 @@ int main(int argc, char **argv)
 				return errno;
 			}
 		}
-		get_client_ip_mac(conn_fd);
+{
 memdebug_enter();
+		get_client_ip_mac(conn_fd);
+memdebug_leave_info("get_client_ip_mac");
+}
+{
+memdebug_enter();
+
 		handle_request();
+
 memdebug_leave_info("handle_request");
+}
 		wfflush(conn_fp);	// jimmy, https, 8/4/2003
 #ifdef HAVE_HTTPS
 #ifdef XYSSL_SUPPORT
@@ -1434,6 +1442,8 @@ memdebug_leave_info("handle_request");
 #endif
 #endif
 		wfclose(conn_fp);	// jimmy, https, 8/4/2003
+		free(conn_fp);
+		conn_fp = NULL;
 		close(conn_fd);
 	}
 
@@ -1672,5 +1682,9 @@ int wfclose(webs_t wp)
 	} else
 #endif
 #endif
-		return fclose(fp);
+	{
+	    int ret = fclose(fp);
+	    wp->fp = NULL;
+	    return ret;
+	}
 }
