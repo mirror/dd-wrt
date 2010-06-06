@@ -372,8 +372,8 @@ char *num_to_protocol(int num)
 
 void validate_services_port(webs_t wp)
 {
-	char *buf = (char *)malloc(8192);
-	char *services = (char *)malloc(8192);
+	char *buf = (char *)safe_malloc(8192);
+	char *services = (char *)safe_malloc(8192);
 	memset(buf, 0, 8192);
 	memset(services, 0, 8192);
 	char *cur = buf, *svcs = NULL;
@@ -487,7 +487,7 @@ void addDeletion(char *word)
 	char *oldarg = nvram_get("action_service_arg1");
 
 	if (oldarg && strlen(oldarg) > 0) {
-		char *newarg = malloc(strlen(oldarg) + strlen(word) + 2);
+		char *newarg = safe_malloc(strlen(oldarg) + strlen(word) + 2);
 
 		sprintf(newarg, "%s %s", oldarg, word);
 		nvram_set("action_service_arg1", newarg);
@@ -499,8 +499,8 @@ void addDeletion(char *word)
 void delete_static_route(webs_t wp)
 {
 	addAction("routing");
-	char *buf = malloc(1000);
-	char *buf_name = malloc(1000);
+	char *buf = safe_malloc(1000);
+	char *buf_name = safe_malloc(1000);
 
 	memset(buf, 0, 1000);
 	memset(buf_name, 0, 1000);
@@ -1577,7 +1577,7 @@ void macro_rem(char *a, char *nv)
 			if (buffer != NULL) {
 				int slen = strlen(buffer);
 
-				b = malloc(slen + 1);
+				b = safe_malloc(slen + 1);
 
 				for (i = 0; i < slen; i++) {
 					if (buffer[i] == ' ')
@@ -1709,7 +1709,7 @@ void add_vifs_single(char *prefix, int device)
 
 	if (vifs == NULL)
 		return;
-	char *n = (char *)malloc(strlen(vifs) + 8);
+	char *n = (char *)safe_malloc(strlen(vifs) + 8);
 	char v[80];
 	char v2[80];
 
@@ -1870,7 +1870,7 @@ void del_bond(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("bondings");
-	newwordlist = (char *)malloc(strlen(wordlist));
+	newwordlist = (char *)safe_malloc(strlen(wordlist));
 	memset(newwordlist, 0, strlen(wordlist));
 	int count = 0;
 
@@ -1905,7 +1905,7 @@ void add_olsrd(webs_t wp)
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
 	char *addition = ">5.0>90.0>2.0>270.0>15.0>90.0>15.0>90.0";
 	char *newadd =
-	    (char *)malloc(strlen(wordlist) + strlen(addition) +
+	    (char *)safe_malloc(strlen(wordlist) + strlen(addition) +
 			   strlen(ifname) + 2);
 	if (strlen(wordlist) > 0) {
 		strcpy(newadd, wordlist);
@@ -1929,7 +1929,7 @@ void del_olsrd(webs_t wp)
 		return;
 	int d = atoi(del);
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
-	char *newlist = (char *)malloc(strlen(wordlist) + 1);
+	char *newlist = (char *)safe_malloc(strlen(wordlist) + 1);
 
 	memset(newlist, 0, strlen(wordlist));
 	char *next;
@@ -1950,7 +1950,7 @@ void del_olsrd(webs_t wp)
 void save_olsrd(webs_t wp)
 {
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
-	char *newlist = (char *)malloc(strlen(wordlist) + 512);
+	char *newlist = (char *)safe_malloc(strlen(wordlist) + 512);
 
 	memset(newlist, 0, strlen(wordlist) + 512);
 	char *next;
@@ -2249,7 +2249,7 @@ void del_vlan(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("vlan_tags");
-	newwordlist = (char *)malloc(strlen(wordlist));
+	newwordlist = (char *)safe_malloc(strlen(wordlist));
 	memset(newwordlist, 0, strlen(wordlist));
 	int count = 0;
 
@@ -2319,7 +2319,7 @@ void del_mdhcp(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("mdhcpd");
-	newwordlist = (char *)malloc(strlen(wordlist));
+	newwordlist = (char *)safe_malloc(strlen(wordlist));
 	memset(newwordlist, 0, strlen(wordlist));
 	int count = 0;
 
@@ -2355,7 +2355,7 @@ void del_bridge(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("bridges");
-	newwordlist = (char *)malloc(strlen(wordlist));
+	newwordlist = (char *)safe_malloc(strlen(wordlist));
 	memset(newwordlist, 0, strlen(wordlist));
 	int count = 0;
 
@@ -2424,7 +2424,7 @@ void del_bridgeif(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("bridgesif");
-	newwordlist = (char *)malloc(strlen(wordlist));
+	newwordlist = (char *)safe_malloc(strlen(wordlist));
 	memset(newwordlist, 0, strlen(wordlist));
 	int count = 0;
 
@@ -2533,7 +2533,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		char *sl = websGetVar(wp, n, NULL);
 
 		if (sl) {
-			char *slc = (char *)malloc(strlen(sl) + 1);
+			char *slc = (char *)safe_malloc(strlen(sl) + 1);
 
 			strcpy(slc, sl);
 			int i, sllen = strlen(slc);
@@ -2988,7 +2988,7 @@ char *request_freedns(char *user, char *password)
 		return NULL;
 	while (getc(in) != '?' && feof(in) == 0) ;
 	i = 0;
-	char *hash = malloc(64);
+	char *hash = safe_malloc(64);
 
 	if (feof(in)) {
 		free(hash);
@@ -3455,9 +3455,9 @@ void add_radius_user(webs_t wp)
 	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
 	struct radiusdb *db = loadradiusdb();
 	if (db == NULL) {
-		db = malloc(sizeof(struct radiusdb));
+		db = safe_malloc(sizeof(struct radiusdb));
 		db->usercount = 0;
-		db->users = malloc(sizeof(struct radiususer));
+		db->users = safe_malloc(sizeof(struct radiususer));
 	} else {
 		db->users =
 		    realloc(db->users,
@@ -3510,9 +3510,9 @@ void add_radius_client(webs_t wp)
 	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
 	struct radiusclientdb *db = loadradiusclientdb();
 	if (db == NULL) {
-		db = malloc(sizeof(struct radiusclientdb));
+		db = safe_malloc(sizeof(struct radiusclientdb));
 		db->usercount = 0;
-		db->users = malloc(sizeof(struct radiusclient));
+		db->users = safe_malloc(sizeof(struct radiusclient));
 	} else {
 		db->users =
 		    realloc(db->users,
@@ -3561,7 +3561,7 @@ static void save_radius_clients(webs_t wp)
 {
 	char passwd[] = { "passwordXXXXX" };
 	char user[] = { "usernameXXXXX" };
-	struct radiusclientdb *db = malloc(sizeof(struct radiusclientdb));
+	struct radiusclientdb *db = safe_malloc(sizeof(struct radiusclientdb));
 	db->usercount = 0;
 	db->users = NULL;
 	while (1) {
@@ -3578,10 +3578,10 @@ static void save_radius_clients(webs_t wp)
 		    realloc(db->users,
 			    sizeof(struct radiusclient) * (db->usercount + 1));
 
-		db->users[db->usercount].client = malloc(strlen(u) + 1);
+		db->users[db->usercount].client = safe_malloc(strlen(u) + 1);
 		strcpy(db->users[db->usercount].client, u);
 		db->users[db->usercount].clientsize = strlen(u) + 1;
-		db->users[db->usercount].passwd = malloc(strlen(p) + 1);
+		db->users[db->usercount].passwd = safe_malloc(strlen(p) + 1);
 		strcpy(db->users[db->usercount].passwd, p);
 		db->users[db->usercount].passwordsize = strlen(p) + 1;
 		db->usercount++;
@@ -3598,7 +3598,7 @@ static void save_radius_users(webs_t wp)
 	char downstream[] = { "passwordXXXXX" };
 	char upstream[] = { "usernameXXXXX" };
 	char expiration[] = { "expirationXXXXX" };
-	struct radiusdb *db = malloc(sizeof(struct radiusdb));
+	struct radiusdb *db = safe_malloc(sizeof(struct radiusdb));
 	char filename[128];
 	db->usercount = 0;
 	db->users = NULL;
@@ -3635,10 +3635,10 @@ static void save_radius_users(webs_t wp)
 		    realloc(db->users,
 			    sizeof(struct radiususer) * (db->usercount + 1));
 
-		db->users[db->usercount].user = malloc(strlen(u) + 1);
+		db->users[db->usercount].user = safe_malloc(strlen(u) + 1);
 		strcpy(db->users[db->usercount].user, u);
 		db->users[db->usercount].usersize = strlen(u) + 1;
-		db->users[db->usercount].passwd = malloc(strlen(p) + 1);
+		db->users[db->usercount].passwd = safe_malloc(strlen(p) + 1);
 		strcpy(db->users[db->usercount].passwd, p);
 		db->users[db->usercount].passwordsize = strlen(p) + 1;
 		db->users[db->usercount].downstream = atoi(d);

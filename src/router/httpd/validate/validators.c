@@ -1238,7 +1238,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	int error_value = 0;
-	char *buf = malloc((19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) + 1);
+	char *buf = safe_malloc((19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) + 1);
 	if (buf == NULL)
 		return;		//out of memory
 	char *cur = buf;
@@ -1326,7 +1326,7 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
-	buf = (char *)malloc(sof);
+	buf = (char *)safe_malloc(sof);
 	cur = buf;
 	buf[0] = 0;
 
@@ -1479,7 +1479,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
-	buf = (char *)malloc(sof);
+	buf = (char *)safe_malloc(sof);
 	cur = buf;
 	buf[0] = 0;
 
@@ -1874,7 +1874,7 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
-	buf = (char *)malloc(sof);
+	buf = (char *)safe_malloc(sof);
 	cur = buf;
 	buf[0] = 0;
 
@@ -1968,7 +1968,7 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
-	buf = (char *)malloc(sof);
+	buf = (char *)safe_malloc(sof);
 	cur = buf;
 	buf[0] = 0;
 
@@ -2029,7 +2029,7 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
-	buf = (char *)malloc(sof);
+	buf = (char *)safe_malloc(sof);
 	cur = buf;
 	buf[0] = 0;
 
@@ -2093,7 +2093,7 @@ void validate_iradius(webs_t wp, char *value, struct variable *v)
 	char *leases;
 	int i;
 
-	leases = (char *)malloc((128 * leasenum) + 1);
+	leases = (char *)safe_malloc((128 * leasenum) + 1);
 	memset(leases, 0, (128 * leasenum) + 1);
 	int leasen = 0;
 
@@ -2166,7 +2166,7 @@ void validate_userlist(webs_t wp, char *value, struct variable *v)
 	char *leases;
 	int i;
 
-	leases = (char *)malloc((128 * leasenum) + 1);
+	leases = (char *)safe_malloc((128 * leasenum) + 1);
 	memset(leases, 0, (128 * leasenum) + 1);
 
 	for (i = 0; i < leasenum; i++) {
@@ -2205,7 +2205,7 @@ char *buildmac(char *in)
 	char mac[20];
 	char *outmac;
 
-	outmac = malloc(20);
+	outmac = safe_malloc(20);
 	strncpy(mac, in, 20);
 	filterstring(mac, ':');
 	filterstring(mac, '-');
@@ -2245,7 +2245,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	char *leases;
 	int i;
 
-	leases = (char *)malloc((54 * leasenum) + 1);
+	leases = (char *)safe_malloc((54 * leasenum) + 1);
 	memset(leases, 0, (54 * leasenum) + 1);
 
 	for (i = 0; i < leasenum; i++) {
@@ -2929,7 +2929,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		return;
 	count = atoi(buf);
 	sof = (count * 46) + 1;
-	buf = (char *)malloc(sof);
+	buf = (char *)safe_malloc(sof);
 	cur = buf;
 	memset(buf, 0, sof);
 

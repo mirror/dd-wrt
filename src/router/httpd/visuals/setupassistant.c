@@ -1960,7 +1960,7 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix,
 		security_mode = nvram_selget(wp, var);
 	if (strcmp(security_mode, security_prefix)) {
 		if (strlen(security_prefix) > strlen(security_mode)) {
-			security_mode = (char *)malloc(strlen(security_prefix));
+			security_mode = (char *)safe_malloc(strlen(security_prefix));
 		}
 		sprintf(security_mode, "%s", security_prefix);
 	}
