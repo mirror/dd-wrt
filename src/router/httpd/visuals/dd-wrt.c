@@ -897,7 +897,7 @@ void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 
 	cprintf("collection result %s", u);
 	if (u != NULL) {
-		userlist = (char *)malloc(strlen(u) + 1);
+		userlist = (char *)safe_malloc(strlen(u) + 1);
 		strcpy(userlist, u);
 		free(u);
 		o = userlist;
@@ -988,7 +988,7 @@ void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 	char username[32];
 	char password[32];
 	char *u = nvram_safe_get("fon_userlist");
-	char *userlist = (char *)malloc(strlen(u) + 1);
+	char *userlist = (char *)safe_malloc(strlen(u) + 1);
 
 	strcpy(userlist, u);
 	char *o = userlist;
@@ -1036,7 +1036,7 @@ void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 		return;
 	// cprintf("get leases");
 	char *nvleases = nvram_safe_get("static_leases");
-	char *leases = (char *)malloc(strlen(nvleases) + 1);
+	char *leases = (char *)safe_malloc(strlen(nvleases) + 1);
 	char *originalpointer = leases;	// strsep destroys the pointer by
 
 	// moving it
@@ -2409,7 +2409,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		if (!contains(word, '.'))
 			sprintf(finalbuffer, "%s %s", finalbuffer, word);
 	}
-	char *checkbuffer = malloc(strlen(finalbuffer) + 6);
+	char *checkbuffer = safe_malloc(strlen(finalbuffer) + 6);
 	memset(checkbuffer, 0, strlen(finalbuffer) + 6);
 	strcpy(checkbuffer, "none ");
 	strcat(checkbuffer, finalbuffer);

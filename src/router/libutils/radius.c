@@ -84,10 +84,10 @@ struct radiusdb *loadradiusdb(void)
 	struct radiusdb *db;
 	if (feof(fp))
 		return NULL;
-	db = malloc(sizeof(struct radiusdb));
+	db = safe_malloc(sizeof(struct radiusdb));
 	db->usercount = readword(fp);
 	if (db->usercount)
-		db->users = malloc(db->usercount * sizeof(struct radiususer));
+		db->users = safe_malloc(db->usercount * sizeof(struct radiususer));
 	else
 		db->users = NULL;
 	unsigned int i;
@@ -97,7 +97,7 @@ struct radiusdb *loadradiusdb(void)
 		db->users[i].usersize = readword(fp);
 		curlen += 8;
 		if (db->users[i].usersize) {
-			db->users[i].user = malloc(db->users[i].usersize);
+			db->users[i].user = safe_malloc(db->users[i].usersize);
 			fread(db->users[i].user, db->users[i].usersize, 1, fp);
 			curlen += db->users[i].usersize;
 		} else
@@ -106,7 +106,7 @@ struct radiusdb *loadradiusdb(void)
 		db->users[i].passwordsize = readword(fp);
 		curlen += 4;
 		if (db->users[i].passwordsize) {
-			db->users[i].passwd = malloc(db->users[i].passwordsize);
+			db->users[i].passwd = safe_malloc(db->users[i].passwordsize);
 			fread(db->users[i].passwd, db->users[i].passwordsize, 1,
 			      fp);
 			curlen += db->users[i].passwordsize;
@@ -190,10 +190,10 @@ struct radiusclientdb *loadradiusclientdb(void)
 	struct radiusclientdb *db;
 	if (feof(fp))
 		return NULL;
-	db = malloc(sizeof(struct radiusclientdb));
+	db = safe_malloc(sizeof(struct radiusclientdb));
 	db->usercount = readword(fp);
 	if (db->usercount)
-		db->users = malloc(db->usercount * sizeof(struct radiusclient));
+		db->users = safe_malloc(db->usercount * sizeof(struct radiusclient));
 	else
 		db->users = NULL;
 	unsigned int i;
@@ -203,7 +203,7 @@ struct radiusclientdb *loadradiusclientdb(void)
 		db->users[i].clientsize = readword(fp);
 		curlen += 8;
 		if (db->users[i].clientsize) {
-			db->users[i].client = malloc(db->users[i].clientsize);
+			db->users[i].client = safe_malloc(db->users[i].clientsize);
 			fread(db->users[i].client, db->users[i].clientsize, 1,
 			      fp);
 			curlen += db->users[i].clientsize;
@@ -213,7 +213,7 @@ struct radiusclientdb *loadradiusclientdb(void)
 		db->users[i].passwordsize = readword(fp);
 		curlen += 4;
 		if (db->users[i].passwordsize) {
-			db->users[i].passwd = malloc(db->users[i].passwordsize);
+			db->users[i].passwd = safe_malloc(db->users[i].passwordsize);
 			fread(db->users[i].passwd, db->users[i].passwordsize, 1,
 			      fp);
 			curlen += db->users[i].passwordsize;

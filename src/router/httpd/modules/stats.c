@@ -40,7 +40,7 @@ int http_stats(const char *url)
 	};
 	char *contents;
 
-	if (!(buf = malloc(BUFSPACE)))
+	if (!(buf = safe_malloc(BUFSPACE)))
 		return errno;
 
 	/*

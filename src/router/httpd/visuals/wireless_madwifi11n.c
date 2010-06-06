@@ -45,19 +45,18 @@
 #include "../../madwifi.dev/madwifi_mimo.dev/core/net80211/ieee80211_ioctl.h"
 static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 {
-	static char a[18];
+	static char a[32];
 	int i;
 
 	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
 		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
-
+extern unsigned char madbuf[];
 int
 ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 			  char *ifname, int cnt, int turbo, int macmask)
 {
-	// unsigned char buf[24 * 1024];
 
 	unsigned char *cp;
 	int s, len;
@@ -69,9 +68,12 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
 	}
+int state=0;
+{
 	memdebug_enter();
-	int state = get_radiostate(ifname);
+	state = get_radiostate(ifname);
 	memdebug_leave();
+}
 	if (state == 0 || state == -1) {
 		printf("IOCTL_STA_INFO radio %s not enabled!\n", ifname);
 		return cnt;
@@ -83,24 +85,27 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 	}
 	(void)memset(&iwr, 0, sizeof(struct iwreq));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
-	unsigned char *buf = (unsigned char *)malloc(24 * 1024);
 
-	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.pointer = (void *)&madbuf[0];
 	iwr.u.data.length = 24 * 1024;
+{
+	memdebug_enter();
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		fprintf(stderr, "IOCTL_STA_INFO for %s failed!\n", ifname);
-		free(buf);
 		closesocket();
 		return cnt;
 	}
+	memdebug_leave_info("ioctl sta_info");
+}
 	len = iwr.u.data.length;
 	if (len < sizeof(struct ieee80211req_sta_info)) {
 		// fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
-		free(buf);
 		closesocket();
 		return cnt;
 	}
-	cp = buf;
+	cp = madbuf;
+{
+	memdebug_enter();
 	do {
 		struct ieee80211req_sta_info *si;
 		uint8_t *vp;
@@ -158,7 +163,9 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		len -= si->isi_len;
 	}
 	while (len >= sizeof(struct ieee80211req_sta_info));
-	free(buf);
+memdebug_leave_info("iterate info");
+}
+
 	closesocket();
 
 	return cnt;

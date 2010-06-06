@@ -43,6 +43,9 @@
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
+
+unsigned char madbuf[24 * 1024];
+
 static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 {
 	static char a[18];
@@ -82,24 +85,21 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 	}
 	(void)memset(&iwr, 0, sizeof(struct iwreq));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
-	unsigned char *buf = (unsigned char *)malloc(24 * 1024);
 
-	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.pointer = (void *)&madbuf[0];
 	iwr.u.data.length = 24 * 1024;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		fprintf(stderr, "IOCTL_STA_INFO for %s failed!\n", ifname);
-		free(buf);
 		closesocket();
 		return cnt;
 	}
 	len = iwr.u.data.length;
 	if (len < sizeof(struct ieee80211req_sta_info)) {
 		// fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
-		free(buf);
 		closesocket();
 		return cnt;
 	}
-	cp = buf;
+	cp = madbuf;
 	do {
 		struct ieee80211req_sta_info *si;
 		uint8_t *vp;
@@ -157,7 +157,6 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		len -= si->isi_len;
 	}
 	while (len >= sizeof(struct ieee80211req_sta_info));
-	free(buf);
 	closesocket();
 
 	return cnt;
@@ -193,6 +192,8 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 2;
 		else
 			t = 1;
+{
+memdebug_enter();
 #ifdef HAVE_MADWIFI_MIMO
 		if (is_ar5008(devs))
 			cnt =
@@ -203,12 +204,17 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			cnt =
 			    ej_active_wireless_if(wp, argc, argv, devs, cnt, t,
 						  macmask);
+memdebug_leave_info("active_wireless_if call");
+}
+
 		char vif[32];
 
 		sprintf(vif, "%s_vifs", devs);
 		char var[80], *next;
 		char *vifs = nvram_get(vif);
 
+{
+memdebug_enter();
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
 #ifdef HAVE_MADWIFI_MIMO
@@ -223,7 +229,11 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 				    ej_active_wireless_if(wp, argc, argv, var,
 							  cnt, t, macmask);
 			}
+memdebug_leave_info("active_wireless_if call");
+}
 	}
+{
+memdebug_enter();
 
 	// show wds links
 	for (i = 0; i < c; i++) {
@@ -265,6 +275,8 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 							  cnt, t, macmask);
 		}
 	}
+memdebug_leave_info("active_wireless_wds call");
+}
 }
 
 int get_distance(void)

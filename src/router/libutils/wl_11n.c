@@ -79,7 +79,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		achans = chans;
 
 	struct wifi_channels *list =
-	    (struct wifi_channels *)malloc(sizeof(struct wifi_channels) *
+	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
 					   (achans.ic_nchans + 1));
 
 	char wl_mode[16];
@@ -176,7 +176,7 @@ struct wifi_channels *list_channels_11n(char *devnr)
 	 * system (cmd); FILE *in = fopen ("/tmp/.channels", "rb"); if (in ==
 	 * NULL) return NULL; fscanf (in, "%s %s %s %s %s %s %s %s", csign,
 	 * channel, ppp, freq, dum1, dum2, dum3, dum4); int ch = atoi (channel);
-	 * int i; struct wifi_channels *list = (struct wifi_channels *) malloc
+	 * int i; struct wifi_channels *list = (struct wifi_channels *) safe_malloc
 	 * (sizeof (struct wifi_channels) * (ch+1) ); for (i = 0; i < ch; i++) {
 	 * fscanf (in, "%s %s %s %s %s", csign, channel, ppp, freq, dum1); if
 	 * (!strcmp (csign, "Current")) break; list[i].channel = atoi (channel);
@@ -189,7 +189,7 @@ int getassoclist_11n(char *ifname, unsigned char *list)
 {
 	unsigned char *buf;
 
-	buf = malloc(24 * 1024);
+	buf = safe_malloc(24 * 1024);
 	memset(buf, 0, 1024 * 24);
 	unsigned char *cp;
 	int len;
@@ -272,7 +272,7 @@ int getassoclist_11n(char *ifname, unsigned char *list)
 
 int getRssi_11n(char *ifname, unsigned char *mac)
 {
-	unsigned char *buf = malloc(24 * 1024);
+	unsigned char *buf = safe_malloc(24 * 1024);
 
 	memset(buf, 0, 1024 * 24);
 	unsigned char *cp;
@@ -334,7 +334,7 @@ int getRssi_11n(char *ifname, unsigned char *mac)
 
 int getUptime_11n(char *ifname, unsigned char *mac)
 {
-	unsigned char *buf = malloc(24 * 1024);
+	unsigned char *buf = safe_malloc(24 * 1024);
 
 	memset(buf, 0, 24 * 1024);
 	unsigned char *cp;
@@ -391,7 +391,7 @@ int getUptime_11n(char *ifname, unsigned char *mac)
 
 int getNoise_11n(char *ifname, unsigned char *mac)
 {
-	unsigned char *buf = malloc(24 * 1024);
+	unsigned char *buf = safe_malloc(24 * 1024);
 
 	memset(buf, 0, 24 * 1024);
 	unsigned char *cp;

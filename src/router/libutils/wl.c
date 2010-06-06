@@ -339,7 +339,7 @@ STAINFO *getRaStaInfo(char *ifname)
 		nNoiseDbm = lNoise;
 		nNoiseDbm -= 143;
 
-		STAINFO *ret = malloc(sizeof(STAINFO));
+		STAINFO *ret = safe_malloc(sizeof(STAINFO));
 
 		memcpy(ret->mac, BssidQuery, 6);
 		strcpy(ret->ifname, ifn);
@@ -1361,7 +1361,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 
 	// fprintf(stderr,"channel number %d\n", achans.ic_nchans);
 	struct wifi_channels *list =
-	    (struct wifi_channels *)malloc(sizeof(struct wifi_channels) *
+	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
 					   (achans.ic_nchans + 1));
 
 	char wl_mode[16];
@@ -1445,7 +1445,7 @@ struct wifi_channels *list_channels(char *devnr)
 	 * system (cmd); FILE *in = fopen ("/tmp/.channels", "rb"); if (in ==
 	 * NULL) return NULL; fscanf (in, "%s %s %s %s %s %s %s %s", csign,
 	 * channel, ppp, freq, dum1, dum2, dum3, dum4); int ch = atoi (channel);
-	 * int i; struct wifi_channels *list = (struct wifi_channels *) malloc
+	 * int i; struct wifi_channels *list = (struct wifi_channels *) safe_malloc
 	 * (sizeof (struct wifi_channels) * (ch+1) ); for (i = 0; i < ch; i++) {
 	 * fscanf (in, "%s %s %s %s %s", csign, channel, ppp, freq, dum1); if
 	 * (!strcmp (csign, "Current")) break; list[i].channel = atoi (channel);
@@ -1470,7 +1470,7 @@ int getRssi(char *ifname, unsigned char *mac)
 		return getRssi_11n(ifname, mac);
 	}
 #endif
-	unsigned char *buf = malloc(24 * 1024);
+	unsigned char *buf = safe_malloc(24 * 1024);
 
 	memset(buf, 0, 1024 * 24);
 	unsigned char *cp;
@@ -1537,7 +1537,7 @@ int getUptime(char *ifname, unsigned char *mac)
 		return getUptime_11n(ifname, mac);
 	}
 #endif
-	unsigned char *buf = malloc(24 * 1024);
+	unsigned char *buf = safe_malloc(24 * 1024);
 
 	memset(buf, 0, 24 * 1024);
 	unsigned char *cp;
@@ -1600,7 +1600,7 @@ int getNoise(char *ifname, unsigned char *mac)
 		return getNoise_11n(ifname, mac);
 	}
 #endif
-	unsigned char *buf = malloc(24 * 1024);
+	unsigned char *buf = safe_malloc(24 * 1024);
 
 	memset(buf, 0, 24 * 1024);
 	unsigned char *cp;
@@ -1667,7 +1667,7 @@ int getassoclist(char *ifname, unsigned char *list)
 #endif
 	unsigned char *buf;
 
-	buf = malloc(24 * 1024);
+	buf = safe_malloc(24 * 1024);
 	memset(buf, 0, 1024 * 24);
 	unsigned char *cp;
 	int len;

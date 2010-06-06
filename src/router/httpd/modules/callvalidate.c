@@ -67,8 +67,8 @@
 #define SERVICE_MODULE "/usr/lib/validate.so"
 #define VISSERVICE_MODULE "/usr/lib/visuals.so"
 #endif
-//#define SERVICE_MODULE "/tmp/validate.so"
-//#define VISSERVICE_MODULE "/tmp/visuals.so"
+#define SERVICE_MODULE "/tmp/validate.so"
+#define VISSERVICE_MODULE "/tmp/visuals.so"
 
 #define cprintf(fmt, args...)
 
@@ -150,7 +150,7 @@ extern void validate_cgi(webs_t wp);
 
 static int initWeb(void *handle)
 {
-	struct Webenvironment *env;
+	struct Webenvironment env;
 	void (*init) (struct Webenvironment * env);
 
 	init = (void (*)(struct Webenvironment * env))dlsym(handle, "initWeb");
@@ -158,57 +158,63 @@ static int initWeb(void *handle)
 		fprintf(stderr, "error, initWeb not found\n");
 		return -1;
 	}
-	env = (struct Webenvironment *)malloc(sizeof(struct Webenvironment));
-	env->PwebsGetVar = websGetVar;
-	env->PwebsWrite = websWrite;
-	cprintf("httpd_filter_name %p:%d\n", httpd_filter_name,
-		sizeof(struct Webenvironment));
-	env->Phttpd_filter_name = httpd_filter_name;
-	env->Pwl_client_macs = wl_client_macs;
-	env->Pdo_ej_buffer = do_ej_buffer;
-	env->Pdo_ej = do_ej;
+	env.PwebsGetVar = websGetVar;
+	env.PwebsWrite = websWrite;
+	env.Phttpd_filter_name = httpd_filter_name;
+	env.Pwl_client_macs = wl_client_macs;
+	env.Pdo_ej_buffer = do_ej_buffer;
+	env.Pdo_ej = do_ej;
 #ifdef HAVE_HTTPS
-	env->Pdo_ssl = do_ssl;
+	env.Pdo_ssl = do_ssl;
 #endif
-	env->PejArgs = ejArgs;
-	env->PgetWebsFile = getWebsFile;
-	env->Pwfputc = wfputc;
-	env->Pwfputs = wfputs;
-	env->Pwfflush = wfflush;
-	env->PwebsRomPageIndex = websRomPageIndex;
-	env->Plive_translate = live_translate;
-	env->PGOZILA_GET = GOZILA_GET;
-	env->Pvalidate_cgi = validate_cgi;
-	cprintf("call initWeb\n");
-	init(env);
-	free(env);
+	env.PejArgs = ejArgs;
+	env.PgetWebsFile = getWebsFile;
+	env.Pwfputc = wfputc;
+	env.Pwfputs = wfputs;
+	env.Pwfflush = wfflush;
+	env.PwebsRomPageIndex = websRomPageIndex;
+	env.Plive_translate = live_translate;
+	env.PGOZILA_GET = GOZILA_GET;
+	env.Pvalidate_cgi = validate_cgi;
+	init(&env);
 	return 0;
 }
+static void *s_service=NULL;
 
 void start_gozila(char *name, webs_t wp)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_gozila %s\n", name);
 	char service[64];
-	void *handle = load_service(name);
-
-	if (handle == NULL) {
+	int init=0;
+	if (!s_service)
+	{
+	    init=1;
+	    s_service = load_service(name);
+	}
+	if (s_service == NULL) {
 		return;
 	}
-	if (initWeb(handle) != 0) {
+	if (init)
+	{
+	if (initWeb(s_service) != 0) {
 		return;
+	}
 	}
 
 	int (*fptr) (webs_t wp);
 
 	sprintf(service, "%s", name);
 	cprintf("resolving %s\n", service);
-	fptr = (int (*)(webs_t wp))dlsym(handle, service);
+	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
 		(*fptr) (wp);
 	else
 		fprintf(stderr, "function %s not found \n", service);
-	dlclose(handle);
+#ifndef MEMLEAK_OVERRIDE
+	dlclose(s_service);
+	s_service=NULL;
+#endif
 	cprintf("start_sevice done()\n");
 }
 
@@ -217,14 +223,20 @@ int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_validator %s\n", name);
 	char service[64];
-	void *handle = load_service(name);
-
-	if (handle == NULL) {
+	int init =0;
+	if (!s_service)
+	{
+	s_service = load_service(name);
+	init =1;
+	}
+	if (s_service == NULL) {
 		return FALSE;
 	}
-
-	if (initWeb(handle) != 0) {
+	if (init)
+	{
+	if (initWeb(s_service) != 0) {
 		return FALSE;
+	}
 	}
 	int ret = FALSE;
 
@@ -233,12 +245,16 @@ int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 	sprintf(service, "%s", name);
 	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp, char *value, struct variable * v))
-	    dlsym(handle, service);
+	    dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr) (wp, value, v);
 	else
 		fprintf(stderr, "function %s not found \n", service);
-	dlclose(handle);
+#ifndef MEMLEAK_OVERRIDE
+	dlclose(s_service);
+	s_service=NULL;
+#endif
+	
 	cprintf("start_sevice done()\n");
 	return ret;
 }
