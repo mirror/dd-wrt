@@ -675,7 +675,7 @@ void addList(char *listname, char *value)
 
 	if (list)
 		listlen = strlen(list);
-	newlist = malloc(strlen(value + 2) + listlen);
+	newlist = safe_malloc(strlen(value + 2) + listlen);
 	if (list)
 		sprintf(newlist, "%s %s", list, value);
 	else
@@ -742,3 +742,60 @@ int wait_file_exists(const char *name, int max, int invert)
 	}
 	return 0;
 }
+
+#ifdef MEMDEBUG
+#define MEMDEBUGSIZE 1024
+typedef struct MEMENTRY
+{
+void *reference;
+int size;
+char func[32];
+int dirty;
+};
+
+static unsigned int memdebugpnt=0;
+static struct MEMENTRY mementry[MEMDEBUGSIZE];
+void *mymalloc(int size, char *func)
+{
+if (memdebugpnt>=MEMDEBUGSIZE)
+    return safe_malloc(size);
+mementry[memdebugpnt].size=size;
+mementry[memdebugpnt].dirty=1;
+void *ref = malloc(size);
+mementry[memdebugpnt].reference=ref;
+strncpy(mementry[memdebugpnt].func,func,32);
+memdebugpnt++;
+if (memdebugpnt==MEMDEBUGSIZE)
+    memdebugpnt=0;
+return ref;
+}
+#undef free
+void myfree(void *ref)
+{
+int i;
+for (i=0;i<MEMDEBUGSIZE;i++)
+    {
+    if (mementry[i].reference==ref && mementry[i].dirty)
+	{
+//	fprintf(stderr,"free from %s\n",mementry[i].func);
+	mementry[i].dirty = 0;
+	break;
+	}   
+    }
+free(ref);
+}
+
+void showmemdebugstat(void)
+{
+int i;
+for (i=0;i<MEMDEBUGSIZE;i++)
+    {
+    if (mementry[i].dirty)
+	{
+	fprintf(stderr,"%s leaks %d bytes\n",mementry[i].func,mementry[i].size);
+	mementry[i].dirty=0;
+	}
+    }
+}
+
+#endif

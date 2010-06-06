@@ -147,7 +147,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 	if (size < MIN_BUF_SIZE)
 		size = MIN_BUF_SIZE;
-	if ((buf = malloc(size)) == NULL) {
+	if ((buf = safe_malloc(size)) == NULL) {
 		ret = ENOMEM;
 		goto err;
 	}

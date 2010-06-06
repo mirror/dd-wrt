@@ -140,7 +140,7 @@ char *getFileString(FILE * in)
 	char *buf;
 	int i, b;
 
-	buf = malloc(1024);
+	buf = safe_malloc(1024);
 	StringStart(in);
 	for (i = 0; i < 1024; i++) {
 		b = getc(in);
@@ -210,7 +210,7 @@ void Initnvramtab()
 				}
 				while (1) {
 					tmp = (struct variable *)
-					    malloc(sizeof(struct variable));
+					    safe_malloc(sizeof(struct variable));
 					memset(tmp, 0, sizeof(struct variable));
 					tmp->name = getFileString(in);
 					if (tmp->name == NULL)
@@ -222,7 +222,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_range";
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) * 3);
+						    safe_malloc(sizeof(char **) * 3);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] =
@@ -236,7 +236,7 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -252,7 +252,7 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -267,7 +267,7 @@ void Initnvramtab()
 						    "validate_noack";
 						len = 2;
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -279,7 +279,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_name";
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -298,7 +298,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_password";
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -307,7 +307,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_password2";
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -316,7 +316,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_lan_ipaddr";
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -348,7 +348,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_wpa_psk";
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **) * 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -482,7 +482,7 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_wl_auth";
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) * 3);
+						    safe_malloc(sizeof(char **) * 3);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] =
@@ -496,7 +496,7 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -512,7 +512,7 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -527,7 +527,7 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -542,7 +542,7 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -557,7 +557,7 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    malloc(sizeof(char **) *
+						    safe_malloc(sizeof(char **) *
 							   (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
@@ -640,7 +640,7 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 
 	memset(temp, 0, 4096);
 	unsigned int len = getWebsFileLen("WL_FilterTable.asp");
-	char *webfile = (char *)malloc(len + 1);
+	char *webfile = (char *)safe_malloc(len + 1);
 
 	fread(webfile, len, 1, web);
 	webfile[len] = 0;
@@ -766,8 +766,8 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 			fseek(fp, 0, SEEK_END);
 			int len = ftell(fp);
 			rewind(fp);
-			char *serial = malloc(len + 1);
-			char *output = malloc(len + 1);
+			char *serial = safe_malloc(len + 1);
+			char *output = safe_malloc(len + 1);
 			fread(serial, len, 1, fp);
 			fclose(fp);
 			//look for existing entry
@@ -872,7 +872,7 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream,
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("WL_ActiveTable.asp");
 	unsigned int len = getWebsFileLen("WL_ActiveTable.asp");
-	char *webfile = (char *)malloc(len + 1);
+	char *webfile = (char *)safe_malloc(len + 1);
 
 	fread(webfile, len, 1, web);
 	webfile[len] = 0;
@@ -917,7 +917,7 @@ void do_wds(struct mime_handler *handler, char *path, webs_t stream,
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("Wireless_WDS.asp");
 	unsigned int len = getWebsFileLen("Wireless_WDS.asp");
-	char *webfile = (char *)malloc(len + 1);
+	char *webfile = (char *)safe_malloc(len + 1);
 
 	fread(webfile, len, 1, web);
 	webfile[len] = 0;
@@ -962,7 +962,7 @@ void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream,
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("Wireless_Advanced.asp");
 	unsigned int len = getWebsFileLen("Wireless_Advanced.asp");
-	char *webfile = (char *)malloc(len + 1);
+	char *webfile = (char *)safe_malloc(len + 1);
 
 	char index[2];
 	substring(strlen(ifname) - 1, strlen(ifname), ifname, index);
@@ -1759,7 +1759,7 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 		if (post_buf)
 			post_buf = (char *)realloc(post_buf, len + 1);
 		else
-			post_buf = (char *)malloc(len + 1);
+			post_buf = (char *)safe_malloc(len + 1);
 
 		if (!post_buf) {
 			cprintf("The POST data exceed length limit!\n");
@@ -2077,7 +2077,7 @@ static char *getLanguageName()
 	char *lang = nvram_get("language");
 
 	cprintf("get language %s\n", lang);
-	char *l = malloc(60);
+	char *l = safe_malloc(60);
 
 	if (lang == NULL) {
 		cprintf("return default\n");

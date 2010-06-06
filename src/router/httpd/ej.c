@@ -141,17 +141,43 @@ static int decompress(webs_t stream, char *pattern, int len)
 #error "no endian type"
 #endif
 
-void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
+static FILE *s_fp;
+static unsigned char *s_filebuffer;
+static int s_filecount;
+static int s_filelen;
+
+static int buffer_get(void)
 {
-	void *handle = NULL;
+    unsigned char c;
+    c=s_filebuffer[s_filecount++];
+    if (!c)
+	return EOF;
+    return c;
+}
+
+static int file_get(void)
+{
+    if (s_filecount>=s_filelen)
+	return EOF;
+    s_filecount++;
+    return getc(s_fp);
+}
+
+static void *global_handle=NULL;
+static void do_ej_s(int (*get)(void), webs_t stream)	// jimmy, https, 8/4/2003
+{
 	int c, ret;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
 	int len = 0;
-	int filecount = 0;
 	memdebug_enter();
-	pattern = (char *)malloc(PATTERN_BUFFER + 1);
-	while (((c = getc(fp)) != EOF) && filecount < filelen) {
-		filecount++;
+	FILE *backup_fp = s_fp;
+	unsigned char *backup_filecount = s_filecount;
+	unsigned char *backup_filebuffer = s_filebuffer;
+	unsigned int backup_filelen = s_filelen;
+	
+	
+	pattern = (char *)safe_malloc(PATTERN_BUFFER + 1);
+	while ((c = get()) != EOF) {
 		/* Add to pattern space */
 		pattern[len++] = c;
 		pattern[len] = '\0';
@@ -185,9 +211,14 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 					if (!(end = uqstrchr(func, ';')))
 						break;
 					*end++ = '\0';
-
 					/* Call function */
-					handle = call(handle, func, stream);
+					backup_filecount = s_filecount;
+					global_handle = call(global_handle, func, stream);
+					// restore pointers
+					s_fp = backup_fp;
+					s_filebuffer = backup_filebuffer;
+					s_filecount = backup_filecount;
+					s_filelen = backup_filelen;
 				}
 				asp = NULL;
 				len = 0;
@@ -201,80 +232,28 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 		len = 0;
 	}
 
-	if (handle)
-		dlclose(handle);
+#ifndef MEMLEAK_OVERRIDE
+	if (global_handle)
+		dlclose(global_handle);
+	global_handle=NULL
+#endif
 	free(pattern);
 	memdebug_leave();
 }
 
-void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
+void do_ej_buffer(char *buffer, webs_t stream)
 {
-	void *handle = NULL;
-	int c, ret;
-	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
-	int len = 0;
-	char *filebuffer;
-	int filecount = 0;
-	
-	if (buffer == NULL)
-		return;
-	memdebug_enter();
-	filebuffer = buffer;
-	pattern = (char *)malloc(PATTERN_BUFFER + 1);
-	while ((c = filebuffer[filecount++]) != 0) {
+    s_filecount = 0;
+    s_filebuffer = buffer;
+    do_ej_s(&buffer_get,stream);
+}
 
-		/* Add to pattern space */
-		pattern[len++] = c;
-		pattern[len] = '\0';
-		if (len == (PATTERN_BUFFER - 1))
-			goto release;
-
-		if (!asp) {
-			if (pattern[0] == '{') {
-				ret = decompress(stream, pattern, len);
-				if (ret) {
-					if (len == 3)
-						len = 0;
-					continue;
-				}
-			}
-			/* Look for <% ... */
-			if (pattern[0] == 0x3c) {
-				if (len == 1)
-					continue;
-				if (pattern[1] == 0x25) {
-					asp = pattern + 2;
-					continue;
-				}
-			}
-		} else {
-			if (unqstrstr(asp, "%>")) {
-				for (func = asp; func < &pattern[len];
-				     func = end) {
-					/* Skip initial whitespace */
-					for (; isspace((int)*func); func++) ;
-					if (!(end = uqstrchr(func, ';')))
-						break;
-					*end++ = '\0';
-
-					/* Call function */
-					handle = call(handle, func, stream);
-				}
-				asp = NULL;
-				len = 0;
-			}
-			continue;
-		}
-
-	      release:
-		/* Release pattern space */
-		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
-		len = 0;
-	}
-	if (handle)
-		dlclose(handle);
-	free(pattern);
-	memdebug_leave();
+void do_ej_file(FILE *fp,int len, webs_t stream)
+{
+    s_fp = fp;
+    s_filecount = 0;
+    s_filelen = len;
+    do_ej_s(&file_get,stream);
 }
 
 #define WEBS_PAGE_ROM

@@ -2066,7 +2066,7 @@ void *getUEnv(char *name)
 	//fprintf(stderr,"[u-boot env]%s\n",name);
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	fseek(fp, UOFFSET, SEEK_SET);
-	char *mem = malloc(0x2000);
+	char *mem = safe_malloc(0x2000);
 	fread(mem, 0x2000, 1, fp);
 	fclose(fp);
 	int s = (0x2000 - 1) - strlen(name);
@@ -2676,7 +2676,7 @@ int getifcount(const char *ifprefix)
 	 * FILE *in = popen (devcall, "rb"); if (in == NULL) return 0; int count;
 	 * fscanf (in, "%d", &count); pclose (in); return count;
 	 */
-	char *iflist = malloc(256);
+	char *iflist = safe_malloc(256);
 
 	memset(iflist, 0, 256);
 	int c = getIfList(iflist, ifprefix);

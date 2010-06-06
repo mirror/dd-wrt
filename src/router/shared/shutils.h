@@ -129,7 +129,17 @@ extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
 char *strcat_r(const char *s1, const char *s2, char *buf);
 
 
+
 #ifdef MEMDEBUG
+
+void *mymalloc(int size,char *func);
+void myfree(void *mem);
+void showmemdebugstat();
+
+#define safe_malloc(size) mymalloc(size,__func__)
+#define safe_free myfree(mem)
+#define free myfree
+
 #define memdebug_enter()  \
 	struct sysinfo memdebuginfo; \
 	sysinfo(&memdebuginfo); \
@@ -150,9 +160,12 @@ char *strcat_r(const char *s1, const char *s2, char *buf);
 	    fprintf(stderr,"function %s->%s:%d (%s) leaks %ld bytes memory (before: %ld, after: %ld\n",__FILE__,__func__,__LINE__,a,(before-after),before,after); \
 	    }
 #else
+#define safe_malloc malloc
+#define safe_free free
 #define memdebug_enter()
 #define memdebug_leave()
 #define memdebug_leave_info(a)
+#define showmemdebugstat()
 #endif
 
 /*
