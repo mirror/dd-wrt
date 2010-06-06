@@ -35,6 +35,7 @@
 #include <stdio.h>		// for printf, etc.
 #include <sys/time.h>
 #include <time.h>
+#include <shutils.h>
 
 /*
  * define TIMER_PROFILE to enable code which guages how accurate the timer
@@ -138,7 +139,7 @@ void init_event_queue(int n)
 	struct itimerval tv;
 
 	g_maxevents = n;
-	event_freelist = (struct event *)malloc(n * sizeof(struct event));
+	event_freelist = (struct event *)safe_malloc(n * sizeof(struct event));
 	memset(event_freelist, 0, n * sizeof(struct event));
 
 	for (i = 0; i < (n - 1); i++)

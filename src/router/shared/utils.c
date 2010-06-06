@@ -1808,7 +1808,7 @@ void addAction(char *action)
 		}
 	}
 	if (strlen(services) > 0) {
-		actionstack = malloc(strlen(services) + strlen(action) + 2);
+		actionstack = safe_malloc(strlen(services) + strlen(action) + 2);
 		memset(actionstack, 0, strlen(services) + strlen(action) + 2);
 		strcpy(actionstack, action);
 		strcat(actionstack, " ");
@@ -1885,7 +1885,7 @@ int endswith(char *str, char *cmp)
 
 int searchfor(FILE * fp, char *str, int scansize)
 {
-	char *buffer = malloc(scansize);
+	char *buffer = safe_malloc(scansize);
 	int len = fread(buffer, scansize, 1, fp);
 	int i;
 

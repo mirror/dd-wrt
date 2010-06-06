@@ -814,7 +814,7 @@ static void handle_request(void)
 			return;
 		}
 		if (strcasecmp(method, "post") == 0) {
-			query = malloc(10000);
+			query = safe_malloc(10000);
 			if ((count = wfread(query, 1, cl, conn_fp))) {
 				query[count] = '\0';;
 				cl -= strlen(query);
@@ -1117,7 +1117,7 @@ static char *decodeString(char *orig, int flag_plus_to_space)
  * $Description: Given a string, html encode special characters.
  *   This is used for the -e command line option to provide an easy way
  *   for scripts to encode result data without confusing browsers.  The
- *   returned string pointer is memory allocated by malloc().
+ *   returned string pointer is memory allocated by safe_malloc().
  *
  * $Parameters:
  *      (const char *) string . . The first string to encode.
@@ -1132,7 +1132,7 @@ static char *encodeString(const char *string)
 	/* take the simple route and encode everything */
 	/* could possibly scan once to get length.     */
 	int len = strlen(string);
-	char *out = malloc(len * 5 + 1);
+	char *out = safe_malloc(len * 5 + 1);
 	char *p = out;
 	char ch;
 
@@ -1378,7 +1378,7 @@ int main(int argc, char **argv)
 #elif defined(HAVE_MATRIXSSL)
 			matrixssl_new_session(conn_fd);
 			if (!conn_fp)
-				conn_fp = malloc(sizeof(webs));
+				conn_fp = safe_malloc(sizeof(webs));
 			conn_fp->fp = (FILE *) conn_fd;
 #endif
 #ifdef HAVE_XYSSL
@@ -1417,7 +1417,7 @@ int main(int argc, char **argv)
 			}
 #endif
 			if (!conn_fp)
-				conn_fp = malloc(sizeof(webs));
+				conn_fp = safe_malloc(sizeof(webs));
 			if (!(conn_fp->fp = fdopen(conn_fd, "r+"))) {
 				perror("fdopen");
 				return errno;
@@ -1445,6 +1445,7 @@ memdebug_leave_info("handle_request");
 		free(conn_fp);
 		conn_fp = NULL;
 		close(conn_fd);
+		showmemdebugstat();
 	}
 
 	shutdown(listen_fd, 2);

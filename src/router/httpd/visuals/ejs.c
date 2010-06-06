@@ -52,35 +52,21 @@ int do_ssl;
 void initWeb(struct Webenvironment *env)
 {
 
-	cprintf("set websgetwar %p:%p->%p:%p\n", env, env->PwebsGetVar,
-		&websGetVar, websGetVar);
 	websGetVar = env->PwebsGetVar;
 	httpd_filter_name = env->Phttpd_filter_name;
-	cprintf("set wl_client_macs\n");
 	wl_client_macs = env->Pwl_client_macs;
-	cprintf("set webswrite\n");
 	websWrite = env->PwebsWrite;
-	cprintf("set do_ej_buffer\n");
 	do_ej_buffer = env->Pdo_ej_buffer;
-	cprintf("set do_ej\n");
 	do_ej = env->Pdo_ej;
 #ifdef HAVE_HTTPS
-	cprintf("set do_ssl\n");
 	do_ssl = env->Pdo_ssl;
 #endif
-	cprintf("set ejargs\n");
 	ejArgs = env->PejArgs;
-	cprintf("set getwebsfile\n");
 	getWebsFile = env->PgetWebsFile;
-	cprintf("set wwflush\n");
 	wfflush = env->Pwfflush;
-	cprintf("set wfputs\n");
 	wfputc = env->Pwfputc;
-	cprintf("set wfputs\n");
 	wfputs = env->Pwfputs;
-	cprintf("set websrompageindex\n");
 	websRomPageIndex = env->PwebsRomPageIndex;
-	cprintf("set live_translate\n");
 	live_translate = env->Plive_translate;
 	GOZILA_GET = env->PGOZILA_GET;
 	validate_cgi = env->Pvalidate_cgi;
@@ -195,15 +181,6 @@ void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 #if COUNTRY == JAPAN
 	websWrite(wp, "%s", nvram_safe_get(argv[0]));
 #else
-	/*
-	 * for (c = nvram_safe_get (name); *c; c++) { if (isprint ((int) *c)) //
-	 * && // *c != '"' && *c != '&' && *c != '<' && *c != '>') ret +=
-	 * websWrite (wp, "%c", *c); else { if (*c == '"') ret += websWrite (wp,
-	 * "&quot;"); else if (*c == '&') ret += websWrite (wp, "&amp;"); else if 
-	 * (*c == '<') ret += websWrite (wp, "&lt;"); else if (*c == '>') ret +=
-	 * websWrite (wp, "&gt;"); else if (*c == 13) continue; else ret +=
-	 * websWrite (wp, "&#%d", *c); } } 
-	 */
 
 	tf_webWriteESCNV(wp, argv[0]);	// test: buffered version of above
 

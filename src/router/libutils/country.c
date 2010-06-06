@@ -22,6 +22,7 @@
 
 #include <malloc.h>
 #include <string.h>
+#include <shutils.h>
 
 #define YES	1
 #define	NO	0
@@ -676,7 +677,7 @@ char *getCountryList(void)
 #endif
 		}
 		count++;
-		countries = malloc(count);
+		countries = safe_malloc(count);
 		memset(countries, 0, count);
 		for (i = 0; i < N(allCountries); i++) {
 #ifdef HAVE_BUFFALO

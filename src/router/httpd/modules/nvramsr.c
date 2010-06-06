@@ -90,7 +90,7 @@ static int isCritical(char *name)
 
 static void nvram_clear()
 {
-	char *buf = (char *)malloc(NVRAM_SPACE);
+	char *buf = (char *)safe_malloc(NVRAM_SPACE);
 
 	nvram_getall(buf, NVRAM_SPACE);
 	nvram_open();
@@ -174,7 +174,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 			unsigned char c = 0;
 
 			wfread((char *)&c, 1, 1, wp);
-			char *name = (char *)malloc(c + 1);
+			char *name = (char *)safe_malloc(c + 1);
 
 			wfread(name, c, 1, wp);
 			name[c] = 0;
@@ -185,7 +185,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 			wfread((char *)&b, 1, 1, wp);
 			l += ((unsigned int)b << 8);
 
-			char *value = (char *)malloc(l + 1);
+			char *value = (char *)safe_malloc(l + 1);
 
 			wfread(value, l, 1, wp);
 			len -= (l + 2);
@@ -264,7 +264,7 @@ void nv_file_out(struct mime_handler *handler, char *path, webs_t wp,
 		return;
 	}
 #endif
-	char *buf = (char *)malloc(NVRAM_SPACE);
+	char *buf = (char *)safe_malloc(NVRAM_SPACE);
 
 	nvram_getall(buf, NVRAM_SPACE);
 	char *p = buf;
