@@ -187,7 +187,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 
 	}
 
-	closesocket(s);
+	closesocket();
 	return cnt;
 }
 
