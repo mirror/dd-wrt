@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/statfs.h>
+#include <sys/sysinfo.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <broadcom.h>
