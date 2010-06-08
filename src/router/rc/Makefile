@@ -617,7 +617,7 @@ endif
 
 ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
-endi
+endif
 
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
