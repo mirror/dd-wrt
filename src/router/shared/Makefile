@@ -432,6 +432,10 @@ ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif
 
+ifeq ($(CONFIG_NVRAM_60K),y)
+CFLAGS += -DHAVE_NVRAM_60K
+endif
+
 ifeq ($(CONFIG_MATRIXSSL),y)
 #CFLAGS += -I$(TOP)/matrixssl
 #LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixssl
