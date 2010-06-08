@@ -3,7 +3,7 @@
 #
 
 # Nvram size
-CONFIG_NVRAM_60K
+CONFIG_NVRAM_60K=y
 #
 # Base Features
 #
