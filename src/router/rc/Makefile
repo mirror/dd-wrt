@@ -615,6 +615,10 @@ ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 endif
 
+ifeq ($(CONFIG_NVRAM_60K),y)
+CFLAGS += -DHAVE_NVRAM_60K
+endi
+
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
 all: rc
