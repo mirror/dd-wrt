@@ -345,7 +345,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 		script = "/tmp/udhcpc";
 	if (!pidfile)
 		pidfile = "/var/run/udhcpc.pid";
-	char *flags = "";
+	char *flags = NULL;
 	if (!fork)
 		flags = "-q";
 	nvram_set("wan_get_dns", "");
@@ -359,13 +359,14 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 		"-i", wan_ifname,
 		"-p", pidfile,
 		"-s", script,
-		flags, NULL,
+		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL
 	};
-
-	int i = 8;
+	int i = 7;
+	if (flags)
+		dhcp_argv[i++] = flags;
 
 	if (!pidfile) {
 		if (vendorclass != NULL && strlen(vendorclass) > 0) {
@@ -1718,8 +1719,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
