@@ -670,7 +670,7 @@ addEvent(window, "unload", function() {
 											<td align="center"><input class="num" name="%s_wme_txp_bk1" value="<%% nvram_list("%s_wme_txp_bk", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_bk2" value="<%% nvram_list("%s_wme_txp_bk", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_bk3" value="<%% nvram_list("%s_wme_txp_bk", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="%s_wme_txp_bk4" value="<%% nvram_list("%s_wme_txp_bk", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_bk4" value="<%% nvram_list("%s_wme_txp_bk", 4); %%>" size="5" maxlength="6" /></td>
 										</tr>
 										<tr>
 											<td><%% tran("wl_adv.row2"); %%><input type="hidden" name="%s_wme_txp_be" value="5" /></td>
@@ -678,7 +678,7 @@ addEvent(window, "unload", function() {
 											<td align="center"><input class="num" name="%s_wme_txp_be1" value="<%% nvram_list("%s_wme_txp_be", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_be2" value="<%% nvram_list("%s_wme_txp_be", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_be3" value="<%% nvram_list("%s_wme_txp_be", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="%s_wme_txp_be4" value="<%% nvram_list("%s_wme_txp_be", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_be4" value="<%% nvram_list("%s_wme_txp_be", 4); %%>" size="5" maxlength="6" /></td>
 										</tr>
 										<tr>
 											<td><%% tran("wl_adv.row3"); %%><input type="hidden" name="%s_wme_txp_vi" value="5" /></td>
@@ -686,7 +686,7 @@ addEvent(window, "unload", function() {
 											<td align="center"><input class="num" name="%s_wme_txp_vi1" value="<%% nvram_list("%s_wme_txp_vi", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_vi2" value="<%% nvram_list("%s_wme_txp_vi", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_vi3" value="<%% nvram_list("%s_wme_txp_vi", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="%s_wme_txp_vi4" value="<%% nvram_list("%s_wme_txp_vi", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vi4" value="<%% nvram_list("%s_wme_txp_vi", 4); %%>" size="5" maxlength="6" /></td>
 										</tr>
 										<tr>
 											<td><%% tran("wl_adv.row4"); %%><input type="hidden" name="%s_wme_txp_vo" value="5" /></td>
@@ -694,7 +694,7 @@ addEvent(window, "unload", function() {
 											<td align="center"><input class="num" name="%s_wme_txp_vo1" value="<%% nvram_list("%s_wme_txp_vo", 1); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol2)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_vo2" value="<%% nvram_list("%s_wme_txp_vo", 2); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol3)" /></td>
 											<td align="center"><input class="num" name="%s_wme_txp_vo3" value="<%% nvram_list("%s_wme_txp_vo", 3); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol4)" /></td>
-											<td align="center"><input class="num" name="%s_wme_txp_vo4" value="<%% nvram_list("%s_wme_txp_vo", 4); %%>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.txpcol5)" /></td>
+											<td align="center"><input class="num" name="%s_wme_txp_vo4" value="<%% nvram_list("%s_wme_txp_vo", 4); %%>" size="5" maxlength="6" /></td>
 										</tr>
 									</table>
 								</div>
