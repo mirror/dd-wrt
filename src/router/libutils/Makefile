@@ -709,7 +709,7 @@ endif
 
 ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
-endi
+endif
 
 ifeq ($(CONFIG_MATRIXSSL),y)
 #CFLAGS += -I$(TOP)/matrixssl
