@@ -260,7 +260,7 @@ void hotspotsys_config(void)
 		char *et0 = nvram_safe_get("et0macaddr");
 
 		md5_begin(&MD);
-		md5_hash(&MD, et0, 17);
+		md5_hash(et0, 17, &MD);
 		md5_end((unsigned char *)hash, &MD);
 		char idkey[16];
 		int i;
