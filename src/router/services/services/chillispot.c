@@ -267,7 +267,7 @@ void hotspotsys_config(void)
 
 		for (i = 0; i < 6; i++)
 			sprintf(&idkey[2 * i], "%02d", (hash[i] + hash[i+1]) % 100);
-		id[12] = '\0';
+		idkey[12] = '\0';
 		nvram_set("hotss_remotekey", idkey);
 		nvram_set("need_commit", "1");
 	}
