@@ -2198,8 +2198,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"wl1_wme_sta_bk", "15 1023 7 0 0 off", 0},	/* WME STA AC_BK paramters */
 	{"wl1_wme_sta_be", "15 1023 3 0 0 off", 0},	/* WME STA AC_BE paramters */
-	{"wl1_wme_sta_vi", "7 15 2 6016 3008 off", 0},	/* WME STA AC_VI
-							 * paramters */
+	{"wl1_wme_sta_vi", "7 15 2 6016 3008 off", 0},	/* WME STA AC_VI							 * paramters */
 	{"wl1_wme_sta_vo", "3 7 2 3264 1504 off", 0},	/* WME STA AC_VO
 							 * paramters */
 
@@ -2208,8 +2207,7 @@ struct nvram_tuple srouter_defaults[] = {
 	 */
 	{"wl1_wme_ap_bk", "15 1023 7 0 0 off", 0},	/* WME AP AC_BK paramters */
 	{"wl1_wme_ap_be", "15 63 3 0 0 off", 0},	/* WME AP AC_BE paramters */
-	{"wl1_wme_ap_vi", "7 15 1 6016 3008 off", 0},	/* WME AP AC_VI
-							 * paramters */
+	{"wl1_wme_ap_vi", "7 15 1 6016 3008 off", 0},	/* WME AP AC_VI							 * paramters */
 	{"wl1_wme_ap_vo", "3 7 1 3264 1504 off", 0},	/* WME AP AC_VO
 							 * paramters */
 	{"wl1_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
@@ -2219,6 +2217,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_maxassoc", "128", 0},	/* Max associations driver could support */
 
 	/* Per AC Tx parameters */
+
 	{"wl_wme_txp_be", "7 3 4 2 0", 0},	/* WME AC_BE Tx parameters */
 	{"wl_wme_txp_bk", "7 3 4 2 0", 0},	/* WME AC_BK Tx parameters */
 	{"wl_wme_txp_vi", "7 3 4 2 0", 0},	/* WME AC_VI Tx parameters */
