@@ -85,7 +85,9 @@ all: $(UTILS)
 	if test -e "src/Makefile"; then make -C src; fi
 endif
 ifeq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_MADWIFI_MIMO),y)
 	make -C wprobe
+endif
 endif
 
 

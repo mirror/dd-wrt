@@ -632,11 +632,11 @@ void start_restore_defaults(void)
 #elif HAVE_WR941
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "wan lan1 lan2 lan3 lan4 ath0", 0},
-		{"wan_ifname", "wan", 0},
-		{"wan_ifname2", "wan", 0},
-		{"wan_ifnames", "wan", 0},
-		{"wan_default", "wan", 0},
+		{"lan_ifnames", "vlan1 vlan2 ath0", 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
 #elif HAVE_WR1043

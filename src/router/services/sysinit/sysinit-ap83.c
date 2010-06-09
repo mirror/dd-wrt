@@ -188,14 +188,14 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		eval("ifconfig", "eth0", "up");
-		fprintf(stderr, "configure wan to %s\n", mac);
-		eval("ifconfig", "wan", "hw", "ether", mac);
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		fprintf(stderr, "configure vlan1 to %s\n", mac);
+		eval("ifconfig", "vlan1", "hw", "ether", mac);
 		MAC_ADD(mac);
-		fprintf(stderr, "configure lan to %s\n", mac);
-		eval("ifconfig", "lan1", "hw", "ether", mac);
-		eval("ifconfig", "lan2", "hw", "ether", mac);
-		eval("ifconfig", "lan3", "hw", "ether", mac);
-		eval("ifconfig", "lan4", "hw", "ether", mac);
+		fprintf(stderr, "configure vlan2 to %s\n", mac);
+		eval("ifconfig", "vlan2", "hw", "ether", mac);
 		MAC_SUB(mac);
 	}
 #endif
