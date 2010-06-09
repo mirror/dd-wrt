@@ -57,7 +57,7 @@ void doHash(MD5_CTX * MD, char *filename)
 		if (c == EOF)
 			break;
 		buf[0] = c;
-		MD5Update(MD, buf, 1);
+		md5_hash(buf, 1,MD);
 	}
 	fclose(in);
 }
@@ -65,16 +65,16 @@ void doHash(MD5_CTX * MD, char *filename)
 void deviceID(char *output)
 {
 	unsigned char key[16];
-	MD5_CTX MD;
+	md5_ctx_t MD;
 
-	MD5Init(&MD);
+	md5_begin(&MD);
 	// fprintf (stderr, "generate hash\n");
 	doHash(&MD, "/dev/mtdblock/0");
 	doHash(&MD, "/dev/mtdblock0");
 	doHash(&MD,
 	       "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
 	doHash(&MD, "/dev/discs/disc0/part4");
-	MD5Final((unsigned char *)key, &MD);
+	md5_end((unsigned char *)key, &MD);
 	int i;
 
 	for (i = 0; i < 16; i++) {

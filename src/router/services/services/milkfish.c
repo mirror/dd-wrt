@@ -52,15 +52,15 @@ void start_milkfish(void)
 
 void start_milkfish_boot(void)
 {
-	MD5_CTX MD;
+	md5_ctx_t MD;
 
 	if (strlen(nvram_safe_get("milkfish_routerid")) != 32) {
 		unsigned char hash[32];
 		char *et0 = nvram_safe_get("et0macaddr");
 
-		MD5Init(&MD);
-		MD5Update(&MD, et0, 17);
-		MD5Final((unsigned char *)hash, &MD);
+		md5_begin(&MD);
+		md5_hash(et0,17,&MD);
+		md5_end((unsigned char *)hash, &MD);
 		char request[32];
 		int i;
 
