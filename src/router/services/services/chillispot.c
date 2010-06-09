@@ -269,7 +269,11 @@ void hotspotsys_config(void)
 			sprintf(&idkey[2 * i], "%02d", (hash[i] + hash[i+1]) % 100);
 		idkey[12] = '\0';
 		nvram_set("hotss_remotekey", idkey);
-		nvram_set("need_commit", "1");
+		nvram_commit();
+		char sendid[256];
+		sprintf(sendid, "/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&operator=%s\\&location=%s\\&remotekey=%s",
+			nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"), nvram_get("hotss_remotekey")); 
+		system2(sendid);
 	}
 
 	if (!(fp = fopen("/tmp/hotss.conf", "w"))) {
