@@ -14,7 +14,7 @@ unsigned char key64[4][5] = { "", "", "", "" };
 // void nwepgen(char *genstr, int weptype)
 int wep128_passphase(char *buffer, unsigned char *keybyte)
 {
-	MD5_CTX MD;
+	md5_ctx_t MD;
 	char *cp;
 	char password_buf[65];
 	int i, Length;
@@ -22,7 +22,7 @@ int wep128_passphase(char *buffer, unsigned char *keybyte)
 	Length = strlen(buffer);
 
 	// Initialize MD5 structures
-	MD5Init(&MD);
+	md5_begin(&MD);
 
 	// concatenate input passphrase repeatedly to fill password_buf
 	cp = password_buf;
@@ -31,8 +31,8 @@ int wep128_passphase(char *buffer, unsigned char *keybyte)
 		*cp++ = buffer[i % Length];
 
 	// generate 128-bit signature using MD5
-	MD5Update(&MD, (unsigned char *)password_buf, 64);
-	MD5Final((unsigned char *)keybyte, &MD);
+	md5_hash( (unsigned char *)password_buf, 64,&MD);
+	md5_end((unsigned char *)keybyte, &MD);
 
 	return 1;
 }
