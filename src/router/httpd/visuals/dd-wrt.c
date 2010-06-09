@@ -6452,7 +6452,7 @@ void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 	else
 		websWrite(wp,"%d min, ", upminutes);
 
-	websWrite(wp,"load average: %ld.%02ld, %ld.%02ld, %ld.%02ld\n",
+	websWrite(wp,"load average: %ld.%02ld, %ld.%02ld, %ld.%02ld",
 			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
 			LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
 			LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
