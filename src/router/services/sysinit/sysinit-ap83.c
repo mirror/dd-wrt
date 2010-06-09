@@ -170,6 +170,35 @@ void start_sysinit(void)
 		MAC_SUB(mac);
 	}
 #endif
+#ifdef HAVE_WR941
+
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	char mac[32];
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 0x1fc00, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		eval("ifconfig", "eth0", "up");
+		fprintf(stderr, "configure wan to %s\n", mac);
+		eval("ifconfig", "wan", "hw", "ether", mac);
+		MAC_ADD(mac);
+		fprintf(stderr, "configure lan to %s\n", mac);
+		eval("ifconfig", "lan1", "hw", "ether", mac);
+		eval("ifconfig", "lan2", "hw", "ether", mac);
+		eval("ifconfig", "lan3", "hw", "ether", mac);
+		eval("ifconfig", "lan4", "hw", "ether", mac);
+		MAC_SUB(mac);
+	}
+#endif
 #ifdef HAVE_WRT160NL
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	unsigned char buf2[256];
@@ -297,6 +326,12 @@ void start_sysinit(void)
 		eval("ifconfig", "wifi0", "hw", "ether", mac);
 	}
 #endif
+#ifdef HAVE_WR941
+	{
+		fprintf(stderr, "configure wifi0 to %s\n", mac);
+		eval("ifconfig", "wifi0", "hw", "ether", mac);
+	}
+#endif
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
@@ -323,6 +358,9 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #elif HAVE_TEW632BRP
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#elif HAVE_WR941
+	system2("echo 9 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #elif HAVE_WR1043
 	system2("echo 9 >/proc/sys/dev/wifi0/ledpin");
