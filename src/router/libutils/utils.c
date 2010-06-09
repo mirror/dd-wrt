@@ -1057,6 +1057,9 @@ int internal_getRouterBrand()
 #elif HAVE_TEW632BRP
 	setRouter("Trendnet TEW-632BRP");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR941
+	setRouter("TP-Link TL-WR941ND");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR1043
 	setRouter("TP-Link TL-WR1043ND");
 	return ROUTER_BOARD_PB42;
@@ -2878,6 +2881,11 @@ int led_control(int type, int act)
 	{
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_PB42:
+#ifdef HAVE_WR941
+		diag_gpio = 0x102;
+		ses_gpio = 0x005;
+//              usb_gpio = 0x101;
+#endif
 #ifdef HAVE_WR1043
 		diag_gpio = 0x102;
 		ses_gpio = 0x005;
