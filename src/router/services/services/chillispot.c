@@ -253,15 +253,15 @@ void hotspotsys_config(void)
 	char *dnslist;
 	int i;
 	
-	MD5_CTX MD;
+	md5_ctx_t MD;
 
 	if (strlen(nvram_safe_get("hotss_remotekey")) != 12) {
 		unsigned char hash[32];
 		char *et0 = nvram_safe_get("et0macaddr");
 
-		MD5Init(&MD);
-		MD5Update(&MD, et0, 17);
-		MD5Final((unsigned char *)hash, &MD);
+		md5_begin(&MD);
+		md5_hash(&MD, et0, 17);
+		md5_end((unsigned char *)hash, &MD);
 		char idkey[16];
 		int i;
 
