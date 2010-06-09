@@ -43,7 +43,7 @@
 #define IFPREFIX "ath"
 #endif
 
-void doHash(MD5_CTX * MD, char *filename)
+void doHash(md5_ctx_t * MD, char *filename)
 {
 	unsigned char buf[1];
 	FILE *in = fopen(filename, "rb");
