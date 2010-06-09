@@ -1,6 +1,6 @@
 
 <fieldset>
-	<legend><% tran("hotspotsys.legend"); %></legend>
+	<legend><% tran("hotspotsys.legend"); %><% nvram_else_match("hotss_remotekey", "", "", " - remotekey: "); %><% nvram_get("hotss_remotekey"); %></legend>
 	<div class="center"><a href="http://www.hotspotsystem.com/" target="_blank"><img src="images/hotspotsystem.png" alt="hotspotsystem logo" border="0" /></a></div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspotsys.legend"); %></div>
