@@ -33,6 +33,7 @@
 #include <syslog.h>
 #include <wlutils.h>
 #include <errno.h>
+#include <md5.h>
 
 #ifdef HAVE_CHILLI
 
@@ -251,6 +252,25 @@ void hotspotsys_config(void)
 	char var[64];
 	char *dnslist;
 	int i;
+	
+	MD5_CTX MD;
+
+	if (strlen(nvram_safe_get("hotss_remotekey")) != 12) {
+		unsigned char hash[32];
+		char *et0 = nvram_safe_get("et0macaddr");
+
+		MD5Init(&MD);
+		MD5Update(&MD, et0, 17);
+		MD5Final((unsigned char *)hash, &MD);
+		char idkey[16];
+		int i;
+
+		for (i = 0; i < 6; i++)
+			sprintf(&idkey[2 * i], "%02d", (hash[i] + hash[i+1]) % 100);
+		id[12] = '\0';
+		nvram_set("hotss_remotekey", idkey);
+		nvram_set("need_commit", "1");
+	}
 
 	if (!(fp = fopen("/tmp/hotss.conf", "w"))) {
 		perror("/tmp/hotss.conf");

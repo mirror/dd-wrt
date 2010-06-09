@@ -1622,6 +1622,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"hotss_net", "192.168.182.0/24", 0},
 	{"hotss_customuam", "", 0},
 	{"hotss_customuamproto", "https", 0},
+	{"hotss_remotekey", "", 0},
 #endif
 #ifdef HAVE_SSHD
 
