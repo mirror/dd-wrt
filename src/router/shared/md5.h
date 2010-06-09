@@ -28,18 +28,58 @@
 /*
  * MD5 context. 
  */
+#include <string.h>
+# include <byteswap.h>
+# include <endian.h>
 
-typedef unsigned long UINT4;
-typedef unsigned short UINT2;
-typedef unsigned char *POINTER;
+#ifdef __BIG_ENDIAN__
+# define BB_BIG_ENDIAN 1
+# define BB_LITTLE_ENDIAN 0
+#elif __BYTE_ORDER == __BIG_ENDIAN
+# define BB_BIG_ENDIAN 1
+# define BB_LITTLE_ENDIAN 0
+#else
+# define BB_BIG_ENDIAN 0
+# define BB_LITTLE_ENDIAN 1
+#endif
 
-typedef struct {
-	UINT4 state[4];		/* state (ABCD) */
-	UINT4 count[2];		/* number of bits, modulo 2^64 (lsb first) */
-	unsigned char buffer[64];	/* input buffer */
-} MD5_CTX;
 
-void MD5Init(MD5_CTX *);
-void MD5Update(MD5_CTX *, unsigned char *, unsigned int);
-void MD5Final(unsigned char[16], MD5_CTX *);
-char *md5_crypt(char *passwd, unsigned char *pw, unsigned char *salt);
+#if BB_BIG_ENDIAN
+#define SWAP_BE16(x) (x)
+#define SWAP_BE32(x) (x)
+#define SWAP_BE64(x) (x)
+#define SWAP_LE16(x) bswap_16(x)
+#define SWAP_LE32(x) bswap_32(x)
+#define SWAP_LE64(x) bswap_64(x)
+#else
+#define SWAP_BE16(x) bswap_16(x)
+#define SWAP_BE32(x) bswap_32(x)
+#define SWAP_BE64(x) bswap_64(x)
+#define SWAP_LE16(x) (x)
+#define SWAP_LE32(x) (x)
+#define SWAP_LE64(x) (x)
+#endif
+
+#define FAST_FUNC
+
+
+#define ALIGN1 __attribute__((aligned(1)))
+#define ALIGN2 __attribute__((aligned(2)))
+
+
+
+typedef unsigned int uint32_t;
+typedef unsigned long long uint64_t;
+
+typedef struct md5_ctx_t {
+	uint32_t A;
+	uint32_t B;
+	uint32_t C;
+	uint32_t D;
+	uint64_t total;
+	uint32_t buflen;
+	char buffer[128];
+} md5_ctx_t;
+void md5_begin(md5_ctx_t *ctx);
+void md5_hash(const void *data, uint32_t length, md5_ctx_t *ctx);
+void *md5_end(void *resbuf, md5_ctx_t *ctx);

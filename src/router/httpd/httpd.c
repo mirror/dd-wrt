@@ -1067,92 +1067,6 @@ void settimeouts(int sock, int secs)
 		perror("setsockopt(SO_RCVTIMEO)");
 }
 
-/****************************************************************************
- *
- > $Function: decodeString()
- *
- * $Description: Given a URL encoded string, convert it to plain ascii.
- *   Since decoding always makes strings smaller, the decode is done in-place.
- *   Thus, callers should strdup() the argument if they do not want the
- *   argument modified.  The return is the original pointer, allowing this
- *   function to be easily used as arguments to other functions.
- *
- * $Parameters:
- *      (char *) string . . . The first string to decode.
- *      (int)    flag   . . . 1 if require decode '+' as ' ' for CGI
- *
- * $Return: (char *)  . . . . A pointer to the decoded string (same as input).
- *
- * $Errors: None
- *
- ****************************************************************************/
-static char *decodeString(char *orig, int flag_plus_to_space)
-{
-	/* note that decoded string is always shorter than original */
-	char *string = orig;
-	char *ptr = string;
-
-	while (*ptr) {
-		if (*ptr == '+' && flag_plus_to_space) {
-			*string++ = ' ';
-			ptr++;
-		} else if (*ptr != '%')
-			*string++ = *ptr++;
-		else {
-			unsigned int value;
-
-			sscanf(ptr + 1, "%2X", &value);
-			*string++ = value;
-			ptr += 3;
-		}
-	}
-	*string = '\0';
-	return orig;
-}
-
-/****************************************************************************
- *
- > $Function: encodeString()
- *
- * $Description: Given a string, html encode special characters.
- *   This is used for the -e command line option to provide an easy way
- *   for scripts to encode result data without confusing browsers.  The
- *   returned string pointer is memory allocated by safe_malloc().
- *
- * $Parameters:
- *      (const char *) string . . The first string to encode.
- *
- * $Return: (char *) . . . .. . . A pointer to the encoded string.
- *
- * $Errors: Returns a null string ("") if memory is not available.
- *
- ****************************************************************************/
-static char *encodeString(const char *string)
-{
-	/* take the simple route and encode everything */
-	/* could possibly scan once to get length.     */
-	int len = strlen(string);
-	char *out = safe_malloc(len * 5 + 1);
-	char *p = out;
-	char ch;
-
-	if (!out)
-		return "";
-	while ((ch = *string++)) {
-		// very simple check for what to encode
-
-		if (ch > '0' - 1 && ch < '9' + 1)
-			*p++ = ch;
-		else if (ch > 'a' - 1 && ch < 'z' + 1)
-			*p++ = ch;
-		else if (ch > 'A' - 1 && ch < 'Z' + 1)
-			*p++ = ch;
-		else
-			p += sprintf(p, "&#%d;", (unsigned char)ch);
-	}
-	*p = 0;
-	return out;
-}
 
 int main(int argc, char **argv)
 {
@@ -1215,14 +1129,6 @@ int main(int argc, char **argv)
 			get_ciphers = 1;
 			break;
 #endif
-		case 'e':
-			printf("%s", encodeString(optarg));
-			exit(0);
-			break;
-		case 'd':
-			printf("%s", decodeString(optarg, 1));
-			exit(0);
-			break;
 		case 'i':
 			fprintf(stderr, "Usage: %s [-S] [-p port]\n"
 #ifdef HAVE_HTTPS
@@ -1230,11 +1136,11 @@ int main(int argc, char **argv)
 #endif
 				"	-p port : Which port to listen?\n"
 				"	-t secs : How many seconds to wait before timing out?\n"
+#ifdef DEBUG_CIPHER
 				"	-s ciphers: set cipher lists\n"
 				"	-g: get cipher lists\n"
-				"	-h: home directory: use directory\n"
-				"	-d: decode string\n"
-				"	-e: encode string\n", argv[0]);
+#endif
+				"	-h: home directory: use directory\n", argv[0]);
 			exit(0);
 			break;
 		default:
