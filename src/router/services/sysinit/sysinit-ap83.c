@@ -189,13 +189,13 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "0");
 		eval("vconfig", "add", "eth0", "1");
-		eval("vconfig", "add", "eth0", "2");
+		fprintf(stderr, "configure vlan0 to %s\n", mac);
+		eval("ifconfig", "vlan0", "hw", "ether", mac);
+		MAC_ADD(mac);
 		fprintf(stderr, "configure vlan1 to %s\n", mac);
 		eval("ifconfig", "vlan1", "hw", "ether", mac);
-		MAC_ADD(mac);
-		fprintf(stderr, "configure vlan2 to %s\n", mac);
-		eval("ifconfig", "vlan2", "hw", "ether", mac);
 		MAC_SUB(mac);
 	}
 #endif
