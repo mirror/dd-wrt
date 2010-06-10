@@ -564,7 +564,7 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR941
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan0 vlan1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR1043
 	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
