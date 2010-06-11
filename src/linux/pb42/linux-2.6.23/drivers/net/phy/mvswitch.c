@@ -43,7 +43,7 @@ struct mvswitch_priv {
 	/* the driver's tx function */
 	int (*hardstart)(struct sk_buff *skb, struct net_device *dev);
 	struct vlan_group *grp;
-	u8 vlans[16];
+	u8 vlans[2];
 };
 
 #define to_mvsw(_phy) ((struct mvswitch_priv *) (_phy)->priv)
@@ -128,7 +128,7 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	/* append the tag */
 	*((__be32 *) buf) = cpu_to_be32((
 		(MV_TRAILER_OVERRIDE << MV_TRAILER_FLAGS_S) |
-		((priv->vlans[vid] & MV_TRAILER_PORTS_M) << MV_TRAILER_PORTS_S)
+		((priv->vlans[vid] & MV_TRAILER_PORTS_M) << MV_TRAILER_PORTS_S)//|(0x10<<8)
 	));
 #endif
 
@@ -152,7 +152,6 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 	int vlan = -1;
 	unsigned char *buf;
 	int i;
-
 	dev = skb->dev;
 	if (!dev)
 		goto error;
@@ -176,14 +175,17 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 	/* look for the vlan matching the incoming port */
 	for (i = 0; i < ARRAY_SIZE(priv->vlans); i++) {
 		if ((1 << buf[1]) & priv->vlans[i])
+			{
 			vlan = i;
+			goto receive;
+			}
+			
 	}
 
 	if (vlan == -1)
 		goto error;
-
+	receive:;
 	skb->protocol = eth_type_trans(skb, skb->dev);
-
 	if (napi)
 		return vlan_hwaccel_receive_skb(skb, priv->grp, vlan);
 	else
@@ -220,7 +222,7 @@ mvswitch_vlan_rx_register(struct net_device *dev, struct vlan_group *grp)
 static int
 mvswitch_wait_mask(struct phy_device *pdev, int addr, int reg, u16 mask, u16 val)
 {
-	int i = 100;
+	int i = 1000;
 	u16 r;
 
 	do {
@@ -292,6 +294,7 @@ mvswitch_config_init(struct phy_device *pdev)
 #endif
 		emask
 	);
+
 	/* wait for the phy change to settle in */
 	msleep(2);
 	for (i = 0; i < MV_PORTS; i++) {
@@ -326,11 +329,14 @@ mvswitch_config_init(struct phy_device *pdev)
 		/* re-enable port */
 		w16(pdev, MV_PORTREG(CONTROL, i),emask);
 	}
+//	w16(pdev, MV_PORTREG(VLANMAP, MV_CPUPORT),
+//			MV_PORTVLAN_PORTS(0x1f) |
+//			MV_PORTVLAN_ID(MV_CPUPORT)
+//		);
 
 	w16(pdev, MV_PORTREG(VLANMAP, MV_CPUPORT),
 		MV_PORTVLAN_ID(MV_CPUPORT)
 	);
-
 	/* set the port association vector */
 	for (i = 0; i <= MV_PORTS; i++) {
 		w16(pdev, MV_PORTREG(ASSOC, i),
@@ -438,11 +444,9 @@ mvswitch_detect(struct mii_bus *bus, int addr)
 {
 	u16 reg;
 	int i;
-
 	/* we attach to phy id 31 to make sure that the late probe works */
-	if (addr != 31)
+	if (addr != 0)
 		return false;
-
 	/* look for the switch on the bus */
 	reg = bus->read(bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
 	if (reg != MV_IDENT_VALUE && reg != MV_IDENT_VALUE2)
@@ -452,14 +456,14 @@ mvswitch_detect(struct mii_bus *bus, int addr)
 	 * Now that we've established that the switch actually exists, let's 
 	 * get rid of the competition :)
 	 */
-	for (i = 0; i < 31; i++) {
+/*	for (i = 0; i < 31; i++) {
 		if (!bus->phy_map[i])
 			continue;
 
 		device_unregister(&bus->phy_map[i]->dev);
 		kfree(bus->phy_map[i]);
 		bus->phy_map[i] = NULL;
-	}
+	}*/
 
 	return true;
 }
