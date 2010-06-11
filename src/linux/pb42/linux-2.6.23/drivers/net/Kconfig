@@ -2321,10 +2321,6 @@ config REALTEK_PHY
 config ADM6996FC_PHY
     bool "AdmTek 6996FC"
 
-config MV6060
-    bool "AdmTek 6996FC"
-    depends on ADM6996FC_PHY
-
 endchoice
 
 config  AG7240_LEN_PER_TX_DS 
