@@ -1057,8 +1057,11 @@ int internal_getRouterBrand()
 #elif HAVE_TEW632BRP
 	setRouter("Trendnet TEW-632BRP");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR841v3
+	setRouter("TP-Link TL-WR841ND v3");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941
-	setRouter("TP-Link TL-WR941ND");
+	setRouter("TP-Link TL-WR941ND v2/v3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR1043
 	setRouter("TP-Link TL-WR1043ND");
