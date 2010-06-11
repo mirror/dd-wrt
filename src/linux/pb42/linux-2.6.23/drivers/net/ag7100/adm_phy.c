@@ -342,10 +342,71 @@ adm_phySetup(int ethUnit)
                        ADM_PHY_STATUS)));
     }
 
+#ifdef CONFIG_MV6060
+	/* added by lsz 30Apri07 to configure port vlan registers */
+	
+/****************************************************************************
+	Port VLan:
+	
+	 ---------------------------------------------------------------
+	|	| Port6	         | Port5	| Port4	        | Port3	        | Port2	        | Port1	        | Port0	|
+	 ---------------------------------------------------------------
+	| Port0	|	0	|	1	|	0	|	0	|	0	|	0	|	0	|
+	 ---------------------------------------------------------------
+	| Port1	|	0	|	1	|	1	|	1	|	1	|	0	|	0	|
+	 ---------------------------------------------------------------
+	| Port2	|	0	|	1	|	1	|	1	|	0	|	1	|	0	|
+	 ---------------------------------------------------------------
+	| Port3	|	0	|	1	|	1	|	0	|	1	|	1	|	0	|
+	 ---------------------------------------------------------------
+	| Port4	|	0	|	1	|	0	|	1	|	1	|	1	|	0	|
+	 ---------------------------------------------------------------
+	| Port5	|	0	|	0	|	1	|	1	|	1	|	1	|	1	|
+	 ---------------------------------------------------------------
+	| Port6	|	0	|	0	|	0	|	0	|	0	|	0	|	0	|
+	 ---------------------------------------------------------------
+	 
+	Port 0:		Wan
+	Port 1~4:	Lan
+
+	e.g. Port 0 is 010 0000, i.e. 0x20.
+****************************************************************************/
+	#define PORT_VALN_MAP_REG	0x06
+	uint32_t portAddr[7] = {0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE};
+	
+	phy_reg_write(0, portAddr[0], PORT_VALN_MAP_REG, 0x103E);
+	phy_reg_write(0, portAddr[1], PORT_VALN_MAP_REG, 0x103D);
+	phy_reg_write(0, portAddr[2], PORT_VALN_MAP_REG, 0x103B);
+	phy_reg_write(0, portAddr[3], PORT_VALN_MAP_REG, 0x1037);
+	phy_reg_write(0, portAddr[4], PORT_VALN_MAP_REG, 0x102F);
+	phy_reg_write(0, portAddr[5], PORT_VALN_MAP_REG, 0x101F);
+
+/*	phy_reg_write(0, portAddr[0], PORT_VALN_MAP_REG, 0x1020);
+	phy_reg_write(0, portAddr[1], PORT_VALN_MAP_REG, 0x103C);
+	phy_reg_write(0, portAddr[2], PORT_VALN_MAP_REG, 0x103A);
+	phy_reg_write(0, portAddr[3], PORT_VALN_MAP_REG, 0x1036);
+	phy_reg_write(0, portAddr[4], PORT_VALN_MAP_REG, 0x102E);
+	phy_reg_write(0, portAddr[5], PORT_VALN_MAP_REG, 0x101F);*/
+	//phy_reg_write(0, portAddr[6], PORT_VALN_MAP_REG, 0x0000);
+	
+	/* added by lsz to configure header mode registers */
+	#define PORT_CONTROL_REG	0x04
+	uint16_t reg_data = 0x8803;	/* Flow Control | Header Mode | Forwarding */
+	
+	phy_reg_write(0, portAddr[0], PORT_CONTROL_REG, 0x8003);
+	phy_reg_write(0, portAddr[1], PORT_CONTROL_REG, 0x8003);
+	phy_reg_write(0, portAddr[2], PORT_CONTROL_REG, 0x8003);
+	phy_reg_write(0, portAddr[3], PORT_CONTROL_REG, 0x8003);
+	phy_reg_write(0, portAddr[4], PORT_CONTROL_REG, 0x8003);
+	phy_reg_write(0, portAddr[5], PORT_CONTROL_REG, 0x8003);
+	phy_reg_write(0, 0x1E, PORT_CONTROL_REG, reg_data);
+
+#else
     /*
      * XXX
      */
     phy_reg_write(0, 0, 0x10, 0x50);
+#endif
     return (liveLinks > 0);
 }
 
