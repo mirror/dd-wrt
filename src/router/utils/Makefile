@@ -100,7 +100,9 @@ else
 	if test -e "src/Makefile"; then make -C src clean; fi
 endif
 ifeq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_MADWIFI_MIMO),y)
 	make -C wprobe clean
+endif
 endif
 	rm -f *.o *~ $(UTILS)
 
@@ -138,7 +140,9 @@ endif
 
 endif
 ifeq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_MADWIFI_MIMO),y)
 	install -D wprobe/wprobe-util $(INSTALLDIR)/utils/usr/sbin/wprobe-util
+endif
 endif
 	@true
 endif
