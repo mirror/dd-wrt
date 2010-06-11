@@ -6,9 +6,9 @@ refresh() {
 
   id=1
   lastid=0
-  noise_reference=$(wl noise | cut -d" " -f3)
+  noise_reference=$(wl -i `nvram get wl0_ifname` noise | cut -d" " -f3)
   
-  for mac in $(wl assoclist | cut -d" " -f2)
+  for mac in $(wl -i `nvram get wl0_ifname` assoclist | cut -d" " -f2)
   do
     if test $lastid -eq 0
     then
@@ -24,7 +24,7 @@ refresh() {
       eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.26.$id"
     fi
   
-    rssi=$(wl rssi $mac | cut -d" " -f3)
+    rssi=$(wl -i `nvram get wl0_ifname` rssi $mac | cut -d" " -f3)
     if test $rssi -eq 0
     then
       snr=0
