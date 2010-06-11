@@ -227,10 +227,11 @@ static void ag7100_adjust_link(struct net_device *dev)
 
 }
 
-static inline int ag7100_mdiobus_setup(int unit,struct net_device *dev)
+static inline struct mii_bus *ag7100_mdiobus_setup(int unit,struct net_device *dev)
 {
   int i;
   struct phy_device *phydev = NULL;
+  ag7100_mac_t *mac = (ag7100_mac_t *)dev->priv;
   struct mii_bus *mii_bus = kzalloc(sizeof(struct mii_bus),GFP_KERNEL);
   mii_bus->id=unit;
   mii_bus->phy_mask=0;
@@ -243,19 +244,27 @@ static inline int ag7100_mdiobus_setup(int unit,struct net_device *dev)
 	    mii_bus->irq[i] = PHY_POLL;
   mdiobus_register(mii_bus);
    if (unit==0)
+   {
+//   #ifdef CONFIG_MVSWITCH_PHY
+//    phydev = mii_bus->phy_map[31];
+//    #else
     phydev = mii_bus->phy_map[0];
+//    #endif
+   }
    else
     phydev = mii_bus->phy_map[4];
+
     if (phydev!=NULL)
     {
     phydev = phy_connect(dev, phydev->dev.bus_id, &ag7100_adjust_link, 0,PHY_INTERFACE_MODE_RMII);
+    mac->rx = phydev->netif_receive_skb;
     phydev->supported &= PHY_BASIC_FEATURES;
     phydev->advertising = phydev->supported;
     }else{
     printk(KERN_EMERG "phymap is null\n");
     }
 
-  return (0);
+  return mii_bus;
 }
 
 

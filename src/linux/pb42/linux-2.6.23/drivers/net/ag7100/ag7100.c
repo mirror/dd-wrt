@@ -1665,14 +1665,19 @@ process_pkts:
         /*
         * also pulls the ether header
         */
-        skb->protocol       = eth_type_trans(skb, dev);
         skb->dev            = dev;
         bp->buf_pkt         = NULL;
         dev->last_rx        = jiffies;
 
         quota--;
 
-        netif_receive_skb(skb);
+	if (mac->rx)
+	    mac->rx(skb);
+	else
+	    {
+    	    skb->protocol       = eth_type_trans(skb, dev);
+            netif_receive_skb(skb);
+            }
 #endif
 
         ag7100_ring_incr(head);
@@ -2148,6 +2153,24 @@ ag7100_vet_tx_len_per_pkt(unsigned int *len)
     }
 }
 
+#ifdef CONFIG_NET_DSA_MV88E6060
+
+#include "dev-dsa.h"
+
+static struct dsa_chip_data tl_wr941nd_dsa_chip = {
+	.port_names[0]  = "wan",
+	.port_names[1]  = "lan1",
+	.port_names[2]  = "lan2",
+	.port_names[3]  = "lan3",
+	.port_names[4]  = "lan4",
+	.port_names[5]  = "cpu",
+};
+
+static struct dsa_platform_data tl_wr941nd_dsa_data = {
+	.nr_chips	= 1,
+	.chip		= &tl_wr941nd_dsa_chip,
+};
+#endif
 /*
  * All allocations (except irq and rings).
  */
@@ -2327,9 +2350,17 @@ ag7100_init(void)
             printk(MODULE_NAME ": register netdev failed\n");
             goto failed;
         }
-#ifdef CONFIG_PHY_LAYER
+
+#ifdef CONFIG_NET_DSA_MV88E6060
+	if (i==0)
+		{
+    		struct mii_bus *bus = ag7100_mdiobus_setup(i,dev);
+		ar71xx_add_device_dsa(0, &tl_wr941nd_dsa_data,dev,bus);
+		}
+#elif CONFIG_PHY_LAYER
         ag7100_mdiobus_setup(i,dev);
 #endif
+
 
 	netif_carrier_off(dev);
 
@@ -2349,6 +2380,8 @@ ag7100_init(void)
         mdelay(100);
         ar7100_reg_rmw_clear(AR7100_RESET, mask);
         mdelay(100);
+
+
 
     }
     ag7100_trc_init();

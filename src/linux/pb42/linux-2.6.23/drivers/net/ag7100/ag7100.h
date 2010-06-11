@@ -70,6 +70,7 @@ typedef enum {
 
 typedef struct {
     struct net_device      *mac_dev;
+    int (*rx)(struct sk_buff *skb);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
     struct napi_struct mac_napi;
 #endif
@@ -187,6 +188,9 @@ typedef enum {
                                      : (AR7100_RESET_GE0_MAC |  \
                                         AR7100_RESET_GE0_PHY)
 
+#elif CONFIG_MVSWITCH_PHY
+#define ag7100_reset_mask(_no) (_no) ? (AR7100_RESET_GE1_MAC)   \
+                                     : (AR7100_RESET_GE0_MAC)
 #else
 #define ag7100_reset_mask(_no) (_no) ? (AR7100_RESET_GE1_MAC |  \
                                         AR7100_RESET_GE1_PHY)   \

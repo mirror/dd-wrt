@@ -5,6 +5,7 @@ obj-$(CONFIG_AG7100)			+=	ag7100_mod.o
 
 obj-phy-$(CONFIG_VITESSE_PHY)	=	vsc_phy.o
 obj-phy-$(CONFIG_ICPLUS_PHY)	=	ipPhy.o
+#obj-phy-$(CONFIG_NET_DSA)	=	dev-dsa.o
 obj-phy-$(CONFIG_REALTEK_PHY)	=	rtPhy.o
 obj-phy-$(CONFIG_ADM6996FC_PHY)	=	adm_phy.o
 ifeq ($(CONFIG_AP81_CARRIER_CUS109), 1)
