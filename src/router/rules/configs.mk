@@ -51,6 +51,7 @@ obj-$(CONFIG_PIPSEC) += pipsec
 obj-$(CONFIG_FROTTLE) += frottle
 obj-$(CONFIG_WOL) += wol
 obj-$(CONFIG_SNMP) += snmp
+obj-$(CONFIG_TINYSNMP) += tinysnmp
 obj-$(CONFIG_RADVD) += radvd
 obj-$(CONFIG_SPUTNIK_APD) += sputnik
 
@@ -164,6 +165,7 @@ obj-$(CONFIG_STUCK) += stuck_beacon
 obj-$(CONFIG_GPSI) += gpsi
 obj-$(CONFIG_BMON) += bmon
 obj-$(CONFIG_SERCD) += sercd
+obj-$(CONFIG_P910ND) += p910nd
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
