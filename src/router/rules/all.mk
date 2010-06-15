@@ -181,6 +181,7 @@ include rules/mc.mk
 include rules/quagga.mk
 include rules/bmon.mk
 include rules/sercd.mk
+include rules/p910nd.mk
 include rules/ethtool.mk
 include rules/openlldp.mk
 include rules/ipsec-tools.mk
