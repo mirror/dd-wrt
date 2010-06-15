@@ -147,6 +147,11 @@ ifeq ($(CONFIG_V25),y)
 else
 	echo "# CONFIG_V25" is not set >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_NVRAM_60K),y)
+	echo CONFIG_NVRAM_60K=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NVRAM_60K" is not set >> $(LINUXDIR)/.config
+endif
 #ifeq ($(CONFIG_REGISTER),y)
 #	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
 #endif
