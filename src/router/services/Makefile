@@ -236,6 +236,7 @@ CFLAGS_EXTRA += -DHAVE_WR941
 endif
 ifeq ($(CONFIG_P910ND),y)
 CFLAGS_EXTRA += -DHAVE_P910ND
+OBJS += printer.o
 endif
 
 ifeq ($(CONFIG_TEW632BRP),y)
