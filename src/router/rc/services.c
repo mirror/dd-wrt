@@ -479,7 +479,9 @@ static void handle_hotspot(void)
 static void handle_services(void)
 {
 	void *handle = NULL;
-
+#ifdef HAVE_P910ND
+	handle = startstop_nofree_f("printer", handle);
+#endif
 #ifdef HAVE_AP_SERV
 	handle = startstop_nofree_f("apserv", handle);
 #endif
