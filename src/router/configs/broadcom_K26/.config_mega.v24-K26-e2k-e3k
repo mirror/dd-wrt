@@ -4,6 +4,7 @@
 
 # Nvram size
 CONFIG_NVRAM_60K=y
+CONFIG_P910ND=y
 #
 # Base Features
 #
