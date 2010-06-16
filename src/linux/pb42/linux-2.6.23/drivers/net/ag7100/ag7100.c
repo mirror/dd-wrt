@@ -1559,12 +1559,15 @@ process_pkts:
 
         if (ag7100_rx_owned_by_dma(ds))
         {
+    	    break;
+#if 0
             if(quota == iquota)
             {
                 *work_done = quota = 0;
                 return AG7100_RX_DMA_HANG;
             }
             break;
+#endif
         }
         ag7100_intr_ack_rx(mac);
 
@@ -1671,9 +1674,11 @@ process_pkts:
 
         quota--;
 
+#if defined(CONFIG_PHY_LAYER)
 	if (mac->rx)
 	    mac->rx(skb);
 	else
+#endif
 	    {
     	    skb->protocol       = eth_type_trans(skb, dev);
             netif_receive_skb(skb);
@@ -1683,20 +1688,22 @@ process_pkts:
         ag7100_ring_incr(head);
     }
 
+#if 0
     if(quota == iquota)
     {
         *work_done = quota = 0;
         return AG7100_RX_DMA_HANG;
     }
-
+#endif
     r->ring_head   =  head;
-
+#if 0
     rep = ag7100_rx_replenish(mac);
     if(rep < 0)
     {
         *work_done =0 ;
         return AG7100_RX_DMA_HANG;
     }
+#endif
     /*
     * let's see what changed while we were slogging.
     * ack Rx in the loop above is no flush version. It will get flushed now.
