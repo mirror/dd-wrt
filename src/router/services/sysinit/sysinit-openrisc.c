@@ -149,6 +149,9 @@ void start_sysinit(void)
 	eval("mknod", "/dev/gpio", "c", "127", "0");
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
+	eval("mknod", "/dev/lp0", "c", "6", "0");
+	eval("mknod", "/dev/lp1", "c", "6", "1");
+	eval("mknod", "/dev/lp2", "c", "6", "2");
 	eval("mkdir", "-p", "/usr/local/nvram");
 
 	unlink("/tmp/nvram/.lock");
