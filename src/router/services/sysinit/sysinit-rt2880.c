@@ -80,9 +80,6 @@ void start_sysinit(void)
 	eval("mkdir", "/tmp/www");
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
-	eval("mknod", "/dev/lp0", "c", "6", "0");
-	eval("mknod", "/dev/lp1", "c", "6", "1");
-	eval("mknod", "/dev/lp2", "c", "6", "2");
 	eval("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
 	eval("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
 	eval("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
