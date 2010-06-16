@@ -77,6 +77,9 @@ void start_sysinit(void)
 	eval("mkdir", "/tmp/www");
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
+	eval("mknod", "/dev/lp0", "c", "6", "0");
+	eval("mknod", "/dev/lp1", "c", "6", "1");
+	eval("mknod", "/dev/lp2", "c", "6", "2");
 
 	unlink("/tmp/nvram/.lock");
 	eval("mkdir", "/tmp/nvram");

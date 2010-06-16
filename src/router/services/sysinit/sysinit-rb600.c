@@ -79,6 +79,9 @@ void start_sysinit(void)
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mknod", "/dev/ppp", "c", "108", "0");
+	eval("mknod", "/dev/lp0", "c", "6", "0");
+	eval("mknod", "/dev/lp1", "c", "6", "1");
+	eval("mknod", "/dev/lp2", "c", "6", "2");
 	eval("mkdir", "/tmp/www");
 	eval("mount", "-o", "remount,rw", "/dev/root");
 	unlink("/tmp/nvram/.lock");
