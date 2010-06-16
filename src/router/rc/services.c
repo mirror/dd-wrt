@@ -84,6 +84,9 @@ int start_services_main(int argc, char **argv)
 	void *handle = NULL;
 
 	nvram_set("qos_done", "0");
+#ifdef HAVE_P910ND
+	handle = start_service_nofree_f("printer", handle);
+#endif
 #ifdef HAVE_CPUTEMP
 	handle = start_service_nofree_f("hwmon", handle);
 #endif
@@ -187,6 +190,9 @@ int start_services_main(int argc, char **argv)
 int stop_services_main(int argc, char **argv)
 {
 	void *handle = NULL;
+#ifdef HAVE_P910ND
+	handle = stop_service_nofree("printer", handle);
+#endif
 
 	// stop_ses();
 #ifdef HAVE_AP_SERV
