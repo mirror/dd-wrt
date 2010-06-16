@@ -980,7 +980,7 @@ CONFIG_USB_OHCI_LITTLE_ENDIAN=y
 # USB Device Class drivers
 #
 # CONFIG_USB_ACM is not set
-# CONFIG_USB_PRINTER is not set
+CONFIG_USB_PRINTER=m
 
 #
 # NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
