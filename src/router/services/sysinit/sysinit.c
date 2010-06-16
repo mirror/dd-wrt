@@ -1948,6 +1948,17 @@ void start_drivers(void)
 			cprintf("loading printer\n");
 			insmod("printer");
 			insmod("usblp");
+			#ifdef HAVE_P910ND
+			sleep(2); // wait for printers to show up
+			FILE *test = fopen("/dev/usb/lp0","rb");
+			if (!test)
+			{
+			eval("p910nd","-f","/dev/lp0","0");
+			}else{
+			fclose(test);
+			eval("p910nd","-f","/dev/usb/lp0","0");
+			}
+			#endif
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else {
