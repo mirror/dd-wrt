@@ -174,11 +174,9 @@ void runStartup(char *folder, char *extension)
 	return;
 }
 
-
 #ifdef HAVE_BUFFALO
 
 extern void *getUEnv(char *name);
-
 
 static void buffalo_defaults(int force)
 {
@@ -189,28 +187,24 @@ static void buffalo_defaults(int force)
 			    getUEnv("DEF-p_wireless_ath0_11bg-authmode");
 			if (!mode)
 				return;
-			if (!strcmp(mode, "psk"))
-				{
+			if (!strcmp(mode, "psk")) {
 				nvram_set("ath0_akm", "psk psk2");
-				nvram_set("ath0_security_mode","psk psk2");
-				}
-			if (!strcmp(mode, "psk2"))
-				{
+				nvram_set("ath0_security_mode", "psk psk2");
+			}
+			if (!strcmp(mode, "psk2")) {
 				nvram_set("ath0_akm", "psk psk2");
-				nvram_set("ath0_security_mode","psk psk2");
-				}
+				nvram_set("ath0_security_mode", "psk psk2");
+			}
 		} else {
 			char *mode =
 			    getUEnv("DEF-p_wireless_ath0_11bg-authmode");
-			if (mode)
-				{
+			if (mode) {
 				nvram_set("ath0_akm", mode);
-				nvram_set("ath0_security_mode",mode);
-				}
-			else
+				nvram_set("ath0_security_mode", mode);
+			} else
 				return;
 		}
-		
+
 		char *crypto = getUEnv("DEF-p_wireless_ath0_11bg-crypto");
 		if (crypto)
 			nvram_set("ath0_crypto", crypto);
@@ -236,16 +230,16 @@ static void buffalo_defaults(int force)
 		}
 
 		char *region = getUEnv("region");
-		if(region == NULL) {
+		if (region == NULL) {
 			region = "US";
 		}
-		if(!strcmp(region, "US")) {
+		if (!strcmp(region, "US")) {
 			nvram_set("ath0_regdomain", "UNITED_STATES");
-		} else if(!strcmp(region, "EU")) {
+		} else if (!strcmp(region, "EU")) {
 			nvram_set("ath0_regdomain", "GERMANY");
-		} else if(!strcmp(region, "JP")) {
+		} else if (!strcmp(region, "JP")) {
 			nvram_set("ath0_regdomain", "JAPAN");
-		} else if(!strcmp(region, "AP")) {
+		} else if (!strcmp(region, "AP")) {
 			nvram_set("ath0_regdomain", "TAIWAN");
 		}
 
@@ -1948,17 +1942,19 @@ void start_drivers(void)
 			cprintf("loading printer\n");
 			insmod("printer");
 			insmod("usblp");
-			#ifdef HAVE_P910ND
-			sleep(2); // wait for printers to show up
-			FILE *test = fopen("/dev/usb/lp0","rb");
-			if (!test)
-			{
-			eval("p910nd","-f","/dev/lp0","0");
-			}else{
-			fclose(test);
-			eval("p910nd","-f","/dev/usb/lp0","0");
+#ifdef HAVE_P910ND
+			sleep(2);	// wait for printers to show up
+			FILE *test = fopen("/dev/usb/lp0", "rb");
+			if (!test) {
+				eval("mknod", "/dev/lp0", "c", "180", "0");
+				eval("mknod", "/dev/lp1", "c", "180", "1");
+				eval("mknod", "/dev/lp2", "c", "180", "2");
+				eval("p910nd", "-f", "/dev/lp0", "0");
+			} else {
+				fclose(test);
+				eval("p910nd", "-f", "/dev/usb/lp0", "0");
 			}
-			#endif
+#endif
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else {
