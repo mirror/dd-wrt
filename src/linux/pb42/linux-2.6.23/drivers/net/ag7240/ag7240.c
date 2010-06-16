@@ -1411,6 +1411,25 @@ ag7240_link_intr(int cpl, void *dev_id) {
 	return IRQ_HANDLED;
 }
 
+void ag7240_dma_reset(ag7240_mac_t *mac)
+{
+    uint32_t mask;
+
+    if(mac->mac_unit)
+        mask = AR7240_RESET_GE1_MAC;
+    else
+        mask = AR7240_RESET_GE0_MAC;
+
+    ar7240_reg_rmw_set(AR7240_RESET, mask);
+    mdelay(100);
+    ar7240_reg_rmw_clear(AR7240_RESET, mask);
+    mdelay(100);
+
+    ag7240_intr_disable_recv(mac);
+    schedule_work(&mac->mac_tx_timeout);
+}
+
+
 static int
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 ag7240_poll(struct napi_struct *napi, int budget)
@@ -1443,12 +1462,16 @@ ag7240_poll(struct net_device *dev, int *budget)
 #else
     dev->quota  -= work_done;
     *budget     -= work_done;
-    netif_rx_complete(dev);
     if (likely(ret == AG7240_RX_STATUS_DONE))
     {
-        ag7240_intr_enable_recv(mac);
+	netif_rx_complete(dev);
     }
 #endif
+    if(ret == AG7240_RX_DMA_HANG)
+    {
+        status = 0;
+        ag7240_dma_reset(mac);
+    }
     if (likely(ret == AG7240_RX_STATUS_NOT_DONE))
     {
         /*
@@ -1491,18 +1514,6 @@ process_pkts:
 
     ag7240_trc(status,"status");
 
-    /* Dont assert these bits if the DMA check has passed. The DMA
-     * check will clear these bits if a hang condition is detected
-     * on resetting the MAC.
-     */ 
-#ifdef CHECK_DMA_STATUS
-    if(mac->dma_check == 0) {
-        assert((status & AG7240_RX_STATUS_PKT_RCVD));
-        assert((status >> 16));
-    }
-    else
-	mac->dma_check = 0;
-#endif
     /*
     * Flush the DDR FIFOs for our gmac
     */
@@ -1519,8 +1530,13 @@ process_pkts:
 
         if (ag7240_rx_owned_by_dma(ds))
         {
-            assert(quota != iquota); /* WCL */
-            break;
+    	    break;
+/*            if(quota == iquota)
+            {
+                *work_done = quota = 0;
+                return AG7240_RX_DMA_HANG;
+            }
+            break;*/
         }
         ag7240_intr_ack_rx(mac);
 
@@ -1599,10 +1615,19 @@ process_pkts:
         ag7240_ring_incr(head);
     }
 
-    assert(iquota != quota);
+/*    if(quota == iquota)
+    {
+        *work_done = quota = 0;
+        return AG7240_RX_DMA_HANG;
+    }*/
     r->ring_head   =  head;
 
     rep = ag7240_rx_replenish(mac);
+/*    if(rep < 0)
+    {
+        *work_done =0 ;
+        return AG7240_RX_DMA_HANG;
+    }*/
 
     /*
     * let's see what changed while we were slogging.
@@ -1686,8 +1711,10 @@ ag7240_rx_replenish(ag7240_mac_t *mac)
 
         ag7240_trc(ds,"ds");
 
-        assert(!ag7240_rx_owned_by_dma(ds));
-
+        if(ag7240_rx_owned_by_dma(ds))
+    	{
+    	    return -1;
+    	}
         assert(!bf->buf_pkt);
 
         bf->buf_pkt         = ag7240_buffer_alloc();
@@ -1987,7 +2014,6 @@ ag7240_oom_timer(unsigned long data)
 #endif
 }
 
-#ifdef CHECK_DMA_STATUS
 static void
 ag7240_tx_timeout(struct net_device *dev)
 {
@@ -2005,9 +2031,9 @@ ag7240_tx_timeout_task(struct work_struct *work)
 {
     ag7240_mac_t *mac = container_of(work, ag7240_mac_t, mac_tx_timeout);
     ag7240_trc(mac,"mac");
-    check_for_dma_status(mac);
+    ag7240_stop(mac->mac_dev);
+    ag7240_open(mac->mac_dev);
 }
-#endif
 
 static void
 ag7240_get_default_macaddr(ag7240_mac_t *mac, u8 *mac_addr)
@@ -2193,9 +2219,7 @@ ag7240_init(void)
         * watchdog task
         */
 
-#ifdef CHECK_DMA_STATUS
         INIT_WORK(&mac->mac_tx_timeout, ag7240_tx_timeout_task);
-#endif
 
         dev = alloc_etherdev(0);
         if (!dev)
@@ -2218,9 +2242,7 @@ ag7240_init(void)
         dev->poll            =  ag7240_poll;
         dev->weight          =  AG7240_NAPI_WEIGHT;
 #endif
-#ifdef CHECK_DMA_STATUS
         dev->tx_timeout      =  ag7240_tx_timeout;
-#endif
         dev->priv            =  mac;
 
         ag7240_get_default_macaddr(mac, dev->dev_addr);
