@@ -1684,9 +1684,9 @@ void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 	if (!valid_choice(wp, value, v))
 		return;
 	if (atoi(value) == GMODE_AFTERBURNER) {
-		nvram_set("wl_lazywds", "0");
-		nvram_set("wl_wds", "");
-		nvram_set("wl_mode", "ap");
+		nvram_set("wl0_lazywds", "0");
+		nvram_set("wl0_wds", "");
+		nvram_set("wl0_mode", "ap");
 		/*
 		 * if(nvram_invmatch("security_mode", "disabled") &&
 		 * nvram_invmatch("security_mode", "wep")){
@@ -1702,13 +1702,13 @@ void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 	 * force certain wireless variables to fixed values 
 	 */
 	if (atoi(value) == GMODE_AFTERBURNER) {
-		if (nvram_invmatch("wl_auth_mode", "disabled") ||
+		if (nvram_invmatch("wl0_auth_mode", "disabled") ||
 #ifdef ABURN_WSEC_CHECK
-		    nvram_invmatch("wl_wep", "off") ||
+		    nvram_invmatch("wl0_wep", "off") ||
 #endif
-		    nvram_invmatch("wl_mode", "ap") ||
-		    nvram_invmatch("wl_lazywds", "0")
-		    || nvram_invmatch("wl_wds", "")) {
+		    nvram_invmatch("wl0_mode", "ap") ||
+		    nvram_invmatch("wl0_lazywds", "0")
+		    || nvram_invmatch("wl0_wds", "")) {
 			/*
 			 * notify the user 
 			 */
