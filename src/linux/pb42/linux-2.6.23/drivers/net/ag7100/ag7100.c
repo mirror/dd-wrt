@@ -1696,8 +1696,8 @@ process_pkts:
     }
 #endif
     r->ring_head   =  head;
-#if 0
     rep = ag7100_rx_replenish(mac);
+#if 0
     if(rep < 0)
     {
         *work_done =0 ;
