@@ -253,6 +253,30 @@ void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp,
 	}
 }
 
+static void save(FILE *fp,char *p,int not)
+{
+int i;
+	while (strlen(p) != 0) {
+		int len = strlen(p);
+		if (len>2 && (!!strncmp(p,"wl_",0))==not)
+		    {
+			p += len + 1;
+			continue;
+		    }
+		for (i = 0; i < len; i++)
+			if (p[i] == '=')
+				p[i] = 0;
+		char *name = p;
+		fputc(strlen(name), fp);
+		fwrite(name,1,strlen(name),fp);
+		char *val = nvram_safe_get(name);
+		fputc(strlen(val) & 255, fp);
+		fputc(strlen(val) >> 8, fp);
+		fwrite(val,1,strlen(val),fp);
+		p += len + 1;
+	}
+
+}
 void nv_file_out(struct mime_handler *handler, char *path, webs_t wp,
 		 char *query)
 {
@@ -283,60 +307,11 @@ void nv_file_out(struct mime_handler *handler, char *path, webs_t wp,
 	fputc(backupcount & 255, fp);	// high byte
 	fputc(backupcount >> 8, fp);	// low byte
 	//first save all "wl_" prefixed parameters
-	while (strlen(p) != 0) {
-		int len = strlen(p);
-		if (len>2 && strncmp(p,"wl_",0))
-		    {
-			p += len + 1;
-			continue;
-		    }
-		for (i = 0; i < len; i++)
-			if (p[i] == '=')
-				p[i] = 0;
-		char *name = p;
-
-		fputc(strlen(name), fp);
-
-		for (i = 0; i < strlen(name); i++)
-			fputc(name[i], fp);
-		char *val = nvram_safe_get(name);
-
-		fputc(strlen(val) & 255, fp);
-		fputc(strlen(val) >> 8, fp);
-		for (i = 0; i < strlen(val); i++)
-			fputc(val[i], fp);
-
-		p += len + 1;
-	}
+	save(fp,p,1);
 	nvram_getall(buf, NVRAM_SPACE);
-	char *p = buf;
+	p = buf;
 	//now save anything else (this should prevent problems with backups, since wl0 parameters are getting higher priority now which solves restore problems with wds etc.
-	while (strlen(p) != 0) {
-		int len = strlen(p);
-		if (len>2 && !strncmp(p,"wl_",0))
-		    {
-			p += len + 1;
-			continue;
-		    }
-		for (i = 0; i < len; i++)
-			if (p[i] == '=')
-				p[i] = 0;
-		char *name = p;
-
-		fputc(strlen(name), fp);
-
-		for (i = 0; i < strlen(name); i++)
-			fputc(name[i], fp);
-		char *val = nvram_safe_get(name);
-
-		fputc(strlen(val) & 255, fp);
-		fputc(strlen(val) >> 8, fp);
-		for (i = 0; i < strlen(val); i++)
-			fputc(val[i], fp);
-
-		p += len + 1;
-	}
-	
+	save(fp,p,0);	
 	free(buf);
 	fclose(fp);
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, query, "nvrambak.bin");
