@@ -258,7 +258,7 @@ static void save(FILE *fp,char *p,int not)
 int i;
 	while (strlen(p) != 0) {
 		int len = strlen(p);
-		if (len>2 && (!!strncmp(p,"wl_",0))==not)
+		if (len>2 && (!!strncmp(p,"wl_",3))==not)
 		    {
 			p += len + 1;
 			continue;
