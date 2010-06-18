@@ -536,6 +536,9 @@ int internal_getRouterBrand()
 #elif HAVE_WG302
 	setRouter("Netgear WG302v2");
 	return ROUTER_BOARD_GATEWORX;
+#elif HAVE_PRONGHORN
+	setRouter("ADI Engineering Pronghorn Metro");
+	return ROUTER_BOARD_GATEWORX;
 #elif HAVE_GATEWORX
 	char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
 												 */
