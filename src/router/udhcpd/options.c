@@ -178,6 +178,9 @@ int add_simple_option(unsigned char *optionptr, unsigned char code, u_int32_t da
 		case 2: *u16 = data; break;
 		case 4: *u32 = data; break;
 	}
+	if (__BYTE_ORDER == __BIG_ENDIAN) 
+		aligned <<= 8 * (4 - len);
+
 	memcpy(option + 2, &aligned, length);
 	return add_option_string(optionptr, option);
 }
