@@ -582,7 +582,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ppp_keepalive", "0", 0},	/* Restore link automatically */
 	{"ppp_demand", "0", 0},	/* Dial on demand */
 	{"ppp_redialperiod", "30", 0},	/* Redial Period (seconds) */
-	{"ppp_mru", "1500", 0},	/* Negotiate MRU to this value */
 	{"ppp_service", "", 0},	/* PPPoE service name */
 	{"ppp_ac", "", 0},	/* PPPoE access concentrator name */
 	{"ppp_static", "0", 0},	/* Enable / Disable Static IP */
