@@ -751,18 +751,6 @@ static int spiflash_probe(struct platform_device *pdev)
 	int compex=0;
 		if (!strncmp((char*)(buf+0x26da),"myloram.bin",11))
 		    {
-/*static struct mtd_partition dir_parts[] = {
-        { name: "RedBoot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
-        { name: "linux", offset: 0x30000, size: 0x390000, },
-        { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
-        { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
-        { name: "nvram", offset: 0x3d0000, size: 0x10000, },
-        { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
-        { name: "board_config", offset: 0x3f0000, size: 0x10000, },
-        { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
-        { name: NULL, },
-};
-*/
 		    printk(KERN_EMERG "Compex device detected\n");
 		    dir_parts[0].size=0x20000;
 		    dir_parts[0].offset=0;
