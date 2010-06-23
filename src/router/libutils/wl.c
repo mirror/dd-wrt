@@ -838,6 +838,8 @@ int wifi_gettxpower(char *ifname)
 	poweroffset = 8;
 #elif HAVE_EOC2610
 	poweroffset = 8;
+#elif HAVE_EOC5611
+	poweroffset = 6;	//?? guess
 #elif HAVE_EOC5610
 	poweroffset = 0;	// does not need a offset, internally mapped
 #elif HAVE_NS2
