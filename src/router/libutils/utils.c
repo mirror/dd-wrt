@@ -809,6 +809,9 @@ int internal_getRouterBrand()
 #elif HAVE_EOC1650
 	setRouter("Senao EOC-1650");
 	return ROUTER_BOARD_FONERA;
+#elif HAVE_EOC2611
+	setRouter("Senao EOC-2611");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_EOC2610
 #ifdef HAVE_TRIMAX
 	setRouter("TMAX-1200");
@@ -963,6 +966,12 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_PB42;
 #elif HAVE_NS2
 	setRouter("Ubiquiti NanoStation 2");
+	return ROUTER_BOARD_LS2;
+#elif HAVE_EOC5510
+	setRouter("Senao EOC-5510");
+	return ROUTER_BOARD_LS2;
+#elif HAVE_EOC5611
+	setRouter("Senao EOC-5611");
 	return ROUTER_BOARD_LS2;
 #elif HAVE_EOC5610
 	setRouter("Senao EOC-5610");

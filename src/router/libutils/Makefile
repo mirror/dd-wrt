@@ -363,6 +363,9 @@ endif
 ifeq ($(CONFIG_EOC2610),y)
   CFLAGS += -DHAVE_EOC2610
 endif
+ifeq ($(CONFIG_EOC2611),y)
+  CFLAGS += -DHAVE_EOC2611
+endif
 ifeq ($(CONFIG_EOC1650),y)
   CFLAGS += -DHAVE_EOC1650
 endif
@@ -392,6 +395,12 @@ ifeq ($(CONFIG_NS5),y)
 endif
 ifeq ($(CONFIG_EOC5610),y)
   CFLAGS += -DHAVE_EOC5610
+endif
+ifeq ($(CONFIG_EOC5510),y)
+  CFLAGS += -DHAVE_EOC5510
+endif
+ifeq ($(CONFIG_EOC5611),y)
+  CFLAGS += -DHAVE_EOC5611
 endif
 ifeq ($(CONFIG_NS3),y)
   CFLAGS += -DHAVE_NS3
