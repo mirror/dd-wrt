@@ -45,9 +45,8 @@ char *get_wshaper_dev(void)
 
 static char *get_mtu_val(void)
 {
-	if (nvram_match("wshaper_dev", "WAN")
-	    && nvram_match("wan_proto", "pppoe"))
-		return nvram_safe_get("ppp_mtu");
+	if (nvram_match("wshaper_dev", "WAN") && !strcmp(get_wshaper_dev(),"ppp0"))
+		return nvram_safe_get("wan_mtu");
 	else if (nvram_match("wshaper_dev", "WAN")) {
 		if (nvram_match("wan_mtu", "1500"))
 			return getMTU(get_wshaper_dev());
