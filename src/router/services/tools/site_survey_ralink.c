@@ -163,7 +163,7 @@ int site_survey_main(int argc, char *argv[])
 		    if (b2[c]!=0x20)
 			break;
 		    }
-		if (c)
+		if (c && c<32)
 		    {
 		    for (i=0;i<32-c;i++)
 			b2[i]=b2[i+c];
