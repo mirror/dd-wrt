@@ -150,11 +150,23 @@ int site_survey_main(int argc, char *argv[])
 		fread(b2, 33, 1, scan);
 		b2[32] = 0;
 		b2[strlen(b2)] = 0;
+		//kill trailing blanks
 		for (c=0;c<32;c++)
 		    {
 		    if (b2[31-c]!=0x20)
 			break;
 		    b2[31-c]=0;
+		    }
+		//skip leading blanks
+		for (c=0;c<32;c++)
+		    {
+		    if (b2[c]!=0x20)
+			break;
+		    }
+		if (c)
+		    {
+		    for (i=0;i<32-c;i++)
+			b2[i]=b2[i+c];
 		    }
 		int ret = fscanf(scan, "%s %s %s %s %s", b3, b4, b5, b6, b7);	//skip second line
 //              fprintf(stderr,"%d\n",ret);
