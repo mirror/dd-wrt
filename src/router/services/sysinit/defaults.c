@@ -2325,13 +2325,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_dh", "", 0},
 	{"openvpn_tlsauth", "", 0},
 	{"openvpn_onwan", "0", 0},
+#endif
 #ifdef HAVE_KODATA
 	{"newhttp_username", "bJ/GddyoJuiU2", 0},
 	{"newhttp_passwd", "bJDLObifZlIRQ", 0},
-#else
-	{"newhttp_username", "", 0},
-	{"newhttp_passwd", "bJxJZz5DYRGxI", 0},
-#endif
 #endif
 #ifdef HAVE_34TELECOM
 	{"newhttp_passwd", "hdslklas9a", 0},
