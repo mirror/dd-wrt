@@ -13,7 +13,7 @@ LDFLAGS += -lm
 endif
 endif
 
-BCFLAGS	= $(COPTS) -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
+BCFLAGS	= $(COPTS) -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd 
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 BCFLAGS  += -fpic -I$(TOP)/services/include
 
@@ -26,7 +26,7 @@ HCFLAGS  += -fpic -I$(TOP)/services/include
 
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
        bridgetools.o igmp.o wpa.o vlantagging.o httpd.o setuserpw.o anchorfree.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o radvd.o	\
-       pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o apserv.o aoss.o processmanager.o
+       pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o apserv.o aoss.o processmanager.o utils.o
 
 
 ifeq ($(CONFIG_WHRAG108),y)
@@ -967,7 +967,7 @@ endif
 CFLAGS += $(CFLAGS_EXTRA)
 HCFLAGS += $(CFLAGS_EXTRA)
 
-vpath %.c sysinit sysinit/switchlib services tools networking $(TOP)/shared $(SRCBASE)/rts/src
+vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/shared $(SRCBASE)/rts/src
 
 all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
