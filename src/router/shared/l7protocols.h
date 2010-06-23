@@ -52,13 +52,13 @@ l7filters filters_list[] = {
 	 "bittorrent", 1},	// Bittorrent - P2P filesharing / publishing
 	// tool - http://www.bittorrent.com
 	{
-	 "bt", 1},
+	 "bt", 0},
 	{
-	 "bt1", 1},
+	 "bt1", 0},
 	{
-	 "bt2", 1},
+	 "bt2", 0},
 	{
-	 "bt3", 1},
+	 "bt3", 0},
 	{
 	 "chikka", 0},		// Chikka - SMS service which can be used
 	// without phones - http://chikka.com
