@@ -1554,85 +1554,6 @@ int softkill(char *name)
 	return 0;
 }
 
-void getLANMac(char *newmac)
-{
-	strcpy(newmac, nvram_safe_get("et0macaddr"));
-#ifndef HAVE_BUFFALO
-
-	if (nvram_match("port_swap", "1")) {
-		if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
-			// maybe
-			// et1macaddr 
-			// not there?
-		{
-			strcpy(newmac, nvram_safe_get("et1macaddr"));
-		} else {
-			MAC_ADD(newmac);	// et0macaddr +1
-		}
-	}
-#endif
-	return;
-}
-
-void getWirelessMac(char *newmac)
-{
-#ifdef HAVE_BUFFALO
-	strcpy(newmac, nvram_safe_get("il0macaddr"));
-#else
-	// if (strlen(nvram_safe_get ("il0macaddr")) != 0)
-	// {
-	// strcpy (newmac, nvram_safe_get ("il0macaddr"));
-	// }
-	// else
-	{
-		if (nvram_match("port_swap", "1")) {
-			if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
-				// maybe
-				// et1macaddr 
-				// not there?
-			{
-				strcpy(newmac, nvram_safe_get("et1macaddr"));
-				MAC_ADD(newmac);	// et1macaddr +2
-				MAC_ADD(newmac);
-			} else {
-				strcpy(newmac, nvram_safe_get("et0macaddr"));
-				MAC_ADD(newmac);	// et0macaddr +3
-				MAC_ADD(newmac);
-				MAC_ADD(newmac);
-			}
-		} else {
-			strcpy(newmac, nvram_safe_get("et0macaddr"));
-			MAC_ADD(newmac);	// et0macaddr +2
-			MAC_ADD(newmac);
-		}
-	}
-#endif
-	return;
-}
-
-void getWANMac(char *newmac)
-{
-	strcpy(newmac, nvram_safe_get("et0macaddr"));
-#if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
-	if (nvram_invmatch("wan_proto", "disabled")) {
-		MAC_ADD(newmac);	// et0macaddr +1
-
-		if (nvram_match("port_swap", "1")) {
-			if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
-				// maybe
-				// et1macaddr 
-				// not there?
-			{
-				strcpy(newmac, nvram_safe_get("et1macaddr"));
-				MAC_ADD(newmac);	// et1macaddr +1 
-			} else {
-				MAC_ADD(newmac);	// et0macaddr +2
-			}
-		}
-	}
-#endif
-	return;
-}
 
 int getmask(char *nmask)
 {
@@ -1791,34 +1712,6 @@ int ISDIGIT(char *value, int flag)
 		}
 	}
 	return tag;
-}
-
-void addAction(char *action)
-{
-	char *actionstack = "";
-	char *next;
-	char service[80];
-	if (action == NULL || strlen(action) == 0)
-		return;
-	char *services = nvram_safe_get("action_service");
-
-	foreach(service, services, next) {
-		if (!strcmp(service, action)) {
-			return;
-		}
-	}
-	if (strlen(services) > 0) {
-		actionstack = safe_malloc(strlen(services) + strlen(action) + 2);
-		memset(actionstack, 0, strlen(services) + strlen(action) + 2);
-		strcpy(actionstack, action);
-		strcat(actionstack, " ");
-		strcat(actionstack, nvram_safe_get("action_service"));
-		nvram_set("action_service", actionstack);
-		free(actionstack);
-	} else {
-		nvram_set("action_service", action);
-	}
-
 }
 
 void rep(char *in, char from, char to)
