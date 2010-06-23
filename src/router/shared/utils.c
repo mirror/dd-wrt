@@ -1792,3 +1792,32 @@ int searchfor(FILE * fp, char *str, int scansize)
 	free(buffer);
 	return -1;
 }
+
+void addAction(char *action)
+{
+	char *actionstack = "";
+	char *next;
+	char service[80];
+	if (action == NULL || strlen(action) == 0)
+		return;
+	char *services = nvram_safe_get("action_service");
+
+	foreach(service, services, next) {
+		if (!strcmp(service, action)) {
+			return;
+		}
+	}
+	if (strlen(services) > 0) {
+		actionstack = safe_malloc(strlen(services) + strlen(action) + 2);
+		memset(actionstack, 0, strlen(services) + strlen(action) + 2);
+		strcpy(actionstack, action);
+		strcat(actionstack, " ");
+		strcat(actionstack, nvram_safe_get("action_service"));
+		nvram_set("action_service", actionstack);
+		free(actionstack);
+	} else {
+		nvram_set("action_service", action);
+	}
+
+}
+
