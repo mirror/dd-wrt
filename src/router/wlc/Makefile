@@ -3,7 +3,7 @@ CFLAGS	= -I$(SRCBASE)/include.v24 -Wall
 else
 CFLAGS	= -I$(SRCBASE)/include.v23 -Wall 
 endif
-LDFLAGS = -L../shared -L../nvram -lshared -lnvram
+LDFLAGS = -L../libutils -L../nvram -lutils -lnvram
 
 
 all: wlc
