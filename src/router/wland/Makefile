@@ -9,7 +9,7 @@ endif
 CFLAGS	= -I../rc -I$(TOP)/shared -I$(SRCBASE)/include -Wall -I$(SRCBASE)/
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS	+= -s -Os 
-LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L$(SRCBASE)/router/libnet/lib -lnet -L$(TOP)/matrixssl/src -lmatrixssl  -lcrypt 
+LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/utils -L$(INSTALLDIR)/shared/usr/lib -lutils -L$(SRCBASE)/router/libnet/lib -lnet -L$(TOP)/matrixssl/src -lmatrixssl  -lcrypt 
 
 OBJS := ../rc/wland.o
 
