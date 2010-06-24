@@ -216,6 +216,12 @@ endif
 ifeq ($(CONFIG_MR3202A),y)
 	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WPE53G),y)
+	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_NP25G),y)
+	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_MR3201A),y)
 	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
 endif
@@ -356,7 +362,7 @@ distclean mrproper: $(obj-distclean) clean_target
 optimize-lib:
 #	../../tools/optimize_lib.sh netconf/ libnetconf.so libnetconf.a libnetconf_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libnetconf.so
 ifeq ($(CONFIG_SHARED),y)
-	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshared.so
+#	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshared.so
 endif
 #	../../tools/optimize_lib.sh openssl/ libssl.so.0.9.8 libssl.a libssl_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libssl.so.0.9.8
 #	../../tools/optimize_lib.sh openssl/ libcrypto.so.0.9.8 libcrypto.a libcrypto_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libcrypto.so.0.9.8
@@ -448,6 +454,9 @@ ifneq ($(CONFIG_JFFS2),y)
 endif
 ifneq ($(CONFIG_MMC),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
 endif
 
 
@@ -552,6 +561,10 @@ ifeq ($(CONFIG_DIR300),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.dir300 bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.dir300
 endif
+ifeq ($(CONFIG_WPE53G),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.wpe53g bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.wpe53g
+endif
 ifeq ($(CONFIG_WRT54G2),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.wrt54g2 bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.wrt54g2
@@ -574,6 +587,10 @@ ifeq ($(CONFIG_WRK54G),y)
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.wrk
 endif
 ifeq ($(CONFIG_MR3202A),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.mr3202a bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.mr3202a
+endif
+ifeq ($(CONFIG_NP25G),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.mr3202a bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.mr3202a
 endif
@@ -683,6 +700,9 @@ endif
 ifeq ($(CONFIG_NP25G),y)
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/np25g-firmware.bin $(ARCH)-uclibc/lzma_vmlinus.np25g.gz
 endif
+ifeq ($(CONFIG_WPE53G),y)
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/np25g-firmware.bin $(ARCH)-uclibc/vmlinux.wpe53g
+endif
 ifeq ($(CONFIG_MR3201A),y)
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/mr3201a-firmware.bin $(ARCH)-uclibc/vmlinux.mr3201a
 endif
@@ -761,6 +781,12 @@ ifeq ($(CONFIG_NP25G),y)
 		-p0x20000:0x3d0000:alp:0x80041000 \
 		-b0x20000:0x3d0000::$(ARCH)-uclibc/vmlinux.mr3202a \
 		$(ARCH)-uclibc/compex-firmware-np25g.bin
+endif
+ifeq ($(CONFIG_WPE53G),y)
+	-tools/compex/mkmylofw -B WPE53G \
+		-p0x20000:0x3d0000:alp:0x80041000 \
+		-b0x20000:0x3d0000::$(ARCH)-uclibc/vmlinux.wpe53g \
+		$(ARCH)-uclibc/compex-firmware-wpe53g.bin
 endif
 ifeq ($(CONFIG_RTG32),y)
 	dd if=$(ARCH)-uclibc/rt32_preloader.bin of=$(ARCH)-uclibc/rt32_preloader.align bs=65536 conv=sync
