@@ -20,8 +20,8 @@ endif
 #
 # Paths
 #
-SER_MODULES:=sl tm rr maxfwd usrloc registrar dbtext textops nathelper
-SER_MODULE_FILES:=$(foreach module,$(SER_MODULES),ser/modules/$(module)/$(module).so)
+OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
+OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
 OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic no-engines
 
@@ -56,7 +56,7 @@ ifeq ($(ARCH),mips)
 export LINUXDIR := $(SRCBASE)/linux/brcm63xx/linux-2.6.17
 endif
 ifeq ($(ARCH),i386)
-export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.20
+export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.23
 endif
 ifeq ($(ARCH),armeb)
 export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.17
@@ -66,7 +66,7 @@ export LINUXDIR := $(SRCBASE)/kernel/rb500/linux-2.6.17-rc5
 endif
 
 #export KERNELRELEASE = $(shell cat $(LINUXDIR)/.kernelrelease 2> /dev/null)
-export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+export KRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 
 #ifeq ($(PLATFORM),mipsel)
 #export CROSS_COMPILE := mipsel-linux-
@@ -84,7 +84,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #export CFLAGS += -DBCMWPA2 
 #endif
 
-export BASEOPT:=-O2
+export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
@@ -101,6 +101,7 @@ export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -funit-at-a-time
 endif
 
 export CC := $(CROSS_COMPILE)gcc
+export CXX := $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
@@ -146,6 +147,15 @@ build_date:
 kernel:
         # Also build kernel
 	# Also build kernel
+ifeq ($(CONFIG_ISOFS),y)
+	cp $(LINUXDIR)/.config_isofs $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
+endif
+	make -C $(LINUXDIR) oldconfig
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
@@ -162,14 +172,22 @@ kernel:
 #	cp lzma-loader/rb500/lzma.elf $(ARCH)-uclibc/vmlinux
 
 	
-clean: $(obj-clean)
+realclean: $(obj-clean)
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
-	rm -rf $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
-	rm -rf $(ARCH)-uclibc/root.grub
-	rm -f $(ARCH)-uclibc/*
-#	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
+
+	
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-clean madwifi_mimo-clean busybox-clean	
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
 
 clean_target:
 	#umount $(TARGETDIR)
@@ -188,7 +206,7 @@ distclean mrproper: $(obj-distclean) clean_target
 
 optimize-lib:
 #	../../tools/optimize_lib.sh netconf/ libnetconf.so libnetconf.a libnetconf_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libnetconf.so
-	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/lib/libshared.so
+#	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshared.so
 #	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
 	../../tools/optimize_lib.sh lib.i386/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
 #	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
@@ -240,7 +258,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
 	fi
 ifeq ($(CONFIG_MADWIFI),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
+	rm -rf $(TARGETDIR)/lib/modules/$(KRELEASE)/kernel/drivers/net/wl
 endif
 #	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 #	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
@@ -278,8 +296,8 @@ endif
 #	cp adm6996/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
 #endif
 
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/source
 	
 	
 	
@@ -312,6 +330,7 @@ endif
 	./strip_libs.sh $(ARCH)
 
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -le
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -b 262144 -nopad
 	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	cd grub && ./configure --host=i386-linux --target=i386-linux LDFLAGS="-static" CFLAGS="-O2"
 	make -C grub install DESTDIR=$(INSTALLDIR)/grub	
@@ -328,6 +347,7 @@ endif
 	PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image 3 $(ARCH)-uclibc/root.grub 9 $(ARCH)-uclibc/root.fs 16
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin
+
 #	mkdir -p $(TARGETDIR)/boot/grub
 #	cp $(INSTALLDIR)/grub/usr/local/lib/grub/i386-pc/stage2_eltorito $(TARGETDIR)/boot/grub
 #	mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot  -boot-load-size 4 -boot-info-table -o grub.iso $(TARGETDIR)
