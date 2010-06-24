@@ -2480,6 +2480,10 @@ static void save_prefix(webs_t wp, char *prefix)
 {
 	char n[80];
 
+#ifdef HAVE_IFL
+	copytonv(wp, "%s_label", prefix);
+	copytonv(wp, "%s_note", prefix);
+#endif
 #ifdef HAVE_MADWIFI
 	char sifs[80];
 	char turbo[80];
