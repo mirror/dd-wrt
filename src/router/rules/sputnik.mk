@@ -5,6 +5,7 @@ sputnik-checkout:
 
 sputnik-update:
 	svn update $(TOP)/sputnik/src
+	cp $(TOP)/sputnik/src/Makefile.build $(TOP)/sputnik/Makefile
 
 
 sputnik: shared nvram wireless-tools
