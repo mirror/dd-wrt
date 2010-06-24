@@ -550,20 +550,6 @@ char *get_complete_lan_ip(char *ip)
 	return ipaddr;
 }
 
-int get_ppp_pid(char *file)
-{
-	char buf[80];
-	int pid = -1;
-
-	if (file_to_buf(file, buf, sizeof(buf))) {
-		char tmp[80], tmp1[80];
-
-		snprintf(tmp, sizeof(tmp), "/var/run/%s.pid", buf);
-		file_to_buf(tmp, tmp1, sizeof(tmp1));
-		pid = atoi(tmp1);
-	}
-	return pid;
-}
 
 /*
  * =====================================================================================

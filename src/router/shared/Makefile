@@ -443,18 +443,10 @@ CFLAGS += -DHAVE_MATRIXSSL
 endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: libshared.so libshared.a
-#	gcc -o defaults $(HFLAGS) defaults.c
-#	./defaults
+all: 
+	@true
 
 install: all
-ifeq ($(CONFIG_XSCALE),y)
-	install -d $(INSTALLDIR)/shared/lib
-	install -m 755 libshared.so $(INSTALLDIR)/shared/lib
-else
-	install -d $(INSTALLDIR)/shared/usr/lib
-	install -m 755 libshared.so $(INSTALLDIR)/shared/usr/lib
-endif
 
 clean:
 #	rm -f countrycode/countrycode_$(ARCH).o
