@@ -3489,7 +3489,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				  nvram_safe_get(wl_macaddr));
 		websWrite(wp, "]</legend>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
-#ifndef HAVE_BUFFALO
+#ifndef HAVE_EASY_WIRELESS_CONFIG
 		websWrite(wp,
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
 
@@ -3551,7 +3551,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 //              showRadio(wp, "wl_adv.label18", wmm);
 #endif
 
-#else				// start BUFFALO
+#else				// start EASY_WIRELESS_SETUP
 
 // wireless mode
 		char wl_mode[16];
@@ -3602,7 +3602,17 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 #endif
 
-// BUFFALO Advanced
+#ifdef HAVE_IFL
+// label
+		char wl_label[16];
+		sprintf(wl_label, "%s_label", var);
+		websWrite(wp,
+			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_label)</script></div><input type=\"text\" name=\"%s\" value=\"%s\" maxlength=\"20\"></div>\n",
+			  wl_label, nvram_safe_get(wl_label));
+		
+#endif
+
+// WIRELESS Advanced
 		char advanced_label[32];
 		char maskvar[32];
 		strcpy(maskvar, var);
@@ -3621,6 +3631,15 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  advanced_label,
 			  websGetVar(wp, advanced_label,
 				     NULL) ? "" : " style=\"display: none;\"");
+
+#ifdef HAVE_IFL
+
+	char wl_info[16];
+	sprintf(wl_info, "%s_info", var);
+	websWrite(wp,
+		  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_info)</script></div><textarea name=\"%s\" cols=\"60\" rows=\"3\">%s</textarea></div>\n",
+		  wl_info, nvram_safe_get(wl_info));
+#endif
 
 #ifdef HAVE_MADWIFI
 //      sprintf( wl_chanshift, "%s_chanshift", var );
@@ -3667,7 +3686,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #else
 		showbridgesettings(wp, var, 1, 0);
 #endif
-#ifdef HAVE_BUFFALO
+#ifdef HAVE_EASY_WIRELESS_CONFIG
 		websWrite(wp, "</div>\n");
 #endif
 		websWrite(wp, "</fieldset><br />\n");
@@ -3786,7 +3805,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(wl_macaddr));
 	char power[16];
 
-#ifndef HAVE_BUFFALO
+#ifndef HAVE_EASY_WIRELESS_CONFIG
 	// char maxpower[16];
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
@@ -4611,7 +4630,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// ACKnot working
 
 	sprintf(power, "%s_distance", prefix);
-	websWrite(wp, "<br />\n");
+	//websWrite(wp, "<br />\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
@@ -4669,6 +4688,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			// || nvram_match ("ath0_mode", "wdssta"))
 			// showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
+
 #ifdef HAVE_REGISTER
 			int cpeonly = iscpe();
 #else
@@ -4971,7 +4991,18 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			  "");
 		websWrite(wp, "</div>\n");
 	}
-// BUFFALO Advanced
+
+#ifdef HAVE_IFL
+// label
+		char wl_label[16];
+		sprintf(wl_label, "%s_label", prefix);
+		websWrite(wp,
+			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_label)</script></div><input type=\"text\" name=\"%s\" value=\"%s\" maxlength=\"20\"></div>\n",
+			  wl_label, nvram_safe_get(wl_label));
+		
+#endif
+
+// WIRELESS Advanced
 	char advanced_label[32];
 	sprintf(advanced_label, "%s_wl_advanced", prefix);
 	websWrite(wp,
@@ -4987,6 +5018,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  advanced_label,
 		  websGetVar(wp, advanced_label,
 			     NULL) ? "" : " style=\"display: none;\"");
+#ifdef HAVE_IFL
+
+	char wl_info[16];
+	sprintf(wl_info, "%s_info", prefix);
+	websWrite(wp,
+		  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_info)</script></div><textarea name=\"%s\" cols=\"60\" rows=\"3\">%s</textarea></div>\n",
+		  wl_info, nvram_safe_get(wl_info));
+#endif
+
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOCOUNTRYSEL
 	char wl_regdomain[16];
@@ -5334,7 +5374,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// ACKnot working
 
 	sprintf(power, "%s_distance", prefix);
-	websWrite(wp, "<br />\n");
+	//websWrite(wp, "<br />\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
