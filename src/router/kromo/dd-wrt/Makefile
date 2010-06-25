@@ -545,6 +545,8 @@ endif
 ifneq ($(CONFIG_POKER),y)
 	rm -f $(INSTALLDIR)/www/Poker.asp
 	rm -f $(INSTALLDIR)/www/Poker.live.asp
+	rm -f $(INSTALLDIR)/www/PokerEdit.asp
+	rm -f $(INSTALLDIR)/www/PokerEdit.live.asp
 endif
 ifneq ($(CONFIG_WOL),y)
 	rm -f $(INSTALLDIR)/www/Wol.asp
