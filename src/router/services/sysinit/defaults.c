@@ -197,6 +197,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lan_ipaddr", "192.168.1.4", 0},	/* LAN IP address */
 #elif HAVE_SPUTNIK
 	{"lan_ipaddr", "192.168.180.1", 0},	/* LAN IP address */
+#elif HAVE_BKM
+	{"lan_ipaddr", "192.168.42.1", 0},	/* LAN IP address */
+	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
+	{"ath1_regdomain", "GERMANY", 0},	/* LAN IP address */
+	{"ath2_regdomain", "GERMANY", 0},	/* LAN IP address */
+	{"ath3_regdomain", "GERMANY", 0},	/* LAN IP address */
 #else
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #endif
@@ -553,6 +559,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_passwd", "4DC5smu4lEiiQ", 0},	/* Password */
 #elif HAVE_ERC
 	{"http_passwd", "$1$mayB28Aa$pV0QnPSLwtuyNwtlfavvT0", 0},
+#elif HAVE_BKM
+	{"http_passwd", "$1$sur0onKC$Ltnjj7PBVQtmVTNYPb5XF0", 0},
 #else
 	{"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
@@ -664,7 +672,9 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #elif HAVE_TMK
 	{"wl_ssid", "KMT", 0},	/* Service set ID (network name) */
-#elif HAVE_TMK
+#elif HAVE_BKM
+	{"wl_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
+#elif HAVE_ERC
 	{"wl_ssid", "ERC", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
@@ -711,6 +721,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_TMK)
 	{"wl0_ssid", "KMT", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "KMT", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_BKM)
+	{"wl0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_ERC)
 	{"wl0_ssid", "ERC", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "ERC", 0},	/* Service set ID (network name) */
@@ -1194,6 +1207,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "WDSL-Modem XXX", 0},
 #elif  HAVE_TMK
 	{"router_name", "KMT-WAS", 0},
+#elif  HAVE_BKM
+	{"router_name", "BKM-HSDL", 0},
 #elif  HAVE_ERC
 	{"router_name", "ServiceGaterouter", 0},
 #else
