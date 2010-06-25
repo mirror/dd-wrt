@@ -185,6 +185,11 @@ endif
 ifeq ($(CONFIG_FREERADIUS),y)
 CFLAGS += -DHAVE_FREERADIUS
 endif
+ifeq ($(CONFIG_POKER),y)
+CFLAGS += -DHAVE_POKER
+VISOBJS += poker.o
+WEBSOBJS += webspoker.o
+endif
 ifeq ($(CONFIG_PICO5),y)
 CFLAGS += -DHAVE_PICO5
 endif
@@ -820,7 +825,7 @@ endif
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
-validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o $(REGOBJS)
+validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o $(WEBSOBJS) $(REGOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
 
 visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o aoss.o $(VISOBJS) $(REGOBJS2)
