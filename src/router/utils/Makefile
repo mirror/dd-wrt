@@ -94,11 +94,7 @@ endif
 
 
 clean:
-ifeq ($(CONFIG_BUFFALO),y)
-	make -C src clean
-else
 	if test -e "src/Makefile"; then make -C src clean; fi
-endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
 	make -C wprobe clean
