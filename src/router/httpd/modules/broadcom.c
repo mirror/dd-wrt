@@ -1179,7 +1179,11 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_POKER
 	{"Poker", "add_poker_user", "", 0, REFRESH, "add_poker_user"},
 	{"Poker", "del_poker_user", "", 0, REFRESH, "del_poker_user"},
-	{"Poker", "save_radius_user", "", 0, REFRESH, "save_poker_user"},
+	{"Poker", "save_poker_user", "", 0, REFRESH, "save_poker_user"},
+	{"PokerEdit", "poker_loaduser", "", 0, REFRESH, "poker_loaduser"},
+	{"PokerEdit", "poker_checkout", "", 0, REFRESH, "poker_checkout"},
+	{"PokerEdit", "poker_buy", "", 0, REFRESH, "poker_buy"},
+	{"PokerEdit", "poker_back", "", 0, REFRESH, "poker_back"},
 #endif
 #ifdef HAVE_BONDING
 	{"Networking", "add_bond", "", 0, REFRESH, "add_bond"},
