@@ -1176,6 +1176,11 @@ static struct gozila_action gozila_actions[] = {
 	 "del_radius_client"},
 	{"FreeRadius", "save_radius_user", "", 0, REFRESH, "save_radius_user"},
 #endif
+#ifdef HAVE_POKER
+	{"Poker", "add_poker_user", "", 0, REFRESH, "add_poker_user"},
+	{"Poker", "del_poker_user", "", 0, REFRESH, "del_poker_user"},
+	{"Poker", "save_radius_user", "", 0, REFRESH, "save_poker_user"},
+#endif
 #ifdef HAVE_BONDING
 	{"Networking", "add_bond", "", 0, REFRESH, "add_bond"},
 	{"Networking", "del_bond", "", 0, REFRESH, "del_bond"},
