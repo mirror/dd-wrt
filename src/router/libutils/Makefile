@@ -234,6 +234,10 @@ ifeq ($(CONFIG_FREERADIUS),y)
   CFLAGS += -DHAVE_FREERADIUS
   OBJS += radius.o
 endif
+ifeq ($(CONFIG_POKER),y)
+  CFLAGS += -DHAVE_POKER
+  OBJS += poker.o
+endif
 ifeq ($(CONFIG_MR3202A),y)
   CFLAGS += -DHAVE_MR3202A
   CFLAGS += -DHAVE_FONERA
