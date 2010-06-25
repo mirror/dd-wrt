@@ -542,6 +542,10 @@ ifneq ($(CONFIG_FREERADIUS),y)
 	rm -f $(INSTALLDIR)/www/FreeRadius.asp
 	rm -f $(INSTALLDIR)/www/FreeRadius.live.asp
 endif
+ifneq ($(CONFIG_POKER),y)
+	rm -f $(INSTALLDIR)/www/Poker.asp
+	rm -f $(INSTALLDIR)/www/Poker.live.asp
+endif
 ifneq ($(CONFIG_WOL),y)
 	rm -f $(INSTALLDIR)/www/Wol.asp
 	rm -f $(INSTALLDIR)/www/help/HWol.asp
