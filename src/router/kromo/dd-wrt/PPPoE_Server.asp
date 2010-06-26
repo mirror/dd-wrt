@@ -145,6 +145,15 @@ addEvent(window, "unload", function() {
 				<input type="checkbox" value="1" name="_pppoeserver_encryption" <% nvram_checked("pppoeserver_encryption", "1"); %> />
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_limit"); %></div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_sessionlimit" value="<% nvram_get("pppoeserver_sessionlimit"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 10)");
+				//]]>
+				</script></span>
+			</div>	
+			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_lcpei"); %></div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechoint" value="<% nvram_get("pppoeserver_lcpechoint"); %>" />
 				<span class="default"><script type="text/javascript">
