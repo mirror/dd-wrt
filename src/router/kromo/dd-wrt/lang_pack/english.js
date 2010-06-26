@@ -1280,6 +1280,7 @@ service.pppoesrv_remotenet="Remote Network IP";
 service.pppoesrv_remotemask="Remote Network Mask";
 service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Failure";
+service.pppoesrv_limit="Session Limit";
 service.pppoesrv_idlet="Idle Time";
 service.pppoesrv_auth="Authentication";
 service.pppoesrv_radip="Radius Server IP";
