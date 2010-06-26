@@ -849,3 +849,25 @@ void ej_wme_match_op(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+
+void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv) {
+#ifdef HAVE_MADWIFI
+	char *rate_control = "rate_control";	
+	websWrite( wp, "  <h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n" );
+	websWrite( wp, "    <fieldset>\n" );
+	websWrite( wp, "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script>\n" );
+	websWrite( wp, " 	<div class=\"setting\">\n");
+	websWrite( wp,
+		       "          <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control)</script></div>\n");
+	websWrite( wp,
+		       "            <input class=\"spaceradio\" type=\"radio\" value=\"minstrel\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		   nvram_selmatch(wp, rate_control,
+			      "minstrel") ? "checked" : "");
+	websWrite( wp,
+		       "            <input class=\"spaceradio\" type=\"radio\" value=\"sample\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		   nvram_selmatch(wp, rate_control,
+			      "sample") ? "checked" : "");
+	websWrite( wp, "       </div>\n");
+	websWrite( wp, "  </fieldset>\n" );
+#endif
+}
