@@ -1183,6 +1183,7 @@ static struct gozila_action gozila_actions[] = {
 	{"PokerEdit", "poker_loaduser", "", 0, REFRESH, "poker_loaduser"},
 	{"PokerEdit", "poker_checkout", "", 0, REFRESH, "poker_checkout"},
 	{"PokerEdit", "poker_buy", "", 0, REFRESH, "poker_buy"},
+	{"PokerEdit", "poker_credit", "", 0, REFRESH, "poker_credit"},
 	{"PokerEdit", "poker_back", "", 0, REFRESH, "poker_back"},
 #endif
 #ifdef HAVE_BONDING
