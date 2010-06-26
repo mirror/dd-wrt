@@ -69,8 +69,8 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 	char *wordlist, *next;
 	int temp;
 	char ifname[32];
-	strcpy(ifname,ifname2);
-	rep(ifname,'X','.');
+	strcpy(ifname, ifname2);
+	rep(ifname, 'X', '.');
 
 	if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
 		char var[32];
@@ -388,8 +388,8 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 	char *type, *ifname2;
 	char ifname[32];
 	ejArgs(argc, argv, "%s %s", &type, &ifname2);
-	strcpy(ifname,ifname2);
-	rep(ifname,'X','.');
+	strcpy(ifname, ifname2);
+	rep(ifname, 'X', '.');
 	if (!strcmp(type, "online")) {
 		for (i = 0; i < MAX_LEASES; i++) {	// init value
 			strcpy(wl_client_macs[i].hostname, "");
@@ -413,14 +413,16 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			wl_client_macs[nv_count].check = 1;	// checked
 			nv_count++;
 		}
-		
+
 		char *iface;
 #ifdef HAVE_MADWIFI
 		iface = ifname;
-		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
+		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD,
+			  ASSOCLIST_TMP);
 #elif HAVE_RT2880
 		iface = nvram_safe_get("wl0_ifname");
-		sysprintf("wl_rt2880 -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
+		sysprintf("wl_rt2880 -i %s %s > %s", iface, ASSOCLIST_CMD,
+			  ASSOCLIST_TMP);
 #else
 		if (!strcmp(ifname, "wl0"))
 			iface = get_wl_instance_name(0);
@@ -428,7 +430,8 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			iface = get_wl_instance_name(1);
 		else
 			iface = nvram_safe_get("wl0_ifname");
-		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD,ASSOCLIST_TMP);
+		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD,
+			  ASSOCLIST_TMP);
 #endif
 
 		if ((fp = fopen(ASSOCLIST_TMP, "r"))) {
@@ -850,24 +853,44 @@ void ej_wme_match_op(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv) {
+void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
+{
 #ifdef HAVE_MADWIFI
-	char *rate_control = "rate_control";	
-	websWrite( wp, "  <h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n" );
-	websWrite( wp, "    <fieldset>\n" );
-	websWrite( wp, "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script>\n" );
-	websWrite( wp, " 	<div class=\"setting\">\n");
-	websWrite( wp,
-		       "          <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control)</script></div>\n");
-	websWrite( wp,
-		       "            <input class=\"spaceradio\" type=\"radio\" value=\"minstrel\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-		   nvram_selmatch(wp, rate_control,
-			      "minstrel") ? "checked" : "");
-	websWrite( wp,
-		       "            <input class=\"spaceradio\" type=\"radio\" value=\"sample\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-		   nvram_selmatch(wp, rate_control,
-			      "sample") ? "checked" : "");
-	websWrite( wp, "       </div>\n");
-	websWrite( wp, "  </fieldset>\n" );
+	int showrate = 1;
+#ifdef HAVE_MADWIFI_MIMO
+	showrate = 0;
+	char ifname[32];
+	int i;
+	for (i = 0; i < 16; i++) {
+		sprintf(ifname, "ath%d", i);
+		if (ifexists(ifname)) {
+			if (!is_ar5008(ifname))
+				showrate = 1;
+		} else
+			break;
+	}
+#endif
+
+	if (showrate) {
+		char *rate_control = "rate_control";
+		websWrite(wp,
+			  "  <h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
+		websWrite(wp, "    <fieldset>\n");
+		websWrite(wp,
+			  "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script>\n");
+		websWrite(wp, " 	<div class=\"setting\">\n");
+		websWrite(wp,
+			  "          <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control)</script></div>\n");
+		websWrite(wp,
+			  "            <input class=\"spaceradio\" type=\"radio\" value=\"minstrel\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  nvram_selmatch(wp, rate_control,
+					 "minstrel") ? "checked" : "");
+		websWrite(wp,
+			  "            <input class=\"spaceradio\" type=\"radio\" value=\"sample\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  nvram_selmatch(wp, rate_control,
+					 "sample") ? "checked" : "");
+		websWrite(wp, "       </div>\n");
+		websWrite(wp, "  </fieldset>\n");
+	}
 #endif
 }
