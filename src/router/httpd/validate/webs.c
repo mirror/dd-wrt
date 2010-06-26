@@ -2490,6 +2490,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	char chanbw[80];
 	char preamble[80];
 	int cbwchanged = 0;
+	copytonv(wp, "rate_control");
 #endif
 	sprintf(n, "%s_ssid", prefix);
 	copytonv(wp, n);
