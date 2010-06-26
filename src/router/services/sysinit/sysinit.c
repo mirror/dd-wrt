@@ -83,6 +83,8 @@ extern struct nvram_tuple *srouter_defaults;
 extern void load_defaults(void);
 extern void free_defaults(void);
 
+extern int usb_add_ufd(void);
+
 int endswith(char *str, char *cmp)
 {
 	int cmp_len, str_len, i;
@@ -1868,6 +1870,7 @@ void start_drivers(void)
 
 #ifdef HAVE_USB
 
+fprintf( stderr, "[USB] checking...\n" );
 	if (nvram_match("usb_enable", "1")) {
 		led_control(LED_USB, LED_ON);
 
@@ -1935,7 +1938,9 @@ void start_drivers(void)
 			// {
 			// cprintf ("loading usb_fs_xfs\n");
 			// insmod("xfs");
-			// } 
+			// }
+
+			// scan / mount usb drives
 		}
 
 		if (nvram_match("usb_printer", "1")) {
@@ -1944,6 +1949,8 @@ void start_drivers(void)
 			insmod("usblp");
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
+		fprintf(stderr, "[USB] check for drives....\n");
+		usb_add_ufd(); 
 	} else {
 		led_control(LED_USB, LED_OFF);
 	}
