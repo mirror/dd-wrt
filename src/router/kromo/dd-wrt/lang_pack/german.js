@@ -1957,6 +1957,8 @@ wl_basic.ofdm_weak_det="OFDM Problemerkennung";
 wl_basic.radar="Radar Erkennung";
 wl_basic.mtikie="MTik Kompatibilität";
 wl_basic.csma="Carrier Sense";
+wl_basic.advanced_options="Erweiterte Optionen";
+wl_basic.rate_control="Raten Algorithmus";
 
 //help container
 
