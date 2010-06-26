@@ -2043,6 +2043,9 @@ wl_basic.mtikie="MTik Compatibility";
 wl_basic.csma="Carrier Sense";
 wl_basic.if_label="Label (optional)";
 wl_basic.if_info="Info (optional)";
+wl_basic.advanced_options="Advanced Options";
+wl_basic.rate_control="Rate Control Algorithm";
+
 //help container
 var hwl_basic = new Object();
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br/><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";

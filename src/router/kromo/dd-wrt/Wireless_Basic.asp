@@ -305,6 +305,7 @@ addEvent(window, "unload", function() {
 				  	<input type="hidden" name="iface" />
 				  	
 				  	<% show_wireless(); %>
+					<% show_wireless_advanced(); %>
 				  	
 				  	<br />
 				  	<div class="submitFooter">
