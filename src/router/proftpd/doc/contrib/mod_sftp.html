@@ -1,0 +1,1507 @@
+<!-- $Id: mod_sftp.html,v 1.31 2010/01/06 00:41:06 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sftp.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_sftp</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_sftp</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+<b>SFTP versus FTPS</b><br>
+There is a great deal of confusion and misunderstanding surrounding two very
+different protocols: SFTP and FTPS.
+
+<p>
+FTPS stands for "FTP over SSL/TLS".  It is the existing FTP protocol,
+made to run over an SSL/TLS connection; in this manner, it is very similar to
+HTTPS (HTTP over SSL/TLS).  In fact, that is where the name "FTPS" comes from.
+The <a href="http://www.proftpd.org/docs/contrib/mod_tls.html"><code>mod_tls</code></a> module for ProFTPD implements FTPS.  Since FTPS is still FTP, any
+FTPS sessions require multiple TCP connections: one TCP connection for the
+FTP control channel, and separate TCP connections for each FTP data channel.
+The need for these multiple connections is undesirable for many network
+administrators, especially those that wish to restrict all protocols to a
+single TCP connection which can be passed through firewalls/NAT/router
+equipment.  The network equipment, now, often inspects the application-level
+data in FTP packets in order to dynamically open the necessary firewall rules
+for the FTP data channels.  However, FTPS encrypts those packets, and thus
+the network firewall must resort to using a statically configured range of
+ports, or not allow FTPS.  There is a third solution: the <code>CCC</code> FTP
+command, which clears the FTP control channel of encryption, once the user has
+authenticated.  Unfortunately, support for the <code>CCC</code> command is not
+widespread among FTPS clients and servers; the <code>mod_tls</code> module does
+support the <code>CCC</code> command.
+
+<p>
+By contrast, SFTP refers to "Secure File Transfer Protocol", and is <b>not</b>
+related to FTP in any way.  SFTP is based on the SSH2 protocol, which uses
+binary encoding of messages over a secure channel.  Unlike FTP, SSH2 only
+uses a single TCP connection, and multiplexes multiple transfers or "channels"
+over that single connection.  For this reason, many sites prefer SFTP
+to FTPS for secure transfer of data.
+
+<p>
+<b>SSH2 RFCs and SFTP Drafts</b><br>
+For those wishing to learn more about the SSH2 and SFTP protocols, see:
+<ul>
+  <li><a href="http://www.faqs.org/rfcs/rfc4250.html">SSH Assigned Numbers (RFC4250)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4251.html">SSH Architecture (RFC4251)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4252.html">SSH Authentication (RFC4252)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4253.html">SSH Transport Layer (RFC4253)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4254.html">SSH Connection (RFC4254)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4256.html">SSH Keyboard-Interactive Authentication (RFC4256)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4335.html">SSH Channel "Break" Extension (RFC4335)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4344.html">SSH Transport Encryption Modes (RFC4344)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4345.html">SSH Improved Arcfour Modes (RFC4345)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4419.html">SSH Diffie-Hellman Group Exchange Protocol (RFC4419)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4432.html">SSH RSA Key Exchange Protocol (RFC4432)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc4716.html">SSH Public Key File Format (RFC4716)</a>
+  <li><a href="http://www.vandyke.com/technology/draft-ietf-secsh-filexfer.txt">SFTP Draft</a>
+  <li><a href="http://tools.ietf.org/html/draft-ietf-secsh-filexfer-extensions-00">SFTP Extensions Draft</a>
+</ul>
+
+<p>
+<b>The <code>mod_sftp</code> module for ProFTPD</b><br>
+The <code>mod_sftp</code> module implements the SSH2 protocol and its SFTP
+subsystem, for secure file transfer over an SSH2 connection.  The
+<code>mod_sftp</code> module supports:
+<ul>
+  <li>Public key authentication
+  <li>Password authentication (<i>e.g.</i> user authentication via
+    <code>mod_sql</code>, <code>mod_ldap</code>, <code>mod_auth_file</code>,
+    <code>mod_auth_unix</code>, <code>mod_auth_pam</code>)
+  <li>SCP support
+  <li>Quotas (via the <code>mod_quotatab</code> module)
+  <li>FIPS support (see <a href="#Usage">Usage</a> section)
+  <li>Throttled transfers (via <code>TransferRate</code>, and/or the
+    <code>mod_shaper</code> module)
+  <li>Blacklisted public keys
+  <li>Configurable traffic analysis protection
+  <li>Passphrase-protected host keys
+  <li>SFTP extensions: check-file, copy-file, vendor-id, version-select, posix-rename@openssh.com, statvfs@openssh.com, fstatvfs@openssh.com
+</ul>
+
+<p>
+The <code>mod_sftp</code> module does <b>not</b> currently support:
+<ul>
+  <li><code>&lt;Anonymous&gt;</code>
+  <li><code>DirFakeUser/DirFakeGroup</code>
+  <li><code>MaxRetrieveFileSize/MaxStoreFileSize</code>
+  <li><code>UserOwner</code>, <code>GroupOwner</code>
+</ul>
+
+<p>
+The <code>mod_sftp</code> module is contained in the <code>mod_sftp/</code>
+directory, is intended for ProFTPD 1.3.3rc1 and later, and is not compiled by
+default.  Installation instructions are discussed
+<a href="#Installation">here</a>.
+
+<p>
+The most current version of <code>mod_sftp</code> is distributed with the
+ProFTPD source code.
+
+<p>
+This product includes software developed by the OpenSSL Project for use in the
+OpenSSL Toolkit (<a href="http://www.openssl.org/">http://www.openssl.org/</a>).
+This product includes cryptographic software written by Eric Young (eay@cryptsoft.com).
+
+<h2>Author</h2>
+<p>
+Please contact TJ Saunders &lt;tj <i>at</i> castaglia.org&gt; with any
+questions, concerns, or suggestions regarding this module.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#SFTPAcceptEnv">SFTPAcceptEnv</a>
+  <li><a href="#SFTPAuthMethods">SFTPAuthMethods</a>
+  <li><a href="#SFTPAuthorizedHostKeys">SFTPAuthorizedHostKeys</a>
+  <li><a href="#SFTPAuthorizedUserKeys">SFTPAuthorizedUserKeys</a>
+  <li><a href="#SFTPCiphers">SFTPCiphers</a>
+  <li><a href="#SFTPClientMatch">SFTPClientMatch</a>
+  <li><a href="#SFTPCompression">SFTPCompression</a>
+  <li><a href="#SFTPCryptoDevice">SFTPCryptoDevice</a>
+  <li><a href="#SFTPDHParamFile">SFTPDHParamFile</a>
+  <li><a href="#SFTPDigests">SFTPDigests</a>
+  <li><a href="#SFTPDisplayBanner">SFTPDisplayBanner</a>
+  <li><a href="#SFTPEngine">SFTPEngine</a>
+  <li><a href="#SFTPExtensions">SFTPExtensions</a>
+  <li><a href="#SFTPHostKey">SFTPHostKey</a>
+  <li><a href="#SFTPKeyBlacklist">SFTPKeyBlacklist</a>
+  <li><a href="#SFTPKeyExchanges">SFTPKeyExchanges</a>
+  <li><a href="#SFTPLog">SFTPLog</a>
+  <li><a href="#SFTPMaxChannels">SFTPMaxChannels</a>
+  <li><a href="#SFTPOptions">SFTPOptions</a>
+  <li><a href="#SFTPPassPhraseProvider">SFTPPassPhraseProvider</a>
+  <li><a href="#SFTPRekey">SFTPRekey</a>
+  <li><a href="#SFTPTrafficPolicy">SFTPTrafficPolicy</a>
+</ul>
+
+<p>
+<hr>
+<h2><a name="SFTPAcceptEnv">SFTPAcceptEnv</a></h2>
+<strong>Syntax:</strong> SFTPAcceptEnv <em>env1 ...</em><br>
+<strong>Default:</strong> <em>LANG</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Gl
+obal&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.3rc3 and later
+
+<p>
+The <code>SFTPAcceptEnv</code> directive specifies which environment variables
+sent by the client, if any, will be used in the session environment.
+Environment variables are specified by name, and may contain the '*' and '?'
+wildcard characters.  Multiple environment variables may be configured, either
+separated by whitespace or spread across multiple <code>SFTPAcceptEnv</code>
+directives.
+
+<p>
+Be warned that some environment variables may have special meaning to
+underlying libraries; care should be taken in the use of this directive.
+
+<p>
+<hr>
+<h2><a name="SFTPAuthMethods">SFTPAuthMethods</a></h2>
+<strong>Syntax:</strong> SFTPAuthMethods <em>meth1 ...</em><br>
+<strong>Default:</strong> <em>publickey password</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPAuthMethods</code> directive configures the list of available
+authentication methods presented to connecting clients.  The list of
+currently supported methods is:
+<ul>
+  <li>hostbased
+  <li>keyboard-interactive
+  <li>publickey
+  <li>password
+</ul>
+In general, there is no need to use this directive unless only one specific
+authentication method must be used.  Should it be needed, the list of
+authentication methods to use is provided as a space-delimited list,
+<i>e.g.</i>:
+<pre>
+  # Offer publickey and keyboard-interactive authentication only
+  SFTPAuthMethods publickey keyboard-interactive
+</pre>
+
+<p>
+The <em>hostbased</em> authentication method is only offered to clients if
+the <a href="#SFTPAuthorizedHostKeys"><code>SFTPAuthorizedHostKeys</code></a>
+directive is configured.
+
+<p>
+The <em>publickey</em> authentication method is only offered to clients if
+the <a href="#SFTPAuthorizedUserKeys"><code>SFTPAuthorizedUserKeys</code></a>
+directive is configured.
+
+<p>
+The <em>keyboard-interactive</em> authentication method is only offered to
+clients if the <a href="mod_sftp_pam.html"><code>mod_sftp_pam</code></a>
+module is present.
+
+<p>
+<hr>
+<h2><a name="SFTPAuthorizedHostKeys">SFTPAuthorizedHostKeys</a></h2>
+<strong>Syntax:</strong> SFTPAuthorizedHostKeys <em>store1 ...</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPAuthorizedHostKeys</code> directive configures the file that
+<code>mod_sftp</code> will use during the handling of hostbased authentication
+of users.  The configured file may contain several public keys in RFC4716
+format, in no particular order.
+
+<p>
+<b>Note</b> that a <code>SFTPAuthorizedHostKeys</code> directive is
+required for <code>mod_sftp</code> to handle sessions which want to use
+hostbased authentication properly.
+
+<p>
+<b>Note:</b> In order to use OpenSSH public keys in a
+<code>SFTPAuthorizedHostKeys</code>, you <b>must</b> convert them to the
+RFC4716 format (see the <a href="#UsageRFC4716Format">Usage</a> section).
+This is done using OpenSSH's <code>ssh-keygen</code> tool:
+<pre>
+  # ssh-keygen -e -f /path/to/file
+</pre>
+The output from this command can then be added to the
+<code>SFTPAuthorizedHostKeys</code> file.
+
+<p>
+<hr>
+<h2><a name="SFTPAuthorizedUserKeys">SFTPAuthorizedUserKeys</a></h2>
+<strong>Syntax:</strong> SFTPAuthorizedUserKeys <em>store1 ...</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPAuthorizedUserKeys</code> directive configures the file that
+<code>mod_sftp</code> will use during the handling of publickey authentication
+of users.  The configured file may contain several public keys in RFC4716
+format, in no particular order.
+
+<p>
+<b>Note</b> that a <code>SFTPAuthorizedUserKeys</code> directive is
+required for <code>mod_sftp</code> to handle sessions properly.
+
+<p>
+<b>Note:</b> In order to use OpenSSH public keys in a
+<code>SFTPAuthorizedUserKeys</code>, you <b>must</b> convert them to the
+RFC4716 format (see the <a href="#UsageRFC4716Format">Usage</a> section).
+This is done using OpenSSH's <code>ssh-keygen</code> tool:
+<pre>
+  # ssh-keygen -e -f ~/.ssh/id_rsa.pub
+</pre>
+The output from this command can then be added to the
+<code>SFTPAuthorizedUserKeys</code> file.
+
+<p>
+The configured path for a file containing authorized keys can use the
+<code>%u</code> variable, which will be interpolated with the name of the user
+being authenticated.  This feature supports having per-user files of authorized
+keys that reside in a central location, rather than requiring (or allowing)
+users to manage their own authorized keys.  For example:
+<pre>
+  SFTPAuthorizedUserKeys file:/etc/sftp/authorized_keys/%u
+</pre>
+
+<p>
+<hr>
+<h2><a name="SFTPCiphers">SFTPCiphers</a></h2>
+<strong>Syntax:</strong> SFTPCiphers <em>algo1 ...</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPCiphers</code> directive is used to specify the list of
+cipher algorithms that <code>mod_sftp</code> should use.  The current list
+of supported cipher algorithms is, in the default order of preference:
+<ul>
+  <li>aes256-ctr
+  <li>aes192-ctr
+  <li>aes128-ctr
+  <li>aes256-cbc
+  <li>aes196-cbc
+  <li>aes128-cbc
+  <li>blowfish-ctr
+  <li>blowfish-cbc
+  <li>cast128-cbc
+  <li>arcfour256
+  <li>arcfour128
+  <li>3des-ctr
+  <li>3des-cbc
+</ul>
+By default, all of the above cipher algorithms are presented to the client,
+in the above order, during the key exchange.
+
+<p>
+The "none" cipher (<i>i.e.</i> no encryption) will <b>not</b> be presented to
+the client by default; any sites which wish to use "none" will have to
+explicitly configure it via <code>SFTPCiphers</code>.
+
+<p>
+Note that CTR mode ciphers (<i>e.g.</i> the <code>aes128-ctr</code>,
+<code>aes192-ctr</code>, and <code>aes256-ctr</code> ciphers) are recommended.
+Any CBC mode cipher allows for the possibility of an attack which causes
+several bits of plaintext to be leaked; the attack is described
+<a href="http://www.cpni.gov.uk/Docs/Vulnerability_Advisory_SSH.txt">here</a>.
+This attack is on the SSH2 protocol design itself; any SSH2 implementation
+which conforms to the RFCs will have this weakness.
+
+<p>
+In general, there is no need to use this directive unless only one specific
+cipher must be used.
+
+<p>
+<hr>
+<h2><a name="SFTPClientMatch">SFTPClientMatch</a></h2>
+<strong>Syntax:</strong> SFTPClientMatch <em>pattern key1 val1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPClientMatch</code> directive is used to tune some of the
+SSH2/SFTP values based on the connecting client, for better interoperability
+with those clients.  The <em>pattern</em> parameter specifies a POSIX regular
+expression which will be matched against the connecting client's SSH version
+banner.  If the client's banner version matches <em>pattern</em>, then
+the configured keys/values are used for that session.
+
+<p>
+The currently supported SSH2/SFTP keys which can be tuned via
+<code>SFTPClientMatch</code> are:
+<ul>
+  <li>channelPacketSize<br>
+    The <em>value</em> for this key can be a number, with an optional "KB"
+    (kilobytes) suffix.
+
+    <p>
+    The default <code>mod_sftp</code> channel packet size is 32KB.
+  </li>
+
+  <p>
+  <li>channelWindowSize</br>
+    The <em>value</em> for this key can be a number, with an optional
+    "GB" (gigabytes), "MB" (megabytes), or "KB" (kilobytes) suffix.
+
+    <p>
+    The default <code>mod_sftp</code> channel window size is 4GB.  Using
+    smaller window sizes may be necessary for some clients; larger window
+    sizes can help reduce latency for bulk data transfers.
+  </li>
+
+  <p>
+  <li>sftpProtocolVersion</br>
+    The <em>value</em> for this key can be a specific version number,
+    <i>e.g.</i> "3", or it can be a range such as "1-3".  The
+    <code>mod_sftp</code> module supports SFTP protocol versions 1-6;
+    using any other protocol versions will result in bad configuration.
+  </li>
+
+  <p>
+  <li>sftpUTF8ProtocolVersion</br>
+    The <em>value</em> for this key is a specific version number,
+    <i>e.g.</i> "3".  The <code>mod_sftp</code> module uses UTF8 encoding
+    for handling paths/strings in SFTP messages for protocol version 4 and
+    above by default; this key can be used to change the protocol versions for
+    which UTF8 encoding is used.
+
+    <p>
+    For example, if you set:
+<pre>
+    SFTPClientMatch .* sftpUTF8ProtocolVersion 1
+</pre>
+    then <code>mod_sftp</code> will try to use UTF8 for all SFTP protocol
+    versions, all clients.
+  </li>
+</ul>
+
+<p>
+For example, to make <code>mod_sftp</code> only allow SFTP protocol version 3
+to WinSCP clients, you would use:
+<pre>
+  SFTPClientMatch ".*WinSCP.*" sftpProtocolVersion 3
+</pre>
+Or for older OpenSSH clients, you may need to use a smaller channel window
+size, <i>e.g.</i>:
+<pre>
+  SFTPClientMatch "^OpenSSH_3\\.*" channelWindowSize 8MB
+</pre>
+
+<p>
+<hr>
+<h2><a name="SFTPCompression">SFTPCompression</a></h2>
+<strong>Syntax:</strong> SFTPCompression <em>on|off|delayed</em><br>
+<strong>Default:</strong> <em>off</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPCompression</code> directive enables the use of zlib compression
+of the payload of SSH2 packets.  This can make for smaller packets, but require
+more CPU time to compress/uncompress the data.
+
+<p>
+The <em>delayed</em> parameter tells <code>mod_sftp</code> to support a custom
+extension used by OpenSSH, where compression is not actually enabled until
+after the client has successfully authenticated.
+
+<p>
+<hr>
+<h2><a name="SFTPCryptoDevice">SFTPCryptoDevice</a></h2>
+<strong>Syntax:</strong> SFTPCryptoDevice <em>driver|"all"|"none"</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPCryptoDevice</code> directive is used to configure
+<code>mod_sftp</code> to use an OpenSSL "engine", a cryptographic module
+that OpenSSL library can use for accelerated cryptographic support, or
+HSM keys, <i>etc</i>.
+
+<p>
+To use all of the engines compiled into OpenSSL, use:
+<pre>
+  SFTPCryptoDevice all
+</pre>
+OpenSSL will find, from the list of supported engines, the first one
+usable, if any.  If no usable engines are found, OpenSSL will default to
+its normal software implementation.  If a specific engine is desired as
+the default engine to use, specify the engine name, <i>e.g.</i>:
+<pre>
+  SFTPCryptoDevice chil
+</pre>
+
+<p>
+The OpenSSL command
+<pre>
+  openssl engine
+</pre>
+may be used to list all of the engine drivers supported by OpenSSL.
+
+<p>
+<hr>
+<h2><a name="SFTPDHParamFile">SFTPDHParamFile</a></h2>
+<strong>Syntax:</strong> SFTPDHParamFile <em>path</em><br>
+<strong>Default:</strong> <em>dhparams.pem</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPDHParamFile</code> directive is used to configure the path
+to a file containing pre-computed Diffie-Hellman (DH) group parameters.
+These parameters will be used by <code>mod_sftp</code> when handling the
+Diffie-Hellman group exchange (see RFC4419) portion of the key exchange.
+
+<p>
+The <code>SFTPDHParamFile</code> is produced using OpenSSL, which uses
+PEM encodings of PKCS#3 <code>DHparam</code> structures.  It is similar in
+nature to OpenSSH's <code>moduli(5)</code> file.
+
+<p>
+The <code>mod_sftp</code> source code comes with a <code>dhparams.pem</code>
+file which should be sufficient.  If for any reason you find that you
+need to generate your own <code>SFTPDHParamFile</code>, use one of the
+following OpenSSL commands to create this file:
+<pre>
+  # openssl dhparam -outform PEM -2 <i>nbits</i> >> dhparams.pem
+  # openssl dhparam -outform PEM -5 <i>nbits</i> >> dhparams.pem
+</pre>
+Using either <code>-2</code> or <code>-5</code> as the generator is fine.
+The <em>nbits</em> value used should vary between 1024 and 8192, inclusive.
+<b>Beware</b>: this process is quite slow, and CPU/memory intensive!
+
+<p>
+<hr>
+<h2><a name="SFTPDigests">SFTPDigests</a></h2>
+<strong>Syntax:</strong> SFTPDigests <em>algo1 ...</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPDigests</code> directive is used to specify the list of
+MAC digest algorithms that <code>mod_sftp</code> should use.  The current list
+of supported MAC algorithms is:
+<ul>
+  <li>hmac-sha1
+  <li>hmac-sha1-96
+  <li>hmac-md5
+  <li>hmac-md5-96
+  <li>hmac-ripemd160
+</ul>
+By default, all of the above MAC algorithms are presented to the client,
+in the above order, during the key exchange.
+
+<p>
+The "none" MAC (<i>i.e.</i> no MAC) will <b>not</b> be presented to the client
+by default; any sites which wish to use "none" will have to explicitly
+configure it via <code>SFTPDigests</code>.
+
+<p>
+In general, there is no need to use this directive unless only one specific
+MAC algorithm must be used.
+
+<p>
+<hr>
+<h2><a name="SFTPDisplayBanner">SFTPDisplayBanner</a></h2>
+<strong>Syntax:</strong> SFTPDisplayBanner <em>path</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPDisplayBanner</code> directive is used to configure the path
+of a file which will be sent to the client prior to authentication.  Such
+files are often used to sent terms of use or other such policy terms to
+connecting clients.
+
+<p>
+<hr>
+<h2><a name="SFTPEngine">SFTPEngine</a></h2>
+<strong>Syntax:</strong> SFTPEngine <em>on|off</em><br>
+<strong>Default:</strong> <em>off</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPEngine</code> directive toggles the use of the SSH2/SFTP protocols
+engine (<i>e.g.</i> <code>mod_sftp</code>).  This is usually used inside a
+<code>&lt;VirtualHost&gt;</code> section to enable SFTP sessions for a
+particular virtual host. By default <code>mod_sftp</code> is disabled for both
+the main server and all configured virtual hosts.
+
+<p>
+<hr>
+<h2><a name="SFTPExtensions">SFTPExtensions</a></h2>
+<strong>Syntax:</strong> SFTPExtensions <em>ext1 ... extN</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.3rc3 and later
+
+<p>
+The <code>SFTPExtensions</code> directive can be used to enable/disable
+support for the various SFTP extensions supported by <code>mod_sftp</code>.
+The extension names used for the <code>SFTPExtensions</code> directive are:
+<ul>
+  <li>checkFile
+  <li>copyFile
+  <li>vendorID
+  <li>versionSelect
+  <li>posixRename
+  <li>statvfs
+</ul>
+All extensions <i>except</i> <code>vendorID</code> are enabled by default.
+
+<p>
+To enable an extension, preface the extension name with a '+' (plus) character;
+to disable the extension, use a '-' (minus) character prefix.  For example:
+<pre>
+  # Allow the copy-file extension, but not version-select
+  SFTPExtensions +copyFile -versionSelect
+</pre>
+
+<p>
+<hr>
+<h2><a name="SFTPHostKey">SFTPHostKey</a></h2>
+<strong>Syntax:</strong> SFTPHostKey <em>file</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPHostKey</code> directive configures the path to a host key file.
+The <code>mod_sftp</code> module uses the keys thus configured as part of
+the SSH2 key exchange process.
+
+<p>
+Note that the <code>SFTPHostKey</code> directive is <b>required</b>.  You
+can use either an RSA key, a DSA key, or both.  These should be the <b>exact
+same host key files as used by your SSH2 server</b>, <i>e.g.</i>:
+<pre>
+  SFTPHostKey /etc/ssh_host_dsa_key
+  SFTPHostKey /etc/ssh_host_rsa_key
+</pre>
+or the equivalents in the <code>/usr/local/etc/</code> directory.  Using
+different host keys between your SSH2 server and <code>mod_sftp</code> will
+only cause confusion and problems for any SFTP clients.  Most SFTP clients
+will assume that the host uses the same keys for SSH2 and SFTP; after all,
+it is the same <i>host</i> (even the same port), just different services.
+Thus having different host keys for an SSH2 server and <code>mod_sftp</code>
+will cause clients to constantly switch the host keys they record for the
+same host (and cause confusion for users).
+
+<p>
+<hr>
+<h2><a name="SFTPKeyBlacklist">SFTPKeyBlacklist</a></h2>
+<strong>Syntax:</strong> SFTPKeyBlacklist <em>"none"|path</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPKeyBlacklist</code> directive configures the path to
+a specially formatted dictionary of known weak public keys.  This key
+blacklist, and the code for using it, was primarily developed by
+Dmitry V. Levin under sponsorship by
+<a href="http://www.civicactions.com">CivicActions</a>.  For the original
+posting, and further information, see:
+<pre>
+  <a href="http://www.openwall.com/lists/oss-security/2008/05/27/3">http://www.openwall.com/lists/oss-security/2008/05/27/3</a>
+</pre>
+
+<p>
+These known weak public keys arose because a vulnerability in the OpenSSL
+packages distributed by Debian:
+<pre>
+  <a href="http://www.debian.org/security/2008/dsa-1571">http://www.debian.org/security/2008/dsa-1571</a>
+</pre>
+
+<p>
+The <code>mod_sftp</code> source code comes with a <code>blacklist.dat</code>
+file which should be sufficient.  If for any reason you find that you
+need to generate your own <code>SFTPDKeyBlacklist</code>, use the
+<code>blacklist-encode</code> program mentioned in the above URLs.
+
+<p>
+<hr>
+<h2><a name="SFTPKeyExchanges">SFTPKeyExchanges</a></h2>
+<strong>Syntax:</strong> SFTPKeyExchanges <em>algo1 ...</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPKeyExchanges</code> directive is used to specify the list of
+key exchange algorithms that <code>mod_sftp</code> should use.  The current list
+of supported key exchange algorithms is:
+<ul>
+  <li>diffie-hellman-group-exchange-sha256
+  <li>diffie-hellman-group-exchange-sha1
+  <li>diffie-hellman-group14-sha1
+  <li>diffie-hellman-group1-sha1
+  <li>rsa1024-sha1
+</ul>
+By default, all of the above key exchange algorithms are presented to the
+client, in the above order, during the key exchange.
+
+<p>
+In general, there is no need to use this directive unless only one specific
+key exchange algorithm must be used.
+
+<p>
+<hr>
+<h2><a name="SFTPLog">SFTPLog</a></h2>
+<strong>Syntax:</strong> SFTPLog <em>file|"none"</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPLog</code> directive is used to specify a log file for
+<code>mod_sftp</code>'s reporting on a per-server basis.  The <em>file</em>
+parameter given must be the full path to the file to use for logging.
+
+<p>
+Note that this path must <b>not</b> be to a world-writable directory and,
+unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
+(generally a bad idea), the path must <b>not</b> be a symbolic link.
+
+<p>
+<hr>
+<h2><a name="SFTPMaxChannels">SFTPMaxChannels</a></h2>
+<strong>Syntax:</strong> SFTPMaxChannels <em>count</em><br>
+<strong>Default:</strong> 10<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPMaxChannels</code> directive is used to configure the maximum
+number of simultaneously open channels permitted for a client.  The
+default value is 10.
+
+<p>
+A malicious client might try to abuse the server's resources by opening
+an large number of SSH2 channels and then not using them.  Most well-behaved
+SSH2 clients only ever open one channel.
+
+<p>
+<hr>
+<h2><a name="SFTPOptions">SFTPOptions</a></h2>
+<strong>Syntax:</strong> SFTPOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPOptions</code> directive is used to configure various optional
+behavior of <code>mod_sftp</code>.
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>IgnoreSFTPUploadPerms</code><br>
+    <p>
+    When an SFTP client uploads a file, the desired permissions on the file
+    are sent to the server as part of the upload.  (This is different from
+    FTP, which does <b>not</b> include the file permissions in an upload.)
+    If you need more FTP-like functionality for any reason and wish to
+    have <code>mod_sftp</code> silently ignore any permissions sent by the
+    SFTP client, use this option.
+
+  <p>
+  <li><code>IgnoreSCPUploadPerms</code><br>
+    <p>
+    When an SCP client uploads a file, the desired permissions on the file
+    are sent to the server as part of the upload.  (This is different from
+    FTP, which does <b>not</b> include the file permissions in an upload.)
+    If you need more FTP-like functionality for any reason and wish to
+    have <code>mod_sftp</code> silently ignore any permissions sent by the
+    SCP client, use this option.
+</ul>
+
+<p>
+<hr>
+<h2><a name="SFTPPassPhraseProvider">SFTPPassPhraseProvider</a></h2>
+<strong>Syntax:</strong> SFTPPassPhraseProvider <em>path</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPPassPhraseProvider</code> directive is used to specify an
+external program which will be called, when <code>mod_sftp</code> starts up,
+for each encrypted host key file.  The program will be invoked with two
+command-line arguments, passed on <code>stdin</code> to the program:
+<pre>
+  <em>servername</em>:<em>portnumber</em> <em>file</em>
+</pre>
+where <code><em>servername</em>:<em>portnumber</em></code> indicates the
+server using that encrypted certificate key, and <em>file</em> indicates the
+host key file in question. The program then must print the corresponding
+passphrase for the key to <code>stdout</code>.
+
+<p>
+The intent is that this external program can perform any security checks
+necessary, to make sure that the system is not compromised by an attacker,
+and only when these checks pass successfully will the passphrase be provided.
+These security checks, and the way the passphrase is determined, can be as
+complex as you like.
+
+<p>
+Example:
+<pre>
+  SFTPPassPhraseProvider /etc/ftpd/sftp/get-passphrase
+</pre>
+
+<p>
+<hr>
+<h2><a name="SFTPRekey">SFTPRekey</a></h2>
+<strong>Syntax:</strong> SFTPRekey <em>"none"|"required" [[interval bytes] timeout]</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPRekey</code> directive configures the session rekey policy
+used by the <code>mod_sftp</code> module.  When an SSH2 client connects,
+there is an initial exchange of hostkey, cipher, digest, and compression
+algorithms, followed by sharing of information which leads to the calculation
+of shared session keys.  These keys are used in the various algorithms.
+The exchange of algorithms and calculation of new session keys can happen
+at any time during the SSH2 session; this is known as "rekeying".
+
+<p>
+By default, <code>mod_sftp</code> will only <b>require</b> rekeying when
+the packet sequence number (for sent <i>or</i> received SSH2 packets) reaches
+a rather high limit.  The digest algorithm used, for example, might begin
+to leak cryptographically sensitive information if used for too many
+packets (see RFC4344).  Outside of these sequence number limits, however,
+<code>mod_sftp</code> will not attempt to initiate rekeying.
+
+<p>
+To prevent <code>mod_sftp</code> from attempting rekeying, use:
+<pre>
+  SFTPRekey none
+</pre>
+Note that disabling rekeying altogether is a Very Bad Idea.  While rekeying 
+can cause delays in the SSH2 sesssion, it is intended to guard against certain
+attacks.  You should therefore <b>only</b> disable rekeying for certain
+SSH2 clients which cannot support rekeying.  Please report those clients
+(<b>including</b> the client version) to the mod_sftp maintainer, so that that
+client can be added to the list of known clients which cannot handle rekeying.
+
+<p>
+To require rekeying, simply use:
+<pre>
+  SFTPRekey required
+</pre>
+With this parameter, <code>mod_sftp</code> will default to requiring a rekey
+within 1 hour (3600 seconds) or after 2GB of data sent <i>or</i> received,
+whichever happens first.  There will be no timeout once a rekeying has been
+requested.
+
+<p>
+However, administrators wishing to use different rekey intervals or rekey
+byte limits can use the optional <em>interval</em> (in seconds) and
+<em>bytes</em> (in MB) parameters, <i>e.g.</i>:
+<pre>
+  # Require rekeying after 30 minutes, or 4 GB
+  SFTPRekey required 1800 4096
+</pre>
+
+<p>
+Finally, the paranoid administrator may wish to set a timeout, in seconds,
+in which a client <b>must</b> complete a session rekeying, otherwise the
+client will be disconnected.  This would look like:
+<pre>
+  # Require rekeying after 30 minutes, or 4 GB.  If the rekeying is not
+  # completed within 5 minutes of a rekey request, disconnect the client.
+  SFTPRekey required 1800 4096 300
+</pre>
+Note that normally such rekey timeouts are not necessary.
+
+<p>
+<hr>
+<h2><a name="SFTPTrafficPolicy">SFTPTrafficPolicy</a></h2>
+<strong>Syntax:</strong> SFTPTrafficPolicy <em>policy</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.2rc2 and later
+
+<p>
+The <code>SFTPTrafficPolicy</code> directive is used to configure a measure
+of protection against traffic analysis attacks.  Such attacks use the number
+of packets sent, the size of the packets, and the timing of the packets to try
+to gain information about the nature of the data being transmitted.
+
+<p>
+The SSH2 protocol includes a particular message, <code>SSH_MSG_IGNORE</code>,
+which all implementations (both clients and servers) must handle by
+dropping on the floor.  Implementations, like <code>mod_sftp</code>, can
+use these messages to add random data to the session in the hopes of making
+such traffic analyses more difficult.
+
+<p>
+The <code>SFTPTrafficPolicy</code> directive supports the following range
+of policies; the chances columns list the probability that
+<code>mod_sftp</code> will send an <code>SSH_MSG_IGNORE</code> message.
+
+<p>
+<table border=1>
+  <tr>
+    <td><b>Policy Name</b></td>
+    <td><b>Chances</b></td>
+    <td><b>Checks</b></td>
+  </tr>
+
+  <tr>
+    <td>"none"</td>
+    <td>Never</td>
+    <td>Never</td>
+  </tr>
+
+  <tr>
+    <td>"low"</td>
+    <td>1 in 1000</td>
+    <td>Every 5 seconds</td>
+  </tr>
+
+  <tr>
+    <td>"medium"</td>
+    <td>1 in 100</td>
+    <td>Every 5 seconds</td>
+  </tr>
+
+  <tr>
+    <td>"high"</td>
+    <td>1 in 10</td>
+    <td>Every second</td>
+  </tr>
+
+  <tr>
+    <td>"paranoid"</td>
+    <td>Always</td>
+    <td>Every second</td>
+  </tr>
+</table>
+
+<p>
+The default <code>SFTPTrafficPolicy</code> setting is "none".
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+To install <code>mod_sftp</code>, go to the third-party module area in
+the proftpd source code and unpack the <code>mod_sftp</code> source tarball:
+<pre>
+  cd <i>proftpd-dir</i>/contrib/
+  tar zxvf /path/to/mod_sftp-<i>version</i>.tar.gz
+</pre>
+after unpacking the latest proftpd-1.3.2 source code.  For including
+<code>mod_sftp</code> as a staticly linked module:
+<pre>
+  ./configure --enable-openssl --with-modules=mod_sftp ...
+</pre>
+Alternatively, <code>mod_sftp</code> can be built as a DSO module:
+<pre>
+  ./configure --enable-dso --enable-openssl --with-shared=mod_sftp ...
+</pre>
+Then follow the usual steps:
+<pre>
+  make
+  make install
+</pre>
+
+<p>
+<hr>
+<h2><a name="Usage">Usage</a></h2>
+<p>
+
+<p>
+<b>Compiler Warnings</b><br>
+When compiling <code>mod_sftp</code>, you may notice the following compiler
+warning:
+<pre>
+  contrib/mod_sftp/mod_sftp.a(fxp.o): In function `fxp_handle_create':
+  fxp.c:(.text+0x4dc8): warning: the use of `mktemp' is dangerous, better use `mkstemp'
+</pre>
+This warning can be ignored.
+
+<p>
+The <code>mktemp(3)</code> function is generally considered unsafe because,
+in the past, many applications would use this function to create the names of
+temporary files.  The actual problem was not the <code>mktemp(3)</code>
+function itself, but rather that the applications did not check to see
+if the name generated by <code>mktemp(3)</code> already existed in filesytem
+first.  This lead to race conditions where local users could create symlinks
+of the generated names, and the application would overwrite the symlinked file.
+
+<p>
+In the case of <code>mod_sftp</code>, however, the <code>mktemp(3)</code>
+function is <b>not</b> used to create files.  Instead, it is used to create
+arbitrary unique strings that are used as "handles", as references, in the
+protocol.  These strings have no relation to any actual path on the filesystem,
+and thus do not suffer from the above race condition.
+
+<p>
+<b>Access Controls for SFTP Requests</b><br>
+Some of the requests supported by SFTP have FTP command equivalents.  Other
+requests in SFTP have no FTP command equivalent.  This makes the use of
+<code>&lt;Limit&gt;</code> sections for access controls in <code>mod_sftp</code>
+a little interesting.
+
+<p>
+First, the familiar territory.  The following shows the
+<code>&lt;Limit&gt;</code> sections for FTP commands (just as for normal FTP
+sessions) which are honored by <code>mod_sftp</code>:
+<ul>
+  <li><code>&lt;Limit DELE&gt;</code><br>
+    Applies to the <code>REMOVE</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit MKD XMKD&gt;</code><br>
+    Applies to the <code>MKDIR</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit LIST NLST&gt;</code><br>
+    Applies to the <code>READDIR</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit RETR&gt;</code><br>
+    Applies to the <code>READ</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit RNFR RNTO&gt;</code><br>
+    Applies to the <code>RENAME</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit RMD XRMD&gt;</code><br>
+    Applies to the <code>RMDIR</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit STOR&gt;</code><br>
+    Applies to the <code>WRITE</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit SITE_CHMOD&gt;</code><br>
+    Applies to the <code>SETSTAT</code> and <code>FSETSTAT</code> SFTP
+    requests when they change file permissions
+  </li>
+</ul>
+Thus you can see that <code>mod_sftp</code> will reuse much of your existing
+<code>&lt;Limit&gt;</code>-based access controls for SFTP sessions.
+
+<p>
+For those SFTP requests which have no direct FTP equivalents elsewhere in
+<code>proftpd</code>, the <code>mod_sftp</code> module supports some
+slightly different <code>&lt;Limit&gt;</code> sections.  <b>Note</b> that
+the following does <b>not</b> apply to FTP sessions, nor does it imply
+that FTP supports these commands:
+<ul>
+  <li><code>&lt;Limit FSTAT&gt;</code><br>
+    Applies to the <code>FSTAT</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit LSTAT&gt;</code><br>
+    Applies to the <code>LSTAT</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit LOCK&gt;</code><br>
+    Applies to the <code>LOCK</code> and <code>UNLOCK</code> SFTP requests
+  </li>
+
+  <p>
+  <li><code>&lt;Limit OPEN&gt;</code><br>
+    Applies to the <code>OPEN</code> SFTP request
+  </li>
+  <p>
+  <li><code>&lt;Limit SETSTAT&gt;</code><br>
+    Applies to the <code>FSETSTAT</code> and <code>SETSTAT</code> SFTP requests
+  </li>
+
+  <p>
+  <li><code>&lt;Limit STAT&gt;</code><br>
+    Applies to the <code>STAT</code> SFTP request
+  </li>
+
+  <p>
+  <li><code>&lt;Limit SYMLINK&gt;</code><br>
+    Applies to the <code>LINK</code> and <code>SYMLINK</code> SFTP requests
+  </li>
+</ul>
+Note that not all versions of SFTP support all of these requests; the
+<code>LOCK</code> and <code>UNLOCK</code> requests, for example, appear
+only in later versions of SFTP.
+
+<p>
+What about the <code>READ</code> and <code>WRITE</code> command groups?
+<ul>
+  <li><code>&lt;Limit READ&gt;</code><br>
+    Applies to the <code>SYMLINK</code> and <code>READ</code> SFTP requests
+  </li>
+
+  <p>
+  <li><code>&lt;Limit WRITE&gt;</code><br>
+    Applies to the <code>SETSTAT</code>, <code>SYMLINK</code>, and
+    <code>LOCK</code> SFTP requests
+  </li>
+</ul>
+
+<p>
+<b>Environment Variables</b><br>
+The <code>mod_sftp</code> module will set the following environment
+variables whenever an SSH2 client connects:
+<ul>
+  <li><code>SFTP</code>
+  <li><code>SFTP_LIBRARY_VERSION</code>
+  <li><code>SSH_CONNECTION</code>
+</ul>
+In addition, the following environment variables will be set (with appropriate
+values), once the client has successfully exchanged keys with
+<code>mod_sftp</code>:
+<ul>
+  <li>SFTP_CLIENT_CIPHER_ALGO
+  <li>SFTP_CLIENT_COMPRESSION_ALGO
+  <li>SFTP_CLIENT_MAC_ALGO
+  <li>SFTP_SERVER_CIPHER_ALGO
+  <li>SFTP_SERVER_COMPRESSION_ALGO
+  <li>SFTP_SERVER_MAC_ALGO
+</ul>
+
+<p>
+These environment variables are intended for informational purposes,
+<i>e.g.</i> <code>ExtendedLog</code> or <code>SQLLog</code> directives.
+
+<p><a name="UsageRFC4716Format">
+<b>SSH2 Public Key Formats</b><br>
+SSH2 uses public keys for authentication and message protection.  The very
+popular OpenSSH server uses a particular file format for storing public
+keys in files.  However, that format is not portable; it uses a format very
+specific to OpenSSH.  Thus the <code>mod_sftp</code> module uses a different
+format for public keys, specifically, the format specified in
+<a href="http://www.faqs.org/rfcs/rfc4716.html">RFC 4716</a>.  The hope
+is that this format is more interoperable with other SSH2/SFTP implementations.
+
+<p>
+This means that if you wish to use your OpenSSH public keys with the
+<code>mod_sftp</code> module, you will need to convert them from OpenSSH's
+format to the RFC4716 format.  Fortunately, this is supported by
+OpenSSH's <code>ssh-keygen</code> utility, <i>e.g.</i>:
+<pre>
+  # ssh-keygen -e -f ~/.ssh/id_rsa.pub
+</pre>
+The output from this command can be added to the
+<code>SFTPAuthorizedUserKeys</code> used by <code>mod_sftp</code>.
+
+<p>
+<b>Note</b> that the RFC4716 format is <b>not</b> to be used with the
+<code>SFTPHostKey</code> directive.  Even though OpenSSH's host keys have
+".pub" public equivalents, host keys are different from the per-user keys
+that are used for authentication.
+
+<p>
+<b>FIPS Compliance</b><br>
+FIPS stands for "Federal Information Processing Standard", and refers to
+a series of information processing standards issued and used by the US
+government.  When speaking of FIPS and cryptographic software, the pertinent
+standard in particular is
+<a href="http://en.wikipedia.org/wiki/FIPS_140">FIPS-140</a>.
+
+<p>
+How then would you build OpenSSL and <code>mod_sftp</code>, and use them
+such that <code>mod_sftp</code> would be FIPS-compliant?  Using OpenSSL in
+FIPS mode requires quite a few steps.  First, you would configure
+<code>proftpd</code> to use the <code>mod_sftp</code> module as normal,
+assuming your OpenSSL installation has been compiled with FIPS support:
+<pre>
+  ./configure --enable-openssl --with-modules=mod_sftp ...
+</pre>
+
+<p>
+Compiling <code>proftpd</code> requires the following, for FIPS support
+to work properly:
+<pre>
+  make CC=<em>/path/to/openssl/bin/</em>fipsld FIPSLD_CC=<em>gcc</em>
+</pre>
+The <code>FIPSLD_CC</code> variable should point to your normal C compiler,
+<i>e.g.</i> <code>gcc</code>.  The use of this <code>fipsld</code> program
+is <b>mandatory</b>.  The FIPS standard requires that the linking process
+happen a very specific way, involving verification of calculated and expected
+checksums of compiled code, <i>etc</i>.  The OpenSSL packages with FIPS
+support supply this <code>fipsld</code> program which will link the compiled
+code according to the FIPS specifications.  <i>If you do not use
+<code>fipsld</code>, then attempts to use OpenSSL in FIPS mode will fail.</i>
+For example, you would see the following if starting a <code>proftpd</code>
+daemon which has not been linked using <code>fipsld</code> while requesting
+use of FIPS:
+<pre>
+  - mod_sftp/0.0: unable to use FIPS mode: (unknown)
+  - Fatal: unable to load module 'mod_sftp.c': Operation not permitted
+</pre>
+
+<p>
+Now, assuming you have compiled and installed your <code>proftpd</code>
+properly, <i>e.g.</i>:
+<pre>
+  make CC=<em>/path/to/openssl/bin/</em>fipsld FIPSLD_CC=<em>gcc</em>
+  make CC=<em>/path/to/openssl/bin/</em>fipsld FIPSLD_CC=<em>gcc</em> install
+</pre>
+you will now be ready to start <code>proftpd</code>.
+
+<p>
+In order for FIPS mode to be effective, OpenSSL must be told to run in FIPS
+mode from the very beginning.  The <code>mod_sftp</code> module initializes the
+OpenSSL library when the <code>mod_sftp</code> module is loaded, <i>before the
+<code>proftpd.conf</code> file is parsed</i>.  Thus the requesting of FIPS mode
+<b>cannot</b> be done via a setting in <code>proftpd.conf</code>.  (Annoying,
+I know.)
+
+<p>
+Instead, you must use the -D command-line parameter when starting
+<code>proftpd</code> (see the docs for the <code>&lt;IfDefine&gt;</code> and
+<code>Define</code> directives) to define a specific variable, which the
+<code>mod_sftp</code> module will look for.  Specifically, you will need to
+start <code>proftpd</code> like thus:
+<pre>
+  /path/to/proftpd -DSFTP_USE_FIPS ...
+</pre>
+This will define the <code>SFTP_USE_FIPS</code> variable; this tells
+<code>mod_sftp</code> to initialize OpenSSL using FIPS mode.  When this works,
+you will see the following when <code>proftpd</code> starts up:
+<pre>
+  - mod_sftp/0.0: FIPS mode enabled
+</pre>
+
+<p>
+For additional reading on OpenSSL and FIPS, see:
+<pre>
+  <a href="http://www.openssl.org/docs/fips/SecurityPolicy-1.1.1.pdf">http://www.openssl.org/docs/fips/SecurityPolicy-1.1.1.pdf</a>
+  <a href="http://www.openssl.org/docs/fips/UserGuide-1.1.1.pdf">http://www.openssl.org/docs/fips/UserGuide-1.1.1.pdf</a>
+</pre>
+
+<p>
+<b>Example Configuration</b><br>
+When using <code>mod_sftp</code> to handle SFTP connections, you will want
+to create a separate <code>&lt;VirtualHost&gt;</code> section for the
+<code>mod_sftp</code> configuration.  SSH2 (and thus SFTP) requires a different
+port than FTP; in order to listen on different ports, <code>proftpd</code>
+requires different <code>&lt;VirtualHost&gt;</code> sections.  You can have
+multiple <code>&lt;VirtualHost&gt;</code> sections for the same <i>address</i>
+(IP address or DNS name), just different <code>Port</code> directives.
+<pre>
+  &lt;IfModule mod_sftp.c&gt;
+    &lt;VirtualHost <i>a.b.c.d</i>&gt;
+      SFTPEngine on
+      SFTPLog /etc/proftpd/sftp/sftp.log
+
+      # Configure the server to listen on the normal SSH2 port, port 22
+      Port 22
+
+      # Configure both the RSA and DSA host keys, using the same host key
+      # files that OpenSSH uses. 
+      SFTPHostKey /etc/ssh_host_rsa_key
+      SFTPHostKey /etc/ssh_host_dsa_key
+
+      # Configure the file used for comparing authorized public keys of users.
+      SFTPAuthorizedUserKeys file:~/.sftp/authorized_keys
+
+      # Enable compression
+      SFTPCompression delayed
+
+      # Allow the same number of authentication attempts as OpenSSH.
+      #
+      # It is recommended that you explicitly configure MaxLoginAttempts
+      # for your SSH2/SFTP instance to be higher than the normal
+      # MaxLoginAttempts value for FTP, as there are more ways to authenticate
+      # using SSH2.
+      MaxLoginAttempts 6
+
+    &lt;/VirtualHost&gt;
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<b>Logging</b><br>
+The <code>mod_sftp</code> module supports different forms of logging.  The
+main module logging is done via the <code>SFTPLog</code> directive.  For
+debugging purposes, the module also uses <a href="http://www.proftpd.org/docs/howto/Tracing.html">trace logging</a>, via the module-specific "scp", "sftp",
+and "ssh2" log channels.  Thus for trace logging, to aid in debugging, you
+would use the following in your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/sftp-trace.log
+  Trace scp:20 sftp:20 ssh2:20
+</pre>
+This trace logging can generate large files; it is intended for debugging
+use only, and should be removed from any production configuration.
+
+<p>
+<b>Suggested Future Features</b><br>
+The following lists the features I hope to add to <code>mod_sftp</code>,
+according to need, demand, inclination, and time:
+<ul>
+  <li>Look up authorized public keys from LDAP directories
+  <li>Honor the <code>MaxTransferPerHost</code>,
+     <code>MaxTransfersPerUser</code>, <code>MaxRetrieveFileSize</code>,
+     <code>MaxStoreFileSize</code> directives
+</ul>
+
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="SFTPTelnetBanner">
+<font color=red>Question</font>: When I telnet to port 22 of other SSH2 servers,
+I see the SSH2 version banner displayed, <i>e.g.</i>:
+<pre>
+  # telnet example.com 22
+  Trying 1.2.3.4...
+  Connected to example.com.
+  Escape character is '^]'.
+  SSH-1.99-OpenSSH_5.1
+</pre>
+However, when I telnet to the port on which <code>mod_sftp</code> is listening,
+I see the version banner plus some data which can't be rendered in the terminal.
+What is that extra data?<br>
+<font color=blue>Answer</font>: The short answer is that <code>mod_sftp</code>
+is pre-emptively sending the first key exchange data; it is this data which is
+not displayed well.
+
+<p>
+This pre-emptive sending of the first key exchange message is an optimization.
+The SSH2 protocol (and many SSH2 servers) start off doing:
+<pre>
+ (1) <i>client</i> ------------ connect -------------&gt; <i>server</i>
+ (2) <i>client</i> &lt;-------- version banner ---------- <i>server</i>
+ (3) <i>client</i> --- client's first key exchange --&gt; <i>server</i>
+ (4) <i>client</i> &lt;-- server's first key exchange --- <i>server</i>
+</pre>
+So you can see that there's some back and forth.  The "first key exchange"
+messages sent by the client are always the same for that client, likewise the
+server always sends the same "first key exchange" message (based on its
+configuration).  So the above has several TCP packets and ACKs that need to be
+sent back and forth.
+
+<p>
+The <code>mod_sftp</code> module avoids one unnecessary TCP packet+ACK by
+sending its version banner and its first key exchange message in the same TCP
+packet:
+<pre>
+ (1) <i>client</i> ------------ connect -------------&gt; <i>server</i>
+ (2) <i>client</i> &lt;-- version banner/1st key exch---- <i>server</i>
+ (3) <i>client</i> --- client's first key exchange --&gt; <i>server</i>
+</pre>
+This helps cut down on the latency during startup, since <code>mod_sftp</code>
+saves on one TCP round-trip time.
+
+<p>
+This optimization was added after reading this informative paper on SSH and
+SSL/TLS by Peter Gutmann:
+<pre>
+  <a href="http://www.cs.auckland.ac.nz/~pgut001/pubs/app_sec.pdf">Performance Characteristics of Application-level Security Protocols</a>
+</pre>
+
+<p><a name="SFTPBadWindowSize">
+<font color=red>Question</font>: My SSH2/SFTP client dies when trying to
+connect to <code>mod_sftp</code>.  The login succeeds, but then the client
+is disconnected.  The client logs show something like:
+<pre>
+  ServerMaxPacket(32768) ServerWindow(-1) (<i>from WS_FTP</i>)
+</pre>
+or
+<pre>
+  debug1: channel 0: open confirm rwindow -1 rmax 32768 (<i>from OpenSSH_3.0.2p1</i>)
+</pre>
+<font color=blue>Answer</font>: The issue, in short, involves that "-1" value
+you see, and the particular client implementation in question.
+
+<p>
+The SSH2 protocol specifications say that implementations must encode
+the SSH2 channel "window size" as a 32-bit unsigned number.  This means that
+the maximum window size is effectively 4294967295 (<i>i.e.</i> 2 ^ 32 - 1).
+This maximum window size is what <code>mod_sftp</code> uses by default.
+However, some client implementations use a <i>signed</i> data type for
+holding this value.  This means that the value that <code>mod_sftp</code>
+sends to the client becomes a negative signed number to the client (the
+large value "wraps around" to the negative value), and the client chokes.
+
+<p>
+There are two approaches for handling such cases.  You can use the
+<a href="#SFTPClientMatch"><code>SFTPClientMatch</code></a> directive to
+set a smaller channel window size for that particular client, <i>e.g.</i>:
+<pre>
+  SFTPClientMatch ".*WS_FTP.*" channelWindowSize 32MB
+</pre>
+or you can use <code>SFTPClientMatch</code> to set a general channel window
+size for all clients:
+<pre>
+  SFTPClientMatch .* channelWindowSize 64MB
+</pre>
+
+<p>
+The larger the channel window size, the better. (Note that the SSH2 channel
+window size has absolutely <b>no</b> relation to the TCP window size.)
+The smaller this SSH2 channel window size, the more frequently the peer needs
+to send a "window size adjustment" SSH2 request (which entails its own TCP
+packet and ACK) in order to keep the window size open.  The larger the channel
+window size, the fewer "window size adjustment" requests the peer has to send,
+and thus the fewer TCP packets/ACKs are needed.  Since each TCP packet adds
+latency, the smaller channel window sizes can increase the latency for data
+transfers.
+
+<p>
+For this reason, my personal recommendation is to only set smaller channel
+window sizes for those SSH2/SFTP clients which need it; no need to incur
+the additional latency if the client supports the larger window sizes.
+
+<p><a name="SFTPSubsystem">
+<font color=red>Question</font>: Can I configure <code>mod_sftp</code> to be
+an OpenSSH subsystem, <i>e.g.</i> by using the following in my
+<code>sshd_config</code> file:
+<pre>
+  Subsystem  sftp  /usr/local/sbin/proftpd
+</pre>
+<font color=blue>Answer</font>: No.  The <code>mod_sftp</code> module cannot
+be used as an OpenSSH subsystem because proftpd needs more information about
+the session than is provided to OpenSSH subsystems.  ProFTPD needs to know all
+of the information about the authenticated user, the SSH2 channel IDs being
+used for the SFTP/SCP sessions, <i>etc</i>.
+
+<p><a name="SFTPOnly">
+<font color=red>Question</font>: How can I configure <code>proftpd</code>
+so that it only accepts SFTP connections (via <code>mod_sftp</code>), and no
+FTP connections?<br>
+<font color=blue>Answer</font>: Use the following in your
+<code>proftpd.conf</code>:
+<pre>
+  &lt;Limit LOGIN&gt;
+    DenyAll
+  &lt;/Limit&gt;
+
+  &lt;VirtualHost <i>a.b.c.d</i>&gt;
+    &lt;Limit LOGIN&gt;
+      AllowAll
+    &lt;/Limit&gt;
+
+    SFTPEngine on
+    ...
+  &lt;/VirtualHost&gt;
+</pre>
+The idea is to use the <code>&lt;Limit LOGIN&gt;</code> to deny all logins to
+any/all virtual host sections <i>except</i> for the <code>mod_sftp</code>
+section.
+
+<p><a name="SFTPPCBCModeAttacks">
+<font color=red>Question</font>: Is it true that using CBC mode ciphers in
+SSH is insecure?<br>
+<font color=blue>Answer</font>: It is true that there are a couple of published
+<i>theoretical</i> attacks against the SSH protocol when CBC ciphers are
+used, including Rogaway, Wai, and Bellare (see RFC4251, Section 9.3.1) and
+<a href="http://www.cpni.gov.uk/Docs/Vulnerability_Advisory_SSH.txt">"Plaintext Recovery Attacks Against SSH"</a> (CPNI-957037).
+
+<p>
+However, these attacks can be mitigated by countermeasures in the SSH
+implementation.  The use of <code>SSH_MSG_IGNORE</code> messages for the
+Rogaway attack, and the delayed checking of packet length fields until the MAC
+check has passed (and then reading in a random amount of additional data from
+the network) to migitate CPNI-957037, are both implemented within the
+<code>mod_sftp</code> module as security measures.
+
+<p><a name="SFTPListOptions">
+<font color=red>Question</font>: I am trying to use <code>ListOptions</code>
+to change what is displayed for files in my SFTP clients, but it is not working.
+Why?<br>
+<font color=blue>Answer</font>: Unlike FTP, in SFTP it is the <i>client</i>,
+<b>not</b> the server, which determines what to display to the end user.
+Thus the <code>ListOptions</code> directive is not honored by
+<code>mod_sftp</code>.
+
+<p><a name="SFTPUploadChmod">
+<font color=red>Question</font>: If I use a configuration like this:
+<pre>
+  &lt;Directory /path/to/upload&gt;
+    &lt;Limit WRITE&gt;
+      AllowAll
+    &lt;/Limit&gt;
+
+    &lt;Limit SITE_CHMOD&gt;
+      DenyAll
+    &lt;/Limit&gt;
+  &lt;/Directory&gt;
+</pre>
+then why do my SFTP uploads fail, when the same configuration allows uploads to succeed using FTP?<br>
+<font color=blue>Answer</font>: When a file is uploaded using FTP, the only
+parts of the file uploaded are its <i>contents</i> but <b>not</b> the file
+<i>metadata</i> (<i>e.g.</i> not the file timestamps or permissions).  Separate
+FTP commands are used to sent the file metadata to the server.
+
+<p>
+However, the SFTP protocol sends the file metadata <i>as part of the normal upload</i>.  In the configuration above, the limit on <code>SITE CHMOD</code>
+is being applied to the SFTP upload.  If you do not want this, and want
+your SFTP uploads to be more like your FTP uploads, then you should use:
+<pre>
+  SFTPOptions IgnoreSFTPUploadPerms
+</pre>
+in your <code>mod_sftp</code> configuration.
+
+<p>
+<hr><br>
+
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2010/01/06 00:41:06 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2008-2010 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+
