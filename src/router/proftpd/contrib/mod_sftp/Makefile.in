@@ -1,0 +1,58 @@
+top_builddir=../..
+top_srcdir=../../
+srcdir=@srcdir@
+
+include $(top_srcdir)/Make.rules
+
+.SUFFIXES: .la .lo
+
+SHARED_CFLAGS=-DPR_SHARED_MODULE
+SHARED_LDFLAGS=-avoid-version -export-dynamic -module
+VPATH=@srcdir@
+
+MODULE_NAME=mod_sftp
+MODULE_OBJS=mod_sftp.o msg.o packet.o cipher.o mac.o compress.o kex.o keys.o \
+  crypto.o utf8.o session.o service.o kbdint.o auth-hostbased.o auth-kbdint.o \
+  auth-password.o auth-publickey.o auth.o disconnect.o rfc4716.o keystore.o \
+  channel.o blacklist.o interop.o tap.o fxp.o scp.o
+SHARED_MODULE_OBJS=mod_sftp.lo msg.lo packet.lo cipher.lo mac.lo \
+  compress.lo kex.lo keys.lo crypto.lo utf8.lo session.lo service.lo kbdint.lo \
+  auth-hostbased.lo auth-kbdint.lo auth-password.lo auth-publickey.lo auth.lo \
+  disconnect.lo rfc4716.lo keystore.lo channel.lo blacklist.lo interop.lo \
+  tap.lo fxp.lo scp.lo
+
+# Necessary redefinitions
+INCLUDES=-I. -I../.. -I../../include @INCLUDES@
+CPPFLAGS= $(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
+LDFLAGS=-L../../lib @LIBDIRS@
+
+.c.o:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+.c.lo:
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $<
+
+shared: $(SHARED_MODULE_OBJS)
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(SHARED_MODULE_LIBS) `cat $(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
+
+static: $(MODULE_OBJS)
+	$(AR) rc $(MODULE_NAME).a $(MODULE_NAME).o $(MODULE_OBJS)
+	$(RANLIB) $(MODULE_NAME).a
+
+install: install-misc
+	if [ -f $(MODULE_NAME).la ] ; then \
+		$(LIBTOOL) --mode=install --tag=CC $(INSTALL_BIN) $(MODULE_NAME).la $(DESTDIR)$(LIBEXECDIR) ; \
+	fi
+
+install-misc:
+	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 dhparams.pem $(DESTDIR)$(sysconfdir)/dhparams.pem 
+	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 blacklist.dat $(DESTDIR)$(sysconfdir)/blacklist.dat
+
+clean:
+	$(RM) $(MODULE_NAME).a *.o *.la *.lo
+	$(LIBTOOL) --mode=clean $(RM) "$(MODULE_NAME).o"
+	$(LIBTOOL) --mode=clean $(RM) `echo "$(MODULE_NAME).la" | sed 's/\.la$\/.lo/g'`
+
+dist: clean
+	$(RM) Makefile mod_sftp.h config.status config.cache config.log
+	-$(RM) -r .libs/ CVS/ RCS/
