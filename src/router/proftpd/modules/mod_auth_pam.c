@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_pam -- Support for PAM-style authentication.
  * Copyright (c) 1998, 1999, 2000 Habeeb J. Dihu aka
  *   MacGyver <macgyver@tos.net>, All Rights Reserved.
- * Copyright 2000-2008 The ProFTPD Project
+ * Copyright 2000-2009 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lpam$
- * $Id: mod_auth_pam.c,v 1.22 2008/10/06 18:36:23 castaglia Exp $
+ * $Id: mod_auth_pam.c,v 1.24 2009/03/05 05:24:06 castaglia Exp $
  */
 
 #include "conf.h"
@@ -84,12 +84,18 @@ static unsigned long auth_pam_opts = 0UL;
 
 static const char *trace_channel = "pam";
 
-static int pam_exchange(num_msg, msg, resp, appdata_ptr)
-     int num_msg;
-     struct pam_message **msg;
-     struct pam_response **resp;
-     void *appdata_ptr;
-{
+/* On non-Solaris systems, the struct pam_message argument is declared
+ * const, but on Solaris, it isn't.  To avoid compiler warnings about
+ * incompatible pointer types, we need to use const or not as appropriate.
+ */
+#ifndef SOLARIS2
+# define PR_PAM_CONST	const
+#else
+# define PR_PAM_CONST
+#endif
+
+static int pam_exchange(int num_msg, PR_PAM_CONST struct pam_message **msg,
+    struct pam_response **resp, void *appdata_ptr) {
   register unsigned int i;
   struct pam_response *response = NULL;
 

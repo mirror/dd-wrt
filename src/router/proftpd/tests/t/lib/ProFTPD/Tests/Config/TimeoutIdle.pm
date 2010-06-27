@@ -57,7 +57,7 @@ sub tear_down {
   }
 
   undef $self;
-};
+}
 
 sub timeoutidle_ok {
   my $self = shift;
@@ -66,7 +66,8 @@ sub timeoutidle_ok {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -197,7 +198,8 @@ sub timeoutidle_exceeded {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -224,12 +226,15 @@ sub timeoutidle_exceeded {
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
-  my $timeout_idle = 3;
+  my $timeout_idle = 2;
+  my $timeout_delay = $timeout_idle + 2;
 
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10',
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
@@ -265,8 +270,8 @@ sub timeoutidle_exceeded {
       $client->login($user, $passwd);
       $client->noop();
 
-      # Wait for one second more than the idle period
-      sleep($timeout_idle + 1);
+      # Wait for more than the idle period
+      sleep($timeout_delay);
 
       my ($resp_code, $resp_msg);
 

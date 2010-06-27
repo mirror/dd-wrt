@@ -25,7 +25,7 @@
  */
 
 /* Authentication front-end for ProFTPD
- * $Id: auth.c,v 1.67.2.1 2009/04/28 19:41:01 castaglia Exp $
+ * $Id: auth.c,v 1.80 2009/12/06 17:19:17 castaglia Exp $
  */
 
 #include "conf.h"
@@ -221,7 +221,7 @@ static void gidcache_add(gid_t gid, const char *name) {
 static cmd_rec *make_cmd(pool *cp, int argc, ...) {
   va_list args;
   cmd_rec *c;
-  int     i;
+  pool *sub_pool;
 
   c = pcalloc(cp, sizeof(cmd_rec));
 
@@ -229,17 +229,24 @@ static cmd_rec *make_cmd(pool *cp, int argc, ...) {
   c->stash_index = -1;
 
   if (argc) {
+    register unsigned int i;
+
     c->argv = pcalloc(cp, sizeof(void *) * (argc + 1));
 
     va_start(args, argc);
 
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
       c->argv[i] = (void *) va_arg(args, char *);
+    }
 
     va_end(args);
 
     c->argv[argc] = NULL;
   }
+
+  /* Make sure we provide pool and tmp_pool for the consumers. */
+  sub_pool = make_sub_pool(cp);
+  c->pool = c->tmp_pool = sub_pool;
 
   return c;
 }
@@ -507,6 +514,9 @@ struct passwd *pr_auth_getpwnam(pool *p, const char *name) {
 
   uidcache_add(res->pw_uid, name);
 
+  /* Get the (possibly rewritten) home directory. */
+  res->pw_dir = pr_auth_get_home(p, res->pw_dir);
+
   pr_log_debug(DEBUG10, "retrieved UID %lu for user '%s'",
     (unsigned long) res->pw_uid, name);
   return res;
@@ -693,6 +703,48 @@ int pr_auth_authenticate(pool *p, const char *name, const char *pw) {
 
   else if (MODRET_ISERROR(mr))
     res = MODRET_ERROR(mr);
+
+  if (cmd->tmp_pool) {
+    destroy_pool(cmd->tmp_pool);
+    cmd->tmp_pool = NULL;
+  }
+
+  return res;
+}
+
+int pr_auth_authorize(pool *p, const char *name) {
+  cmd_rec *cmd = NULL;
+  modret_t *mr = NULL;
+  module *m = NULL;
+  int res = PR_AUTH_OK;
+
+  cmd = make_cmd(p, 1, name);
+
+  if (auth_tab) {
+
+    /* Fetch the specific module to be used for authenticating this user. */
+    void *v = pr_table_get(auth_tab, name, NULL);
+    if (v) {
+      m = *((module **) v);
+
+      pr_trace_msg(trace_channel, 4,
+        "using module 'mod_%s.c' from authcache to authorize user '%s'",
+        m->name, name);
+    }
+  }
+
+  mr = dispatch_auth(cmd, "authorize", m ? &m : NULL);
+
+  /* Unlike the other auth calls, we assume here that unless the handlers
+   * explicitly return ERROR, the user is authorized.  Thus HANDLED and
+   * DECLINED are both treated as "yes, this user is authorized".  This
+   * handles the case where the authenticating module (e.g. mod_sql)
+   * does NOT provide an 'authorize' handler.
+   */
+
+  if (MODRET_ISERROR(mr)) {
+    res = MODRET_ERROR(mr);
+  }
 
   if (cmd->tmp_pool) {
     destroy_pool(cmd->tmp_pool);
@@ -1027,42 +1079,12 @@ int pr_auth_getgroups(pool *p, const char *name, array_header **group_ids,
   return res;
 }
 
-/* Helper function for pr_auth_get_anon_config(), for handling the
- * (horrible) AnonymousGroup directive.
- */
-static config_rec *auth_anonymous_group(pool *p, char *user) {
-  config_rec *c;
-  int ret = 0;
-
-  /* Retrieve the session group membership information, so that this check
-   * may work properly.
-   */
-  if (!session.gids && !session.groups &&
-      (ret = pr_auth_getgroups(p, user, &session.gids, &session.groups)) < 1)
-    pr_log_debug(DEBUG2, "no supplemental groups found for user '%s'", user);
-
-  c = find_config(main_server->conf, CONF_PARAM, "AnonymousGroup", FALSE);
-
-  if (c) {
-    do {
-      pr_signals_handle();
-
-      ret = pr_expr_eval_group_and((char **) c->argv);
-
-    } while (ret == FALSE &&
-      (c = find_config_next(c, c->next, CONF_PARAM, "AnonymousGroup",
-        FALSE)) != NULL);
-  }
-
-  return ret ? c : NULL;
-}
-
 /* This is one messy function.  Yuck.  Yay legacy code. */
 config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
     char **user_name, char **anon_name) {
-  config_rec *c = NULL, *topc = NULL;
+  config_rec *c = NULL, *topc = NULL, *anon_c = NULL;
   char *config_user_name, *config_anon_name = NULL;
-  unsigned char is_alias = FALSE, force_anon = FALSE, *auth_alias_only = NULL;
+  unsigned char is_alias = FALSE, *auth_alias_only = NULL;
 
   /* Precendence rules:
    *   1. Search for UserAlias directive.
@@ -1071,8 +1093,10 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
    */
 
   config_user_name = get_param_ptr(main_server->conf, "UserName", FALSE);
-  if (config_user_name && user_name)
+  if (config_user_name &&
+      user_name) {
     *user_name = config_user_name;
+  }
 
   /* If the main_server->conf->set list is large (e.g. there are many
    * config_recs in the list, as can happen if MANY <Directory> sections are
@@ -1089,6 +1113,8 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
   c = find_config(main_server->conf, CONF_PARAM, "UserAlias", TRUE);
   if (c) {
     do {
+      pr_signals_handle();
+
       if (strcmp(c->argv[0], "*") == 0 ||
           strcmp(c->argv[0], *login_name) == 0) {
         is_alias = TRUE;
@@ -1108,12 +1134,17 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
     /* while() loops should always handle signals. */
     pr_signals_handle();
 
-    /* If AuthAliasOnly is on, ignore this one and continue. */
-    if (auth_alias_only &&
-        *auth_alias_only == TRUE) {
-      c = find_config_next(c, c->next, CONF_PARAM, "UserAlias", TRUE);
-      continue;
+    if (auth_alias_only) {
+      /* If AuthAliasOnly is on, ignore this one and continue. */
+      if (*auth_alias_only == TRUE) {
+        c = find_config_next(c, c->next, CONF_PARAM, "UserAlias", TRUE);
+        continue;
+      }
     }
+
+    /* At this point, we have found an "AuthAliasOnly off" config in
+     * c->parent->set.  See if there's a UserAlias in the same config set.
+     */
 
     is_alias = FALSE;
 
@@ -1122,8 +1153,9 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
 
     if (c &&
         (strcmp(c->argv[0], "*") == 0 ||
-         strcmp(c->argv[0], *login_name) == 0))
+         strcmp(c->argv[0], *login_name) == 0)) {
       is_alias = TRUE;
+    }
   }
 
   if (c) {
@@ -1133,22 +1165,28 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
      * our anon block.
      */
     if (c->parent &&
-        c->parent->config_type == CONF_ANON)
+        c->parent->config_type == CONF_ANON) {
       c = c->parent;
-    else
+
+    } else {
       c = NULL;
+    }
   }
 
   /* Next, search for an anonymous entry. */
 
-  if (!c) {
+  if (c == NULL) {
     c = find_config(main_server->conf, CONF_ANON, NULL, FALSE);
 
-  } else
+  } else {
     find_config_set_top(c);
+    anon_c = c;
+  }
 
   if (c) {
     do {
+      pr_signals_handle();
+
       config_anon_name = get_param_ptr(c->subset, "UserName", FALSE);
 
       if (!config_anon_name)
@@ -1165,23 +1203,19 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
       FALSE)) != NULL);
   }
 
-  if (!c) {
-    c = auth_anonymous_group(p, *login_name);
-
-    if (c)
-      force_anon = TRUE;
-  }
-
-  if (!is_alias && !force_anon) {
-    auth_alias_only = get_param_ptr(c ? c->subset : main_server->conf,
+  if (!is_alias) {
+    auth_alias_only = get_param_ptr(anon_c ? anon_c->subset : main_server->conf,
       "AuthAliasOnly", FALSE);
 
     if (auth_alias_only &&
         *auth_alias_only == TRUE) {
-      if (c && c->config_type == CONF_ANON)
-        c = NULL;
-      else
+      if (anon_c &&
+          anon_c->config_type == CONF_ANON) {
+        anon_c = NULL;
+
+      } else {
         *login_name = NULL;
+      }
 
       auth_alias_only = get_param_ptr(main_server->conf, "AuthAliasOnly",
         FALSE);
@@ -1190,9 +1224,10 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
           *auth_alias_only == TRUE)
         *login_name = NULL;
 
-      if ((!login_name || !c) &&
-          anon_name)
+      if ((!login_name || !anon_c) &&
+          anon_name) {
         *anon_name = NULL;
+      }
     }
   }
 
@@ -1483,8 +1518,9 @@ int pr_auth_add_auth_only_module(const char *name) {
     return 0;
   }
 
-  if (!auth_module_list)
+  if (auth_module_list == NULL) {
     auth_module_list = xaset_create(auth_pool, NULL);
+  }
 
   /* Prevent duplicates; they could lead to a memory leak. */
   for (elt = (struct auth_module_elt *) auth_module_list->xas_list; elt;
@@ -1497,11 +1533,121 @@ int pr_auth_add_auth_only_module(const char *name) {
 
   elt = pcalloc(auth_pool, sizeof(struct auth_module_elt));
   elt->name = pstrdup(auth_pool, name);
-  xaset_insert_end(auth_module_list, (xasetmember_t *) elt);
 
-  pr_trace_msg(trace_channel, 5, "added '%s' to auth-only module list",
-    name);
+  if (xaset_insert_end(auth_module_list, (xasetmember_t *) elt) < 0) {
+    pr_trace_msg(trace_channel, 1, "error adding '%s' to auth-only "
+      "module set: %s", name, strerror(errno));
+    return -1;
+  }
+
+  pr_trace_msg(trace_channel, 5, "added '%s' to auth-only module list", name);
   return 0;
+}
+
+int pr_auth_clear_auth_only_modules(void) {
+  if (auth_module_list == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  auth_module_list = NULL;
+  pr_trace_msg(trace_channel, 5, "cleared auth-only module list");
+  return 0;
+}
+
+int pr_auth_remove_auth_only_module(const char *name) {
+  struct auth_module_elt *elt = NULL;
+
+  if (!name) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (!(auth_caching & PR_AUTH_CACHE_FL_AUTH_MODULE)) {
+    /* We won't be using the auth-only module cache, so there's no need to
+     * accept this.
+     */
+    pr_trace_msg(trace_channel, 9, "not removing '%s' to the auth-only list: "
+      "caching of auth-only modules disabled", name);
+    return 0;
+  }
+
+  if (auth_module_list == NULL) {
+    pr_trace_msg(trace_channel, 9, "not removing '%s' from list: "
+      "empty auth-only module list", name);
+    errno = ENOENT;
+    return -1;
+  }
+
+  for (elt = (struct auth_module_elt *) auth_module_list->xas_list; elt;
+      elt = elt->next) {
+    if (strcmp(elt->name, name) == 0) {
+      if (xaset_remove(auth_module_list, (xasetmember_t *) elt) < 0) {
+        pr_trace_msg(trace_channel, 1, "error removing '%s' from auth-only "
+          "module set: %s", name, strerror(errno));
+        return -1;
+      }
+
+      pr_trace_msg(trace_channel, 5, "removed '%s' from auth-only module list",
+        name);
+      return 0;
+    }
+  }
+
+  errno = ENOENT;
+  return -1;
+}
+
+char *pr_auth_get_home(pool *p, char *pw_dir) {
+  config_rec *c;
+  char *home_dir;
+
+  home_dir = pw_dir;
+
+  c = find_config(main_server->conf, CONF_PARAM, "RewriteHome", FALSE);
+  if (c == NULL)
+    return home_dir;
+
+  if (*((int *) c->argv[0]) == FALSE)
+    return home_dir;
+
+  /* Rather than using a cmd_rec dispatched to mod_rewrite's PRE_CMD handler,
+   * we use an approach with looser coupling to mod_rewrite: stash the
+   * home directory in the session.notes table, and generate an event.
+   * The mod_rewrite module will listen for this event, rewrite the stashed
+   * home directory as necessary, and be done.
+   *
+   * Thus after the event has been generated, we retrieve (and remove) the
+   * (possibly rewritten) home directory from the session.notes table.
+   * This approach means that other modules which wish to get involved
+   * in the rewriting of the home directory can also do so.
+   */
+
+  (void) pr_table_remove(session.notes, "mod_auth.home-dir", NULL);
+  if (pr_table_add(session.notes, "mod_auth.home-dir",
+      pstrdup(p, pw_dir), 0) < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error stashing home dir in session.notes: %s", strerror(errno));
+    return home_dir;
+  }
+
+  pr_event_generate("mod_auth.rewrite-home", NULL);
+
+  home_dir = pr_table_get(session.notes, "mod_auth.home-dir", NULL);
+  if (home_dir == NULL) {
+    pr_trace_msg(trace_channel, 3,
+      "error getting home dir from session.notes: %s", strerror(errno));
+    return pw_dir;
+  }
+
+  (void) pr_table_remove(session.notes, "mod_auth.home-dir", NULL);
+
+  pr_log_debug(DEBUG9, "returning rewritten home directory '%s' for original "
+    "home directory '%s'", home_dir, pw_dir);
+  pr_trace_msg(trace_channel, 9, "returning rewritten home directory '%s' "
+    "for original home directory '%s'", home_dir, pw_dir);
+
+  return home_dir;
 }
 
 /* Internal use only.  To be called in the session process. */

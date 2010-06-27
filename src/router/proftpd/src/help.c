@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2008 The ProFTPD Project team
+ * Copyright (c) 2004-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* HELP management code
- * $Id: help.c,v 1.4 2008/10/04 04:01:45 castaglia Exp $
+ * $Id: help.c,v 1.5 2009/06/30 23:31:18 castaglia Exp $
  */
 
 #include "conf.h"
@@ -61,8 +61,10 @@ void pr_help_add(const char *cmd, const char *syntax, int impl) {
 
     for (i = 0; i < help_list->nelts; i++)
       if (strcmp(helps[i].cmd, cmd) == 0) {
-        if (helps[i].impl == FALSE)
+        if (helps[i].impl == FALSE &&
+            impl == TRUE) {
           helps[i].impl = impl;
+        }
 
         return;
       }

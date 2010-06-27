@@ -1,4 +1,4 @@
-<!-- $Id: mod_delay.html,v 1.6 2007/10/01 16:40:42 castaglia Exp $ -->
+<!-- $Id: mod_delay.html,v 1.7 2009/03/04 00:57:52 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_delay.html,v $ -->
 
 <html>
@@ -219,6 +219,28 @@ IP address ranges.  For example:
 </pre>
 More information on defining classes can be found <a href="../howto/Classes.html">here</a>.
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p>
+<font color=red>Question</font>: My client times out, after a couple of minutes,
+after sending the <code>USER</code> command.  After disabling <code>mod_delay</code>, the login succeeds quickly.  Isn't this a bug in <code>mod_delay</code>?<br>
+<font color=blue>Answer</font>: No.
+
+<p>
+The <code>DelayTable</code> file can, over time, build up a store of long
+delay values.  A series of logins which take a while (<i>e.g.</i> SSL/TLS
+handshakes over slow network connections) can cause this sort of behavior.
+You can delete the <code>DelayTable</code> file or use the <a href="#delay_reset"><code>delay reset</code></a> ftpdctl action to clear the stored data.
+
+<p>
+<font color=red>Question</font>: Shouldn't <code>mod_delay</code> have some
+sort of maximum delay value, so that it doesn't cause timeouts?<br>
+<font color=blue>Answer</font>:  No.  There is no single value, hardcoded
+or configurable, that will work well for all sites <i>and</i> achieve
+<code>mod_delay</code>'s purpose at the same time.  What seems like a normal
+delay time for one site will be unacceptably long for another site.
+
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
@@ -228,12 +250,12 @@ The <code>mod_delay</code> module is compiled by default.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2007/10/01 16:40:42 $</i><br>
+Last Updated: <i>$Date: 2009/03/04 00:57:52 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2007 TJ Saunders<br>
+&copy; Copyright 2004-2009 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

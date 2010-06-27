@@ -25,7 +25,7 @@
 /*
  * ProFTPD scoreboard support (modified for use by external utilities).
  *
- * $Id: scoreboard.c,v 1.11 2008/03/26 21:13:19 castaglia Exp $
+ * $Id: scoreboard.c,v 1.13 2009/12/03 21:45:24 castaglia Exp $
  */
 
 #include "utils.h"
@@ -237,18 +237,22 @@ pr_scoreboard_entry_t *util_scoreboard_entry_read(void) {
 
   /* NOTE: use readv(2)? */
   errno = 0;
-  while (TRUE) {
+  while (scan_entry.sce_pid == 0) {
     while ((res = read(util_scoreboard_fd, &scan_entry,
         sizeof(scan_entry))) <= 0) {
-      if (res < 0 && errno == EINTR)
-        continue;
 
-      else {
+      if (res < 0 &&
+          errno == EINTR) {
+        continue;
+ 
+      } else {
         unlock_scoreboard();
 
-        if (errno)
+        if (errno) {
           fprintf(stdout, "error reading scoreboard entry: %s\n",
             strerror(errno));
+        }
+
         return NULL;
       }
     }
@@ -256,11 +260,101 @@ pr_scoreboard_entry_t *util_scoreboard_entry_read(void) {
     if (scan_entry.sce_pid) {
       unlock_scoreboard();
       return &scan_entry;
-
-    } else
-      continue;
+    }
   }
 
   unlock_scoreboard();
   return NULL;
+}
+
+int util_scoreboard_scrub(int verbose) {
+  int fd = -1;
+  off_t curr_offset = 0;
+  struct flock lock;
+  pr_scoreboard_entry_t sce;
+
+  if (verbose) {
+    fprintf(stdout, "scrubbing ScoreboardFile %s\n", util_get_scoreboard());
+  }
+
+  /* Manually open the scoreboard.  It won't hurt if the process already
+   * has a descriptor opened on the scoreboard file.
+   */
+  fd = open(util_get_scoreboard(), O_RDWR);
+  if (fd < 0) {
+    return -1;
+  }
+
+  /* Lock the entire scoreboard. */
+  lock.l_type = F_WRLCK;
+  lock.l_whence = 0;
+
+  lock.l_start = 0;
+  lock.l_len = 0;
+
+  /* We can afford to block/wait until we obtain our lock on the file. */
+  while (fcntl(fd, F_SETLKW, &lock) < 0) {
+    if (errno == EINTR) {
+      continue;
+    }
+
+    return -1;
+  }
+
+  /* Skip past the scoreboard header. */
+  curr_offset = lseek(fd, sizeof(pr_scoreboard_header_t), SEEK_SET);
+
+  memset(&sce, 0, sizeof(sce));
+
+  while (read(fd, &sce, sizeof(sce)) == sizeof(sce)) {
+
+    /* Check to see if the PID in this entry is valid.  If not, erase
+     * the slot.
+     */
+    if (sce.sce_pid &&
+        kill(sce.sce_pid, 0) < 0 &&
+        errno == ESRCH) {
+
+      /* OK, the recorded PID is no longer valid. */
+      if (verbose) {
+        fprintf(stdout, "scrubbing scoreboard slot for PID %u",
+          (unsigned int) sce.sce_pid);
+      }
+
+      /* Rewind to the start of this slot. */
+      lseek(fd, curr_offset, SEEK_SET);
+
+      memset(&sce, 0, sizeof(sce));
+      while (write(fd, &sce, sizeof(sce)) != sizeof(sce)) {
+        if (errno == EINTR) {
+          continue;
+        }
+
+        if (verbose) {
+          fprintf(stdout, "error scrubbing scoreboard: %s",
+            strerror(errno));
+        }
+      }
+    }
+
+    /* Mark the current offset. */
+    curr_offset = lseek(fd, 0, SEEK_CUR);
+  }
+
+  /* Release the scoreboard. */
+  lock.l_type = F_UNLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0;
+
+  while (fcntl(fd, F_SETLKW, &lock) < 0) {
+    if (errno == EINTR) {
+      continue;
+    }
+  }
+
+  /* Don't need the descriptor anymore. */
+  (void) close(fd);
+
+  return 0;
 }

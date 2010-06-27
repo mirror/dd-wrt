@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 /* Data transfer module for ProFTPD
  *
- * $Id: mod_xfer.c,v 1.250.2.3 2009/09/01 18:39:27 castaglia Exp $
+ * $Id: mod_xfer.c,v 1.269 2010/02/10 21:45:17 castaglia Exp $
  */
 
 #include "conf.h"
@@ -489,6 +489,39 @@ static int xfer_check_limit(cmd_rec *cmd) {
   return 0;
 }
 
+static int xfer_displayfile(void) {
+  int res = -1;
+
+  if (displayfilexfer_fh) {
+    if (pr_display_fh(displayfilexfer_fh, session.vwd, R_226) < 0) {
+      pr_log_debug(DEBUG6, "unable to display DisplayFileTransfer "
+        "file '%s': %s", displayfilexfer_fh->fh_path, strerror(errno));
+    }
+
+    /* Rewind the filehandle, so that it can be used again. */
+    if (pr_fsio_lseek(displayfilexfer_fh, 0, SEEK_SET) < 0) {
+      pr_log_debug(DEBUG6, "error rewinding DisplayFileTransfer "
+        "file '%s': %s", displayfilexfer_fh->fh_path, strerror(errno));
+    }
+
+    res = 0;
+
+  } else {
+    char *displayfilexfer = get_param_ptr(main_server->conf,
+      "DisplayFileTransfer", FALSE);
+    if (displayfilexfer) {
+      if (pr_display_file(displayfilexfer, session.vwd, R_226) < 0) {
+        pr_log_debug(DEBUG6, "unable to display DisplayFileTransfer "
+          "file '%s': %s", displayfilexfer, strerror(errno));
+      }
+
+      res = 0;
+    }
+  }
+
+  return res;
+}
+
 static int xfer_prio_adjust(void) {
   int res;
 
@@ -600,10 +633,14 @@ static int transmit_normal(char *buf, long bufsz) {
   long sz = pr_fsio_read(retr_fh, buf, bufsz);
 
   if (sz < 0) {
+    int xerrno = errno;
+
     (void) pr_trace_msg("fileperms", 1, "RETR, user '%s' (UID %lu, GID %lu): "
       "error reading from '%s': %s", session.user,
       (unsigned long) session.uid, (unsigned long) session.gid,
-      retr_fh->fh_path, strerror(errno));
+      retr_fh->fh_path, strerror(xerrno));
+
+    errno = xerrno;
     return 0;
   }
 
@@ -633,7 +670,11 @@ static int transmit_sendfile(off_t count, off_t *offset,
      !use_sendfile) {
 
     if (!xfer_logged_sendfile_decline_msg) {
-      if (pr_throttle_have_rate()) {
+      if (!use_sendfile) {
+        pr_log_debug(DEBUG10, "declining use of sendfile due to UseSendfile "
+          "configuration setting");
+
+      } else if (pr_throttle_have_rate()) {
         pr_log_debug(DEBUG10, "declining use of sendfile due to TransferRate "
           "restrictions");
     
@@ -647,10 +688,6 @@ static int transmit_sendfile(off_t count, off_t *offset,
       } else if (have_zmode) {
         pr_log_debug(DEBUG10, "declining use of sendfile due to MODE Z "
           "restrictions");
-
-      } else if (!use_sendfile) {
-        pr_log_debug(DEBUG10, "declining use of sendfile due to UseSendfile "
-          "configuration setting");
 
       } else {
         pr_log_debug(DEBUG10, "declining use of sendfile due to lack of data "
@@ -692,6 +729,10 @@ static int transmit_sendfile(off_t count, off_t *offset,
 #ifdef ENOSYS
       case ENOSYS:
 #endif /* ENOSYS */
+
+#ifdef EOVERFLOW
+      case EOVERFLOW:
+#endif /* EOVERFLOW */
 
       case EINVAL:
         /* No sendfile support, apparently.  Try it the normal way. */
@@ -991,12 +1032,12 @@ static int stor_complete(void) {
   return res;
 }
 
-static int get_hidden_store_path(cmd_rec *cmd, char *path) {
+static int get_hidden_store_path(cmd_rec *cmd, char *path, char *prefix) {
   char *c = NULL, *hidden_path;
   int dotcount = 0, foundslash = 0, basenamestart = 0, maxlen;
 
   /* We have to also figure out the temporary hidden file name for receiving
-   * this transfer.  Length is +5 due to .in. prepended and "." at end.
+   * this transfer.  Length is +(N+1) due to prepended prefix and "." at end.
    */
 
   /* Figure out where the basename starts */
@@ -1031,15 +1072,18 @@ static int get_hidden_store_path(cmd_rec *cmd, char *path) {
   if (!basenamestart) {
     session.xfer.xfer_type = STOR_DEFAULT;
 
+    pr_log_debug(DEBUG6, "could not determine HiddenStores path for '%s'",
+      path);
+
     /* This probably shouldn't happen */
     pr_response_add_err(R_451, _("%s: Bad file name"), path);
     return -1;
   }
 
-  /* Add five for the ".in." and "." characters, plus one for a terminating
+  /* Add N+1 for the prefix and "." characters, plus one for a terminating
    * NUL.
    */
-  maxlen = strlen(path) + 6;
+  maxlen = strlen(path) + strlen(prefix) + 2;
 
   if (maxlen > PR_TUNABLE_PATH_MAX) {
     session.xfer.xfer_type = STOR_DEFAULT;
@@ -1052,15 +1096,16 @@ static int get_hidden_store_path(cmd_rec *cmd, char *path) {
     return -1;
   }
 
-  if (pr_table_add(cmd->notes, "mod_xfer.store-hidden-path", NULL, 0) < 0)
+  if (pr_table_add(cmd->notes, "mod_xfer.store-hidden-path", NULL, 0) < 0) {
     pr_log_pri(PR_LOG_NOTICE,
       "notice: error adding 'mod_xfer.store-hidden-path': %s",
       strerror(errno));
+  }
 
   if (!foundslash) {
 
     /* Simple local file name */
-    hidden_path = pstrcat(cmd->tmp_pool, ".in.", path, ".", NULL);
+    hidden_path = pstrcat(cmd->tmp_pool, prefix, path, ".", NULL);
 
     pr_log_pri(PR_LOG_DEBUG, "HiddenStore: local path, will rename %s to %s",
       hidden_path, path);
@@ -1071,7 +1116,7 @@ static int get_hidden_store_path(cmd_rec *cmd, char *path) {
     hidden_path = pstrndup(cmd->pool, path, maxlen);
     hidden_path[basenamestart] = '\0';
 
-    hidden_path = pstrcat(cmd->pool, hidden_path, ".in.",
+    hidden_path = pstrcat(cmd->pool, hidden_path, prefix,
       path + basenamestart, ".", NULL);
 
     pr_log_pri(PR_LOG_DEBUG, "HiddenStore: complex path, will rename %s to %s",
@@ -1086,15 +1131,15 @@ static int get_hidden_store_path(cmd_rec *cmd, char *path) {
 
     pr_response_add_err(R_550, _("%s: Temporary hidden file %s already exists"),
       cmd->arg, hidden_path);
-
     return -1;
   }
 
   if (pr_table_set(cmd->notes, "mod_xfer.store-hidden-path",
-      hidden_path, 0) < 0)
+      hidden_path, 0) < 0) {
     pr_log_pri(PR_LOG_NOTICE,
       "notice: error setting 'mod_xfer.store-hidden-path': %s",
       strerror(errno));
+  }
 
   session.xfer.xfer_type = STOR_HIDDEN;
   return 0;
@@ -1130,11 +1175,12 @@ MODRET xfer_post_mode(cmd_rec *cmd) {
 MODRET xfer_pre_stor(cmd_rec *cmd) {
   char *path;
   mode_t fmode;
-  unsigned char *hidden_stores = NULL, *allow_overwrite = NULL,
-    *allow_restart = NULL;
+  unsigned char *allow_overwrite = NULL, *allow_restart = NULL;
+  config_rec *c;
 
   if (cmd->argc < 2) {
     pr_response_add_err(R_500, _("'%s' not understood"), get_full_cmd(cmd));
+    errno = EINVAL;
     return PR_ERROR(cmd);
   }
 
@@ -1142,13 +1188,18 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
     pr_fs_decode_path(cmd->tmp_pool, cmd->arg));
 
   if (!path ||
-      !dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, path, NULL)) {
-    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      !dir_check(cmd->tmp_pool, cmd, cmd->group, path, NULL)) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   if (xfer_check_limit(cmd) < 0) {
     pr_response_add_err(R_451, _("%s: Too many transfers"), cmd->arg);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1160,6 +1211,7 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
       (!allow_overwrite || *allow_overwrite == FALSE)) {
     pr_log_debug(DEBUG6, "AllowOverwrite denied permission for %s", cmd->arg);
     pr_response_add_err(R_550, _("%s: Overwrite permission denied"), cmd->arg);
+    errno = EACCES;
     return PR_ERROR(cmd);
   }
 
@@ -1170,9 +1222,17 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
     /* Make an exception for the non-regular /dev/null file.  This will allow
      * network link testing by uploading as much data as necessary directly
      * to /dev/null.
+     *
+     * On Linux, allow another exception for /dev/full; this is useful for
+     * tests which want to simulate running out-of-space scenarios.
      */
-    if (strcasecmp(path, "/dev/null") != 0) {
+    if (strcasecmp(path, "/dev/null") != 0
+#ifdef LINUX
+        && strcasecmp(path, "/dev/full") != 0
+#endif
+       ) {
       pr_response_add_err(R_550, _("%s: Not a regular file"), cmd->arg);
+      errno = EPERM;
       return PR_ERROR(cmd);
     }
   }
@@ -1190,6 +1250,7 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
       cmd->arg);
     session.restart_pos = 0L;
     session.xfer.xfer_type = STOR_DEFAULT;
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1199,12 +1260,22 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
     pr_log_pri(PR_LOG_NOTICE, "notice: error adding 'mod_xfer.store-path': %s",
       strerror(errno));
 
-  hidden_stores = get_param_ptr(CURRENT_CONF, "HiddenStores", FALSE);
-  if (hidden_stores!= NULL &&
-      *hidden_stores == TRUE) {
+  c = find_config(CURRENT_CONF, CONF_PARAM, "HiddenStores", FALSE);
+  if (c &&
+      *((int *) c->argv[0]) == TRUE) {
+    char *prefix = c->argv[1];
 
-    if (get_hidden_store_path(cmd, path) < 0)
+    /* If we're using HiddenStores, then REST won't work. */
+    if (session.restart_pos) {
+      pr_response_add_err(R_501,
+        _("REST not compatible with server configuration"));
+      errno = EINVAL;
       return PR_ERROR(cmd);
+    }
+
+    if (get_hidden_store_path(cmd, path, prefix) < 0) {
+      return PR_ERROR(cmd);
+    }
   }
 
   (void) xfer_prio_adjust();
@@ -1284,8 +1355,8 @@ MODRET xfer_pre_stou(cmd_rec *cmd) {
   /* It's OK to reuse the char * pointer for filename. */
   filename = dir_best_path(cmd->tmp_pool, cmd->arg);
 
-  if (!filename || !dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group,
-      filename, NULL)) {
+  if (!filename ||
+      !dir_check(cmd->tmp_pool, cmd, cmd->group, filename, NULL)) {
     int xerrno = errno;
 
     /* Do not forget to delete the file created by mkstemp(3) if there is
@@ -1332,38 +1403,12 @@ MODRET xfer_pre_stou(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-MODRET xfer_post_xfer(cmd_rec *cmd) {
-
-  if (displayfilexfer_fh) {
-    if (pr_display_fh(displayfilexfer_fh, session.vwd, R_226) < 0)
-      pr_log_debug(DEBUG6, "unable to display DisplayFileTransfer "
-        "file '%s': %s", displayfilexfer_fh->fh_path, strerror(errno));
-
-    /* Rewind the filehandle, so that it can be used again. */
-    if (pr_fsio_lseek(displayfilexfer_fh, 0, SEEK_SET) < 0)
-      pr_log_debug(DEBUG6, "error rewinding DisplayFileTransfer "
-        "file '%s': %s", displayfilexfer_fh->fh_path, strerror(errno));
-
-  } else {
-    char *displayfilexfer = get_param_ptr(main_server->conf,
-      "DisplayFileTransfer", FALSE);
-    if (displayfilexfer) {
-      if (pr_display_file(displayfilexfer, session.vwd, R_226) < 0)
-        pr_log_debug(DEBUG6, "unable to display DisplayFileTransfer "
-          "file '%s': %s", displayfilexfer, strerror(errno));
-    }
-  }
-
-  return PR_DECLINED(cmd);
-}
-
 /* xfer_post_stou() is a POST_CMD handler that changes the mode of the
  * STOU file from 0600, which is what mkstemp() makes it, to 0666,
  * the default for files uploaded via STOR.  This is to prevent users
  * from being surprised.
  */
 MODRET xfer_post_stou(cmd_rec *cmd) {
-  char *display;
 
   /* This is the same mode as used in src/fs.c.  Should probably be
    * available as a macro.
@@ -1377,14 +1422,6 @@ MODRET xfer_post_stou(cmd_rec *cmd) {
       strerror(errno));
   }
 
-  display = get_param_ptr(main_server->conf, "DisplayFileTransfer", FALSE);
-  if (display) {
-    if (pr_display_file(display, session.vwd, R_226) < 0) {
-      pr_log_debug(DEBUG3, "error displaying '%s': %s", display,
-        strerror(errno));
-    }
-  }
-
   return PR_DECLINED(cmd);
 }
 
@@ -1396,6 +1433,7 @@ MODRET xfer_pre_appe(cmd_rec *cmd) {
 
   if (xfer_check_limit(cmd) < 0) {
     pr_response_add_err(R_451, _("%s: Too many transfers"), cmd->arg);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1406,16 +1444,11 @@ MODRET xfer_pre_appe(cmd_rec *cmd) {
 MODRET xfer_stor(cmd_rec *cmd) {
   char *path;
   char *lbuf;
-  int bufsz, len, ferrno = 0;
+  int bufsz, len, ferrno = 0, res;
   off_t nbytes_stored, nbytes_max_store = 0;
   unsigned char have_limit = FALSE;
   struct stat st;
   off_t curr_pos = 0;
-
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  regex_t *preg;
-  int ret;
-#endif /* REGEX */
 
   /* Prepare for any potential throttling. */
   pr_throttle_init(cmd);
@@ -1426,41 +1459,23 @@ MODRET xfer_stor(cmd_rec *cmd) {
 
   path = session.xfer.path;
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  preg = (regex_t *) get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
+  res = pr_filter_allow_path(CURRENT_CONF, path);
+  switch (res) {
+    case 0:
+      break;
 
-  if (preg) {
-    ret = regexec(preg, cmd->arg, 0, NULL, 0);
-    if (ret != 0) {
-      pr_log_debug(DEBUG2, "'%s' denied by PathAllowFilter", cmd->arg);
+    case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
+      pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter", cmd->argv[0],
+        path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
       return PR_ERROR(cmd);
 
-    } else {
-      char errmsg[200];
-      regerror(ret, preg, errmsg, sizeof(errmsg));
-      pr_log_debug(DEBUG8, "'%s' allowed by PathAllowFilter (%s)", cmd->arg,
-        errmsg);
-    }
-  }
-
-  preg = (regex_t *) get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
-
-  if (preg) {
-    ret = regexec(preg, cmd->arg, 0, NULL, 0);
-    if (ret == 0) {
-      pr_log_debug(DEBUG2, "'%s' denied by PathDenyFilter", cmd->arg);
+    case PR_FILTER_ERR_FAILS_DENY_FILTER:
+      pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter", cmd->argv[0],
+        path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
       return PR_ERROR(cmd);
-
-    } else {
-      char errmsg[200];
-      regerror(ret, preg, errmsg, sizeof(errmsg));
-      pr_log_debug(DEBUG8, "'%s' allowed by PathDenyFilter (%s)", cmd->arg,
-        errmsg);
-    }
   }
-#endif /* REGEX */
 
   /* Make sure the proper current working directory is set in the FSIO
    * layer, so that the proper FS can be used for the open().
@@ -1476,7 +1491,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
         "error opening '%s': %s", cmd->argv[0], session.user,
         (unsigned long) session.uid, (unsigned long) session.gid,
-        session.xfer.path_hidden, strerror(errno));
+        session.xfer.path_hidden, strerror(ferrno));
     }
 
   } else if (session.xfer.xfer_type == STOR_APPEND) {
@@ -1496,7 +1511,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
         "error opening '%s': %s", cmd->argv[0], session.user,
         (unsigned long) session.uid, (unsigned long) session.gid,
-        session.xfer.path, strerror(errno));
+        session.xfer.path, strerror(ferrno));
     }
 
   } else {
@@ -1509,7 +1524,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
         "error opening '%s': %s", cmd->argv[0], session.user,
         (unsigned long) session.uid, (unsigned long) session.gid, path,
-        strerror(errno));
+        strerror(ferrno));
     }
   }
 
@@ -1535,7 +1550,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
     }
 
     /* Make sure that the requested offset is valid (within the size of the
-     * file being resumed.
+     * file being resumed).
      */
     if (stor_fh &&
         session.restart_pos > st.st_size) {
@@ -1616,8 +1631,6 @@ MODRET xfer_stor(cmd_rec *cmd) {
   lbuf = (char *) palloc(cmd->tmp_pool, bufsz);
 
   while ((len = pr_data_xfer(lbuf, bufsz)) > 0) {
-    int res;
-
     pr_signals_handle();
 
     if (XFER_ABORTED)
@@ -1675,6 +1688,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
     return PR_ERROR(cmd);
 
   } else if (len < 0) {
+
     /* default abort errno, in case session.d et al has already gone away */
     int xerrno = ECONNABORTED;
 
@@ -1735,7 +1749,12 @@ MODRET xfer_stor(cmd_rec *cmd) {
       }
     }
 
-    pr_data_close(FALSE);
+    if (xfer_displayfile() < 0) {
+      pr_data_close(FALSE);
+
+    } else {
+      pr_data_close(TRUE);
+    } 
   }
 
   return PR_HANDLED(cmd);
@@ -1744,19 +1763,9 @@ MODRET xfer_stor(cmd_rec *cmd) {
 MODRET xfer_rest(cmd_rec *cmd) {
   off_t pos;
   char *endp = NULL;
-  unsigned char *hidden_stores = NULL;
 
   if (cmd->argc != 2) {
     pr_response_add_err(R_500, _("'%s' not understood"), get_full_cmd(cmd));
-    return PR_ERROR(cmd);
-  }
-
-  /* If we're using HiddenStores, then REST won't work. */
-  hidden_stores = get_param_ptr(CURRENT_CONF, "HiddenStores", FALSE);
-  if (hidden_stores != NULL &&
-      *hidden_stores == TRUE) {
-    pr_response_add_err(R_501,
-      _("REST not compatible with server configuration"));
     return PR_ERROR(cmd);
   }
 
@@ -1819,6 +1828,7 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
 
   if (cmd->argc < 2) {
     pr_response_add_err(R_500, _("'%s' not understood"), get_full_cmd(cmd));
+    errno = EINVAL;
     return PR_ERROR(cmd);
   }
 
@@ -1826,23 +1836,34 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
     pr_fs_decode_path(cmd->tmp_pool, cmd->arg));
 
   if (!dir ||
-      !dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, dir, NULL)) {
-    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      !dir_check(cmd->tmp_pool, cmd, cmd->group, dir, NULL)) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   if (xfer_check_limit(cmd) < 0) {
     pr_response_add_err(R_451, _("%s: Too many transfers"), cmd->arg);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
   fmode = file_mode(dir);
+  if (fmode == 0) {
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+    return PR_ERROR(cmd);
+  }
 
-  if (!S_ISREG(fmode)) {
-    if (!fmode)
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
-    else
-      pr_response_add_err(R_550, _("%s: Not a regular file"), cmd->arg);
+  if (!S_ISREG(fmode)
+#ifdef S_ISFIFO
+      && !S_ISFIFO(fmode)
+#endif
+     ) {
+    pr_response_add_err(R_550, _("%s: Not a regular file"), cmd->arg);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1856,6 +1877,7 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
     pr_response_add_err(R_451, _("%s: Restart not permitted, try again"),
       cmd->arg);
     session.restart_pos = 0L;
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1884,12 +1906,14 @@ MODRET xfer_retr(cmd_rec *cmd) {
 
   retr_fh = pr_fsio_open(dir, O_RDONLY);
   if (retr_fh == NULL) {
+    int xerrno = errno;
+
     (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
       "error opening '%s': %s", cmd->argv[0], session.user,
       (unsigned long) session.uid, (unsigned long) session.gid,
-      dir, strerror(errno));
+      dir, strerror(xerrno));
 
-    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
     return PR_ERROR(cmd);
   }
 
@@ -1907,7 +1931,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
   if (session.restart_pos) {
 
     /* Make sure that the requested offset is valid (within the size of the
-     * file being resumed.
+     * file being resumed).
      */
     if (session.restart_pos > st.st_size) {
       pr_response_add_err(R_554, _("%s: invalid REST argument"), cmd->arg);
@@ -1927,11 +1951,11 @@ MODRET xfer_retr(cmd_rec *cmd) {
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
         "error seeking to byte %" PR_LU " of '%s': %s", cmd->argv[0],
         session.user, (unsigned long) session.uid, (unsigned long) session.gid,
-        (pr_off_t) session.restart_pos, dir, strerror(errno));
+        (pr_off_t) session.restart_pos, dir, strerror(xerrno));
 
       pr_log_debug(DEBUG0, "error seeking to offset %" PR_LU
-        "for file %s: %s", (pr_off_t) session.restart_pos, dir,
-        strerror(errno));
+        " for file %s: %s", (pr_off_t) session.restart_pos, dir,
+        strerror(xerrno));
       pr_response_add_err(R_554, _("%s: invalid REST argument"), cmd->arg);
       return PR_ERROR(cmd);
     }
@@ -2049,7 +2073,13 @@ MODRET xfer_retr(cmd_rec *cmd) {
     pr_throttle_pause(session.xfer.total_bytes, TRUE);
 
     retr_complete();
-    pr_data_close(FALSE);
+
+    if (xfer_displayfile() < 0) {
+      pr_data_close(FALSE);
+
+    } else {
+      pr_data_close(TRUE);
+    }
   }
 
   return PR_HANDLED(cmd);
@@ -2207,9 +2237,6 @@ MODRET xfer_err_cleanup(cmd_rec *cmd) {
 MODRET xfer_log_stor(cmd_rec *cmd) {
   _log_transfer('i', 'c');
 
-  /* Increment the byte counter. */
-  session.total_bytes_in += session.xfer.total_bytes;
-
   /* Increment the file counters. */
   session.total_files_in++;
   session.total_files_xfer++;
@@ -2226,9 +2253,6 @@ MODRET xfer_log_stor(cmd_rec *cmd) {
 MODRET xfer_log_retr(cmd_rec *cmd) {
 
   _log_transfer('o', 'c');
-
-  /* Increment the byte counter. */
-  session.total_bytes_out += session.xfer.total_bytes;
 
   /* Increment the file counters. */
   session.total_files_out++;
@@ -2381,21 +2405,56 @@ MODRET set_displayfiletransfer(cmd_rec *cmd) {
 }
 
 MODRET set_hiddenstores(cmd_rec *cmd) {
-  int bool = -1;
+  int bool = -1, add_periods = TRUE;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|CONF_DIR);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
-    CONF_ERROR(cmd, "expected Boolean parameter");
+  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
 
-  c = add_config_param("HiddenStores", 1, NULL);
-  c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  /* Handle the case where the admin may, for some reason, want a custom
+   * prefix which could also be construed to be a Boolean value by
+   * get_boolean(): if the value begins AND ends with a period, then treat
+   * it as a custom prefix.
+   */
+  if ((cmd->argv[1])[0] == '.' &&
+      (cmd->argv[1])[strlen(cmd->argv[1])-1] == '.') {
+    add_periods = FALSE;
+    bool = -1;
+
+  } else {
+    bool = get_boolean(cmd, 1);
+  }
+
+  if (bool == -1) {
+    /* If the parameter is not a Boolean parameter, assume that the
+     * admin is configuring a specific prefix to use instead of the
+     * default ".in.".
+     */
+
+    c->argv[0] = pcalloc(c->pool, sizeof(int));
+    *((int *) c->argv[0]) = TRUE;
+
+    if (add_periods) {
+      /* Automatically add the leading and trailing periods. */
+      c->argv[1] = pstrcat(c->pool, ".", cmd->argv[1], ".", NULL);
+
+    } else {
+      c->argv[1] = pstrdup(c->pool, cmd->argv[1]);
+    }
+
+  } else {
+    c->argv[0] = pcalloc(c->pool, sizeof(int));
+    *((int *) c->argv[0]) = bool;
+
+    if (bool) {
+      /* The default HiddenStore prefix */
+      c->argv[1] = pstrdup(c->pool, ".in.");
+    }
+  }
+
   c->flags |= CF_MERGEDOWN;
-
   return PR_HANDLED(cmd);
 }
 
@@ -2798,13 +2857,11 @@ MODRET set_transferrate(cmd_rec *cmd) {
   if (tmp) {
     cmd->argv[2] = ++tmp;
 
-    if ((freebytes = strtoul(cmd->argv[2], &endp, 10)) < 0)
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-        "negative values not allowed: '", cmd->argv[2], "'", NULL));
-
-    if (endp && *endp)
+    freebytes = strtoul(cmd->argv[2], &endp, 10);
+    if (endp && *endp) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "invalid number: '",
         cmd->argv[2], "'", NULL));
+    }
   }
 
   /* Construct the config_rec */
@@ -3068,8 +3125,6 @@ static cmdtable xfer_cmdtab[] = {
   { CMD,     C_ABOR,	G_NONE,	 xfer_abor,	TRUE,	TRUE,  CL_MISC  },
   { CMD,     C_REST,	G_NONE,	 xfer_rest,	TRUE,	FALSE, CL_MISC  },
   { POST_CMD,C_PROT,	G_NONE,  xfer_post_prot,	FALSE,	FALSE },
-  { POST_CMD,C_RETR,	G_NONE,	 xfer_post_xfer,	FALSE,	FALSE },
-  { POST_CMD,C_STOR,	G_NONE,	 xfer_post_xfer,	FALSE,	FALSE },
   { POST_CMD,C_PASS,	G_NONE,	 xfer_post_pass,	FALSE, FALSE },
   { 0, NULL }
 };

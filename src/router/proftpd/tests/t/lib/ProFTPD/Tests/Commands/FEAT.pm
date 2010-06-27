@@ -135,7 +135,7 @@ sub feat_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = 8;
+      $expected = 9;
       if ($have_nls) {
         $expected += 2;
       }
@@ -148,6 +148,7 @@ sub feat_ok {
         'Features:' => 1,
         ' MDTM' => 1,
         ' MFMT' => 1,
+        ' TVFS' => 1,
         ' MFF modify;UNIX.group;UNIX.mode;' => 1,
         ' MLST modify*;perm*;size*;type*;unique*;UNIX.group*;UNIX.mode*;UNIX.owner*;' => 1,
         ' REST STREAM' => 1,

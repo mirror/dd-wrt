@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_facts.c,v 1.13.2.1 2009/04/28 21:17:45 castaglia Exp $
+ * $Id: mod_facts.c,v 1.26 2009/10/14 23:45:28 castaglia Exp $
  */
 
 #include "conf.h"
@@ -161,14 +161,6 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz) {
 
   memset(buf, '\0', bufsz);
 
-  /* Make sure the first byte is a leading space character, as per RFC,
-   * if the command is MLST.  MLSD entries do not have the leading space.
-   */
-  if (strcmp(session.curr_cmd, C_MLST) == 0) {
-    buf[0] = ' ';
-    buflen = 1;
-  }
-
   ptr = buf + buflen;
 
   if (facts_opts & FACTS_OPT_SHOW_MODIFY) {
@@ -227,7 +219,17 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz) {
     ptr = buf + buflen;
   }
 
-  snprintf(ptr, bufsz - buflen, " %s\n", info->path);
+  /* MLST entries are not sent via pr_data_xfer(), and thus we do not need
+   * to include an LF at the end; it is appended by pr_response_send_raw().
+   * But MLSD entries DO need the trailing LF, so that it can be converted
+   * into a CRLF sequence by pr_data_xfer().
+   */
+  if (strcmp(session.curr_cmd, C_MLSD) == 0) {
+    snprintf(ptr, bufsz - buflen, " %s\n", info->path);
+
+  } else {
+    snprintf(ptr, bufsz - buflen, " %s", info->path);
+  }
 
   buf[bufsz-1] = '\0';
   buflen = strlen(buf);
@@ -240,15 +242,21 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz) {
  * flushed out.
  *
  * This handling is different from the MLST handler's use of
- * facts_mlinfo_send() because MLST gets to send its line back on the control
+ * facts_mlinfo_add() because MLST gets to send its line back on the control
  * channel, wherease MLSD's output is sent via a data transfer, much like
  * LIST or NLST.
  */
-static char mlinfo_buf[PR_TUNABLE_BUFFER_SIZE];
+static char *mlinfo_buf = NULL;
+static size_t mlinfo_bufsz = 0;
 static size_t mlinfo_buflen = 0;
 
 static void facts_mlinfobuf_init(void) {
-  memset(mlinfo_buf, '\0', sizeof(mlinfo_buf));
+  if (mlinfo_buf == NULL) {
+    mlinfo_bufsz = pr_config_get_xfer_bufsz();
+    mlinfo_buf = palloc(session.pool, mlinfo_bufsz);
+  }
+
+  memset(mlinfo_buf, '\0', mlinfo_bufsz);
   mlinfo_buflen = 0;
 }
 
@@ -261,11 +269,11 @@ static void facts_mlinfobuf_add(struct mlinfo *info) {
   /* If this buffer will exceed the capacity of mlinfo_buf, then flush
    * mlinfo_buf.
    */
-  if (buflen >= (sizeof(mlinfo_buf) - mlinfo_buflen)) {
+  if (buflen >= (mlinfo_bufsz - mlinfo_buflen)) {
     (void) facts_mlinfobuf_flush();
   }
 
-  sstrcat(mlinfo_buf, buf, sizeof(mlinfo_buf));
+  sstrcat(mlinfo_buf, buf, mlinfo_bufsz);
   mlinfo_buflen += buflen;
 }
 
@@ -284,7 +292,8 @@ static void facts_mlinfobuf_flush(void) {
   facts_mlinfobuf_init();
 }
 
-static int facts_mlinfo_get(struct mlinfo *info, const char *path) {
+static int facts_mlinfo_get(struct mlinfo *info, const char *path,
+    const char *dent_name) {
   char *perm = "";
 
   if (pr_fsio_stat(path, &(info->st)) < 0) {
@@ -318,19 +327,21 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path) {
   } else {
     info->type = "dir";
 
-    if (path[0] != '.') {
+    if (dent_name[0] != '.') {
       if (strcmp(path, pr_fs_getcwd()) == 0) {
         info->type = "cdir";
       }
 
     } else {
-      if (path[1] == '\0') {
+      if (dent_name[1] == '\0') {
         info->type = "cdir";
       }
 
-      if (path[1] == '.' &&
-          path[2] == '\0') {
-        info->type = "pdir";
+      if (strlen(dent_name) >= 2) {
+        if (dent_name[1] == '.' &&
+            dent_name[2] == '\0') {
+          info->type = "pdir";
+        }
       }
     }
 
@@ -354,11 +365,13 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path) {
   return 0;
 }
 
-static void facts_mlinfo_send(struct mlinfo *info) {
+static void facts_mlinfo_add(struct mlinfo *info) {
   char buf[PR_TUNABLE_BUFFER_SIZE];
 
   (void) facts_mlinfo_fmt(info, buf, sizeof(buf));
-  pr_response_send_raw("%s", buf);
+
+  /* The trailing CRLF will be added by pr_response_add(). */
+  pr_response_add(R_DUP, "%s", buf);
 }
 
 static void facts_mlst_feat_add(pool *p) {
@@ -595,7 +608,6 @@ static int facts_modify_unix_mode(pool *p, const char *path, char *mode_str) {
  */
 
 MODRET facts_mff(cmd_rec *cmd) {
-  register unsigned int i;
   const char *path, *decoded_path;
   char *facts, *ptr;
 
@@ -606,18 +618,16 @@ MODRET facts_mff(cmd_rec *cmd) {
 
   facts = cmd->argv[1];
 
-  /* The path can contain spaces; it is thus the concatenation of all of the
-   * arguments after the timestamp.
+  /* The path can contain spaces.  Thus we need to use cmd->arg, not cmd->argv,
+   * to find the path.  But cmd->arg contains the facts as well.  Thus we
+   * find the FIRST space in cmd->arg; the path is everything past that space.
    */
-  path = pstrdup(cmd->tmp_pool, cmd->argv[2]);
-  for (i = 3; i < cmd->argc; i++) {
-    path = pstrcat(cmd->tmp_pool, path, " ", cmd->argv[i], NULL);
-  }
+  ptr = strchr(cmd->arg, ' ');
+  path = pstrdup(cmd->tmp_pool, ptr + 1);
 
   decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
 
-  if (!dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, (char *) decoded_path,
-      NULL)) {
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
       cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
@@ -739,7 +749,6 @@ MODRET facts_mff(cmd_rec *cmd) {
 }
 
 MODRET facts_mfmt(cmd_rec *cmd) {
-  register unsigned int i;
   const char *path, *decoded_path;
   char *timestamp, *ptr;
   int res;
@@ -751,18 +760,16 @@ MODRET facts_mfmt(cmd_rec *cmd) {
 
   timestamp = cmd->argv[1];
 
-  /* The path can contain spaces; it is thus the concatenation of all of the
-   * arguments after the timestamp.
+  /* The path can contain spaces.  Thus we need to use cmd->arg, not cmd->argv,
+   * to find the path.  But cmd->arg contains the facts as well.  Thus we
+   * find the FIRST space in cmd->arg; the path is everything past that space.
    */
-  path = pstrdup(cmd->tmp_pool, cmd->argv[2]);
-  for (i = 3; i < cmd->argc; i++) {
-    path = pstrcat(cmd->tmp_pool, path, " ", cmd->argv[i], NULL);
-  }
+  ptr = strchr(cmd->arg, ' ');
+  path = pstrdup(cmd->tmp_pool, ptr + 1);
 
   decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
 
-  if (!dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, (char *) decoded_path,
-      NULL)) {
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
       cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
@@ -815,38 +822,33 @@ MODRET facts_mfmt(cmd_rec *cmd) {
 }
 
 MODRET facts_mlsd(cmd_rec *cmd) {
-  const char *path, *decoded_path;
+  const char *path, *decoded_path, *best_path;
   struct mlinfo info;
   DIR *dirh;
   struct dirent *dent;
 
-  if (cmd->argc > 2) {
-    pr_response_add_err(R_501, _("Invalid number of arguments"));
-    return PR_ERROR(cmd);
-  }
-
   if (cmd->argc != 1) {
-    path = cmd->argv[1];
+    path = pstrdup(cmd->tmp_pool, cmd->arg);
     decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
 
   } else {
     decoded_path = path = pr_fs_getcwd();
   }
 
-  if (!dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, (char *) decoded_path,
-      NULL)) {
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
       cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
     return PR_ERROR(cmd);
   }
 
-  /* RFC3659 explicitly does NOT support glob characters. */
+  /* RFC3659 explicitly does NOT support glob characters.  So warn about
+   * this, but let the command continue as is.  We don't actually call
+   * glob(3) here, so no expansion will occur.
+   */
   if (strpbrk(decoded_path, "{[*?") != NULL) {
-    pr_log_debug(DEBUG2, MOD_FACTS_VERSION ": unable to handle MLSD command: "
-      "target '%s' contains glob characters", decoded_path);
-    pr_response_add_err(R_550, _("Unable to handle command"));
-    return PR_ERROR(cmd);
+    pr_log_debug(DEBUG9, MOD_FACTS_VERSION ": glob characters in MLSD ('%s') "
+      "ignored", decoded_path);
   }
 
   /* Make sure that the given path is actually a directory. */
@@ -865,16 +867,18 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
-  dirh = pr_fsio_opendir(decoded_path);
+  best_path = dir_best_path(cmd->tmp_pool, decoded_path);
+
+  dirh = pr_fsio_opendir(best_path);
   if (dirh == NULL) {
     int xerrno = errno;
 
     pr_trace_msg("fileperms", 1, "MLSD, user '%s' (UID %lu, GID %lu): "
-      "error reading directory '%s': %s", session.user,
+      "error opening directory '%s': %s", session.user,
       (unsigned long) session.uid, (unsigned long) session.gid,
-      decoded_path, strerror(xerrno));
+      best_path, strerror(xerrno));
 
-    pr_response_add_err(R_550, _("'%s' cannot be listed"), path);
+    pr_response_add_err(R_550, "%s: %s", path, strerror(xerrno));
     return PR_ERROR(cmd);
   }
 
@@ -894,21 +898,19 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
     pr_signals_handle();
 
-    rel_path = pdircat(cmd->tmp_pool, decoded_path, dent->d_name, NULL);
+    rel_path = pdircat(cmd->tmp_pool, best_path, dent->d_name, NULL);
 
     /* Check that the file can be listed. */
     abs_path = dir_realpath(cmd->tmp_pool, rel_path);
     if (abs_path) {
-      res = dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, abs_path,
-        &hidden);
+      res = dir_check(cmd->tmp_pool, cmd, cmd->group, abs_path, &hidden);
       
     } else {
       abs_path = dir_canonical_path(cmd->tmp_pool, rel_path);
       if (abs_path == NULL)
         abs_path = rel_path;
 
-      res = dir_check_canon(cmd->tmp_pool, cmd->argv[0], cmd->group, abs_path,
-        &hidden);
+      res = dir_check_canon(cmd->tmp_pool, cmd, cmd->group, abs_path, &hidden);
     }
 
     if (!res || hidden) {
@@ -918,7 +920,7 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     memset(&info, 0, sizeof(struct mlinfo));
 
     info.pool = cmd->tmp_pool;
-    if (facts_mlinfo_get(&info, rel_path) < 0) {
+    if (facts_mlinfo_get(&info, rel_path, dent->d_name) < 0) {
       pr_log_debug(DEBUG3, MOD_FACTS_VERSION
         ": MLSD: unable to get info for '%s': %s", abs_path, strerror(errno));
       continue;
@@ -955,20 +957,15 @@ MODRET facts_mlst(cmd_rec *cmd) {
   const char *path, *decoded_path;
   struct mlinfo info;
 
-  if (cmd->argc > 2) {
-    pr_response_add_err(R_501, _("Invalid number of arguments"));
-    return PR_ERROR(cmd);
-  }
-
   if (cmd->argc != 1) {
-    path = cmd->argv[1];
+    path = pstrdup(cmd->tmp_pool, cmd->arg);
     decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
 
   } else {
     decoded_path = path = pr_fs_getcwd();
   }
 
-  if (!dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, (char *) decoded_path,
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path,
       &hidden)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
       cmd->argv[0]);
@@ -980,8 +977,8 @@ MODRET facts_mlst(cmd_rec *cmd) {
     /* Simply send an empty list, much like we do for a STAT command for
      * a hidden file.
      */
-    pr_response_send_raw(_("%s- Start of list for %s"), R_250, path);
-    pr_response_send_raw(_("%s End of list"), R_250);
+    pr_response_add(R_250, _("Start of list for %s"), path);
+    pr_response_add(R_250, _("End of list"));
 
     return PR_HANDLED(cmd);
   }
@@ -989,7 +986,7 @@ MODRET facts_mlst(cmd_rec *cmd) {
   info.pool = cmd->tmp_pool;
 
   pr_fs_clear_cache();
-  if (facts_mlinfo_get(&info, decoded_path) < 0) {
+  if (facts_mlinfo_get(&info, decoded_path, decoded_path) < 0) {
     pr_response_add_err(R_550, _("'%s' cannot be listed"), path);
     return PR_ERROR(cmd);
   }
@@ -999,9 +996,9 @@ MODRET facts_mlst(cmd_rec *cmd) {
    */
   info.path = path;
 
-  pr_response_send_raw(_("%s- Start of list for %s"), R_250, path);
-  facts_mlinfo_send(&info);
-  pr_response_send_raw(_("%s End of list"), R_250);
+  pr_response_add(R_250, _("Start of list for %s"), path);
+  facts_mlinfo_add(&info);
+  pr_response_add(R_250, _("End of list"));
 
   return PR_HANDLED(cmd);
 }
@@ -1155,6 +1152,7 @@ static int facts_sess_init(void) {
 
   pr_feat_add("MFF modify;UNIX.group;UNIX.mode;");
   pr_feat_add("MFMT");
+  pr_feat_add("TVFS");
 
   facts_mlst_feat_add(session.pool);
 

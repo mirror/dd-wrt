@@ -22,7 +22,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_mysql.c,v 1.51.2.1 2009/06/30 16:44:20 castaglia Exp $
+ * $Id: mod_sql_mysql.c,v 1.60 2009/11/13 18:29:42 castaglia Exp $
  */
 
 /*
@@ -200,21 +200,24 @@ static array_header *conn_cache = NULL;
  *   connection.  Returns NULL if unsuccessful, a pointer to the conn_entry_t
  *   if successful.
  */
-static conn_entry_t *_sql_get_connection(char *name)
-{
-  conn_entry_t *entry = NULL;
-  int cnt;
+static conn_entry_t *_sql_get_connection(char *name) {
+  register unsigned int i;
 
-  if (name == NULL) return NULL;
+  if (name == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
 
   /* walk the array looking for our entry */
-  for (cnt=0; cnt < conn_cache->nelts; cnt++) {
-    entry = ((conn_entry_t **) conn_cache->elts)[cnt];
-    if (!strcmp(name, entry->name)) {
+  for (i = 0; i < conn_cache->nelts; i++) {
+    conn_entry_t *entry = ((conn_entry_t **) conn_cache->elts)[i];
+
+    if (strcmp(name, entry->name) == 0) {
       return entry;
     }
   }
 
+  errno = ENOENT;
   return NULL;
 }
 
@@ -227,14 +230,19 @@ static conn_entry_t *_sql_get_connection(char *name)
  * Returns: NULL if the insertion was unsuccessful, a pointer to the 
  *  conn_entry_t that was created if successful.
  */
-static void *_sql_add_connection(pool *p, char *name, db_conn_t *conn)
-{
+static void *_sql_add_connection(pool *p, char *name, db_conn_t *conn) {
   conn_entry_t *entry = NULL;
 
-  if ((!name) || (!conn) || (!p)) return NULL;
-  
+  if (name == NULL ||
+      conn == NULL ||
+      p == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
   if (_sql_get_connection(name)) {
     /* duplicated name */
+    errno = EEXIST;
     return NULL;
   }
 
@@ -325,7 +333,7 @@ static modret_t *_build_data(cmd_rec *cmd, db_conn_t *conn) {
 
   mysql = conn->mysql;
 
-  /* would much rather use mysql_use_result here but without knowing
+  /* Would much rather use mysql_use_result here but without knowing
    * the number of rows returned we can't presize the data[] array.
    */
 
@@ -346,7 +354,7 @@ static modret_t *_build_data(cmd_rec *cmd, db_conn_t *conn) {
       data[i++] = pstrdup(cmd->tmp_pool, row[cnt]);
   }
   
-  /* at this point either we finished correctly or an error occurred in the
+  /* At this point either we finished correctly or an error occurred in the
    * fetch.  Do the right thing.
    */
   if (mysql_errno(mysql)) {
@@ -355,11 +363,25 @@ static modret_t *_build_data(cmd_rec *cmd, db_conn_t *conn) {
     return mr;
   }
 
-  mysql_free_result( result );
+  mysql_free_result(result);
   data[i] = NULL;
   sd->data = data;
 
-  return mod_create_data( cmd, (void *) sd );
+#ifdef CLIENT_MULTI_RESULTS
+  /* We might be dealing with multiple result sets here, as when a stored
+   * procedure was called which produced more results than we expect.
+   *
+   * We only want the first result set, so simply iterate through and free
+   * up any remaining result sets.
+   */
+  while (mysql_next_result(mysql) == 0) {
+    pr_signals_handle();
+    result = mysql_store_result(mysql);
+    mysql_free_result(result);
+  }
+#endif
+
+  return mod_create_data(cmd, (void *) sd);
 }
 
 /*
@@ -382,6 +404,10 @@ static modret_t *_build_data(cmd_rec *cmd, db_conn_t *conn) {
 MODRET cmd_open(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
+  unsigned long client_flags = CLIENT_INTERACTIVE;
+#ifdef PR_USE_NLS
+  const char *encoding = NULL;
+#endif
 
   sql_log(DEBUG_FUNC, "%s", "entering \tmysql cmd_open");
 
@@ -394,31 +420,50 @@ MODRET cmd_open(cmd_rec *cmd) {
 
   /* get the named connection */
 
-  if (!(entry = _sql_get_connection( cmd->argv[0]))) {
+  entry = _sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_MYSQL_VERSION, "unknown named connection");
   } 
 
   conn = (db_conn_t *) entry->data;
 
-  /* if we're already open (connections > 0) increment connections 
-   * reset our timer if we have one, and return HANDLED 
+  /* If we're already open (connections > 0), AND our connection to MySQL
+   * is still alive, increment the connection counter, reset our timer (if
+   * we have one), and return HANDLED.
    */
-  if ((entry->connections > 0) && (!mysql_ping(conn->mysql))) {
-    entry->connections++;
-    if (entry->timer)
-      pr_timer_reset(entry->timer, &sql_mysql_module);
+  if (entry->connections > 0) {
+    if (mysql_ping(conn->mysql) == 0) {
+      entry->connections++;
 
-    sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
-      entry->connections);
-    sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
-    return PR_HANDLED(cmd);
+      if (entry->timer) {
+        pr_timer_reset(entry->timer, &sql_mysql_module);
+      }
+
+      sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
+        entry->connections);
+      sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
+      return PR_HANDLED(cmd);
+
+    } else {
+      sql_log(DEBUG_INFO, "lost connection to database: %s",
+        mysql_error(conn->mysql));
+
+      entry->connections = 0;
+      if (entry->timer) {
+        pr_timer_remove(entry->timer, &sql_mysql_module);
+        entry->timer = 0;
+      }
+
+      sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
+      return PR_ERROR_MSG(cmd, MOD_SQL_MYSQL_VERSION,
+        "lost connection to database");
+    }
   }
 
   /* Make sure we have a new conn struct */
   conn->mysql = mysql_init(NULL);
-
-  if (!conn->mysql) {
+  if (conn->mysql == NULL) {
     pr_log_pri(PR_LOG_ERR, MOD_SQL_MYSQL_VERSION
       ": failed to allocate memory for MYSQL structure.  Shutting down.");
     sql_log(DEBUG_WARN, "%s", "failed to allocate memory for MYSQL structure. "
@@ -431,17 +476,40 @@ MODRET cmd_open(cmd_rec *cmd) {
    */
   mysql_options(conn->mysql, MYSQL_READ_DEFAULT_GROUP, "client");
 
+#if MYSQL_VERSION_ID >= 50013
+  /* The MYSQL_OPT_RECONNECT option appeared in MySQL 5.0.13, according to
+   *
+   *  http://dev.mysql.com/doc/refman/5.0/en/auto-reconnect.html
+   */
+  if (!(pr_sql_opts & SQL_OPT_NO_RECONNECT)) {
+    my_bool reconnect = TRUE;
+    mysql_options(conn->mysql, MYSQL_OPT_RECONNECT, &reconnect);
+  }
+#endif
+
+#ifdef CLIENT_MULTI_RESULTS
+  /* Enable mod_sql_mysql to deal with multiple result sets which may be
+   * returned from calling stored procedures.
+   */
+  client_flags |= CLIENT_MULTI_RESULTS;
+#endif
+
   if (!mysql_real_connect(conn->mysql, conn->host, conn->user, conn->pass,
       conn->db, (int) strtol(conn->port, (char **) NULL, 10),
-      conn->unix_sock, CLIENT_INTERACTIVE)) {
+      conn->unix_sock, client_flags)) {
 
     /* If it didn't work, return an error. */
     sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
     return _build_error(cmd, conn);
   }
 
+  sql_log(DEBUG_FUNC, "MySQL client version: %s", mysql_get_client_info());
+  sql_log(DEBUG_FUNC, "MySQL server version: %s",
+    mysql_get_server_info(conn->mysql));
+
 #ifdef PR_USE_NLS
-  if (pr_encode_get_encoding() != NULL) {
+  encoding = pr_encode_get_encoding();
+  if (encoding != NULL) {
 
 # if MYSQL_VERSION_ID >= 50007
     /* Configure the connection for the current local character set.
@@ -450,14 +518,23 @@ MODRET cmd_open(cmd_rec *cmd) {
      * as per:
      *
      *  http://dev.mysql.com/doc/refman/5.0/en/mysql-set-character-set.html
+     *
+     * Yes, even though the variable names say "charset", we (and MySQL,
+     * though their documentation says otherwise) actually mean "encoding".
      */
-    if (!mysql_set_character_set(conn->mysql, pr_encode_get_charset())) {
+
+     if (strcasecmp(encoding, "UTF-8") == 0) {
+       /* MySQL prefers the name "utf8", not "UTF-8" */
+       encoding = pstrdup(cmd->tmp_pool, "utf8");
+     }
+
+    if (mysql_set_character_set(conn->mysql, encoding) != 0) {
       sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
       return _build_error(cmd, conn);
     }
 
     sql_log(DEBUG_FUNC, "MySQL connection character set now '%s' (from '%s')",
-      mysql_character_set_name(conn->mysql), pr_encode_get_charset());
+      mysql_character_set_name(conn->mysql), pr_encode_get_encoding());
 
 # else
     /* No mysql_set_character_set() API available.  But
@@ -465,8 +542,12 @@ MODRET cmd_open(cmd_rec *cmd) {
      * to at least see whether there might be a character set discrepancy.
      */
 
-    const char *local_charset = pr_encode_get_charset();
+    const char *local_charset = pr_encode_get_encoding();
     const char *mysql_charset = mysql_character_set_name(conn->mysql);
+
+    if (strcasecmp(mysql_charset, "utf8") == 0) {
+      mysql_charset = pstrdup(cmd->tmp_pool, "UTF-8");
+    }
 
     if (local_charset &&
         mysql_charset &&
@@ -486,8 +567,19 @@ MODRET cmd_open(cmd_rec *cmd) {
   /* bump connections */
   entry->connections++;
 
-  /* set up our timer if necessary */
-  if (entry->ttl > 0) {
+  if (pr_sql_conn_policy == SQL_CONN_POLICY_PERSESSION) {
+    /* If the connection policy is PERSESSION... */
+    if (entry->connections == 1) {
+      /* ...and we are actually opening the first connection to the database;
+       * we want to make sure this connection stays open, after this first use
+       * (as per Bug#3290).  To do this, we re-bump the connection count.
+       */
+      entry->connections++;
+    } 
+ 
+  } else if (entry->ttl > 0) { 
+    /* Set up our timer if necessary */
+
     entry->timer = pr_timer_add(entry->ttl, -1, &sql_mysql_module,
       sql_timer_cb, "mysql connection ttl");
     sql_log(DEBUG_INFO, "connection '%s' - %d second timer started",
@@ -662,12 +754,11 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
   havehost = strchr(db, '@');
   haveport = strchr(db, ':');
 
-  /*
-   * if haveport, parse it, otherwise default it. 
-   * if haveport, set it to '\0'
+  /* If haveport, parse it, otherwise default it. 
+   * If haveport, set it to '\0'.
    *
-   * if havehost, parse it, otherwise default it.
-   * if havehost, set it to '\0'
+   * If havehost, parse it, otherwise default it.
+   * If havehost, set it to '\0'.
    */
 
   if (haveport) {
@@ -708,10 +799,15 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
       "named connection already exists");
   }
 
-  entry->ttl = (cmd->argc == 5) ? 
-    (int) strtol(cmd->argv[4], (char **)NULL, 10) : 0;
-  if (entry->ttl < 0) 
-    entry->ttl = 0;
+  if (cmd->argc == 5) { 
+    entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
+    if (entry->ttl >= 1) {
+      pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
+ 
+    } else {
+      entry->ttl = 0;
+    }
+  }
 
   entry->timer = 0;
   entry->connections = 0;
@@ -1274,6 +1370,7 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
   modret_t *cmr = NULL;
   char *unescaped = NULL;
   char *escaped = NULL;
+  cmd_rec *close_cmd;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tmysql cmd_escapestring");
 
@@ -1313,6 +1410,10 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
 #else
   mysql_escape_string(escaped, unescaped, strlen(unescaped));
 #endif
+
+  close_cmd = _sql_make_cmd(cmd->tmp_pool, 1, entry->name);
+  cmd_close(close_cmd);
+  SQL_FREE_CMD(close_cmd);
 
   sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_escapestring");
   return mod_create_data(cmd, (void *) escaped);

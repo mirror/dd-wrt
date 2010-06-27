@@ -24,11 +24,14 @@ SystemLog			%TestDir%/PFTEST.syslog
 TransferLog			%TestDir%/PFTEST.xferlog
 
 # Disable some checks.
-IdentLookups			off
 RequireValidShell		off
 UseFtpUsers			off
 UseReverseDNS			off
 WtmpLog				off
+
+<IfModule mod_ident.c>
+  IdentLookups			off
+</IfModule>
 
 # Umask 022 is a good standard umask to prevent new dirs and files
 # from being group and world writable.
@@ -39,6 +42,6 @@ MaxInstances			5
 
 # Normally, we want files to be overwriteable.
 <Directory />
-	AllowOverwrite		on
+  AllowOverwrite		on
 </Directory>
 

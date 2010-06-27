@@ -81,6 +81,11 @@ Also, see contrib/README.
 
 Security/encryption modules:
 
+    mod_sftp, mod_sftp_pam, mod_sftp_sql
+        SSH2, SFTP, SCP protocol implementation
+        See doc/contrib/mod_sftp.html
+        Contributed by TJ Saunders <tj@castaglia.org>
+
     mod_tls
         SSL/TLS authentication/encryption
         See doc/contrib/mod_tls.html
@@ -123,6 +128,11 @@ Feature modules:
         See doc/contrib/mod_dynmasq.html
         Contributed by TJ Saunders <tj@castaglia.org>
 
+    mod_exec
+        Execute custom external scripts based on session actions/events.
+        See doc/contrib/mod_exec.html
+        Contributed by TJ saunders <tj@castaglia.org>
+
     mod_ifsession
         Conditional per-user, per-group, per-class configurations
         See doc/contrib/mod_ifsession.html
@@ -145,7 +155,7 @@ Feature modules:
         Contributed by Johnie Ingram <johnie@netgod.net>
         and Jim Dogopoulos <jd@dynw.com>/<jd@downcity.net>.
 
-   mod_readme
+    mod_readme
         Display "readme" files, controlled by the "DisplayReadme" directive.
         Originally contributed by <jan.menzel@gmx.de>.
 
@@ -154,6 +164,10 @@ Feature modules:
         See doc/contrib/mod_rewrite.html
         Contributed by TJ Saunders <tj@castaglia.org>
 
+    mod_shaper
+        Throttling of data transfers across the entire server.
+        See doc/contrib/mod_shaper.html
+ 
     mod_site_misc
         Miscellaneous SITE commands (e.g. SITE SYLINK, SITE UTIME)
         See doc/contrib/mod_site_misc.html

@@ -38,7 +38,7 @@ will only show the session count for the given virtual host.
 .PD 0
 .B @BINDIR@/ftpcount
 .br
-.B @LOCALSTATEDIR@/run/proftpd/proftpd.scoreboard
+.B @LOCALSTATEDIR@/proftpd.scoreboard
 .PD
 .SH AUTHORS
 .PP

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2008 The ProFTPD Project team
+ * Copyright (c) 2006-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* UTF8/charset encoding/decoding
- * $Id: encode.h,v 1.2 2008/04/03 03:14:31 castaglia Exp $
+ * $Id: encode.h,v 1.3 2009/09/07 01:37:18 castaglia Exp $
  */
 
 #ifndef PR_ENCODE_H
@@ -49,8 +49,13 @@ void pr_encode_disable_encoding(void);
  */
 int pr_encode_enable_encoding(const char *encoding);
 
-/* Returns string describing the current local charset being used. */
+/* Returns string describing the current charset being used. */
 const char *pr_encode_get_charset(void);
+
+/* Returns string describing the local charset (as determined by environment
+ * variables and such).
+*/
+const char *pr_encode_get_local_charset(void);
 
 /* Returns string describing the current character set (or UTF8) encoding
  * being used.  NULL is returned if no encoding is currently in effect.

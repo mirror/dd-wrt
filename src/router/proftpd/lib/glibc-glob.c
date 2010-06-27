@@ -37,8 +37,8 @@ char *alloca ();
 #endif /* not HAVE_ALLOCA_H */
 #endif /* not __GNUC__ */
 
-#define MAX_RECURSION 	PR_TUNABLE_GLOBBING_MAX
-#define MAX_RESULTS 100000UL
+#define MAX_RECURSION 	PR_TUNABLE_GLOBBING_MAX_RECURSION
+#define MAX_RESULTS	PR_TUNABLE_GLOBBING_MAX_MATCHES
 
 /* Enable GNU extensions in glob.h.  */
 #ifndef _GNU_SOURCE

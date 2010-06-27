@@ -2,7 +2,7 @@
  * ProFTPD: mod_dynmasq -- a module for dynamically updating MasqueradeAddress
  *                         configurations, as when DynDNS names are used
  *
- * Copyright (c) 2004-2008 TJ Saunders
+ * Copyright (c) 2004-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,16 +26,16 @@
  * This is mod_dynmasq, contrib software for proftpd 1.2.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_dynmasq.c,v 1.6 2008/12/04 21:45:58 castaglia Exp $
+ * $Id: mod_dynmasq.c,v 1.7 2010/02/10 01:01:14 castaglia Exp $
  */
 
 #include "conf.h"
 
-#define MOD_DYNMASQ_VERSION		"mod_dynmasq/0.2.1"
+#define MOD_DYNMASQ_VERSION		"mod_dynmasq/0.3"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030005
-# error "ProFTPD 1.3.0 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030201
+# error "ProFTPD 1.3.2rc1 or later required"
 #endif
 
 extern xaset_t *server_list;
@@ -129,17 +129,17 @@ static void dynmasq_mod_unload_ev(const void *event_data, void *user_data) {
 }
 #endif /* !PR_SHARED_MODULE */
 
+static void dynmasq_postparse_ev(const void *event_data, void *user_data) {
+  if (dynmasq_timer_interval != -1) {
+    dynmasq_timer_id = pr_timer_add(dynmasq_timer_interval, -1,
+      &dynmasq_module, dynmasq_update_cb, "dynmasq address update");
+  }
+}
+
 static void dynmasq_restart_ev(const void *event_data, void *user_data) {
   if (dynmasq_timer_id != -1) {
     pr_timer_remove(dynmasq_timer_id, &dynmasq_module);
     dynmasq_timer_id = -1;
-  }
-}
-
-static void dynmasq_startup_ev(const void *event_data, void *user_data) {
-  if (dynmasq_timer_interval != -1) {
-    dynmasq_timer_id = pr_timer_add(dynmasq_timer_interval, -1,
-      &dynmasq_module, dynmasq_update_cb, "dynmasq address update");
   }
 }
 
@@ -152,9 +152,9 @@ static int dynmasq_init(void) {
     dynmasq_mod_unload_ev, NULL);
 #endif /* !PR_SHARED_MODULE */
 
-  pr_event_register(&dynmasq_module, "core.restart", dynmasq_restart_ev,
+  pr_event_register(&dynmasq_module, "core.postparse", dynmasq_postparse_ev,
     NULL);
-  pr_event_register(&dynmasq_module, "core.startup", dynmasq_startup_ev,
+  pr_event_register(&dynmasq_module, "core.restart", dynmasq_restart_ev,
     NULL);
 
   return 0;

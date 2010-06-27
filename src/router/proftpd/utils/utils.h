@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 /* Scoreboard routines.
  *
- * $Id: utils.h,v 1.23 2008/02/10 02:29:22 castaglia Exp $
+ * $Id: utils.h,v 1.25 2009/09/04 17:13:10 castaglia Exp $
  */
 
 #ifndef UTILS_UTILS_H
@@ -85,7 +85,7 @@
 
 /* UTIL_SCOREBOARD_VERSION is used for checking for scoreboard compatibility
  */
-#define UTIL_SCOREBOARD_VERSION        0x01040002
+#define UTIL_SCOREBOARD_VERSION        0x01040003
 
 /* Structure used as a header for scoreboard files.
  */
@@ -127,9 +127,10 @@ typedef struct {
   char sce_client_name[PR_TUNABLE_SCOREBOARD_BUFFER_SIZE];
 
   char sce_class[32];
+  char sce_protocol[32];
   char sce_cwd[PR_TUNABLE_SCOREBOARD_BUFFER_SIZE];
 
-  char sce_cmd[5];
+  char sce_cmd[65];
   char sce_cmd_arg[PR_TUNABLE_SCOREBOARD_BUFFER_SIZE];
 
   time_t sce_begin_idle, sce_begin_session;
@@ -156,5 +157,6 @@ int util_open_scoreboard(int);
 pid_t util_scoreboard_get_daemon_pid(void);
 time_t util_scoreboard_get_daemon_uptime(void);
 pr_scoreboard_entry_t *util_scoreboard_entry_read(void);
+int util_scoreboard_scrub(int);
 
 #endif /* UTILS_UTILS_H */

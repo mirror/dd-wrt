@@ -2,7 +2,7 @@
  * ProFTPD: mod_delay -- a module for adding arbitrary delays to the FTP
  *                       session lifecycle
  *
- * Copyright (c) 2004-2009 TJ Saunders
+ * Copyright (c) 2004-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_delay, contrib software for proftpd 1.2.10 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_delay.c,v 1.30 2009/01/04 01:14:37 castaglia Exp $
+ * $Id: mod_delay.c,v 1.39 2010/02/10 19:20:15 castaglia Exp $
  */
 
 #include "conf.h"
@@ -67,6 +67,24 @@
 # define DELAY_SESS_NVALUES		16
 #endif
 
+/* The mod_delay tables have separate entries for different protocols;
+ * the implementation/handling of one protocol means that that protocol can
+ * have different timings from others.  For example, due to the encryption
+ * overhead, authentication via SSL can take longer than without SSL.  Thus
+ * we need to keep the per-protocol timings separate.
+ *
+ * We currently allocate space for three protocols:
+ *
+ *  ftp
+ *  ftps
+ *  ssh2
+ *
+ * If more protocols are supported by proftpd, this this DELAY_NPROTO value
+ * should be increased accordingly.  The delay_table_reset() function will
+ * also need updating, to include the new protocol, as well.
+ */
+#define DELAY_NPROTO			3
+
 #if defined(PR_USE_CTRLS)
 static ctrls_acttab_t delay_acttab[];
 #endif /* PR_USE_CTRLS */
@@ -75,12 +93,17 @@ extern xaset_t *server_list;
 
 module delay_module;
 
+struct delay_vals_rec {
+  char dv_proto[16];
+  unsigned int dv_nvals;
+  long dv_vals[DELAY_NVALUES];
+};
+
 struct delay_rec {
   unsigned int d_sid;
   char d_addr[80];
   unsigned int d_port;
-  unsigned int d_nvals;
-  long d_vals[DELAY_NVALUES];
+  struct delay_vals_rec d_vals[DELAY_NPROTO];
 };
 
 struct {
@@ -176,13 +199,16 @@ static long delay_select_k(unsigned long k, array_header *values) {
   return -1;
 }
 
-static long delay_get_median(pool *p, unsigned int rownum, long interval) {
+static long delay_get_median(pool *p, unsigned int rownum, const char *protocol,
+    long interval) {
   register unsigned int i;
   struct delay_rec *row;
-  long *tab_vals;
+  struct delay_vals_rec *dv = NULL;
+  long *tab_vals = NULL;
   array_header *list = make_array(p, 1, sizeof(long));
   
-  /* Calculate the median value of the current command's recorded values.
+  /* Calculate the median value of the current command's recorded values,
+   * taking the protocol (e.g. "ftp", "ftps", "ssh2") into account.
    *
    * When calculating the median, we use the current interval as well
    * as the recorded intervals in the table, giving us an odd number of
@@ -195,13 +221,23 @@ static long delay_get_median(pool *p, unsigned int rownum, long interval) {
    */
 
   row = &((struct delay_rec *) delay_tab.dt_data)[rownum];
-  tab_vals = row->d_vals;
+
+  /* Find the list of delay values that match the given protocol. */
+  for (i = 0; i < DELAY_NPROTO; i++) {
+    dv = &(row->d_vals[i]);
+    if (strcmp(dv->dv_proto, protocol) == 0) {
+      tab_vals = dv->dv_vals;
+      break;
+    }
+  }
 
   /* Start at the end of the row and work backward, as values are
    * always added at the end of the row, shifting everything to the left.
    */
-  for (i = 1; i < row->d_nvals; i++)
-    *((long *) push_array(list)) = tab_vals[DELAY_NVALUES - i];
+  if (tab_vals != NULL) {
+    for (i = 1; i < dv->dv_nvals; i++)
+      *((long *) push_array(list)) = tab_vals[DELAY_NVALUES - i];
+  }
   *((long *) push_array(list)) = interval;
 
   pr_trace_msg("delay", 6, "selecting median interval from %d %s", list->nelts,
@@ -265,19 +301,30 @@ static void delay_delay(long interval) {
   delay_signals_unblock();
 }
 
-static void delay_table_add_interval(unsigned int rownum, long interval) {
+static void delay_table_add_interval(unsigned int rownum, const char *protocol,
+    long interval) {
+  register unsigned int i;
   struct delay_rec *row;
+  struct delay_vals_rec *dv = NULL;
 
   row = &((struct delay_rec *) delay_tab.dt_data)[rownum];
 
+  for (i = 0; i < DELAY_NPROTO; i++) {
+    dv = &(row->d_vals[i]);
+    if (strcmp(dv->dv_proto, protocol) == 0) {
+      break;
+    }
+  }
+
   /* Shift all existing values to the left one position. */
-  memmove(&(row->d_vals[0]), &(row->d_vals[1]),
+  memmove(&(dv->dv_vals[0]), &(dv->dv_vals[1]),
     sizeof(long) * (DELAY_NVALUES - 1));
 
   /* Add the given value to the end. */
-  row->d_vals[DELAY_NVALUES-1] = interval;
-  if (row->d_nvals < DELAY_NVALUES)
-    row->d_nvals++;
+  dv->dv_vals[DELAY_NVALUES-1] = interval;
+  if (dv->dv_nvals < DELAY_NVALUES) {
+    dv->dv_nvals++;
+  }
 }
 
 static int delay_table_init(void) {
@@ -287,7 +334,7 @@ static int delay_table_init(void) {
   unsigned int nservers = 0;
   off_t tab_size;
   int flags = O_RDWR|O_CREAT;
-  int reset_table = FALSE;
+  int reset_table = FALSE, xerrno = 0;
 
   /* We only want to create the table if it does not already exist.
    *
@@ -306,14 +353,18 @@ static int delay_table_init(void) {
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, flags);
+  if (fh == NULL) {
+    xerrno = errno;
+  }
   PRIVS_RELINQUISH
 
   if (!fh) {
     pr_log_debug(DEBUG0, MOD_DELAY_VERSION
       ": error opening DelayTable '%s': %s", delay_tab.dt_path,
-      strerror(errno));
+      strerror(xerrno));
     pr_trace_msg("delay", 1, "error opening DelayTable '%s': %s",
-      delay_tab.dt_path, strerror(errno));
+      delay_tab.dt_path, strerror(xerrno));
+    errno = xerrno;
     return -1;
   }
 
@@ -368,7 +419,7 @@ static int delay_table_init(void) {
      */
     lseek(fh->fh_fd, tab_size-1, SEEK_SET);
     if (write(fh->fh_fd, "", 1) != 1) {
-      int xerrno = errno;
+      xerrno = errno;
 
       pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
         ": error writing single byte to DelayTable '%s': %s", fh->fh_path,
@@ -402,7 +453,7 @@ static int delay_table_init(void) {
     MAP_SHARED, delay_tab.dt_fd, 0);
 
   if (delay_tab.dt_data == MAP_FAILED) {
-    int xerrno = errno;
+    xerrno = errno;
 
     delay_tab.dt_data = NULL;
 
@@ -484,7 +535,7 @@ static int delay_table_init(void) {
      */
     lseek(fh->fh_fd, tab_size-1, SEEK_SET);
     if (write(fh->fh_fd, "", 1) != 1) {
-      int xerrno = errno;
+      xerrno = errno;
 
       pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
         ": error writing single byte to DelayTable '%s': %s", fh->fh_path,
@@ -515,7 +566,7 @@ static int delay_table_init(void) {
   pr_trace_msg("delay", 8, "unmapping DelayTable '%s' from memory",
     delay_tab.dt_path);
   if (munmap(delay_tab.dt_data, delay_tab.dt_size) < 0) {
-    int xerrno = errno;
+    xerrno = errno;
     pr_fsio_close(fh);
 
     errno = xerrno;
@@ -584,22 +635,59 @@ static void delay_table_reset(void) {
 
   for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
     unsigned int i = s->sid - 1;
+    struct delay_rec *row;
+    struct delay_vals_rec *dv;
 
     /* Row for USER values */
-    struct delay_rec *row = &((struct delay_rec *) delay_tab.dt_data)[i];
+    row = &((struct delay_rec *) delay_tab.dt_data)[i];
     row->d_sid = s->sid;
     sstrncpy(row->d_addr, pr_netaddr_get_ipstr(s->addr), sizeof(row->d_addr));
     row->d_port = s->ServerPort;
-    row->d_nvals = 0;
     memset(row->d_vals, 0, sizeof(row->d_vals));
+
+    /* Initialize value subsets for "ftp", "ftps", and "ssh2". */
+    dv = &(row->d_vals[0]);
+    memset(dv->dv_proto, 0, sizeof(dv->dv_proto));
+    sstrcat(dv->dv_proto, "ftp", sizeof(dv->dv_proto));
+    dv->dv_nvals = 0;
+    memset(dv->dv_vals, 0, sizeof(dv->dv_vals));
+
+    dv = &(row->d_vals[1]);
+    memset(dv->dv_proto, 0, sizeof(dv->dv_proto));
+    sstrcat(dv->dv_proto, "ftps", sizeof(dv->dv_proto));
+    dv->dv_nvals = 0;
+    memset(dv->dv_vals, 0, sizeof(dv->dv_vals));
+
+    dv = &(row->d_vals[2]);
+    memset(dv->dv_proto, 0, sizeof(dv->dv_proto));
+    sstrcat(dv->dv_proto, "ssh2", sizeof(dv->dv_proto));
+    dv->dv_nvals = 0;
+    memset(dv->dv_vals, 0, sizeof(dv->dv_vals));
 
     /* Row for PASS values */
     row = &((struct delay_rec *) delay_tab.dt_data)[i + 1];
     row->d_sid = s->sid;
     sstrncpy(row->d_addr, pr_netaddr_get_ipstr(s->addr), sizeof(row->d_addr));
     row->d_port = s->ServerPort;
-    row->d_nvals = 0;
     memset(row->d_vals, 0, sizeof(row->d_vals));
+
+    dv = &(row->d_vals[0]);
+    memset(dv->dv_proto, 0, sizeof(dv->dv_proto));
+    sstrcat(dv->dv_proto, "ftp", sizeof(dv->dv_proto));
+    dv->dv_nvals = 0;
+    memset(dv->dv_vals, 0, sizeof(dv->dv_vals));
+
+    dv = &(row->d_vals[1]);
+    memset(dv->dv_proto, 0, sizeof(dv->dv_proto));
+    sstrcat(dv->dv_proto, "ftps", sizeof(dv->dv_proto));
+    dv->dv_nvals = 0;
+    memset(dv->dv_vals, 0, sizeof(dv->dv_vals));
+
+    dv = &(row->d_vals[2]);
+    memset(dv->dv_proto, 0, sizeof(dv->dv_proto));
+    sstrcat(dv->dv_proto, "ssh2", sizeof(dv->dv_proto));
+    dv->dv_nvals = 0;
+    memset(dv->dv_vals, 0, sizeof(dv->dv_vals));
   }
 
   return;
@@ -700,15 +788,20 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
   pool *tmp_pool;
   pr_fh_t *fh;
   char *vals;
+  int xerrno = 0;
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
+  if (fh == NULL) {
+    xerrno = errno;
+  }
   PRIVS_RELINQUISH
 
   if (!fh) {
     pr_ctrls_add_response(ctrl,
       "warning: unable to open DelayTable '%s': %s", delay_tab.dt_path,
-      strerror(errno));
+      strerror(xerrno));
+    xerrno = errno;
     return -1;
   }
 
@@ -716,7 +809,7 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
   delay_tab.dt_data = NULL;
 
   if (delay_table_load(TRUE) < 0) {
-    int xerrno = errno;
+    xerrno = errno;
 
     pr_ctrls_add_response(ctrl,
       "unable to load DelayTable '%s' into memory: %s",
@@ -737,59 +830,88 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
   for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
     unsigned int r = s->sid - 1;
     register unsigned int i;
+    struct delay_rec *row;
  
     /* Row for USER values */
-    struct delay_rec *row = &((struct delay_rec *) delay_tab.dt_data)[r];
-    pr_ctrls_add_response(ctrl, "Address %s#%u: %u USER values (usecs):",
-      row->d_addr, row->d_port, row->d_nvals);
+    row = &((struct delay_rec *) delay_tab.dt_data)[r];
+    pr_ctrls_add_response(ctrl, "Address %s#%u: USER values (usecs):",
+      row->d_addr, row->d_port);
 
-    /* Start at the end of the row and work backward, as values are
-     * always added at the end of the row, shifting everything to the left.
-     */
-    vals = "";
-    for (i = 1; i < row->d_nvals; i++) {
-      char buf[80];
+    for (i = 0; i < DELAY_NPROTO; i++) {
+      struct delay_vals_rec *dv;
+      register unsigned int j;
 
-      memset(buf, '\0', sizeof(buf));
-      snprintf(buf, sizeof(buf)-1, "%10ld", row->d_vals[DELAY_NVALUES - i]);
+      dv = &(row->d_vals[i]);
 
-      vals = pstrcat(tmp_pool, vals, " ", buf, NULL);
-
-      if (i != 0 &&
-          i % 4 == 0) {
-        pr_ctrls_add_response(ctrl, "  %s", vals);
-        vals = "";
+      if ((dv->dv_proto)[0] == '\0') {
+        continue;
       }
-    }
 
-    if (strlen(vals) > 0)
-      pr_ctrls_add_response(ctrl, "  %s", vals);
+      pr_ctrls_add_response(ctrl, " + Protocol %s, %u values:", dv->dv_proto,
+        dv->dv_nvals);
+
+      /* Start at the end of the row and work backward, as values are
+       * always added at the end of the row, shifting everything to the left.
+       */
+      vals = "";
+      for (j = 0; j < dv->dv_nvals; j++) {
+        char buf[80];
+
+        memset(buf, '\0', sizeof(buf));
+        snprintf(buf, sizeof(buf)-1, "%10ld", dv->dv_vals[DELAY_NVALUES - j]);
+
+        vals = pstrcat(tmp_pool, vals, " ", buf, NULL);
+
+        if (j != 0 &&
+            j % 4 == 0) {
+          pr_ctrls_add_response(ctrl, "    %s", vals);
+          vals = "";
+        }
+      }
+
+      if (strlen(vals) > 0)
+        pr_ctrls_add_response(ctrl, "    %s", vals);
+    }
 
     pr_ctrls_add_response(ctrl, "%s", "");
 
     /* Row for PASS values */
     row = &((struct delay_rec *) delay_tab.dt_data)[r + 1];
-    pr_ctrls_add_response(ctrl, "Address %s#%u: %u PASS values (usecs):",
-      row->d_addr, row->d_port, row->d_nvals);
+    pr_ctrls_add_response(ctrl, "Address %s#%u: PASS values (usecs):",
+      row->d_addr, row->d_port);
 
-    vals = "";
-    for (i = 1; i < row->d_nvals; i++) {
-      char buf[80];
+    for (i = 0; i < DELAY_NPROTO; i++) {
+      struct delay_vals_rec *dv;
+      register unsigned int j;
 
-      memset(buf, '\0', sizeof(buf));
-      snprintf(buf, sizeof(buf)-1, "%10ld", row->d_vals[DELAY_NVALUES - i]);
+      dv = &(row->d_vals[i]);
 
-      vals = pstrcat(tmp_pool, vals, " ", buf, NULL);
-
-      if (i != 0 &&
-          i % 4 == 0) {
-        pr_ctrls_add_response(ctrl, "  %s", vals);
-        vals = "";
+      if ((dv->dv_proto)[0] == '\0') {
+        continue;
       }
-    }
 
-    if (strlen(vals) > 0)
-      pr_ctrls_add_response(ctrl, "  %s", vals);
+      pr_ctrls_add_response(ctrl, " + Protocol %s, %u values:", dv->dv_proto,
+        dv->dv_nvals);
+
+      vals = "";
+      for (j = 0; j < dv->dv_nvals; j++) {
+        char buf[80];
+
+        memset(buf, '\0', sizeof(buf));
+        snprintf(buf, sizeof(buf)-1, "%10ld", dv->dv_vals[DELAY_NVALUES - j]);
+
+        vals = pstrcat(tmp_pool, vals, " ", buf, NULL);
+
+        if (j != 0 &&
+            j % 4 == 0) {
+          pr_ctrls_add_response(ctrl, "    %s", vals);
+          vals = "";
+        }
+      }
+
+      if (strlen(vals) > 0)
+        pr_ctrls_add_response(ctrl, "    %s", vals);
+    }
   }
   pr_ctrls_add_response(ctrl, "%s", "");
 
@@ -812,15 +934,20 @@ static int delay_handle_reset(pr_ctrls_t *ctrl, int reqargc,
     char **reqarg) {
   struct flock lock;
   pr_fh_t *fh;
+  int xerrno = 0;
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
+  if (fh == NULL) {
+    xerrno = errno;
+  }
   PRIVS_RELINQUISH
 
   if (!fh) {
     pr_ctrls_add_response(ctrl,
       "unable to open DelayTable '%s': %s", delay_tab.dt_path,
-      strerror(errno));
+      strerror(xerrno));
+    errno = xerrno;
     return -1;
   }
 
@@ -875,7 +1002,7 @@ static int delay_handle_delay(pr_ctrls_t *ctrl, int reqargc,
 
   if (strcmp(reqargv[0], "info") == 0) {
 
-    if (!ctrls_check_acl(ctrl, delay_acttab, "info")) {
+    if (!pr_ctrls_check_acl(ctrl, delay_acttab, "info")) {
       pr_ctrls_add_response(ctrl, "access denied");
       return -1;
     }
@@ -884,19 +1011,16 @@ static int delay_handle_delay(pr_ctrls_t *ctrl, int reqargc,
 
   } else if (strcmp(reqargv[0], "reset") == 0) {
 
-    if (!ctrls_check_acl(ctrl, delay_acttab, "reset")) {
+    if (!pr_ctrls_check_acl(ctrl, delay_acttab, "reset")) {
       pr_ctrls_add_response(ctrl, "access denied");
       return -1;
     }
 
     return delay_handle_reset(ctrl, --reqargc, ++reqargv);
-
-  } else {
-    pr_ctrls_add_response(ctrl, "unknown delay action: '%s'", reqargv[0]);
-    return -1;
   }
 
-  return 0;
+  pr_ctrls_add_response(ctrl, "unknown delay action: '%s'", reqargv[0]);
+  return -1;
 }
 
 #endif /* PR_USE_CTRLS */
@@ -924,7 +1048,7 @@ MODRET set_delayctrlsacls(cmd_rec *cmd) {
       strcmp(cmd->argv[3], "group") != 0)
     CONF_ERROR(cmd, "third parameter must be 'user' or 'group'");
 
-  bad_action = ctrls_set_module_acls(delay_acttab, delay_pool, actions,
+  bad_action = pr_ctrls_set_module_acls(delay_acttab, delay_pool, actions,
     cmd->argv[2], cmd->argv[3], cmd->argv[4]);
   if (bad_action != NULL)
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown delay action: '",
@@ -974,6 +1098,7 @@ MODRET delay_post_pass(cmd_rec *cmd) {
   struct timeval tv;
   unsigned int rownum;
   long interval, median;
+  const char *proto;
 
   if (!delay_engine)
     return PR_DECLINED(cmd);
@@ -1006,8 +1131,10 @@ MODRET delay_post_pass(cmd_rec *cmd) {
   interval = (tv.tv_sec - delay_tv.tv_sec) * 1000000 +
     (tv.tv_usec - delay_tv.tv_usec);
 
+  proto = pr_session_get_protocol(0);
+
   /* Get the median interval value. */
-  median = delay_get_median(cmd->tmp_pool, rownum, interval);
+  median = delay_get_median(cmd->tmp_pool, rownum, proto, interval);
 
   /* Add the interval to the table. Only allow a single session to
    * add a portion of the cache size, to prevent a single client from
@@ -1015,7 +1142,7 @@ MODRET delay_post_pass(cmd_rec *cmd) {
    */
   if (delay_npass < (DELAY_NVALUES / DELAY_SESS_NVALUES)) {
     pr_trace_msg("delay", 8, "adding %ld usecs to PASS row", interval);
-    delay_table_add_interval(rownum, interval);
+    delay_table_add_interval(rownum, proto, interval);
     delay_npass++;
 
   } else {
@@ -1031,6 +1158,15 @@ MODRET delay_post_pass(cmd_rec *cmd) {
     pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
       ": unable to unload DelayTable '%s' from memory: %s",
       delay_tab.dt_path, strerror(errno));
+  }
+
+  /* If this is a POST_CMD phase, then close the table.  If the phase is
+   * POST_CMD_ERR, then leave the table open; the client may send another
+   * set of USER/PASS commands.
+   */
+  if (session.curr_phase == POST_CMD) {
+    (void) close(delay_tab.dt_fd);
+    delay_tab.dt_fd = -1;
   }
 
   /* If the current interval is less than the median interval, we
@@ -1054,6 +1190,7 @@ MODRET delay_post_user(cmd_rec *cmd) {
   struct timeval tv;
   unsigned int rownum;
   long interval, median;
+  const char *proto;
 
   if (!delay_engine)
     return PR_DECLINED(cmd);
@@ -1084,8 +1221,10 @@ MODRET delay_post_user(cmd_rec *cmd) {
   interval = (tv.tv_sec - delay_tv.tv_sec) * 1000000 +
     (tv.tv_usec - delay_tv.tv_usec);
 
+  proto = pr_session_get_protocol(0);
+
   /* Get the median interval value. */
-  median = delay_get_median(cmd->tmp_pool, rownum, interval);
+  median = delay_get_median(cmd->tmp_pool, rownum, proto, interval);
 
   /* Add the interval to the table. Only allow a single session to
    * add a portion of the cache size, to prevent a single client from
@@ -1093,14 +1232,15 @@ MODRET delay_post_user(cmd_rec *cmd) {
    */
   if (delay_nuser < (DELAY_NVALUES / DELAY_SESS_NVALUES)) {
     pr_trace_msg("delay", 8, "adding %ld usecs to USER row", interval);
-    delay_table_add_interval(rownum, interval);
+    delay_table_add_interval(rownum, proto, interval);
     delay_nuser++;
 
-  } else
+  } else {
     /* Generate an event, in case a module (i.e. mod_ban) might want
      * to do something appropriate to such an ill-behaved client.
      */
     pr_event_generate("mod_delay.max-user", session.c);
+  }
 
   /* Done with the table. */
   delay_table_unlock(rownum);
@@ -1130,10 +1270,53 @@ MODRET delay_pre_user(cmd_rec *cmd) {
 /* Event handlers
  */
 
-static void delay_exit_ev(const void *event_data, void *user_data) {
+#if defined(PR_SHARED_MODULE)
+static void delay_mod_unload_ev(const void *event_data, void *user_data) {
+  if (strcmp("mod_delay.c", (const char *) event_data) == 0) {
+    /* Unregister ourselves from all events. */
+    pr_event_unregister(&delay_module, NULL, NULL);
+
+# ifdef PR_USE_CTRLS
+    pr_ctrls_unregister(&delay_module, "delay");
+# endif
+
+  }
+}
+#endif
+
+static void delay_postparse_ev(const void *event_data, void *user_data) {
+  config_rec *c;
+
+  c = find_config(main_server->conf, CONF_PARAM, "DelayEngine", FALSE);
+  if (c && *((unsigned int *) c->argv[0]) == FALSE)
+    delay_engine = FALSE;
+
+  if (!delay_engine)
+    return;
+
+  c = find_config(main_server->conf, CONF_PARAM, "DelayTable", FALSE);
+  if (c)
+    delay_tab.dt_path = c->argv[0];
+
+  (void) delay_table_init();
+  return;
+}
+
+static void delay_restart_ev(const void *event_data, void *user_data) {
+  if (delay_pool)
+    destroy_pool(delay_pool);
+
+  delay_pool = make_sub_pool(permanent_pool);
+  pr_pool_tag(delay_pool, MOD_DELAY_VERSION);
+
+  return;
+}
+
+static void delay_shutdown_ev(const void *event_data, void *user_data) {
   pr_fh_t *fh;
   char *data;
   size_t datalen;
+  int xerrno = 0;
 
   if (!delay_engine)
     return;
@@ -1144,12 +1327,16 @@ static void delay_exit_ev(const void *event_data, void *user_data) {
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
+  if (fh == NULL) {
+    xerrno = errno;
+  }
   PRIVS_RELINQUISH
 
   if (!fh) {
     pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
       ": unable to open DelayTable '%s': %s", delay_tab.dt_path,
-      strerror(errno));
+      strerror(xerrno));
+    errno = xerrno;
     return;
   }
 
@@ -1157,7 +1344,7 @@ static void delay_exit_ev(const void *event_data, void *user_data) {
   delay_tab.dt_data = NULL;
 
   if (delay_table_load(TRUE) < 0) {
-    int xerrno = errno;
+    xerrno = errno;
     pr_fsio_close(fh);
 
     errno = xerrno;
@@ -1195,34 +1382,6 @@ static void delay_exit_ev(const void *event_data, void *user_data) {
   return;
 }
 
-static void delay_postparse_ev(const void *event_data, void *user_data) {
-  config_rec *c;
-
-  c = find_config(main_server->conf, CONF_PARAM, "DelayEngine", FALSE);
-  if (c && *((unsigned int *) c->argv[0]) == FALSE)
-    delay_engine = FALSE;
-
-  if (!delay_engine)
-    return;
-
-  c = find_config(main_server->conf, CONF_PARAM, "DelayTable", FALSE);
-  if (c)
-    delay_tab.dt_path = c->argv[0];
-
-  (void) delay_table_init();
-  return;
-}
-
-static void delay_restart_ev(const void *event_data, void *user_data) {
-  if (delay_pool)
-    destroy_pool(delay_pool);
-
-  delay_pool = make_sub_pool(permanent_pool);
-  pr_pool_tag(delay_pool, MOD_DELAY_VERSION);
-
-  return;
-}
-
 /* Initialization functions
  */
 
@@ -1230,7 +1389,11 @@ static int delay_init(void) {
   delay_tab.dt_path = PR_RUN_DIR "/proftpd.delay";
   delay_tab.dt_data = NULL;
 
-  pr_event_register(&delay_module, "core.exit", delay_exit_ev, NULL);
+  pr_event_register(&delay_module, "core.exit", delay_shutdown_ev, NULL);
+#if defined(PR_SHARED_MODULE)
+  pr_event_register(&delay_module, "core.module-unload", delay_mod_unload_ev,
+    NULL);
+#endif
   pr_event_register(&delay_module, "core.postparse", delay_postparse_ev, NULL);
   pr_event_register(&delay_module, "core.restart", delay_restart_ev, NULL);
 
@@ -1248,7 +1411,7 @@ static int delay_init(void) {
 
     for (i = 0; delay_acttab[i].act_action; i++) {
       delay_acttab[i].act_acl = pcalloc(delay_pool, sizeof(ctrls_acl_t));
-      ctrls_init_acl(delay_acttab[i].act_acl);
+      pr_ctrls_init_acl(delay_acttab[i].act_acl);
     }
   }
 #endif /* PR_USE_CTRLS */
@@ -1259,8 +1422,9 @@ static int delay_init(void) {
 static int delay_sess_init(void) {
   pr_fh_t *fh;
   config_rec *c;
+  int xerrno = errno;
 
-  pr_event_unregister(&delay_module, "core.exit", delay_exit_ev);
+  pr_event_unregister(&delay_module, "core.exit", delay_shutdown_ev);
 
   if (!delay_engine)
     return 0;
@@ -1282,14 +1446,17 @@ static int delay_sess_init(void) {
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
+  if (fh == NULL) {
+    xerrno = errno;
+  }
   PRIVS_RELINQUISH
 
-  if (!fh) {
+  if (fh == NULL) {
     pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
       ": unable to open DelayTable '%s': %s", delay_tab.dt_path,
-      strerror(errno));
+      strerror(xerrno));
     pr_trace_msg("delay", 1, "unable to open DelayTable '%s': %s",
-      delay_tab.dt_path, strerror(errno));
+      delay_tab.dt_path, strerror(xerrno));
     delay_engine = FALSE;
     return 0;
   }

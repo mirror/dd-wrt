@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,8 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/*
- * Resource allocation code
- * $Id: pool.c,v 1.53 2008/10/04 05:38:01 castaglia Exp $
+/* Resource allocation code
+ * $Id: pool.c,v 1.56 2010/02/04 17:24:16 castaglia Exp $
  */
 
 #include "conf.h"
@@ -65,6 +64,25 @@ union block_hdr *block_freelist = NULL;
 static unsigned int stat_malloc = 0;	/* incr when malloc required */
 static unsigned int stat_freehit = 0;	/* incr when freelist used */
 
+#ifdef PR_USE_DEVEL
+/* Debug flags */
+static int debug_flags = 0;
+
+static void oom_printf(const char *fmt, ...) {
+  char buf[PR_TUNABLE_BUFFER_SIZE];
+  va_list msg;
+
+  memset(buf, '\0', sizeof(buf));
+
+  va_start(msg, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, msg);
+  va_end(msg);
+
+  buf[sizeof(buf)-1] = '\0';
+  fprintf(stderr, "%s\n", buf);
+}
+#endif /* PR_USE_DEVEL */
+
 /* Lowest level memory allocation functions
  */
 
@@ -73,8 +91,14 @@ static void *null_alloc(size_t size) {
 
   if (size == 0)
     ret = malloc(size);
-  if (ret == 0) {
+
+  if (ret == NULL) {
     pr_log_pri(PR_LOG_ERR, "fatal: Memory exhausted");
+#ifdef PR_USE_DEVEL
+    if (debug_flags & PR_POOL_DEBUG_FL_OOM_DUMP_POOLS) {
+      pr_pool_debug_memory(oom_printf);
+    }
+#endif
     exit(1);
   }
 
@@ -111,13 +135,14 @@ static void chk_on_blk_list(union block_hdr *blok, union block_hdr *free_blk,
   /* Debug code */
 
   while (free_blk) {
-    if (free_blk == blok) {
-      pr_log_pri(PR_LOG_ERR, "Fatal: DEBUG: Attempt to free already free block "
-       "in pool '%s'", pool_tag ? pool_tag : "<unnamed>");
-      exit(1);
+    if (free_blk != blok) {
+      free_blk = free_blk->h.next;
+      continue;
     }
 
-    free_blk = free_blk->h.next;
+    pr_log_pri(PR_LOG_ERR, "Fatal: DEBUG: Attempt to free already free block "
+     "in pool '%s'", pool_tag ? pool_tag : "<unnamed>");
+    exit(1);
   }
 }
 
@@ -320,6 +345,12 @@ void pr_pool_debug_memory(void (*debugf)(const char *, ...)) {
   debugf("Total %lu bytes allocated", walk_pools(permanent_pool, 0, debugf));
   debug_pool_info(debugf);
 }
+
+int pr_pool_debug_set_flags(int flags) {
+  debug_flags = flags;
+  return 0;
+}
+
 #endif /* PR_USE_DEVEL */
 
 void pr_pool_tag(pool *p, const char *tag) {

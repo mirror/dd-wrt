@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
  *
- * Copyright (c) 2000-2008 TJ Saunders
+ * Copyright (c) 2000-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include "mod_wrap2.h"
 
 typedef struct regtab_obj {
-  struct regtab_obj *next;
+  struct regtab_obj *prev, *next;
 
   /* Table source type name */
   const char *regtab_name;
@@ -115,44 +115,17 @@ static int wrap2_closelog(void) {
 }
 
 int wrap2_log(const char *fmt, ...) {
-  char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
-  time_t timestamp = time(NULL);
-  struct tm *t = NULL;
   va_list msg;
+  int res;
 
   if (!wrap2_logname)
     return 0;
 
-  t = pr_localtime(NULL, &timestamp);
-
-  /* Prepend the timestamp. */
-  strftime(buf, sizeof(buf), "%b %d %H:%M:%S ", t);
-  buf[sizeof(buf) - 1] = '\0';
-
-  /* Prepend a small header */
-  snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-           MOD_WRAP2_VERSION "[%u]: ", (unsigned int) getpid());
-
-  buf[sizeof(buf) - 1] = '\0';
-
-  /* Affix the message. */
   va_start(msg, fmt);
-  vsnprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), fmt, msg);
+  res = pr_log_vwritefile(wrap2_logfd, MOD_WRAP2_VERSION, fmt, msg);
   va_end(msg);
 
-  buf[strlen(buf)] = '\n';
-  buf[sizeof(buf) - 1] = '\0';
-
-  while (write(wrap2_logfd, buf, strlen(buf)) < 0) {
-    if (errno == EINTR) {
-      pr_signals_handle();
-      continue;
-    }
-
-    return -1;
-  }
-
-  return 0;
+  return res;
 }
 
 static int wrap2_openlog(void) {
@@ -310,7 +283,7 @@ static char *wrap2_get_user(wrap2_conn_t *conn) {
 
     /* RFC1413 lookups may have already been done by the mod_ident module.
      * If so, use the ident name stashed; otherwise, use the user name issued
-     * by the client, C_USER.
+     * by the client.
      */
 
     rfc1413_ident = pr_table_get(session.notes, "mod_ident.rfc1413-ident",
@@ -319,8 +292,12 @@ static char *wrap2_get_user(wrap2_conn_t *conn) {
       sstrncpy(conn->user, rfc1413_ident, sizeof(conn->user));
 
     } else {
-      char *user = get_param_ptr(main_server->conf, C_USER, FALSE);
-      sstrncpy(conn->user, user, sizeof(conn->user));
+      char *user;
+
+      user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
+      if (user) {
+        sstrncpy(conn->user, user, sizeof(conn->user));
+      }
     }
   }
 
@@ -336,8 +313,23 @@ static char *wrap2_get_hostaddr(wrap2_host_t *host) {
 }
 
 static char *wrap2_get_hostname(wrap2_host_t *host) {
-  if (*host->name == '\0')
-    sstrncpy(host->name, session.c->remote_name, sizeof(host->name));
+
+  if (*host->name == '\0') {
+    int reverse_dns;
+
+    /* Manually tweak the UseReverseDNS setting, and any caches, so that
+     * we really do use the DNS name here if possible.
+     */
+    pr_netaddr_clear_cache();
+
+    reverse_dns = pr_netaddr_set_reverse_dns(TRUE);
+    session.c->remote_addr->na_have_dnsstr = FALSE;
+    sstrncpy(host->name, pr_netaddr_get_dnsstr(session.c->remote_addr),
+      sizeof(host->name));
+
+    pr_netaddr_set_reverse_dns(reverse_dns);
+    session.c->remote_addr->na_have_dnsstr = FALSE;
+  }
 
   return host->name;
 }
@@ -346,7 +338,7 @@ static char *wrap2_get_hostinfo(wrap2_host_t *host) {
   char *hostname = wrap2_get_hostname(host);
 
   if (WRAP2_IS_KNOWN_HOSTNAME(hostname))
-    return host->name;
+    return hostname;
 
   return wrap2_get_hostaddr(host);
 }
@@ -416,14 +408,10 @@ static unsigned char wrap2_match_string(const char *tok, const char *str) {
 
     /* Prefix */
     return (strncasecmp(tok, str, len) == 0);
-
-  } else {
-
-    /* Exact match */
-    return (strcasecmp(tok, str) == 0);
   }
 
-  return FALSE;
+  /* Exact match */
+  return (strcasecmp(tok, str) == 0);
 }
 
 static unsigned long wrap2_addr_a2n(const char *str) {
@@ -472,6 +460,7 @@ static unsigned char wrap2_match_netmask(const char *net_tok,
 
 static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
   char *mask = NULL;
+  size_t len;
 
   tok = wrap2_skip_whitespace(tok);
 
@@ -497,6 +486,10 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     return FALSE;
 #endif
 
+  } else if (strcasecmp(tok, "ALL") == 0) {
+    /* Matches everything */
+    return TRUE;
+
   } else if (strcasecmp(tok, "KNOWN") == 0) {
 
     /* Check address and name. */
@@ -509,6 +502,23 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     /* Local: no dots in name. */
     char *name = wrap2_get_hostname(host);
     return (strchr(name, '.') == NULL && WRAP2_IS_KNOWN_HOSTNAME(name));
+
+  } else if (tok[(len = strlen(tok)) - 1] == '.') {
+    const char *ip_str;
+ 
+    /* Prefix */
+
+    ip_str = wrap2_get_hostaddr(host);
+    return (strncasecmp(tok, ip_str, len) == 0);
+
+  } else if (tok[0] == '.') {
+    char *name;
+
+    /* Suffix */
+    name = wrap2_get_hostname(host);
+    len = strlen(name) - strlen(tok);
+
+    return (len > 0 && (strcasecmp(tok, name + len) == 0));
 
 #ifdef PR_USE_IPV6 
   } else if (pr_netaddr_use_ipv6() &&
@@ -551,11 +561,34 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     return (wrap2_match_netmask(tok, mask, wrap2_get_hostaddr(host)));
 
   } else {
+    pr_netaddr_t *acl_addr;
 
-    /* Anything else */
-    return (wrap2_match_string(tok, wrap2_get_hostaddr(host)) ||
-      (WRAP2_IS_NOT_INADDR(tok) &&
-       wrap2_match_string(tok, wrap2_get_hostname(host))));
+    /* Anything else.
+     *
+     * In order to properly compare IP addresses (and to handle cases of
+     * handling IPv4-mapped IPv6 addresses compared against IPv4 addresses),
+     * we need to use pr_netaddr_cmp(), rather than doing the string
+     * comparison that libwrap used.
+     */
+
+    acl_addr = pr_netaddr_get_addr(wrap2_pool, tok, NULL);
+    if (acl_addr == NULL) {
+      if (wrap2_match_string(tok, wrap2_get_hostname(host))) {
+        return TRUE;
+      }
+
+      wrap2_log("unable to handle address '%s'", tok);
+
+    } else {
+      if (pr_netaddr_cmp(session.c->remote_addr, acl_addr) == 0) {
+        return TRUE;
+      }
+    }
+
+    if (WRAP2_IS_NOT_INADDR(tok) &&
+        wrap2_match_string(tok, wrap2_get_hostname(host))) {
+      return TRUE;
+    }
   }
 
   return FALSE;
@@ -571,8 +604,9 @@ static unsigned char wrap2_match_client(char *tok, wrap2_conn_t *conn) {
     /* Plain host */
     match = wrap2_match_host(tok, conn->client);
 
-    if (match)
+    if (match) {
       wrap2_log("client matches '%s'", tok);
+    }
 
   } else {
 
@@ -580,8 +614,9 @@ static unsigned char wrap2_match_client(char *tok, wrap2_conn_t *conn) {
     match = (wrap2_match_host(host, conn->client) &&
       wrap2_match_string(tok, wrap2_get_user(conn)));
 
-    if (match)
+    if (match) {
       wrap2_log("client matches '%s@%s'", tok, host);
+    }
   }
 
   return match;
@@ -642,7 +677,7 @@ static unsigned char wrap2_match_list(array_header *list, wrap2_conn_t *conn,
       register unsigned int j;
 
       /* If yes, look for exceptions */
-      for (j = i + 1; j < list->nelts; j++) {      
+      for (j = i + 1; j < list->nelts; j++) {
         token = wrap2_skip_whitespace(tokens[j]);
         if (strcasecmp(token, "EXCEPT") == 0) {
           return (wrap2_match_list(list, conn, match_token, j+1) == 0);
@@ -887,6 +922,7 @@ static int wrap2_handle_opts(array_header *options, wrap2_conn_t *conn) {
 
 static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
   register unsigned int i;
+  int res;
   array_header *daemon_list = NULL, *client_list = NULL, *options_list = NULL;
 
   /* Build daemon list. */
@@ -928,22 +964,28 @@ static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
     }
   }
 
-  if (wrap2_match_list(daemon_list, conn, wrap2_match_daemon, 0) &&
-      wrap2_match_list(client_list, conn, wrap2_match_client, 0)) {
-#ifdef WRAP2_USE_OPTIONS
-    int res = 0;
-    res = wrap2_handle_opts(options_list, conn);
-
-    if (res == WRAP2_OPT_ALLOW)
-      return WRAP2_TAB_ALLOW;
-
-    if (res == WRAP2_OPT_DENY)
-      return WRAP2_TAB_DENY;
-#endif
-    return WRAP2_TAB_MATCH;
+  res = wrap2_match_list(daemon_list, conn, wrap2_match_daemon, 0);
+  if (res == FALSE) {
+    return 0;
   }
 
-  return 0;
+  res = wrap2_match_list(client_list, conn, wrap2_match_client, 0);
+  if (res == FALSE) {
+    return 0;
+  }
+
+#ifdef WRAP2_USE_OPTIONS
+  res = wrap2_handle_opts(options_list, conn);
+  if (res == WRAP2_OPT_ALLOW) {
+    return WRAP2_TAB_ALLOW;
+  }
+
+  if (res == WRAP2_OPT_DENY) {
+    return WRAP2_TAB_DENY;
+  }
+#endif
+
+  return WRAP2_TAB_MATCH;
 }
 
 static unsigned char wrap2_allow_access(wrap2_conn_t *conn) {
@@ -982,8 +1024,9 @@ static unsigned char wrap2_allow_access(wrap2_conn_t *conn) {
       return FALSE;
     }
 
-  } else
+  } else {
     wrap2_log("error opening allow table: %s", strerror(errno));
+  }
 
   /* Open deny table. */
   deny_tab = wrap2_open_table(wrap2_deny_table);
@@ -1004,8 +1047,9 @@ static unsigned char wrap2_allow_access(wrap2_conn_t *conn) {
       return FALSE; 
     }
 
-  } else
+  } else {
     wrap2_log("error opening deny table: %s", strerror(errno));
+  }
 
   wrap2_allow_table = wrap2_deny_table = NULL;
   return TRUE;
@@ -1088,9 +1132,11 @@ int wrap2_register(const char *srcname,
 
   /* Note: I know that use of permanent_pool is discouraged as much as
    * possible, but in this particular instance, I need a pool that
-   * persists across rehashes.  The registration of a table type only
-   * happens once, on module init when the server first starts up, so
-   * this will not constitute a memory leak.
+   * persists across rehashes.
+   *
+   * Ideally, the wrap2_regtab_t struct would have a subpool member;
+   * the objects would have their own pools which could then be
+   * destroyed upon unregistration.
    */
   wrap2_regtab_t *regtab = pcalloc(permanent_pool, sizeof(wrap2_regtab_t));
 
@@ -1098,10 +1144,49 @@ int wrap2_register(const char *srcname,
   regtab->regtab_open = srcopen;
 
   /* Add this object to the list. */
-  regtab->next = wrap2_regtab_list;
+  if (wrap2_regtab_list) {
+    wrap2_regtab_list->prev = regtab;
+    regtab->next = wrap2_regtab_list;
+  }
+
   wrap2_regtab_list = regtab;
 
   return 0;
+}
+
+int wrap2_unregister(const char *srcname) {
+  if (wrap2_regtab_list) {
+    register wrap2_regtab_t *regtab = NULL;
+
+    for (regtab = wrap2_regtab_list; regtab; regtab = regtab->next) {
+      if (strcmp(regtab->regtab_name, srcname) == 0) {
+
+        if (regtab->prev) {
+          regtab->prev->next = regtab->next;
+
+        } else {
+          wrap2_regtab_list = regtab->next;
+        }
+
+        if (regtab->next) {
+          regtab->next->prev = regtab->prev;
+        }
+
+        regtab->prev = regtab->next = NULL;
+
+        /* NOTE: a counter should be kept of the number of unregistrations,
+         * as the memory for a registration is not freed on unregistration.
+         */
+        return 0;
+      }
+    }
+
+    errno = ENOENT;
+    return -1;
+  }
+
+  errno = EPERM;
+  return -1;
 }
 
 /* "builtin" source callbacks. */
@@ -1395,7 +1480,7 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
  */
 
 MODRET wrap2_pre_pass(cmd_rec *cmd) {
-  wrap2_conn_t con;
+  wrap2_conn_t conn;
   unsigned char have_tables = FALSE;
   char *user = NULL;
   config_rec *c = NULL;
@@ -1406,8 +1491,7 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
   /* Hide passwords */
   session.hide_password = TRUE;
 
-  user = get_param_ptr(cmd->server->conf, C_USER, FALSE);
-
+  user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
   if (!user)
     return PR_DECLINED(cmd);
 
@@ -1544,19 +1628,24 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
 
   wrap2_log("looking under service name '%s'", wrap2_service_name);
 
-  memset(&con, '\0', sizeof(con));
+  memset(&conn, '\0', sizeof(conn));
 
-  wrap2_conn_set(&con, WRAP2_CONN_DAEMON, wrap2_service_name,
+  wrap2_conn_set(&conn, WRAP2_CONN_DAEMON, wrap2_service_name,
     WRAP2_CONN_SOCK_FD, session.c->rfd, 0);
 
   wrap2_log("%s", "checking access rules for connection");
 
-  if (strcasecmp(wrap2_get_hostname(con.client), WRAP2_PARANOID) == 0 ||
-      !wrap2_allow_access(&con)) {
+  if (strcasecmp(wrap2_get_hostname(conn.client), WRAP2_PARANOID) == 0 ||
+      !wrap2_allow_access(&conn)) {
     char *msg = NULL;
 
     /* Log the denied connection */
-    wrap2_log("refused connection from %s", wrap2_get_client(&con));
+    wrap2_log("refused connection from %s", wrap2_get_client(&conn));
+
+    /* Broadcast this event to any interested listeners.  We use the same
+     * event name as mod_wrap for consistency.
+     */
+    pr_event_generate("mod_wrap.connection-denied", NULL);
 
     /* Check for a configured WrapDenyMsg.  If not present, then use the
      * default denied message.
@@ -1566,11 +1655,11 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
     if (msg != NULL)
       msg = sreplace(cmd->tmp_pool, msg, "%u", user, NULL);
 
-    pr_response_send(R_530, msg ? msg : _("Access denied"));
+    pr_response_send(R_530, "%s", msg ? msg : _("Access denied"));
     end_login(0);
   }
 
-  wrap2_log("allowed connection from %s", wrap2_get_client(&con));
+  wrap2_log("allowed connection from %s", wrap2_get_client(&conn));
   return PR_DECLINED(cmd);
 }
 
@@ -1586,7 +1675,9 @@ MODRET wrap2_post_pass(cmd_rec *cmd) {
   msg = get_param_ptr(wrap2_ctxt ? wrap2_ctxt->subset : main_server->conf,
     "WrapAllowMsg", FALSE);
   if (msg != NULL) {
-    char *user = get_param_ptr(cmd->server->conf, C_USER, FALSE);
+    char *user;
+
+    user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
     msg = sreplace(cmd->tmp_pool, msg, "%u", user, NULL);
     pr_response_add(R_DUP, "%s", msg);
   }
@@ -1620,10 +1711,15 @@ static void wrap2_mod_unload_ev(const void *event_data, void *user_data) {
     /* Unregister ourselves from all events. */
     pr_event_unregister(&wrap2_module, NULL, NULL);
 
+    wrap2_unregister("builtin");
+
     if (wrap2_pool) {
       destroy_pool(wrap2_pool);
       wrap2_pool = NULL;
     }
+
+    close(wrap2_logfd);
+    wrap2_logfd = -1;
   }
 }
 

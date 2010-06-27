@@ -11,7 +11,6 @@ libexecdir=@libexecdir@
 localedir=@localedir@
 localstatedir=@localstatedir@
 pkgconfigdir=@pkgconfigdir@
-rundir=@localstatedir@/proftpd
 mandir=@mandir@
 
 AR=@AR@
@@ -19,7 +18,7 @@ CC=@CC@
 PLATFORM=@OSREL@ @OSTYPE@
 LDFLAGS=@LDFLAGS@ @LIBDIRS@
 LIBEXECDIR=@LIBEXECDIR@
-LIBS=@LIBRARIES@ @LIBS@
+LIBS=@LIBS@ @LIBRARIES@
 LIBTOOL=@LIBTOOL@
 RANLIB=@RANLIB@
 
@@ -34,7 +33,7 @@ INSTALL_SBIN=$(INSTALL) @INSTALL_STRIP@ -o $(INSTALL_USER) -g $(INSTALL_GROUP) -
 INSTALL_MAN=$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644
 
 RM=rm -f
-SHELL=/bin/sh
+SHELL=@CONFIG_SHELL@
 
 ENABLE_NLS=@ENABLE_NLS@
 ENABLE_TESTS=@ENABLE_TESTS@
@@ -48,27 +47,30 @@ INCLUDES=-I.. -I$(top_srcdir)/include @INCLUDES@
 # Preprocessor compilation flags.
 #
 CPPFLAGS=@CPPFLAGS@ -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
+ADDL_CPPFLAGS=@ADDL_CPPFLAGS@
 
 # Our compiler flags.
 #
 CFLAGS=@CFLAGS@
 DEFINES=$(PLATFORM)
 
-OBJS=main.o timers.o sets.o pool.o str.o table.o regexp.o dirtree.o expr.o \
-     support.o netaddr.o inet.o child.o parser.o log.o lastlog.o xferlog.o \
-     bindings.o netacl.o class.o scoreboard.o help.o feat.o netio.o response.o \
-     data.o modules.o display.o auth.o fsio.o mkhome.o ctrls.o event.o var.o \
-     throttle.o trace.o encode.o proctitle.o pidfile.o env.o version.o
+OBJS=main.o timers.o sets.o pool.o privs.o str.o table.o regexp.o dirtree.o \
+     expr.o support.o netaddr.o inet.o child.o parser.o log.o lastlog.o \
+     xferlog.o bindings.o netacl.o class.o scoreboard.o help.o feat.o netio.o \
+     cmd.o response.o data.o modules.o display.o auth.o fsio.o mkhome.o \
+     ctrls.o event.o var.o throttle.o session.o trace.o encode.o proctitle.o \
+     filter.o pidfile.o env.o version.o wtmp.o
 
-BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/str.o src/table.o \
-           src/regexp.o src/dirtree.o src/expr.o src/support.o src/netaddr.o \
-           src/inet.o src/child.o src/parser.o src/log.o src/lastlog.o \
-           src/xferlog.o src/bindings.o src/netacl.o src/class.o \
-           src/scoreboard.o src/help.o src/feat.o src/netio.o src/response.o \
-           src/data.o src/modules.o src/display.o src/auth.o src/fsio.o \
-           src/mkhome.o src/ctrls.o src/event.o src/var.o src/throttle.o \
-           src/trace.o src/encode.o src/proctitle.o src/pidfile.o src/env.o \
-           src/version.o
+BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/privs.o src/str.o \
+           src/table.o src/regexp.o src/dirtree.o src/expr.o src/support.o \
+           src/netaddr.o src/inet.o src/child.o src/parser.o src/log.o \
+           src/lastlog.o src/xferlog.o src/bindings.o src/netacl.o src/class.o \
+           src/scoreboard.o src/help.o src/feat.o src/netio.o src/cmd.o \
+           src/response.o src/data.o src/modules.o src/display.o src/auth.o \
+           src/fsio.o src/mkhome.o src/ctrls.o src/event.o src/var.o \
+           src/throttle.o src/session.o src/trace.o src/encode.o \
+           src/proctitle.o src/filter.o src/pidfile.o src/env.o src/version.o \
+           src/wtmp.o
 
 SHARED_MODULE_DIRS=@SHARED_MODULE_DIRS@
 SHARED_MODULE_LIBS=@SHARED_MODULE_LIBS@
@@ -88,6 +90,9 @@ BUILD_FTPCOUNT_OBJS=utils/ftpcount.o utils/scoreboard.o utils/misc.o
 FTPDCTL_OBJS=ftpdctl.o pool.o netaddr.o log.o ctrls.o
 BUILD_FTPDCTL_OBJS=src/ftpdctl.o src/pool.o src/str.o src/netaddr.o src/log.o \
   src/ctrls.o
+
+FTPSCRUB_OBJS=ftpscrub.o scoreboard.o misc.o
+BUILD_FTPSCRUB_OBJS=utils/ftpscrub.o utils/scoreboard.o utils/misc.o
 
 FTPSHUT_OBJS=ftpshut.o
 BUILD_FTPSHUT_OBJS=utils/ftpshut.o

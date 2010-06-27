@@ -23,7 +23,7 @@
  */
 
 /* Class routines
- * $Id: class.c,v 1.8 2008/10/04 05:43:16 castaglia Exp $
+ * $Id: class.c,v 1.9 2009/11/05 02:19:03 castaglia Exp $
  */
 
 #include "conf.h"
@@ -77,9 +77,10 @@ pr_class_t *pr_class_match_addr(pr_netaddr_t *addr) {
       switch (cls->cls_satisfy) {
         case PR_CLASS_SATISFY_ANY:
           pr_trace_msg(trace_channel, 6,
-            "checking addr '%s' against class '%s', ACL %s "
+            "checking addr '%s' (%s) against class '%s' rule: %s "
             "(requires any ACL matching)", pr_netaddr_get_ipstr(addr),
-            cls->cls_name, pr_netacl_get_str(tmp_pool, acls[i]));
+            pr_netaddr_get_dnsstr(addr), cls->cls_name,
+            pr_netacl_get_str(tmp_pool, acls[i]));
 
           res = pr_netacl_match(acls[i], addr);
           if (res == 1) {
@@ -90,9 +91,10 @@ pr_class_t *pr_class_match_addr(pr_netaddr_t *addr) {
 
         case PR_CLASS_SATISFY_ALL:
           pr_trace_msg(trace_channel, 6,
-            "checking addr '%s' against class '%s', ACL %s "
+            "checking addr '%s' (%s) against class '%s' ACL: %s "
             "(requires all ACLs matching)", pr_netaddr_get_ipstr(addr),
-            cls->cls_name, pr_netacl_get_str(tmp_pool, acls[i]));
+            pr_netaddr_get_dnsstr(addr), cls->cls_name,
+            pr_netacl_get_str(tmp_pool, acls[i]));
 
           res = pr_netacl_match(acls[i], addr);
 

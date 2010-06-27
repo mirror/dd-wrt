@@ -1,4 +1,4 @@
-<!-- $Id: Authentication.html,v 1.8 2008/05/06 17:01:15 castaglia Exp $ -->
+<!-- $Id: Authentication.html,v 1.10 2010/01/04 17:58:33 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Authentication.html,v $ -->
 
 <html>
@@ -19,7 +19,7 @@ document aims to discuss the sort of checks and configuration involved, and
 hopefully provide a better idea of how <code>proftpd</code> authenticates users.
 
 <p><b>PAM</b><br>
-PAM, which stands for <b>P</b>luggable <b>A</b>authentication <b>M</b>odules,
+PAM, which stands for <b>P</b>luggable <b>A</b>uthentication <b>M</b>odules,
 is an API intended to make it easy to replace the old Unix-style DES password
 hashes stored in <code>/etc/passwd</code> with a flexible system that allows
 system administrators to use MD5 checksums, SQL tables, LDAP servers,
@@ -53,17 +53,14 @@ many of the PAM modules provided by vendors are not designed to work well
 with some of the authentication <a href="#modules">modules</a> supported by
 <code>proftpd</code>.  If PAM is not a necessity for you, and you plan to
 use one of the authentication modules (other than <code>mod_auth_unix</code>),
-you should consider disabling PAM in your <code>proftpd.conf</code>, like so:
+then you need do nothing.  By default, proftpd uses PAM as an <i>additional</i>
+check during logins, but if that check fails, the login may still succeed.
+If you <i>do</i> need the PAM check to be authoritative, then you need to
+use the <code>AuthOrder</code> directive, <i>e.g.</i>:
 <pre>
-  &lt;IfModule mod_auth_pam.c&gt;
-    AuthPAMAuthoritative off
-  &lt;/IfModule&gt;
+  AuthOrder mod_auth_pam.c* ...
 </pre>
-This configuration means that, if <code>mod_auth_pam</code> is present,
-<code>proftpd</code> will still use PAM as an additional check, but if that
-check fails, the login may still proceed (<i>i.e.</i> PAM is not <i>the</i>
-authority when it comes to user authentication).  To disable use of PAM
-entirely, use:
+To disable use of PAM entirely, use:
 <pre>
   &lt;IfModule mod_auth_pam.c&gt;
     AuthPAM off
@@ -209,7 +206,7 @@ following authentication modules are all provided with <code>proftpd</code>:
   </li>
 
   <p>
-  <li><a href="http://www.castaglia.org/proftpd/modules/mod_auth_file.html"><code>mod_auth_file</code></a><br>
+  <li><a href="http://www.proftpd.org/docs/modules/mod_auth_file.html"><code>mod_auth_file</code></a><br>
     Handles the <code>AuthUserFile</code> and <code>AuthGroupFile</code> directives, for storing user account information in <a href="AuthFiles.html">other files</a>
   </li>
 
@@ -219,12 +216,12 @@ following authentication modules are all provided with <code>proftpd</code>:
   </li>
 
   <p>
-  <li><a href="http://www.castaglia.org/proftpd/modules/mod_radius.html"><code>mod_radius</code></a><br>
+  <li><a href="http://www.proftpd.org/docs/contrib/mod_radius.html"><code>mod_radius</code></a><br>
     Handles user account information provided by RADIUS servers
   </li>
 
   <p>
-  <li><a href="http://www.castaglia.org/proftpd/modules/mod_sql.html"><code>mod_sql</code></a><br>
+  <li><a href="http://www.proftpd.org/docs/contrib/mod_sql.html"><code>mod_sql</code></a><br>
     Handles user account information stored in <a href="SQL.html">SQL tables</a>
   </li>
 </ul>
@@ -290,7 +287,7 @@ Note that the <code>mod_auth.c</code> module should <b>never</b> be used in an
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2008/05/06 17:01:15 $</i><br>
+Last Updated: <i>$Date: 2010/01/04 17:58:33 $</i><br>
 <hr>
 
 </body>

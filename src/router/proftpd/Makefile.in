@@ -19,13 +19,13 @@ MAIN_LIBS=@MAIN_LIBS@
 
 BUILD_PROFTPD_OBJS=$(BUILD_OBJS) $(BUILD_STATIC_MODULE_OBJS)
 BUILD_PROFTPD_ARCHIVES=$(BUILD_STATIC_MODULE_ARCHIVES)
-BUILD_BIN=proftpd$(EXEEXT) ftpcount$(EXEEXT) ftpdctl$(EXEEXT) ftpshut$(EXEEXT) ftptop$(EXEEXT) ftpwho$(EXEEXT)
+BUILD_BIN=proftpd$(EXEEXT) ftpcount$(EXEEXT) ftpdctl$(EXEEXT) ftpscrub$(EXEEXT) ftpshut$(EXEEXT) ftptop$(EXEEXT) ftpwho$(EXEEXT)
 
 
 all: $(BUILD_BIN)
 
 include/buildstamp.h:
-	echo \#define BUILD_STAMP \"`date`\" >include/buildstamp.h
+	echo \#define BUILD_STAMP \"`date +"%a %b %e %Y %H:%M:%S %Z"`\" > include/buildstamp.h
 
 dummy:
 
@@ -54,13 +54,16 @@ dirs: include/buildstamp.h dummy
 proftpd$(EXEEXT): lib src modules dirs locale
 	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LDFLAGS) $(MAIN_LDFLAGS) -o $@ $(BUILD_PROFTPD_OBJS) $(BUILD_PROFTPD_ARCHIVES) $(LIBS) $(MAIN_LIBS)
 
-ftpcount$(EXEEXT): utils
+ftpcount$(EXEEXT): lib utils
 	$(CC) $(LDFLAGS) -o $@ $(BUILD_FTPCOUNT_OBJS) $(UTILS_LIBS)
 
-ftpdctl$(EXEEXT): src
+ftpdctl$(EXEEXT): lib src
 	$(CC) $(LDFLAGS) -o $@ $(BUILD_FTPDCTL_OBJS) $(LIBS)
 
-ftpshut$(EXEEXT): utils
+ftpscrub$(EXEEXT): lib utils
+	$(CC) $(LDFLAGS) -o $@ $(BUILD_FTPSCRUB_OBJS) $(UTILS_LIBS)
+
+ftpshut$(EXEEXT): lib utils
 	$(CC) $(LDFLAGS) -o $@ $(BUILD_FTPSHUT_OBJS) $(UTILS_LIBS)
 
 ftptop$(EXEEXT): lib utils
@@ -73,14 +76,14 @@ check: proftpd$(EXEEXT)
 	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check)
 
 # BSD install -d doesn't work, so ...
-$(DESTDIR)$(localedir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd $(DESTDIR)$(libdir) $(DESTDIR)$(pkgconfigdir) $(DESTDIR)$(libdir)/proftpd $(DESTDIR)$(libexecdir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(rundir) $(DESTDIR)$(bindir) $(DESTDIR)$(sbindir) $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man8:
+$(DESTDIR)$(localedir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)/proftpd $(DESTDIR)$(libdir) $(DESTDIR)$(pkgconfigdir) $(DESTDIR)$(libdir)/proftpd $(DESTDIR)$(libexecdir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(bindir) $(DESTDIR)$(sbindir) $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man8:
 	@if [ ! -d $@ ]; then \
 		mkdir -p $@; \
 		chown $(INSTALL_USER):$(INSTALL_GROUP) $@; \
 		chmod 0755 $@; \
 	fi
 
-install-proftpd: proftpd $(DESTDIR)$(includedir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(rundir) $(DESTDIR)$(sbindir)
+install-proftpd: proftpd $(DESTDIR)$(includedir) $(DESTDIR)$(localstatedir) $(DESTDIR)$(sysconfdir) $(DESTDIR)$(sbindir)
 	$(INSTALL_SBIN) proftpd $(DESTDIR)$(sbindir)/proftpd
 	if [ -f $(DESTDIR)$(sbindir)/in.proftpd ] ; then \
 		rm -f $(DESTDIR)$(sbindir)/in.proftpd ; \
@@ -118,6 +121,7 @@ install-modules: $(DESTDIR)$(libexecdir) $(DESTDIR)$(sysconfdir)
 install-utils: $(DESTDIR)$(sbindir) $(DESTDIR)$(bindir)
 	$(INSTALL_BIN)  ftpcount $(DESTDIR)$(bindir)/ftpcount
 	$(INSTALL_BIN)  ftpdctl  $(DESTDIR)$(bindir)/ftpdctl
+	$(INSTALL_SBIN) ftpscrub $(DESTDIR)$(sbindir)/ftpscrub
 	$(INSTALL_SBIN) ftpshut  $(DESTDIR)$(sbindir)/ftpshut
 	$(INSTALL_BIN)  ftptop   $(DESTDIR)$(bindir)/ftptop
 	$(INSTALL_BIN)  ftpwho   $(DESTDIR)$(bindir)/ftpwho
@@ -136,6 +140,7 @@ install-libltdl:
 install-man: $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/src/ftpdctl.8    $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/src/proftpd.8    $(DESTDIR)$(mandir)/man8
+	$(INSTALL_MAN) $(top_srcdir)/utils/ftpscrub.8 $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpshut.8  $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpcount.1 $(DESTDIR)$(mandir)/man1
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftptop.1   $(DESTDIR)$(mandir)/man1
@@ -199,8 +204,13 @@ config.h: stamp-h
 stamp-h: config.h.in config.status
 	./config.status
 
-${srcdir}/configure: configure.in
-	cd ${srcdir} && autoconf
+# This target tends to cause more problems than its worth; there are many
+# differences between autoconf versions, installed macros, etc between the
+# machine used to generate the shipping configure script and the machine on
+# which this target might trigger.  So try to keep the craziness down by
+# avoiding this altogether.
+#${srcdir}/configure: configure.in
+#	cd ${srcdir} && autoconf
 
 Make.rules: Make.rules.in config.status
 	./config.status

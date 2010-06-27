@@ -30,7 +30,7 @@ configuration file.  When run in standalone mode without the
 option, the main
 .B proftpd
 daemon writes its process ID to
-.B @LOCALSTATEDIR@/run/proftpd.pid
+.B @LOCALSTATEDIR@/proftpd.pid
 to make it easy to know which process to SIGHUP.
 .SH OPTIONS
 .TP 12
@@ -75,6 +75,9 @@ Disables address/port collision checking.
 .BI \-V,\--settings
 Displays various compile-time settings and exits.
 .TP
+.BI \-S,\--serveraddr
+Specifies an IP address for the host machine, avoiding an DNS lookup of the hostname
+.TP
 .BI \-t,\--configtest
 Read the configuration file, report any syntax errors, and exit.
 .TP
@@ -111,9 +114,9 @@ used.
 .br
 .B /var/log/xferlog
 .br
-.B @LOCALSTATEDIR@/run/proftpd.pid
+.B @LOCALSTATEDIR@/proftpd.pid
 .br
-.B @LOCALSTATEDIR@/run/proftpd.scoreboard
+.B @LOCALSTATEDIR@/proftpd.scoreboard
 .PD
 .SH AUTHORS
 .PP

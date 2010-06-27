@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2008 The ProFTPD Project team
+ * Copyright (c) 2004-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Configuration parser
- * $Id: parser.c,v 1.18 2008/09/04 01:49:53 castaglia Exp $
+ * $Id: parser.c,v 1.19 2009/03/05 06:01:51 castaglia Exp $
  */
 
 #include "conf.h"
@@ -270,6 +270,7 @@ unsigned int pr_parser_get_lineno(void) {
 int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
     int flags) {
   pr_fh_t *fh;
+  struct stat st;
   struct config_src *cs;
   cmd_rec *cmd;
   pool *tmp_pool;
@@ -295,6 +296,11 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
     destroy_pool(tmp_pool);
     return -1;
   }
+
+  /* Stat the opened file to determine the optimal buffer size for IO. */
+  memset(&st, 0, sizeof(st));
+  pr_fsio_fstat(fh, &st);
+  fh->fh_iosz = st.st_blksize;
 
   /* Push the configuration information onto the stack of configuration
    * sources.
@@ -381,7 +387,7 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
 }
 
 cmd_rec *pr_parser_parse_line(pool *p) {
-  char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'}, *word = NULL;
+  char buf[PR_TUNABLE_BUFFER_SIZE], *word = NULL;
   cmd_rec *cmd = NULL;
   pool *sub_pool = NULL;
   array_header *arr = NULL;
@@ -390,6 +396,8 @@ cmd_rec *pr_parser_parse_line(pool *p) {
     errno = EINVAL;
     return NULL;
   }
+
+  memset(buf, '\0', sizeof(buf));
 
   while (pr_parser_read_line(buf, sizeof(buf)-1) != NULL) {
     char *bufp = buf;

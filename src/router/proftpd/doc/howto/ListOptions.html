@@ -1,4 +1,4 @@
-<!-- $Id: ListOptions.html,v 1.3 2005/08/02 23:38:34 castaglia Exp $ -->
+<!-- $Id: ListOptions.html,v 1.4 2009/05/01 15:47:33 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ListOptions.html,v $ -->
 
 <html>
@@ -26,6 +26,8 @@ The <code>ListOptions</code> directive supports the following options:
       <dd>List all files except &quot;.&quot; and &quot;..&quot;</dd>
   <li><dt>-a</dt>
       <dd>List all files including those whose names start with &quot;.&quot;</dd>
+  <li><dt>-B</dt>
+      <dd>Force printing of non-printable filename characters as \<i>xxx</i>, where <i>xxx</i> is the octal value of the character</dd>
   <li><dt>-C</dt>
       <dd>List entries by columns</dd>
   <li><dt>-d</dt>
@@ -94,6 +96,14 @@ What if you wanted to enable some options and disable others in the same
 </pre>
 
 <p>
+If you are <b>not</b> using the <code>--enable-nls</code> configure option,
+<i>and</i> you want to see non-printable characters in filenames when listing
+directories, you should use:
+<pre>
+  ListOptions -B
+</pre>
+
+<p>
 The following keywords are supported, in addition to &quot;strict&quot;:
 <ul>
   <li><dt>maxfiles</dt>
@@ -120,7 +130,7 @@ used to block the <code>LIST</code> and <code>NLST</code> commands altogether.
 
 <p>
 <hr>
-<i>$Date: 2005/08/02 23:38:34 $</i><br>
+<i>$Date: 2009/05/01 15:47:33 $</i><br>
 
 </body>
 </html>

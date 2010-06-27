@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_ctrls_admin -- a module implementing admin control handlers
  *
- * Copyright (c) 2000-2008 TJ Saunders
+ * Copyright (c) 2000-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,14 +25,14 @@
  * This is mod_controls, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ctrls_admin.c,v 1.34 2008/12/30 21:32:07 castaglia Exp $
+ * $Id: mod_ctrls_admin.c,v 1.40 2010/01/10 20:01:30 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
 #include "mod_ctrls.h"
 
-#define MOD_CTRLS_ADMIN_VERSION		"mod_ctrls_admin/0.9.5"
+#define MOD_CTRLS_ADMIN_VERSION		"mod_ctrls_admin/0.9.6"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030001
@@ -62,6 +62,9 @@ static ctrls_acttab_t ctrls_admin_acttab[];
 /* Pool for this module's use */
 static pool *ctrls_admin_pool = NULL;
 
+static unsigned int ctrls_admin_nrestarts = 0;
+static time_t ctrls_admin_start = 0;
+
 /* Support routines
  */
 
@@ -87,9 +90,9 @@ static int respcmp(const void *a, const void *b) {
   return strcmp(*((char **) a), *((char **) b));
 }
 
+#ifdef PR_USE_DEVEL
 static pr_ctrls_t *mem_ctrl = NULL;
 
-#ifdef PR_USE_DEVEL
 static void mem_printf(const char *fmt, ...) {
   char buf[PR_TUNABLE_BUFFER_SIZE];
   va_list msg;
@@ -113,7 +116,7 @@ static int ctrls_handle_debug(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
 
   /* Check the debug ACL */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "debug")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "debug")) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -141,7 +144,7 @@ static int ctrls_handle_debug(pr_ctrls_t *ctrl, int reqargc,
     }
   
     pr_log_setdebuglevel(level);
-    ctrls_log(MOD_CTRLS_ADMIN_VERSION, "debug: level set to %d", level);
+    pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "debug: level set to %d", level);
     pr_ctrls_add_response(ctrl, "debug level set to %d", level);
 
 #ifdef PR_USE_DEVEL
@@ -158,7 +161,7 @@ static int ctrls_handle_debug(pr_ctrls_t *ctrl, int reqargc,
     pr_pool_debug_memory(mem_printf);
     mem_ctrl = NULL;
 
-    ctrls_log(MOD_CTRLS_ADMIN_VERSION, "debug: dumped memory info");
+    pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "debug: dumped memory info");
 
 #endif /* PR_USE_DEVEL */
 
@@ -175,7 +178,7 @@ static int ctrls_handle_dns(pr_ctrls_t *ctrl, int reqargc,
   int bool;
 
   /* Check the dns ACL */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "dns")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "dns")) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -215,7 +218,7 @@ static int ctrls_handle_dns(pr_ctrls_t *ctrl, int reqargc,
 
     ServerUseReverseDNS = bool;
 
-    ctrls_log(MOD_CTRLS_ADMIN_VERSION, "dns: UseReverseDNS set to '%s'",
+    pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "dns: UseReverseDNS set to '%s'",
       bool ? "on" : "off");
     pr_ctrls_add_response(ctrl, "dns: UseReverseDNS set to '%s'",
       bool ? "on" : "off");
@@ -227,7 +230,7 @@ static int ctrls_handle_dns(pr_ctrls_t *ctrl, int reqargc,
 static int admin_addr_down(pr_ctrls_t *ctrl, pr_netaddr_t *addr,
     unsigned int port) {
 
-  ctrls_log(MOD_CTRLS_ADMIN_VERSION, "down: disabling %s#%u",
+  pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "down: disabling %s#%u",
     pr_netaddr_get_ipstr(addr), port);
 
   if (pr_ipbind_close(addr, port, FALSE) < 0) {
@@ -254,7 +257,7 @@ static int ctrls_handle_down(pr_ctrls_t *ctrl, int reqargc,
    */
 
   /* Check the 'down' ACL */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "down")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "down")) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -399,7 +402,7 @@ static int ctrls_handle_kick(pr_ctrls_t *ctrl, int reqargc,
   int res = 0;
 
   /* Check the kick ACL */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "kick")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "kick")) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -428,31 +431,37 @@ static int ctrls_handle_kick(pr_ctrls_t *ctrl, int reqargc,
     for (i = 1; i < reqargc; i++) {
       unsigned char kicked_user = FALSE;
 
-      if (pr_rewind_scoreboard() < 0)
-        ctrls_log("error rewinding scoreboard: %s", strerror(errno));
+      if (pr_rewind_scoreboard() < 0) {
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "error rewinding scoreboard: %s",
+          strerror(errno));
+      }
 
       while ((score = pr_scoreboard_entry_read()) != NULL) {
         if (strcmp(reqargv[i], score->sce_user) == 0) {
           res = 0;
 
           PRIVS_ROOT
-          res = kill(score->sce_pid, SIGTERM);
+          res = pr_scoreboard_entry_kill(score, SIGTERM);
           PRIVS_RELINQUISH
 
-          if (res == 0)
+          if (res == 0) {
             kicked_user = TRUE;
 
-          else
-            ctrls_log("error kicking user '%s': %s", reqargv[i],
-              strerror(errno));
+          } else {
+            pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+              "error kicking user '%s': %s", reqargv[i], strerror(errno));
+          }
         }
       }
-      if (pr_restore_scoreboard() < 0)
-        ctrls_log("error restoring scoreboard: %s", strerror(errno));
+
+      if (pr_restore_scoreboard() < 0) {
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "error restoring scoreboard: %s",
+          strerror(errno));
+      }
 
       if (kicked_user) {
         pr_ctrls_add_response(ctrl, "kicked user '%s'", reqargv[i]);
-        ctrls_log("kicked user '%s'", reqargv[i]);
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "kicked user '%s'", reqargv[i]);
         pr_log_debug(DEBUG4, MOD_CTRLS_ADMIN_VERSION ": kicked user '%s'",
           reqargv[i]);
 
@@ -489,13 +498,15 @@ static int ctrls_handle_kick(pr_ctrls_t *ctrl, int reqargc,
 
       addr = pr_netaddr_get_ipstr(na);
 
-      if (pr_rewind_scoreboard() < 0)
-        ctrls_log("error rewinding scoreboard: %s", strerror(errno));
+      if (pr_rewind_scoreboard() < 0) {
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "error rewinding scoreboard: %s",
+          strerror(errno));
+      }
 
       while ((score = pr_scoreboard_entry_read()) != NULL) {
         if (strcmp(score->sce_client_addr, addr) == 0) {
           PRIVS_ROOT
-          if (kill(score->sce_pid, SIGTERM) == 0)
+          if (pr_scoreboard_entry_kill(score, SIGTERM) == 0)
             kicked_host = TRUE;
           PRIVS_RELINQUISH
         }
@@ -504,7 +515,7 @@ static int ctrls_handle_kick(pr_ctrls_t *ctrl, int reqargc,
 
       if (kicked_host) {
         pr_ctrls_add_response(ctrl, "kicked host '%s'", addr);
-        ctrls_log("kicked host '%s'", addr);
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "kicked host '%s'", addr);
         pr_log_debug(DEBUG4, MOD_CTRLS_ADMIN_VERSION ": kicked host '%s'",
           addr);
 
@@ -528,31 +539,37 @@ static int ctrls_handle_kick(pr_ctrls_t *ctrl, int reqargc,
     for (i = 1; i < reqargc; i++) {
       unsigned char kicked_class = FALSE;
 
-      if (pr_rewind_scoreboard() < 0)
-        ctrls_log("error rewinding scoreboard: %s", strerror(errno));
+      if (pr_rewind_scoreboard() < 0) {
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "error rewinding scoreboard: %s",
+          strerror(errno));
+      }
 
       while ((score = pr_scoreboard_entry_read()) != NULL) {
         if (strcmp(reqargv[i], score->sce_class) == 0) {
           res = 0;
 
           PRIVS_ROOT
-          res = kill(score->sce_pid, SIGTERM);
+          res = pr_scoreboard_entry_kill(score, SIGTERM);
           PRIVS_RELINQUISH
 
-          if (res == 0)
+          if (res == 0) {
             kicked_class = TRUE;
 
-          else
-            ctrls_log("error kicking class '%s': %s", reqargv[i],
-              strerror(errno));
+          } else {
+            pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+              "error kicking class '%s': %s", reqargv[i], strerror(errno));
+          }
         }
       }
-      if (pr_restore_scoreboard() < 0)
-        ctrls_log("error restoring scoreboard: %s", strerror(errno));
+
+      if (pr_restore_scoreboard() < 0) {
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "error restoring scoreboard: %s",
+          strerror(errno));
+      }
 
       if (kicked_class) {
         pr_ctrls_add_response(ctrl, "kicked class '%s'", reqargv[i]);
-        ctrls_log("kicked class '%s'", reqargv[i]);
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "kicked class '%s'", reqargv[i]);
         pr_log_debug(DEBUG4, MOD_CTRLS_ADMIN_VERSION ": kicked class '%s'",
           reqargv[i]);
 
@@ -573,7 +590,7 @@ static int ctrls_handle_restart(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
 
   /* Check the restart ACL */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "restart")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "restart")) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -581,16 +598,35 @@ static int ctrls_handle_restart(pr_ctrls_t *ctrl, int reqargc,
   }
 
   /* Be pedantic */
-  if (reqargc != 0) {
+  if (reqargc > 1) {
     pr_ctrls_add_response(ctrl, "bad number of arguments");
     return -1;
   }
 
-  PRIVS_ROOT
-  raise(SIGHUP);
-  PRIVS_RELINQUISH
+  if (reqargc == 0) {
+    PRIVS_ROOT
+    raise(SIGHUP);
+    PRIVS_RELINQUISH
 
-  pr_ctrls_add_response(ctrl, "restarted server");
+    pr_ctrls_add_response(ctrl, "restarted server");
+
+  } else if (reqargc == 1) {
+    if (strcmp(reqargv[0], "count") == 0) {
+      struct tm *tm;
+
+      tm = pr_gmtime(ctrl->ctrls_tmp_pool, &ctrls_admin_start);
+      pr_ctrls_add_response(ctrl,
+        "server restarted %u %s since %04d-%02d-%02d %02d:%02d:%02d GMT",
+        ctrls_admin_nrestarts, ctrls_admin_nrestarts != 1 ? "times" : "time",
+        tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min,
+        tm->tm_sec);
+
+    } else {
+      pr_ctrls_add_response(ctrl, "unsupported parameter '%s'", reqargv[0]);
+      return -1;
+    }
+  }
+
   return 0;
 }
 
@@ -598,7 +634,7 @@ static int ctrls_handle_scoreboard(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
 
   /* Check the scoreboard ACL. */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "scoreboard")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "scoreboard")) {
 
     /* Access denied. */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -629,7 +665,7 @@ static int ctrls_handle_shutdown(pr_ctrls_t *ctrl, int reqargc,
   char **respargv = NULL;
 
   /* Check the shutdown ACL */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "shutdown")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "shutdown")) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -650,7 +686,7 @@ static int ctrls_handle_shutdown(pr_ctrls_t *ctrl, int reqargc,
       timeout = atoi(reqargv[1]);
       time(&now);
 
-      ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+      pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
         "shutdown: waiting %u seconds before shutting down", timeout);
 
       /* If the timeout is less than the waiting period, reduce the
@@ -673,7 +709,7 @@ static int ctrls_handle_shutdown(pr_ctrls_t *ctrl, int reqargc,
       if (timeout &&
           time(NULL) - now > timeout) {
 
-        ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+        pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
           "shutdown: %u seconds elapsed, ending %lu remaining sessions",
           timeout, nkids);
 
@@ -685,7 +721,7 @@ static int ctrls_handle_shutdown(pr_ctrls_t *ctrl, int reqargc,
         break;
       }
 
-      ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+      pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
         "shutdown: waiting for %lu sessions to end", nkids);
       sleep(waiting);
 
@@ -709,17 +745,18 @@ static int ctrls_handle_shutdown(pr_ctrls_t *ctrl, int reqargc,
   /* Manually tweak the return value, for the benefit of the client */
   ctrl->ctrls_cb_retval = 0;
 
-  if (pr_ctrls_flush_response(ctrl) < 0)
-    ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+  if (pr_ctrls_flush_response(ctrl) < 0) {
+    pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
       "shutdown: error flushing response: %s", strerror(errno));
+  }
 
   /* For logging/accounting purposes */
-  ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+  pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
     "shutdown: flushed to %s/%s client: return value: 0",
     ctrl->ctrls_cl->cl_user, ctrl->ctrls_cl->cl_group);
 
   for (i = 0; i < respargc; i++)
-    ctrls_log(MOD_CTRLS_ADMIN_VERSION,
+    pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION,
       "shutdown: flushed to %s/%s client: '%s'",
       ctrl->ctrls_cl->cl_user, ctrl->ctrls_cl->cl_group, respargv[i]);
 
@@ -733,7 +770,7 @@ static int admin_addr_status(pr_ctrls_t *ctrl, pr_netaddr_t *addr,
     unsigned int port) {
   pr_ipbind_t *ipbind = NULL;
 
-  ctrls_log(MOD_CTRLS_ADMIN_VERSION, "status: checking %s#%u",
+  pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "status: checking %s#%u",
     pr_netaddr_get_ipstr(addr), port);
 
   /* Fetch the ipbind associated with this address/port. */
@@ -756,7 +793,7 @@ static int ctrls_handle_status(pr_ctrls_t *ctrl, int reqargc,
   register unsigned int i = 0;
 
   /* Check the status ACL. */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "status")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "status")) {
 
     /* Access denied. */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -779,7 +816,7 @@ static int ctrls_handle_status(pr_ctrls_t *ctrl, int reqargc,
     if (strcasecmp(server_str, "all") == 0) {
       pr_ipbind_t *ipbind = NULL;
 
-      ctrls_log(MOD_CTRLS_ADMIN_VERSION, "status: checking all servers");
+      pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "status: checking all servers");
 
       while ((ipbind = pr_ipbind_get(ipbind)) != NULL) {
         const char *ipbind_str = pr_netaddr_get_ipstr(ipbind->ib_addr); 
@@ -825,7 +862,7 @@ static int ctrls_handle_trace(pr_ctrls_t *ctrl, int reqargc,
 #ifdef PR_USE_TRACE
 
   /* Check the trace ACL. */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "trace")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "trace")) {
 
     /* Access denied. */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -932,12 +969,12 @@ static int admin_addr_up(pr_ctrls_t *ctrl, pr_netaddr_t *addr,
    */
   if (ipbind->ib_server->ServerPort && !ipbind->ib_server->listen) {
     ipbind->ib_server->listen =
-      pr_inet_create_connection(ipbind->ib_server->pool, server_list, -1,
+      pr_inet_create_conn(ipbind->ib_server->pool, server_list, -1,
       (SocketBindTight ? ipbind->ib_server->addr : NULL),
       ipbind->ib_server->ServerPort, FALSE);
   }
 
-  ctrls_log(MOD_CTRLS_ADMIN_VERSION, "up: attempting to enable %s#%u",
+  pr_ctrls_log(MOD_CTRLS_ADMIN_VERSION, "up: attempting to enable %s#%u",
     pr_netaddr_get_ipstr(addr), port);
 
   PR_OPEN_IPBIND(ipbind->ib_server->addr, ipbind->ib_server->ServerPort,
@@ -964,7 +1001,7 @@ static int ctrls_handle_up(pr_ctrls_t *ctrl, int reqargc,
    */
 
   /* Check the 'up' ACL */
-  if (!ctrls_check_acl(ctrl, ctrls_admin_acttab, "up")) {
+  if (!pr_ctrls_check_acl(ctrl, ctrls_admin_acttab, "up")) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -1037,7 +1074,7 @@ MODRET set_adminctrlsacls(cmd_rec *cmd) {
       strcmp(cmd->argv[3], "group") != 0)
     CONF_ERROR(cmd, "third parameter must be 'user' or 'group'");
 
-  bad_action = ctrls_set_module_acls(ctrls_admin_acttab, ctrls_admin_pool,
+  bad_action = pr_ctrls_set_module_acls(ctrls_admin_acttab, ctrls_admin_pool,
     actions, cmd->argv[2], cmd->argv[3], cmd->argv[4]);
   if (bad_action != NULL)
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown action: '",
@@ -1080,7 +1117,7 @@ MODRET set_adminctrlsengine(cmd_rec *cmd) {
      */
     char **actions = ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
 
-    bad_action = ctrls_unregister_module_actions(ctrls_admin_acttab, actions,
+    bad_action = pr_ctrls_unregister_module_actions(ctrls_admin_acttab, actions,
       &ctrls_admin_module);
     if (bad_action != NULL)
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown action: '",
@@ -1129,9 +1166,10 @@ static void ctrls_admin_restart_ev(const void *event_data, void *user_data) {
     /* Allocate and initialize the ACL for this control. */
     ctrls_admin_acttab[i].act_acl = pcalloc(ctrls_admin_pool,
       sizeof(ctrls_acl_t));
-    ctrls_init_acl(ctrls_admin_acttab[i].act_acl);
+    pr_ctrls_init_acl(ctrls_admin_acttab[i].act_acl);
   }
 
+  ctrls_admin_nrestarts++;
   return;
 }
 
@@ -1182,7 +1220,7 @@ static int ctrls_admin_init(void) {
     /* Allocate and initialize the ACL for this control. */
     ctrls_admin_acttab[i].act_acl = pcalloc(ctrls_admin_pool,
       sizeof(ctrls_acl_t));
-    ctrls_init_acl(ctrls_admin_acttab[i].act_acl);
+    pr_ctrls_init_acl(ctrls_admin_acttab[i].act_acl);
 
     if (pr_ctrls_register(&ctrls_admin_module,
         ctrls_admin_acttab[i].act_action, ctrls_admin_acttab[i].act_desc,
@@ -1201,6 +1239,7 @@ static int ctrls_admin_init(void) {
   pr_event_register(&ctrls_admin_module, "core.startup",
     ctrls_admin_startup_ev, NULL);
 
+  time(&ctrls_admin_start);
   return 0;
 }
 

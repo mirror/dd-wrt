@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 /* Shows a count of "who" is online via proftpd.  Uses the scoreboard file.
  *
- * $Id: ftpwho.c,v 1.26 2008/02/10 02:29:22 castaglia Exp $
+ * $Id: ftpwho.c,v 1.27 2009/09/04 17:13:10 castaglia Exp $
  */
 
 #include "utils.h"
@@ -157,10 +157,12 @@ static void show_usage(const char *progname, int exit_code) {
 #else /* HAVE_GETOPT_LONG */
     printf("  %s\n", h->short_opt);
 #endif
-    if (!h->desc)
+    if (!h->desc) {
       printf("    display %s usage\n", progname);
-    else
+
+    } else {
       printf("    %s\n", h->desc);
+    }
   }
 
   exit(exit_code);
@@ -273,12 +275,13 @@ int main(int argc, char **argv) {
   mpid = util_scoreboard_get_daemon_pid();
   uptime = util_scoreboard_get_daemon_uptime();
 
-  if (!mpid)
+  if (!mpid) {
     printf("inetd FTP daemon:\n");
 
-  else
+  } else {
     printf("standalone FTP daemon [%u], up for %s\n", (unsigned int) mpid,
       show_uptime(uptime));
+  }
 
   if (server_name)
     printf("ProFTPD Server '%s'\n", server_name);
@@ -315,13 +318,17 @@ int main(int argc, char **argv) {
 
     total++;
 
-    if (strcmp(score->sce_cmd, "RETR") == 0) {
+    if (strcmp(score->sce_cmd, "RETR") == 0 ||
+        strcmp(score->sce_cmd, "READ") == 0 ||
+        strcmp(score->sce_cmd, "scp download") == 0) {
       downloading = TRUE;
 
     } else {
       if (strcmp(score->sce_cmd, "STOR") == 0 ||
           strcmp(score->sce_cmd, "STOU") == 0 ||
-          strcmp(score->sce_cmd, "APPE") == 0) {
+          strcmp(score->sce_cmd, "APPE") == 0 ||
+          strcmp(score->sce_cmd, "WRITE") == 0 ||
+          strcmp(score->sce_cmd, "scp upload") == 0) {
         uploading = TRUE;
       }
     }
@@ -329,16 +336,17 @@ int main(int argc, char **argv) {
     if (outform & OF_COMPAT) {
       if ((downloading || uploading) &&
           score->sce_xfer_size > 0) {
-        if (downloading)
+        if (downloading) {
           printf("%5d %-6s (%s%%) %s %s\n", (int) score->sce_pid,
             show_time(&score->sce_begin_idle),
             percent_complete(score->sce_xfer_size, score->sce_xfer_done),
             score->sce_cmd, score->sce_cmd_arg);
 
-        else
+        } else {
           printf("%5d %-6s (n/a) %s %s\n", (int) score->sce_pid,
             show_time(&score->sce_begin_idle), score->sce_cmd,
             score->sce_cmd_arg);
+        }
 
       } else {
         printf("%5d %-6s %s %s\n", (int) score->sce_pid,
@@ -347,13 +355,22 @@ int main(int argc, char **argv) {
       }
 
       if (verbose) {
-        if (score->sce_client_addr[0])
+        if (score->sce_client_addr[0]) {
           printf("             (host: %s [%s])\n", score->sce_client_name,
             score->sce_client_addr);
-        if (score->sce_cwd[0])
+        }
+
+        if (score->sce_protocol[0]) {
+          printf("              (protocol: %s)\n", score->sce_protocol);
+        }
+
+        if (score->sce_cwd[0]) {
           printf("              (cwd: %s)\n", score->sce_cwd);
-        if (score->sce_class[0])
-          printf("               (class: %s)\n", score->sce_class);
+        }
+
+        if (score->sce_class[0]) {
+          printf("              (class: %s)\n", score->sce_class);
+        }
       }
 
       continue;
@@ -400,33 +417,45 @@ int main(int argc, char **argv) {
 
       /* Display additional information, if requested. */
       if (verbose) {
-        if (score->sce_client_addr[0])
+        if (score->sce_client_addr[0]) {
           printf("%sclient: %s [%s]%s",
             (outform & OF_ONELINE) ? " " : "\t",
             score->sce_client_name, score->sce_client_addr,
             (outform & OF_ONELINE) ? "" : "\n");
+        }
 
-        if (score->sce_server_addr[0])
+        if (score->sce_server_addr[0]) {
           printf("%sserver: %s (%s)%s",
             (outform & OF_ONELINE) ? " " : "\t",
             score->sce_server_addr, score->sce_server_label,
             (outform & OF_ONELINE) ? "" : "\n");
+        }
 
-        if (score->sce_cwd[0])
+        if (score->sce_protocol[0]) {
+          printf("%sprotocol: %s%s",
+            (outform & OF_ONELINE) ? " " : "\t",
+            score->sce_protocol,
+            (outform & OF_ONELINE) ? "" : "\n");
+        }
+
+        if (score->sce_cwd[0]) {
           printf("%slocation: %s%s",
             (outform & OF_ONELINE) ? " " : "\t",
             score->sce_cwd,
             (outform & OF_ONELINE) ? "" : "\n");
+        }
 
-        if (score->sce_class[0])
+        if (score->sce_class[0]) {
           printf("%sclass: %s",
             (outform & OF_ONELINE) ? " " : "\t",
             score->sce_class);
+        }
 
         printf("%s", "\n");
 
-      } else
+      } else {
         printf("%s", "\n");
+      }
 
     } else {
 
@@ -435,22 +464,32 @@ int main(int argc, char **argv) {
 
       /* Display additional information, if requested. */
       if (verbose) {
-        if (score->sce_client_addr[0])
+        if (score->sce_client_addr[0]) {
           printf("%sclient: %s [%s]%s",
             (outform & OF_ONELINE) ? " " : "\n\t",
             score->sce_client_name, score->sce_client_addr,
             (outform & OF_ONELINE) ? "" : "\n");
+        }
 
-        if (score->sce_server_addr[0])
+        if (score->sce_server_addr[0]) {
           printf("%sserver: %s (%s)%s",
             (outform & OF_ONELINE) ? " " : "\t",
             score->sce_server_addr, score->sce_server_label,
             (outform & OF_ONELINE) ? "" : "\n");
+        }
 
-        if (score->sce_class[0])
+        if (score->sce_protocol[0]) {
+          printf("%sprotocol: %s%s",
+            (outform & OF_ONELINE) ? " " : "\t",
+            score->sce_protocol,
+            (outform & OF_ONELINE) ? "" : "\n");
+        }
+
+        if (score->sce_class[0]) {
           printf("%sclass: %s",
             (outform & OF_ONELINE) ? " " : "\t",
             score->sce_class);
+        }
       }
 
       printf("%s", "\n");

@@ -2,7 +2,7 @@
  * ProFTPD: mod_sql -- SQL frontend
  * Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2001 Andrew Houghton.
- * Copyright (c) 2004-2009 TJ Saunders
+ * Copyright (c) 2004-2010 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,14 +23,14 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql.c,v 1.151.2.2 2009/08/19 18:32:16 castaglia Exp $
+ * $Id: mod_sql.c,v 1.181 2010/02/10 18:26:25 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
 #include "mod_sql.h"
 
-#define MOD_SQL_VERSION			"mod_sql/4.2.2"
+#define MOD_SQL_VERSION			"mod_sql/4.2.4"
 
 #if defined(HAVE_CRYPT_H) && !defined(AIX4) && !defined(AIX5)
 # include <crypt.h>
@@ -54,18 +54,17 @@
 #define MOD_SQL_DEF_GROUPGIDFIELD     "gid"
 #define MOD_SQL_DEF_GROUPMEMBERSFIELD "members"
 
-/* default minimum id / default uid / default gid info. 
- * uids and gids less than MOD_SQL_MIN_USER_UID and
- * MOD_SQL_MIN_USER_GID, respectively, get automatically
- * mapped to the defaults, below.  These can be
- * overridden using directives
+/* default minimum ID / default UID / default GID info. 
+ * UIDs and GIDs less than MOD_SQL_MIN_USER_UID and MOD_SQL_MIN_USER_GID,
+ * respectively, get automatically mapped to the defaults, below.  These can
+ * be overridden using directives
  */
-#define MOD_SQL_MIN_USER_UID 999
-#define MOD_SQL_MIN_USER_GID 999
-#define MOD_SQL_DEF_UID 65533
-#define MOD_SQL_DEF_GID 65533
+#define MOD_SQL_MIN_USER_UID		999
+#define MOD_SQL_MIN_USER_GID		999
+#define MOD_SQL_DEF_UID			65533
+#define MOD_SQL_DEF_GID			65533
 
-#define MOD_SQL_BUFSIZE 32
+#define MOD_SQL_BUFSIZE			32
 
 /* Named Query defines */
 #define SQL_SELECT_C		"SELECT"
@@ -92,10 +91,6 @@
 #define SQL_FASTGROUPS         (cmap.authmask & SQL_FAST_GROUPSET)
 #define SQL_FASTUSERS          (cmap.authmask & SQL_FAST_USERSET)
 
-/* SQL options */
-#define SQL_OPT_NO_DISCONNECT_ON_ERROR		0x0001
-#define SQL_OPT_USE_NORMALIZED_GROUP_SCHEMA	0x0002
-
 /*
  * externs, function signatures.. whatever necessary to make
  * the compiler happy..
@@ -103,6 +98,9 @@
 extern pr_response_t *resp_list,*resp_err_list;
 
 module sql_module;
+
+unsigned long pr_sql_opts = 0UL;
+unsigned int pr_sql_conn_policy = 0;
 
 /* For tracking the size of deleted files. */
 static off_t sql_dele_filesz = 0;
@@ -112,7 +110,7 @@ static off_t sql_dele_filesz = 0;
 static char *sql_prepare_where(int, cmd_rec *, int, ...);
 #define SQL_PREPARE_WHERE_FL_NO_TAGS	0x00001
 
-static char *resolve_long_tag(cmd_rec *, char *);
+static const char *resolve_long_tag(cmd_rec *, char *);
 static int resolve_numeric_tag(cmd_rec *, char *);
 static char *resolve_short_tag(cmd_rec *, char);
 
@@ -122,6 +120,8 @@ MODRET cmd_setgrent(cmd_rec *);
 MODRET sql_lookup(cmd_rec *);
 
 static pool *sql_pool = NULL;
+
+static modret_t *process_named_query(cmd_rec *cmd, char *name);
 
 /*
  * cache typedefs
@@ -160,12 +160,16 @@ static struct {
   char *usrtable;               /* user info table name */
   char *usrfield;               /* user name field */
   char *pwdfield;               /* user password field */
-  char *uidfield;               /* user uid field */
-  char *gidfield;               /* user gid field */
+  char *uidfield;               /* user UID field */
+  char *gidfield;               /* user GID field */
   char *homedirfield;           /* user homedir field */
   char *shellfield;             /* user login shell field */
   char *userwhere;              /* users where clause */
-  char *usercustom;		/* custom users query */
+
+  char *usercustom;		/* custom users query (by name) */
+  char *usercustombyid;		/* custom users query (by UID) */
+  char *usercustomuserset;	/* custom query to get 'userset' users */
+  char *usercustomusersetfast;	/* custom query to get 'usersetfast' users */
 
   /*
    * group table and field information
@@ -173,18 +177,22 @@ static struct {
 
   char *grptable;               /* group info table name */
   char *grpfield;               /* group name field */
-  char *grpgidfield;            /* group gid field */
+  char *grpgidfield;            /* group GID field */
   char *grpmembersfield;        /* group members field */
   char *groupwhere;             /* groups where clause */
+
+  char *groupcustombyname;	/* custom group query (by name) */
+  char *groupcustombyid;	/* custom group query (by GID) */
+  char *groupcustommembers;	/* custom group query (user members only) */
+  char *groupcustomgroupset;	/* custom query to get 'groupset' groups */
+  char *groupcustomgroupsetfast;/* custom query to get 'groupsetfast' groups */
 
   /*
    * other information
    */
 
-  array_header *authlist;       /* auth handler list */
+  array_header *auth_list;      /* auth handler list */
   char *defaulthomedir;         /* default homedir if no field specified */
-
-  unsigned long opts;
 
   uid_t minid;                  /* users UID must be this or greater */
   uid_t minuseruid;             /* users UID must be this or greater */
@@ -384,10 +392,11 @@ static int check_response(modret_t *mr) {
   pr_log_debug(DEBUG2, MOD_SQL_VERSION
     ": check the SQLLogFile for more details");
 
-  if (!(cmap.opts & SQL_OPT_NO_DISCONNECT_ON_ERROR)) {
+  if (!(pr_sql_opts & SQL_OPT_NO_DISCONNECT_ON_ERROR)) {
     end_login(1);
   }
 
+  sql_log(DEBUG_FUNC, "SQLOption noDisconnectOnError in effect, not exiting");
   return -1;
 }
 
@@ -449,11 +458,10 @@ int sql_register_backend(const char *backend, cmdtable *cmdtab) {
   sb->backend = backend;
   sb->cmdtab = cmdtab;
 
-  if (sql_backends)
+  if (sql_backends) {
+    sql_backends->prev = sb;
     sb->next = sql_backends;
-
-  else
-    sb->next = NULL;
+  }
 
   sql_backends = sb;
   sql_nbackends++;
@@ -585,65 +593,65 @@ static int sql_set_backend(char *backend) {
   return 0;
 }
 
-/*****************************************************************
- *
- * AUTHENTICATION FUNCTIONS
- *
- *****************************************************************/
+/* Default SQL password handlers (a.k.a. "AuthTypes") provided by mod_sql. */
 
-static modret_t *check_auth_crypt(cmd_rec *cmd, const char *c_clear,
-    const char *c_hash) {
-  int success = 0;
+static modret_t *sql_auth_crypt(cmd_rec *cmd, const char *plaintext,
+    const char *ciphertext) {
 
-  if (*c_hash == '\0')
+  if (*ciphertext == '\0') {
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  }
 
-  success = !strcmp((char *) crypt(c_clear, c_hash), c_hash);
+  if (strcmp((char *) crypt(plaintext, ciphertext), ciphertext) == 0) {
+    return PR_HANDLED(cmd);
+  }
 
-  return success ? PR_HANDLED(cmd) : PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
 
-static modret_t *check_auth_plaintext(cmd_rec *cmd, const char *c_clear,
-    const char *c_hash) {
-  int success = 0;
+static modret_t *sql_auth_plaintext(cmd_rec *cmd, const char *plaintext,
+    const char *ciphertext) {
 
-  if (*c_hash == '\0')
+  if (*ciphertext == '\0') {
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  }
 
-  success = !strcmp(c_clear, c_hash);
+  if (strcmp(plaintext, ciphertext) == 0) {
+    return PR_HANDLED(cmd);
+  }
 
-  return success ? PR_HANDLED(cmd) : PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
 
-static modret_t *check_auth_empty(cmd_rec *cmd, const char *c_clear,
-    const char *c_hash) {
-  int success = 0;
+static modret_t *sql_auth_empty(cmd_rec *cmd, const char *plaintext,
+    const char *ciphertext) {
 
-  success = !strcmp(c_hash, "");
+  if (strcmp(ciphertext, "") == 0) {
+    return PR_HANDLED(cmd);
+  }
 
-  return success ? PR_HANDLED(cmd) : PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
 
-static modret_t *check_auth_backend(cmd_rec *cmd, const char *c_clear,
-    const char *c_hash) {
+static modret_t *sql_auth_backend(cmd_rec *cmd, const char *plaintext,
+    const char *ciphertext) {
   modret_t *mr = NULL;
 
-  if (*c_hash == '\0')
+  if (*ciphertext == '\0') {
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  }
 
-  mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 3, "default", c_clear,
-    c_hash), "sql_checkauth");
-
+  mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 3, "default", plaintext,
+    ciphertext), "sql_checkauth");
   return mr;
 }
 
 #if defined(HAVE_OPENSSL) || defined(PR_USE_OPENSSL)
-static modret_t *check_auth_openssl(cmd_rec *cmd, const char *c_clear,
-    const char *c_hash) {
-  /*
-   * c_clear : plaintext password provided by user 
-   * c_hash  : combination digest name and hashed 
-   *           value, of the form {digest}hash 
+static modret_t *sql_auth_openssl(cmd_rec *cmd, const char *plaintext,
+    const char *ciphertext) {
+
+  /* The ciphertext argument is a combined digest name and hashed value, of
+   * the form "{digest}hash".
    */
 
   EVP_MD_CTX md_ctxt;
@@ -656,23 +664,22 @@ static modret_t *check_auth_openssl(cmd_rec *cmd, const char *c_clear,
    */
   unsigned char buf[EVP_MAX_MD_SIZE*2], mdval[EVP_MAX_MD_SIZE];
   unsigned int mdlen;
-  int res;
 
   char *digestname;             /* ptr to name of the digest function */
   char *hashvalue;              /* ptr to hashed value we're comparing to */
-  char *copyhash;               /* temporary copy of the c_hash string */
+  char *copytext;               /* temporary copy of the ciphertext string */
 
-  if (c_hash[0] != '{') {
+  if (ciphertext[0] != '{') {
     sql_log(DEBUG_WARN, "%s", "no digest found in password hash");
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
-  /* We need a copy of c_hash. */
-  copyhash = pstrdup(cmd->tmp_pool, c_hash);
+  /* We need a copy of the ciphertext. */
+  copytext = pstrdup(cmd->tmp_pool, ciphertext);
 
-  digestname = copyhash + 1;
+  digestname = copytext + 1;
 
-  hashvalue = (char *) strchr(copyhash, '}');
+  hashvalue = (char *) strchr(copytext, '}');
   if (hashvalue == NULL) {
     sql_log(DEBUG_WARN, "%s", "no terminating '}' for digest");
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
@@ -684,72 +691,123 @@ static modret_t *check_auth_openssl(cmd_rec *cmd, const char *c_clear,
   OpenSSL_add_all_digests();
 
   md = EVP_get_digestbyname(digestname);
-
-  if (!md) {
+  if (md == NULL) {
     sql_log(DEBUG_WARN, "no such digest '%s' supported", digestname);
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
   EVP_DigestInit(&md_ctxt, md);
-  EVP_DigestUpdate(&md_ctxt, c_clear, strlen(c_clear));
+  EVP_DigestUpdate(&md_ctxt, plaintext, strlen(plaintext));
   EVP_DigestFinal(&md_ctxt, mdval, &mdlen);
 
   memset(buf, '\0', sizeof(buf));
   EVP_EncodeInit(&base64_ctxt);
   EVP_EncodeBlock(buf, mdval, (int) mdlen);
 
-  res = strcmp((char *) buf, hashvalue);
+  if (strcmp((char *) buf, hashvalue) == 0) {
+    return PR_HANDLED(cmd);
+  }
 
-  return res ? PR_ERROR_INT(cmd, PR_AUTH_BADPWD) : PR_HANDLED(cmd);
+  return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
 #endif
 
-/*
- * support for general-purpose authentication schemes 
- */
-
-#define PLAINTEXT_AUTH_FLAG     1<<0
-#define CRYPT_AUTH_FLAG         1<<1
-#define BACKEND_AUTH_FLAG       1<<2
-#define EMPTY_AUTH_FLAG         1<<3
-#if defined(HAVE_OPENSSL) || defined(PR_USE_OPENSSL)
-# define OPENSSL_AUTH_FLAG       1<<4
-#endif
-
-typedef modret_t *(*auth_func_ptr) (cmd_rec *, const char *, const char *);
-
-typedef struct {
-  char *name;
-  auth_func_ptr check_function;
-  int flag;
-}
-auth_type_entry;
-
-static auth_type_entry supported_auth_types[] = {
-  {"Plaintext", check_auth_plaintext, PLAINTEXT_AUTH_FLAG},
-  {"Crypt", check_auth_crypt, CRYPT_AUTH_FLAG},
-  {"Backend", check_auth_backend, BACKEND_AUTH_FLAG},
-  {"Empty", check_auth_empty, EMPTY_AUTH_FLAG},
-#if defined(HAVE_OPENSSL) || defined(PR_USE_OPENSSL)
-  {"OpenSSL", check_auth_openssl, OPENSSL_AUTH_FLAG},
-#endif
-  /*
-   * add additional encryption types below 
-   */
-  {NULL, NULL, 0}
+struct sql_authtype_handler {
+  struct sql_authtype_handler *next, *prev;
+  pool *pool;
+  const char *name;
+  modret_t *(*cb)(cmd_rec *, const char *, const char *); 
 };
 
-static auth_type_entry *get_auth_entry(char *name) {
-  auth_type_entry *ate = supported_auth_types;
+static struct sql_authtype_handler *sql_auth_list = NULL;
 
-  while (ate->name) {
-    pr_signals_handle();
+static struct sql_authtype_handler *sql_get_authtype(const char *name) {
+  if (sql_auth_list) {
+    struct sql_authtype_handler *sah;
 
-    if (strcasecmp(ate->name, name) == 0)
-      return ate;
-    ate++;
+    for (sah = sql_auth_list; sah; sah = sah->next) {
+      if (strcasecmp(sah->name, name) == 0) {
+        return sah;
+      }
+    }
   }
+
+  errno = ENOENT;
   return NULL;
+}
+
+int sql_register_authtype(const char *name,
+    modret_t *(*cb)(cmd_rec *, const char *, const char *)) {
+  struct sql_authtype_handler *sah;
+  pool *p;
+
+  if (name == NULL ||
+      cb == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Check for duplicates. */
+  sah = sql_get_authtype(name);
+  if (sah != NULL) {
+    errno = EEXIST;
+    return -1;
+  }
+
+  if (sql_pool == NULL) {
+    sql_pool = make_sub_pool(permanent_pool);
+    pr_pool_tag(sql_pool, MOD_SQL_VERSION);
+  }
+
+  p = pr_pool_create_sz(sql_pool, 128);
+  sah = pcalloc(p, sizeof(struct sql_authtype_handler));
+  sah->pool = p;
+  sah->name = pstrdup(sah->pool, name);
+  sah->cb = cb;
+
+  if (sql_auth_list) {
+    sql_auth_list->prev = sah;
+    sah->next = sql_auth_list;
+  }
+    
+  sql_auth_list = sah;
+  return 0;
+}
+
+int sql_unregister_authtype(const char *name) {
+
+  if (name == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (sql_auth_list) {
+    struct sql_authtype_handler *sah;
+
+    for (sah = sql_auth_list; sah; sah = sah->next) {
+      if (strcasecmp(sah->name, name) == 0) {
+        if (sah->prev) {
+          sah->prev->next = sah->next;
+
+        } else {
+          /* This backend is the start of the list, so update the list
+           * head pointer as well.
+           */
+          sql_auth_list = sah->next;       
+        }
+
+        if (sah->next) {
+          sah->next->prev = sah->prev;
+        }
+
+        destroy_pool(sah->pool);
+        return 0;
+      }
+    }
+  }
+
+  errno = ENOENT;
+  return -1;
 }
 
 /*****************************************************************
@@ -765,11 +823,9 @@ static char *_sql_realuser(cmd_rec *cmd) {
   char *user = NULL;
 
   /* this is the userid given by the user */
-  user = (char *) get_param_ptr(main_server->conf, C_USER, FALSE);
+  user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
 
-  /* do we need to check for useralias?
-   * see mod_time.c, get_user_cmd_times() */
-
+  /* Do we need to check for useralias? see mod_time.c, get_user_cmd_times(). */
   mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 2, "default", user),
     "sql_escapestring");
   if (check_response(mr) < 0)
@@ -819,7 +875,7 @@ static char *sql_prepare_where(int flags, cmd_rec *cmd, int cnt, ...) {
         char *tag = NULL;
 
         if (*(++tmp) == '{') {
-          char *query;
+          char *query = NULL;
 
           if (*tmp != '\0')
             query = ++tmp;
@@ -829,7 +885,7 @@ static char *sql_prepare_where(int flags, cmd_rec *cmd, int cnt, ...) {
 
           tag = pstrndup(cmd->tmp_pool, query, (tmp - query));
           if (tag) {
-            str = resolve_long_tag(cmd, tag);
+            str = (char *) resolve_long_tag(cmd, tag);
             if (!str)
               str = pstrdup(cmd->tmp_pool, "");
 
@@ -916,7 +972,7 @@ static int _groupcmp(const void *val1, const void *val2) {
   if ((val1 == NULL) || (val2 == NULL))
     return 0;
   
-  /* either the groupnames match or the gids match */
+  /* either the groupnames match or the GIDs match */
   
   if (_sql_strcmp(((struct group *) val1)->gr_name,
       ((struct group *) val2)->gr_name) == 0)
@@ -959,7 +1015,7 @@ static int _passwdcmp(const void *val1, const void *val2) {
   if ((val1 == NULL) || (val2 == NULL))
      return 0;
   
-  /* either the usernames match or the uids match */
+  /* either the usernames match or the UIDs match */
   if (_sql_strcmp(((struct passwd *) val1)->pw_name,
       ((struct passwd *) val2)->pw_name)  == 0)
     return 1;
@@ -1066,11 +1122,11 @@ static struct passwd *_sql_addpasswd(cmd_rec *cmd, char *username,
   return pwd;
 }
 
-static struct passwd *_sql_getpasswd(cmd_rec *cmd, struct passwd *p) {
+static struct passwd *sql_getpasswd(cmd_rec *cmd, struct passwd *p) {
   sql_data_t *sd = NULL;
   modret_t *mr = NULL;
   struct passwd *pwd = NULL;
-  char uidstr[MOD_SQL_BUFSIZE] = {'\0'};
+  char uidstr[MOD_SQL_BUFSIZE];
   char *usrwhere, *where;
   char *realname = NULL;
   int i = 0;
@@ -1083,7 +1139,7 @@ static struct passwd *_sql_getpasswd(cmd_rec *cmd, struct passwd *p) {
   gid_t gid = 0;
 
   if (p == NULL) {
-    sql_log(DEBUG_WARN, "%s", "_sql_getpasswd called with NULL passwd struct");
+    sql_log(DEBUG_WARN, "%s", "sql_getpasswd called with NULL passwd struct");
     sql_log(DEBUG_WARN, "%s", "THIS SHOULD NEVER HAPPEN");
     return NULL;
   }
@@ -1131,63 +1187,100 @@ static struct passwd *_sql_getpasswd(cmd_rec *cmd, struct passwd *p) {
 
     sql_log(DEBUG_WARN, "cache miss for user '%s'", realname);
 
-  } else {
-    /* Assume we have a uid */
-    snprintf(uidstr, MOD_SQL_BUFSIZE, "%lu", (unsigned long) p->pw_uid);
-    sql_log(DEBUG_WARN, "cache miss for uid '%s'", uidstr);
-
-    if (cmap.uidfield)
-      usrwhere = pstrcat(cmd->tmp_pool, cmap.uidfield, " = ", uidstr, NULL);
-
-    else {
-      sql_log(DEBUG_WARN, "no user uid field configured, declining to "
-        "lookup uid '%s'", uidstr);
-
-      /* If no uid field has been configured, return now and let other
-       * modules possibly have a chance at resolving this UID to a name.
+    if (!cmap.usercustom) { 
+      /* The following nested function calls may look a little strange, but
+       * it is deliberate.  We want to handle any tags/variables within the
+       * cmap.userwhere string (i.e. the SQLUserWhereClause directive, if
+       * configured), but we do NOT want to handle any tags/variables in
+       * the usrwhere variable (a string we concatenated ourselves).  The
+       * usrwhere variable contains the user name, and we need to handle that
+       * string as-is, lest we corrupt/change the user name.
        */
-      return NULL;
+
+      where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, usrwhere,
+        sql_prepare_where(0, cmd, 1, cmap.userwhere, NULL), NULL);
+
+      mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 5, "default",
+        cmap.usrtable, cmap.usrfields, where, "1"), "sql_select");
+
+      if (check_response(mr) < 0)
+        return NULL;
+
+      if (MODRET_HASDATA(mr))
+        sd = (sql_data_t *) mr->data;
+
+    } else {
+      mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 3, "default",
+        cmap.usercustom, realname ? realname : "NULL"));
+
+      if (check_response(mr) < 0)
+        return NULL;
+
+      if (MODRET_HASDATA(mr)) {
+        array_header *ah = (array_header *) mr->data;
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+
+        /* Assume the query only returned 1 row. */
+        sd->fnum = ah->nelts;
+
+        if (sd->fnum) {
+          sd->rnum = 1;
+          sd->data = (char **) ah->elts;
+
+        } else {
+          sd->rnum = 0;
+          sd->data = NULL;
+        }
+      }
     }
-  }
-
-  if (!cmap.usercustom) { 
-
-    /* The following nested function calls may look a little strange, but
-     * it is deliberate.  We want to handle any tags/variables within the
-     * cmap.userwhere string (i.e. the SQLUserWhereClause directive, if
-     * configured), but we do NOT want to handle any tags/variables in
-     * the usrwhere variable (a string we concatenated ourselves).  The
-     * usrwhere variable contains the user name, and we need to handle that
-     * string as-is, lest we corrupt/change the user name.
-     */
-
-    where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, usrwhere,
-      sql_prepare_where(0, cmd, 1, cmap.userwhere, NULL), NULL);
-
-    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 5, "default",
-      cmap.usrtable, cmap.usrfields, where, "1"), "sql_select");
-
-    if (check_response(mr) < 0)
-      return NULL;
-
-    if (MODRET_HASDATA(mr))
-      sd = (sql_data_t *) mr->data;
 
   } else {
+    /* Assume we have a UID */
+    memset(uidstr, '\0', sizeof(uidstr));
+    snprintf(uidstr, sizeof(uidstr)-1, "%lu", (unsigned long) p->pw_uid);
+    sql_log(DEBUG_WARN, "cache miss for UID '%s'", uidstr);
 
-    mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 3, "default", cmap.usercustom,
-      realname ? realname : "NULL"));
+    if (!cmap.usercustombyid) {
+      if (cmap.uidfield) {
+        usrwhere = pstrcat(cmd->tmp_pool, cmap.uidfield, " = ", uidstr, NULL);
 
-    if (check_response(mr) < 0)
-      return NULL;
+        where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2,
+          usrwhere, sql_prepare_where(0, cmd, 1, cmap.userwhere, NULL), NULL);
 
-    if (MODRET_HASDATA(mr)) {
-      array_header *ah = (array_header *) mr->data;
+        mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 5, "default",
+          cmap.usrtable, cmap.usrfields, where, "1"), "sql_select");
+
+        if (check_response(mr) < 0)
+          return NULL;
+
+        if (MODRET_HASDATA(mr))
+          sd = (sql_data_t *) mr->data;
+
+      } else {
+        sql_log(DEBUG_WARN, "no user UID field configured, declining to "
+          "lookup UID '%s'", uidstr);
+
+        /* If no UID field has been configured, return now and let other
+         * modules possibly have a chance at resolving this UID to a name.
+         */
+        return NULL;
+      }
+
+    } else {
+      array_header *ah = NULL;
+
+      mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 3, "default",
+        cmap.usercustombyid, uidstr));
+
+      if (check_response(mr) < 0)
+        return NULL;
+
+      ah = mr->data;
+
       sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
 
-      /* Assume the query only returned 1 row. */
+      /* Assume the query only return 1 row. */
       sd->fnum = ah->nelts;
-
       if (sd->fnum) {
         sd->rnum = 1;
         sd->data = (char **) ah->elts;
@@ -1298,8 +1391,6 @@ static struct group *_sql_addgroup(cmd_rec *cmd, char *groupname, gid_t gid,
   struct group *cached = NULL;
   struct group *grp = NULL;
 
-  int cnt = 0;
-
   grp = pcalloc(cmd->tmp_pool, sizeof(struct group));
   grp->gr_gid = gid;
   grp->gr_name = groupname;
@@ -1318,15 +1409,17 @@ static struct group *_sql_addgroup(cmd_rec *cmd, char *groupname, gid_t gid,
     grp->gr_gid = gid;
 
     if (ah) {
+      register unsigned int i;
+
       /* finish filling in the group */
       grp->gr_mem = (char **) pcalloc(sql_pool,
         sizeof(char *) * (ah->nelts + 1));
 
-      for (cnt = 0; cnt < ah->nelts; cnt++) {
-        grp->gr_mem[cnt] = pstrdup(sql_pool, ((char **) ah->elts)[cnt]);
+      for (i = 0; i < ah->nelts; i++) {
+        grp->gr_mem[i] = pstrdup(sql_pool, ((char **) ah->elts)[i]);
       }
 
-      grp->gr_mem[ah->nelts] = '\0';
+      grp->gr_mem[i] = NULL;
     }
 
     cache_addentry(group_name_cache, grp);
@@ -1340,7 +1433,7 @@ static struct group *_sql_addgroup(cmd_rec *cmd, char *groupname, gid_t gid,
   return grp;
 }
 
-static struct group *_sql_getgroup(cmd_rec *cmd, struct group *g) {
+static struct group *sql_getgroup(cmd_rec *cmd, struct group *g) {
   struct group *grp = NULL;
   modret_t *mr = NULL;
   int cnt = 0;
@@ -1359,7 +1452,7 @@ static struct group *_sql_getgroup(cmd_rec *cmd, struct group *g) {
   gid_t gid = 0;
   
   if (g == NULL) {
-    sql_log(DEBUG_WARN, "%s", "_sql_getgroup called with NULL group struct");
+    sql_log(DEBUG_WARN, "%s", "sql_getgroup called with NULL group struct");
     sql_log(DEBUG_WARN, "%s", "THIS SHOULD NEVER HAPPEN");
     return NULL;
   }
@@ -1383,33 +1476,58 @@ static struct group *_sql_getgroup(cmd_rec *cmd, struct group *g) {
     sql_log(DEBUG_WARN, "cache miss for group '%s'", groupname);
 
   } else {
-    /* Get groupname from gid */
+    /* Get groupname from GID */
     snprintf(gidstr, MOD_SQL_BUFSIZE, "%lu", (unsigned long) g->gr_gid);
 
-    sql_log(DEBUG_WARN, "cache miss for gid '%s'", gidstr);
+    sql_log(DEBUG_WARN, "cache miss for GID '%s'", gidstr);
 
-    if (cmap.grpgidfield)
-      grpwhere = pstrcat(cmd->tmp_pool, cmap.grpgidfield, " = ", gidstr, NULL);
+    if (!cmap.groupcustombyid) {
+      if (cmap.grpgidfield) {
+        grpwhere = pstrcat(cmd->tmp_pool, cmap.grpgidfield, " = ", gidstr,
+          NULL);
 
-    else {
-      sql_log(DEBUG_WARN, "no group gid field configured, declining to lookup "
-        "gid '%s'", gidstr);
+      } else {
+        sql_log(DEBUG_WARN, "no group GID field configured, declining to "
+          "lookup GID '%s'", gidstr);
 
-      /* If no gid field has been configured, return now and let other
-       * modules possibly have a chance at resolving this GID to a name.
-       */
-      return NULL;
+        /* If no GID field has been configured, return now and let other
+         * modules possibly have a chance at resolving this GID to a name.
+         */
+        return NULL;
+      }
+
+      where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, grpwhere,
+        sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL), NULL);
+
+      mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 5, "default",
+        cmap.grptable, cmap.grpfield, where, "1"), "sql_select");
+      if (check_response(mr) < 0)
+        return NULL;
+
+      sd = (sql_data_t *) mr->data;
+
+    } else {
+      mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 3, "default",
+        cmap.groupcustombyid, gidstr));
+
+      if (check_response(mr) < 0)
+        return NULL;
+
+      ah = mr->data;
+
+      sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+
+      /* Assume the query only return 1 row. */
+      sd->fnum = ah->nelts;
+      if (sd->fnum) {
+        sd->rnum = 1;
+        sd->data = (char **) ah->elts;
+
+      } else {
+        sd->rnum = 0;
+        sd->data = NULL;
+      }
     }
-
-    where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, grpwhere,
-      sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL), NULL);
-
-    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 5, "default",
-      cmap.grptable, cmap.grpfield, where, "1"), "sql_select");
-    if (check_response(mr) < 0)
-      return NULL;
-
-    sd = (sql_data_t *) mr->data;
 
     /* If we have no data.. */
     if (sd->rnum == 0)
@@ -1418,18 +1536,41 @@ static struct group *_sql_getgroup(cmd_rec *cmd, struct group *g) {
     groupname = sd->data[0];
   }
 
-  grpwhere = pstrcat(cmd->tmp_pool, cmap.grpfield, " = '", groupname, "'",
-    NULL);
+  if (!cmap.groupcustombyname) {
+    grpwhere = pstrcat(cmd->tmp_pool, cmap.grpfield, " = '", groupname, "'",
+      NULL);
 
-  where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, grpwhere,
-    sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL), NULL);
+    where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, grpwhere,
+      sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL), NULL);
 
-  mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
-    cmap.grptable, cmap.grpfields, where), "sql_select");
-  if (check_response(mr) < 0)
-    return NULL;
+    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
+      cmap.grptable, cmap.grpfields, where), "sql_select");
+    if (check_response(mr) < 0)
+      return NULL;
   
-  sd = (sql_data_t *) mr->data;
+    sd = (sql_data_t *) mr->data;
+
+  } else {
+    mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 3, "default",
+      cmap.groupcustombyname, groupname ? groupname : "NULL"));
+    if (check_response(mr) < 0)
+      return NULL;
+
+    ah = mr->data;
+    sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+ 
+    /* Assume the query only returned 1 row. */
+    sd->fnum = ah->nelts;
+
+    if (sd->fnum) {
+      sd->rnum = 1;
+      sd->data = (char **) ah->elts;
+
+    } else {
+      sd->rnum = 0;
+      sd->data = NULL;
+    }
+  }
 
   /* if we have no data.. */
   if (sd->rnum == 0) {
@@ -1448,8 +1589,7 @@ static struct group *_sql_getgroup(cmd_rec *cmd, struct group *g) {
   
   gid = (gid_t) strtoul(rows[1], NULL, 10);
   
-  /*
-   * painful.. we need to walk through the returned rows and fill in our
+  /* Painful.. we need to walk through the returned rows and fill in our
    * members. Every third element in a row is a member field, and every
    * member field can have multiple members.
    */
@@ -1505,7 +1645,7 @@ static void _setstats(cmd_rec *cmd, int fstor, int fretr, int bstor,
   (void) check_response(mr);
 }
 
-static int _sql_getgroups(cmd_rec *cmd) {
+static int sql_getgroups(cmd_rec *cmd) {
   struct passwd *pw = NULL, lpw;
   struct group *grp, lgr;
   char *grpwhere = NULL, *where = NULL, **rows = NULL;
@@ -1528,7 +1668,7 @@ static int _sql_getgroups(cmd_rec *cmd) {
   
   /* Retrieve the necessary info */
   if (!name ||
-      !(pw = _sql_getpasswd(cmd, &lpw)))
+      !(pw = sql_getpasswd(cmd, &lpw)))
     return -1;
 
   /* Populate the first group ID and name */
@@ -1539,7 +1679,7 @@ static int _sql_getgroups(cmd_rec *cmd) {
   lgr.gr_name = NULL;
 
   if (groups &&
-      (grp = _sql_getgroup(cmd, &lgr)) != NULL)
+      (grp = sql_getgroup(cmd, &lgr)) != NULL)
     *((char **) push_array(groups)) = pstrdup(permanent_pool, grp->gr_name);
 
   mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 2, "default", name),
@@ -1549,40 +1689,69 @@ static int _sql_getgroups(cmd_rec *cmd) {
 
   username = (char *) mr->data;
 
-  if (!(cmap.opts & SQL_OPT_USE_NORMALIZED_GROUP_SCHEMA)) {
+  if (!cmap.groupcustommembers) {
+    if (!(pr_sql_opts & SQL_OPT_USE_NORMALIZED_GROUP_SCHEMA)) {
 
-    /* Use a SELECT with a LIKE clause:
-     *
-     *  SELECT groupname,gid,members FROM groups
-     *    WHERE members LIKE '%,<user>,%' OR LIKE '<user>,%' OR LIKE '%,<user>';
-     */
+      /* Use a SELECT with a LIKE clause:
+       *
+       *  SELECT groupname,gid,members FROM groups
+       *    WHERE members LIKE '%,<user>,%' OR LIKE '<user>,%' OR LIKE '%,<user>';
+       */
 
-    grpwhere = pstrcat(cmd->tmp_pool,
-      cmap.grpmembersfield, " = '", username, "' OR ",
-      cmap.grpmembersfield, " LIKE '", username, ",%' OR ",
-      cmap.grpmembersfield, " LIKE '%,", username, "' OR ",
-      cmap.grpmembersfield, " LIKE '%,", username, ",%'", NULL);
+      grpwhere = pstrcat(cmd->tmp_pool,
+        cmap.grpmembersfield, " = '", username, "' OR ",
+        cmap.grpmembersfield, " LIKE '", username, ",%' OR ",
+        cmap.grpmembersfield, " LIKE '%,", username, "' OR ",
+        cmap.grpmembersfield, " LIKE '%,", username, ",%'", NULL);
+
+    } else {
+      /* Use a single SELECT:
+       *
+       *  SELECT groupname,gid,members FROM groups WHERE members = <user>';
+       */
+      grpwhere = pstrcat(cmd->tmp_pool,
+        cmap.grpmembersfield, " = '", username, "'", NULL);
+    }
+
+    where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, grpwhere,
+      sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL), NULL);
+  
+    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
+      cmap.grptable, cmap.grpfields, where), "sql_select");
+    if (check_response(mr) < 0)
+      return -1;
+  
+    sd = (sql_data_t *) mr->data;
 
   } else {
+    array_header *ah;
 
-    /* Use a single SELECT:
-     *
-     *  SELECT groupname,gid,members FROM groups WHERE members = <user>';
+    /* The username has been escaped according to the backend database' rules
+     * at this point.
      */
+    mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 3, "default",
+      cmap.groupcustommembers, username));
+    if (check_response(mr) < 0)
+      return -1;
 
-    grpwhere = pstrcat(cmd->tmp_pool,
-      cmap.grpmembersfield, " = '", username, "'", NULL);
+    ah = mr->data;
+    sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+
+    /* Assume the query returned N rows, 3 columns per row. */
+    if (ah->nelts % 3 == 0) {
+      sd->fnum = 3;
+      sd->rnum = ah->nelts / 3;
+
+      if (sd->rnum > 0) {
+        sd->data = (char **) ah->elts;
+      }
+
+    } else {
+      sql_log(DEBUG_INFO, "wrong number of columns (%d) returned by custom SQLGroupInfo members query, ignoring results", ah->nelts % 3);
+      sd->rnum = 0;
+      sd->data = NULL;
+    }
   }
-
-  where = sql_prepare_where(SQL_PREPARE_WHERE_FL_NO_TAGS, cmd, 2, grpwhere,
-    sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL), NULL);
-  
-  mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
-    cmap.grptable, cmap.grpfields, where), "sql_select");
-  if (check_response(mr) < 0)
-    return -1;
-  
-  sd = (sql_data_t *) mr->data;
 
   /* If we have no data... */
   if (sd->rnum == 0)
@@ -1615,12 +1784,13 @@ static int _sql_getgroups(cmd_rec *cmd) {
   }
 
   if (gids &&
-      gids->nelts > 0)
+      gids->nelts > 0) {
     return gids->nelts;
 
-  else if (groups &&
-           groups->nelts)
+  } else if (groups &&
+           groups->nelts) {
     return groups->nelts;
+  }
 
   /* Default */
   return -1;
@@ -1666,7 +1836,7 @@ MODRET sql_pre_pass(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", ">>> sql_pre_pass");
 
-  user = get_param_ptr(cmd->server->conf, C_USER, FALSE);
+  user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
   if (user) {
     config_rec *anon_config;
 
@@ -1719,7 +1889,11 @@ MODRET sql_post_retr(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
-static char *resolve_long_tag(cmd_rec *cmd, char *tag) {
+static const char *resolve_long_tag(cmd_rec *cmd, char *tag) {
+
+  if (strcmp(tag, "protocol") == 0) {
+    return pr_session_get_protocol(0);
+  }
 
   if (strlen(tag) > 5 &&
       strncmp(tag, "env:", 4) == 0) {
@@ -1763,7 +1937,7 @@ static int resolve_numeric_tag(cmd_rec *cmd, char *tag) {
 }
 
 static char *resolve_short_tag(cmd_rec *cmd, char tag) {
-  char arg[256], *argp = NULL;
+  char arg[PR_TUNABLE_PATH_MAX+1], *argp = NULL;
 
   memset(arg, '\0', sizeof(arg));
 
@@ -1772,7 +1946,7 @@ static char *resolve_short_tag(cmd_rec *cmd, char tag) {
       char *pass;
 
       argp = arg;
-      pass = get_param_ptr(main_server->conf, C_PASS, FALSE);
+      pass = pr_table_get(session.notes, "mod_auth.anon-passwd", NULL);
       if (!pass)
 	pass = "UNKNOWN";
       
@@ -2010,9 +2184,28 @@ static char *resolve_short_tag(cmd_rec *cmd, char tag) {
       break;
     }
 
+    case 'S': {
+      pr_response_t *r;
+
+      argp = arg;
+      r = (resp_list ? resp_list : resp_err_list);
+
+      for (; r && !r->msg; r = r->next) ;
+      if (r &&
+          r->msg) {
+        sstrncpy(argp, r->msg, sizeof(arg));
+
+      } else {
+        sstrncpy(argp, "-", sizeof(arg));
+      }
+
+      break;
+    }
+
     case 'T':
       argp = arg;
-      if (session.xfer.p) {
+      if (session.xfer.p &&
+          session.xfer.start_time.tv_sec > 0) {
         struct timeval end_time;
       
         gettimeofday(&end_time, NULL);
@@ -2041,7 +2234,7 @@ static char *resolve_short_tag(cmd_rec *cmd, char tag) {
 
       argp = arg;
 
-      login_user = get_param_ptr(main_server->conf, C_USER, FALSE);
+      login_user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
       if (!login_user)
         login_user = "root";
 
@@ -2070,13 +2263,28 @@ static char *resolve_short_tag(cmd_rec *cmd, char tag) {
 
     case 'V':
       argp = arg;
-      sstrncpy(argp, main_server->ServerFQDN, sizeof(arg));
+      sstrncpy(argp, pr_netaddr_get_dnsstr(pr_netaddr_get_sess_local_addr()),
+        sizeof(arg));
       break;
 
     case 'v':
       argp = arg;
       sstrncpy(argp, main_server->ServerName, sizeof(arg));
       break;
+
+    case 'w': {
+      char *rnfr_path = "-";
+
+      if (strcmp(cmd->argv[0], C_RNTO) == 0) {
+        rnfr_path = pr_table_get(session.notes, "mod_core.rnfr-path", NULL);
+        if (rnfr_path == NULL)
+          rnfr_path = "-";
+      }
+ 
+      argp = arg; 
+      sstrncpy(argp, rnfr_path, sizeof(arg));
+      break;
+    }
 
     case '%':
       argp = "%";
@@ -2090,7 +2298,7 @@ static char *resolve_short_tag(cmd_rec *cmd, char tag) {
   return pstrdup(cmd->tmp_pool, argp);
 }
 
-static char *_named_query_type(cmd_rec *cmd, char *name) {
+static char *named_query_type(cmd_rec *cmd, char *name) {
   config_rec *c = NULL;
   char *query = NULL;
 
@@ -2100,18 +2308,20 @@ static char *_named_query_type(cmd_rec *cmd, char *name) {
   if (c)
     return c->argv[0];
 
+  sql_log(DEBUG_FUNC, "no '%s' SQLNamedQuery found", name);
+  errno = ENOENT;
   return NULL;
 }
 
-static modret_t *_process_named_query(cmd_rec *cmd, char *name) {
+static modret_t *process_named_query(cmd_rec *cmd, char *name) {
   config_rec *c;
-  char *query, *tmp, *argp;
-  char outs[SQL_MAX_STMT_LEN] = {'\0'}, *outsp;
+  char *query = NULL, *tmp = NULL, *argp = NULL;
+  char outs[SQL_MAX_STMT_LEN] = {'\0'}, *outsp = NULL;
   char *esc_arg = NULL;
   modret_t *mr = NULL;
   int num = 0;
 
-  sql_log(DEBUG_FUNC, "%s", ">>> _process_named_query");
+  sql_log(DEBUG_FUNC, ">>> process_named_query '%s'", name);
 
   /* Check for a query by that name */
 
@@ -2124,11 +2334,11 @@ static modret_t *_process_named_query(cmd_rec *cmd, char *name) {
     outsp = outs;
 
     for (tmp = c->argv[1]; *tmp; ) {
-      char *tag = 0;
+      char *tag = NULL;
 
       if (*tmp == '%') {
         if (*(++tmp) == '{') {
-          char *tmp_query;
+          char *tmp_query = NULL;
 	  
           if (*tmp != '\0')
             tmp_query = ++tmp;
@@ -2160,7 +2370,7 @@ static modret_t *_process_named_query(cmd_rec *cmd, char *name) {
               esc_arg = cmd->argv[num+2];
 
             } else {
-              argp = resolve_long_tag(cmd, tag);
+              argp = (char *) resolve_long_tag(cmd, tag);
               if (argp == NULL) {
                 return PR_ERROR_MSG(cmd, MOD_SQL_VERSION,
                   "malformed reference %{?} in query");
@@ -2185,8 +2395,8 @@ static modret_t *_process_named_query(cmd_rec *cmd, char *name) {
           mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 2, "default",
             argp), "sql_escapestring");
           if (check_response(mr) < 0)
-            return PR_ERROR_MSG(cmd, MOD_SQL_VERSION,
-              "database error");
+            return PR_ERROR_MSG(cmd, MOD_SQL_VERSION, "database error");
+
           esc_arg = (char *) mr->data;
         }
 
@@ -2231,15 +2441,44 @@ static modret_t *_process_named_query(cmd_rec *cmd, char *name) {
     mr = PR_ERROR(cmd);
   }
  
-  sql_log(DEBUG_FUNC, "%s", "<<< _process_named_query");
+  sql_log(DEBUG_FUNC, "<<< process_named_query '%s'", name);
 
+  return mr;
+}
+
+MODRET process_sqllog(cmd_rec *cmd, config_rec *c, const char *label) {
+  char *qname = NULL;
+  char *type = NULL;
+  modret_t *mr = NULL;
+
+  qname = c->argv[0];
+
+  sql_log(DEBUG_FUNC, ">>> %s (%s)", label, c->name);
+
+  type = named_query_type(cmd, qname);
+  if (type) {
+    if (strcasecmp(type, SQL_UPDATE_C) == 0 ||
+        strcasecmp(type, SQL_FREEFORM_C) == 0 ||
+        strcasecmp(type, SQL_INSERT_C) == 0) {
+      mr = process_named_query(cmd, qname);
+      if (check_response(mr) < 0)
+        return mr;
+
+    } else {
+      sql_log(DEBUG_WARN, "named query '%s' is not an INSERT, UPDATE, or "
+        "FREEFORM query", qname);
+    }
+
+  } else {
+    sql_log(DEBUG_WARN, "named query '%s' cannot be found", qname);
+  }
+
+  sql_log(DEBUG_FUNC, "<<< %s (%s)", label, c->name);
   return mr;
 }
 
 MODRET log_master(cmd_rec *cmd) {
   char *name = NULL;
-  char *qname = NULL;
-  char *type = NULL;
   config_rec *c = NULL;
   modret_t *mr = NULL;
 
@@ -2250,68 +2489,32 @@ MODRET log_master(cmd_rec *cmd) {
   name = pstrcat(cmd->tmp_pool, "SQLLog_", cmd->argv[0], NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
+  while (c) {
+    pr_signals_handle();
 
-  if (c) {
-    do {
-      sql_log(DEBUG_FUNC, "%s", ">>> log_master");
+    mr = process_sqllog(cmd, c, "log_master");
+    if (mr != NULL &&
+        MODRET_ISERROR(mr)) {
+      return mr;
+    }
 
-      qname = c->argv[0];
-      type = _named_query_type(cmd, qname);
-
-      if (type) {
-	if (strcasecmp(type, SQL_UPDATE_C) == 0 || 
-	    strcasecmp(type, SQL_FREEFORM_C) == 0 ||
-	    strcasecmp(type, SQL_INSERT_C) == 0) {
-	  mr = _process_named_query(cmd, qname);
-	  if (c->argc == 2)
-            if (check_response(mr) < 0)
-              return mr;
-
-	} else {
-	  sql_log(DEBUG_WARN, "named query '%s' is not an INSERT, UPDATE, or "
-            "FREEFORM query", qname);
-	}
-      } else {
-	sql_log(DEBUG_WARN, "named query '%s' cannot be found", qname);
-      }
-
-      sql_log(DEBUG_FUNC, "%s", "<<< log_master");
-    } while((c = find_config_next(c, c->next, 
-				  CONF_PARAM, name, FALSE)) != NULL);
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
   
-  /* handle implit queries */
+  /* handle implicit queries */
   name = pstrcat(cmd->tmp_pool, "SQLLog_*", NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
+  while (c) {
+    pr_signals_handle();
 
-  if (c) {
-    do {
-      sql_log(DEBUG_FUNC, "%s", ">>> log_master");
+    mr = process_sqllog(cmd, c, "log_master");
+    if (mr != NULL &&
+        MODRET_ISERROR(mr)) {
+      return mr;
+    }
 
-      qname = c->argv[0];
-      type = _named_query_type(cmd, qname);
-
-      if (type) {
-	if (strcasecmp(type, SQL_UPDATE_C) == 0 || 
-	    strcasecmp(type, SQL_FREEFORM_C) == 0 ||
-	    strcasecmp(type, SQL_INSERT_C) == 0) {
-          mr = _process_named_query(cmd, qname);
-          if (c->argc == 2)
-            if (check_response(mr) < 0)
-              return mr;
-
-	} else {
-	  sql_log(DEBUG_WARN, "named query '%s' is not an INSERT, UPDATE, or "
-            "FREEFORM query", qname);
-	}
-      } else {
-	sql_log(DEBUG_WARN, "named query '%s' cannot be found", qname);
-      }
-
-      sql_log(DEBUG_FUNC, "%s", "<<< log_master");
-    } while((c = find_config_next(c, c->next, 
-				  CONF_PARAM, name, FALSE)) != NULL);
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
 
   return PR_DECLINED(cmd);
@@ -2319,8 +2522,6 @@ MODRET log_master(cmd_rec *cmd) {
 
 MODRET err_master(cmd_rec *cmd) {
   char *name = NULL;
-  char *qname = NULL;
-  char *type = NULL;
   config_rec *c = NULL;
   modret_t *mr = NULL;
 
@@ -2331,68 +2532,32 @@ MODRET err_master(cmd_rec *cmd) {
   name = pstrcat(cmd->tmp_pool, "SQLLog_ERR_", cmd->argv[0], NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
+  while (c) {
+    pr_signals_handle();
 
-  if (c) {
-    do {
-      sql_log(DEBUG_FUNC, "%s", ">>> err_master");
+    mr = process_sqllog(cmd, c, "err_master");
+    if (mr != NULL &&
+        MODRET_ISERROR(mr)) {
+      return mr;
+    }
 
-      qname = c->argv[0];
-      type = _named_query_type(cmd, qname);
-
-      if (type) {
-	if (strcasecmp(type, SQL_UPDATE_C) == 0 || 
-	    strcasecmp(type, SQL_FREEFORM_C) == 0 ||
-	    strcasecmp(type, SQL_INSERT_C) == 0) {
-          mr = _process_named_query(cmd, qname);
-          if (c->argc == 2)
-            if (check_response(mr) < 0)
-              return mr;
-
-	} else {
-	  sql_log(DEBUG_WARN, "named query '%s' is not an INSERT, UPDATE, or "
-            "FREEFORM query", qname);
-	}
-      } else {
-	sql_log(DEBUG_WARN, "named query '%s' cannot be found", qname);
-      }
-
-      sql_log(DEBUG_FUNC, "%s", "<<< err_master");
-    } while((c = find_config_next(c, c->next, 
-				  CONF_PARAM, name, FALSE)) != NULL);
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
   
   /* handle implicit errors */
   name = pstrcat(cmd->tmp_pool, "SQLLog_ERR_*", NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
+  while (c) {
+    pr_signals_handle();
 
-  if (c) {
-    do {
-      sql_log(DEBUG_FUNC, "%s", ">>> err_master");
+    mr = process_sqllog(cmd, c, "err_master");
+    if (mr != NULL &&
+        MODRET_ISERROR(mr)) {
+      return mr;
+    }
 
-      qname = c->argv[0];
-      type = _named_query_type(cmd, qname);
-
-      if (type) {
-	if (strcasecmp(type, SQL_UPDATE_C) == 0 || 
-	    strcasecmp(type, SQL_FREEFORM_C) == 0 ||
-	    strcasecmp(type, SQL_INSERT_C) == 0) {
-          mr = _process_named_query(cmd, qname);
-          if (c->argc == 2)
-            if (check_response(mr) < 0)
-              return mr;
-
-	} else {
-	  sql_log(DEBUG_WARN, "named query '%s' is not an INSERT, UPDATE, or "
-            "FREEFORM query", qname);
-	}
-      } else {
-	sql_log(DEBUG_WARN, "named query '%s' cannot be found", qname);
-      }
-
-      sql_log(DEBUG_FUNC, "%s", "<<< err_master");
-    } while((c = find_config_next(c, c->next, 
-				  CONF_PARAM, name, FALSE)) != NULL);
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
 
   return PR_DECLINED(cmd);
@@ -2415,210 +2580,206 @@ MODRET info_master(cmd_rec *cmd) {
   name = pstrcat(cmd->tmp_pool, "SQLShowInfo_", cmd->argv[0], NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
-  if (c) {
-    sql_log(DEBUG_FUNC, "%s", ">>> info_master");
+  while (c) {
+    sql_log(DEBUG_FUNC, ">>> info_master (%s)", name);
 
     /* we now have at least one config_rec.  Take the output string from 
      * each, and process it -- resolve tags, and when we find a named 
      * query, run it and get info from it. 
      */
 
-    do {
-      pr_signals_handle();
+    pr_signals_handle();
 
-      memset(outs, '\0', sizeof(outs));
-      outsp = outs;
+    memset(outs, '\0', sizeof(outs));
+    outsp = outs;
 
-      for (tmp = c->argv[1]; *tmp; ) {
-	if (*tmp == '%') {
-	  /* is the tag a named_query reference?  If so, process the 
-	   * named query, otherwise process it as a normal tag.. 
-	   */
+    for (tmp = c->argv[1]; *tmp; ) {
+      if (*tmp == '%') {
+        /* is the tag a named_query reference?  If so, process the 
+         * named query, otherwise process it as a normal tag.. 
+         */
 	  
-	  if (*(++tmp) == '{') {
-	    char *query;
+        if (*(++tmp) == '{') {
+	  char *query = NULL;
 
-	    if (*tmp != '\0')
-              query = ++tmp;
+	  if (*tmp != '\0')
+            query = ++tmp;
 	    
-	    /* get the name of the query */
-	    while (*tmp && *tmp != '}')
-              tmp++;
+          /* get the name of the query */
+          while (*tmp && *tmp != '}')
+            tmp++;
 	    
-	    query = pstrndup(cmd->tmp_pool, query, (tmp - query));
+          query = pstrndup(cmd->tmp_pool, query, (tmp - query));
 
-	    /* make sure it's a SELECT query */
+          /* make sure it's a SELECT query */
 	    
-	    type = _named_query_type(cmd, query);
-	    if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
-			 strcasecmp(type, SQL_FREEFORM_C) == 0)) {
-	      mr = _process_named_query(cmd, query);
-	      
-              if (MODRET_ISERROR(mr)) {
+          type = named_query_type(cmd, query);
+          if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
+                       strcasecmp(type, SQL_FREEFORM_C) == 0)) {
+            mr = process_named_query(cmd, query);
+            if (check_response(mr) < 0) {
+              memset(outs, '\0', sizeof(outs));
+              break;
+
+            } else {
+              sd = (sql_data_t *) mr->data;
+              if (sd->rnum == 0 ||
+                  sd->data[0] == NULL) {
+                /* If no data was returned, show nothing.  Just continue
+                 * on to the next SQLShowInfo.
+                 */
                 memset(outs, '\0', sizeof(outs));
                 break;
 
-	      } else {
-		sd = (sql_data_t *) mr->data;
-                if (sd->rnum == 0 ||
-                    sd->data[0] == NULL) {
-                  /* If no data was returned, show nothing.  Just continue
-                   * on to the next SQLShowInfo.
+              } else {
+                if (strcasecmp(sd->data[0], "null") == 0) {
+                  /* Treat the text "null" the same as a real null; just
+                   * continue on.
                    */
                   memset(outs, '\0', sizeof(outs));
                   break;
-
-                } else {
-                  if (strcasecmp(sd->data[0], "null") == 0) {
-                    /* Treat the text "null" the same as a real null; just
-                     * continue on.
-                     */
-                    memset(outs, '\0', sizeof(outs));
-                    break;
-                  }
-
-                  argp = sd->data[0];
                 }
+
+                argp = sd->data[0];
               }
+            }
 
-	    } else {
-              /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
-               * to the next SQLShowInfo.
-               */
-              memset(outs, '\0', sizeof(outs));
-              break;
-	    }
+          } else {
+            /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
+             * to the next SQLShowInfo.
+             */
+            memset(outs, '\0', sizeof(outs));
+            break;
+          }
 
-	  } else {
-	    argp = resolve_short_tag(cmd, *tmp);
-	  }
+        } else {
+          argp = resolve_short_tag(cmd, *tmp);
+        }
 
-	  sstrcat(outs, argp, sizeof(outs));
-	  outsp += strlen(argp);
+        sstrcat(outs, argp, sizeof(outs));
+        outsp += strlen(argp);
 
-	  if (*tmp != '\0')
-            tmp++;
+        if (*tmp != '\0')
+          tmp++;
 
-	} else {
-	  *outsp++ = *tmp++;
-	}
+      } else {
+        *outsp++ = *tmp++;
       }
+    }
       
-      *outsp++ = 0;
+    *outsp++ = 0;
 
-      /* Add the response, if we have one. */
-      if (strlen(outs) > 0) {
-        pr_response_add(c->argv[0], "%s", outs);
-      }
+    /* Add the response, if we have one. */
+    if (strlen(outs) > 0) {
+      pr_response_add(c->argv[0], "%s", outs);
+    }
 
-    } while ((c = find_config_next(c, c->next, CONF_PARAM, name, FALSE)) != NULL);
+    sql_log(DEBUG_FUNC, "<<< info_master (%s)", name);
 
-    sql_log(DEBUG_FUNC, "%s", "<<< info_master");
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
 
   /* process implicit handlers */
   name = pstrcat(cmd->tmp_pool, "SQLShowInfo_*", NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
-  if (c) {
-    sql_log(DEBUG_FUNC, "%s", ">>> info_master");
+  while (c) {
+    sql_log(DEBUG_FUNC, ">>> info_master (%s)", name);
 
     /* we now have at least one config_rec.  Take the output string from 
      * each, and process it -- resolve tags, and when we find a named 
      * query, run it and get info from it. 
      */
 
-    do {
-      pr_signals_handle();
+    pr_signals_handle();
 
-      memset(outs, '\0', sizeof(outs));
-      outsp = outs;
+    memset(outs, '\0', sizeof(outs));
+    outsp = outs;
 
-      for (tmp = c->argv[1]; *tmp; ) {
-	if (*tmp == '%') {
-	  /* is the tag a named_query reference?  If so, process the 
-	   * named query, otherwise process it as a normal tag.. 
-	   */
-	  
-	  if (*(++tmp) == '{') {
-	    char *query;
+    for (tmp = c->argv[1]; *tmp; ) {
+      if (*tmp == '%') {
+        /* is the tag a named_query reference?  If so, process the 
+         * named query, otherwise process it as a normal tag.. 
+         */
+        if (*(++tmp) == '{') {
+          char *query = NULL;
 
-	    if (*tmp != '\0')
-              query = ++tmp;
-	    
-	    /* get the name of the query */
-	    while (*tmp && *tmp != '}')
-              tmp++;
-	    
-	    query = pstrndup(cmd->tmp_pool, query, (tmp - query));
+          if (*tmp != '\0')
+            query = ++tmp;
 
-	    /* make sure it's a SELECT query */
-	    
-	    type = _named_query_type(cmd, query);
-	    if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
-			 strcasecmp(type, SQL_FREEFORM_C) == 0)) {
-	      mr = _process_named_query(cmd, query);
-	      
-              if (MODRET_ISERROR(mr)) {
+          /* get the name of the query */
+          while (*tmp && *tmp != '}')
+            tmp++;
+
+          query = pstrndup(cmd->tmp_pool, query, (tmp - query));
+
+          /* make sure it's a SELECT query */
+
+          type = named_query_type(cmd, query);
+          if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
+                       strcasecmp(type, SQL_FREEFORM_C) == 0)) {
+            mr = process_named_query(cmd, query);
+
+            if (check_response(mr) < 0) {
+              memset(outs, '\0', sizeof(outs));
+              break;
+
+            } else {
+              sd = (sql_data_t *) mr->data;
+              if (sd->rnum == 0 ||
+                  sd->data[0] == NULL) {
+                /* If no data was returned, show nothing.  Just continue
+                 * on to the next SQLShowInfo.
+                 */
                 memset(outs, '\0', sizeof(outs));
                 break;
 
-	      } else {
-		sd = (sql_data_t *) mr->data;
-                if (sd->rnum == 0 ||
-                    sd->data[0] == NULL) {
-                  /* If no data was returned, show nothing.  Just continue
-                   * on to the next SQLShowInfo.
+              } else {
+                if (strcasecmp(sd->data[0], "null") == 0) {
+                  /* Treat the text "null" the same as a real null; just
+                   * continue on.
                    */
                   memset(outs, '\0', sizeof(outs));
                   break;
-
-                } else {
-                  if (strcasecmp(sd->data[0], "null") == 0) {
-                    /* Treat the text "null" the same as a real null; just
-                     * continue on.
-                     */
-                    memset(outs, '\0', sizeof(outs));
-                    break;
-                  }
-
-                  argp = sd->data[0];
                 }
-              }
 
-            } else {
-              /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
-               * to the next SQLShowInfo.
-               */
-              memset(outs, '\0', sizeof(outs));
-              break;
+                argp = sd->data[0];
+              }
             }
 
-	  } else {
-	    argp = resolve_short_tag(cmd, *tmp);
-	  }
+          } else {
+            /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
+             * to the next SQLShowInfo.
+             */
+            memset(outs, '\0', sizeof(outs));
+            break;
+          }
 
-	  sstrcat(outs, argp, sizeof(outs));
-	  outsp += strlen(argp);
+        } else {
+          argp = resolve_short_tag(cmd, *tmp);
+        }
 
-	  if (*tmp != '\0')
-            tmp++;
+        sstrcat(outs, argp, sizeof(outs));
+        outsp += strlen(argp);
 
-	} else {
-	  *outsp++ = *tmp++;
-	}
+        if (*tmp != '\0')
+          tmp++;
+
+      } else {
+        *outsp++ = *tmp++;
       }
+    }
       
-      *outsp++ = 0;
+    *outsp++ = 0;
 
-      /* Add the response, if we have one. */
-      if (strlen(outs) > 0) {
-        pr_response_add(c->argv[0], "%s", outs);
-      }
+    /* Add the response, if we have one. */
+    if (strlen(outs) > 0) {
+      pr_response_add(c->argv[0], "%s", outs);
+    }
 
-    } while ((c = find_config_next(c, c->next, CONF_PARAM, name, FALSE)) != NULL);
+    sql_log(DEBUG_FUNC, "<<< info_master (%s)", name);
 
-    sql_log(DEBUG_FUNC, "%s", "<<< info_master");
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
 
   return PR_DECLINED(cmd);
@@ -2628,7 +2789,7 @@ MODRET errinfo_master(cmd_rec *cmd) {
   char *type = NULL;
   char *name = NULL;
   config_rec *c = NULL;
-  char outs[SQL_MAX_STMT_LEN] = {'\0'}, *outsp;
+  char outs[SQL_MAX_STMT_LEN] = {'\0'}, *outsp = NULL;
   char *argp = NULL; 
   char *tmp = NULL;
   modret_t *mr = NULL;
@@ -2641,209 +2802,209 @@ MODRET errinfo_master(cmd_rec *cmd) {
   name = pstrcat(cmd->tmp_pool, "SQLShowInfo_ERR_", cmd->argv[0], NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
-  if (c) {
-    sql_log(DEBUG_FUNC, "%s", ">>> errinfo_master");
+  while (c) {
+    sql_log(DEBUG_FUNC, ">>> errinfo_master (%s)", name);
 
     /* we now have at least one config_rec.  Take the output string from 
      * each, and process it -- resolve tags, and when we find a named 
      * query, run it and get info from it. 
      */
 
-    do {
-      memset(outs, '\0', sizeof(outs));
-      outsp = outs;
+    pr_signals_handle();
 
-      for (tmp = c->argv[1]; *tmp; ) {
-	if (*tmp == '%') {
-	  /* is the tag a named_query reference?  If so, process the 
-	   * named query, otherwise process it as a normal tag.. 
-	   */
-	  
-	  if (*(++tmp) == '{') {
-	    char *query;
+    memset(outs, '\0', sizeof(outs));
+    outsp = outs;
 
-	    if (*tmp != '\0')
-              query = ++tmp;
-	    
-	    /* get the name of the query */
-	    while (*tmp && *tmp != '}') 
-              tmp++;
-	    
-	    query = pstrndup(cmd->tmp_pool, query, (tmp - query));
+    for (tmp = c->argv[1]; *tmp; ) {
+      if (*tmp == '%') {
+        /* is the tag a named_query reference?  If so, process the 
+         * named query, otherwise process it as a normal tag.. 
+         */
 
-	    /* make sure it's a SELECT query */
+        if (*(++tmp) == '{') {
+          char *query = NULL;
+
+          if (*tmp != '\0')
+            query = ++tmp;
 	    
-	    type = _named_query_type(cmd, query);
-	    if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
-			 strcasecmp(type, SQL_FREEFORM_C) == 0)) {
-	      mr = _process_named_query(cmd, query);
-	      
-              if (MODRET_ISERROR(mr)) {
+          /* get the name of the query */
+	  while (*tmp && *tmp != '}') 
+            tmp++;
+	    
+          query = pstrndup(cmd->tmp_pool, query, (tmp - query));
+
+          /* make sure it's a SELECT query */
+
+          type = named_query_type(cmd, query);
+          if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
+                       strcasecmp(type, SQL_FREEFORM_C) == 0)) {
+            mr = process_named_query(cmd, query);
+
+            if (check_response(mr) < 0) {
+              memset(outs, '\0', sizeof(outs));
+              break;
+
+            } else {
+              sd = (sql_data_t *) mr->data;
+              if (sd->rnum == 0 ||
+                  sd->data[0] == NULL) {
+                /* If no data was returned, show nothing.  Just continue
+                 * on to the next SQLShowInfo.
+                 */
                 memset(outs, '\0', sizeof(outs));
                 break;
 
-	      } else {
-		sd = (sql_data_t *) mr->data;
-                if (sd->rnum == 0 ||
-                    sd->data[0] == NULL) {
-                  /* If no data was returned, show nothing.  Just continue
-                   * on to the next SQLShowInfo.
+              } else {
+                if (strcasecmp(sd->data[0], "null") == 0) {
+                  /* Treat the text "null" the same as a real null; just
+                   * continue on.
                    */
                   memset(outs, '\0', sizeof(outs));
                   break;
-
-                } else {
-                  if (strcasecmp(sd->data[0], "null") == 0) {
-                    /* Treat the text "null" the same as a real null; just
-                     * continue on.
-                     */
-                    memset(outs, '\0', sizeof(outs));
-                    break;
-                  }
-
-                  argp = sd->data[0];
                 }
-              }
 
-            } else {
-              /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
-               * to the next SQLShowInfo.
-               */
-              memset(outs, '\0', sizeof(outs));
-              break;
+                argp = sd->data[0];
+              }
             }
 
-	  } else {
-	    argp = resolve_short_tag(cmd, *tmp);
-	  }
+          } else {
+            /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
+             * to the next SQLShowInfo.
+             */
+            memset(outs, '\0', sizeof(outs));
+            break;
+          }
 
-	  sstrcat(outs, argp, sizeof(outs));
-	  outsp += strlen(argp);
+        } else {
+          argp = resolve_short_tag(cmd, *tmp);
+        }
 
-	  if (*tmp != '\0')
-            tmp++;
+        sstrcat(outs, argp, sizeof(outs));
+        outsp += strlen(argp);
 
-	} else {
-	  *outsp++ = *tmp++;
-	}
+        if (*tmp != '\0')
+          tmp++;
+
+      } else {
+        *outsp++ = *tmp++;
       }
+    }
       
-      *outsp++ = 0;
+    *outsp++ = 0;
 
-      /* Add the response, if we have one. */
-      if (strlen(outs) > 0) {
-        pr_response_add_err(c->argv[0], "%s", outs);
-      }
+    /* Add the response, if we have one. */
+    if (strlen(outs) > 0) {
+      pr_response_add_err(c->argv[0], "%s", outs);
+    }
 
-    } while ((c = find_config_next(c, c->next, CONF_PARAM, name, FALSE)) != NULL);
+    sql_log(DEBUG_FUNC, "<<< errinfo_master (%s)", name);
 
-    sql_log(DEBUG_FUNC, "%s", "<<< errinfo_master");
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
 
   /* process implicit handlers */
   name = pstrcat(cmd->tmp_pool, "SQLShowInfo_ERR_*", NULL);
   
   c = find_config(main_server->conf, CONF_PARAM, name, FALSE);
-  if (c) {
-    sql_log(DEBUG_FUNC, "%s", ">>> errinfo_master");
+  while (c) {
+    sql_log(DEBUG_FUNC, ">>> errinfo_master (%s)", name);
 
     /* we now have at least one config_rec.  Take the output string from 
      * each, and process it -- resolve tags, and when we find a named 
      * query, run it and get info from it. 
      */
 
-    do {
-      pr_signals_handle();
+    pr_signals_handle();
 
-      memset(outs, '\0', sizeof(outs));
-      outsp = outs;
+    memset(outs, '\0', sizeof(outs));
+    outsp = outs;
 
-      for (tmp = c->argv[1]; *tmp; ) {
-	if (*tmp == '%') {
-	  /* is the tag a named_query reference?  If so, process the 
-	   * named query, otherwise process it as a normal tag.. 
-	   */
+    for (tmp = c->argv[1]; *tmp; ) {
+      if (*tmp == '%') {
+        /* is the tag a named_query reference?  If so, process the 
+         * named query, otherwise process it as a normal tag.. 
+         */
 	  
-	  if (*(++tmp) == '{') {
-	    char *query;
+        if (*(++tmp) == '{') {
+          char *query = NULL;
 
-	    if (*tmp != '\0')
-              query = ++tmp;
-	    
-	    /* get the name of the query */
-	    while (*tmp && *tmp != '}')
-              tmp++;
-	    
-	    query = pstrndup(cmd->tmp_pool, query, (tmp - query));
+          if (*tmp != '\0')
+            query = ++tmp;
 
-	    /* make sure it's a SELECT query */
+          /* get the name of the query */
+          while (*tmp && *tmp != '}')
+            tmp++;
 	    
-	    type = _named_query_type(cmd, query);
-	    if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
-			 strcasecmp(type, SQL_FREEFORM_C) == 0)) {
-	      mr = _process_named_query(cmd, query);
-	      
-              if (MODRET_ISERROR(mr)) {
+          query = pstrndup(cmd->tmp_pool, query, (tmp - query));
+
+          /* make sure it's a SELECT query */
+	    
+          type = named_query_type(cmd, query);
+          if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
+                       strcasecmp(type, SQL_FREEFORM_C) == 0)) {
+            mr = process_named_query(cmd, query);
+
+            if (check_response(mr) < 0) {
+              memset(outs, '\0', sizeof(outs));
+              break;
+
+            } else {
+              sd = (sql_data_t *) mr->data;
+              if (sd->rnum == 0 ||
+                  sd->data[0] == NULL) {
+                /* If no data was returned, show nothing.  Just continue
+                 * on to the next SQLShowInfo.
+                 */
                 memset(outs, '\0', sizeof(outs));
                 break;
 
-	      } else {
-		sd = (sql_data_t *) mr->data;
-                if (sd->rnum == 0 ||
-                    sd->data[0] == NULL) {
-                  /* If no data was returned, show nothing.  Just continue
-                   * on to the next SQLShowInfo.
+              } else {
+                if (strcasecmp(sd->data[0], "null") == 0) {
+                  /* Treat the text "null" the same as a real null; just
+                   * continue on.
                    */
                   memset(outs, '\0', sizeof(outs));
                   break;
-
-                } else {
-                  if (strcasecmp(sd->data[0], "null") == 0) {
-                    /* Treat the text "null" the same as a real null; just
-                     * continue on.
-                     */
-                    memset(outs, '\0', sizeof(outs));
-                    break;
-                  }
-
-                  argp = sd->data[0];
                 }
-              }
 
-            } else {
-              /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
-               * to the next SQLShowInfo.
-               */
-              memset(outs, '\0', sizeof(outs));
-              break;
-              continue;
+                argp = sd->data[0];
+              }
             }
 
-	  } else {
-	    argp = resolve_short_tag(cmd, *tmp);
-	  }
+          } else {
+            /* Can't use an INSERT/UPDATE query for retrieving info.  Skip
+             * to the next SQLShowInfo.
+             */
+            memset(outs, '\0', sizeof(outs));
+            break;
+            continue;
+          }
 
-	  sstrcat(outs, argp, sizeof(outs));
-	  outsp += strlen(argp);
+        } else {
+          argp = resolve_short_tag(cmd, *tmp);
+        }
 
-	  if (*tmp != '\0')
-            tmp++;
+        sstrcat(outs, argp, sizeof(outs));
+        outsp += strlen(argp);
 
-	} else {
-	  *outsp++ = *tmp++;
-	}
+        if (*tmp != '\0')
+          tmp++;
+
+      } else {
+        *outsp++ = *tmp++;
       }
+    }
       
-      *outsp++ = 0;
+    *outsp++ = 0;
 
-      /* Add the response, if we have one. */
-      if (strlen(outs) > 0) {
-        pr_response_add(c->argv[0], "%s", outs);
-      }
+    /* Add the response, if we have one. */
+    if (strlen(outs) > 0) {
+      pr_response_add(c->argv[0], "%s", outs);
+    }
 
-    } while ((c = find_config_next(c, c->next, CONF_PARAM, name, FALSE)) != NULL);
+    sql_log(DEBUG_FUNC, "<<< errinfo_master (%s)", name);
 
-    sql_log(DEBUG_FUNC, "%s", "<<< errinfo_master");
+    c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
 
   return PR_DECLINED(cmd);
@@ -2855,8 +3016,10 @@ MODRET sql_cleanup(cmd_rec *cmd) {
   sql_log(DEBUG_FUNC, "%s", ">>> sql_cleanup");
 
   res = _sql_dispatch(cmd, "sql_cleanup");
-  if (check_response(res) < 0)
+  if (check_response(res) < 0) {
+    sql_log(DEBUG_FUNC, "%s", "<<< sql_cleanup");
     return res;
+  }
 
   sql_log(DEBUG_FUNC, "%s", "<<< sql_cleanup");
   return res;
@@ -2952,22 +3115,23 @@ MODRET sql_lookup(cmd_rec *cmd) {
   modret_t *mr = NULL;
   sql_data_t *sd = NULL;
   array_header *ah = NULL;
-  int cnt = 0;
 
   if (cmap.engine == 0)
     return PR_DECLINED(cmd);
 
-  sql_log(DEBUG_FUNC, "%s", ">>> sql_lookup");
-
   if (cmd->argc < 1)
     return PR_ERROR(cmd);
 
-  type = _named_query_type(cmd, cmd->argv[1]);
+  sql_log(DEBUG_FUNC, "%s", ">>> sql_lookup");
+
+  type = named_query_type(cmd, cmd->argv[1]);
   if (type && (strcasecmp(type, SQL_SELECT_C) == 0 ||
 	       strcasecmp(type, SQL_FREEFORM_C) == 0)) {
-    mr = _process_named_query(cmd, cmd->argv[1]);
+    mr = process_named_query(cmd, cmd->argv[1]);
     
     if (!MODRET_ISERROR(mr)) {
+      register unsigned int i;
+
       sd = (sql_data_t *) mr->data;
 
       ah = make_array(session.pool, (sd->rnum * sd->fnum) , sizeof(char *));
@@ -2975,16 +3139,18 @@ MODRET sql_lookup(cmd_rec *cmd) {
       /* the right way to do this is to preserve the abstraction of the array
        * header so things don't blow up when it gets freed
        */
-      for (cnt =0; cnt< (sd->rnum * sd->fnum); cnt++) {
-	*((char **) push_array(ah)) = sd->data[cnt];
+      for (i = 0; i< (sd->rnum * sd->fnum); i++) {
+	*((char **) push_array(ah)) = sd->data[i];
       }
 
       mr = mod_create_data(cmd, (void *) ah);
 
     } else {
       /* We have an error.  Log it and die. */
-      if (check_response(mr) < 0)
+      if (check_response(mr) < 0) {
+        sql_log(DEBUG_FUNC, "%s", "<<< sql_lookup");
         return mr;
+      }
     }
 
   } else {
@@ -3002,22 +3168,21 @@ MODRET sql_change(cmd_rec *cmd) {
   if (cmap.engine == 0)
     return PR_DECLINED(cmd);
 
-  sql_log(DEBUG_FUNC, "%s", ">>> sql_change");
-
   if (cmd->argc < 1)
     return PR_ERROR(cmd);
 
-  type = _named_query_type(cmd, cmd->argv[1]);
+  sql_log(DEBUG_FUNC, "%s", ">>> sql_change");
+
+  type = named_query_type(cmd, cmd->argv[1]);
   if (type && ((!strcasecmp(type, SQL_INSERT_C)) || 
 	       (!strcasecmp(type, SQL_UPDATE_C)) ||
 	       (!strcasecmp(type, SQL_FREEFORM_C)))) {
     /* fixup the cmd_rec */
 
-    mr = _process_named_query(cmd, cmd->argv[1]);
-    
-    if (MODRET_ISERROR(mr)) {
-      if (check_response(mr) < 0)
-        return mr;
+    mr = process_named_query(cmd, cmd->argv[1]);
+    if (check_response(mr) < 0) {
+      sql_log(DEBUG_FUNC, "%s", "<<< sql_change");
+      return mr;
     }
 
   } else {
@@ -3035,9 +3200,12 @@ MODRET sql_escapestr(cmd_rec *cmd) {
 
   mr =_sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 2, "default", cmd->argv[0]),
     "sql_escapestring");
+  if (check_response(mr) < 0) {
+    sql_log(DEBUG_FUNC, "%s", "<<< sql_escapestr");
+    return mr;
+  }
 
   sql_log(DEBUG_FUNC, "%s", "<<< sql_escapestr");
-
   return mr;
 }
 
@@ -3077,16 +3245,40 @@ MODRET cmd_setpwent(cmd_rec *cmd) {
 
   /* single select or not? */
   if (SQL_FASTUSERS) {
-    /* retrieve our list of passwds */
-    where = sql_prepare_where(0, cmd, 1, cmap.userwhere, NULL);
+    /* retrieve our list of users */
 
-    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
-      cmap.usrtable, cmap.usrfields, where), "sql_select");
-    if (check_response(mr) < 0)
-      return mr;
+    if (!cmap.usercustomusersetfast) {
+      where = sql_prepare_where(0, cmd, 1, cmap.userwhere, NULL);
+
+      mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
+        cmap.usrtable, cmap.usrfields, where), "sql_select");
+      if (check_response(mr) < 0)
+        return mr;
   
-    sd = (sql_data_t *) mr->data;
-    
+      sd = (sql_data_t *) mr->data;
+
+    } else {
+      mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 2, "default",
+        cmap.usercustomusersetfast));
+
+      if (check_response(mr) < 0)
+        return mr;
+
+      if (MODRET_HASDATA(mr)) {
+        array_header *ah = (array_header *) mr->data;
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+
+        /* Assume the query returned 6 columns per row. */
+        sd->fnum = 6;
+        sd->rnum = ah->nelts / 6;
+        sd->data = (char **) ah->elts;
+
+      } else {
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+        sd->rnum = 0;
+      }
+    }
+ 
     /* walk through the array, adding users to the cache */
     for (i = 0, cnt = 0; cnt < sd->rnum; cnt++) {
       username = sd->data[i++];
@@ -3150,16 +3342,36 @@ MODRET cmd_setpwent(cmd_rec *cmd) {
     } 
 
   } else {
-    /* retrieve our list of passwds */
-    where = sql_prepare_where(0, cmd, 1, cmap.userwhere, NULL);
+    /* Retrieve our list of users */
 
-    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
-      cmap.usrtable, cmap.usrfield, where), "sql_select");
-    if (check_response(mr) < 0)
-      return mr;
+    if (!cmap.usercustomuserset) {
+      where = sql_prepare_where(0, cmd, 1, cmap.userwhere, NULL);
+
+      mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 4, "default",
+        cmap.usrtable, cmap.usrfield, where), "sql_select");
+      if (check_response(mr) < 0)
+        return mr;
     
-    sd = (sql_data_t *) mr->data;
-    
+      sd = (sql_data_t *) mr->data;
+
+    } else {
+      mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 2, "default",
+        cmap.usercustomuserset));
+
+      if (check_response(mr) < 0)
+        return mr;
+
+      if (MODRET_HASDATA(mr)) {
+        array_header *ah = (array_header *) mr->data;
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+
+        /* Assume the query only returned 1 column per row. */
+        sd->fnum = 1;
+        sd->rnum = ah->nelts;
+        sd->data = (char **) ah->elts;
+      }
+    }
+
     for (cnt = 0; cnt < sd->rnum; cnt++) {
       username = sd->data[cnt];
       
@@ -3170,7 +3382,7 @@ MODRET cmd_setpwent(cmd_rec *cmd) {
       /* otherwise, add it to the cache */
       lpw.pw_uid = -1;
       lpw.pw_name = username;
-      _sql_getpasswd(cmd, &lpw);
+      sql_getpasswd(cmd, &lpw);
     }
   }
   
@@ -3259,15 +3471,38 @@ MODRET cmd_setgrent(cmd_rec *cmd) {
 
   if (SQL_FASTGROUPS) {
     /* retrieve our list of groups */
-    where = sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL);
 
-    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 6, "default",
-      cmap.grptable, cmap.grpfields, where, NULL), "sql_select");
-    if (check_response(mr) < 0)
-      return mr;
+    if (!cmap.groupcustomgroupsetfast) {
+      where = sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL);
+
+      mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 6, "default",
+        cmap.grptable, cmap.grpfields, where, NULL), "sql_select");
+      if (check_response(mr) < 0)
+        return mr;
     
-    sd = (sql_data_t *) mr->data;
-    
+      sd = (sql_data_t *) mr->data;
+   
+    } else {
+      mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 2, "default",
+        cmap.groupcustomgroupsetfast));
+      if (check_response(mr) < 0)
+        return mr;
+
+      if (MODRET_HASDATA(mr)) {
+        ah = mr->data;
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+
+        /* Assume the query returned 3 columns per row. */
+        sd->fnum = 3;
+        sd->rnum = ah->nelts / 3;
+        sd->data = (char **) ah->elts;
+
+      } else {
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+        sd->rnum = 0;
+      }
+    }
+ 
     /* for each group, fill our array header and call _sql_addgroup */
 
     for (cnt = 0; cnt < sd->rnum; cnt ++) {
@@ -3293,15 +3528,38 @@ MODRET cmd_setgrent(cmd_rec *cmd) {
 
   } else {
     /* Retrieve our list of groups. */
-    where = sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL);
+
+    if (!cmap.groupcustomgroupset) {
+      where = sql_prepare_where(0, cmd, 1, cmap.groupwhere, NULL);
  
-    mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 6, "default",
-      cmap.grptable, cmap.grpfield, where, NULL, "DISTINCT"), "sql_select");
-    if (check_response(mr) < 0)
-      return mr;
+      mr = _sql_dispatch(_sql_make_cmd(cmd->tmp_pool, 6, "default",
+        cmap.grptable, cmap.grpfield, where, NULL, "DISTINCT"), "sql_select");
+      if (check_response(mr) < 0)
+        return mr;
     
-    sd = (sql_data_t *) mr->data;
-    
+      sd = (sql_data_t *) mr->data;
+
+    } else {
+      mr = sql_lookup(_sql_make_cmd(cmd->tmp_pool, 2, "default",
+        cmap.groupcustomgroupset));
+      if (check_response(mr) < 0)
+        return mr;
+
+      if (MODRET_HASDATA(mr)) {
+        ah = mr->data;
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+
+        /* Assume the query only returned 1 column per row. */
+        sd->fnum = 1;
+        sd->rnum = ah->nelts;
+        sd->data = (char **) ah->elts;
+
+      } else {
+        sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
+        sd->rnum = 0;
+      }
+    }
+ 
     for (cnt = 0; cnt < sd->rnum; cnt++) {
       groupname = sd->data[cnt];
       
@@ -3313,7 +3571,7 @@ MODRET cmd_setgrent(cmd_rec *cmd) {
       lgr.gr_gid = -1;
       lgr.gr_name = groupname;
       
-      _sql_getgroup(cmd, &lgr);
+      sql_getgroup(cmd, &lgr);
     }
   }
   
@@ -3386,7 +3644,7 @@ MODRET cmd_getpwnam(cmd_rec *cmd) {
 
   lpw.pw_uid = -1;
   lpw.pw_name = cmd->argv[0];
-  pw = _sql_getpasswd(cmd, &lpw);
+  pw = sql_getpasswd(cmd, &lpw);
 
   if (pw == NULL ||
       pw->pw_uid == (uid_t) -1) {
@@ -3410,7 +3668,7 @@ MODRET cmd_getpwuid(cmd_rec *cmd) {
 
   lpw.pw_uid = *((uid_t *) cmd->argv[0]);
   lpw.pw_name = NULL;
-  pw = _sql_getpasswd(cmd, &lpw);
+  pw = sql_getpasswd(cmd, &lpw);
 
   if (pw == NULL ||
       pw->pw_uid == (uid_t) -1) {
@@ -3434,7 +3692,7 @@ MODRET cmd_getgrnam(cmd_rec *cmd) {
 
   lgr.gr_gid = -1;
   lgr.gr_name = cmd->argv[0];
-  gr = _sql_getgroup(cmd, &lgr);
+  gr = sql_getgroup(cmd, &lgr);
 
   if (gr == NULL ||
       gr->gr_gid == (gid_t) -1) {
@@ -3458,7 +3716,7 @@ MODRET cmd_getgrgid(cmd_rec *cmd) {
 
   lgr.gr_gid = *((gid_t *) cmd->argv[0]);
   lgr.gr_name = NULL;
-  gr = _sql_getgroup(cmd, &lgr);
+  gr = sql_getgroup(cmd, &lgr);
 
   if (gr == NULL ||
       gr->gr_gid == (gid_t) -1) {
@@ -3494,7 +3752,7 @@ MODRET cmd_auth(cmd_rec *cmd) {
   lpw.pw_uid = -1;
   lpw.pw_name = cmd->argv[0];
 
-  if ((pw = _sql_getpasswd(cmd, &lpw)) && 
+  if ((pw = sql_getpasswd(cmd, &lpw)) && 
       !pr_auth_check(cmd->tmp_pool, pw->pw_passwd, cmd->argv[0],
         cmd->argv[1])) {
     sql_log(DEBUG_FUNC, "%s", "<<< cmd_auth");
@@ -3508,24 +3766,19 @@ MODRET cmd_auth(cmd_rec *cmd) {
 }
 
 MODRET cmd_check(cmd_rec *cmd) {
-  /*
-   * should we bother to see if the hashed password is what we have in the
+  /* Should we bother to see if the hashed password is what we have in the
    * database? or do we simply assume it is, and ignore the fact that we're
    * being passed the username, too? 
    */
 
-  array_header *ah = cmap.authlist;
-  auth_type_entry *auth_entry;
-  char *c_hash;
-  char *c_clear;
-  int success = 0;
-  int cnt = 0;
-  struct passwd lpw;
+  array_header *ah = cmap.auth_list;
+  int success = FALSE;
   modret_t *mr = NULL;
 
   if (!SQL_USERS ||
-      !(cmap.engine & SQL_ENGINE_FL_AUTH))
+      !(cmap.engine & SQL_ENGINE_FL_AUTH)) {
     return PR_DECLINED(cmd);
+  }
 
   sql_log(DEBUG_FUNC, "%s", ">>> cmd_check");
 
@@ -3539,31 +3792,46 @@ MODRET cmd_check(cmd_rec *cmd) {
     sql_log(DEBUG_AUTH, "%s", "NULL clear password");
 
   } else {
-    c_hash = cmd->argv[0];
-    c_clear = cmd->argv[2];
+    register unsigned int i;
+    char *ciphertext = cmd->argv[0];
+    char *plaintext = cmd->argv[2];
 
-    if (!ah)
+    if (ah == NULL)
       sql_log(DEBUG_AUTH, "%s", "warning: no SQLAuthTypes configured");
 
-    for (cnt = 0; ah && cnt < ah->nelts; cnt++) {
-      auth_entry = ((auth_type_entry **) ah->elts)[cnt];
-      sql_log(DEBUG_AUTH, "checking SQLAuthType '%s'", auth_entry->name);
+    for (i = 0; ah && i < ah->nelts; i++) {
+      struct sql_authtype_handler *sah;
 
-      mr = auth_entry->check_function(cmd, c_clear, c_hash);
+      sah = ((struct sql_authtype_handler **) ah->elts)[i];
+      sql_log(DEBUG_AUTH, "checking password using SQLAuthType '%s'",
+        sah->name);
+
+      mr = sah->cb(cmd, plaintext, ciphertext);
       if (!MODRET_ISERROR(mr)) {
-	sql_log(DEBUG_AUTH, "'%s' auth handler reports success",
-          auth_entry->name);
+	sql_log(DEBUG_AUTH, "'%s' SQLAuthType handler reports success",
+          sah->name);
 	success = 1;
 	break;
 
       } else {
-	sql_log(DEBUG_AUTH, "'%s' auth handler reports failure",
-          auth_entry->name);
+        if (MODRET_HASMSG(mr)) {
+          char *err_msg;
+
+          err_msg = MODRET_ERRMSG(mr);
+          sql_log(DEBUG_AUTH, "'%s' SQLAuthType handler reports failure: %s",
+            sah->name, err_msg);
+
+        } else {
+          sql_log(DEBUG_AUTH, "'%s' SQLAuthType handler reports failure",
+            sah->name);
+        }
       }
     }
   }
 
   if (success) {
+    struct passwd lpw;
+
     /* This and the associated hack in cmd_uid2name are to support
      * UID reuse in the database -- people (for whatever reason) are
      * reusing UIDs/GIDs multiple times, and the displayed owner in a 
@@ -3574,7 +3842,7 @@ MODRET cmd_check(cmd_rec *cmd) {
 
     lpw.pw_uid = -1;
     lpw.pw_name = cmd->argv[1];
-    cmap.authpasswd = _sql_getpasswd(cmd, &lpw);
+    cmap.authpasswd = sql_getpasswd(cmd, &lpw);
 
     session.auth_mech = "mod_sql.c";
     sql_log(DEBUG_FUNC, "%s", "<<< cmd_check");
@@ -3607,7 +3875,7 @@ MODRET cmd_uid2name(cmd_rec *cmd) {
     pw = cmap.authpasswd;
 
   } else {
-    pw = _sql_getpasswd(cmd, &lpw);
+    pw = sql_getpasswd(cmd, &lpw);
   }
 
   sql_log(DEBUG_FUNC, "%s", "<<< cmd_uid2name");
@@ -3619,10 +3887,10 @@ MODRET cmd_uid2name(cmd_rec *cmd) {
    * member will be NULL, which causes an undesired handling by
    * the core code.  Handle this case separately.
    */
-  if (pw->pw_name)
+  if (pw->pw_name) {
     uid_name = pw->pw_name;
 
-  else {
+  } else {
     snprintf(uidstr, MOD_SQL_BUFSIZE, "%lu", (unsigned long) cmd->argv[0]);
     uid_name = uidstr;
   }
@@ -3634,7 +3902,7 @@ MODRET cmd_gid2name(cmd_rec *cmd) {
   char *gid_name = NULL;
   struct group *gr;
   struct group lgr;
-  char gidstr[MOD_SQL_BUFSIZE]={'\0'};
+  char gidstr[MOD_SQL_BUFSIZE];
 
   if (!SQL_GROUPS ||
       !(cmap.engine & SQL_ENGINE_FL_AUTH))
@@ -3644,7 +3912,7 @@ MODRET cmd_gid2name(cmd_rec *cmd) {
 
   lgr.gr_gid = *((gid_t *) cmd->argv[0]);
   lgr.gr_name = NULL;
-  gr = _sql_getgroup(cmd, &lgr);
+  gr = sql_getgroup(cmd, &lgr);
 
   sql_log(DEBUG_FUNC, "%s", "<<< cmd_gid2name");
 
@@ -3655,11 +3923,12 @@ MODRET cmd_gid2name(cmd_rec *cmd) {
    * member will be NULL, which causes an undesired handling by
    * the core code.  Handle this case separately.
    */
-  if (gr->gr_name)
+  if (gr->gr_name) {
     gid_name = gr->gr_name;
 
-  else {
-    snprintf(gidstr, MOD_SQL_BUFSIZE, "%lu", (unsigned long) cmd->argv[0]);
+  } else {
+    memset(gidstr, '\0', sizeof(gidstr));
+    snprintf(gidstr, sizeof(gidstr)-1, "%lu", (unsigned long) cmd->argv[0]);
     gid_name = gidstr;
   }
 
@@ -3686,7 +3955,7 @@ MODRET cmd_name2uid(cmd_rec *cmd) {
     pw = cmap.authpasswd;
 
   } else {
-    pw = _sql_getpasswd(cmd, &lpw);
+    pw = sql_getpasswd(cmd, &lpw);
   }
 
   if (pw == NULL ||
@@ -3711,7 +3980,7 @@ MODRET cmd_name2gid(cmd_rec *cmd) {
 
   lgr.gr_gid = -1;
   lgr.gr_name = cmd->argv[0];
-  gr = _sql_getgroup(cmd, &lgr);
+  gr = sql_getgroup(cmd, &lgr);
 
   if (gr == NULL ||
       gr->gr_gid == (gid_t) -1) {
@@ -3732,7 +4001,7 @@ MODRET cmd_getgroups(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", ">>> cmd_getgroups");
 
-  res = _sql_getgroups(cmd);
+  res = sql_getgroups(cmd);
 
   if (res < 0) {
     sql_log(DEBUG_FUNC, "%s", "<<< cmd_getgroups");
@@ -3786,8 +4055,9 @@ MODRET cmd_getratio(cmd_rec *cmd) {
   sql_data_t *sd;
   char *usrwhere, *where;
 
-  if (!cmap.sql_frate)
+  if (!cmap.sql_frate) {
     return PR_DECLINED(cmd);
+  }
 
   sql_log(DEBUG_FUNC, "%s", ">>> cmd_getratio");
 
@@ -3888,9 +4158,13 @@ MODRET set_sqloptions(cmd_rec *cmd) {
     } else if (strcmp(cmd->argv[i], "useNormalizedGroupSchema") == 0) {
       opts |= SQL_OPT_USE_NORMALIZED_GROUP_SCHEMA;
 
-    } else
+    } else if (strcmp(cmd->argv[i], "noReconnect") == 0) {
+      opts |= SQL_OPT_NO_RECONNECT;
+
+    } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown SQLOption '",
         cmd->argv[i], "'", NULL));
+    }
   }
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
@@ -3935,26 +4209,61 @@ MODRET add_virtualstr(char *name, cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: SQLUserInfo table(s) usernamefield passwdfield uid gid homedir
- *           shell | custom:/<sql-named-query>
+/* usage: SQLUserInfo table(s) usernamefield passwdfield UID GID homedir
+ *           shell | custom:/<sql-named-query>[/<sql-named-query>[/<sql-named-query>[/<sql-named-query>]]]
  */
 MODRET set_sqluserinfo(cmd_rec *cmd) {
 
   if (cmd->argc-1 != 1 &&
-      cmd->argc-1 != 7)
+      cmd->argc-1 != 7) {
     CONF_ERROR(cmd, "missing parameters");
+  }
+
   CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL|CONF_VIRTUAL);
 
   if (cmd->argc-1 == 1) {
-    char *tmp = NULL;
+    char *user = NULL, *userbyid = NULL, *userset = NULL, *usersetfast = NULL;
+    char *ptr = NULL;
 
     /* If only one paramter is used, it must be of the "custom:/" form. */
-    if (strncmp("custom:/", cmd->argv[1], 8) != 0)
+    if (strncmp("custom:/", cmd->argv[1], 8) != 0) {
       CONF_ERROR(cmd, "badly formatted parameter");
+    }
 
-    tmp = strchr(cmd->argv[1], '/');
+    ptr = strchr(cmd->argv[1] + 8, '/');
+    if (ptr == NULL) {
+      add_config_param_str("SQLCustomUserInfoByName", 1, cmd->argv[1] + 8);
+      return PR_HANDLED(cmd);
+    }
 
-    add_config_param_str("SQLCustomUserInfo", 1, tmp+1);
+    *ptr = '\0';
+    user = cmd->argv[1] + 8;
+    userbyid = ptr + 1;
+
+    add_config_param_str("SQLCustomUserInfoByName", 1, user);
+
+    ptr = strchr(userbyid, '/');
+    if (ptr == NULL) {
+      add_config_param_str("SQLCustomUserInfoByID", 1, userbyid);
+      return PR_HANDLED(cmd);
+    }
+
+    *ptr = '\0';
+    userset = ptr + 1;
+
+    add_config_param_str("SQLCustomUserInfoByID", 1, userbyid);
+
+    ptr = strchr(userset, '/');
+    if (ptr == NULL) {
+      add_config_param_str("SQLCustomUserInfoAllNames", 1, userset);
+      return PR_HANDLED(cmd);
+    }
+
+    *ptr = '\0';
+    usersetfast = ptr + 1;
+
+    add_config_param_str("SQLCustomUserInfoAllNames", 1, userset);
+    add_config_param_str("SQLCustomUserInfoAllUsers", 1, usersetfast);
     return PR_HANDLED(cmd);
   }
 
@@ -3984,16 +4293,79 @@ MODRET set_sqluserwhereclause(cmd_rec *cmd) {
 }
 
 /* usage: SQLGroupInfo table(s) groupnamefield gidfield membersfield */
+/* usage: SQLGroupInfo table(s) groupnamefield gidfield membersfield |
+ *        custom:/<sql-named-query>/<sql-named-query>/sql-named-query[/<sql-named-query[/<sql-named-query>]]
+ */
 MODRET set_sqlgroupinfo(cmd_rec *cmd) {
 
-  CHECK_ARGS(cmd, 4);
-  CHECK_CONF(cmd, CONF_ROOT | CONF_GLOBAL | CONF_VIRTUAL);
+  if (cmd->argc-1 != 1 &&
+      cmd->argc-1 != 4) {
+    CONF_ERROR(cmd, "missing parameters");
+  }
+
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL|CONF_VIRTUAL);
+
+  if (cmd->argc-1 == 1) {
+    char *groupbyname = NULL, *groupbyid = NULL, *groupmembers = NULL,
+      *groupset = NULL, *groupsetfast = NULL;
+    char *ptr = NULL;
+
+    /* If only one paramter is used, it must be of the "custom:/" form. */
+    if (strncmp("custom:/", cmd->argv[1], 8) != 0) {
+      CONF_ERROR(cmd, "badly formatted parameter");
+    }
+
+    ptr = strchr(cmd->argv[1] + 8, '/');
+    if (ptr == NULL) {
+      CONF_ERROR(cmd, "badly formatted parameter");
+    }
+
+    *ptr = '\0';
+    groupbyname = cmd->argv[1] + 8;
+    groupbyid = ptr + 1;
+
+    add_config_param_str("SQLCustomGroupInfoByName", 1, groupbyname);
+
+    ptr = strchr(groupbyid, '/');
+    if (ptr == NULL) {
+      CONF_ERROR(cmd, "badly formatted parameter");
+    }
+
+    *ptr = '\0';
+    groupmembers = ptr + 1;
+
+    add_config_param_str("SQLCustomGroupInfoByID", 1, groupbyid);
+
+    ptr = strchr(groupmembers, '/');
+    if (ptr == NULL) {
+      add_config_param_str("SQLCustomGroupInfoMembers", 1, groupmembers);
+      return PR_HANDLED(cmd);
+    }
+
+    *ptr = '\0';
+    groupset = ptr + 1;
+
+    add_config_param_str("SQLCustomGroupInfoMembers", 1, groupmembers);
+
+    ptr = strchr(groupset, '/');
+    if (ptr == NULL) {
+      add_config_param_str("SQLCustomGroupInfoAllNames", 1, groupset);
+      return PR_HANDLED(cmd);
+    }
+
+    *ptr = '\0';
+    groupsetfast = ptr + 1;
+
+    add_config_param_str("SQLCustomGroupInfoAllNames", 1, groupset);
+    add_config_param_str("SQLCustomGroupInfoAllGroups", 1, groupsetfast);
+    return PR_HANDLED(cmd);
+  }
 
   /* required to exist - not even going to check them. */
-  add_config_param_str("SQLGroupTable", 1, (void *) cmd->argv[1]);
-  add_config_param_str("SQLGroupnameField", 1, (void *) cmd->argv[2]);
-  add_config_param_str("SQLGroupGIDField", 1, (void *) cmd->argv[3]);
-  add_config_param_str("SQLGroupMembersField", 1, (void *) cmd->argv[4]);
+  add_config_param_str("SQLGroupTable", 1, cmd->argv[1]);
+  add_config_param_str("SQLGroupnameField", 1, cmd->argv[2]);
+  add_config_param_str("SQLGroupGIDField", 1, cmd->argv[3]);
+  add_config_param_str("SQLGroupMembersField", 1, cmd->argv[4]);
 
   return PR_HANDLED(cmd);
 }
@@ -4036,7 +4408,6 @@ MODRET set_sqllog(cmd_rec *cmd) {
       *namep = toupper(*namep);
     
     name = pstrcat(cmd->tmp_pool, "SQLLog_", name, NULL);
-    
     if (cmd->argc == 4 &&
         strcasecmp(cmd->argv[3], "IGNORE_ERRORS") == 0) {
       c = add_config_param_str(name, 2, cmd->argv[2], "ignore");
@@ -4285,39 +4656,18 @@ static int sql_closelog(void) {
 }
 
 int sql_log(int level, const char *fmt, ...) {
-  char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
-  time_t timestamp = time(NULL);
-  struct tm *t = NULL;
   va_list msg;
+  int res;
 
   /* sanity check */
   if (!sql_logfile)
     return 0;
 
-  t = pr_localtime(NULL, &timestamp);
-
-  /* prepend the timestamp */
-  strftime(buf, sizeof(buf), "%b %d %H:%M:%S ", t);
-  buf[sizeof(buf) - 1] = '\0';
-
-  /* prepend a small header */
-  snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-    MOD_SQL_VERSION "[%u]: ", (unsigned int) getpid());
-
-  buf[sizeof(buf) - 1] = '\0';
-
-  /* affix the message */
   va_start(msg, fmt);
-  vsnprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), fmt, msg);
+  res = pr_log_vwritefile(sql_logfd, MOD_SQL_VERSION, fmt, msg);
   va_end(msg);
 
-  buf[sizeof(buf) - 1] = '\0';
-  buf[strlen(buf)] = '\n';
-
-  if (write(sql_logfd, buf, strlen(buf)) < 0)
-    return -1;
-
-  return 0;
+  return res;
 }
 
 static int sql_openlog(void) {
@@ -4411,35 +4761,34 @@ MODRET set_sqlengine(cmd_rec *cmd) {
 }
 
 MODRET set_sqlauthtypes(cmd_rec *cmd) {
-  config_rec *c;
-  array_header *ah;
-  auth_type_entry *auth_entry;
-  auth_type_entry **auth_handle;
-  int cnt;
+  array_header *auth_list;
+  register unsigned int i;
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL|CONF_VIRTUAL);
 
   /* Need *at least* one handler. */
-  if (cmd->argc < 2)
-    CONF_ERROR(cmd, "expected at least one handler type");
-
-  ah = make_array(permanent_pool, cmd->argc - 1, sizeof(auth_type_entry *));
-
-  /* Walk through our cmd->argv. */
-  for (cnt = 1; cnt < cmd->argc; cnt++) {
-    auth_entry = get_auth_entry(cmd->argv[cnt]);
-    if (auth_entry == NULL) {
-      sql_log(DEBUG_WARN, "unknown auth handler '%s'", cmd->argv[cnt]);
-      CONF_ERROR(cmd, "unknown auth handler");
-    }
-
-    auth_handle = (auth_type_entry **) push_array(ah);
-    *auth_handle = auth_entry;
+  if (cmd->argc < 2) {
+    CONF_ERROR(cmd, "expected at least one SQLAuthType");
   }
 
-  c = add_config_param(cmd->argv[0], 1, (void *) ah);
-  c->flags |= CF_MERGEDOWN;
+  auth_list = make_array(permanent_pool, cmd->argc-1,
+    sizeof(struct sql_authtype_handler *));
 
+  /* Walk through our cmd->argv. */
+  for (i = 1; i < cmd->argc; i++) {
+    struct sql_authtype_handler *sah;
+
+    sah = sql_get_authtype(cmd->argv[i]);
+    if (sah == NULL) {
+      sql_log(DEBUG_WARN, "unknown SQLAuthType '%s'", cmd->argv[i]);
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown SQLAuthType '",
+        cmd->argv[i], "'", NULL));
+    }
+ 
+    *((struct sql_authtype_handler **) push_array(auth_list)) = sah;
+  }
+
+  (void) add_config_param(cmd->argv[0], 1, auth_list);
   return PR_HANDLED(cmd);
 }
 
@@ -4599,13 +4948,6 @@ static void sql_exit_ev(const void *event_data, void *user_data) {
   cmd_rec *cmd;
   modret_t *mr;
 
-  /* Note: most of this code hacked out of log_master(), which
-   * brings to mind the idea of reorganizing the code a little, so
-   * that this function can call a function to do this, instead of
-   * handling it itself; that function to be used by/in log_master
-   * as well.
-   */
-
   if (cmap.engine == 0)
     return;
 
@@ -4613,33 +4955,15 @@ static void sql_exit_ev(const void *event_data, void *user_data) {
   c = find_config(main_server->conf, CONF_PARAM, "SQLLog_EXIT", FALSE);
 
   while (c) {
-    char *qname = NULL, *type = NULL;
-
-    qname = c->argv[0];
-
     pr_signals_handle();
 
     /* Since we're exiting the process here (or soon, anyway), we can
      * get away with using the config_rec's pool.
      */
     cmd = _sql_make_cmd(c->pool, 1, "EXIT");
-    type = _named_query_type(cmd, qname);
 
-    if (type) {
-      if (strcasecmp(type, SQL_UPDATE_C) == 0 ||
-          strcasecmp(type, SQL_FREEFORM_C) == 0 ||
-          strcasecmp(type, SQL_INSERT_C) == 0) {
-
-        sql_log(DEBUG_FUNC, "running named query '%s' at exit", qname);
-        _process_named_query(cmd, qname);
-
-      } else {
-        sql_log(DEBUG_WARN, "named query '%s' is not an INSERT, UPDATE, or "
-          "FREEFORM query", qname);
-      }
-
-    } else
-      sql_log(DEBUG_WARN, "named query '%s' cannot be found", qname);
+    /* Ignore errors; we're exiting anyway. */
+    (void) process_sqllog(cmd, c, "exit_listener");
 
     c = find_config_next(c, c->next, CONF_PARAM, "SQLLog_EXIT", FALSE);
   }
@@ -4658,8 +4982,21 @@ static void sql_mod_unload_ev(const void *event_data, void *user_data) {
     destroy_pool(sql_pool);
     sql_pool = NULL;
     sql_backends = NULL;
+    sql_auth_list = NULL;
 
     pr_event_unregister(&sql_module, NULL, NULL);
+
+    (void) sql_unregister_authtype("Backend");
+    (void) sql_unregister_authtype("Crypt");
+    (void) sql_unregister_authtype("Empty");
+    (void) sql_unregister_authtype("Plaintext");
+
+#if defined(HAVE_OPENSSL) || defined(PR_USE_OPENSSL)
+    (void) sql_unregister_authtype("OpenSSL");
+#endif /* HAVE_OPENSSL */
+
+    close(sql_logfd);
+    sql_logfd = -1;
   }
 }
 
@@ -4684,6 +5021,17 @@ static int sql_init(void) {
 #else
   pr_event_register(&sql_module, "core.preparse", sql_preparse_ev, NULL);
 #endif /* PR_SHARED_MODULE */
+
+  /* Register our built-in auth handlers. */
+  (void) sql_register_authtype("Backend", sql_auth_backend);
+  (void) sql_register_authtype("Crypt", sql_auth_crypt);
+  (void) sql_register_authtype("Empty", sql_auth_empty);
+  (void) sql_register_authtype("Plaintext", sql_auth_plaintext);
+
+#if defined(HAVE_OPENSSL) || defined(PR_USE_OPENSSL)
+  (void) sql_register_authtype("OpenSSL", sql_auth_openssl);
+#endif /* HAVE_OPENSSL */
+
   return 0;
 }
 
@@ -4695,7 +5043,7 @@ static int sql_sess_init(void) {
   cmd_rec *cmd = NULL;
   modret_t *mr = NULL;
   sql_data_t *sd = NULL;
-  int percall = 0, res = 0;
+  int res = 0;
   char *fieldset = NULL;
   pool *tmp_pool = NULL;
 
@@ -4729,8 +5077,8 @@ static int sql_sess_init(void) {
     }
 
     return -1;
-  } 
-
+  }
+ 
   /* Get our backend info and toss it up */
   cmd = _sql_make_cmd(tmp_pool, 1, "foo");
   mr = _sql_dispatch(cmd, "sql_identify");
@@ -4781,10 +5129,11 @@ static int sql_sess_init(void) {
     FALSE);
 
   temp_ptr = get_param_ptr(main_server->conf, "SQLOptions", FALSE);
-  cmap.opts = 0UL;
-  if (temp_ptr)
-    cmap.opts = *((unsigned long *) temp_ptr);
-  
+  pr_sql_opts = 0UL;
+  if (temp_ptr) {
+    pr_sql_opts = *((unsigned long *) temp_ptr);
+  }
+ 
   temp_ptr = get_param_ptr(main_server->conf, "SQLUserTable", FALSE);
   
   /* if we have no SQLUserTable, SQLUserInfo was not used -- default all */
@@ -4798,11 +5147,11 @@ static int sql_sess_init(void) {
     cmap.homedirfield = MOD_SQL_DEF_USERHOMEDIRFIELD;
     cmap.shellfield = MOD_SQL_DEF_USERSHELLFIELD;
 
-    /* It's possible that a custom UserInfo query was configured.  Check for
-     * this.
+    /* It's possible that custom UserInfo queries were configured.  Check for
+     * them.
      */
-    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomUserInfo", FALSE);
-
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomUserInfoByName",
+      FALSE);
     if (temp_ptr) {
       config_rec *custom_c = NULL;
       char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
@@ -4812,8 +5161,64 @@ static int sql_sess_init(void) {
         sql_log(DEBUG_INFO, "error: unable to resolve custom "
           "SQLNamedQuery name '%s'", temp_ptr);
 
-      } else
+      } else {
         cmap.usercustom = temp_ptr;
+      }
+    }
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomUserInfoByID", FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.usercustombyid = temp_ptr;
+      }
+    }
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomUserInfoAllNames",
+      FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.usercustomuserset = temp_ptr;
+      }
+    }
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomUserInfoAllUsers",
+      FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.usercustomusersetfast = temp_ptr;
+      }
+    }
+
+    if (cmap.usercustomuserset &&
+        cmap.usercustomusersetfast &&
+        strcmp(cmap.usercustomuserset, cmap.usercustomusersetfast) == 0) {
+      sql_log(DEBUG_INFO, "warning: 'userset' and 'usersetfast' custom "
+        "SQLUserInfo SQLNamedQuery are the same query ('%s'), probable "
+        "misconfiguration", cmap.usercustomuserset);
     }
 
   } else {
@@ -4848,6 +5253,90 @@ static int sql_sess_init(void) {
     cmap.grpgidfield = MOD_SQL_DEF_GROUPGIDFIELD;
     cmap.grpmembersfield = MOD_SQL_DEF_GROUPMEMBERSFIELD;
 
+    /* Check for any configured custom SQLGroupInfo queries. */
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomGroupInfoByID",
+      FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.groupcustombyid = temp_ptr;
+        cmap.grpgidfield = NULL;
+      }
+    }
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomGroupInfoByName",
+      FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.groupcustombyname = temp_ptr;
+      }
+    }
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomGroupInfoMembers",
+      FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.groupcustommembers = temp_ptr;
+      }
+    }
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomGroupInfoAllNames",
+      FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.groupcustomgroupset = temp_ptr;
+      }
+    }
+
+    temp_ptr = get_param_ptr(main_server->conf, "SQLCustomGroupInfoAllGroups",
+      FALSE);
+    if (temp_ptr) {
+      config_rec *custom_c = NULL;
+      char *named_query = pstrcat(tmp_pool, "SQLNamedQuery_", temp_ptr, NULL);
+
+      custom_c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
+      if (custom_c == NULL) {
+        sql_log(DEBUG_INFO, "error: unable to resolve custom "
+          "SQLNamedQuery name '%s'", temp_ptr);
+
+      } else {
+        cmap.groupcustomgroupsetfast = temp_ptr;
+      }
+    }
+
+
   } else {
     cmap.grptable = get_param_ptr(main_server->conf, "SQLGroupTable", FALSE);
     cmap.grpfield = get_param_ptr(main_server->conf, "SQLGroupnameField",
@@ -4872,10 +5361,11 @@ static int sql_sess_init(void) {
     NULL;
 
   temp_ptr = get_param_ptr(main_server->conf, "SQLAuthTypes", FALSE);
-  cmap.authlist = temp_ptr;
+  cmap.auth_list = temp_ptr;
 
-  if (!cmap.authlist)
+  if (cmap.auth_list == NULL) {
     sql_log(DEBUG_INFO, "%s", "error: no SQLAuthTypes configured");
+  }
 
   temp_ptr = get_param_ptr(main_server->conf, "SQLMinID", FALSE);
   if (temp_ptr) {
@@ -4942,8 +5432,15 @@ static int sql_sess_init(void) {
       "warning: no SQLConnectInfo specified. mod_sql is OFF");
 
   } else {
-    if (strcasecmp(c->argv[3], "percall") == 0)
-      percall = 1;
+    pr_sql_conn_policy = SQL_CONN_POLICY_PERSESSION;
+
+    if (strcasecmp(c->argv[3], "perconn") == 0 ||
+        strcasecmp(c->argv[3], "perconnection") == 0) {
+      pr_sql_conn_policy = SQL_CONN_POLICY_PERCONN;
+
+    } else if (strcasecmp(c->argv[3], "percall") == 0) {
+      pr_sql_conn_policy = SQL_CONN_POLICY_PERCALL;
+    }
 
     cmd = _sql_make_cmd(tmp_pool, 5, "default", c->argv[1], c->argv[2],
       c->argv[0], c->argv[3]);
@@ -4952,19 +5449,18 @@ static int sql_sess_init(void) {
       return -1;
 
     SQL_FREE_CMD(cmd);
-  
-    if (!percall) {
+
+    if (pr_sql_conn_policy == SQL_CONN_POLICY_PERCONN) {
+      /* Open a database connection now, so that we have a database connection
+       * for the lifetime of the client's connection to the server.
+       */
       cmd = _sql_make_cmd(tmp_pool, 1, "default");
       mr = _sql_dispatch(cmd, "sql_open");
       if (check_response(mr) < 0)
         return -1;
 
       SQL_FREE_CMD(cmd);
-      sql_log(DEBUG_INFO, "%s", "backend successfully connected.");
-
-    } else {
-      sql_log(DEBUG_INFO, "%s",
-        "backend will not be checked until first use.");
+      sql_log(DEBUG_INFO, "%s", "backend successfully connected");
     }
 
     cmap.engine = SQL_ENGINE_FL_AUTH|SQL_ENGINE_FL_LOG;
@@ -5008,9 +5504,9 @@ static int sql_sess_init(void) {
 
   if (SQL_USERS) {
     sql_log(DEBUG_INFO, "password field     : %s", cmap.pwdfield);
-    sql_log(DEBUG_INFO, "uid field          : %s",
+    sql_log(DEBUG_INFO, "UID field          : %s",
       (cmap.uidfield ? cmap.uidfield : "NULL"));
-    sql_log(DEBUG_INFO, "gid field          : %s",
+    sql_log(DEBUG_INFO, "GID field          : %s",
       (cmap.gidfield ? cmap.gidfield : "NULL"));
     if (cmap.homedirfield)
       sql_log(DEBUG_INFO, "homedir field      : %s", cmap.homedirfield);
@@ -5023,7 +5519,7 @@ static int sql_sess_init(void) {
   if (SQL_GROUPS) {
     sql_log(DEBUG_INFO, "group table        : %s", cmap.grptable);
     sql_log(DEBUG_INFO, "groupname field    : %s", cmap.grpfield);
-    sql_log(DEBUG_INFO, "grp gid field      : %s", cmap.grpgidfield);
+    sql_log(DEBUG_INFO, "grp GID field      : %s", cmap.grpgidfield);
     sql_log(DEBUG_INFO, "grp members field  : %s", cmap.grpmembersfield);
   }
 

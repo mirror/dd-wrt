@@ -2,7 +2,7 @@
  * ProFTPD: mod_ratio -- Support upload/download ratios.
  * Portions Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2002 James Dogopoulos.
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2009 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -552,7 +552,7 @@ pre_cmd_retr (cmd_rec * cmd)
     {
       path = dir_realpath (cmd->tmp_pool, cmd->arg);
       if (path
-	  && dir_check (cmd->tmp_pool, cmd->argv[0], cmd->group, path, NULL)
+	  && dir_check (cmd->tmp_pool, cmd, cmd->group, path, NULL)
 	  && pr_fsio_stat (path, &sbuf) > -1)
 	fsize = sbuf.st_size;
 

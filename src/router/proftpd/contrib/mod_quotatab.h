@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab -- a module for managing FTP byte/file quotas via
  *                          centralized tables
  *
- * Copyright (c) 2001-2008 TJ Saunders
+ * Copyright (c) 2001-2009 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
  * ftp://pooh.urbanrage.com/pub/c/.  This module, however, has been written
  * from scratch to implement quotas in a different way.
  *
- * $Id: mod_quotatab.h,v 1.8 2008/07/17 20:51:16 castaglia Exp $
+ * $Id: mod_quotatab.h,v 1.11 2009/04/04 04:38:33 castaglia Exp $
  */
 
 #ifndef MOD_QUOTATAB_H
@@ -166,17 +166,23 @@ typedef struct table_obj {
 
   /* Table I/O routines */
   int (*tab_close)(struct table_obj *);
-  int (*tab_create)(struct table_obj *);
-  unsigned char (*tab_lookup)(struct table_obj *, const char *, quota_type_t);
-  int (*tab_read)(struct table_obj *);
+  int (*tab_create)(struct table_obj *, void *);
+  unsigned char (*tab_lookup)(struct table_obj *, void *, const char *,
+    quota_type_t);
+  int (*tab_read)(struct table_obj *, void *);
   unsigned char (*tab_verify)(struct table_obj *);
-  int (*tab_write)(struct table_obj *);
+  int (*tab_write)(struct table_obj *, void *);
 
   /* Table locking routines */
   struct flock tab_lock;
+  int tab_lockfd;
   int (*tab_rlock)(struct table_obj *);
   int (*tab_unlock)(struct table_obj *);
   int (*tab_wlock)(struct table_obj *);
+
+  /* Table locking counters */
+  unsigned int rlock_count;
+  unsigned int wlock_count;
 
 } quota_table_t;
 
@@ -184,12 +190,16 @@ typedef struct table_obj {
 #define QUOTATAB_TALLY_SRC      0x0002
 
 /* Quota objects for the current session. */
-quota_limit_t quotatab_limit;
-quota_tally_t quotatab_tally;
 quota_deltas_t quotatab_deltas;
 
 /* Function prototypes necessary for quotatab sub-modules */
-int quotatab_log(const char *, ...);
+int quotatab_log(const char *, ...)
+#ifdef __GNUC__
+       __attribute__ ((format (printf, 1, 2)));
+#else
+       ;
+#endif
+
 int quotatab_openlog(void);
 int quotatab_register_backend(const char *,
   quota_table_t *(*tab_open)(pool *, quota_tabtype_t, const char *),
@@ -203,17 +213,18 @@ int quotatab_unregister_backend(const char *, unsigned int);
  *  quota table, with duplicate name/type pairs, the duplicates will be
  *  ignored.  Returns TRUE if found, FALSE otherwise.
  */
-unsigned char quotatab_lookup(quota_tabtype_t, const char *, quota_type_t);
+unsigned char quotatab_lookup(quota_tabtype_t, void *, const char *,
+  quota_type_t);
 
 /* Reads via this function are only ever done on tally tables.  Limit tables
  * are read via the quotatab_lookup function.  Returns 0 on success,
  * -1 on failure (with errno set appropriately).
  */
-int quotatab_read(void);
+int quotatab_read(quota_tally_t *);
 
 /* Writes via this function are only ever done on tally tables.  Returns 0
  * on success, -1 on failure (with errno set appropriately).
  */
-int quotatab_write(double, double, double, int, int, int);
+int quotatab_write(quota_tally_t *, double, double, double, int, int, int);
 
 #endif /* no MOD_QUOTATAB_H */

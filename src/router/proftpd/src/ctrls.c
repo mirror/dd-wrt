@@ -24,7 +24,7 @@
 
 /* Controls API routines
  *
- * $Id: ctrls.c,v 1.21.2.1 2009/04/28 22:44:38 castaglia Exp $
+ * $Id: ctrls.c,v 1.23 2009/03/10 16:59:23 castaglia Exp $
  */
 
 #include "conf.h"
@@ -43,6 +43,8 @@
 #endif /* !HAVE_SYS_UIO_H */
 
 #ifdef PR_USE_CTRLS
+
+#include "mod_ctrls.h"
 
 typedef struct ctrls_act_obj {
   struct ctrls_act_obj *prev, *next;
@@ -71,6 +73,9 @@ static const char *trace_channel = "ctrls";
 static ctrls_action_t *action_lookup_next = NULL;
 static const char *action_lookup_action = NULL;
 static module *action_lookup_module = NULL;
+
+/* Logging */
+static int ctrls_logfd = -1;
 
 /* necessary prototypes */
 static ctrls_action_t *ctrls_action_new(void);
@@ -1500,6 +1505,404 @@ int pr_reset_ctrls(void) {
   return 0;
 }
 
+/* From include/mod_ctrls.h */
+
+/* Returns TRUE if the given cl_gid is allowed by the group ACL, FALSE
+ * otherwise. Note that the default is to deny everyone, unless an ACL has
+ * been configured.
+ */
+unsigned char pr_ctrls_check_group_acl(gid_t cl_gid,
+    const ctrls_grp_acl_t *grp_acl) {
+  register int i = 0;
+  unsigned char res = FALSE;
+
+  /* Note: the special condition of ngids of 1 and gids of NULL signals
+   * that all groups are to be treated according to the allow member.
+   */
+  if (grp_acl->gids) {
+    for (i = 0; i < grp_acl->ngids; i++) {
+      if ((grp_acl->gids)[i] == cl_gid) {
+        res = TRUE;
+      }
+    }
+
+  } else if (grp_acl->ngids == 1)
+    res = TRUE;
+
+  if (!grp_acl->allow)
+    res = !res;
+
+  return res;
+}
+
+/* Returns TRUE if the given cl_uid is allowed by the user ACL, FALSE
+ * otherwise. Note that the default is to deny everyone, unless an ACL has
+ * been configured.
+ */
+unsigned char pr_ctrls_check_user_acl(uid_t cl_uid,
+    const ctrls_usr_acl_t *usr_acl) {
+  register int i = 0;
+  unsigned char res = FALSE;
+
+  /* Note: the special condition of nuids of 1 and uids of NULL signals
+   * that all users are to be treated according to the allow member.
+   */
+  if (usr_acl->uids) {
+    for (i = 0; i < usr_acl->nuids; i++) {
+      if ((usr_acl->uids)[i] == cl_uid) {
+        res = TRUE;
+      }
+    }
+
+  } else if (usr_acl->nuids == 1)
+    res = TRUE;
+
+  if (!usr_acl->allow)
+    res = !res;
+
+  return res;
+}
+
+/* Returns TRUE for allowed, FALSE for denied. */
+unsigned char pr_ctrls_check_acl(const pr_ctrls_t *ctrl,
+    const ctrls_acttab_t *acttab, const char *action) {
+  register unsigned int i = 0;
+
+  for (i = 0; acttab[i].act_action; i++) {
+    if (strcmp(acttab[i].act_action, action) == 0) {
+
+      if (!pr_ctrls_check_user_acl(ctrl->ctrls_cl->cl_uid,
+            &(acttab[i].act_acl->acl_usrs)) &&
+          !pr_ctrls_check_group_acl(ctrl->ctrls_cl->cl_gid,
+            &(acttab[i].act_acl->acl_grps))) {
+
+        /* Access denied */
+        return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
+}
+
+void pr_ctrls_init_acl(ctrls_acl_t *acl) {
+
+  /* Sanity check */
+  if (!acl)
+    return;
+
+  memset(acl, 0, sizeof(ctrls_acl_t));
+  acl->acl_usrs.allow = acl->acl_grps.allow = TRUE;
+}
+
+static char *ctrls_argsep(char **arg) {
+  char *ret = NULL, *dst = NULL;
+  char quote_mode = 0;
+
+  if (!arg || !*arg || !**arg)
+    return NULL;
+
+  while (**arg && isspace((int) **arg))
+    (*arg)++;
+
+  if (!**arg)
+    return NULL;
+
+  ret = dst = *arg;
+
+  if (**arg == '\"') {
+    quote_mode++;
+    (*arg)++;
+  }
+
+  while (**arg && **arg != ',' &&
+      (quote_mode ? (**arg != '\"') : (!isspace((int) **arg)))) {
+
+    if (**arg == '\\' && quote_mode) {
+
+      /* escaped char */
+      if (*((*arg) + 1))
+        *dst = *(++(*arg));
+    }
+
+    *dst++ = **arg;
+    ++(*arg);
+  }
+
+  if (**arg)
+    (*arg)++;
+
+  *dst = '\0';
+  return ret;
+}
+
+char **pr_ctrls_parse_acl(pool *acl_pool, char *acl_str) {
+  char *name = NULL, *acl_str_dup = NULL, **acl_list = NULL;
+  array_header *acl_arr = NULL;
+  pool *tmp_pool = NULL;
+
+  /* Sanity checks */
+  if (!acl_pool || !acl_str)
+    return NULL;
+
+  tmp_pool = make_sub_pool(acl_pool);
+  acl_str_dup = pstrdup(tmp_pool, acl_str);
+
+  /* Allocate an array */
+  acl_arr = make_array(acl_pool, 0, sizeof(char **));
+
+  /* Add each name to the array */
+  while ((name = ctrls_argsep(&acl_str_dup)) != NULL) {
+    char *tmp = pstrdup(acl_pool, name);
+
+    /* Push the name into the ACL array */
+    *((char **) push_array(acl_arr)) = tmp;
+  }
+
+  /* Terminate the temp array with a NULL, as is proper. */
+  *((char **) push_array(acl_arr)) = NULL;
+
+  acl_list = (char **) acl_arr->elts;
+  destroy_pool(tmp_pool);
+
+  /* return the array of names */
+  return acl_list;
+}
+
+void pr_ctrls_set_group_acl(pool *grp_acl_pool, ctrls_grp_acl_t *grp_acl,
+    const char *allow, char *grouplist) {
+  char *group = NULL, **groups = NULL;
+  array_header *gid_list = NULL;
+  gid_t gid = 0;
+  pool *tmp_pool = NULL;
+
+  if (grp_acl_pool == NULL ||
+      grp_acl == NULL ||
+      allow == NULL ||
+      grouplist == NULL) {
+    return;
+  }
+
+  tmp_pool = make_sub_pool(grp_acl_pool);
+
+  if (strcmp(allow, "allow") == 0)
+    grp_acl->allow = TRUE;
+  else
+    grp_acl->allow = FALSE;
+
+  /* Parse the given expression into an array, then retrieve the GID
+   * for each given name.
+   */
+  groups = pr_ctrls_parse_acl(grp_acl_pool, grouplist);
+
+  /* Allocate an array of gid_t's */
+  gid_list = make_array(grp_acl_pool, 0, sizeof(gid_t));
+
+  for (group = *groups; group != NULL; group = *++groups) {
+
+    /* Handle a group name of "*" differently. */
+    if (strcmp("*", group) == 0) {
+      grp_acl->ngids = 1;
+      grp_acl->gids = NULL;
+      destroy_pool(tmp_pool);
+      return;
+
+    } else {
+      gid = pr_auth_name2gid(tmp_pool, group);
+      if (gid == (gid_t) -1)
+        continue;
+    }
+
+    *((gid_t *) push_array(gid_list)) = gid;
+  }
+
+  grp_acl->ngids = gid_list->nelts;
+  grp_acl->gids = (gid_t *) gid_list->elts;
+
+  destroy_pool(tmp_pool);
+}
+
+void pr_ctrls_set_user_acl(pool *usr_acl_pool, ctrls_usr_acl_t *usr_acl,
+    const char *allow, char *userlist) {
+  char *user = NULL, **users = NULL;
+  array_header *uid_list = NULL;
+  uid_t uid = 0;
+  pool *tmp_pool = NULL;
+
+  /* Sanity checks */
+  if (usr_acl_pool == NULL ||
+      usr_acl == NULL ||
+      allow == NULL ||
+      userlist == NULL) {
+    return;
+  }
+
+  tmp_pool = make_sub_pool(usr_acl_pool);
+
+  if (strcmp(allow, "allow") == 0)
+    usr_acl->allow = TRUE;
+  else
+    usr_acl->allow = FALSE;
+
+  /* Parse the given expression into an array, then retrieve the UID
+   * for each given name.
+   */
+  users = pr_ctrls_parse_acl(usr_acl_pool, userlist);
+
+  /* Allocate an array of uid_t's */
+  uid_list = make_array(usr_acl_pool, 0, sizeof(uid_t));
+
+  for (user = *users; user != NULL; user = *++users) {
+
+    /* Handle a user name of "*" differently. */
+    if (strcmp("*", user) == 0) {
+      usr_acl->nuids = 1;
+      usr_acl->uids = NULL;
+      destroy_pool(tmp_pool);
+      return;
+
+    } else {
+      uid = pr_auth_name2uid(tmp_pool, user);
+      if (uid == (uid_t) -1)
+        continue;
+    }
+
+    *((uid_t *) push_array(uid_list)) = uid;
+  }
+
+  usr_acl->nuids = uid_list->nelts;
+  usr_acl->uids = (uid_t *) uid_list->elts;
+
+  destroy_pool(tmp_pool);
+}
+
+char *pr_ctrls_set_module_acls(ctrls_acttab_t *acttab, pool *acl_pool,
+    char **actions, const char *allow, const char *type, char *list) {
+  register unsigned int i = 0;
+  unsigned char all_actions = FALSE;
+
+  /* First, sanity check the given list of actions against the actions
+   * in the given table.
+   */
+  for (i = 0; actions[i]; i++) {
+    register unsigned int j = 0;
+    unsigned char valid_action = FALSE;
+
+    if (strcmp(actions[i], "all") == 0)
+      continue;
+
+    for (j = 0; acttab[j].act_action; j++) {
+      if (strcmp(actions[i], acttab[j].act_action) == 0) {
+        valid_action = TRUE;
+        break;
+      }
+    }
+
+    if (!valid_action)
+      return actions[i];
+  }
+
+  for (i = 0; actions[i]; i++) {
+    register unsigned int j = 0;
+
+    if (!all_actions && strcmp(actions[i], "all") == 0)
+      all_actions = TRUE;
+
+    for (j = 0; acttab[j].act_action; j++) {
+      if (all_actions || strcmp(actions[i], acttab[j].act_action) == 0) {
+
+        /* Use the type parameter to determine whether the list is of users or
+         * of groups.
+         */
+        if (strcmp(type, "user") == 0) {
+          pr_ctrls_set_user_acl(acl_pool, &(acttab[j].act_acl->acl_usrs),
+            allow, list);
+
+        } else if (strcmp(type, "group") == 0) {
+          pr_ctrls_set_group_acl(acl_pool, &(acttab[j].act_acl->acl_grps),
+            allow, list);
+        }
+      }
+    }
+  }
+
+  return NULL;
+}
+
+char *pr_ctrls_unregister_module_actions(ctrls_acttab_t *acttab,
+    char **actions, module *mod) {
+  register unsigned int i = 0;
+
+  /* First, sanity check the given actions against the actions supported by
+   * this module.
+   */
+  for (i = 0; actions[i]; i++) {
+    register unsigned int j = 0;
+    unsigned char valid_action = FALSE;
+
+    for (j = 0; acttab[j].act_action; j++) {
+      if (strcmp(actions[i], acttab[j].act_action) == 0) {
+        valid_action = TRUE;
+        break;
+      }
+    }
+
+    if (!valid_action)
+      return actions[i];
+  }
+
+  /* Next, iterate through both lists again, looking for actions of the
+   * module _not_ in the given list.
+   */
+  for (i = 0; acttab[i].act_action; i++) {
+    register unsigned int j = 0;
+    unsigned char have_action = FALSE;
+
+    for (j = 0; actions[j]; j++) {
+      if (strcmp(acttab[i].act_action, actions[j]) == 0) {
+        have_action = TRUE;
+        break;
+      }
+    }
+
+    if (have_action) {
+      pr_trace_msg(trace_channel, 4, "mod_%s.c: removing '%s' control",
+        mod->name, acttab[i].act_action);
+      pr_ctrls_unregister(mod, acttab[i].act_action);
+      destroy_pool(acttab[i].act_acl->acl_pool);
+    }
+  }
+
+  return NULL;
+}
+
+int pr_ctrls_set_logfd(int fd) {
+
+  /* Close any existing log fd. */
+  if (ctrls_logfd >= 0) {
+    (void) close(ctrls_logfd);
+  }
+
+  ctrls_logfd = fd;
+  return 0;
+}
+
+int pr_ctrls_log(const char *module_version, const char *fmt, ...) {
+  va_list msg;
+  int res;
+
+  /* sanity check */
+  if (ctrls_logfd < 0)
+    return 0;
+
+  va_start(msg, fmt);
+  res = pr_log_vwritefile(ctrls_logfd, module_version, fmt, msg);
+  va_end(msg);
+
+  return res;
+}
+
+/* Initialize the Controls API. */
 void init_ctrls(void) {
   struct stat st;
   int sockfd;

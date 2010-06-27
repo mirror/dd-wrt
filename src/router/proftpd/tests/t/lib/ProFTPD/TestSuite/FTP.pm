@@ -10,8 +10,8 @@ my $conn_ex;
 
 sub new {
   my $class = shift;
-  my ($addr, $port, $use_pasv, $timeout) = @_;
-  $use_pasv = 0 unless defined($use_pasv);
+  my ($addr, $port, $use_port, $timeout) = @_;
+  $use_port = 0 unless defined($use_port);
   $timeout = 10 unless defined($timeout);
  
   my $ftp;
@@ -27,11 +27,11 @@ sub new {
       Port => $port,
   );
 
-  if ($use_pasv) {
-    $opts{Passive} = 1;
+  if ($use_port) {
+    $opts{Passive} = 0;
 
   } else {
-    $opts{Passive} = 0;
+    $opts{Passive} = 1;
   }
 
   if ($ENV{TEST_VERBOSE}) {
@@ -618,6 +618,29 @@ sub port {
   # Naughtily invade the Net::FTP internals; it makes for less confusion
   # when writing the unit tests.
   my $ftp = $self->{ftp};
+
+  if ($port) {
+    # Determine the local port from the given argument.
+
+    my $numbers = [split(',', $port)];
+    my $local_port = ($numbers->[4] * 256) + $numbers->[5];
+
+    # If the caller provided an explicit PORT argument, then we need to
+    # open the listening socket ourselves.  Net::FTP is braindead that way.
+    #
+    # The code below is copied from Net::FTP::port().
+
+    ${*$ftp}{net_ftp_listen} ||= IO::Socket::INET->new(
+      Listen => 5,
+      Proto => 'tcp',
+      Timeout => $ftp->timeout,
+      LocalAddr => $ftp->sockhost,
+      LocalPort => $local_port,
+    );
+
+    ${*$ftp}{net_ftp_intern_port} = 1;
+  }
+
   delete(${*$ftp}{net_ftp_passive});
 
   my $msg = $self->response_msg();
@@ -1313,6 +1336,32 @@ sub site {
   }
 }
 
+sub quote {
+  my $self = shift;
+  my $cmd = shift;
+  $cmd = '' unless defined($cmd);
+  my $code;
+
+  $code = $self->{ftp}->quot($cmd, @_);
+  unless ($code) {
+    croak("Raw command '$cmd' failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  if ($code == 4 || $code == 5) {
+    croak("Raw command '$cmd' failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+
+  } else {
+    return $msg;
+  }
+}
+
 sub mlsd {
   my $self = shift;
   my $path = shift;
@@ -1505,6 +1554,59 @@ sub opts {
 
 sub get_connect_exception {
   return $conn_ex;
+}
+
+sub stat {
+  my $self = shift;
+  my $path = shift;
+  $path = '' unless defined($path);
+  my $code;
+
+  $code = $self->{ftp}->quot('STAT', $path);
+  unless ($code) {
+    croak("STAT command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  if ($code == 4 || $code == 5) {
+    croak("STAT command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+
+  } else {
+    return $msg;
+  }
+}
+
+# From the FTP HOST command RFCXXXX (currently in Draft form)
+sub host {
+  my $self = shift;
+  my $host = shift;
+  $host = '' unless defined($host);
+  my $code;
+
+  $code = $self->{ftp}->quot('HOST', $host);
+  unless ($code) {
+    croak("HOST command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  if ($code == 4 || $code == 5) {
+    croak("HOST command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+
+  } else {
+    return $msg;
+  }
 }
 
 1;

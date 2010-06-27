@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Data connection management functions
- * $Id: data.c,v 1.116 2008/12/03 05:06:14 castaglia Exp $
+ * $Id: data.c,v 1.120 2009/09/02 17:58:54 castaglia Exp $
  */
 
 #include "conf.h"
@@ -337,7 +337,7 @@ static int data_active_open(char *reason, off_t size) {
   if (!reason && session.xfer.filename)
     reason = session.xfer.filename;
 
-  session.d = pr_inet_create_connection(session.pool, NULL, -1,
+  session.d = pr_inet_create_conn(session.pool, NULL, -1,
     session.c->local_addr, session.c->local_port-1, TRUE);
 
   /* Set the "stalled" timer, if any, to prevent the connection
@@ -632,7 +632,7 @@ void pr_data_close(int quiet) {
 
   session.sf_flags &= (SF_ALL^SF_PASSIVE);
   session.sf_flags &= (SF_ALL^(SF_ABORT|SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE));
-  session_set_idle();
+  pr_session_set_idle();
 
   if (!quiet)
     pr_response_add(R_226, _("Transfer complete"));
@@ -683,7 +683,7 @@ void pr_data_abort(int err, int quiet) {
 
   session.sf_flags &= (SF_ALL^SF_PASSIVE);
   session.sf_flags &= (SF_ALL^(SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE));
-  session_set_idle();
+  pr_session_set_idle();
 
   /* Aborts no longer necessary */
   signal(SIGURG, SIG_IGN);
@@ -1016,6 +1016,8 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
         buflen = session.xfer.buflen;        /* how much remains in buf */
         adjlen = 0;
 
+        pr_signals_handle();
+
         len = pr_netio_read(session.d->instrm, buf + buflen,
           session.xfer.bufsize - buflen, 1);
         if (len < 0)
@@ -1100,6 +1102,8 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
       int buflen = cl_size;
       unsigned int xferbuflen;
 
+      pr_signals_handle();
+
       if (buflen > pr_config_get_xfer_bufsz())
         buflen = pr_config_get_xfer_bufsz();
 
@@ -1142,6 +1146,13 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
 
   session.xfer.total_bytes += total;
   session.total_bytes += total;
+  if (session.xfer.direction == PR_NETIO_IO_RD) {
+    session.total_bytes_in += total;
+
+  } else {
+    session.total_bytes_out += total;
+  }
+
   return (len < 0 ? -1 : len);
 }
 
@@ -1219,6 +1230,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
 
         session.xfer.total_bytes += len;
         session.total_bytes += len;
+        session.total_bytes_out += len;
 
         return -1;
       }
@@ -1236,6 +1248,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
 
       session.xfer.total_bytes += len;
       session.total_bytes += len;
+      session.total_bytes_out += len;
       total += len;
 
       pr_signals_handle();
@@ -1327,6 +1340,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
         if (XFER_ABORTED) {
           session.xfer.total_bytes += len;
           session.total_bytes += len;
+          session.total_bytes_out += len;
 
           return -1;
         }
@@ -1334,11 +1348,12 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
         pr_signals_handle();
 
         /* If we got everything in this transaction, we're done. */
-        if (len >= count)
+        if (len >= count) {
           break;
 
-        else 
+        } else {
           count -= len;
+        }
 
 	*offset += len;
 	
@@ -1350,6 +1365,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
 	
 	session.xfer.total_bytes += len;
 	session.total_bytes += len;
+	session.total_bytes_out += len;
 	total += len;
 	
 	continue;
@@ -1376,6 +1392,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
 
   session.xfer.total_bytes += len;
   session.total_bytes += len;
+  session.total_bytes_out += len;
   total += len;
 
   return total;

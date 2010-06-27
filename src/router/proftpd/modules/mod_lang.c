@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_lang.c,v 1.23 2009/01/26 21:56:13 castaglia Exp $
+ * $Id: mod_lang.c,v 1.31 2009/10/12 23:11:54 castaglia Exp $
  */
 
 #include "conf.h"
@@ -50,6 +50,8 @@ static const char *lang_default = LANG_DEFAULT_LANG;
 static int lang_engine = TRUE;
 static pool *lang_pool = NULL;
 static array_header *lang_list = NULL;
+static pr_table_t *lang_aliases = NULL;
+static const char *lang_path = PR_LOCALE_DIR;
 
 /* Support routines
  */
@@ -123,31 +125,65 @@ static void lang_feat_remove(void) {
     pr_feat_remove(lang_feat);
 }
 
-static int lang_set_lang(pool *p, const char *lang) {
-  int category = LC_MESSAGES;
-  char *curr_lang, *codeset;
+static const char *lang_bind_domain(void) {
+  const char *res = NULL;
 
-  if (strlen(lang) == 0) {
-    category = LC_ALL;
+#ifdef HAVE_LIBINTL_H
+  pr_log_debug(DEBUG9, MOD_LANG_VERSION
+    ": binding to text domain 'proftpd' using locale path '%s'", lang_path);
+  res = bindtextdomain("proftpd", lang_path); 
+  if (res == NULL) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
+      ": unable to bind to text domain 'proftpd' using locale path '%s': %s",
+      lang_path, strerror(errno));
+    return NULL;
+
+  } else {
+    textdomain("proftpd");
+    pr_log_debug(DEBUG9, MOD_LANG_VERSION ": using locale files in '%s'", res);
+  }
+
+#else
+  pr_log_debug(DEBUG7, MOD_LANG_VERSION
+    ": unable to bind to text domain 'proftpd', lacking libintl support");
+  errno = ENOSYS;
+#endif /* !HAVE_LIBINTL_H */
+
+  return res;
+}
+
+static int lang_set_lang(pool *p, const char *lang) {
+  char *curr_lang;
+
+  if (lang_aliases != NULL) {
+    void *v;
+
+    /* Check to see if the given lang has an alias that has been determined
+     * to be acceptable.
+     */
+
+    v = pr_table_get(lang_aliases, lang, NULL);
+    if (v) {
+      pr_log_debug(DEBUG9, MOD_LANG_VERSION ": '%s' is an alias for '%s'",
+        lang, (const char *) v);
+      lang = v;
+    }
   }
 
   curr_lang = pstrdup(p, setlocale(LC_MESSAGES, NULL));
 
-  if (setlocale(category, lang) == NULL) {
+  /* XXX Do we need to set LC_COLLATE (e.g. for sorted directory listings)
+   * and/or LC_CTYPE (for iconv conversion) here as well?
+   */
+
+  if (setlocale(LC_MESSAGES, lang) == NULL) {
     if (errno == ENOENT) {
-      /* The site may have an unknown/bad LANG environment variable set.
-       * Report this, and fall back to using "C" as the locale.
-       */
-      pr_log_pri(PR_LOG_NOTICE,
-        "unknown/unsupported language '%s' for %s, switching %s from '%s' "
-        "to 'C'", lang, category == LC_MESSAGES ? "LC_MESSAGES" : "LC_ALL",
-        curr_lang, category == LC_MESSAGES ? "LC_MESSAGES" : "LC_ALL");
-      setlocale(category, "C");
+      pr_log_pri(PR_LOG_NOTICE, "unknown/unsupported language '%s', ignoring",
+        lang);
 
     } else {
-      pr_log_pri(PR_LOG_NOTICE, "unable to set %s to '%s': %s",
-        category == LC_MESSAGES ? "LC_MESSAGES" : "LC_ALL", lang,
-        strerror(errno));
+      pr_log_pri(PR_LOG_NOTICE, "unable to set LC_MESSAGES to '%s': %s",
+        lang, strerror(errno));
       return -1;
     }
 
@@ -155,44 +191,38 @@ static int lang_set_lang(pool *p, const char *lang) {
     curr_lang = setlocale(LC_MESSAGES, NULL);
     pr_log_debug(DEBUG4, MOD_LANG_VERSION ": using %s messages",
       *lang ? lang : curr_lang);
-  }
 
-  /* Preserve the POSIX/portable handling of number formatting; local
-   * formatting of decimal points, for example, can cause problems with
-   * numbers in SQL queries.
-   */
-  if (setlocale(LC_NUMERIC, "C") == NULL) {
-    pr_log_pri(PR_LOG_NOTICE, "unable to set LC_NUMERIC: %s",
-      strerror(errno));
-  }
 
-  /* Change the encoding used in the Encode API.  Unfortunately this means
-   * duplicating some of the logic from the Encode API here.
-   */
-#ifdef HAVE_NL_LANGINFO
-  codeset = nl_langinfo(CODESET);
-  if (codeset == NULL ||
-      strlen(codeset) == 0) {
-    codeset = "UTF-8";
- 
-  } else { 
- 
-    /* Workaround a stupid bug in many implementations where nl_langinfo()
-     * returns "646" to mean "US-ASCII".  The problem is that iconv_open(3)
-     * doesn't accept "646" as an acceptable encoding.
-     */
-    if (strcmp(codeset, "646") == 0) {
-      codeset = "US-ASCII";
+    /* Set LC_COLLATE for strcoll(3), for sorted directory listings. */
+    if (setlocale(LC_COLLATE, curr_lang) == NULL) {
+      pr_log_pri(PR_LOG_NOTICE, "unable to set LC_COLLATE to '%s': %s",
+        curr_lang, strerror(errno));
+    }
+
+    /* Set LC_CTYPE for conversion, case-sensitive comparisons, and regexes. */
+    if (setlocale(LC_CTYPE, curr_lang) == NULL) {
+      pr_log_pri(PR_LOG_NOTICE, "unable to set LC_CTYPE to '%s': %s",
+        curr_lang, strerror(errno));
+    }
+
+    /* Set LC_MONETARY, for handling e.g the Euro symbol. */
+    if (setlocale(LC_MONETARY, curr_lang) == NULL) {
+      pr_log_pri(PR_LOG_NOTICE, "unable to set LC_MONETARY to '%s': %s",
+        curr_lang, strerror(errno));
     }
   }
-#else
-  codeset = "UTF-8";
-#endif /* !HAVE_NL_LANGINFO */
 
-  if (category == LC_ALL) {
-    if (pr_encode_enable_encoding(codeset) < 0)
-      return -1;
-  }
+  /* In order to make gettext lookups work properly on some platforms
+   * (i.e. FreeBSD), the LANG environment variable MUST be set.  Apparently
+   * on these platforms, bindtextdomain(3) is not enough.  Sigh.
+   *
+   * This post first tipped me off to the solution for this problem:
+   *
+   *  http://fixunix.com/unix/243882-freebsd-locales.html
+   */
+
+  pr_env_unset(session.pool, "LANG");
+  pr_env_set(session.pool, "LANG", lang);
 
   return 0;
 }
@@ -210,6 +240,21 @@ static int lang_supported(pool *p, const char *lang) {
   if (!lang_list) {
     errno = EPERM;
     return -1;
+  }
+
+  if (lang_aliases != NULL) {
+    void *v;
+    
+    /* Check to see if the given lang has an alias that has been determined
+     * to be acceptable.
+     */
+
+    v = pr_table_get(lang_aliases, lang, NULL);
+    if (v) {
+      pr_log_debug(DEBUG9, MOD_LANG_VERSION ": using '%s' as alias for '%s'",
+        (const char *) v, lang);
+      lang = v;
+    }
   }
 
   lang_dup = pstrdup(p, lang);
@@ -281,7 +326,7 @@ MODRET set_langpath(cmd_rec *cmd) {
       cmd->argv[1], "' for locale files", NULL));
   }
 
-  (void) add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
+  lang_path = pstrdup(permanent_pool, cmd->argv[1]);
   return PR_HANDLED(cmd);
 }
 
@@ -322,7 +367,7 @@ MODRET lang_lang(cmd_rec *cmd) {
   if (!lang_engine)
     return PR_DECLINED(cmd);
 
-  if (!dir_check(cmd->tmp_pool, cmd->argv[0], cmd->group, session.cwd, NULL)) {
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, session.cwd, NULL)) {
     pr_log_debug(DEBUG4, MOD_LANG_VERSION ": LANG command denied by <Limit>");
     pr_response_add_err(R_500, _("Unable to handle command"));
     return PR_ERROR(cmd);
@@ -357,12 +402,6 @@ MODRET lang_lang(cmd_rec *cmd) {
         ": unable to use LangDefault '%s': %s", lang_default, strerror(errno));
       pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
         ": using LC_ALL environment variable value instead");
-
-      if (lang_set_lang(cmd->tmp_pool, "") < 0) {
-        pr_log_pri(PR_LOG_WARNING, MOD_LANG_VERSION
-          ": unable to use LC_ALL value for locale: %s", strerror(errno));
-        end_login(1);
-      }
     }
 
     pr_response_add(R_200, _("Using default language %s"), lang_default);
@@ -529,7 +568,6 @@ MODRET lang_utf8(cmd_rec *cmd) {
 static void lang_postparse_ev(const void *event_data, void *user_data) {
   pool *tmp_pool;
   config_rec *c;
-  const char *lang_path = PR_LOCALE_DIR;
   DIR *dirh;
   server_rec *s;
 #ifdef HAVE_LIBINTL_H
@@ -545,50 +583,11 @@ static void lang_postparse_ev(const void *event_data, void *user_data) {
       return;
   }
 
-  /* ANSI C says that every process starts off in the 'C' locale, regardless
-   * of any environment variable settings (e.g. LANG).  Thus to honor the
-   * LANG et al environment variables, we need to explicitly call
-   * setlocale(3) with the empty string.
-   */
-  if (lang_set_lang(lang_pool, "") < 0) {
-    pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
-      ": error setting locale based on LANG and other environment "
-      "variables: %s", strerror(errno));
-  }
-
   /* Scan the LangPath for the .mo files to read in. */
 
-  c = find_config(main_server->conf, CONF_PARAM, "LangPath", FALSE);
-  if (c) {
-    lang_path = c->argv[0];
-  }
-
-#ifdef HAVE_LIBINTL_H
-  pr_log_debug(DEBUG4, MOD_LANG_VERSION
-    ": binding to text domain 'proftpd' using locale path '%s'", lang_path);
-  locale_path = bindtextdomain("proftpd", lang_path); 
-  if (locale_path == NULL) {
-    pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
-      ": unable to bind to text domain 'proftpd' using locale path '%s': %s",
-      lang_path, strerror(errno));
+  locale_path = lang_bind_domain();
+  if (locale_path == NULL)
     return;
-
-  } else {
-    pr_log_debug(DEBUG4, MOD_LANG_VERSION ": using locale files in '%s'",
-      locale_path);
-
-    /* By default, use UTF8 for the charset for gettext() messages. */
-    if (bind_textdomain_codeset("proftpd", "UTF8") == NULL) {
-      pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
-        ": error setting client charset 'UTF8' for localised messages: %s",
-        strerror(errno));
-    }
-  }
-
-#else
-  pr_log_debug(DEBUG2, MOD_LANG_VERSION
-    ": unable to bind to text domain 'proftpd', lacking libintl support");
-#endif /* !HAVE_LIBINTL_H */
 
   /* Scan locale_path using readdir(), to get the list of available
    * translations/langs.  Make sure to check for presence of 'proftpd.mo'
@@ -606,11 +605,13 @@ static void lang_postparse_ev(const void *event_data, void *user_data) {
   if (dirh != NULL) {
     register unsigned int i;
     struct dirent *dent;
-    char *langs_str = "", **langs = NULL;
+    char *curr_locale, *langs_str = "", **langs = NULL;
 
     if (!lang_list) {
       lang_list = make_array(lang_pool, 3, sizeof(char *));
     }
+
+    curr_locale = pstrdup(tmp_pool, setlocale(LC_MESSAGES, NULL));
 
     while ((dent = readdir(dirh)) != NULL) {
       char *mo;
@@ -618,25 +619,70 @@ static void lang_postparse_ev(const void *event_data, void *user_data) {
 
       pr_signals_handle();
 
+      if (strcmp(dent->d_name, ".") == 0 ||
+          strcmp(dent->d_name, "..") == 0) {
+        continue;
+      }
+
       mo = pdircat(tmp_pool, locale_path, dent->d_name, "LC_MESSAGES",
         "proftpd.mo", NULL);
 
       if (stat(mo, &st) == 0) {
-        char *curr_locale;
+        register unsigned int j;
+        char *locale_name;
 
         /* Check that dent->d_name is a valid language name according to
          * setlocale(3) before adding it to the list.
+         *
+         * Note that proftpd's .po files do not include the optional codeset
+         * modifier in the file name, i.e.:
+         *
+         *  lang[_territory[.codeset[@modifier]]]
+         *
+         * Thus if setlocale() returns ENOENT, we will automatically try
+         * appending a ".UTF-8" to see if setlocale() accepts that.
          */
-        curr_locale = pstrdup(tmp_pool, setlocale(LC_MESSAGES, NULL));
 
-        if (setlocale(LC_MESSAGES, dent->d_name) != NULL) {
-          *((char **) push_array(lang_list)) = pstrdup(lang_pool, dent->d_name);
+        locale_name = dent->d_name;
 
-        } else {
+        for (j = 0; j < 2; j++) {
+          if (setlocale(LC_MESSAGES, locale_name) != NULL) {
+            *((char **) push_array(lang_list)) = pstrdup(lang_pool,
+              locale_name);
+
+            /* If this is not the first setlocale() attempt, then we have
+             * automatically appending ".UTF-8" (or ".utf8") to the file name.
+             * In which case we want to allow the non-".UTF-8"/non-".utf8"
+             * locale name as an acceptable alias.
+             */
+            if (j > 0) {
+              if (lang_aliases == NULL) {
+                lang_aliases = pr_table_alloc(lang_pool, 0);
+              }
+
+              pr_table_add(lang_aliases, pstrdup(lang_pool, dent->d_name),
+                pstrdup(lang_pool, locale_name), 0);
+
+              /* Make sure the original name up in our "supported languages"
+               * list as well.
+               */
+              *((char **) push_array(lang_list)) = pstrdup(lang_pool,
+                dent->d_name);
+            }
+
+            break;
+          }
+
           if (errno == ENOENT) {
-            pr_log_debug(DEBUG5, MOD_LANG_VERSION
-              ": skipping possible language '%s': not supported by "
-              "setlocale(3); see `locale -a'", dent->d_name);
+            if (j == 0) {
+              locale_name = pstrcat(tmp_pool, dent->d_name, ".UTF-8", NULL);
+              continue;
+
+            } else {
+              pr_log_debug(DEBUG5, MOD_LANG_VERSION
+                ": skipping possible language '%s': not supported by "
+                "setlocale(3); see `locale -a'", dent->d_name);
+            }
 
           } else {
             pr_log_debug(DEBUG5, MOD_LANG_VERSION
@@ -644,11 +690,11 @@ static void lang_postparse_ev(const void *event_data, void *user_data) {
               strerror(errno));
           }
         }
-
-        /* Restore the current locale. */
-        setlocale(LC_MESSAGES, curr_locale);
       }
     }
+
+    /* Restore the current locale. */
+    setlocale(LC_MESSAGES, curr_locale);
 
     closedir(dirh);
 
@@ -695,6 +741,7 @@ static void lang_postparse_ev(const void *event_data, void *user_data) {
 static void lang_restart_ev(const void *event_data, void *user_data) {
   destroy_pool(lang_pool);
   lang_list = NULL;
+  lang_aliases = NULL;
 
   lang_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(lang_pool, MOD_LANG_VERSION);
@@ -723,17 +770,6 @@ static int lang_sess_init(void) {
   if (!lang_engine)
     return 0;
 
-  /* ANSI C says that every process starts off in the 'C' locale, regardless
-   * of any environment variable settings (e.g. LANG).  Thus to honor the
-   * LANG et al environment variables, we need to explicitly call
-   * setlocale(3) appropriately.
-   */
-  if (lang_set_lang(lang_pool, "") < 0) {
-    pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
-      ": error setting locale based on LANG and other environment "
-      "variables: %s", strerror(errno));
-  }
-
   c = find_config(main_server->conf, CONF_PARAM, "LangDefault", FALSE);
   if (c) {
     char *lang;
@@ -743,31 +779,15 @@ static int lang_sess_init(void) {
     if (lang_set_lang(lang_pool, lang) < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
         ": unable to use LangDefault '%s': %s", lang, strerror(errno));
-      pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
-        ": using LC_ALL environment variable value instead");
-
-      if (lang_set_lang(lang_pool, "") < 0) {
-        pr_log_pri(PR_LOG_WARNING, MOD_LANG_VERSION
-          ": unable to use LC_ALL value for locale: %s", strerror(errno));
-
-        errno = EPERM;
-        return -1;
-      }
     }
 
+    pr_log_debug(DEBUG9, MOD_LANG_VERSION ": using LangDefault '%s'", lang);
     lang_curr = lang_default = lang;
 
   } else {
     /* No explicit default language configured; rely on the environment
-     * variables.
+     * variables (which will already have been picked up).
      */
-    if (lang_set_lang(lang_pool, "") < 0) {
-      pr_log_pri(PR_LOG_WARNING, MOD_LANG_VERSION
-        ": unable to use LC_ALL value for locale: %s", strerror(errno));
-
-      errno = EPERM;
-      return -1;
-    }
 
     lang_curr = pstrdup(lang_pool, setlocale(LC_MESSAGES, NULL));
     if (strcasecmp(lang_curr, "C") == 0) {

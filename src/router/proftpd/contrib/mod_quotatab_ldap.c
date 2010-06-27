@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_ldap -- a mod_quotatab sub-module for obtaining
  *                               quota information from an LDAP directory.
  *
- * Copyright (c) 2002 TJ Saunders
+ * Copyright (c) 2002-2009 TJ Saunders
  * Copyright (c) 2002-3 John Morrissey
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,14 +35,15 @@ static int ldaptab_close(quota_table_t *ldaptab) {
   return 0;
 }
 
-static unsigned char ldaptab_lookup(quota_table_t *ldaptab, const char *name,
-    quota_type_t quota_type) {
+static unsigned char ldaptab_lookup(quota_table_t *ldaptab, void *ptr,
+    const char *name, quota_type_t quota_type) {
   char **values = NULL;
   array_header *ldap_data = NULL;
   pool *tmp_pool = NULL;
   cmdtable *ldap_cmdtab = NULL;
   cmd_rec *ldap_cmd = NULL;
   modret_t *ldap_res = NULL;
+  quota_limit_t *limit = ptr;
 
   if (quota_type != USER_QUOTA) {
     quotatab_log("error: mod_quotatab_ldap only supports user quotas");
@@ -86,25 +87,25 @@ static unsigned char ldaptab_lookup(quota_table_t *ldaptab, const char *name,
    *  files_{in,out,xfer}_avail
    */
 
-  memmove(quotatab_limit.name, values[0], strlen(values[0]) + 1);
-  quotatab_limit.quota_type = USER_QUOTA;
+  memmove(limit->name, values[0], strlen(values[0]) + 1);
+  limit->quota_type = USER_QUOTA;
 
   if (!strcasecmp(values[1], "false"))
-    quotatab_limit.quota_per_session = FALSE;
+    limit->quota_per_session = FALSE;
   else if (!strcasecmp(values[1], "true"))
-    quotatab_limit.quota_per_session = TRUE;
+    limit->quota_per_session = TRUE;
 
   if (!strcasecmp(values[2], "soft"))
-    quotatab_limit.quota_limit_type = SOFT_LIMIT;
+    limit->quota_limit_type = SOFT_LIMIT;
   else if (!strcasecmp(values[2], "hard"))
-    quotatab_limit.quota_limit_type = HARD_LIMIT;
+    limit->quota_limit_type = HARD_LIMIT;
 
-  quotatab_limit.bytes_in_avail   = atof(values[3]);
-  quotatab_limit.bytes_out_avail  = atof(values[4]);
-  quotatab_limit.bytes_xfer_avail = atof(values[5]);
-  quotatab_limit.files_in_avail   = atoi(values[6]);
-  quotatab_limit.files_out_avail  = atoi(values[7]);
-  quotatab_limit.files_xfer_avail = atoi(values[8]);
+  limit->bytes_in_avail   = atof(values[3]);
+  limit->bytes_out_avail  = atof(values[4]);
+  limit->bytes_xfer_avail = atof(values[5]);
+  limit->files_in_avail   = atoi(values[6]);
+  limit->files_out_avail  = atoi(values[7]);
+  limit->files_xfer_avail = atoi(values[8]);
 
   return TRUE;
 }
