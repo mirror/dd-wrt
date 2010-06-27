@@ -422,6 +422,53 @@ static int r_mkdir(const char *part)
 	return(0);
 }
 
+#ifdef HAVE_SYS_RESOURCE_H
+static struct rlimit core_limits;
+#endif
+
+static void fr_set_dumpable(void)
+{
+	/*
+	 *	If configured, turn core dumps off.
+	 */
+	if (!allow_core_dumps) {
+#ifdef HAVE_SYS_RESOURCE_H
+		struct rlimit no_core;
+
+
+		no_core.rlim_cur = 0;
+		no_core.rlim_max = 0;
+		
+		if (setrlimit(RLIMIT_CORE, &no_core) < 0) {
+			radlog(L_ERR, "Failed disabling core dumps: %s",
+			       strerror(errno));
+		}
+#endif
+		return;
+	}
+
+	/*
+	 *	Set or re-set the dumpable flag.
+	 */
+#ifdef HAVE_SYS_PRCTL_H
+#ifdef PR_SET_DUMPABLE
+	if (prctl(PR_SET_DUMPABLE, 1) < 0) {
+		radlog(L_ERR,"Cannot re-enable core dumps: prctl(PR_SET_DUMPABLE) failed: '%s'",
+		       strerror(errno));
+	}
+#endif
+#endif
+
+	/*
+	 *	Reset the core dump limits to their original value.
+	 */
+#ifdef HAVE_SYS_RESOURCE_H
+	if (setrlimit(RLIMIT_CORE, &core_limits) < 0) {
+		radlog(L_ERR, "Cannot update core dump limit: %s",
+		       strerror(errno));
+	}
+#endif
+}
 
 #ifdef HAVE_SETUID
 static int doing_setuid = FALSE;
@@ -462,6 +509,8 @@ void fr_suid_down(void)
 			progname);
 		_exit(1);
 	}
+
+	fr_set_dumpable();
 }
 
 void fr_suid_down_permanent(void)
@@ -478,6 +527,8 @@ void fr_suid_down_permanent(void)
 		radlog(L_ERR, "Switched to unknown uid");
 		_exit(1);
 	}
+
+	fr_set_dumpable();
 }
 #else
 /*
@@ -495,9 +546,12 @@ void fr_suid_down(void)
 			progname, uid_name, strerror(errno));
 		_exit(1);
 	}
+
+	fr_set_dumpable();
 }
 void fr_suid_down_permanent(void)
 {
+	fr_set_dumpable();
 }
 #endif /* HAVE_SETRESUID && HAVE_GETRESUID */
 #else  /* HAVE_SETUID */
@@ -506,9 +560,11 @@ void fr_suid_up(void)
 }
 void fr_suid_down(void)
 {
+	fr_set_dumpable();
 }
 void fr_suid_down_permanent(void)
 {
+	fr_set_dumpable();
 }
 #endif /* HAVE_SETUID */
  
@@ -522,7 +578,15 @@ void fr_suid_down_permanent(void)
 static int switch_users(CONF_SECTION *cs)
 {
 #ifdef HAVE_SYS_RESOURCE_H
-	struct rlimit core_limits;
+	/*
+	 *	Get the current maximum for core files.  Do this
+	 *	before anything else so as to ensure it's properly
+	 *	initialized.
+	 */
+	if (getrlimit(RLIMIT_CORE, &core_limits) < 0) {
+		radlog(L_ERR, "Failed to get current core limit:  %s", strerror(errno));
+		return 0;
+	}
 #endif
 
 	/*
@@ -606,7 +670,6 @@ static int switch_users(CONF_SECTION *cs)
 		 *	things needed inside of the chroot are the
 		 *	logging directories.
 		 */
-		radlog(L_INFO, "performing chroot to %s\n", chroot_dir);
 	}
 
 #ifdef HAVE_GRP_H
@@ -622,23 +685,24 @@ static int switch_users(CONF_SECTION *cs)
 	/*
 	 *	Just before losing root permissions, ensure that the
 	 *	log files have the correct owner && group.
+	 *
+	 *	We have to do this because the log file MAY have been
+	 *	specified on the command-line.
 	 */
 	if (uid_name || gid_name) {
 		if ((mainconfig.radlog_dest == RADLOG_FILES) &&
-		    (mainconfig.log_file != NULL)) {
-			int fd = open(mainconfig.log_file,
-				      O_WRONLY | O_APPEND | O_CREAT, 0640);
-			if (fd < 0) {
-				fprintf(stderr, "%s: Cannot write to log file %s: %s\n",
-					progname, mainconfig.log_file, strerror(errno));
+		    (mainconfig.radlog_fd < 0)) {
+			mainconfig.radlog_fd = open(mainconfig.log_file,
+						    O_WRONLY | O_APPEND | O_CREAT, 0640);
+			if (mainconfig.radlog_fd < 0) {
+				fprintf(stderr, "radiusd: Failed to open log file %s: %s\n", mainconfig.log_file, strerror(errno));
 				return 0;
 			}
-			close(fd);
 		
 			if (chown(mainconfig.log_file, server_uid, server_gid) < 0) {
-			  fprintf(stderr, "%s: Cannot change ownership of log file %s: %s\n", 
-				  progname, mainconfig.log_file, strerror(errno));
-			  return 0;
+				fprintf(stderr, "%s: Cannot change ownership of log file %s: %s\n", 
+					progname, mainconfig.log_file, strerror(errno));
+				return 0;
 			}
 		}
 	}		
@@ -647,82 +711,18 @@ static int switch_users(CONF_SECTION *cs)
 		doing_setuid = TRUE;
 
 		fr_suid_down();
-
-		/*
-		 *	Now core dumps are disabled on most secure systems.
-		 */
-	}
-#endif
-
-#ifdef HAVE_SYS_RESOURCE_H
-	/*  Get the current maximum for core files.  */
-	if (getrlimit(RLIMIT_CORE, &core_limits) < 0) {
-		radlog(L_ERR, "Failed to get current core limit:  %s", strerror(errno));
-		return 0;
 	}
 #endif
 
 	/*
-	 *	Core dumps are allowed if we're in debug mode, OR
-	 *	we've allowed them, OR we did a setuid (which turns
-	 *	core dumps off).
-	 *
-	 *	Otherwise, disable core dumps for security.
-	 *	
+	 *	This also clears the dumpable flag if core dumps
+	 *	aren't allowed.
 	 */
-	if (!(debug_flag || allow_core_dumps || doing_setuid)) {
-#ifdef HAVE_SYS_RESOURCE_H
-		struct rlimit no_core;
+	fr_set_dumpable();
 
-		no_core.rlim_cur = 0;
-		no_core.rlim_max = 0;
-
-		if (setrlimit(RLIMIT_CORE, &no_core) < 0) {
-			radlog(L_ERR, "Failed disabling core dumps: %s",
-			       strerror(errno));
-			return 0;
-		}
-#endif
-
-		/*
-		 *	Otherwise, re-enable core dumps if we're
-		 *	running as a daemon, AND core dumps are
-		 *	allowed, AND we changed UID's.
-		 */
-	} else if ((debug_flag == 0) && allow_core_dumps && doing_setuid) {
-		/*
-		 *	Set the dumpable flag.
-		 */
-#ifdef HAVE_SYS_PRCTL_H
-#ifdef PR_SET_DUMPABLE
-		if (prctl(PR_SET_DUMPABLE, 1) < 0) {
-			radlog(L_ERR,"Cannot enable core dumps: prctl(PR_SET_DUMPABLE) failed: '%s'",
-			       strerror(errno));
-		}
-#endif
-#endif
-
-		/*
-		 *	Reset the core dump limits again, just to
-		 *	double check that they haven't changed.
-		 */
-#ifdef HAVE_SYS_RESOURCE_H
-		if (setrlimit(RLIMIT_CORE, &core_limits) < 0) {
-			radlog(L_ERR, "Cannot update core dump limit: %s",
-					strerror(errno));
-			return 0;
-		}
-#endif
-
+	if (allow_core_dumps) {
 		radlog(L_INFO, "Core dumps are enabled.");
 	}
-	/*
-	 *	Else we're debugging (so core dumps are enabled)
-	 *	OR we're not debugging, AND "allow_core_dumps == FALSE",
-	 *	OR we're not debugging, AND core dumps are allowed,
-	 *	   BUT we didn't call setuid, so we haven't changed the
-	 *	   core dump capabilities inherited from the parent shell.
-	 */
 
 	return 1;
 }
@@ -811,6 +811,19 @@ int read_mainconfig(int reload)
 				cf_section_free(&cs);
 				return -1;
 			}
+
+			/*
+			 *	Call openlog only once, when the
+			 *	program starts.
+			 */
+			openlog(progname, LOG_PID, mainconfig.syslog_facility);
+
+		} else if (mainconfig.radlog_dest == RADLOG_FILES) {
+			if (!mainconfig.log_file) {
+				fprintf(stderr, "radiusd: Error: Specified \"files\" as a log destination, but no log filename was given!\n");
+				cf_section_free(&cs);
+				return -1;
+			}
 		}
 	}
 
@@ -820,6 +833,22 @@ int read_mainconfig(int reload)
 	 */
 	if (!switch_users(cs)) exit(1);
 #endif
+
+	/*
+	 *	Open the log file AFTER switching uid / gid.  If we
+	 *	did switch uid/gid, then the code in switch_users()
+	 *	took care of setting the file permissions correctly.
+	 */
+	if ((mainconfig.radlog_dest == RADLOG_FILES) &&
+	    (mainconfig.radlog_fd < 0)) {
+		mainconfig.radlog_fd = open(mainconfig.log_file,
+					    O_WRONLY | O_APPEND | O_CREAT, 0640);
+		if (mainconfig.radlog_fd < 0) {
+			fprintf(stderr, "radiusd: Failed to open log file %s: %s\n", mainconfig.log_file, strerror(errno));
+			cf_section_free(&cs);
+			return -1;
+		}
+	}
 
 	/* Initialize the dictionary */
 	cp = cf_pair_find(cs, "dictionary");
@@ -946,6 +975,8 @@ void hup_mainconfig(void)
 	CONF_SECTION *cs;
 	char buffer[1024];
 
+	radlog(L_INFO, "HUP - Re-reading configuration files");
+
 	/* Read the configuration file */
 	snprintf(buffer, sizeof(buffer), "%.200s/%.50s.conf",
 		 radius_dir, mainconfig.name);
@@ -970,6 +1001,35 @@ void hup_mainconfig(void)
 	cc->cs = cs;
 	cc->next = cs_cache;
 	cs_cache = cc;
+
+	/*
+	 *	Re-open the log file.  If we can't, then keep logging
+	 *	to the old log file.
+	 *
+	 *	The "open log file" code is here rather than in log.c,
+	 *	because it makes that function MUCH simpler.
+	 */
+	if (mainconfig.radlog_dest == RADLOG_FILES) {
+		int fd, old_fd;
+		
+		fd = open(mainconfig.log_file,
+			  O_WRONLY | O_APPEND | O_CREAT, 0640);
+		if (fd >= 0) {
+			/*
+			 *	Atomic swap. We'd like to keep the old
+			 *	FD around so that callers don't
+			 *	suddenly find the FD closed, and the
+			 *	writes go nowhere.  But that's hard to
+			 *	do.  So... we have the case where a
+			 *	log message *might* be lost on HUP.
+			 */
+			old_fd = mainconfig.radlog_fd;
+			mainconfig.radlog_fd = fd;
+			close(old_fd);
+		}
+	}
+
+	radlog(L_INFO, "HUP - loading modules");
 
 	/*
 	 *	Prefer the new module configuration.

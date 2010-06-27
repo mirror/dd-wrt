@@ -218,15 +218,34 @@ static int client_sane(RADCLIENT *client)
 			       sizeof(client->ipaddr.ipaddr.ip6addr));
 
 		} else if (client->prefix < 128) {
-			int i;
 			uint32_t mask, *addr;
 
 			addr = (uint32_t *) &client->ipaddr.ipaddr.ip6addr;
 
-			for (i = client->prefix; i < 128; i += 32) {
-				mask = ~0;
-				mask <<= ((128 - i) & 0x1f);
-				addr[i / 32] &= mask;
+			if ((client->prefix & 0x1f) == 0) {
+				mask = 0;
+			} else {
+				mask = ~ ((uint32_t) 0);
+				mask <<= (32 - (client->prefix & 0x1f));
+				mask = htonl(mask);
+			}
+
+			switch (client->prefix >> 5) {
+			case 0:
+				addr[0] &= mask;
+				mask = 0;
+				/* FALL-THROUGH */
+			case 1:
+				addr[1] &= mask;
+				mask = 0;
+				/* FALL-THROUGH */
+			case 2:
+				addr[2] &= mask;
+				mask = 0;
+				/* FALL-THROUGH */
+			case 3:
+				addr[3] &= mask;
+			  break;
 			}
 		}
 		break;
