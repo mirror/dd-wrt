@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project
+ * Copyright (c) 2001-2009 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 /* ProFTPD virtual/modular filesystem support.
  *
- * $Id: fsio.h,v 1.21 2008/10/31 17:38:55 castaglia Exp $
+ * $Id: fsio.h,v 1.24 2009/11/05 17:46:54 castaglia Exp $
  */
 
 #ifndef PR_FSIO_H
@@ -187,6 +187,9 @@ struct fh_rec {
 
   /* For buffer I/O on this file, should anything choose to use it. */
   pr_buffer_t *fh_buf;
+
+  /* Hint of the optimal buffer size for IO on this file. */
+  size_t fh_iosz;
 };
 
 /* Macros for that code that needs to get into the internals of pr_fs_t.
@@ -280,6 +283,7 @@ off_t pr_fsio_lseek(pr_fh_t *, off_t, int);
 char *pr_fsio_getline(char *, int, pr_fh_t *, unsigned int *);
 char *pr_fsio_gets(char *, size_t, pr_fh_t *);
 int pr_fsio_puts(const char *, pr_fh_t *);
+int pr_fsio_set_block(pr_fh_t *);
 
 pr_fs_t *pr_register_fs(pool *, const char *, const char *);
 pr_fs_t *pr_create_fs(pool *, const char *);
@@ -319,6 +323,12 @@ void pr_fs_clean_path(const char *, char *, size_t);
 int pr_fs_glob(const char *, int, int (*errfunc)(const char *, int), glob_t *);
 void pr_fs_globfree(glob_t *);
 void pr_resolve_fs_map(void);
+
+/* The main three fds (stdin, stdout, stderr) need to be protected, reserved
+ * for use.  This function uses dup(2) to open new fds on the given fd
+ * until the new fd is not one of the big three.
+ */
+int pr_fs_get_usable_fd(int);
 
 #if defined(HAVE_STATFS) || defined(HAVE_SYS_STATVFS_H) || \
   defined(HAVE_SYS_VFS_H)

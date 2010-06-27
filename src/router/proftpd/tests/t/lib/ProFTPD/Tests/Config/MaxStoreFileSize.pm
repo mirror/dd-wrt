@@ -66,7 +66,8 @@ sub maxstorefilesize_ok {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -187,7 +188,8 @@ sub maxstorefilesize_exceeded {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -275,8 +277,8 @@ sub maxstorefilesize_exceeded {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "Transfer aborted. Disc quota exceeded";
-      $self->assert($expected eq $resp_msg,
+      $expected = 'Transfer aborted. (Disc|Disk) quota exceeded';
+      $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
 

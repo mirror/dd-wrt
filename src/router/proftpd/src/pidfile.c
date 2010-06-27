@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2007 The ProFTPD Project team
+ * Copyright (c) 2007-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 /*
  * Pidfile management
- * $Id: pidfile.c,v 1.3 2007/01/13 04:16:21 castaglia Exp $
+ * $Id: pidfile.c,v 1.4 2009/08/23 23:58:56 castaglia Exp $
  */
 
 #include "conf.h"
@@ -34,25 +34,29 @@ static const char *pidfile_path = PR_PID_FILE_PATH;
 
 void pr_pidfile_write(void) {
   FILE *fh = NULL;
+  const char *path = NULL;
 
-  pidfile_path = get_param_ptr(main_server->conf, "PidFile", FALSE);
-  if (!pidfile_path || !*pidfile_path)
-    pidfile_path = PR_PID_FILE_PATH;
+  path = get_param_ptr(main_server->conf, "PidFile", FALSE);
+  if (path != NULL &&
+      *path) {
+    pidfile_path = pstrdup(permanent_pool, path);
+
+  } else {
+    path = pidfile_path;
+  }
 
   PRIVS_ROOT
-  fh = fopen(pidfile_path, "w");
+  fh = fopen(path, "w");
   PRIVS_RELINQUISH
 
   if (fh == NULL) {
-    fprintf(stderr, "error opening PidFile '%s': %s\n", pidfile_path,
-      strerror(errno));
+    fprintf(stderr, "error opening PidFile '%s': %s\n", path, strerror(errno));
     exit(1);
   }
 
   fprintf(fh, "%lu\n", (unsigned long) getpid());
   if (fclose(fh) < 0) {
-    fprintf(stderr, "error writing PidFile '%s': %s\n", pidfile_path,
-      strerror(errno));
+    fprintf(stderr, "error writing PidFile '%s': %s\n", path, strerror(errno));
   }
 }
 

@@ -1,4 +1,4 @@
-<!-- $Id: Timestamps.html,v 1.4 2007/06/28 17:41:29 castaglia Exp $ -->
+<!-- $Id: Timestamps.html,v 1.6 2009/11/17 17:36:31 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Timestamps.html,v $ -->
 
 <html>
@@ -21,7 +21,9 @@ not exhibit the same problem.  So is <code>proftpd</code> having issues
 with timestamps?
 
 <p>
-Depending on the logs at which you are looking, the timestamps will be correct
+If the timestamps in question are those displayed in directory listings, then
+you need to check your <a href="http://www.proftpd.org/docs/directives/linked/config_ref_TimesGMT.html"><code>TimesGMT</code></a> configuration.  Otherwise,
+depending on the logs at which you are looking, the timestamps will be correct
 <i>until</i> the user logs in.  After that, the timestamps are wrong.  This
 is one clue.  The other clue is that these wrong timestamps go away when
 the <code>DefaultRoot</code> directive is removed from the
@@ -131,17 +133,21 @@ retrieving the modification time, in GMT.  Period.
 
 <p>
 If you want to set the modification time, you can use the
-<code>mod_site_misc</code> module's <a href="../contrib/mod_site_misc.html#SITE_UTIME"><code>SITE UTIME</code></a> command.
+<code>MFMT</code> command supported by the <code>mod_facts</code> module,
+or the <code>mod_site_misc</code> module's
+<a href="../contrib/mod_site_misc.html#SITE_UTIME"><code>SITE UTIME</code></a>
+command.
 
 <p>
-<font color=red>Question</font>: I thought that the <code>TimesGMT</code> directive was causing this?<br>
+<font color=red>Question</font>: I thought that the <code>TimesGMT</code> directive was affected the timestamps that proftpd uses?<br>
 <font color=blue>Answer</font>: No.  The <a href="http://www.proftpd.org/docs/directives/linked/config_ref_TimesGMT.html"><code>TimesGMT</code></a> directive
-only affects the timestamps as displayed to FTP clients in directory listings;
-it does <b>not</b> affect the timestamps used in log files.
+only affects the timestamps as displayed to FTP clients in
+<i>directory listings</i>; it does <b>not</b> affect the timestamps used in
+log files.
 
 <p>
 <hr>
-<i>$Date: 2007/06/28 17:41:29 $</i><br>
+<i>$Date: 2009/11/17 17:36:31 $</i><br>
 
 </body>
 </html>

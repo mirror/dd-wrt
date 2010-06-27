@@ -1,4 +1,4 @@
-# $Id: proftpd.spec,v 1.59.2.3 2009/12/10 18:33:44 castaglia Exp $
+# $Id: proftpd.spec,v 1.73 2010/02/24 17:54:53 castaglia Exp $
 
 # You can specify additional modules on the RPM build line by specifying
 # flags like:
@@ -8,6 +8,7 @@
 # The following modules/support can be added in this manner:
 #
 #   mod_tls
+#   mod_sftp
 #   mod_radius
 #   mod_ldap
 #   mod_wrap
@@ -42,16 +43,28 @@
 #
 # rpmbuild -ba --with ctrls --with mod_facl --with mod_tls --with nls \
 #	--with ipv6 --with dso proftpd.spec
+#
+# If the /home directory is a network mount (e.g. NFS) which squashes
+# root privileges, then rpm will fail at the install step.  To avoid this,
+# use:
+#
+#  rpmbuild --define 'nohome 1' ...
+%{!?nohome:%define nohome 0}
 
-%define proftpd_version 1.3.2c
+%define proftpd_version 1.3.3
 %define usecvsversion             0%{?_with_cvs:1}
 %define proftpd_cvs_version_main  1.2
 %define proftpd_cvs_version_date  20070929
 
-%define static_modules	%{?_with_mod_facl:mod_facl}
+# define static_modules only if mod_facl has been requested
+%if 0%{?_with_mod_facl:1}
+%define static_modules	mod_facl
+%else
+%undefine static_modules
+%endif
 
 # put mod_ifsession at the end of the list (always)
-%define shared_modules	%{?_with_mod_tls:mod_tls:}mod_sql:mod_radius:mod_ban:mod_ctrls_admin:mod_load:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_ratio:mod_readme:mod_rewrite:mod_site_misc:mod_wrap2:mod_wrap2_file:mod_wrap2_sql%{?_with_nls::mod_lang}:mod_ifsession
+%define shared_modules	%{?_with_mod_tls:mod_tls:}%{?_with_mod_sftp:mod_sftp:}mod_sql:mod_radius:mod_ban:mod_ctrls_admin:mod_load:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_ratio:mod_readme:mod_rewrite:mod_site_misc:mod_wrap2:mod_wrap2_file:mod_wrap2_sql%{?_with_nls::mod_lang}:mod_ifsession
 
 %define unbundled_modules mod_ldap:mod_sql_mysql:mod_sql_postgres:mod_wrap
 
@@ -72,7 +85,7 @@
 
 Summary:		ProFTPD -- Professional FTP Server.
 Name:			proftpd
-Release:		1
+Release:		1%{?dist}
 License:		GPL
 Group:			System Environment/Daemons
 Packager:		The ProFTPD Project <core@proftpd.org>
@@ -89,6 +102,13 @@ Prefix:			%{_prefix}
 BuildRoot:		%{_tmppath}/%{name}-%{version}-root
 Requires:		pam >= 0.99, /sbin/chkconfig
 BuildRequires:		pkgconfig, pam-devel, ncurses-devel, zlib-devel
+BuildRequires:		rpm-build >= 4.2
+# For mod_sftp:
+%if 0%{?_with_mod_sftp:1}
+%define _with_openssl   1
+Requires:               zlib
+BuildRequires:          zlib-devel
+%endif
 # For mod_tls:
 %if 0%{?_with_mod_tls:1}
 %define _with_openssl	1
@@ -159,7 +179,7 @@ Requires:	proftpd, mysql, krb5-libs
 BuildRequires:	mysql-devel, krb5-devel
 
 %description mysql
-This optional package contains the modules using Postgres.
+This optional package contains the modules using MySQL.
 
 %package postgres
 Summary:	ProFTPD -- Modules relying on Postgres.
@@ -168,7 +188,7 @@ Requires:	proftpd, postgresql, krb5-libs, openssl
 BuildRequires:	postgresql-devel, krb5-devel, openssl-devel
 
 %description postgres
-This optional package contains the modules using SQL.
+This optional package contains the modules using Postgres.
 
 %package wrap
 Summary:	ProFTPD -- Modules relying on TCP Wrappers.
@@ -177,7 +197,7 @@ Requires:	proftpd, tcp_wrappers
 BuildRequires:	tcp_wrappers
 
 %description wrap
-This optional package contains the modules using SQL.
+This optional package contains the modules using tcpwrappers/libwrap.
 
 %package devel
 Summary:	ProFTPD -- Header files for developers.
@@ -220,10 +240,12 @@ CFLAGS="$RPM_OPT_FLAGS" ./configure \
 	sysconfdir=%{_sysconfdir} \
 	mandir=%{_mandir} \
 	localstatedir=%{_localstatedir}/run \
-	rundir=%{_localstatedir}/run/proftpd \
+	rundir=%{_localstatedir}/run \
 	INSTALL_USER=`id -un` INSTALL_GROUP=`id -gn` \
     install
+%if !%{nohome}
   mkdir -p $RPM_BUILD_ROOT/home/ftp
+%endif
   mkdir -p $RPM_BUILD_ROOT/etc/pam.d
   install -m 644 contrib/dist/rpm/ftp.pamd $RPM_BUILD_ROOT/etc/pam.d/ftp
   install -m 644 sample-configurations/basic.conf $RPM_BUILD_ROOT/etc/proftpd.conf
@@ -327,6 +349,10 @@ rm -rf %{_builddir}/%{name}-%{version}
 %defattr(-,root,root)
 %{_sbindir}/*
 %{_bindir}/*
+%if 0%{?_with_mod_sftp:1}
+%{_sysconfdir}/blacklist.dat
+%{_sysconfdir}/dhparams.pem
+%endif
 # need to figure out how to exclude from this list...
 %exclude %{_libexecdir}/*.a
 %exclude %{_libexecdir}/*.la
@@ -335,11 +361,12 @@ rm -rf %{_builddir}/%{name}-%{version}
 %exclude %{_libexecdir}/mod_sql_postgres.so
 %exclude %{_libexecdir}/mod_wrap.so
 %{_libdir}/pkgconfig/*.pc
-%{_libdir}/proftpd/*.a
 %{_libexecdir}/*.a
 %{_libexecdir}/*.so
-%dir %{_localstatedir}/run/proftpd
+%dir %{_localstatedir}/run
+%if !%{nohome}
 %dir /home/ftp
+%endif
 %{_initrddir}/proftpd
 %config(noreplace) %{_sysconfdir}/proftpd.conf
 %config(noreplace) %{_sysconfdir}/pam.d/ftp

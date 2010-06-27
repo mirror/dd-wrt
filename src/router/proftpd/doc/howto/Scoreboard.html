@@ -1,4 +1,4 @@
-<!-- $Id: Scoreboard.html,v 1.2 2008/12/10 18:57:19 castaglia Exp $ -->
+<!-- $Id: Scoreboard.html,v 1.4 2009/10/21 16:42:34 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Scoreboard.html,v $ -->
 
 <html>
@@ -47,6 +47,52 @@ directive, and then obtaining debugging output from your <code>proftpd</code>,
 to see if the daemon ran into problems using that defined location.
 
 <p>
+<b>Scrubbing the Scoreboard</b><br>
+There is a bad habit among system administrators of using
+<code>`kill -9'</code> to kill a misbehaving process.  Any process that is
+terminated this way, though, does not have a chance of properly shutting down.
+Administrators would use <code>`kill -9'</code> on some of
+<code>proftpd</code>'s session processes, which means that they would not be
+able to remove their entries from the <code>ScoreboardFile</code>.
+Utilities like <code>ftpwho</code> and <code>ftptop</code> would show sessions
+that no longer existed.
+
+<p>
+The chance of changing this bad habit in system administrators is slim, so
+<code>proftpd</code> was changed to check the <code>ScoreboardFile</code>
+periodically.  It will scan the entire file, and for each scoreboard session
+listed, it asks the operating system if that session process is still alive.
+If the answer is no, the entry is removed from the file.  This process is
+known as &quot;scrubbing&quot;.
+
+<p>
+By default, this scrubbing process occurs every 30 seconds.  For busy/heavily
+loaded sites, this scrubbing interval might be too short; heavily loaded
+servers are more likely to encounter lock contention issues between sessions
+trying to update their scoreboard entry and the daemon trying to scrub
+the scoreboard.  Such sites are advised to use <code>ScoreboardScrub</code>
+configuration directive.  This directive can be used to turn on or off
+the periodic scrubbing, or to set a different scrub interval.  The following
+shows some examples of <code>ScoreboardScrub</code> usage:
+<pre>
+  # The default is to use scoreboard scrubbing, at the default interval
+  ScoreboardScrub on
+
+  # If we are busy server, we might want to turn off scoreboard scrubbing
+  # entirely
+  ScoreboardScrub off
+
+  # Scrubbing is acceptable, but have it happen every 5 minutes instead
+  ScoreboardScrub 300
+</pre>
+
+<p>
+Note that if scoreboard scrubbing is turned off, the
+<code>ScoreboardFile</code> can still be scrubbed on demand, either by using
+the <a href="../contrib/mod_ctrls_admin.html#scoreboard"><code>mod_ctrls_admin</code></a>'s "ftpdctl scoreboard scrub" action, or by using the
+<code>ftpscrub</code> command-line utility.
+
+<p>
 <b>Frequently Asked Questions</b><br>
 <font color=red>Question</font>: Why doesn't <code>proftpd</code> create the needed directories, if they're not there, when opening the scoreboard?<br>
 <font color=blue>Answer</font>: The short answer is because that is the
@@ -69,22 +115,8 @@ will only lead to trouble.  Second, NFS does not support file locking, which
 
 <p>
 <font color=red>Question</font>: Why do I see &quot;scrubbing scoreboard&quot; in my debugging output?<br>
-<font color=blue>Answer</font>: There is a bad habit among system
-administrators of using <code>`kill -9'</code> to kill a misbehaving process.
-Any process that is terminated this way, though, does not have a chance
-of properly shutting down.  Administrators would use <code>`kill -9'</code>
-on some of <code>proftpd</code>'s session processes, which means that
-they would not be able to remove themselves from the scoreboard.
-<code>ftpwho</code> and <code>ftptop</code> would show sessions that no
-longer existed.
-
-<p>
-The chance of changing this bad habit in system administrators is slim, so
-<code>proftpd</code> was changed to check the scoreboard periodically.  It
-will scan the entire scoreboard file, and for each scoreboard session listed,
-it asks the operating system if that session process is still alive.  If
-the answer is no, the entry is removed from the scoreboard.  This process
-is known as &quot;scrubbing&quot;.
+<font color=blue>Answer</font>: These debug messages indicate when the
+<code>proftpd</code> daemon is scrubbing the <code>ScoreboardFile</code>.
 
 <p>
 <font color=red>Question</font>: Our site has <i>many</i> connections, and
@@ -118,8 +150,24 @@ the FTP sessions were no longer slow.
 </ul>
 
 <p>
+<font color=red>Question</font>: What should I do if I see this error in my
+logs:
+<pre>
+  error opening scoreboard: bad version (too old)
+</pre>
+<font color=blue>Answer</font>: This error usually only happens for servers
+which have:
+<pre>
+  ServerType inetd
+</pre>
+in their <code>proftpd.conf</code> files.  It indicates that the existing
+<code>ScoreboardFile</code> is using a format which is too old for the running
+code.  The fix is simple: delete that old <code>ScoreboardFile</code>.  The
+daemon will automatically create a new scoreboard in the correct format.
+
+<p>
 <hr>
-<i>$Date: 2008/12/10 18:57:19 $</i><br>
+<i>$Date: 2009/10/21 16:42:34 $</i><br>
 
 </body>
 </html>

@@ -62,7 +62,7 @@ sub tear_down {
   }
 
   undef $self;
-};
+}
 
 sub ftpaccess_retr_bug2038 {
   my $self = shift;
@@ -71,7 +71,8 @@ sub ftpaccess_retr_bug2038 {
   my $config_file = "$tmpdir/ftpaccess.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/ftpaccess.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ftpaccess.scoreboard");
-  my $log_file = File::Spec->rel2abs('ftpaccess.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/ftpaccess.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/ftpaccess.group");
@@ -187,7 +188,7 @@ EOF
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "test.txt: No such file or directory";
+      $expected = "test.txt: Operation not permitted";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -204,7 +205,7 @@ EOF
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "$test_file: No such file or directory";
+      $expected = "$test_file: Operation not permitted";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -290,7 +291,8 @@ sub ftpaccess_anon_retr_bug2038 {
   my $config_file = "$tmpdir/ftpaccess.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/ftpaccess.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ftpaccess.scoreboard");
-  my $log_file = File::Spec->rel2abs('ftpaccess.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/ftpaccess.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/ftpaccess.group");
@@ -337,11 +339,17 @@ EOF
   # Make a version of the path that the client would see.
   my $anon_test_file = "/foo/test.txt";
 
+  auth_user_write($auth_user_file, $config_user, 'foo', 500, 500, '/tmp',
+    '/bin/bash');
+  auth_group_write($auth_group_file, $config_group, 500, $config_user);
+
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
 
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
     AllowOverride => 'on',
 
     Anonymous => {
@@ -398,7 +406,7 @@ EOF
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "test.txt: No such file or directory";
+      $expected = "test.txt: Operation not permitted";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -415,7 +423,7 @@ EOF
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "$anon_test_file: No such file or directory";
+      $expected = "$anon_test_file: Operation not permitted";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -501,7 +509,8 @@ sub ftpaccess_anon_retr_bug2461 {
   my $config_file = "$tmpdir/ftpaccess.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/ftpaccess.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ftpaccess.scoreboard");
-  my $log_file = File::Spec->rel2abs('ftpaccess.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/ftpaccess.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/ftpaccess.group");
@@ -546,11 +555,17 @@ EOF
   # Make a version of the path that the client would see.
   my $anon_test_file = "/test.txt";
 
+  auth_user_write($auth_user_file, $config_user, 'foo', 500, 500, '/tmp',
+    '/bin/bash');
+  auth_group_write($auth_group_file, $config_group, 500, $config_user);
+
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
 
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
     AllowOverride => 'on',
 
     Anonymous => {
@@ -606,7 +621,7 @@ EOF
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "test.txt: No such file or directory";
+      $expected = "test.txt: Operation not permitted";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -626,7 +641,7 @@ EOF
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "test.txt: No such file or directory";
+      $expected = "test.txt: Operation not permitted";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 

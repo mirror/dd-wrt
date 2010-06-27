@@ -1,4 +1,4 @@
-<!-- $Id: mod_ban.html,v 1.4 2008/03/04 02:05:06 castaglia Exp $ -->
+<!-- $Id: mod_ban.html,v 1.8 2009/12/08 00:24:42 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_ban.html,v $ -->
 
 <html>
@@ -170,7 +170,9 @@ supported events are:
   MaxClientsPerUser
   MaxConnectionsPerHost
   MaxHostsPerUser
+  MaxLoginAttempts
   TimeoutIdle
+  TimeoutLogin
   TimeoutNoTransfer
 </pre>
 An event is generated whenever one of these limits is reached by a client.
@@ -375,11 +377,19 @@ to configure an automatic ban for <code>MaxLoginAttempts</code>:
 </pre>
 
 <p>
-Default list size, BAN_LIST_MAXSZ, configuring using CFLAGS
+By default, the <code>mod_ban</code> module allocate size for 512 bans.
+In practice, this has seemed to work well.  However, if you need to allocate
+space for more bans, you will need to recompile proftpd, and use the
+<code>CFLAGS</code> environment variable like so:
+<pre>
+    ./configure CFLAGS="-DBAN_LIST_MAXSZ=<em>1024</em>" ...
+</pre>
+or whatever your necessary ban list size is.
 
 <p><a name="FAQ"></a>
 <b>Frequently Asked Questions</b><br>
-<font color=red>Question</font>: Why does <code>mod_ban</code> not store ban data across daemon stop/starts?<br>
+<font color=red>Question</font>: Why does <code>mod_ban</code> not store ban
+data across daemon stop/starts?<br>
 <font color=blue>Answer</font>: The <code>mod_ban</code> module was not
 designed to add yet another ACL mechanism to <code>proftpd</code>.  For
 persistent access control, there is the <code>&lt;Limit LOGIN&gt;</code>
@@ -388,7 +398,8 @@ file, and various other mechanisms.  The purpose of <code>mod_ban</code>
 is to provide dynamic, short-lived bans.
 
 <p>
-<font color=red>Question</font>: What about having <code>proftpd</code> delay sending responses to clients, say by 30 seconds or so?<br>
+<font color=red>Question</font>: What about having <code>proftpd</code> delay
+sending responses to clients, say by 30 seconds or so?<br>
 <font color=blue>Answer</font>:  This is a bad idea.  It would allow
 malicious clients, who <i>knew</i> they were banned, to tie up your
 <code>proftpd</code> processes, since those processes would be taking up
@@ -398,15 +409,57 @@ eventually tying up your available system resources with waiting
 <code>proftpd</code> processes.
 
 <p>
+<font color=red>Question</font>: It looks like the <code>BanTable</code> file
+I configured is untouched:
+<pre>
+  -rw-r--r-- 1 ftp  ftp     0 2007-01-13 23:18 ban.table
+</pre>
+Does this mean that something is wrong, or that <code>mod_ban</code> is not
+using that file?<br>
+<p>
+<font color=blue>Answer</font>: A <code>BanTable</code> file <i>is</i> needed,
+just not in an obvious way.  The <code>mod_ban</code> module stores its ban
+information in a SysV shared memory segment.  The configured
+<code>BanTable</code> file is used <i>a)</i> to generate a unique name/ID for
+the shared memory segment to use (and to see if a segment for that name/ID
+already exists), and <i>b)</i> for locking, as when multiple sessions are
+trying to update the shared memory segment at the same time.  But
+<code>mod_ban</code> does not write any data into that file itself, and hence
+the last-modified-time of the file, and the file size, does not change much.
+
+<p><a name="BanWhitelist">
+<font color=red>Question</font>: How can I configure a whitelist of IP
+addresses, to be excluded from the effects of <code>mod_ban</code>?<br>
+<font color=blue>Answer</font>: This can be done using a combination of
+<a href="../howto/Classes.html">Classes</a> and the <a href="mod_ifsession.html"><code>mod_ifsession</code></a> module.  For example:
+<pre>
+  &lt;Class whitelist&gt;
+    From ...
+  &lt;/Class&gt;
+
+  &lt;IfClass whitelist&gt;
+    # Turn the mod_ban module off for whitelisted clients
+    BanEngine off
+  &lt;/IfClass&gt;
+
+  &lt;IfClass !whitelist&gt;
+    # Make sure the mod_ban module is on for clients that are not whitelisted
+    BanEngine on
+  &lt;/IfClass&gt;
+</pre>
+Note that it is <b>important</b> to have <i>both</i>
+<code>&lt;IfClass&gt;</code> sections in your configuration.
+
+<p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008/03/04 02:05:06 $</i><br>
+Last Updated: <i>$Date: 2009/12/08 00:24:42 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2008 TJ Saunders<br>
+&copy; Copyright 2004-2009 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

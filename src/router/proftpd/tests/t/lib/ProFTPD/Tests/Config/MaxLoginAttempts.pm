@@ -57,7 +57,7 @@ sub tear_down {
   }
 
   undef $self;
-};
+}
 
 sub maxloginattempts_one {
   my $self = shift;
@@ -66,7 +66,8 @@ sub maxloginattempts_one {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -136,16 +137,21 @@ sub maxloginattempts_one {
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
+      # A MaxLoginAttempts of one should have caused our connection to be
+      # closed above.
+
       eval { ($resp_code, $resp_msg) = $client->login($user, 'foo') };
       unless ($@) {
         die("Logged in unexpectedly ($resp_code $resp_msg)");
 
       } else {
-        my $err = $@;
-        $expected = '^Failed to login to \S+: 000';
-        $self->assert(qr/$expected/, $err,
-          test_msg("Expected '$expected', got '$err'"));
+        $resp_code = $client->response_code();
+        $resp_msg = $client->response_msg(0);
       }
+
+      $expected = 599;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected $expected, got $resp_code"));
     };
 
     if ($@) {
@@ -156,7 +162,7 @@ sub maxloginattempts_one {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh, 2) };
+    eval { server_wait($config_file, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -184,7 +190,8 @@ sub maxloginattempts_absent {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -258,10 +265,14 @@ sub maxloginattempts_absent {
         die("Logged in unexpectedly ($resp_code $resp_msg)");
 
       } else {
-        my $err = $@;
-        my $expected = '^Failed to login to \S+: 000';
-        $self->assert(qr/$expected/, $err,
-          test_msg("Expected '$expected', got '$err'"));
+        $resp_code = $client->response_code();
+        $resp_msg = $client->response_msg(0);
+
+        my $expected;
+
+        $expected = 599;
+        $self->assert($expected == $resp_code,
+          test_msg("Expected $expected, got $resp_code"));
       }
     };
 
@@ -273,7 +284,7 @@ sub maxloginattempts_absent {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh, 2) };
+    eval { server_wait($config_file, $rfh) };
     if ($@) {
       warn($@);
       exit 1;

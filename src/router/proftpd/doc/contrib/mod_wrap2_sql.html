@@ -1,4 +1,4 @@
-<!-- $Id: mod_wrap2_sql.html,v 1.1 2006/09/06 23:09:58 castaglia Exp $ -->
+<!-- $Id: mod_wrap2_sql.html,v 1.2 2009/03/11 04:52:52 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_wrap2_sql.html,v $ -->
 
 <html>
@@ -163,27 +163,25 @@ Here are some example table schema for SQL-based access tables:
 <p>
 When constructing the client and options lists to return to
 <code>mod_wrap2</code>'s access control engine, <code>mod_wrap2_sql</code> will
-concatenate the results of the queries into a single string, using ` ' as
-a delimiter for client list items, and `:' as a delimiter for option list
-items.  This means that the administrator can store multiple client and
-option tokens in multiple rows, as in the above schema, or the administrator
-can choose to store all of the clients and/or options in a single row,
-in an appropriately formatted string.
+parse each returned row separately, handling both comma- and space-limited
+names in a row, into client list items.  This means that the administrator can
+store multiple client and option tokens in multiple rows, as in the above
+schema, or the administrator can choose to store all of the clients and/or
+options in a single row, in an appropriately formatted string.
 
 <p>
 <hr>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2006/09/06 23:09:58 $</i><br>
+Last Updated: <i>$Date: 2009/03/11 04:52:52 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2006 TJ Saunders<br>
+&copy; Copyright 2000-2009 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 
 <hr><br>
-
 </body>
 </html>
 

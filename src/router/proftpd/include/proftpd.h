@@ -25,7 +25,7 @@
  */
 
 /* General options
- * $Id: proftpd.h,v 1.59 2008/09/01 21:10:38 castaglia Exp $
+ * $Id: proftpd.h,v 1.60 2009/09/02 17:58:53 castaglia Exp $
  */
 
 #ifndef PR_PROFTPD_H
@@ -249,7 +249,6 @@ extern char MultilineRFC2228;
 void end_login(int);
 void pr_signals_handle(void);
 void session_exit(int, void *, int, void *);
-void session_set_idle(void);
 void set_daemon_rlimits(void);
 void set_session_rlimits(void);
 

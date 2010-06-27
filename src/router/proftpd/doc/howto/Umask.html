@@ -1,4 +1,4 @@
-<!-- $Id: Umask.html,v 1.3 2004/04/10 18:01:18 castaglia Exp $ -->
+<!-- $Id: Umask.html,v 1.4 2009/07/16 20:47:31 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Umask.html,v $ -->
 
 <html>
@@ -80,9 +80,26 @@ via FTP.  Note that this construction is recommended instead of using the
 deprecated (as of <code>proftpd-1.2.2rc2</code>) <code>AllowChmod</code>
 configuration directive.
 
+<p><a name="FAQ"></a>
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="UmaskExecutePermission">
+<font color=red>Question</font>: How can I configure <code>proftpd</code> so
+that I can upload a file with <code>770</code> permissions?<br>
+<font color=blue>Answer</font>: Short answer: you can't.  Too many FTP servers,
+in the past, would allow users to upload executable files.  Hackers would
+use this capability, and then exploit a flaw in one of the servers on that
+machine to execute the crafted file they just uploaded.  Thus ProFTPD does
+not allow uploading of files with execute permissions.
+
+<p>
+The workaround, as mentioned above, is to allow the client to use the
+<code>SITE CHMOD</code> command to change the permissions on the file to
+have the execute permissions.
+
 <p>
 <hr>
-Last Updated: <i>$Date: 2004/04/10 18:01:18 $</i><br>
+Last Updated: <i>$Date: 2009/07/16 20:47:31 $</i><br>
 <hr>
 
 </body>

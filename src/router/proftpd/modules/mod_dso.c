@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_dso -- support for loading/unloading modules at run-time
  *
- * Copyright (c) 2004-2008 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2004-2009 TJ Saunders <tj@castaglia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * This is mod_dso, contrib software for proftpd 1.3.x.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_dso.c,v 1.16 2008/10/14 23:23:09 castaglia Exp $
+ * $Id: mod_dso.c,v 1.21 2009/11/17 18:27:46 castaglia Exp $
  */
 
 #include "conf.h"
@@ -34,7 +34,7 @@
 /* Make sure we use the libltdl shipped with proftpd, not the system libltdl. */
 #include "lib/libltdl/ltdl.h"
 
-#define MOD_DSO_VERSION		"mod_dso/0.4"
+#define MOD_DSO_VERSION		"mod_dso/0.5"
 
 /* From modules/module_glue.c */
 extern module *static_modules[];
@@ -73,11 +73,12 @@ static int dso_load_file(char *path) {
 
 static int dso_load_module(char *name) {
   int res;
-  lt_ptr mh = NULL;
   char *symbol_name, *path, *tmp;
   module *m;
+  lt_ptr mh = NULL;
+  lt_dladvise advise;
 
-  if (!name) {
+  if (name == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -92,10 +93,34 @@ static int dso_load_module(char *name) {
   pr_log_debug(DEBUG7, "loading '%s'", name);
 
   tmp = strrchr(name, '.');
-  if (!tmp) {
+  if (tmp == NULL) {
     errno = EINVAL;
     return -1;
   }
+
+  if (lt_dladvise_init(&advise) < 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
+      ": unable to initialise advise: %s", lt_dlerror());
+    errno = EPERM;
+    return -1;
+  }
+
+  if (lt_dladvise_ext(&advise) < 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
+      ": unable to setting 'ext' advise hint: %s", lt_dlerror());
+    lt_dladvise_destroy(&advise);
+    errno = EPERM;
+    return -1;
+  }
+
+  if (lt_dladvise_global(&advise) < 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
+      ": unable to setting 'global' advise hint: %s", lt_dlerror());
+    lt_dladvise_destroy(&advise);
+    errno = EPERM;
+    return -1;
+  }
+
   *tmp = '\0';
 
   /* Load file: $prefix/libexec/<module> */
@@ -103,7 +128,7 @@ static int dso_load_module(char *name) {
 
   pr_trace_msg(trace_channel, 5, "loading module '%s'", path);
 
-  mh = lt_dlopenext(path);
+  mh = lt_dlopenadvise(path, advise);
   if (mh == NULL) {
     *tmp = '.';
 
@@ -112,14 +137,23 @@ static int dso_load_module(char *name) {
     pr_log_debug(DEBUG3, MOD_DSO_VERSION
       ": defaulting to 'self' for symbol resolution");
 
+    lt_dladvise_destroy(&advise);
+
     mh = lt_dlopen(NULL);
     if (mh == NULL) {
       pr_log_debug(DEBUG0, MOD_DSO_VERSION ": error loading 'self': %s",
         lt_dlerror());
-      errno = EPERM;
+
+      if (errno == ENOENT) {
+        pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
+          ": check to see if '%s.la' exists", path);
+      }
+
       return -1;
     }
   }
+
+  lt_dladvise_destroy(&advise);
 
   /* Tease name of the module structure out of the given name:
    *  <module>.<ext> --> <module>_module
@@ -129,6 +163,10 @@ static int dso_load_module(char *name) {
   symbol_name = pstrcat(dso_pool, name+4, "_module", NULL);
 
   /* Lookup module structure symbol by name. */
+
+  pr_trace_msg(trace_channel, 7, "looking for symbol '%s' in loaded module",
+    symbol_name);
+
   m = (module *) lt_dlsym(mh, symbol_name);
   if (m == NULL) {
     *tmp = '.';
@@ -141,7 +179,11 @@ static int dso_load_module(char *name) {
     lt_dlclose(mh);
     mh = NULL;
 
-    errno = EACCES;
+    if (errno == ENOENT) {
+      pr_log_pri(PR_LOG_NOTICE,
+        MOD_DSO_VERSION ": check to see if '%s.la' exists", path);
+    }
+
     return -1;
   }
   *tmp = '.';
@@ -245,7 +287,7 @@ static int dso_handle_insmod(pr_ctrls_t *ctrl, int reqargc,
   register unsigned int i;
 
   /* Check the ACL. */
-  if (!ctrls_check_acl(ctrl, dso_acttab, "insmod")) {
+  if (!pr_ctrls_check_acl(ctrl, dso_acttab, "insmod")) {
 
     /* Access denied. */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -292,7 +334,7 @@ static int dso_handle_lsmod(pr_ctrls_t *ctrl, int reqargc,
   module *m;
 
   /* Check the ACL. */
-  if (!ctrls_check_acl(ctrl, dso_acttab, "lsmod")) {
+  if (!pr_ctrls_check_acl(ctrl, dso_acttab, "lsmod")) {
 
     /* Access denied. */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -322,7 +364,7 @@ static int dso_handle_rmmod(pr_ctrls_t *ctrl, int reqargc,
   register unsigned int i;
 
   /* Check the ACL. */
-  if (!ctrls_check_acl(ctrl, dso_acttab, "rmmod")) {
+  if (!pr_ctrls_check_acl(ctrl, dso_acttab, "rmmod")) {
 
     /* Access denied. */
     pr_ctrls_add_response(ctrl, "access denied");
@@ -412,7 +454,7 @@ MODRET set_modulectrlsacls(cmd_rec *cmd) {
       strcmp(cmd->argv[3], "group") != 0)
     CONF_ERROR(cmd, "third parameter must be 'user' or 'group'");
 
-  bad_action = ctrls_set_module_acls(dso_acttab, dso_pool, actions,
+  bad_action = pr_ctrls_set_module_acls(dso_acttab, dso_pool, actions,
     cmd->argv[2], cmd->argv[3], cmd->argv[4]);
   if (bad_action != NULL)
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown action: '",
@@ -489,9 +531,10 @@ MODRET set_moduleorder(cmd_rec *cmd) {
   for (m = loaded_modules; m;) {
     mn = m->next;
 
-    if (pr_module_unload(m) < 0)
+    if (pr_module_unload(m) < 0) {
       pr_log_debug(DEBUG0, "%s: error unloading module 'mod_%s.c': %s",
         cmd->argv[0], m->name, strerror(errno));
+    }
 
     m = mn;
   }
@@ -505,8 +548,9 @@ MODRET set_moduleorder(cmd_rec *cmd) {
   }
 
   pr_log_pri(PR_LOG_NOTICE, "module order is now:");
-  for (m = loaded_modules; m; m = m->next)
+  for (m = loaded_modules; m; m = m->next) {
     pr_log_pri(PR_LOG_NOTICE, " mod_%s.c", m->name);
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -567,7 +611,7 @@ static void dso_restart_ev(const void *event_data, void *user_data) {
     /* Allocate and initialize the ACL for this control. */
     dso_acttab[i].act_acl = pcalloc(sub_pool, sizeof(ctrls_acl_t));
     dso_acttab[i].act_acl->acl_pool = sub_pool;
-    ctrls_init_acl(dso_acttab[i].act_acl);
+    pr_ctrls_init_acl(dso_acttab[i].act_acl);
   }
 #endif /* PR_USE_CTRLS */
 
@@ -645,7 +689,7 @@ static int dso_init(void) {
     /* Allocate and initialize the ACL for this control. */
     dso_acttab[i].act_acl = pcalloc(sub_pool, sizeof(ctrls_acl_t));
     dso_acttab[i].act_acl->acl_pool = sub_pool;
-    ctrls_init_acl(dso_acttab[i].act_acl);
+    pr_ctrls_init_acl(dso_acttab[i].act_acl);
 
     if (pr_ctrls_register(&dso_module, dso_acttab[i].act_action,
         dso_acttab[i].act_desc, dso_acttab[i].act_cb) < 0)

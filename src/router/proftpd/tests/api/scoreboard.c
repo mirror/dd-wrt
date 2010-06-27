@@ -23,7 +23,7 @@
  */
 
 /* Scoreboard API tests
- * $Id: scoreboard.c,v 1.1 2008/10/06 18:16:50 castaglia Exp $
+ * $Id: scoreboard.c,v 1.2 2009/05/11 18:07:36 castaglia Exp $
  */
 
 #include "tests.h"
@@ -432,6 +432,7 @@ START_TEST (scoreboard_rewind_test) {
 END_TEST
 
 START_TEST (scoreboard_scrub_test) {
+  uid_t euid;
   int res;
   const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
 
@@ -465,13 +466,28 @@ START_TEST (scoreboard_scrub_test) {
     fail("Unexpectedly scrubbed scoreboard");
   }
 
-  if (errno != EPERM) {
-    int xerrno = errno;
+  euid = geteuid();
+  if (euid != 0) {
+    if (errno != EPERM) {
+      int xerrno = errno;
 
-    (void) unlink(path);
-    (void) rmdir(dir);
+      (void) unlink(path);
+      (void) rmdir(dir);
 
-    fail("Failed to set errno to EPERM (got %d)", xerrno);
+      fail("Failed to set errno to EPERM, got %d (euid = %lu)", xerrno,
+        (unsigned long) euid);
+    }
+
+  } else {
+    if (errno != ENOENT) {
+      int xerrno = errno;
+
+      (void) unlink(path);
+      (void) rmdir(dir);
+
+      fail("Failed to set errno to ENOENT, got %d (euid = %lu)", xerrno,
+        (unsigned long) euid);
+    }
   }
 
   res = pr_open_scoreboard(O_RDWR);

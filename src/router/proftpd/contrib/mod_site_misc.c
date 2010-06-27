@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_site_misc -- a module implementing miscellaneous SITE commands
  *
- * Copyright (c) 2004-2008 The ProFTPD Project
+ * Copyright (c) 2004-2009 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,12 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: mod_site_misc.c,v 1.9 2008/12/10 06:54:05 castaglia Exp $
+ * $Id: mod_site_misc.c,v 1.12 2009/11/10 05:02:38 castaglia Exp $
  */
 
 #include "conf.h"
 
-#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.2"
+#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.3"
 
 static int site_misc_check_filters(cmd_rec *cmd, const char *path) {
 #if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
@@ -254,7 +254,7 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
 
   if (strcasecmp(cmd->argv[1], "MKDIR") == 0) {
     register unsigned int i;
-    char *path = "";
+    char *cmd_name, *path = "";
     unsigned char *authenticated;
 
     if (cmd->argc < 3)
@@ -277,10 +277,14 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
       return PR_ERROR(cmd);
     }
 
-    if (!dir_check(cmd->tmp_pool, "SITE_MKDIR", G_WRITE, path, NULL)) {
+    cmd_name = cmd->argv[0];
+    cmd->argv[0] = "SITE_MKDIR";
+    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+      cmd->argv[0] = cmd_name;
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
       return PR_ERROR(cmd);
     }
+    cmd->argv[0] = cmd_name;
 
     if (site_misc_create_path(cmd->tmp_pool, path) < 0) {
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
@@ -303,7 +307,7 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 
   if (strcasecmp(cmd->argv[1], "RMDIR") == 0) {
     register unsigned int i;
-    char *path = "";
+    char *cmd_name, *path = "";
     unsigned char *authenticated;
 
     if (cmd->argc < 3)
@@ -321,10 +325,14 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 
     path = pr_fs_decode_path(cmd->tmp_pool, path);
 
-    if (!dir_check(cmd->tmp_pool, "SITE_RMDIR", G_WRITE, path, NULL)) {
+    cmd_name = cmd->argv[0];
+    cmd->argv[0] = "SITE_RMDIR";
+    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+      cmd->argv[0] = cmd_name;
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
       return PR_ERROR(cmd);
     }
+    cmd->argv[0] = cmd_name;
 
     if (site_misc_delete_path(cmd->tmp_pool, path) < 0) {
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
@@ -346,7 +354,9 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
 
   if (strcasecmp(cmd->argv[1], "SYMLINK") == 0) {
-    char *src, *dst;
+    struct stat st;
+    int res;
+    char *cmd_name, *src, *dst;
     unsigned char *authenticated;
 
     if (cmd->argc < 4)
@@ -361,20 +371,38 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
 
     src = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[2]);
 
-    if (!dir_check(cmd->tmp_pool, "SITE_SYMLINK", G_WRITE, src, NULL)) {
+    cmd_name = cmd->argv[0];
+    cmd->argv[0] = "SITE_SYMLINK";
+    if (!dir_check(cmd->tmp_pool, cmd, G_READ, src, NULL)) {
+      cmd->argv[0] = cmd_name;
       pr_response_add_err(R_550, "%s: %s", cmd->argv[2], strerror(EPERM));
       return PR_ERROR(cmd);
     }
 
     dst = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[3]);
 
-    if (!dir_check(cmd->tmp_pool, "SITE_SYMLINK", G_WRITE, dst, NULL)) {
+    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, dst, NULL)) {
+      cmd->argv[0] = cmd_name;
       pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(EPERM));
       return PR_ERROR(cmd);
     }
+    cmd->argv[0] = cmd_name;
 
     if (site_misc_check_filters(cmd, dst) < 0) {
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
+      return PR_ERROR(cmd);
+    }
+
+    /* Make sure the source path exists.  The symlink(2) man page suggests
+     * that the system call will do this, but experimentally (Mac OSX 10.4)
+     * I've seen symlink(2) happily link two names, neither of which exist
+     * in the filesystem.
+     */
+       
+    pr_fs_clear_cache();
+    res = pr_fsio_stat(src, &st);
+    if (res < 0) {
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
       return PR_ERROR(cmd);
     }
 
@@ -399,7 +427,7 @@ MODRET site_misc_utime(cmd_rec *cmd) {
 
   if (strcasecmp(cmd->argv[1], "UTIME") == 0) {
     register unsigned int i;
-    char c, *p, *path = "";
+    char c, *cmd_name, *p, *path = "";
     unsigned int year, month, day, hour, min, sec = 0;
     struct timeval tvs[2];
     unsigned char *authenticated;
@@ -435,10 +463,14 @@ MODRET site_misc_utime(cmd_rec *cmd) {
 
     path = pr_fs_decode_path(cmd->tmp_pool, path);
 
-    if (!dir_check(cmd->tmp_pool, "SITE_UTIME", G_WRITE, path, NULL)) {
+    cmd_name = cmd->argv[0];
+    cmd->argv[0] = "SITE_UTIME";
+    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+      cmd->argv[0] = cmd_name;
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
       return PR_ERROR(cmd);
     }
+    cmd->argv[0] = cmd_name;
 
     if (site_misc_check_filters(cmd, path) < 0) {
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
@@ -542,6 +574,16 @@ MODRET site_misc_utime(cmd_rec *cmd) {
 /* Initialization functions
  */
 
+static int site_misc_sess_init(void) {
+  /* Advertise support for these SITE commands */
+  pr_feat_add("SITE MKDIR");
+  pr_feat_add("SITE RMDIR");
+  pr_feat_add("SITE SYMLINK");
+  pr_feat_add("SITE UTIME");
+
+  return 0;
+}
+
 /* Module API tables
  */
 
@@ -575,7 +617,7 @@ module site_misc_module = {
   NULL,
 
   /* Session initialization function */
-  NULL,
+  site_misc_sess_init,
 
   /* Module version */
   MOD_SITE_MISC_VERSION

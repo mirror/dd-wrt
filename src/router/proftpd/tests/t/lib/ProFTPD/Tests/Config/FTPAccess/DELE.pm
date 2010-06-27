@@ -61,7 +61,8 @@ sub dele_bug2321 {
   my $config_file = "$tmpdir/limit.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
-  my $log_file = File::Spec->rel2abs('limit.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");

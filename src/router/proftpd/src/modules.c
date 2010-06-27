@@ -25,7 +25,7 @@
 
 /*
  * Module handling routines
- * $Id: modules.c,v 1.56 2008/10/04 04:53:59 castaglia Exp $
+ * $Id: modules.c,v 1.58 2010/02/14 00:19:06 castaglia Exp $
  */
 
 #include "conf.h"
@@ -373,7 +373,7 @@ int pr_stash_remove_symbol(pr_stash_type_t sym_type, const char *sym_name,
       while (tab) {
         pr_signals_handle();
 
-        /* Note: this works because of a hack: the symbol look functions
+        /* Note: this works because of a hack: the symbol lookup functions
          * set a static pointer, curr_sym, to point to the struct stash
          * just looked up.  curr_sym will not be NULL if pr_stash_get_symbol()
          * returns non-NULL.
@@ -403,7 +403,7 @@ int pr_stash_remove_symbol(pr_stash_type_t sym_type, const char *sym_name,
       while (tab) {
         pr_signals_handle();
 
-        /* Note: this works because of a hack: the symbol look functions
+        /* Note: this works because of a hack: the symbol lookup functions
          * set a static pointer, curr_sym, to point to the struct stash
          * just looked up.  
          */
@@ -431,7 +431,7 @@ int pr_stash_remove_symbol(pr_stash_type_t sym_type, const char *sym_name,
       while (tab) {
         pr_signals_handle();
 
-        /* Note: this works because of a hack: the symbol look functions
+        /* Note: this works because of a hack: the symbol lookup functions
          * set a static pointer, curr_sym, to point to the struct stash
          * just looked up.  
          */
@@ -728,16 +728,15 @@ int pr_module_load(module *m) {
     }
 
     /* Add the module to the loaded_modules list. */
-    m->next = loaded_modules;
-
-    if (loaded_modules)
+    if (loaded_modules) {
+      m->next = loaded_modules;
       loaded_modules->prev = m;
+    }
 
     loaded_modules = m;
 
     /* Generate an event. */
     pr_event_generate("core.module-load", buf);
-
     return 0;
   }
 

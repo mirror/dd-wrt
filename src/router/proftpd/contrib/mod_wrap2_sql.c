@@ -2,7 +2,7 @@
  * ProFTPD: mod_wrap2_sql -- a mod_wrap2 sub-module for supplying IP-based
  *                           access control data via SQL tables
  *
- * Copyright (c) 2002-2009 TJ Saunders
+ * Copyright (c) 2002-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_wrap2_sql.c,v 1.6.2.1 2009/04/28 21:49:53 castaglia Exp $
+ * $Id: mod_wrap2_sql.c,v 1.9 2010/02/10 18:31:33 castaglia Exp $
  */
 
 #include "mod_wrap2.h"
@@ -33,6 +33,8 @@
 #define WRAP2_SQL_NSLOTS		2
 #define WRAP2_SQL_CLIENT_QUERY_IDX	0
 #define WRAP2_SQL_OPTION_QUERY_IDX	1
+
+module wrap2_sql_module;
 
 static cmd_rec *sql_cmd_create(pool *parent_pool, int argc, ...) {
   pool *cmd_pool = NULL;
@@ -116,34 +118,41 @@ static array_header *sqltab_fetch_clients_cb(wrap2_table_t *sqltab,
 
   clients_list = make_array(sqltab->tab_pool, sql_data->nelts, sizeof(char *));
 
-  /* Iterate through each returned row.  If there are commas in the line,
-   * parse them as separate client names.  Otherwise, a comma-delimited list
-   * of names will be treated as a single name, and violate the principal of
-   * least surprise for the site admin.
+  /* Iterate through each returned row.  If there are commas or whitespace
+   * in the row, parse them as separate client names.  Otherwise, a comma-
+   * or space-delimited list of names will be treated as a single name, and
+   * violate the principle of least surprise for the site admin.
    */
-
-  *((char **) push_array(clients_list)) = pstrdup(sqltab->tab_pool, vals[0]);
 
   for (i = 0; i < sql_data->nelts; i++) {
     char *ptr;
- 
-    ptr = strchr(vals[i], ',');
+
+    ptr = strpbrk(vals[i], ", \t");
     if (ptr != NULL) {
       char *dup = pstrdup(sqltab->tab_pool, vals[i]);
       char *word;
 
-      while ((word = pr_str_get_word(&dup, 0)) != NULL) {
+      while ((word = pr_str_get_token(&dup, ", \t")) != NULL) {
         size_t wordlen;
 
         pr_signals_handle();
 
         wordlen = strlen(word);
+        if (wordlen == 0)
+          continue;
 
         /* Remove any trailing comma */
         if (word[wordlen-1] == ',')
           word[wordlen-1] = '\0';
 
         *((char **) push_array(clients_list)) = word;
+
+        /* Skip redundant whitespaces */
+        while (*dup == ' ' ||
+               *dup == '\t') {
+          pr_signals_handle();
+          dup++;
+        }
       }
 
     } else {
@@ -329,10 +338,30 @@ static wrap2_table_t *sqltab_open_cb(pool *parent_pool, char *srcinfo) {
   return tab;
 }
 
+/* Event handlers
+ */
+
+#if defined(PR_SHARED_MODULE)
+static void sqltab_mod_unload_ev(const void *event_data, void *user_data) {
+  if (strcmp("mod_wrap2_sql.c", (const char *) event_data) == 0) {
+    pr_event_unregister(&wrap2_sql_module, NULL, NULL);
+    wrap2_unregister("sql");
+  }
+}
+#endif /* PR_SHARED_MODULE */
+
+/* Initialization routines
+ */
+
 static int sqltab_init(void) {
 
   /* Initialize the wrap source objects for type "sql".  */
   wrap2_register("sql", sqltab_open_cb);
+
+#if defined(PR_SHARED_MODULE)
+  pr_event_register(&wrap2_sql_module, "core.module-unload",
+    sqltab_mod_unload_ev, NULL);
+#endif /* PR_SHARED_MODULE */
 
   return 0;
 }

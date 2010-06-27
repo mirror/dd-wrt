@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 /* Scoreboard routines.
  *
- * $Id: scoreboard.h,v 1.15 2008/02/10 02:29:21 castaglia Exp $
+ * $Id: scoreboard.h,v 1.17 2010/01/10 20:01:30 castaglia Exp $
  */
 
 #ifndef PR_SCOREBOARD_H
@@ -32,7 +32,7 @@
 
 /* PR_SCOREBOARD_VERSION is used for checking for scoreboard compatibility
  */
-#define PR_SCOREBOARD_VERSION        		0x01040002
+#define PR_SCOREBOARD_VERSION        		0x01040003
 
 /* Structure used as a header for scoreboard files.
  */
@@ -74,9 +74,10 @@ typedef struct {
   char sce_client_name[PR_TUNABLE_SCOREBOARD_BUFFER_SIZE];
 
   char sce_class[32];
+  char sce_protocol[32];
   char sce_cwd[PR_TUNABLE_SCOREBOARD_BUFFER_SIZE];
 
-  char sce_cmd[5];
+  char sce_cmd[65];
   char sce_cmd_arg[PR_TUNABLE_SCOREBOARD_BUFFER_SIZE];
 
   time_t sce_begin_idle, sce_begin_session;
@@ -106,6 +107,7 @@ typedef struct {
 #define PR_SCORE_BEGIN_SESSION	14
 #define PR_SCORE_XFER_LEN	15
 #define PR_SCORE_XFER_ELAPSED	16
+#define PR_SCORE_PROTOCOL	17
 
 /* Scoreboard error values */
 #define PR_SCORE_ERR_BAD_MAGIC		-2
@@ -129,6 +131,7 @@ int pr_scoreboard_entry_add(void);
 int pr_scoreboard_entry_del(unsigned char);
 pr_scoreboard_entry_t *pr_scoreboard_entry_read(void);
 const char *pr_scoreboard_entry_get(int);
+int pr_scoreboard_entry_kill(pr_scoreboard_entry_t *, int);
 int pr_scoreboard_entry_update(pid_t, ...);
 
 #endif /* PR_SCOREBOARD_H */

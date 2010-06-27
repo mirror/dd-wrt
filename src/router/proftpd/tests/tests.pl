@@ -8,10 +8,14 @@ use Getopt::Long;
 use Test::Harness;
 
 my $opts = {};
-GetOptions($opts, 'h|help', 'C|class=s@');
+GetOptions($opts, 'h|help', 'C|class=s@', 'V|verbose');
 
 if ($opts->{h}) {
   usage();
+}
+
+if ($opts->{V}) {
+  $ENV{TEST_VERBOSE} = 1;
 }
 
 # We use this, rather than use(), since use() is equivalent to a BEGIN
@@ -77,24 +81,41 @@ if (scalar(@ARGV) > 0) {
     t/commands/stor.t
     t/commands/stou.t
     t/commands/appe.t
+    t/commands/stat.t
     t/commands/abor.t
     t/commands/mlsd.t
     t/commands/mlst.t
     t/commands/mff.t
     t/commands/mfmt.t
+    t/config/accessdenymsg.t
+    t/config/accessgrantmsg.t
+    t/config/allowoverwrite.t
+    t/config/authaliasonly.t
+    t/config/authgroupfile.t
+    t/config/authusingalias.t
+    t/config/classes.t
     t/config/createhome.t
     t/config/deleteabortedstores.t
+    t/config/dirfakemode.t
     t/config/displayconnect.t
+    t/config/displayfiletransfer.t 
     t/config/displaylogin.t
+    t/config/displayquit.t
     t/config/groupowner.t
     t/config/hiddenstores.t
     t/config/hidefiles.t
+    t/config/hidegroup.t
+    t/config/hidenoaccess.t
+    t/config/hideuser.t
     t/config/maxinstances.t
     t/config/maxloginattempts.t
     t/config/maxretrievefilesize.t
     t/config/maxstorefilesize.t
     t/config/order.t
+    t/config/pathallowfilter.t
+    t/config/pathdenyfilter.t
     t/config/requirevalidshell.t
+    t/config/rewritehome.t
     t/config/serverident.t
     t/config/storeuniqueprefix.t
     t/config/timeoutidle.t
@@ -103,18 +124,29 @@ if (scalar(@ARGV) > 0) {
     t/config/timeoutsession.t
     t/config/timeoutstalled.t
     t/config/useftpusers.t
+    t/config/useglobbing.t
+    t/config/useralias.t
     t/config/userowner.t
+    t/config/userpassword.t
     t/config/directory/limits.t
     t/config/directory/umask.t
     t/config/ftpaccess/dele.t
+    t/config/ftpaccess/empty.t
+    t/config/ftpaccess/merging.t
     t/config/ftpaccess/retr.t
+    t/config/limit/anonymous.t
+    t/config/limit/rmd.t
     t/config/limit/xmkd.t
+    t/config/limit/filters.t
+    t/config/limit/subdirs.t
     t/logging/extendedlog.t
     t/logging/transferlog.t
     t/signals/term.t
     t/signals/hup.t
     t/signals/segv.t
     t/signals/abrt.t
+    t/utils/ftpcount.t
+    t/utils/ftpwho.t
   )];
 
   # Now interrogate the build to see which module/feature-specific test files
@@ -127,14 +159,29 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_ban)],
     },
 
+    't/modules/mod_cap.t' => {
+      order => ++$order,
+      test_class => [qw(mod_cap)],
+    },
+
     't/modules/mod_ctrls.t' => {
       order => ++$order,
       test_class => [qw(mod_ctrls)],
     },
 
+    't/modules/mod_exec.t' => {
+      order => ++$order,
+      test_class => [qw(mod_exec)],
+    },
+
     't/modules/mod_lang.t' => {
       order => ++$order,
       test_class => [qw(mod_lang)],
+    },
+
+    't/modules/mod_quotatab_file.t' => {
+      order => ++$order,
+      test_class => [qw(mod_quotatab mod_quotatab_file)],
     },
 
     't/modules/mod_quotatab_sql.t' => {
@@ -147,6 +194,21 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_rewrite)],
     },
 
+    't/modules/mod_sftp.t' => {
+      order => ++$order,
+      test_class => [qw(mod_sftp)],
+    },
+
+    't/modules/mod_sftp_sql.t' => {
+      order => ++$order,
+      test_class => [qw(mod_sftp mod_sql_sqlite)],
+    },
+
+    't/modules/mod_shaper.t' => {
+      order => ++$order,
+      test_class => [qw(mod_shaper)],
+    },
+
     't/modules/mod_site_misc.t' => {
       order => ++$order,
       test_class => [qw(mod_site_misc)],
@@ -155,6 +217,11 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_sql.t' => {
       order => ++$order,
       test_class => [qw(mod_sql)],
+    },
+
+    't/modules/mod_sql_passwd.t' => {
+      order => ++$order,
+      test_class => [qw(mod_sql_passwd mod_sql_sqlite)],
     },
 
     't/modules/mod_sql_sqlite.t' => {
@@ -170,6 +237,11 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_unique_id.t' => {
       order => ++$order,
       test_class => [qw(mod_unique_id)],
+    },
+
+    't/modules/mod_wrap.t' => {
+      order => ++$order,
+      test_class => [qw(mod_wrap)],
     },
 
     't/modules/mod_wrap2_file.t' => {
@@ -197,8 +269,8 @@ if (defined($opts->{C})) {
   $ENV{PROFTPD_TEST_ENABLE_CLASS} = join(':', @{ $opts->{C} });
 
 } else {
-  # Disable all 'inprogress' tests by default
-  $ENV{PROFTPD_TEST_DISABLE_CLASS} = 'inprogress';
+  # Disable all 'inprogress' and 'slow' tests by default
+  $ENV{PROFTPD_TEST_DISABLE_CLASS} = 'inprogress:slow';
 }
 
 runtests(@$test_files) if scalar(@$test_files) > 0;
@@ -208,7 +280,7 @@ exit 0;
 sub usage {
   print STDOUT <<EOH;
 
-$0: [--help] [--class=\$name]
+$0: [--help] [--class=\$name] [--verbose]
 
 Examples:
 

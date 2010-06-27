@@ -577,7 +577,7 @@ msgstr "« %s » ne peut être listé"
 #: ../modules/mod_facts.c:915
 #, c-format
 msgid "%s- Start of list for %s"
-msgstr "%s - Début du listage de %s"
+msgstr "%s- Début du listage de %s"
 
 #: ../modules/mod_facts.c:917
 #, c-format

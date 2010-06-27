@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 /*
  * ProFTPD scoreboard support.
  *
- * $Id: scoreboard.c,v 1.45 2009/01/27 23:29:52 castaglia Exp $
+ * $Id: scoreboard.c,v 1.52 2010/01/11 01:16:50 castaglia Exp $
  */
 
 #include "conf.h"
@@ -49,6 +49,8 @@ static struct flock entry_lock;
 static unsigned char scoreboard_read_locked = FALSE;
 static unsigned char scoreboard_write_locked = FALSE;
 
+static const char *trace_channel = "scoreboard";
+
 /* Internal routines */
 
 static char *handle_score_str(const char *fmt, va_list cmdap) {
@@ -61,6 +63,8 @@ static char *handle_score_str(const char *fmt, va_list cmdap) {
 
 static int read_scoreboard_header(pr_scoreboard_header_t *sch) {
   int res = 0;
+
+  pr_trace_msg(trace_channel, 7, "reading scoreboard header");
 
   /* NOTE: reading a struct from a file using read(2) -- bad (in general). */
   while ((res = read(scoreboard_fd, sch, sizeof(pr_scoreboard_header_t))) !=
@@ -335,6 +339,8 @@ int pr_close_scoreboard(void) {
   if (scoreboard_read_locked || scoreboard_write_locked)
     unlock_scoreboard();
 
+  pr_trace_msg(trace_channel, 4, "closing scoreboard fd %d", scoreboard_fd);
+
   while (close(scoreboard_fd) < 0) {
     if (errno == EINTR) {
       pr_signals_handle();
@@ -368,9 +374,10 @@ void pr_delete_scoreboard(void) {
   if (*scoreboard_file) {
     struct stat st;
 
-    if (stat(scoreboard_file, &st) == 0)
+    if (stat(scoreboard_file, &st) == 0) {
       pr_log_debug(DEBUG3, "deleting existing scoreboard '%s'",
         scoreboard_file);
+    }
 
     (void) unlink(scoreboard_file);
   }
@@ -457,6 +464,8 @@ int pr_open_scoreboard(int flags) {
     /* Write-lock the scoreboard file. */
     if (wlock_scoreboard() < 0)
       return -1;
+
+    pr_trace_msg(trace_channel, 7, "writing scoreboard header");
 
     while (write(scoreboard_fd, &header, sizeof(header)) != sizeof(header)) {
       int wr_errno = errno;
@@ -577,6 +586,8 @@ int pr_scoreboard_entry_add(void) {
     return -1;
   }
 
+  pr_trace_msg(trace_channel, 3, "adding new scoreboard entry");
+
   /* Write-lock the scoreboard file. */
   if (wlock_scoreboard() < 0)
     return -1;
@@ -639,9 +650,11 @@ int pr_scoreboard_entry_del(unsigned char verbose) {
   }
 
   if (!have_entry) {
-    errno = EPERM;
+    errno = ENOENT;
     return -1;
   }
+
+  pr_trace_msg(trace_channel, 3, "deleting scoreboard entry");
 
   memset(&entry, '\0', sizeof(entry));
 
@@ -683,6 +696,8 @@ pr_scoreboard_entry_t *pr_scoreboard_entry_read(void) {
     if (rlock_scoreboard() < 0)
       return NULL; 
   }
+
+  pr_trace_msg(trace_channel, 5, "reading scoreboard entry");
 
   memset(&scan_entry, '\0', sizeof(scan_entry));
 
@@ -748,10 +763,102 @@ const char *pr_scoreboard_entry_get(int field) {
 
     case PR_SCORE_CMD_ARG:
       return entry.sce_cmd_arg;
+
+    case PR_SCORE_PROTOCOL:
+      return entry.sce_protocol;
   }
 
   errno = ENOENT;
   return NULL;
+}
+
+int pr_scoreboard_entry_kill(pr_scoreboard_entry_t *sce, int signo) {
+  int res;
+
+  if (sce == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (ServerType == SERVER_STANDALONE) {
+#ifdef HAVE_GETPGID
+    pid_t curr_pgrp;
+
+# ifdef HAVE_GETPGRP
+    curr_pgrp = getpgrp();
+# else
+    curr_pgrp = getpgid(0);
+# endif /* HAVE_GETPGRP */
+
+    if (getpgid(sce->sce_pid) != curr_pgrp) {
+      pr_trace_msg(trace_channel, 1, "scoreboard entry PID %lu process group "
+        "does not match current process group, refusing to send signal",
+        (unsigned long) sce->sce_pid);
+      errno = EPERM;
+      return -1;
+    }
+#endif /* HAVE_GETPGID */
+  }
+
+  res = kill(sce->sce_pid, signo);
+  return res;
+}
+
+/* Given a NUL-terminated string -- possibly UTF8-encoded -- and a maximum
+ * buffer length, return the number of bytes in the string which can fit in
+ * that buffer without truncating a character.  This is needed since UTF8
+ * characters are variable-width.
+ */
+static size_t str_getlen(const char *str, size_t maxsz) {
+#ifdef PR_USE_NLS
+  register unsigned int i = 0;
+
+  while (str[i] > 0 &&
+         i < maxsz) {
+ascii:
+    pr_signals_handle();
+    i++;
+  }
+
+  while (str[i] &&
+         i < maxsz) {
+    size_t len;
+
+    if (str[i] > 0) {
+      goto ascii;
+    }
+
+    pr_signals_handle();
+
+    len = 0;
+
+    switch (str[i] & 0xF0) {
+      case 0xE0:
+        len = 3;
+        break;
+
+      case 0xF0:
+        len = 4;
+        break;
+
+      default:
+        len = 2;
+        break;
+    }
+
+    if ((i + len) < maxsz) {
+      i += len;
+
+    } else {
+      break;
+    }
+  }
+
+  return i;
+#else
+  /* No UTF8 support in this proftpd build; just return the max size. */
+  return maxsz;
+#endif /* !PR_USE_NLS */
 }
 
 int pr_scoreboard_entry_update(pid_t pid, ...) {
@@ -769,6 +876,8 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
     return -1;
   }
 
+  pr_trace_msg(trace_channel, 3, "updating scoreboard entry");
+
   /* If updating some fields, clear the begin_idle field.
    */
 
@@ -781,7 +890,8 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
       case PR_SCORE_USER:
         tmp = va_arg(ap, char *);
         memset(entry.sce_user, '\0', sizeof(entry.sce_user));
-        sstrncpy(entry.sce_user, tmp, sizeof(entry.sce_user));
+        sstrncpy(entry.sce_user, tmp,
+          str_getlen(tmp, sizeof(entry.sce_user)-1) + 1);
         break;
 
       case PR_SCORE_CLIENT_ADDR: {
@@ -796,11 +906,17 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
 
       case PR_SCORE_CLIENT_NAME: {
           char *remote_name = va_arg(ap, char *);
-          
-          snprintf(entry.sce_client_name, sizeof(entry.sce_client_name),
-            "%s", remote_name ? remote_name : "(unknown)");
-          entry.sce_client_name[sizeof(entry.sce_client_name) - 1] = '\0';
 
+          if (remote_name == NULL) {
+            remote_name = "(unknown)";
+          }
+
+          memset(entry.sce_client_name, '\0', sizeof(entry.sce_client_name));
+
+          snprintf(entry.sce_client_name,
+            str_getlen(remote_name, sizeof(entry.sce_client_name)-1),
+            "%s", remote_name);
+          entry.sce_client_name[sizeof(entry.sce_client_name)-1] = '\0';
         }
         break;
 
@@ -813,7 +929,8 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
       case PR_SCORE_CWD:
         tmp = va_arg(ap, char *);
         memset(entry.sce_cwd, '\0', sizeof(entry.sce_cwd));
-        sstrncpy(entry.sce_cwd, tmp, sizeof(entry.sce_cwd));
+        sstrncpy(entry.sce_cwd, tmp,
+          str_getlen(tmp, sizeof(entry.sce_cwd)-1) + 1);
         break;
 
       case PR_SCORE_CMD: {
@@ -833,7 +950,8 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
           argstr = handle_score_str(tmp, ap);
 
           memset(entry.sce_cmd_arg, '\0', sizeof(entry.sce_cmd_arg));
-          sstrncpy(entry.sce_cmd_arg, argstr, sizeof(entry.sce_cmd_arg));
+          sstrncpy(entry.sce_cmd_arg, argstr,
+            str_getlen(argstr, sizeof(entry.sce_cmd_arg)-1) + 1);
           tmp = va_arg(ap, void *);
         }
         break;
@@ -889,6 +1007,12 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
         entry.sce_xfer_elapsed = va_arg(ap, unsigned long);
         break;
 
+      case PR_SCORE_PROTOCOL:
+        tmp = va_arg(ap, char *);
+        memset(entry.sce_protocol, '\0', sizeof(entry.sce_protocol));
+        sstrncpy(entry.sce_protocol, tmp, sizeof(entry.sce_protocol));
+        break;
+
       default:
         errno = ENOENT;
         return -1;
@@ -906,10 +1030,43 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
   return 0;
 }
 
+/* Validate the PID in a scoreboard entry.  A PID can be invalid in a couple
+ * of ways:
+ *
+ *  1.  The PID refers to a process no longer present on the system.
+ *  2.  The PID refers to a process not in the daemon process group
+ *      (for "ServerType standalone" servers only).
+ */
+static int scoreboard_valid_pid(pid_t pid, pid_t curr_pgrp) {
+  int res;
+
+  res = kill(pid, 0);
+  if (res < 0 &&
+      errno == ESRCH) {
+    return -1;
+  }
+
+  if (ServerType == SERVER_STANDALONE &&
+      curr_pgrp > 0) {
+#ifdef HAVE_GETPGID
+    if (getpgid(pid) != curr_pgrp) { 
+      pr_trace_msg(trace_channel, 1, "scoreboard entry PID %lu process group "
+        "does not match current process group, removing entry",
+        (unsigned long) pid);
+      errno = EPERM;
+      return -1;
+    }
+#endif /* HAVE_GETPGID */
+  }
+
+  return 0;
+}
+
 int pr_scoreboard_scrub(void) {
   int fd = -1;
   off_t curr_offset = 0;
   struct flock lock;
+  pid_t curr_pgrp = 0;
   pr_scoreboard_entry_t sce;
 
   pr_log_debug(DEBUG9, "scrubbing scoreboard");
@@ -946,7 +1103,13 @@ int pr_scoreboard_scrub(void) {
   curr_offset = lseek(fd, sizeof(pr_scoreboard_header_t), SEEK_SET);
 
   memset(&sce, 0, sizeof(sce));
-
+ 
+#ifdef HAVE_GETPGRP
+  curr_pgrp = getpgrp();
+#elif HAVE_GETPGID
+  curr_pgrp = getpgid(0);
+#endif /* !HAVE_GETPGRP and !HAVE_GETPGID */
+ 
   PRIVS_ROOT
   while (read(fd, &sce, sizeof(sce)) == sizeof(sce)) {
     pr_signals_handle();
@@ -955,8 +1118,7 @@ int pr_scoreboard_scrub(void) {
      * the slot.
      */
     if (sce.sce_pid &&
-        kill(sce.sce_pid, 0) < 0 &&
-        errno == ESRCH) {
+        scoreboard_valid_pid(sce.sce_pid, curr_pgrp) < 0) {
 
       /* OK, the recorded PID is no longer valid. */
       pr_log_debug(DEBUG9, "scrubbing scoreboard slot for PID %u",

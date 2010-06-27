@@ -66,7 +66,8 @@ sub order_allow_deny_ok {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -200,7 +201,8 @@ sub order_deny_allow_ok {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -285,7 +287,7 @@ sub order_deny_allow_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "test.txt: Permission denied";
+      $expected = "test.txt: Operation not permitted";
       chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));

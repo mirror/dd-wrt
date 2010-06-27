@@ -87,7 +87,7 @@ sub tear_down {
   }
 
   undef $self;
-};
+}
 
 sub abor_retr_binary_ok {
   my $self = shift;
@@ -96,7 +96,8 @@ sub abor_retr_binary_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -242,7 +243,8 @@ sub abor_retr_ascii_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -388,7 +390,8 @@ sub abor_retr_ascii_largefile_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -544,7 +547,8 @@ sub abor_retr_ascii_largefile_followed_by_list_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -748,7 +752,8 @@ sub abor_retr_binary_largefile_followed_by_retr_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -780,8 +785,8 @@ sub abor_retr_binary_largefile_followed_by_retr_ok {
       die("Can't set perms on $home_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    unless (chown($uid, $gid, $home_dir, $test_file)) {
+      die("Can't set owner of $home_dir, $test_file to $uid/$gid: $!");
     }
   }
 
@@ -799,7 +804,8 @@ sub abor_retr_binary_largefile_followed_by_retr_ok {
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
 
-    TimeoutLinger => 5,
+    TimeoutLinger => 1,
+    TimeoutIdle => 15,
 
     IfModules => {
       'mod_delay.c' => {
@@ -848,6 +854,7 @@ sub abor_retr_binary_largefile_followed_by_retr_ok {
 
         if ($count > ($test_filesz - 8192)) {
           $conn->abort();
+          last;
         }
       }
 
@@ -868,6 +875,9 @@ sub abor_retr_binary_largefile_followed_by_retr_ok {
 
       # Make sure we can do another data transfer (this time, a RETR) after
       # the abort
+
+      $client->pasv();
+      $client->type('binary');
       $conn = $client->retr_raw($test_file);
       unless ($conn) {
         die("Failed to RETR: " . $client->response_code() . " " .
@@ -936,7 +946,8 @@ sub abor_stor_binary_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -1026,23 +1037,23 @@ sub abor_stor_binary_ok {
 
       my $expected;
 
-      $expected = 226;
-      $self->assert($expected == $resp_code,
+      $expected = '(226|426)';
+      $self->assert(qr/$expected/, $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "Abort successful";
-      $self->assert($expected eq $resp_msg,
+      $expected = '(Abort successful|Transfer aborted. Data connection closed)';
+      $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       # Make sure the control connection did not close because of the abort.
       ($resp_code, $resp_msg) = $client->quit();
 
-      $expected = 221;
-      $self->assert($expected == $resp_code,
+      $expected = '(221|450)';
+      $self->assert(qr/$expected/, $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "Goodbye.";
-      $self->assert($expected eq $resp_msg,
+      $expected = '(Goodbye.|Transfer aborted. Link to file server lost)';
+      $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
 
@@ -1082,7 +1093,8 @@ sub abor_stor_ascii_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -1172,23 +1184,23 @@ sub abor_stor_ascii_ok {
 
       my $expected;
 
-      $expected = 226;
-      $self->assert($expected == $resp_code,
+      $expected = '(226|426)';
+      $self->assert(qr/$expected/, $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "Abort successful";
-      $self->assert($expected eq $resp_msg,
+      $expected = '(Abort successful|Transfer aborted. Data connection closed)';
+      $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       # Make sure the control connection did not close because of the abort.
       ($resp_code, $resp_msg) = $client->quit();
 
-      $expected = 221;
-      $self->assert($expected == $resp_code,
+      $expected = '(221|450)';
+      $self->assert(qr/$expected/, $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "Goodbye.";
-      $self->assert($expected eq $resp_msg,
+      $expected = '(Goodbye.|Transfer aborted. Link to file server lost)';
+      $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
 
@@ -1228,7 +1240,8 @@ sub abor_with_cyrillic_encoding_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");

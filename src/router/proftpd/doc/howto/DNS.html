@@ -1,4 +1,4 @@
-<!-- $Id: DNS.html,v 1.1 2005/07/05 16:11:15 castaglia Exp $ -->
+<!-- $Id: DNS.html,v 1.2 2009/02/12 22:41:32 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/DNS.html,v $ -->
 
 <html>
@@ -131,9 +131,37 @@ of handling dynamic IP addresses by itself.  One way of dealing with this
 situation is to restart <code>proftpd</code> periodically, which will force it
 to re-parse its configuration and thus re-resolve all IP addresses.
 
+<p><a name="DNSNoDNS">
+<font color=red>Question</font>: What if I do not <i>want</i>
+<code>proftpd</code> to use DNS to resolve the hostname to an IP address
+because I am in an environment where there is no DNS at all?<br>
+<font color=blue>Answer</font>: In ProFTPD 1.3.3rc1, support for a new
+<code>-S</code> command-line option was added.  This option can be used to
+specify the IP address of the host machine.  By default,
+<code>proftpd</code> attempts to resolve the host IP address by using DNS
+resolution of the hostname.  However, in cases where DNS is not configured for
+the host machine, this approach does not work.
+
+<p>
+To specify the desired IP address, use <code>-S</code> when starting
+<code>proftpd</code>, <i>e.g.</i>:
+<pre>
+  /usr/local/sbin/proftpd -S 1.2.3.4 ...
+</pre>
+And if you want <code>proftpd</code> to listen on all interfaces, you can
+specify a wildcard socket using an IP address of 0.0.0.0:
+<pre>
+  /usr/local/sbin/proftpd -S 0.0.0.0 ...
+</pre>
+
+<p>
+Note that will also mean that, in your <code>proftpd.conf</code>, any
+<code>&lt;VirtualHost&gt;</code> sections will need to use IP addresses,
+not DNS names.
+
 <p>
 <hr>
-<i>$Date: 2005/07/05 16:11:15 $</i><br>
+<i>$Date: 2009/02/12 22:41:32 $</i><br>
 
 </body>
 </html>

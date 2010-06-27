@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001, 2002, 2003 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 /* Routines to work with ProFTPD bindings
  *
- * $Id: bindings.c,v 1.32 2006/09/29 16:38:16 castaglia Exp $
+ * $Id: bindings.c,v 1.41 2010/02/22 16:55:11 castaglia Exp $
  */
 
 #include "conf.h"
@@ -57,6 +57,8 @@ static pool *binding_pool = NULL;
 static pr_ipbind_t *ipbind_default_server = NULL,
                    *ipbind_localhost_server = NULL;
 
+static const char *trace_channel = "binding";
+
 /* Server cleanup callback function */
 static void server_cleanup_cb(void *conn) {
   *((conn_t **) conn) = NULL;
@@ -77,6 +79,91 @@ static unsigned int ipbind_hash_addr(pr_netaddr_t *addr) {
 
   key ^= (key >> 16);
   return ((key >> 8) ^ key) % PR_BINDINGS_TABLE_SIZE;
+}
+
+static pool *listening_conn_pool = NULL;
+static xaset_t *listening_conn_list = NULL;
+struct listener_rec {
+  struct listener_rec *next, *prev;
+
+  pool *pool;
+  pr_netaddr_t *addr;
+  unsigned int port;
+  conn_t *conn;
+  int claimed;
+};
+
+static conn_t *get_listening_conn(pr_netaddr_t *addr, unsigned int port) {
+  conn_t *l;
+  pool *p;
+  struct listener_rec *lr;
+
+  if (listening_conn_list) {
+    for (lr = (struct listener_rec *) listening_conn_list->xas_list; lr;
+        lr = lr->next) {
+      int use_elt = FALSE;
+
+      pr_signals_handle();
+
+      if (addr != NULL &&
+          lr->addr != NULL) {
+        const char *lr_ipstr = NULL;
+
+        lr_ipstr = pr_netaddr_get_ipstr(lr->addr);
+
+        /* Note: lr_ipstr should never be null.  If it is, it means that
+         * the lr->addr object never had its IP address resolved/stashed,
+         * and in attempting to do, getnameinfo(3) failed for some reason.
+         *
+         * The IP address on which it's listening, if not available via
+         * lr->addr, should thus be available via lr->conn->local_addr.
+         */
+
+        if (lr_ipstr == NULL &&
+            lr->conn != NULL) {
+          lr_ipstr = pr_netaddr_get_ipstr(lr->conn->local_addr);
+        }
+
+        if (lr_ipstr != NULL) {
+          if (strcmp(pr_netaddr_get_ipstr(addr), lr_ipstr) == 0 &&
+              port == lr->port) {
+            use_elt = TRUE;
+          }
+        }
+
+      } else if (addr == NULL &&
+                 port == lr->port) {
+        use_elt = TRUE;
+      }
+
+      if (use_elt) { 
+        lr->claimed = TRUE;
+        return lr->conn;
+      }
+    }
+  }
+
+  if (listening_conn_pool == NULL) {
+    listening_conn_pool = make_sub_pool(permanent_pool);
+    pr_pool_tag(listening_conn_pool, "Listening Connection Pool");
+
+    listening_conn_list = xaset_create(listening_conn_pool, NULL);
+  }
+
+  p = make_sub_pool(listening_conn_pool); 
+  pr_pool_tag(p, "Listening conn subpool");
+
+  l = pr_inet_create_conn(p, server_list, -1, addr, port, FALSE);
+
+  lr = pcalloc(p, sizeof(struct listener_rec));
+  lr->pool = p;
+  lr->conn = l;
+  lr->addr = pr_netaddr_dup(p, addr);
+  lr->port = port;
+  lr->claimed = TRUE;
+
+  xaset_insert(listening_conn_list, (xasetmember_t *) lr);
+  return l;
 }
 
 /* Slight (clever?) optimization: the loop in server_loop() always
@@ -162,15 +249,14 @@ int pr_ipbind_add_binds(server_rec *serv) {
      */
     if (SocketBindTight &&
         serv->ServerPort) {
-      listen_conn = pr_inet_create_connection(serv->pool, server_list, -1, addr,
-        serv->ServerPort, FALSE);
+      listen_conn = get_listening_conn(addr, serv->ServerPort);
 
-      PR_CREATE_IPBIND(serv, addr);
+      PR_CREATE_IPBIND(serv, addr, serv->ServerPort);
       PR_OPEN_IPBIND(addr, serv->ServerPort, listen_conn, FALSE, FALSE, TRUE);
 
     } else {
 
-      PR_CREATE_IPBIND(serv, addr);
+      PR_CREATE_IPBIND(serv, addr, serv->ServerPort);
       PR_OPEN_IPBIND(addr, serv->ServerPort, serv->listen, FALSE, FALSE, TRUE);
     }
 
@@ -319,7 +405,8 @@ int pr_ipbind_close_listeners(void) {
   return 0;
 }
 
-int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr) {
+int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr,
+    unsigned int port) {
   int res = 0;
   pr_ipbind_t *ipbind = NULL;
   config_rec *c = NULL;
@@ -337,11 +424,11 @@ int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr) {
   /* Make sure the address is not already in use */
   for (ipbind = ipbind_table[i]; ipbind; ipbind = ipbind->ib_next) {
     if (pr_netaddr_cmp(ipbind->ib_addr, addr) == 0 &&
-        ipbind->ib_port == server->ServerPort) {
+        ipbind->ib_port == port) {
 
       /* An ipbind already exists for this IP address */
       pr_log_pri(PR_LOG_NOTICE, "notice: '%s' (%s:%u) already bound to '%s'",
-        server->ServerName, pr_netaddr_get_ipstr(addr), server->ServerPort,
+        server->ServerName, pr_netaddr_get_ipstr(addr), port,
         ipbind->ib_server->ServerName);
 
       errno = EADDRINUSE;
@@ -357,11 +444,14 @@ int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr) {
   ipbind = pcalloc(server->pool, sizeof(pr_ipbind_t));
   ipbind->ib_server = server;
   ipbind->ib_addr = addr;
-  ipbind->ib_port = server->ServerPort;
+  ipbind->ib_port = port;
   ipbind->ib_namebinds = NULL;
   ipbind->ib_isdefault = FALSE;
   ipbind->ib_islocalhost = FALSE;
   ipbind->ib_isactive = FALSE;
+
+  pr_trace_msg(trace_channel, 8, "created binding for %s#%u, server %p",
+    pr_netaddr_get_ipstr(ipbind->ib_addr), ipbind->ib_port, ipbind->ib_server);
 
   /* Add the ipbind to the table. */
   if (ipbind_table[i])
@@ -436,6 +526,8 @@ pr_ipbind_t *pr_ipbind_get(pr_ipbind_t *prev) {
 
 server_rec *pr_ipbind_get_server(pr_netaddr_t *addr, unsigned int port) {
   pr_ipbind_t *ipbind = NULL;
+  pr_netaddr_t wildcard_addr;
+  int addr_family;
 
   /* If we've got a binding configured for this exact address, return it
    * straightaway.
@@ -443,6 +535,53 @@ server_rec *pr_ipbind_get_server(pr_netaddr_t *addr, unsigned int port) {
   ipbind = pr_ipbind_find(addr, port, TRUE);
   if (ipbind != NULL)
     return ipbind->ib_server;
+
+  /* Look for a vhost bound to the wildcard address (i.e. INADDR_ANY).
+   *
+   * This allows for "<VirtualHost 0.0.0.0>" configurations, where the
+   * IP address to which the client might connect is not known at
+   * configuration time.  (Usually happens when the same config file
+   * is deployed to multiple machines.)
+   */
+
+  addr_family = pr_netaddr_get_family(addr);
+
+  pr_netaddr_clear(&wildcard_addr);
+  pr_netaddr_set_family(&wildcard_addr, addr_family);
+  pr_netaddr_set_sockaddr_any(&wildcard_addr);
+
+  ipbind = pr_ipbind_find(&wildcard_addr, port, TRUE);
+  if (ipbind != NULL) {
+    pr_log_debug(DEBUG7, "no matching vhost found for %s#%u, using "
+      "'%s' listening on wildcard address", pr_netaddr_get_ipstr(addr), port,
+      ipbind->ib_server->ServerName);
+    return ipbind->ib_server;
+
+  } else {
+#ifdef PR_USE_IPV6
+    if (addr_family == AF_INET6 &&
+        pr_netaddr_use_ipv6()) {
+
+      /* The pr_ipbind_find() probably returned NULL because there aren't
+       * any <VirtualHost> sections configured explicitly for the wildcard
+       * IPv6 address of "::", just the IPv4 wildcard "0.0.0.0" address.
+       *
+       * So try the pr_ipbind_find() again, this time using the IPv4 wildcard.
+       */
+      pr_netaddr_clear(&wildcard_addr);
+      pr_netaddr_set_family(&wildcard_addr, AF_INET);
+      pr_netaddr_set_sockaddr_any(&wildcard_addr);
+
+      ipbind = pr_ipbind_find(&wildcard_addr, port, TRUE);
+      if (ipbind != NULL) {
+        pr_log_debug(DEBUG7, "no matching vhost found for %s#%u, using "
+          "'%s' listening on wildcard address", pr_netaddr_get_ipstr(addr),
+          port, ipbind->ib_server->ServerName);
+        return ipbind->ib_server;
+      }
+    }
+#endif /* PR_USE_IPV6 */
+  }
 
   /* Use the default server, if set. */
   if (ipbind_default_server &&
@@ -457,8 +596,9 @@ server_rec *pr_ipbind_get_server(pr_netaddr_t *addr, unsigned int port) {
    * loopback address
    */
   if (ipbind_localhost_server &&
-      pr_netaddr_is_loopback(addr))
+      pr_netaddr_is_loopback(addr)) {
     return ipbind_localhost_server->ib_server;
+  }
 
   return NULL;
 }
@@ -779,6 +919,17 @@ void free_bindings(void) {
   }
 
   memset(ipbind_table, 0, sizeof(ipbind_table));
+
+  /* Mark all listening conns as "unclaimed"; any that remaining unclaimed
+   * after init_bindings() can be closed.
+   */
+  if (listening_conn_list) {
+    struct listener_rec *lr;
+
+    for (lr = (struct listener_rec *) listening_conn_list->xas_list; lr; lr = lr->next) {
+      lr->claimed = FALSE;
+    }
+  }
 }
 
 static void init_inetd_bindings(void) {
@@ -786,7 +937,12 @@ static void init_inetd_bindings(void) {
   server_rec *serv = NULL;
   unsigned char *default_server = NULL, is_default = FALSE;
 
-  main_server->listen = pr_inet_create_connection(main_server->pool,
+  /* We explicitly do NOT use the get_listening_conn() function here, since
+   * inetd-run daemons will not a) handle restarts, and thus b) will not have
+   * already-open connections to choose from.
+   */
+
+  main_server->listen = pr_inet_create_conn(main_server->pool,
     server_list, STDIN_FILENO, NULL, INPORT_ANY, FALSE);
 
   /* Fill in all the important connection information. */
@@ -804,7 +960,7 @@ static void init_inetd_bindings(void) {
       *default_server == TRUE)
     is_default = TRUE;
 
-  PR_CREATE_IPBIND(main_server, main_server->addr);
+  PR_CREATE_IPBIND(main_server, main_server->addr, main_server->ServerPort);
   PR_OPEN_IPBIND(main_server->addr, main_server->ServerPort,
     main_server->listen, is_default, TRUE, TRUE);
   PR_ADD_IPBINDS(main_server);
@@ -828,7 +984,7 @@ static void init_inetd_bindings(void) {
         *default_server == TRUE)
       is_default = TRUE;
 
-    PR_CREATE_IPBIND(serv, serv->addr);
+    PR_CREATE_IPBIND(serv, serv->addr, serv->ServerPort);
     PR_OPEN_IPBIND(serv->addr, serv->ServerPort, serv->listen, is_default,
       FALSE, TRUE);
     PR_ADD_IPBINDS(serv);
@@ -847,7 +1003,7 @@ static void init_standalone_bindings(void) {
    */
   if (main_server->ServerPort) {
 
-    /* If SocketBindTight is off, then pr_inet_create_connection() will
+    /* If SocketBindTight is off, then pr_inet_create_conn() will
      * create and bind to a wildcard socket.  However, should it be an
      * IPv4 or an IPv6 wildcard socket?
      */
@@ -866,10 +1022,8 @@ static void init_standalone_bindings(void) {
 #endif /* PR_USE_IPV6 */
     }
 
-    main_server->listen =
-      pr_inet_create_connection(main_server->pool, server_list, -1,
-        (SocketBindTight ? main_server->addr : NULL),
-        main_server->ServerPort, FALSE);
+    main_server->listen = get_listening_conn(
+      (SocketBindTight ? main_server->addr : NULL), main_server->ServerPort);
 
   } else
     main_server->listen = NULL;
@@ -881,7 +1035,7 @@ static void init_standalone_bindings(void) {
 
   if (main_server->ServerPort ||
       is_default) {
-    PR_CREATE_IPBIND(main_server, main_server->addr);
+    PR_CREATE_IPBIND(main_server, main_server->addr, main_server->ServerPort);
     PR_OPEN_IPBIND(main_server->addr, main_server->ServerPort,
       main_server->listen, is_default, TRUE, TRUE);
     PR_ADD_IPBINDS(main_server);
@@ -911,10 +1065,10 @@ static void init_standalone_bindings(void) {
 #endif /* PR_USE_IPV6 */
         }
 
-        serv->listen = pr_inet_create_connection(serv->pool, server_list, -1,
-          (SocketBindTight ? serv->addr : NULL), serv->ServerPort, FALSE);
+        serv->listen = get_listening_conn((SocketBindTight ? serv->addr : NULL),
+          serv->ServerPort);
 
-        PR_CREATE_IPBIND(serv, serv->addr);
+        PR_CREATE_IPBIND(serv, serv->addr, serv->ServerPort);
         PR_OPEN_IPBIND(serv->addr, serv->ServerPort, serv->listen, is_default,
           FALSE, TRUE);
         PR_ADD_IPBINDS(serv);
@@ -922,7 +1076,7 @@ static void init_standalone_bindings(void) {
       } else if (is_default) {
         serv->listen = NULL;
 
-        PR_CREATE_IPBIND(serv, serv->addr);
+        PR_CREATE_IPBIND(serv, serv->addr, serv->ServerPort);
         PR_OPEN_IPBIND(serv->addr, serv->ServerPort, serv->listen, is_default,
           FALSE, TRUE);
         PR_ADD_IPBINDS(serv);
@@ -948,10 +1102,24 @@ static void init_standalone_bindings(void) {
       register_cleanup(serv->listen->pool, &serv->listen, server_cleanup_cb,
         server_cleanup_cb);
 
-      PR_CREATE_IPBIND(serv, serv->addr);
+      PR_CREATE_IPBIND(serv, serv->addr, serv->ServerPort);
       PR_OPEN_IPBIND(serv->addr, serv->ServerPort, NULL, is_default, FALSE,
         TRUE);
       PR_ADD_IPBINDS(serv);
+    }
+  }
+
+  /* Any "unclaimed" listening conns can be removed and closed. */
+  if (listening_conn_list) {
+    struct listener_rec *lr, *lrn;
+
+    for (lr = (struct listener_rec *) listening_conn_list->xas_list; lr; lr = lrn) {
+      lrn = lr->next;
+
+      if (!lr->claimed) {
+        xaset_remove(listening_conn_list, (xasetmember_t *) lr);
+        destroy_pool(lr->pool);
+      }
     }
   }
 

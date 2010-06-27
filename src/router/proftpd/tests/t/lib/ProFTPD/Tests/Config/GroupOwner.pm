@@ -71,7 +71,8 @@ sub groupowner_ok {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -215,7 +216,8 @@ sub groupowner_failed_norootprivs {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -364,7 +366,8 @@ sub groupowner_ok_suppl_group_norootprivs {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
