@@ -78,7 +78,8 @@ sub segv_daemon_ok {
   my $config_file = "$tmpdir/signals.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/signals.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/signals.scoreboard");
-  my $log_file = File::Spec->rel2abs('signals.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $config = {
     PidFile => $pid_file,

@@ -9,7 +9,7 @@ use File::Spec;
 use IO::Handle;
 
 use ProFTPD::TestSuite::FTP;
-use ProFTPD::TestSuite::Utils qw(:auth :config :running :test :testsuite);
+use ProFTPD::TestSuite::Utils qw(:auth :config :features :running :test :testsuite);
 
 $| = 1;
 
@@ -52,7 +52,7 @@ sub tear_down {
   }
 
   undef $self;
-};
+}
 
 sub help_ok {
   my $self = shift;
@@ -61,7 +61,8 @@ sub help_ok {
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
@@ -105,6 +106,17 @@ sub help_ok {
 
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
+  my $auth_helps = [
+    ' NOOP    FEAT    OPTS    AUTH*   CCC*    CONF*   ENC*    MIC*    ',
+    ' PBSZ*   PROT*   TYPE    STRU    MODE    RETR    STOR    STOU    ',
+  ];
+  if (feature_have_module_compiled("mod_tls.c")) {
+    $auth_helps = [
+      ' NOOP    FEAT    OPTS    AUTH    CCC*    CONF*   ENC*    MIC*    ',
+      ' PBSZ    PROT    TYPE    STRU    MODE    RETR    STOR    STOU    ',
+    ];
+  }
+
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
   # to the parent.
@@ -142,11 +154,10 @@ sub help_ok {
         ' CWD     XCWD    CDUP    XCUP    SMNT*   QUIT    PORT    PASV    ',
         ' EPRT    EPSV    ALLO*   RNFR    RNTO    DELE    MDTM    RMD     ',
         ' XRMD    MKD     XMKD    PWD     XPWD    SIZE    SYST    HELP    ',
-        ' NOOP    FEAT    OPTS    AUTH*   CCC*    CONF*   ENC*    MIC*    ',
-        ' PBSZ*   PROT*   TYPE    STRU    MODE    RETR    STOR    STOU    ',
+        @$auth_helps,
         ' APPE    REST    ABOR    USER    PASS    ACCT*   REIN*   LIST    ',
         ' NLST    STAT    SITE    MLSD    MLST    ',
-        'Direct comments to root@localhost',
+        'Direct comments to root@127.0.0.1',
       )];
 
       for (my $i = 0; $i < $nhelp; $i++) {

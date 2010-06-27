@@ -3,7 +3,7 @@
  * Time-stamp: <1999-10-04 03:21:21 root>
  * Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2002-2006 The ProFTPD Project
+ * Copyright (c) 2002-2009 The ProFTPD Project
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql.h,v 1.7 2006/04/21 02:04:19 castaglia Exp $
+ * $Id: mod_sql.h,v 1.10 2009/10/02 21:22:56 castaglia Exp $
  */
 
 #ifndef MOD_SQL_H
@@ -35,6 +35,11 @@ int sql_log(int, const char *, ...);
 cmd_rec *_sql_make_cmd(pool * cp, int argc, ...);
 int sql_register_backend(const char *, cmdtable *);
 int sql_unregister_backend(const char *);
+
+/* Custom SQLAuthType registration. */
+int sql_register_authtype(const char *name,
+  modret_t *(*callback)(cmd_rec *, const char *, const char *));
+int sql_unregister_authtype(const char *name);
 
 /* data passing structure */
 struct sql_data_struct {
@@ -81,7 +86,22 @@ typedef struct sql_data_struct sql_data_t;
  */
 
 #define MOD_SQL_API_V2 "mod_sql_api_v2"
-                
+
+/* SQLOption values */
+extern unsigned long pr_sql_opts;
+
+#define SQL_OPT_NO_DISCONNECT_ON_ERROR          0x0001
+#define SQL_OPT_USE_NORMALIZED_GROUP_SCHEMA     0x0002
+#define SQL_OPT_NO_RECONNECT                    0x0004
+
+/* SQL connection policy */
+extern unsigned int pr_sql_conn_policy;
+
+#define SQL_CONN_POLICY_PERSESSION	1
+#define SQL_CONN_POLICY_TIMER		2
+#define SQL_CONN_POLICY_PERCALL		3
+#define SQL_CONN_POLICY_PERCONN		4
+
 #endif /* MOD_SQL_H */
 
 

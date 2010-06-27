@@ -46,7 +46,7 @@ will only show session information for the given virtual host.
 .PD 0
 .B @BINDIR@/ftpwho
 .br
-.B @LOCALSTATEDIR@/run/proftpd/proftpd.scoreboard
+.B @LOCALSTATEDIR@/proftpd.scoreboard
 .PD
 .SH AUTHORS
 .PP

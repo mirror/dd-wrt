@@ -1,4 +1,4 @@
-<!-- $Id: TLS.html,v 1.20 2009/01/26 20:57:07 castaglia Exp $ -->
+<!-- $Id: TLS.html,v 1.26 2009/12/28 20:12:29 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/TLS.html,v $ -->
 
 <html>
@@ -53,7 +53,7 @@ Example <a href="http://www.castaglia.org/proftpd/modules/mod_tls.html"><code>mo
     # SSL/TLS renegotiations; when mod_tls forces a renegotiation, these
     # clients will close the data connection, or there will be a timeout
     # on an idle data connection.</font>
-    TLSRenegotiate required off
+    TLSRenegotiate none
 
   &lt;/IfModule&gt;
 </pre>
@@ -325,6 +325,32 @@ are used, and how to generate your own:
   <a href="http://www.modssl.org/docs/2.7/ssl_faq.html#ToC24">http://www.modssl.org/docs/2.7/ssl_faq.html</a>
 </pre>
 
+<p><a name="TLSProtection">
+<font color=red>Question</font>: Does FTPS protect both the control connection
+<i>and</i> the data connections?<br>
+<font color=blue>Question</font>: Short answer: yes.
+
+<p>
+The long answer is, of course, that it depends.  In the case of
+<code>mod_tls</code>, it depends on your <code>TLSRequired</code> setting.
+If you use:
+<pre>
+  TLSRequired on
+</pre>
+then you are configuring <code>mod_tls</code> to <b>require</b> SSL/TLS
+protection for both control connections (<i>e.g.</i> protecting the username
+and password used to log in) <i>and</i> data connections.  If you have:
+<pre>
+  TLSRequired off
+</pre>
+then it is up to the FTPS client whether both control and data connections
+will be protected via SSL/TLS.  Other <code>TLSRequired</code> settings
+can be used to specify specific combinations: data connections only,
+control connections only, authentication plus data data connections only,
+<i>etc</i>.  The <code>TLSRequired</code>
+<a href="../../contrib/mod_tls.html#TLSRequired">documentation</a> has the
+details.
+
 <p><a name="TLSClients">
 <font color=red>Question</font>: Where can I find a list of clients that
 support FTPS?<br>
@@ -364,6 +390,11 @@ negotiation or extension discovery, allowing clients and servers to easily
 agree to negotiate &quot;upward&quot; into a secure channel.  The authors
 of the FTPS Draft felt that upward negotiation was the more appropriate of
 these two approaches for encrypting FTP channels.
+
+<p>
+All that said, in ProFTPD 1.3.3rc2, the <code>mod_tls</code> module was
+enhanced to support implicit FTPS via the <code>UseImplicitSSL</code>
+<a href="../contrib/mod_tls.html#TLSOption"><code>TLSOption</code></a>.
 
 <p><a name="TLSPerUser">
 <font color=red>Question</font>: Can I require TLS on a per-user basis?<br>
@@ -421,6 +452,27 @@ to send the USER and PASS commands <i>unencrypted</i>.  Depending on your
 site's security needs, the ability to require SSL/TLS on a per-user basis
 may or may not be worth the ability to require SSL/TLS for the USER and PASS
 commands.
+
+<p><a name="TLSRequiredPlusPerUser">
+<font color=red>Question</font>: When I use the following in my
+<code>proftpd.conf</code>:
+<pre>
+  TLSRequired on <font color=green># or "TLSRequired auth", or "TLSRequired auth+data"</font>
+  TLSOptions AllowPerUser
+</pre>
+I get the following error when I try to start <code>proftpd</code>:
+<pre>
+  cannot enforce both 'TLSRequired auth' and 'TLSOptions AllowPerUser' at the same time
+</pre>
+<font color=blue>Answer</font>: The reason this error occurs is because
+you have a configuration which is impossible to support.  The
+<code>TLSRequired</code> setting (<i>e.g.</i> "on", "auth", or "auth+data")
+requires that SSL/TLS be in use during authentication.  But in order to
+support the <code>TLSOption AllowPerUser</code> setting, the
+<code>mod_tls</code> <b>cannot</b> require that SSL/TLS be in use during
+authentication, since it does not know the user until <i>after</i>
+authentication has completed.  The requested configuration cannot be supported,
+and thus the server will refuse to start.
 
 <p><a name="TLSFXP">
 <font color=red>Question</font>: Why does <code>mod_tls</code> break FXP
@@ -780,7 +832,7 @@ This header/library version check was added recently, hence why older
 <code>proftpd</code> releases do not log the warning.
 
 <p><a name="TLSCertificateChainFile">
-<font color=red>Question</font>: When should the <a href="../contrib/mod_tls.html#TLSCertificateChainFile"><code>TLSCertificateChainFile</code><a> directive be used?<br>
+<font color=red>Question</font>: When should the <a href="../contrib/mod_tls.html#TLSCertificateChainFile"><code>TLSCertificateChainFile</code></a> directive be used?<br>
 <font color=blue>Answer</font>:  Short answer: only in very specific
 arrangements of CA hierarchies.  Most of the time, you probably do not need
 it.
@@ -818,7 +870,7 @@ The client connects to <code>mod_tls</code>, and starts the SSL/TLS handshake.
 <code>mod_tls</code> sends its "certA" certificate, along with any certs that
 may be needed on the client for verifying the server's certificate.  (This
 is what appears in the "Certificate chain" output from <code>s_client</code>;
-see <a href="#TLSDebugging">SSL/TLS debugging</a> above).  Perhaps the client
+see <a href="#TLSDebugging">SSL/TLS debugging</a> above.)  Perhaps the client
 does not have MyServerCA present in the client certificate store.  So we need
 to tell <code>mod_tls</code> to send the MyServerCA and MyRootCA certs, along
 with "certA".  We <i>could</i> place the MyServerCA and MyRootCA certs in
@@ -836,8 +888,29 @@ file should be in certificate chain order, this is not strictly necessary; the
 OpenSSL library will adjust the ordering as appropriate.
 
 <p>
+<font color=red>Question</font>: I am having trouble connecting to my
+SSL/TLS-enabled <code>proftpd</code>; my FTPS client shows this error:
+<pre>
+  error:14094410:SSL routines:SSL3_READ_BYTES:sslv3 alert handshake failure
+</pre>
+What is wrong?<br>
+<font color=blue>Answer</font>: It depends; the first thing is to check
+your <code>TLSLog</code> to see what errors, if any, are logged by the
+<code>mod_tls</code> module.  For example, you might see:
+<pre>
+  Dec 14 10:47:58 mod_tls/2.4.1[13393]: unable to accept TLS connection: protocol error: 
+    (1) error:1408A0C1:SSL routines:SSL3_GET_CLIENT_HELLO:no shared cipher
+</pre>
+The most common causes of these problems are: <i>a)</i> overly restrictive
+<code>TLSCipherSuite</code> configuration, or <i>b)</i> missing server
+certificate (<i>i.e.</i> <code>TLSRSACertificateFile</code>,
+<code>TLSDSACertificateFile</code>, or <code>TLSPKCS12File</code>).  The
+file configured for the server certificate might also be badly formatted,
+which would result in the same error.
+
+<p>
 <hr>
-Last Updated: <i>$Date: 2009/01/26 20:57:07 $</i><br>
+Last Updated: <i>$Date: 2009/12/28 20:12:29 $</i><br>
 <hr>
 
 </body>

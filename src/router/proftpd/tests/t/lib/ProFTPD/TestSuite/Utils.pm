@@ -21,6 +21,7 @@ our @CONFIG = qw(
 );
 
 our @FEATURES = qw(
+  feature_get_version
   feature_have_feature_enabled
   feature_have_module_compiled
   feature_have_module_loaded
@@ -272,17 +273,32 @@ sub config_write {
   my $path = shift;
   my $config = shift;
 
-  my $port = get_high_numbered_port();
-  my ($user_name, $group_name) = config_get_identity();
+  # The $opts hash can be used to tell this function to NOT write
+  # default config values.
+  my $opts = shift;
+  $opts = {} unless defined($opts);
 
-  $config->{Port} = $port;
-  $config->{User} = $user_name;
-  $config->{Group} = $group_name;
+  my ($user_name, $group_name) = config_get_identity();
 
   # Set a bunch of defaults, unless overridden by the caller
 
-  unless (defined($config->{AllowOverride})) {
-    $config->{AllowOverride} = 'off';
+  unless (defined($config->{Port})) {
+    $config->{Port} = get_high_numbered_port();
+  }
+  my $port = $config->{Port};
+
+  unless (defined($config->{User})) {
+    $config->{User} = $user_name;
+  }
+
+  unless (defined($config->{Group})) {
+    $config->{Group} = $group_name;
+  }
+
+  unless ($opts->{NoAllowOverride}) {
+    unless (defined($config->{AllowOverride})) {
+      $config->{AllowOverride} = 'off';
+    }
   }
 
   unless (defined($config->{DefaultAddress})) {
@@ -373,7 +389,13 @@ sub config_write {
 
           if (ref($section) eq 'HASH') {
             while (my ($anon_k, $anon_v) = each(%$section)) {
-              print $fh "  $anon_k $anon_v\n";
+              if (ref($anon_v) eq 'HASH' ||
+                  ref($anon_v) eq 'ARRAY') {
+                config_write_subsection($fh, $anon_k, $anon_v, "  ");
+
+              } else {
+                print $fh "  $anon_k $anon_v\n";
+              }
             }
 
           } elsif (ref($section) eq 'ARRAY') {
@@ -483,6 +505,37 @@ sub config_write {
   return 1;
 }
 
+sub feature_get_version {
+  my $proftpd_bin = get_proftpd_bin();
+
+  my ($version, $label);
+
+  if (open(my $cmdh, "$proftpd_bin -V |")) {
+
+    while (my $line = <$cmdh>) {
+      chomp($line);
+
+      next unless $line =~ /\s+Version:\s+(\S+)\s+\(\S+\)$/;
+
+      $version = $1;
+      $label = $2;
+      last;
+    }
+
+    close($cmdh);
+
+    if (wantarray()) {
+      return ($version, $label);
+
+    } else {
+      return $version;
+    }
+
+  } else {
+    croak("Error listing features");
+  }
+}
+
 sub feature_have_feature_enabled {
   my $feat = shift;
 
@@ -543,7 +596,7 @@ sub feature_have_module_compiled {
 }
 
 sub feature_have_module_loaded {
-  my $module = shift;;
+  my $module = shift;
   my $config_file = shift;
 
   my $proftpd_bin = get_proftpd_bin();
@@ -582,6 +635,7 @@ sub server_start {
   my $config_file = shift;
   croak("Missing config file argument") unless $config_file;
   my $debug_level = shift;
+  my $pid_file = shift;
 
   # Make sure that the config file is an absolute path
   my $abs_config_file = File::Spec->rel2abs($config_file);
@@ -605,6 +659,37 @@ sub server_start {
   }
 
   my @output = `$cmd`;
+
+  # Ideally we would use the return value from the command to determine
+  # whether the server started successfully or not.  But proftpd's exit
+  # codes are not that nice yet, sadly.  Instead, we'll use the PidFile
+  # written out by the server, if provided.
+  if ($pid_file) {
+
+    my $pid;
+    if (open(my $fh, "< $pid_file")) {
+      $pid = <$fh>;
+      chomp($pid);
+      close($fh);
+
+    } else {
+      croak("Can't read $pid_file: $!");
+    }
+
+    $cmd = "kill -0 $pid";
+
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "Testing server: $cmd\n";
+
+    } else {
+      $cmd .= " 2>/dev/null";
+    }
+
+    @output = `$cmd`;
+    if ($? != 0) {
+      croak("server failed to start");
+    }
+  }
 }
 
 sub server_stop {
@@ -695,7 +780,6 @@ sub testsuite_get_runnable_tests {
 
   # Special handling of any 'feature_*' test classes; if the compiled proftpd
   # has these features enabled, include those tests.
-
   my $skip_tests = [];
   foreach my $test (keys(%$tests)) {
     foreach my $class (@{ $tests->{$test}->{test_class} }) {
@@ -716,7 +800,6 @@ sub testsuite_get_runnable_tests {
 
   # Special handling of any 'mod_*' test classes; if the compiled proftpd
   # has these as static modules, include those tests.
-
   $skip_tests = [];
   foreach my $test (keys(%$tests)) {
     foreach my $class (@{ $tests->{$test}->{test_class} }) {
@@ -757,6 +840,26 @@ sub testsuite_get_runnable_tests {
       }
     }
  
+    foreach my $skip_test (@$skip_tests) {
+      delete($tests->{$skip_test});
+    }
+  }
+
+  # Special handling of any 'os_*' test classes; if the machine running
+  # these tests matches the configured OS, include these tests.
+  $skip_tests = [];
+  foreach my $test (keys(%$tests)) {
+    foreach my $class (@{ $tests->{$test}->{test_class} }) {
+      if ($class =~ /^os_(\S+)$/) {
+        my $os = $1;
+
+        unless ($os =~ /$^O/i) {
+          push(@$skip_tests, $test);
+          last;
+        }
+      }
+    }
+
     foreach my $skip_test (@$skip_tests) {
       delete($tests->{$skip_test});
     }

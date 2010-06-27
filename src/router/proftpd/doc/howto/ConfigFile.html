@@ -1,4 +1,4 @@
-<!-- $Id: ConfigFile.html,v 1.5 2006/04/08 01:20:04 castaglia Exp $ -->
+<!-- $Id: ConfigFile.html,v 1.6 2009/09/04 22:26:49 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ConfigFile.html,v $ -->
 
 <html>
@@ -109,6 +109,14 @@ When trying to start the daemon, many users encounter the &quot;no such group
 for those directives.  The error message is a way of telling you to create the
 role accounts mentioned above.
 
+<p>
+For every connection, <code>proftpd</code> creates a new process to handle
+that client/connection.  Once that client has successfully authenticated,
+then that process switches to the identity/privileges (<i>e.g.</i> UID, primary
+and supplemental GIDs, <i>etc</i>) of the authenticated user.  Thus all
+browsing, uploads, and downloads that clients do happen as the user as which
+they are logged in.
+
 <p><a name="Login"></a>
 <b>Logging in</b><br>
 By default, the <code>proftpd</code> daemon reads the host's
@@ -212,7 +220,7 @@ users</a> mailing list is the best place to post them.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2006/04/08 01:20:04 $</i><br>
+Last Updated: <i>$Date: 2009/09/04 22:26:49 $</i><br>
 <hr>
 
 </body>

@@ -294,6 +294,9 @@
 /* Define if you have the getgrouplist function.  */
 #undef HAVE_GETGROUPLIST
 
+/* Define if you have the getgrset function.  */
+#undef HAVE_GETGRSET
+
 /* Define if you have the gethostbyname2 function.  */
 #undef HAVE_GETHOSTBYNAME2
 
@@ -314,6 +317,12 @@
 
 /* Define if you have the getpeerucred function.  */
 #undef HAVE_GETPEERUCRED
+
+/* Define if you have the getpgid function.  */
+#undef HAVE_GETPGID
+
+/* Define if you have the getpgrp function.  */
+#undef HAVE_GETPGRP
 
 /* Define if you have the getprpwent function.  */
 #undef HAVE_GETPRPWENT
@@ -449,6 +458,9 @@
 
 /* Define if you have the tzset function.  */
 #undef HAVE_TZSET
+
+/* Define if you have the uname function.  */
+#undef HAVE_UNAME
 
 /* Define if you have the unsetenv function.  */
 #undef HAVE_UNSETENV
@@ -723,6 +735,9 @@
 /* Define if you have the ncurses library (-lncurses).  */
 #undef HAVE_LIBNCURSES
 
+/* Define if you have the ncurses library (-lncursesw).  */
+#undef HAVE_LIBNCURSESW
+
 /* Define if you have the nsl library (-lnsl).  */
 #undef HAVE_LIBNSL
 
@@ -857,6 +872,9 @@
 
 /* Define if ncurses support, if available, should be used.  */
 #undef PR_USE_NCURSES
+
+/* Define if ncursesw support, if available, should be used.  */
+#undef PR_USE_NCURSESW
 
 /* Define if OpenSSL support, if available, should be used.  */
 #undef PR_USE_OPENSSL

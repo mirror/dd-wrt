@@ -25,7 +25,7 @@
  */
 
 /* Authentication module for ProFTPD
- * $Id: mod_auth.c,v 1.249.2.2 2009/12/10 17:45:55 castaglia Exp $
+ * $Id: mod_auth.c,v 1.273 2010/01/05 23:17:20 castaglia Exp $
  */
 
 #include "conf.h"
@@ -52,8 +52,8 @@ static char *auth_pass_resp_code = R_230;
 static pr_fh_t *displaylogin_fh = NULL;
 static unsigned int TimeoutSession = 0;
 
-static void auth_scan_scoreboard(void);
-static void auth_count_scoreboard(cmd_rec *, char *);
+static int auth_scan_scoreboard(void);
+static int auth_count_scoreboard(cmd_rec *, char *);
 
 /* auth_cmd_chk_cb() is hooked into the main server's auth_hook function,
  * so that we can deny all commands until authentication is complete.
@@ -75,9 +75,16 @@ static int auth_cmd_chk_cb(cmd_rec *cmd) {
  */
 
 static int auth_login_timeout_cb(CALLBACK_FRAME) {
-  pr_event_generate("core.timeout-login", NULL);
   pr_response_send_async(R_421,
-    _("Login Timeout (%d seconds): closing control connection"), TimeoutLogin);
+    _("Login timeout (%d seconds): closing control connection"), TimeoutLogin);
+
+  /* It's possible that any listeners of this event might terminate the
+   * session process themselves (e.g. mod_ban).  So write out that the
+   * TimeoutLogin has been exceeded to the log here, in addition to the
+   * scheduled session exit message.
+   */
+  pr_log_pri(PR_LOG_NOTICE, "Login timeout exceeded, disconnected");
+  pr_event_generate("core.timeout-login", NULL);
 
   session_exit(PR_LOG_NOTICE, "Session timed out, disconnected", 0, NULL);
 
@@ -97,15 +104,24 @@ static int auth_session_timeout_cb(CALLBACK_FRAME) {
   return 0;
 }
 
+/* Event listeners
+ */
+
+static void auth_exit_ev(const void *event_data, void *user_data) {
+  /* Close the scoreboard descriptor that we opened. */
+  (void) pr_close_scoreboard();
+}
+
 static int auth_sess_init(void) {
   config_rec *c = NULL;
   unsigned char *tmp = NULL;
   int res = 0;
 
   /* Check for a server-specific TimeoutLogin */
-  if ((c = find_config(main_server->conf, CONF_PARAM, "TimeoutLogin",
-      FALSE)) != NULL)
+  c = find_config(main_server->conf, CONF_PARAM, "TimeoutLogin", FALSE);
+  if (c != NULL) {
     TimeoutLogin = *((int *) c->argv[0]);
+  }
 
   /* Start the login timer */
   if (TimeoutLogin) {
@@ -138,6 +154,8 @@ static int auth_sess_init(void) {
     }
   }
 
+  pr_event_register(&auth_module, "core.exit", auth_exit_ev, NULL);
+
   /* Create an entry in the scoreboard for this session. */
   if (pr_scoreboard_entry_add() < 0)
     pr_log_pri(PR_LOG_NOTICE, "notice: unable to add scoreboard entry: %s",
@@ -146,11 +164,12 @@ static int auth_sess_init(void) {
   pr_scoreboard_entry_update(session.pid,
     PR_SCORE_USER, "(none)",
     PR_SCORE_SERVER_PORT, main_server->ServerPort,
-    PR_SCORE_SERVER_ADDR, main_server->addr, main_server->ServerPort,
+    PR_SCORE_SERVER_ADDR, session.c->local_addr, session.c->local_port,
     PR_SCORE_SERVER_LABEL, main_server->ServerName,
     PR_SCORE_CLIENT_ADDR, session.c->remote_addr,
     PR_SCORE_CLIENT_NAME, session.c->remote_name,
     PR_SCORE_CLASS, session.class ? session.class->cls_name : "",
+    PR_SCORE_PROTOCOL, "ftp",
     PR_SCORE_BEGIN_SESSION, time(NULL),
     NULL);
 
@@ -227,14 +246,14 @@ static int _do_auth(pool *p, xaset_t *conf, char *u, char *pw) {
 
 MODRET auth_err_pass(cmd_rec *cmd) {
 
-  /* Remove C_USER here in a LOG_CMD_ERR handler, so that other modules,
-   * who may want to lookup the original USER parameter on a failed login in
-   * an earlier command handler phase, have a chance to do so.  This removal
-   * of the C_USER parameter on failure was happening directly in the
-   * CMD handler previously, thus preventing POST_CMD_ERR handlers from
-   * using C_USER.
+  /* Remove the stashed original USER name here in a LOG_CMD_ERR handler, so
+   * that other modules, who may want to lookup the original USER parameter on
+   * a failed login in an earlier command handler phase, have a chance to do
+   * so.  This removal of the USER parameter on failure was happening directly
+   * in the CMD handler previously, thus preventing POST_CMD_ERR handlers from
+   * using USER.
    */
-  remove_config(cmd->server->conf, C_USER, FALSE);
+  pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
 
   return PR_HANDLED(cmd);
 }
@@ -257,14 +276,25 @@ MODRET auth_post_pass(cmd_rec *cmd) {
   unsigned int ctxt_precedence = 0;
   unsigned char have_user_timeout, have_group_timeout, have_class_timeout,
     have_all_timeout, *privsdrop = NULL;
+  struct stat st;
 
-  user = get_param_ptr(cmd->server->conf, C_USER, FALSE);
+  /* Clear the list of auth-only modules. */
+  pr_auth_clear_auth_only_modules();
+
+  user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
 
   /* Count up various quantities in the scoreboard, checking them against
    * the Max* limits to see if the session should be barred from going
    * any further.
    */
   auth_count_scoreboard(cmd, session.user);
+
+  /* Check for dynamic configuration.  This check needs to be after the
+   * setting of any possible anon_config, as that context may be allowed
+   * or denied .ftpaccess-parsing separately from the containing server.
+   */
+  if (pr_fsio_stat(session.cwd, &st) != -1)
+    build_dyn_config(cmd->tmp_pool, session.cwd, &st, TRUE);
 
   have_user_timeout = have_group_timeout = have_class_timeout =
     have_all_timeout = FALSE;
@@ -530,6 +560,8 @@ static char *get_default_root(pool *p) {
   c = find_config(main_server->conf, CONF_PARAM, "DefaultRoot", FALSE);
 
   while (c) {
+    pr_signals_handle();
+
     /* Check the groups acl */
     if (c->argc < 2) {
       dir = c->argv[0];
@@ -543,37 +575,36 @@ static char *get_default_root(pool *p) {
       break;
     }
 
-    c = find_config_next(c,c->next, CONF_PARAM, "DefaultRoot", FALSE);
+    c = find_config_next(c, c->next, CONF_PARAM, "DefaultRoot", FALSE);
   }
 
   if (dir) {
-
     /* Check for any expandable variables. */
     dir = path_subst_uservar(p, &dir);
 
-    if (strcmp(dir, "/") == 0)
+    if (strcmp(dir, "/") == 0) {
       dir = NULL;
 
-    else {
+    } else {
       char *realdir;
       int xerrno = 0;
 
       /* We need to be the final user here so that if the user has their home
-       * directory with a mode the user proftpd is running (ie the User
+       * directory with a mode the user proftpd is running (i.e. the User
        * directive) as can not traverse down, we can still have the default
        * root.
        */
 
       PRIVS_USER
       realdir = dir_realpath(p, dir);
-      if (!realdir)
+      if (realdir == NULL)
         xerrno = errno;
       PRIVS_RELINQUISH
 
-      if (realdir)
+      if (realdir) {
         dir = realdir;
 
-      else {
+      } else {
         /* Try to provide a more informative message. */
         char interp_dir[PR_TUNABLE_PATH_MAX + 1];
 
@@ -593,15 +624,15 @@ static char *get_default_root(pool *p) {
 static struct passwd *passwd_dup(pool *p, struct passwd *pw) {
   struct passwd *npw;
 
-  npw = pcalloc(p,sizeof(struct passwd));
+  npw = pcalloc(p, sizeof(struct passwd));
 
-  npw->pw_name = pstrdup(p,pw->pw_name);
-  npw->pw_passwd = pstrdup(p,pw->pw_passwd);
+  npw->pw_name = pstrdup(p, pw->pw_name);
+  npw->pw_passwd = pstrdup(p, pw->pw_passwd);
   npw->pw_uid = pw->pw_uid;
   npw->pw_gid = pw->pw_gid;
-  npw->pw_gecos = pstrdup(p,pw->pw_gecos);
-  npw->pw_dir = pstrdup(p,pw->pw_dir);
-  npw->pw_shell = pstrdup(p,pw->pw_shell);
+  npw->pw_gecos = pstrdup(p, pw->pw_gecos);
+  npw->pw_dir = pstrdup(p, pw->pw_dir);
+  npw->pw_shell = pstrdup(p, pw->pw_shell);
 
   return npw;
 }
@@ -622,14 +653,13 @@ static void ensure_open_passwd(pool *p) {
 /* Next function (the biggie) handles all authentication, setting
  * up chroot() jail, etc.
  */
-static int setup_env(pool *p, char *user, char *pass) {
+static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
   struct passwd *pw;
-  struct stat sbuf;
   config_rec *c, *tmpc;
   char *origuser,*ourname,*anonname = NULL,*anongroup = NULL,*ugroup = NULL;
-  char sess_ttyname[20] = {'\0'}, *defaulttransfermode;
-  char *defroot = NULL,*defchdir = NULL,*xferlog = NULL;
-  int aclp,i,force_anon = 0,res = 0,showsymlinks;
+  char *defaulttransfermode, *defroot = NULL,*defchdir = NULL,*xferlog = NULL;
+  const char *sess_ttyname;
+  int aclp, i, res = 0, showsymlinks;
   unsigned char *wtmp_log = NULL, *anon_require_passwd = NULL;
 
   /********************* Authenticate the user here *********************/
@@ -724,36 +754,12 @@ static int setup_env(pool *p, char *user, char *pass) {
   }
 
   /* If c != NULL from this point on, we have an anonymous login */
-  aclp = login_check_limits(main_server->conf,FALSE,TRUE,&i);
-
-  /* set force_anon (for AnonymousGroup) and build a custom
-   * anonymous config for this session.
-   */
-  if (c && c->config_type != CONF_ANON) {
-    force_anon = 1;
-
-    defroot = get_default_root(session.pool);
-    if (!defroot)
-      defroot = pstrdup(session.pool, pw->pw_dir);
-
-    c = (config_rec *) pcalloc(session.pool, sizeof(config_rec));
-    c->config_type = CONF_ANON;
-    c->name = defroot;
-
-    anonname = pw->pw_name;
-
-    /* hackery, we trick everything else by pointing the subset
-     * at the main server's configuration.  tricky, eh?
-     */
-     c->subset = main_server->conf;
-  }
+  aclp = login_check_limits(main_server->conf, FALSE, TRUE, &i);
 
   if (c) {
-    if (!force_anon) {
-        anongroup = (char*)get_param_ptr(c->subset,"GroupName",FALSE);
-      if (!anongroup)
-        anongroup = (char*)get_param_ptr(main_server->conf,"GroupName",FALSE);
-    }
+    anongroup = get_param_ptr(c->subset, "GroupName", FALSE);
+    if (!anongroup)
+      anongroup = get_param_ptr(main_server->conf, "GroupName",FALSE);
 
     /* Check for configured AnonRejectPasswords regex here, and fail the login
      * if the given password matches the regex.
@@ -922,8 +928,9 @@ static int setup_env(pool *p, char *user, char *pass) {
   if (c) {
     struct group *grp = NULL;
     unsigned char *add_userdir = NULL;
-    char *u = get_param_ptr(main_server->conf, C_USER, FALSE);
+    char *u;
 
+    u = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
     add_userdir = get_param_ptr(c->subset, "UserDirRoot", FALSE);
 
     /* If resolving an <Anonymous> user, make sure that user's groups
@@ -955,10 +962,20 @@ static int setup_env(pool *p, char *user, char *pass) {
 
     if ((add_userdir && *add_userdir == TRUE) &&
         strcmp(u, user) != 0) {
-      session.chroot_path = dir_realpath(p, pdircat(p, c->name, u, NULL));
+      char *userdir_path = pdircat(p, c->name, u, NULL);
+
+      session.chroot_path = dir_realpath(p, userdir_path);
+      if (session.chroot_path == NULL) {
+        pr_log_debug(DEBUG8, "error resolving '%s': %s", userdir_path,
+          strerror(errno));
+      }
 
     } else {
       session.chroot_path = dir_realpath(p, c->name);
+      if (session.chroot_path == NULL) {
+        pr_log_debug(DEBUG8, "error resolving '%s': %s", c->name,
+          strerror(errno));
+      }
     }
 
     if (session.chroot_path &&
@@ -1098,13 +1115,7 @@ static int setup_env(pool *p, char *user, char *pass) {
    * through with the login process.  Oh well.
    */
 
-  memset(sess_ttyname, '\0', sizeof(sess_ttyname));
-#if (defined(BSD) && (BSD >= 199103))
-  snprintf(sess_ttyname, sizeof(sess_ttyname), "ftp%ld", (long) getpid());
-#else
-  snprintf(sess_ttyname, sizeof(sess_ttyname), "ftpd%d", (int) getpid());
-#endif
-  sess_ttyname[sizeof(sess_ttyname)-1] = '\0';
+  sess_ttyname = pr_session_get_ttyname(p);
 
   /* Perform wtmp logging only if not turned off in <Anonymous>
    * or the current server
@@ -1124,9 +1135,9 @@ static int setup_env(pool *p, char *user, char *pass) {
   }
 
 #ifdef PR_USE_LASTLOG
-  if (lastlog)
-    log_lastlog(pw->pw_uid, session.user, sess_ttyname,
-      session.c->remote_addr);
+  if (lastlog) {
+    log_lastlog(pw->pw_uid, session.user, sess_ttyname, session.c->remote_addr);
+  }
 #endif /* PR_USE_LASTLOG */
 
   /* Open any TransferLogs */
@@ -1141,10 +1152,12 @@ static int setup_env(pool *p, char *user, char *pass) {
       xferlog = PR_XFERLOG_PATH;
   }
 
-  if (strcasecmp(xferlog, "NONE") == 0)
+  if (strcasecmp(xferlog, "NONE") == 0) {
     xferlog_open(NULL);
-  else
+
+  } else {
     xferlog_open(xferlog);
+  }
 
   res = set_groups(p, pw->pw_gid, session.gids);
   if (res < 0) {
@@ -1296,7 +1309,7 @@ static int setup_env(pool *p, char *user, char *pass) {
   sstrncpy(session.vwd, pr_fs_getvwd(), sizeof(session.vwd));
 
   /* Make sure directory config pointers are set correctly */
-  dir_check_full(p, C_PASS, G_NONE, session.cwd, NULL);
+  dir_check_full(p, cmd, G_NONE, session.cwd, NULL);
 
   if (c) {
     if (!session.hide_password)
@@ -1313,13 +1326,6 @@ static int setup_env(pool *p, char *user, char *pass) {
     session.proc_prefix = pstrdup(session.pool, session.c->remote_name);
     session.sf_flags = 0;
   }
-
-   /* Check for dynamic configuration.  This check needs to be after the
-    * setting of any possible anon_config, as that context may be allowed
-    * or denied .ftpaccess-parsing separately from the containing server.
-    */
-   if (pr_fsio_stat(session.cwd, &sbuf) != -1)
-     build_dyn_config(p, session.cwd, &sbuf, TRUE);
 
   /* While closing the pointer to the password database would avoid any
    * potential attempt to hijack this information, it is unfortunately needed
@@ -1350,7 +1356,7 @@ static int setup_env(pool *p, char *user, char *pass) {
     PR_SCORE_CWD, session.cwd,
     NULL);
 
-  session_set_idle();
+  pr_session_set_idle();
 
   pr_timer_remove(PR_TIMER_LOGIN, &auth_module);
 
@@ -1391,25 +1397,27 @@ auth_failure:
  * greeting.  A secondary purpose is to enforce any configured
  * MaxConnectionsPerHost limit.
  */
-static void auth_scan_scoreboard(void) {
+static int auth_scan_scoreboard(void) {
+  char *key;
+  void *v;
   config_rec *c = NULL;
   pr_scoreboard_entry_t *score = NULL;
   unsigned int cur = 0, ccur = 0, hcur = 0;
-  char config_class_users[128] = {'\0'};
   char curr_server_addr[80] = {'\0'};
-  xaset_t *conf = NULL;
   const char *client_addr = pr_netaddr_get_ipstr(session.c->remote_addr);
 
   snprintf(curr_server_addr, sizeof(curr_server_addr), "%s:%d",
-    pr_netaddr_get_ipstr(main_server->addr), main_server->ServerPort);
+    pr_netaddr_get_ipstr(session.c->local_addr), main_server->ServerPort);
   curr_server_addr[sizeof(curr_server_addr)-1] = '\0';
 
   /* Determine how many users are currently connected */
-  if (pr_rewind_scoreboard() < 0)
+  if (pr_rewind_scoreboard() < 0) {
     pr_log_pri(PR_LOG_NOTICE, "error rewinding scoreboard: %s",
       strerror(errno));
+  }
 
   while ((score = pr_scoreboard_entry_read()) != NULL) {
+    pr_signals_handle();
 
     /* Make sure it matches our current server */
     if (strcmp(score->sce_server_addr, curr_server_addr) == 0) {
@@ -1432,22 +1440,26 @@ static void auth_scan_scoreboard(void) {
   }
   pr_restore_scoreboard();
 
-  /* This silliness is needed to get past the broken HP/UX 11.x compiler.
-   */
-  conf = CURRENT_CONF;
+  key = "client-count";
+  (void) pr_table_remove(session.notes, key, NULL);
+  v = palloc(session.pool, sizeof(unsigned int));
+  *((unsigned int *) v) = cur;
 
-  remove_config(CURRENT_CONF, "CURRENT-CLIENTS", FALSE);
-  c = add_config_param_set(&conf, "CURRENT-CLIENTS", 1, NULL);
-  c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
-  *((unsigned int *) c->argv[0]) = cur;
+  if (pr_table_add(session.notes, key, v, sizeof(unsigned int)) < 0) {
+    pr_log_pri(PR_LOG_WARNING,
+      "warning: error stashing '%s': %s", key, strerror(errno));
+  }
 
   if (session.class) {
-    snprintf(config_class_users, sizeof(config_class_users),
-      "CURRENT-CLIENTS-CLASS-%s", session.class->cls_name);
-    remove_config(CURRENT_CONF, config_class_users, FALSE);
-    c = add_config_param_set(&conf, config_class_users, 1, NULL);
-    c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
-    *((unsigned int *) c->argv[0]) = ccur;
+    key = "class-client-count";
+    (void) pr_table_remove(session.notes, key, NULL);
+    v = palloc(session.pool, sizeof(unsigned int));
+    *((unsigned int *) v) = ccur;
+
+    if (pr_table_add(session.notes, key, v, sizeof(unsigned int)) < 0) {
+      pr_log_pri(PR_LOG_WARNING,
+        "warning: error stashing '%s': %s", key, strerror(errno));
+    }
   }
 
   /* Lookup any configured MaxConnectionsPerHost. */
@@ -1481,13 +1493,17 @@ static void auth_scan_scoreboard(void) {
       end_login(1);
     }
   }
+
+  return 0;
 }
 
-static void auth_count_scoreboard(cmd_rec *cmd, char *user) {
+static int auth_count_scoreboard(cmd_rec *cmd, char *user) {
+  char *key;
+  void *v;
   pr_scoreboard_entry_t *score = NULL;
   long cur = 0, hcur = 0, ccur = 0, hostsperuser = 1, usersessions = 0;
   config_rec *c = NULL, *anon_config = NULL, *maxc = NULL;
-  char *origuser, config_class_users[128] = {'\0'};
+  char *origuser;
 
   /* Determine how many users are currently connected. */
   origuser = user;
@@ -1498,15 +1514,18 @@ static void auth_count_scoreboard(cmd_rec *cmd, char *user) {
     char curr_server_addr[80] = {'\0'};
 
     snprintf(curr_server_addr, sizeof(curr_server_addr), "%s:%d",
-      pr_netaddr_get_ipstr(main_server->addr), main_server->ServerPort);
+      pr_netaddr_get_ipstr(session.c->local_addr), main_server->ServerPort);
     curr_server_addr[sizeof(curr_server_addr)-1] = '\0';
 
-    if (pr_rewind_scoreboard() < 0)
+    if (pr_rewind_scoreboard() < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error rewinding scoreboard: %s",
         strerror(errno));
+    }
 
     while ((score = pr_scoreboard_entry_read()) != NULL) {
       unsigned char same_host = FALSE;
+
+      pr_signals_handle();
 
       /* Make sure it matches our current server. */
       if (strcmp(score->sce_server_addr, curr_server_addr) == 0) {
@@ -1544,7 +1563,7 @@ static void auth_count_scoreboard(cmd_rec *cmd, char *user) {
           }
 
           /* Take a per-user count of connections. */
-          if (!strcmp(score->sce_user, user)) {
+          if (strcmp(score->sce_user, user) == 0) {
             usersessions++;
 
             /* Count up unique hosts. */
@@ -1554,26 +1573,35 @@ static void auth_count_scoreboard(cmd_rec *cmd, char *user) {
         }
 
         if (session.class &&
-            strcasecmp(score->sce_class, session.class->cls_name) == 0)
+            strcasecmp(score->sce_class, session.class->cls_name) == 0) {
           ccur++;
+        }
       }
     }
     pr_restore_scoreboard();
     PRIVS_RELINQUISH
   }
 
-  remove_config(cmd->server->conf, "CURRENT-CLIENTS", FALSE);
-  c = add_config_param_set(&cmd->server->conf, "CURRENT-CLIENTS", 1, NULL);
-  c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = cur;
+  key = "client-count";
+  (void) pr_table_remove(session.notes, key, NULL);
+  v = palloc(session.pool, sizeof(unsigned int));
+  *((unsigned int *) v) = cur;
+
+  if (pr_table_add(session.notes, key, v, sizeof(unsigned int)) < 0) {
+    pr_log_pri(PR_LOG_WARNING,
+      "warning: error stashing '%s': %s", key, strerror(errno));
+  }
 
   if (session.class) {
-    snprintf(config_class_users, sizeof(config_class_users), "%s-%s",
-      "CURRENT-CLIENTS-CLASS", session.class->cls_name);
-    remove_config(cmd->server->conf, config_class_users, FALSE);
-    c = add_config_param_set(&cmd->server->conf, config_class_users, 1, NULL);
-    c->argv[0] = pcalloc(c->pool, sizeof(int));
-    *((int *) c->argv[0]) = ccur;
+    key = "class-client-count";
+    (void) pr_table_remove(session.notes, key, NULL);
+    v = palloc(session.pool, sizeof(unsigned int));
+    *((unsigned int *) v) = ccur;
+
+    if (pr_table_add(session.notes, key, v, sizeof(unsigned int)) < 0) {
+      pr_log_pri(PR_LOG_WARNING,
+        "warning: error stashing '%s': %s", key, strerror(errno));
+    }
   }
 
   /* Try to determine what MaxClients/MaxHosts limits apply to this session
@@ -1707,6 +1735,8 @@ static void auth_count_scoreboard(cmd_rec *cmd, char *user) {
       end_login(0);
     }
   }
+
+  return 0;
 }
 
 MODRET auth_pre_user(cmd_rec *cmd) {
@@ -1734,7 +1764,7 @@ MODRET auth_pre_user(cmd_rec *cmd) {
 MODRET auth_user(cmd_rec *cmd) {
   int nopass = FALSE;
   config_rec *c;
-  char *user, *origuser;
+  char *denymsg = NULL, *user, *origuser;
   int failnopwprompt = 0, aclp, i;
   unsigned char *anon_require_passwd = NULL, *login_passwd_prompt = NULL;
 
@@ -1746,32 +1776,52 @@ MODRET auth_user(cmd_rec *cmd) {
 
   user = cmd->arg;
 
-  remove_config(cmd->server->conf, C_USER, FALSE);
-  remove_config(cmd->server->conf, C_PASS, FALSE);
+  (void) pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
+  (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
-  c = add_config_param_set(&cmd->server->conf, C_USER, 1, NULL);
-  c->argv[0] = pstrdup(c->pool, user);
+  if (pr_table_add_dup(session.notes, "mod_auth.orig-user", user, 0) < 0) {
+    pr_log_debug(DEBUG3, "error stashing 'mod_auth.orig-user' in "
+      "session.notes: %s", strerror(errno));
+  }
 
   origuser = user;
   c = pr_auth_get_anon_config(cmd->tmp_pool, &user, NULL, NULL);
+
+  /* Check for AccessDenyMsg */
+  if ((denymsg = get_param_ptr((c ? c->subset : cmd->server->conf),
+      "AccessDenyMsg", FALSE)) != NULL) {
+
+    if (strstr(denymsg, "%u") != NULL) {
+      denymsg = sreplace(cmd->tmp_pool, denymsg, "%u", user, NULL);
+    }
+  }
 
   login_passwd_prompt = get_param_ptr(
     (c && c->config_type == CONF_ANON) ? c->subset : main_server->conf,
     "LoginPasswordPrompt", FALSE);
 
-  if (login_passwd_prompt && *login_passwd_prompt == FALSE)
+  if (login_passwd_prompt &&
+      *login_passwd_prompt == FALSE) {
     failnopwprompt = TRUE;
-  else
+
+  } else {
     failnopwprompt = FALSE;
+  }
 
   if (failnopwprompt) {
     if (!user) {
-      remove_config(cmd->server->conf, C_USER, FALSE);
-      remove_config(cmd->server->conf, C_PASS, FALSE);
+      (void) pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
+      (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
       pr_log_pri(PR_LOG_NOTICE, "USER %s (Login failed): Not a UserAlias.",
         origuser);
-      pr_response_send(R_530, _("Login incorrect."));
+
+      if (denymsg) {
+        pr_response_send(R_530, "%s", denymsg);
+
+      } else {
+        pr_response_send(R_530, _("Login incorrect."));
+      }
 
       end_login(0);
     }
@@ -1788,24 +1838,36 @@ MODRET auth_user(cmd_rec *cmd) {
     if (c) {
       if (!login_check_limits(c->subset, FALSE, TRUE, &i) ||
           (!aclp && !i) ) {
-        remove_config(cmd->server->conf, C_USER, FALSE);
-        remove_config(cmd->server->conf, C_PASS, FALSE);
+        (void) pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
+        (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
         pr_log_auth(PR_LOG_NOTICE, "ANON %s: Limit access denies login.",
           origuser);
-        pr_response_send(R_530, _("Login incorrect."));
+
+        if (denymsg) {
+          pr_response_send(R_530, "%s", denymsg);
+
+        } else {
+          pr_response_send(R_530, _("Login incorrect."));
+        }
 
         end_login(0);
       }
     }
 
     if (!c && !aclp) {
-      remove_config(cmd->server->conf, C_USER, FALSE);
-      remove_config(cmd->server->conf, C_PASS, FALSE);
+      (void) pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
+      (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
       pr_log_auth(PR_LOG_NOTICE,
         "USER %s: Limit access denies login.", origuser);
-      pr_response_send(R_530, _("Login incorrect."));
+
+      if (denymsg) {
+        pr_response_send(R_530, "%s", denymsg);
+
+      } else {
+        pr_response_send(R_530, _("Login incorrect."));
+      }
 
       end_login(0);
     }
@@ -1852,8 +1914,9 @@ MODRET auth_user(cmd_rec *cmd) {
 
     pr_cmd_dispatch(fakecmd);
 
-  } else
+  } else {
     pr_response_add(R_331, _("Password required for %s"), cmd->argv[1]);
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1891,11 +1954,10 @@ MODRET auth_pass(cmd_rec *cmd) {
   if (logged_in)
     return PR_ERROR_MSG(cmd, R_503, _("You are already logged in"));
 
-  user = get_param_ptr(cmd->server->conf, C_USER, FALSE);
-
+  user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
   if (!user) {
-    remove_config(cmd->server->conf, C_USER, FALSE);
-    remove_config(cmd->server->conf, C_PASS, FALSE);
+    (void) pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
+    (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
     return PR_ERROR_MSG(cmd, R_503, _("Login with USER first"));
   }
@@ -1904,7 +1966,7 @@ MODRET auth_pass(cmd_rec *cmd) {
   session.anon_config = NULL;
   session.dir_config = NULL;
 
-  res = setup_env(cmd->tmp_pool, user, cmd->arg);
+  res = setup_env(cmd->tmp_pool, cmd, user, cmd->arg);
   if (res == 1) {
     config_rec *c = NULL;
 
@@ -1914,18 +1976,22 @@ MODRET auth_pass(cmd_rec *cmd) {
 
     set_auth_check(NULL);
 
-    remove_config(cmd->server->conf, C_PASS, FALSE);
+    (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
-    if (session.sf_flags & SF_ANON)
-      add_config_param_set(&cmd->server->conf, C_PASS, 1,
-        pstrdup(cmd->server->pool,
-          pr_fs_decode_path(cmd->server->pool, cmd->arg)));
+    if (session.sf_flags & SF_ANON) {
+      if (pr_table_add_dup(session.notes, "mod_auth.anon-passwd",
+          pr_fs_decode_path(cmd->server->pool, cmd->arg), 0) < 0) {
+        pr_log_debug(DEBUG3,
+          "error stashing anonymous password in session.notes: %s",
+          strerror(errno));
+      }
+    }
 
     logged_in = 1;
     return PR_HANDLED(cmd);
   }
 
-  remove_config(cmd->server->conf, C_PASS, FALSE);
+  (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
   if (res == 0) {
     unsigned int max_logins, *max = NULL;
@@ -1935,20 +2001,28 @@ MODRET auth_pass(cmd_rec *cmd) {
     if ((denymsg = get_param_ptr((session.anon_config ?
         session.anon_config->subset : cmd->server->conf),
         "AccessDenyMsg", FALSE)) != NULL) {
-      denymsg = sreplace(cmd->tmp_pool, denymsg, "%u", user, NULL);
+
+      if (strstr(denymsg, "%u") != NULL) {
+        denymsg = sreplace(cmd->tmp_pool, denymsg, "%u", user, NULL);
+      }
     }
 
-    if ((max = get_param_ptr(main_server->conf, "MaxLoginAttempts",
-        FALSE)) == NULL)
-      max_logins = 3;
-    else
+    max = get_param_ptr(main_server->conf, "MaxLoginAttempts", FALSE);
+    if (max != NULL) {
       max_logins = *max;
 
-    if (++auth_tries >= max_logins) {
-      if (denymsg)
+    } else {
+      max_logins = 3;
+    }
+
+    if (max_logins > 0 &&
+        ++auth_tries >= max_logins) {
+      if (denymsg) {
         pr_response_send(R_530, "%s", denymsg);
-      else
+
+      } else {
         pr_response_send(R_530, _("Login incorrect."));
+      }
 
       pr_log_auth(PR_LOG_NOTICE,
         "Maximum login attempts (%u) exceeded, connection refused", max_logins);
@@ -2050,41 +2124,6 @@ MODRET set_anonrejectpasswords(cmd_rec *cmd) {
     "cannot be used on this system, as you do not have POSIX compliant "
     "regex support", NULL));
 #endif
-}
-
-MODRET add_anonymousgroup(cmd_rec *cmd) {
-  int argc;
-  config_rec *c = NULL;
-  char **argv = NULL;
-  array_header *acl = NULL;
-
-  if (cmd->argc < 2)
-    CONF_ERROR(cmd, "wrong number of parameters");
-
-  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
-
-  argv = cmd->argv;
-  argc = cmd->argc - 1;
-
-  acl = pr_expr_create(cmd->tmp_pool, &argc, argv);
-
-  c = add_config_param(cmd->argv[0], 0);
-  c->argc = argc;
-  c->argv = pcalloc(c->pool, (argc+1) * sizeof(char *));
-  argv = (char **) c->argv;
-
-  if (argc && acl)
-    while (argc--) {
-      *argv++ = pstrdup(c->pool, *((char **) acl->elts));
-      acl->elts = ((char **) acl->elts) + 1;
-    }
-
-  *argv = NULL;
-
-  pr_log_pri(PR_LOG_DEBUG, "The '%s' directive has been deprecated, and will "
-    "be removed in future releases", cmd->argv[0]);
-
-  return PR_HANDLED(cmd);
 }
 
 MODRET set_authaliasonly(cmd_rec *cmd) {
@@ -2657,10 +2696,10 @@ MODRET set_maxloginattempts(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!strcasecmp(cmd->argv[1], "none"))
+  if (strcasecmp(cmd->argv[1], "none") == 0) {
     max = 0;
 
-  else {
+  } else {
     char *endp = NULL;
     max = (int) strtol(cmd->argv[1], &endp, 10);
 
@@ -2690,6 +2729,25 @@ MODRET set_requirevalidshell(cmd_rec *cmd) {
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
   *((unsigned char *) c->argv[0]) = bool;
   c->flags |= CF_MERGEDOWN;
+
+  return PR_HANDLED(cmd);
+}
+
+/* usage: RewriteHome on|off */
+MODRET set_rewritehome(cmd_rec *cmd) {
+  int bool = -1;
+  config_rec *c = NULL;
+
+  CHECK_ARGS(cmd, 1);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  bool = get_boolean(cmd, 1);
+  if (bool == -1)
+    CONF_ERROR(cmd, "expected Boolean parameter");
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  c->argv[0] = pcalloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = bool;
 
   return PR_HANDLED(cmd);
 }
@@ -2958,7 +3016,6 @@ static conftable auth_conftab[] = {
   { "AccessGrantMsg",		set_accessgrantmsg,		NULL },
   { "AnonRequirePassword",	set_anonrequirepassword,	NULL },
   { "AnonRejectPasswords",	set_anonrejectpasswords,	NULL },
-  { "AnonymousGroup",		add_anonymousgroup,		NULL },
   { "AuthAliasOnly",		set_authaliasonly,		NULL },
   { "AuthUsingAlias",		set_authusingalias,		NULL },
   { "CreateHome",		set_createhome,			NULL },
@@ -2975,6 +3032,7 @@ static conftable auth_conftab[] = {
   { "MaxHostsPerUser",		set_maxhostsperuser,		NULL },
   { "MaxLoginAttempts",		set_maxloginattempts,		NULL },
   { "RequireValidShell",	set_requirevalidshell,		NULL },
+  { "RewriteHome",		set_rewritehome,		NULL },
   { "RootLogin",		set_rootlogin,			NULL },
   { "RootRevoke",		set_rootrevoke,			NULL },
   { "TimeoutLogin",		set_timeoutlogin,		NULL },

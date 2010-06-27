@@ -16,7 +16,7 @@ PACKAGE=proftpd
 
 # This file is generated using:
 #
-#   `find ../ -name "*.[ch]" -print | egrep "contrib|include|modules|src" > files.txt'
+#   `find ../ -name "*.[ch]" -print | grep -v tests\/ | egrep "contrib|include|modules|src" | sort > files.txt'
 #
 # and is then checked into CVS.
 FILES=files.txt

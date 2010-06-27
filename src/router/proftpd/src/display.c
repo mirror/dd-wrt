@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2008 The ProFTPD Project team
+ * Copyright (c) 2004-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 /*
  * Display of files
- * $Id: display.c,v 1.10 2008/08/23 02:57:46 castaglia Exp $
+ * $Id: display.c,v 1.16 2009/12/02 03:59:28 castaglia Exp $
  */
 
 #include "conf.h"
@@ -44,12 +44,14 @@ static void format_size_str(char *buf, size_t buflen, off_t size) {
 }
 
 static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
+  struct stat st;
   char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
   int len;
   unsigned int *current_clients = NULL;
   unsigned int *max_clients = NULL;
   off_t fs_size = 0;
   pool *p;
+  void *v;
   xaset_t *s;
   config_rec *c = NULL;
   const char *serverfqdn = main_server->ServerFQDN;
@@ -59,10 +61,16 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
     total_files_xfer[12] = {'\0'};
   char mg_class_limit[12] = {'\0'}, mg_cur[12] = {'\0'},
     mg_xfer_bytes[12] = {'\0'}, mg_cur_class[12] = {'\0'};
-  char mg_xfer_units[12] = {'\0'}, config_class_users[128] = {'\0'}, *user;
+  char mg_xfer_units[12] = {'\0'}, *user;
   const char *mg_time;
   char *rfc1413_ident = NULL;
-  unsigned char first = TRUE;
+  char *first = NULL, *prev = NULL;
+  int sent_first = FALSE;
+
+  /* Stat the opened file to determine the optimal buffer size for IO. */
+  memset(&st, 0, sizeof(st));
+  pr_fsio_fstat(fh, &st);
+  fh->fh_iosz = st.st_blksize;
 
 #if defined(HAVE_STATFS) || defined(HAVE_SYS_STATVFS_H) || \
    defined(HAVE_SYS_VFS_H)
@@ -83,22 +91,25 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
 
   max_clients = get_param_ptr(s, "MaxClients", FALSE);
 
-  current_clients = get_param_ptr(main_server->conf, "CURRENT-CLIENTS", FALSE);
+  v = pr_table_get(session.notes, "client-count", NULL);
+  if (v) {
+    current_clients = v;
+  }
 
   snprintf(mg_cur, sizeof(mg_cur), "%u", current_clients ? *current_clients: 1);
 
   if (session.class && session.class->cls_name) {
-    unsigned int *class_users = NULL;
+    unsigned int *class_clients = NULL;
     config_rec *maxc = NULL;
     unsigned int maxclients = 0;
 
-    snprintf(config_class_users, sizeof(config_class_users),
-      "CURRENT-CLIENTS-CLASS-%s", session.class->cls_name);
-
-    class_users = get_param_ptr(main_server->conf, config_class_users, FALSE);
+    v = pr_table_get(session.notes, "class-client-count", NULL);
+    if (v) {
+      class_clients = v;
+    }
 
     snprintf(mg_cur_class, sizeof(mg_cur_class), "%u",
-      class_users ? *class_users : 0);
+      class_clients ? *class_clients : 0);
 
     /* For the %z variable, first we scan through the MaxClientsPerClass,
      * and use the first applicable one.  If none are found, look for
@@ -129,7 +140,6 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
     snprintf(mg_class_limit, sizeof(mg_class_limit), "%u", maxclients);
 
   } else {
-    mg_cur_class[0] = 0;
     snprintf(mg_class_limit, sizeof(mg_class_limit), "%u",
       max_clients ? *max_clients : 0);
     snprintf(mg_cur_class, sizeof(mg_cur_class), "%u", 0);
@@ -155,7 +165,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
 
   snprintf(mg_max, sizeof(mg_max), "%u", max_clients ? *max_clients : 0);
 
-  user = get_param_ptr(main_server->conf, C_USER, FALSE);
+  user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
   if (user == NULL)
     user = "";
 
@@ -290,15 +300,85 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
 
     sstrncpy(buf, outs, sizeof(buf));
 
+    /* Handle the case where the Display file might contain only one
+     * line.
+     *
+     * We _could_ just use pr_response_add(), and let the response code
+     * automatically handle all of the multiline response formatting.
+     * However, some of the Display files are at times waiting for the
+     * response chains to be flushed won't work (e.g. login, logout).
+     * Thus we have to deal with multiline files appropriately here.
+     */
+
+    if (first == NULL &&
+        sent_first == FALSE) {
+      first = pstrdup(p, outs);
+      continue;
+    }
+
     if (first) {
-      pr_response_send_raw("%s-%s", code, outs);
-      first = FALSE;
+      pr_response_send_raw("%s-%s", code, first);
+      first = NULL;
+      sent_first = TRUE;
+
+      prev = pstrdup(p, outs);
+      continue;
+    }
+
+    if (prev) {
+      if (MultilineRFC2228) {
+        pr_response_send_raw("%s-%s", code, prev);
+
+      } else {
+        pr_response_send_raw(" %s", prev);
+      }
+    }
+
+    prev = pstrdup(p, outs);
+  }
+
+  /* Do we have any remaining lines to send? */
+  if (prev) {
+    if (MultilineRFC2228) {
+      pr_response_send_raw("%s-%s", code, prev);
 
     } else {
-      if (MultilineRFC2228)
-        pr_response_send_raw("%s-%s", code, outs);
-      else
-        pr_response_send_raw(" %s", outs);
+      pr_response_send_raw(" %s", prev);
+    }
+  }
+
+  if (first != NULL) {
+    if (session.auth_mech != NULL) {
+      pr_response_send_raw("%s %s", code, first);
+
+    } else {
+      /* There is a special case if the client has not yet authenticated; it
+       * means we are handling a DisplayConnect file.  The server will send
+       * a banner as well, so we need to treat this is the start of a multiline
+       * response.
+       */
+      pr_response_send_raw("%s-%s", code, first);
+    }
+
+  } else {
+    if (prev) {
+      if (MultilineRFC2228) {
+        pr_response_send_raw("%s-%s", code, prev);
+
+      } else {
+        if (session.auth_mech != NULL) {
+          /* Special case handling for when the client has not yet
+           * authenticated (i.e. session.auth_mech is null).  This means
+           * we're handling a DisplayConnect file.  The server will send
+           * a banner string as well, thus if auth_mech is null, we do NOT
+           * want to send this line; if not null, we DO want to send it.
+           *
+           * Without this check, we would end up sending an extra 220 response 
+           * code to the client, which would confuse it.
+           */
+          pr_response_send_raw("%s %s", code, prev);
+        }
+      }
     }
   }
 

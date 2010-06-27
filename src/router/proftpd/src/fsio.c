@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (C) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (C) 2001-2009 The ProFTPD Project
+ * Copyright (C) 2001-2010 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD virtual/modular file-system support
- * $Id: fsio.c,v 1.75.2.1 2009/09/29 20:51:24 castaglia Exp $
+ * $Id: fsio.c,v 1.89 2010/02/08 21:54:37 castaglia Exp $
  */
 
 #include "conf.h"
@@ -112,7 +112,7 @@ static int sys_unlink(pr_fs_t *fs, const char *path) {
 
 static int sys_open(pr_fh_t *fh, const char *path, int flags) {
 
-#ifdef CYGWIN
+#ifdef O_BINARY
   /* On Cygwin systems, we need the open(2) equivalent of fopen(3)'s "b"
    * option.  Cygwin defines an O_BINARY flag for this purpose.
    */
@@ -266,7 +266,19 @@ static int sys_utimes(pr_fs_t *fs, const char *path, struct timeval *tvs) {
 
 static int sys_futimes(pr_fh_t *fh, int fd, struct timeval *tvs) {
 #ifdef HAVE_FUTIMES
-  return futimes(fd, tvs);
+  int res;
+
+  /* Check for an ENOSYS errno; if so, fallback to using sys_utimes.  Some
+   * platforms will provide a futimes(2) stub which does not actually do
+   * anything.
+   */
+  res = futimes(fd, tvs);
+  if (res < 0 &&
+      errno == ENOSYS) {
+    return sys_utimes(fh->fh_fs, fh->fh_path, tvs);
+  }
+
+  return res;
 #else
   return sys_utimes(fh->fh_fs, fh->fh_path, tvs);
 #endif
@@ -597,7 +609,7 @@ int pr_fs_copy_file(const char *src, const char *dst) {
   struct stat src_st, dst_st;
   char *buf;
   size_t bufsz;
-  int res;
+  int dst_existed = FALSE, res;
 
   if (src == NULL ||
       dst == NULL) {
@@ -605,12 +617,17 @@ int pr_fs_copy_file(const char *src, const char *dst) {
     return -1;
   }
 
-  src_fh = pr_fsio_open(src, O_RDONLY);
-  if (!src_fh) {
+  /* Use a nonblocking open() for the path; it could be a FIFO, and we don't
+   * want to block forever if the other end of the FIFO is not running.
+   */
+  src_fh = pr_fsio_open(src, O_RDONLY|O_NONBLOCK);
+  if (src_fh == NULL) {
     pr_log_pri(PR_LOG_WARNING, "error opening source file '%s' "
       "for copying: %s", src, strerror(errno));
     return -1;
   }
+
+  pr_fsio_set_block(src_fh);
 
   /* Do not allow copying of directories. open(2) may not fail when
    * opening the source path, since it is only doing a read-only open,
@@ -628,8 +645,20 @@ int pr_fs_copy_file(const char *src, const char *dst) {
     return -1;
   }
 
-  dst_fh = pr_fsio_open(dst, O_WRONLY|O_CREAT);
-  if (!dst_fh) {
+  /* We use stat() here, not lstat(), since open() would follow a symlink
+   * to its target, and what we really want to know here is whether the
+   * ultimate destination file exists or not.
+   */
+  if (pr_fsio_stat(dst, &dst_st) == 0) {
+    dst_existed = TRUE;
+    pr_fs_clear_cache();
+  }
+
+  /* Use a nonblocking open() for the path; it could be a FIFO, and we don't
+   * want to block forever if the other end of the FIFO is not running.
+   */
+  dst_fh = pr_fsio_open(dst, O_WRONLY|O_CREAT|O_NONBLOCK);
+  if (dst_fh == NULL) {
     int xerrno = errno;
 
     pr_fsio_close(src_fh);
@@ -640,6 +669,8 @@ int pr_fs_copy_file(const char *src, const char *dst) {
     return -1;
   }
 
+  pr_fsio_set_block(dst_fh);
+
   /* Stat the source file to find its optimal copy block size. */
   if (pr_fsio_fstat(src_fh, &src_st) < 0) {
     int xerrno = errno;
@@ -648,7 +679,11 @@ int pr_fs_copy_file(const char *src, const char *dst) {
 
     pr_fsio_close(src_fh);
     pr_fsio_close(dst_fh);
-    pr_fsio_unlink(dst);
+
+    if (!dst_existed) {
+      /* Don't unlink the destination file if it already existed. */
+      pr_fsio_unlink(dst);
+    }
 
     errno = xerrno;
     return -1;
@@ -683,8 +718,12 @@ int pr_fs_copy_file(const char *src, const char *dst) {
     exit(1);
   }
 
-  /* Make sure the destination file starts with a zero size. */
-  pr_fsio_truncate(dst, 0);
+#ifdef S_ISFIFO
+  if (!S_ISFIFO(dst_st.st_mode)) {
+    /* Make sure the destination file starts with a zero size. */
+    pr_fsio_truncate(dst, 0);
+  }
+#endif
 
   while ((res = pr_fsio_read(src_fh, buf, bufsz)) > 0) {
     pr_signals_handle();
@@ -694,8 +733,6 @@ int pr_fs_copy_file(const char *src, const char *dst) {
         strerror(errno));
       break;
     }
-
-    pr_signals_handle();
   }
 
   free(buf);
@@ -731,9 +768,10 @@ int pr_fs_copy_file(const char *src, const char *dst) {
     /* Linux provides the handy perm_copy_fd(3) function in its libacl
      * library just for this purpose.
      */
-    if (perm_copy_fd(src, PR_FH_FD(src_fh), dst, PR_FH_FD(dst_fh), NULL) < 0)
+    if (perm_copy_fd(src, PR_FH_FD(src_fh), dst, PR_FH_FD(dst_fh), NULL) < 0) {
       pr_log_debug(DEBUG3, "error copying ACL to destination file: %s",
         strerror(errno));
+    }
 
 #  else
     acl_t src_acl = acl_get_fd(PR_FH_FD(src_fh));
@@ -757,11 +795,11 @@ int pr_fs_copy_file(const char *src, const char *dst) {
     int nents;
 
     nents = facl(PR_FH_FD(src_fh), GETACLCNT, 0, NULL);
-    if (nents < 0)
+    if (nents < 0) {
       pr_log_debug(DEBUG3, "error getting source file ACL count: %s",
         strerror(errno));
 
-    else {
+    } else {
       aclent_t *acls;
 
       acls = malloc(sizeof(aclent_t) * nents);
@@ -770,14 +808,15 @@ int pr_fs_copy_file(const char *src, const char *dst) {
         exit(1);
       }
 
-      if (facl(PR_FH_FD(src_fh), GETACL, nents, acls) < 0)
+      if (facl(PR_FH_FD(src_fh), GETACL, nents, acls) < 0) {
         pr_log_debug(DEBUG3, "error getting source file ACLs: %s",
           strerror(errno));
 
-      else {
-        if (facl(PR_FH_FD(dst_fh), SETACL, nents, acls) < 0)
+      } else {
+        if (facl(PR_FH_FD(dst_fh), SETACL, nents, acls) < 0) {
           pr_log_debug(DEBUG3, "error setting dest file ACLs: %s",
             strerror(errno));
+        }
       }
 
       free(acls);
@@ -787,9 +826,12 @@ int pr_fs_copy_file(const char *src, const char *dst) {
 #endif /* HAVE_POSIX_ACL */
 
   pr_fsio_close(src_fh);
-  if (pr_fsio_close(dst_fh) < 0)
+
+  res = pr_fsio_close(dst_fh);
+  if (res < 0) {
     pr_log_pri(PR_LOG_WARNING, "error closing '%s': %s", dst,
       strerror(errno));
+  }
 
   return res;
 }
@@ -2154,6 +2196,9 @@ int pr_fsio_chdir_canon(const char *path, int hidesymlink) {
     return -1;
 
   fs = lookup_dir_fs(resbuf, FSIO_DIR_CHDIR);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom chdir handler.  If there are none,
    * use the system chdir.
@@ -2169,10 +2214,12 @@ int pr_fsio_chdir_canon(const char *path, int hidesymlink) {
     /* chdir succeeded, so we set fs_cwd for future references. */
      fs_cwd = fs ? fs : root_fs;
 
-     if (hidesymlink)
+     if (hidesymlink) {
        pr_fs_virtual_path(path, vwd, sizeof(vwd)-1);
-     else
+
+     } else {
        sstrncpy(vwd, resbuf, sizeof(vwd));
+     }
   }
 
   return res;
@@ -2186,6 +2233,9 @@ int pr_fsio_chdir(const char *path, int hidesymlink) {
   pr_fs_clean_path(path, resbuf, sizeof(resbuf)-1);
 
   fs = lookup_dir_fs(path, FSIO_DIR_CHDIR);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom chdir handler.  If there are none,
    * use the system chdir.
@@ -2372,7 +2422,12 @@ struct dirent *pr_fsio_readdir(void *dir) {
 
 int pr_fsio_mkdir(const char *path, mode_t mode) {
   int res;
-  pr_fs_t *fs = lookup_dir_fs(path, FSIO_DIR_MKDIR);
+  pr_fs_t *fs;
+
+  fs = lookup_dir_fs(path, FSIO_DIR_MKDIR);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom mkdir handler.  If there are none,
    * use the system mkdir.
@@ -2389,7 +2444,12 @@ int pr_fsio_mkdir(const char *path, mode_t mode) {
 
 int pr_fsio_rmdir(const char *path) {
   int res;
-  pr_fs_t *fs = lookup_dir_fs(path, FSIO_DIR_RMDIR);
+  pr_fs_t *fs;
+
+  fs = lookup_dir_fs(path, FSIO_DIR_RMDIR);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom rmdir handler.  If there are none,
    * use the system rmdir.
@@ -2419,7 +2479,12 @@ int pr_fsio_stat_canon(const char *path, struct stat *sbuf) {
 }
 
 int pr_fsio_stat(const char *path, struct stat *sbuf) {
-  pr_fs_t *fs = lookup_file_fs(path, NULL, FSIO_FILE_STAT);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(path, NULL, FSIO_FILE_STAT);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom stat handler.  If there are none,
    * use the system stat.
@@ -2470,7 +2535,12 @@ int pr_fsio_lstat_canon(const char *path, struct stat *sbuf) {
 }
 
 int pr_fsio_lstat(const char *path, struct stat *sbuf) {
-  pr_fs_t *fs = lookup_file_fs(path, NULL, FSIO_FILE_LSTAT);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(path, NULL, FSIO_FILE_LSTAT);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom lstat handler.  If there are none,
    * use the system lstat.
@@ -2502,7 +2572,12 @@ int pr_fsio_readlink_canon(const char *path, char *buf, size_t buflen) {
 
 int pr_fsio_readlink(const char *path, char *buf, size_t buflen) {
   int res;
-  pr_fs_t *fs = lookup_file_fs(path, NULL, FSIO_FILE_READLINK);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(path, NULL, FSIO_FILE_READLINK);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom readlink handler.  If there are none,
    * use the system readlink.
@@ -2575,7 +2650,14 @@ int pr_fsio_rename(const char *rnfm, const char *rnto) {
   pr_fs_t *from_fs, *to_fs, *fs;
 
   from_fs = lookup_file_fs(rnfm, NULL, FSIO_FILE_RENAME);
+  if (from_fs == NULL) {
+    return -1;
+  }
+
   to_fs = lookup_file_fs(rnto, NULL, FSIO_FILE_RENAME);
+  if (to_fs == NULL) {
+    return -1;
+  }
 
   if (from_fs->allow_xdev_rename == FALSE ||
       to_fs->allow_xdev_rename == FALSE) {
@@ -2619,7 +2701,12 @@ int pr_fsio_unlink_canon(const char *name) {
 	
 int pr_fsio_unlink(const char *name) {
   int res;
-  pr_fs_t *fs = lookup_file_fs(name, NULL, FSIO_FILE_UNLINK);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(name, NULL, FSIO_FILE_UNLINK);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom unlink handler.  If there are none,
    * use the system unlink.
@@ -2681,6 +2768,9 @@ pr_fh_t *pr_fsio_open(const char *name, int flags) {
   }
 
   fs = lookup_file_fs(name, NULL, FSIO_FILE_OPEN);
+  if (fs == NULL) {
+    return NULL;
+  }
 
   /* Allocate a filehandle. */
   tmp_pool = make_sub_pool(fs->fs_pool);
@@ -2715,7 +2805,12 @@ pr_fh_t *pr_fsio_creat_canon(const char *name, mode_t mode) {
   char *deref = NULL;
   pool *tmp_pool = NULL;
   pr_fh_t *fh = NULL;
-  pr_fs_t *fs = lookup_file_canon_fs(name, &deref, FSIO_FILE_CREAT);
+  pr_fs_t *fs;
+
+  fs = lookup_file_canon_fs(name, &deref, FSIO_FILE_CREAT);
+  if (fs == NULL) {
+    return NULL;
+  }
 
   /* Allocate a filehandle. */
   tmp_pool = make_sub_pool(fs->fs_pool);
@@ -2749,7 +2844,12 @@ pr_fh_t *pr_fsio_creat_canon(const char *name, mode_t mode) {
 pr_fh_t *pr_fsio_creat(const char *name, mode_t mode) {
   pool *tmp_pool = NULL;
   pr_fh_t *fh = NULL;
-  pr_fs_t *fs = lookup_file_fs(name, NULL, FSIO_FILE_CREAT);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(name, NULL, FSIO_FILE_CREAT);
+  if (fs == NULL) {
+    return NULL;
+  }
 
   /* Allocate a filehandle. */
   tmp_pool = make_sub_pool(fs->fs_pool);
@@ -2878,7 +2978,14 @@ int pr_fsio_link_canon(const char *lfrom, const char *lto) {
   pr_fs_t *from_fs, *to_fs, *fs;
 
   from_fs = lookup_file_fs(lfrom, NULL, FSIO_FILE_LINK);
+  if (from_fs == NULL) {
+    return -1;
+  }
+
   to_fs = lookup_file_fs(lto, NULL, FSIO_FILE_LINK);
+  if (to_fs == NULL) {
+    return -1;
+  }
 
   if (from_fs->allow_xdev_link == FALSE ||
       to_fs->allow_xdev_link == FALSE) {
@@ -2905,11 +3012,17 @@ int pr_fsio_link_canon(const char *lfrom, const char *lto) {
 
 int pr_fsio_link(const char *lfrom, const char *lto) {
   int res;
-
   pr_fs_t *from_fs, *to_fs, *fs;
 
   from_fs = lookup_file_fs(lfrom, NULL, FSIO_FILE_LINK);
+  if (from_fs == NULL) {
+    return -1;
+  }
+
   to_fs = lookup_file_fs(lto, NULL, FSIO_FILE_LINK);
+  if (to_fs == NULL) {
+    return -1;
+  }
 
   if (from_fs->allow_xdev_link == FALSE ||
       to_fs->allow_xdev_link == FALSE) {
@@ -2953,7 +3066,12 @@ int pr_fsio_symlink_canon(const char *lfrom, const char *lto) {
 
 int pr_fsio_symlink(const char *lfrom, const char *lto) {
   int res;
-  pr_fs_t *fs = lookup_file_fs(lto, NULL, FSIO_FILE_SYMLINK);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(lto, NULL, FSIO_FILE_SYMLINK);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom symlink handler.  If there are none,
    * use the system symlink.
@@ -3010,7 +3128,12 @@ int pr_fsio_truncate_canon(const char *path, off_t len) {
 
 int pr_fsio_truncate(const char *path, off_t len) {
   int res;
-  pr_fs_t *fs = lookup_file_fs(path, NULL, FSIO_FILE_TRUNC);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(path, NULL, FSIO_FILE_TRUNC);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom truncate handler.  If there are none,
    * use the system truncate.
@@ -3028,7 +3151,12 @@ int pr_fsio_truncate(const char *path, off_t len) {
 int pr_fsio_chmod_canon(const char *name, mode_t mode) {
   int res;
   char *deref = NULL;
-  pr_fs_t *fs = lookup_file_canon_fs(name, &deref, FSIO_FILE_CHMOD);
+  pr_fs_t *fs;
+
+  fs = lookup_file_canon_fs(name, &deref, FSIO_FILE_CHMOD);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom chmod handler.  If there are none,
    * use the system chmod.
@@ -3048,7 +3176,12 @@ int pr_fsio_chmod_canon(const char *name, mode_t mode) {
 
 int pr_fsio_chmod(const char *name, mode_t mode) {
   int res;
-  pr_fs_t *fs = lookup_file_fs(name, NULL, FSIO_FILE_CHMOD);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(name, NULL, FSIO_FILE_CHMOD);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom chmod handler.  If there are none,
    * use the system chmod.
@@ -3094,7 +3227,12 @@ int pr_fsio_fchmod(pr_fh_t *fh, mode_t mode) {
 
 int pr_fsio_chown_canon(const char *name, uid_t uid, gid_t gid) {
   int res;
-  pr_fs_t *fs = lookup_file_canon_fs(name, NULL, FSIO_FILE_CHOWN);
+  pr_fs_t *fs;
+
+  fs = lookup_file_canon_fs(name, NULL, FSIO_FILE_CHOWN);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom chown handler.  If there are none,
    * use the system chown.
@@ -3114,7 +3252,12 @@ int pr_fsio_chown_canon(const char *name, uid_t uid, gid_t gid) {
 
 int pr_fsio_chown(const char *name, uid_t uid, gid_t gid) {
   int res;
-  pr_fs_t *fs = lookup_file_fs(name, NULL, FSIO_FILE_CHOWN);
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(name, NULL, FSIO_FILE_CHOWN);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom chown handler.  If there are none,
    * use the system chown.
@@ -3168,6 +3311,9 @@ int pr_fsio_access(const char *path, int mode, uid_t uid, gid_t gid,
   }
 
   fs = lookup_file_fs(path, NULL, FSIO_FILE_ACCESS);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom access handler.  If there are none,
    * use the system access.
@@ -3198,10 +3344,11 @@ int pr_fsio_faccess(pr_fh_t *fh, int mode, uid_t uid, gid_t gid,
 
   pr_trace_msg(trace_channel, 8, "using %s faccess() for path '%s'",
     fs->fs_name, fh->fh_path);
-  return (fh->fh_fs->faccess)(fh, mode, uid, gid, suppl_gids);
+  return (fs->faccess)(fh, mode, uid, gid, suppl_gids);
 }
 
 int pr_fsio_utimes(const char *path, struct timeval *tvs) {
+  int res;
   pr_fs_t *fs;
 
   if (path == NULL ||
@@ -3211,6 +3358,9 @@ int pr_fsio_utimes(const char *path, struct timeval *tvs) {
   }
 
   fs = lookup_file_fs(path, NULL, FSIO_FILE_UTIMES);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom utimes handler.  If there are none,
    * use the system utimes.
@@ -3220,10 +3370,16 @@ int pr_fsio_utimes(const char *path, struct timeval *tvs) {
 
   pr_trace_msg(trace_channel, 8, "using %s utimes() for path '%s'",
     fs->fs_name, path);
-  return (fs->utimes)(fs, path, tvs);
+  res = (fs->utimes)(fs, path, tvs);
+
+  if (res == 0)
+    pr_fs_clear_cache();
+
+  return res;
 }
 
 int pr_fsio_futimes(pr_fh_t *fh, struct timeval *tvs) {
+  int res;
   pr_fs_t *fs;
 
   if (fh == NULL ||
@@ -3241,7 +3397,12 @@ int pr_fsio_futimes(pr_fh_t *fh, struct timeval *tvs) {
 
   pr_trace_msg(trace_channel, 8, "using %s futimes() for path '%s'",
     fs->fs_name, fh->fh_path);
-  return (fh->fh_fs->futimes)(fh, fh->fh_fd, tvs);
+  res = (fs->futimes)(fh, fh->fh_fd, tvs);
+
+  if (res == 0)
+    pr_fs_clear_cache();
+
+  return res;
 }
 
 /* If the wrapped chroot() function suceeds (eg returns 0), then all
@@ -3250,7 +3411,12 @@ int pr_fsio_futimes(pr_fh_t *fh, struct timeval *tvs) {
  */
 int pr_fsio_chroot(const char *path) {
   int res = 0;
-  pr_fs_t *fs = lookup_dir_fs(path, FSIO_DIR_CHROOT);
+  pr_fs_t *fs;
+
+  fs = lookup_dir_fs(path, FSIO_DIR_CHROOT);
+  if (fs == NULL) {
+    return -1;
+  }
 
   /* Find the first non-NULL custom chroot handler.  If there are none,
    * use the system chroot.
@@ -3343,10 +3509,16 @@ char *pr_fsio_gets(char *buf, size_t size, pr_fh_t *fh) {
   }
 
   if (!fh->fh_buf) {
+    size_t bufsz;
+
+    /* Conscientious callers who want the optimal IO on the file should
+     * set the fh->fh_iosz hint.
+     */
+    bufsz = fh->fh_iosz ? fh->fh_iosz : PR_TUNABLE_BUFFER_SIZE;
+
     fh->fh_buf = pcalloc(fh->fh_pool, sizeof(pr_buffer_t));
-    fh->fh_buf->buf = fh->fh_buf->current = pcalloc(fh->fh_pool,
-      PR_TUNABLE_BUFFER_SIZE);
-    fh->fh_buf->remaining = fh->fh_buf->buflen = PR_TUNABLE_BUFFER_SIZE;
+    fh->fh_buf->buf = fh->fh_buf->current = pcalloc(fh->fh_pool, bufsz);
+    fh->fh_buf->remaining = fh->fh_buf->buflen = bufsz;
   }
 
   pbuf = fh->fh_buf;
@@ -3480,6 +3652,86 @@ static off_t calc_fs_size(size_t blocks, size_t bsize) {
   return (res_lo >> 10) | (res_hi << 6);
 }
 
+/* Be generous in the maximum allowed number of dup fds, in our search for
+ * one that is outside the big three.
+ *
+ * In theory, this should be a runtime lookup using getdtablesize(2), being
+ * sure to handle the ENOSYS case (for older systems).
+ */
+#define FSIO_MAX_DUPFDS		512
+
+/* The main three fds (stdin, stdout, stderr) need to be protected, reserved
+ * for use.  This function uses dup(2) to open new fds on the given fd
+ * until the new fd is not one of the big three.
+ */
+int pr_fs_get_usable_fd(int fd) {
+  register unsigned int i;
+  int fdi, dup_fds[FSIO_MAX_DUPFDS], n; 
+
+  if (fd > STDERR_FILENO) {
+    return fd;
+  }
+ 
+  memset(dup_fds, -1, sizeof(dup_fds));
+  i = 0;
+  n = -1;
+
+  fdi = fd;
+  while (i < FSIO_MAX_DUPFDS) {
+    pr_signals_handle();
+
+    dup_fds[i] = dup(fdi);
+    if (dup_fds[i] < 0) {
+      register unsigned int j;
+      int xerrno  = errno;
+
+      /* Need to clean up any previously opened dups as well. */
+      for (j = 0; j <= i; j++) {
+        close(dup_fds[j]);
+        dup_fds[j] = -1;
+      }
+
+      errno = xerrno;
+      return -1;
+    }
+
+    if (dup_fds[i] <= STDERR_FILENO) {
+      /* Continue searching for an open fd that isn't 0, 1, or 2. */
+      fdi = dup_fds[i];
+      i++;
+      continue;
+    }
+
+    n = i;
+    fdi = dup_fds[n];
+    break;
+  }
+
+  /* If n is -1, we reached the max number of dups without finding an
+   * open one.  Hard to imagine this happening, but catch the case anyway.
+   */
+  if (n == -1) {
+    /* Free up the fds we opened in our search. */
+    for (i = 0; i < FSIO_MAX_DUPFDS; i++) {
+      if (dup_fds[i] >= 0) {
+        close(dup_fds[i]);
+        dup_fds[i] = -1;
+      }
+    }
+
+    errno = EPERM;
+    return -1;
+  }
+
+  /* Free up the fds we opened in our search. */
+  for (i = 0; i < n; i++) {
+    close(dup_fds[i]);
+    dup_fds[i] = -1;
+  }
+
+  return fdi;
+}
+
 off_t pr_fs_getsize(char *path) {
 # if defined(HAVE_SYS_STATVFS_H)
 
@@ -3504,7 +3756,17 @@ off_t pr_fs_getsize(char *path) {
     return 0;
   }
 
-  return calc_fs_size(fs.f_bavail, fs.f_frsize);
+  /* The calc_fs_size() function is only useful for 32-bit numbers;
+   * if either of our two values are in datatypes larger than 4 bytes,
+   * we'll use typecasting.
+   */
+  if (sizeof(fs.f_bavail) > 4 ||
+      sizeof(fs.f_frsize) > 4) {
+    return ((off_t) fs.f_bavail * (off_t) fs.f_frsize);
+
+  } else {
+    return calc_fs_size(fs.f_bavail, fs.f_frsize);
+  }
 
 # elif defined(HAVE_SYS_VFS_H)
   struct statfs fs;
@@ -3515,7 +3777,18 @@ off_t pr_fs_getsize(char *path) {
     return 0;
   }
 
-  return calc_fs_size(fs.f_bavail, fs.f_bsize);
+  /* The calc_fs_size() function is only useful for 32-bit numbers;
+   * if either of our two values are in datatypes larger than 4 bytes,
+   * we'll use typecasting.
+   */
+  if (sizeof(fs.f_bavail) > 4 ||
+      sizeof(fs.f_bsize) > 4) {
+    return ((off_t) fs.f_bavail * (off_t) fs.f_bsize);
+
+  } else {
+    return calc_fs_size(fs.f_bavail, fs.f_bsize);
+  }
+
 # elif defined(HAVE_STATFS)
   struct statfs fs;
 
@@ -3525,7 +3798,18 @@ off_t pr_fs_getsize(char *path) {
     return 0;
   }
 
-  return calc_fs_size(fs.f_bavail, fs.f_bsize);
+  /* The calc_fs_size() function is only useful for 32-bit numbers;
+   * if either of our two values are in datatypes larger than 4 bytes,
+   * we'll use typecasting.
+   */
+  if (sizeof(fs.f_bavail) > 4 ||
+      sizeof(fs.f_bsize) > 4) {
+    return ((off_t) fs.f_bavail * (off_t) fs.f_bsize);
+
+  } else {
+    return calc_fs_size(fs.f_bavail, fs.f_bsize);
+  }
+
 # endif /* !HAVE_STATFS && !HAVE_SYS_STATVFS && !HAVE_SYS_VFS */
 }
 #endif /* !HAVE_STATFS && !HAVE_SYS_STATVFS && !HAVE_SYS_VFS */
@@ -3537,6 +3821,20 @@ int pr_fsio_puts(const char *buf, pr_fh_t *fh) {
   }
 
   return pr_fsio_write(fh, buf, strlen(buf));
+}
+
+int pr_fsio_set_block(pr_fh_t *fh) {
+  int flags, res;
+
+  if (fh == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  flags = fcntl(fh->fh_fd, F_GETFL);
+  res = fcntl(fh->fh_fd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
+
+  return res;
 }
 
 void pr_resolve_fs_map(void) {
@@ -3708,6 +4006,12 @@ static const char *get_fs_hooks_str(pool *p, pr_fs_t *fs) {
 
   if (fs->faccess)
     hooks = pstrcat(p, hooks, *hooks ? ", " : "", "faccess(2)", NULL);
+
+  if (fs->utimes)
+    hooks = pstrcat(p, hooks, *hooks ? ", " : "", "utimes(2)", NULL);
+
+  if (fs->futimes)
+    hooks = pstrcat(p, hooks, *hooks ? ", " : "", "futimes(3)", NULL);
 
   if (fs->chdir)
     hooks = pstrcat(p, hooks, *hooks ? ", " : "", "chdir(2)", NULL);

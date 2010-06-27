@@ -1,4 +1,4 @@
-<!-- $Id: Controls.html,v 1.3 2006/03/16 18:06:15 castaglia Exp $ -->
+<!-- $Id: Controls.html,v 1.4 2009/08/31 20:40:18 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Controls.html,v $ -->
 
 <html>
@@ -28,7 +28,7 @@ The functionality involves a client and a server communicating over a Unix
 domain socket, using a simple text-based protocol.  A new program,
 <code>ftpdctl</code>, is distributed with ProFTPD; <code>ftpdctl</code> is a
 Controls client.  The server side of the Controls functionality is the
-<a href="http://www.castaglia.org/proftpd/modules/mod_ctrls.html"><code>mod_ctrls</code></a> module, which is compiled into a <code>proftpd</code> daemon when
+<a href="http://www.proftpd.org/docs/modules/mod_ctrls.html"><code>mod_ctrls</code></a> module, which is compiled into a <code>proftpd</code> daemon when
 the <em>--enable-ctrls</em> configure option is used.  Note, however, that
 the Controls functionality only works for <code>proftpd</code> daemons
 whose <code>ServerType</code> is <code>standalone</code>; <code>proftpd</code>
@@ -245,7 +245,7 @@ of the <code>lsctrl</code> action which keeps it from being disablable.
 <b>Admin Controls</b><br>
 The <code>mod_ctrls</code> module, by itself, is rather unexciting.  Other
 modules, such as <code>mod_ctrls_admin</code>, provide more interesting
-and useful control actions:
+and useful control actions, including:
 <ul>
   <li><code>debug</code>
   <li><code>dump</code>
@@ -255,10 +255,11 @@ and useful control actions:
   <li><code>start</code>
   <li><code>status</code>
   <li><code>stop</code>
+  <li><code>trace</code>
 </ul>
 These actions provide basis administrative control over the running
 <code>proftpd</code> daemon; see the <code>mod_ctrls_admin</code>
-<a href="http://www.castaglia.org/proftpd/modules/mod_ctrls_admin.html">documentation</a> for more information.
+<a href="http://www.proftpd.org/docs/contrib/mod_ctrls_admin.html">documentation</a> for more information.
 
 <p>
 A basic <code>mod_ctrls_admin</code> configuration is:
@@ -308,7 +309,7 @@ If either allows access, the client can use that control action.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2006/03/16 18:06:15 $</i><br>
+Last Updated: <i>$Date: 2009/08/31 20:40:18 $</i><br>
 <hr>
 
 </body>

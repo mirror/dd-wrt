@@ -1,4 +1,4 @@
-<!-- $Id: Quotas.html,v 1.6 2008/12/21 22:17:19 castaglia Exp $ -->
+<!-- $Id: Quotas.html,v 1.8 2009/07/23 15:04:05 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Quotas.html,v $ -->
 
 <html>
@@ -221,9 +221,20 @@ be applied to this session.  When this happens, <code>mod_quotatab</code>
 will not update the tally table.
 
 <p>
-If this is not the case, then consider looking in the <a href="../contrib/mod_quotatab.html#QuotaLog"><code>QuotaLog</code></a> file for more information.
+Another possibility is that your configured limits are "unlimited" (<i>i.e.</i>
+zero).  As it states in the <a href="../contrib/mod_quotatab.html#Usage"><code>mod_quotatab</code></a> documentation:
+<pre>
+  For any quota limit that is set as "unlimited", mod_quotatab will not keep the tally.
+  Many site administrators might want this ability, for accounting purposes. However,
+  that ability is outside of the intended design of this module; other logging modules
+  are much better suited for accounting purposes (<i>e.g</i>. mod_sql's <code>SQLLog</code> directive).
+</pre>
 
-<p><a name="QuotasPerMonth" title="#QuotasPerMonth></a>
+<p>
+If the above cases are not applicable, then consider looking in the
+<a href="../contrib/mod_quotatab.html#QuotaLog"><code>QuotaLog</code></a> file for more information.
+
+<p><a name="QuotasPerMonth" title="#QuotasPerMonth"></a>
 <font color=red>Question</font>: Can I use <code>mod_quotatab</code> to set
 monthly quotas?<br>
 <font color=blue>Answer</font>: Sort of.  <code>mod_quotatab</code> itself
@@ -293,9 +304,25 @@ checks the size of the file before the upload/append starts, and then checks
 the size of the file again after the upload/append completes.  The difference
 in file sizes is used for tracking the byte-related tallies.
 
+<p><a name="QuotasDeleteTransferBytes" title="#QuotasDeleteTransferBytes">
+<font color=red>Question</font>: I configured limits for my users such that
+only the transfer bytes limit is set.  On uploads, my transfer bytes tally
+is incremented properly.  But when I delete a file, the transfer bytes tally
+is not <i>decremented</i>.  Is this a bug?<br>
+<font color=blue>Answer</font>: No, it's not a bug.
+
+<p>
+Deleting a file does not count as transferred bytes (<i>i.e.</i> it does not
+pertain to the <code>bytes_xfer</code> limit); it counts as uploaded bytes
+(<i>i.e.</i> the <code>bytes_in</code> limit).  And since there is only a limit,
+in this case, on the transferred bytes, the <code>mod_quotatab</code> module
+ends up not changing any tally value for a delete.  More details on this
+can be found in
+<a href="http://bugs.proftpd.org/show_bug.cgi?id=2897">Bug#2897</a>.
+
 <p>
 <hr>
-<i>$Date: 2008/12/21 22:17:19 $</i><br>
+<i>$Date: 2009/07/23 15:04:05 $</i><br>
 
 </body>
 </html>

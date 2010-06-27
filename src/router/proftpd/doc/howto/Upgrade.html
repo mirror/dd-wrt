@@ -1,4 +1,4 @@
-<!-- $Id: Upgrade.html,v 1.1 2004/12/04 19:17:51 castaglia Exp $ -->
+<!-- $Id: Upgrade.html,v 1.2 2010/01/21 17:37:16 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Upgrade.html,v $ -->
 
 <html>
@@ -35,7 +35,7 @@ the new version into the &quot;live&quot; location:
   cd proftpd-<i>version</i>/
   ./configure ..
   make
-  ./proftpd -t -d9 -c /path/to/proftpd.conf
+  ./proftpd -t -d10 -c /path/to/proftpd.conf
 </pre>
 The &quot;<code>./proftpd</code>&quot; means to use the new
 <code>proftpd</code> binary compiled by <code>make</code>, but not yet
@@ -47,7 +47,7 @@ installed.  If the new binary reports errors, make a copy of your existing
 Make any needed changes to the <code>proftpd.conf.new</code> file, until
 the new <code>proftpd</code> binary reports a successful syntax check:
 <pre>
-  ./proftpd -t -d9 -c /path/to/proftpd.conf.new
+  ./proftpd -t -d10 -c /path/to/proftpd.conf.new
 </pre>
 
 <p>
@@ -63,7 +63,7 @@ will be running.
 
 <p>
 <hr>
-<i>$Date: 2004/12/04 19:17:51 $</i><br>
+<i>$Date: 2010/01/21 17:37:16 $</i><br>
 
 </body>
 </html>

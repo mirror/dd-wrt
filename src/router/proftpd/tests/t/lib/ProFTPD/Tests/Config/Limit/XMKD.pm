@@ -97,7 +97,7 @@ sub tear_down {
   }
 
   undef $self;
-};
+}
 
 sub mkd_allowed {
   my $self = shift;
@@ -106,7 +106,8 @@ sub mkd_allowed {
   my $config_file = "$tmpdir/limit.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
-  my $log_file = File::Spec->rel2abs('limit.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
@@ -236,13 +237,14 @@ sub mkd_denied {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -250,7 +252,7 @@ sub mkd_denied {
   my $uid = 500;
   my $gid = 500;
 
-  my $sub_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
+  my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
 
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
@@ -381,13 +383,14 @@ sub mkd_denied_group_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -517,13 +520,14 @@ sub mkd_denied_class_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -660,13 +664,14 @@ sub mkd_denied_classes_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -807,13 +812,14 @@ sub xmkd_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -939,13 +945,14 @@ sub xmkd_denied {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -1083,13 +1090,14 @@ sub xmkd_denied_group_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -1218,13 +1226,14 @@ sub xmkd_denied_class_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -1360,13 +1369,14 @@ sub xmkd_denied_classes_allowed {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-  my $log_file = File::Spec->rel2abs('cmds.log');
+  my $config_file = "$tmpdir/limit.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';

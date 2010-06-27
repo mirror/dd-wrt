@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2009 The ProFTPD Project team
+ * Copyright (c) 2003-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Event management code
- * $Id: event.c,v 1.16.2.1 2009/04/28 22:44:38 castaglia Exp $
+ * $Id: event.c,v 1.18 2010/02/05 00:32:37 castaglia Exp $
  */
 
 #include "conf.h"
@@ -241,12 +241,13 @@ void pr_event_generate(const char *event, const void *event_data) {
 
       for (evh = evl->handlers; evh; evh = evh->next) {
         if (evh->module) {
-          pr_trace_msg(trace_channel, 8, "dispatching event '%s' to mod_%s",
-            event, evh->module->name);
+          pr_trace_msg(trace_channel, 8,
+            "dispatching event '%s' to mod_%s (at %p)", event,
+            evh->module->name, evh->cb);
 
         } else {
-          pr_trace_msg(trace_channel, 8, "dispatching event '%s' to core",
-            event);
+          pr_trace_msg(trace_channel, 8,
+            "dispatching event '%s' to core (at %p)", event, evh->cb);
         }
 
         evh->cb(event_data, evh->user_data);

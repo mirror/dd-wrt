@@ -23,7 +23,7 @@
  */
 
 /* UTF8/charset encoding/decoding
- * $Id: encode.c,v 1.13 2009/01/28 00:19:42 castaglia Exp $
+ * $Id: encode.c,v 1.20 2009/09/07 01:37:18 castaglia Exp $
  */
 
 #include "conf.h"
@@ -152,63 +152,43 @@ int encode_init(void) {
   }
 
   if (local_charset == NULL) {
-#ifdef HAVE_NL_LANGINFO
-    /* Look up the current charset.  If there's a problem, default to
-     * UCS-2.
-     */
-    local_charset = nl_langinfo(CODESET);
-    if (local_charset == NULL ||
-        strlen(local_charset) == 0) {
-      local_charset = "UTF-8";
-      pr_trace_msg(trace_channel, 1,
-        "unable to determine locale, defaulting to 'UTF-8' for %s conversion",
-        encoding);
+    local_charset = pr_encode_get_local_charset();
 
-    } else {
-
-      /* Workaround a stupid bug in many implementations where nl_langinfo()
-       * returns "646" to mean "US-ASCII".  The problem is that iconv_open(3)
-       * doesn't accept "646" as an acceptable encoding.
-       */
-      if (strcmp(local_charset, "646") == 0) {
-        local_charset = "US-ASCII";
-      }
-
-      pr_trace_msg(trace_channel, 1,
-        "converting %s to local character set '%s'", encoding, local_charset);
-    }
-#else
-    local_charset = "UTF-8";
-    pr_trace_msg(trace_channel, 1,
-      "nl_langinfo(3) not supported, defaulting to using 'UTF-8' for "
-      "%s conversion", encoding);
-#endif /* HAVE_NL_LANGINFO */
   } else {
     pr_trace_msg(trace_channel, 3,
       "using '%s' as local charset for %s conversion", local_charset, encoding);
   }
 
 # ifdef HAVE_ICONV
-  /* Get the iconv handles. */
-  encode_conv = iconv_open(encoding, local_charset);
-  if (encode_conv == (iconv_t) -1) {
-    pr_trace_msg(trace_channel, 1, "error opening conversion handle from '%s' "
-      "to '%s': %s", local_charset, encoding, strerror(errno));
-    return -1;
-  }
+
+  /* If the local charset matches the remote charset, then there's no point
+   * in converting; the charsets are the same.  Indeed, on some libiconv
+   * implementations, attempting to convert between the same charsets results
+   * in a tightly spinning CPU, or worse (see Bug#3272).
+   */
+  if (strcasecmp(local_charset, encoding) != 0) {
+
+    /* Get the iconv handles. */
+    encode_conv = iconv_open(encoding, local_charset);
+    if (encode_conv == (iconv_t) -1) {
+      pr_trace_msg(trace_channel, 1, "error opening conversion handle "
+        "from '%s' to '%s': %s", local_charset, encoding, strerror(errno));
+      return -1;
+    }
  
-  decode_conv = iconv_open(local_charset, encoding);
-  if (decode_conv == (iconv_t) -1) {
-    int xerrno = errno;
+    decode_conv = iconv_open(local_charset, encoding);
+    if (decode_conv == (iconv_t) -1) {
+      int xerrno = errno;
 
-    pr_trace_msg(trace_channel, 1, "error opening conversion handle from '%s' "
-      "to '%s': %s", encoding, local_charset, strerror(errno));
+      pr_trace_msg(trace_channel, 1, "error opening conversion handle "
+        "from '%s' to '%s': %s", encoding, local_charset, strerror(errno));
 
-    (void) iconv_close(encode_conv);
-    encode_conv = (iconv_t) -1;
+      (void) iconv_close(encode_conv);
+      encode_conv = (iconv_t) -1;
 
-    errno = xerrno;
-    return -1;
+      errno = xerrno;
+      return -1;
+    }
   }
 
   set_supports_telnet_iac(encoding);
@@ -227,6 +207,17 @@ char *pr_decode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
   if (!p || !in || !outlen) {
     errno = EINVAL;
     return NULL;
+  }
+
+  /* If the local charset matches the remote charset, then there's no point
+   * in converting; the charsets are the same.  Indeed, on some libiconv
+   * implementations, attempting to convert between the same charsets results
+   * in a tightly spinning CPU (see Bug#3272).
+   */
+  if (local_charset != NULL &&
+      encoding != NULL &&
+      strcasecmp(local_charset, encoding) == 0) {
+    return pstrdup(p, in);
   }
 
   if (decode_conv == (iconv_t) -1) {
@@ -314,7 +305,8 @@ int pr_encode_enable_encoding(const char *codeset) {
     return -1;
   }
 
-  if (strcasecmp(encoding, codeset) == 0) {
+  if (encoding != NULL &&
+      strcasecmp(encoding, codeset) == 0) {
     pr_trace_msg(trace_channel, 5, "'%s' encoding already being used", codeset);
     return 0;
   }
@@ -344,6 +336,44 @@ int pr_encode_enable_encoding(const char *codeset) {
   errno = ENOSYS;
   return -1;
 #endif /* !HAVE_ICONV_H */
+}
+
+const char *pr_encode_get_local_charset(void) {
+  const char *charset = NULL;
+
+#ifdef HAVE_NL_LANGINFO
+  /* Look up the current charset.  If there's a problem, default to
+   * UCS-2.  Make sure we pick up the locale of the environment.
+   */
+  charset = nl_langinfo(CODESET);
+  if (charset == NULL ||
+      strlen(charset) == 0) {
+    charset = "UTF-8";
+    pr_trace_msg(trace_channel, 1,
+      "unable to determine locale, defaulting to 'UTF-8' for %s conversion",
+      encoding);
+
+  } else {
+
+    /* Workaround a stupid bug in many implementations where nl_langinfo()
+     * returns "646" to mean "US-ASCII".  The problem is that iconv_open(3)
+     * doesn't accept "646" as an acceptable encoding.
+     */
+    if (strcmp(charset, "646") == 0) {
+      charset = "US-ASCII";
+    }
+
+    pr_trace_msg(trace_channel, 1,
+      "converting %s to local character set '%s'", encoding, charset);
+    }
+#else
+  charset = "UTF-8";
+  pr_trace_msg(trace_channel, 1,
+    "nl_langinfo(3) not supported, defaulting to using 'UTF-8' for "
+    "%s conversion", encoding);
+#endif /* HAVE_NL_LANGINFO */
+
+  return charset;
 }
 
 const char *pr_encode_get_charset(void) {

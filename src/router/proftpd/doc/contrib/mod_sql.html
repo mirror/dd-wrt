@@ -1,4 +1,4 @@
-<!-- $Id: mod_sql.html,v 1.13 2009/01/22 19:25:29 castaglia Exp $ -->
+<!-- $Id: mod_sql.html,v 1.23 2010/02/01 22:14:14 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sql.html,v $ -->
 
 <html>
@@ -26,6 +26,14 @@ for ProFTPD.  It is comprised of a front end module (<code>mod_sql</code>)
 and backend database-specific modules (<code>mod_sql_mysql</code>,
 <code>mod_sql_postgres</code>).  The front end module leaves the specifics
 of handling database connections to the backend modules.
+
+<p>
+This product includes software developed by the OpenSSL Project for use in the
+OpenSSL Toolkit (http://www.openssl.org/).
+
+<p>
+This product includes cryptographic software written by Eric Young
+(eay@cryptsoft.com).
 
 <p>
 The most current version of <code>mod_sql</code> is distributed with ProFTPD.
@@ -226,7 +234,11 @@ The current supported authentication methods are:
 
   <li><b>Crypt</b><br>
     Allows passwords in the database to be of Unix <code>crypt(3)</code>
-    form.<br>
+    form.  <b>Note</b> that the traditional Unix <code>crypt(3)</code>
+    function only uses the first 8 characters of a password.  If you have
+    passwords longer than 8 characters, and some of those passwords have
+    the same first 8 characters, then those users may be able to log into
+    each others accounts.<br>
   </li>
   <br>
 
@@ -243,7 +255,9 @@ The current supported authentication methods are:
     <code>'{digest-name}hashed-value'</code>, where <code>hashed-value</code>
     is the base64-encoded digest of the passsword.  Only available if you
     define <code>HAVE_OPENSSL</code> when you compile <code>proftpd</code>
-    and you link with OpenSSL's <code>libcrypto</code> library.<br>
+    and you link with OpenSSL's <code>libcrypto</code> library; the easiest
+    way to handle this is to use the <code>--enable-openssl</code> configure
+    option.<br>
   </li>
   <br>
 
@@ -343,9 +357,15 @@ A given database connection is governed by a connection policy that specifies
 when a connection should be opened and when it should be closed.  There are 
 three options:
 <ul>
+  <li><b>PERCONNECTION</b><br>
+    Open a database connection when the client connects to the server,
+    and close the database connection when the client disconnects.<br>
+  </li>
+  <br>
+
   <li><b>PERSESSION</b><br>
-    Open a database connection at the start of the session and close the
-    database connection at the end of the session.<br>
+    Open a database connection on first use (<i>e.g.</i> during authentication)
+    and close the database connection at the end of the session.<br>
   </li>
   <br>
 
@@ -564,6 +584,77 @@ described below:
 </ul>
 If you need to change <b>any</b> of these field names from the default, you
 need to specify <b>all</b> of them.
+
+<p>
+<b>Custom Queries</b><br>
+As of <code>1.3.3rc1</code>, the <code>SQLGroupInfo</code> directive accepts
+an alternate syntax:
+<pre>
+  SQLGroupInfo custom:/<i>group-by-name</i>/<i>group-by-id</i>/<i>group-by-member</i>
+</pre>
+where <i>group-by-name</i> refers to a configured SELECT
+<code>SQLNamedQuery</code>.  This named query <b>must</b> return one row, and
+return the following columns, in this order: <code>groupname, gid,
+members</code>.  The configured query may make use of the variables mentioned
+in the <code>SQLLog</code> description.  The <code>%{0}</code> variable will
+be populated with the group name for which info is being retrieved.  The
+<i>group-by-id</i> here refers to a <code>SQLNamedQuery</code> which is
+<i>just</i> like the lookup given a group name, only the <i>group-by-id</i>
+query needs to return group information given a GID.  For the
+<i>group-by-id</i> query, the <code>%{0}</code> variable is populated with
+the GID in question.  Last, the <i>group-by-member</i> query returns group
+information given a user member; again, the <code>%{0}</code> will contain
+the member/user name by which to look up the group information.
+
+<p>
+<b>Note</b>, however, that if you use the <em>groupset</em> or
+<em>groupsetfast</em> <a href="#SQLAuthenticate"><code>SQLAuthenticate</code></a>
+options, you will need to supply some additional <code>SQLNamedQuery</code>
+names in your custom <code>SQLGroupInfo</code> directive.  The
+<code>SQLGroupInfo</code> directive supports:
+<pre>
+  SQLGroupInfo custom:/<i>lookup-by-name</i>/<i>lookup-by-id</i>/<i>lookup-by-member</i>/[/<i>groupset-lookup</i>[/<i>groupsetfast-lookup</i>]]
+</pre>
+where <em>groupset-lookup</em> is the name of a SELECT
+<code>SQLNamedQuery</code> that returns the names (and <i>only the names</i>)
+of all groups, and the <em>groupsetfast-lookup</em> refers to a SELECT
+<code>SQLNamedQuery</code> that returns all the fields (<i>i.e.</i>
+<code>groupname, gid, members</code> in that order) for all groups.
+
+<p>
+To provide a concrete example:
+<pre>
+  SQLAuthenticate users groups groupsetfast
+  SQLGroupInfo custom:/get-group-by-name/get-group-by-id/get-group-by-member/get-all-groupnames/get-all-groups
+  SQLNamedQuery get-group-by-name SELECT "groupname, gid, members FROM ftpgroups WHERE groupname = '%{0}'"
+  SQLNamedQuery get-group-by-id SELECT "groupname, gid, members FROM ftpgroups WHERE gid = %{0}"
+  SQLNamedQuery get-group-by-member SELECT "groupname, gid, members FROM ftpgroups WHERE (members LIKE '%%,%{0},%%' OR members LIKE '%{0},%%' OR members LIKE '%%,%{0}')"
+  SQLNamedQuery get-all-groupnames SELECT "groupname FROM ftpgroups"
+  SQLNamedQuery get-all-groups SELECT "groupname, gid, members FROM ftpgroups"
+</pre>
+With a configuration similar to these, using either of the <em>groupset</em> or
+<em>groupsetfast</em> in your <code>SQLAuthenticate</code> directive will
+work as expected.
+
+<p>
+Another consideration when using custom <code>SQLGroupInfo</code> queries
+is their relationship to the "useNormalizedGroupSchema" <code>SQLOption</code>.
+<i>I.e.</i> does using the "useNormalizedGroupSchema" option affect how
+the results of custom <code>SQLGroupInfo</code> queries are handled?  No.
+If custom <code>SQLGroupInfo</code> queries are used, <code>mod_sql</code>
+<i>automatically</i> assumes that the custom group members query will return
+<i>N</i> rows, where each row contains 3 columns: group name, group ID,
+and member name.  That is, the custom <code>SQLGroupInfo</code> queries act as
+if "useNormalizedGroupSchema" is always in effect.  (When support for custom
+<code>SQLGroupInfo</code> queries was added, there was no good reason for
+supporting the old, inefficient comma-delimited format for the members column.)
+
+<p>
+<b>See Also</b>:
+  <a href="#SQLAuthenticate"><code>SQLAuthenticate</code></a>,
+  <a href="#SQLLog"><code>SQLLog</code></a>,
+  <a href="#SQLNamedQuery"><code>SQLNamedQuery</code></a>,
+  <a href="#SQLUserInfo"><code>SQLUserInfo</code></a>
 
 <p>
 <hr>
@@ -941,6 +1032,14 @@ The currently implemented options are:
     database errors.
 
   <p>
+  <li><code>noReconnect</code><br>
+    <p>
+    If supported by the database client library, <code>mod_sql</code> will
+    try to automatically reconnect <i>once</i>, if it determines that the
+    connection to the database server was lost.  Use "noReconnect" to disable
+    this auto-reconnection attempt.
+
+  <p>
   <li><code>useNormalizedGroupSchema</code><br>
     <p>
     If this option is enabled, then <code>mod_sql</code>, when retrieving all
@@ -1017,7 +1116,10 @@ The second parameter, <em>numeric</em>, specifies the numeric value of the
 message returned to the FTP client.  <b><i>Do not</i></b> choose a number
 blindly: message numbers may be parsed by clients.  In most cases you will
 want to use <code>214</code>, the &quot;Help message&quot; numeric.  It
-specifies that the information is only meant to be human readable.
+specifies that the information is only meant to be human readable.  Note
+that FTP clients can be <i>very</i> picky about these response codes; choosing
+the wrong code can cause clients not to work.  Section 5.4 of <a href="http://www.faqs.org/rfcs/rfc959.html">RFC959</a> defines the acceptable response codes
+for each FTP command.
 
 <p>
 The third parameter, <em>query-string</em>, is exactly equivalent to the
@@ -1037,7 +1139,7 @@ NULL first value, will be replaced with the string &quot;{null}&quot;.
 For example:
 <pre>
   SQLNamedQuery count SELECT "count from users where userid='%u'"
-  SQLShowInfo PASS "230" "You've logged on %{count} times, %u"
+  SQLShowInfo PASS 230 "You've logged on %{count} times, %u"
 </pre>
 As long as the information is in the database, these two directives specify
 that the user will be greeted with their login count each time they
@@ -1113,6 +1215,7 @@ whether NULL or not.  The parameters are described below:
 </ul>
 
 <p>
+<b>Custom Queries</b><br>
 As of <code>1.2.9rc1</code>, the <code>SQLUserInfo</code> directive accepts
 an alternate syntax:
 <pre>
@@ -1130,7 +1233,50 @@ user name, which is exactly what <code>SQLUserInfo</code> is meant to
 provide.
 
 <p>
+Starting with <code>1.3.3rc1</code>, you can supply other queries as well.
+You can supply a SELECT <code>SQLNamedQuery</code> for returning the
+same information as above, only this query is given a <i>UID</i> instead of
+a user name.  For example:
+<pre>
+  SQLNamedQuery get-user-by-name SELECT "userid, passwd, uid, gid, homedir, shell FROM ftpusers WHERE userid = '%U'"
+  SQLNamedQuery get-user-by-id SELECT "userid, passwd, uid, gid, homedir, shell FROM ftpusers WHERE uid = %{0}"
+
+  SQLUserInfo custom:/get-user-by-name/get-user-by-id
+</pre>
+
+<p>
+<b>Note</b>, however, that if you use the <em>userset</em> or
+<em>usersetfast</em> <a href="#SQLAuthenticate"><code>SQLAuthenticate</code></a>
+options, you will need to supply some additional <code>SQLNamedQuery</code>
+names in your custom <code>SQLUserInfo</code> directive.  The
+<code>SQLUserInfo</code> directive supports:
+<pre>
+  SQLUserInfo custom:/<i>lookup-by-name</i>[/<i>lookup-by-id</i>[/<i>userset-lookup</i>[/<i>usersetfast-lookup</i>]]]
+</pre>
+where <em>userset-lookup</em> is the name of a SELECT <code>SQLNamedQuery</code>
+that returns the names (and <i>only the names</i>) of all users, and the
+<em>usersetfast-lookup</em> refers to a SELECT <code>SQLNamedQuery</code>
+that returns all the fields (<i>i.e.</i> <code>username, passwd, uid, gid,
+homedir, shell</code> in that order) for all users.
+
+<p>
+To provide a concrete example:
+<pre>
+  SQLAuthenticate users groups usersetfast
+  SQLUserInfo custom:/get-user-by-name/get-user-by-id/get-user-names/get-all-users
+  SQLNamedQuery get-user-by-name SELECT "userid, passwd, uid, gid, homedir, shell FROM users WHERE userid = '%U'"
+  SQLNamedQuery get-user-by-id SELECT "userid, passwd, uid, gid, homedir, shell FROM users WHERE uid = %{0}"
+  SQLNamedQuery get-user-names SELECT "userid FROM users"
+  SQLNamedQuery get-all-users SELECT "userid, passwd, uid, gid, homedir, shell FROM users"
+</pre>
+With a configuration similar to these, using either of the <em>userset</em> or
+<em>usersetfast</em> in your <code>SQLAuthenticate</code> directive will
+work as expected.
+
+<p>
 <b>See Also</b>:
+  <a href="#SQLAuthenticate"><code>SQLAuthenticate</code></a>,
+  <a href="#SQLGroupInfo"><code>SQLGroupInfo</code></a>, 
   <a href="#SQLLog"><code>SQLLog</code></a>, 
   <a href="#SQLNamedQuery"><code>SQLNamedQuery</code></a>
 
@@ -1200,12 +1346,12 @@ Complete the build with the following standard commands:
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/01/22 19:25:29 $</i><br>
+Last Updated: <i>$Date: 2010/02/01 22:14:14 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2008 The ProFTPD Project<br>
+&copy; Copyright 2000-2010 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

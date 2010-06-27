@@ -1,4 +1,4 @@
-<!-- $Id: Stopping.html,v 1.4 2005/01/03 05:36:06 castaglia Exp $ -->
+<!-- $Id: Stopping.html,v 1.5 2009/12/14 17:37:48 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Stopping.html,v $ -->
 
 <html>
@@ -16,15 +16,24 @@
 The starting and stopping of a ProFTPD server is a straightforward process,
 once the means intended for such things are understood.  Starting the
 server is easy.  Stopping and/or restarting the server are the more complicated
-tasks.  These can be accomplish either using signals or <code>ftpshut</code>,
-depending on your needs.  Use of signals will fulfill most requirements; the
-<code>ftpshut</code> program is used for a <a href="#ftpshut">specific way of
-shutting down</a> a <code>proftpd</code> server.
+tasks.  Stopping and/or restarting can be accomplish either using signals or
+<code>ftpshut</code>, depending on your needs.  Use of signals will fulfill
+most requirements; the <code>ftpshut</code> program is used for a
+<a href="#ftpshut">specific way of shutting down</a> a <code>proftpd</code>
+server.
 
 <p><a name="Starting"></a>
 <b>Starting <code>proftpd</code></b><br>
-init.d scripts vs command-line invocation
-standalone vs inetd
+The <a href="ServerType.html"><code>ServerType</code></a> configured in
+your <code>proftpd.conf</code> determines how you should start your
+<code>proftpd</code> daemon.  A <code>ServerType</code> of "inetd" means
+that you are letting inetd/xinetd handle the starting of the server; using
+"standalone" means that you will probably end up using some kind of
+script (<i>e.g.</i> <code>init.d</code> shell scripts).
+
+<p>
+All start scripts end up using, in some form or another, the various
+command-line options supported by <code>proftpd<code>:
 <pre>
   /usr/local/sbin/proftpd [options]
 </pre>
@@ -138,8 +147,12 @@ perform a syntax check of the file before sending the signal:
   proftpd -t -d5
 </pre>
 
-<p><a name="InitScript"></a>
+<p><a name="InitScripts"></a>
 <b>Example <code>init.d</code> script</b><br>
+If your particular Unix/Linux distribution and/or <code>proftpd</code>
+package does not provide an init shell script for <code>proftpd</code>, or
+you want to write your own, here is a simple example script to demonstrate
+what one would look like:
 <pre>
   #!/bin/sh
 
@@ -210,6 +223,35 @@ perform a syntax check of the file before sending the signal:
 </pre>
 
 <p>
+For Mac OSX users, here is an example Launcher/launchd <code>plist</code>
+configuration for <code>proftpd</code>:
+<pre>
+  &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+  &lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+    &lt;plist version="1.0"&gt;
+      &lt;dict&gt;
+        &lt;key&gt;KeepAlive&lt;/key&gt;
+          &lt;dict&gt;
+            &lt;key&gt;SuccessfulExit&lt;/key&gt;
+              &lt;true/&gt;
+          &lt;/dict&gt;
+        &lt;key&gt;Label&lt;/key&gt;
+          &lt;string&gt;org.proftpd.proftpd&lt;/string&gt;
+        &lt;key&gt;ProgramArguments&lt;/key&gt;
+          &lt;array&gt;
+            &lt;string&gt;/usr/local/sbin/proftpd&lt;/string&gt;
+            &lt;string&gt;-n&lt;/string&gt;
+          &lt;/array&gt;
+        &lt;key&gt;RunAtLoad&lt;/key&gt;
+          &lt;true/&gt;
+        &lt;key&gt;ServiceIPC&lt;/key&gt;
+          &lt;false/&gt;
+      &lt;/dict&gt;
+    &lt;/plist&gt;
+</pre>
+This has been reported to run successfully on Mac OSX 10.4 and 10.5.
+
+<p>
 <a name="ftpshut"><b>The <code>ftpshut</code> program</b><br>
 The <code>ftpshut</code> program that comes as part of ProFTPD can also
 be used to shut down a <code>proftpd</code> server, in a sense.  This program
@@ -253,7 +295,7 @@ for more detailed information on its usage.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2005/01/03 05:36:06 $</i><br>
+Last Updated: <i>$Date: 2009/12/14 17:37:48 $</i><br>
 <hr>
 
 </body>

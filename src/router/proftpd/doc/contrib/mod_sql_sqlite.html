@@ -1,4 +1,4 @@
-<!-- $Id: mod_sql_sqlite.html,v 1.2 2008/01/08 02:38:15 castaglia Exp $ -->
+<!-- $Id: mod_sql_sqlite.html,v 1.4 2009/06/29 17:10:22 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sql_sqlite.html,v $ -->
 
 <html>
@@ -59,6 +59,14 @@ your <code>configure</code> command, <i>e.g.</i>:
 </pre>
 
 <p>
+Alternatively, if your proftpd was compiled with DSO support, you can
+use the <code>prxs</code> tool to build <code>mod_sql_sqlite</code> as
+a shared module:
+<pre>
+  prxs -c -i -d mod_sql_sqlite.c
+</pre>
+
+<p>
 <hr>
 <h2><a name="Usage">Usage</a></h2>
 For the most part, <code>mod_sql_sqlite</code> requires little configuration.
@@ -74,18 +82,27 @@ For example:
     SQLConnectInfo /path/to/ftpd.db
   &lt;/IfModule&gt;
 </pre>
-Please contact the author directly with any questions or comments.
+
+<p>
+Note that due to the way that <code>mod_sql_sqlite<code> implements database
+transactions (e.g. <code>INSERT</code> and <code>UPDATE</code> SQL statements
+for <code>SQLLog</code> directives), SQLite-3.6.5 or later is <b>required</b>
+in order for <code>mod_sql_sqlite</code> to support <code>SQLLog</code>
+directives if <code>DefaultRoot</code> or <code>&lt;Anonymous&gt;</code> are
+used.  (SQLite-3.6.5 and later support the MEMORY journal mode, which is
+needed for supporting the <code>SQLLog</code> directives in a chrooted
+process.)
 
 <p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008/01/08 02:38:15 $</i><br>
+Last Updated: <i>$Date: 2009/06/29 17:10:22 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2008 TJ Saunders<br>
+&copy; Copyright 2004-2009 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

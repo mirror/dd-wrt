@@ -1,4 +1,4 @@
-<!-- $Id: Limit.html,v 1.12 2008/04/10 15:04:45 castaglia Exp $ -->
+<!-- $Id: Limit.html,v 1.18 2010/02/17 16:07:11 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Limit.html,v $ -->
 
 <html>
@@ -41,7 +41,7 @@ The FTP command groups are:
 
   <p>
   <li>DIRS<br>
-    <i>Covering</i>: CDUP, CWD, LIST, MDTM, NLST, PWD, RNFR, STAT, XCUP, XCWD, XPWD
+    <i>Covering</i>: CDUP, CWD, LIST, MDTM, MLSD, MLST, NLST, PWD, RNFR, STAT, XCUP, XCWD, XPWD
 
   <p>
   <li>LOGIN<br>
@@ -95,7 +95,7 @@ subdirectories (<i>e.g.</i> <code>pub/</code> or <code>incoming/</code>
 directories).
 
 <p>
-<b>Using <code>AllowUser</code></b><br>
+<b>Using <code>AllowUser</code> and <code>DenyUser</code></b><br>
 There is a catch to using the <code>AllowUser</code> configuration directive
 that causes confusion, primarily when a single <code>AllowUser</code>
 directive is being used to allow access to some FTP commands only to
@@ -121,6 +121,7 @@ try using:
   AllowUser dave
   AllowUser wendy
 </pre>
+All of this applies to the <code>DenyUser</code> directive as well.
 
 <p>
 Another important item to keep in mind is that the names used in
@@ -148,7 +149,7 @@ default, unless denied by a <code>Deny</code> directive; &quot;Deny,Allow&quot;
 interpretation to be the more &quot;common sense&quot; interpretation, even
 though it does not match Apache's interpretation.
 
-<p><a name="examples"></a>
+<p><a name="Examples"></a>
 <b>Examples</b><br>
 Here are examples to help illustrate the use of <code>&lt;Limit&gt;</code>.
 First, a common configuration: an upload-only directory.
@@ -185,15 +186,17 @@ upload and download files from the directory, but they cannot see what is
 in the directory:
 <pre>
   &lt;Directory /path/to/dir&gt;
-    &lt;Limit LIST NLST&gt;
+    &lt;Limit LIST NLST MLSD MLST STAT&gt;
       DenyAll
     &lt;/Limit&gt;
   &lt;/Directory&gt;
 </pre>
 That's it.  By default, all commands are allowed in a directory.  By blocking
-the two FTP commands used to list a directory's contents (<i>i.e.</i>
-<code>LIST</code> and <code>NLST</code>), we have effectively blocked the
-client from seeing anything in the directory.
+the FTP commands used to list a directory's contents (<i>i.e.</i>
+<code>LIST</code>, <code>MLSD</code>, <code>MLST</code>, and <code>NLST</code>),
+we have effectively blocked the client from seeing anything in the directory.
+Not many clients use the <code>STAT</code> command, but it also needs to
+be limited, as it can return information about files in a directory as well.
 
 <p>
 Cautious system administrators may want only a few select system users to be
@@ -305,20 +308,60 @@ on the FTP commands response for active and passive data transfers was
 added to ProFTPD in 1.2.10rc1.  If you are using that version or later,
 you can use the following to block active transfers:
 <pre>
-  &lt;Limit PORT&gt;
+  &lt;Limit EPRT PORT&gt;
     DenyAll
   &lt;/Limit&gt;
 </pre>
 Or, conversely, to block passive data transfers:
 <pre>
-  &lt;Limit PASV&gt;
+  &lt;Limit EPSV PASV&gt;
     DenyAll
   &lt;/Limit&gt;
 </pre>
 
 <p>
+Another common question is: "How can I create a read-only account using
+<code>&lt;Limit&gt;</code> sections"?  Here's how:
+<pre>
+  # Assumes that the user is chrooted into their home directory
+  &lt;Directory ~<i>user</i>&gt;
+    &lt;Limit CWD PWD DIRS READ&gt;
+      AllowUser <i>user</i>
+    &lt;/Limit&gt;
+
+    &lt;Limit ALL&gt;
+      DenyUser <i>user</i>
+    &lt;/Limit&gt;
+  &lt;/Directory&gt;
+</pre>
+
+<p>
+What if you want to prevent a certain directory from being deleted, but
+you <i>do</i> want to allow sub-directories in that directory to be deletable?
+Using two <code>&lt;Directory&gt;</code> sections with
+<code>&lt;Limit&gt;</code> sections, you can do this, <i>e.g.</i>:
+<pre>
+  &lt;Directory /path/to/dir&gt;
+    &lt;Limit RMD XRMD&gt;
+      DenyAll
+    &lt;/Limit&gt;
+  &lt;/Directory&gt;
+
+  &lt;Directory /path/to/dir/*&gt;
+    &lt;Limit RMD XRMD&gt;
+      AllowAll
+    &lt;/Limit&lt;
+  &gt;/Directory&gt;
+</pre>
+Note the trailing "/*" suffix in the second <code>&lt;Directory&gt;</code>
+section; this means that the second <code>&lt;Directory&gt;</code> section
+configuration applies to the sub-directories, but <i>not</i> to the parent
+directory itself (which is covered by the first <code>&lt;Directory&gt;</code>
+section).
+
+<p>
 <hr>
-Last Updated: <i>$Date: 2008/04/10 15:04:45 $</i><br>
+Last Updated: <i>$Date: 2010/02/17 16:07:11 $</i><br>
 <hr>
 
 </body>

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Flexible logging module for proftpd
- * $Id: mod_log.c,v 1.88 2009/02/03 17:42:05 castaglia Exp $
+ * $Id: mod_log.c,v 1.103 2010/01/29 19:00:08 castaglia Exp $
  */
 
 #include "conf.h"
@@ -35,7 +35,9 @@ extern pr_response_t *resp_list, *resp_err_list;
 
 module log_module;
 
-#define EXTENDED_LOG_BUFFER_SIZE		1025
+/* Max path length plus 128 bytes for additional info. */
+#define EXTENDED_LOG_BUFFER_SIZE		(PR_TUNABLE_PATH_MAX + 128)
+
 #define EXTENDED_LOG_MODE			0644
 
 typedef struct logformat_struc	logformat_t;
@@ -96,7 +98,9 @@ struct logfile_struc {
 #define META_DIR_PATH		24
 #define META_CMD_PARAMS		25
 #define META_RESPONSE_STR	26
-#define META_VERSION		27
+#define META_PROTOCOL		27
+#define META_VERSION		28
+#define META_RENAME_FROM	29
 
 /* For tracking the size of deleted files. */
 static off_t log_dele_filesz = 0;
@@ -134,6 +138,8 @@ static xaset_t			*log_set = NULL;
    %u			- Local user
    %V                   - DNS name of server serving request
    %v			- ServerName of server serving request
+   %w                   - RNFR path ("whence" a rename comes, i.e. the source)
+   %{protocol}          - Current protocol (e.g. "ftp", "sftp", etc)
    %{version}           - ProFTPD version
 */
 
@@ -193,10 +199,15 @@ static void logformat(char *nickname, char *fmts) {
       tmp++;
       for (;;) {
 
+        if (strncmp(tmp, "{protocol}", 10) == 0) {
+          add_meta(&outs, META_PROTOCOL, 0);
+          tmp += 10;
+          continue;
+        }
+
         if (strncmp(tmp, "{version}", 9) == 0) {
           add_meta(&outs, META_VERSION, 0);
           tmp += 9;
-          *outs++ = *tmp;
           continue;
         }
 
@@ -310,8 +321,16 @@ static void logformat(char *nickname, char *fmts) {
             add_meta(&outs, META_LOCAL_FQDN, 0);
             break;
 
+          case 'w':
+            add_meta(&outs, META_RENAME_FROM, 0);
+            break;
+
           case '%':
             *outs++ = '%';
+            break;
+
+          default:
+            *outs++ = *tmp;
             break;
         }
 
@@ -347,18 +366,22 @@ MODRET set_logformat(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-static int _parse_classes(char *s) {
-  int classes = 0;
+static int parse_classes(char *s) {
+  int classes = CL_NONE;
   char *nextp = NULL;
 
   do {
+    pr_signals_handle();
 
-    if ((nextp = strchr(s, ',')))
+    nextp = strchr(s, ',');
+    if (nextp != NULL) {
       *nextp++ = '\0';
 
-    if (!nextp) {
-      if ((nextp = strchr(s, '|')))
+    } else {
+      nextp = strchr(s, '|');
+      if (nextp != NULL) {
         *nextp++ = '\0';
+      }
     }
 
     if (strcasecmp(s, "NONE") == 0) {
@@ -392,10 +415,15 @@ static int _parse_classes(char *s) {
                strcasecmp(s, "SECURE") == 0) {
       classes |= CL_SEC;
 
-    } else
-      pr_log_pri(PR_LOG_NOTICE, "ExtendedLog class '%s' is not defined.", s);
+    } else {
+      pr_log_pri(PR_LOG_NOTICE, "ExtendedLog class '%s' is not defined", s);
+      return -1;
+    }
 
-  } while ((s = nextp));
+    /* Advance to the next class in the list. */
+    s = nextp;
+
+  } while (s);
 
   return classes;
 }
@@ -421,21 +449,35 @@ MODRET set_extendedlog(cmd_rec *cmd) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown syslog level: '",
         tmp, "'", NULL));
 
-    } else
+    } else {
       c->argv[0] = pstrdup(log_pool, cmd->argv[1]);
+    }
 
   } else if (cmd->argv[1][0] != '/') {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "relative paths not allowed: '",
         cmd->argv[1], "'", NULL));
 
-  } else
+  } else {
     c->argv[0] = pstrdup(log_pool, cmd->argv[1]);
+  }
 
-  if (argc > 2)
-    c->argv[1] = pstrdup(log_pool, cmd->argv[2]);
+  if (argc > 2) {
+    int res;
 
-  if (argc > 3)
+    /* Parse the given class names, to make sure that they are all valid. */
+    res = parse_classes(cmd->argv[2]);
+    if (res < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "invalid log class in '",
+        cmd->argv[2], NULL));    
+    }
+
+    c->argv[1] = palloc(c->pool, sizeof(int));
+    *((int *) c->argv[1]) = res;
+  }
+
+  if (argc > 3) {
     c->argv[2] = pstrdup(log_pool, cmd->argv[3]);
+  }
 
   c->argc = argc-1;
   return PR_HANDLED(cmd);
@@ -473,7 +515,7 @@ MODRET set_serverlog(cmd_rec *cmd) {
 /* Syntax: SystemLog <filename> */
 MODRET set_systemlog(cmd_rec *cmd) {
   char *syslogfn = NULL;
-  int res;
+  int res, xerrno = 0;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
@@ -492,10 +534,14 @@ MODRET set_systemlog(cmd_rec *cmd) {
 
   pr_signals_block();
 
+  PRIVS_ROOT
   res = log_opensyslog(syslogfn);
   if (res < 0) {
-    int xerrno = errno;
+    xerrno = errno;
+  }
+  PRIVS_RELINQUISH
 
+  if (res < 0) {
     pr_signals_unblock();
 
     if (res == PR_LOG_WRITABLE_DIR) {
@@ -535,7 +581,7 @@ static struct tm *_get_gmtoff(int *tz) {
 
 static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
   unsigned char *m;
-  char arg[512] = {'\0'}, *argp = NULL, *pass;
+  char arg[PR_TUNABLE_PATH_MAX+1] = {'\0'}, *argp = NULL, *pass;
 
   /* This function can cause potential problems.  Custom logformats
    * might overrun the arg buffer.  Fixing this problem involves a
@@ -558,7 +604,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
     case META_ANON_PASS:
       argp = arg;
 
-      pass = get_param_ptr(cmd->server->conf, C_PASS, FALSE);
+      pass = pr_table_get(session.notes, "mod_auth.anon-passwd", NULL);
       if (!pass)
         pass = "UNKNOWN";
 
@@ -762,6 +808,21 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
+    case META_RENAME_FROM: {
+      char *rnfr_path = "-";
+
+      argp = arg;
+      if (strcmp(cmd->argv[0], C_RNTO) == 0) {
+        rnfr_path = pr_table_get(session.notes, "mod_core.rnfr-path", NULL);
+        if (rnfr_path == NULL)
+          rnfr_path = "-";
+      }
+
+      sstrncpy(argp, rnfr_path, sizeof(arg));
+      m++;
+      break;
+    }
+
     case META_IDENT_USER: {
       char *rfc1413_ident;
 
@@ -813,7 +874,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
 
     case META_LOCAL_FQDN:
       argp = arg;
-      sstrncpy(argp, cmd->server->ServerFQDN, sizeof(arg));
+      sstrncpy(argp, pr_netaddr_get_dnsstr(session.c->local_addr), sizeof(arg));
       m++;
       break;
 
@@ -946,13 +1007,17 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
 
     case META_ORIGINAL_USER: {
-      char *login_user = get_param_ptr(main_server->conf, C_USER, FALSE);
+      char *login_user;
+
       argp = arg;
 
-      if (login_user)
+      login_user = pr_table_get(session.notes, "mod_auth.orig-user", FALSE);
+      if (login_user) {
         sstrncpy(argp, login_user, sizeof(arg));
-      else
+
+      } else {
         sstrncpy(argp, "(none)", sizeof(arg));
+      }
 
       m++;
       break;
@@ -1000,6 +1065,12 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
+    case META_PROTOCOL:
+      argp = arg;
+      sstrncpy(argp, pr_session_get_protocol(0), sizeof(arg));
+      m++;
+      break;
+
     case META_VERSION:
       argp = arg;
       sstrncpy(argp, PROFTPD_VERSION_TEXT, sizeof(arg));
@@ -1031,9 +1102,10 @@ static void do_log(cmd_rec *cmd, logfile_t *lf) {
   bp = logbuf;
 
   while (*f && size) {
+    pr_signals_handle();
+
     if (*f == META_START) {
       s = get_next_meta(cmd->tmp_pool, cmd, &f);
-
       if (s) {
         size_t tmp;
 
@@ -1061,8 +1133,9 @@ static void do_log(cmd_rec *cmd, logfile_t *lf) {
         lf->lf_fd, strerror(errno));
     }
 
-  } else
+  } else {
     pr_syslog(syslog_sockfd, lf->lf_syslog_level, "%s", logbuf);
+  }
 }
 
 MODRET log_any(cmd_rec *cmd) {
@@ -1114,10 +1187,9 @@ static int log_init(void) {
 
 static void find_extendedlogs(void) {
   config_rec *c;
-  char *logfname;
+  char *logfname, *logfmt_s;
   int logclasses = CL_ALL;
   logformat_t *logfmt;
-  char *logfmt_s = NULL;
   logfile_t *extlog = NULL;
 
   /* We _do_ actually want the recursion here.  The reason is that we want
@@ -1129,28 +1201,39 @@ static void find_extendedlogs(void) {
    */
 
   c = find_config(main_server->conf, CONF_PARAM, "ExtendedLog", TRUE);
-
   while (c) {
+    pr_signals_handle();
+
     logfname = c->argv[0];
+    logfmt_s = NULL;
 
     if (c->argc > 1) {
-      logclasses = _parse_classes(c->argv[1]);
-      if (c->argc > 2)
+      logclasses = *((int *) c->argv[1]);
+
+      if (c->argc > 2) {
         logfmt_s = c->argv[2];
+      }
     }
 
-    /* No logging for this round.
+    /* No logging for this round.  If, however, this was found in an
+     * <Anonymous> section, add a logfile entry for it anyway; the anonymous
+     * directive might be trying to override a higher-level config; see
+     * Bug#1908.
      */
-    if (logclasses == CL_NONE)
+    if (logclasses == CL_NONE &&
+        (c->parent != NULL && c->parent->config_type != CONF_ANON)) {
       goto loop_extendedlogs;
+    }
 
     if (logfmt_s) {
       /* search for the format-nickname */
-      for (logfmt = formats; logfmt; logfmt = logfmt->next)
-        if (strcmp(logfmt->lf_nickname, logfmt_s) == 0)
+      for (logfmt = formats; logfmt; logfmt = logfmt->next) {
+        if (strcmp(logfmt->lf_nickname, logfmt_s) == 0) {
           break;
+        }
+      }
 
-      if (!logfmt) {
+      if (logfmt == NULL) {
         pr_log_pri(PR_LOG_NOTICE,
           "ExtendedLog '%s' uses unknown format nickname '%s'", logfname,
           logfmt_s);
@@ -1209,10 +1292,12 @@ MODRET log_post_pass(cmd_rec *cmd) {
    */
   if (!session.anon_config) {
     for (lf = logs; lf; lf = lf->next) {
-      if (lf->lf_fd != -1 && lf->lf_fd != EXTENDED_LOG_SYSLOG &&
-          lf->lf_conf && lf->lf_conf->config_type == CONF_ANON) {
-        pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s'",
-          lf->lf_filename);
+      if (lf->lf_fd != -1 &&
+          lf->lf_fd != EXTENDED_LOG_SYSLOG &&
+          lf->lf_conf &&
+          lf->lf_conf->config_type == CONF_ANON) {
+        pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s' (fd %d)",
+          lf->lf_filename, lf->lf_fd);
         close(lf->lf_fd);
         lf->lf_fd = -1;
       }
@@ -1223,10 +1308,12 @@ MODRET log_post_pass(cmd_rec *cmd) {
      * context.
      */
     for (lf = logs; lf; lf = lf->next) {
-      if (lf->lf_fd != -1 && lf->lf_fd != EXTENDED_LOG_SYSLOG &&
-          lf->lf_conf && lf->lf_conf != session.anon_config) {
-        pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s'",
-          lf->lf_filename);
+      if (lf->lf_fd != -1 &&
+          lf->lf_fd != EXTENDED_LOG_SYSLOG &&
+          lf->lf_conf &&
+          lf->lf_conf != session.anon_config) {
+        pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s' (fd %d)",
+          lf->lf_filename, lf->lf_fd);
         close(lf->lf_fd);
         lf->lf_fd = -1;
       }
@@ -1236,7 +1323,8 @@ MODRET log_post_pass(cmd_rec *cmd) {
      * close the outer (this allows overriding inside <Anonymous>).
      */
     for (lf = logs; lf; lf = lf->next) {
-      if (lf->lf_conf && lf->lf_conf == session.anon_config) {
+      if (lf->lf_conf &&
+          lf->lf_conf == session.anon_config) {
         /* This should "override" any lower-level extendedlog with the
          * same filename.
          */
@@ -1247,8 +1335,8 @@ MODRET log_post_pass(cmd_rec *cmd) {
               lfi->lf_fd != EXTENDED_LOG_SYSLOG &&
               !lfi->lf_conf &&
               strcmp(lfi->lf_filename, lf->lf_filename) == 0) {
-            pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s'",
-              lf->lf_filename);
+            pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s' (fd %d)",
+              lf->lf_filename, lfi->lf_fd);
             close(lfi->lf_fd);
             lfi->lf_fd = -1;
           }
@@ -1258,8 +1346,8 @@ MODRET log_post_pass(cmd_rec *cmd) {
         if (lf->lf_fd != -1 &&
             lf->lf_fd != EXTENDED_LOG_SYSLOG &&
             lf->lf_classes == CL_NONE) {
-          pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s'",
-            lf->lf_filename);
+          pr_log_debug(DEBUG7, "mod_log: closing ExtendedLog '%s' (fd %d)",
+            lf->lf_filename, lf->lf_fd);
           close(lf->lf_fd);
           lf->lf_fd = -1;
         }

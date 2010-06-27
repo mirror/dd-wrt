@@ -26,7 +26,7 @@
 
 /* User configurable defaults and tunable parameters.
  *
- * $Id: options.h,v 1.28 2009/01/29 16:40:04 castaglia Exp $
+ * $Id: options.h,v 1.29 2009/03/22 01:30:10 castaglia Exp $
  */
 
 #ifndef PR_OPTIONS_H
@@ -194,10 +194,16 @@
 # define PR_TUNABLE_CALLER_DEPTH	32
 #endif
 
-#ifndef PR_TUNABLE_GLOBBING_MAX	
+#ifndef PR_TUNABLE_GLOBBING_MAX_RECURSION
 /* Max number of recursion/directory levels to support when globbing.
  */
-# define PR_TUNABLE_GLOBBING_MAX	8
+# define PR_TUNABLE_GLOBBING_MAX_RECURSION	8
+#endif
+
+#ifndef PR_TUNABLE_GLOBBING_MAX_MATCHES
+/* Max number of matches to support when globbing.
+ */
+# define PR_TUNABLE_GLOBBING_MAX_MATCHES	100000UL
 #endif
 
 #ifndef PR_TUNABLE_LOGIN_MAX

@@ -1,4 +1,4 @@
-<!-- $Id: mod_quotatab.html,v 1.14 2008/04/01 01:15:57 castaglia Exp $ -->
+<!-- $Id: mod_quotatab.html,v 1.16 2009/10/01 16:18:43 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_quotatab.html,v $ -->
 
 <html>
@@ -144,6 +144,7 @@ commenting out all <code>mod_quotatab</code> directives.
 <strong>Module:</strong> mod_quotatab<br>
 <strong>Compatibility:</strong> 1.3.1rc1 and later</a>
 
+<p>
 The <code>QuotaExcludeFilter</code> directive configures a regular expression
 filter that is applied to every file handled by <code>mod_quotatab</code>;
 this includes files that are scanned if:
@@ -152,6 +153,11 @@ this includes files that are scanned if:
 </pre>
 is in effect.  Any file which matches the configured regular expression is
 ignored by <code>mod_quotatab</code>, and will not affect the tally updates.
+
+<p>
+Note that the regular expression is applied to the <i>absolute path</i> of
+the file being handled.  This allows for a regular expression which can
+exclude particular directories, or just certain filenames.
 
 <p>
 <hr>
@@ -575,7 +581,7 @@ for that module.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008/04/01 01:15:57 $</i><br>
+Last Updated: <i>$Date: 2009/10/01 16:18:43 $</i><br>
 
 <br><hr>
 

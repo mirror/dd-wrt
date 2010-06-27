@@ -12,6 +12,7 @@ EXEEXT=
 
 TEST_API_DEPS=\
   $(top_srcdir)/src/pool.o \
+  $(top_srcdir)/src/privs.o \
   $(top_srcdir)/src/str.o \
   $(top_srcdir)/src/sets.o \
   $(top_srcdir)/src/timers.o \
@@ -69,8 +70,10 @@ api/.c.o:
 api-tests$(EXEEXT): $(TEST_API_OBJS) $(TEST_API_DEPS)
 	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LDFLAGS) -o $@ $(TEST_API_DEPS) $(TEST_API_OBJS) $(LIBS) $(TEST_API_LIBS)
 
-check: api-tests$(EXEEXT) dummy
-	./api-tests$(EXEEXT) && perl tests.pl
+running-tests:
+	perl tests.pl
+
+check: dummy api-tests$(EXEEXT) running-tests
 
 clean:
 	$(LIBTOOL) --mode=clean $(RM) *.o api/*.o test$(EXEEXT)

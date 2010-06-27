@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006 The ProFTPD Project team
+ * Copyright (c) 2006-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,11 +23,13 @@
  */
 
 /* Trace API
- * $Id: trace.h,v 1.1 2006/05/18 15:38:44 castaglia Exp $
+ * $Id: trace.h,v 1.2 2010/02/10 20:54:29 castaglia Exp $
  */
 
 #ifndef PR_TRACE_H
 #define PR_TRACE_H
+
+#define PR_TRACE_DEFAULT_CHANNEL	"DEFAULT"
 
 pr_table_t *pr_trace_get_table(void);
 int pr_trace_get_level(const char *);

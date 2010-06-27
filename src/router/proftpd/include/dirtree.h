@@ -27,7 +27,7 @@
 /*
  * Configuration structure, server, command and associated prototypes.
  *
- * $Id: dirtree.h,v 1.71.2.1 2009/04/28 22:33:57 castaglia Exp $
+ * $Id: dirtree.h,v 1.74 2009/03/24 06:23:27 castaglia Exp $
  */
 
 #ifndef PR_DIRTREE_H
@@ -251,19 +251,17 @@ int pr_config_get_xfer_bufsz(void);
  */
 unsigned int pr_config_set_id(const char *name);
 
-cmd_rec *pr_cmd_alloc(pool *, int, ...);
-
 void *get_param_ptr(xaset_t *, const char *, int);
 void *get_param_ptr_next(const char *, int);
 xaset_t *get_dir_ctxt(pool *, char *);
 
 config_rec *dir_match_path(pool *, char *);
-void build_dyn_config(pool *, char *, struct stat *, unsigned char);
+void build_dyn_config(pool *, const char *, struct stat *, unsigned char);
 unsigned char dir_hide_file(const char *);
-int dir_check_full(pool *, char *, char *, char *, int *);
-int dir_check_limits(config_rec *, char *, int);
-int dir_check(pool *, char *, char *, char *, int *);
-int dir_check_canon(pool *, char *, char *, char *, int *);
+int dir_check_full(pool *, cmd_rec *, const char *, const char *, int *);
+int dir_check_limits(cmd_rec *, config_rec *, const char *, int);
+int dir_check(pool *, cmd_rec *, const char *, const char *, int *);
+int dir_check_canon(pool *, cmd_rec *, const char *, const char *, int *);
 int is_dotdir(const char *);
 int is_fnmatch(const char *);
 int login_check_limits(xaset_t *, int, int, int *);

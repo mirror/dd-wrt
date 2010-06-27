@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.975.2.30 2009/12/10 18:33:44 castaglia Exp $
+$Id: NEWS,v 1.1133 2010/02/24 17:54:53 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -9,58 +9,260 @@ $Id: NEWS,v 1.975.2.30 2009/12/10 18:33:44 castaglia Exp $
   where `N' is the bug number.
 -----------------------------------------------------------------------------
 
-1.3.2c - Released 10-Dec-2009
+1.3.3 - Released 24-Feb-2010
 --------------------------------
+- Bug 3389 - Cannot create mod_ban whitelists using <Class> and <IfClass>
+  sections.
+- Bug 3397 - HideFiles none does not work properly on a per-user basis.
+
+1.3.3rc4 - Released 12-Feb-2010
+--------------------------------
+- Bug 3355 - mod_ban should support BanEngine in <VirtualHost> config sections.
+- Bug 3358 - mod_tls doesn't compile with pre-0.9.7 openssl.
+- Bug 3357 - mod_sftp fails to compile on AIX.
+- Bug 3356 - Build timestamp using date(1) can fail depending on environment.
+- Bug 3359 - mod_tls_shmcache segfaults during syntax check.
+- Bug 3362 - Regression in handling of MaxLoginAttempts in 1.3.3rc1.
+- Bug 3370 - Lack of PID protection in ScoreboardFile.
+- Bug 3372 - ProFTPD crashes when retrying a failed login with mod_radius
+  being used.
+- Bug 3375 - Minor SIGHUP-based memory leak in mod_tls.
+- Bug 3376 - Handle the full RFC4716 formatted keys in SQL values.
+- Bug 3377 - mod_wrap2 attempts to resolve 'ALL' keyword as an IP address.
+- Bug 3383 - ExtendedLog variables for protocol and version not handled
+  properly.
+- Bug 3381 - RADIUS authentication broken on 64-bit platforms.
+- Bug 3380 - Support user-specific salts in encoded passwords.
+- Bug 3385 - Memory leak during SCP download.
+- Bug 3386 - Downloading via SCP can stall due to rekeying.
+- Bug 3387 - SIGHUP will eventually cause certain modules (as DSO modules) to
+  segfault.
+
+1.3.3rc3 - Released 10-Dec-2009
+--------------------------------
+- Bug 3303 - FileZilla reports "Server did not properly shut down TLS
+  connection" after TimeoutIdle triggered.
+- Bug 3305 - Emulate Solaris 10 syslog "header" on Solaris 10 servers.
+- Bug 3307 - All FTP logins treated as anonymous logins.
+- Bug 3312 - Uploading via SFTP/SCP to FIFO whose reader is closed causes
+  session to hang.
+- Bug 3313 - Uploading via SFTP to FIFOs fails due to illegal lseek(2),
+  truncate(2) calls.
+- Bug 3314 - Downloading from FIFOs via SFTP/SCP fails.
+- Bug 3315 - Support the %u variable in SFTPAuthorizedUserKeys paths.
+- Bug 3316 - Messages from PAM modules are ignored when authenticating SSH
+  clients via 'keyboard-interactive'.
+- Bug 3317 - mod_wrap/libwrap should honor SyslogFacility setting.
+- Bug 3311 - configure script should automatically detect when -ldl is needed
+  by OpenSSL.
 - Bug 3324 - Vulnerability in SSL/TLS protocol during renegotiation
   (CVE-2009-3555).
+- Bug 3327 - Clear external SSL session caches on server restart/shutdown.
+- Bug 3326 - Shared memory segment used for session cache should be protected
+  via mlock(2).
+- Bug 3322 - Support the "version-select" SFTP extension.
+- Bug 3321 - Support the "check-file-name" and "check-file-handle" SFTP
+  extensions.
+- Bug 3320 - Support the "copy-file" SFTP extension.
 - Bug 3328 - Failed database transaction can cause mod_quotatab to loop
   endlessly.
+- Bug 3307 - Transparently handle the X-variant commands when checking <Limit>
+  permissions.  The fix for this issue has been reimplemented to be more
+  transparent; some existing configurations were broken by the previous
+  implementation.
+- Bug 3329 - Support the "vendor-id" SFTP extension.
 - Bug 3332 - Segfault in mod_wrap when TCPAccessFiles do not exist and client
   sends USER for account which does not exist.
+- Bug 3333 - mod_sql_mysql should support calling stored procedures better.
 - Bug 3337 - <Directory> sections with a trailing directory name of one
-  character have <Limit> problems.  This is a regression caused by Bug#3146.
+  character have <Limit> problems.  This is regression caused by Bug#3146.
+- Bug 3331 - Update bundled libtool to 2.2.4.
 - Bug 3341 - mod_wrap2 segfaults when a valid user retries the USER command.
+- Bug 3342 - FEAT response contains LF without preceding CR.
+- Bug 3306 - ECONNREFUSED while handling SIGHUP.
+- Bug 3345 - mod_sftp returns EACCES rather than ENOENT for an OPEN request
+  for a nonexistent file.
+- Bug 3344 - Support SHA256, SHA512 passwords in databases.
+- Bug 3348 - Rewriting of home directories via RewriteHome does not work for
+  chrooted sessions.
+- Bug 3349 - SSL_SESSION_cmp not available in OpenSSL 1.0.0 betas.
 - Bug 3350 - Segfault caused by scrubbing zero-length portion of memory.
 - Bug 3347 - mod_auth_file handles 'getgroups' request incorrectly.
 - Bug 3351 - Nonchrooted logins on HPUX do not get proper UID/GID.
+- Bug 3352 - mod_sftp does not reject/close connections that have been rejected
+  by mod_wrap.
 
-1.3.2b - Released 20-Oct-2009
+1.3.3rc2 - Released 20-Oct-2009
 --------------------------------
-- Bug 3221 - Fixed regression causing command-line -D/--define options not
-  to work.
+- Bug 3263 - Supplying option SFTPRekey timeout parameter causes segmentation
+  fault.
+- Bug 3265 - SFTP requests are logged to ExtendedLog without regard to classes.
+- Bug 2758 - ProFTPD doesn't always pay attention to AccessDenyMsg.
+- Bug 3266 - Support "implicit" FTPS.
+- Bug 2070 - AuthAliasOnly off in <Global> section kills anonymous logins.
+- Bug 3268 - Files whose names start with whitespace are not listed properly.
+- Bug 1908 - ExtendedLog to work properly in <Anonymous> context.
+- Bug 3269 - RewriteCondition OR/ornext flag does not work.
+- Bug 3254 - NLST/LIST and symbolic link problem.
+- Bug 3272 - Avoid encoding if to/from charsets are the same.
+- Bug 3274 - Timestamp formatting in TransferLog needs padded day-of-month.
+- Bug 3270 - Lost connections to databases not correctly handled.  This
+  also adds support for a new "noReconnect" SQLOption.
 - Bug 3275 - Improper SSL/TLS certificate subjectAltName verification.
-- Bug 3282 - With "SQLNegativeCache on", mod_sql will look up wrong cached user
-  value for subsequent USER commands.
+- Bug 3252 - %F/%f Display variables can report wrong size on 64-bit systems.
+- Bug 3278 - Aborted data transfers not reflected in RADIUS accounting.
+- Bug 3282 - With "SQLNegativeCache on", mod_sql will look up wrong cached
+  user value for subsequent USER commands.
 - Bug 3284 - Slower transfers of multiple small file transfers after upgrade
   from 1.3.0a to 1.3.2a.
+- Bug 3279 - .ftpaccess configurations not merged properly with existing
+  configuration.
 - Bug 3287 - MaxTransfersPerHost, MaxTransfersPerUser directives not supported
   properly.
+- Bug 2013 - Track RFC2228 sessions in scoreboard.  The scoreboard entry
+  format now has a 'protocol' field, for tracking 'ftp' and 'ftps'.
+- Bug 3286 - Client command field in scoreboard entry too short for SSH2/SFTP
+  commands.
+- Bug 3229 - LangDefault does not accept any setting on FreeBSD.
+- Bug 2368 - Allow contrib modules to extend mod_sql's SQLAuthTypes.  This
+  also includes a new mod_sql_passwd contrib module which can handle
+  hex- and base64-encoded MD5 and SHA1 passwords, without the leading
+  "{digest}" prefix required by the mod_sql OpenSSL SQLAuthType.
+- Bug 3292 - "Incorrect MAC received on packet" error using AES CTR ciphers.
+- Bug 3293 - SFTPCipher arcfour256 does not work properly.
+- Bug 3294 - Support configurable HiddenStores prefixes.
+- Bug 3295 - proftpd segfaults when STAT is used with ListOptions "-1".
+- Bug 3296 - mod_quotatab should reject an upload via APPE if the quota is
+  already exceeded.
 - Bug 3297 - Symlinks to directories which end in trailing slashes may not be
   handled properly.
+- Bug 3298 - QuotaExcludeFilter directive ignored by mod_quotatab.
+- Bug 3290 - Change default mod_sql connection policy to open database
+  connection on first use.
+- Bug 3281 - TimeoutLogin not handled properly by mod_ban.
+- Bug 3213 - Use locale-sensitive libncursesw library for ftptop where
+  available.
+- Bug 3214 - ftpwho/ftptop truncate UTF8 strings due to byte, versus character,
+  lengths.
+- Bug 3300 - Support disabling use of S_RLOGIN when calling AIX
+  loginrestrictions().  A new AuthUnixOptions directive is added to support
+  just this one setting, 'aixNoRLogin'.
 
-1.3.2a - Released 30-Jun-2009
+1.3.3rc1 - Released 30-Jun-2009
 --------------------------------
-- Bug 3121 - Use PQescapeStringConn() rather than PQescapeString().
-- Bug 3176 - Postgres chokes on standard charset names.
+- Bug 1801 - Faulty SQLConnectInfo PERCALL policy - connections not closed
+  after each call.
+- Bug 2894 - Deprecate the AnonymousGroup directive.
+- Bug 3123 - Use PQescapeStringConn() rather than PQescapeString().
+- Bug 3133 - mod_facts should advertise TVFS support in the FEAT response.
+- Bug 3128 - mod_sql_sqlite should use transactions for INSERT/UPDATE
+  statements.
+- Bug 3155 - Change the IdentLookups default to 'off'.  The RFC1413 IDENT
+  lookup adds latency to the login process, so much so that it is a FAQ
+  to configure "IdentLookups off".  In addition, the IDENT protocol is not
+  secure; it can easily be spoofed using man-in-the-middle attacks.  Sites
+  that require IDENT lookups must now explicitly configure "IdentLookups on".
+- Bug 3156 - Allow resumed downloads when HiddenStore is in effect.
+- Bug 3170 - RewriteMap unescape URL encoding broken by RewriteCondition
+  backreference handling.
+- Bug 2728 - Support for variables in ServerIdent directive.  The %L, %V,
+  and %v variables are now supported for ServerIdent identity strings.
+- Bug 3178 - mod_wrap2 does not handle IPv4-mapped IPv6 addresses.
 - Bug 3179 - Restarted proftpd using mod_shaper will segfault.
-- Bug 3188 - prxs broken due to typo.
+- Bug 2720 - HideUser/HideGroup should be more flexible.
 - Bug 3183 - Incorrect logging to wtmp.
+- Bug 2608 - DNS should not be used for "server config" address discovery.
+  A new -S command-line option has been added, for specifying the IP address
+  to use for the host, rather than using DNS to resolve the host IP address
+  from the hostname.
 - Bug 3184 - When started in a chroot, proftpd fails to set transfer buffer
   size.
+- Added mod_sftp, mod_sftp_pam, and mod_sftp_sql to the contrib modules.
+- Bug 3185 - mod_wrap2 does not honour partial DNS name in access files.
+  This appears to have been a regression caused by the fix for Bug#3178.
+- Bug 3186 - Support use of <IfClass> directive with mod_ban.  The
+  BanEngine directive can now appear in an <IfClass> section, in order
+  to exclude connection classes from mod_ban's rules.
+- Bug 3188 - prxs broken due to typo.
+- Bug 3154 - Update bundled libtool version.  The bundled libltdl version
+  has been updated to libtool 1.5.26.
+- Bug 3111 - Support SSL/TLS server certificates stored in PKCS#12 files.
+- Bug 3189 - Linker errors occur when using "make -j" parallel builds.
+  ProFTPD now builds successfully using "make -jN", where N is the number
+  of simultaneous build processes to use.
+- Bug 3176 - Postgres chokes on standard charset names.
+- Bug 3129 - Support configurable scoreboard scrubbing.  A new configuration
+  directive, ScoreboardScrub, can be used to control whether the ScoreboardFile
+  is scrubbed, and how often.
 - Bug 3190 - MLSD/MLST do not honor <Limit> configurations.
 - Bug 3196 - mod_quotatab does not honor last group in supplemental group list.
 - Bug 3203 - Missing SQL backend modules can lead to null pointer segfault in
   mod_sql.
+- Bug 3204 - Better support for installation and libs in prxs.  The prxs
+  tool now handles the $Libraries$ build system hints in source files,
+  and honors the DESTDIR environment variable.
+- Bug 3167 - Support rewriting of home directories.
+- Bug 2985 - Newest .spec file requires relatively current version of RPM.
+  The provided .spec file now requires RPM 4.2 or later.
+- Bug 3207 - Support for SSL/TLS session caching across processes/machines.
+  The mod_tls module now supports a TLSSessionCache directive, and an API
+  for modules to provide external SSL session caching mechanisms.
+- Bug 3210 - Data transfers protected by SSL/TLS should reuse the control
+  connection SSL session.  If the TLSRequired policy allows/requires SSL/TLS
+  protections on data tranfers, then reuse of the SSL session from the
+  control connection is now enforced.  Use "TLSOptions NoSessionReuseRequired"
+  to relax this requirement.
 - Bug 3215 - mod_wrap2_sql should support comma-delimited lists of clients.
   This is the same as Bug#3048, only it affects the mod_wrap2_sql module.
+- Bug 2613 - Configure script should not append '/proftpd' to the
+  --localstatedir.
+- Bug 2680 - Add support for <VirtualHost 0.0.0.0>.
+- Bug 3187 - Inconsistent mod_ban logging and display when using
+  "BanEngine off" in an <IfClass> configuration.
+- Bug 3219 - Support environment variable substitutions in mod_rewrite rules.
+  RewriteCondition and RewriteRules can now contain "%{ENV:var}" style
+  strings for environment variable substitution.
 - Bug 3221 - Command line defines (-D/--define) are lost on SIGHUP.
+- Bug 3028 - Unable to escape special characters in RewriteRule substitution
+  string.
+- Bug 3161 - Updating tallies for deleted files should occur based on file
+  ownership.
+- Bug 2067 - Allow/Deny Filters should be supported in the <Limit> context.
+- Bug 2434 - Buggy interaction between custom SQLUserInfo and 'userset'
+  SQLAuthenticate parameter.  See the SQLUserInfo description for more details.
+- Bug 3226 - HideFiles directive not working properly in <Anonymous> sections.
+- Bug 3231 - Use getgrset(3) on AIX to emulate getgrouplist(3).
+- Bug 3043 - SQLGroupInfo should allow custom queries.  See the SQLGroupInfo
+  description for more information.
+- Bug 2178 - Extend TLSRequired for <Directory> and .ftpaccess contexts.
+- Bug 3209 - mod_wrap2 should support the 'spawn' feature (or equivalent) of
+  tcpwrappers.  Using mod_wrap/mod_wrap2 in conjunction with the mod_exec
+  module, this is now possible.
+- Bug 3225 - Opening of files during restart can inappropriately use
+  stdin/stdout/stderr descriptors, leading to bad behavior.  The "bad behavior"
+  can manifest as server shutdown (due to mod_tls errors),
+  "Bad file descriptor" log messages, etc.
 - Bug 3234 - SSL connections can cause 100% CPU usage.
-- Added French, Bulgarian, and Korean translations.
+- Bug 3233 - Dynamic config causes many copies of static configs to be merged.
+- Bug 3086 - mod_quotatab write locking is ineffective.
+- Bug 3029 - Support a RewriteCondition variable for renames.
+- Bug 3230 - Differentiate among protocol connections in DelayTable.
+- Bug 3032 - CR character allowed in filename but not shown.
+- Bug 3237 - "error setting IPV6_V6ONLY: Protocol not available" message
+  filling up log file.
+- Added mod_shaper, mod_exec to the contrib modules.
+- Bug 3249 - mod_ban support for TimeoutLogin.
+- Bug 3253 - Support for %S variable in SQL queries.
+- Bug 3247 - "TLSRequired auth" and "TLSOptions AllowPerUser" are incompatible.
 - Bug 3256 - "SO_OOBINLINE" error occuring again.  This is a regression of
   Bug#2332 caused by code movement in 1.3.2.
 - Bug 3258 - Log cluttered with "using sendfile capability" messages.
 - Bug 3261 - Badly formatted TLSRenegotiate directive causes proftpd to hang.
 - Bug 3257 - CAP_AUDIT_WRITE capability needed for some PAM modules.
+- Bug 3243 - Broken support for AllowOverride per user/group/class conditionals.
+  The user/group/class conditional arguments to the AllowOverride directive
+  were not properly honored.  The fix for this is to remove all support in
+  the AllowOverride directive, and instead use mod_ifsession for conditionals.
 
 1.3.2 - Released 5-Feb-2009
 --------------------------------
