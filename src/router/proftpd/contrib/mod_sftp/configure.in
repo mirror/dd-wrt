@@ -1,0 +1,129 @@
+AC_INIT(./mod_sftp.c)
+
+AC_CANONICAL_SYSTEM
+
+ostype=`echo $build_os | sed 's/\..*$//g' | sed 's/-.*//g' | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_AIX
+AC_ISC_POSIX
+AC_MINIX
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS(stdlib.h unistd.h limits.h fcntl.h)
+
+dnl Need to support/handle the --with-includes and --with-libraries options
+AC_ARG_WITH(includes,
+  [AC_HELP_STRING(
+    [--with-includes=LIST],
+    [add additional include paths to proftpd. LIST is a colon-separated list of include paths to add e.g. --with-includes=/some/mysql/include:/my/include])
+  ],
+  [ ac_addl_includes=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for ainclude in $ac_addl_includes; do
+      if test x"$ac_build_addl_includes" = x ; then
+        ac_build_addl_includes="-I$ainclude"
+      else
+        ac_build_addl_includes="-I$ainclude $ac_build_addl_includes"
+      fi
+    done
+    CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
+  ])
+
+AC_ARG_WITH(libraries,
+  [AC_HELP_STRING(
+    [--with-libraries=LIST],
+    [add additional library paths to proftpd. LIST is a colon-separated list of include paths to add e.g. --with-libraries=/some/mysql/libdir:/my/libs])
+  ],
+  [ ac_addl_libdirs=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for alibdir in $ac_addl_libdirs; do
+      if test x"$ac_build_addl_libdirs" = x ; then
+        ac_build_addl_libdirs="-L$alibdir"
+      else
+        ac_build_addl_libdirs="-L$alibdir $ac_build_addl_libdirs"
+      fi
+    done
+    LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
+  ])
+
+
+dnl Check for a crippled OpenSSL library (e.g. Solaris 10).  More details
+dnl can be found in:
+dnl
+dnl   http://fixunix.com/ssh/73273-openssh-solaris-10-amd64.html
+dnl   http://marc.info/?l=openssh-unix-dev&m=113245772008292&w=2
+dnl   http://opensolaris.org/os/project/crypto/Documentation/sunwcry/
+dnl
+dnl So for those users stuck using the Solaris 10 whose OpenSSL does
+dnl not provide support for AES ciphers longer than 128 bits, we need to
+dnl check and disable those symbols.  Otherwise mod_sftp fails to build due
+dnl to linker errors.
+saved_libs="$LIBS"
+LIBS="$LIBS -lcrypto"
+AC_MSG_CHECKING([whether OpenSSL has crippled AES support])
+AC_TRY_LINK(
+  [ #ifdef HAVE_STRING_H
+    # include <string.h>
+    #endif
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_CIPHER *c;
+    c = EVP_aes_192_cbc();
+    c = EVP_aes_256_cbc();
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_AES_CRIPPLED_OPENSSL, 1, [OpenSSL is missing AES192 and AES256 support])
+  ]
+)
+
+AC_MSG_CHECKING([whether OpenSSL supports SHA256])
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_MD *md;
+    md = EVP_sha256();
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_SHA256_OPENSSL, 1, [OpenSSL supports SHA224/SHA256])
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ]
+)
+
+AC_MSG_CHECKING([whether OpenSSL supports SHA512])
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_MD *md;
+    md = EVP_sha512();
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_SHA512_OPENSSL, 1, [OpenSSL supports SHA384/SHA512])
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ]
+)
+
+LIBS="$saved_libs"
+
+INCLUDES="$ac_build_addl_includes"
+LIBDIRS="$ac_build_addl_libdirs"
+
+AC_SUBST(INCLUDES)
+AC_SUBST(LIBDIRS)
+
+AC_CONFIG_HEADER(mod_sftp.h)
+AC_OUTPUT(Makefile)

@@ -1,0 +1,130 @@
+<!-- $Id: mod_tls_shmcache.html,v 1.1 2009/03/10 07:00:22 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_tls_shmcache.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_tls_shmcache</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_tls_shmcache</code></b></h2>
+</center>
+<hr>
+
+<p>
+The <code>mod_tls_shmcache</code> submodule is contained in the
+<code>mod_tls_shmcache.c</code> file, and is not compiled by default.
+Installation instructions are discussed <a href="#Installation">here</a>.
+
+<p>
+This submodule provides a SysV shared memory-based implementation of
+an external SSL session cache for use by the <code>mod_tls</code> module's
+<a href="mod_tls.html#TLSSessionCache"><code>TLSSessionCache</code></a>
+directive.
+
+<p>
+This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/).
+
+<p>
+This product includes cryptographic software written by Eric Young (eay@cryptsoft.com).
+
+<h2>Author</h2>
+<p>
+Please contact TJ Saunders &lt;tj <i>at</i> castaglia.org&gt; with any
+questions, concerns, or suggestions regarding this module.
+
+<p>
+The <code>mod_tls_shmcache</code> module supports the &quot;shm&quot; string
+for the <em>type</em> parameter of the
+<a href="mod_tls.html#TLSSessionCache"><code>TLSSessionCache</code></a>
+configuration directive.  The <em>info</em> parameter for
+<code>mod_tls_shmcache</code> must be formatted like:
+<pre>
+  /file=<i>/path/to/cache/file</i>[&size=<i>bytes</i>]
+</pre>
+The configured path is used for synchronizing access to the shared memory
+segment among the various server processes.  The default shared memory
+segment size allocated is 1.5MB; use the optional <em>size</em> key to
+configure a different size, in bytes.  Note that the configured size
+<i>must</i> be able to hold at least one cached session; if a too-small size
+is configured, that size will be ignored and the default size will be used.
+
+<p>
+<b>Examples</b><br>
+
+<p>
+Use the default shared memory segment size and timeout:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    ...
+
+    &lt;IfModule mod_tls_shmcache.c&gt;
+      TLSSessionCache shm:/file=/var/ftpd/sesscache
+    &lt;/IfModule&gt;
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+Use a larger shared memory segment size:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    ...
+
+    &lt;IfModule mod_tls_shmcache.c&gt;
+      TLSSessionCache shm:/file=/var/ftpd/sesscache&size=2097152
+    &lt;/IfModule&gt;
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+Use a smaller shared memory size, and a shorter timeout:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    ...
+
+    &lt;IfModule mod_tls_shmcache.c&gt;
+      TLSSessionCache shm:/file=/var/ftpd/sesscache&size=512000 600
+    &lt;/IfModule&gt;
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_tls_shmcache</code> module is distributed with the ProFTPD
+source code.  Simply follow the normal steps for using third-party modules
+in proftpd, being sure to include the <code>mod_tls</code> module (on which
+<code>mod_tls_shmcache</code> depends):
+<pre>
+  ./configure --with-modules=mod_tls:mod_tls_shmcache
+  make
+  make install
+</pre>
+
+<p>
+Alternatively, if your proftpd was compiled with DSO support, you can
+use the <code>prxs</code> tool to build <code>mod_tls_shmcache</code> as
+a shared module:
+<pre>
+  prxs -c -i -d mod_tls_shmcache.c
+</pre>
+
+<p>
+<hr>
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2009/03/10 07:00:22 $</i><br>
+
+<hr>
+<font size=2><b><i>
+&copy; Copyright 2009 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+
