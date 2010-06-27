@@ -27,7 +27,7 @@
 		#  then that EAP type takes precedence over the
 		#  default type configured here.
 		#
-		default_eap_type = md5
+		default_eap_type = peap
 
 		#  A list is maintained to correlate EAP-Response
 		#  packets with EAP-Request packets.  After a
@@ -62,8 +62,8 @@
 		#  Help prevent DoS attacks by limiting the number of
 		#  sessions that the server is tracking.  Most systems
 		#  can handle ~30 EAP sessions/s, so the default limit
-		#  of 2048 is more than enough.
-		max_sessions = 2048
+		#  of 4096 should be OK.
+		max_sessions = 4096
 
 		# Supported EAP-types
 
@@ -72,23 +72,8 @@
 		#  for wireless connections.  It is insecure, and does
 		#  not provide for dynamic WEP keys.
 		#
-		md5 {
-		}
-
-		# Cisco LEAP
-		#
-		#  We do not recommend using LEAP in new deployments.  See:
-		#  http://www.securiteam.com/tools/5TP012ACKE.html
-		#
-		#  Cisco LEAP uses the MS-CHAP algorithm (but not
-		#  the MS-CHAP attributes) to perform it's authentication.
-		#
-		#  As a result, LEAP *requires* access to the plain-text
-		#  User-Password, or the NT-Password attributes.
-		#  'System' authentication is impossible with LEAP.
-		#
-		leap {
-		}
+#		md5 {
+#		}
 
 		#  Generic Token Card.
 		#
@@ -101,10 +86,10 @@
 		#  the users password will go over the wire in plain-text,
 		#  for anyone to see.
 		#
-		gtc {
+#		gtc {
 			#  The default challenge, which many clients
 			#  ignore..
-			#challenge = "Password: "
+#			challenge = "Password: "
 
 			#  The plain-text response which comes back
 			#  is put into a User-Password attribute,
@@ -118,8 +103,8 @@
 			#  configured for the request, and do the
 			#  authentication itself.
 			#
-			auth_type = PAP
-		}
+#			auth_type = PAP
+#		}
 
 		## EAP-TLS
 		#
@@ -129,11 +114,6 @@
 		#  If OpenSSL was not found at the time the server was
 		#  built, the "tls", "ttls", and "peap" sections will
 		#  be ignored.
-		#
-		#  Otherwise, when the server first starts in debugging
-		#  mode, test certificates will be created.  See the
-		#  "make_cert_command" below for details, and the README
-		#  file in raddb/certs
 		#
 		#  These test certificates SHOULD NOT be used in a normal
 		#  deployment.  They are created only to make it easier
@@ -201,7 +181,7 @@
 			#  In these cases, fragment size should be
 			#  1024 or less.
 			#
-		#	fragment_size = 1024
+			fragment_size = 1024
 
 			#  include_length is a flag which is
 			#  by default set to yes If set to
@@ -211,7 +191,7 @@
 			#  message is included ONLY in the
 			#  First packet of a fragment series.
 			#
-		#	include_length = yes
+			include_length = yes
 
 			#  Check the Certificate Revocation List
 			#
@@ -220,83 +200,74 @@
 			#    'c_rehash' is OpenSSL's command.
 			#  3) uncomment the line below.
 			#  5) Restart radiusd
-		#	check_crl = yes
-		#	CA_path = /path/to/directory/with/ca_certs/and/crls/
+#			check_crl = yes
+#			CA_path = /path/to/directory/with/ca_certs/and/crls/
 
-		       #
-		       #  If check_cert_issuer is set, the value will
-		       #  be checked against the DN of the issuer in
-		       #  the client certificate.  If the values do not
-		       #  match, the cerficate verification will fail,
-		       #  rejecting the user.
-		       #
-		#       check_cert_issuer = "/C=GB/ST=Berkshire/L=Newbury/O=My Company Ltd"
+			#
+			#  If check_cert_issuer is set, the value will
+			#  be checked against the DN of the issuer in
+			#  the client certificate.  If the values do not
+			#  match, the cerficate verification will fail,
+			#  rejecting the user.
+			#
+#		       check_cert_issuer = "/C=GB/ST=Berkshire/L=Newbury/O=My Company Ltd"
 
-		       #
-		       #  If check_cert_cn is set, the value will
-		       #  be xlat'ed and checked against the CN
-		       #  in the client certificate.  If the values
-		       #  do not match, the certificate verification
-		       #  will fail rejecting the user.
-		       #
-		       #  This check is done only if the previous
-		       #  "check_cert_issuer" is not set, or if
-		       #  the check succeeds.
-		       #
-		#	check_cert_cn = %{User-Name}
-		#
+			#
+			#  If check_cert_cn is set, the value will
+			#  be xlat'ed and checked against the CN
+			#  in the client certificate.  If the values
+			#  do not match, the certificate verification
+			#  will fail rejecting the user.
+			#
+			#  This check is done only if the previous
+			#  "check_cert_issuer" is not set, or if
+			#  the check succeeds.
+			#
+#			check_cert_cn = %{User-Name}
+
 			# Set this option to specify the allowed
 			# TLS cipher suites.  The format is listed
 			# in "man 1 ciphers".
 			cipher_list = "DEFAULT"
 
 			#
-
-			#  This configuration entry should be deleted
-			#  once the server is running in a normal
-			#  configuration.  It is here ONLY to make
-			#  initial deployments easier.
-			#
-			make_cert_command = "${certdir}/bootstrap"
-
-			#
 			#  Session resumption / fast reauthentication
 			#  cache.
 			#
-			cache {
-			      #
-			      #  Enable it.  The default is "no".
-			      #  Deleting the entire "cache" subsection
-			      #  Also disables caching.
-			      #
-			      #  You can disallow resumption for a
-			      #  particular user by adding the following
-			      #  attribute to the control item list:
-			      #
-			      #		Allow-Session-Resumption = No
-			      #
-			      #  If "enable = no" below, you CANNOT
-			      #  enable resumption for just one user
-			      #  by setting the above attribute to "yes".
-			      #
-			      enable = no
+#			cache {
+				#
+				#  Enable it.  The default is "no".
+				#  Deleting the entire "cache" subsection
+				#  Also disables caching.
+				#
+				#  You can disallow resumption for a
+				#  particular user by adding the following
+				#  attribute to the control item list:
+				#
+				#		Allow-Session-Resumption = No
+				#
+				#  If "enable = no" below, you CANNOT
+				#  enable resumption for just one user
+				#  by setting the above attribute to "yes".
+				#
+#				enable = no
 
-			      #
-			      #  Lifetime of the cached entries, in hours.
-			      #  The sessions will be deleted after this
-			      #  time.
-			      #
-			      lifetime = 24 # hours
+				#
+				#  Lifetime of the cached entries, in hours.
+				#  The sessions will be deleted after this
+				#  time.
+				#
+#				lifetime = 24 # hours
 
-			      #
-			      #  The maximum number of entries in the
-			      #  cache.  Set to "0" for "infinite".
-			      #
-			      #  This could be set to the number of users
-			      #  who are logged in... which can be a LOT.
-			      #
-			      max_entries = 255
-			}
+				#
+				#  The maximum number of entries in the
+				#  cache.  Set to "0" for "infinite".
+				#
+				#  This could be set to the number of users
+				#  who are logged in... which can be a LOT.
+				#
+#				max_entries = 255
+#			}
 		}
 
 		#  The TTLS module implements the EAP-TTLS protocol,
@@ -328,7 +299,7 @@
 			#  If the request does not contain an EAP
 			#  conversation, then this configuration entry
 			#  is ignored.
-			default_eap_type = md5
+			#default_eap_type = mschapv2
 
 			#  The tunneled authentication request does
 			#  not usually contain useful attributes
@@ -344,7 +315,7 @@
 			#  is copied to the tunneled request.
 			#
 			# allowed values: {no, yes}
-			copy_request_to_tunnel = no
+			copy_request_to_tunnel = yes
 
 			#  The reply attributes sent to the NAS are
 			#  usually based on the name of the user
@@ -357,7 +328,7 @@
 			#  the tunneled request.
 			#
 			# allowed values: {no, yes}
-			use_tunneled_reply = no
+			use_tunneled_reply = yes
 
 			#
 			#  The inner tunneled request can be sent
@@ -438,26 +409,16 @@
 
 			#  the PEAP module also has these configuration
 			#  items, which are the same as for TTLS.
-			copy_request_to_tunnel = no
-			use_tunneled_reply = no
+			copy_request_to_tunnel = yes
+			use_tunneled_reply = yes
 
 			#  When the tunneled session is proxied, the
 			#  home server may not understand EAP-MSCHAP-V2.
 			#  Set this entry to "no" to proxy the tunneled
 			#  EAP-MSCHAP-V2 as normal MSCHAPv2.
-		#	proxy_tunneled_request_as_eap = yes
+			proxy_tunneled_request_as_eap = no
 
-			#
-			#  The inner tunneled request can be sent
-			#  through a virtual server constructed
-			#  specifically for this purpose.
-			#
-			#  If this entry is commented out, the inner
-			#  tunneled request will be sent through
-			#  the virtual server that processed the
-			#  outer requests.
-			#
-			virtual_server = "inner-tunnel"
+			EAP-TLS-Require-Client-Cert = no
 		}
 
 		#

@@ -22,31 +22,47 @@ clean:
 distclean:
 	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=$@ common
 
+# Requires GNU Make, but even older ones will do.
+SUBDIRS := $(patsubst %/,%,$(dir $(wildcard $(addsuffix /Makefile,$(MODULES)))))
+
+.PHONY: common libs $(SUBDIRS)
+
+libs:
+	@[ -d lib/ ] || mkdir lib
+	@[ -d lib/.libs ] || mkdir lib/.libs
+
+common: libs $(SUBDIRS)
+
+$(SUBDIRS): 
+	@echo "Making $(WHAT_TO_MAKE) in $@..."
+	$(MAKE) $(MFLAGS) -C $@ $(WHAT_TO_MAKE)
+
+# The rlm_*/*/* stuff is to catch the configure
+CONFIG_FILES := $(wildcard rlm_*/configure.in rlm_*/*/*/configure.in)
+
+.PHONY: reconfig $(CONFIG_FILES)
+
 #
 #  Do NOT use "common", because some modules may not be built,
 #  and therefore their makefiles may be empty or non-existent.
 #
+ifeq "$(AUTOCONF)" ""
 reconfig:
-	@[ "x$(AUTOCONF)" != "x" ] || exit 0
-	@[ "x$(AUTOHEADER)" != "x" ] || exit 0
-	@for x in `find . -name "configure.in" -print`; do \
-		( \
-		 cd `dirname $$x` || exit $$?; \
-		 if [ -f configure.in ]; then \
-			$(AUTOCONF) -I $(top_builddir); \
-		 fi; \
-		 if grep AC_CONFIG_HEADERS configure.in >/dev/null; then\
-			$(AUTOHEADER); \
-		 fi; \
-		)  || exit $$?; \
-	done
+	@echo autoconf is needed for this target
+else
+ifeq "$(AUTOHEADER)" ""
+reconfig:
+	@echo autoheader is needed for this target
+else
+reconfig: $(CONFIG_FILES)
+endif
+endif
 
-common:
-	@[ -d lib/ ] || mkdir lib
-	@[ -d lib/.libs ] || mkdir lib/.libs
-	@for mod in $(MODULES); do \
-		if [ -d $$mod ] && [ -f $$mod/Makefile ]; then \
-			echo "Making $(WHAT_TO_MAKE) in $$mod..."; \
-			$(MAKE) $(MFLAGS) -C $$mod $(WHAT_TO_MAKE) || exit $$?; \
-		fi; \
-	done
+# Don't use: $(MAKE) -C $(dir $@) reconfig
+# The modules may not have a Makefile
+$(CONFIG_FILES):
+	@echo "Making reconfig in $(dir $@)..."
+	@cd $(dir $@) && $(AUTOCONF) -I $(top_builddir)
+	@if grep AC_CONFIG_HEADERS $@ >/dev/null; then\
+		cd $(dir $@) && $(AUTOHEADER); \
+	 fi

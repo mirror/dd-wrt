@@ -1168,6 +1168,7 @@ static int condition_looks_ok(const char **ptr)
 				 *	Parse error.
 				 */
 				if (*q != '{') {
+					DEBUG2("Expected open brace '{' after condition at %s", p);
 					return 0;
 				}
 
@@ -1191,6 +1192,7 @@ static int condition_looks_ok(const char **ptr)
 		}
 	}
 
+	DEBUG3("Unexpected error");
 	return 0;
 }
 
@@ -2560,7 +2562,7 @@ static const char *cf_pair_print_value(const CONF_PAIR *cp,
 }
 
 
-int cf_pair2xml(FILE *fp, CONF_PAIR *cp)
+int cf_pair2xml(FILE *fp, const CONF_PAIR *cp)
 {
 	fprintf(fp, "<%s>", cp->attr);
 	if (cp->value) {
@@ -2597,7 +2599,7 @@ int cf_pair2xml(FILE *fp, CONF_PAIR *cp)
 	return 1;
 }
 
-int cf_section2xml(FILE *fp, CONF_SECTION *cs)
+int cf_section2xml(FILE *fp, const CONF_SECTION *cs)
 {
 	CONF_ITEM *ci, *next;
 
@@ -2635,7 +2637,7 @@ int cf_section2xml(FILE *fp, CONF_SECTION *cs)
 	return 1;		/* success */
 }
 
-int cf_pair2file(FILE *fp, CONF_PAIR *cp)
+int cf_pair2file(FILE *fp, const CONF_PAIR *cp)
 {
 	char buffer[2048];
 
@@ -2645,9 +2647,9 @@ int cf_pair2file(FILE *fp, CONF_PAIR *cp)
 	return 1;
 }
 
-int cf_section2file(FILE *fp, CONF_SECTION *cs)
+int cf_section2file(FILE *fp, const CONF_SECTION *cs)
 {
-	CONF_ITEM *ci, *next;
+	const CONF_ITEM *ci, *next;
 
 	/*
 	 *	Section header
@@ -2667,11 +2669,11 @@ int cf_section2file(FILE *fp, CONF_SECTION *cs)
 
 		switch (ci->type) {
 		case CONF_ITEM_PAIR:
-			if (!cf_pair2file(fp, (CONF_PAIR *) ci)) return 0;
+			if (!cf_pair2file(fp, (const CONF_PAIR *) ci)) return 0;
 			break;
 
 		case CONF_ITEM_SECTION:
-			if (!cf_section2file(fp, (CONF_SECTION *) ci)) return 0;
+			if (!cf_section2file(fp, (const CONF_SECTION *) ci)) return 0;
 			break;
 
 		default:	/* should really be an error. */

@@ -106,13 +106,21 @@ static int eapmessage_verify(REQUEST *request,
 	uint8_t eap_type;
 	char buffer[256];
 
-	if (!data || (data_len <= 1)) {
+	/*
+	 *	No data, OR only 1 byte of EAP type.
+	 */
+	if (!data || (data_len == 0) ||
+	    ((data_len <= 1) && (data[0] != PW_EAP_IDENTITY))) {
 		return 0;
 	}
 
 	eap_type = *data;
 	switch (eap_type) {
 	case PW_EAP_IDENTITY:
+		if (data_len == 1) {
+			RDEBUG2("Identity - ");
+			return 1;
+		}
 		RDEBUG2("Identity - %*s",
 		       data_len - 1, data + 1);
 		return 1;
@@ -401,7 +409,7 @@ static int process_reply(EAP_HANDLER *handler, tls_session_t *tls_session,
 	return rcode;
 }
 
-
+#ifdef WITH_PROXY
 /*
  *	Do post-proxy processing,
  */
@@ -551,6 +559,24 @@ static void my_request_free(void *data)
 
 	request_free(&request);
 }
+#endif
+
+
+static void print_tunneled_data(uint8_t *data, size_t data_len)
+{
+	size_t i;
+
+	if ((debug_flag > 2) && fr_log_fp) {
+		for (i = 0; i < data_len; i++) {
+			if ((i & 0x0f) == 0) fprintf(fr_log_fp, "  PEAP tunnel data in %04x: ", i);
+			
+			fprintf(fr_log_fp, "%02x ", data[i]);
+			
+			if ((i & 0x0f) == 0x0f) fprintf(fr_log_fp, "\n");
+		}
+		if ((data_len & 0x0f) != 0) fprintf(fr_log_fp, "\n");
+	}
+}
 
 
 /*
@@ -564,9 +590,6 @@ int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 	int rcode = RLM_MODULE_REJECT;
 	const uint8_t	*data;
 	unsigned int data_len;
-#ifndef NDEBUG
-	size_t i;
-#endif
 
 	REQUEST *request = handler->request;
 	EAP_DS *eap_ds = handler->eap_ds;
@@ -579,21 +602,9 @@ int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 	tls_session->clean_out.used = 0;
 	data = tls_session->clean_out.data;
 
-#ifndef NDEBUG
-	if ((debug_flag > 2) && fr_log_fp) {
-		for (i = 0; i < data_len; i++) {
-			if ((i & 0x0f) == 0) fprintf(fr_log_fp, "  PEAP tunnel data in %04x: ", i);
-
-			fprintf(fr_log_fp, "%02x ", data[i]);
-
-			if ((i & 0x0f) == 0x0f) fprintf(fr_log_fp, "\n");
-		}
-		if ((data_len & 0x0f) != 0) fprintf(fr_log_fp, "\n");
-	}
-#endif
-
 	if (!eapmessage_verify(request, data, data_len)) {
-		RDEBUG2("Tunneled data is invalid.");
+		RDEBUG2("FAILED processing PEAP: Tunneled data is invalid.");
+		if (debug_flag > 2) print_tunneled_data(data, data_len);
 		return RLM_MODULE_REJECT;
 	}
 
@@ -642,8 +653,16 @@ int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 
 	}
 
+	/*
+	 *	Damned if I know why the clients continue sending EAP
+	 *	packets after we told them to f*ck off.
+	 */
 	if (t->status == PEAP_STATUS_SENT_TLV_FAILURE) {
-		RDEBUG2(" Had sent TLV failure.  User was rejected earlier in this session.");
+		RDEBUG(" The users session was previously rejected: returning reject (again.)");
+		RDEBUG(" *** This means you need to read the PREVIOUS messages in the debug output");
+		RDEBUG(" *** to find out the reason why the user was rejected.");
+		RDEBUG(" *** Look for \"reject\" or \"fail\".  Those earlier messages will tell you.");
+		RDEBUG(" *** what went wrong, and how to fix the problem.");
 		return RLM_MODULE_REJECT;
 	}
 
@@ -834,6 +853,7 @@ int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 	 */
 	switch (fake->reply->code) {
 	case 0:			/* No reply code, must be proxied... */
+#ifdef WITH_PROXY
 		vp = pairfind(fake->config_items, PW_PROXY_TO_REALM);
 
 		if (vp) {
@@ -970,10 +990,12 @@ int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 			 */
 			rcode = RLM_MODULE_UPDATED;
 
-		} else {
+		} else
+#endif	/* WITH_PROXY */
+		  {
 			DEBUG2("  PEAP: Unknown RADIUS packet type %d: rejecting tunneled user", fake->reply->code);
 			rcode = RLM_MODULE_REJECT;
-		}
+		  }
 		break;
 
 	default:
