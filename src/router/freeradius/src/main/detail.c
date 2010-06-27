@@ -272,6 +272,9 @@ static int detail_open(rad_listen_t *this)
 
 	data->client_ip.af = AF_UNSPEC;
 	data->timestamp = 0;
+	data->offset = 0;
+	data->packets = 0;
+	data->tries = 0;
 
 	return 1;
 }
@@ -457,6 +460,8 @@ int detail_recv(rad_listen_t *listener,
 	 *	Read a header, OR a value-pair.
 	 */
 	while (fgets(buffer, sizeof(buffer), data->fp)) {
+		data->offset = ftell(data->fp); /* for statistics */
+
 		/*
 		 *	Badly formatted file: delete it.
 		 *
@@ -566,11 +571,25 @@ int detail_recv(rad_listen_t *listener,
 	 */
 	if (ferror(data->fp)) goto cleanup;
 
+	data->tries = 0;
+	data->packets++;
+
 	/*
 	 *	Process the packet.
 	 */
  alloc_packet:
-	rad_assert(data->state == STATE_QUEUED);
+	data->tries++;
+	
+	/*
+	 *	The writer doesn't check that the record was
+	 *	completely written.  If the disk is full, this can
+	 *	result in a truncated record.  When that happens,
+	 *	treat it as EOF.
+	 */
+	if (data->state != STATE_QUEUED) {
+		radlog(L_ERR, "Truncated record: treating it as EOF for detail file %s", data->filename_work);
+		goto cleanup;	  
+	}
 
 	/*
 	 *	We're done reading the file, but we didn't read
