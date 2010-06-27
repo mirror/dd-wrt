@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* NetIO routines
- * $Id: netio.c,v 1.38 2008/11/17 01:42:17 castaglia Exp $
+ * $Id: netio.c,v 1.39 2009/03/05 06:01:51 castaglia Exp $
  */
 
 #include "conf.h"
@@ -103,19 +103,21 @@ static pr_netio_stream_t *netio_stream_alloc(pool *parent_pool) {
 }
 
 static pr_buffer_t *netio_buffer_alloc(pr_netio_stream_t *nstrm) {
+  size_t bufsz;
   pr_buffer_t *pbuf = NULL;
 
   pbuf = pcalloc(nstrm->strm_pool, sizeof(pr_buffer_t));
 
   /* Allocate a buffer. */
-  pbuf->buf = pcalloc(nstrm->strm_pool, PR_TUNABLE_BUFFER_SIZE);
-  pbuf->buflen = PR_TUNABLE_BUFFER_SIZE;
+  bufsz = pr_config_get_xfer_bufsz();
+  pbuf->buf = pcalloc(nstrm->strm_pool, bufsz);
+  pbuf->buflen = bufsz;
 
   /* Position the offset at the start of the buffer, and set the
    * remaining bytes value accordingly.
    */
   pbuf->current = pbuf->buf;
-  pbuf->remaining = PR_TUNABLE_BUFFER_SIZE;
+  pbuf->remaining = bufsz;
 
   /* Add this buffer to the given stream. */
   nstrm->strm_buf = pbuf;

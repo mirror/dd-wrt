@@ -1,4 +1,4 @@
-<!-- $Id: mod_ctrls_admin.html,v 1.7 2007/10/05 17:13:42 castaglia Exp $ -->
+<!-- $Id: mod_ctrls_admin.html,v 1.8 2010/01/06 23:30:24 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_ctrls_admin.html,v $ -->
 
 <html>
@@ -287,6 +287,18 @@ convenient for administrators, as it does not (necessarily) require root
 privileges, nor knowledge of the daemon's PID, to restart the daemon.
 
 <p>
+Example:
+<pre>
+  # ftpdctl restart
+</pre>
+In addition, you can use the <code>restart</code> control to ask the daemon
+how many times it has been restarted:
+<pre>
+  # ftpdctl restart count
+  ftpdctl: restarted 4 times since 2010-01-06 23:20:09 GMT
+</pre>
+
+<p>
 <hr>
 <h2><a name="scoreboard"><code>scoreboard</code></a></h2>
 <strong>Syntax:</strong> ftpdctl scoreboard scrub<br>
@@ -423,12 +435,12 @@ steps for using third-party modules in ProFTPD:
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2007/10/05 17:13:42 $</i><br>
+Last Updated: <i>$Date: 2010/01/06 23:30:24 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2007 ProFTPD Project<br>
+&copy; Copyright 2004-2010 ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

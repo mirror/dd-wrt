@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2007 The ProFTPD Project team
+ * Copyright (c) 2001-2009 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Controls API definitions
- * $Id: ctrls.h,v 1.5 2007/10/11 02:31:56 castaglia Exp $
+ * $Id: ctrls.h,v 1.6 2009/03/10 16:59:23 castaglia Exp $
  */
 
 #ifndef PR_CTRLS_H
@@ -233,16 +233,13 @@ int pr_get_registered_actions(pr_ctrls_t *ctrl, int flags);
 int pr_set_registered_actions(module *mod, const char *action,
     unsigned char skip_disabled, unsigned int flags);
 
-/* Blocks ctrls from being run
- */
+/* Blocks ctrls from being run. */
 void pr_block_ctrls(void);
 
-/* Unblocks ctrls from being run
- */
+/* Unblocks ctrls from being run. */
 void pr_unblock_ctrls(void);
 
-/*
- */
+/* XXX */
 int pr_check_actions(void);
 
 /* Iterate through the list of pr_ctrls_ts and invoke the callbacks of any
@@ -251,12 +248,10 @@ int pr_check_actions(void);
  */
 int pr_run_ctrls(module *mod, const char *action);
 
-/*
- */
+/* XXX */
 int pr_reset_ctrls(void);
 
-/* Initialize the Controls subsystem.
- */
+/* For internal use only. */
 void init_ctrls(void);
 
 #endif /* PR_CTRLS_H */

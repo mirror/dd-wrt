@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001, 2002, 2003 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 /* ProFTPD bindings support routines.
  *
- * $Id: bindings.h,v 1.10 2004/11/20 20:32:19 castaglia Exp $
+ * $Id: bindings.h,v 1.11 2010/02/09 15:53:26 castaglia Exp $
  */
 
 #include "conf.h"
@@ -94,7 +94,7 @@ conn_t *pr_ipbind_accept_conn(fd_set *readfds, int *listenfd);
  * arguments. The new binding is added the list maintained by the bindings
  * layer.  Returns 0 on success, -1 on failure.
  */
-int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr);
+int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr, unsigned int port);
 
 /* Close all IP bindings associated with the given IP address/port combination.
  * The bindings are then marked as inactive, so that future lookups via
@@ -196,11 +196,11 @@ void free_bindings(void);
       "%s:%d: notice: unable to close ipbind: %s", \
       __FILE__, __LINE__, strerror(errno))
 
-#define PR_CREATE_IPBIND(s, a) \
-  if ((res = pr_ipbind_create((s), (a))) < 0) \
+#define PR_CREATE_IPBIND(s, a, p) \
+  if ((res = pr_ipbind_create((s), (a), (p))) < 0) \
     pr_log_pri(PR_LOG_NOTICE, \
-      "%s:%d: notice: unable to create ipbind '%s': %s", \
-      __FILE__, __LINE__, (s)->ServerAddress, strerror(errno))
+      "%s:%d: notice: unable to create ipbind '%s#%u': %s", \
+      __FILE__, __LINE__, (s)->ServerAddress, (p), strerror(errno))
 
 #define PR_OPEN_IPBIND(a, p, c, d, l, o) \
   if ((res = pr_ipbind_open((a), (p), (c), (d), (l), (o))) < 0) \

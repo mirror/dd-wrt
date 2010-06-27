@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_radius -- a mod_quotatab sub-module for obtaining
  *                                 quota information from RADIUS servers.
  *
- * Copyright (c) 2005-2008 TJ Saunders
+ * Copyright (c) 2005-2009 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ static int radiustab_close(quota_table_t *radiustab) {
   return 0;
 }
 
-static unsigned char radiustab_lookup(quota_table_t *radiustab,
+static unsigned char radiustab_lookup(quota_table_t *radiustab, void *ptr,
     const char *name, quota_type_t quota_type) {
   char **values = NULL;
   array_header *data = NULL;
@@ -47,6 +47,7 @@ static unsigned char radiustab_lookup(quota_table_t *radiustab,
   cmdtable *cmdtab = NULL;
   cmd_rec *cmd = NULL;
   modret_t *res = NULL;
+  quota_limit_t *limit = ptr;
 
   if (quota_type != USER_QUOTA) {
     quotatab_log("error: mod_quotatab_radius only supports user quotas");
@@ -93,25 +94,29 @@ static unsigned char radiustab_lookup(quota_table_t *radiustab,
    *  files_{in,out,xfer}_avail
    */
 
-  memmove(quotatab_limit.name, values[0], strlen(values[0]) + 1);
-  quotatab_limit.quota_type = USER_QUOTA;
+  memmove(limit->name, values[0], strlen(values[0]) + 1);
+  limit->quota_type = USER_QUOTA;
 
-  if (strcasecmp(values[1], "false") == 0)
-    quotatab_limit.quota_per_session = FALSE;
-  else if (strcasecmp(values[1], "true") == 0)
-    quotatab_limit.quota_per_session = TRUE;
+  if (strcasecmp(values[1], "false") == 0) {
+    limit->quota_per_session = FALSE;
 
-  if (strcasecmp(values[2], "soft") == 0)
-    quotatab_limit.quota_limit_type = SOFT_LIMIT;
-  else if (strcasecmp(values[2], "hard") == 0)
-    quotatab_limit.quota_limit_type = HARD_LIMIT;
+  } else if (strcasecmp(values[1], "true") == 0) {
+    limit->quota_per_session = TRUE;
+  }
 
-  quotatab_limit.bytes_in_avail = atof(values[3]);
-  quotatab_limit.bytes_out_avail = atof(values[4]);
-  quotatab_limit.bytes_xfer_avail = atof(values[5]);
-  quotatab_limit.files_in_avail = atoi(values[6]);
-  quotatab_limit.files_out_avail = atoi(values[7]);
-  quotatab_limit.files_xfer_avail = atoi(values[8]);
+  if (strcasecmp(values[2], "soft") == 0) {
+    limit->quota_limit_type = SOFT_LIMIT;
+
+  } else if (strcasecmp(values[2], "hard") == 0) {
+    limit->quota_limit_type = HARD_LIMIT;
+  }
+
+  limit->bytes_in_avail = atof(values[3]);
+  limit->bytes_out_avail = atof(values[4]);
+  limit->bytes_xfer_avail = atof(values[5]);
+  limit->files_in_avail = atoi(values[6]);
+  limit->files_out_avail = atoi(values[7]);
+  limit->files_xfer_avail = atoi(values[8]);
 
   return TRUE;
 }

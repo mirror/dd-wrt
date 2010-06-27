@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
  *
- * Copyright (c) 2000-2007 TJ Saunders
+ * Copyright (c) 2000-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_wrap2.h.in,v 1.3 2007/08/03 14:52:06 castaglia Exp $
+ * $Id: mod_wrap2.h.in,v 1.5 2010/02/10 18:31:33 castaglia Exp $
  *
  * -- DO NOT MODIFY THE LINE BELOW --
  * $Libraries: @WRAP2_LIBS@$
@@ -75,8 +75,16 @@ typedef struct table_obj {
 } wrap2_table_t;
 
 /* Function prototypes necessary for wrap sub-modules */
-int wrap2_log(const char *, ...);
+int wrap2_log(const char *, ...)
+#ifdef __GNUC__
+       __attribute__ ((format (printf, 1, 2)));
+#else
+       ;
+#endif
+
 int wrap2_register(const char *, wrap2_table_t *(*tab_open)(pool *, char *));
+int wrap2_unregister(const char *);
+
 char *wrap2_strsplit(char *, int);
 
 #endif /* MOD_WRAP2_H */

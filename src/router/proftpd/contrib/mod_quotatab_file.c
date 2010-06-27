@@ -1,8 +1,8 @@
 /*
  * ProFTPD: mod_quotatab_file -- a mod_quotatab sub-module for managing quota
- *                          data via file-based tables
+ *                               data via file-based tables
  *
- * Copyright (c) 2002-2003 TJ Saunders
+ * Copyright (c) 2002-2009 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_quotatab_file.c,v 1.2 2004/12/16 22:55:46 castaglia Exp $
+ * $Id: mod_quotatab_file.c,v 1.5 2009/03/23 21:27:43 castaglia Exp $
  */
 
 #include "mod_quotatab.h"
@@ -50,57 +50,72 @@ static int filetab_close(quota_table_t *filetab) {
   return res;
 }
 
-static int filetab_create(quota_table_t *filetab) {
+static int filetab_create(quota_table_t *filetab, void *ptr) {
   int res = -1;
   struct iovec quotav[8];
   off_t current_pos = 0;
+  quota_tally_t *tally = ptr;
 
   /* Use writev() to make this more efficient.  It is done piecewise, rather
    * than doing a normal write(2) directly from the struct pointer, to avoid
    * alignment/padding issues.
    */
 
-  quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE quotatab_tally.name;
-  quotav[0].iov_len = sizeof(quotatab_tally.name);
+  quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE tally->name;
+  quotav[0].iov_len = sizeof(tally->name);
 
-  quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.quota_type;
-  quotav[1].iov_len = sizeof(quotatab_tally.quota_type);
+  quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->quota_type);
+  quotav[1].iov_len = sizeof(tally->quota_type);
 
-  quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_in_used;
-  quotav[2].iov_len = sizeof(quotatab_tally.bytes_in_used);
+  quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_in_used);
+  quotav[2].iov_len = sizeof(tally->bytes_in_used);
 
-  quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_out_used;
-  quotav[3].iov_len = sizeof(quotatab_tally.bytes_out_used);
+  quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_out_used);
+  quotav[3].iov_len = sizeof(tally->bytes_out_used);
 
-  quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_xfer_used;
-  quotav[4].iov_len = sizeof(quotatab_tally.bytes_xfer_used);
+  quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_xfer_used);
+  quotav[4].iov_len = sizeof(tally->bytes_xfer_used);
 
-  quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_in_used;
-  quotav[5].iov_len = sizeof(quotatab_tally.files_in_used);
+  quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_in_used);
+  quotav[5].iov_len = sizeof(tally->files_in_used);
 
-  quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_out_used;
-  quotav[6].iov_len = sizeof(quotatab_tally.files_out_used);
+  quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_out_used);
+  quotav[6].iov_len = sizeof(tally->files_out_used);
 
-  quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_xfer_used;
-  quotav[7].iov_len = sizeof(quotatab_tally.files_xfer_used);
+  quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_xfer_used);
+  quotav[7].iov_len = sizeof(tally->files_xfer_used);
 
   /* Seek to the end of the table */
   current_pos = lseek(filetab->tab_handle, 0, SEEK_END);
 
-  if ((res = writev(filetab->tab_handle, quotav, 8)) > 0)
+  while ((res = writev(filetab->tab_handle, quotav, 8)) < 0) {
+    if (errno == EINTR) {
+      pr_signals_handle();
+      continue;
+    }
+
+    return -1;
+  }
+
+  if (res > 0) {
 
     /* Rewind to the start of the entry. */
     lseek(filetab->tab_handle, current_pos, SEEK_SET);
 
-  else if (res == 0)
+  } else if (res == 0) {
     /* If no bytes were written, it's an error. */
+
+    quotatab_log("error: writev(2) returned zero when creating tally entry, "
+      "returning EPERM");
+    errno = EPERM;
     res = -1;
+  }
 
   return res;
 }
 
-static unsigned char filetab_lookup(quota_table_t *filetab, const char *name,
-    quota_type_t quota_type) {
+static unsigned char filetab_lookup(quota_table_t *filetab, void *ptr,
+    const char *name, quota_type_t quota_type) {
 
   /* Make sure the table pointer is positioned at the start of the table,
    * skipping the magic header value of the table.
@@ -110,15 +125,18 @@ static unsigned char filetab_lookup(quota_table_t *filetab, const char *name,
   /* Handle tally and limit tables differently... */
 
   if (filetab->tab_type == TYPE_TALLY) {
-    while (filetab->tab_read(filetab) >= 0) {
+    quota_tally_t *tally = ptr;
+
+    while (filetab->tab_read(filetab, ptr) >= 0) {
 
       /* Compare quota types.  If the quota type is ALL_QUOTA, don't
        * worry about the name.
        */
-      if (quota_type == quotatab_tally.quota_type) {
+      if (quota_type == tally->quota_type) {
 
         /* Match names if need be */
-        if (name && !strcmp(name, quotatab_tally.name))
+        if (name &&
+            strcmp(name, tally->name) == 0)
           return TRUE;
 
         if (quota_type == ALL_QUOTA)
@@ -133,9 +151,12 @@ static unsigned char filetab_lookup(quota_table_t *filetab, const char *name,
     }
 
   } else if (filetab->tab_type == TYPE_LIMIT) {
-    while (filetab->tab_read(filetab) >= 0) {
-      if (quota_type == quotatab_limit.quota_type) {
-        if (name && !strcmp(name, quotatab_limit.name))
+    quota_limit_t *limit = ptr;
+
+    while (filetab->tab_read(filetab, ptr) >= 0) {
+      if (quota_type == limit->quota_type) {
+        if (name &&
+            strcmp(name, limit->name) == 0)
           return TRUE;
 
         if (quota_type == ALL_QUOTA)
@@ -150,7 +171,7 @@ static unsigned char filetab_lookup(quota_table_t *filetab, const char *name,
   return FALSE;
 }
 
-static int filetab_read(quota_table_t *filetab) {
+static int filetab_read(quota_table_t *filetab, void *ptr) {
   int res = -1;
   struct iovec quotav[10];
 
@@ -165,38 +186,47 @@ static int filetab_read(quota_table_t *filetab) {
   /* Handle the limit and tally tables differently. */
 
   if (filetab->tab_type == TYPE_TALLY) {
+    quota_tally_t *tally = ptr;
 
-    quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE quotatab_tally.name;
-    quotav[0].iov_len = sizeof(quotatab_tally.name);
+    quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE tally->name;
+    quotav[0].iov_len = sizeof(tally->name);
 
-    quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.quota_type;
-    quotav[1].iov_len = sizeof(quotatab_tally.quota_type);
+    quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->quota_type);
+    quotav[1].iov_len = sizeof(tally->quota_type);
 
-    quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_in_used;
-    quotav[2].iov_len = sizeof(quotatab_tally.bytes_in_used);
+    quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_in_used);
+    quotav[2].iov_len = sizeof(tally->bytes_in_used);
 
-    quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_out_used;
-    quotav[3].iov_len = sizeof(quotatab_tally.bytes_out_used);
+    quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_out_used);
+    quotav[3].iov_len = sizeof(tally->bytes_out_used);
 
-    quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_xfer_used;
-    quotav[4].iov_len = sizeof(quotatab_tally.bytes_xfer_used);
+    quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_xfer_used);
+    quotav[4].iov_len = sizeof(tally->bytes_xfer_used);
 
-    quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_in_used;
-    quotav[5].iov_len = sizeof(quotatab_tally.files_in_used);
+    quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_in_used);
+    quotav[5].iov_len = sizeof(tally->files_in_used);
 
-    quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_out_used;
-    quotav[6].iov_len = sizeof(quotatab_tally.files_out_used);
+    quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_out_used);
+    quotav[6].iov_len = sizeof(tally->files_out_used);
 
-    quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_xfer_used;
-    quotav[7].iov_len = sizeof(quotatab_tally.files_xfer_used);
+    quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_xfer_used);
+    quotav[7].iov_len = sizeof(tally->files_xfer_used);
 
-    if ((res = readv(filetab->tab_handle, quotav, 8)) > 0)
+    while ((res = readv(filetab->tab_handle, quotav, 8)) < 0) {
+      if (errno == EINTR) {
+        pr_signals_handle();
+        continue;
+      }
+
+      return -1;
+    }
+
+    if (res > 0) {
 
       /* Always rewind after reading a record. */
       lseek(filetab->tab_handle, current_pos, SEEK_SET);
 
-    else if (res == 0) {
-
+    } else if (res == 0) {
       /* Assume end-of-file. */
       errno = EOF;
       res = -1;
@@ -205,52 +235,53 @@ static int filetab_read(quota_table_t *filetab) {
     return res;
 
   } else if (filetab->tab_type == TYPE_LIMIT) {
+    quota_limit_t *limit = ptr;
 
-    quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE quotatab_limit.name;
-    quotav[0].iov_len = sizeof(quotatab_limit.name);
+    quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE limit->name;
+    quotav[0].iov_len = sizeof(limit->name);
 
-    quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_limit.quota_type;
-    quotav[1].iov_len = sizeof(quotatab_limit.quota_type);
+    quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->quota_type);
+    quotav[1].iov_len = sizeof(limit->quota_type);
 
-    quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.quota_per_session;
-    quotav[2].iov_len = sizeof(quotatab_limit.quota_per_session);
+    quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->quota_per_session);
+    quotav[2].iov_len = sizeof(limit->quota_per_session);
 
-    quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.quota_limit_type;
-    quotav[3].iov_len = sizeof(quotatab_limit.quota_limit_type);
+    quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->quota_limit_type);
+    quotav[3].iov_len = sizeof(limit->quota_limit_type);
 
-    quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.bytes_in_avail;
-    quotav[4].iov_len = sizeof(quotatab_limit.bytes_in_avail);
+    quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->bytes_in_avail);
+    quotav[4].iov_len = sizeof(limit->bytes_in_avail);
 
-    quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.bytes_out_avail;
-    quotav[5].iov_len = sizeof(quotatab_limit.bytes_out_avail);
+    quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->bytes_out_avail);
+    quotav[5].iov_len = sizeof(limit->bytes_out_avail);
 
-    quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.bytes_xfer_avail;
-    quotav[6].iov_len = sizeof(quotatab_limit.bytes_xfer_avail);
+    quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->bytes_xfer_avail);
+    quotav[6].iov_len = sizeof(limit->bytes_xfer_avail);
 
-    quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.files_in_avail;
-    quotav[7].iov_len = sizeof(quotatab_limit.files_in_avail);
+    quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->files_in_avail);
+    quotav[7].iov_len = sizeof(limit->files_in_avail);
 
-    quotav[8].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.files_out_avail;
-    quotav[8].iov_len = sizeof(quotatab_limit.files_out_avail);
+    quotav[8].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->files_out_avail);
+    quotav[8].iov_len = sizeof(limit->files_out_avail);
 
-    quotav[9].iov_base = QUOTATAB_IOV_BASE_TYPE
-      &quotatab_limit.files_xfer_avail;
-    quotav[9].iov_len = sizeof(quotatab_limit.files_xfer_avail);
+    quotav[9].iov_base = QUOTATAB_IOV_BASE_TYPE &(limit->files_xfer_avail);
+    quotav[9].iov_len = sizeof(limit->files_xfer_avail);
 
-    if ((res = readv(filetab->tab_handle, quotav, 10)) > 0)
+    while ((res = readv(filetab->tab_handle, quotav, 10)) < 0) {
+      if (errno == EINTR) {
+        pr_signals_handle();
+        continue;
+      }
+
+      return -1;
+    }
+
+    if (res > 0) {
 
       /* Always rewind after reading a record. */
       lseek(filetab->tab_handle, current_pos, SEEK_SET);
 
-    else if (res == 0) {
-
+    } else if (res == 0) {
       /* Assume end-of-file. */
       errno = EOF;
       res = -1;
@@ -280,9 +311,10 @@ static unsigned char filetab_verify(quota_table_t *filetab) {
   return FALSE;
 }
 
-static int filetab_write(quota_table_t *filetab) {
+static int filetab_write(quota_table_t *filetab, void *ptr) {
   int res = -1;
   struct iovec quotav[8];
+  quota_tally_t *tally = ptr;
 
   /* Mark the current file position. */
   off_t current_pos = lseek(filetab->tab_handle, 0, SEEK_CUR);
@@ -292,39 +324,52 @@ static int filetab_write(quota_table_t *filetab) {
    * alignment/padding issues.
    */
 
-  quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE quotatab_tally.name;
-  quotav[0].iov_len = sizeof(quotatab_tally.name);
+  quotav[0].iov_base = QUOTATAB_IOV_BASE_TYPE tally->name;
+  quotav[0].iov_len = sizeof(tally->name);
 
-  quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.quota_type;
-  quotav[1].iov_len = sizeof(quotatab_tally.quota_type);
+  quotav[1].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->quota_type);
+  quotav[1].iov_len = sizeof(tally->quota_type);
 
-  quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_in_used;
-  quotav[2].iov_len = sizeof(quotatab_tally.bytes_in_used);
+  quotav[2].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_in_used);
+  quotav[2].iov_len = sizeof(tally->bytes_in_used);
 
-  quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_out_used;
-  quotav[3].iov_len = sizeof(quotatab_tally.bytes_out_used);
+  quotav[3].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_out_used);
+  quotav[3].iov_len = sizeof(tally->bytes_out_used);
 
-  quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.bytes_xfer_used;
-  quotav[4].iov_len = sizeof(quotatab_tally.bytes_xfer_used);
+  quotav[4].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->bytes_xfer_used);
+  quotav[4].iov_len = sizeof(tally->bytes_xfer_used);
 
-  quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_in_used;
-  quotav[5].iov_len = sizeof(quotatab_tally.files_in_used);
+  quotav[5].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_in_used);
+  quotav[5].iov_len = sizeof(tally->files_in_used);
 
-  quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_out_used;
-  quotav[6].iov_len = sizeof(quotatab_tally.files_out_used);
+  quotav[6].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_out_used);
+  quotav[6].iov_len = sizeof(tally->files_out_used);
 
-  quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE &quotatab_tally.files_xfer_used;
-  quotav[7].iov_len = sizeof(quotatab_tally.files_xfer_used);
+  quotav[7].iov_base = QUOTATAB_IOV_BASE_TYPE &(tally->files_xfer_used);
+  quotav[7].iov_len = sizeof(tally->files_xfer_used);
 
-  if ((res = writev(filetab->tab_handle, quotav, 8)) >= 0)
+  while ((res = writev(filetab->tab_handle, quotav, 8)) < 0) {
+    if (errno == EINTR) {
+      pr_signals_handle();
+      continue;
+    }
 
-    /* Always rewind after writing a record. */
+    return -1;
+  }
+
+  if (res > 0) {
+
+    /* Rewind to the start of the entry. */
     lseek(filetab->tab_handle, current_pos, SEEK_SET);
 
-  else if (res == 0)
+  } else if (res == 0) {
+    /* If no bytes were written, it's an error. */
 
-    /* It's an error if no bytes are written. */
+    quotatab_log("error: writev(2) returned zero when updating tally entry, "
+      "returning EPERM");
+    errno = EPERM;
     res = -1;
+  }
 
   return res;
 }

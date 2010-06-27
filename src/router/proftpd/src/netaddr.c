@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2008 The ProFTPD Project team
+ * Copyright (c) 2003-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Network address routines
- * $Id: netaddr.c,v 1.65 2008/03/20 21:56:30 castaglia Exp $
+ * $Id: netaddr.c,v 1.70 2010/01/23 18:31:47 castaglia Exp $
  */
 
 #include "conf.h"
@@ -49,6 +49,9 @@ static int use_ipv6 = TRUE;
 #else
 static int use_ipv6 = FALSE;
 #endif /* PR_USE_IPV6 */
+
+static char localaddr_str[PR_TUNABLE_BUFFER_SIZE];
+static int have_localaddr_str = FALSE;
 
 static pool *netaddr_pool = NULL;
 static pr_table_t *netaddr_tab = NULL;
@@ -445,6 +448,8 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
 
     res = pr_inet_pton(AF_INET6, name, &v6.sin6_addr);
     if (res > 0) {
+      int xerrno = errno;
+
       pr_netaddr_set_family(na, AF_INET6);
       pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v6);
       if (addrs)
@@ -455,6 +460,8 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
 
       netaddr_cache_set(name, na);
       netaddr_cache_set(pr_netaddr_get_ipstr(na), na);
+
+      errno = xerrno;
       return na;
     }
   }
@@ -469,6 +476,8 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
 
   res = pr_inet_pton(AF_INET, name, &v4.sin_addr);
   if (res > 0) {
+    int xerrno = errno;
+
     pr_netaddr_set_family(na, AF_INET);
     pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v4);
     if (addrs)
@@ -479,6 +488,8 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
 
     netaddr_cache_set(name, na);
     netaddr_cache_set(pr_netaddr_get_ipstr(na), na);
+
+    errno = xerrno;
     return na;
 
   } else if (res == 0) {
@@ -497,11 +508,14 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
 
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
 
     pr_trace_msg(trace_channel, 7,
       "attempting to resolve '%s' to IPv4 address via DNS", name);
     gai_res = pr_getaddrinfo(name, NULL, &hints, &info);
     if (gai_res != 0) {
+      int xerrno = errno;
+
       if (gai_res != EAI_SYSTEM) {
         pr_trace_msg(trace_channel, 1, "IPv4 getaddrinfo '%s' error: %s",
           name, pr_gai_strerror(gai_res));
@@ -509,9 +523,10 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
       } else {
         pr_trace_msg(trace_channel, 1,
           "IPv4 getaddrinfo '%s' system error: [%d] %s", name,
-          errno, strerror(errno));
+          xerrno, strerror(xerrno));
       }
 
+      errno = xerrno;
       return NULL;
     }
 
@@ -549,11 +564,14 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
 
       hints.ai_family = AF_INET6;
       hints.ai_socktype = SOCK_STREAM;
+      hints.ai_protocol = IPPROTO_TCP;
 
       pr_trace_msg(trace_channel, 7,
         "attempting to resolve '%s' to IPv6 address via DNS", name);
       gai_res = pr_getaddrinfo(name, NULL, &hints, &info);
       if (gai_res != 0) {
+        int xerrno = errno;
+
         if (gai_res != EAI_SYSTEM) {
           pr_trace_msg(trace_channel, 1, "IPv6 getaddrinfo '%s' error: %s",
             name, pr_gai_strerror(gai_res));
@@ -561,9 +579,10 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
         } else {
           pr_trace_msg(trace_channel, 1, 
             "IPv6 getaddrinfo '%s' system error: [%d] %s", name,
-            errno, strerror(errno));
+            xerrno, strerror(xerrno));
         }
 
+        errno = xerrno;
         return na;
       }
 
@@ -591,6 +610,7 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
 
   pr_trace_msg(trace_channel, 8, "failed to resolve '%s' to an IP address",
     name);
+  errno = ENOENT;
   return NULL;
 }
 
@@ -1391,15 +1411,21 @@ const char *pr_netaddr_get_dnsstr(pr_netaddr_t *na) {
 
 /* Return the hostname (wrapper for gethostname(2), except returns FQDN). */
 const char *pr_netaddr_get_localaddr_str(pool *p) {
-  char buf[256] = {'\0'};
-  struct hostent *host;
+  char buf[256];
 
   if (p == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
+  if (have_localaddr_str) {
+    return pr_netaddr_validate_dns_str(pstrdup(p, localaddr_str));
+  }
+
+  memset(buf, '\0', sizeof(buf));
   if (gethostname(buf, sizeof(buf)-1) != -1) {
+    struct hostent *host;
+
     buf[sizeof(buf)-1] = '\0';
 
     /* Note: this may need to be gethostbyname2() on systems that provide
@@ -1407,7 +1433,6 @@ const char *pr_netaddr_get_localaddr_str(pool *p) {
      * a machine only resolves to an IPv6 address.
      */
     host = gethostbyname(buf);
-
     if (host)
       return pr_netaddr_validate_dns_str(pstrdup(p, host->h_name));
 
@@ -1416,6 +1441,18 @@ const char *pr_netaddr_get_localaddr_str(pool *p) {
 
   pr_trace_msg(trace_channel, 1, "gethostname(2) error: %s", strerror(errno));
   return NULL;
+}
+
+int pr_netaddr_set_localaddr_str(const char *addr_str) {
+  if (addr_str == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  memset(localaddr_str, '\0', sizeof(localaddr_str));
+  sstrncpy(localaddr_str, addr_str, sizeof(localaddr_str));
+  have_localaddr_str = TRUE;
+  return 0;
 }
 
 int pr_netaddr_is_loopback(const pr_netaddr_t *na) {

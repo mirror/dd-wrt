@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2005-2008 The ProFTPD Project team
+ * Copyright (c) 2005-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Compatibility
- * $Id: compat.h,v 1.11 2008/06/17 01:01:01 castaglia Exp $
+ * $Id: compat.h,v 1.13 2009/03/10 16:59:23 castaglia Exp $
  */
 
 #ifndef PR_COMPAT_H
@@ -43,11 +43,6 @@
 
 #define LOG_WRITEABLE_DIR	PR_LOG_WRITABLE_DIR
 #define LOG_SYMLINK		PR_LOG_SYMLINK
-
-#define log_openfile            pr_log_openfile
-#define log_pri                 pr_log_pri
-#define log_debug               pr_log_debug
-#define log_auth                pr_log_auth
 
 #define pr_parse_expression     pr_expr_create
 #define pr_class_and_expression pr_expr_eval_class_and
@@ -79,7 +74,23 @@
 #define pr_scoreboard_update_entry	pr_scoreboard_entry_update
 
 /* The following macros first appeared in 1.3.2rc2. */
-#define pr_inet_validate			pr_netaddr_validate_dns_str
-#define call_module					pr_module_call
+#define pr_inet_validate		pr_netaddr_validate_dns_str
+#define call_module			pr_module_call
+
+/* The following macros first appeared in 1.3.3rc1. */
+#define pr_inet_copy_connection		pr_inet_copy_conn
+#define pr_inet_create_connection	pr_inet_create_conn
+#define pr_inet_create_conn_portrange	pr_inet_create_conn_portrange
+
+#define ctrls_check_acl			pr_ctrls_check_acl
+#define ctrls_check_group_acl		pr_ctrls_check_group_acl
+#define ctrls_check_user_acl		pr_ctrls_check_user_acl
+#define ctrls_init_acl			pr_ctrls_init_acl
+#define ctrls_parse_acl			pr_ctrls_parse_acl
+#define ctrls_set_group_acl		pr_ctrls_set_group_acl
+#define ctrls_set_module_acls		pr_ctrls_set_module_acls
+#define ctrls_set_user_acl		pr_ctrls_set_user_acl
+#define ctrls_unregister_module_actions	pr_ctrls_unregister_module_actions
+#define ctrls_log			pr_ctrls_log
 
 #endif /* PR_COMPAT_H */

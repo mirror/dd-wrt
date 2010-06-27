@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Non-specific support functions.
- * $Id: support.h,v 1.31 2008/06/05 08:01:39 castaglia Exp $
+ * $Id: support.h,v 1.34 2010/02/07 18:36:53 castaglia Exp $
  */
 
 #ifndef PR_SUPPORT_H
@@ -70,8 +70,6 @@ char *dir_canonical_path(pool *, const char *);
 char *dir_canonical_vpath(pool *, const char *);
 char *dir_best_path(pool *, const char *);
 
-int set_protocol_name(const char *);
-
 void schedule(void (*f)(void *, void *, void *, void *), int, void *, void *,
   void *, void *);
 void run_schedule(void);
@@ -82,7 +80,6 @@ mode_t file_mode(char *);
 int file_exists(char *);
 int dir_exists(char *);
 int exists(char *);
-char *make_arg_str(pool *, int, char **);
 
 char *safe_token(char **);
 int check_shutmsg(time_t *, time_t *, time_t *, char *, size_t);
@@ -92,5 +89,6 @@ void pr_memscrub(void *, size_t);
 struct tm *pr_gmtime(pool *, const time_t *);
 struct tm *pr_localtime(pool *, const time_t *);
 const char *pr_strtime(time_t);
+const char *pr_strtime2(time_t, int);
 
 #endif /* PR_SUPPORT_H */

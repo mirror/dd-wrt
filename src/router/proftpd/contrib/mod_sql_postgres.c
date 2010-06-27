@@ -23,7 +23,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_postgres.c,v 1.37.2.3 2009/06/30 16:44:20 castaglia Exp $
+ * $Id: mod_sql_postgres.c,v 1.51 2009/10/20 01:11:18 castaglia Exp $
  */
 
 /*
@@ -56,6 +56,11 @@
  */
 #ifdef PR_USE_NLS
 extern const char *pg_encoding_to_char(int encoding);
+
+/* And this is the mod_sql_postgres-specific function mapping iconv
+ * locales to Postgres encodings.
+ */
+static const char *get_postgres_encoding(const char *encoding);
 #endif
 
 /* 
@@ -258,7 +263,7 @@ static modret_t *_build_data(cmd_rec *cmd, db_conn_t *conn) {
 }
 
 #ifdef PR_USE_NLS
-const char *get_postgres_encoding(const char *encoding) {
+static const char *get_postgres_encoding(const char *encoding) {
 
   /* XXX Hack to deal with Postgres' incredibly broken behavior when
    * handling the 'ASCII' encoding.  Specifically, Postgres chokes on
@@ -298,6 +303,10 @@ const char *get_postgres_encoding(const char *encoding) {
     return "LATIN1";
   }
 
+  if (strcasecmp(encoding, "ISO-8859-15") == 0) {
+    return "LATIN9";
+  }
+
   if (strcasecmp(encoding, "EUC-CN") == 0 ||
       strcasecmp(encoding, "EUCCN") == 0) {
     return "EUC_CN";
@@ -321,6 +330,12 @@ const char *get_postgres_encoding(const char *encoding) {
   if (strcasecmp(encoding, "SHIFT-JIS") == 0 ||
       strcasecmp(encoding, "SHIFT_JIS") == 0) {
     return "SJIS";
+  }
+
+  if (strcasecmp(encoding, "UTF8") == 0 ||
+      strcasecmp(encoding, "UTF-8") == 0 ||
+      strcasecmp(encoding, "UTF8-MAC") == 0) {
+    return "UTF8";
   }
 
   return encoding;
@@ -347,6 +362,7 @@ const char *get_postgres_encoding(const char *encoding) {
 MODRET cmd_open(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
+  const char *server_version = NULL;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_open");
 
@@ -370,16 +386,77 @@ MODRET cmd_open(cmd_rec *cmd) {
   /* if we're already open (connections > 0) increment connections 
    * reset our timer if we have one, and return HANDLED 
    */
-  if ((entry->connections > 0) && 
-      (PQstatus(conn->postgres) == CONNECTION_OK)) {
-    entry->connections++;
-    if (entry->timer) 
-      pr_timer_reset(entry->timer, &sql_postgres_module);
+  if (entry->connections > 0) { 
+    if (PQstatus(conn->postgres) == CONNECTION_OK) {
+      entry->connections++;
 
-    sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
-      entry->connections);
-    sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
-    return PR_HANDLED(cmd);
+      if (entry->timer) {
+        pr_timer_reset(entry->timer, &sql_postgres_module);
+      }
+
+      sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
+        entry->connections);
+      sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
+      return PR_HANDLED(cmd);
+
+    } else {
+      char *reason;
+      size_t reason_len;
+
+      /* Unless we've been told not to reconnect, try to reconnect now.
+       * We only try once; if it fails, we return an error.
+       */
+      if (!(pr_sql_opts & SQL_OPT_NO_RECONNECT)) {
+        PQreset(conn->postgres);
+
+        if (PQstatus(conn->postgres) == CONNECTION_OK) {
+          entry->connections++;
+
+          if (entry->timer) {
+            pr_timer_reset(entry->timer, &sql_postgres_module);
+          }
+
+          sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
+            entry->connections);
+          sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
+          return PR_HANDLED(cmd);
+        }
+      }
+
+      reason = PQerrorMessage(conn->postgres);
+      reason_len = strlen(reason);
+
+      /* Postgres might give us an empty string as the reason; not helpful. */
+      if (reason_len == 0) {
+        reason = "(unknown)";
+        reason_len = strlen(reason);
+      }
+
+      /* The error message returned by Postgres is usually appended with
+       * a newline.  Let's prettify it by removing the newline.  Note
+       * that yes, we are overwriting the pointer given to us by Postgres,
+       * but it's OK.  The Postgres docs say that we're not supposed to
+       * free the memory associated with the returned string anyway.
+       */
+      reason = pstrdup(session.pool, reason);
+
+      if (reason[reason_len-1] == '\n') {
+        reason[reason_len-1] = '\0';
+        reason_len--;
+      }
+
+      sql_log(DEBUG_INFO, "lost connection to database: %s", reason);
+
+      entry->connections = 0;
+      if (entry->timer) {
+        pr_timer_remove(entry->timer, &sql_postgres_module);
+        entry->timer = 0;
+      }
+
+      sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
+      return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
+        "lost connection to database");
+    }
   }
 
   /* make sure we have a new conn struct */
@@ -389,6 +466,15 @@ MODRET cmd_open(cmd_rec *cmd) {
     /* if it didn't work, return an error */
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
     return _build_error( cmd, conn );
+  }
+
+#if defined(PG_VERSION_STR)
+  sql_log(DEBUG_FUNC, "Postgres client: %s", PG_VERSION_STR);
+#endif
+
+  server_version = PQparameterStatus(conn->postgres, "server_version");
+  if (server_version != NULL) {
+    sql_log(DEBUG_FUNC, "Postgres server version: %s", server_version);
   }
 
 #ifdef PR_USE_NLS
@@ -406,21 +492,32 @@ MODRET cmd_open(cmd_rec *cmd) {
 
     sql_log(DEBUG_FUNC, "Postgres connection character set now '%s' "
       "(from '%s')", pg_encoding_to_char(PQclientEncoding(conn->postgres)),
-      pr_encode_get_charset());
+      pr_encode_get_encoding());
   }
 #endif /* !PR_USE_NLS */
 
   /* bump connections */
   entry->connections++;
 
-  /* set up our timer if necessary */
-  if (entry->ttl > 0) {
+  if (pr_sql_conn_policy == SQL_CONN_POLICY_PERSESSION) {
+    /* If the connection policy is PERSESSION... */
+    if (entry->connections == 1) {
+      /* ...and we are actually opening the first connection to the database;
+       * we want to make sure this connection stays open, after this first use
+       * (as per Bug#3290).  To do this, we re-bump the connection count.
+       */
+      entry->connections++;
+    } 
+ 
+  } else if (entry->ttl > 0) { 
+    /* Set up our timer if necessary */
+
     entry->timer = pr_timer_add(entry->ttl, -1, &sql_postgres_module,
       sql_timer_cb, "postgres connection ttl");
     sql_log(DEBUG_INFO, "connection '%s' - %d second timer started",
       entry->name, entry->ttl);
 
-    /* timed connections get re-bumped so they don't go away when cmd_close
+    /* Timed connections get re-bumped so they don't go away when cmd_close
      * is called.
      */
     entry->connections++;
@@ -630,10 +727,15 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
       "named connection already exists");
   }
 
-  entry->ttl = (cmd->argc == 5) ? 
-    (int) strtol(cmd->argv[4], (char **)NULL, 10) : 0;
-  if (entry->ttl < 0) 
-    entry->ttl = 0;
+  if (cmd->argc == 5) { 
+    entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
+    if (entry->ttl >= 1) {
+      pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
+ 
+    } else {
+      entry->ttl = 0;
+    }
+  }
 
   entry->timer = 0;
   entry->connections = 0;
@@ -1208,6 +1310,7 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
   modret_t *cmr = NULL;
   char *unescaped = NULL;
   char *escaped = NULL;
+  cmd_rec *close_cmd;
   size_t unescaped_len = 0;
 #ifdef PG_VERSION_NUM
   int pgerr = 0;
@@ -1261,6 +1364,10 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
   PQescapeString(escaped, unescaped, unescaped_len);
 #endif
 
+  close_cmd = _sql_make_cmd(cmd->tmp_pool, 1, entry->name);
+  cmd_close(close_cmd);
+  SQL_FREE_CMD(close_cmd);
+
   sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_escapestring");
   return mod_create_data(cmd, (void *) escaped);
 }
@@ -1310,11 +1417,14 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
 
   conn = (db_conn_t *) entry->data;
 
+  sql_log(DEBUG_WARN, MOD_SQL_POSTGRES_VERSION
+    ": Postgres does not support the 'Backend' SQLAuthType");
+
   sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_checkauth");
 
   /* PostgreSQL doesn't provide this functionality */
-
-  return PR_ERROR(cmd);
+  return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
+    "Postgres does not support the 'Backend' SQLAuthType");
 }
 
 /*

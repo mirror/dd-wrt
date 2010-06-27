@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2008 The ProFTPD Project team
+ * Copyright (c) 2003-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Network address API
- * $Id: netaddr.h,v 1.22 2008/02/24 20:35:56 castaglia Exp $
+ * $Id: netaddr.h,v 1.23 2009/02/12 22:32:01 castaglia Exp $
  */
 
 #ifndef PR_NETADDR_H
@@ -338,6 +338,15 @@ const char *pr_netaddr_get_ipstr(pr_netaddr_t *);
  * returned string will be dup'd from the given pool, if any.
  */
 const char *pr_netaddr_get_localaddr_str(pool *);
+
+/* Sets the name of the local host, overriding the name that would have
+ * been returned by gethostname(2).
+ *
+ * This function is used to avoid using DNS lookups on the gethostname(2)
+ * name in order to determine the IP address to use for the default
+ * 'server config' vhost.
+ */
+int pr_netaddr_set_localaddr_str(const char *);
 
 unsigned int pr_netaddr_get_addrno(const pr_netaddr_t *);
 

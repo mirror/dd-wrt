@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 /* Various basic support routines for ProFTPD, used by all modules
  * and not specific to one or another.
  *
- * $Id: support.c,v 1.98.2.2 2009/12/10 16:26:21 castaglia Exp $
+ * $Id: support.c,v 1.104 2010/02/07 18:36:53 castaglia Exp $
  */
 
 #include "conf.h"
@@ -49,6 +49,11 @@
 #ifdef PR_USE_OPENSSL
 # include <openssl/crypto.h>
 #endif /* PR_USE_OPENSSL */
+
+/* Keep a counter of the number of times signals_block()/signals_unblock()
+ * have been called, to handle nesting of calls.
+ */
+static unsigned int sigs_nblocked = 0;
 
 typedef struct sched_obj {
   struct sched_obj *next, *prev;
@@ -85,16 +90,40 @@ static void mask_signals(unsigned char block) {
 
     sigprocmask(SIG_BLOCK, &mask_sigset, NULL);
 
-  } else
+  } else {
     sigprocmask(SIG_UNBLOCK, &mask_sigset, NULL);
+  }
 }
 
 void pr_signals_block(void) {
-  mask_signals(TRUE);
+  if (sigs_nblocked == 0) {
+    mask_signals(TRUE);
+    pr_trace_msg("signal", 5, "signals blocked");
+
+  } else {
+    pr_trace_msg("signal", 9, "signals already blocked (block count = %u)",
+      sigs_nblocked);
+  }
+
+  sigs_nblocked++;
 }
 
 void pr_signals_unblock(void) {
-  mask_signals(FALSE);
+  if (sigs_nblocked == 0) {
+    pr_trace_msg("signal", 5, "signals already unblocked");
+    return;
+  }
+
+  if (sigs_nblocked == 1) {
+    mask_signals(FALSE);
+    pr_trace_msg("signal", 5, "signals unblocked");
+
+  } else {
+    pr_trace_msg("signal", 9, "signals already unblocked (block count = %u)",
+      sigs_nblocked);
+  }
+
+  sigs_nblocked--;
 }
 
 void schedule(void (*f)(void*,void*,void*,void*),int nloops, void *a1,
@@ -553,37 +582,6 @@ int check_shutmsg(time_t *shut, time_t *deny, time_t *disc, char *msg,
   return 0;
 }
 
-/* Make sure we don't display any sensitive information via argstr. Note:
- * make this a separate function in the future (get_full_cmd() or somesuch),
- * and have that function deal with creating a displayable string.  Once
- * RFC2228 support is added, PASS won't be the only command whose parameters
- * should not be displayed.
- */
-char *make_arg_str(pool *p, int argc, char **argv) {
-  char *res = "";
-
-  /* Check for "sensitive" commands. */
-  if (strcmp(argv[0], C_PASS) == 0 ||
-      strcmp(argv[0], C_ADAT) == 0) {
-    argc = 2;
-    argv[1] = "(hidden)";
-  }
-
-  if (argc > 0) {
-    while (argc--) {
-      if (*res)
-        res = pstrcat(p, res, " ", pr_fs_decode_path(p, *argv++), NULL);
-      else
-        res = pstrcat(p, res, pr_fs_decode_path(p, *argv++), NULL);
-    }
-
-  } else {
-    res = pstrdup(p, res);
-  }
-
-  return res;
-}
-
 /* "safe" memset() (code borrowed from OpenSSL).  This function should be
  * used to clear/scrub sensitive memory areas instead of memset() for the
  * reasons mentioned in this BugTraq thread:
@@ -706,6 +704,10 @@ struct tm *pr_localtime(pool *p, const time_t *t) {
 }
 
 const char *pr_strtime(time_t t) {
+  return pr_strtime2(t, FALSE);
+}
+
+const char *pr_strtime2(time_t t, int use_gmtime) {
   static char buf[64];
   static char *mons[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
     "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -714,9 +716,15 @@ const char *pr_strtime(time_t t) {
 
   memset(buf, '\0', sizeof(buf));
 
-  tr = pr_localtime(NULL, &t);
+  if (use_gmtime) {
+    tr = pr_gmtime(NULL, &t);
+
+  } else {
+    tr = pr_localtime(NULL, &t);
+  }
+
   if (tr != NULL) {
-    snprintf(buf, sizeof(buf), "%s %s %2d %02d:%02d:%02d %d",
+    snprintf(buf, sizeof(buf), "%s %s %02d %02d:%02d:%02d %d",
       days[tr->tm_wday], mons[tr->tm_mon], tr->tm_mday, tr->tm_hour,
       tr->tm_min, tr->tm_sec, tr->tm_year + 1900);
 

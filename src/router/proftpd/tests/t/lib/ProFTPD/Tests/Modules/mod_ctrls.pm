@@ -105,8 +105,8 @@ sub ctrls_lsctrl_ok {
         ControlsEngine => 'on',
         ControlsLog => $log_file,
         ControlsSocket => $ctrls_sock,
-        ControlsACLs => "all allow user $user",
-        ControlsSocketACL => "allow user $user",
+        ControlsACLs => "all allow user root,$user",
+        ControlsSocketACL => "allow user root,$user",
       },
 
       'mod_delay.c' => {
@@ -202,8 +202,8 @@ sub ctrls_lsctrl_system_user_ok {
         ControlsEngine => 'on',
         ControlsLog => $log_file,
         ControlsSocket => $ctrls_sock,
-        ControlsACLs => "all allow user $sys_user",
-        ControlsSocketACL => "allow user $sys_user",
+        ControlsACLs => "all allow user root,$sys_user",
+        ControlsSocketACL => "allow user root,$sys_user",
       },
 
       'mod_delay.c' => {

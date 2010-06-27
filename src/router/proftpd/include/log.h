@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2009 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 /* Logging, either to syslog or stderr, as well as debug logging
  * and debug levels.
  *
- * $Id: log.h,v 1.28 2008/02/18 21:45:20 castaglia Exp $
+ * $Id: log.h,v 1.32 2009/11/04 20:19:05 castaglia Exp $
  */
 
 #ifndef PR_LOG_H
@@ -106,10 +106,16 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
   pr_netaddr_t *remote_addr);
 #endif /* PR_USE_LASTLOG */
 
-int log_wtmp(char *, const char *, const char *, pr_netaddr_t *);
+/* Note: Like lastlog.h, it would be tempting to split out the declaration of
+ * this function, and its necessary system headers, into a proftpd-specific
+ * wtmp.h file.  But that would collide with the system wtmp.h file on
+ * some systems.
+ */
+int log_wtmp(const char *, const char *, const char *, pr_netaddr_t *);
 
 /* file-based logging functions */
 int pr_log_openfile(const char *, int *, mode_t);
+
 int pr_log_writefile(int, const char *, const char *, ...)
 #ifdef __GNUC__
   __attribute__ ((format (printf, 3, 4)));
@@ -117,12 +123,19 @@ int pr_log_writefile(int, const char *, const char *, ...)
   ;
 #endif
 
+/* Same as pr_log_writefile(), only this function takes a va_list.
+ * Useful for modules which provide their own varargs wrapper log functions,
+ * but still want to use the core facilities for writing to the log fd.
+ */
+int pr_log_vwritefile(int, const char *, const char *, va_list ap);
+
 /* syslog-based logging functions.  Note that the open/close functions are
  * not part of the public API; use the pr_log_pri() function to log via
  * syslog.
  */
 void log_closesyslog(void);
 int log_opensyslog(const char *);
+int log_getfacility(void);
 void log_setfacility(int);
 
 void pr_log_pri(int, const char *, ...)

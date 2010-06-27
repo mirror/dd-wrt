@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 /*
  * Table API tests
- * $Id: table.c,v 1.1 2008/10/06 18:16:50 castaglia Exp $
+ * $Id: table.c,v 1.2 2010/02/14 00:36:18 castaglia Exp $
  */
 
 #include "tests.h"
@@ -314,6 +314,61 @@ START_TEST (table_get_test) {
 }
 END_TEST
 
+static unsigned int cache_key_hash(const void *key, size_t keysz) {
+  return 1;
+}
+
+START_TEST (table_get_use_cache_test) {
+  int ok, xerrno;
+  void *res;
+  pr_table_t *tab;
+  const char *key = "bar";
+  char *str;
+  size_t sz;
+
+  res = pr_table_get(NULL, NULL, NULL);
+  fail_unless(res == NULL, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  tab = pr_table_alloc(p, PR_TABLE_FL_USE_CACHE);
+
+  /* We use this specific key hash function to ensure that all of the keys we
+   * add to this table end up in the same linked-list chain.
+   */
+
+  ok = pr_table_ctl(tab, PR_TABLE_CTL_SET_KEY_HASH, cache_key_hash);
+  fail_unless(ok == 0, "Failed to set key hash function for table: %s",
+    strerror(errno));
+
+  res = pr_table_get(tab, NULL, NULL);
+  fail_unless(res == NULL, "Failed to handle null key");
+  fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
+
+  ok = pr_table_add(tab, key, "baz", 0);
+  fail_unless(ok == 0, "Failed to add 'bar' to table: %s", strerror(errno));
+
+  res = pr_table_get(tab, key, &sz);
+  fail_unless(res != NULL, "Failed to lookup value for 'bar': %s",
+    strerror(errno));
+  fail_unless(sz == 4, "Expected result len of 4, got %u", sz);
+
+  str = pcalloc(p, sz);
+  memcpy(str, res, sz);
+
+  fail_unless(strcmp(str, "baz") == 0,
+    "Expected value '%s', got '%s'", "baz", str);
+
+  /* With the USE_CACHE flag on, we should still receive NULL here. */
+  errno = xerrno = 0;
+  res = pr_table_get(tab, key, &sz);
+  fail_unless(res == NULL, "Failed to return null next value: %s",
+    strerror(errno));
+  fail_unless(xerrno == 0, "Expected errno 0, got %d (%s)", xerrno,
+    strerror(xerrno));
+
+}
+END_TEST
+
 START_TEST (table_next_test) {
   int ok;
   char *res;
@@ -599,6 +654,7 @@ Suite *tests_get_table_suite(void) {
   tcase_add_test(testcase, table_empty_test);
   tcase_add_test(testcase, table_free_test);
   tcase_add_test(testcase, table_get_test);
+  tcase_add_test(testcase, table_get_use_cache_test);
   tcase_add_test(testcase, table_next_test);
   tcase_add_test(testcase, table_rewind_test);
   tcase_add_test(testcase, table_remove_test);

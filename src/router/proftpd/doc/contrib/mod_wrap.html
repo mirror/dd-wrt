@@ -1,4 +1,4 @@
-<!-- $Id: mod_wrap.html,v 1.1 2004/11/03 19:37:45 castaglia Exp $ -->
+<!-- $Id: mod_wrap.html,v 1.4 2009/12/23 23:46:35 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_wrap.html,v $ -->
 
 <html>
@@ -250,11 +250,53 @@ See also: <a href="#TCPAccessFiles">TCPAccessFiles</a>
 
 <p>
 <hr>
+<h2><a name="FAQ">FAQ</a></h2>
+
+<p>
+<font color=red>Question</font>: Using <code>mod_wrap</code>, connections
+from hosts that have broken reverse DNS mappings are refused.  OpenSSH
+uses the same <code>libwrap</code> library, and this doesn't happen.  Is it
+a bug in <code>mod_wrap</code>?<br>
+<font color=blue>Answer</font>:  No, it is not, strictly speaking, a bug
+in <code>mod_wrap</code>.
+
+<p>
+Users who encounter this issue will usually find log messages that look
+like the any/all of the following in their syslog:
+<pre>
+  proftpd: warning: can't verify hostname: gethostbyname(<i>dns-name</i>) failed
+  proftpd: warning: can't verify hostname: getaddrinfo(anothername.net, AF_INET) failed
+  proftpd: warning: host name/name mismatch: somedomain.com != vs-23.somename.com
+</pre>
+These log messages do <b>not</b>, in fact, come from <code>proftpd</code>.
+Instead, they come from the <code>libwrap</code> library, which is used by
+the <code>mod_wrap</code> module.  In particular, the <code>libwrap</code>
+library emits these log messages when it has been compiled with the
+<code>-DPARANOID</code> compile-time option (and most installations of the
+<code>libwrap</code> library are compiled this way).
+
+<p>
+OpenSSH allows such connections because the OpenSSH code, when using the
+<code>libwrap</code> library, does not check for paranoid/unknown results
+from the <code>host_access()</code> function of the <code>libwrap</code>
+library.  The <code>mod_wrap</code> module for ProFTPD <i>does</i> check
+for these values, thus why those connections are refused by
+<code>mod_wrap</code> but not OpenSSH.  This just demonstrates that not all
+applications use the <code>libwrap</code> library the same way.
+
+<p>
+The solution, in most cases, is to switch to using the newer
+<a href="mod_wrap2.html"><code>mod_wrap2</code></a> module, which does
+<b>not</b> use the <code>libwrap</code> library (and thus does not encounter
+this issue).
+
+<p>
+<hr>
 <h2><a name="Installation">Installation</a></h2>
 Use of <code>mod_wrap</code> is straightforward, with some minor caveats.  If
 you're using Solaris, you'll need to obtain and build the tcpwrappers library,
 as this library does not come installed on stock Solaris systems.  If you're
-using FreeBSD-4.4-STABLE (and possibly other versions), you'll need to change
+using FreeBSD or Mac OSX (and possibly other versions), you'll need to change
 the following line in the header of <code>mod_wrap.c</code>:
 <pre>
  * $Libraries: -lwrap -lnsl$
@@ -265,7 +307,7 @@ to be:
 </pre>
 This line is needed on Linux and Solaris machines, to properly link against
 the <code>libnsl.a</code> library, which implements the NIS/YP functions.
-In FreeBSD, these functions are implemented in <code>libc</code>.
+In FreeBSD and Mac OSX, these functions are implemented in <code>libc</code>.
 
 <p>
 Then, you need simply follow the normal steps for using third-party modules in
@@ -277,15 +319,14 @@ proftpd:
 </pre>
 
 <p>
-<hr><br>
-
+<hr>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2004/11/03 19:37:45 $</i><br>
+Last Updated: <i>$Date: 2009/12/23 23:46:35 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2002 TJ Saunders<br>
+&copy; Copyright 2000-2009 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

@@ -2,7 +2,7 @@
  * ProFTPD: mod_wrap2_file -- a mod_wrap2 sub-module for supplying IP-based
  *                            access control data via file-based tables
  *
- * Copyright (c) 2002-2008 TJ Saunders
+ * Copyright (c) 2002-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,14 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_wrap2_file.c,v 1.6 2008/03/03 16:26:28 castaglia Exp $
+ * $Id: mod_wrap2_file.c,v 1.10 2010/02/10 18:31:33 castaglia Exp $
  */
 
 #include "mod_wrap2.h"
 
 #define MOD_WRAP2_FILE_VERSION		"mod_wrap2_file/1.2"
+
+module wrap2_file_module;
 
 static const char *filetab_service_name = NULL;
 
@@ -50,7 +52,7 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
 
     if (buf[buflen-1] != '\n') {
       wrap2_log("file '%s': missing newline or line too long (%u) at line %u",
-        filetab->tab_name, buflen, lineno);
+        filetab->tab_name, (unsigned int) buflen, lineno);
       continue;
     } 
 
@@ -76,7 +78,7 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
     if (filetab_service_name &&
         (strcasecmp(filetab_service_name, service) == 0 ||
          strcasecmp("ALL", service) == 0)) {
-      char *tmp = NULL;
+      char *ptr = NULL;
 
       if (filetab_daemons_list == NULL)
         filetab_daemons_list = make_array(filetab->tab_pool, 0, sizeof(char *));
@@ -93,24 +95,65 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
       if (filetab_clients_list == NULL)
         filetab_clients_list = make_array(filetab->tab_pool, 0, sizeof(char *));
 
-      /* If there are commas in the line, parse them as separate client
-       * names.  Otherwise, a comma-delimited list of names will be treated
-       * as a single name, and violate the principal of least surprise
-       * for the site admin.
+      /* Check for another ':' delimiter.  If present, anything following that
+       * delimiter is an option/shell command (as per the hosts_access(5) man
+       * page syntax description).
+       *
+       * If there are commas or whitespace in the line, parse them as separate
+       * client names.  Otherwise, a comma- or space-delimited list of names
+       * will be treated as a single name, and violate the principle of least
+       * surprise for the site admin.
        */
-      tmp = strchr(res, ',');
-      if (tmp != NULL) {
+
+      ptr = wrap2_strsplit(res, ':');    
+      if (ptr != NULL) {
+        if (filetab_options_list == NULL)
+          filetab_options_list = make_array(filetab->tab_pool, 0, 
+            sizeof(char *));
+
+        /* Skip redundant whitespaces */
+        while (*ptr == ' ' ||
+               *ptr == '\t') {
+          pr_signals_handle();
+          ptr++;
+        }
+
+        *((char **) push_array(filetab_options_list)) =
+          pstrdup(filetab->tab_pool, ptr);
+
+      } else {
+        /* No options present. */
+        ptr = res;
+      }
+
+      ptr = strpbrk(res, ", \t");
+      if (ptr != NULL) {
         char *dup = pstrdup(filetab->tab_pool, res);
         char *word;
 
-        while ((word = pr_str_get_word(&dup, 0)) != NULL) {
-          size_t wordlen = strlen(word);
+        while ((word = pr_str_get_token(&dup, ", \t")) != NULL) {
+          size_t wordlen;
+
+          pr_signals_handle();
+
+          wordlen = strlen(word);
+          if (wordlen == 0) {
+            continue;
+          }
 
           /* Remove any trailing comma */
-          if (word[wordlen-1] == ',')
+          if (word[wordlen-1] == ',') {
             word[wordlen-1] = '\0';
+          }
 
           *((char **) push_array(filetab_clients_list)) = word;
+
+          /* Skip redundant whitespaces */
+          while (*dup == ' ' ||
+                 *dup == '\t') {
+            pr_signals_handle();
+            dup++;
+          }
         }
 
       } else {
@@ -118,21 +161,13 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
           pstrdup(filetab->tab_pool, res);
       }
  
-      res = wrap2_strsplit(res, ':');    
-      if (res) {
-        if (filetab_options_list == NULL)
-          filetab_options_list = make_array(filetab->tab_pool, 0, 
-            sizeof(char *));
-
-        *((char **) push_array(filetab_options_list)) =
-          pstrdup(filetab->tab_pool, res);
-      }
-
     } else {
       wrap2_log("file '%s': skipping irrevelant daemon/service ('%s') line %u",
         filetab->tab_name, service, lineno);
     }
   }
+
+  return;
 }
 
 static int filetab_close_cb(wrap2_table_t *filetab) {
@@ -187,6 +222,7 @@ static array_header *filetab_fetch_options_cb(wrap2_table_t *filetab,
 }
 
 static wrap2_table_t *filetab_open_cb(pool *parent_pool, char *srcinfo) {
+  struct stat st;
   wrap2_table_t *tab = NULL;
   pool *tab_pool = make_sub_pool(parent_pool);
 
@@ -226,6 +262,11 @@ static wrap2_table_t *filetab_open_cb(pool *parent_pool, char *srcinfo) {
     return NULL;
   }
 
+  /* Stat the opened file to determine the optimal buffer size for IO. */
+  memset(&st, 0, sizeof(st));
+  pr_fsio_fstat((pr_fh_t *) tab->tab_handle, &st);
+  ((pr_fh_t *) tab->tab_handle)->fh_iosz = st.st_blksize;
+
   tab->tab_name = pstrdup(tab->tab_pool, srcinfo);
 
   /* Set the necessary callbacks. */
@@ -241,10 +282,30 @@ static wrap2_table_t *filetab_open_cb(pool *parent_pool, char *srcinfo) {
   return tab;
 }
 
+/* Event handlers
+ */
+
+#if defined(PR_SHARED_MODULE)
+static void filetab_mod_unload_ev(const void *event_data, void *user_data) {
+  if (strcmp("mod_wrap2_file.c", (const char *) event_data) == 0) {
+    pr_event_unregister(&wrap2_file_module, NULL, NULL);
+    wrap2_unregister("file");
+  }
+}
+#endif /* PR_SHARED_MODULE */
+
+/* Initialization routines
+ */
+
 static int filetab_init(void) {
 
   /* Initialize the wrap source objects for type "file". */
   wrap2_register("file", filetab_open_cb);
+
+#if defined(PR_SHARED_MODULE)
+  pr_event_register(&wrap2_file_module, "core.module-unload",
+    filetab_mod_unload_ev, NULL);
+#endif /* PR_SHARED_MODULE */
 
   return 0;
 }

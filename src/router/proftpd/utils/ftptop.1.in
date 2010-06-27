@@ -14,6 +14,12 @@ command displays the current status of FTP sessions in a continuously updating
 like format.
 .SH OPTIONS
 .TP 12
+.B \-A
+Filter the display to show sessions that are authenticating.
+.TP
+.B \-a
+Filter the display to hide sessions that are authenticating.
+.TP
 .B \-D
 Filter the display to show sessions that are downloading.
 .TP
@@ -61,7 +67,7 @@ modes.
 .PD 0
 .B @BINDIR@/ftptop
 .br
-.B @LOCALSTATEDIR@/run/proftpd/proftpd.scoreboard
+.B @LOCALSTATEDIR@/proftpd.scoreboard
 .PD
 .SH AUTHORS
 .PP

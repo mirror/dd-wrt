@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2008 The ProFTPD Project team
+ * Copyright (c) 2004-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Table API implementation
- * $Id: table.c,v 1.14 2008/12/21 00:55:26 castaglia Exp $
+ * $Id: table.c,v 1.16 2010/02/14 00:36:18 castaglia Exp $
  */
 
 #include "conf.h"
@@ -469,7 +469,7 @@ void *pr_table_kget(pr_table_t *tab, const void *key_data, size_t key_datasz,
              tab->cache_ent->key->key_data == key_data) {
 
      /* If the cached lookup entry matches, we'll use it. */
-     head = tab->cache_ent;
+     head = tab->cache_ent->next;
 
   } else {
     unsigned int idx = h % tab->nchains;
@@ -1003,10 +1003,8 @@ int pr_table_ctl(pr_table_t *tab, int cmd, void *arg) {
 
     default:
       errno = EINVAL;
-      return -1;
   }
 
-  errno = EACCES;
   return -1;
 }
 

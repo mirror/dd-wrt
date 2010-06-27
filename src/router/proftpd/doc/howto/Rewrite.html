@@ -1,4 +1,4 @@
-<!-- $Id: Rewrite.html,v 1.4 2009/02/02 19:46:51 castaglia Exp $ -->
+<!-- $Id: Rewrite.html,v 1.6 2009/05/27 23:09:18 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Rewrite.html,v $ -->
 
 <html>
@@ -252,7 +252,7 @@ configuation used to make this work:
     # Substitute in the IP address of the client, regardless of the address
     # the client tells us to use in the PORT command
     RewriteCondition %m ^PORT$
-    RewriteRule ([0-9]+,[0-9]+,[0-9]+,[0-9]+)(.*) ${replace:/$1/%a$2}
+    RewriteRule ([0-9]+,[0-9]+,[0-9]+,[0-9]+)(.*) ${replace:/$1/$1/%a$2}
 
     # Replace the periods in the client address with commas, as per RFC959
     # requirements
@@ -302,7 +302,20 @@ redirect a request, just like one might do using Apache's
 </pre>
 The above <code>RewriteRule</code> would work, but it would <b>not</b> actually
 redirect the FTP client to the URL.  FTP unfortuntely does <i>not</i> support
-redirection of requests, at the protocol level, unlike HTTP.
+redirection of requests to other servers, at the protocol level, unlike HTTP.
+
+<p>
+However, it <i>is</i> possible to redirect a request to some other directory
+on the same machine.  For example, if you wanted to have any file uploaded
+by a client go into the "/Incoming/" directory, no matter where the client
+wanted to upload the file, you could use:
+<pre>
+  &lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine on
+    RewriteCondition %m STOR
+    RewriteRule (.*/)?(.*) /Incoming/$2
+  &lt;/IfModule&gt;
+</pre>
 
 <p>
 <b>URL Encoded Characters</b><br>

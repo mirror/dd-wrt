@@ -57,7 +57,7 @@ sub tear_down {
   }
 
   undef $self;
-};
+}
 
 sub timeoutlogin_ok {
   my $self = shift;
@@ -66,7 +66,8 @@ sub timeoutlogin_ok {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -173,7 +174,8 @@ sub timeoutlogin_exceeded {
   my $config_file = "$tmpdir/config.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-  my $log_file = File::Spec->rel2abs('config.log');
+
+  my $log_file = File::Spec->rel2abs('tests.log');
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
@@ -238,8 +240,8 @@ sub timeoutlogin_exceeded {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      # Wait for one second more than the login timeout
-      sleep($timeout_login + 1);
+      # Wait for two seconds more than the login timeout
+      sleep($timeout_login + 2);
 
       my ($resp_code, $resp_msg);
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004 The ProFTPD Project team
+ * Copyright (c) 2004-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Children management code
- * $Id: child.c,v 1.4 2004/05/07 03:36:28 castaglia Exp $
+ * $Id: child.c,v 1.5 2010/02/03 21:45:00 castaglia Exp $
  */
 
 #include "conf.h"
@@ -101,7 +101,10 @@ void child_signal(int signo) {
     return;
 
   for (ch = (pr_child_t *) child_list->xas_list; ch; ch = ch->next) {
-    kill(ch->ch_pid, signo);
+    if (kill(ch->ch_pid, signo) < 0) {
+      pr_trace_msg("signal", 1, "error sending signal %d to PID %lu: %s",
+        signo, (unsigned long) ch->ch_pid, strerror(errno));
+    }
   }
 
   return;

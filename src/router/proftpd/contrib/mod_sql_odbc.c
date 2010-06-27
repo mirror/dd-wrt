@@ -21,7 +21,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_sql_odbc.c,v 1.7.2.1 2009/06/30 16:44:20 castaglia Exp $
+ * $Id: mod_sql_odbc.c,v 1.11 2009/10/02 21:22:56 castaglia Exp $
  */
 
 #include "conf.h"
@@ -951,8 +951,19 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
 
   entry->nconn++;
 
-  /* Set up our timer, if necessary. */
-  if (entry->ttl > 0) {
+  if (pr_sql_conn_policy == SQL_CONN_POLICY_PERSESSION) {
+    /* If the connection policy is PERSESSION... */
+    if (entry->nconn == 1) {
+      /* ...and we are actually opening the first connection to the database;
+       * we want to make sure this connection stays open, after this first use
+       * (as per Bug#3290).  To do this, we re-bump the connection count.
+       */
+      entry->nconn++;
+    } 
+ 
+  } else if (entry->ttl > 0) { 
+    /* Set up our timer, if necessary. */
+
     entry->timer = pr_timer_add(entry->ttl, -1, &sql_odbc_module,
       sqlodbc_timer_cb, "odbc connection ttl");
 
@@ -1074,10 +1085,15 @@ MODRET sqlodbc_def_conn(cmd_rec *cmd) {
       "named connection already exists");
   }
 
-  entry->ttl = (cmd->argc == 5) ? 
-    (int) strtol(cmd->argv[4], (char **)NULL, 10) : 0;
-  if (entry->ttl < 0) 
-    entry->ttl = 0;
+  if (cmd->argc == 5) { 
+    entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
+    if (entry->ttl >= 1) {
+      pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
+ 
+    } else {
+      entry->ttl = 0;
+    }
+  }
 
   entry->timer = 0;
   entry->nconn = 0;
@@ -1546,6 +1562,7 @@ MODRET sqlodbc_quote(cmd_rec *cmd) {
   modret_t *mr = NULL;
   char *unescaped = NULL;
   char *escaped = NULL;
+  cmd_rec *close_cmd;
 
   sql_log(DEBUG_FUNC, "%s", "entering \todbc cmd_escapestring");
 
@@ -1575,6 +1592,10 @@ MODRET sqlodbc_quote(cmd_rec *cmd) {
 			      (strlen(unescaped) * 2) + 1);
 
   sqlodbc_escape_string(escaped, unescaped, strlen(unescaped));
+
+  close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
+  sqlodbc_close(close_cmd);
+  destroy_pool(close_cmd->pool);
 
   sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_escapestring");
   return mod_create_data(cmd, (void *) escaped);
