@@ -691,13 +691,13 @@ int indexed_modcall(int comp, int idx, REQUEST *request)
 	}
 
 	if (!server) {
-		RDEBUG("No such virtual server %s", request->server);
+		RDEBUG("No such virtual server \"%s\"", request->server);
 		return RLM_MODULE_FAIL;
 	}
 
 	if (idx == 0) {
 		list = server->mc[comp];
-		if (!list) RDEBUG2("  WARNING: Empty section.  Using default return values.");
+		if (!list) RDEBUG2("  WARNING: Empty %s section.  Using default return values.", section_type_value[comp].section);
 
 	} else {
 		indexed_modcallable *this;
@@ -1452,7 +1452,9 @@ int setup_modules(int reload, CONF_SECTION *config)
 	     listener = listener->next) {
 		char buffer[256];
 
+#ifdef WITH_PROXY
 		if (listener->type == RAD_LISTEN_PROXY) continue;
+#endif
 
 		cs = cf_section_sub_find_name2(config,
 					       "server", listener->server);

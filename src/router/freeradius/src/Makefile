@@ -9,6 +9,7 @@ include ../Make.inc
 SUBDIRS		= include lib modules main
 WHAT_TO_MAKE	= all
 
+.PHONY: all clean install reconfig
 all: freeradius-devel
 	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=$@ common
 
@@ -19,11 +20,24 @@ clean:
 install:
 	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=$@ common
 
-common:
-	@for dir in $(SUBDIRS); do \
-		echo "Making $(WHAT_TO_MAKE) in $$dir..."; \
-		$(MAKE) $(MFLAGS) -C $$dir $(WHAT_TO_MAKE) || exit $$?; \
-	done
+reconfig:
+	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=$@ common
+
+.PHONY: common $(SUBDIRS)
+
+#
+#  Ensure correct build order
+lib: include
+
+modules: lib
+
+main: modules
+
+common: $(SUBDIRS)
+
+$(SUBDIRS): 
+	@echo "Making $(WHAT_TO_MAKE) in $@..."
+	$(MAKE) $(MFLAGS) -C $@ $(WHAT_TO_MAKE)
 
 freeradius-devel:
 	ln -s include freeradius-devel

@@ -51,11 +51,11 @@ RCSID("$Id$")
 static int connect_single_socket(SQLSOCK *sqlsocket, SQL_INST *inst)
 {
 	int rcode;
-	radlog(L_DBG, "rlm_sql (%s): Attempting to connect %s #%d",
+	radlog(L_INFO, "rlm_sql (%s): Attempting to connect %s #%d",
 	       inst->config->xlat_name, inst->module->name, sqlsocket->id);
 	rcode = (inst->module->sql_init_socket)(sqlsocket, inst->config);
 	if (rcode == 0) {
-		radlog(L_DBG, "rlm_sql (%s): Connected new DB handle, #%d",
+		radlog(L_INFO, "rlm_sql (%s): Connected new DB handle, #%d",
 		       inst->config->xlat_name, sqlsocket->id);
 		sqlsocket->state = sockconnected;
 		if (inst->config->lifetime) time(&sqlsocket->connected);
@@ -166,7 +166,7 @@ void sql_poolfree(SQL_INST * inst)
  *************************************************************************/
 int sql_close_socket(SQL_INST *inst, SQLSOCK * sqlsocket)
 {
-	radlog(L_DBG, "rlm_sql (%s): Closing sqlsocket %d",
+	radlog(L_INFO, "rlm_sql (%s): Closing sqlsocket %d",
 	       inst->config->xlat_name, sqlsocket->id);
 	if (sqlsocket->state == sockconnected) {
 		(inst->module->sql_close)(sqlsocket, inst->config);
@@ -226,6 +226,7 @@ SQLSOCK * sql_get_socket(SQL_INST * inst)
 		 */
 		if (inst->config->lifetime && (cur->state == sockconnected) &&
 		    ((cur->connected + inst->config->lifetime) < now)) {
+			DEBUG2("Closing socket %d as its lifetime has been exceeded", cur->id);
 			(inst->module->sql_close)(cur, inst->config);
 			cur->state = sockunconnected;
 			goto reconnect;
@@ -237,6 +238,7 @@ SQLSOCK * sql_get_socket(SQL_INST * inst)
 		 */
 		if (inst->config->max_queries && (cur->state == sockconnected) &&
 		    (cur->queries >= inst->config->max_queries)) {
+			DEBUG2("Closing socket %d as its max_queries has been exceeded", cur->id);
 			(inst->module->sql_close)(cur, inst->config);
 			cur->state = sockunconnected;
 			goto reconnect;
@@ -257,7 +259,7 @@ SQLSOCK * sql_get_socket(SQL_INST * inst)
 
 		/* if we still aren't connected, ignore this handle */
 		if (cur->state == sockunconnected) {
-			radlog(L_DBG, "rlm_sql (%s): Ignoring unconnected handle %d..", inst->config->xlat_name, cur->id);
+			DEBUG("rlm_sql (%s): Ignoring unconnected handle %d..", inst->config->xlat_name, cur->id);
 		        unconnected++;
 #ifdef HAVE_PTHREAD_H
 			pthread_mutex_unlock(&cur->mutex);
@@ -266,10 +268,10 @@ SQLSOCK * sql_get_socket(SQL_INST * inst)
 		}
 
 		/* should be connected, grab it */
-		radlog(L_DBG, "rlm_sql (%s): Reserving sql socket id: %d", inst->config->xlat_name, cur->id);
+		DEBUG("rlm_sql (%s): Reserving sql socket id: %d", inst->config->xlat_name, cur->id);
 
 		if (unconnected != 0 || tried_to_connect != 0) {
-			radlog(L_INFO, "rlm_sql (%s): got socket %d after skipping %d unconnected handles, tried to reconnect %d though", inst->config->xlat_name, cur->id, unconnected, tried_to_connect);
+			DEBUG("rlm_sql (%s): got socket %d after skipping %d unconnected handles, tried to reconnect %d though", inst->config->xlat_name, cur->id, unconnected, tried_to_connect);
 		}
 
 		/*
@@ -511,7 +513,11 @@ int rlm_sql_query(SQLSOCK *sqlsocket, SQL_INST *inst, char *query)
 		return -1;
 	}
 
-	ret = (inst->module->sql_query)(sqlsocket, inst->config, query);
+	if (sqlsocket->conn) {
+		ret = (inst->module->sql_query)(sqlsocket, inst->config, query);
+	} else {
+		ret = SQL_DOWN;
+	}
 
 	if (ret == SQL_DOWN) {
 	        /* close the socket that failed */
@@ -556,7 +562,12 @@ int rlm_sql_select_query(SQLSOCK *sqlsocket, SQL_INST *inst, char *query)
 		return -1;
 	}
 
-	ret = (inst->module->sql_select_query)(sqlsocket, inst->config, query);
+	if (sqlsocket->conn) {
+		ret = (inst->module->sql_select_query)(sqlsocket, inst->config,
+						       query);
+	} else {
+		ret = SQL_DOWN;
+	}
 
 	if (ret == SQL_DOWN) {
 	        /* close the socket that failed */
@@ -595,13 +606,6 @@ int sql_getvpdata(SQL_INST * inst, SQLSOCK * sqlsocket, VALUE_PAIR **pair, char 
 {
 	SQL_ROW row;
 	int     rows = 0;
-
-	/*
-	 *	If there's no query, return an error.
-	 */
-	if (!query || !*query) {
-		return -1;
-	}
 
 	if (rlm_sql_select_query(sqlsocket, inst, query)) {
 		radlog(L_ERR, "rlm_sql_getvpdata: database query error");
