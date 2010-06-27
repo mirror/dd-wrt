@@ -1255,6 +1255,10 @@ service.pptpd_encry="MPPE šifriranje";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
+service.dns1="DNS1";
+service.dns2="DNS2";
+service.wins1="WINS1";
+service.wins2="WINS2";
 
 //rflow.webservices
 service.rflow_legend="RFlow / MACupd";
@@ -1269,12 +1273,13 @@ service.pppoe_srv="Posredovanje";
 service.pppoesrv_legend="PPPoE strežnik";
 service.pppoesrv_srv="Demon RP-PPPoE strežnik";
 service.pppoesrv_srvopt="RP-PPPoE strežnik: možnosti";
-service.pppoesrv_compr="kompresija";
+service.pppoesrv_compr="Kompresija";
 service.pppoesrv_remoteaddr="Oddaljeni začetni IP";
 service.pppoesrv_remotenet="IP oddaljene mreže";
 service.pppoesrv_remotemask="Maska oddaljene mreže";
 service.pppoesrv_lcpei="LCP Echo interval";
 service.pppoesrv_lcpef="LCP Echo neuspeh";
+service.pppoesrv_limit="Meja seje po MACu"
 service.pppoesrv_idlet="Nedejavni čas";
 service.pppoesrv_auth="Overjanje";
 service.pppoesrv_radip="Radius strežnikov IP";
@@ -2035,6 +2040,11 @@ wl_basic.ofdm_weak_det="Šibko zaznavanje OFDM";
 wl_basic.radar="Zaznavanje radarja";
 wl_basic.mtikie="Združljivojst z MTik";
 wl_basic.csma="Zaznavanje nosilca";
+wl_basic.if_label="Označba (opcijsko)";
+wl_basic.if_info="Info (opcijsko)";
+wl_basic.advanced_options="Napredne nastavitve";
+wl_basic.rate_control="Algoritem nadzora hitrosti";
+
 //help container
 
 hwl_basic.right2="Če želite onemogočiti dostop odjemalcem G, izberite <em>Samo-B</em> način. Če želite izključiti brezžično omrežje, izberite <em>Onemogoči</em>.";
