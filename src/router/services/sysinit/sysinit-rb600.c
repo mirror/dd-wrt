@@ -114,10 +114,10 @@ void start_sysinit(void)
 	uname(&name);
 
 	//for extension board
-	insmod("via-rhine");
-	insmod("tulip");
 	insmod("atl1e"); //rb800 only as it seems
 	insmod("gianfar_driver"); //rb800 only as it seems
+	insmod("via-rhine");
+	insmod("tulip");
 	struct ifreq ifr;
 	int s;
 
