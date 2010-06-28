@@ -889,7 +889,7 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"sample\\\" %s >Sample</option>\");\n",
 			  nvram_match("rate_control",
-				      "minstrel") ? "selected=\\\"selected\\\""
+				      "sample") ? "selected=\\\"selected\\\""
 			  : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
