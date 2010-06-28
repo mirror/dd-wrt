@@ -875,10 +875,11 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control)</script></div>\n");
-		websWrite(wp, "<select name=\"rate_control\">\n");
+			      "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></legend>\n");
+		websWrite(wp, "     	<div class=\"setting\">\n");
+		websWrite(wp, "           <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></div>\n");
+		websWrite(wp, "             <select name=\"rate_control\">\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp,
