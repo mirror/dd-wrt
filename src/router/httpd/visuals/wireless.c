@@ -872,25 +872,28 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	if (showrate) {
-		char *rate_control = "rate_control";
 		websWrite(wp,
-			  "  <h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
-		websWrite(wp, "    <fieldset>\n");
+			  "<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
+		websWrite(wp, "<fieldset>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
-			  "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script>\n");
-		websWrite(wp, " 	<div class=\"setting\">\n");
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control)</script></div>\n");
+		websWrite(wp, "<select name=\"rate_control\">\n");
 		websWrite(wp,
-			  "          <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control)</script></div>\n");
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp,
-			  "            <input class=\"spaceradio\" type=\"radio\" value=\"minstrel\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  nvram_selmatch(wp, rate_control,
-					 "minstrel") ? "checked" : "");
+			  "document.write(\"<option value=\\\"minstrel\\\" %s >Minstrel EWMA</option>\");\n",
+			  nvram_match("rate_control",
+				      "minstrel") ? "selected=\\\"selected\\\""
+			  : "");
 		websWrite(wp,
-			  "            <input class=\"spaceradio\" type=\"radio\" value=\"sample\" name=\"rate_control\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  nvram_selmatch(wp, rate_control,
-					 "sample") ? "checked" : "");
-		websWrite(wp, "       </div>\n");
-		websWrite(wp, "  </fieldset>\n");
+			  "document.write(\"<option value=\\\"sample\\\" %s >Sample</option>\");\n",
+			  nvram_match("rate_control",
+				      "minstrel") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</fieldset>\n");
 	}
 #endif
 }
