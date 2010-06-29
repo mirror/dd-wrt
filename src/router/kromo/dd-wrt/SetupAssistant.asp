@@ -759,6 +759,7 @@ function submitSavePrevButtons() {
 									<div class="label"><% tran("aoss.enable"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% sas_nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% sas_nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
+								</div>
 							</fieldset>
 
 							<br style="<% sas_stage_visible_css("4"); %>"/>
