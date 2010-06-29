@@ -193,6 +193,10 @@ void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 
 }
 
+#ifdef HAVE_BUFFALO
+extern void *getUEnv(char *name);
+#endif
+
 void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 {
 
@@ -234,10 +238,21 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 				 "heartbeat") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_3G
+#ifdef HAVE_BUFFALO
+	char *region = getUEnv("region");
+	if (region == NULL) {
+		region = "US";
+	}
+fprintf( stderr, "[REGION CHECK FOR 3G] %s\n", region );
+	if (strcmp(region, "US")) {
+#endif
 	websWrite(wp,
 		  "<option value=\"3g\" %s >3G/UMTS</option>\n",
 		  nvram_selmatch(wp, "wan_proto",
 				 "3g") ? "selected=\"selected\"" : "");
+#ifdef HAVE_BUFFALO
+	}
+#endif
 #endif
 
 	return;
