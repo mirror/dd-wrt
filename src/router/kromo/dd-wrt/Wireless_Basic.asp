@@ -307,7 +307,6 @@ addEvent(window, "unload", function() {
 				  	<% show_wireless(); %>
 					<% show_wireless_advanced(); %>
 				  	
-				  	<br />
 				  	<div class="submitFooter">
 				  		<script type="text/javascript">
 				  		//<![CDATA[

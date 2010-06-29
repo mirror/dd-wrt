@@ -1949,8 +1949,11 @@ fprintf( stderr, "[USB] checking...\n" );
 			insmod("usblp");
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-		fprintf(stderr, "[USB] check for drives....\n");
-		usb_add_ufd(); 
+		
+		if( nvram_match("usb_automnt", "1") ) {
+			printf(stderr, "[USB] check for drives....\n");
+			usb_add_ufd();
+		}
 	} else {
 		led_control(LED_USB, LED_OFF);
 	}
