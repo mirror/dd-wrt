@@ -1031,6 +1031,11 @@ static void handle_dhcp_release(void)
 
 }
 
+static void usbdrivers(void)
+{
+	startstop("drivers"); //stop is not yet implemented but we dont care about yet
+}
+
 #ifdef HAVE_EOP_TUNNEL
 static void handle_eop(void)
 {
@@ -1089,6 +1094,7 @@ static struct SERVICES services_def[] = {
 	{"wireless", handle_wireless},
 	{"wireless_2", handle_wireless_2},
 	{"dhcp_release", handle_dhcp_release},
+	{"usbdrivers", handle_usbdrivers},
 #ifdef HAVE_EOP_TUNNEL
 	{"eop", handle_eop},
 #endif
