@@ -585,6 +585,34 @@ void configure_single_11n(int count)
 	setsysctrl(wif, "maxvaps", vapcount);
 
 	char primary[32] = { 0 };
+	apm = nvram_default_get(wl, "ap");
+
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
+
+		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
+		    || !strcmp(apm, "sta")) {
+			if (vif)
+				sysprintf
+				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+				     dev, wif);
+			else
+				sysprintf
+				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta",
+				     dev, wif);
+
+		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
+			sysprintf
+			    ("80211n_wlanconfig %s create wlandev %s wlanmode ap",
+			     dev, wif);
+		else
+			sysprintf
+			    ("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
+			     dev, wif);
+
+		if (strlen(primary) == 0)
+			strcpy(primary, dev);
+	}
+
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
 		sprintf(mode, "%s_mode", var);
@@ -620,28 +648,31 @@ void configure_single_11n(int count)
 	// create original primary interface
 	apm = nvram_default_get(wl, "ap");
 
-	if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
-	    || !strcmp(apm, "sta")) {
-		if (vif)
+	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
+
+		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
+		    || !strcmp(apm, "sta")) {
+			if (vif)
+				sysprintf
+				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+				     dev, wif);
+			else
+				sysprintf
+				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta",
+				     dev, wif);
+
+		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
 			sysprintf
-			    ("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+			    ("80211n_wlanconfig %s create wlandev %s wlanmode ap",
 			     dev, wif);
 		else
 			sysprintf
-			    ("80211n_wlanconfig %s create wlandev %s wlanmode sta",
+			    ("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
 			     dev, wif);
 
-	} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-		sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode ap",
-			  dev, wif);
-	else
-		sysprintf
-		    ("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
-		     dev, wif);
-
-	if (strlen(primary) == 0)
-		strcpy(primary, dev);
-
+		if (strlen(primary) == 0)
+			strcpy(primary, dev);
+	}
 #if 0
 #endif
 	cprintf("detect maxpower\n");
@@ -704,6 +735,7 @@ void configure_single_11n(int count)
 			setsysctrl(wif, "dynack_count", 20);
 		}
 	}
+
 #if 0
 	char wl_intmit[32];
 	char wl_noise_immunity[32];
@@ -768,6 +800,7 @@ void configure_single_11n(int count)
 		sysprintf("iwpriv %s channelshift 0", dev);
 		break;
 	}
+
 	if (!strcmp(apm, "wdssta") || !strcmp(apm, "wdsap"))
 		sysprintf("iwpriv %s wds 1", dev);
 
