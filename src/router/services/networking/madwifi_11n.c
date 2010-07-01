@@ -644,7 +644,7 @@ void configure_single_11n(int count)
 			nvram_set(vathmac, vmacaddr);
 
 		}
-		}
+	}
 	// create original primary interface
 	apm = nvram_default_get(wl, "ap");
 
