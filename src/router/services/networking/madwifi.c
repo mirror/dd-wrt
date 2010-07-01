@@ -1099,8 +1099,35 @@ static void configure_single(int count)
 		vapcount = countvaps;
 
 	setsysctrl(wif, "maxvaps", vapcount);
-
 	char primary[32] = { 0 };
+	// create original primary interface
+	apm = nvram_default_get(wl, "ap");
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
+
+		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
+		    || !strcmp(apm, "sta")) {
+			if (vif)
+				sysprintf
+				    ("wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+				     dev, wif);
+			else
+				sysprintf
+				    ("wlanconfig %s create wlandev %s wlanmode sta",
+				     dev, wif);
+
+		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
+			sysprintf("wlanconfig %s create wlandev %s wlanmode ap",
+				  dev, wif);
+		else
+			sysprintf
+			    ("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
+			     dev, wif);
+
+		if (strlen(primary) == 0)
+			strcpy(primary, dev);
+
+	}
+
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
 		sprintf(mode, "%s_mode", var);
@@ -1133,31 +1160,30 @@ static void configure_single(int count)
 
 		}
 		}
-	// create original primary interface
-	apm = nvram_default_get(wl, "ap");
 
-	if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
-	    || !strcmp(apm, "sta")) {
-		if (vif)
-			sysprintf
-			    ("wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
-			     dev, wif);
+	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
+		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
+		    || !strcmp(apm, "sta")) {
+			if (vif)
+				sysprintf
+				    ("wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+				     dev, wif);
+			else
+				sysprintf
+				    ("wlanconfig %s create wlandev %s wlanmode sta",
+				     dev, wif);
+
+		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
+			sysprintf("wlanconfig %s create wlandev %s wlanmode ap",
+				  dev, wif);
 		else
 			sysprintf
-			    ("wlanconfig %s create wlandev %s wlanmode sta",
+			    ("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
 			     dev, wif);
 
-	} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-		sysprintf("wlanconfig %s create wlandev %s wlanmode ap", dev,
-			  wif);
-	else
-		sysprintf
-		    ("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
-		     dev, wif);
-
-	if (strlen(primary) == 0)
-		strcpy(primary, dev);
-
+		if (strlen(primary) == 0)
+			strcpy(primary, dev);
+	}
 #if 0
 #endif
 	cprintf("detect maxpower\n");
@@ -1653,14 +1679,12 @@ static void configure_single(int count)
 	sprintf(inact, "%s_inact", dev);
 #ifdef HAVE_MAKSAT
 	sysprintf("iwpriv %s inact_tick %s", dev,
-		nvram_default_get(inact_tick, "1"));
-	sysprintf("iwpriv %s inact %s", dev,
-		nvram_default_get(inact, "15"));
+		  nvram_default_get(inact_tick, "1"));
+	sysprintf("iwpriv %s inact %s", dev, nvram_default_get(inact, "15"));
 #else
 	sysprintf("iwpriv %s inact_tick %s", dev,
-		nvram_default_get(inact_tick, "15"));
-	sysprintf("iwpriv %s inact %s", dev,
-		nvram_default_get(inact, "300"));
+		  nvram_default_get(inact_tick, "15"));
+	sysprintf("iwpriv %s inact %s", dev, nvram_default_get(inact, "300"));
 #endif
 
 	if (strcmp(apm, "sta")) {
