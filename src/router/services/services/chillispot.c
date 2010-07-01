@@ -356,6 +356,10 @@ void hotspotsys_config(void)
 		"uamallowed 62.249.232.74,155.136.68.77,155.136.66.34,66.4.128.0/17,66.211.128.0/17,66.235.128.0/17\n");
 	fprintf(fp,
 		"uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
+	fprintf(fp,
+		"uamallowed 82.199.90.136/29, 82.199.90.160/27, 91.212.42.0/24\n");
+	fprintf(fp,
+		"uamallowed adyen.com\n");
 	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp,
 		"uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
