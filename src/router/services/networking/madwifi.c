@@ -1159,7 +1159,7 @@ static void configure_single(int count)
 			nvram_set(vathmac, vmacaddr);
 
 		}
-		}
+	}
 
 	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
 		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
