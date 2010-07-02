@@ -589,28 +589,11 @@ void configure_single_11n(int count)
 
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
 
-		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
-		    || !strcmp(apm, "sta")) {
-			if (vif)
-				sysprintf
-				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
-				     dev, wif);
-			else
-				sysprintf
-				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta",
-				     dev, wif);
+		sysprintf
+		    ("80211n_wlanconfig %s create wlandev %s wlanmode ap",
+		     dev, wif);
 
-		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-			sysprintf
-			    ("80211n_wlanconfig %s create wlandev %s wlanmode ap",
-			     dev, wif);
-		else
-			sysprintf
-			    ("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
-			     dev, wif);
-
-		if (strlen(primary) == 0)
-			strcpy(primary, dev);
+		strcpy(primary, dev);
 	}
 
 	if (vifs != NULL)
@@ -644,7 +627,7 @@ void configure_single_11n(int count)
 			nvram_set(vathmac, vmacaddr);
 
 		}
-	}
+		}
 	// create original primary interface
 	apm = nvram_default_get(wl, "ap");
 

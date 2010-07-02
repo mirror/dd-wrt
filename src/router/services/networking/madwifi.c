@@ -1104,27 +1104,9 @@ static void configure_single(int count)
 	apm = nvram_default_get(wl, "ap");
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
 
-		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
-		    || !strcmp(apm, "sta")) {
-			if (vif)
-				sysprintf
-				    ("wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
-				     dev, wif);
-			else
-				sysprintf
-				    ("wlanconfig %s create wlandev %s wlanmode sta",
-				     dev, wif);
-
-		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-			sysprintf("wlanconfig %s create wlandev %s wlanmode ap",
-				  dev, wif);
-		else
-			sysprintf
-			    ("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
-			     dev, wif);
-
-		if (strlen(primary) == 0)
-			strcpy(primary, dev);
+		sysprintf("wlanconfig %s create wlandev %s wlanmode ap",
+			  dev, wif);
+		strcpy(primary, dev);
 
 	}
 
@@ -1159,7 +1141,7 @@ static void configure_single(int count)
 			nvram_set(vathmac, vmacaddr);
 
 		}
-	}
+		}
 
 	if (strcmp(apm, "ap") && strcmp(apm, "wdsap")) {
 		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
