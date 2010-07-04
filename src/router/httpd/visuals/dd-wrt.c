@@ -2041,7 +2041,7 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 			  "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n",
 			  vlan_name);
 		//priority
-		sprintf(vlan_name, "vlanprio%d", count);
+		sprintf(vlan_name, "vlanprio%d", i);
 		websWrite(wp, "&nbsp;Prio&nbsp;");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
 		websWrite(wp,
