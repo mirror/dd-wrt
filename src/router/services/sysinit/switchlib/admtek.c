@@ -143,6 +143,10 @@
 #define ADM_REV_NUM_MASK                           0x000f
 #define ADM_REV_NUM_SHIFT                               0
 
+#if defined(HAVE_ADMTEKNESTEDVLAN) 
+#define ADM_SW_SIZE_SEL		(3 << 7)
+#endif
+
 #define ADM_SW_MAC_CLONE_EN     0x10
 #define ADM_SW_VLAN_MODE_SEL    0x20
 
@@ -454,8 +458,14 @@ void config_vlan(void)
 	 * Put the chip in 802.1q mode 
 	 */
 	phyAddr = ADM_SW_VLAN_MODE_REG / ADM_PHY_BASE_REG_NUM;
+
+#if defined(HAVE_ADMTEKNESTEDVLAN) 
+	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG,
+	       (ADM_SW_MAC_CLONE_EN | ADM_SW_SIZE_SEL));
+#else
 	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG,
 	       (ADM_SW_MAC_CLONE_EN | ADM_SW_VLAN_MODE_SEL));
+#endif
 
 }
 
