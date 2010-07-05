@@ -672,6 +672,9 @@ endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS += -DHAVE_LSX
 endif
+ifeq ($(CONFIG_WZRG300NH),y)
+CFLAGS += -DHAVE_WZRG300NH
+endif
 ifeq ($(CONFIG_DANUBE),y)
 CFLAGS += -DHAVE_DANUBE
 endif
