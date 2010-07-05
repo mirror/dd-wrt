@@ -25,6 +25,18 @@
 	<input type="checkbox" name="_wan_pin_unmask" value="0" onclick="setElementMask('wan_pin', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
+	<div class="label"><% tran("share.mode_3g"); %></div>
+	<select name="wan_conmode" >
+		<option value="0" <% nvram_selmatch("wan_conmode", "0", "selected"); %> ><% tran("share.mode_3g_auto"); %></option>
+		<option value="1" <% nvram_selmatch("wan_conmode", "1", "selected"); %> ><% tran("share.mode_3g_3g"); %></option>
+		<option value="2" <% nvram_selmatch("wan_conmode", "2", "selected"); %> ><% tran("share.mode_3g_2g"); %></option>
+		<option value="2" <% nvram_selmatch("wan_conmode", "3", "selected"); %> ><% tran("share.mode_3g_prefer_3g"); %></option>
+		<option value="2" <% nvram_selmatch("wan_conmode", "4", "selected"); %> ><% tran("share.mode_3g_prefer_2g"); %></option>
+		<option value="2" <% nvram_selmatch("wan_conmode", "5", "selected"); %> ><% tran("share.mode_3g_3g2g"); %></option>
+	</select>
+</div>
+
+<div class="setting">
 		<div class="label"><% tran("idx_h.reconnect"); %></div>
 		<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% nvram_checked("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% nvram_checked("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>

@@ -9,6 +9,13 @@ lang_charset.set="iso-8859-1";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Wähl Anweisung";
+share.mode_3g="Verbindungs Typ";
+share.mode_3g_auto="Auto 3g/2G";
+share.mode_3g_3g="Erzwinge 3g";
+share.mode_3g_2g="Erzwinge 2g";
+share.mode_3g_prefer_3g="Bevorzuge 3g";
+share.mode_prefer_2g="Bevorzuge 2g";
+share.mode_3g_3g2g="3g zuerst bei Fehler 2g";
 share.firmware="Firmware";
 share.time="Zeit";
 share.interipaddr="WAN-IP-Addresse";
@@ -421,6 +428,7 @@ bmenu.statuWLAN="WLAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
 bmenu.statuActivate="Aktivieren";
+bmenu.statuGpio="GPIO E/A";
 
 // **************************************************************** Alive.asp **********************************************************************//
 
@@ -1781,6 +1789,12 @@ radius.label8="Umgehen, wenn Server nicht verfügbar";
 radius.label13="Radius Acct Server IP";
 radius.label14="Radius Acct Server Port";
 radius.label17="Radius Acct gemeinsames Passwort";
+
+// ** Gpio.asp
+gpio.titl="Gpio Eingaenge / Ausgaenge";
+gpio.h2="Gpio Eingaenge / Ausgaenge";
+gpio.outputlegend="Gpio Ausgaenge";
+gpio.inputlegend="Gpio Eingaenge";
 
 
 

@@ -10,6 +10,13 @@ var share = new Object();
 share.apn="APN";
 share.pin="PIN";
 share.dial="Dial String";
+share.mode_3g="Connection type";
+share.mode_3g_auto="Auto 3g/2G";
+share.mode_3g_3g="Force 3g";
+share.mode_3g_2g="Force 2g";
+share.mode_3g_prefer_3g="Prefer 3g";
+share.mode_prefer_2g="Prefer 2g";
+share.mode_3g_3g2g="3g first on error 2g";
 share.firmware="Firmware";
 share.time="Time";
 share.interipaddr="WAN IP Address";
@@ -452,6 +459,7 @@ bmenu.statuBand="Bandwidth";
 bmenu.statuSysInfo="Sys-Info";
 bmenu.statuActivate="Activate";
 bmenu.statuMyPage="My Page";
+bmenu.statuGpio="GPIO I/O";
 
 // ** Alive.asp **//
 var alive = new Object();
@@ -1858,6 +1866,13 @@ wl_wimax.width="Channel Width";
 wl_wimax.duplex="Duplex Mode";
 wl_wimax.mode="Operation Mode";
 wl_wimax.mac="Subscriber MAC Address";
+
+// ** Gpio **//
+var gpio = new Object();
+gpio.titl="Gpio Inputs / Outputs";
+gpio.h2="Gpio Inputs / Outputs";
+gpio.oplegend="Gpio Outputs";
+gpio.iplegend="Gpio Inputs";
 
 // ** FreeRadius.asp **//
 var freeradius = new Object();
