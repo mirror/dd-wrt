@@ -71,8 +71,8 @@ void aoss_save(webs_t wp)
 	}
 	if (strlen(nvram_safe_get("aoss_vifs")))
 	    {
-	    nvram_set("ath0_vifs","");
-	    nvram_set("aoss_vifs","");
+	    nvram_unset("ath0_vifs");
+	    nvram_unset("aoss_vifs");
 	    nvram_commit();
 	    }
 	// all other vars
