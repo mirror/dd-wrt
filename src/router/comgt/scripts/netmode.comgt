@@ -1,0 +1,50 @@
+# dial given number
+opengt
+ set com 115200n81
+ set senddelay 0.02
+ waitquiet 1 0.2
+ flash 0.1
+
+:start
+ print "Setting Connection mode '"+$env("COMGTNM")+"'\n"
+# sierra 
+ if $env("COMGNMVARIANT") = "1" goto variant1
+# huawei
+ if $env("COMGNMVARIANT") = "2" goto variant2
+ print "Variant not set / unknown '"+$env("COMGNMVARIANT")+"'\n"
+ exit 1
+
+ waitfor 15 "OK","ERR","ERROR"
+ if % = 0 goto continue
+ if % = 1 goto continue
+ if % = 2 goto senderror
+ if % = 3 goto senderror
+
+ :variant1
+ print "Variant #1\n"
+ let $a=""
+ if $env("COMGTNM") = "0" let $a="AT!SELRAT=0"
+ if $env("COMGTNM") = "1" let $a="AT!SELRAT=1"
+ if $env("COMGTNM") = "2" let $a="AT!SELRAT=2"
+ if $env("COMGTNM") = "3" let $a="AT!SELRAT=3"
+ if $env("COMGTNM") = "4" let $a="AT!SELRAT=4"
+ if $a = "" goto unkownmode
+ send $a
+ send "^m"
+ waitfor 5 "OK","ERR","ERROR"
+ if % = 0 goto continue
+ if % = 1 goto senderror
+ if % = 2 goto senderror
+ goto continue
+
+:unknownmode
+ print "unknown mode"
+ 
+:senderror
+ print "Error sending '"
+ print $a
+ print "'\n"
+ exit 1
+
+:continue
+ exit 0
