@@ -2254,4 +2254,9 @@ static void unset_nvram(void)
 	// nvram_safe_unset("wl_ap_ip");
 #endif
 
+#ifdef HAVE_3G
+	// make sure we dial in mode 5 with 3g first!
+	nvram_unset ("3gnetmodetoggle");
+#endif
+
 }

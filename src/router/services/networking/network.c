@@ -2807,6 +2807,51 @@ void start_wan(int status)
 				sysprintf
 				    ("export COMGTPIN=%s;comgt PIN -d %s\n",
 				     nvram_safe_get("wan_pin"), controldevice);
+			// set netmode, even if it is auto, should be set every time, the stick might save it
+			// some sticks, don't save it ;-)
+			if (strlen(nvram_safe_get("3gnmvariant"))) {
+				int netmode;
+				int netmodetoggle;
+				if (!strlen(nvram_safe_get("wan_conmode")))
+					nvram_set("wan_conmode","0");
+				netmode=atoi(nvram_safe_get("wan_conmode"));
+				if (netmode == 5) {
+					if (strlen(nvram_safe_get("3gnetmodetoggle"))) {
+						netmodetoggle=atoi(nvram_safe_get("3gnetmodetoggle"));
+					if (netmodetoggle == 1) {
+						// 2g
+						netmode=2;
+						nvram_set ("3gnetmodetoggle","0");
+						}
+					else{
+						// auto
+						netmode=0;
+						nvram_set ("3gnetmodetoggle","1");
+						}
+					}
+					else{
+						// auto
+						netmode=0;
+						nvram_set ("3gnetmodetoggle","1");
+						}
+					}
+				sysprintf
+					("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out\n",
+					nvram_safe_get("3gnmvariant"), netmode, controldevice);
+				printf
+					("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"),netmode);
+			}
+
+			// Wait for device to attach to the provider network
+			int retcgatt=0;
+			retcgatt=sysprintf
+			    ("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1\n",
+				     controldevice);
+			// if (retcgatt == 0) 
+					// {
+					// nvram_set("3g_fastdial", "1");
+					// return (5);
+					// }
 			if (strlen(nvram_safe_get("wan_apn")))
 				if (!nvram_match("wan_dial", "2"))
 					sysprintf
@@ -2820,8 +2865,6 @@ void start_wan(int status)
 			fprintf(fp, "noipdefault\n");
 			fprintf(fp, "noauth\n");
 			fprintf(fp, "ipcp-max-failure 30\n");
-			fprintf(fp, "lcp-echo-interval 10\n");
-			fprintf(fp, "lcp-echo-failure 3\n");
 			if (nvram_match("mtu_enable", "1")) {
 				if (atoi(nvram_safe_get("wan_mtu")) > 0) {
 					fprintf(fp, "mtu %s\n",
