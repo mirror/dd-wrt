@@ -30,9 +30,9 @@
 		<option value="0" <% nvram_selmatch("wan_conmode", "0", "selected"); %> ><% tran("share.mode_3g_auto"); %></option>
 		<option value="1" <% nvram_selmatch("wan_conmode", "1", "selected"); %> ><% tran("share.mode_3g_3g"); %></option>
 		<option value="2" <% nvram_selmatch("wan_conmode", "2", "selected"); %> ><% tran("share.mode_3g_2g"); %></option>
-		<option value="2" <% nvram_selmatch("wan_conmode", "3", "selected"); %> ><% tran("share.mode_3g_prefer_3g"); %></option>
-		<option value="2" <% nvram_selmatch("wan_conmode", "4", "selected"); %> ><% tran("share.mode_3g_prefer_2g"); %></option>
-		<option value="2" <% nvram_selmatch("wan_conmode", "5", "selected"); %> ><% tran("share.mode_3g_3g2g"); %></option>
+		<option value="3" <% nvram_selmatch("wan_conmode", "3", "selected"); %> ><% tran("share.mode_3g_prefer_3g"); %></option>
+		<option value="4" <% nvram_selmatch("wan_conmode", "4", "selected"); %> ><% tran("share.mode_3g_prefer_2g"); %></option>
+		<option value="5" <% nvram_selmatch("wan_conmode", "5", "selected"); %> ><% tran("share.mode_3g_3g2g"); %></option>
 	</select>
 </div>
 
