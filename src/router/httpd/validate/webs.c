@@ -1825,6 +1825,7 @@ void remove_vifs_single(char *prefix)
 	    {
 	    nvram_set("ath0_vifs","");
 	    nvram_set("aoss_vifs","");
+	    nvram_commit();
 	    }
 #endif
 }

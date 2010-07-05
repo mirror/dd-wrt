@@ -73,6 +73,7 @@ void aoss_save(webs_t wp)
 	    {
 	    nvram_set("ath0_vifs","");
 	    nvram_set("aoss_vifs","");
+	    nvram_commit();
 	    }
 	// all other vars
 	//validate_cgi(wp);
