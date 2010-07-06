@@ -37,8 +37,8 @@ void start_aoss(void)
 		stop_aoss();
 		return;
 	}
-
-	killall("aoss", SIGTERM);
+	if (pidof("aoss") > 0)
+	    return;
 	ret = eval("aoss", "-i", nvram_safe_get("lan_ifname"), "-m", "ap");
 	dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
 	cprintf("done\n");
