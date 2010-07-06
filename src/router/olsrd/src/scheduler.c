@@ -722,8 +722,17 @@ olsr_wallclock_string(void)
 
   gettimeofday(&now, NULL);
 
+  if (now.tv_sec>(60*60*24))
   sec = (int)now.tv_sec + olsr_get_timezone();
-  usec = (int)now.tv_usec;
+  else
+  sec = (int)now.tv_sec;
+  
+  usec = now.tv_usec;
+  
+  if (sec<0)
+    sec=0;
+  if (usec<0)
+    usec=0;
 
   snprintf(buf, sizeof(buf), "%02d:%02d:%02d.%06d", (sec % 86400) / 3600, (sec % 3600) / 60, sec % 60, usec);
 
@@ -746,6 +755,8 @@ olsr_clock_string(uint32_t clk)
   /* On most systems a clocktick is a 10ms quantity. */
   unsigned int msec = clk % 1000;
   unsigned int sec = clk / 1000;
+  if ((long)sec<0)
+    sec = 0;
 
   snprintf(buf, sizeof(buf), "%02u:%02u:%02u.%03u", sec / 3600, (sec % 3600) / 60, (sec % 60), (msec % MSEC_PER_SEC));
 
