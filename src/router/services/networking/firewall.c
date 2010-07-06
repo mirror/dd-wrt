@@ -1512,6 +1512,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 					save2file
 					    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
 					     seq, log_drop);
+					save2file
+					    ("-A advgrp_%d -m layer7 --l7proto bt3 -j %s\n",
+					     seq, log_drop);
 #ifndef HAVE_MICRO
 //                                      save2file
 //                                          ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
@@ -1544,6 +1547,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto bt3 -j %s\n",
 		     seq, log_drop);
 #ifndef HAVE_MICRO
 //                                      save2file
