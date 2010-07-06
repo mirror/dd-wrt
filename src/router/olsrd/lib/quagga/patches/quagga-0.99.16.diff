@@ -1,0 +1,830 @@
+diff -Naur quagga-0.99.16/bgpd/bgp_vty.c quagga-0.99.16.patched/bgpd/bgp_vty.c
+--- quagga-0.99.16/bgpd/bgp_vty.c	2009-12-14 15:41:13.000000000 +0200
++++ quagga-0.99.16.patched/bgpd/bgp_vty.c	2010-03-12 18:12:28.000000000 +0200
+@@ -8228,8 +8228,14 @@
+ 	return ZEBRA_ROUTE_STATIC;
+       else if (strncmp (str, "r", 1) == 0)
+ 	return ZEBRA_ROUTE_RIP;
+-      else if (strncmp (str, "o", 1) == 0)
++      else if (strncmp (str, "os", 2) == 0)
+ 	return ZEBRA_ROUTE_OSPF;
++      else if (strncmp (str, "h", 1) == 0)
++	return ZEBRA_ROUTE_HSLS;
++      else if (strncmp (str, "ol", 2) == 0)
++	return ZEBRA_ROUTE_OLSR;
++      else if (strncmp (str, "b", 1) == 0)
++	return ZEBRA_ROUTE_BATMAN;
+     }
+   if (afi == AFI_IP6)
+     {
+@@ -8241,21 +8247,30 @@
+ 	return ZEBRA_ROUTE_STATIC;
+       else if (strncmp (str, "r", 1) == 0)
+ 	return ZEBRA_ROUTE_RIPNG;
+-      else if (strncmp (str, "o", 1) == 0)
++      else if (strncmp (str, "os", 2) == 0)
+ 	return ZEBRA_ROUTE_OSPF6;
++      else if (strncmp (str, "h", 1) == 0)
++	return ZEBRA_ROUTE_HSLS;
++      else if (strncmp (str, "ol", 2) == 0)
++	return ZEBRA_ROUTE_OLSR;
++      else if (strncmp (str, "b", 1) == 0)
++	return ZEBRA_ROUTE_BATMAN;
+     }
+   return 0;
+ }
+ 
+ DEFUN (bgp_redistribute_ipv4,
+        bgp_redistribute_ipv4_cmd,
+-       "redistribute (connected|kernel|ospf|rip|static)",
++       "redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman)",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+-       "Static routes\n")
++       "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n")
+ {
+   int type;
+ 
+@@ -8270,13 +8285,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv4_rmap,
+        bgp_redistribute_ipv4_rmap_cmd,
+-       "redistribute (connected|kernel|ospf|rip|static) route-map WORD",
++       "redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) route-map WORD",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n")
+ {
+@@ -8295,13 +8313,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv4_metric,
+        bgp_redistribute_ipv4_metric_cmd,
+-       "redistribute (connected|kernel|ospf|rip|static) metric <0-4294967295>",
++       "redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) metric <0-4294967295>",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n")
+ {
+@@ -8322,13 +8343,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv4_rmap_metric,
+        bgp_redistribute_ipv4_rmap_metric_cmd,
+-       "redistribute (connected|kernel|ospf|rip|static) route-map WORD metric <0-4294967295>",
++       "redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) route-map WORD metric <0-4294967295>",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n"
+        "Metric for redistributed routes\n"
+@@ -8352,13 +8376,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv4_metric_rmap,
+        bgp_redistribute_ipv4_metric_rmap_cmd,
+-       "redistribute (connected|kernel|ospf|rip|static) metric <0-4294967295> route-map WORD",
++       "redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) metric <0-4294967295> route-map WORD",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n"
+        "Route map reference\n"
+@@ -8382,14 +8409,17 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv4,
+        no_bgp_redistribute_ipv4_cmd,
+-       "no redistribute (connected|kernel|ospf|rip|static)",
++       "no redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman)",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+-       "Static routes\n")
++       "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n")
+ {
+   int type;
+ 
+@@ -8405,7 +8435,7 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv4_rmap,
+        no_bgp_redistribute_ipv4_rmap_cmd,
+-       "no redistribute (connected|kernel|ospf|rip|static) route-map WORD",
++       "no redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) route-map WORD",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8413,6 +8443,9 @@
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n")
+ {
+@@ -8431,7 +8464,7 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv4_metric,
+        no_bgp_redistribute_ipv4_metric_cmd,
+-       "no redistribute (connected|kernel|ospf|rip|static) metric <0-4294967295>",
++       "no redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) metric <0-4294967295>",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8439,6 +8472,9 @@
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n")
+ {
+@@ -8457,7 +8493,7 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv4_rmap_metric,
+        no_bgp_redistribute_ipv4_rmap_metric_cmd,
+-       "no redistribute (connected|kernel|ospf|rip|static) route-map WORD metric <0-4294967295>",
++       "no redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) route-map WORD metric <0-4294967295>",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8465,6 +8501,9 @@
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n"
+        "Metric for redistributed routes\n"
+@@ -8486,7 +8525,7 @@
+ 
+ ALIAS (no_bgp_redistribute_ipv4_rmap_metric,
+        no_bgp_redistribute_ipv4_metric_rmap_cmd,
+-       "no redistribute (connected|kernel|ospf|rip|static) metric <0-4294967295> route-map WORD",
++       "no redistribute (connected|kernel|ospf|rip|static|hsls|olsr|batman) metric <0-4294967295> route-map WORD",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8494,6 +8533,9 @@
+        "Open Shurtest Path First (OSPF)\n"
+        "Routing Information Protocol (RIP)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n"
+        "Route map reference\n"
+@@ -8502,13 +8544,16 @@
+ #ifdef HAVE_IPV6
+ DEFUN (bgp_redistribute_ipv6,
+        bgp_redistribute_ipv6_cmd,
+-       "redistribute (connected|kernel|ospf6|ripng|static)",
++       "redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman)",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+-       "Static routes\n")
++       "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n")
+ {
+   int type;
+ 
+@@ -8524,13 +8569,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv6_rmap,
+        bgp_redistribute_ipv6_rmap_cmd,
+-       "redistribute (connected|kernel|ospf6|ripng|static) route-map WORD",
++       "redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) route-map WORD",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n")
+ {
+@@ -8549,13 +8597,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv6_metric,
+        bgp_redistribute_ipv6_metric_cmd,
+-       "redistribute (connected|kernel|ospf6|ripng|static) metric <0-4294967295>",
++       "redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) metric <0-4294967295>",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n")
+ {
+@@ -8576,13 +8627,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv6_rmap_metric,
+        bgp_redistribute_ipv6_rmap_metric_cmd,
+-       "redistribute (connected|kernel|ospf6|ripng|static) route-map WORD metric <0-4294967295>",
++       "redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) route-map WORD metric <0-4294967295>",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n"
+        "Metric for redistributed routes\n"
+@@ -8606,13 +8660,16 @@
+ 
+ DEFUN (bgp_redistribute_ipv6_metric_rmap,
+        bgp_redistribute_ipv6_metric_rmap_cmd,
+-       "redistribute (connected|kernel|ospf6|ripng|static) metric <0-4294967295> route-map WORD",
++       "redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) metric <0-4294967295> route-map WORD",
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n"
+        "Route map reference\n"
+@@ -8636,14 +8693,17 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv6,
+        no_bgp_redistribute_ipv6_cmd,
+-       "no redistribute (connected|kernel|ospf6|ripng|static)",
++       "no redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman)",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+        "Kernel routes\n"
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+-       "Static routes\n")
++       "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n")
+ {
+   int type;
+ 
+@@ -8659,7 +8719,7 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv6_rmap,
+        no_bgp_redistribute_ipv6_rmap_cmd,
+-       "no redistribute (connected|kernel|ospf6|ripng|static) route-map WORD",
++       "no redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) route-map WORD",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8667,6 +8727,9 @@
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n")
+ {
+@@ -8685,7 +8748,7 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv6_metric,
+        no_bgp_redistribute_ipv6_metric_cmd,
+-       "no redistribute (connected|kernel|ospf6|ripng|static) metric <0-4294967295>",
++       "no redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) metric <0-4294967295>",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8693,6 +8756,9 @@
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n")
+ {
+@@ -8711,7 +8777,7 @@
+ 
+ DEFUN (no_bgp_redistribute_ipv6_rmap_metric,
+        no_bgp_redistribute_ipv6_rmap_metric_cmd,
+-       "no redistribute (connected|kernel|ospf6|ripng|static) route-map WORD metric <0-4294967295>",
++       "no redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) route-map WORD metric <0-4294967295>",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8719,6 +8785,9 @@
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Route map reference\n"
+        "Pointer to route-map entries\n"
+        "Metric for redistributed routes\n"
+@@ -8740,7 +8809,7 @@
+ 
+ ALIAS (no_bgp_redistribute_ipv6_rmap_metric,
+        no_bgp_redistribute_ipv6_metric_rmap_cmd,
+-       "no redistribute (connected|kernel|ospf6|ripng|static) metric <0-4294967295> route-map WORD",
++       "no redistribute (connected|kernel|ospf6|ripng|static|hsls|olsr|batman) metric <0-4294967295> route-map WORD",
+        NO_STR
+        "Redistribute information from another routing protocol\n"
+        "Connected\n"
+@@ -8748,6 +8817,9 @@
+        "Open Shurtest Path First (OSPFv3)\n"
+        "Routing Information Protocol (RIPng)\n"
+        "Static routes\n"
++       "Hazy-Sighted Link State Protocol (HSLS)\n"
++       "Optimized Link State Routing (OLSR)\n"
++       "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+        "Metric for redistributed routes\n"
+        "Default metric\n"
+        "Route map reference\n"
+diff -Naur quagga-0.99.16/lib/log.c quagga-0.99.16.patched/lib/log.c
+--- quagga-0.99.16/lib/log.c	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/lib/log.c	2010-03-12 18:12:28.000000000 +0200
+@@ -835,6 +835,8 @@
+   DESC_ENTRY	(ZEBRA_ROUTE_ISIS,	"isis",		'I' ),
+   DESC_ENTRY	(ZEBRA_ROUTE_BGP,	"bgp",		'B' ),
+   DESC_ENTRY	(ZEBRA_ROUTE_HSLS,	"hsls",		'H' ),
++  DESC_ENTRY	(ZEBRA_ROUTE_OLSR,	"olsr",		'o' ),
++  DESC_ENTRY	(ZEBRA_ROUTE_BATMAN,	"batman",	'b' ),
+ };
+ #undef DESC_ENTRY
+ 
+diff -Naur quagga-0.99.16/lib/route_types.txt quagga-0.99.16.patched/lib/route_types.txt
+--- quagga-0.99.16/lib/route_types.txt	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/lib/route_types.txt	2010-03-12 18:12:28.000000000 +0200
+@@ -51,13 +51,9 @@
+ ZEBRA_ROUTE_OSPF6,      ospf6,     ospf6d, 'O', 0, 1, "OSPF"
+ ZEBRA_ROUTE_ISIS,       isis,      isisd,  'I', 1, 1, "IS-IS"
+ ZEBRA_ROUTE_BGP,        bgp,       bgpd,   'B', 1, 1, "BGP"
+-# HSLS and OLSR both are AFI independent (so: 1, 1), however
+-# we want to disable for them for general Quagga distribution.
+-# This at least makes it trivial for users of these protocols
+-# to 'switch on' redist support (direct numeric entry remaining
+-# possible).
+-ZEBRA_ROUTE_HSLS,       hsls,      hslsd,  'H', 0, 0, "HSLS"
+-ZEBRA_ROUTE_OLSR,       olsr,      oslrd,  'o', 0, 0, "OLSR"
++ZEBRA_ROUTE_HSLS,       hsls,      hslsd,  'H', 1, 1, "HSLS"
++ZEBRA_ROUTE_OLSR,       olsr,      olsrd,  'o', 1, 1, "OLSR"
++ZEBRA_ROUTE_BATMAN,     batman,    batmand,'b', 1, 1, "BATMAN"
+ 
+ ## help strings
+ ZEBRA_ROUTE_SYSTEM, "Reserved route type, for internal use only"
+@@ -71,4 +67,5 @@
+ ZEBRA_ROUTE_ISIS,   "Intermediate System to Intermediate System (IS-IS)"
+ ZEBRA_ROUTE_BGP,    "Border Gateway Protocol (BGP)"
+ ZEBRA_ROUTE_HSLS,   "Hazy-Sighted Link State Protocol (HSLS)"
+-ZEBRA_ROUTE_OLSR,   "Optimised Link State Routing (OLSR)"
++ZEBRA_ROUTE_OLSR,   "Optimized Link State Routing (OLSR)"
++ZEBRA_ROUTE_BATMAN, "Better Approach to Mobile Ad-Hoc Networking (BATMAN)"
+diff -Naur quagga-0.99.16/lib/zebra.h quagga-0.99.16.patched/lib/zebra.h
+--- quagga-0.99.16/lib/zebra.h	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/lib/zebra.h	2010-03-12 18:12:28.000000000 +0200
+@@ -441,7 +441,9 @@
+ #define ZEBRA_ROUTE_ISIS                 8
+ #define ZEBRA_ROUTE_BGP                  9
+ #define ZEBRA_ROUTE_HSLS		 10
+-#define ZEBRA_ROUTE_MAX                  11
++#define ZEBRA_ROUTE_OLSR		 11
++#define ZEBRA_ROUTE_BATMAN		 12
++#define ZEBRA_ROUTE_MAX                  13
+ 
+ /* Note: whenever a new route-type or zserv-command is added the
+  * corresponding {command,route}_types[] table in lib/log.c MUST be
+diff -Naur quagga-0.99.16/ospf6d/ospf6_asbr.c quagga-0.99.16.patched/ospf6d/ospf6_asbr.c
+--- quagga-0.99.16/ospf6d/ospf6_asbr.c	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/ospf6d/ospf6_asbr.c	2010-03-12 18:12:28.000000000 +0200
+@@ -616,13 +616,16 @@
+ 
+ DEFUN (ospf6_redistribute,
+        ospf6_redistribute_cmd,
+-       "redistribute (static|kernel|connected|ripng|bgp)",
++       "redistribute (static|kernel|connected|ripng|bgp|hsls|olsr|batman)",
+        "Redistribute\n"
+        "Static route\n"
+        "Kernel route\n"
+        "Connected route\n"
+        "RIPng route\n"
+        "BGP route\n"
++       "HSLS route\n"
++       "OLSR route\n"
++       "BATMAN route\n"
+       )
+ {
+   int type = 0;
+@@ -637,6 +640,12 @@
+     type = ZEBRA_ROUTE_RIPNG;
+   else if (strncmp (argv[0], "bgp", 3) == 0)
+     type = ZEBRA_ROUTE_BGP;
++  else if (strncmp (argv[0], "h", 1) == 0)
++    type = ZEBRA_ROUTE_HSLS;
++  else if (strncmp (argv[0], "o", 1) == 0)
++    type = ZEBRA_ROUTE_OLSR;
++  else if (strncmp (argv[0], "ba", 2) == 0)
++    type = ZEBRA_ROUTE_BATMAN;
+ 
+   ospf6_asbr_redistribute_unset (type);
+   ospf6_asbr_routemap_unset (type);
+@@ -646,13 +655,16 @@
+ 
+ DEFUN (ospf6_redistribute_routemap,
+        ospf6_redistribute_routemap_cmd,
+-       "redistribute (static|kernel|connected|ripng|bgp) route-map WORD",
++       "redistribute (static|kernel|connected|ripng|bgp|hsls|olsr|batman) route-map WORD",
+        "Redistribute\n"
+        "Static routes\n"
+        "Kernel route\n"
+        "Connected route\n"
+        "RIPng route\n"
+        "BGP route\n"
++       "HSLS route\n"
++       "OLSR route\n"
++       "BATMAN route\n"
+        "Route map reference\n"
+        "Route map name\n"
+       )
+@@ -669,6 +681,12 @@
+     type = ZEBRA_ROUTE_RIPNG;
+   else if (strncmp (argv[0], "bgp", 3) == 0)
+     type = ZEBRA_ROUTE_BGP;
++  else if (strncmp (argv[0], "h", 1) == 0)
++    type = ZEBRA_ROUTE_HSLS;
++  else if (strncmp (argv[0], "o", 1) == 0)
++    type = ZEBRA_ROUTE_OLSR;
++  else if (strncmp (argv[0], "ba", 2) == 0)
++    type = ZEBRA_ROUTE_BATMAN;
+ 
+   ospf6_asbr_redistribute_unset (type);
+   ospf6_asbr_routemap_set (type, argv[1]);
+@@ -678,7 +696,7 @@
+ 
+ DEFUN (no_ospf6_redistribute,
+        no_ospf6_redistribute_cmd,
+-       "no redistribute (static|kernel|connected|ripng|bgp)",
++       "no redistribute (static|kernel|connected|ripng|bgp|hsls|olsr|batman)",
+        NO_STR
+        "Redistribute\n"
+        "Static route\n"
+@@ -686,6 +704,9 @@
+        "Connected route\n"
+        "RIPng route\n"
+        "BGP route\n"
++       "HSLS route\n"
++       "OLSR route\n"
++       "BATMAN route\n"
+       )
+ {
+   int type = 0;
+@@ -700,6 +721,12 @@
+     type = ZEBRA_ROUTE_RIPNG;
+   else if (strncmp (argv[0], "bgp", 3) == 0)
+     type = ZEBRA_ROUTE_BGP;
++  else if (strncmp (argv[0], "h", 1) == 0)
++    type = ZEBRA_ROUTE_HSLS;
++  else if (strncmp (argv[0], "o", 1) == 0)
++    type = ZEBRA_ROUTE_OLSR;
++  else if (strncmp (argv[0], "ba", 2) == 0)
++    type = ZEBRA_ROUTE_BATMAN;
+ 
+   ospf6_asbr_redistribute_unset (type);
+   ospf6_asbr_routemap_unset (type);
+diff -Naur quagga-0.99.16/ospfd/ospf_vty.c quagga-0.99.16.patched/ospfd/ospf_vty.c
+--- quagga-0.99.16/ospfd/ospf_vty.c	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/ospfd/ospf_vty.c	2010-03-12 18:12:28.000000000 +0200
+@@ -107,8 +107,14 @@
+     *source = ZEBRA_ROUTE_STATIC;
+   else if (strncmp (str, "r", 1) == 0)
+     *source = ZEBRA_ROUTE_RIP;
+-  else if (strncmp (str, "b", 1) == 0)
++  else if (strncmp (str, "bg", 2) == 0)
+     *source = ZEBRA_ROUTE_BGP;
++  else if (strncmp (str, "h", 1) == 0)
++    *source = ZEBRA_ROUTE_HSLS;
++  else if (strncmp (str, "o", 1) == 0)
++    *source = ZEBRA_ROUTE_OLSR;
++  else if (strncmp (str, "ba", 2) == 0)
++    *source = ZEBRA_ROUTE_BATMAN;
+   else
+     return 0;
+ 
+diff -Naur quagga-0.99.16/ripd/rip_zebra.c quagga-0.99.16.patched/ripd/rip_zebra.c
+--- quagga-0.99.16/ripd/rip_zebra.c	2009-12-10 18:14:39.000000000 +0200
++++ quagga-0.99.16.patched/ripd/rip_zebra.c	2010-03-12 18:12:28.000000000 +0200
+@@ -204,8 +204,11 @@
+   {ZEBRA_ROUTE_KERNEL,  1, "kernel"},
+   {ZEBRA_ROUTE_CONNECT, 1, "connected"},
+   {ZEBRA_ROUTE_STATIC,  1, "static"},
+-  {ZEBRA_ROUTE_OSPF,    1, "ospf"},
+-  {ZEBRA_ROUTE_BGP,     1, "bgp"},
++  {ZEBRA_ROUTE_OSPF,    2, "ospf"},
++  {ZEBRA_ROUTE_BGP,     2, "bgp"},
++  {ZEBRA_ROUTE_HSLS,    1, "hsls"},
++  {ZEBRA_ROUTE_OLSR,    2, "olsr"},
++  {ZEBRA_ROUTE_BATMAN,  2, "batman"},
+   {0, 0, NULL}
+ };
+ 
+diff -Naur quagga-0.99.16/ripngd/ripng_zebra.c quagga-0.99.16.patched/ripngd/ripng_zebra.c
+--- quagga-0.99.16/ripngd/ripng_zebra.c	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/ripngd/ripng_zebra.c	2010-03-12 18:12:28.000000000 +0200
+@@ -214,8 +214,11 @@
+   {ZEBRA_ROUTE_KERNEL,  1, "kernel"},
+   {ZEBRA_ROUTE_CONNECT, 1, "connected"},
+   {ZEBRA_ROUTE_STATIC,  1, "static"},
+-  {ZEBRA_ROUTE_OSPF6,   1, "ospf6"},
+-  {ZEBRA_ROUTE_BGP,     1, "bgp"},
++  {ZEBRA_ROUTE_OSPF6,   2, "ospf6"},
++  {ZEBRA_ROUTE_BGP,     2, "bgp"},
++  {ZEBRA_ROUTE_HSLS,    1, "hsls"},
++  {ZEBRA_ROUTE_OLSR,    2, "olsr"},
++  {ZEBRA_ROUTE_BATMAN,  2, "batman"},
+   {0, 0, NULL}
+ };
+ 
+diff -Naur quagga-0.99.16/zebra/redistribute.c quagga-0.99.16.patched/zebra/redistribute.c
+--- quagga-0.99.16/zebra/redistribute.c	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/zebra/redistribute.c	2010-03-12 18:12:28.000000000 +0200
+@@ -255,6 +255,9 @@
+     case ZEBRA_ROUTE_OSPF:
+     case ZEBRA_ROUTE_OSPF6:
+     case ZEBRA_ROUTE_BGP:
++    case ZEBRA_ROUTE_HSLS:
++    case ZEBRA_ROUTE_OLSR:
++    case ZEBRA_ROUTE_BATMAN:
+       if (! client->redist[type])
+ 	{
+ 	  client->redist[type] = 1;
+@@ -283,6 +286,9 @@
+     case ZEBRA_ROUTE_OSPF:
+     case ZEBRA_ROUTE_OSPF6:
+     case ZEBRA_ROUTE_BGP:
++    case ZEBRA_ROUTE_HSLS:
++    case ZEBRA_ROUTE_OLSR:
++    case ZEBRA_ROUTE_BATMAN:
+       client->redist[type] = 0;
+       break;
+     default:
+diff -Naur quagga-0.99.16/zebra/zebra_rib.c quagga-0.99.16.patched/zebra/zebra_rib.c
+--- quagga-0.99.16/zebra/zebra_rib.c	2009-12-21 12:40:24.000000000 +0200
++++ quagga-0.99.16.patched/zebra/zebra_rib.c	2010-03-12 18:12:28.000000000 +0200
+@@ -66,7 +66,10 @@
+   {ZEBRA_ROUTE_OSPF,    110},
+   {ZEBRA_ROUTE_OSPF6,   110},
+   {ZEBRA_ROUTE_ISIS,    115},
+-  {ZEBRA_ROUTE_BGP,      20  /* IBGP is 200. */}
++  {ZEBRA_ROUTE_BGP,      20  /* IBGP is 200. */},
++  {ZEBRA_ROUTE_HSLS,      0}, 
++  {ZEBRA_ROUTE_OLSR,      0}, 
++  {ZEBRA_ROUTE_BATMAN,    0}
+ };
+ 
+ /* Vector for routing table.  */
+@@ -1229,6 +1232,8 @@
+   [ZEBRA_ROUTE_ISIS]    = 2,
+   [ZEBRA_ROUTE_BGP]     = 3,
+   [ZEBRA_ROUTE_HSLS]    = 4,
++  [ZEBRA_ROUTE_OLSR]    = 4,
++  [ZEBRA_ROUTE_BATMAN]  = 4,
+ };
+ 
+ /* Look into the RN and queue it into one or more priority queues,
+diff -Naur quagga-0.99.16/zebra/zebra_snmp.c quagga-0.99.16.patched/zebra/zebra_snmp.c
+--- quagga-0.99.16/zebra/zebra_snmp.c	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/zebra/zebra_snmp.c	2010-03-12 18:12:28.000000000 +0200
+@@ -251,6 +251,12 @@
+       return 1; /* shouldn't happen */
+     case ZEBRA_ROUTE_BGP:
+       return 14; /* bgp */
++    case ZEBRA_ROUTE_HSLS:
++      return 1; /* other */
++    case ZEBRA_ROUTE_OLSR:
++      return 1; /* other */
++    case ZEBRA_ROUTE_BATMAN:
++      return 1; /* other */
+     default:
+       return 1; /* other */
+     }
+diff -Naur quagga-0.99.16/zebra/zebra_vty.c quagga-0.99.16.patched/zebra/zebra_vty.c
+--- quagga-0.99.16/zebra/zebra_vty.c	2009-12-09 14:37:12.000000000 +0200
++++ quagga-0.99.16.patched/zebra/zebra_vty.c	2010-03-12 19:00:32.000000000 +0200
+@@ -557,7 +557,10 @@
+       if (rib->type == ZEBRA_ROUTE_RIP
+ 	  || rib->type == ZEBRA_ROUTE_OSPF
+ 	  || rib->type == ZEBRA_ROUTE_ISIS
+-	  || rib->type == ZEBRA_ROUTE_BGP)
++	  || rib->type == ZEBRA_ROUTE_BGP
++	  || rib->type == ZEBRA_ROUTE_HSLS
++	  || rib->type == ZEBRA_ROUTE_OLSR
++	  || rib->type == ZEBRA_ROUTE_BATMAN)
+ 	{
+ 	  time_t uptime;
+ 	  struct tm *tm;
+@@ -775,7 +778,10 @@
+       if (rib->type == ZEBRA_ROUTE_RIP
+ 	  || rib->type == ZEBRA_ROUTE_OSPF
+ 	  || rib->type == ZEBRA_ROUTE_ISIS
+-	  || rib->type == ZEBRA_ROUTE_BGP)
++	  || rib->type == ZEBRA_ROUTE_BGP
++	  || rib->type == ZEBRA_ROUTE_HSLS
++	  || rib->type == ZEBRA_ROUTE_OLSR
++	  || rib->type == ZEBRA_ROUTE_BATMAN)
+ 	{
+ 	  time_t uptime;
+ 	  struct tm *tm;
+@@ -803,8 +809,8 @@
+ }
+ 
+ #define SHOW_ROUTE_V4_HEADER "Codes: K - kernel route, C - connected, " \
+-  "S - static, R - RIP, O - OSPF,%s       I - ISIS, B - BGP, " \
+-  "> - selected route, * - FIB route%s%s"
++  "S - static, R - RIP, O - OSPF,%s       I - ISIS, B - BGP, H - HSLS, " \
++  "o - OLSR, b - BATMAN,%s       > - selected route, * - FIB route%s%s"
+ 
+ DEFUN (show_ip_route,
+        show_ip_route_cmd,
+@@ -829,7 +835,7 @@
+ 	if (first)
+ 	  {
+ 	    vty_out (vty, SHOW_ROUTE_V4_HEADER, VTY_NEWLINE, VTY_NEWLINE,
+-		     VTY_NEWLINE);
++		     VTY_NEWLINE, VTY_NEWLINE);
+ 	    first = 0;
+ 	  }
+ 	vty_show_ip_route (vty, rn, rib);
+@@ -922,7 +928,7 @@
+ 
+ DEFUN (show_ip_route_protocol,
+        show_ip_route_protocol_cmd,
+-       "show ip route (bgp|connected|isis|kernel|ospf|rip|static)",
++       "show ip route (bgp|connected|isis|kernel|ospf|rip|static|hsls|olsr|batman)",
+        SHOW_STR
+        IP_STR
+        "IP routing table\n"
+@@ -940,13 +946,13 @@
+   struct rib *rib;
+   int first = 1;
+ 
+-  if (strncmp (argv[0], "b", 1) == 0)
++  if (strncmp (argv[0], "bg", 2) == 0)
+     type = ZEBRA_ROUTE_BGP;
+   else if (strncmp (argv[0], "c", 1) == 0)
+     type = ZEBRA_ROUTE_CONNECT;
+   else if (strncmp (argv[0], "k", 1) ==0)
+     type = ZEBRA_ROUTE_KERNEL;
+-  else if (strncmp (argv[0], "o", 1) == 0)
++  else if (strncmp (argv[0], "os", 2) == 0)
+     type = ZEBRA_ROUTE_OSPF;
+   else if (strncmp (argv[0], "i", 1) == 0)
+     type = ZEBRA_ROUTE_ISIS;
+@@ -954,6 +960,12 @@
+     type = ZEBRA_ROUTE_RIP;
+   else if (strncmp (argv[0], "s", 1) == 0)
+     type = ZEBRA_ROUTE_STATIC;
++  else if (strncmp (argv[0], "h", 1) == 0)
++    type = ZEBRA_ROUTE_HSLS;
++  else if (strncmp (argv[0], "ol", 2) == 0)
++    type = ZEBRA_ROUTE_OLSR;
++  else if (strncmp (argv[0], "ba", 2) == 0)
++    type = ZEBRA_ROUTE_BATMAN;
+   else 
+     {
+       vty_out (vty, "Unknown route type%s", VTY_NEWLINE);
+@@ -1560,7 +1572,10 @@
+       if (rib->type == ZEBRA_ROUTE_RIPNG
+ 	  || rib->type == ZEBRA_ROUTE_OSPF6
+ 	  || rib->type == ZEBRA_ROUTE_ISIS
+-	  || rib->type == ZEBRA_ROUTE_BGP)
++	  || rib->type == ZEBRA_ROUTE_BGP
++	  || rib->type == ZEBRA_ROUTE_HSLS
++	  || rib->type == ZEBRA_ROUTE_OLSR
++	  || rib->type == ZEBRA_ROUTE_BATMAN)
+ 	{
+ 	  time_t uptime;
+ 	  struct tm *tm;
+@@ -1739,7 +1754,10 @@
+       if (rib->type == ZEBRA_ROUTE_RIPNG
+ 	  || rib->type == ZEBRA_ROUTE_OSPF6
+ 	  || rib->type == ZEBRA_ROUTE_ISIS
+-	  || rib->type == ZEBRA_ROUTE_BGP)
++	  || rib->type == ZEBRA_ROUTE_BGP
++	  || rib->type == ZEBRA_ROUTE_HSLS
++	  || rib->type == ZEBRA_ROUTE_OLSR
++	  || rib->type == ZEBRA_ROUTE_BATMAN)
+ 	{
+ 	  time_t uptime;
+ 	  struct tm *tm;
+@@ -1766,7 +1784,7 @@
+     }
+ }
+ 
+-#define SHOW_ROUTE_V6_HEADER "Codes: K - kernel route, C - connected, S - static, R - RIPng, O - OSPFv3,%s       I - ISIS, B - BGP, * - FIB route.%s%s"
++#define SHOW_ROUTE_V6_HEADER "Codes: K - kernel route, C - connected, S - static, R - RIPng, O - OSPFv3,%s       I - ISIS, B - BGP, H - HSLS, o - OLSR, b - BATMAN, * - FIB route.%s%s"
+ 
+ DEFUN (show_ipv6_route,
+        show_ipv6_route_cmd,
+@@ -1842,7 +1860,7 @@
+ 
+ DEFUN (show_ipv6_route_protocol,
+        show_ipv6_route_protocol_cmd,
+-       "show ipv6 route (bgp|connected|isis|kernel|ospf6|ripng|static)",
++       "show ipv6 route (bgp|connected|isis|kernel|ospf6|ripng|static|hsls|olsr|batman)",
+        SHOW_STR
+        IP_STR
+        "IP routing table\n"
+@@ -1860,13 +1878,13 @@
+   struct rib *rib;
+   int first = 1;
+ 
+-  if (strncmp (argv[0], "b", 1) == 0)
++  if (strncmp (argv[0], "bg", 2) == 0)
+     type = ZEBRA_ROUTE_BGP;
+   else if (strncmp (argv[0], "c", 1) == 0)
+     type = ZEBRA_ROUTE_CONNECT;
+   else if (strncmp (argv[0], "k", 1) ==0)
+     type = ZEBRA_ROUTE_KERNEL;
+-  else if (strncmp (argv[0], "o", 1) == 0)
++  else if (strncmp (argv[0], "os", 2) == 0)
+     type = ZEBRA_ROUTE_OSPF6;
+   else if (strncmp (argv[0], "i", 1) == 0)
+     type = ZEBRA_ROUTE_ISIS;
+@@ -1874,6 +1892,12 @@
+     type = ZEBRA_ROUTE_RIPNG;
+   else if (strncmp (argv[0], "s", 1) == 0)
+     type = ZEBRA_ROUTE_STATIC;
++  else if (strncmp (argv[0], "h", 1) == 0)
++    type = ZEBRA_ROUTE_HSLS;
++  else if (strncmp (argv[0], "ol", 2) == 0)
++    type = ZEBRA_ROUTE_OLSR;
++  else if (strncmp (argv[0], "ba", 2) == 0)
++    type = ZEBRA_ROUTE_BATMAN;
+   else 
+     {
+       vty_out (vty, "Unknown route type%s", VTY_NEWLINE);
