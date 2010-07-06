@@ -11,8 +11,8 @@ DEBUG ?= 0
 NO_DEBUG_MESSAGES ?= 1
 
 # the optimize option to be set for gcc
-OPTIMIZE ?= $(COPTS)
-
+OPTIMIZE ?= $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 # enable mudflap with 1 or deactivate with 0
 # you need a recent enough gcc and the libmudflap installed
 MUDFLAP ?= 0
@@ -148,7 +148,7 @@ endif
 LDFLAGS +=	-Wl,-rpath,$(LIBDIR)
 endif
 # LDFLAGS for all 
-LDFLAGS +=	-Wl,--warn-common
+LDFLAGS +=	-Wl,--warn-common  -ffunction-sections -fdata-sections -Wl,--gc-sections
 # See above at "-ffunction-sections" for an explanation (and why it is disabled).
 #LDOPTS +=	-Wl,--gc-sections
 #LDOPTS +=	-Wl,--print-gc-sections
