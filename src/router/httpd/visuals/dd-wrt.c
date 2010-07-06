@@ -1739,6 +1739,7 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 		show_inputlabel(wp, "route.olsrd_lqag", "olsrd_lqaging", 5,
 				"num", 5);
 
+		showRadio(wp, "route.olsrd_smartgw", "olsrd_smartgw");
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmin)</script></div>");
