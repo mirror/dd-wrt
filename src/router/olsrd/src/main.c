@@ -366,12 +366,6 @@ int main(int argc, char *argv[]) {
         olsr_cnf->ip_version == AF_INET ? 4 : 6);
   }
 
-  /*
-   * Print configuration
-   */
-  if (olsr_cnf->debug_level > 1) {
-    olsrd_print_cnf(olsr_cnf);
-  }
 
   def_timer_ci = olsr_alloc_cookie("Default Timer Cookie", OLSR_COOKIE_TYPE_TIMER);
 
@@ -792,7 +786,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
  * Print the command line usage
  */
 static void print_usage(bool error) {
-  fprintf(
+/*  fprintf(
       stderr,
         "%s"
         "usage: olsrd [-f <configfile>] [ -i interface1 interface2 ... ]\n"
@@ -803,7 +797,7 @@ static void print_usage(bool error) {
         "  [-midint <mid interval (secs)>] [-hnaint <hna interval (secs)>]\n"
         "  [-T <Polling Rate (secs)>] [-nofork] [-hemu <ip_address>]\n"
         "  [-lql <LQ level>] [-lqa <LQ aging factor>]\n",
-        error ? "An error occured somwhere between your keyboard and your chair!\n" : "");
+        error ? "An error occured somwhere between your keyboard and your chair!\n" : "");*/
 }
 
 /**
