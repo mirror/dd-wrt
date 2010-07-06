@@ -53,10 +53,29 @@ void start_olsrd(void)
 	fprintf(fp, "Pollrate\t%s\n", nvram_safe_get("olsrd_pollsize"));
 	fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
 	fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
+	fprintf(fp, "MainIP %s\n", nvram_safe_get("lan_ipaddr"));
+
+	if (nvram_match("olsrd_smartgw", "1")) {
+		fprintf(fp, "RtTable auto\n");
+		fprintf(fp, "RtTableDefault auto\n");
+		fprintf(fp, "RtTableTunnel auto\n");
+
+		fprintf(fp, "RtTablePriority auto\n");
+		fprintf(fp, "RtTableDefaultOlsrPriority auto\n");
+		fprintf(fp, "RtTableTunnelPriority auto\n");
+		fprintf(fp, "RtTableDefaultPriority auto\n");
+
+		fprintf(fp, "SmartGateway yes\n");
+		fprintf(fp, "SmartGatewayAllowNAT yes\n");
+		fprintf(fp, "SmartGatewayUplink \"both\"\n");
+		fprintf(fp, "SmartGatewayUplinkNAT yes\n");
+		fprintf(fp, "SmartGatewaySpeed 128 1024\n");
+		fprintf(fp, "SmartGatewayPrefix 0::/0\n");
+	}
 	fprintf(fp, "LinkQualityFishEye\t%s\n",
 		nvram_safe_get("olsrd_lqfisheye"));
 	fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
-	fprintf(fp, "LinkQualityAlgorithm    \"etx_fpm\"\n");
+	fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
 	fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
 		nvram_safe_get("olsrd_lqdijkstramin"),
 		nvram_safe_get("olsrd_lqdijkstramax"));

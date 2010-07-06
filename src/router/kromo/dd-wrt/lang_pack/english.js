@@ -1171,6 +1171,7 @@ route.olsrd_lqdmax="Link Quality Dijkstra Max";
 route.olsrd_lqlvl="Link Quality Level";
 route.olsrd_hysteresis="Hysteresis";
 route.olsrd_newiface="New Interface";
+route.olsrd_smartgw="Smart Gateway";
 route.zebra_legend="Zebra Configuration";
 route.zebra_log="Zebra Log";
 route.zebra_copt="Zebra Config Style";
