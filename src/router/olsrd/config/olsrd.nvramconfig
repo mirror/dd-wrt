@@ -6,5 +6,6 @@
 "olsrd_lqdijkstramin" "" "NULL" "FALSE" "0"
 "olsrd_lqdijkstramax" "" "NULL" "FALSE" "0"
 "olsrd_hysteresis" "" "CHOICE" "2" "0" "1" "FALSE" "0"
+"olsrd_smartgw" "" "CHOICE" "2" "0" "1" "FALSE" "0"
 "olsrd_lqlevel" "" "NULL" "FALSE" "0"
 "olsrd_hna" "" "NULL" "FALSE" "0"
