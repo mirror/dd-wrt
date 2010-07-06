@@ -2698,6 +2698,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"olsrd_lqdijkstramax", "5.0", 0},
 	{"olsrd_lqlevel", "2", 0},
 	{"olsrd_hysteresis", "0", 0},
+	{"olsrd_smartgw", "0", 0},
 #endif
 	{"reconnect_enable", "0", 0},
 	{"reconnect_hours", "0", 0},
