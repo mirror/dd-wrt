@@ -106,60 +106,21 @@ static void olsrd_write_if_autobuf(struct autobuf *out, struct if_config_options
   struct olsr_lq_mult *mult;
 
   abuf_puts(out, "{\n");
-  if (comments) abuf_puts(out,
-    "    # Interface Mode is used to prevent unnecessary\n"
-    "    # packet forwarding on switched ethernet interfaces\n"
-    "    # valid Modes are \"mesh\" and \"ether\"\n"
-    "    # (default is \"mesh\")\n"
-    "    \n");
   if_appendf(out, comments, "    %sMode \"%s\"\n",
       cnfi->mode == DEF_IF_MODE ? "# " : "",
       OLSR_IF_MODE[cnfi->mode]);
-  if (comments) abuf_puts(out,
-    "    \n"
-    "    # IPv4 broadcast address for outgoing OLSR packets.\n"
-    "    # One usefull example would be 255.255.255.255\n"
-    "    # The second useful value would be to\n"
-    "    # specify the peer adress of an ptp-tunnel.\n"
-    "    # another name of this parameter is \"IPv4Multicast\"\n"
-    "    # (default is 0.0.0.0, which triggers the usage of the\n"
-    "    # interface broadcast IP)\n"
-    "    \n");
   if_appendf(out, comments, "    %sIp4Broadcast      %s\n",
       cnfi->ipv4_multicast.v4.s_addr == 0 ? "# " : "",
       inet_ntop(AF_INET, &cnfi->ipv4_multicast, ipbuf.buf, sizeof(ipbuf)));
-  if (comments) abuf_puts(out,
-    "    \n"
-    "    # IPv6 multicast address\n"
-    "    # (default is FF02::6D, the manet-router linklocal multicast)\n"
-    "    \n");
   if_appendf(out, comments, "    %sIPv6Multicast %s\n",
       memcmp(&cnfi->ipv6_multicast, &ipv6_def_multicast, sizeof(ipv6_def_multicast)) == 0 ? "# " : "",
       inet_ntop(AF_INET6, &cnfi->ipv6_multicast, ipbuf.buf, sizeof(ipbuf)));
-  if (comments) abuf_puts(out,
-    "    \n"
-    "    # IPv4 src address for outgoing OLSR packages\n"
-    "    # (default is 0.0.0.0, which triggers usage of the interface IP)\n"
-    "    \n");
   if_appendf(out, comments, "    %sIPv4Src %s\n",
       cnfi->ipv4_src.v4.s_addr == 0 ? "# " : "",
       inet_ntop(AF_INET, &cnfi->ipv4_src, ipbuf.buf, sizeof(ipbuf)));
-  if (comments) abuf_puts(out,
-    "    \n"
-    "    # IPv6 src prefix. OLSRd will choose one of the interface IPs\n"
-    "    # which matches the prefix of this parameter.\n"
-    "    # (default is 0::/0, which triggers the usage\n"
-    "    # of a not-linklocal interface IP)\n"
-    "    \n");
   if_appendf(out, comments, "    %sIPv6Src %s\n",
       cnfi->ipv6_src.prefix_len == 0 ? "# " : "",
       inet_ntop(AF_INET6, &cnfi->ipv6_src, ipbuf.buf, sizeof(ipbuf)));
-  if (comments) abuf_puts(out,
-    "    \n"
-    "    # Emission intervals in seconds.\n"
-    "    # If not defined, Freifunk network defaults are used\n"
-    "    # (default is 2.0/20.0 for Hello and 5.0/300.0 for Tc/Mid/Hna)\n"
-    "    \n");
   if_appendf(out, comments, "    %sHelloInterval       %3.1f\n",
       cnfi->hello_params.emission_interval == HELLO_INTERVAL ? "# " : "",
       cnfi->hello_params.emission_interval);
@@ -184,41 +145,12 @@ static void olsrd_write_if_autobuf(struct autobuf *out, struct if_config_options
   if_appendf(out, comments, "    %sHnaValidityTime     %3.1f\n",
       cnfi->hna_params.validity_time == HNA_HOLD_TIME ? "# " : "",
       cnfi->hna_params.validity_time);
-  if (comments) abuf_puts(out,
-    "    \n"
-    "    # When multiple links exist between hosts\n"
-    "    # the weight of interface is used to determine\n"
-    "    # the link to use. Normally the weight is\n"
-    "    # automatically calculated by olsrd based\n"
-    "    # on the characteristics of the interface,\n"
-    "    # but here you can specify a fixed value.\n"
-    "    # Olsrd will choose links with the lowest value.\n"
-    "    # Note:\n"
-    "    # Interface weight is used only when LinkQualityLevel is set to 0.\n"
-    "    # For any other value of LinkQualityLevel, the interface ETX\n"
-    "    # value is used instead.\n");
   if_appendf(out, comments, "    %sWeight %d\n",
       !cnfi->weight.fixed ? "# " : "",
       cnfi->weight.value);
-  if (comments) abuf_puts(out,
-    "    \n"
-    "    # If a certain route should be preferred\n"
-    "    # or ignored by the mesh, the Link Quality\n"
-    "    # value of a node can be multiplied with a factor\n"
-    "    # entered here. In the example the route\n"
-    "    # using 192.168.0.1 would rather be ignored.\n"
-    "    # A multiplier of 0.5 will result in a small\n"
-    "    # (bad) LinkQuality value and a high (bad)\n"
-    "    # ETX value.\n"
-    "    # Note:\n"
-    "    # Link quality multiplier is used only when\n"
-    "    # LinkQualityLevel is > 0.\n"
-    "    \n");
   mult = cnfi->lq_mult;
 
-  if (mult == NULL) {
-    if (comments) abuf_puts(out, "    # LinkQualityMult 192.168.0.1 0.5\n");
-  } else {
+  if (mult) { 
     while (mult != NULL) {
       if_appendf(out, comments, "    LinkQualityMult    %s %0.2f\n",
           olsr_ip_to_string(&ipbuf, &mult->addr),
