@@ -1,0 +1,46 @@
+#
+# FREEBSD SPECIFIC CONFIGURATION
+#
+
+PREFIX ?= /usr/local
+
+SRCS +=		$(wildcard src/bsd/*.c) $(wildcard src/unix/*.c)
+HDRS +=		$(wildcard src/bsd/*.h) $(wildcard src/unix/*.h)
+
+LIBS =
+
+CPPFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
+
+ifdef NO_80211
+CPPFLAGS +=	-DFBSD_NO_80211=1
+endif
+
+ifdef LIBNET
+
+CPPFLAGS +=	-DSPOOF -I$(PREFIX)/include
+LIBS +=		-L$(PREFIX)/lib -lnet
+
+endif
+
+ifdef OLSRD_PLUGIN
+GENERATE_PIC = true
+endif
+ifeq ($(filter-out alpha x86_64 parisc64 ia64, $(ARCH)),)
+GENERATE_PIC = true
+endif
+
+ifdef GENERATE_PIC
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
+endif
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
+INSTALL_LIB =	install -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME);
+
+OS_LIB_PTHREAD = -pthread
+OS_CFLAG_PTHREAD = -pthread
+OS_LIB_DYNLOAD = -ldl
+
+# Local Variables:
+# mode: makefile
+# End:
