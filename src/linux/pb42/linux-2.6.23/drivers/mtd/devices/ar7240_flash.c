@@ -247,15 +247,15 @@ ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 static struct mtd_partition dir_parts[] = {
 #ifdef CONFIG_MTD_FLASH_16MB
-      {name: "uboot", offset: 0x30000, size:0x10000,},
+      {name: "RedBoot", offset: 0x30000, size:0x10000,},
 	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x50000, size:0xf90000,},
 #elif CONFIG_MTD_FLASH_8MB
-      {name: "uboot", offset: 0x30000, size:0x10000,},
+      {name: "RedBoot", offset: 0x30000, size:0x10000,},
 	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x50000, size:0x790000,},
 #else
-      {name: "uboot", offset: 0, size:0x40000,},
+      {name: "RedBoot", offset: 0, size:0x40000,},
 	//, mask_flags: MTD_WRITEABLE, },
       {name: "linux", offset: 0x40000, size:0x3a0000,},
 #endif
