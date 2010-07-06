@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008, 2009 Thomas d'Otreppe
+ *  Copyright (C) 2008-2010 Thomas d'Otreppe
  *  Copyright (C) 2008, 2009 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -149,7 +149,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2008, 2009 Thomas d'Otreppe\n"
+"  %s - (C) 2008-2010 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -1128,7 +1128,7 @@ int addESSIDfile(char* filename)
     {
         // trim trailing whitespace
         x = strlen(essid) - 1;
-        while (x >= 0 && isspace(essid[x]))
+        while (x >= 0 && isspace((int)essid[x]))
             essid[x--] = 0;
 
         if(strlen(essid))
@@ -2811,11 +2811,19 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
 
                 if(opt.sendeapol && memcmp(packet+z, "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x03", 10) == 0)
                 {
+					st_cur->wpa.eapol_size = ( packet[z + 8 + 2] << 8 ) + packet[z + 8 + 3] + 4;
+
+					if (length - z - 10 < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
+					{
+						// Ignore the packet trying to crash us.
+						printf("Something is trying to crash us; length: %d - z: %d - eapol size: %d\n",
+								length, z, st_cur->wpa.eapol_size);
+						return 1;
+                	}
+
                     /* got eapol frame num 2 */
                     memcpy( st_cur->wpa.snonce, &packet[z + 8 + 17], 32 );
                     st_cur->wpa.state |= 2;
-
-                    st_cur->wpa.eapol_size = ( packet[z + 8 + 2] << 8 ) + packet[z + 8 + 3] + 4;
 
                     memcpy( st_cur->wpa.keymic, &packet[z + 8 + 81], 16 );
                     memcpy( st_cur->wpa.eapol,  &packet[z + 8], st_cur->wpa.eapol_size );
@@ -4013,6 +4021,11 @@ int main( int argc, char *argv[] )
                     return( 1 );
                 }
 
+                if (opt.setWEP == -1)
+                {
+					opt.setWEP = 1;
+				}
+
                 break;
 
             case 'Z' :
@@ -4024,6 +4037,11 @@ int main( int argc, char *argv[] )
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
+
+				if (opt.setWEP == -1)
+                {
+					opt.setWEP = 1;
+				}
 
                 break;
 
