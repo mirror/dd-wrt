@@ -1,0 +1,34 @@
+---------------------------------------------------------------------
+Watchdog PLUGIN FOR OLSRD
+by Henning Rogge <hrogge@googlemail.com>
+---------------------------------------------------------------------
+
+This plugin is used for detecting a total freeze of the olsrd by an external script.
+Once per timeinterval (configurable) it writes the current time into
+a file.
+
+---------------------------------------------------------------------
+PLUGIN PARAMETERS (PlParam)
+---------------------------------------------------------------------
+
+PlParam "file" "/tmp/olsrd.watchdog"
+	Name of the "still alive" file written by the watchdog
+PlParam "interval" "5"
+	Overwrite the file every X seconds
+
+
+---------------------------------------------------------------------
+SAMPLE CONFIG
+---------------------------------------------------------------------
+
+add in /etc/olsrd.conf:
+
+LoadPlugin "olsrd_watchdog.so.0.1"
+{
+  PlParam "file" "/tmp/olsrd.watchdog"
+  PlParam "interval" "5"
+}
+
+
+---------------------------------------------------------------------
+EOF / 26.05.2005
