@@ -63,6 +63,8 @@ void init_msg_seqno(void);
 
 uint16_t get_msg_seqno(void);
 
+bool olsr_is_bad_duplicate_msg_seqno(uint16_t seqno);
+
 int olsr_forward_message(union olsr_message *, struct interface *, union olsr_ip_addr *);
 
 void set_buffer_timer(struct interface *);

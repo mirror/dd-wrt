@@ -1,31 +1,29 @@
+/*
+ * OLSRd Quagga plugin
+ *
+ * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
+ * Copyright (C) 2007-2010 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation or - at your option - under
+ * the terms of the GNU General Public Licence version 2 but can be
+ * linked to any BSD-Licenced Software with public available sourcecode
+ *
+ */
 
-/***************************************************************************
- projekt              : olsrd-quagga
- file                 : olsrd_plugin.c
- usage                : olsrd-plugin-handler-stuff
- copyright            : (C) 2006 by Immo 'FaUl' Wehrenberg
- e-mail               : immo@chaostreff-dortmund.de
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License version 2 as     *
- *   published by the Free Software Foundation.                            *
- *                                                                         *
- ***************************************************************************/
-
-#include <stdio.h>
-#include <string.h>
+/* -------------------------------------------------------------------------
+ * File               : olsrd_plugin.c
+ * Description        : functions to setup plugin
+ * ------------------------------------------------------------------------- */
 
 #include "olsrd_plugin.h"
-#include "plugin_util.h"
-#include "olsr.h"
 #include "scheduler.h"
 #include "defs.h"
+
 #include "quagga.h"
-#include "kernel_routes.h"
-#include "net_olsr.h"
+#include "plugin.h"
+#include "parse.h"
 
 #define PLUGIN_NAME    "OLSRD quagga plugin"
 #define PLUGIN_VERSION "0.2.2"
@@ -36,106 +34,37 @@
 static void __attribute__ ((constructor)) my_init(void);
 static void __attribute__ ((destructor)) my_fini(void);
 
-static set_plugin_parameter set_redistribute;
-static set_plugin_parameter set_exportroutes;
-static set_plugin_parameter set_distance;
-static set_plugin_parameter set_localpref;
-
-static export_route_function orig_addroute_function;
-static export_route_function orig_delroute_function;
-
 int
 olsrd_plugin_interface_version(void)
 {
+
   return PLUGIN_INTERFACE_VERSION;
 }
 
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
-  {.name = "redistribute",.set_plugin_parameter = &set_redistribute,},
-  {.name = "ExportRoutes",.set_plugin_parameter = &set_exportroutes,},
-  {.name = "Distance",.set_plugin_parameter = &set_distance,},
-  {.name = "LocalPref",.set_plugin_parameter = &set_localpref,},
+  {.name = "Redistribute",.set_plugin_parameter = &zplugin_redistribute,},
+  {.name = "ExportRoutes",.set_plugin_parameter = &zplugin_exportroutes,},
+  {.name = "Distance",.set_plugin_parameter = &zplugin_distance,},
+  {.name = "LocalPref",.set_plugin_parameter = &zplugin_localpref,},
+  {.name = "SockPath",.set_plugin_parameter = &zplugin_sockpath,.addon = {PATH_MAX},},
+  {.name = "Port",.set_plugin_parameter = &zplugin_port,},
+  {.name = "Version",.set_plugin_parameter = &zplugin_version,},
 };
 
 void
 olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
+
   *params = plugin_parameters;
-  *size = sizeof plugin_parameters / sizeof *plugin_parameters;
-}
+  *size = ARRAYSIZE(plugin_parameters);
 
-static int
-set_redistribute(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
-  const char *zebra_route_types[] = { "system", "kernel", "connect",
-    "static", "rip", "ripng", "ospf",
-    "ospf6", "isis", "bgp", "hsls"
-  };
-  unsigned int i;
-
-  for (i = 0; i < ARRAYSIZE(zebra_route_types); i++) {
-    if (!strcmp(value, zebra_route_types[i])) {
-      zebra_redistribute(i);
-      return 0;
-    }
-  }
-  return 1;
-}
-
-static int
-set_exportroutes(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
-  if (!strcmp(value, "only")) {
-    orig_addroute_function = NULL;
-    orig_delroute_function = NULL;
-    olsr_addroute_function = zebra_add_olsr_v4_route;
-    olsr_delroute_function = zebra_del_olsr_v4_route;
-    zebra_export_routes(1);
-  } else if (!strcmp(value, "additional")) {
-    orig_addroute_function = olsr_addroute_function;
-    orig_delroute_function = olsr_delroute_function;
-    olsr_addroute_function = zebra_add_olsr_v4_route;
-    olsr_delroute_function = zebra_del_olsr_v4_route;
-    zebra_export_routes(1);
-  } else
-    zebra_export_routes(0);
-  return 0;
-}
-
-static int
-set_distance(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
-  int distance;
-
-  if (set_plugin_int(value, &distance, addon))
-    return 1;
-  if (distance < 0 || distance > 255)
-    return 1;
-  zebra_olsr_distance(distance);
-  return 0;
-}
-
-static int
-set_localpref(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
-  int b;
-
-  if (set_plugin_boolean(value, &b, addon))
-    return 1;
-  if (b)
-    zebra_olsr_localpref();
-  return 0;
 }
 
 int
 olsrd_plugin_init(void)
 {
-  if (olsr_cnf->ip_version != AF_INET) {
-    fputs("see the source - ipv6 so far not supported\n", stderr);
-    return 1;
-  }
 
-  olsr_start_timer(1 * MSEC_PER_SEC, 0, OLSR_TIMER_PERIODIC, &zebra_check, NULL, 0);
+  olsr_start_timer(1 * MSEC_PER_SEC, 0, OLSR_TIMER_PERIODIC, &zparse, NULL, 0);
 
   return 0;
 }
@@ -143,13 +72,17 @@ olsrd_plugin_init(void)
 static void
 my_init(void)
 {
-  init_zebra();
+
+  zebra_init();
+
 }
 
 static void
 my_fini(void)
 {
-  zebra_cleanup();
+
+  zebra_fini();
+
 }
 
 /*

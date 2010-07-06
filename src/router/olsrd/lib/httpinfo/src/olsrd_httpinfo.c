@@ -60,7 +60,6 @@
 #include "olsr_protocol.h"
 #include "net_olsr.h"
 #include "link_set.h"
-#include "socket_parser.h"
 #include "ipcalc.h"
 #include "lq_plugin.h"
 #include "common/autobuf.h"
@@ -159,7 +158,7 @@ static int get_http_socket(int);
 
 static void build_tabs(struct autobuf *, int);
 
-static void parse_http_request(int);
+static void parse_http_request(int fd, void *, unsigned int);
 
 static int build_http_header(http_header_type, bool, uint32_t, char *, uint32_t);
 
@@ -183,7 +182,7 @@ static void build_about_body(struct autobuf *);
 
 static void build_cfgfile_body(struct autobuf *);
 
-static int check_allowed_ip(const struct allowed_net *const allowed_nets, const union olsr_ip_addr *const addr);
+static int check_allowed_ip(const struct allowed_net *const /*allowed_nets*/, const union olsr_ip_addr *const /*addr*/);
 
 static void build_ip_txt(struct autobuf *, const bool want_link, const char *const ipaddrstr, const int prefix_len);
 
@@ -313,14 +312,14 @@ olsrd_plugin_init(void)
   }
 
   /* Register socket */
-  add_olsr_socket(http_socket, &parse_http_request);
+  add_olsr_socket(http_socket, &parse_http_request, NULL, NULL, SP_PR_READ);
 
   return 1;
 }
 
 /* Non reentrant - but we are not multithreaded anyway */
-void
-parse_http_request(int fd)
+static void
+parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
 {
   struct sockaddr_in pin;
   struct autobuf body_abuf = { 0, 0, NULL };
@@ -738,8 +737,8 @@ build_ipaddr_link(struct autobuf *abuf, const bool want_link, const union olsr_i
                                          olsr_cnf->ip_version) :
 #endif
     NULL;
-  /* Print the link only if there is no prefix_len */
-  const int print_link = want_link && (prefix_len == -1 || prefix_len == olsr_cnf->maxplen);
+  /* Print the link only if there is no prefix_len and ip_version is AF_INET */
+  const int print_link = want_link && (prefix_len == -1 || prefix_len == olsr_cnf->maxplen) && (olsr_cnf->ip_version == AF_INET);
   olsr_ip_to_string(&ipaddrstr, ipaddr);
 
   abuf_puts(abuf, "<td>");
@@ -854,9 +853,7 @@ build_config_body(struct autobuf *abuf)
              olsr_ip_to_string(&mainaddrbuf, &olsr_cnf->main_addr));
   abuf_appendf(abuf, "<td>IP version: %d</td>\n", olsr_cnf->ip_version == AF_INET ? 4 : 6);
   abuf_appendf(abuf, "<td>Debug level: %d</td>\n", olsr_cnf->debug_level);
-  abuf_appendf(abuf, "<td>FIB Metrics: %s</td>\n",
-             FIBM_FLAT == olsr_cnf->fib_metric ? CFG_FIBM_FLAT : FIBM_CORRECT ==
-             olsr_cnf->fib_metric ? CFG_FIBM_CORRECT : CFG_FIBM_APPROX);
+  abuf_appendf(abuf, "<td>FIB Metrics: %s</td>\n", FIB_METRIC_TXT[olsr_cnf->fib_metric]);
 
   abuf_puts(abuf, "</tr>\n<tr>\n");
 
@@ -869,9 +866,11 @@ build_config_body(struct autobuf *abuf)
 
   abuf_appendf(abuf, "<td>Fisheye: %s</td>\n", olsr_cnf->lq_fish ? "Enabled" : "Disabled");
   abuf_appendf(abuf, "<td>TOS: 0x%04x</td>\n", olsr_cnf->tos);
-  abuf_appendf(abuf, "<td>RtTable: 0x%04x/%d</td>\n", olsr_cnf->rttable, olsr_cnf->rttable);
-  abuf_appendf(abuf, "<td>RtTableDefault: 0x%04x/%d</td>\n", olsr_cnf->rttable_default,
-             olsr_cnf->rttable_default);
+  abuf_appendf(abuf, "<td>RtTable: 0x%04x/%d</td>\n", olsr_cnf->rt_table, olsr_cnf->rt_table);
+  abuf_appendf(abuf, "<td>RtTableDefault: 0x%04x/%d</td>\n", olsr_cnf->rt_table_default,
+             olsr_cnf->rt_table_default);
+  abuf_appendf(abuf, "<td>RtTableTunnel: 0x%04x/%d</td>\n", olsr_cnf->rt_table_tunnel,
+             olsr_cnf->rt_table_tunnel);
   abuf_appendf(abuf, "<td>Willingness: %d %s</td>\n", olsr_cnf->willingness,
              olsr_cnf->willingness_auto ? "(auto)" : "");
 
@@ -1140,21 +1139,7 @@ build_cfgfile_body(struct autobuf *abuf)
   abuf_puts(abuf,
              "\n\n" "<strong>This is a automatically generated configuration\n"
              "file based on the current olsrd configuration of this node.<br/>\n" "<hr/>\n" "<pre>\n");
-
-  {
-    /* Hack to make netdirect stuff work with
-       olsrd_write_cnf_buf
-     */
-    char tmpBuf[10000];
-    int size;
-    size = olsrd_write_cnf_buf(olsr_cnf, tmpBuf, 10000);
-    if (size < 0) {
-      abuf_puts(abuf, "ERROR GENERATING CONFIGFILE!\n");
-    }
-    else {
-      abuf_puts(abuf, tmpBuf);
-    }
-  }
+  olsrd_write_cnf_autobuf(abuf, olsr_cnf);
 
   abuf_puts(abuf, "</pre>\n<hr/>\n");
 
@@ -1168,42 +1153,12 @@ check_allowed_ip(const struct allowed_net *const my_allowed_nets, const union ol
 {
   const struct allowed_net *alln;
   for (alln = my_allowed_nets; alln != NULL; alln = alln->next) {
-    if ((addr->v4.s_addr & alln->mask.v4.s_addr) == (alln->net.v4.s_addr & alln->mask.v4.s_addr)) {
+    if (ip_in_net(addr, &alln->prefix)) {
       return 1;
     }
   }
   return 0;
 }
-
-#if 0
-
-/*
- * In a bigger mesh, there are probs with the fixed
- * bufsize. Because the Content-Length header is
- * optional, the sprintf() is changed to a more
- * scalable solution here.
- */
-
-int
-netsprintf(char *str, const char *format, ...)
-{
-  va_list arg;
-  int rv;
-  va_start(arg, format);
-  rv = vsprintf(str, format, arg);
-  va_end(arg);
-  if (0 != netsprintf_direct) {
-    if (0 == netsprintf_error) {
-      if (0 > send(client_sockets[curr_clients], str, rv, 0)) {
-        olsr_printf(1, "(HTTPINFO) Failed sending data to client!\n");
-        netsprintf_error = 1;
-      }
-    }
-    return 0;
-  }
-  return rv;
-}
-#endif
 
 /*
  * Local Variables:

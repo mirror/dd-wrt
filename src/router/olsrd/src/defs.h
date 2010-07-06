@@ -69,8 +69,6 @@ extern const char build_host[];
 #define UDP_IPV4_HDRSIZE        28
 #define UDP_IPV6_HDRSIZE        62
 
-#define MIN_PACKET_SIZE(ver)	((int)(sizeof(uint8_t) * (((ver) == AF_INET) ? 4 : 7)))
-
 /* Debug helper macro */
 #ifdef DEBUG
 #define olsr_debug(lvl, format, args...) do {                           \
@@ -119,7 +117,8 @@ extern FILE *debug_handle;
  * CPU will throw BUS_ERROR if alignment does not fit. For this,
  * we add an additional cast to (void *) to prevent the warning.
  */
-#define ARM_NOWARN_ALIGN void *
+#define ARM_NOWARN_ALIGN(x) ((void *)(x))
+#define CONST_ARM_NOWARN_ALIGN(x) ((const void *)(x))
 
 /*
  * A somewhat safe version of strncpy and strncat. Note, that
@@ -181,13 +180,12 @@ extern struct olsrd_config *olsr_cnf;
 
 /* Timer data */
 extern uint32_t now_times;              /* current idea of times(2) reported uptime */
+extern struct olsr_cookie_info *def_timer_ci;
 
 #if defined WIN32
 extern bool olsr_win32_end_request;
 extern bool olsr_win32_end_flag;
 #endif
-
-uint32_t olsr_times(void);
 
 /*
  *IPC functions

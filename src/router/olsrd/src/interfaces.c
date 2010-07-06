@@ -39,6 +39,9 @@
  *
  */
 
+#include <signal.h>
+#include <unistd.h>
+
 #include "defs.h"
 #include "interfaces.h"
 #include "ifnet.h"
@@ -46,13 +49,20 @@
 #include "olsr.h"
 #include "net_olsr.h"
 #include "ipcalc.h"
+#include "log.h"
+#include "parser.h"
+
+#ifdef WIN32
+#include <winbase.h>
+#define close(x) closesocket(x)
+#endif
 
 /* The interface linked-list */
 struct interface *ifnet;
 
 /* Ifchange functions */
 struct ifchgf {
-  int (*function) (struct interface *, int);
+  void (*function) (int if_index, struct interface *, enum olsr_ifchg_flag);
   struct ifchgf *next;
 };
 
@@ -73,7 +83,7 @@ struct olsr_cookie_info *hna_gen_timer_cookie = NULL;
  *@return the number of interfaces configured
  */
 int
-ifinit(void)
+olsr_init_interfacedb(void)
 {
   struct olsr_if *tmp_if;
 
@@ -103,18 +113,18 @@ ifinit(void)
 
   /* Kick a periodic timer for the network interface update function */
   olsr_start_timer((unsigned int)olsr_cnf->nic_chgs_pollrate * MSEC_PER_SEC, 5, OLSR_TIMER_PERIODIC, &check_interface_updates, NULL,
-                   interface_poll_timer_cookie->ci_id);
+                   interface_poll_timer_cookie);
 
   return (ifnet == NULL) ? 0 : 1;
 }
 
 void
-run_ifchg_cbs(struct interface *ifp, int flag)
+olsr_trigger_ifchange(int if_index, struct interface *ifp, enum olsr_ifchg_flag flag)
 {
   struct ifchgf *tmp_ifchgf_list = ifchgf_list;
 
   while (tmp_ifchgf_list != NULL) {
-    tmp_ifchgf_list->function(ifp, flag);
+    tmp_ifchgf_list->function(if_index, ifp, flag);
     tmp_ifchgf_list = tmp_ifchgf_list->next;
   }
 }
@@ -170,7 +180,7 @@ if_ifwithsock(int fd)
   ifp = ifnet;
 
   while (ifp) {
-    if (ifp->olsr_socket == fd)
+    if (ifp->olsr_socket == fd || ifp->send_socket == fd)
       return ifp;
     ifp = ifp->int_next;
   }
@@ -196,6 +206,28 @@ if_ifwithname(const char *if_name)
       return ifp;
     }
     ifp = ifp->int_next;
+  }
+  return NULL;
+}
+
+/**
+ *Find the olsr_if with a given label.
+ *
+ *@param if_name the label of the interface to find.
+ *
+ *@return return the interface struct representing the interface
+ *that matched the label.
+ */
+struct olsr_if *
+olsrif_ifwithname(const char *if_name)
+{
+  struct olsr_if *oifp = olsr_cnf->interfaces;
+  while (oifp) {
+    /* good ol' strcmp should be sufficcient here */
+    if (strcmp(oifp->name, if_name) == 0) {
+      return oifp;
+    }
+    oifp = oifp->next;
   }
   return NULL;
 }
@@ -244,7 +276,7 @@ if_ifwithindex_name(const int if_index)
  *@return nada
  */
 struct olsr_if *
-queue_if(const char *name, int hemu)
+olsr_create_olsrif(const char *name, int hemu)
 {
   struct olsr_if *interf_n = olsr_cnf->interfaces;
   size_t name_size;
@@ -289,7 +321,7 @@ queue_if(const char *name, int hemu)
  *@return
  */
 int
-add_ifchgf(int (*f) (struct interface *, int))
+olsr_add_ifchange_handler(void (*f) (int if_index, struct interface *, enum olsr_ifchg_flag))
 {
 
   struct ifchgf *new_ifchgf;
@@ -308,7 +340,7 @@ add_ifchgf(int (*f) (struct interface *, int))
  * Remove an ifchange function
  */
 int
-del_ifchgf(int (*f) (struct interface *, int))
+olsr_remove_ifchange_handler(void (*f) (int if_index, struct interface *, enum olsr_ifchg_flag))
 {
   struct ifchgf *tmp_ifchgf, *prev;
 
@@ -332,6 +364,83 @@ del_ifchgf(int (*f) (struct interface *, int))
   }
 
   return 0;
+}
+
+void
+olsr_remove_interface(struct olsr_if * iface)
+{
+  struct interface *ifp, *tmp_ifp;
+  ifp = iface->interf;
+
+  OLSR_PRINTF(1, "Removing interface %s (%d)\n", iface->name, ifp->if_index);
+  olsr_syslog(OLSR_LOG_INFO, "Removing interface %s\n", iface->name);
+
+  olsr_delete_link_entry_by_ip(&ifp->ip_addr);
+
+  /*
+   *Call possible ifchange functions registered by plugins
+   */
+  olsr_trigger_ifchange(ifp->if_index, ifp, IFCHG_IF_REMOVE);
+
+  /* cleanup routes over this interface */
+  olsr_delete_interface_routes(ifp->if_index);
+
+  /* Dequeue */
+  if (ifp == ifnet) {
+    ifnet = ifp->int_next;
+  } else {
+    tmp_ifp = ifnet;
+    while (tmp_ifp->int_next != ifp) {
+      tmp_ifp = tmp_ifp->int_next;
+    }
+    tmp_ifp->int_next = ifp->int_next;
+  }
+
+  /* Remove output buffer */
+  net_remove_buffer(ifp);
+
+  /* Check main addr */
+  /* deactivated to prevent change of originator IP */
+#if 0
+  if (ipequal(&olsr_cnf->main_addr, &ifp->ip_addr)) {
+    if (ifnet == NULL) {
+      /* No more interfaces */
+      memset(&olsr_cnf->main_addr, 0, olsr_cnf->ipsize);
+      OLSR_PRINTF(1, "No more interfaces...\n");
+    } else {
+      struct ipaddr_str buf;
+      olsr_cnf->main_addr = ifnet->ip_addr;
+      OLSR_PRINTF(1, "New main address: %s\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
+      olsr_syslog(OLSR_LOG_INFO, "New main address: %s\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
+    }
+  }
+#endif
+  /*
+   * Deregister functions for periodic message generation
+   */
+  olsr_stop_timer(ifp->hello_gen_timer);
+  olsr_stop_timer(ifp->tc_gen_timer);
+  olsr_stop_timer(ifp->mid_gen_timer);
+  olsr_stop_timer(ifp->hna_gen_timer);
+
+  iface->configured = 0;
+  iface->interf = NULL;
+
+  /* Close olsr socket */
+  remove_olsr_socket(ifp->olsr_socket, &olsr_input, NULL);
+  close(ifp->olsr_socket);
+
+  remove_olsr_socket(ifp->send_socket, &olsr_input, NULL);
+  close(ifp->send_socket);
+
+  /* Free memory */
+  free(ifp->int_name);
+  free(ifp);
+
+  if ((ifnet == NULL) && (!olsr_cnf->allow_no_interfaces)) {
+    olsr_syslog(OLSR_LOG_INFO, "No more active interfaces - exiting.\n");
+    olsr_exit("No more active interfaces - exiting.\n", EXIT_FAILURE);
+  }
 }
 
 /*

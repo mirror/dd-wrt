@@ -64,10 +64,7 @@ union olsr_ip_addr httpinfo_listen_ip;
 static void my_init(void) __attribute__ ((constructor));
 static void my_fini(void) __attribute__ ((destructor));
 
-static int add_plugin_ipnet(const char *value, void *data, set_plugin_parameter_addon);
-static int add_plugin_ipaddr(const char *value, void *data, set_plugin_parameter_addon);
-
-static int insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net **allowed_nets);
+static int add_plugin_access(const char *value, void *data, set_plugin_parameter_addon);
 
 /*
  * Defines the version of the plugin interface that is used
@@ -108,8 +105,8 @@ my_fini(void)
 
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &http_port},
-  {.name = "host",.set_plugin_parameter = &add_plugin_ipaddr,.data = &allowed_nets},
-  {.name = "net",.set_plugin_parameter = &add_plugin_ipnet,.data = &allowed_nets},
+  {.name = "host",.set_plugin_parameter = &add_plugin_access,.data = &allowed_nets},
+  {.name = "net",.set_plugin_parameter = &add_plugin_access,.data = &allowed_nets},
   {.name = "resolve",.set_plugin_parameter = &set_plugin_boolean,.data = &resolve_ip_addresses},
 };
 
@@ -121,9 +118,16 @@ olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *
 }
 
 static int
-insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net **my_allowed_nets)
+add_plugin_access(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
+  struct olsr_ip_prefix prefix;
+  struct allowed_net **my_allowed_nets = data;
   struct allowed_net *an;
+
+  if (olsr_string_to_prefix(olsr_cnf->ip_version, &prefix, value)) {
+    fprintf(stderr, "(HTTPINFO) unknown access restriction parameter: %s!\n", value);
+    exit(0);
+  }
 
   an = olsr_malloc(sizeof(*an), __func__);
   if (an == NULL) {
@@ -131,33 +135,11 @@ insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net 
     exit(0);
   }
 
-  if (inet_aton(sz_net, &an->net.v4) == 0 || inet_aton(sz_mask, &an->mask.v4) == 0) {
-    free(an);
-    return 1;
-  }
+  an->prefix = prefix;
   an->next = *my_allowed_nets;
   *my_allowed_nets = an;
   return 0;
 }
-
-static int
-add_plugin_ipnet(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
-  char sz_net[100], sz_mask[100];      /* IPv6 in the future */
-
-  if (sscanf(value, "%99s %99s", sz_net, sz_mask) != 2) {
-    olsr_printf(1, "(HTTPINFO) Error parsing net param \"%s\"!\n", value);
-    return 0;
-  }
-  return insert_plugin_ipnet(sz_net, sz_mask, data);
-}
-
-static int
-add_plugin_ipaddr(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
-{
-  return insert_plugin_ipnet(value, "255.255.255.255", data);
-}
-
 /*
  * Local Variables:
  * mode: c

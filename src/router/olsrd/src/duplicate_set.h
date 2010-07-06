@@ -66,6 +66,7 @@ AVLNODE2STRUCT(duptree2dupentry, struct dup_entry, avl);
 void olsr_init_duplicate_set(void);
 void olsr_cleanup_duplicates(union olsr_ip_addr *orig);
 struct dup_entry *olsr_create_duplicate_entry(void *ip, uint16_t seqnr);
+int olsr_seqno_diff(uint16_t seqno1, uint16_t seqno2);
 int olsr_message_is_duplicate(union olsr_message *m);
 void olsr_print_duplicate_table(void);
 

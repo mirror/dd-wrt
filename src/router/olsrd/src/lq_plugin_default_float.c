@@ -85,7 +85,9 @@ struct lq_handler lq_etx_float_handler = {
   &default_lq_print_cost_float,
 
   sizeof(struct default_lq_float),
-  sizeof(struct default_lq_float)
+  sizeof(struct default_lq_float),
+  4,
+  4
 };
 
 static void

@@ -99,6 +99,19 @@ olsr_cleanup_duplicate_entry(void __attribute__ ((unused)) * unused)
   OLSR_FOR_ALL_DUP_ENTRIES_END(entry);
 }
 
+int olsr_seqno_diff(uint16_t seqno1, uint16_t seqno2) {
+  int diff = (int)seqno1 - (int)(seqno2);
+
+  // overflow ?
+  if (diff > (1 << 15)) {
+    diff -= (1 << 16);
+  }
+  else if (diff < -(1 << 15)) {
+      diff += (1 << 16);
+  }
+  return diff;
+}
+
 int
 olsr_message_is_duplicate(union olsr_message *m)
 {
@@ -136,20 +149,13 @@ olsr_message_is_duplicate(union olsr_message *m)
     return false;               // okay, we process this package
   }
 
-  diff = (int)seqnr - (int)(entry->seqnr);
 
   // update timestamp
   if (valid_until > entry->valid_until) {
     entry->valid_until = valid_until;
   }
-  // overflow ?
-  if (diff > (1 << 15)) {
-    diff -= (1 << 16);
-  }
-  else if (diff < -(1 << 15)) {
-      diff += (1 << 16);
-  }
 
+  diff = olsr_seqno_diff(seqnr, entry->seqnr);
   if (diff < -31) {
     entry->too_low_counter++;
 

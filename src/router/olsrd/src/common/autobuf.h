@@ -42,6 +42,8 @@
 #ifndef _COMMON_AUTOBUF_H
 #define _COMMON_AUTOBUF_H
 
+struct autobuf;
+
 #include "defs.h"
 #include <stdarg.h>
 #include <time.h>

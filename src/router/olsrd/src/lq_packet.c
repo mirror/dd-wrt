@@ -292,7 +292,7 @@ serialize_common(struct olsr_common *comm)
 {
   if (olsr_cnf->ip_version == AF_INET) {
     // serialize an IPv4 OLSR message header
-    struct olsr_header_v4 *olsr_head_v4 = (struct olsr_header_v4 *)(ARM_NOWARN_ALIGN)msg_buffer;
+    struct olsr_header_v4 *olsr_head_v4 = (struct olsr_header_v4 *)ARM_NOWARN_ALIGN(msg_buffer);
 
     olsr_head_v4->type = comm->type;
     olsr_head_v4->vtime = reltime_to_me(comm->vtime);
@@ -305,7 +305,7 @@ serialize_common(struct olsr_common *comm)
     olsr_head_v4->seqno = htons(get_msg_seqno());
   } else {
     // serialize an IPv6 OLSR message header
-    struct olsr_header_v6 *olsr_head_v6 = (struct olsr_header_v6 *)(ARM_NOWARN_ALIGN)msg_buffer;
+    struct olsr_header_v6 *olsr_head_v6 = (struct olsr_header_v6 *)ARM_NOWARN_ALIGN(msg_buffer);
 
     olsr_head_v6->type = comm->type;
     olsr_head_v6->vtime = reltime_to_me(comm->vtime);
@@ -335,7 +335,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
 
   // initialize the LQ_HELLO header
 
-  struct lq_hello_header *head = (struct lq_hello_header *)(ARM_NOWARN_ALIGN)(msg_buffer + off);
+  struct lq_hello_header *head = (struct lq_hello_header *)ARM_NOWARN_ALIGN(msg_buffer + off);
 
   head->reserved = 0;
   head->htime = reltime_to_me(lq_hello->htime);
@@ -368,7 +368,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
         is_first = true;
         for (neigh = lq_hello->neigh; neigh != NULL; neigh = neigh->next) {
           if (0 == i && 0 == j)
-            expected_size += olsr_cnf->ipsize + 4;
+            expected_size += olsr_cnf->ipsize + olsr_sizeof_hello_lqdata();
           if (neigh->neigh_type == i && neigh->link_type == LINK_ORDER[j]) {
             if (is_first) {
               expected_size += sizeof(struct lq_hello_info_header);
@@ -403,7 +403,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
         // we need space for an IP address plus link quality
         // information
 
-        req = olsr_cnf->ipsize + 4;
+        req = olsr_cnf->ipsize + olsr_sizeof_hello_lqdata();
 
         // no, we also need space for an info header, as this is the
         // first neighbor with the current neighor type and link type
@@ -444,7 +444,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
         // create a new info header
 
         if (is_first) {
-          info_head = (struct lq_hello_info_header *)(ARM_NOWARN_ALIGN)(buff + size);
+          info_head = (struct lq_hello_info_header *)ARM_NOWARN_ALIGN(buff + size);
           size += sizeof(struct lq_hello_info_header);
 
           info_head->reserved = 0;
@@ -526,7 +526,7 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 
   // initialize the LQ_TC header
 
-  head = (struct lq_tc_header *)(ARM_NOWARN_ALIGN)(msg_buffer + off);
+  head = (struct lq_tc_header *)ARM_NOWARN_ALIGN(msg_buffer + off);
 
   head->ansn = htons(lq_tc->ansn);
   head->lower_border = 0;
@@ -554,8 +554,7 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
    */
   if (0 < net_output_pending(outif)) {
     for (neigh = lq_tc->neigh; neigh != NULL; neigh = neigh->next) {
-      // TODO sizeof_tc_lq function required
-      expected_size += olsr_cnf->ipsize + 4;
+      expected_size += olsr_cnf->ipsize + olsr_sizeof_tc_lqdata();
     }
   }
 
@@ -570,9 +569,7 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
     // information
 
     // force signed comparison
-
-    // TODO sizeof_tc_lq function required
-    if ((int)(size + olsr_cnf->ipsize + 4) > rem) {
+    if ((int)(size + olsr_cnf->ipsize + olsr_sizeof_tc_lqdata()) > rem) {
       head->lower_border = left_border_flag;
       head->upper_border = calculate_border_flag(last_ip, &neigh->address);
       left_border_flag = head->upper_border;
@@ -598,7 +595,7 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
     genipcopy(buff + size, &neigh->address);
 
     // remember last ip
-    last_ip = (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)(buff + size);
+    last_ip = (union olsr_ip_addr *)ARM_NOWARN_ALIGN(buff + size);
 
     size += olsr_cnf->ipsize;
 

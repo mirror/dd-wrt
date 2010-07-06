@@ -57,15 +57,13 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#define PARSER_DEBUG 0
+#define PARSER_DEBUG 1
 
 #if PARSER_DEBUG
 #define PARSER_DEBUG_PRINTF(x, args...)   printf(x, ##args)
 #else
 #define PARSER_DEBUG_PRINTF(x, args...)   do { } while (0)
 #endif
-
-static char interface_defaults_name[] = "[InterfaceDefaults]";
 
 #define SET_IFS_CONF(ifs, ifcnt, field, value) do { \
 	for (; ifcnt>0; ifs=ifs->next, ifcnt--) { \
@@ -185,10 +183,15 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_INTERFACE
 %token TOK_NOINT
 %token TOK_TOS
-%token TOK_RTTABLE
 %token TOK_OLSRPORT
 %token TOK_RTPROTO
+%token TOK_RTTABLE
 %token TOK_RTTABLE_DEFAULT
+%token TOK_RTTABLE_TUNNEL
+%token TOK_RTTABLE_PRIORITY
+%token TOK_RTTABLE_DEFAULTOLSR_PRIORITY
+%token TOK_RTTABLE_TUNNEL_PRIORITY
+%token TOK_RTTABLE_DEFAULT_PRIORITY
 %token TOK_WILLINGNESS
 %token TOK_IPCCON
 %token TOK_FIBMETRIC
@@ -202,8 +205,6 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_MPRCOVERAGE
 %token TOK_LQ_LEVEL
 %token TOK_LQ_FISH
-%token TOK_LQ_DLIMIT
-%token TOK_LQ_WSIZE
 %token TOK_LQ_AGING
 %token TOK_LQ_PLUGIN
 %token TOK_LQ_NAT_THRESH
@@ -212,6 +213,15 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_PLPARAM
 %token TOK_MIN_TC_VTIME
 %token TOK_LOCK_FILE
+%token TOK_USE_NIIT
+%token TOK_SMART_GW
+%token TOK_SMART_GW_ALLOW_NAT
+%token TOK_SMART_GW_UPLINK
+%token TOK_SMART_GW_UPLINK_NAT
+%token TOK_SMART_GW_SPEED
+%token TOK_SMART_GW_PREFIX
+%token TOK_SRC_IP_ROUTES
+%token TOK_MAIN_IP
 
 %token TOK_HOSTLABEL
 %token TOK_NETLABEL
@@ -237,6 +247,8 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_IPV4_ADDR
 %token TOK_IPV6_ADDR
 %token TOK_DEFAULT
+%token TOK_AUTO
+%token TOK_NONE
 
 %token TOK_COMMENT
 
@@ -253,9 +265,14 @@ stmt:       idebug
           | bnoint
           | atos
           | aolsrport
-          | arttable
-          | artproto
-          | arttable_default
+          | irtproto
+          | irttable
+          | irttable_default
+          | irttable_tunnel
+          | irttable_priority
+          | irttable_defaultolsr_priority
+          | irttable_tunnel_priority
+          | irttable_default_priority
           | awillingness
           | busehyst
           | fhystscale
@@ -268,20 +285,27 @@ stmt:       idebug
           | alq_level
           | alq_plugin
           | alq_fish
-          | alq_dlimit
           | anat_thresh
-          | alq_wsize
           | alq_aging
           | bclear_screen
           | vcomment
           | amin_tc_vtime
           | alock_file
+          | suse_niit
+          | bsmart_gw
+          | bsmart_gw_allow_nat
+          | ssmart_gw_uplink
+          | bsmart_gw_uplink_nat
+          | ismart_gw_speed
+          | ismart_gw_prefix
+          | bsrc_ip_routes
+          | amain_ip
 ;
 
 block:      TOK_HNA4 hna4body
           | TOK_HNA6 hna6body
           | TOK_IPCCON ipcbody
-          | ifdblock ifbody
+          | ifdblock ifdbody
           | ifblock ifbody
           | plblock plbody
 ;
@@ -325,6 +349,20 @@ ifnicks:   | ifnicks ifnick
 ;
 
 ifbody:     TOK_OPEN ifstmts TOK_CLOSE
+;
+
+ifdbody:     TOK_OPEN ifstmts TOK_CLOSE
+{
+  struct olsr_if *in = olsr_cnf->interfaces;
+  printf("\nInterface Defaults");
+  /*remove Interface Defaults from Interface list as they are no interface!*/
+  olsr_cnf->interfaces = in->next;
+  ifs_in_curr_cfg=0;
+  /*free interface but keep its config intact?*/
+  free(in->cnfi);
+  free(in);
+
+}
 ;
 
 ifstmts:   | ifstmts ifstmt
@@ -377,7 +415,8 @@ ifdblock: TOK_INTERFACE_DEFAULTS
     YYABORT;
   }
 
-  in->name = strdup(interface_defaults_name);
+  //should not need a name any more, as we free it on "}" again
+  //in->name = strdup(interface_defaults_name);
 
   olsr_cnf->interface_defaults = in->cnf;
 
@@ -385,6 +424,8 @@ ifdblock: TOK_INTERFACE_DEFAULTS
   in->next = olsr_cnf->interfaces;
   olsr_cnf->interfaces = in;
   ifs_in_curr_cfg=1;
+  
+  fflush(stdout);
 }
 ;
 
@@ -758,15 +799,16 @@ iipversion:    TOK_IPVERSION TOK_INTEGER
 
 fibmetric:    TOK_FIBMETRIC TOK_STRING
 {
+  int i;
   PARSER_DEBUG_PRINTF("FIBMetric: %s\n", $2->string);
-  if (strcmp($2->string, CFG_FIBM_FLAT) == 0) {
-      olsr_cnf->fib_metric = FIBM_FLAT;
-  } else if (strcmp($2->string, CFG_FIBM_CORRECT) == 0) {
-      olsr_cnf->fib_metric = FIBM_CORRECT;
-  } else if (strcmp($2->string, CFG_FIBM_APPROX) == 0) {
-      olsr_cnf->fib_metric = FIBM_APPROX;
-  } else {
-    fprintf(stderr, "FIBMetric must be \"%s\", \"%s\", or \"%s\"!\n", CFG_FIBM_FLAT, CFG_FIBM_CORRECT, CFG_FIBM_APPROX);
+  for (i=0; i<FIBM_CNT; i++) {
+    if (strcmp($2->string, FIB_METRIC_TXT[i]) == 0) {
+      olsr_cnf->fib_metric = i;
+      break;
+    }
+  }
+  if (i == FIBM_CNT) {
+    fprintf(stderr, "Bad FIBMetric value: %s\n", $2->string);
     YYABORT;
   }
   free($1);
@@ -942,32 +984,137 @@ atos: TOK_TOS TOK_INTEGER
 aolsrport: TOK_OLSRPORT TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("OlsrPort: %d\n", $2->integer);
-  if ($2->integer>=1000) olsr_cnf->olsrport = $2->integer;
-  else olsr_cnf->olsrport = DEF_OLSRPORT;
+  olsr_cnf->olsrport = $2->integer;
   free($2);
 }
 ;
 
-arttable: TOK_RTTABLE TOK_INTEGER
-{
-  PARSER_DEBUG_PRINTF("RtTable: %d\n", $2->integer);
-  olsr_cnf->rttable = $2->integer;
-  free($2);
-}
-;
-
-artproto: TOK_RTPROTO TOK_INTEGER
+irtproto: TOK_RTPROTO TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("RtProto: %d\n", $2->integer);
-  olsr_cnf->rtproto = $2->integer;
+  olsr_cnf->rt_proto = $2->integer;
   free($2);
 }
 ;
 
-arttable_default: TOK_RTTABLE_DEFAULT TOK_INTEGER
+irttable: TOK_RTTABLE TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("RtTable: %d\n", $2->integer);
+  olsr_cnf->rt_table = $2->integer;
+  free($2);
+}
+       | TOK_RTTABLE TOK_AUTO
+{
+  PARSER_DEBUG_PRINTF("RtTable: auto\n");
+  olsr_cnf->rt_table = DEF_RT_AUTO;
+  free($2);
+}
+;
+
+irttable_default: TOK_RTTABLE_DEFAULT TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("RtTableDefault: %d\n", $2->integer);
-  olsr_cnf->rttable_default = $2->integer;
+  olsr_cnf->rt_table_default = $2->integer;
+  free($2);
+}
+       | TOK_RTTABLE_DEFAULT TOK_AUTO
+{
+  PARSER_DEBUG_PRINTF("RtTableDefault: auto\n");
+  olsr_cnf->rt_table_default = DEF_RT_AUTO;
+  free($2);
+}
+;
+
+irttable_tunnel: TOK_RTTABLE_TUNNEL TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("RtTableTunnel: %d\n", $2->integer);
+  olsr_cnf->rt_table_tunnel = $2->integer;
+  free($2);
+}
+       | TOK_RTTABLE_TUNNEL TOK_AUTO
+{
+  PARSER_DEBUG_PRINTF("RtTableTunnel: auto\n");
+  olsr_cnf->rt_table_tunnel = DEF_RT_AUTO;
+  free($2);
+}
+;
+
+irttable_priority: TOK_RTTABLE_PRIORITY TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("RtTablePriority: %d\n", $2->integer);
+  olsr_cnf->rt_table_pri = $2->integer;
+  free($2);
+}
+        | TOK_RTTABLE_PRIORITY TOK_AUTO
+{
+  PARSER_DEBUG_PRINTF("RtTablePriority: auto\n");
+  olsr_cnf->rt_table_pri = DEF_RT_AUTO;
+  free($2);
+}
+        | TOK_RTTABLE_PRIORITY TOK_NONE
+{
+  PARSER_DEBUG_PRINTF("RtTablePriority: none\n");
+  olsr_cnf->rt_table_pri = DEF_RT_NONE;
+  free($2);
+}
+;
+
+irttable_default_priority: TOK_RTTABLE_DEFAULT_PRIORITY TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("RtTableDefaultPriority: %d\n", $2->integer);
+  olsr_cnf->rt_table_default_pri = $2->integer;
+  free($2);
+}
+        | TOK_RTTABLE_DEFAULT_PRIORITY TOK_AUTO
+{
+  PARSER_DEBUG_PRINTF("RtTableDefaultPriority: auto\n");
+  olsr_cnf->rt_table_default_pri = DEF_RT_AUTO;
+  free($2);
+}
+        | TOK_RTTABLE_DEFAULT_PRIORITY TOK_NONE
+{
+  PARSER_DEBUG_PRINTF("RtTableDefaultPriority: none\n");
+  olsr_cnf->rt_table_default_pri = DEF_RT_NONE;
+  free($2);
+}
+;
+
+irttable_tunnel_priority: TOK_RTTABLE_TUNNEL_PRIORITY TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("RtTableTunnelPriority: %d\n", $2->integer);
+  olsr_cnf->rt_table_tunnel_pri = $2->integer;
+  free($2);
+}
+        | TOK_RTTABLE_TUNNEL_PRIORITY TOK_AUTO
+{
+  PARSER_DEBUG_PRINTF("RtTableTunnelPriority: auto\n");
+  olsr_cnf->rt_table_tunnel_pri = DEF_RT_AUTO;
+  free($2);
+}
+        | TOK_RTTABLE_TUNNEL_PRIORITY TOK_NONE
+{
+  PARSER_DEBUG_PRINTF("RtTableTunnelPriority: none\n");
+  olsr_cnf->rt_table_tunnel_pri = DEF_RT_NONE;
+  free($2);
+}
+;
+
+irttable_defaultolsr_priority: TOK_RTTABLE_DEFAULTOLSR_PRIORITY TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("RtTableDefaultOlsrPriority: %d\n", $2->integer);
+  olsr_cnf->rt_table_defaultolsr_pri = $2->integer;
+  free($2);
+}
+        | TOK_RTTABLE_DEFAULTOLSR_PRIORITY TOK_AUTO
+{
+  PARSER_DEBUG_PRINTF("RtTableDefaultOlsrPriority: auto\n");
+  olsr_cnf->rt_table_defaultolsr_pri = DEF_RT_AUTO;
+  free($2);
+}
+        | TOK_RTTABLE_DEFAULTOLSR_PRIORITY TOK_NONE
+{
+  PARSER_DEBUG_PRINTF("RtTableDefaultOlsrPriority: none\n");
+  olsr_cnf->rt_table_defaultolsr_pri = DEF_RT_NONE;
   free($2);
 }
 ;
@@ -1061,21 +1208,6 @@ alq_fish: TOK_LQ_FISH TOK_INTEGER
 }
 ;
 
-alq_dlimit: TOK_LQ_DLIMIT TOK_INTEGER TOK_FLOAT
-{
-  PARSER_DEBUG_PRINTF("Link quality dijkstra limit %d, %0.2f\n", $2->integer, $3->floating);
-  olsr_cnf->lq_dlimit = $2->integer;
-  olsr_cnf->lq_dinter = $3->floating;
-  free($2);
-}
-;
-
-alq_wsize: TOK_LQ_WSIZE TOK_INTEGER
-{
-  free($2);
-}
-;
-
 alq_aging: TOK_LQ_AGING TOK_FLOAT
 {
   PARSER_DEBUG_PRINTF("Link quality aging factor %f\n", $2->floating);
@@ -1117,11 +1249,133 @@ anat_thresh: TOK_LQ_NAT_THRESH TOK_FLOAT
 
 bclear_screen: TOK_CLEAR_SCREEN TOK_BOOLEAN
 {
-  PARSER_DEBUG_PRINTF("Clear screen %s\n", olsr_cnf->clear_screen ? "enabled" : "disabled");
+  PARSER_DEBUG_PRINTF("Clear screen %s\n", $2->boolean ? "enabled" : "disabled");
   olsr_cnf->clear_screen = $2->boolean;
   free($2);
 }
 ;
+
+suse_niit: TOK_USE_NIIT TOK_BOOLEAN
+{
+  PARSER_DEBUG_PRINTF("Use NIIT ip translation: %s\n", $2->boolean ? "enabled" : "disabled");
+  olsr_cnf->use_niit = $2->boolean;
+  free($2);
+}
+;
+
+bsmart_gw: TOK_SMART_GW TOK_BOOLEAN
+{
+	PARSER_DEBUG_PRINTF("Smart gateway system: %s\n", $2->boolean ? "enabled" : "disabled");
+	olsr_cnf->smart_gw_active = $2->boolean;
+	free($2);
+}
+;
+
+bsmart_gw_allow_nat: TOK_SMART_GW_ALLOW_NAT TOK_BOOLEAN
+{
+	PARSER_DEBUG_PRINTF("Smart gateway allow client nat: %s\n", $2->boolean ? "yes" : "no");
+	olsr_cnf->smart_gw_allow_nat = $2->boolean;
+	free($2);
+}
+;
+
+ssmart_gw_uplink: TOK_SMART_GW_UPLINK TOK_STRING
+{
+	PARSER_DEBUG_PRINTF("Smart gateway uplink: %s\n", $2->string);
+	if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_NONE]) == 0) {
+		olsr_cnf->smart_gw_type = GW_UPLINK_NONE;
+	}
+	if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_IPV4]) == 0) {
+		olsr_cnf->smart_gw_type = GW_UPLINK_IPV4;
+	}
+	else if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_IPV6]) == 0) {
+		olsr_cnf->smart_gw_type = GW_UPLINK_IPV6;
+	}
+	else if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_IPV46]) == 0) {
+		olsr_cnf->smart_gw_type = GW_UPLINK_IPV46;
+	}
+	else {
+		fprintf(stderr, "Bad gateway uplink type: %s\n", $2->string);
+		YYABORT;
+	}
+	free($2);
+}
+;
+
+ismart_gw_speed: TOK_SMART_GW_SPEED TOK_INTEGER TOK_INTEGER
+{
+	PARSER_DEBUG_PRINTF("Smart gateway speed: %u uplink/%u downlink kbit/s\n", $2->integer, $3->integer);
+	olsr_cnf->smart_gw_uplink = $2->integer;
+	olsr_cnf->smart_gw_downlink = $3->integer;
+	free($2);
+	free($3);
+}
+;
+
+bsmart_gw_uplink_nat: TOK_SMART_GW_UPLINK_NAT TOK_BOOLEAN
+{
+	PARSER_DEBUG_PRINTF("Smart gateway uplink nat: %s\n", $2->boolean ? "yes" : "no");
+	olsr_cnf->smart_gw_uplink_nat = $2->boolean;
+	free($2);
+}
+;
+
+ismart_gw_prefix: TOK_SMART_GW_PREFIX TOK_IPV6_ADDR TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway prefix: %s %u\n", $2->string, $3->integer);
+	if (inet_pton(olsr_cnf->ip_version, $2->string, &olsr_cnf->smart_gw_prefix.prefix) == 0) {
+	  fprintf(stderr, "Bad IP part of gateway prefix: %s\n", $2->string);
+    YYABORT;
+  }
+	olsr_cnf->smart_gw_prefix.prefix_len = (uint8_t)$3->integer;
+	
+	free($2);
+	free($3);
+}
+        |       TOK_SMART_GW_PREFIX TOK_IPV6_ADDR TOK_SLASH TOK_INTEGER
+{
+	PARSER_DEBUG_PRINTF("Smart gateway prefix: %s %u\n", $2->string, $4->integer);
+	if (inet_pton(olsr_cnf->ip_version, $2->string, &olsr_cnf->smart_gw_prefix.prefix) == 0) {
+	  fprintf(stderr, "Bad IP part of gateway prefix: %s\n", $2->string);
+    YYABORT;
+  }
+	olsr_cnf->smart_gw_prefix.prefix_len = (uint8_t)$4->integer;
+	
+	free($2);
+	free($4);
+}
+;
+
+bsrc_ip_routes: TOK_SRC_IP_ROUTES TOK_BOOLEAN
+{
+	PARSER_DEBUG_PRINTF("Use originator for routes src-ip: %s\n", $2->boolean ? "yes" : "no");
+	olsr_cnf->use_src_ip_routes = $2->boolean;
+	free($2);
+}
+;
+
+amain_ip: TOK_MAIN_IP TOK_IPV4_ADDR
+{
+  PARSER_DEBUG_PRINTF("Fixed Main IP: %s\n", $2->string);
+  
+  if (olsr_cnf->ip_version != AF_INET
+      || inet_pton(olsr_cnf->ip_version, $2->string, &olsr_cnf->main_addr) != 1) {
+    fprintf(stderr, "Bad main IP: %s\n", $2->string);
+    YYABORT;
+  }
+  free($2);
+}
+        |       TOK_MAIN_IP TOK_IPV6_ADDR
+{
+  PARSER_DEBUG_PRINTF("Fixed Main IP: %s\n", $2->string);
+  
+  if (olsr_cnf->ip_version != AF_INET6
+      || inet_pton(olsr_cnf->ip_version, $2->string, &olsr_cnf->main_addr) != 1) {
+    fprintf(stderr, "Bad main IP: %s\n", $2->string);
+    YYABORT;
+  }
+  free($2);
+}
 
 plblock: TOK_PLUGIN TOK_STRING
 {
