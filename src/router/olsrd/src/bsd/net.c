@@ -178,10 +178,9 @@ set_sysctl_int(const char *name, int new)
   return old;
 }
 
-int
-enable_ip_forwarding(int version)
-{
-  const char *name = version == AF_INET ? "net.inet.ip.forwarding" : "net.inet6.ip6.forwarding";
+void
+net_os_set_global_ifoptions(void) {
+  const char *name = olsr_cnf->ip_version == AF_INET ? "net.inet.ip.forwarding" : "net.inet6.ip6.forwarding";
 
   gateway = set_sysctl_int(name, 1);
   if (gateway < 0) {
@@ -189,25 +188,17 @@ enable_ip_forwarding(int version)
     olsr_startup_sleep(3);
   }
 
-  return 1;
-}
-
-int
-disable_redirects_global(int version)
-{
-  const char *name;
-
   /* do not accept ICMP redirects */
 
 #if defined(__OpenBSD__) || defined(__NetBSD__)
-  if (version == AF_INET)
+  if (olsr_cnf->ip_version == AF_INET)
     name = "net.inet.icmp.rediraccept";
   else
     name = "net.inet6.icmp6.rediraccept";
 
   ignore_redir = set_sysctl_int(name, 0);
 #elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__
-  if (version == AF_INET) {
+  if (olsr_cnf->ip_version == AF_INET) {
     name = "net.inet.icmp.drop_redirect";
     ignore_redir = set_sysctl_int(name, 1);
   } else {
@@ -215,7 +206,7 @@ disable_redirects_global(int version)
     ignore_redir = set_sysctl_int(name, 0);
   }
 #else
-  if (version == AF_INET)
+  if (olsr_cnf->ip_version == AF_INET)
     name = "net.inet.icmp.drop_redirect";
   else
     name = "net.inet6.icmp6.drop_redirect";
@@ -231,7 +222,7 @@ disable_redirects_global(int version)
 
   /* do not send ICMP redirects */
 
-  if (version == AF_INET)
+  if (olsr_cnf->ip_version == AF_INET)
     name = "net.inet.ip.redirect";
   else
     name = "net.inet6.ip6.redirect";
@@ -242,51 +233,32 @@ disable_redirects_global(int version)
             "Cannot disable outgoing ICMP redirect messages. " "Please disable them manually. Continuing in 3 seconds...\n");
     olsr_startup_sleep(3);
   }
+}
 
-  return 1;
+int net_os_set_ifoptions(const char *if_name __attribute__ ((unused)), struct interface *iface __attribute__ ((unused))) {
+  return -1;
 }
 
 int
-disable_redirects(const char *if_name __attribute__ ((unused)), struct interface *iface __attribute__ ((unused)), int version
-                  __attribute__ ((unused)))
-{
-  /*
-   *  this function gets called for each interface olsrd uses; however,
-   * FreeBSD can only globally control ICMP redirects, and not on a
-   * per-interface basis; hence, only disable ICMP redirects in the "global"
-   * function
-   */
-  return 1;
-}
-
-int
-deactivate_spoof(const char *if_name __attribute__ ((unused)), struct interface *iface __attribute__ ((unused)), int version
-                 __attribute__ ((unused)))
-{
-  return 1;
-}
-
-int
-restore_settings(int version)
-{
+net_os_restore_ifoptions(void) {
   /* reset IP forwarding */
-  const char *name = version == AF_INET ? "net.inet.ip.forwarding" : "net.inet6.ip6.forwarding";
+  const char *name = olsr_cnf->ip_version == AF_INET ? "net.inet.ip.forwarding" : "net.inet6.ip6.forwarding";
 
   set_sysctl_int(name, gateway);
 
   /* reset incoming ICMP redirects */
 
 #ifdef __OpenBSD__
-  name = version == AF_INET ? "net.inet.icmp.rediraccept" : "net.inet6.icmp6.rediraccept";
+  name = olsr_cnf->ip_version == AF_INET ? "net.inet.icmp.rediraccept" : "net.inet6.icmp6.rediraccept";
 #elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__
-  name = version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.rediraccept";
+  name = olsr_cnf->ip_version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.rediraccept";
 #else
-  name = version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.drop_redirect";
+  name = olsr_cnf->ip_version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.drop_redirect";
 #endif
   set_sysctl_int(name, ignore_redir);
 
   /* reset outgoing ICMP redirects */
-  name = version == AF_INET ? "net.inet.ip.redirect" : "net.inet6.ip6.redirect";
+  name = olsr_cnf->ip_version == AF_INET ? "net.inet.ip.redirect" : "net.inet6.ip6.redirect";
   set_sysctl_int(name, send_redir);
   return 1;
 }

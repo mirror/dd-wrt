@@ -1,58 +1,73 @@
 ---------------------------------------------------------------------
 QUAGGA PLUGIN FOR OLSRD
 by Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
+
+addittions by:	Sven-Ola Tuecke <sven-ola-aet-gmx.de>
+	 	Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
 ---------------------------------------------------------------------
 
-This is the Quagga Plugin for the OLSRD. 
-It allowes olsrd to redistribute from various quagga-protocols 
+This is the Quagga Plugin for OLSRd. 
+It allows olsrd to redistribute from various quagga-protocols 
 as well as to export olsr-routes to quagga so that they can be
 redistributed by the quagga-routing-daemons.
 
-Note Sven-Ola: You also need a source distribution of quagga-0.98.5
-or quagga-0.98.6 (that is the current stable). The quagga source tree 
-needs to be patched with quagga-0.98.6-olsr.diff, compiled and installed
-via 'make install'. Because many people will otherwise have compile
-probs, I've added 2 include files in lib/quagga/src/quagga. If you
-want to use another version of quagga, make sure to remove these
-before you compile the olsrd_quagga plugin.
+You also need a source distribution of quagga-0.98.6 or quagga-0.99.15.
+The quagga source tree needs to be patched with quagga-0.98.6.diff or
+quagga-0.99.15.diff, respectively, compiled and installed via
+'make install'.
 
 ---------------------------------------------------------------------
 PLUGIN PARAMETERS (PlParam)
 ---------------------------------------------------------------------
 
-PlParam "redistribute" "<protocol>"
+PlParam "Redistribute" "<protocol>"
 	where protocol is one of the following:
 	system, kernel, connect, static, rip, ripng, ospf, ospf6,
 	isis, bgp, hsls
 	May be used more then once
 
 PlParam "ExportRoutes" "<only/both>"
-	exportes olsr-routes to quagga or to both, quagga and kernel
+	exports olsr-routes to quagga or to both, quagga and kernel
 	no routes are exported to quagga (normal behaviour) if not set.
 
-PlParam "LocalPref" "true"
+PlParam "LocalPref" "<true/false>"
         sets the Zebra SELECTED-flag on the routes exported to zebra
 	which means these routes are prefered in any case.
 
 PlParam "Distance" "0-255"
-        allowes to set the administrative distance to routes exported 
-	to Zebra.
-	
+        allows to set the administrative distance to routes exported 
+	to zebra.
+
+PlParam "SockPath" "<path>"
+        sets the path to zebra socket
+	defaults to "/var/run/quagga/zserv.api" if not set.
+
+PlParam "Port" "<port>"
+        sets the port on which zebra is listening
+	overrides 'SockPath' parameter if set.
+
+PlParam "Version" "<version>"
+        sets the version of packet format to communicate with zebra.
+	use "0" for Quagga 0.98.x and "1" for Quagga 0.99.x.
+	defaults to "0".
+
 ---------------------------------------------------------------------
 SAMPLE CONFIG
 ---------------------------------------------------------------------
 
-add in /etc/olsrd.conf:
+add in /usr/local/etc/olsrd.conf:
 
 LoadPlugin "olsrd_quagga.so.0.2.2"
 {
-	PlParam "redistribute" "ospf"
-	PlParam "redistribute" "bgp"
+	PlParam "Redistribute" "ospf"
+	PlParam "Redistribute" "bgp"
 	PlParam "ExportRoutes" "only"
 	PlParam "Distance" "125" 
 	PlParam "LocalPref" "false"
+	PlParam "SockPath" "/var/run/zserv.api"
+	PlParam "Version" "1"
 }
 
 
 ---------------------------------------------------------------------
-EOF / 8.5.2006
+EOF / 10.03.2010

@@ -1,0 +1,93 @@
+cheat sheet for making a (stable) release tarball.
+
+0. check if your name settings in .hgrc are correct. (have
+   your real name and email address in there).
+
+1. clone a fresh tree:
+
+   $ git clone git://olsr.org/olsrd.git
+   $ git checkout --track -b stable origin/stable
+
+2. check if the DEBUG settings in Makefile.inc are correct:
+
+   DEBUG ?= 1
+   NO_DEBUG_MESSAGES ?= 0
+
+   now check if it builds correct:
+
+   $ make uberclean build_all
+
+3. Update the changelog
+
+4. Change VERS in Makefile.inc to your target release.
+   in this example the target release is 0.5.6-r5
+   Please also write a new version to:
+   gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
+   gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
+
+   most likely this is carrying some pre-XXX-release tag.
+   
+   $ grep -E "^VERS" Makefile
+   VERS =          pre-0.6.1
+
+   change it to
+
+   VERS =          0.6.1
+
+5. commit
+
+6. make the release tarball
+
+   $ cd scripts/
+   $ ./mk-tarball.sh
+   [ ... ]
+   ### creating /tmp/olsrd-0.5.6-r5.tar.gz
+   6c996e94de06115d19dbbcaf6847051a  /tmp/olsrd-0.5.6-r5.tar.gz
+   ### creating /tmp/olsrd-0.5.6-r5.tar.bz2
+   e476819be5747758e3d6f579e4096bce  /tmp/olsrd-0.5.6-r5.tar.bz2
+
+7. check if everything is in the release tarball (ideally on a a
+   different machine) and try to build from the tarball.
+
+8. display the used tags:
+
+   $ git tag
+OLSRD_0_4_10
+OLSRD_0_4_8
+OLSRD_0_4_9
+OLSRD_0_5_0
+OLSRD_0_5_1
+OLSRD_0_5_2
+OLSRD_0_5_3
+OLSRD_0_5_4
+...
+
+   now tag the tree (please stick to the tagging scheme).
+
+   $ git tag -s OLSRD_0_6_0
+
+9. push
+
+10. upload the the .tgz and .bz2 tarballs to the http://www.olsr.org/downaload/0.5/
+   section and add a release article on the web.
+   Add a PGP signed textfile with the md5/sha1 sums to the webpage too
+
+11. Change VERS in Makefile.inc to your *next* target release.
+   in this example the next target release is pre-0.6.2
+   
+   Please also write a new version to:
+   gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
+   gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
+
+   change it from:
+   
+   $ grep -E "^VERS" Makefile
+   VERS =          0.6.1
+
+   to
+
+   VERS =          pre-0.6.2
+
+   commit & push
+
+you are done, congratulations !

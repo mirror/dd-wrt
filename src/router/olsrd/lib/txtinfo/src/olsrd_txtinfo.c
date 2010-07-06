@@ -74,10 +74,10 @@
 #include "hna_set.h"
 #include "mid_set.h"
 #include "link_set.h"
-#include "socket_parser.h"
 #include "net_olsr.h"
 #include "lq_plugin.h"
 #include "common/autobuf.h"
+#include "gateway.h"
 
 #include "olsrd_txtinfo.h"
 #include "olsrd_plugin.h"
@@ -91,9 +91,9 @@ static int ipc_socket;
 /* IPC initialization function */
 static int plugin_ipc_init(void);
 
-static void send_info(int send_what, int socket);
+static void send_info(int /*send_what*/, int /*socket*/);
 
-static void ipc_action(int);
+static void ipc_action(int, void *, unsigned int);
 
 static void ipc_print_neigh(struct autobuf *);
 
@@ -107,6 +107,10 @@ static void ipc_print_hna(struct autobuf *);
 
 static void ipc_print_mid(struct autobuf *);
 
+static void ipc_print_gateway(struct autobuf *);
+
+static void ipc_print_config(struct autobuf *);
+
 #define TXT_IPC_BUFSIZE 256
 
 #define SIW_ALL 0
@@ -117,6 +121,8 @@ static void ipc_print_mid(struct autobuf *);
 #define SIW_MID 5
 #define SIW_TOPO 6
 #define SIW_NEIGHLINK 7
+#define SIW_GATEWAY 8
+#define SIW_CONFIG 9
 
 #define MAX_CLIENTS 3
 
@@ -157,9 +163,7 @@ olsr_plugin_exit(void)
 static int
 plugin_ipc_init(void)
 {
-  struct sockaddr_storage sst;
-  struct sockaddr_in *sock_in;
-  struct sockaddr_in6 *sin6;
+  union olsr_sockaddr sst;
   uint32_t yes = 1;
   socklen_t addrlen;
 
@@ -187,27 +191,25 @@ plugin_ipc_init(void)
     /* complete the socket structure */
     memset(&sst, 0, sizeof(sst));
     if (olsr_cnf->ip_version == AF_INET) {
-      sock_in = (struct sockaddr_in *)&sst;
-      sock_in->sin_family = AF_INET;
+      sst.in4.sin_family = AF_INET;
       addrlen = sizeof(struct sockaddr_in);
 #ifdef SIN6_LEN
-      sock_in->sin_len = addrlen;
+      sst.in4.sin_len = addrlen;
 #endif
-      sock_in->sin_addr.s_addr = txtinfo_listen_ip.v4.s_addr;
-      sock_in->sin_port = htons(ipc_port);
+      sst.in4.sin_addr.s_addr = txtinfo_listen_ip.v4.s_addr;
+      sst.in4.sin_port = htons(ipc_port);
     } else {
-      sin6 = (struct sockaddr_in6 *)&sst;
-      sin6->sin6_family = AF_INET6;
+      sst.in6.sin6_family = AF_INET6;
       addrlen = sizeof(struct sockaddr_in6);
 #ifdef SIN6_LEN
-      sin6->sin6_len = addrlen;
+      sst.in6.sin6_len = addrlen;
 #endif
-      sin6->sin6_addr = txtinfo_listen_ip.v6;
-      sin6->sin6_port = htons(ipc_port);
+      sst.in6.sin6_addr = txtinfo_listen_ip.v6;
+      sst.in6.sin6_port = htons(ipc_port);
     }
 
     /* bind the socket to the port number */
-    if (bind(ipc_socket, (struct sockaddr *)&sst, addrlen) == -1) {
+    if (bind(ipc_socket, &sst.in, addrlen) == -1) {
 #ifndef NODEBUG
       olsr_printf(1, "(TXTINFO) bind()=%s\n", strerror(errno));
 #endif
@@ -223,7 +225,7 @@ plugin_ipc_init(void)
     }
 
     /* Register with olsrd */
-    add_olsr_socket(ipc_socket, &ipc_action);
+    add_olsr_socket(ipc_socket, &ipc_action, NULL, NULL, SP_PR_READ);
 
 #ifndef NODEBUG
     olsr_printf(2, "(TXTINFO) listening on port %d\n", ipc_port);
@@ -233,20 +235,19 @@ plugin_ipc_init(void)
 }
 
 static void
-ipc_action(int fd)
+ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
 {
-  struct sockaddr_storage pin;
-  struct sockaddr_in *sin4;
-  struct sockaddr_in6 *sin6;
+  union olsr_sockaddr pin;
+
   char addr[INET6_ADDRSTRLEN];
   fd_set rfds;
   struct timeval tv;
   int send_what = 0;
   int ipc_connection;
 
-  socklen_t addrlen = sizeof(struct sockaddr_storage);
+  socklen_t addrlen = sizeof(pin);
 
-  if ((ipc_connection = accept(fd, (struct sockaddr *)&pin, &addrlen)) == -1) {
+  if ((ipc_connection = accept(fd, &pin.in, &addrlen)) == -1) {
 #ifndef NODEBUG
     olsr_printf(1, "(TXTINFO) accept()=%s\n", strerror(errno));
 #endif
@@ -255,12 +256,11 @@ ipc_action(int fd)
 
   tv.tv_sec = tv.tv_usec = 0;
   if (olsr_cnf->ip_version == AF_INET) {
-    sin4 = (struct sockaddr_in *)&pin;
-    if (inet_ntop(olsr_cnf->ip_version, &sin4->sin_addr, addr, INET6_ADDRSTRLEN) == NULL)
+    if (inet_ntop(olsr_cnf->ip_version, &pin.in4.sin_addr, addr, INET6_ADDRSTRLEN) == NULL)
       addr[0] = '\0';
-    if (!ip4equal(&sin4->sin_addr, &txtinfo_accept_ip.v4) && txtinfo_accept_ip.v4.s_addr != INADDR_ANY) {
+    if (!ip4equal(&pin.in4.sin_addr, &txtinfo_accept_ip.v4) && txtinfo_accept_ip.v4.s_addr != INADDR_ANY) {
 #ifdef TXTINFO_ALLOW_LOCALHOST
-      if (sin4->sin_addr.s_addr!=INADDR_LOOPBACK) {
+      if (pin.in4.sin_addr.s_addr != INADDR_LOOPBACK) {
 #endif
         olsr_printf(1, "(TXTINFO) From host(%s) not allowed!\n", addr);
         close(ipc_connection);
@@ -270,11 +270,10 @@ ipc_action(int fd)
 #endif
     }
   } else {
-    sin6 = (struct sockaddr_in6 *)&pin;
-    if (inet_ntop(olsr_cnf->ip_version, &sin6->sin6_addr, addr, INET6_ADDRSTRLEN) == NULL)
+    if (inet_ntop(olsr_cnf->ip_version, &pin.in6.sin6_addr, addr, INET6_ADDRSTRLEN) == NULL)
       addr[0] = '\0';
     /* Use in6addr_any (::) in olsr.conf to allow anybody. */
-    if (!ip6equal(&in6addr_any, &txtinfo_accept_ip.v6) && !ip6equal(&sin6->sin6_addr, &txtinfo_accept_ip.v6)) {
+    if (!ip6equal(&in6addr_any, &txtinfo_accept_ip.v6) && !ip6equal(&pin.in6.sin6_addr, &txtinfo_accept_ip.v6)) {
       olsr_printf(1, "(TXTINFO) From host(%s) not allowed!\n", addr);
       close(ipc_connection);
       return;
@@ -311,6 +310,10 @@ ipc_action(int fd)
         send_what = SIW_MID;
       else if (0 != strstr(requ, "/topo"))
         send_what = SIW_TOPO;
+      else if (0 != strstr(requ, "/gateway"))
+        send_what = SIW_GATEWAY;
+      else if (0 != strstr(requ, "/config"))
+        send_what = SIW_CONFIG;
     }
   }
 
@@ -368,7 +371,7 @@ ipc_print_link(struct autobuf *abuf)
               get_link_entry_text(my_link, '\t', &lqbuffer1),
               get_linkcost_text(my_link->linkcost, false, &lqbuffer2));
 #else
-    abuf_appendf(abuf, "%s\t%s\t\t%s\t%s\t\n", olsr_ip_to_string(&buf1, &my_link->local_iface_addr),
+    abuf_appendf(abuf, "%s\t%s\t0.00\t%s\t%s\t\n", olsr_ip_to_string(&buf1, &my_link->local_iface_addr),
               olsr_ip_to_string(&buf2, &my_link->neighbor_iface_addr),
               get_link_entry_text(my_link, '\t', &lqbuffer1),
               get_linkcost_text(my_link->linkcost, false, &lqbuffer2));
@@ -474,12 +477,12 @@ ipc_print_hna(struct autobuf *abuf)
 #ifdef ACTIVATE_VTIME_TXTINFO
       uint32_t vt = tmp_net->hna_net_timer != NULL ? (tmp_net->hna_net_timer->timer_clock - now_times) : 0;
       int diff = (int)(vt);
-      abuf_appendf(abuf, "%s/%d\t%s\t\%d.%03d\n", olsr_ip_to_string(&buf, &tmp_net->A_network_addr), tmp_net->prefixlen,
-                   olsr_ip_to_string(&mainaddrbuf, &tmp_hna->A_gateway_addr),
-                   diff/1000, abs(diff%1000));
+      abuf_appendf(abuf, "%s/%d\t%s\t\%d.%03d\n", olsr_ip_to_string(&buf, &tmp_net->hna_prefix.prefix),
+          tmp_net->hna_prefix.prefix_len, olsr_ip_to_string(&mainaddrbuf, &tmp_hna->A_gateway_addr),
+          diff/1000, abs(diff%1000));
 #else
-      abuf_appendf(abuf, "%s/%d\t%s\n", olsr_ip_to_string(&buf, &tmp_net->A_network_addr), tmp_net->prefixlen,
-                olsr_ip_to_string(&mainaddrbuf, &tmp_hna->A_gateway_addr));
+      abuf_appendf(abuf, "%s/%d\t%s\n", olsr_ip_to_string(&buf, &tmp_net->hna_prefix.prefix),
+          tmp_net->hna_prefix.prefix_len, olsr_ip_to_string(&mainaddrbuf, &tmp_hna->A_gateway_addr));
 #endif /*vtime txtinfo*/
     }
   }
@@ -537,6 +540,70 @@ ipc_print_mid(struct autobuf *abuf)
     }
   }
   abuf_puts(abuf, "\n");
+}
+
+static void
+ipc_print_gateway(struct autobuf *abuf)
+{
+#ifndef linux
+  abuf_puts(abuf, "Gateway mode is only supported in linux\n");
+#else
+  static const char IPV4[] = "ipv4";
+  static const char IPV4_NAT[] = "ipv4(n)";
+  static const char IPV6[] = "ipv6";
+  static const char NONE[] = "-";
+
+  struct ipaddr_str buf;
+  struct gateway_entry *gw;
+  struct lqtextbuffer lqbuf;
+
+  // Status IP ETX Hopcount Uplink-Speed Downlink-Speed ipv4/ipv4-nat/- ipv6/- ipv6-prefix/-
+  abuf_puts(abuf, "Table: Gateways\n   Gateway\tETX\tHopcnt\tUplink\tDownlnk\tIPv4\tIPv6\tPrefix\n");
+  OLSR_FOR_ALL_GATEWAY_ENTRIES(gw) {
+    char v4 = '-', v6 = '-';
+    bool autoV4 = false, autoV6 = false;
+    const char *v4type = NONE, *v6type = NONE;
+    struct tc_entry *tc;
+
+    if ((tc = olsr_lookup_tc_entry(&gw->originator)) == NULL) {
+      continue;
+    }
+
+    if (gw == olsr_get_ipv4_inet_gateway(&autoV4)) {
+      v4 = autoV4 ? 'a' : 's';
+    }
+    else if (gw->ipv4 && (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit)
+        && (olsr_cnf->smart_gw_allow_nat || !gw->ipv4nat)) {
+      v4 = 'u';
+    }
+
+    if (gw == olsr_get_ipv6_inet_gateway(&autoV6)) {
+      v6 = autoV6 ? 'a' : 's';
+    }
+    else if (gw->ipv6 && olsr_cnf->ip_version == AF_INET6) {
+      v6 = 'u';
+    }
+
+    if (gw->ipv4) {
+      v4type = gw->ipv4nat ? IPV4_NAT : IPV4;
+    }
+    if (gw->ipv6) {
+      v6type = IPV6;
+    }
+
+    abuf_appendf(abuf, "%c%c %s\t%s\t%d\t%u\t%u\t%s\t%s\t%s\n",
+        v4, v6, olsr_ip_to_string(&buf, &gw->originator),
+        get_linkcost_text(tc->path_cost, true, &lqbuf), tc->hops,
+        gw->uplink, gw->downlink, v4type, v6type,
+        gw->external_prefix.prefix_len == 0 ? NONE : olsr_ip_prefix_to_string(&gw->external_prefix));
+  } OLSR_FOR_ALL_GATEWAY_ENTRIES_END(gw)
+#endif
+}
+
+static void
+ipc_print_config(struct autobuf *abuf)
+{
+  olsrd_write_cnf_autobuf(abuf, olsr_cnf);
 }
 
 static void
@@ -626,6 +693,14 @@ send_info(int send_what, int the_socket)
   /* routes */
   if ((send_what == SIW_ALL) || (send_what == SIW_ROUTE))
     ipc_print_routes(&abuf);
+
+  /* gateways */
+  if (send_what == SIW_GATEWAY)
+    ipc_print_gateway(&abuf);
+
+  /* config */
+  if (send_what == SIW_CONFIG)
+    ipc_print_config(&abuf);
 
   outbuffer[outbuffer_count] = olsr_malloc(abuf.len, "txt output buffer");
   outbuffer_size[outbuffer_count] = abuf.len;

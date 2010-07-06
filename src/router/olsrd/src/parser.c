@@ -53,6 +53,7 @@
 #include "log.h"
 #include "print_packet.h"
 #include "net_olsr.h"
+#include "duplicate_handler.h"
 
 #ifdef WIN32
 #undef EWOULDBLOCK
@@ -64,7 +65,7 @@ char *StrError(unsigned int ErrNo);
 #define strerror(x) StrError(x)
 #endif
 
-/* Sven-Ola: On very slow devices used in huge networks
+    /* Sven-Ola: On very slow devices used in huge networks
  * the amount of lq_tc messages is so high, that the
  * recv() loop never ends. This is a small hack to end
  * the loop in this cases
@@ -272,14 +273,16 @@ void
 parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip_addr *from_addr)
 {
   union olsr_message *m = (union olsr_message *)olsr->olsr_msg;
-  int count;
-  int msgsize;
+  uint32_t count;
+  uint32_t msgsize;
+  uint16_t seqno;
   struct parse_function_entry *entry;
   struct packetparser_function_entry *packetparser;
 
   count = size - ((char *)m - (char *)olsr);
 
-  if (count < MIN_PACKET_SIZE(olsr_cnf->ip_version))
+  /* minimum packet size is 4 */
+  if (count < 4)
     return;
 
   if (ntohs(olsr->olsr_packlen) !=(uint16_t) size) {
@@ -305,11 +308,6 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
   if (disp_pack_in)
     print_olsr_serialized_packet(stdout, (union olsr_packet *)olsr, size, from_addr);
 
-  if (olsr_cnf->ip_version == AF_INET)
-    msgsize = ntohs(m->v4.olsr_msgsize);
-  else
-    msgsize = ntohs(m->v6.olsr_msgsize);
-
   /*
    * Hysteresis update - for every OLSR package
    */
@@ -325,14 +323,33 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
 
   for (; count > 0; m = (union olsr_message *)((char *)m + (msgsize))) {
     bool forward = true;
+    bool validated;
 
-    if (count < MIN_PACKET_SIZE(olsr_cnf->ip_version) + 8)
+    /* minimum message size is 8 + ipsize */
+    if (count < 8 + olsr_cnf->ipsize)
       break;
 
-    if (olsr_cnf->ip_version == AF_INET)
+    if (olsr_cnf->ip_version == AF_INET) {
       msgsize = ntohs(m->v4.olsr_msgsize);
-    else
+      seqno = ntohs(m->v4.seqno);
+    }
+    else {
       msgsize = ntohs(m->v6.olsr_msgsize);
+      seqno = ntohs(m->v6.seqno);
+    }
+
+    /* sanity check for msgsize */
+    if (msgsize < 8 + olsr_cnf->ipsize) {
+      struct ipaddr_str buf;
+      union olsr_ip_addr *msgorig = (union olsr_ip_addr *) &m->v4.originator;
+      OLSR_PRINTF(1, "Error, OLSR message from %s (type %d) is to small (%d bytes)"
+          ", ignoring all further content of the packet\n",
+          olsr_ip_to_string(&buf, msgorig), m->v4.olsr_msgtype, msgsize);
+      olsr_syslog(OLSR_LOG_ERR, "Error, OLSR message from %s (type %d) is too small (%d bytes)"
+          ", ignoring all further content of the packet\n",
+          olsr_ip_to_string(&buf, msgorig), m->v4.olsr_msgtype, msgsize);
+      break;
+    }
 
     if ((msgsize % 4) != 0) {
       struct ipaddr_str buf;
@@ -360,15 +377,6 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
 
     count -= msgsize;
 
-    /* Check size of message */
-    if (count < 0) {
-      struct ipaddr_str buf;
-      OLSR_PRINTF(1, "packet length error in  packet received from %s!", olsr_ip_to_string(&buf, from_addr));
-
-      olsr_syslog(OLSR_LOG_ERR, " packet length error in  packet received from %s!", olsr_ip_to_string(&buf, from_addr));
-      break;
-    }
-
     /*RFC 3626 section 3.4:
      *  2    If the time to live of the message is less than or equal to
      *  '0' (zero), or if the message was sent by the receiving node
@@ -378,14 +386,17 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
      */
 
     /* Should be the same for IPv4 and IPv6 */
-    if (ipequal((union olsr_ip_addr *)&m->v4.originator, &olsr_cnf->main_addr)
-        || !olsr_validate_address((union olsr_ip_addr *)&m->v4.originator)) {
+    validated = olsr_validate_address((union olsr_ip_addr *)&m->v4.originator);
+    if (ipequal((union olsr_ip_addr *)&m->v4.originator, &olsr_cnf->main_addr) || !validated) {
 #ifdef DEBUG
       struct ipaddr_str buf;
-#endif
-#ifdef DEBUG
       OLSR_PRINTF(3, "Not processing message originating from %s!\n",
                   olsr_ip_to_string(&buf, (union olsr_ip_addr *)&m->v4.originator));
+#endif
+#ifndef NO_DUPLICATE_DETECTION_HANDLER
+      if (validated) {
+        olsr_test_originator_collision(m->v4.olsr_msgtype, seqno);
+      }
 #endif
       continue;
     }
@@ -417,7 +428,7 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
  *@return nada
  */
 void
-olsr_input(int fd)
+olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
 {
   struct interface *olsr_in_if;
   union olsr_ip_addr from_addr;
@@ -452,10 +463,10 @@ olsr_input(int fd)
     }
     if (olsr_cnf->ip_version == AF_INET) {
       /* IPv4 sender address */
-      from_addr.v4 = ((struct sockaddr_in *)&from)->sin_addr;
+      memcpy(&from_addr.v4, &((struct sockaddr_in *)&from)->sin_addr, sizeof(from_addr.v4));
     } else {
       /* IPv6 sender address */
-      from_addr.v6 = ((struct sockaddr_in6 *)&from)->sin6_addr;
+      memcpy(&from_addr.v6, &((struct sockaddr_in6 *)&from)->sin6_addr, sizeof(from_addr.v6));
     }
 
 #ifdef DEBUG
@@ -510,7 +521,7 @@ olsr_input(int fd)
  *@return nada
  */
 void
-olsr_input_hostemu(int fd)
+olsr_input_hostemu(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
 {
   /* sockaddr_in6 is bigger than sockaddr !!!! */
   struct sockaddr_storage from;

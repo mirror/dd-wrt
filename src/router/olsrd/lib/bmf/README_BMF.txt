@@ -1,6 +1,6 @@
 BASIC MULTICAST FORWARDING PLUGIN FOR OLSRD
-by Erik Tromp (erik.tromp@nl.thalesgroup.com, erik_tromp@hotmail.com)
-Version 1.5.3
+by Erik Tromp (eriktromp@users.sourceforge.net, erik_tromp@hotmail.com)
+Version 1.7.0
 
 1. Introduction
 ---------------
@@ -17,14 +17,14 @@ in the past 3-6 seconds are forwarded.
 2. How to build and install
 ---------------------------
 
-Download the olsr-bmf-v1.5.3.tar.gz file and save it into your OLSRD
+Download the olsr-bmf-v1.7.0.tar.gz file and save it into your OLSRD
 base install directory.
 
 Change directory (cd) to your OLSRD base install directory.
 
 At the command prompt, type:
 
-  tar -zxvf ./olsr-bmf-v1.5.3.tar.gz
+  tar -zxvf ./olsr-bmf-v1.7.0.tar.gz
 
 then type:
 
@@ -47,7 +47,7 @@ Set permissions, e.g.:
 To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
 to load the BMF plugin. For example, add the following lines:
 
-  LoadPlugin "olsrd_bmf.so.1.5.3"
+  LoadPlugin "olsrd_bmf.so.1.7.0"
   {
     # No PlParam entries required for basic operation
   }
@@ -63,18 +63,18 @@ olsrd daemon by entering at the shell prompt:
 
 Look at the output; it should list the BMF plugin, e.g.:
 
-  ---------- LOADING LIBRARY olsrd_bmf.so.1.5.3 ----------
-  OLSRD Basic Multicast Forwarding (BMF) plugin 1.5.3 (Feb 24 2008 17:58:02)
+  ---------- LOADING LIBRARY olsrd_bmf.so.1.7.0 ----------
+  OLSRD Basic Multicast Forwarding (BMF) plugin 1.7.0 (Mar 22 2010 21:44:23)
     (C) Thales Communications Huizen, Netherlands
     Erik Tromp (eriktromp@users.sourceforge.net)
   Checking plugin interface version:  5 - OK
   Trying to fetch plugin init function: OK
   Trying to fetch parameter table and it's size...
   Sending parameters...
-  "NonOlsrIf"/"eth0"... NonOlsrIf: OK
+  "NonOlsrIf"/"eth4"... NonOlsrIf: OK
   Running plugin_init function...
   OLSRD Basic Multicast Forwarding (BMF) plugin: opened 5 sockets
-  ---------- LIBRARY olsrd_bmf.so.1.5.3 LOADED ----------
+  ---------- LIBRARY olsrd_bmf.so.1.7.0 LOADED ----------
 
 
 4. How to check if it works
@@ -187,13 +187,14 @@ All configuration of BMF is done via the "LoadPlugin" section in
 the /etc/olsrd.conf file.
 
 The following gives an overview of all plugin parameters that can be
-configured:
+configured. Unless otherwise stated, settings may differ for each node in the
+network.
 
-  LoadPlugin "olsrd_bmf.so.1.5.3"
+  LoadPlugin "olsrd_bmf.so.1.7.0"
   {
     # Specify the name of the BMF network interface.
     # Defaults to "bmf0".
-    PlParam "BmfInterface" "mybmf0"
+    PlParam "BmfInterface" "bmf0"
 
     # Specify the IP address and mask for the BMF network interface.
     # By default, the IP address of the first OLSR interface is copied.
@@ -203,7 +204,9 @@ configured:
     # Enable or disable the flooding of local broadcast packets
     # (e.g. packets with IP destination 192.168.1.255). Either "yes"
     # or "no". Defaults to "yes".
-    PlParam "DoLocalBroadcast" "no"
+    # Note: all nodes in the same network should have the same setting for
+    # this plugin parameter.
+    PlParam "DoLocalBroadcast" "yes"
 
     # Enable or disable the capturing packets on the OLSR-enabled
     # interfaces (in promiscuous mode). Either "yes" or "no". Defaults
@@ -215,7 +218,7 @@ configured:
     # network interfaces will be flooded over the OLSR network.
     # NOTE: This parameter should be set consistently on all hosts throughout
     # the network. If not, hosts may receive multicast packets in duplicate.
-    PlParam "CapturePacketsOnOlsrInterfaces" "yes"
+    PlParam "CapturePacketsOnOlsrInterfaces" "no"
 
     # The forwarding mechanism to use. Either "Broadcast" or
     # "UnicastPromiscuous". Defaults to "Broadcast".
@@ -224,20 +227,24 @@ configured:
     # broadcast is not used. This saves air time on 802.11 WLAN networks,
     # on which unicast packets are usually sent at a much higher bit rate
     # than broadcast packets (which are sent at a basic bit rate).
-    PlParam "BmfMechanism" "UnicastPromiscuous"
+    # Note: all nodes in the same network should have the same setting for
+    # this plugin parameter.
+    PlParam "BmfMechanism" "Broadcast"
 
     # The number of times BMF will transmit the same packet whenever it decides
     # to use broadcast to forward a packet. Defaults to 1. Not used if
     # "BmfMechanism" is set to "UnicastPromiscuous".
-    PlParam "BroadcastRetransmitCount" "2"
+    PlParam "BroadcastRetransmitCount" "1"
 
     # If the number of neighbors to forward to is less than or equal to the
     # FanOutLimit, then packets to be relayed will be sent via unicast.
     # If the number is greater than the FanOutLimit the packet goes out
-    # as broadcast. Legal values are 1...10. See MAX_UNICAST_NEIGHBORS
-    # as defined in NetworkInterfaces.h . Defaults to 2. Not used if
-    # "BmfMechanism" is set to "UnicastPromiscuous".
-    PlParam "FanOutLimit" "4"
+    # as broadcast. Legal values are 0...10. See MAX_UNICAST_NEIGHBORS
+    # as defined in NetworkInterfaces.h . 0 means broadcast is always used,
+    # even if there is only 1 neighbor to forward to. Defaults to 2. 
+    # This plugin parameter is not used if "BmfMechanism" is set to
+    # "UnicastPromiscuous".
+    PlParam "FanOutLimit" "2"
 
     # List of non-OLSR interfaces to include
     PlParam     "NonOlsrIf"  "eth2"
@@ -343,7 +350,7 @@ want to forward multicast and local-broadcast IP packets, specify these
 interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
 of /etc/olsrd.conf. For example:
 
-  LoadPlugin "olsrd_bmf.so.1.5.3"
+  LoadPlugin "olsrd_bmf.so.1.7.0"
   {
     # Non-OLSR interfaces to participate in the multicast flooding
     PlParam     "NonOlsrIf"  "eth2"
@@ -401,7 +408,7 @@ Therefore, override the default IP address and prefix length of
 the BMF network interface, by editing the /etc/olsrd.conf file.
 For example:
 
-  LoadPlugin "olsrd_bmf.so.1.5.3"
+  LoadPlugin "olsrd_bmf.so.1.7.0"
   {
       PlParam "BmfInterfaceIp" "10.10.10.4/24"
   }
@@ -538,6 +545,34 @@ the BMF network interface, either by specifying the interface name itself
 
 10. Version history
 -------------------
+
+21 March 2010: Version 1.7.0
+
+* Ported 1.6.2 back into OLSRd for 0.5.7.0 release: the BMF functions are
+  registered with OLSR so that a separate thread for BMF to run in is no longer
+  necessary. This also removes the need for a mutex to guarantee safe access to
+  OLSR data. Done by Henning Rogge <hrogge@googlemail.com>.
+* Code Cleanup: duplicate code moved to separate functions
+  'ForwardPacket (...)' and 'EncapsulateAndForwardPacket (...)'
+* Prevent the calling of 'sendto' when that would lead to blocking the
+  thread --> thanks to Daniele Lacamera for finding and solving this issue.
+* Changed the legal range of the 'FanOutLimit' plugin parameter from 1...10
+  to 0...10 .
+
+23 November 2008: Version 1.6.2
+
+* Fixed a bug that prevented the route for multicast traffic to be updated
+  when a network interface was added at runtime --> thanks to Daniele Lacamera
+  for finding and solving this bug.
+
+22 July 2008: Version 1.6.1
+
+* Introduced a mutex for safe access to the OLSR data by the BMF thread.
+
+4 July 2008: Version 1.6
+
+* Fixed a bug in the CreateInterface() function: missing initialization
+  of newIf->next to NULL.
 
 24 February 2008: Version 1.5.3
 

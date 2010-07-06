@@ -104,7 +104,7 @@ typedef LUA_UACNUMBER l_uacNumber;
 #endif
 
 #ifndef cast_align
-#define cast_align(t, exp)	((t)(ARM_NOWARN_ALIGN)(exp))
+#define cast_align(t, exp)	((t)ARM_NOWARN_ALIGN(exp))
 #endif
 
 /*

@@ -402,29 +402,30 @@ rawIpAddrToString(void *rawAddr, int len)
 }
 
 static int
-createSockAddr(struct sockaddr *sockAddr, const struct ipAddr *addr, int port)
+createSockAddr(struct sockaddr_storage *sockAddr, const struct ipAddr *addr, int port)
 {
-  struct sockaddr_in *sockAddr4;
-  struct sockaddr_in6 *sockAddr6;
-
-  memset(sockAddr, 0, sizeof(struct sockaddr));
+  memset(sockAddr, 0, sizeof(struct sockaddr_storage));
 
   if (addr->domain == PF_INET) {
-    sockAddr4 = (struct sockaddr_in *)(ARM_NOWARN_ALIGN)sockAddr;
+    struct sockaddr_in sin;
+    memset(&sin, 0, sizeof(sin));
 
-    sockAddr4->sin_family = AF_INET;
-    sockAddr4->sin_port = htons((short)port);
-    sockAddr4->sin_addr.s_addr = addr->addr.v4.s_addr;
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons((short)port);
+    sin.sin_addr.s_addr = addr->addr.v4.s_addr;
 
+    memcpy(sockAddr, &sin, sizeof(sin));
     return 0;
   }
 
   if (addr->domain == PF_INET6) {
-    sockAddr6 = (struct sockaddr_in6 *)(ARM_NOWARN_ALIGN)sockAddr;
+    struct sockaddr_in6 sin6;
+    memset(&sin6, 0, sizeof(sin6));
 
-    sockAddr6->sin6_family = AF_INET6;
-    sockAddr6->sin6_port = htons((short)port);
-    memcpy(&sockAddr6->sin6_addr, &addr->addr.v6, sizeof(struct in6_addr));
+    sin6.sin6_family = AF_INET6;
+    sin6.sin6_port = htons((short)port);
+    sin6.sin6_addr = addr->addr.v6;
+    memcpy(sockAddr, &sin6, sizeof(sin6));
 
     return 0;
   }
@@ -434,33 +435,30 @@ createSockAddr(struct sockaddr *sockAddr, const struct ipAddr *addr, int port)
 }
 
 static int
-addrFromSockAddr(struct ipAddr *addr, const struct sockaddr *sockAddr)
+addrFromSockAddr(struct ipAddr *addr, const union olsr_sockaddr *sockAddr)
 {
-  const struct sockaddr_in *sockAddr4 = (const struct sockaddr_in *)(const ARM_NOWARN_ALIGN)sockAddr;
-  const struct sockaddr_in6 *sockAddr6 = (const struct sockaddr_in6 *)(const ARM_NOWARN_ALIGN)sockAddr;
-
   memset(addr, 0, sizeof(struct ipAddr));
 
-  if (sockAddr4->sin_family == AF_INET) {
+  if (sockAddr->in.sa_family == AF_INET) {
     addr->domain = PF_INET;
-    addr->addr.v4.s_addr = sockAddr4->sin_addr.s_addr;
+    addr->addr.v4.s_addr = sockAddr->in4.sin_addr.s_addr;
     return 0;
   }
 
-  if (sockAddr6->sin6_family == AF_INET6) {
+  if (sockAddr->in.sa_family == AF_INET6) {
     addr->domain = PF_INET6;
-    memcpy(&addr->addr.v6, &sockAddr6->sin6_addr, sizeof(struct in6_addr));
+    memcpy(&addr->addr.v6, &sockAddr->in6.sin6_addr, sizeof(struct in6_addr));
     return 0;
   }
 
-  fprintf(stderr, "invalid address family: %d\n", sockAddr4->sin_family);
+  fprintf(stderr, "invalid address family: %d\n", sockAddr->in.sa_family);
   return -1;
 }
 
 int
 createMainSocket(const struct ipAddr *addr, int port)
 {
-  struct sockaddr sockAddr;
+  struct sockaddr_storage sockAddr;
   static int truePara = 1;
   int flags;
 
@@ -496,7 +494,7 @@ createMainSocket(const struct ipAddr *addr, int port)
     return -1;
   }
 
-  if (bind(mainSocket, &sockAddr, sizeof(struct sockaddr)) < 0) {
+  if (bind(mainSocket, (struct sockaddr *)&sockAddr, sizeof(struct sockaddr)) < 0) {
     error("cannot bind main socket: %s\n", strerror(errno));
     close(mainSocket);
     return -1;
@@ -514,15 +512,15 @@ createMainSocket(const struct ipAddr *addr, int port)
 int
 acceptConn(struct fileId **sockId, struct ipAddr **addr)
 {
-  struct sockaddr sockAddr;
+  union olsr_sockaddr sockAddr;
   socklen_t len;
   int sock;
   int flags;
 
   do {
-    len = sizeof(struct sockaddr);
+    len = sizeof(struct sockaddr_storage);
 
-    sock = accept(mainSocket, &sockAddr, &len);
+    sock = accept(mainSocket, &sockAddr.in, &len);
   }
   while (sock < 0 && errno == EINTR);
 

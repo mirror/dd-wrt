@@ -45,6 +45,7 @@
 #include "olsr_types.h"
 #include "hashing.h"
 #include "mantissa.h"
+#include "packet.h"
 
 struct mid_address {
   union olsr_ip_addr alias;
@@ -72,8 +73,6 @@ struct mid_entry {
 
 extern struct mid_entry mid_set[HASHSIZE];
 extern struct mid_address reverse_mid_set[HASHSIZE];
-
-struct mid_alias;
 
 int olsr_init_mid_set(void);
 void olsr_delete_all_mid_entries(void);

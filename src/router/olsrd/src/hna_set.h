@@ -52,8 +52,7 @@
 /* hna_netmask declared in packet.h */
 
 struct hna_net {
-  union olsr_ip_addr A_network_addr;
-  uint8_t prefixlen;
+  struct olsr_ip_prefix hna_prefix;
   struct timer_entry *hna_net_timer;
   struct hna_entry *hna_gw;            /* backpointer to the owning HNA entry */
   struct hna_net *next;

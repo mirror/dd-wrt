@@ -45,10 +45,15 @@
 #include "olsrd_plugin.h"
 #include "plugin_util.h"
 
-#define INET_NET       0
-#define INET_PREFIX    0
+//#define INET_NET       0
+//#define INET_PREFIX    0
+#define INET_ADDR      0
+#define INET_MASK      0
 
 #define PROCENTRY_ROUTE "/proc/net/route"
+
+#define DEFAULT_HNA_CHECK_INTERVAL	1000
+#define DEFAULT_PING_CHECK_INTERVAL	5
 
 int olsrd_plugin_init(void);
 

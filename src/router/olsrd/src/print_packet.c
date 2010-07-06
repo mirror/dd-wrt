@@ -279,7 +279,7 @@ print_olsr_tcmsg_lq(FILE * handle, uint8_t * data, int16_t totsize)
 
   while (remsize) {
     struct ipaddr_str buf;
-    fprintf(handle, "    +Neighbor: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)data));
+    fprintf(handle, "    +Neighbor: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)ARM_NOWARN_ALIGN(data)));
     data += olsr_cnf->ipsize;
     fprintf(handle, "    +LQ: %d, ", *data);
     data += 1;
@@ -302,7 +302,7 @@ print_olsr_tcmsg(FILE * handle, uint8_t * data, int16_t totsize)
 
   while (remsize) {
     struct ipaddr_str buf;
-    fprintf(handle, "    +Neighbor: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)data));
+    fprintf(handle, "    +Neighbor: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)ARM_NOWARN_ALIGN(data)));
     data += olsr_cnf->ipsize;
 
     remsize -= olsr_cnf->ipsize;
@@ -317,9 +317,9 @@ print_hnamsg(FILE * handle, uint8_t * data, int16_t totsize)
 
   while (remsize) {
     struct ipaddr_str buf;
-    fprintf(handle, "    +Network: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)data));
+    fprintf(handle, "    +Network: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)ARM_NOWARN_ALIGN(data)));
     data += olsr_cnf->ipsize;
-    fprintf(handle, "    +Netmask: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)data));
+    fprintf(handle, "    +Netmask: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)ARM_NOWARN_ALIGN(data)));
     data += olsr_cnf->ipsize;
 
     remsize -= (olsr_cnf->ipsize * 2);
@@ -334,7 +334,7 @@ print_midmsg(FILE * handle, uint8_t * data, int16_t totsize)
 
   while (remsize) {
     struct ipaddr_str buf;
-    fprintf(handle, "    +Alias: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)(ARM_NOWARN_ALIGN)data));
+    fprintf(handle, "    +Alias: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)ARM_NOWARN_ALIGN(data)));
     data += olsr_cnf->ipsize;
     remsize -= olsr_cnf->ipsize;
   }
