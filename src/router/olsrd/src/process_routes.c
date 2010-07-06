@@ -52,6 +52,7 @@
 #include "net_olsr.h"
 #include "tc_set.h"
 #include "olsr_cookie.h"
+#include "olsr_niit.h"
 
 #ifdef WIN32
 char *StrError(unsigned int ErrNo);
@@ -159,6 +160,14 @@ olsr_enqueue_rt(struct list_node *head_node, struct rt_entry *rt)
 static void
 olsr_delete_kernel_route(struct rt_entry *rt)
 {
+  if (rt->rt_metric.hops > 1) {
+    /* multihop route */
+    if (ip_is_linklocal(&rt->rt_dst.prefix)) {
+      /* do not delete a route with a LL IP as a destination */
+      return;
+    }
+  }
+
   if (!olsr_cnf->host_emul) {
     int16_t error = olsr_cnf->ip_version == AF_INET ? olsr_delroute_function(rt) : olsr_delroute6_function(rt);
 
@@ -169,6 +178,12 @@ olsr_delete_kernel_route(struct rt_entry *rt)
 
       olsr_syslog(OLSR_LOG_ERR, "Delete route %s: %s", routestr, err_msg);
     }
+#ifdef LINUX_NETLINK_ROUTING
+    /* call NIIT handler (always)*/
+    if (olsr_cnf->use_niit) {
+      olsr_niit_handle_route(rt, false);
+    }
+#endif
   }
 }
 
@@ -180,7 +195,13 @@ olsr_delete_kernel_route(struct rt_entry *rt)
 static void
 olsr_add_kernel_route(struct rt_entry *rt)
 {
-
+  if (rt->rt_best->rtp_metric.hops > 1) {
+    /* multihop route */
+    if (ip_is_linklocal(&rt->rt_best->rtp_dst.prefix)) {
+      /* do not create a route with a LL IP as a destination */
+      return;
+    }
+  }
   if (!olsr_cnf->host_emul) {
     int16_t error = (olsr_cnf->ip_version == AF_INET) ? olsr_addroute_function(rt) : olsr_addroute6_function(rt);
 
@@ -191,12 +212,18 @@ olsr_add_kernel_route(struct rt_entry *rt)
 
       olsr_syslog(OLSR_LOG_ERR, "Add route %s: %s", routestr, err_msg);
     } else {
-
       /* route addition has suceeded */
 
       /* save the nexthop and metric in the route entry */
       rt->rt_nexthop = rt->rt_best->rtp_nexthop;
       rt->rt_metric = rt->rt_best->rtp_metric;
+
+#ifdef LINUX_NETLINK_ROUTING
+      /* call NIIT handler */
+      if (olsr_cnf->use_niit) {
+        olsr_niit_handle_route(rt, true);
+      }
+#endif
     }
   }
 }
@@ -224,7 +251,19 @@ olsr_chg_kernel_routes(struct list_node *head_node)
   while (!list_is_empty(head_node)) {
     rt = changelist2rt(head_node->next);
 
+/*deleting routes should not be required anymore as we use (NLM_F_CREATE | NLM_F_REPLACE) in linux rtnetlink*/
+#ifdef LINUX_NETLINK_ROUTING
+    /*delete routes with ipv6 only as it still doesn`t support NLM_F_REPLACE*/
+    if (((olsr_cnf->ip_version != AF_INET )
+         || (olsr_addroute_function != olsr_ioctl_add_route) || (olsr_addroute6_function != olsr_ioctl_add_route6)
+         || (olsr_delroute_function != olsr_ioctl_del_route) || (olsr_delroute6_function != olsr_ioctl_del_route6))
+        && (rt->rt_nexthop.iif_index > -1)) {
+      olsr_delete_kernel_route(rt);
+    }
+#else
+    /*no rtnetlink we have to delete routes*/
     if (rt->rt_nexthop.iif_index > -1) olsr_delete_kernel_route(rt);
+#endif /*LINUX_NETLINK_ROUTING*/
 
     olsr_add_kernel_route(rt);
 
@@ -246,9 +285,9 @@ olsr_del_kernel_routes(struct list_node *head_node)
 
   while (!list_is_empty(head_node)) {
     rt = changelist2rt(head_node->prev);
-#if LINUX_POLICY_ROUTING
+#ifdef LINUX_NETLINK_ROUTING
     if (rt->rt_nexthop.iif_index >= 0)
-#endif /*LINUX_POLICY_ROUTING*/
+#endif /*LINUX_NETLINK_ROUTING*/
       olsr_delete_kernel_route(rt);
 
     list_remove(&rt->rt_change_node);
@@ -269,7 +308,6 @@ olsr_delete_outdated_routes(struct rt_entry *rt)
   struct avl_node *rtp_tree_node, *next_rtp_tree_node;
 
   for (rtp_tree_node = avl_walk_first(&rt->rt_path_tree); rtp_tree_node != NULL; rtp_tree_node = next_rtp_tree_node) {
-
     /*
      * pre-fetch the next node before loosing context.
      */
@@ -282,15 +320,15 @@ olsr_delete_outdated_routes(struct rt_entry *rt)
      * comparing for unequalness avoids handling version number wraps.
      */
     if (routingtree_version != rtp->rtp_version) {
-
       /* remove from the originator tree */
       avl_delete(&rt->rt_path_tree, rtp_tree_node);
       rtp->rtp_rt = NULL;
+
+      if (rt->rt_best == rtp) {
+        rt->rt_best = NULL;
+      }
     }
   }
-
-  /* safety measure against dangling pointers */
-  rt->rt_best = NULL;
 }
 
 /**
@@ -336,6 +374,56 @@ olsr_update_rib_routes(void)
   OLSR_FOR_ALL_RT_ENTRIES_END(rt);
 }
 
+void
+olsr_delete_interface_routes(int if_index) {
+  struct rt_entry *rt;
+  bool triggerUpdate = false;
+
+  OLSR_FOR_ALL_RT_ENTRIES(rt) {
+    bool mightTrigger = false;
+    struct rt_path *rtp;
+    struct avl_node *rtp_tree_node, *next_rtp_tree_node;
+
+    /* run through all routing paths of route */
+    for (rtp_tree_node = avl_walk_first(&rt->rt_path_tree); rtp_tree_node != NULL; rtp_tree_node = next_rtp_tree_node) {
+      /*
+       * pre-fetch the next node before loosing context.
+       */
+      next_rtp_tree_node = avl_walk_next(rtp_tree_node);
+
+      rtp = rtp_tree2rtp(rtp_tree_node);
+
+      /* nexthop use lost interface ? */
+      if (rtp->rtp_nexthop.iif_index == if_index) {
+        /* remove from the originator tree */
+        avl_delete(&rt->rt_path_tree, rtp_tree_node);
+        rtp->rtp_rt = NULL;
+
+        if (rt->rt_best == rtp) {
+          rt->rt_best = NULL;
+          mightTrigger = true;
+        }
+      }
+    }
+
+    if (mightTrigger) {
+      if (!rt->rt_path_tree.count) {
+        /* oops, all routes are gone - flush the route head */
+        avl_delete(&routingtree, rt_tree_node);
+
+        /* do not dequeue route because they are already gone */
+      }
+      triggerUpdate = true;
+    }
+  } OLSR_FOR_ALL_RT_ENTRIES_END(rt)
+
+  /* trigger route update if necessary */
+  if (triggerUpdate) {
+    olsr_update_rib_routes();
+    olsr_update_kernel_routes();
+  }
+}
+
 /**
  * Propagate the accumulated changes from the last rib update to the kernel.
  */
@@ -352,6 +440,19 @@ olsr_update_kernel_routes(void)
 #if DEBUG
   olsr_print_routing_table(&routingtree);
 #endif
+}
+
+void
+olsr_force_kernelroutes_refresh(void) {
+  struct rt_entry *rt;
+
+  /* enqueue all existing routes for a rewrite */
+  OLSR_FOR_ALL_RT_ENTRIES(rt) {
+    olsr_enqueue_rt(&chg_kernel_list, rt);
+  } OLSR_FOR_ALL_RT_ENTRIES_END(rt)
+
+  /* trigger kernel route refresh */
+  olsr_chg_kernel_routes(&chg_kernel_list);
 }
 
 /*

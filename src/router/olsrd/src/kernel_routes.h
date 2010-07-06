@@ -53,15 +53,17 @@ int olsr_ioctl_del_route(const struct rt_entry *);
 
 int olsr_ioctl_del_route6(const struct rt_entry *);
 
-#if LINUX_POLICY_ROUTING
-int olsr_netlink_rule(uint8_t, uint8_t, uint16_t);
-
-#if LINUX_RTNETLINK_LISTEN
+#ifdef LINUX_NETLINK_ROUTING
 int rtnetlink_register_socket(int);
-void rtnetlink_read(int);
-#endif /*LINUX_RTNETLINK_LISTEN*/
-
 #endif
+
+void olsr_os_niit_4to6_route(const struct olsr_ip_prefix *dst_v4, bool set);
+void olsr_os_niit_6to4_route(const struct olsr_ip_prefix *dst_v6, bool set);
+void olsr_os_inetgw_tunnel_route(uint32_t if_idx, bool ipv4, bool set);
+
+int olsr_os_policy_rule(int family, int rttable, uint32_t priority, const char *if_name, bool set);
+int olsr_os_localhost_if(union olsr_ip_addr *ip, bool create);
+int olsr_os_ifip(int ifindex, union olsr_ip_addr *ip, bool create);
 
 #endif
 

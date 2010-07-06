@@ -51,7 +51,7 @@
 #include "olsr.h"
 #include "log.h"
 #include "parser.h"
-#include "socket_parser.h"
+#include "scheduler.h"
 #include "net_olsr.h"
 #include "ipcalc.h"
 
@@ -125,13 +125,14 @@ ipc_init(void)
   }
 
   /* Register the socket with the socket parser */
-  add_olsr_socket(ipc_sock, &ipc_accept);
+  add_olsr_socket(ipc_sock, &ipc_accept, NULL, NULL, SP_PR_READ);
 
   return ipc_sock;
 }
 
+
 void
-ipc_accept(int fd)
+ipc_accept(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
 {
   socklen_t addrlen;
   struct sockaddr_in pin;

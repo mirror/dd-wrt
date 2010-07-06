@@ -47,14 +47,12 @@
 #ifndef _PROTOCOLS_OLSR_H
 #define	_PROTOCOLS_OLSR_H
 
+struct olsr;
+
 #include "olsr_types.h"
 #include "olsr_cfg.h"
 
 #include <string.h>
-
-/* Default IPv6 multicast addresses */
-
-#define OLSR_IPV6_MCAST "FF02::1"
 
 #define OLSR_HEADERSIZE (sizeof(uint16_t) + sizeof(uint16_t))
 

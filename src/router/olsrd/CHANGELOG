@@ -1,5 +1,42 @@
 This file states changes as of version 0.2.4:
 
+0.6.0 --------------------------------------------------------------------
+
+Change in version number system. No more -rcX for release candidates and
+-rX for bugfix releases. In future bugfix releases or updates of plugins
+will increase the third digit of the version string while feature releases
+will increase the first and/or the second one.
+
+Markus Kittenberg <Markus.Kittenberger@gmx.at>
+Henning Rogge <henning.rogge@fkie.fraunhofer.de>
+- added NIIT kernel module support for sending IPv4 traffic over
+  IPv6 mesh networks. See README-Olsr-Extensions for more information.
+- added SmartGateway support. OLSRd can now automatically build
+  IPIP tunnels towards the gateway to prevent gateway flapping.
+  See README-Olsr-Extensions for more information.
+- complete rewrite of linux netlink routing code. New code should be
+  more understandable and easier to debug/improve.
+
+Teco Boots <teco@inf-net.nl>
+- new dyngw plugin. More flexible and more features.
+- new p2pd plugin (generalized mdns plugin)
+
+Vasilis Tsiligiannis <b_tsiligiannis@silverton.gr>
+- new version of quagga plugin (with IPv6 support !)
+
+Sven-Ola Tuecke <sven-ola@gmx.de>
+- fixes for improved uClibc support
+- fixes for better linux kernel 2.4 support
+
+Saverio Proto <zioproto@gmail.com>
+- new mdns plugin. (backport from master branch)
+
+Eric Tromps <erik_tromp@hotmail.com>
+- new version of bmf plugin. NO pthreads are necessary anymore
+
+and a lot more small bugfixes. Read GIT changelog at http://olsr.org/git
+to see a complete history.
+
 0.5.6-r8 ---------------------------------------------------------------------
 
 Alina Friedrichsen <x-alina@gmx.net>

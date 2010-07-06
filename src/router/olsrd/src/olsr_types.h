@@ -95,11 +95,19 @@ typedef uint16_t olsr_cookie_t;
 
 /* OpenBSD wants this here */
 #include <sys/types.h>
+#include <sys/socket.h>
 
 /* IPv6 address format in6_addr */
 #ifndef _MSC_VER
 #include <netinet/in.h>
 #endif
+
+union olsr_sockaddr {
+  struct sockaddr_storage storage;
+  struct sockaddr in;
+  struct sockaddr_in in4;
+  struct sockaddr_in6 in6;
+};
 
 union olsr_ip_addr {
   struct in_addr v4;

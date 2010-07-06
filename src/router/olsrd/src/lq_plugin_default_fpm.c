@@ -86,7 +86,9 @@ struct lq_handler lq_etx_fpm_handler = {
   &default_lq_print_cost_fpm,
 
   sizeof(struct default_lq_fpm),
-  sizeof(struct default_lq_fpm)
+  sizeof(struct default_lq_fpm),
+  4,
+  4
 };
 
 uint32_t aging_factor_new, aging_factor_old;

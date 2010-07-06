@@ -89,9 +89,6 @@
 #define WEIGHT_HIGH             4096    /* High                 */
 #define WEIGHT_HIGHEST          8192    /* Really high          */
 
-#define IF_MODE_MESH   	0
-#define IF_MODE_ETHER   1
-
 struct if_gen_property {
   uint32_t owner_id;
   void *data;
@@ -153,24 +150,34 @@ struct interface {
 
 /* Struct used to store original redirect/ingress setting */
   struct nic_state {
-    char redirect;                     /* The original state of icmp redirect */
-    char spoof;                        /* The original state of the IP spoof filter */
+    /* The original state of icmp redirect */
+    char redirect;
+
+    /* The original state of the IP spoof filter */
+    char spoof;
   } nic_state;
 #endif
 
   olsr_reltime hello_etime;
   struct vtimes valtimes;
 
-  uint32_t fwdtimer;                    /* Timeout for OLSR forwarding on this if */
+  /* Timeout for OLSR forwarding on this if */
+  uint32_t fwdtimer;
 
-  struct olsr_netbuf netbuf;           /* the buffer to construct the packet data */
+  /* the buffer to construct the packet data */
+  struct olsr_netbuf netbuf;
 
-  struct if_gen_property *gen_properties;       /* Generic interface properties */
+  /* Generic interface properties */
+  struct if_gen_property *gen_properties;
 
-  int ttl_index;                       /* index in TTL array for fish-eye */
+  /* index in TTL array for fish-eye */
+  int ttl_index;
 
-  bool immediate_send_tc;              /* Hello's are sent immediately normally, this flag prefers to send TC's */
+  /* Hello's are sent immediately normally, this flag prefers to send TC's */
+  bool immediate_send_tc;
 
+  /* backpointer to olsr_if configuration */
+  struct olsr_if *olsr_if;
   struct interface *int_next;
 };
 
@@ -178,33 +185,37 @@ struct interface {
 
 /* Ifchange actions */
 
-#define IFCHG_IF_ADD           1
-#define IFCHG_IF_REMOVE        2
-#define IFCHG_IF_UPDATE        3
+enum olsr_ifchg_flag {
+  IFCHG_IF_ADD = 1,
+  IFCHG_IF_REMOVE = 2,
+  IFCHG_IF_UPDATE = 3
+};
 
 /* The interface linked-list */
 extern struct interface *ifnet;
 
-int ifinit(void);
+int olsr_init_interfacedb(void);
 void olsr_delete_interfaces(void);
 
-void run_ifchg_cbs(struct interface *, int);
+void olsr_trigger_ifchange(int if_index, struct interface *, enum olsr_ifchg_flag);
 
 struct interface *if_ifwithsock(int);
 
 struct interface *if_ifwithaddr(const union olsr_ip_addr *);
 
 struct interface *if_ifwithname(const char *);
+struct olsr_if *olsrif_ifwithname(const char *if_name);
 
 const char *if_ifwithindex_name(const int if_index);
 
 struct interface *if_ifwithindex(const int if_index);
 
-struct olsr_if *queue_if(const char *, int);
+struct olsr_if *olsr_create_olsrif(const char *name, int hemu);
 
-int add_ifchgf(int (*f) (struct interface *, int));
+int olsr_add_ifchange_handler(void (*f) (int if_index, struct interface *, enum olsr_ifchg_flag));
+int olsr_remove_ifchange_handler(void (*f) (int if_index, struct interface *, enum olsr_ifchg_flag));
 
-int del_ifchgf(int (*f) (struct interface *, int));
+void olsr_remove_interface(struct olsr_if *);
 
 extern struct olsr_cookie_info *interface_poll_timer_cookie;
 extern struct olsr_cookie_info *hello_gen_timer_cookie;

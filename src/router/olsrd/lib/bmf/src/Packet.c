@@ -1,33 +1,32 @@
-
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
  * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions 
  * are met:
  *
- * * Redistributions of source code must retain the above copyright
+ * * Redistributions of source code must retain the above copyright 
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the
+ * * Redistributions in binary form must reproduce the above copyright 
+ *   notice, this list of conditions and the following disclaimer in 
+ *   the documentation and/or other materials provided with the 
  *   distribution.
- * * Neither the name of Thales, BMF nor the names of its
- *   contributors may be used to endorse or promote products derived
+ * * Neither the name of Thales, BMF nor the names of its 
+ *   contributors may be used to endorse or promote products derived 
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+ * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY 
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -41,14 +40,12 @@
 #include "Packet.h"
 
 /* System includes */
-#include <stddef.h>             /* NULL */
-#include <assert.h>             /* assert() */
-#include <string.h>             /* memcpy() */
-#include <sys/types.h>          /* u_int8_t, u_int16_t, u_int32_t */
-#include <netinet/in.h>         /* ntohs(), htons() */
-#include <netinet/ip.h>         /* struct iphdr */
-
-#include "defs.h"               /* ARM_NOWARN_ALIGN */
+#include <stddef.h> /* NULL */
+#include <assert.h> /* assert() */
+#include <string.h> /* memcpy() */
+#include <sys/types.h> /* u_int8_t, u_int16_t, u_int32_t */
+#include <netinet/in.h> /* ntohs(), htons() */
+#include <netinet/ip.h> /* struct iphdr */
 
 /* -------------------------------------------------------------------------
  * Function   : IsIpFragment
@@ -58,19 +55,19 @@
  * Return     : true (1) or false (0)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int
-IsIpFragment(unsigned char *ipPacket)
+int IsIpFragment(unsigned char* ipPacket)
 {
-  struct ip *iph;
+  struct ip* iph;
 
   assert(ipPacket != NULL);
 
-  iph = (struct ip *)(ARM_NOWARN_ALIGN)ipPacket;
-  if ((ntohs(iph->ip_off) & IP_OFFMASK) != 0) {
+  iph = (struct ip*) ipPacket;
+  if ((ntohs(iph->ip_off) & IP_OFFMASK) != 0)
+  {
     return 1;
   }
   return 0;
-}                               /* IsIpFragment */
+} /* IsIpFragment */
 
 /* -------------------------------------------------------------------------
  * Function   : GetIpTotalLength
@@ -81,16 +78,15 @@ IsIpFragment(unsigned char *ipPacket)
  * Return     : IP packet length
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-u_int16_t
-GetIpTotalLength(unsigned char *ipPacket)
+u_int16_t GetIpTotalLength(unsigned char* ipPacket)
 {
-  struct iphdr *iph;
+  struct iphdr* iph;
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr *)(ARM_NOWARN_ALIGN)ipPacket;
+  iph = (struct iphdr*) ipPacket;
   return ntohs(iph->tot_len);
-}                               /* GetIpTotalLength */
+} /* GetIpTotalLength */
 
 /* -------------------------------------------------------------------------
  * Function   : GetIpHeaderLength
@@ -100,16 +96,15 @@ GetIpTotalLength(unsigned char *ipPacket)
  * Return     : IP header length
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-unsigned int
-GetIpHeaderLength(unsigned char *ipPacket)
+unsigned int GetIpHeaderLength(unsigned char* ipPacket)
 {
-  struct iphdr *iph;
+  struct iphdr* iph;
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr *)(ARM_NOWARN_ALIGN)ipPacket;
+  iph = (struct iphdr*) ipPacket;
   return iph->ihl << 2;
-}                               /* GetIpHeaderLength */
+} /* GetIpHeaderLength */
 
 /* -------------------------------------------------------------------------
  * Function   : GetTtl
@@ -120,16 +115,15 @@ GetIpHeaderLength(unsigned char *ipPacket)
  * Return     : TTL value
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-u_int8_t
-GetTtl(unsigned char *ipPacket)
+u_int8_t GetTtl(unsigned char* ipPacket)
 {
-  struct iphdr *iph;
+  struct iphdr* iph;
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr *)(ARM_NOWARN_ALIGN)ipPacket;
+  iph = (struct iphdr*) ipPacket;
   return iph->ttl;
-}                               /* GetTtl */
+} /* GetTtl */
 
 /* -------------------------------------------------------------------------
  * Function   : SaveTtlAndChecksum
@@ -140,17 +134,16 @@ GetTtl(unsigned char *ipPacket)
  * Return     : none
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-void
-SaveTtlAndChecksum(unsigned char *ipPacket, struct TSaveTtl *sttl)
+void SaveTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl)
 {
-  struct iphdr *iph;
+  struct iphdr* iph;
 
   assert(ipPacket != NULL && sttl != NULL);
 
-  iph = (struct iphdr *)(ARM_NOWARN_ALIGN)ipPacket;
+  iph = (struct iphdr*) ipPacket;
   sttl->ttl = iph->ttl;
   sttl->check = ntohs(iph->check);
-}                               /* SaveTtlAndChecksum */
+} /* SaveTtlAndChecksum */
 
 /* -------------------------------------------------------------------------
  * Function   : RestoreTtlAndChecksum
@@ -162,17 +155,16 @@ SaveTtlAndChecksum(unsigned char *ipPacket, struct TSaveTtl *sttl)
  * Return     : none
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-void
-RestoreTtlAndChecksum(unsigned char *ipPacket, struct TSaveTtl *sttl)
+void RestoreTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl)
 {
-  struct iphdr *iph;
+  struct iphdr* iph;
 
   assert(ipPacket != NULL && sttl != NULL);
 
-  iph = (struct iphdr *)(ARM_NOWARN_ALIGN)ipPacket;
+  iph = (struct iphdr*) ipPacket;
   iph->ttl = sttl->ttl;
   iph->check = htons(sttl->check);
-}                               /* RestoreTtlAndChecksum */
+} /* RestoreTtlAndChecksum */
 
 /* -------------------------------------------------------------------------
  * Function   : DecreaseTtlAndUpdateHeaderChecksum
@@ -184,20 +176,19 @@ RestoreTtlAndChecksum(unsigned char *ipPacket, struct TSaveTtl *sttl)
  * Data Used  : none
  * Notes      : See also RFC1141
  * ------------------------------------------------------------------------- */
-void
-DecreaseTtlAndUpdateHeaderChecksum(unsigned char *ipPacket)
+void DecreaseTtlAndUpdateHeaderChecksum(unsigned char* ipPacket)
 {
-  struct iphdr *iph;
+  struct iphdr* iph;
   u_int32_t sum;
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr *)(ARM_NOWARN_ALIGN)ipPacket;
+  iph = (struct iphdr*) ipPacket;
 
-  iph->ttl--;                   /* decrement ttl */
-  sum = ntohs(iph->check) + 0x100;      /* increment checksum high byte */
-  iph->check = htons(sum + (sum >> 16));        /* add carry */
-}                               /* DecreaseTtlAndUpdateHeaderChecksum */
+  iph->ttl--; /* decrement ttl */
+  sum = ntohs(iph->check) + 0x100; /* increment checksum high byte */
+  iph->check = htons(sum + (sum>>16)); /* add carry */
+} /* DecreaseTtlAndUpdateHeaderChecksum */
 
 /* -------------------------------------------------------------------------
  * Function   : GetIpHeader
@@ -207,11 +198,10 @@ DecreaseTtlAndUpdateHeaderChecksum(unsigned char *ipPacket)
  * Return     : IP header
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-struct ip *
-GetIpHeader(unsigned char *encapsulationUdpData)
+struct ip* GetIpHeader(unsigned char* encapsulationUdpData)
 {
-  return (struct ip *)(ARM_NOWARN_ALIGN)(encapsulationUdpData + ENCAP_HDR_LEN);
-}                               /* GetIpHeader */
+  return (struct ip*)(encapsulationUdpData + ENCAP_HDR_LEN);
+} /* GetIpHeader */
 
 /* -------------------------------------------------------------------------
  * Function   : GetIpPacket
@@ -221,11 +211,10 @@ GetIpHeader(unsigned char *encapsulationUdpData)
  * Return     : The IP packet
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-unsigned char *
-GetIpPacket(unsigned char *encapsulationUdpData)
+unsigned char* GetIpPacket(unsigned char* encapsulationUdpData)
 {
   return encapsulationUdpData + ENCAP_HDR_LEN;
-}                               /* GetIpPacket */
+} /* GetIpPacket */
 
 /* -------------------------------------------------------------------------
  * Function   : GetEncapsulationUdpDataLength
@@ -235,15 +224,8 @@ GetIpPacket(unsigned char *encapsulationUdpData)
  * Return     : The encapsulation data length
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-u_int16_t
-GetEncapsulationUdpDataLength(unsigned char *encapsulationUdpData)
+u_int16_t GetEncapsulationUdpDataLength(unsigned char* encapsulationUdpData)
 {
   return GetIpTotalLength(GetIpPacket(encapsulationUdpData)) + ENCAP_HDR_LEN;
-}                               /* GetEncapsulationUdpDataLength */
+} /* GetEncapsulationUdpDataLength */
 
-/*
- * Local Variables:
- * c-basic-offset: 2
- * indent-tabs-mode: nil
- * End:
- */

@@ -46,6 +46,8 @@
 #include "net_olsr.h"
 #include "tc_set.h"
 #include "parser.h"
+#include "gateway.h"
+#include "duplicate_handler.h"
 
 struct hna_entry hna_set[HASHSIZE];
 struct olsr_cookie_info *hna_net_timer_cookie = NULL;
@@ -105,7 +107,7 @@ olsr_lookup_hna_net(const struct hna_net *nets, const union olsr_ip_addr *net, u
 
   /* Loop trough entrys */
   for (tmp = nets->next; tmp != nets; tmp = tmp->next) {
-    if (tmp->prefixlen == prefixlen && ipequal(&tmp->A_network_addr, net)) {
+    if (tmp->hna_prefix.prefix_len == prefixlen && ipequal(&tmp->hna_prefix.prefix, net)) {
       return tmp;
     }
   }
@@ -191,8 +193,8 @@ olsr_add_hna_net(struct hna_entry *hna_gw, const union olsr_ip_addr *net, uint8_
 
   /* Fill struct */
   memset(new_net, 0, sizeof(struct hna_net));
-  new_net->A_network_addr = *net;
-  new_net->prefixlen = prefixlen;
+  new_net->hna_prefix.prefix = *net;
+  new_net->hna_prefix.prefix_len= prefixlen;
 
   /* Set backpointer */
   new_net->hna_gw = hna_gw;
@@ -214,19 +216,28 @@ olsr_delete_hna_net_entry(struct hna_net *net_to_delete) {
   struct hna_entry *hna_gw;
   bool removed_entry = false;
 
+#ifdef LINUX_NETLINK_ROUTING
+  if (is_prefix_inetgw(&net_to_delete->hna_prefix)) {
+    /* modify smart gateway entry if necessary */
+    olsr_delete_gateway_entry(&net_to_delete->hna_gw->A_gateway_addr, net_to_delete->hna_prefix.prefix_len);
+  }
+#endif
+
   olsr_stop_timer(net_to_delete->hna_net_timer);
   net_to_delete->hna_net_timer = NULL;  /* be pedandic */
   hna_gw = net_to_delete->hna_gw;
 
 #ifdef DEBUG
-  OLSR_PRINTF(5, "HNA: timeout %s/%u via hna-gw %s\n", olsr_ip_to_string(&buf1, &net_to_delete->A_network_addr),
-              net_to_delete->prefixlen, olsr_ip_to_string(&buf2, &hna_gw->A_gateway_addr));
+  OLSR_PRINTF(5, "HNA: timeout %s via hna-gw %s\n",
+      olsr_ip_prefix_to_string(&net_to_delete->hna_prefix),
+              olsr_ip_to_string(&buf2, &hna_gw->A_gateway_addr));
 #endif
 
   /*
    * Delete the rt_path for the entry.
    */
-  olsr_delete_routing_table(&net_to_delete->A_network_addr, net_to_delete->prefixlen, &hna_gw->A_gateway_addr);
+  olsr_delete_routing_table(&net_to_delete->hna_prefix.prefix,
+      net_to_delete->hna_prefix.prefix_len, &hna_gw->A_gateway_addr);
 
   DEQUEUE_ELEM(net_to_delete);
 
@@ -287,13 +298,14 @@ olsr_update_hna_entry(const union olsr_ip_addr *gw, const union olsr_ip_addr *ne
   /*
    * Add the rt_path for the entry.
    */
-  olsr_insert_routing_table(&net_entry->A_network_addr, net_entry->prefixlen, &gw_entry->A_gateway_addr, OLSR_RT_ORIGIN_HNA);
+  olsr_insert_routing_table(&net_entry->hna_prefix.prefix,
+      net_entry->hna_prefix.prefix_len, &gw_entry->A_gateway_addr, OLSR_RT_ORIGIN_HNA);
 
   /*
    * Start, or refresh the timer, whatever is appropriate.
    */
   olsr_set_timer(&net_entry->hna_net_timer, vtime, OLSR_HNA_NET_JITTER, OLSR_TIMER_ONESHOT, &olsr_expire_hna_net_entry, net_entry,
-                 hna_net_timer_cookie->ci_id);
+                 hna_net_timer_cookie);
 }
 
 /**
@@ -361,7 +373,7 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
   uint16_t olsr_msgsize;
   union olsr_ip_addr originator;
   uint8_t hop_count;
-  uint16_t packet_seq_number;
+  uint16_t msg_seq_number;
 
   int hnasize;
   const uint8_t *curr, *curr_end;
@@ -389,14 +401,6 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
   /* olsr_msgsize */
   pkt_get_u16(&curr, &olsr_msgsize);
 
-  if (olsr_msgsize < 8 + olsr_cnf->ipsize) {
-#ifndef WIN32
-    OLSR_PRINTF(1, "HNA message size %d too small (at least %zu)!\n", olsr_msgsize,
-                8 + olsr_cnf->ipsize);
-#endif
-    return false;
-  }
-
   hnasize = olsr_msgsize - 8 - olsr_cnf->ipsize;
   curr_end = (const uint8_t *)m + olsr_msgsize;
 
@@ -411,7 +415,7 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
   pkt_get_u8(&curr, &hop_count);
 
   /* seqno */
-  pkt_get_u16(&curr, &packet_seq_number);
+  pkt_get_u16(&curr, &msg_seq_number);
 
   if ((hnasize % (2 * olsr_cnf->ipsize)) != 0) {
     OLSR_PRINTF(1, "Illegal HNA message from %s with size %d!\n",
@@ -428,28 +432,49 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
     OLSR_PRINTF(2, "Received HNA from NON SYM neighbor %s\n", olsr_ip_to_string(&buf, from_addr));
     return false;
   }
-#if 1
   while (curr < curr_end) {
-    union olsr_ip_addr net;
-    uint8_t prefixlen;
-    struct ip_prefix_list *entry;
+    struct olsr_ip_prefix prefix;
+    union olsr_ip_addr mask;
 
-    pkt_get_ipaddress(&curr, &net);
-    pkt_get_prefixlen(&curr, &prefixlen);
-    entry = ip_prefix_list_find(olsr_cnf->hna_entries, &net, prefixlen);
+    struct ip_prefix_list *entry;
+    struct interface *ifs;
+    bool stop = false;
+
+    pkt_get_ipaddress(&curr, &prefix.prefix);
+    pkt_get_ipaddress(&curr, &mask);
+    prefix.prefix_len = olsr_netmask_to_prefix(&mask);
+
+#ifdef LINUX_NETLINK_ROUTING
+    if (olsr_cnf->smart_gw_active && olsr_is_smart_gateway(&prefix, &mask)) {
+      olsr_update_gateway_entry(&originator, &mask, prefix.prefix_len, msg_seq_number);
+    }
+#endif
+
+#ifdef MAXIMUM_GATEWAY_PREFIX_LENGTH
+    if (olsr_cnf->smart_gw_active && prefix.prefix_len > 0 && prefix.prefix_len <= MAXIMUM_GATEWAY_PREFIX_LENGTH) {
+      continue;
+    }
+#endif
+
+#ifndef NO_DUPLICATE_DETECTION_HANDLER
+    for (ifs = ifnet; ifs != NULL; ifs = ifs->int_next) {
+      if (ipequal(&ifs->ip_addr, &prefix.prefix)) {
+      /* ignore your own main IP as an incoming MID */
+        olsr_handle_hna_collision(&prefix.prefix, &originator);
+        stop = true;
+        break;
+      }
+    }
+    if (stop) {
+      continue;
+    }
+#endif
+    entry = ip_prefix_list_find(olsr_cnf->hna_entries, &prefix.prefix, prefix.prefix_len);
     if (entry == NULL) {
       /* only update if it's not from us */
-      olsr_update_hna_entry(&originator, &net, prefixlen, vtime);
+      olsr_update_hna_entry(&originator, &prefix.prefix, prefix.prefix_len, vtime);
     }
   }
-#else
-  while (hna_tmp) {
-    /* Don't add an HNA entry that we are advertising ourselves. */
-    if (!ip_prefix_list_find(olsr_cnf->hna_entries, &hna_tmp->net, hna_tmp->prefixlen)) {
-      olsr_update_hna_entry(&message.originator, &hna_tmp->net, hna_tmp->prefixlen, message.vtime);
-    }
-  }
-#endif
   /* Forward the message */
   return true;
 }

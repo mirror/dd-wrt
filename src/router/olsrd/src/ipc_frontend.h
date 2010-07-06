@@ -96,7 +96,7 @@ struct ipc_net_msg {
 
 bool ipc_check_allowed_ip(const union olsr_ip_addr *);
 
-void ipc_accept(int);
+void ipc_accept(int fd, void *, unsigned int);
 
 bool frontend_msgparser(union olsr_message *, struct interface *, union olsr_ip_addr *);
 

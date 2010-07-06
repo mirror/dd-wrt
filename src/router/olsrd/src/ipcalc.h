@@ -49,6 +49,14 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+extern const struct olsr_ip_prefix ipv4_internet_route;
+extern const struct olsr_ip_prefix ipv6_mappedv4_route;
+extern const struct olsr_ip_prefix ipv6_internet_route;
+
+extern const union olsr_ip_addr olsr_ip_zero;
+
+extern const union olsr_ip_addr ipv6_def_multicast;
+
 struct ipaddr_str {
   char buf[MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
 } __attribute__ ((unused));
@@ -149,22 +157,55 @@ olsr_string_to_prefix(int ipversion, struct olsr_ip_prefix *dst, const char *buf
 static INLINE const char *
 sockaddr4_to_string(struct ipaddr_str *const buf, const struct sockaddr *const addr)
 {
-  union {
-    const struct sockaddr *a_sockaddr;
-    const struct sockaddr_in *a_sockaddr_in;
-  } nowarn;
-  nowarn.a_sockaddr = addr;
-  return ip4_to_string(buf, nowarn.a_sockaddr_in->sin_addr);
+  const struct sockaddr_in *addr4 = (const struct sockaddr_in *)addr;
+  return ip4_to_string(buf, addr4->sin_addr);
 }
 
-/* we need to handle one value specifically since shifting 32 bits of a 32 bit integer is the same as shifting 0 bits.
- * The result is in host-byte-order.
- */
-static INLINE uint32_t
-prefix_to_netmask4(uint8_t prefixlen)
-{
-  return prefixlen == 0 ? 0 : (~0U << (32 - prefixlen));
+static INLINE bool
+is_prefix_niit_ipv6(const struct olsr_ip_prefix *p) {
+  return olsr_cnf->ip_version == AF_INET6 && IN6_IS_ADDR_V4MAPPED(&p->prefix.v6)
+      && p->prefix_len >= ipv6_mappedv4_route.prefix_len;
 }
+
+static INLINE struct olsr_ip_prefix *
+prefix_mappedv4_to_v4(struct olsr_ip_prefix *v4, const struct olsr_ip_prefix *v6) {
+  memcpy(&v4->prefix.v4, &v6->prefix.v6.s6_addr[12], sizeof(struct in_addr));
+      v4->prefix_len = v6->prefix_len - 96;
+  return v4;
+}
+
+
+static INLINE bool
+ip_is_linklocal(const union olsr_ip_addr *ip) {
+  return olsr_cnf->ip_version == AF_INET6
+      && ip->v6.s6_addr[0] == 0xfe && (ip->v6.s6_addr[1] & 0xc0) == 0x80;
+}
+
+static INLINE bool
+ip_prefix_is_mappedv4(const struct olsr_ip_prefix *prefix) {
+  return prefix->prefix_len >= ipv6_mappedv4_route.prefix_len
+      && memcmp(prefix, &ipv6_mappedv4_route, ipv6_mappedv4_route.prefix_len / 8) == 0;
+}
+
+static INLINE bool
+ip_prefix_is_mappedv4_inetgw(const struct olsr_ip_prefix *prefix) {
+  return prefix->prefix_len == ipv6_mappedv4_route.prefix_len
+      && memcmp(prefix, &ipv6_mappedv4_route, ipv6_mappedv4_route.prefix_len / 8) == 0;
+}
+
+static INLINE bool
+ip_prefix_is_v4_inetgw(const struct olsr_ip_prefix *prefix) {
+  return prefix->prefix_len == ipv4_internet_route.prefix_len
+      && prefix->prefix.v4.s_addr == ipv4_internet_route.prefix.v4.s_addr;
+}
+
+static INLINE bool
+ip_prefix_is_v6_inetgw(const struct olsr_ip_prefix *prefix) {
+  return prefix->prefix_len == ipv6_internet_route.prefix_len
+      && memcmp(prefix, &ipv6_internet_route, ipv6_internet_route.prefix_len/8) == 0;
+}
+
+extern bool is_prefix_inetgw(const struct olsr_ip_prefix *prefix);
 
 #endif
 

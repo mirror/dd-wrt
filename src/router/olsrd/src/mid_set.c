@@ -52,6 +52,7 @@
 #include "tc_set.h"
 #include "packet.h"             /* struct mid_alias */
 #include "net_olsr.h"
+#include "duplicate_handler.h"
 
 struct mid_entry mid_set[HASHSIZE];
 struct mid_address reverse_mid_set[HASHSIZE];
@@ -591,7 +592,22 @@ olsr_input_mid(union olsr_message *m, struct interface *in_if __attribute__ ((un
   /* Update the timeout of the MID */
   olsr_update_mid_table(&message.mid_origaddr, message.vtime);
 
-  while (tmp_adr) {
+  for (;tmp_adr; tmp_adr = tmp_adr->next) {
+#ifndef NO_DUPLICATE_DETECTION_HANDLER
+    struct interface *ifs;
+    bool stop = false;
+    for (ifs = ifnet; ifs != NULL; ifs = ifs->int_next) {
+      if (ipequal(&ifs->ip_addr, &tmp_adr->alias_addr)) {
+      /* ignore your own main IP as an incoming MID */
+        olsr_handle_mid_collision(&tmp_adr->alias_addr, &message.mid_origaddr);
+        stop = true;
+        break;
+      }
+    }
+    if (stop) {
+      continue;
+    }
+#endif
     if (!mid_lookup_main_addr(&tmp_adr->alias_addr)) {
       OLSR_PRINTF(1, "MID new: (%s, ", olsr_ip_to_string(&buf, &message.mid_origaddr));
       OLSR_PRINTF(1, "%s)\n", olsr_ip_to_string(&buf, &tmp_adr->alias_addr));
@@ -599,7 +615,6 @@ olsr_input_mid(union olsr_message *m, struct interface *in_if __attribute__ ((un
     } else {
       olsr_insert_routing_table(&tmp_adr->alias_addr, olsr_cnf->maxplen, &message.mid_origaddr, OLSR_RT_ORIGIN_MID);
     }
-    tmp_adr = tmp_adr->next;
   }
 
   olsr_prune_aliases(&message);

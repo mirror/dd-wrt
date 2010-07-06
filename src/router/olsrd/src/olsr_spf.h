@@ -42,7 +42,7 @@
 #ifndef _OLSR_SPF_H
 #define _OLSR_SPF_H
 
-void olsr_calculate_routing_table(void);
+void olsr_calculate_routing_table(bool force);
 
 #endif
 

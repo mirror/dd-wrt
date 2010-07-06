@@ -99,7 +99,7 @@ endif
 #WARNINGS +=	-Wunreachable-code
 WARNINGS +=	-Winline
 WARNINGS +=	-Wdisabled-optimization
-#WARNINGS +=	-Werror
+# WARNINGS +=	-Werror
 WARNINGS +=	-finline-functions-called-once
 WARNINGS +=	-funit-at-a-time
 WARNINGS +=	-fearly-inlining

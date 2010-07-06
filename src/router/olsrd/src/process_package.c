@@ -231,13 +231,8 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
 
               walker->saved_path_linkcost = new_path_linkcost;
 
-              if (olsr_cnf->lq_dlimit > 0) {
-                changes_neighborhood = true;
-                changes_topology = true;
-              }
-
-              else
-                OLSR_PRINTF(3, "Skipping Dijkstra (3)\n");
+              changes_neighborhood = true;
+              changes_topology = true;
             }
           }
         }

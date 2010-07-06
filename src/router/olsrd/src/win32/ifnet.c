@@ -46,7 +46,6 @@
 #include "interfaces.h"
 #include "olsr.h"
 #include "parser.h"
-#include "socket_parser.h"
 #include "defs.h"
 #include "net_os.h"
 #include "ifnet.h"
@@ -123,23 +122,6 @@ void ListInterfaces(void);
 int GetIntInfo(struct InterfaceInfo *Info, char *Name);
 
 #define MAX_INTERFACES 100
-
-int __stdcall SignalHandler(unsigned long Signal);
-
-static unsigned long __stdcall
-SignalHandlerWrapper(void *Dummy __attribute__ ((unused)))
-{
-  SignalHandler(0);
-  return 0;
-}
-
-static void
-CallSignalHandler(void)
-{
-  unsigned long ThreadId;
-
-  CreateThread(NULL, 0, SignalHandlerWrapper, NULL, 0, &ThreadId);
-}
 
 static void
 MiniIndexToIntName(char *String, int MiniIndex)
@@ -488,68 +470,6 @@ ListInterfaces(void)
   }
 }
 
-void
-RemoveInterface(struct olsr_if *IntConf, bool went_down)
-{
-  struct interface *Int, *Prev;
-
-  OLSR_PRINTF(1, "Removing interface %s.\n", IntConf->name);
-
-  Int = IntConf->interf;
-
-  run_ifchg_cbs(Int, IFCHG_IF_ADD);
-
-  /*remove all routes*/
-  if (went_down) OLSR_PRINTF(1,"Hint: ifdown handling unimplemented");
-
-  if (Int == ifnet)
-    ifnet = Int->int_next;
-
-  else {
-    for (Prev = ifnet; Prev->int_next != Int; Prev = Prev->int_next);
-
-    Prev->int_next = Int->int_next;
-  }
-
-  if (ipequal(&olsr_cnf->main_addr, &Int->ip_addr)) {
-    if (ifnet == NULL) {
-      memset(&olsr_cnf->main_addr, 0, olsr_cnf->ipsize);
-      OLSR_PRINTF(1, "Removed last interface. Cleared main address.\n");
-    }
-
-    else {
-      struct ipaddr_str buf;
-      olsr_cnf->main_addr = ifnet->ip_addr;
-      OLSR_PRINTF(1, "New main address: %s.\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
-    }
-  }
-
-  /*
-   * Deregister functions for periodic message generation
-   */
-  olsr_stop_timer(Int->hello_gen_timer);
-  olsr_stop_timer(Int->tc_gen_timer);
-  olsr_stop_timer(Int->mid_gen_timer);
-  olsr_stop_timer(Int->hna_gen_timer);
-
-  net_remove_buffer(Int);
-
-  IntConf->configured = 0;
-  IntConf->interf = NULL;
-
-  closesocket(Int->olsr_socket);
-  remove_olsr_socket(Int->olsr_socket, &olsr_input);
-
-  free(Int->int_name);
-  free(Int);
-
-  if (ifnet == NULL && !olsr_cnf->allow_no_interfaces) {
-    OLSR_PRINTF(1, "No more active interfaces - exiting.\n");
-    olsr_cnf->exit_value = EXIT_FAILURE;
-    CallSignalHandler();
-  }
-}
-
 int
 add_hemu_if(struct olsr_if *iface)
 {
@@ -565,6 +485,9 @@ add_hemu_if(struct olsr_if *iface)
   ifp = olsr_malloc(sizeof(struct interface), "Interface update 2");
 
   memset(ifp, 0, sizeof(struct interface));
+
+  /* initialize backpointer */
+  ifp->olsr_if = iface;
 
   iface->configured = true;
   iface->interf = ifp;
@@ -588,6 +511,7 @@ add_hemu_if(struct olsr_if *iface)
   memset(&null_addr, 0, olsr_cnf->ipsize);
   if (ipequal(&null_addr, &olsr_cnf->main_addr)) {
     olsr_cnf->main_addr = iface->hemu_ip;
+    olsr_cnf->unicast_src_ip = iface->hemu_ip;
     OLSR_PRINTF(1, "New main address: %s\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
   }
 
@@ -659,23 +583,23 @@ add_hemu_if(struct olsr_if *iface)
   }
 
   /* Register socket */
-  add_olsr_socket(ifp->olsr_socket, &olsr_input_hostemu);
+  add_olsr_socket(ifp->olsr_socket, &olsr_input_hostemu, NULL, NULL, SP_PR_READ);
 
   /*
    * Register functions for periodic message generation
    */
   ifp->hello_gen_timer =
     olsr_start_timer(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC, HELLO_JITTER, OLSR_TIMER_PERIODIC,
-                     olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello, ifp, hello_gen_timer_cookie->ci_id);
+                     olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello, ifp, hello_gen_timer_cookie);
   ifp->tc_gen_timer =
     olsr_start_timer(iface->cnf->tc_params.emission_interval * MSEC_PER_SEC, TC_JITTER, OLSR_TIMER_PERIODIC,
-                     olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc, ifp, tc_gen_timer_cookie->ci_id);
+                     olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc, ifp, tc_gen_timer_cookie);
   ifp->mid_gen_timer =
     olsr_start_timer(iface->cnf->mid_params.emission_interval * MSEC_PER_SEC, MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, ifp,
-                     mid_gen_timer_cookie->ci_id);
+                     mid_gen_timer_cookie);
   ifp->hna_gen_timer =
     olsr_start_timer(iface->cnf->hna_params.emission_interval * MSEC_PER_SEC, HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, ifp,
-                     hna_gen_timer_cookie->ci_id);
+                     hna_gen_timer_cookie);
 
   /* Recalculate max topology hold time */
   if (olsr_cnf->max_tc_vtime < iface->cnf->tc_params.emission_interval)
@@ -714,7 +638,7 @@ chk_if_changed(struct olsr_if *IntConf)
   Int = IntConf->interf;
 
   if (GetIntInfo(&Info, IntConf->name) < 0) {
-    RemoveInterface(IntConf,false);
+    olsr_remove_interface(IntConf);
     return 1;
   }
 
@@ -831,7 +755,7 @@ chk_if_changed(struct olsr_if *IntConf)
     OLSR_PRINTF(3, "\tNo broadcast address change.\n");
 
   if (Res != 0)
-    run_ifchg_cbs(Int, IFCHG_IF_UPDATE);
+    olsr_trigger_ifchange(Int->if_index, Int, IFCHG_IF_UPDATE);
 
   return Res;
 }
@@ -856,6 +780,9 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
     return 0;
 
   New = olsr_malloc(sizeof(struct interface), "Interface 1");
+  /* initialize backpointer */
+  New->olsr_if = IntConf;
+
 
   New->immediate_send_tc = (IntConf->cnf->tc_params.emission_interval < IntConf->cnf->hello_params.emission_interval);
   if (olsr_cnf->max_jitter == 0) {
@@ -935,7 +862,7 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
     exit(1);
   }
 
-  add_olsr_socket(New->olsr_socket, &olsr_input);
+  add_olsr_socket(New->olsr_socket, &olsr_input, NULL, NULL, SP_PR_READ);
 
   New->int_next = ifnet;
   ifnet = New;
@@ -947,6 +874,7 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
 
   if (ipequal(&NullAddr, &olsr_cnf->main_addr)) {
     olsr_cnf->main_addr = New->ip_addr;
+    olsr_cnf->unicast_src_ip = New->ip_addr;
     OLSR_PRINTF(1, "New main address: %s\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
   }
 
@@ -957,16 +885,16 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
    */
   New->hello_gen_timer =
     olsr_start_timer(IntConf->cnf->hello_params.emission_interval * MSEC_PER_SEC, HELLO_JITTER, OLSR_TIMER_PERIODIC,
-                     olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello, New, hello_gen_timer_cookie->ci_id);
+                     olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello, New, hello_gen_timer_cookie);
   New->tc_gen_timer =
     olsr_start_timer(IntConf->cnf->tc_params.emission_interval * MSEC_PER_SEC, TC_JITTER, OLSR_TIMER_PERIODIC,
-                     olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc, New, tc_gen_timer_cookie->ci_id);
+                     olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc, New, tc_gen_timer_cookie);
   New->mid_gen_timer =
     olsr_start_timer(IntConf->cnf->mid_params.emission_interval * MSEC_PER_SEC, MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, New,
-                     mid_gen_timer_cookie->ci_id);
+                     mid_gen_timer_cookie);
   New->hna_gen_timer =
     olsr_start_timer(IntConf->cnf->hna_params.emission_interval * MSEC_PER_SEC, HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, New,
-                     hna_gen_timer_cookie->ci_id);
+                     hna_gen_timer_cookie);
 
   if (olsr_cnf->max_tc_vtime < IntConf->cnf->tc_params.emission_interval)
     olsr_cnf->max_tc_vtime = IntConf->cnf->tc_params.emission_interval;
@@ -979,7 +907,7 @@ chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__ ((unused)))
 
   New->mode = IntConf->cnf->mode;
 
-  run_ifchg_cbs(New, IFCHG_IF_ADD);
+  olsr_trigger_ifchange(New->if_index, New, IFCHG_IF_ADD);
 
   return 1;
 }
