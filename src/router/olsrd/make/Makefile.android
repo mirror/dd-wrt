@@ -1,0 +1,65 @@
+#
+# LINUX SPECIFIC CONFIGURATION
+#
+
+PREFIX ?= /data/local
+SBINDIR = $(PREFIX)/bin
+ETCDIR = $(PREFIX)/etc
+LIBDIR = $(PREFIX)/lib
+DOCDIR =
+MANDIR =
+
+SRCS += 	$(wildcard src/linux/*.c src/unix/*.c)
+HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
+
+CPPFLAGS += 	-Dlinux
+CPPFLAGS += 	-Dandroid
+CPPFLAGS +=	-DINET_ADDRSTRLEN=16
+CPPFLAGS +=	-Dipv6mr_interface=ipv6mr_ifindex
+CPPFLAGS +=	-D'IPTOS_PREC(tos)=((tos)&0xe0)'
+CPPFLAGS +=	-D'IPTOS_TOS(tos)=((tos)&0x1e)'
+CPPFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
+INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig -n $(LIBDIR)
+
+ifdef OLSRD_PLUGIN
+GENERATE_PIC = true
+endif
+
+ifdef GENERATE_PIC
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
+endif
+
+# You need to download and extract the Android NDK from
+# http://developer.android.com/sdk/ndk/1.5_r1/index.html
+
+NDK = /usr/src/android-ndk-1.5_r1
+NDK_ARCH = $(NDK)/build/platforms/android-1.5/arch-arm
+
+ifneq ($(shell uname -m),armv6l)
+# You are not compiling with Debian direct on the phone
+CROSS_COMPILE = $(NDK)/build/prebuilt/linux-x86/arm-eabi-4.2.1/bin/arm-eabi-
+CC = $(CROSS_COMPILE)gcc
+endif
+
+CFLAGS += -I$(NDK_ARCH)/usr/include
+
+LDFLAGS += -nostartfiles -nodefaultlibs -nostdlib
+LDFLAGS += -Wl,--dynamic-linker -Wl,/system/bin/linker
+LDFLAGS += -Wl,-L$(NDK_ARCH)/usr/lib
+LDFLAGS += -Wl,-rpath-link -Wl,$(NDK_ARCH)/usr/lib
+ifndef OLSRD_PLUGIN
+LDFLAGS += $(NDK_ARCH)/usr/lib/crtbegin_dynamic.o
+endif
+
+LIBS += -Wl,-lc -Wl,-lm -Wl,-lgcc
+ifndef OLSRD_PLUGIN
+LIBS += $(NDK_ARCH)/usr/lib/crtend_android.o
+endif
+
+# Local Variables:
+# mode: makefile
+# End:
