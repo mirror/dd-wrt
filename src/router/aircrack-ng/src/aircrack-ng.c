@@ -1267,7 +1267,7 @@ void read_thread( void *arg )
 
 				/* reject broadcast MACs */
 
-				if( h80211[4] != 0 ) goto skip_station;
+				if( (h80211[4]%2) != 0 ) goto skip_station;
 				memcpy( stmac, h80211 +  4, 6 ); break;
 
 			default: goto skip_station; break;
@@ -1533,6 +1533,12 @@ void read_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size || st_cur->wpa.eapol_size == 0)
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
+
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
 				memset( st_cur->wpa.eapol + 81, 0, 16 );
@@ -1567,6 +1573,12 @@ void read_thread( void *arg )
 
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
+
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size  || st_cur->wpa.eapol_size == 0)
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
@@ -2060,7 +2072,7 @@ void check_thread( void *arg )
 
 				/* reject broadcast MACs */
 
-				if( h80211[4] != 0 ) goto skip_station;
+				if( (h80211[4]%2) != 0 ) goto skip_station;
 				memcpy( stmac, h80211 +  4, 6 ); break;
 
 			default: goto skip_station; break;
@@ -2304,6 +2316,12 @@ void check_thread( void *arg )
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
 
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
+
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
 				memset( st_cur->wpa.eapol + 81, 0, 16 );
@@ -2338,6 +2356,12 @@ void check_thread( void *arg )
 
 				st_cur->wpa.eapol_size = ( h80211[z + 2] << 8 )
 					+   h80211[z + 3] + 4;
+
+				if ((int)pkh.len - z < st_cur->wpa.eapol_size )
+				{
+					// Ignore the packet trying to crash us.
+					continue;
+				}
 
 				memcpy( st_cur->wpa.keymic, &h80211[z + 81], 16 );
 				memcpy( st_cur->wpa.eapol,  &h80211[z], st_cur->wpa.eapol_size );
@@ -3984,8 +4008,8 @@ int crack_wpa_thread( void *arg )
 }
 
 /**
- * Open a specific dictionnary
- * nb: index of the dictionnary
+ * Open a specific dictionary
+ * nb: index of the dictionary
  * return 0 on success and FAILURE if it failed
  */
 int next_dict(int nb)
@@ -4371,7 +4395,7 @@ int crack_wep_dict()
 
 	if(wep.nb_ivs < TEST_MIN_IVS)
 	{
-		printf( "\n%ld IVs is below the minimum required for a dictionnary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
+		printf( "\n%ld IVs is below the minimum required for a dictionary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
 		return( FAILURE );
 	}
 
@@ -5153,7 +5177,7 @@ usage:
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
 
-			/* Disable PTW if dictionnary used in WEP */
+			/* Disable PTW if dictionary used in WEP */
 			if (ap_cur->crypt == 2 && opt.dict != NULL)
 			{
 				opt.do_ptw = 0;
