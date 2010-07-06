@@ -10,6 +10,13 @@ lang_charset.set="utf-8";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Klicni niz";
+share.mode_3g="Način zveze";
+share.mode_3g_auto="Avtomatsko 3G/2G";
+share.mode_3g_3g="Prisili 3G";
+share.mode_3g_2g="Prisili 2G";
+share.mode_3g_prefer_3g="Prednost 3G";
+share.mode_3g_prefer_2g="Prednost 2G";
+share.mode_3g_3g2g="Najprej 3G, ob napaki 2G";
 share.firmware="Strojna programska oprema";
 share.time="Čas";
 share.interipaddr="WAN IP naslov";
@@ -452,6 +459,7 @@ bmenu.statuBand="Pasovna širina";
 bmenu.statuSysInfo="Info stran";
 bmenu.statuActivate="Aktiviraj";
 bmenu.statuMyPage="Moja stran";
+bmenu.statuGpio="GPIO I/O";
 
 // ** Alive.asp **//
 
@@ -1858,6 +1866,13 @@ wl_wimax.width="Širina kanala";
 wl_wimax.duplex="Duplex način";
 wl_wimax.mode="Način delovanja";
 wl_wimax.mac="Subscriber MAC Address";
+
+// ** Gpio **//
+
+gpio.titl="Gpio vhodi / izhodi";
+gpio.h2="Gpio vhodi /izhodi";
+gpio.oplegend="Gpio izhodi";
+gpio.iplegend="Gpio vhodi";
 
 // ** FreeRadius.asp **//
 
