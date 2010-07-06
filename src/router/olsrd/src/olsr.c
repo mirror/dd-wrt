@@ -63,6 +63,8 @@
 #include "common/avl.h"
 #include "net_olsr.h"
 #include "lq_plugin.h"
+#include "gateway.h"
+#include "duplicate_handler.h"
 
 #include <stdarg.h>
 #include <signal.h>
@@ -138,6 +140,19 @@ get_msg_seqno(void)
   return message_seqno++;
 }
 
+bool
+olsr_is_bad_duplicate_msg_seqno(uint16_t seqno) {
+  int32_t diff = (int32_t) seqno - (int32_t) message_seqno;
+
+  if (diff < -32768) {
+    diff += 65536;
+  }
+  else if (diff > 32767) {
+    diff -= 65536;
+  }
+  return diff > 0;
+}
+
 void
 register_pcf(int (*f) (int, int, int))
 {
@@ -174,9 +189,6 @@ olsr_process_changes(void)
     OLSR_PRINTF(3, "CHANGES IN HNA\n");
 #endif
 
-  if (!changes_force && 2 <= olsr_cnf->lq_level && 0 >= olsr_cnf->lq_dlimit)
-    return;
-
   if (!changes_neighborhood && !changes_topology && !changes_hna)
     return;
 
@@ -195,12 +207,15 @@ olsr_process_changes(void)
 
   /* calculate the routing table */
   if (changes_neighborhood || changes_topology || changes_hna) {
-    olsr_calculate_routing_table();
+    olsr_calculate_routing_table(false);
   }
 
   if (olsr_cnf->debug_level > 0) {
     if (olsr_cnf->debug_level > 2) {
       olsr_print_mid_set();
+#ifdef LINUX_NETLINK_ROUTING
+    olsr_print_gateway_entries();
+#endif
 
       if (olsr_cnf->debug_level > 3) {
         if (olsr_cnf->debug_level > 8) {
@@ -209,12 +224,10 @@ olsr_process_changes(void)
         olsr_print_hna_set();
       }
     }
-#if 1
     olsr_print_link_set();
     olsr_print_neighbor_table();
     olsr_print_two_hop_neighbor_table();
     olsr_print_tc_table();
-#endif
   }
 
   for (tmp_pc_list = pcf_list; tmp_pc_list != NULL; tmp_pc_list = tmp_pc_list->next) {
@@ -225,21 +238,6 @@ olsr_process_changes(void)
   changes_topology = false;
   changes_hna = false;
   changes_force = false;
-}
-
-/*
- * Callback for the periodic route calculation.
- */
-void
-olsr_trigger_forced_update(void *unused __attribute__ ((unused)))
-{
-
-  changes_force = true;
-  changes_neighborhood = true;
-  changes_topology = true;
-  changes_hna = true;
-
-  olsr_process_changes();
 }
 
 /**
@@ -293,16 +291,10 @@ olsr_init_tables(void)
   /* Initialize HNA set */
   olsr_init_hna_set();
 
-#if 0
-  /* Initialize Layer 1/2 database */
-  olsr_initialize_layer12();
+  /* Initialize duplicate handler */
+#ifndef NO_DUPLICATE_DETECTION_HANDLER
+  olsr_duplicate_handler_init();
 #endif
-
-  /* Start periodic SPF and RIB recalculation */
-  if (olsr_cnf->lq_dinter > 0.0) {
-    olsr_start_timer((unsigned int)(olsr_cnf->lq_dinter * MSEC_PER_SEC), 5, OLSR_TIMER_PERIODIC, &olsr_trigger_forced_update, NULL,
-                     0);
-  }
 }
 
 /**
@@ -321,7 +313,7 @@ olsr_forward_message(union olsr_message *m, struct interface *in_if, union olsr_
   struct neighbor_entry *neighbor;
   int msgsize;
   struct interface *ifn;
-
+  bool is_ttl_1 = false;
 
   /*
    * Sven-Ola: We should not flood the mesh with overdue messages. Because
@@ -330,10 +322,10 @@ olsr_forward_message(union olsr_message *m, struct interface *in_if, union olsr_
    */
   if (AF_INET == olsr_cnf->ip_version) {
     if (m->v4.ttl < 2 || 255 < (int)m->v4.hopcnt + (int)m->v4.ttl)
-      return 0;
+      is_ttl_1 = true;
   } else {
     if (m->v6.ttl < 2 || 255 < (int)m->v6.hopcnt + (int)m->v6.ttl)
-      return 0;
+      is_ttl_1 = true;
   }
 
   /* Lookup sender address */
@@ -361,15 +353,17 @@ olsr_forward_message(union olsr_message *m, struct interface *in_if, union olsr_
     return 0;
   }
 
-  /* Treat TTL hopcnt */
-  if (olsr_cnf->ip_version == AF_INET) {
-    /* IPv4 */
-    m->v4.hopcnt++;
-    m->v4.ttl--;
-  } else {
-    /* IPv6 */
-    m->v6.hopcnt++;
-    m->v6.ttl--;
+  /* Treat TTL hopcnt except for ethernet link */
+  if (!is_ttl_1) {
+    if (olsr_cnf->ip_version == AF_INET) {
+      /* IPv4 */
+      m->v4.hopcnt++;
+      m->v4.ttl--;
+    } else {
+      /* IPv6 */
+      m->v6.hopcnt++;
+      m->v6.ttl--;
+    }
   }
 
   /* Update packet data */
@@ -377,11 +371,13 @@ olsr_forward_message(union olsr_message *m, struct interface *in_if, union olsr_
 
   /* looping trough interfaces */
   for (ifn = ifnet; ifn; ifn = ifn->int_next) {
+    /* do not retransmit out through the same interface if it has mode == ether */
+    if (ifn == in_if && ifn->mode == IF_MODE_ETHER) continue;
+
+    /* do not forward TTL 1 messages to non-ether interfaces */
+    if (is_ttl_1 && ifn->mode != IF_MODE_ETHER) continue;
+
     if (net_output_pending(ifn)) {
-
-      /* dont forward to incoming interface if interface is mode ether */
-      if (in_if->mode == IF_MODE_ETHER && ifn == in_if) continue;
-
       /*
        * Check if message is to big to be piggybacked
        */

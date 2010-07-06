@@ -34,14 +34,14 @@
 
 OLSRD_PLUGIN =	true
 PLUGIN_NAME =	olsrd_bmf
-PLUGIN_VER =	1.5.3
+PLUGIN_VER =	1.7.0
 
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
-LIBS +=	$(OS_LIB_PTHREAD)
+#LIBS +=	$(OS_LIB_PTHREAD)
 
-ifneq ($(OS),$(filter $(OS),linux android))
+ifneq ($(OS),linux)
 
 default_target install clean: 
 	@echo "*** BMF Plugin only supported on Linux, sorry!"

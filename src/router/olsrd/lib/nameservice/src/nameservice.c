@@ -67,6 +67,9 @@
 #include "mapwrite.h"
 #include "compat.h"
 
+/* true if plugin has been configured */
+static bool nameservice_configured = false;
+
 /* config parameters */
 static char my_hosts_file[MAX_FILE + 1];
 static char my_sighup_pid_file[MAX_FILE + 1];
@@ -319,6 +322,16 @@ add_name_to_list(struct name_entry *my_list, const char *value, int type, const 
 int
 name_init(void)
 {
+  /* register functions with olsrd */
+  olsr_parser_add_function(&olsr_parser, PARSER_TYPE);
+
+  /* periodic message generation */
+  msg_gen_timer = olsr_start_timer(my_interval * MSEC_PER_SEC, EMISSION_JITTER, OLSR_TIMER_PERIODIC, &olsr_namesvc_gen, NULL, 0);
+
+  return 1;
+}
+
+static void name_lazy_init(void) {
   struct name_entry *name;
   union olsr_ip_addr ipz;
   int ret;
@@ -326,8 +339,17 @@ name_init(void)
   //regex string for validating the hostnames
   const char *regex_name = "^[[:alnum:]_.-]+$";
   //regex string for the service line
-  size_t regex_size = 256 * sizeof(char) + strlen(my_suffix);
-  char *regex_service = olsr_malloc(regex_size, "new *char from name_init for regex_service");
+  size_t regex_size;
+  char *regex_service;
+
+  /* wait for configured master IP */
+  if (ipequal(&olsr_cnf->main_addr, &olsr_ip_zero)) {
+    return;
+  }
+  nameservice_configured = true;
+
+  regex_size = 256 * sizeof(char) + strlen(my_suffix);
+  regex_service = olsr_malloc(regex_size, "new *char from name_init for regex_service");
   memset(&ipz, 0, sizeof(ipz));
 
   //compile the regex from the string
@@ -396,15 +418,9 @@ name_init(void)
   my_services = remove_nonvalid_names_from_list(my_services, NAME_SERVICE);
   my_macs = remove_nonvalid_names_from_list(my_macs, NAME_MACADDR);
 
-  /* register functions with olsrd */
-  olsr_parser_add_function(&olsr_parser, PARSER_TYPE);
-
-  /* periodic message generation */
-  msg_gen_timer = olsr_start_timer(my_interval * MSEC_PER_SEC, EMISSION_JITTER, OLSR_TIMER_PERIODIC, &olsr_namesvc_gen, NULL, 0);
-
   mapwrite_init(my_latlon_file);
 
-  return 1;
+  return;
 }
 
 struct name_entry *
@@ -580,6 +596,12 @@ olsr_namesvc_gen(void *foo __attribute__ ((unused)))
   struct interface *ifn;
   int namesize;
 
+  if (!nameservice_configured) {
+    name_lazy_init();
+    if (!nameservice_configured) {
+      return;
+    }
+  }
   /* fill message */
   if (olsr_cnf->ip_version == AF_INET) {
     /* IPv4 */
@@ -590,7 +612,7 @@ olsr_namesvc_gen(void *foo __attribute__ ((unused)))
     message->v4.hopcnt = 0;
     message->v4.seqno = htons(get_msg_seqno());
 
-    namesize = encap_namemsg((struct namemsg *)(ARM_NOWARN_ALIGN)&message->v4.message);
+    namesize = encap_namemsg((struct namemsg *)ARM_NOWARN_ALIGN(&message->v4.message));
     namesize = namesize + sizeof(struct olsrmsg);
 
     message->v4.olsr_msgsize = htons(namesize);
@@ -603,7 +625,7 @@ olsr_namesvc_gen(void *foo __attribute__ ((unused)))
     message->v6.hopcnt = 0;
     message->v6.seqno = htons(get_msg_seqno());
 
-    namesize = encap_namemsg((struct namemsg *)(ARM_NOWARN_ALIGN)&message->v6.message);
+    namesize = encap_namemsg((struct namemsg *)ARM_NOWARN_ALIGN(&message->v6.message));
     namesize = namesize + sizeof(struct olsrmsg6);
 
     message->v6.olsr_msgsize = htons(namesize);
@@ -635,6 +657,13 @@ olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unuse
   int size;
   uint16_t seqno;
 
+  if (!nameservice_configured) {
+    name_lazy_init();
+    if (!nameservice_configured) {
+      return false;
+    }
+  }
+
   /* Fetch the originator of the messsage */
   if (olsr_cnf->ip_version == AF_INET) {
     memcpy(&originator, &m->v4.originator, olsr_cnf->ipsize);
@@ -648,11 +677,11 @@ olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unuse
   if (olsr_cnf->ip_version == AF_INET) {
     vtime = me_to_reltime(m->v4.olsr_vtime);
     size = ntohs(m->v4.olsr_msgsize);
-    namemessage = (struct namemsg *)(ARM_NOWARN_ALIGN)&m->v4.message;
+    namemessage = (struct namemsg *)ARM_NOWARN_ALIGN(&m->v4.message);
   } else {
     vtime = me_to_reltime(m->v6.olsr_vtime);
     size = ntohs(m->v6.olsr_msgsize);
-    namemessage = (struct namemsg *)(ARM_NOWARN_ALIGN)&m->v6.message;
+    namemessage = (struct namemsg *)ARM_NOWARN_ALIGN(&m->v6.message);
   }
 
   /* Check if message originated from this node.
@@ -692,22 +721,22 @@ encap_namemsg(struct namemsg *msg)
 
   // names
   for (my_name = my_names; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
+    pos = create_packet((struct name *)ARM_NOWARN_ALIGN(pos), my_name);
     i++;
   }
   // forwarders
   for (my_name = my_forwarders; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
+    pos = create_packet((struct name *)ARM_NOWARN_ALIGN(pos), my_name);
     i++;
   }
   // services
   for (my_name = my_services; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
+    pos = create_packet((struct name *)ARM_NOWARN_ALIGN(pos), my_name);
     i++;
   }
   // macs
   for (my_name = my_macs; my_name != NULL; my_name = my_name->next) {
-    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, my_name);
+    pos = create_packet((struct name *)ARM_NOWARN_ALIGN(pos), my_name);
     i++;
   }
   // latlon
@@ -729,7 +758,7 @@ encap_namemsg(struct namemsg *msg)
     e.type = NAME_LATLON;
     e.name = s;
     lookup_defhna_latlon(&e.ip);
-    pos = create_packet((struct name *)(ARM_NOWARN_ALIGN)pos, &e);
+    pos = create_packet((struct name *)ARM_NOWARN_ALIGN(pos), &e);
     i++;
   }
   // write the namemsg header with the number of announced entries and the protocol version
@@ -876,7 +905,7 @@ update_name_entry(union olsr_ip_addr *originator, struct namemsg *msg, int msg_s
   end_pos = pos + msg_size - sizeof(struct name *);     // at least one struct name has to be left
 
   for (i = ntohs(msg->nr_names); i > 0 && pos < end_pos; i--) {
-    from_packet = (struct name *)(ARM_NOWARN_ALIGN)pos;
+    from_packet = (struct name *)ARM_NOWARN_ALIGN(pos);
 
     switch (ntohs(from_packet->type)) {
     case NAME_HOST:

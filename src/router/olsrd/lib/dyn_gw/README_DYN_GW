@@ -1,50 +1,6 @@
 DYNAMIC INTERNET GATEWAY PLUGIN FOR olsr.org olsrd
 by Andreas Tonnesen(andreto@olsr.org)
-addittions by Jens Nachitgall
-
-21.12.2004
-  bjoern Riemer
-- added universal hna checking
-  the plParams are parsed in spechial order, first the HNA parameter syntax: "net mask"
-  the following Ping parameter are only used for the previus HNA entry.
-  if there is no previus HNA entry then HNA "0.0.0.0 0.0.0.0" for internet GW is assumed
-
-30.11.2004
-
-  updates by Jens:
-
-- Upgraded to confirm with v2 plugin interface
-- removed IPC stuff
-- Removed much unnessecarry stuff
-- Added an optional validation based on the ping command, which caused
-  some internal restructuring, e.g. the dependency of a threading
-  library)
-- the config file accepts an "Interval", meaning how often the check is
-  done
-
-HOW TO USE
-
-Add an entry like this to your olsrd configuration file:
-
-LoadPlugin "olsrd_dyn_gw.so.0.4"
-{
-    # how often to look for a inet gw, in seconds
-    # defaults to 5 secs, if commented out
-    PlParam     "Interval"   "40"
-    
-    # if one or more IPv4 addresses are given, do a ping on these in
-    # descending order to validate that there is not only an entry in
-    # routing table, but also a real internet connection. If any of
-    # these addresses could be pinged successfully, the test was
-    # succesful, i.e. if the ping on the 1st address was successful,the
-    # 2nd won't be pinged
-    PlParam     "Ping"       "141.1.1.1"
-    PlParam     "Ping"       "194.25.2.129"
-    PlParam	"HNA"	"192.168.80.0 255.255.255.0"
-    PlParam	"HNA"	"192.168.81.0 255.255.255.0"
-    PlParam	"Ping"	"192.168.81.12"
-}
-
+Additions by Jens Nachitgall and others
 
 ABOUT
 
@@ -55,7 +11,7 @@ This is a plugin that checks if the local node has a Internet-
 connection. A Internet-connetion is identified by a "default gw" with a
 hopcount of 0. That is a route to 0.0.0.0/0 with metric 0.  By default
 the check is done every 5 secs. You can change the check interval by
-providing an value for "Interval" in the plugin's section of olsrd.conf.
+providing an value for "PingInterval" in the plugin's section of olsrd.conf.
 
 If one or more IPv4 addresses are given as values for "Ping" in the
 section or dyn_gw in olsrd.conf, then a test is done to validate if
@@ -76,9 +32,104 @@ the OLSR network. If the route is removed the HNA messages
 will not be transmitted. This check is totally dynamic and
 Internet connectivity might come and go.
 
+This plugin can also process more specific routes by specifying groups of HNAs
+(Host and Network Association) and ping hosts. 
+
 This plugin will work very good with a automatic network cable
 detection daemon such as  netplug:
 http://freshmeat.net/projects/key-netplug/
 
 This plugin is a good example of using plugins for other stuff
 than packet transmission.
+
+HOW TO USE (version 0.5)
+
+LoadPlugin "olsrd_dyn_gw.so.0.5"
+{
+    # The plugin check interval can be set here in milliseconds.
+    # The default is 1000 ms (1 second).
+    PlParam     "CheckInterval"  "5000"
+    
+    # The ping check interval in case there is any pinged host specified.
+    # The default is 5 seconds.
+    PlParam     "PingInterval"   "40"
+    
+    # If one or more IPv4 addresses are given, do a ping on these in
+    # descending order to validate that there is not only an entry in
+    # routing table, but also a real network connection. If any of
+    # these addresses could be pinged successfully, the test was
+    # succesful, i.e. if the ping on the 1st address was successful,the
+    # 2nd won't be pinged.
+    #
+    # The Ping list applies to the group of HNAs specified above or to the 
+		# default internet gateway when no HNA is specified.
+		#
+		# Running the plugin without parameters acts as the 'old' dyn_gw_plain.
+    
+    #   The following ping entries for the internet gateway
+    PlParam "Ping"   "141.1.1.1"
+    PlParam "Ping"   "194.25.2.129"
+    
+    #   First group of HNAs with related ping host
+    PlParam	"HNA"	   "192.168.80.0 255.255.255.0"
+    PlParam	"HNA"	   "192.168.81.0 255.255.255.0"
+    PlParam	"Ping"	 "192.168.81.12"
+    
+    #   Second HNA group with multiple related ping hosts.
+    #   Specifying multiple ping hosts provides redundancy.
+    PlParam "HNA"    "192.168.100.0 255.255.255.0"
+    PlParam "HNA"    "192.168.101.0 255.255.255.0"
+    PlParam "HNA"    "192.168.102.0 255.255.255.0"
+    PlParam "Ping"   "192.168.100.10"
+    PlParam "Ping"   "192.168.101.10"
+    
+    #   Third HNA group without ping check
+    PlParam "HNA"    "192.168.200.0 255.255.255.0"
+    PlParam "HNA"    "192.168.201.0 255.255.255.0"
+    PlParam "HNA"    "192.168.202.0 255.255.255.0"
+}
+
+--------------------------------------------------------------------------------
+Change log:
+
+18.02.2010
+  Caspar van Zon / C2SC
+- Changed HNA checking.
+  The 'Ping' PlParam processing has been modified so that it is not only valid 
+	for the previous HNA entry but all entries proceeding the ping parameter until 
+	either the beginning of the list or the previous ping parameter.
+	If there is no previous HNA entry then HNA '0.0.0.0 0.0.0.0' for the internet
+	gateway is inserted instead.
+- Two new interval parameters 'PingInterval' and 'CheckInterval' have been
+  introduced. 'PingInterval' is the new name for the 'Interval' parameter, the
+  old name has been maintained as well for compatibility. The 'CheckInterval' is
+  new and specifies the check interval for the OLSR event loop in milliseconds.
+- When no ping hosts are specified at all the thread for the ping check will not
+  be started, eliminating the thread totally is left for future improvement.
+- Code and variable names have been cleaned up in various places to improve both
+  readability and maintainability.
+- Due to significant changes in the code base and the modified functionality the
+  version of the package has been increased to version 0.5
+- Running the plugin without parameters acts like dyn_gw_plain so the 
+  dyn_gw_plain plugin can be made obsolete.
+	
+21.12.2004
+  bjoern Riemer
+- added universal hna checking
+  the plParams are parsed in spechial order, first the HNA parameter syntax: "net mask"
+  the following Ping parameter are only used for the previus HNA entry.
+  if there is no previus HNA entry then HNA "0.0.0.0 0.0.0.0" for internet GW is assumed
+
+30.11.2004
+
+  updates by Jens:
+
+- Upgraded to confirm with v2 plugin interface
+- removed IPC stuff
+- Removed much unnessecarry stuff
+- Added an optional validation based on the ping command, which caused
+  some internal restructuring, e.g. the dependency of a threading
+  library)
+- the config file accepts an "Interval", meaning how often the check is
+  done
+

@@ -97,7 +97,9 @@ struct lq_handler lq_etx_ff_handler = {
   &default_lq_print_cost_ff,
 
   sizeof(struct default_lq_ff_hello),
-  sizeof(struct default_lq_ff)
+  sizeof(struct default_lq_ff),
+  4,
+  4
 };
 
 static void

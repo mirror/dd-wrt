@@ -55,6 +55,8 @@
 
 #include "oparse.h"
  
+#define ECHO if(fwrite( yytext, yyleng, 1, yyout )) {}
+
 /* Prototypes */
 int yyget_lineno(void);
 FILE * yyget_in(void);
@@ -216,6 +218,16 @@ IPV6ADDR {IPV6PAT1}|{IPV6PAT2}|{IPV6PAT3}|{IPV6PAT4}|{IPV6PAT5}|{IPV6PAT6}|{IPV6
     return TOK_DEFAULT;
 }
 
+"auto" {
+    yylval = NULL;
+    return TOK_AUTO;
+}
+
+"none" {
+    yylval = NULL;
+    return TOK_NONE;
+}
+
 {DECDIGIT}+ {
     yylval = get_integer_token(yytext);
     return TOK_INTEGER;
@@ -307,19 +319,44 @@ IPV6ADDR {IPV6PAT1}|{IPV6PAT2}|{IPV6PAT3}|{IPV6PAT4}|{IPV6PAT5}|{IPV6PAT6}|{IPV6
   return TOK_OLSRPORT;
 }
 
-"RtTable" {
-  yylval = NULL;
-  return TOK_RTTABLE;
-}
-
 "RtProto" {
   yylval = NULL;
   return TOK_RTPROTO;
 }
 
+"RtTable" {
+  yylval = NULL;
+  return TOK_RTTABLE;
+}
+
 "RtTableDefault" {
   yylval = NULL;
   return TOK_RTTABLE_DEFAULT;
+}
+
+"RtTableTunnel" {
+  yylval = NULL;
+  return TOK_RTTABLE_TUNNEL;
+}
+
+"RtTablePriority" {
+  yylval = NULL;
+  return TOK_RTTABLE_PRIORITY;
+}
+
+"RtTableDefaultOlsrPriority" {
+  yylval = NULL;
+  return TOK_RTTABLE_DEFAULTOLSR_PRIORITY;
+}
+
+"RtTableTunnelPriority" {
+  yylval = NULL;
+  return TOK_RTTABLE_TUNNEL_PRIORITY;
+}
+
+"RtTableDefaultPriority" {
+  yylval = NULL;
+  return TOK_RTTABLE_DEFAULT_PRIORITY;
 }
 
 "Willingness" {
@@ -383,11 +420,6 @@ IPV6ADDR {IPV6PAT1}|{IPV6PAT2}|{IPV6PAT3}|{IPV6PAT4}|{IPV6PAT5}|{IPV6PAT6}|{IPV6
     return TOK_LQ_FISH;
 }
 
-"LinkQualityDijkstraLimit" {
-    yylval = NULL;
-    return TOK_LQ_DLIMIT;
-}
-
 "LinkQualityAging" {
     yylval = NULL;
     return TOK_LQ_AGING;
@@ -396,11 +428,6 @@ IPV6ADDR {IPV6PAT1}|{IPV6PAT2}|{IPV6PAT3}|{IPV6PAT4}|{IPV6PAT5}|{IPV6PAT6}|{IPV6
 "LinkQualityAlgorithm" {
     yylval = NULL;
     return TOK_LQ_PLUGIN;
-}
-
-"LinkQualityWinSize" {
-    yylval = NULL;
-    return TOK_LQ_WSIZE;
 }
 
 "NatThreshold" {
@@ -428,11 +455,53 @@ IPV6ADDR {IPV6PAT1}|{IPV6PAT2}|{IPV6PAT3}|{IPV6PAT4}|{IPV6PAT5}|{IPV6PAT6}|{IPV6
     return TOK_CLEAR_SCREEN;
 }
 
+"UseNiit" {
+    yylval = NULL;
+    return TOK_USE_NIIT;
+}
+
+"SmartGateway" {
+    yylval = NULL;
+    return TOK_SMART_GW;
+}
+
+"SmartGatewayAllowNAT" {
+    yylval = NULL;
+    return TOK_SMART_GW_ALLOW_NAT;
+}
+
+"SmartGatewayUplink" {
+    yylval = NULL;
+    return TOK_SMART_GW_UPLINK;
+}
+ 
+"SmartGatewayUplinkNAT" {
+    yylval = NULL;
+    return TOK_SMART_GW_UPLINK_NAT;
+}
+ 
+"SmartGatewaySpeed" {
+    yylval = NULL;
+    return TOK_SMART_GW_SPEED;
+}
+
+"SmartGatewayPrefix" {
+    yylval = NULL;
+    return TOK_SMART_GW_PREFIX;
+}
+
+"SrcIpRoutes" {
+    yylval = NULL;
+    return TOK_SRC_IP_ROUTES;
+}
 "Weight" {
     yylval = NULL;
     return TOK_IFWEIGHT;
 }
-
+"MainIp" {
+    yylval = NULL;
+    return TOK_MAIN_IP;
+}
 "Ip4Broadcast" {
     yylval = NULL;
     return TOK_IPV4BROADCAST;

@@ -30,10 +30,10 @@
 #define incr_top(L) {luaD_checkstack(L,1); L->top++;}
 
 #define savestack(L,p)		((char *)(p) - (char *)L->stack)
-#define restorestack(L,n)	((TObject *)(ARM_NOWARN_ALIGN)((char *)L->stack + (n)))
+#define restorestack(L,n)	((TObject *)ARM_NOWARN_ALIGN((char *)L->stack + (n)))
 
 #define saveci(L,p)		((char *)(p) - (char *)L->base_ci)
-#define restoreci(L,n)		((CallInfo *)(ARM_NOWARN_ALIGN)((char *)L->base_ci + (n)))
+#define restoreci(L,n)		((CallInfo *)ARM_NOWARN_ALIGN((char *)L->base_ci + (n)))
 
 /* type of protected functions, to be ran by `runprotected' */
 typedef void (*Pfunc) (lua_State * L, void *ud);

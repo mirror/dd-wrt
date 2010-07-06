@@ -67,7 +67,6 @@ void WinSockPError(const char *Str);
 void PError(const char *);
 
 void DisableIcmpRedirects(void);
-int disable_ip_forwarding(int Ver);
 
 int
 gethemusocket(struct sockaddr_in *pin)
@@ -205,24 +204,21 @@ getsocket6(int BuffSize, struct interface *ifp __attribute__ ((unused)))
 
 static OVERLAPPED RouterOver;
 
-int
-enable_ip_forwarding(int Ver)
+void net_os_set_global_ifoptions(void)
 {
   HMODULE Lib;
   unsigned int __stdcall(*enable_router)(HANDLE *, OVERLAPPED *);
   HANDLE Hand;
 
-  Ver = Ver;
-
   Lib = LoadLibrary(WIDE_STRING("iphlpapi.dll"));
 
   if (Lib == NULL)
-    return 0;
+    return;
 
   enable_router = (unsigned int __stdcall(*)(HANDLE *, OVERLAPPED *))GetProcAddress(Lib, WIDE_STRING("EnableRouter"));
 
   if (enable_router == NULL)
-    return 0;
+    return;
 
   memset(&RouterOver, 0, sizeof(OVERLAPPED));
 
@@ -230,20 +226,20 @@ enable_ip_forwarding(int Ver)
 
   if (RouterOver.hEvent == NULL) {
     PError("CreateEvent()");
-    return -1;
+    return;
   }
 
   if (enable_router(&Hand, &RouterOver) != ERROR_IO_PENDING) {
     PError("EnableRouter()");
-    return -1;
+    return;
   }
 
   OLSR_PRINTF(3, "Routing enabled.\n");
 
-  return 0;
+  return;
 }
 
-int
+static int
 disable_ip_forwarding(int Ver)
 {
   HMODULE Lib;
@@ -272,10 +268,11 @@ disable_ip_forwarding(int Ver)
   return 0;
 }
 
+
 int
-restore_settings(int Ver)
+net_os_restore_ifoptions(void)
 {
-  disable_ip_forwarding(Ver);
+  disable_ip_forwarding(olsr_cnf->ip_version);
 
   return 0;
 }

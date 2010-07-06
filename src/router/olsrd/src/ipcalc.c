@@ -39,8 +39,42 @@
  *
  */
 
+#include "defs.h"
 #include "ipcalc.h"
 
+/* ipv4 prefix 0.0.0.0/0 */
+const struct olsr_ip_prefix ipv4_internet_route =
+{
+    .prefix.v4.s_addr = 0,
+    .prefix_len = 0
+};
+
+/* ipv6 prefix ::ffff:0:0/96 */
+const struct olsr_ip_prefix ipv6_mappedv4_route =
+{
+    .prefix.v6.s6_addr = { 0,0,0,0,0,0,0,0,0,0,0xff,0xff,0,0,0,0 },
+    .prefix_len = 96
+};
+
+/* ipv6 prefix 2000::/3 */
+const struct olsr_ip_prefix ipv6_internet_route =
+{
+    .prefix.v6.s6_addr = { 0x20, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+    .prefix_len = 3
+};
+
+/* ip address zero */
+const union olsr_ip_addr olsr_ip_zero =
+{
+    .v6.s6_addr = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+};
+
+/* Default IPv6 multicast addresses FF02::6D(linklocal manet routers, see RFC 5498) */
+const union olsr_ip_addr ipv6_def_multicast = {
+    .v6.s6_addr = { 0xFF, 0x02, 0,0,0,0,0,0,0,0,0,0,0,0,0, 0x6D }
+};
+
+/* Host-byte-order! */
 int
 prefix_to_netmask(uint8_t * a, int len, uint8_t prefixlen)
 {
@@ -151,29 +185,52 @@ olsr_ip_prefix_to_string(const struct olsr_ip_prefix *prefix)
 int
 olsr_string_to_prefix(int ipversion, struct olsr_ip_prefix *dst, const char *string) {
   static char buf[MAX(INET6_ADDRSTRLEN + 1 + 3, INET_ADDRSTRLEN + 1 + INET_ADDRSTRLEN)];
-  char *prefix;
+  char *ptr;
 
   strscpy(buf, string, sizeof(buf));
   dst->prefix_len = ipversion == AF_INET ? 32 : 128;
 
-  prefix = strchr(buf, '/');
-  if (prefix) {
-    *prefix++ = 0;
-    dst->prefix_len = atoi(prefix);
+  ptr = strchr(buf, '/');
+  if (!ptr) {
+    ptr = strchr(buf, ' ');
   }
 
-  return inet_pton(ipversion, buf, &dst->prefix);
+  if (ptr) {
+    *ptr++ = 0;
+    if (olsr_cnf->ip_version == AF_INET && strchr(ptr, '.')) {
+      uint8_t subnetbuf[4];
+      if (inet_pton(AF_INET, ptr, subnetbuf) != 1) {
+        return -1;
+      }
+
+      dst->prefix_len = netmask_to_prefix(subnetbuf, sizeof(subnetbuf));
+    }
+    else {
+      dst->prefix_len = atoi(ptr);
+    }
+  }
+  return inet_pton(ipversion, buf, &dst->prefix) == 1 ? 0 : -1;
+}
+
+/* we need to handle one value specifically since shifting
+ * 32 bits of a 32 bit integer is the same as shifting 0 bits.
+ * The result is in host-byte-order.
+ */
+static INLINE uint32_t
+prefix_to_netmask4(uint8_t prefixlen)
+{
+  return prefixlen == 0 ? 0 : (~0U << (32 - prefixlen));
 }
 
 /* see if the ipaddr is in the net. That is equivalent to the fact that the net part
- * of both are equal. So we must compare the first <prefixlen> bits.
+ * of both are equal. So we must compare the first <prefixlen> bits. Network-byte-order!
  */
 int
 ip_in_net(const union olsr_ip_addr *ipaddr, const struct olsr_ip_prefix *net)
 {
   int rv;
   if (olsr_cnf->ip_version == AF_INET) {
-    uint32_t netmask = prefix_to_netmask4(net->prefix_len);
+    uint32_t netmask = htonl(prefix_to_netmask4(net->prefix_len));
     rv = (ipaddr->v4.s_addr & netmask) == (net->prefix.v4.s_addr & netmask);
   } else {
     /* IPv6 */
@@ -190,10 +247,22 @@ ip_in_net(const union olsr_ip_addr *ipaddr, const struct olsr_ip_prefix *net)
       n++;
     }
     /* And the remaining is the same as in the IPv4 case */
-    netmask = prefix_to_netmask4(prefix_len);
+    netmask = htonl(prefix_to_netmask4(prefix_len));
     rv = (*i & netmask) == (*n & netmask);
   }
   return rv;
+}
+
+bool is_prefix_inetgw(const struct olsr_ip_prefix *prefix) {
+  if (olsr_cnf->ip_version == AF_INET && ip_prefix_is_v4_inetgw(prefix)) {
+    return true;
+  }
+  if (olsr_cnf->ip_version == AF_INET6) {
+    if (ip_prefix_is_v6_inetgw(prefix) || ip_prefix_is_mappedv4_inetgw(prefix)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /*

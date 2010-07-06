@@ -276,12 +276,6 @@ pkt_put_ipaddress(uint8_t ** p, const union olsr_ip_addr *var)
   memcpy(*p, var, olsr_cnf->ipsize);
   *p += olsr_cnf->ipsize;
 }
-static INLINE void
-pkt_put_prefixlen(uint8_t ** p, uint8_t var)
-{
-  prefix_to_netmask(*p, olsr_cnf->ipsize, var);
-  *p += olsr_cnf->ipsize;
-}
 
 void olsr_output_lq_hello(void *para);
 

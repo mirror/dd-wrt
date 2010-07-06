@@ -77,8 +77,7 @@ extern int resolve_ip_addresses;
 /* Allowed hosts stuff */
 
 struct allowed_net {
-  union olsr_ip_addr net;
-  union olsr_ip_addr mask;
+  struct olsr_ip_prefix prefix;
   struct allowed_net *next;
 };
 
