@@ -1677,6 +1677,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Milkfish.asp"))
 					j++;
 #endif
+#ifdef HAVE_WIKINGS
+				if (!strcmp(menu[i][j], "AnchorFree.asp"))
+					j++;
+#endif
 #ifndef HAVE_WOL
 				if (!strcmp(menu[i][j], "Wol.asp"))
 					j++;
