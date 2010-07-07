@@ -1,3 +1,4 @@
+CONFIG_NET_RED=y
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.17
@@ -170,7 +171,7 @@ CONFIG_ARCH_ADI_COYOTE_WRT300N=y
 CONFIG_DMABOUNCE=y
 # CONFIG_DMABOUNCE_DEBUG is not set
 # CONFIG_IXP4XX_INDIRECT_PCI is not set
-CONFIG_IXP400_LIB=m
+CONFIG_IXP400_LIB=y
 
 #
 # Boot options
