@@ -243,7 +243,6 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	if (region == NULL) {
 		region = "US";
 	}
-fprintf( stderr, "[REGION CHECK FOR 3G] %s\n", region );
 	if (strcmp(region, "US")) {
 #endif
 	websWrite(wp,
@@ -1841,11 +1840,6 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</fieldset><br />\n");
 	}
 }
-#else				//!HAVE_OLSRD
-void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
-{
-	return;
-}
 #endif
 
 #ifdef HAVE_VLANTAGGING
@@ -1965,11 +1959,6 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bond_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	websWrite(wp, "</fieldset><br />\n");
-}
-#else				//!HAVE_BONDING
-void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
-{
-	return;
 }
 #endif
 
@@ -5042,6 +5031,90 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 
 #ifdef HAVE_MADWIFI
+#ifndef HAVE_MAKSAT
+#ifndef HAVE_DDLINK
+
+	if (isXR36(prefix)) {
+		char wl_cardtype[32];
+		sprintf(wl_cardtype, "%s_cardtype", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n",
+			  wl_cardtype);
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n",
+			  nvram_default_match(wl_cardtype, "0",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n",
+			  nvram_default_match(wl_cardtype, "1",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n",
+			  nvram_default_match(wl_cardtype, "2",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
+	}
+
+	if (isEMP(prefix)) {
+		char wl_cardtype[32];
+		sprintf(wl_cardtype, "%s_cardtype", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n",
+			  wl_cardtype);
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",
+			  nvram_default_match(wl_cardtype, "0",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n",
+			  nvram_default_match(wl_cardtype, "5",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n",
+			  nvram_default_match(wl_cardtype, "6",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n",
+			  nvram_default_match(wl_cardtype, "7",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n",
+			  nvram_default_match(wl_cardtype, "4",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",
+			  nvram_default_match(wl_cardtype, "1",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",
+			  nvram_default_match(wl_cardtype, "2",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n",
+			  nvram_default_match(wl_cardtype, "3",
+					      "0") ? "selected=\\\"selected\\\""
+			  : "");
+		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
+	}
+#endif
+#endif				// ! HAVE MAKSAT
+
 #ifndef HAVE_NOCOUNTRYSEL
 	char wl_regdomain[16];
 
@@ -6086,12 +6159,6 @@ void show_80211X(webs_t wp, char *prefix)
 }
 #endif
 
-#ifndef HAVE_WPA_SUPPLICANT
-void ej_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
-{
-	return;
-}
-#endif
 
 void show_wparadius(webs_t wp, char *prefix)
 {
