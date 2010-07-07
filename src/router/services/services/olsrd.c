@@ -39,6 +39,7 @@ void start_olsrd(void)
 		return;
 	stop_olsrd();
 	char net[64];
+	insmod("ipip");
 
 	strcpy(net, nvram_safe_get("lan_ipaddr"));
 	int a, b, c, d;
