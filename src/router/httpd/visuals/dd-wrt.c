@@ -1740,20 +1740,17 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 				"num", 5);
 
 		showRadio(wp, "route.olsrd_smartgw", "olsrd_smartgw");
-		websWrite(wp, "<div class=\"setting\">\n");
+/*		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmin)</script></div>");
-		websWrite(wp,
-			  "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramin\" onblur=\"olsrd_checkDijkstra(this.form)\" value=\"%s\" />\n",
-			  nvram_safe_get("olsrd_lqdijkstramin"));
+		websWrite(wp,"<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramin\" onblur=\"olsrd_checkDijkstra(this.form)\" value=\"%s\" />\n",nvram_safe_get("olsrd_lqdijkstramin"));
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmax)</script></div>");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmax)</script></div>");
 		websWrite(wp,
 			  "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramax\" onblur=\"olsrd_checkDijkstra(this.form)\" value=\"%s\" />\n",
 			  nvram_safe_get("olsrd_lqdijkstramax"));
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");*/
 
 		showOptionsLabel(wp, "route.olsrd_lqlvl", "olsrd_lqlevel",
 				 "0 1 2", nvram_default_get("olsrd_lqlevel",
