@@ -53,7 +53,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 #define V "Excellent"
 #endif
-	websWrite(wp, "Excel Networks (%s series) V 1.10", V);
+	websWrite(wp, "Excel Networks (%s series) V 2.10", V);
 #undef V
 #else
 
@@ -71,7 +71,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 #define V "Excellent"
 #endif
-	websWrite(wp, "Excel Networks (%s series) V 1.10", V);
+	websWrite(wp, "Excel Networks (%s series) V 2.10", V);
 #undef V
 #else
 
