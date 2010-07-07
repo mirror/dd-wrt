@@ -55,8 +55,10 @@ void start_olsrd(void)
 	fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
 	fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
 	fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
-
+#ifdef HAVE_IPV6
 	if (nvram_match("olsrd_smartgw", "1")) {
+		nvram_set("ipv6_enable","1");
+		start_ipv6(); // load ipv6 drivers
 		fprintf(fp, "RtTable auto\n");
 		fprintf(fp, "RtTableDefault auto\n");
 		fprintf(fp, "RtTableTunnel auto\n");
@@ -73,8 +75,11 @@ void start_olsrd(void)
 		fprintf(fp, "SmartGatewaySpeed 128 1024\n");
 //		fprintf(fp, "SmartGatewayPrefix 0::/0\n");
 	} else {
+#endif
 		fprintf(fp, "SmartGateway no\n");
+#ifdef HAVE_IPV6
 	}
+#endif
 	fprintf(fp, "LinkQualityFishEye\t%s\n",
 		nvram_safe_get("olsrd_lqfisheye"));
 	fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
