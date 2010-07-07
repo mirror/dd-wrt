@@ -53,7 +53,7 @@ void start_olsrd(void)
 	fprintf(fp, "Pollrate\t%s\n", nvram_safe_get("olsrd_pollsize"));
 	fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
 	fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
-	fprintf(fp, "MainIP %s\n", nvram_safe_get("lan_ipaddr"));
+	fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
 
 	if (nvram_match("olsrd_smartgw", "1")) {
 		fprintf(fp, "RtTable auto\n");
@@ -78,9 +78,9 @@ void start_olsrd(void)
 		nvram_safe_get("olsrd_lqfisheye"));
 	fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
 	fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
-	fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
-		nvram_safe_get("olsrd_lqdijkstramin"),
-		nvram_safe_get("olsrd_lqdijkstramax"));
+//	fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
+//		nvram_safe_get("olsrd_lqdijkstramin"),
+//		nvram_safe_get("olsrd_lqdijkstramax"));
 	fprintf(fp, "UseHysteresis\t%s\n",
 		nvram_match("olsrd_hysteresis", "1") ? "yes" : "no");
 	if (nvram_match("olsrd_hysteresis", "0"))
