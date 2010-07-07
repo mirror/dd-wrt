@@ -70,7 +70,7 @@ void start_olsrd(void)
 		fprintf(fp, "SmartGatewayUplink \"both\"\n");
 		fprintf(fp, "SmartGatewayUplinkNAT yes\n");
 		fprintf(fp, "SmartGatewaySpeed 128 1024\n");
-		fprintf(fp, "SmartGatewayPrefix 0::/0\n");
+//		fprintf(fp, "SmartGatewayPrefix 0::/0\n");
 	} else {
 		fprintf(fp, "SmartGateway no\n");
 	}
