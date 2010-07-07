@@ -229,6 +229,9 @@ endif
 ifeq ($(CONFIG_TRIMAX),y)
 CFLAGS += -DHAVE_TRIMAX
 endif
+ifeq ($(CONFIG_IPV6),y)
+CFLAGS += -DHAVE_IPV6
+endif
 ifeq ($(CONFIG_WIKINGS),y)
 CFLAGS += -DHAVE_WIKINGS
 endif
