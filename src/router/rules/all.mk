@@ -147,10 +147,14 @@ include rules/dropbear.mk
 include rules/iproute2.mk
 include rules/igmp-proxy.mk
 include rules/parprouted.mk
+
 include rules/hostapd.mk
+ifeq ($(CONFIG_MADWIFI),y)
+include rules/hostapd-wps.mk
+else
 include rules/hostapd2.mk
-include rules/wpa_supplicant.mk
 include rules/wpa_supplicant2.mk
+endif
 include rules/madwifi.mk
 include rules/madwifi_mimo.mk
 include rules/sputnik.mk
