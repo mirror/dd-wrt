@@ -2432,6 +2432,9 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_SKYTRON
 	{"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
 #endif
+#ifdef HAVE_POKER
+	{"PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, 1},
+#endif
 #ifdef HAVE_DDLAN
 	{"Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
 	{"Management*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
