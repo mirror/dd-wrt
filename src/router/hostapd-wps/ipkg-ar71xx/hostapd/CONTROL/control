@@ -1,0 +1,12 @@
+Package: hostapd
+Version: 20100418-2
+Depends: libnl-tiny, crda
+Provides: 
+Source: package/hostapd
+Section: net
+Priority: optional
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Architecture: ar71xx
+Installed-Size: 478728
+Description:  This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS
+ Authenticator.
