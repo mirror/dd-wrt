@@ -630,6 +630,28 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fprintf(fp, "wpa_passphrase=%s\n",
 				nvram_nget("%s_wpa_psk", prefix));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
+#ifdef HAVE_WPS
+		if (!strcmp(prefix,"ath0"))
+		{
+			fprintf(fp, "eap_server=1\n");
+			fprintf(fp, "ctrl_interface=/var/run/hostapd\n");  // for cli
+    
+//# WPS configuration (AP configured, do not allow external WPS Registrars)
+			fprintf(fp, "wps_state=2\n");
+			fprintf(fp, "ap_setup_locked=1\n");
+//# If UUID is not configured, it will be generated based on local MAC address.
+			fprintf(fp,"uuid=87654321-9abc-def0-1234-56789abc0000\n");
+			fprintf(fp,"wps_pin_requests=/var/run/hostapd.pin-req\n");
+			fprintf(fp,"device_name=%s\n",nvram_safe_get("router_name"));
+			fprintf(fp,"manufacturer=DD-WRT\n");
+			fprintf(fp,"model_name=%s\n",nvram_safe_get("DD_BOARD"));
+			fprintf(fp,"model_number=0\n");
+			fprintf(fp,"serial_number=12345\n");
+			fprintf(fp,"device_type=6-0050F204-1\n");
+			fprintf(fp,"os_version=01020300\n");
+			fprintf(fp,"config_methods=push_button\n"
+	^	}
+#endif
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
 			fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
