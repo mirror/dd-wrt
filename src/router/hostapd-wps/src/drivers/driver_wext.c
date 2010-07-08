@@ -894,7 +894,7 @@ int wpa_driver_wext_scan(void *priv, struct wpa_driver_scan_params *params)
 
 	/* Not all drivers generate "scan completed" wireless event, so try to
 	 * read results after a timeout. */
-	timeout = 5;
+	timeout = 15;
 	if (drv->scan_complete_events) {
 		/*
 		 * The driver seems to deliver SIOCGIWSCAN events to notify
