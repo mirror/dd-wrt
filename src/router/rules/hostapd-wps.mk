@@ -1,5 +1,6 @@
 hostapd2: 
 	$(MAKE) -C hostapd-wps/hostapd clean
+	$(MAKE) -C hostapd-wps/wpa_supplicant clean
 	$(MAKE) -C hostapd-wps/hostapd MULTICALL=1 hostapd_cli hostapd_multi.a
 	$(MAKE) -C hostapd-wps/wpa_supplicant MULTICALL=1 wpa_cli wpa_supplicant_multi.a
 	$(CC) $(COPTS) -L$(TOP)/nvram  -L$(TOP)/libutils -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -o hostapd-wps/wpad hostapd-wps/multicall/multicall.c \
