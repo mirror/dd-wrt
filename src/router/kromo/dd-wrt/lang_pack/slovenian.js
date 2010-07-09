@@ -1171,6 +1171,7 @@ route.olsrd_lqdmax="Kvaliteta zveze: Dijkstra maks";
 route.olsrd_lqlvl="Nivo kvalitete zveze";
 route.olsrd_hysteresis="Histereza";
 route.olsrd_newiface="Nov vmesnik";
+route.olsrd_smartgw="Pametni prehod";
 route.zebra_legend="Zebra konfiguracija";
 route.zebra_log="Zebra dnevnik";
 route.zebra_copt="Zebra način konfiguracije";
