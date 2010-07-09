@@ -1205,7 +1205,9 @@ madwifi_deinit(void *priv)
 	struct madwifi_driver_data *drv = priv;
 
 	netlink_deinit(drv->netlink);
+#ifdef CONFIG_IFACE_DOWN_CONTROL
 	(void) linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 0);
+#endif
 	if (drv->ioctl_sock >= 0)
 		close(drv->ioctl_sock);
 	if (drv->sock_recv != NULL && drv->sock_recv != drv->sock_xmit)
