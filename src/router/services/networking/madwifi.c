@@ -754,22 +754,12 @@ void start_hostapdwan(void)
 		sprintf(ath, "ath%d", i);
 		if (nvram_nmatch("ap", "%s_mode", ath)
 		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
-#ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(ath))
-				setupHostAP(ath, "wext", 1);
-			else
-#endif
 				setupHostAP(ath, "madwifi", 1);
 		}
 		char *vifs = nvram_nget("ath%d_vifs", i);
 
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
-#ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(ath))
-				setupHostAP(var, "wext", 1);
-			else
-#endif
 				setupHostAP(var, "madwifi", 1);
 			}
 	}
