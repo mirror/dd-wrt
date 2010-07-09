@@ -11,6 +11,7 @@
  *
  * See README and COPYING for more details.
  */
+#include <syslog.h>
 
 #include "includes.h"
 
