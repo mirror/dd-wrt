@@ -1196,7 +1196,7 @@ show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
 #ifndef HAVE_RT2880
-	if (!primary || nvram_match(sta, "sta") || nvram_match(sta, "wdssta")
+	if (nvram_match(sta, "sta") || nvram_match(sta, "wdssta")
 	    || nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
 		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 			  selmatch(var, "8021X", "selected=\"selected\""));
