@@ -752,9 +752,10 @@ err1:
 
 static int wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
 {
+#ifdef CONFIG_IFACE_DOWN_CONTROL
 	if (linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 1) < 0)
 		return -1;
-
+#endif
 	/*
 	 * Make sure that the driver does not have any obsolete PMKID entries.
 	 */
@@ -825,9 +826,9 @@ void wpa_driver_wext_deinit(void *priv)
 
 	if (drv->mlme_sock >= 0)
 		eloop_unregister_read_sock(drv->mlme_sock);
-
+#ifdef CONFIG_IFACE_DOWN_CONTROL
 	(void) linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 0);
-
+#endif
 	close(drv->ioctl_sock);
 	if (drv->mlme_sock >= 0)
 		close(drv->mlme_sock);
