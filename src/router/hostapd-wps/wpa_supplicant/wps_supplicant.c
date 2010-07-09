@@ -468,6 +468,32 @@ static void wpa_supplicant_wps_event_er_enrollee_remove(
 }
 
 
+static void wpa_supplicant_wps_event_er_ap_settings(
+	struct wpa_supplicant *wpa_s,
+	struct wps_event_er_ap_settings *ap_settings)
+{
+	char uuid_str[100];
+	char key_str[65];
+	const struct wps_credential *cred = ap_settings->cred;
+
+	key_str[0] = '\0';
+	if (cred->auth_type & (WPS_AUTH_WPAPSK | WPS_AUTH_WPA2PSK)) {
+		if (cred->key_len >= 8 && cred->key_len <= 64) {
+			os_memcpy(key_str, cred->key, cred->key_len);
+			key_str[cred->key_len] = '\0';
+		}
+	}
+
+	uuid_bin2str(ap_settings->uuid, uuid_str, sizeof(uuid_str));
+	/* Use wpa_msg_ctrl to avoid showing the key in debug log */
+	wpa_msg_ctrl(wpa_s, MSG_INFO, WPS_EVENT_ER_AP_SETTINGS
+		     "uuid=%s ssid=%s auth_type=0x%04x encr_type=0x%04x "
+		     "key=%s",
+		     uuid_str, wpa_ssid_txt(cred->ssid, cred->ssid_len),
+		     cred->auth_type, cred->encr_type, key_str);
+}
+
+
 static void wpa_supplicant_wps_event(void *ctx, enum wps_event event,
 				     union wps_event_data *data)
 {
@@ -501,6 +527,10 @@ static void wpa_supplicant_wps_event(void *ctx, enum wps_event event,
 	case WPS_EV_ER_ENROLLEE_REMOVE:
 		wpa_supplicant_wps_event_er_enrollee_remove(wpa_s,
 							    &data->enrollee);
+		break;
+	case WPS_EV_ER_AP_SETTINGS:
+		wpa_supplicant_wps_event_er_ap_settings(wpa_s,
+							&data->ap_settings);
 		break;
 	}
 }
@@ -1099,14 +1129,14 @@ int wpas_wps_scan_result_text(const u8 *ies, size_t ies_len, char *buf,
 }
 
 
-int wpas_wps_er_start(struct wpa_supplicant *wpa_s)
+int wpas_wps_er_start(struct wpa_supplicant *wpa_s, const char *filter)
 {
 #ifdef CONFIG_WPS_ER
 	if (wpa_s->wps_er) {
 		wps_er_refresh(wpa_s->wps_er);
 		return 0;
 	}
-	wpa_s->wps_er = wps_er_init(wpa_s->wps, wpa_s->ifname);
+	wpa_s->wps_er = wps_er_init(wpa_s->wps, wpa_s->ifname, filter);
 	if (wpa_s->wps_er == NULL)
 		return -1;
 	return 0;
@@ -1164,6 +1194,57 @@ int wpas_wps_er_learn(struct wpa_supplicant *wpa_s, const char *uuid,
 }
 
 
+int wpas_wps_er_config(struct wpa_supplicant *wpa_s, const char *uuid,
+		       const char *pin, struct wps_new_ap_settings *settings)
+{
+	u8 u[UUID_LEN];
+	struct wps_credential cred;
+	size_t len;
+
+	if (uuid_str2bin(uuid, u))
+		return -1;
+	if (settings->ssid_hex == NULL || settings->auth == NULL ||
+	    settings->encr == NULL || settings->key_hex == NULL)
+		return -1;
+
+	os_memset(&cred, 0, sizeof(cred));
+	len = os_strlen(settings->ssid_hex);
+	if ((len & 1) || len > 2 * sizeof(cred.ssid) ||
+	    hexstr2bin(settings->ssid_hex, cred.ssid, len / 2))
+		return -1;
+	cred.ssid_len = len / 2;
+
+	len = os_strlen(settings->key_hex);
+	if ((len & 1) || len > 2 * sizeof(cred.key) ||
+	    hexstr2bin(settings->key_hex, cred.key, len / 2))
+		return -1;
+	cred.key_len = len / 2;
+
+	if (os_strcmp(settings->auth, "OPEN") == 0)
+		cred.auth_type = WPS_AUTH_OPEN;
+	else if (os_strcmp(settings->auth, "WPAPSK") == 0)
+		cred.auth_type = WPS_AUTH_WPAPSK;
+	else if (os_strcmp(settings->auth, "WPA2PSK") == 0)
+		cred.auth_type = WPS_AUTH_WPA2PSK;
+	else
+		return -1;
+
+	if (os_strcmp(settings->encr, "NONE") == 0)
+		cred.encr_type = WPS_ENCR_NONE;
+	else if (os_strcmp(settings->encr, "WEP") == 0)
+		cred.encr_type = WPS_ENCR_WEP;
+	else if (os_strcmp(settings->encr, "TKIP") == 0)
+		cred.encr_type = WPS_ENCR_TKIP;
+	else if (os_strcmp(settings->encr, "CCMP") == 0)
+		cred.encr_type = WPS_ENCR_AES;
+	else
+		return -1;
+
+	return wps_er_config(wpa_s->wps_er, u, (const u8 *) pin,
+			     os_strlen(pin), &cred);
+}
+
+
 static void wpas_wps_terminate_cb(void *ctx)
 {
 	wpa_printf(MSG_DEBUG, "WPS ER: Terminated");
@@ -1181,5 +1262,18 @@ int wpas_wps_terminate_pending(struct wpa_supplicant *wpa_s)
 		return 1;
 	}
 #endif /* CONFIG_WPS_ER */
+	return 0;
+}
+
+
+int wpas_wps_in_progress(struct wpa_supplicant *wpa_s)
+{
+	struct wpa_ssid *ssid;
+
+	for (ssid = wpa_s->conf->ssid; ssid; ssid = ssid->next) {
+		if (!ssid->disabled && ssid->key_mgmt == WPA_KEY_MGMT_WPS)
+			return 1;
+	}
+
 	return 0;
 }

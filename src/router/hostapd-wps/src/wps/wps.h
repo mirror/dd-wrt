@@ -195,6 +195,8 @@ struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code);
 
 int wps_is_selected_pbc_registrar(const struct wpabuf *msg);
 int wps_is_selected_pin_registrar(const struct wpabuf *msg);
+int wps_ap_priority_compar(const struct wpabuf *wps_a,
+			   const struct wpabuf *wps_b);
 const u8 * wps_get_uuid_e(const struct wpabuf *msg);
 
 struct wpabuf * wps_build_assoc_req_ie(enum wps_request_type req_type);
@@ -395,7 +397,12 @@ enum wps_event {
 	/**
 	 * WPS_EV_ER_ENROLLEE_REMOVE - ER: Enrollee removed
 	 */
-	WPS_EV_ER_ENROLLEE_REMOVE
+	WPS_EV_ER_ENROLLEE_REMOVE,
+
+	/**
+	 * WPS_EV_ER_AP_SETTINGS - ER: AP Settings learned
+	 */
+	WPS_EV_ER_AP_SETTINGS
 };
 
 /**
@@ -464,6 +471,11 @@ union wps_event_data {
 		const char *model_number;
 		const char *serial_number;
 	} enrollee;
+
+	struct wps_event_er_ap_settings {
+		const u8 *uuid;
+		const struct wps_credential *cred;
+	} ap_settings;
 };
 
 /**
@@ -718,7 +730,8 @@ int wps_process_oob(struct wps_context *wps, struct oob_device_data *oob_dev,
 		    int registrar);
 int wps_attr_text(struct wpabuf *data, char *buf, char *end);
 
-struct wps_er * wps_er_init(struct wps_context *wps, const char *ifname);
+struct wps_er * wps_er_init(struct wps_context *wps, const char *ifname,
+			    const char *filter);
 void wps_er_refresh(struct wps_er *er);
 void wps_er_deinit(struct wps_er *er, void (*cb)(void *ctx), void *ctx);
 void wps_er_set_sel_reg(struct wps_er *er, int sel_reg, u16 dev_passwd_id,
@@ -726,6 +739,8 @@ void wps_er_set_sel_reg(struct wps_er *er, int sel_reg, u16 dev_passwd_id,
 int wps_er_pbc(struct wps_er *er, const u8 *uuid);
 int wps_er_learn(struct wps_er *er, const u8 *uuid, const u8 *pin,
 		 size_t pin_len);
+int wps_er_config(struct wps_er *er, const u8 *uuid, const u8 *pin,
+		  size_t pin_len, const struct wps_credential *cred);
 
 int wps_dev_type_str2bin(const char *str, u8 dev_type[WPS_DEV_TYPE_LEN]);
 char * wps_dev_type_bin2str(const u8 dev_type[WPS_DEV_TYPE_LEN], char *buf,
