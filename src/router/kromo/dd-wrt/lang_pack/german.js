@@ -1780,7 +1780,7 @@ radius.label3="Radius Auth Server IP";
 radius.label4="Radius Auth Server Port";
 radius.label23="Radius Auth Backup Server IP";
 radius.label24="Radius Auth Backup Server Port";
-radius.label27="Radius Auth Backup gemeinsames Passwort";
+radius.label27="Gemeinsames Passwort";
 
 radius.label5="Erlaubte unauthentifizierte Nutzer";
 radius.label6="Passwort-Format";
@@ -1788,7 +1788,7 @@ radius.label7="Radius Auth Shared Secret";
 radius.label8="Umgehen, wenn Server nicht verfügbar";
 radius.label13="Radius Acct Server IP";
 radius.label14="Radius Acct Server Port";
-radius.label17="Radius Acct gemeinsames Passwort";
+radius.label17="Gemeinsames Passwort";
 
 // ** Gpio.asp
 gpio.titl="Gpio Eingaenge / Ausgaenge";
