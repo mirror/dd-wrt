@@ -371,6 +371,9 @@ static struct wpabuf * eap_wsc_process_fragment(struct eap_wsc_data *data,
 
 #ifdef HAVE_AOSS
 extern int led_control(int type, int act);
+enum { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
+	LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1
+};
 enum { LED_ON, LED_OFF, LED_FLASH };
 extern int sysprintf(const char *fmt, ...);
 extern char *nvram_safe_get(const char *name);
