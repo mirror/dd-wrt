@@ -11,6 +11,8 @@ opengt
  if $env("COMGNMVARIANT") = "1" goto variant1
 # huawei
  if $env("COMGNMVARIANT") = "2" goto variant2
+# Option 
+ if $env("COMGNMVARIANT") = "3" goto variant3
  print "Variant not set / unknown '"+$env("COMGNMVARIANT")+"'\n"
  exit 1
 
@@ -20,14 +22,68 @@ opengt
  if % = 2 goto senderror
  if % = 3 goto senderror
 
+#Sierra
  :variant1
- print "Variant #1\n"
+ print "Variant #1 Sierra\n"
  let $a=""
+
+# Auto 3G/2G
  if $env("COMGTNM") = "0" let $a="AT!SELRAT=0"
+# Force 3G
  if $env("COMGTNM") = "1" let $a="AT!SELRAT=1"
+# Force 2G
  if $env("COMGTNM") = "2" let $a="AT!SELRAT=2"
+# Prefer 3G
  if $env("COMGTNM") = "3" let $a="AT!SELRAT=3"
+# Prefer 2G
  if $env("COMGTNM") = "4" let $a="AT!SELRAT=4"
+ if $a = "" goto unkownmode
+ send $a
+ send "^m"
+ waitfor 5 "OK","ERR","ERROR"
+ if % = 0 goto continue
+ if % = 1 goto senderror
+ if % = 2 goto senderror
+ goto continue
+
+#Huawei info from http://xob.kapsi.fi/~joneskoo/huawei.txt
+ :variant2
+ print "Variant #2 Huawei\n"
+ let $a=""
+# Auto 3G/2G
+ if $env("COMGTNM") = "0" let $a="AT^SYSCFG=2,0,3FFFFFFF,2,4"
+# Force 3G
+ if $env("COMGTNM") = "1" let $a="AT^SYSCFG=14,2,3FFFFFFF,2,4"
+# Force 2G
+ if $env("COMGTNM") = "2" let $a="AT^SYSCFG=13,1,3FFFFFFF,2,4"
+# Prefer 3G
+ if $env("COMGTNM") = "3" let $a="AT^SYSCFG=2,2,3FFFFFFF,2,4"
+# Prefer 2G
+ if $env("COMGTNM") = "4" let $a="AT^SYSCFG=2,1,3FFFFFFF,2,4"
+ if $a = "" goto unkownmode
+ send $a
+ send "^m"
+ waitfor 5 "OK","ERR","ERROR"
+ if % = 0 goto continue
+ if % = 1 goto senderror
+ if % = 2 goto senderror
+ goto continue
+
+#Option info from http://www.wireless.att.com/answer-center/main.jsp?t=solutionTab&ft=searchTab&ps=solutionPanels&locale=en_US&_dyncharset=UTF-8&solutionId=58148&isSrch=Yes
+ :variant3
+ print "Variant #3 Option (including HSO)\n"
+ let $a=""
+
+# Auto 3G/2G
+ if $env("COMGTNM") = "0" let $a="AT_OPSYS=5"
+# Force 3G
+ if $env("COMGTNM") = "1" let $a="AT_OPSYS=1"
+# Force 2G
+ if $env("COMGTNM") = "2" let $a="AT_OPSYS=0"
+# Prefer 3G
+ if $env("COMGTNM") = "3" let $a="AT_OPSYS=3"
+# Prefer 2G
+ if $env("COMGTNM") = "4" let $a="AT_OPSYS=2"
  if $a = "" goto unkownmode
  send $a
  send "^m"
