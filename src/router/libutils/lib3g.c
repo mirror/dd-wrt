@@ -239,6 +239,7 @@ char *get3GControlDevice(void)
 		fprintf(stderr, "HUAWEI/Option E172 detected\n");
 		insmod("usbserial");
 		insmod("option");
+		nvram_set("3gnmvariant", "2");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x0af0, 0x7011)) {
