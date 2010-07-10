@@ -640,7 +640,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fprintf(fp, "wps_state=2\n");
 			fprintf(fp, "ap_setup_locked=1\n");
 //# If UUID is not configured, it will be generated based on local MAC address.
-			fprintf(fp,"uuid=87654321-9abc-def0-1234-56789abc0000\n");
+//			fprintf(fp,"uuid=87654321-9abc-def0-1234-56789abc0000\n");
 			fprintf(fp,"wps_pin_requests=/var/run/hostapd.pin-req\n");
 			fprintf(fp,"device_name=%s\n",nvram_safe_get("router_name"));
 			fprintf(fp,"manufacturer=DD-WRT\n");
