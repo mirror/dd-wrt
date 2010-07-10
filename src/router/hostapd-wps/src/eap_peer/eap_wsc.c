@@ -369,6 +369,14 @@ static struct wpabuf * eap_wsc_process_fragment(struct eap_wsc_data *data,
 	return eap_wsc_build_frag_ack(id, EAP_CODE_RESPONSE);
 }
 
+#ifdef HAVE_AOSS
+extern int led_control(int type, int act);
+enum { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
+	LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1
+};
+extern int sysprintf(const char *fmt, ...);
+extern char *nvram_safe_get(const char *name);
+#endif
 
 static struct wpabuf * eap_wsc_process(struct eap_sm *sm, void *priv,
 				       struct eap_method_ret *ret,
@@ -478,7 +486,18 @@ static struct wpabuf * eap_wsc_process(struct eap_sm *sm, void *priv,
 	case WPS_DONE:
 		wpa_printf(MSG_DEBUG, "EAP-WSC: WPS processing completed "
 			   "successfully - wait for EAP failure");
-		eap_wsc_state(data, FAIL);
+#ifdef HAVE_AOSS
+	sysprintf("brctl delif %s aoss", nvram_safe_get("lan_ifname"));
+	sysprintf("ifconfig aoss 0.0.0.0 down");
+	sysprintf("80211n_wlanconfig aoss destroy");
+	system("killall ledtool");
+	led_control(LED_SES	, LED_OFF);
+	system("ledtool 1800 3");
+	sysprintf("startservice deconfigurewifi");
+	sysprintf("startservice configurewifi");
+
+#endif
+		eap_wsc_state(data, DONE);
 		break;
 	case WPS_CONTINUE:
 		eap_wsc_state(data, MESG);
