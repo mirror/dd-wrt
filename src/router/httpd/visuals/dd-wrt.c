@@ -5708,7 +5708,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 
 		strcpy(vvar, prefix);
 		rep(vvar, '.', 'X');
-		sprintf(acct, "%s_acct", var);
+		sprintf(acct, "%s_acct", prefix);
 		websWrite(wp,
 			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label18)</script></div>\n");
 		websWrite(wp,
