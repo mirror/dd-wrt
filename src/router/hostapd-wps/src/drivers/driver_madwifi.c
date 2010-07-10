@@ -1179,6 +1179,7 @@ madwifi_init(struct hostapd_data *hapd, struct wpa_init_params *params)
 		printf("Could not set interface to master mode!\n");
 		goto bad;
 	}
+	(void) linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 0);
 
 	madwifi_set_privacy(drv, 0); /* default to no privacy */
 
@@ -1271,6 +1272,7 @@ madwifi_set_countermeasures(void *priv, int enabled)
 static int
 madwifi_commit(void *priv)
 {
+	(void) linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 1);
 	return 0;
 }
 
