@@ -1272,6 +1272,7 @@ madwifi_set_countermeasures(void *priv, int enabled)
 static int
 madwifi_commit(void *priv)
 {
+	struct madwifi_driver_data *drv = priv;
 	(void) linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 1);
 	return 0;
 }
