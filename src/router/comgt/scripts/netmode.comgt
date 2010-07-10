@@ -16,11 +16,6 @@ opengt
  print "Variant not set / unknown '"+$env("COMGNMVARIANT")+"'\n"
  exit 1
 
- waitfor 15 "OK","ERR","ERROR"
- if % = 0 goto continue
- if % = 1 goto continue
- if % = 2 goto senderror
- if % = 3 goto senderror
 
 #Sierra
  :variant1
