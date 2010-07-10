@@ -2812,9 +2812,7 @@ void start_wan(int status)
 			if (strlen(nvram_safe_get("3gnmvariant"))) {
 				int netmode;
 				int netmodetoggle;
-				if (!strlen(nvram_safe_get("wan_conmode")))
-					nvram_set("wan_conmode","0");
-				netmode=atoi(nvram_safe_get("wan_conmode"));
+				netmode=atoi(nvram_default_get("wan_conmode","0"));
 				if (netmode == 5) {
 					if (strlen(nvram_safe_get("3gnetmodetoggle"))) {
 						netmodetoggle=atoi(nvram_safe_get("3gnetmodetoggle"));
