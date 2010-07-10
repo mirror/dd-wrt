@@ -289,6 +289,7 @@ char *get3GControlDevice(void)
 		nvram_set("3gdata", "/dev/usb/tts/2");
 		insmod("usbserial");
 		insmod("option");
+		nvram_set("3gnmvariant", "3");
 		return "/dev/usb/tts/2";
 	}
 
@@ -309,6 +310,7 @@ char *get3GControlDevice(void)
 		insmod("usbserial");
 		insmod("option");
 		nvram_set("3gdata", "/dev/usb/tts/2");
+		nvram_set("3gnmvariant", "3");
 		return "/dev/usb/tts/2";
 	}
 
