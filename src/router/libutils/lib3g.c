@@ -161,6 +161,7 @@ char *get3GControlDevice(void)
 		set_gpio(27, 0);
 	}
 #endif
+	nvram_unset("3gnmvariant");
 	nvram_set("3gdata", "/dev/usb/tts/0");
 	if (scanFor(0x1199, 0x6880)) {
 		//sierra wireless 
@@ -168,6 +169,7 @@ char *get3GControlDevice(void)
 		insmod("usbserial");
 		insmod("sierra");
 		nvram_set("3gdata", "/dev/usb/tts/4");
+		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x1199, 0x6890)) {
@@ -176,6 +178,7 @@ char *get3GControlDevice(void)
 		insmod("usbserial");
 		insmod("sierra");
 		nvram_set("3gdata", "/dev/usb/tts/4");
+		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x1199, 0x683C)) {
@@ -186,6 +189,7 @@ char *get3GControlDevice(void)
 		insmod("sierra");
 		if (needreset)
 			checkreset("/dev/usb/tts/3");
+		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x1199, 0x683D)) {
@@ -196,6 +200,7 @@ char *get3GControlDevice(void)
 		insmod("sierra");
 		if (needreset)
 			checkreset("/dev/usb/tts/3");
+		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/3";
 	}
 	if (scanFor(0x1199, 0x683E)) {
@@ -206,7 +211,28 @@ char *get3GControlDevice(void)
 		insmod("sierra");
 		if (needreset)
 			checkreset("/dev/usb/tts/3");
+		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/3";
+	}
+	if (scanFor(0x1199, 0x68A3)) {
+		//sierra wireless 
+		fprintf(stderr, "Sierra Wireless MC8700\n");
+		nvram_set("3gdata", "/dev/usb/tts/0");
+		insmod("usbserial");
+		insmod("sierra");
+		if (needreset)
+			checkreset("/dev/usb/tts/2");
+		nvram_set("3gnmvariant", "1");
+		return "/dev/usb/tts/2";
+	}
+	if (scanFor(0x1199, 0x6812)) {
+		//sierra wireless mc 8775V
+		fprintf(stderr,
+			"Sierra Wireless MC 8775V detected\nreset card\n");
+		if (needreset)
+			checkreset("/dev/usb/tts/2");
+		nvram_set("3gnmvariant", "1");
+		return "/dev/usb/tts/2";
 	}
 	if (scanFor(0x12d1, 0x1003)) {
 		//huawei
@@ -220,6 +246,7 @@ char *get3GControlDevice(void)
 		fprintf(stderr, "HUAWEI/Option E301 HSUPA detected\n");
 		insmod("usbserial");
 		insmod("option");
+		nvram_set("3gnmvariant", "2");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1001)) {
@@ -227,6 +254,7 @@ char *get3GControlDevice(void)
 		fprintf(stderr, "HUAWEI/Option E600 detected\n");
 		insmod("usbserial");
 		insmod("option");
+		nvram_set("3gnmvariant", "2");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1003)) {
@@ -234,6 +262,7 @@ char *get3GControlDevice(void)
 		fprintf(stderr, "HUAWEI/Option EC270 detected\n");
 		insmod("usbserial");
 		insmod("option");
+		nvram_set("3gnmvariant", "2");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1412)) {
@@ -241,6 +270,7 @@ char *get3GControlDevice(void)
 		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
 		insmod("usbserial");
 		insmod("option");
+		nvram_set("3gnmvariant", "2");
 		return "/dev/usb/tts/0";
 	}
 	if (scanFor(0x12d1, 0x1412)) {
@@ -248,6 +278,7 @@ char *get3GControlDevice(void)
 		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
 		insmod("usbserial");
 		insmod("option");
+		nvram_set("3gnmvariant", "2");
 		return "/dev/usb/tts/0";
 	}
 
@@ -303,6 +334,7 @@ char *get3GControlDevice(void)
 			"Sierra Wireless MC 8780 detected\nreset card\n");
 		if (needreset)
 			checkreset("/dev/usb/tts/2");
+		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/2";
 	}
 	insmod("usbserial");
