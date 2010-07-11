@@ -1929,11 +1929,6 @@ void sas_show_80211X(webs_t wp, char *prefix)
 						 "leap") ? "true" : "false");
 	websWrite(wp, "//]]>\n</script>\n");
 }
-#else
-void ej_sas_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
-{
-	return;
-}
 #endif
 
 void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix,
