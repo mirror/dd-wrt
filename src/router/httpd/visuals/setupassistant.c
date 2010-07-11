@@ -1481,7 +1481,7 @@ void sas_show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
 #ifndef HAVE_RT2880
-	if (!primary || nvram_selmatch(wp, sta, "sta")
+	if (nvram_selmatch(wp, sta, "sta")
 	    || nvram_selmatch(wp, sta, "wdssta")
 	    || nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
 		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n",
