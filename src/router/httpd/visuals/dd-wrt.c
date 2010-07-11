@@ -2276,9 +2276,6 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 {
-//#ifdef HAVE_MICRO             // brctl N/A in micro
-//    return;
-//#endif
 
 	FILE *f;
 	char buf[128];
@@ -5779,7 +5776,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
-
+#ifdef HAVE_MICRO
 static void init_80211x_layers(webs_t wp, char *prefix)
 {
 	if (nvram_prefix_match("8021xtype", prefix, "tls")) {
@@ -6157,6 +6154,7 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(wp, "//]]>\n</script>\n");
 
 }
+#endif
 #endif
 
 
@@ -6657,43 +6655,6 @@ void ej_get_wdsp2p(webs_t wp, int argc, char_t ** argv)
 
 }
 
-/*
- * void ej_get_services_options (webs_t wp, int argc, char_t ** argv) { char
- * word[1024], *next, *services; char delim[] = "<&nbsp;>";
- * 
- * //services = nvram_safe_get("filter_services"); services =
- * get_filter_services ();
- * 
- * split (word, services, next, delim) { int len = 0; char *name, *prot,
- * *port; char protocol[100], ports[100]; int from = 0, to = 0; //int proto;
- * 
- * if ((name = strstr (word, "$NAME:")) == NULL || (prot = strstr (word,
- * "$PROT:")) == NULL || (port = strstr (word, "$PORT:")) == NULL) continue;
- * 
- * // $NAME if (sscanf (name, "$NAME:%3d:", &len) != 1) continue;
- * 
- * strncpy (name, name + sizeof ("$NAME:nnn:") - 1, len); name[len] = '\0';
- * 
- * // $PROT if (sscanf (prot, "$PROT:%3d:", &len) != 1) continue;
- * 
- * strncpy (protocol, prot + sizeof ("$PROT:nnn:") - 1, len); protocol[len] = 
- * '\0';
- * 
- * // $PORT if (sscanf (port, "$PORT:%3d:", &len) != 1) continue;
- * 
- * strncpy (ports, port + sizeof ("$PORT:nnn:") - 1, len); ports[len] = '\0';
- * 
- * if (sscanf (ports, "%d:%d", &from, &to) != 2) continue;
- * 
- * //cprintf("match:: name=%s, protocol=%s, ports=%s\n", // word, protocol,
- * ports);
- * 
- * websWrite (wp, "<option value=\"%s\">%s</option>", name, name);
- * 
- * }
- * 
- * return; } 
- */
 
 void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 {
