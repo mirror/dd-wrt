@@ -1090,13 +1090,7 @@ void ej_show_control(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-#ifndef HAVE_AQOS
-void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
-{
-	return;
-}
-
-#else
+#ifdef HAVE_AQOS
 void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<fieldset>\n");
