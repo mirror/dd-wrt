@@ -2178,16 +2178,6 @@ void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</span>&nbsp;\n");
 	websWrite(wp, "</div>\n");
 }
-#else
-void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
-{
-	return;
-}
-
-void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
-{
-	return;
-}
 #endif
 
 #ifdef HAVE_VOLT
@@ -2225,16 +2215,6 @@ void ej_show_voltage(webs_t wp, int argc, char_t ** argv)
 	ej_get_voltage(wp, argc, argv);
 	websWrite(wp, "</span>&nbsp;\n");
 	websWrite(wp, "</div>\n");
-}
-#else
-void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
-{
-	return;
-}
-
-void ej_show_voltage(webs_t wp, int argc, char_t ** argv)
-{
-	return;
 }
 #endif
 
@@ -2728,13 +2708,6 @@ void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
 	    }    
 	    
 	fclose(in);
-	return;
-}
-
-#else
-
-void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
-{
 	return;
 }
 
