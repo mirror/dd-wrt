@@ -112,7 +112,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 		char *sroutename = nvram_safe_get("static_route_name");
 
 		foreach(word, sroutename, next) {
-			if (which-- == 0) {
+			if (which-- == 0 || (next == NULL &&!strcmp("", websGetVar(wp, "change_action", "-")) )) {
 				find_match_pattern(name, sizeof(name), word,
 						   "$NAME:", "");
 				httpd_filter_name(name, new_name,
@@ -126,7 +126,8 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	char *sroute = nvram_safe_get("static_route");
 
 	foreach(word, sroute, next) {
-		if (which-- == 0) {
+		//if (which-- == 0) {
+		if (which-- == 0 || (next == NULL &&!strcmp("", websGetVar(wp, "change_action", "-")) )) {
 			netmask = word;
 			ipaddr = strsep(&netmask, ":");
 			if (!ipaddr || !netmask)
@@ -189,6 +190,7 @@ void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 	type = argv[0];
 
 	page = atoi(websGetVar(wp, "route_page", "0"));	// default to 0
+
 	if (!strcmp(type, "select")) {
 		char *sroutename = nvram_safe_get("static_route_name");
 
@@ -205,6 +207,9 @@ void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 					httpd_filter_name(name, new_name,
 							  sizeof(new_name),
 							  GET);
+					if( next == NULL && !strcmp("", websGetVar(wp, "change_action", "-"))) {
+						page = i;
+					}
 				}
 			}
 			snprintf(buf, sizeof(buf), "(%s)", new_name);

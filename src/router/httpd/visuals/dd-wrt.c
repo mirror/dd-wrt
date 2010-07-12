@@ -6221,6 +6221,7 @@ void show_wep(webs_t wp, char *prefix)
 		  prefix);
 	sprintf(var, "%s_key", prefix);
 	nvram_default_get(var, "1");
+fprintf(stderr, "[WEP] default: %s\n", var);
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_key\" %s />1&nbsp;\n",
 		  prefix, selmatch(var, "1", "checked=\"checked\""));
@@ -6261,7 +6262,12 @@ void show_wep(webs_t wp, char *prefix)
 
 	sprintf(p_temp, "%s", get_wep_value(temp, "passphrase", bit, prefix));
 	nvram_set("passphrase_temp", p_temp);
-	tf_webWriteESCNV(wp, "passphrase_temp");
+	if( strcmp( p_temp, nvram_safe_get("passphrase_temp") ) ) {
+		fprintf( stderr, "[NVRAM WRITE ERROR] no match: \"%s\" -> \"%s\"\n", p_temp, nvram_safe_get("passphrase_temp") );
+		websWrite( wp, "%s", p_temp);
+	} else {
+		tf_webWriteESCNV(wp, "passphrase_temp");
+	}
 	nvram_unset("passphrase_temp");
 
 	websWrite(wp, "\" />");

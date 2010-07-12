@@ -130,8 +130,8 @@ function onclick_Add(){
 	if(document.PortServices.Add_Service_Port_S.value > document.PortServices.Add_Service_Port_E.value){
 		var start = document.PortServices.Add_Service_Port_S.value;
 		var end = document.PortServices.Add_Service_Port_E.value;
-		document.PortServices.Add_Service_Port_S.value = end;
-		document.PortServices.Add_Service_Port_E.value = start;
+		document.PortServices.Add_Service_Port_S.value = start;
+		document.PortServices.Add_Service_Port_E.value = end;
 	}
 	if(document.PortServices.Add_Service_Protocol[
                                         document.PortServices.Add_Service_Protocol.selectedIndex].value == "1"){	// icmp
