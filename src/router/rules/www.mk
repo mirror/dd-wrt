@@ -1,8 +1,9 @@
 www-install:
-	rm -rf $(INSTALLDIR)/www
-	install -d $(INSTALLDIR)/www
-	install -d $(INSTALLDIR)/www/www
-	$(MAKE) -C kromo/dd-wrt install INSTALLDIR=$(INSTALLDIR)/www
+	@true
+#	rm -rf $(INSTALLDIR)/www
+#	install -d $(INSTALLDIR)/www
+#	install -d $(INSTALLDIR)/www/www
+#	$(MAKE) -C kromo/dd-wrt install INSTALLDIR=$(INSTALLDIR)/www
 
 www: 
 	rm -rf $(INSTALLDIR)/www
