@@ -336,13 +336,8 @@ static int eap_wsc_process_fragment(struct eap_wsc_data *data,
 }
 
 #ifdef HAVE_AOSS
-extern int led_control(int type, int act);
-enum { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
-	LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1
-};
-enum { LED_ON, LED_OFF, LED_FLASH };
 extern int sysprintf(const char *fmt, ...);
-extern char *nvram_safe_get(const char *name);
+
 #endif
 
 static void eap_wsc_process(struct eap_sm *sm, void *priv,
@@ -441,14 +436,7 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 		eap_wsc_state(data, DONE);
 
 #ifdef HAVE_AOSS
-	sysprintf("ifconfig aoss 0.0.0.0 down");
-	sysprintf("80211n_wlanconfig aoss destroy");
-	system("killall ledtool");
-	led_control(LED_SES	, LED_OFF);
-	system("ledtool 1800 3");
-	sysprintf("startservice deconfigurewifi");
-	sysprintf("startservice configurewifi");
-
+	sysprintf("echo done > /tmp/.wpsdone");
 #endif
 		break;
 	case WPS_CONTINUE:
