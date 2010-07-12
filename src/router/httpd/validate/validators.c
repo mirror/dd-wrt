@@ -3073,10 +3073,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 
 	int i, tmp = 1;
 	char word[256], *next;
-	char buf[1000] = "", *cur = buf;
-	char buf_name[1000] = "", *cur_name = buf_name;
+	char buf[2500] = "", *cur = buf;
+	char buf_name[2500] = "", *cur_name = buf_name;
 	char old[STATIC_ROUTE_PAGE][60];
-	char old_name[STATIC_ROUTE_PAGE][30];
+	char old_name[STATIC_ROUTE_PAGE][60];
 	char backuproute[256];
 	struct variable static_route_variables[] = {
 	      {argv:NULL},
@@ -3088,7 +3088,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname,
 	    *page;
 	char new_name[80];
-	char temp[30], *val = NULL;
+	char temp[60], *val = NULL;
 
 	name = websGetVar(wp, "route_name", "");	// default empty if no find
 	// route_name
@@ -3265,15 +3265,18 @@ write_nvram:
 	}
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
-		if (strcmp(old[i], ""))
+		//if (strcmp(old[i], ""))
+		//	cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
+		//			cur == buf ? "" : " ", old[i]);
+		if (strcmp(old_name[i], "")) {
 			cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
 					cur == buf ? "" : " ", old[i]);
-		if (strcmp(old_name[i], ""))
 			cur_name +=
 			    snprintf(cur_name,
 				     buf_name + sizeof(buf_name) - cur_name,
 				     "%s%s", cur_name == buf_name ? "" : " ",
 				     old_name[i]);
+		}
 	}
 
 	nvram_set(v->name, buf);
