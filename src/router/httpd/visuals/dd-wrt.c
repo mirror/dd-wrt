@@ -1513,7 +1513,7 @@ static void showOption(webs_t wp, char *propname, char *nvname)
 
 }
 #endif
-static void showRadio(webs_t wp, char *propname, char *nvname)
+void showRadio(webs_t wp, char *propname, char *nvname)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
@@ -1533,7 +1533,7 @@ static void showRadio(webs_t wp, char *propname, char *nvname)
 }
 
 #ifdef HAVE_MADWIFI
-static void showAutoOption(webs_t wp, char *propname, char *nvname)
+void showAutoOption(webs_t wp, char *propname, char *nvname)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
