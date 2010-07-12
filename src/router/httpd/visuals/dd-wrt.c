@@ -5770,7 +5770,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
-#ifdef HAVE_MICRO
+#ifndef HAVE_MICRO
 static void init_80211x_layers(webs_t wp, char *prefix)
 {
 	if (nvram_prefix_match("8021xtype", prefix, "tls")) {
