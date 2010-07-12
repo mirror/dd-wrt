@@ -271,7 +271,7 @@ static void wpa_supplicant_eapol_cb(struct eapol_sm *eapol, int success,
 		return;
 	}
 
-	if (wpa_drv_set_key(wpa_s, WPA_ALG_PMK, NULL, 0, 0, NULL, 0, pmk,
+	if (wpa_drv_set_key(wpa_s, WPA_ALG_PMK, (u8 *) "\xff\xff\xff\xff\xff\xff", 0, 0, NULL, 0, pmk,
 			    pmk_len)) {
 		wpa_printf(MSG_DEBUG, "Failed to set PMK to the driver");
 	}
