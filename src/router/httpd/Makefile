@@ -796,6 +796,19 @@ endif
 #OBJS  += common.o server.o
 #OBJS  += code_header.o
 
+install:
+#	lzma e www www.lz
+	install -D www $(INSTALLDIR)/etc/www
+	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
+	mkdir -p $(INSTALLDIR)/usr/lib
+	install -D validate.so $(INSTALLDIR)/usr/lib
+	install -D visuals.so $(INSTALLDIR)/usr/lib
+ifneq ($(CONFIG_NOSSL),y)
+	install -d $(INSTALLDIR)/etc
+	install *.pem $(INSTALLDIR)/etc
+endif
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
+
 
 vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals
 
@@ -813,18 +826,6 @@ clean:
 	#cp ../shared/ezc.o ./
 	#rm -rf $(SRCBASE)/../tools/src/code_header.o	
 
-install:
-#	lzma e www www.lz
-	install -D www $(INSTALLDIR)/etc/www
-	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
-	mkdir -p $(INSTALLDIR)/usr/lib
-	install -D validate.so $(INSTALLDIR)/usr/lib
-	install -D visuals.so $(INSTALLDIR)/usr/lib
-ifneq ($(CONFIG_NOSSL),y)
-	install -d $(INSTALLDIR)/etc
-	install *.pem $(INSTALLDIR)/etc
-endif
-#	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
 cert:
 	./gencert.sh
