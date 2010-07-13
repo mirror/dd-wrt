@@ -149,6 +149,13 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
+	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_DIAG, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
+
 	system2("echo 1 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 
