@@ -182,7 +182,7 @@ static int dev_max_count = 1; /* only NPEC is used */
 #elif defined (CONFIG_IXP400_ETH_NPEB_ONLY) || defined (CONFIG_MACH_WG302V2)
 static int dev_max_count = 1; /* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
-      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_CAMBRIA) || defined (CONFIG_TONZE) || defined (CONFIG_MACH_KIXRP435) \
+      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_CAMBRIA) || defined (CONFIG_TONZE) || defined (CONFIG_MACH_KIXRP435) || defined (CONFIG_MACH_USR8200) \
       || defined (CONFIG_MACH_PRONGHORNMETRO) \
       || defined (CONFIG_MACH_PRONGHORN) || defined (CONFIG_MACH_MI424WR)
 
@@ -646,8 +646,13 @@ static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
 	/* | 1 | 2 | 3 | 4 |      | 5 |                       */
         /* ----------------------------------------           */
 #if defined(CONFIG_TONZE)
-    0,
-    1
+    32,
+    9
+#elif defined(CONFIG_MACH_USR8200)
+    /* 1 PHY per NPE port */
+    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
+    1  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
+
 #elif defined(CONFIG_ARCH_IXDP425)
     /* 1 PHY per NPE port */
     0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
@@ -733,6 +738,9 @@ static phy_cfg_t default_phy_cfg[32] =
 #if defined(CONFIG_TONZE)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}, /* Port 0: monitor the link*/
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}  /* Port 1: monitor the link*/
+#elif defined(CONFIG_MACH_USR8200)
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}, /* Port 0: monitor the phy */
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}  /* Port 1: monitor the link */
 #elif defined(CONFIG_ARCH_ADI_COYOTE_WRT300N)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}, /* Port 0: monitor the phy */
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}  /* Port 1: monitor the link */
@@ -3157,7 +3165,7 @@ static int phy_init(void)
     }
 
     /* Module parameter */
-    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1())  
+    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1() || machine_is_usr8200())  
     { 
 	/* Use hardcoded phy addresses */
 	num_phys_to_set = (sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
@@ -4448,6 +4456,13 @@ static int __init ixp400_eth_init(void)
 	default_phy_cfg[2].linkMonitor=FALSE;
 	default_phy_cfg[3].linkMonitor=FALSE;
 	default_phy_cfg[4].linkMonitor=FALSE;
+	}
+    if (machine_is_usr8200())
+	{
+	phyAddresses[0]=9;
+	phyAddresses[1]=32;
+	default_phy_cfg[0].linkMonitor=TRUE;
+	default_phy_cfg[1].linkMonitor=FALSE;
 	}
     if (machine_is_wg302v1())
 	{
