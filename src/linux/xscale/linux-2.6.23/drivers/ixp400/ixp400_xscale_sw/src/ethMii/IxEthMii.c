@@ -160,6 +160,7 @@ ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_BCM5327_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_RTL8021_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_MARVELL_PHY_ID)
+		    || (ixEthMiiPhyId[i] == IX_ETH_MII_AC101L_PHY_ID)
 		    )
 		{
 		    /* supported phy */
