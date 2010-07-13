@@ -521,6 +521,9 @@ int internal_getRouterBrand()
 #elif HAVE_MI424WR
 	setRouter("Actiontec MI424WR");
 	return ROUTER_BOARD_GATEWORX_GW2345;
+#elif HAVE_USR8200
+	setRouter("US Robotics USR8200");
+	return ROUTER_BOARD_GATEWORX;
 #elif HAVE_TONZE
 	setRouter("Tonze AP-425");
 	return ROUTER_BOARD_GATEWORX;
