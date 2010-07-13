@@ -106,6 +106,9 @@ char *nvram_get(const char *name)
 		value = &nvram_buf[*off];
 	else
 		value = NULL;
+	
+	if (value)
+	    msync(nvram_buf, NVRAM_SPACE, MS_INVALIDATE);
 
 	if (count < 0)
 		perror(PATH_DEV_NVRAM);
