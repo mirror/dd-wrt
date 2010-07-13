@@ -248,6 +248,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		eval("fischecksum");
 	if (nvram_match("DD_BOARD", "Actiontec MI424WR"))
 		eval("fischecksum");
+	if (nvram_match("DD_BOARD", "US Robotics USR8200"))
+		eval("fischecksum");
 
 	if (url)
 		return eval("write", url, "linux");
