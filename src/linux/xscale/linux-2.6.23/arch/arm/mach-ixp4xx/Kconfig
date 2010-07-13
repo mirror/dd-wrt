@@ -101,6 +101,15 @@ config MACH_WRT300NV2
 	  WRT300N v2 router. For more information on this
 	  platform, see http://openwrt.org
 
+config MACH_USR8200
+	bool "USRobotics USR8200"
+	select PCI
+	help
+	  Say 'Y' here if you want your kernel to support the USRobotics
+	  USR8200 router board. For more information on this platform, see
+	  http://openwrt.org
+
+
 config MACH_COMPEX
 	bool "Compex WP18 / NP18A"
 	select PCI

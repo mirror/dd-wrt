@@ -23,6 +23,7 @@ obj-pci-$(CONFIG_MACH_DSMG600)		+= dsmg600-pci.o
 obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o
 obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
 obj-pci-$(CONFIG_MACH_MI424WR)		+= mi424wr-pci.o
+obj-pci-$(CONFIG_MACH_USR8200)		+= usr8200-pci.o
 
 obj-y	+= common.o
 
@@ -43,5 +44,6 @@ obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
 obj-$(CONFIG_MACH_WG302V1)	+= wg302v1-setup.o
 obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
 obj-$(CONFIG_MACH_MI424WR)	+= mi424wr-setup.o
+obj-$(CONFIG_MACH_USR8200)	+= usr8200-setup.o
 
 obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
