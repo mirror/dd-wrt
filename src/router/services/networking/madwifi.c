@@ -1990,6 +1990,11 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		deconfigure_wifi();
 		configure_wifi();
 	}
+#ifdef HAVE_AOSS
+	if (nvram_match("aoss_success","1"))
+		led_control(LED_SES, LED_ON);
+#endif
+
 	if (need_commit) {
 		nvram_commit();
 		need_commit = 0;
