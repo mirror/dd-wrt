@@ -3165,11 +3165,11 @@ static int phy_init(void)
     }
 
     /* Module parameter */
-    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1() || machine_is_usr8200())  
+    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1())  
     { 
 	/* Use hardcoded phy addresses */
 	num_phys_to_set = (sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
-    }else if (machine_is_mi424wr())
+    }else if (machine_is_mi424wr() || machine_is_usr8200())
     {
 	num_phys_to_set = 5;    
     }
@@ -4460,9 +4460,15 @@ static int __init ixp400_eth_init(void)
     if (machine_is_usr8200())
 	{
 	phyAddresses[0]=9;
-	phyAddresses[1]=32;
-	default_phy_cfg[0].linkMonitor=TRUE;
-	default_phy_cfg[1].linkMonitor=FALSE;
+	phyAddresses[1]=16;
+	phyAddresses[1]=17;
+	phyAddresses[1]=18;
+	phyAddresses[1]=19;
+	default_phy_cfg[0].linkMonitor=FALSE;
+	default_phy_cfg[1].linkMonitor=TRUE;
+	default_phy_cfg[2].linkMonitor=FALSE;
+	default_phy_cfg[3].linkMonitor=FALSE;
+	default_phy_cfg[4].linkMonitor=FALSE;
 	}
     if (machine_is_wg302v1())
 	{
