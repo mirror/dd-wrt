@@ -141,6 +141,9 @@ endif
 ifeq ($(CONFIG_PRONGHORN),y)
   CFLAGS += -DHAVE_PRONGHORN
 endif
+ifeq ($(CONFIG_USR8200),y)
+  CFLAGS += -DHAVE_USR8200
+endif
 ifeq ($(CONFIG_WG302),y)
   CFLAGS += -DHAVE_WG302
 endif
