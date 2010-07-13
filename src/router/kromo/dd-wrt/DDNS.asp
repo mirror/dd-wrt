@@ -159,7 +159,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username"); %>" />
+									<input name="ddns_username" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username"); %>" />
 								</div>
 								<div class="setting">
 		  							<div class="label"><% tran("share.passwd"); %></div>
@@ -211,7 +211,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_2" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_2"); %>" />
+									<input name="ddns_username_2" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_2"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
@@ -247,7 +247,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 							<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_3" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_3"); %>" />
+									<input name="ddns_username_3" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_3"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
@@ -283,7 +283,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_4" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_4"); %>" />
+									<input name="ddns_username_4" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_4"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
@@ -319,7 +319,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_6" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_6"); %>" />
+									<input name="ddns_username_6" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_6"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
@@ -369,7 +369,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_7" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_7"); %>" />
+									<input name="ddns_username_7" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_7"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
@@ -409,7 +409,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_8" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_8"); %>" />
+									<input name="ddns_username_8" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_8"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
@@ -443,7 +443,7 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","8","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_9" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_9"); %>" />
+									<input name="ddns_username_9" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_9"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
@@ -483,7 +483,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username_5" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_5"); %>" />
+									<input name="ddns_username_5" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_5"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
