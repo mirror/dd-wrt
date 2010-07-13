@@ -163,6 +163,9 @@ static int hss_coexist = 0;	  /* default : HSS coexist disabled */
 #elif  defined(CONFIG_MI424WR)
 static int no_phy_scan = 0;       /* default : do phy discovery */
 static int hss_coexist = 0;	  /* default : HSS coexist disabled */
+#elif  defined(CONFIG_USR8200)
+static int no_phy_scan = 0;       /* default : do phy discovery */
+static int hss_coexist = 0;	  /* default : HSS coexist disabled */
 #elif  defined(CONFIG_ARCH_ADI_COYOTE_WRT300N)
 static int no_phy_scan = 0;       /* default : do phy discovery */
 static int hss_coexist = 0;	  /* default : HSS coexist disabled */
@@ -650,8 +653,8 @@ static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
     9
 #elif defined(CONFIG_MACH_USR8200)
     /* 1 PHY per NPE port */
-    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
-    1  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
+    9, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
+    16,  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
 
 #elif defined(CONFIG_ARCH_IXDP425)
     /* 1 PHY per NPE port */
@@ -3165,11 +3168,11 @@ static int phy_init(void)
     }
 
     /* Module parameter */
-    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1())  
+    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1() || machine_is_usr8200())  
     { 
 	/* Use hardcoded phy addresses */
 	num_phys_to_set = (sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
-    }else if (machine_is_mi424wr() || machine_is_usr8200())
+    }else if (machine_is_mi424wr() )
     {
 	num_phys_to_set = 5;    
     }
@@ -4461,14 +4464,8 @@ static int __init ixp400_eth_init(void)
 	{
 	phyAddresses[0]=9;
 	phyAddresses[1]=16;
-	phyAddresses[1]=17;
-	phyAddresses[1]=18;
-	phyAddresses[1]=19;
 	default_phy_cfg[0].linkMonitor=FALSE;
 	default_phy_cfg[1].linkMonitor=TRUE;
-	default_phy_cfg[2].linkMonitor=FALSE;
-	default_phy_cfg[3].linkMonitor=FALSE;
-	default_phy_cfg[4].linkMonitor=FALSE;
 	}
     if (machine_is_wg302v1())
 	{
