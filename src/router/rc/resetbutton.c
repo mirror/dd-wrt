@@ -386,6 +386,8 @@ int getbuttonstate()
 	ret = read_bit(3);
 #elif HAVE_MI424WR
 	ret = read_bit(10);
+#elif HAVE_USR8200
+	ret = read_bit(12);
 #elif HAVE_CAMBRIA
 	if (isGW2350())
 		ret = read_bit(4);
