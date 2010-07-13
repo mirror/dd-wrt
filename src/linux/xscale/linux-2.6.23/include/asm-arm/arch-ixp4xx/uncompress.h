@@ -41,7 +41,7 @@ static __inline__ void __arch_decomp_setup(unsigned long arch_id)
 #if defined(CONFIG_TONZE) || defined(CONFIG_NOP8670)
 		uart_base = (volatile u32*) IXP4XX_UART2_BASE_PHYS;
 #else
- 	if (machine_is_adi_coyote() || machine_is_gtwx5715() || machine_is_wrt300nv2() || machine_is_wg302v2() || machine_is_gateway7001() || machine_is_pronghorn() || machine_is_pronghorn_metro())
+ 	if (machine_is_adi_coyote() || machine_is_gtwx5715() || machine_is_wrt300nv2() || machine_is_wg302v2() || machine_is_gateway7001() || machine_is_pronghorn() || machine_is_pronghorn_metro() || machine_is_usr8200())
 		uart_base = (volatile u32*) IXP4XX_UART2_BASE_PHYS;
 	else
 		uart_base = (volatile u32*) IXP4XX_UART1_BASE_PHYS;
