@@ -512,8 +512,8 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hqos.right8"); %></dd>
 							<dt class="term"><% tran("qos.legend4"); %>:</dt>
 							<dd class="definition"><% tran("hqos.right10"); %></dd>
-							<dt class="term"><% tran("qos.legend5"); %>:</dt>
-							<dd class="definition"><% tran("hqos.right12"); %></dd>
+							<!--dt class="term"><% tran("qos.legend5"); %>:</dt>
+							<dd class="definition"><% tran("hqos.right12"); %></dd-->
 						</dl>
 						<br/>
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HQos.asp');"><% tran("share.more"); %></a>
