@@ -1101,6 +1101,9 @@ int internal_getRouterBrand()
 #elif HAVE_JWAP003
 	setRouter("JJPLUS JWAP003");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_ALFAAP94
+	setRouter("Alfa AP94 Board");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
 	setRouter("Ubiquiti LiteStation-SR71");
 	return ROUTER_BOARD_PB42;
@@ -2964,6 +2967,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x105;
 		ses_gpio = 0x104;
 		connected_gpio = 0x007;
+#endif
+#ifdef HAVE_ALFAAP94
+		power_gpio = 0x005;
 #endif
 		break;
 	case ROUTER_ALLNET01:
