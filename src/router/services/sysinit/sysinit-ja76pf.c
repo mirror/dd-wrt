@@ -163,14 +163,17 @@ void start_sysinit(void)
 	}
 
 	detect_wireless_devices();
-
+#ifndef HAVE_ALFAAP94
 	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 4 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 3 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#else
+	led_control(LED_POWER, LED_ON);
 
+#endif
 	/*
 	 * Set a sane date 
 	 */
