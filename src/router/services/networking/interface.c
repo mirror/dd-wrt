@@ -560,6 +560,9 @@ int flush_interfaces(void)
 #elif HAVE_JA76PF
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+#elif HAVE_ALFAAP94
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
+		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_JWAP003
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
