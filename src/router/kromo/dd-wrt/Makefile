@@ -651,42 +651,46 @@ endif
 #endif
 
 
-install: installwebfiles
+stripfiles:
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
 	../../../../tools/strip $(INSTALLDIR)/www/help/*.asp
+
+
+processlangfiles:
 	../../../../tools/process_langfile $(INSTALLDIR)/www/lang_pack/english.js $(INSTALLDIR)/www/lang_pack/*.js
-	
-ifeq ($(CONFIG_SER),y)	
-	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install	
-endif
-	
+
+optimizefiles:
 	../../../../tools/write4 $(INSTALLDIR)/www/*.asp
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
+
+removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
+makewww:
 	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico images/*/*.png images/*/*.gif js/* lang_pack/* style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* > $(SRCBASE)/router/httpd/html.c 
+
+
+removepwc:
 ifeq ($(CONFIG_PWC),y)
 	rm -rf $(INSTALLDIR)/www/style/pwc/ddwrt
 	rm -rf $(INSTALLDIR)/www/style/pwc/default
-endif
-	cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/*
-
-#	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
-#../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
+else
 	@true
-
-postinstall: installwebfiles
-	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
-	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
-ifeq ($(CONFIG_PWC),y)
-	rm -rf $(INSTALLDIR)/www/style/pwc/ddwrt
-	rm -rf $(INSTALLDIR)/www/style/pwc/default
 endif
-	cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/*
 
+cleanup:
+	cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/*
+	rm -rf $(INSTALLDIR)/www/images
+	rm -rf $(INSTALLDIR)/www/help
+	rm -rf $(INSTALLDIR)/www/js
+	rm -rf $(INSTALLDIR)/www/lang_pack
+
+install: installwebfiles stripfiles processlangfiles optimizefiles removeobsolete makewww removepwc cleanup
+
+postinstall: installwebfiles removeobsolete removepwc cleanup
 
 webcomp:
 
