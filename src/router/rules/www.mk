@@ -3,7 +3,7 @@ www-install:
 	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www/www
-#	$(MAKE) -C kromo/dd-wrt install INSTALLDIR=$(INSTALLDIR)/www
+	$(MAKE) -C kromo/dd-wrt postinstall INSTALLDIR=$(INSTALLDIR)/www
 
 www: 
 	rm -rf $(INSTALLDIR)/www

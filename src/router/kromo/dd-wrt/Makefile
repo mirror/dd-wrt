@@ -6,7 +6,7 @@ endif
 
 all:
 
-install:
+installwebfiles:
 #	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
 	install -m 644 $(wildcard *.asp) $(wildcard *.svg) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
@@ -651,7 +651,7 @@ endif
 #endif
 
 
-
+install: installwebfiles
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
 	../../../../tools/strip $(INSTALLDIR)/www/help/*.asp
@@ -677,6 +677,16 @@ endif
 #	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
 #../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
 	@true
+
+postinstall: installwebfiles
+	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
+	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
+ifeq ($(CONFIG_PWC),y)
+	rm -rf $(INSTALLDIR)/www/style/pwc/ddwrt
+	rm -rf $(INSTALLDIR)/www/style/pwc/default
+endif
+	cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/*
+
 
 webcomp:
 
