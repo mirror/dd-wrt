@@ -501,11 +501,11 @@ void addDeletion(char *word)
 void delete_static_route(webs_t wp)
 {
 	addAction("routing");
-	char *buf = safe_malloc(1000);
-	char *buf_name = safe_malloc(1000);
+	char *buf = safe_malloc(2500);
+	char *buf_name = safe_malloc(2500);
 
-	memset(buf, 0, 1000);
-	memset(buf_name, 0, 1000);
+	memset(buf, 0, 2500);
+	memset(buf_name, 0, 2500);
 	char *cur = buf;
 	char *cur_name = buf_name;
 	static char word[256], *next;
@@ -523,7 +523,7 @@ void delete_static_route(webs_t wp)
 			continue;
 		}
 
-		cur += snprintf(cur, buf + 1000 - cur, "%s%s",
+		cur += snprintf(cur, buf + 2500 - cur, "%s%s",
 				cur == buf ? "" : " ", word);
 
 		i++;
@@ -536,7 +536,7 @@ void delete_static_route(webs_t wp)
 			continue;
 		}
 		cur_name +=
-		    snprintf(cur_name, buf_name + 1000 - cur_name, "%s%s",
+		    snprintf(cur_name, buf_name + 2500 - cur_name, "%s%s",
 			     cur_name == buf_name ? "" : " ", word_name);
 
 		i++;
