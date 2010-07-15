@@ -1960,7 +1960,7 @@ fprintf( stderr, "[USB] checking...\n" );
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 		
-		if( nvram_match("usb_automnt", "1") ) {
+		if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
 			printf(stderr, "[USB] check for drives....\n");
 			usb_add_ufd();
 		}
