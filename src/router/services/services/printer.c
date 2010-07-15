@@ -41,10 +41,10 @@ void start_printer(void)
 			eval("mknod", "/dev/lp0", "c", "180", "0");
 			eval("mknod", "/dev/lp1", "c", "180", "1");
 			eval("mknod", "/dev/lp2", "c", "180", "2");
-			eval("p910nd", "-f", "/dev/lp0", "0");
+			eval("p910nd", "-f", "/dev/lp0", "0", "-t", "5");
 		} else {
 			fclose(test);
-			eval("p910nd", "-f", "/dev/usb/lp0", "0");
+			eval("p910nd", "-f", "/dev/usb/lp0", "0", "-t", "5");
 		}
 	}
 }
