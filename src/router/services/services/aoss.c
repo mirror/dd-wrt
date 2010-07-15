@@ -39,7 +39,27 @@ void start_aoss(void)
 	}
 	if (pidof("aoss") > 0)
 	    return;
-	ret = eval("aoss", "-i", nvram_safe_get("lan_ifname"), "-m", "ap");
+	system("killall ledtool");
+	nvram_set("aoss_success","0");
+	led_control(LED_SES, LED_OFF);
+	system("ledtool 180 2");
+	char *vifbak = nvram_safe_get("ath0_vifs");
+	char copy[256];
+	strcpy(copy, vifbak);
+	sysprintf("startservice deconfigurewifi");
+	nvram_unset("ath0_vifs");
+	sysprintf("startservice configurewifi");
+	nvram_set("ath0_vifs", copy);
+	nvram_commit();
+
+	sysprintf("80211n_wlanconfig aoss create wlandev wifi0 wlanmode ap");
+	sysprintf("iwconfig aoss essid ESSID-AOSS");
+	sysprintf("iwpriv aoss authmode 4");
+	sysprintf("iwconfig aoss key [1] 4D454C434F");
+	sysprintf("iwconfig aoss key [1]");
+	sysprintf("ifconfig aoss 0.0.0.0 up");
+
+	ret = eval("aoss", "-i", "aoss", "-m", "ap");
 	dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
 	cprintf("done\n");
 	return;
