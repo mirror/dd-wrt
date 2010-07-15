@@ -178,6 +178,12 @@ void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 		  nvram_selmatch(wp, "wk_mode",
 				 "ospf") ? "selected=\\\"selected\\\"" : "");
 #endif
+#ifdef HAVE_QUAGGA
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"ospf bgp rip router\\\" %s >vtysh OSPF BGP RIP router</option>\");\n",
+		  nvram_selmatch(wp, "wk_mode",
+				 "ospf bgp rip router") ? "selected=\\\"selected\\\"" : "");
+#endif
 #ifdef HAVE_OLSRD
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"olsr\\\" %s >\" + route.olsrd_mod + \"</option>\");\n",
@@ -8123,6 +8129,37 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</table>\n<br />\n");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"client_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+}
+
+#endif
+#ifdef CONFIG_STATUS_GPIO
+void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
+{
+	char *var,*next;
+	char nvgpio[32];
+
+	char *value = websGetVar(wp, "action", "");
+
+	char *gpios = nvram_safe_get("gpio_outputs");
+	var = (char *)malloc(strlen(gpios)+1);
+	if (var != NULL) {
+		if (gpios != NULL) {
+			foreach(var, gpios, next) {
+				sprintf(nvgpio, "gpio%s", var);
+			    nvgpio = nvram_nget("gpio_%s", var);
+				if (!nvgpio) nvram_set(nvgpio,"0");
+				websWrite(wp,
+					  "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n",
+					  	nvgpio,
+			  			nvram_match(nvgpio, "1") ? "checked=\"checked\"" : "");
+				websWrite(wp,
+					  "<input type=\"checkbox\" name=\"%s\" value=\"0\" %s />\n",
+					  	nvgpio,
+			  			nvram_match(nvgpio, "0") ? "checked=\"checked\"" : "");
+				}
+			}
+	free(var);
+	}
 }
 
 #endif
