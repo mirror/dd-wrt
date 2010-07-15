@@ -133,7 +133,7 @@ int usb_add_ufd()
 			sleep(1);
 		}
 	}
-	if (i == 15)
+	if (dir == NULL)  // i is 16 here and not 15 if timeout happens
 		return EINVAL;
 
 	/* 
