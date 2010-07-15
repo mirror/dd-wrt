@@ -30,7 +30,7 @@
 
 void stop_printer(void)
 {
-	stop_process("p9100d", "P910ND printer daemon");
+	stop_process("p910nd", "P910ND printer daemon");
 }
 
 void start_printer(void)
