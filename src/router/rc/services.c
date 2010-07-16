@@ -1034,7 +1034,9 @@ static void handle_dhcp_release(void)
 static void handle_usbdrivers(void)
 {
 	startstop("drivers"); //stop is not yet implemented but we dont care about yet
-	startstop("printer"); 
+#ifdef HAVE_P910ND
+	startstop("printer");
+#endif
 }
 #endif
 #ifdef HAVE_EOP_TUNNEL
