@@ -1959,11 +1959,11 @@ fprintf( stderr, "[USB] checking...\n" );
 			insmod("usblp");
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-		
-		if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
-			printf(stderr, "[USB] check for drives....\n");
-			usb_add_ufd();
-		}
+//   Mounting is done by hotplug event!		
+//		if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
+//			printf(stderr, "[USB] check for drives....\n");
+//			usb_add_ufd();
+//		}
 	} else {
 		led_control(LED_USB, LED_OFF);
 	}
