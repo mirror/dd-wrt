@@ -19,12 +19,16 @@ else
 endif
 
 madwifi-clean:
+ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_DIST),"micro")
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-le-elf-micro
 	make -C madwifi.dev/madwifi.dev/tools2 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
 else
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-le-elf-micro
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+endif
+else
+	@true
 endif
 
 madwifi-install:
