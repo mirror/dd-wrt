@@ -216,6 +216,29 @@ ifeq ($(CONFIG_ORANGE),y)
 	cp orange/logo.png $(INSTALLDIR)/www/style
 endif
 
+# dirty - fix missing orange for all builds - remove after .config files update!
+ifneq ($(CONFIG_ORANGE),y)
+ifeq ($(CONFIG_ELEGANT),y)
+ifeq ($(CONFIG_RED),y)
+ifeq ($(CONFIG_BLUE),y)
+ifeq ($(CONFIG_CYAN),y)
+ifeq ($(CONFIG_YELLOW),y)
+ifeq ($(CONFIG_GREEN),y)
+	mkdir $(INSTALLDIR)/www/style/orange
+#	cp orange/style.css $(INSTALLDIR)/www/style/orange
+#	cp orange/style_ie.css $(INSTALLDIR)/www/style/orange
+	touch $(INSTALLDIR)/www/style/orange/style.css
+	cp common_style/common.css $(INSTALLDIR)/www/style
+	cp orange/logo.png $(INSTALLDIR)/www/style
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+# end orange fix
+
 ifeq ($(CONFIG_34TELECOM),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/34telecom/ install
 	mkdir $(INSTALLDIR)/www/style/cyan
