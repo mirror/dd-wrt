@@ -56,9 +56,9 @@ void setPassword(char *passwd)
 		return;
 	}
 #ifdef HAVE_ERC
-	fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
+	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		zencrypt("Se12@rEServiceGate"));
+		nvram_safe_get("newhttp_passwd"));
 #else
 	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 #endif
@@ -112,8 +112,8 @@ void start_mkfiles(void)
 #endif
 	{
 #ifdef HAVE_ERC
-		fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-			http_passwd);
+		// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+		//	http_passwd);
 		fprintf(fp,
 			"SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 			nvram_safe_get("newhttp_passwd"));

@@ -558,7 +558,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_DDLAN
 	{"http_passwd", "4DC5smu4lEiiQ", 0},	/* Password */
 #elif HAVE_ERC
-	{"http_passwd", "$1$mayB28Aa$pV0QnPSLwtuyNwtlfavvT0", 0},
+	{"http_passwd", "$1$o.4B3QRb$KB7.8AOgnesREpnv8Zhfx1", 0},
 #elif HAVE_BKM
 	{"http_passwd", "$1$sur0onKC$Ltnjj7PBVQtmVTNYPb5XF0", 0},
 #else
@@ -675,7 +675,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_BKM
 	{"wl_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
 #elif HAVE_ERC
-	{"wl_ssid", "ERC", 0},	/* Service set ID (network name) */
+	{"wl_ssid", "RemoteEngineer", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #else
@@ -1210,7 +1210,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif  HAVE_BKM
 	{"router_name", "BKM-HSDL", 0},
 #elif  HAVE_ERC
-	{"router_name", "ServiceGaterouter", 0},
+	{"router_name", "RemoteEngineer", 0},
 #else
 	{"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -1470,7 +1470,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"samba_script", "yourscript", 0},
 #endif
 	{"rflow_enable", "0", 0},
-	{"status_auth", "1", 0},
 #ifdef HAVE_ERC
 	{"info_passwd", "1", 0},
 #else
@@ -2044,6 +2043,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"manual_boot_nv", "0", 0},
 #ifdef HAVE_WTS
 	{"status_auth", "0", 0},
+#elif HAVE_ERC
+	{"status_auth", "0", 0},
 #else
 	{"status_auth", "1", 0},
 #endif
@@ -2349,7 +2350,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"newhttp_passwd", "hdslklas9a", 0},
 #endif
 #ifdef HAVE_ERC
-	{"newhttp_passwd", "$1$zj7Yy9j0$yUL536j6T3vLKvy2L/29J.", 0},
+	{"newhttp_passwd", "$1$.V44ffYt$6ttOdlItuYV6uvi..vvoO/", 0},
 #endif
 #ifdef HAVE_MADWIFI
 	/*
