@@ -1668,6 +1668,7 @@ int getassoclist(char *ifname, unsigned char *list)
 	unsigned int *count = (unsigned int *)list;
 
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
+	{
 		free(buf);
 		return 0;
 	}
