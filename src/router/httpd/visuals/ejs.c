@@ -1437,10 +1437,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_ERC
 	static char menu_s[8][12][32] =
-	    { {"index.asp", "", "", "", "", "", "", "", "", "", "",""},
+	    { {"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "",""},
 	{"Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "",
 	 "", "",""},
 	{"ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "",""},
+	{"Filters.asp", "", "", "", "", "", "", "", "", "", "",""},
 	{"Management.asp", "", "", "", "", "", "", "", "", "", "",""},
 	{"", "", "", "", "", "", "", "", "", "", "",""},
 	{"", "", "", "", "", "", "", "", "", "", "",""},
@@ -1454,6 +1455,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	    { {"setup", "setupbasic", "", "", "", "", "", "", "", "", "", "",""},
 	{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "","", "", "", "",""},
 	{"applications", "applicationspforwarding", "", "", "", "", "", "", "","", "", "",""},
+	{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "",""},
 	{"admin", "adminManagement", "", "", "", "", "", "", "", "", "", "",""},
 	{"", "", "", "", "", "", "", "", "", "", "", "",""},
 	{"", "", "", "", "", "", "", "", "", "", "", "",""},
