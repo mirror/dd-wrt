@@ -2434,13 +2434,8 @@ char *getSTA(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		char mode[32];
-		char netmode[32];
-
-		sprintf(mode, "ath%d_mode", i);
-		sprintf(netmode, "ath%d_net_mode", i);
-		if (nvram_match(mode, "sta")
-		    && !nvram_match(netmode, "disabled")) {
+		if (nvram_nmatch("sta", "ath%d_mode", i)
+		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
 			return stalist[i];
 		}
 
@@ -2458,13 +2453,8 @@ char *getWET(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		char mode[32];
-		char netmode[32];
-
-		sprintf(mode, "ath%d_mode", i);
-		sprintf(netmode, "ath%d_net_mode", i);
-		if (nvram_match(mode, "wet")
-		    && !nvram_match(netmode, "disabled")) {
+		if (nvram_nmatch("wet", "ath%d_mode", i)
+		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
 			return stalist[i];
 		}
 
@@ -2767,13 +2757,7 @@ int getIfList(char *buffer, const char *ifprefix)
 	while (1) {
 		int c = getc(in);
 
-		if (c == EOF) {
-			if (count)
-				buffer[strlen(buffer) - 1] = 0;	// fixup last space
-			fclose(in);
-			return count;
-		}
-		if (c == 0) {
+		if (c == 0 || c == EOF) {
 			if (count)
 				buffer[strlen(buffer) - 1] = 0;	// fixup last space
 			fclose(in);
