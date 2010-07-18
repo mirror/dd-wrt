@@ -4,8 +4,12 @@ madwifi_mimo:
 	make -C madwifi.dev/madwifi.dev/tools TARGET=mipsisa32-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
 
 madwifi_mimo-clean:
+ifeq ($(CONFIG_MADWIFI),y)
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-le-elf
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+else
+	@true
+endif
 
 madwifi_mimo-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
