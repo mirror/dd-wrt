@@ -37,7 +37,7 @@
 #elif HAVE_BKM
 #define CYBERTAN_VERSION	"BKM-HSDL 1.1 (" BUILD_DATE ")"
 #elif HAVE_ERC
-#define CYBERTAN_VERSION	"ServiceGateFirmware 1.0 (" BUILD_DATE ")"
+#define CYBERTAN_VERSION	"RemoteEngineer FW 1.1 (" BUILD_DATE ")"
 #elif HAVE_XIOCOM
 #define CYBERTAN_VERSION	"XOS 1.8.1 (" BUILD_DATE ")"
 #elif HAVE_BUFFALO
