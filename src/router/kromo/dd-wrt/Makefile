@@ -419,7 +419,7 @@ ifeq ($(CONFIG_ERC),y)
 	cp -f erc/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
 	cp -f erc/*.asp $(INSTALLDIR)/www/
 #copy extra scripts and whatever
-	cp -fa erc/extra/* $(INSTALLDIR)/ || true
+	cp -fa erc/extra/* $(INSTALLDIR)/ || true
 endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
