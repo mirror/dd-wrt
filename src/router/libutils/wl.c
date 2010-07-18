@@ -211,10 +211,7 @@ float wifi_getrate(char *ifname)
 
 int get_radiostate(char *ifname)
 {
-	char mode[32];
-
-	sprintf(mode, "%s_net_mode", ifname);
-	if (nvram_match(mode, "disabled"))
+	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
 	struct ifreq ifr;
 	int skfd = getsocket();
@@ -356,16 +353,12 @@ STAINFO *getRaStaInfo(char *ifname)
 int getassoclist(char *ifname, unsigned char *list)
 {
 	struct iwreq iwr;
-	char type[32];
-	char netmode[32];
 	unsigned int *count = (unsigned int *)list;
 
 	RT_802_11_MAC_TABLE table = { 0 };
 	int s, i;
 
-	sprintf(type, "%s_mode", ifname);
-	sprintf(netmode, "%s_net_mode", ifname);
-	if (nvram_match(netmode, "disabled")) {
+	if (nvram_match("disabled", "%s_net_mode", ifname)) {
 		return 0;
 	}
 
@@ -417,15 +410,11 @@ int getassoclist(char *ifname, unsigned char *list)
 int getRssi(char *ifname, unsigned char *mac)
 {
 	struct iwreq iwr;
-	char type[32];
-	char netmode[32];
 
 	RT_802_11_MAC_TABLE table = { 0 };
 	int s, i;
 
-	sprintf(type, "%s_mode", ifname);
-	sprintf(netmode, "%s_net_mode", ifname);
-	if (nvram_match(netmode, "disabled")) {
+	if (nvram_match("disabled", "%s_net_mode", ifname)) {
 		return 0;
 	}
 
@@ -1065,7 +1054,11 @@ int get_wififreq(char *ifname, int freq)
 		return freq - (2427 - 907);
 		break;
 	case 4:		// ubnt sr9
-		switch (freq)	// mmh weired order
+		if (freq < 2422 || freq > 2437)
+			return -1;
+		return (2422 + 922) - freq;
+		break;
+/*		switch (freq)	// mmh weired order
 		{
 		case 2422:
 			return 922;
@@ -1116,7 +1109,7 @@ int get_wififreq(char *ifname, int freq)
 			return 907;
 			break;
 		}
-		return -1;
+		return -1;  */
 	case 13:
 		return freq - (5540 - 3540);	// xr3 general 3,5 ghz
 	case 1328:
@@ -1203,10 +1196,7 @@ int wifi_getfreq(char *ifname)
 
 int get_radiostate(char *ifname)
 {
-	char mode[32];
-
-	sprintf(mode, "%s_net_mode", ifname);
-	if (nvram_match(mode, "disabled"))
+	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
 	struct ifreq ifr;
 	int skfd = getsocket();
@@ -1675,20 +1665,16 @@ int getassoclist(char *ifname, unsigned char *list)
 	int len;
 	struct iwreq iwr;
 	int s;
-	char type[32];
-	char netmode[32];
 	unsigned int *count = (unsigned int *)list;
 
-	sprintf(type, "%s_mode", ifname);
-	sprintf(netmode, "%s_net_mode", ifname);
-	if (nvram_match(netmode, "disabled")) {
+	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		free(buf);
 		return 0;
 	}
 	int mincount = 0;
 
-	if (nvram_match(type, "wdssta") || nvram_match(type, "sta")
-	    || nvram_match(type, "wet")) {
+	if (nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname)
+	    || nvram_nmatch("wet", "%s_mode", ifname)) {
 		int assoc = isAssociated(ifname);
 
 		if (!assoc) {
