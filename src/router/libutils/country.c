@@ -578,7 +578,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_YEMEN, NULL1_WORLD, "YE", "YEMEN", YES, NO, YES, 7000},
 	{CTRY_ZIMBABWE, NULL1_WORLD, "ZW", "ZIMBABWE", YES, NO, YES, 7000}
 };
-
+#ifdef HAVE_BUFFALO
 static char regionCountryCodes[6][31][3] = {
 	{"EU", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "F2", "DE", "GR","HU", "IE", "IT", "LV", "LI", "LT", "LU", "MK", "NL", "NO", "PL", "PT","RO", "SK", "SI", "ES", "SE", "CH", "GB"},
 	{"US", "US", "CA", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
@@ -587,7 +587,7 @@ static char regionCountryCodes[6][31][3] = {
 	{"AP", "BD", "GU", "HK", "IN", "ID", "KP", "PK", "PG", "PH", "SG", "TH","VN", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", ""},
 	{"_D", ""  , "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""}
 };
-
+#endif
 unsigned int getRegDomain(const char *country)
 {
 	int i;
@@ -649,8 +649,8 @@ static char *countries = NULL;
 char *getCountryList(void)
 {
 	int i;
-	char country[80];
 #ifdef HAVE_BUFFALO
+	char country[80];
 	char *region = getUEnv("region");
 	if (region == NULL) {
 		region = "_D";
