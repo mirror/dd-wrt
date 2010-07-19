@@ -16,6 +16,7 @@
 #include <linux/init.h>
 #include <linux/sysrq.h>
 #include <linux/interrupt.h>
+#include <linux/kmsg_dump.h>
 #include <linux/nmi.h>
 #include <linux/kexec.h>
 #include <linux/debug_locks.h>
@@ -80,6 +81,7 @@ NORET_TYPE void panic(const char * fmt, ...)
 	printk(KERN_EMERG "Kernel panic - not syncing: %s\n",buf);
 	bust_spinlocks(0);
 
+	kmsg_dump(KMSG_DUMP_PANIC);
 	/*
 	 * If we have crashed and we have a crash kernel loaded let it handle
 	 * everything else.
@@ -272,6 +274,7 @@ void oops_enter(void)
 void oops_exit(void)
 {
 	do_oops_enter_exit();
+	kmsg_dump(KMSG_DUMP_OOPS);
 }
 
 #ifdef CONFIG_CC_STACKPROTECTOR
