@@ -5229,10 +5229,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.supergff", wl_ff);
 	}
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
+#ifndef HAVE_BUFFALO
 	if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-// !!! Has to be handled according to regulatory settings
-//              showRadio(wp, "wl_basic.outband", wl_outdoor);
+              showRadio(wp, "wl_basic.outband", wl_outdoor);
 	}
+#endif
 #endif
 
 // antenna settings
