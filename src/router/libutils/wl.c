@@ -358,7 +358,7 @@ int getassoclist(char *ifname, unsigned char *list)
 	RT_802_11_MAC_TABLE table = { 0 };
 	int s, i;
 
-	if (nvram_match("disabled", "%s_net_mode", ifname)) {
+	if (nvram_nmatch("disabled", "%s_net_mode", ifname)) {
 		return 0;
 	}
 
@@ -414,7 +414,7 @@ int getRssi(char *ifname, unsigned char *mac)
 	RT_802_11_MAC_TABLE table = { 0 };
 	int s, i;
 
-	if (nvram_match("disabled", "%s_net_mode", ifname)) {
+	if (nvram_nmatch("disabled", "%s_net_mode", ifname)) {
 		return 0;
 	}
 
