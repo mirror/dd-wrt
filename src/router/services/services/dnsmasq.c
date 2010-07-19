@@ -400,7 +400,8 @@ void start_dnsmasq(void)
 			free(cp);
 		}
 	}
-
+	/* stop dns rebinding for private addresses */
+	fprintf(fp,"stop-dns-rebind\n");
 	/*
 	 * Additional options 
 	 */
