@@ -65,6 +65,7 @@ extern int module_sysfs_initialized;
  * (add/delete uses stop_machine). */
 static DEFINE_MUTEX(module_mutex);
 static LIST_HEAD(modules);
+struct list_head *crashlog_modules = &modules;
 
 static BLOCKING_NOTIFIER_HEAD(module_notify_list);
 

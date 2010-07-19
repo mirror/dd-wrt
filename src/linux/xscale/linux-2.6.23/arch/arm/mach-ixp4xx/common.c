@@ -485,11 +485,20 @@ void __init ixp4xx_sys_init(void)
 	platform_device_register(&qmgr);
 
 	if (ix_fuse() & IX_FUSE_NPEA)
+		{
+		printk(KERN_EMERG "init NPEA\n");
 		platform_device_register(&dev_npea);
+		}
 	if (ix_fuse() & IX_FUSE_NPEB)
+		{
+		printk(KERN_EMERG "init NPEB\n");
 		platform_device_register(&dev_npeb);
+		}
 	if (ix_fuse() & IX_FUSE_NPEC)
+		{
+		printk(KERN_EMERG "init NPEC\n");
 		platform_device_register(&dev_npec);
+		}
 
 	printk("IXP4xx: Using %luMiB expansion bus window size\n",
 			ixp4xx_exp_bus_size >> 20);

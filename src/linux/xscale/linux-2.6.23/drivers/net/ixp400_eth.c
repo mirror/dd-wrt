@@ -653,8 +653,8 @@ static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
     9
 #elif defined(CONFIG_MACH_USR8200)
     /* 1 PHY per NPE port */
-    9, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
-    16,  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
+    16, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
+    9,  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
 
 #elif defined(CONFIG_ARCH_IXDP425)
     /* 1 PHY per NPE port */
@@ -852,6 +852,10 @@ static IxEthAccPortId default_portId[] =
     /* configure port for NPE C first */
     IX_ETH_PORT_2, /* EthAcc Port 2 for ixp1 */
     IX_ETH_PORT_3  /* EthAcc Port 3 for ixp2 */
+#elif defined (CONFIG_MACH_USR8200)
+    /* configure port for NPE C first */
+    IX_ETH_PORT_2, /* EthAcc Port 2 for ixp1 */
+    IX_ETH_PORT_1  /* EthAcc Port 3 for ixp2 */
 #else
     /* configure and use both ports */
     IX_ETH_PORT_1, /* EthAcc Port 1 for ixp0 */
@@ -3074,7 +3078,7 @@ static int ethacc_init(void)
 	portId = default_portId[dev_count];
 
         TRACE;
-
+        printk(KERN_EMERG "init port %d, dev %d\n",portId,dev_count);
 	if (IX_SUCCESS == ixNpeDlLoadedImageFunctionalityGet(
 		default_npeImageId[portId].npeId, &imageId))
 	{
@@ -4462,8 +4466,8 @@ static int __init ixp400_eth_init(void)
 	}
     if (machine_is_usr8200())
 	{
-	phyAddresses[0]=9;
-	phyAddresses[1]=16;
+	phyAddresses[0]=16;
+	phyAddresses[1]=9;
 	default_phy_cfg[0].linkMonitor=FALSE;
 	default_phy_cfg[1].linkMonitor=TRUE;
 	}

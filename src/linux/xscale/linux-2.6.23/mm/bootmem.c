@@ -12,6 +12,7 @@
 #include <linux/pfn.h>
 #include <linux/bootmem.h>
 #include <linux/module.h>
+#include <linux/crashlog.h>
 
 #include <asm/bug.h>
 #include <asm/io.h>
@@ -311,6 +312,7 @@ static unsigned long __init free_all_bootmem_core(pg_data_t *pgdat)
 	int gofast = 0;
 
 	BUG_ON(!bdata->node_bootmem_map);
+	crashlog_init_mem(bdata);
 
 	count = 0;
 	/* first extant page of the node */
