@@ -166,6 +166,10 @@ static struct platform_device *usr8200_devices[] __initdata = {
 	&usr8200_rtc,
 };
 
+#define IXP4XX_ETH_NPEA		0x00
+#define IXP4XX_ETH_NPEB		0x10
+#define IXP4XX_ETH_NPEC		0x20
+
 static void __init usr8200_init(void)
 {
 	ixp4xx_sys_init();
@@ -180,6 +184,7 @@ static void __init usr8200_init(void)
 	*IXP4XX_EXP_CS2 = 0x3fff000 | IXP4XX_EXP_BUS_SIZE(0) | IXP4XX_EXP_BUS_WR_EN |
 	                  IXP4XX_EXP_BUS_CS_EN | IXP4XX_EXP_BUS_BYTE_EN;
 	*IXP4XX_GPIO_GPCLKR = 0x01100000;
+
 
 	/* configure button as input */
 	gpio_line_config(12, IXP4XX_GPIO_IN);
