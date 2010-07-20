@@ -220,8 +220,8 @@ void start_ddns(void)
 	if ((fp = fopen("/tmp/ddns/inadyn.conf", "w"))) {
 		fprintf(fp, "--background");
 		fprintf(fp, " --dyndns_system %s", service);	// service
-		fprintf(fp, " -u %s", nvram_safe_get(_username));	// username/email
-		fprintf(fp, " -p %s", nvram_safe_get(_passwd));	// password
+		fprintf(fp, " -u '%s'", nvram_safe_get(_username));	// username/email
+		fprintf(fp, " -p '%s'", nvram_safe_get(_passwd));	// password
 		fprintf(fp, " -a %s", nvram_safe_get(_hostname));	// alias/hostname
 		if (nvram_match("ddns_enable", "1")
 		    || nvram_match("ddns_enable", "6")
