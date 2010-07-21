@@ -220,8 +220,9 @@ void start_ddns(void)
 	if ((fp = fopen("/tmp/ddns/inadyn.conf", "w"))) {
 		fprintf(fp, "--background");
 		fprintf(fp, " --dyndns_system %s", service);	// service
-		fprintf(fp, " -u '%s'", nvram_safe_get(_username));	// username/email
-		fprintf(fp, " -p '%s'", nvram_safe_get(_passwd));	// password
+		// now direct, in the config file it breaks with complex passwords
+		// fprintf(fp, " -u %s", nvram_safe_get(_username));	// username/email
+		// fprintf(fp, " -p %s", nvram_safe_get(_passwd));	// password
 		fprintf(fp, " -a %s", nvram_safe_get(_hostname));	// alias/hostname
 		if (nvram_match("ddns_enable", "1")
 		    || nvram_match("ddns_enable", "6")
@@ -272,7 +273,13 @@ void start_ddns(void)
 		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
 	}
 
-	ret = eval("inadyn", "--input_file", "/tmp/ddns/inadyn.conf");
+	char uname[64];
+	char pass[64];
+	// call uname and pass directly, otherwise complex usernames (with # i.e.) does not work
+	// we are on a single user system.
+	sprintf(uname, "'%s'", nvram_safe_get(_username));
+	sprintf(pass, "'%s'", nvram_safe_get(_passwd));
+	ret = eval("inadyn", "-u", uname, "-p", pass, "--input_file", "/tmp/ddns/inadyn.conf");
 	dd_syslog(LOG_INFO, "DDNS : inadyn daemon successfully started\n");
 
 	cprintf("done\n");
