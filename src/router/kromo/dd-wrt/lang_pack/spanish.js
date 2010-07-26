@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//    Traducción Española del archivo de referencia - DD-WRT V23 SP1 por Theliel 21/05/2010      //
+//    Traducción Española del archivo de referencia - DD-WRT V24 SP2 por Theliel 26/07/2010         //
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
@@ -1163,7 +1163,7 @@ route.static_ip="IP LAN de Destino";
 hroute.right2="Si el router está hospedando tu conexión de Internet, elegir el modo <em>Puerta de Enlace</em> (en inglés Gateway). Si hay otro router en tu red, entonces selecciona el modo <em>Router</em>.";
 hroute.right4="Este es el número de ruteo único, puedes establecer hasta 50 rutas.";
 hroute.right6="Introduce el nombre que te gustaría asignar a este ruteo.";
-hroute.right8="Este es el host remoto al cual querrías asignar el ruteo estático..";
+hroute.right8="Este es el host remoto al cual querrías asignar el ruteo estático.";
 hroute.right10="Determina el host y la segmento de red.";
 
 
@@ -1325,7 +1325,7 @@ service.ses_script="Script personalizado";
 //hwmon.webservices
 service.hwmon_legend="Monitor de Hardware";
 service.hwmon_critemp="Temperatura crítica (ventilador encendido)";
-service.hwmon_hystemp="Temperatura de Histéresis  (Ventilador apagado)";
+service.hwmon_hystemp="Temperatura de Histéresis (ventilador apagado)";
 
 //rstat.webservices
 service.rstats_legend="Monitor de ancho de banda";
@@ -1512,7 +1512,7 @@ status_inet.traffout="Salida";
 status_inet.previous="Mes Anterior";
 status_inet.next="Mes Siguiente";
 status_inet.dataadmin="Datos de Administración";
-status_inet.delete_confirm="AVISO! Esto eliminará todos los datos sobre el tráfico. ¿Proceder?";
+status_inet.delete_confirm="AVISO! Esto eliminará todos los datos sobre el tráfico. Proceder?";
 
 //help container
 hstatus_inet.right2="Esto muestra la información requerida por tu ISP para la conexión a internet. Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo clic en ese botón.";
