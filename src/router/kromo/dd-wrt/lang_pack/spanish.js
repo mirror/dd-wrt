@@ -826,7 +826,7 @@ hanchorfree.right5="Para más información, por favor visite www.anchorfree.com";
 hanchorfree.right6="La activación es fácil";
 hanchorfree.right7="Una vez activado, AnchorFree le enviará un email a la cuenta registrada con instrucciones sencillas para optimizar su hotspot, FAQs, y otra información pertinente sobre como ganar dinero con su router. Desde esta pantalla de configuración, AnchorFree insertará un pequeño frame de publicidad no intrusivo directamente en los navegadores web que accedan a internet desde este router.";
 hanchorfree.right8="Soporte del cliente";
-hanchorfree.right9="Tiene alguna pregunta? Contacte con nosotros en boxhelp@anchorfree.com";
+hanchorfree.right9="¿Tiene alguna pregunta? Contacte con nosotros en boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//
@@ -1512,7 +1512,7 @@ status_inet.traffout="Salida";
 status_inet.previous="Mes Anterior";
 status_inet.next="Mes Siguiente";
 status_inet.dataadmin="Datos de Administración";
-status_inet.delete_confirm="AVISO! Esto eliminará todos los datos sobre el tráfico. Proceder?";
+status_inet.delete_confirm="AVISO! Esto eliminará todos los datos sobre el tráfico. ¿Proceder?";
 
 //help container
 hstatus_inet.right2="Esto muestra la información requerida por tu ISP para la conexión a internet. Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo clic en ese botón.";
@@ -1658,7 +1658,7 @@ wol.legend="Hosts Disponibles";
 wol.legend2="Direcciónes WOL";
 wol.legend3="Salida";
 wol.legend4="WOL Manual";
-wol.enable="Activar WOL?";
+wol.enable="¿Activar WOL?";
 wol.mac="Dirección(es) MAC Address";
 wol.broadcast="Broadcast de Red";
 wol.udp="Puerto UDP";
