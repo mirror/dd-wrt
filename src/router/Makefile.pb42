@@ -523,12 +523,22 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 	tools/bufenc/encryptRC4 WHR-G301N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw-multi -hw_ver=0 -hcrypt="Buffalo" "WHR-G301N" "WHR-G301N" "1.82" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-g300n-firmware_MULTI.enc
 else
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
+#eu-us region
+	tools/bufenc/encryptRC4 WHR-HP-G300N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.82" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_EU-US.enc
+	tools/bufenc/encryptRC4 WHR-HP-GN 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-GN" "WHR-HP-GN" "1.82" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-gn-firmware_EU-US.enc
+	tools/bufenc/encryptRC4 WHR-G301N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=0 -hcrypt="Buffalo" "WHR-G301N" "WHR-G301N" "1.82" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-g300n-firmware_EU-US.enc
+else
 	tools/bufenc/encryptRC4 WHR-HP-G300N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.82" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 	tools/bufenc/encryptRC4 WHR-HP-GN 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-GN" "WHR-HP-GN" "1.82" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-gn-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 	tools/bufenc/encryptRC4 WHR-G301N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-G301N" "WHR-G301N" "1.82" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-g300n-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+endif
 endif
 
 endif
