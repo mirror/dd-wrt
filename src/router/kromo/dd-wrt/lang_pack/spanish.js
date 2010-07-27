@@ -317,7 +317,7 @@ errmsg.err37="Debes introducir un puerto UDP para poder ejecutar la acción.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Por favor, introduzca la Clave Compartida!";
+errmsg.err38="¡Por favor, introduzca la Clave Compartida!";
 errmsg.err39="Clave incorrecta, debe tener entre 8 y 63 caracteres dentro del código ASCII, o 64 si son dígitos hexadecimales.";
 errmsg.err40="Debes introducir una clave para el campo clave ";
 errmsg.err41="Longitud de clave erronea ";
@@ -493,7 +493,7 @@ config.h22="Restaurar la Configuración.";
 config.legend2="Restaurar la Configuración.";
 config.mess2="Por favor, selecciona el archivo a restaurar";
 config.mess3="C U I D A D O";
-config.mess4="Subir solo aquellos archivos de backup creados por este firmware y modelo del router.<br />No subir ningún archivo que no haya sido creado por esta misma interfaz!";
+config.mess4="Subir solo aquellos archivos de backup creados por este firmware y modelo del router.<br />¡No subir ningún archivo que no haya sido creado por esta misma interfaz!";
 
 //help container
 hconfig.right2="Deberías hacer un backup de tu configuración actual por si tuvieses que reinicar el router a sus valores originales.<br /><br />Clic en el botón <em>Backup</em> para hacer un backup de tu configuración.";
@@ -812,11 +812,11 @@ anchorfree.serviceid="ID del servicio";
 anchorfree.servicestatus="Estado del servicio";
 anchorfree.agreement="Terminos y Condiciones";
 anchorfree.agree="Acepto y estoy de acuerdo";
-anchorfree.validaddr="Es necesario introducir una dirección correcta si se desea que el hotspot aparezca publicado en el mapa wifi!";
-anchorfree.validcity="Es necesario introducir una ciudad y/o código postal si se desea que el hotspot aparezca publicado en el mapa wifi!";
+anchorfree.validaddr="¡Es necesario introducir una dirección correcta si se desea que el hotspot aparezca publicado en el mapa wifi!";
+anchorfree.validcity="¡Es necesario introducir una ciudad y/o código postal si se desea que el hotspot aparezca publicado en el mapa wifi!";
 anchorfree.validcat="Por favor, seleccione una categoría para la publicidad de su hotspot";
 anchorfree.validcountry="Por favor, seleccione un país para su hotspot";
-anchorfree.validterms="Debe de aceptar los términos y condiciones!";
+anchorfree.validterms="¡Debe de aceptar los términos y condiciones!";
 
 hanchorfree.right1="Unirse a la red de hotspot publicitarios de AnchorFree";
 hanchorfree.right2="AnchorFree opera como una red de hotspot publicitarios, permitiendo a los usuarios de DD-WRT generarle beneficios.";
@@ -961,7 +961,7 @@ log.accept="Aceptado";
 // ** Management.asp **//
 management.titl="Administración";
 management.h2="Administración Router";
-management.changepassword="Su router está actualmente desprotegido, y usa un nombre de usuario y contraseña por defecto no seguro, por favor cambielos usando los siguientes diálogos!";
+management.changepassword="¡Su router está actualmente desprotegido, y usa un nombre de usuario y contraseña por defecto no seguro, por favor cambielos usando los siguientes diálogos!";
 management.psswd_legend="Clave del Router";
 management.psswd_user="Usuario del Router";
 management.psswd_pass="Clave del Router";
@@ -1512,7 +1512,7 @@ status_inet.traffout="Salida";
 status_inet.previous="Mes Anterior";
 status_inet.next="Mes Siguiente";
 status_inet.dataadmin="Datos de Administración";
-status_inet.delete_confirm="AVISO! Esto eliminará todos los datos sobre el tráfico. ¿Proceder?";
+status_inet.delete_confirm="¡AVISO! Esto eliminará todos los datos sobre el tráfico. ¿Proceder?";
 
 //help container
 hstatus_inet.right2="Esto muestra la información requerida por tu ISP para la conexión a internet. Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo clic en ese botón.";
@@ -1596,8 +1596,8 @@ upgrad.info1="Despues de Flashear, resetear a";
 upgrad.resetOff="No Resetear";
 upgrad.resetOn="Valores por Defecto";
 upgrad.file="Por Favor elige el archivo a actualizar";
-upgrad.warning="P E L I G R O !";
-upgrad.mess1="La actualización del firmware podría tardar varios miutos.<br />No quites la corriente ni pulses el botón reset!";
+upgrad.warning="¡ P E L I G R O !";
+upgrad.mess1="La actualización del firmware podría tardar varios miutos.<br />¡No quites la corriente ni pulses el botón reset!";
 
 //help container
 hupgrad.right2="Haz clic en el botón <em>Explorar...</em> para elegir el archivo de firmware que deseas subir al router.<br /><br /> Haz clic en el botón <em>Actualizar</em> para comenzar el proceso de actualización. La actualización NO DEBE SER INTERRUMPIDA.";
@@ -2019,7 +2019,7 @@ success.alert2="Si has cambiado la IP de tu router, por favor asegúrate de que p
 success.alert3="Si estás conectado via WLAN, por favor, únete a la red y haz clic en <em>Continuar</em>.";
 
 // ** Logout.asp  **//
-logout.message="Ha cerrado sesión de forma exitosa.<br />Gracias por usar DD-WRT !";
+logout.message="Ha cerrado sesión de forma exitosa.<br />¡ Gracias por usar DD-WRT !";
 
 // ** Setup Assistant **//
 sas.title="Asistente de configuraión";
