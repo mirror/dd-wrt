@@ -339,12 +339,15 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 	char *wan_hostname = nvram_get("wan_hostname");
 	char *vendorclass = nvram_get("dhcpc_vendorclass");
 	char *requestip = nvram_get("dhcpc_requestip");
+	int use_extra = 0;
 
 	symlink("/sbin/rc", "/tmp/udhcpc");
 	if (!script)
 		script = "/tmp/udhcpc";
-	if (!pidfile)
+	if (!pidfile) {
 		pidfile = "/var/run/udhcpc.pid";
+		use_extra = 1;
+	}
 	char *flags = NULL;
 	if (!fork)
 		flags = "-q";
@@ -364,32 +367,29 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 		NULL, NULL,
 		NULL, NULL
 	};
+
 	int i = 7;
+
 	if (flags)
 		dhcp_argv[i++] = flags;
 
-	if (!pidfile) {
+	if (use_extra) {
 		if (vendorclass != NULL && strlen(vendorclass) > 0) {
-			dhcp_argv[i] = "-V";
-			i++;
-			dhcp_argv[i] = vendorclass;
-			i++;
+			dhcp_argv[i++] = "-V";
+			dhcp_argv[i++] = vendorclass;
 		}
 
 		if (requestip != NULL && strlen(requestip) > 0) {
-			dhcp_argv[i] = "-r";
-			i++;
-			dhcp_argv[i] = requestip;
-			i++;
+			dhcp_argv[i++] = "-r";
+			dhcp_argv[i++] = requestip;
 		}
 
 		if (wan_hostname != NULL && strlen(wan_hostname) > 0) {
-			dhcp_argv[i] = "-H";
-			i++;
-			dhcp_argv[i] = wan_hostname;
-			i++;
+			dhcp_argv[i++] = "-H";
+			dhcp_argv[i++] = wan_hostname;
 		}
 	}
+
 	_evalpid(dhcp_argv, NULL, 0, &pid);
 
 }
