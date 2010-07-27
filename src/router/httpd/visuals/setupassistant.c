@@ -677,13 +677,16 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\"  onchange=\"refresh(this.form);\">\n",
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+
 #ifdef HAVE_MADWIFI_MIMO
+fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
+/* limit channel options by mode */
 	if (is_ar5008(prefix)) {
-		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
-		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
-		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-		     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
-		     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
+		if ((nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
+		     || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
+		     || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
+		     || nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
+		     || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix)))
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
 				  nvram_selmatch(wp, wl_width,
@@ -692,11 +695,12 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (!is_ar5008(prefix)
 	    || (is_ar5008(prefix)
-		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
+		&& (nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
+		    || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
+		    || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
+		    || nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
+		    || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix))))
+
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -909,7 +913,7 @@ void sas_show_netmode(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\">\n",
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" onchange=\"refresh(this.form);\">\n",
 		  wl_net_mode);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp,
