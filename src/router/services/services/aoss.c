@@ -58,6 +58,8 @@ void start_aoss(void)
 	sysprintf("iwconfig aoss key [1] 4D454C434F");
 	sysprintf("iwconfig aoss key [1]");
 	sysprintf("ifconfig aoss 0.0.0.0 up");
+	sysprintf("iptables -I OUTPUT -o aoss -j ACCEPT"); 
+	sysprintf("iptables -I INPUT -i aoss -j ACCEPT"); 
 
 	ret = eval("aoss", "-i", "aoss", "-m", "ap");
 	dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
@@ -68,6 +70,8 @@ void start_aoss(void)
 void stop_aoss(void)
 {
 	stop_process("aoss", "buffalo aoss daemon");
+	sysprintf("iptables -D OUTPUT -o aoss -j ACCEPT"); 
+	sysprintf("iptables -D INPUT -i aoss -j ACCEPT"); 
 	return;
 }
 
