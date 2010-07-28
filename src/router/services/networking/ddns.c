@@ -273,13 +273,9 @@ void start_ddns(void)
 		nvram2file("ddns_time", "/tmp/ddns/inadyn_time.cache");
 	}
 
-	char uname[64];
-	char pass[64];
 	// call uname and pass directly, otherwise complex usernames (with # i.e.) does not work
 	// we are on a single user system.
-	sprintf(uname, "'%s'", nvram_safe_get(_username));
-	sprintf(pass, "'%s'", nvram_safe_get(_passwd));
-	ret = eval("inadyn", "-u", uname, "-p", pass, "--input_file", "/tmp/ddns/inadyn.conf");
+	ret = sysprintf("inadyn -u \'%s\' -p \'%s\' --input_file /tmp/ddns/inadyn.conf",  nvram_safe_get(_username), nvram_safe_get(_passwd));
 	dd_syslog(LOG_INFO, "DDNS : inadyn daemon successfully started\n");
 
 	cprintf("done\n");
