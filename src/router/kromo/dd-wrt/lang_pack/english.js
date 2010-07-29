@@ -2060,6 +2060,7 @@ wl_basic.if_label="Label (optional)";
 wl_basic.if_info="Info (optional)";
 wl_basic.advanced_options="Advanced Options";
 wl_basic.rate_control="Rate Control Algorithm";
+wl_basic.ap83_vap_note="Adding more than three virtual interfaces will lead to lower performance with some specific client devices on these additional virtual interfaces.";
 
 //help container
 var hwl_basic = new Object();
