@@ -3691,6 +3691,15 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
+#ifdef HAVE_BUFFALO
+#ifdef HAVE_AP83
+		if( count == 4 ) {
+			websWrite(wp, "<div class=\"warning\">\n");
+			websWrite(wp, "  <p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
+			websWrite(wp, "</div>\n<br>\n");
+		}
+#endif
+#endif
 	}
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
@@ -4191,13 +4200,14 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
-		     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
+		     || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
 				  nvram_match(wl_width,
 					      "2040") ?
 				  "selected=\\\"selected\\\"" : "");
-
+			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
+		}
 	}
 	if (!is_ar5008(prefix)
 	    || (is_ar5008(prefix)
@@ -4567,6 +4577,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			if (is_ar5008(prefix)
 			    && (nvram_match(wl_width, "40")
 				|| nvram_match(wl_width, "2040"))) {
+			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (2)\n");
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp,
 					  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
@@ -4813,7 +4824,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_MADWIFI_MIMO
+/* limit channel options by mode */
 	if (is_ar5008(prefix)) {
+		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
 			  nvram_match(wl_width,
@@ -4821,6 +4838,14 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			  "");
 
 	}
+	if (!is_ar5008(prefix)
+	     || (is_ar5008(prefix)
+		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
+
 #endif
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -4899,6 +4924,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  nvram_nmatch("20", "%s_nbw",
 					       prefix) ?
 				  "selected=\\\"selected\\\"" : "");
+fprintf(stderr, "[CHANNEL WIDTH] 40 Mhz (4)\n");
 			websWrite(wp,
 				  "<option value=\"40\" %s>40 MHz</option>\n",
 				  nvram_nmatch("40", "%s_nbw",
@@ -4935,6 +4961,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			if (is_ar5008(prefix)
 			    && (nvram_match(wl_width, "40")
 				|| nvram_match(wl_width, "2040"))) {
+			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (4)\n");
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp,
 					  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
