@@ -166,6 +166,9 @@ endif
 ifeq ($(CONFIG_AOSS),y)
   CFLAGS += -DHAVE_AOSS
 endif
+ifeq ($(CONFIG_AP83),y)
+  CFLAGS += -DHAVE_AP83
+endif
 ifeq ($(CONFIG_THOM),y)
   CFLAGS += -DHAVE_THOM
 endif
