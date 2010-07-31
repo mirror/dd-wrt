@@ -306,100 +306,22 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 	goto rept;
 }
 
-#ifdef HAVE_RB500
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	FILE *fp = fopen("/proc/cpuinfo", "rb");
-
-	if (fp == NULL) {
-		websWrite(wp, "unknown");
-		return;
-	}
-	int cnt = 0;
-	int b = 0;
-
-	while (b != EOF) {
-		b = getc(fp);
-		if (b == ':')
-			cnt++;
-
-		if (cnt == 4) {
-			getc(fp);
-			char cpuclk[4];
-
-			cpuclk[0] = getc(fp);
-			cpuclk[1] = getc(fp);
-			cpuclk[2] = getc(fp);
-			cpuclk[3] = 0;
-			websWrite(wp, cpuclk);
-			fclose(fp);
-			return;
-		}
-	}
-
-	fclose(fp);
-	websWrite(wp, "unknown");
-	return;
-}
-
-#elif HAVE_STORM
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	websWrite(wp, "300");
-	return;
-}
+#ifdef HAVE_STORM
+    #define HARDFREQ "300"
 #elif HAVE_OPENRISC
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	websWrite(wp, "166");
-	return;
-}
+    #define HARDFREQ "166"
 #elif HAVE_RT3052
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	websWrite(wp, "384");
-	return;
-}
+    #define HARDFREQ "384"
 #elif HAVE_RT2880
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	websWrite(wp, "266");
-	return;
-}
+    #define HARDFREQ "266"
 #elif HAVE_XSCALE
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	FILE *fp = fopen("/proc/cpuinfo", "rb");
-
-	if (fp == NULL) {
-		websWrite(wp, "unknown");
-		return;
-	}
-	int cnt = 0;
-	int b = 0;
-
-	while (b != EOF) {
-		b = getc(fp);
-		if (b == ':')
-			cnt++;
-		if (cnt == 2) {
-			getc(fp);
-			char cpuclk[4];
-
-			cpuclk[0] = getc(fp);
-			cpuclk[1] = getc(fp);
-			cpuclk[2] = getc(fp);
-			cpuclk[3] = 0;
-			websWrite(wp, cpuclk);
-			fclose(fp);
-			return;
-		}
-	}
-
-	fclose(fp);
-	websWrite(wp, "unknown");
-	return;
-}
+    #define FREQLINE 2
+#elif defined(HAVE_MAGICBOX) || defined(HAVE_RB600)
+    #define FREQLINE 3
+#elif defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_ADM5120) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_CA8) || defined(HAVE_RB500)
+    #define FREQLINE 4
+#elif defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE)
+    #define FREQLINE 5
 #elif HAVE_X86
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
@@ -437,145 +359,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "unknown");
 	return;
 }
-#elif HAVE_MAGICBOX
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	FILE *fp = fopen("/proc/cpuinfo", "rb");
-
-	if (fp == NULL) {
-		websWrite(wp, "unknown");
-		return;
-	}
-	int cnt = 0;
-	int b = 0;
-
-	while (b != EOF) {
-		b = getc(fp);
-		if (b == ':')
-			cnt++;
-		if (cnt == 3) {
-			getc(fp);
-			char cpuclk[4];
-
-			cpuclk[0] = getc(fp);
-			cpuclk[1] = getc(fp);
-			cpuclk[2] = getc(fp);
-			cpuclk[3] = 0;
-			websWrite(wp, cpuclk);
-			fclose(fp);
-			return;
-		}
-	}
-
-	fclose(fp);
-	websWrite(wp, "unknown");
-	return;
-}
-#elif HAVE_RB600
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	FILE *fp = fopen("/proc/cpuinfo", "rb");
-
-	if (fp == NULL) {
-		websWrite(wp, "unknown");
-		return;
-	}
-	int cnt = 0;
-	int b = 0;
-
-	while (b != EOF) {
-		b = getc(fp);
-		if (b == ':')
-			cnt++;
-		if (cnt == 3) {
-			getc(fp);
-			char cpuclk[4];
-
-			cpuclk[0] = getc(fp);
-			cpuclk[1] = getc(fp);
-			cpuclk[2] = getc(fp);
-			cpuclk[3] = 0;
-			websWrite(wp, cpuclk);
-			fclose(fp);
-			return;
-		}
-	}
-
-	fclose(fp);
-	websWrite(wp, "unknown");
-	return;
-}
-#elif defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_ADM5120) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_CA8)
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	FILE *fp = fopen("/proc/cpuinfo", "rb");
-
-	if (fp == NULL) {
-		websWrite(wp, "unknown");
-		return;
-	}
-	int cnt = 0;
-	int b = 0;
-
-	while (b != EOF) {
-		b = getc(fp);
-		if (b == ':')
-			cnt++;
-		if (cnt == 4) {
-			getc(fp);
-			char cpuclk[4];
-
-			cpuclk[0] = getc(fp);
-			cpuclk[1] = getc(fp);
-			cpuclk[2] = getc(fp);
-			cpuclk[3] = 0;
-			websWrite(wp, cpuclk);
-			fclose(fp);
-			return;
-		}
-	}
-
-	fclose(fp);
-	websWrite(wp, "unknown");
-	return;
-}
-#elif defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE)
-void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
-{
-	FILE *fp = fopen("/proc/cpuinfo", "rb");
-
-	if (fp == NULL) {
-		websWrite(wp, "unknown");
-		return;
-	}
-	int cnt = 0;
-	int b = 0;
-
-	while (b != EOF) {
-		b = getc(fp);
-		if (b == ':')
-			cnt++;
-		if (cnt == 5) {
-			getc(fp);
-			char cpuclk[4];
-
-			cpuclk[0] = getc(fp);
-			cpuclk[1] = getc(fp);
-			cpuclk[2] = getc(fp);
-			cpuclk[3] = 0;
-			websWrite(wp, cpuclk);
-			fclose(fp);
-			return;
-		}
-	}
-
-	fclose(fp);
-	websWrite(wp, "unknown");
-	return;
-}
-
 #else
-
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	char *clk = nvram_get("clkfreq");
@@ -603,65 +387,62 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
+
+#ifdef FREQLINE
+void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *fp = fopen("/proc/cpuinfo", "rb");
+
+	if (fp == NULL) {
+		websWrite(wp, "unknown");
+		return;
+	}
+	int cnt = 0;
+	int b = 0;
+
+	while (b != EOF) {
+		b = getc(fp);
+		if (b == ':')
+			cnt++;
+
+		if (cnt == FREQLINE) {
+			getc(fp);
+			char cpuclk[4];
+
+			cpuclk[0] = getc(fp);
+			cpuclk[1] = getc(fp);
+			cpuclk[2] = getc(fp);
+			cpuclk[3] = 0;
+			websWrite(wp, cpuclk);
+			fclose(fp);
+			return;
+		}
+	}
+
+	fclose(fp);
+	websWrite(wp, "unknown");
+	return;
+}
+#undef FREQLINE
+#elif HARDFREQ
+void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, HARDFREQ);
+	return;
+}
+#undef HARDFREQ
+#endif
+
+
 void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_RB600
-	websWrite(wp, "FreeScale MPC8343");
-#else
-	FILE *fcpu = fopen("/proc/cpuinfo", "r");
 
-	if (fcpu == NULL) {
+	char *str = cpustring();
+	if (!str) {
 		websWrite(wp, "Not Detected!\n");
 		return;
 	}
-	char buf[256];
-	int i;
-
-#ifdef HAVE_MAGICBOX
-	int cnt = 0;
-#endif
-#ifdef HAVE_X86
-	int cnt = 0;
-#endif
-	for (i = 0; i < 256; i++) {
-		int c = getc(fcpu);
-
-		if (c == EOF) {
-			websWrite(wp, "Not Detected!\n");
-			fclose(fcpu);
-			return;
-		}
-		if (c == ':')
-#ifdef HAVE_MAGICBOX
-			cnt++;
-		if (cnt == 2)
-			break;
-#elif HAVE_X86
-			cnt++;
-		if (cnt == 5)
-			break;
-#else
-			break;
-#endif
-	}
-	getc(fcpu);
-	for (i = 0; i < 256; i++) {
-		int c = getc(fcpu);
-
-		if (c == EOF) {
-			websWrite(wp, "Not Detected!\n");
-			fclose(fcpu);
-			return;
-		}
-		if (c == 0xa || c == 0xd)
-			break;
-		buf[i] = c;
-	}
-	buf[i] = 0;
-	websWrite(wp, buf);
-	fclose(fcpu);
-	return;
-#endif
+	websWrite(wp, str);	
 }
 
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
@@ -3691,14 +3472,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
-#ifdef HAVE_BUFFALO
-#ifdef HAVE_AP83
-		if( count == 4 ) {
+#ifdef HAVE_MADWIFI_MIMO
+		if( count == 4 && isap8x()) {
 			websWrite(wp, "<div class=\"warning\">\n");
 			websWrite(wp, "  <p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
 			websWrite(wp, "</div>\n<br>\n");
 		}
-#endif
 #endif
 	}
 	websWrite(wp, "<div class=\"center\">\n");
