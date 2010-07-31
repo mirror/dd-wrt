@@ -1961,9 +1961,8 @@ int internal_getRouterBrand()
 		setRouter("Linksys WAP54G v3.x");
 		return ROUTER_WAP54G_V3;
 	}
-	
-	if (boardnum == 1
-	    && nvram_match("boardtype", "0xE4CD")
+
+	if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
 	    && nvram_match("boardrev", "0x1700")) {
 		cprintf("router is wnr2000 v2\n");
 		setRouter("Netgear WNR2000 v2");
@@ -2858,6 +2857,79 @@ int sv_valid_hwaddr(char *value)
 	return tag;
 }
 
+char *cpustring(void)
+{
+#ifdef HAVE_RB600
+	websWrite(wp, "FreeScale MPC8343");
+#else
+	FILE *fcpu = fopen("/proc/cpuinfo", "r");
+
+	if (fcpu == NULL) {
+		return NULL;
+	}
+	static char buf[256];
+	int i;
+
+#ifdef HAVE_MAGICBOX
+	int cnt = 0;
+#endif
+#ifdef HAVE_X86
+	int cnt = 0;
+#endif
+	for (i = 0; i < 256; i++) {
+		int c = getc(fcpu);
+
+		if (c == EOF) {
+			fclose(fcpu);
+			return NULL;
+		}
+		if (c == ':')
+#ifdef HAVE_MAGICBOX
+			cnt++;
+		if (cnt == 2)
+			break;
+#elif HAVE_X86
+			cnt++;
+		if (cnt == 5)
+			break;
+#else
+			break;
+#endif
+	}
+	getc(fcpu);
+	for (i = 0; i < 256; i++) {
+		int c = getc(fcpu);
+
+		if (c == EOF) {
+			fclose(fcpu);
+			return NULL;
+		}
+		if (c == 0xa || c == 0xd)
+			break;
+		buf[i] = c;
+	}
+	buf[i] = 0;
+	fclose(fcpu);
+	return buf;
+#endif
+}
+
+#ifdef HAVE_MADWIFI_MIMO
+
+int isap8x(void)
+{
+#define CPUSTR "Atheros AR91"
+	char *str = cpustring();
+	if (str && !strncmp(str, CPUSTR, 12))
+		return 1;
+	else
+		return 0;
+#undef CPUSTR
+
+}
+
+#endif
+
 int led_control(int type, int act)
 /*
  * type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
@@ -3355,7 +3427,7 @@ int led_control(int type, int act)
 	case ROUTER_NETGEAR_WNR2000V2:
 		//power_gpio = ??;
 		diag_gpio = 0x002;
-		ses_gpio = 0x007;  //WPS led
+		ses_gpio = 0x007;	//WPS led
 		connected_gpio = 0x006;
 		break;
 	case ROUTER_WRT320N:
