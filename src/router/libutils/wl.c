@@ -1242,11 +1242,10 @@ int isAssociated(char *ifname)
 
 	if (iw_get_ext(getsocket(), ifname, SIOCGIWAP, &wrq) >= 0) {
 		for (i = 0; i < 6; i++)
-			if (wrq.u.ap_addr.sa_data[i] != 0)
-				{
+			if (wrq.u.ap_addr.sa_data[i] != 0) {
 				closesocket();
 				return 1;
-				}
+			}
 	}
 	closesocket();
 	return 0;
@@ -1354,7 +1353,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	// fprintf(stderr,"channel number %d\n", achans.ic_nchans);
 	struct wifi_channels *list =
 	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
-					   (achans.ic_nchans + 1));
+						(achans.ic_nchans + 1));
 
 	char wl_mode[16];
 	char wl_turbo[16];
@@ -1667,14 +1666,14 @@ int getassoclist(char *ifname, unsigned char *list)
 	int s;
 	unsigned int *count = (unsigned int *)list;
 
-	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
-	{
+	if (nvram_nmatch("disabled", "%s_net_mode", ifname)) {
 		free(buf);
 		return 0;
 	}
 	int mincount = 0;
 
-	if (nvram_nmatch("wdssta", "%s_mode", ifname) || nvram_nmatch("sta", "%s_mode", ifname)
+	if (nvram_nmatch("wdssta", "%s_mode", ifname)
+	    || nvram_nmatch("sta", "%s_mode", ifname)
 	    || nvram_nmatch("wet", "%s_mode", ifname)) {
 		int assoc = isAssociated(ifname);
 
@@ -1739,13 +1738,16 @@ int getassoclist(char *ifname, unsigned char *list)
 
 void radio_off(int idx)
 {
-	if (idx != -1)
+	if (idx != -1) {
 		sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", idx);
-	else {
+		sysprintf("echo 1 > /proc/sys/dev/wifi%d/ledon", idx);	//switch off led
+	} else {
 		int cc = getdevicecount();
 		int i;
-		for (i = 0; i < cc; i++)
+		for (i = 0; i < cc; i++) {
 			sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", i);
+			sysprintf("echo 1 > /proc/sys/dev/wifi%d/ledon", i);	//switch off led
+		}
 	}
 }
 
