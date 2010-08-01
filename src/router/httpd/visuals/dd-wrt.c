@@ -388,7 +388,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #endif
 
 
-#ifdef FREQLINE
+#if defined(FREQLINE)
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
@@ -424,7 +424,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 #undef FREQLINE
-#elif HARDFREQ
+#elif defined(HARDFREQ)
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, HARDFREQ);
