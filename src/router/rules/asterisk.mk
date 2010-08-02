@@ -40,8 +40,8 @@ asterisk:
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
-	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
+	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include" \
+	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -51,8 +51,8 @@ asterisk:
 	make -C asterisk
 
 asterisk-install:
-	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
-	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
+	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include" \
+	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -60,8 +60,8 @@ asterisk-install:
 		OPTIMIZE="" \
 		DESTDIR=/tmp/asterisk \
 		install samples
-	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
-	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC" \
+	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include" \
+	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
