@@ -33,6 +33,7 @@ static const char rcsid[] _U_ =
 #include <stdio.h>
 
 #include "interface.h"
+#ifndef HAVE_BPF_DUMP
 
 void
 bpf_dump(struct bpf_program *p, int option)
@@ -64,3 +65,4 @@ bpf_dump(struct bpf_program *p, int option)
 		puts(bpf_image(insn, i));
 	}
 }
+#endif
