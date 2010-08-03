@@ -476,6 +476,8 @@
 // Netgear WNR2000 v2 (BCM4716B0 cpu, 4MB serial flash / 32MB ram, fccid: Netgear PY309100105)
 #define ROUTER_NETGEAR_WNR2000V2 0x9711
 
+#define ROUTER_BOARD_GW2388 0x980f
+
 
 
 #define NVROUTER "DD_BOARD"
