@@ -482,6 +482,18 @@ void start_restore_defaults(void)
 		{"wan_default", "ixp1", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_LAGUNA
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames",
+		 "eth0 eth1 ath0 ath1 ath2 ath3",
+		 0},
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_MAGICBOX
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -1046,6 +1058,16 @@ void start_restore_defaults(void)
 	{
 		restore_defaults = 1;
 	}
+#elif HAVE_LAGUNA
+	linux_overrides = generic;
+	int brand = getRouterBrand();
+
+	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
+		// nvram_invmatch("os_name", 
+		// "linux"))
+	{
+		restore_defaults = 1;
+	}
 #elif HAVE_RB600
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -1433,6 +1455,11 @@ void start_restore_defaults(void)
 	}
 #endif
 #ifdef HAVE_RT2880
+	if (restore_defaults) {
+		eval("erase", "nvram");
+	}
+#endif
+#ifdef HAVE_LAGUNA
 	if (restore_defaults) {
 		eval("erase", "nvram");
 	}

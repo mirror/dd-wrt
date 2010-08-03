@@ -140,6 +140,9 @@ endif
 ifeq ($(CONFIG_OLED),y)
 CFLAGS_EXTRA += -DHAVE_OLED
 endif
+ifeq ($(CONFIG_LAGUNA),y)
+CFLAGS_EXTRA += -DHAVE_LAGUNA
+endif
 ifeq ($(CONFIG_TONZE),y)
 CFLAGS_EXTRA += -DHAVE_TONZE
 endif
