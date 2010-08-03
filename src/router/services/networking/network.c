@@ -1178,10 +1178,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_LAGUNA
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1 ath2 ath3");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1 ath2 ath3");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
