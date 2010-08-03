@@ -55,6 +55,7 @@
 #include <services.h>
 
 #ifdef HAVE_CPUTEMP
+#ifndef HAVE_LAGUNA
 
 #ifdef HAVE_GATEWORX
 #define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028"
@@ -81,5 +82,5 @@ void start_hwmon(void)
 		  TEMP_PREFIX);
 	dd_syslog(LOG_INFO, "hwmon successfully started\n");
 }
-
+#endif
 #endif

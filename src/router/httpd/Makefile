@@ -168,6 +168,8 @@ ifeq ($(CONFIG_AOSS),y)
 endif
 ifeq ($(CONFIG_LAGUNA),y)
   CFLAGS += -DHAVE_LAGUNA
+  CFLAGS += -DHAVE_CPUTEMP
+  CFLAGS += -DHAVE_VOLT
 endif
 ifeq ($(CONFIG_AP83),y)
   CFLAGS += -DHAVE_AP83
