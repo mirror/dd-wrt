@@ -519,8 +519,25 @@ int internal_getRouterBrand()
 	setRouter("SuperGerry");
 	return ROUTER_SUPERGERRY;
 #elif HAVE_LAGUNA
-	setRouter("Gateworks Laguna");
-	return ROUTER_BOARD_GW2388;
+	char *filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-adapter/i2c-0/0-0050/eeprom";	/* bank2=0x100                                                                                           */
+	FILE *file = fopen(filename, "rb");
+	if (file) {
+		fseek(file, 0x130, SEEK_SET);
+		char gwid[9];
+		fread(&gwid[0], 9, 1, file);
+		fclose(file);
+		if (!strncmp(gwid, "GW2388-4", 8)) {
+			setRouter("Gateworks Laguna GW2388-4");
+			return ROUTER_BOARD_GW2388;
+		} else {
+			setRouter("Gateworks Laguna GWXXXX-X");
+			return ROUTER_BOARD_GW2388;
+		}
+	}else{
+			setRouter("Gateworks Laguna");
+			return ROUTER_BOARD_GW2388;
+	
+	}
 #elif HAVE_MI424WR
 	setRouter("Actiontec MI424WR");
 	return ROUTER_BOARD_GATEWORX_GW2345;
