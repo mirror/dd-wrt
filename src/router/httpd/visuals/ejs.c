@@ -2142,6 +2142,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	    fopen
 	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
 	     "rb");
+#elif HAVE_LAGUNA
+	int TEMP_MUL = 20;
+	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input","rb");
 #else
 #define TEMP_MUL 1000
 #ifdef HAVE_X86
@@ -2185,11 +2188,11 @@ void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_VOLT
 void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 {
-	FILE *fp =
-	    fopen
-	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt",
-	     "rb");
-
+#ifdef HAVE_LAGUNA
+	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input","rb");
+#else
+	FILE *fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt","rb");
+#endif
 	if (fp == NULL) {
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 		// i2c 
