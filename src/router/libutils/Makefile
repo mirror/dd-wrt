@@ -97,6 +97,9 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
   CFLAGS += -DHAVE_BUFFALO
 endif
+ifeq ($(CONFIG_LAGUNA),y)
+  CFLAGS += -DHAVE_LAGUNA
+endif
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
   CFLAGS += -DBUFFALO_JP
 endif
