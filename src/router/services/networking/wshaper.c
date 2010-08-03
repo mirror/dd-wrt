@@ -74,6 +74,7 @@ void svqos_reset_ports(void)
 #ifndef HAVE_LSX
 #ifndef HAVE_DANUBE
 #ifndef HAVE_STORM
+#ifndef HAVE_LAGUNA
 #ifndef HAVE_OPENRISC
 #ifndef HAVE_ADM5120
 #ifndef HAVE_TW6600
@@ -132,6 +133,7 @@ void svqos_reset_ports(void)
 #endif
 #endif
 #endif
+#endif
 }
 
 int svqos_set_ports(void)
@@ -147,6 +149,7 @@ int svqos_set_ports(void)
 #ifndef HAVE_CA8
 #ifndef HAVE_SOLO51
 #ifndef HAVE_X86
+#ifndef HAVE_LAGUNA
 #ifndef HAVE_TW6600
 #ifndef HAVE_PB42
 #ifndef HAVE_LSX
@@ -183,6 +186,7 @@ int svqos_set_ports(void)
 			     atoi(level) / 10 - 1, loop);
 		}
 	}
+#endif
 #endif
 #endif
 #endif
@@ -702,6 +706,9 @@ void stop_wshaper(void)
 	ret = eval(script_name, "stop", "XX", "ixp1");
 	ret = eval(script_name, "stop", "XX", "ath0");
 	ret = eval(script_name, "stop", "XX", "ath1");
+#elif HAVE_LAGUNA
+	ret = eval(script_name, "stop", "XX", "eth0");
+	ret = eval(script_name, "stop", "XX", "eth1");
 #elif HAVE_MAGICBOX
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "ath0");
