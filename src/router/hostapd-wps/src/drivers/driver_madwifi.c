@@ -458,21 +458,21 @@ madwifi_set_key(const char *ifname, void *priv, enum wpa_alg alg,
 
 	memset(&wk, 0, sizeof(wk));
 	wk.ik_type = cipher;
-	wk.ik_flags = IEEE80211_KEY_RECV;
-	wk.ik_keyix = key_idx;
+	wk.ik_flags = IEEE80211_KEY_RECV | IEEE80211_KEY_XMIT;
+
+	if (addr == NULL) {
+		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
+		wk.ik_keyix = key_idx;
+		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
+	} else if (!memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
+		wk.ik_flags |= IEEE80211_KEY_GROUP;
+		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
+	} else {
+		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
+		wk.ik_keyix = IEEE80211_KEYIX_NONE;
+	}
 	wk.ik_keylen = key_len;
 	memcpy(wk.ik_keydata, key, key_len);
-
-	if (addr == NULL ||
-	    !memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN))
-		wk.ik_flags |= IEEE80211_KEY_GROUP | IEEE80211_KEY_DEFAULT;
-
-	if (set_tx) {
-		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
-		wk.ik_flags |= IEEE80211_KEY_XMIT;
-	} else {
-		memset(wk.ik_macaddr, 0, IEEE80211_ADDR_LEN);
-	}
 
 	ret = set80211priv(drv, IEEE80211_IOCTL_SETKEY, &wk, sizeof(wk));
 	if (ret < 0) {
