@@ -879,6 +879,7 @@ static void nat_postrouting(void)
 #ifndef HAVE_ADM5120
 #ifndef HAVE_WHRAG108
 #ifndef HAVE_XSCALE
+#ifndef HAVE_LAGUNA
 #ifndef HAVE_X86
 #ifndef HAVE_CA8
 #ifndef HAVE_RB500
@@ -887,6 +888,7 @@ static void nat_postrouting(void)
 			if (nvram_match("block_loopback", "0"))
 				system2
 				    ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+#endif
 #endif
 #endif
 #endif
@@ -3076,6 +3078,14 @@ void start_firewall(void)
 	} else
 		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
 #elif HAVE_XSCALE
+	if ((fp =
+	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
+		   "r+"))) {
+		fprintf(fp, "%d", 65);
+		fclose(fp);
+	} else
+		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
+#elif HAVE_LAGUNA
 	if ((fp =
 	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
 		   "r+"))) {
