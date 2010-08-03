@@ -2143,7 +2143,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
 	     "rb");
 #elif HAVE_LAGUNA
-	int TEMP_MUL = 20;
+	int TEMP_MUL = 10;
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input","rb");
 #else
 #define TEMP_MUL 1000
