@@ -129,6 +129,9 @@ int do_ntp(void)		// called from ntp_main and
 #ifdef HAVE_STORM
 		eval("hwclock", "-w");
 #endif
+#ifdef HAVE_LAGUNA
+		eval("hwclock", "-w");
+#endif
 		/* 
 		 * time_t now = time(0); dd_syslog(LOG_INFO, "time updated: %s\n",
 		 * ctime(&now)); 

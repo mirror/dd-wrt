@@ -148,6 +148,9 @@ endif
 ifeq ($(CONFIG_DIR600),y)
 CFLAGS += -DHAVE_DIR600
 endif
+ifeq ($(CONFIG_LAGUNA),y)
+CFLAGS += -DHAVE_LAGUNA
+endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
