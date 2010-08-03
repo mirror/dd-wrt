@@ -1914,6 +1914,12 @@ fprintf( stderr, "[USB] checking...\n" );
 		cprintf("loading usbcore\n");
 		insmod("usbcore");
 
+		if (nvram_match("usb_usb2", "1")) {
+			cprintf("loading usb2 module\n");
+			insmod("ehci-hcd");
+		}
+
+
 		if (nvram_match("usb_uhci", "1")) {
 			cprintf("loading usb-uhci\n");
 			insmod("usb-uhci");
@@ -1924,11 +1930,6 @@ fprintf( stderr, "[USB] checking...\n" );
 			cprintf("loading usb-ohci\n");
 			insmod("usb-ohci");
 			insmod("ohci-hcd");
-		}
-
-		if (nvram_match("usb_usb2", "1")) {
-			cprintf("loading usb2 module\n");
-			insmod("ehci-hcd");
 		}
 
 		if (nvram_match("usb_storage", "1")) {
