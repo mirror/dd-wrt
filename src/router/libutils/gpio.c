@@ -621,6 +621,30 @@ int get_gpio(int pin)
 	return value;
 }
 
+
+#elif HAVE_LAGUNA
+void set_gpio(int pin, int value)
+{
+switch(pin)
+{
+case 16: // main LED
+sysprintf("echo %d > /sys/devices/platform/leds-gpio/leds/user1/brightness",value);
+break;
+//case 17: // sec LED (not yet)
+//sysprintf("echo %d /sys/devices/platform/leds-gpio/leds/user1/brightness",value);
+//break;
+
+
+}
+
+}
+
+int get_gpio(int pin)
+{
+
+}
+
+
 #else
 
 void set_gpio(int pin, int value)
