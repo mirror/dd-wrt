@@ -542,7 +542,7 @@ void set_gpio(int pin, int value)
 			perror("ioctl");
 		}
 	} else {
-		ioctl(fd, cmd, &value); // silently ignore			
+		ioctl(fd, cmd, &value);	// silently ignore                      
 	}
 	close(fd);
 }
@@ -596,7 +596,7 @@ int get_gpio(int pin)
 			value = 1;
 	} else {
 		if (ioctl(fd, cmd, &value) < 0) {
-			close(fd); // silently ignore errors
+			close(fd);	// silently ignore errors
 			return 0;
 		}
 		close(fd);
@@ -621,29 +621,112 @@ int get_gpio(int pin)
 	return value;
 }
 
-
 #elif HAVE_LAGUNA
+#include <linux/mii.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+
+#define IOC_GPIODEV_MAGIC  'B'
+
+#define _IOC_NRBITS	8
+#define _IOC_TYPEBITS	8
+
+/*
+ * Let any architecture override either of the following before
+ * including this file.
+ */
+
+#ifndef _IOC_SIZEBITS
+# define _IOC_SIZEBITS	14
+#endif
+
+#ifndef _IOC_DIRBITS
+# define _IOC_DIRBITS	2
+#endif
+
+#define _IOC_NRMASK	((1 << _IOC_NRBITS)-1)
+#define _IOC_TYPEMASK	((1 << _IOC_TYPEBITS)-1)
+#define _IOC_SIZEMASK	((1 << _IOC_SIZEBITS)-1)
+#define _IOC_DIRMASK	((1 << _IOC_DIRBITS)-1)
+
+#define _IOC_NRSHIFT	0
+#define _IOC_TYPESHIFT	(_IOC_NRSHIFT+_IOC_NRBITS)
+#define _IOC_SIZESHIFT	(_IOC_TYPESHIFT+_IOC_TYPEBITS)
+#define _IOC_DIRSHIFT	(_IOC_SIZESHIFT+_IOC_SIZEBITS)
+
+/*
+ * Direction bits, which any architecture can choose to override
+ * before including this file.
+ */
+
+#ifndef _IOC_NONE
+# define _IOC_NONE	0U
+#endif
+
+#ifndef _IOC_WRITE
+# define _IOC_WRITE	1U
+#endif
+
+#ifndef _IOC_READ
+# define _IOC_READ	2U
+#endif
+
+#define _IOC(dir,type,nr,size) \
+	(((dir)  << _IOC_DIRSHIFT) | \
+	 ((type) << _IOC_TYPESHIFT) | \
+	 ((nr)   << _IOC_NRSHIFT) | \
+	 ((size) << _IOC_SIZESHIFT))
+
+#define _IO(type,nr)		_IOC(_IOC_NONE,(type),(nr),0)
+
+#define GPIO_GET        _IO(IOC_GPIODEV_MAGIC, 10)
+#define GPIO_SET        _IO(IOC_GPIODEV_MAGIC, 11)
+#define GPIO_CLEAR      _IO(IOC_GPIODEV_MAGIC, 12)
+#define GPIO_DIR_IN     _IO(IOC_GPIODEV_MAGIC, 13)
+#define GPIO_DIR_OUT    _IO(IOC_GPIODEV_MAGIC, 14)
+
 void set_gpio(int pin, int value)
 {
-switch(pin)
-{
-case 16: // main LED
-sysprintf("echo %d > /sys/devices/platform/leds-gpio/leds/user1/brightness",value);
-break;
-//case 17: // sec LED (not yet)
-//sysprintf("echo %d /sys/devices/platform/leds-gpio/leds/user1/brightness",value);
-//break;
+	int fd;
+	if ((fd = open("/dev/misc/gpio", O_RDWR)) < 0) {
+		printf("Error whilst opening /dev/gpio\n");
+		return;
+	}
 
-
-}
-
+	switch (pin) {
+	case 16:		// main LED
+		sysprintf
+		    ("echo %d > /sys/devices/platform/leds-gpio/leds/user1/brightness",
+		     value);
+		break;
+	default:
+		ioctl(fd, GPIO_DIR_OUT, pin);
+		if (value)
+			ioctl(fd, GPIO_SET, pin);
+		else
+			ioctl(fd, GPIO_CLEAR, pin);
+		break;
+	}
+	close(fd);
 }
 
 int get_gpio(int pin)
 {
+	int fd;
+	if ((fd = open("/dev/misc/gpio", O_RDWR)) < 0) {
+		printf("Error whilst opening /dev/gpio\n");
+		return -1;
+	}
+	ioctl(fd, GPIO_DIR_IN, pin);
+	int ret = ioctl(fd, GPIO_GET, pin);
+	close(fd);
+	return ret;
 
 }
-
 
 #else
 
