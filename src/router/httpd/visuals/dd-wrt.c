@@ -312,7 +312,7 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_OPENRISC
 #define HARDFREQ "166"
 #elif HAVE_LAGUNA
-#define HARDFREQ "600" // dualcore
+#define FREQLINE 2
 #elif HAVE_RT3052
 #define HARDFREQ "384"
 #elif HAVE_RT2880
