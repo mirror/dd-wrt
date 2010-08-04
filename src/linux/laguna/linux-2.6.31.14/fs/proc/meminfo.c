@@ -33,6 +33,7 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
  * display in kilobytes.
  */
 #define K(x) ((x) << (PAGE_SHIFT - 10))
+#define B(x) ((unsigned long long)(x) << PAGE_SHIFT)
 	si_meminfo(&i);
 	si_swapinfo(&i);
 	committed = percpu_counter_read_positive(&vm_committed_as);
@@ -48,6 +49,14 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
 
 	for (lru = LRU_BASE; lru < NR_LRU_LISTS; lru++)
 		pages[lru] = global_page_state(NR_LRU_BASE + lru);
+
+	seq_printf(m, "        total:    used:    free:  shared: buffers:  cached:\n"
+		"Mem:  %8Lu %8Lu %8Lu %8Lu %8Lu %8Lu\n"
+		"Swap: %8Lu %8Lu %8Lu\n",
+		B(i.totalram), B(i.totalram-i.freeram), B(i.freeram),
+		B(i.sharedram), B(i.bufferram),
+		B(cached), B(i.totalswap),
+		B(i.totalswap-i.freeswap), B(i.freeswap));
 
 	/*
 	 * Tagged format, for easy grepping and expansion.
