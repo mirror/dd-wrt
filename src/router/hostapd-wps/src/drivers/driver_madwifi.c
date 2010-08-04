@@ -464,9 +464,11 @@ madwifi_set_key(const char *ifname, void *priv, enum wpa_alg alg,
 		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
 		wk.ik_keyix = key_idx;
 		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
-	} else if (!memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
 		wk.ik_flags |= IEEE80211_KEY_GROUP;
-		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
+	} else if (!memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
+		wk.ik_keyix = key_idx;
+		wk.ik_flags |= IEEE80211_KEY_GROUP;
+		memset(wk.ik_macaddr, 0, IEEE80211_ADDR_LEN);
 	} else {
 		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
 		wk.ik_keyix = IEEE80211_KEYIX_NONE;
