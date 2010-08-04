@@ -2120,6 +2120,15 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	}
 #endif
+#ifdef HAVE_LAGUNA
+	strncpy(ifr.ifr_name, "ath0", IFNAMSIZ);
+	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
+		char eabuf[32];
+
+		nvram_set("wl0_hwaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	}
+#endif
 #ifdef HAVE_XSCALE
 	strncpy(ifr.ifr_name, "ath0", IFNAMSIZ);
 	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
