@@ -590,7 +590,7 @@ static int __init laguna_model_setup(void)
 			laguna_norflash_partitions[3].offset = offset;
 			laguna_norflash_partitions[3].size = filesyssize;
 			laguna_norflash_partitions[4].offset = offset + filesyssize;
-			laguna_norflash_partitions[4].size = (flashsize- SZ_256K) - laguna_norflash_partitions[4].offset;
+			laguna_norflash_partitions[4].size = (flashsize- SZ_128K) - laguna_norflash_partitions[4].offset;
 			laguna_norflash_partitions[5].offset = (flashsize - SZ_128K);
 			laguna_norflash_partitions[5].size = SZ_128K;
 			break;
