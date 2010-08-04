@@ -18,6 +18,15 @@ endif
 ifeq ($(CONFIG_MAGICBOX),y)
 MODULE:=networksettings.rb532
 endif
+ifeq ($(CONFIG_LAGUNA),y)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_RB600),y)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_AP83),y)
+MODULE:=networksettings.rb532
+endif
 ifeq ($(CONFIG_LSX),y)
 MODULE:=networksettings.rb532
 endif
