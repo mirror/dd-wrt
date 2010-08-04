@@ -3416,11 +3416,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 #ifdef HAVE_IFL
 
-		char wl_info[16];
-		sprintf(wl_info, "%s_info", var);
+		char wl_note[16];
+		sprintf(wl_note, "%s_note", var);
 		websWrite(wp,
 			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_info)</script></div><textarea name=\"%s\" cols=\"60\" rows=\"3\">%s</textarea></div>\n",
-			  wl_info, nvram_safe_get(wl_info));
+			  wl_note, nvram_safe_get(wl_note));
 #endif
 
 #ifdef HAVE_MADWIFI
@@ -4826,11 +4826,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			     NULL) ? "" : " style=\"display: none;\"");
 #ifdef HAVE_IFL
 
-	char wl_info[16];
-	sprintf(wl_info, "%s_info", prefix);
+	char wl_note[16];
+	sprintf(wl_note, "%s_note", prefix);
 	websWrite(wp,
 		  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_info)</script></div><textarea name=\"%s\" cols=\"60\" rows=\"3\">%s</textarea></div>\n",
-		  wl_info, nvram_safe_get(wl_info));
+		  wl_note, nvram_safe_get(wl_note));
 #endif
 
 #ifdef HAVE_MADWIFI
