@@ -67,6 +67,13 @@ config IP_NF_MATCH_WEBSTR
         tristate "Webstr match support (EXPERIMENTAL)"
 
 
+config IP_NF_MATCH_IPP2P
+	tristate "IPP2P"
+	depends on IP_NF_IPTABLES
+	help
+	  Module for matching traffic of various Peer-to-Peer applications
+
+
 # The matches.
 config IP_NF_MATCH_ADDRTYPE
 	tristate '"addrtype" address type match support'
