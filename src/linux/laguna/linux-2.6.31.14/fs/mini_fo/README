@@ -1,0 +1,163 @@
+README for the mini_fo overlay file system
+=========================================
+
+
+WHAT IS MINI_FO?
+----------------
+
+mini_fo is a virtual kernel file system that can make read-only
+file systems writable. This is done by redirecting modifying operations
+to a writeable location called "storage directory", and leaving the
+original data in the "base directory" untouched. When reading, the
+file system merges the modifed and original data so that only the
+newest versions will appear. This occurs transparently to the user,
+who can access the data like on any other read-write file system.
+
+Base and storage directories may be located on the same or on
+different partitions and may be of different file system types. While
+the storage directory obviously needs to be writable, the base may or
+may not be writable, what doesn't matter as it will no be modified
+anyway.
+
+
+WHAT IS GOOD FOR?
+-----------------
+
+The primary purpose of the mini_fo file system is to allow easy
+software updates to embedded systems, that often store their root
+file system in a read-only flash file system, but there are many
+more as for example sandboxing, or for allowing live-cds to
+permanently store information.
+
+
+BUILDING
+--------
+This should be simple. Adjust the Makefile to point to the correct
+kernel headers you want to build the module for. Then:
+
+    # make
+
+should build "mini_fo.o" for a 2.4 kernel or "mini_fo.ko" for a 2.6
+kernel.
+
+If you are building the module for you current kernel, you can install
+the module (as root):
+
+    # make install
+
+or uninstall with
+
+    # make uninstall
+
+
+USING THE FILE SYSTEM
+--------------------
+
+the general mount syntax is:
+
+   mount -t mini_fo -o base=<base directory>,sto=<storage directory>\
+                            <base directory> <mount point>
+
+Example:
+
+You have mounted a cdrom to /mnt/cdrom and want to modifiy some files
+on it:
+
+load the module (as root)
+
+    # insmod mini_fo.o for a 2.4 kernel or
+
+    # insmod mini_fo.ko for a 2.6 kernel
+
+
+create a storage dir in tmp and a mountpoint for mini_fo:
+
+    # mkdir /tmp/sto
+    # mkdir /mnt/mini_fo
+
+and mount the mini_fo file system:
+
+    # mount -t mini_fo -o base=/mnt/cdrom,sto=/tmp/sto /mnt/cdrom /mnt/mini_fo
+
+
+Now the data stored on the cd can be accessed via the mini_fo
+mountpoint just like any read-write file system, files can be modified
+and deleted, new ones can be created and so on. When done unmount the
+file system:
+
+    # unmount /mnt/mini_fo
+
+Note that if the file system is mounted again using the same storage
+file system, of course it will appear in the modified state again. If
+you remount it using an new empty storage directory, it will be
+unmodified. Therefore by executing:
+
+    # cd /tmp/sto
+    # rm -rf *
+
+you can nuke all the changes you made to the original file system. But
+ remember NEVER do this while the mini_fo file system is mounted!
+
+
+Alternatively you can use the mini_fo-overlay bash script, that
+simplifies managing mini_fo mounts. See TOOLS Section.
+
+
+TOOLS
+-----
+
+mini_fo-merge (experimental):
+
+This is a bash script that will merge changes contained in the storage
+directory back to the base directory. This allows mini_fo to function
+as a cache file system by overlaying a slow (network, ...) file system
+and using a fast (ramdisk, ...) as storage. When done, changes can be
+merged back to the (slow) base with mini_fo-merge. See "mini_fo-merge
+-h" for details.
+
+It can be usefull for merging changes back after a successfull test
+(patches, software updates...)
+
+
+mini_fo-overlay:
+
+This bash script simplifies managing one or more mini_fo mounts. For
+overlaying a directory called "basedir1", you can just call:
+
+    # mini_fo-overlay basedir1
+
+This will mount mini_fo with "basedir1" as base, "/tmp/sto-basedir1/"
+as storage to "/mnt/mini_fo-basedir1/". It has more options though,
+type "mini_fo-overlay -h" for details.
+
+
+DOCUMENTATION, REPORTING BUGS, GETTING HELP
+-------------------------------------------
+
+Please visit the mini_fo project page at:
+
+http://www.denx.de/twiki/bin/view/Know/MiniFOHome
+
+
+WARNINGS
+--------
+
+Never modify the base or the storage directorys while the mini_fo
+file system is mounted, or you might crash you system. Simply accessing
+and reading should not cause any trouble.
+
+Exporting a mini_fo mount point via NFS has not been tested, and may
+or may not work.
+
+Check the RELEASE_NOTES for details on bugs and features.
+
+
+
+Copyright (C) 2004, 2005 Markus Klotzbuecher <mk@creamnet.de>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version
+2 of the License, or (at your option) any later version.
+
+
