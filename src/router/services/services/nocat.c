@@ -265,6 +265,12 @@ void start_splashd(void)
 	insmod("ipt_mac");
 	insmod("xt_mark");
 	insmod("xt_mac");
+	stop_firewall();	// evil
+	stop_wland();
+	stop_wshaper();
+	start_firewall();
+	start_wshaper();
+	start_wland();
 
 	mk_nocat_conf();
 
