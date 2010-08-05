@@ -1,9 +1,13 @@
-EXTRA_CFLAGS =
+EXTRA_CFLAGS = 
 
 #CC = gcc
 
-CFLAGS = -g -Os -pipe -mips32 -mtune=mips32  -Wall $(EXTRA_CFLAGS)
+#CFLAGS = -g -O2 -Wall $(EXTRA_CFLAGS)
+CFLAGS += $(COPTS)
 LDFLAGS = -s 
+# For ARM:
+# CFLAGS =  -Wall $(EXTRA_CFLAGS)
+LDFLAGS = 
 OBJS = parprouted.o arp.o
 
 LIBS = -lpthread
@@ -22,3 +26,7 @@ parprouted:	${OBJS}
 
 parprouted.8:	parprouted.pod
 	pod2man --section=8 --center="Proxy ARP Bridging Daemon" parprouted.pod --release "parprouted" --date "`date '+%B %Y'`" > parprouted.8
+
+parprouted.o : parprouted.c parprouted.h
+
+arp.o : arp.c parprouted.h
