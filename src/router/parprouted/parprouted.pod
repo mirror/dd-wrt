@@ -75,5 +75,5 @@ To bridge between wlan0 and eth0: B<parprouted eth0 wlan0>
 
 =head1 AUTHOR
 
- (C) 2004, Vladimir Ivaschenko <vi@maks.net>
+ (C) 2008, Vladimir Ivaschenko <vi@maks.net>
  http://www.hazard.maks.net
