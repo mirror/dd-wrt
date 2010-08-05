@@ -1,5 +1,5 @@
 /* parprouted: ProxyARP routing daemon. 
- * (C) 2004 Vladimir Ivaschenko <vi@maks.net>
+ * (C) 2008 Vladimir Ivaschenko <vi@maks.net>
  *
  * This application is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -29,7 +29,7 @@
 typedef struct _ether_arp_frame { 
   struct ether_header ether_hdr;
   struct ether_arp arp;
-} ether_arp_frame;
+} __attribute__ ((packed)) ether_arp_frame;
 
 typedef struct _req_struct {
     ether_arp_frame req_frame;
@@ -49,7 +49,9 @@ int ipaddr_known(ARPTAB_ENTRY *list, struct in_addr addr, char *ifname)
   while (list != NULL) {
     /* If we have this address in the table and ARP request comes from a 
        different interface, then we can reply */
-    if ( addr.s_addr == list->ipaddr_ia.s_addr && strcmp(ifname, list->ifname)) {
+    if ( addr.s_addr == list->ipaddr_ia.s_addr &&
+        strcmp(ifname, list->ifname) &&
+        list->incomplete == 0) {
         return 1;
     }
     list = list->next;
@@ -126,7 +128,7 @@ void arp_reply(ether_arp_frame *reqframe, struct sockaddr_ll *ifs)
 
 /* Send ARP who-has request */
 
-void arp_req(char *ifname, struct in_addr remaddr)
+void arp_req(char *ifname, struct in_addr remaddr, int gratuitous)
 {
   ether_arp_frame frame;
   struct ether_arp *arp = &frame.arp;
@@ -185,7 +187,10 @@ void arp_req(char *ifname, struct in_addr remaddr)
   memcpy(&arp->arp_sha, ifs.sll_addr, ETH_ALEN);
 
   memcpy(&arp->arp_tpa, &remaddr.s_addr, 4);
-  memcpy(&arp->arp_spa, &ifaddr, 4);
+  if (gratuitous)
+    memcpy(&arp->arp_spa, &remaddr.s_addr, 4);
+  else
+    memcpy(&arp->arp_spa, &ifaddr, 4);
 
   arp->arp_op = htons(ARPOP_REQUEST);
 
@@ -201,17 +206,13 @@ void arp_req(char *ifname, struct in_addr remaddr)
 
 void refresharp(ARPTAB_ENTRY *list)
 {
-  pthread_mutex_lock(&arptab_mutex);
-
   if (debug) 
       printf("Refreshing ARP entries.\n");
       
   while(list != NULL) {
-    arp_req(list->ifname, list->ipaddr_ia);
+    arp_req(list->ifname, list->ipaddr_ia, 0);
     list = list->next;
   }
-
-  pthread_mutex_unlock(&arptab_mutex);
 }
 
 
@@ -299,7 +300,6 @@ void rq_process(struct in_addr ipaddr, int ifindex)
 	
 	    req_queue_len--;
 
-	    pthread_mutex_unlock(&req_queue_mutex);
 	}
 
 	if (cur_entry != NULL) {
@@ -408,13 +408,21 @@ void *arp(char *ifname)
 
 	  /* Check if reply is for one of the requests in request queue */
 	  rq_process(sin->sin_addr, ifs.sll_ifindex);
+
+	/* send gratuitous arp request to all other interfaces to let them
+	 * update their ARP tables quickly */ 	  
+	for (i=0; i <= last_iface_idx; i++) {
+	    if (strcmp(ifaces[i], ifname)) {
+		arp_req(ifaces[i], sin->sin_addr, 1);
+	    }
+	}
       }
     } while (frame.arp.arp_op != htons(ARPOP_REQUEST));
 
     /* Received frame is an ARP request */
 
-    src = *((long *)frame.arp.arp_spa);
-    dst = *((long *)frame.arp.arp_tpa);
+    memcpy(&src,(char *)frame.arp.arp_spa,4);
+    memcpy(&dst,(char *)frame.arp.arp_tpa,4);
     
     dia.s_addr = dst;
     sia.s_addr = src;
@@ -424,20 +432,16 @@ void *arp(char *ifname)
 
     if (memcmp(&dia,&sia,sizeof(dia)) && dia.s_addr != 0) {
         pthread_mutex_lock(&arptab_mutex);
-        if ( ipaddr_known(*arptab, dia, (char *) ifname) != 0 ) {
-          arp_reply(&frame, &ifs);
-        } else {
-            /* Relay the ARP request to all other interfaces */
-	    for (i=0; i <= last_iface_idx; i++) {
-    	        if (strcmp(ifaces[i], ifname)) {
-		    arp_req(ifaces[i], dia);
-		}
+        /* Relay the ARP request to all other interfaces */
+	for (i=0; i <= last_iface_idx; i++) {
+    	    if (strcmp(ifaces[i], ifname)) {
+		arp_req(ifaces[i], dia, 0);
 	    }
-	    /* Add the request to the request queue */
-	    if (debug)
-    		printf("Adding %s to request queue\n", inet_ntoa(sia));
-	    rq_add(&frame, &ifs);
 	}
+	/* Add the request to the request queue */
+	if (debug)
+    	    printf("Adding %s to request queue\n", inet_ntoa(sia));
+	rq_add(&frame, &ifs);
 	pthread_mutex_unlock(&arptab_mutex);
     }    
   }

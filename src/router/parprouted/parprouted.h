@@ -1,5 +1,5 @@
 /* parprouted: ProxyARP routing daemon. 
- * (C) 2004 Vladimir Ivaschenko <vi@maks.net>
+ * (C) 2008 Vladimir Ivaschenko <vi@maks.net>
  *
  * This application is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -28,7 +28,7 @@
 
 #define MAX_RQ_SIZE 50	/* maximum size of request queue */
 
-#define VERSION "0.63"
+#define VERSION "0.7"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -48,6 +48,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <syslog.h>
 
 typedef struct arptab_entry {
     struct in_addr ipaddr_ia;
@@ -56,10 +57,13 @@ typedef struct arptab_entry {
     time_t tstamp;
     int route_added;
     int incomplete;
+    int want_route;
     struct arptab_entry *next;
 } ARPTAB_ENTRY;
 
 extern int debug;
+extern int verbose;
+
 extern int option_arpperm;
 
 extern ARPTAB_ENTRY **arptab;
@@ -71,7 +75,7 @@ extern int last_iface_idx;
 
 extern void *arp(char *ifname);
 extern void refresharp(ARPTAB_ENTRY *list);
-extern void arp_req(char *ifname, struct in_addr remaddr);
+extern void arp_req(char *ifname, struct in_addr remaddr, int gratuitous);
 
 extern void parseproc();
 extern void processarp(int cleanup);
