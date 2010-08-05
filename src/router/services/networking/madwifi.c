@@ -484,9 +484,9 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			char *authmode = nvram_nget("%s_authmode", prefix);
 
 			if (!strcmp(authmode, "shared"))
-				fprintf(fp, "auth_alg=shared\n");
+				fprintf(fp, "auth_alg=SHARED\n");
 			else
-				fprintf(fp, "auth_alg=open\n");
+				fprintf(fp, "auth_alg=OPEN\n");
 
 			for (i = 1; i < 5; i++) {
 				char *athkey =
