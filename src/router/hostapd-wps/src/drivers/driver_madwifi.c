@@ -438,9 +438,11 @@ madwifi_set_key(const char *ifname, void *priv, enum wpa_alg alg,
 	wpa_printf(MSG_DEBUG, "%s: alg=%d addr=%s key_idx=%d",
 		   __func__, alg, ether_sprintf(addr), key_idx);
 
-	if (alg == WPA_ALG_WEP)
+	if (alg == WPA_ALG_WEP) {
 		cipher = IEEE80211_CIPHER_WEP;
-	else if (alg == WPA_ALG_TKIP)
+		if (!addr || !memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN))
+			return wpa_driver_wext_set_key(ifname, drv->wext, alg, addr, key_idx, set_tx, seq, seq_len, key, key_len);
+	} else if (alg == WPA_ALG_TKIP)
 		cipher = IEEE80211_CIPHER_TKIP;
 	else if (alg == WPA_ALG_CCMP)
 		cipher = IEEE80211_CIPHER_AES_CCM;
