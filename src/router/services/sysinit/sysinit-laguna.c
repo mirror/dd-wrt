@@ -79,11 +79,8 @@ void start_sysinit(void)
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	eval("mkdir", "/tmp/www");
-	eval("mount", "-o", "remount,rw", "/dev/root");
 	unlink("/tmp/nvram/.lock");
 	eval("mkdir", "/tmp/nvram");
-	sleep(1);		//give some time for remount
-	eval("mkdir", "-p", "/usr/local/nvram");
 	cprintf("sysinit() var\n");
 
 	/*
