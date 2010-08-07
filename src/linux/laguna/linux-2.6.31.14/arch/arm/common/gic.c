@@ -197,13 +197,13 @@ void set_interrupt_type_by_base(void __iomem *base, int id, u32 type)
 
         writel(gic_v, base + GIC_DIST_CONFIG + id/16*4);
 }
-
 // type: level or edge 
 // 0 - level high active, 1 - rising edge sensitive
 void set_interrupt_type(int id, u32 type)
 {
 	set_interrupt_type_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, type);
 }
+EXPORT_SYMBOL(set_interrupt_type);
 
 void get_interrupt_type_by_base(void __iomem *base, u32 id, u32 *type)
 {
@@ -226,6 +226,7 @@ void get_interrupt_type(u32 id, u32 *type)
 	get_interrupt_type_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, type);
 }
 
+EXPORT_SYMBOL(get_interrupt_type);
 
 
 // set interrupt priority
@@ -254,6 +255,7 @@ void set_interrupt_pri(u32 id, u32 pri)
 {
 	set_interrupt_pri_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, pri);
 }
+EXPORT_SYMBOL(set_interrupt_pri);
 
 void get_interrupt_pri_by_base(void __iomem *base, int id, u32 *type)
 {
@@ -278,6 +280,7 @@ void get_interrupt_pri(int id, u32 *pri)
 {
 	get_interrupt_pri_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, pri);
 }
+EXPORT_SYMBOL(get_interrupt_pri);
 
 
 void __init gic_dist_init(unsigned int gic_nr, void __iomem *base,
@@ -364,7 +367,7 @@ void cns3xxx_write_pri_mask(u8 pri_mask)
         writel(pri_mask, (void __iomem *) CNS3XXX_TC11MP_GIC_CPU_BASE_VIRT + GIC_CPU_PRIMASK);
 }
 
-
+EXPORT_SYMBOL(cns3xxx_write_pri_mask);
 #ifdef CONFIG_SMP
 void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 {
