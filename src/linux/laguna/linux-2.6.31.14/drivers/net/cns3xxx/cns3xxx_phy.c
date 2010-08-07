@@ -36,6 +36,7 @@
 #include "cns3xxx_switch_type.h"
 #define printk printf
 #endif
+static u16 get_phy_id(u8 phy_addr);
 
 int cns3xxx_phy_reset(u8 phy_addr)
 {

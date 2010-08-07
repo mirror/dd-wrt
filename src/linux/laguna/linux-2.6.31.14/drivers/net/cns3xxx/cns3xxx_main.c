@@ -3735,14 +3735,14 @@ static int __devinit cns3xxx_init(struct platform_device *pdev)
 	// don't free them until cns3xxx_exit_module
 
 	struct eth_plat_info *plat = pdev->dev.platform_data;
+	RingInfo ring_info; 
+	int i=0;
 	init_port = plat->ports;
 	memcpy(cpu_vlan_table_entry.my_mac, plat->cpu_hwaddr, ETH_ALEN);
-#if defined (CONFIG_CNS3XXX_SPPE)
+#if defined (CONFIG_CNS3XXX_SPPE) && defined(CNS3XXX_NON_NIC_MODE_8021Q)
 	memcpy(net_device_prive[3].mac, plat->cpu_hwaddr, ETH_ALEN);
 #endif
 
-	RingInfo ring_info; 
-	int i=0;
 	//spin_lock_init(&star_gsw_send_lock);
 
 
@@ -3894,6 +3894,7 @@ static int __devexit cns3xxx_remove(struct platform_device *pdev)
 	//star_gsw_buffer_free(); 
 #endif
 	unregister_reboot_notifier(&cns3xxx_notifier_reboot);
+	return 0;
 }
 
 
