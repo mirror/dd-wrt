@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.31.14
-# Wed Aug  4 15:09:51 2010
+# Sat Aug  7 00:57:14 2010
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -58,10 +58,8 @@ CONFIG_CLASSIC_RCU=y
 # CONFIG_PREEMPT_RCU_TRACE is not set
 # CONFIG_IKCONFIG is not set
 CONFIG_LOG_BUF_SHIFT=14
-CONFIG_SCHED_CFS=y
-# CONFIG_SCHED_BFS is not set
-# CONFIG_GROUP_SCHED is not set
-# CONFIG_CGROUPS is not set
+# CONFIG_SCHED_CFS is not set
+CONFIG_SCHED_BFS=y
 # CONFIG_SYSFS_DEPRECATED_V2 is not set
 # CONFIG_RELAY is not set
 # CONFIG_NAMESPACES is not set
@@ -356,6 +354,7 @@ CONFIG_IP_ROUTE_VERBOSE=y
 # CONFIG_IP_PNP is not set
 # CONFIG_NET_IPIP is not set
 # CONFIG_NET_IPGRE is not set
+CONFIG_NET_ETHERIP=m
 CONFIG_IP_MROUTE=y
 # CONFIG_IP_PIMSM_V1 is not set
 # CONFIG_IP_PIMSM_V2 is not set
