@@ -118,9 +118,18 @@ void start_sysinit(void)
 
 	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
+	insmod("cns3xxx");
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
 
+	//load mmc drivers
+	insmod("sdhci");
+	insmod("sdhci-pltfm");
+	insmod("sdhci-cns3xxx");
+	insmod("mmc_block");
+	//sata drivers
+	insmod("ahci");
+	insmod("cns3xxx_ahci");
 	/*
 	 * network drivers 
 	 */
