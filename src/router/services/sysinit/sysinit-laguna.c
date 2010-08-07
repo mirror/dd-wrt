@@ -120,7 +120,8 @@ void start_sysinit(void)
 		nvram_set("intel_eth", "1");
 
 	//load mmc drivers
-	insmod("sdhci");
+	eval("insmod","sdhci","debug_quirks=1");
+//	insmod("sdhci");
 	insmod("sdhci-pltfm");
 	insmod("sdhci-cns3xxx");
 	insmod("mmc_block");
