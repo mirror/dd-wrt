@@ -220,7 +220,7 @@ static struct MAIN maincalls[] = {
 	{"startstop_f", NULL, startstop_main_f},
 	{"startstop", NULL, startstop_main},
 	{"softwarerevision", NULL, softwarerevision_main},
-#if !defined(HAVE_MICRO) || defined(HAVE_ADM5120)
+#if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
 	{"watchdog", NULL, &watchdog_main},
 #endif
 	// {"nvram", NULL, &nvram_main},
