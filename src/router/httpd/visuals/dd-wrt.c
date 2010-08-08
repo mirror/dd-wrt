@@ -3968,8 +3968,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-	if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-		showRadio(wp, "wl_basic.outband", wl_outdoor);
+	if (has_5ghz(prefix)) {
+		if (nvram_nmatch("1", "%s_regulatory", prefix)
+		    || !issuperchannel()) {
+			showRadio(wp, "wl_basic.outband", wl_outdoor);
+		}
 	}
 #endif
 	websWrite(wp,
@@ -5037,11 +5040,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.supergff", wl_ff);
 	}
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-#ifndef HAVE_BUFFALO
-	if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-		showRadio(wp, "wl_basic.outband", wl_outdoor);
+	if (has_5ghz(prefix)) {
+		if (nvram_nmatch("1", "%s_regulatory", prefix)
+		    || !issuperchannel()) {
+			showRadio(wp, "wl_basic.outband", wl_outdoor);
+		}
 	}
-#endif
 #endif
 
 // antenna settings
@@ -7849,16 +7853,17 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].usersize) ? db->
-				  users[i].user : "");
+					      && db->users[i].
+					      usersize) ? db->users[i].
+				  user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -7915,16 +7920,17 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].clientsize) ? db->
-				  users[i].client : "");
+					      && db->users[i].
+					      clientsize) ? db->users[i].
+				  client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",
