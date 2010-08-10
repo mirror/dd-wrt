@@ -259,6 +259,9 @@ endif
 ifeq ($(CONFIG_WR941),y)
 CFLAGS += -DHAVE_WR941
 endif
+ifeq ($(CONFIG_WR741),y)
+CFLAGS += -DHAVE_WR741
+endif
 
 ifeq ($(CONFIG_TFTP),y)
 CFLAGS += -DHAVE_TFTP
