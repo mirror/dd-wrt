@@ -1092,7 +1092,7 @@ int internal_getRouterBrand()
 	setRouter("D-Link DIR-615-E1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615E
-	setRouter("D-Link DIR-615-E3");
+	setRouter("D-Link DIR-615-E3/E4");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_TEW652BRP
 	setRouter("Trendnet TEW-652BRP");
