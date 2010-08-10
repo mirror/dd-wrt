@@ -1106,6 +1106,12 @@ int internal_getRouterBrand()
 #elif HAVE_WR941
 	setRouter("TP-Link TL-WR941ND v2/v3");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR841v5
+	setRouter("TP-Link TL-WR841ND v5");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_WR741
+	setRouter("TP-Link TL-WR741ND v1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR1043
 	setRouter("TP-Link TL-WR1043ND");
 	return ROUTER_BOARD_PB42;
@@ -2990,6 +2996,11 @@ int led_control(int type, int act)
 #ifdef HAVE_WR941
 		diag_gpio = 0x102;
 		ses_gpio = 0x005;
+//              usb_gpio = 0x101;
+#endif
+#ifdef HAVE_WR741
+		diag_gpio = 0x101;
+		ses_gpio = 0x000;
 //              usb_gpio = 0x101;
 #endif
 #ifdef HAVE_WR1043
