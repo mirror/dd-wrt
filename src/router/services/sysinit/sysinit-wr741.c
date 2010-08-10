@@ -111,7 +111,6 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7240_mod");
 
-
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
@@ -152,8 +151,11 @@ void start_sysinit(void)
 		close(s);
 	}
 	detect_wireless_devices();
-		fprintf(stderr, "configure wifi0 to %s\n", mac);
-		eval("ifconfig", "wifi0", "hw", "ether", mac);
+	fprintf(stderr, "configure wifi0 to %s\n", mac);
+	eval("ifconfig", "wifi0", "hw", "ether", mac);
+	//enable wlan led (card gpio based)
+	system2("echo 1 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
