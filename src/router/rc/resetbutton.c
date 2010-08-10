@@ -200,7 +200,7 @@ int getbuttonstate()
 #elif defined(HAVE_WR941)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
+	int ret = get_gpio(3);
 
 	if (ret == 0)
 		return 1;
@@ -209,7 +209,7 @@ int getbuttonstate()
 #elif defined(HAVE_WR741)
 int getbuttonstate()
 {
-	int ret = get_gpio(3);
+	int ret = get_gpio(11);
 
 	if (ret == 0)
 		return 1;
