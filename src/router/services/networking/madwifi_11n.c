@@ -54,7 +54,7 @@
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
-#include <iwlib.h>
+//#include <iwlib.h>
 #include <services.h>
 
 static int setsysctrl(const char *dev, const char *control, u_long value)
