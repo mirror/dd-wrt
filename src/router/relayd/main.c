@@ -426,6 +426,9 @@ static void recv_arp_reply(struct relayd_interface *rif, struct arp_packet *pkt)
 	if (!host)
 		return;
 
+	if (host->rif == rif)
+		return;
+
 	send_arp_reply(host->rif, pkt->arp.arp_spa, host->lladdr, host->ipaddr);
 }
 
@@ -535,6 +538,9 @@ static bool forward_dhcp_packet(struct relayd_interface *rif, void *data, int le
 
 	if (!forward_dhcp)
 		return true;
+
+	if (dhcp->op == 2)
+		refresh_host(rif, pkt->eth.ether_shost, (void *) &pkt->iph.saddr);
 
 	DPRINTF(2, "%s: handling DHCP %s\n", rif->ifname, (dhcp->op == 1 ? "request" : "response"));
 
