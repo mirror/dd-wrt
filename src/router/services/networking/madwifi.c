@@ -49,12 +49,11 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
-
 #include "wireless.h"
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
-#include <iwlib.h>
+//#include <iwlib.h>
 #include <services.h>
 
 static int setsysctrl(const char *dev, const char *control, u_long value)
@@ -2098,7 +2097,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			}
 		}
 	}
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+	if ((s = socket(AF_INET, SOCK_RAW, 255)) < 0)
 		return;
 	struct ifreq ifr;
 
