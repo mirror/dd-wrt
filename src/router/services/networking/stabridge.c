@@ -44,6 +44,12 @@
 void start_stabridge(void)
 {
 
+#ifdef HAVE_RELAYD
+	if (getWET()) {
+		sysprintf("relayd -I %s -I %s -D -B", getBridge(getWET()),
+			  getWET());
+	}
+#else
 	if (getWET()) {
 		insmod("ebtables");
 		insmod("ebtables");
@@ -61,10 +67,14 @@ void start_stabridge(void)
 		eval("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol",
 		     "0x888e", "--in-interface", getWET(), "-j", "DROP");
 	}
+#endif
 }
 
 void stop_stabridge(void)
 {
+#ifdef HAVE_RELAYD
+	stop_process("relayd", "Client Bridge Relay Daemon");
+#else
 	if (getWET()) {
 		eval("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
 		     "0x888e", "--in-interface", getWET(), "-j", "DROP");
@@ -87,4 +97,5 @@ void stop_stabridge(void)
 	rmmod("ebtable_nat");
 	rmmod("ebtable_filter");
 	rmmod("ebtables");
+#endif
 }
