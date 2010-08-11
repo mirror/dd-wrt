@@ -634,6 +634,14 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 	char ifname[16];
 
 	strcpy(ifname, temp2);
+
+	char *temp3 = websGetVar(stream, "ifname", NULL);
+        if( temp3 != NULL ) {
+                if( strlen( temp3 ) > 0 ) {
+                        strcpy(ifname, temp3);
+                }
+        }
+	
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("WL_FilterTable.asp");
 	char temp[4096];
@@ -869,6 +877,14 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream,
 	char ifname[16];
 
 	strcpy(ifname, temp2);
+
+	char *temp3 = websGetVar(stream, "ifname", NULL);
+	if( temp3 != NULL ) {
+		if( strlen( temp3 ) > 0 ) {
+			strcpy(ifname, temp3);
+		}
+	}
+	
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("WL_ActiveTable.asp");
 	unsigned int len = getWebsFileLen("WL_ActiveTable.asp");
@@ -1127,6 +1143,7 @@ static struct gozila_action gozila_actions[] = {
 	{"WL_WPATable", "security", "", 1, REFRESH, "set_security"},
 	{"WL_WPATable", "save", "wireless_2", 1, REFRESH, "security_save"},
 	{"WL_WPATable", "keysize", "wireless_2", 1, REFRESH, "security_save"},
+	{"WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac"},
 	{"WL_ActiveTable-wl0", "add_mac", "", 1, REFRESH, "add_active_mac"},
 	{"WL_ActiveTable-wl1", "add_mac", "", 1, REFRESH, "add_active_mac"},
 	/*
