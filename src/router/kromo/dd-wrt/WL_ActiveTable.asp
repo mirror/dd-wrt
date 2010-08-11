@@ -41,6 +41,12 @@ addEvent(window, "load", function() {
 	window.focus();
 
 });
+
+addEvent(window, "unload", function() {
+	var elements = opener.document.forms["macfilter"].elements;
+	var url = elements["submit_button"].value + '-' + elements["ifname"].value + ".asp";
+	opener.window.location = url;
+});
 		
 		//]]>
 		</script>
@@ -48,7 +54,7 @@ addEvent(window, "load", function() {
 
 	<body>
 		<form action="apply.cgi" method="post">
-			<input type="hidden" name="submit_button" value="WL_ActiveTable-%s" />
+			<input type="hidden" name="submit_button" value="WL_ActiveTable" />
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="submit_type" />
