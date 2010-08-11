@@ -72,18 +72,14 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 	strcpy(ifname, ifname2);
 	rep(ifname, 'X', '.');
 
+	char var[32];
 	if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
-		char var[32];
-
 		sprintf(var, "%s_active_mac", ifname);
-		wordlist = nvram_safe_get(var);
 	} else {
-		char var[32];
-
 		sprintf(var, "%s_maclist", ifname);
-		wordlist = nvram_safe_get(var);
 	}
-
+	wordlist = nvram_safe_get(var);
+	
 	temp = which;
 
 	foreach(word, wordlist, next) {
@@ -120,6 +116,16 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 
+	char var[32];
+	char *wordlist;
+	
+        if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
+                sprintf(var, "%s_active_mac", ifname);
+		wordlist = nvram_safe_get(var);
+                sprintf(var, "%s_maclist", ifname);
+		nvram_set(var, wordlist);
+        }
+	
 	if (!strcmp(type, "input")) {
 		websWrite(wp, "<div class=\"col2l\">\n");
 		websWrite(wp, "<fieldset><legend>Table 1</legend>\n");
@@ -402,9 +408,13 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		nv_count = 0;	// init mac list
 
 		char var[32];
-		sprintf(var, "%s_maclist", ifname);
+		if(!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
+			sprintf(var, "%s_active_mac", ifname);
+		} else {
+			sprintf(var, "%s_maclist", ifname);
+		}
 		char *maclist = nvram_safe_get(var);
-
+		
 		foreach(word, maclist, next) {
 			snprintf(wl_client_macs[nv_count].hwaddr,
 				 sizeof(wl_client_macs[nv_count].hwaddr), "%s",
