@@ -208,6 +208,7 @@ include rules/snoop.mk
 include rules/aoss.mk
 include rules/ap-serv.mk
 include rules/buffalo-flash.mk
+include rules/relayd.mk
 # Generic rules
 #
 
