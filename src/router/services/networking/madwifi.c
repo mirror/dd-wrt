@@ -269,6 +269,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
+#ifdef HAVE_RELAYD
+		if ((nvram_match(wmode, "wdssta"))
+		    && nvram_match(bridged, "1"))
+			eval("wpa_supplicant", "-b", getBridge(prefix),
+			     background, "-Dmadwifi", psk, "-c", fstr);
+		else
+			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			     "-c", fstr);
+#else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
 		    && nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(prefix),
@@ -276,6 +285,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		else
 			eval("wpa_supplicant", background, "-Dmadwifi", psk,
 			     "-c", fstr);
+#endif
 	} else if (nvram_match(akm, "8021X")) {
 		char fstr[32];
 		char psk[64];
@@ -451,6 +461,16 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
 		sysprintf("iwpriv %s hostroaming 2", prefix);
+#ifdef HAVE_RELAYD
+		if (nvram_match(bridged, "1")
+		    && (nvram_match(wmode, "wdssta")))
+			eval("wpa_supplicant", "-b",
+			     nvram_safe_get("lan_ifname"), background,
+			     "-Dmadwifi", psk, "-c", fstr);
+		else
+			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			     "-c", fstr);
+#else
 		if (nvram_match(bridged, "1")
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
@@ -460,6 +480,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		else
 			eval("wpa_supplicant", background, "-Dmadwifi", psk,
 			     "-c", fstr);
+
+#endif
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
 		char fstr[32];
 		char psk[16];
@@ -508,6 +530,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
+#ifdef HAVE_RELAYD
+		if ((nvram_match(wmode, "wdssta"))
+		    && nvram_match(bridged, "1"))
+			eval("wpa_supplicant", "-b", getBridge(prefix),
+			     background, "-Dmadwifi", psk, "-c", fstr);
+		else
+			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			     "-c", fstr);
+#else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
 		    && nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(prefix),
@@ -515,7 +546,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		else
 			eval("wpa_supplicant", background, "-Dmadwifi", psk,
 			     "-c", fstr);
-
+#endif
 	}
 
 }
@@ -630,26 +661,28 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				nvram_nget("%s_wpa_psk", prefix));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
 #ifdef HAVE_WPS
-		if (!strcmp(prefix,"ath0"))
-		{
-			fprintf(fp, "eap_server=1\n");
-			fprintf(fp, "ctrl_interface=/var/run/hostapd\n");  // for cli
-    
+			if (!strcmp(prefix, "ath0")) {
+				fprintf(fp, "eap_server=1\n");
+				fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
+
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
-			fprintf(fp, "wps_state=2\n");
-			fprintf(fp, "ap_setup_locked=1\n");
+				fprintf(fp, "wps_state=2\n");
+				fprintf(fp, "ap_setup_locked=1\n");
 //# If UUID is not configured, it will be generated based on local MAC address.
-//			fprintf(fp,"uuid=87654321-9abc-def0-1234-56789abc0000\n");
-			fprintf(fp,"wps_pin_requests=/var/run/hostapd.pin-req\n");
-			fprintf(fp,"device_name=%s\n",nvram_safe_get("router_name"));
-			fprintf(fp,"manufacturer=DD-WRT\n");
-			fprintf(fp,"model_name=%s\n",nvram_safe_get("DD_BOARD"));
-			fprintf(fp,"model_number=0\n");
-			fprintf(fp,"serial_number=12345\n");
-			fprintf(fp,"device_type=6-0050F204-1\n");
-			fprintf(fp,"os_version=01020300\n");
-			fprintf(fp,"config_methods=push_button\n");
-		}
+//                      fprintf(fp,"uuid=87654321-9abc-def0-1234-56789abc0000\n");
+				fprintf(fp,
+					"wps_pin_requests=/var/run/hostapd.pin-req\n");
+				fprintf(fp, "device_name=%s\n",
+					nvram_safe_get("router_name"));
+				fprintf(fp, "manufacturer=DD-WRT\n");
+				fprintf(fp, "model_name=%s\n",
+					nvram_safe_get("DD_BOARD"));
+				fprintf(fp, "model_number=0\n");
+				fprintf(fp, "serial_number=12345\n");
+				fprintf(fp, "device_type=6-0050F204-1\n");
+				fprintf(fp, "os_version=01020300\n");
+				fprintf(fp, "config_methods=push_button\n");
+			}
 #endif
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
@@ -753,13 +786,13 @@ void start_hostapdwan(void)
 		sprintf(ath, "ath%d", i);
 		if (nvram_nmatch("ap", "%s_mode", ath)
 		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
-				setupHostAP(ath, "madwifi", 1);
+			setupHostAP(ath, "madwifi", 1);
 		}
 		char *vifs = nvram_nget("ath%d_vifs", i);
 
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
-				setupHostAP(var, "madwifi", 1);
+			setupHostAP(var, "madwifi", 1);
 			}
 	}
 
@@ -1680,7 +1713,11 @@ static void configure_single(int count)
 	sysprintf("iwpriv %s inact %s", dev, nvram_default_get(inact, "300"));
 #endif
 
+#ifdef HAVE_RELAYD
+	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
+#else
 	if (strcmp(apm, "sta")) {
+#endif
 		char bridged[32];
 
 		sprintf(bridged, "%s_bridged", dev);
@@ -1695,8 +1732,15 @@ static void configure_single(int count)
 				  nvram_nget("%s_netmask", dev));
 		}
 	} else {
-		char bridged[32];
+#ifdef HAVE_RELAYD
+		if (!strcmp(apm, "wet")) {
+			sysprintf("ifconfig %s 0.0.0.0 up", dev);
+//			sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
+//				  dev);
+		}
+#endif
 
+		char bridged[32];
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "0", "1")) {
 			sysprintf("ifconfig %s mtu %s", dev, getMTU(dev));
@@ -1990,7 +2034,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		configure_wifi();
 	}
 #ifdef HAVE_AOSS
-	if (nvram_match("aoss_success","1"))
+	if (nvram_match("aoss_success", "1"))
 		led_control(LED_SES, LED_ON);
 #endif
 
