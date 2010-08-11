@@ -1066,7 +1066,11 @@ void configure_single_11n(int count)
 
 	sleep(3);		//give some time to let hostapd initialize
 
+#ifdef HAVE_RELAYD
+	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
+#else
 	if (strcmp(apm, "sta")) {
+#endif
 		char bridged[32];
 
 		sprintf(bridged, "%s_bridged", dev);
@@ -1081,8 +1085,15 @@ void configure_single_11n(int count)
 				  nvram_nget("%s_netmask", dev));
 		}
 	} else {
-		char bridged[32];
+#ifdef HAVE_RELAYD
+		if (!strcmp(apm, "wet")) {
+			sysprintf("ifconfig %s 0.0.0.0 up", dev);
+//			sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
+//				  dev);
+		}
+#endif
 
+		char bridged[32];
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "0", "1")) {
 			sysprintf("ifconfig %s mtu %s", dev, getMTU(dev));
