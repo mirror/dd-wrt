@@ -74,7 +74,7 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 
 	char var[32];
 	if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
-		sprintf(var, "%s_active_mac", ifname);
+		sprintf(var, "%s_active_mac", ifname2);
 	} else {
 		sprintf(var, "%s_maclist", ifname);
 	}
@@ -97,6 +97,7 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 	int i;
 	char *type;
 	char *ifname;
+	char ifname2[32];
 	int item;
 
 #if LANGUAGE == JAPANESE
@@ -120,12 +121,14 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 	char *wordlist;
 	
         if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
-                sprintf(var, "%s_active_mac", ifname);
+		strcpy(ifname2, ifname);
+		rep(ifname2, 'X', '.');
+		sprintf(var, "%s_active_mac", ifname);
 		wordlist = nvram_safe_get(var);
-                sprintf(var, "%s_maclist", ifname);
+                sprintf(var, "%s_maclist", ifname2);
 		nvram_set(var, wordlist);
         }
-	
+
 	if (!strcmp(type, "input")) {
 		websWrite(wp, "<div class=\"col2l\">\n");
 		websWrite(wp, "<fieldset><legend>Table 1</legend>\n");
