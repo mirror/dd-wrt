@@ -978,8 +978,8 @@ int internal_getRouterBrand()
 	int devcnt = 0;
 	while (dev[devcnt].devicename != NULL) {
 		if (dev[devcnt].devid == device) {
-			nvram_set("ath0_rxantenna", dev[devcnt].rxchain);
-			nvram_set("ath0_txantenna", dev[devcnt].txchain);
+			nvram_default_get("ath0_rxantenna", dev[devcnt].rxchain);
+			nvram_default_get("ath0_txantenna", dev[devcnt].txchain);
 			setRouter(dev[devcnt].devicename);
 			return dev[devcnt].dddev;
 		}
@@ -1077,21 +1077,37 @@ int internal_getRouterBrand()
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WNDR3700
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
 	setRouter("Netgear WNDR3700");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR825
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
 	setRouter("Dlink DIR-825");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WRT400
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
 	setRouter("Linksys WRT400N");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615C1
 	setRouter("D-Link DIR-615-C1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615E1
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
 	setRouter("D-Link DIR-615-E1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615E
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
 	setRouter("D-Link DIR-615-E3/E4");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_TEW652BRP
