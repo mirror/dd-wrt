@@ -49,11 +49,12 @@ function valid_radius(F) {
 
 function valid_wpa_psk(F) {
 	if(F.security_mode.value == "psk" || F.security_mode.value == "psk2" || F.security_mode.value == "psk psk2"){
-		if(F.wl_wpa_psk.value.length == 64){
-			if(!isxdigit(F.wl_wpa_psk, F.wl_wpa_psk.value)) {
-				return false;
-			}
-		} else if(F.wl_wpa_psk.value.length >=8 && F.wl_wpa_psk.value.length <= 63 ){
+//		if(F.wl_wpa_psk.value.length == 64){
+//			if(!isxdigit(F.wl_wpa_psk, F.wl_wpa_psk.value)) {
+//				return false;
+//			}
+//		} else 
+		if(F.wl_wpa_psk.value.length >=8 && F.wl_wpa_psk.value.length <= 63 ){
 			if(!isascii(F.wl_wpa_psk,F.wl_wpa_psk.value)) {
 				return false;
 			}
