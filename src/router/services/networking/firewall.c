@@ -1494,6 +1494,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				if (!strcasecmp(realname, "xdcc"))
 					proto = "xdcc";
 				insmod("ipt_ipp2p");
+				insmod("ipt_layer7");
 				save2file
 				    ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n",
 				     seq, proto, log_drop);
@@ -1532,6 +1533,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	 */
 	if (nvram_nmatch("1", "filter_p2p_grp%d", seq)) {
 		insmod("ipt_ipp2p");
+		insmod("ipt_layer7");
 		save2file("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 			  log_drop);
 		/* bittorrent detection enhanced */
