@@ -399,7 +399,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 #ifndef HAVE_WIKINGS
 #ifdef HAVE_WRT160NL
-			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4)) {
+			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4) && memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
 				cprintf("code pattern error!\n");
 				goto err;	// must be there, otherwise fail here
 			}
