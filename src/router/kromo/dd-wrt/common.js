@@ -938,7 +938,7 @@ function checkformelements( form ) {
 	for( i = 0; i < form.elements.length; i++ ) {
 		if( form.elements[i].type == 'text' ) {
 			if( chars = invalidTextValue(form.elements[i].value ) ) {
-				alert('Invalid input characters "' + chars + '" in field "' + getInputLabel( 'input', form.elements[i].name ) );
+				alert('Invalid input characters "' + chars + '" in field "' + getInputLabel( 'input', form.elements[i].name ) + '"');
 				form.elements[i].style.border = "solid 2px #f00";
 				form.elements[i].focus();
 				return false;
