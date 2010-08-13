@@ -657,8 +657,12 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 
 		if (nvram_match(akm, "psk") ||
 		    nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
-			fprintf(fp, "wpa_passphrase=%s\n",
-				nvram_nget("%s_wpa_psk", prefix));
+			if (strlen (nvram_nget("%s_wpa_psk", prefix)) == 64)
+				fprintf(fp, "wpa_psk=%s\n",
+					nvram_nget("%s_wpa_psk", prefix));
+			else
+				fprintf(fp, "wpa_passphrase=%s\n",
+					nvram_nget("%s_wpa_psk", prefix));			
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
 #ifdef HAVE_WPS
 			if (!strcmp(prefix, "ath0")) {
