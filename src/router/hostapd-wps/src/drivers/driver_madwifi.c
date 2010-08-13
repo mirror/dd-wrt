@@ -477,6 +477,19 @@ madwifi_set_key(const char *ifname, void *priv, enum wpa_alg alg,
 	}
 	wk.ik_keylen = key_len;
 	memcpy(wk.ik_keydata, key, key_len);
+#ifdef WORDS_BIGENDIAN
+#define WPA_KEY_RSC_LEN 8
+	{
+		size_t i;
+		u8 tmp[WPA_KEY_RSC_LEN];
+		os_memset(tmp, 0, sizeof(tmp));
+		for (i = 0; i < seq_len; i++)
+			tmp[WPA_KEY_RSC_LEN - i - 1] = seq[i];
+		os_memcpy(&wk.ik_keyrsc, tmp, WPA_KEY_RSC_LEN);
+	}
+#else /* WORDS_BIGENDIAN */
+	os_memcpy(&wk.ik_keyrsc, seq, seq_len);
+#endif /* WORDS_BIGENDIAN */
 
 	ret = set80211priv(drv, IEEE80211_IOCTL_SETKEY, &wk, sizeof(wk));
 	if (ret < 0) {
