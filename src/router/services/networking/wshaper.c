@@ -579,6 +579,7 @@ int svqos_iptables(void)
 			     proto, level);
 			if (!strcmp(proto, "bit")) {
 				/* bittorrent detection enhanced */
+			insmod("ipt_layer7");
 #ifdef HAVE_MICRO
 				sysprintf
 				    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
