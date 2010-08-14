@@ -259,8 +259,11 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tproto=RSN\n");
 		if (nvram_match(akm, "psk psk2"))
 			fprintf(fp, "\tproto=WPA RSN\n");
-
-		fprintf(fp, "\tpsk=\"%s\"\n", nvram_nget("%s_wpa_psk", prefix));
+		char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
+		if (strlen(wpa_psk)==64)
+		fprintf(fp, "\tpsk=%s\n", wpa_psk);
+		    else    
+		fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
