@@ -213,7 +213,7 @@ struct app_conn_t {
 #define IDLETIME  10  /* Idletime between each select */
 
 #define UAMOKIP_MAX 256 /* Max number of allowed UAM IP addresses */
-#define UAMOKNET_MAX 10 /* Max number of allowed UAM networks */
+#define UAMOKNET_MAX 16 /* Max number of allowed UAM networks */
 
 #define UAMSERVER_MAX 8
 
