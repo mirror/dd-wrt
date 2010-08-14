@@ -357,7 +357,7 @@ void hotspotsys_config(void)
 	fprintf(fp,
 		"uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
 	fprintf(fp,
-		"uamallowed 82.199.90.136/29, 82.199.90.160/27, 91.212.42.0/24\n");
+		"uamallowed 82.199.90.136/29,82.199.90.160/27,91.212.42.0/24\n");
 	fprintf(fp,
 		"uamallowed adyen.com\n");
 	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
