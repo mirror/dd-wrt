@@ -347,7 +347,8 @@ void hotspotsys_config(void)
 	    && nvram_match("hotss_uamenable", "1"))
 		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
 
-	fprintf(fp, "uamallowed hotspotsystem.com,%s\n", uamdomain);
+	fprintf(fp,
+		"uamallowed hotspotsystem.com,%s,www.hotspotsystem.com,tech.hotspotsystem.com\n", uamdomain);
 	fprintf(fp,
 		"uamallowed 194.149.46.0/24,198.241.128.0/17,66.211.128.0/17,216.113.128.0/17\n");
 	fprintf(fp,
@@ -360,12 +361,10 @@ void hotspotsys_config(void)
 		"uamallowed 82.199.90.136/29,82.199.90.160/27,91.212.42.0/24\n");
 	fprintf(fp,
 		"uamallowed adyen.com\n");
-	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
+	fprintf(fp,
+		"uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp,
 		"uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
-	fprintf(fp,
-		"uamallowed www.hotspotsystem.com,%s,tech.hotspotsystem.com\n",
-		uamdomain);
 	fprintf(fp,
 		"uamallowed a1.hotspotsystem.com,a2.hotspotsystem.com,a3.hotspotsystem.com,a4.hotspotsystem.com,a5.hotspotsystem.com,a6.hotspotsystem.com\n");
 	fprintf(fp,
