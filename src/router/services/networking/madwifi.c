@@ -260,10 +260,10 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		if (nvram_match(akm, "psk psk2"))
 			fprintf(fp, "\tproto=WPA RSN\n");
 		char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
-		if (strlen(wpa_psk)==64)
-		fprintf(fp, "\tpsk=%s\n", wpa_psk);
-		    else    
-		fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
+		if (strlen(wpa_psk) == 64)
+			fprintf(fp, "\tpsk=%s\n", wpa_psk);
+		else
+			fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
@@ -660,12 +660,12 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 
 		if (nvram_match(akm, "psk") ||
 		    nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
-			if (strlen (nvram_nget("%s_wpa_psk", prefix)) == 64)
+			if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
 				fprintf(fp, "wpa_psk=%s\n",
 					nvram_nget("%s_wpa_psk", prefix));
 			else
 				fprintf(fp, "wpa_passphrase=%s\n",
-					nvram_nget("%s_wpa_psk", prefix));			
+					nvram_nget("%s_wpa_psk", prefix));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
 #ifdef HAVE_WPS
 			if (!strcmp(prefix, "ath0")) {
@@ -1742,8 +1742,8 @@ static void configure_single(int count)
 #ifdef HAVE_RELAYD
 		if (!strcmp(apm, "wet")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", dev);
-//			sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
-//				  dev);
+//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
+//                                dev);
 		}
 #endif
 
