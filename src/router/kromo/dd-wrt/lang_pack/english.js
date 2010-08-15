@@ -869,6 +869,9 @@ idx_h.reconnect="Force reconnect";
 // ** index_l2tp.asp **//
 var idx_l = new Object();
 idx_l.srv="Gateway (L2TP Server)";
+idx_l.req_chap="Require CHAP";
+idx_l.ref_pap="Refuse PAP";
+idx_l.req_auth="Require Authentication";
 
 
 // ** index_pppoe.asp **//
