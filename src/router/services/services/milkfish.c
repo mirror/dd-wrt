@@ -27,6 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <md5.h>
+#include <services.h>
 
 void start_milkfish_boot(void);
 

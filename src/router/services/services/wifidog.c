@@ -26,6 +26,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <signal.h>
+#include <services.h>
 // unfinished. do not use
 void start_wifidog(void)
 {

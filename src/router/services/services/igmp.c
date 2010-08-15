@@ -26,6 +26,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <signal.h>
+#include <services.h>
 
 void stop_igmp_proxy(void);
 void start_igmp_proxy(void)
