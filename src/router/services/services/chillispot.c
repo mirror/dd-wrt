@@ -34,6 +34,7 @@
 #include <wlutils.h>
 #include <errno.h>
 #include <md5.h>
+#include <services.h>
 
 #ifdef HAVE_CHILLI
 
