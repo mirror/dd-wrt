@@ -27,6 +27,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <signal.h>
+#include <services.h>
 
 void stop_olsrd(void)
 {

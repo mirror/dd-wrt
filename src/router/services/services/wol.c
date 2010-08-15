@@ -32,6 +32,7 @@
 #include "snmp.h"
 #include <signal.h>
 #include <utils.h>
+#include <services.h>
 
 #define WOL_INTERVAL 15
 

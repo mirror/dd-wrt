@@ -28,6 +28,7 @@
 #include <malloc.h>
 #include <sys/stat.h>
 #include <syslog.h>
+#include <services.h>
 
 void add_pppoe_natrule(void)
 {
