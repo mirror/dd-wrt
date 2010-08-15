@@ -713,6 +713,7 @@ nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.sambasrv_legend="Samba Server";
+nas.samba3_legend="File Sharing";
 
 var hnas = new Object();
 hnas.right2="User Password List: Enter one User Password per line. Password can be plain text or MD5 crypt.";
@@ -1433,6 +1434,19 @@ service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
 service.hmilkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
+
+service.samba3_srv="Samba";
+service.samba3_srvstr="Server String";
+service.samba3_pub="Public Share";
+service.samba3_config="Custom Configuration";
+service.samba3_workgrp="Workgroup";
+service.samba3_usr1="User1";
+service.samba3_pass1=" Password1";
+service.samba3_usr2="User2";
+service.samba3_pass2=" Password2";
+service.samba3_pubacl="Readonly";
+service.samba3_advanced="Advanced"
+service.samba3_custom="Use Custom Configuration";
 
 
 // ** eop-tunnel.asp **//

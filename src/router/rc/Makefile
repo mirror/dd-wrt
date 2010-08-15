@@ -484,6 +484,9 @@ endif
 ifeq ($(CONFIG_SAMBA_SRV),y)
 CFLAGS += -DHAVE_SAMBA_SRV
 endif
+ifeq ($(CONFIG_SAMBA3),y)
+CFLAGS += -DHAVE_SAMBA3
+endif
 
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS

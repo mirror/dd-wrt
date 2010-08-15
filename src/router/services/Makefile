@@ -487,7 +487,10 @@ ifeq ($(CONFIG_SAMBA_SRV),y)
 CFLAGS_EXTRA += -DHAVE_SAMBA_SRV
 OBJS += sambasrv.o
 endif
-
+ifeq ($(CONFIG_SAMBA3),y)
+CFLAGS_EXTRA += -DHAVE_SAMBA3
+OBJS += samba3.o
+endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS_EXTRA += -DHAVE_RB500
 endif

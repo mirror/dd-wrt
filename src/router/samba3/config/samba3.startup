@@ -1,0 +1,81 @@
+#!/bin/sh
+
+
+if [ "$(nvram get samba3_enable)" = "1" ]; then 
+
+grep -q nobody /etc/passwd || echo "nobody:*:65534:65534:nobody:/var:/bin/false" >> /etc/passwd
+
+[ -d /var/samba ] || mkdir /var/samba
+
+touch /var/samba/smbpasswd
+
+USR1="$(nvram get samba3_usr1)"
+PASS1="$(nvram get samba3_pass1)"
+USR2="$(nvram get samba3_usr2)"
+PASS2="$(nvram get samba3_pass2)"
+
+if [ "$(nvram get samba3_usr1)" != "" ]; then
+grep -q $USR1 /etc/passwd || echo $USR1":*:1000:1000:"$USR1":/var:/bin/false" >> /etc/passwd
+smbpasswd $USR1 $PASS1
+fi
+
+if [ "$(nvram get samba3_usr2)" != "" ]; then
+grep -q $USR2 /etc/passwd || echo $USR1":*:1000:1000:"$USR2":/var:/bin/false" >> /etc/passwd
+smbpasswd $USR2 $PASS2
+fi
+
+WORKGROUP="$(nvram get samba3_workgrp)"
+SRVSTRING="$(nvram get samba3_srvstr)"
+ACL="No"
+
+if [ "$(nvram get samba3_pubacl)" = "1" ]; then
+ACL="YES"
+fi
+
+SMB_CONF=$( cat <<EOF
+[global]
+server string = $SRVSTRING
+workgroup = $WORKGROUP
+interfaces = br*
+bind interfaces only = Yes
+map to guest = Bad User
+smb passwd file = /var/samba/smbpasswd
+private dir = /var/samba
+passdb backend = smbpasswd
+log file = /var/smbd.log
+max log size = 1000
+socket options = TCP_NODELAY SO_RCVBUF=32768 SO_SNDBUF=32768
+printing = none
+load printers = No
+usershare allow guests = Yes
+EOF
+)
+
+PUBLIC=$( cat <<EOF
+
+[Public]
+comment = Public Share
+path = /jffs/
+read only = $ACL
+guest ok = Yes
+EOF
+)
+
+SMB_CONF_CUSTOM="$(nvram get samba3_conf)"
+
+if [ "$(nvram get samba3_conf)" != "" ]; then
+  echo "$SMB_CONF_CUSTOM" > /tmp/smb.conf
+  if [ "$(nvram get samba3_pub)" = "1" ]; then
+    echo "$PUBLIC" >> /tmp/smb.conf
+  fi
+else
+  echo "$SMB_CONF" > /tmp/smb.conf
+  echo "$PUBLIC" >> /tmp/smb.conf
+fi
+
+/usr/sbin/nmbd -D --configfile=/tmp/smb.conf
+/usr/sbin/smbd -D --configfile=/tmp/smb.conf
+
+fi
+
+
