@@ -551,7 +551,7 @@ hdiag.right2="Ukaze lahko zaženete preko uporabniškega vmesnika. Vnesite ukaze
 // ** DMZ.asp **//
 
 dmz.titl="DMZ";
-dmz.h2="Demilitarizirano obmocčje (DMZ)";
+dmz.h2="Demilitarizirano območje (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="Uporabi DMZ";
 dmz.host="DMZ gostiteljev IP naslov";
