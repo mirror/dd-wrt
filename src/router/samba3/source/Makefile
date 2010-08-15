@@ -950,7 +950,7 @@ bin/libsmbd.a: $(SMBD_OBJ_BASE)
 
 bin/nmbd: $(NMBD_OBJ) $(POPT_OBJS) bin/.dummy
 	@echo Linking $@
-	@$(CC) $(FLAGS)  -o $@ $(NMBD_OBJ) $(LDFLAGS) $(DYNEXP) $(LIBS) $(POPT_OBJS) $(KRB5LIBS) $(LDAP_LIBS)
+	@$(CC) $(FLAGS) $(LDFLAGS) -o $@ $(NMBD_OBJ) $(LIBS) $(POPT_OBJS) $(KRB5LIBS) $(LDAP_LIBS)
 
 
 bin/swat: $(SWAT_OBJ) $(POPT_OBJS) bin/.dummy
