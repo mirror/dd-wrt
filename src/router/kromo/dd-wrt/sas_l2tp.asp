@@ -12,19 +12,19 @@
 	<input name="l2tp_server_name" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_selget("l2tp_server_name"); %>" />
 </div>
 <div class="setting">
-		<div class="label">Require CHAP</div>
-		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="yes" <% sas_nvram_checked("l2tp_req_chap", "yes"); %><% tran("share.yes"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="no" <% sas_nvram_checked("l2tp_req_chap", "no"); %><% tran("share.no"); %>
+		<div class="label"><% tran("idx_l.req_chap"); %></div>
+		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="yes" <% sas_nvram_checked("l2tp_req_chap", "yes"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_req_chap" value="no" <% sas_nvram_checked("l2tp_req_chap", "no"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
-		<div class="label">Refuse PAP</div>
-		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="yes" <% sas_nvram_checked("l2tp_ref_pap", "yes"); %><% tran("share.yes"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="no" <% sas_nvram_checked("l2tp_ref_pap", "no"); %><% tran("share.no"); %>
+		<div class="label"><% tran("idx_l.ref_pap"); %></div>
+		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="yes" <% sas_nvram_checked("l2tp_ref_pap", "yes"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_ref_pap" value="no" <% sas_nvram_checked("l2tp_ref_pap", "no"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
-		<div class="label">Require Authentication</div>
-		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="yes" <% sas_nvram_checked("l2tp_req_auth", "yes"); %><% tran("share.yes"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="no" <% sas_nvram_checked("l2tp_req_auth", "no"); %><% tran("share.no"); %>
+		<div class="label"><% tran("idx_l.req_auth"); %></div>
+		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="yes" <% sas_nvram_checked("l2tp_req_auth", "yes"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="no" <% sas_nvram_checked("l2tp_req_auth", "no"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>
