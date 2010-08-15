@@ -67,8 +67,10 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 			i++;
 			break;
 		} else {
-			strcat(buffer, var);
-			strcat(buffer, " ");
+			if(strchr(var, ':') != NULL) {
+				strcat(buffer, var);
+				strcat(buffer, " ");
+			}
 		}
 		i++;
 	}
