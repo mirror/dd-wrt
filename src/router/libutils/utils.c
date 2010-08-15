@@ -2912,15 +2912,16 @@ int sv_valid_hwaddr(char *value)
 
 char *cpustring(void)
 {
+	static char buf[256];
 #ifdef HAVE_RB600
-	websWrite(wp, "FreeScale MPC8343");
+	strcpy(buf,"FreeScale MPC8343");
+	return buf;
 #else
 	FILE *fcpu = fopen("/proc/cpuinfo", "r");
 
 	if (fcpu == NULL) {
 		return NULL;
 	}
-	static char buf[256];
 	int i;
 
 #ifdef HAVE_MAGICBOX
