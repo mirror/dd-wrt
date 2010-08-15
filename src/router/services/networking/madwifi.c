@@ -1333,7 +1333,6 @@ static void configure_single(int count)
 
 #if defined(HAVE_NS2)  || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
 	int tx = atoi(nvram_default_get(txantenna, "0"));
-
 	setsysctrl(wif, "diversity", 0);
 	switch (tx) {
 	case 0:		// vertical
@@ -1382,7 +1381,6 @@ static void configure_single(int count)
 	int tx = atoi(nvram_default_get(txantenna, "1"));
 	int diva = atoi(nvram_default_get(diversity, "0"));
 #endif
-
 	setsysctrl(wif, "diversity", diva);
 	setsysctrl(wif, "rxantenna", rx);
 	setsysctrl(wif, "txantenna", tx);
