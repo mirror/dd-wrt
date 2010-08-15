@@ -33,6 +33,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <services.h>
 
 void start_vncrepeater(void)
 {

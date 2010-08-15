@@ -35,6 +35,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <services.h>
 
 extern int usejffs;
 

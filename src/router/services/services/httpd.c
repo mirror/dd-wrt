@@ -26,6 +26,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <unistd.h>
+#include <services.h>
 
 void start_httpd(void)
 {
