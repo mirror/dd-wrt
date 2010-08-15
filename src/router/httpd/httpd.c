@@ -706,6 +706,9 @@ static void handle_request(void)
 	int nodetect = 0;
 	if (nvram_match("status_auth", "0") && endswith(file, "Info.htm"))
 		nodetect = 1;
+	if (nvram_match("no_crossdetect","1"))
+		nodetect = 1;
+		
 
 	if (referer && host && nodetect == 0) {
 		int i;
