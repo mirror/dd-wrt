@@ -30,9 +30,11 @@
 	  </div>
                         
 	  <div class="setting">
-             <div class="label"><% tran("service.samba3_advanced"); %></div>
-             <input class="spaceradio" type="checkbox" value="1" name="samba3_advanced" <% nvram_checked("samba3_advanced", "1"); %> /><% tran("service.samba3_custom"); %>&nbsp;
+             <div class="label"><% tran("service.samba3_custom"); %></div>
+	     <input class="spaceradio" type="radio" name="samba3_advanced" value="1" <% nvram_checked("samba3_advanced", "1"); %> onclick="show_layer_ext(this, 'samba3advanced', true)"/><% tran("share.enable"); %>&nbsp;
+             <input class="spaceradio" type="radio" name="samba3_advanced" value="0" <% nvram_checked("samba3_advanced", "0"); %> onclick="show_layer_ext(this, 'samba3advanced', false)"/><% tran("share.disable");%>
           </div>
+	  <div id="samba3advanced">
 	  <div class="setting">
             <div class="label"><% tran("service.samba3_usr1"); %></div>
 	    <input maxlength="32" size="20" name="samba3_usr1" value="<% nvram_get("samba3_usr1"); %>" />
@@ -58,6 +60,7 @@
               document.getElementById("samba3_conf").value = samba3_conf;
               //]]>
               </script>
+	  </div>
 	  </div>
 	</div>
 </fieldset><br />

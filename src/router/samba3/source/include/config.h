@@ -232,7 +232,7 @@
 
 /* Define to 1 if you have the `creat64' function. */
 /* AR7 #define HAVE_CREAT64 1 */
-
+#define HAVE_CREAT64 1
 /* Whether the system has the crypt() function */
 #define HAVE_CRYPT 1
 
@@ -315,7 +315,7 @@
 
 /* Whether large file support can be enabled */
 /* AR7 #define HAVE_EXPLICIT_LARGEFILE_SUPPORT 1 */
-
+#define HAVE_EXPLICIT_LARGEFILE_SUPPORT 1
 /* Define to 1 if you have the `extattr_delete_fd' function. */
 /* #undef HAVE_EXTATTR_DELETE_FD */
 
@@ -378,7 +378,7 @@
 
 /* Define to 1 if you have the `fopen64' function. */
 /* AR7 #define HAVE_FOPEN64 1 */
-
+#define HAVE_FOPEN64 1
 /* Define to 1 if you have the `fremovexattr' function. */
 /* AR7 #define HAVE_FREMOVEXATTR 1 */
 
@@ -387,7 +387,7 @@
 
 /* Define to 1 if you have the `fseeko64' function. */
 /* #define HAVE_FSEEKO64 1 */
-
+#define HAVE_FSEEKO64 1
 /* Define to 1 if you have the `fsetxattr' function. */
 /* AR7 #define HAVE_FSETXATTR 1 */
 
@@ -396,7 +396,7 @@
 
 /* Whether fstat64() is available */
 /* AR7 #define HAVE_FSTAT64 1 */
-
+#define HAVE_FSTAT64 1
 /* Define to 1 if you have the `fsync' function. */
 #define HAVE_FSYNC 1
 
@@ -405,12 +405,14 @@
 
 /* Define to 1 if you have the `ftello64' function. */
 /* AR7 #define HAVE_FTELLO64 1 */
+#define HAVE_FTELLO64 1
 
 /* Define to 1 if you have the `ftruncate' function. */
 #define HAVE_FTRUNCATE 1
 
 /* Define to 1 if you have the `ftruncate64' function. */
 /* AR7 #define HAVE_FTRUNCATE64 1 */
+#define HAVE_FTRUNCATE64 1
 
 /* Truncate extend */
 #define HAVE_FTRUNCATE_EXTEND 1
@@ -525,7 +527,7 @@
 
 /* Whether the 'ino64_t' type is available */
 /* #undef HAVE_INO64_T */
-
+#define HAVE_INO64_T 1
 /* Whether int16 typedef is included by rpc/rpc.h */
 /* #undef HAVE_INT16_FROM_RPC_RPC_H */
 
@@ -792,13 +794,13 @@
 
 /* Define to 1 if you have the `lseek64' function. */
 /* AR7 #define HAVE_LSEEK64 1 */
-
+#define HAVE_LSEEK64 1
 /* Define to 1 if you have the `lsetxattr' function. */
 /* AR7 #define HAVE_LSETXATTR 1 */
 
 /* Define to 1 if you have the `lstat64' function. */
 /* AR7 #define HAVE_LSTAT64 1 */
-
+#define HAVE_LSTAT64 1
 /* Whether the macro for makedev is available */
 #define HAVE_MAKEDEV 1
 
@@ -876,10 +878,10 @@
 
 /* Whether off64_t is available */
 /* #undef HAVE_OFF64_T */
-
+#define HAVE_OFF64_T 1
 /* Define to 1 if you have the `open64' function. */
 /* AR7 #define HAVE_OPEN64 1 */
-
+#define HAVE_OPEN64 1
 /* Define to 1 if you have the `opendir64' function. */
 /* #undef HAVE_OPENDIR64 */
 
@@ -912,7 +914,7 @@
 
 /* Define to 1 if you have the `pread64' function. */
 /* AR7 #define HAVE_PREAD64 1 */
-
+#define HAVE_PREAD64 1
 /* Define to 1 if you have the `putprpwnam' function. */
 /* #undef HAVE_PUTPRPWNAM */
 
@@ -927,7 +929,7 @@
 
 /* Define to 1 if you have the `pwrite64' function. */
 /* AR7 #define HAVE_PWRITE64 1 */
-
+#define HAVE_PWRITE64 1
 /* Whether CRAY int quotactl (char *spec, int request, char *arg); is
    available */
 /* #undef HAVE_QUOTACTL_3 */
@@ -954,7 +956,7 @@
 
 /* Define to 1 if you have the `readdir64' function. */
 /* AR7 #define HAVE_READDIR64 1 */
-
+#define HAVE_READDIR64 1
 /* Define to 1 if you have the <readline.h> header file. */
 /* #undef HAVE_READLINE_H */
 
@@ -1026,7 +1028,7 @@
 
 /* Whether sendfile64() is available */
 /* AR7 #define HAVE_SENDFILE64 1 */
-
+#define HAVE_SENDFILE64 1
 /* Whether sendfilev() is available */
 /* #undef HAVE_SENDFILEV */
 
@@ -1137,7 +1139,7 @@
 
 /* Whether stat64() is available */
 /* AR7 #define HAVE_STAT64 1 */
-
+#define HAVE_STAT64 1
 /* whether struct stat has sub-second timestamps */
 /* AR7 #define HAVE_STAT_HIRES_TIMESTAMPS 1 */
 
@@ -1212,10 +1214,10 @@
 
 /* Whether the 'dirent64' struct is available */
 /* AR7 #define HAVE_STRUCT_DIRENT64 1 */
-
+#define HAVE_STRUCT_DIRENT64 1
 /* Whether the flock64 struct is available */
 /* AR7 #define HAVE_STRUCT_FLOCK64 1 */
-
+#define HAVE_STRUCT_FLOCK64 1
 /* Define to 1 if `method_attrlist' is member of `struct secmethod_table'. */
 /* #undef HAVE_STRUCT_SECMETHOD_TABLE_METHOD_ATTRLIST */
 
@@ -1847,9 +1849,10 @@
 /* The size of a `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
 
+#define SIZEOF_LONG_LONG 8
 /* The size of the 'off_t' type */
 /* AR7 #define SIZEOF_OFF_T 8 */
-#define SIZEOF_OFF_T 4 /* AR7 */
+//#define SIZEOF_OFF_T 4 /* AR7 */
 
 /* The size of a `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
@@ -1992,9 +1995,12 @@
 /* #undef _ALIGNMENT_REQUIRED */
 
 /* File offset bits */
-#ifdef WITH_LFS
+//#ifdef WITH_LFS
 #define _FILE_OFFSET_BITS 64 /* Large File Support */
-#endif
+#define _LARGEFILE_SOURCE 1 
+#define _LARGEFILE64_SOURCE 1 
+#define _LARGE_FILES 
+//#endif
 
 /* Whether to use GNU libc extensions */
 #define _GNU_SOURCE 1
