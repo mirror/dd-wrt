@@ -86,11 +86,11 @@ out:
 void insert_user_in_smbpasswd(char *user, char *line)
 {
 	char t[256];
-	FILE *fp = fopen("/etc/samba/smbpasswd", "r+");
+	FILE *fp = fopen("/var/samba/smbpasswd", "r+");
 
 	if(!fp)
 	{
-		printf("failed to open /etc/samba/smbpasswd");
+		printf("failed to open /var/samba/smbpasswd");
 		goto out;
 	}
 
@@ -118,11 +118,11 @@ out:
 void delete_user_from_smbpasswd(char *user)
 {
 	char t[256];
-	FILE *fp = fopen("/etc/samba/smbpasswd", "r+");
+	FILE *fp = fopen("/var/samba/smbpasswd", "r+");
 
 	if(!fp)
 	{
-		printf("failed to open /etc/samba/smbpasswd");
+		printf("failed to open /var/samba/smbpasswd");
 		goto out;
 	}
 
