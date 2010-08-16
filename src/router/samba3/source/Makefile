@@ -112,7 +112,7 @@ CONFIGFILE = /etc/samba/smb.conf
 LMHOSTSFILE = /etc/lmhosts
 
 # This is where smbpasswd et al go
-PRIVATEDIR = /etc/samba/
+PRIVATEDIR = /var/samba/
 
 SMB_PASSWD_FILE = $(PRIVATEDIR)/smbpasswd
 PRIVATE_DIR = $(PRIVATEDIR)
