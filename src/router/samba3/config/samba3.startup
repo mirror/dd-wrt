@@ -20,7 +20,7 @@ smbpasswd $USR1 $PASS1
 fi
 
 if [ "$(nvram get samba3_usr2)" != "" ]; then
-grep -q $USR2 /etc/passwd || echo $USR1":*:1000:1000:"$USR2":/var:/bin/false" >> /etc/passwd
+grep -q $USR2 /etc/passwd || echo $USR2":*:1001:1001:"$USR2":/var:/bin/false" >> /etc/passwd
 smbpasswd $USR2 $PASS2
 fi
 
@@ -44,7 +44,7 @@ private dir = /var/samba
 passdb backend = smbpasswd
 log file = /var/smbd.log
 max log size = 1000
-socket options = TCP_NODELAY SO_RCVBUF=32768 SO_SNDBUF=32768
+socket options = TCP_NODELAY
 printing = none
 load printers = No
 usershare allow guests = Yes
@@ -63,7 +63,7 @@ EOF
 
 SMB_CONF_CUSTOM="$(nvram get samba3_conf)"
 
-if [ "$(nvram get samba3_conf)" != "" ]; then
+if [ "$(nvram get samba3_conf)" != "" ] && [ "$(nvram get samba3_advanced)" = "1" ]; then
   echo "$SMB_CONF_CUSTOM" > /tmp/smb.conf
   if [ "$(nvram get samba3_pub)" = "1" ]; then
     echo "$PUBLIC" >> /tmp/smb.conf
@@ -72,6 +72,7 @@ else
   echo "$SMB_CONF" > /tmp/smb.conf
   echo "$PUBLIC" >> /tmp/smb.conf
 fi
+chmod 777 /jffs
 
 /usr/sbin/nmbd -D --configfile=/tmp/smb.conf
 /usr/sbin/smbd -D --configfile=/tmp/smb.conf
