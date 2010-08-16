@@ -2656,6 +2656,8 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	struct pattern patterns[] = {
 		{' ', "&nbsp;"},
 		{':', "&semi;"},
+		{'<', "&lt;"},
+		{'>', "&gt;"},
 	};
 
 	struct pattern *v;
