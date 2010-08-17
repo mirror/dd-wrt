@@ -283,6 +283,17 @@ char *get3GControlDevice(void)
 		return "/dev/usb/tts/0";
 	}
 
+	if (scanFor(0x12d1, 0x1446)) {
+		//huawei
+		fprintf(stderr, "HUAWEI/Option E1550 detected\n");
+		system("usb_modeswitch -v 0x12d1 -p 0x1446 -m 1 55534243000000000000000000000011060000000000000000000000000000");
+		sleep(2);
+		insmod("usbserial");
+		insmod("option");
+		nvram_set("3gnmvariant", "2");
+		return "/dev/usb/tts/0";
+	}
+
 	if (scanFor(0x1e0e, 0x9000)) {
 		//huawei
 		fprintf(stderr, "QUALCOMM ICON 210 detected\n");
