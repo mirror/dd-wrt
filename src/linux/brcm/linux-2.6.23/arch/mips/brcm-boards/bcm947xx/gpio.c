@@ -218,8 +218,9 @@ if ((boardnum == 1 || boardnum == 3500)
 
 if ((boardnum == 42 || boardnum == 66)
 		&& nvram_match("boardtype", "0x04EF")
-		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305")))
+		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305") || nvram_match("boardrev", "0x1307")))
 {
+		printk(KERN_EMERG "WRT320N/E2000 GPIO Init\n");
 		gpios = 1 << 2 | 1 << 3 | 1 << 4;
 }
 
