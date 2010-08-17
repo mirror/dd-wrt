@@ -112,13 +112,17 @@ static void skipline(FILE * in)
 	}
 }
 
+#ifdef TEST
+int main(int argc, char *argv[])
+#else
 int site_survey_main(int argc, char *argv[])
+#endif
 {
 #define DOT11_CAP_ESS				0x0001
 #define DOT11_CAP_IBSS				0x0002
 #define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
 
-	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32];
+	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32], ext[32];
 	int i = 0;
 
 	unlink(SITE_SURVEY_DB);
@@ -141,7 +145,6 @@ int site_survey_main(int argc, char *argv[])
 	i = 0;
 	int c=0;
 	do {
-//              fprintf(stderr,"read\n");
 		if (feof(scan))
 			break;
 		fread(b1, 4, 1, scan);
@@ -168,16 +171,15 @@ int site_survey_main(int argc, char *argv[])
 		    for (i=0;i<32-c;i++)
 			b2[i]=b2[i+c];
 		    }
-		int ret = fscanf(scan, "%s %s %s %s %s", b3, b4, b5, b6, b7);	//skip second line
-//              fprintf(stderr,"%d\n",ret);
-		if (ret < 5)
+		int ret = fscanf(scan, "%s %s %s %s %s %s", b3, b4, b5, b6, ext,b7);	//skip second line
+		if (ret < 6)
 			break;
+		skipline(scan);
 		site_survey_lists[i].channel = atoi(b1);	// channel
 		strcpy(site_survey_lists[i].SSID, b2);	//SSID
 		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
 		site_survey_lists[i].phy_noise = -95;	// no way
 		strcpy(site_survey_lists[i].ENCINFO, b4);
-//              strcat(site_survey_lists[i].ENCINFO, b4);
 		site_survey_lists[i].RSSI = -atoi(b5);
 
 		if (!strcmp(b6, "11b/g"))
