@@ -294,6 +294,15 @@ char *get3GControlDevice(void)
 		return "/dev/usb/tts/0";
 	}
 
+	if (scanFor(0x12d1, 0x1001)) { //if E1550 is already switched, it will get 1001 as product id
+		//huawei
+		fprintf(stderr, "HUAWEI/Option detected\n");
+		insmod("usbserial");
+		insmod("option");
+		nvram_set("3gnmvariant", "2");
+		return "/dev/usb/tts/0";
+	}
+
 	if (scanFor(0x1e0e, 0x9000)) {
 		//huawei
 		fprintf(stderr, "QUALCOMM ICON 210 detected\n");
