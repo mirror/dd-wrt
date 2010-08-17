@@ -2043,7 +2043,6 @@ int internal_getRouterBrand()
 	    && nvram_match("boardrev", "0x1307")) {
 		cprintf("router is E2000n\n");
 		setRouter("Linksys E2000");	// renamed (and fixed reset button) wrt320n
-		eval ("gpio", "disable", "0");  //fix for wireless led
 		return ROUTER_WRT320N;
 	}
 
