@@ -65,7 +65,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 
 typedef struct _RT_802_11_MAC_ENTRY {
     unsigned char ApIdx;
-    unsigned char       Addr[MAC_ADDR_LENGTH];
+    unsigned char       Addr[6];
     unsigned char       Aid;
     unsigned char       Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
     unsigned char		MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
