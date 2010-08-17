@@ -154,12 +154,11 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		 * DOT11_CAP_SPECTRUM 0x0100 #define DOT11_CAP_SHORTSLOT 0x0400
 		 * #define DOT11_CAP_CCK_OFDM 0x2000 
 		 */
-		char *open =
-		    // (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : 
-		    // "Yes";
-		    (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ?
+		 
+		char open[32];
+		strncpy(open,(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ?
 		    live_translate("share.no")
-		    : live_translate("share.yes");
+		    : live_translate("share.yes"),31);
 
 		char *netmode;
 		long netmodecap = site_survey_lists[i].capability;
@@ -171,12 +170,13 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			netmode = "AdHoc";
 		else
 			netmode = live_translate("share.unknown");
-
+		char net[32];
+		strcpy(net,netmode);
 		websWrite(wp, "%c\"", i ? ',' : ' ');
 		tf_webWriteJS(wp, tssid);
 		websWrite(wp,
 			  "\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
-			  netmode, site_survey_lists[i].BSSID,
+			  net, site_survey_lists[i].BSSID,
 			  site_survey_lists[i].channel,
 			  site_survey_lists[i].RSSI,
 			  site_survey_lists[i].phy_noise,
