@@ -348,7 +348,7 @@ STAINFO *getRaStaInfo(char *ifname)
 		memcpy(ret->mac, BssidQuery, 6);
 		strcpy(ret->ifname, ifn);
 		ret->rssi = RSSI;
-		ret->noise = nNoiseDbm;
+		ret->noise = -nNoiseDbm;
 		return ret;
 	}
 	return NULL;
