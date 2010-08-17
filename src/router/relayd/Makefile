@@ -5,7 +5,7 @@ LDFLAGS =
 
 all: relayd 
 
-relayd: uloop.o main.o route.o
+relayd: uloop.o main.o route.o dhcp.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 relayd.h: list.h

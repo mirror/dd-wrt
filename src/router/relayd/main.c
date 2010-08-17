@@ -31,6 +31,7 @@
 
 #include "relayd.h"
 
+static LIST_HEAD(pending_routes);
 LIST_HEAD(interfaces);
 int debug;
 
@@ -38,6 +39,12 @@ static int host_timeout;
 static int inet_sock;
 static int forward_bcast;
 static int forward_dhcp;
+
+struct relayd_pending_route {
+	struct relayd_route rt;
+	struct uloop_timeout timeout;
+	uint8_t gateway[4];
+};
 
 static struct relayd_host *find_host_by_ipaddr(struct relayd_interface *rif, const uint8_t *ipaddr)
 {
@@ -81,20 +88,55 @@ static void add_arp(struct relayd_host *host)
 	ioctl(inet_sock, SIOCSARP, &arp);
 }
 
+static void timeout_host_route(struct uloop_timeout *timeout)
+{
+	struct relayd_pending_route *rt;
+
+	rt = container_of(timeout, struct relayd_pending_route, timeout);
+	list_del(&rt->rt.list);
+	free(rt);
+}
+
+void relayd_add_host_route(struct relayd_host *host, const uint8_t *dest, uint8_t mask)
+{
+	struct relayd_route *rt;
+
+	list_for_each_entry(rt, &host->routes, list) {
+		if (!memcmp(rt->dest, dest, sizeof(rt->dest)) && rt->mask == mask)
+			return;
+	}
+
+	rt = calloc(1, sizeof(*rt));
+	if (!rt)
+		return;
+
+	list_add(&rt->list, &host->routes);
+	memcpy(rt->dest, dest, sizeof(rt->dest));
+	rt->mask = mask;
+	relayd_add_route(host, rt);
+}
+
 static void del_host(struct relayd_host *host)
 {
+	struct relayd_route *route, *tmp;
+
 	DPRINTF(1, "%s: deleting host "IP_FMT" ("MAC_FMT")\n", host->rif->ifname,
 		IP_BUF(host->ipaddr), MAC_BUF(host->lladdr));
 
+	list_for_each_entry_safe(route, tmp, &host->routes, list) {
+		relayd_del_route(host, route);
+		list_del(&route->list);
+		free(route);
+	}
 	if (host->rif->managed)
-		relayd_del_route(host);
+		relayd_del_route(host, NULL);
 	uloop_timeout_cancel(&host->timeout);
 	list_del(&host->list);
 	free(host);
 }
 
 static void fill_arp_request(struct arp_packet *pkt, struct relayd_interface *rif,
-                             uint8_t spa[4], uint8_t tpa[4])
+                             const uint8_t spa[4], const uint8_t tpa[4])
 {
 	memset(pkt, 0, sizeof(*pkt));
 
@@ -111,12 +153,11 @@ static void fill_arp_request(struct arp_packet *pkt, struct relayd_interface *ri
 	pkt->arp.arp_pln = 4;
 }
 
-static void send_arp_request(struct relayd_host *host)
+static void send_arp_request(struct relayd_interface *rif, const uint8_t *ipaddr)
 {
-	struct relayd_interface *rif = host->rif;
 	struct arp_packet pkt;
 
-	fill_arp_request(&pkt, host->rif, host->rif->src_ip, host->ipaddr);
+	fill_arp_request(&pkt, rif, rif->src_ip, ipaddr);
 
 	pkt.arp.arp_op = htons(ARPOP_REQUEST);
 	memcpy(pkt.arp.arp_spa, rif->src_ip, ETH_ALEN);
@@ -129,6 +170,36 @@ static void send_arp_request(struct relayd_host *host)
 
 	sendto(rif->fd.fd, &pkt, sizeof(pkt), 0,
 		(struct sockaddr *) &rif->sll, sizeof(rif->sll));
+}
+
+void relayd_add_pending_route(const uint8_t *gateway, const uint8_t *dest, uint8_t mask, int timeout)
+{
+	struct relayd_pending_route *rt;
+	struct relayd_interface *rif;
+	struct relayd_host *host;
+
+	host = find_host_by_ipaddr(NULL, gateway);
+	if (host) {
+		relayd_add_host_route(host, dest, mask);
+		return;
+	}
+
+	rt = calloc(1, sizeof(*rt));
+	if (!rt)
+		return;
+
+	memcpy(rt->gateway, gateway, sizeof(rt->gateway));
+	memcpy(rt->rt.dest, dest, sizeof(rt->rt.dest));
+	rt->rt.mask = mask;
+	list_add(&rt->rt.list, &pending_routes);
+	if (timeout <= 0)
+		return;
+
+	rt->timeout.cb = timeout_host_route;
+	uloop_timeout_set(&rt->timeout, 10000);
+	list_for_each_entry(rif, &interfaces, list) {
+		send_arp_request(rif, gateway);
+	}
 }
 
 static void send_arp_reply(struct relayd_interface *rif, uint8_t spa[4],
@@ -162,7 +233,7 @@ static void host_entry_timeout(struct uloop_timeout *timeout)
 	 * giving up on it.
 	 */
 	if (host->rif->managed && host->cleanup_pending < 2) {
-		send_arp_request(host);
+		send_arp_request(host->rif, host->ipaddr);
 		host->cleanup_pending++;
 		uloop_timeout_set(&host->timeout, 1000);
 		return;
@@ -173,11 +244,13 @@ static void host_entry_timeout(struct uloop_timeout *timeout)
 static struct relayd_host *add_host(struct relayd_interface *rif, const uint8_t *lladdr, const uint8_t *ipaddr)
 {
 	struct relayd_host *host;
+	struct relayd_pending_route *route, *rtmp;
 
 	DPRINTF(1, "%s: adding host "IP_FMT" ("MAC_FMT")\n", rif->ifname,
 			IP_BUF(ipaddr), MAC_BUF(lladdr));
 
 	host = calloc(1, sizeof(*host));
+	INIT_LIST_HEAD(&host->routes);
 	host->rif = rif;
 	memcpy(host->ipaddr, ipaddr, sizeof(host->ipaddr));
 	memcpy(host->lladdr, lladdr, sizeof(host->lladdr));
@@ -187,7 +260,20 @@ static struct relayd_host *add_host(struct relayd_interface *rif, const uint8_t 
 
 	add_arp(host);
 	if (rif->managed)
-		relayd_add_route(host);
+		relayd_add_route(host, NULL);
+
+	list_for_each_entry_safe(route, rtmp, &pending_routes, rt.list) {
+		if (memcmp(route->gateway, ipaddr, 4) != 0)
+			continue;
+
+		relayd_add_host_route(host, route->rt.dest, route->rt.mask);
+		if (!route->timeout.pending)
+			continue;
+
+		uloop_timeout_cancel(&route->timeout);
+		list_del(&route->rt.list);
+		free(route);
+	}
 
 	return host;
 }
@@ -207,8 +293,10 @@ struct relayd_host *relayd_refresh_host(struct relayd_interface *rif, const uint
 		 * If the old entry is behind a managed interface, it will be pinged
 		 * before we expire it
 		 */
-		if (host && !host->cleanup_pending)
+		if (host && !host->cleanup_pending) {
 			uloop_timeout_set(&host->timeout, 1);
+			return NULL;
+		}
 
 		host = add_host(rif, lladdr, ipaddr);
 	} else {
@@ -281,7 +369,8 @@ static void recv_arp_reply(struct relayd_interface *rif, struct arp_packet *pkt)
 		MAC_BUF(pkt->eth.ether_shost),
 		IP_BUF(pkt->arp.arp_tpa));
 
-	relayd_refresh_host(rif, pkt->arp.arp_sha, pkt->arp.arp_spa);
+	if (memcmp(pkt->arp.arp_sha, rif->sll.sll_addr, ETH_ALEN) != 0)
+		relayd_refresh_host(rif, pkt->arp.arp_sha, pkt->arp.arp_spa);
 
 	if (!memcmp(pkt->arp.arp_tpa, rif->src_ip, 4))
 		return;
@@ -329,7 +418,7 @@ static void recv_packet(struct uloop_fd *fd, unsigned int events)
 	} while (1);
 }
 
-static void forward_bcast_packet(struct relayd_interface *from_rif, void *packet, int len)
+void relayd_forward_bcast_packet(struct relayd_interface *from_rif, void *packet, int len)
 {
 	struct relayd_interface *rif;
 	struct ether_header *eth = packet;
@@ -342,86 +431,6 @@ static void forward_bcast_packet(struct relayd_interface *from_rif, void *packet
 		memcpy(eth->ether_shost, rif->sll.sll_addr, ETH_ALEN);
 		send(rif->bcast_fd.fd, packet, len, 0);
 	}
-}
-
-static uint16_t
-chksum(uint16_t sum, const uint8_t *data, uint16_t len)
-{
-	const uint8_t *last;
-	uint16_t t;
-
-	last = data + len - 1;
-
-	while(data < last) {
-		t = (data[0] << 8) + data[1];
-		sum += t;
-		if(sum < t)
-			sum++;
-		data += 2;
-	}
-
-	if(data == last) {
-		t = (data[0] << 8) + 0;
-		sum += t;
-		if(sum < t)
-			sum++;
-	}
-
-	return sum;
-}
-
-static bool forward_dhcp_packet(struct relayd_interface *rif, void *data, int len)
-{
-	struct ip_packet *pkt = data;
-	struct udphdr *udp;
-	struct dhcp_header *dhcp;
-	int udplen;
-	uint16_t sum;
-
-	if (pkt->eth.ether_type != htons(ETH_P_IP))
-		return false;
-
-	if (pkt->iph.version != 4)
-		return false;
-
-	if (pkt->iph.protocol != IPPROTO_UDP)
-		return false;
-
-	udp = (void *) ((char *) &pkt->iph + (pkt->iph.ihl << 2));
-	dhcp = (void *) (udp + 1);
-
-	udplen = ntohs(udp->len);
-	if (udplen > len - ((char *) udp - (char *) data))
-		return false;
-
-	if (udp->dest != htons(67) && udp->source != htons(67))
-		return false;
-
-	if (dhcp->op != 1 && dhcp->op != 2)
-		return false;
-
-	if (!forward_dhcp)
-		return true;
-
-	if (dhcp->op == 2)
-		relayd_refresh_host(rif, pkt->eth.ether_shost, (void *) &pkt->iph.saddr);
-
-	DPRINTF(2, "%s: handling DHCP %s\n", rif->ifname, (dhcp->op == 1 ? "request" : "response"));
-
-	dhcp->flags |= htons(DHCP_FLAG_BROADCAST);
-
-	udp->check = 0;
-	sum = udplen + IPPROTO_UDP;
-	sum = chksum(sum, (void *) &pkt->iph.saddr, 8);
-	sum = chksum(sum, (void *) udp, udplen);
-	if (sum == 0)
-		sum = 0xffff;
-
-	udp->check = htons(~sum);
-
-	forward_bcast_packet(rif, data, len);
-
-	return true;
 }
 
 static void recv_bcast_packet(struct uloop_fd *fd, unsigned int events)
@@ -448,11 +457,11 @@ static void recv_bcast_packet(struct uloop_fd *fd, unsigned int events)
 		if (!forward_bcast && !forward_dhcp)
 			continue;
 
-		if (forward_dhcp_packet(rif, pktbuf, pktlen))
+		if (relayd_handle_dhcp_packet(rif, pktbuf, pktlen, forward_dhcp))
 			continue;
 
 		if (forward_bcast)
-			forward_bcast_packet(rif, pktbuf, pktlen);
+			relayd_forward_bcast_packet(rif, pktbuf, pktlen);
 	} while (1);
 }
 
@@ -539,6 +548,16 @@ static int init_interface(struct relayd_interface *rif)
 	return 0;
 }
 
+static void ping_static_routes(void)
+{
+	struct relayd_pending_route *rt;
+	struct relayd_interface *rif;
+
+	list_for_each_entry(rt, &pending_routes, rt.list)
+		list_for_each_entry(rif, &interfaces, list)
+			send_arp_request(rif, rt->gateway);
+}
+
 static int init_interfaces(void)
 {
 	struct relayd_interface *rif;
@@ -576,24 +595,23 @@ static void free_interfaces(void)
 	}
 }
 
-static int alloc_interface(const char *ifname, bool managed)
+static struct relayd_interface *alloc_interface(const char *ifname, bool managed)
 {
 	struct relayd_interface *rif;
 
 	if (strlen(ifname) >= IFNAMSIZ)
-		return -1;
+		return NULL;
 
 	rif = calloc(1, sizeof(*rif));
 	if (!rif)
-		return -1;
+		return NULL;
 
-	INIT_LIST_HEAD(&rif->list);
 	INIT_LIST_HEAD(&rif->hosts);
 	strcpy(rif->ifname, ifname);
 	list_add(&rif->list, &interfaces);
 	rif->managed = managed;
 
-	return 0;
+	return rif;
 }
 
 static void die(int signo)
@@ -616,6 +634,9 @@ static int usage(const char *progname)
 			"	-i <ifname>	Add an interface for relaying\n"
 			"	-I <ifname>	Same as -i, except with ARP cache and host route management\n"
 			"			You need to specify at least two interfaces\n"
+			"	-G <ip>		Set a gateway IP for clients\n"
+			"	-R <gateway>:<net>/<mask>\n"
+			"			Add a static route for <net>/<mask> via <gateway>\n"
 			"	-t <timeout>	Host entry expiry timeout\n"
 			"	-T <table>	Set routing table number for automatically added routes\n"
 			"	-B		Enable broadcast forwarding\n"
@@ -627,8 +648,12 @@ static int usage(const char *progname)
 
 int main(int argc, char **argv)
 {
+	struct relayd_interface *rif = NULL;
+	struct in_addr addr, addr2;
 	bool managed;
 	int ifnum = 0;
+	char *s, *s2;
+	int mask;
 	int ch;
 
 	debug = 0;
@@ -642,14 +667,15 @@ int main(int argc, char **argv)
 	forward_bcast = 0;
 	uloop_init();
 
-	while ((ch = getopt(argc, argv, "I:i:t:BDdT:")) != -1) {
+	while ((ch = getopt(argc, argv, "I:i:t:BDdT:G:R:")) != -1) {
 		switch(ch) {
 		case 'I':
 			managed = true;
 			/* fall through */
 		case 'i':
 			ifnum++;
-			if (alloc_interface(optarg, managed) < 0)
+			rif = alloc_interface(optarg, managed);
+			if (!rif)
 				return 1;
 
 			managed = false;
@@ -672,6 +698,40 @@ int main(int argc, char **argv)
 			route_table = atoi(optarg);
 			if (route_table <= 0)
 				return usage(argv[0]);
+			break;
+		case 'G':
+			if (!inet_aton(optarg, &addr)) {
+				fprintf(stderr, "Address '%s' not found\n", optarg);
+				return 1;
+			}
+			relayd_add_pending_route((uint8_t *) &addr.s_addr, (const uint8_t *) "\x00\x00\x00\x00", 0, 0);
+			break;
+		case 'R':
+			s = strchr(optarg, ':');
+			if (!s)
+				return usage(argv[0]);
+
+			*(s++) = 0;
+			if (!inet_aton(optarg, &addr)) {
+				fprintf(stderr, "Address '%s' not found\n", optarg);
+				return 1;
+			}
+
+			s2 = strchr(s, '/');
+			if (!s2)
+				return usage(argv[0]);
+
+			*(s2++) = 0;
+			if (!inet_aton(s, &addr2)) {
+				fprintf(stderr, "Address '%s' not found\n", s);
+				return 1;
+			}
+
+			mask = atoi(s2);
+			if (mask < 0 || mask > 32)
+				return usage(argv[0]);
+
+			relayd_add_pending_route((uint8_t *) &addr.s_addr, (uint8_t *) &addr2.s_addr, mask, 0);
 			break;
 		case '?':
 		default:
@@ -700,6 +760,8 @@ int main(int argc, char **argv)
 
 	if (init_interfaces() < 0)
 		return 1;
+
+	ping_static_routes();
 
 	uloop_run();
 	uloop_done();
