@@ -252,20 +252,20 @@ typedef union _MACHTTRANSMIT_SETTING {
 } MACHTTRANSMIT_SETTING;
 
 typedef struct _RT_802_11_MAC_ENTRY {
-    UCHAR ApIdx;
-    UCHAR       Addr[MAC_ADDR_LENGTH];
-    UCHAR       Aid;
-    UCHAR       Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
-    UCHAR		MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
-    CHAR		AvgRssi0;
-	CHAR		AvgRssi1;
-	CHAR		AvgRssi2;
-	UINT32		ConnectedTime;
+    unsigned char ApIdx;
+    unsigned char       Addr[MAC_ADDR_LENGTH];
+    unsigned char       Aid;
+    unsigned char       Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
+    unsigned char		MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+    char		AvgRssi0;
+	char		AvgRssi1;
+	char		AvgRssi2;
+	unsigned int		ConnectedTime;
     MACHTTRANSMIT_SETTING	TxRate;
 //#ifdef RTMP_RBUS_SUPPORT
-	UINT32		LastRxRate;
-	INT32		StreamSnr[3];
-	INT32		SoundingRespSnr[3];
+	 unsigned int		LastRxRate;
+	int		StreamSnr[3];
+	int		SoundingRespSnr[3];
 //#endif // RTMP_RBUS_SUPPORT //
 } RT_802_11_MAC_ENTRY;
 
