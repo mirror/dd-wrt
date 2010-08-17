@@ -3755,8 +3755,8 @@ void start_wan_done(char *wan_ifname)
 			ifconfig("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 		} else if (nvram_match("wl0_mode", "ap")) {
 			br_del_interface(nvram_safe_get("lan_ifname"),
-					 get_wdev());
-			ifconfig(get_wdev(), IFUP | IFF_ALLMULTI, "0.0.0.0",
+					 nvram_safe_get("chilli_interface"));
+			ifconfig(nvram_safe_get("chilli_interface"), IFUP | IFF_ALLMULTI, "0.0.0.0",
 				 NULL);
 		}
 #ifdef HAVE_CHILLI
