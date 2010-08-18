@@ -424,11 +424,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	eval("ifconfig", "wds8", "down");
 	eval("ifconfig", "wds9", "down");
 	eval("ifconfig", "apcli0", "down");
-	sleep(5);
 
 	rmmod("rt2860v2_ap");
 	rmmod("rt2860v2_sta");
-	sleep(3);
 	if (nvram_match("wl0_net_mode", "disabled"))
 		return;
 
