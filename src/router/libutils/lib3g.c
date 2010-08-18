@@ -302,6 +302,29 @@ char *get3GControlDevice(void)
 		nvram_set("3gnmvariant", "2");
 		return "/dev/usb/tts/0";
 	}
+	if (scanFor(0x1410, 0x5030)) { //cdrom mode, switch to modem mode
+		//huawei
+		fprintf(stderr, "Novatel USB760 CDROM Mode detected\n");
+		system("usb_modeswitch -v 0x1410 -p 0x6000 -m 1 5553424312345678000000000000061b000000020000000000000000000000");
+		sleep(2);
+		insmod("usbserial");
+		insmod("option");
+		nvram_set("3gnmvariant", "2");
+		return "/dev/usb/tts/0";
+	}
+
+
+	if (scanFor(0x1410, 0x6000)) { //already modem mode 
+		//huawei
+		fprintf(stderr, "Novatel USB760 Modem Mode detected\n");
+//		system("usb_modeswitch -v 0x1410 -p 0x6000 -m 1 5553424312345678000000000000061b000000020000000000000000000000");
+//		sleep(2);
+		insmod("usbserial");
+		insmod("option");
+		nvram_set("3gnmvariant", "2");
+		return "/dev/usb/tts/0";
+	}
+
 
 	if (scanFor(0x1e0e, 0x9000)) {
 		//huawei
