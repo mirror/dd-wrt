@@ -2914,7 +2914,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 {
 	int i, error = 0;
-	char *buf, *cur;
+	char *buf, *cur, *newbuf, *entry;
 	int count, sof;
 	struct variable trigger_variables[] = {
 	      {argv:ARGV("12")},
@@ -3003,11 +3003,30 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 			error = 1;
 			continue;
 		}
-
-		cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
+		
+		int len = 0;
+		len += strlen(new_name) + 1;
+		len += strlen(enable) + 1;
+		len += strlen(proto) + 1;
+		len += strlen(i_from) + 1;
+		len += strlen(i_to) + 1;
+		len += strlen(o_from) + 1;
+		len += strlen(o_to) + 1;
+	
+		if(strlen(buf) > 0) {
+			len++;
+		}	
+		entry = (char *)safe_malloc(len);
+		sprintf(entry, "%s%s:%s:%s:%s-%s>%s-%s", 
+				strlen(buf) > 0 ? " " : "", new_name, enable, proto, i_from, i_to, o_from, o_to);
+		
+		/*cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
 				cur == buf ? "" : " ", new_name, enable, proto,
-				i_from, i_to, o_from, o_to);
-
+				i_from, i_to, o_from, o_to);*/
+		newbuf = (char *)safe_malloc(strlen(buf) + len);
+		newbuf = strcat(buf, entry);
+		buf = (char *)safe_malloc(strlen(newbuf));
+		strcpy(buf, newbuf);
 	}
 
 	if (!error)

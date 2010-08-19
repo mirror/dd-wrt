@@ -7,6 +7,7 @@ function to_submit(F)
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
 		F.submit();
+		refreshParent();
 	}
 }
 function to_apply(F)
@@ -14,6 +15,7 @@ function to_apply(F)
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
 		F.submit();
+		refreshParent();
 	}
 }
 
@@ -42,11 +44,11 @@ addEvent(window, "load", function() {
 
 });
 
-addEvent(window, "unload", function() {
+refreshParent = function() {
 	var elements = opener.document.forms["macfilter"].elements;
 	var url = elements["submit_button"].value + '-' + elements["ifname"].value + ".asp";
 	opener.window.location = url;
-});
+}
 		
 		//]]>
 		</script>
@@ -94,10 +96,16 @@ addEvent(window, "unload", function() {
 					</tr>
 				</tbody>
 			</table><br />
-			<div class="submitFooter">
+			<div id="submit_footer" class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
 					submitFooterButton(1,0,0,0,1,1);
+					var children = document.getElementById('submit_footer').childNodes;
+					for(var i = 0; i < children.length; i++) {
+						if(children[i].name == "apply_button") {
+							document.getElementById('submit_footer').removeChild(children[i]);
+						}
+					}
 					//]]>
 					</script>
 			</div>
