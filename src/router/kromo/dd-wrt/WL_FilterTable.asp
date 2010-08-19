@@ -1,7 +1,6 @@
 <%% do_pagehead("wl_filter.titl"); %%>
 		<script type="text/javascript">
 		//<![CDATA[
-
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
