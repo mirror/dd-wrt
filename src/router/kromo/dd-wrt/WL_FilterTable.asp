@@ -36,10 +36,16 @@ function to_apply(F) {
 						</tr>
 					</table><br/>
 					<%% wireless_filter_table("input","%s"); %%>
-					<div class="submitFooter">
+					<div id="submit_footer" class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
 						submitFooterButton(1,1,0,0,0,1);
+						var children = document.getElementById('submit_footer').childNodes;
+						for(var i = 0; i < children.length; i++) {
+							if(children[i].name == "apply_button") {
+								document.getElementById('submit_footer').removeChild(children[i]);
+							}
+						}
 						//]]>
 						</script>
 					</div>
