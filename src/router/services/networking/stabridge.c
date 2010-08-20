@@ -46,8 +46,11 @@ void start_stabridge(void)
 
 #ifdef HAVE_RELAYD
 	if (getWET()) {
-		sysprintf("relayd -I %s -I %s -G %s -D -B &", getBridge(getWET()),
-			  getWET(), nvram_safe_get("lan_gateway"));
+		if (nvram_invmatch("lan_gateway","0.0.0.0"))
+		    sysprintf("relayd -I %s -I %s -G %s -D -B &", getBridge(getWET()),getWET(), nvram_safe_get("lan_gateway"));
+		else
+		    sysprintf("relayd -I %s -I %s -D -B &", getBridge(getWET()),getWET());
+		
 	}
 #else
 	if (getWET()) {
