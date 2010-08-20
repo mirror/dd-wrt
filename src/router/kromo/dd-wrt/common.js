@@ -936,7 +936,9 @@ function checkformelements( form ) {
 	var errors = null;
 	var i = 0;
 	for( i = 0; i < form.elements.length; i++ ) {
-		if( form.elements[i].type == 'text' ) {
+		if( form.elements[i].className == "no-check" ) {
+			// don't check for html characters in input fields	
+		} else if( form.elements[i].type == 'text' ) {
 			if( chars = invalidTextValue(form.elements[i].value ) ) {
 				alert('Invalid input characters "' + chars + '" in field "' + getInputLabel( 'input', form.elements[i].name ) + '"');
 				form.elements[i].style.border = "solid 2px #f00";
@@ -1113,12 +1115,14 @@ function setElementMask(id, state) {
 	var val_onblur = OldInput.onblur;
 	var parent = OldInput.parentNode;
 	var sibling = OldInput.nextSibling;
+	var className = OldInput.className;
 	var newInput = document.createElement('input');
 	newInput.setAttribute('value', val);
 	newInput.setAttribute('name', id);
 	newInput.setAttribute('id', id);
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
+	newInput.className = className;
 	//newInput.setAttribute('onblur', val_onblur);
 	newInput.onblur = val_onblur;
 	
