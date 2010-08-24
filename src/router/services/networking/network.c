@@ -3754,9 +3754,11 @@ void start_wan_done(char *wan_ifname)
 			br_del_interface(nvram_safe_get("lan_ifname"), "wl0.1");
 			ifconfig("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 		} else if (nvram_match("wl0_mode", "ap")) {
-			br_del_interface(nvram_safe_get("lan_ifname"),
-					 nvram_safe_get("chilli_interface"));
-			ifconfig(nvram_safe_get("chilli_interface"), IFUP | IFF_ALLMULTI, "0.0.0.0",
+			char *cif = nvram_safe_get("chilli_interface");
+			if (nvram_match("hotss_enable", "1") && nvram_match("hotss_nowifibridge", "1"))
+			    cif = nvram_safe_get("hotss_interface");
+			br_del_interface(nvram_safe_get("lan_ifname"),cif);
+			ifconfig(cif, IFUP | IFF_ALLMULTI, "0.0.0.0",
 				 NULL);
 		}
 #ifdef HAVE_CHILLI
