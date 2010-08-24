@@ -14,7 +14,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.locationid"); %></div>
-			<input class="text" maxLength="25" size="25" name="hotss_locationid" onblur="isdigit(this,hotspotsys.locationid)" value="<% nvram_get("hotss_locationid"); %>" />
+			<input class="text" maxLength="25" size="25" name="hotss_locationid" value="<% nvram_get("hotss_locationid"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.nobridge"); %></div>
