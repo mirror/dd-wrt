@@ -1626,7 +1626,6 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_HOTSPOT
 	{"hotss_enable", "0", 0},
-	{"hotss_radiusnasid", "", 0},
 	{"hotss_uamenable", "0", 0},
 	{"hotss_loginonsplash", "0", 0},
 	{"hotss_customsplash","0",0},
