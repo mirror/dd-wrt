@@ -1,5 +1,4 @@
  "hotss_enable"  "Enable hotspotsys"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
- "hotss_radiusnasid" " " "NULL" "TRUE" "0"
  "hotss_uamenable" "UAM enable" "CHOICE"  "2" "0" "1"  "TRUE" "0"
  "hotss_uamallowed" "UAM Allowed" "NULL" "TRUE" "0"
  "hotss_customuam" "white label domain" "NULL" "TRUE" "0"
