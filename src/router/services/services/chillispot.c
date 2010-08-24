@@ -351,17 +351,17 @@ void hotspotsys_config(void)
 	fprintf(fp,
 		"uamallowed hotspotsystem.com,%s,www.hotspotsystem.com,tech.hotspotsystem.com\n", uamdomain);
 	fprintf(fp,
-		"uamallowed 194.149.46.0/24,198.241.128.0/17,66.211.128.0/17,216.113.128.0/17\n");
+		"uamallowed 66.211.128.0/17,216.113.128.0/17\n");
 	fprintf(fp,
-		"uamallowed 70.42.128.0/17,128.242.125.0/24,216.52.17.0/24\n");
+		"uamallowed 70.42.128.0/17,128.242.125.0/24\n");
 	fprintf(fp,
 		"uamallowed 62.249.232.74,155.136.68.77,155.136.66.34,66.4.128.0/17,66.211.128.0/17,66.235.128.0/17\n");
 	fprintf(fp,
 		"uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
 	fprintf(fp,
-		"uamallowed 82.199.90.136/29,82.199.90.160/27,91.212.42.0/24\n");
+		"uamallowed 82.199.90.0/24,91.212.42.0/24\n");
 	fprintf(fp,
-		"uamallowed adyen.com\n");
+		"uamallowed live.adyen.com\n");
 	fprintf(fp,
 		"uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp,
