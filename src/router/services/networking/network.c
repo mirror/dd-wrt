@@ -2941,10 +2941,10 @@ void start_wan(int status)
 				"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",
 				dial, nvram_safe_get("3gdata"));
 			if (strlen(nvram_safe_get("ppp_username")))
-				fprintf(fp, "user \"%s\"\n",
+				fprintf(fp, "user '%s'\n",
 					nvram_safe_get("ppp_username"));
 			if (strlen(nvram_safe_get("ppp_passwd")))
-				fprintf(fp, "password \"%s\"\n",
+				fprintf(fp, "password '%s'\n",
 					nvram_safe_get("ppp_passwd"));
 			fprintf(fp, "%s\n", nvram_get("3gdata"));
 
