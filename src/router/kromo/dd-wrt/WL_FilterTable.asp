@@ -45,6 +45,15 @@ function to_apply(F) {
 							if(children[i].name == "apply_button") {
 								document.getElementById('submit_footer').removeChild(children[i]);
 							}
+							if(children[i].name == "reset_button") {
+								document.getElementById('submit_footer').childNodes[i].onclick = function(){
+									var ref = document.forms[0].elements['submit_button'].value;
+									if( document.forms[0].elements['ifname'].value) {
+										ref = ref + '-' + document.forms[0].elements['ifname'].value;
+									}
+									document.location = ref + '.asp';
+								};
+							}
 						}
 						//]]>
 						</script>
