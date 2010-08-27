@@ -278,7 +278,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		int zlib_err;
 
 #ifdef SQUASHFS_LZMA
-		if ((zlib_err = LzmaDecode(lzma_workspace, 
+		if ((zlib_err = LzmaDecode2(lzma_workspace, 
 			LZMA_WORKSPACE_SIZE, c_buffer[1],c_buffer[2],c_buffer[0],//LZMA_LC, LZMA_LP, LZMA_PB, 
 			c_buffer+4, c_byte-4, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
 		{
@@ -2136,7 +2136,7 @@ static void squashfs_destroy_inode(struct inode *inode)
 }
 
 
-static void init_once(void * foo, struct kmem_cache * cachep, unsigned long flags)
+static void init_once(void * foo)
 {
 	struct squashfs_inode_info *ei = foo;
 
