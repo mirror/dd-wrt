@@ -779,7 +779,6 @@ _8021xprv
 	copytonv(wp, "%s_acct_port", prefix);
 	copytonv(wp, "%s_acct_key", prefix);
 #endif
-
 	copytonv(wp, "%s_radmactype", prefix);
 
 	sprintf(n, "%s_authmode", prefix);
@@ -2480,6 +2479,13 @@ static void save_prefix(webs_t wp, char *prefix)
 {
 	char n[80];
 
+#ifdef HAVE_RELAYD
+	char gwaddr[32];
+	copytonv(wp, "%s_relayd_gw_auto", prefix);
+	sprintf(n, "%s_relayd_gw_ipaddr", prefix);
+	if (get_merge_ipaddr(wp, n, gwaddr))
+		nvram_set(n, gwaddr);
+#endif
 #ifdef HAVE_IFL
 	copytonv(wp, "%s_label", prefix);
 	copytonv(wp, "%s_note", prefix);

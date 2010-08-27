@@ -4509,8 +4509,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 					      "sta") ?
 				  "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_RT2880
+#ifdef HAVE_RELAYD
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
+#else
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
+#endif;
 				  nvram_match(wl_mode,
 					      "wet") ?
 				  "selected=\\\"selected\\\"" : "");
@@ -4555,6 +4560,41 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "</div>\n");
 		}
 	}
+
+// RELAYD OPTIONAL SETTINGS
+#ifdef HAVE_RELAYD
+	if( nvram_match(wl_mode, "wet") ) {
+		char wl_relayd[32];
+		int ip[4] = { 0, 0, 0, 0 };
+		
+		websWrite(wp,
+			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.clientRelaydDefaultGwMode)</script></div>");
+		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
+		websWrite(wp,
+			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', false)\" %s /><script type=\"text/javascript\">Capture(share.auto)</script>&nbsp;(DHCP)&nbsp;\n",
+			  prefix, prefix, nvram_default_match(wl_relayd,
+					      "1", "1") ? "checked" : "");
+		websWrite(wp,
+			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', true)\" %s/><script type=\"text/javascript\">Capture(share.manual)</script>\n",
+			  prefix, prefix, nvram_default_match(wl_relayd,
+					      "0", "1") ? "checked" : "");
+		websWrite(wp, "</div>\n");
+
+		sprintf(wl_relayd, "%s_relayd_gw_ipaddr", prefix);
+		sscanf(nvram_safe_get(wl_relayd), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2],
+		       &ip[3]);
+		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
+		websWrite(wp, "\
+	<div id=\"%s_relayd_gw_ipaddr\" class=\"setting\"%s>\n\
+	          <input type=\"hidden\" name=\"%s_relayd_gw_ipaddr\" value=\"4\">\n\
+	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.gateway)</script></div>\n\
+	          <input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
+       </div>\n", prefix, nvram_default_match(wl_relayd,
+		"1", "0") ? " style=\"display: none; visibility: hidden;\"" : "",	 
+			prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
+	}
+#endif
+
 	// wireless net mode
 	show_netmode(wp, prefix);
 
@@ -4812,7 +4852,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_label, nvram_safe_get(wl_label));
 
 #endif
-
 // WIRELESS Advanced
 	char advanced_label[32];
 	sprintf(advanced_label, "%s_wl_advanced", prefix);
@@ -5371,7 +5410,7 @@ void show_preshared(webs_t wp, char *prefix)
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
 	sprintf(var, "%s_wpa_psk", prefix);
 	websWrite(wp,
-		  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" onblur=\"valid_psk_length(this);\" maxlength=\"64\" size=\"32\" value=\"",
+		  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_psk_length(this);\" maxlength=\"64\" size=\"32\" value=\"",
 		  prefix, prefix);
 	tf_webWriteESCNV(wp, var);
 	websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");

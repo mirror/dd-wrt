@@ -166,6 +166,9 @@ endif
 ifeq ($(CONFIG_AOSS),y)
   CFLAGS += -DHAVE_AOSS
 endif
+ifeq ($(CONFIG_RELAYD),y)
+  CFLAGS += -DHAVE_RELAYD
+endif
 ifeq ($(CONFIG_LAGUNA),y)
   CFLAGS += -DHAVE_LAGUNA
   CFLAGS += -DHAVE_CPUTEMP

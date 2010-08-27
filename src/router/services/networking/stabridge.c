@@ -46,11 +46,20 @@ void start_stabridge(void)
 
 #ifdef HAVE_RELAYD
 	if (getWET()) {
-		if (nvram_invmatch("lan_gateway","0.0.0.0"))
-		    sysprintf("relayd -I %s -I %s -G %s -D -B &", getBridge(getWET()),getWET(), nvram_safe_get("lan_gateway"));
-		else
-		    sysprintf("relayd -I %s -I %s -D -B &", getBridge(getWET()),getWET());
-		
+		char label[32], debug[32], debug_string[32];
+
+		sprintf(label, "%s_relayd_gw_auto", getWET());
+		sprintf(debug, "%s_relayd_debug", getWET());
+		if(nvram_match(debug, "1")) {
+			//sprintf(debug_string, " -dd >/tmp/%s_relayd.log 2>&1", getWET());
+			sprintf(debug_string, " -dd 2>&1 |/usr/bin/logger", getWET());
+		}
+		if (nvram_match(label,"0")) {
+		    sprintf(label, "%s_relayd_gw_ipaddr", getWET());
+		    sysprintf("relayd -I %s -I %s -G %s -D -B%s &", getBridge(getWET()), getWET(), nvram_safe_get(label), debug_string);
+		} else {
+		    sysprintf("relayd -I %s -I %s -D -B%s &", getBridge(getWET()), getWET(), debug_string);
+		}
 	}
 #else
 	if (getWET()) {
