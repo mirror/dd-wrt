@@ -99,7 +99,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY|RTLD_GLOBAL);
+	void *handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
@@ -108,7 +108,7 @@ static void *load_visual_service(char *name)
 
 		sprintf(dl, "/lib/%s_visual.so", name);
 		cprintf("try to load %s\n", dl);
-		handle = dlopen(name, RTLD_LAZY|RTLD_GLOBAL);
+		handle = dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
 		if (handle == NULL) {
 			fprintf(stderr, "cannot load %s\n", dl);
 			return NULL;
@@ -121,7 +121,7 @@ static void *load_visual_service(char *name)
 static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY|RTLD_GLOBAL);
+	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
@@ -130,7 +130,7 @@ static void *load_service(char *name)
 
 		sprintf(dl, "/lib/%s_validate.so", name);
 		cprintf("try to load %s\n", dl);
-		handle = dlopen(dl, RTLD_LAZY|RTLD_GLOBAL);
+		handle = dlopen(dl, RTLD_LAZY | RTLD_GLOBAL);
 		if (handle == NULL) {
 			fprintf(stderr, "cannot load %s\n", dl);
 			return NULL;
@@ -179,27 +179,26 @@ static int initWeb(void *handle)
 	init(&env);
 	return 0;
 }
-static void *s_service=NULL;
+
+static void *s_service = NULL;
 
 void start_gozila(char *name, webs_t wp)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_gozila %s\n", name);
 	char service[64];
-	int init=0;
-	if (!s_service)
-	{
-	    init=1;
-	    s_service = load_service(name);
+	int init = 0;
+	if (!s_service) {
+		init = 1;
+		s_service = load_service(name);
 	}
 	if (s_service == NULL) {
 		return;
 	}
-	if (init)
-	{
-	if (initWeb(s_service) != 0) {
-		return;
-	}
+	if (init) {
+		if (initWeb(s_service) != 0) {
+			return;
+		}
 	}
 
 	int (*fptr) (webs_t wp);
@@ -209,11 +208,11 @@ void start_gozila(char *name, webs_t wp)
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
 		(*fptr) (wp);
-	else
+	else if (nvram_match("console_debug", "1"))
 		fprintf(stderr, "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
-	s_service=NULL;
+	s_service = NULL;
 #endif
 	cprintf("start_sevice done()\n");
 }
@@ -223,20 +222,18 @@ int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_validator %s\n", name);
 	char service[64];
-	int init =0;
-	if (!s_service)
-	{
-	s_service = load_service(name);
-	init =1;
+	int init = 0;
+	if (!s_service) {
+		s_service = load_service(name);
+		init = 1;
 	}
 	if (s_service == NULL) {
 		return FALSE;
 	}
-	if (init)
-	{
-	if (initWeb(s_service) != 0) {
-		return FALSE;
-	}
+	if (init) {
+		if (initWeb(s_service) != 0) {
+			return FALSE;
+		}
 	}
 	int ret = FALSE;
 
@@ -248,13 +245,13 @@ int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 	    dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr) (wp, value, v);
-	else
+	else if (nvram_match("console_debug", "1"))
 		fprintf(stderr, "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
-	s_service=NULL;
+	s_service = NULL;
 #endif
-	
+
 	cprintf("start_sevice done()\n");
 	return ret;
 }
@@ -288,7 +285,7 @@ void *start_validator_nofree(char *name, void *handle, webs_t wp,
 	cprintf("found. pointer is %p\n", fptr);
 	if (fptr)
 		(*fptr) (wp, value, v);
-	else
+	else if (nvram_match("console_debug", "1"))
 		fprintf(stderr, "function %s not found \n", service);
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
@@ -306,15 +303,15 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 	char service[64];
 	int nohandle = 0;
 
-{
-	memdebug_enter();
-	if (!handle) {
-		cprintf("load visual_service\n");
-		handle = load_visual_service(name);
-		nohandle = 1;
+	{
+		memdebug_enter();
+		if (!handle) {
+			cprintf("load visual_service\n");
+			handle = load_visual_service(name);
+			nohandle = 1;
+		}
+		memdebug_leave_info("loadviz");
 	}
-	memdebug_leave_info("loadviz");
-}
 	if (handle == NULL) {
 		cprintf("handle null\n");
 		return NULL;
@@ -323,28 +320,28 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 	void (*fptr) (webs_t wp, int argc, char_t ** argv);
 
 	sprintf(service, "ej_%s", name);
-{
-	memdebug_enter();
-	if (nohandle) {
-		cprintf("init web\n");
-		if (initWeb(handle) != 0) {
-			return handle;
+	{
+		memdebug_enter();
+		if (nohandle) {
+			cprintf("init web\n");
+			if (initWeb(handle) != 0) {
+				return handle;
+			}
 		}
+		memdebug_leave_info("initweb");
 	}
-	memdebug_leave_info("initweb");
-}
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle,
 								    service);
 	cprintf("found. pointer is %p\n", fptr);
-{
-	memdebug_enter();
-	if (fptr)
-		(*fptr) (wp, argc, argv);
-	else
-		fprintf(stderr, "function %s not found \n", service);
-	memdebug_leave_info(service);
-}
+	{
+		memdebug_enter();
+		if (fptr)
+			(*fptr) (wp, argc, argv);
+		else if (nvram_match("console_debug", "1"))
+			fprintf(stderr, "function %s not found \n", service);
+		memdebug_leave_info(service);
+	}
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
 
