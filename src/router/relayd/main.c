@@ -36,9 +36,13 @@ LIST_HEAD(interfaces);
 int debug;
 
 static int host_timeout;
+static int host_ping_tries;
 static int inet_sock;
 static int forward_bcast;
 static int forward_dhcp;
+
+uint8_t local_addr[4];
+int local_route_table;
 
 struct relayd_pending_route {
 	struct relayd_route rt;
@@ -135,7 +139,7 @@ static void del_host(struct relayd_host *host)
 	free(host);
 }
 
-static void fill_arp_request(struct arp_packet *pkt, struct relayd_interface *rif,
+static void fill_arp_packet(struct arp_packet *pkt, struct relayd_interface *rif,
                              const uint8_t spa[4], const uint8_t tpa[4])
 {
 	memset(pkt, 0, sizeof(*pkt));
@@ -157,7 +161,7 @@ static void send_arp_request(struct relayd_interface *rif, const uint8_t *ipaddr
 {
 	struct arp_packet pkt;
 
-	fill_arp_request(&pkt, rif, rif->src_ip, ipaddr);
+	fill_arp_packet(&pkt, rif, rif->src_ip, ipaddr);
 
 	pkt.arp.arp_op = htons(ARPOP_REQUEST);
 	memcpy(pkt.arp.arp_spa, rif->src_ip, ETH_ALEN);
@@ -202,20 +206,29 @@ void relayd_add_pending_route(const uint8_t *gateway, const uint8_t *dest, uint8
 	}
 }
 
-static void send_arp_reply(struct relayd_interface *rif, uint8_t spa[4],
-                           uint8_t tha[ETH_ALEN], uint8_t tpa[4])
+static void send_arp_reply(struct relayd_interface *rif, const uint8_t spa[4],
+                           const uint8_t tha[ETH_ALEN], const uint8_t tpa[4])
 {
 	struct arp_packet pkt;
 
-	fill_arp_request(&pkt, rif, spa, tpa);
+	fill_arp_packet(&pkt, rif, spa, tpa);
 
 	pkt.arp.arp_op = htons(ARPOP_REPLY);
-	memcpy(pkt.eth.ether_dhost, tha, ETH_ALEN);
-	memcpy(pkt.arp.arp_tha, tha, ETH_ALEN);
+	if (tha) {
+		memcpy(pkt.eth.ether_dhost, tha, ETH_ALEN);
+		memcpy(pkt.arp.arp_tha, tha, ETH_ALEN);
 
-	DPRINTF(2, "%s: sending ARP reply to "IP_FMT", "IP_FMT" is at ("MAC_FMT")\n",
-		rif->ifname, IP_BUF(pkt.arp.arp_tpa),
-		IP_BUF(pkt.arp.arp_spa), MAC_BUF(pkt.eth.ether_shost));
+		DPRINTF(2, "%s: sending ARP reply to "IP_FMT", "IP_FMT" is at ("MAC_FMT")\n",
+			rif->ifname, IP_BUF(pkt.arp.arp_tpa),
+			IP_BUF(pkt.arp.arp_spa), MAC_BUF(pkt.eth.ether_shost));
+	} else {
+		memset(pkt.eth.ether_dhost, 0xff, ETH_ALEN);
+		memset(pkt.arp.arp_tha, 0, ETH_ALEN);
+
+		DPRINTF(2, "%s: sending gratuitous ARP: "IP_FMT" is at ("MAC_FMT")\n",
+			rif->ifname, IP_BUF(pkt.arp.arp_tpa),
+			MAC_BUF(pkt.eth.ether_shost));
+	}
 
 	sendto(rif->fd.fd, &pkt, sizeof(pkt), 0,
 		(struct sockaddr *) &rif->sll, sizeof(rif->sll));
@@ -232,7 +245,7 @@ static void host_entry_timeout(struct uloop_timeout *timeout)
 	 * When the timeout is reached, try pinging the host a few times before
 	 * giving up on it.
 	 */
-	if (host->rif->managed && host->cleanup_pending < 2) {
+	if (host->rif->managed && host->cleanup_pending < host_ping_tries) {
 		send_arp_request(host->rif, host->ipaddr);
 		host->cleanup_pending++;
 		uloop_timeout_set(&host->timeout, 1000);
@@ -278,6 +291,19 @@ static struct relayd_host *add_host(struct relayd_interface *rif, const uint8_t 
 	return host;
 }
 
+static void send_gratuitous_arp(struct relayd_interface *rif, const uint8_t *spa)
+{
+	struct relayd_interface *to_rif;
+
+	list_for_each_entry(to_rif, &interfaces, list) {
+		if (rif == to_rif)
+			continue;
+
+		send_arp_reply(to_rif, spa, NULL, spa);
+	}
+}
+
+
 struct relayd_host *relayd_refresh_host(struct relayd_interface *rif, const uint8_t *lladdr, const uint8_t *ipaddr)
 {
 	struct relayd_host *host;
@@ -302,6 +328,7 @@ struct relayd_host *relayd_refresh_host(struct relayd_interface *rif, const uint
 	} else {
 		host->cleanup_pending = false;
 		uloop_timeout_set(&host->timeout, host_timeout * 1000);
+		send_gratuitous_arp(rif, ipaddr);
 	}
 
 	return host;
@@ -342,7 +369,14 @@ static void recv_arp_request(struct relayd_interface *rif, struct arp_packet *pk
 	if (!memcmp(pkt->arp.arp_spa, "\x00\x00\x00\x00", 4))
 		return;
 
-	relayd_refresh_host(rif, pkt->eth.ether_shost, pkt->arp.arp_spa);
+	if (local_route_table && !memcmp(pkt->arp.arp_tpa, local_addr, sizeof(local_addr))) {
+		send_arp_reply(rif, local_addr, pkt->arp.arp_sha, pkt->arp.arp_spa);
+		return;
+	}
+
+	host = find_host_by_ipaddr(NULL, pkt->arp.arp_spa);
+	if (!host || host->rif != rif)
+		relayd_refresh_host(rif, pkt->eth.ether_shost, pkt->arp.arp_spa);
 
 	host = find_host_by_ipaddr(NULL, pkt->arp.arp_tpa);
 
@@ -358,7 +392,6 @@ static void recv_arp_request(struct relayd_interface *rif, struct arp_packet *pk
 	relay_arp_request(rif, pkt);
 }
 
-
 static void recv_arp_reply(struct relayd_interface *rif, struct arp_packet *pkt)
 {
 	struct relayd_host *host;
@@ -371,9 +404,6 @@ static void recv_arp_reply(struct relayd_interface *rif, struct arp_packet *pkt)
 
 	if (memcmp(pkt->arp.arp_sha, rif->sll.sll_addr, ETH_ALEN) != 0)
 		relayd_refresh_host(rif, pkt->arp.arp_sha, pkt->arp.arp_spa);
-
-	if (!memcmp(pkt->arp.arp_tpa, rif->src_ip, 4))
-		return;
 
 	host = find_host_by_ipaddr(NULL, pkt->arp.arp_tpa);
 	if (!host)
@@ -638,9 +668,11 @@ static int usage(const char *progname)
 			"	-R <gateway>:<net>/<mask>\n"
 			"			Add a static route for <net>/<mask> via <gateway>\n"
 			"	-t <timeout>	Host entry expiry timeout\n"
+			"	-p <tries>	Number of ARP ping attempts before considering a host dead\n"
 			"	-T <table>	Set routing table number for automatically added routes\n"
 			"	-B		Enable broadcast forwarding\n"
 			"	-D		Enable DHCP forwarding\n"
+			"	-L <ipaddr>	Enable local access using <ipaddr> as source address\n"
 			"\n",
 		progname);
 	return -1;
@@ -650,6 +682,7 @@ int main(int argc, char **argv)
 {
 	struct relayd_interface *rif = NULL;
 	struct in_addr addr, addr2;
+	bool local_addr_valid = false;
 	bool managed;
 	int ifnum = 0;
 	char *s, *s2;
@@ -663,11 +696,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	host_timeout = 60;
+	host_timeout = 30;
+	host_ping_tries = 5;
 	forward_bcast = 0;
+	local_route_table = 0;
 	uloop_init();
 
-	while ((ch = getopt(argc, argv, "I:i:t:BDdT:G:R:")) != -1) {
+	while ((ch = getopt(argc, argv, "I:i:t:BDdT:G:R:L:")) != -1) {
 		switch(ch) {
 		case 'I':
 			managed = true;
@@ -683,6 +718,11 @@ int main(int argc, char **argv)
 		case 't':
 			host_timeout = atoi(optarg);
 			if (host_timeout <= 0)
+				return usage(argv[0]);
+			break;
+		case 'p':
+			host_ping_tries = atoi(optarg);
+			if (host_ping_tries <= 0)
 				return usage(argv[0]);
 			break;
 		case 'd':
@@ -705,6 +745,14 @@ int main(int argc, char **argv)
 				return 1;
 			}
 			relayd_add_pending_route((uint8_t *) &addr.s_addr, (const uint8_t *) "\x00\x00\x00\x00", 0, 0);
+			break;
+		case 'L':
+			if (!inet_aton(optarg, &addr)) {
+				fprintf(stderr, "Address '%s' not found\n", optarg);
+				return 1;
+			}
+			memcpy(&local_addr, &addr.s_addr, sizeof(local_addr));
+			local_addr_valid = true;
 			break;
 		case 'R':
 			s = strchr(optarg, ':');
@@ -754,6 +802,9 @@ int main(int argc, char **argv)
 	signal(SIGHUP, die);
 	signal(SIGUSR1, die);
 	signal(SIGUSR2, die);
+
+	if (local_addr_valid)
+		local_route_table = route_table++;
 
 	if (relayd_rtnl_init() < 0)
 		return 1;

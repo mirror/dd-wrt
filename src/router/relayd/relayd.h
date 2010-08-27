@@ -100,6 +100,8 @@ struct rtnl_req {
 extern struct list_head interfaces;
 extern int debug;
 extern int route_table;
+extern uint8_t local_addr[4];
+extern int local_route_table;
 
 void rtnl_route_set(struct relayd_host *host, struct relayd_route *route, bool add);
 
