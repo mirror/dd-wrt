@@ -1501,6 +1501,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 //fprintf(stderr,"generate menu content\n");
 #ifdef HAVE_MADWIFI
+#ifdef HAVE_BUFFALO
+	sprintf(&menu[1][8][0], "");
+	sprintf(&menuname[1][9][0], "");
+#else
 	// fill up WDS
 	int ifcount = getifcount("wifi");
 	if (ifcount>4)
@@ -1514,6 +1518,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		else
 			sprintf(&menuname[1][a + 9][0], "wirelessWds%d", a);
 	}
+#endif
 #else
 #ifdef HAVE_ERC
 	if (wp->userid) {
