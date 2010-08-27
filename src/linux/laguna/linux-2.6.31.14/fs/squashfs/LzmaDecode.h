@@ -83,7 +83,7 @@ int LzmaDecoderInit(
 );
 #endif
 
-int LzmaDecode(
+int LzmaDecode2(
     unsigned char *buffer,
   #ifndef _LZMA_OUT_READ
     UInt32 bufferSize,

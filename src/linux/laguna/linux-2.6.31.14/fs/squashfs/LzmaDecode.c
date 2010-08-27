@@ -388,7 +388,7 @@ int LzmaDecoderInit(
   return LZMA_RESULT_OK;
 }
 
-int LzmaDecode(unsigned char *buffer,
+int LzmaDecode2(unsigned char *buffer,
     unsigned char *outStream, UInt32 outSize,
     UInt32 *outSizeProcessed)
 {
@@ -432,7 +432,7 @@ int LzmaDecode(unsigned char *buffer,
     previousByte = dictionary[dictionaryPos - 1];
 #else
 
-int LzmaDecode(
+int LzmaDecode2(
     Byte *buffer, UInt32 bufferSize,
     int lc, int lp, int pb,
     #ifdef _LZMA_IN_CB
