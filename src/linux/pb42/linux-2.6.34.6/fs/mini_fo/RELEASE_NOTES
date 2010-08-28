@@ -1,0 +1,111 @@
+Release:	mini_fo-0.6.1 (v0-6-1)
+Date:		21.09.2005
+
+
+Changes:
+--------
+v0-6-1:
+
+- bugfixes (see ChangeLog)
+
+- two helper scripts "mini_fo_merge" and "mini_fo_overlay" (see
+  README for details).
+
+v0-6-0:
+
+- Support for 2.4 and 2.6 (see Makefile)
+
+- Partial hard link support (creating works as expected, but already
+  existing links in the base file system will be treated as if they
+  were individual files).
+
+- Various bugfixes and cleanups.
+
+
+v0-6-0-pre1:
+
+- This is mini_fo-0-6-0-pre1! This release is a complete rewrite of
+  many vital mini_fo parts such as the old whiteout list code which
+  has been replaced by the new META subsystem.
+
+- Light weight directory renaming implemented. This means if a
+  directory is renamed via the mini_fo filesystem this will no longer
+  result in a complete copy in storage, instead only one empty
+  directory will be created. All base filed contained in the original
+  directory stay there until modified.
+
+- Special files (creating, renaming, deleting etc.) now working.
+
+- Many bugfixes and cleanup, mini_fo is now a lot more stable.
+
+
+v0-5-10:
+
+- Final release of the 0-5-* versions. Next will be a complete rewrite
+  of many features. This release contains several bugfixes related to
+  directory renaming.
+
+
+v0-5-10-pre6:
+
+- Lots of cleanup and several bugfixes related to directory deleting
+
+- Directory renaming suddenly works, what is most likely due to the
+  fact tha that "mv" is smart: if the classic rename doesn't work it
+  will assume that source and target file are on different fs and will
+  copy the directory and try to remove the source directory. Until
+  directory removing wasn't implemented, it would fail to do this and
+  rollback.
+  So, directory renaming works for now, but it doesn't yet do what you
+  would expect from a overlay fs, so use with care.
+
+
+v0-5-10-pre5:
+
+- implemented directory deleting
+- made parsing of mount options more stable
+- New format of mount options! (See README)
+- I can't reproduce the unknown panic with 2.4.25 anymore, so I'll
+  happily assume it never existed!
+
+
+Implemented features:
+---------------------
+
+- creating hard links (see BUGS on already existing hard links)
+- lightweight directory renaming
+- renaming device files, pipes, sockets, etc.
+- creating, renaming, deleting of special files
+- deleting directorys
+- general directory reading (simple "ls" )
+- creating files in existing directorys
+- creating directorys
+- renaming files.
+- reading and writing files (involves opening)
+- appending to files (creates copy in storage)
+- deleting files
+- llseek works too, what allows editors to work
+- persistency (a deleted file stay deleted over remounts)
+- use of symbolic links
+- creating of device files
+
+
+Not (yet) implemented features:
+-------------------------------
+
+- full hard link support.
+
+
+
+BUGS:
+-----
+
+Hard links in the base file system will be treated as individual
+files, not as links to one inode.
+
+The main problem with hard links isn't allowing to create them, but
+their pure existence. If you modify a base hard link, the changes made
+will only show up on this link, the other link will remain in the
+original state. I hope to fix this someday. Please note that this does
+not effect the special hard links '.' and '..', that are handled
+seperately by the lower fs.
