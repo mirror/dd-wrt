@@ -713,6 +713,7 @@ nas.proftpd_writeen="Dovoli pisanje";
 nas.proftpd_anon="Anonimna prijava (samo za branje)";
 nas.proftpd_anon_dir="Podmapa za anonimno prijavo";
 nas.sambasrv_legend="Samba strežnik";
+nas.samba3_legend="Souporaba datotek";
 
 
 hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Geslo. Geslo je lahko v navadni obliki ali v MD5 crypt.";
@@ -804,8 +805,8 @@ hotspotsys.loginonsplash="Prijava na splash strani";
 hotspotsys.allowuam="UAM dopuščeni";
 hotspotsys.whitelabelproto="White label protokol";
 hotspotsys.whitelabel="White label domena";
-hotspotsys.operatorid="ID operatorja";
-hotspotsys.locationid="Št. lokacije";
+hotspotsys.operatorid="ID operaterja";
+hotspotsys.locationid="ID lokacije";
 hotspotsys.dhcp="DHCP vmesnik";
 hotspotsys.net="Oddaljena mreža";
 hotspotsys.customsplash="Splash Page po meri (Walled Garden)";
@@ -1434,6 +1435,19 @@ service.hmilkfish_right24="not implemented yet - leave empty";
 service.hmilkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
 
+service.samba3_srv="Samba";
+service.samba3_srvstr="Niz strežnika";
+service.samba3_pub="Javna souporaba";
+service.samba3_config="Konfiguracija po meri";
+service.samba3_workgrp="Delovna skupina";
+service.samba3_usr1="Uporabnik1";
+service.samba3_pass1=" Geslo1";
+service.samba3_usr2="Uporabnik2";
+service.samba3_pass2=" Geslo2";
+service.samba3_pubacl="Samo za branje";
+service.samba3_advanced="Napredno"
+service.samba3_custom="Uporabi konfiguracijo po meri";
+
 
 // ** eop-tunnel.asp **//
 
@@ -1997,12 +2011,14 @@ wl_basic.client="Odjemalec";
 wl_basic.repeater="Prenosnik";
 wl_basic.repeaterbridge="Prenosnik-most";
 wl_basic.clientBridge="Odjemalec-most";
+wl_basic.clientRelayd="Odjemalec-most (usmerjan)";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS postaja";
 wl_basic.wdsap="WDS točka";
 wl_basic.mixed="Mešano";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Kratka preambula";
+wl_basic.clientRelaydDefaultGwMode="Privzeti način prehoda";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
 wl_basic.na="NA mešano";
