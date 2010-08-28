@@ -3790,11 +3790,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 					      "sta") ?
 				  "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_RT2880
+#ifdef HAVE_RELAYD
+			websWrite(wp,
+				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
+#else
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
-				  nvram_match(wl_mode,
-					      "wet") ?
-				  "selected=\\\"selected\\\"" : "");
+#endif
 #endif
 			if (!cpeonly)
 				websWrite(wp,
@@ -4515,7 +4517,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
-#endif;
+#endif
 				  nvram_match(wl_mode,
 					      "wet") ?
 				  "selected=\\\"selected\\\"" : "");
