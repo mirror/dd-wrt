@@ -966,10 +966,8 @@ athrs26_phy_is_up(int ethUnit)
 
 void athrs26_reg_dev(ag7240_mac_t **mac)
 {
-    printk(KERN_EMERG "register mac 0 %X\n",mac[0]);
     ag7240_macs[0] = mac[0];
     ag7240_macs[0]->mac_speed = 0xff;
-    printk(KERN_EMERG "register mac 1 %X\n",mac[1]);
     
     ag7240_macs[1] = mac[1];
     ag7240_macs[1]->mac_speed = 0xff;
