@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//		Romanian translation file - DD-WRT V24 by Daniel Alămiță - 05/2010                  //
+//		Romanian translation file - DD-WRT V24 by Daniel Alămiță - 08/2010                  //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -8,6 +8,13 @@ lang_charset.set="UTF-8";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Șir de apel";
+share.mode_3g="Tip conexiune";
+share.mode_3g_auto="3G/2G automat";
+share.mode_3g_3g="Forțează 3G";
+share.mode_3g_2g="Forțează 2G";
+share.mode_3g_prefer_3g="Preferă 3G";
+share.mode_3g_prefer_2g="Preferă 2G";
+share.mode_3g_3g2g="3G, daca sunt erori, 2G";
 share.firmware="Microcod";
 share.time="Timp";
 share.interipaddr="Adresă IP WAN";
@@ -183,7 +190,7 @@ share._48h="La fiecare 2 zile";
 share._168h="În fiecare săptămână";
 share.days="zile";
 share.from2=share.from;
-share.to2=share.to;
+share.to2="către";
 share.days_genetive=share.days;
 share.standard="Standard";
 share.execscript="Execută script";
@@ -196,7 +203,7 @@ share.gbytes="GB";
 share.preempt="Preemptivitate";
 share.acktiming="Cronometrare ACK";
 share.broadcast="Folosire broadcast";
-share.secondcharacter="i";
+share.secondcharacter="s";
 share.change="Schimbare parolă utilizator";
 
 sbutton.save="Salvează";
@@ -253,7 +260,6 @@ sbutton.allways_off="Întotdeauna oprit";
 sbutton.download="Descarcă";
 sbutton.next="Înainte &raquo;";
 sbutton.prev="&laquo; Înapoi";
-
 
 // ** COMMON ERROR MESSAGES  **//
 errmsg.err0="Trebuie să introduceți un nume de utilizator.";
@@ -400,7 +406,6 @@ bmenu.vpn="Traversare VPN";
 bmenu.accrestriction="Restricții de acces";
 bmenu.webaccess="Acces Internet";
 
-
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Interval înaintare port";
 bmenu.applicationspforwarding="Înaintare port";
@@ -445,8 +450,9 @@ bmenu.statuWLAN="Fără fir";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Lățime de bandă";
 bmenu.statuSysInfo="Informații sistem";
-bmenu.statuActivate="Activează";
+bmenu.statuActivate="Activare";
 bmenu.statuMyPage="Pagina mea";
+bmenu.statuGpio="GPIO I/O";
 
 // ** Alive.asp **//
 alive.titl="Supraveghere";
@@ -464,7 +470,7 @@ alive.port="Port Proxy";
 
 //help container
 halive.right2="Alegeți când să fie repornit ruterul. Cron trebuie să fie activat în meniul Administrare.";
-halive.right4="Sunt permise maxim 3 adrese IP separate printr-un <em>SPAȚIU</em>.<BR/>Formatul IP-urilor este: xxx.xxx.xxx.xxx.";
+halive.right4="Sunt permise maxim 3 adrese IP separate printr-un <em>SPAȚIU</em>.<BR/>Formatul adreselor IP este: xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -480,7 +486,7 @@ config.mess4="Încărcați doar fișiere salvate folosind acest microcod (firmwa
 
 //help container
 hconfig.right2="Puteți salva configurația curentă în caz că veți fi nevoit să resetați ruterul la setările implicite.<br /><br />Dați clic pe butonul <em>Creează copie</em> pentru a face o copie de siguranță a configurației curente.";
-hconfig.right4="Dați clic pe butonul <em>Alegeți fișierul</em> (Chrome) sau <em>Răsfoire...</em> (Firefox) pentru a căuta un fișier de configurare salvat în calculatorul dumneavoastră.<br /><br />Dați clic pe butonul <em>" + sbutton.restore + "</em> pentru a înlocui toate setările curente cu cele din fișierul de configurare.";
+hconfig.right4="Dați clic pe butonul <em>Alegeți fișierul, Răsfoire..., etc</em> (Browse) pentru a căuta un fișier de configurare salvat în calculatorul dumneavoastră.<br /><br />Dați clic pe butonul <em>" + sbutton.restore + "</em> pentru a înlocui toate setările curente cu cele din fișierul de configurare.";
 
 
 // ** DDNS.asp **//
@@ -497,7 +503,7 @@ ddns.statu="Stare DDNS";
 ddns.system="Server DYNDNS";
 ddns.options="Opțiuni DDNS adiționale";
 ddns.forceupd="Interval de actualizare forțată";
-ddns.wanip="Nu folosi verificarea externă a IP-ului";
+ddns.wanip="Fără verificare externă a IP-ului";
 
 ddnsm.all_closed="Deocamdată serverul DDNS este închis";
 ddnsm.all_resolving="Rezolvare nume domeniu";
@@ -630,7 +636,6 @@ p2p.h2="Client BitTorrent";
 p2p.legend="CTorrent";
 p2p.ctorrent_srv="Serviciul Ctorrent";
 
-
 //help container
 //hpp2p.right2="Unele aplicații necesită deschiderea unor porturi specifice pentru a funcționa corect. Aplicații de acest fel sunt serverele și unele jocuri online. Când o cerere pentru un anumit port vine din Internet, ruterul va trimite datele către calculatorul specificat. Din cauza problemelor de securitate, ar trebui să limitați înaintarea porturilor doar către acele porturi pe care le folosiți, și debifați căsuța <em>" + share.enable +"</em> după ce ați terminat.";
 
@@ -640,27 +645,29 @@ pforward.titl="Înaintare port";
 pforward.h2="Înaintare port";
 pforward.legend="Înaintări";
 pforward.app="Aplicație";
-pforward.from="Port de la";
-pforward.to="Port către";
+pforward.from="De pe port";
+pforward.to="Către port";
 
 //help container
 hpforward.right2="Unele aplicații necesită deschiderea unor porturi specifice pentru a funcționa corect. Aplicații de acest fel sunt serverele și unele jocuri online. Când o cerere pentru un anumit port vine din Internet, ruterul va trimite datele către calculatorul specificat. Din cauza problemelor de securitate, ar trebui să limitați înaintarea porturilor doar către acele porturi pe care le folosiți, și debifați căsuța <em>Activează</em> după ce ați terminat.";
 
+
 // ** USB.asp **//
 usb.titl="USB";
-usb.usb_legend="Compatibil USB";
+usb.usb_legend="Compatibilitate USB";
 usb.usb_core="Compatibil core USB";
 usb.usb_uhci="Compatibil USB 1.1 (UHCI)";
 usb.usb_ohci="Compatibil USB 1.1 (OHCI)";
 usb.usb_ehci="Compatibil USB 2.0";
 usb.usb_storage="Compatibil cu memorii USB";
-usb.usb_extfs="Compatibil cu Sistemul de Fișiere ext2 / ext3";
-usb.usb_fatfs="Compatibil cu Sistemul de Fișiere FAT";
+usb.usb_extfs="Compatibil cu sistemul de fișiere ext2 / ext3";
+usb.usb_fatfs="Compatibil cu sistemul de fișiere FAT";
 usb.usb_printer="Compatibil imprimantă pe USB";
 usb.usb_automnt="Montare automată";
 usb.usb_mntpoint="Punct de montare disc";
 usb.usb_runonmount="Nume script de executare-la-montare";
 usb.usb_diskinfo="Informații disc";
+
 
 // ** NAS.asp **//
 nas.titl="NAS";
@@ -673,8 +680,11 @@ nas.proftpd_writeen="Permite scriere";
 nas.proftpd_anon="Autentificare anonimă (doar-citire)";
 nas.proftpd_anon_subdir="Sub-director acasă anonim";
 nas.sambasrv_legend="Server Samba";
+nas.samba3_legend="Partajare fișiere";
 
+//help container
 hnas.right2="Listă parole utilizator: Introduceți o parolă utilizator pe linie. Parolele pot fi text în clar sau criptate în MD5.";
+
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -762,10 +772,10 @@ hotspotsys.allowuam="UAM permis";
 hotspotsys.whitelabelproto="Protocol White Label";
 hotspotsys.whitelabel="Domeniu White Label";
 hotspotsys.operatorid="Nume utilizator operator";
-hotspotsys.locationid="Număr locație";
+hotspotsys.locationid="ID locație";
 hotspotsys.dhcp="Interfață DHCP";
 hotspotsys.net="Rețea la distanță";
-hotspotsys.customsplash="Întâmpinare personalizată (Walled Garden)";
+hotspotsys.customsplash="Splash personalizat (Walled Garden)";
 
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="Rețeaua mea de reclame";
@@ -792,6 +802,7 @@ anchorfree.validcat="vă rog să alegeți o categorie de reclame pentru hotspot-
 anchorfree.validcountry="vă rog să selectați țara pentru hotspot-ul dumneavoastră";
 anchorfree.validterms="Trebuie să fiți de acord cu termenii și condițiile!";
 
+//help container
 hanchorfree.right1="Alăturați-vă rețelei de publicitate hotspot AnchorFree";
 hanchorfree.right2="AnchorFree operează o rețea hotspot de publicitate care permite utilizatorilor DD-WRT să obțină venituri din ce în ce mai mari.";
 hanchorfree.right3="Obțineți venituri mai mari cu publicitatea de la AnchorFree";
@@ -818,14 +829,14 @@ idx_h.max_idle="Conectare la cerere: durată maximă de inactivitate";
 idx_h.alive="Menține activ: perioadă de reapelare";
 idx_h.reconnect="Încercare de reconectare";
 
-
 // ** index_l2tp.asp **//
 idx_l.srv="Gateway (server L2TP)";
-
+idx_l.req_chap="Necesită CHAP";
+idx_l.ref_pap="Refuză PAP";
+idx_l.req_auth="Necesită autentificare";
 
 // ** index_pppoe.asp **//
 idx_pppoe.use_rp="Folosește RP PPPoE";
-
 
 // ** index_pptp.asp **//
 idx_pptp.srv="Folosește DHCP";
@@ -835,10 +846,8 @@ idx_pptp.encrypt="Criptare PPTP";
 idx_pptp.reorder="Dezactivează reordonare pachete";
 idx_pptp.addopt="Opțiuni PPTP adiționale";
 
-
 // ** index_static.asp **//
 idx_static.dns="DNS static";
-
 
 // ** index.asp **//
 idx.titl="Instalare";
@@ -939,9 +948,9 @@ management.psswd_user="Nume de utilizator ruter";
 management.psswd_pass="Parolă ruter";
 management.pass_conf="Confirmare parolă ruter";
 management.remote_legend="Acces la distanță";
-management.remote_gui="Administrare GUI din internet";
+management.remote_gui="Administrare GUI din Internet";
 management.remote_https="Folosește HTTPS";
-management.remote_guiport="Port acces GUI din internet";
+management.remote_guiport="Port acces GUI din Internet";
 management.remote_ssh="Administrare SSH";
 management.remote_sshport="Port SSH la distanță";
 management.remote_telnet="Administrare Telnet";
@@ -951,7 +960,7 @@ management.remote_ip="Interval IP-uri la distanță permise";
 management.web_legend="Acces web";
 management.web_refresh="Auto-reîmprospătare (în secunde)";
 management.web_sysinfo="Activare pagină informații";
-management.web_sysinfopass="Cere parola în pagina de informații";
+management.web_sysinfopass="Solicitare parolă în pagina de informații";
 management.web_sysinfomasq="Mascare MAC pe pagina de informații";
 management.boot_legend="Întârziere pornire";
 management.boot_srv="Întârzie pornirea";
@@ -1042,7 +1051,7 @@ networking.legend5="Server DHCP multiplu";
 
 // ** QoS.asp **//
 qos.titl="Calitatea serviciului";
-qos.h2="Quality Of Service (QoS)";
+qos.h2="Quality of Service (QoS)";
 qos.legend="Setări QoS";
 qos.srv="Activare QoS";
 qos.type="Planificator pachet";
@@ -1066,9 +1075,9 @@ qos.legend6="Nivel lățime de bandă implicit";
 qos.bandwidth="Lățime de bandă în kbiți";
 
 //help container
-hqos.right1="Încărcare:";
+hqos.right1="Ieșire:";
 hqos.right2="Setați la 80%-95% (max) din viteza dumneavoastră totală de încărcare.";
-hqos.right3="Descărcare:";
+hqos.right3="Intrare:";
 hqos.right4="Setați la 80%-100% (max) din viteza dumneavoastră totală de descărcare.";
 hqos.right6="Puteți controla rata de transfer cu respect pentru aplicația care consumă din bandă.";
 hqos.right8="Puteți specifica prioritatea pentru tot traficul provenit de la o adresă IP sau un interval de adrese IP.";
@@ -1106,6 +1115,7 @@ route.olsrd_lqdmax="Calitate legătură maxim Dijkstra";
 route.olsrd_lqlvl="Nivel calitate legătură";
 route.olsrd_hysteresis="Histereză";
 route.olsrd_newiface="Interfață nouă";
+route.olsrd_smartgw="Gateway inteligent";
 route.zebra_legend="Configurare Zebra";
 route.zebra_log="Istoric Zebra";
 route.zebra_copt="Stil configurare Zebra";
@@ -1137,15 +1147,11 @@ survey.titl="Examinare zonă";
 survey.h2="Rețele fără fir vecine";
 survey.thjoin="Asociere";
 
-
 // ** Services.asp **//
 service.titl="Servicii";
 service.h2="Administrare servicii";
-
 service.apserv_legend="Configurare la distanță APServ";
 service.apserv="APServ";
-
-
 
 //kaid
 service.kaid_legend="Kaid XBOX";
@@ -1161,8 +1167,8 @@ service.dhcp_vendor="Setează clasă distribuitor";
 service.dhcp_reqip="Cerere IP";
 service.dhcp_legend2="Server DHCP";
 service.dhcp_srv="Daemon DHCP";
-service.dhcp_jffs2="Folosește JFFS2 pentru BD alocare clienți";
-service.dhcp_nvramlease="Folosește NVRAM pentru BD alocare clienți";
+service.dhcp_jffs2="Folosește JFFS2 la BD alocare clienți";
+service.dhcp_nvramlease="Folosește NVRAM la BD alocare clienți";
 service.dhcp_domain="Domeniu folosit";
 service.dhcp_landomain="Domeniu LAN";
 service.dhcp_option="Opțiuni DHCPd adiționale";
@@ -1201,6 +1207,7 @@ service.dns1="DNS1";
 service.dns2="DNS2";
 service.wins1="WINS1";
 service.wins2="WINS2";
+
 //rflow.webservices
 service.rflow_legend="RFlow / MACupd";
 service.rflow_srv1="RFlow";
@@ -1220,6 +1227,7 @@ service.pppoesrv_remotenet="IP rețea la distanță";
 service.pppoesrv_remotemask="Mască rețea la distanță";
 service.pppoesrv_lcpei="Interval repetare LCP";
 service.pppoesrv_lcpef="Eșuare repetare LCP";
+service.pppoesrv_limit="Limită sesiune per MAC";
 service.pppoesrv_idlet="Timp neocupat";
 service.pppoesrv_auth="Autentificare";
 service.pppoesrv_radip="IP server Radius";
@@ -1362,6 +1370,18 @@ service.hmilkfish_right24="deocamdată nu este implementat - lăsați-l gol";
 service.hmilkfish_right26="deocamdată nu este implementat - lăsați-l gol";
 //service.hmilkfish_="";//
 
+service.samba3_srv="Samba";
+service.samba3_srvstr="Șir de caractere server";
+service.samba3_pub="Partajare publică";
+service.samba3_config="Configurație particulară";
+service.samba3_workgrp="Workgroup";
+service.samba3_usr1="User1";
+service.samba3_pass1=" Password1";
+service.samba3_usr2="User2";
+service.samba3_pass2=" Password2";
+service.samba3_pubacl="Doar citire";
+service.samba3_advanced="Avansat"
+service.samba3_custom="Folosește configurație particulară";
 
 // ** eop-tunnel.asp **//
 eoip.titl="Tunel EoIP";
@@ -1402,25 +1422,26 @@ hstatus_lan.right2="Aceasta este adresa MAC a ruterului, așa cum este văzută 
 hstatus_lan.right4="Aceasta este adresa IP a ruterului, așa cum este văzută în rețeaua locală Ethernet.";
 hstatus_lan.right6="Când ruterul folosește o mască de subrețea, este afișată aici.";
 hstatus_lan.right8="Dacă folosiți ruterul ca server DHCP, aceasta va fi afișată aici.";
-hstatus_lan.right10="Dând clic pe orice adresă MAC, veți obține Identificatorul Unic al Organizației pentru interfața rețelei (căutare în baza de date OUI a standardelor IEEE).";
+hstatus_lan.right10="Dând clic pe orice adresă MAC, veți obține identificatorul unic al organizației pentru interfața rețelei (căutare în baza de date OUI a standardelor IEEE).";
 
 
 // ** Status_Bandwidth.asp **//
 status_band.titl="Monitorizare lățime de bandă";
 status_band.h2="Monitorizare lățime de bandă";
-status_band.chg_unit="Schimba in ";
-status_band.chg_scale="Autoscalare";
+status_band.chg_unit="Schimbă în ";
+status_band.chg_scale="Auto-redimensionare";
 status_band.chg_error="Nu se pot prelua informații despre interfață";
 status_band.chg_collect_initial="Colectare date inițiale, vă rog așteptați...";
 status_band.strin="Intrare";
 status_band.strout="Ieșire";
-status_band.follow="urmareste";
+status_band.follow="urmărire";
 status_band.up="sus";
 
 //help container
 hstatus_band.svg="Moduluil SVG de la Adobe este necesar pentru afișarea graficelor lățimii de bandă.";
 hstatus_band.right1="Dați clic pe etichetă pentru schimbarea unităților (octeți/s sau biți/s).";
-hstatus_band.right2="Dați clic pe etichetă pentru a alege tipul de scalare al graficului.";
+hstatus_band.right2="Dați clic pe etichetă pentru a alege tipul de scală al graficului.";
+
 
 // ** Status_Router.asp **//
 status_router.titl="Stare ruter";
@@ -1452,12 +1473,13 @@ status_router.inpvolt="Voltaj de intrare placă";
 status_router.cputemp="Temperatură CPU";
 
 //help container
-hstatus_router.right2="Acesta este numele specific al ruterului, pe care îl puteți alege în pagina <i>Instalare</i>.";
-hstatus_router.right4="Aceasta este adresa MAC a ruterului, așa cum este văzută de către funizorul dumneavoastră de serviciu internet (ISP).";
+hstatus_router.right2="Acesta este numele specific al ruterului, pe care îl puteți modifica în eticheta <i>Instalare</i>.";
+hstatus_router.right4="Aceasta este adresa MAC a ruterului, așa cum este văzută de către funizorul dumneavoastră de serviciu Internet (ISP).";
 hstatus_router.right6="Acesta este microcodul curent al ruterului.";
-hstatus_router.right8="Acesta este timpul primit de la serverul ntp setat în eticheta <em>" + bmenu.setup + " => " + bmenu.setupbasic + "</em>.";
+hstatus_router.right8="Acesta este timpul primit de la serverul ntp setat în pagina <em>" + bmenu.setup + " => " + bmenu.setupbasic + "</em>.";
 hstatus_router.right10="Aceasta este o măsurare a timpului în care ruterul a fost \"pornit\" și în stare de funcționare.";
 hstatus_router.right12="Aceasta este oferită ca trei numere care reprezintă încărcarea sistemului în timpul ultimelor 1, 5 și 15 minute.";
+
 
 // ** Status_Internet.asp **//
 status_inet.titl="Stare WAN";
@@ -1476,11 +1498,10 @@ status_inet.next="Luna următoare";
 status_inet.dataadmin="Administrare date";
 status_inet.delete_confirm="AVERTISMENT! Aceasta va șterge toate datele despre trafic. Continuați?";
 
-
 //help container
-hstatus_inet.right2="Afișează informațiile necesare pentru conectarea dumneavoastră la Internet. Aceaste informații a fost introduse in eticheta Instalare. Pentru a vă conecta dați clic pe butonul <em>Conectează</em> respectiv pe butonul <em>Deconectează</em> pentru a vă deconecta.";
+hstatus_inet.right2="Afișează informațiile necesare pentru conectarea dumneavoastră la Internet. Aceste informații a fost introduse în pagina Instalare. Pentru a vă conecta dați clic pe butonul <em>Conectează</em> respectiv pe butonul <em>Deconectează</em> pentru a vă deconecta.";
 hstatus_inet.right4="Afișează traficul în Internet al ruterului dumneavoastră de la ultima repornire.";
-hstatus_inet.right6="Afișează traficul în Internet al ruterului dumneavoastră pe lună. Țineți cursorul deasupra graficului pentru a vedea datele zilnice. Datele sunt stocate în nvram.";
+hstatus_inet.right6="Afișează traficul în Internet pe lună al ruterului dumneavoastră. Țineți cursorul deasupra graficului pentru a vedea datele zilnice. Datele sunt stocate în nvram.";
 
 
 // ** Status_Conntrack.asp **//
@@ -1515,6 +1536,7 @@ status_wireless.h22="Noduri rețea fără fir";
 status_wireless.legend3="Clienți";
 status_wireless.signal_qual="Calitate semnal";
 status_wireless.wds="Noduri WDS";
+
 
 // ** GPS info **//
 status_gpsi.legend="Informații GPS";
@@ -1561,7 +1583,7 @@ upgrad.warning="A V E R T I S M E N T";
 upgrad.mess1="Actualizarea microcodului poate dura câteva minute.<br />Nu întrerupeți curentul și nu apăsați pe butonul de resetare!";
 
 //help container
-hupgrad.right2="Clic pe butonul <em>Alegeți fișierul</em> (Chrome) sau <em>Răsfoire...</em> (Firefox) pentru a selecta fișierul microcod (firmware) care va fi trimis ruterului.<br /><br /> Clic pe butonul <em>Actualizează</em> pentru a începe procesul de actualizare. Actualizarea nu trebuie să fie întreruptă.";
+hupgrad.right2="Clic pe butonul <em>Alegeți fișierul, Răsfoire..., etc</em> (Browse) pentru a selecta fișierul microcod (firmware) care va fi trimis ruterului.<br /><br /> Clic pe butonul <em>Actualizează</em> pentru a începe procesul de actualizare. Actualizarea nu trebuie să fie întreruptă.";
 
 
 // ** UPnP.asp **//
@@ -1658,7 +1680,6 @@ wpa.radius_key="Cheie RADIUS";
 wpa.algorithms="Algoritmi WPA";
 wpa.shared_key="Cheie partajată WPA";
 
-
 aoss.titl="Securitate AOSS";
 aoss.aoss="AOSS";
 aoss.service="Serviciu AOSS";
@@ -1692,7 +1713,6 @@ hwpa.right2="Puteți alege între Dezactivat, WEP, WPA Personal, WPA Enterprise 
 wl_filter.titl="Listă de adrese MAC filtrate";
 wl_filter.h2="Listă de adrese MAC filtrate";
 wl_filter.h3="Introduceți adresa MAC în acest format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
-
 
 
 // ** WL_ActiveTable.asp **//
@@ -1758,6 +1778,12 @@ wl_wimax.duplex="Mod duplex";
 wl_wimax.mode="Mod de operare";
 wl_wimax.mac="Adresă MAC abonat";
 
+// ** Gpio **//
+gpio.titl="Intrări / Ieșiri Gpio";
+gpio.h2="Intrări / Ieșiri Gpio";
+gpio.oplegend="Ieșiri Gpio";
+gpio.iplegend="Intrări Gpio";
+
 // ** FreeRadius.asp **//
 freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
@@ -1772,8 +1798,6 @@ freeradius.password="Parolă";
 freeradius.downstream="Descărcare";
 freeradius.upstream="Încărcare";
 freeradius.sharedkey="Cheie partajată";
-
-
 freeradius.countrycode="Cod țară";
 freeradius.state="Stat sau regiune";
 freeradius.locality="Localitate";
@@ -1785,6 +1809,7 @@ freeradius.passphrase="Frază secretă";
 freeradius.generate="Generează certificat";
 freeradius.cert_status="Stare certificat";
 freeradius.port="Port Radius";
+
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Setări avansate rețea fără fir";
@@ -1821,8 +1846,6 @@ wl_adv.table1="Parametrii AP EDCA (AP către client)";
 wl_adv.txchainmask="Înlănțuire antene TX";
 wl_adv.rxchainmask="Înlănțuire antene RX";
 
-
-
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
@@ -1852,6 +1875,7 @@ wl_adv.shrt="Scurt"; 				//************* don't use .short ! **************
 //help container
 hwl_adv.right2="Puteți alege între Automat și Cheie partajată. Autentificarea cu cheie partajată este mai sigură, dar toate dispozitivele din rețeaua dumneavoastră trebuie, de asemenea, să fie compatibile cu autentificarea cu Cheie partajată.";
 
+
 // ** Wireless_Basic.asp **//
 wl_basic.titl="Fără fir";
 wl_basic.h2="Fără fir";
@@ -1873,12 +1897,14 @@ wl_basic.client="Client";
 wl_basic.repeater="Repetor";
 wl_basic.repeaterbridge="Punte repetor";
 wl_basic.clientBridge="Punte client";
+wl_basic.clientRelayd="Punte client (rutată)";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="Stație WDS";
 wl_basic.wdsap="AP WDS";
 wl_basic.mixed="Mixt";
 wl_basic.greenfield="Zonă verde";
 wl_basic.preamble="Preambul scurt";
+wl_basic.clientRelaydDefaultGwMode="Mod GW implicit";
 wl_basic.b="Doar-B";
 wl_basic.a="Doar-A";
 wl_basic.na="Mixt-NA";
@@ -1935,11 +1961,18 @@ wl_basic.ofdm_weak_det="Detecție slabă OFDM";
 wl_basic.radar="Detecție radar";
 wl_basic.mtikie="Compatibilitate MTik";
 wl_basic.csma="Examinare furnizor";
+wl_basic.if_label="Etichetă (opțional)";
+wl_basic.if_info="Informații (opțional)";
+wl_basic.advanced_options="Opțiuni avansate";
+wl_basic.rate_control="Algoritm control rată";
+wl_basic.ap83_vap_note="Adăugarea a mai mult de trei interfețe virtuale va conduce la performanță scăzută cu unele dispozitive client specifice pe aceste interfețe virtuale adiționale.";
+
 //help container
 hwl_basic.right2="Dacă doriți să excludeți clienți fără fir-G, alegeți modul <em>Doar-B</em>. Dacă doriți să dezactivați accesul în mod fără fir, alegeți <em>Dezactivat</em>.<br/><b>Atenție :</b> când modul fără fir este schimbat s-ar putea ca unii parametrii avansați să se schimbe (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" sau \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Interval de sensibilitate: ";
-hwl_basic.right4="Ajustează cronometrarea ack. 0 (zero) dezactivează complet cronometrarea ack pe firmware-urile broadcom. Pe firmware-urile bazate pe Atheros o va transforma în modul de cronometrare ack automat.";
+hwl_basic.right4="Ajustează cronometrarea ack. 0 (zero) dezactivează complet cronometrarea ack pe microcodurile broadcom. Pe microcodurile bazate pe Atheros o va transforma în modul de cronometrare ack automat.";
 hwl_basic.right6="Clic pe orice oră pentru a activa sau dezactiva semnalul radio (<em>verde</em> indică permiterea accesului fără fir, iar <em>roșu</em> blocarea accesului fără fir)";
+
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 fail.mess1="Valorile pe care le-ați introdus nu sunt valide. Vă rog să încercați din nou.";
