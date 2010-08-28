@@ -42,7 +42,10 @@ void start_jffs2(void)
 			nvram_commit();
 			itworked = eval("mtd", "erase", rwpart);
 			insmod("crc32");
+			insmod("lzma_compress");
+			insmod("lzma_decompress");
 			insmod("jffs2");
+			
 			char dev[64];
 
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
@@ -57,6 +60,8 @@ void start_jffs2(void)
 		} else {
 			itworked = eval("mtd", "unlock", rwpart);
 			insmod("crc32");
+			insmod("lzma_compress");
+			insmod("lzma_decompress");
 			insmod("jffs2");
 			char dev[64];
 
