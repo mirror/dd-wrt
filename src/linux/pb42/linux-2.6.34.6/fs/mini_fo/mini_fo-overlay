@@ -1,0 +1,130 @@
+#!/bin/bash
+#
+# Copyright (C) 2005 Markus Klotzbuecher <mk@creamnet.de>
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version
+# 2 of the License, or (at your option) any later version.
+#
+
+HELP=
+SUFF=
+MNTP=
+MNT_DIR="/mnt"
+STO=
+STO_DIR="/tmp"
+BASE=
+
+usage()
+{
+cat <<EOF
+
+Usage: $0 [-s suffix] [-d sto_dir_dir] [-m mount point] base_dir
+Version 0.1
+
+This script overlays the given base directory using the mini_fo file
+system. If only the base directory base_dir is given, $0
+will use a storage directory called "sto-<base_dir_name>" in $STO_DIR,
+and mount point "mini_fo-<base_dir_dir>" in $MNT_DIR.
+
+Options:
+     -s <suffix>
+          add given suffix to storage directory and the mount
+          point. This is usefull for overlaying one base directory
+          several times and avoiding conflicts with storage directory
+          names and mount points.
+
+     -d <sto_dir_dir>
+          change the directory in which the storage directory will be
+          created (default is currently "$STO_DIR".
+
+     -m <mount point>
+          use an alternative directory to create the mini_fo
+          mountpoint (default is currently "$MNT_DIR".
+
+     -h   displays this message.
+
+EOF
+exit 1;
+}
+
+while getopts hm:s:d: OPTS
+  do
+  case $OPTS in
+      s)  SUFF="$OPTARG";;
+      d)  STO_DIR="$OPTARG";;
+      m)  MNT_DIR="$OPTARG";;
+      h)  HELP="set";;
+      ?)  usage
+	  exit 1;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+BASE="$1"
+
+if [ "x$HELP" == "xset" ]; then
+    usage
+    exit -1
+fi
+
+# fix suffix
+if [ "x$SUFF" != "x" ]; then
+    SUFF="-$SUFF"
+fi
+
+# kill trailing slashes
+MNT_DIR=${MNT_DIR%/}
+STO_DIR=${STO_DIR%/}
+BASE=${BASE%/}
+
+
+if ! [ -d "$BASE" ]; then
+    echo "invalid base dir $BASE, run $0 -h for help."
+    exit -1
+fi
+
+# check opts
+if ! [ -d "$MNT_DIR" ]; then
+    echo "invalid mount dir $MNT_DIR, run $0 -h for help."
+    exit -1
+fi
+
+if ! [ -d "$STO_DIR" ]; then
+    echo "invalid sto_dir_dir $STO_DIR, run $0 -h for help."
+    exit -1
+fi
+
+MNTP="$MNT_DIR/mini_fo-`basename $BASE`$SUFF"
+STO="$STO_DIR/sto-`basename $BASE`$SUFF"
+
+# create the mount point if it doesn't exist
+mkdir -p $MNTP
+if [ $? -ne 0 ]; then
+    echo "Error, failed to create mount point $MNTP"
+fi
+
+mkdir -p $STO
+if [ $? -ne 0 ]; then
+    echo "Error, failed to create storage dir $STO"
+fi
+
+# check if fs is already mounted
+mount | grep mini_fo | grep $MNTP &> /dev/null
+if [ $? -eq 0 ]; then
+    echo "Error, existing mini_fo mount at $MNTP."
+    exit -1
+fi
+
+mount | grep mini_fo | grep $STO &> /dev/null
+if [ $? -eq 0 ]; then
+    echo "Error, $STO seems to be used already."
+    exit -1
+fi
+
+# mount
+mount -t mini_fo -o base=$BASE,sto=$STO $BASE $MNTP
+
+if [ $? -ne 0 ]; then
+    echo "Error, mounting failed, maybe no permisson to mount?"
+fi
