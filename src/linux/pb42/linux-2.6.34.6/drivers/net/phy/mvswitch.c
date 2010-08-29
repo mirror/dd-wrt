@@ -238,6 +238,8 @@ mvswitch_config_init(struct phy_device *pdev)
 	struct mvswitch_priv *priv = to_mvsw(pdev);
 	struct net_device *dev = pdev->attached_dev;
 	u8 vlmap = 0;
+	u16 reg;
+	u16 emask;
 	int i;
 
 	if (!dev)
@@ -251,6 +253,13 @@ mvswitch_config_init(struct phy_device *pdev)
 #ifdef HEADER_MODE
 	dev->flags |= IFF_PROMISC;
 #endif
+	emask = MV_PORTCTRL_ENABLED;
+	reg = r16(pdev, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;	
+	if (reg == MV_IDENT_VALUE2)
+	    {
+	    printk("%s: Marvell 88E6061 workaround enabled\n",dev->name);
+	    emask = MV_PORTCTRL_ENABLED | MV_PORTCTRL_EGRESSALL;
+	    }
 
 	/* initialize default vlans */
 	for (i = 0; i < MV_PORTS; i++)
@@ -286,7 +295,7 @@ mvswitch_config_init(struct phy_device *pdev)
 		MV_PORTCTRL_RXTR |
 		MV_PORTCTRL_TXTR |
 #endif
-		MV_PORTCTRL_ENABLED
+		emask
 	);
 	/* wait for the phy change to settle in */
 	msleep(2);
@@ -321,7 +330,7 @@ mvswitch_config_init(struct phy_device *pdev)
 
 		/* re-enable port */
 		w16(pdev, MV_PORTREG(CONTROL, i),
-			MV_PORTCTRL_ENABLED
+			emask
 		);
 	}
 
