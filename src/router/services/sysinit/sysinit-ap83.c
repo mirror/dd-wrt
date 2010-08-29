@@ -149,6 +149,10 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set vlan 1");
+		system("swconfig dev eth0 vlan 1 set ports \"1 2 3 4 5t\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0 5t\"");
 		unsigned char buf2[256];
 		fseek(fp, 0x1fc00, SEEK_SET);
 		fread(buf2, 256, 1, fp);
