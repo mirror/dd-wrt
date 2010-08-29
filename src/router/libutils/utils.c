@@ -1283,6 +1283,14 @@ int internal_getRouterBrand()
 			return ROUTER_ASUS_WL550GE;
 		}
 	}
+	
+	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
+	    && nvram_match("boardrev", "0x1204")) {
+		cprintf("router is Belkin Play Max F7D4301v1\n");
+		setRouter("Belkin Play Max F7D4301v1");
+		return ROUTER_BELKIN_F7D4301;
+	}
+
 #endif
 	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
 	    && nvram_match("boardrev", "0x10")) {
@@ -3505,6 +3513,11 @@ int led_control(int type, int act)
 	case ROUTER_NETCORE_NW618:
 		power_gpio = 0x101;
 		diag_gpio = 0x001;	// power blink
+		break;
+	case ROUTER_BELKIN_F7D4301:
+		power_gpio = 0x10a; // green
+		diag_gpio = 0x10b;	// red
+		ses_gpio = 0x10d;   // wps orange
 		break;
 	case ROUTER_DYNEX_DX_NRUTER:
 		power_gpio = 0x001;
