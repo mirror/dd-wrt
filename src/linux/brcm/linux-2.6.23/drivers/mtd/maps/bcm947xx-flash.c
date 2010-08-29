@@ -191,6 +191,7 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 
  found:
 	printk(KERN_EMERG  "bootloader size: %d\n", off);
+	printk(KERN_EMERG  "nvram size: %d\n", NVRAM_SPACE);
 	return off;
 
 }
