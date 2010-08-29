@@ -141,5 +141,6 @@ enum {
 
 #define MV_IDENT_MASK		0xfff0
 #define MV_IDENT_VALUE		0x0600
+#define MV_IDENT_VALUE2		0x0610
 
 #endif
