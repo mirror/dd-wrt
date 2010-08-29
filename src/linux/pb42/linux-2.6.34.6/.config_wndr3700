@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.34.6
-# Sat Aug 28 00:51:03 2010
+# Sat Aug 28 16:55:53 2010
 #
 CONFIG_MIPS=y
 
@@ -1375,6 +1375,8 @@ CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE=3
 # CONFIG_SYSV_FS is not set
 # CONFIG_UFS_FS is not set
 CONFIG_NETWORK_FILESYSTEMS=y
+# CONFIG_NFS_FS is not set
+# CONFIG_NFSD is not set
 # CONFIG_SMB_FS is not set
 # CONFIG_CEPH_FS is not set
 CONFIG_CIFS=m
