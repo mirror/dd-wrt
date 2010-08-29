@@ -239,6 +239,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT160N:
 	case ROUTER_WRT160NV3:
 	case ROUTER_ASUS_RTN16:
+	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
 	case ROUTER_WRT310N:
@@ -714,6 +715,17 @@ void start_sysinit(void)
 		    || nvram_match("vlan2ports", "0 8u")) {
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 			nvram_set("vlan2ports", "0 8");
+			need_reboot = 1;
+		}
+		break;
+		
+	case ROUTER_BELKIN_F7D4301:
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
+		if (nvram_match("vlan1ports", "4 8")
+		    || nvram_match("vlan2ports", "0 1 2 3 8*")) {
+			nvram_set("vlan1ports", "0 1 2 3 8*");
+			nvram_set("vlan2ports", "4 8");
 			need_reboot = 1;
 		}
 		break;
@@ -1406,6 +1418,7 @@ void start_sysinit(void)
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_ASUS_RTN16:
+			case ROUTER_BELKIN_F7D4301:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx";
@@ -1933,6 +1946,7 @@ char *enable_dtag_vlan(int enable)
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT610NV2:
+			case ROUTER_BELKIN_F7D4301:
 				eth = "eth0";
 				break;
 			case ROUTER_WRT600N:
