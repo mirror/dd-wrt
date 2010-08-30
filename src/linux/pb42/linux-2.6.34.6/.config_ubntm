@@ -839,6 +839,9 @@ CONFIG_TUN=y
 # CONFIG_VETH is not set
 # CONFIG_ARCNET is not set
 # CONFIG_PHYLIB is not set
+# CONFIG_RTL8366_SMI is not set
+# CONFIG_RTL8366S_PHY is not set
+# CONFIG_RTL8366RB_PHY is not set
 CONFIG_NET_ETHERNET=y
 CONFIG_MII=y
 # CONFIG_AX88796 is not set
