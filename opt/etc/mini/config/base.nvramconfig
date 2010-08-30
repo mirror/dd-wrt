@@ -73,6 +73,7 @@
  "dhcpd_usejffs" "DHCP leases on jffs" "NULL" "FALSE" "0"
  "dhcpd_options"  "DHCP"  "NULL"  "TRUE" "0"
  "dhcp_dnsmasq" "DNSMasq as DHCP Server" "CHOICE" "2" "0" "1" "FALSE" "0"
+ "dnsmasq_no_dns_rebind"  "DNSMasq no rebind"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dns_dnsmasq"  "Use DNSMasq for DNS"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "auth_dnsmasq"  "DHCP-Authoritative"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "dnsmasq_enable"  "DNS Masq"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
