@@ -65,18 +65,29 @@ void start_sysinit(void)
 	 */
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
+#ifdef HAVE_ATH9K
+	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
+#endif
 	cprintf("sysinit() tmp\n");
 
 	/*
 	 * /tmp 
 	 */
 	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
+#ifdef HAVE_HOTPLUG2
+	// shell-skript. otherwise we loose our console
+	eval("/etc/hotplug2.startup");
+	eval("mkdir", "/dev/pts");
+#else
 	// fix for linux kernel 2.6
+	eval("mknod", "/dev/ppp", "c", "108", "0");
+#endif
+// fix me udevtrigger does not create that (yet) not registered?
+	eval("mknod", "/dev/nvram", "c", "229", "0");
+
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	eval("mkdir", "/tmp/www");
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
 
 	unlink("/tmp/nvram/.lock");
 	eval("mkdir", "/tmp/nvram");
