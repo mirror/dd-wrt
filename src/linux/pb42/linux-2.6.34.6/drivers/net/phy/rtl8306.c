@@ -773,7 +773,7 @@ static struct switch_attr rtl_globals[] = {
 	},
 	{
 		.type = SWITCH_TYPE_INT,
-		.name = "enable_vlan",
+		.name = "vlan",
 		.description = "Enable VLAN mode",
 		.max = 1,
 		.set = rtl_set_vlan,
