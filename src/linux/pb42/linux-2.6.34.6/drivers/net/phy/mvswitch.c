@@ -1,6 +1,7 @@
 /*
  * Marvell 88E6060 switch driver
  * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2008 Sebastian Gottschall <s.gottschall@dd-wrt.com> (just 88E6061 support)
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of the GNU General Public License v2 as published by the
@@ -29,6 +30,7 @@
 #include <asm/irq.h>
 #include <asm/uaccess.h>
 #include "mvswitch.h"
+#define MVSWITCH_MAGIC 0x88E6060
 
 /* Undefine this to use trailer mode instead.
  * I don't know if header mode works with all chips */
@@ -38,13 +40,12 @@ MODULE_DESCRIPTION("Marvell 88E6060 Switch driver");
 MODULE_AUTHOR("Felix Fietkau");
 MODULE_LICENSE("GPL");
 
-#define MVSWITCH_MAGIC 0x88E6060
-
 struct mvswitch_priv {
+	/* the driver's tx function */
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
 	struct vlan_group *grp;
-	u8 vlans[16];
+	u8 vlans[2];
 };
 
 #define to_mvsw(_phy) ((struct mvswitch_priv *) (_phy)->priv)
@@ -129,7 +130,7 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	/* append the tag */
 	*((__be32 *) buf) = cpu_to_be32((
 		(MV_TRAILER_OVERRIDE << MV_TRAILER_FLAGS_S) |
-		((priv->vlans[vid] & MV_TRAILER_PORTS_M) << MV_TRAILER_PORTS_S)
+		((priv->vlans[vid] & MV_TRAILER_PORTS_M) << MV_TRAILER_PORTS_S)//|(0x10<<8)
 	));
 #endif
 
@@ -153,7 +154,6 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 	int vlan = -1;
 	unsigned char *buf;
 	int i;
-
 	dev = skb->dev;
 	if (!dev)
 		goto error;
@@ -177,14 +177,17 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 	/* look for the vlan matching the incoming port */
 	for (i = 0; i < ARRAY_SIZE(priv->vlans); i++) {
 		if ((1 << buf[1]) & priv->vlans[i])
+			{
 			vlan = i;
+			goto receive;
+			}
+			
 	}
 
 	if (vlan == -1)
 		goto error;
-
+	receive:;
 	skb->protocol = eth_type_trans(skb, skb->dev);
-
 	if (napi)
 		return vlan_hwaccel_receive_skb(skb, priv->grp, vlan);
 	else
@@ -221,7 +224,7 @@ mvswitch_vlan_rx_register(struct net_device *dev, struct vlan_group *grp)
 static int
 mvswitch_wait_mask(struct phy_device *pdev, int addr, int reg, u16 mask, u16 val)
 {
-	int i = 100;
+	int i = 1000;
 	u16 r;
 
 	do {
@@ -239,9 +242,8 @@ mvswitch_config_init(struct phy_device *pdev)
 	struct net_device *dev = pdev->attached_dev;
 	u8 vlmap = 0;
 	u16 reg;
-	u16 emask;
 	int i;
-
+	u16 emask;
 	if (!dev)
 		return -EINVAL;
 
@@ -250,9 +252,6 @@ mvswitch_config_init(struct phy_device *pdev)
 	pdev->advertising = ADVERTISED_100baseT_Full;
 	dev->phy_ptr = priv;
 	dev->irq = PHY_POLL;
-#ifdef HEADER_MODE
-	dev->flags |= IFF_PROMISC;
-#endif
 	emask = MV_PORTCTRL_ENABLED;
 	reg = r16(pdev, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;	
 	if (reg == MV_IDENT_VALUE2)
@@ -260,10 +259,9 @@ mvswitch_config_init(struct phy_device *pdev)
 	    printk("%s: Marvell 88E6061 workaround enabled\n",dev->name);
 	    emask = MV_PORTCTRL_ENABLED | MV_PORTCTRL_EGRESSALL;
 	    }
-
 	/* initialize default vlans */
 	for (i = 0; i < MV_PORTS; i++)
-		priv->vlans[(i == MV_WANPORT ? 2 : 1)] |= (1 << i);
+		priv->vlans[(i == MV_WANPORT ? 1 : 0)] |= (1 << i);
 
 	/* before entering reset, disable all ports */
 	for (i = 0; i < MV_PORTS; i++)
@@ -279,6 +277,7 @@ mvswitch_config_init(struct phy_device *pdev)
 		printk("%s: Timeout waiting for the switch to reset.\n", dev->name);
 		return i;
 	}
+	msleep(10); /* wait for the status change to settle in */
 
 	/* set the ATU flags */
 	w16(pdev, MV_SWITCHREG(ATU_CTRL),
@@ -297,6 +296,7 @@ mvswitch_config_init(struct phy_device *pdev)
 #endif
 		emask
 	);
+
 	/* wait for the phy change to settle in */
 	msleep(2);
 	for (i = 0; i < MV_PORTS; i++) {
@@ -329,15 +329,16 @@ mvswitch_config_init(struct phy_device *pdev)
 		);
 
 		/* re-enable port */
-		w16(pdev, MV_PORTREG(CONTROL, i),
-			emask
-		);
+		w16(pdev, MV_PORTREG(CONTROL, i),emask);
 	}
+//	w16(pdev, MV_PORTREG(VLANMAP, MV_CPUPORT),
+//			MV_PORTVLAN_PORTS(0x1f) |
+//			MV_PORTVLAN_ID(MV_CPUPORT)
+//		);
 
 	w16(pdev, MV_PORTREG(VLANMAP, MV_CPUPORT),
 		MV_PORTVLAN_ID(MV_CPUPORT)
 	);
-
 	/* set the port association vector */
 	for (i = 0; i <= MV_PORTS; i++) {
 		w16(pdev, MV_PORTREG(ASSOC, i),
@@ -370,29 +371,54 @@ mvswitch_config_init(struct phy_device *pdev)
 	return 0;
 }
 
+#define MV_AUTONEG_DONE(mv_phy_specific_status)                   \
+    (((mv_phy_specific_status) &                                  \
+        (MV_STATUS_RESOLVED | MV_STATUS_REAL_TIME_LINK_UP)) ==    \
+        (MV_STATUS_RESOLVED | MV_STATUS_REAL_TIME_LINK_UP))
+
 static int
 mvswitch_read_status(struct phy_device *pdev)
 {
 	pdev->speed = SPEED_100;
 	pdev->duplex = DUPLEX_FULL;
-	pdev->link = 1;
+	pdev->state = PHY_UP;
+	static int linkstatus[5]={0,0,0,0,0};
 
-	/* XXX ugly workaround: we can't force the switch
-	 * to gracefully handle hosts moving from one port to another,
-	 * so we have to regularly clear the ATU database */
+	int i;
+	for (i=0;i<MV_PORTS;i++)
+	    {
+	    int status = r16(pdev,MV_PHYPORT(i),MV_PHY_STATUS1);
+	    if (linkstatus[i])
+	    {
+	    if (!(status & MV_STATUS_REAL_TIME_LINK_UP))
+		{
+		printk(KERN_INFO "port %d, link down\n",i);
+		/* XXX ugly workaround: we can't force the switch
+		* to gracefully handle hosts moving from one port to another,
+		* so we have to regularly clear the ATU database */
 
-	/* wait for the ATU to become available */
-	mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
+		/* wait for the ATU to become available */
+		mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
 
-	/* flush the ATU */
-	w16(pdev, MV_SWITCHREG(ATU_OP),
-		MV_ATUOP_INPROGRESS |
-		MV_ATUOP_FLUSH_ALL
-	);
+		/* flush the ATU */
+		w16(pdev, MV_SWITCHREG(ATU_OP),
+			MV_ATUOP_INPROGRESS |
+			MV_ATUOP_FLUSH_ALL
+		);
 
-	/* wait for operation to complete */
-	mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
-
+		/* wait for operation to complete */
+		mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
+		linkstatus[i]=0;
+		}
+	    }else
+	    {
+		if (MV_AUTONEG_DONE(status))
+		    {
+		    printk(KERN_INFO "port %d, link up\n",i);
+		    linkstatus[i]=1;
+		    }
+	    }
+	}    
 	return 0;
 }
 
@@ -408,12 +434,41 @@ mvswitch_remove(struct phy_device *pdev)
 	struct mvswitch_priv *priv = to_mvsw(pdev);
 	struct net_device *dev = pdev->attached_dev;
 
-	/* restore old netdev ops */
+	/* restore old xmit handler */
 	if (priv->ndo_old && dev)
 		dev->netdev_ops = priv->ndo_old;
 	dev->phy_ptr = NULL;
 	dev->features &= ~NETIF_F_HW_VLAN_RX;
 	kfree(priv);
+}
+
+static bool
+mvswitch_detect(struct mii_bus *bus, int addr)
+{
+	u16 reg;
+	int i;
+	/* we attach to phy id 31 to make sure that the late probe works */
+	if (addr != 0)
+		return false;
+	/* look for the switch on the bus */
+	reg = bus->read(bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
+	if (reg != MV_IDENT_VALUE && reg != MV_IDENT_VALUE2)
+		return false;
+
+	/* 
+	 * Now that we've established that the switch actually exists, let's 
+	 * get rid of the competition :)
+	 */
+/*	for (i = 0; i < 31; i++) {
+		if (!bus->phy_map[i])
+			continue;
+
+		device_unregister(&bus->phy_map[i]->dev);
+		kfree(bus->phy_map[i]);
+		bus->phy_map[i] = NULL;
+	}*/
+
+	return true;
 }
 
 static int
@@ -429,17 +484,16 @@ mvswitch_probe(struct phy_device *pdev)
 
 	return 0;
 }
-
 static int
 mvswitch_fixup(struct phy_device *dev)
 {
 	u16 reg;
-
-	if (dev->addr != 0x10)
+//	printk(KERN_EMERG "fixup %d\n",dev->addr);
+	if (dev->addr != 0)
 		return 0;
 
 	reg = dev->bus->read(dev->bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
-	if (reg != MV_IDENT_VALUE)
+	if (reg != MV_IDENT_VALUE && reg != MV_IDENT_VALUE2)
 		return 0;
 
 	dev->phy_id = MVSWITCH_MAGIC;
@@ -448,10 +502,10 @@ mvswitch_fixup(struct phy_device *dev)
 
 
 static struct phy_driver mvswitch_driver = {
-	.name		= "Marvell 88E6060",
+	.name		= "Marvell 88E6060/88E6061",
+	.features	= PHY_BASIC_FEATURES,
 	.phy_id		= MVSWITCH_MAGIC,
 	.phy_id_mask	= 0xffffffff,
-	.features	= PHY_BASIC_FEATURES,
 	.probe		= &mvswitch_probe,
 	.remove		= &mvswitch_remove,
 	.config_init	= &mvswitch_config_init,
