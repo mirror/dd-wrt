@@ -323,6 +323,13 @@ if (boardnum == 12345 && nvram_match("boardrev", "0x1204")
 		gpios = 1 << 10 | 1 << 11 | 1 << 13;
 }
 
+if (boardnum == 12345 && nvram_match("boardrev", "0x1102")
+		&& nvram_match("boardtype", "0xa4cf"))
+{
+		printk(KERN_EMERG "F7D4302v1 GPIO Init\n");
+		gpios = 1 << 10 | 1 << 11 | 1 << 13;
+}
+
 /*if (iswrt300n11)
 {
 	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
