@@ -1,0 +1,55 @@
+#
+# Sample Hotplug2 rules.
+#
+# Additionally allows complex devnode ownership logic.
+#
+
+# Load module
+ACTION == "add",
+MODALIAS is set {
+	exec "/sbin/modprobe" "%MODALIAS%"
+}
+
+# Sound devices
+MAJOR is set, MINOR is set,
+DEVICENAME ~~ (controlC[0-9]|pcmC0D0*|timer) {
+	setenv "FILENAME" "snd/%DEVICENAME%"
+	setenv "FILEGROUP" "snd"
+}
+
+# Disk devices
+MAJOR is set, MINOR is set,
+SUBSYSTEM == "block" {
+	setenv "FILEGROUP" "disk"
+}
+
+# Safe defaults
+FILEMODE is unset {
+	setenv "FILEMODE" 0644
+}
+FILEOWNER is unset {
+	setenv "FILEOWNER" root
+}
+FILEGROUP is unset {
+	setenv "FILEGROUP" adm
+}
+FILENAME is unset {
+	setenv "FILENAME" "%DEVICENAME%"
+}
+
+# Create the actual device node
+ACTION == "add",
+DEVPATH is set,
+MAJOR is set, MINOR is set {
+	mknod "/tmp/dev/%FILENAME%" "%FILEMODE%"
+	chown "%FILEOWNER%" "/tmp/dev/%DEVICENAME%"
+	chgrp "%FILEGROUP%" "/tmp/dev/%DEVICENAME%"
+}
+
+# Load firmware, if necessary
+ACTION == "add",
+FIRMWARE is set {
+	load-firmware "/lib/firmware"
+}
+
+$include "/etc/hotplug2/automount.rules"

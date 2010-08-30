@@ -1,0 +1,22 @@
+These things would be nice to have:
+  o log the relationship of the kernel name and the persistent disk name
+    to syslog, so any error logged from the kernel can be associated with
+    any of the links at that time
+
+
+These things will change in future udev versions:
+  o warn if BUS, ID, SYSFS are used as keys
+    (they are SUBSYSTEMS, KERNELS, ATTRS now)
+
+
+These things are deprecated and scheduled for removal in a future
+udev version:
+  o remove old udevdb dump 'udevinfo -d'
+    (-e exports everything)
+
+  o remove udevstart
+    (we rely on the kernel "uevent" triggers of kernel 2.6.15 and no longer
+     want to guess event properties from sysfs like udevstart is doing it)
+
+  o remove extra for /etc/dev.d/ /etc/hotplug.d/
+    (that inefficient stuff should finally go away)

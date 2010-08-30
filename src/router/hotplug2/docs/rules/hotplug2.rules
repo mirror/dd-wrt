@@ -1,0 +1,24 @@
+#
+# Sample base Hotplug2 rules.
+#
+
+# Load module
+ACTION == "add",
+MODALIAS is set {
+	exec "/sbin/modprobe" "%MODALIAS%"
+}
+
+# Create device nodes
+ACTION == "add",
+DEVPATH is set,
+MAJOR is set, MINOR is set {
+	mknod "/dev/%DEVICENAME%" 0644
+}
+
+# Load firmware, if necessary
+ACTION == "add",
+FIRMWARE is set {
+	load-firmware "/lib/firmware"
+}
+
+$include "/etc/hotplug2/automount.rules"

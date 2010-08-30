@@ -1,0 +1,122 @@
+============
+INTRODUCTION
+============
+
+Hotplug2 is aimed at early Linux user space, that is, initramfs or initrd,
+possibly also at embedded devices (such as WRT-like routers) or very weak
+machines, such as 386/486 (some still use them as workstations).
+
+Hotplug2 connects to the uevent netlink socket and reads events. It supports
+simple rules for processing the events. The rules allow matching of the
+variables obtained by the uevent socket and allows execution of applications,
+with those variables set as their environmental variables. Further
+documentation of rules syntax is available.
+
+Alternatively, Hotplug2 can run without any rules, and simply blindly attempt
+to modprobe whenever an adequate event is received.
+
+Hotplug2 supports cold plugging simply by calling the 'udevtrigger' binary
+internally. As udevtrigger is fairly independent on the rest of udev, it can be
+easily embedded along with Hotplug2.
+
+The advantages over udev are:
+ * Faster processing of events - that is especially notable on slower hardware.
+ * Much smaller footprint of the application.
+
+The disadvantages:
+ * Limited rules system, designed rather for trivial operations than
+   for complex desktop setups.
+ 
+Therefore, as said earlier, Hotplug2 definitely is not aimed as replacement
+for udev on desktop, with the exception of initramfs / initrd.
+
+Hotplug2 is designed with pluggable worker architecture for different setups
+with different resource constraints and demands. There are two base modules
+distributed, single process and forking, that are described in sections below.
+There's also an example worker, servering as a skeleton for any possible
+third-party workers.
+
+
+=====
+USAGE
+=====
+
+The following examples demonstrate usage for one-time hardware detection.
+
+Recommended usage for InitRD, if you do not have any modules you want to
+load manually: ::
+
+  hotplug2 --no-persistent --set-coldplug-cmd /sbin/something \
+           --set-rules-file /etc/hotplug2/main.rules \
+           --set-worker /lib/hotplug2/worker_some.so
+
+Recommended usage for InitRD, if you have modules you want to load manually: ::
+
+  #!/bin/sh
+
+  echo "Starting detection"
+
+  # Start Hotplug2 in persistent mode
+  hotplug2 --set-coldplug-cmd /sbin/something \
+           --set-rules-file /etc/hotplug2/main.rules \
+           --set-worker /lib/hotplug2/worker_some.so &
+  HOTPLUG_PID=$!
+
+  # Load desired modules
+  modprobe module1
+  modprobe module2
+  modprobe module3
+
+  # Switch Hotplug2 to non-persistent mode.
+  kill -USR1 "$HOTPLUG_PID"
+
+  # Wait for Hotplug2 to process all remaining events.
+  wait
+
+  echo "Detection over"
+
+Please note that if you run hotplug2 and udevd simultaneously, both will
+suffer significant slowdown.
+
+To have hotplug2 running permanently and perform coldplug, run: ::
+
+  hotplug2 --persistent --set-coldplug-cmd /sbin/something \
+           --set-rules-file /etc/hotplug2/main.rules \
+           --set-worker /lib/hotplug2/worker_some.so &
+
+Note that hotplug2 will not daemonize itself, you have to use an equivalent
+to Debian's start-stop-daemon, or otherwise ensure it daemonizes.
+
+For further reference, consult manual pages.
+
+=======
+WORKERS
+=======
+
+There are two base workers distributed with Hotplug2:
+
+ * Single process worker
+ * Forking worker
+
+Single process worker executes all rules in a row as they come, and if a
+command takes some time to get processed, all the following events have
+to wait. The benefit, however, is very low overhead for processing and
+very low memory requirements. This worker accepts no configuration options.
+
+Forking worker spawns multiple children that receive events from the
+parent and execute them. The processes are spawned on-demand, but can
+process multiple events and terminate only after a period of inactivity.
+
+Furthermore, forking working attempts to optimize spawning by executing
+the rules in the master process, if the rule is believed not to block
+and a new child process would have to be spawned. A rule is expected
+to be slow if it executs any software, if it loads firmware or if
+a 'flag-slow' is specified in the rules that match the uevent.
+
+Forking worker accepts several configuration options.
+
+--max-children <number>
+  Maximum number of child processes allowed to be spawned.
+
+--always-fork
+  Disable optimalization and never process an event in the master process.

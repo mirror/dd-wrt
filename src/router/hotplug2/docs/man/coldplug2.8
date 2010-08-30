@@ -1,0 +1,26 @@
+.\" .nh
+.\" .ad l
+.TH "coldplug2" "8" "December 2008" "coldplug2" "coldplug2"
+.SH "NAME"
+coldplug2 \- embeddable coldplug support binary
+.SH "SYNOPSIS"
+\fBcoldplug2\fR
+[<directory> [<directory> [...]]]
+.SH "DESCRIPTION"
+.PP 
+The coldplug2 application recursively scans /sys for 'uevent' files and sends 'add' event. Kernel then sends the event using netlink socket to hotplug2 that processes the event.
+.PP 
+It is also possible to specify list of directories, such as 'bus/pci' and 'block', to only limit scanning to these subdirectories. Note that symlinks are not followed.
+.PP 
+.SH "NOTES"
+.PP
+There is no check for valid directories passed as arguments. If you specify '../', the root fs will be scanned.
+.SH "AUTHOR"
+.PP 
+Written by iSteve
+<isteve@bofh.cz>
+.SH "SEE ALSO"
+.PP 
+\fBudev\fR(7),
+\fBudevd\fR(8),
+\fBudevadm\fR(8),

@@ -1,0 +1,131 @@
+============
+Rules syntax
+============
+
+Whitespaces are ignored. Newlines are mostly ignored, unless explicitely
+stated otherwise as required. Comment is everything after a '#'. If there's
+a comment on a line with some other text, there must be a whitespace in front
+of the comment character. ::
+
+  VARNAME           ::= [A-Z]+
+  PRAGMA            ::= "$" [a-zA-Z]+
+  WORD              ::= ([a-zA-Z]+ | <"> <Any character except \ and "> <">)
+
+  input             ::= (directive | rule)* 
+
+  directive         ::= PRAGMA WORD* <newline>
+
+  rule              ::= conditions "{" expressions "}"
+
+  conditions        ::= condition [ "," condition ]*
+  condition         ::= condition_value | condition_existence
+  condition_value   ::= VARNAME condition_cmp WORD
+  condition_exists  ::= VARNAME "is" ("set" | "unset")
+  condition_cmp     ::= ("==" | "!=" | "~~" | "!~")
+
+  expressions       ::= expression*
+  expression        ::= command WORD* <newline>
+
+  command           ::= WORD
+
+
+Operators "==" and "!=" check for string equality and inequality,
+respectively. Operators "~~" and "!~" perform regex match. The 
+"is set" and "is unset" conditions check whether the variable
+has any value at all.
+
+Value substitution is possible, "%VARNAME%" will get replaced by
+respective value.
+
+
+There is only one currently accepted directive:
+
+$include <file1 [file2 [... [filen]]]>
+  Includes all the given files.
+
+========
+Commands
+========
+
+The following commands are currently understood.
+
+print <text>
+  Prints text into stdout.
+
+print-event [rule label]
+  Prints entire event to stdout. If the rule label is provided, it is printed
+  along with the rule. The old name was 'printdebug'.
+
+setenv <key> <value>
+  Sets environment variable key to value.
+
+remove <file>
+  Removes the given file.
+
+chown <owner> <file>
+  Changes owner of the given file.
+
+chgrp <group> <file>
+  Changes group of the given file.
+
+chmod <mode> <file>
+  Changes access mode of the given file.
+
+run <command>
+  Runs the given command using system(), that is, spawns a shell.
+
+exec <command> [arg1 [arg2 [... [argn]]]]
+  Runs the given application directly with all the specified arguments.
+
+mknod <filepath> <mode>
+  Creates new device node (using MAJOR, MINOR and SUBSYSTEM variables) in the
+  given path with the given file mode. Synonymous command is *makedev*.
+
+load-firmware <firmware directory>
+  Loads firmware for the given device, firmware must be stored in the firmware
+  directory. Requires FIRMWARE variable. Is marked as slow.
+
+next-event
+  Stops processing any other following rules for this event and jumps to next
+  event.
+  The old name was *next*.
+
+branch-event [success]
+  Stops processing any other following rules for this event, if the previous
+  command returned failure. If the argument 'success' is specified, this
+  command stops processing if the last command returned success instead.
+  The old name was *next_if_failed*.
+ 
+branch-rule [success]
+  Stops processing the rest of the current rule, if the previous command
+  returned failure. If the optional  argument 'success' is specified, this
+  command stops processing if the last command returned success instead.
+  The old name was *break_if_failed*.
+
+=======
+Example
+=======
+
+The following rules file is syntactically correct. ::
+
+  #
+  # Example Hotplug2 files
+  #
+
+  $include "/etc/hotplug2/other.rules" #Include extra rules
+
+  FOO is set, BAR is unset,
+  VAR == "value", OTHERVAR != "value",
+  ANOTHERVAR ~~ "[vV][aA][lL][uU][eE]" {
+    printdebug "Very strange conditions have matched."
+  }
+
+  OTHERCONDITION is set {
+    # We perform some test and if it fails, we do not continue
+    # with the execution of this particular rule.
+    exec "/lib/hotplug2/some-test.sh"
+    branch-rule
+
+    # If test didn't fail, we do something.
+    exec "/lib/hotplug2/do-something.sh"
+  }

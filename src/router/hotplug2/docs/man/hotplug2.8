@@ -1,0 +1,49 @@
+.\" .nh
+.\" .ad l
+.TH "hotplug2" "8" "November 2008" "hotplug2" "hotplug2"
+.SH "NAME"
+hotplug2 \- embeddable hotplug support binary
+.SH "SYNOPSIS"
+\fBhotplug2\fR
+[options]
+.SH "DESCRIPTION"
+.PP 
+The hotplug2 application allows automatical loading of modules, based on the events sent by kernel, which can be invoked artifically (eg. using udevtrigger).
+.PP 
+The purpose of hotplug2 is not to be a replacement of udev, instead it should be helpful during hardware autodetection in initrd / initramfs.
+.PP 
+.SH "PARAMETERS"
+.TP 
+\fB\-\-persistent\fR, \fB\-\-no\-persistent\fR
+Keep hotplug2 running even after all events have been processed, waiting for more. The default behavior is not to be persistent: note that it will still block until at least one event has been processed. 
+.TP 
+\fB\-\-dumb\fR, \fB\-\-no\-dumb\fR
+Forcibly prevent using rules and only modprobe. Default is \-\-no\-dumb, therefore rules are used.
+.TP 
+\fB\-\-max\-children <value>\fR
+Set the value of maximum children hotplug2 may have running simultaneously. Default is 20.
+.TP 
+\fB\-\-set\-coldplug\-cmd <cmd>\fR
+Sets the application used to perform coldplug. If not set, no coldplugging is preformed.
+.TP 
+\fB\-\-set\-modprobe\-cmd <cmd>\fR
+Sets the application used to perform modprobe. It only gets used in dumb mode. Default is to autodetect: if '/sbin/modprobe' is from module\-init\-tools, use '/sbin/modprobe', otherwise use '/sbin/hotplug2\-modwrap'.
+.TP
+\fB\-\-set\-rules\-file <file>\fR
+Sets the path to the file containing hotplug2 rules. If not set, hotplug2 runs in dumb mode (despite default of \-\-no\-dumb).
+.TP
+\fB\-\-set\-worker <path>\fR
+Sets the worker to be used with hotplug2.
+.TP
+Other flags may or may not be accepted according to the chosen worker.
+.SH "AUTHOR"
+.PP 
+Written by iSteve
+<isteve@bofh.cz>
+.SH "SEE ALSO"
+.PP 
+\fBudev\fR(7),
+\fBudevd\fR(8),
+\fBudevinfo\fR(8),
+\fBudevmonitor\fR(8)
+\fBudevtrigger\fR(8)
