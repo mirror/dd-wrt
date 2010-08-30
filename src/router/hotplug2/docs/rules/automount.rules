@@ -1,0 +1,17 @@
+#
+# Automount drives
+#
+
+ACTION == "add",
+SUBSYSTEM == "block",
+DEVPATH is set {
+	# Try to mount according to fstab
+	exec "mount" "/dev/%DEVICENAME%"
+}
+
+ACTION == "remove",
+SUBSYSTEM == "block",
+DEVPATH is set {
+	# Lazy remove
+	exec "umount" "-l" "/dev/%DEVICENAME%"
+}

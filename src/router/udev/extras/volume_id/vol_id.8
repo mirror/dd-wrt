@@ -1,0 +1,68 @@
+.\"     Title: vol_id
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.72.0 <http://docbook.sf.net/>
+.\"      Date: March 2006
+.\"    Manual: vol_id
+.\"    Source: volume_id
+.\"
+.TH "VOL_ID" "8" "March 2006" "volume_id" "vol_id"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+vol_id \- probe filesystem type and read label and uuid
+.SH "SYNOPSIS"
+.HP 7
+\fBvol_id\fR [\fB\-\-export\fR] [\fB\-t\fR] [\fB\-l\fR] [\fB\-u\fR] [\fIdevice\fR]
+.SH "DESCRIPTION"
+.PP
+\fBvol_id\fR
+is usually called from a udev rule, to provide udev with the filesystem type, the label and the uuid of a volume.
+\fBvol_id\fR
+supports all common filesystem formats and detects various raid setups to prevent the recognition of raid members as a volume with a filesystem.
+.SH "OPTIONS"
+.PP
+\fB\-\-export\fR
+.RS 4
+print all values in key/value format to import them into the environment.
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+print the filesystem type
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+print the safe version of volume label suitable for use as filename. Use
+\fB\-L\fR
+to print literal label
+.RE
+.PP
+\fB\-u\fR
+.RS 4
+print the uuid of a volume
+.RE
+.PP
+\fB\-L\fR
+.RS 4
+print raw volume label
+.RE
+.SH "ENVIRONMENT"
+.PP
+\fBUDEV_LOG\fR
+.RS 4
+Set the syslog priority.
+.RE
+.SH "EXIT STATUS"
+.PP
+\fBvol_id\fR
+will only return successful if the value asked for is not empty. All trailing whitespace will be removed, spaces replaced by underscore and slashes ignored.
+.SH "AUTHOR"
+.PP
+Written by Kay Sievers
+<kay.sievers@vrfy.org>
+.SH "SEE ALSO"
+.PP
+\fBudev\fR(7)

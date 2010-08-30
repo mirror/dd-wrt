@@ -1,0 +1,14 @@
+ Authors:
+----------
+iSteve <isteve@bofh.cz>
+Tomas Janousek <tomi@nomi.cz>
+
+ Thanks to:
+------------
+jikos (Various kernel related consultation)
+pasky (help with inputmap)
+Randy Dunlap (help with isapnpmap)
+Igor2 (provided testing machines)
+yanek (provided testing machines)
+
+...anyone taking more than a short peek at the software.
