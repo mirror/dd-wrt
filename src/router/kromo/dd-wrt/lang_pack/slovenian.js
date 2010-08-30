@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 21.Apr.2010, svn 14300	//
+//				Slovenian translation DD-WRT by Eko, last revision: 30.Avg.2010, svn 15036	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -2079,6 +2079,7 @@ wl_basic.if_label="Označba (opcijsko)";
 wl_basic.if_info="Info (opcijsko)";
 wl_basic.advanced_options="Napredne nastavitve";
 wl_basic.rate_control="Algoritem nadzora hitrosti";
+wl_basic.ap83_vap_note="Dodajanje več kot treh virtualnih vmesnikov lahko vpliva na slabši učinek nekaterih določenih priklopljenih odjemalcev na teh dodatnih vmesnikih.";
 
 //help container
 
