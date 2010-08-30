@@ -402,7 +402,9 @@ void start_dnsmasq(void)
 		}
 	}
 	/* stop dns rebinding for private addresses */
-	fprintf(fp,"stop-dns-rebind\n");
+	if (nvram_match("dnsmasq_no_dns_rebind","1")) {
+	    fprintf(fp,"stop-dns-rebind\n");
+	    }
 	/*
 	 * Additional options 
 	 */
