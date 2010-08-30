@@ -1599,7 +1599,7 @@ void start_restore_defaults(void)
 	}
 #endif
 	if (brand == ROUTER_WRT600N) {
-		if (nvram_match("switch_type", "BCM5395"))	// fix for WRT600N
+		if (nvram_match("switch_type", "BCM5395") && nvram_match("vlan0ports", "1 2 3 4 8*"))	// fix for WRT600N
 			// v1.1 (BCM5395 does 
 			// not suppport vid
 			// 0, so gemtek
