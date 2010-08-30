@@ -159,7 +159,6 @@ config MDIO_OCTEON
 
 config RTL8366_SMI
 	tristate "Driver for the RTL8366 SMI interface"
-	depends on GENERIC_GPIO
 	---help---
 	  This module implements the SMI interface protocol which is used
 	  by some RTL8366 ethernet switch devices via the generic GPIO API.

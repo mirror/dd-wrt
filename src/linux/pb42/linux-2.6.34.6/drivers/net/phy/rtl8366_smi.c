@@ -12,7 +12,7 @@
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/delay.h>
-#include <linux/gpio.h>
+//#include <linux/gpio.h>
 #include <linux/spinlock.h>
 #include <linux/skbuff.h>
 
@@ -29,6 +29,34 @@ static inline void rtl8366_smi_clk_delay(struct rtl8366_smi *smi)
 {
 	ndelay(RTL8366_SMI_CLK_DELAY);
 }
+
+static inline void gpio_direction_input(unsigned gpio)
+{
+	*(volatile int *)(0xb8040000) &= ~(1<<gpio);//change to input	
+}
+static inline void gpio_set_value(unsigned gpio, int v)
+{	
+	if (v) {//hifh		
+		*(volatile int *)(0xb8040008) |= 1<<gpio;
+	} else {//low		
+		*(volatile int *)(0xb8040008) &= ~(1<<gpio);		
+	}
+}
+
+static inline void gpio_direction_output(unsigned gpio,int init)
+{
+	*(volatile int *)(0xb8040000) |= (1<<gpio);//change to output	
+	gpio_set_value(gpio,init);
+}
+
+static inline uint32_t gpio_get_value(unsigned gpio)
+{	
+	 if((*(volatile unsigned long *)0xb8040004) & (1<<gpio))
+	 	return 1;
+	 else
+	 	return 0;			
+}
+
 
 static void rtl8366_smi_start(struct rtl8366_smi *smi)
 {
@@ -448,11 +476,52 @@ static int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	return -ENOSPC;
 }
 
+static int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable)
+{
+	int err;
+
+	err = smi->ops->enable_vlan(smi, enable);
+	if (err)
+		return err;
+
+	smi->vlan_enabled = enable;
+
+	if (!enable) {
+		smi->vlan4k_enabled = 0;
+		err = smi->ops->enable_vlan4k(smi, enable);
+	}
+
+	return err;
+}
+
+static int rtl8366_enable_vlan4k(struct rtl8366_smi *smi, int enable)
+{
+	int err;
+
+	if (enable) {
+		err = smi->ops->enable_vlan(smi, enable);
+		if (err)
+			return err;
+
+		smi->vlan_enabled = enable;
+	}
+
+	err = smi->ops->enable_vlan4k(smi, enable);
+	if (err)
+		return err;
+
+	smi->vlan4k_enabled = enable;
+	return 0;
+}
+
 int rtl8366_reset_vlan(struct rtl8366_smi *smi)
 {
 	struct rtl8366_vlan_mc vlanmc;
 	int err;
 	int i;
+
+	rtl8366_enable_vlan(smi, 0);
+	rtl8366_enable_vlan4k(smi, 0);
 
 	/* clear VLAN member configurations */
 	vlanmc.vid = 0;
@@ -922,6 +991,43 @@ int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 }
 EXPORT_SYMBOL_GPL(rtl8366_sw_set_vlan_ports);
 
+int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+
+	if (attr->ofs > 2)
+		return -EINVAL;
+
+	if (attr->ofs == 1)
+		val->value.i = smi->vlan_enabled;
+	else
+		val->value.i = smi->vlan4k_enabled;
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_get_vlan_enable);
+
+int rtl8366_sw_set_vlan_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	int err;
+
+	if (attr->ofs > 2)
+		return -EINVAL;
+
+	if (attr->ofs == 1)
+		err = rtl8366_enable_vlan(smi, val->value.i);
+	else
+		err = rtl8366_enable_vlan4k(smi, val->value.i);
+
+	return err;
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_set_vlan_enable);
+
 struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent)
 {
 	struct rtl8366_smi *smi;
@@ -946,7 +1052,7 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	if (!smi->ops)
 		return -EINVAL;
 
-	err = gpio_request(smi->gpio_sda, dev_name(smi->parent));
+/*	err = gpio_request(smi->gpio_sda, dev_name(smi->parent));
 	if (err) {
 		dev_err(smi->parent, "gpio_request failed for %u, err=%d\n",
 			smi->gpio_sda, err);
@@ -958,7 +1064,7 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 		dev_err(smi->parent, "gpio_request failed for %u, err=%d\n",
 			smi->gpio_sck, err);
 		goto err_free_sda;
-	}
+	}*/
 
 	spin_lock_init(&smi->lock);
 
@@ -986,9 +1092,9 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	return 0;
 
  err_free_sck:
-	gpio_free(smi->gpio_sck);
+//	gpio_free(smi->gpio_sck);
  err_free_sda:
-	gpio_free(smi->gpio_sda);
+//	gpio_free(smi->gpio_sda);
  err_out:
 	return err;
 }
@@ -998,8 +1104,8 @@ void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 {
 	rtl8366_debugfs_remove(smi);
 	rtl8366_smi_mii_cleanup(smi);
-	gpio_free(smi->gpio_sck);
-	gpio_free(smi->gpio_sda);
+//	gpio_free(smi->gpio_sck);
+//	gpio_free(smi->gpio_sda);
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_cleanup);
 
