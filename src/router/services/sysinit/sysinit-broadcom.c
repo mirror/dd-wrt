@@ -788,7 +788,14 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_NETGEAR_WNDR3300:
-		nvram_set("lan_ifnames", "eth0 eth2 eth3");	// dual radio
+		if (nvram_match("force_vlan_supp", "enabled")) {
+			nvram_set("lan_ifnames", "vlan0 eth2 eth3");
+			nvram_set("vlan0ports", "3 2 1 0 5*");
+			nvram_set("vlan1ports", "4 5");	//dummy
+			nvram_set("vlan0hwname", "et0");
+		} else {
+			nvram_set("lan_ifnames", "eth0 eth2 eth3");	// dual radio
+		}
 		nvram_set("wan_ifname", "eth1");
 		nvram_set("wl0_ifname", "eth2");
 		nvram_set("wl1_ifname", "eth3");
@@ -1371,6 +1378,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_NETGEAR_WNR834BV2:
+	case ROUTER_NETGEAR_WNDR3300:
 		if (nvram_match("force_vlan_supp", "enabled")
 		    && nvram_match("boardflags", "0x10")) {
 			nvram_set("boardflags", "0x110");	//enable lan vlans
