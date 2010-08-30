@@ -1,0 +1,25 @@
+#
+# Automount drives without fstab entries
+#
+
+ACTION == "add",
+SUBSYSTEM == "block",
+DEVPATH is set {
+	# Try to mount
+	exec "mkdir" "/media/%DEVICENAME%"
+	exec "mount" "/dev/%DEVICENAME%" "/media/%DEVICENAME%"
+
+	# If we've succeeded, leave this rule
+	branch-rule success
+
+	# If we've failed, clean up the /media
+	remove "/media/%DEVICENAME%"
+}
+
+ACTION == "remove",
+SUBSYSTEM == "block",
+DEVPATH is set {
+	# Lazy remove
+	exec "umount" "-l" "/dev/%DEVICENAME%"
+	remove "/media/%DEVICENAME%"
+}
