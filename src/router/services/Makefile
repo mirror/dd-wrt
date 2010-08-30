@@ -197,6 +197,9 @@ endif
 ifeq ($(CONFIG_3G),y)
 CFLAGS_EXTRA += -DHAVE_3G
 endif
+ifeq ($(CONFIG_HOTPLUG2),y)
+CFLAGS_EXTRA += -DHAVE_HOTPLUG2
+endif
 
 ifeq ($(CONFIG_USB),y)
 CFLAGS_EXTRA += -DHAVE_USB
