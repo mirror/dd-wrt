@@ -137,7 +137,7 @@ unsigned int * e10_pll;
 #endif	// CONFIG_BUFFALO //
 #ifdef CONFIG_RTL8366RB_SMI
 #define SW_PLL 0x1a000000ul
-#elif defined(CONFIG_RTL8366RB_SMI_MODULE)
+#elif defined(CONFIG_RTL8366_SMI_MODULE)
 #define SW_PLL 0x1a000000ul
 #else
 #define SW_PLL 0x1f000000ul

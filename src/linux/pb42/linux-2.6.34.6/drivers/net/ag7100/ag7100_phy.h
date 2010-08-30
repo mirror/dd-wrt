@@ -181,7 +181,7 @@ ag7100_print_link_status(int unit)
 #define ag7100_phy_is_up(unit)          1
 #ifdef CONFIG_RTL8366RB_SMI
 #define ag7100_phy_speed(unit)          AG7100_PHY_SPEED_1000T
-#elif CONFIG_RTL8366RB_SMI_MODULE
+#elif CONFIG_RTL8366_SMI_MODULE
 #define ag7100_phy_speed(unit)          AG7100_PHY_SPEED_1000T
 #else
 #define ag7100_phy_speed(unit)          AG7100_PHY_SPEED_100TX
@@ -193,7 +193,7 @@ ag7100_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
 *fdx = 1;
 #ifdef CONFIG_RTL8366RB_SMI
 *speed = AG7100_PHY_SPEED_1000T;
-#elif defined(CONFIG_RTL8366RB_SMI_MODULE)
+#elif defined(CONFIG_RTL8366_SMI_MODULE)
 *speed = AG7100_PHY_SPEED_1000T;
 #else
 *speed = AG7100_PHY_SPEED_100TX;
@@ -231,9 +231,10 @@ static inline struct mii_bus *ag7100_mdiobus_setup(int unit,struct net_device *d
 {
   int i;
   struct phy_device *phydev = NULL;
-  ag7100_mac_t *mac = (ag7100_mac_t *)dev->priv;
+  ag7100_mac_t *mac = (ag7100_mac_t *)netdev_priv(dev);
   struct mii_bus *mii_bus = kzalloc(sizeof(struct mii_bus),GFP_KERNEL);
-  mii_bus->id=unit;
+
+  snprintf(mii_bus->id, MII_BUS_ID_SIZE, "%d", unit);
   mii_bus->phy_mask=0;
   mii_bus->priv = dev;
   mii_bus->name = "ag7100_mii";
@@ -256,7 +257,7 @@ static inline struct mii_bus *ag7100_mdiobus_setup(int unit,struct net_device *d
 
     if (phydev!=NULL)
     {
-    phydev = phy_connect(dev, phydev->dev.bus_id, &ag7100_adjust_link, 0,PHY_INTERFACE_MODE_RMII);
+    phydev = phy_connect(dev, dev_name(&phydev->dev), &ag7100_adjust_link, 0,PHY_INTERFACE_MODE_RMII);
     mac->rx = phydev->netif_receive_skb;
     phydev->supported &= PHY_BASIC_FEATURES;
     phydev->advertising = phydev->supported;

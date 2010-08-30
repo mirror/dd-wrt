@@ -179,7 +179,7 @@ typedef enum {
 #elif defined(CONFIG_RTL8366RB_SMI) //avoid phy reset and keep bootloader settings
 #define ag7100_reset_mask(_no) (_no) ? (AR7100_RESET_GE1_MAC)   \
                                      : (AR7100_RESET_GE0_MAC)
-#elif defined(CONFIG_RTL8366RB_SMI_MODULE) //avoid phy reset and keep bootloader settings
+#elif defined(CONFIG_RTL8366_SMI_MODULE) //avoid phy reset and keep bootloader settings
 #define ag7100_reset_mask(_no) (_no) ? (AR7100_RESET_GE1_MAC)   \
                                      : (AR7100_RESET_GE0_MAC)
 #else
