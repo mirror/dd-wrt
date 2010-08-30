@@ -1290,6 +1290,13 @@ int internal_getRouterBrand()
 		setRouter("Belkin Play Max F7D4301v1");
 		return ROUTER_BELKIN_F7D4301;
 	}
+	
+	if (boardnum == 12345 && nvram_match("boardtype", "0xa4cf")
+	    && nvram_match("boardrev", "0x1102")) {
+		cprintf("router is Belkin Play F7D4302v1\n");
+		setRouter("Belkin Play F7D4302v1");
+		return ROUTER_BELKIN_F7D4302;
+	}
 
 #endif
 	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
@@ -3515,6 +3522,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x001;	// power blink
 		break;
 	case ROUTER_BELKIN_F7D4301:
+	case ROUTER_BELKIN_F7D4302:
 		power_gpio = 0x10a; // green
 		diag_gpio = 0x10b;	// red
 		ses_gpio = 0x10d;   // wps orange
