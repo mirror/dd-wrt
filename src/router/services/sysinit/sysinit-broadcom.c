@@ -240,6 +240,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT160NV3:
 	case ROUTER_ASUS_RTN16:
 	case ROUTER_BELKIN_F7D4301:
+	case ROUTER_BELKIN_F7D4302:
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
 	case ROUTER_WRT310N:
@@ -726,6 +727,17 @@ void start_sysinit(void)
 		    || nvram_match("vlan2ports", "0 1 2 3 8*")) {
 			nvram_set("vlan1ports", "0 1 2 3 8*");
 			nvram_set("vlan2ports", "4 8");
+			need_reboot = 1;
+		}
+		break;
+		
+	case ROUTER_BELKIN_F7D4302:
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
+		if (nvram_match("vlan1ports", "4 5*")
+		    || nvram_match("vlan2ports", "0 1 2 3 5*")) {
+			nvram_set("vlan1ports", "0 1 2 3 5*");
+			nvram_set("vlan2ports", "4 5");
 			need_reboot = 1;
 		}
 		break;
@@ -1995,7 +2007,7 @@ char *enable_dtag_vlan(int enable)
 		return eth;
 	}
 
-	if (nvram_match("switch_type", "BCM5325") && (getRouterBrand() != ROUTER_WRT160NV3))	// special condition
+	if (nvram_match("switch_type", "BCM5325") && (getRouterBrand() != ROUTER_WRT160NV3) && (getRouterBrand() != ROUTER_BELKIN_F7D4302))	// special condition
 		// for Broadcom
 		// Gigabit Phy
 		// routers 
@@ -2083,7 +2095,7 @@ char *enable_dtag_vlan(int enable)
 	int lan_vlan_num = 0;
 	int wan_vlan_num = 1;
 
-	if (nvram_match("vlan2ports", "0 5") || nvram_match("vlan2ports", "4 5")) {	//e.g wrt160nv3
+	if (nvram_match("vlan2ports", "0 5") || nvram_match("vlan2ports", "4 5")) {	//e.g wrt160nv3, f7d4302
 		vlan_lan_ports = nvram_safe_get("vlan1ports");
 		vlan_wan_ports = nvram_safe_get("vlan2ports");
 		lan_vlan_num = 1;
