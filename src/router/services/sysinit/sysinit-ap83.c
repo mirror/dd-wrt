@@ -112,6 +112,7 @@ void start_sysinit(void)
 #ifdef HAVE_WR1043
 	fprintf(stderr, "load RTL Switch Driver\n");
 	insmod("rtl8366rb_smi");
+	insmod("swconfig");
 	insmod("rtl8366_smi");
 	insmod("rtl8366rb");
 #endif
