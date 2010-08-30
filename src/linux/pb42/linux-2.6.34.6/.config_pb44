@@ -778,6 +778,9 @@ CONFIG_TUN=y
 # CONFIG_ARCNET is not set
 # CONFIG_PHYLIB is not set
 # CONFIG_VITESSE_PHY is not set
+# CONFIG_RTL8366_SMI is not set
+# CONFIG_RTL8366S_PHY is not set
+# CONFIG_RTL8366RB_PHY is not set
 
 #
 # Ethernet (10 or 100Mbit)
