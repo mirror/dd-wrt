@@ -1,6 +1,6 @@
-﻿///////////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 - updated since svn14570 / by vpritiskovic / 2010-07-22 //
-///////////////////////////////////////////////////////////////////////////////////////////////////
+﻿/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Croatian Translation / DD-WRT v24-sp2 - updated since svn14843 / by Silvio Peša (vpritiskovic) / 2010-08-30 //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 
@@ -713,6 +713,7 @@ nas.proftpd_writeen="Dozvoli Pisanje";
 nas.proftpd_anon="Anonimna Prijava (Čitaj-Samo)";
 nas.proftpd_anon_subdir="Anonimni Kućni Podimenik";
 nas.sambasrv_legend="Samba Poslužitelj";
+nas.samba3_legend="Dijeljenje Datoteka";
 
 
 hnas.right2="Lista Korisničkih Zaporki: Unesi jednu Korisničku Zaporku Enter po liniji. Zaporka može biti obični tekst ili MD5 kriptirano.";
@@ -805,7 +806,7 @@ hotspotsys.allowuam="UAM Allowed";
 hotspotsys.whitelabelproto="White Label Protocol";
 hotspotsys.whitelabel="White Label Domain";
 hotspotsys.operatorid="Operator Username";
-hotspotsys.locationid="Location Number";
+hotspotsys.locationid="Location ID";
 hotspotsys.dhcp="DHCP Sučelje";
 hotspotsys.net="Remote Network";
 hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
@@ -869,6 +870,9 @@ idx_h.reconnect="Nasilno povezivanje";
 // ** index_l2tp.asp **//
 
 idx_l.srv="Poveznik (L2TP Poslužitelj)";
+idx_l.req_chap="Traži CHAP";
+idx_l.ref_pap="Odbij PAP";
+idx_l.req_auth="Traži Autentifikaciju";
 
 
 // ** index_pppoe.asp **//
@@ -1430,6 +1434,19 @@ service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
 service.hmilkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
+
+service.samba3_srv="Samba";
+service.samba3_srvstr="Poslužiteljev Niz";
+service.samba3_pub="Javno Dijeljenje";
+service.samba3_config="Posebna Konfiguracija";
+service.samba3_workgrp="Radna Grupa";
+service.samba3_usr1="Korisnik1";
+service.samba3_pass1=" Zaporka1";
+service.samba3_usr2="Korisnik2";
+service.samba3_pass2=" Zaporka2";
+service.samba3_pubacl="Samo Čitaj";
+service.samba3_advanced="Napredno"
+service.samba3_custom="Koristi Posebnu Konfiguraciju";
 
 
 // ** eop-tunnel.asp **//
@@ -1994,12 +2011,14 @@ wl_basic.client="Klijent";
 wl_basic.repeater="Ponavljač";
 wl_basic.repeaterbridge="Ponavljač Premosnik";
 wl_basic.clientBridge="Klijent Premosnik";
+wl_basic.clientRelayd="Client Bridge (Routed)";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Stanica";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Miješano";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Short Preamble";
+wl_basic.clientRelaydDefaultGwMode="Default GW Mode";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
 wl_basic.na="Miješano NA";
@@ -2056,10 +2075,12 @@ wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="Detekcija Radara";
 wl_basic.mtikie="MTik Sukladnost";
 wl_basic.csma="Carrier Sense";
-wl_basic.if_label="Label (optional)";
-wl_basic.if_info="Info (optional)";
-wl_basic.advanced_options="Advanced Options";
+wl_basic.if_label="Oznaka (opcijski)";
+wl_basic.if_info="Info (opcijski)";
+wl_basic.advanced_options="Napredne Opcije";
 wl_basic.rate_control="Rate Control Algorithm";
+wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do slabijeg učinka na istim s nekim određenim klijentskim uređajima.";
+
 //help container
 
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br/><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
