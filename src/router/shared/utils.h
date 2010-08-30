@@ -482,7 +482,7 @@
 #define ROUTER_BELKIN_F7D4301 0x9916
 
 // Belkin Play F7D4302v1 (BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4302V1)
-#define ROUTER_BELKIN_F7D4302 0x9a0f
+#define ROUTER_BELKIN_F7D4302 0x9a16
 
 
 
