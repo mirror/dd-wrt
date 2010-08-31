@@ -1000,7 +1000,6 @@ void start_sysinit(void)
 	case ROUTER_MOTOROLA_V1:
 	case ROUTER_BUFFALO_WZRG300N:
 	case ROUTER_NETGEAR_WNR834B:
-	case ROUTER_WRT150N:
 	case ROUTER_WRT300N:
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_BUFFALO_WLAH_G54:
@@ -1008,6 +1007,17 @@ void start_sysinit(void)
 	case ROUTER_MICROSOFT_MN700:
 		nvram_set("wan_ifname", "eth1");
 		break;
+		
+	case ROUTER_WRT150N:
+			nvram_set("wan_ifname", "eth1");
+		if (nvram_match("force_vlan_supp", "enabled")) {
+			nvram_set("lan_ifnames", "vlan0 eth2");
+			nvram_set("vlan0ports", "3 2 1 0 5*");
+			nvram_set("vlan1ports", "4 5");	//dummy
+			nvram_set("vlan0hwname", "et0");
+		} else {
+			nvram_set("lan_ifnames", "eth0 eth2");
+		}
 
 	case ROUTER_WRTSL54GS:
 	case ROUTER_WRT160N:
@@ -1021,7 +1031,7 @@ void start_sysinit(void)
 			nvram_set("lan_ifnames", "eth0 eth2");
 		}
 		break;
-
+		
 	case ROUTER_WRT54G1X:
 		if (check_vlan_support()) {
 			nvram_set("lan_ifnames", "vlan0 eth2");
@@ -1365,6 +1375,7 @@ void start_sysinit(void)
 		}
 		break;
 
+	case ROUTER_WRT150N:
 	case ROUTER_WRT160N:
 		if (nvram_match("force_vlan_supp", "enabled")
 		    && nvram_match("boardflags", "0x0010")) {
