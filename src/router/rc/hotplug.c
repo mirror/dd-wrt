@@ -27,6 +27,7 @@
 #include <cy_conf.h>
 #include <rc.h>
 #include <shutils.h>
+#include <syslog.h>
 #include <utils.h>
 #include <errno.h>
 
@@ -46,6 +47,22 @@ int main(int argc, char **argv)
 		if (!strcmp(argv[1], "usb")) {
 			start_service("hotplug_usb");
 			return 0;
+		}
+#endif
+#ifdef HAVE_ATH9K
+		if (!strcmp(argv[1], "regulatory")) {
+			syslog(LOG_DEBUG, "hotplug: old style regulatory called\n");
+			return eval("/sbin/crda");
+		}
+		if (!strcmp(argv[1], "platform")) {
+			char *action;
+			char *devicepath;
+			if ((action = getenv("ACTION")) && (devicepath=getenv("DEVPATH"))
+				&& !strcmp(action, "change") && !strcmp(devicepath,"/devices/platform/regulatory.0"))
+				{
+				syslog(LOG_DEBUG, "hotplug: new style regulatory called\n");
+				return eval("/sbin/crda");
+				}
 		}
 #endif
 #ifdef HAVE_XSCALE
