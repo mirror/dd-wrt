@@ -155,6 +155,13 @@ build_date:
 drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 
+kernelsource:
+	mkdir -p $(LINUXDIR)
+	wget http://www.de.kernel.org/pub/linux/kernel/v2.6/linux-$(KERNELVERSION).tar.bz2 -O $(LINUXDIR)/../linux-$(KERNELVERSION).tar.bz2
+	cd $(LINUXDIR)/../ && tar -xvjf $(LINUXDIR)/../linux-$(KERNELVERSION).tar.bz2
+	cd $(LINUXDIR)/../ && ./patch $(KERNELVERSION)
+
+
 kernel:
         # Also build kernel
 	# Also build kernel
@@ -182,6 +189,9 @@ ifeq ($(CONFIG_WR1043),y)
 endif
 ifeq ($(CONFIG_WR941),y)
 	cp $(LINUXDIR)/.config_wr941 $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_WR741),y)
+	cp $(LINUXDIR)/.config_wr741 $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WRT400),y)
 	cp $(LINUXDIR)/.config_wrt400 $(LINUXDIR)/.config
@@ -365,6 +375,7 @@ ifneq ($(CONFIG_SAMBA),y)
 endif
 ifneq ($(CONFIG_JFFS2),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
 endif
 ifneq ($(CONFIG_IPV6),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
@@ -393,7 +404,15 @@ endif
 	
 	
         # Prepare filesystem
+ifeq ($(CONFIG_ATH9K),y)
+ifneq ($(CONFIG_HOTPLUG2),y)
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep_ath9k.sh
+else
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+endif
+else
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+endif
         # Make sure mksquashfs-2.0 is used
 #	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
@@ -598,13 +617,17 @@ ifeq ($(CONFIG_DIR615E),y)
 	cat tools/dir615e1.tag >> $(ARCH)-uclibc/dir615e1-uimage.bin
 	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir615e3-uimage.bin bs=3538944 conv=sync
 	cat tools/dir615e3.tag >> $(ARCH)-uclibc/dir615e3-uimage.bin
+	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir615e4-uimage.bin bs=3538944 conv=sync
+	cat tools/dir615e4.tag >> $(ARCH)-uclibc/dir615e4-uimage.bin
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage	
 endif
 ifeq ($(CONFIG_WRT160NL),y)
 	./tools/wrt160nl/pad $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/aligned.uimage
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/wrt160nl/trx -m 30000000 -o $(ARCH)-uclibc/wrt160nl-firmware.trx -f $(ARCH)-uclibc/aligned.uimage
+	./tools/wrt160nl/trx -m 30000000 -o $(ARCH)-uclibc/e2100l-firmware.trx -f $(ARCH)-uclibc/aligned.uimage
 	./tools/wrt160nl/addpattern -B WRT160NL -v v1.00.20 -i $(ARCH)-uclibc/wrt160nl-firmware.trx -o $(ARCH)-uclibc/wrt160nl-firmware.bin -g
+	./tools/wrt160nl/addpattern -B E2100L -v v1.00.20 -i $(ARCH)-uclibc/e2100l-firmware.trx -o $(ARCH)-uclibc/e2100l-firmware.bin -g
 endif
 ifeq ($(CONFIG_TG2521),y)
 #	./tools/wrt160nl/pad $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/aligned.uimage
@@ -630,8 +653,17 @@ ifeq ($(CONFIG_WR941),y)
 	./tools/tplink/mktplinkfw -B TL-WR841NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv3-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR841NDv3-firmware.bin mips-uclibc/tplink-WR841NDv3-firmware.bin
 
-#	./tools/tplink/mktplinkfw -B WR941NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv3-firmware.bin
-#	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/WR941NDv3-firmware.bin mips-uclibc/tplink-WR941NDv3-firmware.bin
+endif
+ifeq ($(CONFIG_WR741),y)
+	./tools/tplink/mktplinkfw -B TL-WR741NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR741NDv1-firmware.bin
+	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR741NDv1-firmware.bin mips-uclibc/tplink-WR741NDv1-firmware.bin
+
+
+	./tools/tplink/mktplinkfw -B TL-WR841NDv5 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv5-firmware.bin
+	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR841NDv5-firmware.bin mips-uclibc/tplink-WR841NDv5-firmware.bin
+
+	./tools/tplink/mktplinkfw -B TL-WR941NDv4 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv4-firmware.bin
+	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR941NDv4-firmware.bin mips-uclibc/tplink-WR941NDv4-firmware.bin
 endif
 ifeq ($(CONFIG_WRT400),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/root.wrt400 bs=1048576 conv=sync
