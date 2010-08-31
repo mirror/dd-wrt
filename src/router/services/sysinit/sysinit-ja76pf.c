@@ -74,11 +74,7 @@ void start_sysinit(void)
 	 * /tmp 
 	 */
 	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-#ifdef HAVE_HOTPLUG2
-	// shell-skript. otherwise we loose our console
-	eval("/etc/hotplug2.startup");
-	eval("mkdir", "/dev/pts");
-#else
+#ifndef HAVE_HOTPLUG2
 	// fix for linux kernel 2.6
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 #endif
