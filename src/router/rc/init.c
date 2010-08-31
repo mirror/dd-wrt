@@ -390,11 +390,10 @@ int main(int argc, char **argv)
 	sigset_t sigset;
 	pid_t shell_pid = 0;
 	uint boardflags;
+
 	/* 
 	 * Basic initialization 
 	 */
-	if (console_init())
-		noconsole = 1;
 	cprintf("init lcd\n");
 	initlcd();
 	cprintf("first message\n");
@@ -402,6 +401,8 @@ int main(int argc, char **argv)
 	fprintf(stderr, "start service\n");
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
+	if (console_init())
+		noconsole = 1;
 	start_service("drivers");
 	cprintf("setup signals\n");
 	/* 

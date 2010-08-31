@@ -592,6 +592,9 @@ endif
 ifeq ($(CONFIG_SER),y)
 CFLAGS += -DHAVE_SER
 endif
+ifeq ($(CONFIG_HOTPLUG2),y)
+CFLAGS += -DHAVE_HOTPLUG2
+endif
 
 ifeq ($(CONFIG_ANTIFLASH),y)
 CFLAGS += -DANTI_FLASH
