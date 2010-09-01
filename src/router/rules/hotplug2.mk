@@ -1,6 +1,6 @@
 MAKE_FLAGS += STATIC_WORKER="fork"
 hotplug2:
-	$(MAKE) $(MAKE_FLAGS) COPTS="$(COPTS)" -C hotplug2 
+	$(MAKE) $(MAKE_FLAGS) COPTS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" -C hotplug2 
 
 hotplug2-clean:
 	$(MAKE) -C hotplug2 clean
@@ -11,7 +11,7 @@ hotplug2-install:
 	cd hotplug2/config/etc/ ; cp -av * $(INSTALLDIR)/hotplug2/etc/
 
 udev:
-	$(MAKE) COPTS="$(COPTS)" -C udev udevtrigger
+	$(MAKE) COPTS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" -C udev udevtrigger
 
 udev-clean:
 	$(MAKE) -C udev clean
