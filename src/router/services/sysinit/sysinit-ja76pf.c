@@ -58,45 +58,6 @@ void start_sysinit(void)
 	struct utsname name;
 	time_t tm = 0;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-#ifdef HAVE_ATH9K
-	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
-#endif
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-#ifndef HAVE_HOTPLUG2
-	// fix for linux kernel 2.6
-	eval("mknod", "/dev/ppp", "c", "108", "0");
-#endif
-// fix me udevtrigger does not create that (yet) not registered?
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
-
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 	/*
@@ -121,33 +82,32 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/7", "r");
 	if (fp) {
 		fseek(fp, 0x7f1000, SEEK_SET);
-			unsigned char buf[16];
-			fread(&buf[0], 6, 1, fp);
-			char mac[16];
-			int i;
-			unsigned int copy[16];
-			for (i = 0; i < 12; i++)
-				copy[i] = buf[i] & 0xff;
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-				copy[1], copy[2], copy[3], copy[4], copy[5]);
-			fprintf(stderr, "configure ETH0 to %s\n", mac);
-			nvram_set("et0macaddr_safe", mac);
-			eval("ifconfig", "eth0", "hw", "ether", mac);
-			fread(&buf[6], 6, 1, fp);
-			for (i = 0; i < 12; i++)
-				copy[i] = buf[i] & 0xff;
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6],
-				copy[7], copy[8], copy[9], copy[10], copy[11]);
-			fprintf(stderr, "configure ETH1 to %s\n", mac);
-			eval("ifconfig", "eth1", "hw", "ether", mac);
+		unsigned char buf[16];
+		fread(&buf[0], 6, 1, fp);
+		char mac[16];
+		int i;
+		unsigned int copy[16];
+		for (i = 0; i < 12; i++)
+			copy[i] = buf[i] & 0xff;
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure ETH0 to %s\n", mac);
+		nvram_set("et0macaddr_safe", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		fread(&buf[6], 6, 1, fp);
+		for (i = 0; i < 12; i++)
+			copy[i] = buf[i] & 0xff;
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6],
+			copy[7], copy[8], copy[9], copy[10], copy[11]);
+		fprintf(stderr, "configure ETH1 to %s\n", mac);
+		eval("ifconfig", "eth1", "hw", "ether", mac);
 
 		fclose(fp);
 	}
 
-
-		// no mac found, use default
-//	eval("ifconfig", "eth0", "hw", "ether", "00:15:6D:FE:00:00");
-//	eval("ifconfig", "eth1", "hw", "ether", "00:15:6D:FE:00:01");
+	// no mac found, use default
+//      eval("ifconfig", "eth0", "hw", "ether", "00:15:6D:FE:00:00");
+//      eval("ifconfig", "eth1", "hw", "ether", "00:15:6D:FE:00:01");
 
 //#endif
 	eval("ifconfig", "eth0", "up");

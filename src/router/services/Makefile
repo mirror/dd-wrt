@@ -24,7 +24,7 @@ HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libi
 HCFLAGS  += -fpic -I$(TOP)/services/include
 
 
-OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
+OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
        bridgetools.o igmp.o wpa.o vlantagging.o httpd.o setuserpw.o anchorfree.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o radvd.o	\
        pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o apserv.o aoss.o processmanager.o utils.o
 

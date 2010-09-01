@@ -86,24 +86,6 @@ void start_sysinit(void)
 	struct utsname name;
 	time_t tm = 0;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mknod", "/dev/ppp", "c", "108", "0");
-	eval("mknod", "/dev/nvram", "c", "229", "0");
 	char dev[64];
 	int index = getdiscindex();
 
@@ -146,21 +128,6 @@ void start_sysinit(void)
 		eval("rm", "-f", "/etc/nvram/nvram.db");
 		eval("rm", "-f", "/etc/nvram/offsets.db");
 	}
-	eval("mkdir", "/tmp/www");
-
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
-
-	cprintf("sysinit() var\n");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
 
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");	// system watchdog
