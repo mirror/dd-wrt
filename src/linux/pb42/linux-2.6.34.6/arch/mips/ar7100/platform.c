@@ -149,7 +149,7 @@ static struct rtl8366rb_smi_platform_data tl_wr1043nd_rtl8366_smi_data = {
 };
 
 static struct platform_device tl_wr1043nd_rtl8366_smi_device = {
-	.name		= "rtl8366rb-smi",
+	.name		= "rtl8366rb",
 	.id		= -1,
 	.dev = {
 		.platform_data	= &tl_wr1043nd_rtl8366_smi_data,
@@ -182,10 +182,10 @@ int __init ar7100_platform_init(void)
 
 	platform_add_devices(ar7100_platform_devices,ARRAY_SIZE(ar7100_platform_devices));
 
-#ifdef CONFIG_RTL8366RB_SMI 
+#ifdef CONFIG_RTL8366_SMI 
 	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
 #endif
-#ifdef CONFIG_RTL8366RB_SMI_MODULE
+#ifdef CONFIG_RTL8366_SMI_MODULE
 	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
 #endif
 //	mips_machine_setup();
