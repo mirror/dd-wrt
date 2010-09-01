@@ -1,7 +1,7 @@
 /*
- * sysinit-pb42.c
+ * devinit.c
  *
- * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2010 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,7 +43,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-
+#include <cymac.h>
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 #include <arpa/inet.h>
@@ -51,84 +51,50 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
-#include "devices/wireless.c"
 
-void start_sysinit(void)
+void start_devinit(void)
 {
-	char buf[PATH_MAX];
-	struct utsname name;
-	struct stat tmp_stat;
-	time_t tm = 0;
-
-	if (!nvram_match("disable_watchdog", "1"))
-		eval("watchdog");
-	/*
-	 * Setup console 
-	 */
-
-	cprintf("sysinit() klogctl\n");
-	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
-	cprintf("sysinit() get router\n");
-
-	int brand = getRouterBrand();
+	unlink("/etc/nvram/.lock");
+	cprintf("sysinit() proc\n");
 
 	/*
-	 * Modules 
+	 * /proc 
 	 */
-	uname(&name);
+	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
+	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
+#ifdef HAVE_ATH9K
+	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
+#endif
+	cprintf("sysinit() tmp\n");
 
 	/*
-	 * network drivers 
+	 * /tmp 
 	 */
-	insmod("ag7100_mod");
-	int s;
-	struct ifreq ifr;
+	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
+#ifdef HAVE_HOTPLUG2
+	// shell-skript. otherwise we loose our console
+	system("/etc/hotplug2.startup");
+	system("mkdir /dev/pts");
+#else
+	// fix for linux kernel 2.6
+	eval("mknod", "/dev/ppp", "c", "108", "0");
+#endif
+// fix me udevtrigger does not create that (yet) not registered?
+	eval("mknod", "/dev/nvram", "c", "229", "0");
 
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
+	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
+	eval("mkdir", "/tmp/www");
 
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr,
-		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				  eabuf));
-		nvram_set("et0macaddr", macaddr);
-		nvram_set("et0macaddr_safe", macaddr);
-		close(s);
-	}
-	// insmod("ath_pci", "autocreate=none");
-	insmod("ath_mimo_pci");
-
-	// eval ("ifconfig", "wifi0", "up");
+	unlink("/tmp/nvram/.lock");
+	eval("mkdir", "/tmp/nvram");
 
 	/*
-	 * Set a sane date 
+	 * /var 
 	 */
-	stime(&tm);
-	nvram_set("wl0_ifname", "ath0");
-
-	return;
-	cprintf("done\n");
-}
-
-int check_cfe_nv(void)
-{
-	nvram_set("portprio_support", "0");
-	return 0;
-}
-
-int check_pmon_nv(void)
-{
-	return 0;
-}
-
-void start_overclocking(void)
-{
-}
-
-void enable_dtag_vlan(int enable)
-{
-
+	mkdir("/tmp/var", 0777);
+	mkdir("/var/lock", 0777);
+	mkdir("/var/log", 0777);
+	mkdir("/var/run", 0777);
+	mkdir("/var/tmp", 0777);
 }

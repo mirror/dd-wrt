@@ -398,24 +398,7 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
-#ifdef HAVE_MICRO
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-#endif
 #ifdef HAVE_BCMMODERN
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	eval("mknod", "/dev/nvram", "c", "229", "0");
 	eval("mkdir", "/dev/gpio");
 	eval("mknod", "/dev/gpio/in", "c", "127", "0");
@@ -479,7 +462,7 @@ void start_sysinit(void)
 		{"wl0_ifname", "eth2", 0},
 		{0, 0, 0}
 	};
-	
+
 	struct nvram_tuple vlan_0_1[] = {
 		{"lan_ifnames", "vlan0 eth1", 0},
 		{"wan_ifname", "vlan1", 0},
@@ -719,7 +702,7 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
+
 	case ROUTER_BELKIN_F7D4301:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
@@ -730,7 +713,7 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
+
 	case ROUTER_BELKIN_F7D4302:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
@@ -741,7 +724,7 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
+
 	case ROUTER_NETGEAR_WNR2000V2:
 		basic_params = vlan_0_1;
 		if (nvram_match("vlan0ports", "1 2 3 4 5*")
@@ -775,14 +758,15 @@ void start_sysinit(void)
 		nvram_set("wl0_ifname", "eth1");
 		nvram_set("vlan2hwname", "et0");
 		break;
-		
+
 	case ROUTER_WRT160NV3:
 		nvram_set("lan_ifnames", "vlan1 eth1");
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("wl0_ifname", "eth1");
 		nvram_set("vlan2hwname", "et0");
 		//fix lan port numbering on CSE41, CSE51
-		if (nvram_match("clkdivsf", "4") && nvram_match("vlan1ports", "1 2 3 4 5*")) {
+		if (nvram_match("clkdivsf", "4")
+		    && nvram_match("vlan1ports", "1 2 3 4 5*")) {
 			nvram_set("vlan1ports", "4 3 2 1 5*");
 		}
 		break;
@@ -1007,9 +991,9 @@ void start_sysinit(void)
 	case ROUTER_MICROSOFT_MN700:
 		nvram_set("wan_ifname", "eth1");
 		break;
-		
+
 	case ROUTER_WRT150N:
-			nvram_set("wan_ifname", "eth1");
+		nvram_set("wan_ifname", "eth1");
 		if (nvram_match("force_vlan_supp", "enabled")) {
 			nvram_set("lan_ifnames", "vlan0 eth2");
 			nvram_set("vlan0ports", "3 2 1 0 5*");
@@ -1031,7 +1015,7 @@ void start_sysinit(void)
 			nvram_set("lan_ifnames", "eth0 eth2");
 		}
 		break;
-		
+
 	case ROUTER_WRT54G1X:
 		if (check_vlan_support()) {
 			nvram_set("lan_ifnames", "vlan0 eth2");
@@ -1967,27 +1951,26 @@ char *enable_dtag_vlan(int enable)
 		}
 		char *save_ports2 = nvram_safe_get("vlan2ports");
 		char *save_ports1 = nvram_safe_get("vlan1ports");
-#ifdef HAVE_MADWIFI		
+#ifdef HAVE_MADWIFI
 		eth = "eth0";
 #else
-		switch (getRouterBrand())
-		{
-			case ROUTER_NETGEAR_WNR3500L:
-			case ROUTER_WRT320N:
-			case ROUTER_ASUS_RTN16:
-			case ROUTER_WRT310NV2:
-			case ROUTER_WRT610NV2:
-			case ROUTER_BELKIN_F7D4301:
-				eth = "eth0";
-				break;
-			case ROUTER_WRT600N:
-			case ROUTER_WRT610N:
-				eth = "eth2";
-				break;
-			default:
-				eth = "eth1";
-				break;
-		}		
+		switch (getRouterBrand()) {
+		case ROUTER_NETGEAR_WNR3500L:
+		case ROUTER_WRT320N:
+		case ROUTER_ASUS_RTN16:
+		case ROUTER_WRT310NV2:
+		case ROUTER_WRT610NV2:
+		case ROUTER_BELKIN_F7D4301:
+			eth = "eth0";
+			break;
+		case ROUTER_WRT600N:
+		case ROUTER_WRT610N:
+			eth = "eth2";
+			break;
+		default:
+			eth = "eth1";
+			break;
+		}
 #endif
 		if (donothing) {
 			nvram_set("fromvdsl", "0");

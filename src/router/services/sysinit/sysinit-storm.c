@@ -60,40 +60,8 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	// fix for linux kernel 2.6
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
 	eval("mknod", "/dev/gpio", "c", "127", "0");
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/rtc", "c", "254", "0");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
 
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 	/*
@@ -142,7 +110,6 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-
 	/*
 	 * Set a sane date 
 	 */
@@ -155,7 +122,6 @@ void start_sysinit(void)
 	eval("gpio", "disable", "5");
 
 	eval("hwclock", "-s");
-
 
 	return;
 	cprintf("done\n");

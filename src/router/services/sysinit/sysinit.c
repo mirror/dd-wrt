@@ -1917,7 +1917,7 @@ void start_drivers(void)
 
 #ifdef HAVE_USB
 
-fprintf( stderr, "[USB] checking...\n" );
+	fprintf(stderr, "[USB] checking...\n");
 	if (nvram_match("usb_enable", "1")) {
 		led_control(LED_USB, LED_ON);
 
@@ -1928,7 +1928,6 @@ fprintf( stderr, "[USB] checking...\n" );
 			cprintf("loading usb2 module\n");
 			insmod("ehci-hcd");
 		}
-
 
 		if (nvram_match("usb_uhci", "1")) {
 			cprintf("loading usb-uhci\n");
@@ -1997,11 +1996,11 @@ fprintf( stderr, "[USB] checking...\n" );
 			insmod("usblp");
 		}
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-//   Mounting is done by hotplug event!		
-//		if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
-//			printf(stderr, "[USB] check for drives....\n");
-//			usb_add_ufd();
-//		}
+//   Mounting is done by hotplug event!         
+//              if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
+//                      printf(stderr, "[USB] check for drives....\n");
+//                      usb_add_ufd();
+//              }
 	} else {
 		led_control(LED_USB, LED_OFF);
 	}
@@ -2304,7 +2303,7 @@ static void unset_nvram(void)
 
 #ifdef HAVE_3G
 	// make sure we dial in mode 5 with 3g first!
-	nvram_unset ("3gnetmodetoggle");
+	nvram_unset("3gnetmodetoggle");
 #endif
 
 }

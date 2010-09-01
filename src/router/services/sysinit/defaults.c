@@ -175,10 +175,10 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_BUFFALO
 #ifdef BUFFALO_EU
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
-#endif	
+#endif
 	{"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
-	{"dhcp_start", "2", 0},			/* DHCP Start IP */
-	{"dhcp_num", "64", 0},			/* DHCP Start IP */
+	{"dhcp_start", "2", 0},	/* DHCP Start IP */
+	{"dhcp_num", "64", 0},	/* DHCP Start IP */
 #elif HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
 	{"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
@@ -1458,7 +1458,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_get_ip", "", 0},	/* IP Address assigned by L2TP server */
 	{"l2tp_req_chap", "yes", 0},	/* L2TP require chap */
 	{"l2tp_ref_pap", "yes", 0},	/* L2TP refuse pap */
-	{"l2tp_req_auth", "yes", 0},	/* L2TP require authentication */	
+	{"l2tp_req_auth", "yes", 0},	/* L2TP require authentication */
 	{"wan_gateway_buf", "0.0.0.0", 0},	/* save the default gateway for DHCP */
 
 	{"hb_server_ip", "", 0},	/* heartbeat auth server (IP Address) */
@@ -1629,7 +1629,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"hotss_enable", "0", 0},
 	{"hotss_uamenable", "0", 0},
 	{"hotss_loginonsplash", "0", 0},
-	{"hotss_customsplash","0",0},
+	{"hotss_customsplash", "0", 0},
 	{"hotss_uamallowed", "", 0},
 	{"hotss_operatorid", "", 0},
 	{"hotss_locationid", "", 0},
@@ -2218,7 +2218,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"wl1_wme_sta_bk", "15 1023 7 0 0 off", 0},	/* WME STA AC_BK paramters */
 	{"wl1_wme_sta_be", "15 1023 3 0 0 off", 0},	/* WME STA AC_BE paramters */
-	{"wl1_wme_sta_vi", "7 15 2 6016 3008 off", 0},	/* WME STA AC_VI							 * paramters */
+	{"wl1_wme_sta_vi", "7 15 2 6016 3008 off", 0},	/* WME STA AC_VI                                                         * paramters */
 	{"wl1_wme_sta_vo", "3 7 2 3264 1504 off", 0},	/* WME STA AC_VO
 							 * paramters */
 
@@ -2227,7 +2227,7 @@ struct nvram_tuple srouter_defaults[] = {
 	 */
 	{"wl1_wme_ap_bk", "15 1023 7 0 0 off", 0},	/* WME AP AC_BK paramters */
 	{"wl1_wme_ap_be", "15 63 3 0 0 off", 0},	/* WME AP AC_BE paramters */
-	{"wl1_wme_ap_vi", "7 15 1 6016 3008 off", 0},	/* WME AP AC_VI							 * paramters */
+	{"wl1_wme_ap_vi", "7 15 1 6016 3008 off", 0},	/* WME AP AC_VI                                                  * paramters */
 	{"wl1_wme_ap_vo", "3 7 1 3264 1504 off", 0},	/* WME AP AC_VO
 							 * paramters */
 	{"wl1_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
@@ -2763,7 +2763,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"warn_enabled", "0", 0},
 	{"warn_connlimit", "500", 0},
-	
+
 	{0, 0, 0}
 };
 #else

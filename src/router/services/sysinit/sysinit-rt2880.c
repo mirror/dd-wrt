@@ -62,24 +62,6 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	mount("usbfs", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	// fix for linux kernel 2.6
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
 	eval("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
 	eval("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
@@ -88,17 +70,6 @@ void start_sysinit(void)
 
 	eval("mknod", "/dev/gpio", "c", "252", "0");
 
-	cprintf("sysinit() var\n");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 	/*
 	 * Setup console 
 	 */
