@@ -400,11 +400,7 @@ int main(int argc, char **argv)
 	lcdmessage("System Start");
 	fprintf(stderr, "start service\n");
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
-#ifdef HAVE_HOTPLUG2
-	// shell-skript. otherwise we loose our console
-	system("/etc/hotplug2.startup");
-	system("mkdir /dev/pts");
-#endif
+	start_service("devinit"); //init /dev /proc etc.
 	start_service("sysinit");
 	if (console_init())
 		noconsole = 1;

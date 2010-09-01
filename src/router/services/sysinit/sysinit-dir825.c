@@ -58,38 +58,6 @@ void start_sysinit(void)
 	struct utsname name;
 	time_t tm = 0;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	// fix for linux kernel 2.6
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
-
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 	/*
@@ -122,13 +90,14 @@ void start_sysinit(void)
 		fseek(fp, 0x7f120c, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		for (i = 5; i >= 3; i--)
-		    if (++mactmp[i] != 0x00) break; // dont know what this is 
-		for (i = 0; i < 6 ; i++)
-		    copy[i] = mactmp[i];
+			if (++mactmp[i] != 0x00)
+				break;	// dont know what this is 
+		for (i = 0; i < 6; i++)
+			copy[i] = mactmp[i];
 		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-				copy[1], copy[2], copy[3], copy[4], copy[5]);
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-				copy[1], copy[2], copy[3], copy[4], copy[5]);
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
 
 #else
@@ -138,7 +107,7 @@ void start_sysinit(void)
 		fread(mac2, 18, 1, fp);
 		fclose(fp);
 #endif
-	} else 
+	} else
 #endif
 	{
 		sprintf(mac1, "00:11:22:33:44:55");
@@ -167,8 +136,8 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 #ifdef HAVE_WRT400
-//	eval("ifconfig", "wifi0", "hw", "ether", mac1);
-//	eval("ifconfig", "wifi1", "hw", "ether", mac1);
+//      eval("ifconfig", "wifi0", "hw", "ether", mac1);
+//      eval("ifconfig", "wifi1", "hw", "ether", mac1);
 	system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 0 >/proc/sys/dev/wifi1/ledpin");
@@ -186,14 +155,12 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 #endif
 
-
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_DIAG, LED_OFF);
 	led_control(LED_BRIDGE, LED_OFF);
 	led_control(LED_WLAN, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
-
 
 	/*
 	 * Set a sane date 
