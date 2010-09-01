@@ -61,41 +61,9 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	// fix for linux kernel 2.6
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
-	eval("mkdir", "/tmp/www");
 	eval("mount", "-o", "remount,rw", "/dev/root");
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
 	sleep(1);		//give some time for remount
 	eval("mkdir", "-p", "/usr/local/nvram");
-	cprintf("sysinit() var\n");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 	/*
@@ -114,8 +82,8 @@ void start_sysinit(void)
 	uname(&name);
 
 	//for extension board
-	insmod("atl1e"); //rb800 only as it seems
-	insmod("gianfar_driver"); //rb800 only as it seems
+	insmod("atl1e");	//rb800 only as it seems
+	insmod("gianfar_driver");	//rb800 only as it seems
 	insmod("via-rhine");
 	insmod("tulip");
 	struct ifreq ifr;
@@ -145,7 +113,6 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	detect_wireless_devices();
-
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];

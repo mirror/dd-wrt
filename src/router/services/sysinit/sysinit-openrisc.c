@@ -129,39 +129,9 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	// fix for linux kernel 2.6
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
 	eval("mknod", "/dev/gpio", "c", "127", "0");
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mkdir", "-p", "/usr/local/nvram");
 
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
 	install_sdcard();
 	cprintf("sysinit() setup console\n");
 	eval("insmod", "ks8695_wdt", "wdt_time=30");	// load watchdog module with 30 seconds timeout
@@ -210,13 +180,11 @@ void start_sysinit(void)
 
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 
-
 #ifdef HAVE_ERC
 // start sercd
-	system2("/usr/sbin/sercd -e -p 3696 -l "" 5 /dev/tts/2 /var/lock/tty02.lock &");
+	system2("/usr/sbin/sercd -e -p 3696 -l "
+		" 5 /dev/tts/2 /var/lock/tty02.lock &");
 #endif
-
-
 
 	/*
 	 * Set a sane date 

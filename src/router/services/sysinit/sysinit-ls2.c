@@ -64,32 +64,12 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	// fix for linux kernel 2.6
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
 	eval("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
 	eval("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
 	eval("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
 	eval("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
 
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
 	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");
 
@@ -99,17 +79,6 @@ void start_sysinit(void)
 		eval("/sbin/mtd", "erase", "nvram");
 		nvram_commit();
 	}
-	cprintf("sysinit() var\n");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 	/*

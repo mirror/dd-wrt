@@ -1,5 +1,5 @@
 /*
- * sysinit-rb600.c
+ * sysinit-laguna.c
  *
  * Copyright (C) 2010 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -62,36 +62,6 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
-	/*
-	 * /proc 
-	 */
-	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
-
-	/*
-	 * /tmp 
-	 */
-	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-	// fix for linux kernel 2.6
-	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
-	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
-	cprintf("sysinit() var\n");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 	/*
@@ -120,8 +90,8 @@ void start_sysinit(void)
 		nvram_set("intel_eth", "1");
 
 	//load mmc drivers
-	eval("insmod","sdhci","debug_quirks=1"); // workaround for mmc detection issue. 
-//	insmod("sdhci");
+	eval("insmod", "sdhci", "debug_quirks=1");	// workaround for mmc detection issue. 
+//      insmod("sdhci");
 	insmod("sdhci-pltfm");
 	insmod("sdhci-cns3xxx");
 	insmod("mmc_block");
@@ -132,7 +102,6 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	detect_wireless_devices();
-
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
