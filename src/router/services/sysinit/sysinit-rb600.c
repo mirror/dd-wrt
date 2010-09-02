@@ -75,7 +75,6 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 
-
 	//for extension board
 	insmod("atl1e");	//rb800 only as it seems
 	insmod("gianfar_driver");	//rb800 only as it seems

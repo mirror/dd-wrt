@@ -73,7 +73,6 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 
-
 	//for extension board
 	struct ifreq ifr;
 	int s;
