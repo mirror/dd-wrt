@@ -50,7 +50,6 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/sockios.h>
-#include <linux/mii.h>
 
 void start_devinit(void)
 {
