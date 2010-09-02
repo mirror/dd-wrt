@@ -1452,7 +1452,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 * real name is bmenu.menuname[i][j] 
 	 */
 	static char menuname_s[8][13][32] =
-	    { {"setup", "setupbasic", "", "", "", "", "", "", "", "", "", "",""},
+	    { {"setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "",""},
 	{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "","", "", "", "",""},
 	{"applications", "applicationspforwarding", "", "", "", "", "", "", "","", "", "",""},
 	{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "",""},
