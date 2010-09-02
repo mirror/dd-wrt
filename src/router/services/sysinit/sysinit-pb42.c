@@ -56,7 +56,6 @@
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
-	struct utsname name;
 	struct stat tmp_stat;
 	time_t tm = 0;
 
@@ -72,10 +71,6 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 
-	/*
-	 * Modules 
-	 */
-	uname(&name);
 
 	/*
 	 * network drivers 

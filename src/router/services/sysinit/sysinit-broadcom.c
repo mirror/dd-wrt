@@ -410,18 +410,6 @@ void start_sysinit(void)
 	eval("mknod", "/dev/crypto", "c", "10", "70");
 	eval("mkdir", "/dev/usb");
 #endif
-
-	cprintf("sysinit() var\n");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/lock/subsys", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
 	cprintf("sysinit() setup console\n");
 #ifndef HAVE_MICRO
 	if (!nvram_match("disable_watchdog", "1"))

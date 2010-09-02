@@ -130,7 +130,6 @@ void start_change_mac(void)
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
-	struct utsname name;
 	struct stat tmp_stat;
 	time_t tm = 0;
 
@@ -156,16 +155,6 @@ void start_sysinit(void)
 	eval("mknod", "/dev/mtd/4", "c", "90", "8");
 	eval("mknod", "/dev/mtd/4ro", "c", "90", "9");
 
-	cprintf("sysinit() var\n");
-
-	/*
-	 * /var 
-	 */
-	mkdir("/tmp/var", 0777);
-	mkdir("/var/lock", 0777);
-	mkdir("/var/log", 0777);
-	mkdir("/var/run", 0777);
-	mkdir("/var/tmp", 0777);
 	cprintf("sysinit() setup console\n");
 	/*
 	 * Setup console 
@@ -175,10 +164,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-	/*
-	 * Modules 
-	 */
-	uname(&name);
 	/*
 	 * load some netfilter stuff 
 	 */

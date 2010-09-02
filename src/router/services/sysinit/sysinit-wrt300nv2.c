@@ -50,7 +50,6 @@
 
 void start_sysinit(void)
 {
-	struct utsname name;
 	struct stat tmp_stat;
 	time_t tm = 0;
 
@@ -72,10 +71,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-	/*
-	 * Modules 
-	 */
-	uname(&name);
 	nvram_set("intel_eth", "0");
 
 #if 1
