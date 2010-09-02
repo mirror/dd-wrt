@@ -55,7 +55,6 @@
 
 void start_sysinit(void)
 {
-	struct utsname name;
 	time_t tm = 0;
 
 	if (!nvram_match("disable_watchdog", "1"))
@@ -68,10 +67,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-	/*
-	 * Modules 
-	 */
-	uname(&name);
 
 	/*
 	 * network drivers 

@@ -55,7 +55,6 @@ extern void vlan_init(int num);
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
-	struct utsname name;
 	struct stat tmp_stat;
 	time_t tm = 0;
 
@@ -80,10 +79,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-	/*
-	 * Modules 
-	 */
-	uname(&name);
 	/*
 	 * network drivers 
 	 */
