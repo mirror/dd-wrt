@@ -67,7 +67,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-
 	/*
 	 * network drivers 
 	 */
