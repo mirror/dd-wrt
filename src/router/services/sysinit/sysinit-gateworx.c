@@ -129,7 +129,6 @@
 #endif
 void start_sysinit(void)
 {
-	struct utsname name;
 	struct stat tmp_stat;
 	time_t tm = 0;
 
@@ -150,7 +149,6 @@ void start_sysinit(void)
 	/*
 	 * Modules 
 	 */
-	uname(&name);
 
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
