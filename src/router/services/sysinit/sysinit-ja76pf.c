@@ -67,7 +67,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-
 	/*
 	 * network drivers 
 	 */
@@ -99,7 +98,6 @@ void start_sysinit(void)
 
 		fclose(fp);
 	}
-
 	// no mac found, use default
 //      eval("ifconfig", "eth0", "hw", "ether", "00:15:6D:FE:00:00");
 //      eval("ifconfig", "eth1", "hw", "ether", "00:15:6D:FE:00:01");

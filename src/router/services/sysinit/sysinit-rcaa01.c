@@ -83,7 +83,6 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-
 	/*
 	 * network drivers 
 	 */
@@ -112,8 +111,8 @@ void start_sysinit(void)
 			char macaddr[32];
 
 			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.
-					  ifr_hwaddr.sa_data, eabuf));
+			       ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					  sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 //          MAC_ADD( macaddr );
 			ether_atoe(macaddr,

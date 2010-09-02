@@ -71,7 +71,6 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 
-
 	/*
 	 * network drivers 
 	 */

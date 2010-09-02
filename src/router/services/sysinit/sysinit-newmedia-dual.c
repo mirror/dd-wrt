@@ -100,7 +100,6 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 
-
 	// enableAfterBurner ();
 	insmod("md5");
 	insmod("aes");
