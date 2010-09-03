@@ -181,6 +181,24 @@ char *get3GControlDevice(void)
 		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/3";
 	}
+	if (scanFor(0x1199, 0x6893)) {
+		//sierra wireless 
+		fprintf(stderr, "Sierra Wireless Compass 889 deteted\n");
+		insmod("usbserial");
+		insmod("sierra");
+		nvram_set("3gdata", "/dev/usb/tts/4");
+		nvram_set("3gnmvariant", "1");
+		return "/dev/usb/tts/3";
+	}
+	if (scanFor(0x1199, 0x68a3)) {
+		//sierra wireless 
+		fprintf(stderr, "Sierra Wireless Compass 889 deteted\n");
+		insmod("usbserial");
+		insmod("sierra");
+		nvram_set("3gdata", "/dev/usb/tts/4");
+		nvram_set("3gnmvariant", "1");
+		return "/dev/usb/tts/3";
+	}
 	if (scanFor(0x1199, 0x683C)) {
 		//sierra wireless 
 		fprintf(stderr, "Sierra Wireless MC8790\n");
