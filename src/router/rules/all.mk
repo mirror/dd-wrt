@@ -210,7 +210,7 @@ include rules/aoss.mk
 include rules/ap-serv.mk
 include rules/buffalo-flash.mk
 include rules/relayd.mk
-include rules/ath9k.mk
+include ../../../private/rules/ath9k.mk
 include rules/libnltiny.mk
 include rules/hotplug2.mk
 # Generic rules
