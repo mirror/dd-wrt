@@ -28,6 +28,7 @@
 #include <asm/mach-ar7100/ar7100.h>
 #include <asm/mips_machine.h>
 #include <linux/rtl8366rb_smi.h>
+#include <linux/ath9k_platform.h>
 
 extern uint32_t ar71xx_ahb_freq;
 
@@ -156,13 +157,44 @@ static struct platform_device tl_wr1043nd_rtl8366_smi_device = {
 	}
 };
 
+#ifdef CONFIG_AR9100
+static struct ath9k_platform_data ath9k_pdata = {
+	.macaddr = (u8 *) ath9k_pdata.eeprom_data + 0x20c,
+};
+
+static struct resource ath9k_wmac_res[] = {
+	{
+		.start = AR9100_WMAC_BASE,
+		.end = AR9100_WMAC_BASE + AR9100_WMAC_LEN - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.start = AR7100_CPU_IRQ_WMAC,
+		.end = AR7100_CPU_IRQ_WMAC,
+		.flags = IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device ath9k_platform_device = {
+	.name = "ath9k",
+	.id = -1,
+	.resource = ath9k_wmac_res,
+	.num_resources = ARRAY_SIZE(ath9k_wmac_res),
+	.dev = {
+		.platform_data = &ath9k_pdata,
+	},
+};
+#endif
+
 
 
 static struct platform_device *ar7100_platform_devices[] __initdata = {
 	&ar7100_usb_ohci_device,
 	&ar7100_usb_ehci_device,
-	&ar7100_uart
-
+	&ar7100_uart,
+#ifdef CONFIG_AR9100
+	&ath9k_platform_device
+#endif
 };
 
 extern void ar7100_serial_setup(void);
@@ -177,6 +209,9 @@ extern void ar7100_serial_setup(void);
 
 int __init ar7100_platform_init(void)
 {
+#ifdef CONFIG_AR9100
+	memcpy(&ath9k_pdata.eeprom_data, (void *) KSEG1ADDR(0x1fff1000), sizeof(ath9k_pdata.eeprom_data));
+#endif
         /* need to set clock appropriately */
         ar7100_uart_data[0].uartclk = ar71xx_ahb_freq; 
 
