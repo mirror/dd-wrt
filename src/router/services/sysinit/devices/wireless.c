@@ -39,19 +39,43 @@ static void detect_wireless_devices(void)
 		insmod("ath_pci");
 		insmod("ath_ahb");
 	}
+#ifdef HAVE_ATH9K
+	nvram_default_get("mimo_driver","ath9k");
+	if (nvram_match("mimo_driver", "ath9k"))
+		{
+		fprintf(stderr, "load ATH9K 802.11n Driver\n");
+		// some are just for future use and not (yet) there
+		insmod("/lib/ath9k/compat.ko");
+		insmod("/lib/ath9k/compat_firmware_class.ko");
+		insmod("/lib/ath9k/cfg80211.ko");
+		insmod("/lib/ath9k/mac80211.ko");
+		insmod("/lib/ath9k/ath.ko");
+		insmod("/lib/ath9k/ath9k_hw.ko");
+		insmod("/lib/ath9k/ath9k_common.ko");
+		insmod("/lib/ath9k/ath9k.ko");
+		// delete the default interface, that we can start over
+		// todo do that for multiple cards
+		eval("iw", "wlan0", "del");
+		}
+	else
+		{
+#endif
 #ifdef HAVE_MADWIFI_MIMO
-	fprintf(stderr, "load ATH 802.11n Driver\n");
-	insmod("/lib/80211n/ath_mimo_hal.ko");
-	if (nvram_get("rate_control") != NULL) {
-		char rate[64];
+			fprintf(stderr, "load ATH 802.11n Driver\n");
+			insmod("/lib/80211n/ath_mimo_hal.ko");
+			if (nvram_get("rate_control") != NULL) {
+				char rate[64];
 
-		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-		insmod("/lib/80211n/ath_mimo_ahb.ko");
-	} else {
-		insmod("/lib/80211n/ath_mimo_pci.ko");
-		insmod("/lib/80211n/ath_mimo_ahb.ko");
-	}
+				sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
+				insmod("/lib/80211n/ath_mimo_pci.ko");
+				insmod("/lib/80211n/ath_mimo_ahb.ko");
+			} else {
+				insmod("/lib/80211n/ath_mimo_pci.ko");
+				insmod("/lib/80211n/ath_mimo_ahb.ko");
+			}
+#endif
+#ifdef HAVE_ATH9K
+		}
 #endif
 #endif
 #endif
