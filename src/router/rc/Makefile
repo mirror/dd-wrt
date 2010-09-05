@@ -651,6 +651,9 @@ endif
 ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
 endif
+ifeq ($(CONFIG_ATH9K),y)
+CFLAGS += -DHAVE_ATH9K
+endif
 
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
