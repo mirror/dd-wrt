@@ -3,34 +3,21 @@ busybox-config:
 
 busybox: busybox-config net-tools bird dhcpforwarder
 ifeq ($(ARCH),mipsel)
-ifeq ($(ARCHITECTURE),adm5120)
-ifeq ($(CONFIG_DIST),"micro")
-	cp busybox/.config_micro_atheros busybox/.config
-else
-	cp busybox/.config_fonera busybox/.config
-endif
-
+	cp busybox/.config_std busybox/.config
 ifeq ($(CONFIG_MMC),y)
 	echo CONFIG_MKE2FS=y >> busybox/.config
 else
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
-else
-ifeq ($(ARCHITECTURE),rt2880)
-	cp busybox/.config_fonera busybox/.config
-ifeq ($(CONFIG_USB),y)
-	echo CONFIG_MKE2FS=y >> busybox/.config
-else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-endif
-else
 
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
-else
+endif
+
 ifeq ($(CONFIG_DIST),"micro-special")
 	cp busybox/.config_micro busybox/.config
-else
+endif
+
 ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_mini busybox/.config
 ifeq ($(CONFIG_MMC),y)
@@ -39,18 +26,11 @@ else
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
 else
-	cp busybox/.config_std busybox/.config
-ifeq ($(CONFIG_MMC),y)
-	echo CONFIG_MKE2FS=y >> busybox/.config
-else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-endif
-endif
-endif
-endif
 ifeq ($(CONFIG_BBOX),"mini")
 	cp busybox/.config_mini busybox/.config
 endif
+endif
+
 ifeq ($(CONFIG_BCMMODERN),y)
 ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_bcmmodern_mini busybox/.config
@@ -61,9 +41,31 @@ ifeq ($(CONFIG_BBOX),"mini")
 endif
 endif
 endif
+	
+ifeq ($(ARCHITECTURE),adm5120)
+ifeq ($(CONFIG_DIST),"micro")
+	cp busybox/.config_micro_atheros busybox/.config
+else
+	cp busybox/.config_fonera busybox/.config
+endif
+ifeq ($(CONFIG_MMC),y)
+	echo CONFIG_MKE2FS=y >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+endif
+endif
+ifeq ($(ARCHITECTURE),rt2880)
+	cp busybox/.config_fonera busybox/.config
+ifeq ($(CONFIG_USB),y)
+	echo CONFIG_MKE2FS=y >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+endif
+endif
 	cd busybox && make oldconfig
 endif
-endif
+
+
 ifeq ($(ARCH),i386)
 	cp busybox/.config_wrap busybox/.config
 endif
@@ -186,40 +188,35 @@ endif
 endif
 endif
 ifeq ($(ARCH),arm)
-ifeq ($(ARCHITECTURE),storm)
+cp busybox/.config_xscale busybox/.config
+    ifeq ($(ARCHITECTURE),storm)
 	cp busybox/.config_storm busybox/.config
-ifeq ($(CONFIG_WBD222),y)
-	echo "CONFIG_MKE2FS=y" >> busybox/.config
-else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-endif
-else
-ifeq ($(ARCHITECTURE),laguna)
+	ifeq ($(CONFIG_WBD222),y)
+	    echo "CONFIG_MKE2FS=y" >> busybox/.config
+	else
+	    echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	endif
+    endif
+    ifeq ($(ARCHITECTURE),laguna)
 	cp busybox/.config_laguna busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-else
-	cp busybox/.config_xscale busybox/.config
-else
-ifeq ($(ARCHITECTURE),openrisc)
+    endif
+    ifeq ($(ARCHITECTURE),openrisc)
 	cp busybox/.config_storm busybox/.config
 	echo "CONFIG_MKE2FS=y" >> busybox/.config
-else
-	cp busybox/.config_xscale busybox/.config
-endif
-endif
-endif
+    endif
 endif
 ifeq ($(ARCH),armeb)
-ifeq ($(ARCHITECTURE),wrt300nv2)
+    ifeq ($(ARCHITECTURE),wrt300nv2)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-else
-ifneq ($(CONFIG_WP18),y)
-	cp busybox/.config_xscale busybox/.config
-else
-	cp busybox/.config_xscale_wp18 busybox/.config
-endif
-endif
+    else
+	ifneq ($(CONFIG_WP18),y)
+	    cp busybox/.config_xscale busybox/.config
+	else
+	    cp busybox/.config_xscale_wp18 busybox/.config
+	endif
+    endif
 endif
 ifeq ($(ARCH),powerpc)
 	cp busybox/.config_powerpc busybox/.config
@@ -235,9 +232,7 @@ else
 endif
 	cd busybox && make oldconfig
 	
-	if test ! -e "busybox/busybox"; then \
-	    $(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox ; \
-	fi
+	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox ; \
 
 busybox-install:
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
