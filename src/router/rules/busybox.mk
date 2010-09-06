@@ -188,35 +188,35 @@ endif
 endif
 endif
 ifeq ($(ARCH),arm)
-cp busybox/.config_xscale busybox/.config
-    ifeq ($(ARCHITECTURE),storm)
+	cp busybox/.config_xscale busybox/.config
+ifeq ($(ARCHITECTURE),storm)
 	cp busybox/.config_storm busybox/.config
-	ifeq ($(CONFIG_WBD222),y)
-	    echo "CONFIG_MKE2FS=y" >> busybox/.config
-	else
-	    echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-	endif
-    endif
-    ifeq ($(ARCHITECTURE),laguna)
+ifeq ($(CONFIG_WBD222),y)
+	echo "CONFIG_MKE2FS=y" >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+endif
+endif
+ifeq ($(ARCHITECTURE),laguna)
 	cp busybox/.config_laguna busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-    endif
-    ifeq ($(ARCHITECTURE),openrisc)
+endif
+ifeq ($(ARCHITECTURE),openrisc)
 	cp busybox/.config_storm busybox/.config
 	echo "CONFIG_MKE2FS=y" >> busybox/.config
-    endif
+endif
 endif
 ifeq ($(ARCH),armeb)
-    ifeq ($(ARCHITECTURE),wrt300nv2)
+ifeq ($(ARCHITECTURE),wrt300nv2)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
-    else
-	ifneq ($(CONFIG_WP18),y)
-	    cp busybox/.config_xscale busybox/.config
-	else
-	    cp busybox/.config_xscale_wp18 busybox/.config
-	endif
-    endif
+else
+ifneq ($(CONFIG_WP18),y)
+	cp busybox/.config_xscale busybox/.config
+else
+	cp busybox/.config_xscale_wp18 busybox/.config
+endif
+endif
 endif
 ifeq ($(ARCH),powerpc)
 	cp busybox/.config_powerpc busybox/.config
