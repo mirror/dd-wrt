@@ -213,8 +213,8 @@ static void send_arp_reply(struct relayd_interface *rif, const uint8_t spa[4],
 
 	fill_arp_packet(&pkt, rif, spa, tpa);
 
-	pkt.arp.arp_op = htons(ARPOP_REPLY);
 	if (tha) {
+		pkt.arp.arp_op = htons(ARPOP_REPLY);
 		memcpy(pkt.eth.ether_dhost, tha, ETH_ALEN);
 		memcpy(pkt.arp.arp_tha, tha, ETH_ALEN);
 
@@ -222,8 +222,9 @@ static void send_arp_reply(struct relayd_interface *rif, const uint8_t spa[4],
 			rif->ifname, IP_BUF(pkt.arp.arp_tpa),
 			IP_BUF(pkt.arp.arp_spa), MAC_BUF(pkt.eth.ether_shost));
 	} else {
+		pkt.arp.arp_op = htons(ARPOP_REQUEST);
 		memset(pkt.eth.ether_dhost, 0xff, ETH_ALEN);
-		memset(pkt.arp.arp_tha, 0, ETH_ALEN);
+		memset(pkt.arp.arp_tha, 0xff, ETH_ALEN);
 
 		DPRINTF(2, "%s: sending gratuitous ARP: "IP_FMT" is at ("MAC_FMT")\n",
 			rif->ifname, IP_BUF(pkt.arp.arp_tpa),
@@ -232,6 +233,20 @@ static void send_arp_reply(struct relayd_interface *rif, const uint8_t spa[4],
 
 	sendto(rif->fd.fd, &pkt, sizeof(pkt), 0,
 		(struct sockaddr *) &rif->sll, sizeof(rif->sll));
+
+	if (tha)
+		return;
+
+	/*
+	 * Gratuitous ARP comes in two flavours, request and reply.
+	 * Some operating systems only accept request, some only reply.
+	 * Let's just send both...
+	 */
+	pkt.arp.arp_op = htons(ARPOP_REPLY);
+
+	sendto(rif->fd.fd, &pkt, sizeof(pkt), 0,
+		(struct sockaddr *) &rif->sll, sizeof(rif->sll));
+
 }
 
 static void host_entry_timeout(struct uloop_timeout *timeout)
@@ -345,7 +360,9 @@ static void relay_arp_request(struct relayd_interface *from_rif, struct arp_pack
 			continue;
 
 		memcpy(reqpkt.eth.ether_shost, rif->sll.sll_addr, ETH_ALEN);
+		memset(reqpkt.eth.ether_dhost, 0xff, ETH_ALEN);
 		memcpy(reqpkt.arp.arp_sha, rif->sll.sll_addr, ETH_ALEN);
+		memset(reqpkt.arp.arp_tha, 0, ETH_ALEN);
 
 		DPRINTF(2, "%s: sending ARP who-has "IP_FMT", tell "IP_FMT" ("MAC_FMT")\n",
 			rif->ifname, IP_BUF(reqpkt.arp.arp_tpa),
