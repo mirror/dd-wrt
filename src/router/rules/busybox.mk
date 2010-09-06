@@ -103,6 +103,42 @@ ifeq ($(ARCHITECTURE),lsx)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
+ifeq ($(ARCHITECTURE),ja76pf)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),ap83)
+	cp busybox/.config_ap83 busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),dir825)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),wrt400)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),wndr3700)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),ubntm)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),whrhpgn)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),dir615e)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),wr741)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
 ifeq ($(ARCHITECTURE),danube)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
@@ -120,10 +156,21 @@ endif
 endif
 endif
 endif
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+endif
 ifeq ($(ARCH),arm)
 ifeq ($(ARCHITECTURE),storm)
 	cp busybox/.config_storm busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+ifeq ($(CONFIG_WBD222),y)
+	echo "CONFIG_MKE2FS=y" >> busybox/.config
+endif
 else
 	cp busybox/.config_xscale busybox/.config
 endif
@@ -143,8 +190,16 @@ endif
 ifeq ($(ARCH),powerpc)
 	cp busybox/.config_powerpc busybox/.config
 endif
+ifeq ($(CONFIG_IPV6),y)
+	echo "CONFIG_PING6=y" >> busybox/.config
+	echo "CONFIG_FEATURE_IPV6=y" >> busybox/.config
+	echo "CONFIG_FEATURE_PREFER_IPV4_ADDRESS=y" >> busybox/.config
+else
+	echo "# CONFIG_PING6 is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_IPV6 is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_PREFER_IPV4_ADDRESS is not set" >> busybox/.config
+endif
 	cd busybox && make oldconfig
-
 	
 	make  -C busybox clean
 	rm -f busybox/busybox
