@@ -33,8 +33,17 @@ ifeq ($(CONFIG_DIST),"micro-special")
 else
 ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_mini busybox/.config
+ifeq ($(CONFIG_MMC),y)
+	echo CONFIG_MKE2FS=y >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+endif
 else
 	cp busybox/.config_std busybox/.config
+ifeq ($(CONFIG_MMC),y)
+	echo CONFIG_MKE2FS=y >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
 endif
 endif
@@ -226,9 +235,9 @@ else
 endif
 	cd busybox && make oldconfig
 	
-	make  -C busybox clean
-	rm -f busybox/busybox
-	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox 
+	if test ! -e "busybox/busybox"; then \
+	    $(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox ; \
+	fi
 
 busybox-install:
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
