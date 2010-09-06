@@ -5,7 +5,7 @@ ATH9K_CFLAGS=-I$(TOP)/libnl-tiny/include \
 ATH9K_LDFLAGS=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
 endif
 
-hostapd2: 
+hostapd2: libnltiny
 	$(MAKE) -C hostapd-wps/hostapd clean
 	$(MAKE) -C hostapd-wps/wpa_supplicant clean
 	echo ` \
