@@ -188,7 +188,7 @@ obj-$(CONFIG_AOSS) += aoss
 obj-$(CONFIG_AP_SERV) += ap-serv
 obj-$(CONFIG_BUFFALO) += buffalo_flash
 #obj-$(CONFIG_RELAYD) += relayd
-obj-$(CONFIG_ATH9K) += ath9k iw crda
+obj-$(CONFIG_ATH9K) += ath9k iw crda libnltiny
 obj-$(CONFIG_LIBNLTINY) += libnltiny
 obj-$(CONFIG_HOTPLUG2) += hotplug2 udev
 
