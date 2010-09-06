@@ -10,6 +10,39 @@ madwifi-update:
 
 ifeq ($(ARCH),mipsel)
 
+
+ifeq ($(ARCHITECTURE),adm5120)
+madwifi:
+ifeq ($(CONFIG_DIST),"micro")
+	make -j 4 -C madwifi.dev/madwifi.dev/tools2 TARGET=adm5120-le-elf-micro BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=adm5120-le-elf-micro
+else
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=adm5120-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=adm5120-le-elf
+endif
+
+madwifi-clean:
+ifeq ($(CONFIG_DIST),"micro")
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=adm5120-le-elf-micro
+	make -C madwifi.dev/madwifi.dev/tools2 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=adm5120-le-elf
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+endif
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+ifeq ($(CONFIG_DIST),"micro")
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=adm5120-le-elf-micro install
+	make -C madwifi.dev/madwifi.dev/tools2 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+else
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=adm5120-le-elf install
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+endif
+
+
+else
+
 ifeq ($(ARCHITECTURE),rt2880)
 madwifi:
 	@true
@@ -54,7 +87,7 @@ else
 endif
 endif
 endif
-
+endif
 ifeq ($(ARCH),arm)
 ifeq ($(ARCHITECTURE),storm)
 madwifi:
