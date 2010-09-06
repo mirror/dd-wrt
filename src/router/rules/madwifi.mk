@@ -281,8 +281,13 @@ ifeq ($(CONFIG_RS),y)
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ar7100-rs-be-elf BUS=PCI TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
 	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ar7100-rs-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR)
 else
+ifeq ($(CONFIG_WP543),y)
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ar7100-be-elf BUS=PCI TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
 	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ar7100-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR)
+else
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=lsx-be-elf BUS=PCI TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=lsx-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR)
+endif
 endif
 
 madwifi-clean:
@@ -290,8 +295,13 @@ ifeq ($(CONFIG_RS),y)
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ar7100-rs-be-elf BUS=PCI TOOLPATH=$(LINUXDIR)
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=PCI TOOLPATH=$(LINUXDIR)
 else
+ifeq ($(CONFIG_WP543),y)
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ar7100-be-elf BUS=PCI TOOLPATH=$(LINUXDIR)
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=PCI TOOLPATH=$(LINUXDIR)
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=lsx-be-elf BUS=PCI TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=PCI TOOLPATH=$(LINUXDIR)
+endif
 endif
 
 madwifi-install:
@@ -300,9 +310,28 @@ ifeq ($(CONFIG_RS),y)
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) install
 	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ar7100-rs-be-elf install
 else
+ifeq ($(CONFIG_WP543),y)
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) install
 	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ar7100-be-elf install
+else
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=lsx-be-elf install
 endif
+endif
+else
+ifeq ($(ARCHITECTURE),ja76pf)
+madwifi:
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ar7100-be-elf BUS=PCI TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ar7100-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR)
+
+madwifi-clean:
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ar7100-be-elf BUS=PCI TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=PCI TOOLPATH=$(LINUXDIR)
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ar7100-be-elf install
 
 else
 ifeq ($(ARCHITECTURE),danube)
@@ -576,6 +605,95 @@ else
 endif
 
 else
+
+ifeq ($(ARCHITECTURE),ap83)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
+ifeq ($(ARCHITECTURE),dir825)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
+ifeq ($(ARCHITECTURE),wrt400)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
+ifeq ($(ARCHITECTURE),wndr3700)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
+ifeq ($(ARCHITECTURE),ubntm)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
+ifeq ($(ARCHITECTURE),whrhpgn)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
+ifeq ($(ARCHITECTURE),dir615e)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
+ifeq ($(ARCHITECTURE),wr741)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
 madwifi:
 	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
 	make -C madwifi/madwifi.dev/tools TARGET=mipsisa32-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
@@ -588,6 +706,16 @@ madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
 	make -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-be-elf install
+endif
+
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+endif
 endif
 endif
 endif
