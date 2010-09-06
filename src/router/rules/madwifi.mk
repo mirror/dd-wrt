@@ -9,6 +9,18 @@ madwifi-update:
 
 
 ifeq ($(ARCH),mipsel)
+
+ifeq ($(ARCHITECTURE),rt2880)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+	
+madwifi-install:
+	@true
+
+else
 madwifi:
 ifeq ($(CONFIG_DIST),"micro")
 	make -j 4 -C madwifi.dev/madwifi.dev/tools2 TARGET=mipsisa32-le-elf-micro BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
@@ -39,6 +51,7 @@ ifeq ($(CONFIG_DIST),"micro")
 else
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-le-elf install
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+endif
 endif
 endif
 
