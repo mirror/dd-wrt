@@ -170,6 +170,8 @@ ifeq ($(ARCHITECTURE),storm)
 	cp busybox/.config_storm busybox/.config
 ifeq ($(CONFIG_WBD222),y)
 	echo "CONFIG_MKE2FS=y" >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
 else
 	cp busybox/.config_xscale busybox/.config
