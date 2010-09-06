@@ -47,12 +47,14 @@ void start_stabridge(void)
 #ifdef HAVE_RELAYD
 	if (getWET()) {
 		char label[32], debug[32], debug_string[32];
-
 		sprintf(label, "%s_relayd_gw_auto", getWET());
 		sprintf(debug, "%s_relayd_debug", getWET());
 		if(nvram_match(debug, "1")) {
 			//sprintf(debug_string, " -dd >/tmp/%s_relayd.log 2>&1", getWET());
 			sprintf(debug_string, " -dd 2>&1 |/usr/bin/logger", getWET());
+		}else
+		{
+			sprintf(debug_string,"");
 		}
 		if (nvram_match(label,"0")) {
 		    sprintf(label, "%s_relayd_gw_ipaddr", getWET());
