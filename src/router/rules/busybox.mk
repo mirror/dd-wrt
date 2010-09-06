@@ -185,11 +185,18 @@ else
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
 else
+ifeq ($(ARCHITECTURE),laguna)
+	cp busybox/.config_laguna busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+	cp busybox/.config_xscale busybox/.config
+else
 ifeq ($(ARCHITECTURE),openrisc)
 	cp busybox/.config_storm busybox/.config
 	echo "CONFIG_MKE2FS=y" >> busybox/.config
 else
 	cp busybox/.config_xscale busybox/.config
+endif
 endif
 endif
 endif
