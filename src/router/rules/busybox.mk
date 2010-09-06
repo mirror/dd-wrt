@@ -9,12 +9,22 @@ ifeq ($(CONFIG_DIST),"micro")
 else
 	cp busybox/.config_fonera busybox/.config
 endif
+
 ifeq ($(CONFIG_MMC),y)
 	echo CONFIG_MKE2FS=y >> busybox/.config
 else
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
 else
+ifeq ($(ARCHITECTURE),rt2880)
+	cp busybox/.config_fonera busybox/.config
+ifeq ($(CONFIG_USB),y)
+	echo CONFIG_MKE2FS=y >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+endif
+else
+
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
 else
@@ -25,6 +35,7 @@ ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_mini busybox/.config
 else
 	cp busybox/.config_std busybox/.config
+endif
 endif
 endif
 endif
