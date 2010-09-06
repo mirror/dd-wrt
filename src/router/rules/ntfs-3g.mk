@@ -16,4 +16,4 @@ ntfs-3g-clean:
 	$(MAKE) -C ntfs-3g clean
 
 ntfs-3g-configure:
-	cd ntfs-3g && ./configure --prefix=/usr --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc
+	cd ntfs-3g && ./configure --prefix=/usr --with-fuse=$(TOP)/ntfs-3g/fuse --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc
