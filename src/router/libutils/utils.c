@@ -476,6 +476,7 @@ void setRouter(char *name)
 	if (name)
 		nvram_set(NVROUTER, name);
 #endif
+	cprintf ("router is %s\n", getRouter());
 }
 
 char *getRouter()
@@ -492,7 +493,6 @@ int internal_getRouterBrand()
 
 	if (boardnum == 8 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x11")) {
-		cprintf("router is ALLNET01\n");
 		setRouter("ALLNET EUROWRT 54");
 		return ROUTER_ALLNET01;
 	}
@@ -1204,68 +1204,58 @@ int internal_getRouterBrand()
 	unsigned long melco_id = strtoul(nvram_safe_get("melco_id"), NULL, 0);
 
 	if (boardnum == 42 && nvram_match("boardtype", "bcm94710ap")) {
-		cprintf("router is buffalo\n");
 		setRouter("Buffalo WBR-G54 / WLA-G54");
 		return ROUTER_BUFFALO_WBR54G;
 	}
 #ifndef HAVE_BUFFALO
 	if (nvram_match("boardnum", "mn700") &&
 	    nvram_match("boardtype", "bcm94710ap")) {
-		cprintf("router is Microsoft MN-700\n");
 		setRouter("Microsoft MN-700");
 		return ROUTER_MICROSOFT_MN700;
 	}
 
 	if (nvram_match("boardnum", "asusX") &&
 	    nvram_match("boardtype", "bcm94710dev")) {
-		cprintf("router is Asus WL300g / WL500g\n");
 		setRouter("Asus WL-300g / WL-500g");
 		return ROUTER_ASUS_WL500G;
 	}
 
 	if (boardnum == 44 && nvram_match("boardtype", "bcm94710ap")) {
-		cprintf("router is Dell TrueMobile 2300\n");
 		setRouter("Dell TrueMobile 2300");
 		return ROUTER_DELL_TRUEMOBILE_2300;
 	}
 #endif
 
 	if (boardnum == 100 && nvram_match("boardtype", "bcm94710dev")) {
-		cprintf("router is buffalo\n");
 		setRouter("Buffalo WLA-G54C");
 		return ROUTER_BUFFALO_WLAG54C;
 	}
 #ifndef HAVE_BUFFALO
 	if (boardnum == 45 && nvram_match("boardtype", "bcm95365r")) {
-		cprintf("router is Asus WL-500GD\n");
 		setRouter("Asus WL-500g Deluxe");
 		return ROUTER_ASUS_WL500GD;
 	}
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x04EC")
 	    && nvram_match("boardrev", "0x1402")) {
-		cprintf("router is Asus RT-N10\n");
 		setRouter("Asus RT-N10");
 		return ROUTER_ASUS_RTN10;
 	}
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
 	    && nvram_match("boardrev", "0x1201")) {
-		cprintf("router is Asus RT-N12\n");
 		setRouter("Asus RT-N12");
 		return ROUTER_ASUS_RTN12;
 	}
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boardrev", "0x1218")) {
-		cprintf("router is Asus RT-N16\n");
 		setRouter("Asus RT-N16");
 		return ROUTER_ASUS_RTN16;
 	}
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("boardrev", "0x23") && nvram_match("parkid", "1")) {
-		cprintf("router is Asus WL-500W\n");
 		setRouter("Asus WL-500W");
 		return ROUTER_ASUS_WL500W;
 	}
@@ -1274,11 +1264,9 @@ int internal_getRouterBrand()
 		char *hwver0 = nvram_safe_get("hardware_version");
 
 		if (startswith(hwver0, "WL320G")) {
-			cprintf("router is Asus WL-320gE/gP\n");
 			setRouter("Asus WL-320gE/gP");
 			return ROUTER_ASUS_WL550GE;
 		} else {
-			cprintf("router is Asus WL-550gE\n");
 			setRouter("Asus WL-550gE");
 			return ROUTER_ASUS_WL550GE;
 		}
@@ -1286,14 +1274,12 @@ int internal_getRouterBrand()
 	
 	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
-		cprintf("router is Belkin Play Max F7D4301v1\n");
 		setRouter("Belkin Play Max F7D4301v1");
 		return ROUTER_BELKIN_F7D4301;
 	}
 	
 	if (boardnum == 12345 && nvram_match("boardtype", "0xa4cf")
 	    && nvram_match("boardrev", "0x1102")) {
-		cprintf("router is Belkin Play F7D4302v1\n");
 		setRouter("Belkin Play F7D4302v1");
 		return ROUTER_BELKIN_F7D4302;
 	}
@@ -1301,20 +1287,17 @@ int internal_getRouterBrand()
 #endif
 	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is Buffalo wbr2\n");
 		setRouter("Buffalo WBR2-G54 / WBR2-G54S");
 		return ROUTER_BUFFALO_WBR2G54S;
 	}
 
 	if (boardnum == 2 && nvram_match("boardtype", "0x0101")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is buffalo wla2-g54c\n");
 		setRouter("Buffalo WLA2-G54C / WLI3-TX1-G54");
 		return ROUTER_BUFFALO_WLA2G54C;
 	}
 	if (boardnum == 0 && melco_id == 29090
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is Buffalo WLAH-G54\n");
 		setRouter("Buffalo WLAH-G54");
 		return ROUTER_BUFFALO_WLAH_G54;
 
@@ -1322,27 +1305,23 @@ int internal_getRouterBrand()
 	if (boardnum == 0 && melco_id == 31070
 	    && nvram_match("boardflags", "0x2288")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is Buffalo WAPM-HP-AM54G54\n");
 		setRouter("Buffalo WAPM-HP-AM54G54");
 		return ROUTER_BUFFALO_WAPM_HP_AM54G54;
 	}
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32093) {
-		cprintf("router is Buffalo WHR-G125\n");
 		setRouter("Buffalo WHR-G125");
 		return ROUTER_BUFFALO_WHRG54S;
 	}
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32139) {
-		cprintf("router is Buffalo WCA-G\n");
 		setRouter("Buffalo WCA-G");
 		return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
 	}
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32064) {
-		cprintf("router is Buffalo WHR-HP-G125\n");
 		setRouter("Buffalo WHR-HP-G125");
 		return ROUTER_BUFFALO_WHRG54S;
 	}
@@ -1352,23 +1331,19 @@ int internal_getRouterBrand()
 		if (nvram_match("boardflags", "0x1658")
 		    || nvram_match("boardflags", "0x2658")
 		    || nvram_match("boardflags", "0x3658")) {
-			cprintf("router is Buffalo WLI-TX4-G54HP\n");
 			setRouter("Buffalo WLI-TX4-G54HP");
 			return ROUTER_BUFFALO_WLI_TX4_G54HP;
 		}
 		if (!nvram_match("buffalo_hp", "1")
 		    && nvram_match("boardflags", "0x2758")) {
-			cprintf("router is Buffalo WHR-G54S\n");
 			setRouter("Buffalo WHR-G54S");
 			return ROUTER_BUFFALO_WHRG54S;
 		}
 		if (nvram_match("buffalo_hp", "1")
 		    || nvram_match("boardflags", "0x1758")) {
 #ifndef HAVE_BUFFALO
-			cprintf("router is Buffalo WHR-HP-G54\n");
 			setRouter("Buffalo WHR-HP-G54");
 #else
-			cprintf("router is Buffalo WHR-HP-G54DD\n");
 #ifdef BUFFALO_JP
 			setRouter("Buffalo AS-A100");
 #else
@@ -1381,7 +1356,6 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardtype", "0x470")) {
-		cprintf("router is Buffalo WHR-AM54G54\n");
 		setRouter("Buffalo WHR-AM54G54");
 		return ROUTER_BUFFALO_WHRAM54G54;
 	}
@@ -1390,48 +1364,40 @@ int internal_getRouterBrand()
 
 		if (nvram_match("product_name", "WZR-RS-G54")
 		    || melco_id == 30083) {
-			cprintf("router is Buffalo WZR-RS-G54\n");
 			setRouter("Buffalo WZR-RS-G54");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
 		if (nvram_match("product_name", "WZR-HP-G54")
 		    || melco_id == 30026) {
-			cprintf("router is Buffalo WZR-HP-G54\n");
 			setRouter("Buffalo WZR-HP-G54");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
 		if (nvram_match("product_name", "WZR-G54") || melco_id == 30061) {
-			cprintf("router is Buffalo WZR-G54\n");
 			setRouter("Buffalo WZR-G54");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
 		if (nvram_match("melco_id", "290441dd")) {
-			cprintf("router is Buffalo WHR2-A54G54\n");
 			setRouter("Buffalo WHR2-A54G54");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
 		if (nvram_match("product_name", "WHR3-AG54")
 		    || nvram_match("product_name", "WHR3-B11")
 		    || melco_id == 29130) {
-			cprintf("router is Buffalo WHR3-AG54\n");
 			setRouter("Buffalo WHR3-AG54");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
 		if (nvram_match("product_name", "WVR-G54-NF")
 		    || melco_id == 28100) {
-			cprintf("router is Buffalo WVR-G54-NF\n");
 			setRouter("Buffalo WVR-G54-NF");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
 		if (nvram_match("product_name", "WZR-G108") || melco_id == 31095
 		    || melco_id == 30153) {
-			cprintf("router is Buffalo WZR-G108\n");
 			setRouter("Buffalo WZR-G108");
 			return ROUTER_BRCM4702_GENERIC;
 		}
 		if (melco_id > 0)	// e.g. 29115
 		{
-			cprintf("router is Buffalo WZR series\n");
 			setRouter("Buffalo WZR series");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
@@ -1441,7 +1407,6 @@ int internal_getRouterBrand()
 	    && nvram_match("boardrev", "0x10"))
 		// nvram_match ("boardflags","0x0018"))
 	{
-		cprintf("router is Linksys WRTSL54GS\n");
 		setRouter("Linksys WRTSL54GS");
 		return ROUTER_WRTSL54GS;
 	}
@@ -1449,7 +1414,6 @@ int internal_getRouterBrand()
 	if (boardnum == 42 && nvram_match("boardtype", "0x0101")
 	    && nvram_match("boardrev", "0x10")
 	    && nvram_match("boot_ver", "v3.6")) {
-		cprintf("router is Linksys WRT54G3G\n");
 		setRouter("Linksys WRT54G3G");
 		return ROUTER_WRT54G3G;
 	}
@@ -1460,7 +1424,6 @@ int internal_getRouterBrand()
 
 		if (boardnum == 45 || startswith(hwver, "WL500gp")
 		    || startswith(hwver, "WL500gH")) {
-			cprintf("router is Asus WL-500g Premium\n");
 			setRouter("Asus WL-500g Premium");
 			return ROUTER_ASUS_WL500G_PRE;
 		}
@@ -1470,38 +1433,32 @@ int internal_getRouterBrand()
 
 	if (boardnum == 100 && nvram_match("boardtype", "bcm94710r4")) {
 		if (startswith(et0, "00:11:50")) {
-			cprintf("router is Belkin F5D7130 / F5D7330\n");
 			setRouter("Belkin F5D7130 / F5D7330");
 			return ROUTER_RT210W;
 		}
 		if (startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd")) {
-			cprintf("router is Belkin F5D7230 v1000\n");
 			setRouter("Belkin F5D7230-4 v1000");
 			return ROUTER_RT210W;
 		}
 		if (startswith(et0, "00:01:E3") ||
 		    startswith(et0, "00:01:e3") || startswith(et0, "00:90:96"))
 		{
-			cprintf("router is Siemens\n");
 			setRouter("Siemens SE505 v1");
 			return ROUTER_RT210W;
 		} else {
-			cprintf("router is Askey generic\n");
-			setRouter("RT210W generic");
+			setRouter("Askey RT210W generic");
 			return ROUTER_RT210W;
 		}
 	}
 
 	if (nvram_match("boardtype", "bcm94710r4")
 	    && nvram_match("boardnum", "")) {
-		cprintf("router is Askey board RT2100W\n");
 		setRouter("Askey board RT2100W-D65)");
 		return ROUTER_BRCM4702_GENERIC;
 	}
 
 	if (boardnum == 0 && nvram_match("boardtype", "0x0100")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is Askey board RT2205(6)D-D56\n");
 		if (startswith(et0, "00:11:50") ||
 		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
 		{
@@ -1517,11 +1474,9 @@ int internal_getRouterBrand()
 		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
 		{
 			if (nvram_match("Belkin_ver", "2000")) {
-				cprintf("router is Belkin F5D7230-4 v2000\n");
 				setRouter("Belkin F5D7230-4 v2000");
 				return ROUTER_BELKIN_F5D7230_V2000;
 			} else {
-				cprintf("router is Belkin F5D7230-4 v1444\n");
 				setRouter("Belkin F5D7230-4 v1444");
 				return ROUTER_RT480W;
 			}
@@ -1529,21 +1484,18 @@ int internal_getRouterBrand()
 		if (startswith(et0, "00:01:E3") ||
 		    startswith(et0, "00:01:e3") || startswith(et0, "00:90:96"))
 		{
-			cprintf("router is Siemens / Askey\n");
 			setRouter("Siemens SE505 v2");
 			return ROUTER_RT480W;
 		}
 	}
 	if (boardnum == 1 && nvram_match("boardtype", "0x456")
 	    && nvram_match("test_led_gpio", "2")) {
-		cprintf("router is Belkin F5D7230-4 v3000\n");
 		setRouter("Belkin F5D7230-4 v3000");
 		return ROUTER_BELKIN_F5D7230_V3000;
 	}
 
 	if (nvram_match("boardtype", "0x456")
 	    && nvram_match("hw_model", "F5D7231-4")) {
-		cprintf("router is Belkin F5D7231-4 v1212UK\n");
 		setRouter("Belkin F5D7231-4 v1212UK");
 		return ROUTER_BELKIN_F5D7231;
 	}
@@ -1551,7 +1503,6 @@ int internal_getRouterBrand()
 	if (boardnum == 8 && nvram_match("boardtype", "0x0467"))	// fccid:
 		// K7SF5D7231B
 	{
-		cprintf("router is Belkin F5D7231-4 v2000\n");
 		setRouter("Belkin F5D7231-4 v2000");
 		return ROUTER_BELKIN_F5D7231_V2000;
 	}
@@ -1560,7 +1511,6 @@ int internal_getRouterBrand()
 		if (startswith(et0, "00:11:50") ||
 		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
 		{
-			cprintf("router is Belkin F5D7231-4 v2000\n");
 			setRouter("Belkin F5D7231-4 v2000");
 			return ROUTER_BELKIN_F5D7231;
 		}
@@ -1569,7 +1519,6 @@ int internal_getRouterBrand()
 	if (boardnum == 2 && nvram_match("boardtype", "bcm94710dev") && melco_id == 29016)	// Buffalo 
 		// WLI2-TX1-G54)
 	{
-		cprintf("router is Buffalo WLI2-TX1-G54\n");
 		setRouter("Buffalo WLI2-TX1-G54");
 		return ROUTER_BUFFALO_WLI2_TX1_G54;
 	}
@@ -1585,7 +1534,6 @@ int internal_getRouterBrand()
 	     startswith(et0, "00:0C:10") ||
 	     startswith(et0, "00:0c:10") ||
 	     startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11"))) {
-		cprintf("router Motorola WE800G v1\n");
 		setRouter("Motorola WE800G v1");
 		return ROUTER_MOTOROLA_WE800G;
 	}
@@ -1593,20 +1541,17 @@ int internal_getRouterBrand()
 	if (boardnum == 2
 	    && (startswith(gemtek, "RC") || gemteknum == 1 || gemteknum == 10))
 	{
-		cprintf("router is Linksys wap54g v1.x\n");
 		setRouter("Linksys WAP54G v1.x");
 		return ROUTER_WAP54G_V1;
 	}
 
 	if (boardnum == 2 && gemteknum == 1) {
-		cprintf("router is Sitecom wl-105b\n");
 		setRouter("Sitecom WL-105(b)");
 		return ROUTER_SITECOM_WL105B;
 	}
 
 	if (boardnum == 2 && gemteknum == 7
 	    && nvram_match("boardtype", "bcm94710dev")) {
-		cprintf("router is Sitecom wl-111\n");
 		setRouter("Sitecom WL-111");
 		return ROUTER_SITECOM_WL111;
 	}
@@ -1632,17 +1577,14 @@ int internal_getRouterBrand()
 				nvram_set("boardtype", "bcm94710dev");
 			}
 			if (nvram_match("phyid_num", "0x00000000")) {
-				cprintf("router Motorola WE800G v1\n");
 				setRouter("Motorola WE800G v1");
 				return ROUTER_MOTOROLA_WE800G;
 			} else	// phyid_num == 0xffffffff
 			{
-				cprintf("router Motorola WR850G v1\n");
 				setRouter("Motorola WR850G v1");
 				return ROUTER_MOTOROLA_V1;
 			}
 		} else {
-			cprintf("router is linksys WRT55AG\n");
 			setRouter("Linksys WRT55AG v1");
 			return ROUTER_LINKSYS_WRT55AG;
 		}
@@ -1663,7 +1605,6 @@ int internal_getRouterBrand()
 
 	if (boardnum == 8 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("cardbus", "1")) {
-		cprintf("router is Netgear WNR834B\n");
 		setRouter("Netgear WNR834B");
 		return ROUTER_NETGEAR_WNR834B;
 	}
@@ -1671,11 +1612,9 @@ int internal_getRouterBrand()
 	if (boardnum == 1 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("boardrev", "0x23")) {
 		if (nvram_match("cardbus", "1")) {
-			cprintf("router is Netgear WNR834B v2\n");
 			setRouter("Netgear WNR834B v2");
 			return ROUTER_NETGEAR_WNR834BV2;
 		} else {
-			cprintf("router is Netgear WNDR-3300\n");
 			setRouter("Netgear WNDR3300");
 			return ROUTER_NETGEAR_WNDR3300;
 		}
@@ -1736,100 +1675,83 @@ int internal_getRouterBrand()
 
 	if (boardnum == 42 &&
 	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "1")) {
-		cprintf("router is Linksys WRT350N\n");
 		setRouter("Linksys WRT350N");
 		return ROUTER_WRT350N;
 	}
 
 	if (nvram_match("boardnum", "20070615") &&
-	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")
-	    && nvram_match("switch_type", "BCM5395")) {
-		cprintf("router is Linksys WRT600N v1.1\n");
-		setRouter("Linksys WRT600N v1.1");
-		return ROUTER_WRT600N;
-	}
-
-	if (nvram_match("boardnum", "20070615") &&
 	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")) {
-		cprintf("router is Linksys WRT600N\n");
-		setRouter("Linksys WRT600N");
-		return ROUTER_WRT600N;
+	    if (nvram_match("switch_type", "BCM5395")) {
+			setRouter("Linksys WRT600N v1.1");
+			return ROUTER_WRT600N;
+		} else {
+			setRouter("Linksys WRT600N");
+			return ROUTER_WRT600N;
+		}
 	}
 
 	if (nvram_match("boardtype", "0x478")
 	    && nvram_match("boot_hw_model", "WRT610N")) {
-		cprintf("router is Linksys WRT610N\n");
 		setRouter("Linksys WRT610N");
 		return ROUTER_WRT610N;
 	}
 
 	if (nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boot_hw_model", "WRT610N")) {
-		cprintf("router is Linksys WRT610Nv2\n");
 		setRouter("Linksys WRT610Nv2");
 		return ROUTER_WRT610NV2;
 	}
 
 	if (nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boot_hw_model", "E300")) {
-		cprintf("router is Linksys E3000\n");
 		setRouter("Linksys E3000");	// renamed wrt610nv2
 		return ROUTER_WRT610NV2;
 	}
 
 	if (boardnum == 42 && nvram_match("boardtype", "bcm94710dev")) {
-		cprintf("router is Linksys WRT54G v1.x\n");
 		setRouter("Linksys WRT54G v1.x");
 		return ROUTER_WRT54G1X;
 	}
 
 	if ((boardnum == 1 || boardnum == 0)
 	    && nvram_match("boardtype", "0x0446")) {
-		cprintf("router is U.S. Robotics USR5430\n");
 		setRouter("U.S.Robotics USR5430");
 		return ROUTER_USR_5430;
 	}
 
 	if (boardnum == 1 && nvram_match("boardtype", "0x456")
 	    && nvram_match("test_led_gpio", "0")) {
-		cprintf("router is Netgear WG602 v3\n");
 		setRouter("Netgear WG602 v3");
 		return ROUTER_NETGEAR_WG602_V3;
 	}
 
 	if (boardnum == 10496 && nvram_match("boardtype", "0x456")) {
-		cprintf("router is U.S. Robotics USR5461\n");
 		setRouter("U.S.Robotics USR5461");
 		return ROUTER_USR_5461;
 	}
 
 	if (boardnum == 10500 && nvram_match("boardtype", "0x456")) {
-		cprintf("router is U.S. Robotics USR5432\n");
 		setRouter("U.S.Robotics USR5432");
 		return ROUTER_USR_5461;	// should work in the same way
 	}
 
 	if (boardnum == 10506 && nvram_match("boardtype", "0x456")) {
-		cprintf("router is U.S. Robotics USR5451\n");
 		setRouter("U.S.Robotics USR5451");
 		return ROUTER_USR_5461;	// should work in the same way
 	}
 
 	if (boardnum == 10512 && nvram_match("boardtype", "0x456")) {
-		cprintf("router is U.S. Robotics USR5441\n");
 		setRouter("U.S.Robotics USR5441");
 		return ROUTER_USR_5461;	// should work in the same way
 	}
 
 	if ((boardnum == 35324 || boardnum == 38256)
 	    && nvram_match("boardtype", "0x048e")) {
-		cprintf("router is U.S. Robotics USR5465\n");
 		setRouter("U.S.Robotics USR5465");
 		return ROUTER_USR_5465;
 	}
 
 	if (boardnum == 35334 && nvram_match("boardtype", "0x048e")) {
-		cprintf("router is U.S. Robotics USR5455\n");
 		setRouter("U.S.Robotics USR5455");
 		return ROUTER_USR_5465;	// should work in the same way
 	}
@@ -1838,15 +1760,12 @@ int internal_getRouterBrand()
 		char *cfe = nvram_safe_get("cfe_version");
 
 		if (strstr(cfe, "WRE54G")) {
-			cprintf("router is Linksys WRE54Gv1\n");
 			setRouter("Linksys WRE54G v1");
 			return ROUTER_WAP54G_V2;
 		} else if (strstr(cfe, "iewsonic")) {
-			cprintf("router is Viewsonic WAPBR-100\n");
 			setRouter("Viewsonic WAPBR-100");
 			return ROUTER_VIEWSONIC_WAPBR_100;
 		} else {
-			cprintf("router is Linksys WAP54G v2\n");
 			setRouter("Linksys WAP54G v2");
 			return ROUTER_WAP54G_V2;
 		}
@@ -1856,7 +1775,6 @@ int internal_getRouterBrand()
 		char *cfe = nvram_safe_get("CFEver");
 
 		if (!strncmp(cfe, "MotoWR", 6)) {
-			cprintf("router is motorola\n");
 			setRouter("Motorola WR850G v2/v3");
 			return ROUTER_MOTOROLA;
 		}
@@ -1867,25 +1785,21 @@ int internal_getRouterBrand()
 		char *cfe = nvram_safe_get("CFEver");
 
 		if (!strncmp(cfe, "GW_WR110G", 9)) {
-			cprintf("router is Sparklan WX-6615GT\n");
 			setRouter("Sparklan WX-6615GT");
 			return ROUTER_DELL_TRUEMOBILE_2300_V2;
 		} else {
-			cprintf("router is Dell TrueMobile 2300 v2\n");
 			setRouter("Dell TrueMobile 2300 v2");
 			return ROUTER_DELL_TRUEMOBILE_2300_V2;
 		}
 	}
 #endif
 	if (nvram_match("boardtype", "bcm94710ap")) {
-		cprintf("router is Buffalo old 4710\n");
 		setRouter("Buffalo WBR-B11");
 		return ROUTER_BUFFALO_WBR54G;
 	}
 #ifndef HAVE_BUFFALO
 	if (boardnum == 0 && nvram_match("boardtype", "0x048e") &&	// cfe sets boardnum="", strtoul -> 0
 	    nvram_match("boardrev", "0x35")) {
-		cprintf("router is D-Link DIR-320\n");
 		setRouter("D-Link DIR-320");
 		// apply some fixes
 		if (nvram_get("vlan2ports") != NULL) {
@@ -1896,7 +1810,6 @@ int internal_getRouterBrand()
 	}
 	if (nvram_match("model_name", "DIR-330") &&
 	    nvram_match("boardrev", "0x10")) {
-		cprintf("router is D-Link DIR-330\n");
 		setRouter("D-Link DIR-330");
 		nvram_set("wan_ifnames", "eth0");	// quirk
 		nvram_set("wan_ifname", "eth0");
@@ -1925,10 +1838,8 @@ int internal_getRouterBrand()
 	if (boardnum == 42 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x10")) {
 		if (nvram_match("boardflags", "0x20750")) {
-			cprintf("router is wrt54g2v1/v1.3/gs2v1\n");
-			setRouter("Linksys WRT54G2 / GS2");
+			setRouter("Linksys WRT54G2 / GS2"); // router is wrt54g2v1/v1.3/gs2v1
 		} else {
-			cprintf("router is wrt54gv8/gsv7\n");
 			setRouter("Linksys WRT54Gv8 / GSv7");
 		}
 		return ROUTER_WRT54G_V8;
@@ -1936,8 +1847,7 @@ int internal_getRouterBrand()
 
 	if (boardnum == 8 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x11")) {
-		cprintf("router is ALLNET01\n");
-		setRouter("ALLNET EUROWRT 54");
+		setRouter("ALLNET EUROWRT 54");  //ALLNET01
 		return ROUTER_ALLNET01;
 	}
 
@@ -1945,7 +1855,6 @@ int internal_getRouterBrand()
 	    && nvram_match("boardrev", "0x11")
 	    && (nvram_match("boardflags", "0x650")
 		|| nvram_match("boardflags", "0x0458"))) {
-		cprintf("router is Netgear WG602 v4\n");
 		setRouter("Netgear WG602 v4");
 		return ROUTER_NETGEAR_WG602_V4;
 	}
@@ -1953,27 +1862,23 @@ int internal_getRouterBrand()
 	if (boardnum == 1 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x35")
 	    && nvram_match("parefldovoltage", "0x28")) {
-		cprintf("NetCore NW618 / Rosewill RNX-GX4\n");
 		setRouter("NetCore NW618 / Rosewill RNX-GX4");
 		return ROUTER_NETCORE_NW618;
 	}
 
 	if (boardnum == 42 && nvram_match("boardtype", "0x048E")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is Linksys WRH54G\n");
 		setRouter("Linksys WRH54G");
 		return ROUTER_LINKSYS_WRH54G;
 	}
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x048E")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is Linksys WRT54G v8.1\n");
 		setRouter("Linksys WRT54G v8.1");
 		return ROUTER_WRT54G_V81;
 	}
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x456")) {
-		cprintf("router is Asus WL-520G\n");
 		setRouter("Asus WL-520G");
 		return ROUTER_ASUS_WL520G;
 	}
@@ -1983,16 +1888,13 @@ int internal_getRouterBrand()
 		char *hwver = nvram_safe_get("hardware_version");
 
 		if (boardnum == 45 && startswith(hwver, "WL500GPV2")) {
-			cprintf("router is Asus WL-500G Premium V2\n");
 			setRouter("Asus WL-500G Premium V2");
 			return ROUTER_ASUS_WL500G_PRE_V2;
 		} else if (boardnum == 45 && startswith(hwver, "WL330GE")) {
-			cprintf("router is Asus WL-330GE\n");
 			setRouter("Asus WL-330GE");
 			return ROUTER_ASUS_330GE;
 		} else if (boardnum == 45 || startswith(hwver, "WL500GU")
 			   || startswith(hwver, "WL500GC")) {
-			cprintf("router is Asus WL-520GU/GC\n");
 			setRouter("Asus WL-520GU/GC");
 			return ROUTER_ASUS_WL520GUGC;
 		}
@@ -2001,21 +1903,18 @@ int internal_getRouterBrand()
 	if ((boardnum == 83258 || boardnum == 1 || boardnum == 0123)	//or 01 or 001 or 0x01
 	    && (nvram_match("boardtype", "0x048e") || nvram_match("boardtype", "0x48E")) && (nvram_match("boardrev", "0x11") || nvram_match("boardrev", "0x10")) && (nvram_match("boardflags", "0x750") || nvram_match("boardflags", "0x0750")) && nvram_match("sdram_init", "0x000A"))	//16 MB ram
 	{
-		cprintf("router is Netgear WGR614v8/L/WW\n");
 		setRouter("Netgear WGR614v8/L/WW");
 		return ROUTER_NETGEAR_WGR614L;
 	}
 
 	if (boardnum == 3805 && nvram_match("boardtype", "0x48E")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is Netgear WGR614v9\n");
 		setRouter("Netgear WGR614v9");
 		return ROUTER_NETGEAR_WGR614V9;
 	}
 
 	if (boardnum == 56 && nvram_match("boardtype", "0x456")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is wtr54gs\n");
 		setRouter("Linksys WTR54GS");
 		return ROUTER_LINKSYS_WTR54GS;
 	}
@@ -2024,14 +1923,12 @@ int internal_getRouterBrand()
 	    && (nvram_match("boardtype", "0x0467")
 		|| nvram_match("boardtype", "0x467"))
 	    && nvram_match("WAPver", "3")) {
-		cprintf("router is WAP54G v3.x\n");
 		setRouter("Linksys WAP54G v3.x");
 		return ROUTER_WAP54G_V3;
 	}
 
 	if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
 	    && nvram_match("boardrev", "0x1700")) {
-		cprintf("router is wnr2000 v2\n");
 		setRouter("Netgear WNR2000 v2");
 		return ROUTER_NETGEAR_WNR2000V2;
 	}
@@ -2040,7 +1937,6 @@ int internal_getRouterBrand()
 	    && nvram_match("boardtype", "0x04CF")
 	    && (nvram_match("boardrev", "0x1213")
 		|| nvram_match("boardrev", "02"))) {
-		cprintf("router is wnr3500v2/U/L\n");
 		setRouter("Netgear WNR3500v2/U/L");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
@@ -2049,27 +1945,23 @@ int internal_getRouterBrand()
 	    && nvram_match("boardtype", "0x04EF")
 	    && (nvram_match("boardrev", "0x1304")
 		|| nvram_match("boardrev", "0x1305"))) {
-		cprintf("router is wrt320n\n");
 		setRouter("Linksys WRT320N");
 		return ROUTER_WRT320N;
 	}
 
 	if (boardnum == 42 && nvram_match("boardtype", "0x04EF")
 	    && nvram_match("boardrev", "0x1307")) {
-		cprintf("router is E2000n\n");
 		setRouter("Linksys E2000");	// renamed (and fixed reset button) wrt320n
 		return ROUTER_WRT320N;
 	}
 
 	if (boardnum == 94703 && nvram_match("boardtype", "0x04c0")
 	    && nvram_match("boardrev", "0x1100")) {
-		cprintf("router Dynex DX-NRUTER\n");
 		setRouter("Dynex DX-NRUTER");
 		return ROUTER_DYNEX_DX_NRUTER;
 	}
 
 	setRouter("Linksys WRT54G/GL/GS");
-	cprintf("router is wrt54g\n");
 	return ROUTER_WRT54G;
 #else
 	eval("event", "3", "1", "15");
