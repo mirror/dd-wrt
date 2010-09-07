@@ -269,6 +269,9 @@ static struct ebt_u_target snat_target =
 	.compare	= compare,
 	.extra_ops	= opts_s,
 };
+#ifndef EBT_ARPNAT_TARGET
+#define EBT_ARPNAT_TARGET "arpnat"
+#endif
 
 static struct ebt_u_target arpnat_target =
 {
