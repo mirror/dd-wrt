@@ -1079,6 +1079,13 @@ int internal_getRouterBrand()
 	setRouter("Buffalo WZR-HP-G300NH");
 #endif
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WZRHPAG300NH
+#ifdef HAVE_BUFFALO
+	setRouter("WZR-HP-AG300NH");
+#else
+	setRouter("Buffalo WZR-HP-AG300NH");
+#endif
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WNDR3700
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
@@ -2048,7 +2055,7 @@ void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
 #define UOFFSET 0x40000
-#else
+#elif HAVE_WZRHPAG300NH
 #define UOFFSET 0x3E000
 #endif
 	static char res[64];
@@ -2976,6 +2983,11 @@ int led_control(int type, int act)
 		connected_gpio = 0x112;
 		ses_gpio = 0x111;
 #endif
+#ifdef HAVE_WZRHPAG300NH
+		diag_gpio = 0x101;
+//		connected_gpio = 0x112;
+//		ses_gpio = 0x105;
+#endif
 #ifdef HAVE_DIR615E
 		power_gpio = 0x006;
 		diag_gpio = 0x001;
@@ -3107,6 +3119,12 @@ int led_control(int type, int act)
 		connected_gpio = 0x112;
 		usb_gpio = 0x100;
 		ses_gpio = 0x111;
+#endif
+#ifdef HAVE_WZRHPAG300NH
+		diag_gpio = 0x101;
+//		connected_gpio = 0x112;
+		usb_gpio = 0x102;
+//		ses_gpio = 0x111;
 #endif
 		break;
 #endif
