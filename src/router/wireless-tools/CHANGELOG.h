@@ -1,7 +1,7 @@
 /*
  *	Wireless Tools
  *
- *		Jean II - HPLB 97->99 - HPL 99->04
+ *		Jean II - HPLB 97->99 - HPL 99->07
  *
  * The changelog...
  *
@@ -623,6 +623,8 @@
  *	---
  *	o Introduce WE_MAX_VERSION to take into account forward compat [iwlib]
  *	o Add WE-20 headers, compile with that as default
+ *	---
+ *	o Fix 'inline' for gcc-4 as well. Grrr... [iwlib]
  *
  * wireless 29 :
  * -----------
@@ -655,6 +657,89 @@
  *	o Add WE_ESSENTIAL compile option to drop 10kB [Makefile]
  *	---
  *	o Update manpages with new features above [man]
+ *	---
+ *	o Add temp variable to sscanf() to fix 64 bits issues [iwconfig]
+ *	o De-inline get_pm_value/get_retry_value to reduce footprint [iwlist]
+ *	o Optimise iw_print_ie_cipher/iw_print_ie_auth [iwlist]
+ *	o Add "Memory footprint reduction" section in doc [README]
+ *	o Add 'last' scan option for left-over scan [iwlist]
+ *		(From Stavros Markou <smarkou@patras.atmel.com>)
+ *	o Add 'essid' scan option for directed scan [iwlist]
+ *	---
+ *		(Bug reported by Henrik Brix Andersen <brix@gentoo.org>)
+ *	o Fix segfault on setting bitrate (parse wrong arg) [iwconfig]
+ *	---
+ *	o Revert 'CC=gcc' to normal [Makefile]
+ *	o Integrate properly patch below [iwlist]
+ *		(From Brian Eaton <eaton.lists@gmail.com>)
+ *	o More WPA support : iwlist auth/wpakeys/genie [iwlist]
+ *	---
+ *	o Tweak man pages : interface is often optional [iwlist.8/iwspy.8]
+ *	o Drop obsolete port/roam code from [iwpriv]
+ *		(From Pavel Roskin <proski@gnu.org>)
+ *	o Fix bug where all auth masks use iw_auth_capa_name [iwlist]
+ *		(From Dima Ryazanov <someone@berkeley.edu>)
+ *	o Fix iw_scan()/iw_process_scan() for non-root -> EPERM [iwlib]
+ *		(Bug reported by Arkadiusz Miskiewicz <arekm@pld-linux.org>)
+ *	o Fix "iwconfig nickname" (was abreviated) [iwconfig]
+ *		(Bug reported by Charles Plessy)
+ *	o Invalid mode from driver segfault iwlist scan [iwlist]
+ *		(From Aurelien Jacobs <aurel@gnuage.org>)
+ *	o Replace index() with strchr() [iwlib/iwconfig/iwpriv]
+ *		(From Jens Thoms Toerring)
+ *	o Parser/printf/sscanf fixes and optimisation [iwconfig]
+ *	---
+ *		(From Pavel Roskin <proski@gnu.org>)
+ *	o Fix bug extracting mountpoint of sysfs (wrong field) [ifrename]
+ *		(Suggested by Pavel Roskin <proski@gnu.org>)
+ *	o Read sysfs symlinks transparently [ifrename]
+ *	---
+ *	o Fix README header to talk about ifrename [README]
+ *	o Add 'prevname' selector for udev compatibility [ifrename]
+ *	o Read parent directory names in SYSFS selector [ifrename]
+ *	o Make dry-run output compatible with udev [ifrename]
+ *	o Update man page with useful SYSFS selectors [iftab.5]
+ *	---
+ *	o Factorise wildcard rewrite '*'->'%d' to hide it from -D -V [ifrename]
+ *	o Reorganise sysfs description, better wording [iftab.5]
+ *		(Suggested by Pavel Roskin <proski@gnu.org>)
+ *	o Enhance explanation of arp and iwproto [iftab.5]
+ *	---
+ *		(Bug reported by Johannes Berg <johannes@sipsolutions.net>)
+ *	o Band-aid for the 64->32bit iwevent/iwscan issues [iwlib]
+ *	---
+ *	o Better band-aid for the 64->32bit iwevent/iwscan issues [iwlib]
+ *		(Suggested by Kay Sievers <kay.sievers@vrfy.org>)
+ *	o Add udev compatible output, print new DEVPATH [ifrename]
+ *	---
+ *	o Fix DEVPATH output to use the real devpath from udev [ifrename]
+ *	o Add udev rules for ifrename integration [19-udev-ifrename.rules]
+ *	---
+ *	o Add largest bitrate in easy scan API [iwlib]
+ *	---
+ *	o Debug version : output IW_EV_LCP_LEN [iwlist]
+ *	---
+ *		(Bug reported by Santiago Gala/Roy Marples)
+ *	o Fix 64->32bit band-aid on 64 bits, target is local aligned [iwlib]
+ *	---
+ *		(Bug reported by Santiago Gala/Roy Marples)
+ *	o More fix to the 64->32bit band-aid on 64 bits [iwlib]
+ *	---
+ *		(Bug reported by Dimitris Kogias)
+ *	o Fix GENIE parsing os chipher/key_mngt [iwlist]
+ *		(Bug reported by Guus Sliepen <guus@debian.org>)
+ *	o Compiler warning on DEBUG code [iwlist]
+ *	---
+ *	o --version output WE_MAX_VERSION instead of WE_VERSION [iwlib]
+ *	o Change iwstats dBm range to [-192;63] in iw_print_stats() [iwlib.c]
+ *	o Implement iwstats IW_QUAL_RCPI in iw_print_stats()  [iwlib.c]
+ *		(Bug reported by Guus Sliepen <guus@sliepen.eu.org>)
+ *	o LINUX_VERSION_CODE removed, only use GENERIC_HEADERS [iwlib.h]
+ *		(Bug reported by Johan Danielsson <joda11147@gmail.com>)
+ *	o Fix OUI type check for WPA 1 IE [iwlist.c]
+ *	---
+ *		(Bug reported by Florent Daignière)
+ *	o Don't look for "fixed" out of array in set_txpower_info() [iwconfig]
  */
 
 /* ----------------------------- TODO ----------------------------- */
@@ -665,10 +750,7 @@
  * --------
  *	Make disable a per encryption key modifier if some hardware
  *	requires it.
- *
- * iwpriv :
- * ------
- *	Remove 'port' and 'roam' cruft now that we have mode in iwconfig
+ *	IW_QUAL_RCPI
  *
  * iwspy :
  * -----
