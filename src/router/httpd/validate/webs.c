@@ -1825,6 +1825,12 @@ void remove_vifs_single(char *prefix)
 	    nvram_unset("aoss_vifs");
 	    nvram_commit();
 	    }
+	if (strlen(nvram_safe_get("aossa_vifs")))
+	    {
+	    nvram_unset("ath1_vifs");
+	    nvram_unset("aossa_vifs");
+	    nvram_commit();
+	    }
 #endif
 }
 
