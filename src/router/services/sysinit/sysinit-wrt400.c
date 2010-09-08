@@ -108,9 +108,6 @@ void start_sysinit(void)
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
-		for (i = 5; i >= 3; i--)
-			if (++mactmp[i] != 0x00)
-				break;	// dont know what this is 
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
