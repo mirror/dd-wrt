@@ -72,7 +72,13 @@ static struct mtd_info *bcm947xx_mtd;
 #define ROUTER_NETGEAR_WNDR3300        3
 #define ROUTER_NETGEAR_WNR3500L        4
 #define ROUTER_NETGEAR_WNR2000V2       5
+#define ROUTER_BELKIN_F7D4302          6
 
+/* Belkin Play series */
+#define TRX_MAGIC_F7D4302              0x20091006	/* router's birthday ? */
+#define TRX_MAGIC_QA                   0x12345678	/* cfe: It's QA firmware */
+
+/* Netgear wgr614 */
 #define WGR614_CHECKSUM_BLOCK_START    0x003A0000
 #define WGR614_CHECKSUM_OFF            0x003AFFF8
 #define WGR614_FAKE_LEN                0x00000004  //we fake checksum only over 4 bytes (HDR0)
@@ -112,6 +118,12 @@ static int get_router (void)
 	  && nvram_match ("boardtype", "0xE4CD")
 	  && nvram_match ("boardrev", "0x1700") ) {
 		return ROUTER_NETGEAR_WNR2000V2;  //Netgear WNR2000v2	
+	}
+	
+	if (boardnum == 12345
+	  && nvram_match("boardtype", "0xa4cf")
+	  && nvram_match("boardrev", "0x1102")) {
+		return ROUTER_BELKIN_F7D4302;  //Belkin F7D4302v1
 	}
 	
 	return 0;
@@ -180,6 +192,13 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 
 		/* found a TRX header */
 		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
+			goto found;
+		}
+		
+		/* found a Belkin Play TRX header */
+		if (get_router() == ROUTER_BELKIN_F7D4302
+		  && (le32_to_cpu(trx->magic) == TRX_MAGIC_F7D4302 || le32_to_cpu(trx->magic) == TRX_MAGIC_QA)) {
+		    printk(KERN_EMERG  "Found Belkin Play magic\n");
 			goto found;
 		}
 	}
@@ -293,6 +312,19 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 
 		/* found a TRX header */
 		if (le32_to_cpu(trx.magic) == TRX_MAGIC) {
+			part->offset = le32_to_cpu(trx.offsets[2]) ? : 
+				le32_to_cpu(trx.offsets[1]);
+			part->size = le32_to_cpu(trx.len); 
+
+			part->size -= part->offset;
+			part->offset += off;
+
+			goto found;
+		}
+		
+		/* found a Belkin Play TRX header */
+		if (get_router() == ROUTER_BELKIN_F7D4302
+		  && (le32_to_cpu(trx.magic) == TRX_MAGIC_F7D4302 || le32_to_cpu(trx.magic) == TRX_MAGIC_QA)) {
 			part->offset = le32_to_cpu(trx.offsets[2]) ? : 
 				le32_to_cpu(trx.offsets[1]);
 			part->size = le32_to_cpu(trx.len); 
