@@ -232,6 +232,9 @@ endif
 ifeq ($(CONFIG_ALFAAP94),y)
 	cp $(LINUXDIR)/.config_alfaap94 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WZRHPAG300NH),y)
+	cp $(LINUXDIR)/.config_wzrhpag300nh $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
 else
@@ -401,18 +404,8 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 	
-	
-	
         # Prepare filesystem
-ifeq ($(CONFIG_ATH9K),y)
-ifneq ($(CONFIG_HOTPLUG2),y)
-	cd $(TARGETDIR) && $(TOP)/misc/rootprep_ath9k.sh
-else
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
-endif
-else
-	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
-endif
         # Make sure mksquashfs-2.0 is used
 #	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
@@ -475,6 +468,11 @@ ifeq ($(CONFIG_AP83),y)
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap83-firmware.bin $(ARCH)-uclibc/aligned.uimage
 endif
+ifeq ($(CONFIG_AP96),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap96-firmware.bin $(ARCH)-uclibc/aligned.uimage
+endif
 ifeq ($(CONFIG_AP94),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
@@ -499,6 +497,19 @@ else
 	tools/bufenc/mkfw -hw_ver=3 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "3.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg301nh-firmware.enc $(ARCH)-uclibc/wzrg301nh-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 endif
 endif
+
+ifeq ($(CONFIG_WZRHPAG300NH),y)
+	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300nh-firmware.tftp
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
+	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
+	tools/bufenc/mkfw-multi -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-AG300H" "1.74" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
+else
+	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-AG300H" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+endif
+endif
+
+
 ifeq ($(CONFIG_RSPRO),y)
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/rspro-firmware.bin $(ARCH)-uclibc/vmlinux.lsx
 	tools/ubnt/src/mkfwimage -v RSPRO.ar7100pro.DD-WRT -o mips-uclibc/RSPRO.dd-wrt.bin -i tools/ubnt/rs-ddwrt.txt
