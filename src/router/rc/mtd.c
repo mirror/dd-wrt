@@ -215,7 +215,6 @@ int mtd_write(const char *path, const char *mtd)
 	int ret = -1;
 	int i;
 	unsigned char lzmaloader[4096];
-
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
@@ -737,6 +736,11 @@ fail:
 	eval("mtd", "-f", "write", "/tmp/bdata", "bdata");
 #endif
 #endif
+#endif
+#ifdef HAVE_WZRHPAG300NH
+	// must delete checksum, otherwise device will not boot anymore. the checksum gets recreated by the bootloader
+	if (!ret)
+	    sysprintf("ubootenv del buf_crc");
 #endif
 	// eval("fischecksum");
 
