@@ -183,85 +183,120 @@ extern void *getUEnv(char *name);
 static void buffalo_defaults(int force)
 {
 	if (nvram_get("ath0_akm") == NULL || force) {
-		char *mode_ex = getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
-		if (!mode_ex)
-		    mode_ex = getUEnv("DEF-p_wireless_ath00_11bg-authmode_ex");
-		if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
-			char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
-			if (!mode)
-			    mode = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
-			if (!mode)
-				return;
-			if (!strcmp(mode, "psk")) {
-				nvram_set("ath0_akm", "psk psk2");
-				nvram_set("ath0_security_mode", "psk psk2");
+		{
+			char *mode_ex =
+			    getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
+			if (!mode_ex)
+				mode_ex =
+				    getUEnv
+				    ("DEF-p_wireless_ath00_11bg-authmode_ex");
+			if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
+				char *mode =
+				    getUEnv
+				    ("DEF-p_wireless_ath0_11bg-authmode");
+				if (!mode)
+					mode =
+					    getUEnv
+					    ("DEF-p_wireless_ath00_11bg-authmode");
+				if (!mode)
+					return;
+				if (!strcmp(mode, "psk")) {
+					nvram_set("ath0_akm", "psk psk2");
+					nvram_set("ath0_security_mode",
+						  "psk psk2");
+				}
+				if (!strcmp(mode, "psk2")) {
+					nvram_set("ath0_akm", "psk psk2");
+					nvram_set("ath0_security_mode",
+						  "psk psk2");
+				}
+			} else {
+				char *mode =
+				    getUEnv
+				    ("DEF-p_wireless_ath0_11bg-authmode");
+				if (!mode)
+					mode =
+					    getUEnv
+					    ("DEF-p_wireless_ath00_11bg-authmode");
+				if (mode) {
+					nvram_set("ath0_akm", mode);
+					nvram_set("ath0_security_mode", mode);
+				} else
+					return;
 			}
-			if (!strcmp(mode, "psk2")) {
-				nvram_set("ath0_akm", "psk psk2");
-				nvram_set("ath0_security_mode", "psk psk2");
-			}
-		} else {
-			char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
-			if (!mode)
-			    mode  = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
-			if (mode) {
-				nvram_set("ath0_akm", mode);
-				nvram_set("ath0_security_mode", mode);
-			} else
-				return;
+
+			char *crypto =
+			    getUEnv("DEF-p_wireless_ath0_11bg-crypto");
+			if (!crypto)
+				crypto =
+				    getUEnv("DEF-p_wireless_ath00_11bg-crypto");
+			if (crypto)
+				nvram_set("ath0_crypto", crypto);
+			char *wpapsk =
+			    getUEnv("DEF-p_wireless_ath0_11bg-wpapsk");
+			if (!wpapsk)
+				wpapsk =
+				    getUEnv("DEF-p_wireless_ath00_11bg-wpapsk");
+			if (wpapsk)
+				nvram_set("ath0_wpa_psk", wpapsk);
 		}
-
-		char *crypto = getUEnv("DEF-p_wireless_ath0_11bg-crypto");
-		if (!crypto)
-		    crypto = getUEnv("DEF-p_wireless_ath00_11bg-crypto");
-		if (crypto)
-			nvram_set("ath0_crypto", crypto);
-		char *wpapsk = getUEnv("DEF-p_wireless_ath0_11bg-wpapsk");
-		if (!wpapsk)
-		    wpapsk = getUEnv("DEF-p_wireless_ath00_11bg-wpapsk");
-		if (wpapsk)
-			nvram_set("ath0_wpa_psk", wpapsk);
-
 
 #ifdef HAVE_WZRHPAG300NH
-		char *mode_ex = getUEnv("DEF-p_wireless_ath1_11a-authmode_ex");
-		if (!mode_ex)
-		    mode_ex = getUEnv("DEF-p_wireless_ath10_11a-authmode_ex");
-		if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
-			char *mode = getUEnv("DEF-p_wireless_ath1_11a-authmode");
-			if (!mode)
-			    mode = getUEnv("DEF-p_wireless_ath10_11a-authmode");
-			if (!mode)
-				return;
-			if (!strcmp(mode, "psk")) {
-				nvram_set("ath1_akm", "psk psk2");
-				nvram_set("ath1_security_mode", "psk psk2");
+		{
+			char *mode_ex =
+			    getUEnv("DEF-p_wireless_ath1_11a-authmode_ex");
+			if (!mode_ex)
+				mode_ex =
+				    getUEnv
+				    ("DEF-p_wireless_ath10_11a-authmode_ex");
+			if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
+				char *mode =
+				    getUEnv("DEF-p_wireless_ath1_11a-authmode");
+				if (!mode)
+					mode =
+					    getUEnv
+					    ("DEF-p_wireless_ath10_11a-authmode");
+				if (!mode)
+					return;
+				if (!strcmp(mode, "psk")) {
+					nvram_set("ath1_akm", "psk psk2");
+					nvram_set("ath1_security_mode",
+						  "psk psk2");
+				}
+				if (!strcmp(mode, "psk2")) {
+					nvram_set("ath1_akm", "psk psk2");
+					nvram_set("ath1_security_mode",
+						  "psk psk2");
+				}
+			} else {
+				char *mode =
+				    getUEnv("DEF-p_wireless_ath1_11a-authmode");
+				if (!mode)
+					mode =
+					    getUEnv
+					    ("DEF-p_wireless_ath10_11a-authmode");
+				if (mode) {
+					nvram_set("ath1_akm", mode);
+					nvram_set("ath1_security_mode", mode);
+				} else
+					return;
 			}
-			if (!strcmp(mode, "psk2")) {
-				nvram_set("ath1_akm", "psk psk2");
-				nvram_set("ath1_security_mode", "psk psk2");
-			}
-		} else {
-			char *mode = getUEnv("DEF-p_wireless_ath1_11a-authmode");
-			if (!mode)
-			    mode  = getUEnv("DEF-p_wireless_ath10_11a-authmode");
-			if (mode) {
-				nvram_set("ath1_akm", mode);
-				nvram_set("ath1_security_mode", mode);
-			} else
-				return;
-		}
 
-		char *crypto = getUEnv("DEF-p_wireless_ath1_11a-crypto");
-		if (!crypto)
-		    crypto = getUEnv("DEF-p_wireless_ath10_11a-crypto");
-		if (crypto)
-			nvram_set("ath1_crypto", crypto);
-		char *wpapsk = getUEnv("DEF-p_wireless_ath1_11a-wpapsk");
-		if (!wpapsk)
-		    wpapsk = getUEnv("DEF-p_wireless_ath10_11a-wpapsk");
-		if (wpapsk)
-			nvram_set("ath1_wpa_psk", wpapsk);
+			char *crypto =
+			    getUEnv("DEF-p_wireless_ath1_11a-crypto");
+			if (!crypto)
+				crypto =
+				    getUEnv("DEF-p_wireless_ath10_11a-crypto");
+			if (crypto)
+				nvram_set("ath1_crypto", crypto);
+			char *wpapsk =
+			    getUEnv("DEF-p_wireless_ath1_11a-wpapsk");
+			if (!wpapsk)
+				wpapsk =
+				    getUEnv("DEF-p_wireless_ath10_11a-wpapsk");
+			if (wpapsk)
+				nvram_set("ath1_wpa_psk", wpapsk);
+		}
 #endif
 
 		struct ifreq ifr;
