@@ -69,6 +69,11 @@ static unsigned long calculate_checksum(int action, char *s, int size);
 #define NETGEAR_LEN_CHK_ADDR_8M		0x7AFFF8
 /* end */
 
+/* Belkin Play series */
+#define TRX_MAGIC_F7D4302              0x20091006	/* router's birthday ? */
+#define TRX_MAGIC_QA                   0x12345678	/* cfe: It's QA firmware */
+/* end */
+
 /* 
  * Open an MTD device
  * @param       mtd     path to or partition name of MTD device
@@ -639,6 +644,61 @@ int mtd_write(const char *path, const char *mtd)
 		fprintf(stderr, "Write lzma loader...done.\n");
 
 	}			// end
+	
+	/* Write Belkin Play magic */
+	if (getRouterBrand() == ROUTER_BELKIN_F7D4302) {
+
+		sector_start = 0;
+		unsigned long be_magic = STORE32_LE(TRX_MAGIC_F7D4302);
+		char be_trx[4];
+		
+		memcpy(&be_trx[0], (char *)&be_magic, 4);
+		
+
+		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
+			//fprintf( stderr, "Error seeking the file descriptor\n" );
+			goto fail;
+		}
+
+		free(buf);
+
+		if (!(buf = malloc(mtd_info.erasesize))) {
+			//fprintf( stderr, "Error allocating image block\n");
+			goto fail;
+		}
+
+		memset(buf, 0, mtd_info.erasesize);
+
+		if (read(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
+			//fprintf( stderr, "Error reading first block from MTD device\n" );
+			goto fail;
+		}
+
+		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
+			//fprintf( stderr, "Error seeking the file descriptor\n" );
+			goto fail;
+		}
+
+		erase_info.start = sector_start;
+		erase_info.length = mtd_info.erasesize;
+		ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+
+		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+			//fprintf( stderr, "Error erasing MTD block\n" );
+			goto fail;
+		}
+
+		memcpy(buf, be_trx, 4);	
+
+		if (write(mtd_fd, buf, mtd_info.erasesize) !=
+		    mtd_info.erasesize) {
+			//fprintf( stderr, "Error writing Belkin magic to MTD device\n" );
+			goto fail;
+		}
+
+		fprintf(stderr, "Write Belkin magic...done.\n");
+
+	}		// end
 
 	ret = 0;
 
