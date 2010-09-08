@@ -1325,22 +1325,22 @@ void ej_sas_show_security(webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_MADWIFI
 	int c = get_wl_instances();
 
-	//for (i = 0; i < c; i++) {
+	for (i = 0; i < c; i++) {
 	char buf[16];
 
 	sprintf(buf, "wl%d", i);
 	sas_show_security_single(wp, argc, argv, buf);
-	//}
+	}
 	return;
 #else
 	int c = getdevicecount();
 
-	//for (i = 0; i < c; i++) {
+	for (i = 0; i < c; i++) {
 	char buf[16];
 
 	sprintf(buf, "ath%d", i);
 	sas_show_security_single(wp, argc, argv, buf);
-	//}
+	}
 	return;
 #endif
 }
@@ -1576,24 +1576,24 @@ void ej_sas_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
 	int c = get_wl_instances();
 	int i = 0;
 
-	//for (i = 0; i < c; i++) {
+	for (i = 0; i < c; i++) {
 	char buf[16];
 
 	sprintf(buf, "wl%d", i);
 	sas_init_80211x_layers(wp, buf);
-	//}
+	}
 	return;
 #else
 	int c = getdevicecount();
 	int i = 0;
 
-	//for (i = 0; i < c; i++) {
+	for (i = 0; i < c; i++) {
 	char buf[16];
 
 	sprintf(buf, "ath%d", i);
 	if (nvram_selnmatch(wp, "8021X", "%s_security_mode", buf))
 		sas_init_80211x_layers(wp, buf);
-	//}
+	}
 	return;
 #endif
 
