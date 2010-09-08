@@ -129,6 +129,66 @@ void ap_usb_led_off(void)
 EXPORT_SYMBOL(ap_usb_led_off);
 
 
+typedef	u32					gpio_words;
+#define	GPIO_IGN_MASK		(GPIO_PIN(0) | GPIO_PIN(9) | GPIO_PIN(10))			//IGNORE  GPIO[0]:SI_CS1, GPIO[9-10]:UART
+
+#define	GPIO_PIN_MAX		12
+#define	GPIO_PIN(n)			(1 << (n))
+#define	GPIO_PIN_MASK(_VAL)	(((gpio_words)(_VAL)) & (((((gpio_words)1)<<GPIO_PIN_MAX)-1) & (~(gpio_words)GPIO_IGN_MASK)) )
+
+
+#define	GPIO_WL0_MAX		10
+#define	GPIO_WL0(n)			(1 << ((n)+GPIO_PIN_MAX))
+#define	GPIO_WL0_ADDR		KSEG1ADDR(AR7100_PCI_MEM_BASE + 0x4048)				//AR9220 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0000000 + OFFSET [0x4048]
+#define	GPIO_WL0_MASK(_VAL)	(((gpio_words)(_VAL)) & (((gpio_words)1<<GPIO_WL0_MAX)-1))
+#define	GPIO_WL0_TO(_VAL)	GPIO_WL0_MASK(((gpio_words)(_VAL))>>(GPIO_PIN_MAX))	//the value to AR9220 register
+#define	GPIO_WL0_FROM(_VAL)	(GPIO_WL0_MASK(_VAL)<<(GPIO_PIN_MAX))				//the value from AR9220 register
+
+#define	GPIO_WL1_MAX		10
+#define	GPIO_WL1(n)			(1 << ((n)+GPIO_PIN_MAX+GPIO_WL0_MAX))
+#define	GPIO_WL1_ADDR		KSEG1ADDR(AR7100_PCI_MEM_BASE + 0x00010000 + 0x4048)				//AR9223 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0010000 + OFFSET [0x4048]
+#define	GPIO_WL1_MASK(_VAL)	(((gpio_words)(_VAL)) & (((gpio_words)1<<GPIO_WL1_MAX)-1))
+#define	GPIO_WL1_TO(_VAL)	GPIO_WL1_MASK(((gpio_words)(_VAL))>>(GPIO_PIN_MAX+GPIO_WL0_MAX))	//the value to AR9223 register
+#define	GPIO_WL1_FROM(_VAL)	(GPIO_WL1_MASK(_VAL)<<(GPIO_PIN_MAX+GPIO_WL0_MAX))					//the value from AR9223 register
+
+
+int get_wl0_gpio(int gpio)
+{
+	register	gpio_words	wl0	= (gpio_words)ar7100_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
+        if (wl0&(1<<gpio));
+    	    return 1;
+    	return 0;
+}
+int get_wl1_gpio(int gpio)
+{
+	register	gpio_words	wl1	= (gpio_words)ar7100_reg_rd(GPIO_WL1_ADDR);	//ar9280 register [0x4048]
+        if (wl1&(1<<gpio));
+    	    return 1;
+    	return 0;
+}
+
+void set_wl0_gpio(int gpio,int val)
+{
+	register	gpio_words	wl0	= (gpio_words)ar7100_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
+	if (val)
+	    wl0|=1<<gpio;
+	else
+	    wl0&=(~(1<<gpio));
+	ar7100_reg_rmw_set(GPIO_WL0_ADDR, wl0);	//ar9283 register [0x4048]
+	ar7100_reg_rmw_clear(GPIO_WL0_ADDR, wl0);
+}
+
+void set_wl1_gpio(int gpio,int val)
+{
+	register	gpio_words	wl1	= (gpio_words)ar7100_reg_rd(GPIO_WL1_ADDR);	//ar9280 register [0x4048]
+	if (val)
+	wl1|=1<<gpio;
+	else
+	wl1&=(~(1<<gpio));
+	
+	ar7100_reg_rmw_set(GPIO_WL0_ADDR, wl1);	//ar9283 register [0x4048]
+	ar7100_reg_rmw_clear(GPIO_WL0_ADDR, wl1);
+}
 
 
 #define NXP_74HC153_NUM_GPIOS	8
@@ -190,6 +250,7 @@ gpio_proc_read(char *buf, char **start, off_t offset,
 		*eof = 1;
 		return (2);
 	}
+	    
 	u32 reg = 0;
 	if ((unsigned int)data & GPIO_IN)
 		reg = ar7100_reg_rd(AR7100_GPIO_IN);

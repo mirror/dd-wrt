@@ -323,6 +323,8 @@ config MTD_AR9100_PARALLEL_FLASH
 config WZR_HP_G300NH 
 	bool "support for buffalo WZR G300NH"
 	depends on MTD_AR9100_PARALLEL_FLASH
+config WZRAG300NH 
+	bool "support for buffalo WZR HP AG G300NH"
 config MTD_AR7240_SPI_FLASH
 	bool "Support for ar7240 spi flash"
 	depends on MTD && MACH_AR7240
