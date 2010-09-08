@@ -1,14 +1,14 @@
 /*
  *	Wireless Tools
  *
- *		Jean II - HPLB 97->99 - HPL 99->04
+ *		Jean II - HPLB 97->99 - HPL 99->07
  *
  * Main code for "iwconfig". This is the generic tool for most
  * manipulations...
  * You need to link this code against "iwlib.c" and "-lm".
  *
  * This file is released under the GPL license.
- *     Copyright (c) 1997-2004 Jean Tourrilhes <jt@hpl.hp.com>
+ *     Copyright (c) 1997-2007 Jean Tourrilhes <jt@hpl.hp.com>
  */
 
 #include "iwlib.h"		/* Header */
@@ -384,9 +384,9 @@ set_private_cmd(int		skfd,		/* Socket */
 		printf("Invalid float [%s]...\n", args[i]);
 		return(-1);
 	      }    
-	    if(index(args[i], 'G')) freq *= GIGA;
-	    if(index(args[i], 'M')) freq *= MEGA;
-	    if(index(args[i], 'k')) freq *= KILO;
+	    if(strchr(args[i], 'G')) freq *= GIGA;
+	    if(strchr(args[i], 'M')) freq *= MEGA;
+	    if(strchr(args[i], 'k')) freq *= KILO;
 	    sscanf(args[i], "%i", &temp);
 	    iw_float2freq(freq, ((struct iw_freq *) buffer) + i);
 	  }
@@ -690,6 +690,7 @@ print_priv_all(int		skfd,
  * Convenient access to some private ioctls of some devices
  */
 
+#if 0
 /*------------------------------------------------------------------*/
 /*
  * Set roaming mode on and off
@@ -905,6 +906,7 @@ port_type(int		skfd,		/* Socket */
   free(priv);
   return(-1);
 }
+#endif
 
 /******************************* MAIN ********************************/
 
@@ -954,6 +956,7 @@ main(int	argc,
 	       (!strcmp(argv[2], "--all")))
 	      print_priv_all(skfd, argv[1], NULL, 0);
 	    else
+#if 0
 	      /* Roaming */
 	      if(!strncmp(argv[2], "roam", 4))
 		goterr = set_roaming(skfd, argv + 3, argc - 3, argv[1]);
@@ -962,6 +965,7 @@ main(int	argc,
 		if(!strncmp(argv[2], "port", 4))
 		  goterr = port_type(skfd, argv + 3, argc - 3, argv[1]);
 		else
+#endif
 		  /*-------------*/
 		  /* Otherwise, it's a private ioctl */
 		  goterr = set_private(skfd, argv + 2, argc - 2, argv[1]);
