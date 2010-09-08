@@ -668,7 +668,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 					nvram_nget("%s_wpa_psk", prefix));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
 #ifdef HAVE_WPS
-			if (!strcmp(prefix, "ath0")) {
+			if (!strcmp(prefix, "ath0") || !strcmp(prefix, "ath1")) {
 				fprintf(fp, "eap_server=1\n");
 				fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
 
