@@ -2056,6 +2056,8 @@ void *getUEnv(char *name)
 #ifdef HAVE_WZRG300NH
 #define UOFFSET 0x40000
 #elif HAVE_WZRHPAG300NH
+#define UOFFSET 0x40000
+#else
 #define UOFFSET 0x3E000
 #endif
 	static char res[64];
