@@ -289,6 +289,7 @@ static struct mtd_partition dir_parts[] = {
       {name: "FIS directory", offset: 0x3e0000, size:0x10000,},
       {name: "board_config", offset: 0x3f0000, size:0x10000,},
       {name: "fullflash", offset: 0x3f0000, size:0x10000,},
+      {name: "uboot-env", offset: 0x40000, size:0x10000,},
       {name:NULL,},
 };
 
@@ -741,7 +742,7 @@ static int __init ar7100_flash_init (void)
 		}
 		dir_parts[7].offset = 0;	// linux + nvram = phy size
 		dir_parts[7].size = mtd->size;	// linux + nvram = phy size
-		add_mtd_partitions(mtd, dir_parts, 8);
+		add_mtd_partitions(mtd, dir_parts, 9);
 
     return 0;
 }
