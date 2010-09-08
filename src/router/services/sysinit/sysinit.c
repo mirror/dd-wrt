@@ -185,7 +185,7 @@ static void buffalo_defaults(int force)
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *mode_ex = getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
 		if (!mode_ex)
-		    mode_ex = getUEnv("DEF-p_wireless_ath00_11bg-authmode_ex")
+		    mode_ex = getUEnv("DEF-p_wireless_ath00_11bg-authmode_ex");
 		if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 			char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
 			if (!mode)
@@ -203,7 +203,7 @@ static void buffalo_defaults(int force)
 		} else {
 			char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
 			if (!mode)
-			    mode  = getUEnv("DEF-p_wireless_ath00_11bg-authmode")
+			    mode  = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
 			if (mode) {
 				nvram_set("ath0_akm", mode);
 				nvram_set("ath0_security_mode", mode);
@@ -226,7 +226,7 @@ static void buffalo_defaults(int force)
 #ifdef HAVE_WZRHPAG300NH
 		char *mode_ex = getUEnv("DEF-p_wireless_ath1_11a-authmode_ex");
 		if (!mode_ex)
-		    mode_ex = getUEnv("DEF-p_wireless_ath10_11a-authmode_ex")
+		    mode_ex = getUEnv("DEF-p_wireless_ath10_11a-authmode_ex");
 		if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 			char *mode = getUEnv("DEF-p_wireless_ath1_11a-authmode");
 			if (!mode)
@@ -244,7 +244,7 @@ static void buffalo_defaults(int force)
 		} else {
 			char *mode = getUEnv("DEF-p_wireless_ath1_11a-authmode");
 			if (!mode)
-			    mode  = getUEnv("DEF-p_wireless_ath10_11a-authmode")
+			    mode  = getUEnv("DEF-p_wireless_ath10_11a-authmode");
 			if (mode) {
 				nvram_set("ath1_akm", mode);
 				nvram_set("ath1_security_mode", mode);
