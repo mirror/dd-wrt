@@ -1,7 +1,7 @@
-.\" Jean II - HPL - 2004
+.\" Jean II - HPL - 2004-2007
 .\" iftab.5
 .\"
-.TH IFTAB 5 "01 March 2004" "wireless-tools" "Linux Programmer's Manual"
+.TH IFTAB 5 "26 February 2007" "wireless-tools" "Linux Programmer's Manual"
 .\"
 .\" NAME part
 .\"
@@ -98,7 +98,9 @@ the goal is to uniquely identify each piece of hardware.
 .PP
 Most users will only use the
 .B mac
-selector, other selectors are for more specialised setup.
+selector despite its potential problems, other selectors are for more
+specialised setup. Most selectors accept a '*' in the selector value
+for wilcard matching, and most selectors are case insensitive.
 .TP
 .BI mac " mac address"
 Matches the MAC Address of the interface with the specified MAC
@@ -106,19 +108,27 @@ address. The MAC address of the interface can be shown using
 .IR ifconfig (8)
 or
 .IR ip (8).
-The specified MAC address may contain a '*' for wilcard matching.
 .br
 This is the most common selector, as most interfaces have a unique MAC
 address allowing to identify network interfaces without ambiguity.
 However, some interfaces don't have a valid MAC address until they are
-brought up, in such case using this selector is tricky.
+brought up, in such case using this selector is tricky or impossible.
 .TP
 .BI arp " arp type"
 Matches the ARP Type (also called Link Type) of the interface with the
-specified ARP type. The ARP Type of the interface can be shown using
+specified ARP type as a number. The ARP Type of the interface can be
+shown using
 .IR ifconfig (8)
 or
-.IR ip (8).
+.IR ip (8),
+the
+.B link/ether
+type correspond to
+.B 1
+and the
+.B link/ieee802.11
+type correspond to
+.BR 801 .
 .br
 This selector is useful when a driver create multiple network
 interfaces for a single network card.
@@ -159,7 +169,9 @@ not sufficient to uniquely identify an interface.
 Matches the Wireless Protocol of the interface with the specified
 wireless protocol. The Wireless Protocol of the interface can be shown
 using
-.IR iwconfig (8).
+.IR iwconfig (8)
+or
+.IR iwgetid (8).
 .br
 This selector is only supported on wireless interfaces and is not
 sufficient to uniquely identify an interface.
@@ -174,21 +186,97 @@ This selector is usually only supported on 16 bits cards, for 32 bits
 cards it is advised to use the selector
 .BR businfo .
 .TP
-.BI SYSFS{ filename } " value"
-Matches the sysfs attribute given by filename to the specified value. sysfs attributes of the interface can be read in one of the directory in the directory 
-.IR /sys/class/net/ .
-For example, the filename
-.I address
-is the MAC address of the device and should be identical to the selector
-.BR mac .
+.BI prevname " previous interface name"
+Matches the name of the interface prior to renaming with the specified
+oldname.
 .br
+This selector should be avoided as the previous interface name may
+vary depending on various condition. A system/kernel/driver update may
+change the original name. Then, ifrename or another tool may rename it
+prior to the execution of this selector.
+.TP
+.BI SYSFS{ filename } " value"
+Matches the content the sysfs attribute given by filename to the
+specified value. For symlinks and parents directories, match the
+actual directory name of the sysfs attribute given by filename to the
+specified value.
+.br
+A list of the most useful sysfs attributes is given in the next
+section.
+.\"
+.\" SYSFS DESCRIPTORS part
+.\"
+.SH SYSFS DESCRIPTORS
+Sysfs attributes for a specific interface are located on most systems
+in the directory named after that interface at
+.IR /sys/class/net/ .
+Most sysfs attribute are files, and their values can be read using
+.IR cat "(1) or " more (1).
+It is also possible to match attributes in subdirectories.
+.PP
+Some sysfs attributes are symlinks, pointing to another directory in
+sysfs. If the attribute filename is a symlink the sysfs attribute
+resolves to the name of the directory pointed by the symlink using
+.IR readlink (1).
+The location is a directory in the sysfs tree is also important. If
+the attribute filename ends with
+.IR /.. ,
+the sysfs attribute resolves to the real name of the parent directory
+using
+.IR pwd (1).
+.PP
 The sysfs filesystem is only supported with 2.6.X kernel and need to
-be mounted. sysfs selectors are not as efficient as other selectors,
-therefore they should be avoided for maximum performance.
+be mounted (usually in 
+.IR /sys ).
+sysfs selectors are not as efficient as other selectors, therefore
+they should be avoided for maximum performance.
+.PP
+These are common sysfs attributes and their corresponding ifrename
+descriptors.
+.TP
+.BI SYSFS{address} " value"
+Same as the
+.B mac
+descriptor.
+.TP
+.BI SYSFS{type} " value"
+Same as the
+.B arp
+descriptor.
+.TP
+.BI SYSFS{device} " value"
+Valid only up to kernel 2.6.20. Same as the
+.B businfo
+descriptor.
+.TP
+.BI SYSFS{..} " value"
+Valid only from kernel 2.6.21. Same as the
+.B businfo
+descriptor.
+.TP
+.BI SYSFS{device/driver} " value"
+Valid only up to kernel 2.6.20. Same as the
+.B driver
+descriptor.
+.TP
+.BI SYSFS{../driver} " value"
+Valid only from kernel 2.6.21. Same as the
+.B driver
+descriptor.
+.TP
+.BI SYSFS{device/irq} " value"
+Valid only up to kernel 2.6.20. Same as the
+.B irq
+descriptor.
+.TP
+.BI SYSFS{../irq} " value"
+Valid only from kernel 2.6.21. Same as the
+.B irq
+descriptor.
 .\"
-.\" EXAMPLE part
+.\" EXAMPLES part
 .\"
-.SH EXAMPLE
+.SH EXAMPLES
 # This is a comment
 .br
 eth2		mac 08:00:09:DE:82:0E
@@ -199,7 +287,11 @@ eth4		driver pcnet32 businfo 0000:02:05.0
 .br
 air*		mac 00:07:0E:* arp 1
 .br
-myvpn	SYSFS{address} 00:10:83:*
+myvpn	SYSFS{address} 00:10:83:* SYSFS{type} 1
+.br
+bcm*		SYSFS{device} 0000:03:00.0 SYSFS{device/driver} bcm43xx
+.br
+bcm*		SYSFS{..} 0000:03:00.0 SYSFS{../driver} bcm43xx
 .\"
 .\" AUTHOR part
 .\"

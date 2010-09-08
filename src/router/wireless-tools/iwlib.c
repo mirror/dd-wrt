@@ -1,12 +1,12 @@
 /*
  *	Wireless Tools
  *
- *		Jean II - HPLB 97->99 - HPL 99->04
+ *		Jean II - HPLB 97->99 - HPL 99->07
  *
  * Common subroutines to all the wireless tools...
  *
  * This file is released under the GPL license.
- *     Copyright (c) 1997-2004 Jean Tourrilhes <jt@hpl.hp.com>
+ *     Copyright (c) 1997-2007 Jean Tourrilhes <jt@hpl.hp.com>
  */
 
 /***************************** INCLUDES *****************************/
@@ -99,7 +99,8 @@ const char * const iw_operation_mode[] = { "Auto",
 					"Master",
 					"Repeater",
 					"Secondary",
-					"Monitor" };
+					"Monitor",
+					"Unknown/bug" };
 
 /* Modulations as human readable strings */
 const struct iw_modul_descr	iw_modul_list[] = {
@@ -443,7 +444,7 @@ iw_print_version_info(const char *	toolname)
   if(toolname != NULL)
     printf("%-8.16s  Wireless-Tools version %d\n", toolname, WT_VERSION);
   printf("          Compatible with Wireless Extension v11 to v%d.\n\n",
-	 WE_VERSION);
+	 WE_MAX_VERSION);
 
   /* Get version from kernel */
   we_kernel_version = iw_get_kernel_we_version();
@@ -557,7 +558,7 @@ iw_get_range_info(int		skfd,
       if(range->we_version_compiled > WE_MAX_VERSION)
 	{
 	  fprintf(stderr, "Warning: Driver for device %s has been compiled with version %d\n", ifname, range->we_version_compiled);
-	  fprintf(stderr, "of Wireless Extension, while this program supports up to version %d.\n", WE_VERSION);
+	  fprintf(stderr, "of Wireless Extension, while this program supports up to version %d.\n", WE_MAX_VERSION);
 	  fprintf(stderr, "Some things may be broken...\n\n");
 	}
 
@@ -596,7 +597,7 @@ iw_get_priv_info(int		skfd,
 {
   struct iwreq		wrq;
   iwprivargs *		priv = NULL;	/* Not allocated yet */
-  int			maxpriv = 256;	/* Minimum for compatibility WE<13 */
+  int			maxpriv = 16;	/* Minimum for compatibility WE<13 */
   iwprivargs *		newpriv;
 
   /* Some driver may return a very large number of ioctls. Some
@@ -717,9 +718,12 @@ iw_get_basic_config(int			skfd,
   /* Get operation mode */
   if(iw_get_ext(skfd, ifname, SIOCGIWMODE, &wrq) >= 0)
     {
-      info->mode = wrq.u.mode;
-      if((info->mode < IW_NUM_OPER_MODE) && (info->mode >= 0))
-	info->has_mode = 1;
+      info->has_mode = 1;
+      /* Note : event->u.mode is unsigned, no need to check <= 0 */
+      if(wrq.u.mode < IW_NUM_OPER_MODE)
+	info->mode = wrq.u.mode;
+      else
+	info->mode = IW_NUM_OPER_MODE;	/* Unknown/bug */
     }
 
   return(0);
@@ -1356,7 +1360,9 @@ iw_print_stats(char *		buffer,
    * Further, on 8 bits, 0x100 == 256 == 0.
    *
    * Relative/percent values are always encoded unsigned, between 0 and 255.
-   * Absolute/dBm values are always encoded negative, between -255 and 0.
+   * Absolute/dBm values are always encoded between -192 and 63.
+   * (Note that up to version 28 of Wireless Tools, dBm used to be
+   *  encoded always negative, between -256 and -1).
    *
    * How do we separate relative from absolute values ?
    * The old way is to use the range to do that. As of WE-19, we have
@@ -1365,7 +1371,7 @@ iw_print_stats(char *		buffer,
    * range struct only specify one bound of the value, we assume that
    * the other bound is 0 (zero).
    * For relative values, range is [0 ; range->max].
-   * For absolute values, range is [range->max ; 0].
+   * For absolute values, range is [range->max ; 63].
    *
    * Let's take two example :
    * 1) value is 75%. qual->value = 75 ; range->max_qual.value = 100
@@ -1379,7 +1385,8 @@ iw_print_stats(char *		buffer,
    * The old way to detect dBm require both the range and a non-null
    * level (which confuse the test). The new way can deal with level of 0
    * because it does an explicit test on the flag. */
-  if(has_range && ((qual->level != 0) || (qual->updated & IW_QUAL_DBM)))
+  if(has_range && ((qual->level != 0)
+		   || (qual->updated & (IW_QUAL_DBM | IW_QUAL_RCPI))))
     {
       /* Deal with quality : always a relative value */
       if(!(qual->updated & IW_QUAL_QUAL_INVALID))
@@ -1391,16 +1398,17 @@ iw_print_stats(char *		buffer,
 	  buflen -= len;
 	}
 
-      /* Check if the statistics are in dBm or relative */
-      if((qual->updated & IW_QUAL_DBM)
-	 || (qual->level > range->max_qual.level))
+      /* Check if the statistics are in RCPI (IEEE 802.11k) */
+      if(qual->updated & IW_QUAL_RCPI)
 	{
-	  /* Deal with signal level in dBm  (absolute power measurement) */
+	  /* Deal with signal level in RCPI */
+	  /* RCPI = int{(Power in dBm +110)*2} for 0dbm > Power > -110dBm */
 	  if(!(qual->updated & IW_QUAL_LEVEL_INVALID))
 	    {
-	      len = snprintf(buffer, buflen, "Signal level%c%d dBm  ",
+	      double	rcpilevel = (qual->level / 2.0) - 110.0;
+	      len = snprintf(buffer, buflen, "Signal level%c%g dBm  ",
 			     qual->updated & IW_QUAL_LEVEL_UPDATED ? '=' : ':',
-			     qual->level - 0x100);
+			     rcpilevel);
 	      buffer += len;
 	      buflen -= len;
 	    }
@@ -1408,29 +1416,63 @@ iw_print_stats(char *		buffer,
 	  /* Deal with noise level in dBm (absolute power measurement) */
 	  if(!(qual->updated & IW_QUAL_NOISE_INVALID))
 	    {
-	      len = snprintf(buffer, buflen, "Noise level%c%d dBm",
+	      double	rcpinoise = (qual->noise / 2.0) - 110.0;
+	      len = snprintf(buffer, buflen, "Noise level%c%g dBm",
 			     qual->updated & IW_QUAL_NOISE_UPDATED ? '=' : ':',
-			     qual->noise - 0x100);
+			     rcpinoise);
 	    }
 	}
       else
 	{
-	  /* Deal with signal level as relative value (0 -> max) */
-	  if(!(qual->updated & IW_QUAL_LEVEL_INVALID))
+	  /* Check if the statistics are in dBm */
+	  if((qual->updated & IW_QUAL_DBM)
+	     || (qual->level > range->max_qual.level))
 	    {
-	      len = snprintf(buffer, buflen, "Signal level%c%d/%d  ",
-			     qual->updated & IW_QUAL_LEVEL_UPDATED ? '=' : ':',
-			     qual->level, range->max_qual.level);
-	      buffer += len;
-	      buflen -= len;
-	    }
+	      /* Deal with signal level in dBm  (absolute power measurement) */
+	      if(!(qual->updated & IW_QUAL_LEVEL_INVALID))
+		{
+		  int	dblevel = qual->level;
+		  /* Implement a range for dBm [-192; 63] */
+		  if(qual->level >= 64)
+		    dblevel -= 0x100;
+		  len = snprintf(buffer, buflen, "Signal level%c%d dBm  ",
+				 qual->updated & IW_QUAL_LEVEL_UPDATED ? '=' : ':',
+				 dblevel);
+		  buffer += len;
+		  buflen -= len;
+		}
 
-	  /* Deal with noise level as relative value (0 -> max) */
-	  if(!(qual->updated & IW_QUAL_NOISE_INVALID))
+	      /* Deal with noise level in dBm (absolute power measurement) */
+	      if(!(qual->updated & IW_QUAL_NOISE_INVALID))
+		{
+		  int	dbnoise = qual->noise;
+		  /* Implement a range for dBm [-192; 63] */
+		  if(qual->noise >= 64)
+		    dbnoise -= 0x100;
+		  len = snprintf(buffer, buflen, "Noise level%c%d dBm",
+				 qual->updated & IW_QUAL_NOISE_UPDATED ? '=' : ':',
+				 dbnoise);
+		}
+	    }
+	  else
 	    {
-	      len = snprintf(buffer, buflen, "Noise level%c%d/%d",
-			     qual->updated & IW_QUAL_NOISE_UPDATED ? '=' : ':',
-			     qual->noise, range->max_qual.noise);
+	      /* Deal with signal level as relative value (0 -> max) */
+	      if(!(qual->updated & IW_QUAL_LEVEL_INVALID))
+		{
+		  len = snprintf(buffer, buflen, "Signal level%c%d/%d  ",
+				 qual->updated & IW_QUAL_LEVEL_UPDATED ? '=' : ':',
+				 qual->level, range->max_qual.level);
+		  buffer += len;
+		  buflen -= len;
+		}
+
+	      /* Deal with noise level as relative value (0 -> max) */
+	      if(!(qual->updated & IW_QUAL_NOISE_INVALID))
+		{
+		  len = snprintf(buffer, buflen, "Noise level%c%d/%d",
+				 qual->updated & IW_QUAL_NOISE_UPDATED ? '=' : ':',
+				 qual->noise, range->max_qual.noise);
+		}
 	    }
 	}
     }
@@ -1833,7 +1875,7 @@ iw_print_retry_value(char *	buffer,
       buffer += 10;
 
       /* Display value without units */
-      if(flags & IW_POWER_RELATIVE)
+      if(flags & IW_RETRY_RELATIVE)
 	{
 	  if(we_version < 21)
 	    value /= MEGA;
@@ -2189,7 +2231,7 @@ iw_in_addr(int		skfd,
 	   struct sockaddr *sap)
 {
   /* Check if it is a hardware or IP address */
-  if(index(bufp, ':') == NULL)
+  if(strchr(bufp, ':') == NULL)
     {
       struct sockaddr	if_address;
       struct arpreq	arp_query;
@@ -2630,17 +2672,17 @@ static const unsigned int standard_event_num = (sizeof(standard_event_descr) /
 
 /* Size (in bytes) of various events */
 static const int event_type_size[] = {
-	IW_EV_LCP_LEN,		/* IW_HEADER_TYPE_NULL */
+	IW_EV_LCP_PK_LEN,	/* IW_HEADER_TYPE_NULL */
 	0,
-	IW_EV_CHAR_LEN,		/* IW_HEADER_TYPE_CHAR */
+	IW_EV_CHAR_PK_LEN,	/* IW_HEADER_TYPE_CHAR */
 	0,
-	IW_EV_UINT_LEN,		/* IW_HEADER_TYPE_UINT */
-	IW_EV_FREQ_LEN,		/* IW_HEADER_TYPE_FREQ */
-	IW_EV_ADDR_LEN,		/* IW_HEADER_TYPE_ADDR */
+	IW_EV_UINT_PK_LEN,	/* IW_HEADER_TYPE_UINT */
+	IW_EV_FREQ_PK_LEN,	/* IW_HEADER_TYPE_FREQ */
+	IW_EV_ADDR_PK_LEN,	/* IW_HEADER_TYPE_ADDR */
 	0,
-	IW_EV_POINT_LEN,	/* Without variable payload */
-	IW_EV_PARAM_LEN,	/* IW_HEADER_TYPE_PARAM */
-	IW_EV_QUAL_LEN,		/* IW_HEADER_TYPE_QUAL */
+	IW_EV_POINT_PK_LEN,	/* Without variable payload */
+	IW_EV_PARAM_PK_LEN,	/* IW_HEADER_TYPE_PARAM */
+	IW_EV_QUAL_PK_LEN,	/* IW_HEADER_TYPE_QUAL */
 };
 
 /*------------------------------------------------------------------*/
@@ -2677,29 +2719,26 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
   /* Don't "optimise" the following variable, it will crash */
   unsigned	cmd_index;		/* *MUST* be unsigned */
 
-  /* Unused for now. Will be later on... */
-  we_version = we_version;
-
   /* Check for end of stream */
-  if((stream->current + IW_EV_LCP_LEN) > stream->end)
+  if((stream->current + IW_EV_LCP_PK_LEN) > stream->end)
     return(0);
 
-#if DEBUG
+#ifdef DEBUG
   printf("DBG - stream->current = %p, stream->value = %p, stream->end = %p\n",
 	 stream->current, stream->value, stream->end);
 #endif
 
   /* Extract the event header (to get the event id).
    * Note : the event may be unaligned, therefore copy... */
-  memcpy((char *) iwe, stream->current, IW_EV_LCP_LEN);
+  memcpy((char *) iwe, stream->current, IW_EV_LCP_PK_LEN);
 
-#if DEBUG
+#ifdef DEBUG
   printf("DBG - iwe->cmd = 0x%X, iwe->len = %d\n",
 	 iwe->cmd, iwe->len);
 #endif
 
   /* Check invalid events */
-  if(iwe->len <= IW_EV_LCP_LEN)
+  if(iwe->len <= IW_EV_LCP_PK_LEN)
     return(-1);
 
   /* Get the type and length of that event */
@@ -2717,28 +2756,28 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
     }
   if(descr != NULL)
     event_type = descr->header_type;
-  /* Unknown events -> event_type=0 => IW_EV_LCP_LEN */
+  /* Unknown events -> event_type=0 => IW_EV_LCP_PK_LEN */
   event_len = event_type_size[event_type];
   /* Fixup for earlier version of WE */
   if((we_version <= 18) && (event_type == IW_HEADER_TYPE_POINT))
     event_len += IW_EV_POINT_OFF;
 
   /* Check if we know about this event */
-  if(event_len <= IW_EV_LCP_LEN)
+  if(event_len <= IW_EV_LCP_PK_LEN)
     {
       /* Skip to next event */
       stream->current += iwe->len;
       return(2);
     }
-  event_len -= IW_EV_LCP_LEN;
+  event_len -= IW_EV_LCP_PK_LEN;
 
   /* Set pointer on data */
   if(stream->value != NULL)
     pointer = stream->value;			/* Next value in event */
   else
-    pointer = stream->current + IW_EV_LCP_LEN;	/* First value in event */
+    pointer = stream->current + IW_EV_LCP_PK_LEN;	/* First value in event */
 
-#if DEBUG
+#ifdef DEBUG
   printf("DBG - event_type = %d, event_len = %d, pointer = %p\n",
 	 event_type, event_len, pointer);
 #endif
@@ -2751,6 +2790,7 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
       return(-2);
     }
   /* Fixup for WE-19 and later : pointer no longer in the stream */
+  /* Beware of alignement. Dest has local alignement, not packed */
   if((we_version > 18) && (event_type == IW_HEADER_TYPE_POINT))
     memcpy((char *) iwe + IW_EV_LCP_LEN + IW_EV_POINT_OFF,
 	   pointer, event_len);
@@ -2764,7 +2804,7 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
   if(event_type == IW_HEADER_TYPE_POINT)
     {
       /* Check the length of the payload */
-      unsigned int	extra_len = iwe->len - (event_len + IW_EV_LCP_LEN);
+      unsigned int	extra_len = iwe->len - (event_len + IW_EV_LCP_PK_LEN);
       if(extra_len > 0)
 	{
 	  /* Set pointer on variable part (warning : non aligned) */
@@ -2779,9 +2819,35 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
 	      /* Those checks are actually pretty hard to trigger,
 	       * because of the checks done in the kernel... */
 
+	      unsigned int	token_len = iwe->u.data.length * descr->token_size;
+
+	      /* Ugly fixup for alignement issues.
+	       * If the kernel is 64 bits and userspace 32 bits,
+	       * we have an extra 4+4 bytes.
+	       * Fixing that in the kernel would break 64 bits userspace. */
+	      if((token_len != extra_len) && (extra_len >= 4))
+		{
+		  __u16		alt_dlen = *((__u16 *) pointer);
+		  unsigned int	alt_token_len = alt_dlen * descr->token_size;
+		  if((alt_token_len + 8) == extra_len)
+		    {
+#ifdef DEBUG
+		      printf("DBG - alt_token_len = %d\n", alt_token_len);
+#endif
+		      /* Ok, let's redo everything */
+		      pointer -= event_len;
+		      pointer += 4;
+		      /* Dest has local alignement, not packed */
+		      memcpy((char *) iwe + IW_EV_LCP_LEN + IW_EV_POINT_OFF,
+			     pointer, event_len);
+		      pointer += event_len + 4;
+		      iwe->u.data.pointer = pointer;
+		      token_len = alt_token_len;
+		    }
+		}
+
 	      /* Discard bogus events which advertise more tokens than
 	       * what they carry... */
-	      unsigned int	token_len = iwe->u.data.length * descr->token_size;
 	      if(token_len > extra_len)
 		iwe->u.data.pointer = NULL;	/* Discard paylod */
 	      /* Check that the advertised token size is not going to
@@ -2792,7 +2858,7 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
 	      /* Same for underflows... */
 	      if(iwe->u.data.length < descr->min_tokens)
 		iwe->u.data.pointer = NULL;	/* Discard paylod */
-#if DEBUG
+#ifdef DEBUG
 	      printf("DBG - extra_len = %d, token_len = %d, token = %d, max = %d, min = %d\n",
 		     extra_len, token_len, iwe->u.data.length, descr->max_tokens, descr->min_tokens);
 #endif
@@ -2807,6 +2873,25 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
     }
   else
     {
+      /* Ugly fixup for alignement issues.
+       * If the kernel is 64 bits and userspace 32 bits,
+       * we have an extra 4 bytes.
+       * Fixing that in the kernel would break 64 bits userspace. */
+      if((stream->value == NULL)
+	 && ((((iwe->len - IW_EV_LCP_PK_LEN) % event_len) == 4)
+	     || ((iwe->len == 12) && ((event_type == IW_HEADER_TYPE_UINT) ||
+				      (event_type == IW_HEADER_TYPE_QUAL))) ))
+	{
+#ifdef DEBUG
+	  printf("DBG - alt iwe->len = %d\n", iwe->len - 4);
+#endif
+	  pointer -= event_len;
+	  pointer += 4;
+	  /* Beware of alignement. Dest has local alignement, not packed */
+	  memcpy((char *) iwe + IW_EV_LCP_LEN, pointer, event_len);
+	  pointer += event_len;
+	}
+
       /* Is there more value in the event ? */
       if((pointer + event_len) <= (stream->current + iwe->len))
 	/* Go to next value */
@@ -2917,8 +3002,14 @@ iw_process_scanning_token(struct iw_event *		event,
       memcpy(&wscan->stats.qual, &event->u.qual, sizeof(struct iw_quality));
       break;
     case SIOCGIWRATE:
-      /* Scan may return a list of bitrates. Should we really bother with
-       * an array of bitrates ? Or only the maximum bitrate ? Jean II */
+      /* Scan may return a list of bitrates. As we have space for only
+       * a single bitrate, we only keep the largest one. */
+      if((!wscan->has_maxbitrate) ||
+	 (event->u.bitrate.value > wscan->maxbitrate.value))
+	{
+	  wscan->has_maxbitrate = 1;
+	  memcpy(&(wscan->maxbitrate), &(event->u.bitrate), sizeof(iwparam));
+	}
     case IWEVCUSTOM:
       /* How can we deal with those sanely ? Jean II */
     default:
@@ -2963,7 +3054,9 @@ iw_process_scan(int			skfd,
       wrq.u.data.pointer = NULL;		/* Later */
       wrq.u.data.flags = 0;
       wrq.u.data.length = 0;
-      if(iw_set_ext(skfd, ifname, SIOCSIWSCAN, &wrq) < 0)
+      /* Remember that as non-root, we will get an EPERM here */
+      if((iw_set_ext(skfd, ifname, SIOCSIWSCAN, &wrq) < 0)
+	 && (errno != EPERM))
 	return(-1);
       /* Success : now, just wait for event or results */
       return(250);	/* Wait 250 ms */
@@ -3029,7 +3122,7 @@ iw_process_scan(int			skfd,
       struct stream_descr	stream;
       struct wireless_scan *	wscan = NULL;
       int			ret;
-#if DEBUG
+#ifdef DEBUG
       /* Debugging code. In theory useless, because it's debugged ;-) */
       int	i;
       printf("Scan result [%02X", buffer[0]);
