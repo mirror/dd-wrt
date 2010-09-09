@@ -117,7 +117,7 @@ void start_sysinit(void)
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
-
+		eval("gpio","enable","2");
 
 #else
 		fseek(fp, 0x7f120c, SEEK_SET);
