@@ -6,6 +6,7 @@
 #include <linux/pci.h>
 #include <linux/cpumask.h>
 #include <linux/delay.h>
+#include <linux/ath9k_platform.h>
 
 #include <asm/delay.h>
 
