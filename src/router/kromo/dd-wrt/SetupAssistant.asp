@@ -728,8 +728,8 @@ function submitSavePrevButtons() {
 							<% sas_show_dhcpd_settings("2"); %>
 							
 							<!-- Wireless Setup -->
-							<% sas_show_wireless(); %>
-							<% sas_show_security("3"); %>
+							<% sas_show_wireless("3"); %>
+							<!--% sas_show_security("3"); %-->
 								
 							<!-- Other Settings -->
 							<!-- AOSS start -->
