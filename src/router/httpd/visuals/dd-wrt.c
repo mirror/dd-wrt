@@ -3580,15 +3580,27 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_mode[16];
 	char wl_macaddr[16];
 	char wl_ssid[16];
-
+	char frequencies[16];
+	
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);
 
+	// check the frequency capabilities;
+	if(has_5ghz(prefix) && has_2ghz(prefix)) {
+		sprintf(frequencies, " [2.4/5 GHz]");
+	} else if(has_5ghz(prefix)) {
+		sprintf(frequencies, " [5 GHz]");
+	} else if(has_2ghz(prefix)) {
+		sprintf(frequencies, " [2.4 GHz]");
+	} else {
+		sprintf(frequencies, "");
+	}
+	
 	// wireless mode
 	websWrite(wp,
-		  "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s</h2>\n",
-		  prefix);
+		  "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n",
+		  prefix, frequencies);
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp,
 		  "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [",

@@ -319,6 +319,7 @@ void ej_sas_show_wireless(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(buf, "ath%d", i);
 		ej_sas_show_wireless_single(wp, buf);
+		sas_show_security_single(wp, argc, argv, buf);
 	}
 #else
 	int c = get_wl_instances();
@@ -329,6 +330,7 @@ void ej_sas_show_wireless(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(buf, "wl%d", i);
 		ej_sas_show_wireless_single(wp, buf);
+		sas_show_security_single(wp, argc, argv, buf);
 	}
 #endif
 }
@@ -511,7 +513,8 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	int argc = 1;
 	char *argv[] = { "3" };
 	char *stage_visible_css = "display: none;";
-
+	char frequencies[16];
+	
 	if (ej_sas_stage_is_visible(wp, argc, argv) == 0) {
 		stage_visible_css = "";
 	}
@@ -520,10 +523,21 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);
 
+	// check the frequency capabilities;
+	if(has_5ghz(prefix) && has_2ghz(prefix)) {
+		sprintf(frequencies, " [2.4/5 GHz]");
+	} else if(has_5ghz(prefix)) {
+		sprintf(frequencies, " [5 GHz]");
+	} else if(has_2ghz(prefix)) {
+		sprintf(frequencies, " [2.4 GHz]");
+	} else {
+		sprintf(frequencies, "");
+	}
+	
 	// wireless mode
 	websWrite(wp,
-		  "<h2 style=\"%s\"><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s</h2>\n",
-		  stage_visible_css, prefix);
+		  "<h2 style=\"%s\"><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n",
+		  stage_visible_css, prefix, frequencies);
 	websWrite(wp, "<fieldset style=\"%s\">\n", stage_visible_css);
 	websWrite(wp,
 		  "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [",
@@ -1363,17 +1377,18 @@ sas_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 	if (vifs == NULL)
 		return;
 	sprintf(ssid, "%s_ssid", prefix);
-	websWrite(wp,
+	/*websWrite(wp,
 		  "<h2 style=\"%s\"><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n",
-		  stage_visible_css, prefix);
+		  stage_visible_css, prefix);*/
 	websWrite(wp, "<fieldset style=\"%s\">\n", stage_visible_css);
 	// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
 	websWrite(wp,
-		  "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
+		  "<legend><script type=\"text/javascript\">Capture(wpa.h2)</script></legend>");
+	/*	  "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
 		  IFMAP(prefix));
 	tf_webWriteESCNV(wp, ssid);
 	// contains html tag
-	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
+	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));*/
 	sas_show_security_prefix(wp, argc, argv, prefix, 1);
 	websWrite(wp, "</fieldset>\n<br style=\"%s\"/>\n", stage_visible_css);
 	/*foreach(var, vifs, next) {
