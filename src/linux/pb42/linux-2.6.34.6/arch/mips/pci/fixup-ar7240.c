@@ -1,5 +1,6 @@
 #include <linux/init.h>
 #include <linux/pci.h>
+#include <linux/ath9k_platform.h>
 #include "ar7240.h"
 
 /*
