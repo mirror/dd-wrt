@@ -174,13 +174,35 @@ ar7100_pci_core_intr(int cpl, void *dev_id)
  *
  * There is no translation for inbound access (PCI device as a master)
  */
+static struct ath9k_platform_data ap94_wmac0_data;
+static struct ath9k_platform_data ap94_wmac1_data;
+
+#define CALDATA0_OFFSET		0x1000
+#define CALDATA1_OFFSET		0x5000
  
 static void ar71xx_pci_fixup(struct pci_dev *dev)
 {
 	u32 t;
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
 	if (!ar71xx_pci_fixup_enable)
 		return;
+		
+	ap94_wmac0_data.slot = 0;
+	ap94_wmac1_data.slot = 1;
+	memcpy(ap94_wmac0_data.eeprom_data, art + CALDATA0_OFFSET,sizeof(ap94_wmac0_data.eeprom_data));
+
+	memcpy(ap94_wmac1_data.eeprom_data, art + CALDATA1_OFFSET,sizeof(ap94_wmac1_data.eeprom_data));
+
+	switch(PCI_SLOT(dev->devfn)) {
+	case 17:
+		dev->dev.platform_data = &ap94_wmac0_data;
+		break;
+
+	case 18:
+		dev->dev.platform_data = &ap94_wmac1_data;
+		break;
+	}
 
 	if (dev->bus->number != 0 || dev->devfn != 0)
 		return;
