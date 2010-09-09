@@ -28,14 +28,14 @@ ar7100_start_hc(struct platform_device *dev)
 	printk(KERN_DEBUG __FILE__
 		": starting AR7100 OHCI USB Controller...");
 
-    /*ar7100_reg_rmw_set(AR7100_RESET, mask);
+/*    ar7100_reg_rmw_set(AR7100_RESET, mask);
     mdelay(1000);
     ar7100_reg_rmw_clear(AR7100_RESET, mask);
 
     ar7100_reg_wr(AR7100_USB_CONFIG, 0x20);
-    mdelay(1000);
-    printk("done. reset %#x usb config %#x\n", ar7100_reg_rd(AR7100_RESET),
-            ar7100_reg_rd(AR7100_USB_CONFIG));*/
+    mdelay(1000);*/
+//    printk("done. reset %#x usb config %#x\n", ar7100_reg_rd(AR7100_RESET),
+//            ar7100_reg_rd(AR7100_USB_CONFIG));
     ar7100_reg_rmw_set(AR7100_RESET, AR7100_RESET_USB_OHCI_DLL);
     udelay(500);
     ar7100_reg_rmw_clear(AR7100_RESET, AR7100_RESET_USB_OHCI_DLL);
