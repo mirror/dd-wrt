@@ -101,32 +101,6 @@ EXPORT_SYMBOL(ar7100_gpio_config_input);
 EXPORT_SYMBOL(ar7100_gpio_in_val);
 EXPORT_SYMBOL(ar7100_gpio_out_val);
 
-#define USB_LED_OFF 1
-#define USB_LED_ON 0
-
-void ap_usb_led_on(void)
-{
-#ifdef CONFIG_WNDR3700
-	ar7100_reg_rmw_clear(AR7100_RESET, AR7100_RESET_GE1_PHY);
-#else
-#ifdef AP_USB_LED_GPIO
-	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_ON);
-#endif
-#endif
-}
-EXPORT_SYMBOL(ap_usb_led_on);
-
-void ap_usb_led_off(void)
-{
-#ifdef CONFIG_WNDR3700
-	ar7100_reg_rmw_set(AR7100_RESET, AR7100_RESET_GE1_PHY);
-#else
-#ifdef AP_USB_LED_GPIO
-	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_OFF);
-#endif
-#endif
-}
-EXPORT_SYMBOL(ap_usb_led_off);
 
 
 typedef	u32					gpio_words;
@@ -139,14 +113,14 @@ typedef	u32					gpio_words;
 
 #define	GPIO_WL0_MAX		10
 #define	GPIO_WL0(n)			(1 << ((n)+GPIO_PIN_MAX))
-#define	GPIO_WL0_ADDR		KSEG1ADDR(AR7100_PCI_MEM_BASE + 0x4048)				//AR9220 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0000000 + OFFSET [0x4048]
+#define	GPIO_WL0_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x4048)				//AR9220 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0000000 + OFFSET [0x4048]
 #define	GPIO_WL0_MASK(_VAL)	(((gpio_words)(_VAL)) & (((gpio_words)1<<GPIO_WL0_MAX)-1))
 #define	GPIO_WL0_TO(_VAL)	GPIO_WL0_MASK(((gpio_words)(_VAL))>>(GPIO_PIN_MAX))	//the value to AR9220 register
 #define	GPIO_WL0_FROM(_VAL)	(GPIO_WL0_MASK(_VAL)<<(GPIO_PIN_MAX))				//the value from AR9220 register
 
 #define	GPIO_WL1_MAX		10
 #define	GPIO_WL1(n)			(1 << ((n)+GPIO_PIN_MAX+GPIO_WL0_MAX))
-#define	GPIO_WL1_ADDR		KSEG1ADDR(AR7100_PCI_MEM_BASE + 0x00010000 + 0x4048)				//AR9223 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0010000 + OFFSET [0x4048]
+#define	GPIO_WL1_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x00010000 + 0x4048)				//AR9223 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0010000 + OFFSET [0x4048]
 #define	GPIO_WL1_MASK(_VAL)	(((gpio_words)(_VAL)) & (((gpio_words)1<<GPIO_WL1_MAX)-1))
 #define	GPIO_WL1_TO(_VAL)	GPIO_WL1_MASK(((gpio_words)(_VAL))>>(GPIO_PIN_MAX+GPIO_WL0_MAX))	//the value to AR9223 register
 #define	GPIO_WL1_FROM(_VAL)	(GPIO_WL1_MASK(_VAL)<<(GPIO_PIN_MAX+GPIO_WL0_MAX))					//the value from AR9223 register
@@ -189,6 +163,49 @@ void set_wl1_gpio(int gpio,int val)
 	ar7100_reg_rmw_set(GPIO_WL0_ADDR, wl1);	//ar9283 register [0x4048]
 	ar7100_reg_rmw_clear(GPIO_WL0_ADDR, wl1);
 }
+/*
+
+INSP_LED_DEFINE		InspLedStats[]	= {
+	//	name,		regmask,		output_on_func,		output_of_func,		reverse
+	 {	"diag",		GPIO_PIN( 1),	GpioOutActiveLow,	GpioOutActiveHigh,		0		}
+	,{	"wl1",		GPIO_WL0( 5),	GpioOutActiveLow,	GpioOutActiveHigh,		0		}
+	,{	"usb",		GPIO_WL0( 3),	GpioOutActiveLow,	GpioOutActiveHigh,		0		}
+	,{	"aoss",		GPIO_WL0( 1),	GpioOutActiveLow,	GpioOutActiveHigh,		1		}
+	,{	"wl2",		GPIO_WL1( 1),	GpioOutActiveLow,	GpioOutActiveHigh,		0		}
+	,{	"vpn",		GPIO_WL1( 3),	GpioOutActiveLow,	GpioOutActiveHigh,		0		}
+	,{	"mov",		GPIO_WL1( 4),	GpioOutActiveLow,	GpioOutActiveHigh,		0		}
+	,{	"aoss2",	GPIO_WL1( 5),	GpioOutActiveLow,	GpioOutActiveHigh,		1		}
+	,{	"usbpwr",	GPIO_PIN( 2),	GpioOutActiveHigh,	GpioOutActiveLow,		0		}
+};
+
+*/
+
+#define USB_LED_OFF 1
+#define USB_LED_ON 0
+
+void ap_usb_led_on(void)
+{
+#ifdef CONFIG_WZRAG300NH
+	set_wl0_gpio(3,0);
+#elif CONFIG_WNDR3700
+	ar7100_reg_rmw_clear(AR7100_RESET, AR7100_RESET_GE1_PHY);
+#elif AP_USB_LED_GPIO
+	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_ON);
+#endif
+}
+EXPORT_SYMBOL(ap_usb_led_on);
+
+void ap_usb_led_off(void)
+{
+#ifdef CONFIG_WZRAG300NH
+	set_wl0_gpio(3,1);
+#elif CONFIG_WNDR3700
+	ar7100_reg_rmw_set(AR7100_RESET, AR7100_RESET_GE1_PHY);
+#elif AP_USB_LED_GPIO
+	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_OFF);
+#endif
+}
+EXPORT_SYMBOL(ap_usb_led_off);
 
 
 #define NXP_74HC153_NUM_GPIOS	8
