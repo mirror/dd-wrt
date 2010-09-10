@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'publickey' user authentication
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-publickey.c,v 1.4 2009/03/19 06:04:08 castaglia Exp $
+ * $Id: auth-publickey.c,v 1.4.2.1 2010/06/17 17:57:08 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -41,8 +41,13 @@ static int send_pubkey_ok(const char *algo, const char *pubkey_data,
     uint32_t pubkey_len) {
   struct ssh2_packet *pkt;
   char *buf, *ptr;
-  uint32_t buflen, bufsz = 1024;
+  uint32_t buflen, bufsz;
   int res;
+
+  /* Make sure to allocate a buffer large enough to hold the publickey
+   * data we're sending back.
+   */
+  bufsz = buflen = pubkey_len + 1024;
 
   pkt = sftp_ssh2_packet_create(sftp_pool);
 
@@ -181,8 +186,10 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, const char *orig_user,
 
     id_len = sftp_session_get_id(&id);
 
-    /* XXX Is this buffer large enough?  Too large? */
-    bufsz2 = buflen2 = 2048;
+    /* Make sure to allocate a buffer large enough to hold the publickey
+     * signature and data we want to send back.
+     */
+    bufsz2 = buflen2 = pubkey_len + 1024;
     ptr2 = buf2 = sftp_msg_getbuf(pkt->pool, bufsz2);
 
     sftp_msg_write_data(&buf2, &buflen2, (char *) id, id_len, TRUE);

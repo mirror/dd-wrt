@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2009 The ProFTPD Project team
+ * Copyright (c) 2004-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,8 @@
  * OpenSSL in the source distribution.
  */
 
-/*
- * Display of files
- * $Id: display.c,v 1.16 2009/12/02 03:59:28 castaglia Exp $
+/* Display of files
+ * $Id: display.c,v 1.16.2.2 2010/04/17 17:11:14 castaglia Exp $
  */
 
 #include "conf.h"
@@ -43,7 +42,8 @@ static void format_size_str(char *buf, size_t buflen, off_t size) {
   snprintf(buf, buflen, "%.3" PR_LU "%cB", (pr_off_t) size, units[i]);
 }
 
-static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
+static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
+    int flags) {
   struct stat st;
   char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
   int len;
@@ -306,12 +306,12 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
      * We _could_ just use pr_response_add(), and let the response code
      * automatically handle all of the multiline response formatting.
      * However, some of the Display files are at times waiting for the
-     * response chains to be flushed won't work (e.g. login, logout).
+     * response chains to be flushed, which won't work (e.g. login, logout).
      * Thus we have to deal with multiline files appropriately here.
      */
 
-    if (first == NULL &&
-        sent_first == FALSE) {
+    if (sent_first == FALSE &&
+        first == NULL) {
       first = pstrdup(p, outs);
       continue;
     }
@@ -337,19 +337,14 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
     prev = pstrdup(p, outs);
   }
 
-  /* Do we have any remaining lines to send? */
-  if (prev) {
-    if (MultilineRFC2228) {
-      pr_response_send_raw("%s-%s", code, prev);
-
-    } else {
-      pr_response_send_raw(" %s", prev);
-    }
-  }
-
   if (first != NULL) {
     if (session.auth_mech != NULL) {
-      pr_response_send_raw("%s %s", code, first);
+      if (flags & PR_DISPLAY_FL_NO_EOM) {
+        pr_response_send_raw("%s-%s", code, first);
+
+      } else {
+        pr_response_send_raw("%s %s", code, first);
+      }
 
     } else {
       /* There is a special case if the client has not yet authenticated; it
@@ -366,16 +361,10 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
         pr_response_send_raw("%s-%s", code, prev);
 
       } else {
-        if (session.auth_mech != NULL) {
-          /* Special case handling for when the client has not yet
-           * authenticated (i.e. session.auth_mech is null).  This means
-           * we're handling a DisplayConnect file.  The server will send
-           * a banner string as well, thus if auth_mech is null, we do NOT
-           * want to send this line; if not null, we DO want to send it.
-           *
-           * Without this check, we would end up sending an extra 220 response 
-           * code to the client, which would confuse it.
-           */
+        if (flags & PR_DISPLAY_FL_NO_EOM) {
+          pr_response_send_raw(" %s", prev);
+
+        } else {
           pr_response_send_raw("%s %s", code, prev);
         }
       }
@@ -386,16 +375,17 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code) {
   return 0;
 }
 
-int pr_display_fh(pr_fh_t *fh, const char *fs, const char *code) {
+int pr_display_fh(pr_fh_t *fh, const char *fs, const char *code, int flags) {
   if (!fh || !code) {
     errno = EINVAL;
     return -1;
   }
 
-  return display_fh(fh, fs, code);
+  return display_fh(fh, fs, code, flags);
 }
 
-int pr_display_file(const char *path, const char *fs, const char *code) {
+int pr_display_file(const char *path, const char *fs, const char *code,
+    int flags) {
   pr_fh_t *fh = NULL;
   int res, xerrno;
 
@@ -408,7 +398,7 @@ int pr_display_file(const char *path, const char *fs, const char *code) {
   if (fh == NULL)
     return -1;
 
-  res = display_fh(fh, fs, code);
+  res = display_fh(fh, fs, code, flags);
   xerrno = errno;
 
   pr_fsio_close(fh);

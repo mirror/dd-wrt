@@ -21,11 +21,21 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: crypto.c,v 1.14 2010/01/31 20:34:26 castaglia Exp $
+ * $Id: crypto.c,v 1.14.2.2 2010/05/18 21:43:35 castaglia Exp $
  */
 
 #include "mod_sftp.h"
 #include "crypto.h"
+
+/* In OpenSSL 0.9.7, all des_ functions were renamed to DES_ to avoid 
+ * clashes with older versions of libdes. 
+ */ 
+#if OPENSSL_VERSION_NUMBER < 0x000907000L 
+# define DES_key_schedule des_key_schedule 
+# define DES_cblock des_cblock 
+# define DES_encrypt3 des_encrypt3 
+# define DES_set_key_unchecked des_set_key_unchecked 
+#endif
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
 static const char *crypto_engine = NULL;
@@ -848,17 +858,32 @@ size_t sftp_crypto_get_size(size_t first, size_t second) {
 }
 
 void sftp_crypto_free(int flags) {
+
+  /* Only call EVP_cleanup() et al if other OpenSSL-using modules are not
+   * present.  If we called EVP_cleanup() here during a restart,
+   * and other modules want to use OpenSSL, we may be depriving those modules
+   * of OpenSSL functionality.
+   *
+   * At the moment, the modules known to use OpenSSL are mod_ldap,
+   * mod_sftp, mod_sql, and mod_sql_passwd, and mod_tls.
+   */
+  if (pr_module_get("mod_ldap.c") == NULL &&
+      pr_module_get("mod_sql.c") == NULL &&
+      pr_module_get("mod_sql_passwd.c") == NULL &&
+      pr_module_get("mod_tls.c") == NULL) {
+
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
-  if (crypto_engine) {
-    ENGINE_cleanup();
-    crypto_engine = NULL;
-  }
+    if (crypto_engine) {
+      ENGINE_cleanup();
+      crypto_engine = NULL;
+    }
 #endif
 
-  ERR_free_strings();
-  ERR_remove_state(0);
-  EVP_cleanup();
-  RAND_cleanup();
+    ERR_free_strings();
+    ERR_remove_state(0);
+    EVP_cleanup();
+    RAND_cleanup();
+  }
 }
 
 int sftp_crypto_set_driver(const char *driver) {

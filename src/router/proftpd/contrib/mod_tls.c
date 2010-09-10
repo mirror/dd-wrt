@@ -2806,7 +2806,12 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
   /* TLS handshake on the data channel... */
   } else {
 
-    if (!(tls_opts & TLS_OPT_NO_SESSION_REUSE_REQUIRED)) {
+    /* We won't check for session reuse for data connections when either
+     * a) the NoSessionReuseRequired TLSOption has been configured, or
+     * b) the CCC command has been used (Bug#3465).
+     */
+    if (!(tls_opts & TLS_OPT_NO_SESSION_REUSE_REQUIRED) &&
+        !(tls_flags & TLS_SESS_HAVE_CCC)) {
       int reused;
       SSL_SESSION *ctrl_sess;
 
@@ -2841,19 +2846,23 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
 
         data_sess = SSL_get_session(ssl);
         if (data_sess != NULL) {
+#if OPENSSL_VERSION_NUMBER < 0x000907000L
+          if (SSL_SESSION_cmp(ctrl_sess, data_sess) != 0) {
+#else
           unsigned char *sess_id;
           unsigned int sess_id_len;
 
-#if OPENSSL_VERSION_NUMBER > 0x000908000L
+# if OPENSSL_VERSION_NUMBER > 0x000908000L
           sess_id = (unsigned char *) SSL_SESSION_get_id(data_sess,
             &sess_id_len);
-#else
+# else
           /* XXX Directly accessing these fields cannot be a Good Thing. */
           sess_id = data_sess->session_id;
           sess_id_len = data_sess->session_id_length;
-#endif
+# endif
  
           if (!SSL_has_matching_session_id(ctrl_ssl, sess_id, sess_id_len)) {
+#endif
             tls_log("Client did not reuse SSL session from control channel, "
               "rejecting data connection (see TLSOption "
               "NoSessionReuseRequired)");
@@ -2955,6 +2964,8 @@ static void tls_end_sess(SSL *ssl, int strms, int flags) {
 
   shutdown_state = SSL_get_shutdown(ssl);
   if (!(shutdown_state & SSL_SENT_SHUTDOWN)) {
+    errno = 0;
+
     /* 'close_notify' not already sent; send it now. */
     res = SSL_shutdown(ssl);
   }
@@ -2966,6 +2977,7 @@ static void tls_end_sess(SSL *ssl, int strms, int flags) {
 
       res = 1;
       if (!(shutdown_state & SSL_RECEIVED_SHUTDOWN)) {
+        errno = 0;
         res = SSL_shutdown(ssl);
       }
     }
@@ -2999,8 +3011,6 @@ static void tls_end_sess(SSL *ssl, int strms, int flags) {
               errno != EPERM &&
               errno != ENOSYS) {
             tls_log("SSL_shutdown syscall error: %s", strerror(errno));
-            pr_log_debug(DEBUG0, MOD_TLS_VERSION
-              ": SSL_shutdown syscall error: %s", strerror(errno));
           }
           break;
 
@@ -3017,8 +3027,26 @@ static void tls_end_sess(SSL *ssl, int strms, int flags) {
 
     err_code = SSL_get_error(ssl, res);
     switch (err_code) {
+      case SSL_ERROR_WANT_READ:
+      case SSL_ERROR_WANT_WRITE:
       case SSL_ERROR_ZERO_RETURN:
-        /* Clean shutdown, nothing we need to do. */
+        /* Clean shutdown, nothing we need to do.  The WANT_READ/WANT_WRITE
+         * error codes crept into OpenSSL 0.9.8m, with changes to make
+         * SSL_shutdown() work properly for non-blocking sockets.  And
+         * handling these error codes for older OpenSSL versions won't break
+         * things.
+         */
+        break;
+
+      case SSL_ERROR_SYSCALL:
+        if (errno != 0 &&
+            errno != EOF &&
+            errno != EBADF &&
+            errno != EPIPE &&
+            errno != EPERM &&
+            errno != ENOSYS) {
+          tls_log("SSL_shutdown syscall error: %s", strerror(errno));
+        }
         break;
 
       default:
@@ -4817,7 +4845,7 @@ static int tls_handle_info(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
   opterr = 1;
   optind = 1;
 
-#elif defined(SOLARIS2)
+#elif defined(SOLARIS2) || defined(HPUX11)
   opterr = 0;
   optind = 1;
 
@@ -7437,6 +7465,9 @@ static int tls_sess_init(void) {
     }
 
     tls_flags |= TLS_SESS_ON_CTRL;
+
+    pr_session_set_protocol("ftps");
+    session.rfc2228_mech = "TLS";
   }
 
   return 0;

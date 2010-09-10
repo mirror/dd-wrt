@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.1133 2010/02/24 17:54:53 castaglia Exp $
+$Id: NEWS,v 1.1133.2.61 2010/09/09 22:40:56 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -9,11 +9,93 @@ $Id: NEWS,v 1.1133 2010/02/24 17:54:53 castaglia Exp $
   where `N' is the bug number.
 -----------------------------------------------------------------------------
 
+1.3.3b - Released 09-Sep-2010
+--------------------------------
+- Bug 3481 - Problem with SFTP directory listings.
+- Bug 3483 - NULL pointer dereference handling SITE command in mod_quotatab.
+- Bug 3485 - Disabling IPv6 via -4 or --ipv4 command-line options does not work.
+- Bug 3487 - Null pointer dereference with EPRT/EPSV/PASV/PORT command during
+  data transfer.
+- Bug 3482 - ProFTPD corrupts utmpx log files on FreeBSD 9.0/HEAD.
+- Bug 3491 - Directory pattern not matching as expected.
+- Bug 3492 - Null pointer dereference during data transfer due to RNFR/RNTO.
+- Bug 3494 - Null pointer dereference for IPv6-enabled proftpd when no
+  DefaultServer configured.
+- Bug 3501 - <Anonymous> logins with "AuthAliasOnly on" still handled as
+  anonymous logins.
+
+1.3.3a - Released 01-Jul-2010
+--------------------------------
+- Bug 3400 - Add Japanese translation.
+- Bug 3401 - mod_sftp does not compile with pre-0.9.7 OpenSSL.
+- Bug 3402 - mod_tls does not compile with pre-0.9.7 OpenSSL due to Bug#3349.
+- Bug 3403 - File upload followed by MLSD leads to wrong file size entries in
+  TransferLog.
+- Bug 3405 - Multiple SFTPAuthorizedUserKeys stores causes segfault on 64-bit
+  platforms.
+- Bug 3354 - Renaming a file across mount points to a full disk does not fail
+  as expected.
+- Bug 3408 - Use <termios.h> instead of <sys/termios.h> where possible.
+- Bug 3412 - Include files not included after restart due to permissions.
+- Bug 3409 - Build failure on newer FreeBSD due to utmp/utmpx system changes.
+- Bug 3417 - Unsafe use of pointer when scanning config for ScoreboardFile.
+- Bug 3418 - %U sometimes showing up as "(none)" in ExtendedLog.
+- Bug 3421 - RewriteHome does not work properly for SFTP connections.
+- Bug 3419 - SSL_shutdown() errors with openssl-0.9.8m.
+- Bug 3423 - Last line of multiline DisplayLogin file improperly handled.
+- Bug 3426 - mod_sftp does not log to TransferLog by default.
+- Bug 3425 - Improperly constructed destination paths for SCP uploads.
+- Bug 3427 - mod_sftp does not handle recursive SCP uploads properly.
+- Bug 3432 - ExecBeforeCommand does not interpolate the %F/%f variables
+  properly.
+- Bug 3434 - TraceLog contains messages even with "Trace DEFAULT:0" configured.
+- Bug 3435 - Encoding/decoding conversion can cause CPU spike.
+- Bug 3436 - Support build-time option to disable use of nonblocking open of
+  log files.  Use --disable-nonblocking-log-open to get the pre-1.3.3 behavior
+  of opening log files.
+- Bug 3437 - UseImplicitSSL TLSOption causes PBSZ/PROT commands to fail.
+- Bug 3439 - Encoding fails if an NLS-enabled proftpd starts in a UTF8 locale.
+- Bug 3446 - .ftpaccess ignored in some cases.
+- Bug 3447 - mod_sftp can become confused during large recursive SCP uploads.
+- Bug 3448 - Ensure that STAT/LSTAT/FSTAT SFTP requests do not use cached/stale
+  data.
+- Bug 3449 - mod_sftp does not properly handle the O_TRUNC flag in a SFTP OPEN
+  request.
+- Bug 3450 - mod_sftp does not properly handle the O_APPEND flag in a SFTP OPEN
+  request.
+- Bug 3451 - WinSCP can't upload files using protocol version 5 with mod_sftp.
+- Bug 3452 - mod_sftp does not advertise its supported SFTP extensions for
+  protocol version 5.
+- Bug 3454 - msgfmt(1) options used for generating NLS files are not compatible
+  with Solaris' msgfmt.
+- Bug 3456 - Problem attempting to recursively download a directory via SCP.
+- Bug 3458 - mod_sftp incorrectly performs OpenSSL cleanup.
+- Bug 3459 - mod_radius segfaults during incorrect login due to stale data.
+- Bug 3460 - REALPATH SFTP request can cause improperly cached directory
+  configuration.
+- Bug 3462 - ftpasswd script's --delete-user option does not work.
+- Bug 3463 - ftpasswd script's --delete-group option does not work.
+- Bug 3465 - SIGSEGV at LIST after CCC.
+- Bug 3470 - Deferred resolution <Directory> paths not handled properly by
+  mod_sftp.
+- Bug 3469 - ExtendedLog's %f variable not properly expanded for DELE if path
+  begins with tilde ('~').
+- Bug 3467 - mod_ifsession does not merge <Directory> blocks properly.
+- Bug 3471 - Null values in allow/deny rules causes mod_wrap2 to segfault.
+- Bug 3472 - mod_sftp publickey authentication fails for large keys.
+- Bug 3424 - Bad LDAP lookup can cause mod_ldap segfault under some conditions.
+- Bug 3476 - LIST/NLST of path starting with "-" fails.
+- Bug 3475 - Add new 'noGetgrouplist' AuthUnixOption to work around buggy
+  libc code.
+- Bug 3474 - Using SQLite database and SQLLog directive can lead to problems
+  under load.
+
 1.3.3 - Released 24-Feb-2010
 --------------------------------
 - Bug 3389 - Cannot create mod_ban whitelists using <Class> and <IfClass>
   sections.
 - Bug 3397 - HideFiles none does not work properly on a per-user basis.
+- Bug 3400 - Add Japanese translation.
 
 1.3.3rc4 - Released 12-Feb-2010
 --------------------------------

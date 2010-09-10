@@ -26,7 +26,7 @@
 
 /*
  * House initialization and main program loop
- * $Id: main.c,v 1.391 2010/02/04 17:14:47 castaglia Exp $
+ * $Id: main.c,v 1.391.2.3 2010/07/16 15:54:01 castaglia Exp $
  */
 
 #include "conf.h"
@@ -839,7 +839,7 @@ static void send_session_banner(server_rec *server) {
 
   display = get_param_ptr(server->conf, "DisplayConnect", FALSE);
   if (display != NULL) {
-    if (pr_display_file(display, NULL, R_220) < 0) {
+    if (pr_display_file(display, NULL, R_220, PR_DISPLAY_FL_NO_EOM) < 0) {
       pr_log_debug(DEBUG6, "unable to display DisplayConnect file '%s': %s",
         display, strerror(errno));
     }
@@ -1884,7 +1884,6 @@ static void handle_segv(int signo, siginfo_t *info, void *ptr) {
   /* Call the "normal" SIGSEGV handler. */
   table_handling_signal(TRUE);
   sig_terminate(signo);
-  table_handling_signal(FALSE);
 
   pr_log_pri(PR_LOG_ERR, "-----BEGIN STACK TRACE-----");
 
@@ -2953,11 +2952,11 @@ int main(int argc, char *argv[], char **envp) {
       show_usage(0);
       break;
 
-    case 4:
+    case '4':
       pr_netaddr_disable_ipv6();
       break;
 
-    case 6:
+    case '6':
       pr_netaddr_enable_ipv6();
       break;
 

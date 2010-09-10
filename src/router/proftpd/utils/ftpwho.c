@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 /* Shows a count of "who" is online via proftpd.  Uses the scoreboard file.
  *
- * $Id: ftpwho.c,v 1.27 2009/09/04 17:13:10 castaglia Exp $
+ * $Id: ftpwho.c,v 1.27.2.1 2010/03/25 17:37:49 castaglia Exp $
  */
 
 #include "utils.h"
@@ -239,9 +239,13 @@ int main(int argc, char **argv) {
    * incorrect, try the config file kludge.
    */
   if (check_scoreboard_file() < 0) {
-    const char *file = util_scan_config(config_filename, "ScoreboardFile");
-    if (file)
-      util_set_scoreboard(file);
+    char *path;
+
+    path = util_scan_config(config_filename, "ScoreboardFile");
+    if (path) {
+      util_set_scoreboard(path);
+      free(path);
+    }
 
     if (check_scoreboard_file() < 0) {
       fprintf(stderr, "%s: %s\n", util_get_scoreboard(), strerror(errno));

@@ -26,7 +26,7 @@
 
 /* Data transfer module for ProFTPD
  *
- * $Id: mod_xfer.c,v 1.269 2010/02/10 21:45:17 castaglia Exp $
+ * $Id: mod_xfer.c,v 1.269.2.2 2010/04/12 19:00:00 castaglia Exp $
  */
 
 #include "conf.h"
@@ -493,7 +493,7 @@ static int xfer_displayfile(void) {
   int res = -1;
 
   if (displayfilexfer_fh) {
-    if (pr_display_fh(displayfilexfer_fh, session.vwd, R_226) < 0) {
+    if (pr_display_fh(displayfilexfer_fh, session.vwd, R_226, 0) < 0) {
       pr_log_debug(DEBUG6, "unable to display DisplayFileTransfer "
         "file '%s': %s", displayfilexfer_fh->fh_path, strerror(errno));
     }
@@ -510,7 +510,7 @@ static int xfer_displayfile(void) {
     char *displayfilexfer = get_param_ptr(main_server->conf,
       "DisplayFileTransfer", FALSE);
     if (displayfilexfer) {
-      if (pr_display_file(displayfilexfer, session.vwd, R_226) < 0) {
+      if (pr_display_file(displayfilexfer, session.vwd, R_226, 0) < 0) {
         pr_log_debug(DEBUG6, "unable to display DisplayFileTransfer "
           "file '%s': %s", displayfilexfer, strerror(errno));
       }
@@ -562,7 +562,7 @@ static int xfer_prio_adjust(void) {
   }
 
   if (res < 0) {
-    pr_trace_msg(trace_channel, 0, "error adjusting process priority: %s",
+    pr_trace_msg(trace_channel, 1, "error adjusting process priority: %s",
       strerror(errno));
     return -1;
   }
@@ -586,7 +586,7 @@ static int xfer_prio_restore(void) {
   PRIVS_RELINQUISH
 
   if (res < 0) {
-    pr_trace_msg(trace_channel, 0, "error restoring process priority: %s",
+    pr_trace_msg(trace_channel, 1, "error restoring process priority: %s",
       strerror(errno));
   }
 

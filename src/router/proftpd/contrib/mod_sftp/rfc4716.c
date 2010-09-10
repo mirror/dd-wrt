@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: rfc4716.c,v 1.9 2010/02/21 22:34:03 castaglia Exp $
+ * $Id: rfc4716.c,v 1.9.2.1 2010/03/03 00:53:36 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -451,6 +451,7 @@ static int filestore_close(sftp_keystore_t *store) {
 
 static sftp_keystore_t *filestore_open(pool *parent_pool,
     int requested_key_type, const char *store_info, const char *user) {
+  int xerrno;
   sftp_keystore_t *store;
   pool *filestore_pool;
   struct filestore_data *store_data;
@@ -473,11 +474,10 @@ static sftp_keystore_t *filestore_open(pool *parent_pool,
 
   PRIVS_ROOT
   fh = pr_fsio_open(path, O_RDONLY|O_NONBLOCK);
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (fh == NULL) {
-    int xerrno = errno;
-
     destroy_pool(filestore_pool);
     errno = xerrno;
     return NULL;

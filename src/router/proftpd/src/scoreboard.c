@@ -25,7 +25,7 @@
 /*
  * ProFTPD scoreboard support.
  *
- * $Id: scoreboard.c,v 1.52 2010/01/11 01:16:50 castaglia Exp $
+ * $Id: scoreboard.c,v 1.52.2.1 2010/03/22 23:24:00 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1091,11 +1091,15 @@ int pr_scoreboard_scrub(void) {
   lock.l_len = 0;
 
   while (fcntl(fd, F_SETLKW, &lock) < 0) {
-    if (errno == EINTR) {
+    int xerrno = errno;
+
+    if (xerrno == EINTR) {
       pr_signals_handle();
       continue;
     }
 
+    (void) close(fd);
+    errno = xerrno;
     return -1;
   }
 
@@ -1129,6 +1133,8 @@ int pr_scoreboard_scrub(void) {
 
       memset(&sce, 0, sizeof(sce));
       while (write(fd, &sce, sizeof(sce)) != sizeof(sce)) {
+        /* XXX Should we worry about short writes here? */
+
         if (errno == EINTR) {
           pr_signals_handle();
           continue;
@@ -1159,6 +1165,5 @@ int pr_scoreboard_scrub(void) {
 
   /* Don't need the descriptor anymore. */
   (void) close(fd);
-
   return 0;
 }

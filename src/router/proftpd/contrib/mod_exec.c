@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_exec -- a module for executing external scripts
  *
- * Copyright (c) 2002-2009 TJ Saunders
+ * Copyright (c) 2002-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * This is mod_exec, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_exec.c,v 1.9 2009/07/19 19:11:04 castaglia Exp $
+ * $Id: mod_exec.c,v 1.9.2.1 2010/04/12 17:09:29 castaglia Exp $
  */
 
 #include "conf.h"
@@ -33,7 +33,7 @@
 #include <signal.h>
 #include <sys/resource.h>
 
-#define MOD_EXEC_VERSION	"mod_exec/0.9.8"
+#define MOD_EXEC_VERSION	"mod_exec/0.9.9"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030301
@@ -226,7 +226,7 @@ static char **exec_prepare_environ(pool *env_pool, cmd_rec *cmd) {
   while (c) {
     pr_signals_handle();
 
-    if (!strcmp("-", c->argv[1])) {
+    if (strcmp("-", c->argv[1]) == 0) {
       *((char **) push_array(env)) = pstrcat(env_pool, c->argv[0], "=",
         getenv(c->argv[0]) ? getenv(c->argv[0]) : "", NULL);
 
@@ -887,6 +887,18 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
                session.xfer.path) {
       varstr = sreplace(tmp_pool, varstr, "%F", session.xfer.path, NULL);
 
+    } else if (session.curr_phase == PRE_CMD &&
+               (strcmp(cmd->argv[0], C_STOR) == 0 ||
+                strcmp(cmd->argv[0], C_RETR) == 0 ||
+                strcmp(cmd->argv[0], C_APPE) == 0)) {
+      char *path;
+
+      /* If we're in the PRE_CMD phase, then the %f variable can't be
+       * filled in using session.xfer.path for STOR, RETR, and APPE.
+       */
+      path = dir_best_path(tmp_pool, pr_fs_decode_path(tmp_pool, cmd->arg));
+      varstr = sreplace(tmp_pool, varstr, "%F", path, NULL);
+
     } else {
       /* Some commands (i.e. DELE) have associated filenames that are not
        * stored in the session.xfer structure; these should be expanded
@@ -908,13 +920,30 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
   if (ptr != NULL) {
 
     if (strcmp(cmd->argv[0], C_RNTO) == 0) {
+      char *path;
+
+      path = pr_fs_decode_path(tmp_pool, cmd->arg);
       varstr = sreplace(tmp_pool, varstr, "%f",
-        dir_abs_path(tmp_pool, cmd->arg, TRUE), NULL);
+        dir_abs_path(tmp_pool, path, TRUE), NULL);
 
     } else if (session.xfer.p &&
                session.xfer.path) {
       varstr = sreplace(tmp_pool, varstr, "%f",
         dir_abs_path(tmp_pool, session.xfer.path, TRUE), NULL);
+
+    } else if (session.curr_phase == PRE_CMD &&
+               (strcmp(cmd->argv[0], C_STOR) == 0 ||
+                strcmp(cmd->argv[0], C_RETR) == 0 ||
+                strcmp(cmd->argv[0], C_APPE) == 0)) {
+      char *path;
+
+      /* If we're in the PRE_CMD phase, then the %f variable can't be
+       * filled in using session.xfer.path for STOR, RETR, and APPE.
+       */
+
+      path = pr_fs_decode_path(tmp_pool, cmd->arg);
+      varstr = sreplace(tmp_pool, varstr, "%f",
+        dir_abs_path(tmp_pool, path, TRUE), NULL);
 
     } else {
       /* Some commands (i.e. DELE, MKD, RMD, XMKD, and XRMD) have associated
@@ -930,6 +959,7 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
           dir_abs_path(tmp_pool, cmd->arg, TRUE), NULL);
 
       } else {
+
         /* All other situations get a "".  */
         varstr = sreplace(tmp_pool, varstr, "%f", "", NULL);
       }
