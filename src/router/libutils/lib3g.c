@@ -100,6 +100,96 @@ void checkreset(char *tty)
 #endif
 }
 
+void reset_mc(int needreset, char *controldev)
+{
+	if (needreset)
+		checkreset(controldev);
+}
+
+void modeswitch_e1550(int needreset, char *controldev)
+{
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1446 -m 1 55534243000000000000000000000011060000000000000000000000000000");
+	sleep(2);
+}
+
+void modeswitch_usb760(int needreset, char *controldev)
+{
+	system
+	    ("usb_modeswitch -v 0x1410 -p 0x5030 -m 1 5553424312345678000000000000061b000000020000000000000000000000");
+	sleep(2);
+}
+
+void modeswitch_icon210(int needreset, char *controldev)
+{
+	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x1e0e\n");
+	fprintf(out, "DefaultProduct=0xf000\n");
+	fprintf(out, "TargetVendor=0x1e0e\n");
+	fprintf(out, "TargetProduct=0x9000\n");
+	fprintf(out,
+		"MessageContent=\"555342431234567800000000000006bd000000020000000000000000000000\"\n");
+	fprintf(out, "ResponseEndpoint=0x01\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	sleep(2);
+}
+
+void hsoinit_icon225(int needreset, char *controldev)
+{
+	system("ozerocdoff -wi 0x6971");
+	sleep(10);
+	system("insmod hso");
+	FILE *out = fopen("/tmp/conninfo.ini", "wb");
+	fprintf(out, "APN=%s\n", nvram_safe_get("wan_apn"));
+	fprintf(out, "USER=%s\n", nvram_safe_get("ppp_username"));
+	fprintf(out, "PASS=%s\n", nvram_safe_get("ppp_passwd"));
+	fprintf(out, "PIN=%s\n", nvram_safe_get("wan_pin"));
+	fclose(out);
+	nvram_set("3gdata", "hso");
+	system("/etc/hso/hso_connect.sh restart");
+}
+
+struct DEVICES {
+	int vendor;
+	int product;
+	char *driver;
+	char *controldevice;
+	char *datadevice;
+	int modeswitch;
+	void (*customsetup) (int needreset, char *controldev);
+	char *name;
+};
+
+static struct DEVICES devicelist[] = {
+//sierra wireless cards
+	{0x1199, 0x6880, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL,"Sierra Wireless Compass 885"},
+	{0x1199, 0x6890, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL,"Sierra Wireless Compass 888"},
+	{0x1199, 0x6893, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL,"Sierra Wireless Compass 889"},
+	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 889"},	//alternate variant
+	{0x1199, 0x6832, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1,&reset_mc, "Sierra Wireless MC8780"},
+	{0x1199, 0x683c, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1,&reset_mc, "Sierra Wireless MC8790"},
+	{0x1199, 0x683d, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1,&reset_mc, "Sierra Wireless MC8790"},
+	{0x1199, 0x683e, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1,&reset_mc, "Sierra Wireless MC8790"},
+	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1,&reset_mc, "Sierra Wireless MC8700"},
+	{0x1199, 0x6812, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1,&reset_mc, "Sierra Wireless MC8775V"},
+//option/huawai
+	{0x12d1, 0x1001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,"HUAWAI/Option E600 or generic"},
+	{0x12d1, 0x1003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,"HUAWAI/Option E172/EC270"},
+	{0x12d1, 0x1412, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,"HUAWAI/Option EC168"},
+	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2,&modeswitch_e1550, "HUAWAI/Option E1550"},
+	{0x0af0, 0x7011, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,"HUAWAI/Option E301 HSUPA"},
+	{0x1410, 0x5030, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2,&modeswitch_usb760, "Novatel USB760 CDROM Mode"},
+	{0x1410, 0x6000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,"Novatel USB760 Modem Mode"},
+//qualcomm
+	{0x1e0e, 0x9000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL,"Qualcomm ICON 210 Modem Mode"},
+	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3,&modeswitch_icon210, "Qualcomm ICON 210 CDROM Mode"},
+	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225,"Qualcomm ICON 225"},
+//ericsson
+	{0x0bdb, 0x1900, "option", "/dev/usb/tts/0", "/dev/usb/tts/1", 0, NULL,"Ericsson F3507g"},
+	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}
+};
+
 char *get3GControlDevice(void)
 {
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
@@ -163,260 +253,39 @@ char *get3GControlDevice(void)
 #endif
 	nvram_unset("3gnmvariant");
 	nvram_set("3gdata", "/dev/usb/tts/0");
-	if (scanFor(0x1199, 0x6880)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless Compass 885 deteted\n");
-		insmod("usbserial");
-		insmod("sierra");
-		nvram_set("3gdata", "/dev/usb/tts/4");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/3";
-	}
-	if (scanFor(0x1199, 0x6890)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless Compass 888 deteted\n");
-		insmod("usbserial");
-		insmod("sierra");
-		nvram_set("3gdata", "/dev/usb/tts/4");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/3";
-	}
-	if (scanFor(0x1199, 0x6893)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless Compass 889 deteted\n");
-		insmod("usbserial");
-		insmod("sierra");
-		nvram_set("3gdata", "/dev/usb/tts/4");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/3";
-	}
-	if (scanFor(0x1199, 0x68a3)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless Compass 889 deteted\n");
-		insmod("usbserial");
-		insmod("sierra");
-		nvram_set("3gdata", "/dev/usb/tts/4");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/3";
-	}
-	if (scanFor(0x1199, 0x683C)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless MC8790\n");
-		nvram_set("3gdata", "/dev/usb/tts/4");
-		insmod("usbserial");
-		insmod("sierra");
-		if (needreset)
-			checkreset("/dev/usb/tts/3");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/3";
-	}
-	if (scanFor(0x1199, 0x683D)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless MC8790\n");
-		nvram_set("3gdata", "/dev/usb/tts/4");
-		insmod("usbserial");
-		insmod("sierra");
-		if (needreset)
-			checkreset("/dev/usb/tts/3");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/3";
-	}
-	if (scanFor(0x1199, 0x683E)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless MC8790\n");
-		nvram_set("3gdata", "/dev/usb/tts/4");
-		insmod("usbserial");
-		insmod("sierra");
-		if (needreset)
-			checkreset("/dev/usb/tts/3");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/3";
-	}
-	if (scanFor(0x1199, 0x68A3)) {
-		//sierra wireless 
-		fprintf(stderr, "Sierra Wireless MC8700\n");
-		nvram_set("3gdata", "/dev/usb/tts/0");
-		insmod("usbserial");
-		insmod("sierra");
-		if (needreset)
-			checkreset("/dev/usb/tts/2");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/2";
-	}
-	if (scanFor(0x1199, 0x6812)) {
-		//sierra wireless mc 8775V
-		fprintf(stderr,
-			"Sierra Wireless MC 8775V detected\nreset card\n");
-		insmod("usbserial");
-		insmod("sierra");
-		if (needreset)
-			checkreset("/dev/usb/tts/2");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/2";
-	}
-	if (scanFor(0x12d1, 0x1003)) {
-		//huawei
-		fprintf(stderr, "HUAWEI/Option E172 detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-	if (scanFor(0x0af0, 0x7011)) {
-		//huawei
-		fprintf(stderr, "HUAWEI/Option E301 HSUPA detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-	if (scanFor(0x12d1, 0x1001)) {
-		//huawei
-		fprintf(stderr, "HUAWEI/Option E600 detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-	if (scanFor(0x12d1, 0x1003)) {
-		//huawei
-		fprintf(stderr, "HUAWEI/Option EC270 detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-	if (scanFor(0x12d1, 0x1412)) {
-		//huawei
-		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-	if (scanFor(0x12d1, 0x1412)) {
-		//huawei
-		fprintf(stderr, "HUAWEI/Option EC168 detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
 
-	if (scanFor(0x12d1, 0x1446)) {
-		//huawei
-		fprintf(stderr, "HUAWEI/Option E1550 detected\n");
-		system("usb_modeswitch -v 0x12d1 -p 0x1446 -m 1 55534243000000000000000000000011060000000000000000000000000000");
-		sleep(2);
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
+	int devicecount = 0;
+	while (devicelist[devicecount].vendor != 0xffff) {
+		if (scanFor
+		    (devicelist[devicecount].vendor,
+		     devicelist[devicecount].product)) {
+			fprintf(stderr, "%s detected\n",
+				devicelist[devicecount].name);
+			if (devicelist[devicecount].driver) {
+				insmod("usbserial");
+				insmod(devicelist[devicecount].driver);
+			}
+			if (devicelist[devicecount].datadevice)
+				nvram_set("3gdata",
+					  devicelist[devicecount].datadevice);
+			if (devicelist[devicecount].modeswitch) {
+				char variant[32];
+				sprintf(variant, "%d",
+					devicelist[devicecount].modeswitch);
+				nvram_set("3gnmvariant", variant);
+			}
+			//start custom setup, if defined
+			if (devicelist[devicecount].customsetup)
+				devicelist[devicecount].customsetup(needreset,
+								    devicelist
+								    [devicecount].
+								    controldevice);
+			return devicelist[devicecount].controldevice;
+		}
+		devicecount++;
 	}
+	//not found, use generic implementation (tts0, all drivers)
 
-	if (scanFor(0x12d1, 0x1001)) { //if E1550 is already switched, it will get 1001 as product id
-		//huawei
-		fprintf(stderr, "HUAWEI/Option detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-	if (scanFor(0x1410, 0x5030)) { //cdrom mode, switch to modem mode
-		//huawei
-		fprintf(stderr, "Novatel USB760 CDROM Mode detected\n");
-		system("usb_modeswitch -v 0x1410 -p 0x6000 -m 1 5553424312345678000000000000061b000000020000000000000000000000");
-		sleep(2);
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-
-
-	if (scanFor(0x1410, 0x6000)) { //already modem mode 
-		//huawei
-		fprintf(stderr, "Novatel USB760 Modem Mode detected\n");
-//		system("usb_modeswitch -v 0x1410 -p 0x6000 -m 1 5553424312345678000000000000061b000000020000000000000000000000");
-//		sleep(2);
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "2");
-		return "/dev/usb/tts/0";
-	}
-
-
-	if (scanFor(0x1e0e, 0x9000)) {
-		//huawei
-		fprintf(stderr, "QUALCOMM ICON 210 detected\n");
-		nvram_set("3gdata", "/dev/usb/tts/2");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gnmvariant", "3");
-		return "/dev/usb/tts/2";
-	}
-
-	if (scanFor(0x1e0e, 0xf000)) {
-		//huawei
-		fprintf(stderr, "QUALCOMM ICON 210 detected\n");
-		FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
-		fprintf(out, "DefaultVendor=0x1e0e\n");
-		fprintf(out, "DefaultProduct=0xf000\n");
-		fprintf(out, "TargetVendor=0x1e0e\n");
-		fprintf(out, "TargetProduct=0x9000\n");
-		fprintf(out,
-			"MessageContent=\"555342431234567800000000000006bd000000020000000000000000000000\"\n");
-		fprintf(out, "ResponseEndpoint=0x01\n");
-		fclose(out);
-		system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
-		sleep(2);
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gdata", "/dev/usb/tts/2");
-		nvram_set("3gnmvariant", "3");
-		return "/dev/usb/tts/2";
-	}
-
-	if (scanFor(0x0af0, 0x6971)) {
-		//huawei
-		fprintf(stderr, "QUALCOMM ICON 225 detected\n");
-		system("ozerocdoff -wi 0x6971");
-		sleep(10);
-		system("insmod hso");
-		FILE *out = fopen("/tmp/conninfo.ini", "wb");
-		fprintf(out, "APN=%s\n", nvram_safe_get("wan_apn"));
-		fprintf(out, "USER=%s\n", nvram_safe_get("ppp_username"));
-		fprintf(out, "PASS=%s\n", nvram_safe_get("ppp_passwd"));
-		fprintf(out, "PIN=%s\n", nvram_safe_get("wan_pin"));
-		fclose(out);
-		nvram_set("3gdata", "hso");
-		system("/etc/hso/hso_connect.sh restart");
-		return "hso";
-	}
-
-	if (scanFor(0x1199, 0x6832)) {
-		//sierra wireless mc 8780
-		fprintf(stderr,
-			"Sierra Wireless MC 8780 detected\nreset card\n");
-		insmod("usbserial");
-		insmod("sierra");
-		if (needreset)
-			checkreset("/dev/usb/tts/2");
-		nvram_set("3gnmvariant", "1");
-		return "/dev/usb/tts/2";
-	}
-
-
-	if (scanFor(0x0bdb, 0x1902) || scanFor(0x0bdb, 0x1900)) {
-		//sierra wireless mc 8780
-		fprintf(stderr,
-			"Ericsson F3507g detected\n");
-		insmod("usbserial");
-		insmod("option");
-		nvram_set("3gdata", "/dev/usb/tts/1");
-		return "/dev/usb/tts/0";
-	}
-		
 	insmod("usbserial");
 	insmod("sierra");
 	insmod("option");
