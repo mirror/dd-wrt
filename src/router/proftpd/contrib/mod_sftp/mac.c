@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp MACs
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mac.c,v 1.5 2009/09/16 20:51:15 castaglia Exp $
+ * $Id: mac.c,v 1.5.2.2 2010/04/05 23:13:44 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -169,6 +169,7 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   if (EVP_DigestInit(&ctx, hash) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing message digest: %s", sftp_crypto_get_errors());
+    free(key);
     return -1;
   }
 #else
@@ -179,6 +180,7 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   if (EVP_DigestUpdate(&ctx, k, klen) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest with K: %s", sftp_crypto_get_errors());
+    free(key);
     return -1;
   }
 #else
@@ -189,6 +191,7 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   if (EVP_DigestUpdate(&ctx, h, hlen) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest with H: %s", sftp_crypto_get_errors());
+    free(key);
     return -1;
   }
 #else
@@ -200,6 +203,7 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest with '%c': %s", *letter,
       sftp_crypto_get_errors());
+    free(key);
     return -1;
   }
 #else
@@ -210,6 +214,7 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   if (EVP_DigestUpdate(&ctx, (char *) id, id_len) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest with ID: %s", sftp_crypto_get_errors());
+    free(key);
     return -1;
   }
 #else
@@ -220,6 +225,8 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   if (EVP_DigestFinal(&ctx, key, &key_len) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error finalizing message digest: %s", sftp_crypto_get_errors());
+    pr_memscrub(key, key_sz);
+    free(key);
     return -1;
   }
 #else
@@ -238,6 +245,8 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     if (EVP_DigestInit(&ctx, hash) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error initializing message digest: %s", sftp_crypto_get_errors());
+      pr_memscrub(key, key_sz);
+      free(key);
       return -1;
     }
 #else
@@ -248,6 +257,8 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     if (EVP_DigestUpdate(&ctx, k, klen) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error updating message digest with K: %s", sftp_crypto_get_errors());
+      pr_memscrub(key, key_sz);
+      free(key);
       return -1;
     }
 #else
@@ -258,6 +269,8 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     if (EVP_DigestUpdate(&ctx, h, hlen) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error updating message digest with H: %s", sftp_crypto_get_errors());
+      pr_memscrub(key, key_sz);
+      free(key);
       return -1;
     }
 #else
@@ -269,6 +282,8 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error updating message digest with data: %s",
         sftp_crypto_get_errors());
+      pr_memscrub(key, key_sz);
+      free(key);
       return -1;
     }
 #else
@@ -279,6 +294,8 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     if (EVP_DigestFinal(&ctx, key + len, &len) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error finalizing message digest: %s", sftp_crypto_get_errors());
+      pr_memscrub(key, key_sz);
+      free(key);
       return -1;
     }
 #else

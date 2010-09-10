@@ -27,7 +27,7 @@
  * This module is based in part on code in Alan DeKok's (aland@freeradius.org)
  * mod_auth_radius for Apache, in part on the FreeRADIUS project's code.
  *
- * $Id: mod_radius.c,v 1.56 2010/02/01 18:40:33 castaglia Exp $
+ * $Id: mod_radius.c,v 1.56.2.1 2010/05/24 18:29:43 castaglia Exp $
  */
 
 #define MOD_RADIUS_VERSION "mod_radius/0.9.1"
@@ -1311,6 +1311,44 @@ static void radius_process_user_info(config_rec *c) {
     radius_have_user_info = TRUE;
   else
    radius_log("error with RadiusUserInfo parameters, ignoring them");
+}
+
+static void radius_reset(void) {
+  /* Clear/reset user info */
+  radius_have_user_info = FALSE;
+
+  /* Clear/reset group info */
+  radius_have_group_info = FALSE;
+  radius_prime_group_name = NULL;
+  radius_addl_group_count = 0;
+  radius_addl_group_names = NULL;
+  radius_addl_group_names_str = NULL;
+  radius_addl_group_ids = NULL;
+  radius_addl_group_ids_str = NULL;
+
+  /* Clear/reset quota info */
+  radius_have_quota_info = FALSE;
+  radius_quota_per_sess = NULL;
+  radius_quota_limit_type = NULL;
+  radius_quota_bytes_in = NULL;
+  radius_quota_bytes_out = NULL;
+  radius_quota_bytes_xfer = NULL;
+  radius_quota_files_in = NULL;
+  radius_quota_files_out = NULL;
+
+  /* Clear/reset quota info */
+  radius_have_quota_info = FALSE;
+  radius_quota_per_sess = NULL;
+  radius_quota_limit_type = NULL;
+  radius_quota_bytes_in = NULL;
+  radius_quota_bytes_out = NULL;
+  radius_quota_bytes_xfer = NULL;
+  radius_quota_files_in = NULL;
+  radius_quota_files_out = NULL;
+  radius_quota_files_xfer = NULL;
+
+  /* Clear/reset other info */
+  radius_have_other_info = FALSE;
 }
 
 static unsigned char *radius_xor(unsigned char *p, unsigned char *q,
@@ -2755,17 +2793,19 @@ MODRET radius_pre_pass(cmd_rec *cmd) {
         radius_log("authentication failed for user '%s'", user);
         radius_auth_ok = FALSE;
         radius_auth_reject = TRUE;
+        radius_reset();
         break;
 
       case RADIUS_AUTH_CHALLENGE:
-
         /* Just log this case for now. */
         radius_log("authentication challenged for user '%s'", user);
+        radius_reset();
         break;
 
       default:
         radius_log("notice: server returned unknown response code: %02x",
           response->code);
+        radius_reset();
         break;
     }
 
@@ -2792,32 +2832,7 @@ MODRET radius_post_pass(cmd_rec *cmd) {
 }
 
 MODRET radius_post_pass_err(cmd_rec *cmd) {
-  /* Clear/reset user info */
-  radius_have_user_info = FALSE;
-
-  /* Clear/reset group info */
-  radius_have_group_info = FALSE;
-  radius_prime_group_name = NULL;
-  radius_addl_group_count = 0;
-  radius_addl_group_names = NULL;
-  radius_addl_group_names_str = NULL;
-  radius_addl_group_ids = NULL;
-  radius_addl_group_ids_str = NULL;
-
-  /* Clear/reset quota info */
-  radius_have_quota_info = FALSE;
-  radius_quota_per_sess = NULL;
-  radius_quota_limit_type = NULL;
-  radius_quota_bytes_in = NULL;
-  radius_quota_bytes_out = NULL;
-  radius_quota_bytes_xfer = NULL;
-  radius_quota_files_in = NULL;
-  radius_quota_files_out = NULL;
-  radius_quota_files_xfer = NULL;
-
-  /* Clear/reset other info */
-  radius_have_other_info = FALSE;
-
+  radius_reset();
   return PR_DECLINED(cmd);
 }
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* "Scrubs" the scoreboard file, clearing it of old/stale entries.
- * $Id: ftpscrub.c,v 1.1 2009/02/19 17:45:30 castaglia Exp $
+ * $Id: ftpscrub.c,v 1.1.2.1 2010/03/25 17:37:49 castaglia Exp $
  */
 
 #include "utils.h"
@@ -122,9 +122,13 @@ int main(int argc, char **argv) {
    * incorrect, try the config file kludge.
    */
   if (check_scoreboard_file() < 0) {
-    const char *file = util_scan_config(config_filename, "ScoreboardFile");
-    if (file)
-      util_set_scoreboard(file);
+    char *path;
+
+    path = util_scan_config(config_filename, "ScoreboardFile");
+    if (path) {
+      util_set_scoreboard(path);
+      free(path);
+    }
 
     if (check_scoreboard_file() < 0) {
       fprintf(stderr, "%s: %s\n", util_get_scoreboard(), strerror(errno));

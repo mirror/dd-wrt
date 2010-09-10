@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2000-2003 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2000-2010 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 # format, or AuthGroupFile, in group(5) format.  The idea is somewhat similar
 # to Apache's htpasswd program.
 #
-#  $Id: ftpasswd,v 1.10 2004/10/07 21:17:58 castaglia Exp $
+#  $Id: ftpasswd,v 1.10.4.2 2010/05/27 17:50:50 castaglia Exp $
 #
 # ---------------------------------------------------------------------------
 
@@ -116,11 +116,33 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
   die "$program: --passwd: missing required argument: --name\n"
     unless (defined($opts{'name'}));
 
+  # check for and handle the --delete-user option.
+  if (defined($opts{'delete-user'})) {
+
+    # make sure we can write/update the file first
+    unless (chmod 0644, $output_file) {
+      die "$program: unable to set permissions on $output_file to 0644: $!\n";
+    }
+
+    open_output_file();
+
+    my ($pass, $uid, $gid, $gecos, $home, $shell) = find_passwd_entry(name =>
+      $opts{'name'});
+
+    handle_passwd_entry(name => $opts{'name'}, uid => $uid, gid => $gid,
+      gecos => $gecos, home => $home, shell => $shell,
+      delete_user => $opts{'delete-user'});
+
+    close_output_file();
+
+    # done
+    exit 0;
+  }
+
   # now check for the --change-password option.  If present, lookup
   # the given name in the password file, and reuse all the information
   # except for the password
   if (defined($opts{'change-password'})) {
-
     open_output_file();
 
     my ($pass, $uid, $gid, $gecos, $home, $shell) = find_passwd_entry(name =>
@@ -182,11 +204,30 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
     $output_file = $default_group_file;
   }
 
+  # check for and handle the --delete-group option.
+  if (defined($opts{'delete-group'})) {
+
+    # make sure we can write/update the file first
+    unless (chmod 0644, $output_file) {
+      die "$program: unable to set permissions on $output_file to 0644: $!\n";
+    }
+
+    open_output_file();
+
+    handle_group_entry(name => $opts{'name'},
+      delete_group => $opts{'delete-group'});
+
+    close_output_file();
+
+    # done
+    exit 0;
+  }
+
   # make sure the required options are present
-  die "$program: -group: missing required argument: --gid\n"
+  die "$program: --group: missing required argument: --gid\n"
     unless (defined($opts{'gid'}));
 
-  die "$program: -group: missing required argument: --name\n"
+  die "$program: --group: missing required argument: --name\n"
     unless (defined($opts{'name'}));
 
   open_output_file();
@@ -522,8 +563,8 @@ sub handle_group_entry {
 
   my $gid = $args{'gid'};
   my $name = $args{'name'};
-  my $delete_group = $args{'delete-group'};
-  my $delete_user = $args{'delete-user'};
+  my $delete_group = $args{'delete_group'};
+  my $delete_user = $args{'delete_user'};
   my $passwd;
 
   my $members = "";
@@ -533,15 +574,13 @@ sub handle_group_entry {
   # it already exists), or to create a new entry
 
   my $found = 0;
-  for (my $index = 0; $index <= $#data; $index++) {
+  my $index = 0;
+  for ($index = 0; $index <= $#data; $index++) {
     my @entry = split(':', $data[$index]);
 
     if ($name eq $entry[0]) {
-
-      # remove the entry to be updated
-      splice(@data, $index, 1);
-
       $found = 1;
+      last;
     }
   }
 
@@ -563,8 +602,16 @@ sub handle_group_entry {
     $passwd = "x";
   }
 
+  # remove the entry to be updated
+  splice(@data, $index, 1);
+
+  if ($delete_group) {
+    print STDOUT "$program: entry deleted\n";
+    return;
+  }
+
   # format: $name:$passwd:$gid:$members
-  push(@data, "$name:$passwd:$gid:$members") unless $delete_group;
+  push(@data, "$name:$passwd:$gid:$members");
 
   # always sort by GIDs before printing out the file
   @data = map { $_->[0] }

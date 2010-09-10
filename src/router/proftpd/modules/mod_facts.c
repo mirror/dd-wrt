@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_facts.c,v 1.26 2009/10/14 23:45:28 castaglia Exp $
+ * $Id: mod_facts.c,v 1.26.2.1 2010/03/02 18:08:07 castaglia Exp $
  */
 
 #include "conf.h"
@@ -952,6 +952,15 @@ MODRET facts_mlsd(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+MODRET facts_mlsd_cleanup(cmd_rec *cmd) {
+  if (session.xfer.p) {
+    destroy_pool(session.xfer.p);
+  }
+
+  memset(&session.xfer, '\0', sizeof(session.xfer));
+  return PR_DECLINED(cmd);
+}
+
 MODRET facts_mlst(cmd_rec *cmd) {
   int hidden = FALSE;
   const char *path, *decoded_path;
@@ -1171,6 +1180,8 @@ static cmdtable facts_cmdtab[] = {
   { CMD,	"MFF",		G_WRITE,facts_mff,  TRUE, FALSE, CL_WRITE },
   { CMD,	"MFMT",		G_WRITE,facts_mfmt, TRUE, FALSE, CL_WRITE },
   { CMD,	C_MLSD,		G_DIRS,	facts_mlsd, TRUE, FALSE, CL_DIRS },
+  { LOG_CMD,	C_MLSD,		G_NONE,	facts_mlsd_cleanup, FALSE, FALSE },
+  { LOG_CMD_ERR,C_MLSD,		G_NONE,	facts_mlsd_cleanup, FALSE, FALSE },
   { CMD,	C_MLST,		G_DIRS,	facts_mlst, TRUE, FALSE, CL_DIRS },
   { CMD,	C_OPTS "_MLST", G_NONE, facts_opts_mlst, FALSE, FALSE },
   { 0, NULL }

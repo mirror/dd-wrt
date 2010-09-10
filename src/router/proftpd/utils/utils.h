@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 /* Scoreboard routines.
  *
- * $Id: utils.h,v 1.25 2009/09/04 17:13:10 castaglia Exp $
+ * $Id: utils.h,v 1.25.2.1 2010/03/25 17:37:49 castaglia Exp $
  */
 
 #ifndef UTILS_UTILS_H
@@ -150,7 +150,7 @@ char *util_sstrncpy(char *, const char *, size_t);
 const char *util_get_scoreboard(void);
 int util_set_scoreboard(const char *);
 
-const char *util_scan_config(const char *, const char *);
+char *util_scan_config(const char *, const char *);
 
 int util_close_scoreboard(void);
 int util_open_scoreboard(int);

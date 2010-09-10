@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 /* Utility module linked to utilities to provide functions normally
  * present in full src tree.
- * $Id: misc.c,v 1.8 2008/01/03 02:13:43 castaglia Exp $
+ * $Id: misc.c,v 1.8.4.1 2010/03/25 17:37:49 castaglia Exp $
  */
 
 #include "utils.h"
@@ -52,7 +52,7 @@ char *util_sstrncpy(char *dest, const char *src, size_t n) {
   return dest;
 }
 
-const char *util_scan_config(const char *config_path, const char *directive) {
+char *util_scan_config(const char *config_path, const char *directive) {
   FILE *fp = NULL;
   char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
   char *cp, *value = NULL;
@@ -122,5 +122,5 @@ const char *util_scan_config(const char *config_path, const char *directive) {
 
   fclose(fp);
 
-  return value;
+  return value ? strdup(value) : NULL;
 }
