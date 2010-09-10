@@ -22,7 +22,7 @@
  * detects atheros wireless adapters and loads the drivers
  */
 
-extern int getath9kdevicecount(void);
+// extern int getath9kdevicecount(void);
 
 static void detect_wireless_devices(void)
 {
@@ -54,6 +54,8 @@ static void detect_wireless_devices(void)
 		insmod("/lib/ath9k/ath9k_hw.ko");
 		insmod("/lib/ath9k/ath9k_common.ko");
 		insmod("/lib/ath9k/ath9k.ko");
+		eval("iw", "wlan0", "del"); 
+		/*
 		int ath9kcount=getath9kdevicecount();
 		int i;
 		for (i = 0; i < ath9kcount; i++)
@@ -62,6 +64,7 @@ static void detect_wireless_devices(void)
 			sprintf(ath9kiface, "wlan%d", i);
 				eval("iw", ath9kiface, "del");
 			}
+		*/
 		}
 	else
 		{
