@@ -393,7 +393,7 @@ err:
 
 	return ERR_PTR(err);
 }
-EXPORT_SYMBOL_GPL(crypto_alloc_base);
+EXPORT_SYMBOL(crypto_alloc_base);
  
 /*
  *	crypto_free_tfm - Free crypto transform
@@ -421,7 +421,7 @@ void crypto_free_tfm(struct crypto_tfm *tfm)
 	kfree(tfm);
 }
 
-EXPORT_SYMBOL_GPL(crypto_free_tfm);
+EXPORT_SYMBOL(crypto_free_tfm);
 
 int crypto_alg_available(const char *name, u32 flags)
 {
