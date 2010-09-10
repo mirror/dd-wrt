@@ -47,7 +47,7 @@ install:
 
 loader.gz: loader
 	gzip -nc9 $< > $@
-	echo "DD-WRT v24-sp2 (c) 2004 - 2009 Sebastian Gottschall / NewMedia-NET GmbH" >> loader.gz
+	echo "DD-WRT v24-sp2 (c) 2004 - 2010 Sebastian Gottschall / NewMedia-NET GmbH" >> loader.gz
 
 loader: loader.o
 	$(OBJCOPY) $< $@
