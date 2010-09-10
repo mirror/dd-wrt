@@ -252,23 +252,22 @@ typedef union _MACHTTRANSMIT_SETTING {
 } MACHTTRANSMIT_SETTING;
 
 typedef struct _RT_802_11_MAC_ENTRY {
-    unsigned char ApIdx;
-    unsigned char       Addr[6];
-    unsigned char       Aid;
-    unsigned char       Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
-    unsigned char		MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
-    char		AvgRssi0;
-	char		AvgRssi1;
-	char		AvgRssi2;
-	unsigned int		ConnectedTime;
-    MACHTTRANSMIT_SETTING	TxRate;
+	unsigned char ApIdx;
+	unsigned char Addr[6];
+	unsigned char Aid;
+	unsigned char Psm;	// 0:PWR_ACTIVE, 1:PWR_SAVE
+	unsigned char MimoPs;	// 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+	char AvgRssi0;
+	char AvgRssi1;
+	char AvgRssi2;
+	unsigned int ConnectedTime;
+	MACHTTRANSMIT_SETTING TxRate;
 //#ifdef RTMP_RBUS_SUPPORT
-	 unsigned int		LastRxRate;
-	int		StreamSnr[3];
-	int		SoundingRespSnr[3];
+	unsigned int LastRxRate;
+	int StreamSnr[3];
+	int SoundingRespSnr[3];
 //#endif // RTMP_RBUS_SUPPORT //
 } RT_802_11_MAC_ENTRY;
-
 
 typedef struct _RT_802_11_MAC_TABLE {
 	unsigned long Num;
@@ -1025,6 +1024,18 @@ int get_wififreq(char *ifname, int freq)
 #ifdef HAVE_NS3
 	return -2000;
 #endif
+	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M365")) {
+		return freq - (5540 - 3650);	// this is just a guess    
+	}
+	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M900")) {
+		if (freq < 2427 || freq > 2442)
+			return -1;
+		return freq - (2427 - 907);	//guess too, like on XR9?
+	}
+	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M35")) {
+		return freq - (5540 - 3540);	// like on XR3?
+	}
+
 	if (isEMP(ifname)) {
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
 			return freq - 2400;
@@ -1063,58 +1074,6 @@ int get_wififreq(char *ifname, int freq)
 			return -1;
 		return (2422 + 922) - freq;
 		break;
-/*		switch (freq)	// mmh weired order
-		{
-		case 2422:
-			return 922;
-			break;
-		case 2423:
-			return 921;
-			break;
-		case 2424:
-			return 920;
-			break;
-		case 2425:
-			return 919;
-			break;
-		case 2426:
-			return 918;
-			break;
-		case 2427:
-			return 917;
-			break;
-		case 2428:
-			return 916;
-			break;
-		case 2429:
-			return 915;
-			break;
-		case 2430:
-			return 914;
-			break;
-		case 2431:
-			return 913;
-			break;
-		case 2432:
-			return 912;
-			break;
-		case 2433:
-			return 911;
-			break;
-		case 2434:
-			return 910;
-			break;
-		case 2435:
-			return 909;
-			break;
-		case 2436:
-			return 908;
-			break;
-		case 2437:
-			return 907;
-			break;
-		}
-		return -1;  */
 	case 13:
 		return freq - (5540 - 3540);	// xr3 general 3,5 ghz
 	case 1328:
