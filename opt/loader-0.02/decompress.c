@@ -77,7 +77,8 @@ static __inline__ void blast_dcache(unsigned long size, unsigned long lsize)
 	}
 }
 
-#define TRX_MAGIC       0x30524448      /* "HDR0" */
+#define TRX_MAGIC             0x30524448      /* "HDR0" */
+#define TRX_MAGIC_F7D4302     0x20091006      /* router's birthday ? */
 
 struct trx_header {
 	unsigned int magic;		/* "HDR0" */
@@ -128,12 +129,12 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	unsigned int lp; /* literal pos state bits */
 	unsigned int pb; /* pos state bits */
 	unsigned int osize; /* uncompressed size */
-	unsigned char SIGN[]="DD-WRT v24-sp2 (c) 2004 - 2009 Sebastian Gottschall / NewMedia-NET GmbH";
+	unsigned char SIGN[]="DD-WRT v24-sp2 (c) 2004 - 2010 Sebastian Gottschall / NewMedia-NET GmbH";
 
 	
 	/* look for trx header, 32-bit data access */
 	for (data = ((unsigned char *) KSEG1ADDR(BCM4710_FLASH));
-		((struct trx_header *)data)->magic != TRX_MAGIC; data += 65536);
+		(((struct trx_header *)data)->magic != TRX_MAGIC && ((struct trx_header *)data)->magic != TRX_MAGIC_F7D4302); data += 65536);
 
 	/* compressed kernel is in the partition 0 or 1 */
 	if (((struct trx_header *)data)->offsets[1] > 65536) 
