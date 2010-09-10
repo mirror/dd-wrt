@@ -23,7 +23,7 @@
  */
 
 /* UTF8/charset encoding/decoding
- * $Id: encode.c,v 1.20 2009/09/07 01:37:18 castaglia Exp $
+ * $Id: encode.c,v 1.20.2.4 2010/04/14 21:04:27 castaglia Exp $
  */
 
 #include "conf.h"
@@ -51,9 +51,8 @@ static const char *trace_channel = "encode";
 static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
     char *outbuf, size_t *outbuflen) {
 # ifdef HAVE_ICONV
-  char *start = (char *) inbuf;
 
-  while (inbuflen > 0) {
+  while (*inbuflen > 0) {
     size_t nconv;
 
     pr_signals_handle();
@@ -70,13 +69,7 @@ static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
 #endif
 
     if (nconv == (size_t) -1) {
-      if (errno == EINVAL) {
-        memmove(start, inbuf, *inbuflen);
-        continue;
-
-      } else {
-        return -1;
-      }
+      return -1;
     }
 
     break;
@@ -255,6 +248,17 @@ char *pr_encode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
   if (!p || !in || !outlen) {
     errno = EINVAL;
     return NULL;
+  }
+
+  /* If the local charset matches the remote charset, then there's no point
+   * in converting; the charsets are the same.  Indeed, on some libiconv
+   * implementations, attempting to convert between the same charsets results
+   * in a tightly spinning CPU (see Bug#3272).
+   */
+  if (local_charset != NULL &&
+      encoding != NULL &&
+      strcasecmp(local_charset, encoding) == 0) {
+    return pstrdup(p, in);
   }
 
   if (encode_conv == (iconv_t) -1) {

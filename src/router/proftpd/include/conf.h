@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Generic configuration and standard header file includes.
- * $Id: conf.h,v 1.80 2009/02/22 00:28:07 castaglia Exp $
+ * $Id: conf.h,v 1.80.2.2 2010/08/31 18:09:15 castaglia Exp $
  */
 
 #ifndef PR_CONF_H
@@ -237,13 +237,17 @@ char *strchr(),*strrchr();
  * then try termio.h
  */
 
-#ifdef HAVE_SYS_TERMIOS_H
-# include <sys/termios.h>
+#ifdef HAVE_TERMIOS_H
+# include <termios.h>
 #else
-# ifdef HAVE_SYS_TERMIO_H
-#  include <sys/termio.h>
-# endif /* HAVE_SYS_TERMIO_H */
-#endif /* HAVE_SYS_TERMIOS_H */
+# ifdef HAVE_SYS_TERMIOS_H
+#  include <sys/termios.h>
+# else
+#  ifdef HAVE_SYS_TERMIO_H
+#   include <sys/termio.h>
+#  endif /* HAVE_SYS_TERMIO_H */
+# endif /* HAVE_SYS_TERMIOS_H */
+#endif /* HAVE_TERMIOS_H */
 
 #ifdef PR_USE_NLS
 # ifdef HAVE_LIBINTL_H
@@ -276,9 +280,17 @@ char *strchr(),*strrchr();
 /* AIX, when compiled using -D_NO_PROTO, lacks some prototypes without
  * which ProFTPD may do some funny (and not good) things.  Provide the
  * prototypes as necessary here.
+ *
+ * As examples of what these "not good" things might be:
+ *
+ *  1.  The ScoreboardFile will grow endlessly; session slots will not
+ *      be cleared and reused properly.
+ *
+ *  2.  The mod_delay module will complain of being unable to load the
+ *      table into memory due to "Invalid argument".
  */
 
-#if defined(AIX4) && defined(_NO_PROTO)
+#if defined(_NO_PROTO) && (defined(AIX4) || defined(AIX5))
 off_t lseek(int, off_t, int);
 #endif
 

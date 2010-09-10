@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD virtual/modular file-system support
- * $Id: fsio.c,v 1.89 2010/02/08 21:54:37 castaglia Exp $
+ * $Id: fsio.c,v 1.89.2.2 2010/04/12 19:00:00 castaglia Exp $
  */
 
 #include "conf.h"
@@ -726,12 +726,47 @@ int pr_fs_copy_file(const char *src, const char *dst) {
 #endif
 
   while ((res = pr_fsio_read(src_fh, buf, bufsz)) > 0) {
+    size_t datalen;
+    off_t offset;
+
     pr_signals_handle();
 
-    if (pr_fsio_write(dst_fh, buf, res) != res) {
-      pr_log_pri(PR_LOG_WARNING, "error copying to '%s': %s", dst,
-        strerror(errno));
-      break;
+    /* Be sure to handle short writes. */
+    datalen = res;
+    offset = 0;
+
+    while (datalen > 0) {
+      res = pr_fsio_write(dst_fh, buf + offset, datalen);
+      if (res < 0) {
+        int xerrno = errno;
+
+        if (errno == EINTR ||
+            errno == EAGAIN) {
+          pr_signals_handle();
+          continue;
+        }
+
+        pr_fsio_close(src_fh);
+        pr_fsio_close(dst_fh);
+
+        if (!dst_existed) {
+          /* Don't unlink the destination file if it already existed. */
+          pr_fsio_unlink(dst);
+        }
+
+        pr_log_pri(PR_LOG_WARNING, "error copying to '%s': %s", dst,
+          strerror(xerrno));
+
+        errno = xerrno;
+        return -1;
+      }
+
+      if (res == datalen) {
+        break;
+      }
+
+      offset += res;
+      datalen -= res;
     }
   }
 
@@ -2025,7 +2060,7 @@ char *pr_fs_decode_path(pool *p, const char *path) {
 
   res = pr_decode_str(p, path, strlen(path) + 1, &outlen);
   if (!res) {
-    pr_trace_msg("encode", 0, "error decoding path '%s': %s", path,
+    pr_trace_msg("encode", 1, "error decoding path '%s': %s", path,
       strerror(errno));
     return (char *) path;
   }
@@ -2048,7 +2083,7 @@ char *pr_fs_encode_path(pool *p, const char *path) {
 
   res = pr_encode_str(p, path, strlen(path) + 1, &outlen);
   if (!res) {
-    pr_trace_msg("encode", 0, "error encoding path '%s': %s", path,
+    pr_trace_msg("encode", 1, "error encoding path '%s': %s", path,
       strerror(errno));
     return (char *) path;
   }

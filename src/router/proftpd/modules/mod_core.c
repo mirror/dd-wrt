@@ -25,7 +25,7 @@
  */
 
 /* Core FTPD module
- * $Id: mod_core.c,v 1.366 2010/02/23 18:01:03 castaglia Exp $
+ * $Id: mod_core.c,v 1.366.2.3 2010/04/17 17:11:14 castaglia Exp $
  */
 
 #include "conf.h"
@@ -294,25 +294,36 @@ MODRET set_define(cmd_rec *cmd) {
 }
 
 MODRET add_include(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_ANON|CONF_GLOBAL|CONF_DIR);
 
   /* Make sure the given path is a valid path. */
-  if (pr_fs_valid_path(cmd->argv[1]) < 0) {
+
+  PRIVS_ROOT
+  res = pr_fs_valid_path(cmd->argv[1]);
+
+  if (res < 0) {
+    PRIVS_RELINQUISH
+
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
       "unable to use path for configuration file '", cmd->argv[1], "'", NULL));
   }
 
   if (parse_config_path(cmd->tmp_pool, cmd->argv[1]) == -1) {
-    if (errno != EINVAL)
+    if (errno != EINVAL) {
       pr_log_pri(PR_LOG_WARNING, "warning: unable to include '%s': %s",
         cmd->argv[1], strerror(errno));
 
-    else {
+    } else {
+      PRIVS_RELINQUISH
+
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error including '", cmd->argv[1],
         "': ", strerror(errno), NULL));
     }
   }
+  PRIVS_RELINQUISH
 
   return PR_HANDLED(cmd);
 }
@@ -3007,9 +3018,11 @@ MODRET core_clear_fs(cmd_rec *cmd) {
 
 MODRET core_quit(cmd_rec *cmd) {
   if (displayquit_fh) {
-    if (pr_display_fh(displayquit_fh, NULL, R_221) < 0)
+    if (pr_display_fh(displayquit_fh, NULL, R_221, 0) < 0) {
       pr_log_debug(DEBUG6, "unable to display DisplayQuit file '%s': %s",
         displayquit_fh->fh_path, strerror(errno));
+    }
+
     pr_fsio_close(displayquit_fh);
     displayquit_fh = NULL;
 
@@ -3020,9 +3033,10 @@ MODRET core_quit(cmd_rec *cmd) {
   } else {
     char *display = get_param_ptr(TOPLEVEL_CONF, "DisplayQuit", FALSE); 
     if (display) {
-      if (pr_display_file(display, NULL, R_221) < 0)
+      if (pr_display_file(display, NULL, R_221, 0) < 0) {
         pr_log_debug(DEBUG6, "unable to display DisplayQuit file '%s': %s",
           display, strerror(errno));
+      }
 
       /* Hack or feature, pr_display_file() always puts a hyphen on the
        * last line
@@ -3921,7 +3935,8 @@ MODRET _chdir(cmd_rec *cmd, char *ndir) {
         !S_ISDIR(st.st_mode) &&
         (bool ? st.st_mtime > prev : TRUE)) {
 
-      if (pr_display_file(display, session.cwd, R_250) < 0) {
+      if (pr_display_file(display, session.cwd, R_250,
+          PR_DISPLAY_FL_NO_EOM) < 0) {
         pr_log_debug(DEBUG3, "error displaying '%s': %s", display,
           strerror(errno));
       }

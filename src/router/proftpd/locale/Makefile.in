@@ -21,12 +21,12 @@ PACKAGE=proftpd
 # and is then checked into CVS.
 FILES=files.txt
 
-LANGS=bg_BG en_US fr_FR it_IT ko_KR ru_RU zh_CN zh_TW $(EXTRA_LANGS)
+LANGS=bg_BG en_US fr_FR it_IT ja_JP ko_KR ru_RU zh_CN zh_TW $(EXTRA_LANGS)
 
 # gettext utilities.  Note that this assumes gettext is installed and
 # available on the system.
 MSGCMP=msgcmp
-MSGFMT=msgfmt --check-format
+MSGFMT=msgfmt
 MSGINIT=msginit
 XGETTEXT=xgettext
 
@@ -61,7 +61,9 @@ install: $(LANGS)
 check:
 	-for lang in $(LANGS); do \
 		if [ -f $$lang.po ]; then \
-			echo "Checking $$lang.po...."; \
+			echo "Checking $$lang.po format..."; \
+			$(MSGFMT) --check-format $$lang.po > /dev/null && echo "$$lang.mo OK"; \
+			echo "Checking $$lang.po against template...."; \
 			$(MSGCMP) $$lang.po $(PACKAGE).pot; \
 			echo "----------------------"; \
 		fi; \
@@ -75,5 +77,5 @@ $(LANGS):
 		$(MSGINIT) --no-translator -i $(PACKAGE).pot -o $@.po -l $@; \
 	fi
 	-if [ -f $@.po -a ! -f $@.mo ]; then \
-		 $(MSGFMT) $@.po -o $@.mo; \
+		 $(MSGFMT) -o $@.mo $@.po; \
 	fi

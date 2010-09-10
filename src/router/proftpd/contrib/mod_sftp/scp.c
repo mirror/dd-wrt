@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: scp.c,v 1.37 2010/02/04 04:02:12 castaglia Exp $
+ * $Id: scp.c,v 1.37.2.6 2010/09/08 17:48:48 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -37,15 +37,16 @@ struct scp_path {
   char *path;
   pr_fh_t *fh;
 
-  /* Points to the directory "context" path, if we're receiving a file
-   * from a client sub-directory and we're in recursive mode.
+  /* Points to the parent directory "context" path, if any.  For handling
+   * the push/pop approach that SCP uses for receiving directories from
+   * recursive SCP uploads.
+   *
+   * Note: for very wide/deep recursive uploads, the amount of memory used
+   * for these scp_path structs could grow quite a bit.  If each struct
+   * was allocated out of its own sub pool, then they could be freed
+   * during the recursive upload.  Something to keep in mind.
    */
-  struct scp_path *recv_dir;
-
-  /* Points to the previous directory "context" path, if any.  For handling
-   * the push/pop approach that SCP uses for receiving directories.
-   */
-  struct scp_path *prev_dir;
+  struct scp_path *parent_dir;
 
   /* Track state of file metadata we've received. */
   int checked_errors;
@@ -93,7 +94,6 @@ struct scp_session {
 
   pool *pool;
   uint32_t channel_id;
-  array_header *dirs;
   array_header *paths;
   unsigned int path_idx;
 };
@@ -530,53 +530,85 @@ static int recv_filename(pool *p, uint32_t channel_id, char *name_str,
     return -1;
   }
 
-  if (sp->recv_dir == NULL) {
+  /* name_str contains the name of the source file, on the client machine.
+   * Our task is to determine whether we want use that same filename
+   * for the destination file here or not, and if not, what filename to use
+   * instead.
+   *
+   * sp->path contains the path that the client gaves to us when starting the
+   * SCP session.  This path might be a relative or absolute path to a
+   * directory (which may or may not exist), or might be a relative or absolute
+   * path to an actual file.  And whether we are chrooted or not might also
+   * factor into things.
+   *
+   * Examples:
+   *
+   * 1. scp src.txt 1.2.3.4:dst.txt
+   *
+   *   name_str = "src.txt"
+   *   sp->path = "dst.txt"
+   *
+   * 2. scp src.txt 1.2.3.4:dir
+   *
+   *   name_str = "src.txt"
+   *   sp->path = "dir"
+   *
+   * 3. scp src.txt 1.2.3.4:dir/
+   *
+   *   name_str = "src.txt"
+   *   sp->path = "dir/"
+   *
+   * 4. scp src.txt 1.2.3.4:dir/dst.txt
+   *
+   *   name_str = "src.txt"
+   *   sp->path = "dir/dst.txt"
+   *
+   * 5. scp src.txt 1.2.3.4:/dir
+   *
+   *   name_str = "src.txt"
+   *   sp->path = "/dir"
+   *
+   * 6. scp src.txt 1.2.3.4:/dir/
+   *
+   *   name_str = "src.txt"
+   *   sp->path = "/dir/"
+   *
+   * 7. scp src.txt 1.2.3.4:/dir/dst.txt
+   *
+   *   name_str = "src.txt"
+   *   sp->path = "/dir/dst.txt"
+   *
+   * All of the above examples are effectively the same.  We need to determine
+   * whether sp->path is a directory or not.  The sp->st_mode struct stat can
+   * be used for this.  We should not rely on the presence (or not) of a
+   * trailing slash in the sp->path string.
+   *
+   * If we determine that sp->path is a directory, then we need to append
+   * name_str to get the path to the destination file.  Otherwise,
+   * we should use sp->path as is, as the path to the destination file.
+   */
+
+  if (sp->parent_dir == NULL) {
     if (!S_ISDIR(sp->st_mode)) {
-      sp->filename = pstrdup(scp_pool, name_str); 
+      /* sp->path is not a directory; use it as the destination filename. */
+      sp->filename = pstrdup(scp_pool, sp->path); 
 
     } else {
+      /* sp->path is a directory; append the source filename to it to get the
+       * destination filename.
+       */
       sp->filename = pdircat(scp_pool, sp->path, name_str, NULL);
     }
 
   } else {
-    sp->filename = pdircat(scp_pool, sp->recv_dir->path, name_str, NULL);
+    /* Fortunately, in the case of recursive SCP uploads, we always use the
+     * source filename as the destination file.
+     */
+    sp->filename = pdircat(scp_pool, sp->path, name_str, NULL);
   }
 
   if (sp->filename) {
-    char *ptr;
-
-    ptr = strrchr(sp->path, '/');
-    if (ptr == NULL) {
-      sp->best_path = dir_canonical_vpath(scp_pool, sp->filename);
-
-    } else {
-
-      /* What if the client initially sent an scp command like:
-       *
-       *  scp -t dir/subdir/
-       *
-       * for an incoming 'test.txt' file?  To handle this, we append
-       * the given name to the path sent in the initial scp command.
-       *
-       * However, we only want to do this if the given name_str differs
-       * from the last path component in sp->path.  Otherwise the client
-       * could send:
-       *
-       *  scp -t dir/subdir/file
-       *
-       * and the file info control message might include a filename of
-       * "file".  If we simply append, then we get "dir/subdir/file/file"
-       * which is obviously not correct.
-       */
-
-      if (strcmp(name_str, ptr + 1) != 0) {
-        sp->best_path = dir_canonical_vpath(scp_pool,
-          pdircat(p, sp->path, name_str, NULL));
-
-      } else {
-        sp->best_path = dir_canonical_vpath(scp_pool, sp->path);
-      }
-    }
+    sp->best_path = dir_canonical_vpath(scp_pool, sp->filename);
 
     /* Update the session.xfer.path value with this better, fuller path. */
     session.xfer.path = pstrdup(session.xfer.p, sp->best_path);
@@ -666,27 +698,40 @@ static int recv_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
   if (recv_filename(p, channel_id, ptr, sp) < 0)
     return 1;
 
-  if (i != datalen) {
-    pr_trace_msg(trace_channel, 1, "more data in this message!");
-  }
-
   sp->recvd_finfo = TRUE;
 
   if (have_dir) {
     struct stat st;
-    struct scp_path *sp2;
-
-    sp2 = pcalloc(scp_pool, sizeof(struct scp_path));
+    struct scp_path *parent_sp;
 
     if (pr_fsio_stat(sp->filename, &st) < 0) {
-      pr_trace_msg(trace_channel, 5, "creating directory '%s'", sp->filename);
+      int xerrno = errno;
 
-      if (pr_fsio_mkdir(sp->filename, 0777) < 0) {
+      /* We only want to create the directory if it doesn't already exist. */
+      if (xerrno == ENOENT) {
+        pr_trace_msg(trace_channel, 5, "creating directory '%s'", sp->filename);
+
+        if (pr_fsio_mkdir(sp->filename, 0777) < 0) {
+          xerrno = errno;
+
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "scp: error creating directory '%s': %s", sp->filename,
+            strerror(xerrno));
+          write_confirm(p, channel_id, 1,
+            pstrcat(p, sp->filename, ": ", strerror(xerrno), NULL));
+
+          errno = xerrno;
+          return 1;
+        }
+
+      } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "scp: error creating directory '%s': %s", sp->filename,
-          strerror(errno));
+          "scp: error checking directory '%s': %s", sp->filename,
+          strerror(xerrno));
         write_confirm(p, channel_id, 1,
-          pstrcat(p, sp->filename, ": ", strerror(errno), NULL));
+          pstrcat(p, sp->filename, ": ", strerror(xerrno), NULL));
+
+        errno = xerrno;
         return 1;
       }
 
@@ -701,30 +746,39 @@ static int recv_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
       }
     }
 
-    if (scp_session->dirs == NULL) {
-      scp_session->dirs = make_array(scp_pool, 1, sizeof(struct scp_path *));
-    }
+    /* At this point, the info in sp is for the parent directory; we can
+     * now expect to receive info for the files/directories contained by
+     * this parent directory.
+     *
+     * So we create a new struct scp_path for this parent directory, copy
+     * the relevant bits, push it onto the stack, and clear sp for the
+     * incoming path.
+     */
 
-    *((struct scp_path **) push_array(scp_session->dirs)) = sp2;
-    sp2->path = pstrdup(scp_pool, sp->filename);
-    sp2->filename = pstrdup(scp_pool, sp->filename);
-    sp2->best_path = pstrdup(scp_pool, sp->best_path);
+    parent_sp = pcalloc(scp_pool, sizeof(struct scp_path));
+    parent_sp->path = pstrdup(scp_pool, sp->filename);
+    parent_sp->filename = pstrdup(scp_pool, sp->filename);
+    parent_sp->best_path = pstrdup(scp_pool, sp->best_path);
 
     /* Copy any timeinfo as well. */
-    sp2->times[0].tv_sec = sp->times[0].tv_sec;
-    sp2->times[0].tv_usec = sp->times[0].tv_usec;
-    sp2->times[1].tv_sec = sp->times[1].tv_sec;
-    sp2->times[1].tv_usec = sp->times[1].tv_usec;
-    sp2->recvd_timeinfo = sp->recvd_timeinfo;
+    parent_sp->times[0].tv_sec = sp->times[0].tv_sec;
+    parent_sp->times[0].tv_usec = sp->times[0].tv_usec;
+    parent_sp->times[1].tv_sec = sp->times[1].tv_sec;
+    parent_sp->times[1].tv_usec = sp->times[1].tv_usec;
+    parent_sp->recvd_timeinfo = sp->recvd_timeinfo;
 
     /* And the perms. */
-    sp2->perms = sp->perms;
-
-    sp->prev_dir = sp->recv_dir;
-    sp->recv_dir = sp2;
+    parent_sp->perms = sp->perms;
+    parent_sp->parent_dir = sp->parent_dir;
 
     /* Reset sp, for re-use for the next file coming in. */
     reset_path(sp);
+
+    /* Adjust sp->path to account for the directory we just received; the
+     * next file coming in should be relative to the just-received directory.
+     */
+    sp->path = pstrdup(scp_pool, parent_sp->filename);
+    sp->parent_dir = parent_sp;
 
     write_confirm(p, channel_id, 0, NULL);
     return 0;
@@ -825,19 +879,24 @@ static int recv_data(pool *p, uint32_t channel_id, struct scp_path *sp,
 
   if (writelen > 0) {
     while (TRUE) {
+      /* XXX Do we need to properly handle short writes here? */
       if (pr_fsio_write(sp->fh, data, writelen) != writelen) {
-        if (errno == EAGAIN) {
+        int xerrno = errno;
+
+        if (xerrno == EAGAIN) {
           pr_signals_handle();
           continue;
         }
 
         pr_trace_msg(trace_channel, 2, "error writing to '%s': %s",
-          sp->best_path, strerror(errno));
+          sp->best_path, strerror(xerrno));
         write_confirm(p, channel_id, 1,
-          pstrcat(p, sp->filename, ": write error: ", strerror(errno), NULL));
+          pstrcat(p, sp->filename, ": write error: ", strerror(xerrno), NULL));
 
         pr_fsio_close(sp->fh);
         sp->fh = NULL;
+
+        errno = xerrno;
         return 1;
       }
 
@@ -881,7 +940,7 @@ static int recv_data(pool *p, uint32_t channel_id, struct scp_path *sp,
 
 static int recv_eod(pool *p, uint32_t channel_id, struct scp_path *sp,
     char *data, uint32_t datalen) {
-  struct scp_path *dir_sp;
+  struct scp_path *parent_sp;
   int ok = TRUE;
 
   if (data[0] != 'E') {
@@ -890,36 +949,37 @@ static int recv_eod(pool *p, uint32_t channel_id, struct scp_path *sp,
 
   pr_trace_msg(trace_channel, 5, "'%s' control message: E", sp->path);
 
-  if (sp->recv_dir == NULL) {
-    pr_trace_msg(trace_channel, 1, "received E message for path, but it has no receiving directory context!");
-    return 0;
-  }
-
-  dir_sp = sp->recv_dir;
+  parent_sp = sp->parent_dir;
 
   pr_trace_msg(trace_channel, 9, "setting perms %04o on directory '%s'",
-    (unsigned int) dir_sp->perms, dir_sp->path);
-  if (pr_fsio_chmod(dir_sp->path, dir_sp->perms) < 0) {
+    (unsigned int) parent_sp->perms, parent_sp->path);
+  if (pr_fsio_chmod(parent_sp->path, parent_sp->perms) < 0) {
+    int xerrno = errno;
+
     pr_trace_msg(trace_channel, 2, "error setting mode %04o on '%s': %s",
-      (unsigned int) dir_sp->perms, dir_sp->path, strerror(errno));
+      (unsigned int) parent_sp->perms, parent_sp->path, strerror(xerrno));
     write_confirm(p, channel_id, 1,
-      pstrcat(p, dir_sp->path, ": error setting mode: ", strerror(errno),
+      pstrcat(p, parent_sp->path, ": error setting mode: ", strerror(xerrno),
       NULL));
     ok = FALSE;
   }
 
-  if (dir_sp->recvd_timeinfo) {
+  if (parent_sp->recvd_timeinfo) {
     pr_trace_msg(trace_channel, 9, "setting times on directory '%s'",
-      dir_sp->filename);
+      parent_sp->filename);
 
-    if (pr_fsio_utimes(dir_sp->filename, dir_sp->times) < 0) {
+    if (pr_fsio_utimes(parent_sp->filename, parent_sp->times) < 0) {
+      int xerrno = errno;
+
       pr_trace_msg(trace_channel, 2,
         "error setting atime %lu, mtime %lu on '%s': %s",
         (unsigned long) sp->times[0].tv_sec,
-        (unsigned long) sp->times[1].tv_sec, dir_sp->filename, strerror(errno));
+        (unsigned long) sp->times[1].tv_sec, parent_sp->filename,
+        strerror(xerrno));
+
       write_confirm(p, channel_id, 1,
-        pstrcat(p, dir_sp->filename, ": error setting times: ",
-        strerror(errno), NULL));
+        pstrcat(p, parent_sp->filename, ": error setting times: ",
+        strerror(xerrno), NULL));
       ok = FALSE;
     }
   }
@@ -927,13 +987,12 @@ static int recv_eod(pool *p, uint32_t channel_id, struct scp_path *sp,
   if (ok)
     write_confirm(p, channel_id, 0, NULL);
 
-  sp->recv_dir = sp->prev_dir;
   return 1;
 }
 
-/* Return 1 when the we should skip to the next path in the list, either
- * because we have received all the data for this path, or because we can
- * never receive it (due to some error).
+/* Return 1 when we should skip to the next path in the list, either because
+ * we have received all the data for this path, or because we can never
+ * receive it (due to some error).
  */
 static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
     char *data, uint32_t datalen) {
@@ -943,13 +1002,8 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
   if (!sp->checked_errors) {
     res = recv_errors(p, channel_id, sp, data, datalen);
     if (res == 1)
-      return res;
+      return 1;
   }
-
-  /* Check for end-of-directory control messages. */
-  res = recv_eod(p, channel_id, sp, data, datalen);
-  if (res == 1)
-    return res;
 
   if (!sp->have_mode) {
     struct stat st;
@@ -996,6 +1050,39 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
           return 1;
         }
       }
+    }
+  }
+
+  /* Check for end-of-directory control messages under the following
+   * conditions:
+   *
+   * 1. We can handle an end-of-directory marker, i.e. sp->parent_dir is
+   *    not null.
+   * 2. We have not already received any file info messages for this path.
+   * 3. We have not already received any data for this path.
+   */
+  if (sp->parent_dir != NULL &&
+      sp->recvd_finfo == FALSE &&
+      sp->recvlen == 0) {
+    res = recv_eod(p, channel_id, sp, data, datalen);
+    if (res == 1) {
+      struct scp_path *parent_dir = NULL;
+
+      if (sp->parent_dir != NULL) {
+        parent_dir = sp->parent_dir->parent_dir;
+      }
+
+      if (parent_dir) {
+        sp->path = parent_dir->path;
+      }
+
+      sp->parent_dir = parent_dir;
+
+      /* We return 1 here, and the caller will call reset_path() on the same
+       * sp pointer.  That's OK, since reset_path() does NOT change sp->path or
+       * sp->parent_dir, which is what we are most concerned with here.
+       */
+      return 1;
     }
   }
 
@@ -1392,14 +1479,6 @@ static int send_dir(pool *p, uint32_t channel_id, struct scp_path *sp,
    */
 
   if (sp->dir_spi) { 
-    if (session.xfer.p == NULL) {
-      session.xfer.p = pr_pool_create_sz(scp_pool, 64);
-      session.xfer.path = pstrdup(session.xfer.p, sp->dir_spi->path);
-      memset(&session.xfer.start_time, 0, sizeof(session.xfer.start_time));
-      gettimeofday(&session.xfer.start_time, NULL);
-      session.xfer.direction = PR_NETIO_IO_WR;
-    }
-
     res = send_path(p, channel_id, sp->dir_spi);
     if (res <= 0)
       return res;
@@ -1411,6 +1490,7 @@ static int send_dir(pool *p, uint32_t channel_id, struct scp_path *sp,
     memset(&session.xfer, 0, sizeof(session.xfer));
 
     sp->dir_spi = NULL;
+    return 0;
   }
 
   while ((dent = pr_fsio_readdir(sp->dirh)) != NULL) {
@@ -1427,33 +1507,29 @@ static int send_dir(pool *p, uint32_t channel_id, struct scp_path *sp,
 
     /* Add these to the list of paths that need to be sent. */
     spi = pcalloc(scp_pool, sizeof(struct scp_path));
-    spi->path = pdircat(p, sp->path, dent->d_name, NULL);
+    spi->path = pdircat(scp_pool, sp->path, dent->d_name, NULL);
     pathlen = strlen(spi->path);
 
     /* Trim any trailing path separators.  It's important. */
     while (pathlen > 1 &&
            spi->path[pathlen-1] == '/') {
       pr_signals_handle();
-      spi->path[--pathlen] = '\0';
+      spi->path[pathlen-1] = '\0';
+      pathlen--;
     }
+
+    spi->best_path = dir_canonical_vpath(scp_pool, spi->path);
 
     if (pathlen > 0) {
       sp->dir_spi = spi;
 
-      if (session.xfer.p == NULL) {
-        session.xfer.p = pr_pool_create_sz(scp_pool, 64);
-        session.xfer.path = pstrdup(session.xfer.p, sp->dir_spi->path);
-        memset(&session.xfer.start_time, 0, sizeof(session.xfer.start_time));
-        gettimeofday(&session.xfer.start_time, NULL);
-        session.xfer.direction = PR_NETIO_IO_WR;
-      }
-
-      res = send_path(p, channel_id, sp->dir_spi);
+      res = send_path(p, channel_id, spi);
       if (res == 1) {
         /* Clear out any transfer-specific data. */
         if (session.xfer.p) {
           destroy_pool(session.xfer.p);
         }
+
         memset(&session.xfer, 0, sizeof(session.xfer));
       }
 
@@ -1494,21 +1570,6 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
     PR_SCORE_CMD, "%s", "scp download", NULL, NULL);
   pr_scoreboard_entry_update(session.pid,
     PR_SCORE_CMD_ARG, "%s", sp->path, NULL, NULL);
-
-  cmd = scp_cmd_alloc(p, C_RETR, sp->path);
-
-  if (pr_cmd_dispatch_phase(cmd, PRE_CMD, 0) < 0) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "scp download of '%s' blocked by '%s' handler", sp->path,
-      cmd->argv[0]);
-
-    (void) pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
-    (void) pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
-    return 1;
-  }
-
-  sp->path = cmd->arg;
 
   if (pr_fsio_stat(sp->path, &st) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1556,7 +1617,26 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
     }
   }
 
-  if (!sp->fh) {
+  if (sp->fh == NULL) {
+    cmd = scp_cmd_alloc(p, C_RETR, sp->path);
+
+    if (pr_cmd_dispatch_phase(cmd, PRE_CMD, 0) < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "scp download of '%s' blocked by '%s' handler", sp->path,
+        cmd->argv[0]);
+
+      (void) pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+      (void) pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+
+      return 1;
+    }
+
+    if (strcmp(sp->path, cmd->arg) != 0) {
+      sp->path = cmd->arg;
+    }
+
+    sp->best_path = dir_canonical_vpath(scp_pool, sp->path);
+
     if (!dir_check(p, cmd, G_READ, sp->best_path, NULL)) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "scp download of '%s' blocked by <Limit> configuration", sp->best_path);
@@ -1567,17 +1647,17 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
       return 1;
     }
 
-    sp->fh = pr_fsio_open(sp->path, O_RDONLY|O_NONBLOCK);
+    sp->fh = pr_fsio_open(sp->best_path, O_RDONLY|O_NONBLOCK);
     if (sp->fh == NULL) {
       int xerrno = errno;
 
       (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
         "error opening '%s': %s", "scp download", session.user,
         (unsigned long) session.uid, (unsigned long) session.gid,
-        sp->path, strerror(xerrno));
+        sp->best_path, strerror(xerrno));
 
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error reading '%s': %s", sp->path, strerror(xerrno));
+        "error reading '%s': %s", sp->best_path, strerror(xerrno));
 
       (void) pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
       (void) pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
@@ -1585,6 +1665,16 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
       errno = xerrno;
       return 1;
     }
+  }
+
+  pr_fsio_set_block(sp->fh);
+
+  if (session.xfer.p == NULL) {
+    session.xfer.p = pr_pool_create_sz(scp_pool, 64);
+    session.xfer.path = pstrdup(session.xfer.p, sp->best_path);
+    memset(&session.xfer.start_time, 0, sizeof(session.xfer.start_time));
+    gettimeofday(&session.xfer.start_time, NULL);
+    session.xfer.direction = PR_NETIO_IO_WR;
   }
 
   /* If the PRESERVE flag is set, then we need to send a T control message
@@ -1616,6 +1706,7 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
 
     res = send_data(p, channel_id, sp, &st);
     if (res == 1) {
+      cmd = scp_cmd_alloc(p, C_RETR, sp->path);
       (void) pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
       (void) pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
       return res;
@@ -1625,6 +1716,7 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
   pr_fsio_close(sp->fh);
   sp->fh = NULL;
 
+  cmd = scp_cmd_alloc(p, C_RETR, sp->path);
   (void) pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
   (void) pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
 
@@ -1670,17 +1762,9 @@ int sftp_scp_handle_packet(pool *p, void *ssh2, uint32_t channel_id,
 
       paths = scp_session->paths->elts;
 
-      if (session.xfer.p == NULL) {
-        session.xfer.p = pr_pool_create_sz(scp_pool, 64);
-        session.xfer.path = pstrdup(session.xfer.p,
-          paths[scp_session->path_idx]->path);
-        memset(&session.xfer.start_time, 0, sizeof(session.xfer.start_time));
-        gettimeofday(&session.xfer.start_time, NULL);
-        session.xfer.direction = PR_NETIO_IO_WR;
-      }
-
       res = send_path(pkt->pool, channel_id, paths[scp_session->path_idx]);
       if (res == 1) {
+
         /* If send_path() returns 1, it means we've finished that path,
          * and are ready for another.
          */
@@ -1731,23 +1815,24 @@ int sftp_scp_handle_packet(pool *p, void *ssh2, uint32_t channel_id,
 
     res = recv_path(pkt->pool, channel_id, paths[scp_session->path_idx], data,
       datalen);
-    if (res == 1) {
-      /* If recv_path() returns 1, it means we've finished that path,
-       * and are ready for another.
-       */
-      reset_path(paths[scp_session->path_idx]);
+    if (res < 0)
+      return -1;
 
+    if (res == 1) {
       /* Clear out any transfer-specific data. */
       if (session.xfer.p) {
         destroy_pool(session.xfer.p);
       }
       memset(&session.xfer, 0, sizeof(session.xfer));
 
-      return 0;
+      /* Note: we don't increment path_idx here because when we're receiving
+       * files (i.e. it's an SCP upload), we either receive a single file,
+       * or a single (recursive) directory.  Therefore, there are not
+       * multiple struct scp_path elements in the scp_session->paths array,
+       * just one.
+       */
+      reset_path(paths[scp_session->path_idx]);
     }
-
-    if (res < 0)
-      return -1;
   }
 
   return 0;
@@ -1778,7 +1863,7 @@ int sftp_scp_set_params(pool *p, uint32_t channel_id, array_header *req) {
   opterr = 1;
   optind = 1;
 
-#elif defined(SOLARIS2)
+#elif defined(SOLARIS2) || defined(HPUX11)
   opterr = 0;
   optind = 1;
 
@@ -2090,9 +2175,7 @@ int sftp_scp_close_session(uint32_t channel_id) {
         scp_sessions = sess->next;
       }
 
-      if (sess->dirs != NULL) {
-        /* XXX How to handle dangling directory lists?? */
-      }
+      /* XXX How to handle dangling directory lists?? */
 
       if (sess->paths != NULL) {
         if (sess->paths != NULL &&
@@ -2169,7 +2252,6 @@ int sftp_scp_close_session(uint32_t channel_id) {
         }
       }
 
-      sess->dirs = NULL;
       sess->paths = NULL;
       destroy_pool(sess->pool);
 

@@ -24,7 +24,7 @@
  * DO NOT EDIT BELOW THIS LINE
  * $Archive: mod_sftp.a $
  * $Libraries: -lcrypto -lz $
- * $Id: mod_sftp.c,v 1.29 2010/02/19 17:57:42 castaglia Exp $
+ * $Id: mod_sftp.c,v 1.29.2.1 2010/03/03 00:55:15 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -332,7 +332,9 @@ MODRET set_sftpauthorizedkeys(cmd_rec *cmd) {
     *ptr = ':';
   }
 
-  c = add_config_param_str(cmd->argv[0], cmd->argc-1, NULL);
+  c = add_config_param(cmd->argv[0], 0);
+  c->argc = cmd->argc-1;
+  c->argv = pcalloc(c->pool, c->argc * (sizeof(char *)));
   for (i = 1; i < cmd->argc; i++) {
     c->argv[i-1] = pstrdup(c->pool, cmd->argv[i]);
   }

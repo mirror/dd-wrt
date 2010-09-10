@@ -678,6 +678,9 @@
 /* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
 #undef HAVE_SYS_WAIT_H
 
+/* Define if you have the <termios.h> header file.  */
+#undef HAVE_TERMIOS_H
+
 /* Define if you have the <ucontext.h> header file.  */
 #undef HAVE_UCONTEXT_H
 
@@ -875,6 +878,9 @@
 
 /* Define if ncursesw support, if available, should be used.  */
 #undef PR_USE_NCURSESW
+
+/* Define if using nonblocking open of log files.  */
+#undef PR_USE_NONBLOCKING_LOG_OPEN
 
 /* Define if OpenSSL support, if available, should be used.  */
 #undef PR_USE_OPENSSL
