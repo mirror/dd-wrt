@@ -219,7 +219,7 @@ void start_sysinit(void)
 
 		fseek(file, 0x422, SEEK_SET);
 		fread(&buf[0], 6, 1, file);
-		char mac[16];
+		char mac[20];
 		unsigned int copy[16];
 
 		for (i = 0; i < 6; i++)
