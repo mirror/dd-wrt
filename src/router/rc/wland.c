@@ -493,11 +493,11 @@ static void do_madwifi_check(void)
 	int i, s;
 
 	for (i = 0; i < c; i++) {
+		sprintf(dev, "ath%d", i);
 #ifdef HAVE_MADWIFI_MIMO
-	    if (is_ar5008(i))
+	    if (is_ar5008(dev))
 		continue;
 #endif
-		sprintf(dev, "ath%d", i);
 		if (nvram_match("wds_watchdog_debug", "1"))
 			for (s = 1; s <= 10; s++) {
 				char wdsvarname[32] = { 0 };
