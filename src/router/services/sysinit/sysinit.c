@@ -85,6 +85,9 @@ extern void free_defaults(void);
 
 extern int usb_add_ufd(void);
 
+extern int f_exists(const char *path);
+extern int getdevicecount(void);
+
 int endswith(char *str, char *cmp)
 {
 	int cmp_len, str_len, i;

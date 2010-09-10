@@ -76,9 +76,9 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/7", "r");
 	if (fp) {
 		fseek(fp, 0x7f1000, SEEK_SET);
-		unsigned char buf[16];
+		unsigned char buf[20];
 		fread(&buf[0], 6, 1, fp);
-		char mac[16];
+		char mac[20];
 		int i;
 		unsigned int copy[16];
 		for (i = 0; i < 12; i++)

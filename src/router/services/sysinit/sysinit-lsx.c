@@ -145,7 +145,7 @@ void start_sysinit(void)
 
 			fseek(fp, 0x1f810, SEEK_SET);
 			fread(&buf[0], 6, 1, fp);
-			char mac[16];
+			char mac[20];
 			int i;
 
 			unsigned int copy[16];

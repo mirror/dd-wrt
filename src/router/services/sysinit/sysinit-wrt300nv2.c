@@ -104,7 +104,7 @@ void start_sysinit(void)
 
 		fseek(file, 0x5ffa0, SEEK_SET);	// point of mac address
 		fread(&buf[0], 6, 1, file);
-		char mac[16];
+		char mac[20];
 
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1],
 			buf[2], buf[3], buf[4], buf[5]);
