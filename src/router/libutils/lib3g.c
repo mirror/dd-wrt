@@ -247,6 +247,8 @@ char *get3GControlDevice(void)
 		//sierra wireless mc 8775V
 		fprintf(stderr,
 			"Sierra Wireless MC 8775V detected\nreset card\n");
+		insmod("usbserial");
+		insmod("sierra");
 		if (needreset)
 			checkreset("/dev/usb/tts/2");
 		nvram_set("3gnmvariant", "1");
@@ -396,11 +398,26 @@ char *get3GControlDevice(void)
 		//sierra wireless mc 8780
 		fprintf(stderr,
 			"Sierra Wireless MC 8780 detected\nreset card\n");
+		insmod("usbserial");
+		insmod("sierra");
 		if (needreset)
 			checkreset("/dev/usb/tts/2");
 		nvram_set("3gnmvariant", "1");
 		return "/dev/usb/tts/2";
 	}
+
+
+	if (scanFor(0x0bdb, 0x1902) || scanFor(0x0bdb, 0x1900)) {
+		//sierra wireless mc 8780
+		fprintf(stderr,
+			"Ericsson F3507g detected\n");
+		insmod("usbserial");
+		insmod("option");
+		nvram_set("3gnmvariant", "2");
+		nvram_set("3gdata", "/dev/usb/tts/1");
+		return "/dev/usb/tts/0";
+	}
+		
 	insmod("usbserial");
 	insmod("sierra");
 	insmod("option");
