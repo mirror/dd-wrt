@@ -34,6 +34,7 @@ $(_obj)-$(CONFIG_OCF_HIFN)    += hifn/
 $(_obj)-$(CONFIG_OCF_IXP4XX)  += ixp4xx/
 $(_obj)-$(CONFIG_OCF_TALITOS) += talitos/
 $(_obj)-$(CONFIG_OCF_OCFNULL) += ocfnull/
+$(_obj)-$(CONFIG_OCF_EP80579) += ep80579/
 
 ocf-objs := $(OCF_OBJS)
 

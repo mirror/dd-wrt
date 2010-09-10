@@ -65,6 +65,12 @@ config OCF_TALITOS
 	help
 	  OCF driver for Freescale's security engine (SEC/talitos).
 
+config OCF_EP80579
+	tristate "ep80579 (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for the Intel EP80579 Integrated Processor Product Line.
+
 config OCF_OCFNULL
 	tristate "ocfnull (fake crypto engine)"
 	depends on OCF_OCF
