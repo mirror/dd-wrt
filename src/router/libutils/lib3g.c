@@ -100,27 +100,27 @@ void checkreset(char *tty)
 #endif
 }
 
-void reset_mc(int needreset, char *controldev)
+static void reset_mc(int needreset, char *controldev)
 {
 	if (needreset)
 		checkreset(controldev);
 }
 
-void modeswitch_e1550(int needreset, char *controldev)
+static void modeswitch_e1550(int needreset, char *controldev)
 {
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1446 -m 1 55534243000000000000000000000011060000000000000000000000000000");
 	sleep(2);
 }
 
-void modeswitch_usb760(int needreset, char *controldev)
+static void modeswitch_usb760(int needreset, char *controldev)
 {
 	system
 	    ("usb_modeswitch -v 0x1410 -p 0x5030 -m 1 5553424312345678000000000000061b000000020000000000000000000000");
 	sleep(2);
 }
 
-void modeswitch_icon210(int needreset, char *controldev)
+static void modeswitch_icon210(int needreset, char *controldev)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x1e0e\n");
@@ -135,7 +135,7 @@ void modeswitch_icon210(int needreset, char *controldev)
 	sleep(2);
 }
 
-void hsoinit_icon225(int needreset, char *controldev)
+static void hsoinit_icon225(int needreset, char *controldev)
 {
 	system("ozerocdoff -wi 0x6971");
 	sleep(10);
