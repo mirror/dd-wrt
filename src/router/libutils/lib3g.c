@@ -413,7 +413,6 @@ char *get3GControlDevice(void)
 			"Ericsson F3507g detected\n");
 		insmod("usbserial");
 		insmod("option");
-		nvram_set("3gnmvariant", "2");
 		nvram_set("3gdata", "/dev/usb/tts/1");
 		return "/dev/usb/tts/0";
 	}
