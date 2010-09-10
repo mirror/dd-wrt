@@ -297,8 +297,34 @@ static void buffalo_defaults(int force)
 			if (wpapsk)
 				nvram_set("ath1_wpa_psk", wpapsk);
 		}
-#endif
+		struct ifreq ifr;
+		int s;
 
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+			char eabuf[32];
+
+			strncpy(ifr.ifr_name, "wifi0", IFNAMSIZ);
+			ioctl(s, SIOCGIFHWADDR, &ifr);
+			close(s);
+			unsigned char *edata =
+			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff,
+				edata[4] & 0xff, edata[5] & 0xff);
+			nvram_set("ath0_ssid", eabuf);
+		}
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+			char eabuf[32];
+
+			strncpy(ifr.ifr_name, "wifi1", IFNAMSIZ);
+			ioctl(s, SIOCGIFHWADDR, &ifr);
+			close(s);
+			unsigned char *edata =
+			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff,
+				edata[4] & 0xff, edata[5] & 0xff);
+			nvram_set("ath1_ssid", eabuf);
+		}
+#else
 		struct ifreq ifr;
 		int s;
 
@@ -315,10 +341,8 @@ static void buffalo_defaults(int force)
 				edata[2] & 0xff, edata[3] & 0xff,
 				edata[4] & 0xff, edata[5] & 0xff);
 			nvram_set("ath0_ssid", eabuf);
-#ifdef HAVE_WZRHPAG300NH
-			nvram_set("ath1_ssid", eabuf);
-#endif
 		}
+#endif
 
 		char *region = getUEnv("region");
 		if (region == NULL) {
