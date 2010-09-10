@@ -586,6 +586,12 @@ AC_ARG_ENABLE(nls,
     fi
   ])
 
+AC_ARG_ENABLE(nonblocking-log-open,
+  [AC_HELP_STRING(
+    [--disable-nonblocking-log-open],
+    [disable use of nonblocking open of log files (default=no)])
+  ])
+
 AC_ARG_ENABLE(ncurses,
   [AC_HELP_STRING(
     [--disable-ncurses],
@@ -1164,7 +1170,7 @@ AC_CHECK_HEADERS(netinet/ip.h,,,
 
 AC_CHECK_HEADERS(netinet/tcp.h arpa/inet.h libintl.h)
 AC_CHECK_HEADERS(sys/stat.h errno.h sys/socket.h sys/termios.h sys/termio.h)
-AC_CHECK_HEADERS(sys/statvfs.h sys/un.h sys/vfs.h sys/select.h)
+AC_CHECK_HEADERS(sys/statvfs.h sys/un.h sys/vfs.h sys/select.h termios.h)
 AC_CHECK_HEADERS(dirent.h ndir.h sys/ndir.h sys/dir.h vmsdir.h)
 AC_CHECK_HEADERS(ucred.h ucontext.h utime.h utmpx.h)
 AC_CHECK_HEADERS(regex.h)
@@ -1800,6 +1806,10 @@ if test x"$enable_ncurses" != xno ; then
   else
     AC_DEFINE(PR_USE_NCURSES, 1, [Define if using ncurses support])
   fi
+fi
+
+if test x"$enable_nonblocking_log_open" != xno; then
+  AC_DEFINE(PR_USE_NONBLOCKING_LOG_OPEN, 1, [Define if using nonblocking open of log files])
 fi
 
 if test x"$enable_ident" != xno ; then

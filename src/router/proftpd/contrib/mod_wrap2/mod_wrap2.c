@@ -666,7 +666,16 @@ static unsigned char wrap2_match_list(array_header *list, wrap2_conn_t *conn,
    */
 
   for (i = list_idx; i < list->nelts; i++) {
-    char *token = wrap2_skip_whitespace(tokens[i]);
+    char *token;
+
+    /* It's possible that the token string is actually NULL; handle this
+     * case gracefully.
+     */
+    if (tokens[i] == NULL) {
+      continue;
+    }
+
+    token = wrap2_skip_whitespace(tokens[i]);
 
     if (strcasecmp(token, "EXCEPT") == 0) {
       /* EXCEPT -- give up now. */
@@ -936,7 +945,7 @@ static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
   wrap2_log("table daemon list:");
   for (i = 0; i < daemon_list->nelts; i++) {
     char **daemons = daemon_list->elts;
-    wrap2_log("  %s", daemons[i]);
+    wrap2_log("  %s", daemons[i] ? daemons[i] : "<null>");
   }
 
   /* Build client list. */
@@ -950,7 +959,7 @@ static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
   wrap2_log("table client list:");
   for (i = 0; i < client_list->nelts; i++) {
     char **clients = client_list->elts;
-    wrap2_log("  %s", clients[i]);
+    wrap2_log("  %s", clients[i] ? clients[i] : "<null>");
   }
 
   /* Build options list. */
@@ -960,7 +969,7 @@ static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
     wrap2_log("table options list:");
     for (i = 0; i < options_list->nelts; i++) {
       char **opts = options_list->elts;
-      wrap2_log("  %s", opts[i]);
+      wrap2_log("  %s", opts[i] ? opts[i] : "<null>");
     }
   }
 

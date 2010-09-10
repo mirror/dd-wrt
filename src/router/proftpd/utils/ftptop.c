@@ -1,7 +1,7 @@
 /*
  * ProFTPD - ftptop: a utility for monitoring proftpd sessions
  * Copyright (c) 2000-2002 TJ Saunders <tj@castaglia.org>
- * Copyright (c) 2003-2009 The ProFTPD Project team
+ * Copyright (c) 2003-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 /* Shows who is online via proftpd, in a manner similar to top.  Uses the
  * scoreboard files.
  *
- * $Id: ftptop.c,v 1.38 2009/12/13 20:17:30 castaglia Exp $
+ * $Id: ftptop.c,v 1.38.2.1 2010/03/25 17:37:49 castaglia Exp $
  */
 
 #define FTPTOP_VERSION "ftptop/0.9"
@@ -374,9 +374,13 @@ static void process_opts(int argc, char *argv[]) {
    * incorrect, try the config file kludge.
    */
   if (check_scoreboard_file() < 0) {
-    const char *file = util_scan_config(config_filename, "ScoreboardFile");
-    if (file)
-      util_set_scoreboard(file);
+    char *path;
+
+    path = util_scan_config(config_filename, "ScoreboardFile");
+    if (path) {
+      util_set_scoreboard(path);
+      free(path);
+    }
 
     if (check_scoreboard_file() < 0) {
       fprintf(stderr, "%s: %s\n", util_get_scoreboard(), strerror(errno));

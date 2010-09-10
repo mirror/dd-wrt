@@ -25,7 +25,7 @@
  */
 
 /* Directory listing module for ProFTPD.
- * $Id: mod_ls.c,v 1.172 2010/02/23 17:06:57 castaglia Exp $
+ * $Id: mod_ls.c,v 1.172.2.2 2010/07/20 16:23:47 castaglia Exp $
  */
 
 #include "conf.h"
@@ -303,7 +303,8 @@ static int sendline(int flags, char *fmt, ...) {
         errno != 0) {
       int xerrno = errno;
 
-      if (session.d) {
+      if (session.d &&
+          session.d->outstrm) {
         xerrno = PR_NETIO_ERRNO(session.d->outstrm);
       }
 
@@ -1455,6 +1456,42 @@ static void parse_list_opts(char **opt, int *glob_flags, int handle_plus_opts) {
   }
 }
 
+/* Only look for and parse options if there are more than two arguments.
+ * This will avoid trying to handle the file/path in a command like:
+ *
+ *  LIST -filename
+ *
+ * as if it were options.
+ *
+ * Returns TRUE if the given command has options that should be parsed,
+ * FALSE otherwise.
+ */
+static int have_options(cmd_rec *cmd, const char *arg) {
+  struct stat st;
+  int res;
+
+  /* If we have more than 2 arguments, then we definitely have parseable
+   * options.
+   */
+
+  if (cmd->argc > 2)
+    return TRUE;
+
+  /* Now we need to determine if the given string (arg) should be handled
+   * as options (as when the target path is implied, e.g. "LIST -al") or
+   * as a real path.  We'll simply do a stat on the string; if it exists,
+   * then it's a path.
+   */
+
+  pr_fs_clear_cache();
+  res = pr_fsio_stat(arg, &st);
+
+  if (res == 0)
+    return FALSE;
+
+  return TRUE;
+}
+
 /* The main work for LIST and STAT (not NLST).  Returns -1 on error, 0 if
  * successful.
  */
@@ -1471,39 +1508,22 @@ static int dolist(cmd_rec *cmd, const char *opt, int clearflags) {
       opt_R = opt_S = opt_t = opt_STAT = opt_L = 0;
   }
 
-  if (!list_strict_opts) {
-    parse_list_opts(&arg, &glob_flags, FALSE);
+  if (have_options(cmd, arg)) {
+    if (!list_strict_opts) {
+      parse_list_opts(&arg, &glob_flags, FALSE);
 
-  } else {
-    char *ptr;
+    } else {
+      char *ptr;
 
-    /* Even if the user-given options are ignored, they still need to
-     * "processed" (i.e. skip past options) in order to get to the paths.
-     *
-     * First, scan for options.  Any leading whitespace before options can
-     * be skipped, as long as there ARE options.
-     */
-    ptr = arg;
-
-    while (isspace((int) *ptr)) {
-      pr_signals_handle();
-      ptr++;
-    }
-
-    if (*ptr == '-') {
-      /* Options are found; skip past the leading whitespace. */
-      arg = ptr;
-    }
-
-    while (arg && *arg == '-') {
-      /* Advance to the next whitespace */
-      while (*arg != '\0' && !isspace((int) *arg))
-        arg++;
-
+      /* Even if the user-given options are ignored, they still need to
+       * "processed" (i.e. skip past options) in order to get to the paths.
+       *
+       * First, scan for options.  Any leading whitespace before options can
+       * be skipped, as long as there ARE options.
+       */
       ptr = arg;
 
-      while (*ptr &&
-             isspace((int) *ptr)) {
+      while (isspace((int) *ptr)) {
         pr_signals_handle();
         ptr++;
       }
@@ -1511,17 +1531,36 @@ static int dolist(cmd_rec *cmd, const char *opt, int clearflags) {
       if (*ptr == '-') {
         /* Options are found; skip past the leading whitespace. */
         arg = ptr;
+      }
 
-      } else if (*(arg + 1) == ' ') {
-        /* If the next character is a blank space, advance just one
-         * character.
-         */
-        arg++;
-        break;
+      while (arg && *arg == '-') {
+        /* Advance to the next whitespace */
+        while (*arg != '\0' && !isspace((int) *arg))
+          arg++;
 
-      } else {
-        arg = ptr;
-        break;
+        ptr = arg;
+
+        while (*ptr &&
+               isspace((int) *ptr)) {
+          pr_signals_handle();
+          ptr++;
+        }
+
+        if (*ptr == '-') {
+          /* Options are found; skip past the leading whitespace. */
+          arg = ptr;
+
+        } else if (*(arg + 1) == ' ') {
+          /* If the next character is a blank space, advance just one
+           * character.
+           */
+          arg++;
+          break;
+
+        } else {
+          arg = ptr;
+          break;
+        }
       }
     }
   }
@@ -2288,39 +2327,22 @@ MODRET ls_nlst(cmd_rec *cmd) {
   opt_A = opt_a = opt_B = opt_C = opt_d = opt_F = opt_n = opt_r = opt_R =
     opt_S = opt_t = opt_STAT = opt_L = 0;
 
-  if (!list_strict_opts) {
-    parse_list_opts(&target, &glob_flags, FALSE);
+  if (have_options(cmd, target)) {
+    if (!list_strict_opts) {
+      parse_list_opts(&target, &glob_flags, FALSE);
 
-  } else {
-    char *ptr;
+    } else {
+      char *ptr;
 
-    /* Even if the user-given options are ignored, they still need to
-     * "processed" (i.e. skip past options) in order to get to the paths.
-     *
-     * First, scan for options.  Any leading whitespace before options can
-     * be skipped, as long as there ARE options.
-     */
-    ptr = target;
-
-    while (isspace((int) *ptr)) {
-      pr_signals_handle();
-      ptr++;
-    }
-
-    if (*ptr == '-') {
-      /* Options are found; skip past the leading whitespace. */
-      target = ptr;
-    }
-
-    while (target && *target == '-') {
-      /* Advance to the next whitespace */
-      while (*target != '\0' && !isspace((int) *target))
-        target++;
-
+      /* Even if the user-given options are ignored, they still need to
+       * "processed" (i.e. skip past options) in order to get to the paths.
+       *
+       * First, scan for options.  Any leading whitespace before options can
+       * be skipped, as long as there ARE options.
+       */
       ptr = target;
 
-      while (*ptr &&
-             isspace((int) *ptr)) {
+      while (isspace((int) *ptr)) {
         pr_signals_handle();
         ptr++;
       }
@@ -2328,17 +2350,36 @@ MODRET ls_nlst(cmd_rec *cmd) {
       if (*ptr == '-') {
         /* Options are found; skip past the leading whitespace. */
         target = ptr;
+      }
 
-      } else if (*(target + 1) == ' ') {
-        /* If the next character is a blank space, advance just one
-         * character.
-         */
-        target++;
-        break;
+      while (target && *target == '-') {
+        /* Advance to the next whitespace */
+        while (*target != '\0' && !isspace((int) *target))
+          target++;
 
-      } else {
-        target = ptr;
-        break;
+        ptr = target;
+
+        while (*ptr &&
+               isspace((int) *ptr)) {
+          pr_signals_handle();
+          ptr++;
+        }
+
+        if (*ptr == '-') {
+          /* Options are found; skip past the leading whitespace. */
+          target = ptr;
+
+        } else if (*(target + 1) == ' ') {
+          /* If the next character is a blank space, advance just one
+           * character.
+           */
+          target++;
+          break;
+
+        } else {
+          target = ptr;
+          break;
+        }
       }
     }
   }

@@ -23,7 +23,7 @@
  */
 
 /* Table API implementation
- * $Id: table.c,v 1.16 2010/02/14 00:36:18 castaglia Exp $
+ * $Id: table.c,v 1.16.2.1 2010/03/30 21:17:56 castaglia Exp $
  */
 
 #include "conf.h"
@@ -110,19 +110,23 @@ static void entry_insert(pr_table_entry_t **h, pr_table_entry_t *e) {
 /* Default removal is simply to remove the entry from the chain. */
 static void entry_remove(pr_table_entry_t **h, pr_table_entry_t *e) {
 
-  if (e->next)
+  if (e->next) {
     e->next->prev = e->prev;
+  }
 
-  if (e->prev)
+  if (e->prev) {
     e->prev->next = e->next;
+  }
 
-  if (e == *h &&
-      e->next == NULL)
-    /* This entry is the head, and is the only entry in this chain. */
-    *h = NULL;
+  if (e == *h) {
+    if (e->next == NULL) {
+      /* This entry is the head, and is the only entry in this chain. */
+      *h = NULL;
 
-  else 
-    *h = e->next;
+    } else {
+      *h = e->next;
+    }
+  }
 
   e->prev = e->next = NULL;
   return;
@@ -274,7 +278,9 @@ static pr_table_entry_t *tab_entry_next(pr_table_t *tab) {
 }
 
 static void tab_entry_remove(pr_table_t *tab, pr_table_entry_t *e) {
-  pr_table_entry_t *h = tab->chains[e->idx];
+  pr_table_entry_t *h;
+
+  h = tab->chains[e->idx];
 
   tab->entremove(&h, e);
   tab->chains[e->idx] = h;

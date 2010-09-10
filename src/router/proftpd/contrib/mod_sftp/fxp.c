@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: fxp.c,v 1.88 2010/02/19 17:47:20 castaglia Exp $
+ * $Id: fxp.c,v 1.88.2.13 2010/08/03 23:36:16 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -629,24 +629,35 @@ static int fxp_get_v3_open_flags(uint32_t flags) {
       res |= O_APPEND;
     }
 #endif
+
+  } else if (flags & SSH2_FXF_APPEND) {
+    /* Assume FXF_WRITE, since the client didn't explicitly provide either
+     * FXF_READ or FXF_WRITE.
+     */
+    res = O_WRONLY|O_APPEND;
   }
 
   if (flags & SSH2_FXF_CREAT) {
     res |= O_CREAT;
 
-    if (flags & SSH2_FXF_TRUNC) {
-      res |= O_TRUNC;
-    }
-
+    /* Since the behavior of open(2) when O_EXCL is set and O_CREAT is not
+     * set is undefined, we avoid that situation, and only check for the
+     * FXF_EXCL SSH flag if the FXF_CREAT flag is set.
+     */
     if (flags & SSH2_FXF_EXCL) {
       res |= O_EXCL;
     }
+  }
+
+  if (flags & SSH2_FXF_TRUNC) {
+    res |= O_TRUNC;
   }
 
   return res;
 }
 
 static int fxp_get_v5_open_flags(uint32_t desired_access, uint32_t flags) {
+  uint32_t base_flag;
 
   /* Assume that the desired flag is read-only by default. */
   int res = O_RDONLY;
@@ -687,31 +698,44 @@ static int fxp_get_v5_open_flags(uint32_t desired_access, uint32_t flags) {
 #endif
   }
 
-  if (flags & SSH2_FXF_OPEN_OR_CREATE) {
-    res |= O_CREAT;
+  /* The flags value, in the case of v5 (and later) OPEN requests, has
+   * a "base" value, along with some modifying bits masked in.
+   */
+  base_flag = (flags &~ (SSH2_FXF_ACCESS_APPEND_DATA|SSH2_FXF_ACCESS_APPEND_DATA_ATOMIC|SSH2_FXF_ACCESS_TEXT_MODE));
 
-    /* If we're creating, then it's a write. */
-    if (!(res & O_RDWR)) {
-      res |= O_WRONLY;
-    }
-  }
+  switch (base_flag) {
+    case SSH2_FXF_CREATE_NEW:
+      res |= O_CREAT|O_EXCL;
+      break;
 
-  if (flags & SSH2_FXF_CREATE_TRUNCATE) {
-    res |= O_CREAT|O_TRUNC;
+    case SSH2_FXF_CREATE_TRUNCATE:
+      if (res == O_RDONLY) {
+        /* A truncate is a write. */
+        res = O_WRONLY;
+      }
+      res |= O_CREAT|O_TRUNC;
+      break;
 
-    /* If we're creating and truncating, then it's definitely a write. */
-    if (!(res & O_RDWR)) {
-      res |= O_WRONLY;
-    }
-  }
+    case SSH2_FXF_OPEN_EXISTING:
+      break;
 
-  if (flags & SSH2_FXF_TRUNCATE_EXISTING) {
-    res |= O_TRUNC;
+    case SSH2_FXF_OPEN_OR_CREATE:
+      res |= O_CREAT;
+      break;
 
-    /* If we're truncating, then it's a write. */
-    if (!(res & O_RDWR)) {
-      res |= O_WRONLY;
-    }
+    case SSH2_FXF_TRUNCATE_EXISTING:
+      if (res == O_RDONLY) {
+        /* A truncate is a write. */
+        res = O_WRONLY;
+      }
+      res |= O_TRUNC;
+      break;
+
+    default:
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "unknown OPEN base flag value (%lu), defaulting to O_RDONLY",
+        (unsigned long) base_flag);
+      break;
   }
 
   return res;
@@ -2559,10 +2583,6 @@ static void fxp_version_add_vendor_id_ext(pool *p, char **buf,
   uint64_t build_number;
   struct fxp_extpair ext;
 
-  if (!(fxp_ext_flags & SFTP_FXP_EXT_VENDOR_ID)) {
-    return;
-  }
-
   bufsz2 = buflen2 = 512;
   ptr2 = buf2 = sftp_msg_getbuf(p, bufsz2);
 
@@ -2719,6 +2739,7 @@ static void fxp_version_add_supported_ext(pool *p, char **buf,
   uint32_t attrs_len, attrs_sz;
   char *attrs_buf, *attrs_ptr;
   uint32_t file_mask, bits_mask, open_mask, access_mask, max_read_size;
+  unsigned int ext_count;
 
   ext.ext_name = "supported";
 
@@ -2747,6 +2768,55 @@ static void fxp_version_add_supported_ext(pool *p, char **buf,
   sftp_msg_write_int(&attrs_buf, &attrs_len, access_mask);
   sftp_msg_write_int(&attrs_buf, &attrs_len, max_read_size);
 
+  /* The possible extensions to advertise here are:
+   *
+   *  check-file
+   *  copy-file
+   *  vendor-id
+   */
+
+  ext_count = 3;
+
+  if (!(fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE)) {
+    ext_count--;
+  }
+
+  if (!(fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE)) {
+    ext_count--;
+  }
+
+  /* We don't decrement the extension count if the 'vendor-id' extension
+   * is disabled.  By advertisting the 'vendor-id' extension here, we are
+   * telling the client that it can send us its vendor information.
+   */
+
+  if (ext_count > 0) {
+    uint32_t exts_len, exts_sz;
+    char *exts_buf, *exts_ptr;
+
+    exts_len = exts_sz = 256;
+    exts_buf = exts_ptr = palloc(p, exts_sz);
+
+    if (fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) {
+      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: check-file");
+      sftp_msg_write_string(&exts_buf, &exts_len, "check-file");
+    }
+
+    if (fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) {
+      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: copy-file");
+      sftp_msg_write_string(&exts_buf, &exts_len, "copy-file");
+    }
+
+    /* We always send the 'vendor-id' extension; it lets the client know
+     * that it can send its vendor information to us.
+     */
+    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: vendor-id");
+    sftp_msg_write_string(&exts_buf, &exts_len, "vendor-id");
+
+    sftp_msg_write_data(&attrs_buf, &attrs_len, exts_ptr,
+      (exts_sz - exts_len), FALSE);
+  }
+
   ext.ext_data = attrs_ptr;
   ext.ext_datalen = (attrs_sz - attrs_len);
 
@@ -2761,7 +2831,7 @@ static void fxp_version_add_supported2_ext(pool *p, char **buf,
   char *attrs_buf, *attrs_ptr;
   uint32_t file_mask, bits_mask, open_mask, access_mask, max_read_size;
   uint16_t open_lock_mask, lock_mask;
-  int ext_count;
+  unsigned int ext_count;
 
   ext.ext_name = "supported2";
 
@@ -2828,23 +2898,33 @@ static void fxp_version_add_supported2_ext(pool *p, char **buf,
     ext_count--;
   }
 
+  /* We don't decrement the extension count if the 'vendor-id' extension
+   * is disabled.  By advertisting the 'vendor-id' extension here, we are
+   * telling the client that it can send us its vendor information.
+   */
+
   /* Additional protocol extensions (why these appear in 'supported2' is
    * confusing to me, too).
    */
   sftp_msg_write_int(&attrs_buf, &attrs_len, ext_count);
 
-  if (fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) {
-    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: check-file");
-    sftp_msg_write_string(&attrs_buf, &attrs_len, "check-file");
-  }
+  if (ext_count > 0) {
+    if (fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) {
+      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: check-file");
+      sftp_msg_write_string(&attrs_buf, &attrs_len, "check-file");
+    }
 
-  if (fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) {
-    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: copy-file");
-    sftp_msg_write_string(&attrs_buf, &attrs_len, "copy-file");
-  }
+    if (fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) {
+      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: copy-file");
+      sftp_msg_write_string(&attrs_buf, &attrs_len, "copy-file");
+    }
 
-  pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: vendor-id");
-  sftp_msg_write_string(&attrs_buf, &attrs_len, "vendor-id");
+    /* We always send the 'vendor-id' extension; it lets the client know
+     * that it can send its vendor information to us.
+     */
+    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: vendor-id");
+    sftp_msg_write_string(&attrs_buf, &attrs_len, "vendor-id");
+  }
  
   ext.ext_data = attrs_ptr;
   ext.ext_datalen = (attrs_sz - attrs_len);
@@ -4158,6 +4238,10 @@ static int fxp_handle_extended(struct fxp_packet *fxp) {
   buflen = bufsz = FXP_RESPONSE_DATA_DEFAULT_SZ;
   buf = ptr = palloc(fxp->pool, bufsz);
 
+  /* We always handle an EXTENDED vendor-id request from the client; the
+   * client is telling us its vendor information; it is not requesting that
+   * we send our vendor information.
+   */
   if (strcmp(ext_request_name, "vendor-id") == 0) {
     res = fxp_handle_ext_vendor_id(fxp);
     pr_cmd_dispatch_phase(cmd, res == 0 ? LOG_CMD : LOG_CMD_ERR, 0);
@@ -4591,6 +4675,7 @@ static int fxp_handle_fstat(struct fxp_packet *fxp) {
   }
   cmd->argv[0] = cmd_name;
 
+  pr_fs_clear_cache();
   if (pr_fsio_fstat(fxh->fh, &st) < 0) {
     uint32_t status_code;
     const char *reason;
@@ -4704,7 +4789,10 @@ static int fxp_handle_init(struct fxp_packet *fxp) {
 
   sftp_msg_write_int(&buf, &buflen, fxp_session->client_version);
 
-  fxp_version_add_vendor_id_ext(fxp->pool, &buf, &buflen);
+  if (fxp_ext_flags & SFTP_FXP_EXT_VENDOR_ID) {
+    fxp_version_add_vendor_id_ext(fxp->pool, &buf, &buflen);
+  }
+
   fxp_version_add_version_ext(fxp->pool, &buf, &buflen);
   fxp_version_add_openssh_exts(fxp->pool, &buf, &buflen);
 
@@ -5202,6 +5290,7 @@ static int fxp_handle_lstat(struct fxp_packet *fxp) {
   }
   cmd->argv[0] = cmd_name;
 
+  pr_fs_clear_cache();
   if (pr_fsio_lstat(path, &st) < 0) {
     uint32_t status_code;
     const char *reason;
@@ -6005,12 +6094,7 @@ static int fxp_handle_opendir(struct fxp_packet *fxp) {
 
   fxh = fxp_handle_create(fxp_pool);
   fxh->dirh = dirh;
-
-  if (strcmp(path, pr_fs_getvwd()) != 0) {
-    fxh->dir = pstrdup(fxh->pool, path);
-  } else {
-    fxh->dir = "";
-  }
+  fxh->dir = pstrdup(fxh->pool, path);
 
   if (fxp_handle_add(fxp->channel_id, fxh) < 0) {
     uint32_t status_code;
@@ -6383,8 +6467,9 @@ static int fxp_handle_readdir(struct fxp_packet *fxp) {
   struct fxp_packet *resp;
   array_header *path_list;
   cmd_rec *cmd;
-  int have_error = FALSE;
+  int have_error = FALSE, res;
   mode_t *fake_mode = NULL;
+  const char *vwd = NULL;
 
   name = sftp_msg_read_string(fxp->pool, &fxp->payload, &fxp->payload_sz);
 
@@ -6489,6 +6574,41 @@ static int fxp_handle_readdir(struct fxp_packet *fxp) {
     return fxp_packet_write(resp);
   }
 
+  /* Change into the directory being read, so that ".", "..", and relative
+   * paths (e.g. for symlinks) get resolved properly.
+   *
+   * We need to dup the string returned by pr_fs_getvwd(), since it returns
+   * a pointer to a static string which is changed by the call we make
+   * to pr_fsio_chdir().
+   */
+  vwd = pstrdup(fxp->pool, pr_fs_getvwd());
+
+  res = pr_fsio_chdir(fxh->dir, FALSE);
+  if (res < 0) {
+    uint32_t status_code;
+    const char *reason;
+    int xerrno = errno;
+
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to chdir to '%s': %s", (char *) fxh->dir, strerror(xerrno));
+
+    status_code = fxp_errno2status(xerrno, &reason);
+
+    pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s'",
+      (unsigned long) status_code, reason);
+
+    fxp_status_write(&buf, &buflen, fxp->request_id, status_code,
+      fxp_strerror(status_code), NULL);
+
+    pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+
+    resp = fxp_packet_create(fxp->pool, fxp->channel_id);
+    resp->payload = ptr;
+    resp->payload_sz = (bufsz - buflen);
+
+    return fxp_packet_write(resp);
+  }
+
   fake_mode = get_param_ptr(get_dir_ctxt(fxp->pool, (char *) fxh->dir),
     "DirFakeMode", FALSE);
 
@@ -6498,8 +6618,16 @@ static int fxp_handle_readdir(struct fxp_packet *fxp) {
 
     pr_signals_handle();
 
-    real_path = dir_canonical_vpath(fxp->pool, pdircat(fxp->pool, fxh->dir,
-      dent->d_name, NULL));
+    /* Do not expand/resolve dot directories; it will be handled automatically
+     * lower down in the ACL-checking code.  Plus, this allows regex filters
+     * that rely on the dot directory name to work properly.
+     */
+    if (!is_dotdir(dent->d_name)) {
+      real_path = pdircat(fxp->pool, fxh->dir, dent->d_name, NULL);
+
+    } else {
+      real_path = pstrdup(fxp->pool, dent->d_name);
+    }
 
     fxd = fxp_get_dirent(fxp->pool, cmd, real_path, fake_mode);
     if (fxd == NULL) {
@@ -6524,6 +6652,33 @@ static int fxp_handle_readdir(struct fxp_packet *fxp) {
 
   if (pr_data_get_timeout(PR_DATA_TIMEOUT_STALLED) > 0) {
     pr_timer_reset(PR_TIMER_STALLED, ANY_MODULE);
+  }
+
+  /* Now make sure we switch back to the directory where we were. */
+  res = pr_fsio_chdir(vwd, FALSE);
+  if (res < 0) {
+    uint32_t status_code;
+    const char *reason;
+    int xerrno = errno;
+
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to chdir to '%s': %s", vwd, strerror(xerrno));
+
+    status_code = fxp_errno2status(xerrno, &reason);
+
+    pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s'",
+      (unsigned long) status_code, reason);
+
+    fxp_status_write(&buf, &buflen, fxp->request_id, status_code,
+      fxp_strerror(status_code), NULL);
+
+    pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+
+    resp = fxp_packet_create(fxp->pool, fxp->channel_id);
+    resp->payload = ptr;
+    resp->payload_sz = (bufsz - buflen);
+
+    return fxp_packet_write(resp);
   }
 
   if (path_list->nelts == 0) {
@@ -6804,13 +6959,16 @@ static int fxp_handle_realpath(struct fxp_packet *fxp) {
     path = vpath;
   }
 
-  if (pr_fsio_lstat(path, &st) < 0) {
+  /* Force a full lookup. */
+  if (!dir_check_full(fxp->pool, cmd, G_NONE, path, NULL)) {
     uint32_t status_code;
     const char *reason;
     int xerrno = errno;
 
+    status_code = SSH2_FX_PERMISSION_DENIED;
+
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "error checking '%s' for REALPATH: %s", path, strerror(xerrno));
+      "REALPATH of '%s' blocked by <Limit> configuration", path);
 
     buf = ptr;
     buflen = bufsz;
@@ -6827,15 +6985,41 @@ static int fxp_handle_realpath(struct fxp_packet *fxp) {
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
   } else {
-    pr_trace_msg(trace_channel, 8, "sending response: NAME 1 %s %s",
-      path, fxp_strattrs(fxp->pool, &st, NULL));
+    if (pr_fsio_lstat(path, &st) < 0) {
+      uint32_t status_code;
+      const char *reason;
+      int xerrno = errno;
 
-    sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_NAME);
-    sftp_msg_write_int(&buf, &buflen, fxp->request_id);
-    sftp_msg_write_int(&buf, &buflen, 1);
-    fxp_name_write(fxp->pool, &buf, &buflen, path, &st);
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error checking '%s' for REALPATH: %s", path, strerror(xerrno));
 
-    pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+      buf = ptr;
+      buflen = bufsz;
+
+      status_code = fxp_errno2status(xerrno, &reason);
+
+      pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s' "
+        "('%s' [%d])", (unsigned long) status_code, reason,
+        xerrno != EOF ? strerror(xerrno) : "End of file", xerrno);
+
+      fxp_status_write(&buf, &buflen, fxp->request_id, status_code, reason,
+        NULL);
+
+      pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+
+    } else {
+
+      pr_trace_msg(trace_channel, 8, "sending response: NAME 1 %s %s",
+        path, fxp_strattrs(fxp->pool, &st, NULL));
+
+      sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_FXP_NAME);
+      sftp_msg_write_int(&buf, &buflen, fxp->request_id);
+      sftp_msg_write_int(&buf, &buflen, 1);
+
+      fxp_name_write(fxp->pool, &buf, &buflen, path, &st);
+
+      pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+    }
   }
 
   resp = fxp_packet_create(fxp->pool, fxp->channel_id);
@@ -7782,6 +7966,7 @@ static int fxp_handle_stat(struct fxp_packet *fxp) {
   }
   cmd->argv[0] = cmd_name;
 
+  pr_fs_clear_cache();
   if (pr_fsio_stat(path, &st) < 0) {
     uint32_t status_code;
     const char *reason;

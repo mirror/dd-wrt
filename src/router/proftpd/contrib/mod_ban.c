@@ -25,7 +25,7 @@
  * This is mod_ban, contrib software for proftpd 1.2.x/1.3.x.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ban.c,v 1.37 2010/02/22 17:01:30 castaglia Exp $
+ * $Id: mod_ban.c,v 1.37.2.1 2010/09/08 17:48:48 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1122,7 +1122,7 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
     opterr = 1;
     optind = 1;
 
-#elif defined(SOLARIS2)
+#elif defined(SOLARIS2) || defined(HPUX11)
     opterr = 0;
     optind = 1;
 

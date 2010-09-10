@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: interop.c,v 1.5 2010/02/10 18:34:34 castaglia Exp $
+ * $Id: interop.c,v 1.5.2.1 2010/07/06 15:50:50 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -181,11 +181,11 @@ int sftp_interop_handle_version(const char *client_version) {
       /* We have a match. */
       interop_flags &= ~(known_versions[i].interop_flags);
 
-      if (known_versions[i].interop_flags & SFTP_SSH2_FEAT_PROBE) {
+      if (known_versions[i].interop_flags == SFTP_SSH2_FEAT_PROBE) {
         is_probe = TRUE;
       }
 
-      if (known_versions[i].interop_flags & SFTP_SSH2_FEAT_SCANNER) {
+      if (known_versions[i].interop_flags == SFTP_SSH2_FEAT_SCANNER) {
         is_scan = TRUE;
       }
 

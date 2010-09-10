@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD logging support.
- * $Id: log.c,v 1.99 2009/11/05 17:46:55 castaglia Exp $
+ * $Id: log.c,v 1.99.2.1 2010/04/13 21:57:34 castaglia Exp $
  */
 
 #include "conf.h"
@@ -47,6 +47,7 @@ static int systemlog_fd = -1;
 
 int syslog_sockfd = -1;
 
+#ifdef PR_USE_NONBLOCKING_LOG_OPEN
 static int fd_set_block(int fd) {
   int flags, res;
 
@@ -55,6 +56,7 @@ static int fd_set_block(int fd) {
 
   return res;
 }
+#endif /* PR_USE_NONBLOCKING_LOG_OPEN */
 
 int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
   int res;
@@ -124,12 +126,15 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
 
   if (allow_log_symlinks == NULL ||
       *allow_log_symlinks == FALSE) {
-    int flags = O_APPEND|O_CREAT|O_WRONLY|O_NONBLOCK;
+    int flags = O_APPEND|O_CREAT|O_WRONLY;
 
+#ifdef PR_USE_NONBLOCKING_LOG_OPEN
     /* Use the O_NONBLOCK flag when opening log files, as they might be
      * FIFOs whose other end is not currently running; we do not want to
      * block indefinitely in such cases.
      */
+    flags |= O_NONBLOCK;
+#endif /* PR_USE_NONBLOCKING_LOG_OPEN */
 
 #ifdef O_NOFOLLOW
     /* On systems that support the O_NOFOLLOW flag (e.g. Linux and FreeBSD),
@@ -226,12 +231,15 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
     }
 
   } else {
-    int flags = O_CREAT|O_APPEND|O_WRONLY|O_NONBLOCK;
+    int flags = O_CREAT|O_APPEND|O_WRONLY;
 
+#ifdef PR_USE_NONBLOCKING_LOG_OPEN
     /* Use the O_NONBLOCK flag when opening log files, as they might be
      * FIFOs whose other end is not currently running; we do not want to
      * block indefinitely in such cases.
      */
+    flags |= O_NONBLOCK;
+#endif /* PR_USE_NONBLOCKING_LOG_OPEN */
 
     *log_fd = open(lf, flags, log_mode);
     if (*log_fd < 0) {
@@ -253,8 +261,10 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
     }
   }
 
+#ifdef PR_USE_NONBLOCKING_LOG_OPEN
   /* Return the fd to blocking mode. */
   fd_set_block(*log_fd);
+#endif /* PR_USE_NONBLOCKING_LOG_OPEN */
 
   destroy_pool(tmp_pool);
   return 0;

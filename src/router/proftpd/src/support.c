@@ -27,7 +27,7 @@
 /* Various basic support routines for ProFTPD, used by all modules
  * and not specific to one or another.
  *
- * $Id: support.c,v 1.104 2010/02/07 18:36:53 castaglia Exp $
+ * $Id: support.c,v 1.104.2.1 2010/06/15 16:58:38 castaglia Exp $
  */
 
 #include "conf.h"
@@ -361,11 +361,29 @@ char *dir_realpath(pool *p, const char *path) {
 char *dir_abs_path(pool *p, const char *path, int interpolate) {
   char *res = NULL;
 
-  if (interpolate)
-    path = dir_interpolate(p, path);
-
-  if (!path)
+  if (path == NULL) {
+    errno = EINVAL;
     return NULL;
+  }
+
+  if (interpolate) {
+    char buf[PR_TUNABLE_PATH_MAX+1];
+
+    memset(buf, '\0', sizeof(buf));
+    switch (pr_fs_interpolate(path, buf, sizeof(buf)-1)) {
+      case -1:
+        return NULL;
+
+      case 0:
+        /* Do nothing; path exists */
+        break;
+
+      case 1:
+        /* Interpolation occurred; make a copy of the interpolated path. */
+        path = pstrdup(p, buf);
+        break;
+    }
+  }
 
   if (*path != '/') {
     if (session.chroot_path) {

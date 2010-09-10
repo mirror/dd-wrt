@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: utf8.c,v 1.7 2009/09/08 17:38:04 castaglia Exp $
+ * $Id: utf8.c,v 1.7.2.3 2010/04/13 16:39:16 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -41,24 +41,28 @@ static const char *local_charset = NULL;
 static iconv_t decode_conv = (iconv_t) -1;
 static iconv_t encode_conv = (iconv_t) -1;
 
-static int utf8_convert(iconv_t conv, char *inbuf, size_t *inbuflen,
+static int utf8_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
     char *outbuf, size_t *outbuflen) {
 # ifdef HAVE_ICONV
-  char *start = inbuf;
 
-  while (inbuflen > 0) {
+  while (*inbuflen > 0) {
     size_t nconv;
 
     pr_signals_handle();
 
+    /* Solaris/FreeBSD's iconv(3) takes a const char ** for the input buffer,
+     * whereas Linux/Mac OSX iconv(3) use char ** for the input buffer.
+     */
+#if defined(LINUX) || defined(DARWIN6) || defined(DARWIN7) || \
+    defined(DARWIN8) || defined(DARWIN9)
+ 
+    nconv = iconv(conv, (char **) &inbuf, inbuflen, &outbuf, outbuflen);
+#else
     nconv = iconv(conv, &inbuf, inbuflen, &outbuf, outbuflen);
-    if (nconv == (size_t) -1) {
-      if (errno == EINVAL) {
-        memmove(start, inbuf, *inbuflen);
-        continue;
+#endif
 
-      } else
-        return -1;
+    if (nconv == (size_t) -1) {
+      return -1;
     }
 
     break;

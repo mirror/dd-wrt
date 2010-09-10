@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp user authentication
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth.c,v 1.23 2009/12/12 00:47:39 castaglia Exp $
+ * $Id: auth.c,v 1.23.2.2 2010/04/09 18:26:01 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -265,7 +265,7 @@ static int setup_env(pool *p, char *user) {
   int login_acl, i, res, show_symlinks = FALSE;
   struct stat st;
   char *default_chdir, *default_root, *home_dir;
-  const char *sess_ttyname = NULL;
+  const char *sess_ttyname = NULL, *xferlog = NULL;
   cmd_rec *cmd;
 
   pw = pr_auth_getpwnam(p, user);
@@ -316,7 +316,13 @@ static int setup_env(pool *p, char *user) {
   session.login_uid = pw->pw_uid;
   session.login_gid = pw->pw_gid;
 
-  pw->pw_dir = pr_auth_get_home(p, pw->pw_dir);
+  /* Note that we do NOT need to explicitly call pr_auth_get_home() here;
+   * that call already happens in the pr_auth_getpwnam() call above.  To
+   * call it again here would cause the home directory to be rewritten twice;
+   * depending on the configured rewrite rules, that would lead to an
+   * incorrect value (Bug#3421).
+   */
+
   pw->pw_dir = path_subst_uservar(p, &pw->pw_dir);
 
   if (session.gids == NULL &&
@@ -403,16 +409,18 @@ static int setup_env(pool *p, char *user) {
 #endif /* PR_USE_LASTLOG */
 
   c = find_config(main_server->conf, CONF_PARAM, "TransferLog", FALSE);
-  if (c) {
-    const char *xferlog;
+  if (c == NULL) {
+    xferlog = PR_XFERLOG_PATH;
 
+  } else {
     xferlog = c->argv[0];
-    if (strcasecmp(xferlog, "none") == 0) {
-      xferlog_open(NULL);
+  }
 
-    } else {
-      xferlog_open(xferlog);
-    }
+  if (strcasecmp(xferlog, "none") == 0) {
+    xferlog_open(NULL);
+
+  } else {
+    xferlog_open(xferlog);
   }
 
   res = set_groups(p, pw->pw_gid, session.gids);
