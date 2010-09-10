@@ -193,13 +193,21 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	char dev[128];
 
 	// fprintf (stderr, "Write Linux %d to %s\n", linuxsize,dev);
-	FILE *out = fopen("/tmp/flash", "wb");
+	char drive[64];
+	sprintf(drive,"/dev/discs/disc%d/disc",getdiscindex());
+	FILE *out = fopen(drive, "wb");
 
 	for (i = 0; i < linuxsize; i++)
 		putc(getc(fifo), out);
 	fclose(out);
+
 	sysprintf("sync");
-	sysprintf("dd if=/tmp/flash of=/dev/discs/disc%d/disc",getdiscindex());
+	sysprintf("sync");
+	//reread for validation
+	FILE *in = fopen(drive, "rb");
+	for (i = 0; i < linuxsize; i++)
+	    getc(in);
+	fclose(in);
 	sysprintf("sync");
 	/*
 	 * Wait for write to terminate 
