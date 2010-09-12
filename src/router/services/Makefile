@@ -101,6 +101,9 @@ ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS_EXTRA += -DHAVE_MADWIFI_MIMO
 OBJS += madwifi_11n.o
 endif
+ifeq ($(CONFIG_ATH9K),y)
+CFLAGS_EXTRA += -DHAVE_ATH9K
+endif
 ifeq ($(CONFIG_GLAUCO),y)
 CFLAGS_EXTRA += -DHAVE_GLAUCO
 endif
@@ -319,6 +322,12 @@ ifeq ($(CONFIG_MADWIFI_MIMO),y)
 NOBJS += site_survey_madwifi_11n.o
 NFILES += tools/site_survey_madwifi_11n.c
 NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
+endif
+ifeq ($(CONFIG_ATH9K),y)
+ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/compat-wireless/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
+ATH9KOBJS += madwifi_ath9k.o
+ATH9KFILES += networking/madwifi_ath9k.c
+ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
@@ -1009,9 +1018,6 @@ endif
 ifeq ($(CONFIG_ADMTEKNESTEDVLAN),y)
   CFLAGS_EXTRA += -DHAVE_ADMTEKNESTEDVLAN
 endif
-ifeq ($(CONFIG_ATH9K),y)
-  CFLAGS_EXTRA += -DHAVE_ATH9K
-endif
 
 CFLAGS += $(CFLAGS_EXTRA)
 HCFLAGS += $(CFLAGS_EXTRA)
@@ -1047,7 +1053,10 @@ services.so: $(OBJS)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) --shared -c $(NCFLAGS) -o $(NOBJS) $(NFILES)
 endif
-	$(CC) --shared $(CFLAGS) -o $@ $^  $(NOBJS) $(LDFLAGS)
+ifeq ($(CONFIG_ATH9K),y)
+	$(CC) -shared -c $(ATH9KCFLAGS) $(ATH9KFILES)
+endif
+	$(CC) --shared $(CFLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)

@@ -54,17 +54,7 @@ static void detect_wireless_devices(void)
 		insmod("/lib/ath9k/ath9k_hw.ko");
 		insmod("/lib/ath9k/ath9k_common.ko");
 		insmod("/lib/ath9k/ath9k.ko");
-		eval("iw", "wlan0", "del"); 
-		/*
-		int ath9kcount=getath9kdevicecount();
-		int i;
-		for (i = 0; i < ath9kcount; i++)
-			{
-			char ath9kiface[32];
-			sprintf(ath9kiface, "wlan%d", i);
-				eval("iw", ath9kiface, "del");
-			}
-		*/
+		delete_ath9k_devices(NULL);
 		}
 	else
 		{

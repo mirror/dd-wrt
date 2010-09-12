@@ -21,6 +21,9 @@
 #include <utils.h>
 #include <bcmnvram.h>
 #include <math.h>
+#ifdef HAVE_ATH9K
+#include <glob.h>
+#endif
 
 struct nvram_tuple router_defaults[] = {
 	{0, 0, 0}
@@ -1234,9 +1237,77 @@ int getAssocMAC(char *ifname, char *mac)
 	closesocket();
 	return ret;
 }
+#ifdef HAVE_ATH9K
 
-int is_ar5008(char *prefix)
-{
+int get_ath9k_phy_idx(int idx) {
+	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
+	return idx - getifcount("wifi");
+}
+
+int is_ath9k(char *prefix) {
+	glob_t globbuf;
+	int count=0;
+	char globstring[1024];
+	int globresult;
+	int devnum;
+	// get legacy interface count
+	if (!nvram_match("mimo_driver", "ath9k"))
+		return (0);
+	if (! sscanf(prefix, "ath%d", &devnum) )
+			return(0);
+	// i don't expect 9+ cards in a system
+	// todo we have to maintain an offset here if there are legacy cards 
+	sprintf(globstring,"/sys/class/ieee80211/phy%d",get_ath9k_phy_idx(devnum));
+	globresult=glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	if (globresult == 0)
+		count=(int) globbuf.gl_pathc;
+	globfree(&globbuf);
+	return(count);
+}
+
+void delete_ath9k_devices(char *physical_iface) {
+	glob_t globbuf;
+	char globstring[1024];
+	int globresult;
+	if (physical_iface)
+		sprintf(globstring,"/sys/class/ieee80211/%s/device/net/*",physical_iface);
+	else
+		sprintf(globstring,"/sys/class/ieee80211/phy*/device/net/*");
+	globresult=glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	int i;
+	for (i = 0; i < globbuf.gl_pathc; i++) {
+		char *ifname;
+		ifname = strrchr(globbuf.gl_pathv[i], '/');
+		if (!ifname)
+			continue;
+		eval("iw", ifname + 1, "del");
+	}
+}
+
+void radio_off_ath9k(int idx) {
+	fprintf (stderr, "ath9k radio off: phy%d ath%d\n",get_ath9k_phy_idx(idx), idx);
+	// TBD
+	}
+
+void radio_on_ath9k(int idx) {
+	fprintf (stderr, "ath9k radio on: phy%d ath%d\n",get_ath9k_phy_idx(idx), idx);
+	// TBD
+	}
+
+int has_5ghz_ath9k(int devnum) {
+	fprintf (stderr, "ath9k has_5ghz: phy%d ath%d\n",get_ath9k_phy_idx(devnum), devnum);
+	// TBD
+	return 1;
+	}
+
+int has_2ghz_ath9k(int devnum) {
+	fprintf (stderr, "ath9k has_2ghz: phy%d ath%d\n",get_ath9k_phy_idx(devnum), devnum);
+	// TBD
+	return 1;
+	}
+#endif
+
+int is_ar5008(char *prefix) {
 	char sys[64];
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
@@ -1246,6 +1317,16 @@ int is_ar5008(char *prefix)
 	if (f_exists(sys))
 		return 1;
 
+	return 0;
+}
+
+int is_ath11n(char *prefix) {
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix)) return 1;
+#endif
+#ifdef HAVE_MADWIFI_MIMO
+	if (is_ar5008(prefix)) return 1;
+#endif
 	return 0;
 }
 
@@ -1271,6 +1352,10 @@ int has_5ghz(char *prefix)
 {
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix))
+		return has_5ghz_ath9k(devnum);
+#endif
 
 	return has_athmask(devnum, 0x1);
 }
@@ -1279,6 +1364,10 @@ int has_2ghz(char *prefix)
 {
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix))
+		return has_2ghz_ath9k(devnum);
+#endif
 
 	return has_athmask(devnum, 0x8);
 }
@@ -1411,15 +1500,22 @@ struct wifi_channels *list_channels(char *devnr)
 
 int getdevicecount(void)
 {
-	int count = getifcount("wifi");
+	int count=0;
+#ifdef HAVE_ATH9K
+	count+=getath9kdevicecount();
+#endif
+	count+=getifcount("wifi");
 
-	if (count > 0)
-		return count;
-	return 0;
+	return count;
 }
 
 int getRssi(char *ifname, unsigned char *mac)
 {
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		return getRssi_ath9k(ifname,mac);
+	}
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(ifname)) {
 		return getRssi_11n(ifname, mac);
@@ -1487,6 +1583,11 @@ int getRssi(char *ifname, unsigned char *mac)
 
 int getUptime(char *ifname, unsigned char *mac)
 {
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		return getUptime_ath9k(ifname, mac);
+	}
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(ifname)) {
 		return getUptime_11n(ifname, mac);
@@ -1550,6 +1651,11 @@ int getUptime(char *ifname, unsigned char *mac)
 
 int getNoise(char *ifname, unsigned char *mac)
 {
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		return getNoise_ath9k(ifname, mac);
+	}
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(ifname)) {
 		return getNoise_11n(ifname, mac);
@@ -1615,6 +1721,11 @@ int getNoise(char *ifname, unsigned char *mac)
 
 int getassoclist(char *ifname, unsigned char *list)
 {
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		return getassoclist_ath9k(ifname, list);
+	}
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(ifname)) {
 		return getassoclist_11n(ifname, list);
@@ -1702,6 +1813,9 @@ int getassoclist(char *ifname, unsigned char *list)
 
 void radio_off(int idx)
 {
+#ifdef HAVE_ATH9K
+	radio_off_ath9k(idx);
+#endif
 	if (idx != -1) {
 		sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", idx);
 		sysprintf("echo 1 > /proc/sys/dev/wifi%d/ledon", idx);	//switch off led
@@ -1717,6 +1831,9 @@ void radio_off(int idx)
 
 void radio_on(int idx)
 {
+#ifdef HAVE_ATH9K
+	radio_on_ath9k(idx);
+#endif
 	if (idx != -1)
 		sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent", idx);
 	else {
