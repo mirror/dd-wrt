@@ -59,12 +59,21 @@ endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
 endif
+ifeq ($(CONFIG_ATH9K),y)
+CFLAGS += -DHAVE_ATH9K
+endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 NCFLAGS += $(COPTS) -fPIC -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi_mimo.dev/core  -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 NCFLAGS	+= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 NOBJS += wl_11n.o
 NFILES += wl_11n.c
+endif
+ifeq ($(CONFIG_ATH9K),y)
+ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/compat-wireless/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
+ATH9KOBJS += wl_ath9k.o
+ATH9KFILES += wl_ath9k.c
+ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
@@ -793,7 +802,10 @@ libwireless.so: $(WOBJS)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) -shared -c $(NCFLAGS) $(NFILES)
 endif
-	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) -L../nvram -lnvram  $(WLDFLAGS)
+ifeq ($(CONFIG_ATH9K),y)
+	$(CC) -shared -c $(ATH9KCFLAGS) $(ATH9KFILES)
+endif
+	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram  $(WLDFLAGS) $(ATH9KLDFLAGS)
 
 
 libutils.a: $(OBJS)

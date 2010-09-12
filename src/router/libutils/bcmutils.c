@@ -1484,13 +1484,20 @@ int contains(const char *string, char value)
 
 int haswifi(void)
 {
+	int count=0;
 #ifdef HAVE_NOWIFI
 	return 0;
-#elif HAVE_MADWIFI
-	return getifcount("wifi") > 0 ? 1 : 0;
+#elif defined(HAVE_ATH9K) || defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO)
+#ifdef HAVE_ATH9K
+	count+=getath9kdevicecount();
+#endif
+#if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO)
+	count+=getifcount("wifi");
+#endif
 #else
 	return 1;
 #endif
+	return(count);
 }
 
 static uint32_t str_to_addr(const char *addr)
