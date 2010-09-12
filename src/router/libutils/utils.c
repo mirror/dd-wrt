@@ -40,6 +40,9 @@
 #include <netdb.h>
 #include <resolv.h>
 #include <signal.h>
+#ifdef HAVE_ATH9K
+#include <glob.h>
+#endif
 
 #include <utils.h>
 #include <wlutils.h>
@@ -3831,3 +3834,20 @@ int has_gateway(void)
 		return 1;
 	return 0;
 }
+
+#ifdef HAVE_ATH9K
+int getath9kdevicecount(void)
+{
+	glob_t globbuf;
+	int globresult;
+	int count=0;
+	if (nvram_match("mimo_driver", "ath9k"))
+		{
+		globresult=glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
+		if (globresult == 0)
+			count=(int) globbuf.gl_pathc;
+		globfree(&globbuf);
+		}
+	return(count);
+}
+#endif

@@ -80,9 +80,14 @@ static void deconfigure_single(int count)
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(dev, "ath%d", count);
 	char vifs[128];
+#ifdef HAVE_ATH9K
+	if (is_ath9k(dev)) {
+		deconfigure_single_ath9k(count);
+		return;
+	}
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(dev)) {
-		deconfigure_single_11n(count);
 		return;
 	}
 #endif
@@ -215,6 +220,15 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			background = "-Bddd";
 	}
 
+#ifdef HAVE_ATH9K
+		char driver[32];
+		if (is_ath9k(prefix))
+			sprintf(driver, "-Dnl80211");
+		else
+			sprintf(driver, "-Dmadwifi");
+
+#endif
+
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
 	sprintf(bridged, "%s_bridged", prefix);
@@ -276,17 +290,17 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		if ((nvram_match(wmode, "wdssta"))
 		    && nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(prefix),
-			     background, "-Dmadwifi", psk, "-c", fstr);
+			     background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			eval("wpa_supplicant", background, driver, psk,
 			     "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
 		    && nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(prefix),
-			     background, "-Dmadwifi", psk, "-c", fstr);
+			     background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			eval("wpa_supplicant", background, driver, psk,
 			     "-c", fstr);
 #endif
 	} else if (nvram_match(akm, "8021X")) {
@@ -469,9 +483,9 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		    && (nvram_match(wmode, "wdssta")))
 			eval("wpa_supplicant", "-b",
 			     nvram_safe_get("lan_ifname"), background,
-			     "-Dmadwifi", psk, "-c", fstr);
+			     driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			eval("wpa_supplicant", background, driver, psk,
 			     "-c", fstr);
 #else
 		if (nvram_match(bridged, "1")
@@ -479,9 +493,9 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-b",
 			     nvram_safe_get("lan_ifname"), background,
-			     "-Dmadwifi", psk, "-c", fstr);
+			     driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			eval("wpa_supplicant", background, driver, psk,
 			     "-c", fstr);
 
 #endif
@@ -537,17 +551,17 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		if ((nvram_match(wmode, "wdssta"))
 		    && nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(prefix),
-			     background, "-Dmadwifi", psk, "-c", fstr);
+			     background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			eval("wpa_supplicant", background, driver, psk,
 			     "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
 		    && nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(prefix),
-			     background, "-Dmadwifi", psk, "-c", fstr);
+			     background, driver, psk, "-c", fstr);
 		else
-			eval("wpa_supplicant", background, "-Dmadwifi", psk,
+			eval("wpa_supplicant", background, driver, psk,
 			     "-c", fstr);
 #endif
 	}
@@ -638,7 +652,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
 		if (nvram_nmatch("1", "%s_bridged", prefix))
 			fprintf(fp, "bridge=%s\n", getBridge(prefix));
-
 		fprintf(fp, "driver=%s\n", driver);
 		fprintf(fp, "logger_syslog=-1\n");
 		fprintf(fp, "logger_syslog_level=2\n");
@@ -736,6 +749,81 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 					nvram_nget("%s_acct_key", prefix));
 			}
 		}
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix)) {
+			fprintf(fp, "wmm_ac_bk_cwmin=4\n");
+			fprintf(fp, "wmm_ac_bk_cwmax=10\n");
+			fprintf(fp, "wmm_ac_bk_aifs=7\n");
+			fprintf(fp, "wmm_ac_bk_txop_limit=0\n");
+			fprintf(fp, "wmm_ac_bk_acm=0\n");
+			fprintf(fp, "wmm_ac_be_aifs=3\n");
+			fprintf(fp, "wmm_ac_be_cwmin=4\n");
+			fprintf(fp, "wmm_ac_be_cwmax=10\n");
+			fprintf(fp, "wmm_ac_be_txop_limit=0\n");
+			fprintf(fp, "wmm_ac_be_acm=0\n");
+			fprintf(fp, "wmm_ac_vi_aifs=2\n");
+			fprintf(fp, "wmm_ac_vi_cwmin=3\n");
+			fprintf(fp, "wmm_ac_vi_cwmax=4\n");
+			fprintf(fp, "wmm_ac_vi_txop_limit=94\n");
+			fprintf(fp, "wmm_ac_vi_acm=0\n");
+			fprintf(fp, "wmm_ac_vo_aifs=2\n");
+			fprintf(fp, "wmm_ac_vo_cwmin=2\n");
+			fprintf(fp, "wmm_ac_vo_cwmax=3\n");
+			fprintf(fp, "wmm_ac_vo_txop_limit=47\n");
+			fprintf(fp, "wmm_ac_vo_acm=0\n");
+			fprintf(fp, "tx_queue_data3_aifs=7\n");
+			fprintf(fp, "tx_queue_data3_cwmin=15\n");
+			fprintf(fp, "tx_queue_data3_cwmax=1023\n");
+			fprintf(fp, "tx_queue_data3_burst=0\n");
+			fprintf(fp, "tx_queue_data2_aifs=3\n");
+			fprintf(fp, "tx_queue_data2_cwmin=15\n");
+			fprintf(fp, "tx_queue_data2_cwmax=63\n");
+			fprintf(fp, "tx_queue_data2_burst=0\n");
+			fprintf(fp, "tx_queue_data1_aifs=1\n");
+			fprintf(fp, "tx_queue_data1_cwmin=7\n");
+			fprintf(fp, "tx_queue_data1_cwmax=15\n");
+			fprintf(fp, "tx_queue_data1_burst=3.0\n");
+			fprintf(fp, "tx_queue_data0_aifs=1\n");
+			fprintf(fp, "tx_queue_data0_cwmin=3\n");
+			fprintf(fp, "tx_queue_data0_cwmax=7\n");
+			fprintf(fp, "tx_queue_data0_burst=1.5\n");
+
+			fprintf(fp, "ieee80211n=1\n");
+			fprintf(fp, "ht_capab=[HT40-][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n");
+			fprintf(fp, "wds_sta=1\n");
+			fprintf(fp, "wmm_enabled=1\n");
+			char macaddr[32];
+			getMacAddr(prefix, macaddr);
+			fprintf(fp, "bssid=%s\n",macaddr);
+			char isolate[32];
+			char broadcast[32];
+			sprintf(isolate, "%s_ap_isolate", prefix);
+			if (nvram_default_match(isolate, "1", "0"))
+				fprintf(fp, "ap_isolate=1\n");
+			sprintf(broadcast, "%s_closed", prefix);
+			if (nvram_default_match(broadcast, "1", "0"))
+				fprintf(fp, "ignore_broadcast_ssid=1\n");
+			else
+				fprintf(fp, "ignore_broadcast_ssid=0\n");
+			static char nfreq[16];
+			sprintf(nfreq, "%s_channel", prefix);
+			int channel=ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
+			// i know that's not the right way.. autochannel is 0
+			if(channel < 36)
+				fprintf(fp, "hw_mode=g\n");
+			else
+				fprintf(fp, "hw_mode=a\n");
+			fprintf(fp, "channel=%d\n",channel);
+			char regdomain[16];
+			char *country;
+			sprintf(regdomain, "%s_regdomain", prefix);
+			country=nvram_default_get(regdomain, "US");
+			fprintf(fp, "country_code=%s\n",getIsoName(country));
+			char *ssid;
+			ssid = nvram_nget("%s_ssid", prefix);
+			fprintf(fp, "ssid=%s\n", ssid);
+			}
+#endif
 		if (nvram_invmatch(akm, "radius")) {
 			sprintf(psk, "%s_crypto", prefix);
 			if (nvram_match(psk, "aes"))
@@ -1100,6 +1188,12 @@ static void configure_single(int count)
 
 	sprintf(wif, "wifi%d", count);
 	sprintf(dev, "ath%d", count);
+#ifdef HAVE_ATH9K
+	if (is_ath9k(dev)) {
+		configure_single_ath9k(count);
+		return;
+	}
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(dev)) {
 		configure_single_11n(count);
