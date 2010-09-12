@@ -80,6 +80,11 @@ int getNoise_11n(char *ifname, unsigned char *mac);
 int getUptime_11n(char *ifname, unsigned char *mac);
 int getRssi_11n(char *ifname, unsigned char *mac);
 
+extern int getassoclist_ath9k(char *name, unsigned char *list);
+extern int getNoise_ath9k(char *ifname, unsigned char *mac);
+extern int getUptime_ath9k(char *ifname, unsigned char *mac);
+extern int getRssi_ath9k(char *ifname, unsigned char *mac);
+
 #ifdef HAVE_MADWIFI
 int get_radiostate(char *ifname);
 

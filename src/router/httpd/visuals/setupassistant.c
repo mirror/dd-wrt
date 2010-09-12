@@ -646,8 +646,8 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		showAutoOption(wp, "wl_basic.intmit", wl_intmit);
@@ -692,10 +692,10 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 
-#ifdef HAVE_MADWIFI_MIMO
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
 /* limit channel options by mode */
-	if (is_ar5008(prefix)) {
+	if (is_ath11n(prefix)) {
 		if ((nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
@@ -707,8 +707,8 @@ fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
 						 "2040") ?
 				  "selected=\\\"selected\\\"" : "");
 	}
-	if (!is_ar5008(prefix)
-	    || (is_ar5008(prefix)
+	if (!is_ath11n(prefix)
+	    || (is_ath11n(prefix)
 		&& (nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
@@ -867,8 +867,8 @@ fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
 			}
 		} else {
 			sas_show_channel(wp, prefix, prefix, 0);
-#ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(prefix)
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+			if (is_ath11n(prefix)
 			    && (nvram_selmatch(wp, wl_width, "40")
 				|| nvram_selmatch(wp, wl_width, "2040"))) {
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -1060,8 +1060,8 @@ void sas_show_netmode(webs_t wp, char *prefix)
 #endif
 
 #endif
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(prefix)) {
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (is_ath11n(prefix)) {
 		if (has_2ghz(prefix)) {
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
@@ -1167,8 +1167,8 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char cn[32];
 		char fr[32];
 
-#ifdef HAVE_MADWIFI_MIMO
-		if (is_ar5008(prefix)) {
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+		if (is_ath11n(prefix)) {
 			chan = list_channels_11n(prefix);
 			if (chan == NULL)
 				chan = list_channels_11n(dev);

@@ -49,6 +49,7 @@
 #include <bcmnvram.h>
 #include <l7protocols.h>
 
+
 #ifdef HAVE_OVERCLOCKING
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
@@ -2326,14 +2327,29 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		struct wifi_channels *chan;
 		char cn[32];
 		char fr[32];
+		int gotchannels=0;
 
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+		if (is_ath11n(prefix)) {
 #ifdef HAVE_MADWIFI_MIMO
-		if (is_ar5008(prefix)) {
+			if (is_ar5008(prefix)) {
 			chan = list_channels_11n(prefix);
 			if (chan == NULL)
 				chan = list_channels_11n(dev);
-		} else
+			gotchannels=1;
+			}
 #endif
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix)) {
+		chan = list_channels_ath9k(prefix);
+		if (chan == NULL)
+				chan = list_channels_ath9k(dev);
+		gotchannels=1;
+		}
+#endif
+	  }
+#endif
+	  if (!gotchannels)
 		{
 			chan = list_channels(prefix);
 			if (chan == NULL)
@@ -2897,8 +2913,8 @@ static void show_netmode(webs_t wp, char *prefix)
 #endif
 
 #endif
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(prefix)) {
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (is_ath11n(prefix)) {
 		if (has_2ghz(prefix)) {
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n",
@@ -3925,8 +3941,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		showAutoOption(wp, "wl_basic.intmit", wl_intmit);
@@ -3973,8 +3989,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	show_rates(wp, prefix, 0);
 	show_rates(wp, prefix, 1);
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		showRadio(wp, "wl_basic.extrange", wl_xr);
@@ -3997,8 +4013,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(prefix)) {
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (is_ath11n(prefix)) {
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -4012,8 +4028,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
 		}
 	}
-	if (!is_ar5008(prefix)
-	    || (is_ar5008(prefix)
+// HAEH?
+	if (!is_ath11n(prefix)
+	    || (is_ath11n(prefix)
 		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -4129,8 +4146,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 
 #else
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		showRadio(wp, "wl_basic.diversity", wl_diversity);
@@ -4277,8 +4294,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_preambletime, nvram_default_get(wl_preambletime, "20"));
 	websWrite(wp, "</div>\n");
 #endif
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		sprintf(wmm, "%s_wmm", prefix);
@@ -4376,8 +4393,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		} else {
 
 			show_channel(wp, prefix, prefix, 0);
-#ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(prefix)
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+			if (is_ath11n(prefix)
 			    && (nvram_match(wl_width, "40")
 				|| nvram_match(wl_width, "2040"))) {
 				fprintf(stderr, "[CHANNEL WIDTH] 20/40 (2)\n");
@@ -4666,9 +4683,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 		  wl_width);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-#ifdef HAVE_MADWIFI_MIMO
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 /* limit channel options by mode */
-	if (is_ar5008(prefix)) {
+	if (is_ath11n(prefix)) {
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -4681,8 +4698,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				  "selected=\\\"selected\\\"" : "");
 
 	}
-	if (!is_ar5008(prefix)
-	    || (is_ar5008(prefix)
+// same haeh?
+	if (!is_ath11n(prefix)
+	    || (is_ath11n(prefix)
 		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -4799,8 +4817,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		} else {
 
 			show_channel(wp, prefix, prefix, 0);
-#ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(prefix)
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+			if (is_ath11n(prefix)
 			    && (nvram_match(wl_width, "40")
 				|| nvram_match(wl_width, "2040"))) {
 				fprintf(stderr, "[CHANNEL WIDTH] 20/40 (4)\n");
@@ -5040,8 +5058,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 
 	// channel options
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		showAutoOption(wp, "wl_basic.intmit", wl_intmit);
@@ -5088,8 +5106,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	show_rates(wp, prefix, 0);
 	show_rates(wp, prefix, 1);
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		showRadio(wp, "wl_basic.extrange", wl_xr);
@@ -5137,8 +5155,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 
 #else
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		showRadio(wp, "wl_basic.diversity", wl_diversity);
@@ -5288,8 +5306,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 #endif
 // wmm
-#ifdef HAVE_MADWIFI_MIMO
-	if (!is_ar5008(prefix))
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
 #endif
 	{
 		sprintf(wmm, "%s_wmm", prefix);
