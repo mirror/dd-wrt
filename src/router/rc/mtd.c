@@ -650,7 +650,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* Write Belkin Play magic */
 	if (brand == ROUTER_BELKIN_F7D3301 
 		|| brand == ROUTER_BELKIN_F7D3302
-		|| brabd == ROUTER_BELKIN_F7D4302) {
+		|| brand == ROUTER_BELKIN_F7D4302) {
 
 		sector_start = 0;
 		unsigned long be_magic;
