@@ -219,6 +219,9 @@ endif
 ifeq ($(CONFIG_PWC),y)
 CFLAGS += -DHAVE_PWC
 endif
+ifeq ($(CONFIG_ATH9K),y)
+CFLAGS += -DHAVE_ATH9K
+endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
 endif
