@@ -110,6 +110,7 @@ void configure_single_ath9k(int count) {
 
 	setsysctrl(wif, "maxvaps", vapcount);
 
+	sprintf(wl, "ath%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
