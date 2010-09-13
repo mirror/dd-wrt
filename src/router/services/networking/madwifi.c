@@ -220,8 +220,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			background = "-Bddd";
 	}
 
-#ifdef HAVE_ATH9K
 		char driver[32];
+#ifdef HAVE_ATH9K
 		if (is_ath9k(prefix))
 			sprintf(driver, "-Dnl80211");
 		else
