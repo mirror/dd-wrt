@@ -225,9 +225,9 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		if (is_ath9k(prefix))
 			sprintf(driver, "-Dnl80211");
 		else
+#endif
 			sprintf(driver, "-Dmadwifi");
 
-#endif
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
