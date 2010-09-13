@@ -85,27 +85,29 @@ static struct wifi_channels *list_channelsext_ath9k(const char *ifname, int allc
 {
 	int i;
 	fprintf(stderr, "list fake channels for %s\n", ifname);
-
+	int count=0;
 
 	struct wifi_channels *list =
 	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
 					   (13+1+166-36+1));
 	for (i=0;i<13;i++) {
-		list[i].channel = i+1;
-		list[i].freq = 5*(i+1)+2407;
-		list[i].noise = -95;	// achans.ic_chans[i].ic_noise;
+		list[count].channel = i+1;
+		list[count].freq = 5*(i+1)+2407;
+		list[count].noise = -95;	// achans.ic_chans[i].ic_noise;
+		count++;
 	}
-	i=13;
-	list[i].channel = 14;
-	list[i].freq = 2484;
-	list[i].noise = -95;	// achans.ic_chans[i].ic_noise;
+	list[count].channel = 14;
+	list[count].freq = 2484;
+	list[count].noise = -95;	// achans.ic_chans[i].ic_noise;
+	count++;
 	for (i=36;i<166;i++) {
-		list[i].channel = i+1;
-		list[i].freq = (i+1)*5+5000;
-		list[i].noise = -95;	// achans.ic_chans[i].ic_noise;
+		list[count].channel = i+1;
+		list[count].freq = (i+1)*5+5000;
+		list[count].noise = -95;	// achans.ic_chans[i].ic_noise;
+		count++;
 	}
 
-	list[144].freq = -1;
+	list[count++].freq = -1;
 	return list;
 }
 
