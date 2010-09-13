@@ -478,11 +478,17 @@
 
 #define ROUTER_BOARD_GW2388 0x980f
 
-// Belkin Play Max F7D4301v1 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4301V1)
-#define ROUTER_BELKIN_F7D4301 0x9916
+// Belkin Share Max F7D3301v1 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD3301V1)
+#define ROUTER_BELKIN_F7D3301 0x9916
 
-// Belkin Play F7D4302v1 (BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4302V1)
-#define ROUTER_BELKIN_F7D4302 0x9a16
+// Belkin Share F7D3302v1 (BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD3302V1)
+#define ROUTER_BELKIN_F7D3302 0x9a16
+
+// Belkin Play Max F7D4301v1 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4301V1)
+#define ROUTER_BELKIN_F7D4301 0x9b16
+
+// Belkin Play F7D4302v1 (dual radio, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4302V1)
+#define ROUTER_BELKIN_F7D4302 0x9c16
 
 
 
