@@ -661,7 +661,7 @@ int mtd_write(const char *path, const char *mtd)
 		case ROUTER_BELKIN_F7D3301:
 			be_magic = STORE32_LE(TRX_MAGIC_F7D3301);
 			break;
-		case == ROUTER_BELKIN_F7D3302:
+		case ROUTER_BELKIN_F7D3302:
 			be_magic = STORE32_LE(TRX_MAGIC_F7D3302);
 			break;
 		case ROUTER_BELKIN_F7D4302:
