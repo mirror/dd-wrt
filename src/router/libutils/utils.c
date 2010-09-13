@@ -1281,7 +1281,19 @@ int internal_getRouterBrand()
 			return ROUTER_ASUS_WL550GE;
 		}
 	}
+/*	
+	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
+	    && nvram_match("boardrev", "0x1204")) {
+		setRouter("Belkin Share Max F7D3301v1");
+		return ROUTER_BELKIN_F7D3301;
+	}
 	
+	if (boardnum == 12345 && nvram_match("boardtype", "0xa4cf")
+	    && nvram_match("boardrev", "0x1102")) {
+		setRouter("Belkin Share F7D3302v1");
+		return ROUTER_BELKIN_F7D3302;
+	}
+*/	
 	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
 		setRouter("Belkin Play Max F7D4301v1");
@@ -3436,6 +3448,8 @@ int led_control(int type, int act)
 		power_gpio = 0x101;
 		diag_gpio = 0x001;	// power blink
 		break;
+	case ROUTER_BELKIN_F7D3301:
+	case ROUTER_BELKIN_F7D3302:
 	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_BELKIN_F7D4302:
 		power_gpio = 0x10a; // green
