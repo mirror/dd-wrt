@@ -2142,8 +2142,13 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		need_commit = 0;
 	}
 	eval("killall", "-9", "roaming_daemon");
-	if (getSTA() || getWET())
+	if (getSTA() || getWET()) {
+#ifdef HAVE_ATH9K
+	// disable for now, till fixed
+	if (0) 
+#endif
 		eval("roaming_daemon");
+	}
 
 	int cnt = getifcount("wifi");
 	int s;
