@@ -724,6 +724,8 @@ void period_check(int sig)
 	case ROUTER_WRT350N:
 	case ROUTER_WRT610N:
 	case ROUTER_ASUS_RTN16:
+	case ROUTER_BELKIN_F7D3301:
+	case ROUTER_BELKIN_F7D3302:
 	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_BELKIN_F7D4302:
 		sesgpio = 0x108;	// gpio 8, inversed

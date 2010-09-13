@@ -69,9 +69,11 @@ static unsigned long calculate_checksum(int action, char *s, int size);
 #define NETGEAR_LEN_CHK_ADDR_8M		0x7AFFF8
 /* end */
 
-/* Belkin Play series */
-#define TRX_MAGIC_F7D4302              0x20091006	/* router's birthday ? */
-#define TRX_MAGIC_QA                   0x12345678	/* cfe: It's QA firmware */
+/* Belkin Share & Play series */
+#define TRX_MAGIC_F7D3301			0x20100322	/* Belkin Share Max; router's birthday ? */
+#define TRX_MAGIC_F7D3302			0x20090928	/* Belkin Share; router's birthday ? */
+#define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
+#define TRX_MAGIC_QA				0x12345678	/* Belkin: cfe: It's QA firmware */
 /* end */
 
 /* 
@@ -215,10 +217,11 @@ int mtd_write(const char *path, const char *mtd)
 	int ret = -1;
 	int i;
 	unsigned char lzmaloader[4096];
+	int brand = getRouterBrand();
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
-	if (getRouterBrand() == ROUTER_NETGEAR_WGR614L) {
+	if (brand == ROUTER_NETGEAR_WGR614L) {
 		if ((fp = fopen("/dev/mtdblock/1", "rb")))
 			count =
 			    safe_fread(&trx, 1, sizeof(struct trx_header), fp);
@@ -504,11 +507,11 @@ int mtd_write(const char *path, const char *mtd)
 	int sector_start;
 	char *tmp;
 
-	if (getRouterBrand() == ROUTER_NETGEAR_WGR614L
-	    || getRouterBrand() == ROUTER_NETGEAR_WNR834B
-	    || getRouterBrand() == ROUTER_NETGEAR_WNR834BV2
-	    || getRouterBrand() == ROUTER_NETGEAR_WNDR3300
-	    || getRouterBrand() == ROUTER_NETGEAR_WNR3500L) {
+	if (brand == ROUTER_NETGEAR_WGR614L
+	    || brand == ROUTER_NETGEAR_WNR834B
+	    || brand == ROUTER_NETGEAR_WNR834BV2
+	    || brand == ROUTER_NETGEAR_WNDR3300
+	    || brand == ROUTER_NETGEAR_WNR3500L) {
 #ifndef NETGEAR_CRC_FAKE
 		cal_chksum = calculate_checksum(2, NULL, 0);
 #endif
@@ -517,7 +520,7 @@ int mtd_write(const char *path, const char *mtd)
 		unsigned long flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_4M;
 		unsigned long cfe_size = CFE_SIZE_128K;
 
-		if (getRouterBrand() == ROUTER_NETGEAR_WNR3500L) {
+		if (brand == ROUTER_NETGEAR_WNR3500L) {
 			cfe_size = CFE_SIZE_256K;
 			if (mtd_info.size > FLASH_SIZE_4M) {
 				flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_8M;
@@ -588,7 +591,7 @@ int mtd_write(const char *path, const char *mtd)
 	}
 
 	/* Write old lzma loader */
-	if (getRouterBrand() == ROUTER_NETGEAR_WGR614L) {
+	if (brand == ROUTER_NETGEAR_WGR614L) {
 		int offset = trx.offsets[0];
 		sector_start =
 		    (offset / mtd_info.erasesize) * mtd_info.erasesize;
@@ -645,11 +648,26 @@ int mtd_write(const char *path, const char *mtd)
 	}			// end
 	
 	/* Write Belkin Play magic */
-	if (getRouterBrand() == ROUTER_BELKIN_F7D4302) {
+	if (brand == ROUTER_BELKIN_F7D3301 
+		|| brand == ROUTER_BELKIN_F7D3302
+		|| brabd == ROUTER_BELKIN_F7D4302) {
 
 		sector_start = 0;
-		unsigned long be_magic = STORE32_LE(TRX_MAGIC_F7D4302);
+		unsigned long be_magic;
 		char be_trx[4];
+		
+		switch (brand)
+		{
+		case ROUTER_BELKIN_F7D3301:
+			be_magic = STORE32_LE(TRX_MAGIC_F7D3301);
+			break;
+		case == ROUTER_BELKIN_F7D3302:
+			be_magic = STORE32_LE(TRX_MAGIC_F7D3302);
+			break;
+		case ROUTER_BELKIN_F7D4302:
+			be_magic = STORE32_LE(TRX_MAGIC_F7D4302);
+			break;
+		}
 		
 		memcpy(&be_trx[0], (char *)&be_magic, 4);
 		
