@@ -496,9 +496,9 @@ rip_rx(sock *s, int size)
 static void
 rip_dump_entry( struct rip_entry *e )
 {
-  bdebug( "%I told me %d/%d ago: to %I/%d go via %I, metric %d ", 
+  debug( "%I told me %d/%d ago: to %I/%d go via %I, metric %d ", 
   e->whotoldme, e->updated-now, e->changed-now, e->n.prefix, e->n.pxlen, e->nexthop, e->metric );
-  bdebug( "\n" );
+  debug( "\n" );
 }
 
 /**
@@ -620,16 +620,16 @@ rip_dump(struct proto *p)
   CHK_MAGIC;
   WALK_LIST( w, P->connections ) {
     struct rip_connection *n = (void *) w;
-    bdebug( "RIP: connection #%d: %I\n", n->num, n->addr );
+    debug( "RIP: connection #%d: %I\n", n->num, n->addr );
   }
   i = 0;
   FIB_WALK( &P->rtable, e ) {
-    bdebug( "RIP: entry #%d: ", i++ );
+    debug( "RIP: entry #%d: ", i++ );
     rip_dump_entry( (struct rip_entry *)e );
   } FIB_WALK_END;
   i = 0;
   WALK_LIST( rif, P->interfaces ) {
-    bdebug( "RIP: interface #%d: %s, %I, busy = %x\n", i++, rif->iface?rif->iface->name:"(dummy)", rif->sock->daddr, rif->busy );
+    debug( "RIP: interface #%d: %s, %I, busy = %x\n", i++, rif->iface?rif->iface->name:"(dummy)", rif->sock->daddr, rif->busy );
   }
 }
 

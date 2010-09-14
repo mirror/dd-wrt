@@ -48,7 +48,7 @@ list iface_list;
 void
 ifa_dump(struct ifa *a)
 {
-  bdebug("\t%I, net %I/%-2d bc %I -> %I%s%s%s\n", a->ip, a->prefix, a->pxlen, a->brd, a->opposite,
+  debug("\t%I, net %I/%-2d bc %I -> %I%s%s%s\n", a->ip, a->prefix, a->pxlen, a->brd, a->opposite,
 	(a->flags & IF_UP) ? "" : " DOWN",
 	(a->flags & IA_PRIMARY) ? "" : " SEC",
 	(a->flags & IA_UNNUMBERED) ? " UNNUM" : "");
@@ -66,28 +66,28 @@ if_dump(struct iface *i)
 {
   struct ifa *a;
 
-  bdebug("IF%d: %s", i->index, i->name);
+  debug("IF%d: %s", i->index, i->name);
   if (i->flags & IF_ADMIN_DOWN)
-    bdebug(" ADMIN-DOWN");
+    debug(" ADMIN-DOWN");
   if (i->flags & IF_UP)
-    bdebug(" UP");
+    debug(" UP");
   else
-    bdebug(" DOWN");
+    debug(" DOWN");
   if (i->flags & IF_LINK_UP)
-    bdebug(" LINK-UP");
+    debug(" LINK-UP");
   if (i->flags & IF_MULTIACCESS)
-    bdebug(" MA");
+    debug(" MA");
   if (i->flags & IF_BROADCAST)
-    bdebug(" BC");
+    debug(" BC");
   if (i->flags & IF_MULTICAST)
-    bdebug(" MC");
+    debug(" MC");
   if (i->flags & IF_LOOPBACK)
-    bdebug(" LOOP");
+    debug(" LOOP");
   if (i->flags & IF_IGNORE)
-    bdebug(" IGN");
+    debug(" IGN");
   if (i->flags & IF_TMP_DOWN)
-    bdebug(" TDOWN");
-  bdebug(" MTU=%d\n", i->mtu);
+    debug(" TDOWN");
+  debug(" MTU=%d\n", i->mtu);
   WALK_LIST(a, i->addrs)
     {
       ifa_dump(a);
@@ -106,10 +106,10 @@ if_dump_all(void)
 {
   struct iface *i;
 
-  bdebug("Known network interfaces:\n");
+  debug("Known network interfaces:\n");
   WALK_LIST(i, iface_list)
     if_dump(i);
-  bdebug("Router ID: %08x\n", config->router_id);
+  debug("Router ID: %08x\n", config->router_id);
 }
 
 static inline unsigned

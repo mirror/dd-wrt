@@ -228,7 +228,7 @@ lp_dump(resource *r)
     ;
   for(cntl=0, c=m->first_large; c; c=c->next, cntl++)
     ;
-  bdebug("(chunk=%d threshold=%d count=%d+%d total=%d+%d)\n",
+  debug("(chunk=%d threshold=%d count=%d+%d total=%d+%d)\n",
 	m->chunk_size,
 	m->threshold,
 	cnt,
