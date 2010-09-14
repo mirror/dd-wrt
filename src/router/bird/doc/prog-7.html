@@ -222,24 +222,7 @@ for an invalid address.
 
 <HR><H3>Function</H3>
 <P><I>ip_addr</I>
-<B>ipa_opposite</B>
-(<I>ip_addr</I> <B>x</B>, <I>int</I> <B>pxlen</B>) --     return address of point-to-point neighbor
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>ip_addr</I> <B>x</B><DD><P>IP address of our end of the link
-<DT><I>int</I> <B>pxlen</B><DD><P>network prefix length
-</DL>
-<H3>Description</H3>
-<P><B>ipa_opposite()</B> returns an address of the opposite end of a numbered
-point-to-point link.
-<P>This function is available in IPv4 version only.
-
-
-<HR><H3>Function</H3>
-<P><I>ip_addr</I>
-<B>ipa_classify</B>
+<B>ipa_class_mask</B>
 (<I>ip_addr</I> <B>x</B>) --     guess netmask according to address class
 <P>
 <H3>Arguments</H3>

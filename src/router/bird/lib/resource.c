@@ -37,13 +37,15 @@ struct pool {
 static void pool_dump(resource *);
 static void pool_free(resource *);
 static resource *pool_lookup(resource *, unsigned long);
+static size_t pool_memsize(resource *P);
 
 static struct resclass pool_class = {
   "Pool",
   sizeof(pool),
   pool_free,
   pool_dump,
-  pool_lookup
+  pool_lookup,
+  pool_memsize
 };
 
 pool root_pool;
@@ -93,6 +95,19 @@ pool_dump(resource *P)
   WALK_LIST(r, p->inside)
     rdump(r);
   indent -= 3;
+}
+
+static size_t
+pool_memsize(resource *P)
+{
+  pool *p = (pool *) P;
+  resource *r;
+  size_t sum = sizeof(pool) + ALLOC_OVERHEAD;
+
+  WALK_LIST(r, p->inside)
+    sum += rmemsize(r);
+
+  return sum;
 }
 
 static resource *
@@ -175,6 +190,17 @@ rdump(void *res)
     }
   else
     bdebug("NULL\n");
+}
+
+size_t
+rmemsize(void *res)
+{
+  resource *r = res;
+  if (!r)
+    return 0;
+  if (!r->class->memsize)
+    return r->class->size + ALLOC_OVERHEAD;
+  return r->class->memsize(r);
 }
 
 /**
@@ -277,12 +303,20 @@ mbl_lookup(resource *r, unsigned long a)
   return NULL;
 }
 
+static size_t
+mbl_memsize(resource *r)
+{
+  struct mblock *m = (struct mblock *) r;
+  return ALLOC_OVERHEAD + sizeof(struct mblock) + m->size;
+}
+
 static struct resclass mb_class = {
   "Memory",
   0,
   mbl_free,
   mbl_debug,
-  mbl_lookup
+  mbl_lookup,
+  mbl_memsize
 };
 
 /**

@@ -66,8 +66,8 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
   if (EMPTY_LIST(n->ackl[queue]))
     return;
 
-  pk = (struct ospf_lsack_packet *) ifa->sk->tbuf;
-  op = (struct ospf_packet *) ifa->sk->tbuf;
+  pk = ospf_tx_buffer(ifa);
+  op = &pk->ospf_packet;
 
   ospf_pkt_fill_hdr(n->ifa, pk, LSACK_P);
   h = pk->lsh;
@@ -92,8 +92,7 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
 	op->length = htons(len);
 	DBG("Sending and continuing! Len=%u\n", len);
 
-	OSPF_PACKET(ospf_dump_lsack, (struct ospf_lsack_packet *) ifa->sk->tbuf,
-		    "LSACK packet sent via %s", ifa->iface->name);
+	OSPF_PACKET(ospf_dump_lsack, pk, "LSACK packet sent via %s", ifa->iface->name);
 
 	if (ifa->type == OSPF_IT_BCAST)
 	{
@@ -120,8 +119,7 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
   op->length = htons(len);
   DBG("Sending! Len=%u\n", len);
 
-  OSPF_PACKET(ospf_dump_lsack, (struct ospf_lsack_packet *) ifa->sk->tbuf,
-	      "LSACK packet sent via %s", ifa->iface->name);
+  OSPF_PACKET(ospf_dump_lsack, pk, "LSACK packet sent via %s", ifa->iface->name);
 
   if (ifa->type == OSPF_IT_BCAST)
   {
@@ -185,9 +183,6 @@ ospf_lsack_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
     DBG("Deleting LS Id: %R RT: %R Type: %u from LS Retl for neighbor %R\n",
 	lsa.id, lsa.rt, lsa.type, n->rid);
     s_rem_node(SNODE en);
-    if (en->lsa_body != NULL)
-      mb_free(en->lsa_body);
-    en->lsa_body = NULL;
     ospf_hash_delete(n->lsrth, en);
   }
 }

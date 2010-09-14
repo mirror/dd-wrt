@@ -21,8 +21,11 @@ struct top_hash_entry
   void *lsa_body;
   bird_clock_t inst_t;		/* Time of installation into DB */
   ip_addr nh;			/* Next hop */
-  ip_addr lb;			/* Link back */
-  struct ospf_iface *nhi;	/* Next hop interface */
+  ip_addr lb;			/* In OSPFv2, link back address. In OSPFv3, any global address in the area useful for vlinks */
+  struct ospf_iface *nhi;	/* Next hop interface - valid only in ospf_rt_spf()*/
+#ifdef OSPFv3
+  u32 lb_id;			/* Interface ID of link back iface (for bcast or NBMA networks) */
+#endif
   u32 dist;			/* Distance from the root */
   u16 ini_age;
   u8 color;
@@ -64,13 +67,15 @@ void originate_net_lsa(struct ospf_iface *ifa);
 void update_net_lsa(struct ospf_iface *ifa);
 void update_link_lsa(struct ospf_iface *ifa);
 int can_flush_lsa(struct proto_ospf *po);
-int max_ext_lsa(unsigned pxlen);
+
+void originate_sum_net_lsa(struct ospf_area *oa, struct fib_node *fn, int metric);
+void originate_sum_rt_lsa(struct ospf_area *oa, struct fib_node *fn, int metric, u32 options UNUSED);
+void flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type);
+
 void originate_ext_lsa(net * n, rte * e, struct proto_ospf *po,
 		       struct ea_list *attrs);
 void flush_ext_lsa(net *n, struct proto_ospf *po);
-void check_sum_lsa(struct proto_ospf *po, ort *nf, int);
-void originate_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type, int metric, u32 options);
-void flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type);
+
 
 #ifdef OSPFv2
 struct top_hash_entry * ospf_hash_find_net(struct top_graph *f, u32 domain, u32 lsa);

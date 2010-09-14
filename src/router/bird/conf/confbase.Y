@@ -42,6 +42,7 @@ CF_DECLS
   void *g;
   bird_clock_t time;
   struct prefix px;
+  struct proto_spec ps;
   struct timeformat *tf;
 }
 

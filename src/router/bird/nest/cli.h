@@ -33,6 +33,7 @@ typedef struct cli {
   void (*cleanup)(struct cli *c);
   void *rover;				/* Private to continuation routine */
   int last_reply;
+  int restricted;			/* CLI is restricted to read-only commands */
   struct linpool *parser_pool;		/* Pool used during parsing */
   byte *ring_buf;			/* Ring buffer for asynchronous messages */
   byte *ring_end, *ring_read, *ring_write;	/* Pointers to the ring buffer */
@@ -59,6 +60,14 @@ void cli_free(cli *);
 void cli_kick(cli *);
 void cli_written(cli *);
 void cli_echo(unsigned int class, byte *msg);
+
+static inline int cli_access_restricted(void)
+{
+  if (this_cli && this_cli->restricted)
+    return (cli_printf(this_cli, 8007, "Access denied"), 1);
+  else
+    return 0;
+}
 
 /* Functions provided by sysdep layer */
 

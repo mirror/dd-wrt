@@ -213,13 +213,13 @@ the protocol.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>rte_announce</B>
-(<I>rtable *</I> <B>tab</B>, <I>int</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
+(<I>rtable *</I> <B>tab</B>, <I>unsigned</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>rtable *</I> <B>tab</B><DD><P>table the route has been added to
-<DT><I>int</I> <B>type</B><DD><P>type of route announcement (RA_OPTIMAL or RA_ANY)
+<DT><I>unsigned</I> <B>type</B><DD><P>type of route announcement (RA_OPTIMAL or RA_ANY)
 <DT><I>net *</I> <B>net</B><DD><P>network in question
 <DT><I>rte *</I> <B>new</B><DD><P>the new route to be announced
 <DT><I>rte *</I> <B>old</B><DD><P>the previous route for the same network
@@ -1361,7 +1361,7 @@ a combination of status bits (<I>IF_CHANGE_xxx</I>) in the <B>flags</B> paramete
 </DL>
 <H3>Description</H3>
 <P>The <B>rt_notify()</B> hook is called to inform the protocol instance about
-changes in the routing table it's connected to, that is a route <B>old</B>
+changes in the connected routing table <B>table</B>, that is a route <B>old</B>
 belonging to network <B>net</B> being replaced by a new route <B>new</B> with
 extended attributes <B>attrs</B>. Either <B>new</B> or <B>old</B> or both can be <I>NULL</I>
 if the corresponding route doesn't exist.

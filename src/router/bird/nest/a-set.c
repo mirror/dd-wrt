@@ -42,27 +42,36 @@ int_set_format(struct adata *set, int way, byte *buf, unsigned int size)
   *buf = 0;
 }
 
-struct adata *
-int_set_add(struct linpool *pool, struct adata *list, u32 val)
-{
-  int len = list ? list->length : 0;
-  struct adata *res = lp_alloc(pool, len + sizeof(struct adata) + 4);
-  res->length = len + 4;
-  * (u32 *) res->data = val;
-  if (list)
-    memcpy((char *) res->data + 4, list->data, list->length);
-  return res;
-}
-
 int
 int_set_contains(struct adata *list, u32 val)
 {
+  if (!list)
+    return 0;
+
   u32 *l = (u32 *) list->data;
   unsigned int i;
   for (i=0; i<list->length/4; i++)
     if (*l++ == val)
       return 1;
   return 0;
+}
+
+struct adata *
+int_set_add(struct linpool *pool, struct adata *list, u32 val)
+{
+  struct adata *res;
+  int len;
+
+  if (int_set_contains(list, val))
+    return list;
+
+  len = list ? list->length : 0;
+  res = lp_alloc(pool, len + sizeof(struct adata) + 4);
+  res->length = len + 4;
+  * (u32 *) res->data = val;
+  if (list)
+    memcpy((char *) res->data + 4, list->data, list->length);
+  return res;
 }
 
 struct adata *

@@ -89,7 +89,7 @@ scan_ifs(struct ifreq *r, int cnt)
 	{ err = "SIOCGIFNETMASK"; goto faulty; }
       get_sockaddr((struct sockaddr_in *) &r->ifr_addr, &netmask, NULL, 0);
       l = ipa_mklen(netmask);
-      if (l < 0 || l == 31)
+      if (l < 0)
 	{
 	  log(L_ERR "%s: Invalid netmask (%x)", i.name, netmask);
 	  goto bad;
@@ -139,8 +139,10 @@ scan_ifs(struct ifreq *r, int cnt)
 	    i.flags |= IF_BROADCAST;
 	  if (a.pxlen < 30)
 	    i.flags |= IF_MULTIACCESS;
-	  else
-	    a.opposite = ipa_opposite(a.ip, a.pxlen);
+	  if (a.pxlen == 30)
+	    ifa.opposite = ipa_opposite_m2(ifa.ip);
+	  if (a.pxlen == 31)
+	    ifa.opposite = ipa_opposite_m1(ifa.ip);
 	}
       else
 	a.brd = a.opposite;

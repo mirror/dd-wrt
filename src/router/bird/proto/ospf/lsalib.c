@@ -45,20 +45,8 @@ ospf_age(struct proto_ospf *po)
   struct top_hash_entry *en, *nxt;
   int flush = can_flush_lsa(po);
 
-  if (po->cleanup) OSPF_TRACE(D_EVENTS, "Running ospf_age cleanup");
-
   WALK_SLIST_DELSAFE(en, nxt, po->lsal)
   {
-    if (po->cleanup)
-    {
-      en->color = OUTSPF;
-      en->dist = LSINFINITY;
-      en->nhi = NULL;
-      en->nh = IPA_NONE;
-      en->lb = IPA_NONE;
-      DBG("Infinitying Type: %u, Id: %R, Rt: %R\n", en->lsa.type,
-	  en->lsa.id, en->lsa.rt);
-    }
     if (en->lsa.age == LSA_MAXAGE)
     {
       if (flush)
@@ -88,9 +76,9 @@ ospf_age(struct proto_ospf *po)
 	en->lsa.age = LSA_MAXAGE;
     }
   }
-  po->cleanup = 0;
 }
 
+#ifndef CPU_BIG_ENDIAN
 void
 htonlsah(struct ospf_lsa_header *h, struct ospf_lsa_header *n)
 {
@@ -122,26 +110,27 @@ ntohlsah(struct ospf_lsa_header *n, struct ospf_lsa_header *h)
 }
 
 void
-htonlsab(void *h, void *n, u16 type, u16 len)
+htonlsab(void *h, void *n, u16 len)
 {
   u32 *hid = h;
   u32 *nid = n;
-  int i;
+  unsigned i;
 
   for (i = 0; i < (len / sizeof(u32)); i++)
     nid[i] = htonl(hid[i]);
 }
 
 void
-ntohlsab(void *n, void *h, u16 type, u16 len)
+ntohlsab(void *n, void *h, u16 len)
 {
   u32 *nid = n;
   u32 *hid = h;
-  int i;
+  unsigned i;
 
   for (i = 0; i < (len / sizeof(u32)); i++)
     hid[i] = ntohl(nid[i]);
 }
+#endif /* little endian */
 
 /*
 void
@@ -185,11 +174,10 @@ void
 lsasum_calculate(struct ospf_lsa_header *h, void *body)
 {
   u16 length = h->length;
-  u16 type = h->type;
 
   //  log(L_WARN "Checksum %R %R %d start (len %d)", h->id, h->rt, h->type, length);
   htonlsah(h, h);
-  htonlsab(body, body, type, length - sizeof(struct ospf_lsa_header));
+  htonlsab1(body, length - sizeof(struct ospf_lsa_header));
 
   /*
   char buf[1024];
@@ -203,7 +191,7 @@ lsasum_calculate(struct ospf_lsa_header *h, void *body)
   //  log(L_WARN "Checksum result %4x", h->checksum);
 
   ntohlsah(h, h);
-  ntohlsab(body, body, type, length - sizeof(struct ospf_lsa_header));
+  ntohlsab1(body, length - sizeof(struct ospf_lsa_header));
 }
 
 /*
@@ -252,7 +240,7 @@ lsasum_check(struct ospf_lsa_header *h, void *body)
     c1 %= 255;
   }
 
-  x = ((length - LSA_CHECKSUM_OFFSET) * c0 - c1) % 255;
+  x = (int)((length - LSA_CHECKSUM_OFFSET) * c0 - c1) % 255;
   if (x <= 0)
     x += 255;
   y = 510 - c0 - x;
@@ -325,7 +313,7 @@ lsa_validate_rt(struct ospf_lsa_header *lsa, struct ospf_lsa_rt *body)
 }
 
 static int
-lsa_validate_net(struct ospf_lsa_header *lsa, struct ospf_lsa_net *body)
+lsa_validate_net(struct ospf_lsa_header *lsa, struct ospf_lsa_net *body UNUSED)
 {
   if (lsa->length < (HDRLEN + sizeof(struct ospf_lsa_net)))
     return 0;

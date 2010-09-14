@@ -15,16 +15,19 @@
 <H2><A NAME="s4">4.</A> <A HREF="bird.html#toc4">Remote control</A></H2>
 
 <P>You can use the command-line client birdc to talk with
-a running BIRD. Communication is done using a bird.ctl UNIX domain
-socket (unless changed with the <CODE>-s</CODE> option given to both the server and
-the client). The commands can perform simple actions such as enabling/disabling
-of protocols, telling BIRD to show various information, telling it to
-show routing table filtered by filter, or asking BIRD to
-reconfigure. Press <CODE>?</CODE> at any time to get online help. Option
+a running BIRD. Communication is done using a bird.ctl UNIX
+domain socket (unless changed with the <CODE>-s</CODE> option given to both
+the server and the client). The commands can perform simple actions
+such as enabling/disabling of protocols, telling BIRD to show various
+information, telling it to show routing table filtered by filter, or
+asking BIRD to reconfigure. Press <CODE>?</CODE> at any time to get online
+help. Option <CODE>-r</CODE> can be used to enable a restricted mode of BIRD
+client, which allows just read-only commands (<CODE>show ...</CODE>). Option
 <CODE>-v</CODE> can be passed to the client, to make it dump numeric return
-codes along with the messages. You do not necessarily need to use birdc to talk to BIRD, your
-own applications could do that, too -- the format of communication between
-BIRD and birdc is stable (see the programmer's documentation).
+codes along with the messages. You do not necessarily need to use
+birdc to talk to BIRD, your own applications could do that, too
+-- the format of communication between BIRD and birdc is stable
+(see the programmer's documentation).
 <P>Many commands have the <I>name</I> of the protocol instance as an argument.
 This argument can be omitted if there exists only a single instance.
 <P>
@@ -41,11 +44,16 @@ This argument can be omitted if there exists only a single instance.
 <P>
 <DT><CODE>show ospf neighbors [<I>name</I>] ["<I>interface</I>"]</CODE><DD><P>Show a list of OSPF neighbors and a state of adjacency to them.
 <P>
-<DT><CODE>show ospf state [<I>name</I>]</CODE><DD><P>Show detailed information about OSPF areas based on a content of link-state database.
-It shows network topology,  aggregated networks and routers from other areas and external routes.
+<DT><CODE>show ospf state [all] [<I>name</I>]</CODE><DD><P>Show detailed information about OSPF areas based on a content
+of the link-state database. It shows network topology, stub
+networks, aggregated networks and routers from other areas and
+external routes. The command shows information about reachable
+network nodes, use option <CODE>all</CODE> to show information about
+all network nodes in the link-state database.
 <P>
-<DT><CODE>show ospf topology [<I>name</I>]</CODE><DD><P>Show a topology of OSPF areas based on a content of link-state database.
-It is just a stripped-down version of 'show ospf state'.
+<DT><CODE>show ospf topology [all] [<I>name</I>]</CODE><DD><P>Show a topology of OSPF areas based on a content of the
+link-state database.  It is just a stripped-down version of
+'show ospf state'.
 <P>
 <DT><CODE>show static [<I>name</I>]</CODE><DD><P>Show detailed information about static routes.
 <P>

@@ -101,6 +101,7 @@ static struct nbma_node *this_nbma;
 static struct area_net_config *this_pref;
 static struct ospf_stubnet_config *this_stubnet; 
 
+#ifdef OSPFv2
 static void
 finish_iface_config(struct ospf_iface_patt *ip)
 {
@@ -112,6 +113,16 @@ finish_iface_config(struct ospf_iface_patt *ip)
   if ((ip->autype == OSPF_AUTH_NONE) && (ip->passwords != NULL))
     log(L_WARN "Password option without authentication option does not make sense");
 }
+#endif
+
+#ifdef OSPFv3
+static void
+finish_iface_config(struct ospf_iface_patt *ip)
+{
+  if ((ip->autype != OSPF_AUTH_NONE) || (get_passwords() != NULL))
+    cf_error("Authentication not supported in OSPFv3");
+}
+#endif
 
 /* Headers from ../../proto/pipe/config.Y */
 
@@ -161,6 +172,7 @@ static struct static_route *this_srt;
   void *g;
   bird_clock_t time;
   struct prefix px;
+  struct timeformat *tf;
 }
 
 %token END CLI_MARKER INVALID_TOKEN
@@ -179,7 +191,8 @@ static struct static_route *this_srt;
 %type <t> text_or_none
 
 %nonassoc PREFIX_DUMMY
-%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ AND OR PO PC
+%left AND OR
+%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ PO PC
 %left '+' '-'
 %left '*' '/' '%'
 %left '!'
@@ -189,10 +202,12 @@ static struct static_route *this_srt;
 /* Declarations from ../../sysdep/unix/config.Y */
 
 %token LOG SYSLOG ALL DEBUG TRACE INFO REMOTE WARNING ERROR AUTH FATAL BUG STDERR SOFT
+%token TIMEFORMAT ISO SHORT LONG BASE
 
 %type <i> log_mask log_mask_list log_cat
 %type <g> log_file
 %type <t> cfg_name
+%type <tf> timeformat_which
 
 %token CONFIGURE
 %token DOWN
@@ -210,7 +225,8 @@ static struct static_route *this_srt;
 %token INTERFACE IMPORT EXPORT FILTER NONE STATES ROUTES FILTERS
 %token PASSWORD FROM PASSIVE TO EVENTS PACKETS PROTOCOLS INTERFACES
 %token PRIMARY STATS COUNT FOR COMMANDS PREEXPORT GENERATE
-%token LISTEN BGP V6ONLY ADDRESS PORT PASSWORDS
+%token LISTEN BGP V6ONLY ADDRESS PORT PASSWORDS DESCRIPTION
+%token RELOAD IN OUT MRTDUMP MESSAGES
 
 
 
@@ -222,7 +238,7 @@ static struct static_route *this_srt;
 %type <r> rtable
 %type <s> optsym
 %type <ra> r_args
-%type <i> echo_mask echo_size debug_mask debug_list debug_flag export_or_preexport
+%type <i> echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_or_preexport
 %type <t> proto_patt
 
 %token SHOW STATUS
@@ -239,12 +255,12 @@ static struct static_route *this_srt;
 %token RESTART
 /* Declarations from ../../filter/config.Y */
 
-%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR SET STRING BGPMASK BGPPATH CLIST IF THEN ELSE CASE TRUE FALSE GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED ADD DELETE CONTAINS RESET PREPEND MATCH EMPTY WHERE EVAL
+%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR SET STRING BGPMASK BGPPATH CLIST IF THEN ELSE CASE TRUE FALSE GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED ADD DELETE CONTAINS RESET PREPEND FIRST LAST MATCH EMPTY WHERE EVAL
 
 %nonassoc THEN
 %nonassoc ELSE
 
-%type <x> term block cmds cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
+%type <x> term block cmds cmds_int cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
 %type <f> filter filter_body where_filter
 %type <i> type break_command cpair
 %type <e> set_item set_items switch_body
@@ -255,16 +271,17 @@ static struct static_route *this_srt;
 
 /* Declarations from ../../proto/bgp/config.Y */
 
-%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT
+%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES
 
 /* Declarations from ../../proto/ospf/config.Y */
 
-%token OSPF AREA OSPF_METRIC1 OSPF_METRIC2 OSPF_TAG BROADCAST
-%token RFC1583COMPAT STUB TICK COST RETRANSMIT
+%token OSPF AREA OSPF_METRIC1 OSPF_METRIC2 OSPF_TAG OSPF_ROUTER_ID
+%token BROADCAST RFC1583COMPAT STUB TICK COST RETRANSMIT
 %token HELLO TRANSMIT PRIORITY DEAD NONBROADCAST POINTOPOINT TYPE
 %token SIMPLE AUTHENTICATION STRICT CRYPTOGRAPHIC
 %token ELIGIBLE POLL NETWORKS HIDDEN VIRTUAL LINK
 %token RX BUFFER LARGE NORMAL STUBNET
+%token LSADB
 
 %type <t> opttext
 
@@ -282,7 +299,7 @@ static struct static_route *this_srt;
 
 /* Declarations from ../../proto/static/config.Y */
 
-%token STATIC DROP PROHIBIT
+%token STATIC PROHIBIT
 
 
 %%
@@ -417,6 +434,35 @@ log_cat:
  | AUTH { $$ = L_AUTH[0]; }
  | FATAL { $$ = L_FATAL[0]; }
  | BUG { $$ = L_BUG[0]; }
+ ;
+
+
+
+mrtdump_base:
+   MRTDUMP PROTOCOLS mrtdump_mask ';' { new_config->proto_default_mrtdump = $3; }
+ | MRTDUMP TEXT ';' {
+     FILE *f = tracked_fopen(new_config->pool, $2, "a");
+     if (!f) cf_error("Unable to open MRTDump file '%s': %m", $2);
+     new_config->mrtdump_file = fileno(f);
+   }
+ ;
+
+
+timeformat_which:
+   ROUTE { $$ = &new_config->tf_route; }
+ | PROTOCOL { $$ = &new_config->tf_proto; }
+ | BASE { $$ = &new_config->tf_base; }
+ | LOG { $$ = &new_config->tf_log; }
+
+timeformat_spec:
+   timeformat_which TEXT { *$1 = (struct timeformat){$2, NULL, 0}; }
+ | timeformat_which TEXT expr TEXT { *$1 = (struct timeformat){$2, $4, $3}; }
+ | timeformat_which ISO SHORT { *$1 = (struct timeformat){"%T", "%F", 20*3600}; }
+ | timeformat_which ISO LONG  { *$1 = (struct timeformat){"%F %T", NULL, 0}; }
+ ;
+
+timeformat_base:
+   TIMEFORMAT timeformat_spec ';'
  ;
 
 /* Unix specific commands */
@@ -580,14 +626,17 @@ proto_name:
 proto_item:
    /* EMPTY */
  | PREFERENCE expr {
-     if ($2 < 0 || $2 > 255) cf_error("Invalid preference");
+     if ($2 < 0 || $2 > 0xFFFF) cf_error("Invalid preference");
      this_proto->preference = $2;
    }
  | DISABLED bool { this_proto->disabled = $2; }
  | DEBUG debug_mask { this_proto->debug = $2; }
+ | MRTDUMP mrtdump_mask { this_proto->mrtdump = $2; }
  | IMPORT imexport { this_proto->in_filter = $2; }
  | EXPORT imexport { this_proto->out_filter = $2; }
  | TABLE rtable { this_proto->table = $2; }
+ | ROUTER ID idval { this_proto->router_id = $3; }
+ | DESCRIPTION TEXT { this_proto->dsc = $2; }
  ;
 
 imexport:
@@ -609,6 +658,8 @@ debug_default:
    DEBUG PROTOCOLS debug_mask { new_config->proto_default_debug = $3; }
  | DEBUG COMMANDS expr { new_config->cli_debug = $3; }
  ;
+
+/* MRTDUMP PROTOCOLS is in systep/unix/config.Y */
 
 /* Interface patterns */
 
@@ -692,6 +743,24 @@ debug_flag:
  | INTERFACES	{ $$ = D_IFACES; }
  | EVENTS	{ $$ = D_EVENTS; }
  | PACKETS	{ $$ = D_PACKETS; }
+ ;
+
+/* MRTDump flags */
+
+mrtdump_mask:
+   ALL { $$ = ~0; }
+ | OFF { $$ = 0; }
+ | '{' mrtdump_list '}' { $$ = $2; }
+ ;
+
+mrtdump_list:
+   mrtdump_flag
+ | mrtdump_list ',' mrtdump_flag { $$ = $1 | $3; }
+ ;
+
+mrtdump_flag:
+   STATES	{ $$ = MD_STATES; }
+ | MESSAGES	{ $$ = MD_MESSAGES; }
  ;
 
 /* Password lists */
@@ -881,15 +950,26 @@ echo_size:
  ;
 
 cmd_DISABLE: DISABLE proto_patt END
-{ proto_xxable($2, 0); } ;
+{ proto_xxable($2, XX_DISABLE); } ;
 cmd_ENABLE: ENABLE proto_patt END
-{ proto_xxable($2, 1); } ;
+{ proto_xxable($2, XX_ENABLE); } ;
 cmd_RESTART: RESTART proto_patt END
-{ proto_xxable($2, 2); } ;
+{ proto_xxable($2, XX_RESTART); } ;
+cmd_RELOAD: RELOAD proto_patt END
+{ proto_xxable($2, XX_RELOAD); } ;
+cmd_RELOAD_IN: RELOAD IN proto_patt END
+{ proto_xxable($3, XX_RELOAD_IN); } ;
+cmd_RELOAD_OUT: RELOAD OUT proto_patt END
+{ proto_xxable($3, XX_RELOAD_OUT); } ;
 
 
 cmd_DEBUG: DEBUG proto_patt debug_mask END
-{ proto_debug($2, $3); }
+{ proto_debug($2, 0, $3); }
+ ;
+
+
+cmd_MRTDUMP: MRTDUMP proto_patt mrtdump_mask END
+{ proto_debug($2, 1, $3); }
  ;
 
 proto_patt:
@@ -1034,15 +1114,15 @@ function_def:
 
 /* Programs */
 
+/* Hack: $$ of cmds_int is the last node.
+   $$->next of cmds_int is temporary used for the first node */
+
 cmds: /* EMPTY */ { $$ = NULL; }
- | cmd cmds {
-     if ($1) {
-       if ($1->next)
-	 bug("Command has next already set");
-       $1->next = $2;
-       $$ = $1;
-     } else $$ = $2;
-   }
+ | cmds_int { $$ = $1->next; $1->next = NULL; }
+ ;
+
+cmds_int: cmd { $$ = $1; $1->next = $1; }
+ | cmds_int cmd { $$ = $2; $2->next = $1->next ; $1->next = $2; }
  ;
 
 block:
@@ -1290,6 +1370,8 @@ term:
  | term '.' IP { $$ = f_new_inst(); $$->code = P('c','p'); $$->a1.p = $1; $$->aux = T_IP; }
  | term '.' LEN { $$ = f_new_inst(); $$->code = 'L'; $$->a1.p = $1; }
  | term '.' MASK '(' term ')' { $$ = f_new_inst(); $$->code = P('i','M'); $$->a1.p = $1; $$->a2.p = $5; }
+ | term '.' FIRST { $$ = f_new_inst(); $$->code = P('a','f'); $$->a1.p = $1; }
+ | term '.' LAST  { $$ = f_new_inst(); $$->code = P('a','l'); $$->a1.p = $1; }
 
 /* Communities */
 /* This causes one shift/reduce conflict
@@ -1455,15 +1537,17 @@ bgp_proto_start: proto_start BGP {
      BGP_CFG->hold_time = 240;
      BGP_CFG->connect_retry_time = 120;
      BGP_CFG->initial_hold_time = 240;
-     BGP_CFG->default_med = 0;
      BGP_CFG->compare_path_lengths = 1;
      BGP_CFG->start_delay_time = 5;
      BGP_CFG->error_amnesia_time = 300;
      BGP_CFG->error_delay_time_min = 60;
      BGP_CFG->error_delay_time_max = 300;
-     BGP_CFG->enable_as4 = bgp_as4_support;
+     BGP_CFG->enable_refresh = 1;
+     BGP_CFG->enable_as4 = 1;
      BGP_CFG->capabilities = 2;
      BGP_CFG->advertise_ipv4 = 1;
+     BGP_CFG->interpret_communities = 1;
+     BGP_CFG->default_local_pref = 100;
  }
  ;
 
@@ -1486,7 +1570,11 @@ bgp_proto:
  | bgp_proto KEEPALIVE TIME expr ';' { BGP_CFG->keepalive_time = $4; }
  | bgp_proto MULTIHOP expr VIA ipa ';' { BGP_CFG->multihop = $3; BGP_CFG->multihop_via = $5; }
  | bgp_proto NEXT HOP SELF ';' { BGP_CFG->next_hop_self = 1; }
+ | bgp_proto MISSING LLADDR SELF ';' { BGP_CFG->missing_lladdr = MLL_SELF; }
+ | bgp_proto MISSING LLADDR DROP ';' { BGP_CFG->missing_lladdr = MLL_DROP; }
+ | bgp_proto MISSING LLADDR IGNORE ';' { BGP_CFG->missing_lladdr = MLL_IGNORE; }
  | bgp_proto PATH METRIC bool ';' { BGP_CFG->compare_path_lengths = $4; }
+ | bgp_proto PREFER OLDER bool ';' { BGP_CFG->prefer_older = $4; }
  | bgp_proto DEFAULT BGP_MED expr ';' { BGP_CFG->default_med = $4; }
  | bgp_proto DEFAULT BGP_LOCAL_PREF expr ';' { BGP_CFG->default_local_pref = $4; }
  | bgp_proto SOURCE ADDRESS ipa ';' { BGP_CFG->source_addr = $4; }
@@ -1494,11 +1582,14 @@ bgp_proto:
  | bgp_proto ERROR FORGET TIME expr ';' { BGP_CFG->error_amnesia_time = $5; } 
  | bgp_proto ERROR WAIT TIME expr ',' expr ';' { BGP_CFG->error_delay_time_min = $5; BGP_CFG->error_delay_time_max = $7; }
  | bgp_proto DISABLE AFTER ERROR bool ';' { BGP_CFG->disable_after_error = $5; }
+ | bgp_proto ENABLE ROUTE REFRESH bool ';' { BGP_CFG->enable_refresh = $5; }
  | bgp_proto ENABLE AS4 bool ';' { BGP_CFG->enable_as4 = $4; }
  | bgp_proto CAPABILITIES bool ';' { BGP_CFG->capabilities = $3; }
  | bgp_proto ADVERTISE IPV4 bool ';' { BGP_CFG->advertise_ipv4 = $4; }
  | bgp_proto PASSWORD TEXT ';' { BGP_CFG->password = $3; }
  | bgp_proto ROUTE LIMIT expr ';' { BGP_CFG->route_limit = $4; }
+ | bgp_proto PASSIVE bool ';' { BGP_CFG->passive = $3; }
+ | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
  ;
 
 
@@ -1765,13 +1856,16 @@ cmd_SHOW_OSPF_TOPOLOGY: SHOW OSPF TOPOLOGY optsym opttext END
 cmd_SHOW_OSPF_STATE: SHOW OSPF STATE optsym opttext END
 { ospf_sh_state(proto_get_named($4, &proto_ospf), 1); };
 
+cmd_SHOW_OSPF_LSADB: SHOW OSPF LSADB optsym opttext END
+{ ospf_sh_lsadb(proto_get_named($4, &proto_ospf)); };
+
 /* Grammar from ../../proto/pipe/config.Y */
 
 
 pipe_proto_start: proto_start PIPE {
      this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config));
      this_proto->preference = DEF_PREF_PIPE;
-     PIPE_CFG->mode = PIPE_OPAQUE;
+     PIPE_CFG->mode = PIPE_TRANSPARENT;
   }
  ;
 
@@ -1902,8 +1996,8 @@ cmd_SHOW_STATIC: SHOW STATIC optsym END
 /* Dynamic rules */
 
 
-conf: ';' | definition | log_config | rtrid | listen | newtab | proto | debug_default | filter_def | filter_eval | function_def ;
-cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_DEBUG | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_STATE | cmd_SHOW_STATIC ;
+conf: ';' | definition | log_config | mrtdump_base | timeformat_base | rtrid | listen | newtab | proto | debug_default | filter_def | filter_eval | function_def ;
+cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_RELOAD | cmd_RELOAD_IN | cmd_RELOAD_OUT | cmd_DEBUG | cmd_MRTDUMP | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_STATE | cmd_SHOW_OSPF_LSADB | cmd_SHOW_STATIC ;
 proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
 kern_proto: kern_proto_start proto_name '{' | kern_proto proto_item ';' | kern_proto kern_item ';' | kern_proto nl_item ';' ;
 kif_proto: kif_proto_start proto_name '{' | kif_proto proto_item ';' | kif_proto kif_item ';' ;
@@ -1915,7 +2009,7 @@ dynamic_attr: INVALID_TOKEN { $$ = NULL; } | BGP_PATH
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); } | BGP_ATOMIC_AGGR
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_OPAQUE, T_ENUM_EMPTY, EA_CODE(EAP_BGP, BA_ATOMIC_AGGR)); } | BGP_AGGREGATOR
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_AGGREGATOR)); } | BGP_COMMUNITY
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); } | OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); } | OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); } | OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); } | RIP_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); } | RIP_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); } ;
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); } | OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); } | OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); } | OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); } | OSPF_ROUTER_ID { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_ROUTER_ID); } | RIP_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); } | RIP_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); } ;
 
 %%
 /* C Code from ../../conf/confbase.Y */

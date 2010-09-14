@@ -6,60 +6,10 @@
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
+#include "lib/alloca.h"
 #include "nest/bird.h"
 #include "conf/conf.h"
 #include "filter/filter.h"
-
-/*
- * find_nth - finds n-th element in linked list. Don't be confused by types, it is really a linked list.
- */
-static struct f_tree *
-find_nth(struct f_tree *from, int nth)
-{
-  struct f_tree *pivot;
-  int lcount = 0, rcount = 0;
-  struct f_tree *left, *right, *next;
-
-  pivot = from;
-
-  left = right = NULL;
-  next = from->right;
-  while (from = next) {
-    next = from->right;
-    if (val_compare(pivot->from, from->from)==1) {
-      from->right = left;
-      left = from;
-      lcount++;
-    } else {
-      from->right = right;
-      right = from;
-      rcount++;
-    }
-  }
-  if (lcount == nth) 
-    return pivot;
-  if (lcount < nth)
-    return find_nth(right, nth-lcount-1);
-  return find_nth(left, nth);
-}
-
-/*
- * find_median - Gets list linked by @left, finds its median, trashes pointers in @right.
- */
-static struct f_tree *
-find_median(struct f_tree *from)
-{
-  struct f_tree *t = from;
-  int cnt = 0;
-
-  if (!from)
-    return NULL;
-  do {
-    t->right = t->left;
-    cnt++;
-  } while (t = t->left);
-  return find_nth(from, cnt/2);
-}
 
 /**
  * find_tree
@@ -87,6 +37,23 @@ find_tree(struct f_tree *t, struct f_val val)
     return find_tree(t->left, val);
 }
 
+static struct f_tree *
+build_tree_rec(struct f_tree **buf, int l, int h)
+{
+  struct f_tree *n;
+  int pos;
+
+  if (l >= h)
+    return NULL;
+
+  pos = (l+h)/2;
+  n = buf[pos];
+  n->left = build_tree_rec(buf, l, pos);
+  n->right = build_tree_rec(buf, pos+1, h);
+  return n;
+}
+
+
 /**
  * build_tree
  * @from: degenerated tree (linked by @tree->left) to be transformed into form suitable for find_tree()
@@ -96,29 +63,35 @@ find_tree(struct f_tree *t, struct f_val val)
 struct f_tree *
 build_tree(struct f_tree *from)
 {
-  struct f_tree *median, *t = from, *next, *left = NULL, *right = NULL;
+  struct f_tree *tmp, *root;
+  struct f_tree **buf;
+  int len, i;
 
-  median = find_median(from);
-  if (!median)
+  if (from == NULL)
     return NULL;
 
-  do {
-    next = t->left;
-    if (t == median)
-      continue;
+  len = 0;
+  for (tmp = from; tmp != NULL; tmp = tmp->left)
+    len++;
 
-    if (val_compare(median->from, t->from)==1) {
-      t->left = left;
-      left = t;
-    } else {
-      t->left = right;
-      right = t;
-    }
-  } while(t = next);
+  if (len <= 1024)
+    buf = alloca(len * sizeof(struct f_tree *));
+  else
+    buf = malloc(len * sizeof(struct f_tree *));
 
-  median->left = build_tree(left);
-  median->right = build_tree(right);
-  return median;
+  /* Convert a degenerated tree into an sorted array */
+  i = 0;
+  for (tmp = from; tmp != NULL; tmp = tmp->left)
+    buf[i++] = tmp;
+
+  qsort(buf, len, sizeof(struct f_tree *), tree_compare);
+
+  root = build_tree_rec(buf, 0, len);
+
+  if (len > 1024)
+    free(buf);
+
+  return root;
 }
 
 struct f_tree *

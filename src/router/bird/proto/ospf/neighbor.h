@@ -14,7 +14,6 @@ struct ospf_neighbor *ospf_neighbor_new(struct ospf_iface *ifa);
 void ospf_neigh_sm(struct ospf_neighbor *n, int event);
 void bdr_election(struct ospf_iface *ifa);
 struct ospf_neighbor *find_neigh(struct ospf_iface *ifa, u32 rid);
-struct ospf_neighbor *find_neigh_noifa(struct proto_ospf *po, u32 rid);
 struct ospf_area *ospf_find_area(struct proto_ospf *po, u32 aid);
 void ospf_neigh_remove(struct ospf_neighbor *n);
 void ospf_sh_neigh_info(struct ospf_neighbor *n);
