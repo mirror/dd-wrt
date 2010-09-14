@@ -402,7 +402,9 @@ int main(int argc, char **argv)
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("devinit"); //init /dev /proc etc.
 	start_service("sysinit");
+#ifndef HAVE_LAGUNA
 	if (console_init())
+#endif
 		noconsole = 1;
 	start_service("drivers");
 	cprintf("setup signals\n");
