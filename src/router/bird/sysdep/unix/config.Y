@@ -14,12 +14,13 @@ CF_HDR
 CF_DECLS
 
 CF_KEYWORDS(LOG, SYSLOG, ALL, DEBUG, TRACE, INFO, REMOTE, WARNING, ERROR, AUTH, FATAL, BUG, STDERR, SOFT)
-CF_KEYWORDS(TIMEFORMAT, ISO, SHORT, LONG, BASE)
+CF_KEYWORDS(TIMEFORMAT, ISO, SHORT, LONG, BASE, NAME)
 
 %type <i> log_mask log_mask_list log_cat
 %type <g> log_file
 %type <t> cfg_name
 %type <tf> timeformat_which
+%type <t> syslog_name
 
 CF_GRAMMAR
 
@@ -33,13 +34,18 @@ log_config: LOG log_file log_mask ';' {
   }
  ;
 
+syslog_name:
+   NAME TEXT { $$ = $2; }
+ | { $$ = bird_name; }
+ ;
+
 log_file:
    TEXT {
      FILE *f = tracked_fopen(new_config->pool, $1, "a");
      if (!f) cf_error("Unable to open log file `%s': %m", $1);
      $$ = f;
    }
- | SYSLOG { $$ = NULL; }
+ | SYSLOG syslog_name { $$ = NULL; new_config->syslog_name = $2; }
  | STDERR { $$ = stderr; }
  ;
 
@@ -107,7 +113,7 @@ CF_CLI(CONFIGURE SOFT, cfg_name, [\"<file>\"], [[Reload configuration and ignore
 { cmd_reconfig($3, RECONFIG_SOFT); } ;
 
 CF_CLI(DOWN,,, [[Shut the daemon down]])
-{ cli_msg(7, "Shutdown requested"); order_shutdown(); } ;
+{ cmd_shutdown(); } ;
 
 cfg_name:
    /* empty */ { $$ = NULL; }

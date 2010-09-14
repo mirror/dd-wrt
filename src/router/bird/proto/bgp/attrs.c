@@ -47,7 +47,7 @@ bgp_check_origin(struct bgp_proto *p UNUSED, byte *a, int len UNUSED)
 }
 
 static void
-bgp_format_origin(eattr *a, byte *buf, int buflen)
+bgp_format_origin(eattr *a, byte *buf, int buflen UNUSED)
 {
   static char *bgp_origin_names[] = { "IGP", "EGP", "Incomplete" };
 
@@ -257,14 +257,14 @@ static struct attr_desc bgp_attr_table[] = {
     NULL, NULL },
   { "cluster_list", -1, BAF_OPTIONAL, EAF_TYPE_INT_SET, 0,			/* BA_CLUSTER_LIST */
     bgp_check_cluster_list, bgp_format_cluster_list }, 
-  { NULL, },									/* BA_DPA */
-  { NULL, },									/* BA_ADVERTISER */
-  { NULL, },									/* BA_RCID_PATH */
+  { .name = NULL },								/* BA_DPA */
+  { .name = NULL },									/* BA_ADVERTISER */
+  { .name = NULL },									/* BA_RCID_PATH */
   { "mp_reach_nlri", -1, BAF_OPTIONAL, EAF_TYPE_OPAQUE, 1,			/* BA_MP_REACH_NLRI */
     bgp_check_reach_nlri, NULL },
   { "mp_unreach_nlri", -1, BAF_OPTIONAL, EAF_TYPE_OPAQUE, 1,			/* BA_MP_UNREACH_NLRI */
     bgp_check_unreach_nlri, NULL },
-  { NULL, },									/* BA_EXTENDED_COMM */
+  {  .name = NULL },									/* BA_EXTENDED_COMM */
   { "as4_path", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,		/* BA_AS4_PATH */
     NULL, NULL },
   { "as4_aggregator", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,	/* BA_AS4_PATH */
@@ -514,6 +514,10 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
 
       flags = a->flags & (BAF_OPTIONAL | BAF_TRANSITIVE | BAF_PARTIAL);
       len = bgp_get_attr_len(a);
+
+      /* Skip empty int sets */ 
+      if (((a->type & EAF_TYPE_MASK) == EAF_TYPE_INT_SET) && (len == 0))
+	continue; 
 
       if (remains < len + 4)
 	goto err_no_buffer;
@@ -772,7 +776,7 @@ bgp_free_bucket(struct bgp_proto *p, struct bgp_bucket *buck)
 }
 
 void
-bgp_rt_notify(struct proto *P, net *n, rte *new, rte *old UNUSED, ea_list *attrs)
+bgp_rt_notify(struct proto *P, rtable *tbl UNUSED, net *n, rte *new, rte *old UNUSED, ea_list *attrs)
 {
   struct bgp_proto *p = (struct bgp_proto *) P;
   struct bgp_bucket *buck;
@@ -1070,16 +1074,6 @@ bgp_rte_better(rte *new, rte *old)
   /* Skipping RFC 4271 9.1.2.2. e) */
   /* We don't have interior distances */
 
-  /* RFC 4456 9. b) Compare cluster list lengths */
-  x = ea_find(new->attrs->eattrs, EA_CODE(EAP_BGP, BA_CLUSTER_LIST));
-  y = ea_find(old->attrs->eattrs, EA_CODE(EAP_BGP, BA_CLUSTER_LIST));
-  n = x ? int_set_get_size(x->u.ptr) : 0;
-  o = y ? int_set_get_size(y->u.ptr) : 0;
-  if (n < o)
-    return 1;
-  if (n > o)
-    return 0;
-
   /* RFC 4271 9.1.2.2. f) Compare BGP identifiers */
   /* RFC 4456 9. a) Use ORIGINATOR_ID instead of local neighor ID */
   x = ea_find(new->attrs->eattrs, EA_CODE(EAP_BGP, BA_ORIGINATOR_ID));
@@ -1094,6 +1088,16 @@ bgp_rte_better(rte *new, rte *old)
     return 0;
 
   /* rest of RFC 4271 9.1.2.2. f) */
+  if (n < o)
+    return 1;
+  if (n > o)
+    return 0;
+
+  /* RFC 4456 9. b) Compare cluster list lengths */
+  x = ea_find(new->attrs->eattrs, EA_CODE(EAP_BGP, BA_CLUSTER_LIST));
+  y = ea_find(old->attrs->eattrs, EA_CODE(EAP_BGP, BA_CLUSTER_LIST));
+  n = x ? int_set_get_size(x->u.ptr) : 0;
+  o = y ? int_set_get_size(y->u.ptr) : 0;
   if (n < o)
     return 1;
   if (n > o)

@@ -20,16 +20,10 @@
 #include "nest/cli.h"
 #include "filter/filter.h"
 
-static pool *proto_pool;
+pool *proto_pool;
 
 static list protocol_list;
 static list proto_list;
-
-#define WALK_PROTO_LIST(p) do {							\
-	node *nn;								\
-	WALK_LIST(nn, proto_list) {						\
-		struct proto *p = SKIP_BACK(struct proto, glob_node, nn);
-#define WALK_PROTO_LIST_END } } while(0)
 
 #define PD(pr, msg, args...) do { if (pr->debug & D_STATES) { log(L_TRACE "%s: " msg, pr->name , ## args); } } while(0)
 
@@ -57,7 +51,7 @@ proto_enqueue(list *l, struct proto *p)
 static void
 proto_relink(struct proto *p)
 {
-  list *l;
+  list *l = NULL;
 
   if (p->debug & D_STATES)
     {
@@ -119,7 +113,6 @@ proto_new(struct proto_config *c, unsigned size)
   p->table = c->table->table;
   p->in_filter = c->in_filter;
   p->out_filter = c->out_filter;
-  p->min_scope = SCOPE_SITE;
   p->hash_key = random_u32();
   c->proto = p;
   return p;
@@ -583,6 +576,12 @@ proto_fell_down(struct proto *p)
 
   bzero(&p->stats, sizeof(struct proto_stats));
   rt_unlock_table(p->table);
+
+#ifdef CONFIG_PIPE
+  if (proto_is_pipe(p))
+    rt_unlock_table(pipe_get_peer_table(p));
+#endif
+
   proto_rethink_goal(p);
 }
 
@@ -741,6 +740,8 @@ proto_notify_state(struct proto *p, unsigned ps)
     }
 }
 
+extern struct protocol proto_unix_iface;
+
 static void
 proto_flush_all(void *unused UNUSED)
 {
@@ -749,6 +750,11 @@ proto_flush_all(void *unused UNUSED)
   rt_prune_all();
   while ((p = HEAD(flush_proto_list))->n.next)
     {
+      /* This will flush interfaces in the same manner
+	 like rt_prune_all() flushes routes */
+      if (p->proto == &proto_unix_iface)
+	if_flush_ifaces(p);
+
       DBG("Flushing protocol %s\n", p->name);
       p->core_state = FS_HUNGRY;
       proto_relink(p);
@@ -781,9 +787,76 @@ proto_state_name(struct proto *p)
 }
 
 static void
-proto_do_show(struct proto *p, int verbose)
+proto_do_show_stats(struct proto *p)
+{
+  struct proto_stats *s = &p->stats;
+  cli_msg(-1006, "  Routes:         %u imported, %u exported, %u preferred", 
+	  s->imp_routes, s->exp_routes, s->pref_routes);
+  cli_msg(-1006, "  Route change stats:     received   rejected   filtered    ignored   accepted");
+  cli_msg(-1006, "    Import updates:     %10u %10u %10u %10u %10u",
+	  s->imp_updates_received, s->imp_updates_invalid,
+	  s->imp_updates_filtered, s->imp_updates_ignored,
+	  s->imp_updates_accepted);
+  cli_msg(-1006, "    Import withdraws:   %10u %10u        --- %10u %10u",
+	  s->imp_withdraws_received, s->imp_withdraws_invalid,
+	  s->imp_withdraws_ignored, s->imp_withdraws_accepted);
+  cli_msg(-1006, "    Export updates:     %10u %10u %10u        --- %10u",
+	  s->exp_updates_received, s->exp_updates_rejected,
+	  s->exp_updates_filtered, s->exp_updates_accepted);
+  cli_msg(-1006, "    Export withdraws:   %10u        ---        ---        --- %10u",
+	  s->exp_withdraws_received, s->exp_withdraws_accepted);
+}
+
+#ifdef CONFIG_PIPE
+static void
+proto_do_show_pipe_stats(struct proto *p)
+{
+  struct proto_stats *s1 = &p->stats;
+  struct proto_stats *s2 = pipe_get_peer_stats(p);
+
+  /*
+   * Pipe stats (as anything related to pipes) are a bit tricky. There
+   * are two sets of stats - s1 for routes going from the primary
+   * routing table to the secondary routing table ('exported' from the
+   * user point of view) and s2 for routes going in the other
+   * direction ('imported' from the user point of view).
+   *
+   * Each route going through a pipe is, technically, first exported
+   * to the pipe and then imported from that pipe and such operations
+   * are counted in one set of stats according to the direction of the
+   * route propagation. Filtering is done just in the first part
+   * (export). Therefore, we compose stats for one directon for one
+   * user direction from both import and export stats, skipping
+   * immediate and irrelevant steps (exp_updates_accepted,
+   * imp_updates_received, imp_updates_filtered, ...)
+   */
+
+  cli_msg(-1006, "  Routes:         %u imported, %u exported", 
+	  s2->imp_routes, s1->imp_routes);
+  cli_msg(-1006, "  Route change stats:     received   rejected   filtered    ignored   accepted");
+  cli_msg(-1006, "    Import updates:     %10u %10u %10u %10u %10u",
+	  s2->exp_updates_received, s2->exp_updates_rejected + s2->imp_updates_invalid,
+	  s2->exp_updates_filtered, s2->imp_updates_ignored, s2->imp_updates_accepted);
+  cli_msg(-1006, "    Import withdraws:   %10u %10u        --- %10u %10u",
+	  s2->exp_withdraws_received, s2->imp_withdraws_invalid,
+	  s2->imp_withdraws_ignored, s2->imp_withdraws_accepted);
+  cli_msg(-1006, "    Export updates:     %10u %10u %10u %10u %10u",
+	  s1->exp_updates_received, s1->exp_updates_rejected + s1->imp_updates_invalid,
+	  s1->exp_updates_filtered, s1->imp_updates_ignored, s1->imp_updates_accepted);
+  cli_msg(-1006, "    Export withdraws:   %10u %10u        --- %10u %10u",
+	  s1->exp_withdraws_received, s1->imp_withdraws_invalid,
+	  s1->imp_withdraws_ignored, s1->imp_withdraws_accepted);
+}
+#endif
+
+void
+proto_cmd_show(struct proto *p, unsigned int verbose, int cnt)
 {
   byte buf[256], tbuf[TM_DATETIME_BUFFER_SIZE];
+
+  /* First protocol - show header */
+  if (!cnt)
+    cli_msg(-2002, "name     proto    table    state  since       info");
 
   buf[0] = 0;
   if (p->proto->get_status)
@@ -800,51 +873,162 @@ proto_do_show(struct proto *p, int verbose)
     {
       if (p->cf->dsc)
 	cli_msg(-1006, "  Description:    %s", p->cf->dsc);
+      if (p->cf->router_id)
+	cli_msg(-1006, "  Router ID:      %R", p->cf->router_id);
       cli_msg(-1006, "  Preference:     %d", p->preference);
       cli_msg(-1006, "  Input filter:   %s", filter_name(p->in_filter));
       cli_msg(-1006, "  Output filter:  %s", filter_name(p->out_filter));
 
       if (p->proto_state != PS_DOWN)
 	{
-	  cli_msg(-1006, "  Routes:         %u imported, %u exported, %u preferred", 
-		  p->stats.imp_routes, p->stats.exp_routes, p->stats.pref_routes);
-	  cli_msg(-1006, "  Route change stats:     received   rejected   filtered    ignored   accepted");
-	  cli_msg(-1006, "    Import updates:     %10u %10u %10u %10u %10u",
-		  p->stats.imp_updates_received, p->stats.imp_updates_invalid,
-		  p->stats.imp_updates_filtered, p->stats.imp_updates_ignored,
-		  p->stats.imp_updates_accepted);
-	  cli_msg(-1006, "    Import withdraws:   %10u %10u        --- %10u %10u",
-		  p->stats.imp_withdraws_received, p->stats.imp_withdraws_invalid,
-		  p->stats.imp_withdraws_ignored, p->stats.imp_withdraws_accepted);
-	  cli_msg(-1006, "    Export updates:     %10u %10u %10u        --- %10u",
-		  p->stats.exp_updates_received, p->stats.exp_updates_rejected,
-		  p->stats.exp_updates_filtered, p->stats.exp_updates_accepted);
-	  cli_msg(-1006, "    Export withdraws:   %10u        ---        ---        --- %10u",
-		  p->stats.exp_withdraws_received, p->stats.exp_withdraws_accepted);
+#ifdef CONFIG_PIPE
+	  if (proto_is_pipe(p))
+	    proto_do_show_pipe_stats(p);
+	  else
+#endif
+	    proto_do_show_stats(p);
 	}
+
+      if (p->proto->show_proto_info)
+	p->proto->show_proto_info(p);
 
       cli_msg(-1006, "");
     }
 }
 
 void
-proto_show(struct symbol *s, int verbose)
+proto_cmd_disable(struct proto *p, unsigned int arg UNUSED, int cnt UNUSED)
 {
-  if (s && s->class != SYM_PROTO)
+  if (p->disabled)
+    {
+      cli_msg(-8, "%s: already disabled", p->name);
+      return;
+    }
+
+  log(L_INFO "Disabling protocol %s", p->name);
+  p->disabled = 1;
+  proto_rethink_goal(p);
+  cli_msg(-9, "%s: disabled", p->name);
+}
+
+void
+proto_cmd_enable(struct proto *p, unsigned int arg UNUSED, int cnt UNUSED)
+{
+  if (!p->disabled)
+    {
+      cli_msg(-10, "%s: already enabled", p->name);
+      return;
+    }
+
+  log(L_INFO "Enabling protocol %s", p->name);
+  p->disabled = 0;
+  proto_rethink_goal(p);
+  cli_msg(-11, "%s: enabled", p->name);
+}
+
+void
+proto_cmd_restart(struct proto *p, unsigned int arg UNUSED, int cnt UNUSED)
+{
+  if (p->disabled)
+    {
+      cli_msg(-8, "%s: already disabled", p->name);
+      return;
+    }
+
+  log(L_INFO "Restarting protocol %s", p->name);
+  p->disabled = 1;
+  proto_rethink_goal(p);
+  p->disabled = 0;
+  proto_rethink_goal(p);
+  cli_msg(-12, "%s: restarted", p->name);
+}
+
+void
+proto_cmd_reload(struct proto *p, unsigned int dir, int cnt UNUSED)
+{
+  if (p->disabled)
+    {
+      cli_msg(-8, "%s: already disabled", p->name);
+      return;
+    }
+
+  /* If the protocol in not UP, it has no routes */
+  if (p->proto_state != PS_UP)
+    return;
+
+  log(L_INFO "Reloading protocol %s", p->name);
+
+  /* re-importing routes */
+  if (dir != CMD_RELOAD_OUT)
+    if (! (p->reload_routes && p->reload_routes(p)))
+      {
+	cli_msg(-8006, "%s: reload failed", p->name);
+	return;
+      }
+		 
+  /* re-exporting routes */
+  if (dir != CMD_RELOAD_IN)
+    proto_request_feeding(p);
+
+  cli_msg(-15, "%s: reloading", p->name);
+}
+
+void
+proto_cmd_debug(struct proto *p, unsigned int mask, int cnt UNUSED)
+{
+  p->debug = mask;
+}
+
+void
+proto_cmd_mrtdump(struct proto *p, unsigned int mask, int cnt UNUSED)
+{
+  p->mrtdump = mask;
+}
+
+static void
+proto_apply_cmd_symbol(struct symbol *s, void (* cmd)(struct proto *, unsigned int, int), unsigned int arg)
+{
+  if (s->class != SYM_PROTO)
     {
       cli_msg(9002, "%s is not a protocol", s->name);
       return;
     }
-  cli_msg(-2002, "name     proto    table    state  since       info");
-  if (s)
-    proto_do_show(((struct proto_config *)s->def)->proto, verbose);
-  else
-    {
-      WALK_PROTO_LIST(p)
-	proto_do_show(p, verbose);
-      WALK_PROTO_LIST_END;
-    }
+
+  cmd(((struct proto_config *)s->def)->proto, arg, 0);
   cli_msg(0, "");
+}
+
+static void
+proto_apply_cmd_patt(char *patt, void (* cmd)(struct proto *, unsigned int, int), unsigned int arg)
+{
+  int cnt = 0;
+
+  node *nn;
+  WALK_LIST(nn, proto_list)
+    {
+      struct proto *p = SKIP_BACK(struct proto, glob_node, nn);
+
+      if (!patt || patmatch(patt, p->name))
+	cmd(p, arg, cnt++);
+    }
+
+  if (!cnt)
+    cli_msg(8003, "No protocols match");
+  else
+    cli_msg(0, "");
+}
+
+void
+proto_apply_cmd(struct proto_spec ps, void (* cmd)(struct proto *, unsigned int, int),
+		int restricted, unsigned int arg)
+{
+  if (restricted && cli_access_restricted())
+    return;
+
+  if (ps.patt)
+    proto_apply_cmd_patt(ps.ptr, cmd, arg);
+  else
+    proto_apply_cmd_symbol(ps.ptr, cmd, arg);
 }
 
 struct proto *
@@ -874,113 +1058,4 @@ proto_get_named(struct symbol *sym, struct protocol *pr)
 	cf_error("There is no %s protocol running", pr->name);
     }
   return p;
-}
-
-void
-proto_xxable(char *pattern, int xx)
-{
-  int cnt = 0;
-  WALK_PROTO_LIST(p)
-    if (patmatch(pattern, p->name))
-      {
-	cnt++;
-	switch (xx)
-	  {
-	  case XX_DISABLE:
-	    if (p->disabled)
-	      cli_msg(-8, "%s: already disabled", p->name);
-	    else
-	      {
-		log(L_INFO "Disabling protocol %s", p->name);
-		p->disabled = 1;
-		proto_rethink_goal(p);
-		cli_msg(-9, "%s: disabled", p->name);
-	      }
-	    break;
-
-	  case XX_ENABLE:
-	    if (!p->disabled)
-	      cli_msg(-10, "%s: already enabled", p->name);
-	    else
-	      {
-		log(L_INFO "Enabling protocol %s", p->name);
-		p->disabled = 0;
-		proto_rethink_goal(p);
-		cli_msg(-11, "%s: enabled", p->name);
-	      }
-	    break;
-
-	  case XX_RESTART:
-	    if (p->disabled)
-	      cli_msg(-8, "%s: already disabled", p->name);
-	    else
-	      {
-		log(L_INFO "Restarting protocol %s", p->name);
-		p->disabled = 1;
-		proto_rethink_goal(p);
-		p->disabled = 0;
-		proto_rethink_goal(p);
-		cli_msg(-12, "%s: restarted", p->name);
-	      }
-	    break;
-
-	  case XX_RELOAD:
-	  case XX_RELOAD_IN:
-	  case XX_RELOAD_OUT:
-	    if (p->disabled)
-	      {
-		cli_msg(-8, "%s: already disabled", p->name);
-		break;
-	      }
-
-	    /* If the protocol in not UP, it has no routes */
-	    if (p->proto_state != PS_UP)
-	      break;
-
-	    log(L_INFO "Reloading protocol %s", p->name);
-
-	    /* re-importing routes */
-	    if (xx != XX_RELOAD_OUT)
-	      if (! (p->reload_routes && p->reload_routes(p)))
-		{
-		  cli_msg(-8006, "%s: reload failed", p->name);
-		  break;
-		}
-		 
-	    /* re-exporting routes */
-	    if (xx != XX_RELOAD_IN)
-	      proto_request_feeding(p);
-
-	    cli_msg(-15, "%s: reloading", p->name);
-	    break;
-
-	  default:
-	    ASSERT(0);
-	  }
-      }
-  WALK_PROTO_LIST_END;
-  if (!cnt)
-    cli_msg(8003, "No protocols match");
-  else
-    cli_msg(0, "");
-}
-
-void
-proto_debug(char *pattern, int which, unsigned int mask)
-{
-  int cnt = 0;
-  WALK_PROTO_LIST(p)
-    if (patmatch(pattern, p->name))
-      {
-	cnt++;
-	if (which == 0)
-	  p->debug = mask;
-	else
-	  p->mrtdump = mask;
-      }
-  WALK_PROTO_LIST_END;
-  if (!cnt)
-    cli_msg(8003, "No protocols match");
-  else
-    cli_msg(0, "");
 }

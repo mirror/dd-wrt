@@ -91,6 +91,7 @@ void f_prefix_get_bounds(struct f_prefix *px, int *l, int *h);
 
 void f_prefix_get_bounds(struct f_prefix *px, int *l, int *h);
 int val_compare(struct f_val v1, struct f_val v2);
+int tree_compare(const void *p1, const void *p2);
 void val_print(struct f_val v);
 
 #define F_NOP 0
@@ -114,6 +115,7 @@ void val_print(struct f_val v);
 #define T_INT 0x10
 #define T_BOOL 0x11
 #define T_PAIR 0x12  /*	Notice that pair is stored as integer: first << 16 | second */
+#define T_QUAD 0x13
 
 /* Put enumerational types in 0x30..0x3f range */
 #define T_ENUM_LO 0x30

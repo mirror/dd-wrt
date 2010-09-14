@@ -125,11 +125,12 @@ static_shutdown(struct proto *p)
   struct static_config *c = (void *) p->cf;
   struct static_route *r;
 
-  DBG("Static: prepare for landing!\n");
+  /* Just reset the flag, the routes will be flushed by the nest */
   WALK_LIST(r, c->iface_routes)
-    static_remove(p, r);
+    r->installed = 0;
   WALK_LIST(r, c->other_routes)
-    static_remove(p, r);
+    r->installed = 0;
+
   return PS_DOWN;
 }
 
@@ -217,15 +218,18 @@ static_init(struct proto_config *c)
   return p;
 }
 
-static int
-static_same_route(struct static_route *x, struct static_route *y)
+static inline int
+static_same_net(struct static_route *x, struct static_route *y)
 {
-  return ipa_equal(x->net, y->net)
-    && x->masklen == y->masklen
-    && x->dest == y->dest
+  return ipa_equal(x->net, y->net) && (x->masklen == y->masklen);
+}
+
+static inline int
+static_same_dest(struct static_route *x, struct static_route *y)
+{
+  return (x->dest == y->dest)
     && (x->dest != RTD_ROUTER || ipa_equal(x->via, y->via))
-    && (x->dest != RTD_DEVICE || !strcmp(x->if_name, y->if_name))
-    ;
+    && (x->dest != RTD_DEVICE || !strcmp(x->if_name, y->if_name));
 }
 
 static void
@@ -233,18 +237,25 @@ static_match(struct proto *p, struct static_route *r, struct static_config *n)
 {
   struct static_route *t;
 
+  /*
+   * For given old route *r we find whether a route to the same
+   * network is also in the new route list. In that case, we keep the
+   * route and possibly update the route later if destination changed.
+   * Otherwise, we remove the route.
+   */
+
   if (r->neigh)
     r->neigh->data = NULL;
   WALK_LIST(t, n->iface_routes)
-    if (static_same_route(r, t))
+    if (static_same_net(r, t))
       {
-	t->installed = 1;
+	t->installed = static_same_dest(r, t);
 	return;
       }
   WALK_LIST(t, n->other_routes)
-    if (static_same_route(r, t))
+    if (static_same_net(r, t))
       {
-	t->installed = 1;
+	t->installed = static_same_dest(r, t);
 	return;
       }
   static_remove(p, r);
@@ -294,7 +305,7 @@ static_show_rt(struct static_route *r)
   switch (r->dest)
     {
     case RTD_ROUTER:	bsprintf(via, "via %I", r->via); break;
-    case RTD_DEVICE:	bsprintf(via, "to %s", r->if_name); break;
+    case RTD_DEVICE:	bsprintf(via, "dev %s", r->if_name); break;
     case RTD_BLACKHOLE:	bsprintf(via, "blackhole"); break;
     case RTD_UNREACHABLE:	bsprintf(via, "unreachable"); break;
     case RTD_PROHIBIT:	bsprintf(via, "prohibited"); break;

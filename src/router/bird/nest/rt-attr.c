@@ -54,8 +54,9 @@
 #include "lib/resource.h"
 #include "lib/string.h"
 
+pool *rta_pool;
+
 static slab *rta_slab;
-static pool *rta_pool;
 
 struct protocol *attr_class_to_protocol[EAP_MAX];
 
@@ -400,9 +401,10 @@ ea_format(eattr *e, byte *buf)
       switch (e->type & EAF_TYPE_MASK)
 	{
 	case EAF_TYPE_INT:
-	  bsprintf(buf, "%d", e->u.data);
+	  bsprintf(buf, "%u", e->u.data);
 	  break;
 	case EAF_TYPE_OPAQUE:
+	  *buf = 0;
 	  for(i=0; i<ad->length; i++)
 	    {
 	      if (buf > end - 8)

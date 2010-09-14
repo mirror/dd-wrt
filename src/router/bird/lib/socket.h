@@ -9,6 +9,8 @@
 #ifndef _BIRD_SOCKET_H_
 #define _BIRD_SOCKET_H_
 
+#include <errno.h>
+
 #include "lib/resource.h"
 
 typedef struct birdsock {
@@ -34,8 +36,11 @@ typedef struct birdsock {
 
   void (*err_hook)(struct birdsock *, int); /* errno or zero if EOF */
 
-  ip_addr faddr;			/* For packet protocols: source of current packet */
-  unsigned fport;
+  /* Information about received datagrams (UDP, RAW), valid in rx_hook */
+  ip_addr faddr, laddr;			/* src (From) and dst (Local) address of the datagram */
+  unsigned fport;			/* src port of the datagram */
+  unsigned lifindex;			/* local interface that received the datagram */
+  /* laddr and lifindex are valid only if SKF_LADDR_RX flag is set to request it */
 
   int fd;				/* System-dependent data */
   node n;
@@ -64,6 +69,8 @@ int sk_leave_group(sock *s, ip_addr maddr);
 int sk_set_ipv6_checksum(sock *s, int offset);
 #endif
 
+int sk_set_broadcast(sock *s, int enable);
+
 static inline int
 sk_send_buffer_empty(sock *sk)
 {
@@ -73,7 +80,9 @@ sk_send_buffer_empty(sock *sk)
 
 /* Socket flags */
 
-#define SKF_V6ONLY	1	/* Use  IPV6_V6ONLY socket option */
+#define SKF_V6ONLY	1	/* Use IPV6_V6ONLY socket option */
+#define SKF_LADDR_RX	2	/* Report local address for RX packets */
+#define SKF_LADDR_TX	4	/* Allow to specify local address for TX packets */
 
 
 /*

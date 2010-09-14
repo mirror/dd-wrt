@@ -75,9 +75,13 @@ if_connected(ip_addr *a, struct iface *i) /* -1=error, 1=match, 0=no match */
 	{
 	  if (ipa_in_net(*a, b->prefix, b->pxlen))
 	    {
-	      if (ipa_equal(*a, b->prefix) ||	/* Network address */
-		  ipa_equal(*a, b->brd))	/* Broadcast */
+#ifndef IPV6
+	      if ((b->pxlen < (BITS_PER_IP_ADDRESS - 1)) &&
+		  (ipa_equal(*a, b->prefix) ||	/* Network address */
+		   ipa_equal(*a, b->brd)))	/* Broadcast */
 		return -1;
+#endif
+
 	      return b->scope;
 	    }
 	}
@@ -112,12 +116,12 @@ neighbor *
 neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags)
 {
   neighbor *n;
-  int class, scope = SCOPE_HOST;
+  int class, scope = -1;       ;
   unsigned int h = neigh_hash(p, a);
   struct iface *i;
 
   WALK_LIST(n, neigh_hash_table[h])	/* Search the cache */
-    if (n->proto == p && ipa_equal(*a, n->addr))
+    if (n->proto == p && ipa_equal(*a, n->addr) && (!ifa || (ifa == n->iface)))
       return n;
 
   class = ipa_classify(*a);
@@ -129,7 +133,12 @@ neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags)
     return NULL;			/* Bad scope or a somecast */
 
   if (ifa)
-    scope = if_connected(a, ifa);
+    {
+      scope = if_connected(a, ifa);
+
+      if ((scope < 0) && (flags & NEF_ONLINK))
+	scope = class & IADDR_SCOPE_MASK;
+    }
   else
     WALK_LIST(i, iface_list)
       if ((scope = if_connected(a, i)) >= 0)
@@ -138,22 +147,28 @@ neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags)
 	  break;
 	}
 
-  if (!ifa && !(flags & NEF_STICKY))
+  /* scope < 0 means i don't know neighbor */
+  /* scope >= 0 implies ifa != NULL */
+
+  if ((scope < 0) && !(flags & NEF_STICKY))
     return NULL;
 
   n = sl_alloc(neigh_slab);
   n->addr = *a;
-  n->iface = ifa;
-  if (ifa)
+  if (scope >= 0)
     {
       add_tail(&neigh_hash_table[h], &n->n);
       add_tail(&ifa->neighbors, &n->if_n);
     }
   else
     {
+      /* sticky flag does not work for link-local neighbors;
+	 fortunately, we don't use this combination */
       add_tail(&sticky_neigh_list, &n->n);
+      ifa = NULL;
       scope = 0;
     }
+  n->iface = ifa;
   n->proto = p;
   n->data = NULL;
   n->aux = 0;

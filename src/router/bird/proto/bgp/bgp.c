@@ -60,6 +60,7 @@
 #include "nest/protocol.h"
 #include "nest/route.h"
 #include "nest/locks.h"
+#include "nest/cli.h"
 #include "conf/conf.h"
 #include "lib/socket.h"
 #include "lib/resource.h"
@@ -95,6 +96,15 @@ bgp_open(struct bgp_proto *p)
 
   if (!bgp_listen_sk)
     bgp_listen_sk = bgp_setup_listen_sk(cfg->listen_bgp_addr, cfg->listen_bgp_port, cfg->listen_bgp_flags);
+
+  if (!bgp_listen_sk)
+    {
+      bgp_counter--;
+      p->p.disabled = 1;
+      bgp_store_error(p, NULL, BE_MISC, BEM_NO_SOCKET);
+      proto_notify_state(&p->p, PS_DOWN);
+      return -1;
+    }
 
   if (!bgp_linpool)
     bgp_linpool = lp_new(&root_pool, 4080);
@@ -203,7 +213,7 @@ bgp_start_timer(timer *t, int value)
 void
 bgp_close_conn(struct bgp_conn *conn)
 {
-  struct bgp_proto *p = conn->bgp;
+  // struct bgp_proto *p = conn->bgp;
 
   DBG("BGP: Closing connection\n");
   conn->packets_to_send = 0;
@@ -237,7 +247,7 @@ bgp_update_startup_delay(struct bgp_proto *p)
 
   DBG("BGP: Updating startup delay\n");
 
-  if (p->last_proto_error && ((now - p->last_proto_error) >= cf->error_amnesia_time))
+  if (p->last_proto_error && ((now - p->last_proto_error) >= (int) cf->error_amnesia_time))
     p->startup_delay = 0;
 
   p->last_proto_error = now;
@@ -433,6 +443,15 @@ bgp_sock_err(sock *sk, int err)
   struct bgp_conn *conn = sk->data;
   struct bgp_proto *p = conn->bgp;
 
+  /*
+   * This error hook may be called either asynchronously from main
+   * loop, or synchronously from sk_send().  But sk_send() is called
+   * only from bgp_tx() and bgp_kick_tx(), which are both called
+   * asynchronously from main loop. Moreover, they end if err hook is
+   * called. Therefore, we could suppose that it is always called
+   * asynchronously.
+   */
+
   bgp_store_error(p, conn, BE_SOCKET, err);
 
   if (err)
@@ -492,7 +511,7 @@ bgp_setup_conn(struct bgp_proto *p, struct bgp_conn *conn)
 }
 
 static void
-bgp_setup_sk(struct bgp_proto *p, struct bgp_conn *conn, sock *s)
+bgp_setup_sk(struct bgp_conn *conn, sock *s)
 {
   s->data = conn;
   s->err_hook = bgp_sock_err;
@@ -555,7 +574,7 @@ bgp_connect(struct bgp_proto *p)	/* Enter Connect state and start establishing c
   s->tx_hook = bgp_connected;
   BGP_TRACE(D_EVENTS, "Connecting to %I from local address %I", s->daddr, s->saddr);
   bgp_setup_conn(p, conn);
-  bgp_setup_sk(p, conn, s);
+  bgp_setup_sk(conn, s);
   bgp_conn_set_state(conn, BS_CONNECT);
   if (sk_open(s))
     {
@@ -601,7 +620,7 @@ bgp_incoming_connection(sock *sk, int dummy UNUSED)
 	      goto err;
 
 	    bgp_setup_conn(p, &p->incoming_conn);
-	    bgp_setup_sk(p, &p->incoming_conn, sk);
+	    bgp_setup_sk(&p->incoming_conn, sk);
 	    sk_set_ttl(sk, p->cf->multihop ? : 1);
 	    bgp_send_open(&p->incoming_conn);
 	    return 0;
@@ -614,11 +633,20 @@ bgp_incoming_connection(sock *sk, int dummy UNUSED)
   return 0;
 }
 
+static void
+bgp_listen_sock_err(sock *sk UNUSED, int err)
+{
+  if (err == ECONNABORTED)
+    log(L_WARN "BGP: Incoming connection aborted");
+  else
+    log(L_ERR "BGP: Error on listening socket: %M", err);
+}
+
 static sock *
 bgp_setup_listen_sk(ip_addr addr, unsigned port, u32 flags)
 {
   sock *s = sk_new(&root_pool);
-  DBG("BGP: Creating incoming socket\n");
+  DBG("BGP: Creating listening socket\n");
   s->type = SK_TCP_PASSIVE;
   s->saddr = addr;
   s->sport = port ? port : BGP_PORT;
@@ -627,9 +655,10 @@ bgp_setup_listen_sk(ip_addr addr, unsigned port, u32 flags)
   s->rbsize = BGP_RX_BUFFER_SIZE;
   s->tbsize = BGP_TX_BUFFER_SIZE;
   s->rx_hook = bgp_incoming_connection;
+  s->err_hook = bgp_listen_sock_err;
   if (sk_open(s))
     {
-      log(L_ERR "Unable to open incoming BGP socket");
+      log(L_ERR "BGP: Unable to open listening socket");
       rfree(s);
       return NULL;
     }
@@ -917,42 +946,111 @@ bgp_check(struct bgp_config *c)
 
 static char *bgp_state_names[] = { "Idle", "Connect", "Active", "OpenSent", "OpenConfirm", "Established", "Close" };
 static char *bgp_err_classes[] = { "", "Error: ", "Socket: ", "Received: ", "BGP Error: ", "Automatic shutdown: ", ""};
-static char *bgp_misc_errors[] = { "", "Neighbor lost", "Invalid next hop", "Kernel MD5 auth failed" };
+static char *bgp_misc_errors[] = { "", "Neighbor lost", "Invalid next hop", "Kernel MD5 auth failed", "No listening socket" };
 static char *bgp_auto_errors[] = { "", "Route limit exceeded"};
 
+static const char *
+bgp_last_errmsg(struct bgp_proto *p)
+{
+  switch (p->last_error_class)
+    {
+    case BE_MISC:
+      return bgp_misc_errors[p->last_error_code];
+    case BE_SOCKET:
+      return (p->last_error_code == 0) ? "Connection closed" : strerror(p->last_error_code);
+    case BE_BGP_RX:
+    case BE_BGP_TX:
+      return bgp_error_dsc(p->last_error_code >> 16, p->last_error_code & 0xFF);
+    case BE_AUTO_DOWN:
+      return bgp_auto_errors[p->last_error_code];
+    default:
+      return "";
+    }
+}
+
+static const char *
+bgp_state_dsc(struct bgp_proto *p)
+{
+  //if (p->p.proto_state == PS_DOWN)
+  //  return "Down";
+
+  int state = MAX(p->incoming_conn.state, p->outgoing_conn.state);
+  if ((state == BS_IDLE) && (p->start_state >= BSS_CONNECT) && p->cf->passive)
+    return "Passive";
+
+  return bgp_state_names[state];
+}
 
 static void
 bgp_get_status(struct proto *P, byte *buf)
 {
   struct bgp_proto *p = (struct bgp_proto *) P;
 
-  const byte *err1 = bgp_err_classes[p->last_error_class];
-  const byte *err2 = "";
-  byte errbuf[32];
-
-  switch (p->last_error_class)
-    {
-    case BE_MISC:
-      err2 = bgp_misc_errors[p->last_error_code];
-      break;
-    case BE_SOCKET:
-      err2 = (p->last_error_code == 0) ? "Connection closed" : strerror(p->last_error_code);
-      break;
-    case BE_BGP_RX:
-    case BE_BGP_TX:
-      err2 = bgp_error_dsc(errbuf, p->last_error_code >> 16, p->last_error_code & 0xFF);
-      break;
-    case BE_AUTO_DOWN:
-      err2 = bgp_auto_errors[p->last_error_code];
-      break;
-    }
+  const char *err1 = bgp_err_classes[p->last_error_class];
+  const char *err2 = bgp_last_errmsg(p);
 
   if (P->proto_state == PS_DOWN)
     bsprintf(buf, "%s%s", err1, err2);
   else
-    bsprintf(buf, "%-14s%s%s",
-	     bgp_state_names[MAX(p->incoming_conn.state, p->outgoing_conn.state)],
-	     err1, err2);
+    bsprintf(buf, "%-14s%s%s", bgp_state_dsc(p), err1, err2);
+}
+
+static void
+bgp_show_proto_info(struct proto *P)
+{
+  struct bgp_proto *p = (struct bgp_proto *) P;
+  struct bgp_conn *c = p->conn;
+
+  if (P->proto_state == PS_DOWN)
+    return;
+
+  cli_msg(-1006, "  BGP state:          %s", bgp_state_dsc(p));
+
+  if (P->proto_state == PS_START)
+    {
+      struct bgp_conn *oc = &p->outgoing_conn;
+
+      if ((p->start_state < BSS_CONNECT) &&
+	  (p->startup_timer->expires))
+	cli_msg(-1006, "    Error wait:       %d/%d", 
+		p->startup_timer->expires - now, p->startup_delay);
+
+      if ((oc->state == BS_ACTIVE) &&
+	  (oc->connect_retry_timer->expires))
+	cli_msg(-1006, "    Start delay:      %d/%d", 
+		oc->connect_retry_timer->expires - now, p->cf->start_delay_time);
+    }
+  else if (P->proto_state == PS_UP)
+    {
+      cli_msg(-1006, "    Session:          %s%s%s%s",
+	      p->is_internal ? "internal" : "external",
+	      p->rr_client ? " route-reflector" : "",
+	      p->rs_client ? " route-server" : "",
+	      p->as4_session ? " AS4" : "");
+      cli_msg(-1006, "    Neighbor AS:      %u", p->remote_as);
+      cli_msg(-1006, "    Neighbor ID:      %R", p->remote_id);
+      cli_msg(-1006, "    Neighbor address: %I", p->cf->remote_ip);
+      cli_msg(-1006, "    Nexthop address:  %I", p->next_hop);
+      cli_msg(-1006, "    Source address:   %I", p->source_addr);
+      cli_msg(-1006, "    Neighbor caps:   %s%s",
+	      c->peer_refresh_support ? " refresh" : "",
+	      c->peer_as4_support ? " AS4" : "");
+      if (p->cf->route_limit)
+	cli_msg(-1006, "    Route limit:      %d/%d",
+		p->p.stats.imp_routes, p->cf->route_limit);
+      cli_msg(-1006, "    Hold timer:       %d/%d", 
+	      c->hold_timer->expires - now, c->hold_time);
+      cli_msg(-1006, "    Keepalive timer:  %d/%d", 
+	      c->keepalive_timer->expires - now, c->keepalive_time);
+    }
+
+  if ((p->last_error_class != BE_NONE) && 
+      (p->last_error_class != BE_MAN_DOWN))
+    {
+      const char *err1 = bgp_err_classes[p->last_error_class];
+      const char *err2 = bgp_last_errmsg(p);
+      cli_msg(-1006, "    Last error:       %s%s", err1, err2);
+    }
 }
 
 static int
@@ -983,8 +1081,9 @@ struct protocol proto_bgp = {
   init:			bgp_init,
   start:		bgp_start,
   shutdown:		bgp_shutdown,
+  reconfigure:		bgp_reconfigure,
   get_status:		bgp_get_status,
   get_attr:		bgp_get_attr,
-  reconfigure:		bgp_reconfigure,
   get_route_info:	bgp_get_route_info,
+  show_proto_info:	bgp_show_proto_info
 };

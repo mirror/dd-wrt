@@ -121,6 +121,11 @@ to +2000000000. Overflows are not checked. You can use <CODE>0x1234</CODE> synta
 65535. Literals of this type are written as <CODE>(1234,5678)</CODE>. The same syntax can also be
 used to construct a pair from two arbitrary integer expressions (for example <CODE>(1+2,a)</CODE>).
 <P>
+<DT><CODE>quad</CODE><DD><P>This is a dotted quad of numbers used to represent
+router IDs (and others).  Each component can have a value
+from 0 to 255. Literals of this type are written like IPv4
+addresses.
+<P>
 <DT><CODE>string</CODE><DD><P>This is a string of characters. There are no ways to modify strings in
 filters. You can pass them between functions, assign them to variables of type <CODE>string</CODE>, print
 such variables, but you can't concatenate two strings. String literals
@@ -138,9 +143,10 @@ operators on prefixes:
 <CODE>.ip</CODE> which extracts the IP address from the pair, and <CODE>.len</CODE>, which separates prefix
 length from the pair. So <CODE>1.2.0.0/16.pxlen = 16</CODE> is true.
 <P>
-<DT><CODE>int|ip|prefix|pair|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you can pass them around
-but you can't modify them. Literals of type <CODE>set int</CODE> look like <CODE>[ 1, 2, 5..7 ]</CODE>. As you can see, both simple values and ranges are permitted in
-sets.
+<DT><CODE>int|pair|quad|ip|prefix|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you can pass them around
+but you can't modify them. Literals of type <CODE>int set</CODE> look like <CODE>[ 1, 2, 5..7 ]</CODE>. As you can see, both simple values and ranges are permitted in
+sets. For pair sets, expressions like <CODE>(123,*)</CODE> can be used to denote ranges (in
+that case <CODE>(123,0)..(123,65535)</CODE>).
 <P>Sets of prefixes are special: their literals does not allow ranges, but allows
 prefix patterns that are written as <CODE><I>ipaddress</I>/<I>pxlen</I>{<I>low</I>,<I>high</I>}</CODE>.
 Prefix <CODE><I>ip1</I>/<I>len1</I></CODE> matches prefix pattern <CODE><I>ip2</I>/<I>len2</I>{<I>l</I>,<I>h</I>}</CODE> iff 
@@ -192,12 +198,20 @@ BGP mask expressions can also contain integer expressions enclosed in parenthesi
 and integer variables, for example <CODE>[= * 4 (1+2) a =]</CODE>.
 There is also old syntax that uses / .. / instead of [= .. =] and ? instead of *.
 <P>
-<DT><CODE>clist</CODE><DD><P>Community list is similar to set of pairs,
-except that unlike other sets, it can be modified.
-There exist no literals of this type.
-There are two special operators on clists:
-<P><CODE>add(<I>C</I>,<I>P</I>)</CODE> adds pair <I>P</I> to clist <I>C</I> and returns the result.
-<P><CODE>delete(<I>C</I>,<I>P</I>)</CODE> deletes pair <I>P</I> from clist <I>C</I> and returns the result.
+<DT><CODE>clist</CODE><DD><P>Clist is similar to a set, except that unlike other sets, it
+can be modified. The type is used for community list (a set
+of pairs) and for cluster list (a set of quads). There exist
+no literals of this type. There are two special operators on
+clists:
+<P><CODE>add(<I>C</I>,<I>P</I>)</CODE> adds pair (or quad) <I>P</I> to clist
+<I>C</I> and returns the result.  If item <I>P</I> is already in
+clist <I>C</I>, it does nothing.
+<P><CODE>delete(<I>C</I>,<I>P</I>)</CODE> deletes pair (or quad)
+<I>P</I> from clist <I>C</I> and returns the result.  If clist
+<I>C</I> does not contain item <I>P</I>, it does nothing.
+<I>P</I> may also be a pair (or quad) set, in that case the
+operator deletes all items from clist <I>C</I> that are also
+members of set <I>P</I>.
 <P>Statement <CODE><I>C</I> = add(<I>C</I>, <I>P</I>);</CODE> can be shortened to
 <CODE><I>C</I>.add(<I>P</I>);</CODE> if <I>C</I> is appropriate route attribute
 (for example <CODE>bgp_community</CODE>). Similarly for <CODE>delete</CODE>.
@@ -212,7 +226,7 @@ There are two special operators on clists:
 Special operators include <CODE>~</CODE> for "is element of a set" operation - it can be
 used on element and set of elements of the same type (returning true if element is contained in the given set), or
 on two strings (returning true if first string matches a shell-like pattern stored in second string) or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
-prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair and clist (returning true if the community is element of the community list).
+prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair/quad and clist (returning true if the pair/quad is element of the clist) or on clist and pair/quad set (returning true if there is an element of the clist that is also a member of the pair/quad set).
 <P>
 <P>
 <H2><A NAME="ss5.4">5.4</A> <A HREF="bird.html#toc5.4">Control structures</A>
@@ -255,11 +269,20 @@ if 1234 = i then printn "."; else {
 attributes just like it accesses variables. Attempts to access undefined
 attribute result in a runtime error; you can check if an attribute is
 defined by using the <CODE>defined( <I>attribute</I> )</CODE> operator.
+One notable exception to this rule are attributes of clist type, where
+undefined value is regarded as empty clist for most purposes.
 <P>
 <DL>
 <DT><CODE><I>prefix</I> net</CODE><DD><P>Network the route is talking about. Read-only. (See the chapter about routing tables.)
 <P>
-<DT><CODE><I>enum</I> scope</CODE><DD><P>Address scope of the network (<CODE>SCOPE_HOST</CODE> for addresses local to this host, <CODE>SCOPE_LINK</CODE> for those specific for a physical link, <CODE>SCOPE_SITE</CODE> and <CODE>SCOPE_ORGANIZATION</CODE> for private addresses, <CODE>SCOPE_UNIVERSE</CODE> for globally visible addresses).
+<DT><CODE><I>enum</I> scope</CODE><DD><P>The scope of the route. Possible values: <CODE>SCOPE_HOST</CODE> for
+routes local to this host, <CODE>SCOPE_LINK</CODE> for those specific
+for a physical link, <CODE>SCOPE_SITE</CODE> and
+<CODE>SCOPE_ORGANIZATION</CODE> for private routes and
+<CODE>SCOPE_UNIVERSE</CODE> for globally visible routes. This
+attribute is not interpreted by BIRD and can be used to mark
+routes in filters. The default value for new routes is
+<CODE>SCOPE_UNIVERSE</CODE>.
 <P>
 <DT><CODE><I>int</I> preference</CODE><DD><P>Preference of the route. Valid values are 0-65535. (See the chapter about routing tables.)
 <P>
@@ -269,11 +292,14 @@ defined by using the <CODE>defined( <I>attribute</I> )</CODE> operator.
 <P>
 <DT><CODE><I>string</I> proto</CODE><DD><P>The name of the protocol which the route has been imported from. Read-only.
 <P>
-<DT><CODE><I>enum</I> source</CODE><DD><P>what protocol has told me about this route. Possible values: <CODE>RTS_DUMMY</CODE>, <CODE>RTS_STATIC</CODE>, <CODE>RTS_INHERIT</CODE>, <CODE>RTS_DEVICE</CODE>, <CODE>RTS_STATIC_DEVICE</CODE>, <CODE>RTS_REDIRECT</CODE>, <CODE>RTS_RIP</CODE>, <CODE>RTS_OSPF</CODE>, <CODE>RTS_OSPF_IA</CODE>, <CODE>RTS_OSPF_EXT</CODE>, <CODE>RTS_BGP</CODE>, <CODE>RTS_PIPE</CODE>.
+<DT><CODE><I>enum</I> source</CODE><DD><P>what protocol has told me about this route. Possible values: <CODE>RTS_DUMMY</CODE>, <CODE>RTS_STATIC</CODE>, <CODE>RTS_INHERIT</CODE>, <CODE>RTS_DEVICE</CODE>, <CODE>RTS_STATIC_DEVICE</CODE>, <CODE>RTS_REDIRECT</CODE>, <CODE>RTS_RIP</CODE>, <CODE>RTS_OSPF</CODE>, <CODE>RTS_OSPF_IA</CODE>, <CODE>RTS_OSPF_EXT1</CODE>, <CODE>RTS_OSPF_EXT2</CODE>, <CODE>RTS_BGP</CODE>, <CODE>RTS_PIPE</CODE>.
 <P>
-<DT><CODE><I>enum</I> cast</CODE><DD><P>Route type (<CODE>RTC_UNICAST</CODE> for normal routes, <CODE>RTC_BROADCAST</CODE>, <CODE>RTC_MULTICAST</CODE>, <CODE>RTC_ANYCAST</CODE> for broadcast, multicast and anycast routes). Read-only.
+<DT><CODE><I>enum</I> cast</CODE><DD><P>Route type (Currently <CODE>RTC_UNICAST</CODE> for normal routes,
+<CODE>RTC_BROADCAST</CODE>, <CODE>RTC_MULTICAST</CODE>, <CODE>RTC_ANYCAST</CODE> will
+be used in the future for broadcast, multicast and anycast
+routes). Read-only.
 <P>
-<DT><CODE><I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to (<CODE>RTD_ROUTER</CODE> for forwarding to a neighboring router, <CODE>RTD_NETWORK</CODE> for routing to a directly-connected network, <CODE>RTD_BLACKHOLE</CODE> for packets to be silently discarded, <CODE>RTD_UNREACHABLE</CODE>, <CODE>RTD_PROHIBIT</CODE> for packets that should be returned with ICMP host unreachable / ICMP administratively prohibited messages). Read-only.
+<DT><CODE><I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to (<CODE>RTD_ROUTER</CODE> for forwarding to a neighboring router, <CODE>RTD_DEVICE</CODE> for routing to a directly-connected network, <CODE>RTD_BLACKHOLE</CODE> for packets to be silently discarded, <CODE>RTD_UNREACHABLE</CODE>, <CODE>RTD_PROHIBIT</CODE> for packets that should be returned with ICMP host unreachable / ICMP administratively prohibited messages). Read-only.
 </DL>
 <P>
 <P>There also exist some protocol-specific attributes which are described in the corresponding protocol sections.

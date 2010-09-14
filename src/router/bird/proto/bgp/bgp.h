@@ -179,7 +179,7 @@ byte *bgp_attach_attr_wa(struct ea_list **to, struct linpool *pool, unsigned att
 struct rta *bgp_decode_attrs(struct bgp_conn *conn, byte *a, unsigned int len, struct linpool *pool, int mandatory);
 int bgp_get_attr(struct eattr *e, byte *buf, int buflen);
 int bgp_rte_better(struct rte *, struct rte *);
-void bgp_rt_notify(struct proto *, struct network *, struct rte *, struct rte *, struct ea_list *);
+void bgp_rt_notify(struct proto *P, rtable *tbl UNUSED, net *n, rte *new, rte *old UNUSED, ea_list *attrs);
 int bgp_import_control(struct proto *, struct rte **, struct ea_list **, struct linpool *);
 void bgp_attr_init(struct bgp_proto *);
 unsigned int bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains);
@@ -196,7 +196,7 @@ void bgp_schedule_packet(struct bgp_conn *conn, int type);
 void bgp_kick_tx(void *vconn);
 void bgp_tx(struct birdsock *sk);
 int bgp_rx(struct birdsock *sk, int size);
-const byte * bgp_error_dsc(byte *buff, unsigned code, unsigned subcode);
+const char * bgp_error_dsc(unsigned code, unsigned subcode);
 void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len);
 
 /* Packet types */
@@ -275,6 +275,7 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 #define BEM_NEIGHBOR_LOST	1
 #define BEM_INVALID_NEXT_HOP	2
 #define BEM_INVALID_MD5		3	/* MD5 authentication kernel request failed (possibly not supported) */
+#define BEM_NO_SOCKET		4
 
 /* Automatic shutdown error codes */
 

@@ -23,7 +23,7 @@ m4_define(CF_DECLS, `m4_divert(-1)')
 m4_define(CF_DEFINES, `m4_divert(-1)')
 
 # Keywords are translated to C initializers
-m4_define(CF_handle_kw, `m4_divert(1){ "m4_translit($1,[[A-Z]],[[a-z]])", $1 },
+m4_define(CF_handle_kw, `m4_divert(1){ "m4_translit($1,[[A-Z]],[[a-z]])", $1, NULL },
 m4_divert(-1)')
 m4_define(CF_keywd, `m4_ifdef([[CF_tok_$1]],,[[m4_define([[CF_tok_$1]],1)CF_handle_kw($1)]])')
 m4_define(CF_KEYWORDS, `m4_define([[CF_toks]],[[]])CF_iterate([[CF_keywd]], [[$@]])m4_ifelse(CF_toks,,,%token[[]]CF_toks
@@ -34,7 +34,7 @@ m4_define(CF_CLI, `CF_KEYWORDS(m4_translit($1, [[ ]], [[,]]))
 ')
 
 # Enums are translated to C initializers: use CF_ENUM(typename, prefix, values)
-m4_define(CF_enum, `m4_divert(1){ "CF_enum_prefix[[]]$1", -((CF_enum_type<<16) | CF_enum_prefix[[]]$1) },
+m4_define(CF_enum, `m4_divert(1){ "CF_enum_prefix[[]]$1", -((CF_enum_type<<16) | CF_enum_prefix[[]]$1), NULL },
 m4_divert(-1)')
 m4_define(CF_ENUM, `m4_define([[CF_enum_type]],$1)m4_define([[CF_enum_prefix]],$2)CF_iterate([[CF_enum]], [[m4_shift(m4_shift($@))]])DNL')
 
@@ -42,7 +42,7 @@ m4_define(CF_ENUM, `m4_define([[CF_enum_type]],$1)m4_define([[CF_enum_prefix]],$
 m4_m4wrap(`
 m4_divert(0)
 static struct keyword keyword_list[] = {
-m4_undivert(1){ NULL, -1 } };
+m4_undivert(1){ NULL, -1, NULL } };
 ')
 
 # As we are processing C source, we must access all M4 primitives via

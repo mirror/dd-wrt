@@ -26,7 +26,11 @@ struct resclass {
   void (*free)(resource *);		/* Freeing function */
   void (*dump)(resource *);		/* Dump to debug output */
   resource *(*lookup)(resource *, unsigned long);	/* Look up address (only for debugging) */
+  size_t (*memsize)(resource *);	/* Return size of memory used by the resource, may be NULL */
 };
+
+/* Estimate of system allocator overhead per item, for memory consumtion stats */
+#define ALLOC_OVERHEAD		8
 
 /* Generic resource manipulation */
 
@@ -36,6 +40,7 @@ void resource_init(void);
 pool *rp_new(pool *, char *);		/* Create new pool */
 void rfree(void *);			/* Free single resource */
 void rdump(void *);			/* Dump to debug output */
+size_t rmemsize(void *res);		/* Return size of memory used by the resource */
 void rlookup(unsigned long);		/* Look up address (only for debugging) */
 void rmove(void *, pool *);		/* Move to a different pool */
 

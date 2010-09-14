@@ -29,7 +29,7 @@ CF_DECLS
 
 CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
 	ACCEPT, REJECT, ERROR, QUITBIRD,
-	INT, BOOL, IP, PREFIX, PAIR, SET, STRING, BGPMASK, BGPPATH, CLIST,
+	INT, BOOL, IP, PREFIX, PAIR, QUAD, SET, STRING, BGPMASK, BGPPATH, CLIST,
 	IF, THEN, ELSE, CASE,
 	TRUE, FALSE,
 	FROM, GW, NET, MASK, PROTO, SOURCE, SCOPE, CAST, DEST, PREFERENCE,
@@ -75,6 +75,7 @@ type:
  | IP { $$ = T_IP; }
  | PREFIX { $$ = T_PREFIX; }
  | PAIR { $$ = T_PAIR; }
+ | QUAD { $$ = T_QUAD; }
  | STRING { $$ = T_STRING; }
  | BGPMASK { $$ = T_PATH_MASK; }
  | BGPPATH { $$ = T_PATH; }
@@ -82,8 +83,9 @@ type:
  | type SET { 
 	switch ($1) {
 	  case T_INT:
-	  case T_IP:
 	  case T_PAIR:
+	  case T_QUAD:
+	  case T_IP:
 	       $$ = T_SET;
 	       break;
 
@@ -172,7 +174,14 @@ function_params:
 
 function_body:
    decls '{' cmds '}' {
-     $$ = $3;
+     if ($1) {
+       /* Prepend instruction to clear local variables */
+       $$ = f_new_inst();
+       $$->code = P('c','v');
+       $$->a1.p = $1;
+       $$->next = $3;
+     } else
+       $$ = $3;
    }
  ;
 
@@ -227,13 +236,20 @@ fipa:
 
 set_atom:
    NUM   { $$.type = T_INT; $$.val.i = $1; }
+ | RTRID { $$.type = T_QUAD; $$.val.i = $1; }
  | cpair { $$.type = T_PAIR; $$.val.i = $1; }
  | fipa  { $$ = $1; }
  | ENUM  {  $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
  ; 
 
 set_item:
-   set_atom { 
+   '(' NUM ',' '*' ')' { 
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, 0); 
+	$$->to.val.i = make_pair($2, 0xffff);
+   }
+ | set_atom { 
 	$$ = f_new_tree(); 
 	$$->from = $1; 
 	$$->to = $1;
@@ -273,16 +289,17 @@ fprefix_set:
  ;
 
 switch_body: /* EMPTY */ { $$ = NULL; }
- | set_item ':' cmds switch_body {
-     $$ = $1;
-     $$->data = $3;
-     $$->left = $4;
+ | switch_body set_item ':' cmds  {
+     $$ = $2;
+     $$->data = $4;
+     $$->left = $1;
    }
- | ELSE ':' cmds {
+ | switch_body ELSE ':' cmds {
      $$ = f_new_tree(); 
      $$->from.type = T_VOID; 
      $$->to.type = T_VOID;
-     $$->data = $3;
+     $$->data = $4;
+     $$->left = $1;
    }
  ;
 
@@ -332,6 +349,7 @@ constant:
  | TEXT   { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_STRING; $$->a2.p = $1; }
  | fipa	   { NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; *val = $1; }
  | fprefix_s {NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; *val = $1; }
+ | RTRID  { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_QUAD;  $$->a2.i = $1; }
  | '[' set_items ']' { DBG( "We've got a set here..." ); $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_SET; $$->a2.p = build_tree($2); DBG( "ook\n" ); }
  | '[' fprefix_set ']' { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_PREFIX_SET;  $$->a2.p = $2; }
  | ENUM	  { $$ = f_new_inst(); $$->code = 'c'; $$->aux = $1 >> 16; $$->a2.i = $1 & 0xffff; }
@@ -388,6 +406,7 @@ symbol:
        case SYM_VARIABLE | T_BOOL:
        case SYM_VARIABLE | T_INT:
        case SYM_VARIABLE | T_PAIR:
+       case SYM_VARIABLE | T_QUAD:
        case SYM_VARIABLE | T_STRING:
        case SYM_VARIABLE | T_IP:
        case SYM_VARIABLE | T_PREFIX:

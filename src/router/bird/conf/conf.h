@@ -21,6 +21,7 @@ struct config {
   list tables;				/* Configured routing tables (struct rtable_config) */
   list logfiles;			/* Configured log fils (sysdep) */
   int mrtdump_file;			/* Configured MRTDump file (sysdep, fd in unix) */
+  char *syslog_name;			/* Name used for syslog (NULL -> no syslog) */
   struct rtable_config *master_rtc;	/* Configuration of master routing table */
 
   u32 router_id;			/* Our Router ID */

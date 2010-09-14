@@ -44,7 +44,6 @@ static byte *
 mrt_put_bgp4_hdr(byte *buf, struct bgp_conn *conn, int as4)
 {
   struct bgp_proto *p = conn->bgp;
-  ip_addr local_addr;
 
   if (as4)
     {
@@ -220,7 +219,7 @@ bgp_encode_prefixes(struct bgp_proto *p, byte *w, struct bgp_bucket *buck, unsig
   ip_addr a;
   int bytes;
 
-  while (!EMPTY_LIST(buck->prefixes) && remains >= 5)
+  while (!EMPTY_LIST(buck->prefixes) && remains >= (1+sizeof(ip_addr)))
     {
       struct bgp_prefix *px = SKIP_BACK(struct bgp_prefix, bucket_node, HEAD(buck->prefixes));
       DBG("\tDequeued route %I/%d\n", px->n.prefix, px->n.pxlen);
@@ -595,7 +594,7 @@ bgp_kick_tx(void *vconn)
   struct bgp_conn *conn = vconn;
 
   DBG("BGP: kicking TX\n");
-  while (bgp_fire_tx(conn))
+  while (bgp_fire_tx(conn) > 0)
     ;
 }
 
@@ -605,7 +604,7 @@ bgp_tx(sock *sk)
   struct bgp_conn *conn = sk->data;
 
   DBG("BGP: TX hook\n");
-  while (bgp_fire_tx(conn))
+  while (bgp_fire_tx(conn) > 0)
     ;
 }
 
@@ -614,7 +613,7 @@ bgp_tx(sock *sk)
 void
 bgp_parse_capabilities(struct bgp_conn *conn, byte *opt, int len)
 {
-  struct bgp_proto *p = conn->bgp;
+  // struct bgp_proto *p = conn->bgp;
   int cl;
 
   while (len > 0)
@@ -915,7 +914,6 @@ bgp_do_rx_update(struct bgp_conn *conn,
   rta *a = NULL;
   ip_addr prefix;
   net *n;
-  rte e;
   int err = 0, pxlen;
 
   p->mp_reach_len = 0;
@@ -937,8 +935,6 @@ bgp_do_rx_update(struct bgp_conn *conn,
 
   DO_NLRI(mp_reach)
     {
-      int i;
-
       /* Create fake NEXT_HOP attribute */
       if (len < 1 || (*x != 16 && *x != 32) || len < *x + 2)
 	goto bad;
@@ -1054,6 +1050,7 @@ static struct {
   { 2, 5, "Authentication failure" },
   { 2, 6, "Unacceptable hold time" },
   { 2, 7, "Required capability missing" }, /* [RFC3392] */
+  { 2, 8, "No supported AFI/SAFI" }, /* This error msg is nonstandard */
   { 3, 0, "Invalid UPDATE message" },
   { 3, 1, "Malformed attribute list" },
   { 3, 2, "Unrecognized well-known attribute" },
@@ -1081,16 +1078,16 @@ static struct {
 
 /**
  * bgp_error_dsc - return BGP error description
- * @buff: temporary buffer
  * @code: BGP error code
  * @subcode: BGP error subcode
  *
  * bgp_error_dsc() returns error description for BGP errors
  * which might be static string or given temporary buffer.
  */
-const byte *
-bgp_error_dsc(byte *buff, unsigned code, unsigned subcode)
+const char *
+bgp_error_dsc(unsigned code, unsigned subcode)
 {
+  static char buff[32];
   unsigned i;
   for (i=0; i < ARRAY_SIZE(bgp_msg_table); i++)
     if (bgp_msg_table[i].major == code && bgp_msg_table[i].minor == subcode)
@@ -1106,7 +1103,6 @@ void
 bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len)
 {
   const byte *name;
-  byte namebuf[32];
   byte *t, argbuf[36];
   unsigned i;
 
@@ -1114,7 +1110,7 @@ bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned 
   if (code == 6 && class == BE_BGP_TX)
     return;
 
-  name = bgp_error_dsc(namebuf, code, subcode);
+  name = bgp_error_dsc(code, subcode);
   t = argbuf;
   if (len)
     {

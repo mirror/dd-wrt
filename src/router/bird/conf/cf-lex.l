@@ -33,6 +33,7 @@
 
 #include "nest/bird.h"
 #include "nest/route.h"
+#include "nest/protocol.h"
 #include "filter/filter.h"
 #include "conf/conf.h"
 #include "conf/cf-parse.tab.h"
@@ -76,6 +77,9 @@ int (*cf_read_hook)(byte *buf, unsigned int max);
 %}
 
 %option noyywrap
+%option noinput
+%option nounput
+%option noreject
 
 %x COMMENT CCOMM CLI
 
@@ -109,7 +113,7 @@ WHITE [ \t]
 #endif
 }
 
-0x{DIGIT}+ {
+0x{XIGIT}+ {
   char *e;
   long int l;
   errno = 0;

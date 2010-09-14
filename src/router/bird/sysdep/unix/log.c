@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "nest/bird.h"
 #include "nest/cli.h"
@@ -27,9 +28,9 @@
 #include "lib/lists.h"
 #include "lib/unix.h"
 
-static FILE *dbgf = NULL;
+static FILE *dbgf;
 static list *current_log_list;
-static list init_log_list;
+static char *current_syslog_name; /* NULL -> syslog closed */
 
 bird_clock_t rate_limit_time = 5;
 int rate_limit_count = 5;
@@ -208,37 +209,54 @@ bdebug(char *msg, ...)
   va_end(args);
 }
 
-void
-log_init(int debug, int init)
+static list *
+default_log_list(int debug, int init, char **syslog_name)
 {
-  static struct log_config lc_stderr = { mask: ~0, terminal_flag: 1 };
-
+  static list init_log_list;
   init_list(&init_log_list);
-  current_log_list = &init_log_list;
+  *syslog_name = NULL;
 
 #ifdef HAVE_SYSLOG
   if (!debug)
     {
       static struct log_config lc_syslog = { mask: ~0 };
-      openlog("bird", LOG_CONS | LOG_NDELAY, LOG_DAEMON);
-      add_tail(current_log_list, &lc_syslog.n);
+      add_tail(&init_log_list, &lc_syslog.n);
+      *syslog_name = bird_name;
       if (!init)
-	return;
+	return &init_log_list;
     }
 #endif
 
+  static struct log_config lc_stderr = { mask: ~0, terminal_flag: 1 };
   lc_stderr.fh = stderr;
-  add_tail(current_log_list, &lc_stderr.n);
+  add_tail(&init_log_list, &lc_stderr.n);
+  return &init_log_list;
 }
 
 void
-log_switch(int debug, list *l)
+log_switch(int debug, list *l, char *new_syslog_name)
 {
-  if (EMPTY_LIST(*l))
-    log_init(debug, 0);
-  else
-    current_log_list = l;
+  if (!l || EMPTY_LIST(*l))
+    l = default_log_list(debug, !l, &new_syslog_name);
+
+  current_log_list = l;
+
+#ifdef HAVE_SYSLOG
+  if (current_syslog_name && new_syslog_name &&
+      !strcmp(current_syslog_name, new_syslog_name))
+    return;
+
+  if (current_syslog_name)
+    closelog();
+
+  if (new_syslog_name)
+    openlog(new_syslog_name, LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+
+  current_syslog_name = new_syslog_name;
+#endif
 }
+
+
 
 void
 log_init_debug(char *f)

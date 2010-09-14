@@ -6,6 +6,8 @@
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
+#include <net/if.h>
+
 #ifdef IPV6
 
 #ifndef IPV6_UNICAST_HOPS
@@ -21,15 +23,38 @@ set_inaddr(struct in6_addr *ia, ip_addr a)
   memcpy(ia, &a, sizeof(a));
 }
 
-#else
+static inline void
+get_inaddr(ip_addr *a, struct in6_addr *ia)
+{
+  memcpy(a, ia, sizeof(*a));
+  ipa_ntoh(*a);
+}
 
-#include <net/if.h>
+static inline char *
+sysio_bind_to_iface(sock *s)
+{
+  struct ifreq ifr;
+  strcpy(ifr.ifr_name, s->iface->name);
+  if (setsockopt(s->fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
+    return "SO_BINDTODEVICE";
+
+  return NULL;
+}
+
+#else
 
 static inline void
 set_inaddr(struct in_addr *ia, ip_addr a)
 {
   ipa_hton(a);
   memcpy(&ia->s_addr, &a, sizeof(a));
+}
+
+static inline void
+get_inaddr(ip_addr *a, struct in_addr *ia)
+{
+  memcpy(a, &ia->s_addr, sizeof(*a));
+  ipa_ntoh(*a);
 }
 
 /*
@@ -48,18 +73,18 @@ set_inaddr(struct in_addr *ia, ip_addr a)
 
 #define MREQ_IFA struct in_addr
 #define MREQ_GRP struct ip_mreq
-static inline void fill_mreq_ifa(struct in_addr *m, struct iface *ifa, UNUSED ip_addr maddr)
+static inline void fill_mreq_ifa(struct in_addr *m, struct iface *ifa UNUSED, ip_addr saddr, ip_addr maddr UNUSED)
 {
-  set_inaddr(m, ifa->addr->ip);
+  set_inaddr(m, saddr);
 }
 
-static inline void fill_mreq_grp(struct ip_mreq *m, struct iface *ifa, ip_addr maddr)
+static inline void fill_mreq_grp(struct ip_mreq *m, struct iface *ifa, ip_addr saddr, ip_addr maddr)
 {
   bzero(m, sizeof(*m));
 #ifdef CONFIG_LINUX_MC_MREQ_BIND
   m->imr_interface.s_addr = INADDR_ANY;
 #else
-  set_inaddr(&m->imr_interface, ifa->addr->ip);
+  set_inaddr(&m->imr_interface, saddr);
 #endif
   set_inaddr(&m->imr_multiaddr, maddr);
 }
@@ -87,11 +112,11 @@ struct ip_mreqn
 #define fill_mreq_ifa fill_mreq
 #define fill_mreq_grp fill_mreq
 
-static inline fill_mreq(struct ip_mreqn *m, struct iface *ifa, ip_addr maddr)
+static inline void fill_mreq(struct ip_mreqn *m, struct iface *ifa, ip_addr saddr, ip_addr maddr)
 {
   bzero(m, sizeof(*m));
   m->imr_ifindex = ifa->index;
-  set_inaddr(&m->imr_address, ifa->addr->ip);
+  set_inaddr(&m->imr_address, saddr);
   set_inaddr(&m->imr_multiaddr, maddr);
 }
 #endif
@@ -109,7 +134,7 @@ sysio_setup_multicast(sock *s)
     return "IP_MULTICAST_TTL";
 
   /* This defines where should we send _outgoing_ multicasts */
-  fill_mreq_ifa(&m, s->iface, IPA_NONE);
+  fill_mreq_ifa(&m, s->iface, s->saddr, IPA_NONE);
   if (setsockopt(s->fd, SOL_IP, IP_MULTICAST_IF, &m, sizeof(m)) < 0)
     return "IP_MULTICAST_IF";
 
@@ -131,7 +156,7 @@ sysio_join_group(sock *s, ip_addr maddr)
   MREQ_GRP m;
 
   /* And this one sets interface for _receiving_ multicasts from */
-  fill_mreq_grp(&m, s->iface, maddr);
+  fill_mreq_grp(&m, s->iface, s->saddr, maddr);
   if (setsockopt(s->fd, SOL_IP, IP_ADD_MEMBERSHIP, &m, sizeof(m)) < 0)
     return "IP_ADD_MEMBERSHIP";
 
@@ -144,7 +169,7 @@ sysio_leave_group(sock *s, ip_addr maddr)
   MREQ_GRP m;
 
   /* And this one sets interface for _receiving_ multicasts from */
-  fill_mreq_grp(&m, s->iface, maddr);
+  fill_mreq_grp(&m, s->iface, s->saddr, maddr);
   if (setsockopt(s->fd, SOL_IP, IP_DROP_MEMBERSHIP, &m, sizeof(m)) < 0)
     return "IP_DROP_MEMBERSHIP";
 
@@ -209,3 +234,78 @@ sk_set_md5_auth_int(sock *s, sockaddr *sa, char *passwd)
 
   return rv;
 }
+
+
+#ifndef IPV6
+
+/* RX/TX packet info handling for IPv4 */
+/* Mostly similar to standardized IPv6 code */
+
+#define CMSG_RX_SPACE CMSG_SPACE(sizeof(struct in_pktinfo))
+#define CMSG_TX_SPACE CMSG_SPACE(sizeof(struct in_pktinfo))
+
+static char *
+sysio_register_cmsgs(sock *s)
+{
+  int ok = 1;
+  if ((s->flags & SKF_LADDR_RX) &&
+      setsockopt(s->fd, IPPROTO_IP, IP_PKTINFO, &ok, sizeof(ok)) < 0)
+    return "IP_PKTINFO";
+
+  return NULL;
+}
+
+static void
+sysio_process_rx_cmsgs(sock *s, struct msghdr *msg)
+{
+  struct cmsghdr *cm;
+  struct in_pktinfo *pi = NULL;
+
+  if (!(s->flags & SKF_LADDR_RX))
+    return;
+
+  for (cm = CMSG_FIRSTHDR(msg); cm != NULL; cm = CMSG_NXTHDR(msg, cm))
+    {
+      if (cm->cmsg_level == IPPROTO_IP && cm->cmsg_type == IP_PKTINFO)
+	pi = (struct in_pktinfo *) CMSG_DATA(cm);
+    }
+
+  if (!pi)
+    {
+      s->laddr = IPA_NONE;
+      s->lifindex = 0;
+      return;
+    }
+
+  get_inaddr(&s->laddr, &pi->ipi_addr);
+  s->lifindex = pi->ipi_ifindex;
+  return;
+}
+
+/*
+static void
+sysio_prepare_tx_cmsgs(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
+{
+  struct cmsghdr *cm;
+  struct in_pktinfo *pi;
+
+  if (!(s->flags & SKF_LADDR_TX))
+    return;
+
+  msg->msg_control = cbuf;
+  msg->msg_controllen = cbuflen;
+
+  cm = CMSG_FIRSTHDR(msg);
+  cm->cmsg_level = IPPROTO_IP;
+  cm->cmsg_type = IP_PKTINFO;
+  cm->cmsg_len = CMSG_LEN(sizeof(*pi));
+
+  pi = (struct in_pktinfo *) CMSG_DATA(cm);
+  set_inaddr(&pi->ipi_spec_dst, s->saddr);
+  pi->ipi_ifindex = s->iface ? s->iface->index : 0;
+
+  msg->msg_controllen = cm->cmsg_len;
+}
+*/
+
+#endif

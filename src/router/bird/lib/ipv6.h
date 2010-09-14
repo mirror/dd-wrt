@@ -62,7 +62,9 @@ typedef struct ipv6_addr {
 #define ipa_ntoh(x) ipv6_ntoh(&(x))
 #define ipa_classify(x) ipv6_classify(&(x))
 #define ipa_has_link_scope(x) ipv6_has_link_scope(&(x))
-/* ipa_opposite and ipa_class_mask don't make sense with IPv6 */
+#define ipa_opposite_m1(x) ({ ip_addr _a=(x); _MI(_I0(_a),_I1(_a),_I2(_a),_I3(_a) ^ 1); })
+#define ipa_opposite_m2(x) ({ ip_addr _a=(x); _MI(_I0(_a),_I1(_a),_I2(_a),_I3(_a) ^ 3); })
+/* ipa_class_mask don't make sense with IPv6 */
 /* ipa_from_u32 and ipa_to_u32 replaced by ipa_build */
 #define ipa_build(a,b,c,d) _MI(a,b,c,d)
 #define ipa_compare(x,y) ipv6_compare(x,y)

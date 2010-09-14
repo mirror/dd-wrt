@@ -44,8 +44,8 @@ ospf_lsreq_send(struct ospf_neighbor *n)
   int i, j;
   struct proto *p = &n->ifa->oa->po->proto;
 
-  pk = (struct ospf_lsreq_packet *) n->ifa->sk->tbuf;
-  op = (struct ospf_packet *) n->ifa->sk->tbuf;
+  pk = ospf_tx_buffer(n->ifa);
+  op = &pk->ospf_packet;
 
   ospf_pkt_fill_hdr(n->ifa, pk, LSREQ_P);
 
@@ -82,8 +82,7 @@ ospf_lsreq_send(struct ospf_neighbor *n)
 					i) * sizeof(struct ospf_lsreq_header);
   op->length = htons(length);
 
-  OSPF_PACKET(ospf_dump_lsreq, (struct ospf_lsreq_packet *) n->ifa->sk->tbuf,
-	      "LSREQ packet sent to %I via %s", n->ip, n->ifa->iface->name);
+  OSPF_PACKET(ospf_dump_lsreq, pk, "LSREQ packet sent to %I via %s", n->ip, n->ifa->iface->name);
   ospf_send_to(n->ifa, n->ip);
 }
 
