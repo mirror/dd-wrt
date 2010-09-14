@@ -357,8 +357,8 @@ cli_echo(unsigned int class, byte *msg)
 	free = (c->ring_end - c->ring_buf) - (c->ring_write - c->ring_read + 1);
       else
 	free = c->ring_read - c->ring_write - 1;
-      if (len > free ||
-	  free < c->log_threshold && class < (unsigned) L_INFO[0])
+      if ((len > free) ||
+	  (free < c->log_threshold && class < (unsigned) L_INFO[0]))
 	{
 	  c->ring_overflow++;
 	  continue;

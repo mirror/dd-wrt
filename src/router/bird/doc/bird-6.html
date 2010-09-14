@@ -181,7 +181,7 @@ example, received route carrying a no-adverise community
 should not be advertised to any of its neighbors. If this
 option is enabled (which is by default), BIRD has such
 behavior automatically (it is evaluated when a route is
-exported to the protocol just before the export filter).
+exported to the BGP protocol just before the export filter).
 Otherwise, this integrated processing of well-known
 communities is disabled. In that case, similar behavior can be
 implemented in the export filter.  Default: on.
@@ -316,6 +316,14 @@ of uses of the community mechanism, but generally they are used to carry
 policy information like "don't export to USA peers". As each AS can define
 its own routing policy, it also has a complete freedom about which community
 attributes it defines and what will their semantics be.
+<P>
+<DT><CODE>quad <CODE>bgp_originator_id</CODE> [O]</CODE><DD><P>This attribute is created by the
+route reflector when reflecting the route and contains the router ID of the
+originator of the route in the local AS.
+<P>
+<DT><CODE>clist <CODE>bgp_cluster_list</CODE> [O]</CODE><DD><P>This attribute contains a list
+of cluster IDs of route reflectors. Each route reflector prepends its
+cluster ID when reflecting the route.
 </DL>
 <P>
 <H3>Example</H3>
@@ -403,10 +411,15 @@ protocol device {
 directly connected networks according to the list of interfaces provided
 by the kernel via the Device protocol.
 <P>
-<P>It's highly recommended to include this protocol in your configuration
-unless you want to use BIRD as a route server or a route reflector, that is
-on a machine which doesn't forward packets itself and only participates in
-distribution of routing information.
+<P>The question is whether it is a good idea to have such device
+routes in BIRD routing table. OS kernel usually handles device routes
+for directly connected networks by itself so we don't need (and don't
+want) to export these routes to the kernel protocol. OSPF protocol
+creates device routes for its interfaces itself and BGP protocol is
+usually used for exporting aggregate routes. Although there are some
+use cases that use the direct protocol (like abusing eBGP as an IGP
+routing protocol), in most cases it is not needed to have these device
+routes in BIRD routing table and to use the direct protocol.
 <P>
 <P>The only configurable thing about direct is what interfaces it watches:
 <P>
@@ -437,13 +450,23 @@ protocol direct {
 </H2>
 
 <P>The Kernel protocol is not a real routing protocol. Instead of communicating
-the with other routers in the network, it performs synchronization of BIRD's routing
+with other routers in the network, it performs synchronization of BIRD's routing
 tables with the OS kernel. Basically, it sends all routing table updates to the kernel
 and from time to time it scans the kernel tables to see whether some routes have
 disappeared (for example due to unnoticed up/down transition of an interface)
 or whether an `alien' route has been added by someone else (depending on the
-<CODE>learn</CODE> switch, such routes are either deleted or accepted to our
+<CODE>learn</CODE> switch, such routes are either ignored or accepted to our
 table).
+<P>
+<P>Unfortunately, there is one thing that makes the routing table
+synchronization a bit more complicated. In the kernel routing table
+there are also device routes for directly connected networks. These
+routes are usually managed by OS itself (as a part of IP address
+configuration) and we don't want to touch that.  They are completely
+ignored during the scan of the kernel tables and also the export of
+device routes from BIRD tables to kernel routing tables is restricted
+to prevent accidental interference. This restriction can be disabled using
+<CODE>device routes</CODE> switch.
 <P>
 <P>If your OS supports only a single routing table, you can configure only one
 instance of the Kernel protocol. If it supports multiple tables (in order to
@@ -463,6 +486,14 @@ kernel routing table.
 routing tables by other routing daemons or by the system administrator.
 This is possible only on systems which support identification of route
 authorship.
+<P>
+<DT><CODE>device routes <I>switch</I></CODE><DD><P>Enable export of device
+routes to the kernel routing table. By default, such routes
+are rejected (with the exception of explicitly configured
+device routes from the static protocol) regardless of the
+export filter to protect device routes in kernel routing table
+(managed by OS itself) from accidental overwriting or erasing.
+<P>
 <DT><CODE>kernel table <I>number</I></CODE><DD><P>Select which kernel table should
 this particular instance of the Kernel protocol work with. Available
 only on systems supporting multiple routing tables.
@@ -731,13 +762,15 @@ External routes use <CODE>metric type 1</CODE> or <CODE>metric type 2</CODE>.
 A <CODE>metric of type 1</CODE> is comparable with internal <CODE>metric</CODE>, a
 <CODE>metric of type 2</CODE> is always longer
 than any <CODE>metric of type 1</CODE> or any <CODE>internal metric</CODE>.
+<CODE>Internal metric</CODE> or <CODE>metric of type 1</CODE> is stored in attribute
+<CODE>ospf_metric1</CODE>, <CODE>metric type 2</CODE> is stored in attribute <CODE>ospf_metric2</CODE>.
 If you specify both metrics only metric1 is used.
-Each external route can also carry a <CODE>tag</CODE> which is a 32-bit
-integer which is used when exporting routes to other protocols;
+<P>Each external route can also carry attribute <CODE>ospf_tag</CODE> which is a
+32-bit integer which is used when exporting routes to other protocols;
 otherwise, it doesn't affect routing inside the OSPF domain at all.
-The fourth attribute is a <CODE>router_id</CODE> of the router advertising
-that route/network. This attribute is read-only.
-Default is <CODE>metric of type 2 = 10000</CODE> and <CODE>tag = 0</CODE>.
+The fourth attribute <CODE>ospf_router_id</CODE> is a router ID of the router
+advertising that route/network. This attribute is read-only. Default
+is <CODE>ospf_metric2 = 10000</CODE> and <CODE>ospf_tag = 0</CODE>.
 <P>
 <H3>Example</H3>
 

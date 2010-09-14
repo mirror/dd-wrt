@@ -17,7 +17,7 @@ CF_DEFINES
 
 CF_DECLS
 
-CF_KEYWORDS(KERNEL, PERSIST, SCAN, TIME, LEARN, DEVICE)
+CF_KEYWORDS(KERNEL, PERSIST, SCAN, TIME, LEARN, DEVICE, ROUTES)
 
 CF_GRAMMAR
 
@@ -56,6 +56,7 @@ kern_item:
 	cf_error("Learning of kernel routes not supported in this configuration");
 #endif
    }
+ | DEVICE ROUTES bool { THIS_KRT->devroutes = $3; }
  ;
 
 /* Kernel interface protocol */

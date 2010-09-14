@@ -59,8 +59,9 @@ protocol rip {
 
 <P>
 <DL>
-<DT><CODE>log "<I>filename</I>"|syslog|stderr all|{ <I>list of classes</I> }</CODE><DD><P>Set logging of messages having the given class (either <CODE>all</CODE> or <CODE>{
-error, trace }</CODE> etc.) into selected destination. Classes are:
+<DT><CODE>log "<I>filename</I>"|syslog [name <I>name</I>]|stderr all|{ <I>list of classes</I> }</CODE><DD><P>Set logging of messages having the given class (either <CODE>all</CODE> or <CODE>{
+error, trace }</CODE> etc.) into selected destination (a file specified as a filename string,
+syslog with optional name argument, or the stderr output). Classes are:
 <CODE>info</CODE>, <CODE>warning</CODE>, <CODE>error</CODE> and <CODE>fatal</CODE> for messages about local problems,
 <CODE>debug</CODE> for debugging messages, 
 <CODE>trace</CODE> when you want to know what happens in the network, 

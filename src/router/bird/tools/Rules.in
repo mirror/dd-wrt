@@ -66,7 +66,7 @@ else
 subdir: all.o
 
 all.o: $(objs)
-	$(LD) -r -o $@ $^
+	$(CC) -nostdlib  -Wl,-r -o $@ $^
 
 endif
 

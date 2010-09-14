@@ -10,10 +10,22 @@
 #ifndef _BIRD_OSPF_LSALIB_H_
 #define _BIRD_OSPF_LSALIB_H_
 
+#ifdef CPU_BIG_ENDIAN
+static inline void htonlsah(struct ospf_lsa_header *h, struct ospf_lsa_header *n) { *n = *h; };
+static inline void ntohlsah(struct ospf_lsa_header *n, struct ospf_lsa_header *h) { *h = *n; };
+static inline void htonlsab(void *h, void *n, u16 len) { ASSERT(h != n); memcpy(n, h, len); };
+static inline void ntohlsab(void *n, void *h, u16 len) { ASSERT(n != h); memcpy(h, n, len); };
+static inline void htonlsab1(void *h, u16 len) { };
+static inline void ntohlsab1(void *n, u16 len) { };
+#else
 void htonlsah(struct ospf_lsa_header *h, struct ospf_lsa_header *n);
 void ntohlsah(struct ospf_lsa_header *n, struct ospf_lsa_header *h);
-void htonlsab(void *h, void *n, u16 type, u16 len);
-void ntohlsab(void *n, void *h, u16 type, u16 len);
+void htonlsab(void *h, void *n, u16 len);
+void ntohlsab(void *n, void *h, u16 len);
+static inline void htonlsab1(void *h, u16 len) { htonlsab(h, h, len); };
+static inline void ntohlsab1(void *n, u16 len) { ntohlsab(n, n, len); };
+#endif
+
 void lsasum_calculate(struct ospf_lsa_header *header, void *body);
 u16 lsasum_check(struct ospf_lsa_header *h, void *body);
 #define CMP_NEWER 1

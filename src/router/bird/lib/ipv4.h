@@ -56,7 +56,8 @@ typedef u32 ip_addr;
 #define ipa_ntoh(x) x = _MI(ntohl(_I(x)))
 #define ipa_classify(x) ipv4_classify(_I(x))
 #define ipa_has_link_scope(x) ipv4_has_link_scope(_I(x))
-#define ipa_opposite(x,len) _MI(_I(x) ^ (len == 30 ? 3 : 1))
+#define ipa_opposite_m1(x) _MI(_I(x) ^ 1)
+#define ipa_opposite_m2(x) _MI(_I(x) ^ 3)
 #define ipa_class_mask(x) _MI(ipv4_class_mask(_I(x)))
 #define ipa_from_u32(x) _MI(x)
 #define ipa_to_u32(x) _I(x)
@@ -72,7 +73,7 @@ int ipv4_classify(u32);
 u32 ipv4_class_mask(u32);
 byte *ipv4_skip_header(byte *, int *);
 
-static inline int ipv4_has_link_scope(u32 a)
+static inline int ipv4_has_link_scope(u32 a UNUSED)
 {
   return 0;
 }

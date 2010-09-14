@@ -8,7 +8,6 @@ AC_CONFIG_AUX_DIR(tools)
 
 AC_ARG_ENABLE(debug,[  --enable-debug          enable internal debugging routines (default: disabled)],,enable_debug=no)
 AC_ARG_ENABLE(memcheck,[  --enable-memcheck       check memory allocations when debugging (default: enabled)],,enable_memcheck=yes)
-AC_ARG_ENABLE(warnings,[  --enable-warnings       enable extra warnings (default: disabled)],,enable_warnings=no)
 AC_ARG_ENABLE(client,[  --enable-client         enable building of BIRD client (default: enabled)],,enable_client=yes)
 AC_ARG_ENABLE(ipv6,[  --enable-ipv6           enable building of IPv6 version (default: disabled)],,enable_ipv6=no)
 AC_ARG_WITH(sysconfig,[  --with-sysconfig=FILE   use specified BIRD system configuration file])
@@ -56,23 +55,27 @@ AC_SEARCH_LIBS(clock_gettime,[c rt posix4])
 
 AC_CANONICAL_HOST
 
+# Store this value because ac_test_CFLAGS is overwritten by AC_PROG_CC
+if test "$ac_test_CFLAGS" != set ; then
+	bird_cflags_default=yes
+fi
+
 AC_PROG_CC
 if test -z "$GCC" ; then
 	AC_MSG_ERROR([This program requires the GNU C Compiler.])
-	fi
-AC_MSG_CHECKING([what CFLAGS should we use])
-if test "$ac_test_CFLAGS" != set ; then
-	if test "$enable_warnings" = yes ; then
-		WARNS=" -Wmissing-prototypes -Wundef"
-	else
-		WARNS=" -Wno-unused"
-	fi
-	CFLAGS="$CFLAGS -Wall -W -Wstrict-prototypes -Wno-pointer-sign -Wno-parentheses$WARNS"
 fi
-if test "$with_sysinclude" != no -a -n "$with_sysinclude"; then
-	CPPFLAGS="$CPPFLAGS -I$with_sysinclude"
+
+AC_MSG_CHECKING([what CFLAGS should we use])
+if test "$bird_cflags_default" = yes ; then
+	BIRD_CHECK_GCC_OPTIONS
+
+	CFLAGS="$CFLAGS -Wall -Wstrict-prototypes -Wno-parentheses"
+	if test "$bird_cv_c_option_no_pointer_sign" = yes ; then
+		CFLAGS="$CFLAGS -Wno-pointer-sign"
+	fi
 fi
 AC_MSG_RESULT($CFLAGS)
+
 
 AC_PROG_CPP
 AC_PROG_INSTALL
@@ -113,11 +116,11 @@ else
 				;;
 		ipv6:netbsd*)	sysdesc=bsd-v6
 				CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-				LDFLAGS="$LDFLAGS -L/usr/pkg/lib"
+				LDFLAGS="$LDFLAGS -L/usr/pkg/lib -R/usr/pkg/lib"
 				;;
 		ipv4:netbsd*)	sysdesc=bsd
 				CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-				LDFLAGS="$LDFLAGS -L/usr/pkg/lib"
+				LDFLAGS="$LDFLAGS -L/usr/pkg/lib -R/usr/pkg/lib"
 				;;
 		ipv6:freebsd*)	sysdesc=bsd-v6
 				;;

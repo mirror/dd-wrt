@@ -151,18 +151,6 @@ void ipa_ntoh(ip_addr x) { DUMMY }
 int ipa_classify(ip_addr x) { DUMMY }
 
 /**
- * ipa_opposite - return address of point-to-point neighbor
- * @x: IP address of our end of the link
- * @pxlen: network prefix length
- *
- * ipa_opposite() returns an address of the opposite end of a numbered
- * point-to-point link.
- *
- * This function is available in IPv4 version only.
- */
-ip_addr ipa_opposite(ip_addr x, int pxlen) { DUMMY }
-
-/**
  * ipa_class_mask - guess netmask according to address class
  * @x: IP address
  *
@@ -172,7 +160,7 @@ ip_addr ipa_opposite(ip_addr x, int pxlen) { DUMMY }
  * routing protocols transferring no prefix lengths nor netmasks
  * and this function could be useful to them.
  */
-ip_addr ipa_classify(ip_addr x) { DUMMY }
+ip_addr ipa_class_mask(ip_addr x) { DUMMY }
 
 /**
  * ipa_from_u32 - convert IPv4 address to an integer

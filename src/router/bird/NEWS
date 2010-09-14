@@ -1,3 +1,29 @@
+Version 1.2.4 (2010-08-03)
+  o Added 'show memory' command.
+  o Important bugfix in IPv6 BGP.
+  o Several minor bugfixes.
+
+Version 1.2.3 (2010-06-01)
+  o Pattern matching for community lists.
+  o Many fixes in OSPF protocol (esp. in multi-areas and vlinks).
+  o Several minor bugfixes.
+
+Version 1.2.2 (2010-04-10)
+  o Much better BSD kernel support (IPv6, alien routes, ...).
+  o Deep OSPF socket changes, fixes OSPFv2/v3 behavior on BSD.
+  o OSPFv2 in Linux now supports more non-stub IP prefixes
+    on one physical iface.
+  o Export of device routes to the kernel is more restricted.
+  o Routes with strange scope not allowed in BIRD routing tables.
+  o New filterable route attributes bgp_originator_id,
+    bgp_cluster_list and ospf_router_id.
+  o Restricted read-only CLI (option -r).
+  o Pattern matching for 'show protocols' command.
+  o BGP protocol details in 'show protocols all' command.
+  o Configurable syslog name (and default on IPv6 changed).
+  o Statistic counters for pipes were fixed.
+  o Many bugfixes in BGP, OSPF, filters, ...
+
 Version 1.2.1 (2010-02-11)
   o Option 'interpret communities' allows to override implicit handling
     of well-known communities.

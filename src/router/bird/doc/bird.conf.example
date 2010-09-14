@@ -17,10 +17,10 @@
 #define '1a-a1' = (30+40);
 
 # Define a route filter...
-filter test_filter {
-	if net ~ 10.0.0.0/16 then accept;
-	else reject;
-}
+#filter test_filter {
+#	if net ~ 10.0.0.0/16 then accept;
+#	else reject;
+#}
 
 #filter sink { reject; }
 #filter okay { accept; }
@@ -34,9 +34,9 @@ filter test_filter {
 # The direct protocol automatically generates device routes to
 # all network interfaces. Can exist in as many instances as you wish
 # if you want to populate multiple routing tables with device routes.
-protocol direct {
+#protocol direct {
 #	interface "-eth*", "*";	# Restrict network interfaces it works with
-}
+#}
 
 # This pseudo-protocol performs synchronization between BIRD's routing
 # tables and the kernel. If your kernel supports multiple routing tables
@@ -96,9 +96,9 @@ protocol static {
 #	honor neighbor;		# To whom do we agree to send the routing table
 #	honor always;
 #	honor never;
-#	passwords { password "ahoj" from 0 to 10;
-#		password "nazdar" from 10;
-#	}
+#	passwords {
+#		password "nazdar";
+#	};
 #	authentication none;
 #	import filter { print "importing"; accept; };
 #	export filter { print "exporting"; accept; };
@@ -143,6 +143,7 @@ protocol static {
 #					generate from "22-04-2003 11:00:07";
 #					accept from "17-01-2003 12:01:05";
 #				};
+#			};
 #                       authentication cryptographic;
 #		};
 #	};
@@ -163,7 +164,7 @@ protocol static {
 
 #protocol bgp {
 #	disabled;
-#	description "My BGP uplink"
+#	description "My BGP uplink";
 #	local as 65000;
 #	neighbor 62.168.0.130 as 5588;
 #	multihop 20 via 62.168.0.13;
@@ -181,17 +182,17 @@ protocol static {
 #	default bgp_med 0;	# MED value we use for comparison when none is defined
 #	default bgp_local_pref 0;	# The same for local preference
 #	source address 62.168.0.14;	# What local address we use for the TCP connection
-#	password "secret"	# Password used for MD5 authentication
+#	password "secret";	# Password used for MD5 authentication
 #	rr client;		# I am a route reflector and the neighor is my client
-#	rr cluster id 1.0.0.1	# Use this value for cluster id instead of my router id 
+#	rr cluster id 1.0.0.1;	# Use this value for cluster id instead of my router id 
 #	export where source=RTS_STATIC;
 #	export filter {
 #		if source = RTS_STATIC then {
-##			bgp_community = -empty-; bgp_community = add(bgp_community,(65000,5678));
-##			bgp_origin = 0;
+#			bgp_community = -empty-; bgp_community = add(bgp_community,(65000,5678));
+#			bgp_origin = 0;
 #			bgp_community = -empty-; bgp_community.add((65000,5678));
-##			if (65000,5678) ~ bgp_community then
-##				bgp_community.add((0, 1));
+#			if (65000,5678) ~ bgp_community then
+#				bgp_community.add((0, 1));
 #			if bgp_path ~ [= 65000 =] then
 #				bgp_path.prepend(65000);
 #			accept;

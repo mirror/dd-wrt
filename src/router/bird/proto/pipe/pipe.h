@@ -21,8 +21,20 @@ struct pipe_config {
 struct pipe_proto {
   struct proto p;
   struct rtable *peer;
+  struct proto_stats peer_stats;	/* Statistics for the direction peer->primary */
   int mode;				/* PIPE_OPAQUE or PIPE_TRANSPARENT */
-  struct pipe_proto *phantom;
 };
+
+
+extern struct protocol proto_pipe;
+
+static inline int proto_is_pipe(struct proto *p)
+{ return p->proto == &proto_pipe; }
+
+static inline struct rtable * pipe_get_peer_table(struct proto *P)
+{ return ((struct pipe_proto *) P)->peer; }
+
+static inline struct proto_stats * pipe_get_peer_stats(struct proto *P)
+{ return &((struct pipe_proto *) P)->peer_stats; }
 
 #endif

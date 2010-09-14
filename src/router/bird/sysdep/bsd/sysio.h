@@ -11,20 +11,46 @@
 static inline void
 set_inaddr(struct in6_addr * ia, ip_addr a)
 {
-	ipa_hton(a);
-	memcpy(ia, &a, sizeof(a));
+  ipa_hton(a);
+  memcpy(ia, &a, sizeof(a));
 }
+
+static inline void
+get_inaddr(ip_addr *a, struct in6_addr *ia)
+{
+  memcpy(a, ia, sizeof(*a));
+  ipa_ntoh(*a);
+}
+
+static inline char *
+sysio_bind_to_iface(sock *s)
+{
+  /* Unfortunately not available */
+  return NULL;
+}
+
 
 #else
 
 #include <net/if.h>
+#include <net/if_dl.h>
 
 static inline void
 set_inaddr(struct in_addr * ia, ip_addr a)
 {
-	ipa_hton(a);
-	memcpy(&ia->s_addr, &a, sizeof(a));
+  ipa_hton(a);
+  memcpy(&ia->s_addr, &a, sizeof(a));
 }
+
+static inline void
+get_inaddr(ip_addr *a, struct in_addr *ia)
+{
+  memcpy(a, &ia->s_addr, sizeof(*a));
+  ipa_ntoh(*a);
+}
+
+
+/* BSD Multicast handling for IPv4 */
 
 static inline char *
 sysio_setup_multicast(sock *s)
@@ -79,6 +105,91 @@ sysio_leave_group(sock *s, ip_addr maddr)
 
 	return NULL;
 }
+
+
+/* BSD RX/TX packet info handling for IPv4 */
+/* it uses IP_RECVDSTADDR / IP_RECVIF socket options instead of IP_PKTINFO */
+
+#define CMSG_RX_SPACE (CMSG_SPACE(sizeof(struct in_addr)) + CMSG_SPACE(sizeof(struct sockaddr_dl)))
+#define CMSG_TX_SPACE CMSG_SPACE(sizeof(struct in_addr))
+
+static char *
+sysio_register_cmsgs(sock *s)
+{
+  int ok = 1;
+  if (s->flags & SKF_LADDR_RX)
+    {
+      if (setsockopt(s->fd, IPPROTO_IP, IP_RECVDSTADDR, &ok, sizeof(ok)) < 0)
+	return "IP_RECVDSTADDR";
+
+      if (setsockopt(s->fd, IPPROTO_IP, IP_RECVIF, &ok, sizeof(ok)) < 0)
+	return "IP_RECVIF";
+    }
+
+  return NULL;
+}
+
+static void
+sysio_process_rx_cmsgs(sock *s, struct msghdr *msg)
+{
+  struct cmsghdr *cm;
+
+  if (!(s->flags & SKF_LADDR_RX))
+    return;
+
+  s->laddr = IPA_NONE;
+  s->lifindex = 0;
+
+  for (cm = CMSG_FIRSTHDR(msg); cm != NULL; cm = CMSG_NXTHDR(msg, cm))
+    {
+      if (cm->cmsg_level == IPPROTO_IP && cm->cmsg_type == IP_RECVDSTADDR)
+	{
+	  struct in_addr *ra = (struct in_addr *) CMSG_DATA(cm);
+	  get_inaddr(&s->laddr, ra);
+	}
+
+      if (cm->cmsg_level == IPPROTO_IP && cm->cmsg_type == IP_RECVIF)
+	{
+	  struct sockaddr_dl *ri = (struct sockaddr_dl *) CMSG_DATA(cm);
+	  s->lifindex = ri->sdl_index;
+	}
+    }
+
+  // log(L_WARN "RX %I %d", s->laddr, s->lifindex);
+}
+
+/* Unfortunately, IP_SENDSRCADDR does not work for raw IP sockets on BSD kernels */
+/*
+static void
+sysio_prepare_tx_cmsgs(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
+{
+  struct cmsghdr *cm;
+  struct in_addr *sa;
+
+  if (!(s->flags & SKF_LADDR_TX))
+    return;
+
+  msg->msg_control = cbuf;
+  msg->msg_controllen = cbuflen;
+
+  if (s->iface)
+    {
+      struct in_addr m;
+      set_inaddr(&m, s->saddr);
+      setsockopt(s->fd, IPPROTO_IP, IP_MULTICAST_IF, &m, sizeof(m));
+    }
+
+  cm = CMSG_FIRSTHDR(msg);
+  cm->cmsg_level = IPPROTO_IP;
+  cm->cmsg_type = IP_SENDSRCADDR;
+  cm->cmsg_len = CMSG_LEN(sizeof(*sa));
+
+  sa = (struct in_addr *) CMSG_DATA(cm);
+  set_inaddr(sa, s->saddr);
+
+  msg->msg_controllen = cm->cmsg_len;
+}
+*/
 
 #endif
 

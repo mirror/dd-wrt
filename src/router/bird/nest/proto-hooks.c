@@ -178,13 +178,14 @@ void ifa_notify(struct proto *p, unsigned flags, struct ifa *a)
 /**
  * rt_notify - notify instance about routing table change
  * @p: protocol instance
+ * @table: a routing table 
  * @net: a network entry
  * @new: new route for the network
  * @old: old route for the network
  * @attrs: extended attributes associated with the @new entry
  *
  * The rt_notify() hook is called to inform the protocol instance about
- * changes in the routing table it's connected to, that is a route @old
+ * changes in the connected routing table @table, that is a route @old
  * belonging to network @net being replaced by a new route @new with
  * extended attributes @attrs. Either @new or @old or both can be %NULL
  * if the corresponding route doesn't exist.

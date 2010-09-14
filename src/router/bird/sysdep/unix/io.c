@@ -7,6 +7,10 @@
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
+/* Unfortunately, some glibc versions hide parts of RFC 3542 API
+   if _GNU_SOURCE is not defined. */
+#define _GNU_SOURCE 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -14,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/fcntl.h>
+#include <sys/uio.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <errno.h>
@@ -63,14 +68,16 @@ rf_dump(resource *r)
 {
   struct rfile *a = (struct rfile *) r;
 
-  bdebug("(FILE *%p)\n", a->f);
+  debug("(FILE *%p)\n", a->f);
 }
 
 static struct resclass rf_class = {
   "FILE",
   sizeof(struct rfile),
   rf_free,
-  rf_dump
+  rf_dump,
+  NULL,
+  NULL
 };
 
 void *
@@ -111,7 +118,8 @@ tracked_fopen(pool *p, char *name, char *mode)
 static list near_timers, far_timers;
 static bird_clock_t first_far_timer = TIME_INFINITY;
 
-bird_clock_t now, now_real;
+/* now must be different from 0, because 0 is a special value in timer->expires */
+bird_clock_t now = 1, now_real;
 
 static void
 update_times_plain(void)
@@ -180,22 +188,24 @@ tm_dump(resource *r)
 {
   timer *t = (timer *) r;
 
-  bdebug("(code %p, data %p, ", t->hook, t->data);
+  debug("(code %p, data %p, ", t->hook, t->data);
   if (t->randomize)
-    bdebug("rand %d, ", t->randomize);
+    debug("rand %d, ", t->randomize);
   if (t->recurrent)
-    bdebug("recur %d, ", t->recurrent);
+    debug("recur %d, ", t->recurrent);
   if (t->expires)
-    bdebug("expires in %d sec)\n", t->expires - now);
+    debug("expires in %d sec)\n", t->expires - now);
   else
-    bdebug("inactive)\n");
+    debug("inactive)\n");
 }
 
 static struct resclass tm_class = {
   "Timer",
   sizeof(timer),
   tm_free,
-  tm_dump
+  tm_dump,
+  NULL,
+  NULL
 };
 
 /**
@@ -286,14 +296,14 @@ tm_dump_them(char *name, list *l)
   node *n;
   timer *t;
 
-  bdebug("%s timers:\n", name);
+  debug("%s timers:\n", name);
   WALK_LIST(n, *l)
     {
       t = SKIP_BACK(timer, n, n);
-      bdebug("%p ", t);
+      debug("%p ", t);
       tm_dump(&t->r);
     }
-  bdebug("\n");
+  debug("\n");
 }
 
 void
@@ -548,7 +558,7 @@ sk_dump(resource *r)
   sock *s = (sock *) r;
   static char *sk_type_names[] = { "TCP<", "TCP>", "TCP", "UDP", "UDP/MC", "IP", "IP/MC", "MAGIC", "UNIX<", "UNIX", "DEL!" };
 
-  bdebug("(%s, ud=%p, sa=%08x, sp=%d, da=%08x, dp=%d, tos=%d, ttl=%d, if=%s)\n",
+  debug("(%s, ud=%p, sa=%08x, sp=%d, da=%08x, dp=%d, tos=%d, ttl=%d, if=%s)\n",
 	sk_type_names[s->type],
 	s->data,
 	s->saddr,
@@ -564,7 +574,9 @@ static struct resclass sk_class = {
   "Socket",
   sizeof(sock),
   sk_free,
-  sk_dump
+  sk_dump,
+  NULL,
+  NULL
 };
 
 /**
@@ -640,7 +652,7 @@ fill_in_sockaddr(sockaddr *sa, ip_addr a, unsigned port)
 }
 
 static inline void
-fill_in_sockifa(sockaddr *sa, struct iface *ifa)
+fill_in_sockifa(sockaddr *sa UNUSED, struct iface *ifa UNUSED)
 {
 }
 
@@ -657,10 +669,92 @@ get_sockaddr(struct sockaddr_in *sa, ip_addr *a, unsigned *port, int check)
 
 #endif
 
+
+#ifdef IPV6
+
+/* PKTINFO handling is also standardized in IPv6 */
+#define CMSG_RX_SPACE CMSG_SPACE(sizeof(struct in6_pktinfo))
+#define CMSG_TX_SPACE CMSG_SPACE(sizeof(struct in6_pktinfo))
+
+/*
+ * RFC 2292 uses IPV6_PKTINFO for both the socket option and the cmsg
+ * type, RFC 3542 changed the socket option to IPV6_RECVPKTINFO. If we
+ * don't have IPV6_RECVPKTINFO we suppose the OS implements the older
+ * RFC and we use IPV6_PKTINFO.
+ */
+#ifndef IPV6_RECVPKTINFO
+#define IPV6_RECVPKTINFO IPV6_PKTINFO
+#endif
+
+static char *
+sysio_register_cmsgs(sock *s)
+{
+  int ok = 1;
+  if ((s->flags & SKF_LADDR_RX) &&
+      setsockopt(s->fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &ok, sizeof(ok)) < 0)
+    return "IPV6_RECVPKTINFO";
+
+  return NULL;
+}
+
+static void
+sysio_process_rx_cmsgs(sock *s, struct msghdr *msg)
+{
+  struct cmsghdr *cm;
+  struct in6_pktinfo *pi = NULL;
+
+  if (!(s->flags & SKF_LADDR_RX))
+    return;
+
+  for (cm = CMSG_FIRSTHDR(msg); cm != NULL; cm = CMSG_NXTHDR(msg, cm))
+    {
+      if (cm->cmsg_level == IPPROTO_IPV6 && cm->cmsg_type == IPV6_PKTINFO)
+	pi = (struct in6_pktinfo *) CMSG_DATA(cm);
+    }
+
+  if (!pi)
+    {
+      s->laddr = IPA_NONE;
+      s->lifindex = 0;
+      return;
+    }
+
+  get_inaddr(&s->laddr, &pi->ipi6_addr);
+  s->lifindex = pi->ipi6_ifindex;
+  return;
+}
+
+/*
+static void
+sysio_prepare_tx_cmsgs(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
+{
+  struct cmsghdr *cm;
+  struct in6_pktinfo *pi;
+
+  if (!(s->flags & SKF_LADDR_TX))
+    return;
+
+  msg->msg_control = cbuf;
+  msg->msg_controllen = cbuflen;
+
+  cm = CMSG_FIRSTHDR(msg);
+  cm->cmsg_level = IPPROTO_IPV6;
+  cm->cmsg_type = IPV6_PKTINFO;
+  cm->cmsg_len = CMSG_LEN(sizeof(*pi));
+
+  pi = (struct in6_pktinfo *) CMSG_DATA(cm);
+  set_inaddr(&pi->ipi6_addr, s->saddr);
+  pi->ipi6_ifindex = s->iface ? s->iface->index : 0;
+
+  msg->msg_controllen = cm->cmsg_len;
+  return;
+}
+*/
+#endif
+
 static char *
 sk_set_ttl_int(sock *s)
 {
-  int one = 1;
 #ifdef IPV6
   if (setsockopt(s->fd, SOL_IPV6, IPV6_UNICAST_HOPS, &s->ttl, sizeof(s->ttl)) < 0)
     return "IPV6_UNICAST_HOPS";
@@ -668,6 +762,7 @@ sk_set_ttl_int(sock *s)
   if (setsockopt(s->fd, SOL_IP, IP_TTL, &s->ttl, sizeof(s->ttl)) < 0)
     return "IP_TTL";
 #ifdef CONFIG_UNIX_DONTROUTE
+  int one = 1;
   if (s->ttl == 1 && setsockopt(s->fd, SOL_SOCKET, SO_DONTROUTE, &one, sizeof(one)) < 0)
     return "SO_DONTROUTE";
 #endif 
@@ -682,7 +777,7 @@ static char *
 sk_setup(sock *s)
 {
   int fd = s->fd;
-  char *err;
+  char *err = NULL;
 
   if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
     ERR("fcntl(O_NONBLOCK)");
@@ -701,9 +796,8 @@ sk_setup(sock *s)
 
   if (s->ttl >= 0)
     err = sk_set_ttl_int(s);
-  else
-    err = NULL;
 
+  sysio_register_cmsgs(s);
 bad:
   return err;
 }
@@ -803,6 +897,9 @@ sk_setup_multicast(sock *s)
   if (setsockopt(s->fd, SOL_IPV6, IPV6_MULTICAST_IF, &index, sizeof(index)) < 0)
     ERR("IPV6_MULTICAST_IF");
 
+  if (err = sysio_bind_to_iface(s))
+    goto bad;
+
   return 0;
 
 bad:
@@ -853,6 +950,7 @@ sk_leave_group(sock *s, ip_addr maddr)
 
   return 0;
 }
+
 
 #else /* IPV4 */
 
@@ -947,7 +1045,6 @@ sk_passive_connected(sock *s, struct sockaddr *sa, int al, int type)
     }
   else if (errno != EINTR && errno != EAGAIN)
     {
-      log(L_ERR "accept: %m");
       s->err_hook(s, errno);
     }
   return 0;
@@ -1073,7 +1170,7 @@ bad_no_log:
   return -1;
 }
 
-int
+void
 sk_open_unix(sock *s, char *name)
 {
   int fd;
@@ -1082,15 +1179,13 @@ sk_open_unix(sock *s, char *name)
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (fd < 0)
-    die("sk_open_unix: socket: %m");
+    ERR("socket");
   s->fd = fd;
   if (err = sk_setup(s))
     goto bad;
   unlink(name);
- 
-  if (strlen(name) >= sizeof(sa.sun_path))
-    die("sk_open_unix: path too long");
 
+  /* Path length checked in test_old_bird() */
   sa.sun_family = AF_UNIX;
   strcpy(sa.sun_path, name);
   if (bind(fd, (struct sockaddr *) &sa, SUN_LEN(&sa)) < 0)
@@ -1098,14 +1193,14 @@ sk_open_unix(sock *s, char *name)
   if (listen(fd, 8))
     ERR("listen");
   sk_insert(s);
-  return 0;
+  return;
 
-bad:
+ bad:
   log(L_ERR "sk_open_unix: %s: %m", err);
-  close(fd);
-  s->fd = -1;
-  return -1;
+  die("Unable to create control socket %s", name);
 }
+
+static inline void reset_tx_buffer(sock *s) { s->ttx = s->tpos = s->tbuf; }
 
 static int
 sk_maybe_write(sock *s)
@@ -1124,38 +1219,50 @@ sk_maybe_write(sock *s)
 	    {
 	      if (errno != EINTR && errno != EAGAIN)
 		{
-                  s->ttx = s->tpos;	/* empty tx buffer */
-		  s->err_hook(s, errno);
+		  reset_tx_buffer(s);
+		  /* EPIPE is just a connection close notification during TX */
+		  s->err_hook(s, (errno != EPIPE) ? errno : 0);
 		  return -1;
 		}
 	      return 0;
 	    }
 	  s->ttx += e;
 	}
-      s->ttx = s->tpos = s->tbuf;
+      reset_tx_buffer(s);
       return 1;
     case SK_UDP:
     case SK_IP:
       {
-	sockaddr sa;
-
 	if (s->tbuf == s->tpos)
 	  return 1;
 
-	fill_in_sockaddr(&sa, s->faddr, s->fport);
+	sockaddr sa;
+	fill_in_sockaddr(&sa, s->daddr, s->dport);
 	fill_in_sockifa(&sa, s->iface);
-	e = sendto(s->fd, s->tbuf, s->tpos - s->tbuf, 0, (struct sockaddr *) &sa, sizeof(sa));
+
+	struct iovec iov = {s->tbuf, s->tpos - s->tbuf};
+	// byte cmsg_buf[CMSG_TX_SPACE];
+
+	struct msghdr msg = {
+	  .msg_name = &sa,
+	  .msg_namelen = sizeof(sa),
+	  .msg_iov = &iov,
+	  .msg_iovlen = 1};
+
+	// sysio_prepare_tx_cmsgs(s, &msg, cmsg_buf, sizeof(cmsg_buf));
+	e = sendmsg(s->fd, &msg, 0);
+
 	if (e < 0)
 	  {
 	    if (errno != EINTR && errno != EAGAIN)
 	      {
-                s->ttx = s->tpos;	/* empty tx buffer */
+		reset_tx_buffer(s);
 		s->err_hook(s, errno);
 		return -1;
 	      }
 	    return 0;
 	  }
-	s->tpos = s->tbuf;
+	reset_tx_buffer(s);
 	return 1;
       }
     default:
@@ -1201,8 +1308,6 @@ sk_rx_ready(sock *s)
 int
 sk_send(sock *s, unsigned len)
 {
-  s->faddr = s->daddr;
-  s->fport = s->dport;
   s->ttx = s->tbuf;
   s->tpos = s->tbuf + len;
   return sk_maybe_write(s);
@@ -1221,12 +1326,27 @@ sk_send(sock *s, unsigned len)
 int
 sk_send_to(sock *s, unsigned len, ip_addr addr, unsigned port)
 {
-  s->faddr = addr;
-  s->fport = port;
+  s->daddr = addr;
+  s->dport = port;
   s->ttx = s->tbuf;
   s->tpos = s->tbuf + len;
   return sk_maybe_write(s);
 }
+
+/*
+int
+sk_send_full(sock *s, unsigned len, struct iface *ifa,
+	     ip_addr saddr, ip_addr daddr, unsigned dport)
+{
+  s->iface = ifa;
+  s->saddr = saddr;
+  s->daddr = daddr;
+  s->dport = dport;
+  s->ttx = s->tbuf;
+  s->tpos = s->tbuf + len;
+  return sk_maybe_write(s);
+}
+*/
 
 static int
 sk_read(sock *s)
@@ -1273,8 +1393,21 @@ sk_read(sock *s)
     default:
       {
 	sockaddr sa;
-	int al = sizeof(sa);
-	int e = recvfrom(s->fd, s->rbuf, s->rbsize, 0, (struct sockaddr *) &sa, &al);
+	int e;
+
+	struct iovec iov = {s->rbuf, s->rbsize};
+	byte cmsg_buf[CMSG_RX_SPACE];
+
+	struct msghdr msg = {
+	  .msg_name = &sa,
+	  .msg_namelen = sizeof(sa),
+	  .msg_iov = &iov,
+	  .msg_iovlen = 1,
+	  .msg_control = cmsg_buf,
+	  .msg_controllen = sizeof(cmsg_buf),
+	  .msg_flags = 0};
+
+	e = recvmsg(s->fd, &msg, 0);
 
 	if (e < 0)
 	  {
@@ -1284,6 +1417,8 @@ sk_read(sock *s)
 	  }
 	s->rpos = s->rbuf + e;
 	get_sockaddr(&sa, &s->faddr, &s->fport, 1);
+	sysio_process_rx_cmsgs(s, &msg);
+
 	s->rx_hook(s, e);
 	return 1;
       }
@@ -1321,14 +1456,14 @@ sk_dump_all(void)
   node *n;
   sock *s;
 
-  bdebug("Open sockets:\n");
+  debug("Open sockets:\n");
   WALK_LIST(n, sock_list)
     {
       s = SKIP_BACK(sock, n, n);
-      bdebug("%p ", s);
+      debug("%p ", s);
       sk_dump(&s->r);
     }
-  bdebug("\n");
+  debug("\n");
 }
 
 #undef ERR
@@ -1338,10 +1473,8 @@ sk_dump_all(void)
  *	Main I/O Loop
  */
 
-int async_config_flag;
-int async_dump_flag;
-int async_shutdown_flag;
-
+volatile int async_config_flag;		/* Asynchronous reconfiguration/dump scheduled */
+volatile int async_dump_flag;
 
 void
 io_init(void)
@@ -1495,7 +1628,6 @@ io_loop(void)
 	    {
 	      sock *s = current_sock;
 	      int e;
-	      int steps;
 
 	      if ((s->type < SK_MAGIC) && FD_ISSET(s->fd, &rd) && s->rx_hook)
 		{
@@ -1520,9 +1652,10 @@ test_old_bird(char *path)
   struct sockaddr_un sa;
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
   if (fd < 0)
     die("Cannot create socket: %m");
+  if (strlen(path) >= sizeof(sa.sun_path))
+    die("Socket path too long");
   bzero(&sa, sizeof(sa));
   sa.sun_family = AF_UNIX;
   strcpy(sa.sun_path, path);
