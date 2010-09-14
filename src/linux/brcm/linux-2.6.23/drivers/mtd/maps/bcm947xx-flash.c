@@ -332,7 +332,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		}
 
 		if (get_router() == ROUTER_BELKIN_F7D3302_4302
-		  && (le32_to_cpu(trx->magic) == TRX_MAGIC_F7D3302 || le32_to_cpu(trx->magic) == TRX_MAGIC_F7D4302 || le32_to_cpu(trx->magic) == TRX_MAGIC_QA)) {
+		  && (le32_to_cpu(trx.magic) == TRX_MAGIC_F7D3302 || le32_to_cpu(trx.magic) == TRX_MAGIC_F7D4302 || le32_to_cpu(trx.magic) == TRX_MAGIC_QA)) {
 		    printk(KERN_EMERG  "Found Belkin Share or Play magic\n");
 			goto found;
 		
