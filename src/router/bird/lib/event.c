@@ -49,7 +49,9 @@ static struct resclass ev_class = {
   "Event",
   sizeof(event),
   (void (*)(resource *)) ev_postpone,
-  ev_dump
+  ev_dump,
+  NULL,
+  NULL
 };
 
 /**

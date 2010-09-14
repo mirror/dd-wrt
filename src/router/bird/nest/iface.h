@@ -75,12 +75,22 @@ struct iface *if_update(struct iface *);
 struct ifa *ifa_update(struct ifa *);
 void ifa_delete(struct ifa *);
 void if_start_update(void);
-void if_end_update(void);
 void if_end_partial_update(struct iface *);
+void if_end_update(void);
+void if_flush_ifaces(struct proto *p);
 void if_feed_baby(struct proto *);
 struct iface *if_find_by_index(unsigned);
 struct iface *if_find_by_name(char *);
 void ifa_recalc_all_primary_addresses(void);
+
+static inline int
+ifa_match_addr(struct ifa *ifa, ip_addr addr)
+{
+  if (ifa->flags & IA_UNNUMBERED)
+    return ipa_equal(addr, ifa->opposite);
+  else
+    return ipa_in_net(addr, ifa->prefix, ifa->pxlen);
+}
 
 /* The Neighbor Cache */
 
@@ -97,6 +107,7 @@ typedef struct neighbor {
 } neighbor;
 
 #define NEF_STICKY 1
+#define NEF_ONLINK 2
 
 neighbor *neigh_find(struct proto *, ip_addr *, unsigned flags);
 neighbor *neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags);
@@ -133,7 +144,8 @@ struct iface_patt {
   /* Protocol-specific data follow after this structure */
 };
 
-struct iface_patt *iface_patt_find(list *, struct iface *);
+int iface_patt_match(struct iface_patt *ifp, struct iface *i, struct ifa *a);
+struct iface_patt *iface_patt_find(list *l, struct iface *i, struct ifa *a);
 int iface_patts_equal(list *, list *, int (*)(struct iface_patt *, struct iface_patt *));
 
 #endif

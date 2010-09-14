@@ -385,7 +385,7 @@ as_path_match(struct adata *path, struct f_path_mask *mask)
   struct pm_pos pos[2048 + 1];
   int plen = parse_path(path, pos);
   int l, h, i, nh, nl;
-  u32 val;
+  u32 val = 0;
 
   /* l and h are bound of interval of positions where
      are marked states */
@@ -417,7 +417,7 @@ as_path_match(struct adata *path, struct f_path_mask *mask)
 	  goto step;
 	case PM_QUESTION:
 	step:
-	  nh = -1;
+	  nh = nl = -1;
 	  for (i = h; i >= l; i--)
 	    if (pos[i].mark)
 	      {

@@ -14,7 +14,6 @@ void
 ospf_pkt_fill_hdr(struct ospf_iface *ifa, void *buf, u8 h_type)
 {
   struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
   struct ospf_packet *pkt;
 
   pkt = (struct ospf_packet *) buf;
@@ -77,6 +76,7 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
       }
       password_cpy(pkt->u.password, passwd->password, sizeof(union ospf_auth));
     case OSPF_AUTH_NONE:
+      pkt->checksum = 0;
       pkt->checksum = ipsum_calculate(pkt, sizeof(struct ospf_packet) -
                                   sizeof(union ospf_auth), (pkt + 1),
 				  ntohs(pkt->length) -
@@ -141,13 +141,6 @@ ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_
     return 0;
   }
 
-  if (n && (ifa != n->ifa))
-  {
-    OSPF_TRACE(D_PACKETS, "OSPF_auth: received packet from strange interface (%s/%s)",
-      ifa->iface->name, n->ifa->iface->name);
-    return 0;
-  }
-
   switch(ifa->autype)
   {
     case OSPF_AUTH_NONE:
@@ -179,16 +172,10 @@ ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_
         return 0;
       }
 
-      if (ntohs(pkt->length) + OSPF_AUTH_CRYPT_SIZE != size)
+      if (ntohs(pkt->length) + OSPF_AUTH_CRYPT_SIZE > size)
       {
         OSPF_TRACE(D_PACKETS, "OSPF_auth: size mismatch (%d vs %d)",
 	  ntohs(pkt->length) + OSPF_AUTH_CRYPT_SIZE, size);
-        return 0;
-      }
-
-      if (pkt->u.md5.zero)
-      {
-        OSPF_TRACE(D_PACKETS, "OSPF_auth: \"zero\" area is non-zero");
         return 0;
       }
 
@@ -252,12 +239,26 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
 static int
 ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_packet *pkt, int size)
 { return 1; }
-
+ 
 #endif
+
+#ifdef OSPFv2
+static inline struct ospf_neighbor *
+find_neigh_by_ip(struct ospf_iface *ifa, ip_addr ip)
+{
+  struct ospf_neighbor *n;
+  WALK_LIST(n, ifa->neigh_list)
+    if (ipa_equal(n->ip, ip))
+      return n;
+  return NULL;
+}
+#endif
+
+
 
 /**
  * ospf_rx_hook
- * @sk: socket we received the packet. Its ignored.
+ * @sk: socket we received the packet.
  * @size: size of the packet
  *
  * This is the entry point for messages from neighbors. Many checks (like
@@ -265,21 +266,52 @@ ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_
  * non generic functions.
  */
 int
-ospf_rx_hook(sock * sk, int size)
+ospf_rx_hook(sock *sk, int size)
 {
-  struct ospf_packet *ps;
-  struct ospf_iface *ifa = (struct ospf_iface *) (sk->data);
+  char *mesg = "OSPF: Bad packet from ";
+
+  /* We want just packets from sk->iface. Unfortunately, on BSD we
+     cannot filter out other packets at kernel level and we receive
+     all packets on all sockets */
+  if (sk->lifindex != sk->iface->index)
+    return 1;
+
+  DBG("OSPF: RX hook called (iface %s, src %I, dst %I)\n",
+      sk->iface->name, sk->faddr, sk->laddr);
+
+  /* Initially, the packet is associated with the 'master' iface */
+  struct ospf_iface *ifa = sk->data;
   struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
-  struct ospf_neighbor *n;
-  int osize;
-  char *mesg = "Bad OSPF packet from ";
-  struct ospf_iface *iff;
+  // struct proto *p = &po->proto;
 
-  if (ifa->stub)
-    return (1);
+  int src_local = ifa_match_addr(ifa->addr, sk->faddr);
+  int dst_local = ipa_equal(sk->laddr, ifa->addr->ip);
+  int dst_mcast = ipa_equal(sk->laddr, AllSPFRouters) || ipa_equal(sk->laddr, AllDRouters);
 
-  ps = (struct ospf_packet *) ip_skip_header(sk->rbuf, &size);
+#ifdef OSPFv2
+  /* First, we eliminate packets with strange address combinations.
+   * In OSPFv2, they might be for other ospf_ifaces (with different IP
+   * prefix) on the same real iface, so we don't log it. We enforce
+   * that (src_local || dst_local), therefore we are eliminating all
+   * such cases. 
+   */
+  if (dst_mcast && !src_local)
+    return 1;
+  if (!dst_mcast && !dst_local)
+    return 1;
+
+#else /* OSPFv3 */
+
+  /* In OSPFv3, src_local and dst_local mean link-local. 
+   * RFC 5340 says that local (non-vlink) packets use
+   * link-local src address, but does not enforce it. Strange.
+   */
+  if (dst_mcast && !src_local)
+    log(L_WARN "OSPF: Received multicast packet from %I (not link-local)", sk->faddr);
+#endif
+
+  /* Second, we check packet size, checksum, and the protocol version */
+  struct ospf_packet *ps = (struct ospf_packet *) ip_skip_header(sk->rbuf, &size);
 
   if (ps == NULL)
   {
@@ -287,31 +319,22 @@ ospf_rx_hook(sock * sk, int size)
     return 1;
   }
 
-  /* We receive packets related to vlinks even on non-vlink sockets */
-  if ((ifa->oa->areaid != 0) && (ntohl(ps->areaid) == 0))
-  {
-    WALK_LIST(iff, po->iface_list)
-    {
-      if ((iff->type == OSPF_IT_VLINK) && (iff->iface == ifa->iface) &&
-          (iff->voa = ifa->oa) && ipa_equal(sk->faddr, iff->vip))
-      {
-        return 1;       /* Packet is for VLINK */
-      }
-    }
-  }
-
-  DBG("%s: RX_Hook called on interface %s.\n", p->name, sk->iface->name);
-
   if ((unsigned) size < sizeof(struct ospf_packet))
   {
     log(L_ERR "%s%I - too short (%u bytes)", mesg, sk->faddr, size);
     return 1;
   }
 
-  osize = ntohs(ps->length);
+  int osize = ntohs(ps->length);
   if ((osize > size) || ((osize % 4) != 0))
   {
     log(L_ERR "%s%I - size field does not match (%d/%d)", mesg, sk->faddr, osize, size);
+    return 1;
+  }
+
+  if ((unsigned) size > sk->rbsize)
+  {
+    log(L_ERR "%s%I - too large (%d vs %d)", mesg, sk->faddr, size, sk->rbsize);
     return 1;
   }
 
@@ -331,48 +354,99 @@ ospf_rx_hook(sock * sk, int size)
   }
 #endif
 
-  if (ntohl(ps->areaid) != ifa->oa->areaid)
-  {
-    log(L_ERR "%s%I - different area (%u)", mesg, sk->faddr, ntohl(ps->areaid));
-    return 1;
-  }
 
-  /* FIXME - handling of instance id should be better */
+  /* Third, we resolve associated iface and handle vlinks. */
+
+  u32 areaid = ntohl(ps->areaid);
+  u32 rid = ntohl(ps->routerid);
+
+  if ((areaid == ifa->oa->areaid)
 #ifdef OSPFv3
-  if (ps->instance_id != ifa->instance_id)
+      && (ps->instance_id == ifa->instance_id)
+#endif
+      )
   {
-    log(L_ERR "%s%I - different instance (%u)", mesg, sk->faddr, ps->instance_id);
+    /* It is real iface, source should be local (in OSPFv2) */
+#ifdef OSPFv2
+    if (!src_local)
+      return 1;
+#endif
+  }
+  else if (dst_mcast || (areaid != 0))
+  {
+    /* Obvious mismatch */
+
+#ifdef OSPFv2
+    /* We ignore mismatch in OSPFv3, because there might be
+       other instance with different instance ID */
+    log(L_ERR "%s%I - area does not match (%R vs %R)",
+	mesg, sk->faddr, areaid, ifa->oa->areaid);
+#endif
     return 1;
   }
-#endif
+  else
+  {
+    /* Some vlink? */
+    struct ospf_iface *iff = NULL;
 
-  if (ntohl(ps->routerid) == po->router_id)
+    WALK_LIST(iff, po->iface_list)
+    {
+      if ((iff->type == OSPF_IT_VLINK) && 
+	  (iff->voa == ifa->oa) &&
+#ifdef OSPFv3
+	  (iff->instance_id == ps->instance_id) &&
+#endif
+	  (iff->vid == rid))
+	{
+	  /* Vlink should be UP */
+	  if (iff->state != OSPF_IS_PTP)
+	    return 1;
+	  
+	  ifa = iff;
+	  goto found;
+	}
+    }
+
+#ifdef OSPFv2
+    log(L_WARN "OSPF: Received packet for uknown vlink (ID %R, IP %I)", rid, sk->faddr);
+#endif
+    return 1;
+  }
+
+ found:
+  if (ifa->stub)	    /* This shouldn't happen */
+    return 1;
+
+  if (ipa_equal(sk->laddr, AllDRouters) && (ifa->sk_dr == 0))
+    return 1;
+
+  if (rid == po->router_id)
   {
     log(L_ERR "%s%I - received my own router ID!", mesg, sk->faddr);
     return 1;
   }
 
-  if (ntohl(ps->routerid) == 0)
+  if (rid == 0)
   {
     log(L_ERR "%s%I - router id = 0.0.0.0", mesg, sk->faddr);
     return 1;
   }
 
-  if ((unsigned) size > sk->rbsize)
-  {
-    log(L_ERR "%s%I - packet is too large (%d vs %d)",
-	mesg, sk->faddr, size, sk->rbsize);
-    return 1;
-  }
-
-  /* This is deviation from RFC 2328 - neighbours should be identified by
-   * IP address on broadcast and NBMA networks.
-   */
-  n = find_neigh(ifa, ntohl(ps->routerid));
+#ifdef OSPFv2
+  /* In OSPFv2, neighbors are identified by either IP or Router ID, base on network type */
+  struct ospf_neighbor *n;
+  if ((ifa->type == OSPF_IT_BCAST) || (ifa->type == OSPF_IT_NBMA))
+    n = find_neigh_by_ip(ifa, sk->faddr);
+  else
+    n = find_neigh(ifa, rid);
+#else
+  struct ospf_neighbor *n = find_neigh(ifa, rid);
+#endif
 
   if(!n && (ps->type != HELLO_P))
   {
-    OSPF_TRACE(D_PACKETS, "Received non-hello packet from uknown neighbor (%I)", sk->faddr);
+    log(L_WARN "OSPF: Received non-hello packet from uknown neighbor (src %I, iface %s)",
+	sk->faddr, ifa->iface->name);
     return 1;
   }
 
@@ -422,18 +496,17 @@ ospf_rx_hook(sock * sk, int size)
 void
 ospf_tx_hook(sock * sk)
 {
-  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
-  struct proto *p = (struct proto *) (ifa->oa->po);
-  log(L_ERR "%s: TX_Hook called on interface %s\n", p->name, sk->iface->name);
+//  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
+//  struct proto *p = (struct proto *) (ifa->oa->po);
+  log(L_ERR "OSPF: TX_Hook called");
 }
 
 void
 ospf_err_hook(sock * sk, int err)
 {
-  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
-  struct proto *p = (struct proto *) (ifa->oa->po);
-  log(L_ERR "%s: Err_Hook called on interface %s with err=%d\n",
-    p->name, sk->iface->name, err);
+//  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
+//  struct proto *p = (struct proto *) (ifa->oa->po);
+  log(L_ERR "OSPF: Socket error: %m", err);
 }
 
 void
@@ -441,8 +514,9 @@ ospf_send_to_agt(struct ospf_iface *ifa, u8 state)
 {
   struct ospf_neighbor *n;
 
-  WALK_LIST(n, ifa->neigh_list) if (n->state >= state)
-    ospf_send_to(ifa, n->ip);
+  WALK_LIST(n, ifa->neigh_list)
+    if (n->state >= state)
+      ospf_send_to(ifa, n->ip);
 }
 
 void
@@ -455,7 +529,7 @@ ospf_send_to_bdr(struct ospf_iface *ifa)
 }
 
 void
-ospf_send_to(struct ospf_iface *ifa, ip_addr ip)
+ospf_send_to(struct ospf_iface *ifa, ip_addr dst)
 {
   sock *sk = ifa->sk;
   struct ospf_packet *pkt = (struct ospf_packet *) sk->tbuf;
@@ -468,11 +542,8 @@ ospf_send_to(struct ospf_iface *ifa, ip_addr ip)
 
   ospf_pkt_finalize(ifa, pkt);
   if (sk->tbuf != sk->tpos)
-    log(L_ERR "Aiee, old packet was overwritted in TX buffer");
+    log(L_ERR "Aiee, old packet was overwritten in TX buffer");
 
-  if (ipa_equal(ip, IPA_NONE))
-    sk_send(sk, len);
-  else
-    sk_send_to(sk, len, ip, OSPF_PROTO);
+  sk_send_to(sk, len, dst, 0);
 }
 

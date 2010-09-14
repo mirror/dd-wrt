@@ -41,6 +41,7 @@
 static void slab_free(resource *r);
 static void slab_dump(resource *r);
 static resource *slab_lookup(resource *r, unsigned long addr);
+static size_t slab_memsize(resource *r);
 
 #ifdef FAKE_SLAB
 
@@ -58,7 +59,8 @@ static struct resclass sl_class = {
   "FakeSlab",
   sizeof(struct slab),
   slab_free,
-  slab_dump
+  slab_dump,
+  slab_memsize
 };
 
 struct sl_obj {
@@ -116,6 +118,20 @@ slab_dump(resource *r)
   bdebug("(%d objects per %d bytes)\n", cnt, s->size);
 }
 
+static size_t
+slab_memsize(resource *r)
+{
+  slab *s = (slab *) r;
+  int cnt = 0;
+  struct sl_obj *o;
+
+  WALK_LIST(o, s->objs)
+    cnt++;
+
+  return ALLOC_OVERHEAD + sizeof(struct slab) + cnt * (ALLOC_OVERHEAD + s->size);
+}
+
+
 #else
 
 /*
@@ -136,7 +152,8 @@ static struct resclass sl_class = {
   sizeof(struct slab),
   slab_free,
   slab_dump,
-  slab_lookup
+  slab_lookup,
+  slab_memsize
 };
 
 struct sl_head {
@@ -322,6 +339,23 @@ slab_dump(resource *r)
   WALK_LIST(h, s->full_heads)
     fc++;
   bdebug("(%de+%dp+%df blocks per %d objs per %d bytes)\n", ec, pc, fc, s->objs_per_slab, s->obj_size);
+}
+
+static size_t
+slab_memsize(resource *r)
+{
+  slab *s = (slab *) r;
+  int heads = 0;
+  struct sl_head *h;
+
+  WALK_LIST(h, s->empty_heads)
+    heads++;
+  WALK_LIST(h, s->partial_heads)
+    heads++;
+  WALK_LIST(h, s->full_heads)
+    heads++;
+
+  return ALLOC_OVERHEAD + sizeof(struct slab) + heads * (ALLOC_OVERHEAD + SLAB_SIZE);
 }
 
 static resource *

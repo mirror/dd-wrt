@@ -147,6 +147,20 @@ if test -z "$bird_cv_sys_linux_version" ; then
 fi
 ])])
 
+AC_DEFUN(BIRD_CHECK_GCC_OPTIONS,
+[AC_CACHE_VAL(bird_cv_c_option_no_pointer_sign, [
+cat >conftest.c <<EOF
+int main(void)
+{ return 0; }
+EOF
+if $CC -Wall -Wno-pointer-sign conftest.c >&AS_MESSAGE_LOG_FD 2>&1 ; then
+	bird_cv_c_option_no_pointer_sign=yes
+else
+	bird_cv_c_option_no_pointer_sign=no
+fi
+rm -rf conftest* a.out
+])])
+
 # BIRD_CHECK_PROG_FLAVOR_GNU(PROGRAM-PATH, IF-SUCCESS, [IF-FAILURE])
 # copied autoconf internal _AC_PATH_PROG_FLAVOR_GNU
 m4_define([BIRD_CHECK_PROG_FLAVOR_GNU],

@@ -24,6 +24,7 @@ Reply codes of BIRD command-line interface
 0013	Status report
 0014	Route count
 0015	Reloading
+0016	Access restricted
 
 1000	BIRD version
 1001	Interface list
@@ -43,6 +44,7 @@ Reply codes of BIRD command-line interface
 1015	Show ospf interface
 1016	Show ospf state/topology
 1017	Show ospf lsadb
+1018	Show memory
 
 8000	Reply too long
 8001	Route not found
@@ -51,6 +53,7 @@ Reply codes of BIRD command-line interface
 8004	Stopped due to reconfiguration
 8005	Protocol is down => cannot dump
 8006	Reload failed
+8007	Access denied
 
 9000	Command too long
 9001	Parse error

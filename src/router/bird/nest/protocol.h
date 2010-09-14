@@ -16,6 +16,7 @@
 
 struct iface;
 struct ifa;
+struct rtable;
 struct rte;
 struct neighbor;
 struct rta;
@@ -50,6 +51,7 @@ struct protocol {
   void (*get_status)(struct proto *, byte *buf); /* Get instance status (for `show protocols' command) */
   void (*get_route_info)(struct rte *, byte *buf, struct ea_list *attrs); /* Get route information (for `show route' command) */
   int (*get_attr)(struct eattr *, byte *buf, int buflen);	/* ASCIIfy dynamic attribute (returns GA_*) */
+  void (*show_proto_info)(struct proto *);	/* Show protocol info (for `show protocols all' command) */
 };
 
 void protos_build(void);
@@ -129,7 +131,6 @@ struct proto {
   u32 debug;				/* Debugging flags */
   u32 mrtdump;				/* MRTDump flags */
   unsigned preference;			/* Default route preference */
-  int min_scope;			/* Minimal route scope accepted */
   unsigned accept_ra_types;		/* Which types of route announcements are accepted (RA_OPTIMAL or RA_ANY) */
   unsigned disabled;			/* Manually disabled */
   unsigned proto_state;			/* Protocol state machine (see below) */
@@ -162,7 +163,7 @@ struct proto {
 
   void (*if_notify)(struct proto *, unsigned flags, struct iface *i);
   void (*ifa_notify)(struct proto *, unsigned flags, struct ifa *a);
-  void (*rt_notify)(struct proto *, struct network *net, struct rte *new, struct rte *old, struct ea_list *attrs);
+  void (*rt_notify)(struct proto *, struct rtable *table, struct network *net, struct rte *new, struct rte *old, struct ea_list *attrs);
   void (*neigh_notify)(struct neighbor *neigh);
   struct ea_list *(*make_tmp_attrs)(struct rte *rt, struct linpool *pool);
   void (*store_tmp_attrs)(struct rte *rt, struct ea_list *attrs);
@@ -194,21 +195,30 @@ struct proto {
   /* Hic sunt protocol-specific data */
 };
 
+struct proto_spec {
+  void *ptr;
+  int patt;
+};
+
+
 void *proto_new(struct proto_config *, unsigned size);
 void *proto_config_new(struct protocol *, unsigned size);
-
 void proto_request_feeding(struct proto *p);
-void proto_show(struct symbol *, int);
-struct proto *proto_get_named(struct symbol *, struct protocol *);
-void proto_xxable(char *, int);
-void proto_debug(char *, int, unsigned int);
 
-#define XX_DISABLE	0
-#define XX_ENABLE	1
-#define XX_RESTART	2
-#define XX_RELOAD	3
-#define XX_RELOAD_IN	4
-#define XX_RELOAD_OUT	5
+void proto_cmd_show(struct proto *, unsigned int, int);
+void proto_cmd_disable(struct proto *, unsigned int, int);
+void proto_cmd_enable(struct proto *, unsigned int, int);
+void proto_cmd_restart(struct proto *, unsigned int, int);
+void proto_cmd_reload(struct proto *, unsigned int, int);
+void proto_cmd_debug(struct proto *, unsigned int, int);
+void proto_cmd_mrtdump(struct proto *, unsigned int, int);
+
+void proto_apply_cmd(struct proto_spec ps, void (* cmd)(struct proto *, unsigned int, int), int restricted, unsigned int arg);
+struct proto *proto_get_named(struct symbol *, struct protocol *);
+
+#define CMD_RELOAD	0
+#define CMD_RELOAD_IN	1
+#define CMD_RELOAD_OUT	2
 
 static inline u32
 proto_get_router_id(struct proto_config *pc)
@@ -333,5 +343,14 @@ struct announce_hook {
 };
 
 struct announce_hook *proto_add_announce_hook(struct proto *, struct rtable *);
+
+/*
+ *	Some pipe-specific nest hacks
+ */
+
+#ifdef CONFIG_PIPE
+#include "proto/pipe/pipe.h"
+#endif
+
 
 #endif

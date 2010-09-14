@@ -95,7 +95,7 @@ Czech Republic as a student project. It can be freely distributed under the term
 Public License.
 
 <p>BIRD has been designed to work on all UNIX-like systems. It has been developed and
-tested under Linux 2.0 to 2.4, and then ported to FreeBSD and NetBSD, porting to other
+tested under Linux 2.0 to 2.6, and then ported to FreeBSD, NetBSD and OpenBSD, porting to other
 systems (even non-UNIX ones) should be relatively easy due to its highly modular architecture.
 
 <sect>Installing BIRD
@@ -219,9 +219,10 @@ protocol rip {
 <sect>Global options
 
 <p><descrip>
-	<tag>log "<m/filename/"|syslog|stderr all|{ <m/list of classes/ }</tag> 
+	<tag>log "<m/filename/"|syslog [name <m/name/]|stderr all|{ <m/list of classes/ }</tag> 
 	Set logging of messages having the given class (either <cf/all/ or <cf/{
-	error, trace }/ etc.) into selected destination. Classes are:
+	error, trace }/ etc.) into selected destination (a file specified as a filename string,
+	syslog with optional name argument, or the stderr output). Classes are:
 	<cf/info/, <cf/warning/, <cf/error/ and <cf/fatal/ for messages about local problems,
 	<cf/debug/ for debugging messages, 
 	<cf/trace/ when you want to know what happens in the network, 
@@ -454,16 +455,19 @@ to zero to disable it. An empty <cf><m/switch/</cf> is equivalent to <cf/on/
 <chapt>Remote control
 
 <p>You can use the command-line client <file>birdc</file> to talk with
-a running BIRD. Communication is done using a <file/bird.ctl/ UNIX domain
-socket (unless changed with the <tt/-s/ option given to both the server and
-the client). The commands can perform simple actions such as enabling/disabling
-of protocols, telling BIRD to show various information, telling it to
-show routing table filtered by filter, or asking BIRD to
-reconfigure. Press <tt/?/ at any time to get online help. Option
+a running BIRD. Communication is done using a <file/bird.ctl/ UNIX
+domain socket (unless changed with the <tt/-s/ option given to both
+the server and the client). The commands can perform simple actions
+such as enabling/disabling of protocols, telling BIRD to show various
+information, telling it to show routing table filtered by filter, or
+asking BIRD to reconfigure. Press <tt/?/ at any time to get online
+help. Option <tt/-r/ can be used to enable a restricted mode of BIRD
+client, which allows just read-only commands (<cf/show .../). Option
 <tt/-v/ can be passed to the client, to make it dump numeric return
-codes along with the messages. You do not necessarily need to use <file/birdc/ to talk to BIRD, your
-own applications could do that, too -- the format of communication between
-BIRD and <file/birdc/ is stable (see the programmer's documentation).
+codes along with the messages. You do not necessarily need to use
+<file/birdc/ to talk to BIRD, your own applications could do that, too
+-- the format of communication between BIRD and <file/birdc/ is stable
+(see the programmer's documentation).
 
 Many commands have the <m/name/ of the protocol instance as an argument.
 This argument can be omitted if there exists only a single instance.
@@ -486,13 +490,18 @@ This argument can be omitted if there exists only a single instance.
 	<tag>show ospf neighbors [<m/name/] ["<m/interface/"]</tag>
 	Show a list of OSPF neighbors and a state of adjacency to them.
 
-	<tag>show ospf state [<m/name/]</tag>
-	Show detailed information about OSPF areas based on a content of link-state database.
-	It shows network topology,  aggregated networks and routers from other areas and external routes.
+	<tag>show ospf state [all] [<m/name/]</tag>
+	Show detailed information about OSPF areas based on a content
+	of the link-state database. It shows network topology, stub
+	networks, aggregated networks and routers from other areas and
+	external routes. The command shows information about reachable
+	network nodes, use option <cf/all/ to show information about
+	all network nodes in the link-state database.
 
-	<tag>show ospf topology [<m/name/]</tag>
-	Show a topology of OSPF areas based on a content of link-state database.
-	It is just a stripped-down version of 'show ospf state'.
+	<tag>show ospf topology [all] [<m/name/]</tag>
+	Show a topology of OSPF areas based on a content of the
+	link-state database.  It is just a stripped-down version of
+	'show ospf state'.
 
 	<tag>show static [<m/name/]</tag>
 	Show detailed information about static routes.
@@ -671,6 +680,11 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  65535. Literals of this type are written as <cf/(1234,5678)/. The same syntax can also be
 	  used to construct a pair from two arbitrary integer expressions (for example <cf/(1+2,a)/).
 
+	<tag/quad/ This is a dotted quad of numbers used to represent
+	  router IDs (and others).  Each component can have a value
+	  from 0 to 255. Literals of this type are written like IPv4
+	  addresses.
+
 	<tag/string/ This is a string of characters. There are no ways to modify strings in
 	  filters. You can pass them between functions, assign them to variables of type <cf/string/, print
 	  such variables, but you can't concatenate two strings. String literals
@@ -688,11 +702,12 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  <cf/.ip/ which extracts the IP address from the pair, and <cf/.len/, which separates prefix
 	  length from the pair. So <cf>1.2.0.0/16.pxlen = 16</cf> is true.
 
-	<tag/int|ip|prefix|pair|enum set/
+	<tag/int|pair|quad|ip|prefix|enum set/
 	  Filters recognize four types of sets. Sets are similar to strings: you can pass them around
-	  but you can't modify them. Literals of type <cf>set int</cf> look like <cf>
+	  but you can't modify them. Literals of type <cf>int set</cf> look like <cf>
 	  [ 1, 2, 5..7 ]</cf>. As you can see, both simple values and ranges are permitted in
-	  sets.
+	  sets. For pair sets, expressions like <cf/(123,*)/ can be used to denote ranges (in
+	  that case <cf/(123,0)..(123,65535)/).
 
 	  Sets of prefixes are special: their literals does not allow ranges, but allows
 	  prefix patterns that are written as <cf><M>ipaddress</M>/<M>pxlen</M>{<M>low</M>,<M>high</M>}</cf>.
@@ -756,15 +771,23 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  and integer variables, for example <tt>[= * 4 (1+2) a =]</tt>.
 	  There is also old syntax that uses / .. / instead of [= .. =] and ? instead of *.
 
-	<tag/clist/ 
-	  Community list is similar to set of pairs,
-	  except that unlike other sets, it can be modified.
-	  There exist no literals of this type.
-	  There are two special operators on clists:
+	<tag/clist/
+	  Clist is similar to a set, except that unlike other sets, it
+	  can be modified. The type is used for community list (a set
+	  of pairs) and for cluster list (a set of quads). There exist
+	  no literals of this type. There are two special operators on
+	  clists:
 
-          <cf>add(<m/C/,<m/P/)</cf> adds pair <m/P/ to clist <m/C/ and returns the result.
+          <cf>add(<m/C/,<m/P/)</cf> adds pair (or quad) <m/P/ to clist
+	  <m/C/ and returns the result.  If item <m/P/ is already in
+	  clist <m/C/, it does nothing.
 
-          <cf>delete(<m/C/,<m/P/)</cf> deletes pair <m/P/ from clist <m/C/ and returns the result.
+          <cf>delete(<m/C/,<m/P/)</cf> deletes pair (or quad)
+	  <m/P/ from clist <m/C/ and returns the result.  If clist
+	  <m/C/ does not contain item <m/P/, it does nothing.
+	  <m/P/ may also be a pair (or quad) set, in that case the
+	  operator deletes all items from clist <m/C/ that are also
+	  members of set <m/P/.
 
           Statement <cf><m/C/ = add(<m/C/, <m/P/);</cf> can be shortened to
           <cf><m/C/.add(<m/P/);</cf> if <m/C/ is appropriate route attribute
@@ -779,7 +802,7 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 Special operators include <cf/&tilde;/ for "is element of a set" operation - it can be
 used on element and set of elements of the same type (returning true if element is contained in the given set), or
 on two strings (returning true if first string matches a shell-like pattern stored in second string) or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
-prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair and clist (returning true if the community is element of the community list).
+prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair/quad and clist (returning true if the pair/quad is element of the clist) or on clist and pair/quad set (returning true if there is an element of the clist that is also a member of the pair/quad set).
 
 
 <sect>Control structures
@@ -818,13 +841,22 @@ if 1234 = i then printn "."; else {
 attributes just like it accesses variables. Attempts to access undefined
 attribute result in a runtime error; you can check if an attribute is
 defined by using the <cf>defined( <m>attribute</m> )</cf> operator.
+One notable exception to this rule are attributes of clist type, where
+undefined value is regarded as empty clist for most purposes.
 
 <descrip>
 	<tag><m/prefix/ net</tag>
 	Network the route is talking about. Read-only. (See the chapter about routing tables.)
 
 	<tag><m/enum/ scope</tag>
-	Address scope of the network (<cf/SCOPE_HOST/ for addresses local to this host, <cf/SCOPE_LINK/ for those specific for a physical link, <cf/SCOPE_SITE/ and <cf/SCOPE_ORGANIZATION/ for private addresses, <cf/SCOPE_UNIVERSE/ for globally visible addresses).
+	The scope of the route. Possible values: <cf/SCOPE_HOST/ for
+	routes local to this host, <cf/SCOPE_LINK/ for those specific
+	for a physical link, <cf/SCOPE_SITE/ and
+	<cf/SCOPE_ORGANIZATION/ for private routes and
+	<cf/SCOPE_UNIVERSE/ for globally visible routes. This
+	attribute is not interpreted by BIRD and can be used to mark
+	routes in filters. The default value for new routes is
+	<cf/SCOPE_UNIVERSE/.
 
 	<tag><m/int/ preference</tag>
 	Preference of the route. Valid values are 0-65535. (See the chapter about routing tables.)
@@ -839,13 +871,17 @@ defined by using the <cf>defined( <m>attribute</m> )</cf> operator.
 	The name of the protocol which the route has been imported from. Read-only.
 
 	<tag><m/enum/ source</tag>
-	what protocol has told me about this route. Possible values: <cf/RTS_DUMMY/, <cf/RTS_STATIC/, <cf/RTS_INHERIT/, <cf/RTS_DEVICE/, <cf/RTS_STATIC_DEVICE/, <cf/RTS_REDIRECT/, <cf/RTS_RIP/, <cf/RTS_OSPF/, <cf/RTS_OSPF_IA/, <cf/RTS_OSPF_EXT/, <cf/RTS_BGP/, <cf/RTS_PIPE/.
+	what protocol has told me about this route. Possible values: <cf/RTS_DUMMY/, <cf/RTS_STATIC/, <cf/RTS_INHERIT/, <cf/RTS_DEVICE/, <cf/RTS_STATIC_DEVICE/, <cf/RTS_REDIRECT/, <cf/RTS_RIP/, <cf/RTS_OSPF/, <cf/RTS_OSPF_IA/, <cf/RTS_OSPF_EXT1/, <cf/RTS_OSPF_EXT2/, <cf/RTS_BGP/, <cf/RTS_PIPE/.
 
 	<tag><m/enum/ cast</tag>
-	Route type (<cf/RTC_UNICAST/ for normal routes, <cf/RTC_BROADCAST/, <cf/RTC_MULTICAST/, <cf/RTC_ANYCAST/ for broadcast, multicast and anycast routes). Read-only.
+
+	Route type (Currently <cf/RTC_UNICAST/ for normal routes,
+	<cf/RTC_BROADCAST/, <cf/RTC_MULTICAST/, <cf/RTC_ANYCAST/ will
+	be used in the future for broadcast, multicast and anycast
+	routes). Read-only.
 
 	<tag><m/enum/ dest</tag>
-	Type of destination the packets should be sent to (<cf/RTD_ROUTER/ for forwarding to a neighboring router, <cf/RTD_NETWORK/ for routing to a directly-connected network, <cf/RTD_BLACKHOLE/ for packets to be silently discarded, <cf/RTD_UNREACHABLE/, <cf/RTD_PROHIBIT/ for packets that should be returned with ICMP host unreachable / ICMP administratively prohibited messages). Read-only.
+	Type of destination the packets should be sent to (<cf/RTD_ROUTER/ for forwarding to a neighboring router, <cf/RTD_DEVICE/ for routing to a directly-connected network, <cf/RTD_BLACKHOLE/ for packets to be silently discarded, <cf/RTD_UNREACHABLE/, <cf/RTD_PROHIBIT/ for packets that should be returned with ICMP host unreachable / ICMP administratively prohibited messages). Read-only.
 </descrip>
 
 <p>There also exist some protocol-specific attributes which are described in the corresponding protocol sections.
@@ -1028,7 +1064,7 @@ for each neighbor using the following configuration parameters:
 	should not be advertised to any of its neighbors. If this
 	option is enabled (which is by default), BIRD has such
 	behavior automatically (it is evaluated when a route is
-	exported to the protocol just before the export filter).
+	exported to the BGP protocol just before the export filter).
 	Otherwise, this integrated processing of well-known
 	communities is disabled. In that case, similar behavior can be
 	implemented in the export filter.  Default: on.
@@ -1165,6 +1201,14 @@ with `<tt/O/') are optional.
 	policy information like "don't export to USA peers". As each AS can define
 	its own routing policy, it also has a complete freedom about which community
 	attributes it defines and what will their semantics be.
+
+	<tag>quad <cf/bgp_originator_id/ [O]</tag> This attribute is created by the
+	route reflector when reflecting the route and contains the router ID of the
+	originator of the route in the local AS.
+
+	<tag>clist <cf/bgp_cluster_list/ [O]</tag> This attribute contains a list
+	of cluster IDs of route reflectors. Each route reflector prepends its
+	cluster ID when reflecting the route.
 </descrip>
 
 <sect1>Example
@@ -1246,10 +1290,15 @@ protocol device {
 directly connected networks according to the list of interfaces provided
 by the kernel via the Device protocol.
 
-<p>It's highly recommended to include this protocol in your configuration
-unless you want to use BIRD as a route server or a route reflector, that is
-on a machine which doesn't forward packets itself and only participates in
-distribution of routing information.
+<p>The question is whether it is a good idea to have such device
+routes in BIRD routing table. OS kernel usually handles device routes
+for directly connected networks by itself so we don't need (and don't
+want) to export these routes to the kernel protocol. OSPF protocol
+creates device routes for its interfaces itself and BGP protocol is
+usually used for exporting aggregate routes. Although there are some
+use cases that use the direct protocol (like abusing eBGP as an IGP
+routing protocol), in most cases it is not needed to have these device
+routes in BIRD routing table and to use the direct protocol.
 
 <p>The only configurable thing about direct is what interfaces it watches:
 
@@ -1275,13 +1324,23 @@ protocol direct {
 <sect>Kernel
 
 <p>The Kernel protocol is not a real routing protocol. Instead of communicating
-the with other routers in the network, it performs synchronization of BIRD's routing
+with other routers in the network, it performs synchronization of BIRD's routing
 tables with the OS kernel. Basically, it sends all routing table updates to the kernel
 and from time to time it scans the kernel tables to see whether some routes have
 disappeared (for example due to unnoticed up/down transition of an interface)
 or whether an `alien' route has been added by someone else (depending on the
-<cf/learn/ switch, such routes are either deleted or accepted to our
+<cf/learn/ switch, such routes are either ignored or accepted to our
 table).
+
+<p>Unfortunately, there is one thing that makes the routing table
+synchronization a bit more complicated. In the kernel routing table
+there are also device routes for directly connected networks. These
+routes are usually managed by OS itself (as a part of IP address
+configuration) and we don't want to touch that.  They are completely
+ignored during the scan of the kernel tables and also the export of
+device routes from BIRD tables to kernel routing tables is restricted
+to prevent accidental interference. This restriction can be disabled using
+<cf/device routes/ switch.
 
 <p>If your OS supports only a single routing table, you can configure only one
 instance of the Kernel protocol. If it supports multiple tables (in order to
@@ -1300,6 +1359,14 @@ kernel table.
 	routing tables by other routing daemons or by the system administrator.
 	This is possible only on systems which support identification of route
 	authorship.
+
+	<tag>device routes <m/switch/</tag> Enable export of device
+	routes to the kernel routing table. By default, such routes
+	are rejected (with the exception of explicitly configured
+	device routes from the static protocol) regardless of the
+	export filter to protect device routes in kernel routing table
+	(managed by OS itself) from accidental overwriting or erasing.
+
 	<tag>kernel table <m/number/</tag> Select which kernel table should
 	this particular instance of the Kernel protocol work with. Available
 	only on systems supporting multiple routing tables.
@@ -1584,13 +1651,16 @@ External routes use <cf/metric type 1/ or <cf/metric type 2/.
 A <cf/metric of type 1/ is comparable with internal <cf/metric/, a
 <cf/metric of type 2/ is always longer
 than any <cf/metric of type 1/ or any <cf/internal metric/.
+<cf/Internal metric/ or <cf/metric of type 1/ is stored in attribute
+<cf/ospf_metric1/, <cf/metric type 2/ is stored in attribute <cf/ospf_metric2/.
 If you specify both metrics only metric1 is used.
-Each external route can also carry a <cf/tag/ which is a 32-bit
-integer which is used when exporting routes to other protocols;
+
+Each external route can also carry attribute <cf/ospf_tag/ which is a
+32-bit integer which is used when exporting routes to other protocols;
 otherwise, it doesn't affect routing inside the OSPF domain at all.
-The fourth attribute is a <cf/router_id/ of the router advertising
-that route/network. This attribute is read-only.
-Default is <cf/metric of type 2 = 10000/ and <cf/tag = 0/.
+The fourth attribute <cf/ospf_router_id/ is a router ID of the router
+advertising that route/network. This attribute is read-only. Default
+is <cf/ospf_metric2 = 10000/ and <cf/ospf_tag = 0/.
 
 <sect1>Example
 

@@ -159,6 +159,7 @@ struct ospf_iface
 {
   node n;
   struct iface *iface;		/* Nest's iface */
+  struct ifa *addr;		/* IP prefix associated with that OSPF iface */
   struct ospf_area *oa;
   struct object_lock *lock;
   sock *sk;			/* IP socket (for DD ...) */
@@ -170,7 +171,8 @@ struct ospf_iface
   u32 dead;			/* after "deadint" missing hellos is router dead */
   u32 vid;			/* Id of peer of virtual link */
   ip_addr vip;			/* IP of peer of virtual link */
-  struct ospf_area *voa;	/* Area wich the vlink goes through */
+  struct ospf_iface *vifa;	/* OSPF iface which the vlink goes through */
+  struct ospf_area *voa;	/* OSPF area which the vlink goes through */
   u16 inftransdelay;		/* The estimated number of seconds it takes to
 				   transmit a Link State Update Packet over this
 				   interface.  LSAs contained in the update */
@@ -192,7 +194,6 @@ struct ospf_iface
   u32 dr_iface_id;		/* if drid is valid, this is iface_id of DR (for connecting network) */
   u8 instance_id;		/* Used to differentiate between more OSPF
 				   instances on one interface */
-  ip_addr lladdr;		/* Used link-local addr */
 #endif
 
   u8 type;			/* OSPF view of type */
@@ -203,9 +204,6 @@ struct ospf_iface
 #define OSPF_IT_UNDEF 4
   u8 strictnbma;		/* Can I talk with unknown neighbors? */
   u8 stub;			/* Inactive interface */
-#define OSPF_I_OK 0		/* Everything OK */
-#define OSPF_I_MC 1		/* I didn't open MC socket */
-#define OSPF_I_IP 2		/* I didn't open IP socet */
   u8 state;			/* Interface state machine */
 #define OSPF_IS_DOWN 0		/* Not working */
 #define OSPF_IS_LOOP 1		/* Should never happen */
@@ -237,9 +235,13 @@ struct ospf_iface
 #endif
   int fadj;				/* Number of full adjacent neigh */
   list nbma_list;
-  u8 priority;				/* A router priority for DR election */
+  u8 priority;			/* A router priority for DR election */
   u8 ioprob;
-  u8 dr_up;				/* Socket is a member of DRouters group */
+#define OSPF_I_OK 0		/* Everything OK */
+#define OSPF_I_SK 1		/* Socket open failed */
+#define OSPF_I_LL 2		/* Missing link-local address (OSPFv3) */
+  u8 sk_spf;			/* Socket is a member of SPFRouters group */
+  u8 sk_dr; 			/* Socket is a member of DRouters group */
   u32 rxbuf;
 };
 
@@ -675,8 +677,8 @@ struct ospf_neighbor
 #define ISM_WAITF 1		/* Wait timer fired */
 #define ISM_BACKS 2		/* Backup seen */
 #define ISM_NEICH 3		/* Neighbor change */
-#define ISM_LOOP 4		/* Loop indicated */
-#define ISM_UNLOOP 5		/* Unloop indicated */
+// #define ISM_LOOP 4		/* Loop indicated */
+// #define ISM_UNLOOP 5		/* Unloop indicated */
 #define ISM_DOWN 6		/* Interface down */
 
 /* Definitions for neighbor state machine */
@@ -704,7 +706,7 @@ struct ospf_area
   struct top_hash_entry *pxr_lsa; /* Originated prefix LSA */
   list cand;			/* List of candidates for RT calc. */
   struct fib net_fib;		/* Networks to advertise or not */
-  int stub;
+  unsigned stub;
   int trcap;			/* Transit capability? */
   u32 options;			/* Optional features */
   struct proto_ospf *po;
@@ -720,7 +722,6 @@ struct proto_ospf
   slist lsal;			/* List of all LSA's */
   int calcrt;			/* Routing table calculation scheduled?
 				   0=no, 1=normal, 2=forced reload */
-  int cleanup;                  /* Should I cleanup after RT calculation? */
   list iface_list;		/* Interfaces we really use */
   list area_list;
   int areano;			/* Number of area I belong to */
@@ -770,6 +771,25 @@ struct ospf_iface_patt
 #endif
 };
 
+#if defined(OSPFv2) && !defined(CONFIG_MC_PROPER_SRC)
+static inline int
+ospf_iface_stubby(struct ospf_iface_patt *ip, struct ifa *addr)
+{
+  /*
+   * We cannot properly support multiple OSPF ifaces on real iface
+   * with multiple prefixes, therefore we force OSPF ifaces with
+   * non-primary IP prefixes to be stub.
+   */
+  return ip->stub || !(addr->flags & IA_PRIMARY);
+}
+#else
+static inline int
+ospf_iface_stubby(struct ospf_iface_patt *ip, struct ifa *addr UNUSED)
+{
+  return ip->stub;
+}
+#endif
+
 int ospf_import_control(struct proto *p, rte **new, ea_list **attrs,
 			struct linpool *pool);
 struct ea_list *ospf_make_tmp_attrs(struct rte *rt, struct linpool *pool);
@@ -781,13 +801,14 @@ void schedule_net_lsa(struct ospf_iface *ifa);
 #ifdef OSPFv3
 void schedule_link_lsa(struct ospf_iface *ifa);
 #else
-static inline void schedule_link_lsa(struct ospf_iface *ifa) {}
+static inline void schedule_link_lsa(struct ospf_iface *ifa UNUSED) {}
 #endif
 
 void ospf_sh_neigh(struct proto *p, char *iff);
 void ospf_sh(struct proto *p);
 void ospf_sh_iface(struct proto *p, char *iff);
-void ospf_sh_state(struct proto *p, int verbose);
+void ospf_sh_state(struct proto *p, int verbose, int reachable);
+void ospf_sh_lsadb(struct proto *p);
 
 
 #define EA_OSPF_METRIC1	EA_CODE(EAP_OSPF, 0)

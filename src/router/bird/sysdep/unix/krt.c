@@ -139,15 +139,6 @@ kif_shutdown(struct proto *P)
   krt_if_shutdown(p);
   kif_proto = NULL;
 
-  if_start_update();	/* Remove all interfaces */
-  if_end_update();
-  /*
-   *  FIXME: Is it really a good idea?  It causes routes to be flushed,
-   *  but at the same time it avoids sending of these deletions to the kernel,
-   *  because krt thinks the kernel itself has already removed the route
-   *  when downing the interface.  Sad.
-   */
-
   return PS_DOWN;
 }
 
@@ -558,32 +549,30 @@ krt_got_route(struct krt_proto *p, rte *e)
   rte *old;
   net *net = e->net;
   int verdict;
-#ifdef KRT_ALLOW_LEARN
-  int src = e->u.krt.src;
-#endif
 
-#ifdef CONFIG_AUTO_ROUTES
-  if (e->attrs->dest == RTD_DEVICE)
+#ifdef KRT_ALLOW_LEARN
+  switch (e->u.krt.src)
     {
-      /* It's a device route. Probably a kernel-generated one. */
+    case KRT_SRC_KERNEL:
       verdict = KRF_IGNORE;
       goto sentenced;
-    }
-#endif
 
-#ifdef KRT_ALLOW_LEARN
-  if (src == KRT_SRC_ALIEN)
-    {
+    case KRT_SRC_REDIRECT:
+      verdict = KRF_DELETE;
+      goto sentenced;
+
+    case  KRT_SRC_ALIEN:
       if (KRT_CF->learn)
 	krt_learn_scan(p, e);
       else
 	{
-	  krt_trace_in_rl(&rl_alien_ignored, p, e, "alien route, ignored");
+	  krt_trace_in_rl(&rl_alien_ignored, p, e, "[alien] ignored");
 	  rte_free(e);
 	}
       return;
     }
 #endif
+  /* The rest is for KRT_SRC_BIRD (or KRT_SRC_UNKNOWN) */
 
   if (net->n.flags & KRF_VERDICT_MASK)
     {
@@ -605,7 +594,7 @@ krt_got_route(struct krt_proto *p, rte *e)
   else
     verdict = KRF_DELETE;
 
-sentenced:
+ sentenced:
   krt_trace_in(p, e, ((char *[]) { "?", "seen", "will be updated", "will be removed", "ignored" }) [verdict]);
   net->n.flags = (net->n.flags & ~KRF_VERDICT_MASK) | verdict;
   if (verdict == KRF_UPDATE || verdict == KRF_DELETE)
@@ -680,19 +669,24 @@ krt_prune(struct krt_proto *p)
 }
 
 void
-krt_got_route_async(struct krt_proto *p, rte *e, int new UNUSED)
+krt_got_route_async(struct krt_proto *p, rte *e, int new)
 {
   net *net = e->net;
-  int src = e->u.krt.src;
 
-  switch (src)
+  switch (e->u.krt.src)
     {
     case KRT_SRC_BIRD:
       ASSERT(0);			/* Should be filtered by the back end */
+
     case KRT_SRC_REDIRECT:
-      DBG("It's a redirect, kill him! Kill! Kill!\n");
-      krt_set_notify(p, net, NULL, e);
+      if (new)
+	{
+	  krt_trace_in(p, e, "[redirect] deleting");
+	  krt_set_notify(p, net, NULL, e);
+	}
+      /* If !new, it is probably echo of our deletion */
       break;
+
 #ifdef KRT_ALLOW_LEARN
     case KRT_SRC_ALIEN:
       if (KRT_CF->learn)
@@ -740,16 +734,34 @@ krt_scan(timer *t UNUSED)
 /*
  *	Updates
  */
+static int
+krt_import_control(struct proto *P, rte **new, ea_list **attrs, struct linpool *pool)
+{
+  struct krt_proto *p = (struct krt_proto *) P;
+  rte *e = *new;
+
+  if (e->attrs->proto == P)
+    return -1;
+
+  if (!KRT_CF->devroutes && 
+      (e->attrs->dest == RTD_DEVICE) && 
+      (e->attrs->source != RTS_STATIC_DEVICE))
+    return -1;
+
+  if (!krt_capable(e))
+    return -1;
+
+  return 0;
+}
 
 static void
-krt_notify(struct proto *P, net *net, rte *new, rte *old, struct ea_list *attrs UNUSED)
+krt_notify(struct proto *P, struct rtable *table UNUSED, net *net,
+	   rte *new, rte *old, struct ea_list *attrs UNUSED)
 {
   struct krt_proto *p = (struct krt_proto *) P;
 
   if (shutting_down)
     return;
-  if (new && (!krt_capable(new) || new->attrs->source == RTS_INHERIT))
-    new = NULL;
   if (!(net->n.flags & KRF_INSTALLED))
     old = NULL;
   if (new)
@@ -876,8 +888,8 @@ krt_init(struct proto_config *c)
   struct krt_proto *p = proto_new(c, sizeof(struct krt_proto));
 
   p->p.accept_ra_types = RA_OPTIMAL;
+  p->p.import_control = krt_import_control;
   p->p.rt_notify = krt_notify;
-  p->p.min_scope = SCOPE_HOST;
   return &p->p;
 }
 
@@ -889,6 +901,7 @@ krt_reconfigure(struct proto *p, struct proto_config *new)
 
   return o->scan_time == n->scan_time
     && o->learn == n->learn		/* persist needn't be the same */
+    && o->devroutes == n->devroutes
     && krt_set_params_same(&o->set, &n->set)
     && krt_scan_params_same(&o->scan, &n->scan)
     ;

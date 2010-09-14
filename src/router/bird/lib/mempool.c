@@ -43,13 +43,15 @@ struct linpool {
 static void lp_free(resource *);
 static void lp_dump(resource *);
 static resource *lp_lookup(resource *, unsigned long);
+static size_t lp_memsize(resource *r);
 
 static struct resclass lp_class = {
   "LinPool",
   sizeof(struct linpool),
   lp_free,
   lp_dump,
-  lp_lookup
+  lp_lookup,
+  lp_memsize
 };
 
 /**
@@ -234,6 +236,24 @@ lp_dump(resource *r)
 	m->total,
 	m->total_large);
 }
+
+static size_t
+lp_memsize(resource *r)
+{
+  linpool *m = (linpool *) r;
+  struct lp_chunk *c;
+  int cnt = 0;
+
+  for(c=m->first; c; c=c->next)
+    cnt++;
+  for(c=m->first_large; c; c=c->next)
+    cnt++;
+
+  return ALLOC_OVERHEAD + sizeof(struct linpool) +
+    cnt * (ALLOC_OVERHEAD + sizeof(sizeof(struct lp_chunk))) +
+    m->total + m->total_large;
+}
+
 
 static resource *
 lp_lookup(resource *r, unsigned long a)

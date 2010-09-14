@@ -15,26 +15,21 @@
 #include "nest/bird.h"
 #include "checksum.h"
 
-static u16				/* One-complement addition */
-add16(u16 sum, u16 x)
-{
-  u16 z = sum + x;
-  return z + (z < sum);
-}
-
-static u32
+static inline u32
 add32(u32 sum, u32 x)
 {
   u32 z = sum + x;
-  return z + (z < sum);
+//  return z + (z < sum);
+
+ /* add carry */
+  if (z < x)
+    z++;
+  return z;
 }
 
 static u16
-ipsum_calc_block(u16 *x, unsigned len, u16 sum)
+ipsum_calc_block(u32 *buf, unsigned len, u16 isum)
 {
-  int rest;
-  u32 tmp, *xx;
-
   /*
    *  A few simple facts about the IP checksum (see RFC 1071 for detailed
    *  discussion):
@@ -47,27 +42,17 @@ ipsum_calc_block(u16 *x, unsigned len, u16 sum)
    *  usual alignment requirements and is reasonably fast.
    */
 
-  ASSERT(!(len % 2));
+  ASSERT(!(len % 4));
   if (!len)
-    return sum;
-  len >>= 1;
-  if ((unsigned long) x & 2)		/* Align to 32-bit boundary */
-    {
-      sum = add16(sum, *x++);
-      len--;
-    }
-  rest = len & 1;
-  len >>= 1;
-  tmp = 0;
-  xx = (u32 *) x;
-  while (len)
-    {
-      tmp = add32(tmp, *xx++);
-      len--;
-    }
-  sum = add16(sum, add16(tmp & 0xffff, tmp >> 16U));
-  if (rest)
-    sum = add16(sum, *(u16 *) xx);
+    return isum;
+
+  u32 *end = buf + (len >> 2);
+  u32 sum = isum;
+  while (buf < end)
+    sum = add32(sum, *buf++);
+
+  sum = (sum >> 16) + (sum & 0xffff);    /* add high-16 to low-16 */
+  sum += (sum >> 16); /* add carry */
   return sum;
 }
 

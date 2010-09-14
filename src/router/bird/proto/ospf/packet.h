@@ -19,5 +19,6 @@ void ospf_send_to_agt(struct ospf_iface *ifa, u8 state);
 void ospf_send_to_bdr(struct ospf_iface *ifa);
 void ospf_send_to(struct ospf_iface *ifa, ip_addr ip);
 
+static inline void * ospf_tx_buffer(struct ospf_iface *ifa) { return ifa->sk->tbuf; }
 
 #endif /* _BIRD_OSPF_PACKET_H_ */

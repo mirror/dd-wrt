@@ -97,7 +97,8 @@ static struct resclass olock_class = {
   "ObjLock",
   sizeof(struct object_lock),
   olock_free,
-  olock_dump
+  olock_dump,
+  NULL
 };
 
 /**

@@ -8,3 +8,4 @@
 
 void cmd_show_status(void);
 void cmd_show_symbols(struct symbol *sym);
+void cmd_show_memory(void);

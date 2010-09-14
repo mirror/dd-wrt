@@ -23,7 +23,8 @@ CF_KEYWORDS(BGP, LOCAL, NEIGHBOR, AS, HOLD, TIME, CONNECT, RETRY, KEEPALIVE,
 	BGP_ATOMIC_AGGR, BGP_AGGREGATOR, BGP_COMMUNITY, SOURCE, ADDRESS,
 	PASSWORD, RR, RS, CLIENT, CLUSTER, ID, AS4, ADVERTISE, IPV4,
 	CAPABILITIES, LIMIT, PASSIVE, PREFER, OLDER, MISSING, LLADDR,
-	DROP, IGNORE, ROUTE, REFRESH, INTERPRET, COMMUNITIES)
+	DROP, IGNORE, ROUTE, REFRESH, INTERPRET, COMMUNITIES,
+	BGP_ORIGINATOR_ID, BGP_CLUSTER_LIST)
 
 CF_GRAMMAR
 
@@ -59,7 +60,7 @@ bgp_proto:
      BGP_CFG->remote_ip = $3;
      BGP_CFG->remote_as = $5;
    }
- | bgp_proto RR CLUSTER ID expr ';' { BGP_CFG->rr_cluster_id = $5; }
+ | bgp_proto RR CLUSTER ID idval ';' { BGP_CFG->rr_cluster_id = $5; }
  | bgp_proto RR CLIENT ';' { BGP_CFG->rr_client = 1; }
  | bgp_proto RS CLIENT ';' { BGP_CFG->rs_client = 1; }
  | bgp_proto HOLD TIME expr ';' { BGP_CFG->hold_time = $4; }
@@ -90,22 +91,27 @@ bgp_proto:
  | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
  ;
 
-CF_ADDTO(dynamic_attr, BGP_PATH
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); })
-CF_ADDTO(dynamic_attr, BGP_LOCAL_PREF
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_LOCAL_PREF)); })
-CF_ADDTO(dynamic_attr, BGP_MED
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC)); })
 CF_ADDTO(dynamic_attr, BGP_ORIGIN
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); })
+CF_ADDTO(dynamic_attr, BGP_PATH
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); })
 CF_ADDTO(dynamic_attr, BGP_NEXT_HOP
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); })
+CF_ADDTO(dynamic_attr, BGP_MED
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC)); })
+CF_ADDTO(dynamic_attr, BGP_LOCAL_PREF
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_LOCAL_PREF)); })
 CF_ADDTO(dynamic_attr, BGP_ATOMIC_AGGR
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_OPAQUE, T_ENUM_EMPTY, EA_CODE(EAP_BGP, BA_ATOMIC_AGGR)); })
 CF_ADDTO(dynamic_attr, BGP_AGGREGATOR
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_AGGREGATOR)); })
 CF_ADDTO(dynamic_attr, BGP_COMMUNITY
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); })
+CF_ADDTO(dynamic_attr, BGP_ORIGINATOR_ID
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID, T_QUAD, EA_CODE(EAP_BGP, BA_ORIGINATOR_ID)); })
+CF_ADDTO(dynamic_attr, BGP_CLUSTER_LIST
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_CLUSTER_LIST)); })
+
 
 CF_ENUM(T_ENUM_BGP_ORIGIN, ORIGIN_, IGP, EGP, INCOMPLETE)
 

@@ -1273,7 +1273,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-debug          enable internal debugging routines (default: disabled)
   --enable-memcheck       check memory allocations when debugging (default: enabled)
-  --enable-warnings       enable extra warnings (default: disabled)
   --enable-client         enable building of BIRD client (default: enabled)
   --enable-ipv6           enable building of IPv6 version (default: disabled)
 
@@ -1763,13 +1762,6 @@ if test "${enable_memcheck+set}" = set; then
   enableval=$enable_memcheck;
 else
   enable_memcheck=yes
-fi
-
-# Check whether --enable-warnings was given.
-if test "${enable_warnings+set}" = set; then
-  enableval=$enable_warnings;
-else
-  enable_warnings=no
 fi
 
 # Check whether --enable-client was given.
@@ -2932,6 +2924,11 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
+# Store this value because ac_test_CFLAGS is overwritten by AC_PROG_CC
+if test "$ac_test_CFLAGS" != set ; then
+	bird_cflags_default=yes
+fi
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3612,22 +3609,37 @@ if test -z "$GCC" ; then
 	{ { echo "$as_me:$LINENO: error: This program requires the GNU C Compiler." >&5
 echo "$as_me: error: This program requires the GNU C Compiler." >&2;}
    { (exit 1); exit 1; }; }
-	fi
+fi
+
 { echo "$as_me:$LINENO: checking what CFLAGS should we use" >&5
 echo $ECHO_N "checking what CFLAGS should we use... $ECHO_C" >&6; }
-if test "$ac_test_CFLAGS" != set ; then
-	if test "$enable_warnings" = yes ; then
-		WARNS=" -Wmissing-prototypes -Wundef"
-	else
-		WARNS=" -Wno-unused"
-	fi
-	CFLAGS="$CFLAGS -Wall -W -Wstrict-prototypes -Wno-pointer-sign -Wno-parentheses$WARNS"
+if test "$bird_cflags_default" = yes ; then
+	if test "${bird_cv_c_option_no_pointer_sign+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+cat >conftest.c <<EOF
+int main(void)
+{ return 0; }
+EOF
+if $CC -Wall -Wno-pointer-sign conftest.c >&5 2>&1 ; then
+	bird_cv_c_option_no_pointer_sign=yes
+else
+	bird_cv_c_option_no_pointer_sign=no
 fi
-if test "$with_sysinclude" != no -a -n "$with_sysinclude"; then
-	CPPFLAGS="$CPPFLAGS -I$with_sysinclude"
+rm -rf conftest* a.out
+
+fi
+
+
+	CFLAGS="$CFLAGS -Wall -Wstrict-prototypes -Wno-parentheses"
+	if test "$bird_cv_c_option_no_pointer_sign" = yes ; then
+		CFLAGS="$CFLAGS -Wno-pointer-sign"
+	fi
 fi
 { echo "$as_me:$LINENO: result: $CFLAGS" >&5
 echo "${ECHO_T}$CFLAGS" >&6; }
+
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4193,7 +4205,7 @@ if test "${bird_cv_sys_linux_version+set}" = set; then
 else
 
 cat > conftest.$ac_ext <<EOF
-#line 4196 "configure"
+#line 4208 "configure"
 #include "confdefs.h"
 #include <linux/version.h>
 VERSION: UTS_RELEASE
@@ -4223,7 +4235,7 @@ if test "${bird_cv_sys_linux_version+set}" = set; then
 else
 
 cat > conftest.$ac_ext <<EOF
-#line 4226 "configure"
+#line 4238 "configure"
 #include "confdefs.h"
 #include <linux/version.h>
 VERSION: UTS_RELEASE
@@ -4250,11 +4262,11 @@ echo "$as_me: error: This version of Linux doesn't support IPv6." >&2;}
 				;;
 		ipv6:netbsd*)	sysdesc=bsd-v6
 				CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-				LDFLAGS="$LDFLAGS -L/usr/pkg/lib"
+				LDFLAGS="$LDFLAGS -L/usr/pkg/lib -R/usr/pkg/lib"
 				;;
 		ipv4:netbsd*)	sysdesc=bsd
 				CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
-				LDFLAGS="$LDFLAGS -L/usr/pkg/lib"
+				LDFLAGS="$LDFLAGS -L/usr/pkg/lib -R/usr/pkg/lib"
 				;;
 		ipv6:freebsd*)	sysdesc=bsd-v6
 				;;

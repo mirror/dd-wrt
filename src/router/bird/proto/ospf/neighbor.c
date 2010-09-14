@@ -440,7 +440,6 @@ void
 bdr_election(struct ospf_iface *ifa)
 {
   struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
   u32 myid = po->router_id;
   struct ospf_neighbor *neigh, *ndr, *nbdr, me;
   int doadj;
@@ -450,13 +449,12 @@ bdr_election(struct ospf_iface *ifa)
   me.state = NEIGHBOR_2WAY;
   me.rid = myid;
   me.priority = ifa->priority;
+  me.ip = ifa->addr->ip;
 
 #ifdef OSPFv2
-  me.ip = ifa->iface->addr->ip;
   me.dr = ipa_to_u32(ifa->drip);
   me.bdr = ipa_to_u32(ifa->bdrip);
 #else /* OSPFv3 */
-  me.ip = ifa->lladdr;
   me.dr = ifa->drid;
   me.bdr = ifa->bdrid;
   me.iface_id = ifa->iface->index;
@@ -538,27 +536,6 @@ find_neigh(struct ospf_iface *ifa, u32 rid)
   return NULL;
 }
 
-
-/* Find a closest neighbor which is at least 2-Way */
-struct ospf_neighbor *
-find_neigh_noifa(struct proto_ospf *po, u32 rid)
-{
-  struct ospf_neighbor *n = NULL, *m;
-  struct ospf_iface *ifa;
-
-  WALK_LIST(ifa, po->iface_list) if ((m = find_neigh(ifa, rid)) != NULL)
-  {
-    if (m->state >= NEIGHBOR_2WAY)
-    {
-      if (n == NULL)
-	n = m;
-      else if (m->ifa->cost < n->ifa->cost)
-	n = m;
-    }
-  }
-  return n;
-}
-
 struct ospf_area *
 ospf_find_area(struct proto_ospf *po, u32 aid)
 {
@@ -632,7 +609,7 @@ static void
 rxmt_timer_hook(timer * timer)
 {
   struct ospf_neighbor *n = (struct ospf_neighbor *) timer->data;
-  struct proto *p = &n->ifa->oa->po->proto;
+  // struct proto *p = &n->ifa->oa->po->proto;
   struct top_hash_entry *en;
 
   DBG("%s: RXMT timer fired on interface %s for neigh: %I.\n",

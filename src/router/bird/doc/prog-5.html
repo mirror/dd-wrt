@@ -248,14 +248,13 @@ and body and sending it to the connection.
 
 
 <HR><H3>Function</H3>
-<P><I>const byte *</I>
+<P><I>const char *</I>
 <B>bgp_error_dsc</B>
-(<I>byte *</I> <B>buff</B>, <I>unsigned</I> <B>code</B>, <I>unsigned</I> <B>subcode</B>) --  return BGP error description
+(<I>unsigned</I> <B>code</B>, <I>unsigned</I> <B>subcode</B>) --  return BGP error description
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>byte *</I> <B>buff</B><DD><P>temporary buffer
 <DT><I>unsigned</I> <B>code</B><DD><P>BGP error code
 <DT><I>unsigned</I> <B>subcode</B><DD><P>BGP error subcode
 </DL>
@@ -373,13 +372,36 @@ structure is <I>proto_ospf</I> to which multiple <I>ospf_area</I> and
 describes the link-state database. It allows fast search, addition
 and deletion. Each LSA is kept in two pieces: header and body. Both of them are
 kept in the endianity of the CPU.
+<P>In OSPFv2 specification, it is implied that there is one IP prefix
+for each physical network/interface (unless it is an ptp link). But
+in modern systems, there might be more independent IP prefixes
+associated with an interface.  To handle this situation, we have
+one <I>ospf_iface</I> for each active IP prefix (instead for each active
+iface); This behaves like virtual interface for the purpose of OSPF.
+If we receive packet, we associate it with a proper virtual interface
+mainly according to its source address.
+<P>OSPF keeps one socket per <I>ospf_iface</I>. This allows us (compared to
+one socket approach) to evade problems with a limit of multicast
+groups per socket and with sending multicast packets to appropriate
+interface in a portable way. The socket is associated with
+underlying physical iface and should not receive packets received
+on other ifaces (unfortunately, this is not true on
+BSD). Generally, one packet can be received by more sockets (for
+example, if there are more <I>ospf_iface</I> on one physical iface),
+therefore we explicitly filter received packets according to
+src/dst IP address and received iface.
+<P>Vlinks are implemented using particularly degenerate form of
+<I>ospf_iface</I>, which has several exceptions: it does not have its
+iface or socket (it copies these from 'parent' <I>ospf_iface</I>) and it
+is present in iface list even when down (it is not freed in
+<B>ospf_iface_down()</B>).
 <P>The heart beat of ospf is <B>ospf_disp()</B>. It is called at regular intervals
 (<I>proto_ospf</I>-&gt;tick). It is responsible for aging and flushing of LSAs in
 the database, for routing table calculaction and it call <B>area_disp()</B> of every
 ospf_area.
 <P>The function <B>area_disp()</B> is
 responsible for late originating of router LSA and network LSA
-and for cleanup after routing table calculation process in
+and for cleanup before routing table calculation process in
 the area.
 To every <I>ospf_iface</I>, we connect one or more
 <I>ospf_neighbor</I>'s -- a structure containing many timers and queues
@@ -532,9 +554,7 @@ In other case, new instance of network LSA is originated.
 </DL>
 <H3>Description</H3>
 <P>If I receive a message that new route is installed, I try to originate an
-external LSA. The LSA header of such LSA does not contain information about
-prefix length, so if I have to originate multiple LSAs for route with
-different prefixes I try to increment prefix id to find a "free" one.
+external LSA.
 <P>The function also sets flag ebit. If it's the first time, the new router lsa
 origination is necessary.
 
@@ -647,7 +667,7 @@ interface.
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>sock *</I> <B>sk</B><DD><P>socket we received the packet. Its ignored.
+<DT><I>sock *</I> <B>sk</B><DD><P>socket we received the packet.
 <DT><I>int</I> <B>size</B><DD><P>size of the packet
 </DL>
 <H3>Description</H3>
@@ -744,22 +764,6 @@ of the buffer.
 <P>Calculation of internal paths in an area is described in 16.1 of RFC 2328.
 It's based on Dijkstra's shortest path tree algorithms.
 This function is invoked from <B>ospf_disp()</B>.
-
-
-<HR><H3>Function</H3>
-<P><I>void</I>
-<B>ospf_ext_spf</B>
-(<I>struct proto_ospf *</I> <B>po</B>) --  calculate external paths
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>struct proto_ospf *</I> <B>po</B><DD><P>protocol
-</DL>
-<H3>Description</H3>
-<P>After routing table for any area is calculated, calculation of external
-path is invoked. This process is described in 16.4 of RFC 2328.
-Inter- and Intra-area paths are always prefered over externals.
 
 <H2><A NAME="ss5.3">5.3</A> <A HREF="prog.html#toc5.3">Pipe</A>
 </H2>

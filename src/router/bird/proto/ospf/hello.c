@@ -47,15 +47,15 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
 {
   struct proto_ospf *po = ifa->oa->po;
   struct proto *p = &po->proto;
-  char *beg = "Bad OSPF HELLO packet from ", *rec = " received: ";
-  unsigned int size, i, twoway, oldpriority, eligible, peers;
-  u32 olddr, oldbdr, oldiface_id, tmp;
+  char *beg = "OSPF: Bad HELLO packet from ";
+  unsigned int size, i, twoway, eligible, peers;
+  u32 tmp;
   u32 *pnrid;
 
   size = ntohs(ps_i->length);
   if (size < sizeof(struct ospf_hello_packet))
   {
-    log(L_ERR "%s%I -  too short (%u B)", beg, faddr, size);
+    log(L_ERR "%s%I - too short (%u B)", beg, faddr, size);
     return;
   }
 
@@ -67,38 +67,19 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
 #ifdef OSPFv2
   ip_addr mask = ps->netmask;
   ipa_ntoh(mask);
-  if (ifa->type != OSPF_IT_VLINK)
-    {
-      char *msg = L_WARN "Received HELLO packet %s (%I) is inconsistent "
-	"with the primary address of interface %s.";
-
-      if ((ifa->type != OSPF_IT_PTP) &&
-	  !ipa_equal(mask, ipa_mkmask(ifa->iface->addr->pxlen)))
-	{
-	  if (!n) log(msg, "netmask", mask, ifa->iface->name);
-	  return;
-	}
-
-      /* This check is not specified in RFC 2328, but it is needed
-       * to handle the case when there is more IP networks on one
-       * physical network (which is not handled in RFC 2328).
-       * We allow OSPF on primary IP address only and ignore HELLO packets
-       * with secondary addresses (which are sent for example by Quagga.
-       */
-      if ((ifa->iface->addr->flags & IA_UNNUMBERED) ?
-	  !ipa_equal(faddr, ifa->iface->addr->opposite) :
-	  !ipa_equal(ipa_and(faddr,mask), ifa->iface->addr->prefix))
-	{
-	  if (!n) log(msg, "address", faddr, ifa->iface->name);
-	  return;
-	}
-    }
+  if ((ifa->type != OSPF_IT_VLINK) &&
+      (ifa->type != OSPF_IT_PTP) &&
+      !ipa_equal(mask, ipa_mkmask(ifa->addr->pxlen)))
+  {
+    log(L_ERR "%s%I - netmask mismatch (%I)", beg, faddr, mask);
+    return;
+  }
 #endif
 
   tmp = ntohs(ps->helloint);
   if (tmp != ifa->helloint)
   {
-    log(L_ERR "%s%I%shello interval mismatch (%d).", beg, faddr, rec, tmp);
+    log(L_ERR "%s%I - hello interval mismatch (%d)", beg, faddr, tmp);
     return;
   }
 
@@ -109,14 +90,14 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
 #endif
   if (tmp != ifa->dead)
   {
-    log(L_ERR "%s%I%sdead interval mismatch (%d).", beg, faddr, rec, tmp);
+    log(L_ERR "%s%I - dead interval mismatch (%d)", beg, faddr, tmp);
     return;
   }
 
   tmp = !(ps->options & OPT_E);
-  if (tmp != ifa->oa->stub)
+  if (tmp != !!ifa->oa->stub)
   {
-    log(L_ERR "%s%I%sstub area flag mismatch (%d).", beg, faddr, rec, tmp);
+    log(L_ERR "%s%I - stub area flag mismatch (%d)", beg, faddr, tmp);
     return;
   }
 
@@ -137,7 +118,7 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
       }
       if ((found == 0) && (ifa->strictnbma))
       {
-	log(L_WARN "Ignoring new neighbor: %I on %s.", faddr,
+	log(L_WARN "Ignoring new neighbor: %I on %s", faddr,
 	    ifa->iface->name);
 	return;
       }
@@ -153,7 +134,7 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
 	}
       }
     }
-    OSPF_TRACE(D_EVENTS, "New neighbor found: %I on %s.", faddr,
+    OSPF_TRACE(D_EVENTS, "New neighbor found: %I on %s", faddr,
 	       ifa->iface->name);
 
     n = ospf_neighbor_new(ifa);
@@ -188,11 +169,11 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
   if (!twoway)
     ospf_neigh_sm(n, INM_1WAYREC);
 
-  olddr = n->dr;
-  oldbdr = n->bdr;
-  oldpriority = n->priority;
+  u32 olddr = n->dr;
+  u32 oldbdr = n->bdr;
+  u32 oldpriority = n->priority;
 #ifdef OSPFv3
-  oldiface_id = n->iface_id;
+  u32 oldiface_id = n->iface_id;
 #endif
 
   n->dr = ntohl(ps->dr);
@@ -273,18 +254,18 @@ ospf_hello_send(timer *timer, int poll, struct ospf_neighbor *dirn)
     return;			/* Don't send any packet on stub iface */
 
   p = (struct proto *) (ifa->oa->po);
-  DBG("%s: Hello/Poll timer fired on interface %s.\n",
-      p->name, ifa->iface->name);
+  DBG("%s: Hello/Poll timer fired on interface %s with IP %I\n",
+      p->name, ifa->iface->name, ifa->addr->ip);
 
   /* Now we should send a hello packet */
-  pkt = (struct ospf_hello_packet *) (ifa->sk->tbuf);
-  op = (struct ospf_packet *) pkt;
+  pkt = ospf_tx_buffer(ifa);
+  op = &pkt->ospf_packet;
 
   /* Now fill ospf_hello header */
   ospf_pkt_fill_hdr(ifa, pkt, HELLO_P);
 
 #ifdef OSPFv2
-  pkt->netmask = ipa_mkmask(ifa->iface->addr->pxlen);
+  pkt->netmask = ipa_mkmask(ifa->addr->pxlen);
   ipa_hton(pkt->netmask);
   if ((ifa->type == OSPF_IT_VLINK) || (ifa->type == OSPF_IT_PTP))
     pkt->netmask = IPA_NONE;

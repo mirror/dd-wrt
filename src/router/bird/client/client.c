@@ -25,8 +25,10 @@
 #include "client/client.h"
 #include "sysdep/unix/unix.h"
 
-static char *opt_list = "s:v";
+static char *opt_list = "s:vr";
 static int verbose;
+static char *init_cmd;
+static int once;
 
 static char *server_path = PATH_CONTROL_SOCKET;
 static int server_fd;
@@ -49,7 +51,7 @@ static int num_lines, skip_input, interactive;
 static void
 usage(void)
 {
-  fprintf(stderr, "Usage: birdc [-s <control-socket>] [-v]\n");
+  fprintf(stderr, "Usage: birdc [-s <control-socket>] [-v] [-r]\n");
   exit(1);
 }
 
@@ -67,11 +69,36 @@ parse_args(int argc, char **argv)
       case 'v':
 	verbose++;
 	break;
+      case 'r':
+	init_cmd = "restrict";
+	break;
       default:
 	usage();
       }
+
+  /* If some arguments are not options, we take it as commands */
   if (optind < argc)
-    usage();
+    {
+      char *tmp;
+      int i;
+      int len = 0;
+
+      if (init_cmd)
+	usage();
+
+      for (i = optind; i < argc; i++)
+	len += strlen(argv[i]) + 1;
+
+      tmp = init_cmd = malloc(len);
+      for (i = optind; i < argc; i++)
+	{
+	  strcpy(tmp, argv[i]);
+	  tmp += strlen(tmp);
+	  *tmp++ = ' ';
+	}
+
+      once = 1;
+    }
 }
 
 /*** Input ***/
@@ -267,11 +294,29 @@ update_state(void)
   if (nstate == cstate)
     return;
 
+  if (init_cmd)
+    {
+      /* First transition - client received hello from BIRD
+	 and there is waiting initial command */
+      submit_server_command(init_cmd);
+      init_cmd = NULL;
+      return;
+    }
+
+  if (!init_cmd && once)
+    {
+      /* Initial command is finished and we want to exit */
+      cleanup();
+      exit(0);
+    }
+
   if (nstate == STATE_PROMPT)
-    if (input_initialized)
-      input_reveal();
-    else
-      input_init();
+    {
+      if (input_initialized)
+	input_reveal();
+      else
+	input_init();
+    }
 
   if (nstate != STATE_PROMPT)
     input_hide();
@@ -329,6 +374,8 @@ server_connect(void)
     die("fcntl: %m");
 }
 
+#define PRINTF(LEN, PARGS...) do { if (!skip_input) len = printf(PARGS); } while(0)
+
 static void
 server_got_reply(char *x)
 {
@@ -336,15 +383,15 @@ server_got_reply(char *x)
   int len = 0;
 
   if (*x == '+')			/* Async reply */
-    skip_input || (len = printf(">>> %s\n", x+1));
+    PRINTF(len, ">>> %s\n", x+1);
   else if (x[0] == ' ')			/* Continuation */
-    skip_input || (len = printf("%s%s\n", verbose ? "     " : "", x+1));
+    PRINTF(len, "%s%s\n", verbose ? "     " : "", x+1);
   else if (strlen(x) > 4 &&
 	   sscanf(x, "%d", &code) == 1 && code >= 0 && code < 10000 &&
 	   (x[4] == ' ' || x[4] == '-'))
     {
       if (code)
-	skip_input || (len = printf("%s\n", verbose ? x : x+5));
+	PRINTF(len, "%s\n", verbose ? x : x+5);
       if (x[4] == ' ')
       {
 	nstate = STATE_PROMPT;
@@ -353,7 +400,7 @@ server_got_reply(char *x)
       }
     }
   else
-    skip_input || (len = printf("??? <%s>\n", x));
+    PRINTF(len, "??? <%s>\n", x);
 
   if (skip_input)
     return;
