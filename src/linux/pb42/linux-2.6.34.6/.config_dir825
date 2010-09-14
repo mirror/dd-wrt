@@ -380,7 +380,7 @@ CONFIG_TCP_CONG_WESTWOOD=y
 # CONFIG_TCP_CONG_HTCP is not set
 # CONFIG_TCP_CONG_HSTCP is not set
 # CONFIG_TCP_CONG_HYBLA is not set
-# CONFIG_TCP_CONG_VEGAS is not set
+CONFIG_TCP_CONG_VEGAS=y
 # CONFIG_TCP_CONG_SCALABLE is not set
 # CONFIG_TCP_CONG_LP is not set
 # CONFIG_TCP_CONG_VENO is not set
@@ -999,7 +999,7 @@ CONFIG_N_HDLC=m
 # CONFIG_RISCOM8 is not set
 # CONFIG_SPECIALIX is not set
 # CONFIG_STALDRV is not set
-CONFIG_NOZOMI=m
+# CONFIG_NOZOMI is not set
 
 #
 # Serial drivers
