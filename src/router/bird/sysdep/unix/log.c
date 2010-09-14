@@ -194,7 +194,7 @@ die(char *msg, ...)
  * to the debugging output. No newline character is appended.
  */
 void
-bdebug(char *msg, ...)
+debug(char *msg, ...)
 {
   va_list args;
   char buf[1024];

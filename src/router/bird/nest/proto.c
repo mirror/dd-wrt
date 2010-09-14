@@ -485,27 +485,27 @@ protos_dump_all(void)
 {
   struct proto *p;
 
-  bdebug("Protocols:\n");
+  debug("Protocols:\n");
 
   WALK_LIST(p, active_proto_list)
     {
-      bdebug("  protocol %s state %s/%s\n", p->name,
+      debug("  protocol %s state %s/%s\n", p->name,
 	    p_states[p->proto_state], c_states[p->core_state]);
       if (p->in_filter)
-	bdebug("\tInput filter: %s\n", filter_name(p->in_filter));
+	debug("\tInput filter: %s\n", filter_name(p->in_filter));
       if (p->out_filter != FILTER_REJECT)
-	bdebug("\tOutput filter: %s\n", filter_name(p->out_filter));
+	debug("\tOutput filter: %s\n", filter_name(p->out_filter));
       if (p->disabled)
-	bdebug("\tDISABLED\n");
+	debug("\tDISABLED\n");
       else if (p->proto->dump)
 	p->proto->dump(p);
     }
   WALK_LIST(p, inactive_proto_list)
-    bdebug("  inactive %s: state %s/%s\n", p->name, p_states[p->proto_state], c_states[p->core_state]);
+    debug("  inactive %s: state %s/%s\n", p->name, p_states[p->proto_state], c_states[p->core_state]);
   WALK_LIST(p, initial_proto_list)
-    bdebug("  initial %s\n", p->name);
+    debug("  initial %s\n", p->name);
   WALK_LIST(p, flush_proto_list)
-    bdebug("  flushing %s\n", p->name);
+    debug("  flushing %s\n", p->name);
 }
 
 /**

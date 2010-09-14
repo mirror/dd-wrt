@@ -90,7 +90,7 @@ pool_dump(resource *P)
   pool *p = (pool *) P;
   resource *r;
 
-  bdebug("%s\n", p->name);
+  debug("%s\n", p->name);
   indent += 3;
   WALK_LIST(r, p->inside)
     rdump(r);
@@ -182,14 +182,14 @@ rdump(void *res)
   resource *r = res;
 
   bsprintf(x, "%%%ds%%p ", indent);
-  bdebug(x, "", r);
+  debug(x, "", r);
   if (r)
     {
-      bdebug("%s ", r->class->name);
+      debug("%s ", r->class->name);
       r->class->dump(r);
     }
   else
-    bdebug("NULL\n");
+    debug("NULL\n");
 }
 
 size_t
@@ -240,11 +240,11 @@ rlookup(unsigned long a)
 {
   resource *r;
 
-  bdebug("Looking up %08lx\n", a);
+  debug("Looking up %08lx\n", a);
   if (r = pool_lookup(&root_pool.r, a))
     rdump(r);
   else
-    bdebug("Not found.\n");
+    debug("Not found.\n");
 }
 
 /**
@@ -290,7 +290,7 @@ static void mbl_debug(resource *r)
 {
   struct mblock *m = (struct mblock *) r;
 
-  bdebug("(size=%d)\n", m->size);
+  debug("(size=%d)\n", m->size);
 }
 
 static resource *

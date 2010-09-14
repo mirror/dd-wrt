@@ -56,13 +56,12 @@ void bug(char *msg, ...) NORET;
 #define L_FATAL "\010"			/* Fatal errors */
 #define L_BUG "\011"			/* BIRD bugs */
 
-//#define debug(a, args...) 
-void bdebug(char *msg, ...);		/* Printf to debug output */
+void debug(char *msg, ...);		/* Printf to debug output */
 
 /* Debugging */
 
 #if defined(LOCAL_DEBUG) || defined(GLOBAL_DEBUG)
-#define DBG(x, y...) bdebug(x, ##y)
+#define DBG(x, y...) debug(x, ##y)
 #else
 #define DBG(x, y...) do { } while(0)
 #endif

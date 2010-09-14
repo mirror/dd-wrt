@@ -474,14 +474,14 @@ krt_dump(struct proto *P)
 
   if (!KRT_CF->learn)
     return;
-  bdebug("KRT: Table of inheritable routes\n");
+  debug("KRT: Table of inheritable routes\n");
   rt_dump(&p->krt_table);
 }
 
 static void
 krt_dump_attrs(rte *e)
 {
-  bdebug(" [m=%d,p=%d,t=%d]", e->u.krt.metric, e->u.krt.proto, e->u.krt.type);
+  debug(" [m=%d,p=%d,t=%d]", e->u.krt.metric, e->u.krt.proto, e->u.krt.type);
 }
 
 #endif
