@@ -1,9 +1,9 @@
 libnltiny:
-	$(MAKE) CFLAGS="$(COPTS)" -C libnl-tiny 
+	$(MAKE) CFLAGS="$(COPTS) -fPIC" -C libnl-tiny 
 
 libnltiny-clean:
 	$(MAKE) -C libnl-tiny clean
+	@true
 
 libnltiny-install:
-	@true
-	#install -D libnl-tiny/libnl-tiny.so $(INSTALLDIR)/libnltiny/usr/lib/libnl-tiny.so
+	install -D libnl-tiny/libnl-tiny.so $(INSTALLDIR)/libnltiny/usr/lib/libnl-tiny.so
