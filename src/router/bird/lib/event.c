@@ -39,7 +39,7 @@ ev_dump(resource *r)
 {
   event *e = (event *) r;
 
-  bdebug("(code %p, data %p, %s)\n",
+  debug("(code %p, data %p, %s)\n",
 	e->hook,
 	e->data,
 	e->n.next ? "scheduled" : "inactive");

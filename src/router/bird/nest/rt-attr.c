@@ -450,36 +450,36 @@ ea_dump(ea_list *e)
 
   if (!e)
     {
-      bdebug("NONE");
+      debug("NONE");
       return;
     }
   while (e)
     {
-      bdebug("[%c%c%c]",
+      debug("[%c%c%c]",
 	    (e->flags & EALF_SORTED) ? 'S' : 's',
 	    (e->flags & EALF_BISECT) ? 'B' : 'b',
 	    (e->flags & EALF_CACHED) ? 'C' : 'c');
       for(i=0; i<e->count; i++)
 	{
 	  eattr *a = &e->attrs[i];
-	  bdebug(" %02x:%02x.%02x", EA_PROTO(a->id), EA_ID(a->id), a->flags);
+	  debug(" %02x:%02x.%02x", EA_PROTO(a->id), EA_ID(a->id), a->flags);
 	  if (a->type & EAF_TEMP)
-	    bdebug("T");
-	  bdebug("=%c", "?iO?I?P???S?????" [a->type & EAF_TYPE_MASK]);
+	    debug("T");
+	  debug("=%c", "?iO?I?P???S?????" [a->type & EAF_TYPE_MASK]);
 	  if (a->type & EAF_ORIGINATED)
-	    bdebug("o");
+	    debug("o");
 	  if (a->type & EAF_EMBEDDED)
-	    bdebug(":%08x", a->u.data);
+	    debug(":%08x", a->u.data);
 	  else
 	    {
 	      int j, len = a->u.ptr->length;
-	      bdebug("[%d]:", len);
+	      debug("[%d]:", len);
 	      for(j=0; j<len; j++)
-		bdebug("%02x", a->u.ptr->data[j]);
+		debug("%02x", a->u.ptr->data[j]);
 	    }
 	}
       if (e = e->next)
-	bdebug(" | ");
+	debug(" | ");
     }
 }
 
@@ -708,19 +708,19 @@ rta_dump(rta *a)
   static char *rtc[] = { "", " BC", " MC", " AC" };
   static char *rtd[] = { "", " DEV", " HOLE", " UNREACH", " PROHIBIT" };
 
-  bdebug("p=%s uc=%d %s %s%s%s h=%04x",
+  debug("p=%s uc=%d %s %s%s%s h=%04x",
 	a->proto->name, a->uc, rts[a->source], ip_scope_text(a->scope), rtc[a->cast],
 	rtd[a->dest], a->hash_key);
   if (!(a->aflags & RTAF_CACHED))
-    bdebug(" !CACHED");
-  bdebug(" <-%I", a->from);
+    debug(" !CACHED");
+  debug(" <-%I", a->from);
   if (a->dest == RTD_ROUTER)
-    bdebug(" ->%I", a->gw);
+    debug(" ->%I", a->gw);
   if (a->dest == RTD_DEVICE || a->dest == RTD_ROUTER)
-    bdebug(" [%s]", a->iface ? a->iface->name : "???" );
+    debug(" [%s]", a->iface ? a->iface->name : "???" );
   if (a->eattrs)
     {
-      bdebug(" EA: ");
+      debug(" EA: ");
       ea_dump(a->eattrs);
     }
 }
@@ -737,15 +737,15 @@ rta_dump_all(void)
   rta *a;
   unsigned int h;
 
-  bdebug("Route attribute cache (%d entries, rehash at %d):\n", rta_cache_count, rta_cache_limit);
+  debug("Route attribute cache (%d entries, rehash at %d):\n", rta_cache_count, rta_cache_limit);
   for(h=0; h<rta_cache_size; h++)
     for(a=rta_hash_table[h]; a; a=a->next)
       {
-	bdebug("%p ", a);
+	debug("%p ", a);
 	rta_dump(a);
-	bdebug("\n");
+	debug("\n");
       }
-  bdebug("\n");
+  debug("\n");
 }
 
 void

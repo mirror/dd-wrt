@@ -707,14 +707,14 @@ rte_dump(rte *e)
 {
   net *n = e->net;
   if (n)
-    bdebug("%-1I/%2d ", n->n.prefix, n->n.pxlen);
+    debug("%-1I/%2d ", n->n.prefix, n->n.pxlen);
   else
-    bdebug("??? ");
-  bdebug("KF=%02x PF=%02x pref=%d lm=%d ", n->n.flags, e->pflags, e->pref, now-e->lastmod);
+    debug("??? ");
+  debug("KF=%02x PF=%02x pref=%d lm=%d ", n->n.flags, e->pflags, e->pref, now-e->lastmod);
   rta_dump(e->attrs);
   if (e->attrs->proto->proto->dump_attrs)
     e->attrs->proto->proto->dump_attrs(e);
-  bdebug("\n");
+  debug("\n");
 }
 
 /**
@@ -730,7 +730,7 @@ rt_dump(rtable *t)
   net *n;
   struct announce_hook *a;
 
-  bdebug("Dump of routing table <%s>\n", t->name);
+  debug("Dump of routing table <%s>\n", t->name);
 #ifdef DEBUGGING
   fib_check(&t->fib);
 #endif
@@ -742,8 +742,8 @@ rt_dump(rtable *t)
     }
   FIB_WALK_END;
   WALK_LIST(a, t->hooks)
-    bdebug("\tAnnounces routes to protocol %s\n", a->proto->name);
-  bdebug("\n");
+    debug("\tAnnounces routes to protocol %s\n", a->proto->name);
+  debug("\n");
 }
 
 /**

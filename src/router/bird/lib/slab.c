@@ -115,7 +115,7 @@ slab_dump(resource *r)
 
   WALK_LIST(o, s->objs)
     cnt++;
-  bdebug("(%d objects per %d bytes)\n", cnt, s->size);
+  debug("(%d objects per %d bytes)\n", cnt, s->size);
 }
 
 static size_t
@@ -338,7 +338,7 @@ slab_dump(resource *r)
     pc++;
   WALK_LIST(h, s->full_heads)
     fc++;
-  bdebug("(%de+%dp+%df blocks per %d objs per %d bytes)\n", ec, pc, fc, s->objs_per_slab, s->obj_size);
+  debug("(%de+%dp+%df blocks per %d objs per %d bytes)\n", ec, pc, fc, s->objs_per_slab, s->obj_size);
 }
 
 static size_t

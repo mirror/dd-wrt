@@ -44,7 +44,7 @@ static int debug_flag = 0;
 void
 async_dump(void)
 {
-  bdebug("INTERNAL STATE DUMP\n\n");
+  debug("INTERNAL STATE DUMP\n\n");
 
   rdump(&root_pool);
   sk_dump_all();
@@ -55,7 +55,7 @@ async_dump(void)
   rt_dump_all();
   protos_dump_all();
 
-  bdebug("\n");
+  debug("\n");
 }
 
 /*

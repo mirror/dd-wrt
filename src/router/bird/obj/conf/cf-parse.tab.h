@@ -80,223 +80,229 @@
      SHORT = 296,
      LONG = 297,
      BASE = 298,
-     CONFIGURE = 299,
-     DOWN = 300,
-     KERNEL = 301,
-     PERSIST = 302,
-     SCAN = 303,
-     TIME = 304,
-     LEARN = 305,
-     DEVICE = 306,
-     ASYNC = 307,
-     TABLE = 308,
-     ROUTER = 309,
-     ID = 310,
-     PROTOCOL = 311,
-     PREFERENCE = 312,
-     DISABLED = 313,
-     DIRECT = 314,
-     INTERFACE = 315,
-     IMPORT = 316,
-     EXPORT = 317,
-     FILTER = 318,
-     NONE = 319,
-     STATES = 320,
-     ROUTES = 321,
-     FILTERS = 322,
-     PASSWORD = 323,
-     FROM = 324,
-     PASSIVE = 325,
-     TO = 326,
-     EVENTS = 327,
-     PACKETS = 328,
-     PROTOCOLS = 329,
-     INTERFACES = 330,
-     PRIMARY = 331,
-     STATS = 332,
-     COUNT = 333,
-     FOR = 334,
-     COMMANDS = 335,
-     PREEXPORT = 336,
-     GENERATE = 337,
-     LISTEN = 338,
-     BGP = 339,
-     V6ONLY = 340,
-     ADDRESS = 341,
-     PORT = 342,
-     PASSWORDS = 343,
-     DESCRIPTION = 344,
-     RELOAD = 345,
-     IN = 346,
-     OUT = 347,
-     MRTDUMP = 348,
-     MESSAGES = 349,
-     SHOW = 350,
-     STATUS = 351,
-     SUMMARY = 352,
-     ROUTE = 353,
-     SYMBOLS = 354,
-     DUMP = 355,
-     RESOURCES = 356,
-     SOCKETS = 357,
-     NEIGHBORS = 358,
-     ATTRIBUTES = 359,
-     ECHO = 360,
-     DISABLE = 361,
-     ENABLE = 362,
-     RESTART = 363,
-     FUNCTION = 364,
-     PRINT = 365,
-     PRINTN = 366,
-     UNSET = 367,
-     RETURN = 368,
-     ACCEPT = 369,
-     REJECT = 370,
-     QUITBIRD = 371,
-     INT = 372,
-     BOOL = 373,
-     IP = 374,
-     PREFIX = 375,
-     PAIR = 376,
-     SET = 377,
-     STRING = 378,
-     BGPMASK = 379,
-     BGPPATH = 380,
-     CLIST = 381,
-     IF = 382,
-     THEN = 383,
-     ELSE = 384,
-     CASE = 385,
-     TRUE = 386,
-     FALSE = 387,
-     GW = 388,
-     NET = 389,
-     MASK = 390,
-     PROTO = 391,
-     SOURCE = 392,
-     SCOPE = 393,
-     CAST = 394,
-     DEST = 395,
-     LEN = 396,
-     DEFINED = 397,
-     ADD = 398,
-     DELETE = 399,
-     CONTAINS = 400,
-     RESET = 401,
-     PREPEND = 402,
-     FIRST = 403,
-     LAST = 404,
-     MATCH = 405,
-     EMPTY = 406,
-     WHERE = 407,
-     EVAL = 408,
-     LOCAL = 409,
-     NEIGHBOR = 410,
-     AS = 411,
-     HOLD = 412,
-     CONNECT = 413,
-     RETRY = 414,
-     KEEPALIVE = 415,
-     MULTIHOP = 416,
-     STARTUP = 417,
-     VIA = 418,
-     NEXT = 419,
-     HOP = 420,
-     SELF = 421,
-     DEFAULT = 422,
-     PATH = 423,
-     METRIC = 424,
-     START = 425,
-     DELAY = 426,
-     FORGET = 427,
-     WAIT = 428,
-     AFTER = 429,
-     BGP_PATH = 430,
-     BGP_LOCAL_PREF = 431,
-     BGP_MED = 432,
-     BGP_ORIGIN = 433,
-     BGP_NEXT_HOP = 434,
-     BGP_ATOMIC_AGGR = 435,
-     BGP_AGGREGATOR = 436,
-     BGP_COMMUNITY = 437,
-     RR = 438,
-     RS = 439,
-     CLIENT = 440,
-     CLUSTER = 441,
-     AS4 = 442,
-     ADVERTISE = 443,
-     IPV4 = 444,
-     CAPABILITIES = 445,
-     LIMIT = 446,
-     PREFER = 447,
-     OLDER = 448,
-     MISSING = 449,
-     LLADDR = 450,
-     DROP = 451,
-     IGNORE = 452,
-     REFRESH = 453,
-     INTERPRET = 454,
-     COMMUNITIES = 455,
-     OSPF = 456,
-     AREA = 457,
-     OSPF_METRIC1 = 458,
-     OSPF_METRIC2 = 459,
-     OSPF_TAG = 460,
-     OSPF_ROUTER_ID = 461,
-     BROADCAST = 462,
-     RFC1583COMPAT = 463,
-     STUB = 464,
-     TICK = 465,
-     COST = 466,
-     RETRANSMIT = 467,
-     HELLO = 468,
-     TRANSMIT = 469,
-     PRIORITY = 470,
-     DEAD = 471,
-     NONBROADCAST = 472,
-     POINTOPOINT = 473,
-     TYPE = 474,
-     SIMPLE = 475,
-     AUTHENTICATION = 476,
-     STRICT = 477,
-     CRYPTOGRAPHIC = 478,
-     ELIGIBLE = 479,
-     POLL = 480,
-     NETWORKS = 481,
-     HIDDEN = 482,
-     VIRTUAL = 483,
-     LINK = 484,
-     RX = 485,
-     BUFFER = 486,
-     LARGE = 487,
-     NORMAL = 488,
-     STUBNET = 489,
-     LSADB = 490,
-     TOPOLOGY = 491,
-     STATE = 492,
-     PIPE = 493,
-     PEER = 494,
-     MODE = 495,
-     OPAQUE = 496,
-     TRANSPARENT = 497,
-     RIP = 498,
-     INFINITY = 499,
-     PERIOD = 500,
-     GARBAGE = 501,
-     TIMEOUT = 502,
-     MULTICAST = 503,
-     QUIET = 504,
-     NOLISTEN = 505,
-     VERSION1 = 506,
-     PLAINTEXT = 507,
-     MD5 = 508,
-     HONOR = 509,
-     NEVER = 510,
-     ALWAYS = 511,
-     RIP_METRIC = 512,
-     RIP_TAG = 513,
-     STATIC = 514,
-     PROHIBIT = 515
+     NAME = 299,
+     CONFIGURE = 300,
+     DOWN = 301,
+     KERNEL = 302,
+     PERSIST = 303,
+     SCAN = 304,
+     TIME = 305,
+     LEARN = 306,
+     DEVICE = 307,
+     ROUTES = 308,
+     ASYNC = 309,
+     TABLE = 310,
+     ROUTER = 311,
+     ID = 312,
+     PROTOCOL = 313,
+     PREFERENCE = 314,
+     DISABLED = 315,
+     DIRECT = 316,
+     INTERFACE = 317,
+     IMPORT = 318,
+     EXPORT = 319,
+     FILTER = 320,
+     NONE = 321,
+     STATES = 322,
+     FILTERS = 323,
+     PASSWORD = 324,
+     FROM = 325,
+     PASSIVE = 326,
+     TO = 327,
+     EVENTS = 328,
+     PACKETS = 329,
+     PROTOCOLS = 330,
+     INTERFACES = 331,
+     PRIMARY = 332,
+     STATS = 333,
+     COUNT = 334,
+     FOR = 335,
+     COMMANDS = 336,
+     PREEXPORT = 337,
+     GENERATE = 338,
+     LISTEN = 339,
+     BGP = 340,
+     V6ONLY = 341,
+     ADDRESS = 342,
+     PORT = 343,
+     PASSWORDS = 344,
+     DESCRIPTION = 345,
+     RELOAD = 346,
+     IN = 347,
+     OUT = 348,
+     MRTDUMP = 349,
+     MESSAGES = 350,
+     RESTRICT = 351,
+     MEMORY = 352,
+     SHOW = 353,
+     STATUS = 354,
+     SUMMARY = 355,
+     ROUTE = 356,
+     SYMBOLS = 357,
+     DUMP = 358,
+     RESOURCES = 359,
+     SOCKETS = 360,
+     NEIGHBORS = 361,
+     ATTRIBUTES = 362,
+     ECHO = 363,
+     DISABLE = 364,
+     ENABLE = 365,
+     RESTART = 366,
+     FUNCTION = 367,
+     PRINT = 368,
+     PRINTN = 369,
+     UNSET = 370,
+     RETURN = 371,
+     ACCEPT = 372,
+     REJECT = 373,
+     QUITBIRD = 374,
+     INT = 375,
+     BOOL = 376,
+     IP = 377,
+     PREFIX = 378,
+     PAIR = 379,
+     QUAD = 380,
+     SET = 381,
+     STRING = 382,
+     BGPMASK = 383,
+     BGPPATH = 384,
+     CLIST = 385,
+     IF = 386,
+     THEN = 387,
+     ELSE = 388,
+     CASE = 389,
+     TRUE = 390,
+     FALSE = 391,
+     GW = 392,
+     NET = 393,
+     MASK = 394,
+     PROTO = 395,
+     SOURCE = 396,
+     SCOPE = 397,
+     CAST = 398,
+     DEST = 399,
+     LEN = 400,
+     DEFINED = 401,
+     ADD = 402,
+     DELETE = 403,
+     CONTAINS = 404,
+     RESET = 405,
+     PREPEND = 406,
+     FIRST = 407,
+     LAST = 408,
+     MATCH = 409,
+     EMPTY = 410,
+     WHERE = 411,
+     EVAL = 412,
+     LOCAL = 413,
+     NEIGHBOR = 414,
+     AS = 415,
+     HOLD = 416,
+     CONNECT = 417,
+     RETRY = 418,
+     KEEPALIVE = 419,
+     MULTIHOP = 420,
+     STARTUP = 421,
+     VIA = 422,
+     NEXT = 423,
+     HOP = 424,
+     SELF = 425,
+     DEFAULT = 426,
+     PATH = 427,
+     METRIC = 428,
+     START = 429,
+     DELAY = 430,
+     FORGET = 431,
+     WAIT = 432,
+     AFTER = 433,
+     BGP_PATH = 434,
+     BGP_LOCAL_PREF = 435,
+     BGP_MED = 436,
+     BGP_ORIGIN = 437,
+     BGP_NEXT_HOP = 438,
+     BGP_ATOMIC_AGGR = 439,
+     BGP_AGGREGATOR = 440,
+     BGP_COMMUNITY = 441,
+     RR = 442,
+     RS = 443,
+     CLIENT = 444,
+     CLUSTER = 445,
+     AS4 = 446,
+     ADVERTISE = 447,
+     IPV4 = 448,
+     CAPABILITIES = 449,
+     LIMIT = 450,
+     PREFER = 451,
+     OLDER = 452,
+     MISSING = 453,
+     LLADDR = 454,
+     DROP = 455,
+     IGNORE = 456,
+     REFRESH = 457,
+     INTERPRET = 458,
+     COMMUNITIES = 459,
+     BGP_ORIGINATOR_ID = 460,
+     BGP_CLUSTER_LIST = 461,
+     OSPF = 462,
+     AREA = 463,
+     OSPF_METRIC1 = 464,
+     OSPF_METRIC2 = 465,
+     OSPF_TAG = 466,
+     OSPF_ROUTER_ID = 467,
+     BROADCAST = 468,
+     RFC1583COMPAT = 469,
+     STUB = 470,
+     TICK = 471,
+     COST = 472,
+     RETRANSMIT = 473,
+     HELLO = 474,
+     TRANSMIT = 475,
+     PRIORITY = 476,
+     DEAD = 477,
+     NONBROADCAST = 478,
+     POINTOPOINT = 479,
+     TYPE = 480,
+     SIMPLE = 481,
+     AUTHENTICATION = 482,
+     STRICT = 483,
+     CRYPTOGRAPHIC = 484,
+     ELIGIBLE = 485,
+     POLL = 486,
+     NETWORKS = 487,
+     HIDDEN = 488,
+     VIRTUAL = 489,
+     LINK = 490,
+     RX = 491,
+     BUFFER = 492,
+     LARGE = 493,
+     NORMAL = 494,
+     STUBNET = 495,
+     LSADB = 496,
+     TOPOLOGY = 497,
+     STATE = 498,
+     PIPE = 499,
+     PEER = 500,
+     MODE = 501,
+     OPAQUE = 502,
+     TRANSPARENT = 503,
+     RIP = 504,
+     INFINITY = 505,
+     PERIOD = 506,
+     GARBAGE = 507,
+     TIMEOUT = 508,
+     MULTICAST = 509,
+     QUIET = 510,
+     NOLISTEN = 511,
+     VERSION1 = 512,
+     PLAINTEXT = 513,
+     MD5 = 514,
+     HONOR = 515,
+     NEVER = 516,
+     ALWAYS = 517,
+     RIP_METRIC = 518,
+     RIP_TAG = 519,
+     STATIC = 520,
+     PROHIBIT = 521
    };
 #endif
 /* Tokens.  */
@@ -341,223 +347,229 @@
 #define SHORT 296
 #define LONG 297
 #define BASE 298
-#define CONFIGURE 299
-#define DOWN 300
-#define KERNEL 301
-#define PERSIST 302
-#define SCAN 303
-#define TIME 304
-#define LEARN 305
-#define DEVICE 306
-#define ASYNC 307
-#define TABLE 308
-#define ROUTER 309
-#define ID 310
-#define PROTOCOL 311
-#define PREFERENCE 312
-#define DISABLED 313
-#define DIRECT 314
-#define INTERFACE 315
-#define IMPORT 316
-#define EXPORT 317
-#define FILTER 318
-#define NONE 319
-#define STATES 320
-#define ROUTES 321
-#define FILTERS 322
-#define PASSWORD 323
-#define FROM 324
-#define PASSIVE 325
-#define TO 326
-#define EVENTS 327
-#define PACKETS 328
-#define PROTOCOLS 329
-#define INTERFACES 330
-#define PRIMARY 331
-#define STATS 332
-#define COUNT 333
-#define FOR 334
-#define COMMANDS 335
-#define PREEXPORT 336
-#define GENERATE 337
-#define LISTEN 338
-#define BGP 339
-#define V6ONLY 340
-#define ADDRESS 341
-#define PORT 342
-#define PASSWORDS 343
-#define DESCRIPTION 344
-#define RELOAD 345
-#define IN 346
-#define OUT 347
-#define MRTDUMP 348
-#define MESSAGES 349
-#define SHOW 350
-#define STATUS 351
-#define SUMMARY 352
-#define ROUTE 353
-#define SYMBOLS 354
-#define DUMP 355
-#define RESOURCES 356
-#define SOCKETS 357
-#define NEIGHBORS 358
-#define ATTRIBUTES 359
-#define ECHO 360
-#define DISABLE 361
-#define ENABLE 362
-#define RESTART 363
-#define FUNCTION 364
-#define PRINT 365
-#define PRINTN 366
-#define UNSET 367
-#define RETURN 368
-#define ACCEPT 369
-#define REJECT 370
-#define QUITBIRD 371
-#define INT 372
-#define BOOL 373
-#define IP 374
-#define PREFIX 375
-#define PAIR 376
-#define SET 377
-#define STRING 378
-#define BGPMASK 379
-#define BGPPATH 380
-#define CLIST 381
-#define IF 382
-#define THEN 383
-#define ELSE 384
-#define CASE 385
-#define TRUE 386
-#define FALSE 387
-#define GW 388
-#define NET 389
-#define MASK 390
-#define PROTO 391
-#define SOURCE 392
-#define SCOPE 393
-#define CAST 394
-#define DEST 395
-#define LEN 396
-#define DEFINED 397
-#define ADD 398
-#define DELETE 399
-#define CONTAINS 400
-#define RESET 401
-#define PREPEND 402
-#define FIRST 403
-#define LAST 404
-#define MATCH 405
-#define EMPTY 406
-#define WHERE 407
-#define EVAL 408
-#define LOCAL 409
-#define NEIGHBOR 410
-#define AS 411
-#define HOLD 412
-#define CONNECT 413
-#define RETRY 414
-#define KEEPALIVE 415
-#define MULTIHOP 416
-#define STARTUP 417
-#define VIA 418
-#define NEXT 419
-#define HOP 420
-#define SELF 421
-#define DEFAULT 422
-#define PATH 423
-#define METRIC 424
-#define START 425
-#define DELAY 426
-#define FORGET 427
-#define WAIT 428
-#define AFTER 429
-#define BGP_PATH 430
-#define BGP_LOCAL_PREF 431
-#define BGP_MED 432
-#define BGP_ORIGIN 433
-#define BGP_NEXT_HOP 434
-#define BGP_ATOMIC_AGGR 435
-#define BGP_AGGREGATOR 436
-#define BGP_COMMUNITY 437
-#define RR 438
-#define RS 439
-#define CLIENT 440
-#define CLUSTER 441
-#define AS4 442
-#define ADVERTISE 443
-#define IPV4 444
-#define CAPABILITIES 445
-#define LIMIT 446
-#define PREFER 447
-#define OLDER 448
-#define MISSING 449
-#define LLADDR 450
-#define DROP 451
-#define IGNORE 452
-#define REFRESH 453
-#define INTERPRET 454
-#define COMMUNITIES 455
-#define OSPF 456
-#define AREA 457
-#define OSPF_METRIC1 458
-#define OSPF_METRIC2 459
-#define OSPF_TAG 460
-#define OSPF_ROUTER_ID 461
-#define BROADCAST 462
-#define RFC1583COMPAT 463
-#define STUB 464
-#define TICK 465
-#define COST 466
-#define RETRANSMIT 467
-#define HELLO 468
-#define TRANSMIT 469
-#define PRIORITY 470
-#define DEAD 471
-#define NONBROADCAST 472
-#define POINTOPOINT 473
-#define TYPE 474
-#define SIMPLE 475
-#define AUTHENTICATION 476
-#define STRICT 477
-#define CRYPTOGRAPHIC 478
-#define ELIGIBLE 479
-#define POLL 480
-#define NETWORKS 481
-#define HIDDEN 482
-#define VIRTUAL 483
-#define LINK 484
-#define RX 485
-#define BUFFER 486
-#define LARGE 487
-#define NORMAL 488
-#define STUBNET 489
-#define LSADB 490
-#define TOPOLOGY 491
-#define STATE 492
-#define PIPE 493
-#define PEER 494
-#define MODE 495
-#define OPAQUE 496
-#define TRANSPARENT 497
-#define RIP 498
-#define INFINITY 499
-#define PERIOD 500
-#define GARBAGE 501
-#define TIMEOUT 502
-#define MULTICAST 503
-#define QUIET 504
-#define NOLISTEN 505
-#define VERSION1 506
-#define PLAINTEXT 507
-#define MD5 508
-#define HONOR 509
-#define NEVER 510
-#define ALWAYS 511
-#define RIP_METRIC 512
-#define RIP_TAG 513
-#define STATIC 514
-#define PROHIBIT 515
+#define NAME 299
+#define CONFIGURE 300
+#define DOWN 301
+#define KERNEL 302
+#define PERSIST 303
+#define SCAN 304
+#define TIME 305
+#define LEARN 306
+#define DEVICE 307
+#define ROUTES 308
+#define ASYNC 309
+#define TABLE 310
+#define ROUTER 311
+#define ID 312
+#define PROTOCOL 313
+#define PREFERENCE 314
+#define DISABLED 315
+#define DIRECT 316
+#define INTERFACE 317
+#define IMPORT 318
+#define EXPORT 319
+#define FILTER 320
+#define NONE 321
+#define STATES 322
+#define FILTERS 323
+#define PASSWORD 324
+#define FROM 325
+#define PASSIVE 326
+#define TO 327
+#define EVENTS 328
+#define PACKETS 329
+#define PROTOCOLS 330
+#define INTERFACES 331
+#define PRIMARY 332
+#define STATS 333
+#define COUNT 334
+#define FOR 335
+#define COMMANDS 336
+#define PREEXPORT 337
+#define GENERATE 338
+#define LISTEN 339
+#define BGP 340
+#define V6ONLY 341
+#define ADDRESS 342
+#define PORT 343
+#define PASSWORDS 344
+#define DESCRIPTION 345
+#define RELOAD 346
+#define IN 347
+#define OUT 348
+#define MRTDUMP 349
+#define MESSAGES 350
+#define RESTRICT 351
+#define MEMORY 352
+#define SHOW 353
+#define STATUS 354
+#define SUMMARY 355
+#define ROUTE 356
+#define SYMBOLS 357
+#define DUMP 358
+#define RESOURCES 359
+#define SOCKETS 360
+#define NEIGHBORS 361
+#define ATTRIBUTES 362
+#define ECHO 363
+#define DISABLE 364
+#define ENABLE 365
+#define RESTART 366
+#define FUNCTION 367
+#define PRINT 368
+#define PRINTN 369
+#define UNSET 370
+#define RETURN 371
+#define ACCEPT 372
+#define REJECT 373
+#define QUITBIRD 374
+#define INT 375
+#define BOOL 376
+#define IP 377
+#define PREFIX 378
+#define PAIR 379
+#define QUAD 380
+#define SET 381
+#define STRING 382
+#define BGPMASK 383
+#define BGPPATH 384
+#define CLIST 385
+#define IF 386
+#define THEN 387
+#define ELSE 388
+#define CASE 389
+#define TRUE 390
+#define FALSE 391
+#define GW 392
+#define NET 393
+#define MASK 394
+#define PROTO 395
+#define SOURCE 396
+#define SCOPE 397
+#define CAST 398
+#define DEST 399
+#define LEN 400
+#define DEFINED 401
+#define ADD 402
+#define DELETE 403
+#define CONTAINS 404
+#define RESET 405
+#define PREPEND 406
+#define FIRST 407
+#define LAST 408
+#define MATCH 409
+#define EMPTY 410
+#define WHERE 411
+#define EVAL 412
+#define LOCAL 413
+#define NEIGHBOR 414
+#define AS 415
+#define HOLD 416
+#define CONNECT 417
+#define RETRY 418
+#define KEEPALIVE 419
+#define MULTIHOP 420
+#define STARTUP 421
+#define VIA 422
+#define NEXT 423
+#define HOP 424
+#define SELF 425
+#define DEFAULT 426
+#define PATH 427
+#define METRIC 428
+#define START 429
+#define DELAY 430
+#define FORGET 431
+#define WAIT 432
+#define AFTER 433
+#define BGP_PATH 434
+#define BGP_LOCAL_PREF 435
+#define BGP_MED 436
+#define BGP_ORIGIN 437
+#define BGP_NEXT_HOP 438
+#define BGP_ATOMIC_AGGR 439
+#define BGP_AGGREGATOR 440
+#define BGP_COMMUNITY 441
+#define RR 442
+#define RS 443
+#define CLIENT 444
+#define CLUSTER 445
+#define AS4 446
+#define ADVERTISE 447
+#define IPV4 448
+#define CAPABILITIES 449
+#define LIMIT 450
+#define PREFER 451
+#define OLDER 452
+#define MISSING 453
+#define LLADDR 454
+#define DROP 455
+#define IGNORE 456
+#define REFRESH 457
+#define INTERPRET 458
+#define COMMUNITIES 459
+#define BGP_ORIGINATOR_ID 460
+#define BGP_CLUSTER_LIST 461
+#define OSPF 462
+#define AREA 463
+#define OSPF_METRIC1 464
+#define OSPF_METRIC2 465
+#define OSPF_TAG 466
+#define OSPF_ROUTER_ID 467
+#define BROADCAST 468
+#define RFC1583COMPAT 469
+#define STUB 470
+#define TICK 471
+#define COST 472
+#define RETRANSMIT 473
+#define HELLO 474
+#define TRANSMIT 475
+#define PRIORITY 476
+#define DEAD 477
+#define NONBROADCAST 478
+#define POINTOPOINT 479
+#define TYPE 480
+#define SIMPLE 481
+#define AUTHENTICATION 482
+#define STRICT 483
+#define CRYPTOGRAPHIC 484
+#define ELIGIBLE 485
+#define POLL 486
+#define NETWORKS 487
+#define HIDDEN 488
+#define VIRTUAL 489
+#define LINK 490
+#define RX 491
+#define BUFFER 492
+#define LARGE 493
+#define NORMAL 494
+#define STUBNET 495
+#define LSADB 496
+#define TOPOLOGY 497
+#define STATE 498
+#define PIPE 499
+#define PEER 500
+#define MODE 501
+#define OPAQUE 502
+#define TRANSPARENT 503
+#define RIP 504
+#define INFINITY 505
+#define PERIOD 506
+#define GARBAGE 507
+#define TIMEOUT 508
+#define MULTICAST 509
+#define QUIET 510
+#define NOLISTEN 511
+#define VERSION1 512
+#define PLAINTEXT 513
+#define MD5 514
+#define HONOR 515
+#define NEVER 516
+#define ALWAYS 517
+#define RIP_METRIC 518
+#define RIP_TAG 519
+#define STATIC 520
+#define PROHIBIT 521
 
 
 
@@ -583,10 +595,11 @@ typedef union YYSTYPE
   void *g;
   bird_clock_t time;
   struct prefix px;
+  struct proto_spec ps;
   struct timeformat *tf;
 }
 /* Line 1489 of yacc.c.  */
-#line 590 "cf-parse.tab.h"
+#line 603 "cf-parse.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
