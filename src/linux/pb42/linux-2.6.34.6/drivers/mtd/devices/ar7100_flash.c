@@ -203,7 +203,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i + 15] == 0x27051956) {
-			printk(KERN_EMERG "WRT160NL uboot detected\n");
+			printk(KERN_EMERG "WRT160NL/E2100L uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
 		if (ofs[i] == SQUASHFS_MAGIC) {
