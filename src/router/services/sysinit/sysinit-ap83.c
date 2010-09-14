@@ -174,7 +174,11 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	unsigned char buf2[256];
 	if (fp) {
+#ifdef HAVE_E2100
+		fseek(fp, 0x3f29a, SEEK_SET);
+#else
 		fseek(fp, 0x3f288, SEEK_SET);
+#endif
 		fread(buf2, 19, 1, fp);
 		fclose(fp);
 		fprintf(stderr, "configure eth0 to %s\n", buf2);
