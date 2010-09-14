@@ -172,6 +172,7 @@ static struct static_route *this_srt;
   void *g;
   bird_clock_t time;
   struct prefix px;
+  struct proto_spec ps;
   struct timeformat *tf;
 }
 
@@ -202,18 +203,19 @@ static struct static_route *this_srt;
 /* Declarations from ../../sysdep/unix/config.Y */
 
 %token LOG SYSLOG ALL DEBUG TRACE INFO REMOTE WARNING ERROR AUTH FATAL BUG STDERR SOFT
-%token TIMEFORMAT ISO SHORT LONG BASE
+%token TIMEFORMAT ISO SHORT LONG BASE NAME
 
 %type <i> log_mask log_mask_list log_cat
 %type <g> log_file
 %type <t> cfg_name
 %type <tf> timeformat_which
+%type <t> syslog_name
 
 %token CONFIGURE
 %token DOWN
 /* Declarations from ../../sysdep/unix/krt.Y */
 
-%token KERNEL PERSIST SCAN TIME LEARN DEVICE
+%token KERNEL PERSIST SCAN TIME LEARN DEVICE ROUTES
 
 /* Declarations from ../../sysdep/linux/netlink/netlink.Y */
 
@@ -222,11 +224,11 @@ static struct static_route *this_srt;
 /* Declarations from ../../nest/config.Y */
 
 %token ROUTER ID PROTOCOL PREFERENCE DISABLED DIRECT
-%token INTERFACE IMPORT EXPORT FILTER NONE STATES ROUTES FILTERS
+%token INTERFACE IMPORT EXPORT FILTER NONE STATES FILTERS
 %token PASSWORD FROM PASSIVE TO EVENTS PACKETS PROTOCOLS INTERFACES
 %token PRIMARY STATS COUNT FOR COMMANDS PREEXPORT GENERATE
 %token LISTEN BGP V6ONLY ADDRESS PORT PASSWORDS DESCRIPTION
-%token RELOAD IN OUT MRTDUMP MESSAGES
+%token RELOAD IN OUT MRTDUMP MESSAGES RESTRICT MEMORY
 
 
 
@@ -239,7 +241,7 @@ static struct static_route *this_srt;
 %type <s> optsym
 %type <ra> r_args
 %type <i> echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_or_preexport
-%type <t> proto_patt
+%type <ps> proto_patt proto_patt2
 
 %token SHOW STATUS
 %token SUMMARY
@@ -255,7 +257,7 @@ static struct static_route *this_srt;
 %token RESTART
 /* Declarations from ../../filter/config.Y */
 
-%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR SET STRING BGPMASK BGPPATH CLIST IF THEN ELSE CASE TRUE FALSE GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED ADD DELETE CONTAINS RESET PREPEND FIRST LAST MATCH EMPTY WHERE EVAL
+%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR QUAD SET STRING BGPMASK BGPPATH CLIST IF THEN ELSE CASE TRUE FALSE GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED ADD DELETE CONTAINS RESET PREPEND FIRST LAST MATCH EMPTY WHERE EVAL
 
 %nonassoc THEN
 %nonassoc ELSE
@@ -271,7 +273,7 @@ static struct static_route *this_srt;
 
 /* Declarations from ../../proto/bgp/config.Y */
 
-%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES
+%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST
 
 /* Declarations from ../../proto/ospf/config.Y */
 
@@ -404,13 +406,18 @@ log_config: LOG log_file log_mask ';' {
   }
  ;
 
+syslog_name:
+   NAME TEXT { $$ = $2; }
+ | { $$ = bird_name; }
+ ;
+
 log_file:
    TEXT {
      FILE *f = tracked_fopen(new_config->pool, $1, "a");
      if (!f) cf_error("Unable to open log file `%s': %m", $1);
      $$ = f;
    }
- | SYSLOG { $$ = NULL; }
+ | SYSLOG syslog_name { $$ = NULL; new_config->syslog_name = $2; }
  | STDERR { $$ = stderr; }
  ;
 
@@ -476,7 +483,7 @@ cmd_CONFIGURE_SOFT: CONFIGURE SOFT cfg_name END
 { cmd_reconfig($3, RECONFIG_SOFT); } ;
 
 cmd_DOWN: DOWN  END
-{ cli_msg(7, "Shutdown requested"); order_shutdown(); } ;
+{ cmd_shutdown(); } ;
 
 cfg_name:
    /* empty */ { $$ = NULL; }
@@ -516,6 +523,7 @@ kern_item:
 	cf_error("Learning of kernel routes not supported in this configuration");
 #endif
    }
+ | DEVICE ROUTES bool { THIS_KRT->devroutes = $3; }
  ;
 
 /* Kernel interface protocol */
@@ -673,8 +681,8 @@ iface_patt_node_init:
 
 iface_patt_node_body:
    TEXT { this_ipn->pattern = $1; this_ipn->prefix = IPA_NONE; this_ipn->pxlen = 0; }
- | prefix { this_ipn->pattern = NULL; this_ipn->prefix = $1.addr; this_ipn->pxlen = $1.len; }
- | TEXT prefix { this_ipn->pattern = $1; this_ipn->prefix = $2.addr; this_ipn->pxlen = $2.len; }
+ | prefix_or_ipa { this_ipn->pattern = NULL; this_ipn->prefix = $1.addr; this_ipn->pxlen = $1.len; }
+ | TEXT prefix_or_ipa { this_ipn->pattern = $1; this_ipn->prefix = $2.addr; this_ipn->pxlen = $2.len; }
  ;
 
 iface_negate:
@@ -815,11 +823,14 @@ password_item_params:
 cmd_SHOW_STATUS: SHOW STATUS  END
 { cmd_show_status(); } ;
 
-cmd_SHOW_PROTOCOLS: SHOW PROTOCOLS optsym END
-{ proto_show($3, 0); } ;
+cmd_SHOW_MEMORY: SHOW MEMORY  END
+{ cmd_show_memory(); } ;
 
-cmd_SHOW_PROTOCOLS_ALL: SHOW PROTOCOLS ALL optsym END
-{ proto_show($4, 1); } ;
+cmd_SHOW_PROTOCOLS: SHOW PROTOCOLS proto_patt2 END
+{ proto_apply_cmd($3, proto_cmd_show, 0, 0); } ;
+
+cmd_SHOW_PROTOCOLS_ALL: SHOW PROTOCOLS ALL proto_patt2 END
+{ proto_apply_cmd($4, proto_cmd_show, 0, 1); } ;
 
 optsym:
    SYM
@@ -950,33 +961,41 @@ echo_size:
  ;
 
 cmd_DISABLE: DISABLE proto_patt END
-{ proto_xxable($2, XX_DISABLE); } ;
+{ proto_apply_cmd($2, proto_cmd_disable, 1, 0); } ;
 cmd_ENABLE: ENABLE proto_patt END
-{ proto_xxable($2, XX_ENABLE); } ;
+{ proto_apply_cmd($2, proto_cmd_enable, 1, 0); } ;
 cmd_RESTART: RESTART proto_patt END
-{ proto_xxable($2, XX_RESTART); } ;
+{ proto_apply_cmd($2, proto_cmd_restart, 1, 0); } ;
 cmd_RELOAD: RELOAD proto_patt END
-{ proto_xxable($2, XX_RELOAD); } ;
+{ proto_apply_cmd($2, proto_cmd_reload, 1, CMD_RELOAD); } ;
 cmd_RELOAD_IN: RELOAD IN proto_patt END
-{ proto_xxable($3, XX_RELOAD_IN); } ;
+{ proto_apply_cmd($3, proto_cmd_reload, 1, CMD_RELOAD_IN); } ;
 cmd_RELOAD_OUT: RELOAD OUT proto_patt END
-{ proto_xxable($3, XX_RELOAD_OUT); } ;
+{ proto_apply_cmd($3, proto_cmd_reload, 1, CMD_RELOAD_OUT); } ;
 
 
 cmd_DEBUG: DEBUG proto_patt debug_mask END
-{ proto_debug($2, 0, $3); }
- ;
+{ proto_apply_cmd($2, proto_cmd_debug, 1, $3); } ;
 
 
 cmd_MRTDUMP: MRTDUMP proto_patt mrtdump_mask END
-{ proto_debug($2, 1, $3); }
- ;
+{ proto_apply_cmd($2, proto_cmd_mrtdump, 1, $3); } ;
+
+cmd_RESTRICT: RESTRICT  END
+{ this_cli->restricted = 1; cli_msg(16, "Access restricted"); } ;
 
 proto_patt:
-   SYM { $$ = $1->name; }
- | ALL { $$ = "*"; }
- | TEXT
+   SYM  { $$.ptr = $1; $$.patt = 0; }
+ | ALL  { $$.ptr = NULL; $$.patt = 1; }
+ | TEXT { $$.ptr = $1; $$.patt = 1; }
  ;
+
+proto_patt2:
+   SYM  { $$.ptr = $1; $$.patt = 0; }
+ |      { $$.ptr = NULL; $$.patt = 1; }
+ | TEXT { $$.ptr = $1; $$.patt = 1; }
+ ;
+
 
 /* Grammar from ../../filter/config.Y */
 
@@ -999,6 +1018,7 @@ type:
  | IP { $$ = T_IP; }
  | PREFIX { $$ = T_PREFIX; }
  | PAIR { $$ = T_PAIR; }
+ | QUAD { $$ = T_QUAD; }
  | STRING { $$ = T_STRING; }
  | BGPMASK { $$ = T_PATH_MASK; }
  | BGPPATH { $$ = T_PATH; }
@@ -1006,8 +1026,9 @@ type:
  | type SET { 
 	switch ($1) {
 	  case T_INT:
-	  case T_IP:
 	  case T_PAIR:
+	  case T_QUAD:
+	  case T_IP:
 	       $$ = T_SET;
 	       break;
 
@@ -1096,7 +1117,14 @@ function_params:
 
 function_body:
    decls '{' cmds '}' {
-     $$ = $3;
+     if ($1) {
+       /* Prepend instruction to clear local variables */
+       $$ = f_new_inst();
+       $$->code = P('c','v');
+       $$->a1.p = $1;
+       $$->next = $3;
+     } else
+       $$ = $3;
    }
  ;
 
@@ -1150,13 +1178,20 @@ fipa:
 
 set_atom:
    NUM   { $$.type = T_INT; $$.val.i = $1; }
+ | RTRID { $$.type = T_QUAD; $$.val.i = $1; }
  | cpair { $$.type = T_PAIR; $$.val.i = $1; }
  | fipa  { $$ = $1; }
  | ENUM  {  $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
  ; 
 
 set_item:
-   set_atom { 
+   '(' NUM ',' '*' ')' { 
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, 0); 
+	$$->to.val.i = make_pair($2, 0xffff);
+   }
+ | set_atom { 
 	$$ = f_new_tree(); 
 	$$->from = $1; 
 	$$->to = $1;
@@ -1196,16 +1231,17 @@ fprefix_set:
  ;
 
 switch_body: /* EMPTY */ { $$ = NULL; }
- | set_item ':' cmds switch_body {
-     $$ = $1;
-     $$->data = $3;
-     $$->left = $4;
+ | switch_body set_item ':' cmds  {
+     $$ = $2;
+     $$->data = $4;
+     $$->left = $1;
    }
- | ELSE ':' cmds {
+ | switch_body ELSE ':' cmds {
      $$ = f_new_tree(); 
      $$->from.type = T_VOID; 
      $$->to.type = T_VOID;
-     $$->data = $3;
+     $$->data = $4;
+     $$->left = $1;
    }
  ;
 
@@ -1255,6 +1291,7 @@ constant:
  | TEXT   { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_STRING; $$->a2.p = $1; }
  | fipa	   { NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; *val = $1; }
  | fprefix_s {NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; $$->a1.p = val; *val = $1; }
+ | RTRID  { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_QUAD;  $$->a2.i = $1; }
  | '[' set_items ']' { DBG( "We've got a set here..." ); $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_SET; $$->a2.p = build_tree($2); DBG( "ook\n" ); }
  | '[' fprefix_set ']' { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_PREFIX_SET;  $$->a2.p = $2; }
  | ENUM	  { $$ = f_new_inst(); $$->code = 'c'; $$->aux = $1 >> 16; $$->a2.i = $1 & 0xffff; }
@@ -1310,6 +1347,7 @@ symbol:
        case SYM_VARIABLE | T_BOOL:
        case SYM_VARIABLE | T_INT:
        case SYM_VARIABLE | T_PAIR:
+       case SYM_VARIABLE | T_QUAD:
        case SYM_VARIABLE | T_STRING:
        case SYM_VARIABLE | T_IP:
        case SYM_VARIABLE | T_PREFIX:
@@ -1561,7 +1599,7 @@ bgp_proto:
      BGP_CFG->remote_ip = $3;
      BGP_CFG->remote_as = $5;
    }
- | bgp_proto RR CLUSTER ID expr ';' { BGP_CFG->rr_cluster_id = $5; }
+ | bgp_proto RR CLUSTER ID idval ';' { BGP_CFG->rr_cluster_id = $5; }
  | bgp_proto RR CLIENT ';' { BGP_CFG->rr_client = 1; }
  | bgp_proto RS CLIENT ';' { BGP_CFG->rs_client = 1; }
  | bgp_proto HOLD TIME expr ';' { BGP_CFG->hold_time = $4; }
@@ -1591,6 +1629,7 @@ bgp_proto:
  | bgp_proto PASSIVE bool ';' { BGP_CFG->passive = $3; }
  | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
  ;
+
 
 
 
@@ -1703,7 +1742,6 @@ ospf_vlink_start: VIRTUAL LINK idval
   add_tail(&this_area->vlink_list, NODE this_ipatt);
   init_list(&this_ipatt->ipn_list);
   OSPF_PATT->vid = $3;
-  OSPF_PATT->cost = COST_D;
   OSPF_PATT->helloint = HELLOINT_D;
   OSPF_PATT->rxmtint = RXMTINT_D;
   OSPF_PATT->inftransdelay = INFTRANSDELAY_D;
@@ -1850,11 +1888,21 @@ cmd_SHOW_OSPF_NEIGHBORS: SHOW OSPF NEIGHBORS optsym opttext END
 cmd_SHOW_OSPF_INTERFACE: SHOW OSPF INTERFACE optsym opttext END
 { ospf_sh_iface(proto_get_named($4, &proto_ospf), $5); };
 
+
+
 cmd_SHOW_OSPF_TOPOLOGY: SHOW OSPF TOPOLOGY optsym opttext END
-{ ospf_sh_state(proto_get_named($4, &proto_ospf), 0); };
+{ ospf_sh_state(proto_get_named($4, &proto_ospf), 0, 1); };
+
+cmd_SHOW_OSPF_TOPOLOGY_ALL: SHOW OSPF TOPOLOGY ALL optsym opttext END
+{ ospf_sh_state(proto_get_named($5, &proto_ospf), 0, 0); };
+
+
 
 cmd_SHOW_OSPF_STATE: SHOW OSPF STATE optsym opttext END
-{ ospf_sh_state(proto_get_named($4, &proto_ospf), 1); };
+{ ospf_sh_state(proto_get_named($4, &proto_ospf), 1, 1); };
+
+cmd_SHOW_OSPF_STATE_ALL: SHOW OSPF STATE ALL optsym opttext END
+{ ospf_sh_state(proto_get_named($5, &proto_ospf), 1, 0); };
 
 cmd_SHOW_OSPF_LSADB: SHOW OSPF LSADB optsym opttext END
 { ospf_sh_lsadb(proto_get_named($4, &proto_ospf)); };
@@ -1997,19 +2045,21 @@ cmd_SHOW_STATIC: SHOW STATIC optsym END
 
 
 conf: ';' | definition | log_config | mrtdump_base | timeformat_base | rtrid | listen | newtab | proto | debug_default | filter_def | filter_eval | function_def ;
-cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_RELOAD | cmd_RELOAD_IN | cmd_RELOAD_OUT | cmd_DEBUG | cmd_MRTDUMP | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_STATE | cmd_SHOW_OSPF_LSADB | cmd_SHOW_STATIC ;
+cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_MEMORY | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_RELOAD | cmd_RELOAD_IN | cmd_RELOAD_OUT | cmd_DEBUG | cmd_MRTDUMP | cmd_RESTRICT | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_TOPOLOGY_ALL | cmd_SHOW_OSPF_STATE | cmd_SHOW_OSPF_STATE_ALL | cmd_SHOW_OSPF_LSADB | cmd_SHOW_STATIC ;
 proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
 kern_proto: kern_proto_start proto_name '{' | kern_proto proto_item ';' | kern_proto kern_item ';' | kern_proto nl_item ';' ;
 kif_proto: kif_proto_start proto_name '{' | kif_proto proto_item ';' | kif_proto kif_item ';' ;
-dynamic_attr: INVALID_TOKEN { $$ = NULL; } | BGP_PATH
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); } | BGP_LOCAL_PREF
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_LOCAL_PREF)); } | BGP_MED
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC)); } | BGP_ORIGIN
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); } | BGP_NEXT_HOP
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); } | BGP_ATOMIC_AGGR
+dynamic_attr: INVALID_TOKEN { $$ = NULL; } | BGP_ORIGIN
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); } | BGP_PATH
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); } | BGP_NEXT_HOP
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); } | BGP_MED
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC)); } | BGP_LOCAL_PREF
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_LOCAL_PREF)); } | BGP_ATOMIC_AGGR
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_OPAQUE, T_ENUM_EMPTY, EA_CODE(EAP_BGP, BA_ATOMIC_AGGR)); } | BGP_AGGREGATOR
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_AGGREGATOR)); } | BGP_COMMUNITY
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); } | OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); } | OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); } | OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); } | OSPF_ROUTER_ID { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_ROUTER_ID); } | RIP_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); } | RIP_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); } ;
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); } | BGP_ORIGINATOR_ID
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID, T_QUAD, EA_CODE(EAP_BGP, BA_ORIGINATOR_ID)); } | BGP_CLUSTER_LIST
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_CLUSTER_LIST)); } | OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); } | OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); } | OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); } | OSPF_ROUTER_ID { $$ = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID | EAF_TEMP, T_QUAD, EA_OSPF_ROUTER_ID); } | RIP_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); } | RIP_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); } ;
 
 %%
 /* C Code from ../../conf/confbase.Y */

@@ -151,17 +151,17 @@ static_neigh_notify(struct neighbor *n)
 static void
 static_dump_rt(struct static_route *r)
 {
-  bdebug("%-1I/%2d: ", r->net, r->masklen);
+  debug("%-1I/%2d: ", r->net, r->masklen);
   switch (r->dest)
     {
     case RTD_ROUTER:
-      bdebug("via %I\n", r->via);
+      debug("via %I\n", r->via);
       break;
     case RTD_DEVICE:
-      bdebug("dev %s\n", r->if_name);
+      debug("dev %s\n", r->if_name);
       break;
     default:
-      bdebug("rtd %d\n", r->dest);
+      debug("rtd %d\n", r->dest);
       break;
     }
 }
@@ -172,10 +172,10 @@ static_dump(struct proto *p)
   struct static_config *c = (void *) p->cf;
   struct static_route *r;
 
-  bdebug("Independent static routes:\n");
+  debug("Independent static routes:\n");
   WALK_LIST(r, c->other_routes)
     static_dump_rt(r);
-  bdebug("Device static routes:\n");
+  debug("Device static routes:\n");
   WALK_LIST(r, c->iface_routes)
     static_dump_rt(r);
 }

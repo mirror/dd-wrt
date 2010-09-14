@@ -276,7 +276,7 @@ trie_node_print(struct f_trie_node *t, char *buf, int blen)
 
   int old_blen = blen;
   int wb = 0; // bsnprintf(buf, blen, "%I/%d accept %I\n", t->addr, t->plen, t->accept);
-bdebug("%I/%d accept %I\n", t->addr, t->plen, t->accept);
+debug("%I/%d accept %I\n", t->addr, t->plen, t->accept);
 
   if ((wb < 0) || ((blen - wb) < 10))
     {

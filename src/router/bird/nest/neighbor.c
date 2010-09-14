@@ -187,15 +187,15 @@ neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags)
 void
 neigh_dump(neighbor *n)
 {
-  bdebug("%p %I ", n, n->addr);
+  debug("%p %I ", n, n->addr);
   if (n->iface)
-    bdebug("%s ", n->iface->name);
+    debug("%s ", n->iface->name);
   else
-    bdebug("[] ");
-  bdebug("%s %p %08x scope %s", n->proto->name, n->data, n->aux, ip_scope_text(n->scope));
+    debug("[] ");
+  debug("%s %p %08x scope %s", n->proto->name, n->data, n->aux, ip_scope_text(n->scope));
   if (n->flags & NEF_STICKY)
-    bdebug(" STICKY");
-  bdebug("\n");
+    debug(" STICKY");
+  debug("\n");
 }
 
 /**
@@ -210,13 +210,13 @@ neigh_dump_all(void)
   neighbor *n;
   int i;
 
-  bdebug("Known neighbors:\n");
+  debug("Known neighbors:\n");
   WALK_LIST(n, sticky_neigh_list)
     neigh_dump(n);
   for(i=0; i<NEIGH_HASH_SIZE; i++)
     WALK_LIST(n, neigh_hash_table[i])
       neigh_dump(n);
-  bdebug("\n");
+  debug("\n");
 }
 
 /**

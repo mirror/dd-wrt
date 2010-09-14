@@ -491,21 +491,21 @@ void dump(char *m)
 {
   unsigned int i;
 
-  bdebug("%s ... order=%d, size=%d, entries=%d\n", m, f.hash_order, f.hash_size, f.hash_size);
+  debug("%s ... order=%d, size=%d, entries=%d\n", m, f.hash_order, f.hash_size, f.hash_size);
   for(i=0; i<f.hash_size; i++)
     {
       struct fib_node *n;
       struct fib_iterator *j;
       for(n=f.hash_table[i]; n; n=n->next)
 	{
-	  bdebug("%04x %04x %p %I/%2d", i, ipa_hash(n->prefix), n, n->prefix, n->pxlen);
+	  debug("%04x %04x %p %I/%2d", i, ipa_hash(n->prefix), n, n->prefix, n->pxlen);
 	  for(j=n->readers; j; j=j->next)
-	    bdebug(" %p[%p]", j, j->node);
-	  bdebug("\n");
+	    debug(" %p[%p]", j, j->node);
+	  debug("\n");
 	}
     }
   fib_check(&f);
-  bdebug("-----\n");
+  debug("-----\n");
 }
 
 void init(struct fib_node *n)
@@ -552,7 +552,7 @@ next:
 	  goto next;
 	}
       c = 1;
-      bdebug("got %p\n", z);
+      debug("got %p\n", z);
     }
   FIB_ITERATE_END;
   dump("iter end");

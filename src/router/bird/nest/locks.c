@@ -88,9 +88,9 @@ olock_dump(resource *r)
   struct object_lock *l = (struct object_lock *) r;
   static char *olock_states[] = { "free", "locked", "waiting", "event" };
 
-  bdebug("(%d:%s:%I:%d) [%s]\n", l->type, (l->iface ? l->iface->name : "?"), l->addr, l->port, olock_states[l->state]);
+  debug("(%d:%s:%I:%d) [%s]\n", l->type, (l->iface ? l->iface->name : "?"), l->addr, l->port, olock_states[l->state]);
   if (!EMPTY_LIST(l->waiters))
-    bdebug(" [wanted]\n");
+    debug(" [wanted]\n");
 }
 
 static struct resclass olock_class = {
