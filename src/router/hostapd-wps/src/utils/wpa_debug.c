@@ -99,7 +99,7 @@ static int syslog_priority(int level)
 void wpa_printf(int level, const char *fmt, ...)
 {
 	va_list ap;
-	char logbuf[256];
+
 	va_start(ap, fmt);
 	if (level >= wpa_debug_level) {
 #ifdef CONFIG_DEBUG_SYSLOG
@@ -114,9 +114,8 @@ void wpa_printf(int level, const char *fmt, ...)
 			fprintf(out_file, "\n");
 		} else {
 #endif /* CONFIG_DEBUG_FILE */
-		vsnprintf(logbuf,sizeof(logbuf),fmt, ap);
-		syslog(LOG_INFO, logbuf);
-		syslog(LOG_INFO, "\n");
+		vprintf(fmt, ap);
+		printf("\n");
 #ifdef CONFIG_DEBUG_FILE
 		}
 #endif /* CONFIG_DEBUG_FILE */
