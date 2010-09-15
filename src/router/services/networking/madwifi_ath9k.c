@@ -132,8 +132,13 @@ void configure_single_ath9k(int count) {
 		// infra (adhoc) TBD
 	}
 
-	// vifs TBD
+	char regdomain[16];
+	char *country;
+	sprintf(regdomain, "%s_regdomain", dev);
+	country=nvram_default_get(regdomain, "US");
+	sysprintf ("iw reg set %s", getIsoName(country));
 
+	// vifs TBD
 
 	char macaddr[32];
 	// interface is created at this point, so that should work
@@ -147,14 +152,6 @@ void configure_single_ath9k(int count) {
 	sysprintf("echo TBD maxassoc: %s maxassoc %s", dev,
 		  nvram_default_get(maxassoc, "256"));
 
-	sysprintf("iwpriv %s hide_ssid %s", var,
-			  nvram_default_get(broadcast, "0"));
-
-	sprintf(isolate, "%s_ap_isolate", var);
-		if (nvram_default_match(isolate, "1", "0"))
-			sysprintf("iwpriv %s ap_bridge 0", var);
-	sprintf(ssid, "ath%d_ssid", count);
-	sprintf(broadcast, "ath%d_closed", count);
 	cprintf("done()\n");
 
 	cprintf("setup encryption");
