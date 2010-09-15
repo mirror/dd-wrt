@@ -69,6 +69,10 @@ struct mii_ioctl_data {
 	unsigned short val_out;
 };
 
+#define TRX_MAGIC_F7D3301			0x20100322	/* Belkin Share Max; router's birthday ? */
+#define TRX_MAGIC_F7D3302			0x20090928	/* Belkin Share; router's birthday ? */
+#define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
+
 #ifdef HAVE_FONERA
 static void inline getBoardMAC(char *mac)
 {
@@ -1245,25 +1249,7 @@ int internal_getRouterBrand()
 		setRouter("Asus WL-500g Deluxe");
 		return ROUTER_ASUS_WL500GD;
 	}
-
-	if (boardnum == 45 && nvram_match("boardtype", "0x04EC")
-	    && nvram_match("boardrev", "0x1402")) {
-		setRouter("Asus RT-N10");
-		return ROUTER_ASUS_RTN10;
-	}
-
-	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
-	    && nvram_match("boardrev", "0x1201")) {
-		setRouter("Asus RT-N12");
-		return ROUTER_ASUS_RTN12;
-	}
-
-	if (boardnum == 45 && nvram_match("boardtype", "0x04cf")
-	    && nvram_match("boardrev", "0x1218")) {
-		setRouter("Asus RT-N16");
-		return ROUTER_ASUS_RTN16;
-	}
-
+	
 	if (boardnum == 45 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("boardrev", "0x23") && nvram_match("parkid", "1")) {
 		setRouter("Asus WL-500W");
@@ -1281,19 +1267,32 @@ int internal_getRouterBrand()
 			return ROUTER_ASUS_WL550GE;
 		}
 	}
+
+#ifdef HAVE_BCMMODERN
+	if (boardnum == 45 && nvram_match("boardtype", "0x04EC")
+	    && nvram_match("boardrev", "0x1402")) {
+		setRouter("Asus RT-N10");
+		return ROUTER_ASUS_RTN10;
+	}
+
+	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
+	    && nvram_match("boardrev", "0x1201")) {
+		setRouter("Asus RT-N12");
+		return ROUTER_ASUS_RTN12;
+	}
+
+	if (boardnum == 45 && nvram_match("boardtype", "0x04cf")
+	    && nvram_match("boardrev", "0x1218")) {
+		setRouter("Asus RT-N16");
+		return ROUTER_ASUS_RTN16;
+	}
 /*	
-	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
+	if (boardnum == 12345 && nvram_match("boardtype", "0xXXXX")
 	    && nvram_match("boardrev", "0x1204")) {
 		setRouter("Belkin Share Max F7D3301v1");
 		return ROUTER_BELKIN_F7D3301;
 	}
-	
-	if (boardnum == 12345 && nvram_match("boardtype", "0xa4cf")
-	    && nvram_match("boardrev", "0x1102")) {
-		setRouter("Belkin Share F7D3302v1");
-		return ROUTER_BELKIN_F7D3302;
-	}
-*/	
+*/
 	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
 		setRouter("Belkin Play Max F7D4301v1");
@@ -1302,9 +1301,20 @@ int internal_getRouterBrand()
 	
 	if (boardnum == 12345 && nvram_match("boardtype", "0xa4cf")
 	    && nvram_match("boardrev", "0x1102")) {
+			FILE *mtd1 = fopen("/dev/mtdblock/1", "rb");
+			unsigned long trxhd;
+			if (mtd1) {
+				fread(&trxhd, 4, 1, mtd1);
+				fclose(mtd1);
+				if (trxhd == TRX_MAGIC_F7D3302) {
+					setRouter("Belkin Share F7D3302v1");
+					return ROUTER_BELKIN_F7D3302;
+				}
+			}	
 		setRouter("Belkin Play F7D4302v1");
 		return ROUTER_BELKIN_F7D4302;
 	}
+#endif
 
 #endif
 	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
@@ -1949,6 +1959,7 @@ int internal_getRouterBrand()
 		return ROUTER_WAP54G_V3;
 	}
 
+#ifdef HAVE_BCMMODERN
 	if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
 	    && nvram_match("boardrev", "0x1700")) {
 		setRouter("Netgear WNR2000 v2");
@@ -1976,6 +1987,7 @@ int internal_getRouterBrand()
 		setRouter("Linksys E2000");	// renamed (and fixed reset button) wrt320n
 		return ROUTER_WRT320N;
 	}
+#endif
 
 	if (boardnum == 94703 && nvram_match("boardtype", "0x04c0")
 	    && nvram_match("boardrev", "0x1100")) {
