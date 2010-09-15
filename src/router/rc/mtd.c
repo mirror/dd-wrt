@@ -218,6 +218,7 @@ int mtd_write(const char *path, const char *mtd)
 	int i;
 	unsigned char lzmaloader[4096];
 	int brand = getRouterBrand();
+
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
@@ -233,6 +234,20 @@ int mtd_write(const char *path, const char *mtd)
 		fread(lzmaloader, WGR614_LZMA_LOADER_SIZE, 1, fp);
 		fclose(fp);
 	}
+
+#ifdef HAVE_BCMMODERN		
+	unsigned long trxhd = STORE32_LE(TRX_MAGIC);
+	
+	if (brand == ROUTER_BELKIN_F7D3301 
+		|| brand == ROUTER_BELKIN_F7D3302
+		|| brand == ROUTER_BELKIN_F7D4302) {
+			if ((fp = fopen("/dev/mtdblock/1", "rb"))) {
+				fread(&trxhd, 4, 1, fp);
+				fclose(fp);
+			}
+	}
+#endif
+	
 	nvram_set("flash_active", "1");
 	sleep(1);
 
@@ -647,28 +662,16 @@ int mtd_write(const char *path, const char *mtd)
 
 	}			// end
 	
-	/* Write Belkin Play magic */
+#ifdef HAVE_BCMMODERN
+	/* Write Belkin Play or Share magic */
 	if (brand == ROUTER_BELKIN_F7D3301 
 		|| brand == ROUTER_BELKIN_F7D3302
 		|| brand == ROUTER_BELKIN_F7D4302) {
 
 		sector_start = 0;
-		unsigned long be_magic;
+		unsigned long be_magic = STORE32_LE(trxhd);
 		char be_trx[4];
-		
-		switch (brand)
-		{
-		case ROUTER_BELKIN_F7D3301:
-			be_magic = STORE32_LE(TRX_MAGIC_F7D3301);
-			break;
-		case ROUTER_BELKIN_F7D3302:
-			be_magic = STORE32_LE(TRX_MAGIC_F7D3302);
-			break;
-		case ROUTER_BELKIN_F7D4302:
-			be_magic = STORE32_LE(TRX_MAGIC_F7D4302);
-			break;
-		}
-		
+
 		memcpy(&be_trx[0], (char *)&be_magic, 4);
 		
 
@@ -716,6 +719,7 @@ int mtd_write(const char *path, const char *mtd)
 		fprintf(stderr, "Write Belkin magic...done.\n");
 
 	}		// end
+#endif
 
 	ret = 0;
 
