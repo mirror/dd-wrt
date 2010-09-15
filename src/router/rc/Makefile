@@ -563,6 +563,11 @@ endif
 ifeq ($(CONFIG_RSTP),y)
 CFLAGS += -DHAVE_RSTP
 endif
+
+ifeq ($(CONFIG_BCMMODERN),y)
+CFLAGS += -DHAVE_BCMMODERN
+endif
+
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS +=  -DHAVE_MADWIFI -DHAVE_ROAMING 
 endif
