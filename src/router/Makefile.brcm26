@@ -498,6 +498,17 @@ endif
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12
+# Belkin f7d3302 / f7d4302
+	dd if=$(ARCH)-uclibc/dd-wrt.v24-K26.trx of=$(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd bs=4 count=10000000 skip=1 conv=notrunc
+	printf '\x28\x09\x09\x20' > $(ARCH)-uclibc/f7d3302.hdr
+	cat $(ARCH)-uclibc/f7d3302.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d3302.bin
+	printf '\x06\x10\x09\x20' > $(ARCH)-uclibc/f7d4302.hdr	
+	cat $(ARCH)-uclibc/f7d4302.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d4302.bin
+	rm -rf $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd
+	rm -rf $(ARCH)-uclibc/f7d3302.hdr		
+	rm -rf $(ARCH)-uclibc/f7d4302.hdr
+# end Belkin f7d3302 / f7d4302
+# Netgear
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
@@ -508,6 +519,8 @@ endif
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500U.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR2000v2.chk
+# end Netgear
+# Linksys
 	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
 	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt160nv3.bin -g
 	../../opt/tools/addpattern -4 -p 610N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt610n.bin -g
@@ -516,6 +529,7 @@ endif
 	../../opt/tools/addpattern -4 -p M020 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m20.bin -g
 	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2000.bin -g
 	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3000.bin -g
+# end Linksys
 
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
 
