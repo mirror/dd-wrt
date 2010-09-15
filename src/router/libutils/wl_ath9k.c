@@ -53,6 +53,7 @@ struct wifi_channels {
 // dummy TBD 
 int getassoclist_ath9k(char *ifname, unsigned char *list)
 {
+	// get_ath9k_phy_idx nicht vergessen
 	return(0);
 }
 
@@ -83,6 +84,7 @@ int getNoise_ath9k(char *ifname, unsigned char *mac)
 // dummy TBD  erstmal alles zum spielen
 static struct wifi_channels *list_channelsext_ath9k(const char *ifname, int allchans)
 {
+	// get_ath9k_phy_idx
 	int i;
 	fprintf(stderr, "list fake channels for %s\n", ifname);
 	int count=0;

@@ -612,6 +612,82 @@ static void do_hostapd(char *fstr, char *prefix)
 
 }
 
+#ifdef HAVE_ATH9K
+void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) {
+	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
+	fprintf(fp, "wmm_ac_bk_cwmax=10\n");
+	fprintf(fp, "wmm_ac_bk_aifs=7\n");
+	fprintf(fp, "wmm_ac_bk_txop_limit=0\n");
+	fprintf(fp, "wmm_ac_bk_acm=0\n");
+	fprintf(fp, "wmm_ac_be_aifs=3\n");
+	fprintf(fp, "wmm_ac_be_cwmin=4\n");
+	fprintf(fp, "wmm_ac_be_cwmax=10\n");
+	fprintf(fp, "wmm_ac_be_txop_limit=0\n");
+	fprintf(fp, "wmm_ac_be_acm=0\n");
+	fprintf(fp, "wmm_ac_vi_aifs=2\n");
+	fprintf(fp, "wmm_ac_vi_cwmin=3\n");
+	fprintf(fp, "wmm_ac_vi_cwmax=4\n");
+	fprintf(fp, "wmm_ac_vi_txop_limit=94\n");
+	fprintf(fp, "wmm_ac_vi_acm=0\n");
+	fprintf(fp, "wmm_ac_vo_aifs=2\n");
+	fprintf(fp, "wmm_ac_vo_cwmin=2\n");
+	fprintf(fp, "wmm_ac_vo_cwmax=3\n");
+	fprintf(fp, "wmm_ac_vo_txop_limit=47\n");
+	fprintf(fp, "wmm_ac_vo_acm=0\n");
+	fprintf(fp, "tx_queue_data3_aifs=7\n");
+	fprintf(fp, "tx_queue_data3_cwmin=15\n");
+	fprintf(fp, "tx_queue_data3_cwmax=1023\n");
+	fprintf(fp, "tx_queue_data3_burst=0\n");
+	fprintf(fp, "tx_queue_data2_aifs=3\n");
+	fprintf(fp, "tx_queue_data2_cwmin=15\n");
+	fprintf(fp, "tx_queue_data2_cwmax=63\n");
+	fprintf(fp, "tx_queue_data2_burst=0\n");
+	fprintf(fp, "tx_queue_data1_aifs=1\n");
+	fprintf(fp, "tx_queue_data1_cwmin=7\n");
+	fprintf(fp, "tx_queue_data1_cwmax=15\n");
+	fprintf(fp, "tx_queue_data1_burst=3.0\n");
+	fprintf(fp, "tx_queue_data0_aifs=1\n");
+	fprintf(fp, "tx_queue_data0_cwmin=3\n");
+	fprintf(fp, "tx_queue_data0_cwmax=7\n");
+	fprintf(fp, "tx_queue_data0_burst=1.5\n");
+
+	fprintf(fp, "ieee80211n=1\n");
+	fprintf(fp, "ht_capab=[HT40-][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n");
+	fprintf(fp, "wds_sta=1\n");
+	fprintf(fp, "wmm_enabled=1\n");
+	char macaddr[32];
+	getMacAddr(prefix, macaddr);
+	fprintf(fp, "bssid=%s\n",macaddr);
+	char isolate[32];
+	char broadcast[32];
+	sprintf(isolate, "%s_ap_isolate", prefix);
+	if (nvram_default_match(isolate, "1", "0"))
+		fprintf(fp, "ap_isolate=1\n");
+	sprintf(broadcast, "%s_closed", prefix);
+	if (nvram_default_match(broadcast, "1", "0"))
+		fprintf(fp, "ignore_broadcast_ssid=1\n");
+	else
+		fprintf(fp, "ignore_broadcast_ssid=0\n");
+	static char nfreq[16];
+	sprintf(nfreq, "%s_channel", prefix);
+	int channel=ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
+	// i know that's not the right way.. autochannel is 0
+	if(channel < 36)
+		fprintf(fp, "hw_mode=g\n");
+	else
+		fprintf(fp, "hw_mode=a\n");
+	fprintf(fp, "channel=%d\n",channel);
+	char regdomain[16];
+	char *country;
+	sprintf(regdomain, "%s_regdomain", prefix);
+	country=nvram_default_get(regdomain, "US");
+	fprintf(fp, "country_code=%s\n",getIsoName(country));
+	char *ssid;
+	ssid = nvram_nget("%s_ssid", prefix);
+	fprintf(fp, "ssid=%s\n", ssid);
+}
+#endif
+
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
@@ -620,6 +696,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 #endif
 	char psk[32];
 	char akm[16];
+	char fstr[32];
 
 	sprintf(akm, "%s_akm", prefix);
 	if (nvram_match(akm, "8021X"))
@@ -638,12 +715,50 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	// wep key support
 	if (nvram_match(akm, "wep")) {
 		/* ignore */
+#ifdef HAVE_ATH9K
+		/* don't ignore for ath9k */
+		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+		FILE *fp = fopen(fstr, "wb");
+		fprintf(fp, "interface=%s\n", prefix);
+		setupHostAP_generic_ath9k(prefix,driver,iswan, fp);
+		/*
+		char key[16];
+		int cnt = 1;
+		int i;
+		char bul[8];
+		char *authmode = nvram_nget("%s_authmode", prefix);
+		if (!strcmp(authmode, "shared"))
+			sysprintf("iwpriv %s authmode 2", prefix);
+		else if (!strcmp(authmode, "auto"))
+			sysprintf("iwpriv %s authmode 4", prefix);
+		else
+			sysprintf("iwpriv %s authmode 1", prefix);
+		for (i = 1; i < 5; i++) {
+			char *athkey = nvram_nget("%s_key%d", prefix, i);
+
+			if (athkey != NULL && strlen(athkey) > 0) {
+				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey);	// setup wep
+			}
+		}
+		sysprintf("iwconfig %s key [%s]", prefix,
+			  nvram_nget("%s_key", prefix));
+				wep_default_key=
+		*/
+		fclose(fp);
+		do_hostapd(fstr, prefix);
+	} else if (nvram_match(akm, "disabled")) {
+		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+		FILE *fp = fopen(fstr, "wb");
+		fprintf(fp, "interface=%s\n", prefix);
+		setupHostAP_generic_ath9k(prefix,driver,iswan, fp);
+		fclose(fp);
+		do_hostapd(fstr, prefix);
+#endif
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
 		   nvram_match(akm, "psk psk2") ||
 		   nvram_match(akm, "wpa") ||
 		   nvram_match(akm, "wpa2") || nvram_match(akm, "wpa wpa2")) {
-		char fstr[32];
 
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -751,78 +866,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		}
 #ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
-			fprintf(fp, "wmm_ac_bk_cwmin=4\n");
-			fprintf(fp, "wmm_ac_bk_cwmax=10\n");
-			fprintf(fp, "wmm_ac_bk_aifs=7\n");
-			fprintf(fp, "wmm_ac_bk_txop_limit=0\n");
-			fprintf(fp, "wmm_ac_bk_acm=0\n");
-			fprintf(fp, "wmm_ac_be_aifs=3\n");
-			fprintf(fp, "wmm_ac_be_cwmin=4\n");
-			fprintf(fp, "wmm_ac_be_cwmax=10\n");
-			fprintf(fp, "wmm_ac_be_txop_limit=0\n");
-			fprintf(fp, "wmm_ac_be_acm=0\n");
-			fprintf(fp, "wmm_ac_vi_aifs=2\n");
-			fprintf(fp, "wmm_ac_vi_cwmin=3\n");
-			fprintf(fp, "wmm_ac_vi_cwmax=4\n");
-			fprintf(fp, "wmm_ac_vi_txop_limit=94\n");
-			fprintf(fp, "wmm_ac_vi_acm=0\n");
-			fprintf(fp, "wmm_ac_vo_aifs=2\n");
-			fprintf(fp, "wmm_ac_vo_cwmin=2\n");
-			fprintf(fp, "wmm_ac_vo_cwmax=3\n");
-			fprintf(fp, "wmm_ac_vo_txop_limit=47\n");
-			fprintf(fp, "wmm_ac_vo_acm=0\n");
-			fprintf(fp, "tx_queue_data3_aifs=7\n");
-			fprintf(fp, "tx_queue_data3_cwmin=15\n");
-			fprintf(fp, "tx_queue_data3_cwmax=1023\n");
-			fprintf(fp, "tx_queue_data3_burst=0\n");
-			fprintf(fp, "tx_queue_data2_aifs=3\n");
-			fprintf(fp, "tx_queue_data2_cwmin=15\n");
-			fprintf(fp, "tx_queue_data2_cwmax=63\n");
-			fprintf(fp, "tx_queue_data2_burst=0\n");
-			fprintf(fp, "tx_queue_data1_aifs=1\n");
-			fprintf(fp, "tx_queue_data1_cwmin=7\n");
-			fprintf(fp, "tx_queue_data1_cwmax=15\n");
-			fprintf(fp, "tx_queue_data1_burst=3.0\n");
-			fprintf(fp, "tx_queue_data0_aifs=1\n");
-			fprintf(fp, "tx_queue_data0_cwmin=3\n");
-			fprintf(fp, "tx_queue_data0_cwmax=7\n");
-			fprintf(fp, "tx_queue_data0_burst=1.5\n");
-
-			fprintf(fp, "ieee80211n=1\n");
-			fprintf(fp, "ht_capab=[HT40-][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n");
-			fprintf(fp, "wds_sta=1\n");
-			fprintf(fp, "wmm_enabled=1\n");
-			char macaddr[32];
-			getMacAddr(prefix, macaddr);
-			fprintf(fp, "bssid=%s\n",macaddr);
-			char isolate[32];
-			char broadcast[32];
-			sprintf(isolate, "%s_ap_isolate", prefix);
-			if (nvram_default_match(isolate, "1", "0"))
-				fprintf(fp, "ap_isolate=1\n");
-			sprintf(broadcast, "%s_closed", prefix);
-			if (nvram_default_match(broadcast, "1", "0"))
-				fprintf(fp, "ignore_broadcast_ssid=1\n");
-			else
-				fprintf(fp, "ignore_broadcast_ssid=0\n");
-			static char nfreq[16];
-			sprintf(nfreq, "%s_channel", prefix);
-			int channel=ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
-			// i know that's not the right way.. autochannel is 0
-			if(channel < 36)
-				fprintf(fp, "hw_mode=g\n");
-			else
-				fprintf(fp, "hw_mode=a\n");
-			fprintf(fp, "channel=%d\n",channel);
-			char regdomain[16];
-			char *country;
-			sprintf(regdomain, "%s_regdomain", prefix);
-			country=nvram_default_get(regdomain, "US");
-			fprintf(fp, "country_code=%s\n",getIsoName(country));
-			char *ssid;
-			ssid = nvram_nget("%s_ssid", prefix);
-			fprintf(fp, "ssid=%s\n", ssid);
-			}
+			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
+		}
 #endif
 		if (nvram_invmatch(akm, "radius")) {
 			sprintf(psk, "%s_crypto", prefix);
@@ -864,6 +909,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix,
 			  server, port, share);
 	} else {
+#ifdef HAVE_ATH9K
+	if (!is_ath9k(prefix))
+#endif
 		sysprintf("iwconfig %s key off", prefix);
 	}
 
