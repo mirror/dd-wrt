@@ -2685,6 +2685,17 @@ int ifexists(const char *ifname)
 	return getifcount(ifname) > 0 ? 1 : 0;
 }
 
+int getdevicecount(void)
+{
+	int count=0;
+#ifdef HAVE_ATH9K
+	count+=getath9kdevicecount();
+#endif
+	count+=getifcount("wifi");
+
+	return count;
+}
+
 int getifcount(const char *ifprefix)
 {
 	/*
