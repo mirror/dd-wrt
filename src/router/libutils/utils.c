@@ -2401,8 +2401,12 @@ char *getWifi(char *ifname)
 char *getWDSSTA(void)
 {
 
-	int c = getifcount("wifi");
+	int c = 0;
 	int i;
+#ifdef HAVE_ATH9K
+	count+=getath9kdevicecount();
+#endif
+	count+=getifcount("wifi");
 
 	for (i = 0; i < c; i++) {
 		char mode[32];
@@ -2426,8 +2430,12 @@ char *getSTA(void)
 	if (nvram_match("ofdm_mode", "sta"))
 		return "ofdm";
 #endif
-	int c = getifcount("wifi");
+	int c = 0;
 	int i;
+#ifdef HAVE_ATH9K
+	count+=getath9kdevicecount();
+#endif
+	count+=getifcount("wifi");
 
 	for (i = 0; i < c; i++) {
 		if (nvram_nmatch("sta", "ath%d_mode", i)
@@ -2445,8 +2453,12 @@ char *getWET(void)
 	if (nvram_match("ofdm_mode", "bridge"))
 		return "ofdm";
 #endif
-	int c = getifcount("wifi");
+	int c = 0;
 	int i;
+#ifdef HAVE_ATH9K
+	count+=getath9kdevicecount();
+#endif
+	count+=getifcount("wifi");
 
 	for (i = 0; i < c; i++) {
 		if (nvram_nmatch("wet", "ath%d_mode", i)
