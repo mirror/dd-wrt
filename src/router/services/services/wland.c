@@ -70,6 +70,11 @@ void start_wland(void)
 
 	stop_wland();
 
+#if HAVE_ATH9K
+	if ( getath9kdevicecount() == getdevicecount() )
+			return;
+#endif
+
 	// if( nvram_match("apwatchdog_enable", "0") )
 	// return 0;
 
