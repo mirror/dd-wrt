@@ -410,6 +410,10 @@ static void wpa_driver_nl80211_event_rtm_newlink(void *ctx,
 		return;
 	}
 
+	if (ifi->ifi_family == AF_BRIDGE &&
+	    drv->nlmode != NL80211_IFTYPE_AP)
+		return;
+
 	wpa_printf(MSG_DEBUG, "RTM_NEWLINK: operstate=%d ifi_flags=0x%x "
 		   "(%s%s%s%s)",
 		   drv->operstate, ifi->ifi_flags,
@@ -480,6 +484,10 @@ static void wpa_driver_nl80211_event_rtm_dellink(void *ctx,
 
 	attrlen = len;
 	attr = (struct rtattr *) buf;
+
+	if (ifi->ifi_family == AF_BRIDGE &&
+	    drv->nlmode != NL80211_IFTYPE_AP)
+		return;
 
 	rta_len = RTA_ALIGN(sizeof(struct rtattr));
 	while (RTA_OK(attr, attrlen)) {
@@ -1346,6 +1354,9 @@ static int wpa_driver_nl80211_init_nl(struct wpa_driver_nl80211_data *drv,
 
 	eloop_register_read_sock(nl_socket_get_fd(drv->nl_handle_event),
 				 wpa_driver_nl80211_event_receive, drv, ctx);
+
+	drv->num_if_indices = sizeof(drv->default_if_indices) / sizeof(int);
+	drv->if_indices = drv->default_if_indices;
 
 	return 0;
 
@@ -4867,8 +4878,6 @@ static void *i802_init(struct hostapd_data *hapd,
 		br_ifindex = 0;
 	}
 
-	drv->num_if_indices = sizeof(drv->default_if_indices) / sizeof(int);
-	drv->if_indices = drv->default_if_indices;
 	for (i = 0; i < params->num_bridge; i++) {
 		if (params->bridge[i]) {
 			ifindex = if_nametoindex(params->bridge[i]);
