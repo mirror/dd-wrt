@@ -186,10 +186,9 @@ extern void *getUEnv(char *name);
 static void buffalo_defaults(int force)
 {
 	if (nvram_get("ath0_akm") == NULL || force) {
-		{
-			char *region = getUEnv("region");
-			if (!region
-			    || (strcmp(region, "AP") && strcmp(region, "TW"))) {
+		char *region = getUEnv("region");
+		if (!region || (strcmp(region, "AP") && strcmp(region, "TW"))) {
+			{
 				char *mode_ex =
 				    getUEnv
 				    ("DEF-p_wireless_ath0_11bg-authmode_ex");
