@@ -1255,9 +1255,9 @@ int is_ath9k(char *prefix) {
 		return (0);
 	if (! sscanf(prefix, "ath%d", &devnum) )
 			return(0);
-	// i don't expect 9+ cards in a system
-	// todo we have to maintain an offset here if there are legacy cards 
-	sprintf(globstring,"/sys/class/ieee80211/phy%d",get_ath9k_phy_idx(devnum));
+	// correct index if there are legacy cards arround
+	devnum=get_ath9k_phy_idx(devnum);
+	sprintf(globstring,"/sys/class/ieee80211/phy%d",devnum);
 	globresult=glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
 		count=(int) globbuf.gl_pathc;

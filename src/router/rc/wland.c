@@ -494,6 +494,10 @@ static void do_madwifi_check(void)
 
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "ath%d", i);
+#ifdef HAVE_ATH9K
+	    if (is_ath9k(dev))
+		continue;
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	    if (is_ar5008(dev))
 		continue;
