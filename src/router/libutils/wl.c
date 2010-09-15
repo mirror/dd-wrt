@@ -1498,17 +1498,6 @@ struct wifi_channels *list_channels(char *devnr)
 	 */
 }
 
-int getdevicecount(void)
-{
-	int count=0;
-#ifdef HAVE_ATH9K
-	count+=getath9kdevicecount();
-#endif
-	count+=getifcount("wifi");
-
-	return count;
-}
-
 int getRssi(char *ifname, unsigned char *mac)
 {
 #ifdef HAVE_ATH9K
