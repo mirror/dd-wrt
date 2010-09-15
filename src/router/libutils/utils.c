@@ -1728,6 +1728,7 @@ int internal_getRouterBrand()
 		return ROUTER_WRT610N;
 	}
 
+#ifdef HAVE_BCMMODERN
 	if (nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boot_hw_model", "WRT610N")) {
 		setRouter("Linksys WRT610Nv2");
@@ -1739,6 +1740,7 @@ int internal_getRouterBrand()
 		setRouter("Linksys E3000");	// renamed wrt610nv2
 		return ROUTER_WRT610NV2;
 	}
+#endif
 
 	if (boardnum == 42 && nvram_match("boardtype", "bcm94710dev")) {
 		setRouter("Linksys WRT54G v1.x");
