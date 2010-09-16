@@ -65,7 +65,7 @@ void start_aoss(void)
 	nvram_commit();
 	int hasaoss = 0;
 #ifdef HAVE_WZRHPAG300NH
-	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
+	if (nvram_match("ath1_mode", "ap") || nvram_match("ath1_mode", "wdsap")) {
 		hasaoss = 1;
 		sysprintf
 		    ("80211n_wlanconfig aossa create wlandev wifi1 wlanmode ap");
