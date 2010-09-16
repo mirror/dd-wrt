@@ -38,15 +38,14 @@ void start_aoss(void)
 		return;
 	}
 	if (pidof("aoss") > 0)
-	    return;
+		return;
 	system("killall ledtool");
-	nvram_set("aoss_success","0");
+	nvram_set("aoss_success", "0");
 	led_control(LED_SES, LED_OFF);
 	system("ledtool 180 2");
 	char *vifbak = nvram_safe_get("ath0_vifs");
 	char copy[256];
 	strcpy(copy, vifbak);
-
 
 #ifdef HAVE_WZRHPAG300NH
 	char *vifbak2 = nvram_safe_get("ath1_vifs");
@@ -64,40 +63,57 @@ void start_aoss(void)
 	nvram_set("ath1_vifs", copy2);
 #endif
 	nvram_commit();
-
+	int hasaoss = 0;
 #ifdef HAVE_WZRHPAG300NH
-	sysprintf("80211n_wlanconfig aossa create wlandev wifi1 wlanmode ap");
-	sysprintf("iwconfig aossa essid ESSID-AOSS");
-	sysprintf("iwpriv aossa authmode 4");
-	sysprintf("iwconfig aossa key [1] 4D454C434F");
-	sysprintf("iwconfig aossa key [1]");
-	sysprintf("ifconfig aossa 0.0.0.0 up");
-
-	sysprintf("80211n_wlanconfig aossg create wlandev wifi0 wlanmode ap");
-	sysprintf("iwconfig aossg essid ESSID-AOSS");
-	sysprintf("iwpriv aossg authmode 4");
-	sysprintf("iwconfig aossg key [1] 4D454C434F");
-	sysprintf("iwconfig aossg key [1]");
-	sysprintf("ifconfig aossg 0.0.0.0 up");
-	//create aoss bridge
-	sysprintf("brctl addbr aoss");
-	sysprintf("ifconfig aoss 0.0.0.0 up");
-	sysprintf("brctl addif aoss aossa");
-	sysprintf("brctl addif aoss aossg");
-
-
+	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
+		hasaoss = 1;
+		sysprintf
+		    ("80211n_wlanconfig aossa create wlandev wifi1 wlanmode ap");
+		sysprintf("iwconfig aossa essid ESSID-AOSS");
+		sysprintf("iwpriv aossa authmode 4");
+		sysprintf("iwconfig aossa key [1] 4D454C434F");
+		sysprintf("iwconfig aossa key [1]");
+		sysprintf("ifconfig aossa 0.0.0.0 up");
+	}
+	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
+		hasaoss = 1;
+		sysprintf
+		    ("80211n_wlanconfig aossg create wlandev wifi0 wlanmode ap");
+		sysprintf("iwconfig aossg essid ESSID-AOSS");
+		sysprintf("iwpriv aossg authmode 4");
+		sysprintf("iwconfig aossg key [1] 4D454C434F");
+		sysprintf("iwconfig aossg key [1]");
+		sysprintf("ifconfig aossg 0.0.0.0 up");
+	}
+	if (hasaoss) {
+		//create aoss bridge
+		sysprintf("brctl addbr aoss");
+		sysprintf("ifconfig aoss 0.0.0.0 up");
+		sysprintf("brctl addif aoss aossa");
+		sysprintf("brctl addif aoss aossg");
+	}
 #else
-	sysprintf("80211n_wlanconfig aoss create wlandev wifi0 wlanmode ap");
-	sysprintf("iwconfig aoss essid ESSID-AOSS");
-	sysprintf("iwpriv aoss authmode 4");
-	sysprintf("iwconfig aoss key [1] 4D454C434F");
-	sysprintf("iwconfig aoss key [1]");
-	sysprintf("ifconfig aoss 0.0.0.0 up");
+	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
+		hasaoss = 1;
+		sysprintf
+		    ("80211n_wlanconfig aoss create wlandev wifi0 wlanmode ap");
+		sysprintf("iwconfig aoss essid ESSID-AOSS");
+		sysprintf("iwpriv aoss authmode 4");
+		sysprintf("iwconfig aoss key [1] 4D454C434F");
+		sysprintf("iwconfig aoss key [1]");
+		sysprintf("ifconfig aoss 0.0.0.0 up");
+	}
 #endif
-	sysprintf("iptables -I OUTPUT -o aoss -j ACCEPT"); 
-	sysprintf("iptables -I INPUT -i aoss -j ACCEPT"); 
-	ret = eval("aoss", "-i", "aoss", "-m", "ap");
-	dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
+	if (hasaoss) {
+		sysprintf("iptables -I OUTPUT -o aoss -j ACCEPT");
+		sysprintf("iptables -I INPUT -i aoss -j ACCEPT");
+		ret = eval("aoss", "-i", "aoss", "-m", "ap");
+		dd_syslog(LOG_INFO,
+			  "aoss : aoss daemon successfully started\n");
+	} else
+		dd_syslog(LOG_INFO,
+			  "aoss : aoss daemon not started (operation mode is not AP or WDSAP)\n");
+
 	cprintf("done\n");
 	return;
 }
@@ -105,8 +121,8 @@ void start_aoss(void)
 void stop_aoss(void)
 {
 	stop_process("aoss", "buffalo aoss daemon");
-	sysprintf("iptables -D OUTPUT -o aoss -j ACCEPT"); 
-	sysprintf("iptables -D INPUT -i aoss -j ACCEPT"); 
+	sysprintf("iptables -D OUTPUT -o aoss -j ACCEPT");
+	sysprintf("iptables -D INPUT -i aoss -j ACCEPT");
 	return;
 }
 
