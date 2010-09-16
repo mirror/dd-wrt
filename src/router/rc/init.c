@@ -394,6 +394,10 @@ int main(int argc, char **argv)
 	/* 
 	 * Basic initialization 
 	 */
+#ifdef HAVE_MICRO
+	if (console_init())
+		noconsole = 1;
+#endif
 	cprintf("init lcd\n");
 	initlcd();
 	cprintf("first message\n");
@@ -402,10 +406,12 @@ int main(int argc, char **argv)
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("devinit"); //init /dev /proc etc.
 	start_service("sysinit");
+#ifndef HAVE_MICRO
 #ifndef HAVE_LAGUNA
 	if (console_init())
 #endif
 		noconsole = 1;
+#endif  //HAVE_MICRO
 	start_service("drivers");
 	cprintf("setup signals\n");
 	/* 
