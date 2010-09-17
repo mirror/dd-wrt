@@ -712,7 +712,6 @@ nas.proftpd_passw="Lista Uporabnik Geslo";
 nas.proftpd_writeen="Dovoli pisanje";
 nas.proftpd_anon="Anonimna prijava (samo za branje)";
 nas.proftpd_anon_dir="Podmapa za anonimno prijavo";
-nas.sambasrv_legend="Samba strežnik";
 nas.samba3_legend="Souporaba datotek";
 
 

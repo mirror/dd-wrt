@@ -698,7 +698,6 @@ nas.proftpd_passw="Lista de contraseñas de usuarios";
 nas.proftpd_writeen="Permitir escritura";
 nas.proftpd_anon="Permitir Inicio anónimo (Solo-lectura)";
 nas.proftpd_anon_subdir="Subcarpeta de inicio para accesos anónimos";
-nas.sambasrv_legend="Servidor Samba";
 
 hnas.right2="Lista de contraseñas de los Usuarios: Introduzca una contraseña de usuario por línea. La contraseña puede ser en texto plano o cifrada por MD5.";
 

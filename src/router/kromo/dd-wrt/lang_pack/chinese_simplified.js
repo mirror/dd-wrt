@@ -567,7 +567,6 @@ nas.proftpd_passw="用户密码列表";
 nas.proftpd_writeen="允许写入";
 nas.proftpd_anon="匿名登陆（只读）";
 nas.proftpd_anon_subdir="匿名 Home 子目录";
-nas.sambasrv_legend="Samba服务器";
 
 hnas.right2="用户密码列表：一个用户密码一行。密码可以是明文或MD5加密。";
 
