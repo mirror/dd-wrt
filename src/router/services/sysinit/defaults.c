@@ -2742,9 +2742,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"proftpd_anon", "0", 0},
 	{"proftpd_anon_subdir", "", 0},
 #endif
-#ifdef HAVE_SAMBA_SRV
-	{"sambasrv_enable", "0", 0},
-#endif
 #ifdef HAVE_SAMBA3
 	{"samba3_enable", "0", 0},
 	{"samba3_pub", "0", 0},
