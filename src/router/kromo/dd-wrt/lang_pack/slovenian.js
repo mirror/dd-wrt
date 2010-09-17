@@ -1439,6 +1439,7 @@ service.samba3_srvstr="Niz strežnika";
 service.samba3_pub="Javna souporaba";
 service.samba3_config="Konfiguracija po meri";
 service.samba3_workgrp="Delovna skupina";
+service.samba3_dirpath="Pot do datotek";
 service.samba3_usr1="Uporabnik1";
 service.samba3_pass1=" Geslo1";
 service.samba3_usr2="Uporabnik2";
