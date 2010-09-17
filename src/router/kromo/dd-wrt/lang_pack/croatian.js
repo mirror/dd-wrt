@@ -712,7 +712,6 @@ nas.proftpd_passw="Lista Korisničkih Zaporki";
 nas.proftpd_writeen="Dozvoli Pisanje";
 nas.proftpd_anon="Anonimna Prijava (Čitaj-Samo)";
 nas.proftpd_anon_subdir="Anonimni Kućni Podimenik";
-nas.sambasrv_legend="Samba Poslužitelj";
 nas.samba3_legend="Dijeljenje Datoteka";
 
 

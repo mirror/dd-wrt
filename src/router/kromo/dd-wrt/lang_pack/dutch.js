@@ -708,7 +708,6 @@ nas.proftpd_passw="Gebruikers Wachtwoord Lijst";
 nas.proftpd_writeen="Schrijven Toestaan";
 nas.proftpd_anon="Anonieme Inlog (Alleen-Lezen)";
 nas.proftpd_anon_subdir="Anonieme Home Sub-directory";
-nas.sambasrv_legend="Samba Server";
 
 
 hnas.right2="Gebruikerswachtwoorden Lijst: Gebruik één Gebruikerswachtwoord per regel. Wachtwoorden mogen gewoon platte text zijn of met MD5 encryptie."; 

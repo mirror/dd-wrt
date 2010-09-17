@@ -684,7 +684,6 @@ nas.proftpd_passw="Nutzer Passwort Liste";
 nas.proftpd_writeen="Schreiberlaubniss";
 nas.proftpd_anon="Anonymes Login (Nur-Lesen)";
 nas.proftpd_anon_subdir="Anonymes Heimat Unterverzeichniss";
-nas.sambasrv_legend="Samba Server";
 
 
 hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";

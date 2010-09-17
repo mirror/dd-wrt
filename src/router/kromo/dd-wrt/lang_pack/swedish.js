@@ -674,7 +674,7 @@ nas.proftpd_passw="Användarnamn och Lösenord";
 nas.proftpd_writeen="Tillåt Skrivrättigheter";
 nas.proftpd_anon="Anonym Inloggning (Skrivskyddat)";
 nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
-nas.sambasrv_legend="Samba Server";
+
 
 hnas.right2="Användarnamn och Lösenords lista: Skriv in ett Användarnamn och Lösenord per rad, måste separeras med ett mellanslag. Lösenorden kan vara i textformat eller MD5 krypterat.";
 
