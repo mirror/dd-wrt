@@ -481,9 +481,6 @@ endif
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_FTP
 endif
-ifeq ($(CONFIG_SAMBA_SRV),y)
-CFLAGS += -DHAVE_SAMBA_SRV
-endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS += -DHAVE_SAMBA3
 endif
