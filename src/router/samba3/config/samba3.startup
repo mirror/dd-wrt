@@ -26,10 +26,11 @@ fi
 
 WORKGROUP="$(nvram get samba3_workgrp)"
 SRVSTRING="$(nvram get samba3_srvstr)"
+DIRPATH="$(nvram get samba3_dirpath)"
 ACL="No"
 
 if [ "$(nvram get samba3_pubacl)" = "1" ]; then
-ACL="YES"
+ACL="Yes"
 fi
 
 SMB_CONF=$( cat <<EOF
@@ -55,9 +56,10 @@ PUBLIC=$( cat <<EOF
 
 [Public]
 comment = Public Share
-path = /jffs/
+path = $DIRPATH
 read only = $ACL
 guest ok = Yes
+force user = root
 EOF
 )
 
