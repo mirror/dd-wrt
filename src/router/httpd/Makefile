@@ -481,7 +481,7 @@ endif
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_NAS_SERVER
 endif
-ifeq ($(CONFIG_SAMBASRV),y)
+ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS += -DHAVE_NAS_SERVER
 endif
 
