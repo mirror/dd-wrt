@@ -1440,6 +1440,7 @@ service.samba3_srvstr="Server String";
 service.samba3_pub="Public Share";
 service.samba3_config="Custom Configuration";
 service.samba3_workgrp="Workgroup";
+service.samba3_dirpath="Path to Files";
 service.samba3_usr1="User1";
 service.samba3_pass1=" Password1";
 service.samba3_usr2="User2";
