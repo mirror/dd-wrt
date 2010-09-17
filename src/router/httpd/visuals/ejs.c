@@ -1940,7 +1940,7 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 
 	for (i = 0; i < 39; i++) {
 		websWrite(wp,
-			  "<option value=\"%s\" %s>UTC%s</option>\");\n",
+			  "<option value=\"%s\" %s>UTC%s</option>\n",
 			  timediffs[i], nvram_match("time_zone",
 						    timediffs[i]) ?
 			  "selected=\"selected\"" : "", timezones[i]);
