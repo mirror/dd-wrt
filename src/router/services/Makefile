@@ -501,10 +501,6 @@ ifeq ($(CONFIG_FTP),y)
 CFLAGS_EXTRA += -DHAVE_FTP
 OBJS += proftp.o
 endif
-ifeq ($(CONFIG_SAMBA_SRV),y)
-CFLAGS_EXTRA += -DHAVE_SAMBA_SRV
-OBJS += sambasrv.o
-endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS_EXTRA += -DHAVE_SAMBA3
 OBJS += samba3.o
