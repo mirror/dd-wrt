@@ -2,7 +2,7 @@
  "samba3_pub"  "Samba3 Public" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "samba3_srvstr"  "Samba3 Server String"  "DD-WRT"  "FALSE" "0"
  "samba3_workgrp"  "Samba3 Workgroup"  "Workgroup"  "FALSE" "0"
- "samba3_dirpath"  "Samba3 Dir Path"  "/jffs/"  "FALSE" "0"
+ "samba3_dirpath"  "Samba3 Dir Path"  "/jffs"  "FALSE" "0"
  "samba3_usr1"  "Samba3 User1"  "NULL"  "FALSE" "0"
  "samba3_pass1"  "Samba3 Pass1"  "NULL"  "FALSE" "0"
  "samba3_usr2"  "Samba3 User2"  "NULL"  "FALSE" "0"
