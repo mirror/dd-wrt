@@ -45,7 +45,7 @@ share.ip="IP naslov";
 share.localip="Lokalni IP";
 share.remoteip="Oddaljeni IP";
 share.mac="MAC naslov";
-share.none="Nobeden";
+share.none="Noben";
 share.none2="nič";
 share.both="Oba";
 share.del="Izbriši";
@@ -317,7 +317,7 @@ errmsg.err37="Vnesti morate UDP vrata za zagon.";
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Prosimo, da vnesete skupni ključ!";
-errmsg.err39="Nepravilen ključ, biti mora med 8 in 63 ASCII znaki ali 64 šestnajstiških znakov";
+errmsg.err39="Nepravilen ključ. Biti mora med 8 in 63 ASCII znaki ali 64 šestnajstiških znakov";
 errmsg.err40="Vnesti morate ključ za Ključ ";
 errmsg.err41="Nepravilna dolžina ključa ";
 errmsg.err43="Interval za izmenjavo ključa";
