@@ -13,7 +13,7 @@ cd router
 cp ./configs/broadcom_K26/.config_mini.v24-K26 .config
 
 ## uncomment next line for 60K nvram builds, e.g. e2000, e3000...
-# echo CONGIG_NVRAM_60K=y >> .config
+# echo CONFIG_NVRAM_60K=y >> .config
 
 
 make -f Makefile.brcm26 clean all install
