@@ -105,7 +105,7 @@
 #include "cmdline.h"
 #include "chilli.h"
 
-#include <sys/ucontext.h>
+//#include <sys/ucontext.h>
 struct options_t options;
 
 struct tun_t *tun;                /* TUN instance            */
@@ -142,6 +142,7 @@ void static termination_handler(int signum) {
   keep_going = 0;
 }
 
+#if 0
 void static segfault_handler(int signum, siginfo_t *siginfo, void *ptr) {
   ucontext_t *u = (ucontext_t *)ptr;
   if (options.debug) 
@@ -161,7 +162,7 @@ void static segfault_handler(int signum, siginfo_t *siginfo, void *ptr) {
   keep_going = 0;
   exit(1);
 }
-
+#endif
 /* Alarm handler for general house keeping */
 void static alarm_handler(int signum) {
   /*if (options.debug) printf("SIGALRM received!\n");*/
@@ -4081,10 +4082,11 @@ int main(int argc, char **argv)
   act.sa_handler = termination_handler;
   sigaction(SIGTERM, &act, NULL);
 
+#if 0
   act.sa_sigaction = segfault_handler;
   act.sa_flags = SA_SIGINFO;
   sigaction(SIGSEGV, &act, NULL);
-
+#endif
   sigaction(SIGINT, &act, NULL);
   act.sa_handler = alarm_handler;
   sigaction(SIGALRM, &act, NULL);
