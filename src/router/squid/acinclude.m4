@@ -73,7 +73,7 @@ AC_DEFUN([AC_TEST_CHECKFORHUGEOBJECTS],[
   AC_MSG_CHECKING([whether compiler accepts -fhuge-objects])
   AC_CACHE_VAL([ac_cv_test_checkforhugeobjects],[
     ac_cv_test_checkforhugeobjects=`echo "int foo;" > conftest.cc
-${CXX} -Werror -fhuge-objects -c conftest.cc 2>/dev/null
+${CXX} -fhuge-objects -c conftest.cc 2>/dev/null
 res=$?
 rm -f conftest.*
 echo yes
