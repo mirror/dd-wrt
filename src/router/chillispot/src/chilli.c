@@ -105,6 +105,7 @@
 #include "cmdline.h"
 #include "chilli.h"
 
+#include <sys/ucontext.h>
 struct options_t options;
 
 struct tun_t *tun;                /* TUN instance            */
@@ -139,6 +140,26 @@ void static fireman(int signum) {
 void static termination_handler(int signum) {
   if (options.debug) printf("SIGTERM received!\n");
   keep_going = 0;
+}
+
+void static segfault_handler(int signum, siginfo_t *siginfo, void *ptr) {
+  ucontext_t *u = (ucontext_t *)ptr;
+  if (options.debug) 
+     {
+     printf("SIGSEGV received at %p PC %p!\n",siginfo->si_addr,u->uc_mcontext.arm_pc);
+     }
+  syslog(LOG_INFO, "SIGSEGV received at %p PC %p!\n",siginfo->si_addr,u->uc_mcontext.arm_pc);
+  void *sp=(void*)u->uc_mcontext.arm_sp;
+  syslog(LOG_INFO, "stack %p\n",sp);
+  int i;
+  for (i=0;i<256;i+=4)
+     {
+     syslog(LOG_INFO, "SP%p:%p\n",i,sp+i,*(unsigned long*)(sp+i));    
+     if (options.debug) 
+        printf("SP%d:%p\n",i,*(unsigned long *)(sp+i));    
+     }
+  keep_going = 0;
+  exit(1);
 }
 
 /* Alarm handler for general house keeping */
@@ -1504,6 +1525,7 @@ int static macauth_radius(struct app_conn_t *appconn) {
 
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_USER_NAME, 0, 0, 0,
 			(uint8_t*) appconn->proxyuser, appconn->proxyuserlen);
+			
 
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_USER_PASSWORD, 0, 0, 0,
 		 (uint8_t*) options.macpasswd, strlen(options.macpasswd));
@@ -2645,9 +2667,7 @@ int access_request(struct radius_packet_t *pack,
   }
 
   if (pwdattr)
-    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_USER_PASSWORD, 0, 0, 0,
-		   (uint8_t*) pwd, pwdlen);
-
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_USER_PASSWORD, 0, 0, 0,(uint8_t*) pwd, pwdlen);
   /* Include EAP (if present) */
   offset = 0;
   while (offset < resplen) {
@@ -4057,8 +4077,14 @@ int main(int argc, char **argv)
   memset(&act, 0, sizeof(act));
   act.sa_handler = fireman;
   sigaction(SIGCHLD, &act, NULL);
+
   act.sa_handler = termination_handler;
   sigaction(SIGTERM, &act, NULL);
+
+  act.sa_sigaction = segfault_handler;
+  act.sa_flags = SA_SIGINFO;
+  sigaction(SIGSEGV, &act, NULL);
+
   sigaction(SIGINT, &act, NULL);
   act.sa_handler = alarm_handler;
   sigaction(SIGALRM, &act, NULL);
