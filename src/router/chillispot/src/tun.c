@@ -370,7 +370,7 @@ int tun_addaddr(struct tun_t *this,
   this->addrs++;
   return 0;
 
-#elif defined (__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
+#elif defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
   int fd;
   struct ifaliasreq      areq;
@@ -449,7 +449,7 @@ int tun_setaddr(struct tun_t *this,
 #if defined(__linux__)
   ifr.ifr_netmask.sa_family = AF_INET;
 
-#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   ((struct sockaddr_in *) &ifr.ifr_addr)->sin_len = 
     sizeof (struct sockaddr_in);
   ((struct sockaddr_in *) &ifr.ifr_dstaddr)->sin_len = 
@@ -501,7 +501,7 @@ int tun_setaddr(struct tun_t *this,
     ((struct sockaddr_in *) &ifr.ifr_netmask)->sin_addr.s_addr = 
       netmask->s_addr;
 
-#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
     ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr.s_addr = 
       netmask->s_addr;
 
@@ -589,7 +589,7 @@ int tun_route(struct tun_t *this,
   close(fd);
   return 0;
   
-#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
 struct {
   struct rt_msghdr rt;
@@ -678,7 +678,7 @@ int tun_new(struct tun_t **tun)
 #if defined(__linux__)
   struct ifreq ifr;
 
-#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   char devname[IFNAMSIZ+5]; /* "/dev/" + ifname */
   int devnum;
   struct ifaliasreq areq;
@@ -726,7 +726,7 @@ int tun_new(struct tun_t **tun)
   ioctl((*tun)->fd, TUNSETNOCSUM, 1); /* Disable checksums */
   return 0;
   
-#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
   /* Find suitable device */
   for (devnum = 0; devnum < 255; devnum++) { /* TODO 255 */ 
