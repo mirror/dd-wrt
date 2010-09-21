@@ -483,7 +483,7 @@ void setRouter(char *name)
 	if (name)
 		nvram_set(NVROUTER, name);
 #endif
-	cprintf ("router is %s\n", getRouter());
+	cprintf("router is %s\n", getRouter());
 }
 
 char *getRouter()
@@ -540,10 +540,10 @@ int internal_getRouterBrand()
 			setRouter("Gateworks Laguna GWXXXX-X");
 			return ROUTER_BOARD_GW2388;
 		}
-	}else{
-			setRouter("Gateworks Laguna");
-			return ROUTER_BOARD_GW2388;
-	
+	} else {
+		setRouter("Gateworks Laguna");
+		return ROUTER_BOARD_GW2388;
+
 	}
 #elif HAVE_MI424WR
 	setRouter("Actiontec MI424WR");
@@ -940,42 +940,51 @@ int internal_getRouterBrand()
 		char *rxchain;	// rx chainmask
 		char *txchain;	// tx chainmask
 		int dddev;	// dd-wrt device id
+		int offset;	// frequency offset
 	};
 
+	/* these values are guessed and need to be validated */
+#define M900 (- (2427 - 907))
+#define M365 (- (5540 - 3650))
+#define M35 (- (5540 - 3540))
 	struct UBNTDEV dev[] = {
-		{"Ubiquiti NanoStation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M},	//
-		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M},	//
-		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti NanoStation M365", 0xe0b3, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti NanoStation M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M},	//
-		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M},	//
-		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M},	//
-		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M},	//
-		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M},	//
-		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti Bullet M5", 0xe202, "1", "1", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M},	//
-		{"Ubiquiti Airgrid 5M", 0xe215, "1", "1", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti AirRouter", 0xe4a2, "1", "1", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M},	//
-		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti Airwire", 0xe4a5, "3", "3", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti Loco M2", 0xe0a2, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti Loco M900", 0xe0a9, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti LiteStation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M},	//
-		{"Ubiquiti AP 1000N", 0xe402, "3", "3", ROUTER_BOARD_R2M},	//
-		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M},	//
-		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M},	//
-		{"Ubiquiti NanoBridge M5", 0xe235, "3", "3", ROUTER_BOARD_BS5M},	//
-		{"Ubiquiti NanoBridge M2", 0xe232, "3", "3", ROUTER_BOARD_BS2M},	//
-		{"Ubiquiti Rocket M365", 0xe1b3, "3", "3", ROUTER_BOARD_R5M},	//
-		{"Ubiquiti Rocket M35", 0xe1c3, "3", "3", ROUTER_BOARD_R5M},	//
-		{"Ubiquiti Rocket M900", 0xe1b9, "3", "3", ROUTER_BOARD_R2M},	//
+		{"Ubiquiti NanoStation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M, 0},	//
+		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M, 0},	//
+		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M, 0},	//
+		{"Ubiquiti NanoStation M365", 0xe0b3, "3", "3", ROUTER_BOARD_NS5M, M365},	//
+		{"Ubiquiti NanoStation M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900},	//
+		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M, 0},	//
+		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M, 0},	//
+		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Bullet M5", 0xe202, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti Airgrid 5M", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti AirRouter", 0xe4a2, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Airwire", 0xe405, "3", "3", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Airwire", 0xe4a5, "3", "3", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M, 0},	//
+		{"Ubiquiti Loco M2", 0xe0a2, "3", "3", ROUTER_BOARD_NS5M, 0},	//
+		{"Ubiquiti Loco M900", 0xe0a9, "3", "3", ROUTER_BOARD_NS5M, M900},	//
+		{"Ubiquiti LiteStation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M, 0},	//
+		{"Ubiquiti AP 1000N", 0xe402, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M, 0},	//
+		{"Ubiquiti NanoBridge M5", 0xe235, "3", "3", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti NanoBridge M2", 0xe232, "3", "3", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti Rocket M365", 0xe1b3, "3", "3", ROUTER_BOARD_R5M, M365},	//
+		{"Ubiquiti Rocket M35", 0xe1c3, "3", "3", ROUTER_BOARD_R5M, M35},	//
+		{"Ubiquiti Rocket M900", 0xe1b9, "3", "3", ROUTER_BOARD_R2M, M900},	//
 		{NULL, 0, NULL, NULL, 0},	//
 	};
+
+#undef M35
+#undef M365
+#undef M900
 
 	FILE *fp =
 	    fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device", "rb");
@@ -987,8 +996,15 @@ int internal_getRouterBrand()
 	int devcnt = 0;
 	while (dev[devcnt].devicename != NULL) {
 		if (dev[devcnt].devid == device) {
-			nvram_default_get("ath0_rxantenna", dev[devcnt].rxchain);
-			nvram_default_get("ath0_txantenna", dev[devcnt].txchain);
+			nvram_default_get("ath0_rxantenna",
+					  dev[devcnt].rxchain);
+			nvram_default_get("ath0_txantenna",
+					  dev[devcnt].txchain);
+			if (dev[devcnt].offset) {
+				char foff[32];
+				sprintf(foff, "%d", dev[devcnt].offset);
+				nvram_set("ath0_offset", foff);
+			}
 			setRouter(dev[devcnt].devicename);
 			return dev[devcnt].dddev;
 		}
@@ -1251,7 +1267,7 @@ int internal_getRouterBrand()
 		setRouter("Asus WL-500g Deluxe");
 		return ROUTER_ASUS_WL500GD;
 	}
-	
+
 	if (boardnum == 45 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("boardrev", "0x23") && nvram_match("parkid", "1")) {
 		setRouter("Asus WL-500W");
@@ -1269,7 +1285,6 @@ int internal_getRouterBrand()
 			return ROUTER_ASUS_WL550GE;
 		}
 	}
-
 #ifdef HAVE_BCMMODERN
 	if (boardnum == 45 && nvram_match("boardtype", "0x04EC")
 	    && nvram_match("boardrev", "0x1402")) {
@@ -1300,19 +1315,19 @@ int internal_getRouterBrand()
 		setRouter("Belkin Play Max F7D4301v1");
 		return ROUTER_BELKIN_F7D4301;
 	}
-	
+
 	if (boardnum == 12345 && nvram_match("boardtype", "0xa4cf")
 	    && nvram_match("boardrev", "0x1102")) {
-			FILE *mtd1 = fopen("/dev/mtdblock/1", "rb");
-			unsigned long trxhd;
-			if (mtd1) {
-				fread(&trxhd, 4, 1, mtd1);
-				fclose(mtd1);
-				if (trxhd == TRX_MAGIC_F7D3302) {
-					setRouter("Belkin Share F7D3302v1");
-					return ROUTER_BELKIN_F7D3302;
-				}
-			}	
+		FILE *mtd1 = fopen("/dev/mtdblock/1", "rb");
+		unsigned long trxhd;
+		if (mtd1) {
+			fread(&trxhd, 4, 1, mtd1);
+			fclose(mtd1);
+			if (trxhd == TRX_MAGIC_F7D3302) {
+				setRouter("Belkin Share F7D3302v1");
+				return ROUTER_BELKIN_F7D3302;
+			}
+		}
 		setRouter("Belkin Play F7D4302v1");
 		return ROUTER_BELKIN_F7D4302;
 	}
@@ -1715,7 +1730,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardnum", "20070615") &&
 	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")) {
-	    if (nvram_match("switch_type", "BCM5395")) {
+		if (nvram_match("switch_type", "BCM5395")) {
 			setRouter("Linksys WRT600N v1.1");
 			return ROUTER_WRT600N;
 		} else {
@@ -1729,7 +1744,6 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT610N");
 		return ROUTER_WRT610N;
 	}
-
 #ifdef HAVE_BCMMODERN
 	if (nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boot_hw_model", "WRT610N")) {
@@ -1874,7 +1888,7 @@ int internal_getRouterBrand()
 	if (boardnum == 42 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x10")) {
 		if (nvram_match("boardflags", "0x20750")) {
-			setRouter("Linksys WRT54G2 / GS2"); // router is wrt54g2v1/v1.3/gs2v1
+			setRouter("Linksys WRT54G2 / GS2");	// router is wrt54g2v1/v1.3/gs2v1
 		} else {
 			setRouter("Linksys WRT54Gv8 / GSv7");
 		}
@@ -1883,7 +1897,7 @@ int internal_getRouterBrand()
 
 	if (boardnum == 8 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x11")) {
-		setRouter("ALLNET EUROWRT 54");  //ALLNET01
+		setRouter("ALLNET EUROWRT 54");	//ALLNET01
 		return ROUTER_ALLNET01;
 	}
 
@@ -1962,7 +1976,6 @@ int internal_getRouterBrand()
 		setRouter("Linksys WAP54G v3.x");
 		return ROUTER_WAP54G_V3;
 	}
-
 #ifdef HAVE_BCMMODERN
 	if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
 	    && nvram_match("boardrev", "0x1700")) {
@@ -2689,11 +2702,11 @@ int ifexists(const char *ifname)
 
 int getdevicecount(void)
 {
-	int count=0;
+	int count = 0;
 #ifdef HAVE_ATH9K
-	count+=getath9kdevicecount();
+	count += getath9kdevicecount();
 #endif
-	count+=getifcount("wifi");
+	count += getifcount("wifi");
 
 	return count;
 }
@@ -2871,7 +2884,7 @@ char *cpustring(void)
 {
 	static char buf[256];
 #ifdef HAVE_RB600
-	strcpy(buf,"FreeScale MPC8343");
+	strcpy(buf, "FreeScale MPC8343");
 	return buf;
 #else
 	FILE *fcpu = fopen("/proc/cpuinfo", "r");
@@ -3029,8 +3042,8 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
-//		connected_gpio = 0x112;
-//		ses_gpio = 0x105;
+//              connected_gpio = 0x112;
+//              ses_gpio = 0x105;
 #endif
 #ifdef HAVE_DIR615E
 		power_gpio = 0x006;
@@ -3064,7 +3077,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x102;
 		break;
 	case ROUTER_BOARD_GW2388:
-		connected_gpio = 0x110; // 16 is mapped to front led
+		connected_gpio = 0x110;	// 16 is mapped to front led
 		break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
@@ -3166,9 +3179,9 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
-//		connected_gpio = 0x112;
+//              connected_gpio = 0x112;
 		usb_gpio = 0x102;
-//		ses_gpio = 0x111;
+//              ses_gpio = 0x111;
 #endif
 		break;
 #endif
@@ -3479,9 +3492,9 @@ int led_control(int type, int act)
 	case ROUTER_BELKIN_F7D3302:
 	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_BELKIN_F7D4302:
-		power_gpio = 0x10a; // green
+		power_gpio = 0x10a;	// green
 		diag_gpio = 0x10b;	// red
-		ses_gpio = 0x10d;   // wps orange
+		ses_gpio = 0x10d;	// wps orange
 		break;
 	case ROUTER_DYNEX_DX_NRUTER:
 		power_gpio = 0x001;
@@ -3881,14 +3894,15 @@ int getath9kdevicecount(void)
 {
 	glob_t globbuf;
 	int globresult;
-	int count=0;
-	if (nvram_match("mimo_driver", "ath9k"))
-		{
-		globresult=glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
+	int count = 0;
+	if (nvram_match("mimo_driver", "ath9k")) {
+		globresult =
+		    glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL,
+			 &globbuf);
 		if (globresult == 0)
-			count=(int) globbuf.gl_pathc;
+			count = (int)globbuf.gl_pathc;
 		globfree(&globbuf);
-		}
-	return(count);
+	}
+	return (count);
 }
 #endif
