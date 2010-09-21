@@ -1030,7 +1030,20 @@ int get_wififreq(char *ifname, int freq)
 	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M365")) {
 		return freq - (5540 - 3650);	// this is just a guess    
 	}
+	if (nvram_match("DD_BOARD", "Ubiquiti NanoStation M365")) {
+		return freq - (5540 - 3650);	// this is just a guess    
+	}
 	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M900")) {
+		if (freq < 2427 || freq > 2442)
+			return -1;
+		return freq - (2427 - 907);	//guess too, like on XR9?
+	}
+	if (nvram_match("DD_BOARD", "Ubiquiti NanoStation M900")) {
+		if (freq < 2427 || freq > 2442)
+			return -1;
+		return freq - (2427 - 907);	//guess too, like on XR9?
+	}
+	if (nvram_match("DD_BOARD", "Ubiquiti Loco M900")) {
 		if (freq < 2427 || freq > 2442)
 			return -1;
 		return freq - (2427 - 907);	//guess too, like on XR9?
