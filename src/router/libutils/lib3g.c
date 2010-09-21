@@ -172,51 +172,31 @@ struct DEVICES {
 
 static struct DEVICES devicelist[] = {
 //sierra wireless cards
-	{0x1199, 0x6880, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL,
-	 "Sierra Wireless Compass 885"},
-	{0x1199, 0x6890, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL,
-	 "Sierra Wireless Compass 888"},
-	{0x1199, 0x6893, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL,
-	 "Sierra Wireless Compass 889"},
+	{0x1199, 0x6880, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 885"},	//
+	{0x1199, 0x6890, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 888"},	//
+	{0x1199, 0x6893, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 889"},	//
 	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 889"},	//alternate variant
-	{0x1199, 0x6832, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1,
-	 &reset_mc, "Sierra Wireless MC8780"},
-	{0x1199, 0x683c, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1,
-	 &reset_mc, "Sierra Wireless MC8790"},
-	{0x1199, 0x683d, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1,
-	 &reset_mc, "Sierra Wireless MC8790"},
-	{0x1199, 0x683e, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1,
-	 &reset_mc, "Sierra Wireless MC8790"},
-	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1,
-	 &reset_mc, "Sierra Wireless MC8700"},
-	{0x1199, 0x6812, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1,
-	 &reset_mc, "Sierra Wireless MC8775V"},
+	{0x1199, 0x6832, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8780"},	//
+	{0x1199, 0x683c, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x683d, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x683e, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8700"},	//
+	{0x1199, 0x6812, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8775V"},	//
 //option/huawai
-	{0x12d1, 0x1001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,
-	 "HUAWAI/Option E600 or generic"},
-	{0x12d1, 0x1003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,
-	 "HUAWAI/Option E172/EC270"},
-	{0x12d1, 0x1412, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,
-	 "HUAWAI/Option EC168"},
-	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2,
-	 &modeswitch_e1550, "HUAWAI/Option E1550"},
-	{0x0af0, 0x7011, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,
-	 "HUAWAI/Option E301 HSUPA"},
-	{0x1410, 0x5030, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2,
-	 &modeswitch_usb760, "Novatel USB760 CDROM Mode"},
-	{0x1410, 0x6000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL,
-	 "Novatel USB760 Modem Mode"},
+	{0x12d1, 0x1001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWAI/Option E600 or generic"},	//
+	{0x12d1, 0x1003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWAI/Option E172/EC270"},	//
+	{0x12d1, 0x1412, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWAI/Option EC168"},	//
+	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_e1550, "HUAWAI/Option E1550"},	//
+	{0x0af0, 0x7011, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWAI/Option E301 HSUPA"},	//
+	{0x1410, 0x5030, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel USB760 CDROM Mode"},	//
+	{0x1410, 0x6000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel USB760 Modem Mode"},	//
 //qualcomm
-	{0x1e0e, 0x9000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL,
-	 "Qualcomm ICON 210 Modem Mode"},
-	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3,
-	 &modeswitch_icon210, "Qualcomm ICON 210 CDROM Mode"},
-	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225,
-	 "Qualcomm ICON 225"},
+	{0x1e0e, 0x9000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL, "Qualcomm ICON 210 Modem Mode"},	//
+	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, &modeswitch_icon210, "Qualcomm ICON 210 CDROM Mode"},	//
+	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
 //ericsson
-	{0x0bdb, 0x1900, "option", "/dev/usb/tts/0", "/dev/usb/tts/1", 0, NULL,
-	 "Ericsson F3507g"},
-	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}
+	{0x0bdb, 0x1900, "option", "/dev/usb/tts/0", "/dev/usb/tts/1", 0, NULL, "Ericsson F3507g"},	//
+	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
 char *get3GControlDevice(void)
@@ -307,8 +287,7 @@ char *get3GControlDevice(void)
 			if (devicelist[devicecount].customsetup)
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].
-								    controldevice);
+								    [devicecount].controldevice);
 			return devicelist[devicecount].controldevice;
 		}
 		devicecount++;
