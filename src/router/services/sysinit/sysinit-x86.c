@@ -132,11 +132,16 @@ void start_sysinit(void)
 	//recover nvram if available
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
+		fprintf(stderr,"recover broken nvram\n");
 		sprintf(dev, "/dev/discs/disc%d/disc", index);
+		in = fopen(dev, "rb");
 		fseek(in, 65536 * 2, SEEK_END);
 		char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
+		if (mem[0]==0x4c && mem[1]==0x46)
+		{
+		fprintf(stderr,"found recovery\n");
 		in = fopen("/usr/local/nvram/nvram.bin", "wb");
 		if (in != NULL) {
 			fwrite(mem, 65536, 1, in);
@@ -146,6 +151,7 @@ void start_sysinit(void)
 			sleep(5);
 			sys_reboot();
 			sleep(10000);
+		}
 		}
 		free(mem);
 	} else {
