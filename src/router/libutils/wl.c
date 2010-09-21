@@ -1027,30 +1027,6 @@ int get_wififreq(char *ifname, int freq)
 #ifdef HAVE_NS3
 	return -2000;
 #endif
-	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M365")) {
-		return freq - (5540 - 3650);	// this is just a guess    
-	}
-	if (nvram_match("DD_BOARD", "Ubiquiti NanoStation M365")) {
-		return freq - (5540 - 3650);	// this is just a guess    
-	}
-	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M900")) {
-		if (freq < 2427 || freq > 2442)
-			return -1;
-		return freq - (2427 - 907);	//guess too, like on XR9?
-	}
-	if (nvram_match("DD_BOARD", "Ubiquiti NanoStation M900")) {
-		if (freq < 2427 || freq > 2442)
-			return -1;
-		return freq - (2427 - 907);	//guess too, like on XR9?
-	}
-	if (nvram_match("DD_BOARD", "Ubiquiti Loco M900")) {
-		if (freq < 2427 || freq > 2442)
-			return -1;
-		return freq - (2427 - 907);	//guess too, like on XR9?
-	}
-	if (nvram_match("DD_BOARD", "Ubiquiti Rocket M35")) {
-		return freq - (5540 - 3540);	// like on XR3?
-	}
 
 	if (isEMP(ifname)) {
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
@@ -1250,43 +1226,48 @@ int getAssocMAC(char *ifname, char *mac)
 	closesocket();
 	return ret;
 }
+
 #ifdef HAVE_ATH9K
 
-int get_ath9k_phy_idx(int idx) {
+int get_ath9k_phy_idx(int idx)
+{
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 	return idx - getifcount("wifi");
 }
 
-int is_ath9k(char *prefix) {
+int is_ath9k(char *prefix)
+{
 	glob_t globbuf;
-	int count=0;
+	int count = 0;
 	char globstring[1024];
 	int globresult;
 	int devnum;
 	// get legacy interface count
 	if (!nvram_match("mimo_driver", "ath9k"))
 		return (0);
-	if (! sscanf(prefix, "ath%d", &devnum) )
-			return(0);
+	if (!sscanf(prefix, "ath%d", &devnum))
+		return (0);
 	// correct index if there are legacy cards arround
-	devnum=get_ath9k_phy_idx(devnum);
-	sprintf(globstring,"/sys/class/ieee80211/phy%d",devnum);
-	globresult=glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	devnum = get_ath9k_phy_idx(devnum);
+	sprintf(globstring, "/sys/class/ieee80211/phy%d", devnum);
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
-		count=(int) globbuf.gl_pathc;
+		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
-	return(count);
+	return (count);
 }
 
-void delete_ath9k_devices(char *physical_iface) {
+void delete_ath9k_devices(char *physical_iface)
+{
 	glob_t globbuf;
 	char globstring[1024];
 	int globresult;
 	if (physical_iface)
-		sprintf(globstring,"/sys/class/ieee80211/%s/device/net/*",physical_iface);
+		sprintf(globstring, "/sys/class/ieee80211/%s/device/net/*",
+			physical_iface);
 	else
-		sprintf(globstring,"/sys/class/ieee80211/phy*/device/net/*");
-	globresult=glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+		sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/*");
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	int i;
 	for (i = 0; i < globbuf.gl_pathc; i++) {
 		char *ifname;
@@ -1297,30 +1278,39 @@ void delete_ath9k_devices(char *physical_iface) {
 	}
 }
 
-void radio_off_ath9k(int idx) {
-	fprintf (stderr, "ath9k radio off: phy%d ath%d\n",get_ath9k_phy_idx(idx), idx);
+void radio_off_ath9k(int idx)
+{
+	fprintf(stderr, "ath9k radio off: phy%d ath%d\n",
+		get_ath9k_phy_idx(idx), idx);
 	// TBD
-	}
+}
 
-void radio_on_ath9k(int idx) {
-	fprintf (stderr, "ath9k radio on: phy%d ath%d\n",get_ath9k_phy_idx(idx), idx);
+void radio_on_ath9k(int idx)
+{
+	fprintf(stderr, "ath9k radio on: phy%d ath%d\n", get_ath9k_phy_idx(idx),
+		idx);
 	// TBD
-	}
+}
 
-int has_5ghz_ath9k(int devnum) {
-	fprintf (stderr, "ath9k has_5ghz: phy%d ath%d\n",get_ath9k_phy_idx(devnum), devnum);
+int has_5ghz_ath9k(int devnum)
+{
+	fprintf(stderr, "ath9k has_5ghz: phy%d ath%d\n",
+		get_ath9k_phy_idx(devnum), devnum);
 	// TBD
 	return 1;
-	}
+}
 
-int has_2ghz_ath9k(int devnum) {
-	fprintf (stderr, "ath9k has_2ghz: phy%d ath%d\n",get_ath9k_phy_idx(devnum), devnum);
+int has_2ghz_ath9k(int devnum)
+{
+	fprintf(stderr, "ath9k has_2ghz: phy%d ath%d\n",
+		get_ath9k_phy_idx(devnum), devnum);
 	// TBD
 	return 1;
-	}
+}
 #endif
 
-int is_ar5008(char *prefix) {
+int is_ar5008(char *prefix)
+{
 	char sys[64];
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
@@ -1333,12 +1323,15 @@ int is_ar5008(char *prefix) {
 	return 0;
 }
 
-int is_ath11n(char *prefix) {
+int is_ath11n(char *prefix)
+{
 #ifdef HAVE_ATH9K
-	if (is_ath9k(prefix)) return 1;
+	if (is_ath9k(prefix))
+		return 1;
 #endif
 #ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(prefix)) return 1;
+	if (is_ar5008(prefix))
+		return 1;
 #endif
 	return 0;
 }
@@ -1515,7 +1508,7 @@ int getRssi(char *ifname, unsigned char *mac)
 {
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
-		return getRssi_ath9k(ifname,mac);
+		return getRssi_ath9k(ifname, mac);
 	}
 #endif
 #ifdef HAVE_MADWIFI_MIMO
