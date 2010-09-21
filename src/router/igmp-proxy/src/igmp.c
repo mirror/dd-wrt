@@ -67,7 +67,7 @@ void initIgmp() {
      * - Checksum (let the kernel fill it in)
      */
     ip->ip_v   = IPVERSION;
-    ip->ip_hl  = sizeof(struct ip) >> 2;
+    ip->ip_hl  = (sizeof(struct ip) + 4) >> 2; /* +4 for Router Alert option */
     ip->ip_tos = 0xc0;      /* Internet Control */
     ip->ip_ttl = MAXTTL;    /* applies to unicasts only */
     ip->ip_p   = IPPROTO_IGMP;
@@ -213,7 +213,7 @@ void buildIgmp(uint32_t src, uint32_t dst, int type, int code, uint32_t group, i
     ip                      = (struct ip *)send_buf;
     ip->ip_src.s_addr       = src;
     ip->ip_dst.s_addr       = dst;
-    ip_set_len(ip, MIN_IP_HEADER_LEN + IGMP_MINLEN + datalen);
+    ip_set_len(ip, IP_HEADER_RAOPT_LEN + IGMP_MINLEN + datalen);
 
     if (IN_MULTICAST(ntohl(dst))) {
         ip->ip_ttl = curttl;
@@ -221,13 +221,20 @@ void buildIgmp(uint32_t src, uint32_t dst, int type, int code, uint32_t group, i
         ip->ip_ttl = MAXTTL;
     }
 
-    igmp                    = (struct igmp *)(send_buf + MIN_IP_HEADER_LEN);
+    /* Add Router Alert option */
+    ((u_char*)send_buf+MIN_IP_HEADER_LEN)[0] = IPOPT_RA;
+    ((u_char*)send_buf+MIN_IP_HEADER_LEN)[1] = 0x04;
+    ((u_char*)send_buf+MIN_IP_HEADER_LEN)[2] = 0x00;
+    ((u_char*)send_buf+MIN_IP_HEADER_LEN)[3] = 0x00;
+
+    igmp                    = (struct igmp *)(send_buf + IP_HEADER_RAOPT_LEN);
     igmp->igmp_type         = type;
     igmp->igmp_code         = code;
     igmp->igmp_group.s_addr = group;
     igmp->igmp_cksum        = 0;
     igmp->igmp_cksum        = inetChksum((u_short *)igmp,
-                                         IGMP_MINLEN + datalen);
+                                         IP_HEADER_RAOPT_LEN + datalen);
+
 }
 
 /* 
@@ -257,7 +264,7 @@ void sendIgmp(uint32_t src, uint32_t dst, int type, int code, uint32_t group, in
 #endif
     sdst.sin_addr.s_addr = dst;
     if (sendto(MRouterFD, send_buf,
-               MIN_IP_HEADER_LEN + IGMP_MINLEN + datalen, 0,
+               IP_HEADER_RAOPT_LEN + IGMP_MINLEN + datalen, 0,
                (struct sockaddr *)&sdst, sizeof(sdst)) < 0) {
         if (errno == ENETDOWN)
             my_log(LOG_ERR, errno, "Sender VIF was down.");
