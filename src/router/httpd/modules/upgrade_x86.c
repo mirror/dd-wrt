@@ -196,6 +196,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	char drive[64];
 	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
 	//backup nvram
+	fprintf(stderr,"backup nvram\n");
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
 		char *mem = malloc(65536);
@@ -208,14 +209,17 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		eval("sync");
 		free(mem);
 	}
+	fprintf(stderr,"write system\n");
 	FILE *out = fopen(drive, "r+b");
 	for (i = 0; i < linuxsize; i++)
 		putc(getc(fifo), out);
 	fclose(out);
+	fprintf(stderr,"sync system\n");
 
 	sysprintf("sync");
 	sysprintf("sync");
 	//reread for validation
+	fprintf(stderr,"check system for validation\n");
 	in = fopen(drive, "rb");
 	for (i = 0; i < linuxsize; i++)
 		getc(in);
