@@ -117,6 +117,23 @@ void sendJoinLeaveUpstream(struct RouteTable* route, int join) {
         my_log(LOG_ERR, 0 ,"FATAL: Unable to get Upstream IF.");
     }
 
+    // Check if there is a white list for the upstram VIF
+    if (upstrIf->allowedgroups != NULL) {
+      uint32_t           group = route->group;
+        struct SubnetList* sn;
+
+        // Check if this Request is legit to be forwarded to upstream
+        for(sn = upstrIf->allowedgroups; sn != NULL; sn = sn->next)
+            if((group & sn->subnet_mask) == sn->subnet_addr)
+                // Forward is OK...
+                break;
+
+        if (sn == NULL) {
+	    my_log(LOG_INFO, 0, "The group address %s may not be forwarded upstream. Ignoring.", inetFmt(group, s1));
+            return;
+        }
+    }
+
     // Send join or leave request...
     if(join) {
 

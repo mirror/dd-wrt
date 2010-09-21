@@ -64,6 +64,7 @@
 #define MAX_IP_PACKET_LEN	576
 #define MIN_IP_HEADER_LEN	20
 #define MAX_IP_HEADER_LEN	60
+#define IP_HEADER_RAOPT_LEN	24
 
 #define MAX_MC_VIFS    32     // !!! check this const in the specific includes
 
@@ -141,14 +142,14 @@ struct SubnetList {
 
 struct IfDesc {
     char                Name[IF_NAMESIZE];
-    struct in_addr      InAdr;          /* == 0 for non IP interfaces */            
-    short               Flags;
-    short               state;
-    struct SubnetList*  allowednets;
+    int               	Flags;
+    int               	state;
     unsigned int        robustness;
-    unsigned char       threshold;   /* ttl limit */
+    unsigned int       threshold;   /* ttl limit */
     unsigned int        ratelimit; 
     unsigned int        index;
+    struct SubnetList*  allowednets;
+    struct in_addr      InAdr;          /* == 0 for non IP interfaces */            
 };
 
 // Keeps common configuration settings 
@@ -163,7 +164,7 @@ struct Config {
     unsigned int        lastMemberQueryInterval;
     unsigned int        lastMemberQueryCount;
     // Set if upstream leave messages should be sent instantly..
-    unsigned short      fastUpstreamLeave;
+    unsigned int      fastUpstreamLeave;
 };
 
 // Defines the Index of the upstream VIF...
@@ -180,9 +181,9 @@ int isAdressValidForIf(struct IfDesc* intrface, uint32_t ipaddr);
 /* mroute-api.c
  */
 struct MRouteDesc {
-    struct in_addr  OriginAdr, McAdr;
-    short           InVif;
+    int           InVif;
     uint8_t           TtlVc[ MAX_MC_VIFS ];
+    struct in_addr  OriginAdr, McAdr;
 };
 
 // IGMP socket as interface for the mrouted API
