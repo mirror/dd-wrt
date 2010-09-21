@@ -54,6 +54,8 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
+#define sys_reboot() eval("sync"); eval("event","3","1","15")
+
 static int getdiscindex(void)	// works only for squashfs 
 {
 	int i;
@@ -126,6 +128,28 @@ void start_sysinit(void)
 		nvram_commit();
 		eval("rm", "-f", "/etc/nvram/nvram.db");
 		eval("rm", "-f", "/etc/nvram/offsets.db");
+	}
+	//recover nvram if available
+	in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		sprintf(dev, "/dev/discs/disc%d/disc", index);
+		fseek(in, 65536 * 2, SEEK_END);
+		char *mem = malloc(65536);
+		fread(mem, 65536, 1, in);
+		fclose(in);
+		in = fopen("/usr/local/nvram/nvram.bin", "wb");
+		if (in != NULL) {
+			fwrite(mem, 65536, 1, in);
+			fclose(in);
+			free(mem);
+			eval("sync");
+			sleep(5);
+			sys_reboot();
+			sleep(10000);
+		}
+		free(mem);
+	} else {
+		fclose(in);
 	}
 
 	if (!nvram_match("disable_watchdog", "1"))
