@@ -1905,7 +1905,7 @@ static int __xipram do_xxlock_oneblock(struct map_info *map, struct flchip *chip
 	 * If Instant Individual Block Locking supported then no need
 	 * to delay.
 	 */
-	udelay = (!extp || !(extp->FeatureSupport & (1 << 5))) ? 1000000/HZ : 0;
+	udelay = (!extp || !(extp->FeatureSupport & (1 << 5))) ? 1000000 : 0;
 
 	ret = WAIT_TIMEOUT(map, chip, adr, udelay);
 	if (ret) {
