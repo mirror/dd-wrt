@@ -82,10 +82,22 @@ void acceptGroupReport(uint32_t src, uint32_t group, uint8_t type) {
         my_log(LOG_DEBUG, 0, "Should insert group %s (from: %s) to route table. Vif Ix : %d",
             inetFmt(group,s1), inetFmt(src,s2), sourceVif->index);
 
-        // The membership report was OK... Insert it into the route table..
-        insertRoute(group, sourceVif->index);
-
-
+	// If we don't have a whitelist we insertRoute and done
+	if(sourceVif->allowedgroups == NULL)
+	{
+	    insertRoute(group, sourceVif->index);
+	    return;
+	}
+	// Check if this Request is legit on this interface
+	struct SubnetList *sn;
+	for(sn = sourceVif->allowedgroups; sn != NULL; sn = sn->next)
+	    if((group & sn->subnet_mask) == sn->subnet_addr)
+	    {
+        	// The membership report was OK... Insert it into the route table..
+        	insertRoute(group, sourceVif->index);
+		return;
+	    }
+	my_log(LOG_INFO, 0, "The group address %s may not be requested from this interface. Ignoring.", inetFmt(group, s1));
     } else {
         // Log the state of the interface the report was recieved on.
         my_log(LOG_INFO, 0, "Mebership report was recieved on %s. Ignoring.",
