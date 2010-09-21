@@ -134,7 +134,6 @@ void start_sysinit(void)
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
 		sprintf(dev, "/dev/discs/disc%d/disc", index);
-		fprintf(stderr, "using %s\n", dev);
 		in = fopen(dev, "rb");
 		fseek(in, 0, SEEK_END);
 		long mtdlen = ftell(in);
@@ -142,8 +141,6 @@ void start_sysinit(void)
 		unsigned char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		fprintf(stderr, "%X%X%X%X\n", mem[0] & 0xff, mem[1] & 0xff,
-			mem[2] & 0xff, mem[3] & 0xff);
 		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
 		    && mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
@@ -278,7 +275,6 @@ void start_recover(void)
 	char dev[64];
 	fprintf(stderr, "recover broken nvram\n");
 	sprintf(dev, "/dev/discs/disc%d/disc", getdiscindex());
-	fprintf(stderr, "using %s\n", dev);
 	in = fopen(dev, "rb");
 	fseek(in, 0, SEEK_END);
 	long mtdlen = ftell(in);
@@ -287,8 +283,6 @@ void start_recover(void)
 	unsigned char *mem = malloc(65536);
 	fread(mem, 65536, 1, in);
 	fclose(in);
-	fprintf(stderr, "%X%X%X%X\n", mem[0] & 0xff, mem[1] & 0xff,
-		mem[2] & 0xff, mem[3] & 0xff);
 	if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
 	    && mem[3] == 0x48) {
 		fprintf(stderr, "found recovery\n");

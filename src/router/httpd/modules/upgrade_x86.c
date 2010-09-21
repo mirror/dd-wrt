@@ -209,11 +209,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		fwrite(mem, 65536, 1, in);
 		fclose(in);
 		eval("sync");
-		fprintf(stderr, "reread for sync disc\n");
 		in = fopen(drive, "rb");
 		fseek(in, mtdlen-(65536*2), SEEK_SET);
 		fread(mem, 65536, 1, in);
-		fprintf(stderr,"%X%X%X%X\n",mem[0]&0xff,mem[1]&0xff,mem[2]&0xff,mem[3]&0xff);
 		fclose(in);
 		free(mem);
 	}
