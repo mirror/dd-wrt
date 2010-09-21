@@ -116,6 +116,30 @@ This is especially useful for the upstream interface, since the source for multi
 traffic is often from a remote location. Any number of altnet parameters can be specified.
 .RE
 
+.B whitelist
+.I networkaddr
+.RS
+Defines a whitelist for multicast groups. The network address must be in the following
+format 'a.b.c.d/n'. If you want to allow one single group use a network mask of /32,
+i.e. 'a.b.c.d/32'. 
+
+By default all multicast groups are allowed on any downstream interface. If at least one
+whitelist entry is defined, all igmp membership reports for not explicitly whitelisted
+multicast groups will be ignored and therefore not be served by igmpproxy. This is especially
+useful, if your provider does only allow a predefined set of multicast groups. These whitelists
+are only obeyed by igmpproxy itself, they won't prevent any other igmp client running on the
+same machine as igmpproxy from requesting 'unallowed' multicast groups.
+
+You may specify as many whitelist entries as needed. Although you should keep it as simple as
+possible, as this list is parsed for every membership report and therefore this increases igmp
+response times. Often used or large groups should be defined first, as parsing ends as soon as
+a group matches an entry.
+
+You may also specify whitelist entries for the upstream interface. Only igmp membership reports
+for explicitely whitelisted multicast groups will be sent out on the upstream interface. This
+is useful if you want to use multicast groups only between your downstream interfaces, like SSDP
+from a UPnP server.
+.RE
 
 .SH EXAMPLE
 ## Enable quickleave
