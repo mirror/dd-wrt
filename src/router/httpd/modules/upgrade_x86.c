@@ -196,30 +196,38 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	char drive[64];
 	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
 	//backup nvram
-	fprintf(stderr,"backup nvram\n");
+	fprintf(stderr, "backup nvram\n");
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
 		char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		FILE *in = fopen(drive, "r+b");
-		fseek(in, 65536 * 2, SEEK_END);
+		in = fopen(drive, "r+b");
+		fseek(in, 0, SEEK_END);
+		long mtdlen = ftell(in);
+		fseek(in, mtdlen-(65536*2), SEEK_SET);
 		fwrite(mem, 65536, 1, in);
 		fclose(in);
 		eval("sync");
+		fprintf(stderr, "reread for sync disc\n");
+		in = fopen(drive, "rb");
+		fseek(in, mtdlen-(65536*2), SEEK_SET);
+		fread(mem, 65536, 1, in);
+		fprintf(stderr,"%X%X%X%X\n",mem[0]&0xff,mem[1]&0xff,mem[2]&0xff,mem[3]&0xff);
+		fclose(in);
 		free(mem);
 	}
-	fprintf(stderr,"write system\n");
+	fprintf(stderr, "write system\n");
 	FILE *out = fopen(drive, "r+b");
 	for (i = 0; i < linuxsize; i++)
 		putc(getc(fifo), out);
 	fclose(out);
-	fprintf(stderr,"sync system\n");
+	fprintf(stderr, "sync system\n");
 
 	sysprintf("sync");
 	sysprintf("sync");
 	//reread for validation
-	fprintf(stderr,"check system for validation\n");
+	fprintf(stderr, "check system for validation\n");
 	in = fopen(drive, "rb");
 	for (i = 0; i < linuxsize; i++)
 		getc(in);

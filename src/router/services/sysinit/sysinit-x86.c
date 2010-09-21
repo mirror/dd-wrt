@@ -132,26 +132,30 @@ void start_sysinit(void)
 	//recover nvram if available
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
-		fprintf(stderr,"recover broken nvram\n");
+		fprintf(stderr, "recover broken nvram\n");
 		sprintf(dev, "/dev/discs/disc%d/disc", index);
+		fprintf(stderr, "using %s\n", dev);
 		in = fopen(dev, "rb");
-		fseek(in, 65536 * 2, SEEK_END);
-		char *mem = malloc(65536);
+		fseek(in, 0, SEEK_END);
+		long mtdlen = ftell(in);
+		fseek(in, mtdlen-(65536*2), SEEK_SET);
+		unsigned char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		if (mem[0]==0x46 && mem[1]==0x4c && mem[2]==0x53 && mem[3]==0x48)
-		{
-		fprintf(stderr,"found recovery\n");
-		in = fopen("/usr/local/nvram/nvram.bin", "wb");
-		if (in != NULL) {
-			fwrite(mem, 65536, 1, in);
-			fclose(in);
-			free(mem);
-			eval("sync");
-			sleep(5);
-			sys_reboot();
-			sleep(10000);
-		}
+		fprintf(stderr, "%X%X%X%X\n", mem[0] & 0xff, mem[1] & 0xff,
+			mem[2] & 0xff, mem[3] & 0xff);
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
+		    && mem[3] == 0x48) {
+			fprintf(stderr, "found recovery\n");
+			in = fopen("/usr/local/nvram/nvram.bin", "wb");
+			if (in != NULL) {
+				fwrite(mem, 65536, 1, in);
+				fclose(in);
+				free(mem);
+				eval("sync");
+				sleep(5);
+				eval("reboot");
+			}
 		}
 		free(mem);
 	} else {
@@ -235,5 +239,65 @@ void start_overclocking(void)
 
 void enable_dtag_vlan(int enable)
 {
+
+}
+
+void start_backup(void)
+{
+	char drive[64];
+	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
+	//backup nvram
+	fprintf(stderr, "backup nvram\n");
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in) {
+		char *mem = malloc(65536);
+		fread(mem, 65536, 1, in);
+		fclose(in);
+		in = fopen(drive, "r+b");
+		fseek(in, 0, SEEK_END);
+		long mtdlen = ftell(in);
+		fseek(in, mtdlen-(65536*2), SEEK_SET);
+		fwrite(mem, 65536, 1, in);
+		fclose(in);
+		eval("sync");
+		fprintf(stderr, "reread for sync disc\n");
+		in = fopen(drive, "rb");
+		fseek(in, mtdlen-(65536*2), SEEK_SET);
+		fread(mem, 65536, 1, in);
+		fprintf(stderr, "%X%X%X%X\n", mem[0] & 0xff, mem[1] & 0xff,
+			mem[2] & 0xff, mem[3] & 0xff);
+		fclose(in);
+		free(mem);
+	}
+
+}
+
+void start_recover(void)
+{
+	FILE *in;
+	char dev[64];
+	fprintf(stderr, "recover broken nvram\n");
+	sprintf(dev, "/dev/discs/disc%d/disc", getdiscindex());
+	fprintf(stderr, "using %s\n", dev);
+	in = fopen(dev, "rb");
+	fseek(in, 0, SEEK_END);
+	long mtdlen = ftell(in);
+	fseek(in, mtdlen-(65536*2), SEEK_SET);
+
+	unsigned char *mem = malloc(65536);
+	fread(mem, 65536, 1, in);
+	fclose(in);
+	fprintf(stderr, "%X%X%X%X\n", mem[0] & 0xff, mem[1] & 0xff,
+		mem[2] & 0xff, mem[3] & 0xff);
+	if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
+	    && mem[3] == 0x48) {
+		fprintf(stderr, "found recovery\n");
+		in = fopen("/usr/local/nvram/nvram.bin", "wb");
+		if (in != NULL) {
+			fwrite(mem, 65536, 1, in);
+			fclose(in);
+		}
+	}
+	free(mem);
 
 }
