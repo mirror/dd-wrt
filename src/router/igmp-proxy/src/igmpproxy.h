@@ -149,6 +149,7 @@ struct IfDesc {
     unsigned int        ratelimit; 
     unsigned int        index;
     struct SubnetList*  allowednets;
+    struct SubnetList*  allowedgroups;
     struct in_addr      InAdr;          /* == 0 for non IP interfaces */            
 };
 
