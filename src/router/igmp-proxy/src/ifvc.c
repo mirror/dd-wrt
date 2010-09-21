@@ -139,7 +139,7 @@ void buildIfVc() {
             IfDescEp->allowednets->subnet_addr = subnet;
 
             // Set the default params for the IF...
-            IfDescEp->state         = IF_STATE_DOWNSTREAM;
+            IfDescEp->state         = IF_STATE_DISABLED;
             IfDescEp->robustness    = DEFAULT_ROBUSTNESS;
             IfDescEp->threshold     = DEFAULT_THRESHOLD;   /* ttl limit */
             IfDescEp->ratelimit     = DEFAULT_RATELIMIT; 
