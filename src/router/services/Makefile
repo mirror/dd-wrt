@@ -698,14 +698,18 @@ endif
 ifeq ($(CONFIG_ADM5120),y)
 CFLAGS_EXTRA += -DHAVE_ADM5120
 endif
+
+ifneq ($(ARCHITECTURE),broadcom)
 ifeq ($(CONFIG_RELAYD),y)
 CFLAGS_EXTRA += -DHAVE_RELAYD
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS_EXTRA += -DHAVE_RELAYD
 endif
+
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS_EXTRA += -DHAVE_RELAYD
+endif
 endif
 ifeq ($(CONFIG_WP54G),y)
 CFLAGS_EXTRA += -DHAVE_WP54G
