@@ -562,9 +562,14 @@ ifneq ($(CONFIG_MADWIFI),y)
 VISOBJS += wireless_broadcom.o
 endif
 endif
+
+
+
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -DATH_USE_COMMONHAL
+ifneq ($(ARCHITECTURE),broadcom)
 CFLAGS += -DHAVE_RELAYD
+endif
 NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h  -DATH_USE_COMMONHAL
 NVISOBJS += wireless_madwifi11n.o
 NVISFILES += visuals/wireless_madwifi11n.c
@@ -572,7 +577,9 @@ endif
 
 
 ifeq ($(CONFIG_MADWIFI),y)
+ifneq ($(ARCHITECTURE),broadcom)
 CFLAGS += -DHAVE_RELAYD
+endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -DATH_USE_COMMONHAL
 VISOBJS += wireless_madwifi.o
