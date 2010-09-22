@@ -200,7 +200,7 @@ obj-$(CONFIG_UBOOTENV) += ubootenv
 
 obj-y+=anchorfree
 obj-y+=ttraff
-#obj-y+=speedtest
+obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-y+=configs
 
