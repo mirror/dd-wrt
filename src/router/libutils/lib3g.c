@@ -195,8 +195,8 @@ static struct DEVICES devicelist[] = {
 	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, &modeswitch_icon210, "Qualcomm ICON 210 CDROM Mode"},	//
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
 //ericsson
-	{0x0bdb, 0x1900, "option", "/dev/usb/tts/0", "/dev/usb/tts/1", 0, NULL, "Ericsson F3507g"},	//
-	{0x0bdb, 0x1902, "option", "/dev/usb/tts/0", "/dev/usb/tts/1", 0, NULL, "Ericsson F3507g"},	//
+	{0x0bdb, 0x1900, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
+	{0x0bdb, 0x1902, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
