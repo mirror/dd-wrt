@@ -997,6 +997,7 @@ void start_sysinit(void)
 		} else {
 			nvram_set("lan_ifnames", "eth0 eth2");
 		}
+		break;
 
 	case ROUTER_WRTSL54GS:
 	case ROUTER_WRT160N:
