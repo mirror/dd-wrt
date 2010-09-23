@@ -414,7 +414,7 @@ void start_pppoeserver(void)
 			// identical
 			fclose(fp);
 			makeipup();
-			eval("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get("lan_ipaddr"), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"));	// todo, 
+			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", nvram_safe_get("lan_ipaddr"), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"));	// todo, 
 			// make 
 			// interface 
 			// and 
