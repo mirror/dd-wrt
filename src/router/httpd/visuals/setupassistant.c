@@ -757,11 +757,11 @@ fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
 		  "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",
 		  nvram_selmatch(wp, wl_txantenna,
 				 "1") ? "selected=\\\"selected\\\"" : "");
-#if defined(HAVE_NS5) || defined(HAVE_NS2) || defined(HAVE_NS3)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
 		  nvram_selmatch(wp, wl_txantenna,
 				 "3") ? "selected=\\\"selected\\\"" : "");
+#if defined(HAVE_NS5) || defined(HAVE_NS2) || defined(HAVE_NS3)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",
 		  nvram_selmatch(wp, wl_txantenna,
