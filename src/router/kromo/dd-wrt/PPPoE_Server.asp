@@ -113,10 +113,10 @@ addEvent(window, "unload", function() {
 	<fieldset>
 		<legend><% tran("service.pppoesrv_srvopt"); %></legend>
 			<div class="setting">
-			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_interface"); %></div>
 				<% show_ifselect("pppoeserver_interface"); %>
 			</div>
+			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_remoteaddr"); %></div>
 				<input maxlength="15" size="24" name="pppoeserver_remoteaddr" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remoteaddr"); %>" />
 			</div>
