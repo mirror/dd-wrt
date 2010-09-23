@@ -1284,6 +1284,7 @@ service.pppoe_srv="Posredovanje";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE strežnik";
 service.pppoesrv_srv="Demon RP-PPPoE strežnik";
+service.pppoesrv_legend="RP-PPPoE strežnik: vmesnik";
 service.pppoesrv_srvopt="RP-PPPoE strežnik: možnosti";
 service.pppoesrv_compr="Kompresija";
 service.pppoesrv_remoteaddr="Oddaljeni začetni IP";
