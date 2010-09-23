@@ -103,6 +103,20 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=armv9tdmi-boese-le-elf install
 endif
+ifeq ($(ARCHITECTURE),openrisc)
+madwifi:
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=armv9tdmi-boese-le-elf  
+	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=armv9tdmi-boese-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+
+madwifi-clean:
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=armv9tdmi-boese-le-elf
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=armv9tdmi-boese-le-elf install
+endif
 ifeq ($(ARCHITECTURE),laguna)
 madwifi:
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=laguna-le-elf  
@@ -118,7 +132,6 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=laguna-le-elf install
 endif
 endif
-
 
 ifeq ($(ARCH),armeb)
 ifeq ($(ARCHITECTURE),wrt300nv2)
