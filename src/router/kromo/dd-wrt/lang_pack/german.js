@@ -695,10 +695,11 @@ hotspot.titl="Hotspot";
 hotspot.h2="Hotspot-Portal";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
-hotspot.nowifibridge="Entferne WLAN von der LAN-Bridge";
+hotspot.nowifibridge="Entferne WLAN aus der LAN-Bridge";
+hotspot.net="Netzwerk der Schnittstelle";
 hotspot.pserver="Primärer RADIUS-Server IP/DNS";
 hotspot.bserver="Sekundärer RADIUS-Server IP/DNS";
-hotspot.dns="DNS-IP";
+hotspot.dns="DNS-Server IP";
 hotspot.url="Umleitungs-URL";
 hotspot.dhcp="DHCP-Schnittstelle";
 hotspot.radnas="RADIUS NAS ID";
@@ -709,11 +710,13 @@ hotspot.macauth="MACauth";
 hotspot.option="Zusätzliche Chillispot-Optionen";
 hotspot.fon_chilli="Chillispot lokales Nutzer-Management";
 hotspot.fon_user="Nutzerliste";
+// ** HTTP Redirect **//
 hotspot.http_legend="HTTP-Umleitung";
 hotspot.http_srv="HTTP-Umleitung";
 hotspot.http_ip="HTTP-Ziel-IP";
 hotspot.http_port="HTTP-Ziel-Port";
 hotspot.http_net="HTTP-Ursprungsnetzwerk";
+// ** NoCatSplash **//
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Gateway-Name";
@@ -726,6 +729,7 @@ hotspot.nocat_timeout="Login-Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Nur Routen";
 hotspot.nocat_MAClist="MAC White List";
+// ** SMTP Redirect **//
 hotspot.smtp_legend="SMTP-Umleitung";
 hotspot.smtp_srv="SMTP-Umleitung";
 hotspot.smtp_ip="SMTP-Ziel-IP";
@@ -733,6 +737,7 @@ hotspot.smtp_net="SMTP-Ursprungs-Netzwerk";
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config eingeschaltet";
+// ** Sputnik **//
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik-Agent";
 hotspot.sputnik_id="Sputnik-Server-ID";
@@ -740,6 +745,7 @@ hotspot.sputnik_instant="Nutze Sputnik Instant Setup";
 hotspot.sputnik_express="Nutze SputnikNet Express";
 hotspot.sputnik_about="über Sputnik";
 hotspot.sputnik_learn="Mehr Lernen";
+// ** WIFI Dog **//
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
@@ -763,7 +769,7 @@ hotspot.wifidog_password="HTTP Server Passwort";
 hotspot.wifidog_auth="HTTP Authentication Unterstützung";
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
-hotspotsys.nobridge="Entferne WLAN von der LAN-Bridge";
+hotspotsys.nobridge="Entferne WLAN aus der LAN-Bridge";
 hotspotsys.uamenable="Spezielle Einstellungen";
 hotspotsys.loginonsplash="Login auf Splash Seite";
 hotspotsys.allowuam="UAM Erlaubt";
@@ -771,8 +777,8 @@ hotspotsys.whitelabelproto="White Label Protocol";
 hotspotsys.whitelabel="White Label Domain";
 hotspotsys.operatorid="Nutzername des Betreibers";
 hotspotsys.locationid="Standort Nummer";
-hotspotsys.dhcp="DHCP Interface";
-hotspotsys.net="Entferntes Netzwerk";
+hotspotsys.dhcp="DHCP Schnittstelle";
+hotspotsys.net="Netzwerk der Schnittstelle";
 hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 
 // **************************************************************** AnchorFree.asp *********************************************************//
@@ -1257,7 +1263,7 @@ service.pppoe_srv="Relay";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
 service.pppoesrv_srv="RP-PPPoE Server Daemon";
-service.pppoesrv_interface="RP-PPPoE Server Interface";
+service.pppoesrv_interface="RP-PPPoE Server Schnittstelle";
 service.pppoesrv_srvopt="RP-PPPoE Server Optionen";
 service.pppoesrv_compr="Kompression";
 service.pppoesrv_remoteaddr="Entfernte Start IP";
