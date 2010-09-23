@@ -561,10 +561,10 @@ int internal_getRouterBrand()
 	setRouter("Linksys WRT300N v2");
 	return ROUTER_BOARD_GATEWORX;
 #elif HAVE_WG302V1
-	setRouter("Netgear WG302v1");
+	setRouter("Netgear WG302 v1");
 	return ROUTER_BOARD_GATEWORX;
 #elif HAVE_WG302
-	setRouter("Netgear WG302v2");
+	setRouter("Netgear WG302 v2");
 	return ROUTER_BOARD_GATEWORX;
 #elif HAVE_PRONGHORN
 	setRouter("ADI Engineering Pronghorn Metro");
@@ -1306,13 +1306,13 @@ int internal_getRouterBrand()
 /*	
 	if (boardnum == 12345 && nvram_match("boardtype", "0xXXXX")
 	    && nvram_match("boardrev", "0x1204")) {
-		setRouter("Belkin Share Max F7D3301v1");
+		setRouter("Belkin Share Max F7D3301 v1");
 		return ROUTER_BELKIN_F7D3301;
 	}
 */
 	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
-		setRouter("Belkin Play Max F7D4301v1");
+		setRouter("Belkin Play Max F7D4301 v1");
 		return ROUTER_BELKIN_F7D4301;
 	}
 
@@ -1324,11 +1324,11 @@ int internal_getRouterBrand()
 			fread(&trxhd, 4, 1, mtd1);
 			fclose(mtd1);
 			if (trxhd == TRX_MAGIC_F7D3302) {
-				setRouter("Belkin Share F7D3302v1");
+				setRouter("Belkin Share F7D3302 v1");
 				return ROUTER_BELKIN_F7D3302;
 			}
 		}
-		setRouter("Belkin Play F7D4302v1");
+		setRouter("Belkin Play F7D4302 v1");
 		return ROUTER_BELKIN_F7D4302;
 	}
 #endif
@@ -1695,11 +1695,11 @@ int internal_getRouterBrand()
 			return ROUTER_WRT160N;
 		} else if (nvram_match("boot_hw_model", "WRT160N")
 			   && nvram_match("boot_hw_ver", "3.0")) {
-			setRouter("Linksys WRT160Nv3");
+			setRouter("Linksys WRT160N v3");
 			return ROUTER_WRT160NV3;
 		} else if (nvram_match("boot_hw_model", "M10")
 			   && nvram_match("boot_hw_ver", "1.0")) {
-			setRouter("Linksys M10");	// renamed wrt160nv3
+			setRouter("Cisco Valet M10 v1");	// renamed wrt160nv3
 			return ROUTER_WRT160NV3;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
@@ -1707,11 +1707,11 @@ int internal_getRouterBrand()
 			return ROUTER_WRT310N;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "2.0")) {
-			setRouter("Linksys WRT310Nv2");
+			setRouter("Linksys WRT310N v2");
 			return ROUTER_WRT310NV2;
 		} else if (nvram_match("boot_hw_model", "M20")
 			   && nvram_match("boot_hw_ver", "1.0")) {
-			setRouter("Linksys M20");	// ranamed wrt310nv2
+			setRouter("Cisco Valet M20");	// ranamed wrt310nv2
 			return ROUTER_WRT310NV2;
 		}
 	}
@@ -1747,7 +1747,7 @@ int internal_getRouterBrand()
 #ifdef HAVE_BCMMODERN
 	if (nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boot_hw_model", "WRT610N")) {
-		setRouter("Linksys WRT610Nv2");
+		setRouter("Linksys WRT610N v2");
 		return ROUTER_WRT610NV2;
 	}
 
@@ -1938,7 +1938,7 @@ int internal_getRouterBrand()
 		char *hwver = nvram_safe_get("hardware_version");
 
 		if (boardnum == 45 && startswith(hwver, "WL500GPV2")) {
-			setRouter("Asus WL-500G Premium V2");
+			setRouter("Asus WL-500G Premium v2");
 			return ROUTER_ASUS_WL500G_PRE_V2;
 		} else if (boardnum == 45 && startswith(hwver, "WL330GE")) {
 			setRouter("Asus WL-330GE");
