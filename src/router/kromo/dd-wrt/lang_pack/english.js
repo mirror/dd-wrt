@@ -1285,6 +1285,7 @@ service.pppoe_srv="Relay";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
 service.pppoesrv_srv="RP-PPPoE Server Daemon";
+service.pppoesrv_interface="RP-PPPoE Server Interface";
 service.pppoesrv_srvopt="RP-PPPoE Server Options";
 service.pppoesrv_compr="Compression";
 service.pppoesrv_remoteaddr="Remote Start IP";
