@@ -3,7 +3,7 @@
 # firewall-standalone	This script sets up firewall rules for a standalone
 #                       machine
 #
-# Copyright (C) 2000 Roaring Penguin Software Inc.  This software may
+# Copyright (C) 2005 Roaring Penguin Software Inc.  This software may
 # be distributed under the terms of the GNU General Public License, version
 # 2 or any later version.
 # LIC: GPL
@@ -11,23 +11,24 @@
 # Interface to Internet
 EXTIF=ppp+
 
-ANY=0.0.0.0/0
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD DROP
 
-ipchains -P input ACCEPT
-ipchains -P output ACCEPT
-ipchains -P forward DENY
-
-ipchains -F forward
-ipchains -F input
-ipchains -F output
+iptables -F FORWARD
+iptables -F INPUT
+iptables -F OUTPUT
 
 # Deny TCP and UDP packets to privileged ports
-ipchains -A input -l -i $EXTIF -d $ANY 0:1023 -p udp -j DENY
-ipchains -A input -l -i $EXTIF -d $ANY 0:1023 -p tcp -j DENY
+iptables -A INPUT -p udp -i $EXTIF --dport 0:1023 -j LOG
+iptables -A INPUT -p tcp -i $EXTIF --dport 0:1023 -j LOG
+iptables -A INPUT -p udp -i $EXTIF --dport 0:1023 -j DROP
+iptables -A INPUT -p tcp -i $EXTIF --dport 0:1023 -j DROP
 
 # Deny TCP connection attempts
-ipchains -A input -l -i $EXTIF -p tcp -y -j DENY
+iptables -A INPUT -i $EXTIF -p tcp --syn -j LOG
+iptables -A INPUT -i $EXTIF -p tcp --syn -j DROP
 
 # Deny ICMP echo-requests
-ipchains -A input -l -i $EXTIF -s $ANY echo-request -p icmp -j DENY
+iptables -A INPUT -i $EXTIF -p icmp --icmp-type echo-request -j DROP
 

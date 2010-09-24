@@ -17,7 +17,7 @@
 #
 #--------------------------------------------------------------
 
-# $Id: tkpppoe.in,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $
+# $Id$
 
 # the next line restarts using wish \
 umask 022; \
@@ -1659,7 +1659,7 @@ proc AbortConnection { fp } {
 # %RETURNS:
 #  Nothing
 # %DESCRIPTION:
-#  Called when the "adsl-start" file handle is readable.
+#  Called when the "pppoe-start" file handle is readable.
 #***********************************************************************
 proc StartFPReadable { fp } {
     global StartState
@@ -2291,7 +2291,7 @@ proc SaveConnectionInfo {} {
     file rename -force "$ConnectionInfoFile.new" "$ConnectionInfoFile"
     file rename -force "$PasswordFile.new" "$PasswordFile"
 
-    # Generate config files for adsl-start for each connection
+    # Generate config files for pppoe-start for each connection
     foreach thing $ConnectionInfo {
 	GenerateConfigFile $thing
     }
@@ -2441,7 +2441,7 @@ proc ShellEscape { str } {
 # %RETURNS:
 #  Nothing
 # %DESCRIPTION:
-#  Generates a configuration file for adsl-start and friends under
+#  Generates a configuration file for pppoe-start and friends under
 #  /etc/ppp/rp-pppoe-gui
 #***********************************************************************
 proc GenerateConfigFile { conn } {
@@ -2516,7 +2516,7 @@ proc GenerateConfigFile { conn } {
     puts $fp "CONNECT_TIMEOUT=30"
     puts $fp "CONNECT_POLL=1"
     puts $fp "FORCEPING=\".\""
-    puts $fp "PIDFILE=/var/run/adsl-$name.pid"
+    puts $fp "PIDFILE=/var/run/pppoe-$name.pid"
     puts $fp "CLAMPMSS=1412"
     puts $fp "LCP_INTERVAL=20"
     puts $fp "LCP_FAILURE=3"
@@ -2540,7 +2540,7 @@ proc GenerateConfigFile { conn } {
 #  If connection is up, third element is PPP interface.
 #***********************************************************************
 proc GetConnectionStatus { conn } {
-    set pidfile "/var/run/adsl-$conn.pid"
+    set pidfile "/var/run/pppoe-$conn.pid"
 
     # Check for PID file
     if {![file readable $pidfile]} {

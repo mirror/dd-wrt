@@ -12,7 +12,7 @@
 #
 # LIC: GPL
 #
-# $Id: Makefile.in,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $
+# $Id$
 #***********************************************************************
 DEFINES=
 prefix=@prefix@
@@ -24,11 +24,11 @@ sbindir=@sbindir@
 bindir=@bindir@
 datadir=@datadir@
 
-ADSL_START_PATH=@sbindir@/adsl-start
-ADSL_STOP_PATH=@sbindir@/adsl-stop
-ADSL_STATUS_PATH=@sbindir@/adsl-status
+PPPOE_START_PATH=@sbindir@/pppoe-start
+PPPOE_STOP_PATH=@sbindir@/pppoe-stop
+PPPOE_STATUS_PATH=@sbindir@/pppoe-status
 
-PATHS='-DADSL_START_PATH="$(ADSL_START_PATH)"' '-DADSL_STOP_PATH="$(ADSL_STOP_PATH)"' '-DADSL_STATUS_PATH="$(ADSL_STATUS_PATH)"'
+PATHS='-DPPPOE_START_PATH="$(PPPOE_START_PATH)"' '-DPPPOE_STOP_PATH="$(PPPOE_STOP_PATH)"' '-DPPPOE_STATUS_PATH="$(PPPOE_STATUS_PATH)"'
 
 CFLAGS= @CFLAGS@ $(DEFINES) $(PATHS)
 
@@ -43,20 +43,20 @@ wrapper.o: wrapper.c
 	@CC@ $(CFLAGS) -c -o wrapper.o wrapper.c
 
 install: all
-	-mkdir -p $(RPM_INSTALL_ROOT)$(sbindir)
-	-mkdir -p $(RPM_INSTALL_ROOT)$(bindir)
-	-mkdir -p $(RPM_INSTALL_ROOT)/etc/ppp/rp-pppoe-gui
-	$(install) -m 4755 -s pppoe-wrapper $(RPM_INSTALL_ROOT)$(sbindir)
-	$(install) -m 755 tkpppoe $(RPM_INSTALL_ROOT)$(bindir)
-	-mkdir -p $(RPM_INSTALL_ROOT)$(mandir)/man1
-	$(install) -m 644 pppoe-wrapper.1 $(RPM_INSTALL_ROOT)$(mandir)/man1
-	$(install) -m 644 tkpppoe.1 $(RPM_INSTALL_ROOT)$(mandir)/man1
-	-mkdir -p $(RPM_INSTALL_ROOT)$(datadir)/tkpppoe
+	-mkdir -p $(DESTDIR)$(sbindir)
+	-mkdir -p $(DESTDIR)$(bindir)
+	-mkdir -p $(DESTDIR)/etc/ppp/rp-pppoe-gui
+	$(install) -m 4755 -s pppoe-wrapper $(DESTDIR)$(sbindir)
+	$(install) -m 755 tkpppoe $(DESTDIR)$(bindir)
+	-mkdir -p $(DESTDIR)$(mandir)/man1
+	$(install) -m 644 pppoe-wrapper.1 $(DESTDIR)$(mandir)/man1
+	$(install) -m 644 tkpppoe.1 $(DESTDIR)$(mandir)/man1
+	-mkdir -p $(DESTDIR)$(datadir)/tkpppoe
 	for i in tkpppoe.html mainwin-busy.png mainwin-nonroot.png mainwin.png props-advanced.png props-basic.png props-nic.png props-options.png; do \
-		$(install) -m 644 html/$$i $(RPM_INSTALL_ROOT)$(datadir)/tkpppoe; \
+		$(install) -m 644 html/$$i $(DESTDIR)$(datadir)/tkpppoe; \
 	done
 	for i in en.msg ja.msg; do \
-		$(install) -m 644 $$i $(RPM_INSTALL_ROOT)$(datadir)/tkpppoe; \
+		$(install) -m 644 $$i $(DESTDIR)$(datadir)/tkpppoe; \
 	done
 
 clean:

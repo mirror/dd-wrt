@@ -1,11 +1,11 @@
 # LIC: GPL
 
-$Id: HOW-TO-CONNECT,v 1.4 2005/08/09 02:49:13 dfs Exp $
+$Id$
 
-This package lets you connect a Linux machine to Sympatico HSE or Magma's
-high-speed service using a Nortel 1-meg modem.
+This package lets you connect a Linux machine to an ISP that uses PPPoE.
+PPPoE is used by many DSL providers and some wireless providers.
 
-Follow these steps and you should have your high-speed service up and running.
+Follow these steps and you should have your PPPoE service up and running.
 
 0. Install the rp-pppoe-software
 --------------------------------
@@ -25,7 +25,7 @@ the system, executing:
 
 should display something like this:
 
-	eth0      Link encap:Ethernet  HWaddr 00:60:67:62:31:D4  
+	eth0      Link encap:Ethernet  HWaddr 00:60:67:62:31:D4
 
 plust some more lines.  Your HWaddr will be different.  As long as you see
 the HWaddr line, your card should be working.
@@ -135,7 +135,7 @@ That's it!
 
 --
 David F. Skoll <dfs@roaringpenguin.com> | Roaring Penguin Software Inc.
-http://www.roaringpenguin.com           | Linux and UNIX Specialists
+http://www.roaringpenguin.com           |
 
 PROBLEMS!  DAVE, IT DOESN'T WORK!
 ---------------------------------
@@ -159,8 +159,9 @@ You probably don't have DNS set up.  See step 6.
 -----------------------------------------------------------------------------
 C) Can't compile PPPoE
 
-I have only tested compilation on 2.2-kernel machines.  Make sure you have
-"make", the C compiler and all development header files installed.
+Make sure you have "make", the C compiler and all development header
+files installed.  I only test rp-pppoe on Linux.  It might not work on
+*BSD and probably won't work on any other version of UNIX.
 
 -----------------------------------------------------------------------------
 D) pppd complains about (i) "unknown option pty" or (ii) "pty option precludes
@@ -265,33 +266,3 @@ pppoe-connect:
 	ifconfig ethx up mtu 1500
 
 which should reset things to sane values.
-
-#######################################################################
-#                        WHEN ALL ELSE FAILS:                         #
-#######################################################################
-
-If you are completely unable to connect, run the pppoe-start script in
-debugging mode.  If you are using bash as your shell (if you don't
-know what your shell is, it's probably bash), type this:
-
-	DEBUG=1 pppoe-start
-
-In tcsh or csh, use:
-
-	setenv DEBUG 1; pppoe-start
-
-Then follow the instructions to mail the debugging file to me.  PLEASE
-DON'T DO THIS until you have exhausted all other avenues; rp-pppoe is
-free software and it costs me time and money to help people with
-problems.  While I don't mind doing this, I do mind it if you don't
-make an effort to fix the problem yourself first.
-
-WARNING: If you run pppoe-start in debugging mode and you manage to
-connect, your connection will be extremely slow and huge amounts of
-data will quickly fill your /tmp directory.  Do not use debugging mode
-unless you really cannot get your connection to work.
-
-Be aware that debugging mode produces hex dumps which potentially reveal
-your user name and password.  If the debugging output includes packets
-labeled "PPPoE Session", you may wish to remove these packets from the
-dump before mailing it to me.
