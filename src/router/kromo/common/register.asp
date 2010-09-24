@@ -56,7 +56,7 @@ function to_submit(F) {
 
 						<div class="setting">
 						    <div class="label">System Key</div>
-						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue"  disabled="true" > </textarea>
+						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue" readonly="true" > </textarea>
 						<script type="text/javascript">
 						//<![CDATA[
 						var sysvalue = fix_cr( '<% getregcode(); %>' );
