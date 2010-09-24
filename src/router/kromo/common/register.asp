@@ -56,7 +56,13 @@ function to_submit(F) {
 
 						<div class="setting">
 						    <div class="label">System Key</div>
-						    <% getregcode(); %>
+						<textarea cols="80" rows="5" id="sysvalue" name="sysvalue"> </textarea>
+						<script type="text/javascript">
+						//<![CDATA[
+						var sysvalue = fix_cr( '<% getregcode(); %>' );
+						document.getElementById("sysvalue").value = sysvalue;
+						//]]>
+						</script>
 						</div>
 						<div class="setting">		
 						<div class="label">Activation Key</div>
