@@ -428,7 +428,8 @@
 
 // Linksys WRT160Nv3 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-WRT160NV3)
 // CSE31 ports [W-1-2-3-4], CSE41 and CSE51 ports [W-4-3-2-1]
-// Linksys M10 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-M10)
+// Cisco Valet M10 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-M10)
+// Linksys E1000 v1 (BCM4716A cpu, 4MB serial flash, 5325E switch, fccid: Linksys Q87-E1000)
 #define ROUTER_WRT160NV3 0x8216
 
 #define ROUTER_BOARD_BS2M 0x831c	//bullet 2m
