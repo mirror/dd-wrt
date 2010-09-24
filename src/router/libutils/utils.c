@@ -1701,6 +1701,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Cisco Valet M10 v1");	// renamed wrt160nv3
 			return ROUTER_WRT160NV3;
+		} else if (nvram_match("boot_hw_model", "E100")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys E1000 v1");	// renamed wrt160nv3
+			return ROUTER_WRT160NV3;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys WRT310N");
@@ -1711,7 +1715,7 @@ int internal_getRouterBrand()
 			return ROUTER_WRT310NV2;
 		} else if (nvram_match("boot_hw_model", "M20")
 			   && nvram_match("boot_hw_ver", "1.0")) {
-			setRouter("Cisco Valet M20");	// ranamed wrt310nv2
+			setRouter("Cisco Valet Plus M20");	// ranamed wrt310nv2
 			return ROUTER_WRT310NV2;
 		}
 	}
