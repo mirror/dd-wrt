@@ -1,12 +1,14 @@
 # LIC: GPL
 
-RP-PPPoE now supports kernel-mode PPPoE on Linux kernels 2.4.x.  However,
-the default "./go" build procedure does not make kernel-mode support.
+RP-PPPoE now supports kernel-mode PPPoE on Linux kernels 2.4 or newer.
+However, the default "./go" build procedure does not make kernel-mode
+support.
 
 Here's what you need to do:
 
-0) Make sure you are running kernel 2.4.x on the machine you will build
-rp-pppoe on.  You must have the following kernel configuration settings:
+0) Make sure you are running kernel 2.4 or newer on the machine you
+will build rp-pppoe on.  You must have the following kernel
+configuration settings:
 
 	CONFIG_PPP=m          or CONFIG_PPP=y
 	CONFIG_PPP_ASYNC=m    or CONFIG_PPP_ASYNC=y
@@ -64,6 +66,9 @@ from cvs.samba.org.
 If you didn't check out the PPP software from cvs.samba.org, use:
 
 	./configure --enable-plugin
+
+This will work if the header pppd/pppd.h is located in /usr/include
+or /usr/local/include.
 
 4) Type make; make install
 

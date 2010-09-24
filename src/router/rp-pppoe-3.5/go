@@ -4,11 +4,11 @@
 #
 # go
 #
-# Quick-start shell script to set up ADSL
+# Quick-start shell script to set up PPPoE
 #
 # Copyright (C) 2000 Roaring Penguin Software Inc.
 #
-# $Id: go,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $
+# $Id$
 #***********************************************************************
 
 # Figure out directory of script
@@ -41,4 +41,4 @@ for i in a a a a a a a a a a a a a a a a a a a a a a a a a a a a ; do
     echo ""
 done
 
-sh ../scripts/adsl-setup
+sh ../scripts/pppoe-setup
