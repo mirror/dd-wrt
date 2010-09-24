@@ -1,9 +1,9 @@
 # LIC: GPL
 
 pppoe: a PPP-over-Ethernet redirector for pppd
-Copyright (C) 2001 Roaring Penguin Software Inc.
+Copyright (C) 2001-2005 Roaring Penguin Software Inc.
 
-Much inspiration from an earlier client by Luke Stras.
+Some inspiration from an earlier client by Luke Stras.
 
 The MSS clamping was inspired by mssclampfw by Marc Boucher <marc@mbsi.ca>
 with acknowledgements to Rebel.com (http://www.rebel.com).  However, the
@@ -15,7 +15,7 @@ Introduction
 
 pppoe is a user-space redirector which permits the use of PPPoE
 (Point-to-Point Over Ethernet) with Linux.  PPPoE is used by many
-ADSL service providers.
+DSL service providers.
 
 Installation
 ============
@@ -49,7 +49,7 @@ the archive, become root and type:
 	./go
 
 This should configure, compile and install the software and set up your
-ADSL connection.  You'll have to answer a few questions along the way.
+DSL connection.  You'll have to answer a few questions along the way.
 
 If you want the GUI wrapper, type:
 
@@ -86,4 +86,4 @@ Compile and install pppd if you don't already have it.  Then:
 
 --
 David F. Skoll <dfs@roaringpenguin.com> | Roaring Penguin Software Inc.
-http://www.roaringpenguin.com           | Linux and UNIX Specialists
+http://www.roaringpenguin.com

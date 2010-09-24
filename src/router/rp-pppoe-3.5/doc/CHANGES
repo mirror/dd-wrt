@@ -1,5 +1,30 @@
 # LIC: GPL
 
+Changes from Version 3.9 to 3.10: (30 June 2008)
+
+- Fixed compilation problems on various platforms.
+
+- The Makefiles now use (standard) DESTDIR instead of (non-standard)
+  RPM_INSTALL_ROOT to relocate installed files.
+
+- Spec file has been updated (it had languished since 3.6.)
+
+Changes from Version 3.8 to 3.9: (21 June 2008)
+
+- pppoe-server has new "-x" option to limit the number of sessions per
+  MAC address.
+
+- Added proper timeout handling while waiting for PADO/PADS.
+
+- Fix race condition with some access concentrators that move very quickly
+  into session mode (problem noted by Luigi Sgro)
+
+- Fixed compilation problem on BSD.
+
+- Fixed compilation problems with old versions of gcc
+
+- Remove superfluous options in scripts/pppoe-connect.in
+
 Changes from Version 3.7 to 3.8: (2 April 2006)
 
 - Adjusted code and made it possible to disable debugging code to shrink
@@ -311,4 +336,4 @@ Changes from Version 1.7 to 1.8:
 
 - Made pppoe send a PADT frame if connection is terminated
 
-$Id: CHANGES,v 1.26 2006/04/02 14:29:25 dfs Exp $
+$Id$

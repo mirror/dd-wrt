@@ -1,6 +1,5 @@
-.\" $Id: pppoe-server.8,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $ 
 .\" LIC: GPL
-.TH PPPOE-SERVER 8 "3 July 2000"
+.TH PPPOE-SERVER 8 "21 June 2008"
 .\""
 .UC 4
 .SH NAME
@@ -52,6 +51,13 @@ This option is passed directly to \fBpppoe\fR; see \fBpppoe\fR(8) for
 details.  If you are using kernel-mode PPPoE, this option has \fIno effect\fR.
 
 .TP
+.B \-x \fIn\fR
+Limit the number of sessions per peer MAC address to \fIn\fR.  If a given
+MAC address attempts to create more than \fIn\fR sessions, then its
+PADI and PADR packets are ignored.  If you set \fIn\fR to 0 (the default),
+then no limit is imposed on the number of sessions per peer MAC address.
+
+.TP
 .B \-s
 This option is passed directly to \fBpppoe\fR; see \fBpppoe\fR(8) for
 details.  In addition, it causes \fBpppd\fR to be invoked with the
@@ -74,6 +80,11 @@ of 10.67.15.1 is used.
 .B \-N \fInum\fR
 Allows at most \fInum\fR concurrent PPPoE sessions.  If not specified,
 the default is 64.
+
+.TP
+.B \-O \fIfname\fR
+This option causes \fBpppoe-server\fR to tell \fBpppd\fR to use the option
+file \fIfname\fR instead of the default \fI/etc/ppp/pppoe-server-options\fR.
 
 .TP
 .B \-p \fIfname\fR
@@ -168,6 +179,6 @@ It is \fInot\fR a high-performance server meant for production use.
 The \fBpppoe\fR home page is \fIhttp://www.roaringpenguin.com/pppoe/\fR.
 
 .SH SEE ALSO
-adsl-start(8), adsl-stop(8), adsl-connect(8), pppd(8), pppoe.conf(5),
-pppoe(8), adsl-setup(8), adsl-status(8), pppoe-sniff(8), pppoe-relay(8)
+pppoe-start(8), pppoe-stop(8), pppoe-connect(8), pppd(8), pppoe.conf(5),
+pppoe(8), pppoe-setup(8), pppoe-status(8), pppoe-sniff(8), pppoe-relay(8)
 
