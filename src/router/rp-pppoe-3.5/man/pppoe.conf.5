@@ -1,16 +1,14 @@
-.\" $Id: pppoe.conf.5,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $
 .\" LIC: GPL
-.\""
 .TH PPPOE.CONF 5 "21 February 2000"
 .UC 4
 .SH NAME
-pppoe.conf \- Configuration file used by \fBadsl-start\fR(8),
-\fBadsl-stop\fR(8), \fBadsl-status(8)\fR and \fBadsl-connect\fR(8).
+pppoe.conf \- Configuration file used by \fBpppoe-start\fR(8),
+\fBpppoe-stop\fR(8), \fBpppoe-status(8)\fR and \fBpppoe-connect\fR(8).
 
 .SH DESCRIPTION
 \fB/etc/ppp/pppoe.conf\fR is a shell script which contains configuration
-information for Roaring Penguin's ADSL scripts.  Note that \fBpppoe.conf\fR
-is used only by the various adsl-* shell scripts, not by \fBpppoe\fR
+information for Roaring Penguin's PPPoE scripts.  Note that \fBpppoe.conf\fR
+is used only by the various pppoe-* shell scripts, not by \fBpppoe\fR
 itself.
 
 \fBpppoe.conf\fR consists of a sequence of shell variable assignments.
@@ -18,11 +16,11 @@ The variables and their meanings are:
 
 .TP
 .B ETH
-The Ethernet interface connected to the ADSL modem (for example, eth0).
+The Ethernet interface connected to the DSL modem (for example, eth0).
 
 .TP
 .B USER
-The ADSL user-id (for example, b1xxnxnx@sympatico.ca).
+The PPPoE user-id (for example, b1xxnxnx@sympatico.ca).
 
 .TP
 .B SERVICENAME
@@ -45,7 +43,7 @@ up all the time rather than being activated on demand.
 .TP
 .B DNSTYPE
 One of \fBNOCHANGE\fR, \fBSPECIFY\fR or \fBSERVER\fR.  If
-set to NOCHANGE, \fBadsl-connect\fR will not adjust the DNS setup in
+set to NOCHANGE, \fBpppoe-connect\fR will not adjust the DNS setup in
 any way.  If set to SPECIFY, it will re-write /etc/resolv.conf with
 the values of DNS1 and DNS2.  If set to \fBSERVER\fR, it will
 supply the \fIusepeerdns\fR option to \fBpppd\fR, and make a symlink
@@ -64,40 +62,40 @@ only if you installed the rp-pppoe-gui package.
 
 .TP
 .B USEPEERDNS
-If set to "yes", then \fBadsl-connect\fR will supply the \fIusepeerdns\fR
+If set to "yes", then \fBpppoe-connect\fR will supply the \fIusepeerdns\fR
 option to \fBpppd\fR, which causes it to obtain DNS server addresses
 from the peer and create a new \fB/etc/resolv.conf\fR file.  Otherwise,
-\fBadsl-connect\fR will not supply this option, and \fBpppd\fR will not
+\fBpppoe-connect\fR will not supply this option, and \fBpppd\fR will not
 modify \fB/etc/resolv.conf\fR.
 
 .TP
 .B CONNECT_POLL
-How often (in seconds) \fBadsl-start\fR should check to see if a new PPP
-interface has come up.  If this is set to 0, the \fBadsl-start\fR simply
+How often (in seconds) \fBpppoe-start\fR should check to see if a new PPP
+interface has come up.  If this is set to 0, the \fBpppoe-start\fR simply
 initiates the PPP session, but does not wait to see if it comes up
 successfully.
 
 .TP
 .B CONNECT_TIMEOUT
-How long (in seconds) \fBadsl-start\fR should wait for a new PPP interface
-to come up before concluding that \fBadsl-connect\fR has failed and killing
+How long (in seconds) \fBpppoe-start\fR should wait for a new PPP interface
+to come up before concluding that \fBpppoe-connect\fR has failed and killing
 the session.
 
 .TP
 .B PING
 A character which is echoed every \fBCONNECT_POLL\fR seconds while
-\fBadsl-start\fR is waiting for the PPP interface to come up.
+\fBpppoe-start\fR is waiting for the PPP interface to come up.
 
 .TP
 .B FORCEPING
 A character which is echoed every \fBCONNECT_POLL\fR seconds while
-\fBadsl-start\fR is waiting for the PPP interface to come up.  Similar
-to \fBPING\fR, but the character is echoed even if \fBadsl-start\fR's
+\fBpppoe-start\fR is waiting for the PPP interface to come up.  Similar
+to \fBPING\fR, but the character is echoed even if \fBpppoe-start\fR's
 standard output is not a tty.
 
 .TP
 .B PIDFILE
-A file in which to write the process-ID of the adsl-connect process
+A file in which to write the process-ID of the pppoe-connect process
 (for example, \fB/var/run/pppoe.pid\fR).  Two additional files
 ($PIDFILE.pppd and $PIDFILE.pppoe) hold the process-ID's of the
 \fBpppd\fR and \fBpppoe\fR processes, respectively.
@@ -133,7 +131,7 @@ then \fBpppoe\fR exits.
 
 .TP
 .B FIREWALL
-One of NONE, STANDALONE or MASQUERADE.  If NONE, then \fBadsl-connect\fR does
+One of NONE, STANDALONE or MASQUERADE.  If NONE, then \fBpppoe-connect\fR does
 not add any firewall rules.  If STANDALONE, then it clears existing firewall
 rules and sets up basic rules for a standalone machine.  If MASQUERADE, then
 it clears existing firewall rules and sets up basic rules for an Internet
@@ -153,17 +151,17 @@ Any extra arguments to pass to \fBpppd\fR
 .B LINUX_PLUGIN
 If non-blank, the full path of the Linux kernel-mode PPPoE plugin
 (typically \fB/etc/ppp/plugins/rp-pppoe.so\fR.)  This forces
-\fBadsl-connect\fR to use kernel-mode PPPoE on Linux 2.4.x systems.
+\fBpppoe-connect\fR to use kernel-mode PPPoE on Linux 2.4.x systems.
 This code is experimental and unsupported.  Use of the plugin causes
-\fBadsl-connect\fR to ignore CLAMPMSS, PPPOE_EXTRA, SYNCHRONOUS and
+\fBpppoe-connect\fR to ignore CLAMPMSS, PPPOE_EXTRA, SYNCHRONOUS and
 PPPOE_TIMEOUT.
 
 .P
 By using different configuration files with different PIDFILE
 settings, you can manage multiple PPPoE connections.  Just specify the
-configuration file as an argument to \fBadsl-start\fR and \fBadsl-stop\fR.
+configuration file as an argument to \fBpppoe-start\fR and \fBpppoe-stop\fR.
 
 .SH SEE ALSO
-pppoe(8), adsl-connect(8), adsl-start(8), adsl-stop(8), pppd(8), adsl-setup(8),
+pppoe(8), pppoe-connect(8), pppoe-start(8), pppoe-stop(8), pppd(8), pppoe-setup(8),
 pppoe-wrapper(8)
 
