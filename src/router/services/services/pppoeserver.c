@@ -30,6 +30,15 @@
 #include <syslog.h>
 #include <services.h>
 
+
+static char *getifip(void)
+{
+if (nvram_match("pppoeserver_interface","br0"))
+    return nvram_safe_get("lan_ipaddr");
+else
+    return nvram_nget("%s_ipaddr",nvram_safe_get("pppoeserver_interface"));
+}
+
 void add_pppoe_natrule(void)
 {
 
@@ -38,10 +47,10 @@ void add_pppoe_natrule(void)
 
 		sprintf(mask, "%s/%s", nvram_safe_get("pppoeserver_remotenet"),
 			nvram_safe_get("pppoeserver_remotemask"));
-		eval("iptables", "-A", "INPUT", "-i", nvram_get("lan_ipaddr"),
+		eval("iptables", "-A", "INPUT", "-i", getifip(),
 		     "-s", mask, "-j", "DROP");
 		eval("iptables", "-t", "nat", "-A", "POSTROUTING", "-s", mask,
-		     "-j", "SNAT", "--to-source", nvram_get("lan_ipaddr"));
+		     "-j", "SNAT", "--to-source", getifip());
 	}
 }
 
@@ -52,10 +61,10 @@ void del_pppoe_natrule(void)
 
 		sprintf(mask, "%s/%s", nvram_safe_get("pppoeserver_remotenet"),
 			nvram_safe_get("pppoeserver_remotemask"));
-		eval("iptables", "-D", "INPUT", "-i", nvram_get("lan_ipaddr"),
+		eval("iptables", "-D", "INPUT", "-i", getifip(),
 		     "-s", mask, "-j", "DROP");
 		eval("iptables", "-t", "nat", "-D", "POSTROUTING", "-s", mask,
-		     "-j", "SNAT", "--to-source", nvram_get("lan_ipaddr"));
+		     "-j", "SNAT", "--to-source", getifip());
 	}
 }
 
@@ -154,21 +163,20 @@ void start_pppoeserver(void)
 			struct dns_lists *dns_list = get_dns_list();
 
 			if (nvram_match("dnsmasq_enable", "1")) {
-				if (nvram_invmatch("lan_ipaddr", ""))
+				if (strcmp(getifip(), ""))
 					fprintf(fp, "ms-dns %s\n",
-						nvram_safe_get("lan_ipaddr"));
+						getifip());
 			} else if (nvram_match("local_dns", "1")) {
 				if (dns_list
-				    && (nvram_invmatch("lan_ipaddr", "")
+				    && (strcmp(getifip(), "")
 					|| strlen(dns_list->dns_server[0]) > 0
 					|| strlen(dns_list->dns_server[1]) > 0
 					|| strlen(dns_list->dns_server[2]) > 0))
 				{
 
-					if (nvram_invmatch("lan_ipaddr", ""))
+					if (strcmp(getifip(), ""))
 						fprintf(fp, "ms-dns %s\n",
-							nvram_safe_get
-							("lan_ipaddr"));
+							getifip());
 					if (strlen(dns_list->dns_server[0]) > 0)
 						fprintf(fp, "ms-dns %s\n",
 							dns_list->dns_server
@@ -249,7 +257,7 @@ void start_pppoeserver(void)
 			fclose(fp);
 			makeipup();
 			// end parsing
-			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", nvram_safe_get("lan_ipaddr"), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	
+			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	
 			// todo, 
 			// make 
 			// interface //done
@@ -308,21 +316,20 @@ void start_pppoeserver(void)
 			struct dns_lists *dns_list = get_dns_list();
 
 			if (nvram_match("dnsmasq_enable", "1")) {
-				if (nvram_invmatch("lan_ipaddr", ""))
+				if (strcmp(getifip(), ""))
 					fprintf(fp, "ms-dns %s\n",
-						nvram_safe_get("lan_ipaddr"));
+						getifip());
 			} else if (nvram_match("local_dns", "1")) {
 				if (dns_list
-				    && (nvram_invmatch("lan_ipaddr", "")
+				    && (strcmp(getifip(), "")
 					|| strlen(dns_list->dns_server[0]) > 0
 					|| strlen(dns_list->dns_server[1]) > 0
 					|| strlen(dns_list->dns_server[2]) > 0))
 				{
 
-					if (nvram_invmatch("lan_ipaddr", ""))
+					if (strcmp(getifip(), ""))
 						fprintf(fp, "ms-dns %s\n",
-							nvram_safe_get
-							("lan_ipaddr"));
+							getifip());
 					if (strlen(dns_list->dns_server[0]) > 0)
 						fprintf(fp, "ms-dns %s\n",
 							dns_list->dns_server
@@ -415,7 +422,7 @@ void start_pppoeserver(void)
 			// identical
 			fclose(fp);
 			makeipup();
-			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", nvram_safe_get("lan_ipaddr"), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	
+			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	
 			// todo, 
 			// make 
 			// interface //done
