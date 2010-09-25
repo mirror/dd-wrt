@@ -1579,7 +1579,7 @@ struct nvram_tuple srouter_defaults[] = {
 	// #endif
 	{"pptpd_enable", "0", 0},
 	{"pptpd_forcemppe", "1", 0},
-	{"pptpd_bcrelay", "1", 0},
+	{"pptpd_bcrelay", "0", 0},
 	{"pptpd_lip", "", 0},
 	{"pptpd_rip", "", 0},
 	{"pptpd_auth", "", 0},
