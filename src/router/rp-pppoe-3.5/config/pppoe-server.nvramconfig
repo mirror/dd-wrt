@@ -18,3 +18,4 @@
  "pppoeserver_remoteaddr" "" "NULL" "TRUE" "0" 
  "pppoeserver_remotenet" "" "NULL" "TRUE" "0" 
  "pppoeserver_remotemask" "" "NULL" "TRUE" "0" 
+ "pppoeserver_interface" "" "NULL" "TRUE" "0" 
