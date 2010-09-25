@@ -224,10 +224,11 @@ if ((boardnum == 42 || boardnum == 66)
 		gpios = 1 << 2 | 1 << 3 | 1 << 4;
 }
 
-if (boardnum == 42 && nvram_match("boot_hw_model", "WRT160N")
-		&& nvram_match("boot_hw_ver", "3.0"))
+if (boardnum == 42 && ((nvram_match("boot_hw_model", "WRT160N") && nvram_match("boot_hw_ver", "3.0")) 
+		|| (nvram_match("boot_hw_model", "M10") && nvram_match("boot_hw_ver", "1.0")) 
+		|| (nvram_match("boot_hw_model", "E100") && nvram_match("boot_hw_ver", "1.0")) ) )
 {
-		printk(KERN_EMERG "WRT160Nv3 GPIO Init\n");
+		printk(KERN_EMERG "WRT160Nv3/M10/E1000 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
