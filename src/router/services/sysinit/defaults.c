@@ -2654,7 +2654,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ttraff_enable", "1", 0},
 #ifdef HAVE_PPPOESERVER
 	{"pppoeserver_enabled", "0", 0},
-	{"pppoeserver_inteface", "br0", 0},
+	{"pppoeserver_interface", "br0", 0},
 	{"pppoeradius_enabled", "0", 0},
 	{"pppoeserver_remoteaddr", "10.10.10.1", 0},
 	{"pppoeserver_remotenet", "10.10.10.0", 0},
