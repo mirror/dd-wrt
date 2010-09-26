@@ -66,12 +66,14 @@ void start_pptpd(void)
 	cprintf("write config\n");
 	fprintf(fp, "lock\n"
 		"name *\n"
-		"proxyarp\n"
-		"ipcp-accept-local\n"
-		"ipcp-accept-remote\n"
-		"lcp-echo-failure 10\n"
-		"lcp-echo-interval 5\n"
-		"deflate 0\n" "auth\n" "-chap\n" "-mschap\n" "+mschap-v2\n");
+		"nobsdcomp\n" 
+		"nodeflate\n" 
+		"auth\n"
+		"refuse-pap\n"
+		"refuse-eap\n"
+		"refuse-chap\n"
+		"refuse-mschap\n"
+		"require-mschap-v2\n");
 	if (nvram_match("pptpd_forcemppe", "1"))
 		fprintf(fp, "mppe required,no56,no40,stateless\n");
 	else
@@ -81,6 +83,11 @@ void start_pptpd(void)
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
 		"ip-up-script /tmp/pptpd/ip-up\n"
 		"ip-down-script /tmp/pptpd/ip-down\n"
+		"proxyarp\n"
+		"ipcp-accept-local\n"
+		"ipcp-accept-remote\n"
+		"lcp-echo-failure 10\n"
+		"lcp-echo-interval 5\n"
 		"mtu %s\n" "mru %s\n",
 		nvram_get("pptpd_mtu") ? nvram_get("pptpd_mtu") : "1450",
 		nvram_get("pptpd_mru") ? nvram_get("pptpd_mru") : "1450");
