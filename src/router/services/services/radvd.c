@@ -67,26 +67,9 @@ void start_radvd(void)
 		return;
 	if (!nvram_match("ipv6_enable", "1"))
 		return;
-	buf = nvram_safe_get("radvd_conf");
-	if (buf != NULL) {
-		buf2 = (char *)malloc(strlen(buf) + 1);
-		memcpy(buf2, buf, strlen(buf));
-		buf2[strlen(buf)] = 0;
-
-		i = 0;
-		while (buf2[i++] != 0) {
-			cprintf(".");
-			if (buf2[i - 1] == '\r')
-				continue;
-			buf2[c++] = buf2[i - 1];
-		}
-		buf2[c++] = 0;
-		fp = fopen("/tmp/radvd.conf", "wb");
-		fwrite(buf2, 1, c - 1, fp);
-		fclose(fp);
-		free(buf2);
-	}
-	// nvram2file("radvd_conf", "/tmp/radvd.conf");
+	buf = nvram_get("radvd_conf");
+	if (buf != NULL)	
+	    writenvram("radvd_conf","/tmp/radvd.conf");
 
 	system2("sync");
 
