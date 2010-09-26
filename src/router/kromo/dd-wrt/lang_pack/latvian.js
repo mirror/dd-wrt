@@ -458,7 +458,7 @@ alive.port="Proxy Port";
 //help container
 
 halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
-halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
+halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<br/>IPs Format is xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//

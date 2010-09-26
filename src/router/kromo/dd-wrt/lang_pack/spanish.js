@@ -480,7 +480,7 @@ alive.port="Puerto del Proxy";
 //help container
 
 halive.right2="Elige cuando reinicar el router. Cron debe estar activado en la pestaña de administración.";
-halive.right4="Se permite un máximo de tres IPs separdas por un <em>SPACE</em>.<BR/>El formato de las IPs es xxx.xxx.xxx.xxx";
+halive.right4="Se permite un máximo de tres IPs separdas por un <em>SPACE</em>.<br/>El formato de las IPs es xxx.xxx.xxx.xxx";
 
 
 // ** config.asp **//

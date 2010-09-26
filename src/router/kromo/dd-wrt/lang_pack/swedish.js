@@ -470,7 +470,7 @@ alive.port="Proxy Port";
 //help container
 
 halive.right2="Välj när du vill starta om routern med en schemalagd omstart. Cron måste vara aktiverat i Administrations fliken.";
-halive.right4="Max tre IP-adresser separerade med ett <em>MELLANSLAG</em> är tillåtna.<BR/>IPs Formatet är xxx.xxx.xxx.xxx.";
+halive.right4="Max tre IP-adresser separerade med ett <em>MELLANSLAG</em> är tillåtna.<br/>IPs Formatet är xxx.xxx.xxx.xxx.";
 
 // ** config.asp **//
 config.titl="Backup & Återställning";

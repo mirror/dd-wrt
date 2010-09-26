@@ -368,7 +368,7 @@ alive.port="Porta do Proxy";
 
 
 halive.right2="Escolha quando reiniciar o roteador. O Cron deve estar habilitado na aba de <em>Gerenciamento</em>.";
-halive.right4="São permitidos três IPs no máximo, separados por um <em>ESPAÇO</em>.<BR/>Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
+halive.right4="São permitidos três IPs no máximo, separados por um <em>ESPAÇO</em>.<br/>Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
 
 
 // ******************************************* config.asp *******************************************//
