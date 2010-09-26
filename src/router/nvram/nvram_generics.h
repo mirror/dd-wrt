@@ -198,7 +198,7 @@ void fwritenvram(char *var, FILE * fp)
 	char *host_key = nvram_safe_get(var);
 	int len = strlen(host_key);
 	for (i = 0; i < len; i++)
-		if (host_key[i] != 0x0D)
+		if (host_key[i] != '\r')
 			fprintf(fp, "%c", host_key[i]);
 }
 
