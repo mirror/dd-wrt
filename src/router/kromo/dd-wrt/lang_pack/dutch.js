@@ -465,7 +465,7 @@ alive.port="Proxy Poort";
 //help container
 
 halive.right2="Selecteer uit de opties, wanneer u de router wilt laten herstarten. Cron dient geactiveerd te zijn op de Beheer pagina.";
-halive.right4="Maximaal drie verschillende IP's scheiden door een <em>SPATIE</em> is toegestaan.<BR/>Het IP's Formaat is xxx.xxx.xxx.xxx.";
+halive.right4="Maximaal drie verschillende IP's scheiden door een <em>SPATIE</em> is toegestaan.<br/>Het IP's Formaat is xxx.xxx.xxx.xxx.";
 
 
 

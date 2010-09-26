@@ -397,7 +397,7 @@ alive.IP2="代理服务器IP地址";
 alive.port="代理服务器端口";
 
 halive.right2="选择何时重新启动路由器。在管理标签中，Cron选项必须被开启。";
-halive.right4="最多允许3个IP地址，之间使用<em>空格</em>分隔。<BR/>IP地址格式为：xxx.xxx.xxx.xxx。";
+halive.right4="最多允许3个IP地址，之间使用<em>空格</em>分隔。<br/>IP地址格式为：xxx.xxx.xxx.xxx。";
 
 config.titl="备份 & 恢复";
 config.h2="备份配置";

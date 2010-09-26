@@ -470,7 +470,7 @@ alive.port="Port Proxy";
 
 //help container
 halive.right2="Alegeți când să fie repornit ruterul. Cron trebuie să fie activat în meniul Administrare.";
-halive.right4="Sunt permise maxim 3 adrese IP separate printr-un <em>SPAȚIU</em>.<BR/>Formatul adreselor IP este: xxx.xxx.xxx.xxx.";
+halive.right4="Sunt permise maxim 3 adrese IP separate printr-un <em>SPAȚIU</em>.<br/>Formatul adreselor IP este: xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//

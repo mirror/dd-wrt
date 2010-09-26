@@ -325,9 +325,7 @@ errmsg.err49="RADIUS ist nur im AP-Modus verfügbar.";
 errmsg.err50="Sie müssen eine SSID angeben.";
 
 // Management.asp error messages
-errmsg.err51="Der Router ist im Augenblick auf das Standard-Kennwort konfiguriert. \
-			Aus Sicherheitsgründen müssen Sie das Kennwort ändern bevor Sie die Remote-Management Funktion aktivieren. \
-			Klicken Sie den OK-Button um das Kennwort zu ändern. Klicken Sie den Abbrechen-Button um die Remote-Management-Funktion ausgeschaltet zu lassen.";
+errmsg.err51="Der Router ist im Augenblick auf das Standard-Kennwort konfiguriert. Aus Sicherheitsgründen müssen Sie das Kennwort ändern bevor Sie die Remote-Management Funktion aktivieren. Klicken Sie den OK-Button um das Kennwort zu ändern. Klicken Sie den Abbrechen-Button um die Remote-Management-Funktion ausgeschaltet zu lassen.";
 errmsg.err52="Eingegebene Passwörter stimmen nicht überein.";
 
 // Port_Services.asp error messages
@@ -448,7 +446,7 @@ alive.port="Proxy-Port";
 //help container
 
 halive.right2="Wählen Sie aus, wann der Router neu starten soll. Cron muss hierfür auf dem Management-Tab, eingeschaltet sein.";
-halive.right4="Maximal 3 IPs (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<BR/>IP-Format ist xxx.xxx.xxx.xxx.";
+halive.right4="Maximal 3 IPs (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br/>IP-Format ist xxx.xxx.xxx.xxx.";
 
 // **************************************************************** config.asp **********************************************************************//
 
