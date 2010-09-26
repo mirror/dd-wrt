@@ -73,7 +73,7 @@ void start_pptpd(void)
 		"lcp-echo-interval 5\n"
 		"deflate 0\n" "auth\n" "-chap\n" "-mschap\n" "+mschap-v2\n");
 	if (nvram_match("pptpd_forcemppe", "1"))
-		fprintf(fp, "mppe required,stateless\n");
+		fprintf(fp, "mppe required,no56,no40,stateless\n");
 	else
 		fprintf(fp, "mppe stateless\n");
 	fprintf(fp, "mppc\n"
@@ -194,7 +194,8 @@ void start_pptpd(void)
 	if (nvram_match("pptpd_bcrelay", "1"))
 		fprintf(fp, "bcrelay %s\n", nvram_safe_get("lan_ifname"));
 	fprintf(fp, "localip %s\n"
-		"remoteip %s\n", nvram_safe_get("pptpd_lip"),
+		"remoteip %s\n", 
+		nvram_safe_get("pptpd_lip"),
 		nvram_safe_get("pptpd_rip"));
 	fclose(fp);
 
