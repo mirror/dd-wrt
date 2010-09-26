@@ -3626,7 +3626,7 @@ void start_wan_done(char *wan_ifname)
 			mkdir("/tmp/ppp", 0700);
 
 			// Create our custom pptp ipup script and change its attributes
-			nvram2file("pptp_customipup",
+			writenvram("pptp_customipup",
 				   "/tmp/ppp/sh_pptp_customipup");
 			chmod("/tmp/ppp/sh_pptp_customipup", 0744);
 
