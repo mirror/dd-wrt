@@ -442,7 +442,7 @@ alive.port="Porta Proxy";
 
 //help container
 halive.right2="Scegli quando riavviare il router. Cron deve essere abilitato dalla finestra Gestione.";
-halive.right4="Sono permessi massimo tre IP separati da uno <em>SPAZIO</em>.<BR/>Il formato degli IP è xxx.xxx.xxx.xxx.";
+halive.right4="Sono permessi massimo tre IP separati da uno <em>SPAZIO</em>.<br/>Il formato degli IP è xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//

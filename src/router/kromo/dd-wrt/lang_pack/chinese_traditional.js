@@ -449,7 +449,7 @@ alive.port="代理伺服器埠號";
 //help container
 //
 halive.right2="選擇何時重新啟動路由器.在普通管理標籤中的Cron選項必須被開啟.";
-halive.right4="最多允許3個IP位址,之間使用 <em>空格</em> 區隔<BR/>IP位址格式為 xxx.xxx.xxx.xxx.";
+halive.right4="最多允許3個IP位址,之間使用 <em>空格</em> 區隔<br/>IP位址格式為 xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//

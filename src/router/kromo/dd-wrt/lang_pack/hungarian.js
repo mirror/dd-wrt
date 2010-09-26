@@ -373,7 +373,7 @@ alive.port="Proxy Port";
 //help container
 
 halive.right2="Válassza ki, hogy mikor induljon újra a router. A Cronnak engedélyezettnek kell lennie a kezelés fülön.";
-halive.right4="Maximum 3 IP cím (egy <em>SZÓKÖZ</em> karakterrel elválasztva) megengedett.<BR/>IP formátum a következõ: xxx.xxx.xxx.xxx.";
+halive.right4="Maximum 3 IP cím (egy <em>SZÓKÖZ</em> karakterrel elválasztva) megengedett.<br/>IP formátum a következõ: xxx.xxx.xxx.xxx.";
 
 // **************************************************************** config.asp **********************************************************************//
 

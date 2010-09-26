@@ -436,7 +436,7 @@ alive.port="Port du proxy";
 
 //help container
 halive.right2="Choisissez quand le routeur doit redémarrer. <em>Cron</em> doit être activé dans l'onglet gestion.";
-halive.right4="Un maximum de 3 IPs séparées par un <em>ESPACE</em> est autorisé.<BR/>Le format des IPs est xxx.xxx.xxx.xxx.";
+halive.right4="Un maximum de 3 IPs séparées par un <em>ESPACE</em> est autorisé.<br/>Le format des IPs est xxx.xxx.xxx.xxx.";
 
 // ** config.asp **//
 config.titl="Sauvegarde & Restauration";

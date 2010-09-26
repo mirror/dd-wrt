@@ -479,7 +479,7 @@ alive.port="Proksi vrata";
 //help container
 
 halive.right2="Izbira ponovnega zagona usmerjevalnika. Cron mora biti omogočen pod zavihkom Upravljanje.";
-halive.right4="Dovoljeni so največ trije IP naslovi ločeni s <em>PRESLEDEK</em>.<BR/>Format IP je xxx.xxx.xxx.xxx.";
+halive.right4="Dovoljeni so največ trije IP naslovi ločeni s presledkom.<br />Format IP je xxx.xxx.xxx.xxx .";
 
 
 // ** config.asp **//
@@ -600,20 +600,20 @@ filter.legend3="Zaprte storitve ";
 filter.catchall="Ujemi vse protokole P2P";
 filter.legend4="Zapiranje spletišč z URL naslovom";
 filter.legend5="Zapiranje spletišč s ključno besedo";
-filter.mess1="Zbriši smernico?";
+filter.mess1="Izbriši smernico?";
 filter.mess2="Izbrati morate vsaj dan.";
 filter.mess3="Končni čas mora biti večji od začetnega.";
 
 //help container
 
-hfilter.right2="Določite lahko do 10 smernic dostopa. Kliknite <em>" + sbutton.del + "</em>, da zbrišete smernico, ali <em>" + sbutton.summary + "</em> za povzetek smernice.";
+hfilter.right2="Določite lahko do 10 smernic dostopa. Kliknite <em>" + sbutton.del + "</em>, da izbrišete smernico, ali <em>" + sbutton.summary + "</em> za povzetek smernice.";
 hfilter.right4="Omogoči ali onemogoči smernico.";
 hfilter.right6="Smernici lahko določite ime.";
 hfilter.right8="Določite dan v tednu, ko bo smernica uporabljena.";
 hfilter.right10="Vnesite čas, ko bo smernica uporabljena.";
 hfilter.right12="Zaprete lahko določene storitve. Kliknite <em>" + sbutton.filterSer + "</em> za spremembo nastavitev.";
 hfilter.right14="Zaprete lahko določena spletišča tako, da vnesete njihov URL.";
-hfilter.right16="Zaprete lahko določena spletišča tako, da vnesete ključno besedo vsebovano v njihovi spletni starni.";
+hfilter.right16="Zaprete lahko določena spletišča tako, da vnesete ključno besedo vsebovano v njihovi spletni strani.";
 
 
 // ** FilterSummary.asp **//

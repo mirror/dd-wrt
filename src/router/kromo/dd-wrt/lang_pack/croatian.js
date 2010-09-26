@@ -479,7 +479,7 @@ alive.port="Proxy Vrata";
 //help container
 
 halive.right2="Odaberi kada ponovo pokrenuti usmjerivač. CRON mora biti omogućen u kartici UPRAVLJANJE.";
-halive.right4="Najviše tri IP adrese odvojene <em>RAZMAKOM</em> su dozvoljene.<BR/>Format IP adresa je:xxx.xxx.xxx.xxx.";
+halive.right4="Najviše tri IP adrese odvojene <em>RAZMAKOM</em> su dozvoljene.<br/>Format IP adresa je:xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
