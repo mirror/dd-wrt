@@ -49,7 +49,6 @@
 #include <bcmnvram.h>
 #include <l7protocols.h>
 
-
 #ifdef HAVE_OVERCLOCKING
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
 static unsigned int type3_clocks[3] = { 150, 200, 0 };
@@ -2327,30 +2326,29 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		struct wifi_channels *chan;
 		char cn[32];
 		char fr[32];
-		int gotchannels=0;
+		int gotchannels = 0;
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 		if (is_ath11n(prefix)) {
 #ifdef HAVE_MADWIFI_MIMO
 			if (is_ar5008(prefix)) {
-			chan = list_channels_11n(prefix);
-			if (chan == NULL)
-				chan = list_channels_11n(dev);
-			gotchannels=1;
+				chan = list_channels_11n(prefix);
+				if (chan == NULL)
+					chan = list_channels_11n(dev);
+				gotchannels = 1;
 			}
 #endif
 #ifdef HAVE_ATH9K
-		if (is_ath9k(prefix)) {
-		chan = list_channels_ath9k(prefix);
-		if (chan == NULL)
-				chan = list_channels_ath9k(dev);
-		gotchannels=1;
+			if (is_ath9k(prefix)) {
+				chan = list_channels_ath9k(prefix);
+				if (chan == NULL)
+					chan = list_channels_ath9k(dev);
+				gotchannels = 1;
+			}
+#endif
 		}
 #endif
-	  }
-#endif
-	  if (!gotchannels)
-		{
+		if (!gotchannels) {
 			chan = list_channels(prefix);
 			if (chan == NULL)
 				chan = list_channels(dev);
@@ -3597,22 +3595,22 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_macaddr[16];
 	char wl_ssid[16];
 	char frequencies[16];
-	
+
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);
 
 	// check the frequency capabilities;
-	if(has_5ghz(prefix) && has_2ghz(prefix)) {
+	if (has_5ghz(prefix) && has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4/5 GHz]");
-	} else if(has_5ghz(prefix)) {
+	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " [5 GHz]");
-	} else if(has_2ghz(prefix)) {
+	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4 GHz]");
 	} else {
 		sprintf(frequencies, "");
 	}
-	
+
 	// wireless mode
 	websWrite(wp,
 		  "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n",
@@ -3825,9 +3823,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
 #endif
-					  nvram_match(wl_mode,
-						       "wet") ? 
-					  "selected=\\\"selected\\\"" : "");
+				  nvram_match(wl_mode,
+					      "wet") ?
+				  "selected=\\\"selected\\\"" : "");
 #endif
 			if (!cpeonly)
 				websWrite(wp,
@@ -4597,35 +4595,35 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 // RELAYD OPTIONAL SETTINGS
 #ifdef HAVE_RELAYD
-	if( nvram_match(wl_mode, "wet") ) {
+	if (nvram_match(wl_mode, "wet")) {
 		char wl_relayd[32];
 		int ip[4] = { 0, 0, 0, 0 };
-		
+
 		websWrite(wp,
 			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.clientRelaydDefaultGwMode)</script></div>");
 		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', false)\" %s /><script type=\"text/javascript\">Capture(share.auto)</script>&nbsp;(DHCP)&nbsp;\n",
-			  prefix, prefix, nvram_default_match(wl_relayd,
-					      "1", "1") ? "checked" : "");
+			  prefix, prefix,
+			  nvram_default_match(wl_relayd, "1",
+					      "1") ? "checked" : "");
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', true)\" %s/><script type=\"text/javascript\">Capture(share.manual)</script>\n",
-			  prefix, prefix, nvram_default_match(wl_relayd,
-					      "0", "1") ? "checked" : "");
+			  prefix, prefix,
+			  nvram_default_match(wl_relayd, "0",
+					      "1") ? "checked" : "");
 		websWrite(wp, "</div>\n");
 
 		sprintf(wl_relayd, "%s_relayd_gw_ipaddr", prefix);
-		sscanf(nvram_safe_get(wl_relayd), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2],
-		       &ip[3]);
+		sscanf(nvram_safe_get(wl_relayd), "%d.%d.%d.%d", &ip[0], &ip[1],
+		       &ip[2], &ip[3]);
 		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
 		websWrite(wp, "\
 	<div id=\"%s_relayd_gw_ipaddr\" class=\"setting\"%s>\n\
 	          <input type=\"hidden\" name=\"%s_relayd_gw_ipaddr\" value=\"4\">\n\
 	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.gateway)</script></div>\n\
 	          <input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
-       </div>\n", prefix, nvram_default_match(wl_relayd,
-		"1", "0") ? " style=\"display: none; visibility: hidden;\"" : "",	 
-			prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
+       </div>\n", prefix, nvram_default_match(wl_relayd, "1", "0") ? " style=\"display: none; visibility: hidden;\"" : "", prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
 	}
 #endif
 
@@ -7778,30 +7776,32 @@ void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
 	char *next;
 	char var[80];
 	char eths[256];
-	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control","rb");
-	if (fp==NULL)
-	    return;
-	int c=0;
-	while(1 && c<255)
-	{
-	int v = getc(fp);
-	if (v==EOF || v == 0xa )
-	    break;
-	eths[c++]=v;
+	FILE *fp =
+	    fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
+	if (fp == NULL)
+		return;
+	int c = 0;
+	while (1 && c < 255) {
+		int v = getc(fp);
+		if (v == EOF || v == 0xa)
+			break;
+		eths[c++] = v;
 	}
-	eths[c++]=0;
+	eths[c++] = 0;
 	fclose(fp);
-	
-	websWrite(wp,"<div class=\"setting\">\n");
-	websWrite(wp,"<div class=\"label\">TCP Congestion Control</div>\n");
+
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\">TCP Congestion Control</div>\n");
 	websWrite(wp, "<select name=\"tcp_congestion_control\">\n");
 	foreach(var, eths, next) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
-			  nvram_match("tcp_congestion_control", var) ? "selected" : "", var);
+			  nvram_match("tcp_congestion_control",
+				      var) ? "selected" : "", var);
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 }
+
 void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 {
 	if (argc < 1)
@@ -7824,7 +7824,8 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
-		if (!nvram_nmatch("0","%s_bridged",var) && strncmp(var,"br",2))
+		if (!nvram_nmatch("0", "%s_bridged", var)
+		    && strncmp(var, "br", 2))
 			continue;
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
 			  nvram_match(ifname, var) ? "selected" : "", var);
@@ -7958,17 +7959,16 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].
-					      usersize) ? db->users[i].
-				  user : "");
+					      && db->users[i].usersize) ? db->
+				  users[i].user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -8025,17 +8025,16 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].
-					      clientsize) ? db->users[i].
-				  client : "");
+					      && db->users[i].clientsize) ? db->
+				  users[i].client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",
