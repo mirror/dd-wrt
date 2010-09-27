@@ -209,7 +209,7 @@ void start_dnsmasq(void)
 	}
 	fprintf(fp, "\n");
 
-	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n");
+	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n");
 
 	/*
 	 * Domain 
