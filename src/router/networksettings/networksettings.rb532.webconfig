@@ -1,6 +1,7 @@
 
 <fieldset>
 	<legend><% tran("management.net_legend"); %></legend>
+	<% show_congestion(); %>
 	<div class="setting">
 		<div class="label"><% tran("management.net_port"); %></div>
 		<input class="num" size="5" maxlength="5" name="ip_conntrack_max" onblur="valid_range(this,256,65535,management.net_port)" value="<% nvram_get("ip_conntrack_max"); %>" />&nbsp;
