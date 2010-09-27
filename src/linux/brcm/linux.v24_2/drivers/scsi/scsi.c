@@ -1885,7 +1885,7 @@ static int proc_scsi_gen_write(struct file * file, const char * buf,
 		id = simple_strtoul(p + 1, &p, 0);
 		lun = simple_strtoul(p + 1, &p, 0);
 
-		printk(KERN_INFO "scsi singledevice %d %d %d %d\n", host, channel,
+		printk(KERN_INFO "scsi add-single-device %d %d %d %d\n", host, channel,
 		       id, lun);
 
 		for (HBA_ptr = scsi_hostlist; HBA_ptr; HBA_ptr = HBA_ptr->next) {
@@ -1916,13 +1916,16 @@ static int proc_scsi_gen_write(struct file * file, const char * buf,
 		id = simple_strtoul(p + 1, &p, 0);
 		lun = simple_strtoul(p + 1, &p, 0);
 
+		printk(KERN_INFO "scsi remove-single-device %d %d %d %d\n", host, channel,
+		       id, lun);
 
 		for (HBA_ptr = scsi_hostlist; HBA_ptr; HBA_ptr = HBA_ptr->next) {
 			if (HBA_ptr->host_no == host) {
 				break;
 			}
 		}
-		err=scsi_remove_single_device(HBA_ptr, channel, id, lun);
+		if ((err=scsi_remove_single_device(HBA_ptr, channel, id, lun))==0)
+		    err = length;
 		goto out;
 	}
 out:

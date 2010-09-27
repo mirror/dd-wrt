@@ -72,8 +72,10 @@ int fat_get_block(struct inode *inode, long iblock, struct buffer_head *bh_resul
 	}
 	MSDOS_I(inode)->mmu_private += sb->s_blocksize;
 	phys = fat_bmap(inode, iblock);
-	if (!phys)
+	if (!phys) {
 		BUG();
+		return -EIO;
+	}
 	bh_result->b_dev = inode->i_dev;
 	bh_result->b_blocknr = phys;
 	bh_result->b_state |= (1UL << BH_Mapped);

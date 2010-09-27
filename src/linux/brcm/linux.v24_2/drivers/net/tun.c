@@ -118,6 +118,17 @@ static struct net_device_stats *tun_net_stats(struct net_device *dev)
 	return &tun->stats;
 }
 
+#define MIN_MTU 68
+#define MAX_MTU 65535
+
+static int tun_net_change_mtu(struct net_device *dev, int new_mtu)  {
+	if (new_mtu < MIN_MTU || new_mtu + dev->hard_header_len > MAX_MTU)
+		return -EINVAL;
+	dev->mtu = new_mtu;
+	return 0;
+}
+
+
 /* Initialize net device. */
 int tun_net_init(struct net_device *dev)
 {
@@ -156,6 +167,7 @@ int tun_net_init(struct net_device *dev)
 		break;
 	};
 
+	dev->change_mtu = tun_net_change_mtu;
 	return 0;
 }
 
