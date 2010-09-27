@@ -7785,7 +7785,7 @@ void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
 	while(1 && c<255)
 	{
 	int v = getc(fp);
-	if (v==NULL)
+	if (v==EOF || v == 0xa )
 	    break;
 	eths[c++]=v;
 	}
