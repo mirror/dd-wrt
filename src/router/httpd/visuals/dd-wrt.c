@@ -7773,6 +7773,35 @@ void ej_show_macfilter(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
+{
+	char *next;
+	char var[80];
+	char eths[256];
+	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control","rb");
+	if (fp==NULL)
+	    return;
+	int c=0;
+	while(1 && c<255)
+	{
+	int v = getc(fp);
+	if (v==NULL)
+	    break;
+	eths[c++]=v;
+	}
+	eths[c++]=0;
+	fclose(fp);
+	
+	websWrite(wp,"<div class=\"setting\">\n");
+	websWrite(wp,"<div class=\"label\">TCP Congestion Control</div>\n");
+	websWrite(wp, "<select name=\"tcp_congestion_control\">\n");
+	foreach(var, eths, next) {
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
+			  nvram_match("tcp_congestion_control", var) ? "selected" : "", var);
+	}
+	websWrite(wp, "</select>\n");
+	websWrite(wp, "</div>\n");
+}
 void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 {
 	if (argc < 1)
