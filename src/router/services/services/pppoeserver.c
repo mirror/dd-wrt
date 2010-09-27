@@ -126,11 +126,8 @@ static void do_pppoeconfig(FILE * fp)
 	else
 		fprintf(fp, "mppc\n");
 	fprintf(fp, "nopcomp\n");
-	fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));	// todo 
-	// ...
-	if (nvram_default_match("pppoeserver_encryption", "1", "0"))	// make 
-		// it 
-		// configureable
+	fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));
+	if (nvram_default_match("pppoeserver_encryption", "1", "0"))
 	{
 		fprintf(fp,
 			"mppe required,no56,no40,stateless\n"
@@ -249,16 +246,6 @@ void start_pppoeserver(void)
 			fclose(fp);
 			makeipup();
 			// end parsing
-			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	//set -N to 999 concurrent connections
-			// todo, 
-			// make 
-			// base 
-			// address 
-			// configurable, 
-			// see 
-			// networking 
-			// page 
-			// options
 		} else {
 
 			mkdir("/tmp/pppoeserver", 0777);
@@ -266,12 +253,8 @@ void start_pppoeserver(void)
 			    fopen("/tmp/pppoeserver/pppoe-server-options",
 				  "wb");
 			do_pppoeconfig(fp);
-			fprintf(fp, "login\n" "require-mschap-v2\n" "default-mru\n" "default-asyncmap\n" "lcp-echo-interval %s\n"	// todo 
-				// optionally 
-				// configurable
-				"lcp-echo-failure %s\n"	// todo 
-				// optionally 
-				// configureable
+			fprintf(fp, "login\n" "require-mschap-v2\n" "default-mru\n" "default-asyncmap\n" "lcp-echo-interval %s\n"
+				"lcp-echo-failure %s\n"	
 				"noipdefault\n"
 				"nodefaultroute\n"
 				"noproxyarp\n"
@@ -309,8 +292,8 @@ void start_pppoeserver(void)
 			fprintf(fp, "%s %s\n", nvram_safe_get("pppoeserver_authserverip"), nvram_safe_get("pppoeserver_sharedkey"));	// todo, 
 			fclose(fp);
 			makeipup();
-			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	//set -N to 999 concurrent connections
 		}
+		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	//set -N to 999 concurrent connections
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
 	}
