@@ -30,13 +30,13 @@
 #include <syslog.h>
 #include <services.h>
 
-
 static char *getifip(void)
 {
-if (nvram_match("pppoeserver_interface","br0"))
-    return nvram_safe_get("lan_ipaddr");
-else
-    return nvram_nget("%s_ipaddr",nvram_safe_get("pppoeserver_interface"));
+	if (nvram_match("pppoeserver_interface", "br0"))
+		return nvram_safe_get("lan_ipaddr");
+	else
+		return nvram_nget("%s_ipaddr",
+				  nvram_safe_get("pppoeserver_interface"));
 }
 
 void add_pppoe_natrule(void)
@@ -98,6 +98,95 @@ static void makeipup(void)
 
 }
 
+static void do_pppoeconfig(FILE * fp)
+{
+	// fprintf (fp, "crtscts\n");
+	if (nvram_default_match("pppoeserver_bsdcomp", "0", "0"))
+		fprintf(fp, "nobsdcomp\n");
+	else
+		fprintf(fp, "bsdcomp 12\n");
+	if (nvram_default_match("pppoeserver_deflate", "0", "0"))
+		fprintf(fp, "nodeflate\n");
+	else
+		fprintf(fp, "deflate 12\n");
+	if (nvram_default_match("pppoeserver_lzs", "0", "0"))
+		fprintf(fp, "nolzs\n");
+	else
+		fprintf(fp, "lzs\n");
+	if (nvram_default_match("pppoeserver_mppc", "0", "0"))
+		fprintf(fp, "nomppc\n");
+	else
+		fprintf(fp, "mppc\n");
+	fprintf(fp, "nopcomp\n");
+	fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));	// todo 
+	// ...
+	if (nvram_default_match("pppoeserver_encryption", "1", "0"))	// make 
+		// it 
+		// configureable
+	{
+		fprintf(fp,
+			"mppe required,no56,no40,stateless\n"
+			"refuse-eap\n" "refuse-pap\n"
+			"refuse-chap\n" "refuse-mschap\n"
+			"require-mschap-v2\n");
+	} else
+		fprintf(fp, "nomppe\n");
+	fprintf(fp, "auth\n"
+		"default-mru\n"
+		"default-asyncmap\n"
+		"lcp-echo-interval %s\n"
+		"lcp-echo-failure %s\n",
+		nvram_safe_get("pppoeserver_lcpechoint"),
+		nvram_safe_get("pppoeserver_lcpechofail"));
+	if (!nowins) {
+		fprintf(fp, "ms-wins %s\n", nvram_safe_get("wan_wins"));
+	}
+	struct dns_lists *dns_list = get_dns_list();
+
+	if (nvram_match("dnsmasq_enable", "1")) {
+		if (strcmp(getifip(), ""))
+			fprintf(fp, "ms-dns %s\n", getifip());
+	} else if (nvram_match("local_dns", "1")) {
+		if (dns_list && (strcmp(getifip(), "")
+				 || strlen(dns_list->dns_server[0]) > 0
+				 || strlen(dns_list->dns_server[1]) > 0
+				 || strlen(dns_list->dns_server[2]) > 0)) {
+
+			if (strcmp(getifip(), ""))
+				fprintf(fp, "ms-dns %s\n", getifip());
+			if (strlen(dns_list->dns_server[0]) > 0)
+				fprintf(fp, "ms-dns %s\n",
+					dns_list->dns_server[0]);
+			if (strlen(dns_list->dns_server[1]) > 0)
+				fprintf(fp, "ms-dns %s\n",
+					dns_list->dns_server[1]);
+			if (strlen(dns_list->dns_server[2]) > 0)
+				fprintf(fp, "ms-dns %s\n",
+					dns_list->dns_server[2]);
+		}
+	} else {
+		if (dns_list
+		    && (strlen(dns_list->dns_server[0]) > 0
+			|| strlen(dns_list->dns_server[1]) > 0
+			|| strlen(dns_list->dns_server[2]) > 0)) {
+			if (strlen(dns_list->dns_server[0]) > 0)
+				fprintf(fp, "ms-dns  %s\n",
+					dns_list->dns_server[0]);
+			if (strlen(dns_list->dns_server[1]) > 0)
+				fprintf(fp, "ms-dns  %s\n",
+					dns_list->dns_server[1]);
+			if (strlen(dns_list->dns_server[2]) > 0)
+				fprintf(fp, "ms-dns  %s\n",
+					dns_list->dns_server[2]);
+
+		}
+	}
+
+	if (dns_list)
+		free(dns_list);
+
+}
+
 void start_pppoeserver(void)
 {
 	if (nvram_default_match("pppoeserver_enabled", "1", "0")) {
@@ -116,104 +205,7 @@ void start_pppoeserver(void)
 			mkdir("/tmp/pppoeserver", 0777);
 			fp = fopen("/tmp/pppoeserver/pppoe-server-options",
 				   "wb");
-			// fprintf (fp, "crtscts\n");
-			if (nvram_default_match
-			    ("pppoeserver_bsdcomp", "0", "0"))
-				fprintf(fp, "nobsdcomp\n");
-			else
-				fprintf(fp, "bsdcomp 12\n");
-			if (nvram_default_match
-			    ("pppoeserver_deflate", "0", "0"))
-				fprintf(fp, "nodeflate\n");
-			else
-				fprintf(fp, "deflate 12\n");
-			if (nvram_default_match("pppoeserver_lzs", "0", "0"))
-				fprintf(fp, "nolzs\n");
-			else
-				fprintf(fp, "lzs\n");
-			if (nvram_default_match("pppoeserver_mppc", "0", "0"))
-				fprintf(fp, "nomppc\n");
-			else
-				fprintf(fp, "mppc\n");
-			fprintf(fp, "nopcomp\n");
-			fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));	// todo 
-			// ...
-			if (nvram_default_match("pppoeserver_encryption", "1", "0"))	// make 
-				// it 
-				// configureable
-			{
-				fprintf(fp,
-					"mppe required,no56,no40,stateless\n"
-					"refuse-eap\n" "refuse-pap\n"
-					"refuse-chap\n" "refuse-mschap\n"
-					"require-mschap-v2\n");
-			} else
-				fprintf(fp, "nomppe\n");
-			fprintf(fp, "auth\n"
-				"default-mru\n"
-				"default-asyncmap\n"
-				"lcp-echo-interval %s\n"
-				"lcp-echo-failure %s\n",
-				nvram_safe_get("pppoeserver_lcpechoint"),
-				nvram_safe_get("pppoeserver_lcpechofail"));
-			if (!nowins) {
-				fprintf(fp, "ms-wins %s\n",
-					nvram_safe_get("wan_wins"));
-			}
-			struct dns_lists *dns_list = get_dns_list();
-
-			if (nvram_match("dnsmasq_enable", "1")) {
-				if (strcmp(getifip(), ""))
-					fprintf(fp, "ms-dns %s\n",
-						getifip());
-			} else if (nvram_match("local_dns", "1")) {
-				if (dns_list
-				    && (strcmp(getifip(), "")
-					|| strlen(dns_list->dns_server[0]) > 0
-					|| strlen(dns_list->dns_server[1]) > 0
-					|| strlen(dns_list->dns_server[2]) > 0))
-				{
-
-					if (strcmp(getifip(), ""))
-						fprintf(fp, "ms-dns %s\n",
-							getifip());
-					if (strlen(dns_list->dns_server[0]) > 0)
-						fprintf(fp, "ms-dns %s\n",
-							dns_list->dns_server
-							[0]);
-					if (strlen(dns_list->dns_server[1]) > 0)
-						fprintf(fp, "ms-dns %s\n",
-							dns_list->dns_server
-							[1]);
-					if (strlen(dns_list->dns_server[2]) > 0)
-						fprintf(fp, "ms-dns %s\n",
-							dns_list->dns_server
-							[2]);
-				}
-			} else {
-				if (dns_list
-				    && (strlen(dns_list->dns_server[0]) > 0
-					|| strlen(dns_list->dns_server[1]) > 0
-					|| strlen(dns_list->dns_server[2]) > 0))
-				{
-					if (strlen(dns_list->dns_server[0]) > 0)
-						fprintf(fp, "ms-dns  %s\n",
-							dns_list->dns_server
-							[0]);
-					if (strlen(dns_list->dns_server[1]) > 0)
-						fprintf(fp, "ms-dns  %s\n",
-							dns_list->dns_server
-							[1]);
-					if (strlen(dns_list->dns_server[2]) > 0)
-						fprintf(fp, "ms-dns  %s\n",
-							dns_list->dns_server
-							[2]);
-
-				}
-			}
-
-			if (dns_list)
-				free(dns_list);
+			do_pppoeconfig(fp);
 			fprintf(fp, "noipdefault\n"
 				"nodefaultroute\n"
 				"noproxyarp\n"
@@ -257,12 +249,7 @@ void start_pppoeserver(void)
 			fclose(fp);
 			makeipup();
 			// end parsing
-			eval("pppoe-server", "-k", 
-				"-I", nvram_safe_get("pppoeserver_interface"), 
-				"-L", getifip(), 
-				"-R", nvram_safe_get("pppoeserver_remoteaddr"), 
-				"-x", nvram_safe_get("pppoeserver_sessionlimit"), 
-				"-N", "999");	//set -N to 999 concurrent connections
+			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	//set -N to 999 concurrent connections
 			// todo, 
 			// make 
 			// base 
@@ -278,97 +265,7 @@ void start_pppoeserver(void)
 			mkdir("/tmp/pppoeserver", 0777);
 			fp = fopen("/tmp/pppoeserver/pppoe-server-options",
 				   "wb");
-			// fprintf (fp, "crtscts\n");
-			if (nvram_default_match
-			    ("pppoeserver_bsdcomp", "0", "0"))
-				fprintf(fp, "nobsdcomp\n");
-			else
-				fprintf(fp, "bsdcomp 12\n");
-			if (nvram_default_match
-			    ("pppoeserver_deflate", "0", "0"))
-				fprintf(fp, "nodeflate\n");
-			else
-				fprintf(fp, "deflate 12\n");
-			if (nvram_default_match("pppoeserver_lzs", "0", "0"))
-				fprintf(fp, "nolzs\n");
-			else
-				fprintf(fp, "lzs\n");
-			if (nvram_default_match("pppoeserver_mppc", "0", "0"))
-				fprintf(fp, "nomppc\n");
-			else
-				fprintf(fp, "mppc\n");
-			fprintf(fp, "nopcomp\n");
-			fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));	// todo 
-			// ...
-			if (nvram_default_match("pppoeserver_encryption", "1", "0"))	// make 
-				// it 
-				// configureable
-			{
-				fprintf(fp,
-					"mppe required,no56,no40,stateless\n"
-					"refuse-eap\n" "refuse-pap\n"
-					"refuse-chap\n" "refuse-mschap\n"
-					"require-mschap-v2\n");
-			} else
-				fprintf(fp, "nomppe\n");
-			if (!nowins) {
-				fprintf(fp, "ms-wins %s\n",
-					nvram_safe_get("wan_wins"));
-			}
-
-			struct dns_lists *dns_list = get_dns_list();
-
-			if (nvram_match("dnsmasq_enable", "1")) {
-				if (strcmp(getifip(), ""))
-					fprintf(fp, "ms-dns %s\n",
-						getifip());
-			} else if (nvram_match("local_dns", "1")) {
-				if (dns_list
-				    && (strcmp(getifip(), "")
-					|| strlen(dns_list->dns_server[0]) > 0
-					|| strlen(dns_list->dns_server[1]) > 0
-					|| strlen(dns_list->dns_server[2]) > 0))
-				{
-
-					if (strcmp(getifip(), ""))
-						fprintf(fp, "ms-dns %s\n",
-							getifip());
-					if (strlen(dns_list->dns_server[0]) > 0)
-						fprintf(fp, "ms-dns %s\n",
-							dns_list->dns_server
-							[0]);
-					if (strlen(dns_list->dns_server[1]) > 0)
-						fprintf(fp, "ms-dns %s\n",
-							dns_list->dns_server
-							[1]);
-					if (strlen(dns_list->dns_server[2]) > 0)
-						fprintf(fp, "ms-dns %s\n",
-							dns_list->dns_server
-							[2]);
-				}
-			} else {
-				if (dns_list
-				    && (strlen(dns_list->dns_server[0]) > 0
-					|| strlen(dns_list->dns_server[1]) > 0
-					|| strlen(dns_list->dns_server[2]) > 0))
-				{
-					if (strlen(dns_list->dns_server[0]) > 0)
-						fprintf(fp, "ms-dns  %s\n",
-							dns_list->dns_server
-							[0]);
-					if (strlen(dns_list->dns_server[1]) > 0)
-						fprintf(fp, "ms-dns  %s\n",
-							dns_list->dns_server
-							[1]);
-					if (strlen(dns_list->dns_server[2]) > 0)
-						fprintf(fp, "ms-dns  %s\n",
-							dns_list->dns_server
-							[2]);
-				}
-			}
-
-			if (dns_list)
-				free(dns_list);
+			do_pppoeconfig(fp);
 			fprintf(fp, "login\n" "require-mschap-v2\n" "default-mru\n" "default-asyncmap\n" "lcp-echo-interval %s\n"	// todo 
 				// optionally 
 				// configurable
@@ -425,12 +322,7 @@ void start_pppoeserver(void)
 			// identical
 			fclose(fp);
 			makeipup();
-			eval("pppoe-server", "-k", 
-				"-I", nvram_safe_get("pppoeserver_interface"), 
-				"-L", getifip(), 
-				"-R", nvram_safe_get("pppoeserver_remoteaddr"), 
-				"-x", nvram_safe_get("pppoeserver_sessionlimit"), 
-				"-N", "999");	//set -N to 999 concurrent connections
+			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	//set -N to 999 concurrent connections
 			// todo, 
 			// make 
 			// base 
