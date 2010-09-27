@@ -382,6 +382,20 @@ int do_timer(void)
 
 static int noconsole = 0;
 
+static void set_tcp_params(void)
+{
+	system("/etc/preinit");	// sets default values for ip_conntrack
+	if (f_exists("/proc/sys/net/ipv4/tcp_westwood")) {
+		system("/bin/echo 0 > /proc/sys/net/ipv4/tcp_westwood");
+		system("/bin/echo 1 > /proc/sys/net/ipv4/tcp_vegas_cong_avoid");
+		system("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha");
+		system("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta");
+	}
+	system("/bin/echo %s > /proc/sys/net/ipv4/tcp_congestion_control",
+	       nvram_default_get("tcp_congestion_control", "vegas"));
+
+}
+
 /* 
  * Main loop 
  */
@@ -404,14 +418,14 @@ int main(int argc, char **argv)
 	lcdmessage("System Start");
 	fprintf(stderr, "start service\n");
 	fprintf(stderr, "starting Architecture code for " ARCHITECTURE "\n");
-	start_service("devinit"); //init /dev /proc etc.
+	start_service("devinit");	//init /dev /proc etc.
 	start_service("sysinit");
 #ifndef HAVE_MICRO
 #ifndef HAVE_LAGUNA
 	if (console_init())
 #endif
 		noconsole = 1;
-#endif  //HAVE_MICRO
+#endif				//HAVE_MICRO
 	start_service("drivers");
 	cprintf("setup signals\n");
 	/* 
@@ -482,15 +496,7 @@ int main(int argc, char **argv)
 #endif
 
 	set_ip_forward('1');
-	system("/etc/preinit");	// sets default values for ip_conntrack
-	if (f_exists("/proc/sys/net/ipv4/tcp_westwood")) {
-		system("/bin/echo 0 > /proc/sys/net/ipv4/tcp_westwood");
-		system("/bin/echo 1 > /proc/sys/net/ipv4/tcp_vegas_cong_avoid");
-		system("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha");
-		system("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta");
-	}
-	system("/bin/echo %s > /proc/sys/net/ipv4/tcp_congestion_control",nvram_default_get("tcp_congestion_control","vegas"));
-
+	set_tcp_params();
 #ifdef HAVE_JFFS2
 	start_service("jffs2");
 #endif
@@ -662,6 +668,7 @@ int main(int argc, char **argv)
 			 * Fall through 
 			 */
 		case START:
+			set_tcp_params();
 			lcdmessage("START SERVICES");
 			nvram_set("wl0_lazy_wds",
 				  nvram_safe_get("wl_lazy_wds"));
