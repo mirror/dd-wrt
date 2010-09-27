@@ -128,10 +128,10 @@ static void do_pppoeconfig(FILE * fp)
 	fprintf(fp, "nopcomp\n");
 	fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));
 	if (nvram_default_match("pppoeserver_encryption", "1", "0")) {
-		fprintf(fp,
-			"mppe required,no56,no40,stateless\n"
-			"refuse-eap\n" "refuse-pap\n"
-			"refuse-chap\n" "refuse-mschap\n"
+		fprintf(fp, "mppe required,no56,no40,stateless\n" "refuse-eap\n"	//
+			"refuse-pap\n"	//
+			"refuse-chap\n"	//
+			"refuse-mschap\n"	//
 			"require-mschap-v2\n");
 	} else
 		fprintf(fp, "nomppe\n");
@@ -252,34 +252,43 @@ void start_pppoeserver(void)
 			    fopen("/tmp/pppoeserver/pppoe-server-options",
 				  "wb");
 			do_pppoeconfig(fp);
-			fprintf(fp,
-				"login\n" "require-mschap-v2\n" "default-mru\n"
-				"default-asyncmap\n" "lcp-echo-interval %s\n"
-				"lcp-echo-failure %s\n" "noipdefault\n"
-				"nodefaultroute\n" "noproxyarp\n" "noktune\n"
-				"netmask 255.255.255.255\n" "plugin radius.so\n"
-				"plugin radattr.so\n"
-				"radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n"
-				"ip-up-script /tmp/pppoeserver/ip-up\n"
-				"ip-down-script /tmp/pppoeserver/ip-down\n",
+			fprintf(fp, "login\n"	//
+				"require-mschap-v2\n"	// 
+				"default-mru\n"	//
+				"default-asyncmap\n"	// 
+				"lcp-echo-interval %s\n"	//
+				"lcp-echo-failure %s\n"	//
+				"noipdefault\n"	//
+				"nodefaultroute\n"	// 
+				"noproxyarp\n"	//
+				"noktune\n"	//
+				"netmask 255.255.255.255\n"	//
+				"plugin radius.so\n"	//
+				"plugin radattr.so\n"	//
+				"radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n"	//
+				"ip-up-script /tmp/pppoeserver/ip-up\n"	//
+				"ip-down-script /tmp/pppoeserver/ip-down\n",	//
 				nvram_safe_get("pppoeserver_lcpechoint"),
 				nvram_safe_get("pppoeserver_lcpechofail"));
 			fclose(fp);
 			mkdir("/tmp/pppoeserver/radius", 0777);
 			fp = fopen("/tmp/pppoeserver/radius/radiusclient.conf",
 				   "wb");
-			fprintf(fp,
-				"auth_order\tradius\n" "login_tries\t4\n"
-				"login_timeout\t60\n" "nologin\t/etc/nologin\n"
-				"issue\t/etc/issue\n"
-				"servers\t/tmp/pppoeserver/radius/servers\n"
-				"dictionary\t/etc/dictionary\n"
-				"login_radius\t/usr/local/sbin/login.radius\n"
-				"seqfile\t/var/run/radius.seq\n"
-				"mapfile\t/etc/port-id-map\n" "default_realm\n"
-				"radius_timeout\t10\n" "radius_retries\t3\n"
-				"login_local\t/bin/login\n" "authserver %s:%s\n"
-				"acctserver %s:%s\n",
+			fprintf(fp, "auth_order\tradius\n"	//
+				"login_tries\t4\n"	//
+				"login_timeout\t60\n"	// 
+				"nologin\t/etc/nologin\n"	//
+				"issue\t/etc/issue\n"	//
+				"servers\t/tmp/pppoeserver/radius/servers\n"	//
+				"dictionary\t/etc/dictionary\n"	//
+				"login_radius\t/usr/local/sbin/login.radius\n"	//
+				"seqfile\t/var/run/radius.seq\n"	///
+				"mapfile\t/etc/port-id-map\n" "default_realm\n"	//
+				"radius_timeout\t10\n"	//
+				"radius_retries\t3\n"	//
+				"login_local\t/bin/login\n"	//
+				"authserver %s:%s\n"	//
+				"acctserver %s:%s\n",	//
 				nvram_safe_get("pppoeserver_authserverip"),
 				nvram_safe_get("pppoeserver_authserverport"),
 				nvram_safe_get("pppoeserver_authserverip"),
