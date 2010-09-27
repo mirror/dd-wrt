@@ -9,7 +9,7 @@
 static void usage(void)
 {
 	fprintf(stderr,
-		"usage: nvram [get name] [set name=value] [unset name] [show]\n");
+		"usage: nvram [get name] [set name=value] [unset name] [show] [backup filename] [restore filename]\n");
 	exit(0);
 }
 
@@ -59,6 +59,14 @@ int main(int argc, char **argv)
 			    sizeof(struct nvram_header) + (int)name - (int)buf;
 			fprintf(stderr, "size: %d bytes (%d left)\n", size,
 				NVRAM_SPACE - size);
+		} else if (!strncmp(*argv, "backup", 6)) {
+			if (*++argv) {
+				nvram_backup(*argv);
+			}
+		} else if (!strncmp(*argv, "restore", 7)) {
+			if (*++argv) {
+				nvram_restore(*argv);
+			}
 		}
 		if (!*argv)
 			break;

@@ -805,6 +805,13 @@ int searchfor(FILE * fp, char *str, int scansize);
 int insmod(char *module);
 void rmmod(char *module);
 
+int nvram_backup(char *filename);
+
+int nvram_restore(char *filename);
+
+void nvram_clear(void);
+int nvram_critical(char *name);
+
 int do80211priv(const char *ifname, int op, void *data, size_t len);
 int getsocket(void);
 void closesocket(void);
