@@ -100,6 +100,14 @@ static void makeipup(void)
 
 static void do_pppoeconfig(FILE * fp)
 {
+	int nowins = 0;
+
+	if (nvram_match("wan_wins", "0.0.0.0")) {
+		nvram_set("wan_wins", "");
+		nowins = 1;
+	}
+	if (strlen(nvram_safe_get("wan_wins")) == 0)
+		nowins = 1;
 	// fprintf (fp, "crtscts\n");
 	if (nvram_default_match("pppoeserver_bsdcomp", "0", "0"))
 		fprintf(fp, "nobsdcomp\n");
@@ -191,20 +199,12 @@ void start_pppoeserver(void)
 {
 	if (nvram_default_match("pppoeserver_enabled", "1", "0")) {
 		add_pppoe_natrule();
-		int nowins = 0;
-
-		if (nvram_match("wan_wins", "0.0.0.0")) {
-			nvram_set("wan_wins", "");
-			nowins = 1;
-		}
-		if (strlen(nvram_safe_get("wan_wins")) == 0)
-			nowins = 1;
 		if (nvram_default_match("pppoeradius_enabled", "0", "0")) {
-			FILE *fp;
 
 			mkdir("/tmp/pppoeserver", 0777);
-			fp = fopen("/tmp/pppoeserver/pppoe-server-options",
-				   "wb");
+			FILE *fp =
+			    fopen("/tmp/pppoeserver/pppoe-server-options",
+				  "wb");
 			do_pppoeconfig(fp);
 			fprintf(fp, "noipdefault\n"
 				"nodefaultroute\n"
@@ -260,11 +260,11 @@ void start_pppoeserver(void)
 			// page 
 			// options
 		} else {
-			FILE *fp;
 
 			mkdir("/tmp/pppoeserver", 0777);
-			fp = fopen("/tmp/pppoeserver/pppoe-server-options",
-				   "wb");
+			FILE *fp =
+			    fopen("/tmp/pppoeserver/pppoe-server-options",
+				  "wb");
 			do_pppoeconfig(fp);
 			fprintf(fp, "login\n" "require-mschap-v2\n" "default-mru\n" "default-asyncmap\n" "lcp-echo-interval %s\n"	// todo 
 				// optionally 
