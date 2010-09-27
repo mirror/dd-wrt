@@ -61,11 +61,23 @@ int main(int argc, char **argv)
 				NVRAM_SPACE - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
-				nvram_backup(*argv);
+				int ret = nvram_backup(*argv);
+				if (ret < 0) {
+					fprintf(stderr, "can't write %s\n",
+						*argv);
+				}
 			}
 		} else if (!strncmp(*argv, "restore", 7)) {
 			if (*++argv) {
-				nvram_restore(*argv);
+				int ret = nvram_restore(*argv);
+				if (ret == -1) {
+					fprintf(stderr, "can't write %s\n",
+						*argv);
+				}
+				if (ret == -2) {
+					fprintf(stderr, "file %s broken\n",
+						*argv);
+				}
 			}
 		}
 		if (!*argv)
