@@ -307,35 +307,9 @@ void start_pppoeserver(void)
 			fclose(fp);
 			fp = fopen("/tmp/pppoeserver/radius/servers", "wb");
 			fprintf(fp, "%s %s\n", nvram_safe_get("pppoeserver_authserverip"), nvram_safe_get("pppoeserver_sharedkey"));	// todo, 
-			// shared 
-			// secret 
-			// for 
-			// radius 
-			// server, 
-			// see 
-			// above 
-			// for 
-			// server 
-			// name, 
-			// must 
-			// be 
-			// identical
 			fclose(fp);
 			makeipup();
 			eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", "999");	//set -N to 999 concurrent connections
-			// todo, 
-			// make 
-			// base 
-			// address 
-			// configurable, 
-			// remote 
-			// addr 
-			// as 
-			// well, 
-			// see 
-			// networking 
-			// page 
-			// options
 		}
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
