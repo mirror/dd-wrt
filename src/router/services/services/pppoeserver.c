@@ -282,7 +282,7 @@ void start_pppoeserver(void)
 				"servers\t/tmp/pppoeserver/radius/servers\n"	//
 				"dictionary\t/etc/dictionary\n"	//
 				"login_radius\t/usr/local/sbin/login.radius\n"	//
-				"seqfile\t/var/run/radius.seq\n"	///
+				"seqfile\t/var/run/radius.seq\n"	//
 				"mapfile\t/etc/port-id-map\n" "default_realm\n"	//
 				"radius_timeout\t10\n"	//
 				"radius_retries\t3\n"	//
