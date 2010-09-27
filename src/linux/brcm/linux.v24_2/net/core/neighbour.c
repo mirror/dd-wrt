@@ -1248,7 +1248,7 @@ void neigh_parms_release(struct neigh_table *tbl, struct neigh_parms *parms)
 }
 
 
-void neigh_table_init(struct neigh_table *tbl)
+void neigh_table_init_no_netlink(struct neigh_table *tbl)
 {
 	unsigned long now = jiffies;
 	unsigned long phsize;
@@ -1302,10 +1302,27 @@ void neigh_table_init(struct neigh_table *tbl)
 
 	tbl->last_flush = now;
 	tbl->last_rand = now + tbl->parms.reachable_time*20;
+}
+
+void neigh_table_init(struct neigh_table *tbl)
+{
+	struct neigh_table *tmp;
+
+	neigh_table_init_no_netlink(tbl);
 	write_lock(&neigh_tbl_lock);
-	tbl->next = neigh_tables;
-	neigh_tables = tbl;
+	for (tmp = neigh_tables; tmp; tmp = tmp->next) {
+		if (tmp->family == tbl->family)
+		break;
+	}
+	tbl->next       = neigh_tables;
+	neigh_tables    = tbl;
 	write_unlock(&neigh_tbl_lock);
+
+	if (unlikely(tmp)) {
+		printk(KERN_ERR "NEIGH: Registering multiple tables for "
+			"family %d\n", tbl->family);
+		dump_stack();
+	}
 }
 
 int neigh_table_clear(struct neigh_table *tbl)

@@ -63,7 +63,8 @@ VERSION 1.2	<2002/11/30>
 	        printk( "Assertion failed! %s,%s,%s,line=%d\n",	\
         	#expr,__FILE__,__FUNCTION__,__LINE__);		\
         }
-#define dprintk(fmt, args...)	do { printk(PFX fmt, ## args) } while (0)
+#define dprintk(fmt, args...) \
+	do { printk(KERN_DEBUG PFX fmt, ## args); } while (0)
 #else
 #define assert(expr) do {} while (0)
 #define dprintk(fmt, args...)	do {} while (0)
@@ -729,7 +730,7 @@ rtl8169_init_board(struct pci_dev *pdev, struct net_device **dev_out,
 
 	tp->cp_cmd = PCIMulRW | RxChkSum;
 
-	if ((sizeof(dma_addr_t) > 32) &&
+	if ((sizeof(dma_addr_t) > 4) &&
 	    !pci_set_dma_mask(pdev, DMA_64BIT_MASK))
 		tp->cp_cmd |= PCIDAC;
 	else {
@@ -1131,7 +1132,7 @@ rtl8169_hw_start(struct net_device *dev)
 	RTL_W16(CPlusCmd, tp->cp_cmd);
 
 	if (tp->mac_version == RTL_GIGA_MAC_VER_D) {
-		dprintk(KERN_INFO PFX "Set MAC Reg C+CR Offset 0xE0: bit-3 and bit-14 MUST be 1\n");
+		dprintk("Set MAC Reg C+CR Offset 0xE0: bit-3 and bit-14 MUST be 1\n");
 		tp->cp_cmd |= (1 << 14) | PCIMulRW;
 		RTL_W16(CPlusCmd, tp->cp_cmd);
 	}

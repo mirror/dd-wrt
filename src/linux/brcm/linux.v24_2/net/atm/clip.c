@@ -752,7 +752,7 @@ static struct atm_clip_ops __atm_clip_ops = {
 
 static int __init atm_clip_init(void)
 {
-	neigh_table_init(&clip_tbl);
+	neigh_table_init_no_netlink(&clip_tbl);
 
 	clip_tbl_hook = &clip_tbl;
 	atm_clip_ops_set(&__atm_clip_ops);

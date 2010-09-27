@@ -192,6 +192,7 @@ struct neigh_table
 };
 
 extern void			neigh_table_init(struct neigh_table *tbl);
+extern void			neigh_table_init_no_netlink(struct neigh_table *tbl);
 extern int			neigh_table_clear(struct neigh_table *tbl);
 extern struct neighbour *	neigh_lookup(struct neigh_table *tbl,
 					     const void *pkey,
