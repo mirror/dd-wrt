@@ -34,7 +34,7 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fPIC 
 LDFLAGS += -L.
-OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o
+OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
 WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
