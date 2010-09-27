@@ -820,12 +820,18 @@ static int irda_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	}
 #endif /* CONFIG_IRDA_ULTRA */
 
+	self->ias_obj = irias_new_object(addr->sir_name, jiffies);
+	if (self->ias_obj == NULL)
+		return -ENOMEM;
+
 	err = irda_open_tsap(self, addr->sir_lsap_sel, addr->sir_name);
-	if (err < 0)
+	if (err < 0) {
+		irias_delete_object(self->ias_obj);
+		self->ias_obj = NULL;
 		return err;
+	}
 	
 	/*  Register with LM-IAS */
-	self->ias_obj = irias_new_object(addr->sir_name, jiffies);
 	irias_add_integer_attrib(self->ias_obj, "IrDA:TinyTP:LsapSel", 
 				 self->stsap_sel, IAS_KERNEL_ATTR);
 	irias_insert_object(self->ias_obj);
@@ -1086,14 +1092,6 @@ static int irda_create(struct socket *sock, int protocol)
 
 	init_waitqueue_head(&self->query_wait);
 
-	/* Initialise networking socket struct */ 
-	sock_init_data(sock, sk);	/* Note : set sk->refcnt to 1 */
-	sk->family = PF_IRDA;
-	sk->protocol = protocol;
-	/* Link networking socket and IrDA socket structs together */
-	sk->protinfo.irda = self;
-	self->sk = sk;
-
 	switch (sock->type) {
 	case SOCK_STREAM:
 		sock->ops = &irda_stream_ops;
@@ -1117,12 +1115,22 @@ static int irda_create(struct socket *sock, int protocol)
 			break;
 		default:
 			ERROR("%s(), protocol not supported!\n", __FUNCTION__);
+			sk_free(sk);
 			return -ESOCKTNOSUPPORT;
 		}
 		break;
 	default:
+		sk_free(sk);
 		return -ESOCKTNOSUPPORT;
 	}		
+
+	/* Initialise networking socket struct */
+	sock_init_data(sock, sk);	/* Note : set sk->refcnt to 1 */
+	sk->family = PF_IRDA;
+	sk->protocol = protocol;
+	/* Link networking socket and IrDA socket structs together */
+	sk->protinfo.irda = self;
+	self->sk = sk;
 
 	/* Register as a client with IrLMP */
 	self->ckey = irlmp_register_client(0, NULL, NULL, NULL);
@@ -1806,7 +1814,7 @@ static int irda_setsockopt(struct socket *sock, int level, int optname,
 	struct irda_ias_set    *ias_opt;
 	struct ias_object      *ias_obj;
 	struct ias_attrib *	ias_attr;	/* Attribute in IAS object */
-	int opt;
+	int opt, free_ias = 0;
 	
 	self = sk->protinfo.irda;
 	ASSERT(self != NULL, return -1;);
@@ -1865,11 +1873,20 @@ static int irda_setsockopt(struct socket *sock, int level, int optname,
 			/* Create a new object */
 			ias_obj = irias_new_object(ias_opt->irda_class_name,
 						   jiffies);
+			if (ias_obj == NULL) {
+				kfree(ias_opt);
+				return -ENOMEM;
+			}
+			free_ias = 1;
 		}
 
 		/* Do we have the attribute already ? */
 		if(irias_find_attrib(ias_obj, ias_opt->irda_attrib_name)) {
 			kfree(ias_opt);
+			if (free_ias) {
+				kfree(ias_obj->name);
+				kfree(ias_obj);
+			}
 			return -EINVAL;
 		}
 
@@ -1888,6 +1905,10 @@ static int irda_setsockopt(struct socket *sock, int level, int optname,
 			if(ias_opt->attribute.irda_attrib_octet_seq.len >
 			   IAS_MAX_OCTET_STRING) {
 				kfree(ias_opt);
+				if (free_ias) {
+					kfree(ias_obj->name);
+					kfree(ias_obj);
+				}
 				return -EINVAL;
 			}
 			/* Add an octet sequence attribute */
@@ -1904,6 +1925,10 @@ static int irda_setsockopt(struct socket *sock, int level, int optname,
 			if(ias_opt->attribute.irda_attrib_string.len >
 			   IAS_MAX_STRING) {
 				kfree(ias_opt);
+				if (free_ias) {
+					kfree(ias_obj->name);
+					kfree(ias_obj);
+				}
 				return -EINVAL;
 			}
 			/* NULL terminate the string (avoid troubles) */
@@ -1917,6 +1942,10 @@ static int irda_setsockopt(struct socket *sock, int level, int optname,
 			break;
 		default :
 			kfree(ias_opt);
+			if (free_ias) {
+				kfree(ias_obj->name);
+				kfree(ias_obj);
+			}
 			return -EINVAL;
 		}
 		irias_insert_object(ias_obj);

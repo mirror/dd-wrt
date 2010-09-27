@@ -51,11 +51,11 @@ subdir-$(CONFIG_BCM57XX) += bcm57xx
 endif
 subdir-$(CONFIG_ET) += et
 subdir-$(CONFIG_ROBO) += robo
-#ifdef CONFIG_V25
-#subdir-$(CONFIG_WL)	+= brcm.v25
-#else
-#subdir-$(CONFIG_WL)	+= brcm
-#endif
+ifdef CONFIG_V25
+subdir-$(CONFIG_WL)	+= brcm.v25
+else
+subdir-$(CONFIG_WL)	+= brcm
+endif
 subdir-$(CONFIG_WL) += wl
 #ifdef CONFIG_LED	#added by Jerry Lee
 #subdir-$(CONFIG_LED) += led
