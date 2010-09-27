@@ -127,8 +127,7 @@ static void do_pppoeconfig(FILE * fp)
 		fprintf(fp, "mppc\n");
 	fprintf(fp, "nopcomp\n");
 	fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));
-	if (nvram_default_match("pppoeserver_encryption", "1", "0"))
-	{
+	if (nvram_default_match("pppoeserver_encryption", "1", "0")) {
 		fprintf(fp,
 			"mppe required,no56,no40,stateless\n"
 			"refuse-eap\n" "refuse-pap\n"
@@ -253,14 +252,12 @@ void start_pppoeserver(void)
 			    fopen("/tmp/pppoeserver/pppoe-server-options",
 				  "wb");
 			do_pppoeconfig(fp);
-			fprintf(fp, "login\n" "require-mschap-v2\n" "default-mru\n" "default-asyncmap\n" "lcp-echo-interval %s\n"
-				"lcp-echo-failure %s\n"	
-				"noipdefault\n"
-				"nodefaultroute\n"
-				"noproxyarp\n"
-				"noktune\n"
-				"netmask 255.255.255.255\n"
-				"plugin radius.so\n"
+			fprintf(fp,
+				"login\n" "require-mschap-v2\n" "default-mru\n"
+				"default-asyncmap\n" "lcp-echo-interval %s\n"
+				"lcp-echo-failure %s\n" "noipdefault\n"
+				"nodefaultroute\n" "noproxyarp\n" "noktune\n"
+				"netmask 255.255.255.255\n" "plugin radius.so\n"
 				"plugin radattr.so\n"
 				"radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n"
 				"ip-up-script /tmp/pppoeserver/ip-up\n"
