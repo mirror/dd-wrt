@@ -37,7 +37,7 @@ void init_log()
 	openlog (BINARY, LOG_PID, LOG_DAEMON);
     }
 }
-
+/*
 void l2tp_log (int level, const char *fmt, ...)
 {
     char buf[256];
@@ -53,7 +53,7 @@ void l2tp_log (int level, const char *fmt, ...)
 	fprintf(stderr, "xl2tpd[%d]: %s", getpid(), buf);
     }
 }
-
+*/
 void set_error (struct call *c, int error, const char *fmt, ...)
 {
     va_list args;
