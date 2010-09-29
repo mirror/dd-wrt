@@ -5,6 +5,7 @@
 #include <linux/pci.h>
 #include <linux/cpumask.h>
 #include <linux/delay.h>
+#include <linux/ath9k_platform.h>
 
 #include <asm/delay.h>
 
@@ -162,7 +163,7 @@ static void ar724x_pci_fixup(struct pci_dev *dev)
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar724x_pci_fixup);
 
-static void *getCalData(int slot)
+static void *getCalData(int slot) 
 {
 u8 *base;
 for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
@@ -207,7 +208,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 		return;
 	}
 
-	mem = ioremap(AR71XX_PCI_MEM_BASE, 0x10000);
+	mem = ioremap(AR7240_PCI_MEM_BASE, 0x10000);
 	if (!mem) {
 		printk(KERN_ERR "PCI: ioremap error for device %s\n",
 		       pci_name(dev));
