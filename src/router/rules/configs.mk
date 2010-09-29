@@ -193,7 +193,10 @@ obj-$(CONFIG_AOSS) += aoss
 obj-$(CONFIG_AP_SERV) += ap-serv
 obj-$(CONFIG_BUFFALO) += buffalo_flash
 #obj-$(CONFIG_RELAYD) += relayd
-#obj-$(CONFIG_ATH9K) += ath9k iw crda libnltiny
+obj-$(CONFIG_ATH9K) += libnltiny
+obj-$(CONFIG_ATH9K) += ath9k 
+obj-$(CONFIG_ATH9K) += iw 
+obj-$(CONFIG_ATH9K) += crda 
 obj-$(CONFIG_LIBNLTINY) += libnltiny
 obj-$(CONFIG_HOTPLUG2) += hotplug2 udev
 obj-$(CONFIG_UBOOTENV) += ubootenv
@@ -209,83 +212,14 @@ obj-checkout := $(foreach obj,$(obj-y) $(obj-n),$(obj)-checkout)
 obj-update := $(foreach obj,$(obj-y) $(obj-n),$(obj)-update)
 
 configs-checkout:
-	rm -rf $(TOP)/kromo/dd-wrt/34telecom
-	rm -rf $(TOP)/kromo/dd-wrt/3com
-	rm -rf $(TOP)/kromo/dd-wrt/alfa
-	rm -rf $(TOP)/kromo/dd-wrt/allnet
-	rm -rf $(TOP)/kromo/dd-wrt/buffalo
-	rm -rf $(TOP)/kromo/dd-wrt/cesar
-	rm -rf $(TOP)/kromo/dd-wrt/cnc
-	rm -rf $(TOP)/kromo/dd-wrt/corenet
-	rm -rf $(TOP)/kromo/dd-wrt/ddlan
-	rm -rf $(TOP)/kromo/dd-wrt/erc
-	rm -rf $(TOP)/kromo/dd-wrt/ggew
-	rm -rf $(TOP)/kromo/dd-wrt/glauco
-	rm -rf $(TOP)/kromo/dd-wrt/kmt
-	rm -rf $(TOP)/kromo/dd-wrt/kodata
-	rm -rf $(TOP)/kromo/dd-wrt/maksat
-	rm -rf $(TOP)/kromo/dd-wrt/maksat_coral
-	rm -rf $(TOP)/kromo/dd-wrt/nmn
-	rm -rf $(TOP)/kromo/dd-wrt/powernoc
-	rm -rf $(TOP)/kromo/dd-wrt/telcom
-	rm -rf $(TOP)/kromo/dd-wrt/thom
-	rm -rf $(TOP)/kromo/dd-wrt/trimax
-	rm -rf $(TOP)/kromo/dd-wrt/wts
-	rm -rf $(TOP)/kromo/dd-wrt/mynetway
-	rm -rf $(TOP)/kromo/dd-wrt/wikings
-	svn co svn://svn.dd-wrt.com/private/designs/34telecom $(TOP)/kromo/dd-wrt/34telecom
-	svn co svn://svn.dd-wrt.com/private/designs/3com $(TOP)/kromo/dd-wrt/3com
-	svn co svn://svn.dd-wrt.com/private/designs/alfa $(TOP)/kromo/dd-wrt/alfa
-	svn co svn://svn.dd-wrt.com/private/designs/allnet $(TOP)/kromo/dd-wrt/allnet
-	svn co svn://svn.dd-wrt.com/private/designs/buffalo $(TOP)/kromo/dd-wrt/buffalo
-	svn co svn://svn.dd-wrt.com/private/designs/cesar $(TOP)/kromo/dd-wrt/cesar
-	svn co svn://svn.dd-wrt.com/private/designs/cnc $(TOP)/kromo/dd-wrt/cnc
-	svn co svn://svn.dd-wrt.com/private/designs/corenet $(TOP)/kromo/dd-wrt/corenet
-	svn co svn://svn.dd-wrt.com/private/designs/ddlan $(TOP)/kromo/dd-wrt/ddlan
-	svn co svn://svn.dd-wrt.com/private/designs/erc $(TOP)/kromo/dd-wrt/erc
-	svn co svn://svn.dd-wrt.com/private/designs/ggew $(TOP)/kromo/dd-wrt/ggew
-	svn co svn://svn.dd-wrt.com/private/designs/glauco $(TOP)/kromo/dd-wrt/glauco
-	svn co svn://svn.dd-wrt.com/private/designs/kmt $(TOP)/kromo/dd-wrt/kmt
-	svn co svn://svn.dd-wrt.com/private/designs/kodata $(TOP)/kromo/dd-wrt/kodata
-	svn co svn://svn.dd-wrt.com/private/designs/maksat $(TOP)/kromo/dd-wrt/maksat
-	svn co svn://svn.dd-wrt.com/private/designs/maksat_coral $(TOP)/kromo/dd-wrt/maksat_coral
-	svn co svn://svn.dd-wrt.com/private/designs/nmn $(TOP)/kromo/dd-wrt/nmn
-	svn co svn://svn.dd-wrt.com/private/designs/powernoc $(TOP)/kromo/dd-wrt/powernoc
-	svn co svn://svn.dd-wrt.com/private/designs/telcom $(TOP)/kromo/dd-wrt/telcom
-	svn co svn://svn.dd-wrt.com/private/designs/thom $(TOP)/kromo/dd-wrt/thom
-	svn co svn://svn.dd-wrt.com/private/designs/trimax $(TOP)/kromo/dd-wrt/trimax
-	svn co svn://svn.dd-wrt.com/private/designs/wts $(TOP)/kromo/dd-wrt/wts
-	svn co svn://svn.dd-wrt.com/private/designs/mynetway $(TOP)/kromo/dd-wrt/mynetway
-	svn co svn://svn.dd-wrt.com/private/designs/wikings $(TOP)/kromo/dd-wrt/wikings
-	svn co svn://svn.dd-wrt.com/private/designs/nextmedia $(TOP)/kromo/dd-wrt/nextmedia
+	rm -rf $(TOP)/private
+	svn co svn://svn.dd-wrt.com/private $(TOP)/private
+	$(TOP)/private/symlinks.sh $(TOP)
 		
 
 configs-update:
-	svn update $(TOP)/kromo/dd-wrt/34telecom
-	svn update $(TOP)/kromo/dd-wrt/3com
-	svn update $(TOP)/kromo/dd-wrt/alfa
-	svn update $(TOP)/kromo/dd-wrt/allnet
-	svn update $(TOP)/kromo/dd-wrt/buffalo
-	svn update $(TOP)/kromo/dd-wrt/cesar
-	svn update $(TOP)/kromo/dd-wrt/cnc
-	svn update $(TOP)/kromo/dd-wrt/corenet
-	svn update $(TOP)/kromo/dd-wrt/ddlan
-	svn update $(TOP)/kromo/dd-wrt/erc
-	svn update $(TOP)/kromo/dd-wrt/ggew
-	svn update $(TOP)/kromo/dd-wrt/glauco
-	svn update $(TOP)/kromo/dd-wrt/kmt
-	svn update $(TOP)/kromo/dd-wrt/kodata
-	svn update $(TOP)/kromo/dd-wrt/maksat
-	svn update $(TOP)/kromo/dd-wrt/maksat_coral
-	svn update $(TOP)/kromo/dd-wrt/nmn
-	svn update $(TOP)/kromo/dd-wrt/powernoc
-	svn update $(TOP)/kromo/dd-wrt/telcom
-	svn update $(TOP)/kromo/dd-wrt/thom
-	svn update $(TOP)/kromo/dd-wrt/trimax
-	svn update $(TOP)/kromo/dd-wrt/wts
-	svn update $(TOP)/kromo/dd-wrt/mynetway
-	svn update $(TOP)/kromo/dd-wrt/wikings
-	svn update $(TOP)/kromo/dd-wrt/nextmedia
+	svn update $(TOP)/private
+	$(TOP)/private/symlinks.sh $(TOP)
 
 configs-clean:
 	@true
