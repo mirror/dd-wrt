@@ -1,11 +1,3 @@
-aoss-checkout:
-	rm -rf $(TOP)/aoss
-	svn co svn://svn.dd-wrt.com/private/aoss $(TOP)/aoss
-
-aoss-update:
-	svn update $(TOP)/aoss
-
-
 aoss: 
 	if test -e "aoss/Makefile"; then make -C aoss; fi
 	@true
