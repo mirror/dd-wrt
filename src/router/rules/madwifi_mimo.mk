@@ -1,9 +1,3 @@
-madwifi_mimo-checkout:
-	rm -rf $(TOP)/madwifi.dev/madwifi_mimo.dev
-	svn co svn://svn.dd-wrt.com/private/madwifi_mimo $(TOP)/madwifi.dev/madwifi_mimo.dev
-
-madwifi_mimo-update:
-	svn update $(TOP)/madwifi.dev/madwifi_mimo.dev
 
 ifeq ($(CONFIG_AHB),y)
 madwifi_mimo:

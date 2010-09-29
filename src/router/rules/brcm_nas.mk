@@ -1,10 +1,3 @@
-nas-checkout:
-	rm -rf $(TOP)/nas/src
-	svn co svn://svn.dd-wrt.com/private/nas/src $(TOP)/nas/src
-
-nas-update:
-	svn update $(TOP)/nas/src
-
 
 nas:
 ifeq ($(CONFIG_MSSID),y)
