@@ -1,13 +1,5 @@
 include $(TOP)/.config
 
-madwifi-checkout:
-	rm -rf $(TOP)/madwifi.dev/madwifi.dev
-	svn co svn://svn.dd-wrt.com/private/madwifi $(TOP)/madwifi.dev/madwifi.dev
-
-madwifi-update:
-	svn update $(TOP)/madwifi.dev/madwifi.dev
-
-
 ifeq ($(ARCH),mipsel)
 
 

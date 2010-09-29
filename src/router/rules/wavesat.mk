@@ -1,10 +1,3 @@
-wavesat-checkout:
-	rm -rf $(TOP)/wavesat
-	svn co svn://svn.dd-wrt.com/private/wavesat $(TOP)/wavesat
-
-wavesat-update:
-	svn update $(TOP)/wavesat
-
 wavesat-configure:
 	@true
 #	cd wavesat && make OS_TYPE=WAVESAT_TIMESYS_2_6 STATION_TYPE=SUB_STATION LIB_C=uClibc  ARCH_TYPE=TARGET_ARM	dep
