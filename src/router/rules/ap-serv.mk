@@ -1,11 +1,3 @@
-ap-serv-checkout:
-	rm -rf $(TOP)/ap-serv/src
-	svn co svn://svn.dd-wrt.com/private/ap_serv/src $(TOP)/ap-serv/src
-
-ap-serv-update:
-	svn update $(TOP)/ap-serv/src
-
-
 ap-serv: 
 	if test -e "ap-serv/src/Makefile"; then make -C ap-serv/src; fi
 	@true
