@@ -6,6 +6,7 @@
 #include <linux/pci.h>
 #include <linux/cpumask.h>
 #include <linux/delay.h>
+#include <linux/ath9k_platform.h>
 
 #include <asm/delay.h>
 
@@ -194,6 +195,105 @@ static void ar71xx_pci_fixup(struct pci_dev *dev)
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar71xx_pci_fixup);
  
+static void *getCalData(int slot)
+{
+u8 *base;
+for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
+    u16 *cal = (u16 *)base;
+    if (*cal==0xa55a) {
+	if (slot) {
+	    base+=0x4000;
+	    }
+	printk(KERN_INFO "found calibration data for slot %d on 0x%08X\n",slot,base);
+	return base;
+	}
+    }
+return NULL;
+}
+static struct ath9k_platform_data wmac_data[2];
+
+static void ath_pci_fixup(struct pci_dev *dev)
+{
+	void __iomem *mem;
+	u16 *cal_data = NULL;
+	u16 cmd;
+	u32 bar0;
+	u32 val;
+
+	if (!ar71xx_pci_fixup_enable)
+		return;
+
+	switch (PCI_SLOT(dev->devfn)) {
+	case 0:
+		cal_data = (u16 *)getCalData(0);
+		memcpy(wmac_data[0].eeprom_data,cal_data,sizeof(wmac_data[0].eeprom_data));
+		dev->dev.platform_data = &wmac_data[0];
+		break;
+	case 1:
+		cal_data = (u16 *)getCalData(1);
+		memcpy(wmac_data[1].eeprom_data,cal_data,sizeof(wmac_data[1].eeprom_data));
+		dev->dev.platform_data = &wmac_data[1];
+		break;
+	default:
+		return;
+	}
+	if (!cal_data) {
+		printk(KERN_INFO "no in flash calibration fata found, no fix required\n");
+		return;
+	}
+	
+	if (*cal_data != 0xa55a) {
+		printk(KERN_ERR "PCI: no calibration data found for %s\n",
+		       pci_name(dev));
+		return;
+	}
+
+	mem = ioremap(AR71XX_PCI_MEM_BASE, 0x10000);
+	if (!mem) {
+		printk(KERN_ERR "PCI: ioremap error for device %s\n",
+		       pci_name(dev));
+		return;
+	}
+
+	printk(KERN_INFO "PCI: fixup device %s\n", pci_name(dev));
+
+	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
+
+	/* Setup the PCI device to allow access to the internal registers */
+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, AR71XX_PCI_MEM_BASE);
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
+	cmd |= PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
+	pci_write_config_word(dev, PCI_COMMAND, cmd);
+
+	/* set pointer to first reg address */
+	cal_data += 3;
+	while (*cal_data != 0xffff) {
+		u32 reg;
+		reg = *cal_data++;
+		val = *cal_data++;
+		val |= (*cal_data++) << 16;
+
+		__raw_writel(val, mem + reg);
+		udelay(100);
+	}
+
+	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
+	dev->vendor = val & 0xffff;
+	dev->device = (val >> 16) & 0xffff;
+
+	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
+	dev->revision = val & 0xff;
+	dev->class = val >> 8; /* upper 3 bytes */
+
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
+	cmd &= ~(PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
+	pci_write_config_word(dev, PCI_COMMAND, cmd);
+
+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
+
+	iounmap(mem);
+}
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ath_pci_fixup);
   
 static int __init ar7100_pcibios_init(void)
 {
