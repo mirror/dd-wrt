@@ -1,7 +1,7 @@
 /*
  * Fundamental types and constants relating to WPA
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: wpa.h,v 1.16 2006/04/27 01:26:35 Exp $
+ * $Id: wpa.h,v 1.18.18.1 2009/10/22 07:38:44 Exp $
  */
 
 #ifndef _proto_wpa_h_
@@ -18,13 +18,9 @@
 #include <typedefs.h>
 #include <proto/ethernet.h>
 
-/* enable structure packing */
-#if defined(__GNUC__)
-#define	PACKED	__attribute__((packed))
-#else
-#pragma pack(1)
-#define	PACKED
-#endif
+
+/* This marks the start of a packed structure section. */
+#include <packed_section_start.h>
 
 /* Reason Codes */
 
@@ -46,63 +42,59 @@
 #define WPA2_PMKID_LEN	16
 
 /* WPA IE fixed portion */
-typedef struct
+typedef BWL_PRE_PACKED_STRUCT struct
 {
 	uint8 tag;	/* TAG */
 	uint8 length;	/* TAG length */
 	uint8 oui[3];	/* IE OUI */
 	uint8 oui_type;	/* OUI type */
-	struct {
+	BWL_PRE_PACKED_STRUCT struct {
 		uint8 low;
 		uint8 high;
-	} PACKED version;	/* IE version */
-} PACKED wpa_ie_fixed_t;
+	} BWL_POST_PACKED_STRUCT version;	/* IE version */
+} BWL_POST_PACKED_STRUCT wpa_ie_fixed_t;
 #define WPA_IE_OUITYPE_LEN	4
 #define WPA_IE_FIXED_LEN	8
 #define WPA_IE_TAG_FIXED_LEN	6
 
-#ifdef BCMWPA2
-typedef struct {
+typedef BWL_PRE_PACKED_STRUCT struct {
 	uint8 tag;	/* TAG */
 	uint8 length;	/* TAG length */
-	struct {
+	BWL_PRE_PACKED_STRUCT struct {
 		uint8 low;
 		uint8 high;
-	} PACKED version;	/* IE version */
-} PACKED wpa_rsn_ie_fixed_t;
+	} BWL_POST_PACKED_STRUCT version;	/* IE version */
+} BWL_POST_PACKED_STRUCT wpa_rsn_ie_fixed_t;
 #define WPA_RSN_IE_FIXED_LEN	4
 #define WPA_RSN_IE_TAG_FIXED_LEN	2
 typedef uint8 wpa_pmkid_t[WPA2_PMKID_LEN];
-#endif
 
 /* WPA suite/multicast suite */
-typedef struct
+typedef BWL_PRE_PACKED_STRUCT struct
 {
 	uint8 oui[3];
 	uint8 type;
-} PACKED wpa_suite_t, wpa_suite_mcast_t;
+} BWL_POST_PACKED_STRUCT wpa_suite_t, wpa_suite_mcast_t;
 #define WPA_SUITE_LEN	4
 
 /* WPA unicast suite list/key management suite list */
-typedef struct
+typedef BWL_PRE_PACKED_STRUCT struct
 {
-	struct {
+	BWL_PRE_PACKED_STRUCT struct {
 		uint8 low;
 		uint8 high;
-	} PACKED count;
+	} BWL_POST_PACKED_STRUCT count;
 	wpa_suite_t list[1];
-} PACKED wpa_suite_ucast_t, wpa_suite_auth_key_mgmt_t;
+} BWL_POST_PACKED_STRUCT wpa_suite_ucast_t, wpa_suite_auth_key_mgmt_t;
 #define WPA_IE_SUITE_COUNT_LEN	2
-#ifdef BCMWPA2
-typedef struct
+typedef BWL_PRE_PACKED_STRUCT struct
 {
-	struct {
+	BWL_PRE_PACKED_STRUCT struct {
 		uint8 low;
 		uint8 high;
-	} PACKED count;
+	} BWL_POST_PACKED_STRUCT count;
 	wpa_pmkid_t list[1];
-} PACKED wpa_pmkid_list_t;
-#endif
+} BWL_POST_PACKED_STRUCT wpa_pmkid_list_t;
 
 /* WPA cipher suites */
 #define WPA_CIPHER_NONE		0	/* None */
@@ -111,6 +103,7 @@ typedef struct
 #define WPA_CIPHER_AES_OCB	3	/* AES (OCB) */
 #define WPA_CIPHER_AES_CCM	4	/* AES (CCM) */
 #define WPA_CIPHER_WEP_104	5	/* WEP (104-bit) */
+
 
 #define IS_WPA_CIPHER(cipher)	((cipher) == WPA_CIPHER_NONE || \
 				 (cipher) == WPA_CIPHER_WEP_40 || \
@@ -150,9 +143,7 @@ typedef struct
 #define	WPA_CAP_WPA2_PREAUTH		RSN_CAP_PREAUTH
 
 
-#undef PACKED
-#if !defined(__GNUC__)
-#pragma pack()
-#endif
+/* This marks the end of a packed structure section. */
+#include <packed_section_end.h>
 
 #endif /* _proto_wpa_h_ */

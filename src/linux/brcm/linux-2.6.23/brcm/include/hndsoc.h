@@ -1,7 +1,7 @@
 /*
  * Broadcom HND chip & on-chip-interconnect-related definitions.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndsoc.h,v 13.3.2.3.8.1 2009/01/22 04:05:20 Exp $
+ * $Id: hndsoc.h,v 13.8.20.1 2009/11/11 22:49:06 Exp $
  */
 
 #ifndef	_HNDSOC_H
@@ -30,7 +30,12 @@
 #define	SI_SDRAM_SWAPPED	0x10000000	/* Byteswapped Physical SDRAM */
 #define SI_SDRAM_R2		0x80000000	/* Region 2 for sdram (512 MB) */
 
+#ifdef SI_ENUM_BASE_VARIABLE
+#define SI_ENUM_BASE		(sii->pub.si_enum_base)
+#else
 #define SI_ENUM_BASE    	0x18000000	/* Enumeration space base */
+#endif /* SI_ENUM_BASE_VARIABLE */
+
 #define SI_WRAP_BASE    	0x18100000	/* Wrapper space base */
 #define SI_CORE_SIZE    	0x1000		/* each core gets 4Kbytes for registers */
 #define	SI_MAXCORES		16		/* Max cores (this is arbitrary, for software
@@ -118,6 +123,8 @@
 #define	SPIH_CORE_ID		0x833		/* SPI host core */
 #define	I2S_CORE_ID		0x834		/* I2S core */
 #define	DMEMS_CORE_ID		0x835		/* SDR/DDR1 memory controller core */
+#define	DEF_SHIM_COMP		0x837		/* SHIM component in ubus/6362 */
+#define OOB_ROUTER_CORE_ID	0x367		/* OOB router core ID */
 #define	DEF_AI_COMP		0xfff		/* Default component, in ai chips it maps all
 						 * unused address ranges
 						 */
@@ -130,6 +137,7 @@
 /* SOC Interconnect types (aka chip types) */
 #define	SOCI_SB			0
 #define	SOCI_AI			1
+#define	SOCI_UBUS		2
 
 /* Common core control flags */
 #define	SICF_BIST_EN		0x8000

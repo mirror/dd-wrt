@@ -257,10 +257,56 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 	else if (si_coreid(sih) == USB20H_CORE_ID) {
 		if (!si_iscoreup(sih)) {
 			si_core_reset(sih, 0, 0);
-			writel(0x7ff, (uintptr)regs + 0x200);
-			udelay(1);
+			mdelay(10);
+			if (si_corerev(sih) >= 5) {
+				uint32 tmp;
+				/* Enable Misc PLL */
+				tmp = readl(regs + 0x1e0);
+				tmp |= 0x100;
+				writel(tmp, regs + 0x1e0);
+				SPINWAIT((((tmp = readl(regs + 0x1e0)) & (1 << 24))
+					== 0), 1000);
+				/* Take out of resets */
+				writel(0x4ff, regs + 0x200);
+				udelay(25);
+				writel(0x6ff, regs + 0x200);
+				udelay(25);
+
+				/* Make sure digital and AFE are locked in USB PHY */
+				writel(0x6b, regs + 0x524);
+				udelay(50);
+				tmp = readl(regs + 0x524);
+				udelay(50);
+				writel(0xab, regs + 0x524);
+				udelay(50);
+				tmp = readl(regs + 0x524);
+				udelay(50);
+				writel(0x2b, regs + 0x524);
+				udelay(50);
+				tmp = readl(regs + 0x524);
+				udelay(50);
+				writel(0x10ab, regs + 0x524);
+				udelay(50);
+				tmp = readl(regs + 0x524);
+				SPINWAIT((((tmp = readl(regs + 0x528)) & 0xc000) !=
+					0xc000), 100000);
+				if ((tmp & 0xc000) != 0xc000) {
+					printk("WARNING! USB20H mdio_rddata 0x%08x\n", tmp);
+				}
+				writel(0x80000000, regs + 0x528);
+				tmp = readl(regs + 0x314);
+				udelay(265);
+				writel(0x7ff, regs + 0x200);
+				udelay(10);
+
+				/* Take USB and HSIC out of non-driving modes */
+				writel(0, regs + 0x510);
+			} else {
+				writel(0x7ff, regs + 0x200);
+				udelay(1);
+			}
 		}
-#if 0
+
 		/* PRxxxx: War for 5354 failures. */
 		if (si_corerev(sih) == 1) {
 			uint32 tmp;
@@ -279,7 +325,7 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 			tmp = readl(regs + 0x304);
 			printk("USB20H shim cr: 0x%x\n", tmp);
 		}
-#endif
+
                                 /* War for 4716 failures. */
                 if (sih->chip == BCM4716_CHIP_ID) {
                         uint32 tmp;

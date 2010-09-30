@@ -2,7 +2,7 @@
  * Common [OS-independent] header file for
  * Broadcom BCM47XX 10/100Mbps Ethernet Device Driver
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: etc.h,v 1.66.96.2.12.1 2009/03/13 00:45:23 Exp $
+ * $Id: etc.h,v 1.71.6.3 2010/03/03 19:44:41 Exp $
  */
 
 #ifndef _etc_h_
@@ -46,7 +46,7 @@ struct chops {
 	void (*txreclaim)(ch_t *ch, bool all);		/* reclaim transmit resources */
 	void (*rxreclaim)(ch_t *ch);			/* reclaim receive resources */
 	void (*statsupd)(ch_t *ch);			/* update sw stat counters */
-	void (*dumpmib)(ch_t *ch, struct bcmstrbuf *);	/* get sw mib counters */
+	void (*dumpmib)(ch_t *ch, struct bcmstrbuf *, bool clear);	/* get sw mib counters */
 	void (*enablepme)(ch_t *ch);			/* enable PME */
 	void (*disablepme)(ch_t *ch);			/* disable PME */
 	void (*phyreset)(ch_t *ch, uint phyaddr);	/* reset phy */
@@ -184,6 +184,8 @@ typedef struct etc_info {
 #define TX_Q2		TC_CL	/* DMA txq 2 */
 #define TX_Q3		TC_VO	/* DMA txq 3 */
 
+#define	ETDUMPSZ	13312
+
 static inline uint32
 etc_up2tc(uint32 up)
 {
@@ -237,6 +239,7 @@ extern void etc_init(etc_info_t *etc, uint options);
 extern void etc_up(etc_info_t *etc);
 extern uint etc_down(etc_info_t *etc, int reset);
 extern int etc_ioctl(etc_info_t *etc, int cmd, void *arg);
+extern int etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg);
 extern void etc_promisc(etc_info_t *etc, uint on);
 extern void etc_qos(etc_info_t *etc, uint on);
 extern void etc_dump(etc_info_t *etc, struct bcmstrbuf *b);

@@ -2,7 +2,7 @@
  * qmath functions used in arithmatic and DSP operations where
  * fractional operations, saturation support is needed.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: qmath.c,v 1.3 2008/01/12 05:06:51 Exp $
+ * $Id: qmath.c,v 1.5 2008/12/16 04:02:21 Exp $
  */
 
 #include "qmath.h"
@@ -523,7 +523,7 @@ qm_muls32(int32 a, int32 b)
 }
 
 /* This table is log2(1+(i/32)) where i=[0:1:31], in q.15 format */
-int16 log_table[] = {
+static const int16 log_table[] = {
 0,
 1455,
 2866,
@@ -620,7 +620,7 @@ qm_log10(int32 N, int16 qN, int16 *log10N, int16 *qLog10N)
 	s32log = log_table[s16tableIndex];		/* q.15 format */
 
 	/* interpolate using the offset. */
-	s16errorApproximation = (int16)qm_mulu16(u16offset, \
+	s16errorApproximation = (int16)qm_mulu16(u16offset,
 		(uint16)(log_table[s16tableIndex+1]-log_table[s16tableIndex])); /* q.15 */
 
 	s32log = qm_add16((int16)s32log, s16errorApproximation);	/* q.15 format */

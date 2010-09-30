@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,19 +9,19 @@
  *
  * Fundamental constants relating to UDP Protocol
  *
- * $Id: bcmudp.h,v 9.6 2007/02/19 16:53:25 Exp $
+ * $Id: bcmudp.h,v 9.7 2008/12/01 22:55:19 Exp $
  */
 
 #ifndef _bcmudp_h_
 #define _bcmudp_h_
 
-/* enable structure packing */
-#if defined(__GNUC__)
-#define	PACKED	__attribute__((packed))
-#else
-#pragma pack(1)
-#define	PACKED
+#ifndef _TYPEDEFS_H_
+#include <typedefs.h>
 #endif
+
+/* This marks the start of a packed structure section. */
+#include <packed_section_start.h>
+
 
 /* UDP header */
 #define UDP_DEST_PORT_OFFSET	2	/* UDP dest port offset */
@@ -32,17 +32,15 @@
 #define UDP_PORT_LEN	2	/* UDP port length */
 
 /* These fields are stored in network order */
-struct bcmudp_hdr
+BWL_PRE_PACKED_STRUCT struct bcmudp_hdr
 {
 	uint16	src_port;	/* Source Port Address */
 	uint16	dst_port;	/* Destination Port Address */
 	uint16	len;		/* Number of bytes in datagram including header */
 	uint16	chksum;		/* entire datagram checksum with pseudoheader */
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 
-#undef PACKED
-#if !defined(__GNUC__)
-#pragma pack()
-#endif
+/* This marks the end of a packed structure section. */
+#include <packed_section_end.h>
 
 #endif	/* #ifndef _bcmudp_h_ */

@@ -2,7 +2,7 @@
  * Misc utility routines for accessing chip-specific features
  * of the SiliconBackplane-based Broadcom chips.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -10,7 +10,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: aiutils.c,v 1.3.2.6.6.1 2008/10/31 05:59:50 Exp $
+ * $Id: aiutils.c,v 1.18.18.2 2010/03/04 08:29:43 Exp $
  */
 
 #include <typedefs.h>
@@ -18,35 +18,34 @@
 #include <osl.h>
 #include <bcmutils.h>
 #include <siutils.h>
-#include <bcmdevs.h>
 #include <hndsoc.h>
 #include <sbchipc.h>
-#include <pci_core.h>
-#include <pcie_core.h>
-#include <nicpci.h>
 #include <pcicfg.h>
-#include <sbpcmcia.h>
-#include <sbsocram.h>
-#include <bcmnvram.h>
-#include <bcmsrom.h>
-#include <hndpmu.h>
-#ifdef BCMSPI
-#include <spid.h>
-#endif /* BCMSPI */
 
 #include "siutils_priv.h"
+
+#include <bcmdevs.h>
+
+#define BCM47162_DMP() ((sih->chip == BCM47162_CHIP_ID) && \
+	    (sih->chiprev == 0) && \
+	    (sii->coreid[sii->curidx] == MIPS74K_CORE_ID))
+
+#define BCM5357_DMP() ((sih->chip == BCM5357_CHIP_ID) && \
+	    (sih->chippkg == BCM5357_PKG_ID) && \
+	    (sii->coreid[sii->curidx] == USB20H_CORE_ID))
+
 
 /* EROM parsing */
 
 static uint32
-get_erom_ent(si_t *sih, uint32 *eromptr, uint32 mask, uint32 match)
+get_erom_ent(si_t *sih, uint32 **eromptr, uint32 mask, uint32 match)
 {
 	uint32 ent;
 	uint inv = 0, nom = 0;
 
 	while (TRUE) {
-		ent = R_REG(si_osh(sih), (uint32 *)(uintptr)(*eromptr));
-		*eromptr += sizeof(uint32);
+		ent = R_REG(si_osh(sih), *eromptr);
+		(*eromptr)++;
 
 		if (mask == 0)
 			break;
@@ -73,7 +72,7 @@ get_erom_ent(si_t *sih, uint32 *eromptr, uint32 mask, uint32 match)
 }
 
 static uint32
-get_asd(si_t *sih, uint32 *eromptr, uint sp, uint ad, uint st, uint32 *addrl, uint32 *addrh,
+get_asd(si_t *sih, uint32 **eromptr, uint sp, uint ad, uint st, uint32 *addrl, uint32 *addrh,
         uint32 *sizel, uint32 *sizeh)
 {
 	uint32 asd, sz, szd;
@@ -83,7 +82,7 @@ get_asd(si_t *sih, uint32 *eromptr, uint sp, uint ad, uint st, uint32 *addrl, ui
 	    (((asd & AD_SP_MASK) >> AD_SP_SHIFT) != sp) ||
 	    ((asd & AD_ST_MASK) != st)) {
 		/* This is not what we want, "push" it back */
-		*eromptr -= sizeof(uint32);
+		(*eromptr)--;
 		return 0;
 	}
 	*addrl = asd & AD_ADDR_MASK;
@@ -113,13 +112,13 @@ ai_scan(si_t *sih, void *regs, uint devid)
 {
 	si_info_t *sii = SI_INFO(sih);
 	chipcregs_t *cc = (chipcregs_t *)regs;
-	uint32 erombase, eromptr, eromlim;
+	uint32 erombase, *eromptr, *eromlim;
 
 	erombase = R_REG(sii->osh, &cc->eromptr);
 
 	switch (BUSTYPE(sih->bustype)) {
 	case SI_BUS:
-		eromptr = (uintptr)REG_MAP(erombase, SI_CORE_SIZE);
+		eromptr = (uint32 *)REG_MAP(erombase, SI_CORE_SIZE);
 		break;
 
 	case PCI_BUS:
@@ -128,13 +127,13 @@ ai_scan(si_t *sih, void *regs, uint devid)
 
 		/* Now point the window at the erom */
 		OSL_PCI_WRITE_CONFIG(sii->osh, PCI_BAR0_WIN, 4, erombase);
-		eromptr = (uint32)(uintptr)regs;
+		eromptr = regs;
 		break;
 
 #ifdef BCMJTAG
 	case JTAG_BUS:
 #endif	/* BCMJTAG */
-		eromptr = erombase;
+		eromptr = (uint32 *)(uintptr)erombase;
 		break;
 
 	case PCMCIA_BUS:
@@ -143,13 +142,14 @@ ai_scan(si_t *sih, void *regs, uint devid)
 		ASSERT(0);
 		return;
 	}
-	eromlim = eromptr + ER_REMAPCONTROL;
+	eromlim = eromptr + (ER_REMAPCONTROL / sizeof(uint32));
 
-	SI_VMSG(("ai_scan: regs = 0x%p, erombase = 0x%08x, eromptr = 0x%08x, eromlim = 0x%08x\n",
+	SI_VMSG(("ai_scan: regs = 0x%p, erombase = 0x%08x, eromptr = 0x%p, eromlim = 0x%p\n",
 	         regs, erombase, eromptr, eromlim));
 	while (eromptr < eromlim) {
-		uint32 cia, cib, base, cid, mfg, crev, nmw, nsw, nmp, nsp;
+		uint32 cia, cib, cid, mfg, crev, nmw, nsw, nmp, nsp;
 		uint32 mpd, asd, addrl, addrh, sizel, sizeh;
+		uint32 *base;
 		uint i, j, idx;
 		bool br;
 
@@ -161,7 +161,7 @@ ai_scan(si_t *sih, void *regs, uint devid)
 			SI_VMSG(("Found END of erom after %d cores\n", sii->numcores));
 			return;
 		}
-		base = eromptr - sizeof(uint32);
+		base = eromptr - 1;
 		cib = get_erom_ent(sih, &eromptr, 0, 0);
 
 		if ((cib & ER_TAG) != ER_CI) {
@@ -177,13 +177,21 @@ ai_scan(si_t *sih, void *regs, uint devid)
 		nmp = (cib & CIB_NMP_MASK) >> CIB_NMP_SHIFT;
 		nsp = (cib & CIB_NSP_MASK) >> CIB_NSP_SHIFT;
 
-		SI_VMSG(("Found component 0x%04x/0x%04x rev %d at erom addr 0x%08x, with nmw = %d, "
+		SI_VMSG(("Found component 0x%04x/0x%04x rev %d at erom addr 0x%p, with nmw = %d, "
 		         "nsw = %d, nmp = %d & nsp = %d\n",
 		         mfg, cid, crev, base, nmw, nsw, nmp, nsp));
 
-		if (((mfg == MFGID_ARM) && (cid == DEF_AI_COMP)) ||
-		    (nmw + nsw == 0) || (nsp == 0)) {
+		if (((mfg == MFGID_ARM) && (cid == DEF_AI_COMP)) || (nsp == 0))
+			continue;
+		if ((nmw + nsw == 0)) {
 			/* A component which is not a core */
+			if (cid == OOB_ROUTER_CORE_ID) {
+				asd = get_asd(sih, &eromptr, 0, 0, AD_ST_SLAVE,
+					&addrl, &addrh, &sizel, &sizeh);
+				if (asd != 0) {
+					sii->oob_router = addrl;
+				}
+			}
 			continue;
 		}
 
@@ -414,14 +422,14 @@ ai_flag(si_t *sih)
 	aidmp_t *ai;
 
 	sii = SI_INFO(sih);
-
-	if ((sih->chip == BCM47162_CHIP_ID) &&
-	    (sih->chiprev == 0) &&
-	    (sii->coreid[sii->curidx] == MIPS74K_CORE_ID)) {
+	if (BCM47162_DMP()) {
 		SI_ERROR(("%s: Attempting to read MIPS DMP registers on 47162a0", __FUNCTION__));
 		return sii->curidx;
 	}
-
+	if (BCM5357_DMP()) {
+		SI_ERROR(("%s: Attempting to read USB20H DMP registers on 5357\n", __FUNCTION__));
+		return sii->curidx;
+	}
 	ai = sii->curwrap;
 
 	return (R_REG(sii->osh, &ai->oobselouta30) & 0x1f);
@@ -624,13 +632,18 @@ ai_core_cflags_wo(si_t *sih, uint32 mask, uint32 val)
 	uint32 w;
 
 	sii = SI_INFO(sih);
-	if ((sih->chip == BCM47162_CHIP_ID) &&
-	    (sih->chiprev == 0) &&
-	    (sii->coreid[sii->curidx] == MIPS74K_CORE_ID)) {
+
+	if (BCM47162_DMP()) {
 		SI_ERROR(("%s: Accessing MIPS DMP register (ioctrl) on 47162a0",
 		          __FUNCTION__));
 		return;
 	}
+	if (BCM5357_DMP()) {
+		SI_ERROR(("%s: Accessing USB20H DMP register (ioctrl) on 5357\n",
+		          __FUNCTION__));
+		return;
+	}
+
 	ASSERT(GOODREGS(sii->curwrap));
 	ai = sii->curwrap;
 
@@ -650,13 +663,17 @@ ai_core_cflags(si_t *sih, uint32 mask, uint32 val)
 	uint32 w;
 
 	sii = SI_INFO(sih);
-	if ((sih->chip == BCM47162_CHIP_ID) &&
-	    (sih->chiprev == 0) &&
-	    (sii->coreid[sii->curidx] == MIPS74K_CORE_ID)) {
+	if (BCM47162_DMP()) {
 		SI_ERROR(("%s: Accessing MIPS DMP register (ioctrl) on 47162a0",
 		          __FUNCTION__));
 		return 0;
 	}
+	if (BCM5357_DMP()) {
+		SI_ERROR(("%s: Accessing USB20H DMP register (ioctrl) on 5357\n",
+		          __FUNCTION__));
+		return 0;
+	}
+
 	ASSERT(GOODREGS(sii->curwrap));
 	ai = sii->curwrap;
 
@@ -678,13 +695,17 @@ ai_core_sflags(si_t *sih, uint32 mask, uint32 val)
 	uint32 w;
 
 	sii = SI_INFO(sih);
-	if ((sih->chip == BCM47162_CHIP_ID) &&
-	    (sih->chiprev == 0) &&
-	    (sii->coreid[sii->curidx] == MIPS74K_CORE_ID)) {
+	if (BCM47162_DMP()) {
 		SI_ERROR(("%s: Accessing MIPS DMP register (iostatus) on 47162a0",
 		          __FUNCTION__));
 		return 0;
 	}
+	if (BCM5357_DMP()) {
+		SI_ERROR(("%s: Accessing USB20H DMP register (iostatus) on 5357\n",
+		          __FUNCTION__));
+		return 0;
+	}
+
 	ASSERT(GOODREGS(sii->curwrap));
 	ai = sii->curwrap;
 
@@ -698,3 +719,62 @@ ai_core_sflags(si_t *sih, uint32 mask, uint32 val)
 
 	return R_REG(sii->osh, &ai->iostatus);
 }
+
+#if defined(BCMDBG_DUMP)
+/* print interesting aidmp registers */
+void
+ai_dumpregs(si_t *sih, struct bcmstrbuf *b)
+{
+	si_info_t *sii;
+	osl_t *osh;
+	aidmp_t *ai;
+	uint i;
+
+	sii = SI_INFO(sih);
+	osh = sii->osh;
+
+	for (i = 0; i < sii->numcores; i++) {
+		si_setcoreidx(&sii->pub, i);
+		ai = sii->curwrap;
+
+		bcm_bprintf(b, "core 0x%x: \n", sii->coreid[i]);
+		if (BCM47162_DMP()) {
+			bcm_bprintf(b, "Skipping mips74k in 47162a0\n");
+			continue;
+		}
+		if (BCM5357_DMP()) {
+			bcm_bprintf(b, "Skipping usb20h in 5357\n");
+			continue;
+		}
+
+		bcm_bprintf(b, "ioctrlset 0x%x ioctrlclear 0x%x ioctrl 0x%x iostatus 0x%x"
+			    "ioctrlwidth 0x%x iostatuswidth 0x%x\n"
+			    "resetctrl 0x%x resetstatus 0x%x resetreadid 0x%x resetwriteid 0x%x\n"
+			    "errlogctrl 0x%x errlogdone 0x%x errlogstatus 0x%x"
+			    "errlogaddrlo 0x%x errlogaddrhi 0x%x\n"
+			    "errlogid 0x%x errloguser 0x%x errlogflags 0x%x\n"
+			    "intstatus 0x%x config 0x%x itcr 0x%x\n",
+			    R_REG(osh, &ai->ioctrlset),
+			    R_REG(osh, &ai->ioctrlclear),
+			    R_REG(osh, &ai->ioctrl),
+			    R_REG(osh, &ai->iostatus),
+			    R_REG(osh, &ai->ioctrlwidth),
+			    R_REG(osh, &ai->iostatuswidth),
+			    R_REG(osh, &ai->resetctrl),
+			    R_REG(osh, &ai->resetstatus),
+			    R_REG(osh, &ai->resetreadid),
+			    R_REG(osh, &ai->resetwriteid),
+			    R_REG(osh, &ai->errlogctrl),
+			    R_REG(osh, &ai->errlogdone),
+			    R_REG(osh, &ai->errlogstatus),
+			    R_REG(osh, &ai->errlogaddrlo),
+			    R_REG(osh, &ai->errlogaddrhi),
+			    R_REG(osh, &ai->errlogid),
+			    R_REG(osh, &ai->errloguser),
+			    R_REG(osh, &ai->errlogflags),
+			    R_REG(osh, &ai->intstatus),
+			    R_REG(osh, &ai->config),
+			    R_REG(osh, &ai->itcr));
+	}
+}
+#endif	

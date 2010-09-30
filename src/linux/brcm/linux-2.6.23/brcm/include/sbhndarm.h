@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane ARM definitions
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbhndarm.h,v 13.9 2008/03/28 19:17:28 Exp $
+ * $Id: sbhndarm.h,v 13.10 2008/12/17 13:12:05 Exp $
  */
 
 #ifndef	_sbhndarm_h_
@@ -24,6 +24,7 @@
 /* bits in corecontrol */
 #define	ACC_FORCED_RST		0x1
 #define	ACC_SERRINT		0x2
+#define ACC_NOTSLEEPINGCLKREQ_SHIFT	24
 
 /* arm resetlog */
 #define SBRESETLOG		0x1
