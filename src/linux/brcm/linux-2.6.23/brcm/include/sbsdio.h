@@ -4,7 +4,7 @@
  *
  * SDIO core support 1bit, 4 bit SDIO mode as well as SPI mode.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -12,7 +12,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbsdio.h,v 13.32 2008/02/19 10:00:06 Exp $
+ * $Id: sbsdio.h,v 13.34 2009/03/11 20:27:16 Exp $
  */
 
 #ifndef	_SBSDIO_H
@@ -124,10 +124,10 @@
 
 /* some duplication with sbsdpcmdev.h here */
 /* valid bits in SBSDIO_FUNC1_SBADDRxxx regs */
-#define SBSDIO_SBADDRLOW_MASK	0x80			/* Valid bits in SBADDRLOW */
-#define SBSDIO_SBADDRMID_MASK	0xff			/* Valid bits in SBADDRMID */
-#define SBSDIO_SBADDRHIGH_MASK	0xff			/* Valid bits in SBADDRHIGH */
-#define SBSDIO_SBWINDOW_MASK	0xffff8000		/* Address bits from SBADDR regs */
+#define SBSDIO_SBADDRLOW_MASK		0x80		/* Valid bits in SBADDRLOW */
+#define SBSDIO_SBADDRMID_MASK		0xff		/* Valid bits in SBADDRMID */
+#define SBSDIO_SBADDRHIGH_MASK		0xffU		/* Valid bits in SBADDRHIGH */
+#define SBSDIO_SBWINDOW_MASK		0xffff8000	/* Address bits from SBADDR regs */
 
 /* direct(mapped) cis space */
 #define SBSDIO_CIS_BASE_COMMON		0x1000		/* MAPPED common CIS address */
@@ -136,6 +136,7 @@
 #else
 #define SBSDIO_CIS_SIZE_LIMIT		0x200		/* maximum bytes in one CIS */
 #endif /* !BCMSPI */
+#define SBSDIO_OTP_CIS_SIZE_LIMIT       0x078           /* maximum bytes OTP CIS */
 
 #define SBSDIO_CIS_OFT_ADDR_MASK	0x1FFFF		/* cis offset addr is < 17 bits */
 

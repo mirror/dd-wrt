@@ -1,7 +1,7 @@
 /*
  * SROM format definition.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,16 +9,21 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: bcmsrom_fmt.h,v 13.6.2.3 2008/08/11 21:28:20 Exp $
+ * $Id: bcmsrom_fmt.h,v 13.15.28.7 2010/03/12 19:35:28 Exp $
  */
 
 #ifndef	_bcmsrom_fmt_h_
 #define	_bcmsrom_fmt_h_
 
+#define SROM_MAXREV		9	/* max revisiton supported by driver */
+
 /* Maximum srom: 6 Kilobits == 768 bytes */
 #define	SROM_MAX		768
 #define SROM_MAXW		384
 #define VARS_MAX		4096
+
+/* PCI fields */
+#define PCI_F0DEVID		48
 
 
 #define	SROM_WORDS		64
@@ -163,6 +168,7 @@
 #define SROM4_SWITCH_MASK	0xff00
 #define SROM4_SWITCH_SHIFT	8
 
+
 /* Per-path fields */
 #define	MAX_PATH_SROM		4
 #define	SROM4_PATH0		64
@@ -204,7 +210,7 @@
 #define	SROM4_CRCREV		219
 
 
-/*SROM Rev 8: Make space for a 48word hardware header for PCIe rev >= 6.
+/* SROM Rev 8: Make space for a 48word hardware header for PCIe rev >= 6.
  * This is acombined srom for both MIMO and SISO boards, usable in
  * the .130 4Kilobit OTP with hardware redundancy.
  */
@@ -255,6 +261,20 @@
 #define SROM8_FEM_EXTPA_GAIN_SHIFT	1
 #define SROM8_FEM_TSSIPOS_MASK		0x0001
 #define SROM8_FEM_TSSIPOS_SHIFT		0
+
+#define SROM8_THERMAL		89
+#define SROM8_EXTLNAGAIN        93
+
+/* Temp sense related entries */
+#define SROM8_MPWR_RAWTS		90
+#define SROM8_TS_SLP_OPT_CORRX	91
+/* FOC: freiquency offset correction, HWIQ: H/W IOCAL enable, IQSWP: IQ CAL swap disable */
+#define SROM8_FOC_HWIQ_IQSWP	92
+
+#define SROM8_EXTLNAGAIN        93
+
+/* Temperature delta for PHY calibration */
+#define SROM8_PHYCAL_TEMPDELTA	94
 
 /* Per-path offsets & fields */
 #define	SROM8_PATH0		96
@@ -309,5 +329,45 @@
 #define	SROM8_W1_PAB2_HC	(SROM8_SISO + SROM8_5GH_PA + 2)
 
 #define	SROM8_CRCREV		219
+
+/* SROM REV 9 */
+#define SROM9_2GPO_CCKBW20	160
+#define SROM9_2GPO_CCKBW20UL	161
+#define SROM9_2GPO_LOFDMBW20	162
+#define SROM9_2GPO_LOFDMBW20UL	164
+
+#define SROM9_5GLPO_LOFDMBW20	166
+#define SROM9_5GLPO_LOFDMBW20UL	168
+#define SROM9_5GMPO_LOFDMBW20	170
+#define SROM9_5GMPO_LOFDMBW20UL	172
+#define SROM9_5GHPO_LOFDMBW20	174
+#define SROM9_5GHPO_LOFDMBW20UL	176
+
+#define SROM9_2GPO_MCSBW20	178
+#define SROM9_2GPO_MCSBW20UL	180
+#define SROM9_2GPO_MCSBW40	182
+
+#define SROM9_5GLPO_MCSBW20	184
+#define SROM9_5GLPO_MCSBW20UL	186
+#define SROM9_5GLPO_MCSBW40	188
+#define SROM9_5GMPO_MCSBW20	190
+#define SROM9_5GMPO_MCSBW20UL	192
+#define SROM9_5GMPO_MCSBW40	194
+#define SROM9_5GHPO_MCSBW20	196
+#define SROM9_5GHPO_MCSBW20UL	198
+#define SROM9_5GHPO_MCSBW40	200
+
+#define SROM9_PO_MCS32		202
+#define SROM9_PO_LOFDM40DUP	203
+
+#define SROM9_REV_CRC		219
+
+typedef struct {
+	uint8 tssipos;		/* TSSI positive slope, 1: positive, 0: negative */
+	uint8 extpagain;	/* Ext PA gain-type: full-gain: 0, pa-lite: 1, no_pa: 2 */
+	uint8 pdetrange;	/* support 32 combinations of different Pdet dynamic ranges */
+	uint8 triso;		/* TR switch isolation */
+	uint8 antswctrllut;	/* antswctrl lookup table configuration: 32 possible choices */
+} srom_fem_t;
 
 #endif	/* _bcmsrom_fmt_h_ */

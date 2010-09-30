@@ -2,7 +2,7 @@
  * Linux-specific abstractions to gain some independence from linux kernel versions.
  * Pave over some 2.2 versus 2.4 versus 2.6 kernel differences.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -10,7 +10,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linuxver.h,v 13.40.2.4 2008/05/02 20:40:31 Exp $
+ * $Id: linuxver.h,v 13.50.22.2 2009/10/02 19:09:49 Exp $
  */
 
 #ifndef _linuxver_h_
@@ -53,6 +53,9 @@
 #include <linux/pci.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28))
+#undef IP_TOS
+#endif
 #include <asm/io.h>
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 41))
@@ -109,9 +112,23 @@ typedef irqreturn_t(*FN_ISR) (int irq, void *dev_id, struct pt_regs *ptregs);
 #endif /* not SANDGATE2G */
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 67) */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#include <net/lib80211.h>
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+#include <linux/ieee80211.h>
+#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
+#include <net/ieee80211.h>
+#endif
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30) */
+
 #if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
 #include <pcmcia/version.h>
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) */
+
 #include <pcmcia/cs_types.h>
 #include <pcmcia/cs.h>
 #include <pcmcia/cistpl.h>
@@ -206,6 +223,18 @@ extern void pci_unregister_driver(struct pci_driver *drv);
 #define module_exit(x)	__exitcall(x);
 #endif
 #endif	/* LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18) */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#define WL_USE_NETDEV_OPS
+#else
+#undef WL_USE_NETDEV_OPS
+#endif
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)) && defined(CONFIG_RFKILL_INPUT)
+#define WL_CONFIG_RFKILL_INPUT
+#else
+#undef WL_CONFIG_RFKILL_INPUT
+#endif
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 48))
 #define list_for_each(pos, head) \
@@ -340,7 +369,7 @@ static inline void tasklet_init(struct tasklet_struct *tasklet,
 	tasklet->routine = (void (*)(void *))func;
 	tasklet->data = (void *)data;
 }
-#define tasklet_kill(tasklet)	{ do{} while (0); }
+#define tasklet_kill(tasklet)	{ do {} while (0); }
 
 /* 2.4.x introduced del_timer_sync() */
 #define del_timer_sync(timer) del_timer(timer)
@@ -512,5 +541,32 @@ do {									\
 })
 
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)) */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27))
+#define KILL_PROC(pid, sig) \
+{ \
+	struct task_struct *tsk; \
+	tsk = find_task_by_vpid(pid); \
+	if (tsk) send_sig(sig, tsk, 1); \
+}
+#else
+#define KILL_PROC(pid, sig) \
+{ \
+	kill_proc(pid, sig, 1); \
+}
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+#define WL_DEV_IF(dev)          ((wl_if_t*)netdev_priv(dev))
+#else
+#define WL_DEV_IF(dev)          ((wl_if_t*)(dev)->priv)
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+#define WL_ISR(i, d, p)         wl_isr((i), (d))
+#else
+#define WL_ISR(i, d, p)         wl_isr((i), (d), (p))
+#endif  /* < 2.6.20 */
+
 
 #endif /* _linuxver_h_ */

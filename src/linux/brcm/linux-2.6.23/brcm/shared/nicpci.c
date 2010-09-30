@@ -1,7 +1,7 @@
 /*
  * Code to operate on PCI/E core, in NIC mode
  * Implements pci_api.h
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: nicpci.c,v 1.15.2.7.4.1 2008/11/18 18:15:09 Exp $
+ * $Id: nicpci.c,v 1.29.8.2 2010/03/16 18:34:52 Exp $
  */
 
 #include <typedefs.h>
@@ -34,9 +34,10 @@ typedef struct {
 	si_t *sih;			/* System interconnect handle */
 	osl_t *osh;			/* OSL handle */
 	uint8	pciecap_lcreg_offset;	/* PCIE capability LCreg offset in the config space */
+	uint8	pciecap_devctrl_offset;	/* PCIE DevControl reg offset in the config space */
 	bool	pcie_pr42767;
 	uint8	pcie_polarity;
-	bool	pcie_war_aspm_ovr;		/* Override ASPM/Clkreq settings */
+	uint8	pcie_war_aspm_ovr;		/* Override ASPM/Clkreq settings */
 
 	uint8 pmecap_offset;	/* PM Capability offset in the config space */
 	bool pmecap;		/* Capable of generating PME */
@@ -124,6 +125,7 @@ pcicore_init(si_t *sih, osl_t *osh, void *regs)
 		cap_ptr = pcicore_find_pci_capability(pi->osh, PCI_CAP_PCIECAP_ID, NULL, NULL);
 		ASSERT(cap_ptr);
 		pi->pciecap_lcreg_offset = cap_ptr + PCIE_CAP_LINKCTRL_OFFSET;
+		pi->pciecap_devctrl_offset = cap_ptr + PCIE_CAP_DEVCTRL_OFFSET;
 	} else
 		pi->regs.pciregs = (sbpciregs_t*)regs;
 
@@ -254,7 +256,7 @@ pcie_mdiosetblock(pcicore_info_t *pi, uint blk)
 	uint mdiodata, i = 0;
 	uint pcie_serdes_spinwait = 200;
 
-	mdiodata = MDIODATA_START | MDIODATA_WRITE | (MDIODATA_DEV_ADDR << MDIODATA_DEVADDR_SHF) | \
+	mdiodata = MDIODATA_START | MDIODATA_WRITE | (MDIODATA_DEV_ADDR << MDIODATA_DEVADDR_SHF) |
 	        (MDIODATA_BLK_ADDR << MDIODATA_REGADDR_SHF) | MDIODATA_TA | (blk << 4);
 	W_REG(pi->osh, &pcieregs->mdiodata, mdiodata);
 
@@ -291,11 +293,11 @@ pcie_mdioop(pcicore_info_t *pi, uint physmedia, uint regaddr, bool write, uint *
 		/* new serdes is slower in rw, using two layers of reg address mapping */
 		if (!pcie_mdiosetblock(pi, physmedia))
 			return 1;
-		mdiodata = (MDIODATA_DEV_ADDR << MDIODATA_DEVADDR_SHF) | \
+		mdiodata = (MDIODATA_DEV_ADDR << MDIODATA_DEVADDR_SHF) |
 			(regaddr << MDIODATA_REGADDR_SHF);
 		pcie_serdes_spinwait *= 20;
 	} else {
-		mdiodata = (physmedia << MDIODATA_DEVADDR_SHF_OLD) | \
+		mdiodata = (physmedia << MDIODATA_DEVADDR_SHF_OLD) |
 			(regaddr << MDIODATA_REGADDR_SHF_OLD);
 	}
 
@@ -344,6 +346,37 @@ pcie_mdiowrite(pcicore_info_t *pi, uint physmedia, uint regaddr, uint val)
 }
 
 /* ***** Support functions ***** */
+static uint32
+pcie_devcontrol_mrrs(void *pch, uint32 mask, uint32 val)
+{
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+	uint32 reg_val;
+	uint8 offset;
+
+	offset = pi->pciecap_devctrl_offset;
+	if (!offset)
+		return 0;
+
+	reg_val = OSL_PCI_READ_CONFIG(pi->osh, offset, sizeof(uint32));
+	/* set operation */
+	if (mask) {
+		if (val > PCIE_CAP_DEVCTRL_MRRS_128B) {
+			if (pi->sih->buscorerev < 18) {
+				PCI_ERROR(("%s pcie corerev %d doesn't support >128B MRRS",
+					__FUNCTION__, pi->sih->buscorerev));
+				val = PCIE_CAP_DEVCTRL_MRRS_128B;
+			}
+		}
+
+		reg_val &= ~PCIE_CAP_DEVCTRL_MRRS_MASK;
+		reg_val |= (val << PCIE_CAP_DEVCTRL_MRRS_SHIFT) & PCIE_CAP_DEVCTRL_MRRS_MASK;
+
+		OSL_PCI_WRITE_CONFIG(pi->osh, offset, sizeof(uint32), reg_val);
+		reg_val = OSL_PCI_READ_CONFIG(pi->osh, offset, sizeof(uint32));
+	}
+	return reg_val;
+}
+
 uint8
 pcie_clkreq(void *pch, uint32 mask, uint32 val)
 {
@@ -472,30 +505,44 @@ pcie_war_aspm_clkreq(pcicore_info_t *pi)
 
 		reg16 = &pcieregs->sprom[SRSH_ASPM_OFFSET];
 		val16 = R_REG(pi->osh, reg16);
-		if (!pi->pcie_war_aspm_ovr)
+
+		val16 &= ~SRSH_ASPM_ENB;
+		if (pi->pcie_war_aspm_ovr == PCIE_ASPM_ENAB)
 			val16 |= SRSH_ASPM_ENB;
-		else
-			val16 &= ~SRSH_ASPM_ENB;
+		else if (pi->pcie_war_aspm_ovr == PCIE_ASPM_L1_ENAB)
+			val16 |= SRSH_ASPM_L1_ENB;
+		else if (pi->pcie_war_aspm_ovr == PCIE_ASPM_L0s_ENAB)
+			val16 |= SRSH_ASPM_L0s_ENB;
+
 		W_REG(pi->osh, reg16, val16);
 
 		w = OSL_PCI_READ_CONFIG(pi->osh, pi->pciecap_lcreg_offset, sizeof(uint32));
-		if (!pi->pcie_war_aspm_ovr)
-			w |= PCIE_ASPM_ENAB;
-		else
-			w &= ~PCIE_ASPM_ENAB;
+		w &= ~PCIE_ASPM_ENAB;
+		w |= pi->pcie_war_aspm_ovr;
 		OSL_PCI_WRITE_CONFIG(pi->osh, pi->pciecap_lcreg_offset, sizeof(uint32), w);
 	}
 
 	reg16 = &pcieregs->sprom[SRSH_CLKREQ_OFFSET_REV5];
 	val16 = R_REG(pi->osh, reg16);
 
-	if (!pi->pcie_war_aspm_ovr) {
+	if (pi->pcie_war_aspm_ovr != PCIE_ASPM_DISAB) {
 		val16 |= SRSH_CLKREQ_ENB;
 		pi->pcie_pr42767 = TRUE;
 	} else
 		val16 &= ~SRSH_CLKREQ_ENB;
 
 	W_REG(pi->osh, reg16, val16);
+}
+
+void
+pcie_war_ovr_aspm_disable(void *pch)
+{
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+
+	pi->pcie_war_aspm_ovr = FALSE;
+
+	/* Update the current state */
+	pcie_war_aspm_clkreq(pi);
 }
 
 /* Apply the polarity determined at the start */
@@ -595,11 +642,18 @@ pcie_war_pci_setup(pcicore_info_t *pi)
 }
 
 void
-pcie_war_ovr_aspm_disable(void *pch)
+pcie_war_ovr_aspm_update(void *pch, uint8 aspm)
 {
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
 
-	pi->pcie_war_aspm_ovr = FALSE;
+	if (!PCIE_ASPM(pi->sih))
+		return;
+
+	/* Validate */
+	if (aspm > PCIE_ASPM_ENAB)
+		return;
+
+	pi->pcie_war_aspm_ovr = aspm;
 
 	/* Update the current state */
 	pcie_war_aspm_clkreq(pi);
@@ -612,11 +666,16 @@ BCMATTACHFN(pcicore_attach)(void *pch, char *pvars, int state)
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
 	si_t *sih = pi->sih;
 
-	/* Determine if this board needs override */
-	pi->pcie_war_aspm_ovr = ((sih->boardvendor == VENDOR_APPLE) &&
-	                         ((uint8)getintvar(pvars, "sromrev") == 4) &&
-	                         ((uint8)getintvar(pvars, "boardrev") <= 0x71)) ||
-	        ((uint32)getintvar(pvars, "boardflags2") & BFL2_PCIEWAR_OVR);
+	if (PCIE_ASPM(sih)) {
+		if (((sih->boardvendor == VENDOR_APPLE) &&
+		     ((uint8)getintvar(pvars, "sromrev") == 4) &&
+		     ((uint8)getintvar(pvars, "boardrev") <= 0x71)) ||
+		    ((uint32)getintvar(pvars, "boardflags2") & BFL2_PCIEWAR_OVR)) {
+			pi->pcie_war_aspm_ovr = PCIE_ASPM_DISAB;
+		} else {
+			pi->pcie_war_aspm_ovr = PCIE_ASPM_ENAB;
+		}
+	}
 
 	/* These need to happen in this order only */
 	pcie_war_polarity(pi);
@@ -626,6 +685,12 @@ BCMATTACHFN(pcicore_attach)(void *pch, char *pvars, int state)
 	pcie_war_aspm_clkreq(pi);
 
 	pcie_clkreq_upd(pi, state);
+
+	/* Default setting for increasing the TX drive strength */
+	if ((sih->boardvendor == VENDOR_APPLE) &&
+	    (sih->boardtype == 0x8d))
+		pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x7f);
+
 }
 
 void
@@ -640,6 +705,11 @@ pcicore_hwup(void *pch)
 		pcicore_fixlatencytimer(pch, 0x20);
 
 	pcie_war_pci_setup(pi);
+
+	/* Default setting for increasing the TX drive strength */
+	if ((pi->sih->boardvendor == VENDOR_APPLE) &&
+	    (pi->sih->boardtype == 0x8d))
+		pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x7f);
 }
 
 void
@@ -654,6 +724,9 @@ pcicore_up(void *pch, int state)
 	pcie_extendL1timer(pi, TRUE);
 
 	pcie_clkreq_upd(pi, state);
+
+	if (pi->sih->buscorerev == 18)
+		pcie_devcontrol_mrrs(pi, PCIE_CAP_DEVCTRL_MRRS_MASK, PCIE_CAP_DEVCTRL_MRRS_128B);
 }
 
 /* When the device is going to enter D3 state (or the system is going to enter S3/S4 states */
@@ -798,7 +871,46 @@ pcicore_fixlatencytimer(pcicore_info_t* pch, uint8 timer_val)
 	}
 }
 
+uint32
+pcie_lcreg(void *pch, uint32 mask, uint32 val)
+{
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+	uint8 offset;
 
+	offset = pi->pciecap_lcreg_offset;
+	if (!offset)
+		return 0;
+
+	/* set operation */
+	if (mask)
+		OSL_PCI_WRITE_CONFIG(pi->osh, offset, sizeof(uint32), val);
+
+	return OSL_PCI_READ_CONFIG(pi->osh, offset, sizeof(uint32));
+}
+
+
+uint32
+pcicore_pciereg(void *pch, uint32 offset, uint32 mask, uint32 val, uint type)
+{
+	uint32 reg_val = 0;
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
+	osl_t *osh = pi->osh;
+
+	if (mask) {
+		PCI_ERROR(("PCIEREG: 0x%x writeval  0x%x\n", offset, val));
+		pcie_writereg(osh, pcieregs, type, offset, val);
+	}
+
+	/* Should not read register 0x154 */
+	if (pi->sih->buscorerev <= 5 && offset == PCIE_DLLP_PCIE11 && type == PCIE_PCIEREGS)
+		return reg_val;
+
+	reg_val = pcie_readreg(osh, pcieregs, type, offset);
+	PCI_ERROR(("PCIEREG: 0x%x readval is 0x%x\n", offset, reg_val));
+
+	return reg_val;
+}
 
 uint32
 pcicore_pcieserdesreg(void *pch, uint32 mdioslave, uint32 offset, uint32 mask, uint32 val)
@@ -817,3 +929,89 @@ pcicore_pcieserdesreg(void *pch, uint32 mdioslave, uint32 offset, uint32 mask, u
 
 	return reg_val;
 }
+
+
+#if defined(BCMDBG_DUMP)
+
+/* size that can take bitfielddump */
+#define BITFIELD_DUMP_SIZE  2048
+
+/* Dump PCIE PLP/DLLP/TLP  diagnostic registers */
+int
+pcicore_dump_pcieregs(void *pch, struct bcmstrbuf *b)
+{
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+	sbpcieregs_t *pcieregs = pi->regs.pcieregs;
+	si_t *sih = pi->sih;
+	uint reg_val = 0;
+	char *bitfield_dump_buf;
+
+	if (!(bitfield_dump_buf = MALLOC(pi->osh, BITFIELD_DUMP_SIZE))) {
+		printf("bitfield dump allocation failed\n");
+		return BCME_NOMEM;
+	}
+
+	bcm_bprintf(b, "PLPRegs \t");
+	bcmdumpfields(si_pcie_readreg, (void *)(uintptr)pi->sih, PCIE_PCIEREGS,
+		(struct fielddesc *)(uintptr)pcie_plp_regdesc,
+		bitfield_dump_buf, BITFIELD_DUMP_SIZE);
+	bcm_bprintf(b, "%s", bitfield_dump_buf);
+	bzero(bitfield_dump_buf, BITFIELD_DUMP_SIZE);
+	bcm_bprintf(b, "\n");
+	bcm_bprintf(b, "DLLPRegs \t");
+	bcmdumpfields(si_pcie_readreg, (void *)(uintptr)pi->sih, PCIE_PCIEREGS,
+		(struct fielddesc *)(uintptr)pcie_dllp_regdesc,
+		bitfield_dump_buf, BITFIELD_DUMP_SIZE);
+	bcm_bprintf(b, "%s", bitfield_dump_buf);
+	bzero(bitfield_dump_buf, BITFIELD_DUMP_SIZE);
+	bcm_bprintf(b, "\n");
+	bcm_bprintf(b, "TLPRegs \t");
+	bcmdumpfields(si_pcie_readreg, (void *)(uintptr)pi->sih, PCIE_PCIEREGS,
+		(struct fielddesc *)(uintptr)pcie_tlp_regdesc,
+		bitfield_dump_buf, BITFIELD_DUMP_SIZE);
+	bcm_bprintf(b, "%s", bitfield_dump_buf);
+	bzero(bitfield_dump_buf, BITFIELD_DUMP_SIZE);
+	bcm_bprintf(b, "\n");
+
+	/* enable mdio access to SERDES */
+	W_REG(pi->osh, (&pcieregs->mdiocontrol), MDIOCTL_PREAM_EN | MDIOCTL_DIVISOR_VAL);
+
+	bcm_bprintf(b, "SERDES regs \n");
+	if (sih->buscorerev >= 10) {
+		pcie_mdioread(pi, MDIO_DEV_IEEE0, 0x2, &reg_val);
+		bcm_bprintf(b, "block IEEE0, offset 2: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_IEEE0, 0x3, &reg_val);
+		bcm_bprintf(b, "block IEEE0, offset 2: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_IEEE1, 0x08, &reg_val);
+		bcm_bprintf(b, "block IEEE1, lanestatus: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_IEEE1, 0x0a, &reg_val);
+		bcm_bprintf(b, "block IEEE1, lanestatus2: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_BLK4, 0x16, &reg_val);
+		bcm_bprintf(b, "MDIO_DEV_BLK4, lanetest0: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_TXPLL, 0x11, &reg_val);
+		bcm_bprintf(b, "MDIO_DEV_TXPLL, pllcontrol: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_TXPLL, 0x12, &reg_val);
+		bcm_bprintf(b, "MDIO_DEV_TXPLL, plltimer1: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_TXPLL, 0x13, &reg_val);
+		bcm_bprintf(b, "MDIO_DEV_TXPLL, plltimer2: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_TXPLL, 0x14, &reg_val);
+		bcm_bprintf(b, "MDIO_DEV_TXPLL, plltimer3: 0x%x\n", reg_val);
+		pcie_mdioread(pi, MDIO_DEV_TXPLL, 0x17, &reg_val);
+		bcm_bprintf(b, "MDIO_DEV_TXPLL, freqdetcounter: 0x%x\n", reg_val);
+	} else {
+		pcie_mdioread(pi, MDIODATA_DEV_RX, SERDES_RX_TIMER1, &reg_val);
+		bcm_bprintf(b, "rxtimer1 0x%x ", reg_val);
+		pcie_mdioread(pi, MDIODATA_DEV_RX, SERDES_RX_CDR, &reg_val);
+		bcm_bprintf(b, "rxCDR 0x%x ", reg_val);
+		pcie_mdioread(pi, MDIODATA_DEV_RX, SERDES_RX_CDRBW, &reg_val);
+		bcm_bprintf(b, "rxCDRBW 0x%x\n", reg_val);
+	}
+
+	/* disable mdio access to SERDES */
+	W_REG(pi->osh, (&pcieregs->mdiocontrol), 0);
+
+	MFREE(pi->osh, bitfield_dump_buf, BITFIELD_DUMP_SIZE);
+
+	return 0;
+}
+#endif	

@@ -40,8 +40,12 @@
 #include <hndmips.h>
 #include <sflash.h>
 
+/* Temp buffer to hold the nvram transfered romboot CFE */
+char __initdata ram_nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
+
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
+static bool nvram_inram = FALSE;
 
 #ifdef MODULE
 
@@ -72,6 +76,14 @@ early_nvram_init(void)
 	int i;
 	uint32 base, off, lim;
 	u32 *src, *dst;
+
+	header = (struct nvram_header *)ram_nvram_buf;
+	if (header->magic == NVRAM_MAGIC) {
+		if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
+			nvram_inram = TRUE;
+			goto found;
+		}
+	}
 
 	if ((cc = si_setcore(sih, CC_CORE_ID, 0)) != NULL) {
 		base = KSEG1ADDR(SI_FLASH2);
@@ -239,10 +251,12 @@ _nvram_read(char *buf)
 	struct nvram_header *header = (struct nvram_header *) buf;
 	size_t len;
 
-	if (!nvram_mtd ||
+	if (nvram_inram || !nvram_mtd ||
 	    nvram_mtd->read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
 	    header->magic != NVRAM_MAGIC) {
+		if (nvram_inram)
+			printk("Sourcing NVRAM from ram\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 	}

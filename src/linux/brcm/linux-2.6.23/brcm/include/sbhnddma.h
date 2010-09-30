@@ -2,7 +2,7 @@
  * Generic Broadcom Home Networking Division (HND) DMA engine HW interface
  * This supports the following chips: BCM42xx, 44xx, 47xx .
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -10,7 +10,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbhnddma.h,v 13.12.2.1 2008/07/26 00:51:58 Exp $
+ * $Id: sbhnddma.h,v 13.19.18.1 2010/05/07 18:40:09 Exp $
  */
 
 #ifndef	_sbhnddma_h_
@@ -57,8 +57,10 @@ typedef volatile struct {
 /*
  * Each descriptor ring must be 4096byte aligned, and fit within a single 4096byte page.
  */
-#define	D32MAXRINGSZ	4096
-#define	D32RINGALIGN	4096
+#define	D32RINGALIGN_BITS	12
+#define	D32MAXRINGSZ		(1 << D32RINGALIGN_BITS)
+#define	D32RINGALIGN		(1 << D32RINGALIGN_BITS)
+
 #define	D32MAXDD	(D32MAXRINGSZ / sizeof (dma32dd_t))
 
 /* transmit channel control */
@@ -140,9 +142,10 @@ typedef volatile struct {
 #define	FA_SEL_RSP	0xf0000			/* receive frame status pointers */
 
 /* descriptor control flags */
-#define	CTRL_BC_MASK	0x1fff			/* buffer byte count */
+#define	CTRL_BC_MASK	0x00001fff		/* buffer byte count, real data len must <= 4KB */
 #define	CTRL_AE		((uint32)3 << 16)	/* address extension bits */
 #define	CTRL_AE_SHIFT	16
+#define	CTRL_PARITY	((uint32)3 << 18)	/* parity bit */
 #define	CTRL_EOT	((uint32)1 << 28)	/* end of descriptor table */
 #define	CTRL_IOC	((uint32)1 << 29)	/* interrupt on completion */
 #define	CTRL_EOF	((uint32)1 << 30)	/* end of frame */
@@ -189,8 +192,10 @@ typedef volatile struct {
 /*
  * Each descriptor ring must be 8kB aligned, and fit within a contiguous 8kB physical addresss.
  */
-#define	D64MAXRINGSZ	8192
-#define	D64RINGALIGN	8192
+#define D64RINGALIGN_BITS	13
+#define	D64MAXRINGSZ		(1 << D64RINGALIGN_BITS)
+#define	D64RINGALIGN		(1 << D64RINGALIGN_BITS)
+
 #define	D64MAXDD	(D64MAXRINGSZ / sizeof (dma64dd_t))
 
 /* transmit channel control */
@@ -215,7 +220,7 @@ typedef volatile struct {
 #define	D64_XS0_XS_STOPPED	0x30000000	/* stopped */
 #define	D64_XS0_XS_SUSP		0x40000000	/* suspend pending */
 
-#define	D64_XS1_AD_MASK		0x0001ffff	/* active descriptor */
+#define	D64_XS1_AD_MASK		0x00001fff	/* active descriptor */
 #define	D64_XS1_XE_MASK		0xf0000000     	/* transmit errors */
 #define	D64_XS1_XE_SHIFT		28
 #define	D64_XS1_XE_NOERR	0x00000000	/* no error */
@@ -239,6 +244,9 @@ typedef volatile struct {
 /* flags for dma controller */
 #define DMA_CTRL_PEN		(1 << 0)	/* partity enable */
 #define DMA_CTRL_ROC		(1 << 1)	/* rx overflow continue */
+#define DMA_CTRL_RXMULTI	(1 << 2)	/* allow rx scatter to multiple descriptors */
+#define DMA_CTRL_UNFRAMED	(1 << 3)	/* Unframed Rx/Tx data */
+#define DMA_CTRL_USB_BOUNDRY4KB_WAR (1 << 4)
 
 /* receive descriptor table pointer */
 #define	D64_RP_LD_MASK		0x00000fff	/* last valid descriptor */
@@ -279,13 +287,14 @@ typedef volatile struct {
 #define	D64_FA_SEL_RSP		0xf0000		/* receive frame status pointers */
 
 /* descriptor control flags 1 */
+#define D64_CTRL_COREFLAGS	0x0ff00000	/* core specific flags */
 #define	D64_CTRL1_EOT		((uint32)1 << 28)	/* end of descriptor table */
 #define	D64_CTRL1_IOC		((uint32)1 << 29)	/* interrupt on completion */
 #define	D64_CTRL1_EOF		((uint32)1 << 30)	/* end of frame */
 #define	D64_CTRL1_SOF		((uint32)1 << 31)	/* start of frame */
 
 /* descriptor control flags 2 */
-#define	D64_CTRL2_BC_MASK	0x00007fff	/* buffer byte count mask */
+#define	D64_CTRL2_BC_MASK	0x00007fff	/* buffer byte count. real data len must <= 16KB */
 #define	D64_CTRL2_AE		0x00030000	/* address extension bits */
 #define	D64_CTRL2_AE_SHIFT	16
 #define D64_CTRL2_PARITY	0x00040000      /* parity bit */
@@ -293,5 +302,15 @@ typedef volatile struct {
 /* control flags in the range [27:20] are core-specific and not defined here */
 #define	D64_CTRL_CORE_MASK	0x0ff00000
 
+#define D64_RX_FRM_STS_LEN	0x0000ffff	/* frame length mask */
+#define D64_RX_FRM_STS_OVFL	0x00800000	/* RxOverFlow */
+#define D64_RX_FRM_STS_DSCRCNT	0x0f000000	/* no. of descriptors used - 1, d11corerev >= 22 */
+#define D64_RX_FRM_STS_DATATYPE	0xf0000000	/* core-dependent data type */
+
+/* receive frame status */
+typedef volatile struct {
+	uint16 len;
+	uint16 flags;
+} dma_rxh_t;
 
 #endif	/* _sbhnddma_h_ */

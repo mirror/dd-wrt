@@ -1,7 +1,7 @@
 /*
  * MIPS 74k definitions
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: mips74k_core.h,v 13.1 2008/03/25 01:50:53 Exp $
+ * $Id: mips74k_core.h,v 13.1.140.1 2009/11/16 03:58:52 Exp $
  */
 
 #ifndef	_mips74k_core_h_
@@ -41,6 +41,9 @@ typedef volatile struct {
 	uint32	PAD[101];
 	uint32	clkcontrolstatus;
 } mips74kregs_t;
+
+/* Core specific status flags */
+#define SISF_CHG_CLK_OTF_PRESENT	0x0001
 
 #endif	/* _LANGUAGE_ASSEMBLY */
 

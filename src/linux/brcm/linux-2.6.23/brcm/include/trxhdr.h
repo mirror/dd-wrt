@@ -1,7 +1,7 @@
 /*
  * TRX image file header format.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: trxhdr.h,v 13.11.304.1 2008/08/19 19:36:33 Exp $
+ * $Id: trxhdr.h,v 13.15 2008/09/15 16:56:00 Exp $
  */
 
 #include <typedefs.h>
@@ -20,6 +20,7 @@
 #define TRX_NO_HEADER	1		/* Do not write TRX header */
 #define TRX_GZ_FILES	0x2     /* Contains up to TRX_MAX_OFFSET individual gzip files */
 #define TRX_MAX_OFFSET	3		/* Max number of individual files */
+#define TRX_UNCOMP_IMAGE	0x20	/* Trx contains uncompressed rtecdc.bin image */
 
 struct trx_header {
 	uint32 magic;		/* "HDR0" */

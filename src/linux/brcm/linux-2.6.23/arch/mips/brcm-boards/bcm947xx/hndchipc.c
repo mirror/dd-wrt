@@ -1,7 +1,7 @@
 /*
  * BCM47XX support code for some chipcommon facilities (uart, jtagm)
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndchipc.c,v 1.23.52.1 2008/11/13 22:55:07 Exp $
+ * $Id: hndchipc.c,v 1.24 2008/11/13 23:35:46 Exp $
  */
 
 #include <typedefs.h>
@@ -19,7 +19,6 @@
 #include <siutils.h>
 #include <bcmnvram.h>
 #include <hndsoc.h>
-#include "siutils_priv.h"
 #include <sbchipc.h>
 #include <hndchipc.h>
 #include <hndcpu.h>
@@ -50,19 +49,6 @@ static cc_isr_info_t cc_isr_desc[MAX_CC_INT_SOURCE];
 /* chip common intmask */
 static uint32 cc_intmask = 0;
 
-static bool
-BCMINITFN(serial_exists)(osl_t *osh, uint8 *regs)
-{
-	uint8 save_mcr, status1;
-
-	save_mcr = R_REG(osh, &regs[UART_MCR]);
-	W_REG(osh, &regs[UART_MCR], UART_MCR_LOOP | 0x0a);
-	status1 = R_REG(osh, &regs[UART_MSR]) & 0xf0;
-	W_REG(osh, &regs[UART_MCR], save_mcr);
-
-	return (status1 == 0x90);
-}
-
 /*
  * Initializes UART access. The callback function will be called once
  * per found UART.
@@ -72,7 +58,6 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 {
 	osl_t *osh;
 	void *regs;
-	ulong base;
 	chipcregs_t *cc;
 	uint32 rev, cap, pll, baud_base, div;
 	uint irq;
@@ -80,39 +65,7 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 
 	osh = si_osh(sih);
 
-	if ((regs = si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		extifregs_t *eir = (extifregs_t *) regs;
-		sbconfig_t *sb;
-
-		/* Determine external UART register base */
-		sb = (sbconfig_t *)((ulong) eir + SBCONFIGOFF);
-		base = EXTIF_CFGIF_BASE(sb_base(R_REG(osh, &sb->sbadmatch1)));
-
-		/* Determine IRQ */
-		irq = si_irq(sih);
-
-		/* Disable GPIO interrupt initially */
-		W_REG(osh, &eir->gpiointpolarity, 0);
-		W_REG(osh, &eir->gpiointmask, 0);
-
-		/* Search for external UARTs */
-		n = 2;
-		for (i = 0; i < 2; i++) {
-			regs = (void *) REG_MAP(base + (i * 8), 8);
-			if (serial_exists(osh, regs)) {
-				/* Set GPIO 1 to be the external UART IRQ */
-				W_REG(osh, &eir->gpiointmask, 2);
-				/* XXXDetermine external UART clock */
-				if (add)
-					add(regs, irq, 13500000, 0);
-			}
-		}
-
-		/* Add internal UART if enabled */
-		if (R_REG(osh, &eir->corecontrol) & CC_UE)
-			if (add)
-				add((void *) &eir->uartdata, irq, si_clock(sih), 2);
-	} else if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) {
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
 	/* Determine core revision and capabilities */
@@ -131,11 +84,7 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 		div = 1;
 	} else {
 		/* Fixed ALP clock */
-		if (si_corerev(sih) == 20) {
-				/* Set the override bit so we don't divide it */
-			W_REG(osh, &cc->corecontrol, CC_UARTCLKO);
-			baud_base = 25000000;
-		} else 	if (rev >= 11 && rev != 15) {
+		if (rev >= 11 && rev != 15) {
 			baud_base = si_alp_clock(sih);
 			div = 1;
 			/* Turn off UART clock before switching clock source */
@@ -181,7 +130,6 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 
 		if (add)
 			add(regs, irq, baud_base, 0);
-	}
 	}
 }
 

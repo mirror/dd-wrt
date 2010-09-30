@@ -2,14 +2,14 @@
  * Required functions exported by the port-specific (os-dependent) driver
  * to common (os-independent) driver code.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: et_export.h,v 1.13.96.1 2008/07/26 00:30:46 Exp $
+ * $Id: et_export.h,v 1.14 2008/07/25 02:41:40 Exp $
  */
 
 #ifndef _et_export_h_
