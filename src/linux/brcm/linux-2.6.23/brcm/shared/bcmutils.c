@@ -1,14 +1,14 @@
 /*
  * Driver O/S-independent utility routines
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: bcmutils.c,v 1.218.2.3.20.2 2008/11/03 23:38:06 Exp $
+ * $Id: bcmutils.c,v 1.248.4.4 2010/06/15 06:19:14 Exp $
  */
 
 #include <typedefs.h>
@@ -34,7 +34,7 @@
 #include <proto/vlan.h>
 #include <proto/bcmip.h>
 #include <proto/802.1d.h>
-
+#include <proto/802.11.h>
 #ifdef BCMPERFSTATS
 #include <bcmperf.h>
 #endif
@@ -132,7 +132,7 @@ pkt2pktcopy(osl_t *osh, void *p1, uint offs1, void *p2, uint offs2, int maxlen)
 
 
 /* return total length of buffer chain */
-uint
+uint BCMFASTPATH
 pkttotlen(osl_t *osh, void *p)
 {
 	uint total;
@@ -154,7 +154,7 @@ pktlast(osl_t *osh, void *p)
 }
 
 /* count segments of a chained packet */
-uint
+uint BCMFASTPATH
 pktsegcnt(osl_t *osh, void *p)
 {
 	uint cnt;
@@ -281,24 +281,36 @@ pktq_pdeq_tail(struct pktq *pq, int prec)
 	return p;
 }
 
-void BCMFASTPATH
-pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir)
+void
+pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir, ifpkt_cb_t fn, int arg)
 {
 	struct pktq_prec *q;
-	void *p;
+	void *p, *prev = NULL;
 
 	q = &pq->q[prec];
 	p = q->head;
 	while (p) {
-		q->head = PKTLINK(p);
-		PKTSETLINK(p, NULL);
-		PKTFREE(osh, p, dir);
-		q->len--;
-		pq->len--;
-		p = q->head;
+		if (fn == NULL || (*fn)(p, arg)) {
+			bool head = (p == q->head);
+			if (head)
+				q->head = PKTLINK(p);
+			else
+				PKTSETLINK(prev, PKTLINK(p));
+			PKTSETLINK(p, NULL);
+			PKTFREE(osh, p, dir);
+			q->len--;
+			pq->len--;
+			p = (head ? q->head : PKTLINK(prev));
+		} else {
+			prev = p;
+			p = PKTLINK(p);
+		}
 	}
-	ASSERT(q->len == 0);
-	q->tail = NULL;
+
+	if (q->head == NULL) {
+		ASSERT(q->len == 0);
+		q->tail = NULL;
+	}
 }
 
 bool BCMFASTPATH
@@ -425,7 +437,7 @@ pktq_deq_tail(struct pktq *pq, int *prec_out)
 	return p;
 }
 
-void * BCMFASTPATH
+void *
 pktq_peek(struct pktq *pq, int *prec_out)
 {
 	int prec;
@@ -442,7 +454,7 @@ pktq_peek(struct pktq *pq, int *prec_out)
 	return (pq->q[prec].head);
 }
 
-void * BCMFASTPATH
+void *
 pktq_peek_tail(struct pktq *pq, int *prec_out)
 {
 	int prec;
@@ -460,17 +472,18 @@ pktq_peek_tail(struct pktq *pq, int *prec_out)
 	return (pq->q[prec].tail);
 }
 
-void BCMFASTPATH
-pktq_flush(osl_t *osh, struct pktq *pq, bool dir)
+void
+pktq_flush(osl_t *osh, struct pktq *pq, bool dir, ifpkt_cb_t fn, int arg)
 {
 	int prec;
 	for (prec = 0; prec < pq->num_prec; prec++)
-		pktq_pflush(osh, pq, prec, dir);
-	ASSERT(pq->len == 0);
+		pktq_pflush(osh, pq, prec, dir, fn, arg);
+	if (fn == NULL)
+		ASSERT(pq->len == 0);
 }
 
 /* Return sum of lengths of a specific set of precedences */
-int BCMFASTPATH
+int
 pktq_mlen(struct pktq *pq, uint prec_bmp)
 {
 	int prec, len;
@@ -523,8 +536,13 @@ pktq_mdeq(struct pktq *pq, uint prec_bmp, int *prec_out)
 }
 #endif /* BCMDRIVER */
 
-
+#if !defined(BCMROMOFFLOAD) || defined(BMAC_ROML_SHARED_LIB)
+#if defined(BCMROMBUILD)
+const unsigned char BCMROMDATA(bcm_ctype)[] = {
+#else
 const unsigned char bcm_ctype[] = {
+#endif
+
 	_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,			/* 0-7 */
 	_BCM_C, _BCM_C|_BCM_S, _BCM_C|_BCM_S, _BCM_C|_BCM_S, _BCM_C|_BCM_S, _BCM_C|_BCM_S, _BCM_C,
 	_BCM_C,	/* 8-15 */
@@ -600,13 +618,13 @@ BCMROMFN(bcm_strtoul)(char *cp, char **endp, uint base)
 		result = result*base + value;
 		/* Detected overflow */
 		if (result < last_result && !minus)
-			return ((unsigned long) -1);
+			return (ulong)-1;
 		last_result = result;
 		cp++;
 	}
 
 	if (minus)
-		result = (ulong)(result * -1);
+		result = (ulong)(-(long)result);
 
 	if (endp)
 		*endp = (char *)cp;
@@ -667,6 +685,159 @@ BCMROMFN(bcmstrncat)(char *dest, const char *src, uint size)
 	return (dest);
 }
 
+
+/****************************************************************************
+* Function:   bcmstrtok
+*
+* Purpose:
+*  Tokenizes a string. This function is conceptually similiar to ANSI C strtok(),
+*  but allows strToken() to be used by different strings or callers at the same
+*  time. Each call modifies '*string' by substituting a NULL character for the
+*  first delimiter that is encountered, and updates 'string' to point to the char
+*  after the delimiter. Leading delimiters are skipped.
+*
+* Parameters:
+*  string      (mod) Ptr to string ptr, updated by token.
+*  delimiters  (in)  Set of delimiter characters.
+*  tokdelim    (out) Character that delimits the returned token. (May
+*                    be set to NULL if token delimiter is not required).
+*
+* Returns:  Pointer to the next token found. NULL when no more tokens are found.
+*****************************************************************************
+*/
+char *
+bcmstrtok(char **string, const char *delimiters, char *tokdelim)
+{
+	unsigned char *str;
+	unsigned long map[8];
+	int count;
+	char *nextoken;
+
+	if (tokdelim != NULL) {
+		/* Prime the token delimiter */
+		*tokdelim = '\0';
+	}
+
+	/* Clear control map */
+	for (count = 0; count < 8; count++) {
+		map[count] = 0;
+	}
+
+	/* Set bits in delimiter table */
+	do {
+		map[*delimiters >> 5] |= (1 << (*delimiters & 31));
+	}
+	while (*delimiters++);
+
+	str = (unsigned char*)*string;
+
+	/* Find beginning of token (skip over leading delimiters). Note that
+	 * there is no token iff this loop sets str to point to the terminal
+	 * null (*str == '\0')
+	 */
+	while (((map[*str >> 5] & (1 << (*str & 31))) && *str) || (*str == ' ')) {
+		str++;
+	}
+
+	nextoken = (char*)str;
+
+	/* Find the end of the token. If it is not the end of the string,
+	 * put a null there.
+	 */
+	for (; *str; str++) {
+		if (map[*str >> 5] & (1 << (*str & 31))) {
+			if (tokdelim != NULL) {
+				*tokdelim = *str;
+			}
+
+			*str++ = '\0';
+			break;
+		}
+	}
+
+	*string = (char*)str;
+
+	/* Determine if a token has been found. */
+	if (nextoken == (char *) str) {
+		return NULL;
+	}
+	else {
+		return nextoken;
+	}
+}
+
+
+#define xToLower(C) \
+	((C >= 'A' && C <= 'Z') ? (char)((int)C - (int)'A' + (int)'a') : C)
+
+
+/****************************************************************************
+* Function:   bcmstricmp
+*
+* Purpose:    Compare to strings case insensitively.
+*
+* Parameters: s1 (in) First string to compare.
+*             s2 (in) Second string to compare.
+*
+* Returns:    Return 0 if the two strings are equal, -1 if t1 < t2 and 1 if
+*             t1 > t2, when ignoring case sensitivity.
+*****************************************************************************
+*/
+int
+bcmstricmp(const char *s1, const char *s2)
+{
+	char dc, sc;
+
+	while (*s2 && *s1) {
+		dc = xToLower(*s1);
+		sc = xToLower(*s2);
+		if (dc < sc) return -1;
+		if (dc > sc) return 1;
+		s1++;
+		s2++;
+	}
+
+	if (*s1 && !*s2) return 1;
+	if (!*s1 && *s2) return -1;
+	return 0;
+}
+
+
+/****************************************************************************
+* Function:   bcmstrnicmp
+*
+* Purpose:    Compare to strings case insensitively, upto a max of 'cnt'
+*             characters.
+*
+* Parameters: s1  (in) First string to compare.
+*             s2  (in) Second string to compare.
+*             cnt (in) Max characters to compare.
+*
+* Returns:    Return 0 if the two strings are equal, -1 if t1 < t2 and 1 if
+*             t1 > t2, when ignoring case sensitivity.
+*****************************************************************************
+*/
+int
+bcmstrnicmp(const char* s1, const char* s2, int cnt)
+{
+	char dc, sc;
+
+	while (*s2 && *s1 && cnt) {
+		dc = xToLower(*s1);
+		sc = xToLower(*s2);
+		if (dc < sc) return -1;
+		if (dc > sc) return 1;
+		s1++;
+		s2++;
+		cnt--;
+	}
+
+	if (!cnt) return 0;
+	if (*s1 && !*s2) return 1;
+	if (!*s1 && *s2) return -1;
+	return 0;
+}
+
 /* parse a xx:xx:xx:xx:xx:xx format ethernet address */
 int
 BCMROMFN(bcm_ether_atoe)(char *p, struct ether_addr *ea)
@@ -681,6 +852,7 @@ BCMROMFN(bcm_ether_atoe)(char *p, struct ether_addr *ea)
 
 	return (i == 6);
 }
+#endif	/* (!defined(BCMROMOFFLOAD)) || defined(BMAC_ROML_SHARED_LIB) */
 
 #if defined(CONFIG_USBRNDIS_RETAIL) || defined(NDIS_MINIPORT_DRIVER)
 /* registry routine buffer preparation utility functions:
@@ -688,12 +860,7 @@ BCMROMFN(bcm_ether_atoe)(char *p, struct ether_addr *ea)
  * of bytes copied. Minimum bytes copied is null char(1)/wchar(2)
  */
 ulong
-wchar2ascii(
-	char *abuf,
-	ushort *wbuf,
-	ushort wbuflen,
-	ulong abuflen
-)
+wchar2ascii(char *abuf, ushort *wbuf, ushort wbuflen, ulong abuflen)
 {
 	ulong copyct = 1;
 	ushort i;
@@ -753,7 +920,7 @@ bcm_mdelay(uint ms)
 char *
 getvar(char *vars, const char *name)
 {
-#ifdef	_MINOSL_
+#ifdef _MINOSL_
 	return NULL;
 #else
 	char *s;
@@ -777,7 +944,7 @@ getvar(char *vars, const char *name)
 
 	/* then query nvram */
 	return (nvram_get(name));
-#endif	/* _MINOSL_ */
+#endif	/* defined(_MINOSL_) */
 }
 
 /*
@@ -851,10 +1018,8 @@ getgpiopin(char *vars, char *pin_name, uint def_pin)
 			def_pin =  GPIO_PIN_NOTDEFINED;
 		}
 	}
-
 	return def_pin;
 }
-
 
 #if defined(BCMPERFSTATS) || defined(BCMTSTAMPEDLOGS)
 
@@ -932,7 +1097,7 @@ bcmstats(char *fmt)
 void
 bcmdumplog(char *buf, int size)
 {
-	char *limit, *line;
+	char *limit;
 	int j = 0;
 	int num;
 
@@ -949,10 +1114,10 @@ bcmdumplog(char *buf, int size)
 	for (j = 0; j < num && (buf < limit); readi = (readi + 1) % LOGSIZE, j++) {
 		if (logtab[readi].fmt == NULL)
 		    continue;
-		line = buf;
-		buf += sprintf(buf, "%d\t", logtab[readi].cycles);
-		buf += sprintf(buf, logtab[readi].fmt, logtab[readi].a1, logtab[readi].a2);
-		buf += sprintf(buf, "\n");
+		buf += snprintf(buf, (limit - buf), "%d\t", logtab[readi].cycles);
+		buf += snprintf(buf, (limit - buf), logtab[readi].fmt, logtab[readi].a1,
+		                logtab[readi].a2);
+		buf += snprintf(buf, (limit - buf), "\n");
 	}
 
 }
@@ -1014,7 +1179,8 @@ bcmtslog(uint32 tstamp, char *fmt, uint a1, uint a2)
 }
 
 /* Print out a microsecond timestamp as "sec.ms.us " */
-void bcmprinttstamp(uint32 ticks)
+void
+bcmprinttstamp(uint32 ticks)
 {
 	uint us, ms, sec;
 
@@ -1047,6 +1213,20 @@ bcmprinttslogs(void)
 }
 #endif	/* BCMTSTAMPEDLOGS */
 
+#if defined(DHD_DEBUG)
+/* pretty hex print a pkt buffer chain */
+void
+prpkt(const char *msg, osl_t *osh, void *p0)
+{
+	void *p;
+
+	if (msg && (msg[0] != '\0'))
+		printf("%s:\n", msg);
+
+	for (p = p0; p; p = PKTNEXT(osh, p))
+		prhex(NULL, PKTDATA(osh, p), PKTLEN(osh, p));
+}
+#endif	
 
 /* Takes an Ethernet frame and sets out-of-bound PKTPRIO.
  * Also updates the inplace vlan tag if requested.
@@ -1077,7 +1257,7 @@ pktsetprio(void *pkt, bool update_vtag)
 
 		if (ntoh16(evh->ether_type) == ETHER_TYPE_IP) {
 			uint8 *ip_body = pktdata + sizeof(struct ethervlan_header);
-			uint8 tos_tc = IP_TOS(ip_body);
+			uint8 tos_tc = IP_TOS46(ip_body);
 			dscp_prio = (int)(tos_tc >> IPV4_TOS_PREC_SHIFT);
 		}
 
@@ -1089,7 +1269,7 @@ pktsetprio(void *pkt, bool update_vtag)
 			priority = vlan_prio;
 			rc |= PKTPRIO_VLAN;
 		}
-		/* 
+		/*
 		 * If the DSCP priority is not the same as the VLAN priority,
 		 * then overwrite the priority field in the vlan tag, with the
 		 * DSCP priority value. This is required for Linux APs because
@@ -1104,7 +1284,7 @@ pktsetprio(void *pkt, bool update_vtag)
 		}
 	} else if (ntoh16(eh->ether_type) == ETHER_TYPE_IP) {
 		uint8 *ip_body = pktdata + sizeof(struct ether_header);
-		uint8 tos_tc = IP_TOS(ip_body);
+		uint8 tos_tc = IP_TOS46(ip_body);
 		priority = (int)(tos_tc >> IPV4_TOS_PREC_SHIFT);
 		rc |= PKTPRIO_DSCP;
 	}
@@ -1181,8 +1361,8 @@ bcm_nvram_vars(uint *length)
 int
 BCMINITFN(bcm_nvram_cache)(void *sih)
 {
-	void *osh;
 	int ret = 0;
+	void *osh;
 	char *flash = NULL;
 
 	if (vars_len >= 0) {
@@ -1221,6 +1401,175 @@ exit:
 }
 #endif /* WLC_LOW */
 
+#ifdef BCMDBG_PKT       /* pkt logging for debugging */
+/* Add a packet to the pktlist */
+void
+pktlist_add(pktlist_info_t *pktlist, void *pkt, int line, char *file)
+{
+	uint16 i;
+	char* basename;
+#ifdef BCMDBG_PTRACE
+	uint16 *idx = PKTLIST_IDX(pkt);
+#endif /* BCMDBG_PTRACE */
+
+	ASSERT(pktlist->count < PKTLIST_SIZE);
+
+	/* Verify the packet is not already part of the list */
+	for (i = 0; i < pktlist->count; i++) {
+		if (pktlist->list[i].pkt == pkt) {
+			printf("pkt %p already on pktlist\n", pkt); 
+			pktlist_dump(pktlist, NULL);
+			ASSERT(0);
+		}
+	}
+	pktlist->list[pktlist->count].pkt = pkt;
+	pktlist->list[pktlist->count].line = line;
+
+	basename = strrchr(file, '/');
+	if (basename)
+		basename++;
+	else
+		basename = file;
+	pktlist->list[pktlist->count].file = basename;
+#ifdef BCMDBG_PTRACE
+	*idx = pktlist->count;
+	bzero((void *) pktlist->list[pktlist->count].pkt_trace, PKTTRACE_MAX_BYTES);
+#endif /* BCMDBG_PTRACE */
+	pktlist->count++;
+
+	return;
+}
+
+/* Remove a packet from the pktlist */
+void
+pktlist_remove(pktlist_info_t *pktlist, void *pkt)
+{
+	uint16 i;
+	uint16 num = pktlist->count;
+#ifdef BCMDBG_PTRACE
+	uint16 *idx = PKTLIST_IDX(pkt);
+
+	ASSERT((*idx) < pktlist->count);
+#endif /* BCMDBG_PTRACE */
+
+	/* find the index where pkt exists */
+	for (i = 0; i < num; i++)
+	{
+		/* check for the existence of pkt in the list */
+		if (pktlist->list[i].pkt == pkt)
+		{
+#ifdef BCMDBG_PTRACE
+			ASSERT((*idx) == i);
+#endif /* BCMDBG_PTRACE */
+			/* replace with the last element */
+			pktlist->list[i].pkt = pktlist->list[num-1].pkt;
+			pktlist->list[i].line = pktlist->list[num-1].line;
+			pktlist->list[i].file = pktlist->list[num-1].file;
+#ifdef BCMDBG_PTRACE
+			memcpy(pktlist->list[i].pkt_trace, pktlist->list[num-1].pkt_trace,
+				PKTTRACE_MAX_BYTES);
+			idx = PKTLIST_IDX(pktlist->list[i].pkt);
+			*idx = i;
+#endif /* BCMDBG_PTRACE */
+			pktlist->count--;
+			return;
+		}
+	}
+	ASSERT(0);
+}
+
+#ifdef BCMDBG_PTRACE
+void
+pktlist_trace(pktlist_info_t *pktlist, void *pkt, uint16 bit)
+{
+	uint16 *idx = PKTLIST_IDX(pkt);
+
+	ASSERT(((*idx) < pktlist->count) && (bit < PKTTRACE_MAX_BITS));
+	ASSERT(pktlist->list[(*idx)].pkt == pkt);
+
+	pktlist->list[(*idx)].pkt_trace[bit/NBBY] |= (1 << ((bit)%NBBY));
+
+}
+#endif /* BCMDBG_PTRACE */
+
+/* Dump the pktlist (and the contents of each packet if 'data'
+ * is set). 'buf' should be large enough
+ */
+
+char *
+pktlist_dump(pktlist_info_t *pktlist, char *buf)
+{
+	char *obuf = buf;
+	uint16 i;
+
+	if (buf != NULL)
+		buf += sprintf(buf, "Packet list dump:\n");
+	else
+		printf("Packet list dump:\n");
+
+	for (i = 0; i < (pktlist->count); i++) {
+		if (buf != NULL)
+			buf += sprintf(buf, "Pkt_addr: 0x%p Line: %d File: %s\t",
+				pktlist->list[i].pkt, pktlist->list[i].line,
+				pktlist->list[i].file);
+		else
+			printf("Pkt_addr: 0x%p Line: %d File: %s\t", pktlist->list[i].pkt,
+				pktlist->list[i].line, pktlist->list[i].file);
+
+/* #ifdef NOTDEF  Remove this ifdef to print pkttag and pktdata */
+		if (buf != NULL) {
+			if (PKTTAG(pktlist->list[i].pkt)) {
+				/* Print pkttag */
+				buf += sprintf(buf, "Pkttag(in hex): ");
+				buf += bcm_format_hex(buf, PKTTAG(pktlist->list[i].pkt),
+					OSL_PKTTAG_SZ);
+			}
+			buf += sprintf(buf, "Pktdata(in hex): ");
+			buf += bcm_format_hex(buf, PKTDATA(NULL, pktlist->list[i].pkt),
+			                      PKTLEN(NULL, pktlist->list[i].pkt));
+		} else {
+			void *pkt = pktlist->list[i].pkt, *npkt;
+
+			printf("Pkt[%d] Dump:\n", i);
+			while (pkt) {
+				int hroom, pktlen;
+				char *src;
+#ifdef BCMDBG_PTRACE
+				uint16 *idx = PKTLIST_IDX(pkt);
+
+				ASSERT((*idx) < pktlist->count);
+				prhex("Pkt Trace (in hex):", pktlist->list[(*idx)].pkt_trace,
+					PKTTRACE_MAX_BYTES);
+#endif /* BCMDBG_PTRACE */
+				npkt = (void *)PKTNEXT(NULL, pkt);
+				PKTSETNEXT(NULL, pkt, NULL);
+
+				src = (char *)(PKTTAG(pkt));
+				pktlen = PKTLEN(NULL, pkt);
+				hroom = PKTHEADROOM(NULL, pkt);
+
+				printf("Pkttag_addr: %p\n", src);
+				if (src)
+					prhex("Pkttag(in hex): ", src, OSL_PKTTAG_SZ);
+				src = (char *) (PKTDATA(NULL, pkt));
+				printf("Pkthead_addr: %p len: %d\n", src - hroom, hroom);
+				prhex("Pkt headroom content(in hex): ", src - hroom, hroom);
+				printf("Pktdata_addr: %p len: %d\n", src, pktlen);
+				prhex("Pktdata(in hex): ", src, pktlen);
+
+				pkt = npkt;
+			}
+		}
+/* #endif  NOTDEF */
+
+		if (buf != NULL)
+			buf += sprintf(buf, "\n");
+		else
+			printf("\n");
+	}
+	return obuf;
+}
+#endif  /* BCMDBG_PKT */
 
 /* iovar table lookup */
 const bcm_iovar_t*
@@ -1296,6 +1645,7 @@ bcm_iovar_lencheck(const bcm_iovar_t *vi, void *arg, int len, bool set)
 #endif	/* BCMDRIVER */
 
 
+#ifndef	BCMROMOFFLOAD
 /*******************************************************************************
  * crc8
  *
@@ -1508,12 +1858,12 @@ static const uint32 crc32_table[256] = {
     0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
 };
 
+/*
+ * crc input is CRC32_INIT_VALUE for a fresh start, or previous return value if
+ * accumulating over multiple pieces.
+ */
 uint32
-BCMROMFN(hndcrc32)(
-    uint8 *pdata,  /* pointer to array of data to process */
-    uint   nbytes, /* number of input data bytes to process */
-    uint32 crc     /* either CRC32_INIT_VALUE or previous return value */
-)
+BCMROMFN(hndcrc32)(uint8 *pdata, uint nbytes, uint32 crc)
 {
 	uint8 *pend;
 #ifdef __mips__
@@ -1555,7 +1905,8 @@ BCMROMFN(hndcrc32)(
 #define CBUFSIZ 	(CLEN+4)
 #define CNBUFS		5 /* # of bufs */
 
-void testcrc32(void)
+void
+testcrc32(void)
 {
 	uint j, k, l;
 	uint8 *buf;
@@ -1676,15 +2027,17 @@ BCMROMFN(bcm_parse_ordered_tlvs)(void *buf, int buflen, uint key)
 	}
 	return NULL;
 }
+#endif	/* !BCMROMOFFLOAD */
 
-#if defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC)
+#if defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || \
+	defined(BCMDBG_DUMP) || defined(DHD_DEBUG)
 int
 bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len)
 {
 	int i;
 	char* p = buf;
 	char hexstr[16];
-	int slen = 0;
+	int slen = 0, nlen = 0;
 	uint32 bit;
 	const char* name;
 
@@ -1692,34 +2045,40 @@ bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len)
 		return 0;
 
 	buf[0] = '\0';
-	len -= 1;
 
 	for (i = 0; flags != 0; i++) {
 		bit = bd[i].bit;
 		name = bd[i].name;
-		if (bit == 0 && flags) {
+		if (bit == 0 && flags != 0) {
 			/* print any unnamed bits */
-			sprintf(hexstr, "0x%X", flags);
+			snprintf(hexstr, 16, "0x%X", flags);
 			name = hexstr;
 			flags = 0;	/* exit loop */
 		} else if ((flags & bit) == 0)
 			continue;
-		slen += strlen(name);
-		if (len < slen)
-			break;
-		if (p != buf) p += sprintf(p, " "); /* btwn flag space */
-		strcpy(p, name);
-		p += strlen(name);
 		flags &= ~bit;
+		nlen = strlen(name);
+		slen += nlen;
+		/* count btwn flag space */
+		if (flags != 0)
+			slen += 1;
+		/* need NULL char as well */
+		if (len <= slen)
+			break;
+		/* copy NULL char but don't count it */
+		strncpy(p, name, nlen + 1);
+		p += nlen;
+		/* copy btwn flag space and NULL char */
+		if (flags != 0)
+			p += snprintf(p, 2, " ");
 		len -= slen;
-		slen = 1;	/* account for btwn flag space */
 	}
 
 	/* indicate the str was too short */
 	if (flags != 0) {
-		if (len == 0)
-			p--;	/* overwrite last char */
-		p += sprintf(p, ">");
+		if (len < 2)
+			p -= 2 - len;	/* overwrite last char */
+		p += snprintf(p, 2, ">");
 	}
 
 	return (int)(p - buf);
@@ -1734,7 +2093,7 @@ bcm_format_hex(char *str, const void *bytes, int len)
 	const uint8 *src = (const uint8*)bytes;
 
 	for (i = 0; i < len; i++) {
-		p += sprintf(p, "%02X", *src);
+		p += snprintf(p, 3, "%02X", *src);
 		src++;
 	}
 	return (int)(p - str);
@@ -1745,6 +2104,8 @@ void
 prhex(const char *msg, uchar *buf, uint nbytes)
 {
 	char line[128], *p;
+	int len = sizeof(line);
+	int nchar;
 	uint i;
 
 	if (msg && (msg[0] != '\0'))
@@ -1753,12 +2114,20 @@ prhex(const char *msg, uchar *buf, uint nbytes)
 	p = line;
 	for (i = 0; i < nbytes; i++) {
 		if (i % 16 == 0) {
-			p += sprintf(p, "  %04d: ", i);	/* line prefix */
+			nchar = snprintf(p, len, "  %04d: ", i);	/* line prefix */
+			p += nchar;
+			len -= nchar;
 		}
-		p += sprintf(p, "%02x ", buf[i]);
+		if (len > 0) {
+			nchar = snprintf(p, len, "%02x ", buf[i]);
+			p += nchar;
+			len -= nchar;
+		}
+
 		if (i % 16 == 15) {
 			printf("%s\n", line);		/* flush line */
 			p = line;
+			len = sizeof(line);
 		}
 	}
 
@@ -1768,13 +2137,37 @@ prhex(const char *msg, uchar *buf, uint nbytes)
 }
 #endif 
 
+static const char *crypto_algo_names[] = {
+	"NONE",
+	"WEP1",
+	"TKIP",
+	"WEP128",
+	"AES_CCM",
+	"AES_OCB_MSDU",
+	"AES_OCB_MPDU",
+	"NALG"
+	"UNDEF",
+	"UNDEF",
+	"UNDEF",
+#ifdef BCMWAPI_WPI
+	"WAPI",
+#endif /* BCMWAPI_WPI */
+	"UNDEF"
+};
+
+const char *
+bcm_crypto_algo_name(uint algo)
+{
+	return (algo < ARRAYSIZE(crypto_algo_names)) ? crypto_algo_names[algo] : "ERR";
+}
+
 
 char *
 bcm_chipname(uint chipid, char *buf, uint len)
 {
 	const char *fmt;
 
-	fmt = (chipid > 0xa000) ? "%d" : "%x";
+	fmt = ((chipid > 0xa000) || (chipid < 0x4000)) ? "%d" : "%x";
 	snprintf(buf, len, fmt, chipid);
 	return buf;
 }
@@ -1865,6 +2258,7 @@ bcm_mkiovar(char *name, char *data, uint datalen, char *buf, uint buflen)
 	return len;
 }
 
+#ifndef BCMROMOFFLOAD
 
 /* Quarter dBm units to mW
  * Table starts at QDBM_OFFSET, so the first entry is mW for qdBm=153
@@ -1967,6 +2361,7 @@ BCMROMFN(bcm_bitcount)(uint8 *bitmap, uint length)
 	return bitcount;
 }
 
+#endif /* !BCMROMOFFLOAD */
 
 #ifdef BCMDRIVER
 
@@ -2003,4 +2398,78 @@ bcm_bprintf(struct bcmstrbuf *b, const char *fmt, ...)
 
 	return r;
 }
+
+void
+bcm_inc_bytes(uchar *num, int num_bytes, uint8 amount)
+{
+	int i;
+
+	for (i = 0; i < num_bytes; i++) {
+		num[i] += amount;
+		if (num[i] >= amount)
+			break;
+		amount = 1;
+	}
+}
+
+int
+bcm_cmp_bytes(uchar *arg1, uchar *arg2, uint8 nbytes)
+{
+	int i;
+
+	for (i = nbytes - 1; i >= 0; i--) {
+		if (arg1[i] != arg2[i])
+			return (arg1[i] - arg2[i]);
+	}
+	return 0;
+}
+
+void
+bcm_print_bytes(char *name, const uchar *data, int len)
+{
+	int i;
+	int per_line = 0;
+
+	printf("%s: %d \n", name ? name : "", len);
+	for (i = 0; i < len; i++) {
+		printf("%02x ", *data++);
+		per_line++;
+		if (per_line == 16) {
+			per_line = 0;
+			printf("\n");
+		}
+	}
+	printf("\n");
+}
+#if defined(WLTINYDUMP) || defined(WLMSG_INFORM) || defined(WLMSG_ASSOC) || \
+	defined(WLMSG_PRPKT) || defined(WLMSG_WSEC)
+#define SSID_FMT_BUF_LEN	((4 * DOT11_MAX_SSID_LEN) + 1)
+
+int
+bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len)
+{
+	uint i, c;
+	char *p = buf;
+	char *endp = buf + SSID_FMT_BUF_LEN;
+
+	if (ssid_len > DOT11_MAX_SSID_LEN) ssid_len = DOT11_MAX_SSID_LEN;
+
+	for (i = 0; i < ssid_len; i++) {
+		c = (uint)ssid[i];
+		if (c == '\\') {
+			*p++ = '\\';
+			*p++ = '\\';
+		} else if (bcm_isprint((uchar)c)) {
+			*p++ = (char)c;
+		} else {
+			p += snprintf(p, (endp - p), "\\x%02X", c);
+		}
+	}
+	*p = '\0';
+	ASSERT(p < endp);
+
+	return (int)(p - buf);
+}
+#endif 
+
 #endif /* BCMDRIVER */

@@ -1,7 +1,7 @@
 /*
  * HND Minimal OS Abstraction Layer.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: min_osl.h,v 13.22.2.1.6.2 2008/11/19 01:45:21 Exp $
+ * $Id: min_osl.h,v 13.28.30.2 2010/03/18 02:03:55 Exp $
  */
 
 #ifndef _min_osl_h_
@@ -122,12 +122,24 @@ extern void *malloc(uint size);
 #define	OSL_CACHED(va)		((void *)(va))
 #endif
 
+#ifdef __mips__
+#define OSL_PREF_RANGE_LD(va, sz) prefetch_range_PREF_LOAD_RETAINED(va, sz)
+#define OSL_PREF_RANGE_ST(va, sz) prefetch_range_PREF_STORE_RETAINED(va, sz)
+#else /* __mips__ */
+#define OSL_PREF_RANGE_LD(va, sz)
+#define OSL_PREF_RANGE_ST(va, sz)
+#endif /* __mips__ */
+
 /* host/bus architecture-specific address byte swap */
 #define BUS_SWAP32(v)		(v)
 
 /* microsecond delay */
 #define	OSL_DELAY(usec)		udelay(usec)
 extern void udelay(uint32 usec);
+
+/* get processor cycle count */
+#define OSL_GETCYCLES(x)	((x) = osl_getcycles())
+extern uint32 osl_getcycles(void);
 
 /* map/unmap physical to virtual I/O */
 #define	REG_MAP(pa, size)	(OSL_UNCACHED(pa))
@@ -173,7 +185,7 @@ extern int osl_error(int);
 #define PKTFRMNATIVE(osh, lb)		((void *)NULL)
 #define PKTTONATIVE(osh, p)		((struct lbuf *)NULL)
 
-/* get system up time in miliseconds */
-#define OSL_SYSUPTIME()			(0)
+/* Global ASSERT type flag */
+extern uint32 g_assert_type;
 
 #endif	/* _min_osl_h_ */

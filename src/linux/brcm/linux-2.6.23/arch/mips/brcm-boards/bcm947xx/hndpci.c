@@ -1,7 +1,7 @@
 /*
  * Low-Level PCI and SI support for BCM47xx
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndpci.c,v 1.36.2.3.6.5 2009/01/22 22:07:12 Exp $
+ * $Id: hndpci.c,v 1.44.2.2 2010/02/09 10:07:47 Exp $
  */
 
 #include <typedefs.h>
@@ -31,7 +31,11 @@
 #include "siutils_priv.h"
 
 /* debug/trace */
+#ifdef BCMDBG_PCI
+#define	PCI_MSG(args)	printf args
+#else
 #define	PCI_MSG(args)
+#endif
 
 /* to free some function memory after boot */
 #ifndef linux
@@ -318,8 +322,13 @@ extpci_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *bu
 			              PCIE_CONFIG_INDADDR(func, off), val);
 
 		si_setcoreidx(sih, coreidx);
-	} else
+	} else {
 		W_REG(osh, reg, val);
+
+		if ((sih->chip == BCM4716_CHIP_ID) || (sih->chip == BCM4748_CHIP_ID))
+			(void)R_REG(osh, reg);
+	}
+
 
 done:
 	if (reg && addr)
@@ -659,7 +668,7 @@ hndpci_init_pci(si_t *sih)
 		/* On 4716 (and other AXI chips?) make sure the slave wrapper
 		 * is also put in reset.
 		 */
-		if (chip == BCM4716_CHIP_ID) {
+		if ((chip == BCM4716_CHIP_ID) || (chip == BCM4748_CHIP_ID)) {
 			uint32 *resetctrl;
 
 			resetctrl = (uint32 *)OSL_UNCACHED(SI_WRAP_BASE + (9 * SI_CORE_SIZE) +
@@ -731,7 +740,7 @@ hndpci_init_pci(si_t *sih)
 			 * as mips can't generate 64-bit address on the
 			 * backplane.
 			 */
-			if (chip == BCM4716_CHIP_ID)
+			if ((chip == BCM4716_CHIP_ID) || (chip == BCM4748_CHIP_ID))
 				W_REG(osh, &pcie->sbtopcie0, SBTOPCIE_MEM | SI_PCI_MEM);
 			else
 				W_REG(osh, &pcie->sbtopcie0, SBTOPCIE_IO);
@@ -864,7 +873,11 @@ hndpci_init_regions(si_t *sih, uint func, pci_config_regs *cfg, si_bar_cfg_t *ba
 		} else {
 			/* In AI chips EHCI is addrspace 0, OHCI is 1 */
 			base1 = base;
-			base = htol32(si_addrspace(sih, 1));
+			if (sih->chip == BCM5357_CHIP_ID &&
+			    sih->chiprev == 0)
+				base = 0x18009000;
+			else
+				base = htol32(si_addrspace(sih, 1));
 		}
 
 		i = bar->n = 1;
@@ -929,6 +942,14 @@ hndpci_init_cores(si_t *sih)
 				break;
 		if (i < pci_banned)
 			continue;
+
+		if (coreid == USB20H_CORE_ID) {
+			if ((CHIPID(sih->chip) == BCM5357_CHIP_ID) &&
+				(sih->chippkg == BCM5357_PKG_ID)) {
+				printf("PCI: skip disabled USB20H\n");
+				continue;
+			}
+		}
 
 		for (func = 0; func < MAXFUNCS; ++func) {
 			/* Make sure we won't go beyond the limit */

@@ -1,7 +1,7 @@
 /*
  * Table that encodes the srom formats for PCI/PCIe NICs.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: bcmsrom_tbl.h,v 13.4.8.20 2008/10/17 17:52:06 Exp $
+ * $Id: bcmsrom_tbl.h,v 13.32.4.10 2010/04/30 04:33:41 Exp $
  */
 
 #ifndef	_bcmsrom_tbl_h_
@@ -33,6 +33,8 @@ typedef struct {
 #define	SRFL_CCODE	0x10		/* value is in country code format */
 #define	SRFL_ETHADDR	0x20		/* value is an Ethernet address */
 #define SRFL_LEDDC	0x40		/* value is an LED duty cycle */
+#define SRFL_NOVAR	0x80		/* do not generate a nvram param, entry is for mfgc */
+
 
 /* Assumptions:
  * - Ethernet address spans across 3 consective words
@@ -48,6 +50,7 @@ typedef struct {
  */
 
 static const sromvar_t pci_sromvars[] = {
+	{"devid",	0xffffff00,	SRFL_PRHEX|SRFL_NOVAR,	PCI_F0DEVID,	0xffff},
 	{"boardrev",	0x0000000e,	SRFL_PRHEX,	SROM_AABREV,		SROM_BR_MASK},
 	{"boardrev",	0x000000f0,	SRFL_PRHEX,	SROM4_BREV,		0xffff},
 	{"boardrev",	0xffffff00,	SRFL_PRHEX,	SROM8_BREV,		0xffff},
@@ -209,8 +212,40 @@ static const sromvar_t pci_sromvars[] = {
 	{"txpid5gha1",	0x000000f0,	0,		SROM4_TXPID5GH,		0xff00},
 	{"txpid5gha2",	0x000000f0,	0,		SROM4_TXPID5GH + 1,	0x00ff},
 	{"txpid5gha3",	0x000000f0,	0,		SROM4_TXPID5GH + 1,	0xff00},
+
+	{"ccode",	0x0000000f,	SRFL_CCODE,	SROM_CCODE,		0xffff},
+	{"ccode",	0x00000010,	SRFL_CCODE,	SROM4_CCODE,		0xffff},
+	{"ccode",	0x000000e0,	SRFL_CCODE,	SROM5_CCODE,		0xffff},
+	{"ccode",	0xffffff00,	SRFL_CCODE,	SROM8_CCODE,		0xffff},
+	{"macaddr",	0xffffff00,	SRFL_ETHADDR,	SROM8_MACHI,		0xffff},
+	{"macaddr",	0x000000e0,	SRFL_ETHADDR,	SROM5_MACHI,		0xffff},
+	{"macaddr",	0x00000010,	SRFL_ETHADDR,	SROM4_MACHI,		0xffff},
+	{"macaddr",	0x00000008,	SRFL_ETHADDR,	SROM3_MACHI,		0xffff},
+	{"il0macaddr",	0x00000007,	SRFL_ETHADDR,	SROM_MACHI_IL0,		0xffff},
+	{"et1macaddr",	0x00000007,	SRFL_ETHADDR,	SROM_MACHI_ET1,		0xffff},
+	{"leddc",	0xffffff00,	SRFL_NOFFS|SRFL_LEDDC,	SROM8_LEDDC,	0xffff},
+	{"leddc",	0x000000e0,	SRFL_NOFFS|SRFL_LEDDC,	SROM5_LEDDC,	0xffff},
+	{"leddc",	0x00000010,	SRFL_NOFFS|SRFL_LEDDC,	SROM4_LEDDC,	0xffff},
+	{"leddc",	0x00000008,	SRFL_NOFFS|SRFL_LEDDC,	SROM3_LEDDC,	0xffff},
+
+	{"tempthresh",	0xffffff00,	0,		SROM8_THERMAL,		0xff00},
+	{"tempoffset",	0xffffff00,	0,		SROM8_THERMAL,		0x00ff},
+	{"rawtempsense", 0xffffff00,	SRFL_PRHEX,	SROM8_MPWR_RAWTS,	0x01ff},
+	{"measpower",	0xffffff00,	SRFL_PRHEX,	SROM8_MPWR_RAWTS,	0xfe00},
+	{"tempsense_slope",	0xffffff00,	SRFL_PRHEX, 	SROM8_TS_SLP_OPT_CORRX,	0x00ff},
+	{"tempcorrx",	0xffffff00,	SRFL_PRHEX, 	SROM8_TS_SLP_OPT_CORRX,	0xfc00},
+	{"tempsense_option",	0xffffff00,	SRFL_PRHEX,	SROM8_TS_SLP_OPT_CORRX,	0x0300},
+	{"freqoffset_corr",	0xffffff00,	SRFL_PRHEX,	SROM8_FOC_HWIQ_IQSWP,	0x000f},
+	{"iqcal_swp_dis",	0xffffff00,	SRFL_PRHEX,	SROM8_FOC_HWIQ_IQSWP,	0x0010},
+	{"hw_iqcal_en",	0xffffff00,	SRFL_PRHEX,	SROM8_FOC_HWIQ_IQSWP,	0x0020},
+	{"elna2g",      0xffffff00,     0,              SROM8_EXTLNAGAIN,       0x00ff},
+	{"elna5g",      0xffffff00,     0,              SROM8_EXTLNAGAIN,       0xff00},
+	{"phycal_tempdelta",	0xffffff00,	0,	SROM8_PHYCAL_TEMPDELTA,	0x00ff},
+	{"temps_period",	0xffffff00,	0,	SROM8_PHYCAL_TEMPDELTA,	0x0f00},
+	{"temps_hysteresis",	0xffffff00,	0,	SROM8_PHYCAL_TEMPDELTA,	0xf000},
+
 	{"cck2gpo",	0x000000f0,	0,		SROM4_2G_CCKPO,		0xffff},
-	{"cck2gpo",	0xffffff00,	0,		SROM8_2G_CCKPO,		0xffff},
+	{"cck2gpo",	0x00000100,	0,		SROM8_2G_CCKPO,		0xffff},
 	{"ofdm2gpo",	0x000000f0,	SRFL_MORE,	SROM4_2G_OFDMPO,	0xffff},
 	{"",		0,		0,		SROM4_2G_OFDMPO + 1,	0xffff},
 	{"ofdm5gpo",	0x000000f0,	SRFL_MORE,	SROM4_5G_OFDMPO,	0xffff},
@@ -219,13 +254,13 @@ static const sromvar_t pci_sromvars[] = {
 	{"",		0,		0,		SROM4_5GL_OFDMPO + 1,	0xffff},
 	{"ofdm5ghpo",	0x000000f0,	SRFL_MORE,	SROM4_5GH_OFDMPO,	0xffff},
 	{"",		0,		0,		SROM4_5GH_OFDMPO + 1,	0xffff},
-	{"ofdm2gpo",	0xffffff00,	SRFL_MORE,	SROM8_2G_OFDMPO,	0xffff},
+	{"ofdm2gpo",	0x00000100,	SRFL_MORE,	SROM8_2G_OFDMPO,	0xffff},
 	{"",		0,		0,		SROM8_2G_OFDMPO + 1,	0xffff},
-	{"ofdm5gpo",	0xffffff00,	SRFL_MORE,	SROM8_5G_OFDMPO,	0xffff},
+	{"ofdm5gpo",	0x00000100,	SRFL_MORE,	SROM8_5G_OFDMPO,	0xffff},
 	{"",		0,		0,		SROM8_5G_OFDMPO + 1,	0xffff},
-	{"ofdm5glpo",	0xffffff00,	SRFL_MORE,	SROM8_5GL_OFDMPO,	0xffff},
+	{"ofdm5glpo",	0x00000100,	SRFL_MORE,	SROM8_5GL_OFDMPO,	0xffff},
 	{"",		0,		0,		SROM8_5GL_OFDMPO + 1,	0xffff},
-	{"ofdm5ghpo",	0xffffff00,	SRFL_MORE,	SROM8_5GH_OFDMPO,	0xffff},
+	{"ofdm5ghpo",	0x00000100,	SRFL_MORE,	SROM8_5GH_OFDMPO,	0xffff},
 	{"",		0,		0,		SROM8_5GH_OFDMPO + 1,	0xffff},
 	{"mcs2gpo0",	0x000000f0,	0,		SROM4_2G_MCSPO,		0xffff},
 	{"mcs2gpo1",	0x000000f0,	0,		SROM4_2G_MCSPO + 1,	0xffff},
@@ -259,60 +294,93 @@ static const sromvar_t pci_sromvars[] = {
 	{"mcs5ghpo5",	0x000000f0,	0,		SROM4_5GH_MCSPO + 5,	0xffff},
 	{"mcs5ghpo6",	0x000000f0,	0,		SROM4_5GH_MCSPO + 6,	0xffff},
 	{"mcs5ghpo7",	0x000000f0,	0,		SROM4_5GH_MCSPO + 7,	0xffff},
-	{"mcs2gpo0",	0xffffff00,	0,		SROM8_2G_MCSPO,		0xffff},
-	{"mcs2gpo1",	0xffffff00,	0,		SROM8_2G_MCSPO + 1,	0xffff},
-	{"mcs2gpo2",	0xffffff00,	0,		SROM8_2G_MCSPO + 2,	0xffff},
-	{"mcs2gpo3",	0xffffff00,	0,		SROM8_2G_MCSPO + 3,	0xffff},
-	{"mcs2gpo4",	0xffffff00,	0,		SROM8_2G_MCSPO + 4,	0xffff},
-	{"mcs2gpo5",	0xffffff00,	0,		SROM8_2G_MCSPO + 5,	0xffff},
-	{"mcs2gpo6",	0xffffff00,	0,		SROM8_2G_MCSPO + 6,	0xffff},
-	{"mcs2gpo7",	0xffffff00,	0,		SROM8_2G_MCSPO + 7,	0xffff},
-	{"mcs5gpo0",	0xffffff00,	0,		SROM8_5G_MCSPO,		0xffff},
-	{"mcs5gpo1",	0xffffff00,	0,		SROM8_5G_MCSPO + 1,	0xffff},
-	{"mcs5gpo2",	0xffffff00,	0,		SROM8_5G_MCSPO + 2,	0xffff},
-	{"mcs5gpo3",	0xffffff00,	0,		SROM8_5G_MCSPO + 3,	0xffff},
-	{"mcs5gpo4",	0xffffff00,	0,		SROM8_5G_MCSPO + 4,	0xffff},
-	{"mcs5gpo5",	0xffffff00,	0,		SROM8_5G_MCSPO + 5,	0xffff},
-	{"mcs5gpo6",	0xffffff00,	0,		SROM8_5G_MCSPO + 6,	0xffff},
-	{"mcs5gpo7",	0xffffff00,	0,		SROM8_5G_MCSPO + 7,	0xffff},
-	{"mcs5glpo0",	0xffffff00,	0,		SROM8_5GL_MCSPO,	0xffff},
-	{"mcs5glpo1",	0xffffff00,	0,		SROM8_5GL_MCSPO + 1,	0xffff},
-	{"mcs5glpo2",	0xffffff00,	0,		SROM8_5GL_MCSPO + 2,	0xffff},
-	{"mcs5glpo3",	0xffffff00,	0,		SROM8_5GL_MCSPO + 3,	0xffff},
-	{"mcs5glpo4",	0xffffff00,	0,		SROM8_5GL_MCSPO + 4,	0xffff},
-	{"mcs5glpo5",	0xffffff00,	0,		SROM8_5GL_MCSPO + 5,	0xffff},
-	{"mcs5glpo6",	0xffffff00,	0,		SROM8_5GL_MCSPO + 6,	0xffff},
-	{"mcs5glpo7",	0xffffff00,	0,		SROM8_5GL_MCSPO + 7,	0xffff},
-	{"mcs5ghpo0",	0xffffff00,	0,		SROM8_5GH_MCSPO,	0xffff},
-	{"mcs5ghpo1",	0xffffff00,	0,		SROM8_5GH_MCSPO + 1,	0xffff},
-	{"mcs5ghpo2",	0xffffff00,	0,		SROM8_5GH_MCSPO + 2,	0xffff},
-	{"mcs5ghpo3",	0xffffff00,	0,		SROM8_5GH_MCSPO + 3,	0xffff},
-	{"mcs5ghpo4",	0xffffff00,	0,		SROM8_5GH_MCSPO + 4,	0xffff},
-	{"mcs5ghpo5",	0xffffff00,	0,		SROM8_5GH_MCSPO + 5,	0xffff},
-	{"mcs5ghpo6",	0xffffff00,	0,		SROM8_5GH_MCSPO + 6,	0xffff},
-	{"mcs5ghpo7",	0xffffff00,	0,		SROM8_5GH_MCSPO + 7,	0xffff},
+	{"mcs2gpo0",	0x00000100,	0,		SROM8_2G_MCSPO,		0xffff},
+	{"mcs2gpo1",	0x00000100,	0,		SROM8_2G_MCSPO + 1,	0xffff},
+	{"mcs2gpo2",	0x00000100,	0,		SROM8_2G_MCSPO + 2,	0xffff},
+	{"mcs2gpo3",	0x00000100,	0,		SROM8_2G_MCSPO + 3,	0xffff},
+	{"mcs2gpo4",	0x00000100,	0,		SROM8_2G_MCSPO + 4,	0xffff},
+	{"mcs2gpo5",	0x00000100,	0,		SROM8_2G_MCSPO + 5,	0xffff},
+	{"mcs2gpo6",	0x00000100,	0,		SROM8_2G_MCSPO + 6,	0xffff},
+	{"mcs2gpo7",	0x00000100,	0,		SROM8_2G_MCSPO + 7,	0xffff},
+	{"mcs5gpo0",	0x00000100,	0,		SROM8_5G_MCSPO,		0xffff},
+	{"mcs5gpo1",	0x00000100,	0,		SROM8_5G_MCSPO + 1,	0xffff},
+	{"mcs5gpo2",	0x00000100,	0,		SROM8_5G_MCSPO + 2,	0xffff},
+	{"mcs5gpo3",	0x00000100,	0,		SROM8_5G_MCSPO + 3,	0xffff},
+	{"mcs5gpo4",	0x00000100,	0,		SROM8_5G_MCSPO + 4,	0xffff},
+	{"mcs5gpo5",	0x00000100,	0,		SROM8_5G_MCSPO + 5,	0xffff},
+	{"mcs5gpo6",	0x00000100,	0,		SROM8_5G_MCSPO + 6,	0xffff},
+	{"mcs5gpo7",	0x00000100,	0,		SROM8_5G_MCSPO + 7,	0xffff},
+	{"mcs5glpo0",	0x00000100,	0,		SROM8_5GL_MCSPO,	0xffff},
+	{"mcs5glpo1",	0x00000100,	0,		SROM8_5GL_MCSPO + 1,	0xffff},
+	{"mcs5glpo2",	0x00000100,	0,		SROM8_5GL_MCSPO + 2,	0xffff},
+	{"mcs5glpo3",	0x00000100,	0,		SROM8_5GL_MCSPO + 3,	0xffff},
+	{"mcs5glpo4",	0x00000100,	0,		SROM8_5GL_MCSPO + 4,	0xffff},
+	{"mcs5glpo5",	0x00000100,	0,		SROM8_5GL_MCSPO + 5,	0xffff},
+	{"mcs5glpo6",	0x00000100,	0,		SROM8_5GL_MCSPO + 6,	0xffff},
+	{"mcs5glpo7",	0x00000100,	0,		SROM8_5GL_MCSPO + 7,	0xffff},
+	{"mcs5ghpo0",	0x00000100,	0,		SROM8_5GH_MCSPO,	0xffff},
+	{"mcs5ghpo1",	0x00000100,	0,		SROM8_5GH_MCSPO + 1,	0xffff},
+	{"mcs5ghpo2",	0x00000100,	0,		SROM8_5GH_MCSPO + 2,	0xffff},
+	{"mcs5ghpo3",	0x00000100,	0,		SROM8_5GH_MCSPO + 3,	0xffff},
+	{"mcs5ghpo4",	0x00000100,	0,		SROM8_5GH_MCSPO + 4,	0xffff},
+	{"mcs5ghpo5",	0x00000100,	0,		SROM8_5GH_MCSPO + 5,	0xffff},
+	{"mcs5ghpo6",	0x00000100,	0,		SROM8_5GH_MCSPO + 6,	0xffff},
+	{"mcs5ghpo7",	0x00000100,	0,		SROM8_5GH_MCSPO + 7,	0xffff},
 	{"cddpo",	0x000000f0,	0,		SROM4_CDDPO,		0xffff},
 	{"stbcpo",	0x000000f0,	0,		SROM4_STBCPO,		0xffff},
 	{"bw40po",	0x000000f0,	0,		SROM4_BW40PO,		0xffff},
 	{"bwduppo",	0x000000f0,	0,		SROM4_BWDUPPO,		0xffff},
-	{"cddpo",	0xffffff00,	0,		SROM8_CDDPO,		0xffff},
-	{"stbcpo",	0xffffff00,	0,		SROM8_STBCPO,		0xffff},
-	{"bw40po",	0xffffff00,	0,		SROM8_BW40PO,		0xffff},
-	{"bwduppo",	0xffffff00,	0,		SROM8_BWDUPPO,		0xffff},
-	{"ccode",	0x0000000f,	SRFL_CCODE,	SROM_CCODE,		0xffff},
-	{"ccode",	0x00000010,	SRFL_CCODE,	SROM4_CCODE,		0xffff},
-	{"ccode",	0x000000e0,	SRFL_CCODE,	SROM5_CCODE,		0xffff},
-	{"ccode",	0xffffff00,	SRFL_CCODE,	SROM8_CCODE,		0xffff},
-	{"macaddr",	0xffffff00,	SRFL_ETHADDR,	SROM8_MACHI,		0xffff},
-	{"macaddr",	0x000000e0,	SRFL_ETHADDR,	SROM5_MACHI,		0xffff},
-	{"macaddr",	0x00000010,	SRFL_ETHADDR,	SROM4_MACHI,		0xffff},
-	{"macaddr",	0x00000008,	SRFL_ETHADDR,	SROM3_MACHI,		0xffff},
-	{"il0macaddr",	0x00000007,	SRFL_ETHADDR,	SROM_MACHI_IL0,		0xffff},
-	{"et1macaddr",	0x00000007,	SRFL_ETHADDR,	SROM_MACHI_ET1,		0xffff},
-	{"leddc",	0xffffff00,	SRFL_NOFFS|SRFL_LEDDC,	SROM8_LEDDC,	0xffff},
-	{"leddc",	0x000000e0,	SRFL_NOFFS|SRFL_LEDDC,	SROM5_LEDDC,	0xffff},
-	{"leddc",	0x00000010,	SRFL_NOFFS|SRFL_LEDDC,	SROM4_LEDDC,	0xffff},
-	{"leddc",	0x00000008,	SRFL_NOFFS|SRFL_LEDDC,	SROM3_LEDDC,	0xffff},
+	{"cddpo",	0x00000100,	0,		SROM8_CDDPO,		0xffff},
+	{"stbcpo",	0x00000100,	0,		SROM8_STBCPO,		0xffff},
+	{"bw40po",	0x00000100,	0,		SROM8_BW40PO,		0xffff},
+	{"bwduppo",	0x00000100,	0,		SROM8_BWDUPPO,		0xffff},
+
+	/* power per rate from sromrev 9 */
+	{"cckbw202gpo",		0xfffffe00,	0,	SROM9_2GPO_CCKBW20,		0xffff},
+	{"cckbw20ul2gpo",	0xfffffe00,	0,	SROM9_2GPO_CCKBW20UL,		0xffff},
+	{"legofdmbw202gpo",	0xfffffe00,	SRFL_MORE, SROM9_2GPO_LOFDMBW20,	0xffff},
+	{"",			0,		0,	SROM9_2GPO_LOFDMBW20 + 1,	0xffff},
+	{"legofdmbw20ul2gpo",	0xfffffe00,	SRFL_MORE, SROM9_2GPO_LOFDMBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_2GPO_LOFDMBW20UL + 1,	0xffff},
+	{"legofdmbw205glpo",	0xfffffe00,	SRFL_MORE, SROM9_5GLPO_LOFDMBW20,	0xffff},
+	{"",			0,		0,	SROM9_5GLPO_LOFDMBW20 + 1,	0xffff},
+	{"legofdmbw20ul5glpo",	0xfffffe00,	SRFL_MORE, SROM9_5GLPO_LOFDMBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_5GLPO_LOFDMBW20UL + 1,	0xffff},
+	{"legofdmbw205gmpo",	0xfffffe00,	SRFL_MORE, SROM9_5GMPO_LOFDMBW20,	0xffff},
+	{"",			0,		0,	SROM9_5GMPO_LOFDMBW20 + 1,	0xffff},
+	{"legofdmbw20ul5gmpo",	0xfffffe00,	SRFL_MORE, SROM9_5GMPO_LOFDMBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_5GMPO_LOFDMBW20UL + 1,	0xffff},
+	{"legofdmbw205ghpo",	0xfffffe00,	SRFL_MORE, SROM9_5GHPO_LOFDMBW20,	0xffff},
+	{"",			0,		0,	SROM9_5GHPO_LOFDMBW20 + 1,	0xffff},
+	{"legofdmbw20ul5ghpo",	0xfffffe00,	SRFL_MORE, SROM9_5GHPO_LOFDMBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_5GHPO_LOFDMBW20UL + 1,	0xffff},
+	{"mcsbw202gpo",		0xfffffe00,	SRFL_MORE, SROM9_2GPO_MCSBW20,		0xffff},
+	{"",			0,		0,	SROM9_2GPO_MCSBW20 + 1,		0xffff},
+	{"mcsbw20ul2gpo",      	0xfffffe00,	SRFL_MORE, SROM9_2GPO_MCSBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_2GPO_MCSBW20UL + 1,	0xffff},
+	{"mcsbw402gpo",		0xfffffe00,	SRFL_MORE, SROM9_2GPO_MCSBW40,		0xffff},
+	{"",			0,		0,	SROM9_2GPO_MCSBW40 + 1,		0xffff},
+	{"mcsbw205glpo",	0xfffffe00,	SRFL_MORE, SROM9_5GLPO_MCSBW20,		0xffff},
+	{"",			0,		0,	SROM9_5GLPO_MCSBW20 + 1,	0xffff},
+	{"mcsbw20ul5glpo",	0xfffffe00,	SRFL_MORE, SROM9_5GLPO_MCSBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_5GLPO_MCSBW20UL + 1,	0xffff},
+	{"mcsbw405glpo",	0xfffffe00,	SRFL_MORE, SROM9_5GLPO_MCSBW40,		0xffff},
+	{"",			0,		0,	SROM9_5GLPO_MCSBW40 + 1,	0xffff},
+	{"mcsbw205gmpo",	0xfffffe00,	SRFL_MORE, SROM9_5GMPO_MCSBW20,		0xffff},
+	{"",			0,		0,	SROM9_5GMPO_MCSBW20 + 1,	0xffff},
+	{"mcsbw20ul5gmpo",	0xfffffe00,	SRFL_MORE, SROM9_5GMPO_MCSBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_5GMPO_MCSBW20UL + 1,	0xffff},
+	{"mcsbw405gmpo",	0xfffffe00,	SRFL_MORE, SROM9_5GMPO_MCSBW40,		0xffff},
+	{"",			0,		0,	SROM9_5GMPO_MCSBW40 + 1,	0xffff},
+	{"mcsbw205ghpo",	0xfffffe00,	SRFL_MORE, SROM9_5GHPO_MCSBW20,		0xffff},
+	{"",			0,		0,	SROM9_5GHPO_MCSBW20 + 1,	0xffff},
+	{"mcsbw20ul5ghpo",	0xfffffe00,	SRFL_MORE, SROM9_5GHPO_MCSBW20UL,	0xffff},
+	{"",			0,		0,	SROM9_5GHPO_MCSBW20UL + 1,	0xffff},
+	{"mcsbw405ghpo",	0xfffffe00,	SRFL_MORE, SROM9_5GHPO_MCSBW40,		0xffff},
+	{"",			0,		0,	SROM9_5GHPO_MCSBW40 + 1,	0xffff},
+	{"mcs32po",		0xfffffe00,	0,	SROM9_PO_MCS32,			0xffff},
+	{"legofdm40duppo",	0xfffffe00,	0,	SROM9_PO_LOFDM40DUP,		0xffff},
+
 	{NULL,		0,		0,		0,			0}
 };
 
@@ -360,11 +428,11 @@ static const sromvar_t perpath_pci_sromvars[] = {
 	{NULL,		0,		0,		0, 			0}
 };
 
-#if !(defined(PHY_TYPE_N) && defined(PHY_TYPE_LP) && defined(PHY_TYPE_SSN))
+#if !(defined(PHY_TYPE_HT) && defined(PHY_TYPE_N) && defined(PHY_TYPE_LP))
+#define	PHY_TYPE_HT		7	/* HT-Phy value */
 #define	PHY_TYPE_N		4	/* N-Phy value */
 #define	PHY_TYPE_LP		5	/* LP-Phy value */
-#define	PHY_TYPE_SSN		6	/* SSLPN-Phy value */
-#endif /* !(defined(PHY_TYPE_N) && defined(PHY_TYPE_LP)) */
+#endif /* !(defined(PHY_TYPE_HT) && defined(PHY_TYPE_N) && defined(PHY_TYPE_LP)) */
 #if !defined(PHY_TYPE_NULL)
 #define	PHY_TYPE_NULL		0xf	/* Invalid Phy value */
 #endif /* !defined(PHY_TYPE_NULL) */
@@ -377,6 +445,19 @@ typedef struct {
 } pavars_t;
 
 static const pavars_t pavars[] = {
+	/* HTPHY */
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_2G,  0, "pa2gw0a0 pa2gw1a0 pa2gw2a0"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_2G,  1, "pa2gw0a1 pa2gw1a1 pa2gw2a1"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_2G,  2, "pa2gw0a2 pa2gw1a2 pa2gw2a2"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GL, 0, "pa5glw0a0 pa5glw1a0 pa5glw2a0"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GL, 1, "pa5glw0a1 pa5glw1a1 pa5glw2a1"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GL, 2, "pa5glw0a2 pa5glw1a2 pa5glw2a2"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GM, 0, "pa5gw0a0 pa5gw1a0 pa5gw2a0"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GM, 1, "pa5gw0a1 pa5gw1a1 pa5gw2a1"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GM, 2, "pa5gw0a2 pa5gw1a2 pa5gw2a2"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GH, 0, "pa5ghw0a0 pa5ghw1a0 pa5ghw2a0"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GH, 1, "pa5ghw0a1 pa5ghw1a1 pa5ghw2a1"},
+	{PHY_TYPE_HT, WL_CHAN_FREQ_RANGE_5GH, 2, "pa5ghw0a2 pa5ghw1a2 pa5ghw2a2"},
 	/* NPHY */
 	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_2G,  0, "pa2gw0a0 pa2gw1a0 pa2gw2a0"},
 	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_2G,  1, "pa2gw0a1 pa2gw1a1 pa2gw2a1"},
@@ -391,11 +472,6 @@ static const pavars_t pavars[] = {
 	{PHY_TYPE_LP, WL_CHAN_FREQ_RANGE_5GL, 0, "pa1lob0 pa1lob1 pa1lob2"},
 	{PHY_TYPE_LP, WL_CHAN_FREQ_RANGE_5GM, 0, "pa1b0 pa1b1 pa1b2"},
 	{PHY_TYPE_LP, WL_CHAN_FREQ_RANGE_5GH, 0, "pa1hib0 pa1hib1 pa1hib2"},
-	/* SSLPNPHY */
-	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_2G,  0, "pa0b0 pa0b1 pa0b2"},
-	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_5GL, 0, "pa1lob0 pa1lob1 pa1lob2"},
-	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_5GM, 0, "pa1b0 pa1b1 pa1b2"},
-	{PHY_TYPE_SSN, WL_CHAN_FREQ_RANGE_5GH, 0, "pa1hib0 pa1hib1 pa1hib2"},
 	{PHY_TYPE_NULL, 0, 0, ""}
 };
 
@@ -407,10 +483,14 @@ typedef struct {
 
 static const povars_t povars[] = {
 	/* NPHY */
-	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_2G,  "cck2gpo ofdm2gpo"},
-	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_5GL, "ofdm5glpo"},
-	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_5GM, "ofdm5gpo"},
-	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_5GH, "ofdm5ghpo"},
+	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_2G,  "mcs2gpo0 mcs2gpo1 mcs2gpo2 mcs2gpo3 "
+	"mcs2gpo4 mcs2gpo5 mcs2gpo6 mcs2gpo7"},
+	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_5GL, "mcs5glpo0 mcs5glpo1 mcs5glpo2 mcs5glpo3 "
+	"mcs5glpo4 mcs5glpo5 mcs5glpo6 mcs5glpo7"},
+	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_5GM, "mcs5gpo0 mcs5gpo1 mcs5gpo2 mcs5gpo3 "
+	"mcs5gpo4 mcs5gpo5 mcs5gpo6 mcs5gpo7"},
+	{PHY_TYPE_N, WL_CHAN_FREQ_RANGE_5GH, "mcs5ghpo0 mcs5ghpo1 mcs5ghpo2 mcs5ghpo3 "
+	"mcs5ghpo4 mcs5ghpo5 mcs5ghpo6 mcs5ghpo7"},
 	{PHY_TYPE_NULL, 0, ""}
 };
 
@@ -425,8 +505,10 @@ typedef struct {
 #define OTP_RAW		(0xff - 1)	/* Reserved tuple number for wrvar Raw input */
 #define OTP_VERS_1	(0xff - 2)	/* CISTPL_VERS_1 */
 #define OTP_MANFID	(0xff - 3)	/* CISTPL_MANFID */
+#define OTP_RAW1	(0xff - 4)	/* Like RAW, but comes first */
 
 static const cis_tuple_t cis_hnbuvars[] = {
+	{OTP_RAW1,		0, ""},	/* special case */
 	{OTP_VERS_1,		0, "smanf sproductname"},	/* special case (non BRCM tuple) */
 	{OTP_MANFID,		4, "2manfid 2prodid"},		/* special case (non BRCM tuple) */
 	{HNBU_SROMREV,		2, "1sromrev"},
@@ -442,6 +524,8 @@ static const cis_tuple_t cis_hnbuvars[] = {
 	{HNBU_BOARDFLAGS,	9, "4boardflags 4boardflags2"},
 	{HNBU_LEDS,		5, "1ledbh0 1ledbh1 1ledbh2 1ledbh3"},
 	{HNBU_CCODE,		4, "2ccode 1cctl"},
+	{HNBU_CCKPO,		3, "2cckpo"},
+	{HNBU_OFDMPO,		5, "4ofdmpo"},
 	{HNBU_RDLID,		3, "2rdlid"},
 	{HNBU_RSSISMBXA2G,	3, "0rssismf2g 0rssismc2g 0rssisav2g 0bxa2g"}, /* special case */
 	{HNBU_RSSISMBXA5G,	3, "0rssismf5g 0rssismc5g 0rssisav5g 0bxa5g"}, /* special case */
@@ -479,11 +563,20 @@ static const cis_tuple_t cis_hnbuvars[] = {
 	"2mcs5glpo4 2mcs5glpo5 2mcs5glpo6 2mcs5glpo7 "
 	"2mcs5ghpo0 2mcs5ghpo1 2mcs5ghpo2 2mcs5ghpo3 "
 	"2mcs5ghpo4 2mcs5ghpo5 2mcs5ghpo6 2mcs5ghpo7"},
+	{HNBU_CCKFILTTYPE,	2, "1cckdigfilttype"},
+	{HNBU_PO_CDD,		3, "2cddpo"},
+	{HNBU_PO_STBC,		3, "2stbcpo"},
+	{HNBU_PO_40M,		3, "2bw40po"},
+	{HNBU_PO_40MDUP,	3, "2bwduppo"},
 	{HNBU_RDLRWU,		2, "1rdlrwu"},
-	{HNBU_WPS,		2, "1wpsgpio"},
+	{HNBU_WPS,		3, "1wpsgpio 1wpsled"},
 	{HNBU_USBFS,		2, "1usbfs"},
+	{HNBU_ELNA2G,           2, "1elna2g"},
+	{HNBU_ELNA5G,           2, "1elna5g"},
 	{HNBU_CUSTOM1,		5, "4customvar1"},
 	{OTP_RAW,		0, ""},	/* special case */
+	{HNBU_OFDMPO5G,		13, "4ofdm5gpo 4ofdm5glpo 4ofdm5ghpo"},
+	{HNBU_USBEPNUM,		3, "2usbepnum"},
 	{0xFF,			0, ""}
 };
 

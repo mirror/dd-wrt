@@ -1,7 +1,7 @@
 /*
  * BCM47XX Sonics SiliconBackplane MIPS core routines
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndmips.c,v 1.35.2.5.12.13 2009/01/28 15:13:32 Exp $
+ * $Id: hndmips.c,v 1.51.2.8 2010/06/28 21:58:59 Exp $
  */
 
 #include <typedefs.h>
@@ -28,6 +28,7 @@
 #include <hndcpu.h>
 #include <hndmips.h>
 #include <hndpmu.h>
+#include <dmemc_core.h>
 
 /* debug/trace */
 #define	HNDMIPS_ERROR(args)
@@ -211,9 +212,7 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 	osl_t *osh;
 	uint32 c0reg;
 	ulong hz, ns, tmp;
-	extifregs_t *eir;
 	chipcregs_t *cc;
-	char *value;
 	uint irq;
 
 	osh = si_osh(sih);
@@ -229,67 +228,26 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 	ns = 1000000000 / hz;
 
 	/* Setup external interface timing */
-	if ((eir = si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		/* Initialize extif so we can get to the LEDs and external UART */
-		W_REG(osh, &eir->prog_config, CF_EN);
-
-		/* Set timing for the flash */
-		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
-		tmp = tmp | (CEIL(40, ns) << FW_W1_SHIFT); /* W1 = 40nS */
-		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
-		W_REG(osh, &eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
-
-		/* Set programmable interface timing for external uart */
-		tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
-		tmp = tmp | (CEIL(20, ns) << FW_W2_SHIFT); /* W2 = 20nS */
-		tmp = tmp | (CEIL(100, ns) << FW_W1_SHIFT); /* W1 = 100nS */
-		tmp = tmp | CEIL(120, ns);		/* W0 = 120nS */
-		W_REG(osh, &eir->prog_waitcount, tmp);	/* 0x01020a0c for a 100Mhz clock */
-	} else if ((cc = si_setcoreidx(sih, SI_CC_IDX))) {
+	cc = si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
 	/* Set timing for the flash */
 	tmp = CEIL(10, ns) << FW_W3_SHIFT;	/* W3 = 10nS */
 	tmp |= CEIL(10, ns) << FW_W1_SHIFT;	/* W1 = 10nS */
 	tmp |= CEIL(120, ns);			/* W0 = 120nS */
-	if (sih->ccrev < 9 || sih->chip==0x5365)
+	if (sih->ccrev < 9)
 		W_REG(osh, &cc->flash_waitcount, tmp);
 
 	if ((sih->ccrev < 9) ||
-	    ((sih->chip == BCM5350_CHIP_ID) && sih->chiprev == 0) || (sih->chip==0x5365)) {
+	    ((sih->chip == BCM5350_CHIP_ID) && sih->chiprev == 0)) {
 		W_REG(osh, &cc->pcmcia_memwait, tmp);
 	}
 
 	/* Save shared IRQ mapping base */
 	shirq_map_base = shirqmap;
-	}
-	
+
 	/* Chip specific initialization */
 	switch (sih->chip) {
-	case BCM4710_CHIP_ID:
-		/* Clear interrupt map */
-		for (irq = 0; irq <= 4; irq++)
-			si_clearirq(sih, irq);
-		si_setirq(sih, 0, CODEC_CORE_ID, 0);
-		si_setirq(sih, 0, EXTIF_CORE_ID, 0);
-		si_setirq(sih, 2, ENET_CORE_ID, 1);
-		si_setirq(sih, 3, ILINE20_CORE_ID, 0);
-		si_setirq(sih, 4, PCI_CORE_ID, 0);
-		ASSERT(eir);
-		value = nvram_get("et0phyaddr");
-		if (value && !strcmp(value, "31")) {
-			/* Enable internal UART */
-			W_REG(osh, &eir->corecontrol, CC_UE);
-			/* Give USB its own interrupt */
-			si_setirq(sih, 1, USB_CORE_ID, 0);
-		} else {
-			/* Disable internal UART */
-			W_REG(osh, &eir->corecontrol, 0);
-			/* Give Ethernet its own interrupt */
-			si_setirq(sih, 1, ENET_CORE_ID, 0);
-			si_setirq(sih, 0, USB_CORE_ID, 0);
-		}
-		break;
 	case BCM5350_CHIP_ID:
 		/* Clear interrupt map */
 		for (irq = 0; irq <= 4; irq++)
@@ -306,6 +264,7 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 		si_setirq(sih, 4, PCI_CORE_ID, 0);
 		break;
 	case BCM4716_CHIP_ID:
+	case BCM4748_CHIP_ID:
 		/* Clear interrupt map */
 		for (irq = 0; irq <= 4; irq++)
 			si_clearirq(sih, irq);
@@ -323,6 +282,16 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 		si_setirq(sih, 1, D11_CORE_ID, 0);
 		si_setirq(sih, 2, GMAC_CORE_ID, 0);
 		si_setirq(sih, 0, CC_CORE_ID, 0);
+		break;
+	case BCM5357_CHIP_ID:
+		/* Clear interrupt map */
+		for (irq = 0; irq <= 4; irq++)
+			si_clearirq(sih, irq);
+		si_setirq(sih, 1, D11_CORE_ID, 0);
+		si_setirq(sih, 2, GMAC_CORE_ID, 0);
+		si_setirq(sih, 3, USB20H_CORE_ID, 0);
+		si_setirq(sih, 0, CC_CORE_ID, 0);
+		si_setirq(sih, 0, I2S_CORE_ID, 0);
 		break;
 	case BCM47162_CHIP_ID:
 		/* Clear interrupt map */
@@ -348,7 +317,6 @@ uint32
 BCMINITFN(si_cpu_clock)(si_t *sih)
 {
 	osl_t *osh;
-	extifregs_t *eir;
 	chipcregs_t *cc;
 	uint32 n, m;
 	uint idx;
@@ -364,19 +332,7 @@ BCMINITFN(si_cpu_clock)(si_t *sih)
 	idx = si_coreidx(sih);
 
 	/* switch to chipc core */
-	pll_type = PLL_TYPE1;
-
-	/* switch to extif or chipc core */
-	if ((eir = (extifregs_t *) si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		n = R_REG(osh, &eir->clockcontrol_n);
-		m = R_REG(osh, &eir->clockcontrol_sb);
-	} else if ((	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) {
-	/* 5354 chip uses a non programmable PLL of frequency 240MHz */
-		if (sih->chip == BCM5354_CHIP_ID) {
-			rate = 240000000;
-			goto out;
-		}
-
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
 	pll_type = sih->cccaps & CC_CAP_PLL_MASK;
@@ -399,14 +355,9 @@ BCMINITFN(si_cpu_clock)(si_t *sih)
 			m = R_REG(osh, &cc->clockcontrol_m2);
 	} else
 		m = R_REG(osh, &cc->clockcontrol_sb);
-	} else {
-	    goto out;
-	}
+
 	/* calculate rate */
-	if (sih->chip == 0x5365)
-		rate = 100000000;
-	else
-		rate = si_clock_rate(pll_type, n, m);
+	rate = si_clock_rate(pll_type, n, m);
 
 	if (pll_type == PLL_TYPE6)
 		rate = SB2MIPS_T6(rate);
@@ -431,9 +382,218 @@ BCMINITFN(si_mem_clock)(si_t *sih)
 	return si_clock(sih);
 }
 
+#define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4)
+
+static void
+do_router_coma(si_t *sih, dmemcregs_t *dmc, int delay)
+{
+	/* SDRAM refresh */
+	SET_REG(osh, &dmc->control[9], DMC09_SREFRESH, DMC09_SREFRESH);
+	SET_REG(osh, &dmc->control[9], DMC09_START, 0);
+
+	OSL_DELAY(delay * 1000000);
+
+	/* set jtag user reg 0 = 0x80 to set DDR pad power saving mode */
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0xff03ff3a");   /* (16 + addr) << 20 | 0xfe03ff3a */
+	asm("sw   $9, 0x0034($8)");
+	asm("li   $9, 0x80");      /* data */
+	asm("sw   $9, 0x0038($8)");
+	asm("li   $9, 0x80071f1f");
+	asm("sw   $9, 0x0030($8)");
+	asm("sync");
+
+	OSL_DELAY(delay * 1000000);
+
+	/* A0 vs B0 steps */
+	if (sih->chiprev == 0) {
+
+		/* set jtag user reg 3 = 0x60000 to turn off ephy pll and bias power */
+		asm("lui  $8, 0xb800");
+		asm("li   $9, 0xff33ff3a");   /* (16 + addr) << 20 | 0xfe03ff3a */
+		asm("sw   $9, 0x0034($8)");
+		asm("li   $9, 0x60000");      /* data */
+		asm("sw   $9, 0x0038($8)");
+		asm("li   $9, 0x80071f1f");
+		asm("sw   $9, 0x0030($8)");
+		asm("sync");
+
+		OSL_DELAY(delay * 1000000);
+	} else {
+
+		/* set ephy pll and bias power power save through chipc registers */
+		asm("lui  $8, 0xb800");
+		asm("li   $9, 0x4");
+		asm("sw   $9, 0x0650($8)");
+		asm("li   $9, 0x8a60e001");
+		asm("sw   $9, 0x0654($8)");
+		asm("sync");
+		asm("nop");
+
+		OSL_DELAY(delay * 1000000);
+
+		asm("lui  $8, 0xb800");
+		asm("li   $9, 0x2");
+		asm("sw   $9, 0x0650($8)");
+		asm("li   $9, 0xcad00000");
+		asm("sw   $9, 0x0654($8)");
+		asm("sync");
+		asm("nop");
+
+		OSL_DELAY(delay * 1000000);
+	}
+
+	/* set ddr dmp io control = 0 */
+	asm("lui  $8, 0xb810");
+	asm("li   $9, 0x0");
+	asm("sw   $9, 0x5408($8)");
+	asm("sync");
+	asm("nop");
+
+	OSL_DELAY(delay * 1000000);
+
+	/* set PMU control = 1 */
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x1");
+	asm("sw   $9, 0x0600($8)");
+	asm("sync");
+	asm("nop");
+
+	OSL_DELAY(delay * 1000000);
+
+	/* set mips dmp io control = 0 */
+	asm("lui  $8, 0xb810");
+	asm("li   $9, 0x0");
+	asm("sw   $9, 0x3408($8)");
+	asm("sync");
+	asm("nop");
+
+	/* wait for watch dog timer done */
+	__asm__(
+		".set\tmips3\n\t"
+		"sync\n\t"
+		"wait\n\t"
+		".set\tmips0");
+
+	asm("nop");
+	asm("nop");
+}
+
+static void
+BCMINITFN(aftercoma)(void)
+{
+
+}
+
+void
+si_router_coma(si_t *sih, int reset, int delay)
+{
+	dmemcregs_t *dmc = NULL;
+	chipcregs_t *cc;
+	uint ic_size, ic_lsize;
+	ulong start, end;
+	uint32 c0reg;
+	uint32 tmp;
+	int i;
+
+	/* Disable interrupts */
+
+	c0reg = MFC0(C0_STATUS, 0);
+	tmp = (c0reg & ~(ALLINTS | ST0_IE));
+	MTC0(C0_STATUS, 0, tmp);
+
+	icache_probe(MFC0(C0_CONFIG, 1), &ic_size, &ic_lsize);
+
+	/* Put coma routine into the icache */
+	start = (ulong)&do_router_coma;
+	end = (ulong)&aftercoma;
+	for (i = 0; i < (end - start); i += ic_lsize)
+		cache_op(start + i, Fill_I);
+
+	/* d11:  aidmp(resetctrl) = 1, aidmp(ioctrl) = 0 */
+	si_setcore(sih, D11_CORE_ID, 0);
+	si_core_disable(sih, 0);
+
+	OSL_DELAY(delay * 1000000);
+
+	/* gmac: aidmp(ioctrl) = 0 */
+	si_setcore(sih, GMAC_CORE_ID, 0);
+	si_core_cflags(sih, -1, 0);
+
+	OSL_DELAY(delay * 1000000);
+
+	/* Prepare JTAG registers */ 
+	si_setcore(sih, CC_CORE_ID, 0);
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+
+	W_REG(osh, &cc->jtagctrl, 0x01);
+	W_REG(osh, &cc->jtagcmd, 0x80030000);
+	W_REG(osh, &cc->gpioouten, 0x0);
+
+	/* Set the watchdog */
+	if (sih->chiprev == 0) {
+		W_REG(osh, &cc->watchdog, reset*ILP_CLOCK);
+	} else {
+		si_watchdog_ms(sih, reset*1000);
+	}
+
+	dmc = (dmemcregs_t *)si_setcore(sih, DMEMC_CORE_ID, 0);
+	do_router_coma(sih, dmc, delay);
+}
+
+static void
+BCMINITFN(sdsleep)(osl_t *osh, dmemcregs_t *dmc)
+{
+	int i;
+	int val, val1;
+
+	SET_REG(osh, &dmc->control[9], DMC09_SREFRESH, DMC09_SREFRESH);
+	SET_REG(osh, &dmc->control[9], DMC09_START, 0);
+
+	__asm__(
+		".set\tmips3\n\t"
+		"sync\n\t"
+		"wait\n\t"
+		".set\tmips0");
+
+	SET_REG(osh, &dmc->control[9], DMC09_START, DMC09_START);
+
+	/* Check DLL lock */
+	while ((R_REG(osh, &dmc->control[4]) & DMC04_DLLLOCK) == 0);
+
+	/* Add some delay */
+	for (i = 0; i < 3000000; i++);
+
+	val = R_REG(osh, &dmc->control[5]) & 0x1;
+	if (val) {
+		/* bypass mode */
+		val1 = R_REG(osh, &dmc->control[144]) >> 3;
+		val = (R_REG(osh, &dmc->control[140]) & ~0x03ff0000) | (val1 << 16);
+		W_REG(osh, &dmc->control[140], val);
+		val = (R_REG(osh, &dmc->control[142]) & ~0x1ff8000) | (((val1 * 3) & 0x3ff) << 15);
+		W_REG(osh, &dmc->control[142], val);
+		val1 = R_REG(osh, &dmc->control[145]) >> 3;
+		val = (R_REG(osh, &dmc->control[141]) & ~0x03ff0000) | (val1 << 16);
+		W_REG(osh, &dmc->control[141], val);
+		val = (R_REG(osh, &dmc->control[143]) & ~0x1ff8000) | (((val1 * 3) & 0x3ff) << 15);
+		W_REG(osh, &dmc->control[143], val);
+	}
+
+	for (i = 0; i < 1000000; i++);
+
+	SET_REG(osh, &dmc->control[9], DMC09_SREFRESH, 0);
+}
+
+static void
+BCMINITFN(aftersdsleep)(void)
+{
+}
+
+#define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4)
+
 /*
  * Set the MIPS, backplane and DDR clocks as closely as possible in chips
- * with a PMU. So far that means 4716, 47162, and 5356 all of which share
+ * with a PMU. So far that means 4716, 47162, 5357, and 5356 all of which share
  * the same PLL controls.
  */
 static bool
@@ -441,124 +601,134 @@ BCMINITFN(mips_pmu_setclock)(si_t *sih, uint32 mipsclock, uint32 ddrclock, uint3
 {
 	osl_t *osh;
 	chipcregs_t *cc = NULL;
+	dmemcregs_t *dmc = NULL;
+	void *regs = NULL;
+	int chclk_otf = 0;
 	uint idx, i;
 	uint mainpll_pll0 = PMU4716_MAINPLL_PLL0;
 	bool ret = TRUE;
 	uint32 (*pll_table)[8];
 
-	/* 20MHz table for 4716, 4717, 4718, 47162 */
+	/* 20MHz table for 4716, 4717, 4718, 47162, 5357 */
 	static uint32 BCMINITDATA(pll20mhz_table)[][8] = {
-		/* cpu, ddr, axi, pllctl12,  pllctl13,   pllctl14,   pllctl15,  |pllctl16 */
-		{  66,  66,  66, 0x11100070, 0x00121212, 0x03c00000, 0x20000000, 0 },
-		{  75,  75,  75, 0x11100070, 0x00101010, 0x03c00000, 0x20000000, 0 },
-		{  80,  80,  80, 0x11100070, 0x000a0a0a, 0x02800000, 0x20000000, 0 },
-		{  83,  83,  83, 0x11100070, 0x000c0c0c, 0x03200000, 0x20000000, 0 },
-		{ 100,  66,  66, 0x11100070, 0x0012120c, 0x03c00000, 0x30000000, 0 },
-		{ 100, 100, 100, 0x11100070, 0x000c0c0c, 0x03c00000, 0x20000000, 0 },
-		{ 120,  60,  60, 0x11100070, 0x00101008, 0x03000000, 0x40000000, 0 },
-		{ 120, 120, 120, 0x11100070, 0x00080808, 0x03000000, 0x20000000, 0 },
-		{ 125,  83,  83, 0x11100070, 0x000c0c08, 0x03200000, 0x30000000, 0 },
-		{ 133,  66,  66, 0x11500070, 0x00101008, 0x10a00000, 0x40000000, 4 },
-		{ 133, 133, 133, 0x11500070, 0x00080808, 0x10a00000, 0x20000000, 4 },
-		{ 148, 148,  74, 0x11100070, 0x00120909, 0x04300000, 0x28000000, 0 },
-		{ 150,  75,  75, 0x11100070, 0x00101008, 0x03c00000, 0x40000000, 0 },
-		{ 150, 100, 100, 0x11100070, 0x000c0c08, 0x03c00000, 0x30000000, 0 },
-		{ 150, 150,  75, 0x11100070, 0x00100808, 0x03c00000, 0x28000000, 0 },
-		{ 150, 150, 150, 0x11100070, 0x00080808, 0x03c00000, 0x20000000, 0 },
-		{ 155, 155,  77, 0x11100070, 0x00120909, 0x04600000, 0x28000000, 0 },
-		{ 155, 155, 155, 0x11100070, 0x00090909, 0x04600000, 0x20000000, 0 },
-		{ 166,  83,  83, 0x11100070, 0x000c0c06, 0x03200000, 0x40000000, 0 },
-		{ 166, 166,  83, 0x11100070, 0x000c0606, 0x03200000, 0x28000000, 0 },
-		{ 166, 166, 166, 0x11100070, 0x00060606, 0x03200000, 0x20000000, 0 },
-		{ 200, 200, 100, 0x11100070, 0x000c0606, 0x03c00000, 0x28000000, 0 },
-		{ 223, 148,  74, 0x11100070, 0x00120906, 0x04300000, 0x38000000, 0 },
-		{ 240, 120, 120, 0x11100070, 0x00080804, 0x03000000, 0x40000000, 0 },
-		{ 240, 240, 120, 0x11100070, 0x00080404, 0x03000000, 0x28000000, 0 },
-		{ 250, 166,  83, 0x11100070, 0x000c0604, 0x03200000, 0x38000000, 0 },
-		{ 250, 166, 166, 0x11100070, 0x00060604, 0x03200000, 0x30000000, 0 },
-		{ 266, 133, 133, 0x11500070, 0x00080804, 0x10a00000, 0x40000000, 4 },
-		{ 266, 266, 133, 0x11500070, 0x00080404, 0x10a00000, 0x28000000, 4 },
-		{ 300, 100, 100, 0x11100070, 0x000c0c04, 0x03c00000, 0x60000000, 0 },
-		{ 300, 150,  75, 0x11100070, 0x00100804, 0x03c00000, 0x48000000, 0 },
-		{ 300, 150, 150, 0x11100070, 0x00080804, 0x03c00000, 0x40000000, 0 },
-		{ 300, 200, 100, 0x11100070, 0x000c0604, 0x03c00000, 0x38000000, 0 },
-		{ 320, 160,  80, 0x11100070, 0x000c0603, 0x03000000, 0x48000000, 0 },
- 		{ 320, 213, 106, 0x11100070, 0x000c0604, 0x04000000, 0x38000000, 0 },
-		{ 320, 240, 120, 0x11100070, 0x00080403, 0x03000000, 0x28000000, 0 },
-		{ 333, 166,  83, 0x11100070, 0x000c0603, 0x03200000, 0x48000000, 0 },
-		{ 333, 166, 166, 0x11100070, 0x00060603, 0x03200000, 0x40000000, 0 },
-		{ 340, 226, 113, 0x11100070, 0x000c0604, 0x04400000, 0x38000000, 0 },
-		{ 354, 177,  88, 0x11500070, 0x000c0603, 0x10a00000, 0x48000000, 4 },
-		{ 360, 240, 120, 0x11100070, 0x000c0604, 0x04800000, 0x38000000, 0 },
-		{ 373, 186,  93, 0x11100070, 0x000c0603, 0x03800000, 0x48000000, 0 },
-		{ 400, 133, 133, 0x11100070, 0x000c0c04, 0x05000000, 0x60000000, 0 },
-		{ 400, 160,  80, 0x11100070, 0x00140a04, 0x05000000, 0x58000000, 0 },
-		{ 400, 160, 160, 0x11100070, 0x000a0a04, 0x05000000, 0x50000000, 0 },
-		{ 400, 200, 100, 0x11100070, 0x000c0603, 0x03c00000, 0x48000000, 0 },
-		{ 400, 266, 133, 0x11100070, 0x000c0604, 0x05000000, 0x38000000, 0 },
-		{ 426, 213, 106, 0x11100070, 0x000c0603, 0x04000000, 0x48000000, 0 },
-		{ 440, 220, 110, 0x11100070, 0x000c0603, 0x04200000, 0x48000000, 0 },
-		{ 446, 148,  74, 0x11100070, 0x00120903, 0x04300000, 0x68000000, 0 },
-		{ 453, 226, 113, 0x11100070, 0x000c0603, 0x04400000, 0x48000000, 0 },
-		{ 466, 233, 116, 0x11100070, 0x000c0603, 0x04600000, 0x48000000, 0 },
-		{ 480, 137,  68, 0x11100070, 0x000e0702, 0x03000000, 0x78000000, 0 },
-		{ 480, 137, 137, 0x11100070, 0x00070702, 0x03000000, 0x70000000, 0 },
-		{ 480, 160,  80, 0x11100070, 0x000c0602, 0x03000000, 0x68000000, 0 },
-		{ 480, 240, 120, 0x11100070, 0x00080402, 0x03000000, 0x48000000, 0 },
-		{ 500, 100, 100, 0x11100070, 0x000a0a02, 0x03200000, 0xa0000000, 0 },
-		{ 500, 166,  83, 0x11100070, 0x000c0602, 0x03200000, 0x68000000, 0 },
-		{ 500, 166, 166, 0x11100070, 0x00060602, 0x03200000, 0x60000000, 0 },
-		{ 500, 200, 100, 0x11100070, 0x000a0502, 0x03200000, 0x58000000, 0 },
-		{ 500, 250, 125, 0x11100070, 0x00080402, 0x03200000, 0x48000000, 0 },
-		{ 532, 133, 133, 0x11500070, 0x00080802, 0x10a00000, 0x80000000, 4 },
-		{ 532, 177,  88, 0x11500070, 0x000c0602, 0x10a00000, 0x68000000, 4 },
-		{ 532, 177, 177, 0x11500070, 0x00060602, 0x10a00000, 0x60000000, 4 },
-		{ 532, 266, 133, 0x11500070, 0x00080402, 0x10a00000, 0x48000000, 4 },
+		/* cpu, ddr, axi, pllctl12,  pllctl13,   pllctl14,   pllctl15,	 pllctl16 */
+		{  66,  66,  66, 0x11100070, 0x00121212, 0x03c00000, 0x20000000, 0x200005c0 },
+		{  75,  75,  75, 0x11100070, 0x00101010, 0x03c00000, 0x20000000, 0x200005c0 },
+		{  80,  80,  80, 0x11100070, 0x000a0a0a, 0x02800000, 0x20000000, 0x200005c0 },
+		{  83,  83,  83, 0x11100070, 0x000c0c0c, 0x03200000, 0x20000000, 0x200005c0 },
+		{ 100,  66,  66, 0x11100070, 0x0012120c, 0x03c00000, 0x30000000, 0x200005c0 },
+		{ 100, 100, 100, 0x11100070, 0x000c0c0c, 0x03c00000, 0x20000000, 0x200005c0 },
+		{ 120,  60,  60, 0x11100070, 0x00101008, 0x03000000, 0x40000000, 0x200005c0 },
+		{ 120, 120, 120, 0x11100070, 0x00080808, 0x03000000, 0x20000000, 0x200005c0 },
+		{ 125,  83,  83, 0x11100070, 0x000c0c08, 0x03200000, 0x30000000, 0x200005c0 },
+		{ 133,  66,  66, 0x11100070, 0x0018180c, 0x05000000, 0x40000000, 0x200005c0 },
+		{ 133, 133, 133, 0x11100070, 0x000c0c0c, 0x05000000, 0x20000000, 0x200005c0 },
+		{ 148, 148,  74, 0x11100070, 0x00120909, 0x04300000, 0x28000000, 0x200005c0 },
+		{ 150,  75,  75, 0x11100070, 0x00101008, 0x03c00000, 0x40000000, 0x200005c0 },
+		{ 150, 100, 100, 0x11100070, 0x000c0c08, 0x03c00000, 0x30000000, 0x200005c0 },
+		{ 150, 150,  75, 0x11100070, 0x00100808, 0x03c00000, 0x28000000, 0x200005c0 },
+		{ 150, 150, 150, 0x11100070, 0x00080808, 0x03c00000, 0x20000000, 0x200005c0 },
+		{ 155, 155,  77, 0x11100070, 0x00120909, 0x04600000, 0x28000000, 0x200005c0 },
+		{ 155, 155, 155, 0x11100070, 0x00090909, 0x04600000, 0x20000000, 0x200005c0 },
+		{ 166,  83,  83, 0x11100070, 0x000c0c06, 0x03200000, 0x40000000, 0x200005c0 },
+		{ 166, 166,  83, 0x11100070, 0x000c0606, 0x03200000, 0x28000000, 0x200005c0 },
+		{ 166, 166, 166, 0x11100070, 0x00060606, 0x03200000, 0x20000000, 0x200005c0 },
+		{ 200, 200, 100, 0x11100070, 0x000c0606, 0x03c00000, 0x28000000, 0x200005c0 },
+		{ 223, 148,  74, 0x11100070, 0x00120906, 0x04300000, 0x38000000, 0x200005c0 },
+		{ 240, 120, 120, 0x11100070, 0x00080804, 0x03000000, 0x40000000, 0x200005c0 },
+		{ 240, 240, 120, 0x11100070, 0x00080404, 0x03000000, 0x28000000, 0x200005c0 },
+		{ 250, 166,  83, 0x11100070, 0x000c0604, 0x03200000, 0x38000000, 0x200005c0 },
+		{ 250, 166, 166, 0x11100070, 0x00060604, 0x03200000, 0x30000000, 0x200005c0 },
+		{ 266, 133, 133, 0x11100070, 0x000c0c06, 0x05000000, 0x40000000, 0x200005c0 },
+		{ 266, 266, 133, 0x11100070, 0x000c0606, 0x05000000, 0x28000000, 0x200005c0 },
+		{ 300, 100, 100, 0x11100070, 0x000c0c04, 0x03c00000, 0x60000000, 0x200005c0 },
+		{ 300, 150,  75, 0x11100070, 0x00100804, 0x03c00000, 0x48000000, 0x200005c0 },
+		{ 300, 150, 150, 0x11100070, 0x00080804, 0x03c00000, 0x40000000, 0x200005c0 },
+		{ 300, 200, 100, 0x11100070, 0x000c0604, 0x03c00000, 0x38000000, 0x200005c0 },
+		{ 320, 160,  80, 0x11100070, 0x00100804, 0x04000000, 0x48000000, 0x200005c0 },
+		{ 320, 213, 106, 0x11100070, 0x000c0604, 0x04000000, 0x38000000, 0x200005c0 },
+		{ 320, 240, 120, 0x11100070, 0x00080403, 0x03000000, 0x38000000, 0x200005c0 },
+		{ 320, 256, 128, 0x11100070, 0x000a0504, 0x04000000, 0x38000000, 0x200005c0 },
+		{ 330, 165,  82, 0x11100070, 0x00100804, 0x04200000, 0x48000000, 0x200005c0 },
+		{ 330, 165, 165, 0x11100070, 0x00080804, 0x04200000, 0x40000000, 0x200005c0 },
+		{ 333, 166,  83, 0x11100070, 0x000c0603, 0x03200000, 0x48000000, 0x200005c0 },
+		{ 333, 166, 166, 0x11100070, 0x00060603, 0x03200000, 0x40000000, 0x200005c0 },
+		{ 340, 226, 113, 0x11100070, 0x000c0604, 0x04400000, 0x38000000, 0x200005c0 },
+		{ 350, 175,  87, 0x11100070, 0x00100804, 0x04600000, 0x48000000, 0x200005c0 },
+		{ 353, 176,  88, 0x11100070, 0x000c0603, 0x03500000, 0x48000000, 0x200005c0 },
+		{ 360, 240, 120, 0x11100070, 0x000c0604, 0x04800000, 0x38000000, 0x200005c0 },
+		{ 370, 185,  92, 0x11100070, 0x00100804, 0x04a00000, 0x48000000, 0x200005c0 },
+		{ 370, 246, 123, 0x11100070, 0x000c0604, 0x04a00000, 0x38000000, 0x200005c0 },
+		{ 373, 186,  93, 0x11100070, 0x000c0603, 0x03800000, 0x48000000, 0x200005c0 },
+		{ 400, 133, 133, 0x11100070, 0x000c0c04, 0x05000000, 0x60000000, 0x200005c0 },
+		{ 400, 160,  80, 0x11100070, 0x00140a04, 0x05000000, 0x58000000, 0x200005c0 },
+		{ 400, 160, 160, 0x11100070, 0x000a0a04, 0x05000000, 0x50000000, 0x200005c0 },
+		{ 400, 200, 100, 0x11100070, 0x00100804, 0x05000000, 0x48000000, 0x200005c0 },
+		{ 400, 266, 133, 0x11100070, 0x000c0604, 0x05000000, 0x38000000, 0x200005c0 },
+		{ 426, 213, 106, 0x11100070, 0x000c0603, 0x04000000, 0x48000000, 0x200005c0 },
+		{ 440, 220, 110, 0x11100070, 0x000c0603, 0x04200000, 0x48000000, 0x200005c0 },
+		{ 446, 148,  74, 0x11100070, 0x00120903, 0x04300000, 0x68000000, 0x200005c0 },
+		{ 453, 226, 113, 0x11100070, 0x000c0603, 0x04400000, 0x48000000, 0x200005c0 },
+		{ 466, 233, 116, 0x11100070, 0x000c0603, 0x04600000, 0x48000000, 0x200005c0 },
+		{ 480, 137,  68, 0x11100070, 0x000e0702, 0x03000000, 0x78000000, 0x200005c0 },
+		{ 480, 137, 137, 0x11100070, 0x00070702, 0x03000000, 0x70000000, 0x200005c0 },
+		{ 480, 160,  80, 0x11100070, 0x000c0602, 0x03000000, 0x68000000, 0x200005c0 },
+		{ 480, 240, 120, 0x11100070, 0x00080402, 0x03000000, 0x48000000, 0x200005c0 },
+		{ 500, 100, 100, 0x11100070, 0x000a0a02, 0x03200000, 0xa0000000, 0x200005c0 },
+		{ 500, 166,  83, 0x11100070, 0x000c0602, 0x03200000, 0x68000000, 0x200005c0 },
+		{ 500, 166, 166, 0x11100070, 0x00060602, 0x03200000, 0x60000000, 0x200005c0 },
+		{ 500, 200, 100, 0x11100070, 0x000a0502, 0x03200000, 0x58000000, 0x200005c0 },
+		{ 500, 250, 125, 0x11100070, 0x00080402, 0x03200000, 0x48000000, 0x200005c0 },
+		{ 530, 176,  88, 0x11100070, 0x000c0602, 0x03500000, 0x68000000, 0x200005c0 },
+		{ 530, 176, 176, 0x11100070, 0x00060602, 0x03500000, 0x60000000, 0x200005c0 },
+		{ 530, 265, 132, 0x11100070, 0x00080402, 0x03500000, 0x48000000, 0x200005c0 },
+		{ 533, 133, 133, 0x11100070, 0x000c0c03, 0x05000000, 0x80000000, 0x200005c0 },
+		{ 533, 266, 133, 0x11100070, 0x000c0603, 0x05000000, 0x48000000, 0x200005c0 },
 		{0}
 	};
 
 	/* 25MHz table for 5356 */
 	static uint32 BCMINITDATA(pll25mhz_table)[][8] = {
-		/* cpu, ddr, axi, pllctl12,  pllctl13,   pllctl14,   pllctl15,  |pllctl16 */
-		{  66,  66,  66, 0x11100070, 0x00121212, 0x03000000, 0x20000000, 0 },
-		{  75,  75,  75, 0x11100070, 0x00101010, 0x03000000, 0x20000000, 0 },
-		{  80,  80,  80, 0x11100070, 0x000a0a0a, 0x02000000, 0x20000000, 0 },
-		{  83,  83,  83, 0x11100070, 0x000c0c0c, 0x02800000, 0x20000000, 0 },
-		{ 100,  66,  66, 0x11100070, 0x0012120c, 0x03000000, 0x30000000, 0 },
-		{ 100, 100, 100, 0x11100070, 0x000c0c0c, 0x03000000, 0x20000000, 0 },
-		{ 125,  83,  83, 0x11100070, 0x000c0c08, 0x02800000, 0x30000000, 0 },
-		{ 133, 133, 133, 0x11100070, 0x000c0c0c, 0x04000000, 0x20000000, 0 },
-		{ 150,  75,  75, 0x11100070, 0x00101008, 0x03000000, 0x40000000, 0 },
-		{ 150, 100, 100, 0x11100070, 0x000c0c08, 0x03000000, 0x30000000, 0 },
-		{ 150, 150,  75, 0x11100070, 0x00100808, 0x03000000, 0x28000000, 0 },
-		{ 150, 150, 150, 0x11100070, 0x00080808, 0x03000000, 0x20000000, 0 },
-		{ 166,  83,  83, 0x11100070, 0x000c0c06, 0x02800000, 0x40000000, 0 },
-		{ 166, 166,  83, 0x11100070, 0x000c0606, 0x02800000, 0x28000000, 0 },
-		{ 166, 166, 166, 0x11100070, 0x00060606, 0x02800000, 0x20000000, 0 },
-		{ 200, 133, 133, 0x11100070, 0x000c0c08, 0x04000000, 0x30000000, 0 },
-		{ 200, 200, 100, 0x11100070, 0x000c0606, 0x03000000, 0x28000000, 0 },
-		{ 250, 166,  83, 0x11100070, 0x000c0604, 0x02800000, 0x38000000, 0 },
-		{ 250, 166, 166, 0x11100070, 0x00060604, 0x02800000, 0x30000000, 0 },
-		{ 293, 195,  97, 0x11100070, 0x000c0604, 0x02f00000, 0x38000000, 0 },
-		{ 300, 100, 100, 0x11100070, 0x000c0c04, 0x03000000, 0x60000000, 0 },
-		{ 300, 120, 120, 0x11100070, 0x000a0a04, 0x03000000, 0x50000000, 0 },
-		{ 300, 150,  75, 0x11100070, 0x00100804, 0x03000000, 0x48000000, 0 },
-		{ 300, 150, 150, 0x11100070, 0x00080804, 0x03000000, 0x40000000, 0 },
-		{ 300, 200, 100, 0x11100070, 0x000c0604, 0x03000000, 0x38000000, 0 },
+		/* cpu, ddr, axi, pllctl12,  pllctl13,   pllctl14,   pllctl15,   pllctl16 */
+		{  66,  66,  66, 0x11100070, 0x00121212, 0x03000000, 0x20000000, 0x200005c0 },
+		{  75,  75,  75, 0x11100070, 0x00101010, 0x03000000, 0x20000000, 0x200005c0 },
+		{  80,  80,  80, 0x11100070, 0x000a0a0a, 0x02000000, 0x20000000, 0x200005c0 },
+		{  83,  83,  83, 0x11100070, 0x000c0c0c, 0x02800000, 0x20000000, 0x200005c0 },
+		{ 100,  66,  66, 0x11100070, 0x0012120c, 0x03000000, 0x30000000, 0x200005c0 },
+		{ 100, 100, 100, 0x11100070, 0x000c0c0c, 0x03000000, 0x20000000, 0x200005c0 },
+		{ 125,  83,  83, 0x11100070, 0x000c0c08, 0x02800000, 0x30000000, 0x200005c0 },
+		{ 133, 133, 133, 0x11100070, 0x000c0c0c, 0x04000000, 0x20000000, 0x200005c0 },
+		{ 150,  75,  75, 0x11100070, 0x00101008, 0x03000000, 0x40000000, 0x200005c0 },
+		{ 150, 100, 100, 0x11100070, 0x000c0c08, 0x03000000, 0x30000000, 0x200005c0 },
+		{ 150, 150,  75, 0x11100070, 0x00100808, 0x03000000, 0x28000000, 0x200005c0 },
+		{ 150, 150, 150, 0x11100070, 0x00080808, 0x03000000, 0x20000000, 0x200005c0 },
+		{ 166,  83,  83, 0x11100070, 0x000c0c06, 0x02800000, 0x40000000, 0x200005c0 },
+		{ 166, 166,  83, 0x11100070, 0x000c0606, 0x02800000, 0x28000000, 0x200005c0 },
+		{ 166, 166, 166, 0x11100070, 0x00060606, 0x02800000, 0x20000000, 0x200005c0 },
+		{ 200, 133, 133, 0x11100070, 0x000c0c08, 0x04000000, 0x30000000, 0x200005c0 },
+		{ 200, 200, 100, 0x11100070, 0x000c0606, 0x03000000, 0x28000000, 0x200005c0 },
+		{ 250, 166,  83, 0x11100070, 0x000c0604, 0x02800000, 0x38000000, 0x200005c0 },
+		{ 250, 166, 166, 0x11100070, 0x00060604, 0x02800000, 0x30000000, 0x200005c0 },
+		{ 293, 195,  97, 0x11100070, 0x000c0604, 0x02f00000, 0x38000000, 0x200005c0 },
+		{ 300, 100, 100, 0x11100070, 0x000c0c04, 0x03000000, 0x60000000, 0x200005c0 },
+		{ 300, 120, 120, 0x11100070, 0x000a0a04, 0x03000000, 0x50000000, 0x200005c0 },
+		{ 300, 150,  75, 0x11100070, 0x00100804, 0x03000000, 0x48000000, 0x200005c0 },
+		{ 300, 150, 150, 0x11100070, 0x00080804, 0x03000000, 0x40000000, 0x200005c0 },
+		{ 300, 200, 100, 0x11100070, 0x000c0604, 0x03000000, 0x38000000, 0x200005c0 },
 		{ 332, 110, 110, 0x11100070, 0x000c0c04, 0x03540000, 0x6047ae14, 0x202c2820 },
 		{ 332, 133, 133, 0x11100070, 0x000a0a04, 0x03540000, 0x5047ae14, 0x202c2820 },
 		{ 332, 166,  83, 0x11100070, 0x00100804, 0x03540000, 0x4847ae14, 0x202c2820 },
-		{ 333, 111, 111, 0x11100070, 0x00090903, 0x02800000, 0x60000000, 0 },
-		{ 333, 133, 133, 0x11100070, 0x000f0f06, 0x05000000, 0x50000000, 0 },
-		{ 333, 166,  83, 0x11100070, 0x000c0603, 0x02800000, 0x48000000, 0 },
-		{ 333, 166, 166, 0x11100070, 0x00060603, 0x02800000, 0x40000000, 0 },
-		{ 400, 200, 100, 0x11100070, 0x000c0603, 0x03000000, 0x48000000, 0 },
-		{ 400, 133, 133, 0x11100070, 0x000c0c04, 0x04000000, 0x60000000, 0 },
-		{ 400, 266, 133, 0x11100070, 0x000c0604, 0x04000000, 0x38000000, 0 },
-		{ 500, 166,  83, 0x11100070, 0x000c0602, 0x02800000, 0x68000000, 0 },
-		{ 500, 166, 166, 0x11100070, 0x00060602, 0x02800000, 0x60000000, 0 },
-		{ 500, 200, 100, 0x11100070, 0x000a0502, 0x02800000, 0x58000000, 0 },
-		{ 500, 250, 125, 0x11100070, 0x00080402, 0x02800000, 0x48000000, 0 },
+		{ 333, 111, 111, 0x11100070, 0x00090903, 0x02800000, 0x60000000, 0x200005c0 },
+		{ 333, 133, 133, 0x11100070, 0x000f0f06, 0x05000000, 0x50000000, 0x38000700 },
+		{ 333, 166,  83, 0x11100070, 0x000c0603, 0x02800000, 0x48000000, 0x200005c0 },
+		{ 333, 166, 166, 0x11100070, 0x00060603, 0x02800000, 0x40000000, 0x200005c0 },
+		{ 400, 133, 133, 0x11100070, 0x000c0c04, 0x04000000, 0x60000000, 0x200005c0 },
+		{ 400, 200, 100, 0x11100070, 0x000c0603, 0x03000000, 0x48000000, 0x200005c0 },
+		{ 400, 266, 133, 0x11100070, 0x000c0604, 0x04000000, 0x38000000, 0x200005c0 },
+		{ 500, 166,  83, 0x11100070, 0x000c0602, 0x02800000, 0x68000000, 0x200005c0 },
+		{ 500, 166, 166, 0x11100070, 0x00060602, 0x02800000, 0x60000000, 0x200005c0 },
+		{ 500, 200, 100, 0x11100070, 0x000a0502, 0x02800000, 0x58000000, 0x200005c0 },
+		{ 500, 250, 125, 0x11100070, 0x00080402, 0x02800000, 0x48000000, 0x200005c0 },
 		{0}
 	};
 
@@ -569,8 +739,13 @@ BCMINITFN(mips_pmu_setclock)(si_t *sih, uint32 mipsclock, uint32 ddrclock, uint3
 
 	/* Adjust the mainpll_pll0 address and pll table for 5356 */
 	if (CHIPID(sih->chip) == BCM5356_CHIP_ID) {
-		mainpll_pll0 = PMU5356_MAINPLL_PLL0;
-		pll_table = pll25mhz_table;
+	  mainpll_pll0 = PMU5356_MAINPLL_PLL0;
+	  pll_table = pll25mhz_table;
+	}
+	/* Adjust the mainpll_pll0 address and pll table for 5357 */
+	if (CHIPID(sih->chip) == BCM5357_CHIP_ID) {
+	  mainpll_pll0 = PMU5357_MAINPLL_PLL0;
+	  pll_table = pll20mhz_table;
 	}
 
 	/* get index of the current core */
@@ -587,6 +762,14 @@ BCMINITFN(mips_pmu_setclock)(si_t *sih, uint32 mipsclock, uint32 ddrclock, uint3
 	HNDMIPS_NONE(("Looking for %d/%d/%d\n", mipsclock, ddrclock, axiclock));
 
 	for (idx = 0; pll_table[idx][0] != 0; idx++) {
+		uint16 chippkg;
+		/* Bypass pll entries that are not allowed */
+		if ((((pll_table[idx][4] & 0xff) < 4) ||
+		     (((pll_table[idx][5] >> 20) & 0x1ff) > 0x50)) &&
+		    (CHIPID(sih->chip) == BCM5357_CHIP_ID) &&
+		    (((chippkg = R_REG(osh, &cc->sromotp[23])) & 0x80) == 0x80)) {
+			continue;
+		}
 		if ((mipsclock <= pll_table[idx][0]) &&
 		    ((ddrclock == 0) || (ddrclock <= pll_table[idx][1])) &&
 		    ((axiclock == 0) || (axiclock <= pll_table[idx][2])))
@@ -621,15 +804,61 @@ BCMINITFN(mips_pmu_setclock)(si_t *sih, uint32 mipsclock, uint32 ddrclock, uint3
 		W_REG(osh, &cc->pllcontrol_addr, mainpll_pll0 + i);
 		(void)R_REG(osh, &cc->pllcontrol_addr);
 		tmp = pll_table[idx][i + 3];
-		/* For pllctl we only modify low 4 bits */
-		if (i == PMU5_PLL_PLLCTL_OFF) {
-			if ((tmp & ~0xf) == 0)
-				tmp |= R_REG(osh, &cc->pllcontrol_data) & ~0xf;
-		}
 		W_REG(osh, &cc->pllcontrol_data, tmp);
 	}
 	/* Wait for the last write */
 	(void)R_REG(osh, &cc->pllcontrol_data);
+
+	/* For chips that support changing clocks on the fly, use the new clocks changing scheme */
+	if ((regs = si_setcore(sih, MIPS74K_CORE_ID, 0)) != NULL)
+		chclk_otf = ((si_core_sflags(sih, 0, 0) & SISF_CHG_CLK_OTF_PRESENT) != 0);
+	if (chclk_otf &&
+	    ((dmc = (dmemcregs_t *)si_setcore(sih, DMEMC_CORE_ID, 0)) != NULL)) {
+		uint ic_size, ic_lsize;
+		ulong start, end;
+		uint32 c0reg;
+		uint32 tmp;
+
+		/* Enable mips interrupt */
+		c0reg = MFC0(C0_STATUS, 0);
+		tmp = (c0reg & ~ALLINTS) | IE_IRQ0;
+		MTC0(C0_STATUS, 0, tmp);
+
+		/* Enable PMU interrupt */
+		OR_REG(osh, &cc->intmask, CI_PMU);
+
+		icache_probe(MFC0(C0_CONFIG, 1), &ic_size, &ic_lsize);
+
+		/* Put sdsleep routine into the icache */
+		start = (ulong)&sdsleep;
+		end = (ulong)&aftersdsleep;
+		for (i = 0; i < (end - start); i += ic_lsize)
+			cache_op(start + i, Fill_I);
+
+		/* Program PMU timer */
+		tmp = R_REG(osh, &cc->res_req_timer);
+		tmp &= 0xfc000000;
+		tmp |= 0x0100011b;
+		W_REG(osh, &cc->res_req_timer, tmp);
+
+		/* Set change clock */
+		W_REG(osh, &cc->chipcontrol_addr, 0x1);
+		SET_REG(osh, &cc->chipcontrol_data, (1 << 3), (1 << 3));
+
+		sdsleep(osh, dmc);
+
+		/* Clear change clock */
+		W_REG(osh, &cc->chipcontrol_addr, 0x1);
+		SET_REG(osh, &cc->chipcontrol_data, (1 << 3), 0);
+
+		/* Clear PMU interrupt */
+		W_REG(osh, &cc->pmustatus, 0x40);
+
+		/* Restore mips interrupt mask */
+		MTC0(C0_STATUS, 0, c0reg);
+
+		goto done;
+	}
 
 	if (CHIPID(sih->chip) == BCM47162_CHIP_ID) {
 		/* In 47162, clear min_res_mask */
@@ -659,8 +888,6 @@ done:
 
 	return ret;
 }
-
-#define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4)
 
 static void
 BCMINITFN(handler)(void)
@@ -697,7 +924,6 @@ BCMINITFN(afterhandler)(void)
 bool
 BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 pciclock)
 {
-	extifregs_t *eir = NULL;
 	osl_t *osh;
 	chipcregs_t *cc = NULL;
 	mips33regs_t *mipsr = NULL;
@@ -706,77 +932,6 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 	uint32 pll_type, sync_mode;
 	uint ic_size, ic_lsize;
 	uint idx, i;
-  /* PLL configuration: type 1 */
-  typedef struct
-  {
-    uint32 mipsclock;
-    uint16 n;
-    uint32 sb;
-    uint32 pci33;
-    uint32 pci25;
-  } n3m_table_t;
-  static n3m_table_t BCMINITDATA (type1_table)[] =
-  {
-    /* 96.000 32.000 24.000 */
-    {
-    96000000, 0x0303, 0x04020011, 0x11030011, 0x11050011},
-      /* 100.000 33.333 25.000 */
-    {
-    100000000, 0x0009, 0x04020011, 0x11030011, 0x11050011},
-      /* 104.000 31.200 24.960 */
-    {
-    104000000, 0x0802, 0x04020011, 0x11050009, 0x11090009},
-      /* 108.000 32.400 24.923 */
-    {
-    108000000, 0x0403, 0x04020011, 0x11050009, 0x02000802},
-      /* 112.000 32.000 24.889 */
-    {
-    112000000, 0x0205, 0x04020011, 0x11030021, 0x02000403},
-      /* 115.200 32.000 24.000 */
-    {
-    115200000, 0x0303, 0x04020009, 0x11030011, 0x11050011},
-      /* 120.000 30.000 24.000 */
-    {
-    120000000, 0x0011, 0x04020011, 0x11050011, 0x11090011},
-      /* 124.800 31.200 24.960 */
-    {
-    124800000, 0x0802, 0x04020009, 0x11050009, 0x11090009},
-      /* 128.000 32.000 24.000 */
-    {
-    128000000, 0x0305, 0x04020011, 0x11050011, 0x02000305},
-      /* 132.000 33.000 24.750 */
-    {
-    132000000, 0x0603, 0x04020011, 0x11050011, 0x02000305},
-      /* 136.000 32.640 24.727 */
-    {
-    136000000, 0x0c02, 0x04020011, 0x11090009, 0x02000603},
-      /* 140.000 30.000 24.706 */
-    {
-    140000000, 0x0021, 0x04020011, 0x11050021, 0x02000c02},
-      /* 144.000 30.857 24.686 */
-    {
-    144000000, 0x0405, 0x04020011, 0x01020202, 0x11090021},
-      /* 150.857 33.000 24.000 */
-    {
-    150857142, 0x0605, 0x04020021, 0x02000305, 0x02000605},
-      /* 152.000 32.571 24.000 */
-    {
-    152000000, 0x0e02, 0x04020011, 0x11050021, 0x02000e02},
-      /* 156.000 31.200 24.960 */
-    {
-    156000000, 0x0802, 0x04020005, 0x11050009, 0x11090009},
-      /* 160.000 32.000 24.000 */
-    {
-    160000000, 0x0309, 0x04020011, 0x11090011, 0x02000309},
-      /* 163.200 32.640 24.727 */
-    {
-    163200000, 0x0c02, 0x04020009, 0x11090009, 0x02000603},
-      /* 168.000 32.000 24.889 */
-    {
-    168000000, 0x0205, 0x04020005, 0x11030021, 0x02000403},
-      /* 176.000 33.000 24.000 */
-    {
-  176000000, 0x0602, 0x04020003, 0x11050005, 0x02000602},};
 
 	/* PLL configuration: type 3 */
 	typedef struct {
@@ -992,13 +1147,7 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 	clockcontrol_m2 = NULL;
 
 	/* switch to chipc core */
-	if ((eir = (extifregs_t *) si_setcore(sih, EXTIF_CORE_ID, 0))) {
-		pll_type = PLL_TYPE1;
-		clockcontrol_n = &eir->clockcontrol_n;
-		clockcontrol_sb = &eir->clockcontrol_sb;
-		clockcontrol_pci = &eir->clockcontrol_pci;
-		clockcontrol_m2 = &cc->clockcontrol_m2;
-	} else if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) { 
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
 	pll_type = sih->cccaps & CC_CAP_PLL_MASK;
@@ -1012,8 +1161,6 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 		clockcontrol_pci = &cc->clockcontrol_pci;
 		clockcontrol_m2 = &cc->clockcontrol_m2;
 	}
-	} else
-		goto done;
 
 	if (pll_type == PLL_TYPE6) {
 		/* Silence compilers */
@@ -1025,56 +1172,7 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 		orig_pci = R_REG(osh, clockcontrol_pci);
 	}
 
-  if (pll_type == PLL_TYPE1)
-    {
-      /* Keep the current PCI clock if not specified */
-      if (pciclock == 0)
-	{
-	  pciclock = si_clock_rate (pll_type, R_REG (osh, clockcontrol_n),
-				    R_REG (osh, clockcontrol_pci));
-	  pciclock = (pciclock <= 25000000) ? 25000000 : 33000000;
-	}
-
-      /* Search for the closest MIPS clock less than or equal to a preferred value */
-      for (i = 0; i < ARRAYSIZE (type1_table); i++)
-	{
-	  ASSERT (type1_table[i].mipsclock ==
-		  si_clock_rate (pll_type, type1_table[i].n,
-				 type1_table[i].sb));
-	  if (type1_table[i].mipsclock > mipsclock)
-	    break;
-	}
-      if (i == 0)
-	{
-	  ret = FALSE;
-	  goto done;
-	}
-      else
-	{
-	  ret = TRUE;
-	  i--;
-	}
-      ASSERT (type1_table[i].mipsclock <= mipsclock);
-
-      /* No PLL change */
-      if ((orig_n == type1_table[i].n) &&
-	  (orig_sb == type1_table[i].sb) &&
-	  (orig_pci == type1_table[i].pci33))
-	goto done;
-
-      /* Set the PLL controls */
-      W_REG (osh, clockcontrol_n, type1_table[i].n);
-      W_REG (osh, clockcontrol_sb, type1_table[i].sb);
-      if (pciclock == 25000000)
-	W_REG (osh, clockcontrol_pci, type1_table[i].pci25);
-      else
-	W_REG (osh, clockcontrol_pci, type1_table[i].pci33);
-
-      /* Reset */
-      si_watchdog (sih, 1);
-      while (1);
-    }
-  else if (pll_type == PLL_TYPE3) {
+	if (pll_type == PLL_TYPE3) {
 		/* 5350 */
 		if (sih->chip != BCM5365_CHIP_ID) {
 			/*

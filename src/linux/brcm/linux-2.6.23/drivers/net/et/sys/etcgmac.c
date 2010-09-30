@@ -3,14 +3,14 @@
  *
  * This file implements the chip-specific routines for the GMAC core.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: etcgmac.c,v 1.2.2.3.14.15 2009/04/09 08:03:38 Exp $
+ * $Id: etcgmac.c,v 1.12.20.12 2010/08/03 17:05:16 Exp $
  */
 
 #include <typedefs.h>
@@ -89,7 +89,7 @@ static void chipintrsoff(ch_t *ch);
 static void chiptxreclaim(ch_t *ch, bool all);
 static void chiprxreclaim(ch_t *ch);
 static void chipstatsupd(ch_t *ch);
-static void chipdumpmib(ch_t *ch, struct bcmstrbuf *b);
+static void chipdumpmib(ch_t *ch, struct bcmstrbuf *b, bool clear);
 static void chipenablepme(ch_t *ch);
 static void chipdisablepme(ch_t *ch);
 static void chipphyreset(ch_t *ch, uint phyaddr);
@@ -137,6 +137,7 @@ struct chops bcmgmac_et_chops = {
 static uint devices[] = {
 	BCM47XX_GMAC_ID,
 	BCM4716_CHIP_ID,
+	BCM4748_CHIP_ID,
 	0x0000
 };
 
@@ -255,26 +256,26 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	ch->di[0] = dma_attach(osh, name, ch->sih,
 	                       DMAREG(ch, DMA_TX, TX_Q0),
 	                       DMAREG(ch, DMA_RX, RX_Q0),
-	                       NTXD, NRXD, RXBUFSZ, NRXBUFPOST, HWRXOFF,
+	                       NTXD, NRXD, RXBUFSZ, -1, NRXBUFPOST, HWRXOFF,
 	                       &et_msg_level);
 
 	/* TX: TC_BE, RX: UNUSED */
 	ch->di[1] = dma_attach(osh, name, ch->sih,
 	                       DMAREG(ch, DMA_TX, TX_Q1),
 	                       NULL /* rxq unused */,
-	                       NTXD, 0, 0, 0, 0, &et_msg_level);
+	                       NTXD, 0, 0, -1, 0, 0, &et_msg_level);
 
 	/* TX: TC_CL, RX: UNUSED */
 	ch->di[2] = dma_attach(osh, name, ch->sih,
 	                       DMAREG(ch, DMA_TX, TX_Q2),
 	                       NULL /* rxq unused */,
-	                       NTXD, 0, 0, 0, 0, &et_msg_level);
+	                       NTXD, 0, 0, -1, 0, 0, &et_msg_level);
 
 	/* TX: TC_VO, RX: UNUSED */
 	ch->di[3] = dma_attach(osh, name, ch->sih,
 	                       DMAREG(ch, DMA_TX, TX_Q3),
 	                       NULL /* rxq unused */,
-	                       NTXD, 0, 0, 0, 0, &et_msg_level);
+	                       NTXD, 0, 0, -1, 0, 0, &et_msg_level);
 
 	for (i = 0; i < NUMTXQ; i++)
 		if (ch->di[i] == NULL) {
@@ -320,6 +321,8 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	 * Broadcom Robo ethernet switch.
 	 */
 	if ((boardflags & BFL_ENETROBO) && (etc->phyaddr == EPHY_NOREG)) {
+		ET_TRACE(("et%d: chipattach: Calling robo attach\n", etc->unit));
+
 		/* Attach to the switch */
 		if (!(etc->robo = bcm_robo_attach(ch->sih, ch, ch->vars,
 		                                  (miird_f)bcmgmac_et_chops.phyrd,
@@ -431,6 +434,7 @@ chiplongname(ch_t *ch, char *buf, uint bufsize)
 	switch (ch->etc->deviceid) {
 		case BCM47XX_GMAC_ID:
 		case BCM4716_CHIP_ID:
+		case BCM4748_CHIP_ID:
 		default:
 			s = "Broadcom BCM47XX 10/100/1000 Mbps Ethernet Controller";
 			break;
@@ -489,8 +493,8 @@ gmac_reset(ch_t *ch)
 	ocmdcfg = cmdcfg = R_REG(ch->osh, &ch->regs->cmdcfg);
 
 	cmdcfg &= ~(CC_TE | CC_RE | CC_RPI | CC_TAI | CC_HD | CC_ML |
-	            CC_CFE | CC_RL | CC_RED | CC_PE | CC_TPI | CC_PAD_EN);
-	cmdcfg |= (CC_PROM | CC_PF | CC_NLC | CC_CFE);
+	            CC_CFE | CC_RL | CC_RED | CC_PE | CC_TPI | CC_PAD_EN | CC_PF);
+	cmdcfg |= (CC_PROM | CC_NLC | CC_CFE);
 
 	if (cmdcfg != ocmdcfg)
 		W_REG(ch->osh, &ch->regs->cmdcfg, cmdcfg);
@@ -666,6 +670,21 @@ gmac_enable(ch_t *ch)
 		si_pmu_chipcontrol(ch->sih, PMU_CHIPCTL1, PMU_CC1_RXC_DLL_BYPASS,
 		                   PMU_CC1_RXC_DLL_BYPASS);
 
+	/* Set the GMAC flowcontrol on and off thresholds and pause retry timer
+	 * the thresholds are tuned based on size of buffer internal to GMAC.
+	 */
+	if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
+	    (CHIPID(ch->sih->chip) == BCM4716_CHIP_ID) ||
+	    (CHIPID(ch->sih->chip) == BCM47162_CHIP_ID)) {
+		uint32 flctl = 0x03cb04cb;
+
+		if (CHIPID(ch->sih->chip) == BCM5357_CHIP_ID)
+			flctl = 0x2300e1;
+
+		W_REG(ch->osh, &regs->flowctlthresh, flctl);
+		W_REG(ch->osh, &regs->pausectl, 0x27fff);
+	}
+
 	/* init the mac data period. the value is set according to expr
 	 * ((128ns / bp_clk) - 3).
 	 */
@@ -768,7 +787,12 @@ chipreset(ch_t *ch)
 	gmac_mf_cleanup(ch);
 
 chipinreset:
-	if ((sflags = si_core_sflags(ch->sih, 0, 0)) & SISF_SW_ATTACHED) {
+	sflags = si_core_sflags(ch->sih, 0, 0);
+	/* Do not enable internal switch for 47186 */
+	if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) && (ch->sih->chippkg == BCM47186_PKG_ID))
+		sflags &= ~SISF_SW_ATTACHED;
+
+	if (sflags & SISF_SW_ATTACHED) {
 		ET_TRACE(("et%d: internal switch attached\n", ch->etc->unit));
 		flagbits = SICF_SWCLKE;
 		if (!ch->etc->robo) {
@@ -779,6 +803,29 @@ chipinreset:
 
 	/* reset core */
 	si_core_reset(ch->sih, flagbits, 0);
+
+	/* Request Misc PLL for corerev > 2 */
+	if (ch->etc->corerev > 2) {
+		OR_REG(ch->osh, &regs->clk_ctl_st, CS_ER);
+		SPINWAIT((R_REG(ch->osh, &regs->clk_ctl_st) & CS_ES) != CS_ES, 1000);
+	}
+
+	if (CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) {
+		char *var;
+		uint32 sw_type = PMU_CC1_SW_TYPE_EPHY | PMU_CC1_IF_TYPE_MII;
+
+		if ((var = getvar(ch->vars, "et_swtype")) != NULL)
+			sw_type = (bcm_atoi(var) & 0x0f) << 4;
+		else if (ch->sih->chippkg == BCM5358_PKG_ID)
+			sw_type = PMU_CC1_SW_TYPE_EPHYRMII;
+		else if (ch->sih->chippkg == BCM47186_PKG_ID)
+			sw_type = PMU_CC1_IF_TYPE_RGMII|PMU_CC1_SW_TYPE_RGMII;
+
+		ET_TRACE(("%s: sw_type %04x\n", __FUNCTION__, sw_type));
+		si_pmu_chipcontrol(ch->sih, PMU_CHIPCTL1,
+			(PMU_CC1_IF_TYPE_MASK|PMU_CC1_SW_TYPE_MASK),
+			sw_type);
+	}
 
 	if ((sflags & SISF_SW_ATTACHED) && (!ch->etc->robo)) {
 		ET_TRACE(("et%d: taking switch out of reset\n", ch->etc->unit));
@@ -896,9 +943,6 @@ chipinit(ch_t *ch, uint options)
 
 	ET_TRACE(("et%d: chipinit\n", etc->unit));
 
-	/* Do timeout fixup */
-	si_core_tofixup(ch->sih);
-
 	/* enable one rx interrupt per received frame */
 	W_REG(ch->osh, &regs->intrecvlazy, (1 << IRL_FC_SHIFT));
 
@@ -982,7 +1026,7 @@ chiptx(ch_t *ch, void *p0)
 	    (((robo_info_t *)ch->etc->robo)->devid == DEVID53115)) {
 		void *p = p0;
 
-	    	if ((p0 = etc_bcm53115_war(ch->etc, p)) == NULL) {
+		if ((p0 = etc_bcm53115_war(ch->etc, p)) == NULL) {
 			PKTFREE(ch->osh, p, TRUE);
 			return FALSE;
 		}
@@ -995,6 +1039,7 @@ chiptx(ch_t *ch, void *p0)
 	if (len > (ETHER_MAX_LEN + 32)) {
 		ET_ERROR(("et%d: chiptx: max frame length exceeded\n",
 		          ch->etc->unit));
+		PKTFREE(ch->osh, p0, TRUE);
 		return FALSE;
 	}
 
@@ -1008,14 +1053,14 @@ chiptx(ch_t *ch, void *p0)
 	ASSERT(q < NUMTXQ);
 	error = dma_txfast(ch->di[q], p0, TRUE);
 
-	/* set back the orig length */
-	PKTSETLEN(ch->osh, p0, len);
-
 	if (error) {
 		ET_ERROR(("et%d: chiptx: out of txds\n", ch->etc->unit));
 		ch->etc->txnobuf++;
 		return FALSE;
 	}
+
+	/* set back the orig length */
+	PKTSETLEN(ch->osh, p0, len);
 
 	return TRUE;
 }
@@ -1029,7 +1074,7 @@ chiptxreclaim(ch_t *ch, bool forceall)
 	ET_TRACE(("et%d: chiptxreclaim\n", ch->etc->unit));
 
 	for (i = 0; i < NUMTXQ; i++) {
-		dma_txreclaim(ch->di[i], forceall);
+		dma_txreclaim(ch->di[i], forceall ? HNDDMA_RANGE_ALL : HNDDMA_RANGE_TRANSMITTED);
 		ch->intstatus &= ~(I_XI0 << i);
 	}
 }
@@ -1187,7 +1232,7 @@ chiperrors(ch_t *ch)
 	}
 
 	if (intstatus & I_RFO) {
-		ET_ERROR(("et%d: receive fifo overflow\n", etc->unit));
+		ET_TRACE(("et%d: receive fifo overflow\n", etc->unit));
 		etc->rxoflo++;
 	}
 
@@ -1252,11 +1297,16 @@ chipstatsupd(ch_t *ch)
 }
 
 static void
-chipdumpmib(ch_t *ch, struct bcmstrbuf *b)
+chipdumpmib(ch_t *ch, struct bcmstrbuf *b, bool clear)
 {
 	gmacmib_t *m;
 
 	m = &ch->mib;
+
+	if (clear) {
+		bzero((char *)m, sizeof(gmacmib_t));
+		return;
+	}
 
 	bcm_bprintf(b, "tx_broadcast_pkts %d tx_multicast_pkts %d tx_jabber_pkts %d "
 	               "tx_oversize_pkts %d\n",
@@ -1447,28 +1497,32 @@ chipphyreset(ch_t *ch, uint phyaddr)
 static void
 chipphyinit(ch_t *ch, uint phyaddr)
 {
-	int i;
+	if (CHIPID(ch->sih->chip) == BCM5356_CHIP_ID) {
+		int i;
 
-	if (CHIPID(ch->sih->chip) == BCM5356_CHIP_ID && ch->sih->chiprev == 0) {
-		for (i = 0; i < 5; i++) {
-			if (i != 2) {
-				chipphywr(ch, i, 0x04, 0x0461);
-			}
-			chipphywr(ch, i, 0x1f, 0x008b);
-			chipphywr(ch, i, 0x1d, 0x0100);
-			if (i == 2) {
-				chipphywr(ch, 2, 0x1f, 0xf);
-				chipphywr(ch, 2, 0x13, 0xa842);
-			}
-			chipphywr(ch, i, 0x1f, 0x000b);
-			OSL_DELAY(300000);
-		}
-	} else if (CHIPID(ch->sih->chip) == BCM5356_CHIP_ID && ch->sih->chiprev > 0) {
 		for (i = 0; i < 5; i++) {
 			chipphywr(ch, i, 0x1f, 0x008b);
 			chipphywr(ch, i, 0x15, 0x0100);
 			chipphywr(ch, i, 0x1f, 0x000f);
 			chipphywr(ch, i, 0x12, 0x2aaa);
+			chipphywr(ch, i, 0x1f, 0x000b);
+		}
+	}
+
+	if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) && (ch->sih->chippkg != BCM47186_PKG_ID)) {
+		int i;
+
+		for (i = 0; i < 5; i++) {
+			chipphywr(ch, i, 0x1f, 0x000f);
+			chipphywr(ch, i, 0x16, 0x5284);
+			chipphywr(ch, i, 0x1f, 0x000b);
+			chipphywr(ch, i, 0x17, 0x0010);
+			chipphywr(ch, i, 0x1f, 0x000f);
+			chipphywr(ch, i, 0x16, 0x5296);
+			chipphywr(ch, i, 0x17, 0x1073);
+			chipphywr(ch, i, 0x17, 0x9073);
+			chipphywr(ch, i, 0x16, 0x52b6);
+			chipphywr(ch, i, 0x17, 0x9273);
 			chipphywr(ch, i, 0x1f, 0x000b);
 		}
 	}

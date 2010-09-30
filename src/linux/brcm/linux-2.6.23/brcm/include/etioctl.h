@@ -1,14 +1,14 @@
 /*
  * BCM44XX Ethernet Windows device driver custom OID definitions.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: etioctl.h,v 13.14.2.1 2008/06/24 09:38:29 Exp $
+ * $Id: etioctl.h,v 13.17.8.2 2010/04/07 06:00:51 Exp $
  */
 
 #ifndef _etioctl_h_
@@ -32,6 +32,7 @@
 #define ETCDUMP		3
 #define ETCSETMSGLEVEL	4
 #define	ETCPROMISC	5
+#define ETCVAR		6
 #define	ETCSPEED	7
 #define ETCPHYRD	9
 #define ETCPHYWR	10
@@ -41,14 +42,20 @@
 #define ETCROBORD	14
 #define ETCROBOWR	15
 
-#if defined(linux)
+/*
+ * A set of iovars defined for ET set/get 
+ */
+#define IOV_ET_POWER_SAVE_MODE 1
+#define IOV_ET_CLEAR_DUMP      2
+
+#if defined(linux) || defined(__ECOS)
 #define SIOCSETCUP		(SIOCDEVPRIVATE + ETCUP)
 #define SIOCSETCDOWN		(SIOCDEVPRIVATE + ETCDOWN)
 #define SIOCSETCLOOP		(SIOCDEVPRIVATE + ETCLOOP)
 #define SIOCGETCDUMP		(SIOCDEVPRIVATE + ETCDUMP)
 #define SIOCSETCSETMSGLEVEL	(SIOCDEVPRIVATE + ETCSETMSGLEVEL)
 #define SIOCSETCPROMISC		(SIOCDEVPRIVATE + ETCPROMISC)
-#define SIOCSETCTXDOWN		(SIOCDEVPRIVATE + 6)	/* obsolete */
+#define SIOCSETGETVAR		(SIOCDEVPRIVATE + ETCVAR)
 #define SIOCSETCSPEED		(SIOCDEVPRIVATE + ETCSPEED)
 #define SIOCTXGEN		(SIOCDEVPRIVATE + 8)
 #define SIOCGETCPHYRD		(SIOCDEVPRIVATE + ETCPHYRD)
@@ -58,6 +65,14 @@
 #define SIOCSETCPHYWR2		(SIOCDEVPRIVATE + ETCPHYWR2)
 #define SIOCGETCROBORD		(SIOCDEVPRIVATE + ETCROBORD)
 #define SIOCSETCROBOWR		(SIOCDEVPRIVATE + ETCROBOWR)
+
+/* structure to send a generic var set/get */
+typedef struct et_var_s {
+	uint cmd;
+	uint set;
+	void *buf;
+	uint len;
+} et_var_t;
 
 /* arg to SIOCTXGEN */
 struct txg {

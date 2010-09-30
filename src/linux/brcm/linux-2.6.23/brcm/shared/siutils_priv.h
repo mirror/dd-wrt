@@ -1,7 +1,7 @@
 /*
  * Include file private to the SOC Interconnect support files.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,13 +9,12 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: siutils_priv.h,v 1.3.2.1 2008/07/26 01:21:27 Exp $
+ * $Id: siutils_priv.h,v 1.10.8.3 2010/02/18 02:35:38 Exp $
  */
 
 #ifndef	_siutils_priv_h_
 #define	_siutils_priv_h_
 
-/* debug/trace */
 #define	SI_ERROR(args)
 
 #define	SI_MSG(args)
@@ -57,9 +56,6 @@ typedef struct si_info {
 
 	bool	memseg;			/* flag to toggle MEM_SEG register */
 
-	uint	gpioidx;		/* gpio control core index */
-	uint	gpioid;			/* gpio control coretype */
-
 	char *vars;
 	uint varsz;
 
@@ -81,6 +77,7 @@ typedef struct si_info {
 
 	uint32	cia[SI_MAXCORES];	/* erom cia entry for each core */
 	uint32	cib[SI_MAXCORES];	/* erom cia entry for each core */
+	uint32	oob_router;		/* oob router registers for axi */
 } si_info_t;
 
 #define	SI_INFO(sih)	(si_info_t *)(uintptr)sih
@@ -133,7 +130,8 @@ typedef struct si_info {
 #define PCI_FORCEHT(si)	\
 	(((PCIE(si)) && (si->pub.chip == BCM4311_CHIP_ID) && ((si->pub.chiprev <= 1))) || \
 	((PCI(si) || PCIE(si)) && (si->pub.chip == BCM4321_CHIP_ID)) || \
-	(PCIE(si) && (si->pub.chip == BCM4716_CHIP_ID)))
+	(PCIE(si) && (si->pub.chip == BCM4716_CHIP_ID)) || \
+	(PCIE(si) && (si->pub.chip == BCM4748_CHIP_ID)))
 
 /* GPIO Based LED powersave defines */
 #define DEFAULT_GPIO_ONTIME	10		/* Default: 10% on */
@@ -146,6 +144,7 @@ typedef struct si_info {
 /* Silicon Backplane externs */
 extern void sb_scan(si_t *sih, void *regs, uint devid);
 extern uint sb_coreid(si_t *sih);
+extern uint sb_intflag(si_t *sih);
 extern uint sb_flag(si_t *sih);
 extern void sb_setint(si_t *sih, int siflag);
 extern uint sb_corevendor(si_t *sih);
@@ -168,7 +167,14 @@ extern int sb_numaddrspaces(si_t *sih);
 
 extern uint32 sb_set_initiator_to(si_t *sih, uint32 to, uint idx);
 
+extern bool sb_taclear(si_t *sih, bool details);
 
+#if defined(BCMDBG_DUMP)
+extern void sb_dump(si_t *sih, struct bcmstrbuf *b);
+#endif
+#if defined(BCMDBG_DUMP)
+extern void sb_dumpregs(si_t *sih, struct bcmstrbuf *b);
+#endif
 
 /* Wake-on-wireless-LAN (WOWL) */
 extern bool sb_pci_pmecap(si_t *sih);
@@ -201,5 +207,32 @@ extern int ai_numaddrspaces(si_t *sih);
 extern uint32 ai_addrspace(si_t *sih, uint asidx);
 extern uint32 ai_addrspacesize(si_t *sih, uint asidx);
 
+#if defined(BCMDBG_DUMP)
+extern void ai_dumpregs(si_t *sih, struct bcmstrbuf *b);
+#endif
+
+#ifdef SI_ENUM_BASE_VARIABLE
+extern void si_enum_base_init(si_t *sih, uint bustype);
+#endif /* SI_ENUM_BASE_VARIABLE */
+
+#define ub_scan(a, b, c) do {} while (0)
+#define ub_flag(a) (0)
+#define ub_setint(a, b) do {} while (0)
+#define ub_coreidx(a) (0)
+#define ub_corevendor(a) (0)
+#define ub_corerev(a) (0)
+#define ub_iscoreup(a) (0)
+#define ub_setcoreidx(a, b) (0)
+#define ub_core_cflags(a, b, c) (0)
+#define ub_core_cflags_wo(a, b, c) do {} while (0)
+#define ub_core_sflags(a, b, c) (0)
+#define ub_corereg(a, b, c, d, e) (0)
+#define ub_core_reset(a, b, c) do {} while (0)
+#define ub_core_disable(a, b) do {} while (0)
+#define ub_numaddrspaces(a) (0)
+#define ub_addrspace(a, b)  (0)
+#define ub_addrspacesize(a, b) (0)
+#define ub_view(a, b) do {} while (0)
+#define ub_dumpregs(a, b) do {} while (0)
 
 #endif	/* _siutils_priv_h_ */

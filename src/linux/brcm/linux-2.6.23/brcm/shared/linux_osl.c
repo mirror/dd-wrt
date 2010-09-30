@@ -1,7 +1,7 @@
 /*
  * Linux OS Independent Layer
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linux_osl.c,v 1.127.2.11.12.3 2008/11/19 01:49:45 Exp $
+ * $Id: linux_osl.c,v 1.152.18.27 2010/08/02 17:43:31 Exp $
  */
 
 #define LINUX_PORT
@@ -26,6 +26,12 @@
 #endif /* mips */
 #include <pcicfg.h>
 
+#ifdef BCMASSERT_LOG
+#include <bcm_assert_log.h>
+#endif
+
+#include <linux/fs.h>
+
 #define PCI_CFG_RETRY 		10
 
 #define OS_HANDLE_MAGIC		0x1234abcd	/* Magic # to recognise osh */
@@ -36,10 +42,11 @@ typedef struct bcm_mem_link {
 	struct bcm_mem_link *next;
 	uint	size;
 	int	line;
+	void 	*osh;
 	char	file[BCM_MEM_FILENAME_LEN];
 } bcm_mem_link_t;
 
-#if defined(DSLCPE_DELAY)
+#if defined(DSLCPE_DELAY_NOT_YET)
 struct shared_osl {
 	int long_delay;
 	spinlock_t *lock;
@@ -50,15 +57,24 @@ struct shared_osl {
 
 struct osl_info {
 	osl_pubinfo_t pub;
+#ifdef CTFPOOL
+	ctfpool_t *ctfpool;
+#endif /* CTFPOOL */
 	uint magic;
 	void *pdev;
-	uint malloced;
+	atomic_t malloced;
 	uint failed;
 	uint bustype;
 	bcm_mem_link_t *dbgmem_list;
+	spinlock_t dbgmem_lock;
 #if defined(DSLCPE_DELAY)
 	shared_osl_t *oshsh; /* osh shared */
 #endif
+#ifdef BCMDBG_PKT      /* pkt logging for debugging */
+	spinlock_t pktlist_lock;
+	pktlist_info_t pktlist;
+#endif  /* BCMDBG_PKT */
+	spinlock_t pktalloc_lock;
 };
 
 /* PCMCIA attribute space access macros */
@@ -72,7 +88,10 @@ struct pcmcia_dev {
 };
 #endif /* defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE) */
 
-static int16 linuxbcmerrormap[] =  \
+/* Global ASSERT type flag */
+uint32 g_assert_type = 0;
+
+static int16 linuxbcmerrormap[] =
 {	0, 			/* 0 */
 	-EINVAL,		/* BCME_ERROR */
 	-EINVAL,		/* BCME_BADARG */
@@ -110,16 +129,20 @@ static int16 linuxbcmerrormap[] =  \
 	-EINVAL,		/* BCME_NOT_WME_ASSOCIATION */
 	-EIO,			/* BCME_SDIO_ERROR */
 	-ENODEV,		/* BCME_DONGLE_DOWN */
-	-EINVAL			/* BCME_VERSION */
+	-EINVAL,		/* BCME_VERSION */
+	-EIO,			/* BCME_TXFAIL */
+	-EIO,			/* BCME_RXFAIL */
+	-EINVAL,		/* BCME_NODEVICE */
+	-EINVAL,		/* BCME_NMODE_DISABLED */
 
 /* When an new error code is added to bcmutils.h, add os 
  * spcecific error translation here as well
  */
 /* check if BCME_LAST changed since the last time this function was updated */
-#if BCME_LAST != -37
+#if BCME_LAST != -41
 #error "You need to add a OS error translation in the linuxbcmerrormap \
-	for new error code defined in bcmuitls.h"
-#endif /* BCME_LAST != -37 */
+	for new error code defined in bcmutils.h"
+#endif /* BCME_LAST != -41 */
 };
 
 /* translate bcmerrors into linux errors */
@@ -149,9 +172,10 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 	ASSERT(ABS(BCME_LAST) == (ARRAYSIZE(linuxbcmerrormap) - 1));
 
 	osh->magic = OS_HANDLE_MAGIC;
-	osh->malloced = 0;
+	atomic_set(&osh->malloced, 0);
 	osh->failed = 0;
 	osh->dbgmem_list = NULL;
+	spin_lock_init(&(osh->dbgmem_lock));
 	osh->pdev = pdev;
 	osh->pub.pkttag = pkttag;
 	osh->bustype = bustype;
@@ -174,6 +198,10 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 			break;
 	}
 
+#ifdef BCMDBG_PKT
+	spin_lock_init(&(osh->pktlist_lock));
+#endif
+	spin_lock_init(&(osh->pktalloc_lock));
 	return osh;
 }
 
@@ -187,51 +215,335 @@ osl_detach(osl_t *osh)
 	kfree(osh);
 }
 
-/* Return a new packet. zero out pkttag */
-void * BCMFASTPATH
-osl_pktget(osl_t *osh, uint len)
+#ifdef CTFPOOL
+
+#ifdef CTFPOOL_SPINLOCK
+#define CTFPOOL_LOCK(ctfpool, flags)	spin_lock_irqsave(&(ctfpool)->lock, flags)
+#define CTFPOOL_UNLOCK(ctfpool, flags)	spin_unlock_irqrestore(&(ctfpool)->lock, flags)
+#else
+#define CTFPOOL_LOCK(ctfpool, flags)	spin_lock_bh(&(ctfpool)->lock)
+#define CTFPOOL_UNLOCK(ctfpool, flags)	spin_unlock_bh(&(ctfpool)->lock)
+#endif /* CTFPOOL_SPINLOCK */
+/*
+ * Allocate and add an object to packet pool.
+ */
+void *
+osl_ctfpool_add(osl_t *osh)
 {
 	struct sk_buff *skb;
+#ifdef CTFPOOL_SPINLOCK
+	unsigned long flags;
+#endif /* CTFPOOL_SPINLOCK */
 
+	if ((osh == NULL) || (osh->ctfpool == NULL))
+		return NULL;
+
+	CTFPOOL_LOCK(osh->ctfpool, flags);
+	ASSERT(osh->ctfpool->curr_obj <= osh->ctfpool->max_obj);
+
+	/* No need to allocate more objects */
+	if (osh->ctfpool->curr_obj == osh->ctfpool->max_obj) {
+		CTFPOOL_UNLOCK(osh->ctfpool, flags);
+		return NULL;
+	}
+
+	/* Allocate a new skb and add it to the ctfpool */
+	skb = dev_alloc_skb(osh->ctfpool->obj_size);
+	if (skb == NULL) {
+		printf("%s: skb alloc of len %d failed\n", __FUNCTION__,
+		       osh->ctfpool->obj_size);
+		CTFPOOL_UNLOCK(osh->ctfpool, flags);
+		return NULL;
+	}
+
+	/* Add to ctfpool */
+	skb->next = (struct sk_buff *)osh->ctfpool->head;
+	osh->ctfpool->head = skb;
+	osh->ctfpool->fast_frees++;
+	osh->ctfpool->curr_obj++;
+
+	/* Hijack a skb member to store ptr to ctfpool */
+	CTFPOOLPTR(osh, skb) = (void *)osh->ctfpool;
+
+	/* Use bit flag to indicate skb from fast ctfpool */
+	PKTFAST(osh, skb) = FASTBUF;
+
+	CTFPOOL_UNLOCK(osh->ctfpool, flags);
+
+	return skb;
+}
+
+/*
+ * Add new objects to the pool.
+ */
+void
+osl_ctfpool_replenish(osl_t *osh, uint thresh)
+{
+	if ((osh == NULL) || (osh->ctfpool == NULL))
+		return;
+
+	/* Do nothing if no refills are required */
+	while ((osh->ctfpool->refills > 0) && (thresh--)) {
+		osl_ctfpool_add(osh);
+		osh->ctfpool->refills--;
+	}
+}
+
+/*
+ * Initialize the packet pool with specified number of objects.
+ */
+int32
+osl_ctfpool_init(osl_t *osh, uint numobj, uint size)
+{
+	osh->ctfpool = kmalloc(sizeof(ctfpool_t), GFP_ATOMIC);
+	ASSERT(osh->ctfpool);
+	bzero(osh->ctfpool, sizeof(ctfpool_t));
+
+	osh->ctfpool->max_obj = numobj;
+	osh->ctfpool->obj_size = size;
+
+	spin_lock_init(&osh->ctfpool->lock);
+
+	while (numobj--) {
+		if (!osl_ctfpool_add(osh))
+			return -1;
+		osh->ctfpool->fast_frees--;
+	}
+
+	return 0;
+}
+
+/*
+ * Cleanup the packet pool objects.
+ */
+void
+osl_ctfpool_cleanup(osl_t *osh)
+{
+	struct sk_buff *skb, *nskb;
+#ifdef CTFPOOL_SPINLOCK
+	unsigned long flags;
+#endif /* CTFPOOL_SPINLOCK */
+
+	if ((osh == NULL) || (osh->ctfpool == NULL))
+		return;
+
+	CTFPOOL_LOCK(osh->ctfpool, flags);
+
+	skb = osh->ctfpool->head;
+
+	while (skb != NULL) {
+		nskb = skb->next;
+		dev_kfree_skb(skb);
+		skb = nskb;
+		osh->ctfpool->curr_obj--;
+	}
+
+	ASSERT(osh->ctfpool->curr_obj == 0);
+	osh->ctfpool->head = NULL;
+	CTFPOOL_UNLOCK(osh->ctfpool, flags);
+
+	kfree(osh->ctfpool);
+	osh->ctfpool = NULL;
+}
+
+void
+osl_ctfpool_stats(osl_t *osh, void *b)
+{
+	struct bcmstrbuf *bb;
+
+	if ((osh == NULL) || (osh->ctfpool == NULL))
+		return;
+
+	bb = b;
+
+	ASSERT((osh != NULL) && (bb != NULL));
+
+	bcm_bprintf(bb, "max_obj %d obj_size %d curr_obj %d refills %d\n",
+	            osh->ctfpool->max_obj, osh->ctfpool->obj_size,
+	            osh->ctfpool->curr_obj, osh->ctfpool->refills);
+	bcm_bprintf(bb, "fast_allocs %d fast_frees %d slow_allocs %d\n",
+	            osh->ctfpool->fast_allocs, osh->ctfpool->fast_frees,
+	            osh->ctfpool->slow_allocs);
+}
+
+static inline struct sk_buff *
+osl_pktfastget(osl_t *osh, uint len)
+{
+	struct sk_buff *skb;
+#ifdef CTFPOOL_SPINLOCK
+	unsigned long flags;
+#endif /* CTFPOOL_SPINLOCK */
+
+
+	/* Try to do fast allocate. Return null if ctfpool is not in use
+	 * or if there are no items in the ctfpool.
+	 */
+	if (osh->ctfpool == NULL)
+		return NULL;
+
+	CTFPOOL_LOCK(osh->ctfpool, flags);
+	if (osh->ctfpool->head == NULL) {
+		ASSERT(osh->ctfpool->curr_obj == 0);
+		osh->ctfpool->slow_allocs++;
+		CTFPOOL_UNLOCK(osh->ctfpool, flags);
+		return NULL;
+	}
+
+	ASSERT(len <= osh->ctfpool->obj_size);
+
+	/* Get an object from ctfpool */
+	skb = (struct sk_buff *)osh->ctfpool->head;
+	osh->ctfpool->head = (void *)skb->next;
+
+	osh->ctfpool->fast_allocs++;
+	osh->ctfpool->curr_obj--;
+	ASSERT(CTFPOOLHEAD(osh, skb) == (struct sock *)osh->ctfpool->head);
+	CTFPOOL_UNLOCK(osh->ctfpool, flags);
+
+	/* Init skb struct */
+	skb->next = skb->prev = NULL;
+	skb->data = skb->head + 16;
+	skb->tail = skb->head + 16;
+
+	skb->len = 0;
+	skb->cloned = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 14)
+	skb->list = NULL;
+#endif
+	atomic_set(&skb->users, 1);
+
+	return skb;
+}
+#endif /* CTFPOOL */
+
+
+/* Return a new packet. zero out pkttag */
+#ifdef BCMDBG_PKT
+void * BCMFASTPATH
+osl_pktget(osl_t *osh, uint len, int line, char *file)
+#else /* BCMDBG_PKT */
+void * BCMFASTPATH
+osl_pktget(osl_t *osh, uint len)
+#endif /* BCMDBG_PKT */
+{
+	struct sk_buff *skb;
+	unsigned long flags;
+
+#ifdef CTFPOOL
+	/* Allocate from local pool */
+	skb = osl_pktfastget(osh, len);
+	if ((skb != NULL) || ((skb = dev_alloc_skb(len)) != NULL)) {
+#else /* CTFPOOL */
 	if ((skb = dev_alloc_skb(len))) {
+#endif /* CTFPOOL */
 		skb_put(skb, len);
 		skb->priority = 0;
 
+#ifdef BCMDBG_PKT
+		spin_lock_irqsave(&osh->pktlist_lock, flags);
+		pktlist_add(&(osh->pktlist), (void *) skb, line, file);
+		spin_unlock_irqrestore(&osh->pktlist_lock, flags);
+#endif
 
+		spin_lock_irqsave(&osh->pktalloc_lock, flags);
 		osh->pub.pktalloced++;
+		spin_unlock_irqrestore(&osh->pktalloc_lock, flags);
 	}
 
 	return ((void*) skb);
 }
+
+#ifdef CTFPOOL
+static inline void
+osl_pktfastfree(osl_t *osh, struct sk_buff *skb)
+{
+	ctfpool_t *ctfpool;
+#ifdef CTFPOOL_SPINLOCK
+	unsigned long flags;
+#endif /* CTFPOOL_SPINLOCK */
+
+
+	ctfpool = (ctfpool_t *)CTFPOOLPTR(osh, skb);
+	ASSERT(ctfpool != NULL);
+
+	/* Add object to the ctfpool */
+	CTFPOOL_LOCK(ctfpool, flags);
+	skb->next = (struct sk_buff *)ctfpool->head;
+	ctfpool->head = (void *)skb;
+
+	ctfpool->fast_frees++;
+	ctfpool->curr_obj++;
+
+	ASSERT(ctfpool->curr_obj <= ctfpool->max_obj);
+	CTFPOOL_UNLOCK(ctfpool, flags);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
+	skb->tstamp.tv.sec = 0;
+#else
+	skb->stamp.tv_sec = 0;
+#endif
+
+	/* We only need to init the fields that we change */
+	skb->dev = NULL;
+	skb->dst = NULL;
+	memset(skb->cb, 0, sizeof(skb->cb));
+	skb->ip_summed = 0;
+	skb->destructor = NULL;
+}
+#endif /* CTFPOOL */
 
 /* Free the driver packet. Free the tag if present */
 void BCMFASTPATH
 osl_pktfree(osl_t *osh, void *p, bool send)
 {
 	struct sk_buff *skb, *nskb;
+	unsigned long flags;
 
 	skb = (struct sk_buff*) p;
 
 	if (send && osh->pub.tx_fn)
 		osh->pub.tx_fn(osh->pub.tx_ctx, p, 0);
 
+	PKTDBG_TRACE(osh, (void *) skb, PKTLIST_PKTFREE);
+
 	/* perversion: we use skb->next to chain multi-skb packets */
 	while (skb) {
 		nskb = skb->next;
 		skb->next = NULL;
 
+#ifdef BCMDBG_PKT
+		spin_lock_irqsave(&osh->pktlist_lock, flags);
+		pktlist_remove(&(osh->pktlist), (void *) skb);
+		spin_unlock_irqrestore(&osh->pktlist_lock, flags);
+#endif
 
-		if (skb->destructor) {
-			/* cannot kfree_skb() on hard IRQ (net/core/skbuff.c) if destructor exists
-			 */
-			dev_kfree_skb_any(skb);
-		} else {
-			/* can free immediately (even in_irq()) if destructor does not exist */
-			dev_kfree_skb(skb);
+#ifdef CTFMAP
+		/* Clear the map ptr before freeing */
+		PKTCLRCTF(osh, skb);
+		CTFMAPPTR(osh, skb) = NULL;
+#endif /* CTFMAP */
+
+#ifdef CTFPOOL
+		if ((PKTISFAST(osh, skb)) && (atomic_read(&skb->users) == 1))
+			osl_pktfastfree(osh, skb);
+		else {
+#else /* CTFPOOL */
+		{
+#endif /* CTFPOOL */
+			if (skb->destructor)
+				/* cannot kfree_skb() on hard IRQ (net/core/skbuff.c) if
+				 * destructor exists
+				 */
+				dev_kfree_skb_any(skb);
+			else
+				/* can free immediately (even in_irq()) if destructor
+				 * does not exist
+				 */
+				dev_kfree_skb(skb);
 		}
-
+	spin_lock_irqsave(&osh->pktalloc_lock, flags);
 		osh->pub.pktalloced--;
-
+	spin_unlock_irqrestore(&osh->pktalloc_lock, flags);
 		skb = nskb;
 	}
 }
@@ -312,6 +624,15 @@ osl_pcmcia_write_attr(osl_t *osh, uint offset, void *buf, int size)
 	osl_pcmcia_attr(osh, offset, (char *) buf, size, TRUE);
 }
 
+#ifdef BCMDBG_MEM
+/* In BCMDBG_MEM configurations osl_malloc is only used internally in
+ * the implementation of osl_debug_malloc.  Because we are using the GCC
+ * -Wstrict-prototypes compile option, we must always have a prototype
+ * for a global/external function.  So make osl_malloc static in
+ * the BCMDBG_MEM case.
+ */
+static
+#endif
 void * BCMFASTPATH
 osl_malloc(osl_t *osh, uint size)
 {
@@ -327,17 +648,26 @@ osl_malloc(osl_t *osh, uint size)
 		return (NULL);
 	}
 	if (osh)
-		osh->malloced += size;
+		atomic_add(size, &osh->malloced);
 
 	return (addr);
 }
 
+#ifdef BCMDBG_MEM
+/* In BCMDBG_MEM configurations osl_mfree is only used internally in
+ * the implementation of osl_debug_mfree.  Because we are using the GCC
+ * -Wstrict-prototypes compile option, we must always have a prototype
+ * for a global/external function.  So make osl_mfree static in
+ * the BCMDBG_MEM case.
+ */
+static
+#endif
 void BCMFASTPATH
 osl_mfree(osl_t *osh, void *addr, uint size)
 {
 	if (osh) {
 		ASSERT(osh->magic == OS_HANDLE_MAGIC);
-		osh->malloced -= size;
+		atomic_sub(size, &osh->malloced);
 	}
 	kfree(addr);
 }
@@ -346,7 +676,7 @@ uint
 osl_malloced(osl_t *osh)
 {
 	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
-	return (osh->malloced);
+	return (atomic_read(&osh->malloced));
 }
 
 uint
@@ -356,7 +686,146 @@ osl_malloc_failed(osl_t *osh)
 	return (osh->failed);
 }
 
+#ifdef BCMDBG_MEM
+#define MEMLIST_LOCK(osh, flags)	spin_lock_irqsave(&(osh)->dbgmem_lock, flags)
+#define MEMLIST_UNLOCK(osh, flags)	spin_unlock_irqrestore(&(osh)->dbgmem_lock, flags)
 
+void*
+osl_debug_malloc(osl_t *osh, uint size, int line, char* file)
+{
+	bcm_mem_link_t *p;
+	char* basename;
+	unsigned long flags;
+
+	if (!size) {
+		printk("%s: allocating zero sized mem at %s line %d\n", __FUNCTION__, file, line);
+		ASSERT(0);
+	}
+
+	MEMLIST_LOCK(osh, flags);
+	if ((p = (bcm_mem_link_t*)osl_malloc(osh, sizeof(bcm_mem_link_t) + size)) == NULL)
+		return (NULL);
+
+	p->size = size;
+	p->line = line;
+	p->osh = (void *)osh;
+
+	basename = strrchr(file, '/');
+	/* skip the '/' */
+	if (basename)
+		basename++;
+
+	if (!basename)
+		basename = file;
+
+	strncpy(p->file, basename, BCM_MEM_FILENAME_LEN);
+	p->file[BCM_MEM_FILENAME_LEN - 1] = '\0';
+
+	/* link this block */
+	if (osh) {
+		p->prev = NULL;
+		p->next = osh->dbgmem_list;
+		if (p->next)
+			p->next->prev = p;
+		osh->dbgmem_list = p;
+	}
+	MEMLIST_UNLOCK(osh, flags);
+
+	return p + 1;
+}
+
+void
+osl_debug_mfree(osl_t *osh, void *addr, uint size, int line, char* file)
+{
+	bcm_mem_link_t *p = (bcm_mem_link_t *)((int8*)addr - sizeof(bcm_mem_link_t));
+	unsigned long flags;
+
+	ASSERT(osh == NULL || osh->magic == OS_HANDLE_MAGIC);
+
+	if (p->size == 0) {
+		printk("osl_debug_mfree: double free on addr %p size %d at line %d file %s\n",
+			addr, size, line, file);
+		ASSERT(p->size);
+		return;
+	}
+
+	if (p->size != size) {
+		printk("%s: dealloca size does not match alloc size\n", __FUNCTION__);
+		printk("Dealloc addr %p size %d at line %d file %s\n", addr, size, line, file);
+		printk("Alloc size %d line %d file %s\n", p->size, p->line, p->file);
+		ASSERT(p->size == size);
+		return;
+	}
+
+	if (p->osh != (void *)osh) {
+		printk("osl_debug_mfree: alloc osh %p does not match dealloc osh %p\n",
+			p->osh, osh);
+		printk("Dealloc addr %p size %d at line %d file %s\n", addr, size, line, file);
+		printk("Alloc size %d line %d file %s\n", p->size, p->line, p->file);
+		ASSERT(p->osh == (void *)osh);
+		return;
+	}
+
+	MEMLIST_LOCK(osh, flags);
+	/* unlink this block */
+	if (osh) {
+		if (p->prev)
+			p->prev->next = p->next;
+		if (p->next)
+			p->next->prev = p->prev;
+		if (osh->dbgmem_list == p)
+			osh->dbgmem_list = p->next;
+		p->next = p->prev = NULL;
+	}
+
+	p->size = 0;
+
+	osl_mfree(osh, p, size + sizeof(bcm_mem_link_t));
+	MEMLIST_UNLOCK(osh, flags);
+}
+
+int
+osl_debug_memdump(osl_t *osh, struct bcmstrbuf *b)
+{
+	bcm_mem_link_t *p;
+	unsigned long flags;
+
+	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
+
+	MEMLIST_LOCK(osh, flags);
+	if (osh->dbgmem_list) {
+		if (b != NULL)
+			bcm_bprintf(b, "   Address   Size File:line\n");
+		else
+			printf("   Address   Size File:line\n");
+
+		for (p = osh->dbgmem_list; p; p = p->next) {
+			if (b != NULL)
+				bcm_bprintf(b, "%p %6d %s:%d\n", (char*)p + sizeof(bcm_mem_link_t),
+					p->size, p->file, p->line);
+			else
+				printf("%p %6d %s:%d\n", (char*)p + sizeof(bcm_mem_link_t),
+					p->size, p->file, p->line);
+
+			/* Detects loop-to-self so we don't enter infinite loop */
+			if (p == p->next) {
+				if (b != NULL)
+					bcm_bprintf(b, "WARNING: loop-to-self "
+						"p %p p->next %p\n", p, p->next);
+				else
+					printf("WARNING: loop-to-self "
+						"p %p p->next %p\n", p, p->next);
+
+				break;
+			}
+		}
+	}
+	MEMLIST_UNLOCK(osh, flags);
+
+	return 0;
+}
+
+#endif	/* BCMDBG_MEM */
 
 uint
 osl_dma_consistent_align(void)
@@ -365,9 +834,14 @@ osl_dma_consistent_align(void)
 }
 
 void*
-osl_dma_alloc_consistent(osl_t *osh, uint size, ulong *pap)
+osl_dma_alloc_consistent(osl_t *osh, uint size, uint16 align_bits, uint *alloced, ulong *pap)
 {
+	uint16 align = (1 << align_bits);
 	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
+
+	if (!ISALIGNED(DMA_CONSISTENT_ALIGN, align))
+		size += align;
+	*alloced = size;
 
 	return (pci_alloc_consistent(osh->pdev, size, (dma_addr_t*)pap));
 }
@@ -383,18 +857,11 @@ osl_dma_free_consistent(osl_t *osh, void *va, uint size, ulong pa)
 uint BCMFASTPATH
 osl_dma_map(osl_t *osh, void *va, uint size, int direction)
 {
-	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
+	int dir;
 
-	if (direction == DMA_TX)
-		return (pci_map_single(osh->pdev, va, size, PCI_DMA_TODEVICE));
-	else {
-#ifdef mips
-		dma_cache_inv((uint)va, size);
-		return (virt_to_phys(va));
-#else /* mips */
-		return (pci_map_single(osh->pdev, va, size, PCI_DMA_FROMDEVICE));
-#endif /* mips */
-	}
+	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
+	dir = (direction == DMA_TX)? PCI_DMA_TODEVICE: PCI_DMA_FROMDEVICE;
+	return (pci_map_single(osh->pdev, va, size, dir));
 }
 
 void BCMFASTPATH
@@ -407,6 +874,46 @@ osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction)
 	pci_unmap_single(osh->pdev, (uint32)pa, size, dir);
 }
 
+#if defined(BCMDBG_ASSERT) || defined(BCMASSERT_LOG)
+void
+osl_assert(char *exp, char *file, int line)
+{
+	char tempbuf[256];
+	char *basename;
+
+	basename = strrchr(file, '/');
+	/* skip the '/' */
+	if (basename)
+		basename++;
+
+	if (!basename)
+		basename = file;
+
+#ifdef BCMASSERT_LOG
+	snprintf(tempbuf, 64, "\"%s\": file \"%s\", line %d\n",
+		exp, basename, line);
+
+	bcm_assert_log(tempbuf);
+
+#endif /* BCMASSERT_LOG */
+#ifdef BCMDBG_ASSERT
+	snprintf(tempbuf, 256, "assertion \"%s\" failed: file \"%s\", line %d\n",
+		exp, basename, line);
+
+	/* Print assert message and give it time to be written to /var/log/messages */
+	if (!in_interrupt()) {
+		const int delay = 3;
+		printk("%s", tempbuf);
+		printk("panic in %d seconds\n", delay);
+		set_current_state(TASK_INTERRUPTIBLE);
+		schedule_timeout(delay * HZ);
+	}
+	if (g_assert_type == 0)
+		panic("%s", tempbuf);
+#endif
+
+}
+#endif /* BCMDBG_ASSERT || BCMASSERT_LOG */
 
 void
 osl_delay(uint usec)
@@ -482,23 +989,93 @@ osl_long_delay(osl_t *osh, uint usec, bool yield)
 /* Clone a packet.
  * The pkttag contents are NOT cloned.
  */
+#ifdef BCMDBG_PKT
+void *
+osl_pktdup(osl_t *osh, void *skb, int line, char *file)
+#else /* BCMDBG_PKT */
 void *
 osl_pktdup(osl_t *osh, void *skb)
+#endif /* BCMDBG_PKT */
 {
 	void * p;
+	unsigned long flags;
+
+	/* clear the CTFBUF flag if set and map the rest of the buffer
+	 * before cloning.
+	 */
+	PKTCTFMAP(osh, skb);
 
 	if ((p = skb_clone((struct sk_buff*)skb, GFP_ATOMIC)) == NULL)
 		return NULL;
+
+#ifdef CTFPOOL
+	if (PKTISFAST(osh, skb)) {
+		ctfpool_t *ctfpool;
+
+		/* if the buffer allocated from ctfpool is cloned then
+		 * we can't be sure when it will be freed. since there
+		 * is a chance that we will be losing a buffer
+		 * from our pool, we increment the refill count for the
+		 * object to be alloced later.
+		 */
+		ctfpool = (ctfpool_t *)CTFPOOLPTR(osh, skb);
+		ASSERT(ctfpool != NULL);
+		PKTCLRFAST(osh, p);
+		PKTCLRFAST(osh, skb);
+		ctfpool->refills++;
+	}
+#endif /* CTFPOOL */
 
 	/* skb_clone copies skb->cb.. we don't want that */
 	if (osh->pub.pkttag)
 		bzero((void*)((struct sk_buff *)p)->cb, OSL_PKTTAG_SZ);
 
 	/* Increment the packet counter */
+	spin_lock_irqsave(&osh->pktalloc_lock, flags);
 	osh->pub.pktalloced++;
+	spin_unlock_irqrestore(&osh->pktalloc_lock, flags);
+#ifdef BCMDBG_PKT
+	spin_lock_irqsave(&osh->pktlist_lock, flags);
+	pktlist_add(&(osh->pktlist), (void *) p, line, file);
+	spin_unlock_irqrestore(&osh->pktlist_lock, flags);
+#endif
 	return (p);
 }
 
+#ifdef BCMDBG_PKT
+#ifdef BCMDBG_PTRACE
+void
+osl_pkttrace(osl_t *osh, void *pkt, uint16 bit)
+{
+	pktlist_trace(&(osh->pktlist), pkt, bit);
+}
+#endif /* BCMDBG_PTRACE */
+
+char *
+osl_pktlist_dump(osl_t *osh, char *buf)
+{
+	pktlist_dump(&(osh->pktlist), buf);
+	return buf;
+}
+
+void
+osl_pktlist_add(osl_t *osh, void *p, int line, char *file)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&osh->pktlist_lock, flags);
+	pktlist_add(&(osh->pktlist), p, line, file);
+	spin_unlock_irqrestore(&osh->pktlist_lock, flags);
+}
+
+void
+osl_pktlist_remove(osl_t *osh, void *p)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&osh->pktlist_lock, flags);
+	pktlist_remove(&(osh->pktlist), p);
+	spin_unlock_irqrestore(&osh->pktlist_lock, flags);
+}
+#endif /* BCMDBG_PKT */
 
 /*
  * OSLREGOPS specifies the use of osl_XXX routines to be used for register access
@@ -566,6 +1143,12 @@ osl_writel(osl_t *osh, volatile uint32 *r, uint32 v)
  */
 #ifdef BINOSL
 
+uint32
+osl_sysuptime(void)
+{
+	return ((uint32)jiffies * (1000 / HZ));
+}
+
 uint
 osl_pktalloced(osl_t *osh)
 {
@@ -589,7 +1172,7 @@ osl_printf(const char *format, ...)
 		return (0);
 	}
 
-	return (printk(buf));
+	return (printk("%s", buf));
 }
 
 int
@@ -877,46 +1460,47 @@ osl_pktsetprio(void *skb, uint x)
 {
 	((struct sk_buff*)skb)->priority = x;
 }
-
-/* Convert a driver packet to native(OS) packet
- * In the process, packettag is zeroed out before sending up
- * IP code depends on skb->cb to be setup correctly with various options
- * In our case, that means it should be 0
- */
-struct sk_buff *
-osl_pkt_tonative(osl_t *osh, void *pkt)
-{
-	struct sk_buff *nskb;
-
-	if (osh->pub.pkttag)
-		bzero((void*)((struct sk_buff *)pkt)->cb, OSL_PKTTAG_SZ);
-
-	/* Decrement the packet counter */
-	for (nskb = (struct sk_buff *)pkt; nskb; nskb = nskb->next) {
-		osh->pub.pktalloced--;
-	}
-
-	return (struct sk_buff *)pkt;
-}
-
-/* Convert a native(OS) packet to driver packet.
- * In the process, native packet is destroyed, there is no copying
- * Also, a packettag is zeroed out
- */
-void *
-osl_pkt_frmnative(osl_t *osh, void *pkt)
-{
-	struct sk_buff *nskb;
-
-	if (osh->pub.pkttag)
-		bzero((void*)((struct sk_buff *)pkt)->cb, OSL_PKTTAG_SZ);
-
-	/* Increment the packet counter */
-	for (nskb = (struct sk_buff *)pkt; nskb; nskb = nskb->next) {
-		osh->pub.pktalloced++;
-	}
-
-	return (void *)pkt;
-}
-
 #endif	/* BINOSL */
+
+/* Linux Kernel: File Operations: start */
+void *
+osl_os_open_image(char *filename)
+{
+	struct file *fp;
+
+	fp = filp_open(filename, O_RDONLY, 0);
+	/*
+	 * 2.6.11 (FC4) supports filp_open() but later revs don't?
+	 * Alternative:
+	 * fp = open_namei(AT_FDCWD, filename, O_RD, 0);
+	 * ???
+	 */
+	 if (IS_ERR(fp))
+		 fp = NULL;
+
+	 return fp;
+}
+
+int
+osl_os_get_image_block(char *buf, int len, void *image)
+{
+	struct file *fp = (struct file *)image;
+	int rdlen;
+
+	if (!image)
+		return 0;
+
+	rdlen = kernel_read(fp, fp->f_pos, buf, len);
+	if (rdlen > 0)
+		fp->f_pos += rdlen;
+
+	return rdlen;
+}
+
+void
+osl_os_close_image(void *image)
+{
+	if (image)
+		filp_close((struct file *)image, NULL);
+}
+/* Linux Kernel: File Operations: end */

@@ -1,7 +1,7 @@
 /*
  * BCM47XX Denali DDR1/DDR2 and SDR/DDR1 memory controlers.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: dmemc_core.h,v 13.1.4.2.8.2 2008/11/11 04:17:31 Exp $
+ * $Id: dmemc_core.h,v 13.5.32.1 2009/11/16 03:58:52 Exp $
  */
 
 #ifndef	_DMEMC_H
@@ -81,6 +81,38 @@
 #define	DMEMC_CONTROL52		0x0d4
 #define	DMEMC_CONTROL53		0x0d0
 
+#define	DMEMC_CLK_CTL_ST	0x1e4
+#define	DMEMC_DDR_CTRL		0x1e0
+#define	DMEMC_STAT		0x1f4
+
+#define DMEMC_CONTROL125	0x1f0
+#define DMEMC_CONTROL126	0x1fc
+#define DMEMC_CONTROL127	0x1f8
+#define DMEMC_CONTROL128	0x204
+#define DMEMC_CONTROL129	0x200
+#define DMEMC_CONTROL130	0x20c
+#define DMEMC_CONTROL131	0x208
+#define DMEMC_CONTROL132	0x214
+#define DMEMC_CONTROL133	0x210
+#define DMEMC_CONTROL134	0x21c
+#define DMEMC_CONTROL135	0x218
+#define DMEMC_CONTROL136	0x224
+#define DMEMC_CONTROL137	0x220
+#define DMEMC_CONTROL138	0x22c
+#define DMEMC_CONTROL139	0x228
+#define DMEMC_CONTROL140	0x234
+#define DMEMC_CONTROL141	0x230
+#define DMEMC_CONTROL142	0x23c
+#define DMEMC_CONTROL143	0x238
+#define DMEMC_CONTROL144	0x244
+#define DMEMC_CONTROL145	0x240
+#define DMEMC_CONTROL146	0x24c
+#define DMEMC_CONTROL147	0x248
+#define DMEMC_CONTROL148	0x254
+#define DMEMC_CONTROL149	0x250
+#define DMEMC_CONTROL150	0x25c
+#define DMEMC_CONTROL151	0x258
+
 #define	DMEMC_PVTGROUPA 	0x404
 #define	DMEMC_PVTGROUPB 	0x400
 #define	DMEMC_PVTGROUPC 	0x40c
@@ -90,10 +122,6 @@
 #define	DMEMC_PVTGROUPH 	0x41c
 #define	DMEMC_PVTGROUPI 	0x418
 #define	DMEMC_PVTGROUPJ 	0x424
-
-#define	DMEMC_CLK_CTL_ST	0x1e4
-#define	DMEMC_DDR_CTRL		0x1e0
-#define	DMEMC_STAT		0x1f4
 
 #define	DMEMC_GPIOSEL	        0x804
 #define	DMEMC_GPIOOUTEN		0x800
@@ -159,6 +187,35 @@
 #define	DMEMC_DDR_CTRL		0x1e4
 #define	DMEMC_STAT		0x1f0
 
+#define DMEMC_CONTROL125	0x1f4
+#define DMEMC_CONTROL126	0x1f8
+#define DMEMC_CONTROL127	0x1fc
+#define DMEMC_CONTROL128	0x200
+#define DMEMC_CONTROL129	0x204
+#define DMEMC_CONTROL130	0x208
+#define DMEMC_CONTROL131	0x20c
+#define DMEMC_CONTROL132	0x210
+#define DMEMC_CONTROL133	0x214
+#define DMEMC_CONTROL134	0x218
+#define DMEMC_CONTROL135	0x21c
+#define DMEMC_CONTROL136	0x220
+#define DMEMC_CONTROL137	0x224
+#define DMEMC_CONTROL138	0x228
+#define DMEMC_CONTROL139	0x22c
+#define DMEMC_CONTROL140	0x230
+#define DMEMC_CONTROL141	0x234
+#define DMEMC_CONTROL142	0x238
+#define DMEMC_CONTROL143	0x23c
+#define DMEMC_CONTROL144	0x240
+#define DMEMC_CONTROL145	0x244
+#define DMEMC_CONTROL146	0x248
+#define DMEMC_CONTROL147	0x24c
+#define DMEMC_CONTROL148	0x250
+#define DMEMC_CONTROL149	0x254
+#define DMEMC_CONTROL150	0x258
+#define DMEMC_CONTROL151	0x25c
+
+
 #define DMEMC_PVTGROUPA 	0x400
 #define DMEMC_PVTGROUPB 	0x404
 #define DMEMC_PVTGROUPC 	0x408
@@ -175,13 +232,13 @@
 
 #else	/* !_LANGUAGE_ASSEMBLY */
 
-#define	DMEMC_MAXREG		51
+#define	DMEMC_MAXREG		151
 #define	DMEMC_PVTREGS		9
 
 /* DMEMC core registers */
 typedef volatile struct dmemcregs {
 	uint32	control[DMEMC_MAXREG];
-	uint32	PAD[205];
+	uint32	PAD[105];
 	uint32	pvtgroup[DMEMC_PVTREGS];	/* 0x400 */
 	uint32	PAD[247];
 	uint32	gpiosel;			/* 0x800 */
@@ -218,6 +275,7 @@ typedef volatile struct dmemsregs {
 #define	DMC04_BIST_GO		0x00000001
 
 /* Bits in control09 */
+#define	DMC09_SREFRESH		0x00010000
 #define	DMC09_START		0x01000000
 
 /* Bits in control11 */
@@ -247,6 +305,25 @@ typedef volatile struct dmemsregs {
 #define	DM_INT_BIST_DONE	0x20
 #define	DM_INT_DLL_UNLOCK	0x40
 #define	DM_INT_ANY		0x80
+
+/* Interrupt bits redefined in revision 2 */
+#define	DMC132_INTMASK_MASK	0x07ff0000
+#define	DMC132_INTMASK_SHIFT	16
+#define	DMC132_INTACK_MASK	0x000003ff
+
+#define	DMC133_INTSTAT_MASK	0x000007ff
+
+#define	DM2_INT_SINGLE_BAD	(1 << 0)
+#define	DM2_INT_MULTI_BAD	(1 << 1)
+#define	DM2_INT_CMD_ERR		(1 << 2)
+#define	DM2_INT_DATA_ERR	(1 << 3)
+#define	DM2_INT_INIT_DONE	(1 << 4)
+#define	DM2_INT_BIST_DONE	(1 << 5)
+#define	DM2_INT_ODT_CAS3_ERR	(1 << 6)
+#define	DM2_INT_DQS_ERR		(1 << 7)
+#define	DM2_INT_DLL_LOCKCHANGE	(1 << 8)
+#define	DM2_INT_DLLRESYNC_DONE	(1 << 9)
+#define	DM2_INT_ANY		(1 << 10)
 
 /* Stat bits */
 #define	DM_STAT_DDR2_CAP	0x0400

@@ -4,14 +4,14 @@
  * This file implements the chip-specific routines
  * for Broadcom HNBU Sonics SiliconBackplane enet cores.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: etc47xx.c,v 1.164.2.1.14.3 2008/11/21 02:57:04 Exp $
+ * $Id: etc47xx.c,v 1.172.20.1 2010/03/03 19:45:42 Exp $
  */
 
 #include <typedefs.h>
@@ -81,7 +81,7 @@ static void chipintrsoff(ch_t *ch);
 static void chiptxreclaim(ch_t *ch, bool all);
 static void chiprxreclaim(ch_t *ch);
 static void chipstatsupd(ch_t *ch);
-static void chipdumpmib(ch_t *ch, struct bcmstrbuf *b);
+static void chipdumpmib(ch_t *ch, struct bcmstrbuf *b, bool clear);
 static void chipenablepme(ch_t *ch);
 static void chipdisablepme(ch_t *ch);
 static void chipphyreset(ch_t *ch, uint phyaddr);
@@ -152,7 +152,6 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 {
 	struct bcm4xxx *ch;
 	bcmenetregs_t *regs;
-	uint i;
 	char name[16];
 	char *var;
 	uint boardflags, boardtype;
@@ -260,7 +259,7 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	sprintf(name, "et%d", etc->coreunit);
 	if ((ch->di = dma_attach(osh, name, ch->sih,
 	                         (void *)&regs->dmaregs.xmt, (void *)&regs->dmaregs.rcv,
-	                         NTXD, NRXD, RXBUFSZ, NRXBUFPOST, HWRXOFF,
+	                         NTXD, NRXD, RXBUFSZ, -1, NRXBUFPOST, HWRXOFF,
 	                         &et_msg_level)) == NULL) {
 		ET_ERROR(("et%d: chipattach: dma_attach failed\n", etc->unit));
 		goto fail;
@@ -269,25 +268,6 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 
 	/* set default sofware intmask */
 	ch->intmask = DEF_INTMASK;
-
-	/*
-	 * GPIO bits 2 and 6 on bcm94710r1 and bcm94710dev reset the
-	 * external phys to a known good state. bcm94710r4 uses only
-	 * GPIO 6 but GPIO 2 is not connected. Just reset both of them
-	 * whenever this function is called.
-	 */
-	if ((boardtype == BCM94710D_BOARD) ||
-	    (boardtype == BCM94710AP_BOARD) ||
-	    (boardtype == BCM94710R1_BOARD) ||
-	    (boardtype == BCM94710R4_BOARD)) {
-		si_gpioout(ch->sih, 0x44, 0, GPIO_DRV_PRIORITY);
-		si_gpioouten(ch->sih, 0x44, 0x44, GPIO_DRV_PRIORITY);
-		/* Hold phys in reset for a nice long 2 ms */
-		for (i = 0; i < 2; i++)
-			OSL_DELAY(1000);
-		si_gpioout(ch->sih, 0x44, 0x44, GPIO_DRV_PRIORITY);
-		si_gpioouten(ch->sih, 0x44, 0, GPIO_DRV_PRIORITY);
-	}
 
 	/*
 	 * For the 5222 dual phy shared mdio contortion, our phy is
@@ -302,9 +282,7 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	/*
 	 * Broadcom Robo ethernet switch.
 	 */
-	if (((boardflags & BFL_ENETROBO) ||
-	     (boardtype == BCM94710AP_BOARD) ||
-	     (boardtype == BCM94702MN_BOARD)) &&
+	if ((boardflags & BFL_ENETROBO) &&
 	    (etc->phyaddr == EPHY_NOREG)) {
 		/* Attach to the switch */
 		if (!(etc->robo = bcm_robo_attach(ch->sih, ch, ch->vars,
@@ -559,9 +537,6 @@ chipinit(struct bcm4xxx *ch, uint options)
 
 	ET_TRACE(("et%d: chipinit\n", etc->unit));
 
-	/* Do timeout fixup */
-	si_core_tofixup(ch->sih);
-
 	/* enable crc32 generation */
 	OR_REG(ch->osh, &regs->emaccontrol, EMC_CG);
 
@@ -653,7 +628,7 @@ static void BCMFASTPATH
 chiptxreclaim(struct bcm4xxx *ch, bool forceall)
 {
 	ET_TRACE(("et%d: chiptxreclaim\n", ch->etc->unit));
-	dma_txreclaim(ch->di, forceall);
+	dma_txreclaim(ch->di, forceall ? HNDDMA_RANGE_ALL : HNDDMA_RANGE_TRANSMITTED);
 	ch->intstatus &= ~I_XI;
 }
 
@@ -818,7 +793,7 @@ chipwrcam(struct bcm4xxx *ch, struct ether_addr *ea, uint camindex)
 	W_REG(ch->osh, &ch->regs->camcontrol, ((camindex << CC_INDEX_SHIFT) | CC_WR));
 
 	/* spin until done */
-	SPINWAIT((R_REG(ch->osh, &ch->regs->camcontrol) & CC_CB), 100);
+	SPINWAIT((R_REG(ch->osh, &ch->regs->camcontrol) & CC_CB), 1000);
 
 	/*
 	 * This assertion is usually caused by the phy not providing a clock
@@ -904,11 +879,16 @@ chipstatsupd(struct bcm4xxx *ch)
 }
 
 static void
-chipdumpmib(ch_t *ch, struct bcmstrbuf *b)
+chipdumpmib(ch_t *ch, struct bcmstrbuf *b, bool clear)
 {
 	bcmenetmib_t *m;
 
 	m = &ch->mib;
+
+	if (clear) {
+		bzero((char *)m, sizeof(bcmenetmib_t));
+		return;
+	}
 
 	bcm_bprintf(b, "tx_broadcast_pkts %d tx_multicast_pkts %d tx_jabber_pkts %d "
 	               "tx_oversize_pkts %d\n",

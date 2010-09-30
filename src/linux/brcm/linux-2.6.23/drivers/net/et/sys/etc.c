@@ -3,14 +3,14 @@
  * Broadcom Home Networking Division 10/100 Mbit/s Ethernet
  * Device Driver.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: etc.c,v 1.105.2.2.12.1 2009/03/13 00:45:23 Exp $
+ * $Id: etc.c,v 1.114.4.9 2010/03/03 19:44:08 Exp $
  */
 
 #include <typedefs.h>
@@ -66,12 +66,14 @@ uint32 priq_selector[] = {
 struct chops*
 etc_chipmatch(uint vendor, uint device)
 {
+#if !defined(_CFE_) || defined(CFG_ETC47XX)
 	{
 		extern struct chops bcm47xx_et_chops;
 
 		if (bcm47xx_et_chops.id(vendor, device))
 			return (&bcm47xx_et_chops);
 	}
+#endif
 
 #ifdef CFG_GMAC
 	{
@@ -207,6 +209,51 @@ etc_down(etc_info_t *etc, int reset)
 	return (callback);
 }
 
+/* common iovar handler. return 0=ok, -1=error */
+int
+etc_iovar(etc_info_t *etc, uint cmd, uint set, void *arg)
+{
+	int error;
+#ifdef ETROBO
+	int i;
+	uint *vecarg;
+	robo_info_t *robo = etc->robo;
+#endif
+
+	error = 0;
+	ET_TRACE(("et%d: etc_iovar: cmd 0x%x\n", etc->unit, cmd));
+
+	switch (cmd) {
+#ifdef ETROBO
+		case IOV_ET_POWER_SAVE_MODE:
+			vecarg = (uint *)arg;
+			if (set)
+				error = robo_power_save_mode_set(robo, vecarg[1], vecarg[0]);
+			else {
+				/* get power save mode of all the phys */
+				if (vecarg[0] == MAX_NO_PHYS) {
+					for (i = 0; i < MAX_NO_PHYS; i++)
+						vecarg[i] = robo_power_save_mode_get(robo, i);
+					break;
+				}
+
+				/* get power save mode of the phy */
+				error = robo_power_save_mode_get(robo, vecarg[0]);
+				if (error != -1) {
+					vecarg[1] = error;
+					error = 0;
+				}
+			}
+			break;
+#endif /* ETROBO */
+
+		default:
+			error = -1;
+	}
+
+	return (error);
+}
+
 /* common ioctl handler.  return: 0=ok, -1=error */
 int
 etc_ioctl(etc_info_t *etc, int cmd, void *arg)
@@ -236,7 +283,7 @@ etc_ioctl(etc_info_t *etc, int cmd, void *arg)
 
 	case ETCDUMP:
 		if (et_msg_level & 0x10000)
-			bcmdumplog((char *)arg, 4096);
+			bcmdumplog((char *)arg, ETDUMPSZ);
 		break;
 
 	case ETCSETMSGLEVEL:
@@ -382,8 +429,38 @@ etc_watchdog(etc_info_t *etc)
 {
 	uint16 status;
 	uint16 lpa;
+#ifdef ETROBO
+	robo_info_t *robo = (robo_info_t *)etc->robo;
+	static uint32 sleep_timer = PWRSAVE_SLEEP_TIME, wake_timer;
+#endif
 
 	etc->now++;
+
+#ifdef ETROBO
+	/* Every PWRSAVE_WAKE_TIME sec the phys that are in manual mode 
+	 * is taken out of that mode and link status is checked after
+	 * PWRSAVE_SLEEP_TIME sec to see if any of the links is up
+	 * to take that port is taken out of the manual power save mode
+	 */
+	if (robo) {
+		if (ROBO_IS_PWRSAVE_MANUAL(robo)) {
+			if (etc->now == sleep_timer) {
+				robo_power_save_toggle(robo, FALSE);
+				wake_timer = sleep_timer + PWRSAVE_WAKE_TIME;
+			} else if (etc->now == wake_timer) {
+				robo_power_save_toggle(robo, TRUE);
+				sleep_timer = wake_timer + PWRSAVE_SLEEP_TIME;
+			}
+		}
+
+		/* Apply the auto configuration from the nvram variable in the beginning */
+		if ((etc->now == PWRSAVE_WAKE_TIME) && ROBO_IS_PWRSAVE_AUTO(robo)) {
+			robo_power_save_mode_update(robo);
+		}
+	}
+
+
+#endif /* ETROBO */
 
 	/* no local phy registers */
 	if (etc->phyaddr == EPHY_NOREG) {
@@ -518,9 +595,12 @@ etc_bcm53115_war(etc_info_t *etc, void *p)
 	uint16 vlan_tag;
 	int vlan_prio;
 	uint8 *data = PKTDATA(etc->osh, p);
+	uint8 *ip_body = data + sizeof(struct ethervlan_header);
 
 	evh = (struct ethervlan_header *)data;
-	if (evh->vlan_type != hton16(ETHER_TYPE_8021Q))
+	/* No additional TAG added if IPTOS has priority != 0 */
+	if ((evh->vlan_type != hton16(ETHER_TYPE_8021Q)) ||
+	    (IP_TOS46(ip_body) & IPV4_TOS_PREC_MASK))
 		return (p);
 
 	vlan_tag = evh->vlan_tag;
