@@ -1058,6 +1058,7 @@ management.lang_japanese="Japanese";
 management.lang_hungarian="Hungarian";
 management.lang_latvian="Latvian";
 management.net_legend="IP Filter Settings (adjust these for P2P)";
+management.net_conctrl="TCP Congestion Control";
 management.net_port="Maximum Ports";
 management.net_tcptimeout="TCP Timeout (in seconds)";
 management.net_udptimeout="UDP Timeout (in seconds)";
