@@ -59,7 +59,7 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 	osl_t *osh;
 	void *regs;
 	chipcregs_t *cc;
-	uint32 rev, cap, pll, baud_base, div;
+	uint32 rev, cap, pll, baud_base, div = 48;
 	uint irq;
 	int i, n;
 
@@ -84,7 +84,11 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 		div = 1;
 	} else {
 		/* Fixed ALP clock */
-		if (rev >= 11 && rev != 15) {
+		if (si_corerev(sih) == 20) {
+			/* Set the override bit so we don't divide it */
+			W_REG(osh, &cc->corecontrol, CC_UARTCLKO);
+			baud_base = 25000000;
+		} else if (rev >= 11 && rev != 15) {
 			baud_base = si_alp_clock(sih);
 			div = 1;
 			/* Turn off UART clock before switching clock source */
