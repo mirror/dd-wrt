@@ -38,7 +38,7 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	sprintf(tq, "traff-%02u-%u", month, year);
 	tdata = nvram_safe_get(tq);
 	
-	if (tdata == NULL || strlen(tdata) == 0) {
+	if (strlen(tdata) == 0) {
 		for (d = 1; d <= days; d++) {
 			strcat(sbuff, "0:0 ");
 		}
