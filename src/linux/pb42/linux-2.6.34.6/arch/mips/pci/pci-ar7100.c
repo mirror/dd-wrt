@@ -199,9 +199,8 @@ static void *getCalData(int slot)
 {
 u8 *base;
 for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
-    u16 *cal = (u16 *)base;
-    u16 *cal2 = (u16 *)(base+8);
-    if (*cal==0xa55a && *cal2==0x168c) {
+    u32 *cal = (u32 *)base;
+    if (*cal==0xa55a0000) {
 	if (slot) {
 	    base+=0x4000;
 	    }
