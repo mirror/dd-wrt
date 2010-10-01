@@ -1058,6 +1058,7 @@ management.lang_japanese="japonščina";
 management.lang_hungarian="madžarščina";
 management.lang_latvian="Latvijščina";
 management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
+management.net_conctrl="TCP nadzor zgostitve";
 management.net_port="Največje št. vrat";
 management.net_tcptimeout="TCP časovna omejitev (v sekundah)";
 management.net_udptimeout="UDP časovna omejitev (v sekundah)";
