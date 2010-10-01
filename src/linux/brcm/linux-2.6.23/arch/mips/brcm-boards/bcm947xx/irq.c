@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -38,7 +38,7 @@
  * where <base-IRQ> is specified in setup.c when calling
  * sb_mips_init(), 2 is to offset the two software IRQs.
  *
- * $Id: irq.c,v 1.8 2008/07/04 01:20:42 Exp $
+ * $Id: irq.c,v 1.11 2010/01/07 06:40:35 Exp $
  */
 
 #include <linux/config.h>
@@ -157,7 +157,9 @@ end_brcm_irq2(unsigned int irq)
  * re-entered as soon as the IE is re-enabled in function
  * handle_IRQ_envet().
  */
-void
+extern asmlinkage void __do_softirq(void);
+
+void BCMFASTPATH
 plat_irq_dispatch(struct pt_regs *regs)
 {
 	u32 pending, ipvec;
@@ -170,8 +172,7 @@ plat_irq_dispatch(struct pt_regs *regs)
 	clear_c0_status(pending);
 	irq_disable_hazard();
 
-	/*
-	 * Handle MIPS timer interrupt. Re-enable MIPS IRQ7
+	/* Handle MIPS timer interrupt. Re-enable MIPS IRQ7
 	 * immediately after servicing the interrupt so that
 	 * we can take this kind of interrupt again later
 	 * while servicing other interrupts.
@@ -183,8 +184,7 @@ plat_irq_dispatch(struct pt_regs *regs)
 		irq_enable_hazard();
 	}
 
-	/*
-	 * Build bitvec for pending interrupts. Start with
+	/* Build bitvec for pending interrupts. Start with
 	 * MIPS IRQ2 and add linux IRQs to higher bits to
 	 * make the interrupt processing uniform.
 	 */
@@ -202,8 +202,7 @@ plat_irq_dispatch(struct pt_regs *regs)
 	}
 
 #ifdef CONFIG_HND_BMIPS3300_PROF
-	/*
-	 * Handle MIPS core interrupt. Re-enable the MIPS IRQ that
+	/* Handle MIPS core interrupt. Re-enable the MIPS IRQ that
 	 * MIPS core is assigned to immediately after servicing the
 	 * interrupt so that we can take this kind of interrupt again
 	 * later while servicing other interrupts.
@@ -211,8 +210,7 @@ plat_irq_dispatch(struct pt_regs *regs)
 	 * mipsirq < 0 indicates MIPS core IRQ # is unknown.
 	 */
 	if (mipsirq >= 0 && (ipvec & (1 << mipsirq))) {
-		/*
-		 * MIPS core raised the interrupt on the shared MIPS IRQ2.
+		/* MIPS core raised the interrupt on the shared MIPS IRQ2.
 		 * Make sure MIPS core is the only interrupt source before
 		 * re-enabling the IRQ.
 		 */
@@ -226,8 +224,7 @@ plat_irq_dispatch(struct pt_regs *regs)
 				irq_enable_hazard();
 			}
 		}
-		/*
-		 * MIPS core raised the interrupt on a dedicated MIPS IRQ.
+		/* MIPS core raised the interrupt on a dedicated MIPS IRQ.
 		 * Re-enable the IRQ immediately.
 		 */
 		else {
@@ -247,8 +244,7 @@ plat_irq_dispatch(struct pt_regs *regs)
 	 */
 	ipvec >>= 1;
 
-	/*
-	 * Handle all other interrupts. Re-enable disabled MIPS IRQs
+	/* Handle all other interrupts. Re-enable disabled MIPS IRQs
 	 * after processing all pending interrupts.
 	 */
 	for (irq = 3; ipvec != 0; irq++) {
@@ -258,6 +254,12 @@ plat_irq_dispatch(struct pt_regs *regs)
 	}
 	set_c0_status(pending);
 	irq_enable_hazard();
+
+	/* Process any pending softirqs (tasklets, softirqs ...) */
+	local_irq_save(flags);
+	if (local_softirq_pending() && !in_interrupt())
+		__do_softirq();
+	local_irq_restore(flags);
 }
 
 /* MIPS IRQ0 to IRQ7 interrupt controller */
@@ -299,9 +301,8 @@ arch_init_irq(void)
 	else if (MIPS74K(current_cpu_data.processor_id))
 		mips_core_id = MIPS74K_CORE_ID;
 	else {
-		mips_core_id = MIPS33_CORE_ID;
 		printk(KERN_ERR "MIPS CPU type %x unknown", current_cpu_data.processor_id);
-//		return;
+		return;
 	}
 
 	/* Cache chipc and mips33 config registers */
@@ -318,7 +319,11 @@ arch_init_irq(void)
 	}
 	si_setcoreidx(bcm947xx_sih, coreidx);
 
-	if (MIPS74K(current_cpu_data.processor_id)) {
+	if (BCM330X(current_cpu_data.processor_id)) {
+		/* Cache mips33 sbintvec register */
+		if (mipssbr)
+			shints = R_REG(NULL, &mipssbr->sbintvec);
+	} else {
 		uint32 *intmask;
 
 		/* Use intmask5 register to route the timer interrupt */
@@ -330,10 +335,6 @@ arch_init_irq(void)
 
 		/* Save the pointer to mips core registers */
 		mips_corereg = regs;
-	} else {
-		/* Cache mips33 sbintvec register */
-		if (mipssbr)
-			shints = R_REG(NULL, &mipssbr->sbintvec);
 	}
 
 	/* Install interrupt controllers */

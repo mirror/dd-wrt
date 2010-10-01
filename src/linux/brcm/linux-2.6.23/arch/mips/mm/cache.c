@@ -58,26 +58,42 @@ EXPORT_SYMBOL(_dma_cache_inv);
 asmlinkage int sys_cacheflush(unsigned long addr,
 	unsigned long bytes, unsigned int cache)
 {
+	struct vm_area_struct* vma;
 	if (bytes == 0)
 		return 0;
 	if (!access_ok(VERIFY_WRITE, (void __user *) addr, bytes))
 		return -EFAULT;
 
-	flush_icache_range(addr, addr + bytes);
+	if (cache & DCACHE)
+        {
+                vma = find_vma(current->mm, (unsigned long) addr);
+                if (vma) {
+                        flush_cache_range(vma,(unsigned long)addr,((unsigned long)addr) + bytes);
+                }
+                else {
+                        __flush_cache_all();
+                }
+        }
+        if (cache & ICACHE)
+        {
+                flush_icache_range(addr, addr + bytes);
+        }	
 
 	return 0;
 }
 
+void *kmap_atomic_page_address(struct page *page);
+
 void __flush_dcache_page(struct page *page)
 {
-	struct address_space *mapping = page_mapping(page);
 	unsigned long addr;
 
-	if (PageHighMem(page))
-		return;
-	if (mapping && !mapping_mapped(mapping)) {
-		SetPageDcacheDirty(page);
-		return;
+	if (PageHighMem(page)) {
+		addr = (unsigned long) kmap_atomic_page_address(page);
+		if (addr) {
+			flush_data_cache_page(addr);
+			return;
+		}
 	}
 
 	/*
@@ -86,7 +102,8 @@ void __flush_dcache_page(struct page *page)
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
 	addr = (unsigned long) page_address(page);
-	flush_data_cache_page(addr);
+	if (addr)
+		flush_data_cache_page(addr);
 }
 
 EXPORT_SYMBOL(__flush_dcache_page);
@@ -120,11 +137,11 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
 	if (unlikely(!pfn_valid(pfn)))
 		return;
 	page = pfn_to_page(pfn);
-	if (page_mapping(page) && Page_dcache_dirty(page)) {
+	if (page_mapping(page)) {
 		addr = (unsigned long) page_address(page);
 		if (exec || pages_do_alias(addr, address & PAGE_MASK))
-			flush_data_cache_page(addr);
-		ClearPageDcacheDirty(page);
+			if (addr)
+				flush_data_cache_page(addr);
 	}
 }
 

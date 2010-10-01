@@ -31,6 +31,7 @@
 #include <linux/spinlock.h>
 #include <linux/mm.h>
 #include <asm/pgtable.h>	/* MODULE_START */
+#include <asm/highmem.h>	/* MODULE_START */
 
 struct mips_hi16 {
 	struct mips_hi16 *next;
