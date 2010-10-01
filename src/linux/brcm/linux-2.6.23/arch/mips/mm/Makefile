@@ -34,3 +34,4 @@ obj-$(CONFIG_RM7000_CPU_SCACHE)	+= sc-rm7k.o
 obj-$(CONFIG_MIPS_CPU_SCACHE)	+= sc-mips.o
 
 EXTRA_CFLAGS += -Werror
+EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include 

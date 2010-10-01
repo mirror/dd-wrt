@@ -113,14 +113,13 @@
 #define PRID_COPT_MASK          0xff000000
 #define PRID_COMP_MASK          0x00ff0000
 #define PRID_IMP_MASK           0x0000ff00
- 
+#define PRID_REV_MASK           0x000000ff
+
 
 
 /*
  * Definitions for 7:0 on legacy processors
  */
-
-#define PRID_REV_MASK		0x00ff
 
 #define PRID_REV_TX4927		0x0022
 #define PRID_REV_TX4937		0x0030

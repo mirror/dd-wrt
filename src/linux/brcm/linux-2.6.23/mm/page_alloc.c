@@ -2944,7 +2944,11 @@ static void __meminit free_area_init_core(struct pglist_data *pgdat,
 		 * is used by this zone for memmap. This affects the watermark
 		 * and per-cpu initialisations
 		 */
+#ifdef CONFIG_SPARSEMEM
+                memmap_pages = 0;
+#else
 		memmap_pages = (size * sizeof(struct page)) >> PAGE_SHIFT;
+#endif
 		if (realsize >= memmap_pages) {
 			realsize -= memmap_pages;
 			printk(KERN_DEBUG

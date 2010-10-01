@@ -28,6 +28,8 @@
 #include <asm/mmu_context.h>
 #include <asm/war.h>
 #include <asm/cacheflush.h> /* for run_uncached() */
+#include <typedefs.h>
+#include <bcmdefs.h>
 
 
 /*
@@ -576,7 +578,7 @@ static void r4k_flush_icache_range(unsigned long start, unsigned long end)
 
 #ifdef CONFIG_DMA_NONCOHERENT
 
-static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
+static void BCMFASTPATH r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 {
 	/* Catch bad driver code */
 	BUG_ON(size == 0);
@@ -605,7 +607,8 @@ static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 	bc_wback_inv(addr, size);
 }
 
-static void r4k_dma_cache_inv(unsigned long addr, unsigned long size)
+
+static void BCMFASTPATH r4k_dma_cache_inv(unsigned long addr, unsigned long size)
 {
 	/* Catch bad driver code */
 	BUG_ON(size == 0);
