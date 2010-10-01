@@ -33,6 +33,33 @@ void __kunmap(struct page *page)
  * kmaps are appropriate for short, tight code paths only.
  */
 
+/*
+ * need an array per cpu, and each array has to be cache aligned
+ */
+struct kmap_map {
+	struct page *page;
+	void        *vaddr;
+};
+
+struct {
+	struct kmap_map map[KM_TYPE_NR];
+} ____cacheline_aligned_in_smp kmap_atomic_maps[NR_CPUS];
+
+
+
+void *
+kmap_atomic_page_address(struct page *page)
+{
+	int i;
+
+	for (i = 0; i < KM_TYPE_NR; i++)
+		if (kmap_atomic_maps[smp_processor_id()].map[i].page == page)
+			return(kmap_atomic_maps[smp_processor_id()].map[i].vaddr);
+
+	return((struct page *)0);
+}
+
+
 void *__kmap_atomic(struct page *page, enum km_type type)
 {
 	enum fixed_addresses idx;
@@ -52,12 +79,14 @@ void *__kmap_atomic(struct page *page, enum km_type type)
 	set_pte(kmap_pte-idx, mk_pte(page, kmap_prot));
 	local_flush_tlb_one((unsigned long)vaddr);
 
+	kmap_atomic_maps[smp_processor_id()].map[type].page = page;
+	kmap_atomic_maps[smp_processor_id()].map[type].vaddr = (void *)vaddr;
+
 	return (void*) vaddr;
 }
 
 void __kunmap_atomic(void *kvaddr, enum km_type type)
 {
-#ifdef CONFIG_DEBUG_HIGHMEM
 	unsigned long vaddr = (unsigned long) kvaddr & PAGE_MASK;
 	enum fixed_addresses idx = type + KM_TYPE_NR*smp_processor_id();
 
@@ -69,6 +98,17 @@ void __kunmap_atomic(void *kvaddr, enum km_type type)
 	if (vaddr != __fix_to_virt(FIX_KMAP_BEGIN+idx))
 		BUG();
 
+	/* Protect against multiple unmaps
+	 * Can't cache flush an unmapped page.
+	 */
+	if ( kmap_atomic_maps[smp_processor_id()].map[type].vaddr ) {
+		kmap_atomic_maps[smp_processor_id()].map[type].page = (struct page *)0;
+		kmap_atomic_maps[smp_processor_id()].map[type].vaddr = (void *) 0;
+
+		flush_data_cache_page((unsigned long)vaddr);
+	}
+
+#ifdef CONFIG_DEBUG_HIGHMEM
 	/*
 	 * force other mappings to Oops if they'll try to access
 	 * this pte without first remap it

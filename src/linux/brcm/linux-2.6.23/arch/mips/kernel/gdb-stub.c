@@ -377,7 +377,7 @@ static struct hard_trap_info {
 	unsigned char signo;		/* Signal that we map this trap into */
 } hard_trap_info[] = {
 	{ 6, SIGBUS },			/* instruction bus error */
-	{ 7, SIGBUS },			/* data bus error */
+/*	{ 7, SIGBUS },		*/	/* data bus error */
 	{ 9, SIGTRAP },			/* break */
 	{ 10, SIGILL },			/* reserved instruction */
 /*	{ 11, SIGILL },		*/	/* CPU unusable */

@@ -25,6 +25,10 @@ config MIPS_BRCM
 	select SYS_SUPPORTS_KGDB
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_HAS_CPU_MIPS32_R2
+	select ARCH_SELECT_MEMORY_MODEL
+	select ARCH_SPARSEMEM_ENABLE
+	select CPU_SUPPORTS_HIGHMEM
+	select SYS_SUPPORTS_HIGHMEM
 
 config MACH_ALCHEMY
 	bool "Alchemy processor based machines"
@@ -1563,9 +1567,16 @@ config ARCH_DISCONTIGMEM_ENABLE
 	  or have huge holes in the physical address space for other reasons.
 	  See <file:Documentation/vm/numa> for more.
 
+config ARCH_POPULATES_NODE_MAP
+	bool
+	default y if SPARSEMEM
+
+config ARCH_SELECT_MEMORY_MODEL
+	def_bool y
+
 config ARCH_SPARSEMEM_ENABLE
 	bool
-	select SPARSEMEM_STATIC
+#	select SPARSEMEM_STATIC
 
 config NUMA
 	bool "NUMA Support"

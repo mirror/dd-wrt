@@ -6,8 +6,8 @@
  * SECTION_SIZE_BITS		2^N: how big each section will be
  * MAX_PHYSMEM_BITS		2^N: how much memory we can have in that space
  */
-#define SECTION_SIZE_BITS       28
-#define MAX_PHYSMEM_BITS        35
+#define SECTION_SIZE_BITS       27 /* 128 mb */
+#define MAX_PHYSMEM_BITS        32 /* 4 gb */
 
 #endif /* CONFIG_SPARSEMEM */
 #endif /* _MIPS_SPARSEMEM_H */
