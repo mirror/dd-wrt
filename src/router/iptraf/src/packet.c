@@ -77,7 +77,7 @@ unsigned short getlinktype(unsigned short family, char *ifname,
 
     switch (family) {
     case ARPHRD_ETHER:
-        if ((strncmp(ifname, "eth", 3) == 0) || (strncmp(ifname, "ixp", 3) == 0) || (strncmp(ifname, "br", 2) == 0) )
+        if ((strncmp(ifname, "eth", 3) == 0) || (strncmp(ifname, "ixp", 3) == 0) || (strncmp(ifname, "br", 2) == 0) || (strncmp(ifname, "oet", 3) == 0) )
             result = LINK_ETHERNET;
         else if (strncmp(ifname, "plip", 4) == 0)
             result = LINK_PLIP;
@@ -89,7 +89,7 @@ unsigned short getlinktype(unsigned short family, char *ifname,
             result = LINK_ETHERNET;
         else if (strncmp(ifname, "ipsec", 5) == 0)
             result = LINK_ETHERNET;
-        else if ((strncmp(ifname, "wvlan", 5) == 0) || (strncmp(ifname, "wlan", 4) == 0) || (strncmp(ifname, "ath", 3) == 0))
+        else if ((strncmp(ifname, "wvlan", 5) == 0) || (strncmp(ifname, "wl", 2) == 0) || (strncmp(ifname, "ath", 3) == 0))
             result = LINK_ETHERNET;
         else if ((strncmp(ifname, "sm2", 3) == 0)
                  || (strncmp(ifname, "sm3", 3) == 0))
