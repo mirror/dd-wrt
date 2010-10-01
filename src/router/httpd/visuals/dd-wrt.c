@@ -7793,7 +7793,7 @@ void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
 	}
 
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">TCP Congestion Control</div>\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.net_conctrl)</script></div>\n");
 	websWrite(wp, "<select name=\"tcp_congestion_control\">\n");
 	foreach(var, eths, next) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
