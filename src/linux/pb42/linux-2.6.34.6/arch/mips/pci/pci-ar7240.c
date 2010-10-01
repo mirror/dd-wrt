@@ -168,7 +168,7 @@ static void *getCalData(int slot)
 u8 *base;
 for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
     u32 *cal = (u32 *)base;
-    if (*cal==0xa55a0000) {
+    if (*cal==0xa55a0000) { //protection bit is always zero on inflash devices, so we can use for match it
 	if (slot) {
 	    base+=0x4000;
 	    }
