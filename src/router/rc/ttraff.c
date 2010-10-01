@@ -44,6 +44,7 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 		}
 		strcat(sbuff, "[0:0]");
 		nvram_set(tq, sbuff);
+		nvram_commit(); // invalidate them
 		tdata = nvram_safe_get(tq);
 	}
 
