@@ -72,8 +72,7 @@ static struct mtd_info *bcm947xx_mtd;
 #define ROUTER_NETGEAR_WNDR3300        3
 #define ROUTER_NETGEAR_WNR3500L        4
 #define ROUTER_NETGEAR_WNR2000V2       5
-#define ROUTER_BELKIN_F7D3301          6
-#define ROUTER_BELKIN_F7D3302_4302     7
+#define ROUTER_BELKIN_F7D3301_3302_4302     6
 
 /* Belkin Share & Play series */
 #define TRX_MAGIC_F7D3301              0x20100322      /* Belkin Share Max; router's birthday ? */
@@ -126,7 +125,7 @@ static int get_router (void)
 	if (boardnum == 12345
 	  && nvram_match("boardtype", "0xa4cf")
 	  && nvram_match("boardrev", "0x1102")) {
-		return ROUTER_BELKIN_F7D3302_4302;  //Belkin F7D3302v1 / F7D4302v1
+		return ROUTER_BELKIN_F7D3301_3302_4302;  //Belkin F7D3301v1 /F7D3302v1 / F7D4302v1
 	}
 	
 	return 0;
@@ -192,25 +191,24 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 		if (mtd->read(mtd, off, sizeof(buf), &len, buf) ||
 		    len != sizeof(buf))
 			continue;
-
-		/* found a TRX header */
-		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
+			
+		switch (le32_to_cpu(trx->magic)) {
+		 /* found a TRX header */	
+		case TRX_MAGIC:
 			goto found;
-		}
-	
-		/* found a Belkin Share Max TRX header */
-		if (get_router() == ROUTER_BELKIN_F7D3301
-		  && (le32_to_cpu(trx->magic) == TRX_MAGIC_F7D3301 || le32_to_cpu(trx->magic) == TRX_MAGIC_QA)) {
-		    printk(KERN_EMERG  "Found Belkin Share Max magic\n");
-			goto found;
-		}
+			break;
 		/* found a Belkin Share or Play TRX header */
-		if (get_router() == ROUTER_BELKIN_F7D3302_4302
-		  && (le32_to_cpu(trx->magic) == TRX_MAGIC_F7D3302 || le32_to_cpu(trx->magic) == TRX_MAGIC_F7D4302 || le32_to_cpu(trx->magic) == TRX_MAGIC_QA)) {
-		    printk(KERN_EMERG  "Found Belkin Share or Play magic\n");
-			goto found;
-		}	
-		
+		case TRX_MAGIC_F7D3301:
+		case TRX_MAGIC_F7D3302:
+		case TRX_MAGIC_F7D4302:
+		case TRX_MAGIC_QA:
+			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302) {
+				printk(KERN_EMERG  "Found Belkin Share or Play TRX magic\n");
+				goto found;
+			}
+			break;
+		}
+
 	}
 
 	printk(KERN_EMERG 
@@ -320,21 +318,21 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		    len != sizeof(trx))
 			continue;
 
-		/* found a TRX header */
-		if (le32_to_cpu(trx.magic) == TRX_MAGIC) {
+		switch (le32_to_cpu(trx.magic)) {
+		 /* found a TRX header */	
+		case TRX_MAGIC:
 			goto found;
-		}
-		
-		/* found a Belkin Share max TRX header */
-		if (get_router() == ROUTER_BELKIN_F7D3301
-		  && (le32_to_cpu(trx.magic) == TRX_MAGIC_F7D3301 || le32_to_cpu(trx.magic) == TRX_MAGIC_QA)) {
-			goto found;
-		}
-
-		if (get_router() == ROUTER_BELKIN_F7D3302_4302
-		  && (le32_to_cpu(trx.magic) == TRX_MAGIC_F7D3302 || le32_to_cpu(trx.magic) == TRX_MAGIC_F7D4302 || le32_to_cpu(trx.magic) == TRX_MAGIC_QA)) {
-		    printk(KERN_EMERG  "Found Belkin Share or Play magic\n");
-			goto found;
+			break;
+		/* found a Belkin Share or Play TRX header */
+		case TRX_MAGIC_F7D3301:
+		case TRX_MAGIC_F7D3302:
+		case TRX_MAGIC_F7D4302:
+		case TRX_MAGIC_QA:
+			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302) {
+				printk(KERN_EMERG  "Found Belkin Share or Play TRX magic\n");
+				goto found;
+			}
+			break;
 		}
 	}
 
