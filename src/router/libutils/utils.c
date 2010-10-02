@@ -1303,13 +1303,7 @@ int internal_getRouterBrand()
 		setRouter("Asus RT-N16");
 		return ROUTER_ASUS_RTN16;
 	}
-/*	
-	if (boardnum == 12345 && nvram_match("boardtype", "0xXXXX")
-	    && nvram_match("boardrev", "0x1204")) {
-		setRouter("Belkin Share Max F7D3301 v1");
-		return ROUTER_BELKIN_F7D3301;
-	}
-*/
+
 	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
 		setRouter("Belkin Play Max F7D4301 v1");
@@ -1323,6 +1317,10 @@ int internal_getRouterBrand()
 		if (mtd1) {
 			fread(&trxhd, 4, 1, mtd1);
 			fclose(mtd1);
+			if (trxhd == TRX_MAGIC_F7D3301) {
+				setRouter("Belkin Share Max F7D3301 v1");
+				return ROUTER_BELKIN_F7D3301;
+			}
 			if (trxhd == TRX_MAGIC_F7D3302) {
 				setRouter("Belkin Share F7D3302 v1");
 				return ROUTER_BELKIN_F7D3302;
