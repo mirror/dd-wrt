@@ -546,36 +546,38 @@ int svqos_iptables(void)
 			char *proto = NULL;
 			char *realname = name;
 
-			if (!strcasecmp(realname, "gnutella"))
-				proto = "gnu";
-			else if (!strcasecmp(realname, "bearshare"))
-				proto = "gnu";
-			else if (!strcasecmp(realname, "edonkey"))
-				proto = "edk";
-			else if (!strcasecmp(realname, "kazaa"))
-				proto = "kazaa";
-			else if (!strcasecmp(realname, "directconnect"))
-				proto = "dc";
-			else if (!strcasecmp(realname, "bittorrent"))
-				proto = "bit";
-			else if (!strcasecmp(realname, "applejuice"))
+			if (!strcasecmp(realname, "applejuice"))
 				proto = "apple";
-			else if (!strcasecmp(realname, "soulseek"))
-				proto = "soul";
 			else if (!strcasecmp(realname, "ares"))
 				proto = "ares";
+			else if (!strcasecmp(realname, "bearshare"))
+				proto = "gnu";
+			else if (!strcasecmp(realname, "bittorrent"))
+				proto = "bit";
+			else if (!strcasecmp(realname, "directconnect"))
+				proto = "dc";
+			else if (!strcasecmp(realname, "edonkey"))
+				proto = "edk";
+			else if (!strcasecmp(realname, "gnutella"))
+				proto = "gnu";
+			else if (!strcasecmp(realname, "kazaa"))
+				proto = "kazaa";
 			else if (!strcasecmp(realname, "mute"))
 				proto = "mute";
+			else if (!strcasecmp(realname, "soulseek"))
+				proto = "soul";
 			else if (!strcasecmp(realname, "waste"))
 				proto = "waste";
+			else if (!strcasecmp(realname, "winmx"))
+				proto = "winmx";
 			else if (!strcasecmp(realname, "xdcc"))
 				proto = "xdcc";
 			insmod("ipt_ipp2p");
 			sysprintf
-			    ("iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+			    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 			     proto, level);
 			sysprintf
-			    ("iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+			    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 			     proto, level);
 			if (!strcmp(proto, "bit")) {
 				/* bittorrent detection enhanced */
