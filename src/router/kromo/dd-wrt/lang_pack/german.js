@@ -1033,7 +1033,7 @@ management.lang_swedish="Schwedisch";
 management.lang_japanese="Japanisch";
 management.lang_hungarian="Ungarisch";
 management.net_legend="IP-Filter-Einstellungen (Für P2P bitte anpassen)";
-management.net_conctrl="TCP Blockierungskontrolle";
+management.net_conctrl="TCP Staukontroll-Mechanismus";
 management.net_port="Maximale Ports";
 management.net_tcptimeout="TCP-Timeout (in Sekunden)";
 management.net_udptimeout="UDP-Timeout (in Sekunden)";
@@ -1977,7 +1977,7 @@ wl_basic.radar="Radar Erkennung";
 wl_basic.mtikie="MTik Kompatibilität";
 wl_basic.csma="Carrier Sense";
 wl_basic.advanced_options="Erweiterte Optionen";
-wl_basic.rate_control="Raten Algorithmus";
+wl_basic.rate_Blocontrol="Raten Algorithmus";
 
 //help container
 
