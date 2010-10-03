@@ -172,9 +172,12 @@ int site_survey_main(int argc, char *argv[])
 			b2[i]=b2[i+c];
 		    }
 		int ret = fscanf(scan, "%s %s %s %s %s %s", b3, b4, b5, b6, ext,b7);	//skip second line
-		if (ret < 6)
+		if (ret < 5)
 			break;
-		skipline(scan);
+		if (ret==6)
+		    skipline(scan);
+		else
+		    strncpy(b7,ext,31);
 		site_survey_lists[i].channel = atoi(b1);	// channel
 		strcpy(site_survey_lists[i].SSID, b2);	//SSID
 		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
