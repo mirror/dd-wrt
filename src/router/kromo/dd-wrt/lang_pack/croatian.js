@@ -1,5 +1,5 @@
 ﻿/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 - updated since svn14843 / by Silvio Peša (vpritiskovic) / 2010-08-30 //
+// Croatian Translation / DD-WRT v24-sp2 - updated since svn15037 / by Silvio Peša (vpritiskovic) / 2010-10-02 // 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -479,7 +479,7 @@ alive.port="Proxy Vrata";
 //help container
 
 halive.right2="Odaberi kada ponovo pokrenuti usmjerivač. CRON mora biti omogućen u kartici UPRAVLJANJE.";
-halive.right4="Najviše tri IP adrese odvojene <em>RAZMAKOM</em> su dozvoljene.<br/>Format IP adresa je:xxx.xxx.xxx.xxx.";
+halive.right4="Najviše tri IP adrese odvojene <em>RAZMAKOM</em> su dozvoljene.<br/>Format IP adresa je:xxx.xxx.xxx.xxx .";
 
 
 // ** config.asp **//
@@ -715,7 +715,7 @@ nas.proftpd_anon_subdir="Anonimni Kućni Podimenik";
 nas.samba3_legend="Dijeljenje Datoteka";
 
 
-hnas.right2="Lista Korisničkih Zaporki: Unesi jednu Korisničku Zaporku Enter po liniji. Zaporka može biti obični tekst ili MD5 kriptirano.";
+hnas.right2="Lista Korisničkih Zaporki: Unesi jednu Zaporku po liniji. Zaporka može biti obični tekst ili MD5 enkripcija.";
 
 // ** Hotspot.asp **//
 
@@ -805,9 +805,9 @@ hotspotsys.allowuam="UAM Allowed";
 hotspotsys.whitelabelproto="White Label Protocol";
 hotspotsys.whitelabel="White Label Domain";
 hotspotsys.operatorid="Operator Username";
-hotspotsys.locationid="Location ID";
+hotspotsys.locationid="ID Lokacije";
 hotspotsys.dhcp="DHCP Sučelje";
-hotspotsys.net="Remote Network";
+hotspotsys.net="Udaljena Mreža";
 hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 
 
@@ -1058,6 +1058,7 @@ management.lang_japanese="Japanski";
 management.lang_hungarian="Mađarski";
 management.lang_latvian="Latvijski";
 management.net_legend="Postavke IP Filtera (ovo postaviti za P2P)";
+management.net_conctrl="TCP Congestion Control";
 management.net_port="Maksimalno Vrata";
 management.net_tcptimeout="TCP Vrem. ograničenje (u sekundama)";
 management.net_udptimeout="UDP Vrem. ograničenje (u sekundama)";
@@ -1233,13 +1234,14 @@ service.dhcp_legend2="DHCP Poslužitelj";
 service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="Use JFFS2 for client lease DB";
 service.dhcp_nvramlease="Use NVRAM for client lease DB";
-service.dhcp_domain="Used Domain";
-service.dhcp_landomain="LAN Domain";
-service.dhcp_option="Additional DHCPd Options";
+service.dhcp_domain="Korištena Domena";
+service.dhcp_landomain="LAN Domena";
+service.dhcp_option="Dodatne DHCPd Opcije";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Local DNS";
-service.dnsmasq_opt="Additional DNSMasq Options";
+service.dnsmasq_loc="Lokalni DNS";
+service.dnsmasq_no_dns_rebind="No DNS Rebind";
+service.dnsmasq_opt="Dodatne DNSMasq Opcije";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1284,6 +1286,7 @@ service.pppoe_srv="Relay";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Poslužitelj";
 service.pppoesrv_srv="RP-PPPoE Server Daemon";
+service.pppoesrv_interface="RP-PPPoE Sučelje Poslužitelja";
 service.pppoesrv_srvopt="Opcije RP-PPPoE Poslužitelja";
 service.pppoesrv_compr="Sažimanje";
 service.pppoesrv_remoteaddr="Udaljena Početna IP Adresa";
@@ -1439,6 +1442,7 @@ service.samba3_srvstr="Poslužiteljev Niz";
 service.samba3_pub="Javno Dijeljenje";
 service.samba3_config="Posebna Konfiguracija";
 service.samba3_workgrp="Radna Grupa";
+service.samba3_dirpath="Staza do Datoteka";
 service.samba3_usr1="Korisnik1";
 service.samba3_pass1=" Zaporka1";
 service.samba3_usr2="Korisnik2";
@@ -2010,7 +2014,7 @@ wl_basic.client="Klijent";
 wl_basic.repeater="Ponavljač";
 wl_basic.repeaterbridge="Ponavljač Premosnik";
 wl_basic.clientBridge="Klijent Premosnik";
-wl_basic.clientRelayd="Client Bridge (Routed)";
+wl_basic.clientRelayd="Klijent Premosnik (Routed)";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Stanica";
 wl_basic.wdsap="WDS AP";
