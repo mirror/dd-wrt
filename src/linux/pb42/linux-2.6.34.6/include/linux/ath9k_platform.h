@@ -18,7 +18,6 @@ struct ath9k_platform_data {
 	u8 *macaddr;
 
 	bool quirk_wndr3700;
-	int slot;
 };
 
 #endif /* _LINUX_ATH9K_PLATFORM_H */
