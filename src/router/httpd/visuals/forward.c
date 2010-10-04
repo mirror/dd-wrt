@@ -104,7 +104,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 {
 	static char word[256];
 	char *next, *wordlist;
-	char *name, *from, *to, *proto, *ip, *enable;
+	char *name, *from, *to, *proto, *ip, *enable, *src=NULL;
 	static char new_name[200];
 	int temp;
 
