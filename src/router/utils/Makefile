@@ -118,6 +118,7 @@ ifeq ($(ARCH),armeb)
 else
 
 ifneq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_RT2880),y)
 
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
@@ -134,6 +135,7 @@ else
 	install -D wl.v23 $(INSTALLDIR)/utils/usr/sbin/wl
 endif
 
+endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
