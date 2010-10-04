@@ -563,8 +563,7 @@ static void parse_spec_forward(char *wordlist)
 		if (!to) {
 			to = src;
 			src = NULL;
-			}
-
+		}
 		// cprintf("%s %s %s %s %s\n",enable,proto,from,ip,to);
 
 		/*
@@ -578,7 +577,7 @@ static void parse_spec_forward(char *wordlist)
 		 * -j DNAT --to-destination 192.168.1.88:23 
 		 */
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			if (src && strlen(src)>0) {
+			if (src && strlen(src) > 0) {
 				save2file
 				    ("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
 				     src, wanaddr, from, ip, to);
@@ -599,7 +598,7 @@ static void parse_spec_forward(char *wordlist)
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 
-			if (src && strlen(src)>0) {
+			if (src && strlen(src) > 0) {
 				save2file
 				    ("-A PREROUTING -p udp -m udp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
 				     src, wanaddr, from, ip, to);
