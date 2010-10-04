@@ -29,6 +29,7 @@
 #include <linux/module.h>
 #include <linux/file.h>
 #include <linux/proc_fs.h>
+#include <linux/pfn.h>
 #include <asm/io.h>
 
 #define CRASHLOG_PAGES	4
