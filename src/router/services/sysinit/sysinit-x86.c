@@ -151,7 +151,7 @@ void start_sysinit(void)
 				free(mem);
 				eval("sync");
 				sleep(5);
-				eval("reboot");
+				eval("event", "5", "1", "15");
 			}
 		}
 		free(mem);
