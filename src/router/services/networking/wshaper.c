@@ -45,7 +45,8 @@ char *get_wshaper_dev(void)
 
 static char *get_mtu_val(void)
 {
-	if (nvram_match("wshaper_dev", "WAN") && !strcmp(get_wshaper_dev(),"ppp0"))
+	if (nvram_match("wshaper_dev", "WAN")
+	    && !strcmp(get_wshaper_dev(), "ppp0"))
 		return nvram_safe_get("wan_mtu");
 	else if (nvram_match("wshaper_dev", "WAN")) {
 		if (nvram_match("wan_mtu", "1500"))
@@ -572,43 +573,44 @@ int svqos_iptables(void)
 				proto = "winmx";
 			else if (!strcasecmp(realname, "xdcc"))
 				proto = "xdcc";
-			insmod("ipt_ipp2p");
-			sysprintf
-			    ("iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
-			     proto, level);
-			sysprintf
-			    ("iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
-			     proto, level);
-			if (!strcmp(proto, "bit")) {
-				/* bittorrent detection enhanced */
-			insmod("ipt_layer7");
+			if (proto) {
+				insmod("ipt_ipp2p");
+				sysprintf
+				    ("iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+				     proto, level);
+				sysprintf
+				    ("iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+				     proto, level);
+				if (!strcmp(proto, "bit")) {
+					/* bittorrent detection enhanced */
+					insmod("ipt_layer7");
 #ifdef HAVE_MICRO
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
-				     level);
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
-				     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
+					     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
+					     level);
 #else
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
-				     level);
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
-				     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
+					     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
+					     level);
 #endif
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m layer7 --l7proto bt1 -j MARK --set-mark %s\n",
-				     level);
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m layer7 --l7proto bt1 -j MARK --set-mark %s\n",
-				     level);
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m layer7 --l7proto bt2 -j MARK --set-mark %s\n",
-				     level);
-				sysprintf
-				    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m layer7 --l7proto bt2 -j MARK --set-mark %s\n",
-				     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m layer7 --l7proto bt1 -j MARK --set-mark %s\n",
+					     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m layer7 --l7proto bt1 -j MARK --set-mark %s\n",
+					     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m layer7 --l7proto bt2 -j MARK --set-mark %s\n",
+					     level);
+					sysprintf
+					    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m layer7 --l7proto bt2 -j MARK --set-mark %s\n",
+					     level);
 #ifndef HAVE_MICRO
 //                              sysprintf
 //                                  ("iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j MARK --set-mark %s\n",
@@ -617,6 +619,7 @@ int svqos_iptables(void)
 //                                  ("iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j MARK --set-mark %s\n",
 //                                   level);
 #endif
+				}
 			}
 		}
 
