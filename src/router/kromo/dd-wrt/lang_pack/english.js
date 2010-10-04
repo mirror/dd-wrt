@@ -677,6 +677,7 @@ pforward.titl="Port Forwarding";
 pforward.h2="Port Forward";
 pforward.legend="Forwards";
 pforward.app="Application";
+pforward.src="Source Net";
 pforward.from="Port from";
 pforward.to="Port to";
 
