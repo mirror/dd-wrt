@@ -1491,6 +1491,8 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 					proto = "mute";
 				if (!strcasecmp(realname, "waste"))
 					proto = "waste";
+				if (!strcasecmp(realname, "winmx"))
+					proto = "winmx";
 				if (!strcasecmp(realname, "xdcc"))
 					proto = "xdcc";
 				insmod("ipt_ipp2p");
