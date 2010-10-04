@@ -255,7 +255,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 } MACHTTRANSMIT_SETTING;
 
 typedef struct _RT_802_11_MAC_ENTRY {
-//	unsigned char ApIdx;
+	unsigned char ApIdx;
 	unsigned char Addr[6];
 	unsigned char Aid;
 	unsigned char Psm;	// 0:PWR_ACTIVE, 1:PWR_SAVE
@@ -265,13 +265,11 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	char AvgRssi2;
 	unsigned int ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
-#if 0 // not yet
 //#ifdef RTMP_RBUS_SUPPORT
 	unsigned int LastRxRate;
 	int StreamSnr[3];
 	int SoundingRespSnr[3];
 //#endif // RTMP_RBUS_SUPPORT //
-#endif
 } RT_802_11_MAC_ENTRY;
 
 typedef struct _RT_802_11_MAC_TABLE {
@@ -352,11 +350,7 @@ STAINFO *getRaStaInfo(char *ifname)
 		memcpy(ret->mac, BssidQuery, 6);
 		strcpy(ret->ifname, ifn);
 		ret->rssi = RSSI;
-#if 0 // not yet
 		ret->noise = -nNoiseDbm;
-#else
-		ret->noise = nNoiseDbm;
-#endif
 		return ret;
 	}
 	return NULL;

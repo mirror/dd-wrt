@@ -1489,18 +1489,20 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		char forward_from[] = "fromXXX";
 		char forward_to[] = "toXXX";
 		char forward_ip[] = "ipXXX";
+		char forward_src[] = "srcXXX";
 		char forward_tcp[] = "tcpXXX";	// for checkbox
 		char forward_udp[] = "udpXXX";	// for checkbox
 		char forward_pro[] = "proXXX";	// for select, cisco style UI
 		char forward_enable[] = "enableXXX";
 		char *name = "", new_name[200] = "", *from = "", *to = "", *ip =
 		    "", *tcp = "", *udp = "", *enable = "", proto[10], *pro =
-		    "";
+		    "",*src = "";
 
 		snprintf(forward_name, sizeof(forward_name), "name%d", i);
 		snprintf(forward_from, sizeof(forward_from), "from%d", i);
 		snprintf(forward_to, sizeof(forward_to), "to%d", i);
 		snprintf(forward_ip, sizeof(forward_ip), "ip%d", i);
+		snprintf(forward_src, sizeof(forward_src), "src%d", i);
 		snprintf(forward_tcp, sizeof(forward_tcp), "tcp%d", i);
 		snprintf(forward_udp, sizeof(forward_udp), "udp%d", i);
 		snprintf(forward_enable, sizeof(forward_enable), "enable%d", i);
@@ -1510,6 +1512,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		from = websGetVar(wp, forward_from, "0");
 		to = websGetVar(wp, forward_to, "0");
 		ip = websGetVar(wp, forward_ip, "0");
+		src = websGetVar(wp, forward_src, NULL);
 		tcp = websGetVar(wp, forward_tcp, NULL);	// for checkbox
 		udp = websGetVar(wp, forward_udp, NULL);	// for checkbox
 		pro = websGetVar(wp, forward_pro, NULL);	// for select option
@@ -1578,29 +1581,20 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		 * Sveasoft add - new format allows full IP address 
 		 */
 		if (sv_valid_ipaddr(ip)) {
+			if (!src)
 			cur +=
 			    snprintf(cur, buf + sof - cur,
 				     "%s%s:%s:%s:%d>%s:%d",
 				     cur == buf ? "" : " ", new_name, enable,
 				     proto, atoi(from), ip, atoi(to));
-		}
-		/*
-		 * Sveasoft - for backwords compatability allow single number 
-		 */
-		else if (sv_valid_range(ip, 0, 254)) {
-			char fullip[16] = { 0 };
-			int f_ip[4];
-
-			sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d",
-			       &f_ip[0], &f_ip[1], &f_ip[2], &f_ip[3]);
-			snprintf(fullip, 15, "%d.%d.%d.%d", f_ip[0], f_ip[1],
-				 f_ip[2], atoi(ip));
+			else
 			cur +=
 			    snprintf(cur, buf + sof - cur,
-				     "%s%s:%s:%s:%d>%s:%d",
+				     "%s%s:%s:%s:%d>%s:%d<%s",
 				     cur == buf ? "" : " ", new_name, enable,
-				     proto, atoi(from), fullip, atoi(to));
-
+				     proto, atoi(from), ip, atoi(to),src);
+			
+			
 		} else {
 			error = 1;
 			continue;

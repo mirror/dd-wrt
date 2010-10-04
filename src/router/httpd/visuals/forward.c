@@ -133,6 +133,10 @@ void port_forward_spec(webs_t wp, char *type, int which)
 			ip = strsep(&to, ":");
 			if (!ip || !to)
 				continue;
+			src = to;
+			to = strsep(&src, "<");
+			if (!to)
+				continue;
 
 			if (!strcmp(type, "name")) {
 				httpd_filter_name(name, new_name,
@@ -174,6 +178,8 @@ void port_forward_spec(webs_t wp, char *type, int which)
 					websWrite(wp, "");
 			} else if (!strcmp(type, "ip"))
 				websWrite(wp, "%s", ip);
+			else if (!strcmp(type, "src"))
+				websWrite(wp, "%s", src==NULL?"":src);
 			else if (!strcmp(type, "enable")) {
 				if (!strcmp(enable, "on"))
 					websWrite(wp, "checked=\"checked\"");
@@ -187,6 +193,8 @@ void port_forward_spec(webs_t wp, char *type, int which)
 		websWrite(wp, "0");
 	else if (!strcmp(type, "ip"))
 		websWrite(wp, "0.0.0.0");
+	else if (!strcmp(type, "src"))
+		websWrite(wp, "");
 	else if (!strcmp(type, "sel_both"))
 		websWrite(wp, "selected=\\\"selected\\\"");
 	else

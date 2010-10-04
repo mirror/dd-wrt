@@ -649,6 +649,7 @@ pforward.titl="Port-Weiterleitung";
 pforward.h2="Port-Weiterleitung";
 pforward.legend="Weiterleitungen";
 pforward.app="Anwendung";
+pforward.src="Von Netz";
 pforward.from="Von Port";
 pforward.to="Nach Port";
 

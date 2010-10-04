@@ -19,12 +19,15 @@
 				<dt><% tran("pforward.app"); %></dt>
 				<dd>Enter the name of the application in the field provided.</dd>
 				
-				<dt><% tran("pforward.from"); %></dt>
-				<dd>Enter the number of the external port (the port number seen by users on the Internet).</dd>
-				
 				<dt><% tran("share.proto"); %></dt>
 				<dd>Chose the right protocol <i>TCP</i>, <i>UDP</i> or <i>Both</i>. Set this to what the application requires.</dd>
-				
+
+				<dt><% tran("pforward.src"); %></dt>
+				<dd>Enter the source IP Network which should be forwarded.</dd>
+
+				<dt><% tran("pforward.from"); %></dt>
+				<dd>Enter the number of the external port (the port number seen by users on the Internet).</dd>
+								
 				<dt><% tran("share.ip"); %></dt>
 				<dd>Enter the IP Address of the PC running the application.</dd>
 
