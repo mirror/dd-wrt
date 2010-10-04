@@ -574,10 +574,10 @@ int svqos_iptables(void)
 				proto = "xdcc";
 			insmod("ipt_ipp2p");
 			sysprintf
-			    ("iptables -t mangle -A SVQOS_OUT -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+			    ("iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 			     proto, level);
 			sysprintf
-			    ("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+			    ("iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 			     proto, level);
 			if (!strcmp(proto, "bit")) {
 				/* bittorrent detection enhanced */
