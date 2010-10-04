@@ -39,8 +39,6 @@
 #include <stdarg.h>
 #include <sha1.h>
 
-
-
 extern char *(*websGetVar) (webs_t wp, char *var, char *d);
 
 void wan_proto(webs_t wp)
@@ -1819,18 +1817,16 @@ void remove_vifs_single(char *prefix)
 	// nvram_commit ();
 #ifdef HAVE_AOSS
 // must remove all aoss vap's if one of them is touched
-	if (strlen(nvram_safe_get("aoss_vifs")))
-	    {
-	    nvram_unset("ath0_vifs");
-	    nvram_unset("aoss_vifs");
-	    nvram_commit();
-	    }
-	if (strlen(nvram_safe_get("aossa_vifs")))
-	    {
-	    nvram_unset("ath1_vifs");
-	    nvram_unset("aossa_vifs");
-	    nvram_commit();
-	    }
+	if (strlen(nvram_safe_get("aoss_vifs"))) {
+		nvram_unset("ath0_vifs");
+		nvram_unset("aoss_vifs");
+		nvram_commit();
+	}
+	if (strlen(nvram_safe_get("aossa_vifs"))) {
+		nvram_unset("ath1_vifs");
+		nvram_unset("aossa_vifs");
+		nvram_commit();
+	}
 #endif
 }
 
@@ -1913,7 +1909,7 @@ void add_olsrd(webs_t wp)
 	char *addition = ">5.0>90.0>2.0>270.0>15.0>90.0>15.0>90.0";
 	char *newadd =
 	    (char *)safe_malloc(strlen(wordlist) + strlen(addition) +
-			   strlen(ifname) + 2);
+				strlen(ifname) + 2);
 	if (strlen(wordlist) > 0) {
 		strcpy(newadd, wordlist);
 		strcat(newadd, " ");
