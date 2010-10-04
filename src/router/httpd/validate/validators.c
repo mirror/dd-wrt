@@ -1581,7 +1581,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		 * Sveasoft add - new format allows full IP address 
 		 */
 		if (sv_valid_ipaddr(ip)) {
-			if (!src)
+			if (!src || strlen(src)==0)
 			cur +=
 			    snprintf(cur, buf + sof - cur,
 				     "%s%s:%s:%s:%d>%s:%d",
