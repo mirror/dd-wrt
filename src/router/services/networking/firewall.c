@@ -560,8 +560,10 @@ static void parse_spec_forward(char *wordlist)
 
 		src = to;
 		to = strsep(&src, "<");
-		if (!to)
-			continue;
+		if (!to) {
+			to = src;
+			src = NULL;
+			}
 
 		// cprintf("%s %s %s %s %s\n",enable,proto,from,ip,to);
 
