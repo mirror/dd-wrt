@@ -68,8 +68,9 @@ addEvent(window, "unload", function() {
 								<table class="table center" cellspacing="5" summary="ports forwardig table">
 									<tr>
 										<th><% tran("pforward.app"); %></th>
-										<th><% tran("pforward.from"); %></th>
 										<th><% tran("share.proto"); %></th>
+										<th><% tran("pforward.src"); %></th>
+										<th><% tran("pforward.from"); %></th>
 										<th><% tran("share.ip"); %></th>
 										<th><% tran("pforward.to"); %></th>
 										<th><% tran("share.enable"); %></th>
