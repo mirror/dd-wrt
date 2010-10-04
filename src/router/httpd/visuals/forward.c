@@ -135,9 +135,10 @@ void port_forward_spec(webs_t wp, char *type, int which)
 				continue;
 			src = to;
 			to = strsep(&src, "<");
-			if (!to)
-				continue;
-
+		if (!to) {
+			to = src;
+			src = NULL;
+			}
 			if (!strcmp(type, "name")) {
 				httpd_filter_name(name, new_name,
 						  sizeof(new_name), GET);
