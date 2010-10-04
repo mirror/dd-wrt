@@ -63,6 +63,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 } MACHTTRANSMIT_SETTING;
 
 typedef struct _RT_802_11_MAC_ENTRY {
+	unsigned char ApIdx;
 	unsigned char Addr[6];
 	unsigned char Aid;
 	unsigned char Psm;	// 0:PWR_ACTIVE, 1:PWR_SAVE
@@ -72,12 +73,45 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	char AvgRssi2;
 	unsigned int ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
+//#ifdef RTMP_RBUS_SUPPORT
+	unsigned int LastRxRate;
+	int StreamSnr[3];
+	int SoundingRespSnr[3];
+//#endif // RTMP_RBUS_SUPPORT //
 } RT_802_11_MAC_ENTRY;
+
+		// Last RX Rate
+//              unsigned int mcs = pe->LastRxRate & 0x7F;
+//              websWrite(wp, T("<td>MCS %d<br>%2dM, %cGI<br>%s%s</td>"),
+//                              mcs,  ((lastRxRate>>7) & 0x1)? 40: 20,
+//                              ((lastRxRate>>8) & 0x1)? 'S': 'L',
+//                              phyMode[(lastRxRate>>14) & 0x3],
+//                              ((lastRxRate>>9) & 0x3)? ", STBC": " ");
+
+typedef union _HTTRANSMIT_SETTING {
+	struct {
+		unsigned short MCS:7;	// MCS
+		unsigned short BW:1;	//channel bandwidth 20MHz or 40 MHz
+		unsigned short ShortGI:1;
+		unsigned short STBC:2;	//SPACE
+		unsigned short rsv:3;
+		unsigned short MODE:2;	// 0: CCK, 1:OFDM, 2:Mixedmode, 3:GreenField
+	} field;
+	unsigned short word;
+} HTTRANSMIT_SETTING, *PHTTRANSMIT_SETTING;
 
 typedef struct _RT_802_11_MAC_TABLE {
 	unsigned long Num;
 	RT_802_11_MAC_ENTRY Entry[128];	//MAX_LEN_OF_MAC_TABLE = 32
 } RT_802_11_MAC_TABLE;
+#define BW_20       0
+#define BW_40       1
+// SHORTGI
+#define GI_400      1		// only support in HT mode
+#define GI_800      0
+
+#define RT_OID_802_11_QUERY_LAST_RX_RATE            0x0613
+#define	RT_OID_802_11_QUERY_LAST_TX_RATE			0x0632
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
 
@@ -87,6 +121,107 @@ typedef struct STAINFO {
 	char noise;
 	char ifname[32];
 } STAINFO;
+
+static char bGetHTTxRateByBW_GI_MCS(int nBW, int nGI, int nMCS, double *dRate)
+{
+	//fprintf(stderr, "bGetHTTxRateByBW_GI_MCS()\n");
+	double HTTxRate20_800[24] =
+	    { 6.5, 13.0, 19.5, 26.0, 39.0, 52.0, 58.5, 65.0, 13.0, 26.0, 39.0,
+		52.0, 78.0, 104.0, 117.0, 130.0,
+		19.5, 39.0, 58.5, 78.0, 117.0, 156.0, 175.5, 195.0
+	};
+	double HTTxRate20_400[24] =
+	    { 7.2, 14.4, 21.7, 28.9, 43.3, 57.8, 65.0, 72.2, 14.444, 28.889,
+		43.333, 57.778, 86.667, 115.556, 130.000, 144.444,
+		21.7, 43.3, 65.0, 86.7, 130.0, 173.3, 195.0, 216.7
+	};
+	double HTTxRate40_800[25] =
+	    { 13.5, 27.0, 40.5, 54.0, 81.0, 108.0, 121.5, 135.0, 27.0, 54.0,
+		81.0, 108.0, 162.0, 216.0, 243.0, 270.0,
+		40.5, 81.0, 121.5, 162.0, 243.0, 324.0, 364.5, 405.0, 6.0
+	};
+	double HTTxRate40_400[25] =
+	    { 15.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 30.0, 60.0,
+		90.0, 120.0, 180.0, 240.0, 270.0, 300.0,
+		45.0, 90.0, 135.0, 180.0, 270.0, 360.0, 405.0, 450.0, 6.7
+	};
+
+	// no TxRate for (BW = 20, GI = 400, MCS = 32) & (BW = 20, GI = 400, MCS = 32)
+	if (((nBW == BW_20) && (nGI == GI_400) && (nMCS == 32)) ||
+	    ((nBW == BW_20) && (nGI == GI_800) && (nMCS == 32))) {
+		return 0;
+	}
+
+	if (nMCS == 32)
+		nMCS = 25;
+
+	if (nBW == BW_20 && nGI == GI_800)
+		*dRate = HTTxRate20_800[nMCS];
+	else if (nBW == BW_20 && nGI == GI_400)
+		*dRate = HTTxRate20_400[nMCS];
+	else if (nBW == BW_40 && nGI == GI_800)
+		*dRate = HTTxRate40_800[nMCS];
+	else if (nBW == BW_40 && nGI == GI_400)
+		*dRate = HTTxRate40_400[nMCS];
+	else
+		return 0;	//false
+
+	//fprintf(stderr, "dRate=%.1f\n", *dRate);
+	return 1;		//true
+}
+
+static void TxRxRateFor11n(HTTRANSMIT_SETTING * HTSetting,
+			   double *fLastTxRxRate)
+{
+	double b_mode[] = { 1, 2, 5.5, 11 };
+	float g_Rate[] = { 6, 9, 12, 18, 24, 36, 48, 54 };
+
+	switch (HTSetting->field.MODE) {
+	case 0:
+		if (HTSetting->field.MCS >= 0 && HTSetting->field.MCS <= 3)
+			*fLastTxRxRate = b_mode[HTSetting->field.MCS];
+		else if (HTSetting->field.MCS >= 8
+			 && HTSetting->field.MCS <= 11)
+			*fLastTxRxRate = b_mode[HTSetting->field.MCS - 8];
+		else
+			*fLastTxRxRate = 0;
+
+		break;
+	case 1:
+		if ((HTSetting->field.MCS >= 0) && (HTSetting->field.MCS < 8))
+			*fLastTxRxRate = g_Rate[HTSetting->field.MCS];
+		else
+			*fLastTxRxRate = 0;
+
+		break;
+	case 2:
+	case 3:
+		if (0 == bGetHTTxRateByBW_GI_MCS(HTSetting->field.BW,
+						 HTSetting->field.ShortGI,
+						 HTSetting->field.MCS,
+						 fLastTxRxRate)) {
+			*fLastTxRxRate = 0;
+		}
+		break;
+	default:
+		*fLastTxRxRate = 0;
+		break;
+	}
+}
+
+extern int OidQueryInformation(unsigned long OidQueryCode, int socket_id,
+			       char *DeviceName, void *ptr,
+			       unsigned long PtrLength);
+
+static void DisplayLastTxRxRateFor11n(int s, int nID, double *fLastTxRxRate)
+{
+	unsigned long lHTSetting;
+	HTTRANSMIT_SETTING HTSetting;
+	OidQueryInformation(nID, s, "ra0", &lHTSetting, sizeof(lHTSetting));
+	memset(&HTSetting, 0x00, sizeof(HTSetting));
+	memcpy(&HTSetting, &lHTSetting, sizeof(HTSetting));
+	TxRxRateFor11n(&HTSetting, fLastTxRxRate);
+}
 
 int
 ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
@@ -139,35 +274,40 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 				mac[9] = 'x';
 				mac[10] = 'x';
 			}
-#if 0
-			if (si->isi_rates
-			    &&
-			    ((si->isi_rates[si->isi_txrate] &
-			      IEEE80211_RATE_VAL) != 0)
-			    &&
-			    ((si->isi_rates[si->isi_rxrate] &
-			      IEEE80211_RATE_VAL) != 0)) {
-				websWrite(wp,
-					  "'%s','%s','%3dM','%3dM','%d','%d','%d'",
-					  mac, ifname,
-					  ((si->isi_rates[si->isi_txrate] &
-					    IEEE80211_RATE_VAL) / 2) * turbo,
-					  ((si->isi_rates[si->isi_rxrate] &
-					    IEEE80211_RATE_VAL) / 2) * turbo,
-					  -95 + table.Entry[i].AvgRssi0, -95,
-					  table.Entry[i].AvgRssi0);
-			} else
-//* 1.24 + 116
-#endif
+
 			{
 				int qual =
 				    table.Entry[i].AvgRssi0 * 124 + 11600;
 				qual /= 10;
+				HTTRANSMIT_SETTING HTSetting;
+				double rate = 1;
+				char rx[32];
+				char tx[32];
+				memset(&HTSetting, 0x00, sizeof(HTSetting));
+				memcpy(&HTSetting, &table.Entry[i].TxRate,
+				       sizeof(HTSetting));
+				TxRxRateFor11n(&HTSetting, &rate);
+				snprintf(tx, 8, "%.1f", rate);
+
+				memset(&HTSetting, 0x00, sizeof(HTSetting));
+				HTSetting.field.MCS =
+				    table.Entry[i].LastRxRate & 0x7F;
+				HTSetting.field.BW =
+				    (table.Entry[i].LastRxRate >> 7) & 0x1;
+				HTSetting.field.ShortGI =
+				    (table.Entry[i].LastRxRate >> 8) & 0x1;
+				HTSetting.field.STBC =
+				    (table.Entry[i].LastRxRate >> 9) & 0x3;
+				HTSetting.field.MODE =
+				    (table.Entry[i].LastRxRate >> 14) & 0x3;
+				TxRxRateFor11n(&HTSetting, &rate);
+				snprintf(rx, 8, "%.1f", rate);
 
 				websWrite(wp,
-					  "'%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'",
-					  mac, ifname, table.Entry[i].AvgRssi0,
-					  -95,
+					  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'",
+					  mac, ifname,
+					  UPTIME(table.Entry[i].ConnectedTime),
+					  tx, rx, table.Entry[i].AvgRssi0, -95,
 					  (table.Entry[i].AvgRssi0 - (-95)),
 					  qual);
 			}
@@ -178,10 +318,20 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		char mac[32];
 
 		int qual = sta->rssi * 124 + 11600;
+		double rate = 1;
+		char rx[32];
+		char tx[32];
+		DisplayLastTxRxRateFor11n(s, RT_OID_802_11_QUERY_LAST_RX_RATE,
+					  &rate);
+		snprintf(rx, 8, "%.1f", rate);
+		DisplayLastTxRxRateFor11n(s, RT_OID_802_11_QUERY_LAST_TX_RATE,
+					  &rate);
+		snprintf(tx, 8, "%.1f", rate);
+
 		qual /= 10;
 		strcpy(mac, ieee80211_ntoa(sta->mac));
-		websWrite(wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'",
-			  mac, sta->ifname, sta->rssi, sta->noise,
+		websWrite(wp, "'%s','%s','N/A','%s','%s','%d','%d','%d','%d'",
+			  mac, sta->ifname, tx, rx, sta->rssi, sta->noise,
 			  (sta->rssi - (sta->noise)), qual);
 		free(sta);
 
