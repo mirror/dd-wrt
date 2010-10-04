@@ -1004,7 +1004,6 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 		port_forward_spec(wp, "name", i);
 		websWrite(wp, "\" /></td>\n");
 
-		
 		//proto
 		websWrite(wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
 		websWrite(wp, "<option value=\"tcp\" ");
@@ -1020,37 +1019,46 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
       		\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
 
-
 		//src net
 		websWrite(wp, "<td>\n");
-		websWrite(wp,"<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"",i);
+		websWrite(wp,
+			  "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"",
+			  i);
 		port_forward_spec(wp, "src", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//from
 		websWrite(wp, "<td>\n");
-		websWrite(wp,"<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
+		websWrite(wp,
+			  "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+			  i);
 		port_forward_spec(wp, "from", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//dest ip
 		websWrite(wp, "<td>\n");
-		websWrite(wp,"<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",i);
+		websWrite(wp,
+			  "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
+			  i);
 		port_forward_spec(wp, "ip", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//port to
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
+		websWrite(wp,
+			  "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+			  i);
 		port_forward_spec(wp, "to", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//checkbox
 		websWrite(wp, "<td>\n");
-		websWrite(wp,"<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",i);
+		websWrite(wp,
+			  "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
+			  i);
 		port_forward_spec(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
-		
+
 		//end of table
 		websWrite(wp, "</tr>\n");
 	}
@@ -1450,57 +1458,89 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_ERC
 	static char menu_s[8][12][32] =
-	    { {"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "",""},
+	    { {"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", ""},
 	{"Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "",
-	 "", "",""},
-	{"ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "",""},
-	{"Filters.asp", "", "", "", "", "", "", "", "", "", "",""},
-	{"Management.asp", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "",""}
+	 "", "", ""},
+	{"ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", ""},
+	{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},
+	{"Management.asp", "", "", "", "", "", "", "", "", "", "", ""},
+	{"", "", "", "", "", "", "", "", "", "", "", ""},
+	{"", "", "", "", "", "", "", "", "", "", "", ""},
+	{"", "", "", "", "", "", "", "", "", "", "", ""},
+	{"", "", "", "", "", "", "", "", "", "", "", ""}
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
 	static char menuname_s[8][13][32] =
-	    { {"setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "",""},
-	{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "","", "", "", "",""},
-	{"applications", "applicationspforwarding", "", "", "", "", "", "", "","", "", "",""},
-	{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "",""},
-	{"admin", "adminManagement", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "", "",""},
-	{"", "", "", "", "", "", "", "", "", "", "", "",""}
+	    { {"setup", "setupbasic", "setupddns", "", "", "", "", "", "", "",
+	       "", "", ""},
+	{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "",
+	 "", "", "", "", ""},
+	{"applications", "applicationspforwarding", "", "", "", "", "", "", "",
+	 "", "", "", ""},
+	{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "",
+	 ""},
+	{"admin", "adminManagement", "", "", "", "", "", "", "", "", "", "",
+	 ""},
+	{"", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"", "", "", "", "", "", "", "", "", "", "", "", ""}
 	};
 
 #endif
 
 	static char menu_t[8][12][32] =
-	{ {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp","Networking.asp", "eop-tunnel.asp", "", "", "", "",""},
-	{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp","Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp","Wireless_MAC.asp","Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",""},
-	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp","USB.asp", "NAS.asp","Hotspot.asp", "Milkfish.asp", "AnchorFree.asp", "","",""},
-	{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "",""},
-	{"Filters.asp", "", "", "", "", "", "", "", "", "", "",""},
-	{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp","DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "",""},
-	{"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp","Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "",""},
-	{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp","Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp","Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "",""}
+	    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
+	       "Networking.asp", "eop-tunnel.asp", "", "", "", "", ""},
+	{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp",
+	 "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp",
+	 "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "",
+	 "", ""},
+	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp",
+	 "USB.asp", "NAS.asp", "Hotspot.asp", "Milkfish.asp", "AnchorFree.asp",
+	 "", "", ""},
+	{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", ""},
+	{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},
+	{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp",
+	 "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", ""},
+	{"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp",
+	 "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "",
+	 ""},
+	{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
+	 "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp",
+	 "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "",
+	 ""}
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
-	static char menuname_t[8][13][32] =
-	{ 
-	{"setup", "setupbasic", "setupddns", "setupmacclone","setuprouting", "setupvlan", "networking", "setupeop", "", "","","",""},
-	{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax","wirelessRadius", "wirelessSecurity", "wirelessAoss", "wirelessMac","wirelessAdvanced", "wirelessWds", "", "",""},
-	{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp","servicesUSB", "servicesNAS", "servicesHotspot", "servicesMilkfish","servicesAnchorFree", "", "",""},
-	{"security", "firwall", "vpn", "", "", "", "", "", "", "", "", "",""},
-	{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "",""},
-	{"applications", "applicationspforwarding", "applicationsprforwarding","applicationsptriggering", "applicationsUpnp", "applicationsDMZ","applicationsQoS", "applicationsP2P", "", "", "", "",""},
-	{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol","adminFactory", "adminUpgrade", "adminBackup", "", "", "", "",""},
-	{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN","statuSputnik", "statuVPN", "statuBand", "statuSysInfo","statuActivate", "statuMyPage", "",""}
+	static char menuname_t[8][13][32] = {
+		{"setup", "setupbasic", "setupddns", "setupmacclone",
+		 "setuprouting", "setupvlan", "networking", "setupeop", "", "",
+		 "", "", ""},
+		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
+		 "wirelessRadius", "wirelessSecurity", "wirelessAoss",
+		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
+		{"services", "servicesServices", "servicesRadius",
+		 "servicesPppoesrv", "servicesPptp", "servicesUSB",
+		 "servicesNAS", "servicesHotspot", "servicesMilkfish",
+		 "servicesAnchorFree", "", "", ""},
+		{"security", "firwall", "vpn", "", "", "", "", "", "", "", "",
+		 "", ""},
+		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "",
+		 "", "", ""},
+		{"applications", "applicationspforwarding",
+		 "applicationsprforwarding", "applicationsptriggering",
+		 "applicationsUpnp", "applicationsDMZ", "applicationsQoS",
+		 "applicationsP2P", "", "", "", "", ""},
+		{"admin", "adminManagement", "adminAlive", "adminDiag",
+		 "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "",
+		 "", "", "", ""},
+		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN",
+		 "statuSputnik", "statuVPN", "statuBand", "statuSysInfo",
+		 "statuActivate", "statuMyPage", "", ""}
 	};
 	static char menu[8][12][32];
 	static char menuname[8][13][32];
@@ -1520,8 +1560,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #else
 	// fill up WDS
 	int ifcount = getifcount("wifi");
-	if (ifcount>4)
-	    ifcount=4; //truncate to max of 4
+	if (ifcount > 4)
+		ifcount = 4;	//truncate to max of 4
 	int a;
 
 	for (a = 0; a < ifcount; a++) {
@@ -1541,11 +1581,15 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		int a;
 
 		for (a = 0; a < ifcount; a++) {
-			sprintf(&menu[1][a * 2 + 7][0],"Wireless_Advanced-wl%d.asp", a);
-			sprintf(&menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp",a);
+			sprintf(&menu[1][a * 2 + 7][0],
+				"Wireless_Advanced-wl%d.asp", a);
+			sprintf(&menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp",
+				a);
 			if (ifcount == 1) {
-				sprintf(&menuname[1][a * 2 + 8][0],"wirelessAdvanced");
-				sprintf(&menuname[1][a * 2 + 9][0],"wirelessWds");
+				sprintf(&menuname[1][a * 2 + 8][0],
+					"wirelessAdvanced");
+				sprintf(&menuname[1][a * 2 + 9][0],
+					"wirelessWds");
 			} else {
 				sprintf(&menuname[1][a * 2 + 8][0],
 					"wirelessAdvancedwl%d", a);
@@ -1644,7 +1688,9 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 				if (!strcmp(menu[i][j], "Wireless_radauth.asp"))
 					j++;
-				if (!wifi && !strncmp(menu[i][j], "Wireless_MAC.asp",8))
+				if (!wifi
+				    && !strncmp(menu[i][j], "Wireless_MAC.asp",
+						8))
 					j++;
 				if (!strncmp
 				    (menu[i][j], "Wireless_Advanced", 17))
@@ -2162,7 +2208,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	     "rb");
 #elif HAVE_LAGUNA
 	int TEMP_MUL = 10;
-	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input","rb");
+	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
 #else
 #define TEMP_MUL 1000
 #ifdef HAVE_X86
@@ -2207,9 +2253,12 @@ void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_LAGUNA
-	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input","rb");
+	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
 #else
-	FILE *fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt","rb");
+	FILE *fp =
+	    fopen
+	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt",
+	     "rb");
 #endif
 	if (fp == NULL) {
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
@@ -2317,24 +2366,23 @@ void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 	sprintf(var, "%s_mode", m);
 
 	if (nvram_match(var, "ap") || nvram_match(var, "wdsap")) {
-		showap = 1;  // "Clients"
-	}
-	else {
-		showcli = 1;  // "Access Point"
+		showap = 1;	// "Clients"
+	} else {
+		showcli = 1;	// "Access Point"
 		sprintf(var, "%s_vifs", m);
 		if (strlen(nvram_safe_get(var)) > 0)
-			showap = 1;  // " & Clients"
+			showap = 1;	// " & Clients"
 	}
 
 	if (showcli)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">Capture(info.ap)</script>");
 	if (showcli && showap)
-		websWrite(wp, " & ");		  
+		websWrite(wp, " & ");
 	if (showap)
-			websWrite(wp,
-			  "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");	
-	
+		websWrite(wp,
+			  "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
+
 }
 
 void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
@@ -2349,7 +2397,7 @@ void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
 void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
-	
+
 	sprintf(mode, "%s_mode", nvram_safe_get("wifi_display"));
 
 	websWrite(wp, "<script type=\"text/javascript\">");
@@ -2707,29 +2755,27 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-
 #ifdef HAVE_PPPOESERVER
 
 void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
 {
-	FILE *in = fopen("/tmp/pppoe_connected","rb");
+	FILE *in = fopen("/tmp/pppoe_connected", "rb");
 	if (!in)
-	    return;
+		return;
 	char pid[32];
 	char ifname[32];
 	char local[32];
 	char remote[32];
 	char peer[64];
-	int count=0;
-	while(fscanf(in,"%s %s %s %s",pid,ifname,local,peer)==4)
-	    {
-	    websWrite(wp,"%c\"%s\",\"%s\",\"%s\",\"%s\"",
-					  count ? ',' : ' ',ifname,peer,local,pid);
-	    count++;
-	    if (feof(in))
-		break;
-	    }    
-	    
+	int count = 0;
+	while (fscanf(in, "%s %s %s %s", pid, ifname, local, peer) == 4) {
+		websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\"",
+			  count ? ',' : ' ', ifname, peer, local, pid);
+		count++;
+		if (feof(in))
+			break;
+	}
+
 	fclose(in);
 	return;
 }

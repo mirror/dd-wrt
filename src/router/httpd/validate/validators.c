@@ -1238,7 +1238,8 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	int error_value = 0;
-	char *buf = safe_malloc((19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) + 1);
+	char *buf =
+	    safe_malloc((19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) + 1);
 	if (buf == NULL)
 		return;		//out of memory
 	char *cur = buf;
@@ -1496,7 +1497,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		char forward_enable[] = "enableXXX";
 		char *name = "", new_name[200] = "", *from = "", *to = "", *ip =
 		    "", *tcp = "", *udp = "", *enable = "", proto[10], *pro =
-		    "",*src = "";
+		    "", *src = "";
 
 		snprintf(forward_name, sizeof(forward_name), "name%d", i);
 		snprintf(forward_from, sizeof(forward_from), "from%d", i);
@@ -1581,20 +1582,21 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		 * Sveasoft add - new format allows full IP address 
 		 */
 		if (sv_valid_ipaddr(ip)) {
-			if (!src || strlen(src)==0)
-			cur +=
-			    snprintf(cur, buf + sof - cur,
-				     "%s%s:%s:%s:%d>%s:%d",
-				     cur == buf ? "" : " ", new_name, enable,
-				     proto, atoi(from), ip, atoi(to));
+			if (!src || strlen(src) == 0)
+				cur +=
+				    snprintf(cur, buf + sof - cur,
+					     "%s%s:%s:%s:%d>%s:%d",
+					     cur == buf ? "" : " ", new_name,
+					     enable, proto, atoi(from), ip,
+					     atoi(to));
 			else
-			cur +=
-			    snprintf(cur, buf + sof - cur,
-				     "%s%s:%s:%s:%d>%s:%d<%s",
-				     cur == buf ? "" : " ", new_name, enable,
-				     proto, atoi(from), ip, atoi(to),src);
-			
-			
+				cur +=
+				    snprintf(cur, buf + sof - cur,
+					     "%s%s:%s:%s:%d>%s:%d<%s",
+					     cur == buf ? "" : " ", new_name,
+					     enable, proto, atoi(from), ip,
+					     atoi(to), src);
+
 		} else {
 			error = 1;
 			continue;
@@ -2997,7 +2999,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 			error = 1;
 			continue;
 		}
-		
+
 		int len = 0;
 		len += strlen(new_name) + 1;
 		len += strlen(enable) + 1;
@@ -3006,17 +3008,18 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		len += strlen(i_to) + 1;
 		len += strlen(o_from) + 1;
 		len += strlen(o_to) + 1;
-	
-		if(strlen(buf) > 0) {
+
+		if (strlen(buf) > 0) {
 			len++;
-		}	
+		}
 		entry = (char *)safe_malloc(len);
-		sprintf(entry, "%s%s:%s:%s:%s-%s>%s-%s", 
-				strlen(buf) > 0 ? " " : "", new_name, enable, proto, i_from, i_to, o_from, o_to);
-		
+		sprintf(entry, "%s%s:%s:%s:%s-%s>%s-%s",
+			strlen(buf) > 0 ? " " : "", new_name, enable, proto,
+			i_from, i_to, o_from, o_to);
+
 		/*cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
-				cur == buf ? "" : " ", new_name, enable, proto,
-				i_from, i_to, o_from, o_to);*/
+		   cur == buf ? "" : " ", new_name, enable, proto,
+		   i_from, i_to, o_from, o_to); */
 		newbuf = (char *)safe_malloc(strlen(buf) + len);
 		newbuf = strcat(buf, entry);
 		buf = (char *)safe_malloc(strlen(newbuf));
@@ -3279,8 +3282,8 @@ write_nvram:
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
 		//if (strcmp(old[i], ""))
-		//	cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-		//			cur == buf ? "" : " ", old[i]);
+		//      cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
+		//                      cur == buf ? "" : " ", old[i]);
 		if (strcmp(old_name[i], "")) {
 			cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
 					cur == buf ? "" : " ", old[i]);
