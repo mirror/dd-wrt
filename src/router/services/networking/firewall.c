@@ -576,24 +576,41 @@ static void parse_spec_forward(char *wordlist)
 		 * -j DNAT --to-destination 192.168.1.88:23 
 		 */
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			save2file("-A PREROUTING -p tcp -m tcp -d %s --dport %s -j DNAT --to-destination %s:%s\n", wanaddr, from, ip, to);
-			if (src)
-			snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -s %s -d %s --dport %s -j %s\n", src,ip, to,log_accept);
-			else
-			snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, to,log_accept);
-
+			if (src) {
+				save2file
+				    ("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+				     src, wanaddr, from, ip, to);
+				snprintf(buff, sizeof(buff),
+					 "-A FORWARD -p tcp -m tcp -s %s -d %s --dport %s -j %s\n",
+					 src, ip, to, log_accept);
+			} else {
+				save2file
+				    ("-A PREROUTING -p tcp -m tcp -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+				     wanaddr, from, ip, to);
+				snprintf(buff, sizeof(buff),
+					 "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n",
+					 ip, to, log_accept);
+			}
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
 			strcat(suspense, buff);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 
-			save2file("-A PREROUTING -p udp -m udp -d %s --dport %s -j DNAT --to-destination %s:%s\n", wanaddr, from,ip, to);
-			if (src)
-			{
-			snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -s %s -d %s --dport %s -j %s\n", src,ip, to,log_accept);
-			}else{
-			snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, to,log_accept);
+			if (src) {
+				save2file
+				    ("-A PREROUTING -p udp -m udp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+				     src, wanaddr, from, ip, to);
+				snprintf(buff, sizeof(buff),
+					 "-A FORWARD -p udp -m udp -s %s -d %s --dport %s -j %s\n",
+					 src, ip, to, log_accept);
+			} else {
+				save2file
+				    ("-A PREROUTING -p udp -m udp -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+				     wanaddr, from, ip, to);
+				snprintf(buff, sizeof(buff),
+					 "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n",
+					 ip, to, log_accept);
 			}
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
