@@ -109,10 +109,11 @@ static int usb_process_path(char *path, char *fs)
 	return ret;
 }
 
+
     /* 
      * Handle hotplugging of UFD 
      */
-int usb_add_ufd()
+int usb_add_ufd(void)
 {
 	DIR *dir;
 	FILE *fp;
@@ -127,12 +128,21 @@ int usb_add_ufd()
 	int i, found = 0;
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
-		if ((dir = opendir("/dev/discs")) != NULL) {
+		if ((dir = opendir("/dev/discs")) != NULL || (fp=fopen("/dev/sda","rb"))!=NULL) {
 			break;
 		} else {
 			sleep(1);
 		}
 	}
+	int new = 0;
+	if (fp)
+	    {
+	    fclose(fp);
+	    new=1;
+	    if (dir)
+		closedir(dir);
+	    dir = opendir("/dev");
+	    }
 	if (dir == NULL)  // i is 16 here and not 15 if timeout happens
 		return EINVAL;
 
@@ -142,7 +152,7 @@ int usb_add_ufd()
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
-			if ((strncmp(entry->d_name, "disc", 4)))
+			if ((strncmp(entry->d_name, "disc", 4)) && (strncmp(entry->d_name, "sd", 2)))
 				continue;
 			else
 				found = 1;
@@ -155,7 +165,9 @@ int usb_add_ufd()
 
 			if (usb_ufd_connected(entry->d_name + 4) == FALSE)
 				continue;
-
+			if (new)
+			sprintf(path, "/dev/%s", entry->d_name);
+			    else
 			sprintf(path, "/dev/discs/%s/disc", entry->d_name);
 
 			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
@@ -193,7 +205,7 @@ int usb_add_ufd()
 				/* 
 				 * If it is partioned, mount first partition else raw disk 
 				 */
-				if (is_part) {
+				if (is_part && !new) {
 					partitions =
 					    "part1 part2 part3 part4 part5 part6";
 					foreach(part, partitions, next) {
@@ -209,6 +221,7 @@ int usb_add_ufd()
 						}
 					}
 				} else {
+					if (!new || !is_part)
 					if (usb_process_path(path, fs) == 0)
 						is_mounted = 1;
 				}
