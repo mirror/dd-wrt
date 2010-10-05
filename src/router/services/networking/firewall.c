@@ -525,6 +525,30 @@ static void parse_upnp_forward()
 	}
 }
 #endif
+static void create_spec_forward(char *proto, char *src, char *wanaddr,
+				char *from, char *ip, char *to)
+{
+	char buff[256];
+	if (src && strlen(src) > 0) {
+		save2file
+		    ("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+		     proto, proto, src, wanaddr, from, ip, to);
+		snprintf(buff, sizeof(buff),
+			 "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n",
+			 proto, proto, src, ip, to, log_accept);
+	} else {
+		save2file
+		    ("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+		     proto, proto, wanaddr, from, ip, to);
+		snprintf(buff, sizeof(buff),
+			 "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n",
+			 proto, proto, ip, to, log_accept);
+	}
+	count += strlen(buff) + 1;
+	suspense = realloc(suspense, count);
+	strcat(suspense, buff);
+
+}
 
 static void parse_spec_forward(char *wordlist)
 {
@@ -576,46 +600,12 @@ static void parse_spec_forward(char *wordlist)
 		 * -A PREROUTING -i eth1 -p tcp -m tcp -d 192.168.88.11 --dport 823
 		 * -j DNAT --to-destination 192.168.1.88:23 
 		 */
+
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			if (src && strlen(src) > 0) {
-				save2file
-				    ("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
-				     src, wanaddr, from, ip, to);
-				snprintf(buff, sizeof(buff),
-					 "-A FORWARD -p tcp -m tcp -s %s -d %s --dport %s -j %s\n",
-					 src, ip, to, log_accept);
-			} else {
-				save2file
-				    ("-A PREROUTING -p tcp -m tcp -d %s --dport %s -j DNAT --to-destination %s:%s\n",
-				     wanaddr, from, ip, to);
-				snprintf(buff, sizeof(buff),
-					 "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n",
-					 ip, to, log_accept);
-			}
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			create_spec_forward("tcp", src, wanaddr, from, ip, to);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-
-			if (src && strlen(src) > 0) {
-				save2file
-				    ("-A PREROUTING -p udp -m udp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
-				     src, wanaddr, from, ip, to);
-				snprintf(buff, sizeof(buff),
-					 "-A FORWARD -p udp -m udp -s %s -d %s --dport %s -j %s\n",
-					 src, ip, to, log_accept);
-			} else {
-				save2file
-				    ("-A PREROUTING -p udp -m udp -d %s --dport %s -j DNAT --to-destination %s:%s\n",
-				     wanaddr, from, ip, to);
-				snprintf(buff, sizeof(buff),
-					 "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n",
-					 ip, to, log_accept);
-			}
-			count += strlen(buff) + 1;
-			suspense = realloc(suspense, count);
-			strcat(suspense, buff);
+			create_spec_forward("udp", src, wanaddr, from, ip, to);
 		}
 	}
 }
@@ -728,6 +718,7 @@ static void nat_prerouting(void)
 	 */
 	suspense = malloc(1);
 	*suspense = 0;
+	count=1;
 
 	if (has_gateway()) {
 		/*
@@ -2339,7 +2330,7 @@ static void filter_forward(void)
 	 */
 	if (*suspense != 0)
 		save2file("%s", suspense);
-
+	free(suspense);
 	/*
 	 * Port trigger by user definition 
 	 */
