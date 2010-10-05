@@ -83,7 +83,7 @@ short osl_ifflags(const char *ifname)
 	close(sockfd);
 	return flags;
 }
-
+#if 0 
 int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port)
 {
 	struct ip_mreqn mcreqn;
@@ -151,7 +151,7 @@ int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port)
 	// TRUE == success, FALSE otherwise.
 	return success;
 }
-
+#endif
 char *safe_snprintf(char *str, int *len, const char *fmt, ...)
 {
 	va_list ap;
