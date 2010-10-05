@@ -72,7 +72,9 @@ void start_devinit(void)
 	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
 #ifdef HAVE_HOTPLUG2
 	// shell-skript. otherwise we loose our console
-	system("/etc/hotplug2.startup");
+	system("echo >/proc/sys/kernel/hotplug");
+	system("mount -t tmpfs none /dev -o size=512K");
+	system("mknod /dev/console c 5 1\n");
 	system("mkdir /dev/pts");
 #else
 	// fix for linux kernel 2.6
@@ -97,4 +99,8 @@ void start_devinit(void)
 	mkdir("/var/log", 0777);
 	mkdir("/var/run", 0777);
 	mkdir("/var/tmp", 0777);
+
+#ifdef HAVE_HOTPLUG2
+	system("/etc/hotplug2.startup");
+#endif
 }
