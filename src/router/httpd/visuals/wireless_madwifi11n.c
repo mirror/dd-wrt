@@ -52,7 +52,8 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
-extern unsigned char madbuf[];
+
+extern unsigned char madbuf[24 * 1024];
 int
 ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 			  char *ifname, int cnt, int turbo, int macmask)
@@ -68,12 +69,8 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
 	}
-int state=0;
-{
-	memdebug_enter();
+	int state = 0;
 	state = get_radiostate(ifname);
-	memdebug_leave();
-}
 	if (state == 0 || state == -1) {
 		printf("IOCTL_STA_INFO radio %s not enabled!\n", ifname);
 		return cnt;
@@ -88,15 +85,11 @@ int state=0;
 
 	iwr.u.data.pointer = (void *)&madbuf[0];
 	iwr.u.data.length = 24 * 1024;
-{
-	memdebug_enter();
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		fprintf(stderr, "IOCTL_STA_INFO for %s failed!\n", ifname);
 		closesocket();
 		return cnt;
 	}
-	memdebug_leave_info("ioctl sta_info");
-}
 	len = iwr.u.data.length;
 	if (len < sizeof(struct ieee80211req_sta_info)) {
 		// fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
@@ -104,8 +97,7 @@ int state=0;
 		return cnt;
 	}
 	cp = madbuf;
-{
-	memdebug_enter();
+	int bufcount = 0;
 	do {
 		struct ieee80211req_sta_info *si;
 		uint8_t *vp;
@@ -118,7 +110,7 @@ int state=0;
 		cnt++;
 		char mac[32];
 
-		strcpy(mac, ieee80211_ntoa(si->isi_macaddr));
+		strncpy(mac, ieee80211_ntoa(si->isi_macaddr), 31);
 		if (nvram_match("maskmac", "1") && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
@@ -159,12 +151,13 @@ int state=0;
 			  tx, rx,
 			  si->isi_noise + si->isi_rssi + bias,
 			  si->isi_noise + bias, si->isi_rssi, qual);
+		bufcount += si->isi_len;
 		cp += si->isi_len;
 		len -= si->isi_len;
 	}
-	while (len >= sizeof(struct ieee80211req_sta_info));
-memdebug_leave_info("iterate info");
-}
+	while (len >= sizeof(struct ieee80211req_sta_info)
+	       && bufcount <
+	       (sizeof(madbuf) - sizeof(struct ieee80211req_sta_info)));
 
 	closesocket();
 
