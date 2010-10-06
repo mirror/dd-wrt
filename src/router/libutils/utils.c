@@ -3898,7 +3898,11 @@ int getath9kdevicecount(void)
 	glob_t globbuf;
 	int globresult;
 	int count = 0;
+#ifndef HAVE_MADWIFI_MIMO
+	if (1) {
+#else
 	if (nvram_match("mimo_driver", "ath9k")) {
+#endif
 		globresult =
 		    glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL,
 			 &globbuf);
