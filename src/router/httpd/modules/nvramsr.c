@@ -80,6 +80,8 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	int ret = nvram_restore("/tmp/restore.bin");
 	if (ret < 0)
 		restore_ret = 99;
+	else
+		restore_ret = 0;
 	eval("rm", "-f", "/tmp/restore.bin");
 	chdir("/www");
 }
