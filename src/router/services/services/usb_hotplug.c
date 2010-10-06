@@ -109,7 +109,6 @@ static int usb_process_path(char *path, char *fs)
 	return ret;
 }
 
-
     /* 
      * Handle hotplugging of UFD 
      */
@@ -128,22 +127,22 @@ int usb_add_ufd(void)
 	int i, found = 0;
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
-		if ((dir = opendir("/dev/discs")) != NULL || (fp=fopen("/dev/sda","rb"))!=NULL) {
+		if ((dir = opendir("/dev/discs")) != NULL
+		    || (fp = fopen("/dev/sda", "rb")) != NULL) {
 			break;
 		} else {
 			sleep(1);
 		}
 	}
 	int new = 0;
-	if (fp)
-	    {
-	    fclose(fp);
-	    new=1;
-	    if (dir)
-		closedir(dir);
-	    dir = opendir("/dev");
-	    }
-	if (dir == NULL)  // i is 16 here and not 15 if timeout happens
+	if (fp) {
+		fclose(fp);
+		new = 1;
+		if (dir)
+			closedir(dir);
+		dir = opendir("/dev");
+	}
+	if (dir == NULL)	// i is 16 here and not 15 if timeout happens
 		return EINVAL;
 
 	/* 
@@ -152,7 +151,8 @@ int usb_add_ufd(void)
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
-			if ((strncmp(entry->d_name, "disc", 4)) && (strncmp(entry->d_name, "sd", 2)))
+			if ((strncmp(entry->d_name, "disc", 4))
+			    && (strncmp(entry->d_name, "sd", 2)))
 				continue;
 			else
 				found = 1;
@@ -162,14 +162,23 @@ int usb_add_ufd(void)
 			 * it is removed. Verify the device  is still inserted.  Strip
 			 * the "disc" and pass the rest of the string.  
 			 */
-
-			if (usb_ufd_connected(entry->d_name + 4) == FALSE)
-				continue;
-			if (new)
-			sprintf(path, "/dev/%s", entry->d_name);
-			    else
-			sprintf(path, "/dev/discs/%s/disc", entry->d_name);
-
+			if (new) {
+				//everything else would cause a memory fault
+				if (usb_ufd_connected(entry->d_name) == FALSE)
+					continue;
+			} else {
+				if (usb_ufd_connected(entry->d_name + 4) ==
+				    FALSE)
+					continue;
+			}
+			if (new) {
+				if (strlen(entry->d_name) != 3)
+					continue;
+				sprintf(path, "/dev/%s", entry->d_name);
+			} else {
+				sprintf(path, "/dev/discs/%s/disc",
+					entry->d_name);
+			}
 			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
 
 			/* 
@@ -220,8 +229,21 @@ int usb_add_ufd(void)
 							break;
 						}
 					}
+				}
+				if (is_part && new) {
+					partitions = "1 2 3 4 5 6";
+					foreach(part, partitions, next) {
+						sprintf(path, "/dev/%s%s",
+							entry->d_name, part);
+						if (stat(path, &tmp_stat))
+							continue;
+						if (usb_process_path(path, fs)
+						    == 0) {
+							is_mounted = 1;
+							break;
+						}
+					}
 				} else {
-					if (!new || !is_part)
 					if (usb_process_path(path, fs) == 0)
 						is_mounted = 1;
 				}
