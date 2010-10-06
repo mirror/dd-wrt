@@ -42,7 +42,11 @@ static void detect_wireless_devices(void)
 		insmod("ath_ahb");
 	}
 #ifdef HAVE_ATH9K
+#ifndef HAVE_MADWIFI_MIMO
+	if (1)
+#else
 	if (nvram_match("mimo_driver", "ath9k"))
+#endif
 		{
 		fprintf(stderr, "load ATH9K 802.11n Driver\n");
 		// some are just for future use and not (yet) there
