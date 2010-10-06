@@ -1,4 +1,5 @@
 ap-serv: 
+	if test -e "ap-serv/src/Makefile"; then make -C ap-serv/src clean; fi
 	if test -e "ap-serv/src/Makefile"; then make -C ap-serv/src; fi
 	@true
 ap-serv-clean:
