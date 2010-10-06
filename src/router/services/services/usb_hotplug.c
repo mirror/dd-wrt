@@ -128,7 +128,7 @@ int usb_add_ufd(void)
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
 		if ((dir = opendir("/dev/discs")) != NULL
-		    || (fp = fopen("/dev/sda", "rb")) != NULL || (fp = fopen("/dev/sdb", "rb") || (fp = fopen("/dev/sdc", "rb") || (fp = fopen("/dev/sdd", "rb")) != NULL) {
+		    || (fp = fopen("/dev/sda", "rb")) != NULL || (fp = fopen("/dev/sdb", "rb")) != NULL || (fp = fopen("/dev/sdc", "rb")) != NULL || (fp = fopen("/dev/sdd", "rb")) != NULL) {
 			break;
 		} else {
 			sleep(1);
