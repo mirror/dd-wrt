@@ -37,7 +37,6 @@ SMB_CONF=$( cat <<EOF
 [global]
 server string = $SRVSTRING
 workgroup = $WORKGROUP
-interfaces = br*
 bind interfaces only = Yes
 map to guest = Bad User
 smb passwd file = /var/samba/smbpasswd
