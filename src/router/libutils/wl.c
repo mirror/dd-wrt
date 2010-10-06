@@ -1243,8 +1243,10 @@ int is_ath9k(char *prefix)
 	int globresult;
 	int devnum;
 	// get legacy interface count
+#ifdef HAVE_MADWIFI_MIMO
 	if (!nvram_match("mimo_driver", "ath9k"))
 		return (0);
+#endif
 	if (!sscanf(prefix, "ath%d", &devnum))
 		return (0);
 	// correct index if there are legacy cards arround
