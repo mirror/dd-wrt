@@ -19,6 +19,7 @@
 
 static bool usb_ufd_connected(char *str);
 static int usb_process_path(char *path, char *fs);
+static int usb_unmount(void);
 int usb_add_ufd(void);
 
 #define DUMPFILE	"/tmp/disktype.dump"
@@ -46,8 +47,13 @@ void start_hotplug_usb(void)
 	/* 
 	 * If a new USB device is added and it is of storage class 
 	 */
-	if (class == 8 && subclass == 6 && !strcmp(action, "add"))
-		usb_add_ufd();
+	if (class == 8 && subclass == 6 )
+	    {
+		if (!strcmp(action, "add"))
+		    usb_add_ufd();
+		if (!strcmp(action, "remove"))
+		    usb_unmount();
+	    }
 
 	return;
 }
@@ -107,6 +113,17 @@ static int usb_process_path(char *path, char *fs)
 		ret = eval("/bin/mount", path, mount_point);	//guess fs
 
 	return ret;
+}
+
+static void usb_unmount(void)
+{
+	char mount_point[32];
+
+	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
+
+	eval("/bin/umount", "-t", mount_point);
+	eval("rm","-f",DUMPFILE);
+	return;
 }
 
     /* 
