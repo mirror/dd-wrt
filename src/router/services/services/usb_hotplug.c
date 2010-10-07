@@ -47,13 +47,12 @@ void start_hotplug_usb(void)
 	/* 
 	 * If a new USB device is added and it is of storage class 
 	 */
-	if (class == 8 && subclass == 6 )
-	    {
+	if (class == 8 && subclass == 6) {
 		if (!strcmp(action, "add"))
-		    usb_add_ufd();
+			usb_add_ufd();
 		if (!strcmp(action, "remove"))
-		    usb_unmount();
-	    }
+			usb_unmount();
+	}
 
 	return;
 }
@@ -121,8 +120,8 @@ static void usb_unmount(void)
 
 	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 
-	eval("/bin/umount", "-t", mount_point);
-	eval("rm","-f",DUMPFILE);
+	eval("/bin/umount", mount_point);
+	eval("rm", "-f", DUMPFILE);
 	return;
 }
 
@@ -145,7 +144,10 @@ int usb_add_ufd(void)
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
 		if ((dir = opendir("/dev/discs")) != NULL
-		    || (fp = fopen("/dev/sda", "rb")) != NULL || (fp = fopen("/dev/sdb", "rb")) != NULL || (fp = fopen("/dev/sdc", "rb")) != NULL || (fp = fopen("/dev/sdd", "rb")) != NULL) {
+		    || (fp = fopen("/dev/sda", "rb")) != NULL
+		    || (fp = fopen("/dev/sdb", "rb")) != NULL
+		    || (fp = fopen("/dev/sdc", "rb")) != NULL
+		    || (fp = fopen("/dev/sdd", "rb")) != NULL) {
 			break;
 		} else {
 			sleep(1);
