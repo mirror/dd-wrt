@@ -19,7 +19,7 @@
 
 static bool usb_ufd_connected(char *str);
 static int usb_process_path(char *path, char *fs);
-static int usb_unmount(void);
+static void usb_unmount(void);
 int usb_add_ufd(void);
 
 #define DUMPFILE	"/tmp/disktype.dump"
