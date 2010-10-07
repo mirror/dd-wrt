@@ -65,7 +65,7 @@ endif
 all : gnupg $(BINS)
 
 gnupg :
-	cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr
+	cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-nls
 	make -C libgpg-error
 	make -C libgpg-error install DESTDIR=$(INSTALLDIR)/vpnc
 	cd libgcrypt && ./configure --host=$(ARCH)-linux --prefix=/usr --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr
