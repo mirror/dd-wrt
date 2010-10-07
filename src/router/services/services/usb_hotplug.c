@@ -110,7 +110,7 @@ static int usb_process_path(char *path, char *fs)
 
 	if (ret != 0)		//give it another try
 		ret = eval("/bin/mount", path, mount_point);	//guess fs
-
+	system("echo 4096 > /proc/sys/vm/min_free_kbytes"); // avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram to 4096. everything else can be used for fs cache
 	return ret;
 }
 
