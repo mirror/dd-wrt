@@ -103,6 +103,8 @@ static int usb_process_path(char *path, char *fs)
 {
 	int ret = ENOENT;
 	char mount_point[32];
+	eval("stopservice","samba3");
+	eval("stopservice","ftpsrv");
 
 	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 
@@ -111,17 +113,22 @@ static int usb_process_path(char *path, char *fs)
 	if (ret != 0)		//give it another try
 		ret = eval("/bin/mount", path, mount_point);	//guess fs
 	system("echo 4096 > /proc/sys/vm/min_free_kbytes"); // avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram to 4096. everything else can be used for fs cache
+	eval("startservice","samba3");
+	eval("startservice","ftpsrv");
 	return ret;
 }
 
 static void usb_unmount(void)
 {
 	char mount_point[32];
-
+	eval("stopservice","samba3");
+	eval("stopservice","ftpsrv");
 	system("echo 1 > /proc/sys/vm/drop_caches"); // flush fs cache
 	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 	eval("/bin/umount", mount_point);
 	eval("rm", "-f", DUMPFILE);
+	eval("startservice","samba3");
+	eval("startservice","ftpsrv");
 	return;
 }
 
