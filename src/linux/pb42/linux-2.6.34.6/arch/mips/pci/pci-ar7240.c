@@ -208,7 +208,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	if (!mem) {
 		printk(KERN_ERR "PCI: ioremap error for device %s\n",
 		       pci_name(dev));
-		goto error;
+		return;
 	}
 
 	/* Setup the PCI device to allow access to the internal registers */
