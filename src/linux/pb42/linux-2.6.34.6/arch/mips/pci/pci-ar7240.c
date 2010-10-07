@@ -167,13 +167,13 @@ static void *getCalData(int slot)
 {
 u8 *base;
 for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
-    u32 *cal = (u32 *)base;
-    if (*cal==0xa55a0000) { //protection bit is always zero on inflash devices, so we can use for match it
-	if (slot) {
-	    base+=0x4000;
-	    }
-	printk(KERN_INFO "found calibration data for slot %d on 0x%08X\n",slot,base);
-	return base;
+	u32 *cal = (u32 *)base;
+	if (*cal==0xa55a0000) { //protection bit is always zero on inflash devices, so we can use for match it
+		if (slot) {
+			base+=0x4000;
+		}
+		printk(KERN_INFO "found calibration data for slot %d on 0x%08X\n",slot,base);
+		return base;
 	}
     }
 return NULL;
@@ -195,19 +195,14 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	printk(KERN_INFO "PCI: fixup device %s\n", pci_name(dev));
 
 	cal_data = (u16 *)getCalData(0);
-	memcpy(wmac_data[0].eeprom_data,cal_data,sizeof(wmac_data[0].eeprom_data));
-	dev->dev.platform_data = &wmac_data[0];
-
-	if (!cal_data) {
+	if (caldata) {
+		memcpy(wmac_data[0].eeprom_data,cal_data,sizeof(wmac_data[0].eeprom_data));
+		dev->dev.platform_data = &wmac_data[0];
+	} else {
 		printk(KERN_INFO "no in flash calibration fata found, no fix required\n");
-		goto error;
+		return;
 	}
 
-	if (*cal_data != 0xa55a) {
-		printk(KERN_ERR "PCI: no calibration data found for %s\n",
-		       pci_name(dev));
-		goto error;
-	}
 
 	mem = ioremap(AR7240_PCI_MEM_BASE, 0x10000);
 	if (!mem) {
@@ -244,9 +239,6 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 
 	iounmap(mem);
 	return;
-
-error:
-	dev->dev.platform_data = NULL;
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ap91_pci_fixup);
 
