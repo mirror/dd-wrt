@@ -122,8 +122,7 @@ static int get_router (void)
 		return ROUTER_NETGEAR_WNR2000V2;  //Netgear WNR2000v2	
 	}
 	
-	if (boardnum == 12345
-	  && nvram_match("boardtype", "0xa4cf")
+	if (nvram_match("boardtype", "0xa4cf")
 	  && nvram_match("boardrev", "0x1102")) {
 		return ROUTER_BELKIN_F7D3301_3302_4302;  //Belkin F7D3301v1 /F7D3302v1 / F7D4302v1
 	}
