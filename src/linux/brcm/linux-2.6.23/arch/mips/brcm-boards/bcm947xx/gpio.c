@@ -311,14 +311,14 @@ if (boardnum == 1 && nvram_match("boardrev", "0x23")
 }
 
 if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
-	    && nvram_match("boardrev", "0x10"))
+		&& nvram_match("boardrev", "0x10"))
 {
 		printk(KERN_EMERG "WBR2-G54(S) GPIO Init\n");
 		gpios = 1 << 1 | 1 << 6;
 }
 
-if (boardnum == 12345 && nvram_match("boardrev", "0x1204")
-		&& nvram_match("boardtype", "0xd4cf"))
+if (nvram_match("boardtype", "0xd4cf")
+		&& nvram_match("boardrev", "0x1204"))
 {
 		printk(KERN_EMERG "F7D4301v1 GPIO Init\n");
 		gpios = 1 << 10 | 1 << 11 | 1 << 13;
