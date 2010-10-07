@@ -239,20 +239,20 @@ static void ath_pci_fixup(struct pci_dev *dev)
 	}
 	if (!cal_data) {
 		printk(KERN_INFO "no in flash calibration fata found, no fix required\n");
-		return;
+		goto error;
 	}
 	
 	if (*cal_data != 0xa55a) {
 		printk(KERN_ERR "PCI: no calibration data found for %s\n",
 		       pci_name(dev));
-		return;
+		goto error;
 	}
 
 	mem = ioremap(AR71XX_PCI_MEM_BASE, 0x10000);
 	if (!mem) {
 		printk(KERN_ERR "PCI: ioremap error for device %s\n",
 		       pci_name(dev));
-		return;
+		goto error;
 	}
 
 	printk(KERN_INFO "PCI: fixup device %s\n", pci_name(dev));
@@ -292,6 +292,10 @@ static void ath_pci_fixup(struct pci_dev *dev)
 	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
 
 	iounmap(mem);
+	return;
+
+error:
+	dev->dev.platform_data = NULL;
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ath_pci_fixup);
   
