@@ -1305,13 +1305,13 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_RTN16;
 	}
 
-	if (boardnum == 12345 && nvram_match("boardtype", "0xd4cf")
+	if (nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
 		setRouter("Belkin Play Max F7D4301 v1");
 		return ROUTER_BELKIN_F7D4301;
 	}
 
-	if (boardnum == 12345 && nvram_match("boardtype", "0xa4cf")
+	if (nvram_match("boardtype", "0xa4cf")
 	    && nvram_match("boardrev", "0x1102")) {
 		FILE *mtd1 = fopen("/dev/mtdblock/1", "rb");
 		unsigned long trxhd;
