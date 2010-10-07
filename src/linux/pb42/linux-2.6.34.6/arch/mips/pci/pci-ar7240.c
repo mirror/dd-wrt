@@ -195,7 +195,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	printk(KERN_INFO "PCI: fixup device %s\n", pci_name(dev));
 
 	cal_data = (u16 *)getCalData(0);
-	if (caldata) {
+	if (cal_data) {
 		memcpy(wmac_data[0].eeprom_data,cal_data,sizeof(wmac_data[0].eeprom_data));
 		dev->dev.platform_data = &wmac_data[0];
 	} else {
