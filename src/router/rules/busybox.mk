@@ -260,6 +260,15 @@ else
 	echo "# CONFIG_FEATURE_IPV6 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_PREFER_IPV4_ADDRESS is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_SWAP),y)
+	echo "CONFIG_MKSWAP=y" >> busybox/.config
+	echo "CONFIG_SWAPONOFF=y" >> busybox/.config
+	echo "CONFIG_FEATURE_SWAPON_PRI=y" >> busybox/.config
+else
+	echo "# CONFIG_MKSWAP is not set" >> busybox/.config
+	echo "# CONFIG_SWAPONOFF is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_SWAPON_PRI is not set" >> busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
