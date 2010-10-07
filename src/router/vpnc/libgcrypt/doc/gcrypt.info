@@ -1,7 +1,7 @@
-This is gcrypt.info, produced by makeinfo version 4.8 from gcrypt.texi.
+This is gcrypt.info, produced by makeinfo version 4.13 from gcrypt.texi.
 
-   This manual is for Libgcrypt (version 1.2.4, 3 November 2006), which
-is GNU's library of cryptographic building blocks.
+This manual is for Libgcrypt (version 1.2.4, 3 November 2006), which is
+GNU's library of cryptographic building blocks.
 
    Copyright (C) 2000, 2002, 2003, 2004 Free Software Foundation, Inc.
 
@@ -1444,8 +1444,8 @@ File: gcrypt.info,  Node: Hashing,  Next: Public Key cryptography (I),  Prev: Sy
 *********
 
 Libgcrypt provides an easy and consistent to use interface for hashing.
-Hashing is buffered and several hash algorithms can be updated at
-once.  It is possible to calculate a MAC using the same routines.  The
+Hashing is buffered and several hash algorithms can be updated at once.
+It is possible to calculate a MAC using the same routines.  The
 programming model follows an open/process/close paradigm and is in that
 similar to other building blocks provided by Libgcrypt.
 
@@ -4626,73 +4626,73 @@ Function and Data Index
 
 
 Tag Table:
-Node: Top733
-Node: Introduction6213
-Node: Getting Started6587
-Node: Features7470
-Node: Overview8260
-Node: Preparation8908
-Node: Header9706
-Node: Building sources10589
-Node: Building sources using Automake12511
-Node: Initializing the library13692
-Node: Multi Threading14735
-Ref: Multi Threading-Footnote-118640
-Node: Generalities19048
-Node: Controlling the library19373
-Node: Modules19757
-Node: Error Handling20536
-Node: Error Values23061
-Node: Error Sources28001
-Node: Error Codes30272
-Node: Error Strings33233
-Node: Handler Functions34385
-Node: Progress handler34944
-Node: Allocation handler36891
-Node: Error handler38186
-Node: Logging handler39243
-Node: Symmetric cryptography39749
-Node: Available ciphers40538
-Node: Cipher modules42442
-Node: Available cipher modes46965
-Node: Working with cipher handles47644
-Node: General cipher functions55504
-Node: Hashing57981
-Node: Available hash algorithms58787
-Node: Hash algorithm modules60814
-Node: Working with hash algorithms64661
-Node: Public Key cryptography (I)75054
-Node: Available algorithms75907
-Node: Used S-expressions76260
-Node: Public key modules78052
-Node: Cryptographic Functions83640
-Node: General public-key related Functions91129
-Node: Public Key cryptography (II)98351
-Node: Available asymmetric algorithms99258
-Node: Working with sets of data99938
-Node: Working with handles102960
-Node: Working with keys103904
-Node: Using cryptographic functions107966
-Node: Handle-independent functions109784
-Node: Random Numbers110398
-Node: Quality of random numbers110693
-Node: Retrieving random numbers111349
-Node: S-expressions112761
-Node: Data types for S-expressions113405
-Node: Working with S-expressions113731
-Node: MPI library122265
-Node: Data types123573
-Node: Basic functions123779
-Node: MPI formats125847
-Node: Calculations128637
-Node: Comparisons130892
-Node: Bit manipulations131510
-Node: Miscellaneous132654
-Node: Utilities134498
-Node: Memory allocation134702
-Node: Library Copying135958
-Node: Copying164122
-Node: Concept Index183325
-Node: Function and Data Index184280
+Node: Top731
+Node: Introduction6211
+Node: Getting Started6585
+Node: Features7468
+Node: Overview8258
+Node: Preparation8906
+Node: Header9704
+Node: Building sources10587
+Node: Building sources using Automake12509
+Node: Initializing the library13690
+Node: Multi Threading14733
+Ref: Multi Threading-Footnote-118638
+Node: Generalities19046
+Node: Controlling the library19371
+Node: Modules19755
+Node: Error Handling20534
+Node: Error Values23059
+Node: Error Sources27999
+Node: Error Codes30270
+Node: Error Strings33231
+Node: Handler Functions34383
+Node: Progress handler34942
+Node: Allocation handler36889
+Node: Error handler38184
+Node: Logging handler39241
+Node: Symmetric cryptography39747
+Node: Available ciphers40536
+Node: Cipher modules42440
+Node: Available cipher modes46963
+Node: Working with cipher handles47642
+Node: General cipher functions55502
+Node: Hashing57979
+Node: Available hash algorithms58784
+Node: Hash algorithm modules60811
+Node: Working with hash algorithms64658
+Node: Public Key cryptography (I)75051
+Node: Available algorithms75904
+Node: Used S-expressions76257
+Node: Public key modules78049
+Node: Cryptographic Functions83637
+Node: General public-key related Functions91126
+Node: Public Key cryptography (II)98348
+Node: Available asymmetric algorithms99255
+Node: Working with sets of data99935
+Node: Working with handles102957
+Node: Working with keys103901
+Node: Using cryptographic functions107963
+Node: Handle-independent functions109781
+Node: Random Numbers110395
+Node: Quality of random numbers110690
+Node: Retrieving random numbers111346
+Node: S-expressions112758
+Node: Data types for S-expressions113402
+Node: Working with S-expressions113728
+Node: MPI library122262
+Node: Data types123570
+Node: Basic functions123776
+Node: MPI formats125844
+Node: Calculations128634
+Node: Comparisons130889
+Node: Bit manipulations131507
+Node: Miscellaneous132651
+Node: Utilities134495
+Node: Memory allocation134699
+Node: Library Copying135955
+Node: Copying164119
+Node: Concept Index183322
+Node: Function and Data Index184277
 
 End Tag Table
