@@ -118,8 +118,8 @@ static void usb_unmount(void)
 {
 	char mount_point[32];
 
+	system("echo 1 > /proc/sys/vm/drop_caches"); // flush fs cache
 	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
-
 	eval("/bin/umount", mount_point);
 	eval("rm", "-f", DUMPFILE);
 	return;
