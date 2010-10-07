@@ -677,6 +677,7 @@ pforward.titl="Posredovanje vrat";
 pforward.h2="Posredovanje vrat";
 pforward.legend="Posredovanje";
 pforward.app="Aplikacija";
+pforward.src="Izvorna mreža";
 pforward.from="Od vrat";
 pforward.to="Do vrat";
 
