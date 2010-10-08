@@ -16,7 +16,7 @@ LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram
 endif
 
 # If you want to debug daemon, add following line
-CFLAGS +=  -DDBG 
+#CFLAGS +=  -DDBG 
 
 OBJS =	rt2860apd.o eloop.o eapol_sm.o radius.o md5.o  \
 	config.o ieee802_1x.o  \

@@ -1,3 +1,19 @@
+/*
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation. See README and COPYING for
+ * more details.
+
+	Module Name:
+	eapol_sm.c
+
+	Revision History:
+	Who         When          What
+	--------    ----------    ----------------------------------------------
+	Jan, Lee    Dec --2003    modified
+
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -536,7 +552,7 @@ eapol_sm_alloc(rtapd *rtapd, struct sta_info *sta)
 
 	/* Set default values for state machine constants */
 	sm->auth_pae.state = AUTH_PAE_INITIALIZE;
-	sm->auth_pae.quietPeriod = AUTH_PAE_DEFAULT_quietPeriod;
+	sm->auth_pae.quietPeriod = rtapd->conf->quiet_interval;
 	sm->auth_pae.initialEAPMsg = AUTH_PAE_DEFAULT_initialEAPMsg;
 	sm->auth_pae.reAuthMax = AUTH_PAE_DEFAULT_reAuthMax;
 	sm->auth_pae.txPeriod = AUTH_PAE_DEFAULT_txPeriod;
