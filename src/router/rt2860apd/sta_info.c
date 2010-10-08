@@ -1,4 +1,19 @@
+/*
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation. See README and COPYING for
+ * more details.
 
+	Module Name:
+	sta_info.c
+
+	Revision History:
+	Who 		When		  What
+	--------	----------	  ----------------------------------------------
+	Jan, Lee	Dec --2003	  modified
+
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -216,7 +231,10 @@ void Ap_handle_session_timer(void *eloop_ctx, void *timeout_ctx)
 	memcpy(hdr3->sAddr, apd->own_addr[sta->ApIdx], ETH_ALEN);
 	// send deauth
 	DBGPRINT(RT_DEBUG_TRACE,"AP_HANDLE_SESSION_TIMER : Send Deauth \n");	  
-	if (RT_ioctl(apd->ioctl_sock, RTPRIV_IOCTL_RADIUS_DATA, buf, len, apd->prefix_wlan_name, sta->ApIdx, 0))
+	if (RT_ioctl(apd->ioctl_sock, 
+				 RT_PRIV_IOCTL, buf, len, 
+				 apd->prefix_wlan_name, sta->ApIdx, 
+				 RT_OID_802_DOT1X_RADIUS_DATA))
 	{
 		DBGPRINT(RT_DEBUG_ERROR," ioctl \n");
 		return;

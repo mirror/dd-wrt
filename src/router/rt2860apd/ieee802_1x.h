@@ -96,10 +96,10 @@ typedef struct PACKED _RADIUS_SRV_INFO {
 	unsigned int		radius_ip;
 	unsigned int		radius_port;
 	unsigned char		radius_key[64];
-	unsigned char		radius_keylen;
+	unsigned char		radius_key_len;
 } RADIUS_SRV_INFO, *PRADIUS_SRV_INFO;
 
-typedef struct PACKED _RADIUS_KEY_INFO
+typedef struct PACKED _DOT1X_BSS_INFO
 {
 	unsigned char		radius_srv_num;			
 	RADIUS_SRV_INFO		radius_srv_info[MAX_RADIUS_SRV_NUM];	
@@ -107,22 +107,31 @@ typedef struct PACKED _RADIUS_KEY_INFO
     unsigned char       key_index;           
     unsigned char       key_length;          // length of key in bytes
     unsigned char       key_material[13];    
-} RADIUS_KEY_INFO, *PRADIUS_KEY_INFO;
+	unsigned char		nasId[IFNAMSIZ];
+	unsigned char		nasId_len;
+} DOT1X_BSS_INFO, *PDOT1X_BSS_INFO;
 
 // It's used by 802.1x daemon to require relative configuration
-typedef struct PACKED _RADIUS_CONF
+typedef struct PACKED _DOT1X_CMM_CONF
 {
     unsigned int       	Length;             // Length of this structure    
     unsigned char		mbss_num;			// indicate multiple BSS number 
 	unsigned int		own_ip_addr;	
 	unsigned int		retry_interval;
 	unsigned int		session_timeout_interval;
+	unsigned int		quiet_interval;
 	unsigned char		EAPifname[MAX_MBSSID_NUM][IFNAMSIZ];
 	unsigned char		EAPifname_len[MAX_MBSSID_NUM];
 	unsigned char 		PreAuthifname[MAX_MBSSID_NUM][IFNAMSIZ];
 	unsigned char		PreAuthifname_len[MAX_MBSSID_NUM];
-	RADIUS_KEY_INFO		RadiusInfo[MAX_MBSSID_NUM];
-} RADIUS_CONF, *PRADIUS_CONF;
+	DOT1X_BSS_INFO		Dot1xBssInfo[MAX_MBSSID_NUM];
+} DOT1X_CMM_CONF, *PDOT1X_CMM_CONF;
+
+typedef struct PACKED _DOT1X_IDLE_TIMEOUT
+{
+	unsigned char			StaAddr[MAC_ADDR_LEN];			
+	unsigned int			idle_timeout;
+} DOT1X_IDLE_TIMEOUT, *PDOT1X_IDLE_TIMEOUT;
 
 void ieee802_1x_new_station(rtapd *apd, struct sta_info *sta);
 void ieee802_1x_free_station(struct sta_info *sta);

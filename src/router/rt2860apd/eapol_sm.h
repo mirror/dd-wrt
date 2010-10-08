@@ -20,7 +20,7 @@ struct eapol_auth_pae_sm {
 
 	/* constants */
 	unsigned int quietPeriod; /* default 60; 0..65535 */
-#define AUTH_PAE_DEFAULT_quietPeriod 60
+	
 	EAPMsgType initialEAPMsg; /* IEEE 802.1aa/D4 */
 #define AUTH_PAE_DEFAULT_initialEAPMsg EAPRequestIdentity
 	unsigned int reAuthMax; /* default 2 */
