@@ -1,3 +1,19 @@
+/*
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation. See README and COPYING for
+ * more details.
+
+	Module Name:
+	ieee802_1x.c
+
+	Revision History:
+	Who 		When		  What
+	--------	----------	  ----------------------------------------------
+	Jan, Lee	Dec --2003	  modified
+
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -70,7 +86,10 @@ static void ieee802_1x_send(rtapd *rtapd, struct sta_info *sta, u8 type, u8 *dat
 	}
 	else
 	{
-        if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_RADIUS_DATA, buf, len, rtapd->prefix_wlan_name, sta->ApIdx, 0))
+        if (RT_ioctl(rtapd->ioctl_sock, 
+					 RT_PRIV_IOCTL, buf, len, 
+					 rtapd->prefix_wlan_name, sta->ApIdx, 
+					 RT_OID_802_DOT1X_RADIUS_DATA))
         DBGPRINT(RT_DEBUG_ERROR,"ioctl failed for ieee802_1x_send(len=%d)\n", len);
 	}
 
@@ -96,9 +115,13 @@ void ieee802_1x_set_sta_authorized(rtapd *rtapd, struct sta_info *sta, int autho
 				UCHAR	MacAddr[MAC_ADDR_LEN];
 				
 				memcpy(MacAddr, sta->addr, MAC_ADDR_LEN);
-				if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_STATIC_WEP_COPY, (char *)&MacAddr, sizeof(MacAddr), rtapd->prefix_wlan_name, sta->ApIdx, 0))
+				if (RT_ioctl(rtapd->ioctl_sock, 
+							 RT_PRIV_IOCTL, 
+							 (char *)&MacAddr, sizeof(MacAddr), 
+							 rtapd->prefix_wlan_name, sta->ApIdx, 
+							 RT_OID_802_DOT1X_STATIC_WEP_COPY))
 				{				   
-                	DBGPRINT(RT_DEBUG_ERROR,"Failed to RTPRIV_IOCTL_STATIC_WEP_COPY\n");
+                	DBGPRINT(RT_DEBUG_ERROR,"Failed to RT_OID_802_DOT1X_STATIC_WEP_COPY\n");
                 	return;
 				}   
 	    	}
@@ -273,17 +296,28 @@ void ieee802_1x_tx_key(rtapd *rtapd, struct sta_info *sta, u8 id)
 	// WPA2(pre-auth)
 	if (sta->ethertype== ETH_P_PRE_AUTH)
 	{
-		if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_ADD_PMKID_CACHE, (char *)&WepKey, sizeof(NDIS_802_11_KEY), rtapd->prefix_wlan_name, 0, 0))
+		if (RT_ioctl(rtapd->ioctl_sock, 
+					 RT_PRIV_IOCTL, 
+					 (char *)&WepKey, 
+					 sizeof(NDIS_802_11_KEY), 
+					 rtapd->prefix_wlan_name, 0, 
+					 RT_OID_802_DOT1X_PMKID_CACHE))
 		{
-			DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_tx_key:RTPRIV_IOCTL_ADD_PMKID_CACHE\n");
+			DBGPRINT(RT_DEBUG_ERROR, "ieee802_1x_tx_key:RT_OID_802_DOT1X_PMKID_CACHE\n");
 			return;
 		}
 	}
 	else
 	{
-		if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_ADD_WPA_KEY, (char *)&WepKey, sizeof(NDIS_802_11_KEY), rtapd->prefix_wlan_name, sta->ApIdx, 0))
+		if (RT_ioctl(rtapd->ioctl_sock, 
+					 RT_PRIV_IOCTL, 
+					 (char *)&WepKey, 
+					 sizeof(NDIS_802_11_KEY), 
+					 rtapd->prefix_wlan_name, 
+					 sta->ApIdx, 
+					 RT_OID_802_DOT1X_WPA_KEY))
 		{
-			DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_tx_key:RTPRIV_IOCTL_ADD_WPA_KEY\n");
+			DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_tx_key:RT_OID_802_DOT1X_WPA_KEY\n");
 			return;
 		}
 	}
@@ -301,17 +335,28 @@ void ieee802_1x_tx_key(rtapd *rtapd, struct sta_info *sta, u8 id)
 	// WPA2(pre-auth)
 	if (sta->ethertype == ETH_P_PRE_AUTH)
 	{
-		if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_ADD_PMKID_CACHE, (char *)&WepKey, sizeof(NDIS_802_11_KEY), rtapd->prefix_wlan_name, 0, 0))
+		if (RT_ioctl(rtapd->ioctl_sock, 
+					 RT_PRIV_IOCTL, 
+					 (char *)&WepKey, 
+					 sizeof(NDIS_802_11_KEY), 
+					 rtapd->prefix_wlan_name, 0, 
+					 RT_OID_802_DOT1X_PMKID_CACHE))
 		{
-			DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_tx_key:RTPRIV_IOCTL_ADD_PMKID_CACHE\n");
+			DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_tx_key:RT_OID_802_DOT1X_PMKID_CACHE\n");
 			return;
 		}
 	}
 	else
 	{
-		if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_ADD_WPA_KEY, (char *)&WepKey, sizeof(NDIS_802_11_KEY), rtapd->prefix_wlan_name, sta->ApIdx, 0))
+		if (RT_ioctl(rtapd->ioctl_sock, 
+					 RT_PRIV_IOCTL, 
+					 (char *)&WepKey, 
+					 sizeof(NDIS_802_11_KEY), 
+					 rtapd->prefix_wlan_name, 
+					 sta->ApIdx, 
+					 RT_OID_802_DOT1X_WPA_KEY))
 		{
-			DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_tx_key:RTPRIV_IOCTL_ADD_WPA_KEY\n");
+			DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_tx_key:RT_OID_802_DOT1X_WPA_KEY\n");
 			return;
 		}
 	}
@@ -342,6 +387,15 @@ static void ieee802_1x_encapsulate_radius(rtapd *rtapd, struct sta_info *sta, u8
 	if (!Radius_msg_add_attr(msg, RADIUS_ATTR_NAS_IP_ADDRESS, (u8 *) &rtapd->conf->own_ip_addr, 4))
 	{
 		DBGPRINT(RT_DEBUG_ERROR,"Could not add NAS-IP-Address\n");
+		goto fail;
+	}
+
+	if ((rtapd->conf->nasId_len[sta->ApIdx] > 0) &&
+	    !Radius_msg_add_attr(msg, RADIUS_ATTR_NAS_IDENTIFIER,
+				 rtapd->conf->nasId[sta->ApIdx],
+				 rtapd->conf->nasId_len[sta->ApIdx])) 
+	{
+		DBGPRINT(RT_DEBUG_ERROR, "Could not add NAS-Identifier\n");
 		goto fail;
 	}
 
@@ -603,9 +657,17 @@ void ieee802_1x_receive(
 			return;
 	}
 
-	if (((ethertype == ETH_P_PAE) && (hdr->version != EAPOL_VERSION)) || ((ethertype == ETH_P_PRE_AUTH) && (hdr->version != EAPOL_VERSION_2)))
+	/* Check protocol type */
+	if ((ethertype != ETH_P_PAE) && (ethertype != ETH_P_PRE_AUTH))
 	{
-		DBGPRINT(RT_DEBUG_ERROR,"Key descripter does not match with WPA rule\n");
+		DBGPRINT(RT_DEBUG_ERROR, "Unsupported Protocol Type (%d)\n", ethertype);
+		return;
+	}
+
+	/* Check EAPoL Protocol Version */
+	if ((hdr->version != EAPOL_VERSION) && (hdr->version != EAPOL_VERSION_2))
+	{
+		DBGPRINT(RT_DEBUG_ERROR, "Unsupported EAPoL Protocol Version (%d)\n", hdr->version);
 		return;
 	}
 
@@ -737,6 +799,18 @@ static void ieee802_1x_get_keys(rtapd *rtapd, struct sta_info *sta,
 	
 	if(keys && keys->recv_len != 0)
 	{
+		/* 	draft-ietf-eap-keying-01.txt 
+			Appendix C. MSK and EMSK Hierarchy
+
+			In EAP-TLS [RFC2716], the MSK is divided into two halves,
+			corresponding to the "Peer to Authenticator Encryption Key"
+			(Enc-RECV-Key, 32 octets, also known as the PMK) and "Authenticator
+			to Peer Encryption Key" (Enc-SEND-Key, 32 octets). In [RFC2548], the
+			Enc-RECV-Key (the PMK) is transported in the MS-MPPE-Recv-Key
+			attribute, and the Enc-SEND-Key is transported in the
+			MS-MPPE-Send-Key attribute.
+		*/
+	
 		DBGPRINT(RT_DEBUG_INFO, "IEEE802_1x_Get_Keys, PMK_len = %d\n",keys->recv_len );
 		DBGPRINT(RT_DEBUG_INFO, "PMK = %x %x %x %x %x %x %x ...%x \n",\
 			keys->recv[0],keys->recv[1],keys->recv[2],keys->recv[3],\
@@ -752,17 +826,34 @@ static void ieee802_1x_get_keys(rtapd *rtapd, struct sta_info *sta,
 		// WPA2(pre-auth)
 		if (sta->ethertype == ETH_P_PRE_AUTH)
 		{
-			if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_ADD_PMKID_CACHE, (char *)&WepKey, sizeof(NDIS_802_11_KEY), rtapd->prefix_wlan_name, 0, 0))
+			if (RT_ioctl(rtapd->ioctl_sock, 
+						 RT_PRIV_IOCTL, 
+						 (char *)&WepKey, 
+						 sizeof(NDIS_802_11_KEY), 
+						 rtapd->prefix_wlan_name, 0, 
+						 RT_OID_802_DOT1X_PMKID_CACHE))
 			{
-				DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_get_keys:RTPRIV_IOCTL_ADD_PMKID_CACHE\n");
+				DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_get_keys:RT_OID_802_DOT1X_PMKID_CACHE\n");
 				return;
 			}
 		}
 		else
 		{
-			if (RT_ioctl(rtapd->ioctl_sock, RTPRIV_IOCTL_ADD_WPA_KEY, (char *)&WepKey, sizeof(NDIS_802_11_KEY), rtapd->prefix_wlan_name, sta->ApIdx, 0))
+			if (keys->recv_len == 32 && keys->send_len == 32)
 			{
-				DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_get_keys:RTPRIV_IOCTL_ADD_WPA_KEY\n");
+				WepKey.KeyLength += keys->send_len;
+				memcpy(&WepKey.KeyMaterial[32], keys->send, 32);
+			}
+			
+			if (RT_ioctl(rtapd->ioctl_sock, 
+						 RT_PRIV_IOCTL, 
+						 (char *)&WepKey, 
+						 sizeof(NDIS_802_11_KEY), 
+						 rtapd->prefix_wlan_name, 
+						 sta->ApIdx, 
+						 RT_OID_802_DOT1X_WPA_KEY))
+			{
+				DBGPRINT(RT_DEBUG_ERROR,"ieee802_1x_get_keys:RT_OID_802_DOT1X_WPA_KEY\n");
 				return;
 			}
 		}
@@ -867,9 +958,10 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 			u8 *shared_secret, size_t shared_secret_len, void *data)
 {
 	struct sta_info *sta;
-	u32 session_timeout = 88, termination_action;
-	int session_timeout_set, free_flag = 0;
 	static int qosidx = 500;
+	u32 session_timeout = 0, idle_timeout = 0, termination_action;
+	int session_timeout_set, idle_timeout_set; 
+	int	free_flag = 0;
 
 	DBGPRINT(RT_DEBUG_TRACE,"Receive IEEE802_1X Response Packet From Radius Server. \n");
 
@@ -910,10 +1002,16 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 
 	sta->last_recv_radius = msg;
 
+	/* Extract the Session-Timeout attrubute */
 	session_timeout_set = !Radius_msg_get_attr_int32(msg, RADIUS_ATTR_SESSION_TIMEOUT, &session_timeout);
+
+	/* Extrace the Termination-Action attribute */
 	if (Radius_msg_get_attr_int32(msg, RADIUS_ATTR_TERMINATION_ACTION, &termination_action))
 		termination_action = RADIUS_TERMINATION_ACTION_DEFAULT;
 
+	/* Extrace Idle-Timeout attribute */
+	idle_timeout_set = !Radius_msg_get_attr_int32(msg, RADIUS_ATTR_IDLE_TIMEOUT, &idle_timeout);
+			
 	switch (msg->hdr->code)
 	{
 		case RADIUS_CODE_ACCESS_ACCEPT:
@@ -1001,6 +1099,11 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 			else  // 0 0
 				free_flag = 1;
 			sta->eapol_sm->be_auth.aSuccess = TRUE;
+
+			/* Set idle timeout */
+			if (idle_timeout_set)
+				dot1x_set_IdleTimeoutAction(rtapd, sta, idle_timeout);
+	
 			ieee802_1x_get_keys(rtapd, sta, msg, req, shared_secret, shared_secret_len);
 			break;
 

@@ -1,4 +1,19 @@
+/*
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation. See README and COPYING for
+ * more details.
 
+	Module Name:
+	rt2860apd.c
+
+	Revision History:
+	Who         When          What
+	--------    ----------    ----------------------------------------------
+	Jan, Lee    Dec --2003    modified
+
+*/
 
 #include <net/if_arp.h>
 #include <netpacket/packet.h>
@@ -78,7 +93,14 @@ u16	RTMPCompareMemory(void *pSrc1,void *pSrc2, u16 Length)
 	return (0);
 }
 
-int RT_ioctl(int sid, int param, char  *data, int data_len, char *prefix_name, unsigned char apidx, int flags)
+int RT_ioctl(
+		int 			sid, 
+		int 			param, 
+		char  			*data, 
+		int 			data_len, 
+		char 			*prefix_name, 
+		unsigned char 	apidx, 
+		int 			flags)
 {
     //char			name[12];
     int				ret = 1;
@@ -99,6 +121,32 @@ int RT_ioctl(int sid, int param, char  *data, int data_len, char *prefix_name, u
     return ret;
 }
 
+void dot1x_set_IdleTimeoutAction(
+		rtapd *rtapd,
+		struct sta_info *sta,
+		u32		idle_timeout)
+{
+	DOT1X_IDLE_TIMEOUT dot1x_idle_time;
+
+	memset(&dot1x_idle_time, 0, sizeof(DOT1X_IDLE_TIMEOUT));
+
+	memcpy(dot1x_idle_time.StaAddr, sta->addr, MAC_ADDR_LEN);
+	
+	dot1x_idle_time.idle_timeout = 
+		((idle_timeout < DEFAULT_IDLE_INTERVAL) ? DEFAULT_IDLE_INTERVAL : idle_timeout);
+
+	if (RT_ioctl(rtapd->ioctl_sock, 
+				 RT_PRIV_IOCTL, 
+				 (char *)&dot1x_idle_time, 
+				 sizeof(DOT1X_IDLE_TIMEOUT), 
+				 rtapd->prefix_wlan_name, sta->ApIdx, 
+				 RT_OID_802_DOT1X_IDLE_TIMEOUT))
+	{				   
+    	DBGPRINT(RT_DEBUG_ERROR,"Failed to RT_OID_802_DOT1X_IDLE_TIMEOUT\n");
+    	return;
+	}   
+
+}
 static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 {                              
 	rtapd *rtapd = eloop_ctx;
@@ -224,7 +272,7 @@ int Apd_init_sockets(rtapd *rtapd)
 	    if (ioctl(rtapd->eth_sock[i], SIOCGIFINDEX, &ifr) != 0)
     	{
     	    perror("ioctl(SIOCGIFHWADDR)(eth_sock)");
-    	    return -1;
+   	     	return -1;
     	}
 
     	memset(&addr, 0, sizeof(addr));
@@ -481,6 +529,13 @@ static void Handle_usr1(int sig, void *eloop_ctx, void *signal_ctx)
     	    }
         }*/
 
+#if MULTIPLE_RADIUS
+		for (i = 0; i < MAX_MBSSID_NUM; i++)
+			rtapd->radius->mbss_auth_serv_sock[i] = -1;
+#else
+		rtapd->radius->auth_serv_sock = -1;
+#endif
+
 	    if (Radius_client_init(rtapd))
         {
 		    DBGPRINT(RT_DEBUG_ERROR,"RADIUS client initialization failed.\n");
@@ -594,9 +649,9 @@ int main(int argc, char *argv[])
 	int ret = 1, i;
 	int c;
        pid_t auth_pid;
-    char prefix_name[IFNAMSIZ+1];
+    char prefix_name[IFNAMSIZ+1] = "";
     
-	strcpy(prefix_name, "ra");
+	//strcpy(prefix_name, "ra");	// remove by chhung
 	
 	for (;;)
     {
@@ -629,7 +684,16 @@ int main(int argc, char *argv[])
 			    break;
 		}
 	} 
+	// +++ add by chhung, for concurrent AP  
+	if (strcmp(prefix_name, "") == 0) {
+		if (strcmp(argv[0], "rtinicapd") == 0)
+			strcpy(prefix_name, "rai");
+		else
+			strcpy(prefix_name, "ra");
+	}
+	// --- add by chhung, for concurrent AP
 
+	//printf("Ralink DOT1X daemon, version = '%s' \n", dot1x_version);
 	DBGPRINT(RT_DEBUG_TRACE, "prefix_name = '%s'\n", prefix_name);
 
 

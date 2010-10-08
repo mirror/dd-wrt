@@ -20,7 +20,6 @@
 #endif
 
 #include "config.h"
-#define NIC_DBG_STRING      ("[DOT1X] ")
 
 #define RT_DEBUG_OFF		0
 #define RT_DEBUG_ERROR		1
@@ -33,13 +32,29 @@
 #define RT_QUERY_SIGNAL_CONTEXT						0x0402
 #define	RT_SET_APD_PID								0x0405
 #define RT_SET_DEL_MAC_ENTRY						0x0406
-#define OID_802_11_RADIUS_QUERY_SETTING				0x0540
+
 
 #define RT_PRIV_IOCTL								(SIOCIWFIRSTPRIV + 0x01)
+#if 0
+#define OID_802_11_RADIUS_QUERY_SETTING				0x0540
 #define RTPRIV_IOCTL_ADD_PMKID_CACHE                (SIOCIWFIRSTPRIV + 0x0A)
 #define RTPRIV_IOCTL_RADIUS_DATA                    (SIOCIWFIRSTPRIV + 0x0C)
 #define RTPRIV_IOCTL_ADD_WPA_KEY                    (SIOCIWFIRSTPRIV + 0x0E)
 #define RTPRIV_IOCTL_STATIC_WEP_COPY                (SIOCIWFIRSTPRIV + 0x10)
+#else
+#define OID_802_DOT1X_CONFIGURATION					0x0540
+#define OID_802_DOT1X_PMKID_CACHE					0x0541
+#define OID_802_DOT1X_RADIUS_DATA					0x0542
+#define OID_802_DOT1X_WPA_KEY						0x0543
+#define OID_802_DOT1X_STATIC_WEP_COPY				0x0544
+#define OID_802_DOT1X_IDLE_TIMEOUT					0x0545
+
+#define RT_OID_802_DOT1X_PMKID_CACHE		(OID_GET_SET_TOGGLE | OID_802_DOT1X_PMKID_CACHE)
+#define RT_OID_802_DOT1X_RADIUS_DATA		(OID_GET_SET_TOGGLE | OID_802_DOT1X_RADIUS_DATA)
+#define RT_OID_802_DOT1X_WPA_KEY			(OID_GET_SET_TOGGLE | OID_802_DOT1X_WPA_KEY)
+#define RT_OID_802_DOT1X_STATIC_WEP_COPY	(OID_GET_SET_TOGGLE | OID_802_DOT1X_STATIC_WEP_COPY)
+#define RT_OID_802_DOT1X_IDLE_TIMEOUT		(OID_GET_SET_TOGGLE | OID_802_DOT1X_IDLE_TIMEOUT)
+#endif
 
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
@@ -58,6 +73,9 @@
 #define BIT(x) (1 << (x))
 #define REAUTH_TIMER_DEFAULT_reAuthEnabled TRUE
 #define REAUTH_TIMER_DEFAULT_reAuthPeriod 3600
+#define AUTH_PAE_DEFAULT_quietPeriod 		60
+#define DEFAULT_IDLE_INTERVAL 				60
+
 
 #if DBG
 extern u32 	RTDebugLevel;	
@@ -65,7 +83,6 @@ extern u32 	RTDebugLevel;
 {                                   \
     if (Level <= RTDebugLevel)      \
     {                               \
-        printf(NIC_DBG_STRING);   \
 		printf( fmt, ## args);			\
     }                               \
 }
@@ -113,5 +130,10 @@ void ieee802_1x_receive(rtapd *apd, u8 *sa, u8 *apidx, u8 *buf, size_t len, u16 
 u16	RTMPCompareMemory(void *pSrc1,void *pSrc2, u16 Length);
 void Handle_term(int sig, void *eloop_ctx, void *signal_ctx);
 int RT_ioctl(int sid, int param, char  *data, int data_len, char *prefix_name, unsigned char apidx, int flags);
+
+void dot1x_set_IdleTimeoutAction(
+		rtapd *rtapd,
+		struct sta_info *sta,
+		u32		idle_timeout);
 
 #endif // RT2860APD_H

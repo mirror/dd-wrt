@@ -47,10 +47,20 @@ struct rtapd_config {
 
 	int radius_retry_primary_interval;
 
-#define HOSTAPD_AUTH_OPEN BIT(0)
-#define HOSTAPD_AUTH_SHARED_KEY BIT(1)
 	int session_timeout_set;
 	int session_timeout_interval;
+
+	/* The initialization value used for the quietWhile timer. 
+	   Its default value is 60 s; it can be set by management 
+	   to any value in the range from 0 to 65535 s. 
+
+	   NOTE 1 - The Authenticator may increase the value of quietPeriod 
+	   per Port to ignore authorization failures for longer periods 
+	   of time after a number of authorization failures have occurred.*/	
+	int 	quiet_interval;
+
+	u8		nasId[MAX_MBSSID_NUM][32];
+	int		nasId_len[MAX_MBSSID_NUM];
 };
 
 
