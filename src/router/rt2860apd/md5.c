@@ -1,3 +1,33 @@
+/*
+
+ ***************************************************************************
+ * Ralink Tech Inc.
+ * 4F, No. 2 Technology	5th	Rd.
+ * Science-based Industrial	Park
+ * Hsin-chu, Taiwan, R.O.C.
+ *
+ * (c) Copyright 2002-2004, Ralink Technology, Inc.
+ *
+ * All rights reserved.	Ralink's source	code is	an unpublished work	and	the
+ * use of a	copyright notice does not imply	otherwise. This	source code
+ * contains	confidential trade secret material of Ralink Tech. Any attemp
+ * or participation	in deciphering,	decoding, reverse engineering or in	any
+ * way altering	the	source code	is stricitly prohibited, unless	the	prior
+ * written consent of Ralink Technology, Inc. is obtained.
+ ***************************************************************************
+
+	Module Name:
+	md5.c
+
+	Abstract:
+
+	Revision History:
+	Who			When			What
+	--------	----------		----------------------------------------------
+	jan		10-28-03		Initial
+	Rita    	11-23-04		Modify MD5 and SHA-1
+	Edward Tsai	03-11-05		Integrate hostapd_get_rand and rc4 frunctions from MD5 code of HUT Mobile IP
+ */
 
 #include <stdio.h>
 #include <string.h>
