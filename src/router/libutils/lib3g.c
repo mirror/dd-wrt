@@ -170,10 +170,10 @@ static void modeswitch_icon210(int needreset, char *controldev)
 	fprintf(out, "DefaultVendor=0x1e0e\n");
 	fprintf(out, "DefaultProduct=0xf000\n");
 	fprintf(out, "TargetVendor=0x1e0e\n");
-	fprintf(out, "TargetProduct=0x9000\n");
+	fprintf(out, "TargetProductList=\"9200,9000\"\n");
 	fprintf(out,
 		"MessageContent=\"555342431234567800000000000006bd000000020000000000000000000000\"\n");
-	fprintf(out, "ResponseEndpoint=0x01\n");
+	fprintf(out, "NeedResponse=1\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 	sleep(2);
@@ -261,8 +261,9 @@ static struct DEVICES devicelist[] = {
 	{0x1410, 0x6000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel USB760 Modem Mode"},	//
 	{0x1410, 0x6002, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel USB760 3G Modem Mode"},	//
 //qualcomm
-	{0x1e0e, 0x9000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL, "Qualcomm ICON 210 Modem Mode"},	//
-	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, &modeswitch_icon210, "Qualcomm ICON 210 CDROM Mode"},	//
+	{0x1e0e, 0x9000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
+	{0x1e0e, 0x9200, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
+	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
 //ericsson
 	{0x0bdb, 0x1900, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
