@@ -144,6 +144,21 @@ static void modeswitch_onda(int needreset, char *controldev)
 	sleep(2);
 }
 
+static void modeswitch_sierra(int needreset, char *controldev)
+{
+	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
+
+	fprintf(out, "DefaultVendor=0x1199\n"
+		"DefaultVendor=0x0fff\n"
+		"TargetVendor=0x1199\n"
+		"TargetProductList=\"0017,0018,0019,0020,0021,0022,0024,0026,0027,0028,0029,0112,0120,0218,0220,0224,6802,6803,6804,6805,6808,6809,6812,6813,6815,6816,6820,6821,6822,6832,6833,6834,6835,6838,6839,683a,683b,683c,683d,683e,6850,6851,6852,6853,6855,6856,6859,685a\"\n"
+		"SierraMode=1\n" 
+		"CheckSuccess=10\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	sleep(2);
+}
+
 static void modeswitch_huawei(int needreset, char *controldev)
 {
 	system("usb_modeswitch -v 0x12d1 -p 0x1001 -d");
@@ -207,16 +222,60 @@ struct DEVICES {
 
 static struct DEVICES devicelist[] = {
 //sierra wireless cards
+	{0x1199, 0x0fff, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &modeswitch_sierra, "Sierra Device CDROM Mode"},	//
+	{0x1199, 0x0017, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0018, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0019, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0020, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0021, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0022, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0024, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0026, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0027, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0028, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0029, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0112, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0120, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0218, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0220, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0224, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6802, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6803, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8765 Modem Mode"},	//
+	{0x1199, 0x6804, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6805, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6808, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6809, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6812, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, &reset_mc, "Sierra Wireless MC8775V"},	//
+	{0x1199, 0x6813, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
+	{0x1199, 0x6815, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
+	{0x1199, 0x6816, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
+	{0x1199, 0x6820, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless AC875 Modem Mode"},	//
+	{0x1199, 0x6821, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless AC875U Modem Mode"},	//
+	{0x1199, 0x6822, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6832, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8780 Modem Mode"},	//
+	{0x1199, 0x6833, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC8781 Modem Mode"},	//
+	{0x1199, 0x6834, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6835, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6838, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6839, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x683a, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC8785 Modem Mode"},	//
+	{0x1199, 0x683b, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC8785 Composite Modem Mode"},	//
+	{0x1199, 0x683c, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x683d, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8791 Composite"},	//
+	{0x1199, 0x683e, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x6850, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6851, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6852, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6853, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6855, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6856, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6859, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x685a, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
 	{0x1199, 0x6880, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 885"},	//
 	{0x1199, 0x6890, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 888"},	//
 	{0x1199, 0x6893, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 889"},	//
 	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 889"},	//alternate variant
-	{0x1199, 0x6832, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8780"},	//
-	{0x1199, 0x683c, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
-	{0x1199, 0x683d, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
-	{0x1199, 0x683e, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
 	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8700"},	//
-	{0x1199, 0x6812, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8775V"},	//
 //option/huawei
 	{0x12d1, 0x1001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E600 or generic"},	//
 	{0x12d1, 0x1003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E172/EC270"},	//
