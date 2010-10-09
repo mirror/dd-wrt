@@ -1,5 +1,5 @@
 PROG        = usb_modeswitch
-VERS        = 0.9.7
+VERS        = 1.1.4
 #STRIP	    = strip
 #CC          = gcc
 CCFLAGS     = $(COPTS) -DNEED_PRINTF -Ilibusb-compat/libusb
