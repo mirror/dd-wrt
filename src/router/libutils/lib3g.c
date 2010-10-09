@@ -115,17 +115,49 @@ static void reset_mc(int needreset, char *controldev)
 		checkreset(controldev);
 }
 
-static void modeswitch_e1550(int needreset, char *controldev)
-{
-	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1446 -m 1 55534243000000000000000000000011060000000000000000000000000000");
-	sleep(2);
-}
 
 static void modeswitch_usb760(int needreset, char *controldev)
 {
-	system
-	    ("usb_modeswitch -v 0x1410 -p 0x5030 -m 1 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x1410 -p 0x5010 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x1410 -p 0x5020 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x1410 -p 0x5030 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x1410 -p 0x5031 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x1410 -p 0x5041 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	sleep(2);
+}
+
+static void modeswitch_onda(int needreset, char *controldev)
+{
+	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
+
+	fprintf(out, "DefaultVendor=0x1e0e\n"
+		"DefaultVendor=0x19d2\n"
+		"DefaultProduct=0x2000\n"
+		"TargetVendor=0x19d2\n"
+		"TargetProductList=\"0001,0002,0015,0016,0017,0031,0037,0052,0055,0063,0064,0108,0128\"\n"
+		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n"
+		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n"
+		"MessageContent3=\"55534243123456702000000080000c85010101180101010101000000000000\"\n"
+		"NeedResponse=1\n" "CheckSuccess=20\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	sleep(2);
+}
+
+static void modeswitch_huawei(int needreset, char *controldev)
+{
+	system("usb_modeswitch -v 0x12d1 -p 0x1001 -d -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x1003 -d -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x1414 -d -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780600000080000601000000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x1446 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x14ad -M 55534243123456780000000000000011060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x14c6 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x1521 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x1523 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x1557 -M 55534243123456780000000000000011060000000000000000000000000000");
 	sleep(2);
 }
 
@@ -183,13 +215,48 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8700"},	//
 	{0x1199, 0x6812, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8775V"},	//
 //option/huawei
-	{0x12d1, 0x1001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option E600 or generic"},	//
-	{0x12d1, 0x1003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option E172/EC270"},	//
+	{0x12d1, 0x1001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E600 or generic"},	//
+	{0x12d1, 0x1003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E172/EC270"},	//
+	{0x12d1, 0x101e, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI U7510 / U7517"},	//
+	{0x12d1, 0x1031, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI U8110 (Android smartphone)"},	//
+	{0x12d1, 0x1035, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI U8110 (Android smartphone)"},	//
+	{0x12d1, 0x1414, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E180"},	//
+	{0x12d1, 0x1406, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x140b, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x140c, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x1412, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option EC168"},	//
-	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_e1550, "HUAWEI/Option E1550"},	//
+	{0x12d1, 0x141b, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x14ac, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x14ae, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Vodafone (Huawei) K3806"},	//
+	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x14ad, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Vodafone (Huawei) K3806"},	//
+	{0x12d1, 0x14c1, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x14c6, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x1520, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei K3765"},	//
+	{0x12d1, 0x1465, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei K3765"},	//
+	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei K4505"},	//
+	{0x12d1, 0x1464, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei K4505"},	//
+	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei R201"},	//
+	{0x12d1, 0x1491, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei R201"},	//
+	{0x12d1, 0x1557, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei E173"},	//
+	{0x12d1, 0x14a5, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei E173"},	//
+
 	{0x0af0, 0x7011, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
+
+
+	{0x1410, 0x5010, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel CDROM Mode"},	//
+	{0x1410, 0x5020, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel MC990D CDROM Mode"},	//
 	{0x1410, 0x5030, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel USB760 CDROM Mode"},	//
+	{0x1410, 0x5031, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel USB760 3G CDROM Mode"},	//
+	{0x1410, 0x5041, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 CDROM Mode"},	//
+	{0x1410, 0x4100, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel Modem Mode"},	//
+	{0x1410, 0x4400, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel Modem Mode"},	//
+
+	{0x1410, 0x7001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
+	{0x1410, 0x7003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
+
 	{0x1410, 0x6000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel USB760 Modem Mode"},	//
+	{0x1410, 0x6002, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel USB760 3G Modem Mode"},	//
 //qualcomm
 	{0x1e0e, 0x9000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL, "Qualcomm ICON 210 Modem Mode"},	//
 	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, &modeswitch_icon210, "Qualcomm ICON 210 CDROM Mode"},	//
@@ -197,6 +264,10 @@ static struct DEVICES devicelist[] = {
 //ericsson
 	{0x0bdb, 0x1900, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
 	{0x0bdb, 0x1902, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
+//ONDA
+	{0x19d2, 0x2000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_onda, "ONDA MT505UP/ZTE (cdrom mode)"},	//
+	{0x19d2, 0x0002, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
@@ -288,7 +359,8 @@ char *get3GControlDevice(void)
 			if (devicelist[devicecount].customsetup)
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].controldevice);
+								    [devicecount].
+								    controldevice);
 			return devicelist[devicecount].controldevice;
 		}
 		devicecount++;
