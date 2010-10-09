@@ -146,9 +146,12 @@ static void modeswitch_onda(int needreset, char *controldev)
 
 static void modeswitch_huawei(int needreset, char *controldev)
 {
-	system("usb_modeswitch -v 0x12d1 -p 0x1001 -d -H");
-	system("usb_modeswitch -v 0x12d1 -p 0x1003 -d -H");
-	system("usb_modeswitch -v 0x12d1 -p 0x1414 -d -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x1001 -d");
+	system("usb_modeswitch -v 0x12d1 -p 0x1003 -d");
+	system("usb_modeswitch -v 0x12d1 -p 0x1414 -d");
+	system("usb_modeswitch -v 0x12d1 -p 0x1001 -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780600000080000601000000000000000000000000000000");
 	system("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
 	system("usb_modeswitch -v 0x12d1 -p 0x1446 -M 55534243123456780000000000000011060000000000000000000000000000");
