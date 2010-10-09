@@ -228,18 +228,18 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x141b, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x14ac, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x14ae, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Vodafone (Huawei) K3806"},	//
-	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "HUAWEI/Option newer modems"},	//
-	{0x12d1, 0x14ad, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Vodafone (Huawei) K3806"},	//
-	{0x12d1, 0x14c1, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x14ad, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Vodafone (Huawei) K3806"},	//
+	{0x12d1, 0x14c1, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
 	{0x12d1, 0x14c6, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Vodafone (Huawei) K4605"},	//
-	{0x12d1, 0x1520, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei K3765"},	//
-	{0x12d1, 0x1465, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei K3765"},	//
-	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei K4505"},	//
-	{0x12d1, 0x1464, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei K4505"},	//
-	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei R201"},	//
-	{0x12d1, 0x1491, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei R201"},	//
-	{0x12d1, 0x1557, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawai, "Huawei E173"},	//
-	{0x12d1, 0x14a5, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &NULL, "Huawei E173"},	//
+	{0x12d1, 0x1520, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei K3765"},	//
+	{0x12d1, 0x1465, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei K3765"},	//
+	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei K4505"},	//
+	{0x12d1, 0x1464, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei K4505"},	//
+	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei R201"},	//
+	{0x12d1, 0x1491, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei R201"},	//
+	{0x12d1, 0x1557, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei E173"},	//
+	{0x12d1, 0x14a5, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei E173"},	//
 
 	{0x0af0, 0x7011, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
 
