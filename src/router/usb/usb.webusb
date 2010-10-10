@@ -33,16 +33,6 @@
 			<input class="spaceradio" type="radio" value="0" name="usb_storage" <% nvram_checked("usb_storage","0"); %> onclick="show_layer_ext(this, 'idusbstor', false)" /><% tran("share.disable"); %>
 		</div>
 			<div id="idusbstor">
-				<div class="setting">
-					<div class="label"><% tran("usb.usb_extfs"); %></div>
-					<input class="spaceradio" type="radio" value="1" name="usb_fs_ext3" <% nvram_checked("usb_fs_ext3","1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" value="0" name="usb_fs_ext3" <% nvram_checked("usb_fs_ext3","0"); %> /><% tran("share.disable"); %>
-				</div>
-				<div class="setting">					
-					<div class="label"><% tran("usb.usb_fatfs"); %></div>
-					<input class="spaceradio" type="radio" value="1" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" value="0" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","0"); %> /><% tran("share.disable"); %>
-				</div>
 				<div class="setting">					
 					<div class="label"><% tran("usb.usb_automnt"); %></div>
 					<input class="spaceradio" type="radio" value="1" name="usb_automnt" <% nvram_checked("usb_automnt","1"); %> onclick="show_layer_ext(this, 'idusbmnt', true)" /><% tran("share.enable"); %>&nbsp;
