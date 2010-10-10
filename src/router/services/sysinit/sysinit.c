@@ -2108,41 +2108,6 @@ void start_drivers(void)
 			insmod("sd_mod");
 			cprintf("loading usb-storage\n");
 			insmod("usb-storage");
-
-			if (nvram_match("usb_fs_ext3", "1")) {
-				cprintf("loading jbd\n");
-				insmod("mbcache");
-				cprintf("loading ext2\n");
-				insmod("ext2");
-#ifdef HAVE_USB_ADVANCED
-				cprintf("loading jbd\n");
-				insmod("jbd");
-				cprintf("loading ext3\n");
-				insmod("ext3");
-#endif
-			}
-
-			if (nvram_match("usb_fs_fat", "1")) {
-				cprintf("loading usb_fs_fat\n");
-				insmod("nls_base");
-				insmod("nls_cp437");
-				insmod("nls_iso8859-1");
-				insmod("nls_iso8859-2");
-				insmod("nls_utf8");
-				insmod("fat");
-				cprintf("loading usb_fs_vfat\n");
-				insmod("vfat");
-				cprintf("loading fs_msdos\n");
-				insmod("msdos");
-			}
-
-			if (nvram_match("usb_fs_xfs", "1")) {
-				cprintf("loading usb_fs_xfs\n");
-				insmod("xfs");
-			}
-
-
-			// scan / mount usb drives
 		}
 
 		if (nvram_match("usb_printer", "1")) {

@@ -108,8 +108,37 @@ static int usb_process_path(char *path, char *fs)
 
 	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 #ifdef HAVE_NTFS3G
+	if (!strcmp(fs, "ntfs"))
+		insmod("fuse");
+#endif
+	if (!strcmp(fs, "ext2")) {
+		insmod("mbcache");
+		insmod("ext2");
+	}
+#ifdef HAVE_USB_ADVANCED
+	if (!strcmp(fs, "ext3")) {
+		insmod("mbcache");
+		insmod("ext2");
+		insmod("jbd");
+		insmod("ext3");
+	}
+#endif
+	if (!strcmp(fs, "vfat")) {
+		insmod("nls_base");
+		insmod("nls_cp437");
+		insmod("nls_iso8859-1");
+		insmod("nls_iso8859-2");
+		insmod("nls_utf8");
+		insmod("fat");
+		insmod("vfat");
+		insmod("msdos");
+	}
+	if (!strcmp(fs, "xfs")) {
+		insmod("xfs");
+	}
+#ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
-		eval("insmod", "fuse");
+		insmod("fuse");
 		ret = eval("ntfs-3g", path, mount_point);
 	} else
 #endif
@@ -226,6 +255,9 @@ int usb_add_ufd(void)
 							break;
 						} else if (strstr(line, "Ext2")) {
 							fs = "ext2";
+							break;
+						} else if (strstr(line, "XFS")) {
+							fs = "xfs";
 							break;
 						} else if (strstr(line, "Ext3")) {
 #ifdef HAVE_USB_ADVANCED
