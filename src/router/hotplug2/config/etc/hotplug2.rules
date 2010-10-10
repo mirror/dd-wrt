@@ -1,5 +1,4 @@
 $include /etc/hotplug2-common.rules
-$include /etc/hotplug2-ddwrt.rules
 
 SUBSYSTEM ~~ (net|button|usb|platform|ieee1394|block|atm) {
 	exec /sbin/hotplug %SUBSYSTEM%
