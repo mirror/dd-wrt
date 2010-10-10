@@ -1,9 +1,9 @@
 
 ntfs-3g:
 	CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS)" \
-	CPPFLAGS="$(COPTS)" \
-	LDFLAGS="$(COPTS) -fPIC" \
+	CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	$(MAKE) -C ntfs-3g all
 
 ntfs-3g-install:
@@ -16,4 +16,4 @@ ntfs-3g-clean:
 	$(MAKE) -C ntfs-3g clean
 
 ntfs-3g-configure:
-	cd ntfs-3g && ./configure --prefix=/usr --with-fuse=internal --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc
+	cd ntfs-3g && ./configure --prefix=/usr --with-fuse=internal --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"
