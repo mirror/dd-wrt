@@ -114,8 +114,7 @@ void start_sysinit(void)
 	if (fp) {
 		system("swconfig dev rtl8366rb set reset 1");
 		system("swconfig dev rtl8366rb set vlan 1");
-		system
-		    ("swconfig dev rtl8366rb vlan 1 set ports \"1 2 3 4 5t\"");
+		system("swconfig dev rtl8366rb vlan 1 set ports \"1 2 3 4 5t\"");
 		system("swconfig dev rtl8366rb vlan 2 set ports \"0 5t\"");
 		unsigned char buf2[256];
 		fseek(fp, 0x1fc00, SEEK_SET);

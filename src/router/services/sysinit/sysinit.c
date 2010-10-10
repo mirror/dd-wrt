@@ -2140,11 +2140,7 @@ void start_drivers(void)
 				cprintf("loading usb_fs_xfs\n");
 				insmod("xfs");
 			}
-			// if (nvram_match ("usb_fs_xfs", "1"))
-			// {
-			// cprintf ("loading usb_fs_xfs\n");
-			// insmod("xfs");
-			// }
+
 
 			// scan / mount usb drives
 		}
