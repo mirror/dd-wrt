@@ -217,6 +217,9 @@ endif
 ifeq ($(CONFIG_ALPHA),y)
 CFLAGS_EXTRA += -DHAVE_ALPHA
 endif
+ifeq ($(CONFIG_NTFS3G),y)
+CFLAGS_EXTRA += -DHAVE_NTFS3G
+endif
 ifeq ($(CONFIG_CORENET),y)
 CFLAGS_EXTRA += -DHAVE_CORENET
 endif
