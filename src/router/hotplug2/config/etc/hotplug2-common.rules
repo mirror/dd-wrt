@@ -4,6 +4,11 @@
 # 	nothrottle
 # 	exec logger -s -t hotplug -p daemon.info "name=%DEVICENAME%, path=%DEVPATH%"
 # }
+DEVICENAME ~~ (ttyUSB), MINOR is set {
+	exec /bin/mkdir -p /dev/usb/tts 
+	exec ln -s /dev/%DEVICENAME% /dev/usb/tts/%MINOR%
+}
+
 
 DEVICENAME ~~ (null|full|ptmx|tty|zero|gpio|hvc) {
 	nothrottle
@@ -54,4 +59,8 @@ FIRMWARE is set, ACTION == add {
 	nothrottle
 	load-firmware /lib/firmware
 	next
+}
+
+DEVICENAME ~~ (^mtd), MINOR is set {
+	exec /etc/hotplug2-createmtd.sh 
 }
