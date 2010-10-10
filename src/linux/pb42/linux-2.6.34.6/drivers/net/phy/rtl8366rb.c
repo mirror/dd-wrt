@@ -243,7 +243,7 @@ static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8366RB_SGCR, RTL8366RB_SGCR_MAX_LENGTH_MASK,
-		RTL8366RB_SGCR_MAX_LENGTH_1536);
+		RTL8366RB_SGCR_MAX_LENGTH_9216);
 
 	/* enable all ports */
 	REG_WR(smi, RTL8366RB_PECR, 0);
