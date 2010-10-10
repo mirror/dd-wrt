@@ -161,9 +161,6 @@ static void modeswitch_sierra(int needreset, char *controldev)
 
 static void modeswitch_huawei(int needreset, char *controldev)
 {
-	system("usb_modeswitch -v 0x12d1 -p 0x1001 -d");
-	system("usb_modeswitch -v 0x12d1 -p 0x1003 -d");
-	system("usb_modeswitch -v 0x12d1 -p 0x1414 -d");
 	system("usb_modeswitch -v 0x12d1 -p 0x1001 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
