@@ -1,8 +1,0 @@
-# provide old devpts devicenames for ttyUSB and mtd(block)
-DEVICENAME ~~ (ttyUSB), MINOR is set {
-	exec /bin/mkdir -p /dev/usb/tts 
-	exec ln -s /dev/%DEVICENAME% /dev/usb/tts/%MINOR%
-}
-DEVICENAME ~~ (^mtd), MINOR is set {
-	exec /etc/hotplug2-createmtd.sh 
-}
