@@ -328,7 +328,7 @@ static struct DEVICES devicelist[] = {
 	{0x0bdb, 0x1900, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
 	{0x0bdb, 0x1902, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
 //ONDA
-	{0x19d2, 0x2000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
+	{0x19d2, 0x2000, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
 	{0x19d2, 0x0001, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0002, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
