@@ -3177,8 +3177,11 @@ int led_control(int type, int act)
 		connected_gpio = 0x10d;
 		break;
 	case ROUTER_BOARD_OPENRISC:
+#ifndef HAVE_ERC
+// ERC: diag button is used different / wlan button is handled by a script
 		diag_gpio = 0x003;
 		ses_gpio = 0x005;
+#endif
 		break;
 #else
 	case ROUTER_BOARD_PB42:
