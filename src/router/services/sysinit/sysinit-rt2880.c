@@ -96,6 +96,23 @@ void start_sysinit(void)
 	sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
 	sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
 #endif
+#ifdef HAVE_RT10N
+	FILE *in = fopen("/dev/mtdblock/2", "rb");
+	unsigned char mac[32];
+	if (in != NULL) {
+		fseek(in,4,SEEK_SET);
+		fread(mac,6,1,in);
+		fclose(in);
+		unsigned int copy[6];
+		int i;
+		for (i = 0; i < 6; i++)
+			copy[i] = mac[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		eval("ifconfig", "eth2", "hw", "ether", mac);
+	}
+
+#endif
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
@@ -140,7 +157,12 @@ void start_sysinit(void)
 #ifndef HAVE_EAP9550
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth2", "1");	//LAN 
+
 		eval("vconfig", "add", "eth2", "2");	//WAN
+#ifdef HAVE_RT10N
+		MAC_ADD(mac);
+		eval("ifconfig", "vlan2", "hw", "ether", mac);
+#endif
 #endif
 
 #ifdef HAVE_ALLNET11N
