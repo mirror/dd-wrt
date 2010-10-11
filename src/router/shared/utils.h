@@ -491,6 +491,8 @@
 // Belkin Play F7D4302v1 (dual radio, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4302V1)
 #define ROUTER_BELKIN_F7D4302 0x9c16
 
+#define ROUTER_ASUS_RTN10PLUS 0x9d1a	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+
 
 
 #define NVROUTER "DD_BOARD"
