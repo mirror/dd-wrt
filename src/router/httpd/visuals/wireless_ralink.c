@@ -62,7 +62,6 @@ typedef union _MACHTTRANSMIT_SETTING {
 	unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
-
 typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned char ApIdx;
 	unsigned char Addr[6];
@@ -241,9 +240,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
 	}
-//fprintf(stderr,"%d\n",__LINE__);
-	int state = 1;//get_radiostate(ifname);
-//fprintf(stderr,"%d\n",__LINE__);
+	int state = get_radiostate(ifname);
 
 	if (state == 0 || state == -1) {
 		return cnt;
@@ -257,9 +254,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 
 	iwr.u.data.pointer = (caddr_t) & table;
 	iwr.u.data.length = sizeof(table);
-fprintf(stderr,"%d = %d\n",__LINE__,iwr.u.data.length);
-//RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT	
-if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &iwr) < 0) {
+	if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &iwr) < 0) {
 		ignore = 1;
 	}
 
