@@ -118,6 +118,8 @@ int uloop_timeout_add(struct uloop_timeout *timeout)
 
 	timeout->prev = prev;
 	timeout->next = *head;
+	if (timeout->next)
+		timeout->next->prev = timeout;
 	*head = timeout;
 	timeout->pending = true;
 
