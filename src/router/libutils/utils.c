@@ -726,6 +726,9 @@ int internal_getRouterBrand()
 #elif HAVE_DIR615
 	setRouter("Dlink-DIR615 rev d");
 	return ROUTER_BOARD_DIR615D;
+#elif HAVE_RT10N
+	setRouter("Asus RT-N10+");
+	return ROUTER_ASUS_RTN10PLUS;
 #elif HAVE_DIR600
 #ifdef HAVE_DIR300
 	setRouter("Dlink-DIR300 rev b");
@@ -3152,6 +3155,11 @@ int led_control(int type, int act)
 		diag_gpio = 0x106;
 		connected_gpio = 0x100;
 		usb_gpio = 0x104;
+		break;
+	case ROUTER_ASUS_RTN10PLUS:
+//		diag_gpio = 0x10d;
+//		connected_gpio = 0x108;
+//		power_gpio = 0x109;
 		break;
 	case ROUTER_BOARD_DIR600B:
 		diag_gpio = 0x10d;
