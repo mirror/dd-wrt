@@ -170,6 +170,15 @@ void start_sysinit(void)
 		sysprintf("switch reg w 44 1001");
 		sysprintf("switch reg w 48 1001");
 		sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_RT10N
+		sysprintf("switch reg w 14 405555");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 98 7f3f");
+		sysprintf("switch reg w e4 3f");
+		sysprintf("switch reg w 40 1002");
+		sysprintf("switch reg w 44 1001");
+		sysprintf("switch reg w 48 1001");
+		sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_ACXNR22
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
@@ -287,6 +296,11 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_RT10N
+			sysprintf("switch reg w 40 1007");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1001");
+			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_ACXNR22
 			sysprintf("switch reg w 40 1007");
 			sysprintf("switch reg w 44 1001");
@@ -319,6 +333,11 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_ESR9752
+			sysprintf("switch reg w 40 1002");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1001");
+			sysprintf("switch reg w 70 ffff417e");
+#elif HAVE_RT10N
 			sysprintf("switch reg w 40 1002");
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
