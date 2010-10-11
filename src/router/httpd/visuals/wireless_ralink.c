@@ -62,6 +62,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 	unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
+
 typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned char ApIdx;
 	unsigned char Addr[6];
@@ -114,6 +115,7 @@ typedef struct _RT_802_11_MAC_TABLE {
 #define	RT_OID_802_11_QUERY_LAST_TX_RATE			0x0632
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
+#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT					(SIOCIWFIRSTPRIV + 0x1F)	// modified by Red@Ralink, 2009/09/30
 
 typedef struct STAINFO {
 	char mac[6];
@@ -228,7 +230,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		      char *ifname, int cnt, int turbo, int macmask)
 {
 
-	RT_802_11_MAC_TABLE table = { 0 };
+	static RT_802_11_MAC_TABLE table = { 0 };
 
 	unsigned char *cp;
 	int s, len, i;
@@ -239,7 +241,9 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
 	}
-	int state = get_radiostate(ifname);
+//fprintf(stderr,"%d\n",__LINE__);
+	int state = 1;//get_radiostate(ifname);
+//fprintf(stderr,"%d\n",__LINE__);
 
 	if (state == 0 || state == -1) {
 		return cnt;
@@ -252,8 +256,10 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 
 	iwr.u.data.pointer = (caddr_t) & table;
-//    iwr.u.data.length = 24 * 1024;
-	if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr) < 0) {
+	iwr.u.data.length = sizeof(table);
+fprintf(stderr,"%d = %d\n",__LINE__,iwr.u.data.length);
+//RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT	
+if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &iwr) < 0) {
 		ignore = 1;
 	}
 
