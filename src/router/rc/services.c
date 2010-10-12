@@ -940,6 +940,7 @@ static void handle_wireless(void)
 #ifdef HAVE_DNSMASQ
 	handle = startstop_nofree_f("dnsmasq", handle);
 #endif
+	handle = start_service_nofree("wan_boot", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree("zebra", handle);
 #endif
@@ -1017,6 +1018,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("hostapdwan", handle);
 #endif
+	handle = start_service_nofree("wan_boot", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree_f("zebra", handle);
 #endif
