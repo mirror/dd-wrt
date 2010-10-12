@@ -171,8 +171,8 @@ static void usb_unmount(void)
      */
 int usb_add_ufd(void)
 {
-	DIR *dir;
-	FILE *fp;
+	DIR *dir = NULL;
+	FILE *fp = NULL;
 	char line[256];
 	struct dirent *entry;
 	char path[128];
