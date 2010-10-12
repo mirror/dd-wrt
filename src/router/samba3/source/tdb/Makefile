@@ -2,7 +2,7 @@
 # Makefile for tdb directory
 #
 
-CFLAGS = -DSTANDALONE -DTDB_DEBUG -g 
+CFLAGS = -DSTANDALONE
 #-DHAVE_MMAP=1
 CC = gcc
 

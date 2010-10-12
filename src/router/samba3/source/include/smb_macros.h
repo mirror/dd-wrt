@@ -72,8 +72,13 @@
 		 __FILE__, __LINE__)), smb_panic("assert failed")))
 #else
 /* redefine the assert macro for non-developer builds */
+#ifdef NEED_PRINTF
 #define SMB_ASSERT(b) ( (b) ? (void)0 : \
         (DEBUG(0,("PANIC: assert failed at %s(%d)\n", __FILE__, __LINE__))))
+#else
+#define SMB_ASSERT(x) do { } while(0)
+#endif
+
 #endif
 
 #define SMB_WARN(condition, message) \
