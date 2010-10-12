@@ -94,6 +94,8 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 	system2("echo 0 >/proc/sys/dev/wifi0/softled");
+	
+	eval("gpio","enable","8"); //enable power passthrough
 
 	/*
 	 * Set a sane date 
