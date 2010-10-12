@@ -229,8 +229,11 @@ typedef struct {
 	} ;
 } GUID;
 
+#ifdef NEED_PRINTF
 #define ntfs_log_error(args...) do { printf("** " args); if (!isatty(1)) fprintf(stderr,args); } while(0)
-
+#else
+#define ntfs_log_error(args...) do { } while(0)
+#endif
 /*
  *		Struct to hold the input mapping file
  *	(private to this module)
