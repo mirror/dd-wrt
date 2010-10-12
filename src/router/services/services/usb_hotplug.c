@@ -211,11 +211,12 @@ int usb_add_ufd(void)
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
-			if ((strncmp(entry->d_name, "disc", 4))
-			    && (strncmp(entry->d_name, "sd", 2)))
+		
+			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
-			else
-				found = 1;
+			if (new && (strncmp(entry->d_name, "sd", 2)))
+				continue;
+			found = 1;
 
 			/* 
 			 * Files created when the UFD is inserted are not removed when
