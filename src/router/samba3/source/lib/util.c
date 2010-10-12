@@ -1578,7 +1578,7 @@ gid_t nametogid(const char *name)
 /*******************************************************************
  Something really nasty happened - panic !
 ********************************************************************/
-
+#ifdef NEED_PRINTF
 void smb_panic(const char *const why)
 {
 	char *cmd;
@@ -1617,7 +1617,7 @@ void smb_panic(const char *const why)
 
 	dump_core();
 }
-
+#endif
 /*******************************************************************
  Print a backtrace of the stack to the debug log. This function
  DELIBERATELY LEAKS MEMORY. The expectation is that you should

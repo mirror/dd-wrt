@@ -413,7 +413,7 @@ PASSDB_OBJ = $(PASSDB_GET_SET_OBJ) passdb/passdb.o passdb/pdb_interface.o \
 		passdb/lookup_sid.o \
 		passdb/login_cache.o  passdb/pdb_smbpasswd.o passdb/pdb_tdb.o \
 		lib/system_smbd.o \
-		passdb/lookup_sid.o passdb/util_builtin.o \
+		passdb/util_builtin.o \
 		passdb/util_wellknown.o passdb/util_unixsids.o
 
 XML_OBJ = passdb/pdb_xml.o
@@ -946,6 +946,7 @@ bin/smbd: bin/libsmbd.a $(SMBD_OBJ_MAIN) $(POPT_OBJS) $(POPT_LIB_OBJ) bin/.dummy
 bin/libsmbd.a: $(SMBD_OBJ_BASE)
 	$(AR) cru bin/libsmbd.a $(SMBD_OBJ_BASE)
 	$(RANLIB) bin/libsmbd.a
+#	$(CC) -shared $(FLAGS) $(LDFLAGS) -o $@ $(SMBD_OBJ_BASE)
 
 
 bin/nmbd: $(NMBD_OBJ) $(POPT_OBJS) bin/.dummy
