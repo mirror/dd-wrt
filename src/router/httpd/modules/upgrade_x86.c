@@ -205,23 +205,31 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		in = fopen(drive, "r+b");
 		fseek(in, 0, SEEK_END);
 		long mtdlen = ftell(in);
-		fseek(in, mtdlen-(65536*2), SEEK_SET);
+		fseek(in, mtdlen - (65536 * 2), SEEK_SET);
 		fwrite(mem, 65536, 1, in);
 		fclose(in);
 		eval("sync");
 		in = fopen(drive, "rb");
-		fseek(in, mtdlen-(65536*2), SEEK_SET);
+		fseek(in, mtdlen - (65536 * 2), SEEK_SET);
 		fread(mem, 65536, 1, in);
 		fclose(in);
 		free(mem);
 	}
 	fprintf(stderr, "write system\n");
 	FILE *out = fopen(drive, "r+b");
-	for (i = 0; i < linuxsize; i++)
-		putc(getc(fifo), out);
+	char *flashbuf = (char *)malloc(linuxsize);
+	if (!flashbuf)		// not enough memory, use direct way
+	{
+		for (i = 0; i < linuxsize; i++)
+			putc(getc(fifo), out);
+	} else {
+		//read into temp buffer
+		fread(flashbuf, linuxsize, 1, fifo);
+		fwrite(flashbuf, linuxsize, 1, out);
+		free(flashbuf);
+	}
 	fclose(out);
 	fprintf(stderr, "sync system\n");
-
 	sysprintf("sync");
 	sysprintf("sync");
 	//reread for validation
