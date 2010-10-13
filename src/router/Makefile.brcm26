@@ -370,6 +370,9 @@ ifneq ($(CONFIG_USB_ADVANCED),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd	
 endif
+ifneq ($(CONFIG_NTFS3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fuse
+endif
 ifneq ($(CONFIG_USB),y)
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls
