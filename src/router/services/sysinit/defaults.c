@@ -2645,8 +2645,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"usb_usb2", "0", 0},
 	{"usb_storage", "0", 0},
 	{"usb_printer", "0", 0},
-	{"usb_fs_ext3", "0", 0},
-	{"usb_fs_fat", "0", 0},
 	{"usb_automnt", "0", 0},
 	{"usb_mntpoint", "mnt", 0},
 	{"usb_runonmount", "", 0},
