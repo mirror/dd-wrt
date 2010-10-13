@@ -661,8 +661,6 @@ usb.usb_uhci="USB 1.1 驅動 (UHCI)";
 usb.usb_ohci="USB 1.1 驅動 (OHCI)";
 usb.usb_ehci="USB 2.0 驅動";
 usb.usb_storage="USB 儲存裝置驅動";
-usb.usb_extfs="ext2 / ext3 檔案系統驅動";
-usb.usb_fatfs="FAT 檔案系統驅動";
 usb.usb_printer="USB 印表機驅動";
 
 // ** Hotspot.asp **//
