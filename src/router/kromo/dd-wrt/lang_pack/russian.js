@@ -631,8 +631,6 @@ usb.usb_uhci="Поддержка USB 1.1 (UHCI)";
 usb.usb_ohci="Поддержка USB 1.1 (OHCI)";
 usb.usb_ehci="Поддержка USB 2.0";
 usb.usb_storage="Поддержка USB-дисков";
-usb.usb_extfs="Поддержка файл.системы ext2/ext3";
-usb.usb_fatfs="Поддержка файловой системы FAT";
 usb.usb_printer="Поддержка USB-принтера";
 
 // ** Hotspot.asp **//

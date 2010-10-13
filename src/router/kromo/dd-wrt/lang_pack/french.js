@@ -613,8 +613,6 @@ usb.usb_uhci="Support USB 1.1 (UHCI)";
 usb.usb_ohci="Support USB 1.1 (OHCI)";
 usb.usb_ehci="Support USB 2.0";
 usb.usb_storage="Support Stockage USB";
-usb.usb_extfs="Support système de fichier ext2 / ext3";
-usb.usb_fatfs="Support système de fichier FAT";
 usb.usb_printer="Support imprimante USB";
 
 // ** Hotspot.asp **//
