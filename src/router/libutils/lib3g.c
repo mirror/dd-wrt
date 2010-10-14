@@ -144,6 +144,25 @@ static void modeswitch_onda(int needreset, char *controldev)
 	sleep(2);
 }
 
+static void modeswitch_onda2(int needreset, char *controldev)
+{
+	system("usb_modeswitch -v 0x19d2 -p 0x0003 -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0026 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0040 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0053 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0083 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0101 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0103 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0115 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x1001 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x1007 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x1009 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x1013 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0xfff6 -M 5553424312345678c00000008000069f030000000000000000000000000000");
+	sleep(2);
+}
+
 static void modeswitch_sierra(int needreset, char *controldev)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
@@ -332,14 +351,38 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0016, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0017, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0022, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0026, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0031, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF636"},	//
 	{0x19d2, 0x0037, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0040, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0052, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0053, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0055, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0063, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone K3565-Z HSDPA (modem mode)"},	// tested, working. i hope the other ZDA devices are working in the same way
 	{0x19d2, 0x0064, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
+	{0x19d2, 0x0083, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0094, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
+	{0x19d2, 0x0101, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0103, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0104, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0108, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0115, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0116, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0128, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0124, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1001, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1003, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1007, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1008, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1009, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1010, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1013, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x1015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0xfff5, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0xfff6, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0xfff1, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0xffff, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
