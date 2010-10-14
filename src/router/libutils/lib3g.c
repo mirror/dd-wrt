@@ -115,14 +115,18 @@ static void reset_mc(int needreset, char *controldev)
 		checkreset(controldev);
 }
 
-
 static void modeswitch_usb760(int needreset, char *controldev)
 {
-	system("usb_modeswitch -v 0x1410 -p 0x5010 -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x1410 -p 0x5020 -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x1410 -p 0x5030 -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x1410 -p 0x5031 -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x1410 -p 0x5041 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x1410 -p 0x5010 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x1410 -p 0x5020 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x1410 -p 0x5030 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x1410 -p 0x5031 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x1410 -p 0x5041 -M 5553424312345678000000000000061b000000020000000000000000000000");
 	sleep(2);
 }
 
@@ -146,20 +150,34 @@ static void modeswitch_onda(int needreset, char *controldev)
 
 static void modeswitch_onda2(int needreset, char *controldev)
 {
-	system("usb_modeswitch -v 0x19d2 -p 0x0003 -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x0026 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x0040 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x0053 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x0083 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x0101 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x0103 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x0115 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x1001 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x1007 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x1009 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x1013 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0xfff6 -M 5553424312345678c00000008000069f030000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0003 -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0026 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0040 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0053 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0083 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0101 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0103 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0115 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x1001 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x1007 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x1009 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x1013 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0xfff6 -M 5553424312345678c00000008000069f030000000000000000000000000000");
 	sleep(2);
 }
 
@@ -171,8 +189,7 @@ static void modeswitch_sierra(int needreset, char *controldev)
 		"DefaultVendor=0x0fff\n"
 		"TargetVendor=0x1199\n"
 		"TargetProductList=\"0017,0018,0019,0020,0021,0022,0024,0026,0027,0028,0029,0112,0120,0218,0220,0224,6802,6803,6804,6805,6808,6809,6812,6813,6815,6816,6820,6821,6822,6832,6833,6834,6835,6838,6839,683a,683b,683c,683d,683e,6850,6851,6852,6853,6855,6856,6859,685a\"\n"
-		"SierraMode=1\n" 
-		"CheckSuccess=10\n");
+		"SierraMode=1\n" "CheckSuccess=10\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 	sleep(2);
@@ -183,15 +200,24 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	system("usb_modeswitch -v 0x12d1 -p 0x1001 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
-	system("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780600000080000601000000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x1446 -M 55534243123456780000000000000011060000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x14ad -M 55534243123456780000000000000011060000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x14c6 -M 55534243123456780000000000000011060000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011060000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x1521 -M 55534243123456780000000000000011060000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x1523 -M 55534243123456780000000000000011060000000000000000000000000000");
-	system("usb_modeswitch -v 0x12d1 -p 0x1557 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780600000080000601000000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1446 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x14ad -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x14c6 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1521 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1523 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1557 -M 55534243123456780000000000000011060000000000000000000000000000");
 	sleep(2);
 }
 
@@ -238,152 +264,151 @@ struct DEVICES {
 
 static struct DEVICES devicelist[] = {
 //sierra wireless cards
-	{0x1199, 0x0fff, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &modeswitch_sierra, "Sierra Device CDROM Mode"},	//
-	{0x1199, 0x0017, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0018, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0019, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless AC595U Modem Mode"},	//
-	{0x1199, 0x0020, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0021, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless AC597E Modem Mode"},	//
-	{0x1199, 0x0022, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0024, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC5727 CDMA Modem Mode"},	//
-	{0x1199, 0x0026, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0027, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0028, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0029, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0112, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless CDMA 1xEVDO PC Card, Aircard 580 Modem Mode"},	//
-	{0x1199, 0x0120, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless AC595U Modem Mode"},	//
-	{0x1199, 0x0218, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC5720 Wireless Modem"},	//
-	{0x1199, 0x0220, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x0224, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6802, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
-	{0x1199, 0x6803, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8765 Modem Mode"},	//
-	{0x1199, 0x6804, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
-	{0x1199, 0x6805, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8765 Modem Mode"},	//
-	{0x1199, 0x6808, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
-	{0x1199, 0x6809, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
-	{0x1199, 0x6812, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, &reset_mc, "Sierra Wireless MC8775V"},	//
-	{0x1199, 0x6813, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
-	{0x1199, 0x6815, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
-	{0x1199, 0x6816, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
-	{0x1199, 0x6820, "sierra", "/dev/usb/tts/0", "/dev/usb/tts/2", 1, NULL, "Sierra Wireless AC875 Modem Mode"},	//
-	{0x1199, 0x6821, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless AC875U Modem Mode"},	//
-	{0x1199, 0x6822, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6832, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8780 Modem Mode"},	//
-	{0x1199, 0x6833, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC8781 Modem Mode"},	//
-	{0x1199, 0x6834, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6835, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6838, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6839, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x683a, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC8785 Modem Mode"},	//
-	{0x1199, 0x683b, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless MC8785 Composite Modem Mode"},	//
-	{0x1199, 0x683c, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
-	{0x1199, 0x683d, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8791 Composite"},	//
-	{0x1199, 0x683e, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
-	{0x1199, 0x6850, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless AirCard 880 Modem Mode"},	//
-	{0x1199, 0x6851, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless AirCard 881 Modem Mode"},	//
-	{0x1199, 0x6852, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless AirCard 880E Modem Mode"},	//
-	{0x1199, 0x6853, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless AirCard 881E Modem Mode"},	//
-	{0x1199, 0x6855, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6856, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless ATT USB Connect 881 Modem Mode"},	//
-	{0x1199, 0x6859, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x685a, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6880, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 885"},	//
-	{0x1199, 0x6890, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 888"},	//
-	{0x1199, 0x6893, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 889"},	//
-//	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/3", "/dev/usb/tts/4", 1, NULL, "Sierra Wireless Compass 889"},	//alternate variant
-	{0x1199, 0x68a3, "sierra", "/dev/usb/tts/2", "/dev/usb/tts/0", 1, &reset_mc, "Sierra Wireless MC8700"},	//
+	{0x1199, 0x0fff, "sierra", "3", "4", 1, &modeswitch_sierra, "Sierra Device CDROM Mode"},	//
+	{0x1199, 0x0017, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0018, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0019, "sierra", "3", "4", 1, NULL, "Sierra Wireless AC595U Modem Mode"},	//
+	{0x1199, 0x0020, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0021, "sierra", "3", "4", 1, NULL, "Sierra Wireless AC597E Modem Mode"},	//
+	{0x1199, 0x0022, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0024, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC5727 CDMA Modem Mode"},	//
+	{0x1199, 0x0026, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0027, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0028, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0029, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0112, "sierra", "3", "4", 1, NULL, "Sierra Wireless CDMA 1xEVDO PC Card, Aircard 580 Modem Mode"},	//
+	{0x1199, 0x0120, "sierra", "3", "4", 1, NULL, "Sierra Wireless AC595U Modem Mode"},	//
+	{0x1199, 0x0218, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC5720 Wireless Modem"},	//
+	{0x1199, 0x0220, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0224, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6802, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6803, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8765 Modem Mode"},	//
+	{0x1199, 0x6804, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6805, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8765 Modem Mode"},	//
+	{0x1199, 0x6808, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6809, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
+	{0x1199, 0x6812, "sierra", "0", "2", 1, &reset_mc, "Sierra Wireless MC8775V"},	//
+	{0x1199, 0x6813, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
+	{0x1199, 0x6815, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
+	{0x1199, 0x6816, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8775 Modem Mode"},	//
+	{0x1199, 0x6820, "sierra", "0", "2", 1, NULL, "Sierra Wireless AC875 Modem Mode"},	//
+	{0x1199, 0x6821, "sierra", "2", "0", 1, NULL, "Sierra Wireless AC875U Modem Mode"},	//
+	{0x1199, 0x6822, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6832, "sierra", "2", "0", 1, &reset_mc, "Sierra Wireless MC8780 Modem Mode"},	//
+	{0x1199, 0x6833, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC8781 Modem Mode"},	//
+	{0x1199, 0x6834, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6835, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6838, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6839, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x683a, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC8785 Modem Mode"},	//
+	{0x1199, 0x683b, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC8785 Composite Modem Mode"},	//
+	{0x1199, 0x683c, "sierra", "3", "4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x683d, "sierra", "3", "4", 1, &reset_mc, "Sierra Wireless MC8791 Composite"},	//
+	{0x1199, 0x683e, "sierra", "3", "4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x6850, "sierra", "2", "0", 1, NULL, "Sierra Wireless AirCard 880 Modem Mode"},	//
+	{0x1199, 0x6851, "sierra", "2", "0", 1, NULL, "Sierra Wireless AirCard 881 Modem Mode"},	//
+	{0x1199, 0x6852, "sierra", "2", "0", 1, NULL, "Sierra Wireless AirCard 880E Modem Mode"},	//
+	{0x1199, 0x6853, "sierra", "2", "0", 1, NULL, "Sierra Wireless AirCard 881E Modem Mode"},	//
+	{0x1199, 0x6855, "sierra", "2", "0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6856, "sierra", "2", "0", 1, NULL, "Sierra Wireless ATT USB Connect 881 Modem Mode"},	//
+	{0x1199, 0x6859, "sierra", "2", "0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x685a, "sierra", "2", "0", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x6880, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 885"},	//
+	{0x1199, 0x6890, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 888"},	//
+	{0x1199, 0x6893, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},	//
+//      {0x1199, 0x68a3, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},   //alternate variant
+	{0x1199, 0x68a3, "sierra", "2", "0", 1, &reset_mc, "Sierra Wireless MC8700"},	//
 //option/huawei
-	{0x12d1, 0x1001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E600/E620 or generic"},	//
-	{0x12d1, 0x1003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E172/EC27/E220/E230/E270 HSDPA/HSUPA Model"},	//
-	{0x12d1, 0x1009, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option U120"},	//
-	{0x12d1, 0x101e, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI U7510 / U7517"},	//
-	{0x12d1, 0x1031, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI U8110 (Android smartphone)"},	//
-	{0x12d1, 0x1035, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI U8110 (Android smartphone)"},	//
-	{0x12d1, 0x1414, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E180"},	//
-	{0x12d1, 0x1406, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
-	{0x12d1, 0x140b, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option EC1260 Wireless Data Modem HSD USB Card"},	//
-	{0x12d1, 0x140c, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
-	{0x12d1, 0x1412, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option EC168"},	//
-	{0x12d1, 0x141b, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
-	{0x12d1, 0x14ac, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option newer modems"},	//
-	{0x12d1, 0x14ae, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Vodafone (Huawei) K3806"},	//
-	{0x12d1, 0x1446, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "HUAWEI/Option E1552 HSPA Modem"},	//
-	{0x12d1, 0x14ad, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Vodafone (Huawei) K3806"},	//
-	{0x12d1, 0x14c1, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
-	{0x12d1, 0x14c6, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Vodafone (Huawei) K4605"},	//
-	{0x12d1, 0x1520, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei K3765"},	//
-	{0x12d1, 0x1465, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei K3765"},	//
-	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei K4505"},	//
-	{0x12d1, 0x1464, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei K4505"},	//
-	{0x12d1, 0x1521, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei R201"},	//
-	{0x12d1, 0x1491, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei R201"},	//
-	{0x12d1, 0x1557, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_huawei, "Huawei E173"},	//
-	{0x12d1, 0x14a5, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Huawei E173"},	//
+	{0x12d1, 0x1001, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E600/E620 or generic"},	//
+	{0x12d1, 0x1003, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E172/EC27/E220/E230/E270 HSDPA/HSUPA Model"},	//
+	{0x12d1, 0x1009, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option U120"},	//
+	{0x12d1, 0x101e, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI U7510 / U7517"},	//
+	{0x12d1, 0x1031, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI U8110 (Android smartphone)"},	//
+	{0x12d1, 0x1035, "option", "0", "0", 2, NULL, "HUAWEI U8110 (Android smartphone)"},	//
+	{0x12d1, 0x1414, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E180"},	//
+	{0x12d1, 0x1406, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x140b, "option", "0", "0", 2, NULL, "HUAWEI/Option EC1260 Wireless Data Modem HSD USB Card"},	//
+	{0x12d1, 0x140c, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x1412, "option", "0", "0", 2, NULL, "HUAWEI/Option EC168"},	//
+	{0x12d1, 0x141b, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x14ac, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x14ae, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3806"},	//
+	{0x12d1, 0x1446, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E1552 HSPA Modem"},	//
+	{0x12d1, 0x14ad, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K3806"},	//
+	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x14c6, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x1520, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K3765"},	//
+	{0x12d1, 0x1465, "option", "0", "0", 2, NULL, "Huawei K3765"},	//
+	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K4505"},	//
+	{0x12d1, 0x1464, "option", "0", "0", 2, NULL, "Huawei K4505"},	//
+	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei R201"},	//
+	{0x12d1, 0x1491, "option", "0", "0", 2, NULL, "Huawei R201"},	//
+	{0x12d1, 0x1557, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173"},	//
+	{0x12d1, 0x14a5, "option", "0", "0", 2, NULL, "Huawei E173"},	//
 
-	{0x0af0, 0x7011, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
+	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
 
+	{0x1410, 0x5010, "option", "0", "0", 2, &modeswitch_usb760, "Novatel CDROM Mode"},	//
+	{0x1410, 0x5020, "option", "0", "0", 2, &modeswitch_usb760, "Novatel MC990D CDROM Mode"},	//
+	{0x1410, 0x5030, "option", "0", "0", 2, &modeswitch_usb760, "Novatel USB760 CDROM Mode"},	//
+	{0x1410, 0x5031, "option", "0", "0", 2, &modeswitch_usb760, "Novatel USB760 3G CDROM Mode"},	//
+	{0x1410, 0x5041, "option", "0", "0", 2, &modeswitch_usb760, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 CDROM Mode"},	//
+	{0x1410, 0x4100, "option", "0", "0", 2, NULL, "Novatel U727 Modem Mode"},	//
+	{0x1410, 0x4400, "option", "0", "0", 2, NULL, "Novatel Ovation MC930D/MC950D Modem Mode"},	//
 
-	{0x1410, 0x5010, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel CDROM Mode"},	//
-	{0x1410, 0x5020, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel MC990D CDROM Mode"},	//
-	{0x1410, 0x5030, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel USB760 CDROM Mode"},	//
-	{0x1410, 0x5031, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel USB760 3G CDROM Mode"},	//
-	{0x1410, 0x5041, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, &modeswitch_usb760, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 CDROM Mode"},	//
-	{0x1410, 0x4100, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel U727 Modem Mode"},	//
-	{0x1410, 0x4400, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel Ovation MC930D/MC950D Modem Mode"},	//
+	{0x1410, 0x7001, "option", "0", "0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
+	{0x1410, 0x7003, "option", "0", "0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
 
-	{0x1410, 0x7001, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
-	{0x1410, 0x7003, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
-
-	{0x1410, 0x6000, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel USB760 Modem Mode"},	//
-	{0x1410, 0x6002, "option", "/dev/usb/tts/0", "/dev/usb/tts/0", 2, NULL, "Novatel USB760 3G Modem Mode"},	//
+	{0x1410, 0x6000, "option", "0", "0", 2, NULL, "Novatel USB760 Modem Mode"},	//
+	{0x1410, 0x6002, "option", "0", "0", 2, NULL, "Novatel USB760 3G Modem Mode"},	//
 //qualcomm
-	{0x1e0e, 0x9000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
-	{0x1e0e, 0x9200, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
-	{0x1e0e, 0xf000, "option", "/dev/usb/tts/2", "/dev/usb/tts/2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
+	{0x1e0e, 0x9000, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
+	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
+	{0x1e0e, 0xf000, "option", "2", "2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
 //ericsson
-	{0x0bdb, 0x1900, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
-	{0x0bdb, 0x1902, "option", "/dev/usb/tts/4", "/dev/usb/tts/4", 0, NULL, "Ericsson F3507g"},	//
+	{0x0bdb, 0x1900, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
+	{0x0bdb, 0x1902, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
 //ONDA
-	{0x19d2, 0x2000, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
-	{0x19d2, 0x0001, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0002, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE ET502HS/MT505UP/MF632"},	//
-	{0x19d2, 0x0003, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MU351 (cdrom mode)"},	//
-	{0x19d2, 0x0015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0016, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0017, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0022, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K2525 (modem mode)"},	//
-	{0x19d2, 0x0026, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE AC581 (cdrom mode)"},	//
-	{0x19d2, 0x0031, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF110/MF112 (Variant) (modem mode)"},	//
-	{0x19d2, 0x0037, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0040, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K2525 (cdrom mode)"},	//
-	{0x19d2, 0x0052, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0053, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (modem mode)"},	//
-	{0x19d2, 0x0055, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0063, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone K3565-Z HSDPA (modem mode)"},	// tested, working. i hope the other ZDA devices are working in the same way
-	{0x19d2, 0x0064, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
-	{0x19d2, 0x0083, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (cdrom mode)"},	//
-	{0x19d2, 0x0094, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE AC581 (modem mode)"},	//
-	{0x19d2, 0x0101, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K4505-Z (cdrom mode)"},	//
-	{0x19d2, 0x0103, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MF112 (cdrom mode)"},	//
-	{0x19d2, 0x0104, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K4505-Z (modem mode)"},	//
-	{0x19d2, 0x0108, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0115, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0116, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF651 (cdrom mode)"},	//
-	{0x19d2, 0x0128, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF651 (modem mode)"},	//
-	{0x19d2, 0x0124, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF110 (Variant) (modem mode)"},	//
-	{0x19d2, 0x1001, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3805-Z (cdrom mode)"},	//
-	{0x19d2, 0x1003, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3805-Z (modem mode)"},	//
-	{0x19d2, 0x1007, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3570-Z (cdrom mode)"},	//
-	{0x19d2, 0x1008, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3570-Z (modem mode)"},	//
-	{0x19d2, 0x1009, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3571-Z (cdrom mode)"},	//
-	{0x19d2, 0x1010, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3571-Z (modem mode)"},	//
-	{0x19d2, 0x1013, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3806-Z (cdrom mode)"},	//
-	{0x19d2, 0x1015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3806-Z (modem mode)"},	//
-	{0x19d2, 0xfff5, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
-	{0x19d2, 0xfff6, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
-	{0x19d2, 0xfff1, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE generic (modem mode)"},	//
-	{0x19d2, 0xffff, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE generic (modem mode)"},	//
+	{0x19d2, 0x2000, "option", "1", "3", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
+	{0x19d2, 0x0001, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0002, "option", "1", "3", 2, NULL, "ZTE ET502HS/MT505UP/MF632"},	//
+	{0x19d2, 0x0003, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MU351 (cdrom mode)"},	//
+	{0x19d2, 0x0015, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0016, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0017, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0022, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K2525 (modem mode)"},	//
+	{0x19d2, 0x0026, "option", "1", "3", 2, &modeswitch_onda2, "ZTE AC581 (cdrom mode)"},	//
+	{0x19d2, 0x0031, "option", "1", "3", 2, NULL, "ZTE MF110/MF112 (Variant) (modem mode)"},	//
+	{0x19d2, 0x0037, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0040, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K2525 (cdrom mode)"},	//
+	{0x19d2, 0x0052, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0053, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (modem mode)"},	//
+	{0x19d2, 0x0055, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0063, "option", "1", "3", 2, NULL, "Vodafone K3565-Z HSDPA (modem mode)"},	// tested, working. i hope the other ZDA devices are working in the same way
+	{0x19d2, 0x0064, "option", "1", "3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
+	{0x19d2, 0x0083, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (cdrom mode)"},	//
+	{0x19d2, 0x0094, "option", "1", "3", 2, NULL, "ZTE AC581 (modem mode)"},	//
+	{0x19d2, 0x0101, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K4505-Z (cdrom mode)"},	//
+	{0x19d2, 0x0103, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MF112 (cdrom mode)"},	//
+	{0x19d2, 0x0104, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K4505-Z (modem mode)"},	//
+	{0x19d2, 0x0108, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0115, "option", "1", "3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0116, "option", "1", "3", 2, NULL, "ZTE MF651 (cdrom mode)"},	//
+	{0x19d2, 0x0128, "option", "1", "3", 2, NULL, "ZTE MF651 (modem mode)"},	//
+	{0x19d2, 0x0124, "option", "1", "3", 2, NULL, "ZTE MF110 (Variant) (modem mode)"},	//
+	{0x19d2, 0x1001, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3805-Z (cdrom mode)"},	//
+	{0x19d2, 0x1003, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3805-Z (modem mode)"},	//
+	{0x19d2, 0x1007, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3570-Z (cdrom mode)"},	//
+	{0x19d2, 0x1008, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3570-Z (modem mode)"},	//
+	{0x19d2, 0x1009, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3571-Z (cdrom mode)"},	//
+	{0x19d2, 0x1010, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3571-Z (modem mode)"},	//
+	{0x19d2, 0x1013, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3806-Z (cdrom mode)"},	//
+	{0x19d2, 0x1015, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3806-Z (modem mode)"},	//
+	{0x19d2, 0xfff5, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
+	{0x19d2, 0xfff6, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
+	{0x19d2, 0xfff1, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
+	{0x19d2, 0xffff, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
 
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
@@ -463,9 +488,17 @@ char *get3GControlDevice(void)
 				insmod("usbserial");
 				insmod(devicelist[devicecount].driver);
 			}
-			if (devicelist[devicecount].datadevice)
-				nvram_set("3gdata",
-					  devicelist[devicecount].datadevice);
+			if (devicelist[devicecount].datadevice) {
+				static char data[32];
+				if (!strcmp
+				    (devicelist[devicecount].datadevice, "hso"))
+					sprintf(data, "hso");
+				else
+					sprintf(data, "/dev/usb/tts/%s",
+						devicelist[devicecount].
+						datadevice);
+				nvram_set("3gdata", data);
+			}
 			if (devicelist[devicecount].modeswitch) {
 				char variant[32];
 				sprintf(variant, "%d",
@@ -476,9 +509,15 @@ char *get3GControlDevice(void)
 			if (devicelist[devicecount].customsetup)
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].
-								    controldevice);
-			return devicelist[devicecount].controldevice;
+								    [devicecount].controldevice);
+			static char control[32];
+			if (!strcmp
+			    (devicelist[devicecount].controldevice, "hso"))
+				sprintf(control, "hso");
+			else
+				sprintf(control, "/dev/usb/tts/%s",
+					devicelist[devicecount].controldevice);
+			return control;
 		}
 		devicecount++;
 	}
