@@ -348,41 +348,42 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x2000, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
 	{0x19d2, 0x0001, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0002, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE ET502HS/MT505UP/MF632"},	//
+	{0x19d2, 0x0003, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MU351 (cdrom mode)"},	//
 	{0x19d2, 0x0015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0016, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0017, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0022, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0026, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0031, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF636"},	//
+	{0x19d2, 0x0022, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K2525 (modem mode)"},	//
+	{0x19d2, 0x0026, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE AC581 (cdrom mode)"},	//
+	{0x19d2, 0x0031, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF110/MF112 (Variant) (modem mode)"},	//
 	{0x19d2, 0x0037, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0040, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0040, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K2525 (cdrom mode)"},	//
 	{0x19d2, 0x0052, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0053, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0053, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (modem mode)"},	//
 	{0x19d2, 0x0055, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0063, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone K3565-Z HSDPA (modem mode)"},	// tested, working. i hope the other ZDA devices are working in the same way
 	{0x19d2, 0x0064, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
-	{0x19d2, 0x0083, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0094, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
-	{0x19d2, 0x0101, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0103, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0104, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0083, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (cdrom mode)"},	//
+	{0x19d2, 0x0094, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE AC581 (modem mode)"},	//
+	{0x19d2, 0x0101, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K4505-Z (cdrom mode)"},	//
+	{0x19d2, 0x0103, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE MF112 (cdrom mode)"},	//
+	{0x19d2, 0x0104, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K4505-Z (modem mode)"},	//
 	{0x19d2, 0x0108, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0115, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0116, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0128, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0124, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1001, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1003, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1007, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1008, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1009, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1010, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1013, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x1015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0xfff5, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0xfff6, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0xfff1, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0xffff, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0116, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF651 (cdrom mode)"},	//
+	{0x19d2, 0x0128, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF651 (modem mode)"},	//
+	{0x19d2, 0x0124, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE MF110 (Variant) (modem mode)"},	//
+	{0x19d2, 0x1001, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3805-Z (cdrom mode)"},	//
+	{0x19d2, 0x1003, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3805-Z (modem mode)"},	//
+	{0x19d2, 0x1007, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3570-Z (cdrom mode)"},	//
+	{0x19d2, 0x1008, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3570-Z (modem mode)"},	//
+	{0x19d2, 0x1009, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3571-Z (cdrom mode)"},	//
+	{0x19d2, 0x1010, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3571-Z (modem mode)"},	//
+	{0x19d2, 0x1013, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3806-Z (cdrom mode)"},	//
+	{0x19d2, 0x1015, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "Vodafone (ZTE) K3806-Z (modem mode)"},	//
+	{0x19d2, 0xfff5, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
+	{0x19d2, 0xfff6, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
+	{0x19d2, 0xfff1, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE generic (modem mode)"},	//
+	{0x19d2, 0xffff, "option", "/dev/usb/tts/1", "/dev/usb/tts/3", 2, NULL, "ZTE generic (modem mode)"},	//
 
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
