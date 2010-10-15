@@ -138,14 +138,19 @@ static int usb_process_path(char *path, char *fs)
 	}
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
-		insmod("fuse");
 		ret = eval("ntfs-3g", path, mount_point);
 	} else
 #endif
 		ret = eval("/bin/mount", "-t", fs, path, mount_point);
 
-	if (ret != 0)		//give it another try
+	if (ret != 0) {		//give it another try
+#ifdef HAVE_NTFS3G
+	if (!strcmp(fs, "ntfs")) {
+		ret = eval("ntfs-3g", path, mount_point);
+	} else
+#endif
 		ret = eval("/bin/mount", path, mount_point);	//guess fs
+	}
 	system("echo 4096 > /proc/sys/vm/min_free_kbytes");	// avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram to 4096. everything else can be used for fs cache
 	eval("startservice", "samba3");
 	eval("startservice", "ftpsrv");
