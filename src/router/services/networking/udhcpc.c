@@ -179,7 +179,7 @@ static int bound(void)
 		char *callbuffer = malloc(strlen(cidr) + 128);
 		sprintf(callbuffer,
 			"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",
-			cidr, ifname);
+			cidr, wan_ifname);
 		system(callbuffer);
 		free(callbuffer);
 	}
