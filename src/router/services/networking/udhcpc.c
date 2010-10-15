@@ -173,6 +173,16 @@ static int bound(void)
 	static char temp_wan_ipaddr[16], temp_wan_netmask[16],
 	    temp_wan_gateway[16];
 	int changed = 0;
+	static char *cidr;
+	cidr = getenv("cidrroute");
+	if (cidr && wan_ifname) {
+		char *callbuffer = malloc(strlen(cidr) + 128);
+		sprintf(callbuffer,
+			"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",
+			cidr, ifname);
+		system(callbuffer);
+		free(callbuffer);
+	}
 
 	if ((value = getenv("ip"))) {
 		chomp(value);
