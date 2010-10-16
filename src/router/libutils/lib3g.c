@@ -134,8 +134,7 @@ static void modeswitch_onda(int needreset, char *controldev)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 
-	fprintf(out, "DefaultVendor=0x1e0e\n"
-		"DefaultVendor=0x19d2\n"
+	fprintf(out, "DefaultVendor=0x19d2\n"
 		"DefaultProduct=0x2000\n"
 		"TargetVendor=0x19d2\n"
 		"TargetProductList=\"0001,0002,0015,0016,0017,0031,0037,0052,0055,0063,0064,0108,0128\"\n"
