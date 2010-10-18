@@ -1,3 +1,7 @@
+#ifdef __UCLIBC_HAS_LFS__
+#define _FILE_OFFFSET_BITS 64
+#define __USE_LARGEFILE64
+#endif
 
 /*
  * Broadcom Home Gateway Reference Design
@@ -197,20 +201,20 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
 	//backup nvram
 	fprintf(stderr, "backup nvram\n");
-	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
 		char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		in = fopen(drive, "r+b");
-		fseek(in, 0, SEEK_END);
-		long mtdlen = ftell(in);
-		fseek(in, mtdlen - (65536 * 2), SEEK_SET);
+		in = fopen64(drive, "r+b");
+		fseeko64(in, 0, SEEK_END);
+		__off64_t mtdlen = ftello64(in);
+		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
 		fwrite(mem, 65536, 1, in);
 		fclose(in);
 		eval("sync");
-		in = fopen(drive, "rb");
-		fseek(in, mtdlen - (65536 * 2), SEEK_SET);
+		in = fopen64(drive, "rb");
+		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
 		fread(mem, 65536, 1, in);
 		fclose(in);
 		free(mem);
