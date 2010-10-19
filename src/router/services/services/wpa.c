@@ -154,6 +154,8 @@ void start_radius(char *prefix)
 
 void start_nas_single(char *type, char *prefix);
 
+
+
 static void convert_wds(int instance)
 {
 	char wds_mac[254];
@@ -514,6 +516,7 @@ void start_nas_single(char *type, char *prefix)
 		pid_t pid;
 		FILE *fp = { 0 };
 		if (!strcmp(mode, "-S")) {
+
 			char **argv;
 
 			if (nvram_nmatch("wet", "%s_mode", prefix)
@@ -543,10 +546,12 @@ void start_nas_single(char *type, char *prefix)
 
 			}
 			_evalpid(argv, NULL, 0, &pid);
+
 		} else {
 			if (!strcmp(auth_mode, "2")
 			    || !strcmp(auth_mode, "64")
 			    || !strcmp(auth_mode, "66")) {
+
 				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
@@ -584,11 +589,13 @@ void start_nas_single(char *type, char *prefix)
 					};
 					_evalpid(argv, NULL, 0, &pid);
 				}
+
 			} else if (!strcmp(auth_mode, "32")) {
 				int idx = atoi(nvram_safe_get(index));
 				char wepkey[32];
 
 				sprintf(wepkey, "%s_key%d", prefix, idx);
+
 				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
@@ -632,7 +639,9 @@ void start_nas_single(char *type, char *prefix)
 					_evalpid(argv, NULL, 0, &pid);
 
 				}
+
 			} else {
+				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
 						iface, mode,
@@ -661,6 +670,7 @@ void start_nas_single(char *type, char *prefix)
 					};
 					_evalpid(argv, NULL, 0, &pid);
 				}
+
 			}
 
 		}
