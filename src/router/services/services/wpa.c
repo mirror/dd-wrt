@@ -154,8 +154,6 @@ void start_radius(char *prefix)
 
 void start_nas_single(char *type, char *prefix);
 
-// #define HAVE_NASCONF //use this to parse nas parameters from conf file. 
-
 static void convert_wds(int instance)
 {
 	char wds_mac[254];
@@ -412,10 +410,6 @@ void start_nas(void)
 void start_nas_single(char *type, char *prefix)
 {
 	FILE *fnas;
-#ifdef HAVE_NASCONF
-	char conffile[64];
-	FILE *conf;
-#endif
 	char pidfile[64];
 	char *auth_mode = "255";	/* -m N = WPA authorization mode (N = 0:
 					 * none, 1: 802.1x, 2: WPA PSK, 255:
@@ -436,10 +430,6 @@ void start_nas_single(char *type, char *prefix)
 	}
 
 	snprintf(pidfile, sizeof(pidfile), "/tmp/nas.%s%s.pid", prefix, type);
-#ifdef HAVE_NASCONF
-	snprintf(conffile, sizeof(conffile), "/tmp/nas.%s%s.conf",
-		 prefix, type);
-#endif
 
 	char apmode[32];
 
@@ -524,7 +514,6 @@ void start_nas_single(char *type, char *prefix)
 		pid_t pid;
 		FILE *fp = { 0 };
 		if (!strcmp(mode, "-S")) {
-#ifndef HAVE_NASCONF
 			char **argv;
 
 			if (nvram_nmatch("wet", "%s_mode", prefix)
@@ -554,27 +543,13 @@ void start_nas_single(char *type, char *prefix)
 
 			}
 			_evalpid(argv, NULL, 0, &pid);
-#else
-			conf = fopen(conffile, "w");
-			fprintf(conf,
-				"-H 34954 -i %s %s -m %s -k %s -s %s -w %s -g %s\n",
-				iface, mode, auth_mode, key,
-				nvram_safe_get(ssid), sec_mode,
-				nvram_safe_get(rekey));
-			fclose(conf);
-			char *argv[] =
-			    { "nas", conffile, pidfile, "wan", NULL };
-			_evalpid(argv, NULL, 0, &pid);
-#endif
 		} else {
 			if (!strcmp(auth_mode, "2")
 			    || !strcmp(auth_mode, "64")
 			    || !strcmp(auth_mode, "66")) {
-#ifndef HAVE_NASCONF
-				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
-						iface, mode,
+						nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface), mode,
 						"-m",
 						auth_mode, "-r", key,
 						"-s",
@@ -589,52 +564,14 @@ void start_nas_single(char *type, char *prefix)
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
-				} else {
-					char *argv[] = { "nas", "-P", pidfile,
-						"-H", "34954", "-l",
-						getBridge(iface), "-i",
-						iface, mode, "-m",
-						auth_mode, "-r", key,
-						"-s",
-						nvram_safe_get(ssid),
-						"-w",
-						sec_mode, "-g",
-						nvram_safe_get(rekey), "-h",
-						nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
-						// //radius 
-						// rekey 
-						// time
-						NULL
-					};
-					_evalpid(argv, NULL, 0, &pid);
-				}
-#else
-				conf = fopen(conffile, "w");
-				fprintf(conf,
-					"-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -g %s -h %s -p %s\n",
-					getBridge(iface), iface, mode,
-					auth_mode, key,
-					nvram_safe_get(ssid), sec_mode,
-					nvram_safe_get(rekey),
-					nvram_safe_get(radius),
-					nvram_safe_get(port));
-				fclose(conf);
-				char *argv[] =
-				    { "nas", conffile, pidfile, "lan",
-					NULL
-				};
-				_evalpid(argv, NULL, 0, &pid);
-#endif
 			} else if (!strcmp(auth_mode, "32")) {
 				int idx = atoi(nvram_safe_get(index));
 				char wepkey[32];
 
 				sprintf(wepkey, "%s_key%d", prefix, idx);
-#ifndef HAVE_NASCONF
-				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
-						iface, mode,
+						nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface), mode,
 						"-m",
 						auth_mode, "-r", key,
 						"-s",
@@ -651,53 +588,11 @@ void start_nas_single(char *type, char *prefix)
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
-				} else {
-					char *argv[] = { "nas", "-P", pidfile,
-						"-H", "34954", "-l",
-						getBridge(iface), "-i",
-						iface, mode, "-m",
-						auth_mode, "-r", key,
-						"-s",
-						nvram_safe_get(ssid),
-						"-w",
-						sec_mode, "-I",
-						nvram_safe_get(index), "-k",
-						nvram_safe_get(wepkey),
-						"-h",
-						nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
-						// //radius 
-						// rekey 
-						// time
-						NULL
-					};
 
-					_evalpid(argv, NULL, 0, &pid);
-
-				}
-#else
-				conf = fopen(conffile, "w");
-				fprintf(conf,
-					"-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -I %s -k %s -h %s -p %s\n",
-					getBridge(iface), iface, mode,
-					auth_mode, key,
-					nvram_safe_get(ssid), sec_mode,
-					nvram_safe_get(index),
-					nvram_safe_get(wepkey),
-					nvram_safe_get(radius),
-					nvram_safe_get(port));
-				fclose(conf);
-				char *argv[] =
-				    { "nas", conffile, pidfile, "lan",
-					NULL
-				};
-				_evalpid(argv, NULL, 0, &pid);
-#endif
 			} else {
-#ifndef HAVE_NASCONF
-				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
-						iface, mode,
+						nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface), mode,
 						"-m",
 						auth_mode, "-k", key,
 						"-s",
@@ -708,36 +603,6 @@ void start_nas_single(char *type, char *prefix)
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
-				} else {
-					char *argv[] = { "nas", "-P", pidfile,
-						"-H", "34954", "-l",
-						getBridge(iface), "-i",
-						iface, mode, "-m",
-						auth_mode, "-k", key,
-						"-s",
-						nvram_safe_get(ssid),
-						"-w",
-						sec_mode, "-g",
-						nvram_safe_get(rekey),
-						NULL
-					};
-					_evalpid(argv, NULL, 0, &pid);
-				}
-#else
-				conf = fopen(conffile, "w");
-				fprintf(conf,
-					"-H 34954 -l %s -i %s %s -m %s -k %s -s %s -w %s -g %s\n",
-					getBridge(iface), iface, mode,
-					auth_mode, key,
-					nvram_safe_get(ssid), sec_mode,
-					nvram_safe_get(rekey));
-				fclose(conf);
-				char *argv[] =
-				    { "nas", conffile, pidfile, "lan",
-					NULL
-				};
-				_evalpid(argv, NULL, 0, &pid);
-#endif
 			}
 
 		}
@@ -773,26 +638,12 @@ void stop_nas(void)
 	unlink("/tmp/nas.wl0lan.pid");
 	unlink("/tmp/nas.wl1wan.pid");
 	unlink("/tmp/nas.wl1lan.pid");
-#ifdef HAVE_NASCONF
-	unlink("/tmp/nas.wl0wan.conf");
-	unlink("/tmp/nas.wl0lan.conf");
-	unlink("/tmp/nas.wl1wan.conf");
-	unlink("/tmp/nas.wl1lan.conf");
-#endif
 	unlink("/tmp/nas.wl0.1lan.pid");
 	unlink("/tmp/nas.wl0.2lan.pid");
 	unlink("/tmp/nas.wl0.3lan.pid");
 	unlink("/tmp/nas.wl1.1lan.pid");
 	unlink("/tmp/nas.wl1.2lan.pid");
 	unlink("/tmp/nas.wl1.3lan.pid");
-#ifdef HAVE_NASCONF
-	unlink("/tmp/nas.wl0.1lan.conf");
-	unlink("/tmp/nas.wl0.2lan.conf");
-	unlink("/tmp/nas.wl0.3lan.conf");
-	unlink("/tmp/nas.wl1.1lan.conf");
-	unlink("/tmp/nas.wl1.2lan.conf");
-	unlink("/tmp/nas.wl1.3lan.conf");
-#endif
 
 	cprintf("done\n");
 	return;
