@@ -547,9 +547,10 @@ void start_nas_single(char *type, char *prefix)
 			if (!strcmp(auth_mode, "2")
 			    || !strcmp(auth_mode, "64")
 			    || !strcmp(auth_mode, "66")) {
+				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
-						nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface), mode,
+						iface, mode,
 						"-m",
 						auth_mode, "-r", key,
 						"-s",
@@ -564,14 +565,34 @@ void start_nas_single(char *type, char *prefix)
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
+				} else {
+					char *argv[] = { "nas", "-P", pidfile,
+						"-H", "34954", "-l",
+						getBridge(iface), "-i",
+						iface, mode, "-m",
+						auth_mode, "-r", key,
+						"-s",
+						nvram_safe_get(ssid),
+						"-w",
+						sec_mode, "-g",
+						nvram_safe_get(rekey), "-h",
+						nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
+						// //radius 
+						// rekey 
+						// time
+						NULL
+					};
+					_evalpid(argv, NULL, 0, &pid);
+				}
 			} else if (!strcmp(auth_mode, "32")) {
 				int idx = atoi(nvram_safe_get(index));
 				char wepkey[32];
 
 				sprintf(wepkey, "%s_key%d", prefix, idx);
+				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
-						nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface), mode,
+						iface, mode,
 						"-m",
 						auth_mode, "-r", key,
 						"-s",
@@ -588,11 +609,33 @@ void start_nas_single(char *type, char *prefix)
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
+				} else {
+					char *argv[] = { "nas", "-P", pidfile,
+						"-H", "34954", "-l",
+						getBridge(iface), "-i",
+						iface, mode, "-m",
+						auth_mode, "-r", key,
+						"-s",
+						nvram_safe_get(ssid),
+						"-w",
+						sec_mode, "-I",
+						nvram_safe_get(index), "-k",
+						nvram_safe_get(wepkey),
+						"-h",
+						nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
+						// //radius 
+						// rekey 
+						// time
+						NULL
+					};
 
+					_evalpid(argv, NULL, 0, &pid);
+
+				}
 			} else {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-i",
-						nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface), mode,
+						iface, mode,
 						"-m",
 						auth_mode, "-k", key,
 						"-s",
@@ -603,6 +646,21 @@ void start_nas_single(char *type, char *prefix)
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
+				} else {
+					char *argv[] = { "nas", "-P", pidfile,
+						"-H", "34954", "-l",
+						getBridge(iface), "-i",
+						iface, mode, "-m",
+						auth_mode, "-k", key,
+						"-s",
+						nvram_safe_get(ssid),
+						"-w",
+						sec_mode, "-g",
+						nvram_safe_get(rekey),
+						NULL
+					};
+					_evalpid(argv, NULL, 0, &pid);
+				}
 			}
 
 		}
