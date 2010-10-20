@@ -2487,6 +2487,26 @@
 #define NID_aes_256_cfb128		429
 #define OBJ_aes_256_cfb128		OBJ_aes,44L
 
+#define SN_aes_512_ecb		"AES-512-ECB"
+#define LN_aes_512_ecb		"aes-512-ecb"
+#define NID_aes_512_ecb		859
+#define OBJ_aes_512_ecb		OBJ_aes,61L
+
+#define SN_aes_512_cbc		"AES-512-CBC"
+#define LN_aes_512_cbc		"aes-512-cbc"
+#define NID_aes_512_cbc		860
+#define OBJ_aes_512_cbc		OBJ_aes,62L
+
+#define SN_aes_512_ofb128		"AES-512-OFB"
+#define LN_aes_512_ofb128		"aes-512-ofb"
+#define NID_aes_512_ofb128		864
+#define OBJ_aes_512_ofb128		OBJ_aes,63L
+
+#define SN_aes_512_cfb128		"AES-512-CFB"
+#define LN_aes_512_cfb128		"aes-512-cfb"
+#define NID_aes_512_cfb128		865
+#define OBJ_aes_512_cfb128		OBJ_aes,64L
+
 #define SN_aes_128_cfb1		"AES-128-CFB1"
 #define LN_aes_128_cfb1		"aes-128-cfb1"
 #define NID_aes_128_cfb1		650
@@ -2499,6 +2519,10 @@
 #define LN_aes_256_cfb1		"aes-256-cfb1"
 #define NID_aes_256_cfb1		652
 
+#define SN_aes_512_cfb1		"AES-512-CFB1"
+#define LN_aes_512_cfb1		"aes-512-cfb1"
+#define NID_aes_512_cfb1		861
+
 #define SN_aes_128_cfb8		"AES-128-CFB8"
 #define LN_aes_128_cfb8		"aes-128-cfb8"
 #define NID_aes_128_cfb8		653
@@ -2510,6 +2534,10 @@
 #define SN_aes_256_cfb8		"AES-256-CFB8"
 #define LN_aes_256_cfb8		"aes-256-cfb8"
 #define NID_aes_256_cfb8		655
+
+#define SN_aes_512_cfb8		"AES-512-CFB8"
+#define LN_aes_512_cfb8		"aes-512-cfb8"
+#define NID_aes_512_cfb8		862
 
 #define SN_des_cfb1		"DES-CFB1"
 #define LN_des_cfb1		"des-cfb1"
@@ -2538,6 +2566,10 @@
 #define SN_id_aes256_wrap		"id-aes256-wrap"
 #define NID_id_aes256_wrap		790
 #define OBJ_id_aes256_wrap		OBJ_aes,45L
+
+#define SN_id_aes512_wrap		"id-aes512-wrap"
+#define NID_id_aes512_wrap		863
+#define OBJ_id_aes512_wrap		OBJ_aes,65L
 
 #define OBJ_nist_hashalgs		OBJ_nistAlgorithms,2L
 

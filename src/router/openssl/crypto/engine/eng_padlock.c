@@ -646,6 +646,14 @@ padlock_bswapl(void *key)
 #define NID_aes_256_ofb	NID_aes_256_ofb128
 #endif
 
+#if defined(NID_aes_512_cfb128) && ! defined (NID_aes_512_cfb)
+#define NID_aes_512_cfb	NID_aes_512_cfb128
+#endif
+
+#if defined(NID_aes_512_ofb128) && ! defined (NID_aes_512_ofb)
+#define NID_aes_512_ofb	NID_aes_512_ofb128
+#endif
+
 /* List of supported ciphers. */
 static int padlock_cipher_nids[] = {
 	NID_aes_128_ecb,
@@ -662,6 +670,11 @@ static int padlock_cipher_nids[] = {
 	NID_aes_256_cbc,
 	NID_aes_256_cfb,
 	NID_aes_256_ofb,
+
+	NID_aes_512_ecb,
+	NID_aes_512_cbc,
+	NID_aes_512_cfb,
+	NID_aes_512_ofb,
 };
 static int padlock_cipher_nids_num = (sizeof(padlock_cipher_nids)/
 				      sizeof(padlock_cipher_nids[0]));
@@ -763,6 +776,19 @@ padlock_ciphers (ENGINE *e, const EVP_CIPHER **cipher, const int **nids, int nid
 	    *cipher = &padlock_aes_256_cfb;
 	    break;
 	  case NID_aes_256_ofb:
+	    *cipher = &padlock_aes_256_ofb;
+	    break;
+
+	  case NID_aes_512_ecb:
+	    *cipher = &padlock_aes_256_ecb;
+	    break;
+	  case NID_aes_512_cbc:
+	    *cipher = &padlock_aes_256_cbc;
+	    break;
+	  case NID_aes_512_cfb:
+	    *cipher = &padlock_aes_256_cfb;
+	    break;
+	  case NID_aes_512_ofb:
 	    *cipher = &padlock_aes_256_ofb;
 	    break;
 

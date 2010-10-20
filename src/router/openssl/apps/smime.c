@@ -164,6 +164,8 @@ int MAIN(int argc, char **argv)
 				cipher = EVP_aes_192_cbc();
 		else if (!strcmp(*args,"-aes256"))
 				cipher = EVP_aes_256_cbc();
+		else if (!strcmp(*args,"-aes512"))
+				cipher = EVP_aes_512_cbc();
 #endif
 #ifndef OPENSSL_NO_CAMELLIA
 		else if (!strcmp(*args,"-camellia128"))

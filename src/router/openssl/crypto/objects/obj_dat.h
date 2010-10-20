@@ -62,12 +62,12 @@
  * [including the GNU Public Licence.]
  */
 
-#define NUM_NID 859
-#define NUM_SN 852
-#define NUM_LN 852
-#define NUM_OBJ 806
+#define NUM_NID 866
+#define NUM_SN 859
+#define NUM_LN 859
+#define NUM_OBJ 811
 
-static unsigned char lvalues[5722]={
+static unsigned char lvalues[5767]={
 0x00,                                        /* [  0] OBJ_undef */
 0x2A,0x86,0x48,0x86,0xF7,0x0D,               /* [  1] OBJ_rsadsi */
 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,          /* [  7] OBJ_pkcs */
@@ -874,6 +874,11 @@ static unsigned char lvalues[5722]={
 0x2B,0x06,0x01,0x04,0x01,0x82,0x37,0x11,0x02,/* [5701] OBJ_LocalKeySet */
 0x55,0x1D,0x2E,                              /* [5710] OBJ_freshest_crl */
 0x2B,0x06,0x01,0x05,0x05,0x07,0x08,0x03,     /* [5713] OBJ_id_on_permanentIdentifier */
+0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x01,0x3D,/* [5721] OBJ_aes_512_ecb */
+0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x01,0x3E,/* [5730] OBJ_aes_512_cbc */
+0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x01,0x41,/* [5739] OBJ_id_aes512_wrap */
+0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x01,0x3F,/* [5748] OBJ_aes_512_ofb128 */
+0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x01,0x40,/* [5757] OBJ_aes_512_cfb128 */
 };
 
 static ASN1_OBJECT nid_objs[NUM_NID]={
@@ -2262,6 +2267,14 @@ static ASN1_OBJECT nid_objs[NUM_NID]={
 	&(lvalues[5710]),0},
 {"id-on-permanentIdentifier","Permanent Identifier",
 	NID_id_on_permanentIdentifier,8,&(lvalues[5713]),0},
+{"AES-512-ECB","aes-512-ecb",NID_aes_512_ecb,9,&(lvalues[5721]),0},
+{"AES-512-CBC","aes-512-cbc",NID_aes_512_cbc,9,&(lvalues[5730]),0},
+{"AES-512-CFB1","aes-512-cfb1",NID_aes_512_cfb1,0,NULL,0},
+{"AES-512-CFB8","aes-512-cfb8",NID_aes_512_cfb8,0,NULL,0},
+{"id-aes512-wrap","id-aes512-wrap",NID_id_aes512_wrap,9,
+	&(lvalues[5739]),0},
+{"AES-512-OFB","aes-512-ofb",NID_aes_512_ofb128,9,&(lvalues[5748]),0},
+{"AES-512-CFB","aes-512-cfb",NID_aes_512_cfb128,9,&(lvalues[5757]),0},
 };
 
 static ASN1_OBJECT *sn_objs[NUM_SN]={
@@ -2284,6 +2297,12 @@ static ASN1_OBJECT *sn_objs[NUM_SN]={
 &(nid_objs[655]),/* "AES-256-CFB8" */
 &(nid_objs[426]),/* "AES-256-ECB" */
 &(nid_objs[428]),/* "AES-256-OFB" */
+&(nid_objs[860]),/* "AES-512-CBC" */
+&(nid_objs[865]),/* "AES-512-CFB" */
+&(nid_objs[861]),/* "AES-512-CFB1" */
+&(nid_objs[862]),/* "AES-512-CFB8" */
+&(nid_objs[859]),/* "AES-512-ECB" */
+&(nid_objs[864]),/* "AES-512-OFB" */
 &(nid_objs[91]),/* "BF-CBC" */
 &(nid_objs[93]),/* "BF-CFB" */
 &(nid_objs[92]),/* "BF-ECB" */
@@ -2618,6 +2637,7 @@ static ASN1_OBJECT *sn_objs[NUM_SN]={
 &(nid_objs[788]),/* "id-aes128-wrap" */
 &(nid_objs[789]),/* "id-aes192-wrap" */
 &(nid_objs[790]),/* "id-aes256-wrap" */
+&(nid_objs[863]),/* "id-aes512-wrap" */
 &(nid_objs[262]),/* "id-alg" */
 &(nid_objs[323]),/* "id-alg-des40" */
 &(nid_objs[326]),/* "id-alg-dh-pop" */
@@ -3280,6 +3300,12 @@ static ASN1_OBJECT *ln_objs[NUM_LN]={
 &(nid_objs[655]),/* "aes-256-cfb8" */
 &(nid_objs[426]),/* "aes-256-ecb" */
 &(nid_objs[428]),/* "aes-256-ofb" */
+&(nid_objs[860]),/* "aes-512-cbc" */
+&(nid_objs[865]),/* "aes-512-cfb" */
+&(nid_objs[861]),/* "aes-512-cfb1" */
+&(nid_objs[862]),/* "aes-512-cfb8" */
+&(nid_objs[859]),/* "aes-512-ecb" */
+&(nid_objs[864]),/* "aes-512-ofb" */
 &(nid_objs[376]),/* "algorithm" */
 &(nid_objs[484]),/* "associatedDomain" */
 &(nid_objs[485]),/* "associatedName" */
@@ -3469,6 +3495,7 @@ static ASN1_OBJECT *ln_objs[NUM_LN]={
 &(nid_objs[788]),/* "id-aes128-wrap" */
 &(nid_objs[789]),/* "id-aes192-wrap" */
 &(nid_objs[790]),/* "id-aes256-wrap" */
+&(nid_objs[863]),/* "id-aes512-wrap" */
 &(nid_objs[262]),/* "id-alg" */
 &(nid_objs[323]),/* "id-alg-des40" */
 &(nid_objs[326]),/* "id-alg-dh-pop" */
@@ -4604,6 +4631,11 @@ static ASN1_OBJECT *obj_objs[NUM_OBJ]={
 &(nid_objs[428]),/* OBJ_aes_256_ofb128               2 16 840 1 101 3 4 1 43 */
 &(nid_objs[429]),/* OBJ_aes_256_cfb128               2 16 840 1 101 3 4 1 44 */
 &(nid_objs[790]),/* OBJ_id_aes256_wrap               2 16 840 1 101 3 4 1 45 */
+&(nid_objs[859]),/* OBJ_aes_512_ecb                  2 16 840 1 101 3 4 1 61 */
+&(nid_objs[860]),/* OBJ_aes_512_cbc                  2 16 840 1 101 3 4 1 62 */
+&(nid_objs[864]),/* OBJ_aes_512_ofb128               2 16 840 1 101 3 4 1 63 */
+&(nid_objs[865]),/* OBJ_aes_512_cfb128               2 16 840 1 101 3 4 1 64 */
+&(nid_objs[863]),/* OBJ_id_aes512_wrap               2 16 840 1 101 3 4 1 65 */
 &(nid_objs[672]),/* OBJ_sha256                       2 16 840 1 101 3 4 2 1 */
 &(nid_objs[673]),/* OBJ_sha384                       2 16 840 1 101 3 4 2 2 */
 &(nid_objs[674]),/* OBJ_sha512                       2 16 840 1 101 3 4 2 3 */
