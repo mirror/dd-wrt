@@ -29,14 +29,21 @@
  */
 
 /* January 12, 2005
- * 
+ *
  * Modified by rodent at rodent dot za dot net
  * Support added for the new WRT54G v2.2 and WRT54GS v1.1 "flags"
  * Without the flags set to 0x7, the above units will refuse to flash.
- * 
+ *
  * Extensions:
  *  -{0|1|2} sets {0|1} sets hw_ver flag to 0/1. {2} sets hw_ver to 1
  *     and adds the new hardware "flags" for the v2.2/v1.1 units
+*/
+
+/* October 20, 2010, Eko, dd-wrt
+ *
+ * Extensions:
+ *  -r allows setting the extra magic on the command line.
+ *     e.g. -r 2.0.0.0 for Linksys E1000v2
 */
 
 #include <stdio.h>
@@ -52,6 +59,7 @@
 #define CODE_PATTERN   "W54S"	/* from code_pattern.h */
 
 #define CYBERTAN_VERSION	"v3.37.2" /* from cyutils.h */
+#define EXTRA_MAGIC       "0.0.0.0"
 
 /* WRT54G v2.2 and WRT54GS v1.1 "flags" (from 3.37.32 firmware cyutils.h) */
 #define SUPPORT_4712_CHIP      0x0001
@@ -78,7 +86,7 @@ void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-p pattern] [-g] [-v v#.#.#] [-{0|1|2|4}]\n");
+	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-p pattern] [-r #.#.#.#] [-g] [-v v#.#.#] [-{0|1|2|4}]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -92,9 +100,11 @@ int main(int argc, char **argv)
 	char *ofn = NULL;
 	char *pattern = CODE_PATTERN;
 	char *version = CYBERTAN_VERSION;
+	char *extra_mag = EXTRA_MAGIC;  /* res1 */
 	int gflag = 0;
 	int c;
 	int v0, v1, v2;
+	int r0, r1, r2, r3;
 	size_t off, n;
 	time_t t;
 	struct tm *ptm;
@@ -104,7 +114,7 @@ int main(int argc, char **argv)
 	hdr = (struct code_header *) buf;
 	memset(hdr, 0, sizeof(struct code_header));
 
-	while ((c = getopt(argc, argv, "i:o:p:gv:0124")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:r:gv:0124")) != -1) {
 		switch (c) {
 			case 'i':
 				ifn = optarg;
@@ -117,6 +127,9 @@ int main(int argc, char **argv)
 				break;
 			case 'g':
 				gflag = 1;
+				break;
+			case 'r':
+				extra_mag = optarg;
 				break;
 			case 'v':			/* extension to allow setting version */
 				version = optarg;
@@ -179,6 +192,11 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	if (4 != sscanf(extra_mag, "%d.%d.%d.%d", &r0, &r1, &r2, &r3)) {
+		fprintf(stderr, "bad extra pattern string \"%s\"\n", extra_mag);
+		return EXIT_FAILURE;
+	}
+
 	memcpy(&hdr->magic, pattern, 4);
 	hdr->fwdate[0] = ptm->tm_year % 100;
 	hdr->fwdate[1] = ptm->tm_mon + 1;
@@ -186,6 +204,10 @@ int main(int argc, char **argv)
 	hdr->fwvern[0] = v0;
 	hdr->fwvern[1] = v1;
 	hdr->fwvern[2] = v2;
+	hdr->res1[0] = r0;
+    hdr->res1[1] = r1;
+    hdr->res1[2] = r2;
+    hdr->res1[3] = r3;
 	memcpy(&hdr->id, CODE_ID, strlen(CODE_ID));
 
 	off = sizeof(struct code_header);
@@ -216,7 +238,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 	}
-	
+
 	if (ferror(in)) {
 		goto FREAD_ERROR;
 	}
