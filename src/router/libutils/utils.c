@@ -1707,6 +1707,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E1000 v1");	// renamed wrt160nv3
 			return ROUTER_WRT160NV3;
+		} else if (nvram_match("boot_hw_model", "E1000")
+			   && nvram_match("boot_hw_ver", "2.0")) {
+			setRouter("Linksys E1000 v2");
+			return ROUTER_LINKSYS_E1000V2;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys WRT310N");
