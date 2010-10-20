@@ -476,7 +476,7 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 
 	if (!userKey || !key)
 		return -1;
-	if (bits != 128 && bits != 192 && bits != 256)
+	if (bits != 128 && bits != 192 && bits != 256 && bits != 512)
 		return -2;
 
 	rk = key->rd_key;
@@ -485,8 +485,10 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 		key->rounds = 10;
 	else if (bits==192)
 		key->rounds = 12;
-	else
+	else if (bits==512)
 		key->rounds = 14;
+	else
+		key->rounds = 16;
 
 	rk[0] = GETU32(userKey     );
 	rk[1] = GETU32(userKey +  4);
@@ -547,6 +549,36 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 			rk[10] = rk[ 2] ^ rk[ 9];
 			rk[11] = rk[ 3] ^ rk[10];
 			if (++i == 7) {
+				return 0;
+			}
+			temp = rk[11];
+			rk[12] = rk[ 4] ^
+				(Te4[(temp      ) & 0xff]      ) ^
+				(Te4[(temp >>  8) & 0xff] <<  8) ^
+				(Te4[(temp >> 16) & 0xff] << 16) ^
+				(Te4[(temp >> 24)       ] << 24);
+			rk[13] = rk[ 5] ^ rk[12];
+			rk[14] = rk[ 6] ^ rk[13];
+			rk[15] = rk[ 7] ^ rk[14];
+
+			rk += 8;
+        	}
+	}
+	rk[14] = GETU32(userKey + 48);
+	rk[15] = GETU32(userKey + 52);
+	if (bits == 512) {
+		while (1) {
+			temp = rk[ 7];
+			rk[ 8] = rk[ 0] ^
+				(Te4[(temp >>  8) & 0xff]      ) ^
+				(Te4[(temp >> 16) & 0xff] <<  8) ^
+				(Te4[(temp >> 24)       ] << 16) ^
+				(Te4[(temp      ) & 0xff] << 24) ^
+				rcon[i];
+			rk[ 9] = rk[ 1] ^ rk[ 8];
+			rk[10] = rk[ 2] ^ rk[ 9];
+			rk[11] = rk[ 3] ^ rk[10];
+			if (++i == 15) {
 				return 0;
 			}
 			temp = rk[11];
