@@ -856,3 +856,10 @@ hmac		855
 LocalKeySet		856
 freshest_crl		857
 id_on_permanentIdentifier		858
+aes_512_ecb		859
+aes_512_cbc		860
+aes_512_cfb1		861
+aes_512_cfb8		862
+id_aes512_wrap		863
+aes_512_ofb128		864
+aes_512_cfb128		865
