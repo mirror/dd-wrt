@@ -174,6 +174,8 @@ int MAIN(int argc, char **argv)
 			enc=EVP_aes_192_cbc();
 		else if (strcmp(*argv,"-aes256") == 0)
 			enc=EVP_aes_256_cbc();
+		else if (strcmp(*argv,"-aes512") == 0)
+			enc=EVP_aes_512_cbc();
 #endif
 #ifndef OPENSSL_NO_CAMELLIA
 		else if (strcmp(*argv,"-camellia128") == 0)

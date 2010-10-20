@@ -790,6 +790,18 @@ const EVP_CIPHER *EVP_aes_256_ofb(void);
 #if 0
 const EVP_CIPHER *EVP_aes_256_ctr(void);
 #endif
+const EVP_CIPHER *EVP_aes_512_ecb(void);
+const EVP_CIPHER *EVP_aes_512_cbc(void);
+const EVP_CIPHER *EVP_aes_512_cfb1(void);
+const EVP_CIPHER *EVP_aes_512_cfb8(void);
+const EVP_CIPHER *EVP_aes_512_cfb128(void);
+# define EVP_aes_512_cfb EVP_aes_512_cfb128
+const EVP_CIPHER *EVP_aes_512_ofb(void);
+#if 0
+const EVP_CIPHER *EVP_aes_512_ctr(void);
+#endif
+
+
 #endif
 #ifndef OPENSSL_NO_CAMELLIA
 const EVP_CIPHER *EVP_camellia_128_ecb(void);

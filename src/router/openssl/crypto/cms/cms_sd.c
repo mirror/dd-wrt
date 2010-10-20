@@ -1001,7 +1001,8 @@ static int cms_add_digest_smcap(STACK_OF(X509_ALGOR) **sk, int nid, int arg)
 #endif
 int CMS_add_standard_smimecap(STACK_OF(X509_ALGOR) **smcap)
 	{
-	if (!cms_add_cipher_smcap(smcap, NID_aes_256_cbc, -1)
+	if (!cms_add_cipher_smcap(smcap, NID_aes_512_cbc, -1)
+		|| !cms_add_cipher_smcap(smcap, NID_aes_256_cbc, -1)
 		|| !cms_add_cipher_smcap(smcap, NID_aes_192_cbc, -1)
 		|| !cms_add_cipher_smcap(smcap, NID_aes_128_cbc, -1)
 		|| !cms_add_cipher_smcap(smcap, NID_des_ede3_cbc, -1)

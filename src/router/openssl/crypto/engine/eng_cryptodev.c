@@ -148,6 +148,7 @@ static struct {
 	{ CRYPTO_AES_CBC,		NID_aes_128_cbc,	16,	16, },
 	{ CRYPTO_AES_CBC,		NID_aes_192_cbc,	16,	24, },
 	{ CRYPTO_AES_CBC,		NID_aes_256_cbc,	16,	32, },
+	{ CRYPTO_AES_CBC,		NID_aes_512_cbc,	16,	64, },
 	{ CRYPTO_BLF_CBC,		NID_bf_cbc,		8,	16, },
 	{ CRYPTO_CAST_CBC,		NID_cast5_cbc,		8,	16, },
 	{ CRYPTO_SKIPJACK_CBC,		NID_undef,		0,	 0, },
@@ -638,6 +639,19 @@ const EVP_CIPHER cryptodev_aes_256_cbc = {
 	NULL
 };
 
+const EVP_CIPHER cryptodev_aes_512_cbc = {
+	NID_aes_512_cbc,
+	16, 64, 16,
+	EVP_CIPH_CBC_MODE,
+	cryptodev_init_key,
+	cryptodev_cipher,
+	cryptodev_cleanup,
+	sizeof(struct dev_crypto_state),
+	EVP_CIPHER_set_asn1_iv,
+	EVP_CIPHER_get_asn1_iv,
+	NULL
+};
+
 /*
  * Registered by the ENGINE when used to find out how to deal with
  * a particular NID in the ENGINE. this says what we'll do at the
@@ -674,6 +688,9 @@ cryptodev_engine_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
 		break;
 	case NID_aes_256_cbc:
 		*cipher = &cryptodev_aes_256_cbc;
+		break;
+	case NID_aes_512_cbc:
+		*cipher = &cryptodev_aes_512_cbc;
 		break;
 	default:
 		*cipher = NULL;

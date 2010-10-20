@@ -157,6 +157,12 @@ int EVP_CIPHER_type(const EVP_CIPHER *ctx)
 
 		return NID_aes_256_cfb128;
 
+		case NID_aes_512_cfb128:
+		case NID_aes_512_cfb8:
+		case NID_aes_512_cfb1:
+
+		return NID_aes_512_cfb128;
+
 		case NID_des_cfb64:
 		case NID_des_cfb8:
 		case NID_des_cfb1:

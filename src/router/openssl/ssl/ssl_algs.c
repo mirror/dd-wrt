@@ -81,6 +81,7 @@ int SSL_library_init(void)
 	EVP_add_cipher(EVP_aes_128_cbc());
 	EVP_add_cipher(EVP_aes_192_cbc());
 	EVP_add_cipher(EVP_aes_256_cbc());
+	EVP_add_cipher(EVP_aes_512_cbc());
 #endif
 
 #ifndef OPENSSL_NO_CAMELLIA
