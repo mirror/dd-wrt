@@ -79,9 +79,9 @@ typedef unsigned int u32;
 typedef unsigned short u16;
 typedef unsigned char u8;
 
-#define MAXKC   (256/32)
-#define MAXKB   (256/8)
-#define MAXNR   14
+#define MAXKC   (512/32)
+#define MAXKB   (512/8)
+#define MAXNR   16
 
 /* This controls loop-unrolling in aes_core.c */
 #undef FULL_UNROLL
