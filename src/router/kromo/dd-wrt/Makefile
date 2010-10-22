@@ -441,6 +441,12 @@ endif
 ifeq ($(CONFIG_THOM),y)
 	cp -f thom/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
+
+ifeq ($(CONFIG_CARLSONWIRELESS),y)
+	cp -f carlsonwireless/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f carlsonwireless/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+endif
+
 ifneq ($(CONFIG_REGISTER),y)
 	rm -f $(INSTALLDIR)/www/style/logo-trial.png
 	rm -f $(INSTALLDIR)/www/style/logo-cpe.png
