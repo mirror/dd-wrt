@@ -333,6 +333,9 @@ endif
 ifeq ($(CONFIG_WIKINGS),y)
   CFLAGS += -DHAVE_WIKINGS
 endif
+ifeq ($(CONFIG_CARLSONWIRELESS),y)
+  CFLAGS += -DHAVE_CARLSONWIRELESS
+endif
 ifeq ($(CONFIG_SUB3),y)
 CFLAGS += -DHAVE_SUB3
 endif
