@@ -6207,7 +6207,14 @@ void ej_show_defwpower(webs_t wp, int argc, char_t ** argv)
 	case ROUTER_ASUS_RTN16:
 		websWrite(wp, "17");
 		break;
+#ifndef HAVE_BUFFALO
 	case ROUTER_BUFFALO_WHRG54S:
+		if (nvram_match("DD_BOARD", "Buffalo WHR-HP-G54"))
+			websWrite(wp, "28");
+		else
+			websWrite(wp, "71");
+		break;
+#endif
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 		websWrite(wp, "28");
 		break;
@@ -7793,7 +7800,8 @@ void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
 	}
 
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.net_conctrl)</script></div>\n");
+	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(management.net_conctrl)</script></div>\n");
 	websWrite(wp, "<select name=\"tcp_congestion_control\">\n");
 	foreach(var, eths, next) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var,
@@ -7961,17 +7969,16 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].
-					      usersize) ? db->users[i].
-				  user : "");
+					      && db->users[i].usersize) ? db->
+				  users[i].user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -8028,17 +8035,16 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].
-					      clientsize) ? db->users[i].
-				  client : "");
+					      && db->users[i].clientsize) ? db->
+				  users[i].client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+					      && db->users[i].
+					      passwordsize) ? db->users[i].
+				  passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",
