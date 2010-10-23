@@ -141,14 +141,14 @@ void start_sysinit(void)
 			fprintf(stderr, "Compex WP543 detected\n");
 			eval("ifconfig", "eth0", "0.0.0.0", "down");
 			eval("ifconfig", "eth1", "0.0.0.0", "down");
-			unsigned char buf[16];
+			unsigned char buf[20];
 
 			fseek(fp, 0x1f810, SEEK_SET);
 			fread(&buf[0], 6, 1, fp);
 			char mac[20];
 			int i;
 
-			unsigned int copy[16];
+			unsigned int copy[20];
 
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
