@@ -252,7 +252,7 @@ int site_survey_main_11n(int argc, char *argv[])
 {
 	char *name = nvram_safe_get("wl0_ifname");
 	unsigned char mac[20];
-	int i = 0;
+	int i = 0,c;
 	char *dev = name;
 
 	unlink(SITE_SURVEY_DB);
@@ -286,6 +286,16 @@ int site_survey_main_11n(int argc, char *argv[])
 		sr = (struct ieee80211req_scan_result *)cp;
 		vp = (u_int8_t *)(sr + 1);
 		memset(ssid, 0, sizeof(ssid));
+		for (c = 0; c < SITE_SURVEY_NUM && site_survey_lists[c].BSSID[0] && site_survey_lists[c].channel != 0; c++)
+		    {
+		    if (!strcmp(site_survey_lists[c].SSID,vp) && 
+		    	!strcmp(site_survey_lists[c].BSSID,ieee80211_ntoa(sr->isr_bssid))
+		    	{
+		    	// entry already exists, skip
+			cp += sr->isr_len, len -= sr->isr_len;
+			continue;
+		    	}
+		    }
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
 		strcpy(site_survey_lists[i].BSSID,
 		       ieee80211_ntoa(sr->isr_bssid));
@@ -312,8 +322,7 @@ int site_survey_main_11n(int argc, char *argv[])
 	free(buf);
 	write_site_survey();
 	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
-	     && site_survey_lists[i].channel != 0; i++) {
+	 {
 
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
