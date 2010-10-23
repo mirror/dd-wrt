@@ -3449,8 +3449,13 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				 nvram_default_get(wl_protmode, "None"));
 		showrtssettings(wp, var);
 
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+	if (!is_ath11n(prefix))
+#endif
+	{
 		sprintf(wmm, "%s_wmm", var);
 		showRadio(wp, "wl_adv.label18", wmm);
+	}
 #endif
 
 #endif				// end BUFFALO
