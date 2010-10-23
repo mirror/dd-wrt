@@ -214,13 +214,13 @@ void start_sysinit(void)
 	if (file) {
 		eval("ifconfig", "ixp0", "0.0.0.0", "down");
 		eval("ifconfig", "ixp1", "0.0.0.0", "down");
-		unsigned char buf[16];
+		unsigned char buf[20];
 		int i;
 
 		fseek(file, 0x422, SEEK_SET);
 		fread(&buf[0], 6, 1, file);
 		char mac[20];
-		unsigned int copy[16];
+		unsigned int copy[20];
 
 		for (i = 0; i < 6; i++)
 			copy[i] = buf[i] & 0xff;
@@ -248,12 +248,12 @@ void start_sysinit(void)
 	FILE *file = fopen(filename, "r");
 
 	if (file) {
-		unsigned char buf[16];
+		unsigned char buf[20];
 
 		fread(&buf[0], 16, 1, file);
-		char mac[16];
+		char mac[20];
 
-		unsigned int copy[16];
+		unsigned int copy[20];
 		int i;
 
 		for (i = 0; i < 12; i++)
@@ -302,14 +302,14 @@ void start_sysinit(void)
 			fprintf(stderr, "Compex WP188 detected\n");
 			eval("ifconfig", "ixp0", "0.0.0.0", "down");
 			eval("ifconfig", "ixp1", "0.0.0.0", "down");
-			unsigned char buf[16];
+			unsigned char buf[20];
 
 			fseek(file, 0x1f810, SEEK_SET);
 			fread(&buf[0], 6, 1, file);
-			char mac[16];
+			char mac[20];
 			int i;
 
-			unsigned int copy[16];
+			unsigned int copy[20];
 
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
