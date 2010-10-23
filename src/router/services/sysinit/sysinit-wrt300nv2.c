@@ -100,7 +100,7 @@ void start_sysinit(void)
 	FILE *file = fopen(filename, "r");
 
 	if (file) {
-		unsigned char buf[16];
+		unsigned char buf[20];
 
 		fseek(file, 0x5ffa0, SEEK_SET);	// point of mac address
 		fread(&buf[0], 6, 1, file);
