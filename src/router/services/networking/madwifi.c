@@ -88,6 +88,7 @@ static void deconfigure_single(int count)
 #endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(dev)) {
+		deconfigure_single_11n(count);
 		return;
 	}
 #endif
