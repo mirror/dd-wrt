@@ -80,7 +80,7 @@ void start_sysinit(void)
 		fread(&buf[0], 6, 1, fp);
 		char mac[20];
 		int i;
-		unsigned int copy[16];
+		unsigned int copy[20];
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
