@@ -150,17 +150,17 @@ static int __inline ismtikoui(const unsigned char *frm)
 
 __inline static int ishtcap(const u_int8_t *frm)
 {
-    return frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|51);
+	return frm[1] > 3 && BE_READ_4(frm + 2) == ((0x00904c << 8) | 51);
 }
 
 __inline static int ishtinfo(const u_int8_t *frm)
 {
-    int isht = frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|52);
-    if (!isht)
-	isht = frm[1] > 3 && BE_READ_4(frm+2) == ((0x00904c<<8)|61);
-    return isht;
+	int isht = frm[1] > 3 && BE_READ_4(frm + 2) == ((0x00904c << 8) | 52);
+	if (!isht)
+		isht = frm[1] > 3
+		    && BE_READ_4(frm + 2) == ((0x00904c << 8) | 61);
+	return isht;
 }
-
 
 # if __BYTE_ORDER == __BIG_ENDIAN
 # define __bswap_16(x) \
@@ -172,33 +172,31 @@ __inline static int ishtinfo(const u_int8_t *frm)
 #define	le16toh(_x)	_x
 #endif
 
-
 __inline static int isht20(const u_int8_t *frm)
 {
-    if (ishtcap(frm))
-	{
-	struct ieee80211_ie_htcap_cmn *htcap = (struct ieee80211_ie_htcap_cmn *)frm+6;
-	u_int16_t cap = le16toh(htcap->hc_cap);
-	if (!(cap & IEEE80211_HTCAP_C_CHWIDTH40))
-	    return 1;
-	else 
-	    return 0;
+	if (ishtcap(frm)) {
+		struct ieee80211_ie_htcap_cmn *htcap =
+		    (struct ieee80211_ie_htcap_cmn *)frm + 6;
+		u_int16_t cap = le16toh(htcap->hc_cap);
+		if (!(cap & IEEE80211_HTCAP_C_CHWIDTH40))
+			return 1;
+		else
+			return 0;
 	}
-    return 0;
+	return 0;
 }
 
 __inline static int isht40(const u_int8_t *frm)
 {
-    if (ishtcap(frm))
-	{
-	    return 1-isht20(frm);
+	if (ishtcap(frm)) {
+		return 1 - isht20(frm);
 	}
-    return 0;
+	return 0;
 }
 
 static int fillenc(char *encinfo, unsigned char *vp, int ielen)
 {
-int r =0;
+	int r = 0;
 	memset(encinfo, 0, 128);
 	while (ielen > 0) {
 		switch (vp[0]) {
@@ -213,16 +211,13 @@ int r =0;
 				strcat(encinfo, "ATH ");
 			if (ismtikoui(vp))
 				strcat(encinfo, "MTIK ");
-			if (isht20(vp))
-				{
+			if (isht20(vp)) {
 				strcat(encinfo, "HT20 ");
-				r=150;
-				}
-			else if (isht40(vp))
-				{
+				r = 150;
+			} else if (isht40(vp)) {
 				strcat(encinfo, "HT40 ");
-				r=300;
-				}
+				r = 300;
+			}
 			break;
 		case IEEE80211_ELEMID_RSN:
 			strcat(encinfo, "WPA2 ");
@@ -235,7 +230,7 @@ int r =0;
 	}
 	if (strlen(encinfo) > 0)
 		encinfo[strlen(encinfo) - 1] = 0;
-return r;
+	return r;
 }
 
 static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
@@ -252,7 +247,7 @@ int site_survey_main_11n(int argc, char *argv[])
 {
 	char *name = nvram_safe_get("wl0_ifname");
 	unsigned char mac[20];
-	int i = 0,c;
+	int i = 0, c;
 	char *dev = name;
 
 	unlink(SITE_SURVEY_DB);
@@ -286,22 +281,23 @@ int site_survey_main_11n(int argc, char *argv[])
 		sr = (struct ieee80211req_scan_result *)cp;
 		vp = (u_int8_t *)(sr + 1);
 		memset(ssid, 0, sizeof(ssid));
-		for (c = 0; c < SITE_SURVEY_NUM && site_survey_lists[c].BSSID[0] && site_survey_lists[c].channel != 0; c++)
-		    {
-		    if (!strcmp(site_survey_lists[c].SSID,vp) && 
-		    	!strcmp(site_survey_lists[c].BSSID,ieee80211_ntoa(sr->isr_bssid))
-		    	{
-		    	// entry already exists, skip
-			cp += sr->isr_len, len -= sr->isr_len;
-			continue;
-		    	}
-		    }
+		for (c = 0; c < SITE_SURVEY_NUM && site_survey_lists[c].BSSID[0]
+		     && site_survey_lists[c].channel != 0; c++) {
+			if (!strcmp(site_survey_lists[c].SSID, vp)
+			    && !strcmp(site_survey_lists[c].BSSID,
+				       ieee80211_ntoa(sr->isr_bssid))
+			    && site_survey_lists[c].channel ==
+			    ieee80211_mhz2ieee(sr->isr_freq)) {
+				// entry already exists, skip
+				cp += sr->isr_len, len -= sr->isr_len;
+				continue;
+			}
+		}
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
 		strcpy(site_survey_lists[i].BSSID,
 		       ieee80211_ntoa(sr->isr_bssid));
 		site_survey_lists[i].channel = ieee80211_mhz2ieee(sr->isr_freq);
 		int noise = 256;
-
 		noise -= (int)sr->isr_noise;
 		site_survey_lists[i].phy_noise = -noise;
 		if (sr->isr_noise == 0) {
@@ -312,9 +308,11 @@ int site_survey_main_11n(int argc, char *argv[])
 		site_survey_lists[i].capability = sr->isr_capinfo;
 		// site_survey_lists[i].athcaps = sr->isr_athflags;
 		site_survey_lists[i].rate_count = sr->isr_nrates;
-		int n11 = fillenc(site_survey_lists[i].ENCINFO,(unsigned char *)(vp + sr->isr_ssid_len),sr->isr_ie_len);
+		int n11 = fillenc(site_survey_lists[i].ENCINFO,
+				  (unsigned char *)(vp + sr->isr_ssid_len),
+				  sr->isr_ie_len);
 		if (n11)
-		    site_survey_lists[i].rate_count = n11; 
+			site_survey_lists[i].rate_count = n11;
 		cp += sr->isr_len, len -= sr->isr_len;
 		i++;
 	}
@@ -322,13 +320,14 @@ int site_survey_main_11n(int argc, char *argv[])
 	free(buf);
 	write_site_survey();
 	open_site_survey();
-	 {
+	{
 
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
-			site_survey_lists[i].channel, site_survey_lists[i].RSSI,
+			site_survey_lists[i].channel,
+			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].beacon_period,
 			site_survey_lists[i].capability,
@@ -340,11 +339,9 @@ int site_survey_main_11n(int argc, char *argv[])
 	return 0;
 }
 
-
 static int write_site_survey(void)
 {
 	FILE *fp;
-
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
 		fwrite(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
 		fclose(fp);
@@ -356,9 +353,7 @@ static int write_site_survey(void)
 static int open_site_survey(void)
 {
 	FILE *fp;
-
 	bzero(site_survey_lists, sizeof(site_survey_lists));
-
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
 		fread(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
 		fclose(fp);
