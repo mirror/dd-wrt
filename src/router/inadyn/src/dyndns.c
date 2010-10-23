@@ -917,7 +917,7 @@ RC_TYPE dyn_dns_shutdown(DYN_DNS_CLIENT *p_self)
 */
 RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 {
-	RC_TYPE rc;
+	RC_TYPE rc = RC_OK;
 
 	if (p_self == NULL)
 	{
@@ -929,9 +929,36 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 		if (nvram_match("ddns_wan_ip","1"))
 		{
 		char new_ip_str[32];
-		strcpy(new_ip_str,nvram_safe_get("wan_ipaddr"));
+		int wan_link = check_wan_link(0);
+		char *wan_ipaddr = NULL;
+		if (nvram_match("wan_proto", "pptp")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("pptp_get_ip") :
+			    nvram_safe_get("wan_ipaddr");
+		} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		} else if (nvram_match("wan_proto", "l2tp")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("l2tp_get_ip") :
+			    nvram_safe_get("wan_ipaddr");
+		} else if (nvram_match("wan_proto", "disabled")) {
+			wan_ipaddr = "0.0.0.0";
+		} else {
+			wan_ipaddr = nvram_safe_get("wan_ipaddr");
+		}
+		if (!strcmp(wan_ipaddr,"0.0.0.0")) {
+			DBG_PRINTF((LOG_WARNING,"W: DYNDNS: Error: device has no WAN Address\n"));
+			rc = RC_ERROR; 
+			break;
+		    }
+		strcpy(new_ip_str,wan_ipaddr);
 		p_self->info.my_ip_has_changed = (strcmp(new_ip_str, p_self->info.my_ip_address.name) != 0);
 		strcpy(p_self->info.my_ip_address.name, new_ip_str);
+		rc = RC_OK;
 		}else{
 		/*ask IP server something so he will respond and give me my IP */
 		rc = do_ip_server_transaction(p_self);
