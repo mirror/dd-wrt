@@ -365,7 +365,3 @@ static int open_site_survey(void)
 	return 0;
 }
 
-void main(int argc, char *argv[])
-{
-	site_survey_main_11n(argc, argv);
-}
