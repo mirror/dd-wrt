@@ -277,20 +277,20 @@ int site_survey_main_11n(int argc, char *argv[])
 		struct ieee80211req_scan_result *sr;
 		unsigned char *vp;
 		char ssid[14];
-
 		sr = (struct ieee80211req_scan_result *)cp;
 		vp = (u_int8_t *)(sr + 1);
 		memset(ssid, 0, sizeof(ssid));
 		for (c = 0; c < SITE_SURVEY_NUM && site_survey_lists[c].BSSID[0]
 		     && site_survey_lists[c].channel != 0; c++) {
-			if (!strcmp(site_survey_lists[c].SSID, vp)
-			    && !strcmp(site_survey_lists[c].BSSID,
-				       ieee80211_ntoa(sr->isr_bssid))
-			    && site_survey_lists[c].channel ==
+			if (strlen(site_survey_lists[c].SSID) == sr->isr_ssid_len &&	//
+			    !strncmp(site_survey_lists[c].SSID, vp, sr->isr_ssid_len) &&	// 
+			    !strcmp(site_survey_lists[c].BSSID, ieee80211_ntoa(sr->isr_bssid)) &&	// 
+			    site_survey_lists[c].channel ==
 			    ieee80211_mhz2ieee(sr->isr_freq)) {
 				// entry already exists, skip
-				cp += sr->isr_len, len -= sr->isr_len;
-				continue;
+				cp += sr->isr_len;
+				len -= sr->isr_len;
+				goto skip;
 			}
 		}
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
@@ -313,14 +313,17 @@ int site_survey_main_11n(int argc, char *argv[])
 				  sr->isr_ie_len);
 		if (n11)
 			site_survey_lists[i].rate_count = n11;
-		cp += sr->isr_len, len -= sr->isr_len;
+		cp += sr->isr_len;
+		len -= sr->isr_len;
 		i++;
+	      skip:;
 	}
 	while (len >= sizeof(struct ieee80211req_scan_result));
 	free(buf);
 	write_site_survey();
 	open_site_survey();
-	{
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
+	     && site_survey_lists[i].channel != 0; i++) {
 
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
@@ -360,4 +363,9 @@ static int open_site_survey(void)
 		return 1;
 	}
 	return 0;
+}
+
+void main(int argc, char *argv[])
+{
+	site_survey_main_11n(argc, argv);
 }
