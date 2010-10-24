@@ -729,8 +729,14 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 			rk += 8;
         	}
 	}
-	rk[16] = GETU32(userKey + 48);
-	rk[17] = GETU32(userKey + 52);
+	rk[8] = GETU32(userKey + 32);
+	rk[9] = GETU32(userKey + 36);
+	rk[10] = GETU32(userKey + 40);
+	rk[11] = GETU32(userKey + 44);
+	rk[12] = GETU32(userKey + 48);
+	rk[13] = GETU32(userKey + 52);
+	rk[14] = GETU32(userKey + 56);
+	rk[15] = GETU32(userKey + 60);
 
 	if (bits == 512) {
 		while (1) {
