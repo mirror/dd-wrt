@@ -106,6 +106,7 @@ void start_sysinit(void)
 	insmod("ehci-hcd");
 	insmod("scsi_mod");
 	insmod("scsi_wait_scan");
+	insmod("cdrom");
 	insmod("sd_mod");
 	insmod("sr_mod");
 	insmod("usb-storage");
