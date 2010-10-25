@@ -83,6 +83,7 @@ RC_TYPE ip_initialize(IP_SOCKET *p_self)
 
 	do
 	{
+		res_init();
 		rc = os_ip_support_startup();
 		if (rc != RC_OK)
 		{
@@ -92,7 +93,7 @@ RC_TYPE ip_initialize(IP_SOCKET *p_self)
 		/*remote addres */
 		if (p_self->p_remote_host_name != NULL)
 		{
-            unsigned long addr = 0;
+        		unsigned long addr = 0;
 			HOSTENT* p_remotehost = (HOSTENT*) gethostbyname(p_self->p_remote_host_name);
 			
 			if (p_remotehost == NULL)
