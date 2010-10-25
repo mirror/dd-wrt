@@ -66,7 +66,9 @@ else
 subdir: all.o
 
 all.o: $(objs)
-	$(CC) -nostdlib  -Wl,-r -o $@ $^
+#       $(LD) -r -o $@ $^
+#	Changed to $(CC) because $(LD) has problems with crosscompiling
+	$(CC) -nostdlib -r -o $@ $^
 
 endif
 

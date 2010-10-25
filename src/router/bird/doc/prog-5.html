@@ -786,7 +786,7 @@ with the core.
 <P>We maintain our own linked list of <I>rip_entry</I> structures -- it serves
 as our small routing table. RIP never adds to this linked list upon
 packet reception; instead, it lets the core know about data from the packet
-and waits for the core to call <B>rip_rte_notify()</B>.
+and waits for the core to call <B>rip_rt_notify()</B>.
 <P>Within <B>rip_tx()</B>, the list is
 walked and a packet is generated using <B>rip_tx_prepare()</B>. This gets
 tricky because we may need to send more than one packet to one

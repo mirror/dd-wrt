@@ -472,6 +472,9 @@ ospf_iface_new(struct proto_ospf *po, struct iface *iface, struct ifa *addr,
 
   WALK_LIST(nb, ip->nbma_list)
   {
+    if (!ipa_in_net(nb->ip, addr->prefix, addr->pxlen))
+      continue;
+
     nbma = mb_alloc(p->pool, sizeof(struct nbma_node));
     nbma->ip = nb->ip;
     nbma->eligible = nb->eligible;
