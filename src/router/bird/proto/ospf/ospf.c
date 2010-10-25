@@ -851,7 +851,7 @@ ospf_reconfigure(struct proto *p, struct proto_config *c)
 	{
 	  found = 0;
 	  WALK_LIST(nb2, newip->nbma_list)
-	    if (ipa_compare(nb1->ip, nb2->ip) == 0)
+	    if (ipa_equal(nb1->ip, nb2->ip))
 	  {
 	    found = 1;
 	    if (nb1->eligible != nb2->eligible)
@@ -873,9 +873,12 @@ ospf_reconfigure(struct proto *p, struct proto_config *c)
 	/* And then add new */
 	WALK_LIST(nb2, newip->nbma_list)
 	{
+	  if (!ipa_in_net(nb2->ip, ifa->addr->prefix, ifa->addr->pxlen))
+	    continue;
+
 	  found = 0;
 	  WALK_LIST(nb1, ifa->nbma_list)
-	    if (ipa_compare(nb1->ip, nb2->ip) == 0)
+	    if (ipa_equal(nb1->ip, nb2->ip))
 	  {
 	    found = 1;
 	    break;

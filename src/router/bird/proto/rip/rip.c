@@ -27,7 +27,7 @@
  * We maintain our own linked list of &rip_entry structures -- it serves
  * as our small routing table. RIP never adds to this linked list upon
  * packet reception; instead, it lets the core know about data from the packet
- * and waits for the core to call rip_rte_notify().
+ * and waits for the core to call rip_rt_notify().
  *
  * Within rip_tx(), the list is
  * walked and a packet is generated using rip_tx_prepare(). This gets
@@ -269,6 +269,8 @@ rip_rte_update_if_better(rtable *tab, net *net, struct proto *p, rte *new)
       (ipa_equal(old->attrs->from, new->attrs->from) &&
       (old->u.rip.metric != new->u.rip.metric)) )
     rte_update(tab, net, p, p, new);
+  else
+    rte_free(new);
 }
 
 /*
@@ -866,24 +868,16 @@ rip_store_tmp_attrs(struct rte *rt, struct ea_list *attrs)
  */
 static void
 rip_rt_notify(struct proto *p, struct rtable *table UNUSED, struct network *net,
-	      struct rte *new, struct rte *old, struct ea_list *attrs)
+	      struct rte *new, struct rte *old UNUSED, struct ea_list *attrs)
 {
   CHK_MAGIC;
+  struct rip_entry *e;
 
-  if (old) {
-    struct rip_entry *e = fib_find( &P->rtable, &net->n.prefix, net->n.pxlen );
-    if (!e)
-      log( L_BUG "%s: Deleting nonexistent entry?!", p->name );
+  e = fib_find( &P->rtable, &net->n.prefix, net->n.pxlen );
+  if (e)
     fib_delete( &P->rtable, e );
-  }
 
   if (new) {
-    struct rip_entry *e;
-#if 0
-    /* This can happen since feeding of protocols is asynchronous */
-    if (fib_find( &P->rtable, &net->n.prefix, net->n.pxlen ))
-      log( L_BUG "%s: Inserting entry which is already there?", p->name );
-#endif
     e = fib_get( &P->rtable, &net->n.prefix, net->n.pxlen );
 
     e->nexthop = new->attrs->gw;
