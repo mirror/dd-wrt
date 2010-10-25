@@ -1598,6 +1598,16 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		killall("udhcpc", SIGKILL);
 		sys_commit();
 #ifdef HAVE_X86
+	char drive[64];
+	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
+	FILE *in = fopen(drive, "r+b");
+	fseeko64(in, 0, SEEK_END);
+	__off64_t mtdlen = ftell(in);
+	fseeko64(in, mtdlen-(65536*2), SEEK_SET);
+	int i;
+	for (i=0;i<65536;i++)
+	    putc(0,in); // erase backup area
+	fclose(in);
 		eval("mount", "/usr/local", "-o", "remount,rw");
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
 		eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
