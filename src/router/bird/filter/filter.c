@@ -119,6 +119,13 @@ static inline int int_cmp(int i1, int i2)
   else return 1;
 }
 
+static inline int uint_cmp(unsigned int i1, unsigned int i2)
+{
+  if (i1 == i2) return 0;
+  if (i1 < i2) return -1;
+  else return 1;
+}
+
 /**
  * val_compare - compare two values
  * @v1: first value
@@ -144,9 +151,9 @@ val_compare(struct f_val v1, struct f_val v2)
 #ifndef IPV6
     /* IP->Quad implicit conversion */
     if ((v1.type == T_QUAD) && (v2.type == T_IP))
-      return int_cmp(v1.val.i, ipa_to_u32(v2.val.px.ip));
+      return uint_cmp(v1.val.i, ipa_to_u32(v2.val.px.ip));
     if ((v1.type == T_IP) && (v2.type == T_QUAD))
-      return int_cmp(ipa_to_u32(v1.val.px.ip), v2.val.i);
+      return uint_cmp(ipa_to_u32(v1.val.px.ip), v2.val.i);
 #endif
 
     debug( "Types do not match in val_compare\n" );
@@ -156,9 +163,10 @@ val_compare(struct f_val v1, struct f_val v2)
   case T_ENUM:
   case T_INT:
   case T_BOOL:
+    return int_cmp(v1.val.i, v2.val.i);
   case T_PAIR:
   case T_QUAD:
-    return int_cmp(v1.val.i, v2.val.i);
+    return uint_cmp(v1.val.i, v2.val.i);
   case T_IP:
     return ipa_compare(v1.val.px.ip, v2.val.px.ip);
   case T_PREFIX:
@@ -919,6 +927,9 @@ interpret(struct f_inst *what)
       runtime("Can't add/delete to non-clist");
 
     struct f_val dummy;
+    u16 op = what->aux;
+    i = 0;
+
     if ((v2.type == T_PAIR) || (v2.type == T_QUAD))
       i = v2.val.i;
 #ifndef IPV6
@@ -926,13 +937,13 @@ interpret(struct f_inst *what)
     else if (v2.type == T_IP)
       i = ipa_to_u32(v2.val.px.ip);
 #endif
-    else if ((v2.type == T_SET) && (what->aux == 'd') && clist_set_type(v2.val.t, &dummy))
-      what->aux = 'D';
+    else if ((v2.type == T_SET) && (op == 'd') && clist_set_type(v2.val.t, &dummy))
+      op = 'D';
     else
       runtime("Can't add/delete non-pair");
 
     res.type = T_CLIST;
-    switch (what->aux) {
+    switch (op) {
     case 'a': res.val.ad = int_set_add(f_pool, v1.val.ad, i); break;
     case 'd': res.val.ad = int_set_del(f_pool, v1.val.ad, i); break;
     case 'D': res.val.ad = clist_del_matching(f_pool, v1.val.ad, v2.val.t); break;
@@ -1119,10 +1130,7 @@ u32
 f_eval_asn(struct f_inst *expr)
 {
   struct f_val res = interpret(expr);
-  if (res.type != T_INT)
-    cf_error("Can't operate with value of non-integer type in AS path mask constructor");
- 
-  return res.val.i;
+  return (res.type == T_INT) ? res.val.i : 0;
 }
 
 /**

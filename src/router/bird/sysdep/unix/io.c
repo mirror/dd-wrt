@@ -1129,7 +1129,7 @@ sk_open(sock *s)
       if (connect(fd, (struct sockaddr *) &sa, sizeof(sa)) >= 0)
 	sk_tcp_connected(s);
       else if (errno != EINTR && errno != EAGAIN && errno != EINPROGRESS &&
-	       errno != ECONNREFUSED && errno != EHOSTUNREACH)
+	       errno != ECONNREFUSED && errno != EHOSTUNREACH && errno != ENETUNREACH)
 	ERR("connect");
       break;
     case SK_TCP_PASSIVE:

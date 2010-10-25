@@ -1,3 +1,6 @@
+Version 1.2.5 (2010-10-10)
+  o Several mostly minor bugfixes.
+
 Version 1.2.4 (2010-08-03)
   o Added 'show memory' command.
   o Important bugfix in IPv6 BGP.
