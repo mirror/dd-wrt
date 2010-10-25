@@ -210,7 +210,8 @@ void Initnvramtab()
 				}
 				while (1) {
 					tmp = (struct variable *)
-					    safe_malloc(sizeof(struct variable));
+					    safe_malloc(sizeof
+							(struct variable));
 					memset(tmp, 0, sizeof(struct variable));
 					tmp->name = getFileString(in);
 					if (tmp->name == NULL)
@@ -222,7 +223,8 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_range";
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) * 3);
+						    safe_malloc(sizeof(char **)
+								* 3);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] =
@@ -236,8 +238,8 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -252,8 +254,8 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -267,8 +269,8 @@ void Initnvramtab()
 						    "validate_noack";
 						len = 2;
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -279,7 +281,8 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_name";
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **)
+								* 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -298,7 +301,8 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_password";
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **)
+								* 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -307,7 +311,8 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_password2";
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **)
+								* 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -316,7 +321,8 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_lan_ipaddr";
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **)
+								* 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -348,7 +354,8 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_wpa_psk";
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) * 2);
+						    safe_malloc(sizeof(char **)
+								* 2);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] = NULL;
@@ -482,7 +489,8 @@ void Initnvramtab()
 						tmp->validatename =
 						    "validate_wl_auth";
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) * 3);
+						    safe_malloc(sizeof(char **)
+								* 3);
 						tmp->argv[0] =
 						    getFileString(in);
 						tmp->argv[1] =
@@ -496,8 +504,8 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -512,8 +520,8 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -527,8 +535,8 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -542,8 +550,8 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -557,8 +565,8 @@ void Initnvramtab()
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
 						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **) *
-							   (len + 1));
+						    safe_malloc(sizeof(char **)
+								* (len + 1));
 						for (i = 0; i < len; i++) {
 							tmp->argv[i] =
 							    getFileString(in);
@@ -636,12 +644,12 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 	strcpy(ifname, temp2);
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
-        if( temp3 != NULL ) {
-                if( strlen( temp3 ) > 0 ) {
-                        strcpy(ifname, temp3);
-                }
-        }
-	
+	if (temp3 != NULL) {
+		if (strlen(temp3) > 0) {
+			strcpy(ifname, temp3);
+		}
+	}
+
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("WL_FilterTable.asp");
 	char temp[4096];
@@ -652,7 +660,7 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 
 	fread(webfile, len, 1, web);
 	webfile[len] = 0;
-	rep(ifname,'.','X');
+	rep(ifname, '.', 'X');
 	sprintf(temp, webfile, ifname, ifname, ifname, ifname, ifname, ifname);
 	free(webfile);
 	fclose(web);
@@ -879,12 +887,12 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream,
 	strcpy(ifname, temp2);
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
-	if( temp3 != NULL ) {
-		if( strlen( temp3 ) > 0 ) {
+	if (temp3 != NULL) {
+		if (strlen(temp3) > 0) {
 			strcpy(ifname, temp3);
 		}
 	}
-	
+
 	ifname[indexof(ifname, '.')] = 0;
 	FILE *web = getWebsFile("WL_ActiveTable.asp");
 	unsigned int len = getWebsFileLen("WL_ActiveTable.asp");
@@ -1273,10 +1281,14 @@ static struct gozila_action gozila_actions[] = {
 	 "milkfish_sip_message"},
 #endif
 #ifdef HAVE_BUFFALO
-	{"SetupAssistant", "save", "setupassistant", 1, REFRESH, "setupassistant_save"},
-	{"SetupAssistant", "wep_key_generate", "setupassistant", 1, REFRESH, "generate_wep_key"},
-	{"SetupAssistant", "security", "setupassistant", 1, REFRESH, "set_security"},
-	{"SetupAssistant", "keysize", "setupassistant", 1, REFRESH, "security_save"},
+	{"SetupAssistant", "save", "setupassistant", 1, REFRESH,
+	 "setupassistant_save"},
+	{"SetupAssistant", "wep_key_generate", "setupassistant", 1, REFRESH,
+	 "generate_wep_key"},
+	{"SetupAssistant", "security", "setupassistant", 1, REFRESH,
+	 "set_security"},
+	{"SetupAssistant", "keysize", "setupassistant", 1, REFRESH,
+	 "security_save"},
 	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
 	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
 #endif
@@ -1503,6 +1515,33 @@ void do_logout(void)		// static functions are not exportable,
 	send_authenticate(auth_realm);
 }
 
+static int getdiscindex(void)	// works only for squashfs 
+{
+	int i;
+
+	for (i = 0; i < 10; i++) {
+		char dev[64];
+
+		sprintf(dev, "/dev/discs/disc%d/part2", i);
+		FILE *in = fopen(dev, "rb");
+
+		if (in == NULL)
+			continue;	// no second partition or disc does not
+		// exist, skipping
+		char buf[4];
+
+		fread(buf, 4, 1, in);
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
+		    && buf[3] == 't') {
+			fclose(in);
+			// filesystem detected
+			return i;
+		}
+		fclose(in);
+	}
+	return -1;
+}
+
 static int
 apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  char_t * url, char_t * path, char_t * query)
@@ -1598,16 +1637,16 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		killall("udhcpc", SIGKILL);
 		sys_commit();
 #ifdef HAVE_X86
-	char drive[64];
-	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
-	FILE *in = fopen(drive, "r+b");
-	fseeko64(in, 0, SEEK_END);
-	__off64_t mtdlen = ftell(in);
-	fseeko64(in, mtdlen-(65536*2), SEEK_SET);
-	int i;
-	for (i=0;i<65536;i++)
-	    putc(0,in); // erase backup area
-	fclose(in);
+		char drive[64];
+		sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
+		FILE *in = fopen(drive, "r+b");
+		fseeko64(in, 0, SEEK_END);
+		__off64_t mtdlen = ftell(in);
+		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
+		int i;
+		for (i = 0; i < 65536; i++)
+			putc(0, in);	// erase backup area
+		fclose(in);
 		eval("mount", "/usr/local", "-o", "remount,rw");
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
 		eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
@@ -2067,13 +2106,12 @@ static void do_fetchif(struct mime_handler *handler, char *url,
 	char buffer[256];
 	char querybuffer[32];
 
-
 	if (query == NULL || strlen(query) == 0)
 		return;
-		
+
 	strncpy(querybuffer, query, 30);
 	strcat(querybuffer, ":");
-		
+
 	int strbuffer = 0;
 	time_t tm;
 	struct tm tm_time;
@@ -2092,8 +2130,8 @@ static void do_fetchif(struct mime_handler *handler, char *url,
 
 	/* eat first two lines */
 	fgets(line, sizeof(line), in);
-   	fgets(line, sizeof(line), in);
-   	
+	fgets(line, sizeof(line), in);
+
 	while (fgets(line, sizeof(line), in) != NULL) {
 		if (strstr(line, querybuffer)) {
 			llen = strlen(line);
@@ -2132,8 +2170,8 @@ char *live_translate(char *tran)
 	FILE *fp;
 	static char temp[256], temp1[256];
 	char *temp2;
-	if (tran==NULL || !strlen(tran))
-	    return "";
+	if (tran == NULL || !strlen(tran))
+		return "";
 	char *lang = getLanguageName();
 	char buf[64];
 	int start, filelen, pos;
@@ -2150,7 +2188,7 @@ char *live_translate(char *tran)
 	int len = strlen(temp1);
 
 	fp = getWebsFile(buf);
-	if (fp)	{
+	if (fp) {
 		start = ftell(fp);
 		filelen = getWebsFileLen(buf);
 
@@ -2169,8 +2207,8 @@ char *live_translate(char *tran)
 		}
 		fclose(fp);
 	}
-	
-	strcpy(buf, "lang_pack/english.js");  // if string not found, try english 
+
+	strcpy(buf, "lang_pack/english.js");	// if string not found, try english 
 	fp = getWebsFile(buf);
 
 	if (fp == NULL)
@@ -2192,7 +2230,7 @@ char *live_translate(char *tran)
 		}
 	}
 	fclose(fp);
-	
+
 	return "Error";		// not found
 
 }
@@ -2802,12 +2840,13 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 
 	websWrite(stream, "DEVICE_VSP_VERSION=0.1\n");
 	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.\n");
-	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n", nvram_safe_get("DD_BOARD"));
+	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n",
+		  nvram_safe_get("DD_BOARD"));
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00\n");
 	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1\n");
-//	websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s\n", authmode);
-//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s\n", encrypt);
-//	websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s\n", wpakey);
+//      websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s\n", authmode);
+//      websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s\n", encrypt);
+//      websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT_KEY=%s\n", wpakey);
 	websWrite(stream, "DEVICE_URL_GET=/vsp.html\n");
 	websWrite(stream, "DEVICE_URL_SET=/vsp.html\n");
 
