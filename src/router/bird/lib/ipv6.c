@@ -67,13 +67,15 @@ ipv6_classify(ip_addr *a)
 {
   u32 x = a->addr[0];
 
-  if ((x & 0xe0000000) == 0x20000000)		/* Aggregatable Global Unicast Address */
+  if ((x & 0xe0000000) == 0x20000000)		/* 2000::/3  Aggregatable Global Unicast Address */
     return IADDR_HOST | SCOPE_UNIVERSE;
-  if ((x & 0xffc00000) == 0xfe800000)		/* Link-Local Address */
+  if ((x & 0xffc00000) == 0xfe800000)		/* fe80::/10 Link-Local Address */
     return IADDR_HOST | SCOPE_LINK;
-  if ((x & 0xffc00000) == 0xfec00000)		/* Site-Local Address */
+  if ((x & 0xffc00000) == 0xfec00000)		/* fec0::/10 Site-Local Address */
     return IADDR_HOST | SCOPE_SITE;
-  if ((x & 0xff000000) == 0xff000000)		/* Multicast Address */
+  if ((x & 0xfe000000) == 0xfc000000)		/* fc00::/7  Unique Local Unicast Address (RFC 4193) */
+    return IADDR_HOST | SCOPE_SITE;
+  if ((x & 0xff000000) == 0xff000000)		/* ff00::/8  Multicast Address */
     {
       unsigned int scope = (x >> 16) & 0x0f;
       switch (scope)

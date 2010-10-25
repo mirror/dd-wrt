@@ -1,3 +1,81 @@
+commit d846d5f29676a8d2905b36bcbafc4dc44283efce
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Oct 9 20:08:00 2010 +0200
+
+    NEWS and version update.
+
+commit 06ad8f9ebc1d1ce804d51285604ccb6297229451
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Oct 9 01:00:53 2010 +0200
+
+    Fixes error handling in ASN expressions.
+
+commit 7e4553865f339f1dc01de1a0601239b7adda0d32
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Oct 4 20:17:48 2010 +0200
+
+    Fixes a sporadic crash during reconfigure.
+
+commit 0d18f3f265021547668510855eacc1b4359feb18
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Oct 4 19:55:11 2010 +0200
+
+    Fixes scope of filter symbols.
+
+commit 35456c9b33fc6463114090d1850cfc459a0b6599
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Sep 15 02:01:23 2010 +0200
+
+    Fixes a bug in pair sets.
+
+commit 408595259f4eea4e31dd7142100d2f1863574685
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Sep 11 20:14:53 2010 +0200
+
+    Fixes a bug in community set delete.
+
+commit b2c8936720e18d57a7c0c9a26985abccb0c67af9
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Sep 8 12:08:38 2010 +0200
+
+    Fixes a one byte buffer overflow.
+
+commit 8f2d438844d22319cf08af9e5ac66967fb1fab1b
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Sep 3 17:15:02 2010 +0200
+
+    Fixes a crash in RIP during reconfigure.
+
+commit c4f8e745f8767356895f053ad60ed98c6473a4ea
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Sep 3 16:32:00 2010 +0200
+
+    Fixes a memory leak in RIP.
+
+commit 0c69be079abfd43b683c2d9daed3e9d42fd09ec2
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Aug 22 14:43:53 2010 +0200
+
+    Fixes a bug in NBMA on an iface with multiple IP addresses.
+
+commit 2083c12f7d4e2617d5163da0e56b741a98270d6c
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Aug 12 10:22:40 2010 +0200
+
+    Supports unique local unicast addresses.
+
+commit 7a9aeb8f601c22f16cf14113d447eeacfa14f322
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Aug 4 13:53:52 2010 +0200
+
+    Fixes build on Sparc.
+
+commit bf5aa0d17cd9a96b22397d5d2dd7c03197838067
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Aug 3 01:12:43 2010 +0200
+
+    Ignore warning when BGP peer is unreachable.
+
 commit 487e90fbdf9362ca0eafc80a606c7f75e4eef31f
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Tue Aug 3 14:04:39 2010 +0200
