@@ -470,8 +470,8 @@ ag7100_hw_setup(ag7100_mac_t *mac)
     ag7100_reg_wr(mac, AG7100_DMA_TX_DESC, ag7100_desc_dma_addr(tx, t0));
     ag7100_reg_wr(mac, AG7100_DMA_RX_DESC, ag7100_desc_dma_addr(rx, r0));
 
-    printk(MODULE_NAME ": cfg1 %#x cfg2 %#x\n", ag7100_reg_rd(mac, AG7100_MAC_CFG1),
-        ag7100_reg_rd(mac, AG7100_MAC_CFG2));
+//    printk(MODULE_NAME ": cfg1 %#x cfg2 %#x\n", ag7100_reg_rd(mac, AG7100_MAC_CFG1),
+//        ag7100_reg_rd(mac, AG7100_MAC_CFG2));
 }
 
 static void
@@ -536,7 +536,7 @@ ag7100_set_pll(ag7100_mac_t *mac, unsigned int pll)
     ar7100_reg_wr(ETH_PLL_CONFIG, val);
     udelay(100);
 
-    printk(MODULE_NAME ": pll reg %#x: %#x  ", reg, ar7100_reg_rd(reg));
+//    printk(MODULE_NAME ": pll reg %#x: %#x  ", reg, ar7100_reg_rd(reg));
 }
 
 #if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
@@ -838,7 +838,7 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
         athrs26_phy_on(mac);
 #endif
 
-    printk(MODULE_NAME ": CPU PhaseLockLoop      : %#x\n", *(volatile int *) 0xb8050000);  //set CPU PhaseLockLoop configuration
+/*    printk(MODULE_NAME ": CPU PhaseLockLoop      : %#x\n", *(volatile int *) 0xb8050000);  //set CPU PhaseLockLoop configuration
     printk(MODULE_NAME ": Secondary PhaseLockLoop: %#x\n", *(volatile int *) 0xb8050004);  //set secondary PhaseLockLoop configuration
     printk(MODULE_NAME ": Ethernet Internal Clock Control: %#x\n", *(volatile int *) 0xb8050010);  //set Ethernet Internal Clock Control
     printk(MODULE_NAME ": mii: %#x\n", ar7100_reg_rd(mii_reg(mac)));
@@ -849,7 +849,7 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
     printk(MODULE_NAME ": fcfg_2: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_2));
     printk(MODULE_NAME ": fcfg_3: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_3));
     printk(MODULE_NAME ": fcfg_4: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_4));
-    printk(MODULE_NAME ": fcfg_5: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_5));
+    printk(MODULE_NAME ": fcfg_5: %#x\n", ag7100_reg_rd(mac, AG7100_MAC_FIFO_CFG_5));*/
 }
 
 static void copy_txdescs(ag7100_mac_t *mac, int start, int end)
@@ -887,11 +887,11 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
 
         if(ag7100_tx_owned_by_dma(ds)) {
                         if ((jiffies - bp->trans_start) > (1 * HZ)) {
-                printk(MODULE_NAME ": Tx Dma status : %s\n",
-                ag7100_tx_stopped(mac) ? "inactive" : "active");
+//                printk(MODULE_NAME ": Tx Dma status : %s\n",
+//                ag7100_tx_stopped(mac) ? "inactive" : "active");
 #if 0
-                printk(MODULE_NAME ": timestamp:%u jiffies:%u diff:%d\n",bp->trans_start,jiffies,
-                             (jiffies - bp->trans_start));
+//                printk(MODULE_NAME ": timestamp:%u jiffies:%u diff:%d\n",bp->trans_start,jiffies,
+//                             (jiffies - bp->trans_start));
 #endif
                ag7100_dma_reset(mac);
                            return 1;
@@ -941,7 +941,7 @@ ag7100_check_link(ag7100_mac_t *mac)
     {
         if (carrier)
         {
-            printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
+//            printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
             netif_carrier_off(dev);
         }
         goto done;
@@ -961,16 +961,16 @@ ag7100_check_link(ag7100_mac_t *mac)
     if (carrier && (speed == mac->mac_speed) && (fdx == mac->mac_fdx)) 
         goto done;
 
-    printk(MODULE_NAME ": unit %d phy is up...", mac->mac_unit);
-    printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
-        spd_str[speed], dup_str[fdx]);
+//    printk(MODULE_NAME ": unit %d phy is up...", mac->mac_unit);
+//    printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
+//        spd_str[speed], dup_str[fdx]);
 
     ag7100_set_mac_from_link(mac, speed, fdx);
 
-    printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl %#x \n", 
-        ag7100_reg_rd(mac, AG7100_MAC_CFG2), 
-        ag7100_reg_rd(mac, AG7100_MAC_IFCTL),
-        ar7100_reg_rd(mii_reg(mac)));
+//    printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl %#x \n", 
+//        ag7100_reg_rd(mac, AG7100_MAC_CFG2), 
+//        ag7100_reg_rd(mac, AG7100_MAC_IFCTL),
+//        ar7100_reg_rd(mii_reg(mac)));
     /*
     * in business
     */
@@ -1012,10 +1012,10 @@ done:
 	    (!(status & AG7100_RX_STATUS_PKT_RCVD)) &&
 	    (!((status & AG7100_RX_STATUS_PKTCNT_MASK )>>16))) {
 	     	rx_hang_detected[mac->mac_unit] += 1;
-	     	if ( mac->mac_unit == 1 )	     
-            	printk(MODULE_NAME ": WAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
-	    	 else
-				printk(MODULE_NAME ": LAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
+//	     	if ( mac->mac_unit == 1 )	     
+//            	printk(MODULE_NAME ": WAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
+//	    	 else
+//				printk(MODULE_NAME ": LAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
             rx_hang_detect_pkt_cnt_all[mac->mac_unit] = perf_cnt;
 	    	rx_hang_detect_pkt_cnt_valid[mac->mac_unit] = mac->net_rx_packets;
 
@@ -1981,7 +1981,7 @@ ag7100_ring_alloc(ag7100_ring_t *r, int count)
     memset(r, 0, sizeof(ag7100_ring_t));
 
     r->ring_buffer = (ag7100_buffer_t *)kmalloc(buf_alloc_size, GFP_KERNEL);
-    printk("%s Allocated %d at 0x%lx\n",__func__,buf_alloc_size,(unsigned long) r->ring_buffer);
+//    printk("%s Allocated %d at 0x%lx\n",__func__,buf_alloc_size,(unsigned long) r->ring_buffer);
     if (!r->ring_buffer)
     {
         printk(MODULE_NAME ": unable to allocate buffers\n");
@@ -1994,9 +1994,9 @@ ag7100_ring_alloc(ag7100_ring_t *r, int count)
         GFP_DMA);
     if (! r->ring_desc)
     {
-        printk(MODULE_NAME ": unable to allocate coherent descs\n");
+//        printk(MODULE_NAME ": unable to allocate coherent descs\n");
         kfree(r->ring_buffer);
-        printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) r->ring_buffer);
+///        printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) r->ring_buffer);
         return 1;
     }
 
@@ -2091,10 +2091,10 @@ ag7100_get_default_macaddr(ag7100_mac_t *mac, u8 *mac_addr)
         AR7100_EEPROM_GE0_MAC_ADDR;
 #endif
 
-    printk(MODULE_NAME "CHH: Mac address for unit %d\n",mac->mac_unit);
-    printk(MODULE_NAME "CHH: %02x:%02x:%02x:%02x:%02x:%02x \n",
-        eep_mac_addr[0],eep_mac_addr[1],eep_mac_addr[2],
-        eep_mac_addr[3],eep_mac_addr[4],eep_mac_addr[5]);    
+//    printk(MODULE_NAME "CHH: Mac address for unit %d\n",mac->mac_unit);
+//    printk(MODULE_NAME "CHH: %02x:%02x:%02x:%02x:%02x:%02x \n",
+//        eep_mac_addr[0],eep_mac_addr[1],eep_mac_addr[2],
+//        eep_mac_addr[3],eep_mac_addr[4],eep_mac_addr[5]);    
     memcpy(mac_addr,eep_mac_addr,6);    
 }
 
@@ -2209,7 +2209,7 @@ ag7100_init(void)
 
     ag7100_vet_tx_len_per_pkt( &tx_len_per_ds);
 
-    printk(MODULE_NAME ": Length per segment %d\n", tx_len_per_ds);
+//    printk(MODULE_NAME ": Length per segment %d\n", tx_len_per_ds);
 
     /* 
     * Compute the number of descriptors for an MTU 
@@ -2221,9 +2221,9 @@ ag7100_init(void)
     tx_max_desc_per_ds_pkt =1;
 #endif
 
-    printk(MODULE_NAME ": Max segments per packet %d\n", tx_max_desc_per_ds_pkt);
-    printk(MODULE_NAME ": Max tx descriptor count    %d\n", AG7100_TX_DESC_CNT);
-    printk(MODULE_NAME ": Max rx descriptor count    %d\n", AG7100_RX_DESC_CNT);
+//    printk(MODULE_NAME ": Max segments per packet %d\n", tx_max_desc_per_ds_pkt);
+//    printk(MODULE_NAME ": Max tx descriptor count    %d\n", AG7100_TX_DESC_CNT);
+//    printk(MODULE_NAME ": Max rx descriptor count    %d\n", AG7100_RX_DESC_CNT);
 
     /* 
     * Let hydra know how much to put into the fifo in words (for tx) 
@@ -2231,7 +2231,7 @@ ag7100_init(void)
     if (0 == fifo_3)
         fifo_3 = 0x000001ff | ((AG7100_TX_FIFO_LEN-tx_len_per_ds)/4)<<16;
 
-    printk(MODULE_NAME ": fifo cfg 3 %08x\n", fifo_3);
+//    printk(MODULE_NAME ": fifo cfg 3 %08x\n", fifo_3);
 
     /* 
     ** Do the rest of the initializations 
@@ -2267,7 +2267,7 @@ ag7100_init(void)
         if (!dev)
         {
             kfree(mac);
-            printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) mac);
+//            printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) mac);
             printk(MODULE_NAME ": unable to allocate etherdev\n");
             return 1;
         }
@@ -2413,7 +2413,7 @@ failed:
         if (ag7100_macs[i]->mac_dev) 
             free_netdev(ag7100_macs[i]->mac_dev);
         kfree(ag7100_macs[i]);
-        printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) ag7100_macs[i]);
+//        printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) ag7100_macs[i]);
     }
     return 1;
 }
@@ -2428,9 +2428,9 @@ ag7100_cleanup(void)
         unregister_netdev(ag7100_macs[i]->mac_dev);
         free_netdev(ag7100_macs[i]->mac_dev);
         kfree(ag7100_macs[i]);
-        printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) ag7100_macs[i]);
+//        printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) ag7100_macs[i]);
     }
-    printk(MODULE_NAME ": cleanup done\n");
+//    printk(MODULE_NAME ": cleanup done\n");
 }
 
 module_init(ag7100_init);
