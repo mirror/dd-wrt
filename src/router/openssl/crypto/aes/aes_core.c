@@ -740,30 +740,48 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 
 	if (bits == 512) {
 		while (1) {
-			temp = rk[ 7];
-			rk[ 8] = rk[ 0] ^
+			temp = rk[ 15];
+			rk[ 16] = rk[ 0] ^
 				(Te2[(temp >> 16) & 0xff] & 0xff000000) ^
 				(Te3[(temp >>  8) & 0xff] & 0x00ff0000) ^
 				(Te0[(temp      ) & 0xff] & 0x0000ff00) ^
 				(Te1[(temp >> 24)       ] & 0x000000ff) ^
 				rcon[i];
-			rk[ 9] = rk[ 1] ^ rk[ 8];
-			rk[10] = rk[ 2] ^ rk[ 9];
-			rk[11] = rk[ 3] ^ rk[10];
-			if (++i == 15) {
+			rk[17] = rk[ 1] ^ rk[16];
+			rk[18] = rk[ 2] ^ rk[17];
+			rk[19] = rk[ 3] ^ rk[18];
+			if (++i == 7) {
 				return 0;
 			}
-			temp = rk[11];
-			rk[12] = rk[ 4] ^
+			temp = rk[19];
+			rk[20] = rk[ 4] ^
 				(Te2[(temp >> 24)       ] & 0xff000000) ^
 				(Te3[(temp >> 16) & 0xff] & 0x00ff0000) ^
 				(Te0[(temp >>  8) & 0xff] & 0x0000ff00) ^
 				(Te1[(temp      ) & 0xff] & 0x000000ff);
-			rk[13] = rk[ 5] ^ rk[12];
-			rk[14] = rk[ 6] ^ rk[13];
-			rk[15] = rk[ 7] ^ rk[14];
+			rk[21] = rk[ 5] ^ rk[20];
+			rk[22] = rk[ 6] ^ rk[21];
+			rk[23] = rk[ 7] ^ rk[22];
+			temp = rk[23];
+			rk[24] = rk[ 8] ^
+				(Te2[(temp >> 24)       ] & 0xff000000) ^
+				(Te3[(temp >> 16) & 0xff] & 0x00ff0000) ^
+				(Te0[(temp >>  8) & 0xff] & 0x0000ff00) ^
+				(Te1[(temp      ) & 0xff] & 0x000000ff);
+			rk[25] = rk[ 9] ^ rk[24];
+			rk[26] = rk[ 10] ^ rk[25];
+			rk[27] = rk[ 11] ^ rk[26];
+			temp = rk[27];
+			rk[28] = rk[ 12] ^
+				(Te2[(temp >> 24)       ] & 0xff000000) ^
+				(Te3[(temp >> 16) & 0xff] & 0x00ff0000) ^
+				(Te0[(temp >>  8) & 0xff] & 0x0000ff00) ^
+				(Te1[(temp      ) & 0xff] & 0x000000ff);
+			rk[29] = rk[ 13] ^ rk[28];
+			rk[30] = rk[ 14] ^ rk[29];
+			rk[31] = rk[ 15] ^ rk[30];
 
-			rk += 8;
+			rk += 16;
         	}
 	}
 	return 0;

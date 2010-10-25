@@ -63,7 +63,7 @@
 
 /* Because array size can't be a const in C, the following two are macros.
    Both sizes are in bytes. */
-#define AES_MAXNR 30
+#define AES_MAXNR 28
 #define AES_BLOCK_SIZE 16
 
 #ifdef OPENSSL_FIPS
