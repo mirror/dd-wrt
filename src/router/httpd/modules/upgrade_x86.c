@@ -339,11 +339,11 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
 		FILE *in = fopen(drive, "r+b");
 		fseeko64(in, 0, SEEK_END);
-    		__off64_t mtdlen = ftell(in);
-		fseeko64(in, mtdlen-(65536*2), SEEK_SET);
+		__off64_t mtdlen = ftell(in);
+		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
-		for (i=0;i<65536;i++)
-		    putc(0,in); // erase backup area
+		for (i = 0; i < 65536; i++)
+			putc(0, in);	// erase backup area
 		fclose(in);
 	}
 	/*
