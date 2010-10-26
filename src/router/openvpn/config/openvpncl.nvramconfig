@@ -5,7 +5,7 @@
  "openvpncl_ca"  "OpenVPN Public Key"  "NULL"   "FALSE" "0"
  "openvpncl_client"  "Client Public Key"  "NULL"   "FALSE" "0"
  "openvpncl_key"  "Client Private Key"  "NULL"   "FALSE" "0"
- "openvpncl_proto" "Tunnel Protocol" "CHOICE" "2" "udp" "tcp" "FALSE" "0"
+ "openvpncl_proto" "Tunnel Protocol" "CHOICE" "2" "udp" "tcp-client" "FALSE" "0"
  "openvpncl_mtu" "TUN MTU" "NULL" "FALSE" "0"
  "openvpncl_tuntap" "TUN DEV" "NULL" "FALSE" "0"
  "openvpncl_extramtu" "TUN EXTRA" "NULL" "FALSE" "0"
