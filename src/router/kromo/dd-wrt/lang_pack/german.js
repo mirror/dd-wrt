@@ -1622,7 +1622,7 @@ hupnp.right4="Erlaubt Anwendungen, eine automatische Port-Weiterleitung auf dem 
 // ******************************************* VPN.asp *******************************************//
 
 vpn.titl="VPN-Durchleitung";
-vpn.h2="Virtual Private Network (VPN)";
+vpn.h2="Virtuelles Privates Netzwerk (VPN)";
 vpn.legend="VPN-Durchleitung";
 vpn.ipsec="IPSec-Durchleitung";
 vpn.pptp="PPTP-Durchleitung";
