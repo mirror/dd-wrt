@@ -34,17 +34,17 @@
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label"><% tran("service.vpn_clicert"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_client" name="openvpn_client"> </textarea>
+		<div class="label"><% tran("service.vpnd_cert"); %></div>
+		<textarea cols="60" rows="10" id="openvpn_pubcrt" name="openvpn_crt"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
-				var openvpn_client = fix_cr( '<% nvram_get("openvpn_client"); %>' );
-				document.getElementById("openvpn_client").value = openvpn_client;
+				var openvpn_crt = fix_cr( '<% nvram_get("openvpn_crt"); %>' );
+				document.getElementById("openvpn_crt").value = openvpn_crt	;
 		//]]>
 		</script>
 	</div>
 	<div class="setting">		
-		<div class="label"><% tran("service.vpn_clikey"); %></div>
+		<div class="label"><% tran("service.vpnd_key"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_key" name="openvpn_key"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[		
