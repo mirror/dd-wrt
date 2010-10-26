@@ -58,6 +58,7 @@
 #define  ROBO_DEVICE_ID_5395	0x95
 #define  ROBO_DEVICE_ID_5397	0x97
 #define  ROBO_DEVICE_ID_5398	0x98
+#define  ROBO_DEVICE_ID_53115	0x3115
 
 /* Private et.o ioctls */
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
@@ -101,7 +102,11 @@ static int do_ioctl(int cmd, void *buf)
 		robo.ifr.ifr_data = (caddr_t) buf;
 
 	set_fs(KERNEL_DS);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
+	ret = robo.dev->netdev_ops->ndo_do_ioctl(robo.dev, &robo.ifr, cmd);
+#else
 	ret = robo.dev->do_ioctl(robo.dev, &robo.ifr, cmd);
+#endif
 	set_fs(old_fs);
 
 	return ret;
@@ -293,6 +298,7 @@ static void robo_switch_reset(void)
 	    (robo.devid == ROBO_DEVICE_ID_5398)) {
 		/* Trigger a software reset. */
 		robo_write16(ROBO_CTRL_PAGE, 0x79, 0x83);
+		mdelay(500);
 		robo_write16(ROBO_CTRL_PAGE, 0x79, 0);
 	}
 }
@@ -306,7 +312,11 @@ static int robo_probe(char *devname)
 	printk(KERN_INFO PFX "Probing device %s: ", devname);
 	strcpy(robo.ifr.ifr_name, devname);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25)
 	if ((robo.dev = dev_get_by_name(devname)) == NULL) {
+#else
+	if ((robo.dev = dev_get_by_name(&init_net, devname)) == NULL) {
+#endif
 		printk("No such device\n");
 		return 1;
 	}
@@ -359,7 +369,7 @@ static int robo_probe(char *devname)
 	if (err)
 		return err;
 
-	printk("found!\n");
+	printk("found a 5%s%x!\n", robo.devid & 0xff00 ? "" : "3", robo.devid);
 	return 0;
 }
 
@@ -437,6 +447,17 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 	}
 
 	/* write config now */
+
+	if (robo.devid != ROBO_DEVICE_ID_5325) {
+		__u8 regoff = ((robo.devid == ROBO_DEVICE_ID_5395) ||
+			(robo.devid == ROBO_DEVICE_ID_53115)) ? 0x20 : 0;
+
+		robo_write32(ROBO_ARLIO_PAGE, 0x63 + regoff, (c->untag << 9) | c->port);
+		robo_write16(ROBO_ARLIO_PAGE, 0x61 + regoff, nr);
+		robo_write16(ROBO_ARLIO_PAGE, 0x60 + regoff, 1 << 7);
+		return 0;
+	}
+
 	val16 = (nr) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
 	if (robo.is_5350) {
 		robo_write32(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350,
@@ -478,7 +499,12 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
 		(1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
-		(1 << 1) | (1 << 2) | (1 << 3) /* RSV multicast */);
+		(robo.devid == ROBO_DEVICE_ID_5325 ? (1 << 1) :
+		0) | (1 << 2) | (1 << 3)); /* RSV multicast */
+
+	if (robo.devid != ROBO_DEVICE_ID_5325)
+		return 0;
+
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
 		(1 << 6) /* drop invalid VID frames */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, disable ? 0 :
@@ -577,6 +603,10 @@ static int __init robo_init(void)
 			.port_handlers		= NULL,
 			.vlan_handlers		= vlan,
 		};
+		if (robo.devid != ROBO_DEVICE_ID_5325) {
+			driver.ports = 9;
+			driver.cpuport = 8;
+		}
 
 		return switch_register_driver(&driver);
 	}
