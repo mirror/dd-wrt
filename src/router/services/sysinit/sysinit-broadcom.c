@@ -1436,7 +1436,7 @@ void start_sysinit(void)
 			case ROUTER_BELKIN_F7D4301:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
-				modules = "bcm57xx";
+				modules = "bcm57xx switch-core switch-robo";
 #else
 				modules = "bcm57xxlsys";
 #endif
@@ -1518,7 +1518,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN16:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
-				modules = "bcm57xx";
+				modules = "bcm57xx switch-core switch-robo";
 #else
 				modules = "bcm57xxlsys";
 #endif
