@@ -1329,6 +1329,7 @@ service.vpnd_mask="Netmask";
 service.vpnd_startip="Pool start IP";
 service.vpnd_endip="Pool end IP";
 service.vpnd_cl2cl="Client to Client connection allowed";
+service.vpnd_switch="Switch Server config";
 service.vpn_legend="OpenVPN Client";
 service.vpn_srv="Start OpenVPN Client";
 service.vpn_ipname="Server IP/Name";
