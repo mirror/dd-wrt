@@ -39,7 +39,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpnd_startip"); %></div>
-			<input size="27" maxlength="15" name="openvpn_startip" value="<% nvram_get("oopenvpn_startip"); %>" />
+			<input size="27" maxlength="15" name="openvpn_startip" value="<% nvram_get("openvpn_startip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpnd_endip"); %></div>
@@ -104,7 +104,7 @@
 				document.getElementById("openvpn_crt").value = openvpn_crt	;
 		//]]>
 		</script>
-		</div>
+	</div>
 	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_key"); %></div>
