@@ -74,7 +74,7 @@
 	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.vpn_srvcert"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_ca" name="openvpn_ca"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_ca" name="openvpn_ca"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
 				var openvpn_ca = fix_cr( '<% nvram_get("openvpn_ca"); %>' );
@@ -85,7 +85,7 @@
 	<div id="idnew"> 
 	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_cert"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_pubcrt" name="openvpn_crt"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_pubcrt" name="openvpn_crt"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
 				var openvpn_crt = fix_cr( '<% nvram_get("openvpn_crt"); %>' );
@@ -97,7 +97,7 @@
 	<div id="idold"> 
 	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_cert"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_pubcrt" name="openvpn_crt"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_pubcrt" name="openvpn_crt"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
 				var openvpn_crt = fix_cr( '<% nvram_get("openvpn_client"); %>' );
@@ -108,7 +108,7 @@
 	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_key"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_key" name="openvpn_key"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_key" name="openvpn_key"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[		
 				var openvpn_key = fix_cr( '<% nvram_get("openvpn_key"); %>' );
@@ -118,7 +118,7 @@
 	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_dhpem"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_dh" name="openvpn_dh"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_dh" name="openvpn_dh"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[		
 				var openvpn_dh = fix_cr( '<% nvram_get("openvpn_dh"); %>' );
@@ -138,7 +138,7 @@
 	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_tlsauth"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_tlsauth" name="openvpn_tlsauth"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_tlsauth" name="openvpn_tlsauth"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
 				var openvpn_tlsauth = fix_cr( '<% nvram_get("openvpn_tlsauth"); %>' );
@@ -148,7 +148,7 @@
 	</div>
 		<div class="setting">		
 		<div class="label"><% tran("service.vpnd_crl"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_crl" name="openvpn_crl"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_crl" name="openvpn_crl"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
 				var openvpn_crl = fix_cr( '<% nvram_get("openvpn_crl"); %>' );
