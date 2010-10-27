@@ -11,3 +11,5 @@
  "openvpncl_extramtu" "TUN EXTRA" "NULL" "FALSE" "0"
  "openvpncl_mssfix" "TCP MSS" "NULL" "FALSE" "0"
  "openvpncl_certtype"  "nsCertType server" "CHOICE" "2" "0" "1" "TRUE" "0"
+ "openvpncl_config" "Config" "NULL" "FALSE" "0"
+ "openvpncl_nat" "Enable NAT" "CHOICE" "2" "0" "1" "TRUE" "0"
