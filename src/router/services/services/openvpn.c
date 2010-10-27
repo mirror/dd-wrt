@@ -83,18 +83,12 @@ void start_openvpnserver(void)
 	return;	
 	fclose(fp);
 
-	FILE *fp = fopen("/tmp/openvpn/route-up.sh", "wb");
+	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
 	fprintf(fp, "startservice set_routes\n");;
-	//decide if its a tcp or udp tunnel & open/close firewall accordingly
-	if (nvram_match("openvpn_port", "udp"))
-		fprintf(fp, "iptables -I INPUT 2 -p udp --dport %s",
-		nvram_safe_get("openvpn_port")" -j ACCEPT\n");
-	else
-		fprintf(fp, "iptables -I INPUT 2 -p tcp --dport %s",
-		nvram_safe_get("openvpn_port")" -j ACCEPT\n");
-	return;
+	fprintf(fp, "iptables -I INPUT 2 -p %s --dport %s -j ACCEPT\n",
+		nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_port"));
 	fprintf(fp, "iptables -I FORWARD 1 -i br0 -o tun+ -j ACCEPT\n");
 	fprintf(fp, "iptables -I FORWARD 2 -i tun+ -o br0 -j ACCEPT\n");
 	//fprintf(fp, "iptables -I INPUT -i tun0 -j ACCEPT\n");
@@ -103,13 +97,8 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
-	if (nvram_match("openvpn_port", "udp"))
-		fprintf(fp, "iptables -D INPUT -p udp --dport %s",
-		nvram_safe_get("openvpn_port")" -j ACCEPT\n");
-	else
-		fprintf(fp, "iptables -D INPUT -p tcp --dport %s",
-		nvram_safe_get("openvpn_port")" -j ACCEPT\n");
-	return;
+	fprintf(fp, "iptables -D INPUT -p %s --dport %s -j ACCEPT\n",
+		nvram_safe_get("openvpn_proto"),nvram_safe_get("openvpn_port"));
 	fprintf(fp, "iptables -D FORWARD -i br0 -o tun+ -j ACCEPT\n");
 	fprintf(fp, "iptables -D FORWARD -i tun+ -o br0 -j ACCEPT\n");
 	fclose(fp);
