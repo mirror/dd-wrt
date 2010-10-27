@@ -11,8 +11,60 @@
 		<div class="label"><% tran("service.vpnd_starttype"); %></div>
 		<input type="radio" name="openvpn_onwan" value="1" <% nvram_checked("openvpn_onwan", "1"); %> /><% tran("service.vpnd_startWanup"); %>
 		<input type="radio" name="openvpn_onwan" value="0" <% nvram_checked("openvpn_onwan", "0"); %> /><% tran("service.vpnd_startSystem"); %>
-		</div>
-	
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.vpnd_mode"); %></div>
+		<select name="openvpn_mode">
+		<option value="router" <% nvram_selected("openvpn_mode","router"); %>>Router</option>
+		<option value="bridge" <% nvram_selected("openvpn_mode","bridge"); %>>Bridge</option>
+		</select>
+	</div>	
+	<div class="setting">
+		<div class="label"><% tran("service.vpnd_net"); %></div>
+		<input size="27" maxlength="15" name="openvpn_net" value="<% nvram_get("openvpn_net"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("share.gateway"); %></div>
+		<input size="27" maxlength="15" name="openvpn_gateway" value="<% nvram_get("openvpn_gateway"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.vpnd_mask"); %></div>
+		<input size="27" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("sservice.vpnd_startip"); %></div>
+		<input size="27" maxlength="15" name="openvpn_startip" value="<% nvram_get("oopenvpn_startip"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.vpnd_endip"); %></div>
+		<input size="27" maxlength="15" name="openvpn_endip" value="<% nvram_get("openvpn_endipk"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("share.port"); %></div>
+		<input size="5" maxlength="5" class="num" name="openvpn_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_port"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.vpn_tunnel"); %></div>
+		<select name="openvpn_proto">
+		<option value="udp" <% nvram_selected("openvpn_proto","udp"); %>>UDP</option>
+		<option value="tcp" <% nvram_selected("openvpn_proto","tcp-servert"); %>>TCP</option>
+		</select>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.vpn_tuntap"); %></div>
+		<select name="openvpncl_tuntap">
+		<option value="tun" <% nvram_selected("openvpn_tuntap","tun"); %>>TUN</option>
+		<option value="tap" <% nvram_selected("openvpn_tuntap","tap"); %>>TAP</option>
+		</select>
+	</div>
+	<div class="setting">
+	<div class="label"><% tran("service.vpn_certtype"); %></div>
+			<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_certtype" <% nvram_checked("openvpncl_certtype","1"); %> />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.vpn_certtype"); %></div>
+		<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_certtype" <% nvram_checked("openvpncl_certtype","1"); %> />
+	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.vpn_srvcert"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_ca" name="openvpn_ca"> </textarea>
