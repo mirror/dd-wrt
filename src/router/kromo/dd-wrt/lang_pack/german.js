@@ -1288,16 +1288,29 @@ service.snmp_read="RO-Community";
 service.snmp_write="RW-Community";
 
 //openvpn.webservices
+service.vpnd_legend="OpenVPN Daemon";
+service.vpnd_srv="Starte OpenVPN Daemon";
+service.vpnd_startWanup="Bei WAN Start";
+service.vpnd_startSystem="Bei System Start";
+service.vpnd_config="OpenVPN Konfiguration";
+service.vpnd_cert="Öffentliches Server-Zertifikat";
+service.vpnd_key="Privater Server-Schüssel";
+service.vpnd_mode="Server mode";
+service.vpnd_net="Netzwerk";
+service.vpnd_mask="Netzwerkmaske";
+service.vpnd_startip="Pool start IP";
+service.vpnd_endip="Pool end IP";
+service.vpnd_cl2cl="Klient zu Klient verbindung erlaubt";
 service.vpn_legend="OpenVPN-Client";
 service.vpn_srv="Starte OpenVPN";
 service.vpn_ipname="Server-IP/Name";
 service.vpn_mtu="TUN-MTU-Einstellungen";
 service.vpn_mru="TUN-MTU-Extra";
 service.vpn_mss="TCP-MSS";
-service.vpn_compress="Nutze LZO-Compression";
+service.vpn_compress="Benutze LZO-Compression";
 service.vpn_tunnel="Tunnel-Protokoll";
-service.vpn_tuntap="Tunnel-Device";
-service.vpn_srvcert="Öffentliches Server-Zertifikat";
+service.vpn_tuntap="Tunnel-Typ";
+service.vpn_srvcert="Öffentliches CA-Zertifikat";
 service.vpn_clicert="Öffentliches Client-Zertifikat";
 service.vpn_clikey="Privater Client-Schlüssel";
 
