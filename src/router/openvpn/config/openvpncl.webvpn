@@ -9,23 +9,23 @@
 	<div id="idvpncl">
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_ipname"); %></div>
-			<input size="27" name="openvpncl_remoteip" value="<% nvram_get("openvpncl_remoteip"); %>" />
+			<input size="27" maxlength="15" name="openvpncl_remoteip" value="<% nvram_get("openvpncl_remoteip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
-			<input size="5" maxlength="32" class="num" name="openvpncl_remoteport" onblur="valid_range(this,1,65535,share.port)"  value="<% nvram_get("openvpncl_remoteport"); %>" />
+			<input size="5" maxlength="5" class="num" name="openvpncl_remoteport" onblur="valid_range(this,1,65535,share.port)"  value="<% nvram_get("openvpncl_remoteport"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_mtu"); %></div>
-			<input size="5" maxlength="32" class="num" name="openvpncl_mtu" value="<% nvram_get("openvpncl_mtu"); %>" />
+			<input size="5" maxlength="5" class="num" name="openvpncl_mtu" value="<% nvram_get("openvpncl_mtu"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_mru"); %></div>
-			<input size="5" maxlength="32" class="num" name="openvpncl_extramtu" value="<% nvram_get("openvpncl_extramtu"); %>" />
+			<input size="5" maxlength="5" class="num" name="openvpncl_extramtu" value="<% nvram_get("openvpncl_extramtu"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_mss"); %></div>
-			<input size="5" maxlength="32" class="num" name="openvpncl_mssfix" value="<% nvram_get("openvpncl_mssfix"); %>" />
+			<input size="5" maxlength="5" class="num" name="openvpncl_mssfix" value="<% nvram_get("openvpncl_mssfix"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_tunnel"); %></div>
