@@ -99,8 +99,8 @@ void start_openvpnserver(void)
 	fprintf(fp, "startservice set_routes\n");;
 	fprintf(fp, "iptables -I INPUT 2 -p %s --dport %s -j ACCEPT\n", 
                 nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_port")); 
-	fprintf(fp, "iptables -I FORWARD 1 -i %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
-	fprintf(fp, "iptables -I FORWARD 2 -o %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+	fprintf(fp, "iptables -I FORWARD 1 -i %s+ -j ACCEPT\n", nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I FORWARD 2 -o %s+ -j ACCEPT\n", nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
@@ -108,8 +108,8 @@ void start_openvpnserver(void)
 		return;
 	fprintf(fp, "iptables -D INPUT -p %s --dport %s -j ACCEPT\n", 
 		nvram_safe_get("openvpn_proto"),nvram_safe_get("openvpn_port")); 
-	fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
-	fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+	fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n", nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n", nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
@@ -203,13 +203,25 @@ void start_openvpn(void)
 	fp = fopen("/tmp/openvpncl/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "iptables -A POSTROUTING -t nat -o tun0 -j MASQUERADE\n");
+	if (nvram_match("openvpncl_nat", "1"))
+		fprintf(fp, "iptables -A POSTROUTING -t nat -o tun0 -j MASQUERADE\n");
+	else	
+		fprintf(fp, "iptables -A FORWARD 1 -i %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -A FORWARD 2 -o %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+	return;
 	fclose(fp);
+
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "iptables -D POSTROUTING -t nat -o tun0 -j MASQUERADE\n");
+	if (nvram_match("openvpncl_nat", "1"))
+		fprintf(fp, "iptables -D POSTROUTING -t nat -o tun0 -j MASQUERADE\n");
+	else	
+		fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+	return;
 	fclose(fp);
+
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
 
