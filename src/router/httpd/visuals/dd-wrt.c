@@ -6711,10 +6711,10 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				  "<script type=\"text/javascript\">Capture(vlan.negociate)</script>");
 			break;
 		case 18:
-			websWrite(wp, "100 Mbit");
+			websWrite(wp, "Full Speed");
 			break;
 		case 19:
-			websWrite(wp, "Full-Duplex");
+			websWrite(wp, "Full Duplex");
 			break;
 		case 20:
 			websWrite(wp, "Enabled");
