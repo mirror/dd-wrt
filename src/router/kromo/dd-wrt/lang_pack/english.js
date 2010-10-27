@@ -1343,6 +1343,7 @@ service.vpn_srvcert="CA Cert";
 service.vpn_clicert="Public Client Cert";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Private Client Key";
+service.vpn_nat="Enable NAT";
 
 service.vncrepeater_legend="VNC";
 service.vncrepeater="VNC Repeater";
