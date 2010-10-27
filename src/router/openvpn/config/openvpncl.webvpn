@@ -50,6 +50,10 @@
 			<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_certtype" <% nvram_checked("openvpncl_certtype","1"); %> />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.vpn_nat"); %></div>
+			<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_nat" <% nvram_checked("openvpncl_nat","1"); %> />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.vpn_srvcert"); %></div>
 			<textarea cols="60" rows="2" id="openvpncl_ca" name="openvpncl_ca"></textarea>
 			<script type="text/javascript">
@@ -79,5 +83,15 @@
 			//]]>
 			</script>
 		</div>
+		<div class="setting">		
+			<div class="label"><% tran("service.vpnd_config"); %></div>
+			<textarea cols="60" rows="2" id="openvpncl_config" name="openvpncl_config"> </textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+					var openvpn_config = fix_cr( '<% nvram_get("openvpncl_config"); %>' );
+					document.getElementById("openvpncl_config").value = openvpncl_config;
+			//]]>
+		</script>
+	</div>
 	</div>	
 </fieldset><br/>
