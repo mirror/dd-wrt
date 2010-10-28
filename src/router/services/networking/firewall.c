@@ -1931,6 +1931,11 @@ static void filter_input(void)
 	/*
 	 * lonewolf mods for multiple VLANs / interfaces 
 	 */
+#ifdef HAVE_OPENVPN
+	if (nvram_match("openvpn_enable", "1")) {
+	    save2file("-A INPUT -p %s --dport %s -j ACCEPT\n",nvram_safe_get("openvpn_proto"),nvram_safe_get("openvpn_port"));
+	}
+#endif
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (nvram_invmatch("dr_wan_rx", "0"))
 			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n",
