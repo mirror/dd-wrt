@@ -64,7 +64,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "log-append /var/log/openvpn\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
-		fprintf(fp, "dev %s\n", nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "dev %s\n", nvram_safe_get("openvpn_tuntap"));
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
