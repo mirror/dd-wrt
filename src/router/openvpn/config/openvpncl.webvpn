@@ -9,7 +9,7 @@
 	<div id="idvpncl">
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_ipname"); %></div>
-			<input size="27" maxlength="15" name="openvpncl_remoteip" value="<% nvram_get("openvpncl_remoteip"); %>" />
+			<input size="27" maxlength="64" name="openvpncl_remoteip" value="<% nvram_get("openvpncl_remoteip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
