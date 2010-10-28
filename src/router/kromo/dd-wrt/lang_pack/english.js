@@ -2157,7 +2157,7 @@ hsas.other="Other Settings help text";
 var haoss = new Object();
 haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS capable clients to your access point without requiring manual configuration.";
 haoss.securitymodes="The AOSS Security Modes define what client security modes are accepted for AOSS negotiation. If a Client only supports security modes that are not enabled it cannot connect.";
-
+haoss.wps="WPS enables support for the Wifi Protected Setup using the Push Button on your Router, or by using the PIN Method using the PIN printed on your client device or your client authentication application";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 var dhcp = new Object();
