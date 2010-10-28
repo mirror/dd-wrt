@@ -31,7 +31,7 @@
 			<div class="label"><% tran("service.vpn_tunnel"); %></div>
 			<select name="openvpncl_proto">
 			    <option value="udp" <% nvram_selected("openvpncl_proto","udp"); %>>UDP</option>
-			    <option value="tcp" <% nvram_selected("openvpncl_proto","tcp-client"); %>>TCP</option>
+			    <option value="tcp-client" <% nvram_selected("openvpncl_proto","tcp-client"); %>>TCP</option>
 			</select>
 		</div>
 		<div class="setting">
@@ -85,11 +85,11 @@
 		</div>
 		<div class="setting">		
 			<div class="label"><% tran("service.vpnd_config"); %></div>
-			<textarea cols="60" rows="2" id="openvpncl_config" name="openvpncl_config"> </textarea>
+			<textarea cols="60" rows="2" id="openvpncl_config" name="openvpncl_config"></textarea>
 			<script type="text/javascript">
 			//<![CDATA[
-					var openvpn_config = fix_cr( '<% nvram_get("openvpncl_config"); %>' );
-					document.getElementById("openvpncl_config").value = openvpncl_config;
+				var openvpncl_config = fix_cr( '<% nvram_get("openvpncl_config"); %>' );
+				document.getElementById("openvpncl_config").value = openvpncl_config;
 			//]]>
 		</script>
 	</div>
