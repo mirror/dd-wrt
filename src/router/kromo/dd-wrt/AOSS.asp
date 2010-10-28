@@ -95,6 +95,8 @@ addEvent(window, "unload", function() {
 					<legend><% tran("aoss.service"); %></legend>
 					<div class="setting">
 						<div class="label"><% tran("aoss.enable"); %></div>
+						<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
 					<div id="aoss_button" class="setting" style="<% visible_css("aoss_enable", "1"); %>">
 						<div class="label"><% tran("aoss.start"); %></div>
 						<input type="button" class="aoss_enable" value="" onclick="startAOSS(this.form)">
@@ -170,7 +172,7 @@ document.write("<\/tr>");
 					<legend><% tran("aoss.wps"); %></legend>
 					<div class="setting">
 						<div class="label"><% tran("aoss.wpsenable"); %></div>
-						<input class="spaceradio" type="radio" value="1" name="wps_enabled" <% nvram_checked("wps_enabled", "0"); %> /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="1" name="wps_enabled" <% nvram_checked("wps_enabled", "1"); %> /><% tran("share.enable"); %>&nbsp;
 						<input class="spaceradio" type="radio" value="0" name="wps_enabled" <% nvram_checked("wps_enabled", "0"); %> /><% tran("share.disable"); %>
 					</div>
 					<div class="setting">
