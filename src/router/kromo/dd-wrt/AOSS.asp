@@ -203,6 +203,11 @@ document.write("<\/tr>");
 				 <dd class="definition"><% tran("haoss.basic"); %></dd>
 				 <dt class="term"><% tran("aoss.securitymodes"); %></dt>
 				 <dd class="definition"><% tran("haoss.securitymodes"); %></dd>
+<% ifndef("HAVE_WPS", "<!--"); %>
+				 <dt class="term"><% tran("aoss.wps"); %></dt>
+				 <dd class="definition"><% tran("haoss.wps"); %></dd>
+<% ifndef("HAVE_WPS", "-->"); %>
+
 			   </dl><br />
 			   <!--a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a-->
 			</div>
