@@ -93,25 +93,19 @@ void start_openvpnserver(void)
 	}
 	fclose(fp);
 
+	sysprintf("iptables -I INPUT -p %s --dport %s -j ACCEPT\n",nvram_safe_get("openvpn_proto"),nvram_safe_get("openvpn_port"));
+
 	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
 	fprintf(fp, "startservice set_routes\n");;
-	fprintf(fp, "iptables -I INPUT 2 -p %s --dport %s -j ACCEPT\n",
-		nvram_safe_get("openvpn_proto"),
-		nvram_safe_get("openvpn_port"));
-	fprintf(fp, "iptables -I FORWARD 1 -i %s+ -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -I FORWARD 2 -o %s+ -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I FORWARD 1 -i %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I FORWARD 2 -o %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "iptables -D INPUT -p %s --dport %s -j ACCEPT\n",
-		nvram_safe_get("openvpn_proto"),
-		nvram_safe_get("openvpn_port"));
 	fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n",
 		nvram_safe_get("openvpn_tuntap"));
 	fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n",
