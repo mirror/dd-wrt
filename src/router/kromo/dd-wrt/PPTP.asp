@@ -64,11 +64,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="openvpncl_certtype" />
-							<input type="hidden" name="openvpncl_nat" />
-							<input type="hidden" name="openvpncl_lzo" />
-							<input type="hidden" name="openvpn_lzo" />
-							
-							
+
+														
 <h2><% tran("service.pptp_srv"); %></h2>
 
 <fieldset>
