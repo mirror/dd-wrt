@@ -1809,7 +1809,7 @@ aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is con
 aoss.wep_notice="WEP security mode is insecure, therefore the use of WEP is not recommended.";
 aoss.wep_info="(required for most gaming consoles supporting AOSS)";
 aoss.wps="WPS Setup";
-aoss.wpspin="WPS Pin";
+aoss.wpspin="WPS PIN";
 aoss.wpsregister="Register PIN";
 aoss.wpsenable="WPS Button";
 
