@@ -173,7 +173,11 @@ document.write("<\/tr>");
 					<div class="setting">
 						<div class="label"><% tran("aoss.wpspin"); %></div>
 						<input class="num" name="wps_pin" size="16" maxlength="16" value="" />&nbsp;
-						<input type="button" name="start_wps" value="<% tran("aoss.wpsregister"); %>" class="button" onclick="to_register" >
+						<script type="text/javascript">
+						//<![CDATA[
+						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsregister + "\" onclick=\"to_register(this.form);\" />");
+						//]]>
+						</script>
 					</div>
 				</fieldset>
 <% ifndef("HAVE_WPS", "-->"); %>
