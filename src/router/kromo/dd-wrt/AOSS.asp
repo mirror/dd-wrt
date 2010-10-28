@@ -97,7 +97,7 @@ addEvent(window, "unload", function() {
 						<div class="label"><% tran("aoss.enable"); %></div>
 						<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
 						<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
-					<div id="aoss_button" class="setting" style="<% visible_css("aoss_enable", "1"); %>">
+					<div id="aoss_button" class="setting" style="<% visible_css("aoss_enable", "1"); %>"></div>
 						<div class="label"><% tran("aoss.start"); %></div>
 						<input type="button" class="aoss_enable" value="" onclick="startAOSS(this.form)">
 					</div>
@@ -168,6 +168,7 @@ document.write("<\/tr>");
 <br /-->
 <!-- AOSS end -->
 <% ifndef("HAVE_WPS", "<!--"); %>
+				<h2>WPS<!-- % tran(""); %--></h2>
 				<fieldset>
 					<legend><% tran("aoss.wps"); %></legend>
 					<div class="setting">
@@ -185,6 +186,7 @@ document.write("<\/tr>");
 						</script>
 					</div>
 				</fieldset>
+				<br />
 <% ifndef("HAVE_WPS", "-->"); %>
 				
 				<div class="submitFooter">
