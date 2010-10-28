@@ -41,7 +41,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/dh.pem", "openvpn_dh");
 	write_nvram("/tmp/openvpn/ca.crt", "openvpn_ca");
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
-	if (nvram_match("openvpn_switch", "1"))	//be sure to use the correct cert naming
+	if (nvram_match("openvpn_switch", "1"))	//use the new/old nv naming
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 	else
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
@@ -59,9 +59,6 @@ void start_openvpnserver(void)
 		fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
 		fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
 		fprintf(fp, "key /tmp/openvpn/key.pem\n");
-		fprintf(fp, "management 127.0.0.1 5001\n");
-		fprintf(fp, "management-query-passwords\n");
-		fprintf(fp, "management-log-cache\n");
 		//be sure Chris old style ist still working
 	if (nvram_match("openvpn_switch", "1"))	
 		fprintf(fp, "client-to-client\n");
@@ -89,7 +86,10 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_mask"),
 			nvram_safe_get("openvpn_startip"),
 			nvram_safe_get("openvpn_endip"));
-		return;	
+		return;
+		fprintf(fp, "management 127.0.0.1 5001\n");
+		fprintf(fp, "management-query-passwords\n");
+		fprintf(fp, "management-log-cache\n");
 	return;
 	fclose(fp);
 
@@ -166,8 +166,12 @@ void start_openvpn(void)
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
 	mkdir("/tmp/openvpncl", 0700);
-	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
+	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");
+	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
+	write_nvram("/tmp/openvpncl/client.key", "openvpncl_key");
+	write_nvram("/tmp/openvpncl/openvpn.conf", "openvpncl_config");
 
+	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "a+b");
 	if (fp == NULL)
 		return;
 	fprintf(fp, "client\n");
@@ -188,7 +192,6 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_extramtu"));
 	if (nvram_invmatch("openvpncl_mssfix", ""))
 		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));
-
 	fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
 	fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
 	fprintf(fp, "key /tmp/openvpncl/client.key\n");	
@@ -200,6 +203,7 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_lzo", "1"))
 		fprintf(fp, "comp-lzo\n");
 	fclose(fp);
+
 	fp = fopen("/tmp/openvpncl/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
@@ -225,9 +229,6 @@ void start_openvpn(void)
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
 
-	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");
-	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
-	write_nvram("/tmp/openvpncl/client.key", "openvpncl_key");
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf",
 		     "--route-up", "/tmp/openvpn/route-up.sh", "--down",
