@@ -166,6 +166,9 @@ endif
 ifeq ($(CONFIG_DDLINK),y)
   CFLAGS += -DHAVE_DDLINK
 endif
+ifeq ($(CONFIG_WPS),y)
+  CFLAGS += -DHAVE_WPS
+endif
 ifeq ($(CONFIG_AOSS),y)
   CFLAGS += -DHAVE_AOSS
 endif
@@ -873,7 +876,7 @@ endif
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
-validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o $(WEBSOBJS) $(REGOBJS)
+validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
 
 visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o aoss.o $(VISOBJS) $(REGOBJS2)
