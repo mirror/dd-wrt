@@ -40,6 +40,7 @@ void start_openvpnserver(void)
 	mkdir("/tmp/openvpn", 0700);
 	write_nvram("/tmp/openvpn/dh.pem", "openvpn_dh");
 	write_nvram("/tmp/openvpn/ca.crt", "openvpn_ca");
+	write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
@@ -53,17 +54,18 @@ void start_openvpnserver(void)
 	fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 	fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
 	fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
+	fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
 	fprintf(fp, "key /tmp/openvpn/key.pem\n");
-	fprintf(fp, "cert /tmp/openvpn/ca.crl\n");
-	fprintf(fp, "key /tmp/openvpn/ta.key\n");
+	fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 	//be sure Chris old style ist still working
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 		fprintf(fp, "client-to-client\n");
 		fprintf(fp, "keepalive 10 60\n");
 		fprintf(fp, "verb 4\n");
-		fprintf(fp, "mute 4\n");
+		fprintf(fp, "mute 20\n");
 		fprintf(fp, "log-append /var/log/openvpn\n");
+//		fprintf(fp, "tls-server\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
 		fprintf(fp, "dev %s\n", nvram_safe_get("openvpn_tuntap"));
@@ -84,10 +86,10 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_startip"),
 				nvram_safe_get("openvpn_endip"));
 		}
-		fprintf(fp, "management 127.0.0.1 5001\n");
-		fprintf(fp, "management-query-passwords\n");
+/*		fprintf(fp, "management 127.0.0.1 5001\n");
+		fprintf(fp, "management-query-passwords\n");  disable for now
 		fprintf(fp, "management-log-cache\n");
-	} else {
+*/	} else {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 
 	}
@@ -106,10 +108,8 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
@@ -194,6 +194,7 @@ void start_openvpn(void)
 	fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
 	fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
 	fprintf(fp, "key /tmp/openvpncl/client.key\n");
+//	fprintf(fp, "tls-auth /tmp/openvpncl/client.key 1\n"); for future usage
 
 	// Botho 22/05/2006 - start
 	if (nvram_match("openvpncl_certtype", "1"))
@@ -210,10 +211,8 @@ void start_openvpn(void)
 		fprintf(fp,
 			"iptables -A POSTROUTING -t nat -o tun0 -j MASQUERADE\n");
 	else {
-		fprintf(fp, "iptables -A FORWARD 1 -i %s+ -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -A FORWARD 2 -o %s+ -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -A FORWARD 1 -i %s+ -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -A FORWARD 2 -o %s+ -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
 	}
 	fclose(fp);
 
@@ -224,10 +223,8 @@ void start_openvpn(void)
 		fprintf(fp,
 			"iptables -D POSTROUTING -t nat -o tun0 -j MASQUERADE\n");
 	else {
-		fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
 	}
 	fclose(fp);
 
