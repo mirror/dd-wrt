@@ -55,7 +55,7 @@ void aoss_save(webs_t wp)
 	nvram_set("aoss_wep", buf);
 #ifdef HAVE_WPS
 	sprintf(buf, "%s", websGetVar(wp, "wps_enabled", "0"));
-	nvram_set("wps_enabled", "1");
+	nvram_set("wps_enabled", buf);
 #endif
 	// check if at least one value was set
 	if (!strcmp(websGetVar(wp, "aoss_aes", "0"), "0")
