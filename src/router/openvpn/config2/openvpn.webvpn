@@ -58,14 +58,14 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_tuntap"); %></div>
-			<select name="openvpncl_tuntap">
+			<select name="openvpn_tuntap">
 			<option value="tun" <% nvram_selected("openvpn_tuntap","tun"); %>>TUN</option>
 			<option value="tap" <% nvram_selected("openvpn_tuntap","tap"); %>>TAP</option>
 		</select>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_compress"); %></div>
-			<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_lzo" <% nvram_checked("openvpn_lzo","1"); %> />
+			<input class="spaceradio" type="checkbox" value="1" name="_openvpn_lzo" <% nvram_checked("openvpn_lzo","1"); %> />
 		</div>
 	</div>
 	<div class="setting">		
