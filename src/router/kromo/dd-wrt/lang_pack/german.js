@@ -1739,6 +1739,10 @@ aoss.notice="Mitteilung";
 aoss.ap_mode_notice="Mitteilung: AOSS kann nur genutzt werden, wenn die Primäre WLAN Schnittstelle sich im AP oder WDS-AP Modus befindet.";
 aoss.wep_notice="Der WEP Modus ist unsicher, aus dem Grunde empfehlen wir Ihnen, diesen Nicht zu benutzen.";
 aoss.wep_info="(wird für einige Spielkonsolen die AOSS unterstützen, in Verbindung mit AOSS benötigt)";
+aoss.wps="WPS Einstellungen";
+aoss.wpspin="WPS PIN";
+aoss.wpsregister="Registriere PIN";
+aoss.wpsenable="WPS Knopf";
 
 sec80211x.xsuptype="XSupplicant Typ";
 sec80211x.servercertif="Public Server Zertifikat";
@@ -2043,6 +2047,7 @@ hsas.other="Andere Einstellungen Hilfe Text";
 // ** AOSS **//
 haoss.basic="Das \"AirStation One-Touch Secure System\" (AOSS) erlaubt Ihnen ihre AOSS fähigen Clients mit Ihrem Accesspoint zu Verbinden ohne das Sie eine manuelle Konfiguration durchführen müssen";
 haoss.securitymodes="Die AOSS Sicherheits Modies definieren welche Sicherheits Einstellungen von Clients akzeptiert werden. Wenn ein Client nur Sicherheits Einstellungen unterstützt die nicht erlaubt sind, kann er sich nicht Verbinden.";
+haoss.wps="WPS aktiviert die Unterstützung fuer Wifi Protected Setup unter Zuhilfenahme des WPS / AOSS Knopfes an ihrem Router oder durch Nutzung der PIN die auf ihrem Client Gerät oder in ihrer Client Anwendung abgebilded ist.";
 
 
 // *****************************************************		OLD PAGES 		************************************************************************//
