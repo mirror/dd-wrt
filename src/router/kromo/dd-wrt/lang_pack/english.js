@@ -1341,7 +1341,7 @@ service.vpn_tunnel="Tunnel Protocol";
 service.vpn_tuntap="Tunnel Device";
 service.vpn_srvcert="CA Cert";
 service.vpn_clicert="Public Client Cert";
-service.vpn_certtype="nsCertType";
+service.vpn_certtype="nsCertType verification";
 service.vpn_clikey="Private Client Key";
 service.vpn_nat="Enable NAT";
 
