@@ -2760,6 +2760,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"aoss_aes", "1", 0},
 	{"aoss_wep", "0", 0},
 #endif
+#ifdef HAVE_WPS
+	{"wps_enabled", "1", 0},
+#endif
 	{"warn_enabled", "0", 0},
 	{"warn_connlimit", "500", 0},
 
