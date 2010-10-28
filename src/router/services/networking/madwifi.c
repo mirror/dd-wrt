@@ -817,7 +817,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				fprintf(fp, "serial_number=12345\n");
 				fprintf(fp, "device_type=6-0050F204-1\n");
 				fprintf(fp, "os_version=01020300\n");
-				fprintf(fp, "config_methods=push_button\n");
+				fprintf(fp, "config_methods=label display push_button keypad\n");
 			}
 #endif
 		} else {
