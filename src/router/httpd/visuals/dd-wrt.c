@@ -250,7 +250,7 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	if (region == NULL) {
 		region = "US";
 	}
-	if (strcmp(region, "US") || nvram_match("umts_override", "1")) {
+	if (!strcmp(region, "EU") || nvram_match("umts_override", "1")) {
 #endif
 		websWrite(wp,
 			  "<option value=\"3g\" %s >3G/UMTS</option>\n",
