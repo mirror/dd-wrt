@@ -35,6 +35,16 @@ void start_aoss(void)
 
 	if (nvram_match("aoss_enable", "0")) {
 		stop_aoss();
+#ifdef HAVE_WPS			// set to 1 or remove the #if to reenable WPS support
+		sysprintf("rm -f /tmp/.wpsdone");
+		if (nvram_match("wps_enabled", "1")) {
+			sysprintf("hostapd_cli -i ath0 wps_pbc");
+#ifdef HAVE_WZRHPAG300NH
+			sysprintf("hostapd_cli -i ath1 wps_pbc");
+#endif
+		}
+#endif
+
 		return;
 	}
 	if (pidof("aoss") > 0)
