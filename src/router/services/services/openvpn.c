@@ -54,6 +54,8 @@ void start_openvpnserver(void)
 	fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
 	fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
 	fprintf(fp, "key /tmp/openvpn/key.pem\n");
+	fprintf(fp, "cert /tmp/openvpn/ca.crl\n");
+	fprintf(fp, "key /tmp/openvpn/ta.key\n");
 	//be sure Chris old style ist still working
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
