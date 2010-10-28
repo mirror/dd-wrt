@@ -1,5 +1,5 @@
  "openvpn_enable"   "OpenVPN Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
- "openvpn_net"  "OpenVPN Network"  "MERGEIPADDRS" "FALSE" "0"
+ "openvpn_net"  "OpenVPN Network"  "NULL" "FALSE" "0"
  "openvpn_mask"  "OpenVPN Netmask"  "NULL"   "FALSE" "0"
  "openvpn_gateway"  "OpenVPN Gateway"  "NULL"   "FALSE" "0"
  "openvpn_startip"  "OpenVPN pool start ip"  "NULL"   "FALSE" "0"

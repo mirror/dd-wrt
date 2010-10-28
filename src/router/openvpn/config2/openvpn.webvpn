@@ -29,20 +29,18 @@
 				<div class="label"><% tran("service.vpnd_net"); %></div>
 				<input size="27" maxlength="15" name="openvpn_net" value="<% nvram_get("openvpn_net"); %>" />
 			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.vpnd_mask"); %></div>
-				<input size="27" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
-			</div>
 		</div>
 		<div id="idbridge">
 			<div class="setting">
 				<div class="label"><% tran("share.gateway"); %></div>
 				<input size="27" maxlength="15" name="openvpn_gateway" value="<% nvram_get("openvpn_gateway"); %>" />
 			</div>
+		</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_mask"); %></div>
 				<input size="27" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
 			</div>
+		<div id="idbridge">
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_startip"); %></div>
 				<input size="27" maxlength="15" name="openvpn_startip" value="<% nvram_get("openvpn_startip"); %>" />
