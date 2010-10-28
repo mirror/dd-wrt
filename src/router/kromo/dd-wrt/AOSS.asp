@@ -18,6 +18,12 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
   apply(F);
 }
+
+function to_register(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "wps_register";
+  apply(F);
+}
 function to_apply(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
@@ -161,6 +167,16 @@ document.write("<\/tr>");
 </fieldset>
 <br /-->
 <!-- AOSS end -->
+<% ifndef("HAVE_WPS", "<!--"); %>
+				<fieldset>
+					<legend><% tran("aoss.wps"); %></legend>
+					<div class="setting">
+						<div class="label"><% tran("aoss.wpspin"); %></div>
+						<input class="num" name="wps_pin" size="16" maxlength="16" value="" />&nbsp;
+						<input type="button" name="start_wps" value="<% tran("aoss.wpsregister"); %>" class="button" onclick="to_register" >
+					</div>
+				</fieldset>
+<% ifndef("HAVE_WPS", "-->"); %>
 				
 				<div class="submitFooter">
 					<script type="text/javascript">
