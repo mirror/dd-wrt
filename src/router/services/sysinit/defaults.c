@@ -2362,6 +2362,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_tuntap", "tun", 0},
 	{"openvpn_mode", "router", 0},
 	{"openvpn_cl2cl", "0", 0},
+	{"openvpn_onwan", "0", 0},
 	{"openvpn_switch", "0", 0},	//switch between old/new style config for now
 
 #endif
