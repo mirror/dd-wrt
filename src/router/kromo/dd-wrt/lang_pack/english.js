@@ -1807,6 +1807,9 @@ aoss.notice="NOTICE";
 aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is configured as AP or WDS AP.";
 aoss.wep_notice="WEP security mode is insecure, therefore the use of WEP is not recommended.";
 aoss.wep_info="(required for most gaming consoles supporting AOSS)";
+aoss.wps="WPS Setup";
+aoss.wpspin="WPS Pin";
+aoss.wpsregister="Register PIN";
 
 var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";

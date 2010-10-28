@@ -575,6 +575,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_BUFFALO
 	"HAVE_BUFFALO",
 #endif
+#ifdef HAVE_WPS
+	"HAVE_WPS",
+#endif
 	NULL
 };
 
