@@ -1524,7 +1524,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		 "setuprouting", "setupvlan", "networking", "setupeop", "", "",
 		 "", "", ""},
 		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
-		 "wirelessRadius", "wirelessSecurity", "wirelessAoss",
+		 "wirelessRadius", "wirelessSecurity", 
+#ifdef HAVE_WPS
+		 "wirelessAossWPS",
+#else
+		 "wirelessAoss",
+#endif		 
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
 		{"services", "servicesServices", "servicesRadius",
 		 "servicesPppoesrv", "servicesPptp", "servicesUSB",
