@@ -44,24 +44,19 @@ struct variable **variables;
 
 void aoss_save(webs_t wp)
 {
-	fprintf(stderr, "[AOSS Save]");
-	char buf[1];
+	char buf[32];
 	sprintf(buf, "%s", websGetVar(wp, "aoss_enable", "0"));
-	fprintf(stderr, "[aoss_enable] save %s\n", buf);
 	nvram_set("aoss_enable", buf);
-
 	sprintf(buf, "%s", websGetVar(wp, "aoss_aes", "0"));
-	fprintf(stderr, "[aoss_aes] save %s\n", buf);
 	nvram_set("aoss_aes", buf);
-
 	sprintf(buf, "%s", websGetVar(wp, "aoss_tkip", "0"));
-	fprintf(stderr, "[aoss_tkip] save %s\n", buf);
 	nvram_set("aoss_tkip", buf);
-
 	sprintf(buf, "%s", websGetVar(wp, "aoss_wep", "0"));
-	fprintf(stderr, "[aoss_wep] save %s\n", buf);
 	nvram_set("aoss_wep", buf);
-
+#ifdef HAVE_WPS
+	sprintf(buf, "%s", websGetVar(wp, "wps_enabled", "0"));
+	nvram_set("wps_enabled", "1");
+#endif
 	// check if at least one value was set
 	if (!strcmp(websGetVar(wp, "aoss_aes", "0"), "0")
 	    && !strcmp(websGetVar(wp, "aoss_tkip", "0"), "0")
