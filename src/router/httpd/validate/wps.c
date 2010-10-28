@@ -46,9 +46,9 @@ void wps_register(webs_t wp)
 {
 	char *pin = websGetVar(wp, "wps_pin", NULL);
 	if (pin) {
-		sysprintf("hostapd_cli -i ath0 wps_pin any %s", pin);
+		sysprintf("hostapd_cli -i ath0 wps_pin any %s 300", pin);
 #ifdef HAVE_WZRHPAG300NH
-		sysprintf("hostapd_cli -i ath1 wps_pin any %s", pin);
+		sysprintf("hostapd_cli -i ath1 wps_pin any %s 300", pin);
 #endif
 	}
 }
