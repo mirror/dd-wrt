@@ -1933,7 +1933,7 @@ static void filter_input(void)
 	 */
 #ifdef HAVE_OPENVPN
 	if (nvram_match("openvpn_enable", "1")) {
-	    save2file("-A INPUT -p %s --dport %s -j ACCEPT\n",nvram_safe_get("openvpn_proto"),nvram_safe_get("openvpn_port"));
+	    save2file("-A INPUT -p %s --dport %s -j ACCEPT\n",nvram_match("openvpn_proto","udp")?"udp":"tcp",nvram_safe_get("openvpn_port"));
 	}
 #endif
 	if (!nvram_match("wan_proto", "disabled")) {

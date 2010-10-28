@@ -93,7 +93,7 @@ void start_openvpnserver(void)
 	}
 	fclose(fp);
 
-	sysprintf("iptables -I INPUT -p %s --dport %s -j ACCEPT\n",nvram_safe_get("openvpn_proto"),nvram_safe_get("openvpn_port"));
+	sysprintf("iptables -I INPUT -p %s --dport %s -j ACCEPT\n",nvram_match("openvpn_proto","udp")?"udp":"tcp",nvram_safe_get("openvpn_port"));
 
 	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
