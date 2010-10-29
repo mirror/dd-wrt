@@ -187,7 +187,7 @@ static void buffalo_defaults(int force)
 {
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
-		if (!region || (strcmp(region, "AP") && strcmp(region, "TW"))) {
+		if (!region || (strcmp(region, "AP") && strcmp(region, "TW") && strcmp(region, "KR") && strcmp(region, "CH"))) {
 			{
 				char *mode_ex =
 				    getUEnv
