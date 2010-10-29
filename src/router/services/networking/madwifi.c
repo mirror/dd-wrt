@@ -31,7 +31,7 @@
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,6 +49,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
+#include <sha1.h>
 #include "wireless.h"
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
@@ -689,6 +690,61 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) 
 }
 #endif
 
+#ifdef HAVE_WPS
+//loaned from hostapd
+void get_uuid(char *uuid_str)
+{
+	int s;
+	struct ifreq ifr;
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		close(s);
+	}
+	
+	const unsigned char *addr[2];
+	unsigned int len[2];
+	unsigned char hash[20];
+	unsigned char nsid[16] = {
+		0x52, 0x64, 0x80, 0xf8,
+		0xc9, 0x9b,
+		0x4b, 0xe5,
+		0xa6, 0x55,
+		0x58, 0xed, 0x5f, 0x5d, 0x60, 0x84
+	};
+	unsigned char bin[16];
+	sha1_ctx_t ctx;
+
+	addr[0] = nsid;
+	len[0] = sizeof(nsid);
+	addr[1] = (unsigned char*)ifr.ifr_hwaddr.sa_data;
+	len[1] = 6;
+
+	sha1_begin(&ctx);
+	sha1_hash(addr[0],len[0], &ctx);
+	sha1_hash(addr[1],len[1], &ctx);
+	sha1_end(hash, &ctx);
+	memcpy(bin, hash, 16);
+
+	/* Version: 5 = named-based version using SHA-1 */
+	bin[6] = (5 << 4) | (bin[6] & 0x0f);
+
+	/* Variant specified in RFC 4122 */
+	bin[8] = 0x80 | (bin[8] & 0x3f);
+	
+	sprintf(uuid_str, "%02x%02x%02x%02x-%02x%02x-%02x%02x-"
+				      "%02x%02x-%02x%02x%02x%02x%02x%02x",
+			  bin[0], bin[1], bin[2], bin[3],
+			  bin[4], bin[5], bin[6], bin[7],
+			  bin[8], bin[9], bin[10], bin[11],
+			  bin[12], bin[13], bin[14], bin[15]);
+
+}
+
+#endif
+
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
@@ -804,8 +860,10 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 				fprintf(fp, "wps_state=2\n");
 				fprintf(fp, "ap_setup_locked=1\n");
-//# If UUID is not configured, it will be generated based on local MAC address.
-//                      fprintf(fp,"uuid=87654321-9abc-def0-1234-56789abc0000\n");
+//# If UUID is not configured, it will be generated based on local MAC address. 
+				char uuid[64];
+				get_uuid(uuid); 
+                    		fprintf(fp,"uuid=%s\n",uuid);
 				fprintf(fp,
 					"wps_pin_requests=/var/run/hostapd.pin-req\n");
 				fprintf(fp, "device_name=%s\n",
