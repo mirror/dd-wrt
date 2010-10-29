@@ -471,10 +471,37 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			count++;
 			}
 		fprintf(fp, "BssidNum=%d\n", count - 1);
-
-/* need to check if these values are okay for RT3052 too */
+#ifdef HAVE_ESR6650
+		fprintf(fp, "Ht_TxStream=1\n");
+		fprintf(fp, "Ht_RxStream=1\n");
+#elif HAVE_ESR9752
+		fprintf(fp, "Ht_TxStream=2\n");
+		fprintf(fp, "Ht_RxStream=2\n");
+#elif HAVE_ACXNR22
+		fprintf(fp, "Ht_TxStream=2\n");
+		fprintf(fp, "Ht_RxStream=2\n");
+#elif HAVE_EAP9550
+		fprintf(fp, "Ht_TxStream=2\n");
+		fprintf(fp, "Ht_RxStream=2\n");
+#elif HAVE_DIR600
+		fprintf(fp, "Ht_TxStream=1\n");
+		fprintf(fp, "Ht_RxStream=1\n");
+#elif HAVE_RT10N
+		fprintf(fp, "Ht_TxStream=1\n");
+		fprintf(fp, "Ht_RxStream=1\n");
+#elif HAVE_DIR615
+		fprintf(fp, "Ht_TxStream=2\n");
+		fprintf(fp, "Ht_RxStream=2\n");
+#elif HAVE_W502U
+		fprintf(fp, "Ht_TxStream=1\n");
+		fprintf(fp, "Ht_RxStream=1\n");
+#elif HAVE_RT3052
+		fprintf(fp, "Ht_TxStream=2\n");
+		fprintf(fp, "Ht_RxStream=2\n");
+#else
 		fprintf(fp, "Ht_TxStream=2\n");
 		fprintf(fp, "Ht_RxStream=3\n");
+#endif
 		fprintf(fp, "MaxStaNum=%s\n", nvram_safe_get("wl0_maxassoc"));
 	}
 /* suggestion by Jimmy */
