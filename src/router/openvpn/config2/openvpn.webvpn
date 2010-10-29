@@ -20,8 +20,8 @@
 	<div id="idnew">
 		<div class="setting">
 		<div class="label"><% tran("service.vpnd_mode"); %></div>
-			<input class="spaceradio" type="radio" name="openvpn_mode" value="router" <% nvram_checked("openvpn_mode", "router"); %> onclick="toggle_layer_ext(this, 'idrouter', 'idbridge', true)" />Router&nbsp;
-			<input class="spaceradio" type="radio" name="openvpn_mode" value="bridge" <% nvram_checked("openvpn_mode", "bridge"); %> onclick="toggle_layer_ext(this, 'idrouter', 'idbridge', false)" />Bridge&nbsp;
+			<input class="spaceradio" type="radio" name="openvpn_tuntap" value="tun" <% nvram_checked("openvpn_tuntap", "tun"); %> onclick="toggle_layer_ext(this, 'idrouter', 'idbridge', true)" />Router (TUN)&nbsp;
+			<input class="spaceradio" type="radio" name="openvpn_tuntap" value="tap" <% nvram_checked("openvpn_tuntap", "tap"); %> onclick="toggle_layer_ext(this, 'idrouter', 'idbridge', false)" />Bridge (TAP)e&nbsp;
 		</div>
 
 		<div id="idrouter">
@@ -57,13 +57,6 @@
 			<select name="openvpn_proto">
 			<option value="udp" <% nvram_selected("openvpn_proto","udp"); %>>UDP</option>
 			<option value="tcp-server" <% nvram_selected("openvpn_proto","tcp-server"); %>>TCP</option>
-		</select>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("service.vpn_tuntap"); %></div>
-			<select name="openvpn_tuntap">
-			<option value="tun" <% nvram_selected("openvpn_tuntap","tun"); %>>TUN</option>
-			<option value="tap" <% nvram_selected("openvpn_tuntap","tap"); %>>TAP</option>
 		</select>
 		</div>
 		<div class="setting">
