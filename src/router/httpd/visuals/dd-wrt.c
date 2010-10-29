@@ -4003,6 +4003,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
+#ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 	if (has_5ghz(prefix)) {
 		if (nvram_nmatch("1", "%s_regulatory", prefix)
@@ -4010,6 +4011,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			showRadio(wp, "wl_basic.outband", wl_outdoor);
 		}
 	}
+#endif
 #endif
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
@@ -5116,6 +5118,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadio(wp, "wl_basic.extrange", wl_xr);
 		showRadio(wp, "wl_basic.supergff", wl_ff);
 	}
+#ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 	if (has_5ghz(prefix)) {
 		if (nvram_nmatch("1", "%s_regulatory", prefix)
@@ -5123,6 +5126,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			showRadio(wp, "wl_basic.outband", wl_outdoor);
 		}
 	}
+#endif
 #endif
 
 // antenna settings
