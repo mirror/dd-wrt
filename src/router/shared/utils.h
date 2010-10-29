@@ -497,6 +497,9 @@
 // Linksys E1000 v2 (BCM5357 cpu, 4MB serial flash, 32 MB ram, fccid: Linksys Q87-E1000V2)
 #define ROUTER_LINKSYS_E1000V2 0x9e0f
 
+// Repotec RP-WR5422
+#define ROUTER_BOARD_WR5422 0x9f1a
+
 
 
 #define NVROUTER "DD_BOARD"
