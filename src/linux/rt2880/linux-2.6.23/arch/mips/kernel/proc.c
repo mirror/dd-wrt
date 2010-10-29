@@ -86,6 +86,7 @@ static const char *cpu_name[] = {
 	[CPU_LOONGSON2]	= "ICT Loongson-2",
 };
 
+extern unsigned int rt2880_freq;
 
 static int show_cpuinfo(struct seq_file *m, void *v)
 {
@@ -112,6 +113,7 @@ static int show_cpuinfo(struct seq_file *m, void *v)
 	                            cpu_data[n].cputype : CPU_UNKNOWN],
 	                           (version >> 4) & 0x0f, version & 0x0f,
 	                           (fp_vers >> 4) & 0x0f, fp_vers & 0x0f);
+	seq_printf(m, "CPUClock\t\t: %d\n", rt2880_freq);
 	seq_printf(m, "BogoMIPS\t\t: %lu.%02lu\n",
 	              cpu_data[n].udelay_val / (500000/HZ),
 	              (cpu_data[n].udelay_val / (5000/HZ)) % 100);
