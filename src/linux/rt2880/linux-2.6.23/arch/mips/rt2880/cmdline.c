@@ -41,17 +41,7 @@
 
 #include <asm/bootinfo.h>
 
-#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
-#ifdef CONFIG_SYSFS
 char rt2880_cmdline[]=CONFIG_CMDLINE;
-#else
-char rt2880_cmdline[]="console=ttyS1,57600n8 root=1f04";
-#endif
-#elif defined (CONFIG_RT2880_ROOTFS_IN_RAM)
-char rt2880_cmdline[]="console=ttyS1,57600n8 root=/dev/ram0";
-#else
-#error "RT2880 Root File System not defined"
-#endif
 
 extern int prom_argc;
 extern int *_prom_argv;
@@ -76,16 +66,20 @@ void  __init prom_init_cmdline(void)
 
 	cp = &(arcs_cmdline[0]);
 
-	strcpy(cp, rt2880_cmdline);
-	cp += strlen(rt2880_cmdline);
-	*cp++ = ' ';
-
+#ifdef CONFIG_UBOOT_CMDLINE
 	while(actr < prom_argc) {
 	    strcpy(cp, prom_argv(actr));
 	    cp += strlen(prom_argv(actr));
 	    *cp++ = ' ';
 	    actr++;
 	}
+#else
+	strcpy(cp, rt2880_cmdline);
+	cp += strlen(rt2880_cmdline);
+	*cp++ = ' ';
+#endif
+
+
 	if (cp != &(arcs_cmdline[0])) /* get rid of trailing space */
 	    --cp;
 	*cp = '\0';

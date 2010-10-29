@@ -87,26 +87,6 @@ struct resource rt2880_res_ram = {
 
 struct prom_pmemblock * __init prom_getmdesc(void)
 {
-	/*
-	*  Configures memory map based on Environment Variables set up by
-	*  surfmilo (linux loader):
-	*
-	*    rambase = base of useable SDRAM
-	*    ramsize = size of useable SDRAM
-	*
-	*  Assumptions made by linux:
-	*    The kernel variables (.data) immediately follow the kernel code
-	*      (.text) in memory.  The end of .data section, symbol _end,
-	*      is used to denote the end of the kernel.
-	*    The kernel code resides in ram, and all available ram exists
-	*      after the kernel.
-	*
-	*  Note: Cpu jump vectors are in remapped ISRAM/VECMEM,
-	*        which begins at 0000_0000
-	*
-	*        Linux memory map does not contain ISRAM since ISRAM
-	*        does not support DMA transfers.
-	*/
 	char *env_str;
 	unsigned int ramsize, rambase;
 
@@ -165,6 +145,10 @@ void __init prom_meminit(void)
 #ifdef DEBUG
 	struct prom_pmemblock *psave;
 #endif
+
+	//printk("ram start= %x, ram end= %x\n",rt2880_res_ram.start, rt2880_res_ram.end); 
+	//printk("size = %x\n",rt2880_res_ram.end - rt2880_res_ram.start); 
+ 	//add_memory_region(0x0a000000, rt2880_res_ram.end - rt2880_res_ram.start, BOOT_MEM_RAM);
 	unsigned long mem, before, offset;
 
 	before = ((unsigned long) &prom_meminit) & (127 << 20);
