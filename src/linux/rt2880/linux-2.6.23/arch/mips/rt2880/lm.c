@@ -41,7 +41,9 @@ static int lm_bus_probe(struct device *dev)
 	struct lm_device *lmdev = to_lm_device(dev);
 	struct lm_driver *lmdrv = to_lm_driver(dev->driver);
 
-	return lmdrv->probe(lmdev);
+	if(lmdrv->probe !=NULL) {
+	    return lmdrv->probe(lmdev);
+	}
 }
 
 static int lm_bus_remove(struct device *dev)
@@ -49,7 +51,9 @@ static int lm_bus_remove(struct device *dev)
 	struct lm_device *lmdev = to_lm_device(dev);
 	struct lm_driver *lmdrv = to_lm_driver(dev->driver);
 
-	lmdrv->remove(lmdev);
+	if(lmdrv->remove != NULL) {
+	    lmdrv->remove(lmdev);
+	}
 	return 0;
 }
 
