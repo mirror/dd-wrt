@@ -51,12 +51,14 @@ void start_openvpnserver(void)
 	 */
 	write_nvram("/tmp/openvpn/openvpn.conf", "openvpn_config");
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "a+b");	//be sure to append and force non override
+	if (fp == NULL)
+		return;
 	fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 	fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
 	fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
-	fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
 	fprintf(fp, "key /tmp/openvpn/key.pem\n");
-	fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
+//	fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");  disable to prevent problems for now
+//	fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 	//be sure Chris old style ist still working
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
@@ -65,31 +67,32 @@ void start_openvpnserver(void)
 		fprintf(fp, "verb 4\n");
 		fprintf(fp, "mute 20\n");
 		fprintf(fp, "log-append /var/log/openvpn\n");
-//		fprintf(fp, "tls-server\n");
+		fprintf(fp, "tls-server\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
-		fprintf(fp, "dev %s\n", nvram_safe_get("openvpn_tuntap"));
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
 			fprintf(fp, "comp-lzo\n");
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
-		if (nvram_match("openvpn_mode", "router"))
+		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
 				nvram_safe_get("openvpn_mask"));
+			fprintf(fp, "dev tun\n");
+		}
 		else {
 			fprintf(fp, "server-bridge %s %s %s %s\n",
 				nvram_safe_get("openvpn_gateway"),
 				nvram_safe_get("openvpn_mask"),
 				nvram_safe_get("openvpn_startip"),
 				nvram_safe_get("openvpn_endip"));
+			fprintf(fp, "dev tap\n");
 		}
-/*		fprintf(fp, "management 127.0.0.1 5001\n");
-		fprintf(fp, "management-query-passwords\n");  disable for now
-		fprintf(fp, "management-log-cache\n");
-*/	} else {
+		fprintf(fp, "management 127.0.0.1 5001\n");
+		fprintf(fp, "management-log-cache 50\n");
+	} else {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 
 	}
