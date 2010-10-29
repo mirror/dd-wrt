@@ -16,7 +16,6 @@
  "openvpn_config" "Config" "NULL" "FALSE" "0"
  "openvpn_tlsauth" "Tlsauth" "NULL" "FALSE" "0"
  "openvpn_tuntap" "TUN DEV" "CHOICE" "2" "tun" "tap" "FALSE" "0"
- "openvpn_mode"	"Bridge/Router mode" "CHOICE" "2" "router" "bridge" "FALSE" "0"
  "openvpn_cl2cl" "allow Client to Client" "NULL" "FALSE" "0"
  "openvpn_switch"   "OpenVPN Switch between GUI versions"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_client"  "Client Public Key (wrong&old)"  "NULL"   "FALSE" "0"
