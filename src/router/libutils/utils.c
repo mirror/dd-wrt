@@ -742,6 +742,9 @@ int internal_getRouterBrand()
 #elif HAVE_WHRG300N
 	setRouter("Buffalo WHR-G300N");
 	return ROUTER_BOARD_WHRG300N;
+#elif HAVE_WR5422
+	setRouter("Repotec RP-WR5422");
+	return ROUTER_BOARD_WR5422;
 #else
 	setRouter("Generic RT2880");
 	return ROUTER_BOARD_RT2880;
@@ -3201,6 +3204,9 @@ int led_control(int type, int act)
 		usb_gpio = 0x102;
 //              ses_gpio = 0x111;
 #endif
+		break;
+	case ROUTER_BOARD_WR5422:
+		ses_gpio = 0x10d;
 		break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
