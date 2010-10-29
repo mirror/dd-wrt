@@ -314,9 +314,9 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_LAGUNA
 #define FREQLINE 2
 #elif HAVE_RT3052
-#define HARDFREQ "384"
+#define FREQLINE 4
 #elif HAVE_RT2880
-#define HARDFREQ "266"
+#define FREQLINE 4
 #elif HAVE_XSCALE
 #define FREQLINE 2
 #elif defined(HAVE_MAGICBOX) || defined(HAVE_RB600)
