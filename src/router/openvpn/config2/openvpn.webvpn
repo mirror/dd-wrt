@@ -74,6 +74,11 @@
 			<input class="spaceradio" type="radio" name="openvpn_cl2cl" value="1" <% nvram_checked("openvpn_cl2cl", "1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="openvpn_cl2cl" value="0" <% nvram_checked("openvpn_cl2cl", "0"); %> /><% tran("share.disable"); %>
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.vpn_dupcn"); %></div>
+			<input class="spaceradio" type="radio" name="openvpn_dupcn" value="1" <% nvram_checked("openvpn_dupcn", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="openvpn_dupcn" value="0" <% nvram_checked("openvpn_dupcn", "0"); %> /><% tran("share.disable"); %>
+		</div>
 		<div class="setting">		
 			<div class="label"><% tran("service.vpnd_cert"); %></div>
 			<textarea cols="60" rows="2" id="openvpn_crt" name="openvpn_crt"> </textarea>
