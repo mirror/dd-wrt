@@ -258,6 +258,7 @@ void start_setup_vlans(void)
 	unsigned char mac[20];;
 	struct ifreq ifr;
 	int s;
+	char *phy = getPhyDev();
 
 	s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -311,6 +312,21 @@ void start_setup_vlans(void)
 			vlanmap[3] = 2;
 			vlanmap[4] = 1;
 		}
+	} else if (nvram_match("vlan2ports", "4 8")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 8;
+		if (nvram_match("vlan1ports", "0 1 2 3 8*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else  // "3 2 1 0 8*"
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;	
+		}
 	} else if (nvram_match("vlan1ports", "4 8")) {
 		vlanmap[0] = 4;
 		vlanmap[5] = 8;
@@ -357,7 +373,7 @@ void start_setup_vlans(void)
 						snprintf(buff, 9, "%d", tmp);
 						eval("vconfig", "set_name_type",
 						     "VLAN_PLUS_VID_NO_PAD");
-						eval("vconfig", "add", "eth0",
+						eval("vconfig", "add", phy,
 						     buff);
 						snprintf(buff, 9, "vlan%d",
 							 tmp);
@@ -406,15 +422,15 @@ void start_setup_vlans(void)
 			}
 			if (mask & 8 && use < 5) {
 				sysprintf
-				    ("echo 0 > /proc/switch/eth0/port/%d/enable",
-				     use);
+				    ("echo 0 > /proc/switch/%s/port/%d/enable",
+				     phy, use);
 			} else {
 				sysprintf
-				    ("echo 1 > /proc/switch/eth0/port/%d/enable",
-				     use);
+				    ("echo 1 > /proc/switch/%s/port/%d/enable",
+				     phy, use);
 			}
-			snprintf(buff, 69, "/proc/switch/eth0/port/%d/media",
-				 use);
+			snprintf(buff, 69, "/proc/switch/%s/port/%d/media",
+				 phy, use);
 			if ((fp = fopen(buff, "r+"))) {
 				if ((mask & 4) == 4) {
 					if ((mask & 3) == 0) {
@@ -480,13 +496,13 @@ void start_setup_vlans(void)
 		}
 	}
 	for (i = 0; i < 16; i++) {
-		sysprintf("echo " " > /proc/switch/eth0/vlan/%d/ports", i);
+		sysprintf("echo " " > /proc/switch/%s/vlan/%d/ports", phy, i);
 	}
 	for (i = 0; i < 16; i++) {
 		fprintf(stderr, "configure vlan ports to %s\n",
 			portsettings[i]);
-		sysprintf("echo %s > /proc/switch/eth0/vlan/%d/ports",
-			  portsettings[i], i);
+		sysprintf("echo %s > /proc/switch/%s/vlan/%d/ports",
+			  portsettings[i], phy, i);
 	}
 	return;
 #endif
