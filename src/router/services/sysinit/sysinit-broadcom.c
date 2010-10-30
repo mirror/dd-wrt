@@ -706,7 +706,7 @@ void start_sysinit(void)
 		nvram_set("wan_ifname", "vlan2");
 		if (nvram_match("vlan1ports", "4 8")
 		    || nvram_match("vlan2ports", "0 1 2 3 8*")) {
-			nvram_set("vlan1ports", "0 1 2 3 8*");
+			nvram_set("vlan1ports", "3 2 1 0 8*");
 			nvram_set("vlan2ports", "4 8");
 			need_reboot = 1;
 		}
