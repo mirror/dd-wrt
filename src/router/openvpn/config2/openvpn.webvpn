@@ -152,7 +152,7 @@
 		//]]>
 		</script>
 	</div>
-		<div class="setting">		
+	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_crl"); %></div>
 		<textarea cols="60" rows="2" id="openvpn_crl" name="openvpn_crl"> </textarea>
 		<script type="text/javascript">
