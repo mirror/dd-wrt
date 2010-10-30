@@ -24,6 +24,35 @@ int usb_add_ufd(void);
 
 #define DUMPFILE	"/tmp/disktype.dump"
 
+
+#ifdef HAVE_X86
+static int getdiscindex(void)	// works only for squashfs 
+{
+	int i;
+
+	for (i = 0; i < 10; i++) {
+		char dev[64];
+
+		sprintf(dev, "/dev/discs/disc%d/part2", i);
+		FILE *in = fopen(dev, "rb");
+
+		if (in == NULL)
+			continue;	// no second partition or disc does not
+		// exist, skipping
+		char buf[4];
+
+		fread(buf, 4, 1, in);
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
+		    && buf[3] == 't') {
+			fclose(in);
+			// filesystem detected
+			return i;
+		}
+		fclose(in);
+	}
+	return -1;
+}
+#endif
 void start_hotplug_usb(void)
 {
 	char *device, *interface;
@@ -216,7 +245,16 @@ int usb_add_ufd(void)
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
-		
+
+#ifdef HAVE_X86
+			char check[32];
+			sprintf("disc%d",getdiscindex());
+			if (!strncmp(entry->d_name,check,5))
+				{
+				fprintf(stderr,"skip %s, since its the system drive\n",check);
+				continue;
+				}
+#endif		
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
 			if (new && (strncmp(entry->d_name, "sd", 2)))
