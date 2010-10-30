@@ -49,8 +49,8 @@ void start_openvpnserver(void)
 	   write openvpn server config file on current config and common settings
 	   TODO GUI integration
 	 */
-	write_nvram("/tmp/openvpn/openvpn.conf", "openvpn_config");
-	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "a+b");	//be sure to append and force non override
+//	write_nvram("/tmp/openvpn/openvpn.conf", "openvpn_config");
+	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");	//be sure to append and force non override
 	if (fp == NULL)
 		return;
 	fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
@@ -70,6 +70,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "tls-server\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
+		if (nvram_match("openvpn_dupcn", "1"))
+			fprintf(fp, "duplicate-cn\n");
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
@@ -96,6 +98,7 @@ void start_openvpnserver(void)
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 
 	}
+	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
 
 	sysprintf("iptables -I INPUT -p %s --dport %s -j ACCEPT\n",nvram_match("openvpn_proto","udp")?"udp":"tcp",nvram_safe_get("openvpn_port"));
@@ -171,9 +174,9 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
 	write_nvram("/tmp/openvpncl/client.key", "openvpncl_key");
-	write_nvram("/tmp/openvpncl/openvpn.conf", "openvpncl_config");
+//	write_nvram("/tmp/openvpncl/openvpn.conf", "openvpncl_config");
 
-	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "a+b");
+	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
 	fprintf(fp, "client\n");
@@ -200,13 +203,13 @@ void start_openvpn(void)
 //	fprintf(fp, "tls-auth /tmp/openvpncl/client.key 1\n"); for future usage
 	fprintf(fp, "management 127.0.0.1 5002\n");
 	fprintf(fp, "management-log-cache 50\n");
-
 	// Botho 22/05/2006 - start
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	// end
 	if (nvram_match("openvpncl_lzo", "1"))
 		fprintf(fp, "comp-lzo\n");
+	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpncl/route-up.sh", "wb");
