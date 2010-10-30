@@ -198,7 +198,7 @@ void start_openvpn(void)
 	fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
 	fprintf(fp, "key /tmp/openvpncl/client.key\n");
 //	fprintf(fp, "tls-auth /tmp/openvpncl/client.key 1\n"); for future usage
-	fprintf(fp, "management 127.0.0.1 5001\n");
+	fprintf(fp, "management 127.0.0.1 5002\n");
 	fprintf(fp, "management-log-cache 50\n");
 
 	// Botho 22/05/2006 - start
