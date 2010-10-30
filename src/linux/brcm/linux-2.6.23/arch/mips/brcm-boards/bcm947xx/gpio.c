@@ -232,10 +232,10 @@ if (boardnum == 42 && ((nvram_match("boot_hw_model", "WRT160N") && nvram_match("
 		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
-if (boardnum == 42 && nvram_match("boot_hw_model", "WRT310N")
-		&& nvram_match("boot_hw_ver", "2.0"))
+if (boardnum == 42 && ((nvram_match("boot_hw_model", "WRT310N")& & nvram_match("boot_hw_ver", "2.0"))
+		|| (nvram_match("boot_hw_model", "M20") && nvram_match("boot_hw_ver", "1.0")) ) )
 {
-		printk(KERN_EMERG "WRT310Nv2 GPIO Init\n");
+		printk(KERN_EMERG "WRT310Nv2/M20 GPIO Init\n");
 		gpios = 1 << 1 | 1 << 2 | 1 << 4;
 }
 
