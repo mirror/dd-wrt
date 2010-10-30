@@ -352,9 +352,9 @@ static int __init ar7240_flash_init(void)
 //			dir_parts[0].size = guess-0x30000;
 //			dir_parts[0].offset = 0x30000;
 //			}else{
-//			dir_parts[0].offset = 0;
-//			dir_parts[0].size = guess;			
 //			}
+			dir_parts[0].offset = 0;
+			dir_parts[0].size = guess;			
 			dir_parts[7].size = guess;			
 			dir_parts[1].offset = guess;
 			dir_parts[1].size = 0;
