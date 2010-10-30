@@ -259,6 +259,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_WRT610NV2:
 	case ROUTER_DYNEX_DX_NRUTER:
+	case ROUTER_LINKSYS_E1000V2:
 
 		break;
 	case ROUTER_WRT600N:
@@ -456,6 +457,13 @@ void start_sysinit(void)
 	struct nvram_tuple vlan_0_1[] = {
 		{"lan_ifnames", "vlan0 eth1", 0},
 		{"wan_ifname", "vlan1", 0},
+		{"wl0_ifname", "eth1", 0},
+		{0, 0, 0}
+	};
+	
+	struct nvram_tuple vlan_1_2[] = {
+		{"lan_ifnames", "vlan1 eth1", 0},
+		{"wan_ifname", "vlan2", 0},
 		{"wl0_ifname", "eth1", 0},
 		{0, 0, 0}
 	};
@@ -682,9 +690,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_WRT320N:
 	case ROUTER_ASUS_RTN16:
-		nvram_set("lan_ifnames", "vlan1 eth1");
-		nvram_set("wan_ifname", "vlan2");
-		nvram_set("wl0_ifname", "eth1");
+		basic_params = vlan_1_2;
 		nvram_set("vlan2hwname", "et0");
 		if (nvram_match("vlan1ports", "1 2 3 4 8*")
 		    || nvram_match("vlan2ports", "0 8u")) {
@@ -746,22 +752,24 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_WRT310NV2:
-		nvram_set("lan_ifnames", "vlan1 eth1");
-		nvram_set("wan_ifname", "vlan2");
-		nvram_set("wl0_ifname", "eth1");
+		basic_params = vlan_1_2;
 		nvram_set("vlan2hwname", "et0");
+		if (nvram_match("vlan1ports", "1 2 3 4 8*"))
+			nvram_set("vlan1ports", "4 3 2 1 8*");
 		break;
 
 	case ROUTER_WRT160NV3:
-		nvram_set("lan_ifnames", "vlan1 eth1");
-		nvram_set("wan_ifname", "vlan2");
-		nvram_set("wl0_ifname", "eth1");
+		basic_params = vlan_1_2;
 		nvram_set("vlan2hwname", "et0");
 		//fix lan port numbering on CSE41, CSE51
 		if (nvram_match("clkdivsf", "4")
 		    && nvram_match("vlan1ports", "1 2 3 4 5*")) {
 			nvram_set("vlan1ports", "4 3 2 1 5*");
 		}
+		break;
+		
+	case ROUTER_LINKSYS_E1000V2:
+		basic_params = vlan_0_1;
 		break;
 		
 #endif		
@@ -1420,6 +1428,7 @@ void start_sysinit(void)
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
 			case ROUTER_ASUS_RTN10:
+//			case ROUTER_LINKSYS_E1000V2:
 				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
@@ -1504,6 +1513,7 @@ void start_sysinit(void)
 		} else {
 			switch (brand) {
 			case ROUTER_ASUS_RTN10:
+//			case ROUTER_LINKSYS_E1000V2:
 				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
