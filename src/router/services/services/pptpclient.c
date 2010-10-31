@@ -74,9 +74,7 @@ static void create_pptp_config(char *servername, char *username)
 		return;
 	}
 	fprintf(fp, "defaultroute\n");	// Add a default route to the 
-	// system routing tables,
-	// using the peer as the
-	// gateway
+	// system routing tables, using the peer as the gateway
 	fprintf(fp, "usepeerdns\n");	// Ask the peer for up to 2 DNS
 	// server addresses
 	fprintf(fp, "pty 'pptp %s --nolaunchpppd", servername);
@@ -92,8 +90,7 @@ static void create_pptp_config(char *servername, char *username)
 		fprintf(fp, "'\n");
 
 	fprintf(fp, "user '%s'\n", username);
-	// fprintf(fp, "persist\n"); // Do not exit after a connection is
-	// terminated.
+	// fprintf(fp, "persist\n"); // Do not exit after a connection is terminated.
 
 	if (nvram_match("mtu_enable", "1"))
 		fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
@@ -128,22 +125,19 @@ static void create_pptp_config(char *servername, char *username)
 	} else {
 		fprintf(fp, "mppe required,stateless\n");
 	}
-	fprintf(fp, "default-asyncmap\n");	// Disable asyncmap
-	// negotiation
+	fprintf(fp, "default-asyncmap\n");	// Disable asyncmap negotiation
 	fprintf(fp, "nopcomp\n");	// Disable protocol field compression
-	fprintf(fp, "noaccomp\n");	// Disable Address/Control
-	// compression
-	fprintf(fp, "novj\n");	// Disable Van Jacobson style TCP/IP
-	// header compression
+	fprintf(fp, "noaccomp\n");	// Disable Address/Control compression
+	fprintf(fp, "novj\n");	// Disable Van Jacobson style TCP/IP header compression
 	fprintf(fp, "nobsdcomp\n");	// Disables BSD-Compress compression
 	fprintf(fp, "nodeflate\n");	// Disables Deflate compression
 	fprintf(fp, "lcp-echo-failure 6\n");
-	fprintf(fp, "lcp-echo-interval 3\n");
-	// echo-request frame to the
-	// peer
+	fprintf(fp, "lcp-echo-interval 3\n"); // echo-request frame to the peer
 	fprintf(fp, "noipdefault\n");
 	fprintf(fp, "lock\n");
 	fprintf(fp, "noauth\n");
+	fprintf(fp, "debug\n");
+	fprintf(fp, "logfd 2\n");
 
 	if (nvram_invmatch("pptp_extraoptions", ""))
 		fwritenvram("pptp_extraoptions", fp);

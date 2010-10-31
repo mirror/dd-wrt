@@ -78,7 +78,10 @@ void start_pptpd(void)
 		fprintf(fp, "mppe required,stateless\n");
 	else
 		fprintf(fp, "mppe stateless\n");
-	fprintf(fp, "mppc\n"
+		fprintf(fp, "mppc\n"
+		"debug\n"
+		"logfd 2\n"
+		"connections 254\n"	//allows X concurrent connections (default 100)
 		"ms-ignore-domain\n"
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
 		"ip-up-script /tmp/pptpd/ip-up\n"
@@ -87,7 +90,7 @@ void start_pptpd(void)
 		"ipcp-accept-local\n"
 		"ipcp-accept-remote\n"
 		"lcp-echo-failure 10\n"
-		"lcp-echo-interval 5\n"
+		"lcp-echo-interval 6\n"
 		"mtu %s\n" "mru %s\n",
 		nvram_get("pptpd_mtu") ? nvram_get("pptpd_mtu") : "1450",
 		nvram_get("pptpd_mru") ? nvram_get("pptpd_mru") : "1450");
