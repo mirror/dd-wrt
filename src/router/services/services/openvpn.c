@@ -98,7 +98,7 @@ void start_openvpnserver(void)
 		if (strlen(nvram_safe_get("openvpn_tlsauth"))>0)
 			fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 		if (strlen(nvram_safe_get("openvpn_crl"))>0)
-			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n"); ;
+			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
 	} else {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 
@@ -113,8 +113,8 @@ void start_openvpnserver(void)
 	if (fp == NULL)
 		return;
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl addif br0 tap0\n")
-		fprintf(fp, "ifconfig tap0 0.0.0.0 promisc up\n")
+		fprintf(fp, "brctl addif br0 tap0\n");
+		fprintf(fp, "ifconfig tap0 0.0.0.0 promisc up\n");
 	}
 	fprintf(fp, "startservice set_routes\n");
 	fprintf(fp, "iptables -I INPUT 2 -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
@@ -125,9 +125,8 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/down.sh", "wb");
 	if (fp == NULL)
 		return;
-	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "ifconfig tap0 down\n")
-	}
+	if (nvram_match("openvpn_tuntap", "tap"))
+		fprintf(fp, "ifconfig tap0 down\n");
 	fprintf(fp, "iptables -D INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fprintf(fp, "iptables -D FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fprintf(fp, "iptables -D FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
