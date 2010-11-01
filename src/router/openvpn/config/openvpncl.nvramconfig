@@ -13,3 +13,6 @@
  "openvpncl_certtype"  "nsCertType server" "CHOICE" "2" "0" "1" "TRUE" "0"
  "openvpncl_config" "Config" "NULL" "FALSE" "0"
  "openvpncl_nat" "Enable NAT" "CHOICE" "2" "0" "1" "TRUE" "0"
+ "openvpncl_tlsauth"  "TLS Auth Key"  "NULL"   "FALSE" "0"
+ "openvpncl_cipher" "Cipher" "CHOICE" "6" "blowfish cbc" "aes-128 cbc" "aes-192 cbc" "aes-256 cbc" "aes-512 cbc" "rc4" "FALSE" "0"
+ "openvpncl_auth" "Hash Algorithmus" "CHOICE" "4" "sha1" "sha256" "sha512" "md5" "FALSE" "0" 

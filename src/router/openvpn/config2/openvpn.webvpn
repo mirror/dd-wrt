@@ -65,6 +65,26 @@
 		</select>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.vpn_cipher"); %></div>
+			<select name="openvpn_cipher">
+			<option value="blowfish cbc" <% nvram_selected("openvpn_cipher","blowfish cbc"); %>>Blowfish CBC</option>
+			<option value="aes-128 cbc" <% nvram_selected("openvpn_cipher","aes-128 cbc"); %>>AES-128 CBC</option>
+			<option value="aes-192 cbc" <% nvram_selected("openvpn_cipher","aes-192 cbc"); %>>AES-192 CBC</option>
+			<option value="aes-256 cbc" <% nvram_selected("openvpn_cipher","aes-256 cbc"); %>>AES-256 CBC</option>
+			<option value="aes-512 cbc" <% nvram_selected("openvpn_cipher","aes-512 cbc"); %>>AES-512 CBC</option>
+			<option value="rc4" <% nvram_selected("openvpn_cipher","rc4"); %>>RC4 (fast&unsave)</option>>
+		</select>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.vpn_auth"); %></div>
+			<select name="openvpn_auth">
+			<option value="sha1" <% nvram_selected("openvpn_auth","sha1"); %>>SHA1</option>
+			<option value="sha256" <% nvram_selected("openvpn_auth","sha256"); %>>SHA256</option>
+			<option value="sha512" <% nvram_selected("openvpn_auth","sha512"); %>>SHA512</option>
+			<option value="md5" <% nvram_selected("openvpn_auth","md5"); %>>MD5 (fast&unsave)</option>
+		</select>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.vpn_compress"); %></div>
 			<input class="spaceradio" type="radio" name="openvpn_lzo" value="1" <% nvram_checked("openvpn_lzo", "1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="openvpn_lzo" value="0" <% nvram_checked("openvpn_lzo", "0"); %> /><% tran("share.disable"); %>

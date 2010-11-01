@@ -20,3 +20,5 @@
  "openvpn_switch"   "OpenVPN Switch between GUI versions"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_client"  "Client Public Key (wrong&old)"  "NULL"   "FALSE" "0"
  "openvpn_dupcn"  "allow duplicate client cn"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "openvpn_cipher" "Cipher" "CHOICE" "6" "blowfish cbc" "aes-128 cbc" "aes-192 cbc" "aes-256 cbc" "aes-512 cbc" "rc4" "FALSE" "0"
+ "openvpn_auth" "Hash Algorithmus" "CHOICE" "4" "sha1" "sha256" "sha512" "md5" "FALSE" "0" 
