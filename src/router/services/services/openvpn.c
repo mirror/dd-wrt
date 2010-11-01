@@ -44,7 +44,6 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
-	chmod("/tmp/openvpn/ta.key", 0600);
 	/*
 	   26.10.2010 Sash      
 	   write openvpn server config file on current config and common settings
@@ -113,10 +112,6 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
-	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl addif br0 tap0\n");
-		fprintf(fp, "ifconfig tap0 0.0.0.0 promisc up\n");
-	}
 	fprintf(fp, "startservice set_routes\n");
 	fprintf(fp, "iptables -I INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fprintf(fp, "iptables -I FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
@@ -146,6 +141,13 @@ void start_openvpnserver(void)
 		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
 		     "--route-up", "/tmp/openvpn/route-up.sh", "--down",
 		     "/tmp/openvpn/route-down.sh", "--daemon");
+
+	//bring up tap interface when choosen
+	if (nvram_match("openvpn_tuntap", "tap")) {
+		sysprintf("ifconfig tap0 0.0.0.0 promisc up\n");
+		sysprintf("brctl addif br0 tap0\n");
+	}
+
 }
 
 void stop_openvpnserver(void)
@@ -247,6 +249,8 @@ void start_openvpn(void)
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
+	if (nvram_match("openvpncl_tuntap", "tap"))
+		fprintf(fp, "ifconfig tap0 down\n");
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
@@ -269,6 +273,12 @@ void start_openvpn(void)
 		     "--route-up", "/tmp/openvpncl/route-up.sh", "--down",
 		     "/tmp/openvpncl/route-down.sh", "--daemon");
 	return;
+
+	//bring up tap interface when choosen
+	if (nvram_match("openvpncl_tuntap", "tap")) {
+		sysprintf("ifconfig tap0 0.0.0.0 promisc up\n");
+		sysprintf("brctl addif br0 tap0\n");	
+	}
 }
 
 void stop_openvpn(void)
