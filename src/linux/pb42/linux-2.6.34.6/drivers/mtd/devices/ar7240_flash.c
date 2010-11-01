@@ -96,13 +96,17 @@ int guessbootsize(void *offset, unsigned int maxscan)
 {
 	unsigned int i,a;
 	unsigned int *ofs = (unsigned int *)offset;
-	maxscan -= 65536;
+	maxscan -= 0x20000;
 	maxscan /= 4;
 	zcom=0;
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
 			printk(KERN_EMERG "redboot or compatible detected\n");
 			return i * 4;	// redboot, lzma image
+		}
+		if (ofs[i] == 0x27051956 && ofs[i+0x16384] == 0x27051956) {
+			printk(KERN_EMERG "uboot detected (ubnt)\n");
+			return (i * 4)+0x10000;	// uboot, lzma image
 		}
 		if (ofs[i] == 0x27051956) {
 			printk(KERN_EMERG "uboot detected\n");
