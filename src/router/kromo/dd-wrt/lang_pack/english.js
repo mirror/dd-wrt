@@ -1347,6 +1347,8 @@ service.vpn_clicert="Public Client Cert";
 service.vpn_certtype="nsCertType verification";
 service.vpn_clikey="Private Client Key";
 service.vpn_nat="Enable NAT";
+service.vpn_cipher="Encryption Cipher";
+service.vpn_auth="Hash Algorithmus";
 
 service.vncrepeater_legend="VNC";
 service.vncrepeater="VNC Repeater";
