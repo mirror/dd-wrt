@@ -71,6 +71,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
 		fprintf(fp, "cipher %s\n", nvram_safe_get("openvpn_cipher"));
 		fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
+		fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400"); //store client ip. keep them persistant for x seconds
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		if (nvram_match("openvpn_certtype", "1"))
