@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_site_misc -- a module implementing miscellaneous SITE commands
  *
- * Copyright (c) 2004-2009 The ProFTPD Project
+ * Copyright (c) 2004-2010 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,14 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: mod_site_misc.c,v 1.12 2009/11/10 05:02:38 castaglia Exp $
+ * $Id: mod_site_misc.c,v 1.12.2.2 2010/10/22 00:06:04 castaglia Exp $
  */
 
 #include "conf.h"
 
-#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.3"
+#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.4"
+
+static unsigned int site_misc_engine = TRUE;
 
 static int site_misc_check_filters(cmd_rec *cmd, const char *path) {
 #if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
@@ -81,27 +83,32 @@ static int site_misc_create_dir(const char *dir) {
 
 static int site_misc_create_path(pool *p, const char *path) {
   struct stat st;
-  char *curr_path, *dup_path;
+  char *curr_path, *tmp_path;
 
   pr_fs_clear_cache();
 
   if (pr_fsio_stat(path, &st) == 0)
     return 0;
 
-  dup_path = pstrdup(p, path);
-  curr_path = session.cwd;
- 
-  while (dup_path &&
-         *dup_path) {
+  /* The given path should already be canonicalized; we do not need to worry
+   * if it is relative to the current working directory or not.
+   */
+
+  tmp_path = pstrdup(p, path);
+
+  curr_path = "/";
+  while (tmp_path &&
+         *tmp_path) {
     char *curr_dir;
 
     pr_signals_handle();
 
-    curr_dir = strsep(&dup_path, "/");
+    curr_dir = strsep(&tmp_path, "/");
     curr_path = pdircat(p, curr_path, curr_dir, NULL);
-   
-    if (site_misc_create_dir(curr_path) < 0)
+
+    if (site_misc_create_dir(curr_path) < 0) {
       return -1;
+    }
   }
  
   return 0;
@@ -245,12 +252,41 @@ static time_t site_misc_mktime(unsigned int year, unsigned int month,
   return res;
 }
 
+/* Configuration handlers
+ */
+
+/* usage: SiteMiscEngine on|off */
+MODRET set_sitemiscengine(cmd_rec *cmd) {
+  config_rec *c;
+  int bool;
+
+  CHECK_ARGS(cmd, 1);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  bool = get_boolean(cmd, 1);
+  if (bool == -1)
+    CONF_ERROR(cmd, "expected Boolean parameter");
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
+  *((unsigned int *) c->argv[0]) = bool;
+
+  return PR_HANDLED(cmd);
+}
+
 /* Command handlers
  */
 
 MODRET site_misc_mkdir(cmd_rec *cmd) {
-  if (cmd->argc < 2)
+  if (!site_misc_engine) {
     return PR_DECLINED(cmd);
+  }
+
+  if (cmd->argc < 2) {
+    pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
+      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+    return PR_DECLINED(cmd);
+  }
 
   if (strcasecmp(cmd->argv[1], "MKDIR") == 0) {
     register unsigned int i;
@@ -277,10 +313,19 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
       return PR_ERROR(cmd);
     }
 
+    path = dir_canonical_path(cmd->tmp_pool, path);
+    if (path == NULL) {
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      return PR_ERROR(cmd);
+    }
+
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_MKDIR";
-    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+    if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
       cmd->argv[0] = cmd_name;
+
+      pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+        ": %s command denied by <Limit>", cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
       return PR_ERROR(cmd);
     }
@@ -302,8 +347,15 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
 }
 
 MODRET site_misc_rmdir(cmd_rec *cmd) {
-  if (cmd->argc < 2)
+  if (!site_misc_engine) {
     return PR_DECLINED(cmd);
+  }
+
+  if (cmd->argc < 2) {
+    pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
+      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+    return PR_DECLINED(cmd);
+  }
 
   if (strcasecmp(cmd->argv[1], "RMDIR") == 0) {
     register unsigned int i;
@@ -325,10 +377,19 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 
     path = pr_fs_decode_path(cmd->tmp_pool, path);
 
+    path = dir_canonical_path(cmd->tmp_pool, path);
+    if (path == NULL) {
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      return PR_ERROR(cmd);
+    }
+
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_RMDIR";
-    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+    if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
       cmd->argv[0] = cmd_name;
+
+      pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+        ": %s command denied by <Limit>", cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
       return PR_ERROR(cmd);
     }
@@ -350,8 +411,15 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 }
 
 MODRET site_misc_symlink(cmd_rec *cmd) {
-  if (cmd->argc < 2)
+  if (!site_misc_engine) {
     return PR_DECLINED(cmd);
+  }
+
+  if (cmd->argc < 2) {
+    pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
+      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+    return PR_DECLINED(cmd);
+  }
 
   if (strcasecmp(cmd->argv[1], "SYMLINK") == 0) {
     struct stat st;
@@ -370,19 +438,35 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     }
 
     src = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[2]);
+    src = dir_canonical_path(cmd->tmp_pool, src);
+    if (src == NULL) {
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      return PR_ERROR(cmd);
+    }
 
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_SYMLINK";
-    if (!dir_check(cmd->tmp_pool, cmd, G_READ, src, NULL)) {
+    if (!dir_check_canon(cmd->tmp_pool, cmd, G_READ, src, NULL)) {
       cmd->argv[0] = cmd_name;
+
+      pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+        ": %s command denied by <Limit>", cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", cmd->argv[2], strerror(EPERM));
       return PR_ERROR(cmd);
     }
 
     dst = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[3]);
+    dst = dir_canonical_path(cmd->tmp_pool, dst);
+    if (dst == NULL) {
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      return PR_ERROR(cmd);
+    }
 
-    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, dst, NULL)) {
+    if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, dst, NULL)) {
       cmd->argv[0] = cmd_name;
+
+      pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+        ": %s command denied by <Limit>", cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(EPERM));
       return PR_ERROR(cmd);
     }
@@ -422,8 +506,15 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
 }
 
 MODRET site_misc_utime(cmd_rec *cmd) {
-  if (cmd->argc < 2)
+  if (!site_misc_engine) {
     return PR_DECLINED(cmd);
+  }
+
+  if (cmd->argc < 2) {
+    pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
+      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+    return PR_DECLINED(cmd);
+  }
 
   if (strcasecmp(cmd->argv[1], "UTIME") == 0) {
     register unsigned int i;
@@ -463,10 +554,19 @@ MODRET site_misc_utime(cmd_rec *cmd) {
 
     path = pr_fs_decode_path(cmd->tmp_pool, path);
 
+    path = dir_canonical_path(cmd->tmp_pool, path);
+    if (path == NULL) {
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      return PR_ERROR(cmd);
+    }
+
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_UTIME";
-    if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+    if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
       cmd->argv[0] = cmd_name;
+
+      pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+        ": %s command denied by <Limit>", cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
       return PR_ERROR(cmd);
     }
@@ -575,6 +675,17 @@ MODRET site_misc_utime(cmd_rec *cmd) {
  */
 
 static int site_misc_sess_init(void) {
+  config_rec *c;
+
+  c = find_config(main_server->conf, CONF_PARAM, "SiteMiscEngine", FALSE);
+  if (c) {
+    site_misc_engine = *((unsigned int *) c->argv[0]);
+  }
+
+  if (!site_misc_engine) {
+    return 0;
+  }
+
   /* Advertise support for these SITE commands */
   pr_feat_add("SITE MKDIR");
   pr_feat_add("SITE RMDIR");
@@ -586,6 +697,11 @@ static int site_misc_sess_init(void) {
 
 /* Module API tables
  */
+
+static conftable site_misc_conftab[] = {
+  { "SiteMiscEngine",	set_sitemiscengine,	NULL },
+  { NULL }
+};
 
 static cmdtable site_misc_cmdtab[] = {
   { CMD, C_SITE, G_WRITE, site_misc_mkdir,	FALSE,	FALSE, CL_MISC },
@@ -605,7 +721,7 @@ module site_misc_module = {
   "site_misc",
 
   /* Module configuration handler table */
-  NULL,
+  site_misc_conftab,
 
   /* Module command handler table */
   site_misc_cmdtab,

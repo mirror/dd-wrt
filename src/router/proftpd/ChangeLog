@@ -1,3 +1,536 @@
+2010-10-29 10:08  castaglia
+
+	* RELEASE_NOTES, contrib/dist/rpm/proftpd.spec, include/version.h:
+	  Updating release notes and version files for the pending 1.3.3c
+	  release.
+
+2010-10-29 10:03  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_site_misc.pm:
+	  Add unit tests showing that mod_site_misc properly honors <Limit>
+	  sections on its SITE commands.
+
+2010-10-29 09:51  castaglia
+
+	* src/dirtree.c:
+	  Fix typo in badly backported change which caused compilation
+	  failure.
+
+2010-10-29 09:35  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Telnet.pm:
+	  Fix the Telnet tests to be skipped properly, without compilation
+	  error, if the Net::Telnet module isn't installed.
+
+2010-10-29 09:31  castaglia
+
+	* NEWS, src/netio.c:
+	  Backport of fix for Bug#3521 to 1.3.3 branch.
+
+2010-10-29 09:30  castaglia
+
+	* tests/: tests.pl, t/telnet.t, t/lib/ProFTPD/Tests/Telnet.pm:
+	  Add regression test for the Telnet IAC handling bug (Bug#3521).
+
+2010-10-29 09:29  castaglia
+
+	* NEWS, src/netio.c:
+	  Bug#3521 - Telnet IAC processing stack overflow.
+
+2010-10-26 20:07  castaglia
+
+	* NEWS, include/proftpd.h, modules/mod_core.c, src/dirtree.c,
+	  src/display.c, src/response.c:
+	  Bug#3520 -  MultilineRFC2228 directive should be supported in
+	  <VirtualHost> and <Global> sections.
+
+2010-10-26 20:02  castaglia
+
+	* tests/: tests.pl, t/config/multilinerfc2228.t,
+	  t/lib/ProFTPD/Tests/Config/MultilineRFC2228.pm:
+	  Adding unit tests for the MultilineRFC2228 directive.
+
+2010-10-24 12:12  castaglia
+
+	* lib/pr_fnmatch_loop.c:
+	  Try to avoid more non-gcc compiler unhappiness.
+
+2010-10-24 12:10  castaglia
+
+	* lib/pr_fnmatch.c:
+	  Try to make non-gcc compilers happier by providing a
+	  __builtin_expect macro definition for them.
+
+2010-10-23 12:46  castaglia
+
+	* src/dirtree.c:
+	  Fix minor issue with handling of escapes in is_fnmatch().
+
+2010-10-23 12:40  castaglia
+
+	* include/compat.h:
+	  Make sure to have a compatibility macro for the renamed
+	  is_fnmatch() function.
+
+2010-10-23 12:39  castaglia
+
+	* tests/api/netacl.c:
+	  Updated unit tests for NetACL parsing changes.
+
+2010-10-23 12:37  castaglia
+
+	* include/dirtree.h, include/str.h, src/dirtree.c, src/str.c,
+	  tests/api/str.c:
+	  Move the is_fnmatch() function into the str.c source file, and
+	  rename it to pr_str_is_fnmatch(), making it part of the public
+	  API.	Added unit tests for its behavior as well.
+
+2010-10-21 17:08  castaglia
+
+	* RELEASE_NOTES:
+	  Updating release notes for 1.3.3 branch; need a maint release
+	  from this soon.
+
+2010-10-21 17:06  castaglia
+
+	* NEWS, contrib/mod_site_misc.c:
+	  Backport of fix for Bug#3519 to 1.3.3 branch.
+
+2010-10-21 17:01  castaglia
+
+	* NEWS, contrib/mod_site_misc.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_site_misc.pm:
+	  Bug#3519 - Inappropriate directory traversal allowed by
+	  mod_site_misc.
+
+2010-10-21 11:17  castaglia
+
+	* doc/contrib/mod_site_misc.html:
+	  Updated mod_site_misc docs for new SiteMiscEngine directive.
+
+2010-10-21 11:15  castaglia
+
+	* doc/contrib/mod_site_misc.html:
+	  Update mod_site_misc docs for new SiteMiscEngine directive.
+
+2010-10-21 11:09  castaglia
+
+	* NEWS, contrib/mod_site_misc.c:
+	  Backport of fix for Bug#3518 to 1.3.3 branch.
+
+2010-10-21 11:08  castaglia
+
+	* NEWS, contrib/mod_site_misc.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_site_misc.pm:
+	  Bug#3518 - Support SiteMiscEngine directive, for disabling
+	  mod_site_misc functionality via proftpd.conf.
+
+2010-10-20 16:38  castaglia
+
+	* lib/: pr_fnmatch.c, pr_fnmatch_loop.c:
+	  Avoid this compiler warning:
+
+	    warning: shadowing built-in function 'mempcpy'
+
+	  by prefixing our provided mempcpy(3) name with underscores.
+	  Whee.
+
+2010-10-20 16:02  castaglia
+
+	* contrib/: mod_quotatab.c:
+	  Clear the "have update" flag in a few more places, just to be
+	  sure.
+
+2010-10-20 15:49  castaglia
+
+	* contrib/: mod_quotatab.c:
+	  Make sure the "have update" flag is cleared properly for DELEs;
+	  related to Bug#3517.
+
+2010-10-20 15:44  castaglia
+
+	* NEWS, contrib/mod_quotatab.c:
+	  Backport of fix for Bug#3517 to 1.3.3 branch.
+
+2010-10-20 15:43  castaglia
+
+	* NEWS, contrib/mod_quotatab.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_quotatab_sql.pm:
+	  Bug#3517 - mod_quotatab decrements file tally improperly for
+	  failed DELE commands.
+
+2010-10-20 13:39  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Mention the space-avaiable SFTP extension in the SFTPExtensions
+	  doc.
+
+2010-10-20 13:38  castaglia
+
+	* NEWS, contrib/mod_sftp/fxp.c, contrib/mod_sftp/fxp.h,
+	  contrib/mod_sftp/mod_sftp.c:
+	  Bug#3516 - Support the "space-available" SFTP extension.
+
+2010-10-20 12:13  castaglia
+
+	* lib/: pr_fnmatch.c, pr_fnmatch_loop.c:
+	  Fix compilation of the newly-updated fnmatch implementation on
+	  non-GNU systems (i.e. systems which may not have the mempcpy(3)
+	  function).
+
+2010-10-19 16:17  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/Limit/LOGIN.pm:
+	  Updated unit test for Bug#3484.
+
+2010-10-19 16:14  castaglia
+
+	* src/modules.c:
+	  When unloading a module, try to remove as many callbacks that the
+	  module may have registered as possible.
+
+2010-10-19 15:18  castaglia
+
+	* NEWS, src/netacl.c, src/netaddr.c:
+	  Bug#3484 - Support range expressions for IP addresses in
+	  Allow/Deny/From rules.
+
+2010-10-19 15:14  castaglia
+
+	* RELEASE_NOTES:
+	  Mention the upgrade of the bundled fnmatch implementation in the
+	  release notes.
+
+2010-10-19 15:06  castaglia
+
+	* include/libsupp.h, lib/pr_fnmatch.c, lib/pr_fnmatch_loop.c:
+	  Updating the bundled fnmatch implementation to that from
+	  glibc-2.9.  This is needed to properly support range expressions,
+	  a la Bug#3484.  Strange that this hasn't been noticed before.
+
+	  Hopefully this upgrade doesn't break any existing configs.
+
+2010-10-18 14:14  castaglia
+
+	* NEWS:
+	  Updating NEWS for Bug#3514.
+
+2010-10-18 14:13  castaglia
+
+	* tests/tests.pl:
+	  More residue from Bug#3514.
+
+2010-10-18 14:13  castaglia
+
+	* tests/t/lib/ProFTPD/TestSuite/Child.pm:
+	  Strange that these didn't get checked in, as part of Bug#3514.
+
+2010-10-18 14:12  castaglia
+
+	* tests/t/lib/ProFTPD/TestSuite/Utils.pm:
+	  Forgot to check this in; it's part of Bug#3514.
+
+2010-10-18 13:52  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/: AccessDenyMsg.pm,
+	  AccessGrantMsg.pm, AllowOverwrite.pm, AnonRejectPasswords.pm,
+	  AnonRequirePassword.pm, AuthAliasOnly.pm, AuthGroupFile.pm,
+	  AuthOrder.pm, AuthUsingAlias.pm, Classes.pm, CreateHome.pm,
+	  DefaultChdir.pm, DeleteAbortedStores.pm, DirFakeMode.pm,
+	  DisplayChdir.pm, DisplayConnect.pm, DisplayFileTransfer.pm,
+	  DisplayLogin.pm, DisplayQuit.pm, GroupOwner.pm, HiddenStores.pm,
+	  HideFiles.pm, HideGroup.pm, HideNoAccess.pm, HideUser.pm,
+	  MaxClients.pm, MaxInstances.pm, MaxLoginAttempts.pm,
+	  MaxRetrieveFileSize.pm, MaxStoreFileSize.pm, Order.pm,
+	  PathAllowFilter.pm, PathDenyFilter.pm, RequireValidShell.pm,
+	  RewriteHome.pm, ServerAdmin.pm, ServerIdent.pm,
+	  StoreUniquePrefix.pm, TimeoutIdle.pm, TimeoutLogin.pm,
+	  TimeoutNoTransfer.pm, TimeoutSession.pm, TimeoutStalled.pm,
+	  Trace.pm, UseFtpUsers.pm, UseGlobbing.pm, UserAlias.pm,
+	  UserOwner.pm, UserPassword.pm:
+	  Update tests to use base set_up() and tear_down() methods.
+
+2010-10-18 13:11  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/Limit/: Anonymous.pm,
+	  Filters.pm, LOGIN.pm, MFMT.pm, OPTS.pm, RMD.pm,
+	  SubDirectories.pm, XMKD.pm:
+	  Updating tests to use base set_up() and tear_down() methods.
+
+2010-10-18 11:57  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Config/: Directory/Limits.pm,
+	  Directory/Lookups.pm, Directory/Umask.pm, FTPAccess/DELE.pm,
+	  FTPAccess/Empty.pm, FTPAccess/Merging.pm, FTPAccess/RETR.pm:
+	  Updating tests to use base set_up() and tear_down() methods.
+
+2010-10-18 10:43  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Commands/: ABOR.pm, ALLO.pm, APPE.pm,
+	  CDUP.pm, CWD.pm, DELE.pm, EPRT.pm, EPSV.pm, FEAT.pm, HELP.pm,
+	  HOST.pm, LIST.pm, MDTM.pm, MFF.pm, MFMT.pm, MKD.pm, MLSD.pm,
+	  MLST.pm, MODE.pm, NLST.pm, NOOP.pm, PASS.pm, PASV.pm, PORT.pm,
+	  PWD.pm, QUIT.pm, REST.pm, RETR.pm, RMD.pm, RNFR.pm, RNTO.pm,
+	  SIZE.pm, STAT.pm, STOR.pm, STOU.pm, STRU.pm, SYST.pm, TYPE.pm,
+	  USER.pm:
+	  Updating tests to use base set_up() and tear_down() methods.
+
+2010-10-18 10:26  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/: mod_ban.pm, mod_cap.pm,
+	  mod_copy.pm, mod_ctrls.pm, mod_deflate.pm, mod_exec.pm,
+	  mod_ifsession.pm, mod_ifversion.pm, mod_lang.pm,
+	  mod_quotatab_file.pm, mod_quotatab_sql.pm, mod_radius.pm,
+	  mod_rewrite.pm, mod_sftp_sql.pm, mod_shaper.pm, mod_site_misc.pm,
+	  mod_sql.pm, mod_sql_passwd.pm, mod_sql_sqlite.pm, mod_tls.pm,
+	  mod_unique_id.pm, mod_wrap.pm, mod_wrap2_file.pm,
+	  mod_wrap2_sql.pm:
+	  Updating tests to use the base set_up() and tear_down() methods.
+
+2010-10-18 09:55  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Logging/: ExtendedLog.pm,
+	  TransferLog.pm:
+	  Updating tests to use base set_up() and tear_down() methods.
+
+2010-10-18 09:54  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Logins.pm:
+	  Updating test to use the base set_up() and tear_down() methods.
+
+2010-10-18 09:52  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Signals/: ABRT.pm, HUP.pm, SEGV.pm,
+	  TERM.pm:
+	  Updating tests to use the base set_up() and tear_down() methods.
+
+2010-10-18 09:19  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Bug#3514 - Test suite tmpdir improvements.
+
+2010-10-16 11:48  castaglia
+
+	* modules/mod_delay.c:
+	  Use LONG_MAX as the delay ceiling.
+
+2010-10-16 11:29  castaglia
+
+	* contrib/mod_sftp/channel.c:
+	  Remove now-unused variable, and avoid a verbose compiler warning.
+
+2010-10-16 10:56  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Add unit test for an SFTP upload which exceeds a mod_quotatab
+	  limit; make sure that mod_sftp sends the proper error code and
+	  message.
+
+2010-10-16 10:55  castaglia
+
+	* contrib/mod_quotatab.c:
+	  When handling upload errors in mod_quotatab, try not to delete
+	  the bytes of files that were being appended to.  That is, only
+	  account for transfer differences if the number of transfer bytes
+	  is greater than zero, lest we penalize users inadvertently.
+
+2010-10-15 15:08  castaglia
+
+	* contrib/mod_sftp/channel.c:
+	  Avoid compiler warning about returning a pointer (NULL,
+	  specifically) from a function which expects to return an unsigned
+	  int.
+
+2010-10-15 11:27  jwm
+
+	* README.LDAP: update from latest mod_ldap bzr
+
+2010-10-15 11:26  jwm
+
+	* contrib/mod_ldap.c: mod_ldap bzr r106:   2.9.0 looks ready to go
+	  mod_ldap bzr r105:   - check LDAPSearchScope value at config
+	  parse time   - support base scope
+
+2010-10-14 15:01  jwm
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_ldap.pm: round out the
+	  parts of mod_ldap we can test without our own slapd instance
+
+2010-10-14 14:39  castaglia
+
+	* contrib/mod_sftp/: fxp.c:
+	  Handle quota-related errno values in the OPEN request handler.
+
+2010-10-14 14:31  castaglia
+
+	* contrib/: mod_quotatab.c:
+	  Make sure that the STOR and APPE handlers set errno
+	  appropriately, when the quota are reached.
+
+2010-10-06 17:10  castaglia
+
+	* NEWS, modules/mod_cap.c:
+	  Backport of fix for Bug#3513 to 1.3.3 branch.
+
+2010-10-06 17:10  castaglia
+
+	* NEWS, modules/mod_cap.c:
+	  Bug#3513 - EPERM error logged unnecessarily for SFTP logins on
+	  Linux.
+
+2010-10-06 11:54  castaglia
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Add unit tests for "TLSOptions dNSNameRequired", and for
+	  combining the various cert checks via "TLSOptions
+	  iPAddressRequired dNSNameRequired CommonNameRequired".
+
+2010-10-06 11:45  castaglia
+
+	* doc/contrib/mod_tls.html:
+	  Document the newly added (Bug#3512) CommonNameRequired TLSOption.
+
+2010-10-06 11:43  castaglia
+
+	* NEWS, RELEASE_NOTES, contrib/mod_tls.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_tls.pm:
+	  Bug#3512 - Add ability to check client certificate CommonName
+	  (CN) when verifying SSL/TLS clients.
+
+2010-10-06 11:39  castaglia
+
+	* tests/t/etc/modules/mod_tls/: NOTES, client-cert-localhost.pem:
+	  Add a cert with a 'localhost' CN and DNS subjAltName value.
+	  Update the notes with how to create this cert.
+
+2010-09-29 11:13  castaglia
+
+	* NEWS, contrib/mod_sql_sqlite.c:
+	  Backport of fix for Bug#3511 to 1.3.3 branch.
+
+2010-09-29 11:13  castaglia
+
+	* NEWS, contrib/mod_sql_sqlite.c,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_sqlite.pm:
+	  Bug#3511 - SQLAuthType Backend not properly rejected by
+	  mod_sql_sqlite.
+
+2010-09-28 11:20  jwm
+
+	* tests/t/lib/ProFTPD/Tests/Modules/mod_ldap.pm: honor $allow_auth
+	  in ldap_auth() test
+
+2010-09-28 09:56  castaglia
+
+	* RELEASE_NOTES:
+	  Make sure to mention the new NoErrorIfAbsent ListOption, from
+	  Bug#3506, in the release notes.
+
+2010-09-28 09:49  castaglia
+
+	* NEWS, modules/mod_ls.c,
+	  tests/t/lib/ProFTPD/Tests/Commands/LIST.pm,
+	  tests/t/lib/ProFTPD/Tests/Commands/NLST.pm:
+	  Bug#3506 - Support ListOption for returning 226 response code
+	  when listing nonexistent file, instead of 450.
+
+2010-09-23 17:44  castaglia
+
+	* doc/contrib/mod_sftp.html:
+	  Update the mod_sftp docs to note that all SFTPOptions must appear
+	  on the same line.
+
+2010-09-20 14:49  castaglia
+
+	* doc/contrib/mod_sql_passwd.html:
+	  Doc typos (missing line breaks).
+
+2010-09-17 11:00  castaglia
+
+	* doc/contrib/mod_tls.html:
+	  Try to make it clear that all TLSOptions used must appear on the
+	  same line in the config file, rather than being spread out over
+	  multiple TLSOptions.
+
+2010-09-17 10:56  castaglia
+
+	* contrib/mod_tls.c:
+	  Minor tweaks to the log message about the NoSessionUseRequired
+	  TLSOptions parameter.
+
+2010-09-16 14:40  castaglia
+
+	* modules/mod_delay.c:
+	  Make the maximum selected delay be 1 hour.  It's long, yes -- but
+	  still prevents the multiple days/years selection which one user
+	  was seeing.
+
+2010-09-16 14:36  castaglia
+
+	* modules/mod_delay.c:
+	  Add some guards to mod_delay, to try to curb overly excessive
+	  delays.
+
+	  First, initialize the delay value records to use values of -1,
+	  and then make sure that such negative values are skipped when
+	  building the list of values from which to select the median.
+
+	  Check that the selected median is greater than or equal to zero
+	  before using it.
+
+	  Last, add an absolute limit on the selected delay; currently set
+	  to 15 minutes.
+
+2010-09-15 10:37  castaglia
+
+	* RELEASE_NOTES, doc/contrib/mod_sftp.html:
+	  Add docs for the new SFTPClientAlive directive.
+
+2010-09-15 10:29  castaglia
+
+	* NEWS, contrib/mod_sftp/channel.c, contrib/mod_sftp/channel.h,
+	  contrib/mod_sftp/mod_sftp.c, contrib/mod_sftp/packet.c,
+	  contrib/mod_sftp/packet.h,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sftp.pm:
+	  Bug#3505 - Support for SSH2 client "alive" checks, a la OpenSSH's
+	  ClientAliveCount/Interval.
+
+2010-09-14 11:16  castaglia
+
+	* modules/mod_delay.c:
+	  Adding yet more trace logging to mod_delay.
+
+2010-09-14 11:08  castaglia
+
+	* modules/mod_delay.c:
+	  Adding more trace logging to mod_delay.
+
+2010-09-14 10:55  castaglia
+
+	* modules/mod_delay.c:
+	  Add a little more trace logging to mod_delay, in order to track
+	  down a segfault that I suspect is originating in there.  Also fix
+	  up the trace logging so that errno is not trampled as often
+	  (leads to more accurate log messages).
+
+2010-09-13 16:13  castaglia
+
+	* src/mkhome.c:
+	  Add support for trace logging of some of the CreateHome workings.
+
+2010-09-10 14:07  castaglia
+
+	* NEWS, contrib/mod_sql.c, modules/mod_log.c,
+	  tests/t/lib/ProFTPD/Tests/Logging/ExtendedLog.pm,
+	  tests/t/lib/ProFTPD/Tests/Modules/mod_sql_sqlite.pm:
+	  Bug#3390 - Add extra %-variable to LogFormat directive to log
+	  UID/GID of logged user.
+
+2010-09-09 15:42  castaglia
+
+	* ChangeLog:
+	  Updated Changelog.
+
 2010-09-09 15:40  castaglia
 
 	* NEWS, contrib/dist/rpm/proftpd.spec, include/version.h:
@@ -28820,7 +29353,7 @@
 2003-06-11 19:08  castaglia
 
 	* src/: inet.c, modules.c:
-	  Missing $Id: ChangeLog,v 1.145.2.2 2010/09/09 22:42:03 castaglia Exp $ keyword.
+	  Missing $Id: ChangeLog,v 1.145.2.3 2010/10/29 17:09:33 castaglia Exp $ keyword.
 
 2003-06-11 15:45  castaglia
 
@@ -29999,7 +30532,7 @@
 
 	* contrib/: mod_sql.c, mod_sql.h, mod_sql_mysql.c,
 	  mod_sql_postgres.c:
-	  Adding $Id: ChangeLog,v 1.145.2.2 2010/09/09 22:42:03 castaglia Exp $ tags to the mod_sql files.
+	  Adding $Id: ChangeLog,v 1.145.2.3 2010/10/29 17:09:33 castaglia Exp $ tags to the mod_sql files.
 
 2003-03-14 07:54  castaglia
 
@@ -30518,12 +31051,12 @@
 
 	* src/netio.c, src/pool.c, src/sets.c, include/ident.h,
 	  include/timers.h:
-	  Adding more $Id: ChangeLog,v 1.145.2.2 2010/09/09 22:42:03 castaglia Exp $ keywords.
+	  Adding more $Id: ChangeLog,v 1.145.2.3 2010/10/29 17:09:33 castaglia Exp $ keywords.
 
 2003-02-11 23:34  castaglia
 
 	* src/feat.c:
-	  Added $Id: ChangeLog,v 1.145.2.2 2010/09/09 22:42:03 castaglia Exp $ keyword.
+	  Added $Id: ChangeLog,v 1.145.2.3 2010/10/29 17:09:33 castaglia Exp $ keyword.
 
 2003-02-10 15:34  castaglia
 
