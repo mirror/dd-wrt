@@ -32,8 +32,8 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvram_else_match("openvpncl_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_mode, 'idrouter', <% nvram_else_match("openvpn_mode", "router", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_mode, 'idbridge', <% nvram_else_match("openvpn_mode", "bridge", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_mode, 'idrouter', <% nvram_else_match("openvpn_tuntap", "tun", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_mode, 'idbridge', <% nvram_else_match("openvpn_tuntap", "tap", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvram_else_match("openvpn_switch", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvram_else_match("openvpn_switch", "0", "1", "0"); %> == 1);
 		
