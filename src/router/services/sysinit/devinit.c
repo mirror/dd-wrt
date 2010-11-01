@@ -51,6 +51,37 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 
+
+#ifdef HAVE_X86
+
+static int getdiscindex(void)	// works only for squashfs 
+{
+	int i;
+
+	for (i = 0; i < 10; i++) {
+		char dev[64];
+
+		sprintf(dev, "/dev/discs/disc%d/part2", i);
+		FILE *in = fopen(dev, "rb");
+
+		if (in == NULL)
+			continue;	// no second partition or disc does not
+		// exist, skipping
+		char buf[4];
+
+		fread(buf, 4, 1, in);
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
+		    && buf[3] == 't') {
+			fclose(in);
+			// filesystem detected
+			return i;
+		}
+		fclose(in);
+	}
+	return -1;
+}
+
+#endif
 void start_devinit(void)
 {
 	unlink("/etc/nvram/.lock");
