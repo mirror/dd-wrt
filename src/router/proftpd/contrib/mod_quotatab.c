@@ -28,7 +28,7 @@
  * ftp://pooh.urbanrage.com/pub/c/.  This module, however, has been written
  * from scratch to implement quotas in a different way.
  *
- * $Id: mod_quotatab.c,v 1.58.2.1 2010/07/15 17:28:18 castaglia Exp $
+ * $Id: mod_quotatab.c,v 1.58.2.5 2010/10/20 23:03:14 castaglia Exp $
  */
 
 #include "mod_quotatab.h"
@@ -1524,6 +1524,18 @@ MODRET quotatab_pre_appe(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_IN(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
 
   } else if (sess_limit.bytes_xfer_avail > 0.0 &&
@@ -1535,6 +1547,18 @@ MODRET quotatab_pre_appe(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
   }
 
@@ -1558,12 +1582,15 @@ MODRET quotatab_post_appe(cmd_rec *cmd) {
   off_t append_bytes = session.xfer.total_bytes;
 
   /* sanity check */
-  if (!use_quotas)
+  if (!use_quotas) {
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
+  }
 
   if (quotatab_ignore_path(cmd->tmp_pool, cmd->arg)) {
     quotatab_log("%s: path '%s' matched QuotaExcludeFilter '%s', ignoring",
       cmd->argv[0], cmd->arg, quota_exclude_filter);
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
   }
 
@@ -1576,12 +1603,13 @@ MODRET quotatab_post_appe(cmd_rec *cmd) {
     append_bytes = st.st_size - quotatab_disk_nbytes;
 
   } else {
-    if (errno == ENOENT)
+    if (errno == ENOENT) {
       append_bytes = 0;
 
-    else
+    } else {
       quotatab_log("%s: error checking '%s': %s", cmd->argv[0], cmd->arg,
         strerror(errno));
+    }
   }
 
   /* Write out an updated quota entry. */
@@ -1643,9 +1671,9 @@ MODRET quotatab_post_appe(cmd_rec *cmd) {
           cmd->argv[0], cmd->arg);
       }
     }
-
   }
 
+  have_quota_update = 0;
   return PR_DECLINED(cmd);
 }
 
@@ -1654,12 +1682,15 @@ MODRET quotatab_post_appe_err(cmd_rec *cmd) {
   off_t append_bytes = session.xfer.total_bytes;
 
   /* sanity check */
-  if (!use_quotas)
+  if (!use_quotas) {
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
+  }
 
   if (quotatab_ignore_path(cmd->tmp_pool, cmd->arg)) {
     quotatab_log("%s: path '%s' matched QuotaExcludeFilter '%s', ignoring",
       cmd->argv[0], cmd->arg, quota_exclude_filter);
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
   }
 
@@ -1672,12 +1703,13 @@ MODRET quotatab_post_appe_err(cmd_rec *cmd) {
     append_bytes = st.st_size - quotatab_disk_nbytes;
 
   } else {
-    if (errno == ENOENT)
+    if (errno == ENOENT) {
       append_bytes = 0;
 
-    else
+    } else {
       quotatab_log("%s: error checking '%s': %s", cmd->argv[0], cmd->arg,
         strerror(errno));
+    }
   }
 
   /* Write out an updated quota entry */
@@ -1741,6 +1773,7 @@ MODRET quotatab_post_appe_err(cmd_rec *cmd) {
     }
   }
 
+  have_quota_update = 0;
   return PR_DECLINED(cmd);
 }
 
@@ -1774,6 +1807,18 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_IN(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
 
   } else if (sess_limit.bytes_xfer_avail > 0.0 &&
@@ -1785,6 +1830,18 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
   }
 
@@ -1821,6 +1878,18 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
       pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
         cmd->argv[0], DISPLAY_FILES_IN(cmd));
       have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
       return PR_ERROR(cmd);
 
     } else if (sess_limit.files_xfer_avail != 0 &&
@@ -1832,6 +1901,18 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
       pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
         cmd->argv[0], DISPLAY_FILES_XFER(cmd));
       have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
       return PR_ERROR(cmd);
     }
   }
@@ -2033,13 +2114,13 @@ MODRET quotatab_pre_dele(cmd_rec *cmd) {
     } else {
       quotatab_disk_nbytes = quotatab_dele_st.st_size;
       quotatab_have_dele_st = TRUE;
+      have_quota_update = QUOTA_HAVE_WRITE_UPDATE;
     }
 
   } else {
     quotatab_disk_nbytes = 0;
   }
 
-  have_quota_update = QUOTA_HAVE_WRITE_UPDATE;
   return PR_DECLINED(cmd);
 }
 
@@ -2166,10 +2247,6 @@ MODRET quotatab_post_dele(cmd_rec *cmd) {
         }
       }
     }
-
-  } else {
-    /* Write out an updated quota entry. */
-    QUOTATAB_TALLY_WRITE(-quotatab_disk_nbytes, 0, 0, -1, 0, 0)
   }
 
   /* NOTE: if use_dirs is TRUE, also take into consideration the decreased
@@ -2190,6 +2267,9 @@ MODRET quotatab_post_dele_err(cmd_rec *cmd) {
 
   /* Clear the cached bytes. */
   quotatab_disk_nbytes = 0;
+
+  /* Clear the update flag as well. */
+  have_quota_update = 0;
 
   return PR_DECLINED(cmd);
 }
@@ -2658,6 +2738,14 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
     pr_response_add_err(R_451, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_OUT(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
 
   } else if (sess_limit.bytes_xfer_avail > 0.0 &&
@@ -2669,6 +2757,14 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
     pr_response_add_err(R_451, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
   }
 
@@ -2684,6 +2780,14 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
     pr_response_add_err(R_451, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_FILES_OUT(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
 
   } else if (sess_limit.files_xfer_avail != 0 &&
@@ -2695,6 +2799,14 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
     pr_response_add(R_451, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_FILES_XFER(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
   }
 
@@ -2965,6 +3077,18 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_IN(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
 
   } else if (sess_limit.bytes_xfer_avail > 0.0 &&
@@ -2976,6 +3100,18 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
   }
 
@@ -2991,6 +3127,18 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_FILES_IN(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
 
   } else if (sess_limit.files_xfer_avail != 0 &&
@@ -3002,6 +3150,18 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       cmd->argv[0], DISPLAY_FILES_XFER(cmd));
     have_err_response = TRUE;
+
+    /* Set an appropriate errno value. */
+#if defined(EDQUOT)
+    errno = EDQUOT;
+#elif defined(EFBIG)
+    errno = EFBIG;
+#elif defined(ENOSPC)
+    errno = ENOSPC;
+#else
+    errno = EPERM;
+#endif
+
     return PR_ERROR(cmd);
   }
 
@@ -3011,10 +3171,12 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
    * disk_nbytes to be zero. 
    */
   pr_fs_clear_cache();
-  if (pr_fsio_lstat(cmd->arg, &st) < 0)
+  if (pr_fsio_lstat(cmd->arg, &st) < 0) {
     quotatab_disk_nbytes = 0;
-  else
+
+  } else {
     quotatab_disk_nbytes = st.st_size;
+  }
 
   have_quota_update = QUOTA_HAVE_WRITE_UPDATE;
   return PR_DECLINED(cmd);
@@ -3025,12 +3187,15 @@ MODRET quotatab_post_stor(cmd_rec *cmd) {
   off_t store_bytes = session.xfer.total_bytes;
 
   /* Sanity check */
-  if (!use_quotas)
+  if (!use_quotas) {
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
+  }
 
   if (quotatab_ignore_path(cmd->tmp_pool, cmd->arg)) {
     quotatab_log("%s: path '%s' matched QuotaExcludeFilter '%s', ignoring",
       cmd->argv[0], cmd->arg, quota_exclude_filter);
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
   }
 
@@ -3043,12 +3208,13 @@ MODRET quotatab_post_stor(cmd_rec *cmd) {
     store_bytes = st.st_size - quotatab_disk_nbytes;
 
   } else {
-    if (errno == ENOENT)
+    if (errno == ENOENT) {
       store_bytes = 0;
 
-    else
+    } else {
       quotatab_log("%s: error checking '%s': %s", cmd->argv[0], cmd->arg,
         strerror(errno));
+    }
   }
 
   /* NOTE: if use_dirs is TRUE, also take into consideration the increased
@@ -3146,6 +3312,7 @@ MODRET quotatab_post_stor(cmd_rec *cmd) {
     }
   }
 
+  have_quota_update = 0;
   return PR_DECLINED(cmd);
 }
 
@@ -3154,12 +3321,15 @@ MODRET quotatab_post_stor_err(cmd_rec *cmd) {
   off_t store_bytes = session.xfer.total_bytes;
 
   /* Sanity check */
-  if (!use_quotas)
+  if (!use_quotas) {
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
+  }
 
   if (quotatab_ignore_path(cmd->tmp_pool, cmd->arg)) {
     quotatab_log("%s: path '%s' matched QuotaExcludeFilter '%s', ignoring",
       cmd->argv[0], cmd->arg, quota_exclude_filter);
+    have_quota_update = 0;
     return PR_DECLINED(cmd);
   }
 
@@ -3274,6 +3444,7 @@ MODRET quotatab_post_stor_err(cmd_rec *cmd) {
       cmd->argv[0], DISPLAY_FILES_XFER(cmd));
   }
 
+  have_quota_update = 0;
   return PR_DECLINED(cmd);
 }
 

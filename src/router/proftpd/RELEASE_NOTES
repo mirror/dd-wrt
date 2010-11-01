@@ -6,6 +6,13 @@ This file contains a description of the major changes to ProFTPD for the
 releases.  More information on these changes can be found in the NEWS and
 ChangeLog files.
 
+1.3.3c
+---------
+
+  + Fixed Telnet IAC stack overflow vulnerability (ZDI-CAN-925)
+  + Fixed directory traversal bug in mod_site_misc
+  + Fixed SQLite authentications using "SQLAuthType Backend"
+
 1.3.3b
 ---------
 
@@ -522,4 +529,4 @@ ChangeLog files.
         this will probably not apply to most modules.
 
  
-Last Updated: $Date: 2010/08/30 17:43:42 $
+Last Updated: $Date: 2010/10/29 17:08:56 $
