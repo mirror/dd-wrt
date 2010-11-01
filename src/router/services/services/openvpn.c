@@ -117,9 +117,9 @@ void start_openvpnserver(void)
 		fprintf(fp, "ifconfig tap0 0.0.0.0 promisc up\n");
 	}
 	fprintf(fp, "startservice set_routes\n");
-	fprintf(fp, "iptables -I INPUT 2 -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -I FORWARD 1 -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -I FORWARD 2 -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpn/down.sh", "wb");
@@ -128,6 +128,7 @@ void start_openvpnserver(void)
 	if (nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "ifconfig tap0 down\n");
 	fprintf(fp, "iptables -D INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -D INPUT -p %s --dport %s -j ACCEPT\n",nvram_match("openvpn_proto","udp")?"udp":"tcp",nvram_safe_get("openvpn_port"));
 	fprintf(fp, "iptables -D FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fprintf(fp, "iptables -D FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
@@ -137,7 +138,7 @@ void start_openvpnserver(void)
 
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
-		     "--route-up", "/tmp/openvpn/route-up.sh", "--down",
+		     "--up", "/tmp/openvpn/route-up.sh", "--down",
 		     "/tmp/openvpn/route-down.sh", "--daemon", "--engine",
 		     "cryptodev");
 	else
@@ -233,11 +234,11 @@ void start_openvpn(void)
 	if (fp == NULL)
 		return;
 	if (nvram_match("openvpncl_nat", "1"))
-		fprintf(fp, "iptables -A POSTROUTING -t nat -o %s+ -j MASQUERADE\n",
+		fprintf(fp, "iptables -A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
-		fprintf(fp, "iptables -A FORWARD 1 -i %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -A FORWARD 2 -o %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -A FORWARD -i %s0 -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -A FORWARD -o %s0 -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
 	}
 	fclose(fp);
 
@@ -245,11 +246,11 @@ void start_openvpn(void)
 	if (fp == NULL)
 		return;
 	if (nvram_match("openvpncl_nat", "1"))
-		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s+ -j MASQUERADE\n",
+		fprintf(fp, "iptables -D POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
-		fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D FORWARD -i %s0 -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp, "iptables -D FORWARD -o %s0 -j ACCEPT\n", nvram_safe_get("openvpncl_tuntap"));
 	}
 	fclose(fp);
 
