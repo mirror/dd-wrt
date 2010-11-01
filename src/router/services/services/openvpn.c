@@ -44,7 +44,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
-	chmod("/tmp/openvpn/ta.key", 0700)
+	chmod("/tmp/openvpn/ta.key", 0700);
 	/*
 	   26.10.2010 Sash      
 	   write openvpn server config file on current config and common settings
