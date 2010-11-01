@@ -134,18 +134,18 @@ _nvram_read(char *buf)
 	srcf = filp_open("/usr/local/nvram/nvram.bin", O_RDONLY, 0);
 	if (IS_ERR(srcf))
 	    {
-	        printk(KERN_EMERG "Broken NVRAM found, recovering it \n");
+	        printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem error)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
 		header->magic = NVRAM_MAGIC;
 		header->len = 0;
 	set_fs(old_fs);
-	    return 0;	    
+	    return -1;	    
 	    }
 	if ((srcf->f_op == NULL) || (srcf->f_op->read == NULL) || (srcf->f_op->write == NULL))
 	    {
-	        printk(KERN_EMERG "Broken NVRAM found, recovering it \n");
+	        printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem not ready)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
@@ -153,13 +153,13 @@ _nvram_read(char *buf)
 		header->len = 0;
 	    filp_close(srcf, NULL);			
 	set_fs(old_fs);
-	    return 0;
+	    return -1;
 	    } /* End of if */
 	len = srcf->f_op->read(srcf,buf,NVRAM_SPACE,&srcf->f_pos);
 
 
 	if (len != NVRAM_SPACE || header->magic != NVRAM_MAGIC) {
-	        printk(KERN_EMERG "Broken NVRAM found, recovering it \n");
+	        printk(KERN_EMERG "Broken NVRAM found, recovering it (header error)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
