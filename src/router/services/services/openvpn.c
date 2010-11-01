@@ -81,6 +81,8 @@ void start_openvpnserver(void)
 			fprintf(fp, "comp-lzo\n");
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
+//		if (nvram_match("openvpn_redirgate", "1"))
+			fprintf(fp, "push \"redirect-gateway\"\n");
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
@@ -207,7 +209,7 @@ void start_openvpn(void)
 	fprintf(fp, "log-append /var/log/openvpncl\n");
 	fprintf(fp, "client\n");
 	fprintf(fp, "tls-client\n");
-	fprintf(fp, "dev %s\n", nvram_safe_get("openvpncl_tuntap"));
+	fprintf(fp, "dev %s0\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
