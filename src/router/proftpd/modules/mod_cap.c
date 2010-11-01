@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2003-2009 The ProFTPD Project team
+ * Copyright (c) 2003-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -L$(top_srcdir)/lib/libcap -lcap$
  * $Directories: $(top_srcdir)/lib/libcap$
- * $Id: mod_cap.c,v 1.21 2009/11/04 23:02:10 castaglia Exp $
+ * $Id: mod_cap.c,v 1.21.2.1 2010/10/07 00:10:43 castaglia Exp $
  */
 
 #include <stdio.h>
@@ -241,9 +241,23 @@ MODRET cap_post_pass(cmd_rec *cmd) {
    * so we can't use PRIVS_ROOT/PRIVS_RELINQUISH. setreuid() is the
    * workaround.
    */
-  if (setreuid(session.uid, 0) == -1) {
-    pr_log_pri(PR_LOG_ERR, MOD_CAP_VERSION ": setreuid: %s", strerror(errno));
+  if (setreuid(session.uid, 0) < 0) {
+    int xerrno = errno;
+    const char *proto;
+
     pr_signals_unblock();
+
+    proto = pr_session_get_protocol(0);
+
+    /* If this is for an SSH2 connection, don't log the error if it is
+     * an EPERM.
+     */
+    if (strcmp(proto, "ssh2") != 0 ||
+        xerrno != EPERM) {
+      pr_log_pri(PR_LOG_ERR, MOD_CAP_VERSION ": setreuid: %s",
+        strerror(xerrno));
+    }
+
     return PR_DECLINED(cmd);
   }
 #endif /* PR_DEVEL_COREDUMP */

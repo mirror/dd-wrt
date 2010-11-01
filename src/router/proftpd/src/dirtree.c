@@ -25,7 +25,7 @@
  */
 
 /* Read configuration file(s), and manage server/configuration structures.
- * $Id: dirtree.c,v 1.232.2.4 2010/08/04 22:32:59 castaglia Exp $
+ * $Id: dirtree.c,v 1.232.2.6 2010/10/29 16:51:45 castaglia Exp $
  */
 
 #include "conf.h"
@@ -133,8 +133,11 @@ int is_fnmatch(const char *str) {
         return TRUE;
 
       case '\\':
-        if (*str++ == '\0')
+        if (*(str+1) == '\0')
           return FALSE;
+
+        /* Advance past the escaped character */
+        str++;
         break;
 
       case '[':

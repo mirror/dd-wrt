@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* NetIO routines
- * $Id: netio.c,v 1.39 2009/03/05 06:01:51 castaglia Exp $
+ * $Id: netio.c,v 1.39.2.1 2010/10/29 16:31:35 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1098,6 +1098,16 @@ char *pr_netio_telnet_gets(char *buf, size_t buflen,
             }
             break;
         }
+      }
+
+      /* In the situation where the previous byte was an IAC, we wrote IAC
+       * into the output buffer, and decremented buflen (size of the output
+       * buffer remaining).  Thus we need to check here if buflen is zero,
+       * before trying to decrement buflen again (and possibly underflowing
+       * the buflen size_t data type).
+       */
+      if (buflen == 0) {
+        break;
       }
 
       *bp++ = cp;
