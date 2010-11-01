@@ -65,6 +65,26 @@ void start_devinit(void)
 	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
 #endif
 	cprintf("sysinit() tmp\n");
+#ifdef HAVE_X86
+	char dev[64];
+	int index = getdiscindex();
+
+	if (index == -1) {
+		fprintf(stderr,
+			"no valid dd-wrt partition found, calling shell");
+		eval("/bin/sh");
+		exit(0);
+	}
+	// sprintf (dev, "/dev/discs/disc%d/part1", index);
+	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
+
+	sprintf(dev, "/dev/discs/disc%d/part3", index);
+	if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL)) {
+		eval("/sbin/mke2fs", "-F", "-b", "1024", dev);
+		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
+//		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
+	}
+#endif
 
 	/*
 	 * /tmp 
