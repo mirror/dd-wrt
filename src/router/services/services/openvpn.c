@@ -69,6 +69,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "tls-server\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
+		fprintf(fp, "cipher %s\n", nvram_safe_get("openvpn_cipher"));
+		fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		if (nvram_match("openvpn_certtype", "1"))
@@ -183,6 +185,8 @@ void start_openvpn(void)
 	fprintf(fp, "client\n");
 	fprintf(fp, "dev %s\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
+	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
+	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
 	fprintf(fp, "resolv-retry infinite\n");
