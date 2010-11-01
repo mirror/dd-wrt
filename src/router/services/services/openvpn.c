@@ -44,6 +44,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
+	chmod("/tmp/openvpn/ta.key", 0700)
 	/*
 	   26.10.2010 Sash      
 	   write openvpn server config file on current config and common settings
@@ -56,15 +57,13 @@ void start_openvpnserver(void)
 	fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
 	fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
 	fprintf(fp, "key /tmp/openvpn/key.pem\n");
-//	fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");  disable to prevent problems for now
-//	fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 	//be sure Chris old style ist still working
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 		fprintf(fp, "client-to-client\n");
 		fprintf(fp, "keepalive 10 120\n");
 		fprintf(fp, "verb 4\n");
-		fprintf(fp, "mute 20\n");
+		fprintf(fp, "mute 3\n");
 		fprintf(fp, "log-append /var/log/openvpn\n");
 		fprintf(fp, "tls-server\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
@@ -72,6 +71,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "cipher %s\n", nvram_safe_get("openvpn_cipher"));
 		fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
 		fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400"); //store client ip. keep them persistant for x seconds
+		fprintf(fp, "management 127.0.0.1 5001\n");
+		fprintf(fp, "management-log-cache 50\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		if (nvram_match("openvpn_certtype", "1"))
@@ -84,7 +85,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
 				nvram_safe_get("openvpn_mask"));
-			fprintf(fp, "dev tun\n");
+			fprintf(fp, "dev tun0\n");
 		}
 		else {
 			fprintf(fp, "server-bridge %s %s %s %s\n",
@@ -92,10 +93,12 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_mask"),
 				nvram_safe_get("openvpn_startip"),
 				nvram_safe_get("openvpn_endip"));
-			fprintf(fp, "dev tap\n");
+			fprintf(fp, "dev tap0\n");
 		}
-		fprintf(fp, "management 127.0.0.1 5001\n");
-		fprintf(fp, "management-log-cache 50\n");
+		if (strlen(nvram_safe_get("openvpn_tlsauth"))>0)
+			fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
+		if (strlen(nvram_safe_get("openvpn_crl"))>0)
+			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n"); ;
 	} else {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 
@@ -109,18 +112,25 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/up.sh", "wb");
 	if (fp == NULL)
 		return;
+	if (nvram_match("openvpn_tuntap", "tap")) {
+		fprintf(fp, "brctl addif br0 tap0\n")
+		fprintf(fp, "ifconfig tap0 0.0.0.0 promisc up\n")
+	}
 	fprintf(fp, "startservice set_routes\n");
-	fprintf(fp, "iptables -I INPUT 2 -i %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -I FORWARD 1 -i %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -I FORWARD 2 -o %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I INPUT 2 -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I FORWARD 1 -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -I FORWARD 2 -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpn/down.sh", "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "iptables -D INPUT -i %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -D FORWARD -i %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -D FORWARD -o %s+ -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	if (nvram_match("openvpn_tuntap", "tap")) {
+		fprintf(fp, "ifconfig tap0 down\n")
+	}
+	fprintf(fp, "iptables -D INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -D FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	fprintf(fp, "iptables -D FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
 	chmod("/tmp/openvpn/up.sh", 0700);
@@ -128,13 +138,13 @@ void start_openvpnserver(void)
 
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
-		     "--up", "/tmp/openvpn/up.sh", "--down",
-		     "/tmp/openvpn/down.sh", "--daemon", "--engine",
+		     "--route-up", "/tmp/openvpn/route-up.sh", "--down",
+		     "/tmp/openvpn/route-down.sh", "--daemon", "--engine",
 		     "cryptodev");
 	else
 		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
-		     "--up", "/tmp/openvpn/up.sh", "--down",
-		     "/tmp/openvpn/down.sh", "--daemon");
+		     "--route-up", "/tmp/openvpn/route-up.sh", "--down",
+		     "/tmp/openvpn/route-down.sh", "--daemon");
 }
 
 void stop_openvpnserver(void)
@@ -179,45 +189,44 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
 	write_nvram("/tmp/openvpncl/client.key", "openvpncl_key");
+	write_nvram("/tmp/openvpncl/ta.key", "openvpncl_tlsauth");
 
 	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
+	fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
+	fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
+	fprintf(fp, "key /tmp/openvpncl/client.key\n");
+	fprintf(fp, "management 127.0.0.1 5001\n");
+	fprintf(fp, "management-log-cache 50\n");
+	fprintf(fp, "verb 4\n");
+	fprintf(fp, "mute 3\n");
+	fprintf(fp, "log-append /var/log/openvpncl\n");
 	fprintf(fp, "client\n");
 	fprintf(fp, "dev %s\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
-	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"),
-		nvram_safe_get("openvpncl_remoteport"));
 	fprintf(fp, "resolv-retry infinite\n");
 	fprintf(fp, "nobind\n");
-	// fprintf(fp,"user nobody\n");
-	// fprintf(fp,"group nobody\n");
 	fprintf(fp, "persist-key\n");
 	fprintf(fp, "persist-tun\n");
+	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"),
+		nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_extramtu", ""))
-		fprintf(fp, "tun-mtu-extra %s\n",
-			nvram_safe_get("openvpncl_extramtu"));
+		fprintf(fp, "tun-mtu-extra %s\n", nvram_safe_get("openvpncl_extramtu"));
 	if (nvram_invmatch("openvpncl_mssfix", ""))
 		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));
-	fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
-	fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
-	fprintf(fp, "key /tmp/openvpncl/client.key\n");
-//	fprintf(fp, "tls-auth /tmp/openvpncl/client.key 1\n"); for future usage
-	fprintf(fp, "management 127.0.0.1 5001\n");
-	fprintf(fp, "management-log-cache 50\n");
-	fprintf(fp, "verb 4\n");
-//	fprintf(fp, "mute 20\n");
-	fprintf(fp, "log-append /var/log/openvpncl\n");
 	// Botho 22/05/2006 - start
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	// end
 	if (nvram_match("openvpncl_lzo", "1"))
 		fprintf(fp, "comp-lzo\n");
+	if (strlen(nvram_safe_get("openvpncl_tlsauth"))>0)
+		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
 
