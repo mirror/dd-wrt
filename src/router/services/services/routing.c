@@ -264,7 +264,7 @@ int zebra_ospf_init(void)
 	if (nvram_match("dyn_default", "1"))
 		while (!eval("ip", "route", "del", "default")) ;
 
-	ret1 = eval("zebra", "-d", "-f", "/tmp/zebra.conf");
+	ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
 	ret2 = eval("ospfd", "-d", "-f", "/tmp/ospfd.conf");
 
 	return ret1 + ret2;
