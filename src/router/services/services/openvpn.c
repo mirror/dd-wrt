@@ -203,6 +203,7 @@ void start_openvpn(void)
 	fprintf(fp, "mute 3\n");
 	fprintf(fp, "log-append /var/log/openvpncl\n");
 	fprintf(fp, "client\n");
+	fprintf(fp, "tls-client\n");
 	fprintf(fp, "dev %s\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
