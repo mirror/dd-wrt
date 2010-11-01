@@ -3201,7 +3201,7 @@ int led_control(int type, int act)
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
 //              connected_gpio = 0x112;
-		usb_gpio = 0x102;
+//		usb_gpio = 0x102;
 //              ses_gpio = 0x111;
 #endif
 		break;
