@@ -129,8 +129,8 @@ void start_openvpnserver(void)
 	fprintf(fp, "iptables -D FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
-	chmod("/tmp/openvpn/up.sh", 0700);
-	chmod("/tmp/openvpn/down.sh", 0700);
+	chmod("/tmp/openvpn/route-up.sh", 0700);
+	chmod("/tmp/openvpn/route-down.sh", 0700);
 
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
@@ -139,7 +139,7 @@ void start_openvpnserver(void)
 		     "cryptodev");
 	else
 		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
-		     "--route-up", "/tmp/openvpn/route-up.sh", "--down",
+		     "--up", "/tmp/openvpn/route-up.sh", "--down",
 		     "/tmp/openvpn/route-down.sh", "--daemon");
 
 	//bring up tap interface when choosen
