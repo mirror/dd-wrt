@@ -44,7 +44,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
-	chmod("/tmp/openvpn/ta.key", 0700);
+	chmod("/tmp/openvpn/ta.key", 0600);
 	/*
 	   26.10.2010 Sash      
 	   write openvpn server config file on current config and common settings
@@ -70,11 +70,12 @@ void start_openvpnserver(void)
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
 		fprintf(fp, "cipher %s\n", nvram_safe_get("openvpn_cipher"));
 		fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
-		fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400"); //store client ip. keep them persistant for x seconds
 		fprintf(fp, "management 127.0.0.1 5001\n");
 		fprintf(fp, "management-log-cache 50\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
+		else	//store client ip.keep them persistant for x sec.works only when dupcn=off
+			fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
@@ -109,7 +110,7 @@ void start_openvpnserver(void)
 	//accept incoming connections on startup
 	sysprintf("iptables -I INPUT -p %s --dport %s -j ACCEPT\n",nvram_match("openvpn_proto","udp")?"udp":"tcp",nvram_safe_get("openvpn_port"));
 
-	fp = fopen("/tmp/openvpn/up.sh", "wb");
+	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
 	if (nvram_match("openvpn_tuntap", "tap")) {
@@ -122,7 +123,7 @@ void start_openvpnserver(void)
 	fprintf(fp, "iptables -I FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 	fclose(fp);
 
-	fp = fopen("/tmp/openvpn/down.sh", "wb");
+	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
 	if (nvram_match("openvpn_tuntap", "tap"))
