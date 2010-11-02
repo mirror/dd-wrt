@@ -290,6 +290,7 @@ struct hostapd_bss_config {
 	int wps_state;
 #ifdef CONFIG_WPS
 	int ap_setup_locked;
+	int dualband;
 	u8 uuid[16];
 	char *wps_pin_requests;
 	char *device_name;

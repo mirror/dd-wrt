@@ -483,6 +483,21 @@ static void hostapd_wps_clear_ies(struct hostapd_data *hapd)
 	hapd->drv.set_ap_wps_ie(hapd);
 }
 
+static int count_interface_cb(struct hostapd_iface *iface, void *ctx)
+{
+	int *count= ctx;
+	(*count)++;
+	return 0;
+}
+
+
+static int interface_count(struct hostapd_iface *iface)
+{
+	int count = 0;
+	iface->for_each_interface(iface->interfaces, count_interface_cb,
+				  &count);
+	return count;
+}
 
 int hostapd_init_wps(struct hostapd_data *hapd,
 		     struct hostapd_bss_config *conf)
@@ -633,9 +648,15 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 	if (conf->ssid.security_policy == SECURITY_STATIC_WEP)
 		cfg.static_wep_only = 1;
 
+	cfg.dualband = interface_count(hapd->iface) > 1;
+	if (hapd->conf->dualband)
+	    cfg.dualband = 1;
+	if (cfg.dualband)
+		wpa_printf(MSG_DEBUG, "WPS: Dualband AP");
+
 	wps->registrar = wps_registrar_init(wps, &cfg);
 	if (wps->registrar == NULL) {
-		printf("Failed to initialize WPS Registrar\n");
+		wpa_printf(MSG_DEBUG, "Failed to initialize WPS Registrar\n");
 		os_free(wps->network_key);
 		os_free(wps);
 		return -1;
