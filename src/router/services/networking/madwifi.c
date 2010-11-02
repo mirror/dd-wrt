@@ -860,6 +860,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 				fprintf(fp, "wps_state=2\n");
 				fprintf(fp, "ap_setup_locked=1\n");
+#ifdef HAVE_WZRHPAG300NH
+				fprintf(fp, "dualband=1\n");
+#endif
 //# If UUID is not configured, it will be generated based on local MAC address. 
 				char uuid[64];
 				get_uuid(uuid); 
