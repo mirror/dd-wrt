@@ -158,6 +158,7 @@ int start_services_main(int argc, char **argv)
 
 #ifdef HAVE_OPENVPN
 	handle = start_service_nofree_f("openvpnserversys", handle);
+	handle = start_service_nofree_f("openvpn", handle);
 #endif
 #ifdef HAVE_VNCREPEATER
 	handle = start_service_nofree_f("vncrepeater", handle);
@@ -287,6 +288,7 @@ int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_OPENVPN
 	handle = stop_service_nofree("openvpnserversys", handle);
+	handle = stop_service_nofree("openvpn", handle);
 #endif
 //    if( handle )
 //      dlclose( handle );
@@ -522,9 +524,6 @@ static void handle_services(void)
 #ifdef HAVE_SNMP
 	handle = startstop_nofree_f("snmp", handle);
 #endif
-#ifdef HAVE_OPENVPN
-	handle = startstop_nofree_f("openvpn", handle);
-#endif
 #ifdef HAVE_PPTPD
 	handle = startstop_nofree_f("pptpd", handle);
 #endif
@@ -552,7 +551,10 @@ static void handle_services(void)
 	handle = startstop_nofree_f("vncrepeater", handle);
 #endif
 #ifdef HAVE_OPENVPN
-	handle = startstop_nofree_f("openvpnserver", handle);
+	handle = stop_service_nofree("openvpnserver", handle);
+	handle = stop_service_nofree("openvpn", handle);
+	handle = start_service_nofree_f("openvpnserver", handle);
+	handle = start_service_nofree_f("openvpn", handle);
 #endif
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
