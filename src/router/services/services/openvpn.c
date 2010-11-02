@@ -81,7 +81,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "comp-lzo\n");
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
-//		if (nvram_match("openvpn_redirgate", "1"))
+		if (nvram_match("openvpn_redirgate", "1"))
 			fprintf(fp, "push \"redirect-gateway\"\n");
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
@@ -116,8 +116,8 @@ void start_openvpnserver(void)
 		return;
 		//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		sysprintf("ifconfig tap0 0.0.0.0 promisc up\n");
-		sysprintf("brctl addif br0 tap0\n");
+		fprintf("ifconfig tap0 0.0.0.0 promisc up\n");
+		fprintf("brctl addif br0 tap0\n");
 	}
 	fprintf(fp, "startservice set_routes\n");
 	fprintf(fp, "iptables -I INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
@@ -237,11 +237,9 @@ void start_openvpn(void)
 	fp = fopen("/tmp/openvpncl/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
-	//bring up tap interface when choosen
-/*	if (nvram_match("openvpncl_tuntap", "tap")) {
-		sysprintf("ifconfig tap0 0.0.0.0 promisc up\n");
-		sysprintf("brctl addif br0 tap0\n");	
-	}*/
+	//bridge tap interface to br0 when choosen
+	if (nvram_match("openvpncl_bridge", "1") && nvram_match("openvpncl_tuntap", "tap"))
+		fprintf("brctl addif br0 tap0\n");
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp, "iptables -A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
