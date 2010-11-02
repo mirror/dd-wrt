@@ -241,7 +241,7 @@ void start_openvpn(void)
 /*	if (nvram_match("openvpncl_tuntap", "tap")) {
 		sysprintf("ifconfig tap0 0.0.0.0 promisc up\n");
 		sysprintf("brctl addif br0 tap0\n");	
-*/	}
+	}*/
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp, "iptables -A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
