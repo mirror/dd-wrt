@@ -1349,7 +1349,9 @@ service.vpn_clikey="Private Client Key";
 service.vpn_nat="Enable NAT";
 service.vpn_cipher="Encryption Cipher";
 service.vpn_auth="Hash Algorithmus";
+service.vpn_bridge="Bridge Tap to br0";
 
+//vnc.repeater
 service.vncrepeater_legend="VNC";
 service.vncrepeater="VNC Repeater";
 
