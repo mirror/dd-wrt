@@ -123,6 +123,7 @@ struct wps_registrar {
 	int sel_reg_dev_password_id_override;
 	int sel_reg_config_methods_override;
 	int static_wep_only;
+	int dualband;
 
 	struct wps_registrar_device *devices;
 
@@ -377,6 +378,18 @@ static int wps_build_sel_reg_dev_password_id(struct wps_registrar *reg,
 	return 0;
 }
 
+static int wps_build_sel_pbc_reg_uuid_e(struct wps_registrar *reg,
+					struct wpabuf *msg)
+{
+	u16 id = reg->pbc ? DEV_PW_PUSHBUTTON : DEV_PW_DEFAULT;
+	if (!reg->sel_reg_union)
+		return 0;
+	if (reg->sel_reg_dev_password_id_override >= 0)
+		id = reg->sel_reg_dev_password_id_override;
+	if (id != DEV_PW_PUSHBUTTON || !reg->dualband)
+		return 0;
+	return wps_build_uuid_e(msg, reg->wps->uuid);
+}
 
 static int wps_build_sel_reg_config_methods(struct wps_registrar *reg,
 					    struct wpabuf *msg)
@@ -468,6 +481,7 @@ wps_registrar_init(struct wps_context *wps,
 	reg->sel_reg_dev_password_id_override = -1;
 	reg->sel_reg_config_methods_override = -1;
 	reg->static_wep_only = cfg->static_wep_only;
+	reg->dualband = cfg->dualband;
 
 	if (wps_set_ie(reg)) {
 		wps_registrar_deinit(reg);
@@ -908,10 +922,10 @@ static int wps_set_ie(struct wps_registrar *reg)
 
 	wpa_printf(MSG_DEBUG, "WPS: Build Beacon and Probe Response IEs");
 
-	beacon = wpabuf_alloc(300);
+	beacon = wpabuf_alloc(400);
 	if (beacon == NULL)
 		return -1;
-	probe = wpabuf_alloc(400);
+	probe = wpabuf_alloc(500);
 	if (probe == NULL) {
 		wpabuf_free(beacon);
 		return -1;
@@ -923,6 +937,8 @@ static int wps_set_ie(struct wps_registrar *reg)
 	    wps_build_selected_registrar(reg, beacon) ||
 	    wps_build_sel_reg_dev_password_id(reg, beacon) ||
 	    wps_build_sel_reg_config_methods(reg, beacon) ||
+	    wps_build_sel_pbc_reg_uuid_e(reg, beacon) ||
+	    (reg->dualband && wps_build_rf_bands(&reg->wps->dev, beacon)) ||
 	    wps_build_version(probe) ||
 	    wps_build_wps_state(reg->wps, probe) ||
 	    wps_build_ap_setup_locked(reg->wps, probe) ||
