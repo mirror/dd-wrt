@@ -138,7 +138,7 @@ void start_openvpnserver(void)
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
 	chmod("/tmp/openvpn/route-down.sh", 0700);
-	eval("ln","-s","/tmp/openvpnserver","/usr/sbin/openvpn");
+	eval("ln","-s","/usr/sbin/openvpn","/tmp/openvpnserver");
 
 	if (nvram_match("use_crypto", "1"))
 		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf",
