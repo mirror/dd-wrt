@@ -1886,6 +1886,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			}
 		} else if (os_strcmp(buf, "ap_setup_locked") == 0) {
 			bss->ap_setup_locked = atoi(pos);
+		} else if (os_strcmp(buf, "dualband") == 0) {
+			bss->dualband = atoi(pos);
 		} else if (os_strcmp(buf, "uuid") == 0) {
 			if (uuid_str2bin(pos, bss->uuid)) {
 				wpa_printf(MSG_ERROR, "Line %d: invalid UUID",
