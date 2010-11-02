@@ -96,6 +96,11 @@
 			<input class="spaceradio" type="radio" name="openvpncl_nat" value="0" <% nvram_checked("openvpncl_nat", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.vpn_bridge"); %></div>
+			<input class="spaceradio" type="radio" name="openvpncl_bridge" value="1" <% nvram_checked("openvpncl_bridge", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="openvpncl_bridge" value="0" <% nvram_checked("openvpncl_bridge", "0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.vpn_srvcert"); %></div>
 			<textarea cols="60" rows="2" id="openvpncl_ca" name="openvpncl_ca"></textarea>
 			<script type="text/javascript">
