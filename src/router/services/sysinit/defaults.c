@@ -2356,8 +2356,8 @@ struct nvram_tuple srouter_defaults[] = {
 /*	{"openvpn_mtu", "1500", 0},
 	{"openvpn_extramtu", "32", 0},
 	{"openvpn_mssfix", "1450", 0},	NOT USED ATM
-	{"openvpn_certtype", "0", 0},
-*/	{"openvpn_config", "", 0},
+	{"openvpn_certtype", "0", 0}, */
+	{"openvpn_config", "", 0},
 	{"openvpn_dh", "", 0},
 	{"openvpn_tlsauth", "", 0},
 	{"openvpn_config", "", 0},
@@ -2368,6 +2368,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_switch", "0", 0},	//switch between old/new style config for now
 	{"openvpn_cipher", "blowfish cbc", 0},
 	{"openvpn_auth", "sha1", 0},
+	{"openvpn_redirgate", "1", 0},
 
 #endif
 #ifdef HAVE_KODATA
