@@ -85,6 +85,11 @@
 		</select>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.vpn_redirgate"); %></div>
+			<input class="spaceradio" type="radio" name="openvpn_redirgate" value="1" <% nvram_checked("openvpn_redirgate", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="openvpn_redirgate" value="0" <% nvram_checked("openvpn_redirgate", "0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.vpn_compress"); %></div>
 			<input class="spaceradio" type="radio" name="openvpn_lzo" value="1" <% nvram_checked("openvpn_lzo", "1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="openvpn_lzo" value="0" <% nvram_checked("openvpn_lzo", "0"); %> /><% tran("share.disable"); %>
