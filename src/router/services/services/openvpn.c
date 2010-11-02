@@ -138,21 +138,22 @@ void start_openvpnserver(void)
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
 	chmod("/tmp/openvpn/route-down.sh", 0700);
+	eval("ln","-s","/tmp/openvpnserver","/usr/sbin/openvpn");
 
 	if (nvram_match("use_crypto", "1"))
-		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
+		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf",
 		     "--up", "/tmp/openvpn/route-up.sh", "--down",
 		     "/tmp/openvpn/route-down.sh", "--daemon", "--engine",
 		     "cryptodev");
 	else
-		eval("openvpn", "--config", "/tmp/openvpn/openvpn.conf",
+		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf",
 		     "--up", "/tmp/openvpn/route-up.sh", "--down",
 		     "/tmp/openvpn/route-down.sh", "--daemon");
 }
 
 void stop_openvpnserver(void)
 {
-	stop_process("openvpn", "OpenVPN daemon");
+	stop_process("openvpnserver", "OpenVPN daemon (Server)");
 	return;
 }
 
@@ -278,14 +279,14 @@ void start_openvpn(void)
 
 void stop_openvpn(void)
 {
-	stop_process("openvpn", "OpenVPN daemon");
+	stop_process("openvpn", "OpenVPN daemon (Client)");
 }
 
 void stop_openvpn_wandone(void)
 {
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
-	stop_process("openvpn", "OpenVPN daemon");
+	stop_process("openvpn", "OpenVPN daemon (Client)");
 }
 
 #endif
