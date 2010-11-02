@@ -1932,11 +1932,21 @@ static void filter_input(void)
 	 * lonewolf mods for multiple VLANs / interfaces 
 	 */
 #ifdef HAVE_OPENVPN
+	//check if ovpn server is running
 	if (nvram_match("openvpn_enable", "1")) {
 	 	save2file("-A INPUT -p %s --dport %s -j ACCEPT\n",nvram_match("openvpn_proto","udp")?"udp":"tcp",nvram_safe_get("openvpn_port"));
 		save2file("-A INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 		save2file("-A FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
 		save2file("-A FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+	}
+	//check if ovpn client is running
+	if (nvram_match("openvpncl_enable", "1")) {
+		if (nvram_match("openvpncl_nat", "1"))
+			save2file("-A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",nvram_safe_get("openvpncl_tuntap"));
+		else {
+			save2file("-A FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
+			save2file("-A FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
+		}
 	}
 #endif
 	if (!nvram_match("wan_proto", "disabled")) {
