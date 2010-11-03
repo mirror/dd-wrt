@@ -25,6 +25,7 @@
 #define RTL8366S_PHY_NO_MAX	4
 #define RTL8366S_PHY_PAGE_MAX	7
 #define RTL8366S_PHY_ADDR_MAX	31
+#define RTL8366S_PHY_WAN	4
 
 /* Switch Global Configuration register */
 #define RTL8366S_SGCR				0x0000
@@ -814,7 +815,7 @@ static struct switch_attr rtl8366s_globals[] = {
 		.max = 1,
 	}, {
 		.type = SWITCH_TYPE_INT,
-		.name = "enable_vlan",
+		.name = "vlan",
 		.description = "Enable VLAN mode",
 		.set = rtl8366_sw_set_vlan_enable,
 		.get = rtl8366_sw_get_vlan_enable,
@@ -1026,7 +1027,7 @@ static struct rtl8366_smi_ops rtl8366s_smi_ops = {
 	.enable_vlan4k	= rtl8366s_enable_vlan4k,
 };
 
-static int __init rtl8366s_probe(struct platform_device *pdev)
+static int __devinit rtl8366s_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
 	struct rtl8366s_platform_data *pdata;
@@ -1090,6 +1091,10 @@ static int rtl8366s_phy_config_init(struct phy_device *phydev)
 
 static int rtl8366s_phy_config_aneg(struct phy_device *phydev)
 {
+	/* phy 4 might be connected to a second mac, allow aneg config */
+	if (phydev->addr == RTL8366S_PHY_WAN)
+		return genphy_config_aneg(phydev);
+
 	return 0;
 }
 
