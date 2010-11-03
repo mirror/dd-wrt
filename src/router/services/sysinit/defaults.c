@@ -2370,7 +2370,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_cipher", "bf-cbc", 0},
 	{"openvpn_auth", "sha1", 0},
 	{"openvpn_redirgate", "1", 0},
-	{"openvpn_adv", "0", 0}
+	{"openvpn_adv", "0", 0},
 
 #endif
 #ifdef HAVE_KODATA
