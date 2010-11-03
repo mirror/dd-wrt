@@ -62,7 +62,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "client-to-client\n");
 		fprintf(fp, "keepalive 10 120\n");
 		fprintf(fp, "verb 4\n");
-		fprintf(fp, "mute 3\n");
+		fprintf(fp, "mute 1\n");
 		fprintf(fp, "log-append /var/log/openvpn\n");
 		fprintf(fp, "tls-server\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
@@ -71,6 +71,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
 		fprintf(fp, "management 127.0.0.1 5001\n");
 		fprintf(fp, "management-log-cache 50\n");
+		fprintf(fp, "mtu-disc yes\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		else	//store client ip.keep them persistant for x sec.works only when dupcn=off
@@ -83,11 +84,14 @@ void start_openvpnserver(void)
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
 			fprintf(fp, "push \"redirect-gateway\"\n");
+		if (nvram_match("openvpn_proto", "udp"))
+			fprintf(fp, "fast-io\n"); //experimental!improving CPU efficiency by 5%-10%
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
 				nvram_safe_get("openvpn_mask"));
 			fprintf(fp, "dev tun0\n");
+//			fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
 		}
 		else {
 			fprintf(fp, "server-bridge %s %s %s %s\n",
@@ -116,8 +120,8 @@ void start_openvpnserver(void)
 		return;
 		//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp,"ifconfig tap0 0.0.0.0 promisc up\n");
 		fprintf(fp,"brctl addif br0 tap0\n");
+		fprintf(fp,"ifconfig tap0 0.0.0.0 promisc up\n");
 	}
 	fprintf(fp, "startservice set_routes\n");
 	fprintf(fp, "iptables -I INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
@@ -204,7 +208,7 @@ void start_openvpn(void)
 	fprintf(fp, "management 127.0.0.1 5001\n");
 	fprintf(fp, "management-log-cache 50\n");
 	fprintf(fp, "verb 4\n");
-	fprintf(fp, "mute 3\n");
+	fprintf(fp, "mute 1\n");
 	fprintf(fp, "log-append /var/log/openvpncl\n");
 	fprintf(fp, "client\n");
 	fprintf(fp, "tls-client\n");
@@ -216,20 +220,24 @@ void start_openvpn(void)
 	fprintf(fp, "nobind\n");
 	fprintf(fp, "persist-key\n");
 	fprintf(fp, "persist-tun\n");
+	fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_extramtu", ""))
-		fprintf(fp, "tun-mtu-extra %s\n", nvram_safe_get("openvpncl_extramtu"));
+		fprintf(fp, "tun-mtu-extra %s\n", nvram_safe_get("openvpncl_extramtu")); //tun=0,tap=32 - only a internal buffersize
 	if (nvram_invmatch("openvpncl_mssfix", ""))
-		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));
+		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));	//fragment=mssfix
+		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_mssfix"));
 	// Botho 22/05/2006 - start
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	// end
 	if (nvram_match("openvpncl_lzo", "1"))
 		fprintf(fp, "comp-lzo\n");
+	if (nvram_match("openvpncl_proto", "udp"))
+		fprintf(fp, "fast-io\n"); //experimental!improving CPU efficiency by 5%-10%
 	if (strlen(nvram_safe_get("openvpncl_tlsauth"))>0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
