@@ -78,13 +78,15 @@ void start_openvpnserver(void)
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
-			fprintf(fp, "comp-lzo\n");
+			fprintf(fp, "comp-lzo yes\n"); //yes/no/adaptive
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
 			fprintf(fp, "push \"redirect-gateway\"\n");
 		if (nvram_match("openvpn_proto", "udp"))
 			fprintf(fp, "fast-io\n"); //experimental!improving CPU efficiency by 5%-10%
+		else	//TCP_NODELAY is generally a good latency optimization
+			fprintf(fp, "tcp-nodelay\n"); 
 		if (nvram_invmatch("openvpn_mtu", ""))
 			fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpn_mtu"));
 		if (nvram_invmatch("openvpn_mssfix", "")) {
@@ -241,7 +243,7 @@ void start_openvpn(void)
 		fprintf(fp, "ns-cert-type server\n");
 	// end
 	if (nvram_match("openvpncl_lzo", "1"))
-		fprintf(fp, "comp-lzo\n");
+		fprintf(fp, "comp-lzo yes\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n"); //experimental!improving CPU efficiency by 5%-10%
 	if (nvram_match("openvpncl_tuntap", "tap"))
