@@ -1351,6 +1351,7 @@ service.vpn_nat="Enable NAT";
 service.vpn_cipher="Encryption Cipher";
 service.vpn_auth="Hash Algorithmus";
 service.vpn_bridge="Bridge Tap to br0";
+service.vpn_adv="Advanced Options";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
