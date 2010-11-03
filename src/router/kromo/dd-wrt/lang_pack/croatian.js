@@ -1,6 +1,6 @@
-﻿/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 - updated since svn15037 / by Silvio Peša (vpritiskovic) / 2010-10-02 // 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////////////////////////////
+// Croatian Translation / DD-WRT v24-sp2 / updated since svn15338 / by Silvio Peša / 2010-11-03 // 
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 
@@ -10,13 +10,13 @@ lang_charset.set="UTF-8";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Pozivni Niz";
-share.mode_3g="Connection type";
+share.mode_3g="Tip Veze";
 share.mode_3g_auto="Auto 3G/2G";
-share.mode_3g_3g="Force 3G";
-share.mode_3g_2g="Force 2G";
-share.mode_3g_prefer_3g="Prefer 3G";
-share.mode_3g_prefer_2g="Prefer 2G";
-share.mode_3g_3g2g="3G first, on error 2G";
+share.mode_3g_3g="Forsiraj 3G";
+share.mode_3g_2g="Forsiraj 2G";
+share.mode_3g_prefer_3g="Pretpostavi 3G";
+share.mode_3g_prefer_2g="Pretpostavi 2G";
+share.mode_3g_3g2g="Prvo 3G, nakon greške 2G";
 share.firmware="Strojni Program";
 share.time="Vrijeme";
 share.interipaddr="WAN IP Adresa";
@@ -267,22 +267,22 @@ sbutton.prev="&laquo; Prethodno";
 
 // ** COMMON ERROR MESSAGES  **//
 
-errmsg.err0="You must input a username.";
-errmsg.err1="You must input a Router Name.";
+errmsg.err0="Morate postaviti korisničko ime.";
+errmsg.err1="Morate postaviti ime usmjerivača.";
 errmsg.err2="Out of range, please adjust start IP address or user&#39;s numbers.";
 errmsg.err3="You must at least select a day.";
 errmsg.err4="The end time must be bigger than start time.";
 errmsg.err5="The MAC Address length is not correct.";
-errmsg.err6="You must input a password.";
-errmsg.err7="You must input a hostname.";
-errmsg.err8="You must input an IP Address or Domain Name.";
+errmsg.err6="Morate unijeti zaporku.";
+errmsg.err7="Morate unijeti ime stroja.";
+errmsg.err8="Morate unijeti IP adresu ili ime domene.";
 errmsg.err9="Illegal DMZ IP Address.";
 errmsg.err10="Confirmed password did not match Entered Password. Please re-enter password.";
-errmsg.err11="No spaces are allowed in Password";
+errmsg.err11="Razmaci nisu dozvoljeni u zaporkama";
 errmsg.err12="You must input a command to run.";
-errmsg.err13="Upgrade failed.";
-errmsg.err45="Not available in HTTPS! Please connect in HTTP mode.";
-errmsg.err46="Not available in HTTPS";
+errmsg.err13="Nadogradnja nije uspjela.";
+errmsg.err45="Nije dostupno u HTTPS! Molim spojite se u HTTP modu.";
+errmsg.err46="Nije dostupno u HTTPS";
 
 //common.js error messages
 errmsg.err14=" value is out of range [";
@@ -386,13 +386,14 @@ bmenu.setupvlan="VLAN-ovi";
 bmenu.setupeop="EoIP Tuneli";
 bmenu.networking="Mreža";
 
-bmenu.wireless="Bežična";
+bmenu.wireless="WiFi";
 bmenu.wirelessBasic="Osnovno";
 bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Sigurnost";
 bmenu.wirelessAoss="AOSS";
+bmenu.wirelessAossWPS="AOSS / WPS";
 bmenu.wirelessMac="Filter MAC Adresa";
 bmenu.wirelessAdvanced="Napredno";
 bmenu.wirelessAdvancedwl0="WL0-Napredno";
@@ -451,12 +452,12 @@ bmenu.servicesAnchorFree="Reklamna Mreža";
 bmenu.statu="Status";
 bmenu.statuRouter="Usmjerivač";
 bmenu.statuInet="WAN";
-bmenu.statuLAN="Lokalna Mreža";
+bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
-bmenu.statuWLAN="Bežična Mreža";
+bmenu.statuWLAN="WiFi";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Pojasna Širina";
-bmenu.statuSysInfo="Informacije o Sustavu";
+bmenu.statuSysInfo="Sustav";
 bmenu.statuActivate="Aktiviraj";
 bmenu.statuMyPage="Moja Stranica";
 bmenu.statuGpio="GPIO I/O";
@@ -567,7 +568,7 @@ factdef.titl="Tvornički Zadano";
 factdef.h2="Postavljanje na Tvornički Zadanu Konfiguraciju";
 factdef.legend="Brisanje vaših postavki";
 factdef.restore="Postavi Tvornički Zadanu Konfiguraciju";
-factdef.mess1="POZOR! Ako kliknete OK, uređaj će se postaviti na tvornički zadane vrijednosti i sve vaše postavke će biti izbrisane.";
+factdef.mess1="POZOR! Ako kliknete OK, uređaj će se postaviti na tvornički zadane vrijednosti i ukloniti sve vaše postavke.";
 
 //help container
 
@@ -677,6 +678,7 @@ pforward.titl="Prosljeđivanje Vrata";
 pforward.h2="Prosljeđivanje Vrata";
 pforward.legend="Prosljeđivanja";
 pforward.app="Primjena";
+pforward.src="Izvorišna Mreža";
 pforward.from="Vrata od";
 pforward.to="Vrata do";
 
@@ -1304,36 +1306,54 @@ service.pppoesrv_chaps="Lokalno Upravljanje Korisnicima (CHAP Secrets)";
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
-service.snmp_loc="Location";
-service.snmp_contact="Contact";
-service.snmp_name="Name";
-service.snmp_read="RO Community";
-service.snmp_write="RW Community";
+service.snmp_loc="Lokacija";
+service.snmp_contact="Kontakt";
+service.snmp_name="Ime";
+service.snmp_read="RO Zajednica";
+service.snmp_write="RW Zajednica";
 
 //openvpn.webvpn
-service.vpnd_legend="OpenVPN Daemon";
-service.vpnd_srv="Start OpenVPN Daemon";
-service.vpnd_starttype="Start Type";
-service.vpnd_startWanup="WAN Up";
-service.vpnd_startSystem="System";
-service.vpnd_crl="Certificate Revoke List";
-service.vpnd_config="OpenVPN Config";
+service.vpnd_legend="OpenVPN Poslužitelj";
+service.vpnd_srv="Pokreni OpenVPN uslugu";
+service.vpnd_starttype="Način pokretanja";
+service.vpnd_startWanup="nakon WAN sučelja";
+service.vpnd_startSystem="Sustav";
+service.vpnd_crl="Certificirana Pozivna Lista";
+service.vpnd_config="Dodatna Konfiguracija";
 service.vpnd_dhpem="DH PEM";
-service.vpnd_tlsauth="OpenVPN TLS Auth";
-service.vpn_legend="OpenVPN Client";
-service.vpn_srv="Start OpenVPN Client";
-service.vpn_ipname="Server IP/Name";
-service.vpn_mtu="TUN MTU Setting";
-service.vpn_mru="TUN MTU Extra";
-service.vpn_mss="TCP MSS";
-service.vpn_compress="Use LZO Compression";
-service.vpn_tunnel="Tunelski Protokol";
-service.vpn_tuntap="Tunelski Uređaj";
+service.vpnd_tlsauth="TLS Ključ Autentikacije";
+service.vpnd_cert="Javni Certifikat Poslužitelja";
+service.vpnd_key="Privatni Ključ Poslužitelja";
+service.vpnd_mode="Mod Poslužitelja";
+service.vpnd_net="Mreža";
+service.vpnd_mask="Maska Mreže";
+service.vpnd_startip="Pool start IP";
+service.vpnd_endip="Pool end IP";
+service.vpnd_cl2cl="Dozvoli Vezu Klijent do Klijenta";
+service.vpnd_switch="Konf. Switch Poslužitelja";
+service.vpnd_dupcn="Dozvoli dvostruki CN";
+service.vpn_redirgate="Redirecto default Gateway";
+service.vpn_legend="OpenVPN Klijent";
+service.vpn_srv="Pokreni OpenVPN Klijent";
+service.vpn_ipname="IP/Ime Poslužitelja";
+service.vpn_mtu="TUN MTU Postavka";
+service.vpn_mru="TUN MTU Posebno";
+service.vpn_mss="TCP MSS Fix/Fragment";
+service.vpn_compress="Koristi LZO Sažimanje";
+service.vpn_cl2cl="Dozvoli Klijent do Klijenta";
+service.vpn_tunnel="Protokol Tunela";
+service.vpn_tuntap="Sučelje Tunela";
 service.vpn_srvcert="CA Cert";
-service.vpn_clicert="Public Client Cert";
-service.vpn_certtype="nsCertType";
-service.vpn_clikey="Private Client Key";
+service.vpn_clicert="Javni Certifikat Poslužitelja";
+service.vpn_certtype="nsCertType Ovjera";
+service.vpn_clikey="Privatni Ključ Klijenta";
+service.vpn_nat="Omogući NAT";
+service.vpn_cipher="Enkripcijski Cipher";
+service.vpn_auth="Hash Algoritam";
+service.vpn_bridge="Premosti Tap u br0";
+service.vpn_adv="Napredne Opcije";
 
+//vnc.repeater
 service.vncrepeater_legend="VNC";
 service.vncrepeater="VNC Repeater";
 
@@ -1796,6 +1816,10 @@ aoss.notice="NOTICE";
 aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is configured as AP or WDS AP.";
 aoss.wep_notice="WEP security mode is insecure, therefore the use of WEP is not recommended.";
 aoss.wep_info="(required for most gaming consoles supporting AOSS)";
+aoss.wps="WPS Setup";
+aoss.wpspin="WPS PIN";
+aoss.wpsregister="Register PIN";
+aoss.wpsenable="WPS Button";
 
 
 sec80211x.xsuptype="XSupplicant Type";
@@ -1899,14 +1923,14 @@ freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="Certifikat Poslužitelja";
 freeradius.cert="Napravi Certifikat";
-freeradius.clientcert="Klijentski Certifikati";
+freeradius.clientcert="Certifikati Klijenata";
 freeradius.settings="Postavke";
 freeradius.users="Korisnici";
 freeradius.clients="Klijenti";
 freeradius.username="Korisničko Ime";
 freeradius.password="Zaporka";
-freeradius.downstream="Strujanje Skidanja";
-freeradius.upstream="Strujanje Podizanja";
+freeradius.downstream="Nizvodno Slijed";
+freeradius.upstream="Uzvodno Slijed";
 freeradius.sharedkey="Dijeljeni Ključ";
 
 
@@ -2141,7 +2165,7 @@ hsas.other="Other Settings help text";
 
 haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogućava da spojite drugi AOSS klijent na vašu pristupnu točku bez dodatne ručne konfiguracije.";
 haoss.securitymodes="The AOSS Security Modes define what client security modes are accepted for AOSS negotiation. If a Client only supports security modes that are not enabled it cannot connect.";
-
+haoss.wps="WPS enables support for the Wifi Protected Setup using the Push Button on your Router, or by using the PIN Method using the PIN printed on your client device or your client authentication application";
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 
