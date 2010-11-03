@@ -34,7 +34,7 @@
 			<input size="5" maxlength="5" class="num" name="openvpncl_extramtu" value="<% nvram_get("openvpncl_extramtu"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
-			document.write("(" + share.deflt + ": 32)");
+			document.write("(" + share.deflt + ": Tun=0; Tap=32)");
 			//]]>
 			</script></span>
 		</div>
@@ -64,12 +64,11 @@
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_cipher"); %></div>
 			<select name="openvpncl_cipher">
-			<option value="blowfish cbc" <% nvram_selected("openvpncl_cipher","blowfish cbc"); %>>Blowfish CBC</option>
-			<option value="aes-128 cbc" <% nvram_selected("openvpncl_cipher","aes-128 cbc"); %>>AES-128 CBC</option>
-			<option value="aes-192 cbc" <% nvram_selected("openvpncl_cipher","aes-192 cbc"); %>>AES-192 CBC</option>
-			<option value="aes-256 cbc" <% nvram_selected("openvpncl_cipher","aes-256 cbc"); %>>AES-256 CBC</option>
-			<option value="aes-512 cbc" <% nvram_selected("openvpncl_cipher","aes-512 cbc"); %>>AES-512 CBC</option>
-			<option value="rc4" <% nvram_selected("openvpncl_cipher","rc4"); %>>RC4 (fast&unsave)</option>>
+			<option value="blowfish cbc" <% nvram_selected("openvpncl_cipher","bf-cbc"); %>>Blowfish CBC</option>
+			<option value="aes-128 cbc" <% nvram_selected("openvpncl_cipher","aes-128-cbc"); %>>AES-128 CBC</option>
+			<option value="aes-192 cbc" <% nvram_selected("openvpncl_cipher","aes-192-cbc"); %>>AES-192 CBC</option>
+			<option value="aes-256 cbc" <% nvram_selected("openvpncl_cipher","aes-256-cbc"); %>>AES-256 CBC</option>
+			<option value="aes-512 cbc" <% nvram_selected("openvpncl_cipher","aes-512-cbc"); %>>AES-512 CBC</option>
 		</select>
 		</div>
 		<div class="setting">
@@ -78,7 +77,7 @@
 			<option value="sha1" <% nvram_selected("openvpncl_auth","sha1"); %>>SHA1</option>
 			<option value="sha256" <% nvram_selected("openvpncl_auth","sha256"); %>>SHA256</option>
 			<option value="sha512" <% nvram_selected("openvpncl_auth","sha512"); %>>SHA512</option>
-			<option value="md5" <% nvram_selected("openvpncl_auth","md5"); %>>MD5 (fast&unsave)</option>
+			<option value="md5" <% nvram_selected("openvpncl_auth","md5"); %>>MD5 (fast&unsecure)</option>
 		</select>
 		</div>
 		<div class="setting">
