@@ -1177,7 +1177,7 @@ int internal_getRouterBrand()
 #elif HAVE_WR740v1
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
-	setRouter("TP-Link TL-W740ND v1");
+	setRouter("TP-Link TL-W740N v1/v2");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901v1
 	nvram_default_get("ath0_rxantenna", "3");
