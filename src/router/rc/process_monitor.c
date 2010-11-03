@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 
 		}
 #endif
-#ifdef HAVE_CHILLISPOT
+#ifdef HAVE_CHILLI
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && (nvram_match("chilli_enable", "1") || nvram_match("hotss_enable", "1"))) {
 			sysprintf("stopservice chilli");
