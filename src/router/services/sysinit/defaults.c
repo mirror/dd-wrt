@@ -2328,9 +2328,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_key", "", 0},
 	{"openvpncl_lzo", "0", 0},
 	{"openvpncl_proto", "udp", 0},
-	{"openvpncl_mtu", "1500", 0},
-	{"openvpncl_extramtu", "32", 0},
-	{"openvpncl_mssfix", "1450", 0},
+	{"openvpncl_mtu", "", 0},
+	{"openvpncl_extramtu", "", 0},
+	{"openvpncl_mssfix", "", 0},
 	{"openvpncl_certtype", "0", 0},
 	{"openvpncl_tuntap", "tun", 0},
 	{"openvpncl_nat", "0", 0},
@@ -2338,6 +2338,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_tlsauth", "", 0},
 	{"openvpncl_cipher", "bf-cbc", 0},
 	{"openvpncl_auth", "sha1", 0},
+	{"openvpncl_adv", "0", 0},
 
 	{"openvpn_enable", "0", 0},
 	{"openvpn_net", "0.0.0.0", 0},
@@ -2353,10 +2354,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_key", "", 0},
 	{"openvpn_lzo", "0", 0},
 	{"openvpn_proto", "udp", 0},
-/*	{"openvpn_mtu", "1500", 0},
-	{"openvpn_extramtu", "32", 0},
-	{"openvpn_mssfix", "1450", 0},	NOT USED ATM
-	{"openvpn_certtype", "0", 0}, */
+	{"openvpn_mtu", "", 0},
+//	{"openvpn_extramtu", "", 0},
+	{"openvpn_mssfix", "", 0},
+//	{"openvpn_certtype", "0", 0},
 	{"openvpn_config", "", 0},
 	{"openvpn_dh", "", 0},
 	{"openvpn_tlsauth", "", 0},
@@ -2369,6 +2370,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_cipher", "bf-cbc", 0},
 	{"openvpn_auth", "sha1", 0},
 	{"openvpn_redirgate", "1", 0},
+	{"openvpn_adv", "0", 0}
 
 #endif
 #ifdef HAVE_KODATA

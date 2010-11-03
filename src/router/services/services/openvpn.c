@@ -86,6 +86,12 @@ void start_openvpnserver(void)
 			fprintf(fp, "push \"redirect-gateway\"\n");
 		if (nvram_match("openvpn_proto", "udp"))
 			fprintf(fp, "fast-io\n"); //experimental!improving CPU efficiency by 5%-10%
+		if (nvram_invmatch("openvpn_mtu", ""))
+			fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpn_mtu"));
+		if (nvram_invmatch("openvpn_mssfix", "")) {
+			fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpn_mssfix"));	//fragment=mssfix
+			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_mssfix"));
+		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
@@ -220,16 +226,16 @@ void start_openvpn(void)
 	fprintf(fp, "nobind\n");
 	fprintf(fp, "persist-key\n");
 	fprintf(fp, "persist-tun\n");
-	fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_extramtu", ""))
 		fprintf(fp, "tun-mtu-extra %s\n", nvram_safe_get("openvpncl_extramtu")); //tun=0,tap=32 - only a internal buffersize
-	if (nvram_invmatch("openvpncl_mssfix", ""))
+	if (nvram_invmatch("openvpncl_mssfix", "")) {
 		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));	//fragment=mssfix
 		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_mssfix"));
+	}
 	// Botho 22/05/2006 - start
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
@@ -238,6 +244,8 @@ void start_openvpn(void)
 		fprintf(fp, "comp-lzo\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n"); //experimental!improving CPU efficiency by 5%-10%
+	if (nvram_match("openvpncl_tuntap", "tap"))
+		fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
 	if (strlen(nvram_safe_get("openvpncl_tlsauth"))>0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
