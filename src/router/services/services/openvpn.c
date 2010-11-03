@@ -226,6 +226,7 @@ void start_openvpn(void)
 	fprintf(fp, "nobind\n");
 	fprintf(fp, "persist-key\n");
 	fprintf(fp, "persist-tun\n");
+	fprintf(fp, "mtu-disc yes\n");
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_invmatch("openvpncl_mtu", ""))
