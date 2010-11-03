@@ -59,7 +59,6 @@ void start_openvpnserver(void)
 	//be sure Chris old style ist still working
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
-		fprintf(fp, "client-to-client\n");
 		fprintf(fp, "keepalive 10 120\n");
 		fprintf(fp, "verb 4\n");
 		fprintf(fp, "mute 1\n");
