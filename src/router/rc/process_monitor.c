@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		    && nvram_match("cron_enable", "1")) {
 			sysprintf("stopservice cron");
 			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting cron\n");
+			dd_syslog(LOG_DEBUG, "Restarting cron  (time sync change)\n");
 			sysprintf("startservice_f cron");
 
 		}
@@ -99,8 +99,18 @@ int main(int argc, char **argv)
 		    && nvram_match("snmpd_enable", "1")) {
 			sysprintf("stopservice snmp");
 			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting snmpd\n");
+			dd_syslog(LOG_DEBUG, "Restarting snmpd  (time sync change)\n");
 			sysprintf("startservice_f snmp");
+
+		}
+#endif
+#ifdef HAVE_CHILLISPOT
+		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
+		    && (nvram_match("chilli_enable", "1") || nvram_match("hotss_enable", "1"))) {
+			sysprintf("stopservice chilli");
+			sleep(1);
+			dd_syslog(LOG_DEBUG, "Restarting Chillispot (time sync change)\n");
+			sysprintf("startservice_f chilli");
 
 		}
 #endif
@@ -109,7 +119,7 @@ int main(int argc, char **argv)
 		    && nvram_match("wd_enable", "1")) {
 			sysprintf("stopservice wifidog");
 			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting Wifidog daemon\n");
+			dd_syslog(LOG_DEBUG, "Restarting Wifidog daemon (time sync change)\n");
 			sysprintf("startservice_f wifidog");
 		}
 #endif
