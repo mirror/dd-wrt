@@ -21,33 +21,6 @@
 			</script></span>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.vpn_mtu"); %></div>
-			<input size="5" maxlength="5" class="num" name="openvpncl_mtu" value="<% nvram_get("openvpncl_mtu"); %>" />
-			<span class="default"><script type="text/javascript">
-			//<![CDATA[
-			document.write("(" + share.deflt + ": 1500)");
-			//]]>
-			</script></span>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("service.vpn_mru"); %></div>
-			<input size="5" maxlength="5" class="num" name="openvpncl_extramtu" value="<% nvram_get("openvpncl_extramtu"); %>" />
-			<span class="default"><script type="text/javascript">
-			//<![CDATA[
-			document.write("(" + share.deflt + ": Tun=0; Tap=32)");
-			//]]>
-			</script></span>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("service.vpn_mss"); %></div>
-			<input size="5" maxlength="5" class="num" name="openvpncl_mssfix" value="<% nvram_get("openvpncl_mssfix"); %>" />
-			<span class="default"><script type="text/javascript">
-			//<![CDATA[
-			document.write("(" + share.deflt + ": 1450)");
-			//]]>
-			</script></span>
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("service.vpn_tunnel"); %></div>
 			<select name="openvpncl_proto">
 			    <option value="udp" <% nvram_selected("openvpncl_proto","udp"); %>>UDP</option>
@@ -98,6 +71,40 @@
 			<div class="label"><% tran("service.vpn_bridge"); %></div>
 			<input class="spaceradio" type="radio" name="openvpncl_bridge" value="1" <% nvram_checked("openvpncl_bridge", "1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="openvpncl_bridge" value="0" <% nvram_checked("openvpncl_bridge", "0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.vpn_adv"); %></div>
+			<input class="spaceradio" type="radio" name="openvpncl_adv" value="1" <% nvram_checked("openvpncl_adv", "1"); %> onclick="show_layer_ext(this, 'idmtu', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="openvpncl_adv" value="0" <% nvram_checked("openvpncl_adv", "0"); %> onclick="show_layer_ext(this, 'idmtu', false)" /><% tran("share.disable"); %>
+		</div>
+		<div id="idmtu">
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_mtu"); %></div>
+				<input size="5" maxlength="5" class="num" name="openvpncl_mtu" value="<% nvram_get("openvpncl_mtu"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1500; Disable=empty)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_mru"); %></div>
+				<input size="5" maxlength="5" class="num" name="openvpncl_extramtu" value="<% nvram_get("openvpncl_extramtu"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": Tun=0; Tap=32; Disable=empty)");
+				//]]>
+				</script></span>
+				</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_mss"); %></div>
+				<input size="5" maxlength="5" class="num" name="openvpncl_mssfix" value="<% nvram_get("openvpncl_mssfix"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1450; Disable=empty)");
+				//]]>
+				</script></span>
+			</div>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_srvcert"); %></div>
