@@ -92,7 +92,7 @@
 				<input size="5" maxlength="5" class="num" name="openvpncl_extramtu" value="<% nvram_get("openvpncl_extramtu"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": Tun=0; Tap=32; Disable=empty)");
+				document.write("(" + share.deflt + ": Tun=0; Tap=32; Dis.=empty)");
 				//]]>
 				</script></span>
 				</div>
@@ -104,6 +104,16 @@
 				document.write("(" + share.deflt + ": 1450; Disable=empty)");
 				//]]>
 				</script></span>
+			</div>
+			<div class="setting">		
+				<div class="label"><% tran("service.vpnd_config"); %></div>
+				<textarea cols="60" rows="2" id="openvpncl_config" name="openvpncl_config"></textarea>
+				<script type="text/javascript">
+				//<![CDATA[
+					var openvpncl_config = fix_cr( '<% nvram_get("openvpncl_config"); %>' );
+					document.getElementById("openvpncl_config").value = openvpncl_config;
+				//]]>
+			</script>
 			</div>
 		</div>
 		<div class="setting">
@@ -146,15 +156,5 @@
 			//]]>
 			</script>
 		</div>
-		<div class="setting">		
-			<div class="label"><% tran("service.vpnd_config"); %></div>
-			<textarea cols="60" rows="2" id="openvpncl_config" name="openvpncl_config"></textarea>
-			<script type="text/javascript">
-			//<![CDATA[
-				var openvpncl_config = fix_cr( '<% nvram_get("openvpncl_config"); %>' );
-				document.getElementById("openvpncl_config").value = openvpncl_config;
-			//]]>
-		</script>
-	</div>
 	</div>	
 </fieldset><br/>
