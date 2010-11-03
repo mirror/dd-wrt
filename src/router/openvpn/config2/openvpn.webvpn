@@ -67,11 +67,11 @@
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_cipher"); %></div>
 			<select name="openvpn_cipher">
-			<option value="blowfish cbc" <% nvram_selected("openvpn_cipher","bf-cbc"); %>>Blowfish CBC</option>
-			<option value="aes-128 cbc" <% nvram_selected("openvpn_cipher","aes-128-cbc"); %>>AES-128 CBC</option>
-			<option value="aes-192 cbc" <% nvram_selected("openvpn_cipher","aes-192-cbc"); %>>AES-192 CBC</option>
-			<option value="aes-256 cbc" <% nvram_selected("openvpn_cipher","aes-256-cbc"); %>>AES-256 CBC</option>
-			<option value="aes-512 cbc" <% nvram_selected("openvpn_cipher","aes-512-cbc"); %>>AES-512 CBC</option>
+			<option value="bf-cbc" <% nvram_selected("openvpn_cipher","bf-cbc"); %>>Blowfish CBC</option>
+			<option value="aes-128-cbc" <% nvram_selected("openvpn_cipher","aes-128-cbc"); %>>AES-128 CBC</option>
+			<option value="aes-192-cbc" <% nvram_selected("openvpn_cipher","aes-192-cbc"); %>>AES-192 CBC</option>
+			<option value="aes-256-cbc" <% nvram_selected("openvpn_cipher","aes-256-cbc"); %>>AES-256 CBC</option>
+			<option value="aes-512-cbc" <% nvram_selected("openvpn_cipher","aes-512-cbc"); %>>AES-512 CBC</option>
 		</select>
 		</div>
 		<div class="setting">
