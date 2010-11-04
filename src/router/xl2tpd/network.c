@@ -398,6 +398,7 @@ void network_thread ()
     for (;;)
     {
         int ret;
+        process_signal();
         max = build_fdset (&readfds);
         ptv = process_schedule(&tv);
         ret = select (max + 1, &readfds, NULL, NULL, ptv);

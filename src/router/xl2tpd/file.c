@@ -91,6 +91,8 @@ struct lns *new_lns ()
     tmp->localaddr = 0;
     tmp->tun_rws = DEFAULT_RWS_SIZE;
     tmp->call_rws = DEFAULT_RWS_SIZE;
+    tmp->rxspeed = DEFAULT_RX_BPS;
+    tmp->txspeed = DEFAULT_TX_BPS;
     tmp->hbit = 0;
     tmp->lbit = 0;
     tmp->authpeer = 0;
@@ -297,6 +299,46 @@ int set_rws (char *word, char *value, int context, void *item)
                 return -1;
             }
         }
+        break;
+    default:
+        snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
+                  word);
+        return -1;
+    }
+    return 0;
+}
+
+int set_speed (char *word, char *value, int context, void *item)
+{
+    if (atoi (value) < 1 )
+    {
+        snprintf (filerr, sizeof (filerr),
+                  "bps must be greater than zero\n");
+        return -1;
+    }
+    switch (context & ~CONTEXT_DEFAULT)
+    {
+    case CONTEXT_LAC:
+        if (word[0] == 't')
+            set_int (word, value, &(((struct lac *) item)->txspeed));
+        else if (word[0] == 'r')
+            set_int (word, value, &(((struct lac *) item)->rxspeed));
+        else
+	{
+            set_int (word, value, &(((struct lac *) item)->rxspeed));
+            set_int (word, value, &(((struct lac *) item)->txspeed));
+	}
+        break;
+    case CONTEXT_LNS:
+        if (word[0] == 't')
+            set_int (word, value, &(((struct lns *) item)->txspeed));
+        else if (word[0] == 'r')
+            set_int (word, value, &(((struct lns *) item)->rxspeed));
+        else
+	{
+            set_int (word, value, &(((struct lns *) item)->rxspeed));
+            set_int (word, value, &(((struct lns *) item)->txspeed));
+	}
         break;
     default:
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
@@ -1416,5 +1458,8 @@ struct keyword words[] = {
     {"tunnel rws", &set_rws},
     {"flow bit", &set_flow},
     {"challenge", &set_challenge},
+    {"tx bps", &set_speed},
+    {"rx bps", &set_speed},
+    {"bps", &set_speed},
     {NULL, NULL}
 };

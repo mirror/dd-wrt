@@ -1622,7 +1622,7 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
             if (AMBIT (avp->length))
             {
                 l2tp_log (LOG_WARNING,
-                     "%s:  dont know how to handle mandatory attribute %d.  Closing %s.\n",
+                     "%s:  don't know how to handle mandatory attribute %d.  Closing %s.\n",
                      __FUNCTION__, avp->attr,
                      (c != t->self) ? "call" : "tunnel");
                 set_error (c, VENDOR_ERROR,
@@ -1635,7 +1635,7 @@ int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c)
             {
                 if (DEBUG)
                     l2tp_log (LOG_WARNING,
-                         "%s:  dont know how to handle atribute %d.\n",
+                         "%s:  don't know how to handle atribute %d.\n",
                          __FUNCTION__, avp->attr);
                 goto next;
             }

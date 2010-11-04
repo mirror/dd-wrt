@@ -43,7 +43,10 @@
 ; tunnel rws = 4						; * RWS for tunnel (must be > 0)
 ; flow bit = yes						; * Include sequence numbers
 ; challenge = yes						; * Challenge authenticate peer ; 
-;
+; rx bps = 10000000				; Receive tunnel speed
+; tx bps = 10000000				; Transmit tunnel speed
+; bps = 100000					; Define both receive and transmit speed in one option
+
 ; [lac marko]							; Example VPN LAC definition
 ; lns = lns.marko.net					; * Who is our LNS?
 ; lns = lns2.marko.net					; * A backup LNS (not yet used)

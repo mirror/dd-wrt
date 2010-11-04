@@ -117,6 +117,7 @@ int getPtyMaster_ptmx(char *ttybuf, int ttybuflen)
 
     return fd;
 }
+#endif
 #ifdef OPENBSD
 int getPtyMaster_ptm(char *ttybuf, int ttybuflen)
 {
@@ -169,5 +170,3 @@ int getPtyMaster(char *ttybuf, int ttybuflen)
 
     return -EINVAL;
 }
-
-#endif

@@ -1,3 +1,21 @@
+v1.2.7
+* Reduce time in signal handlers where we cannot log [Shinichi Furuso]
+* Add rx/tx bps speed setting options [Tony Hoyle]
+  (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=578070)
+* Rename FFLAGS to IPFLAGS to avoid clashing on debian [Paul]
+* spelling fix (dont -> don't) [Paul]
+
+v1.2.6
+* Partial fix for compiling on OpenBSD [synapse]
+* add missing setting of logopen=1 in init_log() [Shingo Yamawaki]
+* xltpd could deadlock on syslog() call in signal handler [Bart Trojanowski] 
+* fix fedora/centos spec file [Paul]
+
+v1.2.5
+* Fix initscript for https://bugzilla.redhat.com/show_bug.cgi?id=247100
+* Fix for two Windows machines behind the same NAT with the same
+  number of l2tp connection attempts since boot [Shinichi Furuso]
+
 v1.2.4
 * Fixes to Suse spec file [Shingo Yamawaki]
 * unclutter logs for 'select timeout' [Shingo Yamawaki]
