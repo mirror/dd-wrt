@@ -649,17 +649,6 @@ static void nat_prerouting(void)
 	}
 #ifdef HAVE_SSHD
 	/*
-	 * Impede DoS/Bruteforce, reduce load on ssh
-	 */
-#ifndef HAVE_MICRO
-	if (remotessh  && nvram_match("limit_ssh", "1")) {
-		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
-			wanface, nvram_safe_get("sshd_wanport"));
-		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", 
-			wanface, nvram_safe_get("sshd_wanport") );
-	}
-#endif
-	/*
 	 * Enable remote ssh management : Botho 03-05-2006 
 	 */
 	if (remotessh) {
@@ -688,16 +677,6 @@ static void nat_prerouting(void)
 #endif
 
 #ifdef HAVE_TELNETD
-	/*
-	 * Impede DoS/Bruteforce, reduce load on Telnet
-	 */
-#ifndef HAVE_MICRO
-	if (remotetelnet && nvram_match("limit_telnet", "1")) {
-		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
-			wanface, nvram_safe_get("telnet_wanport"));
-		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", wanface, nvram_safe_get("telnet_wanport") );
-	}
-#endif
 	/*
 	 * Enable remote telnet management 
 	 */
@@ -2047,6 +2026,17 @@ static void filter_input(void)
 
 #ifdef HAVE_SSHD
 	/*
+	 * Impede DoS/Bruteforce, reduce load on ssh
+	 */
+#ifndef HAVE_MICRO
+	if (remotessh  && nvram_match("limit_ssh", "1")) {
+		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", 
+			wanface, nvram_safe_get("sshd_wanport") );
+		save2file("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
+			wanface, nvram_safe_get("sshd_wanport"));
+	}
+#endif
+	/*
 	 * Remote Web GUI Management Botho 03-05-2006 : remote ssh & remote GUI
 	 * management are not linked anymore 
 	 */
@@ -2058,6 +2048,17 @@ static void filter_input(void)
 #endif
 
 #ifdef HAVE_TELNETD
+	/*
+	 * Impede DoS/Bruteforce, reduce load on Telnet
+	 */
+#ifndef HAVE_MICRO
+	if (remotetelnet && nvram_match("limit_telnet", "1")) {
+		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", 
+			wanface, nvram_safe_get("telnet_wanport") );		
+		save2file("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
+			wanface, nvram_safe_get("telnet_wanport"));
+	}
+#endif
 	if (remotetelnet) {
 		save2file
 		    ("-A INPUT -p tcp -m tcp -d %s --dport 23 -j logaccept\n",
