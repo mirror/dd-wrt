@@ -1240,6 +1240,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
+	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #elif HAVE_SAGAR
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
 	{"block_wan", "0", 0},	/* Block WAN Request [1|0] */
@@ -1254,6 +1257,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
+	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #elif HAVE_DDLAN
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
 	{"block_wan", "0", 0},	/* Block WAN Request [1|0] */
@@ -1268,6 +1274,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
+	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #elif HAVE_MAKSAT
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
 	{"block_wan", "0", 0},	/* Block WAN Request [1|0] */
@@ -1295,6 +1304,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "0", 0},	/* Remote Management [1|0] */
+	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #else
 	{"filter", "on", 0},	/* Firewall Protection [on|off] */
 	{"block_wan", "1", 0},	/* Block WAN Request [1|0] */
@@ -1308,6 +1320,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
+	{"limit_http", "1", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_ssh", "1", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_telnet", "1", 0},	/* Impede DDoS/Brutforce [1|0] */
+	
 #ifdef HAVE_DDLAN
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_GGEW
@@ -2329,7 +2345,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_lzo", "0", 0},
 	{"openvpncl_proto", "udp", 0},
 	{"openvpncl_mtu", "", 0},
-	{"openvpncl_extramtu", "", 0},
 	{"openvpncl_mssfix", "", 0},
 	{"openvpncl_certtype", "0", 0},
 	{"openvpncl_tuntap", "tun", 0},
@@ -2355,7 +2370,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_lzo", "0", 0},
 	{"openvpn_proto", "udp", 0},
 	{"openvpn_mtu", "", 0},
-//	{"openvpn_extramtu", "", 0},
 	{"openvpn_mssfix", "", 0},
 //	{"openvpn_certtype", "0", 0},
 	{"openvpn_config", "", 0},
