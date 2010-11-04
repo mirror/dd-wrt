@@ -15,7 +15,6 @@ function submitcheck(F) {
 	if(F._block_activex){
 		F.block_activex.value = F._block_activex.checked ? 1 : 0;
 	}
-	
 	if (F._block_wan){
 		F.block_wan.value = F._block_wan.checked ? 1 : 0;
 	}
@@ -27,9 +26,6 @@ function submitcheck(F) {
 	}
 	if(F._block_ident){
 		F.block_ident.value = F._block_ident.checked ? 1 : 0;
-	}
-	if(F._limit_http){
-		F.limit_http.value = F._limit_http.checked ? 1 : 0;
 	}
 	if(F._limit_ssh){
 		F.limit_ssh.value = F._limit_ssh.checked ? 1 : 0;
@@ -107,7 +103,6 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="block_activex" />
 						<input type="hidden" name="limit_ssh" />
 						<input type="hidden" name="limit_telnet" />
-v						<input type="hidden" name="limit_http" />
 						<h2><% tran("firewall.h2"); %></h2>
 						
 						<fieldset>
@@ -160,12 +155,9 @@ v						<input type="hidden" name="limit_http" />
 								<fieldset>
 									<legend><% tran("firewall.legend4"); %></legend>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_http" <% nvram_checked("limit_http", "1"); %> /><% tran("firewall.http"); %>
-										</div>
-<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_ssh" <% nvram_checked("limit_ssh", "1"); %> /><% tran("firewall.ssh"); %>
 										</div>
-<div class="setting">
+									<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_telnet" <% nvram_checked("limit_telnet", "1"); %> /><% tran("firewall.telnet"); %>
 										</div>
 									</fieldset>
