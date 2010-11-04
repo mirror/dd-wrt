@@ -156,6 +156,7 @@ v						<input type="hidden" name="limit_http" />
 										</div>
 									</fieldset>
 								<% ifdef("MICRO", "<!--"); %>
+								<br />
 								<fieldset>
 									<legend><% tran("firewall.legend4"); %></legend>
 										<div class="setting">
