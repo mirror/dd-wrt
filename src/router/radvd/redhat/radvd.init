@@ -1,11 +1,8 @@
 #! /bin/sh
 #
-# $Id: radvd.init,v 1.6 2009/05/25 06:17:28 psavola Exp $
+# $Id: radvd.init,v 1.7 2010/03/05 12:14:47 psavola Exp $
 #
-### BEGIN INIT INFO
-# provides: radvd
 # chkconfig: - 54 46
-# short-Description: router advertisement daemon for IPv6
 # description:	radvd is the router advertisement daemon for IPv6.  It \
 #		listens to router solicitations and sends router \
 #		advertisements as described in "Neighbor Discovery for IP \
@@ -18,6 +15,10 @@
 # pidfile: /var/run/radvd.pid
 # config: /etc/radvd.conf
 # config: /etc/sysconfig/radvd
+
+### BEGIN INIT INFO
+# Provides: radvd
+# Short-Description: router advertisement daemon for IPv6
 ### END INIT INFO
 
 # Source function library.
@@ -47,7 +48,13 @@ case "$1" in
 	daemon radvd $OPTIONS
 	RETVAL=$?
 	echo
-	[ $RETVAL -eq 0 ] && touch $LOCKFILE
+	if [ $RETVAL -eq 0 ]; then
+		touch $LOCKFILE
+	else
+		if [ -f $LOCKFILE ]; then
+			RETVAL=0
+		fi
+	fi
 	;;
   stop)
 	echo -n $"Stopping $PROG: "
@@ -65,13 +72,13 @@ case "$1" in
 	$0 start
 	RETVAL=$?
 	;;
-  reload)
+  reload|force-reload)
 	echo -n $"Reloading $PROG: "
 	killproc radvd -HUP
 	RETVAL=$?	
 	echo
 	;;
-  condrestart)
+  condrestart|try-restart)
         if [ -f $LOCKFILE ]; then
 		$0 stop
 		$0 start
@@ -79,7 +86,7 @@ case "$1" in
 	fi
         ;;  
   *)
-	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
+	echo $"Usage: $0 {start|stop|status|restart|try-restart|reload|force-reload}"
 	exit 2
 esac
 

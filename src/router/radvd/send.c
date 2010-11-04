@@ -1,5 +1,5 @@
 /*
- *   $Id: send.c,v 1.31 2009/09/07 07:59:57 psavola Exp $
+ *   $Id: send.c,v 1.34 2010/01/28 13:34:26 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -66,6 +66,17 @@ send_ra_forall(int sock, struct Interface *iface, struct in6_addr *dest)
 	return 0;
 }
 
+static void
+send_ra_inc_len(size_t *len, int add)
+{
+	*len += add;
+	if(*len >= MSG_SIZE_SEND)
+	{
+		flog(LOG_ERR, "Too many prefixes or routes. Exiting.");
+		exit(1);
+	}
+}
+
 int
 send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 {
@@ -80,10 +91,8 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 	struct AdvPrefix *prefix;
 	struct AdvRoute *route;
 	struct AdvRDNSS *rdnss;
-	/* XXX: we don't keep track if buff gets overflowed.  In theory the sysadmin could
-	   do that with e.g., too many advertised prefixes or routes, but buff is just so
-	   large that this should never happen and if it does, it's admin's fault :-)  */
-	unsigned char buff[MSG_SIZE];
+
+	unsigned char buff[MSG_SIZE_SEND];
 	size_t len = 0;
 	ssize_t err;
 
@@ -134,7 +143,7 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 	addr.sin6_port = htons(IPPROTO_ICMPV6);
 	memcpy(&addr.sin6_addr, dest, sizeof(struct in6_addr));
 
-	memset(&buff, 0, sizeof(buff));
+	memset(buff, 0, sizeof(buff));
 	radvert = (struct nd_router_advert *) buff;
 
 	radvert->nd_ra_type  = ND_ROUTER_ADVERT;
@@ -193,7 +202,7 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 			memcpy(&pinfo->nd_opt_pi_prefix, &prefix->Prefix,
 			       sizeof(struct in6_addr));
 
-			len += sizeof(*pinfo);
+			send_ra_inc_len(&len, sizeof(*pinfo));
 		}
 
 		prefix = prefix->next;
@@ -222,7 +231,7 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 			
 		memcpy(&rinfo->nd_opt_ri_prefix, &route->Prefix,
 		       sizeof(struct in6_addr));
-		len += sizeof(*rinfo);
+		send_ra_inc_len(&len, sizeof(*rinfo));
 
 		route = route->next;
 	}
@@ -254,7 +263,7 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 		       sizeof(struct in6_addr));
 		memcpy(&rdnssinfo->nd_opt_rdnssi_addr3, &rdnss->AdvRDNSSAddr3,
 		       sizeof(struct in6_addr));
-		len += sizeof(*rdnssinfo) - (3-rdnss->AdvRDNSSNumber)*sizeof(struct in6_addr);
+		send_ra_inc_len(&len, sizeof(*rdnssinfo) - (3-rdnss->AdvRDNSSNumber)*sizeof(struct in6_addr));
 
 		rdnss = rdnss->next;
 	}
@@ -273,7 +282,7 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 		mtu->nd_opt_mtu_reserved = 0; 
 		mtu->nd_opt_mtu_mtu      = htonl(iface->AdvLinkMTU);
 
-		len += sizeof(*mtu);
+		send_ra_inc_len(&len, sizeof(*mtu));
 	}
 
 	/*
@@ -290,11 +299,11 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 		*ucp++  = ND_OPT_SOURCE_LINKADDR;
 		*ucp++  = (uint8_t) ((iface->if_hwaddr_len + 16 + 63) >> 6);
 
-		len += 2 * sizeof(uint8_t);
+		send_ra_inc_len(&len, 2 * sizeof(uint8_t));
 
 		i = (iface->if_hwaddr_len + 7) >> 3;
 		memcpy(buff + len, iface->if_hwaddr, i);
-		len += i;
+		send_ra_inc_len(&len, i);
 	}
 
 	/*
@@ -320,7 +329,7 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 		a_ival.adv_ival	= htonl(ival);
 
 		memcpy(buff + len, &a_ival, sizeof(a_ival));
-		len += sizeof(a_ival);
+		send_ra_inc_len(&len, sizeof(a_ival));
 	}
 
 	/*
@@ -342,7 +351,7 @@ send_ra(int sock, struct Interface *iface, struct in6_addr *dest)
 		ha_info.lifetime	= htons(iface->HomeAgentLifetime);
 
 		memcpy(buff + len, &ha_info, sizeof(ha_info));
-		len += sizeof(ha_info);
+		send_ra_inc_len(&len, sizeof(ha_info));
 	}
 	
 	iov.iov_len  = len;

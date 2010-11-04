@@ -1,4 +1,25 @@
-$Id: CHANGES,v 1.90 2009/09/10 11:48:09 psavola Exp $
+$Id: CHANGES,v 1.97 2010/03/05 12:15:33 psavola Exp $
+
+05/03/2010	Release 1.6.
+
+05/03/2010	Update Redhat spec and init files from Fedora.
+
+28/01/2010	Decrease MSG_SIZE from 4096 to about 1500B. Send buffer
+                uses a smaller size in order to avoid sending out
+                fragmented packets, yet being able to receive full-size
+                frames.
+
+28/01/2010	Keep track of buffer size and exit if the number of
+		prefixes/routes/etc. would grow too much. Prevent a memory
+                corruption due to wrong memset. Patches from Jan
+                Görig, Red Hat bug #554125.
+
+22/01/2010	On BSD use getifaddrs() also in setup_deviceinfo(),
+		fixes a multiple interfaces problem on NetBSD 5 due to
+		change in data structures. Patch from Michael Stapelberg.
+
+07/11/2009	Allow radvd.conf prefix, clients, route, and RDNSS options
+		to be in any order.  Patch from Michael Stapelberg.
 
 10/09/2009	Release 1.5.
 

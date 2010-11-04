@@ -1,5 +1,5 @@
 /*
- *   $Id: radvd.c,v 1.40 2009/09/07 07:59:57 psavola Exp $
+ *   $Id: radvd.c,v 1.41 2010/01/28 13:34:26 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -68,7 +68,7 @@ int check_conffile_perm(const char *, const char *);
 int
 main(int argc, char *argv[])
 {
-	unsigned char msg[MSG_SIZE];
+	unsigned char msg[MSG_SIZE_RECV];
 	char pidstr[16];
 	ssize_t ret;
 	int c, log_method;
