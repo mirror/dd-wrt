@@ -142,7 +142,10 @@ static int remotemanage = 0;
 #ifdef HAVE_SSHD
 static int remotessh = 0;	/* Botho 03-05-2006 */
 #endif
+
+#ifdef HAVE_TELNETD
 static int remotetelnet = 0;
+#endif
 
 static void save2file(const char *fmt, ...)
 {
@@ -672,6 +675,8 @@ static void nat_prerouting(void)
 		}
 	}
 #endif
+
+#ifdef HAVE_TELNETD
 	/*
 	 * Enable remote telnet management 
 	 */
@@ -696,6 +701,7 @@ static void nat_prerouting(void)
 			}
 		}
 	}
+#endif
 
 	/*
 	 * ICMP packets are always redirected to INPUT chains 
@@ -2016,6 +2022,16 @@ static void filter_input(void)
 		    ("-A INPUT -p tcp -m tcp -d %s --dport %d -j logaccept\n",
 		     nvram_safe_get("lan_ipaddr"), web_lanport);
 	}
+	/*
+	 * Impede DoS/Bruteforce, reduce load on httpd
+	 */
+	if (remotemanage && nvram_match("limit_http", "1")) { 
+			save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
+				wanface, nvram_safe_get("http_wanport"));
+			save2file("-A INPUT -i %s -p tcp --dport %s -j logdrop\n", 
+				wanface, nvram_safe_get("http_wanport") );
+	}
+
 #ifdef HAVE_SSHD
 	/*
 	 * Remote Web GUI Management Botho 03-05-2006 : remote ssh & remote GUI
@@ -2026,13 +2042,33 @@ static void filter_input(void)
 		    ("-A INPUT -p tcp -m tcp -d %s --dport %s -j logaccept\n",
 		     nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
 	}
+	/*
+	 * Impede DoS/Bruteforce, reduce load on ssh
+	 */
+	if (remotessh  && nvram_match("limit_ssh", "1")) {
+		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
+			wanface, nvram_safe_get("sshd_wanport"));
+		save2file("-A INPUT -i %s -p tcp --dport %s -j logdrop\n", 
+			wanface, nvram_safe_get("sshd_wanport") );
+	}
 #endif
+
+#ifdef HAVE_TELNETD
 	if (remotetelnet) {
 		save2file
 		    ("-A INPUT -p tcp -m tcp -d %s --dport 23 -j logaccept\n",
 		     nvram_safe_get("lan_ipaddr"));
 	}
-
+	/*
+	 * Impede DoS/Bruteforce, reduce load on Telnet
+	 */
+	if (remotetelnet && nvram_match("limit_telnet", "1")) {
+		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
+			wanface, nvram_safe_get("telnet_wanport"));
+		save2file("-A INPUT -i %s -p tcp --dport %s -j logdrop\n", 
+			wanface, nvram_safe_get("telnet_wanport") );
+	}
+#endif
 	/*
 	 * ICMP request from WAN interface 
 	 */
@@ -2045,6 +2081,7 @@ static void filter_input(void)
 	 */
 	save2file("-A INPUT -p igmp -j %s\n",
 		  doMultiCast() == 0 ? log_drop : TARG_PASS);
+
 
 #ifdef HAVE_TFTP
 	/*
@@ -2489,6 +2526,8 @@ static void filter_table(void)
 				     wanface);
 			}
 #endif
+
+#ifdef HAVE_TELNETD
 			if (!remotetelnet && strlen(wanface) > 0) {
 				save2file
 				    ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
@@ -2497,6 +2536,7 @@ static void filter_table(void)
 				    ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
 				     wanface);
 			}
+#endif
 			filter_forward();
 
 		} else {
@@ -3022,6 +3062,8 @@ void start_firewall(void)
 	else
 		remotessh = 0;
 #endif
+
+#ifdef HAVE_TELNETD
 	/*
 	 * Remote telnet management 
 	 */
@@ -3032,6 +3074,7 @@ void start_firewall(void)
 		remotetelnet = 1;
 	else
 		remotetelnet = 0;
+#endif
 
 #ifdef HAVE_HTTPS
 	if (nvram_match("remote_mgt_https", "1"))
