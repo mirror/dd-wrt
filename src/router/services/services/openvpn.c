@@ -68,7 +68,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "proto %s\n", nvram_safe_get("openvpn_proto"));
 		fprintf(fp, "cipher %s\n", nvram_safe_get("openvpn_cipher"));
 		fprintf(fp, "auth %s\n", nvram_safe_get("openvpn_auth"));
-		fprintf(fp, "management 127.0.0.1 5001\n");
+		fprintf(fp, "management 127.0.0.1 5002\n");
 		fprintf(fp, "management-log-cache 50\n");
 		fprintf(fp, "mtu-disc yes\n");
 		if (nvram_match("openvpn_dupcn", "1"))
