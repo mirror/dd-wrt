@@ -61,7 +61,7 @@ void start_openvpnserver(void)
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 		fprintf(fp, "keepalive 10 120\n");
 		fprintf(fp, "verb 4\n");
-		fprintf(fp, "mute 1\n");
+		fprintf(fp, "mute 5\n");
 		fprintf(fp, "log-append /var/log/openvpn\n");
 		fprintf(fp, "tls-server\n");
 		fprintf(fp, "port %s\n", nvram_safe_get("openvpn_port"));
@@ -89,7 +89,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "tcp-nodelay\n"); 
 		if (nvram_invmatch("openvpn_mtu", ""))
 			fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpn_mtu"));
-		if (nvram_invmatch("openvpn_mssfix", "")) {
+		if (nvram_invmatch("openvpn_mssfix", "") && nvram_match("openvpn_proto", "udp")) {
 			fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpn_mssfix"));	//fragment=mssfix
 			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_mssfix"));
 		}
@@ -215,7 +215,7 @@ void start_openvpn(void)
 	fprintf(fp, "management 127.0.0.1 5001\n");
 	fprintf(fp, "management-log-cache 50\n");
 	fprintf(fp, "verb 4\n");
-	fprintf(fp, "mute 1\n");
+	fprintf(fp, "mute 5\n");
 	fprintf(fp, "log-append /var/log/openvpncl\n");
 	fprintf(fp, "client\n");
 	fprintf(fp, "tls-client\n");
@@ -232,9 +232,7 @@ void start_openvpn(void)
 		nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
-	if (nvram_invmatch("openvpncl_extramtu", ""))
-		fprintf(fp, "tun-mtu-extra %s\n", nvram_safe_get("openvpncl_extramtu")); //tun=0,tap=32 - only a internal buffersize
-	if (nvram_invmatch("openvpncl_mssfix", "")) {
+	if (nvram_invmatch("openvpncl_mssfix", "") && nvram_match("openvpn_proto", "udp")) {
 		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));	//fragment=mssfix
 		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_mssfix"));
 	}
