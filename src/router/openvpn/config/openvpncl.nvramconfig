@@ -8,7 +8,6 @@
  "openvpncl_proto" "Tunnel Protocol" "CHOICE" "2" "udp" "tcp-client" "FALSE" "0"
  "openvpncl_mtu" "TUN MTU" "NULL" "FALSE" "0"
  "openvpncl_tuntap" "TUN DEV" "NULL" "FALSE" "0"
- "openvpncl_extramtu" "TUN EXTRA" "NULL" "FALSE" "0"
  "openvpncl_mssfix" "TCP MSS" "NULL" "FALSE" "0"
  "openvpncl_certtype"  "nsCertType server" "CHOICE" "2" "0" "1" "TRUE" "0"
  "openvpncl_config" "Config" "NULL" "FALSE" "0"
