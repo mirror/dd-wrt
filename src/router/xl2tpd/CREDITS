@@ -3,6 +3,9 @@
 * Michael Richardson <mcr@xelerance.com>, for adding IPsec SAref tracking
 * Paul Wouters <paul@xelerance.com>, for packaging, debugging and support.
 
+* Tuomo Soini <tis@foobar.fi> for various packaging and initscript patches
+* Shingo Yamawaki & Shinichi Furuso for SAref related patches.
+
 Thanks to Jacco de Leeuw for his maintenance of the 0.69 version of l2tpd.
 
 Original credits follow.

@@ -40,7 +40,7 @@ typedef unsigned long long _u64;
 #define CONTROL_PIPE "/var/run/xl2tpd/l2tp-control"
 
 #define BINARY "xl2tpd"
-#define SERVER_VERSION "xl2tpd-1.2.4"
+#define SERVER_VERSION "xl2tpd-1.2.6"
 #define VENDOR_NAME "xelerance.com"
 #ifndef PPPD
 #define PPPD		"/usr/sbin/pppd"
@@ -164,6 +164,8 @@ struct tunnel
 #endif
     int rws;                    /* Peer's Receive Window Size */
     int ourrws;                 /* Receive Window Size */
+    int rxspeed;		/* Receive bps */
+    int txspeed;		/* Transmit bps */
     struct call *self;
     struct lns *lns;            /* LNS that owns us */
     struct lac *lac;            /* LAC that owns us */

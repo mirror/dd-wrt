@@ -29,12 +29,23 @@
 #include <netinet/in.h>
 #include "l2tp.h"
 
+/* prevent deadlock that occurs when a signal handler, which interrupted a
+ * call to syslog(), attempts to call syslog(). */
+static int syslog_nesting = 0;
+#define SYSLOG_CALL(code) do {      \
+    if (++syslog_nesting < 2) {     \
+        code;                       \
+    }                               \
+    --syslog_nesting;               \
+} while(0)
+
 void init_log()
 {
     static int logopen=0;
     
     if(!logopen) {
-	openlog (BINARY, LOG_PID, LOG_DAEMON);
+	SYSLOG_CALL( openlog (BINARY, LOG_PID, LOG_DAEMON) );
+	logopen=1;
     }
 }
 /*
@@ -48,7 +59,7 @@ void l2tp_log (int level, const char *fmt, ...)
     
     if(gconfig.daemon) {
 	init_log();
-	syslog (level, "%s", buf);
+	SYSLOG_CALL( syslog (level, "%s", buf) );
     } else {
 	fprintf(stderr, "xl2tpd[%d]: %s", getpid(), buf);
     }
