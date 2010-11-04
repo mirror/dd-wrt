@@ -653,10 +653,10 @@ static void nat_prerouting(void)
 	 */
 #ifndef HAVE_MICRO
 	if (remotessh  && nvram_match("limit_ssh", "1")) {
-		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", 
-			wanface, nvram_safe_get("sshd_wanport") );
 		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
 			wanface, nvram_safe_get("sshd_wanport"));
+		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", 
+			wanface, nvram_safe_get("sshd_wanport") );
 	}
 #endif
 	/*
@@ -693,10 +693,9 @@ static void nat_prerouting(void)
 	 */
 #ifndef HAVE_MICRO
 	if (remotetelnet && nvram_match("limit_telnet", "1")) {
-		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", 
-			wanface, nvram_safe_get("telnet_wanport") );
 		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
 			wanface, nvram_safe_get("telnet_wanport"));
+		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", wanface, nvram_safe_get("telnet_wanport") );
 	}
 #endif
 	/*
