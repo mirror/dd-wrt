@@ -1,5 +1,5 @@
 /*
- *   $Id: recv.c,v 1.11 2006/10/09 06:21:59 psavola Exp $
+ *   $Id: recv.c,v 1.12 2010/01/28 13:34:26 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -51,7 +51,7 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
 		return -1;
 	}
 
-	iov.iov_len = MSG_SIZE;
+	iov.iov_len = MSG_SIZE_RECV;
 	iov.iov_base = (caddr_t) msg;
 
 	memset(&mhdr, 0, sizeof(mhdr));
