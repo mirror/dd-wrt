@@ -7,15 +7,14 @@ Url: http://www.xelerance.com/software/xl2tpd/
 Group: System Environment/Daemons
 Source0: http://www.xelerance.com/software/xl2tpd/xl2tpd-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires: ppp 
-BuildRequires: kernel-headers => 2.6.23
-%if 0%{?el3}%{?el4}
-BuildRequires: libpcap
+Requires: ppp >= 2.4.3
+%if %{sles_version} == 0
+BuildRequires: linux-kernel-headers => 2.6.19, libpcap-devel
 %else
-BuildRequires: libpcap-devel
+BuildRequires: glibc-devel, libpcap
 %endif
-Obsoletes: l2tpd <= 0.69-0.6.20051030.fc6
-Provides: l2tpd = 0.69-0.6.20051030.fc7
+Obsoletes: l2tpd <= 0.69
+Provides: l2tpd = 0.69
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
@@ -49,19 +48,17 @@ It was de-facto maintained by Jacco de Leeuw <jacco2@dds.nl> in 2002 and 2003.
 %setup -q
 
 %build
-# Customer test case proved the first make line failed, the second one worked
-# the failing one had incoming l2tp packets, but never got a tunnel up.
-#make DFLAGS="$RPM_OPT_FLAGS -g -DDEBUG_PPPD -DDEBUG_CONTROL -DDEBUG_ENTROPY"
-make DFLAGS="-g -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_FLOW -DDEBUG_PAYLOAD -DDEBUG_CONTROL -DDEBUG_CONTROL_XMIT -DDEBUG_FLOW_MORE -DDEBUG_MAGIC -DDEBUG_ENTROPY -DDEBUG_HIDDEN -DDEBUG_PPPD -DDEBUG_AAA -DDEBUG_FILE -DDEBUG_FLOW -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_ZLB -DDEBUG_AUTH"
+make DFLAGS="$RPM_OPT_FLAGS -g -DDEBUG_PPPD -DDEBUG_CONTROL -DDEBUG_ENTROPY -DTRUST_PPPD_TO_DIE"
 
 %install
 rm -rf %{buildroot}
-make DESTDIR=%{buildroot} PREFIX=%{_prefix} install
+make PREFIX=%{_prefix} DESTDIR=%{buildroot} MANDIR=%{buildroot}/%{_mandir} install
 install -p -D -m644 examples/xl2tpd.conf %{buildroot}%{_sysconfdir}/xl2tpd/xl2tpd.conf
 install -p -D -m644 examples/ppp-options.xl2tpd %{buildroot}%{_sysconfdir}/ppp/options.xl2tpd
 install -p -D -m600 doc/l2tp-secrets.sample %{buildroot}%{_sysconfdir}/xl2tpd/l2tp-secrets
 install -p -D -m600 examples/chapsecrets.sample %{buildroot}%{_sysconfdir}/ppp/chap-secrets.sample
-install -p -D -m755 packaging/fedora/xl2tpd.init %{buildroot}%{_initrddir}/xl2tpd
+install -p -D -m755 packaging/suse/xl2tpd.init %{buildroot}%{_initrddir}/xl2tpd
+ln -sf /etc/init.d/xl2tpd $RPM_BUILD_ROOT/usr/sbin/rcxl2tpd
 install -p -D -m755 -d %{buildroot}%{_localstatedir}/run/xl2tpd
 
 
@@ -69,6 +66,8 @@ install -p -D -m755 -d %{buildroot}%{_localstatedir}/run/xl2tpd
 rm -rf %{buildroot}
 
 %post
+%{fillup_and_insserv xl2tpd}
+
 /sbin/chkconfig --add xl2tpd
 # if we migrate from l2tpd to xl2tpd, copy the configs
 if [ -f /etc/l2tpd/l2tpd.conf ]
@@ -85,20 +84,19 @@ fi
 
 
 %preun
-if [ $1 -eq 0 ]; then
-	/sbin/service xl2tpd stop > /dev/null 2>&1
-	/sbin/chkconfig --del xl2tpd
-fi
+%stop_on_removal xl2tpd
+exit 0
 
 %postun
-if [ $1 -ge 1 ]; then
-  /sbin/service xl2tpd condrestart 2>&1 >/dev/null
-fi
+%restart_on_update xl2tpd
+%insserv_cleanup
+exit 0
 
 %files
 %defattr(-,root,root)
 %doc BUGS CHANGES CREDITS LICENSE README.* TODO doc/rfc2661.txt 
 %doc doc/README.patents examples/chapsecrets.sample
+%{_sbindir}/rcxl2tpd
 %{_sbindir}/xl2tpd
 %{_bindir}/pfc
 %{_mandir}/*/*
@@ -112,6 +110,9 @@ fi
 * Sun Oct 26 2008 Paul Wouters <paul@xelerance.com> 1.2.2-1
 - Updated Suse init scripts and spec file
 - Added pfc for pppd's precompiled-active-filter
+
+* Fri Apr 18 2008 Paul Wouters <paul@xelerance.com> 1.2.1-1
+- Updated Suse init scripts and spec file
 
 * Tue Jun 26 2007 Paul Wouters <paul@xelerance.com> 1.1.11-1
 - Minor changes to spec file to accomodate new README files

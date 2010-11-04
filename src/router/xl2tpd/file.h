@@ -68,6 +68,8 @@ struct lns
     unsigned int localaddr;     /* Local IP for PPP connections */
     int tun_rws;                /* Receive window size (tunnel) */
     int call_rws;               /* Call rws */
+    int rxspeed;		/* Tunnel rx speed */
+    int txspeed;		/* Tunnel tx speed */
     int hbit;                   /* Permit hidden AVP's? */
     int lbit;                   /* Use the length field? */
     int challenge;              /* Challenge authenticate the peer? */
@@ -104,6 +106,8 @@ struct lac
     struct schedule_entry *rsched;
     int tun_rws;                /* Receive window size (tunnel) */
     int call_rws;               /* Call rws */
+    int rxspeed;		/* Tunnel rx speed */
+    int txspeed;		/* Tunnel tx speed */
     int active;                 /* Is this connection in active use? */
     int hbit;                   /* Permit hidden AVP's? */
     int lbit;                   /* Use the length field? */

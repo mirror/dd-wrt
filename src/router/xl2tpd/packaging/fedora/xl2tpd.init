@@ -1,13 +1,22 @@
 #!/bin/sh
 #
-# xl2tpd			This shell script takes care of starting and stopping l2tpd.
+# xl2tpd	This shell script takes care of starting and stopping l2tpd.
 #
 # chkconfig: - 80 30
 # description:	Layer 2 Tunnelling Protocol Daemon (RFC 2661)
 #
-# processname:	xl2tpd
+# processname:	/usr/sbin/xl2tpd
 # config:	/etc/xl2tpd/xl2tpd.conf
 # pidfile:	/var/run/xl2tpd.pid
+
+### BEGIN INIT INFO
+# Provides: xl2tpd
+# Required-Start: $local_fs $network $syslog
+# Required-Stop: $local_fs $network $syslog
+# Default-Start:
+# Short-Description: start|stop|status|restart|try-restart|reload|force-reload xl2tpd server
+# Description: control xl2tpd server
+### END INIT INFO
 
 #Servicename
 SERVICE=xl2tpd
@@ -35,17 +44,24 @@ start() {
 	fi
 	daemon $SERVICE
 	RETVAL=$?
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$SERVICE
-	echo ""
-	return $RETVAL
+	echo 
+	if [ $RETVAL -eq 0 ];then
+	   touch /var/lock/subsys/$SERVICE
+	else
+	   exit 7;
+	fi
+  return 0;
 }
 
 stop() {
 	echo -n "Stopping $SERVICE: "
 	killproc $SERVICE
 	RETVAL=$?
+	if [ $RETVAL -eq 0 ]; then
+	   rm -f /var/run/xl2tpd/$SERVICE
+	   rm -f /var/lock/subsys/$SERVICE
+	fi
 	echo
-	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$SERVICE
 	return $RETVAL
 }
 

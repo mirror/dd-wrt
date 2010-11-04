@@ -28,8 +28,6 @@
 
 #include "ipsecmast.h"
 
-extern void child_handler (int signal);
-
 struct buffer *new_payload (struct sockaddr_in peer)
 {
     struct buffer *tmp = new_buf (MAX_RECV_SIZE);
@@ -429,8 +427,6 @@ void destroy_call (struct call *c)
     pid = c->pppd;
     if (pid)
     {
-      /* we'll do waitpid here so disable child_handler while at it */
-      signal (SIGCHLD, SIG_DFL);
       /* Set c->pppd to zero to prevent recursion with child_handler */
       c->pppd = 0;
       /*
@@ -456,13 +452,6 @@ void destroy_call (struct call *c)
  #endif
       kill (pid, SIGKILL);
 #endif
-
-      waitpid (pid, NULL, 0);
-#ifdef DEBUG_PPPD
-      l2tp_log (LOG_DEBUG, "pppd %d successfully terminated\n", pid);
-#endif
-      /* restore child_handler */
-      signal (SIGCHLD, &child_handler);
     }
     if (c->container)
     {
@@ -507,12 +496,6 @@ void destroy_call (struct call *c)
     }
 
     free (c);
-
-    /*
-     * Signal child_handler just to be sure that waitpid is done if some
-     * pppd's died meanwhile
-     */
-    kill (SIGCHLD, getpid ());
 }
 
 
