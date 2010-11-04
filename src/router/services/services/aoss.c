@@ -79,7 +79,7 @@ void start_aoss(void)
 		hasaoss = 1;
 		sysprintf
 		    ("80211n_wlanconfig aossa create wlandev wifi1 wlanmode ap");
-		sysprintf("iwconfig aossa essid ESSID-AOSS");
+		sysprintf("iwconfig aossa essid ESSID-AOSS-1");
 		sysprintf("iwpriv aossa authmode 4");
 		sysprintf("iwconfig aossa key [1] 4D454C434F");
 		sysprintf("iwconfig aossa key [1]");
