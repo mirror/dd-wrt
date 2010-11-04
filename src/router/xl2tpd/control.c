@@ -176,7 +176,7 @@ int control_finish (struct tunnel *t, struct call *c)
     struct ppp_opts *po;
     char ip1[STRLEN];
     char ip2[STRLEN];
-    char dummy_buf[128] = "/var/l2tp/"; /* jz: needed to read /etc/ppp/var.options - just kick it if you dont like */
+    char dummy_buf[128] = "/var/l2tp/"; /* jz: needed to read /etc/ppp/var.options - just kick it if you don't like */
     char passwdfd_buf[32] = ""; /* buffer for the fd, not the password */
     int i;
     int pppd_passwdfd[2];            
@@ -204,11 +204,15 @@ int control_finish (struct tunnel *t, struct call *c)
             {
                 t->ourrws = t->lns->tun_rws;
                 t->hbit = t->lns->hbit;
+		t->rxspeed = t->lns->rxspeed;
+		t->txspeed = t->lns->txspeed;
             }
             else if (t->lac)
             {
                 t->ourrws = t->lac->tun_rws;
                 t->hbit = t->lac->hbit;
+		t->rxspeed = t->lac->rxspeed;
+		t->txspeed = t->lac->txspeed;
             }
             /* This is an attempt to bring up the tunnel */
             t->state = SCCRQ;
@@ -412,6 +416,7 @@ int control_finish (struct tunnel *t, struct call *c)
         {
             if ((y->tid == t->tid) &&
                 (y->peer.sin_addr.s_addr == t->peer.sin_addr.s_addr) &&
+                (!gconfig.ipsecsaref || y->refhim == t->refhim) &&
                 (y != t))
             {
                 /* This can happen if we get a duplicate
@@ -799,14 +804,14 @@ int control_finish (struct tunnel *t, struct call *c)
             mk_challenge (t->chal_them.vector, VECTOR_SIZE);
             add_randvect_avp (buf, t->chal_them.vector, VECTOR_SIZE);
         }
-        add_txspeed_avp (buf, DEFAULT_TX_BPS);
+        add_txspeed_avp (buf, t->txspeed);
         add_frame_avp (buf, c->frame);
 /*		if (c->ourrws >= 0)
 			add_avp_rws(buf, c->ourrws); */
         /* FIXME: Packet Processing Delay */
         /* We don't need any kind of proxy PPP stuff */
         /* Can we proxy authenticate ourselves??? */
-        add_rxspeed_avp (buf, DEFAULT_RX_BPS);
+        add_rxspeed_avp (buf, t->rxspeed);
 /* add_seqreqd_avp (buf); *//* We don't have sequencing code, so
  * don't ask for sequencing */
         add_control_hdr (t, c, buf);
@@ -973,7 +978,7 @@ int control_finish (struct tunnel *t, struct call *c)
         po = add_opt (po, "passive");
         po = add_opt (po, "nodetach");
         po = add_opt (po, "file");
-        strcat (dummy_buf, c->dial_no); /* jz: use /etc/ppp/dialnumber.options for pppd - kick it if you dont like */
+        strcat (dummy_buf, c->dial_no); /* jz: use /etc/ppp/dialnumber.options for pppd - kick it if you don't like */
         strcat (dummy_buf, ".options");
         po = add_opt (po, dummy_buf);
         if (c->lac)

@@ -61,6 +61,12 @@ int switch_io = 0;              /* jz: Switch for Incoming or Outgoing Call */
 
 static void open_controlfd(void);
 
+volatile sig_atomic_t sigterm_received;
+volatile sig_atomic_t sigint_received;
+volatile sig_atomic_t sigchld_received;
+volatile sig_atomic_t sigusr1_received;;
+volatile sig_atomic_t sighup_received;
+
 void init_tunnel_list (struct tunnel_list *t)
 {
     t->head = NULL;
@@ -290,6 +296,40 @@ void death_handler (int signal)
     unlink (gconfig.controlfile);
 
     exit (1);
+}
+
+void sigterm_handler(int sig)
+{
+    sigterm_received = 1;
+}
+
+void sigint_handler(int sig)
+{
+    sigint_received = 1;
+}
+
+void sigchld_handler(int sig)
+{
+    sigchld_received = 1;
+}
+
+void sigusr1_handler(int sig)
+{
+    sigusr1_received = 1;
+}
+
+void sighup_handler(int sig)
+{
+    sighup_received = 1;
+}
+
+void process_signal(void)
+{
+    if (sigterm_received) { sigterm_received = 0; death_handler(SIGTERM); }
+    if (sigint_received) { sigint_received = 0; death_handler(SIGINT); }
+    if (sigchld_received) { sigchld_received = 0; child_handler(SIGCHLD); }
+    if (sigusr1_received) { sigusr1_received = 0; status_handler(SIGUSR1); }
+    if (sighup_received) { sighup_received = 0; null_handler(SIGHUP); }
 }
 
 int start_pppd (struct call *c, struct ppp_opts *opts)
@@ -824,6 +864,8 @@ struct tunnel *new_tunnel ()
     };
     tmp->ourrws = DEFAULT_RWS_SIZE;
     tmp->self->ourfbit = FBIT;
+    tmp->rxspeed = DEFAULT_RX_BPS;
+    tmp->txspeed = DEFAULT_TX_BPS;
     tmp->lac = NULL;
     tmp->lns = NULL;
     tmp->chal_us.state = 0;
@@ -1225,11 +1267,11 @@ void init (int argc,char *argv[])
 
     consider_pidfile();
 
-    signal (SIGTERM, &death_handler);
-    signal (SIGINT, &death_handler);
-    signal (SIGCHLD, &child_handler);
-    signal (SIGUSR1, &status_handler);
-    signal (SIGHUP, &null_handler);
+    signal (SIGTERM, &sigterm_handler);
+    signal (SIGINT, &sigint_handler);
+    signal (SIGCHLD, &sigchld_handler);
+    signal (SIGUSR1, &sigusr1_handler);
+    signal (SIGHUP, &sighup_handler);
     init_scheduler ();
 
     unlink(gconfig.controlfile);

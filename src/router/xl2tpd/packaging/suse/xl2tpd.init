@@ -1,28 +1,29 @@
 #! /bin/sh
-# Copyright (c) 1995-2003
+# Copyright (c) 1995-2003 Bernhard Thoni <bt@tronicplanet.de>
 # Tronicplanet Datendienst GmbH, Simbach am INN, Germany.
 # All rights reserved.
+# Copyright (c) 2006-2008 Paul Wouters <paul@xelerance.com>
+# Xeleracne Corporation
 #
-# Author: Bernhard Thoni <bt@tronicplanet.de>
-#
-# /etc/init.d/l2tpd
+# /etc/init.d/xl2tpd
 #
 #   and its symbolic link
 #
-# /(usr/)sbin/rcl2tpd
+# /usr/sbin/rcxl2tpd
 #
 # LSB compliant service control script; see http://www.linuxbase.org/spec/
 # 
-# System startup script for L2TP daemon l2tpd
+# System startup script for L2TP daemon xl2tpd
 #
 ### BEGIN INIT INFO
-# Provides: FOO
+# Provides: xl2tpd
 # Required-Start: $syslog
 # Required-Stop:  $syslog
 # Default-Start:  3 5
 # Default-Stop:   0 1 2 6
-# Description:    Start l2tpd to allow XY and provide YZ
-#	continued on second line by '#<TAB>'
+# Short-Description: Start xl2tpd (to provide L2TP VPN's)
+# Description:    Start xl2tpd to provide L2TP VPN tunnels
+#	normally used with IPsec (openswan)
 ### END INIT INFO
 # 
 # Note on Required-Start: It does specify the init script ordering,
@@ -33,13 +34,15 @@
 test -r /etc/rc.config && . /etc/rc.config
 
 # Check for missing binaries (stale symlinks should not happen)
-L2TPD_BIN=/usr/sbin/l2tpd
-test -x $L2TPD_BIN || exit 5
+XL2TPD_BIN=/usr/sbin/xl2tpd
+test -x $YPBIND_BIN || { echo "$YPBIND_BIN not installed";
+        if [ "$1" = "stop" ]; then exit 0; else exit 5; fi; }
 
 # Check for existence of needed config file and read it
-#L2TPD_CONFIG=/etc/sysconfig/FOO
-#test -r $L2TPD_CONFIG || exit 6
-#. $L2TPD_CONFIG
+#XL2TPD_CONFIG=/etc/sysconfig/xl2tpd
+#test -r $YPBIND_CONFIG || { echo "$YPBIND_CONFIG not existing";
+#        if [ "$1" = "stop" ]; then exit 0; else exit 6; fi; }
+#. $XL2TPD_CONFIG
 
 # Shell functions sourced from /etc/rc.status:
 #      rc_check         check and set local and overall rc status
@@ -73,56 +76,57 @@ rc_reset
 
 case "$1" in
     start)
-	echo -n "Starting L2TPD"
+	echo -n "Starting xl2tpd"
 	## Start daemon with startproc(8). If this fails
 	## the echo return value is set appropriate.
 
 	# NOTE: startproc returns 0, even if service is 
 	# already running to match LSB spec.
-	startproc $L2TPD_BIN >/dev/null 2>&1
+	startproc $XL2TPD_BIN >/dev/null 2>&1
 
 	# Remember status and be verbose
 	rc_status -v
 	;;
     stop)
-	echo -n "Shutting down L2TPD"
+	echo -n "Shutting down xl2tpd"
 	## Stop daemon with killproc(8) and if this fails
 	## set echo the echo return value.
 
-	killproc -TERM $L2TPD_BIN
-
+	killproc -TERM $XL2TPD_BIN
+	rm -f /var/run/xl2tpd/xl2tpd.pid
 	# Remember status and be verbose
 	rc_status -v
 	;;
-    try-restart)
-	## Stop the service and if this succeeds (i.e. the 
-	## service was running before), start it again.
-	## Note: try-restart is not (yet) part of LSB (as of 0.7.5)
-	$0 status >/dev/null &&  $0 restart
-
-	# Remember status and be quiet
-	rc_status
-	;;
+    try-restart|condrestart)
+        ## Do a restart only if the service was active before.
+        ## Note: try-restart is now part of LSB (as of 1.9).
+        ## RH has a similar command named condrestart.
+        if test "$1" = "condrestart"; then
+                echo "${attn} Use try-restart ${done}(LSB)${attn} rather than condrestart ${warn}(RH)${norm}"
+        fi
+        $0 status
+        if test $? = 0; then
+                $0 restart
+        else
+                rc_reset        # Not running is not a failure.
+        fi
+        rc_status
+        ;;
     restart)
-	## Stop the service and regardless of whether it was
-	## running or not, start it again.
-	$0 stop
-	$0 start
-
-	# Remember status and be quiet
-	rc_status
-	;;
+        $0 stop
+        sleep 1
+        $0 start
+        rc_status
+        ;;
     force-reload)
 	## Signal the daemon to reload its config. Most daemons
 	## do this on signal 1 (SIGHUP).
 	## If it does not support it, restart.
-
-	echo -n "Reload service L2TPD"
+	echo -n "Reload service xl2tpd"
 	## if it supports it:
-	killproc -HUP $L2TPD_BIN
-	#touch /var/run/l2tpd.pid
+	killproc -HUP $XL2TPD_BIN
+	#touch /var/run/xl2tpd/xl2tpd.pid
 	rc_status -v
-
 	## Otherwise:
 	#$0 stop  &&  $0 start
 	#rc_status
@@ -130,19 +134,17 @@ case "$1" in
     reload)
 	## Like force-reload, but if daemon does not support
 	## signalling, do nothing (!)
-
 	# If it supports signalling:
-	echo -n "Reload service L2TPD"
-	killproc -HUP $L2TPD_BIN
-	#touch /var/run/l2tpd.pid
+	echo -n "Reload service xl2tpd"
+	killproc -HUP $XL2TPD_BIN
+	#touch /var/run/xl2tpd.pid
 	rc_status -v
-	
 	## Otherwise if it does not support reload:
 	#rc_failed 3
 	#rc_status -v
 	;;
     status)
-	echo -n "Checking for service L2TPD: "
+	echo -n "Checking for service xl2tpd: "
 	## Check status with checkproc(8), if process is running
 	## checkproc will return with exit status 0.
 
@@ -153,14 +155,14 @@ case "$1" in
 	# 3 - service not running
 
 	# NOTE: checkproc returns LSB compliant status values.
-	checkproc $L2TPD_BIN
+	checkproc $XL2TPD_BIN
 	rc_status -v
 	;;
     probe)
 	## Optional: Probe for the necessity of a reload,
 	## print out the argument which is required for a reload.
 
-	test /etc/l2tpd/l2tpd.conf -nt /var/run/l2tpd.pid && echo reload
+	test /etc/xl2tpd/xl2tpd.conf -nt /var/run/xltpd/xl2tpd.pid && echo reload
 	;;
     *)
 	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload|probe}"
