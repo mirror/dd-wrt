@@ -1,5 +1,5 @@
 /*
- *   $Id: radvdump.c,v 1.18 2007/06/25 11:42:10 psavola Exp $
+ *   $Id: radvdump.c,v 1.19 2010/01/28 13:34:26 psavola Exp $
  *
  *   Authors:
  *    Lars Fenneberg		<lf@elemental.net>
@@ -42,7 +42,7 @@ void print_preferences(int);
 int
 main(int argc, char *argv[])
 {
-	unsigned char msg[MSG_SIZE];
+	unsigned char msg[MSG_SIZE_RECV];
 	int c, len, hoplimit;
 	int edefs = 0;
 	struct sockaddr_in6 rcv_addr;

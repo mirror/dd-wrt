@@ -1,5 +1,5 @@
 /*
- *   $Id: defaults.h,v 1.21 2008/03/31 09:37:31 psavola Exp $
+ *   $Id: defaults.h,v 1.22 2010/01/28 13:34:26 psavola Exp $
  *
  *   Authors:
  *    Lars Fenneberg		<lf@elemental.net>	 
@@ -21,8 +21,8 @@
 #include <radvd.h>
 
 /* maximum message size for incoming and outgoing RSs and RAs */
-
-#define MSG_SIZE			4096
+#define MSG_SIZE_RECV			1500
+#define MSG_SIZE_SEND			1452
 
 #define MAX2(X,Y) ( (( X ) >=  ( Y )) ? ( X ) : ( Y ))
 

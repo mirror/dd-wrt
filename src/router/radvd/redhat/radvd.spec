@@ -1,4 +1,4 @@
-# $Id: radvd.spec,v 1.26 2009/09/10 11:48:09 psavola Exp $
+# $Id: radvd.spec,v 1.27 2010/03/05 12:14:47 psavola Exp $
 
 %define initdir /etc/rc.d/init.d
 #%(if test -d /etc/init.d/. ; then echo /etc/init.d ; else echo /etc/rc.d/init.d ; fi)
@@ -7,14 +7,14 @@
 
 Summary: A Router Advertisement daemon
 Name: radvd
-Version: 1.5
+Version: 1.6
 Release: 1
 # The code includes the advertising clause, so it's GPL-incompatible
 License: BSD with advertising
 Group: System Environment/Daemons
 URL:        http://www.litech.org/radvd/
 Source:     http://www.litech.org/radvd/dist/%{name}-%{version}.tar.gz
-Requires(postun):   chkconfig, /usr/sbin/userdel, initscripts
+Requires(postun):   chkconfig, initscripts
 Requires(preun):    chkconfig, initscripts
 Requires(post):     chkconfig
 Requires(pre):      /usr/sbin/useradd
@@ -36,6 +36,8 @@ services.
 %setup -q
 
 %build
+export CFLAGS="$RPM_OPT_FLAGS -D_GNU_SOURCE -fPIE" 
+export LDFLAGS='-pie -Wl,-z,relro,-z,now,-z,noexecstack,-z,nodlopen'
 %configure --with-pidfile=/var/run/radvd/radvd.pid
 make
 # make %{?_smp_mflags} 
@@ -62,9 +64,6 @@ install -m 644 redhat/radvd.sysconfig $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ra
 %postun
 if [ "$1" -ge "1" ]; then
     /sbin/service radvd condrestart >/dev/null 2>&1
-fi
-if [ $1 = 0 ]; then
-        /usr/sbin/userdel radvd > /dev/null 2>&1 || :
 fi
 
 %post
@@ -93,6 +92,12 @@ fi
 %{_sbindir}/radvdump
 
 %changelog
+* Fri Mar  5 2010 Pekka Savola <pekkas@netcore.fi> 1.6-1
+- 1.6
+- Updated the spec file from Fedora (remove userdel at postun),
+  use compile flags
+- Updated init script from Fedora.
+
 * Thu Sep 10 2009 Pekka Savola <pekkas@netcore.fi> 1.5-1
 - 1.5
 

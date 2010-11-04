@@ -1,5 +1,5 @@
 /*
- *   $Id: gram.y,v 1.22 2009/09/07 07:56:02 psavola Exp $
+ *   $Id: gram.y,v 1.23 2009/11/07 18:42:14 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -43,6 +43,18 @@ static void yyerror(char *msg);
 #endif
 
 #define ABORT	do { cleanup(); YYABORT; } while (0);
+#define ADD_TO_LL(type, list, value) \
+	do { \
+		if (iface->list == NULL) \
+			iface->list = value; \
+		else { \
+			type *current = iface->list; \
+			while (current->next != NULL) \
+				current = current->next; \
+			current->next = value; \
+		} \
+	} while (0)
+
 
 %}
 
@@ -103,10 +115,10 @@ static void yyerror(char *msg);
 %token		T_BAD_TOKEN
 
 %type	<str>	name
-%type	<pinfo> optional_prefixlist prefixdef prefixlist
-%type	<ainfo> optional_clientslist clientslist v6addrlist
-%type	<rinfo>	optional_routelist routedef routelist
-%type	<rdnssinfo> optional_rdnsslist rdnssdef rdnsslist
+%type	<pinfo> prefixdef 
+%type	<ainfo> clientslist v6addrlist
+%type	<rinfo>	routedef 
+%type	<rdnssinfo> rdnssdef 
 %type   <num>	number_or_infinity
 
 %union {
@@ -195,49 +207,16 @@ name		: STRING
 		}
 		;
 
-ifaceparams	: optional_ifacevlist optional_prefixlist optional_clientslist optional_routelist optional_rdnsslist
-		{
-			iface->AdvPrefixList = $2;
-			iface->ClientList = $3;
-			iface->AdvRouteList = $4;
-			iface->AdvRDNSSList = $5;
-		}
+ifaceparams :
+		/* empty */
+		| ifaceparam ifaceparams
 		;
 
-optional_ifacevlist: /* empty */
-		   | ifacevlist
-		   ;
-
-optional_prefixlist: /* empty */
-		{
-			$$ = NULL;
-		}
-		| prefixlist
-		;
-
-optional_clientslist: /* empty */
-		{
-			$$ = NULL;
-		}
-		| clientslist
-		;
-
-optional_routelist: /* empty */
-		{
-			$$ = NULL;
-		}
-		| routelist
-		;
-		
-optional_rdnsslist: /* empty */
-		{
-			$$ = NULL;
-		}
-		| rdnsslist
-		;
-
-ifacevlist	: ifacevlist ifaceval
-		| ifaceval
+ifaceparam 	: ifaceval
+		| prefixdef 	{ ADD_TO_LL(struct AdvPrefix, AdvPrefixList, $1); }
+		| clientslist 	{ ADD_TO_LL(struct Clients, ClientList, $1); }
+		| routedef 	{ ADD_TO_LL(struct AdvRoute, AdvRouteList, $1); }
+		| rdnssdef 	{ ADD_TO_LL(struct AdvRDNSS, AdvRDNSSList, $1); }
 		;
 
 ifaceval	: T_MinRtrAdvInterval NUMBER ';'
@@ -369,13 +348,6 @@ v6addrlist	: IPV6ADDR ';'
 		}
 		;
 
-
-prefixlist	: prefixdef optional_prefixlist
-		{
-			$1->next = $2;
-			$$ = $1;
-		}
-		;
 
 prefixdef	: prefixhead '{' optional_prefixplist '}' ';'
 		{
@@ -514,13 +486,6 @@ prefixparms	: T_AdvOnLink SWITCH ';'
 		}
 		;
 
-routelist	: routedef optional_routelist
-		{
-			$1->next = $2;
-			$$ = $1;
-		}
-		;
-
 routedef	: routehead '{' optional_routeplist '}' ';'
 		{
 			$$ = route;
@@ -569,13 +534,6 @@ routeparms	: T_AdvRoutePreference SIGNEDNUMBER ';'
 		| T_AdvRouteLifetime number_or_infinity ';'
 		{
 			route->AdvRouteLifetime = $2;
-		}
-		;
-		
-rdnsslist	: rdnssdef optional_rdnsslist
-		{
-			$1->next = $2;
-			$$ = $1;
 		}
 		;
 		
