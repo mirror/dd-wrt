@@ -2025,13 +2025,14 @@ static void filter_input(void)
 	/*
 	 * Impede DoS/Bruteforce, reduce load on httpd
 	 */
+#ifndef HAVE_MICRO
 	if (remotemanage && nvram_match("limit_http", "1")) { 
 			save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
 				wanface, nvram_safe_get("http_wanport"));
 			save2file("-A INPUT -i %s -p tcp --dport %s -j logdrop\n", 
 				wanface, nvram_safe_get("http_wanport") );
 	}
-
+#endif
 #ifdef HAVE_SSHD
 	/*
 	 * Remote Web GUI Management Botho 03-05-2006 : remote ssh & remote GUI
@@ -2045,12 +2046,14 @@ static void filter_input(void)
 	/*
 	 * Impede DoS/Bruteforce, reduce load on ssh
 	 */
+#ifndef HAVE_MICRO
 	if (remotessh  && nvram_match("limit_ssh", "1")) {
 		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
 			wanface, nvram_safe_get("sshd_wanport"));
 		save2file("-A INPUT -i %s -p tcp --dport %s -j logdrop\n", 
 			wanface, nvram_safe_get("sshd_wanport") );
 	}
+#endif
 #endif
 
 #ifdef HAVE_TELNETD
@@ -2062,12 +2065,14 @@ static void filter_input(void)
 	/*
 	 * Impede DoS/Bruteforce, reduce load on Telnet
 	 */
+#ifndef HAVE_MICRO
 	if (remotetelnet && nvram_match("limit_telnet", "1")) {
 		save2file("-A INPUT -i %s -p tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
 			wanface, nvram_safe_get("telnet_wanport"));
 		save2file("-A INPUT -i %s -p tcp --dport %s -j logdrop\n", 
 			wanface, nvram_safe_get("telnet_wanport") );
 	}
+#endif
 #endif
 	/*
 	 * ICMP request from WAN interface 
