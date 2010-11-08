@@ -653,9 +653,59 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) 
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
 
-	fprintf(fp, "ieee80211n=1\n");
-	fprintf(fp, "ht_capab=[HT40-][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n");
-	fprintf(fp, "wds_sta=1\n");
+	char *netmode = nvram_nget("%s_net_mode", prefix);
+	char ht[5];
+	int ieee80211n=0;
+	if (!strcmp(netmode, "mixed"))
+			{
+			fprintf(fp, "ieee80211n=1\n");
+			ieee80211n=1;
+			}
+	// if (!strcmp(netmode, "b-only")) ham wa garnuech
+	// if (!strcmp(netmode, "g-only"))  garnix machen
+	// if (!strcmp(netmode, "bg-mixed")) garnix machen
+	// if (!strcmp(netmode, "a-only")) garnix machen
+	if (!strcmp(netmode, "ng-only")) {
+		fprintf(fp, "ieee80211n=1\n");
+		ieee80211n=1;
+		}
+	if (!strcmp(netmode, "na-only")) {
+		fprintf(fp, "ieee80211n=1\n");
+		ieee80211n=1;
+		}
+	if (ieee80211n == 1)
+		{
+		char bw[32];
+		sprintf(bw, "%s_channelbw", prefix);
+		if (nvram_match(bw, "20"))
+			{
+			sprintf(ht,"20");
+			}
+		else if (nvram_match(bw, "40") || nvram_match(bw, "2040"))
+			{
+			char sb[32];
+			sprintf(sb, "%s_nctrlsb", prefix);
+			if (nvram_match(sb, "upper"))
+				{
+				sprintf(ht,"40+");
+				}
+			else
+				{
+				sprintf(ht,"40-");
+				}
+			}
+
+		}
+	else
+		{
+		sprintf(ht,"20");
+		}
+	// todo: check if hardware is able to do the flags
+	// nsmx supports them
+	fprintf(fp, "ht_capab=[HT%s][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n",ht);
+	char *mode = nvram_nget("%s_mode", prefix);
+	if (!strcmp(mode, "wdsap"))
+		fprintf(fp, "wds_sta=1\n");
 	fprintf(fp, "wmm_enabled=1\n");
 	char macaddr[32];
 	getMacAddr(prefix, macaddr);
