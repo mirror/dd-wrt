@@ -673,6 +673,14 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) 
 		fprintf(fp, "ieee80211n=1\n");
 		ieee80211n=1;
 		}
+	if (!strcmp(netmode, "n2-only")) {
+		fprintf(fp, "ieee80211n=1\n");
+		ieee80211n=1;
+		}
+	if (!strcmp(netmode, "n5-only")) {
+		fprintf(fp, "ieee80211n=1\n");
+		ieee80211n=1;
+		}
 	if (ieee80211n == 1)
 		{
 		char bw[32];
