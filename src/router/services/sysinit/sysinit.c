@@ -400,7 +400,8 @@ static void buffalo_defaults(int force)
 			nvram_set("ath1_regdomain", "CHINA");
 		} else if (!strcmp(region, "KR")) {
 			nvram_set("ath1_regdomain", "KOREA_REPUBLIC");
-		}#endif
+		}
+#endif
 	}
 }
 #endif
