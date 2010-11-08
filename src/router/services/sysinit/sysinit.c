@@ -379,7 +379,11 @@ static void buffalo_defaults(int force)
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("ath0_regdomain", "TAIWAN");
 		} else if (!strcmp(region, "TW")) {
-			nvram_set("ath1_regdomain", "TAIWAN");
+			nvram_set("ath0_regdomain", "TAIWAN");
+		} else if (!strcmp(region, "CH")) {
+			nvram_set("ath0_regdomain", "CHINA");
+		} else if (!strcmp(region, "KR")) {
+			nvram_set("ath0_regdomain", "KOREA_REPUBLIC");
 		}
 #ifdef HAVE_WZRHPAG300NH
 		if (!strcmp(region, "US")) {
@@ -392,8 +396,11 @@ static void buffalo_defaults(int force)
 			nvram_set("ath1_regdomain", "TAIWAN");
 		} else if (!strcmp(region, "TW")) {
 			nvram_set("ath1_regdomain", "TAIWAN");
-		}
-#endif
+		} else if (!strcmp(region, "CH")) {
+			nvram_set("ath1_regdomain", "CHINA");
+		} else if (!strcmp(region, "KR")) {
+			nvram_set("ath1_regdomain", "KOREA_REPUBLIC");
+		}#endif
 	}
 }
 #endif
