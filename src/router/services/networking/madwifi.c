@@ -679,7 +679,7 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) 
 	else
 		fprintf(fp, "hw_mode=a\n");
 	if (nvram_match(nfreq,"0"))
-	    fprintf(fp, "channel=2437\n");
+	    fprintf(fp, "channel=6\n");
 	else
 	    fprintf(fp, "channel=%d\n",channel);
 	char regdomain[16];
