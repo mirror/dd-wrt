@@ -678,7 +678,10 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) 
 		fprintf(fp, "hw_mode=g\n");
 	else
 		fprintf(fp, "hw_mode=a\n");
-	fprintf(fp, "channel=%d\n",channel);
+	if (!channel)
+	    fprintf(fp, "channel=6\n");
+	else
+	    fprintf(fp, "channel=%d\n",channel);
 	char regdomain[16];
 	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
