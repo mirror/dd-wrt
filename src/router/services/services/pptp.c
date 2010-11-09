@@ -81,7 +81,7 @@ void start_pptpd(void)
 		fprintf(fp, "mppc\n"
 		"debug\n"
 		"logfd 2\n"
-		"connections 254\n"	//allows X concurrent connections (default 100)
+//disable 4 now		"connections 254\n"	//allows X concurrent connections (default 100)
 		"ms-ignore-domain\n"
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
 		"ip-up-script /tmp/pptpd/ip-up\n"
