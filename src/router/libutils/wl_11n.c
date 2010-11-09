@@ -41,12 +41,6 @@
 #include "../madwifi.dev/madwifi_mimo.dev/core/net80211/ieee80211_crypto.h"
 #include "../madwifi.dev/madwifi_mimo.dev/core/net80211/ieee80211_ioctl.h"
 
-struct wifi_channels {
-	int channel;
-	int freq;
-	int noise;
-};
-
 static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 {
 	struct ieee80211req_chaninfo chans;
@@ -81,6 +75,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	struct wifi_channels *list =
 	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
 					   (achans.ic_nchans + 1));
+	(void)memset(list, 0, (sizeof(struct wifi_channels)*((achans.ic_nchans + 1))));
 
 	char wl_mode[16];
 	char wl_turbo[16];

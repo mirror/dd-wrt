@@ -1169,11 +1169,6 @@ int get_radiostate(char *ifname)
 	return 0;
 }
 
-struct wifi_channels {
-	int channel;
-	int freq;
-	int noise;
-};
 
 static inline int iw_get_ext(int skfd,	/* Socket to the kernel */
 			     const char *ifname,	/* Device name */
@@ -1415,6 +1410,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	struct wifi_channels *list =
 	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
 						(achans.ic_nchans + 1));
+	(void)memset(list, 0, (sizeof(struct wifi_channels)*((achans.ic_nchans + 1))));
 
 	char wl_mode[16];
 	char wl_turbo[16];
