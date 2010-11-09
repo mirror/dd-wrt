@@ -83,7 +83,7 @@ void start_openvpnserver(void)
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
-			fprintf(fp, "push \"redirect-gateway\"\n");
+			fprintf(fp, "push \"redirect-gateway def1\"\n");
 		if (nvram_match("openvpn_proto", "udp"))
 			fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 		else		//TCP_NODELAY is generally a good latency optimization
