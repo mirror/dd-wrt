@@ -9,6 +9,7 @@
 #include <stdarg.h>
 
 #include <broadcom.h>
+#include <wlutils.h>
 #include <cymac.h>
 
 char *nvram_selget(webs_t wp, char *name)
@@ -477,19 +478,6 @@ void ej_sas_get_dns_ip(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s",
 		  sas_get_dns_ip(wp, argv[0], atoi(argv[1]), atoi(argv[2])));
 }
-
-#ifdef HAVE_MADWIFI
-struct wifi_channels {
-	int channel;
-	int freq;
-	int noise;
-};
-extern struct wifi_channels *list_channels(char *devnr);
-extern struct wifi_channels *list_channels_11n(char *devnr);
-
-// extern int getchannelcount (void);
-extern int getdevicecount(void);
-#endif
 
 void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 {
