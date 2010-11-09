@@ -254,7 +254,7 @@ if (submitcheck(F))
 var update;
 
 addEvent(window, "load", function() {
-
+<% ifdef("HAVE_ATH9K", "initChannelProperties();"); %>
 	var wl0_mode = "<% nvram_get("wl0_mode"); %>";
 	   if (wl0_mode=="ap" || wl0_mode=="infra")
 	{
@@ -278,6 +278,62 @@ addEvent(window, "unload", function() {
 
 });
 
+function setChannelProperties(channels) {
+	index = channels.selectedIndex;
+	properties = eval('(' + channels[index].getAttribute('rel') + ')' );
+
+	// get the interface label
+	var iflabel = channels.name.substr( 0, channels.name.length - 8);
+
+	// check for HT40 upper / lower channel
+	var nctrlsb = document.forms[0][iflabel + '_nctrlsb'];
+	if( nctrlsb ) {
+
+		var selected = 0;
+		if( nctrlsb.length ) {
+			selected = nctrlsb.options[nctrlsb.selectedIndex].value;
+		}
+
+		// remove unneeded the entries
+		while(nctrlsb.length) {
+			nctrlsb.remove(0); 
+		}
+
+		// auto channel
+		if( channels[index].value == '0' ) {
+			nctrlsb.options[nctrlsb.length] = new Option( 'auto', 'auto' );
+		} else {
+
+			// HT40 minus
+			if( properties.HT40minus == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( 'lower', 'lower' );
+			}
+	
+			if( properties.HT40plus == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( 'upper', 'upper' );
+			}
+		}
+
+		// adjust selected index
+		nctrlsb.selectedIndex = 0;
+		for( i = 0; i < nctrlsb.length; i++) {
+			if( nctrlsb.options[i].value == selected ) {
+				nctrlsb.selectedIndex = i;
+			}
+		}
+	}
+}
+
+function initChannelProperties() {
+	for(j = 0; j < document.forms[0].elements.length; j++) {
+		element = document.forms[0].elements[j];
+		if( element.name) {
+			if( element.name.substr( element.name.length - 8, 8) == '_channel' && element.getAttribute('rel') == 'ath9k' ) {
+				setChannelProperties(element);
+			}
+		}
+	}
+}
 		//]]>
 		</script>
 	</head>
