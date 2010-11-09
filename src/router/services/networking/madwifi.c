@@ -222,14 +222,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			background = "-Bddd";
 	}
 
-		char driver[32];
+	char driver[32];
 #ifdef HAVE_ATH9K
-		if (is_ath9k(prefix))
-			sprintf(driver, "-Dnl80211");
-		else
+	if (is_ath9k(prefix))
+		sprintf(driver, "-Dnl80211");
+	else
 #endif
-			sprintf(driver, "-Dmadwifi");
-
+		sprintf(driver, "-Dmadwifi");
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
@@ -615,7 +614,8 @@ static void do_hostapd(char *fstr, char *prefix)
 }
 
 #ifdef HAVE_ATH9K
-void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) {
+void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
+{
 	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
 	fprintf(fp, "wmm_ac_bk_cwmax=10\n");
 	fprintf(fp, "wmm_ac_bk_aifs=7\n");
@@ -655,69 +655,41 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) 
 
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	char ht[5];
-	int ieee80211n=0;
-	if (!strcmp(netmode, "mixed"))
-			{
-			fprintf(fp, "ieee80211n=1\n");
-			ieee80211n=1;
-			}
-	// if (!strcmp(netmode, "b-only")) ham wa garnuech
-	// if (!strcmp(netmode, "g-only"))  garnix machen
-	// if (!strcmp(netmode, "bg-mixed")) garnix machen
-	// if (!strcmp(netmode, "a-only")) garnix machen
-	if (!strcmp(netmode, "ng-only")) {
+	if (!strcmp(netmode, "ng-only") ||	//
+	    !strcmp(netmode, "na-only") ||	//
+	    !strcmp(netmode, "n2-only") ||	//
+	    !strcmp(netmode, "n5-only") ||	//
+	    !strcmp(netmode, "mixed")) {
 		fprintf(fp, "ieee80211n=1\n");
-		ieee80211n=1;
-		}
-	if (!strcmp(netmode, "na-only")) {
-		fprintf(fp, "ieee80211n=1\n");
-		ieee80211n=1;
-		}
-	if (!strcmp(netmode, "n2-only")) {
-		fprintf(fp, "ieee80211n=1\n");
-		ieee80211n=1;
-		}
-	if (!strcmp(netmode, "n5-only")) {
-		fprintf(fp, "ieee80211n=1\n");
-		ieee80211n=1;
-		}
-	if (ieee80211n == 1)
-		{
 		char bw[32];
 		sprintf(bw, "%s_channelbw", prefix);
-		if (nvram_match(bw, "20"))
-			{
-			sprintf(ht,"20");
-			}
-		else if (nvram_match(bw, "40") || nvram_match(bw, "2040"))
-			{
+		if (nvram_match(bw, "20")) {
+			sprintf(ht, "20");
+		} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
-			if (nvram_match(sb, "upper"))
-				{
-				sprintf(ht,"40+");
-				}
-			else
-				{
-				sprintf(ht,"40-");
-				}
+			if (nvram_match(sb, "upper")) {
+				sprintf(ht, "40+");
+			} else {
+				sprintf(ht, "40-");
 			}
+		}
 
-		}
-	else
-		{
-		sprintf(ht,"20");
-		}
+	} else {
+		sprintf(ht, "20");
+	}
 	// todo: check if hardware is able to do the flags
 	// nsmx supports them
-	fprintf(fp, "ht_capab=[HT%s][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n",ht);
+	fprintf(fp,
+		"ht_capab=[HT%s][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n",
+		ht);
 	char *mode = nvram_nget("%s_mode", prefix);
 	if (!strcmp(mode, "wdsap"))
 		fprintf(fp, "wds_sta=1\n");
 	fprintf(fp, "wmm_enabled=1\n");
 	char macaddr[32];
 	getMacAddr(prefix, macaddr);
-	fprintf(fp, "bssid=%s\n",macaddr);
+	fprintf(fp, "bssid=%s\n", macaddr);
 	char isolate[32];
 	char broadcast[32];
 	sprintf(isolate, "%s_ap_isolate", prefix);
@@ -730,21 +702,21 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE *fp) 
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 	static char nfreq[16];
 	sprintf(nfreq, "%s_channel", prefix);
-	int channel=ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
+	int channel = ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
 	// i know that's not the right way.. autochannel is 0
-	if(channel < 36)
+	if (channel < 36)
 		fprintf(fp, "hw_mode=g\n");
 	else
 		fprintf(fp, "hw_mode=a\n");
-	if (nvram_match(nfreq,"0"))
-	    fprintf(fp, "channel=6\n");
+	if (nvram_match(nfreq, "0"))
+		fprintf(fp, "channel=6\n");
 	else
-	    fprintf(fp, "channel=%d\n",channel);
+		fprintf(fp, "channel=%d\n", channel);
 	char regdomain[16];
 	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
-	country=nvram_default_get(regdomain, "US");
-	fprintf(fp, "country_code=%s\n",getIsoName(country));
+	country = nvram_default_get(regdomain, "UNITED_STATES");
+	fprintf(fp, "country_code=%s\n", getIsoName(country));
 	char *ssid;
 	ssid = nvram_nget("%s_ssid", prefix);
 	fprintf(fp, "ssid=%s\n", ssid);
@@ -764,7 +736,7 @@ void get_uuid(char *uuid_str)
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		close(s);
 	}
-	
+
 	const unsigned char *addr[2];
 	unsigned int len[2];
 	unsigned char hash[20];
@@ -780,12 +752,12 @@ void get_uuid(char *uuid_str)
 
 	addr[0] = nsid;
 	len[0] = sizeof(nsid);
-	addr[1] = (unsigned char*)ifr.ifr_hwaddr.sa_data;
+	addr[1] = (unsigned char *)ifr.ifr_hwaddr.sa_data;
 	len[1] = 6;
 
 	sha1_begin(&ctx);
-	sha1_hash(addr[0],len[0], &ctx);
-	sha1_hash(addr[1],len[1], &ctx);
+	sha1_hash(addr[0], len[0], &ctx);
+	sha1_hash(addr[1], len[1], &ctx);
 	sha1_end(hash, &ctx);
 	memcpy(bin, hash, 16);
 
@@ -794,13 +766,13 @@ void get_uuid(char *uuid_str)
 
 	/* Variant specified in RFC 4122 */
 	bin[8] = 0x80 | (bin[8] & 0x3f);
-	
+
 	sprintf(uuid_str, "%02x%02x%02x%02x-%02x%02x-%02x%02x-"
-				      "%02x%02x-%02x%02x%02x%02x%02x%02x",
-			  bin[0], bin[1], bin[2], bin[3],
-			  bin[4], bin[5], bin[6], bin[7],
-			  bin[8], bin[9], bin[10], bin[11],
-			  bin[12], bin[13], bin[14], bin[15]);
+		"%02x%02x-%02x%02x%02x%02x%02x%02x",
+		bin[0], bin[1], bin[2], bin[3],
+		bin[4], bin[5], bin[6], bin[7],
+		bin[8], bin[9], bin[10], bin[11],
+		bin[12], bin[13], bin[14], bin[15]);
 
 }
 
@@ -838,37 +810,37 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
-		setupHostAP_generic_ath9k(prefix,driver,iswan, fp);
+		setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
 		/*
-		char key[16];
-		int cnt = 1;
-		int i;
-		char bul[8];
-		char *authmode = nvram_nget("%s_authmode", prefix);
-		if (!strcmp(authmode, "shared"))
-			sysprintf("iwpriv %s authmode 2", prefix);
-		else if (!strcmp(authmode, "auto"))
-			sysprintf("iwpriv %s authmode 4", prefix);
-		else
-			sysprintf("iwpriv %s authmode 1", prefix);
-		for (i = 1; i < 5; i++) {
-			char *athkey = nvram_nget("%s_key%d", prefix, i);
+		   char key[16];
+		   int cnt = 1;
+		   int i;
+		   char bul[8];
+		   char *authmode = nvram_nget("%s_authmode", prefix);
+		   if (!strcmp(authmode, "shared"))
+		   sysprintf("iwpriv %s authmode 2", prefix);
+		   else if (!strcmp(authmode, "auto"))
+		   sysprintf("iwpriv %s authmode 4", prefix);
+		   else
+		   sysprintf("iwpriv %s authmode 1", prefix);
+		   for (i = 1; i < 5; i++) {
+		   char *athkey = nvram_nget("%s_key%d", prefix, i);
 
-			if (athkey != NULL && strlen(athkey) > 0) {
-				sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey);	// setup wep
-			}
-		}
-		sysprintf("iwconfig %s key [%s]", prefix,
-			  nvram_nget("%s_key", prefix));
-				wep_default_key=
-		*/
+		   if (athkey != NULL && strlen(athkey) > 0) {
+		   sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey); // setup wep
+		   }
+		   }
+		   sysprintf("iwconfig %s key [%s]", prefix,
+		   nvram_nget("%s_key", prefix));
+		   wep_default_key=
+		 */
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 	} else if (nvram_match(akm, "disabled")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
-		setupHostAP_generic_ath9k(prefix,driver,iswan, fp);
+		setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 #endif
@@ -926,8 +898,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 #endif
 //# If UUID is not configured, it will be generated based on local MAC address. 
 				char uuid[64];
-				get_uuid(uuid); 
-                    		fprintf(fp,"uuid=%s\n",uuid);
+				get_uuid(uuid);
+				fprintf(fp, "uuid=%s\n", uuid);
 				fprintf(fp,
 					"wps_pin_requests=/var/run/hostapd.pin-req\n");
 				fprintf(fp, "device_name=%s\n",
@@ -939,7 +911,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				fprintf(fp, "serial_number=12345\n");
 				fprintf(fp, "device_type=6-0050F204-1\n");
 				fprintf(fp, "os_version=01020300\n");
-				fprintf(fp, "config_methods=label display push_button keypad\n");
+				fprintf(fp,
+					"config_methods=label display push_button keypad\n");
 			}
 #endif
 		} else {
@@ -1033,9 +1006,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			  server, port, share);
 	} else {
 #ifdef HAVE_ATH9K
-	if (!is_ath9k(prefix))
+		if (!is_ath9k(prefix))
 #endif
-		sysprintf("iwconfig %s key off", prefix);
+			sysprintf("iwconfig %s key off", prefix);
 	}
 
 }
@@ -2315,10 +2288,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	eval("killall", "-9", "roaming_daemon");
 	if (getSTA() || getWET()) {
 #ifdef HAVE_ATH9K
-	// disable for now, till fixed
-	if (0) 
+		// disable for now, till fixed
+		if (0)
 #endif
-		eval("roaming_daemon");
+			eval("roaming_daemon");
 	}
 
 	int cnt = getifcount("wifi");
