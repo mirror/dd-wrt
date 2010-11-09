@@ -901,19 +901,6 @@ void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
-#ifdef HAVE_MADWIFI
-struct wifi_channels {
-	int channel;
-	int freq;
-	int noise;
-};
-extern struct wifi_channels *list_channels(char *devnr);
-extern struct wifi_channels *list_channels_11n(char *devnr);
-
-// extern int getchannelcount (void);
-extern int getdevicecount(void);
-#endif
-
 static char *selmatch(char *var, char *is, char *ret)
 {
 	if (nvram_match(var, is))
@@ -2320,11 +2307,16 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label4)</script></div>\n<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n",
-			  wl_channel);
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label4)</script></div>\n");
+#ifdef HAVE_ATH9K
+		if(is_ath9k(prefix))
+			websWrite(wp, "<select name=\"%s\" rel=\"ath9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n",wl_channel);
+		else
+#endif
+			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 #ifdef HAVE_MADWIFI
 		struct wifi_channels *chan;
-		char cn[32];
+		char cn[128];
 		char fr[32];
 		int gotchannels = 0;
 
@@ -2340,9 +2332,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #endif
 #ifdef HAVE_ATH9K
 			if (is_ath9k(prefix)) {
-				chan = list_channels_ath9k(prefix);
+				chan = list_channels_ath9k(prefix,"DE",20, 0xff);
 				if (chan == NULL)
-					chan = list_channels_ath9k(dev);
+					chan = list_channels_ath9k(dev,"DE",20,0xff);
 				gotchannels = 1;
 			}
 #endif
@@ -2362,22 +2354,39 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					      "0") ? "selected=\\\"selected\\\""
 				  : "");
 			int i = 0;
+			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
 
 			while (chan[i].freq != -1) {
 				cprintf("%d\n", chan[i].channel);
 				cprintf("%d\n", chan[i].freq);
 
+#ifdef HAVE_ATH9K
+			if (nvram_match("ath9k_channeldebug", "1"))
+				{
+				sprintf(cn, "%d (-%d,+%d,o%d,d%d,m%d,nofdm%d)", chan[i].channel, chan[i].ht40minus,chan[i].ht40plus,chan[i].outdoor,chan[i].dfs,chan[i].max_eirp,chan[i].no_ofdm);
+				}
+			else
 				sprintf(cn, "%d", chan[i].channel);
-				sprintf(fr, "%d", chan[i].freq);
+#else
+				sprintf(cn, "%d", chan[i].channel);
+#endif
+				sprintf(fr, "%d", chan[i].freq );
 				int freq = get_wififreq(prefix, chan[i].freq);
 				if (freq != -1)
 					websWrite(wp,
+#ifdef HAVE_ATH9K
+						  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"HT40minus\\\":%d,\\\"HT40plus\\\":%d}\\\'%s>%s - %d MHz</option>\");\n",
+						  fr, chan[i].ht40minus, chan[i].ht40plus, nvram_match(wl_channel,
+								  fr) ?
+						  " selected=\\\"selected\\\"" :
+						  "", cn, (freq));
+#else
 						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
 						  fr, nvram_match(wl_channel,
 								  fr) ?
 						  "selected=\\\"selected\\\"" :
 						  "", cn, (freq));
-				// free (chan[i].freq);
+#endif
 				i++;
 			}
 			free(chan);

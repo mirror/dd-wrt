@@ -578,6 +578,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_WPS
 	"HAVE_WPS",
 #endif
+#ifdef HAVE_ATH9K
+	"HAVE_ATH9K",
+#endif
 	NULL
 };
 
