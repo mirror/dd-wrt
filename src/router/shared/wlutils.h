@@ -85,7 +85,26 @@ extern int getNoise_ath9k(char *ifname, unsigned char *mac);
 extern int getUptime_ath9k(char *ifname, unsigned char *mac);
 extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 
+#if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+struct wifi_channels {
+	int channel;
+	int freq;
+	int noise;
+	unsigned char ht40minus; 
+	unsigned char ht40plus; 
+	unsigned char outdoor; 
+	unsigned char dfs; 
+	int max_eirp;
+	unsigned char no_ofdm;
+};
+
+extern struct wifi_channels *list_channels_11n(char *devnr);
+extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country,int max_bandwidth_khz, unsigned char band);
+extern int getdevicecount(void);
+#endif
+
 #ifdef HAVE_MADWIFI
+extern struct wifi_channels *list_channels(char *devnr);
 int get_radiostate(char *ifname);
 
 int isAssociated(char *ifname);
