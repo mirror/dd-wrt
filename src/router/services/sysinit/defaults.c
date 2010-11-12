@@ -76,6 +76,8 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #elif HAVE_ALFA_BRANDING
 	{"router_style", "xirian", 0},
+#elif HAVE_CARLSONWIRELESS
+	{"router_style", "carlson", 0},
 #else
 	{"router_style", "elegant", 0},
 #endif
@@ -159,6 +161,8 @@ struct nvram_tuple srouter_defaults[] = {
 	 */
 #ifdef HAVE_POWERNOC_WOAP54G
 	{"lan_proto", "static", 0},	/* [static|dhcp] */
+#elif HAVE_CARLSONWIRELESS
+	{"lan_proto", "static", 0},	/* [static|dhcp] */
 #else
 	{"lan_proto", "dhcp", 0},	/* [static|dhcp] */
 #endif
@@ -203,6 +207,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath1_regdomain", "GERMANY", 0},	/* LAN IP address */
 	{"ath2_regdomain", "GERMANY", 0},	/* LAN IP address */
 	{"ath3_regdomain", "GERMANY", 0},	/* LAN IP address */
+#elif HAVE_CARLSONWIRELESS
+	{"lan_ipaddr", "192.168.2.20", 0},	/* LAN ip address */
+	{"ath0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
+	{"ath1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
+	{"ath2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
 #else
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #endif
@@ -293,6 +302,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_XIOCOM
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_CARLSONWIRELESS
+	{"wan_proto", "disabled", 0}	/* [static|dhcp|pppoe|disabled] */
 #else
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #endif
@@ -540,6 +551,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_username", "bJz7PcC1rCRJQ", 0},	/* Username */
 #elif HAVE_ERC
 	{"http_username", "$1$OIw4f9TB$/dcveO2p0zs7eH0gHgsyw0", 0},
+#elif HAVE_CARLSONWIRELESS
+	{"http_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F.", 0},	/* HTTP username) */
 #else
 	{"http_username", "bJ/GddyoJuiU2", 0},	/* Username */
 #endif
@@ -565,6 +578,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_passwd", "$1$o.4B3QRb$KB7.8AOgnesREpnv8Zhfx1", 0},
 #elif HAVE_BKM
 	{"http_passwd", "$1$sur0onKC$Ltnjj7PBVQtmVTNYPb5XF0", 0},
+#elif HAVE_CARLSONWIRELESS
+	{"http_passwd", "$1$y5qEiLaV$KNvLd5jrLCfYko/e6e7lZ1", 0},	/* HTTP password) */
 #else
 	{"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
@@ -632,6 +647,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
 #ifdef HAVE_DDLAN
 	{"wl_distance", "2000", 0},	/* ack timing, distance in meters */
+#elif HAVE_CARLSONWIRELESS
+	{"wl_distance", "0", 0},	/* ack timing, distance in meters */
+	{"ath0_distance", "0", 0},	/* ack timing, distance in meters */
 #else
 	{"wl_distance", "2000", 0},	/* ack timing, distance in meters */
 #endif
@@ -709,6 +727,14 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_NEXTMEDIA)
 	{"wl0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_CARLSONWIRELESS)
+	{"wl0_ifname", "ath0", 0},		/* Wireless interface name) */
+	{"wl0_ssid", "Carlson", 0},		/* Service set ID (network name) */
+	{"ath0_ssid", "Carlson", 0},		/* Service set ID (network name) */
+	{"ath0_nctrlsb", "upper", 0},		/* ath0 11n sub channel */
+	{"ath0_crypto", "aes", 0},		/* ath0 encryption type */
+	{"ath0_security_mode", "psk2", 0},	/* ath0 encryption type */
+	{"ath0_txpwrdbm", "19", 0},		/* ath0 transmit power */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
@@ -844,12 +870,16 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #endif
+#ifdef HAVE_CARLSONWIRELESS
+	{"ath0_channelbw", "40", 0},	/* ath0 channel bandwidth */
+#else
 	{"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 	{"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 	{"ath2_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 	{"ath3_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 	{"ath4_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 	{"ath5_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
+#endif
 
 #ifdef HAVE_DDLAN
 	{"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
@@ -863,6 +893,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
 	{"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif HAVE_CARLSONWIRELES
+	{"ath0_mode", "wdsap", 0},	/* AP mode (wdsap) */
 #else
 	{"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
 	{"ath1_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
@@ -934,8 +966,14 @@ struct nvram_tuple srouter_defaults[] = {
 					 * "disabled" (allow all) */
 	{"wl_macmode1", "disabled", 0},	/* "disabled" or "other" for WEBB *//* Add */
 #ifdef HAVE_MADWIFI
+#ifdef HAVE_CARLSONWIRELESS
+	{"ath0_channel", "5180", 0},	/* 5275ath0 frequency */
+	{"ath0_rxantenna", "3", 0},
+	{"ath0_txantenna", "3", 0},
+#else
 	{"ath0_channel", "0", 0},	/* Channel number */
 	{"ath1_channel", "0", 0},	/* Channel number */
+#endif
 #else
 
 	{"wl0_channel", "6", 0},	/* Channel number */
@@ -989,6 +1027,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_net_mode", "b-only", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
 #endif
+#elif HAVE_CARLSONWIRELESS
+	{"ath0_net_mode", "n5-only", 0},/* ath0 wireless mode */
 #else
 	{"wl_net_mode", "mixed", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
@@ -1082,8 +1122,13 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
+#ifdef HAVE_CARLSONWIRELESS
+	{"ath0_akm", "psk2", 0},
+	{"ath0_wpa_psk", "7078227000", 0},	/* ath0 encryption key */
+#else
 	{"ath0_akm", "disabled", 0},
 	{"ath0_wpa_psk", "", 0},	/* WPA pre-shared key */
+#endif
 	{"ath0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
 	{"ath0_radius_port", "1812", 0},	/* RADIUS server UDP port */
 	{"ath0_radius_ipaddr", "", 0},	/* RADIUS server IP address */
@@ -1215,6 +1260,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "BKM-HSDL", 0},
 #elif  HAVE_ERC
 	{"router_name", "RemoteEngineer", 0},
+#elif  HAVE_CARLSONWIRELESS
+	{"router_name", "CWT", 0},		/* Router name) */
 #else
 	{"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -2410,6 +2457,10 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_ERC
 	{"newhttp_passwd", "$1$.V44ffYt$6ttOdlItuYV6uvi..vvoO/", 0},
+#endif
+#ifdef HAVE_CARLSONWIRELESS
+	{"newhttp_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F.", 0},	/* HTTP username) */
+	{"newhttp_passwd", "$1$y5qEiLaV$KNvLd5jrLCfYko/e6e7lZ1", 0},	/* HTTP password) */
 #endif
 #ifdef HAVE_MADWIFI
 	/*
