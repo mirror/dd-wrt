@@ -479,6 +479,8 @@ void setRouter(char *name)
 #else
 	nvram_set(NVROUTER, "Excellent");
 #endif
+#elif HAVE_CARLSONWIRELESS
+	nvram_set(NVROUTER, "LH-135/270 ST");
 #else
 	if (name)
 		nvram_set(NVROUTER, name);
