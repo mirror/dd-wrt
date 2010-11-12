@@ -169,7 +169,7 @@ document.write("<\/tr>");
 <br /-->
 <!-- AOSS end -->
 <% ifndef("HAVE_WPS", "<!--"); %>
-				<h2>WPS<!-- % tran(""); %--></h2>
+				<h2>WPS</h2>
 				<fieldset>
 					<legend><% tran("aoss.wps"); %></legend>
 					<div class="setting">
