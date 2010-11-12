@@ -445,6 +445,13 @@ endif
 ifeq ($(CONFIG_CARLSONWIRELESS),y)
 	cp -f carlsonwireless/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f carlsonwireless/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+	cp -f carlsonwireless/dd-logo.png $(INSTALLDIR)/www/images/dd-logo.png
+	cp carlsonwireless/help/* $(INSTALLDIR)/www/help
+	mkdir $(INSTALLDIR)/www/style/carlson
+	cp elegant/style.css $(INSTALLDIR)/www/style/carlson
+	cp elegant/style_ie.css $(INSTALLDIR)/www/style/carlson
+#	cp carlsonwireless/common.js $(INSTALLDIR)/www
+#	cp carlsonwireless/About.htm $(INSTALLDIR)/www
 endif
 
 ifneq ($(CONFIG_REGISTER),y)
