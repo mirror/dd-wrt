@@ -312,9 +312,9 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6856, "sierra", "2", "0", 1, NULL, "Sierra Wireless ATT USB Connect 881 Modem Mode"},	//
 	{0x1199, 0x6859, "sierra", "2", "0", 1, NULL, "Sierra Wireless Modem Mode"},	//
 	{0x1199, 0x685a, "sierra", "2", "0", 1, NULL, "Sierra Wireless Modem Mode"},	//
-	{0x1199, 0x6880, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 885"},	//
-	{0x1199, 0x6890, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 888"},	//
-	{0x1199, 0x6893, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},	//
+	{0x1199, 0x6880, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 885"},	//
+	{0x1199, 0x6890, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 888"},	//
+	{0x1199, 0x6893, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 889"},	//
 //      {0x1199, 0x68a3, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},   //alternate variant
 	{0x1199, 0x68a3, "sierra", "2", "0", 1, &reset_mc, "Sierra Wireless MC8700"},	//
 //option/huawei
