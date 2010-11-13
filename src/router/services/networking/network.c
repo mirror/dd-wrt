@@ -2967,7 +2967,7 @@ void start_wan(int status)
 				dial = "ATDT#777";
 			fprintf(fp,
 				"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",
-				dial, nvram_safe_get("3gdata"));
+				dial, controldevice);
 			if (strlen(nvram_safe_get("ppp_username")))
 				fprintf(fp, "user '%s'\n",
 					nvram_safe_get("ppp_username"));
