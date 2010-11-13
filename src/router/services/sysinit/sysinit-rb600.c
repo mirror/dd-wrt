@@ -61,6 +61,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	eval("mount", "-o", "remount,rw", "/dev/root");
+	eval("mount", "-o", "remount,rw", "/dev/sda1","/");
 	sleep(1);		//give some time for remount
 	eval("mkdir", "-p", "/usr/local/nvram");
 	if (!nvram_match("disable_watchdog", "1"))
@@ -76,7 +77,7 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 
 	//for extension board
-	insmod("atl1e");	//rb800 only as it seems
+	insmod("atl1c");	//rb800 only as it seems
 	insmod("gianfar_driver");	//rb800 only as it seems
 	insmod("via-rhine");
 	insmod("tulip");
