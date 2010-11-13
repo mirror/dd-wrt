@@ -316,7 +316,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6890, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 888"},	//
 	{0x1199, 0x6893, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 889"},	//
 //      {0x1199, 0x68a3, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},   //alternate variant
-	{0x1199, 0x68a3, "sierra", "2", "0", 1, &reset_mc, "Sierra Wireless MC8700"},	//
+	{0x1199, 0x68a3, "sierra", "2", "2", 1, &reset_mc, "Sierra Wireless MC8700/Compass Direct IP"},	//
 //option/huawei
 	{0x12d1, 0x1001, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E600/E620 or generic"},	//
 	{0x12d1, 0x1003, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E172/EC27/E220/E230/E270 HSDPA/HSUPA Model"},	//
