@@ -116,7 +116,6 @@ void start_devinit(void)
 //		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
 #endif
-
 	/*
 	 * /tmp 
 	 */
