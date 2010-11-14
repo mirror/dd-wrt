@@ -77,9 +77,10 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 
 	//for extension board
-	insmod("atl1c");	//rb800 only as it seems
 	insmod("fsl_pq_mdio");	//rb800 only as it seems
 	insmod("gianfar_driver");	//rb800 only as it seems
+	insmod("atl1c");	//rb800 only as it seems
+	insmod("via-velocity");
 	insmod("via-rhine");
 	insmod("tulip");
 	struct ifreq ifr;
