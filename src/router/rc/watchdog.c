@@ -15,6 +15,8 @@ static void watchdog(void)
 	int oldstate = -1;
 	int counter = 0;
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
+	if (fd == -1)
+	    fd = open("/dev/watchdog", O_WRONLY);
 
 	if (fd == -1) {
 		return;
