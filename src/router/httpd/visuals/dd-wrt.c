@@ -409,12 +409,16 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 
 		if (cnt == FREQLINE) {
 			getc(fp);
-			char cpuclk[4];
-
-			cpuclk[0] = getc(fp);
-			cpuclk[1] = getc(fp);
-			cpuclk[2] = getc(fp);
-			cpuclk[3] = 0;
+			char cpuclk[7];
+			int i;
+			for (i=0;i<6;i++)
+			    {
+			    int c = getc(fp);
+			    if (c==EOF || c=='\n' || c=='.' || c==0)
+				break;
+			    cpuclk[i]=c;
+			    }
+			cpuclk[i] = 0;
 			websWrite(wp, cpuclk);
 			fclose(fp);
 			return;
