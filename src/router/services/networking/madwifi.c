@@ -807,42 +807,46 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		/* ignore */
 #ifdef HAVE_ATH9K
 		/* don't ignore for ath9k */
-		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
-		fprintf(fp, "interface=%s\n", prefix);
-		setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
-		/*
-		   char key[16];
-		   int cnt = 1;
-		   int i;
-		   char bul[8];
-		   char *authmode = nvram_nget("%s_authmode", prefix);
-		   if (!strcmp(authmode, "shared"))
-		   sysprintf("iwpriv %s authmode 2", prefix);
-		   else if (!strcmp(authmode, "auto"))
-		   sysprintf("iwpriv %s authmode 4", prefix);
-		   else
-		   sysprintf("iwpriv %s authmode 1", prefix);
-		   for (i = 1; i < 5; i++) {
-		   char *athkey = nvram_nget("%s_key%d", prefix, i);
+		if (is_ath9k(prefix)) {
+			sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+			FILE *fp = fopen(fstr, "wb");
+			fprintf(fp, "interface=%s\n", prefix);
+			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
+			/*
+			   char key[16];
+			   int cnt = 1;
+			   int i;
+			   char bul[8];
+			   char *authmode = nvram_nget("%s_authmode", prefix);
+			   if (!strcmp(authmode, "shared"))
+			   sysprintf("iwpriv %s authmode 2", prefix);
+			   else if (!strcmp(authmode, "auto"))
+			   sysprintf("iwpriv %s authmode 4", prefix);
+			   else
+			   sysprintf("iwpriv %s authmode 1", prefix);
+			   for (i = 1; i < 5; i++) {
+			   char *athkey = nvram_nget("%s_key%d", prefix, i);
 
-		   if (athkey != NULL && strlen(athkey) > 0) {
-		   sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey); // setup wep
-		   }
-		   }
-		   sysprintf("iwconfig %s key [%s]", prefix,
-		   nvram_nget("%s_key", prefix));
-		   wep_default_key=
-		 */
-		fclose(fp);
-		do_hostapd(fstr, prefix);
+			   if (athkey != NULL && strlen(athkey) > 0) {
+			   sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey); // setup wep
+			   }
+			   }
+			   sysprintf("iwconfig %s key [%s]", prefix,
+			   nvram_nget("%s_key", prefix));
+			   wep_default_key=
+			 */
+			fclose(fp);
+			do_hostapd(fstr, prefix);
+		}
 	} else if (nvram_match(akm, "disabled")) {
-		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
-		fprintf(fp, "interface=%s\n", prefix);
-		setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
-		fclose(fp);
-		do_hostapd(fstr, prefix);
+		if (is_ath9k(prefix)) {
+			sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+			FILE *fp = fopen(fstr, "wb");
+			fprintf(fp, "interface=%s\n", prefix);
+			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
+			fclose(fp);
+			do_hostapd(fstr, prefix);
+		}
 #endif
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
