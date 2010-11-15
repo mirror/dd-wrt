@@ -143,7 +143,7 @@ static int remotemanage = 0;
 static int remotessh = 0;	/* Botho 03-05-2006 */
 #endif
 
-#ifdef HAVE_TELNETD
+#ifdef HAVE_TELNET
 static int remotetelnet = 0;
 #endif
 
@@ -676,7 +676,7 @@ static void nat_prerouting(void)
 	}
 #endif
 
-#ifdef HAVE_TELNETD
+#ifdef HAVE_TELNET
 	/*
 	 * Enable remote telnet management 
 	 */
@@ -2046,7 +2046,7 @@ static void filter_input(void)
 	}
 #endif
 
-#ifdef HAVE_TELNETD
+#ifdef HAVE_TELNET
 	/*
 	 * Impede DoS/Bruteforce, reduce load on Telnet
 	 */
@@ -2522,7 +2522,7 @@ static void filter_table(void)
 			}
 #endif
 
-#ifdef HAVE_TELNETD
+#ifdef HAVE_TELNET
 			if (!remotetelnet && strlen(wanface) > 0) {
 				save2file
 				    ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
@@ -3058,7 +3058,7 @@ void start_firewall(void)
 		remotessh = 0;
 #endif
 
-#ifdef HAVE_TELNETD
+#ifdef HAVE_TELNET
 	/*
 	 * Remote telnet management 
 	 */
