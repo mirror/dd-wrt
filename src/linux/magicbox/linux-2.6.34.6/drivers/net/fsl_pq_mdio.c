@@ -292,7 +292,6 @@ static int fsl_pq_mdio_probe(struct of_device *ofdev,
 	new_bus->reset = &fsl_pq_mdio_reset,
 	new_bus->priv = priv;
 	fsl_pq_mdio_bus_name(new_bus->id, np);
-	printk(KERN_EMERG "id %s\n",new_bus->id);
 	addrp = of_get_address(np, 0, &size, NULL);
 	if (!addrp) {
 		err = -EINVAL;
@@ -305,7 +304,6 @@ static int fsl_pq_mdio_probe(struct of_device *ofdev,
 		err = -EINVAL;
 		goto err_free_bus;
 	}
-	printk(KERN_EMERG "address %lX\n",addr);
 	map = ioremap(addr, size);
 	if (!map) {
 		err = -ENOMEM;
