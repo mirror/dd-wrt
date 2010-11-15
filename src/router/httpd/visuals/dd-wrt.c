@@ -2373,20 +2373,25 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(fr, "%d", chan[i].freq );
 				int freq = get_wififreq(prefix, chan[i].freq);
 				if (freq != -1)
-					websWrite(wp,
 #ifdef HAVE_ATH9K
+		if(is_ath9k(prefix))
+		{
+					websWrite(wp,
 						  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"HT40minus\\\":%d,\\\"HT40plus\\\":%d}\\\'%s>%s - %d MHz</option>\");\n",
 						  fr, chan[i].ht40minus, chan[i].ht40plus, nvram_match(wl_channel,
 								  fr) ?
 						  " selected=\\\"selected\\\"" :
 						  "", cn, (freq));
-#else
+		}else
+#endif
+		{
+					websWrite(wp,
 						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
 						  fr, nvram_match(wl_channel,
 								  fr) ?
 						  "selected=\\\"selected\\\"" :
 						  "", cn, (freq));
-#endif
+		}
 				i++;
 			}
 			free(chan);
