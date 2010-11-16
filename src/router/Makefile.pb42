@@ -329,6 +329,12 @@ ifeq ($(CONFIG_HTTPD),y)
 	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
 endif
+ifeq ($(CONFIG_KAID),y)
+	cp kaid/kaid $(TARGETDIR)/usr/sbin
+endif
+ifeq ($(CONFIG_RC),y)
+	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+endif
 
 	# optimize the crypto library by removing unneeded symbols
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
@@ -427,12 +433,6 @@ endif
 	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
-ifeq ($(CONFIG_KAID),y)
-	cp kaid/kaid $(TARGETDIR)/usr/sbin
-endif
-ifeq ($(CONFIG_RC),y)
-	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
-endif
 #ifneq ($(CONFIG_NOOPT),y)
 	-./strip_libs.sh $(ARCH)
 #endif
@@ -491,24 +491,41 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 	tools/bufenc/encryptRC4 WZR-HP-G300NH 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg301nh-firmware.enc
 	tools/bufenc/mkfw-multi -hw_ver=3 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "3.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg301nh-firmware.enc $(ARCH)-uclibc/wzrg301nh-firmware_MULTI.enc
 else
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
+#eu-us region
+	tools/bufenc/encryptRC4 WZR-HP-G300NH 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh-firmware.enc $(ARCH)-uclibc/wzrg300nh-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+	tools/bufenc/encryptRC4 WZR-HP-G300NH 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg301nh-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=3 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "3.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg301nh-firmware.enc $(ARCH)-uclibc/wzrg301nh-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+else
 	tools/bufenc/encryptRC4 WZR-HP-G300NH 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh-firmware.enc
 	tools/bufenc/mkfw -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh-firmware.enc $(ARCH)-uclibc/wzrg300nh-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 	tools/bufenc/encryptRC4 WZR-HP-G300NH 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg301nh-firmware.enc
 	tools/bufenc/mkfw -hw_ver=3 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "3.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg301nh-firmware.enc $(ARCH)-uclibc/wzrg301nh-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 endif
 endif
+endif
 
 ifeq ($(CONFIG_WZRHPAG300NH),y)
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300nh-firmware.tftp
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
-	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
-	tools/bufenc/mkfw-multi -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.71 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
+ifeq ($(CONFIG_BUFFALO),y)
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "3.01" "US-EU-AP-TW-KR-CH" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
 else
-	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
-	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+	tools/bufenc/mkfw-multi -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "3.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
+endif
+else
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
+#eu-us region
+	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.71 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "3.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+else
+	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.71 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "3.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 endif
 endif
-
+endif
 
 ifeq ($(CONFIG_RSPRO),y)
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/rspro-firmware.bin $(ARCH)-uclibc/vmlinux.lsx
@@ -592,7 +609,7 @@ ifeq ($(CONFIG_WNDR3700),y)
 	-rm -rf $(ARCH)-uclibc/wndr3700
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
-		-n 'MIPS DD-WRT v24 WNDR3700' \
+		-n 'WNDR3700-V1.0.4.68' \
 		-d $(ARCH)-uclibc/kernel.squashfs \
 		$(ARCH)-uclibc/kernel.uimage
 	./tools/wndr3700/wndr3700 \
@@ -603,7 +620,8 @@ ifeq ($(CONFIG_WNDR3700),y)
 		dd if=$(ARCH)-uclibc/kernel.image bs=1024k conv=sync; \
 		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
 	) > $(ARCH)-uclibc/wndr3700-uimage.bin
-	./tools/wndr3700/mkdniimg -B WNDR3700 -v DD-WRT.v24 -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory.img
+	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_NA.img
+	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r "" -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_WW.img
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/wndr3700-webflash.bin $(ARCH)-uclibc/wndr3700-uimage.bin	
 endif
 ifeq ($(CONFIG_TEW632BRP),y)
@@ -669,12 +687,20 @@ ifeq ($(CONFIG_WR741),y)
 	./tools/tplink/mktplinkfw -B TL-WR741NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR741NDv1-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR741NDv1-firmware.bin mips-uclibc/tplink-WR741NDv1-firmware.bin
 
+	./tools/tplink/mktplinkfw -B TL-WR740NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv1-firmware.bin
+	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR740NDv1-firmware.bin mips-uclibc/tplink-WR740NDv1-firmware.bin
 
 	./tools/tplink/mktplinkfw -B TL-WR841NDv5 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv5-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR841NDv5-firmware.bin mips-uclibc/tplink-WR841NDv5-firmware.bin
 
+	./tools/tplink/mktplinkfw -B TL-WR841NDv7 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv7-firmware.bin
+	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR841NDv7-firmware.bin mips-uclibc/tplink-WR841NDv7-firmware.bin
+
 	./tools/tplink/mktplinkfw -B TL-WR941NDv4 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv4-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR941NDv4-firmware.bin mips-uclibc/tplink-WR941NDv4-firmware.bin
+
+	./tools/tplink/mktplinkfw -B TL-WA901NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv1-firmware.bin
+	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WA901NDv1-firmware.bin mips-uclibc/tplink-WA901NDv1-firmware.bin
 endif
 ifeq ($(CONFIG_WRT400),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/root.wrt400 bs=1048576 conv=sync
