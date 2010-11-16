@@ -1,3 +1,9 @@
+#ifdef __UCLIBC_HAS_LFS__
+#define _FILE_OFFFSET_BITS 64
+#define __USE_LARGEFILE64
+#endif
+
+
 /*
  * sysinit-rb600.c
  *
@@ -119,6 +125,38 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
+
+	//recover nvram if available
+	char dev[64];
+	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		fprintf(stderr, "recover broken nvram\n");
+		sprintf(dev, "/dev/sda");
+		in = fopen64(dev, "rb");
+		fseeko64(in, 0, SEEK_END);
+		__off64_t mtdlen = ftell(in);
+		fseeko64(in, mtdlen-(65536*2), SEEK_SET);
+		unsigned char *mem = malloc(65536);
+		fread(mem, 65536, 1, in);
+		fclose(in);
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
+		    && mem[3] == 0x48) {
+			fprintf(stderr, "found recovery\n");
+			in = fopen64("/usr/local/nvram/nvram.bin", "wb");
+			if (in != NULL) {
+				fwrite(mem, 65536, 1, in);
+				fclose(in);
+				free(mem);
+				eval("sync");
+				sleep(5);
+				eval("event", "5", "1", "15");
+			}
+		}
+		free(mem);
+	} else {
+		fclose(in);
+	}
+
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 
