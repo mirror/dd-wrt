@@ -174,12 +174,6 @@ void start_sysinit(void)
 
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 
-#ifdef HAVE_ERC
-// start sercd
-	system2("/usr/sbin/sercd -e -p 3696 -l "
-		" 5 /dev/tts/2 /var/lock/tty02.lock &");
-#endif
-
 	/*
 	 * Set a sane date 
 	 */
