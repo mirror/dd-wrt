@@ -588,7 +588,6 @@ static char regionCountryCodes[8][31][3] = {
 	{"CH", "CN", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""},
 	{"AP", "AU", "SG", "HK", "PH", "IN", "TH", "MY", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", ""},
 	{"_D", ""  , "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""}
-//	{"AP", "BD", "GU", "HK", "IN", "ID", "KP", "PK", "PG", "PH", "SG", "TH","VN", "KR", "TW", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", ""},
 };
 #endif
 unsigned int getRegDomain(const char *country)
@@ -629,9 +628,8 @@ extern void *getUEnv(char *name);
 static int isValidCountry(char *region, char *country)
 {
 	int i, j;
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 8; i++) {
 		if (!strcmp(region, regionCountryCodes[i][0])) {
-			fprintf(stderr,"match for %s\n",region);
 			for (j = 1; j < 31; j++) {
 				//fprintf(stderr, "[%s] %s\n", country, regionCountryCodes[i][j]);
 				if (!strcmp(country, regionCountryCodes[i][j])) {
@@ -660,7 +658,6 @@ char *getCountryList(void)
 		region = "_D";
 	}
 #endif
-	fprintf(stderr,"region %s\n",region);
 	if (countries == NULL) {
 		int count = 0;
 		for (i = 0; i < N(allCountries); i++) {
@@ -682,7 +679,6 @@ char *getCountryList(void)
 			if (isValidCountry(region, country)) {
 #endif
 				strcat(countries, allCountries[i].name);
-				fprintf(stderr,"countries %s\n",countries);
 				strcat(countries, " ");
 				
 #ifdef HAVE_BUFFALO
