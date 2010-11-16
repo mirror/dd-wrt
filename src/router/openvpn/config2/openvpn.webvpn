@@ -80,7 +80,7 @@
 			<option value="sha1" <% nvram_selected("openvpn_auth","sha1"); %>>SHA1</option>
 			<option value="sha256" <% nvram_selected("openvpn_auth","sha256"); %>>SHA256</option>
 			<option value="sha512" <% nvram_selected("openvpn_auth","sha512"); %>>SHA512</option>
-			<option value="md5" <% nvram_selected("openvpn_auth","md5"); %>>MD5 (fast&unsecure)</option>
+			<option value="md5" <% nvram_selected("openvpn_auth","md5"); %>>MD5</option>
 		</select>
 		</div>
 		<div class="setting">

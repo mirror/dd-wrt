@@ -294,7 +294,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_MAGICBOX
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_RB600
-	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_TW6600
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_XSCALE
@@ -2415,6 +2415,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_cipher", "bf-cbc", 0},
 	{"openvpncl_auth", "sha1", 0},
 	{"openvpncl_adv", "0", 0},
+	{"openvpncl_bridge", "0", 0},
 
 	{"openvpn_enable", "0", 0},
 	{"openvpn_net", "0.0.0.0", 0},
