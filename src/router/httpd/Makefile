@@ -151,6 +151,7 @@ CFLAGS += -DHAVE_RB500
 OBJS += upgrade_rb500.o
 else
 ifneq ($(CONFIG_X86),y)
+ifneq ($(CONFIG_RB600),y)
 ifeq ($(CONFIG_BUFFALO),y)
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 OBJS += upgrade_buffalo.o
@@ -161,6 +162,7 @@ else
 OBJS += upgrade.o
 endif
 CFLAGS += -DHAVE_LOUD
+endif
 endif
 endif
 ifeq ($(CONFIG_DDLINK),y)
@@ -289,6 +291,7 @@ OBJS += upgrade_x86.o
 endif
 ifeq ($(CONFIG_RB600),y)
 CFLAGS += -DHAVE_RB600
+OBJS += upgrade_x86.o
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
