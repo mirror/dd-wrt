@@ -417,9 +417,9 @@ ifeq ($(CONFIG_ERC),y)
 	cp -f erc/common.js $(INSTALLDIR)/www/common.js
 	cp -f erc/help/* $(INSTALLDIR)/www/help
 	cp -f erc/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
-	cp -f erc/*.asp $(INSTALLDIR)/www/
+	-cp -f erc/*.asp $(INSTALLDIR)/www/
 #copy extra scripts and whatever
-	cp -fa erc/extra/* $(INSTALLDIR)/ || true
+	cp -fa erc/extra/* $(INSTALLDIR) || true
 endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
@@ -671,7 +671,7 @@ ifeq ($(CONFIG_SKYTEL),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/skytel/ install
 else
 ifeq ($(CONFIG_ERC),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/erc/common/ install
+	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/erc/common/ install
 else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
 endif
