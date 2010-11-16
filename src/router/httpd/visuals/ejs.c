@@ -1239,7 +1239,6 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 					       entry->d_name);
 					resultcount++;
 					result[resultcount] = NULL;
-					do_ej(NULL, buf, wp, NULL);
 				}
 			} else {
 				if (endswith(entry->d_name, ".webconfig")) {
@@ -1251,7 +1250,6 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 					       entry->d_name);
 					resultcount++;
 					result[resultcount] = NULL;
-					do_ej(NULL, buf, wp, NULL);
 				}
 			}
 
