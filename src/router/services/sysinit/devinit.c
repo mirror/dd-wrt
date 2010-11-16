@@ -132,6 +132,7 @@ void start_devinit(void)
 #endif
 // fix me udevtrigger does not create that (yet) not registered?
 	eval("mknod", "/dev/nvram", "c", "229", "0");
+	eval("mknod", "/dev/watchdog", "c", "10", "130");
 
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
