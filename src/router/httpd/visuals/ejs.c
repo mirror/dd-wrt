@@ -1263,7 +1263,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 				int step = 0;
 			      again:;
 			        if (!result[i][step] || !result[i+1][step])
-			    	    continue 
+			    	    continue;
 				if (result[i][step] == result[i + 1][step]) {
 					step++;
 					goto again;
