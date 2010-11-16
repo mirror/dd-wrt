@@ -64,8 +64,6 @@ void start_sysinit(void)
 	eval("mount", "-o", "remount,rw", "/dev/sda1","/");
 	sleep(1);		//give some time for remount
 	eval("mkdir", "-p", "/usr/local/nvram");
-	if (!nvram_match("disable_watchdog", "1"))
-		eval("watchdog");
 	/*
 	 * Setup console 
 	 */
@@ -121,6 +119,8 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
+	if (!nvram_match("disable_watchdog", "1"))
+		eval("watchdog");
 
 	/*
 	 * Set a sane date 
