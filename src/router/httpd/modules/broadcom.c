@@ -1642,7 +1642,7 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 #ifdef HAVE_X86
 		char drive[64];
 		sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
-		FILE *in = fopen(drive, "r+b");
+		FILE *in = fopen64(drive, "r+b");
 		fseeko64(in, 0, SEEK_END);
 		__off64_t mtdlen = ftell(in);
 		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
@@ -1656,6 +1656,24 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		eval("rm", "-f", "/usr/local/nvram/*");	// delete nvram
 		// database
 		eval("mount", "/usr/local", "-o", "remount,ro");
+		eval("sync");
+#elif HAVE_RB600
+		char drive[64];
+		sprintf(drive, "/dev/sda");
+		FILE *in = fopen64(drive, "r+b");
+		fseeko64(in, 0, SEEK_END);
+		__off64_t mtdlen = ftell(in);
+		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
+		int i;
+		for (i = 0; i < 65536; i++)
+			putc(0, in);	// erase backup area
+		fclose(in);
+		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		eval("rm", "-f", "/usr/local/nvram/*");	// delete nvram
+		eval("sync");
+
+#endif
 #elif HAVE_RB500
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
 		eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
