@@ -1210,6 +1210,9 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 	char buf[256];
 	struct dirent *entry;
 	DIR *directory;
+	int resultcount = 0;
+	char *result[256];
+	result[0] = NULL;
 
 	// display modules
 	int idx;
@@ -1230,16 +1233,55 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 #endif
 					sprintf(buf, "%s/%s", directories[idx],
 						entry->d_name);
+					result[resultcount] =
+					    malloc(strlen(entry->d_name) + 1);
+					strcpy(result[resultcount],
+					       entry->d_name);
+					resultcount++;
+					result[resultcount] = NULL;
 					do_ej(NULL, buf, wp, NULL);
 				}
 			} else {
 				if (endswith(entry->d_name, ".webconfig")) {
 					sprintf(buf, "%s/%s", directories[idx],
 						entry->d_name);
+					result[resultcount] =
+					    malloc(strlen(entry->d_name) + 1);
+					strcpy(result[resultcount],
+					       entry->d_name);
+					resultcount++;
+					result[resultcount] = NULL;
 					do_ej(NULL, buf, wp, NULL);
 				}
 			}
+
 		}
+		/* now sort entries to solve EXT2 unsorted problem */
+		int i, a;
+		for (a = 0; a < resultcount; a++)
+			for (i = 0; i < resultcount - 1; i++) {
+				int step = 0;
+			      again:;
+				if (result[i][step] == result[i + 1][step]) {
+					step++;
+					goto again;
+				}
+				if (result[i][step] > result[i + 1][step]) {
+					char *temp = result[i + 1];
+					result[i + 1] = result[i];
+					result[i] = temp;
+					step = 0;
+				}
+			}
+		for (i = 0; i < resultcount; i++) {
+			sprintf(buf, "%s/%s", directories[idx], result[i]);
+			do_ej(NULL, buf, wp, NULL);
+		}
+		for (i = 0; i < resultcount; i++) {
+			free(result[i]);
+		}
+		resultcount = 0;
+		result[0] = NULL;
 		closedir(directory);
 	}
 	return;
@@ -1527,12 +1569,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		 "setuprouting", "setupvlan", "networking", "setupeop", "", "",
 		 "", "", ""},
 		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
-		 "wirelessRadius", "wirelessSecurity", 
+		 "wirelessRadius", "wirelessSecurity",
 #ifdef HAVE_WPS
 		 "wirelessAossWPS",
 #else
 		 "wirelessAoss",
-#endif		 
+#endif
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
 		{"services", "servicesServices", "servicesRadius",
 		 "servicesPppoesrv", "servicesPptp", "servicesUSB",
