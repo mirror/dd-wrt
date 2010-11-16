@@ -1365,7 +1365,7 @@ static void velocity_init_registers(struct velocity_info *vptr,
 		/*
 		 *	Init CAM filter
 		 */
-		velocity_init_cam_filter(vptr);
+//		velocity_init_cam_filter(vptr);
 
 		/*
 		 *	Set packet filter: Receive directed and broadcast address
@@ -2116,7 +2116,7 @@ static int velocity_rx_srv(struct velocity_info *vptr, int budget_left)
 		/*
 		 *	Don't drop CE or RL error frame although RXOK is off
 		 */
-		if (rd->rdesc0.RSR & (RSR_RXOK | RSR_CE | RSR_RL)) {
+		if (rd->rdesc0.RSR & (RSR_RXOK | RSR_CE | RSR_RL | RSR_VIDM)) {
 			if (velocity_receive_frame(vptr, rd_curr) < 0)
 				stats->rx_dropped++;
 		} else {
