@@ -3684,8 +3684,7 @@ void start_wan_done(char *wan_ifname)
 	inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&lanip);
 	inet_aton(nvram_safe_get("lan_netmask"), (struct in_addr *)&lannm);
 
-	if (wanip != 0 && nvram_match("wan_ipaddr", "0.0.0.0")
-	    && !nvram_match("wan_proto", "disabled")) {
+	if (wanip != 0 && !nvram_match("wan_proto", "disabled")) {
 		int iperror = 0;
 
 		if ((wanip & wannm) == (lanip & wannm))

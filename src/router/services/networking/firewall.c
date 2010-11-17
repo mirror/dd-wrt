@@ -724,7 +724,7 @@ static void nat_prerouting(void)
 	 */
 	suspense = malloc(1);
 	*suspense = 0;
-	count=1;
+	count = 1;
 
 	if (has_gateway()) {
 		/*
@@ -753,6 +753,12 @@ static void nat_prerouting(void)
 		save2file("-A PREROUTING -d %s -j DNAT --to-destination %s%s\n",
 			  wanaddr, lan_cclass, nvram_safe_get("dmz_ipaddr"));
 
+}
+
+static int wanactive(void)
+{
+	return (!nvram_match("wan_proto", "disabled")
+		&& strcmp(wanaddr, "0.0.0.0"));
 }
 
 static void nat_postrouting(void)
@@ -785,8 +791,7 @@ static void nat_postrouting(void)
 	}
 #ifdef HAVE_PPPOESERVER
 	if (nvram_match("pppoeserver_enabled", "1")
-	    && !nvram_match("wan_proto", "disabled")
-	    && strcmp(wanaddr, "0.0.0.0"))
+	    && wanactive())
 		save2file("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",
 			  nvram_safe_get("pppoeserver_remotenet"),
 			  nvram_safe_get("pppoeserver_remotemask"), wanaddr);
@@ -804,8 +809,7 @@ static void nat_postrouting(void)
 			     nvram_safe_get("tvnicfrom"),
 			     nvram_safe_get("tvnicaddr"));
 		}
-		if (strlen(wanface) > 0 && !nvram_match("wan_proto", "disabled")
-		    && strcmp(wanaddr, "0.0.0.0"))
+		if (strlen(wanface) > 0 && wanactive())
 			save2file
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     wanface, wanaddr);
@@ -928,8 +932,7 @@ static void nat_postrouting(void)
 		}
 	} else {
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
-		if (strlen(wanface) > 0 && !nvram_match("wan_proto", "disabled")
-		    && strcmp(wanaddr, "0.0.0.0"))
+		if (strlen(wanface) > 0 && wanactive())
 			if (nvram_match("wl_br1_enable", "1"))
 				save2file
 				    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
@@ -1940,22 +1943,31 @@ static void filter_input(void)
 #ifdef HAVE_OPENVPN
 	//check if ovpn server is running
 	if (nvram_match("openvpn_enable", "1")) {
-	 	save2file("-A INPUT -p %s --dport %s -j ACCEPT\n",nvram_match("openvpn_proto","udp")?"udp":"tcp",nvram_safe_get("openvpn_port"));
-		save2file("-A INPUT -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-		save2file("-A FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
-		save2file("-A FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpn_tuntap"));
+		save2file("-A INPUT -p %s --dport %s -j ACCEPT\n",
+			  nvram_match("openvpn_proto", "udp") ? "udp" : "tcp",
+			  nvram_safe_get("openvpn_port"));
+		save2file("-A INPUT -i %s0 -j ACCEPT\n",
+			  nvram_safe_get("openvpn_tuntap"));
+		save2file("-A FORWARD -i %s0 -j ACCEPT\n",
+			  nvram_safe_get("openvpn_tuntap"));
+		save2file("-A FORWARD -o %s0 -j ACCEPT\n",
+			  nvram_safe_get("openvpn_tuntap"));
 	}
 	//check if ovpn client is running
 	if (nvram_match("openvpncl_enable", "1")) {
 		if (nvram_match("openvpncl_nat", "1"))
-			save2file("-A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",nvram_safe_get("openvpncl_tuntap"));
+			save2file
+			    ("-A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
+			     nvram_safe_get("openvpncl_tuntap"));
 		else {
-			save2file("-A FORWARD -i %s0 -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
-			save2file("-A FORWARD -o %s0 -j ACCEPT\n",nvram_safe_get("openvpncl_tuntap"));
+			save2file("-A FORWARD -i %s0 -j ACCEPT\n",
+				  nvram_safe_get("openvpncl_tuntap"));
+			save2file("-A FORWARD -o %s0 -j ACCEPT\n",
+				  nvram_safe_get("openvpncl_tuntap"));
 		}
 	}
 #endif
-	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0")) {
+	if (wanactive()) {
 		if (nvram_invmatch("dr_wan_rx", "0"))
 			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n",
 				  wanface, RIP_PORT, TARG_PASS);
@@ -2023,17 +2035,17 @@ static void filter_input(void)
 		    ("-A INPUT -p tcp -m tcp -d %s --dport %d -j logaccept\n",
 		     nvram_safe_get("lan_ipaddr"), web_lanport);
 	}
-
 #ifdef HAVE_SSHD
 	/*
 	 * Impede DoS/Bruteforce, reduce load on ssh
 	 */
 #ifndef HAVE_MICRO
 	if (remotessh && nvram_match("limit_ssh", "1")) {
-		save2file("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
-			wanface, nvram_safe_get("sshd_port"));
-		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", 
-			wanface, nvram_safe_get("sshd_port") );
+		save2file
+		    ("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n",
+		     wanface, nvram_safe_get("sshd_port"));
+		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", wanface,
+			  nvram_safe_get("sshd_port"));
 	}
 #endif
 	/*
@@ -2041,7 +2053,8 @@ static void filter_input(void)
 	 * management are not linked anymore 
 	 */
 	if (remotessh) {
-		save2file ("-A INPUT -p tcp -m tcp -d %s --dport %s -j logaccept\n",
+		save2file
+		    ("-A INPUT -p tcp -m tcp -d %s --dport %s -j logaccept\n",
 		     nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
 	}
 #endif
@@ -2052,10 +2065,11 @@ static void filter_input(void)
 	 */
 #ifndef HAVE_MICRO
 	if (remotetelnet && nvram_match("limit_telnet", "1")) {
-		save2file("-A INPUT -i %s -p tcp -m tcp --dport 23 -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n", 
-			wanface);
-		save2file("-A INPUT -i %s -p tcp --dport 23 -j DROP\n", 
-			wanface);		
+		save2file
+		    ("-A INPUT -i %s -p tcp -m tcp --dport 23 -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n",
+		     wanface);
+		save2file("-A INPUT -i %s -p tcp --dport 23 -j DROP\n",
+			  wanface);
 	}
 #endif
 	if (remotetelnet) {
@@ -2067,7 +2081,7 @@ static void filter_input(void)
 	/*
 	 * ICMP request from WAN interface 
 	 */
-	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0"))
+	if (wanactive())
 		save2file("-A INPUT -i %s -p icmp -j %s\n", wanface,
 			  nvram_match("block_wan", "1") ? log_drop : TARG_PASS);
 
@@ -2076,7 +2090,6 @@ static void filter_input(void)
 	 */
 	save2file("-A INPUT -p igmp -j %s\n",
 		  doMultiCast() == 0 ? log_drop : TARG_PASS);
-
 
 #ifdef HAVE_TFTP
 	/*
@@ -2444,9 +2457,9 @@ static void nat_table(void)
 	save2file("*nat\n"
 		  ":PREROUTING ACCEPT [0:0]\n"
 		  ":POSTROUTING ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n");
-	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0")) {
-	    nat_prerouting();
-	    nat_postrouting();
+	if (wanactive()) {
+		nat_prerouting();
+		nat_postrouting();
 	}
 	save2file("COMMIT\n");
 }
@@ -2485,7 +2498,7 @@ static void filter_table(void)
 		}
 	}
 
-	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0")) {
+	if (wanactive()) {
 		/*
 		 * Does it disable the filter? 
 		 */
