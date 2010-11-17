@@ -30,7 +30,6 @@
 #undef CONFIG_AR9100
 #endif
 
-#ifdef CONFIG_AG7240_QOS
 
 #include <net/inet_ecn.h>                /* XXX for TOS */
 #include <linux/if_ether.h>
@@ -48,15 +47,20 @@
 #define ENET_AC_VI       2               /* video */
 #define ENET_AC_VO       3               /* voice */
 
+#define HDR_PACKET_TYPE_MASK    0x0F            
+#define HDR_PRIORITY_SHIFT      0x4
+#define HDR_PRIORITY_MASK       0x3
+#define TOS_ECN_SHIFT           0x2
+#define TOS_ECN_MASK            0xFC
+
 #define TOS_TO_ENET_AC(_tos) (      \
     (((_tos) == 0) || ((_tos) == 3)) ? ENET_AC_BE : \
     (((_tos) == 1) || ((_tos) == 2)) ? ENET_AC_BK : \
     (((_tos) == 4) || ((_tos) == 5)) ? ENET_AC_VI : \
         ENET_AC_VO)
-#endif
 
-//#define CHECK_DMA_STATUS 1
-#define ETH_SOFT_LED 1
+#define CONFIG_CHECK_DMA_STATUS 1
+#define CONFIG_ETH_SOFT_LED 1
 
 #ifdef AG7240_DEBUG
 #define DPRINTF(_fmt,...) do {         \
@@ -91,12 +95,7 @@ typedef struct {
     struct sk_buff *buf_pkt;        /*ptr to skb*/
     int             buf_nds;        /*no. of desc for this skb*/
     ag7240_desc_t  *buf_lastds;     /*the last desc. (for convenience)*/
-#ifdef CHECK_DMA_STATUS
     unsigned long   trans_start;    /*  descriptor time stamp */
-#else
-    uint32_t 	pad;
-
-#endif
 }ag7240_buffer_t;
 
 /*
@@ -136,11 +135,8 @@ typedef struct {
     uint32_t                mac_unit;
     uint32_t                mac_base;
     int                     mac_irq;
-#ifdef CONFIG_AG7240_QOS
+    uint8_t                 mac_noacs;
     ag7240_ring_t           mac_txring[ENET_NUM_AC];
-#else
-    ag7240_ring_t           mac_txring;
-#endif
     ag7240_ring_t           mac_rxring;
     ag7240_stats_t          mac_stats;
     spinlock_t              mac_lock;
@@ -155,9 +151,8 @@ typedef struct {
     struct napi_struct mac_napi;
 #endif
     uint32_t                 mac_ifup;
-#ifdef CHECK_DMA_STATUS
+    uint16_t                mac_flags;
     uint32_t		    dma_check;
-#endif
 }ag7240_mac_t;
 
 #define net_rx_packets      mac_net_stats.rx_packets
@@ -216,6 +211,8 @@ typedef enum {
 
 #define mii_reg(_mac)   (AR7240_MII0_CTRL + ((_mac)->mac_unit * 4))
 #define mii_if(_mac)    (((_mac)->mac_unit == 0) ? mii0_if : mii1_if)
+#define phy_reg_read    ag7240_mii_read
+#define phy_reg_write   ag7240_mii_write
 
 #define ag7240_set_mii_ctrl_speed(_mac, _spd)   do {                        \
     ar7240_reg_rmw_clear(mii_reg(_mac), (3 << 4));                          \
@@ -329,7 +326,6 @@ typedef enum {
 #define AG7240_DMA_DMA_STATE 	       0x3
 #define AG7240_DMA_AHB_STATE 	       0x7
 
-#ifdef CONFIG_AG7240_QOS
 /*
  * QOS register Defines 
  */
@@ -352,7 +348,6 @@ typedef enum {
 #define AG7240_TX_QOS_WGT_2(x)		  ((x & 0x3F) << 20)
 #define AG7240_TX_QOS_WGT_3(x)		  ((x & 0x3F) << 26)
 
-#endif
 /*
  * tx/rx ctrl and status bits
  */
@@ -417,6 +412,18 @@ typedef enum {
 #define AG7240_TOTAL_COL_CNTR		0x10c
 #define AG7240_TX_CRC_ERR_CNTR		0x11c
 
+
+#define AG7240_ETH_CFG                  0x18070000
+#define AG7240_ETH_CFG_RGMII_GE0        (1<<0)
+#define AG7240_ETH_CFG_MII_GE0          (1<<1)
+#define AG7240_ETH_CFG_GMII_GE0         (1<<2)
+#define AG7240_ETH_CFG_MII_GE0_MASTER   (1<<3)
+#define AG7240_ETH_CFG_MII_GE0_SLAVE    (1<<4)
+#define AG7240_ETH_CFG_GE0_ERR_EN       (1<<5)
+#define AG7240_ETH_CFG_SW_ONLY_MODE     (1<<6)
+#define AG7240_ETH_CFG_SW_PHY_SWAP      (1<<7)
+#define AG7240_ETH_CFG_SW_PHY_ADDR_SWAP (1<<8)
+
 /*
  * Everything but TX
  */
@@ -460,7 +467,6 @@ typedef enum {
 #define ag7240_rx_stop(_mac)                                            \
     ag7240_reg_wr((_mac), AG7240_DMA_RX_CTRL, 0)
 
-#ifdef CONFIG_AG7240_QOS
 
 #define ag7240_tx_start_qos(_mac,ac)                                       \
 switch(ac) {  								   \
@@ -478,12 +484,10 @@ switch(ac) {  								   \
 		break;							   \
 }
 
-#else
 
 #define ag7240_tx_start(_mac)                                           \
     ag7240_reg_wr((_mac), AG7240_DMA_TX_CTRL, AG7240_TXE)
 
-#endif
 
 #define ag7240_tx_stop(_mac)						\
     ag7240_reg_wr((_mac), AG7240_DMA_TX_CTRL, 0)
@@ -547,6 +551,7 @@ static inline int ag7240_rx_ring_full(ag7240_mac_t *mac)
     ag7240_reg_wr_nf((_mac), AG7240_DMA_RX_STATUS, AG7240_RX_STATUS_PKT_RCVD);
 #define ag7240_intr_ack_rxovf(_mac)                                           \
     ag7240_reg_wr((_mac), AG7240_DMA_RX_STATUS, AG7240_RX_STATUS_OVF);
+
 /*
  * Not used currently
  */
@@ -577,9 +582,13 @@ static inline int ag7240_rx_ring_full(ag7240_mac_t *mac)
     ag7240_reg_rmw_clear(mac, AG7240_DMA_INTR_MASK,                         \
                         (AG7240_INTR_RX ));
 
+#define ag7240_intr_enable_rxovf(_mac)                                      \
+    ag7240_reg_rmw_set((_mac), AG7240_DMA_INTR_MASK, AG7240_INTR_RX_OVF);
+
 #define ag7240_intr_disable_rxovf(_mac)                                      \
     ag7240_reg_rmw_clear(mac, AG7240_DMA_INTR_MASK,                         \
                         (AG7240_INTR_RX_OVF));
+
 
 
 #define ag7240_intr_enable_recv(_mac)                                      \
@@ -626,6 +635,35 @@ static inline void ag7240_set_mac_speed(ag7240_mac_t *mac, int is100)
 uint16_t ag7240_mii_read(int unit, uint32_t phy_addr, uint8_t reg);
 void ag7240_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data);
 unsigned int s26_rd_phy(unsigned int phy_addr, unsigned int reg_addr);
+
+#define CHECK_DMA_STATUS    0x0001
+#define ETH_SOFT_LED        0x0002
+#define WAN_QOS_SOFT_CLASS      0x0004
+#define ETH_SWONLY_MODE         0x0008
+#define ATHR_S26_HEADER         0x0010
+#define ATHR_S16_HEADER         0x0020
+#define ETH_PKT_INSPECT         0x0040
+
+static inline int
+mac_has_flag(ag7240_mac_t *mac, u_int16_t flag)
+{
+      return ((mac->mac_flags & flag) != 0);
+}
+
+static inline void
+mac_set_flag(ag7240_mac_t *mac, u_int16_t flag)
+{
+    mac->mac_flags |= flag;
+    return;
+    
+}
+
+static inline void
+mac_clear_flag(ag7240_mac_t *mac, u_int16_t flag)
+{
+    mac->mac_flags &= ~flag;
+    return;
+}
 
 #ifdef ETH_SOFT_LED
 /**

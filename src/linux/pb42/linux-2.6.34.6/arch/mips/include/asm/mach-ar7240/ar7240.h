@@ -129,7 +129,14 @@ typedef unsigned int ar7240_reg_t;
 #define AHB_DIV_MASK    0x1
 #define DDR_DIV_SHIFT   22
 #define DDR_DIV_MASK    0x1
-#define AR7240_ETH_PLL_CONFIG           AR7240_PLL_BASE+0x4
+
+#ifdef CONFIG_WASP_SUPPORT
+#define AR7240_DDR_PLL_CONFIG		AR7240_PLL_BASE+0x4
+#define AR7240_DDR_CLK_CTRL		AR7240_PLL_BASE+0x8
+#else
+#define AR7240_ETH_PLL_CONFIG		AR7240_PLL_BASE+0x4
+#endif
+#define AR7242_ETH_XMII_CONFIG		AR7240_PLL_BASE+0x2c
 
 #define AR7240_ETH_INT0_CLK             AR7240_PLL_BASE+0x14
 #define AR7240_ETH_INT1_CLK             AR7240_PLL_BASE+0x18
@@ -720,29 +727,44 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 
 
 /* These are values used in platform.inc to select PLL settings */
+#define AR7240_REV_ID			(AR7240_RESET_BASE + 0x90)
+#define AR7240_REV_ID_MASK		0xffff
+#define AR7240_REV_ID_AR7130		0xa0
+#define AR7240_REV_ID_AR7141		0xa1
+#define AR7240_REV_ID_AR7161		0xa2
+#define AR7240_REV_1_0			0xc0
+#define AR7240_REV_1_1			0xc1
+#define AR7240_REV_1_2			0xc2
+#define AR7241_REV_1_0			0x0100
+#define AR7242_REV_1_0			0x1100
+#define AR7241_REV_1_1			0x0101
+#define AR7242_REV_1_1			0x1101
+#define AR9330_REV_1_0			0x0110
+#define AR9330_REV_1_1			0x0111
 
-#define AR7240_REV_ID           (AR7240_RESET_BASE + 0x90)
-#define AR7240_REV_ID_MASK      0xffff
-#define AR7240_REV_ID_AR7130    0xa0
-#define AR7240_REV_ID_AR7141    0xa1
-#define AR7240_REV_ID_AR7161    0xa2
-#define AR7240_REV_1_0          0xc0
-#define AR7240_REV_1_1          0xc1
-#define AR7240_REV_1_2          0xc2
-#define AR7241_REV_1_0          0x0100
-#define AR7242_REV_1_0          0x1100
-#define AR7241_REV_1_1          0x0101
-#define AR7242_REV_1_1          0x1101
+#define AR9344_REV_1_0			0x2120
+#define AR9342_REV_1_0			0x1120
+#define AR9341_REV_1_0			0x0120
 
-#define is_ar7240()     (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_2) || \
+
+#define is_ar7240()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_1) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_0))
 
-#define is_ar7241()     (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) || \
-                         ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_1))
+#define is_ar7241()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_1))
 
-#define is_ar7242()     (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_0) || \
-                         ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_1))
+#define is_ar7242()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_0) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_1))
+
+#define is_ar9344()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9344_REV_1_0)
+#define is_ar9342()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_0)
+#define is_ar9341()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9341_REV_1_0)
+
+#define is_ar9330()     (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_0) || \
+			((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_1))
+
+#define is_ar934x()	(is_ar9344() || is_ar9342() || is_ar9341())
 
 
 #define AR7240_PLL_USE_REV_ID    0
@@ -778,6 +800,19 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define AR7240_RESET_PCI_BUS                (1 << 1)
 #define AR7240_RESET_PCI_CORE               (1 << 0)
 
+
+#ifdef CONFIG_WASP_SUPPORT
+#define is_wasp()	is_ar934x()
+#define ATH_WMAC_BASE	AR7240_APB_BASE + 0x100000
+#define ATH_WMAC_LEN		0x1ffff /* XXX:Check this */
+#else
+#define is_wasp()		(0)
+#endif
+
+#ifdef CONFIG_MACH_HORNET
+#define ATH_WMAC_BASE	AR7240_APB_BASE + 0x100000
+#define ATH_WMAC_LEN		0x1ffff /* XXX:Check this */
+#endif
 
 void ar7240_reset(unsigned int mask);
 

@@ -17,77 +17,19 @@
 #ifndef _AG7240_PHY_H
 #define _AG7240_PHY_H
 
-#define phy_reg_read        ag7240_mii_read
-#define phy_reg_write       ag7240_mii_write
-
 #include "ag7240.h"
-
-#ifdef __BDI
-
-/* Empty */
-
-#else
-#ifdef __ECOS
-
-/* ecos will set the value of CYGNUM_USE_ENET_PHY to one of the following strings
- * based on the cdl. These are defined here in no particuilar way so the
- * #if statements that follow will have something to compare to.
- */
-#define AR7240_VSC_ENET_PHY             1
-#define AR7240_VSC8601_ENET_PHY         2
-#define AR7240_VSC8601_VSC8601_ENET_PHY 3
-#define AR7240_VSC8601_VSC73XX_ENET_PHY 4
-#define AR7240_ICPLUS_ENET_PHY          5
-#define AR7240_REALTEK_ENET_PHY         6
-#define AR7240_ADMTEK_ENET_PHY          7  
-#define AR7240_ATHRF1_ENET_PHY          8
-#define AR7240_ATHRS26_ENET_PHY         9
-
-#if (CYGNUM_USE_ENET_PHY == AR7240_VSC_ENET_PHY) 
-#   define CONFIG_VITESSE_PHY
-#elif (CYGNUM_USE_ENET_PHY == AR7240_VSC8601_ENET_PHY) 
-#   define CONFIG_VITESSE_8601_PHY
-#elif (CYGNUM_USE_ENET_PHY == AR7240_VSC8601_VSC73XX_ENET_PHY)
-#   define CONFIG_VITESSE_8601_7395_PHY
-#elif (CYGNUM_USE_ENET_PHY == AR7240_ICPLUS_ENET_PHY)
-#   define CONFIG_ICPLUS_PHY 
-#elif (CYGNUM_USE_ENET_PHY == AR7240_REALTEK_ENET_PHY)
-#   define CONFIG_REALTEK_PHY
-#elif (CYGNUM_USE_ENET_PHY == AR7240_ADMTEK_ENET_PHY)
-#   define CONFIG_ADM6996FC_PHY
-#elif (CYGNUM_USE_ENET_PHY == AR7240_ATHRF1_ENET_PHY)
-#   define CONFIG_ATHRF1_PHY
-#elif (CYGNUM_USE_ENET_PHY == AR7240_ATHRS26_ENET_PHY)
-#   define CONFIG_ATHRS26_PHY
-#else
-#error unknown PHY type CYGNUM_USE_ENET_PHY
-#endif
-
-#include "vsc8601_phy.h"
-#include "vsc73xx.h"
-#include "ipPhy.h"
-#include "rtPhy.h"
-#include "adm_phy.h"
-#include "athr_phy.h"
-#include "ar7240_s26_phy.h"
-
-#define in_interrupt(x)    0
-#define schedule_work(x)
-#define INIT_WORK(x,y)
-
-#else /* Must be Linux, CONFIGs are defined in .config */
-
-/* Empty */
-
-#endif
-#endif
+#include "athrs_ioctl.h"
 
 #ifdef CONFIG_AR7240_S26_PHY
 
-#include "ar7240_s26_phy.h"
-
-#define ag7240_phy_ioctl(unit, args)    athr_ioctl(unit,args)
-#define ag7240_phy_setup(unit)          athrs26_phy_setup (unit)
+#include "ar7240_s26_phy.h" 
+#ifdef CONFIG_AR7242_RGMII_PHY
+#include "athrf1_phy.h"
+#endif
+#ifdef CONFIG_AR7242_S16_PHY
+#include "athrs16_phy.h"
+#endif
+extern ag7240_mac_t *ag7240_macs[2];
 #define ag7240_phy_is_up(unit)          athrs26_phy_is_up (unit)
 #define ag7240_phy_speed(unit,phyUnit)  athrs26_phy_speed (unit,phyUnit)
 #define ag7240_phy_is_fdx(unit,phyUnit) athrs26_phy_is_fdx(unit,phyUnit)
@@ -96,12 +38,95 @@
 #define ag7240_phy_tag_len              ATHR_VLAN_TAG_SIZE
 #define ag7240_phy_get_counters         athrs26_get_counters
 
+static inline void athrs_reg_dev(ag7240_mac_t **ag7240_macs)
+{
+#if defined(CONFIG_AR7242_S16_PHY)
+  if (is_ar7242())
+    athrs16_reg_dev(ag7240_macs);
+#endif
+  athrs26_reg_dev(ag7240_macs);
+
+  return ;
+
+}
+
+static inline int athrs_do_ioctl(struct net_device *dev,struct ifreq *ifr, int cmd)
+{
+  ag7240_mac_t *mac = (ag7240_mac_t *)netdev_priv(dev);
+  int ret = -1;
+
+  if (is_ar7240() || mac->mac_unit == 1)
+    ret = athrs26_ioctl(dev,ifr, cmd);
+#ifdef CONFIG_AR7242_S16_PHY
+  else if(is_ar7242())
+    ret = athrs16_ioctl(ifr->ifr_data, cmd);
+#endif
+#ifdef CONFIG_ATHRS_QOS
+  if(ret < 0) 
+    ret = athrs_config_qos(ifr->ifr_data,cmd);
+#endif
+  return ret;
+}
+
+static inline void ag7240_phy_reg_init(int unit)
+{
+#ifndef CONFIG_AR7242_S16_PHY
+  if (unit == 0)
+    athrs26_reg_init(unit);
+#else
+  if (unit == 0 && is_ar7242())
+    athrs16_reg_init(unit);
+#endif
+  else
+    athrs26_reg_init_lan(unit);
+} 
+
+static inline void ag7240_phy_setup(int unit)
+{
+  if (is_ar7241() || is_ar7240())
+    athrs26_phy_setup (unit);
+  else if (is_ar7242() && unit == 1) 
+    athrs26_phy_setup (unit);
+#ifdef CONFIG_AR7242_RGMII_PHY
+  else if (is_ar7242() && unit == 0)
+    athr_phy_setup(unit);
+#endif
+#ifdef CONFIG_AR7242_S16_PHY
+  else if (is_ar7242() && unit == 0)
+    athrs16_phy_setup(unit);
+#endif
+}
+
 static inline unsigned int 
 ag7240_get_link_status(int unit, int *link, int *fdx, ag7240_phy_speed_t *speed,int phyUnit)
 {
-  *link=ag7240_phy_is_up(unit);
-  *fdx=ag7240_phy_is_fdx(unit, phyUnit);
-  *speed=ag7240_phy_speed(unit, phyUnit);
+  if (is_ar7240() || is_ar7241() || (is_ar7242() && unit == 1)) {
+    *link=ag7240_phy_is_up(unit);
+    *fdx=ag7240_phy_is_fdx(unit, phyUnit);
+    *speed=ag7240_phy_speed(unit, phyUnit);
+  } 
+#ifdef CONFIG_AR7242_RGMII_PHY
+  else if(is_ar7242() && unit == 0){
+    *link=athr_phy_is_up(unit);
+    *fdx=athr_phy_is_fdx(unit,phyUnit);
+    *speed=athr_phy_speed(unit,phyUnit);
+  }
+#endif
+#ifdef CONFIG_AR7242_VIR_PHY
+  else if(is_ar7242() && unit == 0){
+    *link=athr_vir_phy_is_up(unit);
+    *fdx=athr_vir_phy_is_fdx(unit);
+    *speed=athr_vir_phy_speed(unit);
+  }
+#endif
+
+#ifdef CONFIG_AR7242_S16_PHY
+  else if(is_ar7242() && unit == 0){
+    *link=athrs16_phy_is_up(unit);
+    *fdx=athrs16_phy_is_fdx(unit);
+    *speed=athrs16_phy_speed(unit);
+  }
+#endif
   return 0;
 }
 
