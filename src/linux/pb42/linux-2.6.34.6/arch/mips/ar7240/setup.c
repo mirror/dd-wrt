@@ -24,6 +24,10 @@
 
 #include "ar7240.h"
 
+#ifdef CONFIG_WASP_SUPPORT
+#include <ar934x.h>
+#endif
+
 #ifdef CONFIG_AR7240_EMULATION
 #define         AG7240_CONSOLE_BAUD (9600)
 #else
@@ -31,12 +35,19 @@
 #endif
 
 uint32_t ar7240_cpu_freq = 0, ar7240_ahb_freq, ar7240_ddr_freq;
+#ifdef CONFIG_WASP_SUPPORT
+uint32_t ath_ref_clk_freq;
+#endif
 
 static int __init ar7240_init_ioc(void);
 void Uart16550Init(void);
 void serial_print(char *fmt, ...);
 void writeserial(char *str,int count);
+#ifdef CONFIG_WASP_SUPPORT
+static void wasp_sys_frequency(void);
+#else
 static void ar7240_sys_frequency(void);
+#endif
 u8 Uart16550GetPoll(void);
 /* 
  * Export AHB freq value to be used by Ethernet MDIO.
@@ -47,7 +58,15 @@ void
 ar7240_restart(char *command)
 {
     for(;;) {
-        ar7240_reg_wr(AR7240_RESET, AR7240_RESET_FULL_CHIP);
+#ifdef CONFIG_WASP_SUPPORT
+		/*
+		 * WAR for full chip reset spi vs. boot-rom selection
+		 * bug in wasp 1.0
+		 */
+		ar7240_reg_wr (AR7240_GPIO_OE, ar7240_reg_rd(AR7240_GPIO_OE) & (~(1 << 17)));
+#else
+		ar7240_reg_wr(AR7240_RESET, AR7240_RESET_FULL_CHIP);
+#endif
     }
 }
 
@@ -112,6 +131,26 @@ switch (id) {
 		chip = "7242";
 		rev = 1;
 		break;
+	case AR9330_REV_1_0:
+		chip = "9330";
+		rev = 0;
+		break;
+	case AR9330_REV_1_1:
+		chip = "9330";
+		rev = 1;
+		break;
+	case AR9344_REV_1_0:
+		chip = "9344";
+		rev = 0;
+		break;
+	case AR9342_REV_1_0:
+		chip = "9342";
+		rev = 0;
+		break;
+	case AR9341_REV_1_0:
+		chip = "9341";
+		rev = 0;
+		break;
 	default:
 		chip = "724x";
 	}
@@ -121,12 +160,107 @@ return str;
 }
 
 EXPORT_SYMBOL(get_system_type);
+
+#if defined(CONFIG_WASP_SUPPORT) || defined(CONFIG_MACH_HORNET)
+int
+valid_wmac_num(u_int16_t wmac_num)
+{
+    return (wmac_num == 0);
+}
+
+/*
+ * HOWL has only one wmac device, hence the following routines
+ * ignore the wmac_num parameter
+ */
+int
+get_wmac_irq(u_int16_t wmac_num)
+{
+    return ATH_CPU_IRQ_WLAN;
+}
+
+unsigned long
+get_wmac_base(u_int16_t wmac_num)
+{
+    return KSEG1ADDR(ATH_WMAC_BASE);
+}
+
+unsigned long
+get_wmac_mem_len(u_int16_t wmac_num)
+{
+    return ATH_WMAC_LEN;
+}
+
+EXPORT_SYMBOL(valid_wmac_num);
+EXPORT_SYMBOL(get_wmac_irq);
+EXPORT_SYMBOL(get_wmac_base);
+EXPORT_SYMBOL(get_wmac_mem_len);
+#endif
+
+
 /*
  * The bootloader musta set cpu_pll_config.
  * We extract the pll divider, multiply it by the base freq 40.
  * The cpu and ahb are divided off of that.
  */
 //#define FB50 1
+
+#if defined (CONFIG_WASP_SUPPORT)
+static void
+wasp_sys_frequency(void)
+{
+#if !defined(CONFIG_AR7240_EMULATION)
+	uint32_t pll, out_div, ref_div, nint, frac, clk_ctrl;
+#endif
+	uint32_t ref;
+
+	if (ar7240_cpu_freq)
+		return;
+
+	if ((ar7240_reg_rd(ATH_BOOTSTRAP_REG) & ATH_REF_CLK_40)) {
+		ref = (40 * 1000000);
+	} else {
+		ref = (25 * 1000000);
+	}
+	ath_ref_clk_freq = ref;
+
+#ifdef CONFIG_AR7240_EMULATION
+	ar7240_cpu_freq = 80000000;
+	ar7240_ddr_freq = 80000000;
+	ar7240_ahb_freq = 40000000;
+#else
+	clk_ctrl = ar7240_reg_rd(AR7240_DDR_CLK_CTRL);
+
+	pll = ar7240_reg_rd(AR7240_PLL_CONFIG);
+	out_div	= CPU_PLL_CONFIG_OUTDIV_GET(pll);
+	ref_div	= CPU_PLL_CONFIG_REFDIV_GET(pll);
+	nint	= CPU_PLL_CONFIG_NINT_GET(pll);
+	frac	= CPU_PLL_CONFIG_NFRAC_GET(pll);
+	ar7240_cpu_freq = ((nint * ref / ref_div) >> out_div) /
+			(CPU_DDR_CLOCK_CONTROL_CPU_POST_DIV_GET(clk_ctrl) + 1);
+
+	pll = ar7240_reg_rd(AR7240_DDR_PLL_CONFIG);
+	out_div	= DDR_PLL_CONFIG_OUTDIV_GET(pll);
+	ref_div	= DDR_PLL_CONFIG_REFDIV_GET(pll);
+	nint	= DDR_PLL_CONFIG_NINT_GET(pll);
+	frac	= DDR_PLL_CONFIG_NFRAC_GET(pll);
+	ar7240_ddr_freq = ((nint * ref / ref_div) >> out_div) /
+			(CPU_DDR_CLOCK_CONTROL_DDR_POST_DIV_GET(clk_ctrl) + 1);
+
+	if (CPU_DDR_CLOCK_CONTROL_AHBCLK_FROM_DDRPLL_GET(clk_ctrl)) {
+		ar7240_ahb_freq = ar7240_ddr_freq /
+			(CPU_DDR_CLOCK_CONTROL_AHB_POST_DIV_GET(clk_ctrl) + 1);
+	} else {
+		ar7240_ahb_freq = ar7240_cpu_freq /
+			(CPU_DDR_CLOCK_CONTROL_AHB_POST_DIV_GET(clk_ctrl) + 1);
+	}
+#endif
+	printk("%s: cpu %u ddr %u ahb %u\n", __func__,
+		ar7240_cpu_freq / 1000000,
+		ar7240_ddr_freq / 1000000,
+		ar7240_ahb_freq / 1000000);
+}
+#else
+
 static void
 ar7240_sys_frequency(void)
 {
@@ -169,6 +303,7 @@ ar7240_sys_frequency(void)
     ar7240_ahb_freq = ar7240_cpu_freq/ahb_div;
 #endif
 }
+#endif
 extern int early_serial_setup(struct uart_port *port);
 
 #define AR71XX_UART_FLAGS (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_IOREMAP)
@@ -329,7 +464,15 @@ void __init plat_mem_setup(void)
     ar71xx_detect_mem_size();
 
     Uart16550Init();
+#ifdef CONFIG_MACH_HORNET
+    serial_print("Booting AR9330(Hornet)...\n");
+    /* clear wmac reset */
+    ar7240_reg_wr(AR7240_RESET, (ar7240_reg_rd(AR7240_RESET) & (~AR7240_RESET_WMAC)));
+#elif CONFIG_WASP_SUPPORT
+    serial_print("Booting WASP !!! -:) ...\n");
+#else
     serial_print("Booting AR7240(Python)...\n");
+#endif
     is_ar9000=1;
 //#if 0
 //    serial_setup();
@@ -375,18 +518,26 @@ void Uart16550Init()
 {
     int freq, div;
 
+#ifdef CONFIG_WASP_SUPPORT
+    wasp_sys_frequency();
+    freq = ath_ref_clk_freq;
+#else
     ar7240_sys_frequency();
     freq = ar7240_ahb_freq;
 
 #if 0// CONFIG_DIR615E
-
     MY_WRITE(0xb8040000, 0xcff);
+
     MY_WRITE(0xb8040008, 0x3b);
+
     /* Enable UART , SPI and Disable S26 UART */ 
     MY_WRITE(0xb8040028, (ar7240_reg_rd(0xb8040028) | 0x48002));
 
     MY_WRITE(0xb8040008, 0x2f);
 #endif
+#endif
+
+
     div = freq/(AG7240_CONSOLE_BAUD*16);
 
 //    div = 0xCB;

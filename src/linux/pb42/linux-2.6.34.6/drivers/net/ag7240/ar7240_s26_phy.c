@@ -148,7 +148,6 @@ static athrPhyInfo_t athrPhyInfo[] = {
 
 static uint8_t athr26_init_flag = 0,athr26_init_flag1 = 0;
 static DECLARE_WAIT_QUEUE_HEAD (hd_conf_wait);
-static ag7240_mac_t *ag7240_macs[2];
 
 #define ATHR_GLOBALREGBASE    0
 
@@ -232,9 +231,20 @@ void athrs26_sleep_off(int phy_addr)
 void athrs26_enable_linkIntrs(int ethUnit) 
 {
      int phyUnit = 0, phyAddr = 0;
+     ag7240_mac_t *mac = ag7240_macs[ethUnit];
 
     /* Enable global PHY link status interrupt */
     athrs26_reg_write(S26_GLOBAL_INTR_MASK_REG,PHY_LINK_CHANGE_REG); 
+
+    if (mac_has_flag(mac,ETH_SWONLY_MODE)) {
+        if (ethUnit == 1) {
+            for (phyUnit = 0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
+                phyAddr = ATHR_PHYADDR(phyUnit);
+                s26_wr_phy(phyAddr,ATHR_PHY_INTR_ENABLE,PHY_LINK_INTRS);
+            }
+        }
+        return ;
+    }
 
      if (ethUnit == ENET_UNIT_WAN) {
          s26_wr_phy(ATHR_PHY4_ADDR,ATHR_PHY_INTR_ENABLE,PHY_LINK_INTRS);
@@ -250,6 +260,16 @@ void athrs26_enable_linkIntrs(int ethUnit)
 void athrs26_disable_linkIntrs(int ethUnit) 
 {
      int phyUnit = 0, phyAddr = 0;
+     ag7240_mac_t *mac = ag7240_macs[ethUnit];
+     if (mac_has_flag(mac,ETH_SWONLY_MODE)) {
+         if (ethUnit == 1) {
+             for (phyUnit = 0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
+                 phyAddr = ATHR_PHYADDR(phyUnit);
+                 s26_wr_phy(phyAddr,ATHR_PHY_INTR_ENABLE,0x0);
+             }
+         }
+         return ;
+     }
 
      if (ethUnit == ENET_UNIT_WAN) {
          s26_wr_phy(ATHR_PHY4_ADDR,ATHR_PHY_INTR_ENABLE,0x0);
@@ -327,10 +347,12 @@ void athrs26_force_10M(int phyAddr,int duplex)
     phy_in_reset = 0;
 }
 
-void athrs26_reg_init(void)
+void athrs26_reg_init(int ethUnit)
 {
     uint32_t ar7240_revid;
     uint32_t rd_data;
+
+    ag7240_mac_t *mac = ag7240_macs[ethUnit];
 
     /* if using header for register configuration, we have to     */
     /* configure s26 register after frame transmission is enabled */
@@ -361,6 +383,10 @@ void athrs26_reg_init(void)
     /* Disable WAN mac inside S26 */
     athrs26_reg_write(PORT_STATUS_REGISTER5,0x0);
 
+    /* Enable WAN mac inside S26 */
+    if (mac_has_flag(mac,ETH_SWONLY_MODE)) 
+        athrs26_reg_write(PORT_STATUS_REGISTER5,0x200);
+
     /* Enable MDIO Access if PHY is Powered-down */
     s26_wr_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_ADDRESS,0x3);
     rd_data = s26_rd_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_DATA);
@@ -371,7 +397,7 @@ void athrs26_reg_init(void)
     athr26_init_flag = 1;
 }
 
-void athrs26_reg_init_lan(void)
+void athrs26_reg_init_lan(int ethUnit)
 {
     int i = 60;
     int       phyUnit;
@@ -381,6 +407,7 @@ void athrs26_reg_init_lan(void)
     uint32_t  queue_ctrl_reg = 0;
     uint32_t  ar7240_revid;
     uint32_t rd_data;
+    ag7240_mac_t *mac = ag7240_macs[ethUnit];
     
     /* if using header for register configuration, we have to     */
     /* configure s26 register after frame transmission is enabled */
@@ -408,6 +435,10 @@ void athrs26_reg_init_lan(void)
     athrs26_reg_write(0x118,0x0032b5555);
 
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX - 1; phyUnit++) {
+
+        if ((ATHR_ETHUNIT(phyUnit) == ENET_UNIT_WAN) &&
+            !mac_has_flag(mac,ETH_SWONLY_MODE))
+            continue;
 
         foundPhy = TRUE;
         phyBase = ATHR_PHYBASE(phyUnit);
@@ -529,14 +560,14 @@ void athrs26_reg_init_lan(void)
     DPRINTF("S26 PORT_CONTROL_REGISTER2 :%x\n", athrs26_reg_read ( PORT_CONTROL_REGISTER2 ));
     DPRINTF("S26 PORT_CONTROL_REGISTER3 :%x\n", athrs26_reg_read ( PORT_CONTROL_REGISTER3 ));
     DPRINTF("S26 PORT_CONTROL_REGISTER4 :%x\n", athrs26_reg_read ( PORT_CONTROL_REGISTER4 ));
+    if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) {
+        athrs26_reg_write(ATHR_PRI_CTRL_PORT_2,(athrs26_reg_read(ATHR_PRI_CTRL_PORT_2)|ATHR_TOS_PRI_EN));
+        athrs26_reg_write(ATHR_PRI_CTRL_PORT_3,(athrs26_reg_read(ATHR_PRI_CTRL_PORT_3)|ATHR_TOS_PRI_EN));
+        athrs26_reg_write(ATHR_PRI_CTRL_PORT_4,(athrs26_reg_read(ATHR_PRI_CTRL_PORT_4)|ATHR_TOS_PRI_EN));
+        athrs26_reg_write(ATHR_PRI_CTRL_PORT_5,(athrs26_reg_read(ATHR_PRI_CTRL_PORT_5)|ATHR_TOS_PRI_EN));
+        athrs26_reg_write(ATHR_QOS_MODE_REGISTER,ATHR_QOS_FIXED_PRIORITY);
 
-#ifdef CONFIG_AG7240_QOS 
-    athrs26_reg_write(ATHR_QOS_PORT_1,(athrs26_reg_read(ATHR_QOS_PORT_1)|ATHR_ENABLE_TOS));
-    athrs26_reg_write(ATHR_QOS_PORT_2,(athrs26_reg_read(ATHR_QOS_PORT_2)|ATHR_ENABLE_TOS));
-    athrs26_reg_write(ATHR_QOS_PORT_3,(athrs26_reg_read(ATHR_QOS_PORT_3)|ATHR_ENABLE_TOS));
-    athrs26_reg_write(ATHR_QOS_PORT_4,(athrs26_reg_read(ATHR_QOS_PORT_4)|ATHR_ENABLE_TOS));
-#endif
-
+    }
     /* Disable WAN mac inside S26 after S26 Reset*/
 
     athrs26_reg_write(PORT_STATUS_REGISTER5,0x0);
@@ -546,13 +577,13 @@ void athrs26_reg_init_lan(void)
     athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
 //#endif
 
-#if defined(CONFIG_ATHEROS_HEADER_EN)
-   //Set CPU port0 to Atheros Header Enable.
-   athrs26_reg_write(0x104,athrs26_reg_read(0x104)|(0x1<<11));
+    if(mac_has_flag(mac,ATHR_S26_HEADER))
+        /* Set CPU port0 to Atheros Header Enable. */
+        athrs26_reg_write(0x104,athrs26_reg_read(0x104)|(0x1<<11));
 
-   // Clear Multicast over vlans.
-   //athrs26_reg_write(0x2c, athrs26_reg_read(0x2c)&0xffc0ffff);
-#endif
+    if (mac_has_flag(mac,ETH_SWONLY_MODE))
+        athrs26_reg_write(PORT_STATUS_REGISTER5,0x200);
+
 
     athr26_init_flag1 = 1;
 }
@@ -712,9 +743,10 @@ athrs26_phy_setup(int ethUnit)
      */
     for (phyUnit=0; (phyUnit < ATHR_PHY_MAX) /*&& (timeout > 0) */; phyUnit++) {
 
-        if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
+
+        if ((ATHR_ETHUNIT(phyUnit) == ENET_UNIT_WAN) &&
+                !mac_has_flag(ag7240_macs[ENET_UNIT_LAN],ETH_SWONLY_MODE))
             continue;
-        }
 
         timeout=20;
         for (;;) {
@@ -904,9 +936,11 @@ athrs26_phy_is_up(int ethUnit)
     uint32_t      phyAddr;
 
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
-        if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
+        if(mac_has_flag(ag7240_macs[ENET_UNIT_LAN],ETH_SWONLY_MODE))
+            ethUnit = ENET_UNIT_LAN;
+
+        if (!ATHR_IS_ETHUNIT(phyUnit,ethUnit))
             continue;
-        }
 
         phyBase = ATHR_PHYBASE(phyUnit);
         phyAddr = ATHR_PHYADDR(phyUnit);
@@ -963,14 +997,21 @@ athrs26_phy_is_up(int ethUnit)
     return (linkCount);
 
 }
-
 void athrs26_reg_dev(ag7240_mac_t **mac)
 {
-    ag7240_macs[0] = mac[0];
-    ag7240_macs[0]->mac_speed = 0xff;
-    
-    ag7240_macs[1] = mac[1];
-    ag7240_macs[1]->mac_speed = 0xff;
+    if( mac[0]) {
+        ag7240_macs[0] = mac[0];
+        ag7240_macs[0]->mac_speed = 0xff;
+    }
+    else 
+        printk("MAC [0] not registered \n");
+   
+    if( mac[1]) {
+        ag7240_macs[1] = mac[1];
+        ag7240_macs[1]->mac_speed = 0xff;
+    }
+    else 
+        printk("MAC [1] not registered \n");
     return;
 
 }
@@ -1147,6 +1188,14 @@ int athr_ioctl(struct net_device *dev,uint32_t *args, int cmd)
 		    }
 		    else
 		       return -EINVAL;
+               if(ATHR_ETHUNIT(ethcfg->phy_reg) == ENET_UNIT_WAN) {
+                   if(mac_has_flag(ag7240_macs[ENET_UNIT_LAN],ETH_SWONLY_MODE))
+                       ag7240_check_link(ag7240_macs[ENET_UNIT_LAN],ethcfg->phy_reg);
+                   else
+                       ag7240_check_link(ag7240_macs[0],ethcfg->phy_reg);
+               }else{ 
+                   ag7240_check_link(ag7240_macs[1],ethcfg->phy_reg);
+               }
 		}
 		else {
 		    return -EINVAL;
@@ -1369,10 +1418,15 @@ void ar7240_s26_intr(void)
                if (!athrs26_phy_is_link_alive(phyUnit) && !((linkDown >> phyUnit) & 0x1))
                         continue;
 
-               if(ATHR_ETHUNIT(phyUnit) == ENET_UNIT_WAN) 
-                    ag7240_check_link(ag7240_macs[0],phyUnit);
-               else  
+               if(ATHR_ETHUNIT(phyUnit) == ENET_UNIT_WAN) {
+                    if (mac_has_flag(ag7240_macs[ENET_UNIT_LAN],ETH_SWONLY_MODE))
+                        ag7240_check_link(ag7240_macs[ENET_UNIT_LAN],phyUnit);
+                    else
+                        ag7240_check_link(ag7240_macs[0],phyUnit);
+               }
+               else {  
                     ag7240_check_link(ag7240_macs[1],phyUnit);
+               }
            }
        }
        athrs26_reg_write(S26_GLOBAL_INTR_MASK_REG,PHY_LINK_CHANGE_REG); 

@@ -14,7 +14,11 @@
 
 #include <asm/mach-ar7240/ar7240.h>
 
+#ifdef CONFIG_WASP_SUPPORT
+extern uint32_t ath_ref_clk_freq;
+#else
 extern uint32_t ar7240_ahb_freq;
+#endif
 
 /* 
  * OHCI (USB full speed host controller) 
@@ -113,15 +117,11 @@ static struct platform_device ar7240_uart = {
 };
 
 static struct platform_device *ar7241_platform_devices[] __initdata = {
-#ifdef CONFIG_USB_EHCI_AR9130
- &ar7240_usb_ehci_device
-#endif
+	&ar7240_usb_ehci_device
 };
 
 static struct platform_device *ar7240_platform_devices[] __initdata = {
-#ifdef CONFIG_USB_OHCI_AR7240
 	&ar7240_usb_ohci_device
-#endif
 };
 
 static struct platform_device *ar724x_platform_devices[] __initdata = {
@@ -131,15 +131,20 @@ static struct platform_device *ar724x_platform_devices[] __initdata = {
 int __init ar7240_platform_init(void)
 {
 	int ret;
+
         /* need to set clock appropriately */
-        ar7240_uart_data[0].uartclk = ar7240_ahb_freq; 
+#ifdef CONFIG_WASP_SUPPORT
+	ar7240_uart_data[0].uartclk = ath_ref_clk_freq;
+#else
+	ar7240_uart_data[0].uartclk = ar7240_ahb_freq;
+#endif
 	ret = platform_add_devices(ar724x_platform_devices, 
                                 ARRAY_SIZE(ar724x_platform_devices));
 
         if (ret < 0)
 		return ret; 
 
-	if (is_ar7241() || is_ar7242()) {
+	if (is_ar7241() || is_ar7242()  || is_ar9330() || is_wasp()) {
 	    return (platform_add_devices(ar7241_platform_devices, 
                                 ARRAY_SIZE(ar7241_platform_devices)));
         }

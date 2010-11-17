@@ -279,6 +279,11 @@ DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ap91_pci_fixup);
 static int __init ar7240_pcibios_init(void)
 {
 
+#ifdef CONFIG_WASP_SUPPORT
+	if (is_ar9341()) {
+		return 0;
+	}
+#endif
 	/*
 	 * Check if the WLAN PCI-E H/W is present, If the
 	 * WLAN H/W is not present, skip the PCI
