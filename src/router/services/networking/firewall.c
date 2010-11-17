@@ -1955,7 +1955,7 @@ static void filter_input(void)
 		}
 	}
 #endif
-	if (!nvram_match("wan_proto", "disabled")) {
+	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0")) {
 		if (nvram_invmatch("dr_wan_rx", "0"))
 			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n",
 				  wanface, RIP_PORT, TARG_PASS);
@@ -2067,7 +2067,7 @@ static void filter_input(void)
 	/*
 	 * ICMP request from WAN interface 
 	 */
-	if (!nvram_match("wan_proto", "disabled"))
+	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0"))
 		save2file("-A INPUT -i %s -p icmp -j %s\n", wanface,
 			  nvram_match("block_wan", "1") ? log_drop : TARG_PASS);
 
@@ -2444,8 +2444,10 @@ static void nat_table(void)
 	save2file("*nat\n"
 		  ":PREROUTING ACCEPT [0:0]\n"
 		  ":POSTROUTING ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n");
-	nat_prerouting();
-	nat_postrouting();
+	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0")) {
+	    nat_prerouting();
+	    nat_postrouting();
+	}
 	save2file("COMMIT\n");
 }
 
@@ -2483,7 +2485,7 @@ static void filter_table(void)
 		}
 	}
 
-	if (!nvram_match("wan_proto", "disabled")) {
+	if (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr,"0.0.0.0")) {
 		/*
 		 * Does it disable the filter? 
 		 */
