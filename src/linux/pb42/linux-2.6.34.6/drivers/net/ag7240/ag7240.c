@@ -40,15 +40,12 @@
 #include "ag7240_phy.h"
 #include "ag7240_trc.h"
 
-static ag7240_mac_t *ag7240_macs[2];
+ag7240_mac_t *ag7240_macs[2];
 static void ag7240_hw_setup(ag7240_mac_t *mac);
 static void ag7240_hw_stop(ag7240_mac_t *mac);
 static void ag7240_oom_timer(unsigned long data);
 int  ag7240_check_link(ag7240_mac_t *mac,int phyUnit);
-#ifdef CHECK_DMA_STATUS
-static int  check_for_dma_status(ag7240_mac_t *mac);
-static uint32_t prev_ts;
-#endif
+static int  check_for_dma_status(ag7240_mac_t *mac,int ac);
 static int  ag7240_tx_alloc(ag7240_mac_t *mac);
 static int  ag7240_rx_alloc(ag7240_mac_t *mac);
 static void ag7240_rx_free(ag7240_mac_t *mac);
@@ -56,11 +53,7 @@ static void ag7240_tx_free(ag7240_mac_t *mac);
 static int  ag7240_ring_alloc(ag7240_ring_t *r, int count);
 static int  ag7240_rx_replenish(ag7240_mac_t *mac);
 static void ag7240_get_default_macaddr(ag7240_mac_t *mac, u8 *mac_addr);
-#ifdef CONFIG_AG7240_QOS
 static int  ag7240_tx_reap(ag7240_mac_t *mac,int ac);
-#else
-static int  ag7240_tx_reap(ag7240_mac_t *mac);
-#endif
 static void ag7240_ring_release(ag7240_mac_t *mac, ag7240_ring_t  *r);
 static void ag7240_ring_free(ag7240_ring_t *r);
 static void ag7240_tx_timeout_task(struct work_struct *work);
@@ -107,12 +100,11 @@ char *dup_str[] = {"half duplex", "full duplex"};
 #define MODULE_NAME "AG7240"
 MODULE_LICENSE("Dual BSD/GPL");
 
+static uint32_t prev_dma_chk_ts;
 /* if 0 compute in init */
 int tx_len_per_ds = 0;
 int phy_in_reset = 0;
-#ifdef CONFIG_AG7240_QOS
 int enet_ac = 0;
-#endif
 module_param(tx_len_per_ds, int, 0);
 MODULE_PARM_DESC(tx_len_per_ds, "Size of DMA chunk");
 
@@ -140,6 +132,8 @@ MODULE_PARM_DESC(gige_pll, "Pll for (R)GMII if");
 int fifo_5 = 0xbefff;
 module_param(fifo_5, int, 0);
 MODULE_PARM_DESC(fifo_5, "fifo cfg 5 settings");
+
+int xmii_val = 0x16000000;
 
 int ignore_packet_inspection = 0;
 
@@ -190,7 +184,7 @@ void set_packet_inspection_flag(int flag)
 #define ENET_UNIT_LAN 1
 #define ENET_UNIT_WAN 0
 
-#ifdef CONFIG_AG7240_QOS
+
 static inline int ag7240_tx_reap_thresh(ag7240_mac_t *mac,int ac)
 {
     ag7240_ring_t *r = &mac->mac_txring[ac];
@@ -205,22 +199,6 @@ static inline int ag7240_tx_ring_full(ag7240_mac_t *mac,int ac)
     ag7240_trc_new(ag7240_ndesc_unused(mac, r),"tx ring full");
     return (ag7240_ndesc_unused(mac, r) < tx_max_desc_per_ds_pkt + 2);
 }
-#else
-static inline int ag7240_tx_reap_thresh(ag7240_mac_t *mac)
-{
-    ag7240_ring_t *r = &mac->mac_txring;
-
-    return (ag7240_ndesc_unused(mac, r) < AG7240_TX_REAP_THRESH);
-}
-
-static inline int ag7240_tx_ring_full(ag7240_mac_t *mac)
-{
-    ag7240_ring_t *r = &mac->mac_txring;
-
-    ag7240_trc_new(ag7240_ndesc_unused(mac, r),"tx ring full");
-    return (ag7240_ndesc_unused(mac, r) < tx_max_desc_per_ds_pkt + 2);
-}
-#endif
 static int
 ag7240_open(struct net_device *dev)
 {
@@ -234,6 +212,10 @@ ag7240_open(struct net_device *dev)
 #endif
 
     assert(mac);
+    if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS))
+        mac->mac_noacs = 4;
+    else
+        mac->mac_noacs = 1;
 
     st = request_irq(mac->mac_irq, ag7240_intr, 0, dev->name, dev);
     if (st < 0)
@@ -258,37 +240,34 @@ ag7240_open(struct net_device *dev)
     spin_unlock_irqrestore(&mac->mac_lock, flags);
 
     ag7240_hw_setup(mac);
-#ifdef SWITCH_AHB_FREQ
-    /* 
-    * Reduce the AHB frequency to 100MHz while setting up the 
-    * S26 phy. 
-    */
-    pll= ar7240_reg_rd(AR7240_PLL_CONFIG);
-    tmp_pll = pll& ~((PLL_DIV_MASK << PLL_DIV_SHIFT) | (PLL_REF_DIV_MASK << PLL_REF_DIV_SHIFT));
-    tmp_pll = tmp_pll | (0x64 << PLL_DIV_SHIFT) |
-        (0x5 << PLL_REF_DIV_SHIFT) | (1 << AHB_DIV_SHIFT);
-
-    ar7240_reg_wr_nf(AR7240_PLL_CONFIG, tmp_pll);
+#ifdef CONFIG_AR7242_VIR_PHY
+ #ifndef SWITCH_AHB_FREQ
+    u32 tmp_pll ;
+ #endif
+    tmp_pll = 0x62000000 ;
+    ar7240_reg_wr_nf(AR7242_ETH_XMII_CONFIG, tmp_pll);
     udelay(100*1000);
 #endif
 
     mac->mac_speed = -1;
 
-    if (mac->mac_unit == 0)
-        athrs26_reg_init();
-    else
-	athrs26_reg_init_lan();
+    ag7240_phy_reg_init(mac->mac_unit);
+
 
     printk("Setting PHY...\n");
 
-#ifdef ETH_SOFT_LED
+    if (mac_has_flag(mac,ETH_SOFT_LED)) {
     /* Resetting PHY will disable MDIO access needed by soft LED task.
      * Hence, Do not reset PHY until Soft LED task get completed.
      */
-    while(atomic_read(&Ledstatus) == 1);
-#endif
+        while(atomic_read(&Ledstatus) == 1);
+    }
     phy_in_reset = 1;
-    ag7240_phy_setup(mac->mac_unit);
+#ifndef CONFIG_AR7242_VIR_PHY
+     ag7240_phy_setup(mac->mac_unit);
+#else
+     athr_vir_phy_setup(mac->mac_unit);
+#endif 
     phy_in_reset = 0;
 
 #ifdef SWITCH_AHB_FREQ
@@ -313,7 +292,24 @@ ag7240_open(struct net_device *dev)
  
     mac->mac_ifup = 1;
     ag7240_int_enable(mac);
-    athrs26_enable_linkIntrs(mac->mac_unit);
+
+    if (is_ar7240())
+        ag7240_intr_enable_rxovf(mac);
+
+#if defined(CONFIG_AR7242_RGMII_PHY)||defined(CONFIG_AR7242_S16_PHY)||defined(CONFIG_AR7242_VIR_PHY)   
+    
+    if(is_ar7242() && mac->mac_unit == 0) {
+
+        init_timer(&mac->mac_phy_timer);
+        mac->mac_phy_timer.data     = (unsigned long)mac;
+        mac->mac_phy_timer.function = (void *)ag7242_check_link;
+        ag7242_check_link(mac);
+
+    }
+#endif
+    
+    if (is_ar7240() || is_ar7241() || (is_ar7242() && mac->mac_unit == 1))
+	athrs26_enable_linkIntrs(mac->mac_unit);
 
     ag7240_rx_start(mac);	
     netif_start_queue(dev);
@@ -350,18 +346,17 @@ ag7240_stop(struct net_device *dev)
  * Clearing the software link status while bringing the interface down
  * will avoid the race condition during PHY RESET.
  */
-#ifdef ETH_SOFT_LED
-    if (mac->mac_unit == ENET_UNIT_LAN) {
-        for(i = 0;i < 4; i++)
-            PLedCtrl.ledlink[i] = 0;
+    if (mac_has_flag(mac,ETH_SOFT_LED)) {
+        if (mac->mac_unit == ENET_UNIT_LAN) {
+            for(i = 0;i < 4; i++)
+                PLedCtrl.ledlink[i] = 0;
+        }
+        else {
+            PLedCtrl.ledlink[4] = 0;
+        }
     }
-    else {
-        PLedCtrl.ledlink[4] = 0;
-    }
-#endif
-#ifdef CHECK_DMA_STATUS
-    del_timer(&mac->mac_phy_timer);
-#endif
+    if (is_ar7242())
+        del_timer(&mac->mac_phy_timer);
     spin_unlock_irqrestore(&mac->mac_lock, flags);
 
     /*ag7240_trc_dump();*/
@@ -441,31 +436,15 @@ ag7240_stop(struct net_device *dev)
 static void
 ag7240_hw_setup(ag7240_mac_t *mac)
 {
-#ifdef CONFIG_AG7240_QOS
     ag7240_ring_t *tx, *rx = &mac->mac_rxring;
-    int ac;
-#else
-    ag7240_ring_t *tx = &mac->mac_txring, *rx = &mac->mac_rxring;
-#endif
     ag7240_desc_t *r0, *t0;
-    uint32_t mgmt_cfg_val;
+    uint32_t mgmt_cfg_val,ac;
     u32 check_cnt;
 
     if(mac->mac_unit)
     {
         ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN |
             AG7240_MAC_CFG1_TX_EN | AG7240_MAC_CFG1_RX_FCTL | AG7240_MAC_CFG1_TX_FCTL));
-
-#ifdef CONFIG_ATHEROS_HEADER_EN
-	/* Disable AG7240_MAC_CFG2_LEN_CHECK to fix the bug that 
-	 * the mac address is mistaken as length when enabling Atheros header 
-	 */ 
-        ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN |
-             AG7240_MAC_CFG2_IF_1000));
-#else
-        ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN |
-            AG7240_MAC_CFG2_LEN_CHECK | AG7240_MAC_CFG2_IF_1000));
-#endif
     } 
     else 
     {
@@ -478,6 +457,9 @@ ag7240_hw_setup(ag7240_mac_t *mac)
     ag7240_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
     ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_0, FIFO_CFG0_INIT);
+
+    if (mac_has_flag(mac,ATHR_S26_HEADER) || mac_has_flag(mac,ATHR_S16_HEADER))
+        ag7240_reg_rmw_clear(mac, AG7240_MAC_CFG2, AG7240_MAC_CFG2_LEN_CHECK)
     /*
     * set the mii if type - NB reg not in the gigE space
     */
@@ -508,74 +490,97 @@ ag7240_hw_setup(ag7240_mac_t *mac)
             default:
                      mgmt_cfg_val = 0x7;
         }
-	if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) {
-	    /* Virian */	
+        if ((is_ar7241() || is_ar7242())) {
+
+            /* External MII mode */
+            if (mac->mac_unit == 0 && is_ar7242()) {
+                mgmt_cfg_val = 0x6;
+                ar7240_reg_rmw_set(AG7240_ETH_CFG, AG7240_ETH_CFG_RGMII_GE0); 
+                ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+                ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+            }
+            /* Virian */
             mgmt_cfg_val = 0x4;
+
+            if (mac_has_flag(mac,ETH_SWONLY_MODE)) {
+                ar7240_reg_rmw_set(AG7240_ETH_CFG, AG7240_ETH_CFG_SW_ONLY_MODE); 
+                ag7240_reg_rmw_set(ag7240_macs[0], AG7240_MAC_CFG1, AG7240_MAC_CFG1_SOFT_RST);;
+            }
             ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
             ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
-	    printk("Virian MDC CFG Value ==> %x\n",mgmt_cfg_val);
+            printk("Virian MDC CFG Value ==> %x\n",mgmt_cfg_val);
         }
-	else { /* Python 1.0 & 1.1 */
-        	if (mac->mac_unit == 0) {
-            		check_cnt = 0;
-            		while (check_cnt++ < 10) {
-                		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
-                		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
-                		if(athrs26_mdc_check() == 0) 
-                    			break;
-            		}
-            		if(check_cnt == 11)
-                		printk("%s: MDC check failed\n", __func__);
-       		}
-    	}
+        else { /* Python 1.0 & 1.1 */
+            if (mac->mac_unit == 0) {
+                check_cnt = 0;
+                while (check_cnt++ < 10) {
+                    ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+                    ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+                    if(athrs26_mdc_check() == 0) 
+                        break;
+                }
+                if(check_cnt == 11)
+                    printk("%s: MDC check failed\n", __func__);
+            }
+        }
     }
         
     ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_1, 0x10ffff);
     ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_2, 0x015500aa);
+
     /*
-    * Weed out junk frames (CRC errored, short collision'ed frames etc.)
-    */
-    ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_4, FIFO_CFG4_INIT);
+     * Weed out junk frames (CRC errored, short collision'ed frames etc.)
+     */
+    ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_4, 0x3ffff);
+
     /*
      * Drop CRC Errors, Pause Frames ,Length Error frames, Truncated Frames
      * dribble nibble and rxdv error frames.
      */
     DPRINTF("Setting Drop CRC Errors, Pause Frames and Length Error frames \n");
-    ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, FIFO_CFG5_INIT);
-
-#ifdef CONFIG_AG7240_QOS
+    if(mac_has_flag(mac,ATHR_S26_HEADER)){
+        ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0xe6bc0);
+    }else{
+        ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0x66b82);
+    }
+    if (mac->mac_unit == 0 && is_ar7242()){
+       ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0xe6be2);
+    }
+    if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) {
     /* Enable Fixed priority */
 #if 1
-  ag7240_reg_wr(mac,AG7240_DMA_TX_ARB_CFG,AG7240_TX_QOS_MODE_WEIGHTED
-			| AG7240_TX_QOS_WGT_0(0x7)
-			| AG7240_TX_QOS_WGT_1(0x5) 
-			| AG7240_TX_QOS_WGT_2(0x3)
-			| AG7240_TX_QOS_WGT_3(0x1));
+        ag7240_reg_wr(mac,AG7240_DMA_TX_ARB_CFG,AG7240_TX_QOS_MODE_WEIGHTED
+                    | AG7240_TX_QOS_WGT_0(0x7)
+                    | AG7240_TX_QOS_WGT_1(0x5) 
+                    | AG7240_TX_QOS_WGT_2(0x3)
+                    | AG7240_TX_QOS_WGT_3(0x1));
 #else
-  ag7240_reg_wr(mac,AG7240_DMA_TX_ARB_CFG,AG7240_TX_QOS_MODE_FIXED);
+        ag7240_reg_wr(mac,AG7240_DMA_TX_ARB_CFG,AG7240_TX_QOS_MODE_FIXED);
 #endif
-    for(ac = 0;ac <  ENET_NUM_AC; ac++) {
-       tx = &mac->mac_txring[ac];
-       t0  =  &tx->ring_desc[0];
-       switch(ac) {
-            case ENET_AC_VO:
-                ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q0, ag7240_desc_dma_addr(tx, t0));
-		break;
-            case ENET_AC_VI:
-                ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q1, ag7240_desc_dma_addr(tx, t0));
-		break;
-            case ENET_AC_BK:
-                ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q2, ag7240_desc_dma_addr(tx, t0));
-		break;
-            case ENET_AC_BE:
-                ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q3, ag7240_desc_dma_addr(tx, t0));
-		break;
-       }
+        for(ac = 0;ac < mac->mac_noacs; ac++) {
+            tx = &mac->mac_txring[ac];
+            t0  =  &tx->ring_desc[0];
+            switch(ac) {
+                case ENET_AC_VO:
+                    ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q0, ag7240_desc_dma_addr(tx, t0));
+                    break;
+                case ENET_AC_VI:
+                    ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q1, ag7240_desc_dma_addr(tx, t0));
+                    break;
+                case ENET_AC_BK:
+                    ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q2, ag7240_desc_dma_addr(tx, t0));
+                    break;
+                case ENET_AC_BE:
+                    ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q3, ag7240_desc_dma_addr(tx, t0));
+                    break;
+            }
+        }
     }
-#else
-    t0  =  &tx->ring_desc[0];
-    ag7240_reg_wr(mac, AG7240_DMA_TX_DESC, ag7240_desc_dma_addr(tx, t0));
-#endif
+    else {
+        tx = &mac->mac_txring[0];
+        t0  =  &tx->ring_desc[0];
+        ag7240_reg_wr(mac, AG7240_DMA_TX_DESC_Q0, ag7240_desc_dma_addr(tx, t0));
+    }
     r0  =  &rx->ring_desc[0];
     ag7240_reg_wr(mac, AG7240_DMA_RX_DESC, ag7240_desc_dma_addr(rx, r0));
 
@@ -594,7 +599,7 @@ ag7240_hw_stop(ag7240_mac_t *mac)
     * put everything into reset.
     * Dont Reset WAN MAC as we are using eth0 MDIO to access S26 Registers.
     */
-    if(mac->mac_unit == 1)
+    if(mac->mac_unit == 1 || is_ar7241() || is_ar7242())
         ag7240_reg_rmw_set(mac, AG7240_MAC_CFG1, AG7240_MAC_CFG1_SOFT_RST);
 }
 
@@ -632,18 +637,24 @@ ag7240_set_mac_from_link(ag7240_mac_t *mac, ag7240_phy_speed_t speed, int fdx)
     case AG7240_PHY_SPEED_1000T:
         ag7240_set_mac_if(mac, 1);
         ag7240_reg_rmw_set(mac, AG7240_MAC_FIFO_CFG_5, (1 << 19));
+        if (is_ar7242() &&( mac->mac_unit == 0))
+            ar7240_reg_wr(AR7242_ETH_XMII_CONFIG,xmii_val);
         break;
 
     case AG7240_PHY_SPEED_100TX:
         ag7240_set_mac_if(mac, 0);
         ag7240_set_mac_speed(mac, 1);
         ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 19));
+        if (is_ar7242() &&( mac->mac_unit == 0))
+            ar7240_reg_wr(AR7242_ETH_XMII_CONFIG,0x0101);
         break;
 
     case AG7240_PHY_SPEED_10T:
         ag7240_set_mac_if(mac, 0);
         ag7240_set_mac_speed(mac, 0);
         ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 19));
+        if (is_ar7242() &&( mac->mac_unit == 0))
+            ar7240_reg_wr(AR7242_ETH_XMII_CONFIG,0x1616);
         break;
 
     default:
@@ -656,7 +667,6 @@ ag7240_set_mac_from_link(ag7240_mac_t *mac, ag7240_phy_speed_t speed, int fdx)
     DPRINTF(MODULE_NAME ": cfg_5: %#x\n", ag7240_reg_rd(mac, AG7240_MAC_FIFO_CFG_5));
 }
 
-#ifdef ETH_SOFT_LED
 static int 
 led_control_func(ATH_LED_CONTROL *pledctrl) 
 {
@@ -664,9 +674,11 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
     const LED_BLINK_RATES  *bRateTab; 
     static uint32_t pkt_count;
     ag7240_mac_t *mac;
-
-
     mac = ag7240_macs[1];
+
+    if (mac_has_flag(mac,ETH_SOFT_LED)) {
+        atomic_inc(&Ledstatus);
+
     atomic_inc(&Ledstatus);
   
     /* 
@@ -756,21 +768,20 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
             s26_wr_phy(4,0x19,0x0);
         }
     }
+}
 done: 
-#ifdef CHECK_DMA_STATUS
-    if(ag7240_get_diff(prev_ts,jiffies) >= (1*HZ / 2)) {
-        if (ag7240_macs[0]->mac_ifup) check_for_dma_status(ag7240_macs[0]);      
-        if (ag7240_macs[1]->mac_ifup) check_for_dma_status(ag7240_macs[1]);
-        prev_ts = jiffies;
-    } 
-#endif     
+    if (mac_has_flag(mac,CHECK_DMA_STATUS)) { 
+        if(ag7240_get_diff(prev_dma_chk_ts,jiffies) >= (1*HZ / 2)) {
+            if (ag7240_macs[0]->mac_ifup) check_for_dma_status(ag7240_macs[0],0);      
+            if (ag7240_macs[1]->mac_ifup) check_for_dma_status(ag7240_macs[1],0);
+            prev_dma_chk_ts = jiffies;
+        }
+    }
     mod_timer(&PLedCtrl.led_timer,(jiffies + AG7240_LED_POLL_SECONDS));
     atomic_dec(&Ledstatus);
     return 0;
 }
-#endif
 
-#ifdef CHECK_DMA_STATUS
 static int check_dma_status_pause(ag7240_mac_t *mac) { 
 
     int RxFsm,TxFsm,RxFD,RxCtrl,TxCtrl;
@@ -806,9 +817,9 @@ static int check_dma_status_pause(ag7240_mac_t *mac) {
     }
 }
 
-static int check_for_dma_status(ag7240_mac_t *mac) {
+static int check_for_dma_status(ag7240_mac_t *mac,int ac) {
 
-    ag7240_ring_t   *r     = &mac->mac_txring;
+    ag7240_ring_t   *r     = &mac->mac_txring[ac];
     int              head  = r->ring_head, tail = r->ring_tail;
     ag7240_desc_t   *ds;
     uint32_t rx_ds;
@@ -818,7 +829,7 @@ static int check_for_dma_status(ag7240_mac_t *mac) {
 
     /* If Tx hang is asserted reset the MAC and restore the descriptors
      * and interrupt state.
-    */
+     */
     while (tail != head)
     {
         ds   = &r->ring_desc[tail];
@@ -827,30 +838,30 @@ static int check_for_dma_status(ag7240_mac_t *mac) {
         if(ag7240_tx_owned_by_dma(ds)) {
             if ((ag7240_get_diff(bp->trans_start,jiffies)) > ((1 * HZ/10))) {
 
-		/*
-		 * If the DMA is in pause state reset kernel watchdog timer
-		 */
-		
+                 /*
+                  * If the DMA is in pause state reset kernel watchdog timer
+                  */
+        
                 if(check_dma_status_pause(mac)) {
-		    mac->mac_dev->trans_start = jiffies;
-		    return 0;
-		}
+                    mac->mac_dev->trans_start = jiffies;
+                    return 0;
+                } 
                 printk(MODULE_NAME ": Tx Dma status eth%d : %s\n",mac->mac_unit,
-                 ag7240_tx_stopped(mac) ? "inactive" : "active");                               
+                            ag7240_tx_stopped(mac) ? "inactive" : "active");                               
 
                 spin_lock_irqsave(&mac->mac_lock, flags);
                                                                                                 
                 int_mask = ag7240_reg_rd(mac,AG7240_DMA_INTR_MASK);
 
-	        ag7240_tx_stop(mac);
-	        ag7240_rx_stop(mac);
+                ag7240_tx_stop(mac);
+                ag7240_rx_stop(mac);
 
                 rx_ds = ag7240_reg_rd(mac,AG7240_DMA_RX_DESC);
                 mask = ag7240_reset_mask(mac->mac_unit);
 
                 /*
-                * put into reset, hold, pull out.
-                */
+                 * put into reset, hold, pull out.
+                 */
                 ar7240_reg_rmw_set(AR7240_RESET, mask);
                 udelay(10);
                 ar7240_reg_rmw_clear(AR7240_RESET, mask);
@@ -871,25 +882,33 @@ static int check_for_dma_status(ag7240_mac_t *mac) {
                 ag7240_set_mac_from_link(mac, mac->mac_speed, mac->mac_fdx);
                 
                 mac->dma_check = 1;
-                ag7240_tx_start(mac);
+
+                if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) {
+                    ag7240_tx_start_qos(mac,ac);
+                }
+                else {
+                    ag7240_tx_start(mac);
+                }
+
                 ag7240_rx_start(mac);
                
                 /*
                  * Restore interrupts
                  */
-                 ag7240_reg_wr(mac,AG7240_DMA_INTR_MASK,int_mask);
+                ag7240_reg_wr(mac,AG7240_DMA_INTR_MASK,int_mask);
 
-                 spin_unlock_irqrestore(&mac->mac_lock,flags);
-		 break;
-           }
+                spin_unlock_irqrestore(&mac->mac_lock,flags);
+                break;
+            }
         }
         ag7240_ring_incr(tail);
     }
     return 0;
 }
-#endif
+
 
 /*
+ *
  * phy link state management
  */
 int
@@ -899,20 +918,112 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
     int                 carrier = netif_carrier_ok(dev), fdx, phy_up;
     ag7240_phy_speed_t  speed;
     int                 rc;
-    uint8_t  intlink;
-    uint16_t rd_data;
 
     /* The vitesse switch uses an indirect method to communicate phy status
-    * so it is best to limit the number of calls to what is necessary.
-    * However a single call returns all three pieces of status information.
-    * 
-    * This is a trivial change to the other PHYs ergo this change.
-    *
-    */
+     * so it is best to limit the number of calls to what is necessary.
+     * However a single call returns all three pieces of status information.
+     * 
+     * This is a trivial change to the other PHYs ergo this change.
+     *
+     */
   
     rc = ag7240_get_link_status(mac->mac_unit, &phy_up, &fdx, &speed, phyUnit);
 
     athrs26_phy_stab_wr(phyUnit,phy_up,speed);
+
+    if (rc < 0)
+        goto done;
+
+    if (!phy_up)
+    {
+        if (carrier)
+        {
+            printk(MODULE_NAME ":unit %d: phy %0d not up carrier %d\n", mac->mac_unit, phyUnit, carrier);
+
+            /* A race condition is hit when the queue is switched on while tx interrupts are enabled.
+             * To avoid that disable tx interrupts when phy is down.
+             */
+            ag7240_intr_disable_tx(mac);
+
+            netif_carrier_off(dev);
+            netif_stop_queue(dev);
+            if (mac_has_flag(mac,ETH_SOFT_LED)) {
+                PLedCtrl.ledlink[phyUnit] = 0;
+                s26_wr_phy(phyUnit,0x19,0x0);
+            }
+        }
+        goto done;
+    }
+   
+    if(!mac->mac_ifup)
+        goto done; 
+    /*
+     * phy is up. Either nothing changed or phy setttings changed while we 
+     * were sleeping.
+     */
+
+    if ((fdx < 0) || (speed < 0))
+    {
+        printk(MODULE_NAME ": phy not connected?\n");
+        return 0;
+    }
+
+    if (carrier && (speed == mac->mac_speed) && (fdx == mac->mac_fdx)) 
+        goto done;
+
+    if (athrs26_phy_is_link_alive(phyUnit)) 
+    {
+        printk(MODULE_NAME ": enet unit:%d phy:%d is up...", mac->mac_unit,phyUnit);
+        printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
+           spd_str[speed], dup_str[fdx]);
+
+        ag7240_set_mac_from_link(mac, speed, fdx);
+
+        printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl  \n", 
+           ag7240_reg_rd(mac, AG7240_MAC_CFG2), 
+           ag7240_reg_rd(mac, AG7240_MAC_IFCTL));
+        /*
+         * in business
+         */
+        netif_carrier_on(dev);
+        netif_start_queue(dev);
+        /* 
+         * WAR: Enable link LED to glow if speed is negotiated as 10 Mbps 
+         */
+        if (mac_has_flag(mac,ETH_SOFT_LED)) {
+            PLedCtrl.ledlink[phyUnit] = 1;
+            PLedCtrl.speed[phyUnit] = speed;
+
+            s26_wr_phy(phyUnit,0x19,0x3c0);
+        }
+    }
+    else {
+        if (mac_has_flag(mac,ETH_SOFT_LED)) {
+            PLedCtrl.ledlink[phyUnit] = 0;
+            s26_wr_phy(phyUnit,0x19,0x0);
+        }
+        printk(MODULE_NAME ": enet unit:%d phy:%d is down...\n", mac->mac_unit,phyUnit);
+    }
+
+done:
+    return 0;
+}
+
+#if defined(CONFIG_AR7242_RGMII_PHY)||defined(CONFIG_AR7242_S16_PHY)||defined(CONFIG_AR7242_VIR_PHY)   
+/*
+ * phy link state management
+ */
+int
+ag7242_check_link(ag7240_mac_t *mac)
+{
+    struct net_device  *dev     = mac->mac_dev;
+    int                 carrier = netif_carrier_ok(dev), fdx, phy_up;
+    ag7240_phy_speed_t  speed;
+    int                 rc,phyUnit = 0;
+
+
+    rc = ag7240_get_link_status(mac->mac_unit, &phy_up, &fdx, &speed, phyUnit);
+
     if (rc < 0)
         goto done;
 
@@ -928,20 +1039,14 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
             ag7240_intr_disable_tx(mac);
 
             netif_carrier_off(dev);
-#ifdef  ETH_SOFT_LED
-       PLedCtrl.ledlink[phyUnit] = 0;
-       s26_wr_phy(phyUnit,0x19,0x0);
-#endif
-        }
+            netif_stop_queue(dev);
+       }
+       goto done;
+    }
+
+    if(!mac->mac_ifup) {
         goto done;
     }
-   
-    if(!mac->mac_ifup)
-	goto done; 
-    /*
-    * phy is up. Either nothing changed or phy setttings changed while we 
-    * were sleeping.
-    */
 
     if ((fdx < 0) || (speed < 0))
     {
@@ -949,58 +1054,39 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
         return 0;
     }
 
-    if (carrier && (speed == mac->mac_speed) && (fdx == mac->mac_fdx)) 
+    if (carrier && (speed == rg_phy_speed ) && (fdx == rg_phy_duplex)) {
         goto done;
-
-    if (athrs26_phy_is_link_alive(phyUnit)) 
+    }
+#ifdef CONFIG_AR7242_RGMII_PHY
+    if (athr_phy_is_link_alive(phyUnit)) 
+#endif
     {
-       printk(MODULE_NAME ": enet unit:%d phy:%d is up...", mac->mac_unit,phyUnit);
-       printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
+        printk(MODULE_NAME ": enet unit:%d is up...\n", mac->mac_unit);
+        printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)],
            spd_str[speed], dup_str[fdx]);
 
-       ag7240_set_mac_from_link(mac, speed, fdx);
+        rg_phy_speed = speed;
+        rg_phy_duplex = fdx;
+        /* Set GEO to be always at Giga Bit */
+        speed = AG7240_PHY_SPEED_1000T;
+        ag7240_set_mac_from_link(mac, speed, fdx);
 
-       printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl  \n", 
-           ag7240_reg_rd(mac, AG7240_MAC_CFG2), 
+        printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl  \n",
+           ag7240_reg_rd(mac, AG7240_MAC_CFG2),
            ag7240_reg_rd(mac, AG7240_MAC_IFCTL));
-
-       /* Check the LAN port interface link */
-       if (mac->mac_unit == ENET_UNIT_LAN) {
-           intlink = 0x8; /* Set MII inteface link */
-           s26_wr_phy(phyUnit,ATHR_DEBUG_PORT_ADDRESS,0x12);
-           rd_data = s26_rd_phy(phyUnit,ATHR_DEBUG_PORT_DATA);
-       printk(MODULE_NAME ": enet unit %d phy %d mode 0x%x\n",mac->mac_unit,phyUnit,rd_data);
-       if (rd_data & intlink ) {
-           rd_data &= ~intlink;
-           s26_wr_phy(phyUnit,ATHR_DEBUG_PORT_ADDRESS,0x12);
-           s26_wr_phy(phyUnit,ATHR_DEBUG_PORT_DATA,rd_data);
-        }}
-
-       /*
-       * in business
-       */
-       netif_carrier_on(dev);
-       /* 
-        * WAR: Enable link LED to glow if speed is negotiated as 10 Mbps 
-       */
-#ifdef ETH_SOFT_LED
-       PLedCtrl.ledlink[phyUnit] = 1;
-       PLedCtrl.speed[phyUnit] = speed;
-
-       s26_wr_phy(phyUnit,0x19,0x3c0);
-#endif
+        /*
+         * in business
+         */
+        netif_carrier_on(dev);
+        netif_start_queue(dev);
     }
-    else {
-#ifdef  ETH_SOFT_LED
-	PLedCtrl.ledlink[phyUnit] = 0;
-	s26_wr_phy(phyUnit,0x19,0x0);
-#endif
-	    printk(MODULE_NAME ": enet unit:%d phy:%d is down...\n", mac->mac_unit,phyUnit);
-    }
-
+    
 done:
+    mod_timer(&mac->mac_phy_timer, jiffies + AG7240_PHY_POLL_SECONDS*HZ);
     return 0;
 }
+
+#endif
 
 uint16_t
 ag7240_mii_read(int unit, uint32_t phy_addr, uint8_t reg)
@@ -1089,24 +1175,13 @@ ag7240_handle_tx_full(ag7240_mac_t *mac)
  *
  * ******************************
  */
-#ifdef CONFIG_AG7240_QOS 
 static ag7240_desc_t *
 ag7240_get_tx_ds(ag7240_mac_t *mac, int *len, unsigned char **start,int ac)
-#else
-static ag7240_desc_t *
-ag7240_get_tx_ds(ag7240_mac_t *mac, int *len, unsigned char **start)
-#endif
 {
     ag7240_desc_t      *ds;
     int                len_this_ds;
-#ifdef CONFIG_AG7240_QOS
     ag7240_ring_t      *r   = &mac->mac_txring[ac];
-#else
-    ag7240_ring_t      *r   = &mac->mac_txring;
-#endif
-#ifdef CHECK_DMA_STATUS
     ag7240_buffer_t    *bp;
-#endif
 
 
 
@@ -1132,10 +1207,10 @@ ag7240_get_tx_ds(ag7240_mac_t *mac, int *len, unsigned char **start)
     *len   -= len_this_ds;
     *start += len_this_ds;
 
-#ifdef CHECK_DMA_STATUS
-     bp = &r->ring_buffer[r->ring_head];
-     bp->trans_start = jiffies; /*Time stamp each packet */
-#endif
+    if (mac_has_flag(mac,CHECK_DMA_STATUS)) {
+        bp = &r->ring_buffer[r->ring_head];
+        bp->trans_start = jiffies; 
+    }
 
     ag7240_ring_incr(r->ring_head);
 
@@ -1146,71 +1221,72 @@ int
 ag7240_hard_start(struct sk_buff *skb, struct net_device *dev)
 {
     ag7240_mac_t       *mac = (ag7240_mac_t *)netdev_priv(dev);
-#ifdef CONFIG_AG7240_QOS
     ag7240_ring_t      *r;
     struct ethhdr *eh = (struct ethhdr *) skb->data;
     int                ac;
-#else
-    ag7240_ring_t      *r   = &mac->mac_txring;
-#endif
     ag7240_buffer_t    *bp;
     ag7240_desc_t      *ds, *fds;
     unsigned char      *start;
     int                len;
     int                nds_this_pkt;
-
-#if defined(CONFIG_ATHEROS_HEADER_EN)
-    /* add header to normal frames */
-    /* check if normal frames */
-    if (mac->mac_unit == 1) 
-    {
-        skb_push(skb, 2);
-        skb->data[0] = 0x30; /* broadcast = 0; from_cpu = 0; reserved = 1; port_num = 0 */
-        skb->data[1] = 0x40; /* reserved = 0b10; priority = 0; type = 0 (normal) */
-    }
-#endif
-
 //#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     if(unlikely((skb->len <= 0) || (skb->len > (dev->mtu + ETH_VLAN_HLEN +6 ))))
 //#else
-//    if(unlikely((skb->len <= 0) || (skb->len > (dev->mtu + ETH_HLEN))))
+//    if(unlikely((skb->len <= 0) || (skb->len > (dev->mtu + ETH_HLEN + 4))))
 //#endif
     {
         printk(MODULE_NAME ": bad skb, len %d\n", skb->len);
         goto dropit;
     }
 
-#ifdef CONFIG_AG7240_QOS
-    for (ac = 0;ac < ENET_NUM_AC; ac++) {
-
-    if (ag7240_tx_reap_thresh(mac,ac)) 
-        ag7240_tx_reap(mac,ac);
+    for (ac = 0;ac < mac->mac_noacs; ac++) {
+        if (ag7240_tx_reap_thresh(mac,ac)) 
+            ag7240_tx_reap(mac,ac);
     }
 
     /* 
      * Select the TX based on access category 
      */
-   
-    /* Default priority */
     ac = ENET_AC_BE;
+    if ( (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) || (mac_has_flag(mac,ATHR_S26_HEADER))
+        || (mac_has_flag(mac,ATHR_S16_HEADER)))  { 
+        /* Default priority */
+        eh = (struct ethhdr *) skb->data;
 
-    if (eh->h_proto  == __constant_htons(ETHERTYPE_IP))
-    {
-        const struct iphdr *ip = (struct iphdr *)
-                    (skb->data + sizeof (struct ethhdr));
-        /*
-         * IP frame: exclude ECN bits 0-1 and map DSCP bits 2-7
-         * from TOS byte.
-         */
-        ac = TOS_TO_ENET_AC ((ip->tos & (~INET_ECN_MASK)) >> IP_PRI_SHIFT);
-
+        if (eh->h_proto  == __constant_htons(ETHERTYPE_IP))
+        {
+            const struct iphdr *ip = (struct iphdr *)
+                        (skb->data + sizeof (struct ethhdr));
+            /*
+             * IP frame: exclude ECN bits 0-1 and map DSCP bits 2-7
+             * from TOS byte.
+             */
+            ac = TOS_TO_ENET_AC ((ip->tos >> TOS_ECN_SHIFT) & 0x3F);
+        }
     }
-    skb->priority = ac;
+    skb->priority=ac;
+    /* add header to normal frames sent to LAN*/
+    if (mac_has_flag(mac,ATHR_S26_HEADER))
+    {
+        skb_push(skb, ATHR_HEADER_LEN);
+        skb->data[0] = 0x30; /* broadcast = 0; from_cpu = 0; reserved = 1; port_num = 0 */
+        skb->data[1] = (0x40 | (ac << HDR_PRIORITY_SHIFT)); /* reserved = 0b10; priority = 0; type = 0 (normal) */
+        skb->priority=ENET_AC_BE;
+    }
+
+    if (mac_has_flag(mac,ATHR_S16_HEADER))
+    {
+        skb_push(skb, ATHR_HEADER_LEN);
+        memcpy(skb->data,skb->data + ATHR_HEADER_LEN, 12);
+
+        skb->data[12] = 0x30; /* broadcast = 0; from_cpu = 0; reserved = 1; port_num = 0 */
+        skb->data[13] = 0x40 | ((ac << HDR_PRIORITY_SHIFT)); /* reserved = 0b10; priority = 0; type = 0 (normal) */
+        skb->priority=ENET_AC_BE;
+    }
+    /*hdr_dump("Tx",mac->mac_unit,skb->data,ac,0);*/
     r = &mac->mac_txring[skb->priority];
-#else
-    if (ag7240_tx_reap_thresh(mac)) 
-        ag7240_tx_reap(mac);
-#endif
+
+    assert(r);
     ag7240_trc_new(r->ring_head,"hard-stop hd");
     ag7240_trc_new(r->ring_tail,"hard-stop tl");
 
@@ -1227,19 +1303,11 @@ ag7240_hard_start(struct sk_buff *skb, struct net_device *dev)
     assert(len>4);
 
     nds_this_pkt = 1;
-#ifdef CONFIG_AG7240_QOS
     fds = ds = ag7240_get_tx_ds(mac, &len, &start,skb->priority);
-#else
-    fds = ds = ag7240_get_tx_ds(mac, &len, &start);
-#endif
 
     while (len>0)
     {
-#ifdef CONFIG_AG7240_QOS
         ds = ag7240_get_tx_ds(mac, &len, &start,skb->priority);
-#else
-        ds = ag7240_get_tx_ds(mac, &len, &start);
-#endif
         nds_this_pkt++;
         ag7240_tx_give_to_dma(ds);
     }
@@ -1265,19 +1333,16 @@ ag7240_hard_start(struct sk_buff *skb, struct net_device *dev)
 
     ag7240_trc(ag7240_reg_rd(mac, AG7240_DMA_TX_CTRL),"dma idle");
 
-#ifdef CONFIG_AG7240_QOS
-    ag7240_tx_start_qos(mac,skb->priority);
-
-    for ( ac = 0;ac < ENET_NUM_AC; ac++) {
+    if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) {
+        ag7240_tx_start_qos(mac,skb->priority);
+    }
+    else {
+        ag7240_tx_start(mac);
+    }
+    for ( ac = 0;ac < mac->mac_noacs; ac++) {
         if (unlikely(ag7240_tx_ring_full(mac,ac))) 
             ag7240_handle_tx_full(mac);
     }
-#else
-    ag7240_tx_start(mac);
-
-    if (unlikely(ag7240_tx_ring_full(mac)))
-        ag7240_handle_tx_full(mac);
-#endif
 
 
     dev->trans_start = jiffies;
@@ -1326,11 +1391,7 @@ ag7240_intr(int cpl, void *dev_id)
 {
     struct net_device *dev  = (struct net_device *)dev_id;
     ag7240_mac_t      *mac  = (ag7240_mac_t *)netdev_priv(dev);
-#ifdef CONFIG_AG7240_QOS
     int   isr, imr, handled = 0,ac;
-#else
-    int   isr, imr, handled = 0;
-#endif
 
     isr   = ag7240_get_isr(mac);
     imr   = ag7240_reg_rd(mac, AG7240_DMA_INTR_MASK);
@@ -1342,7 +1403,10 @@ ag7240_intr(int cpl, void *dev_id)
     if (isr & (AG7240_INTR_RX_OVF))
     {
         handled = 1;
+
+    if (is_ar7240()) 
         ag7240_reg_wr(mac,AG7240_MAC_CFG1,(ag7240_reg_rd(mac,AG7240_MAC_CFG1)&0xfffffff3));
+
         ag7240_intr_ack_rxovf(mac);
     }
     if (likely(isr & AG7240_INTR_RX))
@@ -1373,13 +1437,9 @@ ag7240_intr(int cpl, void *dev_id)
     {
         handled = 1;
         ag7240_intr_ack_tx(mac);
-#ifdef CONFIG_AG7240_QOS
 	/* Which queue to reap ??????????? */
-        for(ac = 0; ac < ENET_NUM_AC;ac++)
+        for(ac = 0; ac < mac->mac_noacs;ac++)
             ag7240_tx_reap(mac,ac);
-#else
-        ag7240_tx_reap(mac);
-#endif
     }
     if (unlikely(isr & AG7240_INTR_RX_BUS_ERROR))
     {
@@ -1736,8 +1796,10 @@ ag7240_rx_replenish(ag7240_mac_t *mac)
     */
     wmb();
 
-    ag7240_reg_wr(mac,AG7240_MAC_CFG1,(ag7240_reg_rd(mac,AG7240_MAC_CFG1)|0xc));
-    ag7240_rx_start(mac);
+    if (is_ar7240()) {
+        ag7240_reg_wr(mac,AG7240_MAC_CFG1,(ag7240_reg_rd(mac,AG7240_MAC_CFG1)|0xc));
+        ag7240_rx_start(mac);
+    }
 
     r->ring_tail = tail;
     ag7240_trc(refilled,"refilled");
@@ -1748,30 +1810,18 @@ ag7240_rx_replenish(ag7240_mac_t *mac)
 /* 
  * Reap from tail till the head or whenever we encounter an unxmited packet.
  */
-#ifdef CONFIG_AG7240_QOS
 static int
 ag7240_tx_reap(ag7240_mac_t *mac,int ac)
-#else
-static int
-ag7240_tx_reap(ag7240_mac_t *mac)
-#endif
 {    
-#ifdef CONFIG_AG7240_QOS
     ag7240_ring_t   *r;
     int              head, tail, reaped = 0, i;
-#else
-    ag7240_ring_t   *r     = &mac->mac_txring;
-    int              head  = r->ring_head, tail = r->ring_tail, reaped = 0, i;
-#endif
     ag7240_desc_t   *ds;
     ag7240_buffer_t *bf;
     uint32_t    flags;
 
-#ifdef CONFIG_AG7240_QOS
     r = &mac->mac_txring[ac];
     head = r->ring_head;
     tail = r->ring_tail;
-#endif
     ag7240_trc_new(head,"hd");
     ag7240_trc_new(tail,"tl");
 
@@ -1830,19 +1880,13 @@ ag7240_tx_reap(ag7240_mac_t *mac)
 static int
 ag7240_tx_alloc(ag7240_mac_t *mac)
 {
-#ifdef CONFIG_AG7240_QOS
     ag7240_ring_t *r ;
     int ac;
-#else
-    ag7240_ring_t *r = &mac->mac_txring;
-#endif
     ag7240_desc_t *ds;
     int i, next;
-#ifdef CONFIG_AG7240_QOS
-    for(ac = 0;ac < ENET_NUM_AC; ac++) {
+    for(ac = 0;ac < mac->mac_noacs; ac++) {
 
         r  = &mac->mac_txring[ac];
-#endif
         if (ag7240_ring_alloc(r, AG7240_TX_DESC_CNT))
             return 1;
 
@@ -1856,9 +1900,7 @@ ag7240_tx_alloc(ag7240_mac_t *mac)
             ds[i].next_desc     =   ag7240_desc_dma_addr(r, &ds[next]);
             ag7240_tx_own(&ds[i]);
        }
-#ifdef CONFIG_AG7240_QOS
    }
-#endif
     return 0;
 }
 
@@ -1913,17 +1955,12 @@ error:
 static void
 ag7240_tx_free(ag7240_mac_t *mac)
 {
-#ifdef CONFIG_AG7240_QOS
     int ac;
     
-    for(ac = 0;ac < ENET_NUM_AC; ac++) {
+    for(ac = 0;ac < mac->mac_noacs; ac++) {
         ag7240_ring_release(mac, &mac->mac_txring[ac]);
         ag7240_ring_free(&mac->mac_txring[ac]);
    }
-#else
-    ag7240_ring_release(mac, &mac->mac_txring);
-    ag7240_ring_free(&mac->mac_txring);
-#endif
 }
 
 static void
@@ -2030,6 +2067,7 @@ ag7240_tx_timeout_task(struct work_struct *work)
 {
     ag7240_mac_t *mac = container_of(work, ag7240_mac_t, mac_tx_timeout);
     ag7240_trc(mac,"mac");
+    check_for_dma_status(mac,0);
     ag7240_stop(mac->mac_dev);
     ag7240_open(mac->mac_dev);
 }
@@ -2205,7 +2243,29 @@ ag7240_init(void)
         mac->mac_unit               =  i;
         mac->mac_base               =  ag7240_mac_base(i);
         mac->mac_irq                =  ag7240_mac_irq(i);
+        mac->mac_noacs              =  1;
         ag7240_macs[i]              =  mac;
+#ifdef CONFIG_ATHEROS_HEADER_EN
+        if (mac->mac_unit == ENET_UNIT_LAN)    
+	    mac_set_flag(mac,ATHR_S26_HEADER);
+#endif 
+#ifdef CONFIG_ETH_SOFT_LED
+        if (is_ar7240())
+            mac_set_flag(mac,ETH_SOFT_LED);
+#endif
+#ifdef CONFIG_CHECK_DMA_STATUS 
+        mac_set_flag(mac,CHECK_DMA_STATUS);
+#endif
+#ifdef CONFIG_S26_SWITCH_ONLY_MODE
+        if (is_ar7241()) {
+            if(i) {
+                mac_set_flag(mac,ETH_SWONLY_MODE);
+                }
+            else {
+                continue;
+            }
+        }
+#endif
         spin_lock_init(&mac->mac_lock);
         /*
         * out of memory timer
@@ -2278,20 +2338,24 @@ ag7240_init(void)
     ag7240_trc_init();
 
     athrs26_reg_dev(ag7240_macs);
-#ifdef CHECK_DMA_STATUS
-    prev_ts = jiffies;
-#endif
-#ifdef ETH_SOFT_LED
-    init_timer(&PLedCtrl.led_timer);
-    PLedCtrl.led_timer.data     = (unsigned long)(&PLedCtrl);
-    PLedCtrl.led_timer.function = (void *)led_control_func;
-    mod_timer(&PLedCtrl.led_timer,(jiffies + AG7240_LED_POLL_SECONDS));
-#endif
+    if (mac_has_flag(mac,CHECK_DMA_STATUS))
+        prev_dma_chk_ts = jiffies;
+
+    if (mac_has_flag(mac,ETH_SOFT_LED)) {
+        init_timer(&PLedCtrl.led_timer);
+        PLedCtrl.led_timer.data     = (unsigned long)(&PLedCtrl);
+        PLedCtrl.led_timer.function = (void *)led_control_func;
+        mod_timer(&PLedCtrl.led_timer,(jiffies + AG7240_LED_POLL_SECONDS));
+    }
     return 0;
 failed:
     free_irq(AR7240_MISC_IRQ_ENET_LINK, ag7240_macs[0]->mac_dev);
     for(i = 0; i < AG7240_NMACS; i++)
     {
+#ifdef CONFIG_S26_SWITCH_ONLY_MODE
+        if (is_ar7241() && i == 0)
+            continue;
+#endif
         if (!ag7240_macs[i]) 
             continue;
         if (ag7240_macs[i]->mac_dev) 
@@ -2310,6 +2374,10 @@ ag7240_cleanup(void)
     free_irq(AR7240_MISC_IRQ_ENET_LINK, ag7240_macs[0]->mac_dev);
     for(i = 0; i < AG7240_NMACS; i++)
     {
+        if (mac_has_flag(ag7240_macs[1],ETH_SWONLY_MODE) && i == 0) {
+            kfree(ag7240_macs[i]);
+            continue;
+        }
         unregister_netdev(ag7240_macs[i]->mac_dev);
         free_netdev(ag7240_macs[i]->mac_dev);
         kfree(ag7240_macs[i]);

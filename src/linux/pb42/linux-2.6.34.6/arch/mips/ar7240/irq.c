@@ -33,7 +33,9 @@ static struct irqaction cascade  = {
 
 
 static void ar7240_dispatch_misc_intr(void);
+#ifndef CONFIG_WASP_SUPPORT
 static void ar7240_dispatch_pci_intr(void);
+#endif
 static void ar7240_dispatch_gpio_intr(void);
 static void ar7240_misc_irq_init(int irq_base);
 extern asmlinkage void ar7240_interrupt_receive(void);
@@ -57,6 +59,11 @@ void __init arch_init_irq(void)
     setup_irq(AR7240_MISC_IRQ_GPIO, &cascade);
 #ifdef CONFIG_PCI
     setup_irq(AR7240_CPU_IRQ_PCI,   &cascade);
+#endif
+#ifdef CONFIG_WASP_SUPPORT
+	set_irq_chip_and_handler(ATH_CPU_IRQ_WLAN,
+				&dummy_irq_chip,
+				handle_percpu_irq);
 #endif
 }
 
@@ -158,8 +165,21 @@ asmlinkage void plat_irq_dispatch(void)
         do_IRQ(AR7240_CPU_IRQ_TIMER);
 	}
     else if (pending & CAUSEF_IP2) 
-        ar7240_dispatch_pci_intr();
-
+    {
+#ifdef CONFIG_WASP_SUPPORT
+#ifdef CONFIG_PCI
+		if (unlikely(ar7240_reg_rd
+			(AR7240_PCIE_WMAC_INT_STATUS) & PCI_WMAC_INTR))
+			ar7240_dispatch_pci_intr();
+		else
+#endif
+			do_IRQ(ATH_CPU_IRQ_WLAN);
+#elif defined (CONFIG_MACH_HORNET)
+			do_IRQ(ATH_CPU_IRQ_WLAN);
+#else
+			ar7240_dispatch_pci_intr();
+#endif
+    }
     else if (pending & CAUSEF_IP4) 
         do_IRQ(AR7240_CPU_IRQ_GE0);
 

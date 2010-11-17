@@ -123,12 +123,6 @@ config USB_EHCI_MXC
 	---help---
 	  Variation of ARC USB block used in some Freescale chips.
 
-config USB_EHCI_AR7100
-	bool "USB EHCI support for AR71xx"
-	depends on USB_EHCI_HCD && MACH_AR7100
-	help
-	  Support for Atheros AR71xx built-in EHCI controller
-
 
 config USB_EHCI_HCD_PPC_OF
 	bool "EHCI support for PPC USB controller on OF platform bus"
@@ -221,11 +215,23 @@ config USB_OHCI_AR7100
 	  Support for Atheros AR71xx built-in OHCI controller
 
 config USB_OHCI_AR7240
-    bool "USB OHCI support for AR7240"
-    depends on MACH_AR7240 && USB_OHCI_HCD
-    help
-        Support for AR7240 OHCI controller
+	bool "USB OHCI support for AR7240"
+	depends on (MACH_AR7240 || MACH_HORNET) && USB_OHCI_HCD
+	depends on MACH_AR7240 && USB_OHCI_HCD
+	help
+	  Support for AR7240 OHCI controller
 
+config USB_EHCI_AR7100
+	bool "USB EHCI support for AR71xx"
+	depends on USB_EHCI_HCD && MACH_AR7100
+	help
+	  Support for Atheros AR71xx built-in EHCI controller
+
+config USB_EHCI_AR9130
+	bool "USB EHCI support for AR9130"
+	depends on (MACH_AR7100 || MACH_AR7240 || MACH_HORNET) && USB_EHCI_HCD
+	help
+	  Support for AR9130 EHCI controller
 
 config USB_OHCI_HCD_PPC_SOC
 	bool "OHCI support for on-chip PPC USB controller"
@@ -430,8 +436,3 @@ config USB_IMX21_HCD
          To compile this driver as a module, choose M here: the
          module will be called "imx21-hcd".
 
-config USB_EHCI_AR9130
-    bool "USB EHCI support for AR9130"
-    depends on (MACH_AR7100 || MACH_AR7240) && USB_EHCI_HCD
-    help
-        Support for AR9130 EHCI controller
