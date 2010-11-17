@@ -573,6 +573,14 @@ ipcp_init(unit)
     f->callbacks = &ipcp_callbacks;
     fsm_init(&ipcp_fsm[unit]);
 
+    /*
+     * Some 3G modems use repeated IPCP NAKs as a way of stalling
+     * until they can contact a server on the network, so we increase
+     * the default number of NAKs we accept before we start treating
+     * them as rejects.
+     */
+    f->maxnakloops = 100;
+
     memset(wo, 0, sizeof(*wo));
     memset(ao, 0, sizeof(*ao));
 
