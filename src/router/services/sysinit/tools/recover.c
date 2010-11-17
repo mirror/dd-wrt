@@ -38,9 +38,9 @@ void start_recover(void)
 	char dev[64];
 	fprintf(stderr, "recover broken nvram\n");
 #ifdef HAVE_RB600
-	sprintf(drive, "/dev/sda");
+	sprintf(dev, "/dev/sda");
 #else
-	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
+	sprintf(dev, "/dev/discs/disc%d/disc", getdiscindex());
 #endif
 	in = fopen(dev, "rb");
 	fseeko64(in, 0, SEEK_END);
