@@ -115,6 +115,7 @@ void start_devinit(void)
 		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
 //		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
+	eval("mkdir", "-p", "/usr/local/nvram");
 #endif
 	/*
 	 * /tmp 
