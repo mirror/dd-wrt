@@ -1022,7 +1022,7 @@ athrs26_reg_read(unsigned int s26_addr)
     unsigned int addr_temp;
     unsigned int s26_rd_csr_low, s26_rd_csr_high, s26_rd_csr;
     unsigned int data;
-    unsigned int phy_address, reg_address;
+    unsigned int phy_address, reg_address, unit = 0;
 
     addr_temp = (s26_addr & 0xfffffffc) >>2;
     data = addr_temp >> 7;
@@ -1030,14 +1030,21 @@ athrs26_reg_read(unsigned int s26_addr)
     phy_address = 0x1f;
     reg_address = 0x10;
 
-    phy_reg_write(0,phy_address, reg_address, data);
+    if (is_ar7240()) {
+        unit = 0;
+    } 
+    else if(is_ar7241() || is_ar7242()) {
+        unit = 1;
+    }
+
+    phy_reg_write(unit,phy_address, reg_address, data);
 
     phy_address = (0x17 & ((addr_temp >> 4) | 0x10));
     reg_address = ((addr_temp << 1) & 0x1e);
-    s26_rd_csr_low = (uint32_t) phy_reg_read(0,phy_address, reg_address);
+    s26_rd_csr_low = (uint32_t) phy_reg_read(unit,phy_address, reg_address);
 
     reg_address = reg_address | 0x1;
-    s26_rd_csr_high = (uint32_t) phy_reg_read(0,phy_address, reg_address);
+    s26_rd_csr_high = (uint32_t) phy_reg_read(unit,phy_address, reg_address);
     s26_rd_csr = (s26_rd_csr_high << 16) | s26_rd_csr_low ;
 
     return(s26_rd_csr);
@@ -1048,7 +1055,7 @@ athrs26_reg_write(unsigned int s26_addr, unsigned int s26_write_data)
 {
     unsigned int addr_temp;
     unsigned int data;
-    unsigned int phy_address, reg_address;
+    unsigned int phy_address, reg_address, unit = 0;
 
 
     addr_temp = (s26_addr &  0xfffffffc) >>2;
@@ -1057,16 +1064,23 @@ athrs26_reg_write(unsigned int s26_addr, unsigned int s26_write_data)
     phy_address = 0x1f;
     reg_address = 0x10;
 
-    phy_reg_write(0,phy_address, reg_address, data);
+    if (is_ar7240()) {
+        unit = 0;
+    } 
+    else if(is_ar7241() || is_ar7242()) {
+        unit = 1;
+    }
+
+    phy_reg_write(unit,phy_address, reg_address, data);
 
     phy_address = (0x17 & ((addr_temp >> 4) | 0x10));
     reg_address = ((addr_temp << 1) & 0x1e);
     data = s26_write_data  & 0xffff;
-    phy_reg_write(0,phy_address, reg_address, data);
+    phy_reg_write(unit,phy_address, reg_address, data);
 
     reg_address = (((addr_temp << 1) & 0x1e) | 0x1);
     data = s26_write_data >> 16;
-    phy_reg_write(0,phy_address, reg_address, data);
+    phy_reg_write(unit,phy_address, reg_address, data);
 }
 
 
