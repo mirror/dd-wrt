@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V23 SP1 by Botho 17/05/2006				//
+//		English reference translation file - DD-WRT V24 SP2       18/NOV/2010				//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -1352,7 +1352,7 @@ service.vpn_certtype="nsCertType verification";
 service.vpn_clikey="Private Client Key";
 service.vpn_nat="Enable NAT";
 service.vpn_cipher="Encryption Cipher";
-service.vpn_auth="Hash Algorithmus";
+service.vpn_auth="Hash Algorithm";
 service.vpn_bridge="Bridge Tap to br0";
 service.vpn_adv="Advanced Options";
 
