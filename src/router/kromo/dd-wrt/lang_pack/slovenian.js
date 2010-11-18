@@ -1,9 +1,9 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 30.Avg.2010, svn 15036	//
+//				Slovenian translation DD-WRT by Eko, last revision: 18.Nov.2010, svn 15735	//
 //////////////////////////////////////////////////////////////////////////////////////////////
-// IMPORTANT: for live values use UTF-8 Unicode Character Set
 
 // ** COMMON SHARE LABEL **//
+
 lang_charset.set="utf-8";
 
 
@@ -393,6 +393,7 @@ bmenu.wirelessSuperchannel="SuperKanal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Brezžična zaščita";
 bmenu.wirelessAoss="AOSS";
+bmenu.wirelessAossWPS="AOSS / WPS";
 bmenu.wirelessMac="Filter MAC";
 bmenu.wirelessAdvanced="Napredne nastavitve";
 bmenu.wirelessAdvancedwl0="WL0-Napredno";
@@ -636,8 +637,12 @@ firewall.cookies="Filter za piškotke";
 firewall.applet="Filter za Java aplete";
 firewall.activex="Filter za ActiveX";
 firewall.legend3="Prepreči WAN zahteve";
+firewall.legend4="Prepreči napad z grobo silo / DoS";
 firewall.ping="Prepreči anonimno WAN zahtevo (ping)";
 firewall.muticast="Filter za multicast";
+firewall.ssh="Omeji SSH dostop";
+firewall.telnet="Omeji Telnet dostop";
+firewall.http="Omeji HTTP dostop";
 filter.nat="Filter za NAT preusmeritev";
 filter.port113="Filter za IDENT (vrata 113)";
 
@@ -807,7 +812,7 @@ hotspotsys.operatorid="ID operaterja";
 hotspotsys.locationid="ID lokacije";
 hotspotsys.dhcp="DHCP vmesnik";
 hotspotsys.net="Oddaljena mreža";
-hotspotsys.customsplash="Splash Page po meri (Walled Garden)";
+hotspotsys.customsplash="Splash stran po meri (Walled Garden)";
 
 
 anchorfree.anchorfree="AnchorFree";
@@ -1146,7 +1151,7 @@ hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na katera fiži�
 
 routetbl.titl="Usmerjevalna tabela";
 routetbl.h2="Seznam vnosov v usmerjevalno tabelo";
-routetbl.th1="Ciljni LAN IP";
+routetbl.th1="Ciljna LAN mreža";
 
 
 // ** Routing.asp **//
@@ -1191,7 +1196,7 @@ route.gateway_legend="Dinamično usmerjevanje";
 route.static_legend="Statično usmerjevanje";
 route.static_setno="Izberi št. niza";
 route.static_name="Ime smeri";
-route.static_ip="Ciljni LAN IP";
+route.static_ip="Ciljna LAN mreža";
 
 //help container
 
@@ -1239,6 +1244,7 @@ service.dhcp_option="Dodatne DHCPd možnosti";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokalni DNS";
+service.dnsmasq_no_dns_rebind="Brez DNS ponovnega vezanja";
 service.dnsmasq_opt="Dodatne DNSMasq možnosti";
 
 //pptp.webservices
@@ -1320,20 +1326,37 @@ service.vpnd_crl="Seznam preklicanih certifikatov";
 service.vpnd_config="OpenVPN konfiguracija";
 service.vpnd_dhpem="DH PEM";
 service.vpnd_tlsauth="OpenVPN TLS Auth";
+service.vpnd_cert="Javno strežniško potrdilo";
+service.vpnd_key="Zasebni strežniški ključ";
+service.vpnd_mode="Način strežnika";
+service.vpnd_net="Mreža";
+service.vpnd_mask="Mrežna maska";
+service.vpnd_startip="Pool začetni IP";
+service.vpnd_endip="Pool končni IP";
+service.vpnd_cl2cl="Dovoli zvezo odjemalec-odjemalec";
+service.vpnd_switch="Konfiguracija stikala stežnika";
+service.vpnd_dupcn="Dovoli podvojeni cn";
+service.vpn_redirgate="Preusmeri privzeti prehod";
 service.vpn_legend="OpenVPN odjemalec";
 service.vpn_srv="Začni OpenVPN";
 service.vpn_ipname="Strežnikov IP/ime";
 service.vpn_mtu="TUN MTU nastavitev";
-service.vpn_mru="TUN MTU dodatno";
-service.vpn_mss="TCP MSS";
+service.vpn_mss="MSS-fiksiranje/fragmentiranje preko tunela";
 service.vpn_compress="Uporabi LZO stiskanje";
+service.vpn_cl2cl="Dovoli odjemalec-odjemalec";
 service.vpn_tunnel="Tunelski protokol";
 service.vpn_tuntap="Tunelska naprava";
 service.vpn_srvcert="Javno strežniško potrdilo";
 service.vpn_clicert="Javno odjemalčevo potrdilo";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Zasebni odjemalčev ključ";
+service.vpn_nat="Dovoli NAT";
+service.vpn_cipher="Šifra za šifriranje";
+service.vpn_auth="Hash algoritem";
+service.vpn_bridge="Most Tap - br0";
+service.vpn_adv="Napredne možnosti";
 
+//vnc.repeater
 service.vncrepeater_legend="VNC";
 service.vncrepeater="VNC prenosnik";
 
@@ -1781,7 +1804,7 @@ wpa.shared_key="WPA deljeni ključ";
 
 aoss.titl="AOSS varnost";
 aoss.aoss="AOSS";
-aoss.service="AOSS servis";
+aoss.service="Storitev AOSS";
 aoss.enable="Omogoči AOSS";
 aoss.start="Začni AOSS pogajanje";
 aoss.securitymodes="Varnostni načini";
@@ -1796,6 +1819,10 @@ aoss.notice="OBVESTILO";
 aoss.ap_mode_notice="OBVESTILO: AOSS se lahko uporablja samo kadar je brezžično (prvi radio) v načinu AP ali WDS AP..";
 aoss.wep_notice="način WEP ni dovolj varen, zato ga ne priporočamo.";
 aoss.wep_info="(potrebno za večino igralnih konzol, ki podpirajo AOSS)";
+aoss.wps="Namestitev WPS";
+aoss.wpspin="WPS PIN";
+aoss.wpsregister="Registriraj PIN";
+aoss.wpsenable="WPS gumb";
 
 
 sec80211x.xsuptype="Tip XSupplicanta";
