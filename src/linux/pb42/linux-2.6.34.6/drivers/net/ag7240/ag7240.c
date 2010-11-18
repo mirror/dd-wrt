@@ -1091,14 +1091,11 @@ done:
 uint16_t
 ag7240_mii_read(int unit, uint32_t phy_addr, uint8_t reg)
 {
-    ag7240_mac_t *mac   = ag7240_unit2mac(0);
+    ag7240_mac_t *mac   = ag7240_unit2mac(unit);
     uint16_t      addr  = (phy_addr << AG7240_ADDR_SHIFT) | reg, val;
     volatile int           rddata;
     uint16_t      ii = 0x1000;
 
-    if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) {
-       mac = ag7240_unit2mac(1);
-    }
 
     ag7240_reg_wr(mac, AG7240_MII_MGMT_CMD, 0x0);
     ag7240_reg_wr(mac, AG7240_MII_MGMT_ADDRESS, addr);
@@ -1119,14 +1116,11 @@ ag7240_mii_read(int unit, uint32_t phy_addr, uint8_t reg)
 void
 ag7240_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data)
 {
-    ag7240_mac_t *mac   = ag7240_unit2mac(0);
+    ag7240_mac_t *mac   = ag7240_unit2mac(unit);
     uint16_t      addr  = (phy_addr << AG7240_ADDR_SHIFT) | reg;
     volatile int rddata;
     uint16_t      ii = 0x1000;
 
-    if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0) {
-       mac = ag7240_unit2mac(1);
-    }
 
     ag7240_reg_wr(mac, AG7240_MII_MGMT_ADDRESS, addr);
     ag7240_reg_wr(mac, AG7240_MII_MGMT_CTRL, data);
