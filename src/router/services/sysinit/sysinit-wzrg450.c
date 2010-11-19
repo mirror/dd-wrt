@@ -1,5 +1,5 @@
 /*
- * sysinit-wzrag300nh.c
+ * sysinit-wzrg450.c
  *
  * Copyright (C) 2010 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
