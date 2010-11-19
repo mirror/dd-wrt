@@ -824,6 +824,7 @@ static void nat_postrouting(void)
 
 		if (nvram_match("block_loopback", "1"))
 			method = "DROP";
+
 		{
 			// added for logic test
 			int loopmask = 0;
@@ -831,17 +832,17 @@ static void nat_postrouting(void)
 
 			// lan_netmask 
 			// is valid
-
-			loopmask = getmask(nmask);
-
-			if (nvram_match("block_loopback", "0"))
+			if (nvram_match("block_loopback", "0")) {
 				save2file
 				    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
 				     lanface);
-			save2file
-			    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
-			     lanface, lan_cclass, loopmask, lan_cclass,
-			     loopmask, method);
+			} else {
+				loopmask = getmask(nmask);
+				save2file
+				    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
+				     lanface, lan_cclass, loopmask, lan_cclass,
+				     loopmask, method);
+			}
 			char *next;
 			char dev[16];
 			char var[80];
@@ -858,28 +859,37 @@ static void nat_postrouting(void)
 					if (nvram_nmatch
 					    ("0", "%s_bridged", var)) {
 						if (nvram_match
-						    ("block_loopback", "0"))
+						    ("block_loopback", "0")) {
 							save2file
 							    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
 							     var);
-						char nat[32];
-						sprintf(nat, "%s_nat", var);
-						nvram_default_get(nat, "1");
-						if (nvram_match(nat, "1"))
-							save2file
-							    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
-							     var,
-							     nvram_nget
-							     ("%s_ipaddr", var),
-							     getmask(nvram_nget
-								     ("%s_netmask",
-								      var)),
-							     nvram_nget
-							     ("%s_ipaddr", var),
-							     getmask(nvram_nget
-								     ("%s_netmask",
-								      var)),
-							     method);
+						} else {
+							char nat[32];
+							sprintf(nat, "%s_nat",
+								var);
+							nvram_default_get(nat,
+									  "1");
+							if (nvram_match
+							    (nat, "1"))
+								save2file
+								    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
+								     var,
+								     nvram_nget
+								     ("%s_ipaddr",
+								      var),
+								     getmask
+								     (nvram_nget
+								      ("%s_netmask",
+								       var)),
+								     nvram_nget
+								     ("%s_ipaddr",
+								      var),
+								     getmask
+								     (nvram_nget
+								      ("%s_netmask",
+								       var)),
+								     method);
+						}
 					}
 				}
 			}
