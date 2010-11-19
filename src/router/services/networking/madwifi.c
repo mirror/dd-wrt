@@ -704,7 +704,7 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
 	sprintf(nfreq, "%s_channel", prefix);
 	int channel = ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
 	// i know that's not the right way.. autochannel is 0
-	if (channel < 36)
+	if (channel < 36 || nvram_match(nfreq,"0"))
 		fprintf(fp, "hw_mode=g\n");
 	else
 		fprintf(fp, "hw_mode=a\n");
