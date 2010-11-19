@@ -914,6 +914,15 @@ int internal_getRouterBrand()
 #elif HAVE_BWRG1000
 	setRouter("Bountiful BWRG-1000");
 	return ROUTER_BOARD_LS2;
+#elif HAVE_WLAEAG300N
+#ifdef HAVE_BUFFALO
+	setRouter("WLAE-AG300N");
+#else
+	setRouter("Buffalo WLAE-AG300N");
+#endif
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRHPG300N
 #ifdef HAVE_BUFFALO
 	setRouter("WHR-HP-G300N");
