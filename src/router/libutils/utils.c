@@ -1115,6 +1115,13 @@ int internal_getRouterBrand()
 #elif HAVE_TG2521
 	setRouter("ZCom TG-2521");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WZRG450
+#ifdef HAVE_BUFFALO
+	setRouter("WZR-HP-G450H");
+#else
+	setRouter("Buffalo WZR-HP-G450H");
+#endif
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG300NH
 #ifdef HAVE_BUFFALO
 	setRouter("WZR-HP-G300NH");
@@ -3080,7 +3087,8 @@ int led_control(int type, int act)
 		ses_gpio = 0x111;
 #endif
 #ifdef HAVE_WZRHPAG300NH
-		diag_gpio = 0x101;
+		diag_gpio = 0x10e;
+                ses_gpio = 0x10d;
 //              connected_gpio = 0x112;
 //              ses_gpio = 0x105;
 #endif

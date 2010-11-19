@@ -119,6 +119,21 @@ void start_sysinit(void)
 		MAC_ADD(mac2);
 		eval("gpio","enable","2");
 
+#elif HAVE_WZRG450
+		fseek(fp, 0x51002, SEEK_SET); //osprey eeprom mac location
+		fread(mactmp, 6, 1, fp);
+		fclose(fp);
+		for (i = 0; i < 6; i++)
+			copy[i] = mactmp[i];
+		for (i = 0; i < 6; i++)
+			copy[i] &= 0xff;
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		MAC_ADD(mac2);
+		eval("gpio","disable","16");
+
 #else
 		fseek(fp, 0x7f120c, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
