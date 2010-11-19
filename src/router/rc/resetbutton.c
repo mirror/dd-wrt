@@ -233,6 +233,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WZRG450)
+int getbuttonstate()
+{
+	int ret = get_gpio(6);	// nxp multiplexer connected
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_WZRG300NH)
 int getbuttonstate()
 {
@@ -619,6 +628,9 @@ void period_check(int sig)
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
+#elif defined(HAVE_WZRG450)
+	sesgpio = 0x108;
+	val |= get_gpio(8) << 8;	//aoss pushbutton
 #elif defined(HAVE_WZRHPAG300NH)
 	sesgpio = 0x105;
 	val |= get_gpio(5) << 5;	//aoss pushbutton
@@ -808,7 +820,7 @@ void period_check(int sig)
 						  "Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 					led_control(LED_DIAG, LED_ON);
-#elif defined(HAVE_WHRHPGN)  || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH)
+#elif defined(HAVE_WHRHPGN)  || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
 					led_control(LED_DIAG, LED_ON);
 #endif
 					ACTION("ACT_HW_RESTORE");
@@ -852,7 +864,7 @@ void period_check(int sig)
 					// was pressed and
 					// we're restoring
 					// defaults.
-#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH)
+#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
 					led_control(LED_DIAG, LED_ON);
 #endif
 
