@@ -169,6 +169,10 @@ ifeq ($(ARCHITECTURE),wzrag300nh)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
+ifeq ($(ARCHITECTURE),wzrg450)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
 ifeq ($(ARCHITECTURE),ubntm)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
@@ -190,6 +194,7 @@ ifeq ($(ARCHITECTURE),danube)
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 	cp busybox/.config_3com busybox/.config
+endif
 endif
 endif
 endif
