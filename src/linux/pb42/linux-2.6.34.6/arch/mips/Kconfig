@@ -711,16 +711,6 @@ config AR7100_EMULATION
     bool "build system for AR7100 emulation board?"
     depends on MACH_AR7100
 
-config AR7100_USB_GPIO_LED
-    bool "usb led support?"
-    depends on MACH_AR7100 || MACH_AR7240
-    default n
-
-
-config AP_USB_LED_GPIO
-    int "gpio number"
-    depends on AR7100_USB_GPIO_LED
-    
 
 config  MACH_AR7240
     bool "Support for Atheros ar7240 based board"
@@ -750,6 +740,17 @@ config AR7240_EMULATION
     bool "build system for AR7240 emulation board?"
     depends on MACH_AR7240
 
+
+config AR7100_USB_GPIO_LED
+    bool "usb led support?"
+    depends on MACH_AR7100 || MACH_AR7240
+    default n
+
+
+config AP_USB_LED_GPIO
+    int "gpio number"
+    depends on AR7100_USB_GPIO_LED
+    
 
 endchoice
 

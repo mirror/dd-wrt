@@ -58,3 +58,5 @@ obj-$(CONFIG_USB_CDC_COMPOSITE) += g_cdc.o
 obj-$(CONFIG_USB_G_MULTI)	+= g_multi.o
 obj-$(CONFIG_USB_G_NOKIA)	+= g_nokia.o
 
+obj-$(CONFIG_USB_AR9130)	+= ar9130_udc.o
+obj-$(CONFIG_USB_AR9130_OTG)	+= ar9130_otg.o

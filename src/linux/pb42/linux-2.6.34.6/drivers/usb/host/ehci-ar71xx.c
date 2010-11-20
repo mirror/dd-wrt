@@ -223,7 +223,7 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
 	if (!is_ar9000)
 	    ar7100_start_ehc(pdev);
 	else{
-	ehci =hcd_to_ehci(hcd);
+	    ehci =hcd_to_ehci(hcd);
     ehci->caps = hcd->regs + 0x100;     /* Device/Host Capa Reg*/
     ehci->regs = hcd->regs + 0x140;     /* Device/Host Oper Reg*/
 
@@ -232,7 +232,11 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
     ar9130_debug_dev("Host Operational Reg %p \n",ehci->regs);
 
     /* Added 5_29_07 */
+#ifdef MACH_AR7240
+    ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE |AR7240_RESET_USB_PHY_ANALOG);
+#else
     ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE);
+#endif
     mdelay(10);
 	
     ar9130_reg_wr(AR9130_RESET,((ar9130_reg_rd(AR9130_RESET) & ~(AR9130_RESET_USB_HOST)) |

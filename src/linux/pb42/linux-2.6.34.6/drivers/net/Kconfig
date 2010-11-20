@@ -2153,7 +2153,7 @@ endchoice
 
 config AG7240
     tristate "Atheros AR7240 GigE"
-    depends on MACH_AR7240
+    depends on MACH_AR7240 || MACH_HORNET
     help
         This enables the building of Atheros AR7240 gigE driver module.
 
@@ -2165,6 +2165,11 @@ config ATHEROS_HEADER_EN
     bool "Add two bytes atheros header before the ethernet packet."
     depends on AG7240
 
+
+config  AG7240_GE0_IS_CONNECTED
+    bool "port 0 is connected to a PHY"
+    depends on AG7240
+
 choice
     prompt "port 0 interface"
     depends on AG7240
@@ -2172,9 +2177,30 @@ choice
 config AG7240_GE0_MII
     bool "MII mode"
 
+config AG7240_GE0_GMII
+    bool "GMII mode"
+
+config AG7240_GE0_RGMII
+    bool "RGMII mode"
+
 endchoice
 
-config  AG7240_QOS
+choice  
+    prompt "PHY or switch used"
+    depends on AG7240_GE0_IS_CONNECTED
+
+config AR7242_RGMII_PHY
+    bool "AR7242 RGMII Phy"
+
+config AR7242_S16_PHY
+    bool "AR7242 S16 Switch"
+
+config AR7242_VIR_PHY
+    bool "AR7242 Vitual Switch"
+
+endchoice
+
+config  ATHRS_QOS
     bool "Enable MAC 0 QOS "
     depends on AG7240
 
@@ -2197,6 +2223,13 @@ choice
 
 config AR7240_S26_PHY
     bool "Atheros S26 Phy"
+
+config S26_SWITCH_ONLY_MODE
+    bool "Enable switch only mode"
+    depends on AR7240_S26_PHY
+
+config AR8021_PHY
+    bool "Atheros AR8021 Phy"
 
 endchoice
 

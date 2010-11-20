@@ -168,7 +168,7 @@ static void *getCalData(int slot)
 u8 *base;
 for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
 	u32 *cal = (u32 *)base;
-	if (*cal==0xa55a0000) { //protection bit is always zero on inflash devices, so we can use for match it
+	if (*cal==0xa55a0000 || *cal==0x5aa50000) { //protection bit is always zero on inflash devices, so we can use for match it
 		if (slot) {
 			base+=0x4000;
 		}
@@ -179,12 +179,14 @@ for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000)
 return NULL;
 }
 
+
 static struct ath9k_platform_data wmac_data[1];
 
 static void ap91_pci_fixup(struct pci_dev *dev)
 {
 	void __iomem *mem;
 	u16 *cal_data=NULL;
+	u8 *calcopy;
 	u16 cmd;
 	u32 val;
 
@@ -195,6 +197,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	printk(KERN_INFO "PCI: fixup device %s\n", pci_name(dev));
 
 	cal_data = (u16 *)getCalData(0);
+	calcopy = (u8 *)cal_data;
 	if (cal_data) {
 		memcpy(wmac_data[0].eeprom_data,cal_data,sizeof(wmac_data[0].eeprom_data));
 		dev->dev.platform_data = &wmac_data[0];
@@ -232,6 +235,12 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
+	if (dev->device==0x0030) //AR9300 Hack
+ 	    {
+ 		calcopy+=0x1000;
+		memcpy(wmac_data[0].eeprom_data,calcopy,sizeof(wmac_data[0].eeprom_data));
+		dev->dev.platform_data = &wmac_data[0];	    
+	    }
 
 	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
 	dev->revision = val & 0xff;

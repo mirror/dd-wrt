@@ -135,8 +135,9 @@ typedef struct {
     uint32_t                mac_unit;
     uint32_t                mac_base;
     int                     mac_irq;
+    uint8_t                 mac_ifup;
     uint8_t                 mac_noacs;
-    ag7240_ring_t           mac_txring[ENET_NUM_AC];
+    ag7240_ring_t           mac_txring[4];
     ag7240_ring_t           mac_rxring;
     ag7240_stats_t          mac_stats;
     spinlock_t              mac_lock;
@@ -150,7 +151,6 @@ typedef struct {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
     struct napi_struct mac_napi;
 #endif
-    uint32_t                 mac_ifup;
     uint16_t                mac_flags;
     uint32_t		    dma_check;
 }ag7240_mac_t;
@@ -427,7 +427,7 @@ typedef enum {
 /*
  * Everything but TX
  */
-#define AG7240_INTR_MASK    (AG7240_INTR_RX | AG7240_INTR_RX_OVF |  \
+#define AG7240_INTR_MASK    (AG7240_INTR_RX | \
                              AG7240_INTR_RX_BUS_ERROR |             \
                              AG7240_INTR_TX_BUS_ERROR              \
                              /*| AG7240_INTR_TX_URN | AG7240_INTR_TX*/)
@@ -635,6 +635,8 @@ static inline void ag7240_set_mac_speed(ag7240_mac_t *mac, int is100)
 uint16_t ag7240_mii_read(int unit, uint32_t phy_addr, uint8_t reg);
 void ag7240_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data);
 unsigned int s26_rd_phy(unsigned int phy_addr, unsigned int reg_addr);
+int  ag7240_check_link(ag7240_mac_t *mac,int phyUnit);
+int  ag7242_check_link(ag7240_mac_t *mac);
 
 #define CHECK_DMA_STATUS    0x0001
 #define ETH_SOFT_LED        0x0002
@@ -665,7 +667,6 @@ mac_clear_flag(ag7240_mac_t *mac, u_int16_t flag)
     return;
 }
 
-#ifdef ETH_SOFT_LED
 /**
  * Added for customizing LED control operations
  */
@@ -703,6 +704,5 @@ LED_BLINK_RATES BlinkRateTable_10M[] = {
     {  MB(10),  1,  1 }, /* on:10ms  off:42ms */
     {  0xffffffff, 0 , 1 }
 };
-#endif
 
 #endif

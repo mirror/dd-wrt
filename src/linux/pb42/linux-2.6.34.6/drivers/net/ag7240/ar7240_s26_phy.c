@@ -392,6 +392,11 @@ void athrs26_reg_init(int ethUnit)
     rd_data = s26_rd_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_DATA);
     s26_wr_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_ADDRESS,0x3);
     s26_wr_phy(ATHR_PHY4_ADDR,ATHR_DEBUG_PORT_DATA,(rd_data & 0xfffffeff) );
+
+    if (mac_has_flag(mac,ATHR_S26_HEADER))
+        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4804);
+    else
+        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4004);
     athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
 
     athr26_init_flag = 1;
@@ -434,7 +439,7 @@ void athrs26_reg_init_lan(int ethUnit)
     */
     athrs26_reg_write(0x118,0x0032b5555);
 
-    for (phyUnit=0; phyUnit < ATHR_PHY_MAX - 1; phyUnit++) {
+    for (phyUnit=0; phyUnit < ATHR_PHY_MAX ; phyUnit++) {
 
         if ((ATHR_ETHUNIT(phyUnit) == ENET_UNIT_WAN) &&
             !mac_has_flag(mac,ETH_SWONLY_MODE))
@@ -497,18 +502,10 @@ void athrs26_reg_init_lan(int ethUnit)
      * status[5]=1'h1;     - Rx Flow Ctrl En
      * status[6]=1'h1;     - Duplex Mode
      */
-#ifdef CONFIG_AR7240_EMULATION
-    athrs26_reg_write(PORT_STATUS_REGISTER0, 0x7e);  /* CPU Port */
-    athrs26_reg_write(PORT_STATUS_REGISTER1, 0x3c);
-    athrs26_reg_write(PORT_STATUS_REGISTER2, 0x3c);
-    athrs26_reg_write(PORT_STATUS_REGISTER3, 0x3c);
-    athrs26_reg_write(PORT_STATUS_REGISTER4, 0x3c);
-#else
     athrs26_reg_write(PORT_STATUS_REGISTER1, 0x200);  /* LAN - 1 */
     athrs26_reg_write(PORT_STATUS_REGISTER2, 0x200);  /* LAN - 2 */
     athrs26_reg_write(PORT_STATUS_REGISTER3, 0x200);  /* LAN - 3 */
     athrs26_reg_write(PORT_STATUS_REGISTER4, 0x200);  /* LAN - 4 */
-#endif
 
     /* QM Control */
     athrs26_reg_write(0x38, 0xc000050e);
@@ -518,13 +515,10 @@ void athrs26_reg_init_lan(int ethUnit)
      * status[7] = 1'b1;   - Learn One Lock
      * status[14] = 1'b0;  - Learn Enable
      */
-#ifdef CONFIG_AR7240_EMULATION
-    athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x04);
-    athrs26_reg_write(PORT_CONTROL_REGISTER1, 0x4004);
-#else
-   /* Atheros Header Disable */
-    athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4004);
-#endif
+    if (mac_has_flag(mac,ATHR_S26_HEADER))
+        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4804);
+    else 
+        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4004);
 
    /* Tag Priority Mapping */
 //      athrs26_reg_write(0x70, 0x41af);
@@ -1074,15 +1068,21 @@ athrs26_reg_write(unsigned int s26_addr, unsigned int s26_write_data)
     phy_reg_write(unit,phy_address, reg_address, data);
 
     phy_address = (0x17 & ((addr_temp >> 4) | 0x10));
-    reg_address = ((addr_temp << 1) & 0x1e);
-    data = s26_write_data  & 0xffff;
-    phy_reg_write(unit,phy_address, reg_address, data);
 
     reg_address = (((addr_temp << 1) & 0x1e) | 0x1);
     data = s26_write_data >> 16;
     phy_reg_write(unit,phy_address, reg_address, data);
+    
+    reg_address = ((addr_temp << 1) & 0x1e);
+    data = s26_write_data  & 0xffff;
+    phy_reg_write(unit,phy_address, reg_address, data);
 }
 
+void athrs26_reg_rmw(unsigned int s26_addr, unsigned int s26_write_data) 
+{
+    int val = athrs26_reg_read(s26_addr);
+    athrs26_reg_write(s26_addr,(val | s26_write_data));
+}
 
 unsigned int s26_rd_phy(unsigned int phy_addr, unsigned int reg_addr)
 {
@@ -1142,13 +1142,14 @@ void s26_wr_phy(unsigned int phy_addr, unsigned int reg_addr, unsigned int write
 
 }
 
-#ifdef CONFIG_AR7240_S26_VLAN_IGMP
-int athr_ioctl(struct net_device *dev,uint32_t *args, int cmd)
+int athrs26_ioctl(struct net_device *dev,void *args, int cmd)
 {
-    struct eth_diag *etd =(struct eth_diag *) args;
-    uint32_t ar7240_revid;
     struct ifreq * ifr = (struct ifreq *) args;
+    struct eth_cfg_params *ethcfg;
+    uint32_t ar7240_revid;
+    ag7240_mac_t *mac;
 
+#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     struct arl_struct * arl = (struct arl_struct *) (&ifr->ifr_ifru.ifru_mtu);
     unsigned int vlan_value = ifr->ifr_ifru.ifru_ivalue;
     unsigned short vlan_id = vlan_value >> 16;
@@ -1156,52 +1157,142 @@ int athr_ioctl(struct net_device *dev,uint32_t *args, int cmd)
     unsigned short vlan_port = vlan_value & 0x1f;
     unsigned int flag = 0;
     uint32_t ret = 0;
+#endif
+
+    ethcfg = (struct eth_cfg_params *)ifr->ifr_data;
 
     switch(cmd){
-            case S26_PACKET_FLAG:
-		printk("ag7240::S26_PACKET_FLAG %d \n",vlan_value);
-		set_packet_inspection_flag(vlan_value);
-		break;
+#ifdef CONFIG_AR7240_S26_VLAN_IGMP
+        case S26_PACKET_FLAG:
+            printk("ag7240::S26_PACKET_FLAG %d \n",vlan_value);
+            set_packet_inspection_flag(vlan_value);
+            break;
 
-	    case S26_RD_PHY: 
-		if(etd->ed_u.portnum != 0xf)
-		    etd->val = s26_rd_phy(etd->ed_u.portnum,etd->phy_reg);
-		else
-		    etd->val = athrs26_reg_read(etd->phy_reg);
-		break;
+        case S26_VLAN_ADDPORTS:
+            if(vlan_id>4095) return -EINVAL;
+            printk("ag7240::S26_ADD_PORT vid = %d ports=%x.\n",vlan_id,vlan_port);
+            ret = python_ioctl_vlan_addports(vlan_id,vlan_port);
+            break;
 
-	    case S26_WR_PHY: 
-		if(etd->ed_u.portnum != 0xf)
-		    s26_wr_phy(etd->ed_u.portnum,etd->phy_reg,etd->val);
-		else
-		    athrs26_reg_write(etd->phy_reg,etd->val);
-		break;
+        case S26_VLAN_DELPORTS:
+            if(vlan_id>4095) return -EINVAL;
+            printk("ag7240::S26_DEL_PORT vid = %d ports=%x.\n",vlan_id,vlan_port);
+            ret = python_ioctl_vlan_delports(vlan_id,vlan_port);
+            break;
 
-	    case S26_FORCE_PHY:
-		 if(etd->phy_reg < ATHR_PHY_MAX) {
-		    if(etd->val == 10) {
-		       printk("Forcing 10 on port:%d \n",(etd->phy_reg));
-		       athrs26_force_10M(etd->phy_reg,etd->ed_u.duplex);
-		    }
-		    else if(etd->val == 100) {
-		       printk("Forcing 100 on port:%d \n",(etd->phy_reg));
-		       athrs26_force_100M(etd->phy_reg,etd->ed_u.duplex);
-		    }
-		    else if(etd->val == 0) {
-		       printk("Enabling Auto Neg on port:%d \n",(etd->phy_reg));
+        case S26_VLAN_SETTAGMODE:
+            printk("ag7240::S26_VLAN_SETTAGMODE mode=%d portno=%d .\n",mode,vlan_port);
+            ret = python_port_egvlanmode_set(vlan_port,mode);
+            break;
 
-		       ar7240_revid = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
+        case S26_VLAN_SETDEFAULTID:
+            if(vlan_id>4095) return -EINVAL;
+            printk("ag7240::S26_VLAN_SETDEFAULTID vid = %d portno=%d.\n",vlan_id,vlan_port);
+            ret = python_port_default_vid_set(vlan_port,vlan_id);
+            break;
 
-		       if(ar7240_revid == AR7240_REV_1_0) {
-		           s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_ADDRESS,0x0);
-		           s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_DATA,0x2ee);
-		           s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_ADDRESS,0x3);
-		           s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_DATA,0x3a11);
-		       }
-		       s26_wr_phy(etd->phy_reg,ATHR_PHY_CONTROL,0x9000);
-		    }
-		    else
-		       return -EINVAL;
+        case  S26_IGMP_ON_OFF:
+        {
+            int tmp = 0;
+            tmp = vlan_value & (0x1 << 7);
+            vlan_port &= ~(0x1 << 7);
+            if(vlan_port>4) return -EINVAL;
+            if(tmp != 0){
+                printk("ag7240::Enable IGMP snooping in port no %x.\n",vlan_port);
+                ret= python_port_igmps_status_set(vlan_port,1);
+            }else{
+                printk("ag7240::Disable IGMP snooping in port no %x.\n",vlan_port);
+                ret= python_port_igmps_status_set(vlan_port,0);
+            }
+        }
+            break;
+
+        case S26_LINK_GETSTAT:
+            if(vlan_port>4){/* if port=WAN */
+                int fdx, phy_up;
+                ag7240_phy_speed_t  speed;
+                ag7240_get_link_status(0, &phy_up, &fdx, &speed, 4);
+                ifr->ifr_ifru.ifru_ivalue = (speed<<16|fdx<<8|phy_up);
+                printk("ag7240::S26_LINK_GETSTAT portno WAN is %x.\n",ifr->ifr_ifru.ifru_ivalue);
+            }else if(vlan_port > 0){
+                flag = athrs26_phy_is_link_alive(vlan_port-1);
+                ifr->ifr_ifru.ifru_ivalue = flag;
+                printk("ag7240::S26_LINK_GETSTAT portno %d is %s.\n",vlan_port,flag?"up":"down");
+            }else{
+                ifr->ifr_ifru.ifru_ivalue = 1;
+            }
+            /* PHY 0-4 <---> port 1-5 in user space. */
+            break;
+
+        case S26_VLAN_ENABLE:
+            python_ioctl_enable_vlan();
+            printk("ag7240::S26_VLAN_ENABLE.\n");
+            break;
+
+        case S26_VLAN_DISABLE:
+            python_ioctl_disable_vlan();
+            printk("ag7240::S26_VLAN_DISABLE.\n");
+            break;
+
+        case S26_ARL_ADD:
+            ret = python_fdb_add(arl->mac_addr,arl->port_map,arl->sa_drop);
+            printk("ag7240::S26_ARL_ADD,mac:[%x.%x.%x.%x.%x.%x] port[%x] drop %d\n",
+                arl->mac_addr.uc[0],arl->mac_addr.uc[1],arl->mac_addr.uc[2],arl->mac_addr.uc[3],
+                arl->mac_addr.uc[4],arl->mac_addr.uc[5],arl->port_map,arl->sa_drop);
+            break;
+
+        case S26_ARL_DEL:
+            ret = python_fdb_del(arl->mac_addr);
+            printk("ag7240::S26_ARL_DEL mac:[%x.%x.%x.%x.%x.%x].\n",arl->mac_addr.uc[0],arl->mac_addr.uc[1],
+            arl->mac_addr.uc[2],arl->mac_addr.uc[3],arl->mac_addr.uc[4],arl->mac_addr.uc[5]);
+            break;
+        case S26_MCAST_CLR:
+            /* 0: switch off the unkown multicast packets over vlan. 1: allow the unknown multicaset packets over vlans. */
+            if(!vlan_value)
+                python_clear_multi();
+            else
+                python_set_multi();
+                printk("athr_gmac::S26_MCAST_CLR --- %s.\n", vlan_value?"enable Multicast":"disable Multicast");
+            break;
+#endif
+        case S26_RD_PHY: 
+            if(ethcfg->portnum != 0xf)
+                ethcfg->val = s26_rd_phy(ethcfg->portnum,ethcfg->phy_reg);
+            else
+                ethcfg->val = athrs26_reg_read(ethcfg->phy_reg);
+            break;
+        
+        case S26_WR_PHY:
+            if(ethcfg->portnum != 0xf)
+                s26_wr_phy(ethcfg->portnum,ethcfg->phy_reg,ethcfg->val);
+            else
+                athrs26_reg_write(ethcfg->phy_reg,ethcfg->val);
+            break;
+        case S26_FORCE_PHY:
+            printk("Duplex %d\n",ethcfg->duplex);
+            if(ethcfg->phy_reg < ATHR_PHY_MAX) {
+                if(ethcfg->val == 10) {
+                    printk("Forcing 10Mbps %s on port:%d \n",
+                         dup_str[ethcfg->duplex],(ethcfg->phy_reg));
+                    athrs26_force_10M(ethcfg->phy_reg,ethcfg->duplex);
+                }else if(ethcfg->val == 100) {
+                    printk("Forcing 100Mbps %s on port:%d \n",
+                         dup_str[ethcfg->duplex],(ethcfg->phy_reg));
+                    athrs26_force_100M(ethcfg->phy_reg,ethcfg->duplex);
+                }else if(ethcfg->val == 0) {
+                    printk("Enabling Auto Neg on port:%d \n",(ethcfg->phy_reg));
+                    ar7240_revid = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
+
+                    if(ar7240_revid == AR7240_REV_1_0) {
+                        s26_wr_phy(ethcfg->phy_reg,ATHR_DEBUG_PORT_ADDRESS,0x0);
+                        s26_wr_phy(ethcfg->phy_reg,ATHR_DEBUG_PORT_DATA,0x2ee);
+                        s26_wr_phy(ethcfg->phy_reg,ATHR_DEBUG_PORT_ADDRESS,0x3);
+                        s26_wr_phy(ethcfg->phy_reg,ATHR_DEBUG_PORT_DATA,0x3a11);
+                    }
+                    s26_wr_phy(ethcfg->phy_reg,ATHR_PHY_CONTROL,0x9000);
+               }else
+                   return -EINVAL;
+
                if(ATHR_ETHUNIT(ethcfg->phy_reg) == ENET_UNIT_WAN) {
                    if(mac_has_flag(ag7240_macs[ENET_UNIT_LAN],ETH_SWONLY_MODE))
                        ag7240_check_link(ag7240_macs[ENET_UNIT_LAN],ethcfg->phy_reg);
@@ -1210,165 +1301,13 @@ int athr_ioctl(struct net_device *dev,uint32_t *args, int cmd)
                }else{ 
                    ag7240_check_link(ag7240_macs[1],ethcfg->phy_reg);
                }
-		}
-		else {
-		    return -EINVAL;
-		}
-		break;
-
-	    case S26_VLAN_ADDPORTS:
-		if(vlan_id>4095) return -EINVAL;
-		printk("ag7240::S26_ADD_PORT vid = %d ports=%x.\n",vlan_id,vlan_port);
-		ret = python_ioctl_vlan_addports(vlan_id,vlan_port);
-		break;
-
-	    case S26_VLAN_DELPORTS:
-		if(vlan_id>4095) return -EINVAL;
-		printk("ag7240::S26_DEL_PORT vid = %d ports=%x.\n",vlan_id,vlan_port);
-		ret = python_ioctl_vlan_delports(vlan_id,vlan_port);
-		break;
-
-	    case S26_VLAN_SETTAGMODE:
-		printk("ag7240::S26_VLAN_SETTAGMODE mode=%d portno=%d .\n",mode,vlan_port);
-		ret = python_port_egvlanmode_set(vlan_port,mode);
-		break;
-
-	    case S26_VLAN_SETDEFAULTID:
-		if(vlan_id>4095) return -EINVAL;
-		printk("ag7240::S26_VLAN_SETDEFAULTID vid = %d portno=%d.\n",vlan_id,vlan_port);
-		ret = python_port_default_vid_set(vlan_port,vlan_id);
-		break;
-
-	    case  S26_IGMP_ON:
-		if(vlan_port>4) return -EINVAL;
-		printk("ag7240::Enable IGMP snooping in port no %x.\n",vlan_port);
-		ret= python_port_igmps_status_set(vlan_port,1);
-		break;
-
-	    case S26_IGMP_OFF:
-		if(vlan_port>4) return -EINVAL;
-		printk("ag7240::Disable IGMP snooping in port no %x.\n",vlan_port);
-		ret= python_port_igmps_status_set(vlan_port,0);
-		break;
-
-	    case S26_LINK_GETSTAT:
-		// PHY 0-4 <---> port 1-5 in user space.
-		if(vlan_port>4){//if port=WAN
-			int fdx, phy_up;
-			ag7240_phy_speed_t  speed;
-			ag7240_get_link_status(0, &phy_up, &fdx, &speed, 4);
-			ifr->ifr_ifru.ifru_ivalue = (speed<<16|fdx<<8|phy_up);
-			printk("ag7240::S26_LINK_GETSTAT portno WAN is %x.\n",ifr->ifr_ifru.ifru_ivalue);
-		}else{
-		flag = athrs26_phy_is_link_alive(vlan_port-1);
-		ifr->ifr_ifru.ifru_ivalue = flag;
-		printk("ag7240::S26_LINK_GETSTAT portno %d is %s.\n",vlan_port,flag?"up":"down");
-		}
-		break;
-
-            case S26_VLAN_ENABLE:
-		python_ioctl_enable_vlan();
-		printk("ag7240::S26_VLAN_ENABLE.\n");
-		break;
-
-            case S26_VLAN_DISABLE:
-		python_ioctl_disable_vlan();
-		printk("ag7240::S26_VLAN_DISABLE.\n");
-		break;
-
-            case S26_ARL_ADD:
-		ret = python_fdb_add(arl->mac_addr,arl->port_map,arl->sa_drop);
-		printk("ag7240::S26_ARL_ADD,mac:[%x.%x.%x.%x.%x.%x] port[%x] drop %d\n",arl->mac_addr.uc[0],arl->mac_addr.uc[1],
-			arl->mac_addr.uc[2],arl->mac_addr.uc[3],arl->mac_addr.uc[4],arl->mac_addr.uc[5],arl->port_map,arl->sa_drop);
-		break;
-
-            case S26_ARL_DEL:
-		ret = python_fdb_del(arl->mac_addr);
-		printk("ag7240::S26_ARL_DEL mac:[%x.%x.%x.%x.%x.%x].\n",arl->mac_addr.uc[0],arl->mac_addr.uc[1],
-			arl->mac_addr.uc[2],arl->mac_addr.uc[3],arl->mac_addr.uc[4],arl->mac_addr.uc[5]);
-		break;
-
-            case S26_MCAST_CLR:
-		//0: switch off the unkown multicast packets over vlan. 1: allow the unknown multicaset packets over vlans.
-		if((vlan_port%2)==0)
-			python_clear_multi();
-		else
-			python_set_multi();
-		printk("ag7240::S26_MCAST_CLR --- %s.\n",(vlan_port%2)?"enable Multicast":"disable Multicast");
-		break;
-		
-	    default:
-		return -EINVAL;
-    }
-    if(ret != PYTHON_OK)  
-    {
-	 printk(" Failure ret = %d .\n",ret);
-         return -EINVAL;
-    }
-
-    return 0;
-}
-#else
-int athr_ioctl(uint32_t *args, int cmd)
-{
-    struct eth_diag *etd =(struct eth_diag *) args;
-    uint32_t ar7240_revid;
-
-    if(cmd  == S26_RD_PHY) {
-        if(etd->ed_u.portnum != 0xf)
-            etd->val = s26_rd_phy(etd->ed_u.portnum,etd->phy_reg);
-        else
-            etd->val = athrs26_reg_read(etd->phy_reg);
-    }
-    else if(cmd  == S26_WR_PHY) {
-        if(etd->ed_u.portnum != 0xf)
-            s26_wr_phy(etd->ed_u.portnum,etd->phy_reg,etd->val);
-        else
-            athrs26_reg_write(etd->phy_reg,etd->val);
-    }
-    else if(cmd == S26_FORCE_PHY) {
-         if(etd->phy_reg < ATHR_PHY_MAX) {
-            if(etd->val == 10) {
-	       printk("Forcing 10Mbps %s on port:%d \n",
-                         dup_str[etd->ed_u.duplex],(etd->phy_reg));
-               athrs26_force_10M(etd->phy_reg,etd->ed_u.duplex);
-            }
-            else if(etd->val == 100) {
-	       printk("Forcing 100Mbps %s on port:%d \n",
-                         dup_str[etd->ed_u.duplex],(etd->phy_reg));
-               athrs26_force_100M(etd->phy_reg,etd->ed_u.duplex);
-            }
-	    else if(etd->val == 0) {
-	       printk("Enabling Auto Neg on port:%d \n",(etd->phy_reg));
-
-               ar7240_revid = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
-
-               if(ar7240_revid == AR7240_REV_1_0) {
-                   s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_ADDRESS,0x0);
-                   s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_DATA,0x2ee);
-                   s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_ADDRESS,0x3);
-                   s26_wr_phy(etd->phy_reg,ATHR_DEBUG_PORT_DATA,0x3a11);
-               }
-               s26_wr_phy(etd->phy_reg,ATHR_PHY_CONTROL,0x9000);
-            }
-            else
-               return -EINVAL;
-
-            if(ATHR_ETHUNIT(etd->phy_reg) == ENET_UNIT_WAN) 
-                ag7240_check_link(ag7240_macs[0],etd->phy_reg);
-            else  
-                ag7240_check_link(ag7240_macs[1],etd->phy_reg);
-        }
-        else {
+            break;
+            } 
+        default: 
             return -EINVAL;
         }
-    }
-    else
-        return -EINVAL;
-
     return 0;
 }
-#endif
 
 int athrs26_mdc_check()
 {

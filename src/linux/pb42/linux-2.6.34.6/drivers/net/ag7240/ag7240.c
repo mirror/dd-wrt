@@ -44,7 +44,6 @@ ag7240_mac_t *ag7240_macs[2];
 static void ag7240_hw_setup(ag7240_mac_t *mac);
 static void ag7240_hw_stop(ag7240_mac_t *mac);
 static void ag7240_oom_timer(unsigned long data);
-int  ag7240_check_link(ag7240_mac_t *mac,int phyUnit);
 static int  check_for_dma_status(ag7240_mac_t *mac,int ac);
 static int  ag7240_tx_alloc(ag7240_mac_t *mac);
 static int  ag7240_rx_alloc(ag7240_mac_t *mac);
@@ -94,6 +93,7 @@ char *mii_str[2][4] = {
     {"GMii", "Mii", "RGMii", "RMii"},
     {"GMii","Mii","RGMii", "RMii"}
 };
+int rg_phy_speed = -1 , rg_phy_duplex = -1;
 char *spd_str[] = {"10Mbps", "100Mbps", "1000Mbps"};
 char *dup_str[] = {"half duplex", "full duplex"};
 
@@ -445,18 +445,21 @@ ag7240_hw_setup(ag7240_mac_t *mac)
     {
         ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN |
             AG7240_MAC_CFG1_TX_EN | AG7240_MAC_CFG1_RX_FCTL | AG7240_MAC_CFG1_TX_FCTL));
+        ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN |
+            AG7240_MAC_CFG2_LEN_CHECK | AG7240_MAC_CFG2_IF_1000));
     } 
     else 
     {
         ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN |
-                    AG7240_MAC_CFG1_TX_EN));
+            AG7240_MAC_CFG1_TX_EN));
         ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN |
             AG7240_MAC_CFG2_LEN_CHECK));
     }
 
     ag7240_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
-    ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_0, FIFO_CFG0_INIT);
+    ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_0, 0x1f00);
+//    ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_0, FIFO_CFG0_INIT);
 
     if (mac_has_flag(mac,ATHR_S26_HEADER) || mac_has_flag(mac,ATHR_S16_HEADER))
         ag7240_reg_rmw_clear(mac, AG7240_MAC_CFG2, AG7240_MAC_CFG2_LEN_CHECK)
@@ -2088,11 +2091,7 @@ ag7240_get_default_macaddr(ag7240_mac_t *mac, u8 *mac_addr)
 static int
 ag7240_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
-#ifdef CONFIG_AR7240_S26_VLAN_IGMP
-    return athr_ioctl(dev,(uint32_t *)ifr, cmd);
-#else
-    return athr_ioctl((uint32_t *)ifr, cmd);
-#endif
+    return athrs_do_ioctl(dev,ifr, cmd);
 }
 static struct net_device_stats 
     *ag7240_get_stats(struct net_device *dev)
@@ -2331,7 +2330,7 @@ ag7240_init(void)
 
     ag7240_trc_init();
 
-    athrs26_reg_dev(ag7240_macs);
+    athrs_reg_dev(ag7240_macs);
     if (mac_has_flag(mac,CHECK_DMA_STATUS))
         prev_dma_chk_ts = jiffies;
 
@@ -2377,9 +2376,8 @@ ag7240_cleanup(void)
         kfree(ag7240_macs[i]);
         printk("%s Freeing at 0x%lx\n",__func__,(unsigned long) ag7240_macs[i]);
     }
-#ifdef ETH_SOFT_LED
-    del_timer(&PLedCtrl.led_timer);
-#endif
+    if (mac_has_flag(ag7240_macs[0],ETH_SOFT_LED)) 
+        del_timer(&PLedCtrl.led_timer);
     printk(MODULE_NAME ": cleanup done\n");
 }
 
