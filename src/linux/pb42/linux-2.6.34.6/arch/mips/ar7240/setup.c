@@ -438,7 +438,7 @@ unsigned int __cpuinit get_c0_compare_int(void)
 
 
 int is_ar9000;
-
+EXPORT_SYMBOL(is_ar9000);
 void __init plat_mem_setup(void)
 {
 
