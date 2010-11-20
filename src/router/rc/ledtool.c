@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 			usleep(500000);
 			led_control(LED_DIAG, LED_OFF);
 			usleep(500000);
-			if ((times % 3) == 0)
+			if (times && (times % 3) == 0)
 				sleep(3);
 
 			break;
