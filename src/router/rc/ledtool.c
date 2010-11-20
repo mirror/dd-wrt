@@ -42,6 +42,7 @@ int main(int argc, char **argv)
 	}
 	int times = atoi(argv[1]);
 	int type = 0;
+	int count = 0;
 	if (argc > 2)
 		type = atoi(argv[2]);
 
@@ -75,12 +76,13 @@ int main(int argc, char **argv)
 			usleep(500000);
 			led_control(LED_DIAG, LED_OFF);
 			usleep(500000);
-			if (times && (times % 3) == 0)
+			if (count && (count % 3) == 0)
 				sleep(3);
 
 			break;
 		}
 		times--;
+		count++;
 	}
 
 	return 0;
