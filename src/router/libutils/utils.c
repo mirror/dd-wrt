@@ -3232,7 +3232,6 @@ int led_control(int type, int act)
 #ifdef HAVE_WZRG300NH
 		diag_gpio = 0x101;
 		connected_gpio = 0x112;
-		usb_gpio = 0x100;
 		ses_gpio = 0x111;
 #endif
 #ifdef HAVE_WZRHPAG300NH
@@ -3240,6 +3239,10 @@ int led_control(int type, int act)
 //              connected_gpio = 0x112;
 //		usb_gpio = 0x102;
 //              ses_gpio = 0x111;
+#endif
+#ifdef HAVE_WZRG450
+		diag_gpio = 0x10e;
+                ses_gpio = 0x10d;
 #endif
 		break;
 	case ROUTER_BOARD_WR5422:
