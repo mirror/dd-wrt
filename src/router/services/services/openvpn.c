@@ -71,6 +71,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "management 127.0.0.1 5002\n");
 		fprintf(fp, "management-log-cache 50\n");
 		fprintf(fp, "mtu-disc yes\n");
+		fprintf(fp, "topology subnet\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		else		//store client ip.keep them persistant for x sec.works only when dupcn=off
