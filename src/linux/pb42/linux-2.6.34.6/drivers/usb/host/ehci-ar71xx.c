@@ -14,7 +14,11 @@
 
 #include <linux/platform_device.h>
 #include <linux/delay.h>
+#if defined (CONFIG_MACH_AR7240) || defined (CONFIG_MACH_HORNET)
+#include <asm/mach-ar7240/ar7240.h>
+#else
 #include <asm/mach-ar7100/ar7100.h>
+#endif
 
 /*
  * AR9130 Debug functions
@@ -84,6 +88,24 @@ do {                                                    \
 #define AR9130_EHCI_EXT_ULPI                (0x170)
 #define AR9130_EHCI_EXT_OTGSC               (0x1A4)
 
+#if defined (CONFIG_MACH_AR7240) || defined (CONFIG_MACH_HORNET)
+
+#define AR9130_RESET_USB_HOST               (AR7240_RESET_USB_HOST)
+#define AR9130_RESET_USB_PHY                (AR7240_RESET_USB_PHY)
+#define AR9130_RESET_USBSUS_OVRIDE	    (AR7240_RESET_USBSUS_OVRIDE)
+#define AR9130_USB_MODE                     (AR7240_USB_MODE)
+
+#define AR9130_RESET                        (AR7240_RESET_BASE + 0x1C)
+#define AR9130_USB_CONFIG                   (AR7240_USB_CONFIG_BASE + 0x4)
+#define AR9130_USB_FLADJ_VAL                (AR7240_USB_CONFIG_BASE)
+
+#define ar9130_reg_rmw_set(_reg,_mask)      ar7240_reg_rmw_set(_reg,_mask)
+#define ar9130_reg_rmw_clear(_reg,_mask)    ar7240_reg_rmw_clear(_reg,_mask)
+#define ar9130_reg_wr(_phys,_val)           ar7240_reg_wr(_phys,_val)
+#define ar9130_reg_rd(_phys)                ar7240_reg_rd(_phys)
+
+#else
+
 #define AR9130_RESET_USB_HOST               (AR7100_RESET_USB_HOST)
 #define AR9130_RESET_USB_PHY                (AR7100_RESET_USB_PHY)
 #define AR9130_RESET_USBSUS_OVRIDE	    (AR7100_RESET_USBSUS_OVRIDE)
@@ -97,34 +119,36 @@ do {                                                    \
 #define ar9130_reg_wr(_phys,_val)           ar7100_reg_wr(_phys,_val)
 #define ar9130_reg_rd(_phys)                ar7100_reg_rd(_phys)
 
+#endif
+
 extern int usb_disabled(void);
 extern int is_ar9000;
 
 static void 
 ar7100_start_ehc(struct platform_device *dev)
 {
-    int mask = AR7100_RESET_USB_HOST|AR7100_RESET_USB_PHY;
+    int mask = AR9130_RESET_USB_HOST|AR9130_RESET_USB_PHY;
 
 	printk(KERN_DEBUG __FILE__
 		": starting AR7100 EHCI USB Controller...");
 
-    ar7100_reg_rmw_set(AR7100_RESET, mask);
+    ar9130_reg_rmw_set(AR9130_RESET, mask);
     mdelay(1000);
-    ar7100_reg_rmw_clear(AR7100_RESET, mask);
+    ar9130_reg_rmw_clear(AR9130_RESET, mask);
 
     //ar7100_reg_wr(AR7100_USB_CONFIG, 0x20);
     //ar7100_reg_rmw_clear(AR7100_USB_CONFIG, 0x4);
 
     /*Turning on the Buff and Desc swap bits */
-    ar7100_reg_wr(AR7100_USB_CONFIG, 0x30000);
+    ar9130_reg_wr(AR9130_USB_CONFIG, 0x30000);
 
     /* WAR for HW bug. Here it adjusts the duration between two SOFS */
     /* Was: ar7100_reg_wr(AR7100_USB_FLADJ_VAL,0x20400); */
-    ar7100_reg_wr(AR7100_USB_FLADJ_VAL,0x20c00);
+    ar9130_reg_wr(AR9130_USB_FLADJ_VAL,0x20c00);
 
     mdelay(900);
-    printk("done. reset %#x usb config %#x\n", ar7100_reg_rd(AR7100_RESET),
-            ar7100_reg_rd(AR7100_USB_CONFIG));
+    printk("done. reset %#x usb config %#x\n", ar9130_reg_rd(AR9130_RESET),
+            ar9130_reg_rd(AR9130_USB_CONFIG));
 }
 
 
