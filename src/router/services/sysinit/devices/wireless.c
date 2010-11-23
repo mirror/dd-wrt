@@ -57,7 +57,11 @@ static void detect_wireless_devices(void)
 		insmod("/lib/ath9k/ath.ko");
 		insmod("/lib/ath9k/ath9k_hw.ko");
 		insmod("/lib/ath9k/ath9k_common.ko");
+#ifdef HAVE_WZRG450
+		system("/sbin/insmod /lib/ath9k/ath9k.ko blink=1");
+#else
 		insmod("/lib/ath9k/ath9k.ko");
+#endif
 		delete_ath9k_devices(NULL);
 		}
 	else
