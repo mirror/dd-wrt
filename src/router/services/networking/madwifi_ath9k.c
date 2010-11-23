@@ -89,7 +89,8 @@ void configure_single_ath9k(int count) {
 	// create base device
 	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
-	if (nvram_match(net, "disabled"))
+	char *netmode = nvram_default_get(net, "mixed");
+	if (!strcmp(netmode, "disabled"))
 		return;
 
 #ifdef HAVE_REGISTER
