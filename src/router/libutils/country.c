@@ -94,10 +94,10 @@ enum EnumRd {
 	APL9_WORLD = 0x5E,	/* Korea 5GHz */
 	APL11_WORLD	= 0x5A,		/* India */
 
-	APL6_FCCA	= 0x205B,		/* Singapore */
-	APL8_FCCA  = 0x205D,     /* Malaysia 5GHz */
-	NULL1_FCCA	= 0x2003,		/* For 11b-only countries (no 11a allowed) */
-	APL11_FCCA	= 0x205A,		/* India */
+	APL6_FCCA	= 0xaB,		/* Singapore */
+	APL8_FCCA       = 0xaD,     /* Malaysia 5GHz */
+	NULL1_FCCA	= 0xa3,		/* For 11b-only countries (no 11a allowed) */
+	APL11_FCCA	= 0xaA,		/* India */
 
 	/*
 	 * World mode SKUs
