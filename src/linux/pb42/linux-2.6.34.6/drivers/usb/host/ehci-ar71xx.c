@@ -110,7 +110,7 @@ do {                                                    \
 #define AR9130_RESET_USB_PHY                (AR7100_RESET_USB_PHY)
 #define AR9130_RESET_USBSUS_OVRIDE	    (AR7100_RESET_USBSUS_OVRIDE)
 
-#define AR9130_RESET                        (AR7100_RESET_BASE + 0x1C)
+#define AR9130_RESET                        (AR7100_RESET)
 #define AR9130_USB_CONFIG                   (AR7100_USB_CONFIG_BASE + 0x4)
 #define AR9130_USB_FLADJ_VAL                (AR7100_USB_CONFIG_BASE)
 
