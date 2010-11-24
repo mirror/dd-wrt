@@ -1970,6 +1970,8 @@ static void filter_input(void)
 			    ("-A POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			     nvram_safe_get("openvpncl_tuntap"));
 		else {
+			save2file("-A INPUT -i %s1 -j ACCEPT\n",
+				  nvram_safe_get("openvpncl_tuntap"));
 			save2file("-A FORWARD -i %s1 -j ACCEPT\n",
 				  nvram_safe_get("openvpncl_tuntap"));
 			save2file("-A FORWARD -o %s1 -j ACCEPT\n",
