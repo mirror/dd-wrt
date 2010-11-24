@@ -286,6 +286,8 @@ void start_openvpn(void)
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
+		fprintf(fp, "iptables -I INPUT -i %s1 -j ACCEPT\n",
+			nvram_safe_get("openvpncl_tuntap"));
 		fprintf(fp, "iptables -I FORWARD -i %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
 		fprintf(fp, "iptables -I FORWARD -o %s1 -j ACCEPT\n",
@@ -301,6 +303,8 @@ void start_openvpn(void)
 			"iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
+		fprintf(fp, "iptables -D INPUT -i %s1 -j ACCEPT\n",
+			nvram_safe_get("openvpncl_tuntap"));
 		fprintf(fp, "iptables -D FORWARD -i %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
 		fprintf(fp, "iptables -D FORWARD -o %s1 -j ACCEPT\n",
