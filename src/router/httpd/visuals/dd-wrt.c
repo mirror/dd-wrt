@@ -411,13 +411,12 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 			getc(fp);
 			char cpuclk[7];
 			int i;
-			for (i=0;i<6;i++)
-			    {
-			    int c = getc(fp);
-			    if (c==EOF || c=='\n' || c=='.' || c==0)
-				break;
-			    cpuclk[i]=c;
-			    }
+			for (i = 0; i < 6; i++) {
+				int c = getc(fp);
+				if (c == EOF || c == '\n' || c == '.' || c == 0)
+					break;
+				cpuclk[i] = c;
+			}
 			cpuclk[i] = 0;
 			websWrite(wp, cpuclk);
 			fclose(fp);
@@ -2313,11 +2312,15 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		websWrite(wp,
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label4)</script></div>\n");
 #ifdef HAVE_ATH9K
-		if(is_ath9k(prefix))
-			websWrite(wp, "<select name=\"%s\" rel=\"ath9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n",wl_channel);
+		if (is_ath9k(prefix))
+			websWrite(wp,
+				  "<select name=\"%s\" rel=\"ath9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n",
+				  wl_channel);
 		else
 #endif
-			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
+			websWrite(wp,
+				  "<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n",
+				  wl_channel);
 #ifdef HAVE_MADWIFI
 		struct wifi_channels *chan;
 		char cn[128];
@@ -2336,9 +2339,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #endif
 #ifdef HAVE_ATH9K
 			if (is_ath9k(prefix)) {
-				chan = list_channels_ath9k(prefix,"DE",20, 0xff);
+				chan =
+				    list_channels_ath9k(prefix, "DE", 20, 0xff);
 				if (chan == NULL)
-					chan = list_channels_ath9k(dev,"DE",20,0xff);
+					chan =
+					    list_channels_ath9k(dev, "DE", 20,
+								0xff);
 				gotchannels = 1;
 			}
 #endif
@@ -2365,37 +2371,46 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				cprintf("%d\n", chan[i].freq);
 
 #ifdef HAVE_ATH9K
-			if (nvram_match("ath9k_channeldebug", "1"))
-				{
-				sprintf(cn, "%d (-%d,+%d,o%d,d%d,m%d,nofdm%d)", chan[i].channel, chan[i].ht40minus,chan[i].ht40plus,chan[i].outdoor,chan[i].dfs,chan[i].max_eirp,chan[i].no_ofdm);
-				}
-			else
-				sprintf(cn, "%d", chan[i].channel);
+				if (nvram_match("ath9k_channeldebug", "1")) {
+					sprintf(cn,
+						"%d (-%d,+%d,o%d,d%d,m%d,nofdm%d)",
+						chan[i].channel,
+						chan[i].ht40minus,
+						chan[i].ht40plus,
+						chan[i].outdoor, chan[i].dfs,
+						chan[i].max_eirp,
+						chan[i].no_ofdm);
+				} else
+					sprintf(cn, "%d", chan[i].channel);
 #else
 				sprintf(cn, "%d", chan[i].channel);
 #endif
-				sprintf(fr, "%d", chan[i].freq );
+				sprintf(fr, "%d", chan[i].freq);
 				int freq = get_wififreq(prefix, chan[i].freq);
 				if (freq != -1)
 #ifdef HAVE_ATH9K
-		if(is_ath9k(prefix))
-		{
-					websWrite(wp,
-						  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"HT40minus\\\":%d,\\\"HT40plus\\\":%d}\\\'%s>%s - %d MHz</option>\");\n",
-						  fr, chan[i].ht40minus, chan[i].ht40plus, nvram_match(wl_channel,
-								  fr) ?
-						  " selected=\\\"selected\\\"" :
-						  "", cn, (freq));
-		}else
+					if (is_ath9k(prefix)) {
+						websWrite(wp,
+							  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"HT40minus\\\":%d,\\\"HT40plus\\\":%d}\\\'%s>%s - %d MHz</option>\");\n",
+							  fr, chan[i].ht40minus,
+							  chan[i].ht40plus,
+							  nvram_match
+							  (wl_channel,
+							   fr) ?
+							  " selected=\\\"selected\\\""
+							  : "", cn, (freq));
+					} else
 #endif
-		{
-					websWrite(wp,
-						  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
-						  fr, nvram_match(wl_channel,
-								  fr) ?
-						  "selected=\\\"selected\\\"" :
-						  "", cn, (freq));
-		}
+					{
+						websWrite(wp,
+							  "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
+							  fr,
+							  nvram_match
+							  (wl_channel,
+							   fr) ?
+							  "selected=\\\"selected\\\""
+							  : "", cn, (freq));
+					}
 				i++;
 			}
 			free(chan);
@@ -3468,12 +3483,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		showrtssettings(wp, var);
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (!is_ath11n(prefix))
+		if (!is_ath11n(prefix))
 #endif
-	{
-		sprintf(wmm, "%s_wmm", var);
-		showRadio(wp, "wl_adv.label18", wmm);
-	}
+		{
+			sprintf(wmm, "%s_wmm", var);
+			showRadio(wp, "wl_adv.label18", wmm);
+		}
 #endif
 
 #endif				// end BUFFALO
@@ -4332,8 +4347,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_ssid, nvram_safe_get(wl_ssid));
 
 #ifdef HAVE_MADWIFI
-	showRadio(wp, "wl_basic.radar", wl_doth);
-	show_chanshift(wp, prefix);
+#ifndef HAVE_BUFFALO
+	if (has_5ghz(prefix)) {
+		showRadio(wp, "wl_basic.radar", wl_doth);
+		show_chanshift(wp, prefix);
+	}
+#endif
 #endif
 #ifdef HAVE_RT2880
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
@@ -5342,8 +5361,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 // radar detection
 #ifdef HAVE_MADWIFI
-	showRadio(wp, "wl_basic.radar", wl_doth);
-	show_chanshift(wp, prefix);
+#ifndef HAVE_BUFFALO
+	if (has_5ghz(prefix)) {
+		showRadio(wp, "wl_basic.radar", wl_doth);
+		show_chanshift(wp, prefix);
+	}
+#endif
 #endif
 
 // scanlist
@@ -7996,16 +8019,17 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].usersize) ? db->
-				  users[i].user : "");
+					      && db->users[i].
+					      usersize) ? db->users[i].
+				  user : "");
 
 			sprintf(vlan_name, "password%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
 			websWrite(wp,
@@ -8062,16 +8086,17 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].clientsize) ? db->
-				  users[i].client : "");
+					      && db->users[i].
+					      clientsize) ? db->users[i].
+				  client : "");
 
 			sprintf(vlan_name, "shared%d", i);
 			websWrite(wp,
 				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
 				  vlan_name, (db->users[i].passwd != NULL
-					      && db->users[i].
-					      passwordsize) ? db->users[i].
-				  passwd : "");
+					      && db->
+					      users[i].passwordsize) ? db->
+				  users[i].passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",

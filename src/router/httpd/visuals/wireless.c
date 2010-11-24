@@ -79,7 +79,7 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 		sprintf(var, "%s_maclist", ifname);
 	}
 	wordlist = nvram_safe_get(var);
-	
+
 	temp = which;
 
 	foreach(word, wordlist, next) {
@@ -119,15 +119,15 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 
 	char var[32];
 	char *wordlist;
-	
-        if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
+
+	if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
 		strcpy(ifname2, ifname);
 		rep(ifname2, 'X', '.');
 		sprintf(var, "%s_active_mac", ifname);
 		wordlist = nvram_safe_get(var);
-                sprintf(var, "%s_maclist", ifname2);
+		sprintf(var, "%s_maclist", ifname2);
 		nvram_set(var, wordlist);
-        }
+	}
 
 	if (!strcmp(type, "input")) {
 		websWrite(wp, "<div class=\"col2l\">\n");
@@ -411,13 +411,13 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		nv_count = 0;	// init mac list
 
 		char var[32];
-		if(!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
+		if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
 			sprintf(var, "%s_active_mac", ifname);
 		} else {
 			sprintf(var, "%s_maclist", ifname);
 		}
 		char *maclist = nvram_safe_get(var);
-		
+
 		foreach(word, maclist, next) {
 			snprintf(wl_client_macs[nv_count].hwaddr,
 				 sizeof(wl_client_macs[nv_count].hwaddr), "%s",
@@ -889,9 +889,10 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 			  "<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp,
-			      "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></legend>\n");
+			  "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></legend>\n");
 		websWrite(wp, "     	<div class=\"setting\">\n");
-		websWrite(wp, "           <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></div>\n");
+		websWrite(wp,
+			  "           <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></div>\n");
 		websWrite(wp, "             <select name=\"rate_control\">\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
