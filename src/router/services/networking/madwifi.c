@@ -1493,7 +1493,11 @@ static void configure_single(int count)
 	char doth[32];
 
 	sprintf(doth, "%s_doth", dev);
+#ifdef HAVE_BUFFALO
+	sysprintf("iwpriv %s doth %s", dev, nvram_default_get(doth, "1"));
+#else
 	sysprintf("iwpriv %s doth %s", dev, nvram_default_get(doth, "0"));
+#endif
 	int disablescan = 0;
 
 	set_scanlist(dev, wif);
