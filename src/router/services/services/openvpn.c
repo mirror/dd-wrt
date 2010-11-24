@@ -44,6 +44,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
+	chmod("/tmp/openvpn/key.pem", 0600);
 	/*
 	   26.10.2010 Sash      
 	   write openvpn server config file on current config and common settings
@@ -223,6 +224,7 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
 	write_nvram("/tmp/openvpncl/client.key", "openvpncl_key");
 	write_nvram("/tmp/openvpncl/ta.key", "openvpncl_tlsauth");
+	chmod("/tmp/openvpn/client.key", 0600);
 
 	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
 	if (fp == NULL)
@@ -237,7 +239,7 @@ void start_openvpn(void)
 	fprintf(fp, "log-append /var/log/openvpncl\n");
 	fprintf(fp, "client\n");
 	fprintf(fp, "tls-client\n");
-	fprintf(fp, "dev %s0\n", nvram_safe_get("openvpncl_tuntap"));
+	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
@@ -277,16 +279,16 @@ void start_openvpn(void)
 	//bridge tap interface to br0 when choosen
 	if (nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_tuntap", "tap")) {
-		fprintf(fp, "brctl addif br0 tap0\n");
+		fprintf(fp, "brctl addif br0 tap1\n");
 	}
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
-			"iptables -A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
+			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
-		fprintf(fp, "iptables -A FORWARD -i %s0 -j ACCEPT\n",
+		fprintf(fp, "iptables -I FORWARD -i %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -A FORWARD -o %s0 -j ACCEPT\n",
+		fprintf(fp, "iptables -I FORWARD -o %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	}
 	fclose(fp);
@@ -296,17 +298,17 @@ void start_openvpn(void)
 		return;
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
-			"iptables -D POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
+			"iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
-		fprintf(fp, "iptables -D FORWARD -i %s0 -j ACCEPT\n",
+		fprintf(fp, "iptables -D FORWARD -i %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -D FORWARD -o %s0 -j ACCEPT\n",
+		fprintf(fp, "iptables -D FORWARD -o %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	}
 	if (nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_tuntap", "tap")) {
-		fprintf(fp, "brctl delif br0 tap0\n");
+		fprintf(fp, "brctl delif br0 tap1\n");
 	}
 	fclose(fp);
 
