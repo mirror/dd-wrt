@@ -1,6 +1,10 @@
 #ifndef _ATHRS16_PHY_H
 #define _ATHRS16_PHY_H
 
+#define BITS(_s, _n)	(((1UL << (_n)) - 1) << _s)
+
+#define AR8216_REG_GLOBAL_CTRL		0x0030
+#define   AR8316_GCTRL_MTU		BITS(0, 14)
 
 /*****************/
 /* PHY Registers */
