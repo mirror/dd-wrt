@@ -134,16 +134,16 @@ void start_sysinit(void)
 		MAC_ADD(mac2);
 		eval("gpio","disable","16");
 
-		fprintf(stderr, "configure eth0 to %s\n", mac1);
-		eval("ifconfig", "eth0", "hw", "ether", mac1);
+		fprintf(stderr, "configure eth0 to %s\n", mac2);
+		eval("ifconfig", "eth0", "hw", "ether", mac2);
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
-		fprintf(stderr, "configure vlan1 to %s\n", mac1);
-		eval("ifconfig", "vlan1", "hw", "ether", mac1);
-		fprintf(stderr, "configure vlan2 to %s\n", mac1);
-		eval("ifconfig", "vlan2", "hw", "ether", mac1);
+		fprintf(stderr, "configure vlan1 to %s\n", mac2);
+		eval("ifconfig", "vlan1", "hw", "ether", mac2);
+		fprintf(stderr, "configure vlan2 to %s\n", mac2);
+		eval("ifconfig", "vlan2", "hw", "ether", mac2);
 #else
 		fseek(fp, 0x7f120c, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
@@ -166,11 +166,14 @@ void start_sysinit(void)
 		sprintf(mac1, "00:11:22:33:44:55");
 		sprintf(mac2, "00:11:22:33:44:66");
 	}
+#ifndef HAVE_WZRG450
 	eval("ifconfig", "eth0", "hw", "ether", mac1);
 	eval("ifconfig", "eth0", "up");
-#ifndef HAVE_WZRG450
 	eval("ifconfig", "eth1", "hw", "ether", mac2);
 	eval("ifconfig", "eth1", "up");
+#else
+	eval("ifconfig", "eth0", "hw", "ether", mac2);
+	eval("ifconfig", "eth0", "up");
 #endif
 	struct ifreq ifr;
 	int s;
