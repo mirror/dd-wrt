@@ -1967,12 +1967,12 @@ static void filter_input(void)
 	if (nvram_match("openvpncl_enable", "1")) {
 		if (nvram_match("openvpncl_nat", "1"))
 			save2file
-			    ("-A POSTROUTING -t nat -o %s0 -j MASQUERADE\n",
+			    ("-A POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			     nvram_safe_get("openvpncl_tuntap"));
 		else {
-			save2file("-A FORWARD -i %s0 -j ACCEPT\n",
+			save2file("-A FORWARD -i %s1 -j ACCEPT\n",
 				  nvram_safe_get("openvpncl_tuntap"));
-			save2file("-A FORWARD -o %s0 -j ACCEPT\n",
+			save2file("-A FORWARD -o %s1 -j ACCEPT\n",
 				  nvram_safe_get("openvpncl_tuntap"));
 		}
 	}
@@ -2301,7 +2301,7 @@ static void filter_forward(void)
 	if (nvram_match("wk_mode", "olsr")) {
 		save2file("-A FORWARD -p udp --dport 698 -j ACCEPT\n");
 		save2file("-A FORWARD -p udp --sport 698 -j ACCEPT\n");
-	}
+	}ope
 #endif
 	/*
 	 * Sveasoft mod - FORWARD br1 to br0, protecting br0 
