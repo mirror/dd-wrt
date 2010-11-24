@@ -502,7 +502,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	char *argv[] = { "3" };
 	char *stage_visible_css = "display: none;";
 	char frequencies[16];
-	
+
 	if (ej_sas_stage_is_visible(wp, argc, argv) == 0) {
 		stage_visible_css = "";
 	}
@@ -512,16 +512,16 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ssid, "%s_ssid", prefix);
 
 	// check the frequency capabilities;
-	if(has_5ghz(prefix) && has_2ghz(prefix)) {
+	if (has_5ghz(prefix) && has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4/5 GHz]");
-	} else if(has_5ghz(prefix)) {
+	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " [5 GHz]");
-	} else if(has_2ghz(prefix)) {
+	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4 GHz]");
 	} else {
 		sprintf(frequencies, "");
 	}
-	
+
 	// wireless mode
 	websWrite(wp,
 		  "<h2 style=\"%s\"><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n",
@@ -681,7 +681,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
+	fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
 /* limit channel options by mode */
 	if (is_ath11n(prefix)) {
 		if ((nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
@@ -702,7 +702,6 @@ fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
 		    || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix))))
-
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -1328,20 +1327,20 @@ void ej_sas_show_security(webs_t wp, int argc, char_t ** argv)
 	int c = get_wl_instances();
 
 	for (i = 0; i < c; i++) {
-	char buf[16];
+		char buf[16];
 
-	sprintf(buf, "wl%d", i);
-	sas_show_security_single(wp, argc, argv, buf);
+		sprintf(buf, "wl%d", i);
+		sas_show_security_single(wp, argc, argv, buf);
 	}
 	return;
 #else
 	int c = getdevicecount();
 
 	for (i = 0; i < c; i++) {
-	char buf[16];
+		char buf[16];
 
-	sprintf(buf, "ath%d", i);
-	sas_show_security_single(wp, argc, argv, buf);
+		sprintf(buf, "ath%d", i);
+		sas_show_security_single(wp, argc, argv, buf);
 	}
 	return;
 #endif
@@ -1366,17 +1365,17 @@ sas_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 		return;
 	sprintf(ssid, "%s_ssid", prefix);
 	/*websWrite(wp,
-		  "<h2 style=\"%s\"><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n",
-		  stage_visible_css, prefix);*/
+	   "<h2 style=\"%s\"><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n",
+	   stage_visible_css, prefix); */
 	websWrite(wp, "<fieldset style=\"%s\">\n", stage_visible_css);
 	// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
 	websWrite(wp,
 		  "<legend><script type=\"text/javascript\">Capture(wpa.h2)</script></legend>");
-	/*	  "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
-		  IFMAP(prefix));
-	tf_webWriteESCNV(wp, ssid);
-	// contains html tag
-	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));*/
+	/*        "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
+	   IFMAP(prefix));
+	   tf_webWriteESCNV(wp, ssid);
+	   // contains html tag
+	   websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac)); */
 	sas_show_security_prefix(wp, argc, argv, prefix, 1);
 	websWrite(wp, "</fieldset>\n<br style=\"%s\"/>\n", stage_visible_css);
 	/*foreach(var, vifs, next) {
@@ -1580,10 +1579,10 @@ void ej_sas_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
 	int i = 0;
 
 	for (i = 0; i < c; i++) {
-	char buf[16];
+		char buf[16];
 
-	sprintf(buf, "wl%d", i);
-	sas_init_80211x_layers(wp, buf);
+		sprintf(buf, "wl%d", i);
+		sas_init_80211x_layers(wp, buf);
 	}
 	return;
 #else
@@ -1591,11 +1590,11 @@ void ej_sas_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
 	int i = 0;
 
 	for (i = 0; i < c; i++) {
-	char buf[16];
+		char buf[16];
 
-	sprintf(buf, "ath%d", i);
-	if (nvram_selnmatch(wp, "8021X", "%s_security_mode", buf))
-		sas_init_80211x_layers(wp, buf);
+		sprintf(buf, "ath%d", i);
+		if (nvram_selnmatch(wp, "8021X", "%s_security_mode", buf))
+			sas_init_80211x_layers(wp, buf);
 	}
 	return;
 #endif
@@ -1962,7 +1961,8 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix,
 		security_mode = nvram_selget(wp, var);
 	if (strcmp(security_mode, security_prefix)) {
 		if (strlen(security_prefix) > strlen(security_mode)) {
-			security_mode = (char *)safe_malloc(strlen(security_prefix));
+			security_mode =
+			    (char *)safe_malloc(strlen(security_prefix));
 		}
 		sprintf(security_mode, "%s", security_prefix);
 	}
