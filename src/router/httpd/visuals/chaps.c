@@ -6,8 +6,6 @@
 #include <broadcom.h>
 #include <cy_conf.h>
 
-
-
 /*
  * Example: name:pass:ip:on 
  */

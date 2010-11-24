@@ -1256,14 +1256,13 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 		}
 		/* now sort entries to solve EXT2 unsorted problem */
 		int i, a;
-		for (a = 0; a < resultcount; a++)
-		{
-			int change=0;
+		for (a = 0; a < resultcount; a++) {
+			int change = 0;
 			for (i = 0; i < resultcount - 1; i++) {
 				int step = 0;
 			      again:;
-			        if (!result[i][step] || !result[i+1][step])
-			    	    continue;
+				if (!result[i][step] || !result[i + 1][step])
+					continue;
 				if (result[i][step] == result[i + 1][step]) {
 					step++;
 					goto again;
@@ -1277,7 +1276,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 				}
 			}
 			if (!change)
-			    break; //no more sortable entries found, so just break up here
+				break;	//no more sortable entries found, so just break up here
 		}
 		for (i = 0; i < resultcount; i++) {
 			sprintf(buf, "%s/%s", directories[idx], result[i]);

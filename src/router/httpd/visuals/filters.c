@@ -899,7 +899,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 
 	if (!strcmp(type, "all_list") || !strcmp(type, "user_list")) {
 		if (!strcmp(type, "all_list"))
-			get_filter_services(services,sizeof(services));
+			get_filter_services(services, sizeof(services));
 		else		// user_list only
 		{
 			strcat(services, nvram_safe_get("filter_services"));	// this 
