@@ -243,26 +243,31 @@ void athrs16_reg_init(int ethUinit)
 	hsl_dev_init(0, 2);
 #endif
 
-#if 0
+#if 1
    /* Enable ARP packets to CPU port */
     athrs16_reg_write(S16_ARL_TBL_CTRL_REG,(athrs16_reg_read(S16_ARL_TBL_CTRL_REG) | 0x100000));
    /* Enable Broadcast packets to CPU port */
-    athrs16_reg_write(S16_FLD_MASK_REG,(athrs16_reg_read(S16_FLD_MASK_REG) | S16_ENABLE_CPU_BROADCAST ));
+//    athrs16_reg_write(S16_FLD_MASK_REG,(athrs16_reg_read(S16_FLD_MASK_REG) | S16_ENABLE_CPU_BROADCAST ));
+    athrs16_reg_write(S16_FLD_MASK_REG,0x003f003f); // enable multicast and unicast on all ports, in case that bootloader did not initialize it in correct way
+    //jumbo
+    athrs16_reg_write(0x30,(athrs26_reg_read(0x30)&AR8316_GCTRL_MTU)|(9018 + 8 + 2));
+
 #endif
 #ifndef CONFIG_S26_SWITCH_ONLY_MODE
     athrs16_reg_write(S16_CPU_PORT_REGISTER,0x000001f0);
 
+
+#if 0
+// config wan = port 4, lan = 0 - 3
     /* Recognize tag packet from CPU */
-    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER0,0xc03e0001);
-
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER0,0xc03e0001); // 1111100000000000000001
     /* Insert PVID 1 to LAN ports */
-    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER1,0x001d0001);
-    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER2,0x001b0001);
-    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER3,0x00170001);
-    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER4,0x000f0001);
-
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER1,0x001d0001); //  111010000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER2,0x001b0001); //  110110000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER3,0x00170001); //  101110000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER4,0x000f0001); //  011110000000000000001
    /* Insert PVID 2 to WAN port */
-    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER5,0x00010002);
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER5,0x00010002); // 0000010000000000000010
 
    /* Egress tag packet to CPU and untagged packet to LAN port */
 
@@ -275,12 +280,49 @@ void athrs16_reg_init(int ethUinit)
     athrs16_reg_write(S16_PORT_CONTROL_REGISTER5,0x00006104);
 
   /* Group port - 0,1,2,3 to VID 1 */
-    athrs16_reg_write(S16_VLAN_FUNC_REGISTER1,0x0000081f);
+    athrs16_reg_write(S16_VLAN_FUNC_REGISTER1,0x0000081f); // 100000011111
     athrs16_reg_write(S16_VLAN_FUNC_REGISTER0,0x0001000a);
 
   /*  port - 4  to VID 2 */
-    athrs16_reg_write(S16_VLAN_FUNC_REGISTER1,0x00000821);
-    athrs16_reg_write(S16_VLAN_FUNC_REGISTER0,0x0002000a);
+    athrs16_reg_write(S16_VLAN_FUNC_REGISTER1,0x00000821); // 100000100001
+    athrs16_reg_write(S16_VLAN_FUNC_REGISTER0,0x0002000a); 
+
+
+#else
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER0,0xc03e0001); // 1111100000000000000001
+
+    /* Insert PVID 1 to LAN ports */
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER1,0x00010002); // 0000010000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER2,0x00390001); // 1110010000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER3,0x00350001); // 1101010000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER4,0x002d0001); // 1011010000000000000001
+
+   /* Insert PVID 2 to WAN port */
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER5,0x001d0001); // 0111010000000000000010
+
+
+   /* Egress tag packet to CPU and untagged packet to LAN port */
+
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER0,0x00006204);
+
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER1,0x00006104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER2,0x00006104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER3,0x00006104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER4,0x00006104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER5,0x00006104);
+
+  /* Group port - 0,1,2,3 to VID 1 */
+    athrs16_reg_write(S16_VLAN_FUNC_REGISTER1,0x0000083d); // 100000111101
+    athrs16_reg_write(S16_VLAN_FUNC_REGISTER0,0x0001000a);
+
+  /*  port - 4  to VID 2 */
+    athrs16_reg_write(S16_VLAN_FUNC_REGISTER1,0x00000803); // 100000000011
+    athrs16_reg_write(S16_VLAN_FUNC_REGISTER0,0x0002000a); 
+
+#endif
+
+
+
 #endif
     athr16_init_flag = 1;
     printk("athrs16_reg_init complete.\n");
