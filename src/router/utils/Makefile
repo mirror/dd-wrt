@@ -107,7 +107,9 @@ install: all
 #	install -d $(INSTALLDIR)/utils/usr/lib
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-	install $(UTILS) $(INSTALLDIR)/utils/usr/sbin
+ifneq ($(origin UTILS), undefined)
+	install $(UTILS) $(INSTALLDIR)/utils/usr/sbin 
+endif
 endif
 endif
 	#install $(LIBS) $(INSTALLDIR)/utils/usr/lib
