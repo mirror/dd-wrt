@@ -1355,6 +1355,7 @@ service.vpn_cipher="Encryption Cipher";
 service.vpn_auth="Hash Algorithm";
 service.vpn_bridge="Bridge Tap to br0";
 service.vpn_adv="Advanced Options";
+service.vpn_tlscip="TLS Cipher";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
