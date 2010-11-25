@@ -26,3 +26,5 @@
  "openvpn_mssfix" "TCP MSS" "NULL" "FALSE" "0"
  "openvpn_mtu" "TUN MTU" "NULL" "FALSE" "0"
  "openvpn_adv"   "Advanced options"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "openvpn_tlscip"   "TLS Cipher" "CHOICE" "3" "AES128-SHA" "AES256-SHA" "AES512-SHA" "FALSE" "0"
+ "openvpn_tlscipen"   "Enable TLS Cipher"   "CHOICE" "2" "0" "1"  "FALSE" "0"
