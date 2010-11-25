@@ -33,20 +33,20 @@
 		<div id="idbridge">
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_startip"); %></div>
-				<input size="27" maxlength="15" name="openvpn_startip" value="<% nvram_get("openvpn_startip"); %>" />
+				<input size="15" maxlength="15" name="openvpn_startip" value="<% nvram_get("openvpn_startip"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_endip"); %></div>
-				<input size="27" maxlength="15" name="openvpn_endip" value="<% nvram_get("openvpn_endip"); %>" />
+				<input size="15" maxlength="15" name="openvpn_endip" value="<% nvram_get("openvpn_endip"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.gateway"); %></div>
-				<input size="27" maxlength="15" name="openvpn_gateway" value="<% nvram_get("openvpn_gateway"); %>" />
+				<input size="15" maxlength="15" name="openvpn_gateway" value="<% nvram_get("openvpn_gateway"); %>" />
 			</div>
 		</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_mask"); %></div>
-				<input size="27" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
+				<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
 			</div>
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
@@ -111,7 +111,7 @@
 		<div id="idmtu">
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_mtu"); %></div>
-				<input size="5" maxlength="5" class="num" name="openvpn_mtu" value="<% nvram_get("openvpn_mtu"); %>" />
+				<input size="5" maxlength="5" class="num" name="openvpn_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_mtu"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1500; Disable=empty)");
@@ -120,12 +120,27 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_mss"); %></div>
-				<input size="5" maxlength="5" class="num" name="openvpn_mssfix" value="<% nvram_get("openvpn_mssfix"); %>" />
+				<input size="5" maxlength="5" class="num" name="openvpn_mssfix" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_mssfix"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1450; Disable=empty)");
 				//]]>
 				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_tlscip"); %></div>
+				<input class="spaceradio" type="radio" name="openvpn_tlscipen" value="1" <% nvram_checked("openvpn_tlscipen", "1"); %> onclick="show_layer_ext(this, 'idtlscip', true)" /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpn_tlscipen" value="0" <% nvram_checked("openvpn_tlscipen", "0"); %> onclick="show_layer_ext(this, 'idtlscip', false)" /><% tran("share.disable"); %>
+			</div>
+			<div id="idtlscip">
+				<div class="setting">
+					<div class="label"><% tran("service.vpn_tlscip"); %></div>
+					<select name="openvpn_tlscip">
+					<option value="AES128-SHA" <% nvram_selected("openvpn_tlscip","AES128-SHA"); %>>AES-128 SHA</option>
+					<option value="AES256-SHA" <% nvram_selected("openvpn_tlscip","AES256-SHA"); %>>AES-256 SHA</option>
+					<option value="AES515-SHA" <% nvram_selected("openvpn_tlscip","AES512-SHA"); %>>AES-512 SHA</option>
+				</select>
+			</div>
 			</div>
 		</div>
 		<div class="setting">		
