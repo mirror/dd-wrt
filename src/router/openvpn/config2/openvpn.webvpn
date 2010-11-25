@@ -138,7 +138,7 @@
 					<select name="openvpn_tlscip">
 					<option value="AES128-SHA" <% nvram_selected("openvpn_tlscip","AES128-SHA"); %>>AES-128 SHA</option>
 					<option value="AES256-SHA" <% nvram_selected("openvpn_tlscip","AES256-SHA"); %>>AES-256 SHA</option>
-					<option value="AES515-SHA" <% nvram_selected("openvpn_tlscip","AES512-SHA"); %>>AES-512 SHA</option>
+					<option value="AES512-SHA" <% nvram_selected("openvpn_tlscip","AES512-SHA"); %>>AES-512 SHA</option>
 				</select>
 			</div>
 			</div>
