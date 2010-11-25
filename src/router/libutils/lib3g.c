@@ -185,7 +185,7 @@ static void modeswitch_sierra(int needreset, char *controldev)
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 
 	fprintf(out, "DefaultVendor=0x1199\n"
-		"DefaultVendor=0x0fff\n"
+		"DefaultProduct=0x0fff\n"
 		"TargetVendor=0x1199\n"
 		"TargetProductList=\"0017,0018,0019,0020,0021,0022,0024,0026,0027,0028,0029,0112,0120,0218,0220,0224,6802,6803,6804,6805,6808,6809,6812,6813,6815,6816,6820,6821,6822,6832,6833,6834,6835,6838,6839,683a,683b,683c,683d,683e,6850,6851,6852,6853,6855,6856,6859,685a\"\n"
 		"SierraMode=1\n" "CheckSuccess=10\n");
