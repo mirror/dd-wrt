@@ -16,30 +16,30 @@ Protected Access (WPA) which is the standard of the future.
 Authentication, authorization and accounting (AAA) is handled by your
 favorite radius server.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.hotspotsystem)</script>Hotspot System</dt>
+<dt><script type="text/javascript">Capture(hotspotsys.legend)</script></dt>
 <dd>You can have your hotspot portal managed by HotspotSystem.com. 
 They provide free and pay-per-use hotspot solutions with billing. 
 For more information please visit <a href="http://www.hotspotsystem.com">www.hotspotsystem.com</a></dd>
 
-<dt><script type="text/javascript">Capture(hotspot.opid)</script>Operator Username</dt>
+<dt><script type="text/javascript">Capture(hotspotsys.operatorid)</script></dt>
 <dd>The Operator Username which you have registered at <a href="http://www.hotspotsystem.com">www.hotspotsystem.com</a></dd>
 
-<dt><script type="text/javascript">Capture(hotspot.locid)</script>Location ID</dt>
+<dt><script type="text/javascript">Capture(hotspotsys.locationid)</script></dt>
 <dd>The number of the location you would like to set up.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.separatewifilan)</script>Separate Wifi from the LAN Bridge</dt>
+<dt><script type="text/javascript">Capture(hotspotsys.nobridge)</script></dt>
 <dd>If this option is enabled (default), then Wifi and LAN are handled separately. 
 For example you can forward Wifi users to a splash page, while LAN ports remain completly free. 
 If you set this to disable, then all ports are handled together.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.dhcp)</script>DHCP Interface</dt>
+<dt><script type="text/javascript">Capture(hotspotsys.dhcp)</script></dt>
 <dd>This has to be the interface you would like to use for the hotspot portal. 
 </dd>
 
-<dt><script type="text/javascript">Capture(hotspot.remotenetwork)</script>Remote Network</dt>
+<dt><script type="text/javascript">Capture(hotspotsys.net)</script></dt>
 <dd>Network mask where you wish to run the hotspot service.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.specsettings)</script>Special Settings</dt>
+<dt><script type="text/javascript">Capture(hotspotsys.uamenable)</script></dt>
 <dd>Here you can make changes on your splash page. You can add more sites for free browsing.
 If you are a White Label operator you can use your own domain name on your splash pages. 
 Options are:
@@ -62,30 +62,30 @@ www.chillispot.info,10.11.12.0/24</li>
 
 
 
-<dt><script type="text/javascript">Capture(hotspot.pserver)</script>Primary Radius Server IP/DNS</dt>
+<dt><script type="text/javascript">Capture(hotspot.pserver)</script></dt>
 <dd>The IP addresses of radius server 1 and 2.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.dns)</script>DNS IP</dt>
+<dt><script type="text/javascript">Capture(hotspot.dns)</script></dt>
 <dd>DNS Server IP. It is used to inform the client about the DNS
 address to use for host name resolution. If this option is not given
 the system primary DNS is used.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.url)</script>Redirect URL</dt>
+<dt><script type="text/javascript">Capture(hotspot.url)</script></dt>
 <dd>URL of web server to use for authenticating clients.</dd>
 
-<dt><script type="text/javascript">Capture(share.share_key)</script>Shared Key</dt>
+<dt><script type="text/javascript">Capture(share.share_key)</script></dt>
 <dd>Radius shared secret for both servers. This secret should be changed in order not to compromise security.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.dhcp)</script>DHCP Interface</dt>
+<dt><script type="text/javascript">Capture(hotspot.dhcp)</script></dt>
 <dd>Ethernet interface to listen to for the downlink interface. This option must be specified.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.radnas)</script>Radius NAS ID</dt>
+<dt><script type="text/javascript">Capture(hotspot.radnas)</script></dt>
 <dd>Network access server identifier.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.uam)</script>UAM Secret</dt>
+<dt><script type="text/javascript">Capture(hotspot.uam)</script></dt>
 <dd>Shared secret between uamserver and chilli. This secret should be set in order not to compromise security.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.uamdns)</script>UAM Any DNS</dt>
+<dt><script type="text/javascript">Capture(hotspot.uamdns)</script></dt>
 <dd>Allow any DNS server. Normally unauthenticated clients are only
 allowed to communicate with the DNS servers specified by the dns1 and
 dns2 options. This option will allow the client to use all DNS servers.
@@ -99,15 +99,15 @@ given DNS server.</div>
 </div>
 </dd>
 
-<dt><script type="text/javascript">Capture(hotspot.allowuam)</script>UAM Allowed</dt>
+<dt><script type="text/javascript">Capture(hotspot.allowuam)</script></dt>
 <dd>IP addresses or network segments the client can access without
 first authenticating (Comma separated list of domain names). Example:
 www.chillispot.info,10.11.12.0/24 </dd>
 
-<dt><script type="text/javascript">Capture(hotspot.macauth)</script>MACauth</dt>
+<dt><script type="text/javascript">Capture(hotspot.macauth)</script></dt>
 <dd>If this option is given ChilliSpot will try to authenticate all users based on their mac address alone.</dd>
 
-<dt><script type="text/javascript">Capture(hotspot.option)</script>Additional Chillispot Options</dt>
+<dt><script type="text/javascript">Capture(hotspot.option)</script></dt>
 <dd>You can specify here additional Options.<br><br>
 <div class="note">
 <h4>Note</h4>
