@@ -2,6 +2,9 @@
 ifeq ($(CONFIG_BUFFALO),y)
 export EXTRA_VERSION=-buffalo
 endif
+ifeq ($(CONFIG_NEXTMEDIA),y)
+export EXTRA_VERSION=-nextmedia
+endif
 
 
 ifeq ($(CONFIG_AHB),y)
