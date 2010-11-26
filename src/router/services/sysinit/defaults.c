@@ -2420,12 +2420,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_auth", "sha1", 0},
 	{"openvpncl_adv", "0", 0},
 	{"openvpncl_bridge", "0", 0},
-	{"openvpncl_tlscip", "AES128-SHA", 0},
-	{"openvpncl_tlscipen", "0", 0},
+	{"openvpncl_tlscip", "0", 0},
 
 	{"openvpn_enable", "0", 0},
 	{"openvpn_net", "0.0.0.0", 0},
 	{"openvpn_mask", "0.0.0.0", 0},
+	{"openvpn_maskb", "0.0.0.0", 0},
 	{"openvpn_gateway", "0.0.0.0", 0},
 	{"openvpn_startip", "0.0.0.0", 0},
 	{"openvpn_endip", "0.0.0.0", 0},
@@ -2453,8 +2453,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_auth", "sha1", 0},
 	{"openvpn_redirgate", "1", 0},
 	{"openvpn_adv", "0", 0},
-	{"openvpn_tlscip", "AES128-SHA", 0},
-	{"openvpn_tlscipen", "0", 0},
+	{"openvpn_tlscip", "0", 0},
 
 #endif
 #ifdef HAVE_KODATA
