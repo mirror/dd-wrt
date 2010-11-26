@@ -131,7 +131,8 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
-		MAC_ADD(mac2);
+		mac1[0] |= 0x02; // add private bit
+		mac2[0] |= 0x02;
 		eval("gpio","disable","16");
 
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
