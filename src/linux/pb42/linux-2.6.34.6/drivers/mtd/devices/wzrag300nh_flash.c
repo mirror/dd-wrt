@@ -48,7 +48,7 @@ static	__u32	_s_jiffies	= 0;
 
 #define	DBGMSG(S)	do { printk(KERN_DEBUG "%s[%08lX]::%s\n", __FUNCTION__, jiffies, (S)); } while(0)
 
-#if	defined(CONFIG_MACH_AR7100)
+#if 0//	defined(CONFIG_MACH_AR7100)
 //#include	"asm/mach-ar7100/ar7100.h"
 #define	DIAG_GPIO_NO			(1<<1)
 #define	DIAG_INIT(F_WRITE)		do { if(IS_NEW_SEQUENCE(F_WRITE)){_f_on=0;} while(_f_init) { ar7100_reg_rmw_set(AR7100_GPIO_OE, DIAG_GPIO_NO); _f_init=0; } } while(0)
@@ -57,7 +57,11 @@ static	__u32	_s_jiffies	= 0;
 #define	DIAG_BLINK()			do { _f_on = (_f_on+1) & 0x1; if (_f_on) DIAG_ON(); else DIAG_OFF(); } while(0)
 
 #else	//defined  CONFIG_AR9100
-#error	"not define support TARGET"
+#define	DIAG_GPIO_NO			(1<<1)
+#define	DIAG_INIT(F_WRITE)		do {  } while(0)
+#define	DIAG_ON()				do {  } while(0)
+#define	DIAG_OFF()				do {  } while(0)
+#define	DIAG_BLINK()			do {  } while(0)
 #endif	//defined  CONFIG_AR9100
 
 
