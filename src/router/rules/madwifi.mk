@@ -158,7 +158,7 @@ madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
 ifneq ($(CONFIG_NOWIFI),y)
 	make -j 4 -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
-	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=xscale-boese-be-elf install
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=xscale-nextmedia-be-elf install
 endif
 
 else
