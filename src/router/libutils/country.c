@@ -100,6 +100,13 @@ enum EnumRd {
 	APL11_FCCA	= 0xaA,		/* India */
 	APL9_FCCA = 0xae,	/* Korea 5GHz */
 
+	RAI_WORLD	= 0xa0
+	RAIIT_WORLD	= 0xa1
+	IT_WORLD	= 0xa2
+	RAI 		= 0x01a0
+	RAIIT		= 0x01a1
+	IT		= 0x01a2
+
 	/*
 	 * World mode SKUs
 	 */
@@ -277,6 +284,8 @@ enum CountryCode {
 	CTRY_IRELAND = 372,	/* Ireland */
 	CTRY_ISRAEL = 376,	/* Israel */
 	CTRY_ITALY = 380,	/* Italy */
+	CTRY_ITALYRAI = 381,	/* Italy */
+	CTRY_RAI = 382,	/* Italy */
 	CTRY_JAMAICA = 388,	/* Jamaica */
 	CTRY_JAPAN = 392,	/* Japan */
 	CTRY_JORDAN = 400,	/* Jordan */
@@ -519,7 +528,13 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_IRAN, APL1_WORLD, "IR", "IRAN", YES, YES, YES, 7000},
 	{CTRY_IRELAND, ETSI1_WORLD, "IE", "IRELAND", YES, NO, YES, 7000},
 	{CTRY_ISRAEL, NULL1_WORLD, "IL", "ISRAEL", YES, NO, YES, 7000},
+#ifdef HAVE_NEXTMEDIA
+	{CTRY_ITALY, IT_WORLD, "IT", "ITALY", YES, NO, YES, 7000},
+	{CTRY_ITALYRAI, RAIIT_WORLD, "ITRAI", "ITALY", YES, NO, YES, 7000},
+	{CTRY_RAI, RAI_WORLD, "RAI", "ITALY", YES, NO, YES, 7000},
+#else
 	{CTRY_ITALY, ETSI1_WORLD, "IT", "ITALY", YES, NO, YES, 7000},
+#endif
 	{CTRY_JAPAN, MKK1_MKKA, "JP", "JAPAN", YES, NO, NO, 7000},
 	{CTRY_JORDAN, APL4_WORLD, "JO", "JORDAN", YES, NO, YES, 7000},
 	{CTRY_KAZAKHSTAN, NULL1_WORLD, "KZ", "KAZAKHSTAN", YES, NO, YES, 7000},
