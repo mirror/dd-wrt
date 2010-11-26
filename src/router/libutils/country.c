@@ -100,12 +100,12 @@ enum EnumRd {
 	APL11_FCCA	= 0xaA,		/* India */
 	APL9_FCCA = 0xae,	/* Korea 5GHz */
 
-	RAI_WORLD	= 0xa0
-	RAIIT_WORLD	= 0xa1
-	IT_WORLD	= 0xa2
-	RAI 		= 0x01a0
-	RAIIT		= 0x01a1
-	IT		= 0x01a2
+	RAI_WORLD	= 0xa0,
+	RAIIT_WORLD	= 0xa1,
+	IT_WORLD	= 0xa2,
+	RAI 		= 0x01a0,
+	RAIIT		= 0x01a1,
+	IT		= 0x01a2,
 
 	/*
 	 * World mode SKUs
