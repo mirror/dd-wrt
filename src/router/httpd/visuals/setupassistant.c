@@ -2062,7 +2062,7 @@ void sas_show_wep(webs_t wp, char *prefix)
 	char *bit;
 
 	cprintf("show wep\n");
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 	char wl_authmode[16];
 
 	sprintf(wl_authmode, "%s_authmode", prefix);
