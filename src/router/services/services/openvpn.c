@@ -44,7 +44,6 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
-	chmod("/tmp/openvpn/key.pem", 0600);
 	/*
 	   26.10.2010 Sash      
 	   write openvpn server config file on current config and common settings
@@ -86,7 +85,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
 			fprintf(fp, "push \"redirect-gateway def1\"\n");
-		if (nvram_match("openvpn_tlscipen", "1"))
+		if (!nvram_match("openvpn_tlsci", "0"))
 			fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpn_tlscip"));
 		if (nvram_match("openvpn_proto", "udp"))
 			fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
@@ -244,7 +243,6 @@ void start_openvpn(void)
 	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
-	fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpncl_tlscip"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
 	fprintf(fp, "resolv-retry infinite\n");
 	fprintf(fp, "nobind\n");
@@ -273,7 +271,7 @@ void start_openvpn(void)
 		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support. not supported on server in version 2.1.3
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
-	if (nvram_match("openvpncl_tlscipen", "1"))
+	if (!nvram_match("openvpncl_tlsci", "0"))
 		fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpncl_tlscip"));
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
