@@ -71,6 +71,8 @@ void configure_single_ath9k(int count) {
 	static char athmac[16];
 	static char maxassoc[32];
 	static char wl_poll[32];
+	static char rxantenna[32];
+	static char txantenna[32];
 	static int vapcount = 0;
 	char *apm;
 	char isolate[32];
@@ -86,6 +88,8 @@ void configure_single_ath9k(int count) {
 	sprintf(sens, "ath%d_distance", count);
 	sprintf(diversity, "ath%d_diversity", count);
 	sprintf(athmac, "ath%d_hwaddr", count);
+	sprintf(rxantenna("ath%d_rxantenna", count);
+	sprintf(txantenna("ath%d_txantenna", count);
 	// create base device
 	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
@@ -98,7 +102,8 @@ void configure_single_ath9k(int count) {
 #else
 	int cpeonly = 0;
 #endif
-
+	sysprintf("echo %d > /sys/kernel/debug/ath9k/%s/rx_chainmask",nvram_safe_get(rxantenna),wif);
+	sysprintf("echo %d > /sys/kernel/debug/ath9k/%s/tx_chainmask",nvram_safe_get(txantenna),wif);
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
 	foreach(var, vifs, next) {
