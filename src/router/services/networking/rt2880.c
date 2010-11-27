@@ -515,6 +515,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		fprintf(fp, "WirelessMode=4\n");
 	if (nvram_match("wl0_net_mode", "n-only"))
 		fprintf(fp, "WirelessMode=6\n");
+	if (nvram_match("wl0_net_mode", "n2-only"))
+		fprintf(fp, "WirelessMode=6\n");
+	if (nvram_match("wl0_net_mode", "ng-only"))
+		fprintf(fp, "WirelessMode=7\n");
 	if (nvram_match("wl0_net_mode", "mixed"))
 		fprintf(fp, "WirelessMode=9\n");
 
@@ -539,7 +543,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	fprintf(fp, "ShortSlot=%s\n",
 		nvram_match("wl0_shortslot", "long") ? "0" : "1");
 	if (nvram_match("wl0_channel", "0"))
-		fprintf(fp, "AutoChannelSelect=1\n");
+		fprintf(fp, "AutoChannelSelect=2\n");
 	else
 		fprintf(fp, "AutoChannelSelect=0\n");
 
@@ -1036,7 +1040,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	fprintf(fp, "FragThreshold=%s\n", nvram_safe_get("wl0_frag"));
 	fprintf(fp, "TxBurst=%s\n",
 		nvram_match("wl0_frameburst", "on") ? "0" : "1");
-	fprintf(fp, "PktAggregate=0\n");
+	fprintf(fp, "PktAggregate=0\n"); // ralink propertiery, do not use
 	fprintf(fp, "TurboRate=0\n");
 	fprintf(fp, "WmmCapable=%s\n",
 		nvram_match("wl0_wme", "on") ? "1" : "0");
