@@ -1116,6 +1116,8 @@ int internal_getRouterBrand()
 	setRouter("ZCom TG-2521");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG450
+	nvram_default_get("ath0_rxantenna", "7"); 
+	nvram_default_get("ath0_txantenna", "7");
 #ifdef HAVE_BUFFALO
 	setRouter("WZR-HP-G450H");
 #else
