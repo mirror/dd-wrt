@@ -566,7 +566,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	else
 		strcat(eapifname, getBridge("ra0"));
 	if (nvram_match("wl0_akm", "wep")) {
-		strcat(authmode, "OPEN");
+		if (nvram_match("wl0_authmode", "shared"))
+			strcat(authmode, "SHARED");
+		else if (nvram_match("wl0_authmode", "auto"))
+			strcat(authmode, "WEPAUTO");
+		else
+			strcat(authmode, "OPEN");
 		strcat(encryptype, "WEP");
 		strcat(x80211, "0");
 		if (isSTA()) {
@@ -761,7 +766,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			sprintf(radius_server, "%s;0.0.0.0", radius_server);
 			sprintf(radius_port, "%s;1812", radius_port);
 			sprintf(radius_key, "%s;ralink", radius_key);
-			strcat(authmode, ";OPEN");
+			if (nvram_nmatch("shared", "%s_authmode", var))
+				strcat(authmode, ";SHARED");
+			else if (nvram_nmatch("auto", "%s_authmode", var))
+				strcat(authmode, ";WEPAUTO");
+			else
+				strcat(authmode, ";OPEN");
 			strcat(encryptype, ";WEP");
 			strcat(x80211, ";0");
 			fprintf(fp, "Key1Str%d=%s\n", count,
@@ -1081,7 +1091,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		}
 		if (nvram_match("wl0_akm", "wep")) {
 			fprintf(fp, "ApCliEncrypType=WEP\n");
-			fprintf(fp, "ApCliAuthMode=OPEN\n");
+			if (nvram_match("wl0_authmode", "shared"))
+				fprintf(fp, "ApCliAuthMode=SHARED\n");
+			else if (nvram_match("wl0_authmode", "auto"))
+				fprintf(fp, "ApCliAuthMode=WEPAUTO\n");
+			else
+				fprintf(fp, "ApCliAuthMode=OPEN\n");
 			fprintf(fp, "ApCliDefaultKeyID=%s\n",
 				nvram_safe_get("wl0_key"));
 			fprintf(fp, "ApCliKey1Type=0\n");
