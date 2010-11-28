@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.34.7
-# Mon Nov 22 20:18:41 2010
+# Sat Nov 27 00:34:04 2010
 #
 CONFIG_MIPS=y
 
@@ -763,10 +763,10 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_DOC2001PLUS is not set
 # CONFIG_MTD_AR7100_SPI_FLASH is not set
 # CONFIG_MTD_FLASH_16MB is not set
-CONFIG_MTD_FLASH_8MB=y
+# CONFIG_MTD_FLASH_8MB is not set
 # CONFIG_MTD_AR9100_PARALLEL_FLASH is not set
-# CONFIG_WZRAG300NH is not set
-CONFIG_MTD_AR7240_SPI_FLASH=y
+CONFIG_WZRG450NH=y
+# CONFIG_MTD_AR7240_SPI_FLASH is not set
 # CONFIG_MTD_NAND is not set
 # CONFIG_MTD_ONENAND is not set
 
