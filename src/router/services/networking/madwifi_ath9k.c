@@ -88,8 +88,8 @@ void configure_single_ath9k(int count) {
 	sprintf(sens, "ath%d_distance", count);
 	sprintf(diversity, "ath%d_diversity", count);
 	sprintf(athmac, "ath%d_hwaddr", count);
-	sprintf(rxantenna("ath%d_rxantenna", count);
-	sprintf(txantenna("ath%d_txantenna", count);
+	sprintf(rxantenna, "ath%d_rxantenna", count);
+	sprintf(txantenna, "ath%d_txantenna", count);
 	// create base device
 	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
