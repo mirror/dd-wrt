@@ -370,6 +370,7 @@ int detail_recv(rad_listen_t *listener,
 
 		case STATE_HEADER:
 		do_header:
+			data->tries = 0;
 			if (!data->fp) {
 				data->state = STATE_UNOPENED;
 				goto open_file;
@@ -691,6 +692,17 @@ int detail_recv(rad_listen_t *listener,
 		vp->vp_integer += time(NULL) - data->timestamp;
 	}
 
+	/*
+	 *	Set the transmission count.
+	 */
+	vp = pairfind(packet->vps, PW_PACKET_TRANSMIT_COUNTER);
+	if (!vp) {
+		vp = paircreate(PW_PACKET_TRANSMIT_COUNTER, PW_TYPE_INTEGER);
+		rad_assert(vp != NULL);
+		pairadd(&packet->vps, vp);
+	}
+	vp->vp_integer = data->tries;
+
 	*pfun = rad_accounting;
 
 	if (debug_flag) {
@@ -728,13 +740,17 @@ void detail_free(rad_listen_t *this)
 	listen_detail_t *data = this->data;
 
 	free(data->filename);
+	data->filename = NULL;
 	pairfree(&data->vps);
 
-	if (data->fp != NULL) fclose(data->fp);
+	if (data->fp != NULL) {
+		fclose(data->fp);
+		data->fp = NULL;
+	}
 }
 
 
-int detail_print(rad_listen_t *this, char *buffer, size_t bufsize)
+int detail_print(const rad_listen_t *this, char *buffer, size_t bufsize)
 {
 	if (!this->server) {
 		return snprintf(buffer, bufsize, "%s",
@@ -809,6 +825,7 @@ static const CONF_PARSER detail_config[] = {
 	{ NULL, -1, 0, NULL, NULL }		/* end the list */
 };
 
+extern int check_config;
 
 /*
  *	Parse a detail section.
@@ -819,6 +836,8 @@ int detail_parse(CONF_SECTION *cs, rad_listen_t *this)
 	listen_detail_t *data;
 	RADCLIENT	*client;
 	char buffer[2048];
+
+	if (check_config) return 0;
 
 	if (!this->data) {
 		this->data = rad_malloc(sizeof(*data));

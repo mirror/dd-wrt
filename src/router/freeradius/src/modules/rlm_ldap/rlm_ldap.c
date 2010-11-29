@@ -173,10 +173,38 @@ typedef struct {
 	int		 edir_account_policy_check;
 #endif
 	int		 set_auth_type;
+
+	/*
+	 *	For keep-alives.
+	 */
+#ifdef LDAP_OPT_X_KEEPALIVE_IDLE
+	int		keepalive_idle;
+#endif
+#ifdef LDAP_OPT_X_KEEPALIVE_PROBES
+	int		keepalive_probes;
+#endif
+#ifdef LDAP_OPT_ERROR_NUMBER
+	int		keepalive_interval;
+#endif
+
 }  ldap_instance;
 
 /* The default setting for TLS Certificate Verification */
 #define TLS_DEFAULT_VERIFY "allow"
+
+static CONF_PARSER keepalive_config[] = {
+#ifdef LDAP_OPT_X_KEEPALIVE_IDLE
+	{"idle", PW_TYPE_INTEGER, offsetof(ldap_instance,keepalive_idle), NULL, "60"},
+#endif
+#ifdef LDAP_OPT_X_KEEPALIVE_PROBES
+	{"probes", PW_TYPE_INTEGER, offsetof(ldap_instance,keepalive_probes), NULL, "3"},
+#endif
+#ifdef LDAP_OPT_ERROR_NUMBER
+	{"interval", PW_TYPE_INTEGER, offsetof(ldap_instance,keepalive_interval), NULL, "30"},
+#endif
+
+	{ NULL, -1, 0, NULL, NULL }
+};
 
 static CONF_PARSER tls_config[] = {
 	{"start_tls", PW_TYPE_BOOLEAN,
@@ -315,6 +343,8 @@ static const CONF_PARSER module_config[] = {
 #endif
 
 	{"set_auth_type", PW_TYPE_BOOLEAN, offsetof(ldap_instance,set_auth_type), NULL, "yes"},
+
+	{ "keepalive", PW_TYPE_SUBSECTION, 0, NULL, (const void *) keepalive_config },
 	{NULL, -1, 0, NULL, NULL}
 };
 
@@ -366,6 +396,18 @@ static inline void ldap_release_conn(int i, ldap_instance *inst)
 	conns[i].locked = 0;
 	pthread_mutex_unlock(&(conns[i].mutex));
 }
+
+#ifdef NOVELL
+static inline void ldap_release_apc_conn(int i, ldap_instance *inst)
+				     
+{
+	LDAP_CONN *conns = inst->apc_conns;
+
+	DEBUG("  [%s] ldap_release_conn: Release Id: %d", inst->xlat_name, i);
+	conns[i].locked = 0;
+	pthread_mutex_unlock(&(conns[i].mutex));
+}
+#endif
 
 /*************************************************************************
  *
@@ -1654,7 +1696,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 				if ((vp_auth_opt = paircreate(auth_opt_attr, PW_TYPE_STRING)) == NULL){
 					radlog(L_ERR, "  [%s] Could not allocate memory. Aborting.", inst->xlat_name);
 					ldap_msgfree(result);
-					ldap_release_conn(conn_id, inst->conns);
+					ldap_release_conn(conn_id, inst);
 				}
 				strcpy(vp_auth_opt->vp_strvalue, auth_option[0]);
 				vp_auth_opt->length = strlen(auth_option[0]);
@@ -1721,7 +1763,9 @@ static int ldap_authorize(void *instance, REQUEST * request)
 	*/
        if (debug_flag > 1) {
 	       if (!pairfind(request->config_items, PW_CLEARTEXT_PASSWORD) &&
-		   !pairfind(request->config_items, PW_USER_PASSWORD)) {
+		   !pairfind(request->config_items, PW_USER_PASSWORD) &&
+		   !pairfind(request->config_items, PW_PASSWORD_WITH_HEADER) &&
+		   !pairfind(request->config_items, PW_CRYPT_PASSWORD)) {
 		       DEBUG("WARNING: No \"known good\" password was found in LDAP.  Are you sure that the user is configured correctly?");
 	       }
        }
@@ -1883,7 +1927,7 @@ static int ldap_authenticate(void *instance, REQUEST * request)
 		LDAP_CONN       *conn1;
 		int auth_state = -1;
 		char            *challenge = NULL;
-		int             challenge_len = MAX_CHALLENGE_LEN;
+		size_t          challenge_len = MAX_CHALLENGE_LEN;
 		char            *state = NULL;
 
 		dattr = dict_attrbyname("eDir-APC");
@@ -2157,7 +2201,7 @@ static int ldap_postauth(void *instance, REQUEST * request)
 						}
 
 						vp_apc->vp_strvalue[0] = '3';
-						ldap_release_conn(conn_id, inst->apc_conns);
+						ldap_release_apc_conn(conn_id, inst);
 						return RLM_MODULE_REJECT;
 					}
 					conn->bound = 1;
@@ -2174,11 +2218,11 @@ static int ldap_postauth(void *instance, REQUEST * request)
 						ldap_memfree((void *)error_msg);
 					}
 					vp_apc->vp_strvalue[0] = '3';
-					ldap_release_conn(conn_id, inst->apc_conns);
+					ldap_release_apc_conn(conn_id, inst);
 					return RLM_MODULE_REJECT;
 				}
 				vp_apc->vp_strvalue[0] = '3';
-				ldap_release_conn(conn_id, inst->apc_conns);
+				ldap_release_apc_conn(conn_id, inst);
 				return RLM_MODULE_OK;
 			}
 	}
@@ -2275,6 +2319,30 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 		ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
 		radlog(L_ERR, "  [%s] Could not set LDAP version to V3: %s", inst->xlat_name, ldap_err2string(ldap_errno));
 	}
+
+#ifdef LDAP_OPT_X_KEEPALIVE_IDLE
+	if (ldap_set_option(ld, LDAP_OPT_X_KEEPALIVE_IDLE,
+			    (void *) &(inst->keepalive_idle)) != LDAP_OPT_SUCCESS) {
+		ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
+		radlog(L_ERR, "  [%s] Could not set LDAP_OPT_X_KEEPALIVE_IDLE %d: %s", inst->xlat_name, inst->keepalive_idle, ldap_err2string(ldap_errno));
+	}
+#endif
+
+#ifdef LDAP_OPT_X_KEEPALIVE_PROBES
+	if (ldap_set_option(ld, LDAP_OPT_X_KEEPALIVE_PROBES,
+			    (void *) &(inst->keepalive_probes)) != LDAP_OPT_SUCCESS) {
+		ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
+		radlog(L_ERR, "  [%s] Could not set LDAP_OPT_X_KEEPALIVE_PROBES %d: %s", inst->xlat_name, inst->keepalive_probes, ldap_err2string(ldap_errno));
+	}
+#endif
+
+#ifdef LDAP_OPT_X_KEEPALIVE_INTERVAL
+	if (ldap_set_option(ld, LDAP_OPT_X_KEEPALIVE_INTERVAL,
+			    (void *) &(inst->keepalive_interval)) != LDAP_OPT_SUCCESS) {
+		ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
+		radlog(L_ERR, "  [%s] Could not set LDAP_OPT_X_KEEPALIVE_INTERVAL %d: %s", inst->xlat_name, inst->keepalive_interval, ldap_err2string(ldap_errno));
+	}
+#endif
 
 #ifdef HAVE_LDAP_START_TLS
         if (inst->tls_mode) {
@@ -2461,6 +2529,14 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 			radlog(L_ERR, "  [%s] LDAP login failed: check identity, password settings in ldap section of radiusd.conf", inst->xlat_name);
 			*result = RLM_MODULE_FAIL;
 		}
+		if(err != NULL){
+			ldap_get_option(ld, LDAP_OPT_ERROR_STRING, err);
+		}
+		break;
+
+	case LDAP_CONSTRAINT_VIOLATION:
+		DEBUG("rlm_ldap: Bind failed with constraint violation");
+		*result = RLM_MODULE_REJECT;
 		if(err != NULL){
 			ldap_get_option(ld, LDAP_OPT_ERROR_STRING, err);
 		}

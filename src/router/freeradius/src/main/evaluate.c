@@ -162,7 +162,7 @@ static FR_TOKEN getregex(const char **ptr, char *buffer, size_t buflen,
 
 			default:
 				if ((p[1] >= '0') && (p[1] <= '9') &&
-				    (sscanf(p, "%3o", &x) == 1)) {
+				    (sscanf(p + 1, "%3o", &x) == 1)) {
 					*q++ = x;
 					p += 2;
 				} else {
@@ -366,7 +366,8 @@ static int radius_do_cmp(REQUEST *request, int *presult,
 				
 				RDEBUG2("    (Attribute %s was not found)",
 				       pleft);
-				return FALSE;
+				*presult = 0;
+				return TRUE;
 			}
 
 #ifdef HAVE_REGEX_H

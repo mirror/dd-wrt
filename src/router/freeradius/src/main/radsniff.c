@@ -42,6 +42,8 @@ static int minimal = 0;
 static int do_sort = 0;
 struct timeval start_pcap = {0, 0};
 static rbtree_t *filter_tree = NULL;
+static pcap_dumper_t *pcap_dumper = NULL;
+
 typedef int (*rbcmp)(const void *, const void *);
 
 static int filter_packet(RADIUS_PACKET *packet)
@@ -161,7 +163,7 @@ static void sort(RADIUS_PACKET *packet)
 }
 
 #define USEC 1000000
-static void tv_sub(struct timeval *end, struct timeval *start,
+static void tv_sub(const struct timeval *end, const struct timeval *start,
 		   struct timeval *elapsed)
 {
 	elapsed->tv_sec = end->tv_sec - start->tv_sec;
@@ -200,10 +202,17 @@ static void got_packet(uint8_t *args, const struct pcap_pkthdr *header, const ui
 	args = args;		/* -Wunused */
 
 	/* Define our packet's attributes */
-	ethernet = (const struct ethernet_header*)(data);
-	ip = (const struct ip_header*)(data + size_ethernet);
-	udp = (const struct udp_header*)(data + size_ethernet + size_ip);
-	payload = (const uint8_t *)(data + size_ethernet + size_ip + size_udp);
+
+	if ((data[0] == 2) && (data[1] == 0) &&
+	    (data[2] == 0) && (data[3] == 0)) {
+		ip = (const struct ip_header*) (data + 4);
+
+	} else {
+		ethernet = (const struct ethernet_header*)(data);
+		ip = (const struct ip_header*)(data + size_ethernet);
+	}
+	udp = (const struct udp_header*)(((const uint8_t *) ip) + size_ip);
+	payload = (const uint8_t *)(((const uint8_t *) udp) + size_udp);
 
 	packet = malloc(sizeof(*packet));
 	if (!packet) {
@@ -220,14 +229,14 @@ static void got_packet(uint8_t *args, const struct pcap_pkthdr *header, const ui
 	packet->dst_port = ntohs(udp->udp_dport);
 
 	packet->data = payload;
-	packet->data_len = header->len - size_ethernet - size_ip - size_udp;
+	packet->data_len = header->len - (payload - data);
 
 	if (!rad_packet_ok(packet, 0)) {
-		fr_perror("Packet");
+		printf("Packet: %s\n", fr_strerror());
 		
-		fprintf(stderr, "\tFrom:    %s:%d\n", inet_ntoa(ip->ip_src), ntohs(udp->udp_sport));
-		fprintf(stderr, "\tTo:      %s:%d\n", inet_ntoa(ip->ip_dst), ntohs(udp->udp_dport));
-		fprintf(stderr, "\tType:    %s\n", fr_packet_codes[packet->code]);
+		printf("\tFrom:    %s:%d\n", inet_ntoa(ip->ip_src), ntohs(udp->udp_sport));
+		printf("\tTo:      %s:%d\n", inet_ntoa(ip->ip_dst), ntohs(udp->udp_dport));
+		printf("\tType:    %s\n", fr_packet_codes[packet->code]);
 
 		free(packet);
 		return;
@@ -247,6 +256,12 @@ static void got_packet(uint8_t *args, const struct pcap_pkthdr *header, const ui
 		DEBUG("Packet number %d doesn't match\n", count++);
 		return;
 	}
+
+	if (pcap_dumper) {
+		pcap_dump((void *) pcap_dumper, header, data);
+		goto check_filter;
+	}
+
 	printf("%s Id %d\t", fr_packet_codes[packet->code], packet->id);
 
 	/* Print the RADIUS packet */
@@ -272,6 +287,7 @@ static void got_packet(uint8_t *args, const struct pcap_pkthdr *header, const ui
 	printf("\n");
 	fflush(stdout);
 
+ check_filter:
 	/*
 	 *	If we're doing filtering, Access-Requests are cached
 	 *	in the filter tree.
@@ -290,15 +306,18 @@ static void NEVER_RETURNS usage(int status)
 	fprintf(output, "options:\n");
 	fprintf(output, "\t-c count\tNumber of packets to capture.\n");
 	fprintf(output, "\t-d directory\tDirectory where the dictionaries are found\n");
-	fprintf(output, "\t-f filter\tPCAP filter. (default is udp port 1812 or 1813 or 1814)\n");
+	fprintf(output, "\t-F\t\tFilter PCAP file from stdin to stdout.\n");
+	fprintf(output, "\t\t\tOutput file will contain RADIUS packets.\n");
+	fprintf(output, "\t-f filter\tPCAP filter. (default is udp port 1812 or 1813)\n");
 	fprintf(output, "\t-h\t\tPrint this help message.\n");
 	fprintf(output, "\t-i interface\tInterface to capture.\n");
 	fprintf(output, "\t-I filename\tRead packets from filename.\n");
 	fprintf(output, "\t-m\t\tPrint packet headers only, not contents.\n");
-	fprintf(output, "\t-p port\tList for packets on port.\n");
+	fprintf(output, "\t-p port\t\tListen for packets on port.\n");
 	fprintf(output, "\t-r filter\tRADIUS attribute filter.\n");
 	fprintf(output, "\t-s secret\tRADIUS secret.\n");
-	fprintf(output, "\t-S\t\tSort attributes in the packet.  Used to compare server results.\n");
+	fprintf(output, "\t-S\t\tSort attributes in the packet.\n");
+	fprintf(output, "\t\t\tUsed to compare server results.\n");
 	fprintf(output, "\t-x\t\tPrint out debugging information.\n");
 	exit(status);
 }
@@ -315,17 +334,19 @@ int main(int argc, char *argv[])
 	char *pcap_filter = NULL;
 	char *radius_filter = NULL;
 	char *filename = NULL;
+	char *dump_file = NULL;
 	int packet_count = -1;		/* how many packets to sniff */
 	int opt;
 	FR_TOKEN parsecode;
 	const char *radius_dir = RADIUS_DIR;
 	int port = 1812;
+	int filter_stdin = 0;
 
 	/* Default device */
 	dev = pcap_lookupdev(errbuf);
 
 	/* Get options */
-	while ((opt = getopt(argc, argv, "c:d:f:hi:I:mp:r:s:SxX")) != EOF) {
+	while ((opt = getopt(argc, argv, "c:d:Ff:hi:I:mp:r:s:Sw:xX")) != EOF) {
 		switch (opt)
 		{
 		case 'c':
@@ -337,6 +358,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'd':
 			radius_dir = optarg;
+			break;
+		case 'F':
+			filter_stdin = 1;
 			break;
 		case 'f':
 			pcap_filter = optarg;
@@ -365,6 +389,9 @@ int main(int argc, char *argv[])
 		case 'S':
 			do_sort = 1;
 			break;
+		case 'w':
+			dump_file = optarg;
+			break;
 		case 'x':
 		case 'X':	/* for backwards compatibility */
 		  	fr_debug_flag++;
@@ -374,16 +401,26 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/*
+	 *	Cross-check command-line arguments.
+	 */
+	if (filter_stdin && (filename || dump_file)) usage(1);
+
 	if (!pcap_filter) {
 		pcap_filter = buffer;
-		snprintf(buffer, sizeof(buffer), "udp port %d or %d or %d",
-			 port, port + 1, port + 2);
+		snprintf(buffer, sizeof(buffer), "udp port %d or %d",
+			 port, port + 1);
 	}
-
-        if (dict_init(radius_dir, RADIUS_DICTIONARY) < 0) {
-                fr_perror("radsniff");
-                return 1;
-        }
+	
+	/*
+	 *	There are many times where we don't need the dictionaries.
+	 */
+	if (fr_debug_flag || radius_filter) {
+		if (dict_init(radius_dir, RADIUS_DICTIONARY) < 0) {
+			fr_perror("radsniff");
+			return 1;
+		}
+	}
 
 	if (radius_filter) {
 		parsecode = userparse(radius_filter, &filter_vps);
@@ -425,24 +462,47 @@ int main(int argc, char *argv[])
 	/* Open the device so we can spy */
 	if (filename) {
 		descr = pcap_open_offline(filename, errbuf);
+
+	} else if (filter_stdin) {
+		descr = pcap_fopen_offline(stdin, errbuf);
+
+	} else if (!dev) {
+		fprintf(stderr, "radsniff: No filename or device was specified.\n");
+		exit(1);
+
 	} else {
-		descr = pcap_open_live(dev, SNAPLEN, 1, 0, errbuf);
+		descr = pcap_open_live(dev, 65536, 1, 0, errbuf);
 	}
 	if (descr == NULL)
 	{
-		printf("radsniff: pcap_open_live failed (%s)\n", errbuf);
+		fprintf(stderr, "radsniff: pcap_open_live failed (%s)\n", errbuf);
 		exit(1);
+	}
+
+	if (dump_file) {
+		pcap_dumper = pcap_dump_open(descr, dump_file);
+		if (!pcap_dumper) {
+			fprintf(stderr, "radsniff: Failed opening output file (%s)\n", pcap_geterr(descr));
+			exit(1);
+		}
+	} else if (filter_stdin) {
+		pcap_dumper = pcap_dump_fopen(descr, stdout);
+		if (!pcap_dumper) {
+			fprintf(stderr, "radsniff: Failed opening stdout: %s\n", pcap_geterr(descr));
+			exit(1);
+		}
+
 	}
 
 	/* Apply the rules */
 	if( pcap_compile(descr, &fp, pcap_filter, 0, netp) == -1)
 	{
-		printf("radsniff: pcap_compile failed\n");
+		fprintf(stderr, "radsniff: pcap_compile failed\n");
 		exit(1);
 	}
 	if (pcap_setfilter(descr, &fp) == -1)
 	{
-		printf("radsniff: pcap_setfilter failed\n");
+		fprintf(stderr, "radsniff: pcap_setfilter failed\n");
 		exit(1);
 	}
 

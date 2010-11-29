@@ -279,9 +279,29 @@ static void remove_from_proxy_hash(REQUEST *request)
   	PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
 }
 
+static int proxy_add_fds(rad_listen_t *proxy_listener)
+{
+	int i, proxy, found = -1;
+
+	proxy = proxy_listener->fd;
+	for (i = 0; i < 32; i++) {
+		/*
+		 *	Found a free entry.  Save the socket,
+		 *	and remember where we saved it.
+		 */
+		if (proxy_fds[(proxy + i) & 0x1f] == -1) {
+			found = (proxy + i) & 0x1f;
+			proxy_fds[found] = proxy;
+			proxy_listeners[found] = proxy_listener;
+			break;
+		}
+	}
+
+	return found;
+}
+
 static int proxy_id_alloc(REQUEST *request, RADIUS_PACKET *packet)
 {
-	int i, proxy, found;
 	rad_listen_t *proxy_listener;
 
 	if (fr_packet_list_id_alloc(proxy_list, packet)) return 1;
@@ -302,21 +322,7 @@ static int proxy_id_alloc(REQUEST *request, RADIUS_PACKET *packet)
 	/*
 	 *	Cache it locally.
 	 */
-	found = -1;
-	proxy = proxy_listener->fd;
-	for (i = 0; i < 32; i++) {
-		/*
-		 *	Found a free entry.  Save the socket,
-		 *	and remember where we saved it.
-		 */
-		if (proxy_fds[(proxy + i) & 0x1f] == -1) {
-			found = (proxy + i) & 0x1f;
-			proxy_fds[found] = proxy;
-			proxy_listeners[found] = proxy_listener;
-			break;
-		}
-	}
-	if (found < 0) {
+	if (proxy_add_fds(proxy_listener) < 0) {
 		proxy_all_used = TRUE;
 		listen_free(&proxy_listener);
 		radlog(L_ERR, "Failed creating new proxy socket: server is too busy and home servers appear to be down");
@@ -413,7 +419,7 @@ static int insert_into_proxy_hash(REQUEST *request, int retransmit)
 	if (!fr_packet_list_insert(proxy_list, &request->proxy)) {
 		fr_packet_list_id_free(proxy_list, request->proxy);
 		PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
-		RDEBUG2("ERROR: Failed to insert entry into proxy list");
+		RDEBUG2("ERROR: Failed to insert entry into proxy list.");
 		return 0;
 	}
 
@@ -479,6 +485,7 @@ static void wait_for_child_to_die(void *ctx)
 	REQUEST *request = ctx;
 
 	rad_assert(request->magic == REQUEST_MAGIC);
+	remove_from_request_hash(request);
 
 	/*
 	 *	If it's still queued (waiting for a thread to pick it
@@ -490,14 +497,15 @@ static void wait_for_child_to_die(void *ctx)
 	     (pthread_equal(request->child_pid, NO_SUCH_CHILD_PID) == 0))) {
 
 		/*
-		 *	Cap delay at five minutes.
+		 *	Cap delay at max_request_time
 		 */
-		if (request->delay < (USEC * 60 * 5)) {
+		if (request->delay < (USEC * request->root->max_request_time)) {
 			request->delay += (request->delay >> 1);
 			radlog(L_INFO, "WARNING: Child is hung for request %u in component %s module %s.",
 			       request->number, request->component, request->module);
 		} else {
-			RDEBUG2("Child is still stuck for request %u",
+			request->delay = USEC * request->root->max_request_time;
+			RDEBUG2("WARNING: Child is hung after \"max_request_time\" for request %u",
 				request->number);
 		}
 		tv_add(&request->when, request->delay);
@@ -507,7 +515,6 @@ static void wait_for_child_to_die(void *ctx)
 	}
 
 	RDEBUG2("Child is finally responsive for request %u", request->number);
-	remove_from_request_hash(request);
 
 #ifdef WITH_PROXY
 	if (request->proxy) {
@@ -792,7 +799,7 @@ static void ping_home_server(void *ctx)
 	rad_assert(request->proxy_listener == NULL);
 
 	if (!insert_into_proxy_hash(request, FALSE)) {
-		RDEBUG2("ERROR: Failed inserting status check %d into proxy hash.  Discarding it.",
+		RDEBUG2("ERROR: Failed to insert status check %d into proxy list.  Discarding it.",
 		       request->number);
 		ev_request_free(&request);
 		return;
@@ -1082,33 +1089,54 @@ static void no_response_to_proxied_request(void *ctx)
 	/*
 	 *	Don't touch request due to race conditions
 	 */
-	if (home->state == HOME_STATE_IS_DEAD) {
-		rad_assert(home->ev != NULL); /* or it will never wake up */
+
+	/*
+	 *	If it's not alive, don't try to make it a zombie.
+	 */
+	if (home->state != HOME_STATE_ALIVE) {
+		/*
+		 *	Don't check home->ev due to race conditions.
+		 */
+		return;
+	}
+
+	/*
+	 *	We've received a real packet recently.  Don't mark the
+	 *	server as zombie until we've received NO packets for a
+	 *	while.  The "1/4" of zombie period was chosen rather
+	 *	arbitrarily.  It's a balance between too short, which
+	 *	gives quick fail-over and fail-back, or too long,
+	 *	where the proxy still sends packets to an unresponsive
+	 *	home server.
+	 */
+	if ((home->last_packet + ((home->zombie_period + 3) / 4)) >= now.tv_sec) {
 		return;
 	}
 
 	/*
 	 *	Enable the zombie period when we notice that the home
-	 *	server hasn't responded.  We do NOT back-date the start
-	 *	of the zombie period.
+	 *	server hasn't responded for a while.  We back-date the
+	 *	zombie period to when we last received a response from
+	 *	the home server.
 	 */
-	if (home->state == HOME_STATE_ALIVE) {
-		home->state = HOME_STATE_ZOMBIE;
-		home->zombie_period_start = now;	
-		fr_event_delete(el, &home->ev);
-		home->currently_outstanding = 0;
-		home->num_received_pings = 0;
-
-		radlog(L_PROXY, "Marking home server %s port %d as zombie (it looks like it is dead).",
-		       inet_ntop(home->ipaddr.af, &home->ipaddr.ipaddr,
-				 buffer, sizeof(buffer)),
-		       home->port);
-
-		/*
-		 *	Start pinging the home server.
-		 */
-		ping_home_server(home);
-	}
+	home->state = HOME_STATE_ZOMBIE;
+	
+	home->zombie_period_start.tv_sec = home->last_packet;
+	home->zombie_period_start.tv_sec = USEC / 2;
+	
+	fr_event_delete(el, &home->ev);
+	home->currently_outstanding = 0;
+	home->num_received_pings = 0;
+	
+	radlog(L_PROXY, "Marking home server %s port %d as zombie (it looks like it is dead).",
+	       inet_ntop(home->ipaddr.af, &home->ipaddr.ipaddr,
+			 buffer, sizeof(buffer)),
+	       home->port);
+	
+	/*
+	 *	Start pinging the home server.
+	 */
+	ping_home_server(home);
 }
 #endif
 
@@ -1140,6 +1168,25 @@ static void wait_a_bit(void *ctx)
 	switch (request->child_state) {
 	case REQUEST_QUEUED:
 	case REQUEST_RUNNING:
+		/*
+		 *	If we're not thread-capable, OR we're capable,
+		 *	but have been told to run without threads,
+		 *	complain when the requests is queued for a
+		 *	thread, or running in a child thread.
+		 */
+#ifdef HAVE_PTHREAD_H
+		if (!have_children)
+#endif
+		{
+			rad_assert("We do not have threads, but the request is marked as queued or running in a child thread" == NULL);
+			break;
+		}
+
+#ifdef HAVE_PTHREAD_H
+		/*
+		 *	If we have threads, wait for the child thread
+		 *	to stop.
+		 */
 		when = request->received;
 		when.tv_sec += request->root->max_request_time;
 
@@ -1156,24 +1203,18 @@ static void wait_a_bit(void *ctx)
 		 *	Request still has more time.  Continue
 		 *	waiting.
 		 */
-		if (timercmp(&now, &when, <) ||
-		    ((request->listener->type == RAD_LISTEN_DETAIL) &&
-		     (request->child_state == REQUEST_QUEUED))) {
+		if (timercmp(&now, &when, <)) {
 			if (request->delay < (USEC / 10)) {
 				request->delay = USEC / 10;
 			}
 			request->delay += request->delay >> 1;
 
-#ifdef WITH_DETAIL
 			/*
-			 *	Cap wait at some sane value for detail
-			 *	files.
+			 *	Cap delays at something reasonable.
 			 */
-			if ((request->listener->type == RAD_LISTEN_DETAIL) &&
-			    (request->delay > (request->root->max_request_time * USEC))) {
+			if (request->delay > (request->root->max_request_time * USEC)) {
 				request->delay = request->root->max_request_time * USEC;
 			}
-#endif
 
 			request->when = now;
 			tv_add(&request->when, request->delay);
@@ -1181,7 +1222,8 @@ static void wait_a_bit(void *ctx)
 			break;
 		}
 
-#if defined(HAVE_PTHREAD_H)
+		request->master_state = REQUEST_STOP_PROCESSING;
+
 		/*
 		 *	A child thread MAY still be running on the
 		 *	request.  Ask the thread to stop working on
@@ -1189,30 +1231,18 @@ static void wait_a_bit(void *ctx)
 		 */
 		if (have_children &&
 		    (pthread_equal(request->child_pid, NO_SUCH_CHILD_PID) == 0)) {
-			request->master_state = REQUEST_STOP_PROCESSING;
-
-			radlog(L_ERR, "WARNING: Unresponsive child for request %u, in module %s component %s",
+			radlog(L_ERR, "WARNING: Unresponsive child for request %u, in component %s module %s",
 			       request->number,
-			       request->module ? request->module : "<server core>",
-			       request->component ? request->component : "<server core>");
-			
-			request->delay = USEC / 4;
-			tv_add(&request->when, request->delay);
-			callback = wait_for_child_to_die;
-			break;
-		}
-#endif
+			       request->component ? request->component : "<server core>",
+			       request->module ? request->module : "<server core>");
 
-		/*
-		 *	Else no child thread is processing the
-		 *	request.  We probably should have just marked
-		 *	the request as 'done' elsewhere, like in the
-		 *	post-proxy-fail handler.  But doing that would
-		 *	involve checking for max_request_time in
-		 *	multiple places, so this may be simplest.
-		 */
-		request->child_state = REQUEST_DONE;
-		/* FALL-THROUGH */
+		}
+			
+		request->delay = USEC;
+		tv_add(&request->when, request->delay);
+		callback = wait_for_child_to_die;
+		break;
+#endif
 
 		/*
 		 *	Mark the request as no longer running,
@@ -1405,7 +1435,7 @@ static void retransmit_coa_request(void *ctx)
 	
 	if (update_event_timestamp(request->proxy, now.tv_sec)) {
 		if (!insert_into_proxy_hash(request, TRUE)) {
-			DEBUG("ERROR: Failed re-inserting CoA request into proxy hash.");
+			DEBUG("ERROR: Failed to insert retransmission of CoA request into proxy list.");
 			return;
 		}
 
@@ -1599,7 +1629,7 @@ static int originated_coa_request(REQUEST *request)
 	coa->proxy->dst_port = coa->home_server->port;
 
 	if (!insert_into_proxy_hash(coa, FALSE)) {
-		DEBUG("ERROR: Failed inserting CoA request into proxy hash.");
+		DEBUG("ERROR: Failed to insert CoA request into proxy list.");
 		goto fail;
 	}
 
@@ -1847,12 +1877,12 @@ static int proxy_request(REQUEST *request)
 #endif
 
 	if (request->home_server->server) {
-		RDEBUG("ERROR: Cannot perform real proxying to a virtual server.");
+		RDEBUG("ERROR: Cannot proxy to a virtual server.");
 		return 0;
 	}
 
 	if (!insert_into_proxy_hash(request, FALSE)) {
-		RDEBUG("ERROR: Failed inserting request into proxy hash.");
+		RDEBUG("ERROR: Failed to insert entry into proxy list.");
 		return 0;
 	}
 
@@ -2469,6 +2499,8 @@ static void request_post_handler(REQUEST *request)
 	 *	if it wasn't proxied.
 	 */
 	if (!request->proxy &&
+	    (request->packet->code != PW_COA_REQUEST) &&
+	    (request->packet->code != PW_DISCONNECT_REQUEST) &&
 	    (request->coa ||
 	     (pairfind(request->config_items, PW_SEND_COA_REQUEST) != NULL))) {
 		if (!originated_coa_request(request)) {
@@ -2585,7 +2617,7 @@ static void received_retransmit(REQUEST *request, const RADCLIENT *client)
 
 			home = home_server_ldb(NULL, request->home_pool, request);
 			if (!home) {
-				RDEBUG2("Failed to find live home server for request %u", request->number);
+				RDEBUG2("ERROR: Failed to find live home server for request %u", request->number);
 			no_home_servers:
 				/*
 				 *	Do post-request processing,
@@ -3038,6 +3070,19 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 	gettimeofday(&now, NULL);
 
 	/*
+	 *	"ping" packets have a different algorithm for marking
+	 *	a home server alive.  They also skip all of the CoA,
+	 *	etc. checks.
+	 */
+	if (!request->packet) {
+		request->proxy_reply = packet;
+		received_response_to_ping(request);
+		request->proxy_reply = NULL; /* caller will free it */
+		ev_request_free(&request);
+		return NULL;
+	}
+
+	/*
 	 *	Maybe move this earlier in the decision process?
 	 *	Having it here means that late or duplicate proxy
 	 *	replies no longer get the home server marked as
@@ -3047,10 +3092,11 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 	 *	receive a packet?  Setting this here means that we
 	 *	mark it alive on *any* packet, even if it's lost all
 	 *	of the *other* packets in the last 10s.
+	 *
+	 *	This behavior could be configurable.
 	 */
-	if (request->proxy->code != PW_STATUS_SERVER) {
-		request->home_server->state = HOME_STATE_ALIVE;
-	}
+	request->home_server->state = HOME_STATE_ALIVE;
+	request->home_server->last_packet = now.tv_sec;
 	
 #ifdef WITH_COA
 	/*
@@ -3099,7 +3145,7 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 		RDEBUG2("Ignoring proxy reply that arrived after we sent a reply to the NAS");
 		return NULL;
 	}
-	
+
 #ifdef WITH_STATS
 	/*
 	 *	The average includes our time to receive packets and
@@ -3174,17 +3220,6 @@ REQUEST *received_proxy_response(RADIUS_PACKET *packet)
 		}
 	}
 #endif
-
-	/*
-	 *	There's no incoming request, so it's a proxied packet
-	 *	we originated.
-	 */
-	if (!request->packet) {
-		received_response_to_ping(request);
-		request->proxy_reply = NULL; /* caller will free it */
-		ev_request_free(&request);
-		return NULL;
-	}
 
 	request->child_state = REQUEST_QUEUED;
 	request->when = now;
@@ -3542,6 +3577,10 @@ int radius_event_init(CONF_SECTION *cs, int spawn_flag)
 	if (check_config) {
 		DEBUG("%s: #### Skipping IP addresses and Ports ####",
 		       mainconfig.name);
+		if (listen_init(cs, &head) < 0) {
+			fflush(NULL);
+			exit(1);
+		}
 		return 1;
 	}
 
@@ -3636,11 +3675,11 @@ int radius_event_init(CONF_SECTION *cs, int spawn_flag)
 
 #ifdef WITH_PROXY
 		case RAD_LISTEN_PROXY:
-			rad_assert(proxy_fds[this->fd & 0x1f] == -1);
-			rad_assert(proxy_listeners[this->fd & 0x1f] == NULL);
-			
-			proxy_fds[this->fd & 0x1f] = this->fd;
-			proxy_listeners[this->fd & 0x1f] = this;
+			if (proxy_add_fds(this) < 0) {
+				radlog(L_ERR, "Failed creating new proxy socket");
+				return 0;
+			}
+
 			if (!fr_packet_list_socket_add(proxy_list,
 							 this->fd)) {
 				rad_assert(0 == 1);

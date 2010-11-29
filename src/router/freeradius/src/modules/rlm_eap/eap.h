@@ -113,6 +113,10 @@ typedef struct _eap_handler {
 	int		stage;
 
 	int		trips;
+
+	int		tls;
+	int		finished;
+	VALUE_PAIR	*certs;
 } EAP_HANDLER;
 
 /*

@@ -66,6 +66,7 @@ struct fr_command_table_t {
 
 typedef struct fr_command_socket_t {
 	char	*path;
+	char	*copy;		/* <sigh> */
 	uid_t	uid;
 	gid_t	gid;
 	int	mode;
@@ -253,6 +254,7 @@ static int fr_server_domain_socket(const char *path)
 
 	return sockfd;
 }
+
 
 static void command_close_socket(rad_listen_t *this)
 {
@@ -1682,6 +1684,54 @@ static int command_add_client_file(rad_listen_t *listener, int argc, char *argv[
 }
 
 
+static int command_del_client(rad_listen_t *listener, int argc, char *argv[])
+{
+#ifdef WITH_DYNAMIC_CLIENTS
+	RADCLIENT *client;
+
+	client = get_client(listener, argc - 1, argv + 1);
+	if (!client) return 0;
+
+	if (!client->dynamic) {
+		cprintf(listener, "ERROR: Client %s was not dynamically defined.\n", argv[1]);
+		return 0;
+	}
+
+	/*
+	 *	DON'T delete it.  Instead, mark it as "dead now".  The
+	 *	next time we receive a packet for the client, it will
+	 *	be deleted.
+	 *
+	 *	If we don't receive a packet from it, the client
+	 *	structure will stick around for a while.  Oh well...
+	 */
+	client->lifetime = 1;
+#else
+	cprintf(listener, "ERROR: Dynamic clients are not supported.\n");
+#endif
+
+	return 1;
+}
+
+
+static fr_command_table_t command_table_del_client[] = {
+	{ "ipaddr", FR_WRITE,
+	  "del client ipaddr <ipaddr> - Delete a dynamically created client",
+	  command_del_client, NULL },
+
+	{ NULL, 0, NULL, NULL, NULL }
+};
+
+
+static fr_command_table_t command_table_del[] = {
+	{ "client", FR_WRITE,
+	  "del client <command> - Delete client configuration commands",
+	  NULL, command_table_del_client },
+
+	{ NULL, 0, NULL, NULL, NULL }
+};
+
+
 static fr_command_table_t command_table_add_client[] = {
 	{ "file", FR_WRITE,
 	  "add client file <filename> - Add new client definition from <filename>",
@@ -1761,6 +1811,7 @@ static fr_command_table_t command_table[] = {
 	{ "debug", FR_WRITE,
 	  "debug <command> - debugging commands",
 	  NULL, command_table_debug },
+	{ "del", FR_WRITE, NULL, NULL, command_table_del },
 	{ "hup", FR_WRITE,
 	  "hup [module] - sends a HUP signal to the server, or optionally to one module",
 	  command_hup, NULL },
@@ -1781,6 +1832,16 @@ static fr_command_table_t command_table[] = {
 };
 
 
+static void command_socket_free(rad_listen_t *this)
+{
+	fr_command_socket_t *sock = this->data;
+
+	unlink(sock->copy);
+	free(sock->copy);
+	sock->copy = NULL;
+}
+
+
 /*
  *	Parse the unix domain sockets.
  *
@@ -1790,11 +1851,16 @@ static int command_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 {
 	fr_command_socket_t *sock;
 
+	if (check_config) return 0;
+
 	sock = this->data;
 
 	if (cf_section_parse(cs, sock, command_config) < 0) {
 		return -1;
 	}
+
+	sock->copy = NULL;
+	if (sock->path) sock->copy = strdup(sock->path);
 
 #if defined(HAVE_GETPEEREID) || defined (SO_PEERCRED)
 	if (sock->uid_name) {
@@ -1855,7 +1921,7 @@ static int command_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	return 0;
 }
 
-static int command_socket_print(rad_listen_t *this, char *buffer, size_t bufsize)
+static int command_socket_print(const rad_listen_t *this, char *buffer, size_t bufsize)
 {
 	fr_command_socket_t *sock = this->data;
 
@@ -2098,7 +2164,7 @@ static int command_domain_recv(rad_listen_t *listener,
 			 */
 			if (((co->mode & FR_WRITE) == 0) &&
 			    ((table[i].mode & FR_WRITE) != 0)) {
-				cprintf(listener, "ERROR: You do not have write permission.  See \"mode = rw\" in %s\n", co->path);
+				cprintf(listener, "ERROR: You do not have write permission.  See \"mode = rw\" in the \"listen\" section for this socket.\n");
 				goto do_next;
 			}
 
