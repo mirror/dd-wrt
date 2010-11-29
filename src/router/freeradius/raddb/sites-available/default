@@ -11,6 +11,12 @@
 #
 ######################################################################
 #
+#	Read "man radiusd" before editing this file.  See the section
+#	titled DEBUGGING.  It outlines a method where you can quickly
+#	obtain the configuration you want, without running into
+#	trouble.  See also "man unlang", which documents the format
+#	of this file.
+#
 #	This configuration is designed to work in the widest possible
 #	set of circumstances, with the widest possible number of
 #	authentication methods.  This means that in general, you should
@@ -61,8 +67,6 @@ authorize {
 	#
 	#  It takes care of processing the 'raddb/hints' and the
 	#  'raddb/huntgroups' files.
-	#
-	#  It also adds the %{Client-IP-Address} attribute to the request.
 #	preprocess
 
 	#
@@ -82,7 +86,13 @@ authorize {
 	#  the MS-CHAP-Challenge attribute, and add 'Auth-Type := MS-CHAP'
 	#  to the request, which will cause the server to then use
 	#  the mschap module for authentication.
-	mschap
+#	mschap
+
+	#
+	#  If you have a Cisco SIP server authenticating against
+	#  FreeRADIUS, uncomment the following line, and the 'digest'
+	#  line in the 'authenticate' section.
+#	digest
 
 	#
 	#  The WiMAX specification says that the Calling-Station-Id
@@ -130,6 +140,14 @@ authorize {
 	}
 
 	#
+	#  Pull crypt'd passwords from /etc/passwd or /etc/shadow,
+	#  using the system API's to get the password.  If you want
+	#  to read /etc/passwd or /etc/shadow directly, see the
+	#  passwd module in radiusd.conf.
+	#
+#	unix
+
+	#
 	#  Read the 'users' file
 	files
 
@@ -141,9 +159,26 @@ authorize {
 #	sql
 
 	#
+	#  If you are using /etc/smbpasswd, and are also doing
+	#  mschap authentication, the un-comment this line, and
+	#  configure the 'etc_smbpasswd' module, above.
+#	etc_smbpasswd
+
+	#
 	#  The ldap module will set Auth-Type to LDAP if it has not
 	#  already been set
 #	ldap
+
+	#
+	#  Enforce daily limits on time spent logged in.
+#	daily
+
+	#
+	# Use the checkval module
+#	checkval
+
+#	expiration
+#	logintime
 
 	#
 	#  If no other module has claimed responsibility for
@@ -220,6 +255,29 @@ authenticate {
 		mschap
 	}
 
+	#
+	#  If you have a Cisco SIP server authenticating against
+	#  FreeRADIUS, uncomment the following line, and the 'digest'
+	#  line in the 'authorize' section.
+#	digest
+
+	#
+	#  Pluggable Authentication Modules.
+#	pam
+
+	#
+	#  See 'man getpwent' for information on how the 'unix'
+	#  module checks the users password.  Note that packets
+	#  containing CHAP-Password attributes CANNOT be authenticated
+	#  against /etc/passwd!  See the FAQ for details.
+	#
+	#  For normal "crypt" authentication, the "pap" module should
+	#  be used instead of the "unix" module.  The "unix" module should
+	#  be used for authentication ONLY for compatibility with legacy
+	#  FreeRADIUS configurations.
+	#
+#	unix
+
 	# Uncomment it if you want to use ldap for authentication
 	#
 	# Note that this means "check plain-text password against
@@ -232,7 +290,22 @@ authenticate {
 	#
 	#  Allow EAP authentication.
 	eap
-	pap
+
+	#
+	#  The older configurations sent a number of attributes in
+	#  Access-Challenge packets, which wasn't strictly correct.
+	#  If you want to filter out these attributes, uncomment
+	#  the following lines.
+	#
+#	Auth-Type eap {
+#		eap {
+#			handled = 1  
+#		}
+#		if (handled && (Response-Packet-Type == Access-Challenge)) {
+#			attr_filter.access_challenge.post-auth
+#			handled  # override the "updated" code from attr_filter
+#		}
+#	}
 }
 
 
@@ -241,6 +314,29 @@ authenticate {
 #
 #preacct {
 #	preprocess
+
+	#
+	#  Session start times are *implied* in RADIUS.
+	#  The NAS never sends a "start time".  Instead, it sends
+	#  a start packet, *possibly* with an Acct-Delay-Time.
+	#  The server is supposed to conclude that the start time
+	#  was "Acct-Delay-Time" seconds in the past.
+	#
+	#  The code below creates an explicit start time, which can
+	#  then be used in other modules.
+	#
+	#  The start time is: NOW - delay - session_length
+	#
+
+#	  update request {
+#	  	FreeRADIUS-Acct-Session-Start-Time = "%{expr: %l - %{%{Acct-Session-Time}:-0} - %{%{Acct-Delay-Time}:-0}}"
+#	}
+
+
+	#
+	#  Ensure that we have a semi-unique identifier for every
+	#  request, and many NAS boxes are broken.
+#	acct_unique
 
 	#
 	#  Look for IPASS-style 'realm/', and if not found, look for
@@ -269,6 +365,11 @@ accounting {
 #	detail
 #	daily
 
+	#  Update the wtmp file
+	#
+	#  If you don't use "radlast", you can delete this line.
+	unix
+
 	#
 	#  For Simultaneous-Use tracking.
 	#
@@ -277,11 +378,28 @@ accounting {
 	radutmp
 #	sradutmp
 
+	#  Return an address to the IP Pool when we see a stop record.
+#	main_pool
+
 	#
 	#  Log traffic to an SQL database.
 	#
 	#  See "Accounting queries" in sql.conf
 #	sql
+
+	#
+	#  If you receive stop packets with zero session length,
+	#  they will NOT be logged in the database.  The SQL module
+	#  will print a message (only in debugging mode), and will
+	#  return "noop".
+	#
+	#  You can ignore these packets by uncommenting the following
+	#  three lines.  Otherwise, the server will not respond to the
+	#  accounting request, and the NAS will retransmit.
+	#
+#	if (noop) {
+#		ok
+#	}
 
 	#
 	#  Instead of sending the query to the SQL server,
@@ -291,6 +409,9 @@ accounting {
 
 	#  Cisco VoIP specific bulk accounting
 #	pgsql-voip
+
+	# For Exec-Program and Exec-Program-Wait
+	exec
 
 	#  Filter attributes from the accounting response.
 	#attr_filter.accounting_response
@@ -320,6 +441,9 @@ session {
 #  Once we KNOW that the user has been authenticated, there are
 #  additional steps we can take.
 #post-auth {
+	#  Get an address from the IP Pool.
+#	main_pool
+
 	#
 	#  If you want to have a log of authentication replies,
 	#  un-comment the following line, and the 'detail reply_log'
@@ -331,20 +455,6 @@ session {
 	#
 	#  See "Authentication Logging Queries" in sql.conf
 #	sql
-
-	#
-	#  If you receive stop packets with zero session length,
-	#  they will NOT be logged in the database.  The SQL module
-	#  will print a message (only in debugging mode), and will
-	#  return "noop".
-	#
-	#  You can ignore these packets by uncommenting the following
-	#  three lines.  Otherwise, the server will not respond to the
-	#  accounting request, and the NAS will retransmit.
-	#
-#	if (noop) {
-#		ok
-#	}
 
 	#
 	#  Instead of sending the query to the SQL server,
@@ -359,6 +469,7 @@ session {
 	#
 #	ldap
 
+	# For Exec-Program and Exec-Program-Wait
 #	exec
 
 	#
@@ -386,6 +497,32 @@ session {
 	#
 #	wimax
 
+	#  If there is a client certificate (EAP-TLS, sometimes PEAP
+	#  and TTLS), then some attributes are filled out after the
+	#  certificate verification has been performed.  These fields
+	#  MAY be available during the authentication, or they may be
+	#  available only in the "post-auth" section.
+	#
+	#  The first set of attributes contains information about the
+	#  issuing certificate which is being used.  The second
+	#  contains information about the client certificate (if
+	#  available).
+#
+#	update reply {
+#	       Reply-Message += "%{TLS-Cert-Serial}"
+#	       Reply-Message += "%{TLS-Cert-Expiration}"
+#	       Reply-Message += "%{TLS-Cert-Subject}"
+#	       Reply-Message += "%{TLS-Cert-Issuer}"
+#	       Reply-Message += "%{TLS-Cert-Common-Name}"
+#
+#	       Reply-Message += "%{TLS-Client-Cert-Serial}"
+#	       Reply-Message += "%{TLS-Client-Cert-Expiration}"
+#	       Reply-Message += "%{TLS-Client-Cert-Subject}"
+#	       Reply-Message += "%{TLS-Client-Cert-Issuer}"
+#	       Reply-Message += "%{TLS-Client-Cert-Common-Name}"
+#	}
+
+
 	#  If the WiMAX module did it's work, you may want to do more
 	#  things here, like delete the MS-MPPE-*-Key attributes.
 	#
@@ -404,7 +541,7 @@ session {
 	#  'edir_account_policy_check = yes' in the ldap module configuration
 	#
 #	Post-Auth-Type REJECT {
-		# log failed authentications in SQL, too.
+#		# log failed authentications in SQL, too.
 #		sql
 #		attr_filter.access_reject
 #	}
