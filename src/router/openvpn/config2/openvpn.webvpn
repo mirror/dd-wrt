@@ -136,9 +136,9 @@
 				<div class="setting">
 					<div class="label"><% tran("service.vpn_tlscip"); %></div>
 					<select name="openvpn_tlscip">
+					<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>>OFF</option>
 					<option value="AES128-SHA" <% nvram_selected("openvpn_tlscip","AES128-SHA"); %>>AES-128 SHA</option>
 					<option value="AES256-SHA" <% nvram_selected("openvpn_tlscip","AES256-SHA"); %>>AES-256 SHA</option>
-					<option value="AES512-SHA" <% nvram_selected("openvpn_tlscip","AES512-SHA"); %>>AES-512 SHA</option>
 				</select>
 			</div>
 			</div>
