@@ -20,26 +20,6 @@
  * Copyright 2000,2001,2006  The FreeRADIUS server project
  */
 
-
-/*
- *  mschap.c    MS-CHAP module
- *
- *  This implements MS-CHAP, as described in RFC 2548
- *
- *  http://www.freeradius.org/rfc/rfc2548.txt
- *
- */
-
-/*
- *  If you have any questions on NTLM (Samba) passwords
- *  support, LM authentication and MS-CHAP v2 support
- *  please contact
- *
- *  Vladimir Dubrovin	vlad@sandy.ru
- *  aka
- *  ZARAZA		3APA3A@security.nnov.ru
- */
-
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
 
 #include	<freeradius-devel/ident.h>
@@ -53,6 +33,7 @@ RCSID("$Id$")
 
 #include 	<ctype.h>
 
+#include	"mschap.h"
 #include	"smbdes.h"
 
 #ifdef __APPLE__
@@ -147,115 +128,6 @@ static int pdb_decode_acct_ctrl(const char *p)
 }
 
 
-/*
- *	ntpwdhash converts Unicode password to 16-byte NT hash
- *	with MD4
- */
-static void ntpwdhash (uint8_t *szHash, const char *szPassword)
-{
-	char szUnicodePass[513];
-	int nPasswordLen;
-	int i;
-
-	/*
-	 *	NT passwords are unicode.  Convert plain text password
-	 *	to unicode by inserting a zero every other byte
-	 */
-	nPasswordLen = strlen(szPassword);
-	for (i = 0; i < nPasswordLen; i++) {
-		szUnicodePass[i << 1] = szPassword[i];
-		szUnicodePass[(i << 1) + 1] = 0;
-	}
-
-	/* Encrypt Unicode password to a 16-byte MD4 hash */
-	fr_md4_calc(szHash, (uint8_t *) szUnicodePass, (nPasswordLen<<1) );
-}
-
-
-/*
- *	challenge_hash() is used by mschap2() and auth_response()
- *	implements RFC2759 ChallengeHash()
- *	generates 64 bit challenge
- */
-static void challenge_hash( const uint8_t *peer_challenge,
-			    const uint8_t *auth_challenge,
-			    const char *user_name, uint8_t *challenge )
-{
-	fr_SHA1_CTX Context;
-	uint8_t hash[20];
-
-	fr_SHA1Init(&Context);
-	fr_SHA1Update(&Context, peer_challenge, 16);
-	fr_SHA1Update(&Context, auth_challenge, 16);
-	fr_SHA1Update(&Context, (const uint8_t *) user_name,
-		      strlen(user_name));
-	fr_SHA1Final(hash, &Context);
-	memcpy(challenge, hash, 8);
-}
-
-/*
- *	auth_response() generates MS-CHAP v2 SUCCESS response
- *	according to RFC 2759 GenerateAuthenticatorResponse()
- *	returns 42-octet response string
- */
-static void auth_response(const char *username,
-			  const uint8_t *nt_hash_hash,
-			  uint8_t *ntresponse,
-			  uint8_t *peer_challenge, uint8_t *auth_challenge,
-			  char *response)
-{
-	fr_SHA1_CTX Context;
-	static const uint8_t magic1[39] =
-	{0x4D, 0x61, 0x67, 0x69, 0x63, 0x20, 0x73, 0x65, 0x72, 0x76,
-	 0x65, 0x72, 0x20, 0x74, 0x6F, 0x20, 0x63, 0x6C, 0x69, 0x65,
-	 0x6E, 0x74, 0x20, 0x73, 0x69, 0x67, 0x6E, 0x69, 0x6E, 0x67,
-	 0x20, 0x63, 0x6F, 0x6E, 0x73, 0x74, 0x61, 0x6E, 0x74};
-
-	static const uint8_t magic2[41] =
-	{0x50, 0x61, 0x64, 0x20, 0x74, 0x6F, 0x20, 0x6D, 0x61, 0x6B,
-	 0x65, 0x20, 0x69, 0x74, 0x20, 0x64, 0x6F, 0x20, 0x6D, 0x6F,
-	 0x72, 0x65, 0x20, 0x74, 0x68, 0x61, 0x6E, 0x20, 0x6F, 0x6E,
-	 0x65, 0x20, 0x69, 0x74, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6F,
-	 0x6E};
-
-	static const char hex[16] = "0123456789ABCDEF";
-
-	size_t i;
-        uint8_t challenge[8];
-	uint8_t digest[20];
-
-	fr_SHA1Init(&Context);
-	fr_SHA1Update(&Context, nt_hash_hash, 16);
-	fr_SHA1Update(&Context, ntresponse, 24);
-	fr_SHA1Update(&Context, magic1, 39);
-	fr_SHA1Final(digest, &Context);
-	challenge_hash(peer_challenge, auth_challenge, username, challenge);
-	fr_SHA1Init(&Context);
-	fr_SHA1Update(&Context, digest, 20);
-	fr_SHA1Update(&Context, challenge, 8);
-	fr_SHA1Update(&Context, magic2, 41);
-	fr_SHA1Final(digest, &Context);
-
-	/*
-	 *	Encode the value of 'Digest' as "S=" followed by
-	 *	40 ASCII hexadecimal digits and return it in
-	 *	AuthenticatorResponse.
-	 *	For example,
-	 *	"S=0123456789ABCDEF0123456789ABCDEF01234567"
-	 */
- 	response[0] = 'S';
-	response[1] = '=';
-
-	/*
-	 *	The hexadecimal digits [A-F] MUST be uppercase.
-	 */
-	for (i = 0; i < sizeof(digest); i++) {
-		response[2 + (i * 2)] = hex[(digest[i] >> 4) & 0x0f];
-		response[3 + (i * 2)] = hex[digest[i] & 0x0f];
-	}
-}
-
-
 typedef struct rlm_mschap_t {
 	int use_mppe;
 	int require_encryption;
@@ -319,6 +191,7 @@ static size_t mschap_xlat(void *instance, REQUEST *request,
 			 *	for MS-CHAPv2.
 			 */
 		} else if (chap_challenge->length == 16) {
+			VALUE_PAIR *name_attr, *response_name;
 			char *username_string;
 
 			RDEBUG2(" mschap2: %02x", chap_challenge->vp_octets[0]);
@@ -328,6 +201,12 @@ static size_t mschap_xlat(void *instance, REQUEST *request,
 				RDEBUG2("MS-CHAP2-Response is required to calculate MS-CHAPv1 challenge.");
 				return 0;
 			}
+
+			/*
+			 *	FIXME: Much of this is copied from
+			 *	below.  We should put it into a
+			 *	separate function.
+			 */
 
 			/*
 			 *	Responses are 50 octets.
@@ -340,22 +219,44 @@ static size_t mschap_xlat(void *instance, REQUEST *request,
 			user_name = pairfind(request->packet->vps,
 					     PW_USER_NAME);
 			if (!user_name) {
-				RDEBUG2("User-Name is required to calculateMS-CHAPv1 Challenge.");
+				RDEBUG2("User-Name is required to calculate MS-CHAPv1 Challenge.");
 				return 0;
+			}
+
+ 			/*
+			 *      Check for MS-CHAP-User-Name and if found, use it
+			 *      to construct the MSCHAPv1 challenge.  This is
+			 *      set by rlm_eap_mschap to the MS-CHAP Response
+			 *      packet Name field.
+			 *
+			 *	We prefer this to the User-Name in the
+			 *	packet.
+			 */
+			response_name = pairfind(request->packet->vps, PW_MS_CHAP_USER_NAME);
+			if (response_name) {
+				name_attr = response_name;
+			} else {
+				name_attr = user_name;
 			}
 
 			/*
 			 *	with_ntdomain_hack moved here, too.
 			 */
-			if ((username_string = strchr(user_name->vp_strvalue, '\\')) != NULL) {
+			if ((username_string = strchr(name_attr->vp_strvalue, '\\')) != NULL) {
 				if (inst->with_ntdomain_hack) {
 					username_string++;
 				} else {
 					RDEBUG2("NT Domain delimeter found, should we have enabled with_ntdomain_hack?");
-					username_string = user_name->vp_strvalue;
+					username_string = name_attr->vp_strvalue;
 				}
 			} else {
-				username_string = user_name->vp_strvalue;
+				username_string = name_attr->vp_strvalue;
+			}
+
+			if (response_name &&
+			    ((user_name->length != response_name->length) ||
+			     (strncasecmp(user_name->vp_strvalue, response_name->vp_strvalue, user_name->length) != 0))) {
+				RDEBUG("WARNING: User-Name (%s) is not the same as MS-CHAP Name (%s) from EAP-MSCHAPv2", user_name->vp_strvalue, response_name->vp_strvalue);
 			}
 
 			/*
@@ -363,7 +264,9 @@ static size_t mschap_xlat(void *instance, REQUEST *request,
 			 *	from the MS-CHAPv2 peer challenge,
 			 *	our challenge, and the user name.
 			 */
-			challenge_hash(response->vp_octets + 2,
+			RDEBUG2("Creating challenge hash with username: %s",
+				username_string);
+			mschap_challenge_hash(response->vp_octets + 2,
 				       chap_challenge->vp_octets,
 				       username_string, buffer);
 			data = buffer;
@@ -549,7 +452,7 @@ static size_t mschap_xlat(void *instance, REQUEST *request,
 			return 0;
 		}
 
-		ntpwdhash(buffer,buf2);
+		mschap_ntpwdhash(buffer,buf2);
 
 		fr_bin2hex(buffer, out, 16);
 		out[32] = '\0';
@@ -798,7 +701,24 @@ static int do_mschap(rlm_mschap_t *inst,
 					     buffer, sizeof(buffer),
 					     NULL, NULL, 1);
 		if (result != 0) {
+			char *p;
+			VALUE_PAIR *vp = NULL;
+
 			RDEBUG2("External script failed.");
+
+			vp = pairmake("Module-Failure-Message", "", T_OP_EQ);
+			if (!vp) {
+				radlog_request(L_ERR, 0, request, "No memory to allocate Module-Failure-Message");
+				return RLM_MODULE_FAIL;
+			}
+
+			p = strchr(buffer, '\n');
+			if (p) *p = '\0';
+			snprintf(vp->vp_strvalue, sizeof(vp->vp_strvalue),
+				"%s: External script says %s",
+				 inst->xlat_name, buffer);
+			vp->length = strlen(vp->vp_strvalue);
+			pairadd(&request->packet->vps, vp);
 			return -1;
 		}
 
@@ -981,7 +901,7 @@ static int mschap_authorize(void * instance, REQUEST *request)
 	}
 
 	if (pairfind(request->config_items, PW_AUTH_TYPE)) {
-		RDEBUG2("Found existing Auth-Type.  Not changing it.");
+		RDEBUG2("WARNING: Auth-Type already set.  Not setting to MS-CHAP");
 		return RLM_MODULE_NOOP;
 	}
 
@@ -1147,7 +1067,7 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 			radlog_request(L_ERR, 0, request, "No memory");
 			return RLM_MODULE_FAIL;
 		} else {
-			ntpwdhash(nt_password->vp_octets,
+			mschap_ntpwdhash(nt_password->vp_octets,
 				  password->vp_strvalue);
 			nt_password->length = 16;
 		}
@@ -1155,7 +1075,7 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 
 	challenge = pairfind(request->packet->vps, PW_MSCHAP_CHALLENGE);
 	if (!challenge) {
-		RDEBUG2("No MS-CHAP-Challenge in the request");
+		RDEBUG("ERROR: You set 'Auth-Type = MS-CHAP' for a request that does not contain any MS-CHAP attributes!");
 		return RLM_MODULE_REJECT;
 	}
 
@@ -1217,6 +1137,7 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 
 	} else if ((response = pairfind(request->packet->vps, PW_MSCHAP2_RESPONSE)) != NULL) {
 		uint8_t	mschapv1_challenge[16];
+		VALUE_PAIR *name_attr, *response_name;
 
 		/*
 		 *	MS-CHAPv2 challenges are 16 octets.
@@ -1243,19 +1164,41 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 			return RLM_MODULE_INVALID;
 		}
 
-
 		/*
-		 *	with_ntdomain_hack moved here
+		 *      Check for MS-CHAP-User-Name and if found, use it
+		 *      to construct the MSCHAPv1 challenge.  This is
+		 *      set by rlm_eap_mschap to the MS-CHAP Response
+		 *      packet Name field.
+		 *
+		 *	We prefer this to the User-Name in the
+		 *	packet.
 		 */
-		if ((username_string = strchr(username->vp_strvalue, '\\')) != NULL) {
-		        if (inst->with_ntdomain_hack) {
-			        username_string++;
+		response_name = pairfind(request->packet->vps, PW_MS_CHAP_USER_NAME);
+		if (response_name) {
+			name_attr = response_name;
+		} else {
+			name_attr = username;
+		}
+		
+		/*
+		 *	with_ntdomain_hack moved here, too.
+		 */
+		if ((username_string = strchr(name_attr->vp_strvalue, '\\')) != NULL) {
+			if (inst->with_ntdomain_hack) {
+				username_string++;
 			} else {
-				RDEBUG2("  NT Domain delimeter found, should we have enabled with_ntdomain_hack?");
-				username_string = username->vp_strvalue;
+				RDEBUG2("NT Domain delimeter found, should we have enabled with_ntdomain_hack?");
+				username_string = name_attr->vp_strvalue;
 			}
 		} else {
-		        username_string = username->vp_strvalue;
+			username_string = name_attr->vp_strvalue;
+		}
+		
+		if (response_name &&
+		    ((username->length != response_name->length) ||
+		     (strncasecmp(username->vp_strvalue, response_name->vp_strvalue, username->length) != 0))) {
+			RDEBUG("ERROR: User-Name (%s) is not the same as MS-CHAP Name (%s) from EAP-MSCHAPv2", username->vp_strvalue, response_name->vp_strvalue);
+			return RLM_MODULE_REJECT;
 		}
 
 #ifdef __APPLE__
@@ -1282,7 +1225,9 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 		 *	MS-CHAPv2 takes some additional data to create an
 		 *	MS-CHAPv1 challenge, and then does MS-CHAPv1.
 		 */
-		challenge_hash(response->vp_octets + 2, /* peer challenge */
+		RDEBUG2("Creating challenge hash with username: %s",
+			username_string);
+		mschap_challenge_hash(response->vp_octets + 2, /* peer challenge */
 			       challenge->vp_octets, /* our challenge */
 			       username_string,	/* user name */
 			       mschapv1_challenge); /* resulting challenge */
@@ -1300,13 +1245,7 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 			return RLM_MODULE_REJECT;
 		}
 
-		/*
-		 *	Get the NT-hash-hash, if necessary
-		 */
-		if (nt_password) {
-		}
-
-		auth_response(username_string, /* without the domain */
+		mschap_auth_response(username_string, /* without the domain */
 			      nthashhash, /* nt-hash-hash */
 			      response->vp_octets + 26, /* peer response */
 			      response->vp_octets + 2, /* peer challenge */
@@ -1317,7 +1256,7 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 		chap = 2;
 
 	} else {		/* Neither CHAPv1 or CHAPv2 response: die */
-		radlog_request(L_AUTH, 0, request, "No MS-CHAP response found");
+		RDEBUG("ERROR: You set 'Auth-Type = MS-CHAP' for a request that does not contain any MS-CHAP attributes!");
 		return RLM_MODULE_INVALID;
 	}
 

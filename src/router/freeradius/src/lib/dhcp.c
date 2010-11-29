@@ -344,7 +344,7 @@ RADIUS_PACKET *fr_dhcp_recv(int sockfd)
 				 packet->code - PW_DHCP_OFFSET);
 		}
 
-		DEBUG("Received %s of id %08x from %s:%d to %s:%d",
+		DEBUG("Received %s of id %08x from %s:%d to %s:%d\n",
 		       name, (unsigned int) packet->id,
 		       inet_ntop(packet->src_ipaddr.af,
 				 &packet->src_ipaddr.ipaddr,
@@ -438,9 +438,12 @@ static int decode_tlv(VALUE_PAIR *tlv, const uint8_t *data, size_t data_len)
 	 *	The caller allocated TLV, so we need to copy the FIRST
 	 *	attribute over top of that.
 	 */
-	memcpy(tlv, head, sizeof(*tlv));
-	head->next = NULL;
-	pairfree(&head);
+	if (head) {
+		memcpy(tlv, head, sizeof(*tlv));
+		head->next = NULL;
+		pairfree(&head);
+	}
+
 	return 0;
 
 make_tlv:
@@ -503,7 +506,7 @@ static int fr_dhcp_attr2vp(VALUE_PAIR *vp, const uint8_t *p, size_t alen)
 		
 	default:
 		fr_strerror_printf("Internal sanity check %d %d", vp->type, __LINE__);
-		break;
+		return -1;
 	} /* switch over type */
 
 	vp->length = alen;
@@ -517,7 +520,6 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 	uint32_t giaddr;
 	VALUE_PAIR *head, *vp, **tail;
 	VALUE_PAIR *maxms, *mtu;
-	char buffer[2048];
 
 	head = NULL;
 	tail = &head;
@@ -605,10 +607,7 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 
 		if (!vp) continue;
 		
-		if (fr_debug_flag > 1) {
-			vp_prints(buffer, sizeof(buffer), vp);
-			fr_strerror_printf("\t%s", buffer);
-		}
+		debug_pair(vp);
 		*tail = vp;
 		tail = &vp->next;
 	}
@@ -708,13 +707,11 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 					return -1;
 			}
 
-			if (fr_debug_flag > 1) {
-				vp_prints(buffer, sizeof(buffer), vp);
-				fr_strerror_printf("\t%s", buffer);
-			}
-
 			*tail = vp;
-			while (*tail) tail = &vp->next;
+			while (*tail) {
+				debug_pair(*tail);
+				tail = &(*tail)->next;
+			}
 			p += alen;
 		} /* loop over array entries */
 	} /* loop over the entire packet */
@@ -776,6 +773,12 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 	if (maxms && mtu && (maxms->vp_integer > mtu->vp_integer)) {
 		fr_strerror_printf("DHCP WARNING: Client says MTU is smaller than maximum message size: fixing it");
 		maxms->vp_integer = mtu->vp_integer;
+	}
+
+	if (fr_debug_flag > 0) {
+		for (vp = packet->vps; vp != NULL; vp = vp->next) {
+			
+		}
 	}
 
 	if (fr_debug_flag) fflush(stdout);
@@ -1039,7 +1042,7 @@ int fr_dhcp_encode(RADIUS_PACKET *packet, RADIUS_PACKET *original)
 				 packet->code - PW_DHCP_OFFSET);
 		}
 
-		DEBUG("Sending %s of id %08x from %s:%d to %s:%d",
+		DEBUG("Sending %s of id %08x from %s:%d to %s:%d\n",
 		       name, (unsigned int) packet->id,
 		       inet_ntop(packet->src_ipaddr.af,
 				 &packet->src_ipaddr.ipaddr,
@@ -1200,8 +1203,30 @@ int fr_dhcp_encode(RADIUS_PACKET *packet, RADIUS_PACKET *original)
 	}
 	p += DHCP_CHADDR_LEN;
 
-	memset(p, 0, 192);	/* bootp legacy */
-	p += 192;
+	/*
+	 *	Zero our sname && filename fields.
+	 */
+	memset(p, 0, DHCP_SNAME_LEN + DHCP_FILE_LEN);
+	p += DHCP_SNAME_LEN;
+
+	/*
+	 *	Copy over DHCP-Boot-Filename.
+	 *
+	 *	FIXME: This copy should be delayed until AFTER the options
+	 *	have been processed.  If there are too many options for
+	 *	the packet, then they go into the sname && filename fields.
+	 *	When that happens, the boot filename is passed as an option,
+	 *	instead of being placed verbatim in the filename field.
+	 */
+	vp = pairfind(packet->vps, DHCP2ATTR(269));
+	if (vp) {
+		if (vp->length > DHCP_FILE_LEN) {
+			memcpy(p, vp->vp_strvalue, DHCP_FILE_LEN);
+		} else {
+			memcpy(p, vp->vp_strvalue, vp->length);
+		}
+	}
+	p += DHCP_FILE_LEN;
 
 	lvalue = htonl(DHCP_OPTION_MAGIC_NUMBER); /* DHCP magic number */
 	memcpy(p, &lvalue, 4);
@@ -1324,7 +1349,6 @@ int fr_dhcp_encode(RADIUS_PACKET *packet, RADIUS_PACKET *original)
 	vp = packet->vps;
 	while (vp) {
 		int num_entries = 1;
-		
 		VALUE_PAIR *same;
 		uint8_t *plength, *pattr;
 
@@ -1332,6 +1356,9 @@ int fr_dhcp_encode(RADIUS_PACKET *packet, RADIUS_PACKET *original)
 		if (vp->attribute == DHCP2ATTR(53)) goto next; /* already done */
 		if (((vp->attribute & 0xffff) > 255) &&
 		    (DHCP_BASE_ATTR(vp->attribute) != PW_DHCP_OPTION_82)) goto next;
+
+		debug_pair(vp);
+		if (vp->flags.encoded) goto next;
 
 		length = vp->length;
 
@@ -1363,16 +1390,22 @@ int fr_dhcp_encode(RADIUS_PACKET *packet, RADIUS_PACKET *original)
 			}
 
 			if (vp->flags.is_tlv) {
-				VALUE_PAIR *tlv = fr_dhcp_vp2suboption(vp);
-				if (vp) {
-					tlv->next = vp->next;
-					vp->next = tlv;
-				}
-				
+				VALUE_PAIR *tlv;
+
 				/*
-				 *	The encoded flag MUST be set in the vp!
+				 *	Should NOT have been encoded yet!
 				 */
-				vp = vp->next;
+				tlv = fr_dhcp_vp2suboption(vp);
+
+				/*
+				 *	Ignore it if there's an issue
+				 *	encoding it.
+				 */
+				if (!tlv) goto next;
+
+				tlv->next = vp->next;
+				vp->next = tlv;
+				vp = tlv;
 			}
 
 			length = fr_dhcp_vp2attr(vp, p, 0);

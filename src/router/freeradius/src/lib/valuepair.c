@@ -135,6 +135,33 @@ VALUE_PAIR *pairalloc(DICT_ATTR *da)
 }
 
 
+VALUE_PAIR *paircreate_raw(int attr, int type, VALUE_PAIR *vp)
+{
+	char *p = (char *) (vp + 1);
+
+	if (!vp->flags.unknown_attr) {
+		pairfree(&vp);
+		return NULL;
+	}
+
+	vp->vendor = VENDOR(attr);
+	vp->attribute = attr;
+	vp->operator = T_OP_EQ;
+	vp->name = p;
+	vp->type = type;
+	vp->length = 0;
+	memset(&vp->flags, 0, sizeof(vp->flags));
+	vp->flags.unknown_attr = 1;
+	
+	if (!vp_print_name(p, FR_VP_NAME_LEN, vp->attribute)) {
+		free(vp);
+		return NULL;
+	}
+
+	return vp;
+}
+
+
 /*
  *	Create a new valuepair.
  */
@@ -153,19 +180,7 @@ VALUE_PAIR *paircreate(int attr, int type)
 	/*
 	 *	It isn't in the dictionary: update the name.
 	 */
-	if (!da) {
-		char *p = (char *) (vp + 1);
-		
-		vp->vendor = VENDOR(attr);
-		vp->attribute = attr;
-		vp->name = p;
-		vp->type = type; /* be forgiving */
-
-		if (!vp_print_name(p, FR_VP_NAME_LEN, vp->attribute)) {
-			free(vp);
-			return NULL;
-		}
-	}
+	if (!da) return paircreate_raw(attr, type, vp);
 
 	return vp;
 }
@@ -320,6 +335,12 @@ VALUE_PAIR *paircopyvp(const VALUE_PAIR *vp)
 		return NULL;
 	}
 	memcpy(n, vp, sizeof(*n) + name_len);
+
+	/*
+	 *	Reset the name field to point to the NEW attribute,
+	 *	rather than to the OLD one.
+	 */
+	if (vp->flags.unknown_attr) n->name = (char *) (n + 1);
 	n->next = NULL;
 
 	if ((n->type == PW_TYPE_TLV) &&
@@ -791,13 +812,11 @@ static int gettime(const char *valstr, time_t *date)
 		f[2] = strchr(f[1], ':'); /* find : separator */
 		if (f[2]) {
 		  *(f[2]++) = '\0';	/* nuke it, and point to SS */
-		} else {
-		  strcpy(f[2], "0");	/* assignment would discard const */
-		}
+		  tm->tm_sec = atoi(f[2]);
+		}			/* else leave it as zero */
 
 		tm->tm_hour = atoi(f[0]);
 		tm->tm_min = atoi(f[1]);
-		tm->tm_sec = atoi(f[2]);
 	}
 
 	/*
@@ -895,6 +914,10 @@ VALUE_PAIR *pairparsevalue(VALUE_PAIR *vp, const char *value)
 						c = '\'';
 						cp++;
 						break;
+					case '\\':
+						c = '\\';
+						cp++;
+						break;
 					case '`':
 						c = '`';
 						cp++;
@@ -918,6 +941,7 @@ VALUE_PAIR *pairparsevalue(VALUE_PAIR *vp, const char *value)
 				*p++ = c;
 				length++;
 			}
+			vp->vp_strvalue[length] = '\0';
 			vp->length = length;
 			break;
 
@@ -1103,12 +1127,21 @@ VALUE_PAIR *pairparsevalue(VALUE_PAIR *vp, const char *value)
 			break;
 
 		case PW_TYPE_IPV6ADDR:
-			if (inet_pton(AF_INET6, value, &vp->vp_ipv6addr) <= 0) {
-				fr_strerror_printf("failed to parse IPv6 address "
-					   "string \"%s\"", value);
-				return NULL;
+			{
+				fr_ipaddr_t ipaddr;
+
+				if (ip_hton(value, AF_INET6, &ipaddr) < 0) {
+					char buffer[1024];
+
+					strlcpy(buffer, fr_strerror(), sizeof(buffer));
+
+					fr_strerror_printf("failed to parse IPv6 address "
+                                                           "string \"%s\": %s", value, buffer);
+					return NULL;
+				}
+				vp->vp_ipv6addr = ipaddr.ipaddr.ip6addr;
+				vp->length = 16; /* length of IPv6 address */
 			}
-			vp->length = 16; /* length of IPv6 address */
 			break;
 
 		case PW_TYPE_IPV6PREFIX:

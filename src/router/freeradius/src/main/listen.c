@@ -189,7 +189,8 @@ RADCLIENT *client_listener_find(const rad_listen_t *listener,
 		 *	can be defined.
 		 */
 		rad_assert(client->dynamic == 0);
-	} else {
+
+	} else if (!client->dynamic && client->rate_limit) {
 		/*
 		 *	The IP is unknown, so we've found an enclosing
 		 *	network.  Enable DoS protection.  We only
@@ -373,7 +374,7 @@ static int rad_status_server(REQUEST *request)
 }
 
 
-static int socket_print(rad_listen_t *this, char *buffer, size_t bufsize)
+static int socket_print(const rad_listen_t *this, char *buffer, size_t bufsize)
 {
 	size_t len;
 	listen_socket_t *sock = this->data;
@@ -460,6 +461,8 @@ static int socket_print(rad_listen_t *this, char *buffer, size_t bufsize)
 	return 1;
 }
 
+extern int check_config;	/* radiusd.c */
+
 
 /*
  *	Parse an authentication or accounting socket.
@@ -509,6 +512,19 @@ static int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 
 	sock->ipaddr = ipaddr;
 	sock->port = listen_port;
+
+	if (check_config) {
+		if (home_server_find(&sock->ipaddr, sock->port)) {
+				char buffer[128];
+				
+				DEBUG("ERROR: We have been asked to listen on %s port %d, which is also listed as a home server.  This can create a proxy loop.",
+				      ip_ntoh(&sock->ipaddr, buffer, sizeof(buffer)),
+				      sock->port);
+				return -1;
+		}
+
+		return 0;	/* don't do anything */
+	}
 
 	/*
 	 *	If we can bind to interfaces, do so,
@@ -1350,7 +1366,7 @@ static const rad_listen_master_t master_listen[RAD_LISTEN_MAX] = {
 
 #ifdef WITH_COMMAND_SOCKET
 	/* TCP command socket */
-	{ command_socket_parse, NULL,
+	{ command_socket_parse, command_socket_free,
 	  command_domain_accept, command_domain_send,
 	  command_socket_print, command_socket_encode, command_socket_decode },
 #endif
@@ -1428,7 +1444,7 @@ static int listen_bind(rad_listen_t *this)
 #endif
 
 		default:
-			radlog(L_ERR, "ERROR: Non-fatal internal sanity check failed in bind.");
+			DEBUG("WARNING: Internal sanity check failed in binding to socket.  Ignoring problem.");
 			return -1;
 		}
 	}
@@ -1712,7 +1728,7 @@ rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists)
 		/*
 		 *	Not proxy, ignore it.
 		 */
-		if (tmp->type != RAD_LISTEN_PROXY) continue;
+		if (tmp->type != RAD_LISTEN_PROXY) goto next;
 
 		sock = tmp->data;
 
@@ -1725,13 +1741,17 @@ rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists)
 		if ((ipaddr->af != AF_UNSPEC) &&
 		    (fr_ipaddr_cmp(&sock->ipaddr, ipaddr) != 0)) {
 			if (exists) return tmp;
-			continue;
+			goto next;
 		}
 		
 		if (!old) old = sock;
 
+	next:
 		last = &(tmp->next);
 	}
+
+	this = listen_alloc(RAD_LISTEN_PROXY);
+	sock = this->data;
 
 	if (!old) {
 		/*
@@ -1741,17 +1761,17 @@ rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists)
 		 *	If we're initializing the server, it's OK for the
 		 *	socket to NOT exist.
 		 */
-		if (!exists) return NULL;
+		if (!exists) {
+			DEBUG("WARNING: No previous template for proxy socket.  Source IP address may be chosen by the OS");
+		}
 
-		this = listen_alloc(RAD_LISTEN_PROXY);
-
-		sock = this->data;
-		sock->ipaddr = *ipaddr;
-
+		if (ipaddr->af != AF_UNSPEC) {
+			sock->ipaddr = *ipaddr;
+		} else {
+			memset(&sock->ipaddr, 0, sizeof(sock->ipaddr));
+			sock->ipaddr.af = AF_INET; /* Oh well */
+		}
 	} else {
-		this = listen_alloc(RAD_LISTEN_PROXY);
-		
-		sock = this->data;
 		sock->ipaddr = old->ipaddr;
 	}
 
@@ -1766,6 +1786,7 @@ rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists)
 		return this;
 	}
 
+	DEBUG("Failed binding to new proxy socket");
 	listen_free(&this);
 	return NULL;
 }
@@ -2110,16 +2131,19 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head)
 	 *	Otherwise, don't do anything.
 	 */
  do_proxy:
+	/*
+	 *	No sockets to receive packets, this is an error.
+	 *	proxying is pointless.
+	 */
+	if (!*head) {
+		radlog(L_ERR, "The server is not configured to listen on any ports.  Cannot start.");
+		return -1;
+	}
+
 #ifdef WITH_PROXY
 	if (mainconfig.proxy_requests == TRUE) {
 		int		port = -1;
 		listen_socket_t *sock = NULL;
-
-		/*
-		 *	No sockets to receive packets, therefore
-		 *	proxying is pointless.
-		 */
-		if (!*head) return -1;
 
 		if (defined_proxy) goto check_home_servers;
 
@@ -2130,6 +2154,19 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head)
 		for (this = *head; this != NULL; this = this->next) {
 			if (this->type == RAD_LISTEN_AUTH) {
 				sock = this->data;
+
+				/*
+				 *	We shouldn't proxy on loopback.
+				 */
+				if ((sock->ipaddr.af == AF_INET) &&
+				    (sock->ipaddr.ipaddr.ip4addr.s_addr == htonl(INADDR_LOOPBACK))) continue;
+
+
+#ifdef HAVE_STRUCT_SOCKADDR_IN6
+				if ((sock->ipaddr.af == AF_INET6) &&
+				    (IN6_IS_ADDR_LINKLOCAL(&sock->ipaddr.ipaddr.ip6addr))) continue;
+#endif
+
 				if (server_ipaddr.af == AF_UNSPEC) {
 					server_ipaddr = sock->ipaddr;
 				}
@@ -2191,7 +2228,7 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head)
 		 *	on their src_ipaddr.
 		 */
 	check_home_servers:
-		if (home_server_create_listeners(*head) != 0) return -1;
+		if (home_server_create_listeners() != 0) return -1;
 	}
 #endif
 

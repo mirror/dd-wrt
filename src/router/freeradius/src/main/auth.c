@@ -175,9 +175,11 @@ static int rad_check_password(REQUEST *request)
 	 */
 	cur_config_item = request->config_items;
 	while(((auth_type_pair = pairfind(cur_config_item, PW_AUTH_TYPE))) != NULL) {
+		DICT_VALUE *dv;
+
 		auth_type = auth_type_pair->vp_integer;
 		auth_type_count++;
-		DICT_VALUE *dv = dict_valbyattr(auth_type_pair->attribute,
+		dv = dict_valbyattr(auth_type_pair->attribute,
 						auth_type_pair->vp_integer);
 
 		RDEBUG2("Found Auth-Type = %s",
@@ -262,7 +264,7 @@ static int rad_check_password(REQUEST *request)
 		 	*
 		 	*	This is fail-safe.
 		 	*/
-			RDEBUG2("No authenticate method (Auth-Type) configuration found for the request: Rejecting the user");
+			RDEBUG2("ERROR: No authenticate method (Auth-Type) found for the request: Rejecting the user");
 			return -2;
 		}
 	}

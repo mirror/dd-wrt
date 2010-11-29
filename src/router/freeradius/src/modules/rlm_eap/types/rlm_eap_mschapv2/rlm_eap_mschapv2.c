@@ -44,6 +44,23 @@ static CONF_PARSER module_config[] = {
 };
 
 
+static void fix_mppe_keys(EAP_HANDLER *handler, mschapv2_opaque_t *data)
+{
+	pairmove2(&data->mppe_keys, &handler->request->reply->vps, ((311 << 16) | 7));
+	pairmove2(&data->mppe_keys, &handler->request->reply->vps, ((311 << 16) | 8));
+	pairmove2(&data->mppe_keys, &handler->request->reply->vps, ((311 << 16) | 16));
+	pairmove2(&data->mppe_keys, &handler->request->reply->vps, ((311 << 16) | 17));
+  
+}
+
+static void free_data(void *ptr)
+{
+	mschapv2_opaque_t *data = ptr;
+
+	pairfree(&data->mppe_keys);
+	free(data);
+}
+
 /*
  *	Detach the module.
  */
@@ -245,9 +262,10 @@ static int mschapv2_initiate(void *type_data, EAP_HANDLER *handler)
 	 */
 	data->code = PW_EAP_MSCHAPV2_CHALLENGE;
 	memcpy(data->challenge, challenge->vp_strvalue, MSCHAPV2_CHALLENGE_LEN);
+	data->mppe_keys = NULL;
 
 	handler->opaque = data;
-	handler->free_opaque = free;
+	handler->free_opaque = free_data;
 
 	/*
 	 *	Compose the EAP-MSCHAPV2 packet out of the data structure,
@@ -338,10 +356,7 @@ static int mschap_postproxy(EAP_HANDLER *handler, void *tunnel_data)
 	 *
 	 *	FIXME: Use intelligent names...
 	 */
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 7));
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 8));
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 16));
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 17));
+	fix_mppe_keys(handler, data);
 
 	/*
 	 *	And we need to challenge the user, not ack/reject them,
@@ -362,7 +377,7 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 	int rcode;
 	mschapv2_opaque_t *data;
 	EAP_DS *eap_ds = handler->eap_ds;
-	VALUE_PAIR *challenge, *response;
+	VALUE_PAIR *challenge, *response, *name;
 
 	rad_assert(handler->request != NULL);
 	rad_assert(handler->stage == AUTHENTICATE);
@@ -464,6 +479,9 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 #endif
 
 		eap_ds->request->code = PW_EAP_SUCCESS;
+
+		pairadd(&handler->request->reply->vps, data->mppe_keys);
+		data->mppe_keys = NULL;
 		return 1;
 		break;
 
@@ -506,12 +524,36 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 	response->vp_strvalue[0] = eap_ds->response->type.data[1];
 	response->vp_strvalue[1] = eap_ds->response->type.data[5 + MSCHAPV2_RESPONSE_LEN];
 
+	name = pairmake("NTLM-User-Name", "", T_OP_EQ);
+	if (!name) {
+		pairfree(&challenge);
+		pairfree(&response);
+		radlog(L_ERR, "rlm_eap_mschapv2: Failed creating NTLM-User-Name: %s", fr_strerror());
+		return 0;
+	}
+	
+	/*
+	 *	MS-Length - MS-Value - 5.
+	 */
+	name->length = (((eap_ds->response->type.data[2] << 8) |
+                         eap_ds->response->type.data[3]) -
+			eap_ds->response->type.data[4] - 5);
+	if (name->length >= sizeof(name->vp_strvalue)) {
+		name->length = sizeof(name->vp_strvalue) - 1;
+	}
+
+	memcpy(name->vp_strvalue,
+	       &eap_ds->response->type.data[4 + MSCHAPV2_RESPONSE_LEN],
+	       name->length);
+	name->vp_strvalue[name->length] = '\0';
+
 	/*
 	 *	Add the pairs to the request, and call the 'mschap'
 	 *	module.
 	 */
 	pairadd(&handler->request->packet->vps, challenge);
 	pairadd(&handler->request->packet->vps, response);
+	pairadd(&handler->request->packet->vps, name);
 
 #ifdef WITH_PROXY
 	/*
@@ -599,10 +641,7 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 	 *	Delete MPPE keys & encryption policy.  We don't
 	 *	want these here.
 	 */
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 7));
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 8));
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 16));
-	pairdelete(&handler->request->reply->vps, ((311 << 16) | 17));
+	fix_mppe_keys(handler, data);
 
 	/*
 	 *	Take the response from the mschap module, and

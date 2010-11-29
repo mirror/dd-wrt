@@ -403,7 +403,11 @@ int client_add(RADCLIENT_LIST *clients, RADCLIENT *client)
 #ifdef WITH_DYNAMIC_CLIENTS
 void client_delete(RADCLIENT_LIST *clients, RADCLIENT *client)
 {
-	if (!clients || !client) return;
+	if (!client) return;
+
+	if (!clients) clients = root_clients;
+
+	if (!client->dynamic) return;
 
 	rad_assert((client->prefix >= 0) && (client->prefix <= 128));
 
@@ -531,6 +535,8 @@ static const CONF_PARSER client_config[] = {
 	  offsetof(RADCLIENT, client_server), 0, NULL },
 	{ "lifetime",  PW_TYPE_INTEGER,
 	  offsetof(RADCLIENT, lifetime), 0, NULL },
+	{ "rate_limit",  PW_TYPE_BOOLEAN,
+	  offsetof(RADCLIENT, rate_limit), 0, NULL },
 #endif
 
 #ifdef WITH_COA

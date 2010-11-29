@@ -73,12 +73,15 @@ $INCLUDE dictionary.rfc3576
 $INCLUDE dictionary.rfc3580
 $INCLUDE dictionary.rfc4072
 $INCLUDE dictionary.rfc4372
+$INCLUDE dictionary.rfc4603
 $INCLUDE dictionary.rfc4675
 $INCLUDE dictionary.rfc4679
 $INCLUDE dictionary.rfc4818
 $INCLUDE dictionary.rfc4849
 $INCLUDE dictionary.rfc5176
 $INCLUDE dictionary.rfc5580
+$INCLUDE dictionary.rfc5607
+$INCLUDE dictionary.rfc5904
 
 #
 #	Include vendor dictionaries after the standard ones.
@@ -113,7 +116,7 @@ $INCLUDE dictionary.cisco.bbsm
 $INCLUDE dictionary.clavister
 $INCLUDE dictionary.colubris
 $INCLUDE dictionary.cosine
-#$INCLUDE dictionary.dhcp
+$INCLUDE dictionary.dhcp
 $INCLUDE dictionary.digium
 $INCLUDE dictionary.epygi
 $INCLUDE dictionary.erx
@@ -143,7 +146,7 @@ $INCLUDE dictionary.lucent
 $INCLUDE dictionary.manzara
 $INCLUDE dictionary.merit
 $INCLUDE dictionary.microsoft
-$INCLUDE dictionary.mikrotik
+$INCLUDE dictionary.motorola.wimax
 $INCLUDE dictionary.navini
 $INCLUDE dictionary.netscreen
 $INCLUDE dictionary.networkphysics
@@ -224,5 +227,13 @@ VALUE	NAS-Port-Type			Wireless-CDMA2000	22
 VALUE	NAS-Port-Type			Wireless-UMTS		23
 VALUE	NAS-Port-Type			Wireless-1X-EV		24
 VALUE	NAS-Port-Type			IAPP			25
+
+VALUE   NAS-Port-Type                   FTTP                    26
+VALUE   NAS-Port-Type                   Wireless-802.16         27
+VALUE   NAS-Port-Type                   Wireless-802.20         28
+VALUE   NAS-Port-Type                   Wireless-802.22         29
+
+VALUE   NAS-Port-Type                   xPON                    35
+VALUE   NAS-Port-Type                   Wireless-XGP            36
 
 VALUE	Framed-Protocol			PPTP			9

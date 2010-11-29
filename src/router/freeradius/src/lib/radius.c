@@ -233,7 +233,7 @@ static int rad_sendto(int sockfd, void *data, size_t data_len, int flags,
 	 *	And if they don't specify a source IP address, don't
 	 *	use udpfromto.
 	 */
-	if ((dst_ipaddr->af == AF_INET) ||
+	if ((dst_ipaddr->af == AF_INET) &&
 	    (src_ipaddr->af != AF_UNSPEC)) {
 		return sendfromto(sockfd, data, data_len, flags,
 				  (struct sockaddr *)&src, sizeof_src,
@@ -1294,6 +1294,7 @@ int rad_encode(RADIUS_PACKET *packet, const RADIUS_PACKET *original,
 		 *	necessary, in order to permit this overflow.
 		 */
 		if ((total_length + len) > MAX_PACKET_LEN) {
+			DEBUG("WARNING: Attributes are too long for packet.  Discarding data past %d bytes", total_length);
 			break;
 		}
 
@@ -1772,6 +1773,18 @@ int rad_packet_ok(RADIUS_PACKET *packet, int flags)
 
 	while (count > 0) {
 		/*
+		 *	We need at least 2 bytes to check the
+		 *	attribute header.
+		 */
+		if (count < 2) {
+			fr_strerror_printf("WARNING: Malformed RADIUS packet from host %s: attribute header overflows the packet",
+				   inet_ntop(packet->src_ipaddr.af,
+					     &packet->src_ipaddr.ipaddr,
+					     host_ipaddr, sizeof(host_ipaddr)));
+			return 0;
+		}
+
+		/*
 		 *	Attribute number zero is NOT defined.
 		 */
 		if (attr[0] == 0) {
@@ -1787,11 +1800,24 @@ int rad_packet_ok(RADIUS_PACKET *packet, int flags)
 		 *	fields.  Anything shorter is an invalid attribute.
 		 */
        		if (attr[1] < 2) {
-			fr_strerror_printf("WARNING: Malformed RADIUS packet from host %s: attribute %d too short",
+			fr_strerror_printf("WARNING: Malformed RADIUS packet from host %s: attribute %u too short",
 				   inet_ntop(packet->src_ipaddr.af,
 					     &packet->src_ipaddr.ipaddr,
 					     host_ipaddr, sizeof(host_ipaddr)),
 				   attr[0]);
+			return 0;
+		}
+
+		/*
+		 *	If there are fewer bytes in the packet than in the
+		 *	attribute, it's a bad packet.
+		 */
+		if (count < attr[1]) {
+			fr_strerror_printf("WARNING: Malformed RADIUS packet from host %s: attribute %u data overflows the packet",
+				   inet_ntop(packet->src_ipaddr.af,
+					     &packet->src_ipaddr.ipaddr,
+					     host_ipaddr, sizeof(host_ipaddr)),
+					   attr[0]);
 			return 0;
 		}
 
@@ -2126,7 +2152,7 @@ int rad_verify(RADIUS_PACKET *packet, RADIUS_PACKET *original,
 		case PW_ACCOUNTING_REQUEST:
 			if (calc_acctdigest(packet, secret) > 1) {
 				fr_strerror_printf("Received %s packet "
-					   "from %s with invalid signature!  (Shared secret is incorrect.)",
+					   "from client %s with invalid signature!  (Shared secret is incorrect.)",
 					   fr_packet_codes[packet->code],
 					   inet_ntop(packet->src_ipaddr.af,
 						     &packet->src_ipaddr.ipaddr,
@@ -2147,13 +2173,12 @@ int rad_verify(RADIUS_PACKET *packet, RADIUS_PACKET *original,
 			rcode = calc_replydigest(packet, original, secret);
 			if (rcode > 1) {
 				fr_strerror_printf("Received %s packet "
-					   "from client %s port %d with invalid signature (err=%d)!  (Shared secret is incorrect.)",
+					   "from home server %s port %d with invalid signature!  (Shared secret is incorrect.)",
 					   fr_packet_codes[packet->code],
 					   inet_ntop(packet->src_ipaddr.af,
 						     &packet->src_ipaddr.ipaddr,
 						     buffer, sizeof(buffer)),
-					   packet->src_port,
-					   rcode);
+					   packet->src_port);
 				return -1;
 			}
 			break;
@@ -2176,7 +2201,7 @@ int rad_verify(RADIUS_PACKET *packet, RADIUS_PACKET *original,
 static VALUE_PAIR *data2vp(const RADIUS_PACKET *packet,
 			   const RADIUS_PACKET *original,
 			   const char *secret,
-			   UNUSED unsigned int attribute, size_t length,
+			   unsigned int attribute, size_t length,
 			   const uint8_t *data, VALUE_PAIR *vp)
 {
 	int offset = 0;
@@ -2408,16 +2433,33 @@ static VALUE_PAIR *data2vp(const RADIUS_PACKET *packet,
 
 	default:
 	raw:
-		vp->type = PW_TYPE_OCTETS;
-		vp->length = length;
-		memcpy(vp->vp_octets, data, length);
-
-
 		/*
-		 *	Ensure there's no encryption or tag stuff,
-		 *	we just pass the attribute as-is.
+		 *	Change the name to show the user that the
+		 *	attribute is not of the correct format.
 		 */
-		memset(&vp->flags, 0, sizeof(vp->flags));
+		{
+			VALUE_PAIR *vp2;
+
+			vp2 = pairalloc(NULL);
+			if (!vp2) {
+				pairfree(&vp);
+				return NULL;
+			}
+			pairfree(&vp);
+			vp = vp2;
+
+			/*
+			 *	This sets "vp->flags" appropriately,
+			 *	and vp->type.
+			 */
+			if (!paircreate_raw(attribute, PW_TYPE_OCTETS, vp)) {
+				return NULL;
+			}
+
+			vp->length = length;
+			memcpy(vp->vp_octets, data, length);
+		}
+		break;
 	}
 
 	return vp;
@@ -2635,8 +2677,9 @@ static VALUE_PAIR *rad_continuation2vp(const RADIUS_PACKET *packet,
 			goto not_well_formed;
 		}
 
-		if (!data2vp(packet, original, secret,
-			     ptr[0], ptr[1] - 2, ptr + 2, vp)) {
+		vp = data2vp(packet, original, secret,
+			     ptr[0], ptr[1] - 2, ptr + 2, vp);
+		if (!vp) {	/* called frees vp */
 			pairfree(&head);
 			goto not_well_formed;
 		}
