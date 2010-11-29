@@ -392,7 +392,7 @@ REQUEST *request_alloc(void)
 	request->options = RAD_REQUEST_OPTION_NONE;
 
 	request->module = "";
-	request->component = "";
+	request->component = "<core>";
 	if (debug_flag) request->radlog = radlog_request;
 
 	return request;

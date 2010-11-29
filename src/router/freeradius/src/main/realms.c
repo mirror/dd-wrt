@@ -355,6 +355,10 @@ static CONF_PARSER home_server_config[] = {
 };
 
 
+static void null_free(UNUSED void *data)
+{
+}
+
 static int home_server_add(realm_config_t *rc, CONF_SECTION *cs, int pool_type)
 {
 	const char *name2;
@@ -384,6 +388,13 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs, int pool_type)
 
 	home->name = name2;
 	home->cs = cs;
+
+        /*
+	 *      For zombie period calculations.  We want to count
+	 *      zombies from the time when the server starts, instead
+	 *      of from 1970.
+	 */
+	home->last_packet = time(NULL);
 
 	/*
 	 *	Authentication servers have a default "no_response_fail = 0".
@@ -486,7 +497,7 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs, int pool_type)
 		if (pool_type != home->type) {
 		mismatch:
 			cf_log_err(cf_sectiontoitem(cs),
-				   "Server pool cannot include home server %s of type \"%s\"",
+				   "Home server %s of unexpected type \"%s\"",
 				   name2, hs_type);
 			goto error;
 		}
@@ -689,6 +700,11 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs, int pool_type)
 		}
 #endif
 	}
+
+	/*
+	 *	Mark it as already processed
+	 */
+	cf_data_add(cs, "home_server", null_free, null_free);
 
 	return 1;
 }
@@ -1733,6 +1749,22 @@ int realms_init(CONF_SECTION *config)
 			return 0;
 		}
 	}
+
+	/*
+	 *	CoA home servers aren't tied to realms.
+	 */
+	for (cs = cf_subsection_find_next(config, NULL, "home_server");
+	     cs != NULL;
+	     cs = cf_subsection_find_next(config, cs, "home_server")) {
+		/*
+		 *	Server was already loaded.
+		 */
+		if (cf_data_find(cs, "home_server")) continue;
+
+		if (!home_server_add(rc, cs, HOME_TYPE_COA)) {
+			return 0;
+		}
+	}
 #endif
 
 
@@ -2064,16 +2096,12 @@ home_server *home_server_ldb(const char *realmname,
 			 *	the 'hints' file.
 			 */
 			request->proxy->vps =  paircopy(request->packet->vps);
-
-			/*
-			 *	Set the source IP address for proxying.
-			 */
-			request->proxy->src_ipaddr = found->src_ipaddr;
 		}
 
 		/*
 		 *	Update the various fields as appropriate.
 		 */
+		request->proxy->src_ipaddr = found->src_ipaddr;
 		request->proxy->dst_ipaddr = found->ipaddr;
 		request->proxy->dst_port = found->port;
 		request->home_server = found;
@@ -2200,9 +2228,8 @@ home_pool_t *home_pool_byname(const char *name, int type)
 #endif
 
 #ifdef WITH_PROXY
-static int home_server_create_callback(void *ctx, void *data)
+static int home_server_create_callback(UNUSED void *ctx, void *data)
 {
-	rad_listen_t *head = ctx;
 	home_server *home = data;
 	rad_listen_t *this;
 
@@ -2218,8 +2245,10 @@ static int home_server_create_callback(void *ctx, void *data)
 		 */
 		if (!this) return 1;
 
-		this->next = head->next;
-		head->next = this;
+		/*
+		 *	Don't do anything else.  The function above
+		 *	takes care of adding the listener to the list.
+		 */
 	}
 
 	return 0;
@@ -2228,21 +2257,15 @@ static int home_server_create_callback(void *ctx, void *data)
 /*
  *	Taking a void* here solves some header issues.
  */
-int home_server_create_listeners(void *ctx)
+int home_server_create_listeners(void)
 {
-	rad_listen_t *head = ctx;
-
 	if (!home_servers_byaddr) return 0;
-
-	rad_assert(head != NULL);
 
 	/*
 	 *	Add the listeners to the TAIL of the list.
 	 */
-	while (head->next) head = head->next;
-
 	if (rbtree_walk(home_servers_byaddr, InOrder,
-			home_server_create_callback, head) != 0) {
+			home_server_create_callback, NULL) != 0) {
 		return -1;
 	}
 

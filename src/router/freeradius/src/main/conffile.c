@@ -1511,6 +1511,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 		case T_EOL:
 		case T_HASH:
 		do_bare_word:
+			t3 = t2;
 			t2 = T_OP_EQ;
 			value = NULL;
 			goto do_set;
@@ -1529,7 +1530,6 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 
 		case T_OP_EQ:
 		case T_OP_SET:
-		do_set:
 			t3 = getstring(&ptr, buf3, sizeof(buf3));
 			if (t3 == T_OP_INVALID) {
 				radlog(L_ERR, "%s[%d]: Parse error: %s",
@@ -1556,6 +1556,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 			/*
 			 *	Add this CONF_PAIR to our CONF_SECTION
 			 */
+		do_set:
 			cpn = cf_pair_alloc(buf1, value, t2, t3, this);
 			cpn->item.filename = filename;
 			cpn->item.lineno = *lineno;
@@ -1692,6 +1693,7 @@ int cf_file_include(const char *filename, CONF_SECTION *cs)
 	}
 
 	if (cf_data_find_internal(cs, filename, PW_TYPE_FILENAME)) {
+		fclose(fp);
 		radlog(L_ERR, "Cannot include the same file twice: \"%s\"",
 		       filename);
 		return -1;
@@ -2571,7 +2573,7 @@ int cf_pair2xml(FILE *fp, const CONF_PAIR *cp)
 		char *p = buffer;
 		const char *q = cp->value;
 
-		while (*q && (p < (buffer + sizeof(buffer)))) {
+		while (*q && (p < (buffer + sizeof(buffer) - 1))) {
 			if (q[0] == '&') {
 				memcpy(p, "&amp;", 4);
 				p += 5;

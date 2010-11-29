@@ -11,16 +11,29 @@
 server inner-tunnel {
 
 #
-#  Un-comment the next section to perform test on the inner tunnel
-#  without needing an outer tunnel session.  The tests will not be
-#  exactly the same as when TTLS or PEAP are used, but they will
-#  be close enough for many tests.
+#  This next section is here to allow testing of the "inner-tunnel"
+#  authentication methods, independently from the "default" server.
+#  It is listening on "localhost", so that it can only be used from
+#  the same machine.
 #
-#listen {
-#       ipaddr = 127.0.0.1
-#       port = 18120
-#       type = auth
-#}
+#	$ radtest USER PASSWORD 127.0.0.1:18120 0 testing123
+#
+#  If it works, you have configured the inner tunnel correctly.  To check
+#  if PEAP will work, use:
+#
+#	$ radtest -t mschap USER PASSWORD 127.0.0.1:18120 0 testing123
+#
+#  If that works, PEAP should work.  If that command doesn't work, then
+#
+#	FIX THE INNER TUNNEL CONFIGURATION UNTIL IT WORKS.
+#
+#  Do NOT keep testing PEAP.  It won't help.
+#
+listen {
+       ipaddr = 127.0.0.1
+       port = 18120
+       type = auth
+}
 
 
 #  Authorization. First preprocess (hints and huntgroups files),
@@ -51,7 +64,7 @@ authorize {
 	#  to read /etc/passwd or /etc/shadow directly, see the
 	#  passwd module, above.
 	#
-	unix
+#	unix
 
 	#
 	#  Look for IPASS style 'realm/', and if not found, look for

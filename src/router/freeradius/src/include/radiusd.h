@@ -89,6 +89,8 @@ typedef struct auth_req REQUEST;
 #ifndef WITHOUT_COMMAND_SOCKET
 #ifdef HAVE_SYS_UN_H
 #define WITH_COMMAND_SOCKET (1)
+#else
+#define WITHOUT_COMMAND_SOCKET (1)
 #endif
 #endif
 
@@ -134,6 +136,7 @@ typedef struct radclient {
 	time_t			created;
 	time_t			last_new_client;
 	char			*client_server;
+	int			rate_limit;
 #endif
 
 #ifdef WITH_COA
@@ -298,7 +301,7 @@ typedef struct pair_list {
 
 typedef int (*rad_listen_recv_t)(rad_listen_t *, RAD_REQUEST_FUNP *, REQUEST **);
 typedef int (*rad_listen_send_t)(rad_listen_t *, REQUEST *);
-typedef int (*rad_listen_print_t)(rad_listen_t *, char *, size_t);
+typedef int (*rad_listen_print_t)(const rad_listen_t *, char *, size_t);
 typedef int (*rad_listen_encode_t)(rad_listen_t *, REQUEST *);
 typedef int (*rad_listen_decode_t)(rad_listen_t *, REQUEST *);
 

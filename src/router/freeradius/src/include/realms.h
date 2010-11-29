@@ -53,6 +53,7 @@ typedef struct home_server {
 	int		currently_outstanding;
 	int		message_authenticator;
 
+	time_t		last_packet;
 	struct timeval	revive_time;
 	struct timeval	zombie_period_start;
 	int		zombie_period; /* unresponsive for T, mark it dead */
@@ -130,7 +131,7 @@ REALM *realm_find2(const char *name); /* ... with name taken from realm_find */
 
 home_server *home_server_ldb(const char *realmname, home_pool_t *pool, REQUEST *request);
 home_server *home_server_find(fr_ipaddr_t *ipaddr, int port);
-int	home_server_create_listeners(void *head);
+int	home_server_create_listeners(void);
 #ifdef WITH_COA
 home_server *home_server_byname(const char *name, int type);
 #endif
