@@ -791,7 +791,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	sprintf(akm, "%s_akm", prefix);
 	if (nvram_match(akm, "8021X"))
 		return;
-	if (nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+/*	if (nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
 	    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "radius")) {
 		if (iswan == 0 && nvram_invmatch("wan_proto","disabled"))
 			return;
@@ -801,7 +801,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	    nvram_match(akm, "psk psk2") || nvram_match(akm, "wep")) {
 		if (iswan == 1)
 			return;
-	}
+	}*/
 	// wep key support
 	if (nvram_match(akm, "wep")) {
 		/* ignore */
@@ -1019,7 +1019,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 
 void start_hostapdwan(void)
 {
-	char ath[32];
+/*	char ath[32];
 	char *next;
 	char var[80];
 	int c = getdevicecount();
@@ -1038,7 +1038,7 @@ void start_hostapdwan(void)
 			setupHostAP(var, "madwifi", 1);
 			}
 	}
-
+*/
 }
 
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
