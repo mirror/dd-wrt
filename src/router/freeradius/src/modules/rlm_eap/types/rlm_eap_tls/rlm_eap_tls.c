@@ -55,6 +55,14 @@ static CONF_PARSER cache_config[] = {
  	{ NULL, -1, 0, NULL, NULL }           /* end the list */
 };
 
+static CONF_PARSER verify_config[] = {
+	{ "tmpdir", PW_TYPE_STRING_PTR,
+	  offsetof(EAP_TLS_CONF, verify_tmp_dir), NULL, NULL},
+	{ "client", PW_TYPE_STRING_PTR,
+	  offsetof(EAP_TLS_CONF, verify_client_cert_cmd), NULL, NULL},
+ 	{ NULL, -1, 0, NULL, NULL }           /* end the list */
+};
+
 static CONF_PARSER module_config[] = {
 	{ "rsa_key_exchange", PW_TYPE_BOOLEAN,
 	  offsetof(EAP_TLS_CONF, rsa_key), NULL, "no" },
@@ -98,6 +106,8 @@ static CONF_PARSER module_config[] = {
 	  offsetof(EAP_TLS_CONF, make_cert_command), NULL, NULL},
 
 	{ "cache", PW_TYPE_SUBSECTION, 0, NULL, (const void *) cache_config },
+
+	{ "verify", PW_TYPE_SUBSECTION, 0, NULL, (const void *) verify_config },
 
  	{ NULL, -1, 0, NULL, NULL }           /* end the list */
 };
@@ -214,6 +224,23 @@ static SSL_SESSION *cbtls_get_session(UNUSED SSL *s,
 }
 
 /*
+ *	For creating certificate attributes.
+ */
+static const char *cert_attr_names[5][2] = {
+  { "TLS-Client-Cert-Serial",		"TLS-Cert-Serial" },
+  { "TLS-Client-Cert-Expiration",	"TLS-Cert-Expiration" },
+  { "TLS-Client-Cert-Subject",		"TLS-Cert-Subject" },
+  { "TLS-Client-Cert-Issuer",		"TLS-Cert-Issuer" },
+  { "TLS-Client-Cert-Common-Name",	"TLS-Cert-Common-Name" }
+};
+
+#define EAPTLS_SERIAL		(0)
+#define EAPTLS_EXPIRATION	(1)
+#define EAPTLS_SUBJECT		(2)
+#define EAPTLS_ISSUER		(3)
+#define EAPTLS_CN		(4)
+
+/*
  *	Before trusting a certificate, you must make sure that the
  *	certificate is 'valid'. There are several steps that your
  *	application can take in determining if a certificate is
@@ -244,23 +271,28 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	char issuer[1024]; /* Used for the issuer name */
 	char common_name[1024];
 	char cn_str[1024];
+	char buf[64];
 	EAP_HANDLER *handler = NULL;
 	X509 *client_cert;
 	SSL *ssl;
-	int err, depth;
+	int err, depth, lookup;
 	EAP_TLS_CONF *conf;
 	int my_ok = ok;
 	REQUEST *request;
+	ASN1_INTEGER *sn = NULL;
+	ASN1_TIME *asn_time = NULL;
 
 	client_cert = X509_STORE_CTX_get_current_cert(ctx);
 	err = X509_STORE_CTX_get_error(ctx);
 	depth = X509_STORE_CTX_get_error_depth(ctx);
 
-	if (!my_ok) {
-		radlog(L_ERR,"--> verify error:num=%d:%s\n",err,
-			X509_verify_cert_error_string(err));
-		return my_ok;
-	}
+	lookup = depth;
+
+	/*
+	 *	Log client/issuing cert.  If there's an error, log
+	 *	issuing cert.
+	 */
+	if ((lookup > 1) && !my_ok) lookup = 1;
 
 	/*
 	 * Retrieve the pointer to the SSL of the connection currently treated
@@ -272,16 +304,59 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	conf = (EAP_TLS_CONF *)SSL_get_ex_data(ssl, 1);
 
 	/*
+	 *	Get the Serial Number
+	 */
+	buf[0] = '\0';
+	sn = X509_get_serialNumber(client_cert);
+
+	/*
+	 *	For this next bit, we create the attributes *only* if
+	 *	we're at the client or issuing certificate.
+	 */
+	if ((lookup <= 1) && sn && (sn->length < (sizeof(buf) / 2))) {
+		char *p = buf;
+		int i;
+
+		for (i = 0; i < sn->length; i++) {
+			sprintf(p, "%02x", (unsigned int)sn->data[i]);
+			p += 2;
+		}
+		pairadd(&handler->certs,
+			pairmake(cert_attr_names[EAPTLS_SERIAL][lookup], buf, T_OP_SET));
+	}
+
+
+	/*
+	 *	Get the Expiration Date
+	 */
+	buf[0] = '\0';
+	asn_time = X509_get_notAfter(client_cert);
+	if ((lookup <= 1) && asn_time && (asn_time->length < MAX_STRING_LEN)) {
+		memcpy(buf, (char*) asn_time->data, asn_time->length);
+		buf[asn_time->length] = '\0';
+		pairadd(&handler->certs,
+			pairmake(cert_attr_names[EAPTLS_EXPIRATION][lookup], buf, T_OP_SET));
+	}
+
+	/*
 	 *	Get the Subject & Issuer
 	 */
 	subject[0] = issuer[0] = '\0';
 	X509_NAME_oneline(X509_get_subject_name(client_cert), subject,
 			  sizeof(subject));
+	subject[sizeof(subject) - 1] = '\0';
+	if ((lookup <= 1) && subject[0] && (strlen(subject) < MAX_STRING_LEN)) {
+		pairadd(&handler->certs,
+			pairmake(cert_attr_names[EAPTLS_SUBJECT][lookup], subject, T_OP_SET));
+	}
+
 	X509_NAME_oneline(X509_get_issuer_name(ctx->current_cert), issuer,
 			  sizeof(issuer));
-
-	subject[sizeof(subject) - 1] = '\0';
 	issuer[sizeof(issuer) - 1] = '\0';
+	if ((lookup <= 1) && issuer[0] && (strlen(issuer) < MAX_STRING_LEN)) {
+		pairadd(&handler->certs,
+			pairmake(cert_attr_names[EAPTLS_ISSUER][lookup], issuer, T_OP_SET));
+	}
 
 	/*
 	 *	Get the Common Name
@@ -289,6 +364,18 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	X509_NAME_get_text_by_NID(X509_get_subject_name(client_cert),
 				  NID_commonName, common_name, sizeof(common_name));
 	common_name[sizeof(common_name) - 1] = '\0';
+	if ((lookup <= 1) && common_name[0] && (strlen(common_name) < MAX_STRING_LEN)) {
+		pairadd(&handler->certs,
+			pairmake(cert_attr_names[EAPTLS_CN][lookup], common_name, T_OP_SET));
+	}
+
+	if (!my_ok) {
+		const char *p = X509_verify_cert_error_string(err);
+		radlog(L_ERR,"--> verify error:num=%d:%s\n",err, p);
+		radius_pairmake(request, &request->packet->vps,
+				"Module-Failure-Message", p, T_OP_SET);
+		return my_ok;
+	}
 
 	switch (ctx->error) {
 
@@ -346,6 +433,59 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 				}
 			}
 		} /* check_cert_cn */
+
+		while (conf->verify_client_cert_cmd) {
+			char filename[256];
+			FILE *fp;
+
+			snprintf(filename, sizeof(filename), "%s/%s.client.XXXXXXXX",
+				 conf->verify_tmp_dir, progname);
+			if (mkstemp(filename) < 0) {
+				RDEBUG("Failed creating file in %s: %s",
+				       conf->verify_tmp_dir, strerror(errno));
+				break;				       
+			}
+
+			fp = fopen(filename, "w");
+			if (!fp) {
+				RDEBUG("Failed opening file %s: %s",
+				       filename, strerror(errno));
+				break;
+			}
+
+			if (!PEM_write_X509(fp, client_cert)) {
+				fclose(fp);
+				RDEBUG("Failed writing certificate to file");
+				goto do_unlink;
+			}
+			fclose(fp);
+
+			if (!radius_pairmake(request, &request->packet->vps,
+					     "TLS-Client-Cert-Filename",
+					     filename, T_OP_SET)) {
+				RDEBUG("Failed creating TLS-Client-Cert-Filename");
+				
+				goto do_unlink;
+			}
+
+			RDEBUG("Verifying client certificate: %s",
+			       conf->verify_client_cert_cmd);
+			if (radius_exec_program(conf->verify_client_cert_cmd,
+						request, 1, NULL, 0, 
+						request->packet->vps,
+						NULL, 1) != 0) {
+				radlog(L_AUTH, "rlm_eap_tls: Certificate CN (%s) fails external verification!", common_name);
+				my_ok = 0;
+			} else {
+				RDEBUG("Client certificate CN %s passed external validation", common_name);
+			}
+
+		do_unlink:
+			unlink(filename);
+			break;
+		}
+
+
 	} /* depth == 0 */
 
 	if (debug_flag > 0) {
@@ -521,6 +661,9 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	 */
 	ctx_options |= SSL_OP_NO_SSLv2;
    	ctx_options |= SSL_OP_NO_SSLv3;
+#ifdef SSL_OP_NO_TICKET
+	ctx_options |= SSL_OP_NO_TICKET ;
+#endif
 
 	/*
 	 *	SSL_OP_SINGLE_DH_USE must be used in order to prevent
@@ -808,8 +951,25 @@ static int eaptls_attach(CONF_SECTION *cs, void **instance)
 	}
 
         if (generate_eph_rsa_key(inst->ctx) < 0) {
+		eaptls_detach(inst);
                 return -1;
         }
+
+	if (conf->verify_tmp_dir) {
+		char filename[256];
+
+		if (chmod(conf->verify_tmp_dir, S_IRWXU) < 0) {
+			radlog(L_ERR, "rlm_eap_tls: Failed changing permissions on %s: %s", conf->verify_tmp_dir, strerror(errno));
+			eaptls_detach(inst);
+			return -1;
+		}
+	}
+
+	if (conf->verify_client_cert_cmd && !conf->verify_tmp_dir) {
+		radlog(L_ERR, "rlm_eap_tls: You MUST set the verify directory in order to use verify_client_cmd");
+		eaptls_detach(inst);
+		return -1;
+	}
 
 	*instance = inst;
 
@@ -847,6 +1007,9 @@ static int eaptls_initiate(void *type_arg, EAP_HANDLER *handler)
 	REQUEST		*request = handler->request;
 
 	inst = (eap_tls_t *)type_arg;
+
+	handler->tls = TRUE;
+	handler->finished = FALSE;
 
 	/*
 	 *	Manually flush the sessions every so often.  If HALF

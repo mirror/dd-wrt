@@ -109,6 +109,7 @@ int eaptls_success(EAP_HANDLER *handler, int peap_flag)
 	REQUEST *request = handler->request;
 	tls_session_t *tls_session = handler->opaque;
 
+	handler->finished = TRUE;
 	reply.code = EAPTLS_SUCCESS;
 	reply.length = TLS_HEADER_LEN;
 	reply.flags = peap_flag;
@@ -148,10 +149,13 @@ int eaptls_success(EAP_HANDLER *handler, int peap_flag)
 		RDEBUG2("Saving response in the cache");
 		
 		vp = paircopy2(request->reply->vps, PW_USER_NAME);
-		pairadd(&vps, vp);
+		if (vp) pairadd(&vps, vp);
 		
 		vp = paircopy2(request->packet->vps, PW_STRIPPED_USER_NAME);
-		pairadd(&vps, vp);
+		if (vp) pairadd(&vps, vp);
+		
+		vp = paircopy2(request->reply->vps, PW_CACHED_SESSION_POLICY);
+		if (vp) pairadd(&vps, vp);
 		
 		if (vps) {
 			SSL_SESSION_set_ex_data(tls_session->ssl->session,
@@ -209,6 +213,7 @@ int eaptls_fail(EAP_HANDLER *handler, int peap_flag)
 	EAPTLS_PACKET	reply;
 	tls_session_t *tls_session = handler->opaque;
 
+	handler->finished = TRUE;
 	reply.code = EAPTLS_FAIL;
 	reply.length = TLS_HEADER_LEN;
 	reply.flags = peap_flag;
@@ -760,7 +765,7 @@ static eaptls_status_t eaptls_operation(eaptls_status_t status,
 	 *	If more info
 	 *	is required then send another request.
 	 */
-	if (!tls_handshake_recv(tls_session)) {
+	if (!tls_handshake_recv(handler->request, tls_session)) {
 		DEBUG2("TLS receive handshake failed during operation");
 		eaptls_fail(handler, tls_session->peap_flag);
 		return EAPTLS_FAIL;
@@ -835,6 +840,8 @@ eaptls_status_t eaptls_process(EAP_HANDLER *handler)
 	REQUEST *request = handler->request;
 
 	RDEBUG2("processing EAP-TLS");
+	if (handler->certs) pairadd(&request->packet->vps,
+				    paircopy(handler->certs));
 
 	/* This case is when SSL generates Alert then we
 	 * send that alert to the client and then send the EAP-Failure

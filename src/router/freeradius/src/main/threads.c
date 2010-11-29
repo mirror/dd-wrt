@@ -157,6 +157,7 @@ typedef struct THREAD_POOL {
 static THREAD_POOL thread_pool;
 static int pool_initialized = FALSE;
 static time_t last_cleaned = 0;
+static time_t almost_now = 0;
 
 static void thread_pool_manage(time_t now);
 
@@ -301,10 +302,13 @@ static int request_enqueue(REQUEST *request, RAD_REQUEST_FUNP fun)
 		/*
 		 *	Mark the request as done.
 		 */
-		radlog(L_ERR, "!!! ERROR !!! The server is blocked: discarding new request %d", request->number);
+		radlog(L_ERR, "Something is blocking the server.  There are %d packets in the queue, waiting to be processed.  Ignoring the new request.", thread_pool.max_queue_size);
 		request->child_state = REQUEST_DONE;
 		return 0;
 	}
+	request->child_state = REQUEST_QUEUED;
+	request->component = "<core>";
+	request->module = "<queue>";
 
 	entry = rad_malloc(sizeof(*entry));
 	entry->request = request;
@@ -344,6 +348,7 @@ static int request_enqueue(REQUEST *request, RAD_REQUEST_FUNP fun)
  */
 static int request_dequeue(REQUEST **request, RAD_REQUEST_FUNP *fun)
 {
+	int blocked;
 	RAD_LISTEN_TYPE i, start;
 	request_queue_t *entry;
 
@@ -407,6 +412,9 @@ static int request_dequeue(REQUEST **request, RAD_REQUEST_FUNP *fun)
 	rad_assert((*request)->magic == REQUEST_MAGIC);
 	rad_assert(*fun != NULL);
 
+	(*request)->component = "<core>";
+	(*request)->module = "<thread>";
+
 	/*
 	 *	If the request has sat in the queue for too long,
 	 *	kill it.
@@ -416,8 +424,27 @@ static int request_dequeue(REQUEST **request, RAD_REQUEST_FUNP *fun)
 	 *	have acknowledged it as "done".
 	 */
 	if ((*request)->master_state == REQUEST_STOP_PROCESSING) {
+		(*request)->module = "<done>";
 		(*request)->child_state = REQUEST_DONE;
 		goto retry;
+	}
+
+	/*
+	 *	Produce messages for people who have 10 million rows
+	 *	in a database, without indexes.
+	 */
+	rad_assert(almost_now != 0);
+	blocked = almost_now - (*request)->timestamp;
+	if (blocked < 5) {
+		blocked = 0;
+	} else {
+		static time_t last_complained = 0;
+		
+		if (last_complained != almost_now) {
+			last_complained = almost_now;
+		} else {
+			blocked = 0;
+		}
 	}
 
 	/*
@@ -426,6 +453,11 @@ static int request_dequeue(REQUEST **request, RAD_REQUEST_FUNP *fun)
 	thread_pool.active_threads++;
 
 	pthread_mutex_unlock(&thread_pool.queue_mutex);
+
+	if (blocked) {
+		radlog(L_ERR, "Request %u has been waiting in the processing queue for %d seconds.  Check that all databases are running properly!",
+		       (*request)->number, blocked);
+	}
 
 	return 1;
 }
@@ -833,7 +865,7 @@ int thread_pool_init(CONF_SECTION *cs, int *spawn_flag)
  */
 int thread_pool_addrequest(REQUEST *request, RAD_REQUEST_FUNP fun)
 {
-	time_t now = request->timestamp;
+	almost_now = request->timestamp;
 
 	/*
 	 *	We've been told not to spawn threads, so don't.
@@ -862,9 +894,9 @@ int thread_pool_addrequest(REQUEST *request, RAD_REQUEST_FUNP fun)
 	 *	in a while, OR if the thread pool appears to be full,
 	 *	go manage it.
 	 */
-	if ((last_cleaned < now) ||
+	if ((last_cleaned < almost_now) ||
 	    (thread_pool.active_threads == thread_pool.total_threads)) {
-		thread_pool_manage(now);
+		thread_pool_manage(almost_now);
 	}
 
 	return 1;

@@ -103,6 +103,7 @@ static const FR_NAME_NUMBER header_names[] = {
 	{ "{sha}",	PW_SHA_PASSWORD },
 	{ "{ssha}",	PW_SSHA_PASSWORD },
 	{ "{nt}",	PW_NT_PASSWORD },
+	{ "{nthash}",	PW_NT_PASSWORD },
 	{ "{x-nthash}",	PW_NT_PASSWORD },
 	{ "{ns-mta-md5}", PW_NS_MTA_MD5_PASSWORD },
 	{ "{x- orcllmv}", PW_LM_PASSWORD },
@@ -313,19 +314,41 @@ static int pap_authorize(void *instance, REQUEST *request)
 		{
 			int attr;
 			char *p, *q;
-			char buffer[64];
+			char buffer[128];
 			VALUE_PAIR *new_vp;
 
 			found_pw = TRUE;
+		redo:
 			q = vp->vp_strvalue;
 			p = strchr(q + 1, '}');
 			if (!p) {
+				int decoded;
+
 				/*
-				 *	FIXME: Turn it into a
-				 *	cleartext-password, unless it,
-				 *	or user-password already
-				 *	exists.
+				 *	Password already exists: use
+				 *	that instead of this one.
 				 */
+				if (pairfind(request->config_items, PW_USER_PASSWORD) ||
+				    pairfind(request->config_items, PW_CLEARTEXT_PASSWORD)) {
+					RDEBUG("Config already contains \"known good\" password.  Ignoring Password-With-Header");
+					break;
+				}
+
+				/*
+				 *	If it's binary, it may be
+				 *	base64 encoded.  Decode it,
+				 *	and re-write the attribute to
+				 *	have the decoded value.
+				 */
+				decoded = base64_decode(vp->vp_strvalue, buffer);
+				if ((decoded > 0) && (buffer[0] == '{') &&
+				    (strchr(buffer, '}') != NULL)) {
+					memcpy(vp->vp_octets, buffer, decoded);
+					vp->length = decoded;
+					goto redo;
+				}
+
+				RDEBUG("Failed to decode Password-With-Header = \"%s\"", vp->vp_strvalue);
 				break;
 			}
 
@@ -343,8 +366,14 @@ static int pap_authorize(void *instance, REQUEST *request)
 			new_vp = radius_paircreate(request,
 						   &request->config_items,
 						   attr, PW_TYPE_STRING);
-			strcpy(new_vp->vp_strvalue, p + 1);/* bounds OK */
-			new_vp->length = strlen(new_vp->vp_strvalue);
+			
+			/*
+			 *	The data after the '}' may be binary,
+			 *	so we copy it via memcpy.
+			 */
+			new_vp->length = vp->length;
+			new_vp->length -= (p - q + 1);
+			memcpy(new_vp->vp_strvalue, p + 1, new_vp->length);
 
 			/*
 			 *	May be old-style User-Password with header.
@@ -440,7 +469,7 @@ static int pap_authorize(void *instance, REQUEST *request)
 	 *	Don't touch existing Auth-Types.
 	 */
 	if (auth_type) {
-		RDEBUG2("Found existing Auth-Type, not changing it.");
+		RDEBUG2("WARNING: Auth-Type already set.  Not setting to PAP");
 		return RLM_MODULE_NOOP;
 	}
 
@@ -487,16 +516,9 @@ static int pap_authenticate(void *instance, REQUEST *request)
 	char buff2[MAX_STRING_LEN + 50];
 	int scheme = PAP_ENC_INVALID;
 
-	if (!request->password){
-		radlog_request(L_AUTH, 0, request, "Attribute \"Password\" is required for authentication.");
-		return RLM_MODULE_INVALID;
-	}
-
-	/*
-	 *	Clear-text passwords are the only ones we support.
-	 */
-	if (request->password->attribute != PW_USER_PASSWORD) {
-		radlog_request(L_AUTH, 0, request, "Attribute \"User-Password\" is required for authentication. Cannot use \"%s\".", request->password->name);
+	if (!request->password ||
+	    (request->password->attribute != PW_USER_PASSWORD)) {
+		RDEBUG("ERROR: You set 'Auth-Type = PAP' for a request that does not contain a User-Password attribute!");
 		return RLM_MODULE_INVALID;
 	}
 
@@ -582,8 +604,8 @@ static int pap_authenticate(void *instance, REQUEST *request)
 	do_clear:
 		RDEBUG("Using clear text password \"%s\"",
 		      vp->vp_strvalue);
-		if (strcmp((char *) vp->vp_strvalue,
-			   (char *) request->password->vp_strvalue) != 0){
+		if (strcmp(vp->vp_strvalue,
+			   request->password->vp_strvalue) != 0){
 			snprintf(module_fmsg,sizeof(module_fmsg),"rlm_pap: CLEAR TEXT password check failed");
 			goto make_msg;
 		}
@@ -594,9 +616,10 @@ static int pap_authenticate(void *instance, REQUEST *request)
 
 	case PAP_ENC_CRYPT:
 	do_crypt:
-		RDEBUG("Using CRYPT encryption.");
-		if (fr_crypt_check((char *) request->password->vp_strvalue,
-				     (char *) vp->vp_strvalue) != 0) {
+		RDEBUG("Using CRYPT password \"%s\"",
+		       vp->vp_strvalue);
+		if (fr_crypt_check(request->password->vp_strvalue,
+				   vp->vp_strvalue) != 0) {
 			snprintf(module_fmsg,sizeof(module_fmsg),"rlm_pap: CRYPT password check failed");
 			goto make_msg;
 		}
