@@ -793,7 +793,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		return;
 	if (nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
 	    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "radius")) {
-		if (iswan == 0)
+		if (iswan == 0 && nvram_invmatch("wan_proto","disabled"))
 			return;
 	}
 	if (nvram_match(akm, "psk") ||
