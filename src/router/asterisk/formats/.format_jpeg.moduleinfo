@@ -1,0 +1,2 @@
+<member name="format_jpeg" displayname="jpeg (joint picture experts group) image format" remove_on_change="formats/format_jpeg.o formats/format_jpeg.so">
+</member>

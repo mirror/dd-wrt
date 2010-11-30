@@ -1,0 +1,3 @@
+<member name="res_config_sqlite" displayname="Realtime SQLite configuration" remove_on_change="res/res_config_sqlite.o res/res_config_sqlite.so">
+	<depend>sqlite</depend>
+</member>

@@ -87,6 +87,9 @@ asterisk-install:
 	done
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/sbin
 	$(CP) /tmp/asterisk/usr/sbin/asterisk $(INSTALLDIR)/asterisk/usr/sbin/
+	$(CP) /tmp/asterisk/usr/sbin/astgenkey $(INSTALLDIR)/asterisk/usr/sbin/
+	$(CP) /tmp/asterisk/usr/sbin/astcanary $(INSTALLDIR)/asterisk/usr/sbin/
+	ln -s asterisk $(INSTALLDIR)/asterisk/usr/sbin/rasterisk
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
 	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/voicemail.conf $(INSTALLDIR)/asterisk/etc/asterisk/
 	$(INSTALL_DIR)  $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
@@ -98,17 +101,15 @@ asterisk-install:
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
 	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/iax.conf $(INSTALLDIR)/asterisk/etc/asterisk/
 	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/iaxprov.conf $(INSTALLDIR)/asterisk/etc/asterisk/
-	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
-	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/chan_iax2.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
-	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/chan_local.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/chan* $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
 	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/app_system.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
-	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/format_g729.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/format* $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
 	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/cdr*.conf $(INSTALLDIR)/asterisk/etc/asterisk/
@@ -118,6 +119,6 @@ asterisk-install:
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/etc/asterisk
 	$(INSTALL_DATA) /tmp/asterisk/etc/asterisk/musiconhold.conf $(INSTALLDIR)/asterisk/etc/asterisk/
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
-	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/res_musiconhold.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+	$(INSTALL_BIN) /tmp/asterisk/usr/lib/asterisk/modules/res* $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 	rm -rf /tmp/asterisk
 

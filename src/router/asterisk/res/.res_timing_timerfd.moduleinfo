@@ -1,0 +1,3 @@
+<member name="res_timing_timerfd" displayname="Timerfd Timing Interface" remove_on_change="res/res_timing_timerfd.o res/res_timing_timerfd.so">
+	<depend>timerfd</depend>
+</member>

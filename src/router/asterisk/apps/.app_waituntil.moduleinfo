@@ -1,0 +1,2 @@
+<member name="app_waituntil" displayname="Wait until specified time" remove_on_change="apps/app_waituntil.o apps/app_waituntil.so">
+</member>

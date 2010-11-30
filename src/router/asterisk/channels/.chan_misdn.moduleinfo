@@ -1,0 +1,5 @@
+<member name="chan_misdn" displayname="Channel driver for mISDN Support (BRI/PRI)" remove_on_change="channels/chan_misdn.o channels/chan_misdn.so">
+	<depend>isdnnet</depend>
+	<depend>misdn</depend>
+	<depend>suppserv</depend>
+</member>

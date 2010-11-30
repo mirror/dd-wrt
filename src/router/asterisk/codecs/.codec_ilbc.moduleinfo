@@ -1,0 +1,3 @@
+<member name="codec_ilbc" displayname="iLBC Coder/Decoder" remove_on_change="codecs/codec_ilbc.o codecs/codec_ilbc.so">
+	<defaultenabled>no</defaultenabled>
+</member>

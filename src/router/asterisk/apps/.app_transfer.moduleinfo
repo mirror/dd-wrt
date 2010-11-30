@@ -1,0 +1,2 @@
+<member name="app_transfer" displayname="Transfers a caller to another extension" remove_on_change="apps/app_transfer.o apps/app_transfer.so">
+</member>

@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Invdividual Users</TITLE>
+<META NAME="description" CONTENT="Invdividual Users">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node316.html">
+<LINK REL="up" HREF="node315.html">
+<LINK REL="next" HREF="node318.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html5031"
+  HREF="node318.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5027"
+  HREF="node315.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5023"
+  HREF="node316.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5029"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5032"
+  HREF="node318.html">Templates</A>
+<B> Up:</B> <A NAME="tex2html5028"
+  HREF="node315.html">Configuration of users.conf</A>
+<B> Previous:</B> <A NAME="tex2html5024"
+  HREF="node316.html">The [general] section</A>
+ &nbsp; <B>  <A NAME="tex2html5030"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION001632000000000000000">
+Invdividual Users</A>
+</H2>
+
+<P>
+To enable auto-provisioning of a phone, the user in users.conf needs to have:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+...
+autoprov=yes
+macaddress=deadbeef4dad
+profile=polycom
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+The profile is optional if a <SPAN  CLASS="textbf">default_profile</SPAN> is set in phoneprov.conf. 
+The following is a sample users.conf entry, with the template variables commented next to 
+the settings:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[6001]
+callwaiting = yes
+context = numberplan-custom-1
+hasagent = no
+hasdirectory = yes
+hasiax = no
+hasmanager = no
+hassip = yes
+hasvoicemail = yes
+host = dynamic
+mailbox = 6001
+threewaycalling = yes
+deletevoicemail = no
+autoprov = yes
+profile = polycom
+directmedia = no
+nat = no
+fullname = User Two ; ${DISPLAY_NAME}
+secret = test ; ${SECRET}
+username = 6001 ; ${USERNAME}
+macaddress = deadbeef4dad ; ${MAC}
+label = 6001 ; ${LABEL}
+cid_number = 6001 ; ${CALLERID}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+The variables above, are the user-specfic variables that can be substituted into dynamic 
+filenames and config templates.
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

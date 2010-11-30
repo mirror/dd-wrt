@@ -1,0 +1,2 @@
+<member name="func_config" displayname="Asterisk configuration file variable access" remove_on_change="funcs/func_config.o funcs/func_config.so">
+</member>
