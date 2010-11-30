@@ -1,2 +1,0 @@
-<member name="app_chanspy" displayname="Listen to the audio of an active channel" remove_on_change="apps/app_chanspy.o apps/app_chanspy.so">
-</member>

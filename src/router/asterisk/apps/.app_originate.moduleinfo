@@ -1,2 +1,0 @@
-<member name="app_originate" displayname="Originate call" remove_on_change="apps/app_originate.o apps/app_originate.so">
-</member>

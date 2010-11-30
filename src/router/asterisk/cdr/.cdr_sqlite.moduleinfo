@@ -1,3 +1,0 @@
-<member name="cdr_sqlite" displayname="SQLite CDR Backend" remove_on_change="cdr/cdr_sqlite.o cdr/cdr_sqlite.so">
-	<depend>sqlite</depend>
-</member>
