@@ -1,0 +1,2 @@
+<member name="func_cdr" displayname="Call Detail Record (CDR) dialplan function" remove_on_change="funcs/func_cdr.o funcs/func_cdr.so">
+</member>

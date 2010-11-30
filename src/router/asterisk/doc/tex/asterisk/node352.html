@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Interception macros</TITLE>
+<META NAME="description" CONTENT="Interception macros">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node351.html">
+<LINK REL="up" HREF="node346.html">
+<LINK REL="next" HREF="node353.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html5485"
+  HREF="node353.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5481"
+  HREF="node346.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5477"
+  HREF="node351.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5483"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5486"
+  HREF="node353.html">Manipulation examples</A>
+<B> Up:</B> <A NAME="tex2html5482"
+  HREF="node346.html">Tools available</A>
+<B> Previous:</B> <A NAME="tex2html5478"
+  HREF="node351.html">Dial() and Queue() dialplan</A>
+ &nbsp; <B>  <A NAME="tex2html5484"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION002026000000000000000">
+Interception macros</A>
+</H2>
+
+<P>
+The interception macros give the administrator an opportunity to alter
+connected line and redirecting information before the channel driver is
+given the information.  If the macro does not change a value then that is
+what is going to be passed to the channel driver.
+
+<P>
+The tag string available in CALLERID, CONNECTEDLINE, and REDIRECTING is
+useful for the interception macros to provide some information about where
+the information originally came from.
+
+<P>
+The 'i' option of the CONNECTEDLINE dialplan function should always be
+used in the CONNECTED_LINE interception macros.  The interception macro
+always passes the connected line information on to the channel driver when
+the macro exits.  Similarly, the 'i' option of the REDIRECTING dialplan
+function should always be used in the REDIRECTING interception macros.
+
+<P>
+<PRE>
+${REDIRECTING_CALLEE_SEND_MACRO}
+  Macro to call before sending a redirecting update to the callee.
+  This macro may never be needed since the redirecting updates
+  should only go from the callee to the caller direction.  It is
+  available for completeness.
+${REDIRECTING_CALLEE_SEND_MACRO_ARGS}
+  Arguments to pass to ${REDIRECTING_CALLEE_SEND_MACRO}.
+
+${REDIRECTING_CALLER_SEND_MACRO}
+  Macro to call before sending a redirecting update to the caller.
+${REDIRECTING_CALLER_SEND_MACRO_ARGS}
+  Arguments to pass to ${REDIRECTING_CALLER_SEND_MACRO}.
+
+${CONNECTED_LINE_CALLEE_SEND_MACRO}
+  Macro to call before sending a connected line update to the callee.
+${CONNECTED_LINE_CALLEE_SEND_MACRO_ARGS}
+  Arguments to pass to ${CONNECTED_LINE_CALLEE_SEND_MACRO}.
+
+${CONNECTED_LINE_CALLER_SEND_MACRO}
+  Macro to call before sending a connected line update to the caller.
+${CONNECTED_LINE_CALLER_SEND_MACRO_ARGS}
+  Arguments to pass to ${CONNECTED_LINE_CALLER_SEND_MACRO}.
+</PRE>
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

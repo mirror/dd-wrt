@@ -1,0 +1,3 @@
+<member name="chan_alsa" displayname="ALSA Console Channel Driver" remove_on_change="channels/chan_alsa.o channels/chan_alsa.so">
+	<depend>alsa</depend>
+</member>

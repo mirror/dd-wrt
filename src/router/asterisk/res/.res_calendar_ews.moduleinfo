@@ -1,0 +1,3 @@
+<member name="res_calendar_ews" displayname="Asterisk MS Exchange Web Service Calendar Integration" remove_on_change="res/res_calendar_ews.o res/res_calendar_ews.so">
+	<depend>neon29</depend>
+</member>

@@ -1,0 +1,2 @@
+<member name="res_convert" displayname="File format conversion CLI command" remove_on_change="res/res_convert.o res/res_convert.so">
+</member>

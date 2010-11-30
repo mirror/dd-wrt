@@ -1,0 +1,3 @@
+<member name="codec_gsm" displayname="GSM Coder/Decoder" remove_on_change="codecs/codec_gsm.o codecs/codec_gsm.so">
+	<depend>gsm</depend>
+</member>

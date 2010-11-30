@@ -1,0 +1,2 @@
+<member name="app_dumpchan" displayname="Dump Info About The Calling Channel" remove_on_change="apps/app_dumpchan.o apps/app_dumpchan.so">
+</member>

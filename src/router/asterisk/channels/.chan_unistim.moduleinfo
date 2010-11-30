@@ -1,0 +1,2 @@
+<member name="chan_unistim" displayname="UNISTIM Protocol (USTM)" remove_on_change="channels/chan_unistim.o channels/chan_unistim.so">
+</member>

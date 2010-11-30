@@ -1,0 +1,3 @@
+<member name="test_strings" displayname="Dynamic string test module" remove_on_change="tests/test_strings.o tests/test_strings.so">
+	<depend>TEST_FRAMEWORK</depend>
+</member>

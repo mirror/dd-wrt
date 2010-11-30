@@ -1,0 +1,3 @@
+<member name="cel_tds" displayname="FreeTDS CEL Backend" remove_on_change="cel/cel_tds.o cel/cel_tds.so">
+	<depend>freetds</depend>
+</member>

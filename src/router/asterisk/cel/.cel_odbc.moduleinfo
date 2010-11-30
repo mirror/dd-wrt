@@ -1,0 +1,3 @@
+<member name="cel_odbc" displayname="ODBC CEL backend" remove_on_change="cel/cel_odbc.o cel/cel_odbc.so">
+	<depend>res_odbc</depend>
+</member>

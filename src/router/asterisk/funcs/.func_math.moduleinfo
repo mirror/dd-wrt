@@ -1,0 +1,2 @@
+<member name="func_math" displayname="Mathematical dialplan function" remove_on_change="funcs/func_math.o funcs/func_math.so">
+</member>

@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Debugging</TITLE>
+<META NAME="description" CONTENT="Debugging">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node202.html">
+<LINK REL="up" HREF="node192.html">
+<LINK REL="next" HREF="node204.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3513"
+  HREF="node204.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3509"
+  HREF="node192.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3505"
+  HREF="node202.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3511"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3514"
+  HREF="node204.html">Distributed Universal Number Discovery</A>
+<B> Up:</B> <A NAME="tex2html3510"
+  HREF="node192.html">Mobile</A>
+<B> Previous:</B> <A NAME="tex2html3506"
+  HREF="node202.html">DTMF Debouncing</A>
+ &nbsp; <B>  <A NAME="tex2html3512"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION007411000000000000000">
+Debugging</A>
+</H2>
+
+<P>
+Different phone manufacturers have different interpretations of the Bluetooth Handsfree Profile Spec.
+This means that not all phones work the same way, particularly in the connection setup / initialisation
+sequence. I've tried to make chan_mobile as general as possible, but it may need modification to
+support some phone i've never tested.
+
+<P>
+Some phones, most notably Sony Ericsson 'T' series, dont quite conform to the Bluetooth HFP spec.
+chan_mobile will detect these and adapt accordingly. The T-610 and T-630 have been tested and
+work fine.
+
+<P>
+If your phone doesnt behave has expected, turn on Asterisk debugging with 'core set debug 1'.
+
+<P>
+This will log a bunch of debug messages indicating what the phone is doing, importantly the rfcomm
+conversation between Asterisk and the phone. This can be used to sort out what your phone is doing
+and make chan_mobile support it.
+
+<P>
+Be aware also, that just about all mobile phones behave differently. For example my LG TU500 wont dial unless
+the phone is a the 'idle' screen. i.e. if the phone is showing a 'menu' on the display, when you dial via
+Asterisk, the call will not work. chan_mobile handles this, but there may be other phones that do
+other things too...
+
+<P>
+Important: Watch what your mobile phone is doing the first few times. Asterisk wont make random calls but
+if chan_mobile fails to hangup for some reason and you get a huge bill from your telco, dont blame me ;)
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3513"
+  HREF="node204.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3509"
+  HREF="node192.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3505"
+  HREF="node202.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3511"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3514"
+  HREF="node204.html">Distributed Universal Number Discovery</A>
+<B> Up:</B> <A NAME="tex2html3510"
+  HREF="node192.html">Mobile</A>
+<B> Previous:</B> <A NAME="tex2html3506"
+  HREF="node202.html">DTMF Debouncing</A>
+ &nbsp; <B>  <A NAME="tex2html3512"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

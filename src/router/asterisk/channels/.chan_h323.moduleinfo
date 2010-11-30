@@ -1,0 +1,4 @@
+<member name="chan_h323" displayname="The NuFone Network's OpenH323 Channel Driver" remove_on_change="channels/chan_h323.o channels/chan_h323.so">
+	<depend>openh323</depend>
+	<defaultenabled>yes</defaultenabled>
+</member>

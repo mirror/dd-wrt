@@ -1,0 +1,2 @@
+<member name="app_readexten" displayname="Read and evaluate extension validity" remove_on_change="apps/app_readexten.o apps/app_readexten.so">
+</member>

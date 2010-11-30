@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>PostreSQL</TITLE>
+<META NAME="description" CONTENT="PostreSQL">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node262.html">
+<LINK REL="previous" HREF="node260.html">
+<LINK REL="up" HREF="node256.html">
+<LINK REL="next" HREF="node262.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html4298"
+  HREF="node262.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4294"
+  HREF="node256.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4288"
+  HREF="node260.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4296"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4299"
+  HREF="node262.html">SQLite 3</A>
+<B> Up:</B> <A NAME="tex2html4295"
+  HREF="node256.html">Storage Backends</A>
+<B> Previous:</B> <A NAME="tex2html4289"
+  HREF="node260.html">MySQL</A>
+ &nbsp; <B>  <A NAME="tex2html4297"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION001263000000000000000">
+PostreSQL</A>
+</H2>
+        If you want to go directly to postgresql database, and have the cel_pgsql.so
+        compiled you can use the following sample setup.
+        On Debian, before compiling asterisk, just install libpqxx-dev.
+        Other distros will likely have a similiar package.
+
+<P>
+Once you have the compile done,
+        copy the sample cel_pgsql.conf file or create your own.
+
+<P>
+Here is a sample:
+<PRE>
+        /etc/asterisk/cel_pgsql.conf
+          ; Sample Asterisk config file for CEL logging to PostgresSQL
+          [global]
+          hostname=localhost
+          port=5432
+          dbname=asterisk
+          password=password
+          user=postgres
+          table=cel
+</PRE>
+        Now create a table in postgresql for your cels
+
+<P>
+<PRE>
+        CREATE TABLE cel (
+                id            serial ,
+                eventtype     varchar (30)          NOT NULL ,
+                eventtime     timestamp             NOT NULL ,
+                userdeftype   varchar(255)          NOT NULL ,
+                cid_name      varchar (80)          NOT NULL ,
+                cid_num       varchar (80)          NOT NULL ,
+                cid_ani       varchar (80)          NOT NULL ,
+                cid_rdnis     varchar (80)          NOT NULL ,
+                cid_dnid      varchar (80)          NOT NULL ,
+                exten         varchar (80)          NOT NULL ,
+                context       varchar (80)          NOT NULL ,
+                channame      varchar (80)          NOT NULL ,
+                appname       varchar (80)          NOT NULL ,
+                appdata       varchar (80)          NOT NULL ,
+                amaflags      int                   NOT NULL ,
+                accountcode   varchar (20)          NOT NULL ,
+                peeraccount   varchar (20)          NOT NULL ,
+                uniqueid      varchar (150)         NOT NULL ,
+                linkedid      varchar (150)         NOT NULL ,
+                userfield     varchar (255)         NOT NULL ,
+                peer          varchar (80)          NOT NULL
+        );
+</PRE>
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

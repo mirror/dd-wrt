@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Write functions</TITLE>
+<META NAME="description" CONTENT="Write functions">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node326.html">
+<LINK REL="up" HREF="node325.html">
+<LINK REL="next" HREF="node328.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html5160"
+  HREF="node328.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5156"
+  HREF="node325.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5152"
+  HREF="node326.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5158"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5161"
+  HREF="node328.html">Dialplan Examples</A>
+<B> Up:</B> <A NAME="tex2html5157"
+  HREF="node325.html">Dialplan functions</A>
+<B> Previous:</B> <A NAME="tex2html5153"
+  HREF="node326.html">Read functions</A>
+ &nbsp; <B>  <A NAME="tex2html5159"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION001732000000000000000">
+Write functions</A>
+</H2>
+
+<P>
+To write an event to a calendar, the CALENDAR_WRITE function is used. This
+function takes a calendar name and also uses the same fields as
+CALENDAR_QUERY_RESULT. As a write function, it takes a set of comma-separated
+values that are in the same order as the specified fields. For example:
+</B></SMALL>
+<UL>
+<LI><PRE>
+CALENDAR_WRITE(mycalendar,summary,organizer,start,end,busystate)=
+  "My event","mailto:jdoe@example.com",228383580,228383640,1)
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

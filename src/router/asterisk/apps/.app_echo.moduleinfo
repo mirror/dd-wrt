@@ -1,0 +1,2 @@
+<member name="app_echo" displayname="Simple Echo Application" remove_on_change="apps/app_echo.o apps/app_echo.so">
+</member>

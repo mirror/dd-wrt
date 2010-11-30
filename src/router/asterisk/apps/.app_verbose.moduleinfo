@@ -1,0 +1,2 @@
+<member name="app_verbose" displayname="Send verbose output" remove_on_change="apps/app_verbose.o apps/app_verbose.so">
+</member>

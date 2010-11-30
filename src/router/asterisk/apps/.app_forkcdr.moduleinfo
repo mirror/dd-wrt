@@ -1,0 +1,2 @@
+<member name="app_forkcdr" displayname="Fork The CDR into 2 separate entities" remove_on_change="apps/app_forkcdr.o apps/app_forkcdr.so">
+</member>

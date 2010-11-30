@@ -1,0 +1,2 @@
+<member name="format_vox" displayname="Dialogic VOX (ADPCM) File Format" remove_on_change="formats/format_vox.o formats/format_vox.so">
+</member>
