@@ -1952,7 +1952,7 @@ freeradius.port="Radius Port";
 
 //help container
 var hfreeradius = new Object();
-hrad.right1="You must enable JFFS before starting FreeRadius.";
+hfreeradius.right1="You must enable JFFS before starting FreeRadius.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();
