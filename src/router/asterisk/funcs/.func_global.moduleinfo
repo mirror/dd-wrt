@@ -1,0 +1,2 @@
+<member name="func_global" displayname="Variable dialplan functions" remove_on_change="funcs/func_global.o funcs/func_global.so">
+</member>

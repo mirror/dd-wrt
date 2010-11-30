@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Using chan_mobile</TITLE>
+<META NAME="description" CONTENT="Using chan_mobile">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node199.html">
+<LINK REL="previous" HREF="node197.html">
+<LINK REL="up" HREF="node192.html">
+<LINK REL="next" HREF="node199.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3455"
+  HREF="node199.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3451"
+  HREF="node192.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3445"
+  HREF="node197.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3453"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3456"
+  HREF="node199.html">Dialplan hints</A>
+<B> Up:</B> <A NAME="tex2html3452"
+  HREF="node192.html">Mobile</A>
+<B> Previous:</B> <A NAME="tex2html3446"
+  HREF="node197.html">Configuring chan_mobile</A>
+ &nbsp; <B>  <A NAME="tex2html3454"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00746000000000000000">
+Using chan_mobile</A>
+</H2>
+
+<P>
+chan_mobile.so must be loaded either by loading it using the Asterisk CLI, or by adding it to /etc/asterisk/modules.conf
+
+<P>
+Search for your bluetooth devices using the CLI command 'mobile search'. Be patient with this command as
+it will take 8 - 10 seconds to do the discovery. This requires a free adapter.
+
+<P>
+Headsets will generally have to be put into 'pairing' mode before they will show up here.
+
+<P>
+This will return something like the following :-
+
+<P>
+<PRE>
+*CLI&gt; mobile search
+Address           Name                           Usable Type    Port
+00:12:56:90:6E:00 LG TU500                       Yes    Phone   4
+00:80:C8:35:52:78 Toaster                        No     Headset 0
+00:0B:9E:11:74:A5 Hello II Plus                  Yes    Headset 1
+00:0F:86:0E:AE:42 Daves Blackberry               Yes    Phone   7
+</PRE>
+
+<P>
+This is a list of all bluetooth devices seen and whether or not they are usable with chan_mobile.
+The Address field contains the 'bd address' of the device. This is like an ethernet mac address.
+The Name field is whatever is configured into the device as its name.
+The Usable field tells you whether or not the device supports the Bluetooth Handsfree Profile or Headset profile.
+The Type field tells you whether the device is usable as a Phone line (FXO) or a headset (FXS)
+The Port field is the number to put in the configuration file.
+
+<P>
+Choose which device(s) you want to use and edit /etc/asterisk/mobile.conf. There is a sample included
+with the Asterisk-addons source under configs/mobile.conf.sample.
+
+<P>
+Be sure to configure the right bd address and port number from the search. If you want inbound
+calls on a device to go to a specific context, add a context= line, otherwise the default will
+be used. The 'id' of the device [bitinbrackets] can be anything you like, just make it unique.
+
+<P>
+If you are configuring a Headset be sure to include the type=headset line, if left out it defaults
+to phone.
+
+<P>
+The CLI command 'mobile show devices' can be used at any time to show the status of configured devices,
+and whether or not the device is capable of sending / receiving SMS via bluetooth.
+
+<P>
+<PRE>
+*CLI&gt; mobile show devices 
+ID              Address           Group Adapter         Connected State SMS
+headset         00:0B:9E:11:AE:C6 0     blue            No        Init  No 
+LGTU550         00:E0:91:7F:46:44 1     dlink           No        Init  No
+</PRE>
+
+<P>
+As each phone is connected you will see a message on the Asterisk console :-
+
+<P>
+<PRE>
+ Loaded chan_mobile.so =&gt; (Bluetooth Mobile Device Channel Driver)
+    -- Bluetooth Device blackberry has connected.
+    -- Bluetooth Device dave has connected.
+</PRE>
+
+<P>
+To make outbound calls, add something to you Dialplan like the following :- (modify to suit)
+
+<P>
+; Calls via LGTU5500
+<PRE>
+exten =&gt; _9X.,1,Dial(Mobile/LGTU550/${EXTEN:1},45)
+exten =&gt; _9X.,n,Hangup
+</PRE>
+
+<P>
+To use channel groups, add an entry to each phones definition in mobile.conf like group=n
+where n is a number.
+
+<P>
+Then if you do something like Dial(Mobile/g1/123456) Asterisk will dial 123456 on the first
+connected free phone in group 1.
+
+<P>
+Phones which do not have a specific 'group=n' will be in group 0.
+
+<P>
+To dial out on a headset, you need to use some other mechanism, because the headset is not likely
+to have all the needed buttons on it. res_clioriginate is good for this :-
+
+<P>
+<PRE>
+*CLI&gt; originate Mobile/headset extension NNNNN@context
+</PRE>
+
+<P>
+This will call your headset, once you answer, Asterisk will call NNNNN at context context
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3455"
+  HREF="node199.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3451"
+  HREF="node192.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3445"
+  HREF="node197.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3453"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3456"
+  HREF="node199.html">Dialplan hints</A>
+<B> Up:</B> <A NAME="tex2html3452"
+  HREF="node192.html">Mobile</A>
+<B> Previous:</B> <A NAME="tex2html3446"
+  HREF="node197.html">Configuring chan_mobile</A>
+ &nbsp; <B>  <A NAME="tex2html3454"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

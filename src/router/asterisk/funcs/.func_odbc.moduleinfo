@@ -1,0 +1,3 @@
+<member name="func_odbc" displayname="ODBC lookups" remove_on_change="funcs/func_odbc.o funcs/func_odbc.so">
+	<depend>res_odbc</depend>
+</member>

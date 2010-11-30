@@ -1,0 +1,5 @@
+<member name="chan_jingle" displayname="Jingle Channel Driver" remove_on_change="channels/chan_jingle.o channels/chan_jingle.so">
+	<depend>iksemel</depend>
+	<depend>res_jabber</depend>
+	<use>openssl</use>
+</member>

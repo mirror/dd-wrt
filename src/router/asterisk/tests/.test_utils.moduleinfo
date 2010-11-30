@@ -1,0 +1,3 @@
+<member name="test_utils" displayname="Utils test module" remove_on_change="tests/test_utils.o tests/test_utils.so">
+	<depend>TEST_FRAMEWORK</depend>
+</member>

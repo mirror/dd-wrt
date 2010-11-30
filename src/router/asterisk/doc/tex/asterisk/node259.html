@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>FreeTDS, using cel_tds</TITLE>
+<META NAME="description" CONTENT="FreeTDS, using cel_tds">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node258.html">
+<LINK REL="up" HREF="node257.html">
+<LINK REL="next" HREF="node260.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html4274"
+  HREF="node260.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4270"
+  HREF="node257.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4266"
+  HREF="node258.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4272"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4275"
+  HREF="node260.html">MySQL</A>
+<B> Up:</B> <A NAME="tex2html4271"
+  HREF="node257.html">Microsoft SQL Server</A>
+<B> Previous:</B> <A NAME="tex2html4267"
+  HREF="node258.html">ODBC using cel_odbc</A>
+ &nbsp; <B>  <A NAME="tex2html4273"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION001261200000000000000">
+FreeTDS, using cel_tds</A>
+</H3>
+		Compile, configure, and install the latest FreeTDS package:
+<PRE>
+		   tar -zxvf freetds-0.62.4.tar.gz &amp;&amp;
+		   cd freetds-0.62.4 &amp;&amp;
+		   ./configure --prefix=/usr --with-tdsver=7.0
+		   make &amp;&amp;
+		   make install
+</PRE>
+                Compile, or recompile, asterisk so that it will now add support
+                for cel_tds.
+<PRE>
+                   make clean &amp;&amp; ./configure --with-tds &amp;&amp;
+                   make update &amp;&amp;
+                   make &amp;&amp;
+                   make install
+</PRE>
+                Only install one database connector.  Do not confuse asterisk
+                by using both ODBC (cel_odbc) and FreeTDS (cel_tds).
+                This command will erase the contents of cel_odbc.conf
+<PRE>
+		[ -f /etc/asterisk/cel_odbc.conf ] &gt; /etc/asterisk/cel_odbc.conf
+</PRE>
+                Setup cel_tds configuration files.  These are working samples
+                from my system.  You will need to modify for your setup. Define
+                your usernames and passwords here, secure file as well.
+<PRE>
+                /etc/asterisk/cel_tds.conf
+		   [global]
+		   hostname=192.168.1.25
+		   port=1433
+		   dbname=voipdb
+		   user=voipdbuser
+		   password=voipdpass
+		   charset=BIG5
+</PRE>
+                And finally, create the 'cel' table in your mssql database.
+<PRE>
+		CREATE TABLE cel (
+				[eventtype]     [varchar] (30)          NULL ,
+		        [eventtime]     [datetime]              NULL ,
+		        [cidname]       [varchar] (80)          NULL ,
+		        [cidnum]        [varchar] (80)          NULL ,
+		        [cidani]        [varchar] (80)          NULL ,
+		        [cidrdnis]      [varchar] (80)          NULL ,
+		        [ciddnid]       [varchar] (80)          NULL ,
+		        [exten]         [varchar] (80)          NULL ,
+		        [context]       [varchar] (80)          NULL ,
+		        [channame]      [varchar] (80)          NULL ,
+		        [appname]       [varchar] (80)          NULL ,
+		        [appdata]       [varchar] (80)          NULL ,
+		        [amaflags]      [varchar] (16)          NULL ,
+		        [accountcode]   [varchar] (20)          NULL ,
+		        [uniqueid]      [varchar] (32)          NULL ,
+		        [userfield]     [varchar] (255)         NULL ,
+		        [peer]          [varchar] (80)          NULL
+		)
+</PRE>
+                Start asterisk in verbose mode, you should see that asterisk
+                logs a connection to the database and will now record every
+                call to the database when it's complete.
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

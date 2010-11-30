@@ -1,0 +1,2 @@
+<member name="codec_ulaw" displayname="mu-Law Coder/Decoder" remove_on_change="codecs/codec_ulaw.o codecs/codec_ulaw.so">
+</member>

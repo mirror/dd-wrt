@@ -1,0 +1,4 @@
+<member name="format_ogg_vorbis" displayname="OGG/Vorbis audio" remove_on_change="formats/format_ogg_vorbis.o formats/format_ogg_vorbis.so">
+	<depend>vorbis</depend>
+	<depend>ogg</depend>
+</member>

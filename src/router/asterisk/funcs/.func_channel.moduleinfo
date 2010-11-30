@@ -1,0 +1,2 @@
+<member name="func_channel" displayname="Channel information dialplan functions" remove_on_change="funcs/func_channel.o funcs/func_channel.so">
+</member>

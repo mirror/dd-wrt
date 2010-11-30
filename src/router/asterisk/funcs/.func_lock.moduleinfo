@@ -1,0 +1,2 @@
+<member name="func_lock" displayname="Dialplan mutexes" remove_on_change="funcs/func_lock.o funcs/func_lock.so">
+</member>

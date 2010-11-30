@@ -1,0 +1,2 @@
+<member name="res_timing_pthread" displayname="pthread Timing Interface" remove_on_change="res/res_timing_pthread.o res/res_timing_pthread.so">
+</member>

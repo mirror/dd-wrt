@@ -1,0 +1,3 @@
+<member name="cdr_tds" displayname="FreeTDS CDR Backend" remove_on_change="cdr/cdr_tds.o cdr/cdr_tds.so">
+	<depend>freetds</depend>
+</member>

@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Dialing destinations with different information</TITLE>
+<META NAME="description" CONTENT="Dialing destinations with different information">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node189.html">
+<LINK REL="previous" HREF="node187.html">
+<LINK REL="up" HREF="node183.html">
+<LINK REL="next" HREF="node189.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3328"
+  HREF="node189.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3324"
+  HREF="node183.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3318"
+  HREF="node187.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3326"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3329"
+  HREF="node189.html">Using callfiles and Local</A>
+<B> Up:</B> <A NAME="tex2html3325"
+  HREF="node183.html">Local</A>
+<B> Previous:</B> <A NAME="tex2html3319"
+  HREF="node187.html">Delay dialing devices</A>
+ &nbsp; <B>  <A NAME="tex2html3327"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00735000000000000000">
+Dialing destinations with different information</A>
+</H2>
+
+<P>
+With Asterisk, we can place a call to multiple destinations by separating the
+technology/destination pair with an ampersand (&amp;). For example, the following
+Dial() line would ring two separate destinations for 30 seconds:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+exten =&gt; 201,1,Dial(SIP/0004f2040001&amp;DAHDI/g0/14165551212,30)
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+That line would dial both the SIP/0004f2040001 device (likely a SIP device on
+the network) and dial the phone number 1-416-555-1212 via a DAHDI interface. In
+our example though, we would be sending the same callerID information to both
+end points, but perhaps we want to send a different callerID to one of the
+destinations?
+
+<P>
+We can send different callerIDs to each of the destinations if we want by using
+the Local channel. The following example shows how this is possible because we
+would Dial() two different Local channels from our top level Dial(), and that
+would then execute some dialplan before sending the call off to the final
+destinations.
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[devices]
+exten =&gt; 201,1,NoOp()
+exten =&gt; 201,n,Dial(Local/201@internal&amp;Local/201@external,30)
+exten =&gt; 201,n,Voicemail(201@default,${IF($[${DIALSTATUS} = BUSY]?b:u)})
+exten =&gt; 201,n,Hangup()
+
+[internal]
+exten =&gt; 201,1,Verbose(2,Placing internal call for extension 201)
+exten =&gt; 201,n,Set(CALLERID(name)=From Sales)
+exten =&gt; 201,n,Dial(SIP/0004f2040001,30)
+
+[external]
+exten =&gt; 201,1,Verbose(2,Placing external call for extension 201)
+exten =&gt; 201,n,Set(CALLERID(name)=Acme Cleaning)
+exten =&gt; 201,n,Dial(DAHDI/g0/14165551212)
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+With the dialplan above, we've sent two different callerIDs to the destinations:
+
+<P>
+
+<UL>
+<LI>"From Sales" was sent to the local device SIP/0004f2040001
+</LI>
+<LI>"Acme Cleaning" was sent to the remote number 1-416-555-1212 via DAHDI
+</LI>
+</UL>
+
+<P>
+Because each of the channels is independent from the other, you could perform
+any other call manipulation you need. Perhaps the 1-416-555-1212 number is a
+cell phone and you know you can only ring that device for 18 seconds before the
+voicemail would pick up. You could then limit the length of time the external
+number is dialed, but still allow the internal device to be dialed for a longer
+period of time.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3328"
+  HREF="node189.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3324"
+  HREF="node183.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3318"
+  HREF="node187.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3326"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3329"
+  HREF="node189.html">Using callfiles and Local</A>
+<B> Up:</B> <A NAME="tex2html3325"
+  HREF="node183.html">Local</A>
+<B> Previous:</B> <A NAME="tex2html3319"
+  HREF="node187.html">Delay dialing devices</A>
+ &nbsp; <B>  <A NAME="tex2html3327"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

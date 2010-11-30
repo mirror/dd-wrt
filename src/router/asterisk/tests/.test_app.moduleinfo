@@ -1,0 +1,3 @@
+<member name="test_app" displayname="App unit tests" remove_on_change="tests/test_app.o tests/test_app.so">
+	<depend>TEST_FRAMEWORK</depend>
+</member>

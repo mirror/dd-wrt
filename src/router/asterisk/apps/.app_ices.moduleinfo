@@ -1,0 +1,2 @@
+<member name="app_ices" displayname="Encode and Stream via icecast and ices" remove_on_change="apps/app_ices.o apps/app_ices.so">
+</member>

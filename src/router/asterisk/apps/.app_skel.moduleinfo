@@ -1,0 +1,3 @@
+<member name="app_skel" displayname="Skeleton (sample) Application" remove_on_change="apps/app_skel.o apps/app_skel.so">
+	<defaultenabled>no</defaultenabled>
+</member>
