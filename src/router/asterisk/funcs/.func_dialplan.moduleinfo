@@ -1,2 +1,0 @@
-<member name="func_dialplan" displayname="Dialplan Context/Extension/Priority Checking Functions" remove_on_change="funcs/func_dialplan.o funcs/func_dialplan.so">
-</member>

@@ -1,3 +1,0 @@
-<member name="test_dlinklists" displayname="Test Doubly-Linked Lists" remove_on_change="tests/test_dlinklists.o tests/test_dlinklists.so">
-	<defaultenabled>no</defaultenabled>
-</member>
