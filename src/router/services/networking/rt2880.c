@@ -579,10 +579,18 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		strcat(encryptype, "WEP");
 		strcat(x80211, "0");
 		if (isSTA()) {
-			fprintf(fp, "Key1=%s\n", nvram_safe_get("wl0_key1"));
-			fprintf(fp, "Key2=%s\n", nvram_safe_get("wl0_key2"));
-			fprintf(fp, "Key3=%s\n", nvram_safe_get("wl0_key3"));
-			fprintf(fp, "Key4=%s\n", nvram_safe_get("wl0_key4"));
+			fprintf(fp, "Key1Str=%s\n",
+				nvram_safe_get("wl0_key1"));
+			fprintf(fp, "Key2Str=%s\n",
+				nvram_safe_get("wl0_key2"));
+			fprintf(fp, "Key3Str=%s\n",
+				nvram_safe_get("wl0_key3"));
+			fprintf(fp, "Key4Str=%s\n",
+				nvram_safe_get("wl0_key4"));
+			fprintf(fp, "Key1Type=0\n");
+			fprintf(fp, "Key2Type=0\n");
+			fprintf(fp, "Key3Type=0\n");
+			fprintf(fp, "Key4Type=0\n");
 		} else {
 			fprintf(fp, "Key1Str1=%s\n",
 				nvram_safe_get("wl0_key1"));
