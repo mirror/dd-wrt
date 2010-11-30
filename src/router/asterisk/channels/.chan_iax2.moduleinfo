@@ -1,3 +1,0 @@
-<member name="chan_iax2" displayname="Inter Asterisk eXchange (Ver 2)" remove_on_change="channels/chan_iax2.o channels/chan_iax2.so">
-	<use>crypto</use>
-</member>

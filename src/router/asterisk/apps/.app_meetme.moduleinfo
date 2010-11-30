@@ -1,3 +1,0 @@
-<member name="app_meetme" displayname="MeetMe conference bridge" remove_on_change="apps/app_meetme.o apps/app_meetme.so">
-	<depend>dahdi</depend>
-</member>

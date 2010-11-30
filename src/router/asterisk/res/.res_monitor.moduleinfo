@@ -1,2 +1,0 @@
-<member name="res_monitor" displayname="Call Monitoring Resource" remove_on_change="res/res_monitor.o res/res_monitor.so">
-</member>
