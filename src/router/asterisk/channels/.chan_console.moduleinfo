@@ -1,3 +1,0 @@
-<member name="chan_console" displayname="Console Channel Driver" remove_on_change="channels/chan_console.o channels/chan_console.so">
-	<depend>portaudio</depend>
-</member>

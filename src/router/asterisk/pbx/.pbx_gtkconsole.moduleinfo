@@ -1,4 +1,0 @@
-<member name="pbx_gtkconsole" displayname="GTK Console" remove_on_change="pbx/pbx_gtkconsole.o pbx/pbx_gtkconsole.so">
-	<depend>gtk</depend>
-	<defaultenabled>no</defaultenabled>
-</member>

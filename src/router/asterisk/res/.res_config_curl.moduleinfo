@@ -1,3 +1,0 @@
-<member name="res_config_curl" displayname="Realtime Curl configuration" remove_on_change="res/res_config_curl.o res/res_config_curl.so">
-	<depend>curl</depend>
-</member>
