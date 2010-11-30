@@ -82,15 +82,12 @@ void Gsm_Preprocess P3((S, s, so),
 		 */
 		{
 		word		msp;
-#ifndef __GNUC__ 
 		word		lsp;
-#endif
 		longword L_s2;
 		longword L_temp;
 		
 		L_s2 = s1;
 		L_s2 <<= 15;
-#ifndef __GNUC__ 
 		msp = (word)SASR( L_z2, 15 );
 		lsp = (word)(L_z2 & 0x7fff); /* gsm_L_sub(L_z2,(msp<<15)); */
 
@@ -98,16 +95,6 @@ void Gsm_Preprocess P3((S, s, so),
 		L_temp = (longword)msp * 32735; /* GSM_L_MULT(msp,32735) >> 1;*/
 		L_z2   = GSM_L_ADD( L_temp, L_s2 );
 		/* above does L_z2  = L_z2 * 0x7fd5/0x8000 + L_s2 */
-#else
-		L_z2 = ((long long)L_z2*32735 + 0x4000)>>15;
-		/* alternate (ansi) version of above line does slightly different rounding:
-		 * L_temp = L_z2 >> 9;
-		 * L_temp += L_temp >> 5;
-		 * L_temp = (++L_temp) >> 1;
-		 * L_z2 = L_z2 - L_temp;
-		 */
-		L_z2 = GSM_L_ADD(L_z2,L_s2);
-#endif
 		/*    Compute sof[k] with rounding
 		 */
 		L_temp = GSM_L_ADD( L_z2, 16384 );
