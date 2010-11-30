@@ -206,6 +206,8 @@ CFLAGS += -DHAVE_XSCALE
 endif
 ifeq ($(CONFIG_FREERADIUS),y)
 CFLAGS += -DHAVE_FREERADIUS
+VISOBJS += freeradius.o
+WEBSOBJS += websfreeradius.o
 endif
 ifeq ($(CONFIG_POKER),y)
 CFLAGS += -DHAVE_POKER
