@@ -47,7 +47,7 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <bcmnvram.h>
-#include <l7protocols.h>
+//#include <l7protocols.h>
 
 #ifdef HAVE_OVERCLOCKING
 static unsigned int type2_clocks[7] = { 200, 240, 252, 264, 300, 330, 0 };
