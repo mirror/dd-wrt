@@ -1,0 +1,2 @@
+<member name="format_ilbc" displayname="Raw iLBC data" remove_on_change="formats/format_ilbc.o formats/format_ilbc.so">
+</member>

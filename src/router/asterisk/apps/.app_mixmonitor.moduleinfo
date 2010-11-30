@@ -1,0 +1,2 @@
+<member name="app_mixmonitor" displayname="Mixed Audio Monitoring Application" remove_on_change="apps/app_mixmonitor.o apps/app_mixmonitor.so">
+</member>

@@ -1,0 +1,3 @@
+<member name="test_locale" displayname="Locale tests" remove_on_change="tests/test_locale.o tests/test_locale.so">
+	<defaultenabled>no</defaultenabled>
+</member>

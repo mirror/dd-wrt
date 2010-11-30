@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Introduction</TITLE>
+<META NAME="description" CONTENT="Introduction">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node346.html">
+<LINK REL="previous" HREF="node344.html">
+<LINK REL="up" HREF="node344.html">
+<LINK REL="next" HREF="node346.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html5397"
+  HREF="node346.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5393"
+  HREF="node344.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5387"
+  HREF="node344.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5395"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5398"
+  HREF="node346.html">Tools available</A>
+<B> Up:</B> <A NAME="tex2html5394"
+  HREF="node344.html">Manipulating Party ID Information</A>
+<B> Previous:</B> <A NAME="tex2html5388"
+  HREF="node344.html">Manipulating Party ID Information</A>
+ &nbsp; <B>  <A NAME="tex2html5396"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION002010000000000000000">
+Introduction</A>
+</H1>
+
+<P>
+This chapter aims to explain how to use some of the features available to
+manipulate party ID information.  It will not delve into specific channel
+configuration options described in the respective sample configuration
+files.  The party ID information can consist of Caller ID, Connected Line
+ID, redirecting to party ID information, and redirecting from party ID
+information.  Meticulous control is needed particularly when
+interoperating between different channel technologies.
+
+<P>
+
+<UL>
+<LI>Caller ID: The Caller ID information describes who is originating a
+call.
+
+<P>
+</LI>
+<LI>Connected Line ID: The Connected Line ID information describes who
+is connected to the other end of a call while a call is established.
+Unlike Caller ID, the connected line information can change over the life
+of a call when call transfers are performed.  The connected line
+information can also change in either direction because either end could
+transfer the call.  For ISDN it is known as Connected Line Identification
+Presentation (COLP), Connected Line Identification Restriction (COLR), and
+Explicit Call Transfer (ECT).  For SIP it is known either as
+P-Asserted-Identity or Remote-Party-Id.
+
+<P>
+</LI>
+<LI>Redirecting information: When a call is forwarded, the call
+originator is informed that the call is redirecting-to a new destination.
+The new destination is also informed that the incoming call is
+redirecting-from the forwarding party.  A call can be forwarded repeatedly
+until a new destination answers it or a forwarding limit is reached.
+
+<P>
+</LI>
+</UL>
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html5397"
+  HREF="node346.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5393"
+  HREF="node344.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5387"
+  HREF="node344.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5395"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5398"
+  HREF="node346.html">Tools available</A>
+<B> Up:</B> <A NAME="tex2html5394"
+  HREF="node344.html">Manipulating Party ID Information</A>
+<B> Previous:</B> <A NAME="tex2html5388"
+  HREF="node344.html">Manipulating Party ID Information</A>
+ &nbsp; <B>  <A NAME="tex2html5396"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

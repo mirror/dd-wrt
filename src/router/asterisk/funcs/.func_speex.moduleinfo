@@ -1,0 +1,5 @@
+<member name="func_speex" displayname="Noise reduction and Automatic Gain Control (AGC)" remove_on_change="funcs/func_speex.o funcs/func_speex.so">
+	<depend>speex</depend>
+	<depend>speex_preprocess</depend>
+	<use>speexdsp</use>
+</member>

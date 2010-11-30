@@ -1,0 +1,2 @@
+<member name="res_agi" displayname="Asterisk Gateway Interface (AGI)" remove_on_change="res/res_agi.o res/res_agi.so">
+</member>

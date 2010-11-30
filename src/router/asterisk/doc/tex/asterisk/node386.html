@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>audiofilter</TITLE>
+<META NAME="description" CONTENT="audiofilter">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node387.html">
+<LINK REL="previous" HREF="node385.html">
+<LINK REL="up" HREF="node385.html">
+<LINK REL="next" HREF="node387.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html5920"
+  HREF="node387.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5916"
+  HREF="node385.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5910"
+  HREF="node385.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5918"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5921"
+  HREF="node387.html">makeg722</A>
+<B> Up:</B> <A NAME="tex2html5917"
+  HREF="node385.html">About The Sounds Tools</A>
+<B> Previous:</B> <A NAME="tex2html5911"
+  HREF="node385.html">About The Sounds Tools</A>
+ &nbsp; <B>  <A NAME="tex2html5919"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION002331000000000000000">
+audiofilter</A>
+</H2>
+The audiofilter application is used to "tune" the sound files in such a way that
+they sound good when being used while in a compressed format. The values in the
+scripts for creating the sound files supplied in repotools is essentially a
+high-pass filter that drops out audio below 100Hz (or so).
+
+<P>
+(There is an ITU specification that states for 8KHz audio that is being compressed
+frequencies below a certain threshold should be removed because they make the
+resulting compressed audio sound worse than it should.)
+
+<P>
+The audiofilter application is used by the 'converter' script located in the
+scripts subdirectory of repotools/sound_tools. The values being passed to the
+audiofilter application is as follows:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+audiofilter -n 0.86916 -1.73829 0.86916 -d 1.00000 -1.74152 0.77536
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+The two options -n and -d are 'numerator' and 'denominator'. Per the author,
+Jean-Marc Valin, "These values are filter coefficients (-n means numerator, -d is 
+denominator) expressed in the z-transform domain. There represent an elliptic filter
+that I designed with Octave such that 'the result sounds good'."
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

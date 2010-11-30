@@ -1,0 +1,3 @@
+<member name="test_devicestate" displayname="Device State Test" remove_on_change="tests/test_devicestate.o tests/test_devicestate.so">
+	<depend>TEST_FRAMEWORK</depend>
+</member>

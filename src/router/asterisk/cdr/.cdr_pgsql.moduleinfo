@@ -1,0 +1,3 @@
+<member name="cdr_pgsql" displayname="PostgreSQL CDR Backend" remove_on_change="cdr/cdr_pgsql.o cdr/cdr_pgsql.so">
+	<depend>pgsql</depend>
+</member>

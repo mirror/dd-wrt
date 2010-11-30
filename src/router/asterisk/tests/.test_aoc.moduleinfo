@@ -1,0 +1,3 @@
+<member name="test_aoc" displayname="AOC unit tests" remove_on_change="tests/test_aoc.o tests/test_aoc.so">
+	<depend>TEST_FRAMEWORK</depend>
+</member>

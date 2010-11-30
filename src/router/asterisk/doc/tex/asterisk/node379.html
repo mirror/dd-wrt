@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Additional restrictions and caveats</TITLE>
+<META NAME="description" CONTENT="Additional restrictions and caveats">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node380.html">
+<LINK REL="previous" HREF="node378.html">
+<LINK REL="up" HREF="node375.html">
+<LINK REL="next" HREF="node380.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html5831"
+  HREF="node380.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5827"
+  HREF="node375.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5821"
+  HREF="node378.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5829"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5832"
+  HREF="node380.html">Summary</A>
+<B> Up:</B> <A NAME="tex2html5828"
+  HREF="node375.html">Packet Loss Concealment</A>
+<B> Previous:</B> <A NAME="tex2html5822"
+  HREF="node378.html">A bit of background</A>
+ &nbsp; <B>  <A NAME="tex2html5830"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION002240000000000000000">
+Additional restrictions and caveats</A>
+</H1>
+
+<P>
+One restriction that has not been spelled out so far but that has been
+hinted at is the presence of a bridge. The term bridge in this sense means
+two channels exchanging audio with one another. A bridge is required because
+use of a jitter buffer is a prerequisite for using PLC, and a jitter buffer
+is only used when bridging two channels. This means that one-legged calls,
+(e.g. calls to voicemail, to an IVR, to an extension that just plays back
+audio) will not use PLC. In addition, MeetMe and ConfBridge calls will not
+use PLC.
+	It should be obvious, but it bears mentioning, that PLC cannot be used
+when using a technology's native bridging functionality. For instance, if
+two SIP channels can exchange RTP directly, then Asterisk will never be
+able to process the audio in the first place. Since translation of audio
+is a requirement for using PLC, and translation will not allow for a
+native bridge to be created, this is something that is not likely to be
+an issue, though.
+	Since a jitter buffer is a requirement in order to use PLC, it should
+be noted that simply enabling the jitter buffer via the <TT>jbenable</TT> option
+may not be enough. For instance, if bridging two SIP channels together,
+the default behavior will not be to enable jitter buffers on either channel.
+The rationale is that the jitter will be handled at the endpoints to which
+Asterisk is sending the audio. In order to ensure that a jitter buffer is
+used in all cases, one must enable the <TT>jbforce</TT> option for channel types
+on which PLC is desired.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html5831"
+  HREF="node380.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html5827"
+  HREF="node375.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html5821"
+  HREF="node378.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html5829"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html5832"
+  HREF="node380.html">Summary</A>
+<B> Up:</B> <A NAME="tex2html5828"
+  HREF="node375.html">Packet Loss Concealment</A>
+<B> Previous:</B> <A NAME="tex2html5822"
+  HREF="node378.html">A bit of background</A>
+ &nbsp; <B>  <A NAME="tex2html5830"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2010-10-21
+</ADDRESS>
+</BODY>
+</HTML>

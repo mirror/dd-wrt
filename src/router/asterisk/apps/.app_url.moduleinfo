@@ -1,0 +1,2 @@
+<member name="app_url" displayname="Send URL Applications" remove_on_change="apps/app_url.o apps/app_url.so">
+</member>

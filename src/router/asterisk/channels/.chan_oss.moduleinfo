@@ -1,0 +1,3 @@
+<member name="chan_oss" displayname="OSS Console Channel Driver" remove_on_change="channels/chan_oss.o channels/chan_oss.so">
+	<depend>oss</depend>
+</member>
