@@ -43,7 +43,7 @@ function to_apply(F) {
 
 function handle_hotss(F)
 {
-	if(F.hotss_loginonsplash.value == 0) {
+	if(F.hotss_loginonsplash.value == "0") {
 		choose_enable(F._hotss_customsplash);
 	}
 	else {
