@@ -250,7 +250,7 @@ void hotspotsys_config(void)
 	char var[64];
 	char *dnslist;
 	int i;
-	
+
 	md5_ctx_t MD;
 
 	if (strlen(nvram_safe_get("hotss_remotekey")) != 12) {
@@ -264,13 +264,17 @@ void hotspotsys_config(void)
 		int i;
 
 		for (i = 0; i < 6; i++)
-			sprintf(&idkey[2 * i], "%02d", (hash[i] + hash[i+1]) % 100);
+			sprintf(&idkey[2 * i], "%02d",
+				(hash[i] + hash[i + 1]) % 100);
 		idkey[12] = '\0';
 		nvram_set("hotss_remotekey", idkey);
 		nvram_commit();
 		char sendid[256];
-		sprintf(sendid, "/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&operator=%s\\&location=%s\\&remotekey=%s",
-			nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"), nvram_get("hotss_remotekey")); 
+		sprintf(sendid,
+			"/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&operator=%s\\&location=%s\\&remotekey=%s",
+			nvram_get("hotss_operatorid"),
+			nvram_get("hotss_locationid"),
+			nvram_get("hotss_remotekey"));
 		system2(sendid);
 	}
 
@@ -343,21 +347,17 @@ void hotspotsys_config(void)
 		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
 
 	fprintf(fp,
-		"uamallowed hotspotsystem.com,%s,www.hotspotsystem.com,tech.hotspotsystem.com\n", uamdomain);
-	fprintf(fp,
-		"uamallowed 66.211.128.0/17,216.113.128.0/17\n");
-	fprintf(fp,
-		"uamallowed 70.42.128.0/17,128.242.125.0/24\n");
+		"uamallowed hotspotsystem.com,%s,www.hotspotsystem.com,tech.hotspotsystem.com\n",
+		uamdomain);
+	fprintf(fp, "uamallowed 66.211.128.0/17,216.113.128.0/17\n");
+	fprintf(fp, "uamallowed 70.42.128.0/17,128.242.125.0/24\n");
 	fprintf(fp,
 		"uamallowed 62.249.232.74,155.136.68.77,155.136.66.34,66.4.128.0/17,66.211.128.0/17,66.235.128.0/17\n");
 	fprintf(fp,
 		"uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
-	fprintf(fp,
-		"uamallowed 82.199.90.0/24,91.212.42.0/24\n");
-	fprintf(fp,
-		"uamallowed live.adyen.com\n");
-	fprintf(fp,
-		"uamallowed www.paypal.com,www.paypalobjects.com\n");
+	fprintf(fp, "uamallowed 82.199.90.0/24,91.212.42.0/24\n");
+	fprintf(fp, "uamallowed live.adyen.com\n");
+	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp,
 		"uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
 	fprintf(fp,
