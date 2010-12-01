@@ -272,7 +272,7 @@ void validate_filter_tod(webs_t wp)
 
 }
 
-static void applytake(char *value)
+void applytake(char *value)
 {
 	if (value && !strcmp(value, "ApplyTake")) {
 		nvram_commit();
