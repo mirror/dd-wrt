@@ -159,7 +159,7 @@ typedef enum {
  */
 #define ETHERNET_FCS_SIZE            4
 #define AG71XX_TX_FIFO_LEN	2048
-#define AG71XX_TX_MTU_LEN	1544
+#define AG71XX_TX_MTU_LEN	1716
 #define AG7100_RX_RESERVE           (64)
 #define AG7100_RX_BUF_SIZE      \
     (AG7100_RX_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETHERNET_FCS_SIZE)
