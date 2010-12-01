@@ -2641,11 +2641,6 @@ static void filter_table(void)
 	if (nvram_match("chilli_enable", "1")) {
 		save2file("-A FORWARD -i br0 -j DROP\n");
 		save2file("-A FORWARD -o br0 -j DROP\n");
-		// if (nvram_match("chilli_nowifibridge","1"))
-		// {
-		// save2file("-t nat -A PREROUTING -s 192.168.182.0/24 -d
-		// 192.168.182.1 -j DROP"); 
-		// }
 	}
 	/*
 	 * DD-WRT end 

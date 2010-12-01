@@ -11,5 +11,4 @@
  "chilli_net" " " "NULL" "TRUE" "0"
  "chilli_uamallowed" " " "NULL" "TRUE" "0"
  "chilli_macauth" "Mac Auth field" "CHOICE" "2" "0" "1" "TRUE" "0"
- "chilli_nowifibridge" "no wireless bridge" "CHOICE" "2" "0" "1" "TRUE" "0"
  "chilli_additional" "Chillispot Ad Options" "NULL" "FALSE" "0" 
