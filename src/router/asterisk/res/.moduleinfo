@@ -49,7 +49,6 @@
 <member name="res_convert" displayname="File format conversion CLI command" remove_on_change="res/res_convert.o res/res_convert.so">
 </member>
 <member name="res_crypto" displayname="Cryptographic Digital Signatures" remove_on_change="res/res_crypto.o res/res_crypto.so">
-	<depend>openssl</depend>
 </member>
 <member name="res_curl" displayname="cURL Resource Module" remove_on_change="res/res_curl.o res/res_curl.so">
 	<depend>curl</depend>
