@@ -1952,7 +1952,7 @@ freeradius.port="Radius Port";
 
 //help container
 var hfreeradius = new Object();
-hfreeradius.right1="You must enable JFFS before starting FreeRadius.";
+hfreeradius.right2="You must enable JFFS before starting FreeRadius.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();
@@ -2012,7 +2012,7 @@ wl_adv.txprow4="AC VO TX Parameters";
 wl_adv.col6="Admin Forced";
 wl_adv.row1="Background";
 wl_adv.row2="Best Effort";
-wl_adv.row3="Video";
+wl_adv.row3="rVideo";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
 wl_adv.lng="Long"; 					//************* don't use .long ! *************
