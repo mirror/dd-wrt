@@ -41,8 +41,8 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.loginonsplash"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="hotss_loginonsplash" <% nvram_selmatch("hotss_loginonsplash","1", "checked"); %>  /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="hotss_loginonsplash" <% nvram_selmatch("hotss_loginonsplash","0", "checked"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="hotss_loginonsplash" onclick="handle_hotss(this.form)" <% nvram_selmatch("hotss_loginonsplash","1", "checked"); %>  /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="hotss_loginonsplash" onclick="handle_hotss(this.form)" <% nvram_selmatch("hotss_loginonsplash","0", "checked"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.customsplash"); %></div>
