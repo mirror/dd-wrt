@@ -180,7 +180,7 @@ MODULE_PARM_DESC(fifo_5, "fifo cfg 5 settings");
 #define AG7100_TX_MIN_DS_LEN        128
 #define AG7100_TX_MAX_DS_LEN        AG7100_TX_FIFO_LEN
 
-#define AG7100_TX_MTU_LEN           1540
+#define AG7100_TX_MTU_LEN           AG71XX_TX_MTU_LEN
 
 #define AG7100_TX_DESC_CNT           CONFIG_AG7100_NUMBER_TX_PKTS*tx_max_desc_per_ds_pkt
 #define AG7100_TX_REAP_THRESH        AG7100_TX_DESC_CNT/2
@@ -2182,7 +2182,7 @@ static struct net_device_ops mac_net_ops;
 
 static int ag7100_change_mtu(struct net_device *dev, int new_mtu)
 {
-	if (new_mtu<=1522)
+	if (new_mtu<=(AG71XX_TX_MTU_LEN-18))
 	    dev->mtu = new_mtu;
 	return 0;
 }
