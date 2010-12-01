@@ -226,6 +226,8 @@ void athrs16_reg_init()
 	hsl_dev_init(0, 2);
 #endif
     printk("athrs16_reg_init complete.\n");
+//    athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8316_GCTRL_MTU)|(9018 + 8 + 2));
+      athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8216_GCTRL_MTU)|1716);
 //    athrs16_reg_write(AR8216_REG_GLOBAL_CTRL,AR8216_GCTRL_MTU,1716 ); //     1500 + 4 /* vlan */ + 2 /* header */);
 
     athr16_init_flag = 1;

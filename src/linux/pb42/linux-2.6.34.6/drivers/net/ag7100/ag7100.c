@@ -2179,6 +2179,14 @@ static struct dsa_platform_data tl_wr941nd_dsa_data = {
 
 static struct net_device_ops mac_net_ops;
 
+
+static int ag7100_change_mtu(struct net_device *dev, int new_mtu)
+{
+	if (new_mtu<=1518)
+	    dev->mtu = new_mtu;
+	return 0;
+}
+
 /*
  * All allocations (except irq and rings).
  */
@@ -2282,7 +2290,7 @@ ag7100_init(void)
 #else
         mac_net_ops.ndo_do_ioctl        =  NULL;
 #endif
-	mac_net_ops.ndo_change_mtu		= eth_change_mtu;
+	mac_net_ops.ndo_change_mtu		= ar7100_change_mtu;
 	mac_net_ops.ndo_set_mac_address	= eth_mac_addr;
 	mac_net_ops.ndo_validate_addr	= eth_validate_addr;
         dev->netdev_ops = (const struct net_device_ops *)&mac_net_ops;             
