@@ -1865,7 +1865,7 @@ freeradius.generate="Erzeuge Certificate";
 freeradius.cert_status="Zertifikat Status";
 freeradius.port="Radius Port";
 
-hfreeradius.right1="Bitte JFFS einschalten, bevor sie Radius nutzen.";
+hfreeradius.right2="Bitte JFFS einschalten, bevor sie Radius nutzen.";
 
 
 // **************************************************************** Wireless_Advanced.asp ***************************************************************//
