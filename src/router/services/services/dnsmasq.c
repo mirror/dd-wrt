@@ -151,24 +151,24 @@ void start_dnsmasq(void)
 		return;
 	}
 //    fprintf(fp, "bind-interfaces\n");
-		if (nvram_match("chilli_enable", "1")) {
-			if (canlan())
-				fprintf(fp, "interface=%s", get_wdev());
-			else
-				fprintf(fp, "interface=%s,", get_wdev());
-		} else if (nvram_match("pptpd_enable", "1")) {
-			if (canlan())
-				fprintf(fp, "listen-address=%s,%s", "127.0.0.1",
-					nvram_safe_get("lan_ipaddr"));
-			else
-				fprintf(fp, "listen-address=%s", "127.0.0.1");
-		} else {
-			if (canlan())
-				fprintf(fp, "interface=%s",
-					nvram_safe_get("lan_ifname"));
-			else
-				fprintf(fp, "interface=");
-		}
+	if (nvram_match("chilli_enable", "1")) {
+		if (canlan())
+			fprintf(fp, "interface=%s", get_wdev());
+		else
+			fprintf(fp, "interface=%s,", get_wdev());
+	} else if (nvram_match("pptpd_enable", "1")) {
+		if (canlan())
+			fprintf(fp, "listen-address=%s,%s", "127.0.0.1",
+				nvram_safe_get("lan_ipaddr"));
+		else
+			fprintf(fp, "listen-address=%s", "127.0.0.1");
+	} else {
+		if (canlan())
+			fprintf(fp, "interface=%s",
+				nvram_safe_get("lan_ifname"));
+		else
+			fprintf(fp, "interface=");
+	}
 	int mdhcpcount = 0;
 
 	if (nvram_get("mdhcpd_count") != NULL) {
@@ -391,9 +391,9 @@ void start_dnsmasq(void)
 		}
 	}
 	/* stop dns rebinding for private addresses */
-	if (nvram_match("dnsmasq_no_dns_rebind","1")) {
-	    fprintf(fp,"stop-dns-rebind\n");
-	    }
+	if (nvram_match("dnsmasq_no_dns_rebind", "1")) {
+		fprintf(fp, "stop-dns-rebind\n");
+	}
 	/*
 	 * Additional options 
 	 */
