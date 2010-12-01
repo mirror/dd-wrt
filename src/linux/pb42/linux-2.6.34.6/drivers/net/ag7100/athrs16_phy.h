@@ -1,6 +1,13 @@
 #ifndef _ATHRS16_PHY_H
 #define _ATHRS16_PHY_H
 
+#define AR8216_REG_CTRL			0x0000
+#define   AR8216_CTRL_REVISION		BITS(0, 8)
+#define   AR8216_CTRL_REVISION_S	0
+#define   AR8216_CTRL_VERSION		BITS(8, 8)
+#define   AR8216_CTRL_VERSION_S		8
+#define   AR8216_CTRL_RESET		BIT(31)
+
 
 /*****************/
 /* PHY Registers */
@@ -26,6 +33,8 @@
 #define BIT(nr)			(1UL << (nr))
 #define AR8216_REG_GLOBAL_CTRL		0x0030
 #define AR8216_GCTRL_MTU		BITS(0, 10)
+#define AR8316_GCTRL_MTU		BITS(0, 14)
+#define AR8216_REG_FLOOD_MASK		0x002C
 
 #define ATHR_CTRL_SOFTWARE_RESET                    0x8000
 #define ATHR_CTRL_SPEED_LSB                         0x2000
