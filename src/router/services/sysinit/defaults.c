@@ -1694,7 +1694,6 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_CHILLI
 	{"chilli_net", "192.168.182.0/24", 0},
 	{"chilli_enable", "0", 0},
-	{"chilli_nowifibridge", "0", 0},
 	{"chilli_url", "", 0},
 	{"chilli_radius", "0.0.0.0", 0},
 	{"chilli_backup", "0.0.0.0", 0},
@@ -1716,7 +1715,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"hotss_uamallowed", "", 0},
 	{"hotss_operatorid", "", 0},
 	{"hotss_locationid", "", 0},
-	{"hotss_nowifibridge", "1", 0},
 	{"hotss_interface", "", 0},
 	{"hotss_net", "192.168.182.0/24", 0},
 	{"hotss_customuam", "", 0},

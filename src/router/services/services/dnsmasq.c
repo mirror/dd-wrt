@@ -151,16 +151,6 @@ void start_dnsmasq(void)
 		return;
 	}
 //    fprintf(fp, "bind-interfaces\n");
-	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1")
-		&& nvram_match("chilli_enable", "1"))
-	    || (nvram_match("hotss_nowifibridge", "1")
-		&& nvram_match("hotss_enable", "1"))) {
-		if (canlan())
-			fprintf(fp, "interface=%s,br0", get_wdev());
-		else
-			fprintf(fp, "interface=%s", get_wdev());
-	} else {
 		if (nvram_match("chilli_enable", "1")) {
 			if (canlan())
 				fprintf(fp, "interface=%s", get_wdev());
@@ -179,7 +169,6 @@ void start_dnsmasq(void)
 			else
 				fprintf(fp, "interface=");
 		}
-	}
 	int mdhcpcount = 0;
 
 	if (nvram_get("mdhcpd_count") != NULL) {

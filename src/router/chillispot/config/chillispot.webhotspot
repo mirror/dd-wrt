@@ -8,19 +8,12 @@
 	</div>
 	<div id="idchilli">
 		<div class="setting">
-			<div class="label"><% tran("hotspot.nowifibridge"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="chilli_nowifibridge" <% nvram_selmatch("chilli_nowifibridge","1", "checked"); %> onclick="show_layer_ext(this, 'idchillidhcp', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="chilli_nowifibridge" <% nvram_selmatch("chilli_nowifibridge","0", "checked"); %> onclick="show_layer_ext(this, 'idchillidhcp', false)" /><% tran("share.disable"); %>
+			<div class="label"><% tran("hotspot.dhcp"); %></div>
+			<% show_ifselect("chilli_interface"); %>
 		</div>
-		<div id="idchillidhcp">		
-			<div class="setting">
-				<div class="label"><% tran("hotspot.dhcp"); %></div>
-				<% show_ifselect("chilli_interface"); %>
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("hotspot.net"); %></div>
-				<input class="text" maxLength="20" size="20" name="chilli_net" value="<% nvram_get("chilli_net"); %>" />
-			</div>
+		<div class="setting">
+			<div class="label"><% tran("hotspot.net"); %></div>
+			<input class="text" maxLength="20" size="20" name="chilli_net" value="<% nvram_get("chilli_net"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.pserver"); %></div>
