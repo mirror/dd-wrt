@@ -3771,45 +3771,6 @@ void start_wan_done(char *wan_ifname)
 	start_sputnik();
 #endif
 
-#ifdef HAVE_FON
-#ifdef HAVE_MICRO
-	br_init();
-#endif
-
-	if (nvram_match("wl0_mode", "apsta")) {
-		br_del_interface(nvram_safe_get("lan_ifname"), "wl0.1");
-		ifconfig("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
-	} else if (nvram_match("wl0_mode", "ap")) {
-		br_del_interface(nvram_safe_get("lan_ifname"), get_wdev());
-		ifconfig(get_wdev(), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
-	}
-#ifdef HAVE_CHILLI
-	stop_chilli();
-	start_chilli();
-#endif
-#else
-	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1")
-		&& nvram_match("chilli_enable", "1"))
-	    || (nvram_match("hotss_nowifibridge", "1")
-		&& nvram_match("hotss_enable", "1"))) {
-		if (nvram_match("wl0_mode", "apsta")) {
-			br_del_interface(nvram_safe_get("lan_ifname"), "wl0.1");
-			ifconfig("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
-		} else if (nvram_match("wl0_mode", "ap")) {
-			char *cif = nvram_safe_get("chilli_interface");
-			if (nvram_match("hotss_enable", "1") && nvram_match("hotss_nowifibridge", "1"))
-			    cif = nvram_safe_get("hotss_interface");
-			br_del_interface(nvram_safe_get("lan_ifname"),cif);
-			ifconfig(cif, IFUP | IFF_ALLMULTI, "0.0.0.0",
-				 NULL);
-		}
-#ifdef HAVE_CHILLI
-		stop_chilli();
-		start_chilli();
-#endif
-	}
-#endif
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -3887,24 +3848,6 @@ void stop_wan(void)
 	// take effect
 #ifdef HAVE_PPP
 #endif
-#ifndef HAVE_FON
-	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1")
-		&& nvram_match("chilli_enable", "1"))
-	    || (nvram_match("hotss_nowifibridge", "1")
-		&& nvram_match("hotss_enable", "1")))
-#endif
-	{
-#ifdef HAVE_MICRO
-		br_init();
-#endif
-
-		br_add_interface(getBridge(get_wdev()), get_wdev());
-#ifdef HAVE_MICRO
-		br_shutdown();
-#endif
-
-	}
 
 	cprintf("done\n");
 }
