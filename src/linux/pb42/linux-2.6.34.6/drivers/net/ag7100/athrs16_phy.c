@@ -174,13 +174,63 @@ void phy_mode_setup()
 
 }
 
+#define AR8X16_PROBE_RETRIES	10
+
+enum {
+  UNKNOWN = 0,
+  AR8216 = 8216,
+  AR8316 = 8316
+};
+
+
+static inline int id_chip(void)
+{
+	u32 val;
+	u16 id;
+	int i;
+	int ret=0;
+
+	val = athrs16_reg_read(AR8216_REG_CTRL);
+	if (val == ~0)
+		return UNKNOWN;
+
+	id = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+	for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
+		u16 t;
+
+		val = athrs16_reg_read(AR8216_REG_CTRL);
+		if (val == ~0)
+			return UNKNOWN;
+
+		t = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+		if (t != id)
+			return UNKNOWN;
+	}
+
+	switch (id) {
+	case 0x0101:
+		ret = AR8216;
+		break;
+	case 0x1001:
+		ret = AR8316;
+		break;
+	default:
+		return UNKNOWN;
+	}
+		printk(KERN_DEBUG
+			"ar%d Atheros device [ver=%d, rev=%d]\n",ret,
+			(int)(id >> AR8216_CTRL_VERSION_S),
+			(int)(id & AR8216_CTRL_REVISION));
+	return ret;
+}
+
 void athrs16_reg_init()
 {
     /* if using header for register configuration, we have to     */
     /* configure s16 register after frame transmission is enabled */
     if (athr16_init_flag)
         return;
-
+    int idchip = id_chip();
     /*Power on strip mode setup*/
 #if CFG_BOARD_PB45
     athrs16_reg_write(0x208, 0x2fd0001);  /*tx delay*/   
@@ -226,9 +276,13 @@ void athrs16_reg_init()
 	hsl_dev_init(0, 2);
 #endif
     printk("athrs16_reg_init complete.\n");
-//    athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8316_GCTRL_MTU)|(9018 + 8 + 2));
+      if (idchip==AR8316)
+      {
+      athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8316_GCTRL_MTU)|(9018 + 8 + 2));      
+      athrs16_reg_write(AR8216_REG_FLOOD_MASK, 0x003f003f);
+      }else{
       athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8216_GCTRL_MTU)|1716);
-//    athrs16_reg_write(AR8216_REG_GLOBAL_CTRL,AR8216_GCTRL_MTU,1716 ); //     1500 + 4 /* vlan */ + 2 /* header */);
+      }      
 
     athr16_init_flag = 1;
 }
