@@ -165,10 +165,7 @@ void chilli_config(void)
 	fprintf(fp, "radiusserver2 %s\n", nvram_get("chilli_backup"));
 	fprintf(fp, "radiussecret %s\n", nvram_get("chilli_pass"));
 
-	if (nvram_match("chilli_nowifibridge", "1"))
-		fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
-	else
-		fprintf(fp, "dhcpif br0\n");
+	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
 
 	fprintf(fp, "uamserver %s\n", nvram_get("chilli_url"));
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
@@ -286,12 +283,9 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
 
-	if (nvram_match("hotss_nowifibridge", "1")) {
-		fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
-		if (nvram_invmatch("hotss_net", ""))
-			fprintf(fp, "net %s\n", nvram_get("hotss_net"));
-	} else
-		fprintf(fp, "dhcpif br0\n");
+	fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
+	if (nvram_invmatch("hotss_net", ""))
+		fprintf(fp, "net %s\n", nvram_get("hotss_net"));
 
 	char *uamdomain = "customer.hotspotsystem.com";
 	if (!nvram_match("hotss_customuam", "")) {
