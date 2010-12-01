@@ -13,6 +13,7 @@ asterisk-configure:
 	--without-misdn \
 	--without-nbs \
 	--with-ncurses="$(TOP)/ncurses" \
+	--with-crypto="$(TOP)/openssl" \
 	--without-netsnmp \
 	--without-newt \
 	--without-odbc \
@@ -40,8 +41,8 @@ asterisk:
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include" \
-	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib" \
+	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include" \
+	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -85,6 +86,7 @@ asterisk-install:
 		func_strings func_timeout func_callerid; do \
 		$(CP) /tmp/asterisk/usr/lib/asterisk/modules/$$f.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/ ; \
 	done
+	rm -rf $(INSTALLDIR)/asterisk/usr/sbin
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/sbin
 	$(CP) /tmp/asterisk/usr/sbin/asterisk $(INSTALLDIR)/asterisk/usr/sbin/
 	$(CP) /tmp/asterisk/usr/sbin/astgenkey $(INSTALLDIR)/asterisk/usr/sbin/
