@@ -2168,6 +2168,13 @@ ag7240_vet_tx_len_per_pkt(unsigned int *len)
 }
 static struct net_device_ops mac_net_ops;
 
+static int ag7240_change_mtu(struct net_device *dev, int new_mtu)
+{
+	if (new_mtu<=1518)
+	    dev->mtu = new_mtu;
+	return 0;
+}
+
 /*
  * All allocations (except irq and rings).
  */
@@ -2286,7 +2293,7 @@ ag7240_init(void)
         mac_net_ops.ndo_get_stats = ag7240_get_stats;
         mac_net_ops.ndo_tx_timeout= ag7240_tx_timeout;
         mac_net_ops.ndo_do_ioctl        =  ag7240_do_ioctl;
-	mac_net_ops.ndo_change_mtu		= eth_change_mtu;
+	mac_net_ops.ndo_change_mtu		= ag7240_change_mtu;
 	mac_net_ops.ndo_set_mac_address	= eth_mac_addr;
 	mac_net_ops.ndo_validate_addr	= eth_validate_addr;
 	netif_napi_add(dev, &mac->mac_napi, ag7240_poll, AG7240_NAPI_WEIGHT);
