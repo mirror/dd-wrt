@@ -41,6 +41,18 @@ function to_apply(F) {
 	applytake(F);
 }
 
+function handle_hotss(F)
+{
+	if(F.hotss_loginonsplash.value == 0) {
+		choose_enable(F._hotss_customsplash);
+	}
+	else {
+		F._hotss_customsplash.checked = false;
+		choose_disable(F._hotss_customsplash);
+	}
+}
+
+
 function setHotss(val) {
 	if (val == "1") {
 		//document.setup.chilli_enable[1].click();
@@ -77,6 +89,8 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.hotss_nowifibridge, 'idhotssdhcp', <% nvram_else_match("hotss_nowifibridge", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_nowifibridge, 'idchillidhcp', <% nvram_else_match("chilli_nowifibridge", "1", "1", "0"); %> == 1);
 	setHotss("<% nvram_else_match("hotss_enable", "1", "1", "0"); %>");
+	if (document.setup.hotss_loginonsplash)
+		handle_hotss(document.setup);
 		
 	update = new StatusbarUpdate();
 	update.start();
