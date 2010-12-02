@@ -2288,14 +2288,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 	sprintf(wl_net_mode, "%s_net_mode", prefix);
 	if (nvram_match(wl_net_mode, "disabled"))
 		return;
-#ifdef HAVE_RT2880
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "apsta") || nvram_match(wl_mode, "apstawet")
-	    || nvram_match(wl_mode, "infra"))
-#else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra"))
-#endif
 	{
 		char wl_channel[16];
 
