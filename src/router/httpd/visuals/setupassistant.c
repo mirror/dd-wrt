@@ -1124,17 +1124,9 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 	if (nvram_selmatch(wp, wl_net_mode, "disabled")) {
 		return;
 	}
-#ifdef HAVE_RT2880
-	if (nvram_selmatch(wp, wl_mode, "ap")
-	    || nvram_selmatch(wp, wl_mode, "wdsap")
-	    || nvram_selmatch(wp, wl_mode, "apsta")
-	    || nvram_selmatch(wp, wl_mode, "apstawet")
-	    || nvram_selmatch(wp, wl_mode, "infra"))
-#else
 	if (nvram_selmatch(wp, wl_mode, "ap")
 	    || nvram_selmatch(wp, wl_mode, "wdsap")
 	    || nvram_selmatch(wp, wl_mode, "infra"))
-#endif
 	{
 		char wl_channel[16];
 		sprintf(wl_channel, "%s_channel", prefix);
