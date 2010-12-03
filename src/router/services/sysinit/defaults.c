@@ -151,7 +151,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lan_ifnames", "", 0},	/* Enslaved LAN interfaces */
 	{"lan_hwnames", "", 0},	/* LAN driver names (e.g. et0) */
 	{"lan_hwaddr", "", 0},	/* LAN interface MAC address */
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 	{"wl0_ifname", "ath0", 0},	/* LAN interface MAC address */
 #else
 	{"wl0_ifname", "eth1", 0},	/* LAN interface MAC address */
@@ -706,7 +706,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #else
 
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 #ifdef HAVE_MAKSAT
 	{"show_hidden", "1", 0},
 	{"ath0_regulatory", "0", 0},
@@ -811,7 +811,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_NEWMEDIA
 	{"wl_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 #else
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 	{"ath0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 	{"ath0_closed", "0", 0},	/* Closed (hidden) network */
 	{"ath1_radio", "1", 0},	/* Enable (1) or disable (0) radio */
@@ -855,7 +855,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_mode", "sta", 0},
 #else
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
 	{"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 	{"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
@@ -915,7 +915,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath5_xr", "0", 0},	/* AP mode (ap|sta|wds) */
 #endif
 #endif
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 	{"ath0_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
 	{"ath1_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
 	{"ath2_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
@@ -925,7 +925,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"wl_wds", "", 0},	/* xx:xx:xx:xx:xx:xx ... */
 	{"wl_wep", "disabled", 0},	/* Data encryption (off|wep|tkip|aes) */
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
 	{"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
 	{"wl_auth", "0", 0},	/* Shared key authentication optional (0) or
 				 * required (1) */
@@ -969,7 +969,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_macmode", "disabled", 0},	/* "allow" only, "deny" only, or
 					 * "disabled" (allow all) */
 	{"wl_macmode1", "disabled", 0},	/* "disabled" or "other" for WEBB *//* Add */
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_channel", "5180", 0},	/* 5275ath0 frequency */
 	{"ath0_rxantenna", "3", 0},
@@ -1085,7 +1085,7 @@ struct nvram_tuple srouter_defaults[] = {
 	 * Add 
 	 */
 	{"security_mode_last", "", 0},	/* Save last WPA mode *//* Add */
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
 	{"wl0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
 	{"wl0_akm", "disabled", 0},
@@ -1569,7 +1569,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"rc_firewall", "", 0},
 	{"rc_custom", "", 0},
 	{"rc_shutdown", "", 0},
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 #ifdef HAVE_XIOCOM
 	{"ath0_txpwrdbm", "17", 0},
 	{"ath1_txpwrdbm", "17", 0},
@@ -1795,7 +1795,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"telnet_wanport", "23", 0},	/* WAN port to listen on */
 	{"syslogd_enable", "0", 0},
 	{"syslogd_rem_ip", "", 0},
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
 	{"wl0_wds1_enable", "0", 0},
 	{"wl0_wds2_enable", "0", 0},
 	{"wl0_wds3_enable", "0", 0},
@@ -1936,7 +1936,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_br1_nat", "0", 0},
 	{"wl1_br1_enable", "0", 0},
 	{"wl1_br1_nat", "0", 0},
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
 
 	{"wl0_wds", "", 0},
 	{"wl0_wds0", "", 0},
@@ -2740,7 +2740,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_RADLOCAL
 	{"iradius_enable", "0", 0},
 #endif
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
 	{"wifi_display", "ath0", 0},
 #else
 	{"wifi_display", "wl0", 0},
