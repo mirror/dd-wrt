@@ -292,8 +292,10 @@ int usb_add_ufd(void)
 				while (fgets(line, sizeof(line), fp) != NULL) {
 					if (strstr(line, "Partition"))
 						is_part = 1;
+fprintf( stderr, "[USB Device] partition: %s\n", line );
 
 					if (strstr(line, "file system")) {
+fprintf( stderr, "[USB Device] file system: %s\n", line );
 						if (strstr(line, "FAT")) {
 							fs = "vfat";
 							break;

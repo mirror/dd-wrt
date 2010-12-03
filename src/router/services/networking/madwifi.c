@@ -663,12 +663,12 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
 		fprintf(fp, "ieee80211n=1\n");
 		char bw[32];
 		sprintf(bw, "%s_channelbw", prefix);
-		if (nvram_match(bw, "20")) {
+		if (nvram_default_match(bw, "20","20")) {
 			sprintf(ht, "20");
 		} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
-			if (nvram_match(sb, "upper")) {
+			if (nvram_default_match(sb, "upper","lower")) {
 				sprintf(ht, "40+");
 			} else {
 				sprintf(ht, "40-");
@@ -708,7 +708,7 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
 		fprintf(fp, "hw_mode=g\n");
 	else
 		fprintf(fp, "hw_mode=a\n");
-	if (nvram_match(nfreq, "0"))
+	if (nvram_default_match(nfreq, "0", "0"))
 		fprintf(fp, "channel=6\n");
 	else
 		fprintf(fp, "channel=%d\n", channel);
