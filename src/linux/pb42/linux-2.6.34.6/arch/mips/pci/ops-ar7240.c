@@ -98,7 +98,7 @@ ar7240_pci_read_config(struct pci_bus *bus, unsigned int devfn, int where,
     /* Make sure the address is aligned to natural boundary */
     if(where & (size - 1))
         return PCIBIOS_BAD_REGISTER_NUMBER;
-
+    
     spin_lock_irqsave(&ar7100_pci_lock, flags);
     switch (size) {
         case 1:
@@ -131,6 +131,7 @@ ar7240_pci_read_config(struct pci_bus *bus, unsigned int devfn, int where,
             return PCIBIOS_BAD_REGISTER_NUMBER;
     }
     spin_unlock_irqrestore(&ar7100_pci_lock, flags);
+
     return PCIBIOS_SUCCESSFUL;
 }
 
