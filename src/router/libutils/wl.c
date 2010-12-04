@@ -1012,13 +1012,11 @@ int wifi_gettxpoweroffset(char *ifname)
 	if (poweroffset < 0 || poweroffset > 20)
 		poweroffset = 0;
 #endif
-#ifdef HAVE_MAKSAT
 	char *manpoweroffset;
 	manpoweroffset = nvram_nget("%s_poweroffset", ifname);
 	if (strlen(manpoweroffset)) {
 		poweroffset = atoi(manpoweroffset);
 	}
-#endif
 	return poweroffset;
 }
 
