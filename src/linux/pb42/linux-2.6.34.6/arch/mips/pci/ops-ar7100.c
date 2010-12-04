@@ -251,6 +251,7 @@ ar7100_pci_read_config(struct pci_bus *bus, unsigned int devfn, int where,
 {
 	uint32_t n, byte_enables, addr, data, slot = PCI_SLOT(devfn);
 	uint8_t bus_num = bus->number;
+	int retry = 0;
 
 	*value = 0xffffffff;
 	n = where % 4;
@@ -259,10 +260,14 @@ ar7100_pci_read_config(struct pci_bus *bus, unsigned int devfn, int where,
 		return PCIBIOS_BAD_REGISTER_NUMBER;
 
 	addr = ar7100_config_addr(bus_num, devfn, where);
+	retry:;
 	if (ar7100_pci_read(addr, byte_enables | AR7100_CFG_CMD_READ, &data)) 
 		return PCIBIOS_DEVICE_NOT_FOUND;
 
 	*value = (data >> (8*n)) & bytemask[size];
+
+	if (where == PCI_COMMAND && (*value & 0xffff) == 0xffff && retry++ < 2)
+		goto retry;
 
 	return PCIBIOS_SUCCESSFUL;
 }
