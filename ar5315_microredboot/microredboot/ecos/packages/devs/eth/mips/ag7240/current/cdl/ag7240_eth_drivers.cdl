@@ -1,0 +1,170 @@
+# ====================================================================
+#
+#      ar7100_eth_driver.cdl
+#
+#      Ethernet drivers - platform dependent enet support for Atheros'
+#                         AG7240-based boards.
+#
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Atheros Communications, Inc.
+# Original data:  
+# Contributors:   Atheros engineering
+# Date:           2003-10-22
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240 {
+    display       "Atheros AG7240 Ethernet Driver"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_HAL_MIPS_AR7240
+
+    implements    CYGHWR_NET_DRIVERS
+    include_dir   .
+    include_files ;
+    description   "Ethernet driver for Atheros AG7240 boards."
+    compile       -library=libextras.a ag7240_ecos.c 
+
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE0 {
+        display       "Ethernet port 0 driver"
+        flavor        bool
+        default_value 1
+        implements    CYGHWR_NET_DRIVER_ETH0
+         
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE0_NAME {
+            display       "Device name for the ethernet port 0 driver"
+            flavor        data
+            default_value {"\"eth0\""}
+            description   "Device name for the ethernet port 0 driver"
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE0_MII {
+            display       "Use MII"
+            flavor        bool
+            default_value 0
+        }
+ 
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE0_GMII {
+            display       "Use GMII"
+            flavor        bool
+            default_value 0
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE0_RGMII {
+            display       "Use RGMII"
+            flavor        bool
+            default_value 1
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE0_CONNECTED {
+            display       "connect"
+            flavor        bool
+            default_value 1
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE1 {
+        display       "Ethernet port 1 driver"
+        flavor        bool
+        default_value 1
+        implements    CYGHWR_NET_DRIVER_ETH1
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE1_NAME {
+            display       "Device name for the ethernet port 1 driver"
+            flavor        data
+            default_value {"\"eth1\""}
+            description   "Device name for the ethernet port 1 driver"
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE1_MII {
+            display       "Use MII"
+            flavor        bool
+            default_value 1
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_GE1_CONNECTED {
+            display       "connect"
+            flavor        bool
+            default_value 1
+        }
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_S26_PHY {
+        display       "S26 PHY"
+        flavor        bool
+        default_value 1
+        compile       ar7240_s26_phy.c
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_S26_PHY_SWONLY {
+            display       "S26 Switch Only"
+            flavor        bool
+            default_value 1
+        }
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_S26_VLAN_IGMP {
+            display       "VLAN IGMP"
+            flavor        bool
+            default_value 0
+        }
+    }
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7242_S16_PHY {
+        display       "ATHRS16 PHY"
+        flavor        bool
+        default_value 1
+        compile       athrs16_phy.c
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7242_RGMII_PHY {
+        display       "RGMII PHY"
+        flavor        bool
+        default_value 0
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7242_VIR_PHY {
+        display       "VIR PHY"
+        flavor        bool
+        default_value 0
+    }
+
+    cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_RX_DESC_CNT {
+        display       "RX descriptor count"
+        flavor        data
+        default_value 252
+    }
+
+    cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_TX_DESC_CNT {
+        display       "TX descriptor count"
+        flavor        data
+        default_value 252
+    }
+
+    cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_MAC_LOCATION {
+        display       "MAC location"
+        flavor        data
+        default_value 0xbfff0000
+    }
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_OPTIONS {
+        display "Atheros AG7240 ethernet driver build options"
+        flavor  none
+        no_define
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AG7240_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Atheros AG7240 ethernet driver package.
+                These flags are used in addition to the set of global
+		        flags."
+        }
+    }
+}
+

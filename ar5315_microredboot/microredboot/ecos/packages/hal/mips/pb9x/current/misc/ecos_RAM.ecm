@@ -1,0 +1,39 @@
+cdl_savefile_version 1;
+cdl_savefile_command cdl_savefile_version {};
+cdl_savefile_command cdl_savefile_command {};
+cdl_savefile_command cdl_configuration { description hardware template package };
+cdl_savefile_command cdl_package { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_component { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_option { value_source user_value wizard_value inferred_value };
+cdl_savefile_command cdl_interface { value_source user_value wizard_value inferred_value };
+
+cdl_configuration eCos {
+    description "" ;
+    hardware    ar7240 ;
+    template    kernel ;
+	package CYGPKG_IO current ;
+	package CYGPKG_IO_SERIAL current ;
+	package CYGPKG_IO_FLASH current ;
+	package CYGPKG_IO_ETH_DRIVERS current ;
+	package CYGPKG_IO_FILEIO current ;
+	package CYGPKG_LIBC_I18N current;
+	package CYGPKG_LIBC_STDIO current;
+	package CYGPKG_LIBC_STDLIB current;
+	package CYGPKG_LIBC_STRING current ;
+	package CYGPKG_LIBC_TIME current ;
+	package CYGPKG_NET current;
+	package CYGPKG_NET_FREEBSD_STACK current ;
+};
+
+cdl_option CYGNUM_RAM_ENTRY {
+    user_value   0x80060000
+};
+
+cdl_option CYGNUM_USE_ENET_PHY {
+    user_value AR7100_VSC8601_ENET_PHY
+};
+
+cdl_option CYGDBG_IO_ETH_DRIVERS_DEBUG {
+	user_value 0
+};
+
