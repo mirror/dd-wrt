@@ -1,0 +1,1024 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+AC_TO_ENET_TOS	ag7240_mac.h	61;"	d
+AG7240_ADDR_SHIFT	ag7240_mac.h	398;"	d
+AG7240_BYTE_PER_CLK_EN	ag7240_mac.h	286;"	d
+AG7240_DMA_AHB_STATE	ag7240_mac.h	340;"	d
+AG7240_DMA_DMA_STATE	ag7240_mac.h	339;"	d
+AG7240_DMA_INTR	ag7240_mac.h	330;"	d
+AG7240_DMA_INTR_MASK	ag7240_mac.h	329;"	d
+AG7240_DMA_RXFSM	ag7240_mac.h	331;"	d
+AG7240_DMA_RX_CTRL	ag7240_mac.h	326;"	d
+AG7240_DMA_RX_DESC	ag7240_mac.h	327;"	d
+AG7240_DMA_RX_STATUS	ag7240_mac.h	328;"	d
+AG7240_DMA_TXFSM	ag7240_mac.h	332;"	d
+AG7240_DMA_TX_ARB_CFG	ag7240_mac.h	356;"	d
+AG7240_DMA_TX_CTRL	ag7240_mac.h	323;"	d
+AG7240_DMA_TX_CTRL_Q0	ag7240_mac.h	346;"	d
+AG7240_DMA_TX_CTRL_Q1	ag7240_mac.h	347;"	d
+AG7240_DMA_TX_CTRL_Q2	ag7240_mac.h	348;"	d
+AG7240_DMA_TX_CTRL_Q3	ag7240_mac.h	349;"	d
+AG7240_DMA_TX_DESC	ag7240_mac.h	324;"	d
+AG7240_DMA_TX_DESC_Q0	ag7240_mac.h	351;"	d
+AG7240_DMA_TX_DESC_Q1	ag7240_mac.h	352;"	d
+AG7240_DMA_TX_DESC_Q2	ag7240_mac.h	353;"	d
+AG7240_DMA_TX_DESC_Q3	ag7240_mac.h	354;"	d
+AG7240_DMA_TX_STATUS	ag7240_mac.h	325;"	d
+AG7240_DMA_XFIFO_DEPTH	ag7240_mac.h	333;"	d
+AG7240_ETH_CFG	ag7240_mac.h	431;"	d
+AG7240_ETH_CFG_GE0_ERR_EN	ag7240_mac.h	437;"	d
+AG7240_ETH_CFG_GMII_GE0	ag7240_mac.h	434;"	d
+AG7240_ETH_CFG_MII_GE0	ag7240_mac.h	433;"	d
+AG7240_ETH_CFG_MII_GE0_MASTER	ag7240_mac.h	435;"	d
+AG7240_ETH_CFG_MII_GE0_SLAVE	ag7240_mac.h	436;"	d
+AG7240_ETH_CFG_RGMII_GE0	ag7240_mac.h	432;"	d
+AG7240_ETH_CFG_SW_ONLY_MODE	ag7240_mac.h	438;"	d
+AG7240_ETH_CFG_SW_PHY_ADDR_SWAP	ag7240_mac.h	440;"	d
+AG7240_ETH_CFG_SW_PHY_SWAP	ag7240_mac.h	439;"	d
+AG7240_GE_MAC_ADDR1	ag7240_mac.h	404;"	d
+AG7240_GE_MAC_ADDR2	ag7240_mac.h	405;"	d
+AG7240_INTR_MASK	ag7240_mac.h	446;"	d
+AG7240_INTR_RX	ag7240_mac.h	386;"	d
+AG7240_INTR_RX_BUS_ERROR	ag7240_mac.h	388;"	d
+AG7240_INTR_RX_OVF	ag7240_mac.h	387;"	d
+AG7240_INTR_TX	ag7240_mac.h	383;"	d
+AG7240_INTR_TX_BUS_ERROR	ag7240_mac.h	385;"	d
+AG7240_INTR_TX_URN	ag7240_mac.h	384;"	d
+AG7240_LED_POLL_SECONDS	ag7240.h	112;"	d
+AG7240_MAC_CFG1	ag7240_mac.h	272;"	d
+AG7240_MAC_CFG1_LOOPBACK	ag7240_mac.h	303;"	d
+AG7240_MAC_CFG1_RX_EN	ag7240_mac.h	304;"	d
+AG7240_MAC_CFG1_RX_FCTL	ag7240_mac.h	306;"	d
+AG7240_MAC_CFG1_RX_RST	ag7240_mac.h	301;"	d
+AG7240_MAC_CFG1_SOFT_RST	ag7240_mac.h	300;"	d
+AG7240_MAC_CFG1_TX_EN	ag7240_mac.h	305;"	d
+AG7240_MAC_CFG1_TX_FCTL	ag7240_mac.h	307;"	d
+AG7240_MAC_CFG1_TX_RST	ag7240_mac.h	302;"	d
+AG7240_MAC_CFG2	ag7240_mac.h	273;"	d
+AG7240_MAC_CFG2_CRC_EN	ag7240_mac.h	311;"	d
+AG7240_MAC_CFG2_FDX	ag7240_mac.h	310;"	d
+AG7240_MAC_CFG2_HUGE_FRAME_EN	ag7240_mac.h	314;"	d
+AG7240_MAC_CFG2_IF_1000	ag7240_mac.h	315;"	d
+AG7240_MAC_CFG2_IF_10_100	ag7240_mac.h	316;"	d
+AG7240_MAC_CFG2_LEN_CHECK	ag7240_mac.h	313;"	d
+AG7240_MAC_CFG2_PAD_CRC_EN	ag7240_mac.h	312;"	d
+AG7240_MAC_FIFO_CFG_0	ag7240_mac.h	279;"	d
+AG7240_MAC_FIFO_CFG_1	ag7240_mac.h	280;"	d
+AG7240_MAC_FIFO_CFG_2	ag7240_mac.h	281;"	d
+AG7240_MAC_FIFO_CFG_3	ag7240_mac.h	282;"	d
+AG7240_MAC_FIFO_CFG_4	ag7240_mac.h	283;"	d
+AG7240_MAC_FIFO_CFG_5	ag7240_mac.h	285;"	d
+AG7240_MAC_FIFO_RAM_0	ag7240_mac.h	288;"	d
+AG7240_MAC_FIFO_RAM_1	ag7240_mac.h	289;"	d
+AG7240_MAC_FIFO_RAM_2	ag7240_mac.h	290;"	d
+AG7240_MAC_FIFO_RAM_3	ag7240_mac.h	291;"	d
+AG7240_MAC_FIFO_RAM_4	ag7240_mac.h	292;"	d
+AG7240_MAC_FIFO_RAM_5	ag7240_mac.h	293;"	d
+AG7240_MAC_FIFO_RAM_6	ag7240_mac.h	294;"	d
+AG7240_MAC_FIFO_RAM_7	ag7240_mac.h	295;"	d
+AG7240_MAC_IFCTL	ag7240_mac.h	274;"	d
+AG7240_MAC_IFCTL_SPEED	ag7240_mac.h	318;"	d
+AG7240_MAC_MII_MGMT_CFG	ag7240_mac.h	393;"	d
+AG7240_MGMT_CFG_CLK_DIV_20	ag7240_mac.h	394;"	d
+AG7240_MGMT_CMD_READ	ag7240_mac.h	396;"	d
+AG7240_MGMT_IND_BUSY	ag7240_mac.h	402;"	d
+AG7240_MGMT_IND_INVALID	ag7240_mac.h	403;"	d
+AG7240_MII0_CONTROL	ag7240_mac.h	406;"	d
+AG7240_MII0_INTERFACE	ag7240_mac.h	200;"	d
+AG7240_MII0_INTERFACE	ag7240_mac.h	202;"	d
+AG7240_MII0_INTERFACE	ag7240_mac.h	204;"	d
+AG7240_MII0_INTERFACE	ag7240_mac.h	206;"	d
+AG7240_MII1_INTERFACE	ag7240_mac.h	217;"	d
+AG7240_MII1_INTERFACE	ag7240_mac.h	219;"	d
+AG7240_MII1_INTERFACE	ag7240_mac.h	221;"	d
+AG7240_MII1_INTERFACE	ag7240_mac.h	223;"	d
+AG7240_MII1_INTERFACE	ag7240_mac.h	227;"	d
+AG7240_MII_MGMT_ADDRESS	ag7240_mac.h	397;"	d
+AG7240_MII_MGMT_CMD	ag7240_mac.h	395;"	d
+AG7240_MII_MGMT_CTRL	ag7240_mac.h	399;"	d
+AG7240_MII_MGMT_IND	ag7240_mac.h	401;"	d
+AG7240_MII_MGMT_STATUS	ag7240_mac.h	400;"	d
+AG7240_NAPI_WEIGHT	ag7240.h	110;"	d
+AG7240_NMACS	ag7240_mac.h	214;"	d
+AG7240_NMACS	ag7240_mac.h	226;"	d
+AG7240_NVDEVS	ag7240_mac.h	149;"	d
+AG7240_PHY_POLL_SECONDS	ag7240.h	111;"	d
+AG7240_PHY_SPEED_1000T	ag7240_mac.h	/^    AG7240_PHY_SPEED_1000T,$/;"	e	enum:__anon15
+AG7240_PHY_SPEED_100TX	ag7240_mac.h	/^    AG7240_PHY_SPEED_100TX,$/;"	e	enum:__anon15
+AG7240_PHY_SPEED_10T	ag7240_mac.h	/^    AG7240_PHY_SPEED_10T,$/;"	e	enum:__anon15
+AG7240_RXE	ag7240_mac.h	373;"	d
+AG7240_RX_BUF_SIZE	ag7240_mac.h	246;"	d
+AG7240_RX_BYTES_CNTR	ag7240_mac.h	413;"	d
+AG7240_RX_CODE_ERR_CNTR	ag7240_mac.h	419;"	d
+AG7240_RX_CRC_ERR_CNTR	ag7240_mac.h	417;"	d
+AG7240_RX_CRS_ERR_CNTR	ag7240_mac.h	420;"	d
+AG7240_RX_DESC_CNT	ag7240.h	108;"	d
+AG7240_RX_DROP_CNTR	ag7240_mac.h	421;"	d
+AG7240_RX_FRM_ERR_CNTR	ag7240_mac.h	418;"	d
+AG7240_RX_LEN_ERR_CNTR	ag7240_mac.h	415;"	d
+AG7240_RX_MULT_CNTR	ag7240_mac.h	423;"	d
+AG7240_RX_OVL_ERR_CNTR	ag7240_mac.h	416;"	d
+AG7240_RX_PKT_CNTR	ag7240_mac.h	411;"	d
+AG7240_RX_RESERVE	ag7240_mac.h	245;"	d
+AG7240_RX_STATUS_BUS_ERROR	ag7240_mac.h	378;"	d
+AG7240_RX_STATUS_DONE	ag7240_mac.h	/^    AG7240_RX_STATUS_DONE,$/;"	e	enum:__anon17
+AG7240_RX_STATUS_NOT_DONE	ag7240_mac.h	/^    AG7240_RX_STATUS_NOT_DONE,$/;"	e	enum:__anon17
+AG7240_RX_STATUS_OOM	ag7240_mac.h	/^    AG7240_RX_STATUS_OOM,$/;"	e	enum:__anon17
+AG7240_RX_STATUS_OVF	ag7240_mac.h	377;"	d
+AG7240_RX_STATUS_PKTCNT_MASK	ag7240_mac.h	375;"	d
+AG7240_RX_STATUS_PKT_RCVD	ag7240_mac.h	376;"	d
+AG7240_TOTAL_COL_CNTR	ag7240_mac.h	425;"	d
+AG7240_TXE	ag7240_mac.h	367;"	d
+AG7240_TX_BYTES_CNTR	ag7240_mac.h	414;"	d
+AG7240_TX_CRC_ERR_CNTR	ag7240_mac.h	426;"	d
+AG7240_TX_DESC_CNT	ag7240.h	104;"	d
+AG7240_TX_DROP_CNTR	ag7240_mac.h	422;"	d
+AG7240_TX_FIFO_LEN	ag7240.h	98;"	d
+AG7240_TX_MAX_DS_LEN	ag7240.h	100;"	d
+AG7240_TX_MIN_DS_LEN	ag7240.h	99;"	d
+AG7240_TX_MTU_LEN	ag7240.h	102;"	d
+AG7240_TX_MULT_CNTR	ag7240_mac.h	424;"	d
+AG7240_TX_PKT_CNTR	ag7240_mac.h	412;"	d
+AG7240_TX_QOS_MODE_FIXED	ag7240_mac.h	357;"	d
+AG7240_TX_QOS_MODE_WEIGHTED	ag7240_mac.h	358;"	d
+AG7240_TX_QOS_WGT_0	ag7240_mac.h	359;"	d
+AG7240_TX_QOS_WGT_1	ag7240_mac.h	360;"	d
+AG7240_TX_QOS_WGT_2	ag7240_mac.h	361;"	d
+AG7240_TX_QOS_WGT_3	ag7240_mac.h	362;"	d
+AG7240_TX_QSTART_THRESH	ag7240.h	106;"	d
+AG7240_TX_REAP_THRESH	ag7240.h	105;"	d
+AG7240_TX_STATUS_BUS_ERROR	ag7240_mac.h	371;"	d
+AG7240_TX_STATUS_PKTCNT_SHIFT	ag7240_mac.h	368;"	d
+AG7240_TX_STATUS_PKT_SENT	ag7240_mac.h	369;"	d
+AG7240_TX_STATUS_URN	ag7240_mac.h	370;"	d
+ALL	tools/Makefile	/^ALL=	ethreg$/;"	m
+ARL_FLUSH_ALL	python_vlan_igmp.c	337;"	d	file:
+ARL_FLUSH_ALL_UNLOCK	python_vlan_igmp.c	340;"	d	file:
+ARL_LOAD_ENTRY	python_vlan_igmp.c	338;"	d	file:
+ARL_LOOKUP_ENTRY	python_vlan_igmp.c	341;"	d	file:
+ARL_PURGE_ENTRY	python_vlan_igmp.c	339;"	d	file:
+ATHER_DEBUG_SERDES_REG	ar7240_s26_phy.h	93;"	d
+ATHER_DEBUG_SERDES_REG	athrs16_phy.h	73;"	d
+ATHER_SERDES_BEACON	ar7240_s26_phy.h	96;"	d
+ATHER_SERDES_BEACON	athrs16_phy.h	76;"	d
+ATHER_STATUS_FULL_DEPLEX	athrs16_phy.h	68;"	d
+ATHER_STATUS_FULL_DUPLEX	ar7240_s26_phy.h	87;"	d
+ATHER_STATUS_LINK_MASK	ar7240_s26_phy.h	85;"	d
+ATHER_STATUS_LINK_MASK	athrs16_phy.h	66;"	d
+ATHER_STATUS_LINK_SHIFT	ar7240_s26_phy.h	86;"	d
+ATHER_STATUS_LINK_SHIFT	athrs16_phy.h	67;"	d
+ATHR_1000BASET_CONTROL	ar7240_s26_phy.h	33;"	d
+ATHR_1000BASET_CONTROL	athrs16_phy.h	17;"	d
+ATHR_1000BASET_STATUS	ar7240_s26_phy.h	34;"	d
+ATHR_1000BASET_STATUS	athrs16_phy.h	18;"	d
+ATHR_ADVERTISE_1000FULL	ar7240_s26_phy.h	81;"	d
+ATHR_ADVERTISE_1000FULL	athrs16_phy.h	63;"	d
+ATHR_ADVERTISE_1000HALF	ar7240_s26_phy.h	82;"	d
+ATHR_ADVERTISE_100FULL	ar7240_s26_phy.h	71;"	d
+ATHR_ADVERTISE_100FULL	athrs16_phy.h	53;"	d
+ATHR_ADVERTISE_100HALF	ar7240_s26_phy.h	72;"	d
+ATHR_ADVERTISE_100HALF	athrs16_phy.h	54;"	d
+ATHR_ADVERTISE_10FULL	ar7240_s26_phy.h	73;"	d
+ATHR_ADVERTISE_10FULL	athrs16_phy.h	55;"	d
+ATHR_ADVERTISE_10HALF	ar7240_s26_phy.h	74;"	d
+ATHR_ADVERTISE_10HALF	athrs16_phy.h	56;"	d
+ATHR_ADVERTISE_ALL	ar7240_s26_phy.h	76;"	d
+ATHR_ADVERTISE_ALL	athrs16_phy.h	58;"	d
+ATHR_ADVERTISE_ASYM_PAUSE	ar7240_s26_phy.h	69;"	d
+ATHR_ADVERTISE_ASYM_PAUSE	athrs16_phy.h	51;"	d
+ATHR_ADVERTISE_NEXT_PAGE	ar7240_s26_phy.h	68;"	d
+ATHR_ADVERTISE_NEXT_PAGE	athrs16_phy.h	50;"	d
+ATHR_ADVERTISE_PAUSE	ar7240_s26_phy.h	70;"	d
+ATHR_ADVERTISE_PAUSE	athrs16_phy.h	52;"	d
+ATHR_AUTONEG_ADVERT	ar7240_s26_phy.h	28;"	d
+ATHR_AUTONEG_ADVERT	athrs16_phy.h	12;"	d
+ATHR_AUTONEG_DONE	ar7240_s26_phy.h	56;"	d
+ATHR_AUTONEG_DONE	athrs16_phy.h	38;"	d
+ATHR_AUTONEG_EXPANSION	ar7240_s26_phy.h	30;"	d
+ATHR_AUTONEG_EXPANSION	athrs16_phy.h	14;"	d
+ATHR_CPU_EN	ar7240_s26_phy.h	170;"	d
+ATHR_CPU_PORT	ar7240_s26_phy.h	154;"	d
+ATHR_CTRL_AUTONEGOTIATION_ENABLE	ar7240_s26_phy.h	45;"	d
+ATHR_CTRL_AUTONEGOTIATION_ENABLE	athrs16_phy.h	27;"	d
+ATHR_CTRL_PORT_0	ar7240_s26_phy.h	153;"	d
+ATHR_CTRL_RESTART_AUTONEGOTIATION	ar7240_s26_phy.h	46;"	d
+ATHR_CTRL_RESTART_AUTONEGOTIATION	athrs16_phy.h	28;"	d
+ATHR_CTRL_SOFTWARE_RESET	ar7240_s26_phy.h	43;"	d
+ATHR_CTRL_SOFTWARE_RESET	athrs16_phy.h	25;"	d
+ATHR_CTRL_SPEED_FULL_DUPLEX	ar7240_s26_phy.h	47;"	d
+ATHR_CTRL_SPEED_FULL_DUPLEX	athrs16_phy.h	29;"	d
+ATHR_CTRL_SPEED_LSB	ar7240_s26_phy.h	44;"	d
+ATHR_CTRL_SPEED_LSB	athrs16_phy.h	26;"	d
+ATHR_CTRL_SPEED_MSB	ar7240_s26_phy.h	48;"	d
+ATHR_CTRL_SPEED_MSB	athrs16_phy.h	30;"	d
+ATHR_DA_PRI_EN	ar7240_s26_phy.h	167;"	d
+ATHR_DA_PRI_EN	athrs16_phy.h	145;"	d
+ATHR_DEBUG_PORT_ADDRESS	ar7240_s26_phy.h	37;"	d
+ATHR_DEBUG_PORT_ADDRESS	athrs16_phy.h	21;"	d
+ATHR_DEBUG_PORT_DATA	ar7240_s26_phy.h	38;"	d
+ATHR_DEBUG_PORT_DATA	athrs16_phy.h	22;"	d
+ATHR_ETHUNIT	ar7240_s26_phy.c	160;"	d	file:
+ATHR_ETHUNIT	athrf1_phy.c	113;"	d	file:
+ATHR_ETHUNIT	athrs16_phy.c	156;"	d	file:
+ATHR_GLOBALREGBASE	ar7240_s26_phy.c	149;"	d	file:
+ATHR_HDR_EN	ar7240_s26_phy.h	169;"	d
+ATHR_HEADER_LEN	ar7240_s26_phy.h	236;"	d
+ATHR_HEADER_LEN	athrs16_phy.h	203;"	d
+ATHR_ID_MAX	ar7240_s26_phy.c	155;"	d	file:
+ATHR_ID_MAX	athrs16_phy.c	151;"	d	file:
+ATHR_ID_MIN	ar7240_s26_phy.c	154;"	d	file:
+ATHR_ID_MIN	athrs16_phy.c	150;"	d	file:
+ATHR_IND_PHY	athrs16_phy.c	71;"	d	file:
+ATHR_IP_PRI_MAP0	ar7240_s26_phy.h	155;"	d
+ATHR_IP_PRI_MAP1	ar7240_s26_phy.h	156;"	d
+ATHR_IP_PRI_MAP2	ar7240_s26_phy.h	157;"	d
+ATHR_IS_ENET_PORT	ar7240_s26_phy.c	158;"	d	file:
+ATHR_IS_ENET_PORT	athrf1_phy.c	111;"	d	file:
+ATHR_IS_ENET_PORT	athrs16_phy.c	154;"	d	file:
+ATHR_IS_ETHUNIT	ar7240_s26_phy.c	166;"	d	file:
+ATHR_IS_ETHUNIT	athrf1_phy.c	118;"	d	file:
+ATHR_IS_ETHUNIT	athrs16_phy.c	162;"	d	file:
+ATHR_IS_PHY_ALIVE	ar7240_s26_phy.c	159;"	d	file:
+ATHR_IS_PHY_ALIVE	athrf1_phy.c	112;"	d	file:
+ATHR_IS_PHY_ALIVE	athrs16_phy.c	155;"	d	file:
+ATHR_IS_WAN_PORT	ar7240_s26_phy.c	170;"	d	file:
+ATHR_IS_WAN_PORT	athrf1_phy.c	122;"	d	file:
+ATHR_IS_WAN_PORT	athrs16_phy.c	166;"	d	file:
+ATHR_LAN_PORT_VLAN	ar7240_s26_phy.c	48;"	d	file:
+ATHR_LAN_PORT_VLAN	athrf1_phy.c	28;"	d	file:
+ATHR_LAN_PORT_VLAN	athrs16_phy.c	41;"	d	file:
+ATHR_LATCH_LINK_PASS	ar7240_s26_phy.h	89;"	d
+ATHR_LINK_100BASETX	ar7240_s26_phy.h	63;"	d
+ATHR_LINK_100BASETX	athrs16_phy.h	45;"	d
+ATHR_LINK_100BASETX_FULL_DUPLEX	ar7240_s26_phy.h	62;"	d
+ATHR_LINK_100BASETX_FULL_DUPLEX	athrs16_phy.h	44;"	d
+ATHR_LINK_10BASETX	ar7240_s26_phy.h	65;"	d
+ATHR_LINK_10BASETX	athrs16_phy.h	47;"	d
+ATHR_LINK_10BASETX_FULL_DUPLEX	ar7240_s26_phy.h	64;"	d
+ATHR_LINK_10BASETX_FULL_DUPLEX	athrs16_phy.h	46;"	d
+ATHR_LINK_PARTNER_ABILITY	ar7240_s26_phy.h	29;"	d
+ATHR_LINK_PARTNER_ABILITY	athrs16_phy.h	13;"	d
+ATHR_LINK_PARTNER_NEXT_PAGE	ar7240_s26_phy.h	32;"	d
+ATHR_LINK_PARTNER_NEXT_PAGE	athrs16_phy.h	16;"	d
+ATHR_NEXT_PAGE_TRANSMIT	ar7240_s26_phy.h	31;"	d
+ATHR_NEXT_PAGE_TRANSMIT	athrs16_phy.h	15;"	d
+ATHR_PHY0_ADDR	ar7240_s26_phy.c	56;"	d	file:
+ATHR_PHY0_ADDR	athrf1_phy.c	37;"	d	file:
+ATHR_PHY0_ADDR	athrs16_phy.c	66;"	d	file:
+ATHR_PHY1_ADDR	ar7240_s26_phy.c	57;"	d	file:
+ATHR_PHY1_ADDR	athrf1_phy.c	38;"	d	file:
+ATHR_PHY1_ADDR	athrs16_phy.c	67;"	d	file:
+ATHR_PHY2_ADDR	ar7240_s26_phy.c	58;"	d	file:
+ATHR_PHY2_ADDR	athrf1_phy.c	39;"	d	file:
+ATHR_PHY2_ADDR	athrs16_phy.c	68;"	d	file:
+ATHR_PHY3_ADDR	ar7240_s26_phy.c	59;"	d	file:
+ATHR_PHY3_ADDR	athrf1_phy.c	40;"	d	file:
+ATHR_PHY3_ADDR	athrs16_phy.c	69;"	d	file:
+ATHR_PHY4_ADDR	ar7240_s26_phy.c	60;"	d	file:
+ATHR_PHY4_ADDR	athrf1_phy.c	41;"	d	file:
+ATHR_PHY4_ADDR	athrs16_phy.c	70;"	d	file:
+ATHR_PHYADDR	ar7240_s26_phy.c	162;"	d	file:
+ATHR_PHYADDR	athrf1_phy.c	115;"	d	file:
+ATHR_PHYADDR	athrs16_phy.c	158;"	d	file:
+ATHR_PHYBASE	ar7240_s26_phy.c	161;"	d	file:
+ATHR_PHYBASE	athrf1_phy.c	114;"	d	file:
+ATHR_PHYBASE	athrs16_phy.c	157;"	d	file:
+ATHR_PHY_CONTROL	ar7240_s26_phy.h	24;"	d
+ATHR_PHY_CONTROL	athrs16_phy.h	8;"	d
+ATHR_PHY_FUNC_CONTROL	ar7240_s26_phy.h	35;"	d
+ATHR_PHY_ID1	ar7240_s26_phy.h	26;"	d
+ATHR_PHY_ID1	athrs16_phy.h	10;"	d
+ATHR_PHY_ID2	ar7240_s26_phy.h	27;"	d
+ATHR_PHY_ID2	athrs16_phy.h	11;"	d
+ATHR_PHY_INTR_ENABLE	ar7240_s26_phy.h	39;"	d
+ATHR_PHY_INTR_STATUS	ar7240_s26_phy.h	40;"	d
+ATHR_PHY_MAX	ar7240_s26_phy.c	151;"	d	file:
+ATHR_PHY_MAX	athrf1_phy.c	36;"	d	file:
+ATHR_PHY_MAX	athrs16_phy.c	147;"	d	file:
+ATHR_PHY_SPEC_CONTROL	athrs16_phy.h	19;"	d
+ATHR_PHY_SPEC_STATUS	ar7240_s26_phy.h	36;"	d
+ATHR_PHY_SPEC_STATUS	athrs16_phy.h	20;"	d
+ATHR_PHY_STATUS	ar7240_s26_phy.h	25;"	d
+ATHR_PHY_STATUS	athrs16_phy.h	9;"	d
+ATHR_PORT_PRI_EN	ar7240_s26_phy.h	168;"	d
+ATHR_PORT_PRI_EN	athrs16_phy.h	146;"	d
+ATHR_PRI_CTRL_PORT_0	ar7240_s26_phy.h	158;"	d
+ATHR_PRI_CTRL_PORT_0	athrs16_phy.h	136;"	d
+ATHR_PRI_CTRL_PORT_1	ar7240_s26_phy.h	159;"	d
+ATHR_PRI_CTRL_PORT_1	athrs16_phy.h	137;"	d
+ATHR_PRI_CTRL_PORT_2	ar7240_s26_phy.h	160;"	d
+ATHR_PRI_CTRL_PORT_2	athrs16_phy.h	138;"	d
+ATHR_PRI_CTRL_PORT_3	ar7240_s26_phy.h	161;"	d
+ATHR_PRI_CTRL_PORT_3	athrs16_phy.h	139;"	d
+ATHR_PRI_CTRL_PORT_4	ar7240_s26_phy.h	162;"	d
+ATHR_PRI_CTRL_PORT_4	athrs16_phy.h	140;"	d
+ATHR_PRI_CTRL_PORT_5	ar7240_s26_phy.h	163;"	d
+ATHR_PRI_CTRL_PORT_5	athrs16_phy.h	141;"	d
+ATHR_QOS_FIXED_PRIORITY	ar7240_s26_phy.h	173;"	d
+ATHR_QOS_FIXED_PRIORITY	athrs16_phy.h	149;"	d
+ATHR_QOS_MIXED	ar7240_s26_phy.h	175;"	d
+ATHR_QOS_MIXED	athrs16_phy.h	151;"	d
+ATHR_QOS_MODE_REGISTER	ar7240_s26_phy.h	172;"	d
+ATHR_QOS_MODE_REGISTER	athrs16_phy.h	148;"	d
+ATHR_QOS_WEIGHTED	ar7240_s26_phy.h	174;"	d
+ATHR_QOS_WEIGHTED	athrs16_phy.h	150;"	d
+ATHR_RESET_DONE	ar7240_s26_phy.h	50;"	d
+ATHR_RESET_DONE	athrs16_phy.h	32;"	d
+ATHR_S16_HEADER	ag7240_mac.h	81;"	d
+ATHR_S26_HEADER	ag7240_mac.h	80;"	d
+ATHR_STATUS_AUTO_NEG_DONE	ar7240_s26_phy.h	54;"	d
+ATHR_STATUS_AUTO_NEG_DONE	athrs16_phy.h	36;"	d
+ATHR_STATUS_LINK_PASS	ar7240_s26_phy.h	88;"	d
+ATHR_STATUS_LINK_PASS	athrs16_phy.h	69;"	d
+ATHR_STATUS_RESOVLED	ar7240_s26_phy.h	90;"	d
+ATHR_STATUS_RESOVLED	athrs16_phy.h	70;"	d
+ATHR_TOS_PRI_EN	ar7240_s26_phy.h	165;"	d
+ATHR_TOS_PRI_EN	athrs16_phy.h	143;"	d
+ATHR_VLAN_PRI_EN	ar7240_s26_phy.h	166;"	d
+ATHR_VLAN_PRI_EN	athrs16_phy.h	144;"	d
+ATHR_VLAN_TABLE_SETTING	ar7240_s26_phy.c	163;"	d	file:
+ATHR_VLAN_TABLE_SETTING	athrf1_phy.c	116;"	d	file:
+ATHR_VLAN_TABLE_SETTING	athrs16_phy.c	159;"	d	file:
+ATHR_WAN_PORT_VLAN	ar7240_s26_phy.c	49;"	d	file:
+ATHR_WAN_PORT_VLAN	athrf1_phy.c	29;"	d	file:
+ATHR_WAN_PORT_VLAN	athrs16_phy.c	42;"	d	file:
+ATH_LED_CONTROL	ag7240_mac.h	/^} ATH_LED_CONTROL;$/;"	t	typeref:struct:eth_led_control
+AT_HEADER_TYPE	ar7240_s26_phy.h	/^} AT_HEADER_TYPE;$/;"	t	typeref:enum:__anon22
+AT_HEADER_TYPE	athrs16_phy.h	/^} AT_HEADER_TYPE;$/;"	t	typeref:enum:__anon5
+BINDIR	tools/Makefile	/^BINDIR= \/usr\/local\/bin$/;"	m
+BOOL	ar7240_s26_phy.h	178;"	d
+BOOL	athrs16_phy.h	154;"	d
+BlinkRateTable_100M	ag7240_mac.h	/^LED_BLINK_RATES BlinkRateTable_100M[] = {$/;"	v
+BlinkRateTable_10M	ag7240_mac.h	/^LED_BLINK_RATES BlinkRateTable_10M[] = {$/;"	v
+CFG_BOARD_AP96	athrs16_phy.c	49;"	d	file:
+CFG_BOARD_AP96	athrs16_phy.c	54;"	d	file:
+CFG_BOARD_PB45	athrs16_phy.c	53;"	d	file:
+CFG_BOARD_PB45	athrs16_phy.c	59;"	d	file:
+CFLAGS	tools/Makefile	/^CFLAGS= ${INCS} -g -O2 -Wall$/;"	m
+CHECK_DMA_STATUS	ag7240_mac.h	76;"	d
+CONFIG_CHECK_DMA_STATUS	ag7240_mac.h	69;"	d
+CONFIG_ETH_SOFT_LED	ag7240_mac.h	70;"	d
+CPU_PORT_REGISTER	ar7240_s26_phy.h	131;"	d
+DEPTH	tools/Makefile	/^DEPTH := ..\/..\/..\/..\/..$/;"	m
+DPRINTF	ag7240_mac.h	85;"	d
+DPRINTF	ag7240_mac.h	89;"	d
+DPRINTF	ar7240_s26_phy.c	66;"	d	file:
+DPRINTF	ar7240_s26_phy.c	70;"	d	file:
+DRV_LOG	ar7240_s26_phy.c	44;"	d	file:
+DRV_LOG	athrs16_phy.c	37;"	d	file:
+DRV_MSG	ar7240_s26_phy.c	45;"	d	file:
+DRV_MSG	athrs16_phy.c	38;"	d	file:
+DRV_PRINT	ar7240_s26_phy.c	46;"	d	file:
+DRV_PRINT	athrs16_phy.c	39;"	d	file:
+ENET_AC_BE	ag7240_mac.h	39;"	d
+ENET_AC_BK	ag7240_mac.h	40;"	d
+ENET_AC_VI	ag7240_mac.h	41;"	d
+ENET_AC_VO	ag7240_mac.h	42;"	d
+ENET_NUM_AC	ag7240_mac.h	37;"	d
+ENET_UNIT_LAN	ag7240.h	114;"	d
+ENET_UNIT_LAN	ar7240_s26_phy.c	50;"	d	file:
+ENET_UNIT_LAN	athrf1_phy.c	30;"	d	file:
+ENET_UNIT_LAN	athrs16_phy.c	47;"	d	file:
+ENET_UNIT_LAN	athrs16_phy.c	52;"	d	file:
+ENET_UNIT_LAN	athrs16_phy.c	57;"	d	file:
+ENET_UNIT_LAN	athrs_qos.h	8;"	d
+ENET_UNIT_WAN	ag7240.h	115;"	d
+ENET_UNIT_WAN	ar7240_s26_phy.c	51;"	d	file:
+ENET_UNIT_WAN	athrf1_phy.c	31;"	d	file:
+ENET_UNIT_WAN	athrs16_phy.c	48;"	d	file:
+ENET_UNIT_WAN	athrs16_phy.c	58;"	d	file:
+ENET_UNIT_WAN	athrs_qos.h	9;"	d
+ETHERNET_FCS_SIZE	ag7240_mac.h	244;"	d
+ETHERTYPE_IP	ag7240_mac.h	32;"	d
+ETHREG_TOOL_BUILD	tools/ethreg.c	19;"	d	file:
+ETH_DA_QOS	athrs_ioctl.h	54;"	d
+ETH_DMA_CHECK	athrs_ioctl.h	78;"	d
+ETH_IP_QOS	athrs_ioctl.h	55;"	d
+ETH_PKT_INSPECT	ag7240_mac.h	82;"	d
+ETH_PORT_ELIMIT	athrs_ioctl.h	57;"	d
+ETH_PORT_EQLIMIT	athrs_ioctl.h	58;"	d
+ETH_PORT_ILIMIT	athrs_ioctl.h	56;"	d
+ETH_PORT_QOS	athrs_ioctl.h	52;"	d
+ETH_SOFT_CLASS	athrs_ioctl.h	51;"	d
+ETH_SOFT_LED	ag7240_mac.h	77;"	d
+ETH_SWONLY_MODE	ag7240_mac.h	79;"	d
+ETH_VLAN_HLEN	ag7240.h	48;"	d
+ETH_VLAN_QOS	athrs_ioctl.h	53;"	d
+FALSE	ar7240_s26_phy.c	54;"	d	file:
+FALSE	athrf1_phy.c	34;"	d	file:
+FALSE	athrs16_phy.c	64;"	d	file:
+FALSE	python_vlan_igmp.c	28;"	d	file:
+HDR_PACKET_TYPE_MASK	ag7240_mac.h	44;"	d
+HDR_PRIORITY_MASK	ag7240_mac.h	46;"	d
+HDR_PRIORITY_SHIFT	ag7240_mac.h	45;"	d
+HEADER_EN	athrs16_phy.h	162;"	d
+HEADER_REG_CONF	athrs16_phy.h	161;"	d
+INSTALL_ROOT	tools/Makefile	/^INSTALL_ROOT = ${DEPTH}\/rootfs-${BOARD_TYPE}${BUILD_CONFIG}.optbuild\/$/;"	m
+INSTALL_ROOT2	tools/Makefile	/^INSTALL_ROOT2 = ${DEPTH}\/rootfs-${BOARD_TYPE}${BUILD_CONFIG}.build\/$/;"	m
+IP_PRI_SHIFT	ag7240_mac.h	35;"	d
+LDFLAGS	tools/Makefile	/^LDFLAGS= -static$/;"	m
+LED_BLINK_RATES	ag7240_mac.h	/^} LED_BLINK_RATES;$/;"	t	typeref:struct:__anon18
+Ledstatus	ag7240.c	/^atomic_t Ledstatus;$/;"	v
+MB	ag7240_mac.h	631;"	d
+MDIO_CTRL_REGISTER	ar7240_s26_phy.h	132;"	d
+MIB_1ST	ar7240_s26_phy.h	/^    MIB_1ST,$/;"	e	enum:__anon22
+MIB_1ST	athrs16_phy.h	/^    MIB_1ST,$/;"	e	enum:__anon5
+MODULE_NAME	ag7240.c	43;"	d	file:
+MODULE_NAME	ar7240_s26_phy.c	62;"	d	file:
+MODULE_NAME	athr_vir_phy.c	26;"	d	file:
+MODULE_NAME	athrf1_phy.c	26;"	d	file:
+MODULE_NAME	athrs16_phy.c	73;"	d	file:
+NORMAL_PACKET	ar7240_s26_phy.h	/^    NORMAL_PACKET,$/;"	e	enum:__anon22
+NORMAL_PACKET	athrs16_phy.h	/^    NORMAL_PACKET,$/;"	e	enum:__anon5
+PHY_CAP_TYPE	ar7240_s26_phy.c	/^} PHY_CAP_TYPE;$/;"	t	typeref:enum:__anon19	file:
+PHY_CAP_TYPE	athrs16_phy.c	/^} PHY_CAP_TYPE;$/;"	t	typeref:enum:__anon1	file:
+PHY_LINK_CHANGE_REG	ar7240_s26_phy.h	145;"	d
+PHY_LINK_DOWN	ar7240_s26_phy.h	147;"	d
+PHY_LINK_DUPLEX_CHANGE	ar7240_s26_phy.h	148;"	d
+PHY_LINK_INTRS	ar7240_s26_phy.h	150;"	d
+PHY_LINK_SPEED_CHANGE	ar7240_s26_phy.h	149;"	d
+PHY_LINK_UP	ar7240_s26_phy.h	146;"	d
+PHY_PORTINFO_SIZE	ar7240_s26_phy.c	/^    PHY_PORTINFO_SIZE,$/;"	e	enum:__anon19	file:
+PHY_PORTINFO_SIZE	athrs16_phy.c	/^    PHY_PORTINFO_SIZE,$/;"	e	enum:__anon1	file:
+PHY_SRCPORT_INFO	ar7240_s26_phy.c	/^    PHY_SRCPORT_INFO, $/;"	e	enum:__anon19	file:
+PHY_SRCPORT_INFO	athrs16_phy.c	/^    PHY_SRCPORT_INFO, $/;"	e	enum:__anon1	file:
+PHY_SRCPORT_NONE	ar7240_s26_phy.c	/^    PHY_SRCPORT_NONE,$/;"	e	enum:__anon20	file:
+PHY_SRCPORT_NONE	athrs16_phy.c	/^    PHY_SRCPORT_NONE,$/;"	e	enum:__anon2	file:
+PHY_SRCPORT_TRAILER	ar7240_s26_phy.c	/^    PHY_SRCPORT_TRAILER,$/;"	e	enum:__anon20	file:
+PHY_SRCPORT_TRAILER	athrs16_phy.c	/^    PHY_SRCPORT_TRAILER,$/;"	e	enum:__anon2	file:
+PHY_SRCPORT_TYPE	ar7240_s26_phy.c	/^} PHY_SRCPORT_TYPE;$/;"	t	typeref:enum:__anon20	file:
+PHY_SRCPORT_TYPE	athrs16_phy.c	/^} PHY_SRCPORT_TYPE;$/;"	t	typeref:enum:__anon2	file:
+PHY_SRCPORT_VLANTAG	ar7240_s26_phy.c	/^    PHY_SRCPORT_VLANTAG, $/;"	e	enum:__anon20	file:
+PHY_SRCPORT_VLANTAG	athrs16_phy.c	/^    PHY_SRCPORT_VLANTAG, $/;"	e	enum:__anon2	file:
+PLedCtrl	ag7240.c	/^ATH_LED_CONTROL    PLedCtrl;$/;"	v
+PORT_BASE_VLAN_ADDR	python_vlan_igmp.c	260;"	d	file:
+PORT_BASE_VLAN_REGISTER0	ar7240_s26_phy.h	107;"	d
+PORT_BASE_VLAN_REGISTER1	ar7240_s26_phy.h	108;"	d
+PORT_BASE_VLAN_REGISTER2	ar7240_s26_phy.h	109;"	d
+PORT_BASE_VLAN_REGISTER3	ar7240_s26_phy.h	110;"	d
+PORT_BASE_VLAN_REGISTER4	ar7240_s26_phy.h	111;"	d
+PORT_BASE_VLAN_REGISTER5	ar7240_s26_phy.h	112;"	d
+PORT_CONTROL_REGISTER0	ar7240_s26_phy.h	121;"	d
+PORT_CONTROL_REGISTER1	ar7240_s26_phy.h	122;"	d
+PORT_CONTROL_REGISTER2	ar7240_s26_phy.h	123;"	d
+PORT_CONTROL_REGISTER3	ar7240_s26_phy.h	124;"	d
+PORT_CONTROL_REGISTER4	ar7240_s26_phy.h	125;"	d
+PORT_CONTROL_REGISTER5	ar7240_s26_phy.h	126;"	d
+PORT_CONTROL_REG_ADDR	python_vlan_igmp.c	50;"	d	file:
+PORT_EG_TAGGED	ar7240_s26_phy.h	/^    PORT_EG_TAGGED,          \/**<  egress transmit packets with vlan tag *\/$/;"	e	enum:__anon24
+PORT_EG_UNMODIFIED	ar7240_s26_phy.h	/^    PORT_EG_UNMODIFIED = 0,  \/**<  egress transmit packets unmodified *\/$/;"	e	enum:__anon24
+PORT_EG_UNTAGGED	ar7240_s26_phy.h	/^    PORT_EG_UNTAGGED,        \/**<  egress transmit packets without vlan tag *\/$/;"	e	enum:__anon24
+PORT_STATUS_REGISTER0	ar7240_s26_phy.h	100;"	d
+PORT_STATUS_REGISTER1	ar7240_s26_phy.h	101;"	d
+PORT_STATUS_REGISTER2	ar7240_s26_phy.h	102;"	d
+PORT_STATUS_REGISTER3	ar7240_s26_phy.h	103;"	d
+PORT_STATUS_REGISTER4	ar7240_s26_phy.h	104;"	d
+PORT_STATUS_REGISTER5	ar7240_s26_phy.h	105;"	d
+PYTHON_ATF0_ADDR	python_vlan_igmp.c	333;"	d	file:
+PYTHON_ATF1_ADDR	python_vlan_igmp.c	334;"	d	file:
+PYTHON_ATF2_ADDR	python_vlan_igmp.c	335;"	d	file:
+PYTHON_ERR	ar7240_s26_phy.c	40;"	d	file:
+PYTHON_ERR	python_vlan_igmp.c	31;"	d	file:
+PYTHON_FULL	ar7240_s26_phy.c	41;"	d	file:
+PYTHON_FULL	python_vlan_igmp.c	32;"	d	file:
+PYTHON_MAX_PORTS_ID	python_vlan_igmp.c	35;"	d	file:
+PYTHON_MAX_PORT_ID	python_vlan_igmp.c	34;"	d	file:
+PYTHON_OK	ar7240_s26_phy.c	39;"	d	file:
+PYTHON_OK	python_vlan_igmp.c	30;"	d	file:
+PYTHON_PORTS_ID_CHECK	python_vlan_igmp.c	43;"	d	file:
+PYTHON_PORT_ID_CHECK	python_vlan_igmp.c	37;"	d	file:
+PYTHON_VLAN_ID_CHECK	python_vlan_igmp.c	78;"	d	file:
+PYTHON_VTF0_ADDR	python_vlan_igmp.c	88;"	d	file:
+PYTHON_VTF1_ADDR	python_vlan_igmp.c	89;"	d	file:
+RATE_LIMIT1_REGISTER0	ar7240_s26_phy.h	128;"	d
+RATE_LIMIT2_REGISTER0	ar7240_s26_phy.h	129;"	d
+RATE_LIMIT_REGISTER0	ar7240_s26_phy.h	114;"	d
+RATE_LIMIT_REGISTER1	ar7240_s26_phy.h	115;"	d
+RATE_LIMIT_REGISTER2	ar7240_s26_phy.h	116;"	d
+RATE_LIMIT_REGISTER3	ar7240_s26_phy.h	117;"	d
+RATE_LIMIT_REGISTER4	ar7240_s26_phy.h	118;"	d
+RATE_LIMIT_REGISTER5	ar7240_s26_phy.h	119;"	d
+READ_WRITE_REG	ar7240_s26_phy.h	/^    READ_WRITE_REG,$/;"	e	enum:__anon22
+READ_WRITE_REG	athrs16_phy.h	/^    READ_WRITE_REG,$/;"	e	enum:__anon5
+READ_WRITE_REG_ACK	ar7240_s26_phy.h	/^    READ_WRITE_REG_ACK,$/;"	e	enum:__anon22
+READ_WRITE_REG_ACK	athrs16_phy.h	/^    READ_WRITE_REG_ACK,$/;"	e	enum:__anon5
+RESERVED0	ar7240_s26_phy.h	/^    RESERVED0,$/;"	e	enum:__anon22
+RESERVED0	athrs16_phy.h	/^    RESERVED0,$/;"	e	enum:__anon5
+RESERVED1	ar7240_s26_phy.h	/^    RESERVED1,$/;"	e	enum:__anon22
+RESERVED1	athrs16_phy.h	/^    RESERVED1,$/;"	e	enum:__anon5
+RESERVED2	ar7240_s26_phy.h	/^    RESERVED2,$/;"	e	enum:__anon22
+RESERVED2	athrs16_phy.h	/^    RESERVED2,$/;"	e	enum:__anon5
+RESERVED3	ar7240_s26_phy.h	/^    RESERVED3$/;"	e	enum:__anon22
+RESERVED3	athrs16_phy.h	/^    RESERVED3$/;"	e	enum:__anon5
+S16_ARL_TBL_CTRL_REG	athrs16_phy.h	119;"	d
+S16_ARL_TBL_FUNC_REG0	athrs16_phy.h	115;"	d
+S16_ARL_TBL_FUNC_REG1	athrs16_phy.h	116;"	d
+S16_ARL_TBL_FUNC_REG2	athrs16_phy.h	117;"	d
+S16_CPU_PORT_REGISTER	athrs16_phy.h	112;"	d
+S16_ENABLE_CPU_BROADCAST	athrs16_phy.h	125;"	d
+S16_FLD_MASK_REG	athrs16_phy.h	118;"	d
+S16_GLOBAL_INTR_MASK_REG	athrs16_phy.h	121;"	d
+S16_GLOBAL_INTR_REG	athrs16_phy.h	120;"	d
+S16_MDIO_CTRL_REGISTER	athrs16_phy.h	113;"	d
+S16_PHY_LINK_CHANGE_REG	athrs16_phy.h	127;"	d
+S16_PHY_LINK_DOWN	athrs16_phy.h	129;"	d
+S16_PHY_LINK_DUPLEX_CHANGE	athrs16_phy.h	130;"	d
+S16_PHY_LINK_INTRS	athrs16_phy.h	132;"	d
+S16_PHY_LINK_SPEED_CHANGE	athrs16_phy.h	131;"	d
+S16_PHY_LINK_UP	athrs16_phy.h	128;"	d
+S16_PORT_BASE_VLAN_REGISTER0	athrs16_phy.h	87;"	d
+S16_PORT_BASE_VLAN_REGISTER1	athrs16_phy.h	88;"	d
+S16_PORT_BASE_VLAN_REGISTER2	athrs16_phy.h	89;"	d
+S16_PORT_BASE_VLAN_REGISTER3	athrs16_phy.h	90;"	d
+S16_PORT_BASE_VLAN_REGISTER4	athrs16_phy.h	91;"	d
+S16_PORT_BASE_VLAN_REGISTER5	athrs16_phy.h	92;"	d
+S16_PORT_CONTROL_REGISTER0	athrs16_phy.h	105;"	d
+S16_PORT_CONTROL_REGISTER1	athrs16_phy.h	106;"	d
+S16_PORT_CONTROL_REGISTER2	athrs16_phy.h	107;"	d
+S16_PORT_CONTROL_REGISTER3	athrs16_phy.h	108;"	d
+S16_PORT_CONTROL_REGISTER4	athrs16_phy.h	109;"	d
+S16_PORT_CONTROL_REGISTER5	athrs16_phy.h	110;"	d
+S16_PORT_STATUS_REGISTER0	athrs16_phy.h	80;"	d
+S16_PORT_STATUS_REGISTER1	athrs16_phy.h	81;"	d
+S16_PORT_STATUS_REGISTER2	athrs16_phy.h	82;"	d
+S16_PORT_STATUS_REGISTER3	athrs16_phy.h	83;"	d
+S16_PORT_STATUS_REGISTER4	athrs16_phy.h	84;"	d
+S16_PORT_STATUS_REGISTER5	athrs16_phy.h	85;"	d
+S16_PWR_ON_STRAP_REG	athrs16_phy.h	122;"	d
+S16_RATE_LIMIT_REGISTER0	athrs16_phy.h	98;"	d
+S16_RATE_LIMIT_REGISTER1	athrs16_phy.h	99;"	d
+S16_RATE_LIMIT_REGISTER2	athrs16_phy.h	100;"	d
+S16_RATE_LIMIT_REGISTER3	athrs16_phy.h	101;"	d
+S16_RATE_LIMIT_REGISTER4	athrs16_phy.h	102;"	d
+S16_RATE_LIMIT_REGISTER5	athrs16_phy.h	103;"	d
+S16_VLAN_FUNC_REGISTER0	athrs16_phy.h	94;"	d
+S16_VLAN_FUNC_REGISTER1	athrs16_phy.h	95;"	d
+S26_ARL_ADD	athrs_ioctl.h	107;"	d
+S26_ARL_DEL	athrs_ioctl.h	108;"	d
+S26_ARL_TBL_CTRL_REG	ar7240_s26_phy.h	138;"	d
+S26_ARL_TBL_FUNC_REG0	ar7240_s26_phy.h	134;"	d
+S26_ARL_TBL_FUNC_REG1	ar7240_s26_phy.h	135;"	d
+S26_ARL_TBL_FUNC_REG2	ar7240_s26_phy.h	136;"	d
+S26_ENABLE_CPU_BROADCAST	ar7240_s26_phy.h	143;"	d
+S26_FLD_MASK_REG	ar7240_s26_phy.h	137;"	d
+S26_FORCE_100M	ar7240_s26_phy.h	259;"	d
+S26_FORCE_PHY	athrs_ioctl.h	33;"	d
+S26_FORCE_PHY	eth_diag.h	4;"	d
+S26_GLOBAL_INTR_MASK_REG	ar7240_s26_phy.h	140;"	d
+S26_GLOBAL_INTR_REG	ar7240_s26_phy.h	139;"	d
+S26_IGMP_ON_OFF	athrs_ioctl.h	98;"	d
+S26_LINK_GETSTAT	athrs_ioctl.h	102;"	d
+S26_MCAST_CLR	athrs_ioctl.h	110;"	d
+S26_PACKET_FLAG	athrs_ioctl.h	111;"	d
+S26_QOS_CTL	athrs_ioctl.h	82;"	d
+S26_RD_PHY	athrs_ioctl.h	31;"	d
+S26_RD_PHY	eth_diag.h	2;"	d
+S26_VER_1_0	ar7240_s26_phy.h	181;"	d
+S26_VLAN_ADDPORTS	athrs_ioctl.h	88;"	d
+S26_VLAN_DELPORTS	athrs_ioctl.h	89;"	d
+S26_VLAN_DISABLE	athrs_ioctl.h	105;"	d
+S26_VLAN_ENABLE	athrs_ioctl.h	104;"	d
+S26_VLAN_SETDEFAULTID	athrs_ioctl.h	95;"	d
+S26_VLAN_SETTAGMODE	athrs_ioctl.h	92;"	d
+S26_WR_PHY	athrs_ioctl.h	32;"	d
+S26_WR_PHY	eth_diag.h	3;"	d
+SIOCDEVPRIVATE	eth_diag.h	1;"	d
+SOFT_LED_BLINK	athrs_ioctl.h	77;"	d
+SW_ONLY_MODE	athrs_ioctl.h	76;"	d
+SW_PLL	ag7240.h	117;"	d
+TOS_ECN_MASK	ag7240_mac.h	48;"	d
+TOS_ECN_SHIFT	ag7240_mac.h	47;"	d
+TOS_TO_ENET_AC	ag7240_mac.h	55;"	d
+TRC_SIZE	ag7240_trc.h	20;"	d
+TRUE	ar7240_s26_phy.c	53;"	d	file:
+TRUE	athrf1_phy.c	33;"	d	file:
+TRUE	athrs16_phy.c	63;"	d	file:
+TRUE	python_vlan_igmp.c	27;"	d	file:
+VLANTableSetting	ar7240_s26_phy.c	/^    uint32_t VLANTableSetting; \/* Value to be written to VLAN table *\/$/;"	m	struct:__anon21	file:
+VLANTableSetting	athrf1_phy.c	/^    uint32_t VLANTableSetting; \/* Value to be written to VLAN table *\/$/;"	m	struct:__anon4	file:
+VLANTableSetting	athrs16_phy.c	/^    uint32_t VLANTableSetting; \/* Value to be written to VLAN table *\/$/;"	m	struct:__anon3	file:
+VLAN_DEV_INFO	athrs_ioctl.h	113;"	d
+VLAN_FIND_ENTRY	python_vlan_igmp.c	86;"	d	file:
+VLAN_LOAD_ENTRY	python_vlan_igmp.c	84;"	d	file:
+VLAN_PURGE_ENTRY	python_vlan_igmp.c	85;"	d	file:
+WAN_QOS_SOFT_CLASS	ag7240_mac.h	78;"	d
+_AG7240_H	ag7240.h	18;"	d
+_AG7240_MAC_H	ag7240_mac.h	18;"	d
+_AG7240_PHY_H	ag7240_phy.h	18;"	d
+_AG7240_TRC_h	ag7240_trc.h	18;"	d
+_ATHRS16_PHY_H	athrs16_phy.h	2;"	d
+_ATHRS26_PHY_H	ar7240_s26_phy.h	18;"	d
+_ATHRS26_RGMII_H	athrf1_phy.h	18;"	d
+_ATHRS_IOCTL_H	athrs_ioctl.h	18;"	d
+_ATHRS_QOPS_H	athrs_qos.h	2;"	d
+_ATH_HEADER_CONF	ar7240_s26_phy.h	213;"	d
+_ATH_HEADER_CONF	athrs16_phy.h	180;"	d
+_python_fdb_commit	python_vlan_igmp.c	/^_python_fdb_commit(uint32_t op)$/;"	f	file:
+_python_fdb_fill_addr	python_vlan_igmp.c	/^_python_fdb_fill_addr(mac_addr_t addr, uint32_t * reg0, uint32_t * reg1)$/;"	f	file:
+_python_fdb_is_zeroaddr	python_vlan_igmp.c	/^_python_fdb_is_zeroaddr(mac_addr_t addr)$/;"	f	file:
+_python_vlan_commit	python_vlan_igmp.c	/^_python_vlan_commit(uint32_t op)$/;"	f	file:
+_python_vlan_read	python_vlan_igmp.c	/^_python_vlan_read(uint32_t vlan_id, uint32_t * port_bmap)$/;"	f	file:
+ad_in_data	eth_diag.h	/^    caddr_t ad_in_data;$/;"	m	struct:eth_diag
+ad_name	athrs_ioctl.h	/^    char    ad_name[IFNAMSIZ];      \/* if name, e.g. "eth0" *\/$/;"	m	struct:eth_cfg_params
+ad_name	eth_diag.h	/^    char    ad_name[IFNAMSIZ];      \/* if name, e.g. "eth0" *\/$/;"	m	struct:eth_diag
+ad_out_data	eth_diag.h	/^    caddr_t ad_out_data;$/;"	m	struct:eth_diag
+addr_to_words	ag7240.h	82;"	d
+ag7100_mac_reg_read	athrs_qos.h	/^ag7100_mac_reg_read(char *ad_name,uint32_t Reg) {$/;"	f
+ag7100_mac_reg_rmw_clear	athrs_qos.h	/^ag7100_mac_reg_rmw_clear(char *ad_name,uint32_t Reg, uint32_t Val) {$/;"	f
+ag7100_mac_reg_rmw_set	athrs_qos.h	/^ag7100_mac_reg_rmw_set(char *ad_name,uint32_t Reg, uint32_t Val) {$/;"	f
+ag7100_mac_reg_write	athrs_qos.h	/^ag7100_mac_reg_write(char *ad_name,uint32_t Reg, uint32_t Val) {$/;"	f
+ag7240_buffer_alloc	ag7240.c	/^    ag7240_buffer_alloc(void)$/;"	f	file:
+ag7240_buffer_free	ag7240.c	/^ag7240_buffer_free(struct sk_buff *skb)$/;"	f	file:
+ag7240_buffer_t	ag7240_mac.h	/^}ag7240_buffer_t;$/;"	t	typeref:struct:__anon12
+ag7240_check_link	ag7240.c	/^ag7240_check_link(ag7240_mac_t *mac,int phyUnit)$/;"	f
+ag7240_cleanup	ag7240.c	/^ag7240_cleanup(void)$/;"	f	file:
+ag7240_cleanup	ag7240.c	/^module_exit(ag7240_cleanup);$/;"	v
+ag7240_desc_dma_addr	ag7240_mac.h	470;"	d
+ag7240_desc_t	ag7240_mac.h	/^}ag7240_desc_t;$/;"	t	typeref:struct:__anon11
+ag7240_dev_up	ag7240_mac.h	185;"	d
+ag7240_disable_mac_qos	athrs_qos.h	/^ag7240_disable_mac_qos(char *ad_name) {$/;"	f
+ag7240_do_ioctl	ag7240.c	/^ag7240_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)$/;"	f	file:
+ag7240_enable_mac_qos	athrs_qos.h	/^ag7240_enable_mac_qos(char *ad_name) {$/;"	f
+ag7240_get_default_macaddr	ag7240.c	/^ag7240_get_default_macaddr(ag7240_mac_t *mac, u8 *mac_addr)$/;"	f	file:
+ag7240_get_diff	ag7240.h	/^ag7240_get_diff(uint32_t t1,uint32_t t2)$/;"	f
+ag7240_get_isr	ag7240_mac.h	524;"	d
+ag7240_get_link_status	ag7240_phy.h	/^ag7240_get_link_status(int unit, int *link, int *fdx, ag7240_phy_speed_t *speed,int phyUnit)$/;"	f
+ag7240_get_stats	ag7240.c	/^    *ag7240_get_stats(struct net_device *dev)$/;"	f	file:
+ag7240_get_tx_ds	ag7240.c	/^ag7240_get_tx_ds(ag7240_mac_t *mac, int *len, unsigned char **start,int ac)$/;"	f	file:
+ag7240_handle_tx_full	ag7240.c	/^ag7240_handle_tx_full(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_hard_start	ag7240.c	/^ag7240_hard_start(struct sk_buff *skb, struct net_device *dev)$/;"	f
+ag7240_hw_setup	ag7240.c	/^ag7240_hw_setup(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_hw_stop	ag7240.c	/^ag7240_hw_stop(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_init	ag7240.c	/^ag7240_init(void)$/;"	f	file:
+ag7240_init	ag7240.c	/^module_init(ag7240_init);$/;"	v
+ag7240_int_disable	ag7240_mac.h	528;"	d
+ag7240_int_enable	ag7240_mac.h	525;"	d
+ag7240_intr	ag7240.c	/^ag7240_intr(int cpl, void *dev_id, struct pt_regs *regs)$/;"	f	file:
+ag7240_intr_ack_rx	ag7240_mac.h	541;"	d
+ag7240_intr_ack_rxbe	ag7240_mac.h	552;"	d
+ag7240_intr_ack_rxovf	ag7240_mac.h	543;"	d
+ag7240_intr_ack_tx	ag7240_mac.h	548;"	d
+ag7240_intr_ack_txbe	ag7240_mac.h	550;"	d
+ag7240_intr_ack_txurn	ag7240_mac.h	539;"	d
+ag7240_intr_disable_recv	ag7240_mac.h	571;"	d
+ag7240_intr_disable_rxovf	ag7240_mac.h	578;"	d
+ag7240_intr_disable_tx	ag7240_mac.h	568;"	d
+ag7240_intr_disable_txurn	ag7240_mac.h	559;"	d
+ag7240_intr_enable_recv	ag7240_mac.h	583;"	d
+ag7240_intr_enable_rxovf	ag7240_mac.h	575;"	d
+ag7240_intr_enable_tx	ag7240_mac.h	565;"	d
+ag7240_intr_enable_txurn	ag7240_mac.h	562;"	d
+ag7240_link_intr	ag7240.c	/^ag7240_link_intr(int cpl, void *dev_id, struct pt_regs *regs) {$/;"	f	file:
+ag7240_mac_base	ag7240_mac.h	250;"	d
+ag7240_mac_irq	ag7240_mac.h	251;"	d
+ag7240_mac_reg_read	athrs_qos.h	/^ag7240_mac_reg_read(char *ad_name,uint32_t Reg) {$/;"	f
+ag7240_mac_reg_rmw_clear	athrs_qos.h	/^ag7240_mac_reg_rmw_clear(char *ad_name,uint32_t Reg, uint32_t Val) $/;"	f
+ag7240_mac_reg_rmw_set	athrs_qos.h	/^ag7240_mac_reg_rmw_set(char *ad_name,uint32_t Reg, uint32_t Val) $/;"	f
+ag7240_mac_reg_write	athrs_qos.h	/^ag7240_mac_reg_write(char *ad_name,uint32_t Reg, uint32_t Val) $/;"	f
+ag7240_mac_t	ag7240_mac.h	/^}ag7240_mac_t;$/;"	t	typeref:struct:__anon16
+ag7240_macs	ag7240.c	/^ag7240_mac_t *ag7240_macs[2];$/;"	v
+ag7240_mii_read	ag7240.c	/^ag7240_mii_read(int unit, uint32_t phy_addr, uint8_t reg)$/;"	f
+ag7240_mii_write	ag7240.c	/^ag7240_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data)$/;"	f
+ag7240_name2mac	ag7240_mac.h	257;"	d
+ag7240_ndesc_unused	ag7240.h	/^ag7240_ndesc_unused(ag7240_mac_t *mac, ag7240_ring_t *ring)$/;"	f
+ag7240_oom_timer	ag7240.c	/^ag7240_oom_timer(unsigned long data)$/;"	f	file:
+ag7240_open	ag7240.c	/^ag7240_open(struct net_device *dev)$/;"	f	file:
+ag7240_phy_get_counters	ag7240_phy.h	39;"	d
+ag7240_phy_is_fdx	ag7240_phy.h	35;"	d
+ag7240_phy_is_lan_pkt	ag7240_phy.h	36;"	d
+ag7240_phy_is_up	ag7240_phy.h	33;"	d
+ag7240_phy_reg_init	ag7240_phy.h	/^static inline void ag7240_phy_reg_init(int unit)$/;"	f
+ag7240_phy_set_pkt_port	ag7240_phy.h	37;"	d
+ag7240_phy_setup	ag7240_phy.h	/^static inline void ag7240_phy_setup(int unit)$/;"	f
+ag7240_phy_speed	ag7240_phy.h	34;"	d
+ag7240_phy_speed_t	ag7240_mac.h	/^}ag7240_phy_speed_t;$/;"	t	typeref:enum:__anon15
+ag7240_phy_tag_len	ag7240_phy.h	38;"	d
+ag7240_poll	ag7240.c	/^ag7240_poll(struct net_device *dev, int *budget)$/;"	f	file:
+ag7240_print_link_status	ag7240_phy.h	/^ag7240_print_link_status(int unit)$/;"	f
+ag7240_recv_packets	ag7240.c	/^ag7240_recv_packets(struct net_device *dev, ag7240_mac_t *mac, $/;"	f	file:
+ag7240_reg_rd	ag7240_mac.h	451;"	d
+ag7240_reg_rmw_clear	ag7240_mac.h	466;"	d
+ag7240_reg_rmw_set	ag7240_mac.h	463;"	d
+ag7240_reg_wr	ag7240_mac.h	454;"	d
+ag7240_reg_wr_nf	ag7240_mac.h	460;"	d
+ag7240_reset_mask	ag7240_mac.h	253;"	d
+ag7240_ring_alloc	ag7240.c	/^ag7240_ring_alloc(ag7240_ring_t *r, int count)$/;"	f	file:
+ag7240_ring_free	ag7240.c	/^ag7240_ring_free(ag7240_ring_t *r)$/;"	f	file:
+ag7240_ring_incr	ag7240_mac.h	508;"	d
+ag7240_ring_release	ag7240.c	/^ag7240_ring_release(ag7240_mac_t *mac, ag7240_ring_t  *r)$/;"	f	file:
+ag7240_ring_t	ag7240_mac.h	/^}ag7240_ring_t;$/;"	t	typeref:struct:__anon13
+ag7240_rx_alloc	ag7240.c	/^ag7240_rx_alloc(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_rx_free	ag7240.c	/^ag7240_rx_free(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_rx_give_to_dma	ag7240_mac.h	515;"	d
+ag7240_rx_owned_by_dma	ag7240_mac.h	514;"	d
+ag7240_rx_replenish	ag7240.c	/^ag7240_rx_replenish(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_rx_ring_full	ag7240.h	/^static inline int ag7240_rx_ring_full(ag7240_mac_t *mac)$/;"	f
+ag7240_rx_start	ag7240_mac.h	480;"	d
+ag7240_rx_status_t	ag7240_mac.h	/^}ag7240_rx_status_t;$/;"	t	typeref:enum:__anon17
+ag7240_rx_stop	ag7240_mac.h	483;"	d
+ag7240_set_mac_duplex	ag7240.h	/^static inline void ag7240_set_mac_duplex(ag7240_mac_t *mac, int fdx)$/;"	f
+ag7240_set_mac_from_link	ag7240.c	/^ag7240_set_mac_from_link(ag7240_mac_t *mac, ag7240_phy_speed_t speed, int fdx)$/;"	f	file:
+ag7240_set_mac_if	ag7240.h	/^static inline void ag7240_set_mac_if(ag7240_mac_t *mac, int is_1000)$/;"	f
+ag7240_set_mac_speed	ag7240.h	/^static inline void ag7240_set_mac_speed(ag7240_mac_t *mac, int is100)$/;"	f
+ag7240_set_mii_ctrl_speed	ag7240_mac.h	235;"	d
+ag7240_stats_t	ag7240_mac.h	/^}ag7240_stats_t;$/;"	t	typeref:struct:__anon14
+ag7240_stop	ag7240.c	/^ag7240_stop(struct net_device *dev)$/;"	f	file:
+ag7240_trc	ag7240_trc.h	65;"	d
+ag7240_trc	ag7240_trc.h	93;"	d
+ag7240_trc_dump	ag7240_trc.h	67;"	d
+ag7240_trc_dump	ag7240_trc.h	94;"	d
+ag7240_trc_entry_t	ag7240_trc.h	/^}ag7240_trc_entry_t;$/;"	t	typeref:struct:__anon9
+ag7240_trc_init	ag7240_trc.h	37;"	d
+ag7240_trc_init	ag7240_trc.h	91;"	d
+ag7240_trc_new	ag7240_trc.h	48;"	d
+ag7240_trc_new	ag7240_trc.h	92;"	d
+ag7240_trc_t	ag7240_trc.h	/^}ag7240_trc_t;$/;"	t	typeref:struct:__anon10
+ag7240_tx_alloc	ag7240.c	/^ag7240_tx_alloc(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_tx_free	ag7240.c	/^ag7240_tx_free(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_tx_give_to_dma	ag7240_mac.h	517;"	d
+ag7240_tx_own	ag7240_mac.h	518;"	d
+ag7240_tx_owned_by_dma	ag7240_mac.h	516;"	d
+ag7240_tx_reap	ag7240.c	/^ag7240_tx_reap(ag7240_mac_t *mac,int ac)$/;"	f	file:
+ag7240_tx_reap_thresh	ag7240.h	/^static inline int ag7240_tx_reap_thresh(ag7240_mac_t *mac,int ac)$/;"	f
+ag7240_tx_ring_full	ag7240.h	/^static inline int ag7240_tx_ring_full(ag7240_mac_t *mac,int ac)$/;"	f
+ag7240_tx_start	ag7240_mac.h	502;"	d
+ag7240_tx_start_qos	ag7240_mac.h	486;"	d
+ag7240_tx_stop	ag7240_mac.h	505;"	d
+ag7240_tx_stopped	ag7240_mac.h	477;"	d
+ag7240_tx_timeout	ag7240.c	/^ag7240_tx_timeout(struct net_device *dev)$/;"	f	file:
+ag7240_tx_timeout_task	ag7240.c	/^ag7240_tx_timeout_task(ag7240_mac_t *mac)$/;"	f	file:
+ag7240_unit2mac	ag7240_mac.h	256;"	d
+ag7240_vet_tx_len_per_pkt	ag7240.c	/^ag7240_vet_tx_len_per_pkt(unsigned int *len)$/;"	f	file:
+ag7242_check_link	ag7240.c	/^ag7242_check_link(ag7240_mac_t *mac)$/;"	f
+ar7240_s26_intr	ar7240_s26_phy.c	/^void ar7240_s26_intr(void)$/;"	f
+arl_struct	athrs_ioctl.h	/^struct arl_struct {$/;"	s
+assert	ag7240_mac.h	260;"	d
+at_header_t	ar7240_s26_phy.h	/^}at_header_t;$/;"	t	typeref:struct:__anon23
+at_header_t	athrs16_phy.h	/^}at_header_t;$/;"	t	typeref:struct:__anon6
+ath_qops	athrs_ioctl.h	/^struct ath_qops {$/;"	s
+ath_qos_ops	athrs_qos.h	/^struct ath_qops ath_qos_ops = {$/;"	v	typeref:struct:ath_qops
+ath_remove_hdr	ag7240.c	/^ath_remove_hdr(ag7240_mac_t *mac, struct sk_buff *skb) $/;"	f	file:
+athr16_init_flag	athrs16_phy.c	/^static uint8_t athr16_init_flag = 0;$/;"	v	file:
+athr26_init_flag	ar7240_s26_phy.c	/^static uint8_t athr26_init_flag = 0,athr26_init_flag1 = 0;$/;"	v	file:
+athr26_init_flag1	ar7240_s26_phy.c	/^static uint8_t athr26_init_flag = 0,athr26_init_flag1 = 0;$/;"	v	file:
+athrPhyInfo	ar7240_s26_phy.c	/^static athrPhyInfo_t athrPhyInfo[] = {$/;"	v	file:
+athrPhyInfo	athrf1_phy.c	/^static athrPhyInfo_t athrPhyInfo[] = {$/;"	v	file:
+athrPhyInfo	athrs16_phy.c	/^static athrPhyInfo_t athrPhyInfo[] = {$/;"	v	file:
+athrPhyInfo_t	ar7240_s26_phy.c	/^} athrPhyInfo_t;$/;"	t	typeref:struct:__anon21	file:
+athrPhyInfo_t	athrf1_phy.c	/^} athrPhyInfo_t;$/;"	t	typeref:struct:__anon4	file:
+athrPhyInfo_t	athrs16_phy.c	/^} athrPhyInfo_t;$/;"	t	typeref:struct:__anon3	file:
+athr_auto_neg	athrf1_phy.c	/^void athr_auto_neg(int ethUnit,int phyUnit) $/;"	f
+athr_disable_linkIntrs	athrf1_phy.c	/^void athr_disable_linkIntrs(int ethUnit) $/;"	f
+athr_enable_linkIntrs	athrf1_phy.c	/^void athr_enable_linkIntrs(int ethUnit) $/;"	f
+athr_phy_is_fdx	athrf1_phy.c	/^athr_phy_is_fdx(int ethUnit,int phyUnit)$/;"	f
+athr_phy_is_link_alive	athrf1_phy.c	/^athr_phy_is_link_alive(int phyUnit)$/;"	f
+athr_phy_is_up	athrf1_phy.c	/^athr_phy_is_up(int ethUnit)$/;"	f
+athr_phy_setup	athrf1_phy.c	/^athr_phy_setup(int ethUnit)$/;"	f
+athr_phy_speed	athrf1_phy.c	/^athr_phy_speed(int ethUnit,int phyUnit)$/;"	f
+athr_phy_t	athr_vir_phy.c	/^}athr_phy_t;$/;"	t	typeref:struct:__anon8	file:
+athr_register_qos	athrs_qos.c	/^int athr_register_qos(void *mac)$/;"	f
+athr_vir_phy_find	athr_vir_phy.c	/^athr_vir_phy_find(int unit)$/;"	f	file:
+athr_vir_phy_is_fdx	athr_vir_phy.c	/^athr_vir_phy_is_fdx(int unit)$/;"	f
+athr_vir_phy_is_up	athr_vir_phy.c	/^athr_vir_phy_is_up(int unit)$/;"	f
+athr_vir_phy_setup	athr_vir_phy.c	/^athr_vir_phy_setup(int unit)$/;"	f
+athr_vir_phy_speed	athr_vir_phy.c	/^athr_vir_phy_speed(int unit)$/;"	f
+athrs16_ioctl	athrs16_phy.c	/^int athrs16_ioctl(struct eth_cfg_params *etd, int cmd)$/;"	f
+athrs16_phy_is_fdx	athrs16_phy.c	/^athrs16_phy_is_fdx(int ethUnit)$/;"	f
+athrs16_phy_is_link_alive	athrs16_phy.c	/^athrs16_phy_is_link_alive(int phyUnit)$/;"	f
+athrs16_phy_is_up	athrs16_phy.c	/^athrs16_phy_is_up(int ethUnit)$/;"	f
+athrs16_phy_setup	athrs16_phy.c	/^athrs16_phy_setup(int ethUnit)$/;"	f
+athrs16_phy_speed	athrs16_phy.c	/^athrs16_phy_speed(int ethUnit)$/;"	f
+athrs16_reg_dev	athrs16_phy.c	/^void athrs16_reg_dev(ag7240_mac_t **mac)$/;"	f
+athrs16_reg_init	athrs16_phy.c	/^void athrs16_reg_init(int ethUinit)$/;"	f
+athrs16_reg_read	athrs16_phy.c	/^athrs16_reg_read(uint32_t reg_addr)$/;"	f
+athrs16_reg_write	athrs16_phy.c	/^athrs16_reg_write(uint32_t reg_addr, uint32_t reg_val)$/;"	f
+athrs26_defvid_get	ar7240_s26_phy.c	/^inline uint16_t athrs26_defvid_get(uint32_t port_id)$/;"	f
+athrs26_defvid_set	ar7240_s26_phy.c	/^BOOL athrs26_defvid_set(uint32_t port_id, uint16_t def_vid)$/;"	f
+athrs26_disable_linkIntrs	ar7240_s26_phy.c	/^void athrs26_disable_linkIntrs(int ethUnit) $/;"	f
+athrs26_enable_linkIntrs	ar7240_s26_phy.c	/^void athrs26_enable_linkIntrs(int ethUnit) $/;"	f
+athrs26_force_100M	ar7240_s26_phy.c	/^void athrs26_force_100M(int phyAddr,int duplex) $/;"	f
+athrs26_force_10M	ar7240_s26_phy.c	/^void athrs26_force_10M(int phyAddr,int duplex) $/;"	f
+athrs26_ioctl	ar7240_s26_phy.c	/^int athrs26_ioctl(struct net_device *dev,void *args, int cmd)$/;"	f
+athrs26_mac_speed_set	ar7240_s26_phy.c	/^void athrs26_mac_speed_set(ag7240_mac_t *mac, ag7240_phy_speed_t speed)$/;"	f
+athrs26_mdc_check	ar7240_s26_phy.c	/^int athrs26_mdc_check()$/;"	f
+athrs26_phy_is_fdx	ar7240_s26_phy.c	/^athrs26_phy_is_fdx(int ethUnit,int phyUnit)$/;"	f
+athrs26_phy_is_link_alive	ar7240_s26_phy.c	/^athrs26_phy_is_link_alive(int phyUnit)$/;"	f
+athrs26_phy_is_up	ar7240_s26_phy.c	/^athrs26_phy_is_up(int ethUnit)$/;"	f
+athrs26_phy_off	ar7240_s26_phy.c	/^void athrs26_phy_off(ag7240_mac_t *mac)$/;"	f
+athrs26_phy_on	ar7240_s26_phy.c	/^void athrs26_phy_on(ag7240_mac_t *mac)$/;"	f
+athrs26_phy_setup	ar7240_s26_phy.c	/^athrs26_phy_setup(int ethUnit)$/;"	f
+athrs26_phy_speed	ar7240_s26_phy.c	/^athrs26_phy_speed(int ethUnit,int phyUnit)$/;"	f
+athrs26_phy_stab_wr	ar7240_s26_phy.c	/^void athrs26_phy_stab_wr(int phy_id, BOOL phy_up, int phy_speed)$/;"	f
+athrs26_powersave_off	ar7240_s26_phy.c	/^void athrs26_powersave_off(int phy_addr)$/;"	f
+athrs26_reg_dev	ar7240_s26_phy.c	/^void athrs26_reg_dev(ag7240_mac_t **mac)$/;"	f
+athrs26_reg_init	ar7240_s26_phy.c	/^void athrs26_reg_init(int ethUnit)$/;"	f
+athrs26_reg_init_lan	ar7240_s26_phy.c	/^void athrs26_reg_init_lan(int ethUnit)$/;"	f
+athrs26_reg_read	ar7240_s26_phy.c	/^uint32_t athrs26_reg_read(unsigned int s26_addr)$/;"	f
+athrs26_reg_rmw	ar7240_s26_phy.c	/^void athrs26_reg_rmw(unsigned int s26_addr, unsigned int s26_write_data) $/;"	f
+athrs26_reg_write	ar7240_s26_phy.c	/^void athrs26_reg_write(unsigned int s26_addr, unsigned int s26_write_data)$/;"	f
+athrs26_sleep_off	ar7240_s26_phy.c	/^void athrs26_sleep_off(int phy_addr)$/;"	f
+athrs_config_qos	athrs_qos.c	/^int athrs_config_qos(struct eth_cfg_params *ethcfg, int cmd)$/;"	f
+athrs_do_ioctl	ag7240_phy.h	/^static inline int athrs_do_ioctl(struct net_device *dev,struct ifreq *ifr, int cmd)$/;"	f
+athrs_reg_dev	ag7240_phy.h	/^static inline void athrs_reg_dev(ag7240_mac_t **ag7240_macs)$/;"	f
+broadcast	ar7240_s26_phy.h	/^    uint16_t    broadcast  :1;$/;"	m	struct:__anon23
+broadcast	athrs16_phy.h	/^    uint16_t    broadcast;$/;"	m	struct:__anon6
+buf_lastds	ag7240_mac.h	/^    ag7240_desc_t  *buf_lastds;     \/*the last desc. (for convenience)*\/$/;"	m	struct:__anon12
+buf_nds	ag7240_mac.h	/^    int             buf_nds;        \/*no. of desc for this skb*\/$/;"	m	struct:__anon12
+buf_pkt	ag7240_mac.h	/^    struct sk_buff *buf_pkt;        \/*ptr to skb*\/$/;"	m	struct:__anon12	typeref:struct:__anon12::sk_buff
+check_dma_status_pause	ag7240.c	/^static int check_dma_status_pause(ag7240_mac_t *mac) { $/;"	f	file:
+check_for_dma_status	ag7240.c	/^static int check_for_dma_status(ag7240_mac_t *mac,int ac) {$/;"	f	file:
+cmd	athrs_ioctl.h	/^    uint16_t cmd;$/;"	m	struct:eth_cfg_params
+comment	ag7240_trc.h	/^    char    comment[32];$/;"	m	struct:__anon9
+cpu_egress_tagged_flag	ar7240_s26_phy.c	/^static uint8_t cpu_egress_tagged_flag = 0;$/;"	v	file:
+cur	ag7240_trc.h	/^    int                 cur;$/;"	m	struct:__anon10
+define	athrs_qos.h	212;"	d
+disable_qos	athrs_ioctl.h	/^    void      (*disable_qos)(char *ad_name);$/;"	m	struct:ath_qops
+dma_check	ag7240_mac.h	/^    uint8_t         dma_check;$/;"	m	struct:__anon16
+dup_str	ag7240.c	/^char *dup_str[] = {"half duplex", "full duplex"}; $/;"	v
+duplex	athrs_ioctl.h	/^    uint8_t duplex;$/;"	m	struct:eth_cfg_params
+duplex	eth_diag.h	/^        u_int8_t duplex;$/;"	m	union:eth_diag::__anon7
+duplex	tools/ethreg.c	/^int s,opt_force = 0,duplex = 1;$/;"	v
+ed_u	eth_diag.h	/^    }ed_u;$/;"	m	struct:eth_diag	typeref:union:eth_diag::__anon7
+enable_qos	athrs_ioctl.h	/^    int       (*enable_qos)(char *ad_name);$/;"	m	struct:ath_qops
+entry	ag7240_trc.h	/^    ag7240_trc_entry_t  entry[TRC_SIZE];$/;"	m	struct:__anon10
+etd	tools/ethreg.c	/^struct eth_cfg_params etd;$/;"	v	typeref:struct:eth_cfg_params
+ethUnit	ar7240_s26_phy.c	/^    int    ethUnit;          \/* MAC associated with this phy port *\/$/;"	m	struct:__anon21	file:
+ethUnit	athrf1_phy.c	/^    int    ethUnit;          \/* MAC associated with this phy port *\/$/;"	m	struct:__anon4	file:
+ethUnit	athrs16_phy.c	/^    int    ethUnit;          \/* MAC associated with this phy port *\/$/;"	m	struct:__anon3	file:
+eth_cfg_params	athrs_ioctl.h	/^struct eth_cfg_params {$/;"	s
+eth_diag	eth_diag.h	/^struct eth_diag {$/;"	s
+eth_led_control	ag7240_mac.h	/^typedef struct eth_led_control {$/;"	s
+eth_vlan_dev_info	athrs_ioctl.h	/^struct eth_vlan_dev_info {$/;"	s
+fifo_3	ag7240.c	/^int fifo_3 = 0x1f00140;$/;"	v
+fifo_5	ag7240.c	/^int fifo_5 = 0xbefff;$/;"	v
+from_cpu	ar7240_s26_phy.h	/^    uint16_t    from_cpu   :1;$/;"	m	struct:__anon23
+from_cpu	athrs16_phy.h	/^    uint16_t    from_cpu;$/;"	m	struct:__anon6
+ftpp_override	ag7240_mac.h	/^    uint32_t    ftpp_override  :  5;$/;"	m	struct:__anon11
+get_ndev	athrs_qos.h	/^*get_ndev(char *ad_name)$/;"	f
+get_qmac	athrs_qos.h	/^*get_qmac(char *ad_name)$/;"	f
+gige_pll	ag7240.c	/^int gige_pll = 0x1a000000;$/;"	v
+hdr_dump	ag7240.c	/^void hdr_dump(char *str,int unit,struct ethhdr *ehdr,int qos,int ac)$/;"	f
+ignore_packet_inspection	ag7240.c	/^int ignore_packet_inspection = 0;$/;"	v
+inmap	athrs_ioctl.h	/^    unsigned long inmap[8];$/;"	m	struct:eth_vlan_dev_info
+isEnetPort	ar7240_s26_phy.c	/^    BOOL   isEnetPort;       \/* normal enet port *\/$/;"	m	struct:__anon21	file:
+isEnetPort	athrf1_phy.c	/^    BOOL   isEnetPort;       \/* normal enet port *\/$/;"	m	struct:__anon4	file:
+isEnetPort	athrs16_phy.c	/^    BOOL   isEnetPort;       \/* normal enet port *\/$/;"	m	struct:__anon3	file:
+isPhyAlive	ar7240_s26_phy.c	/^    BOOL   isPhyAlive;       \/* last known state of link *\/$/;"	m	struct:__anon21	file:
+isPhyAlive	athrf1_phy.c	/^    BOOL   isPhyAlive;       \/* last known state of link *\/$/;"	m	struct:__anon4	file:
+isPhyAlive	athrs16_phy.c	/^    BOOL   isPhyAlive;       \/* last known state of link *\/$/;"	m	struct:__anon3	file:
+is_cpu_egress_tagged	ar7240_s26_phy.c	/^inline uint8_t is_cpu_egress_tagged(void)$/;"	f
+is_empty	ag7240_mac.h	/^    uint32_t    is_empty       :  1;$/;"	m	struct:__anon11
+is_enet_port	athr_vir_phy.c	/^  int              is_enet_port;$/;"	m	struct:__anon8	file:
+led_control_func	ag7240.c	/^led_control_func(ATH_LED_CONTROL *pledctrl) $/;"	f	file:
+led_timer	ag7240_mac.h	/^    struct timer_list      led_timer;$/;"	m	struct:eth_led_control	typeref:struct:eth_led_control::timer_list
+ledlink	ag7240_mac.h	/^    uint8_t                ledlink[5];                 \/\/ current link state$/;"	m	struct:eth_led_control
+line	ag7240_trc.h	/^    int     line;$/;"	m	struct:__anon9
+mac_addr	athrs_ioctl.h	/^    mac_addr_t mac_addr;$/;"	m	struct:arl_struct
+mac_addr	athrs_ioctl.h	/^    uint8_t  mac_addr[6];$/;"	m	struct:eth_cfg_params
+mac_addr_t	athrs_ioctl.h	/^} mac_addr_t;$/;"	t	typeref:struct:__anon25
+mac_base	ag7240_mac.h	/^    uint32_t                mac_base;$/;"	m	struct:__anon16
+mac_clear_flag	ag7240_mac.h	/^mac_clear_flag(ag7240_mac_t *mac, u_int16_t flag)$/;"	f
+mac_dev	ag7240_mac.h	/^    struct net_device      *mac_dev;$/;"	m	struct:__anon16	typeref:struct:__anon16::net_device
+mac_fdx	ag7240_mac.h	/^    int                     mac_fdx;$/;"	m	struct:__anon16
+mac_flags	ag7240_mac.h	/^    uint16_t                mac_flags;$/;"	m	struct:__anon16
+mac_has_flag	ag7240_mac.h	/^mac_has_flag(ag7240_mac_t *mac, u_int16_t flag)$/;"	f
+mac_ifup	ag7240_mac.h	/^    uint8_t                 mac_ifup;$/;"	m	struct:__anon16
+mac_irq	ag7240_mac.h	/^    int                     mac_irq;$/;"	m	struct:__anon16
+mac_lock	ag7240_mac.h	/^    spinlock_t              mac_lock;$/;"	m	struct:__anon16
+mac_net_stats	ag7240_mac.h	/^    struct net_device_stats mac_net_stats;$/;"	m	struct:__anon16	typeref:struct:__anon16::net_device_stats
+mac_noacs	ag7240_mac.h	/^    uint8_t                 mac_noacs;$/;"	m	struct:__anon16
+mac_oom_timer	ag7240_mac.h	/^    struct timer_list       mac_oom_timer;$/;"	m	struct:__anon16	typeref:struct:__anon16::timer_list
+mac_phy_timer	ag7240_mac.h	/^    struct timer_list       mac_phy_timer;$/;"	m	struct:__anon16	typeref:struct:__anon16::timer_list
+mac_rxring	ag7240_mac.h	/^    ag7240_ring_t           mac_rxring;$/;"	m	struct:__anon16
+mac_set_flag	ag7240_mac.h	/^mac_set_flag(ag7240_mac_t *mac, u_int16_t flag)$/;"	f
+mac_speed	ag7240_mac.h	/^    ag7240_phy_speed_t      mac_speed;$/;"	m	struct:__anon16
+mac_stats	ag7240_mac.h	/^    ag7240_stats_t          mac_stats;$/;"	m	struct:__anon16
+mac_tx_timeout	ag7240_mac.h	/^    struct work_struct      mac_tx_timeout;$/;"	m	struct:__anon16	typeref:struct:__anon16::work_struct
+mac_txring	ag7240_mac.h	/^    ag7240_ring_t           mac_txring[4];$/;"	m	struct:__anon16
+mac_unit	ag7240_mac.h	/^    uint32_t                mac_unit;$/;"	m	struct:__anon16
+mac_unit	athr_vir_phy.c	/^  int              mac_unit;$/;"	m	struct:__anon8	file:
+main	tools/ethreg.c	/^main(int argc, char *argv[])$/;"	f
+mii0_if	ag7240.c	/^int mii0_if = AG7240_MII0_INTERFACE;$/;"	v
+mii1_if	ag7240.c	/^int mii1_if = AG7240_MII1_INTERFACE;$/;"	v
+mii_if	ag7240_mac.h	231;"	d
+mii_reg	ag7240_mac.h	230;"	d
+mii_str	ag7240.h	/^static char *mii_str[2][4] = {$/;"	v
+more	ag7240_mac.h	/^    uint32_t    more           :  1;$/;"	m	struct:__anon11
+net_rx_bytes	ag7240_mac.h	180;"	d
+net_rx_fifo_errors	ag7240_mac.h	178;"	d
+net_rx_over_errors	ag7240_mac.h	182;"	d
+net_rx_packets	ag7240_mac.h	177;"	d
+net_tx_bytes	ag7240_mac.h	181;"	d
+net_tx_dropped	ag7240_mac.h	183;"	d
+net_tx_packets	ag7240_mac.h	179;"	d
+next_desc	ag7240_mac.h	/^    uint32_t    next_desc      ;$/;"	m	struct:__anon11
+obj	tools/Makefile	/^obj := .$/;"	m
+opt_force	tools/ethreg.c	/^int s,opt_force = 0,duplex = 1;$/;"	v
+outmap	athrs_ioctl.h	/^    char * outmap[16];$/;"	m	struct:eth_vlan_dev_info
+phyAddr	ar7240_s26_phy.c	/^    uint32_t phyAddr;          \/* PHY registers associated with this phy port *\/$/;"	m	struct:__anon21	file:
+phyAddr	athrf1_phy.c	/^    uint32_t phyAddr;          \/* PHY registers associated with this phy port *\/$/;"	m	struct:__anon4	file:
+phyAddr	athrs16_phy.c	/^    uint32_t phyAddr;          \/* PHY registers associated with this phy port *\/$/;"	m	struct:__anon3	file:
+phyBase	ar7240_s26_phy.c	/^    uint32_t phyBase;$/;"	m	struct:__anon21	file:
+phyBase	athrf1_phy.c	/^    uint32_t phyBase;$/;"	m	struct:__anon4	file:
+phyBase	athrs16_phy.c	/^    uint32_t phyBase;$/;"	m	struct:__anon3	file:
+phy_addr	athr_vir_phy.c	/^  unsigned int     phy_addr;$/;"	m	struct:__anon8	file:
+phy_in_reset	ag7240.c	/^int phy_in_reset = 0;$/;"	v
+phy_info	athr_vir_phy.c	/^athr_phy_t phy_info[] = {$/;"	v
+phy_mode_setup	athrs16_phy.c	/^static void phy_mode_setup(void) $/;"	f	file:
+phy_reg	athrs_ioctl.h	/^    uint32_t phy_reg;$/;"	m	struct:eth_cfg_params
+phy_reg	eth_diag.h	/^    u_int32_t phy_reg;$/;"	m	struct:eth_diag
+phy_reg_read	ag7240_mac.h	232;"	d
+phy_reg_write	ag7240_mac.h	233;"	d
+phy_val_saved	ar7240_s26_phy.c	/^static unsigned int phy_val_saved = 0;$/;"	v	file:
+pkt_size	ag7240_mac.h	/^    uint32_t    pkt_size       : 12;$/;"	m	struct:__anon11
+pkt_start_addr	ag7240_mac.h	/^    uint32_t    pkt_start_addr;$/;"	m	struct:__anon11
+port_1q_egmode_t	ar7240_s26_phy.h	/^} port_1q_egmode_t;$/;"	t	typeref:enum:__anon24
+port_def_vid	ar7240_s26_phy.c	/^static uint16_t port_def_vid[5] = {1, 1, 1, 1, 1};$/;"	v	file:
+port_map	athrs_ioctl.h	/^    int port_map;$/;"	m	struct:arl_struct
+port_num	ar7240_s26_phy.h	/^    uint16_t    port_num   :4;$/;"	m	struct:__anon23
+port_num	athrs16_phy.h	/^    uint16_t    port_num;$/;"	m	struct:__anon6
+portnum	athrs_ioctl.h	/^    uint16_t portnum;           \/* pack to fit, yech *\/$/;"	m	struct:eth_cfg_params
+portnum	eth_diag.h	/^        u_int16_t portnum;           \/* pack to fit, yech *\/$/;"	m	union:eth_diag::__anon7
+prev_dma_chk_ts	ag7240.h	/^static uint32_t prev_dma_chk_ts;$/;"	v
+priority	ar7240_s26_phy.h	/^    uint16_t    priority   :2;$/;"	m	struct:__anon23
+priority	athrs16_phy.h	/^    uint16_t    priority;$/;"	m	struct:__anon6
+progname	tools/ethreg.c	/^const char *progname;$/;"	v
+python_clear_multi	python_vlan_igmp.c	/^python_clear_multi()$/;"	f
+python_fdb_add	python_vlan_igmp.c	/^python_fdb_add(mac_addr_t addr, uint32_t port_bmap, BOOL sa_drop)$/;"	f
+python_fdb_add_qos	python_vlan_igmp.c	/^python_fdb_add_qos(u_int8_t addr[], uint32_t prio,uint32_t portno)$/;"	f
+python_fdb_del	python_vlan_igmp.c	/^python_fdb_del(mac_addr_t addr)$/;"	f
+python_fdb_flush	python_vlan_igmp.c	/^python_fdb_flush(BOOL f_static)$/;"	f
+python_fdb_getentry	python_vlan_igmp.c	/^python_fdb_getentry(mac_addr_t addr)$/;"	f
+python_ioctl_disable_vlan	python_vlan_igmp.c	/^python_ioctl_disable_vlan()$/;"	f
+python_ioctl_enable_vlan	python_vlan_igmp.c	/^python_ioctl_enable_vlan()$/;"	f
+python_ioctl_set_igmp	python_vlan_igmp.c	/^python_ioctl_set_igmp(uint32_t vlan_id, BOOL enable)$/;"	f
+python_ioctl_vlan_addports	python_vlan_igmp.c	/^python_ioctl_vlan_addports(uint32_t vlan_id, uint32_t port_id)$/;"	f
+python_ioctl_vlan_delports	python_vlan_igmp.c	/^python_ioctl_vlan_delports(uint32_t vlan_id, uint32_t port_id)$/;"	f
+python_ioctl_vlan_qos	python_vlan_igmp.c	/^python_ioctl_vlan_qos(uint32_t vlan_id, uint32_t vlan_pri, uint32_t *port_map)$/;"	f
+python_port_1qmode_set	python_vlan_igmp.c	/^python_port_1qmode_set(uint32_t port_id, BOOL enable)$/;"	f
+python_port_default_vid_set	python_vlan_igmp.c	/^python_port_default_vid_set(uint32_t port_id, uint32_t vlan_id)$/;"	f
+python_port_egvlanmode_set	python_vlan_igmp.c	/^python_port_egvlanmode_set(uint32_t port_id, port_1q_egmode_t mode)$/;"	f
+python_port_igmps_status_set	python_vlan_igmp.c	/^python_port_igmps_status_set(uint32_t port_id, BOOL enable)$/;"	f
+python_set_multi	python_vlan_igmp.c	/^python_set_multi()$/;"	f
+python_vlan_create	python_vlan_igmp.c	/^python_vlan_create(uint32_t vlan_id)$/;"	f
+python_vlan_delete	python_vlan_igmp.c	/^python_vlan_delete(uint32_t vlan_id)$/;"	f
+python_vlan_member_add	python_vlan_igmp.c	/^python_vlan_member_add(uint32_t vlan_id, uint32_t port_id)$/;"	f
+python_vlan_member_del	python_vlan_igmp.c	/^python_vlan_member_del(uint32_t vlan_id, uint32_t port_id)$/;"	f
+python_vlan_query	python_vlan_igmp.c	/^python_vlan_query(uint32_t vlan_id, uint32_t * port_bmap)$/;"	f
+qos	ag7240_mac.h	/^    struct ath_qops         *qos;$/;"	m	struct:__anon16	typeref:struct:__anon16::ath_qops
+qos_cap	athrs_ioctl.h	/^    int       qos_cap;$/;"	m	struct:ath_qops
+qos_flag	athrs_ioctl.h	/^    int       qos_flag;$/;"	m	struct:ath_qops
+rate	ag7240_mac.h	/^    u_int32_t    rate;        \/\/ Rate per second$/;"	m	struct:__anon18
+reg_read	athrs_ioctl.h	/^    uint32_t  (*reg_read)(char *ad_name,uint32_t Reg);$/;"	m	struct:ath_qops
+reg_rmw_clear	athrs_ioctl.h	/^    void      (*reg_rmw_clear)(char *ad_name,uint32_t Reg, uint32_t Val);$/;"	m	struct:ath_qops
+reg_rmw_set	athrs_ioctl.h	/^    void      (*reg_rmw_set)(char *ad_name,uint32_t Reg, uint32_t Val);$/;"	m	struct:ath_qops
+reg_write	athrs_ioctl.h	/^    void      (*reg_write)(char *ad_name,uint32_t Reg, uint32_t Val);$/;"	m	struct:ath_qops
+regread	tools/ethreg.c	/^regread(u_int32_t phy_reg, u_int16_t portno, struct ifreq *ifr)$/;"	f
+regwrite	tools/ethreg.c	/^regwrite(u_int32_t phy_reg, u_int32_t val, u_int16_t portno, struct ifreq *ifr)$/;"	f	file:
+res1	ag7240_mac.h	/^    uint32_t    res1           :  6;$/;"	m	struct:__anon11
+res2	ag7240_mac.h	/^    uint32_t    res2           :  3;$/;"	m	struct:__anon11
+res3	ag7240_mac.h	/^    uint32_t    res3           :  4;$/;"	m	struct:__anon11
+reserved0	ar7240_s26_phy.h	/^    uint16_t    reserved0  :2;$/;"	m	struct:__anon23
+reserved0	athrs16_phy.h	/^    uint16_t    reserved0;$/;"	m	struct:__anon6
+reserved1	ar7240_s26_phy.h	/^    uint16_t    reserved1  :2;$/;"	m	struct:__anon23
+reserved1	athrs16_phy.h	/^    uint16_t    reserved1;$/;"	m	struct:__anon6
+rg_phy_duplex	ag7240.c	/^int rg_phy_speed = -1 , rg_phy_duplex = -1;$/;"	v
+rg_phy_speed	ag7240.c	/^int rg_phy_speed = -1 , rg_phy_duplex = -1;$/;"	v
+ring_buffer	ag7240_mac.h	/^    ag7240_buffer_t   *ring_buffer;         \/* OS buffer info       *\/$/;"	m	struct:__anon13
+ring_desc	ag7240_mac.h	/^    ag7240_desc_t     *ring_desc;           \/* hardware descriptors *\/$/;"	m	struct:__anon13
+ring_desc_dma	ag7240_mac.h	/^    dma_addr_t         ring_desc_dma;       \/* dma addresses of desc*\/$/;"	m	struct:__anon13
+ring_head	ag7240_mac.h	/^    int                ring_head;           \/* producer index       *\/$/;"	m	struct:__anon13
+ring_nelem	ag7240_mac.h	/^    int                ring_nelem;          \/* nelements            *\/$/;"	m	struct:__anon13
+ring_tail	ag7240_mac.h	/^    int                ring_tail;           \/* consumer index       *\/$/;"	m	struct:__anon13
+s	tools/ethreg.c	/^int s,opt_force = 0,duplex = 1;$/;"	v
+s26_rd_phy	ar7240_s26_phy.c	/^unsigned int s26_rd_phy(unsigned int phy_addr, unsigned int reg_addr)$/;"	f
+s26_wr_phy	ar7240_s26_phy.c	/^void s26_wr_phy(unsigned int phy_addr, unsigned int reg_addr, unsigned int write_data)$/;"	f
+sa_drop	athrs_ioctl.h	/^    int sa_drop; $/;"	m	struct:arl_struct
+set_cpu_egress_tagged	ar7240_s26_phy.c	/^void set_cpu_egress_tagged(uint8_t is_tagged)$/;"	f
+set_mac_qops	athrs_qos.h	/^set_mac_qops(void *mac)$/;"	f
+set_packet_inspection_flag	ag7240.c	/^void set_packet_inspection_flag(int flag)$/;"	f
+spd_str	ag7240.c	/^char *spd_str[] = {"10Mbps", "100Mbps", "1000Mbps"};$/;"	v
+speed	ag7240_mac.h	/^    ag7240_phy_speed_t     speed[5];                   \/\/ current link speed $/;"	m	struct:eth_led_control
+stats	ag7240_mac.h	/^    int stats;$/;"	m	struct:__anon14
+tb	ag7240_mac.h	/^    ag7240_trc_t            tb;$/;"	m	struct:__anon16
+timeOff	ag7240_mac.h	/^    u_int32_t    timeOff;     \/\/ LED OFF time in ms$/;"	m	struct:__anon18
+timeOn	ag7240_mac.h	/^    u_int32_t    timeOn;      \/\/ LED ON time in ms$/;"	m	struct:__anon18
+tos	athrs_ioctl.h	/^    uint32_t tos;$/;"	m	struct:eth_cfg_params
+trans_start	ag7240_mac.h	/^    unsigned long   trans_start;    \/*  descriptor time stamp *\/$/;"	m	struct:__anon12
+tx_len_per_ds	ag7240.h	/^static int tx_len_per_ds = 0;$/;"	v
+tx_max_desc_per_ds_pkt	ag7240.h	/^static int tx_max_desc_per_ds_pkt=0;$/;"	v
+type	ar7240_s26_phy.h	/^    uint16_t    type       :4;$/;"	m	struct:__anon23
+type	athrs16_phy.h	/^    uint16_t    type ;$/;"	m	struct:__anon6
+uc	athrs_ioctl.h	/^    u_int8_t uc[6];$/;"	m	struct:__anon25
+unit	ag7240_trc.h	/^    u32     unit;$/;"	m	struct:__anon9
+usage	tools/ethreg.c	/^usage()$/;"	f	file:
+val	ag7240_trc.h	/^    u32     val;$/;"	m	struct:__anon9
+val	athrs_ioctl.h	/^    uint32_t val;$/;"	m	struct:eth_cfg_params
+val	eth_diag.h	/^    u_int   val;$/;"	m	struct:eth_diag
+vlan_id	athrs_ioctl.h	/^    unsigned short vlan_id;$/;"	m	struct:eth_vlan_dev_info
+vlanid	athrs_ioctl.h	/^    uint16_t vlanid;$/;"	m	struct:eth_cfg_params
+xmii_val	ag7240.c	/^int xmii_val = 0x16000000;$/;"	v

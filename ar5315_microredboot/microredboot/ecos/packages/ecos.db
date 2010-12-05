@@ -6222,6 +6222,16 @@ package CYGPKG_HAL_MIPS_PB45 {
            Atheros PB45 reference design.  It should be used on the
            actual hardware."
 }
+package CYGPKG_HAL_MIPS_PB9X {
+        alias           { "PB9X BOARD HAL" hal_pb9x pb9x_hal }
+        directory       hal/mips/pb9x
+        script          hal_mips_pb9x.cdl
+        hardware
+        description "
+           The PB9X Board HAL package provides support for the
+           Atheros PB9X reference design.  It should be used on the
+           actual hardware."
+}
 
 package CYGPKG_HAL_MIPS_AR7100 {
         alias           { "AR7100 WiSoC HAL" hal_ar7100 ar7100_hal }
@@ -6232,6 +6242,16 @@ package CYGPKG_HAL_MIPS_AR7100 {
            The AR7100 WiSoC HAL package provides generic support for this
            WiSoC. It is also necessary to select a specific target HAL
            package. "
+}
+
+package CYGPKG_HAL_MIPS_AR7240 {
+        alias           { "AR7240 WiSoC HAL" hal_ar7240 ar7240_hal }
+        directory       hal/mips/ar7240
+        script          hal_mips_ar7240.cdl
+        hardware
+        description     "The AR7240 WiSoC HAL package provides generic support for this
+                         WiSoC. It is also necessary to select a specific target HAL
+                         package. "
 }
 
 package CYGPKG_DEVS_FLASH_AR7100 {
@@ -6254,6 +6274,17 @@ package CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7100 {
                 Ethernet driver for Atheros AR7100 boards.
                 Sufficient for use with RedBoot."
 }
+
+package CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7240 {
+        alias           { "AR7240 Ethernet driver" ar7240_eth_driver
+                          ar7240_driver}
+        hardware
+        directory       devs/eth/mips/ar7240
+        script          ar7240_eth_drivers.cdl
+        description     "
+                Ethernet driver for Atheros AR7240 boards."
+}
+
 
 package CYGPKG_HAL_MIPS_CUS100 {
         alias           { "CUS100 BOARD HAL" hal_cus100 cus100_hal }
@@ -6339,6 +6370,21 @@ target atheros_pb44 {
         description "
            The atheros_pb44 target provides the packages needed to run
            eCos on a Atheros p44 reference design based on the AR7100 WiSoC."
+}
+
+target atheros_pb9x {
+        alias           { "Atheros pb9x reference board based on AR7240 WiSoC" ar7240_mips32_24kc_pb9x}
+        packages        { CYGPKG_HAL_MIPS
+                          CYGPKG_HAL_MIPS_MIPS32
+                          CYGPKG_HAL_MIPS_AR7240
+                          CYGPKG_HAL_MIPS_PB9X
+                          CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7240
+        }
+        set_value CYGHWR_HAL_MIPS_MIPS32_CORE "4Kc"
+        set_value CYGHWR_HAL_MIPS_MIPS32_ENDIAN "Big"
+        description "
+           The atheros_pb9x target provides the packages needed to run
+           eCos on a Atheros p92 reference design based on the AR7240 WiSoC."
 }
 
 target atheros_pb45 {
