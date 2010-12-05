@@ -27,7 +27,7 @@
 		<div id="idrouter">
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_net"); %></div>
-				<input size="27" maxlength="15" name="openvpn_net" value="<% nvram_get("openvpn_net"); %>" />
+				<input size="15" maxlength="15" name="openvpn_net" value="<% nvram_get("openvpn_net"); %>" />
 			</div>
 		</div>
 		<div id="idbridge">
@@ -84,31 +84,31 @@
 		</select>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.vpn_compress"); %></div>
-			<input class="spaceradio" type="radio" name="openvpn_lzo" value="1" <% nvram_checked("openvpn_lzo", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="openvpn_lzo" value="0" <% nvram_checked("openvpn_lzo", "0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("service.vpn_redirgate"); %></div>
-			<input class="spaceradio" type="radio" name="openvpn_redirgate" value="1" <% nvram_checked("openvpn_redirgate", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="openvpn_redirgate" value="0" <% nvram_checked("openvpn_redirgate", "0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("service.vpn_cl2cl"); %></div>
-			<input class="spaceradio" type="radio" name="openvpn_cl2cl" value="1" <% nvram_checked("openvpn_cl2cl", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="openvpn_cl2cl" value="0" <% nvram_checked("openvpn_cl2cl", "0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("service.vpnd_dupcn"); %></div>
-			<input class="spaceradio" type="radio" name="openvpn_dupcn" value="1" <% nvram_checked("openvpn_dupcn", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="openvpn_dupcn" value="0" <% nvram_checked("openvpn_dupcn", "0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("service.vpn_adv"); %></div>
 			<input class="spaceradio" type="radio" name="openvpn_adv" value="1" <% nvram_checked("openvpn_adv", "1"); %> onclick="show_layer_ext(this, 'idmtu', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="openvpn_adv" value="0" <% nvram_checked("openvpn_adv", "0"); %> onclick="show_layer_ext(this, 'idmtu', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idmtu">
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_compress"); %></div>
+				<input class="spaceradio" type="radio" name="openvpn_lzo" value="1" <% nvram_checked("openvpn_lzo", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpn_lzo" value="0" <% nvram_checked("openvpn_lzo", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_redirgate"); %></div>
+				<input class="spaceradio" type="radio" name="openvpn_redirgate" value="1" <% nvram_checked("openvpn_redirgate", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpn_redirgate" value="0" <% nvram_checked("openvpn_redirgate", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_cl2cl"); %></div>
+				<input class="spaceradio" type="radio" name="openvpn_cl2cl" value="1" <% nvram_checked("openvpn_cl2cl", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpn_cl2cl" value="0" <% nvram_checked("openvpn_cl2cl", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpnd_dupcn"); %></div>
+				<input class="spaceradio" type="radio" name="openvpn_dupcn" value="1" <% nvram_checked("openvpn_dupcn", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpn_dupcn" value="0" <% nvram_checked("openvpn_dupcn", "0"); %> /><% tran("share.disable"); %>
+			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_mtu"); %></div>
 				<input size="5" maxlength="5" class="num" name="openvpn_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_mtu"); %>" />
