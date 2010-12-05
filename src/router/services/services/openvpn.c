@@ -85,7 +85,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
 			fprintf(fp, "push \"redirect-gateway def1\"\n");
-		if (!nvram_match("openvpn_tlsci", "0"))
+		if (nvram_invmatch("openvpn_tlsci", "0"))
 			fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpn_tlscip"));
 		if (nvram_match("openvpn_proto", "udp"))
 			fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
@@ -271,7 +271,7 @@ void start_openvpn(void)
 		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support. not supported on server in version 2.1.3
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
-	if (!nvram_match("openvpncl_tlsci", "0"))
+	if (nvram_invmatch("openvpncl_tlsci", "0"))
 		fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpncl_tlscip"));
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
