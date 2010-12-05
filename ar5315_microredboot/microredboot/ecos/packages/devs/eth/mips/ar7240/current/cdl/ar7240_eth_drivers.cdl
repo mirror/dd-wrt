@@ -1,0 +1,54 @@
+# ====================================================================
+#
+#      ar7100_eth_driver.cdl
+#
+#      Ethernet drivers - platform dependent enet support for Atheros'
+#                         AR7100-based boards.
+#
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      Atheros Communications, Inc.
+# Original data:  
+# Contributors:   Atheros engineering
+# Date:           2003-10-22
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7240 {
+    display       "Atheros AG7240 Ethernet Driver"
+
+    parent        CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_IO_ETH_DRIVERS
+    active_if	  CYGPKG_HAL_MIPS_AR7240
+
+    implements    CYGHWR_NET_DRIVERS
+    implements    CYGHWR_NET_DRIVER_ETH0
+    implements    CYGHWR_NET_DRIVER_ETH1
+    include_dir   .
+    include_files ;
+    description   "Ethernet driver for Atheros AR7240 boards."
+#    compile       -library=libextras.a ag7100_ecos.c vscgen_phy.c ipPhy.c rtPhy.c adm_phy.c vsc8601_phy.c athrf1_phy.c athrs26_phy.c
+    compile       -library=libextras.a ag7240_ecos.c vscgen_phy.c ipPhy.c rtPhy.c adm_phy.c vsc8601_phy.c athrf1_phy.c athrs26_phy.c
+#   compile       -library=libextras.a ag7100_ecos.c vsc8601_phy.c generic_i2c.c generic_spi.c vsc73xx.c
+
+    cdl_component CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7240_OPTIONS {
+        display "Atheros AG7240 ethernet driver build options"
+        flavor  none
+	no_define
+
+        cdl_option CYGPKG_DEVS_ETH_MIPS_MIPS32_AR7240_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "-D_KERNEL -D__ECOS" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the Atheros AG7240 ethernet driver package.
+                These flags are used in addition to the set of global
+		flags."
+        }
+    }
+}
+

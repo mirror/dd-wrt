@@ -1,0 +1,30 @@
+# ====================================================================
+#
+#      hal_mips_ar7240.cdl
+#
+#      MIPS AR7240 SOC HAL package configuration data
+#
+# ====================================================================
+
+cdl_package CYGPKG_HAL_MIPS_AR7240 {
+    display       "AR7240 Atheros SOC"
+    parent        CYGPKG_HAL_MIPS
+    requires      { ((CYGHWR_HAL_MIPS_MIPS32_CORE == "4Kc") || \
+                       (CYGHWR_HAL_MIPS_MIPS32_CORE == "4Kp"))  \
+                  }
+    include_dir   cyg/hal
+    define_header hal_mips_ar7240.h
+    description   "
+           The AR7240 HAL package provides generic support for the
+	       Atheros AR7240 WiSoC. It is also necessary
+           to select a specific board package."
+
+    define_proc {
+        puts $::cdl_header "#include <pkgconf/hal_mips_mips32.h>"
+    }
+
+    compile       platform.S plf_misc.c hal_diag.c ar7240_serial.c memset.S
+    implements    CYGINT_HAL_MIPS_INTERRUPT_RETURN_KEEP_SR_IM
+
+}
+
