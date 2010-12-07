@@ -181,7 +181,7 @@ uint32_t rtl8368s_getAsicPHYRegsRetry( uint32_t phyNo, uint32_t page, uint32_t a
 
 BOOL rtl8366rb_phy_is_link_alive(int phyUnit)
 {
-    uint32_t regData;
+    uint32_t regData=1;
     
 	//DEBUG_MSG(("rtl8366rb_phy_is_link_alive %d\n",phyUnit));
  	rtl8366rb_getPHYLinkStatus(phyUnit,&regData);
@@ -944,7 +944,7 @@ return 1;
 	  			udelay(50);         
             	/* Check for AutoNegotiation complete */            
             	if (/* !(phyHwControl & (1<<12)) || */ (phyHwStatus & (1<<5)) ) {                	
-                	rtl8368s_getAsicPHYRegs(phyUnit,0,MII_STATUS_REG,&phyHwStatus);
+                	rtl8368s_getAsicPHYRegsRetry(phyUnit,0,MII_STATUS_REG,&phyHwStatus);
                 	
                 	if (phyHwStatus & (1<<2)) {
                 		//gainedLinks++;

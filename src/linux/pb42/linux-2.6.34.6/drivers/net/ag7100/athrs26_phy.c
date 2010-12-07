@@ -315,7 +315,7 @@ void athrs26_reg_init()
 #ifdef FULL_FEATURE
     athena_init(0, 2);
 #endif
-    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
+    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1716);
 
 
     athr26_init_flag = 1;
