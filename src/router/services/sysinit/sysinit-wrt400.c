@@ -133,8 +133,11 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 //		mac1[0] |= 0x02; // add private bit
 //		mac2[0] |= 0x02;
+#ifdef HAVE_WZRG300NH2
+		eval("gpio","disable","13");
+#else
 		eval("gpio","disable","16");
-
+#endif
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		eval("ifconfig", "eth0", "hw", "ether", mac2);
 		eval("ifconfig", "eth0", "up");
