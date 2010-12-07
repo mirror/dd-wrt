@@ -233,6 +233,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WZRG300NH2)
+int getbuttonstate()
+{
+	int ret = get_gpio(1);	// nxp multiplexer connected
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_WZRG450)
 int getbuttonstate()
 {
@@ -628,6 +637,9 @@ void period_check(int sig)
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
+#elif defined(HAVE_WZRG300NH2)
+	sesgpio = 0x10c;
+	val |= get_gpio(12) << 12;	//aoss pushbutton
 #elif defined(HAVE_WZRG450)
 	sesgpio = 0x108;
 	val |= get_gpio(8) << 8;	//aoss pushbutton
