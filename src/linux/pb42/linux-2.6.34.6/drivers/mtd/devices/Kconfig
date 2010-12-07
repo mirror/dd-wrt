@@ -329,6 +329,9 @@ config WZRAG300NH
 config WZRG450NH 
 	bool "support for buffalo WZR HP G450NH"
 	depends on MACH_AR7240
+config WZRG300NH2
+	bool "support for buffalo WZR HP G300NH2"
+	depends on WZRG450NH
 config MTD_AR7240_SPI_FLASH
 	bool "Support for ar7240 spi flash"
 	depends on MTD && MACH_AR7240
