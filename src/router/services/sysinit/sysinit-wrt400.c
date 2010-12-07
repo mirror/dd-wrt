@@ -222,13 +222,17 @@ void start_sysinit(void)
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 
 #else
-
-
 #ifndef HAVE_WNDR3700
+
+#ifdef HAVE_WZRG300NH2
+	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#else
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 6 >/proc/sys/dev/wifi1/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi1/softled");
+#endif
 #else
 	eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	eval("ifconfig", "wifi1", "hw", "ether", wmac);
