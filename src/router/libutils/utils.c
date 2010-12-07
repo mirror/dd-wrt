@@ -3261,6 +3261,10 @@ int led_control(int type, int act)
 		diag_gpio = 0x10e;
                 ses_gpio = 0x10d;
 #endif
+#ifdef HAVE_WZRG300NH2
+		diag_gpio = 0x110;
+//                ses_gpio = 0x10d;
+#endif
 		break;
 	case ROUTER_BOARD_WR5422:
 		ses_gpio = 0x10d;
