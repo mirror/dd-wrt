@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2008, Atheros Communications Inc.
+/* Copyright (c) 2008, Atheros Communications Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -397,7 +396,8 @@ void athrs26_reg_init(int ethUnit)
         athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4804);
     else
         athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4004);
-    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
+
+    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1544);
 
     athr26_init_flag = 1;
 }
@@ -568,7 +568,8 @@ void athrs26_reg_init_lan(int ethUnit)
 
 //#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     // Set Max MTU to 1518+6 for vlan and header space.
-    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
+    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1544);
+//    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
 //#endif
 
     if(mac_has_flag(mac,ATHR_S26_HEADER))
