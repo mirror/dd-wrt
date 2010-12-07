@@ -946,7 +946,7 @@ int
 rtl8366sr_phy_speed_ext(int phyUnit)
 {
 #if 1
-return AG7100_PHY_SPEED_1000T      
+return AG7100_PHY_SPEED_1000T;
 #else
    DEBUG_MSG(("rtl8366sr_phy_speed ext phyUnit=%d\n",phyUnit));  	
   	
