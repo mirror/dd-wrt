@@ -50,7 +50,7 @@
 #define BITS(_s, _n)	(((1UL << (_n)) - 1) << _s)
 #define BIT(nr)			(1UL << (nr))
 #define AR8216_REG_GLOBAL_CTRL		0x0030
-#define AR8216_GCTRL_MTU		BITS(0, 10)
+#define AR8216_GCTRL_MTU		BITS(0, 11)
 
 
 #define ATHR_RESET_DONE(phy_control)                   \
