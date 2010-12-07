@@ -1115,6 +1115,15 @@ int internal_getRouterBrand()
 #elif HAVE_TG2521
 	setRouter("ZCom TG-2521");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WZRG300NH2
+	nvram_default_get("ath0_rxantenna", "3"); 
+	nvram_default_get("ath0_txantenna", "3");
+#ifdef HAVE_BUFFALO
+	setRouter("WZR-HP-G300NH2");
+#else
+	setRouter("Buffalo WZR-HP-G300NH2");
+#endif
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG450
 	nvram_default_get("ath0_rxantenna", "7"); 
 	nvram_default_get("ath0_txantenna", "7");
@@ -3093,6 +3102,10 @@ int led_control(int type, int act)
 #ifdef HAVE_WZRG450
 		diag_gpio = 0x10e;
                 ses_gpio = 0x10d;
+#endif
+#ifdef HAVE_WZRG300NH2
+		diag_gpio = 0x110;
+//                ses_gpio = 0x10d;
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;

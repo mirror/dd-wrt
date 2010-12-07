@@ -527,6 +527,25 @@ endif
 endif
 endif
 
+
+
+ifeq ($(CONFIG_WZRG300NH2),y)
+	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.tftp
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
+	tools/bufenc/encryptRC4 WZR-HP-G300NH2 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
+	tools/bufenc/mkfw-multi -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G300NH2" "1.74" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
+else
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
+#eu-us region
+	tools/bufenc/encryptRC4 WZR-HP-G300NH2 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G300NH2" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+else
+	tools/bufenc/encryptRC4 WZR-HP-G300NH2 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
+	tools/bufenc/mkfw -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G300NH2" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+endif
+endif
+endif
+
 ifeq ($(CONFIG_WZRHPAG300NH),y)
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300nh-firmware.tftp
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
