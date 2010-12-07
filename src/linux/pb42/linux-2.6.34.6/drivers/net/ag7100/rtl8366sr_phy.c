@@ -203,7 +203,7 @@ uint32_t rtl8366s_getAsicPHYRegsRetry( uint32_t phyNo, uint32_t page, uint32_t a
 
 BOOL rtl8366sr_phy_is_link_alive(int phyUnit)
 {
-    uint32_t regData;
+    uint32_t regData=1;
     
 	//DEBUG_MSG(("rtl8366sr_phy_is_link_alive %d\n",phyUnit));
  	rtl8366s_getPHYLinkStatus(phyUnit,&regData);
@@ -886,9 +886,9 @@ rtl8366sr_phy_speed(int ethUnit)
 			uint32_t link_status_giga;
 			uint32_t local_cap,remote_cap,common_cap;
 			
-			rtl8366s_getAsicPHYRegs(phyUnit,0,MII_GIGA_STATUS,&link_status_giga);
-			rtl8366s_getAsicPHYRegs(phyUnit,0,MII_LOCAL_CAP,&local_cap);
-			rtl8366s_getAsicPHYRegs(phyUnit,0,MII_REMOTE_CAP,&remote_cap);
+			rtl8366s_getAsicPHYRegsRetry(phyUnit,0,MII_GIGA_STATUS,&link_status_giga);
+			rtl8366s_getAsicPHYRegsRetry(phyUnit,0,MII_LOCAL_CAP,&local_cap);
+			rtl8366s_getAsicPHYRegsRetry(phyUnit,0,MII_REMOTE_CAP,&remote_cap);
         	common_cap = (local_cap & remote_cap);
         	
         	if (link_status_giga & (1 << MII_GIGA_STATUS_FULL)) {//
