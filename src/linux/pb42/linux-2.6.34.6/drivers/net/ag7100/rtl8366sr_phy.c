@@ -631,7 +631,9 @@ int
 rtl8366sr_phy_is_fdx(int ethUnit)
 {
     int	phyUnit;  	    
-    
+#if 1
+return 1;    
+#else
     //DEBUG_MSG(("rtl8366sr_phy_is_fdx ethUnit=%d\n",ethUnit));      
 #ifdef CFG_SP1000
 	if(!ethUnit)
@@ -733,6 +735,7 @@ rtl8366sr_phy_is_fdx(int ethUnit)
     }
 #endif    
     return FALSE;
+#endif
 }
 
 /******************************************************************************
@@ -747,7 +750,9 @@ rtl8366sr_phy_is_fdx(int ethUnit)
 int
 rtl8366sr_phy_is_fdx_ext(int phyUnit)
 {      	
-    
+#if 1 
+return 1;
+#else    
     DEBUG_MSG(("rtl8366sr_phy_is_fdx_ext phyUnit=%d\n",phyUnit));  	
     
     if (rtl8366sr_phy_is_link_alive(phyUnit)) {
@@ -794,6 +799,7 @@ rtl8366sr_phy_is_fdx_ext(int phyUnit)
     //}	
 
     return FALSE;
+#endif
 }
 
 /******************************************************************************
@@ -809,8 +815,11 @@ rtl8366sr_phy_is_fdx_ext(int phyUnit)
 int
 rtl8366sr_phy_speed(int ethUnit)
 {
+#if 1
+return AG7100_PHY_SPEED_1000T;
+#else
    int	phyUnit;
-   
+ 
    //DEBUG_MSG(("rtl8366sr_phy_speed ethUnit=%d\n",ethUnit));  	
 #ifdef CFG_SP1000
 	if(!ethUnit)
@@ -920,6 +929,7 @@ rtl8366sr_phy_speed(int ethUnit)
     }    
 #endif  
     return AG7100_PHY_SPEED_10T;
+#endif
 }
 
 /******************************************************************************
@@ -935,7 +945,9 @@ rtl8366sr_phy_speed(int ethUnit)
 int
 rtl8366sr_phy_speed_ext(int phyUnit)
 {
-      
+#if 1
+return AG7100_PHY_SPEED_1000T      
+#else
    DEBUG_MSG(("rtl8366sr_phy_speed ext phyUnit=%d\n",phyUnit));  	
   	
     if (rtl8366sr_phy_is_link_alive(phyUnit)) {
@@ -982,6 +994,7 @@ rtl8366sr_phy_speed_ext(int phyUnit)
     //} 
 
     return AG7100_PHY_SPEED_10T;
+#endif
 }
 
 /*****************************************************************************
@@ -999,6 +1012,9 @@ rtl8366sr_phy_speed_ext(int phyUnit)
 int
 rtl8366sr_phy_is_up(int ethUnit)
 {
+#if 1
+return 1;
+#else
     int           phyUnit;
     uint32_t      phyHwStatus, phyHwControl;
     rtlPhyInfo_t *lastStatus;
@@ -1141,7 +1157,7 @@ rtl8366sr_phy_is_up(int ethUnit)
     }//end for
 #endif
     return (linkCount);
-    
+#endif
 }
 
 int
