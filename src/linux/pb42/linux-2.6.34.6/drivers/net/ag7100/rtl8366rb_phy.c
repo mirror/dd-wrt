@@ -505,7 +505,7 @@ return 1;
 int
 rtl8366rb_phy_is_fdx(int ethUnit)
 {
-#ifdef CONFIG_TPLINK
+#if 1//def CONFIG_TPLINK
 return 1;
 #else
     int	phyUnit;  	    
@@ -626,7 +626,7 @@ return 1;
 int
 rtl8366rb_phy_is_fdx_ext(int phyUnit)
 {      	
-#ifdef CONFIG_TPLINK
+#if 1//def CONFIG_TPLINK
 return 1;
 #else    
     DEBUG_MSG(("rtl8366rb_phy_is_fdx_ext phyUnit=%d\n",phyUnit));  	
@@ -692,7 +692,7 @@ int
 rtl8366rb_phy_speed(int ethUnit)
 {
    int	phyUnit;
-#ifdef CONFIG_TPLINK
+#if 1//def CONFIG_TPLINK
     return AG7100_PHY_SPEED_1000T;
 #else
    //DEBUG_MSG("rtl8366rb_phy_speed ethUnit=%d\n",ethUnit);  	
@@ -820,7 +820,7 @@ rtl8366rb_phy_speed(int ethUnit)
 int
 rtl8366rb_phy_speed_ext(int phyUnit)
 {
-#ifdef CONFIG_TPLINK
+#if 1//def CONFIG_TPLINK
 return AG7100_PHY_SPEED_1000T;
 #else
    DEBUG_MSG(("rtl8366rb_phy_speed ext phyUnit=%d\n",phyUnit));  	
@@ -887,7 +887,7 @@ return AG7100_PHY_SPEED_1000T;
 int
 rtl8366rb_phy_is_up(int ethUnit)
 {
-#ifdef CONFIG_TPLINK
+#if 1 //def CONFIG_TPLINK
 return 1;
 #else
     int           phyUnit;
@@ -1054,7 +1054,7 @@ rtl_ioctl(uint32_t *args, int cmd)
 /* 2008/11/28 BUFFALO: fix WAN portlink down issue */
 int rtl8366rb_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
 {
-#ifdef CONFIG_TPLINK
+#if 1//def CONFIG_TPLINK
 
 	*link = 1;
 	*fdx = 1;
