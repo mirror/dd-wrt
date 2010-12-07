@@ -248,7 +248,7 @@ void athrs16_reg_init(int ethUinit)
     athrs16_reg_write(S16_ARL_TBL_CTRL_REG,(athrs16_reg_read(S16_ARL_TBL_CTRL_REG) | 0x100000));
    /* Enable Broadcast packets to CPU port */
 //    athrs16_reg_write(S16_FLD_MASK_REG,(athrs16_reg_read(S16_FLD_MASK_REG) | S16_ENABLE_CPU_BROADCAST ));
-    athrs16_reg_write(S16_FLD_MASK_REG,0x003f003f); // enable multicast and unicast on all ports, in case that bootloader did not initialize it in correct way
+    athrs16_reg_write(S16_FLD_MASK_REG,0x003f003f | S16_ENABLE_CPU_BROADCAST); // enable multicast and unicast on all ports, in case that bootloader did not initialize it in correct way
     //jumbo, 8316 only
     athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8316_GCTRL_MTU)|(9018 + 8 + 2));
 
