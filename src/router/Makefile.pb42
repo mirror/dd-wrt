@@ -238,6 +238,9 @@ endif
 ifeq ($(CONFIG_WZRG450),y)
 	cp $(LINUXDIR)/.config_wzrg450 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WZRG300NH2),y)
+	cp $(LINUXDIR)/.config_wzrg300nh2 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
 else
