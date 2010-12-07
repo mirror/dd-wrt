@@ -118,7 +118,29 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
 		eval("gpio","enable","2");
-
+#elif HAVE_WZRG300NH2
+		fseek(fp, 0x5120C, SEEK_SET);
+		fread(mactmp, 6, 1, fp);
+		fclose(fp);
+		for (i = 0; i < 6; i++)
+			copy[i] = mactmp[i];
+		for (i = 0; i < 6; i++)
+			copy[i] &= 0xff;
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		eval("gpio","enable","13");
+		fprintf(stderr, "configure eth0 to %s\n", mac2);
+		eval("ifconfig", "eth0", "hw", "ether", mac2);
+		eval("ifconfig", "eth0", "up");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		fprintf(stderr, "configure vlan1 to %s\n", mac2);
+		eval("ifconfig", "vlan1", "hw", "ether", mac2);
+		fprintf(stderr, "configure vlan2 to %s\n", mac2);
+		eval("ifconfig", "vlan2", "hw", "ether", mac2);
 #elif HAVE_WZRG450
 		fseek(fp, 0x51002, SEEK_SET); //osprey eeprom mac location
 		fread(mactmp, 6, 1, fp);
@@ -133,11 +155,7 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 //		mac1[0] |= 0x02; // add private bit
 //		mac2[0] |= 0x02;
-#ifdef HAVE_WZRG300NH2
-		eval("gpio","disable","13");
-#else
 		eval("gpio","disable","16");
-#endif
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		eval("ifconfig", "eth0", "hw", "ether", mac2);
 		eval("ifconfig", "eth0", "up");
