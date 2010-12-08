@@ -167,7 +167,8 @@ void set_wl0_gpio(int gpio,int val)
 	else
 	    wl0&=(~(1<<gpio));
 
-	ar7240_reg_rmw_set(GPIO_WL0_ADDR, wl0);	//ar9283 register [0x4048]
+	ar7240_reg_wr(GPIO_WL0_ADDR, wl0);	//ar9283 register [0x4048]
+	ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9283 register [0x4048]
 }
 
 #define USB_LED_OFF 1
@@ -176,6 +177,7 @@ void set_wl0_gpio(int gpio,int val)
 
 void ap_usb_led_on(void)
 {
+printk(KERN_EMERG "switch USB LED On\n");
 #ifdef CONFIG_WZRG300NH2
 set_wl0_gpio(4,0);
 #else
@@ -188,6 +190,7 @@ EXPORT_SYMBOL(ap_usb_led_on);
 
 void ap_usb_led_off(void)
 {
+printk(KERN_EMERG "switch USB LED Off\n");
 #ifdef CONFIG_WZRG300NH2
 set_wl0_gpio(4,1);
 #else
