@@ -631,7 +631,7 @@ int
 rtl8366sr_phy_is_fdx(int ethUnit)
 {
     int	phyUnit;  	    
-#if 1
+#if 0
 return 1;    
 #else
     //DEBUG_MSG(("rtl8366sr_phy_is_fdx ethUnit=%d\n",ethUnit));      
@@ -750,7 +750,7 @@ return 1;
 int
 rtl8366sr_phy_is_fdx_ext(int phyUnit)
 {      	
-#if 1 
+#if 0 
 return 1;
 #else    
     DEBUG_MSG(("rtl8366sr_phy_is_fdx_ext phyUnit=%d\n",phyUnit));  	
@@ -815,7 +815,7 @@ return 1;
 int
 rtl8366sr_phy_speed(int ethUnit)
 {
-#if 1
+#if 0
 return AG7100_PHY_SPEED_1000T;
 #else
    int	phyUnit;
@@ -945,7 +945,7 @@ return AG7100_PHY_SPEED_1000T;
 int
 rtl8366sr_phy_speed_ext(int phyUnit)
 {
-#if 1
+#if 0
 return AG7100_PHY_SPEED_1000T;
 #else
    DEBUG_MSG(("rtl8366sr_phy_speed ext phyUnit=%d\n",phyUnit));  	
@@ -1012,7 +1012,7 @@ return AG7100_PHY_SPEED_1000T;
 int
 rtl8366sr_phy_is_up(int ethUnit)
 {
-#if 1
+#if 0
 return 1;
 #else
     int           phyUnit;
