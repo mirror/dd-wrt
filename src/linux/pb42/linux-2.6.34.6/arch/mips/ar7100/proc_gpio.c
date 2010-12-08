@@ -149,7 +149,6 @@ void set_wl0_gpio(int gpio,int val)
 	else
 	    wl0&=(~(1<<gpio));
 	ar7100_reg_rmw_set(GPIO_WL0_ADDR, wl0);	//ar9283 register [0x4048]
-	ar7100_reg_rmw_clear(GPIO_WL0_ADDR, wl0);
 }
 
 void set_wl1_gpio(int gpio,int val)
@@ -161,7 +160,6 @@ void set_wl1_gpio(int gpio,int val)
 	wl1&=(~(1<<gpio));
 	
 	ar7100_reg_rmw_set(GPIO_WL0_ADDR, wl1);	//ar9283 register [0x4048]
-	ar7100_reg_rmw_clear(GPIO_WL0_ADDR, wl1);
 }
 /*
 
