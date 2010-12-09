@@ -984,7 +984,7 @@ done:
     mod_timer(&mac->mac_phy_timer, jiffies + AG7100_PHY_POLL_SECONDS*HZ);
 
 /* "Hydra WAN + RealTek PHY with a specific NetGear Hub" Rx hang workaround */
-#if 1//DMA mac hang
+#ifndef CONFIG_AR9100 //1//DMA mac hang
      {
         unsigned int perf_cnt = ag7100_get_rx_count(mac);
         if (perf_cnt == 0xffffffff) {
