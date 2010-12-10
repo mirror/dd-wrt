@@ -397,7 +397,7 @@ void athrs26_reg_init(int ethUnit)
     else
         athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4004);
 
-    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1528);
+    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1716);
 
     athr26_init_flag = 1;
 }
