@@ -568,7 +568,7 @@ void athrs26_reg_init_lan(int ethUnit)
 
 //#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     // Set Max MTU to 1518+6 for vlan and header space.
-    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1544);
+    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1716);
 //    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
 //#endif
 
