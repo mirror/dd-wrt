@@ -164,6 +164,8 @@ void configure_single_ath9k(int count) {
 	sprintf(maxassoc, "%s_maxassoc", dev);
 	sysprintf("echo TBD maxassoc: %s maxassoc %s", dev,
 		  nvram_default_get(maxassoc, "256"));
+// das scheint noch aerger zu machen
+	sysprintf ("iw dev %s set power_save off", dev);
 
 	cprintf("done()\n");
 
