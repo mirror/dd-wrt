@@ -280,21 +280,21 @@ void athrs26_reg_init()
 #ifdef HEADER_EN        
     athrs26_reg_write(0x104, 0x6804);
 #else
-    athrs26_reg_write(0x104, 0x6004);
+//    athrs26_reg_write(0x104, 0x6004);
 #endif
 
-    athrs26_reg_write(0x204, 0x6004);
+/*    athrs26_reg_write(0x204, 0x6004);
     athrs26_reg_write(0x304, 0x6004);
     athrs26_reg_write(0x404, 0x6004);
     athrs26_reg_write(0x504, 0x6004);    
-    athrs26_reg_write(0x604, 0x6004);    
+    athrs26_reg_write(0x604, 0x6004);    */
 #else
 
     athrs26_reg_write(0x38, 0xc000050e);      
 #ifdef HEADER_EN        
     athrs26_reg_write(0x104, 0x4804);
 #else
-    athrs26_reg_write(0x104, 0x4004);
+//    athrs26_reg_write(0x104, 0x4004);
 #endif
 #endif
        
