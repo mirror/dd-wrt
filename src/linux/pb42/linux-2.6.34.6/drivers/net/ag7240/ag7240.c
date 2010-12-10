@@ -540,12 +540,15 @@ ag7240_hw_setup(ag7240_mac_t *mac)
     DPRINTF("Setting Drop CRC Errors, Pause Frames and Length Error frames \n");
     if(mac_has_flag(mac,ATHR_S26_HEADER)){
         ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0xe6bc0);
-    }else{
-        ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0x66b82);
+    } else if (mac->mac_unit == 0 && is_ar7242()){
+       ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0xe6be2);
+    } else{
+        ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, FIFO_CFG5_INIT);
     }
     if (mac->mac_unit == 0 && is_ar7242()){
        ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0xe6be2);
     }
+    
     if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) {
     /* Enable Fixed priority */
 #if 1
