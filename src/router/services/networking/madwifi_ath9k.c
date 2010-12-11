@@ -109,8 +109,12 @@ void configure_single_ath9k(int count) {
 	nvram_default_get(rxantenna, "7");
 	nvram_default_get(txantenna, "5");
 #endif
+	// before 2010-12-09
 	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/rx_chainmask",nvram_safe_get(rxantenna),wif);
 	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/tx_chainmask",nvram_safe_get(txantenna),wif);
+	// after 2010-12-09
+	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/rx_chainmask",nvram_safe_get(rxantenna),wif);
+	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/tx_chainmask",nvram_safe_get(txantenna),wif);
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
 	foreach(var, vifs, next) {
