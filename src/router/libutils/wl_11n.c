@@ -90,7 +90,10 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		up = 1;
 
 	for (i = 0; i < achans.ic_nchans; i++) {
-
+#ifdef HAVE_BUFFALO
+		if (achans.ic_chans[i].ic_flags & IEEE80211_CHAN_RADARFOUND) //filter channels with detected radar
+		    continue;
+#endif
 		// filter out A channels if mode isnt A-Only or mixed
 		if (IEEE80211_IS_CHAN_5GHZ(&achans.ic_chans[i])) {
 			if (nvram_invmatch(wl_mode, "a-only")
