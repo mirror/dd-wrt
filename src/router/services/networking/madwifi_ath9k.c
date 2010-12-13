@@ -131,7 +131,7 @@ void configure_single_ath9k(int count)
 		//older versions
 		sprintf(rxchainmask, "/sys/kernel/debug/ath9k/%s/rx_chainmask",
 			wif);
-		sprintf(txchainmask, "/sys/kernel/debug/ath9l/%s/tx_chainmask",
+		sprintf(txchainmask, "/sys/kernel/debug/ath9k/%s/tx_chainmask",
 			wif);
 		fp = fopen(rxchainmask, "rb");
 		if (fp) {
