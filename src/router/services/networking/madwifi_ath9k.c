@@ -43,14 +43,17 @@
 #include <unistd.h>
 
 #include <services.h>
-void deconfigure_single_ath9k(int count) {
-	fprintf (stderr, "ath9k deconfigure_single: phy%d ath%d\n",get_ath9k_phy_idx(count), count);
+void deconfigure_single_ath9k(int count)
+{
+	fprintf(stderr, "ath9k deconfigure_single: phy%d ath%d\n",
+		get_ath9k_phy_idx(count), count);
 	static char wif[10];
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
 	delete_ath9k_devices(wif);
 }
 
-void configure_single_ath9k(int count) {
+void configure_single_ath9k(int count)
+{
 	char *next;
 	static char var[80];
 	static char mode[80];
@@ -82,7 +85,8 @@ void configure_single_ath9k(int count) {
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
 	sprintf(dev, "ath%d", count);
 	sprintf(wifivifs, "ath%d_vifs", count);
-	fprintf (stderr, "ath9k configure_single: phy%d ath%d\n",get_ath9k_phy_idx(count), count);
+	fprintf(stderr, "ath9k configure_single: phy%d ath%d\n",
+		get_ath9k_phy_idx(count), count);
 	sprintf(channel, "ath%d_channel", count);
 	sprintf(power, "ath%d_txpwrdbm", count);
 	sprintf(sens, "ath%d_distance", count);
@@ -102,19 +106,61 @@ void configure_single_ath9k(int count) {
 #else
 	int cpeonly = 0;
 #endif
-#if defined(HAVE_WHRHPGN) || defined(HAVE_DIR615E)
-	nvram_default_get(rxantenna, "3");
-	nvram_default_get(txantenna, "3");
-#else
-	nvram_default_get(rxantenna, "7");
-	nvram_default_get(txantenna, "5");
-#endif
+	if (strlen(nvram_safe_get(rxantenna)) == 0
+	    || strlen(nvram_safe_get(txantenna)) == 0) {
+		char rxchainmask[64];
+		char txchainmask[64];
+		sprintf(rxchainmask,
+			"/sys/kernel/debug/ieee80211/%s/ath9k/rx_chainmask",
+			wif);
+		sprintf(txchainmask,
+			"/sys/kernel/debug/ieee80211/%s/ath9k/tx_chainmask",
+			wif);
+		int rxdef = 7;
+		int txdef = 5;
+		FILE *fp = fopen(rxchainmask, "rb");
+		if (fp) {
+			fscanf(fp, "0x%08X", &rxdef);
+			fclose(fp);
+		}
+		fp = fopen(txchainmask, "rb");
+		if (fp) {
+			fscanf(fp, "0x%08X", &txdef);
+			fclose(fp);
+		}
+		//older versions
+		sprintf(rxchainmask, "/sys/kernel/debug/ath9k/%s/rx_chainmask",
+			wif);
+		sprintf(txchainmask, "/sys/kernel/debug/ath9l/%s/tx_chainmask",
+			wif);
+		fp = fopen(rxchainmask, "rb");
+		if (fp) {
+			fscanf(fp, "0x%08X", &rxdef);
+			fclose(fp);
+		}
+		fp = fopen(txchainmask, "rb");
+		if (fp) {
+			fscanf(fp, "0x%08X", &txdef);
+			fclose(fp);
+		}
+
+		char rxdefstr[32];
+		char txdefstr[32];
+		sprintf(rxdefstr, "%d", rxdef);
+		sprintf(txdefstr, "%d", txdef);
+		nvram_default_get(rxantenna, rxdefstr);
+		nvram_default_get(txantenna, txdefstr);
+	}
 	// before 2010-12-09
-	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/rx_chainmask",nvram_safe_get(rxantenna),wif);
-	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/tx_chainmask",nvram_safe_get(txantenna),wif);
+	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/rx_chainmask",
+		  nvram_safe_get(rxantenna), wif);
+	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/tx_chainmask",
+		  nvram_safe_get(txantenna), wif);
 	// after 2010-12-09
-	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/rx_chainmask",nvram_safe_get(rxantenna),wif);
-	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/tx_chainmask",nvram_safe_get(txantenna),wif);
+	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/rx_chainmask",
+		  nvram_safe_get(rxantenna), wif);
+	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/tx_chainmask",
+		  nvram_safe_get(txantenna), wif);
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
 	foreach(var, vifs, next) {
@@ -130,30 +176,26 @@ void configure_single_ath9k(int count) {
 	sprintf(wl, "ath%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta")
+	    || !strcmp(apm, "wet")) {
 
-		sysprintf
-		    ("iw %s interface add %s type managed",
-		     wif, dev);
-
-		strcpy(primary, dev);
-	}
-	else if (!strcmp(apm, "wdssta") ) {
-		sysprintf
-		    ("iw %s interface add %s type managed 4addr on",
-		     wif, dev);
+		sysprintf("iw %s interface add %s type managed", wif, dev);
 
 		strcpy(primary, dev);
-	}
-	else {
+	} else if (!strcmp(apm, "wdssta")) {
+		sysprintf
+		    ("iw %s interface add %s type managed 4addr on", wif, dev);
+
+		strcpy(primary, dev);
+	} else {
 		// infra (adhoc) TBD
 	}
 
 	char regdomain[16];
 	char *country;
 	sprintf(regdomain, "%s_regdomain", dev);
-	country=nvram_default_get(regdomain, "US");
-	sysprintf ("iw reg set %s", getIsoName(country));
+	country = nvram_default_get(regdomain, "US");
+	sysprintf("iw reg set %s", getIsoName(country));
 
 	// vifs TBD
 
@@ -162,14 +204,13 @@ void configure_single_ath9k(int count) {
 	getMacAddr(dev, macaddr);
 	nvram_set(athmac, macaddr);
 	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
-	sysprintf
-	    ("iw %s set distance %d", wif, distance);
+	sysprintf("iw %s set distance %d", wif, distance);
 
 	sprintf(maxassoc, "%s_maxassoc", dev);
 	sysprintf("echo TBD maxassoc: %s maxassoc %s", dev,
 		  nvram_default_get(maxassoc, "256"));
 // das scheint noch aerger zu machen
-	sysprintf ("iw dev %s set power_save off", dev);
+	sysprintf("iw dev %s set power_save off", dev);
 
 	cprintf("done()\n");
 
@@ -202,8 +243,8 @@ void configure_single_ath9k(int count) {
 #ifdef HAVE_RELAYD
 		if (!strcmp(apm, "wet")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", dev);
-//			sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
-//				  dev);
+//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
+//                                dev);
 		}
 #endif
 
