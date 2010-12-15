@@ -189,6 +189,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	u8 *calcopy;
 	u16 cmd;
 	u32 val;
+	u32 bar0;
 
 	if (!ar724x_pci_fixup_enable)
 		return;
@@ -214,8 +215,15 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 		return;
 	}
 
+	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
+
 	/* Setup the PCI device to allow access to the internal registers */
-	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0xffff);
+        if ((is_ar7241() || is_ar7242()))
+        {
+	    pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0x1000ffff);
+        }else{
+	    pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0xffff);
+	}
 	pci_read_config_word(dev, PCI_COMMAND, &cmd);
 	cmd |= PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
 	pci_write_config_word(dev, PCI_COMMAND, cmd);
@@ -246,6 +254,12 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
 	dev->revision = val & 0xff;
 	dev->class = val >> 8; /* upper 3 bytes */
+
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
+	cmd &= ~(PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
+	pci_write_config_word(dev, PCI_COMMAND, cmd);
+
+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
 
 	iounmap(mem);
 	return;
@@ -306,9 +320,6 @@ static int __init ar7240_pcibios_init(void)
 	}
         if ((is_ar7241() || is_ar7242()))
 		ar7240_reg_wr(AR7240_PCI_LCL_APP, (ar7240_reg_rd(AR7240_PCI_LCL_APP) | (0x1 << 16)));
-
-    if ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7241_REV_1_0)
-	ar7240_reg_wr(AR7240_PCI_LCL_APP, (ar7240_reg_rd(AR7240_PCI_LCL_APP) | (0x1 << 16)));
 
 
 	printk("PCI init:%s\n", __func__);
