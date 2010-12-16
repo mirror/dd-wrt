@@ -46,14 +46,17 @@ void set_gpio(int gpio, int value)
 {
 	FILE *in;
 	char buf[64];
-
-	sprintf(buf, "/proc/gpio/%d_dir", gpio);
-	in = fopen(buf, "wb");
-	if (in == NULL)
-		return;
-	fprintf(in, "1");
-	fclose(in);
-	sprintf(buf, "/proc/gpio/%d_out", gpio);
+	if (gpio < 32) {
+		sprintf(buf, "/proc/gpio/%d_dir", gpio);
+		in = fopen(buf, "wb");
+		if (in == NULL)
+			return;
+		fprintf(in, "1");
+		fclose(in);
+		sprintf(buf, "/proc/gpio/%d_out", gpio);
+	} else {
+		sprintf(buf, "/proc/wl0gpio/%d_out", gpio);
+	}
 	in = fopen(buf, "wb");
 	if (in == NULL)
 		return;
