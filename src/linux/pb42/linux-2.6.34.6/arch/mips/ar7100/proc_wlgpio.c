@@ -149,7 +149,7 @@ register_proc (void)
 {
   unsigned char i, flag = 0;
   char proc_name[64];
-  int gpiocount = 16;
+  int gpiocount = 32;
 
   /* create directory gpio */
   gpio_dir = proc_mkdir ("wl0gpio", NULL);
@@ -183,7 +183,7 @@ cleanup_proc (void)
 {
   unsigned char i;
   char proc_name[64];
-  int gpiocount=16;
+  int gpiocount=32;
 
   for (i = 0; i < gpiocount; i++)
     {
