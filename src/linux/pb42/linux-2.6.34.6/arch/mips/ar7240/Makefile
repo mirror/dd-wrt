@@ -20,6 +20,7 @@
 
 obj-y	+=	prom.o	\
 			proc_gpio.o \
+			proc_wlgpio.o \
 			irq.o	\
 			setup.o	\
 			ar7240.o \
