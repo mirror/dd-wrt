@@ -1525,6 +1525,10 @@ int internal_getRouterBrand()
 			setRouter("Asus WL-500g Premium");
 			return ROUTER_ASUS_WL500G_PRE;
 		}
+		if (boardnum == 44 || startswith(hwver, "WL700g")) {
+			setRouter("Asus WL-700gE");
+			return ROUTER_ASUS_WL700GE;
+		}
 	}
 
 	char *et0 = nvram_safe_get("et0macaddr");
@@ -3402,6 +3406,7 @@ int led_control(int type, int act)
 		// defaults
 		break;
 	case ROUTER_ASUS_WL500G_PRE:
+	case ROUTER_ASUS_WL700GE:
 		power_gpio = 0x101;
 		diag_gpio = 0x001;	// power led blink / off to indicate factory
 		// defaults
