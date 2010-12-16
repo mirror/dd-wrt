@@ -1893,6 +1893,7 @@ void start_restore_defaults(void)
 				nvram_set("vlan0ports", "0 5*");
 				break;
 			case ROUTER_ASUS_WL500G_PRE:
+			case ROUTER_ASUS_WL700GE:
 				nvram_set("vlan0ports", "1 2 3 4 5*");
 				break;
 			case ROUTER_MOTOROLA:

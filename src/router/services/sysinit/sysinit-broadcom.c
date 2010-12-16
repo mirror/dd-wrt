@@ -1086,9 +1086,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_ASUS_WL500G_PRE:
-		if (nvram_match("sdram_init", "0x000b"))
-			nvram_set("sdram_init", "0x0009");
-		// nvram_set ("sdram_ncdl", "0x208");
+	case ROUTER_ASUS_WL700GE:
 		nvram_set("lan_ifnames", "vlan0 eth2");
 		nvram_set("wl0_ifname", "eth2");
 		nvram_set("wan_ifname", "vlan1");	// fix for Asus WL500gPremium 
@@ -1308,7 +1306,7 @@ void start_sysinit(void)
 	}
 
 	/*
-	 * additional boardflags adjustment 
+	 * additional boardflags adjustment, etc...
 	 */
 	switch (brand) {
 	case ROUTER_BELKIN_F5D7231:
@@ -1405,6 +1403,12 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
+		
+	case ROUTER_ASUS_WL500G_PRE:
+		if (nvram_match("sdram_init", "0x000b"))
+			nvram_set("sdram_init", "0x0009");
+		break;
+			
 	}
 
 	if (need_reboot) {
