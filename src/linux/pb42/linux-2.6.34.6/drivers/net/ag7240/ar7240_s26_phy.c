@@ -395,7 +395,7 @@ void athrs26_reg_init(int ethUnit)
     if (mac_has_flag(mac,ATHR_S26_HEADER))
         athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4804);
     else
-        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4004);
+        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x6004);
 
    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&0xfffff800)|0x6b4);
 //    athrs26_reg_write(0x30,(athrs26_reg_read(0x30)&AR8216_GCTRL_MTU)|1716);
@@ -519,7 +519,7 @@ void athrs26_reg_init_lan(int ethUnit)
     if (mac_has_flag(mac,ATHR_S26_HEADER))
         athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4804);
     else 
-        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x4004);
+        athrs26_reg_write(PORT_CONTROL_REGISTER0, 0x6004);
 
    /* Tag Priority Mapping */
 //      athrs26_reg_write(0x70, 0x41af);
