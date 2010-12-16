@@ -730,6 +730,7 @@ void period_check(int sig)
 		sesgpio = 0x102;	// gpio 2, inversed
 		break;
 	case ROUTER_BUFFALO_WBR2G54S:
+	case ROUTER_ASUS_WL700GE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
 #ifndef HAVE_BUFFALO
