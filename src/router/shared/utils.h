@@ -500,6 +500,9 @@
 // Repotec RP-WR5422
 #define ROUTER_BOARD_WR5422 0x9f1a
 
+// Asus WL-700ge (BCM4780 cpu, 2MB flash, 64MB ram, BCM5325E switch)
+#define ROUTER_ASUS_WL700GE 0xa017
+
 
 
 #define NVROUTER "DD_BOARD"
