@@ -55,7 +55,7 @@ void set_gpio(int gpio, int value)
 		fclose(in);
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else {
-		sprintf(buf, "/proc/wl0gpio/%d_out", gpio);
+		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio-32));
 	}
 	in = fopen(buf, "wb");
 	if (in == NULL)
