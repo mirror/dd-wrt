@@ -23,52 +23,13 @@
 #include "ar7100.h"
 
 
-typedef	u32					gpio_words;
+extern void set_wl0_gpio(int gpio,int val);
 
-#define	GPIO_WL0_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x4048)				//AR9220 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0000000 + OFFSET [0x4048]
-#define	GPIO_WL1_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x00010000 + 0x4048)				//AR9223 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0010000 + OFFSET [0x4048]
+extern void set_wl1_gpio(int gpio,int val);
 
-static void set_wl0_gpio(int gpio,int val)
-{
-	register	gpio_words	wl0	= (gpio_words)ar7100_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
-	if (val)
-	    wl0|=1<<gpio;
-	else
-	    wl0&=(~(1<<gpio));
+extern int get_wl0_gpio(int gpio);
 
-	ar7100_reg_wr(GPIO_WL0_ADDR, wl0);	//ar9283 register [0x4048]
-	ar7100_reg_rd(GPIO_WL0_ADDR);	//ar9283 register [0x4048]
-}
-
-static void set_wl1_gpio(int gpio,int val)
-{
-	register	gpio_words	wl0	= (gpio_words)ar7100_reg_rd(GPIO_WL1_ADDR);	//ar9280 register [0x4048]
-	if (val)
-	    wl0|=1<<gpio;
-	else
-	    wl0&=(~(1<<gpio));
-
-	ar7100_reg_wr(GPIO_WL1_ADDR, wl0);	//ar9283 register [0x4048]
-	ar7100_reg_rd(GPIO_WL1_ADDR);	//ar9283 register [0x4048]
-}
-
-static int get_wl0_gpio(int gpio)
-{
-	register	gpio_words	wl0	= (gpio_words)ar7100_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
-	if (wl0 & (1<<gpio))
-	    return 1;
-	else
-	    return 0;
-}
-
-static int get_wl1_gpio(int gpio)
-{
-	register	gpio_words	wl0	= (gpio_words)ar7100_reg_rd(GPIO_WL1_ADDR);	//ar9280 register [0x4048]
-	if (wl0 & (1<<gpio))
-	    return 1;
-	else
-	    return 0;
-}
+extern int get_wl1_gpio(int gpio);
 
 
 

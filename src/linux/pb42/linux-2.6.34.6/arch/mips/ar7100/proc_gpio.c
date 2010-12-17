@@ -114,6 +114,7 @@ typedef	u32					gpio_words;
 #define	GPIO_WL0_MAX		10
 #define	GPIO_WL0(n)			(1 << ((n)+GPIO_PIN_MAX))
 #define	GPIO_WL0_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x4048)				//AR9220 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0000000 + OFFSET [0x4048]
+#define	GPIOOUT_WL0_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x404c)				//AR9220 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0000000 + OFFSET [0x4048]
 #define	GPIO_WL0_MASK(_VAL)	(((gpio_words)(_VAL)) & (((gpio_words)1<<GPIO_WL0_MAX)-1))
 #define	GPIO_WL0_TO(_VAL)	GPIO_WL0_MASK(((gpio_words)(_VAL))>>(GPIO_PIN_MAX))	//the value to AR9220 register
 #define	GPIO_WL0_FROM(_VAL)	(GPIO_WL0_MASK(_VAL)<<(GPIO_PIN_MAX))				//the value from AR9220 register
@@ -121,9 +122,14 @@ typedef	u32					gpio_words;
 #define	GPIO_WL1_MAX		10
 #define	GPIO_WL1(n)			(1 << ((n)+GPIO_PIN_MAX+GPIO_WL0_MAX))
 #define	GPIO_WL1_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x00010000 + 0x4048)				//AR9223 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0010000 + OFFSET [0x4048]
+#define	GPIOOUT_WL1_ADDR		KSEG1ADDR(AR71XX_PCI_MEM_BASE + 0x00010000 + 0x404c)				//AR9223 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0010000 + OFFSET [0x4048]
 #define	GPIO_WL1_MASK(_VAL)	(((gpio_words)(_VAL)) & (((gpio_words)1<<GPIO_WL1_MAX)-1))
 #define	GPIO_WL1_TO(_VAL)	GPIO_WL1_MASK(((gpio_words)(_VAL))>>(GPIO_PIN_MAX+GPIO_WL0_MAX))	//the value to AR9223 register
 #define	GPIO_WL1_FROM(_VAL)	(GPIO_WL1_MASK(_VAL)<<(GPIO_PIN_MAX+GPIO_WL0_MAX))					//the value from AR9223 register
+
+#define AR_GPIO_OUTPUT_MUX1                      0x4060
+#define AR_GPIO_OUTPUT_MUX2                      0x4064
+#define AR_GPIO_OUTPUT_MUX3                      0x4068
 
 
 int get_wl0_gpio(int gpio)
@@ -141,9 +147,27 @@ int get_wl1_gpio(int gpio)
     	return 0;
 }
 
+#define AR_GPIO_OE_OUT                           0x404c // GPIO output register
+#define AR_GPIO_OE_OUT_DRV                       0x3    // 2 bit field mask, shifted by 2*bitpos
+#define AR_GPIO_OE_OUT_DRV_NO                    0x0    // tristate
+#define AR_GPIO_OE_OUT_DRV_LOW                   0x1    // drive if low
+#define AR_GPIO_OE_OUT_DRV_HI                    0x2    // drive if high
+#define AR_GPIO_OE_OUT_DRV_ALL                   0x3    // drive always
+
 void set_wl0_gpio(int gpio,int val)
 {
-	register	gpio_words	wl0	= (gpio_words)ar7100_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
+	register	gpio_words	wl0;
+	int shift;
+	
+	wl0 = (gpio_words)ar7100_reg_rd(GPIOOUT_WL0_ADDR);
+
+	shift = gpio*2;
+	wl0 |= 	AR_GPIO_OE_OUT_DRV << shift;
+	ar7100_reg_wr(GPIOOUT_WL0_ADDR, wl0);	//ar9283 register [0x4048]
+	ar7100_reg_rd(GPIOOUT_WL0_ADDR);	//ar9283 register [0x4048]
+	
+	wl0 = (gpio_words)ar7100_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
+
 	if (val)
 	    wl0|=1<<gpio;
 	else
@@ -154,7 +178,17 @@ void set_wl0_gpio(int gpio,int val)
 
 void set_wl1_gpio(int gpio,int val)
 {
-	register	gpio_words	wl1	= (gpio_words)ar7100_reg_rd(GPIO_WL1_ADDR);	//ar9280 register [0x4048]
+	register	gpio_words	wl1;
+	int shift;
+
+	wl1 = (gpio_words)ar7100_reg_rd(GPIOOUT_WL0_ADDR);
+	shift = gpio*2;
+	wl1 |= 	AR_GPIO_OE_OUT_DRV << shift;
+	ar7100_reg_wr(GPIOOUT_WL1_ADDR, wl1);	//ar9283 register [0x4048]
+	ar7100_reg_rd(GPIOOUT_WL1_ADDR);	//ar9283 register [0x4048]
+
+	wl1	= (gpio_words)ar7100_reg_rd(GPIO_WL1_ADDR);	//ar9280 register [0x4048]
+
 	if (val)
 	wl1|=1<<gpio;
 	else
