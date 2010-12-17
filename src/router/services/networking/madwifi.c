@@ -257,8 +257,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 
 		sprintf(psk, "%s_crypto", prefix);
 		if (nvram_match(psk, "aes")) {
+#if 1
+			fprintf(fp, "\tpairwise=CCMP\n");
+			fprintf(fp, "\tgroup=CCMP TKIP\n");
+#else
 			fprintf(fp, "\tpairwise=CCMP\n");
 			fprintf(fp, "\tgroup=CCMP\n");
+#endif
 		}
 		if (nvram_match(psk, "tkip")) {
 			fprintf(fp, "\tpairwise=TKIP\n");
