@@ -189,6 +189,14 @@ void set_wl0_gpio(int gpio,int val)
 	ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9283 register [0x4048]
 }
 
+int get_wl0_gpio(int gpio)
+{
+	register	gpio_words	wl0	= (gpio_words)ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
+        if (wl0&(1<<gpio));
+    	    return 1;
+    	return 0;
+}
+
 #define USB_LED_OFF 1
 #define USB_LED_ON 0
 
