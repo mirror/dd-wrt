@@ -2289,8 +2289,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 	if (nvram_match(wl_net_mode, "disabled"))
 		return;
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "infra"))
-	{
+	    || nvram_match(wl_mode, "infra")) {
 		char wl_channel[16];
 
 		sprintf(wl_channel, "%s_channel", prefix);
@@ -5447,16 +5446,20 @@ void show_preshared(webs_t wp, char *prefix)
 		  "<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
 	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.rekey)</script></div>\n");
-	sprintf(var, "%s_wpa_gtk_rekey", prefix);
-	websWrite(wp,
-		  "<input class=\"num\" name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n",
-		  prefix, nvram_default_get(var, "3600"));
-	websWrite(wp,
-		  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
-	websWrite(wp, "</div>\n");
+
+	if (nvram_nmatch("ap", "%s_mode", prefix)
+	    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.rekey)</script></div>\n");
+		sprintf(var, "%s_wpa_gtk_rekey", prefix);
+		websWrite(wp,
+			  "<input class=\"num\" name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n",
+			  prefix, nvram_default_get(var, "3600"));
+		websWrite(wp,
+			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
+		websWrite(wp, "</div>\n");
+	}
 	websWrite(wp, "</div>\n");
 }
 
