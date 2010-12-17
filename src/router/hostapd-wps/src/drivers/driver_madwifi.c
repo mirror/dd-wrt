@@ -460,21 +460,31 @@ madwifi_set_key(const char *ifname, void *priv, enum wpa_alg alg,
 
 	memset(&wk, 0, sizeof(wk));
 	wk.ik_type = cipher;
-	wk.ik_flags = IEEE80211_KEY_RECV | IEEE80211_KEY_XMIT;
+	wk.ik_flags = IEEE80211_KEY_RECV;
+	if (set_tx)
+		wk.ik_flags |= IEEE80211_KEY_XMIT;
 
 	if (addr == NULL) {
-		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
+		os_memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
 		wk.ik_keyix = key_idx;
-		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
-		wk.ik_flags |= IEEE80211_KEY_GROUP;
-	} else if (!memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
-		wk.ik_keyix = key_idx;
-		wk.ik_flags |= IEEE80211_KEY_GROUP;
-		memset(wk.ik_macaddr, 0, IEEE80211_ADDR_LEN);
 	} else {
-		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
-		wk.ik_keyix = IEEE80211_KEYIX_NONE;
+		os_memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
+		/*
+		 * Deduce whether group/global or unicast key by checking
+		 * the address (yech).  Note also that we can only mark global
+		 * keys default; doing this for a unicast key is an error.
+		 */
+		if (os_memcmp(addr, "\xff\xff\xff\xff\xff\xff",
+			      IEEE80211_ADDR_LEN) == 0) {
+			wk.ik_flags |= IEEE80211_KEY_GROUP;
+			wk.ik_keyix = key_idx;
+		} else {
+			wk.ik_keyix = key_idx == 0 ? IEEE80211_KEYIX_NONE :
+				key_idx;
+		}
 	}
+	if (wk.ik_keyix != IEEE80211_KEYIX_NONE && set_tx)
+		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
 	wk.ik_keylen = key_len;
 	memcpy(wk.ik_keydata, key, key_len);
 #ifdef WORDS_BIGENDIAN
