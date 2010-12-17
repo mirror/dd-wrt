@@ -23,30 +23,9 @@
 #include "ar7240.h"
 
 
-typedef	u32					gpio_words;
+extern void set_wl0_gpio(int gpio,int val);
 
-#define	GPIO_WL0_ADDR		KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x4048)				//AR9220 GPIO IN/OUT REGISTER	--> PCI MAP 0xB0000000 + OFFSET [0x4048]
-
-static void set_wl0_gpio(int gpio,int val)
-{
-	register	gpio_words	wl0	= (gpio_words)ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
-	if (val)
-	    wl0|=1<<gpio;
-	else
-	    wl0&=(~(1<<gpio));
-
-	ar7240_reg_wr(GPIO_WL0_ADDR, wl0);	//ar9283 register [0x4048]
-	ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9283 register [0x4048]
-}
-
-static int get_wl0_gpio(int gpio)
-{
-	register	gpio_words	wl0	= (gpio_words)ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
-	if (wl0 & (1<<gpio))
-	    return 1;
-	else
-	    return 0;
-}
+extern int get_wl0_gpio(int gpio);
 
 
 
