@@ -629,16 +629,24 @@ static void checkhostapd(char *ifname)
 				char checkname[32];
 				sprintf(checkname, "/proc/%d/cmdline", pid);
 				fp = fopen(checkname, "rb");
+				int needrestart = 0;
 				if (!fp) {
+					needrestart = 1;
+				} else {
+					char cmdline[128];
+					fscanf(fp, "%s", cmdline);
+					if (!strncmp(cmdline, "hostapd", 7))
+						needrestart = 1;
+					fclose(fp);
+				}
+				if (needrestart) {
 					char fstr[32];
 					sprintf(fstr, "/tmp/%s_hostap.conf",
 						ifname);
-					fprintf(stderr,
-						"HOSTAPD on %s with pid %d died, restarting....\n",
-						ifname, pid);
+					dd_syslog(LOG_INFO,
+						  "HOSTAPD on %s with pid %d died, restarting....\n",
+						  ifname, pid);
 					do_hostapd(fstr, ifname);
-				} else {
-					fclose(fp);
 				}
 			}
 		}
