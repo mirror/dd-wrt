@@ -633,10 +633,12 @@ static void checkhostapd(char *ifname)
 					char fstr[32];
 					sprintf(fstr, "/tmp/%s_hostap.conf",
 						ifname);
-					fprintf(stderr,"HOSTAPD on %s with pid %d died, restarting....\n",ifname,pid);
+					fprintf(stderr,
+						"HOSTAPD on %s with pid %d died, restarting....\n",
+						ifname, pid);
 					do_hostapd(fstr, ifname);
-				}else {
-				fclose(fp);
+				} else {
+					fclose(fp);
 				}
 			}
 		}
