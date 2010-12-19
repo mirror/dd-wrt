@@ -635,8 +635,9 @@ static void checkhostapd(char *ifname)
 						ifname);
 					fprintf(stderr,"HOSTAPD on %s with pid %d died, restarting....\n",ifname,pid);
 					do_hostapd(fstr, ifname);
-				}
+				}else {
 				fclose(fp);
+				}
 			}
 		}
 	}
