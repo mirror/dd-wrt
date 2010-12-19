@@ -29,6 +29,10 @@ mkdir -p usr/bin
 cd usr/bin
 ln -sf /opt/bin/perl perl
 cd ../../
+mkdir -p bin
+cd bin
+ln -sf /opt/bin/bash bash
+cd ../
 # tmp
 mkdir -p tmp
 ln -sf tmp/var var
