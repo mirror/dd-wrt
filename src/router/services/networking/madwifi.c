@@ -590,14 +590,14 @@ static void do_hostapd(char *fstr, char *prefix)
 
 	fp = fopen(fname, "rb");
 	if (fp) {
-		fread(&pid, 4, 1, fp);
+		fscanf(fp, "%d", &pid);
 		fclose(fp);
 		if (pid > 0)
 			kill(pid, SIGTERM);
 	}
 
-	char *argv[] = { "hostapd", "-B", NULL, NULL, NULL };
-	int argc = 2;
+	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL };
+	int argc = 4;
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	if (debug != NULL) {
 		if (!strcmp(debug, "1"))
@@ -609,13 +609,66 @@ static void do_hostapd(char *fstr, char *prefix)
 	}
 	argv[argc++] = fstr;
 	_evalpid(argv, NULL, 0, &pid);
-//      eval( "hostapd", "-B", fstr );
-	fp = fopen(fname, "wb");
-	if (fp) {
-		fwrite(&pid, 4, 1, fp);
-		fclose(fp);
+}
+
+static void checkhostapd(char *ifname)
+{
+	char akm[32];
+	int pid;
+	char fname[32];
+	sprintf(akm, "%s_akm", ifname);
+	if (nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+	    || nvram_match(akm, "wpa wpa2")) {
+		sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
+		FILE *fp;
+		fp = fopen(fname, "rb");
+		if (fp) {
+			fscanf(fp, "%d", &pid);
+			fclose(fp);
+			if (pid > 0) {
+				char checkname[32];
+				sprintf(checkname, "/proc/%d/cmdline", pid);
+				fp = fopen(checkname, "rb");
+				if (!fp) {
+					char fstr[32];
+					sprintf(fstr, "/tmp/%s_hostap.conf",
+						ifname);
+					fprintf(stderr,"HOSTAPD on %s with pid %d died, restarting....\n",ifname,pid);
+					do_hostapd(fstr, ifname);
+				}
+				fclose(fp);
+			}
+		}
 	}
 
+}
+
+void start_checkhostapd(void)
+{
+	char *next, *vifs;
+	char wifivifs[32];
+	char var[80];
+	int c = getdevicecount();
+	char athname[32];
+	int i;
+	for (i = 0; i < c; i++) {
+		sprintf(athname, "ath%d", i);
+		if (!nvram_nmatch("disabled", "%s_net_mode", athname)
+		    && (nvram_nmatch("ap", "%s_mode", athname)
+			|| nvram_nmatch("wdsap", "%s_mode", athname))) {
+			//okay, these modes might run hostapd and may cause troubles if the radius gets unavailable
+			checkhostapd(athname);
+			sprintf(wifivifs, "%s_vifs", athname);
+			vifs = nvram_safe_get(wifivifs);
+			if (vifs != NULL && strlen(vifs) > 0) {
+				foreach(var, vifs, next) {
+					checkhostapd(var);
+				}
+
+			}
+
+		}
+	}
 }
 
 #ifdef HAVE_ATH9K
@@ -668,12 +721,13 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
 		fprintf(fp, "ieee80211n=1\n");
 		char bw[32];
 		sprintf(bw, "%s_channelbw", prefix);
-		if (nvram_default_match(bw, "20","20")) {
+		if (nvram_default_match(bw, "20", "20")) {
 			sprintf(ht, "20");
-		} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+		} else if (nvram_match(bw, "40")
+			   || nvram_match(bw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
-			if (nvram_default_match(sb, "upper","lower")) {
+			if (nvram_default_match(sb, "upper", "lower")) {
 				sprintf(ht, "40+");
 			} else {
 				sprintf(ht, "40-");
@@ -709,7 +763,7 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
 	sprintf(nfreq, "%s_channel", prefix);
 	int channel = ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
 	// i know that's not the right way.. autochannel is 0
-	if (channel < 36 || nvram_match(nfreq,"0"))
+	if (channel < 36 || nvram_match(nfreq, "0"))
 		fprintf(fp, "hw_mode=g\n");
 	else
 		fprintf(fp, "hw_mode=a\n");
@@ -856,8 +910,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
 		   nvram_match(akm, "psk psk2") ||
-		   nvram_match(akm, "wpa") ||
-		   nvram_match(akm, "wpa2") || nvram_match(akm, "wpa wpa2")) {
+		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+		   || nvram_match(akm, "wpa wpa2")) {
 
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -879,14 +933,15 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fprintf(fp, "eapol_key_index_workaround=0\n");
 		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
 			fprintf(fp, "wpa=1\n");
-		if (nvram_match(akm, "psk2") || nvram_match(akm, "wpa2"))
+		if (nvram_match(akm, "psk2")
+		    || nvram_match(akm, "wpa2"))
 			fprintf(fp, "wpa=2\n");
 		if (nvram_match(akm, "psk psk2")
 		    || nvram_match(akm, "wpa wpa2"))
 			fprintf(fp, "wpa=3\n");
 
-		if (nvram_match(akm, "psk") ||
-		    nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
+		if (nvram_match(akm, "psk") || nvram_match(akm, "psk2")
+		    || nvram_match(akm, "psk psk2")) {
 			if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
 				fprintf(fp, "wpa_psk=%s\n",
 					nvram_nget("%s_wpa_psk", prefix));
@@ -895,7 +950,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 					nvram_nget("%s_wpa_psk", prefix));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
 #ifdef HAVE_WPS
-			if (!strcmp(prefix, "ath0") || !strcmp(prefix, "ath1")) {
+			if (!strcmp(prefix, "ath0")
+			    || !strcmp(prefix, "ath1")) {
 				fprintf(fp, "eap_server=1\n");
 				fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
 
@@ -949,15 +1005,16 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			nvram_default_get(check, "0.0.0.0");
 
 			if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
-			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr",
-					     prefix)
+			    && !nvram_nmatch("0.0.0.0",
+					     "%s_radius2_ipaddr", prefix)
 			    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
 				fprintf(fp, "auth_server_addr=%s\n",
 					nvram_nget("%s_radius2_ipaddr",
 						   prefix));
 				fprintf(fp, "auth_server_port=%s\n",
 					nvram_nget("%s_radius2_port", prefix));
-				fprintf(fp, "auth_server_shared_secret=%s\n",
+				fprintf(fp,
+					"auth_server_shared_secret=%s\n",
 					nvram_nget("%s_radius2_key", prefix));
 			}
 			if (nvram_nmatch("1", "%s_acct", prefix)) {
@@ -965,7 +1022,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 					nvram_nget("%s_acct_ipaddr", prefix));
 				fprintf(fp, "acct_server_port=%s\n",
 					nvram_nget("%s_acct_port", prefix));
-				fprintf(fp, "acct_server_shared_secret=%s\n",
+				fprintf(fp,
+					"acct_server_shared_secret=%s\n",
 					nvram_nget("%s_acct_key", prefix));
 			}
 		}
@@ -1011,8 +1069,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		if (nvram_match(type, "3"))
 			pragma = "";
 		sleep(1);	// some delay is usefull
-		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix,
-			  server, port, share);
+		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma,
+			  prefix, server, port, share);
 	} else {
 #ifdef HAVE_ATH9K
 		if (!is_ath9k(prefix))
@@ -1098,22 +1156,22 @@ static void set_rate(char *dev, char *priv)
 #endif
 
 	if (nvram_match(bw, "20") && nvram_match(xr, "0"))
-		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f
-		    || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f
-		    || atof(r) == 13.5f) {
+		if (atof(r) == 27.0f || atof(r) == 1.5f
+		    || atof(r) == 2.0f || atof(r) == 3.0f
+		    || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_set(rate, "0");
 			r = "0";
 		}
 	if (nvram_match(bw, "40"))
-		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f
-		    || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f
-		    || atof(r) == 13.5f) {
+		if (atof(r) == 27.0f || atof(r) == 1.5f
+		    || atof(r) == 2.0f || atof(r) == 3.0f
+		    || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_set(rate, "0");
 			r = "0";
 		}
 	if (nvram_match(bw, "10"))
-		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f
-		    || atof(r) == 13.5f) {
+		if (atof(r) > 27.0f || atof(r) == 1.5f
+		    || atof(r) == 2.0f || atof(r) == 13.5f) {
 			nvram_set(rate, "0");
 			r = "0";
 		}
@@ -1419,7 +1477,8 @@ static void configure_single(int count)
 				sysprintf
 				    ("wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
 				     var, wif);
-			else if (!strcmp(vapm, "ap") || !strcmp(vapm, "wdsap"))
+			else if (!strcmp(vapm, "ap")
+				 || !strcmp(vapm, "wdsap"))
 				sysprintf
 				    ("wlanconfig %s create wlandev %s wlanmode ap",
 				     var, wif);
@@ -1454,8 +1513,9 @@ static void configure_single(int count)
 				     dev, wif);
 
 		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-			sysprintf("wlanconfig %s create wlandev %s wlanmode ap",
-				  dev, wif);
+			sysprintf
+			    ("wlanconfig %s create wlandev %s wlanmode ap",
+			     dev, wif);
 		else
 			sysprintf
 			    ("wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
@@ -1945,7 +2005,8 @@ static void configure_single(int count)
 
 	sleep(1);
 	apm = nvram_default_get(wl, "ap");
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	    && strcmp(apm, "wet")) {
 		cprintf("set channel\n");
 		char *ch = nvram_default_get(channel, "0");
 
@@ -2019,8 +2080,8 @@ static void configure_single(int count)
 
 				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_match(bridged, "1", "1")) {
-					sysprintf("ifconfig %s 0.0.0.0 up",
-						  var);
+					sysprintf
+					    ("ifconfig %s 0.0.0.0 up", var);
 					br_add_interface(getBridge(var), var);
 				} else {
 					char ip[32];
@@ -2028,8 +2089,8 @@ static void configure_single(int count)
 
 					sprintf(ip, "%s_ipaddr", var);
 					sprintf(mask, "%s_netmask", var);
-					sysprintf("ifconfig %s mtu %s", var,
-						  getMTU(var));
+					sysprintf("ifconfig %s mtu %s",
+						  var, getMTU(var));
 					sysprintf
 					    ("ifconfig %s %s netmask %s up",
 					     var, nvram_safe_get(ip),
@@ -2039,7 +2100,8 @@ static void configure_single(int count)
 		}
 	}
 	// setup encryption
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet"))
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	    && strcmp(apm, "wet"))
 		setupHostAP(dev, "madwifi", 0);
 	else
 		setupSupplicant(dev, NULL);
@@ -2127,22 +2189,23 @@ void start_vifs(void)
 					sprintf(bridged, "%s_bridged", var);
 					if (nvram_default_match
 					    (bridged, "1", "1")) {
-						eval("ifconfig", var, "0.0.0.0",
-						     "up");
-						br_add_interface(getBridge(var),
-								 var);
+						eval("ifconfig", var,
+						     "0.0.0.0", "up");
+						br_add_interface
+						    (getBridge(var), var);
 					} else {
 						char ip[32];
 						char mask[32];
 
 						sprintf(ip, "%s_ipaddr", var);
-						sprintf(mask, "%s_netmask",
-							var);
-						eval("ifconfig", var, "mtu",
-						     getMTU(var));
+						sprintf(mask,
+							"%s_netmask", var);
+						eval("ifconfig", var,
+						     "mtu", getMTU(var));
 						sysprintf
 						    ("ifconfig %s %s netmask %s up",
-						     var, nvram_safe_get(ip),
+						     var,
+						     nvram_safe_get(ip),
 						     nvram_safe_get(mask));
 					}
 				}
@@ -2184,16 +2247,18 @@ void start_duallink(void)
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 200");
 		sysprintf("iptables -t mangle -F PREROUTING");
-		sysprintf("ip route add %s/%s dev ath0 src %s table 100",
-			  nvram_safe_get("ath0_ipaddr"),
-			  nvram_safe_get("ath0_netmask"),
-			  nvram_safe_get("ath0_ipaddr"));
+		sysprintf
+		    ("ip route add %s/%s dev ath0 src %s table 100",
+		     nvram_safe_get("ath0_ipaddr"),
+		     nvram_safe_get("ath0_netmask"),
+		     nvram_safe_get("ath0_ipaddr"));
 		sysprintf("ip route default via %s table 100",
 			  nvram_safe_get("ath0_duallink_parent"));
-		sysprintf("ip route add %s/%s dev ath0 src %s table 200",
-			  nvram_safe_get("ath1_ipaddr"),
-			  nvram_safe_get("ath1_netmask"),
-			  nvram_safe_get("ath1_ipaddr"));
+		sysprintf
+		    ("ip route add %s/%s dev ath0 src %s table 200",
+		     nvram_safe_get("ath1_ipaddr"),
+		     nvram_safe_get("ath1_netmask"),
+		     nvram_safe_get("ath1_ipaddr"));
 		sysprintf("ip route default via %s table 200",
 			  nvram_safe_get("ath1_duallink_parent"));
 		sysprintf
@@ -2205,16 +2270,18 @@ void start_duallink(void)
 		sysprintf("ip route flush table 200");
 		sysprintf("ip route del fwmark 1 table 100");
 		sysprintf("iptables -t mangle -F PREROUTING");
-		sysprintf("ip route add %s/%s dev ath0 src %s table 100",
-			  nvram_safe_get("ath0_ipaddr"),
-			  nvram_safe_get("ath0_netmask"),
-			  nvram_safe_get("ath0_ipaddr"));
+		sysprintf
+		    ("ip route add %s/%s dev ath0 src %s table 100",
+		     nvram_safe_get("ath0_ipaddr"),
+		     nvram_safe_get("ath0_netmask"),
+		     nvram_safe_get("ath0_ipaddr"));
 		sysprintf("ip route default via %s table 100",
 			  nvram_safe_get("ath0_duallink_parent"));
-		sysprintf("ip route add %s/%s dev ath0 src %s table 200",
-			  nvram_safe_get("ath1_ipaddr"),
-			  nvram_safe_get("ath1_netmask"),
-			  nvram_safe_get("ath1_ipaddr"));
+		sysprintf
+		    ("ip route add %s/%s dev ath0 src %s table 200",
+		     nvram_safe_get("ath1_ipaddr"),
+		     nvram_safe_get("ath1_netmask"),
+		     nvram_safe_get("ath1_ipaddr"));
 		sysprintf("ip route default via %s table 200",
 			  nvram_safe_get("ath1_duallink_parent"));
 		sysprintf
@@ -2227,7 +2294,7 @@ void start_duallink(void)
 extern void adjust_regulatory(int count);
 
 void configure_wifi(void)	// madwifi implementation for atheros based
-				// cards
+	    // cards
 {
 	deconfigure_wifi();
 	int c = getdevicecount();
@@ -2343,7 +2410,8 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			 * Bring up and configure br1 interface 
 			 */
 			if (nvram_invmatch(br1ipaddr, "0.0.0.0")) {
-				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr),
+				ifconfig("br1", IFUP,
+					 nvram_safe_get(br1ipaddr),
 					 nvram_safe_get(br1netmask));
 
 				if (nvram_match("lan_stp", "0"))
@@ -2388,8 +2456,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 				snprintf(wdsbc, 31, "%s", wdsip);
 				get_broadcast(wdsbc, wdsnm);
-				eval("ifconfig", dev, wdsip, "broadcast",
-				     wdsbc, "netmask", wdsnm, "up");
+				eval("ifconfig", dev, wdsip,
+				     "broadcast", wdsbc, "netmask",
+				     wdsnm, "up");
 			} else if (nvram_match(wdsvarname, "2")
 				   && nvram_match(br1enable, "1")) {
 				eval("ifconfig", dev, "up");
