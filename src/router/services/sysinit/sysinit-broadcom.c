@@ -1303,6 +1303,10 @@ void start_sysinit(void)
 	case ROUTER_WRT54G_V8:
 		nvram_set("reset_gpio", "7");
 		break;
+		
+	case ROUTER_ASUS_WL700GE:
+		eval("gpio", "enable", "3");  // POWER-enable, turns on power to HDD and switch leds
+		break;
 	}
 
 	/*
