@@ -39,6 +39,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <err.h>
+#include <syslog.h>
 
 #include <ctype.h>
 #include <string.h>
