@@ -90,6 +90,7 @@ void start_ftpsrv(void)
 		"Port            %s\n"
 		"Umask           022\n"
 		"MaxInstances    10\n"
+		"MaxLoginAttempts 3\n"
 		"User            root\n"
 		"Group           root\n"
 		"UseReverseDNS   off\n"
