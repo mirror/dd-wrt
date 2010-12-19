@@ -636,7 +636,7 @@ static void checkhostapd(char *ifname)
 				} else {
 					char cmdline[128];
 					fscanf(fp, "%s", cmdline);
-					if (!strncmp(cmdline, "hostapd", 7))
+					if (strncmp(cmdline, "hostapd", 7))
 						needrestart = 1;
 					fclose(fp);
 				}
