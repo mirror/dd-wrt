@@ -2166,11 +2166,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"mmc_cs", "0", 0},
 #endif
 #ifdef HAVE_RB500
-	{"ip_conntrack_max", "32768", 0},
+	{"ip_conntrack_max", "16384", 0},
 #elif HAVE_WRT300NV2
 	{"ip_conntrack_max", "4096", 0},
 #elif HAVE_XSCALE
-	{"ip_conntrack_max", "32768", 0},
+	{"ip_conntrack_max", "16384", 0},
 #elif HAVE_X86
 #ifdef HAVE_NOWIFI
 	{"ip_conntrack_max", "4096", 0},
@@ -2178,13 +2178,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ip_conntrack_max", "32768", 0},
 #endif
 #elif HAVE_MAGICBOX
-	{"ip_conntrack_max", "32768", 0},
+	{"ip_conntrack_max", "16384", 0},
 #elif HAVE_LAGUNA
 	{"ip_conntrack_max", "32768", 0},
 #elif HAVE_RB600
 	{"ip_conntrack_max", "32768", 0},
 #elif HAVE_MERAKI
-	{"ip_conntrack_max", "32768", 0},
+	{"ip_conntrack_max", "16384", 0},
 #elif HAVE_FONERA
 	{"ip_conntrack_max", "4096", 0},
 #elif HAVE_BUFFALO
