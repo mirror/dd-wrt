@@ -86,7 +86,7 @@ authorize {
 	#  the MS-CHAP-Challenge attribute, and add 'Auth-Type := MS-CHAP'
 	#  to the request, which will cause the server to then use
 	#  the mschap module for authentication.
-#	mschap
+	mschap
 
 	#
 	#  If you have a Cisco SIP server authenticating against
