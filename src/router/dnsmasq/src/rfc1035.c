@@ -686,7 +686,6 @@ int extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 			    return 0; /* looped CNAMES */
 			  goto cname_loop;
 			}
-		      
 		      cache_insert(name, &addr, now, cttl, name_encoding | F_REVERSE);
 		      found = 1; 
 		    }
@@ -705,7 +704,9 @@ int extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 		  ttl = find_soa(header, qlen);
 		}
 	      if (ttl)
+	      {
 		cache_insert(NULL, &addr, now, ttl, name_encoding | F_REVERSE | F_NEG | flags);	
+		}
 	    }
 	}
       else

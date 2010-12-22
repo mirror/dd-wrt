@@ -225,7 +225,6 @@ char *cache_get_name(struct crec *crecp)
     return crecp->name.bname->name;
   else if (crecp->flags & F_DHCP) 
     return crecp->name.namep;
-  
   return crecp->name.sname;
 }
 
@@ -360,7 +359,6 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
   union bigname *big_name = NULL;
   int freed_all = flags & F_REVERSE;
   int free_avail = 0;
-
   log_query(flags | F_UPSTREAM, name, addr, NULL);
 
   /* CONFIG bit no needed except for logging */
@@ -492,7 +490,6 @@ void cache_end_insert(void)
 struct crec *cache_find_by_name(struct crec *crecp, char *name, time_t now, unsigned short prot)
 {
   struct crec *ans;
-
   if (crecp) /* iterating */
     ans = crecp->next;
   else
@@ -642,43 +639,62 @@ static void add_hosts_entry(struct crec *cache, struct all_addr *addr, int addrl
 			    unsigned short flags, int index, int addr_dup)
 {
   struct crec *lookup = cache_find_by_name(NULL, cache->name.sname, 0, flags & (F_IPV4 | F_IPV6));
-  int i;
-  
+  int i, nameexists = 0;
+  struct cname *a;
   /* Remove duplicates in hosts files. */
-  if (lookup && (lookup->flags & F_HOSTS) &&
-      memcmp(&lookup->addr.addr, addr, addrlen) == 0)
-    free(cache);
-  else
+  if (lookup && (lookup->flags & F_HOSTS))
     {
-      /* Ensure there is only one address -> name mapping (first one trumps) 
-	 We do this by steam here, first we see if the address is the same as
-	 the last one we saw, which eliminates most in the case of an ad-block 
-	 file with thousands of entries for the same address.
-	 Then we search and bail at the first matching address that came from
-	 a HOSTS file. Since the first host entry gets reverse, we know 
-	 then that it must exist without searching exhaustively for it. */
-     
-      if (addr_dup)
-	flags &= ~F_REVERSE;
-      else
-	for (i=0; i<hash_size; i++)
-	  {
-	    for (lookup = hash_table[i]; lookup; lookup = lookup->hash_next)
-	      if ((lookup->flags & F_HOSTS) && 
-		  (lookup->flags & flags & (F_IPV4 | F_IPV6)) &&
-		  memcmp(&lookup->addr.addr, addr, addrlen) == 0)
-		{
-		  flags &= ~F_REVERSE;
-		  break;
-		}
-	    if (lookup)
+      nameexists = 1;
+      if (memcmp(&lookup->addr.addr, addr, addrlen) == 0)
+	{
+	  free(cache);
+	  return;
+	}
+    }
+  
+  /* Ensure there is only one address -> name mapping (first one trumps) 
+     We do this by steam here, first we see if the address is the same as
+     the last one we saw, which eliminates most in the case of an ad-block 
+     file with thousands of entries for the same address.
+     Then we search and bail at the first matching address that came from
+     a HOSTS file. Since the first host entry gets reverse, we know 
+     then that it must exist without searching exhaustively for it. */
+  
+  if (addr_dup)
+    flags &= ~F_REVERSE;
+  else
+    for (i=0; i<hash_size; i++)
+      {
+	for (lookup = hash_table[i]; lookup; lookup = lookup->hash_next)
+	  if ((lookup->flags & F_HOSTS) && 
+	      (lookup->flags & flags & (F_IPV4 | F_IPV6)) &&
+	      memcmp(&lookup->addr.addr, addr, addrlen) == 0)
+	    {
+	      flags &= ~F_REVERSE;
 	      break;
-	  }
-      
-      cache->flags = flags;
-      cache->uid = index;
-      memcpy(&cache->addr.addr, addr, addrlen);
-      cache_hash(cache);
+	    }
+	if (lookup)
+	  break;
+      }
+  
+  cache->flags = flags;
+  cache->uid = index;
+  memcpy(&cache->addr.addr, addr, addrlen);
+  cache_hash(cache);
+  
+  /* don't need to do alias stuff for second and subsequent addresses. */
+  if (!nameexists)
+    for (a = daemon->cnames; a; a = a->next)
+    {
+      if (hostname_isequal(cache->name.sname, a->target) &&
+	  (lookup = whine_malloc(sizeof(struct crec) + strlen(a->alias)+1-SMALLDNAME)))
+	{
+	  lookup->flags = F_FORWARD | F_IMMORTAL | F_HOSTS | F_CNAME;
+	  strcpy(lookup->name.sname, a->alias);
+	  lookup->addr.cname.cache = cache;
+	  lookup->addr.cname.uid = index;
+	  cache_hash(lookup);
+	}
     }
 }
 
@@ -851,13 +867,13 @@ void cache_unhash_dhcp(void)
 void cache_add_dhcp_entry(char *host_name, 
 			  struct in_addr *host_address, time_t ttd) 
 {
-  struct crec *crec = NULL;
+  struct crec *crec = NULL, *aliasc;
   unsigned short flags =  F_DHCP | F_FORWARD | F_IPV4 | F_REVERSE;
   int in_hosts = 0;
+  struct cname *a;
 
   if (!host_name)
     return;
-
   while ((crec = cache_find_by_name(crec, host_name, 0, F_IPV4 | F_CNAME)))
     {
       /* check all addresses associated with name */
@@ -912,6 +928,30 @@ void cache_add_dhcp_entry(char *host_name,
       crec->addr.addr.addr.addr4 = *host_address;
       crec->name.namep = host_name;
       cache_hash(crec);
+
+      for (a = daemon->cnames; a; a = a->next)
+      {
+	if (hostname_isequal(host_name, a->target))
+	  {
+	    if ((aliasc = dhcp_spare))
+	      dhcp_spare = dhcp_spare->next;
+	    else /* need new one */
+	      aliasc = whine_malloc(sizeof(struct crec));
+	    
+	    if (aliasc)
+	      {
+		aliasc->flags = F_FORWARD | F_DHCP | F_CNAME;
+		if (ttd == 0)
+		  aliasc->flags |= F_IMMORTAL;
+		else
+		  aliasc->ttd = ttd;
+		aliasc->name.namep = a->alias;
+		aliasc->addr.cname.cache = crec;
+		aliasc->addr.cname.uid = crec->uid;
+		cache_hash(aliasc);
+	      }
+	  }
+	}
     }
 }
 
