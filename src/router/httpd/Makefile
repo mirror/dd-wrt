@@ -593,6 +593,12 @@ NVISOBJS += wireless_madwifi11n.o
 NVISFILES += visuals/wireless_madwifi11n.c
 endif
 
+ifeq ($(CONFIG_ATH9K),y)
+LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+ATH9KVISOBJS += wireless_madwifiath9k.o
+ATH9KVISFILES += visuals/wireless_madwifiath9k.c
+endif
+
 
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(ARCHITECTURE),broadcom)
@@ -640,6 +646,9 @@ ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_EASY_WIRELESS_CONFIG
 endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
+CFLAGS += -DHAVE_EASY_WIRELESS_CONFIG
+endif
+ifeq ($(CONFIG_MADWIFI_ATH9K),y)
 CFLAGS += -DHAVE_EASY_WIRELESS_CONFIG
 endif
 
@@ -902,7 +911,10 @@ visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) --shared -c -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
-	$(CC) --shared -o $@ $^ $(NVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+ifeq ($(CONFIG_ATH9K),y)
+	$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+endif
+	$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 	
 	
 build_date.o: build_date.c

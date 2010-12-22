@@ -71,8 +71,8 @@ NFILES += wl_11n.c
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/compat-wireless/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
-ATH9KOBJS += wl_ath9k.o
-ATH9KFILES += wl_ath9k.c
+ATH9KOBJS += wl_ath9k.o mac80211info.o unl.o
+ATH9KFILES += wl_ath9k.c mac80211info.c unl.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
