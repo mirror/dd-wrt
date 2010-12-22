@@ -12,6 +12,8 @@
 #ifndef _TYPEDEFS_H_
 #define _TYPEDEFS_H_
 
+#include <stdbool.h>
+
 
 /* Define 'SITE_TYPEDEFS' in the compile to include a site specific
  * typedef file "site_typedefs.h".
@@ -198,9 +200,9 @@ enum {
 #ifdef USE_TYPEDEF_DEFAULTS
 #undef USE_TYPEDEF_DEFAULTS
 
-#ifndef TYPEDEF_BOOL
-typedef	/* @abstract@ */ unsigned char	bool;
-#endif
+// #ifndef TYPEDEF_BOOL
+// typedef	/* @abstract@ */ unsigned char	bool;
+// #endif
 
 /* define uchar, ushort, uint, ulong */
 
