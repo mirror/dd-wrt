@@ -1362,3 +1362,89 @@ function SortableTable (tableEl) {
 	}
  
 }
+
+function addTableEntry( tableId ) {
+	
+	var table = $(tableId);
+	var section = table.childElements()[0];
+	var rows = section.childElements();
+	var row = null;
+	
+	for (i = 0; i < rows.length; i++) {
+		if(rows[i].id) {
+			if(rows[i].id.substr( rows[i].id.length - 9, 9 ) == '_template' ) {
+				// create copy
+				row = document.createElement('TR');
+				row.id = tableId + '_row_' + (rows.length - i);
+				for(j = 0; j < rows[i].childElements().length; j++) {
+					var cell = rows[i].childElements()[j].cloneNode(true);
+					// rename fields
+					for(k = 0; k < cell.childElements().length; k++) {
+						if(cell.childElements()[k].name) {
+							cell.childElements()[k].name = cell.childElements()[k].name + '_' + (rows.length - i);
+						}
+						if(cell.childElements()[k].id) {
+							cell.childElements()[k].id = cell.childElements()[k].id + '_' + (rows.length - i);
+						}
+					}
+					row.appendChild(cell);
+				}
+			}
+		}
+	}
+
+	if(row != null) {
+		section.appendChild(row);
+		
+		// adjust share counter
+		if($(tableId + '_count')) {
+			$(tableId + '_count').value++;
+		}
+	}
+}
+
+function removeTableEntry( tableId, button ) {
+	
+	if(button.name.indexOf('_del_') >= 0) {
+		var rowNumber = button.name.substr(button.name.indexOf('_del_') + 5, button.name.length - button.name.indexOf('_del_') - 5);
+		
+		if(rowNumber > 0) {
+			var table = $(tableId);
+			var section = table.childElements()[0];
+			var row = $(tableId + '_row_' + rowNumber);
+			section.removeChild( row );
+			
+			// reorder remaining rows
+			var rows = section.childElements();
+			var sublabel = tableId + '_row_';
+			for (i = 0; i < rows.length; i++) {
+				if( rows[i].id.substr( 0, sublabel.length ) == sublabel && rows[i].id.substr(rows[i].id.length - 9, 9) != '_template') {
+					var index = rows[i].id.substr( sublabel.length, rows[i].id.length - sublabel.length);
+					if(index > rowNumber) {
+						rows[i].id = sublabel + (index - 1);
+						for(j = 0; j < rows[i].childElements().length; j++) {
+							var cell = rows[i].childElements()[j];
+							// rename fields
+							for(k = 0; k < cell.childElements().length; k++) {
+								var label = cell.childElements()[k].name;
+								label = label.substr(0, label.length - index.length);
+								cell.childElements()[k].name = label + (index - 1);
+								
+								if(cell.childElements()[k].id) {
+									var id = cell.childElements()[k].id;
+									id = id.substr(0, id.length - index.length);
+									cell.childElements()[k].id = id + (index - 1);
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			// adjust share counter
+			if($(tableId + '_count')) {
+				$(tableId + '_count').value--;
+			}
+		}
+	}
+}
