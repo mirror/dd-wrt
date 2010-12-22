@@ -643,7 +643,6 @@ struct dhcp_config *find_config(struct dhcp_config *configs,
 				int hw_type, char *hostname)
 {
   struct dhcp_config *config; 
-  
   if (clid)
     for (config = configs; config; config = config->next)
       if (config->flags & CONFIG_CLID)
@@ -701,7 +700,6 @@ void dhcp_read_ethers(void)
   struct dhcp_config **up, *tmp;
   struct dhcp_config *config;
   int count = 0, lineno = 0;
-
   addr.s_addr = 0; /* eliminate warning */
   
   if (!f)
@@ -832,8 +830,7 @@ void check_dhcp_hosts(int fatal)
      since the address is reserved by the other one -> protocol loop. 
      Also check that FQDNs match the domain we are using. */
   
-  struct dhcp_config *configs, *cp;
- 
+  struct dhcp_config *configs, *cp; 
   for (configs = daemon->dhcp_conf; configs; configs = configs->next)
     {
       char *domain;
@@ -904,7 +901,7 @@ void dhcp_update_configs(struct dhcp_config *configs)
  	      my_syslog(LOG_WARNING, _("%s has more than one address in hostsfile, using %s for DHCP"), 
  			config->hostname, inet_ntoa(crec->addr.addr.addr.addr4));
  	    }
- 
+	     
  	  if (config_find_by_address(configs, crec->addr.addr.addr.addr4))
 	  {
  	    my_syslog(LOG_WARNING, _("duplicate IP address %s (%s) in dhcp-config directive"), 
