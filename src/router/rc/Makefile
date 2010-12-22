@@ -669,6 +669,7 @@ ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
 endif
 ifeq ($(CONFIG_ATH9K),y)
+LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 CFLAGS += -DHAVE_ATH9K
 endif
 

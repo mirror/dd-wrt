@@ -9,6 +9,7 @@ ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
 
+
 CFLAGS += -I iksemel -fPIC
 CFLAGS += -I zlib 
 CFLAGS += -I ../../include.v23 -I../shared
@@ -21,9 +22,13 @@ endif
 #CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"dd-wrt\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.6.6\"
 
 # LDFLAGS += -L$(INSTALLDIR)/nvram/usr/lib -lnvram -lshared
-LDFLAGS =-L../libutils -lwireless -lutils -L../shared -lshared  -L../nvram -lnvram -lcrypt
+LDFLAGS =-L../libutils -lwireless -lutils -L../nvram -lnvram -lcrypt
 ifeq ($(CONFIG_MADWIFI),y)
 LDFLAGS += -lm
+endif
+
+ifeq ($(CONFIG_ATH9K),y)
+LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
 OBJS := src/apd.o
@@ -87,12 +92,24 @@ install: all
 	$(STRIP) $(INSTALLDIR)/sbin/apd
 
 libiksemel.so: $(IOBJS)
+ifeq ($(CONFIG_BCMMODERN),y)
+	$(CC) -fPIC -shared -o brcm26/$@ $^ $(LDFLAGS) 
+else
 	$(CC) -fPIC -shared -o $(ARCH)/$@ $^ $(LDFLAGS) 
+endif
 	
 sputnik: $(OBJS) 
+ifeq ($(CONFIG_BCMMODERN),y)
+	$(CC) -o brcm26/$@ $^ $(LDFLAGS) -L$(ARCH) -liksemel
+else
 	$(CC) -o $(ARCH)/$@ $^ $(LDFLAGS) -L$(ARCH) -liksemel
+endif
 
 sputnik.static: $(OBJS) $(IOBJS)
+ifeq ($(CONFIG_BCMMODERN),y)
+	$(CC) -o brcm26/$@ $^ $(LDFLAGS) -L$(ARCH) 
+else
 	$(CC) -o $(ARCH)/$@ $^ $(LDFLAGS) -L$(ARCH) 
+endif
 
 $(OBJS): $(CY_DEPS)

@@ -1,0 +1,78 @@
+#ifdef HAVE_ATH9K
+#define VISUALSOURCE 1
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
+#include <ctype.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include <broadcom.h>
+#include <bcmparams.h>
+#include <utils.h>
+#include <wlutils.h>
+#include "wireless_generic.c"
+int
+ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
+			  char *ifname, int cnt, int turbo, int macmask) {
+	char mac[32];
+	struct mac80211_info *mac80211_info;
+	struct wifi_client_info *wc;
+	char nb[32];
+	int bias,qual;
+
+	sprintf(nb, "%s_bias", ifname);
+	bias = atoi(nvram_default_get(nb, "0"));
+
+	mac80211_info = mac80211_assoclist(ifname);
+	for (wc = mac80211_info->wci ; wc ; wc = wc->next) {
+		if (cnt)
+			websWrite(wp, ",");
+		cnt++;
+		strncpy(mac, wc->mac, 31);
+		if (nvram_match("maskmac", "1") && macmask) {
+			mac[0] = 'x';
+			mac[1] = 'x';
+			mac[3] = 'x';
+			mac[4] = 'x';
+			mac[6] = 'x';
+			mac[7] = 'x';
+			mac[9] = 'x';
+			mac[10] = 'x';
+		}
+		qual = wc->signal * 124 + 11600;
+		qual /= 10;
+
+		 websWrite(wp,
+			"'%s','%s','%s','%dM(%d)','%s%s','%d','%d','%d','%d'",
+			mac,
+			wc->ifname,
+			UPTIME(wc->uptime),
+			wc->txrate / 10,
+			wc->mcs,
+			// wc->rxrate / 10, 
+			(wc->is_40mhz ? "HT40" : "HT20"),
+			(wc->is_short_gi ? "s" : ""),
+			wc->signal + bias,
+			wc->noise + bias,
+			wc->signal - wc->noise,
+			qual
+		);
+	}
+	free_wifi_clients(mac80211_info->wci);
+	free(mac80211_info);
+	return cnt;
+}
+#endif
