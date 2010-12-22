@@ -97,6 +97,7 @@ struct myoption {
 #define LOPT_LOCAL     287
 #define LOPT_NAPTR     288
 #define LOPT_MINPORT   289
+#define LOPT_CNAME     290
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -199,6 +200,7 @@ static const struct myoption opts[] =
     {"dhcp-optsfile", 1, 0, LOPT_DHCP_OPTS },
     {"dhcp-no-override", 0, 0, LOPT_OVERRIDE },
     {"stop-dns-rebind", 0, 0, LOPT_REBIND },
+    {"cname", 1, 0, LOPT_CNAME },
     {"all-servers", 0, 0, LOPT_NOLAST}, 
     {"dhcp-match", 1, 0, LOPT_MATCH }, 
     {"dhcp-broadcast", 1, 0, LOPT_BROADCAST },
@@ -320,6 +322,7 @@ static struct {
    { LOPT_SCRIPTUSR, ARG_ONE, "<username>", gettext_noop("Run lease-change script as this user."), NULL },
    { LOPT_NAPTR, ARG_DUP, "<name>,<naptr>", gettext_noop("Specify NAPTR DNS record."), NULL },
    { LOPT_MINPORT, ARG_ONE, "<port>", gettext_noop("Specify lowest port available for DNS query transmission."), NULL },
+   { LOPT_CNAME, ARG_DUP, "<alias>,<target>", gettext_noop("Specify alias name for LOCAL DNS name."), NULL },
    { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -1795,8 +1798,7 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 		    new->lease_time = 120;
 		  new->flags |= CONFIG_TIME;
 		}
-	    }
-	
+	    }	
 	daemon->dhcp_conf = new;
 	break;
       }
@@ -2046,6 +2048,26 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 	*up = new;
 	new->name = opt_string_alloc(arg);
 	new->intr = opt_string_alloc(comma);
+	break;
+      }
+
+    case LOPT_CNAME: /* --cname */
+      {
+	struct cname *new;
+	
+	if (!(comma = split(arg)))
+	  option = '?';
+	else
+	  {
+	    for (new = daemon->cnames; new; new = new->next)
+	      if (hostname_isequal(new->alias, arg))
+		problem = _("duplicate CNAME");
+	    new = opt_malloc(sizeof(struct cname));
+	    new->next = daemon->cnames;
+	    daemon->cnames = new;
+	    new->alias = opt_string_alloc(arg);
+	    new->target = opt_string_alloc(comma);
+	  }
 	break;
       }
 
