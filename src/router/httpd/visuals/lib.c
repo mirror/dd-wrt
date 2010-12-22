@@ -56,7 +56,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Excel Networks (%s series) V 2.10", V);
 #undef V
 #elif HAVE_CARLSONWIRELESS
-		websWrite(wp, "Carlson Wireless v1.0 (%s)", SVN_REVISION);
+		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
 #else
 
 		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
