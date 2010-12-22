@@ -1,3 +1,16 @@
+/*
+ * wireless_madwifiath9k.c 
+ * Copyright (C) 2010 Christian Scheele <chris@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License version 2.1
+ * as published by the Free Software Foundation
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 #ifdef HAVE_ATH9K
 #define VISUALSOURCE 1
 #include <stdio.h>
