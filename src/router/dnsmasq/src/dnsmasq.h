@@ -232,6 +232,11 @@ struct ptr_record {
   struct ptr_record *next;
 };
 
+struct cname {
+  char *alias, *target;
+  struct cname *next;
+};
+
 struct interface_name {
   char *name; /* domain name */
   char *intr; /* interface name */
@@ -574,6 +579,7 @@ extern struct daemon {
   struct naptr *naptr;
   struct txt_record *txt;
   struct ptr_record *ptr;
+  struct cname *cnames;
   struct interface_name *int_names;
   char *mxtarget;
   char *lease_file; 

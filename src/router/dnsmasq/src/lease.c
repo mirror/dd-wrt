@@ -151,7 +151,9 @@ void lease_update_from_configs(void)
 			      lease->hwaddr, lease->hwaddr_len, lease->hwaddr_type, NULL)) && 
 	(config->flags & CONFIG_NAME) &&
 	(!(config->flags & CONFIG_ADDR) || config->addr.s_addr == lease->addr.s_addr))
+	{
       lease_set_hostname(lease, config->hostname, daemon->domain_suffix, 1);
+      }
     else if ((name = host_from_dns(lease->addr)))
       lease_set_hostname(lease, name, daemon->domain_suffix, 1); /* updates auth flag only */
 }
