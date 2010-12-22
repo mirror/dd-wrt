@@ -500,6 +500,7 @@ CFLAGS += -DHAVE_NAS_SERVER
 endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS += -DHAVE_NAS_SERVER
+CFLAGS += -DHAVE_SAMBA_SERVER
 endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
@@ -877,7 +878,11 @@ endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
 cert:
+ifeq ($(CONFIG_CARLSONWIRELESS),y)
+	./gencert_carlsonwireless.sh
+else
 	./gencert.sh
+endif
 	
 httpd: cgi.o ej.o httpd.o broadcom.o \
        $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
