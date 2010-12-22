@@ -446,7 +446,9 @@ ifeq ($(CONFIG_CARLSONWIRELESS),y)
 	cp -f carlsonwireless/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f carlsonwireless/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f carlsonwireless/dd-logo.png $(INSTALLDIR)/www/images/dd-logo.png
-	cp carlsonwireless/help/* $(INSTALLDIR)/www/help
+	cp -f carlsonwireless/*.asp $(INSTALLDIR)/www
+	cp -f carlsonwireless/help/* $(INSTALLDIR)/www/help
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	mkdir $(INSTALLDIR)/www/style/carlson
 	cp elegant/style.css $(INSTALLDIR)/www/style/carlson
 	cp elegant/style_ie.css $(INSTALLDIR)/www/style/carlson
@@ -673,7 +675,11 @@ else
 ifeq ($(CONFIG_ERC),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/erc/common/ install
 else
+ifeq ($(CONFIG_CARLSONWIRELESS),y)
+	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/carlsonwireless/common/ install
+else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
+endif
 endif
 endif
 endif

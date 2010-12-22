@@ -2357,7 +2357,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					      "0") ? "selected=\\\"selected\\\""
 				  : "");
 			int i = 0;
-			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
 
 			while (chan[i].freq != -1) {
 				cprintf("%d\n", chan[i].channel);
@@ -4015,8 +4014,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			 "None CTS RTS/CTS", nvram_default_get(wl_protmode,
 							       "None"));
 	showrtssettings(wp, prefix);
-	show_rates(wp, prefix, 0);
-	show_rates(wp, prefix, 1);
+	if(!is_ath11n(prefix)) {
+		show_rates(wp, prefix, 0);
+		show_rates(wp, prefix, 1);
+	}
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 	if (!is_ath11n(prefix))
@@ -4045,7 +4046,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+#ifdef HAVE_ATH9K
+	if (is_ath11n(prefix) && !is_ath9k(pefix)) {
+#else
 	if (is_ath11n(prefix)) {
+#endif
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -4060,6 +4065,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 	}
 // HAEH?
+#ifdef HAVE_ATH9K
+	if(is_ath9k(prefix)) {
+
+	} else {
+#else
 	if (!is_ath11n(prefix)
 	    || (is_ath11n(prefix)
 		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
@@ -4068,15 +4078,18 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
+#endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
 			  nvram_match(wl_width,
 				      "40") ? "selected=\\\"selected\\\"" : "");
-
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
 		  nvram_match(wl_width,
 			      "20") ? "selected=\\\"selected\\\"" : "");
+#ifdef HAVE_ATH9K
+	}
+#endif
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
 		  nvram_match(wl_width,
@@ -4696,7 +4709,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 /* limit channel options by mode */
+#ifdef HAVE_ATH9K
+	if (is_ath11n(prefix) && !is_ath9k(prefix)) {
+#else
 	if (is_ath11n(prefix)) {
+#endif
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -4832,7 +4849,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			if (is_ath11n(prefix)
 			    && (nvram_match(wl_width, "40")
 				|| nvram_match(wl_width, "2040"))) {
-				fprintf(stderr, "[CHANNEL WIDTH] 20/40 (4)\n");
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp,
 					  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
@@ -5114,8 +5130,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			 "None CTS RTS/CTS", nvram_default_get(wl_protmode,
 							       "None"));
 	showrtssettings(wp, prefix);
-	show_rates(wp, prefix, 0);
-	show_rates(wp, prefix, 1);
+	if(!is_ath11n(prefix)) {
+		show_rates(wp, prefix, 0);
+		show_rates(wp, prefix, 1);
+	}
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 	if (!is_ath11n(prefix))
