@@ -752,8 +752,9 @@ void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
 	// todo: check if hardware is able to do the flags
 	// nsmx supports them
 	fprintf(fp,
-		"ht_capab=[HT%s][SHORT-GI-40][TX-STBC][RX-STBC1][DSSS_CCK-40]\n",
-		ht);
+		"ht_capab=[HT%s]%s\n",
+		ht,
+		mac80211_get_caps(prefix));
 	char *mode = nvram_nget("%s_mode", prefix);
 	if (!strcmp(mode, "wdsap"))
 		fprintf(fp, "wds_sta=1\n");
