@@ -86,6 +86,13 @@ extern int getUptime_ath9k(char *ifname, unsigned char *mac);
 extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+#include <stdint.h>
+extern struct wifi_channels *list_channels_11n(char *devnr);
+extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country,int max_bandwidth_khz, unsigned char band);
+extern int getdevicecount(void);
+extern struct mac80211_info *mac80211_assoclist(char *interface); 
+extern char *mac80211_get_caps(char *interface); 
+
 struct wifi_channels {
 	int channel;
 	int freq;
@@ -98,9 +105,34 @@ struct wifi_channels {
 	unsigned char no_ofdm;
 };
 
-extern struct wifi_channels *list_channels_11n(char *devnr);
-extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country,int max_bandwidth_khz, unsigned char band);
-extern int getdevicecount(void);
+struct mac80211_info {
+	struct wifi_client_info *wci;
+	int8_t noise;
+	uint64_t channel_active_time;
+	uint64_t channel_busy_time;
+};
+
+struct wifi_client_info {
+    char ifname[20];
+    char is_wds;
+    char mac[18];
+    uint32_t uptime;
+    uint16_t txrate;
+    uint32_t rxrate;
+    int8_t signal;
+    uint32_t noise;
+    uint32_t snr;
+    int8_t mcs;
+    char is_40mhz;
+    char is_short_gi;
+    uint32_t inactive_time;
+    uint32_t rx_packets;
+    uint32_t tx_packets;
+    uint32_t rx_bytes;
+    uint32_t tx_bytes;
+    struct wifi_client_info *next;
+};
+extern void free_wifi_clients(struct wifi_client_info *wci);
 #endif
 
 #ifdef HAVE_MADWIFI
