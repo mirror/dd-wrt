@@ -9,7 +9,6 @@ ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
 
-
 CFLAGS += -I iksemel -fPIC
 CFLAGS += -I zlib 
 CFLAGS += -I ../../include.v23 -I../shared
@@ -26,7 +25,6 @@ LDFLAGS =-L../libutils -lwireless -lutils -L../nvram -lnvram -lcrypt
 ifeq ($(CONFIG_MADWIFI),y)
 LDFLAGS += -lm
 endif
-
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
