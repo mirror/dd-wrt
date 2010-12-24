@@ -1287,21 +1287,6 @@ void radio_on_ath9k(int idx)
 	// TBD
 }
 
-int has_5ghz_ath9k(int devnum)
-{
-	fprintf(stderr, "ath9k has_5ghz: phy%d ath%d\n",
-		get_ath9k_phy_idx(devnum), devnum);
-	// TBD
-	return 1;
-}
-
-int has_2ghz_ath9k(int devnum)
-{
-	fprintf(stderr, "ath9k has_2ghz: phy%d ath%d\n",
-		get_ath9k_phy_idx(devnum), devnum);
-	// TBD
-	return 1;
-}
 #endif
 
 int is_ar5008(char *prefix)
@@ -1355,7 +1340,7 @@ int has_5ghz(char *prefix)
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
-		return has_5ghz_ath9k(devnum);
+		return mac80211_check_band(prefix,5);
 #endif
 
 	return has_athmask(devnum, 0x1);
@@ -1367,7 +1352,7 @@ int has_2ghz(char *prefix)
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
-		return has_2ghz_ath9k(devnum);
+		return mac80211_check_band(prefix,2);
 #endif
 
 	return has_athmask(devnum, 0x8);
