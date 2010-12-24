@@ -92,6 +92,7 @@ extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country,int 
 extern int getdevicecount(void);
 extern struct mac80211_info *mac80211_assoclist(char *interface); 
 extern char *mac80211_get_caps(char *interface); 
+extern int mac80211_check_band(char *interface,int checkband);
 
 struct wifi_channels {
 	int channel;

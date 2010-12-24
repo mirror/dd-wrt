@@ -360,6 +360,55 @@ nla_put_failure:
 	return "";
 	}
 
+static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
+	[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
+};
+
+int mac80211_check_band(char *interface,int checkband) {
+	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *bands, *band,*freqlist,*freq;
+	int rem, rem2, freq_mhz;
+	int wdev,phy;
+	int bandfound=0;
+	wdev = if_nametoindex(interface);
+	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return 0;
+	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	if (!bands)
+		goto out;
+
+	nla_for_each_nested(band, bands, rem) {
+		freqlist = nla_find(nla_data(band), nla_len(band),
+				    NL80211_BAND_ATTR_FREQS);
+		if (!freqlist)
+			continue;
+		nla_for_each_nested(freq, freqlist, rem2) {
+			nla_parse_nested(tb, NL80211_FREQUENCY_ATTR_MAX,
+					 freq, freq_policy);
+			if (!tb[NL80211_FREQUENCY_ATTR_FREQ])
+				continue;
+
+			if (tb[NL80211_FREQUENCY_ATTR_DISABLED])
+				continue;
+
+			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
+			if ((int) (freq_mhz / 1000) == checkband)
+				bandfound=1;
+		}
+	}
+	return bandfound;
+out:
+nla_put_failure:
+	nlmsg_free(msg);
+	return 0;
+}
+
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root){
 		struct wifi_client_info *new = calloc(1, sizeof(struct wifi_client_info));
 		if (new == NULL) {
