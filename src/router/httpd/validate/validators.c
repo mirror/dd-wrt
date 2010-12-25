@@ -701,12 +701,11 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 
 	get_merge_ipaddr(wp, "wan_ipaddr", wan_ipaddr);
 	get_merge_ipaddr(wp, "wan_netmask", wan_netmask);
+	get_merge_ipaddr(wp, "wan_gateway", wan_gateway);
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_set("pptp_pass", "0");	// disable pptp passthrough
-		get_merge_ipaddr(wp, "pptp_server_ip", wan_gateway);
-	} else
-		get_merge_ipaddr(wp, "wan_gateway", wan_gateway);
-
+	}
+	
 	if (!strcmp(wan_proto, "pptp") && !strcmp("0.0.0.0", wan_ipaddr)) {	// Sveasoft: allow 0.0.0.0 for pptp IP addr
 		pptp_skip_check = TRUE;
 		nvram_set("pptp_use_dhcp", "1");
@@ -729,17 +728,7 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	if (!strcmp(wan_gateway, "0.0.0.0"))
 		return;
 
-	if (!strcmp(wan_proto, "pptp"))
-		nvram_set("pptp_server_ip", wan_gateway);
-	else
-		nvram_set("wan_gateway", wan_gateway);
-
-	if (!strcmp(wan_proto, "pptp") && !strcmp(pptp_use_dhcp, "1")) {
-		if (!legal_ipaddr(wan_gateway))
-			return;
-		nvram_set("pptp_server_ip", wan_gateway);
-		return;
-	}
+	nvram_set("wan_gateway", wan_gateway);
 }
 
 #ifdef HAVE_PORTSETUP
