@@ -217,6 +217,9 @@ endif
 ifeq ($(CONFIG_MYNETWAY),y)
   CFLAGS += -DHAVE_MYNETWAY
 endif
+ifeq ($(CONFIG_F5D8235),y)
+CFLAGS += -DHAVE_F5D8235
+endif
 ifeq ($(CONFIG_MAKSAT_BLANK),y)
 CFLAGS += -DHAVE_MAKSAT_BLANK
 endif
