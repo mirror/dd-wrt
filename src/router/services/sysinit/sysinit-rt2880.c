@@ -241,9 +241,17 @@ void start_sysinit(void)
 		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
 		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
 #elif HAVE_AR690W
-
 #elif HAVE_BR6574N
-
+#elif HAVE_F5D8235
+		sysprintf("switch reg w 14 405555");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 98 7f40");
+		sysprintf("switch reg w e4 20");
+		sysprintf("switch reg w 40 1001");
+		sysprintf("switch reg w 44 1001");
+		sysprintf("switch reg w 48 1001");
+		sysprintf("switch reg w 4c 1");
+		sysprintf("switch reg w 70 ffffffff");
 #elif HAVE_EAP9550
 		sysprintf("switch reg w 14 5555");
 		sysprintf("switch reg w 40 1001");
@@ -308,6 +316,7 @@ char *enable_dtag_vlan(int enable)
 {
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750) {
 		if (enable) {
+#if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			sysprintf("switch reg w 14 405555");
 			sysprintf("switch reg w 50 7001");
 			sysprintf("switch reg w 98 7f2f");
@@ -347,18 +356,17 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_AR670W
-#elif HAVE_BR6574N
-
 #else
 			sysprintf("switch reg w 40 1001");
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1007");
 			sysprintf("switch reg w 70 ffff506f");
 #endif
+#endif
 			// now we got vlan7, how do we trunk now. lets find out
 			return "eth2";
 		} else {
+#if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			sysprintf("switch reg w 14 405555");
 			sysprintf("switch reg w 50 2001");
 			sysprintf("switch reg w 98 7f3f");
@@ -401,6 +409,7 @@ char *enable_dtag_vlan(int enable)
 #elif HAVE_BR6574N
 #elif HAVE_AR690W
 #elif HAVE_AR670W
+#elif HAVE_F5D8235
 #else
 			sysprintf("switch reg w 40 1001");
 			sysprintf("switch reg w 44 1001");
@@ -411,6 +420,7 @@ char *enable_dtag_vlan(int enable)
 			     "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth2", "2");	//WAN
 			return "eth2";
+#endif		
 		}
 	} else {
 		return "eth2";
