@@ -741,6 +741,9 @@ int internal_getRouterBrand()
 #elif HAVE_ASUSRTN13U
 	setRouter("Asus RT-N13U");
 	return ROUTER_BOARD_WHRG300N;
+#elif HAVE_F5D8235
+	setRouter("Belkin F5D8235-4 v2");
+	return ROUTER_BOARD_F5D8235;
 #elif HAVE_WHRG300N
 	setRouter("Buffalo WHR-G300N");
 	return ROUTER_BOARD_WHRG300N;
@@ -3283,6 +3286,11 @@ int led_control(int type, int act)
 		diag_gpio = 0x107;
 		connected_gpio = 0x109;
 		ses_gpio = 0x10e;
+		break;
+	case ROUTER_BOARD_F5D8235:
+		diag_gpio = 0x109;
+		connected_gpio = 0x105;
+		ses_gpio = 0x10c;
 		break;
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x101;
