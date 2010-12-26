@@ -126,6 +126,8 @@ install-common:
 
 install : install-common
 	install -m755 vpnc $(DESTDIR)$(SBINDIR)
+	-rm -rf $(DESTDIR)/usr/share
+	-rm -rf $(DESTDIR)/usr/include
 
 install-strip : install-common
 	install -s -m755 vpnc $(DESTDIR)$(SBINDIR)
