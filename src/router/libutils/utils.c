@@ -3288,7 +3288,9 @@ int led_control(int type, int act)
 		ses_gpio = 0x10e;
 		break;
 	case ROUTER_BOARD_F5D8235:
+		usb_gpio = 0x117;
 		diag_gpio = 0x109;
+		disconnected_gpio = 0x106;
 		connected_gpio = 0x105;
 		ses_gpio = 0x10c;
 		break;
