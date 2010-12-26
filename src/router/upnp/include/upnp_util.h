@@ -20,7 +20,7 @@ extern "C" {
 #endif	/* __cplusplus */
 
 #define	UPNP_STR(value)		(value)->val.str
-#define	UPNP_BOOL(value)	(value)->val.bool
+#define	UPNP_BOOL(value)	(value)->val.bool2
 #define	UPNP_I1(value)		(value)->val.i1
 #define	UPNP_I2(value)		(value)->val.i2
 #define	UPNP_I4(value)		(value)->val.i4
@@ -32,7 +32,7 @@ extern "C" {
 
 #define	ARG_VALUE(arg)		(&(arg)->value)
 #define	ARG_STR(arg)		(arg)->value.val.str
-#define	ARG_BOOL(arg)		(arg)->value.val.bool
+#define	ARG_BOOL(arg)		(arg)->value.val.bool2
 #define	ARG_I1(arg)		(arg)->value.val.i1
 #define	ARG_I2(arg)		(arg)->value.val.i2
 #define	ARG_I4(arg)		(arg)->value.val.i4
