@@ -129,6 +129,7 @@ install : install-common
 	-rm -rf $(DESTDIR)/usr/share
 	-rm -rf $(DESTDIR)/usr/include
 	-rm -f $(DESTDIR)/usr/lib/*.la
+	-rm -f $(DESTDIR)/usr/lib/*.a
 
 install-strip : install-common
 	install -s -m755 vpnc $(DESTDIR)$(SBINDIR)
