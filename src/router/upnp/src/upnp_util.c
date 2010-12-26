@@ -191,8 +191,8 @@ translate_value(UPNP_CONTEXT *context, UPNP_VALUE *value)
 		break;
 
 	case UPNP_TYPE_BOOL:
-		value->val.bool = (value->val.bool ? 1 : 0);
-		sprintf(buf, "%d", value->val.bool);
+		value->val.bool2 = (value->val.bool2 ? 1 : 0);
+		sprintf(buf, "%d", value->val.bool2);
 		break;
 
 	case UPNP_TYPE_I1:
@@ -257,12 +257,12 @@ convert_value(UPNP_CONTEXT *context, UPNP_VALUE *value)
 			strcmp(value->val.str, "false") == 0 ||
 			strcmp(value->val.str, "no") == 0) {
 
-			value->val.bool = 0;
+			value->val.bool2 = 0;
 		}
 		else if (strcmp(value->val.str, "1") == 0 ||
 			strcmp(value->val.str, "true") == 0 ||
 			strcmp(value->val.str, "yes") == 0) {
-			value->val.bool = 1;
+			value->val.bool2 = 1;
 		}
 		else {
 			return -1;
