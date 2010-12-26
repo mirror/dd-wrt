@@ -3974,6 +3974,7 @@ int crypt_make_salt(char *p, int cnt, int x)
 
 #define MD5_OUT_BUFSIZE 36
 
+
 char *zencrypt(char *passwd)
 {
 	char salt[sizeof("$N$XXXXXXXX")];	/* "$N$XXXXXXXX" or "XX" */
@@ -3981,7 +3982,7 @@ char *zencrypt(char *passwd)
 
 	strcpy(salt, "$1$");
 	crypt_make_salt(salt + 3, 4, 0);
-	strcpy(passout, crypt((unsigned char *)passwd, (unsigned char *)salt));
+	strcpy(passout, __md5_crypt((unsigned char *)passwd, (unsigned char *)salt));
 	return passout;
 }
 
