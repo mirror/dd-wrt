@@ -73,7 +73,7 @@ typedef	struct upnp_value {
 		unsigned char	ui1;
 		unsigned short	ui2;
 		unsigned long	ui4;
-		unsigned int	bool;
+		unsigned int	bool2;
 		char str[UPNP_VALUE_SIZE];
 		char data[UPNP_VALUE_SIZE];
 	} val;
