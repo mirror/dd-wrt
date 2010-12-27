@@ -34,6 +34,7 @@ extern int get_wl_instance(char *ifname);
 extern int get_wl_instances(void);
 extern char *get_wl_instance_name(int instance);
 
+
 float wifi_getrate(char *ifname);
 int wifi_gettxpower(char *ifname);
 int wifi_gettxpoweroffset(char *ifname);
@@ -85,6 +86,10 @@ extern int getNoise_ath9k(char *ifname, unsigned char *mac);
 extern int getUptime_ath9k(char *ifname, unsigned char *mac);
 extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 
+extern int has_2ghz(char *prefix);
+extern int has_5ghz(char *prefix);
+
+
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 #include <stdint.h>
 extern struct wifi_channels *list_channels_11n(char *devnr);
@@ -93,6 +98,7 @@ extern int getdevicecount(void);
 extern struct mac80211_info *mac80211_assoclist(char *interface); 
 extern char *mac80211_get_caps(char *interface); 
 extern int mac80211_check_band(char *interface,int checkband);
+struct wifi_channels *mac80211_get_channels(char *interface,char *country,int max_bandwidth_khz, unsigned char checkband);
 
 struct wifi_channels {
 	int channel;
@@ -100,10 +106,16 @@ struct wifi_channels {
 	int noise;
 	unsigned char ht40minus; 
 	unsigned char ht40plus; 
-	unsigned char outdoor; 
 	unsigned char dfs; 
 	int max_eirp;
+	unsigned char no_outdoor; 
+	unsigned char no_indoor; 
 	unsigned char no_ofdm;
+	unsigned char no_cck;
+	unsigned char ptp_only;
+	unsigned char ptmp_only;
+	unsigned char passive_scan;
+	unsigned char no_ibss;
 };
 
 struct mac80211_info {

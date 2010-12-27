@@ -77,6 +77,7 @@ int getNoise_ath9k(char *ifname, unsigned char *mac)
 
 
 // dummy TBD  erstmal alles zum spielen
+/*
 static struct wifi_channels *list_channelsext_ath9k(const char *ifname, char country[2],int max_bandwidth_khz, unsigned char band)
 {
 	// get_ath9k_phy_idx
@@ -112,54 +113,32 @@ static struct wifi_channels *list_channelsext_ath9k(const char *ifname, char cou
 	list[count].outdoor = 1;
 	list[count].no_ofdm = 1;
 	count++;
-	if (!strcmp(country,"DE"))
-		{
-		for (i=36;i<140;i++) {
-			list[count].channel = i+1;
-			list[count].freq = (i+1)*5+5000;
-			list[count].noise = -95;
-			if (i>38)
+		for (i=36;i<145;i=i+4) {
+			list[count].channel = i;
+			list[count].freq = i*5+5000;
+			if (i!=36)
 				list[count].ht40minus = 1;
-			if (i<138)
-				list[count].ht40plus = 1;
-			if (i<=60)
-				list[count].outdoor = 0;
-			else
-				list[count].outdoor = 1;
-			if (i>=52)
-				list[count].dfs = 1;
+			list[count].ht40plus = 1;
 			list[count].max_eirp = 27;
-			list[count].no_ofdm = 0;
 			count++;
 			}
-		}
-	else
-		{
-		for (i=36;i<166;i++) {
-			list[count].channel = i+1;
-			list[count].freq = (i+1)*5+5000;
-			list[count].noise = -95;
-			if (i>38)
-				list[count].ht40minus = 1;
-			if (i<138)
+		for (i=149;i<201;i=i+4) {
+			list[count].channel = i;
+			list[count].freq = i*5+5000;
+			if (i!=197)
 				list[count].ht40plus = 1;
-			if (i<=60)
-				list[count].outdoor = 0;
-			else
-				list[count].outdoor = 1;
-			if (i>=52)
-				list[count].dfs = 1;
+			list[count].ht40minus = 1;
 			list[count].max_eirp = 27;
-			list[count].no_ofdm = 0;
 			count++;
 			}
-		}
 
 	list[count++].freq = -1;
 	return list;
 }
-
+*/
+/*
 struct wifi_channels *list_channels_ath9k(char *devnr, char country[2],int max_bandwidth_khz, unsigned char band)
 {
 	return list_channelsext_ath9k(devnr, country,max_bandwidth_khz,band);
 }
+*/
