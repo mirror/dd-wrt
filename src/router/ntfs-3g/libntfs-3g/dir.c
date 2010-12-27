@@ -356,7 +356,7 @@ u64 ntfs_inode_lookup_by_name(ntfs_inode *dir_ni,
 		ntfs_attr_put_search_ctx(ctx);
 		if (mref)
 			return mref;
-		ntfs_log_debug("Entry not found.\n");
+		ntfs_log_debug("Entry not found - between root entries.\n");
 		errno = ENOENT;
 		return -1;
 	} /* Child node present, descend into it. */
@@ -1844,8 +1844,9 @@ search:
 				       (long long unsigned)MREF_LE(fn->parent_directory));
 			continue;
 		}
-		     
-		if (fn->file_name_type == FILE_NAME_POSIX || case_sensitive_match)
+		if (case_sensitive_match
+		    || ((fn->file_name_type == FILE_NAME_POSIX)
+			&& NVolCaseSensitive(ni->vol)))
 			case_sensitive = CASE_SENSITIVE;
 		
 		if (ntfs_names_are_equal(fn->file_name, fn->file_name_length,
