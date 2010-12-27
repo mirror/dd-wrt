@@ -1,0 +1,1967 @@
+AC_REVISION($Revision: 1.3 $)
+
+AC_INIT([DSL CPE Control application],[3.24.4.4],[],[dsl_cpe_control])
+AC_CONFIG_SRCDIR(src/Makefile.am)
+AM_INIT_AUTOMAKE
+
+# Checks for programs.
+AC_PROG_CC
+
+# Checks for libraries.
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_CONST
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+AC_C_VOLATILE
+
+# Checks for library functions.
+#AC_PROG_GCC_TRADITIONAL
+#AC_FUNC_MKTIME
+#AC_FUNC_SELECT_ARGTYPES
+#AC_FUNC_STRFTIME
+#AC_FUNC_STRTOD
+#AC_CHECK_FUNCS([ftime gethostbyname gettimeofday localtime_r memset select socket strchr strerror strstr strtoull])
+
+#
+# save the configure arguments
+#
+CONFIGURE_OPTIONS="$ac_configure_args"
+AC_SUBST(CONFIGURE_OPTIONS)
+
+AM_CONDITIONAL(DEVICE_DANUBE, false)
+AM_CONDITIONAL(DEVICE_VINAX, false)
+
+PREDEFINED_CONF_EXTRA_APP_CFLAGS="-Os"
+
+PREDEFINED_CONF_INCLUDE_DSL_EVENT_POLLING="no"
+PREDEFINED_CONF_INCLUDE_DEPRECATED="yes"
+PREDEFINED_CONF_INCLUDE_DEVICE_EXCEPTION_CODES="no"
+PREDEFINED_CONF_INCLUDE_FW_REQUEST_SUPPORT="yes"
+PREDEFINED_CONF_DSL_CCA_DBG_MAX_LEVEL_PRE="no"
+PREDEFINED_CONF_DSL_DEBUG_TOOL_INTERFACE="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_CLI_SUPPORT="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT="yes"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH="no"
+PREDEFINED_CONF_INCLUDE_SCRIPT_NOTIFICATION="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_SOAP_SUPPORT="no"
+PREDEFINED_CONF_INCLUDE_DSL_DELT="yes"
+PREDEFINED_CONF_INCLUDE_DSL_ADSL_MIB="no"
+PREDEFINED_CONF_INCLUDE_DSL_CEOC="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_TRACE_BUFFER="no"
+PREDEFINED_CONF_INCLUDE_DSL_CONFIG_GET="yes"
+PREDEFINED_CONF_INCLUDE_DSL_SYSTEM_INTERFACE="yes"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_MISC_LINE_STATUS="no"
+PREDEFINED_CONF_INCLUDE_DSL_RESOURCE_STATISTICS="yes"
+PREDEFINED_CONF_INCLUDE_DSL_FRAMING_PARAMETERS="yes"
+PREDEFINED_CONF_INCLUDE_DSL_G997_LINE_INVENTORY="yes"
+PREDEFINED_CONF_INCLUDE_DSL_G997_FRAMING_PARAMETERS="yes"
+PREDEFINED_CONF_INCLUDE_DSL_G997_PER_TONE="yes"
+PREDEFINED_CONF_INCLUDE_DSL_G997_STATUS="yes"
+PREDEFINED_CONF_INCLUDE_DSL_G997_ALARM="yes"
+PREDEFINED_CONF_INCLUDE_DSL_PM="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CONFIG="yes"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_HISTORY="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS="no"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT="yes"
+PREDEFINED_CONF_INCLUDE_DSL_CPE_DTI_SUPPORT="no"
+PREDEFINED_CONF_INCLUDE_DSL_BONDING="no"
+
+dnl enable DANUBE support
+AC_ARG_ENABLE(danube,
+    AC_HELP_STRING(
+        [--enable-danube],[Add DANUBE Family support.]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_API_DANUBE,,[Add DANUBE support])
+            AM_CONDITIONAL(DEVICE_DANUBE, true)
+            AC_SUBST([DSL_DEVICE_NAME],[Danube_Family])
+        fi
+   ]
+)
+
+dnl enable VINAX support
+AC_ARG_ENABLE(vinax,
+    AC_HELP_STRING(
+        [--enable-vinax],[Add VINAX support.]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_API_VINAX,,[Add VINAX support])
+            AM_CONDITIONAL(DEVICE_VINAX, true)
+            AC_SUBST([DSL_DEVICE_NAME],[Vinax])
+        fi
+   ]
+)
+
+dnl Select configure model
+AC_ARG_ENABLE(model,
+    AC_HELP_STRING(
+        [--enable-model[=model]],[Select configure model (lite|footprint|typical|full|debug)]
+    ),
+    [
+        case "$enableval" in
+        lite )
+            AC_SUBST([DSL_CONFIG_MODEL_TYPE],[Lite])
+    	      PREDEFINED_CONF_INCLUDE_DEPRECATED="no"
+            PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT="no"
+            PREDEFINED_CONF_INCLUDE_DSL_CONFIG_GET="no"
+            PREDEFINED_CONF_INCLUDE_DSL_SYSTEM_INTERFACE="no"
+            PREDEFINED_CONF_INCLUDE_DSL_RESOURCE_STATISTICS="no"
+            PREDEFINED_CONF_INCLUDE_DSL_FRAMING_PARAMETERS="no"
+            PREDEFINED_CONF_INCLUDE_DSL_G997_LINE_INVENTORY="no"
+            PREDEFINED_CONF_INCLUDE_DSL_G997_FRAMING_PARAMETERS="no"
+            PREDEFINED_CONF_INCLUDE_DSL_G997_PER_TONE="no"
+            PREDEFINED_CONF_INCLUDE_DSL_G997_STATUS="no"
+            PREDEFINED_CONF_INCLUDE_DSL_G997_ALARM="no"
+            PREDEFINED_CONF_INCLUDE_DSL_DELT="no"
+            PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CONFIG="no"
+            ;;
+        footprint )
+           AC_SUBST([DSL_CONFIG_MODEL_TYPE],[Footprint])
+           PREDEFINED_CONF_INCLUDE_DEPRECATED="no"
+ 	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CLI_SUPPORT="yes"
+	        PREDEFINED_CONF_DSL_DEBUG_TOOL_INTERFACE="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH="yes"
+	        PREDEFINED_CONF_INCLUDE_SCRIPT_NOTIFICATION="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CEOC="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_RESOURCE_STATISTICS="no"
+	        PREDEFINED_CONF_INCLUDE_DSL_PM="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_COUNTERS="yes"
+	         ;;
+        typical )
+            AC_SUBST([DSL_CONFIG_MODEL_TYPE],[Typical])
+	        PREDEFINED_CONF_INCLUDE_SCRIPT_NOTIFICATION="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CLI_SUPPORT="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH="yes"
+	        PREDEFINED_CONF_DSL_DEBUG_TOOL_INTERFACE="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CEOC="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_PM="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_HISTORY="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_COUNTERS="yes"
+           PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS="yes"
+           PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS="yes"
+
+            # enable device specific options
+            if test -z "${DEVICE_DANUBE_TRUE}"; then
+                PREDEFINED_CONF_INCLUDE_DEVICE_EXCEPTION_CODES="yes"
+                PREDEFINED_CONF_INCLUDE_DSL_CPE_TRACE_BUFFER="yes"
+            fi
+            ;;
+        full )
+            AC_SUBST([DSL_CONFIG_MODEL_TYPE],[Full])
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_SOAP_SUPPORT="yes"
+	        PREDEFINED_CONF_INCLUDE_SCRIPT_NOTIFICATION="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CLI_SUPPORT="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH="yes"
+	        PREDEFINED_CONF_DSL_DEBUG_TOOL_INTERFACE="yes"
+           PREDEFINED_CONF_INCLUDE_DSL_CPE_DTI_SUPPORT="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CEOC="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_MISC_LINE_STATUS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_PM="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_HISTORY="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS="yes"
+           PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS="yes"
+
+             # enable device specific options
+             if test -z "${DEVICE_VINAX_TRUE}"; then
+                PREDEFINED_CONF_INCLUDE_DSL_BONDING="yes"
+             fi
+
+
+            # enable device specific options
+            if test -z "${DEVICE_DANUBE_TRUE}"; then
+                PREDEFINED_CONF_INCLUDE_DEVICE_EXCEPTION_CODES="yes"
+                PREDEFINED_CONF_INCLUDE_DSL_ADSL_MIB="yes"
+                PREDEFINED_CONF_INCLUDE_DSL_CPE_TRACE_BUFFER="yes"
+                PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS="yes"
+            fi
+            ;;
+        debug )
+            PREDEFINED_CONF_EXTRA_APP_CFLAGS="-O2 -g0"
+            AC_SUBST([DSL_CONFIG_MODEL_TYPE],[Debug])
+           PREDEFINED_CONF_DSL_CCA_DBG_MAX_LEVEL_PRE="msg"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_SOAP_SUPPORT="yes"
+	        PREDEFINED_CONF_INCLUDE_SCRIPT_NOTIFICATION="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CLI_SUPPORT="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH="yes"
+	        PREDEFINED_CONF_DSL_DEBUG_TOOL_INTERFACE="yes"
+           PREDEFINED_CONF_INCLUDE_DSL_CPE_DTI_SUPPORT="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CEOC="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_MISC_LINE_STATUS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_PM="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_HISTORY="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS="yes"
+           PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS="yes"
+	        PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS="yes"
+
+            # enable device specific options
+            if test -z "${DEVICE_VINAX_TRUE}"; then
+               PREDEFINED_CONF_INCLUDE_DSL_BONDING="yes"
+            fi
+
+            # enable device specific options
+            if test -z "${DEVICE_DANUBE_TRUE}"; then
+                PREDEFINED_CONF_INCLUDE_DEVICE_EXCEPTION_CODES="yes"
+                PREDEFINED_CONF_INCLUDE_DSL_ADSL_MIB="yes"
+                PREDEFINED_CONF_INCLUDE_DSL_CPE_TRACE_BUFFER="yes"
+                PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS="yes"
+            fi
+            ;;
+          * )
+            echo "error: invalid selection for --enable-model=$enableval"
+            exit 1 ;;
+       esac
+    ],
+    [
+        AC_SUBST([DSL_CONFIG_MODEL_TYPE],[None selected])
+    ]
+)
+
+dnl Enable debugging mode
+AC_ARG_ENABLE(debug,
+    AC_HELP_STRING(
+        [--enable-debug,Enable debug info]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_SUBST([EXTRA_APP_CFLAGS],["-O2 -g0"])
+        else
+            AC_SUBST([EXTRA_APP_CFLAGS],["-Os"])
+        fi
+    ],
+    [
+        AC_SUBST([EXTRA_APP_CFLAGS],[$PREDEFINED_CONF_EXTRA_APP_CFLAGS])
+    ]
+)
+
+dnl Set target application cflags
+AM_CONDITIONAL(ADD_APPL_CFLAGS_SET, false)
+AC_ARG_ENABLE(add-appl-cflags,
+    AS_HELP_STRING(--enable-add-appl-cflags=x,Set add appl cflags),
+    [
+        if test -n "$enableval"; then
+            echo Set add appl compile flags = $enableval
+            AM_CONDITIONAL(ADD_APPL_CFLAGS_SET, true)
+            AC_SUBST([ADD_APPL_CFLAGS],[$enableval])
+        fi
+    ]
+)
+
+dnl Set target application ldflags
+AM_CONDITIONAL(ADD_APPL_LDFLAGS_SET, false)
+AC_ARG_ENABLE(add-appl-ldflags,
+    AS_HELP_STRING(--enable-add-appl-ldflags=x,Set add appl ldflags),
+    [
+        if test -n "$enableval"; then
+            echo Set add appl ldflags = $enableval
+            AM_CONDITIONAL(ADD_APPL_LDFLAGS_SET, true)
+            AC_SUBST([ADD_APPL_LDFLAGS],[$enableval])
+        fi
+    ]
+)
+
+AC_ARG_ENABLE(static,
+    AS_HELP_STRING(--enable-static,Enable static linking of the application),
+    [
+        if test "$enableval" = yes; then
+            AM_CONDITIONAL(DSL_CPE_STATIC_LINKING, true)
+        else
+            AM_CONDITIONAL(DSL_CPE_STATIC_LINKING, false)
+        fi
+    ],
+    [
+        AM_CONDITIONAL(DSL_CPE_STATIC_LINKING, false)
+    ]
+)
+
+dnl set DSL DRIVER driver include path
+DEFAULT_DSL_DRIVER_INCL_PATH=''
+AC_ARG_ENABLE(driver-include,
+    AC_HELP_STRING(--enable-driver-include=-I/path/to/your/driver,Set the DSL DRIVER driver include path),
+    [
+        if test -n "$enableval"; then
+            echo Set the DSL CE API driver include path to $enableval
+            AC_SUBST([DSL_DRIVER_INCL_PATH],[$enableval])
+        else
+            echo Set the default DSL DRIVER driver include path $DEFAULT_DSL_DRIVER_INCL_PATH
+            AC_SUBST([DSL_DRIVER_INCL_PATH],[$DEFAULT_DSL_DRIVER_INCL_PATH])
+        fi
+    ]
+)
+
+dnl set DSL DEVICE DRIVER driver include path
+DEFAULT_DSL_DEVICE_DRIVER_INCL_PATH=''
+AC_ARG_ENABLE(device-driver-include,
+    AC_HELP_STRING(--enable-device-driver-include=-I/path/to/your/driver,Set the DSL DEVICE DRIVER driver include path),
+    [
+        if test -n "$enableval"; then
+            echo Set the DSL DEVICE driver include path to $enableval
+            AC_SUBST([DSL_DEVICE_DRIVER_INCL_PATH],[$enableval])
+        else
+            echo Set the default DSL DEVICE DRIVER driver include path $DEFAULT_DSL_DEVICE_DRIVER_INCL_PATH
+            AC_SUBST([DSL_DEVICE_DRIVER_INCL_PATH],[$DEFAULT_DSL_DEVICE_DRIVER_INCL_PATH])
+        fi
+    ]
+)
+
+dnl enable IFXOS support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_IFXOS_SUPPORT, false)
+AC_ARG_ENABLE(ifxos,
+    AC_HELP_STRING(
+        [--enable-ifxos],[Include IFXOS support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_IFXOS_SUPPORT,,[Include IFXOS support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_IFXOS_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_IFXOS_SUPPORT],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_IFXOS_SUPPORT],[no])
+        fi
+    ],
+    [
+        AC_SUBST([INCLUDE_DSL_CPE_IFXOS_SUPPORT],[no])
+    ]
+) 
+
+dnl set libifxos.a library path
+DEFAULT_IFXOS_LIBRARY_PATH='.'
+AC_ARG_ENABLE(ifxos-library,
+    AS_HELP_STRING([--enable-ifxos-library=-L/path/to/your/lib_ifxos/src] , [Set the lib_ifxos library path. In this location the libifxos.a should be found]),
+    [
+        if test -n "$enableval"; then
+            echo Set the libifxos.a library path to $enableval
+            AC_SUBST([IFXOS_LIBRARY_PATH],[$enableval])
+        else
+            echo Set the lib_board_config library path $DEFAULT_IFXOS_LIBRARY_PATH
+            AC_SUBST([IFXOS_LIBRARY_PATH],[$DEFAULT_IFXOS_LIBRARY_PATH])
+        fi
+    ],
+    [
+        echo Set the libifxos.a library path $DEFAULT_IFXOS_LIBRARY_PATH
+        AC_SUBST([IFXOS_LIBRARY_PATH],[$DEFAULT_IFXOS_LIBRARY_PATH])
+    ]
+)
+
+dnl set lib_ifxos include path
+DEFAULT_IFXOS_INCLUDE_PATH='-I./lib_ifxos/src/include'
+AC_ARG_ENABLE(ifxos-include,
+    AC_HELP_STRING([--enable-ifxos-include=-I/path/to/your/lib_ifxos/src/include], [Set the lib_ifxos include path.]),
+    [
+        if test -n "$enableval"; then
+            echo Set the lib_ifxos include path $enableval
+            AC_SUBST([IFXOS_INCLUDE_PATH],[$enableval])
+        else
+            echo -e Set the default lib_ifxos include path $DEFAULT_IFXOS_INCLUDE_PATH
+            AC_SUBST([IFXOS_INCLUDE_PATH],[$DEFAULT_IFXOS_INCLUDE_PATH])
+        fi
+    ],
+    [
+        echo -e Set the default lib_ifxos include path $DEFAULT_IFXOS_INCLUDE_PATH
+        AC_SUBST([IFXOS_INCLUDE_PATH],[$DEFAULT_IFXOS_INCLUDE_PATH])
+    ]
+) 
+
+dnl set the number of DSL devices to be supported
+AC_ARG_WITH(max-device,
+    AS_HELP_STRING(
+    [--with-max-device=value],[Maximum DSL devices to support.]
+    ),
+    [
+        if test "$withval" = ""; then
+            AC_DEFINE_UNQUOTED(DSL_CPE_MAX_DEVICE_NUMBER, 1, [Maximum DSL devices to support])
+            AC_SUBST([DSL_CPE_MAX_DEVICE_NUMBER],[1])
+        else
+            AC_DEFINE_UNQUOTED(DSL_CPE_MAX_DEVICE_NUMBER,$withval, [Maximum DSL devices to support])
+            AC_SUBST([DSL_CPE_MAX_DEVICE_NUMBER],[$withval])
+        fi
+    ],
+    [
+        AC_DEFINE_UNQUOTED(DSL_CPE_MAX_DEVICE_NUMBER, 1, [Maximum DSL devices to support])
+        AC_SUBST([DSL_CPE_MAX_DEVICE_NUMBER],[1])
+    ]
+)
+
+dnl Enable debug printouts
+AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, false)
+AC_ARG_ENABLE(debug-prints,
+    AC_HELP_STRING(
+        [--enable-debug-prints[=level]],[Enable debug printouts (default: yes/err|none/no|prn|err|wrn|msg|local)]
+    ),
+    [
+        case "$enableval" in
+            yes )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = no (using default)])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, false)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[no])
+
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[n/a])
+                ;;
+            no | none )
+                AC_DEFINE(DSL_CPE_DEBUG_DISABLE,,[Disabled debug prints])
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[yes])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = n/a])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, false)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[no])
+
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[n/a])
+                ;;
+            prn | 0x1 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x1, [Debug level = print (prn)])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x1])
+                ;;
+            err | 0x2 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x2, [Debug level = error (err)])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x2])
+                ;;
+            wrn | 0x40 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x40, [Debug level = warning (wrn)])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x40])
+                ;;
+            msg | 0x80 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x80, [Debug level = local])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x80])
+                ;;
+            local | 0xFF )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0xFF, [Debug level = local])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0xFF])
+                ;;
+            * )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = no (using default)])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, false)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[no])
+
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[n/a])
+        esac
+    ],
+    [
+        case "$PREDEFINED_CONF_DSL_CCA_DBG_MAX_LEVEL_PRE" in
+            yes )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = no (using default)])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, false)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[no])
+
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[n/a])
+                ;;
+            no | none )
+                AC_DEFINE(DSL_CPE_DEBUG_DISABLE,,[Disabled debug prints])
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[yes])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = n/a])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, false)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[no])
+
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[n/a])
+                ;;
+            prn | 0x1 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x1, [Debug level = print (prn)])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x1])
+                ;;
+            err | 0x2 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x2, [Debug level = error (err)])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x2])
+                ;;
+            wrn | 0x40 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x40, [Debug level = warning (wrn)])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x40])
+                ;;
+            msg | 0x80 )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0x80, [Debug level = local])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0x80])
+                ;;
+            local | 0xFF )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = yes])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, true)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[yes])
+
+                AC_DEFINE_UNQUOTED(DSL_CCA_DBG_MAX_LEVEL_PRE,0xFF, [Debug level = local])
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[0xFF])
+                ;;
+            * )
+                AC_SUBST([DSL_CPE_DEBUG_DISABLE],[no])
+
+                AC_DEFINE(DSL_CCA_DBG_MAX_LEVEL_SET,,[Preselection of max. debug level = no (using default)])
+                AM_CONDITIONAL(DSL_CCA_DBG_MAX_LEVEL_SET, false)
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_SET],[no])
+
+                AC_SUBST([DSL_CCA_DBG_MAX_LEVEL_PRE],[n/a])
+        esac
+    ]
+)
+
+dnl enable FW request support
+AM_CONDITIONAL(INCLUDE_FW_REQUEST_SUPPORT, false)
+AC_ARG_ENABLE(dsl_fw_request,
+    AC_HELP_STRING(
+        [--enable-dsl-fw-request],[Include FW request support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_FW_REQUEST_SUPPORT, false)
+            AC_SUBST([INCLUDE_FW_REQUEST_SUPPORT],[no])
+        else
+            AC_DEFINE(INCLUDE_FW_REQUEST_SUPPORT,,[Include FW request support])
+            AM_CONDITIONAL(INCLUDE_FW_REQUEST_SUPPORT, true)
+            AC_SUBST([INCLUDE_FW_REQUEST_SUPPORT],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_FW_REQUEST_SUPPORT" = yes; then
+            AC_DEFINE(INCLUDE_FW_REQUEST_SUPPORT,,[Include FW request support])
+            AM_CONDITIONAL(INCLUDE_FW_REQUEST_SUPPORT, true)
+            AC_SUBST([INCLUDE_FW_REQUEST_SUPPORT],[yes])
+        else
+            AC_SUBST([INCLUDE_FW_REQUEST_SUPPORT],[no])
+        fi
+    ]
+)
+
+dnl enable includation of deprecated functions
+AM_CONDITIONAL(INCLUDE_DEPRECATED, false)
+AC_ARG_ENABLE(deprecated,
+    AC_HELP_STRING(
+        [--enable-deprecated],[Include deprecated functions]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DEPRECATED, false)
+            AC_SUBST([INCLUDE_DEPRECATED],[no])
+        else
+            AC_DEFINE(INCLUDE_DEPRECATED,,[Include deprecated functions])
+            AM_CONDITIONAL(INCLUDE_DEPRECATED, true)
+            AC_SUBST([INCLUDE_DEPRECATED],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DEPRECATED" = yes; then
+            AC_DEFINE(INCLUDE_DEPRECATED,,[Include deprecated functions])
+            AM_CONDITIONAL(INCLUDE_DEPRECATED, true)
+            AC_SUBST([INCLUDE_DEPRECATED],[yes])
+        else
+            AC_SUBST([INCLUDE_DEPRECATED],[no])
+        fi
+    ]
+)
+
+dnl enable Device Exception Codes Support
+AM_CONDITIONAL(INCLUDE_DEVICE_EXCEPTION_CODES, false)
+AC_ARG_ENABLE(device_exception_codes,
+    AC_HELP_STRING(
+        [--enable-device-exception-codes],[Include Device Exception Codes]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DEVICE_EXCEPTION_CODES, false)
+            AC_SUBST([INCLUDE_DEVICE_EXCEPTION_CODES],[no])
+        else
+            AC_DEFINE(INCLUDE_DEVICE_EXCEPTION_CODES,,[Include Device Exception Codes])
+            AM_CONDITIONAL(INCLUDE_DEVICE_EXCEPTION_CODES, true)
+            AC_SUBST([INCLUDE_DEVICE_EXCEPTION_CODES],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DEVICE_EXCEPTION_CODES" = yes; then
+            AC_DEFINE(INCLUDE_DEVICE_EXCEPTION_CODES,,[Include Device Exception Codes])
+            AM_CONDITIONAL(INCLUDE_DEVICE_EXCEPTION_CODES, true)
+            AC_SUBST([INCLUDE_DEVICE_EXCEPTION_CODES],[yes])
+        else
+            AC_SUBST([INCLUDE_DEVICE_EXCEPTION_CODES],[no])
+        fi
+    ]
+)
+
+dnl enable Event Polling support
+AM_CONDITIONAL(INCLUDE_DSL_EVENT_POLLING, false)
+AC_ARG_ENABLE(dsl_event_polling,
+    AC_HELP_STRING(
+        [--enable-dsl-event-polling],[Include Event Polling support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_EVENT_POLLING, false)
+            AC_SUBST([INCLUDE_DSL_EVENT_POLLING],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_EVENT_POLLING,,[Include Event Polling support])
+            AM_CONDITIONAL(INCLUDE_DSL_EVENT_POLLING, true)
+            AC_SUBST([INCLUDE_DSL_EVENT_POLLING],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_EVENT_POLLING" = yes; then
+            AC_DEFINE(INCLUDE_DSL_EVENT_POLLING,,[Include FW request support])
+            AM_CONDITIONAL(INCLUDE_DSL_EVENT_POLLING, true)
+            AC_SUBST([INCLUDE_DSL_EVENT_POLLING],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_EVENT_POLLING],[no])
+        fi
+    ]
+)
+
+dnl enable Misc Line Status support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_MISC_LINE_STATUS, false)
+AC_ARG_ENABLE(dsl_misc_line_status,
+    AC_HELP_STRING(
+        [--enable-dsl-misc-line-status],[Include Misc Line Status support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_MISC_LINE_STATUS,,[Include Misc Line Status support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_MISC_LINE_STATUS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_MISC_LINE_STATUS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_MISC_LINE_STATUS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_MISC_LINE_STATUS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_MISC_LINE_STATUS,,[Include Misc Line Status support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_MISC_LINE_STATUS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_MISC_LINE_STATUS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_MISC_LINE_STATUS],[no])
+        fi
+    ]
+)
+
+dnl enable Showtime event handling
+AM_CONDITIONAL(INCLUDE_DSL_CPE_TRACE_BUFFER, false)
+AC_ARG_ENABLE(adsl_trace,
+    AC_HELP_STRING(
+        [--enable-adsl-trace],[Include showtime event logging support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_TRACE_BUFFER,,[Include ADSL showtime event logging support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_TRACE_BUFFER, true)
+            AC_SUBST([INCLUDE_DSL_CPE_TRACE_BUFFER],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_TRACE_BUFFER],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_TRACE_BUFFER" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_TRACE_BUFFER,,[Include ADSL showtime event logging support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_TRACE_BUFFER, true)
+            AC_SUBST([INCLUDE_DSL_CPE_TRACE_BUFFER],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_TRACE_BUFFER],[no])
+        fi
+    ]
+)
+
+dnl enable configuration get support
+AM_CONDITIONAL(INCLUDE_DSL_CONFIG_GET, false)
+AC_ARG_ENABLE(dsl_config_get,
+    AC_HELP_STRING(
+        [--enable-dsl-config-get],[Include configuration get support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_CONFIG_GET, false)
+            AC_SUBST([INCLUDE_DSL_CONFIG_GET],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_CONFIG_GET,,[Include configuration get support])
+            AM_CONDITIONAL(INCLUDE_DSL_CONFIG_GET, true)
+            AC_SUBST([INCLUDE_DSL_CONFIG_GET],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CONFIG_GET" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CONFIG_GET,,[Include configuration get support])
+            AM_CONDITIONAL(INCLUDE_DSL_CONFIG_GET, true)
+            AC_SUBST([INCLUDE_DSL_CONFIG_GET],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CONFIG_GET],[no])
+        fi
+    ]
+)
+
+dnl enable filesystem support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT, false)
+AC_ARG_ENABLE(dsl_filesystem,
+    AC_HELP_STRING(
+        [--enable-dsl-filesystem],[Include filesystem support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT, false)
+            AC_SUBST([INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT,,[Include filesystem support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT,,[Include filesystem support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT],[no])
+        fi
+    ]
+)
+
+dnl enable System Interface config support
+AM_CONDITIONAL(INCLUDE_DSL_SYSTEM_INTERFACE, false)
+AC_ARG_ENABLE(dsl_system_interface,
+    AC_HELP_STRING(
+        [--enable-dsl-system-interface],[Include System Interface configuration support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_SYSTEM_INTERFACE, false)
+            AC_SUBST([INCLUDE_DSL_SYSTEM_INTERFACE],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_SYSTEM_INTERFACE,,[Include System Interface configuration support])
+            AM_CONDITIONAL(INCLUDE_DSL_SYSTEM_INTERFACE, true)
+            AC_SUBST([INCLUDE_DSL_SYSTEM_INTERFACE],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_SYSTEM_INTERFACE" = yes; then
+            AC_DEFINE(INCLUDE_DSL_SYSTEM_INTERFACE,,[Include System Interface configuration support])
+            AM_CONDITIONAL(INCLUDE_DSL_SYSTEM_INTERFACE, true)
+            AC_SUBST([INCLUDE_DSL_SYSTEM_INTERFACE],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_SYSTEM_INTERFACE, false)
+            AC_SUBST([INCLUDE_DSL_SYSTEM_INTERFACE],[no])
+        fi
+    ]
+)
+
+
+dnl enable Resource Statistics support
+AM_CONDITIONAL(INCLUDE_DSL_RESOURCE_STATISTICS, false)
+AC_ARG_ENABLE(dsl_resource_statistics,
+    AC_HELP_STRING(
+        [--enable-dsl-resource-statistics],[Include Resource Statistics support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_RESOURCE_STATISTICS, false)
+            AC_SUBST([INCLUDE_DSL_RESOURCE_STATISTICS],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_RESOURCE_STATISTICS,,[Include Resource Statistics support])
+            AM_CONDITIONAL(INCLUDE_DSL_RESOURCE_STATISTICS, true)
+            AC_SUBST([INCLUDE_DSL_RESOURCE_STATISTICS],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_RESOURCE_STATISTICS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_RESOURCE_STATISTICS,,[Include Resource Statistics support])
+            AM_CONDITIONAL(INCLUDE_DSL_RESOURCE_STATISTICS, true)
+            AC_SUBST([INCLUDE_DSL_RESOURCE_STATISTICS],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_RESOURCE_STATISTICS, false)
+            AC_SUBST([INCLUDE_DSL_RESOURCE_STATISTICS],[no])
+        fi
+    ]
+)
+
+dnl enable G997 Line Inventory support
+AM_CONDITIONAL(INCLUDE_DSL_G997_LINE_INVENTORY, false)
+AC_ARG_ENABLE(dsl_g997_line_inventory,
+    AC_HELP_STRING(
+        [--enable-dsl-g997-line-inventory],[Include G997 Line Inventory support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_G997_LINE_INVENTORY, false)
+            AC_SUBST([INCLUDE_DSL_G997_LINE_INVENTORY],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_G997_LINE_INVENTORY,,[Include G997 Line Inventory support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_LINE_INVENTORY, true)
+            AC_SUBST([INCLUDE_DSL_G997_LINE_INVENTORY],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_G997_LINE_INVENTORY" = yes; then
+            AC_DEFINE(INCLUDE_DSL_G997_LINE_INVENTORY,,[Include G997 Line Inventory support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_LINE_INVENTORY, true)
+            AC_SUBST([INCLUDE_DSL_G997_LINE_INVENTORY],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_G997_LINE_INVENTORY, false)
+            AC_SUBST([INCLUDE_DSL_G997_LINE_INVENTORY],[no])
+        fi
+    ]
+)
+
+dnl enable Framing Parameters support
+AM_CONDITIONAL(INCLUDE_DSL_FRAMING_PARAMETERS, false)
+AC_ARG_ENABLE(dsl_framing_parameters,
+    AC_HELP_STRING(
+        [--enable-dsl-framing-parameters],[Include Framing Parameters support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_FRAMING_PARAMETERS, false)
+            AC_SUBST([INCLUDE_DSL_FRAMING_PARAMETERS],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_FRAMING_PARAMETERS,,[Include Framing Parameters support])
+            AM_CONDITIONAL(INCLUDE_DSL_FRAMING_PARAMETERS, true)
+            AC_SUBST([INCLUDE_DSL_FRAMING_PARAMETERS],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_FRAMING_PARAMETERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_FRAMING_PARAMETERS,,[Include Framing Parameters support])
+            AM_CONDITIONAL(INCLUDE_DSL_FRAMING_PARAMETERS, true)
+            AC_SUBST([INCLUDE_DSL_FRAMING_PARAMETERS],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_FRAMING_PARAMETERS, false)
+            AC_SUBST([INCLUDE_DSL_FRAMING_PARAMETERS],[no])
+        fi
+    ]
+)
+
+dnl enable G997 Framing Parameters support
+AM_CONDITIONAL(INCLUDE_DSL_G997_FRAMING_PARAMETERS, false)
+AC_ARG_ENABLE(dsl_g997_framing_parameters,
+    AC_HELP_STRING(
+        [--enable-dsl-g997-framing-parameters],[Include G997 Framing Parameters support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_G997_FRAMING_PARAMETERS, false)
+            AC_SUBST([INCLUDE_DSL_G997_FRAMING_PARAMETERS],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_G997_FRAMING_PARAMETERS,,[Include G997 Framing Parameters support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_FRAMING_PARAMETERS, true)
+            AC_SUBST([INCLUDE_DSL_G997_FRAMING_PARAMETERS],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_G997_FRAMING_PARAMETERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_G997_FRAMING_PARAMETERS,,[Include G997 Framing Parameters support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_FRAMING_PARAMETERS, true)
+            AC_SUBST([INCLUDE_DSL_G997_FRAMING_PARAMETERS],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_G997_FRAMING_PARAMETERS, false)
+            AC_SUBST([INCLUDE_DSL_G997_FRAMING_PARAMETERS],[no])
+        fi
+    ]
+)
+
+dnl enable G997 per tone values support
+AM_CONDITIONAL(INCLUDE_DSL_G997_PER_TONE, false)
+AC_ARG_ENABLE(dsl_g997_per_tone,
+    AC_HELP_STRING(
+        [--enable-dsl-g997-per-tone],[Include G997 per tone values support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_G997_PER_TONE, false)
+            AC_SUBST([INCLUDE_DSL_G997_PER_TONE],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_G997_PER_TONE,,[Include G997 per tone values support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_PER_TONE, true)
+            AC_SUBST([INCLUDE_DSL_G997_PER_TONE],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_G997_PER_TONE" = yes; then
+            AC_DEFINE(INCLUDE_DSL_G997_PER_TONE,,[Include G997 per tone values support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_PER_TONE, true)
+            AC_SUBST([INCLUDE_DSL_G997_PER_TONE],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_G997_PER_TONE, false)
+            AC_SUBST([INCLUDE_DSL_G997_PER_TONE],[no])
+        fi
+    ]
+)
+
+dnl enable G997 status support
+AM_CONDITIONAL(INCLUDE_DSL_G997_STATUS, false)
+AC_ARG_ENABLE(dsl_g997_status,
+    AC_HELP_STRING(
+        [--enable-dsl-g997-status],[Include G997 status support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_G997_STATUS, false)
+            AC_SUBST([INCLUDE_DSL_G997_STATUS],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_G997_STATUS,,[Include G997 status support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_STATUS, true)
+            AC_SUBST([INCLUDE_DSL_G997_STATUS],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_G997_STATUS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_G997_STATUS,,[Include G997 status support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_STATUS, true)
+            AC_SUBST([INCLUDE_DSL_G997_STATUS],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_G997_STATUS, false)
+            AC_SUBST([INCLUDE_DSL_G997_STATUS],[no])
+        fi
+    ]
+)
+
+dnl enable G997 alarm support
+AM_CONDITIONAL(INCLUDE_DSL_G997_ALARM, false)
+AC_ARG_ENABLE(dsl_g997_alarm,
+    AC_HELP_STRING(
+        [--enable-dsl-g997-alarm],[Include G997 alarm support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_G997_ALARM, false)
+            AC_SUBST([INCLUDE_DSL_G997_ALARM],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_G997_ALARM,,[Include G997 alarm support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_ALARM, true)
+            AC_SUBST([INCLUDE_DSL_G997_ALARM],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_G997_ALARM" = yes; then
+            AC_DEFINE(INCLUDE_DSL_G997_ALARM,,[Include G997 alarm support])
+            AM_CONDITIONAL(INCLUDE_DSL_G997_ALARM, true)
+            AC_SUBST([INCLUDE_DSL_G997_ALARM],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_G997_ALARM, false)
+            AC_SUBST([INCLUDE_DSL_G997_ALARM],[no])
+        fi
+    ]
+)
+
+dnl enable DELT support
+AM_CONDITIONAL(INCLUDE_DSL_DELT, false)
+AC_ARG_ENABLE(dsl_delt,
+    AC_HELP_STRING(
+        [--enable-dsl-delt],[Include DELT support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_DELT, false)
+            AC_SUBST([INCLUDE_DSL_DELT],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_DELT,,[Include DELT support])
+            AM_CONDITIONAL(INCLUDE_DSL_DELT, true)
+            AC_SUBST([INCLUDE_DSL_DELT],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_DELT" = yes; then
+            AC_DEFINE(INCLUDE_DSL_DELT,,[Include DELT support])
+            AM_CONDITIONAL(INCLUDE_DSL_DELT, true)
+            AC_SUBST([INCLUDE_DSL_DELT],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_DELT],[no])
+        fi
+    ]
+)
+
+dnl enable PM support
+AM_CONDITIONAL(INCLUDE_DSL_PM, false)
+AC_ARG_ENABLE(dsl_pm,
+    AC_HELP_STRING(
+        [--enable-dsl-pm],[Include DSL PM support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_PM,,[Include DSL PM support])
+            AM_CONDITIONAL(INCLUDE_DSL_PM, true)
+            AC_SUBST([INCLUDE_DSL_PM],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_PM],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_PM" = yes; then
+            AC_DEFINE(INCLUDE_DSL_PM,,[Include DSL PM support])
+            AM_CONDITIONAL(INCLUDE_DSL_PM, true)
+            AC_SUBST([INCLUDE_DSL_PM],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_PM],[no])
+        fi
+    ]
+)
+
+dnl enable PM config support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CONFIG, false)
+AC_ARG_ENABLE(dsl_pm_config,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-config],[Include PM config support]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CONFIG, false)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CONFIG],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CONFIG,,[Include PM config support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CONFIG, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CONFIG],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CONFIG" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CONFIG,,[Include PM config support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CONFIG, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CONFIG],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CONFIG, false)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CONFIG],[no])
+        fi
+    ]
+)
+
+dnl enable PM channel counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_channel_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-channel-counters],[Include DSL PM channel counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS,,[Include DSL PM channel counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS,,[Include DSL PM channel counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM channel extended counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_channel_ext_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-channel-ext-counters],[Include DSL PM channel extended counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS,,[Include DSL PM channel extended counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS,,[Include DSL PM channel extended counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM datapath counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_datapath_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-datapath-counters],[Include DSL PM datapath counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS,,[Include DSL PM datapath counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS,,[Include DSL PM datapath counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM retransmission counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_RETX_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_retx_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-retx-counters],[Include DSL PM retransmission counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_RETX_COUNTERS,,[Include DSL PM retransmission counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_RETX_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_RETX_COUNTERS,,[Include DSL PM retransmission counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_RETX_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM datapath failure counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_datapath_failure_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-datapath-failure-counters],[Include DSL PM datapath failure counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS,,[Include DSL PM datapath failure counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS,,[Include DSL PM datapath failure counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM line counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_line_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-line-counters],[Include DSL PM line counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_COUNTERS,,[Include DSL PM line counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_COUNTERS,,[Include DSL PM line counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_COUNTERS],[no])
+        fi
+    ]
+)
+
+### Deprecated! ###
+### Subject to be removed ###
+dnl enable PM line event showtime counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_line_failure_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-line-failure-counters],[Include DSL PM line failure counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS,,[Include DSL PM line failure counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS,,[Include DSL PM line failure counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM line event showtime counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_line_event_showtime_counters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-line-event-showtime-counters],[Include DSL PM line event showtime counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS,,[Include DSL PM line event showtime counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS,,[Include DSL PM line event showtime counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM channel thresholds support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS, false)
+AC_ARG_ENABLE(dsl_pm_channel_thresholds,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-channel-thresholds],[Include DSL PM channel thresholds support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS,,[Include DSL PM channel thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS,,[Include DSL PM channel thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS],[no])
+        fi
+    ]
+)
+
+dnl enable PM datapath thresholds support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS, false)
+AC_ARG_ENABLE(dsl_pm_datapath_thresholds,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-datapath-thresholds],[Include DSL PM datapath thresholds support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS,,[Include DSL PM datapath thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS,,[Include DSL PM datapath thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS],[no])
+        fi
+    ]
+)
+
+dnl enable PM retransmission thresholds support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS, false)
+AC_ARG_ENABLE(dsl_pm_retx_thresholds,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-retx-thresholds],[Include DSL PM retransmission thresholds support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS,,[Include DSL PM retransmission thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS,,[Include DSL PM retransmission thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS],[no])
+        fi
+    ]
+)
+
+dnl enable PM line thresholds support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS, false)
+AC_ARG_ENABLE(dsl_pm_line_thresholds,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-line-thresholds],[Include DSL PM line thresholds support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS,,[Include DSL PM line thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS,,[Include DSL PM line thresholds support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS],[no])
+        fi
+    ]
+)
+
+dnl enable PM total counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_total,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-total],[Include DSL PM total counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS,,[Include DSL PM total counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS,,[Include DSL PM total counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM history support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_HISTORY, false)
+AC_ARG_ENABLE(dsl_pm_history,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-history],[Include DSL PM history support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_HISTORY,,[Include DSL PM history support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_HISTORY, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_HISTORY],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_HISTORY],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_HISTORY" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_HISTORY,,[Include DSL PM history support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_HISTORY, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_HISTORY],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_HISTORY],[no])
+        fi
+    ]
+)
+
+dnl enable PM showtime counters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS, false)
+AC_ARG_ENABLE(dsl_pm_showtime,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-showtime],[Include DSL PM showtime counters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS,,[Include DSL PM showtime counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS,,[Include DSL PM showtime counters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS],[no])
+        fi
+    ]
+)
+
+dnl enable PM optional parameters support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS, false)
+AC_ARG_ENABLE(dsl_pm_optional_parameters,
+    AC_HELP_STRING(
+        [--enable-dsl-pm-optional-parameters],[Include DSL PM optional parameters support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS,,[Include DSL PM optional parameters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS,,[Include DSL PM optional parameters support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS, true)
+            AC_SUBST([INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS],[no])
+        fi
+    ]
+)
+
+dnl enable the SOAP support
+AC_ARG_ENABLE(soap-support,
+    AS_HELP_STRING(
+        [--enable-soap-support],[Enable SOAP support.]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_SOAP_SUPPORT,,[Enable SOAP support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_SOAP_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_SOAP_SUPPORT],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_SOAP_SUPPORT, false)
+            AC_SUBST([INCLUDE_DSL_CPE_SOAP_SUPPORT],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_SOAP_SUPPORT" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_SOAP_SUPPORT,,[Enable SOAP support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_SOAP_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_SOAP_SUPPORT],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_SOAP_SUPPORT, false)
+            AC_SUBST([INCLUDE_DSL_CPE_SOAP_SUPPORT],[no])
+        fi
+    ]
+)
+
+dnl enable CMV test scripts parser support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT, false)
+AC_ARG_ENABLE(cmv-scripts,
+    AS_HELP_STRING(
+        [--enable-cmv-scripts],[Enable CMV scripts parser support.]
+    ),
+    [
+        if test "$enableval" = no; then
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT, false)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT],[no])
+        else
+            AC_DEFINE(INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT,,[Enable CMV scripts parser support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT],[yes])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT,,[Enable CMV scripts parser support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT, false)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT],[no])
+        fi
+    ]
+)
+
+dnl enable CMV test scripts math support
+AC_ARG_ENABLE(cmv-scripts-math,
+    AS_HELP_STRING(
+        [--enable-cmv-scripts-math],[Enable CMV scripts math support.]
+    ),
+    [
+    if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH,,[Enable CMV scripts math support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH, true)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH, false)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH,,[Enable CMV scripts math support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH, true)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH, false)
+            AC_SUBST([INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH],[no])
+        fi
+    ]
+)
+
+dnl enable script notification support
+AC_ARG_ENABLE(script-notification,
+    AS_HELP_STRING(
+        [--enable-script-notification],[Enable script notification support.]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_SCRIPT_NOTIFICATION,,[Enable script notification support])
+            AM_CONDITIONAL(INCLUDE_SCRIPT_NOTIFICATION, true)
+            AC_SUBST([INCLUDE_SCRIPT_NOTIFICATION],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_SCRIPT_NOTIFICATION, false)
+            AC_SUBST([INCLUDE_SCRIPT_NOTIFICATION],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_SCRIPT_NOTIFICATION" = yes; then
+            AC_DEFINE(INCLUDE_SCRIPT_NOTIFICATION,,[Enable script notification support])
+            AM_CONDITIONAL(INCLUDE_SCRIPT_NOTIFICATION, true)
+            AC_SUBST([INCLUDE_SCRIPT_NOTIFICATION],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_SCRIPT_NOTIFICATION, false)
+            AC_SUBST([INCLUDE_SCRIPT_NOTIFICATION],[no])
+        fi
+    ]
+)
+
+dnl enable the CLI support
+AC_ARG_ENABLE(cli-support,
+    AS_HELP_STRING(
+        [--enable-cli-support],[Enable CLI support.]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_CLI_SUPPORT,,[Enable CLI support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CLI_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_CLI_SUPPORT],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CLI_SUPPORT, false)
+            AC_SUBST([INCLUDE_DSL_CPE_CLI_SUPPORT],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_CLI_SUPPORT" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_CLI_SUPPORT,,[Enable CLI support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CLI_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_CLI_SUPPORT],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_CLI_SUPPORT, false)
+            AC_SUBST([INCLUDE_DSL_CPE_CLI_SUPPORT],[no])
+        fi
+    ]
+)
+
+dnl enable ADSL MIB support
+AC_ARG_ENABLE(adsl-mib-support,
+    AS_HELP_STRING(
+        [--enable-adsl-mib-support],[Enable MIB support.]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_ADSL_MIB,,[Enable MIB support])
+            AM_CONDITIONAL(INCLUDE_DSL_ADSL_MIB, true)
+            AC_SUBST([INCLUDE_DSL_ADSL_MIB],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_ADSL_MIB, false)
+            AC_SUBST([INCLUDE_DSL_ADSL_MIB],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_ADSL_MIB" = yes; then
+            AC_DEFINE(INCLUDE_DSL_ADSL_MIB,,[Include ADSL MIB support])
+            AM_CONDITIONAL(INCLUDE_DSL_ADSL_MIB, true)
+            AC_SUBST([INCLUDE_DSL_ADSL_MIB],[yes])
+        else
+            AM_CONDITIONAL(INCLUDE_DSL_ADSL_MIB, false)
+            AC_SUBST([INCLUDE_DSL_ADSL_MIB],[no])
+        fi
+    ]
+)
+
+dnl set the number of channels per line
+AC_ARG_WITH(channels-per-line,
+    AS_HELP_STRING(
+        [--with-channels-per-line=value],[Channels per line to support.]
+    ),
+    [
+        if test "$withval" = yes; then
+            AC_MSG_ERROR([ Please provide a value for the channels per line ]);
+        fi
+        AC_DEFINE_UNQUOTED(DSL_CHANNELS_PER_LINE,$withval, [Channels per line to support])
+        AC_SUBST([DSL_CHANNELS_PER_LINE],[$withval])
+    ]
+)
+
+dnl enable TCP debug support
+AM_CONDITIONAL(DSL_DEBUG_TOOL_INTERFACE, false)
+AC_ARG_ENABLE(debug-tool-interface,
+    AC_HELP_STRING(
+        [--enable-debug-tool-interface],[Include DSL TCP debug support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(DSL_DEBUG_TOOL_INTERFACE,,[Include DSL TCP debug support])
+            AM_CONDITIONAL(DSL_DEBUG_TOOL_INTERFACE, true)
+            AC_SUBST([DSL_DEBUG_TOOL_INTERFACE],[yes])
+        else
+            AC_SUBST([DSL_DEBUG_TOOL_INTERFACE],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_DSL_DEBUG_TOOL_INTERFACE" = yes; then
+            AC_DEFINE(DSL_DEBUG_TOOL_INTERFACE,,[Include DSL TCP debug support])
+            AM_CONDITIONAL(DSL_DEBUG_TOOL_INTERFACE, true)
+            AC_SUBST([DSL_DEBUG_TOOL_INTERFACE],[yes])
+        else
+            AC_SUBST([DSL_DEBUG_TOOL_INTERFACE],[no])
+        fi
+    ]
+)
+
+dnl enable Debug and Trace Interface support
+AM_CONDITIONAL(INCLUDE_DSL_CPE_DTI_SUPPORT, false)
+AC_ARG_ENABLE(dti,
+    AC_HELP_STRING(
+        [--enable-dti],[Include DTI support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_DTI_SUPPORT,,[Include DTI support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_DTI_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_DTI_SUPPORT],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_DTI_SUPPORT],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CPE_DTI_SUPPORT" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CPE_DTI_SUPPORT,,[Include DTI support])
+            AM_CONDITIONAL(INCLUDE_DSL_CPE_DTI_SUPPORT, true)
+            AC_SUBST([INCLUDE_DSL_CPE_DTI_SUPPORT],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CPE_DTI_SUPPORT],[no])
+        fi
+    ]
+)
+
+dnl set Debug and Trace Interface (DTI) include path
+DEFAULT_DTI_INCL_PATH=''
+AC_ARG_ENABLE(dti-include,
+   AS_HELP_STRING(
+      [--enable-dti-include= -I/path/to/your/DTI/include],[Set the DTI include path]
+   ),
+   [
+    if test -n "$enableval"; then
+       echo Set the dti_agent include path to $enableval
+       AC_SUBST([DTI_INCL_PATH],[$enableval])
+    else
+       echo Set the dti_agent include path to $DEFAULT_DTI_INCL_PATH
+       AC_SUBST([DTI_INCL_PATH],[$DEFAULT_DTI_INCL_PATH])
+    fi
+   ],
+   [
+      if test "$INCLUDE_DSL_CPE_DTI_SUPPORT" = yes; then
+         AC_MSG_WARN([Please provide include path to DTI Agent!])
+      fi
+   ]
+) 
+
+dnl set DTI agent library path
+DEFAULT_DTI_LIBRARY_PATH=''
+AC_ARG_ENABLE(dti-library,
+   AS_HELP_STRING([--enable-dti-library= -L/path/to/your/DTI/library], 
+                  [Set the DTI library path. In this location the libdti_agent.a should be found]
+   ),
+   [
+    if test -n "$enableval"; then
+       echo Set the libdti_agent.a library path to $enableval
+       AC_SUBST([DTI_LIBRARY_PATH],[$enableval])
+    else
+       echo Set the libdti_agent.a library path $DEFAULT_DTI_LIBRARY_PATH
+       AC_SUBST([DTI_LIBRARY_PATH],[$DEFAULT_DTI_LIBRARY_PATH])
+    fi
+   ],
+   [
+      if test "$INCLUDE_DSL_CPE_DTI_SUPPORT" = yes; then
+         AC_MSG_WARN([Please provide the path to libdti_agent.a, otherwise linking might not work!])
+      fi
+   ]
+)
+
+dnl enable VDSL BONDING support
+AM_CONDITIONAL(INCLUDE_DSL_BONDING, false)
+AC_ARG_ENABLE(dsl-bonding,
+    AC_HELP_STRING(
+        [--enable-dsl-bonding],[Include DSL BONDING support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            # enable device specific options
+            if test -z "${DEVICE_DANUBE_TRUE}"; then
+               AC_MSG_ERROR([Bonding for Danube is not supported yet!])
+            fi
+
+            if test "$DSL_CPE_MAX_DEVICE_NUMBER" -gt 1; then
+               AC_DEFINE(INCLUDE_DSL_BONDING,,[Include DSL BONDING support])
+               AM_CONDITIONAL(INCLUDE_DSL_BONDING, true)
+               AC_SUBST([INCLUDE_DSL_BONDING],[yes])
+            else
+               AC_SUBST([INCLUDE_DSL_BONDING],[no])
+            fi
+        else
+            AC_SUBST([INCLUDE_DSL_BONDING],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_BONDING" = yes; then
+            if test "$DSL_CPE_MAX_DEVICE_NUMBER" -gt 1; then
+               AC_DEFINE(INCLUDE_DSL_BONDING,,[Include DSL BONDING support])
+               AM_CONDITIONAL(INCLUDE_DSL_BONDING, true)
+               AC_SUBST([INCLUDE_DSL_BONDING],[yes])
+            else
+               AC_SUBST([INCLUDE_DSL_BONDING],[no])
+            fi
+        else
+            AC_SUBST([INCLUDE_DSL_BONDING],[no])
+        fi
+    ]
+)
+
+dnl enable DSL CEOC support
+AM_CONDITIONAL(INCLUDE_DSL_CEOC, false)
+AC_ARG_ENABLE(dsl-ceoc,
+    AC_HELP_STRING(
+        [--enable-dsl-ceoc],[Include DSL CEOC support]
+    ),
+    [
+        if test "$enableval" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CEOC,,[Include DSL CEOC support])
+            AM_CONDITIONAL(INCLUDE_DSL_CEOC, true)
+            AC_SUBST([INCLUDE_DSL_CEOC],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CEOC],[no])
+        fi
+    ],
+    [
+        if test "$PREDEFINED_CONF_INCLUDE_DSL_CEOC" = yes; then
+            AC_DEFINE(INCLUDE_DSL_CEOC,,[Include DSL CEOC support])
+            AM_CONDITIONAL(INCLUDE_DSL_CEOC, true)
+            AC_SUBST([INCLUDE_DSL_CEOC],[yes])
+        else
+            AC_SUBST([INCLUDE_DSL_CEOC],[no])
+        fi
+    ]
+)
+
+dnl Set the configure params for dist check
+
+AC_SUBST([DISTCHECK_CONFIGURE_PARAMS],[$CONFIGURE_OPTIONS])
+
+AC_CONFIG_COMMANDS_PRE([
+echo -e "------------------------------------------------------------------------"
+echo -e " Configuration for dsl_cpe_control:"
+echo -e "  Configure model type:             $DSL_CONFIG_MODEL_TYPE"
+echo -e "  Source code location:             $srcdir"
+echo -e "  Compiler:                         $CC"
+echo -e "  Compiler c-flags:                 $CFLAGS"
+echo -e "  Extra compiler c-flags:           $EXTRA_APP_CFLAGS"
+echo -e "  Host System Type:                 $host"
+echo -e "  Install path:                     $prefix"
+echo -e "  Driver Include Path               $DSL_DRIVER_INCL_PATH"
+echo -e "  Device Driver Include Path        $DSL_DEVICE_DRIVER_INCL_PATH"
+echo -e "  Include IFXOS:                    $INCLUDE_DSL_CPE_IFXOS_SUPPORT"
+echo -e "  IFXOS library path:               $IFXOS_LIBRARY_PATH"
+echo -e "  IFXOS include path:               $IFXOS_INCLUDE_PATH"
+echo -e "  Include DTI:                      $INCLUDE_DSL_CPE_DTI_SUPPORT"
+echo -e "  DTI include path:                 $DTI_INCL_PATH"
+echo -e "  DTI library path:                 $DTI_LIBRARY_PATH" 
+echo -e "  DSL device:                       $DSL_DEVICE_NAME"
+echo -e "  Max device number:                $DSL_CPE_MAX_DEVICE_NUMBER"
+echo -e "  Channels per line:                $DSL_CHANNELS_PER_LINE"
+echo -e "  Disable debug prints:             $DSL_CPE_DEBUG_DISABLE"
+echo -e "  Preselection of max. debug level: $DSL_CCA_DBG_MAX_LEVEL_SET"
+echo -e "  Preselected max. debug level:     $DSL_CCA_DBG_MAX_LEVEL_PRE"
+echo -e "  Enable static build:              $DSL_CPE_STATIC_LINKING"
+echo -e "  Include Event Polling support:    $INCLUDE_DSL_EVENT_POLLING"
+echo -e "  Include deprecated functions:     $INCLUDE_DEPRECATED"           
+echo -e "  Include Device Exception Codes:   $INCLUDE_DEVICE_EXCEPTION_CODES"
+echo -e "  Include FW request support:       $INCLUDE_FW_REQUEST_SUPPORT"
+echo -e "  Include trace buffer support:     $INCLUDE_DSL_CPE_TRACE_BUFFER"
+echo -e "  Include SOAP support:             $INCLUDE_DSL_CPE_SOAP_SUPPORT"
+echo -e "  Include Filesystem:               $INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT"
+echo -e "  Include CMV scripts:              $INCLUDE_DSL_CPE_CMV_SCRIPTS_SUPPORT"
+echo -e "  Include CMV scripts math:         $INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH"
+echo -e "  Include scripts notification:     $INCLUDE_SCRIPT_NOTIFICATION"
+echo -e "  Include CLI:                      $INCLUDE_DSL_CPE_CLI_SUPPORT"
+echo -e "  Include MIB:                      $INCLUDE_DSL_ADSL_MIB"
+echo -e "  Include CEOC:                     $INCLUDE_DSL_CEOC"
+echo -e "  Include config. get support:      $INCLUDE_DSL_CONFIG_GET"
+echo -e "  Include System i/f configuration: $INCLUDE_DSL_SYSTEM_INTERFACE"
+echo -e "  Include Resource Statistics:      $INCLUDE_DSL_RESOURCE_STATISTICS"
+echo -e "  Include Framing Parameters:       $INCLUDE_DSL_FRAMING_PARAMETERS"
+echo -e "  Include G997 Line Inventory:      $INCLUDE_DSL_G997_LINE_INVENTORY"
+echo -e "  Include G997 Framing Parameters:  $INCLUDE_DSL_G997_FRAMING_PARAMETERS"
+echo -e "  Include G997 per tone data:       $INCLUDE_DSL_G997_PER_TONE"
+echo -e "  Include G997 status:              $INCLUDE_DSL_G997_STATUS"
+echo -e "  Include G997 alarm:               $INCLUDE_DSL_G997_ALARM"
+echo -e "  Include DSL Bonding:              $INCLUDE_DSL_BONDING"
+echo -e "  Include Misc Line Status          $INCLUDE_DSL_CPE_MISC_LINE_STATUS"
+echo -e "  Include DELT:                     $INCLUDE_DSL_DELT"
+echo -e "  Include PM:                       $INCLUDE_DSL_PM"
+echo -e "  Include PM config:                $INCLUDE_DSL_CPE_PM_CONFIG"
+echo -e "  Include PM total:                 $INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS"
+echo -e "  Include PM history:               $INCLUDE_DSL_CPE_PM_HISTORY"
+echo -e "  Include PM showtime:              $INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS"
+echo -e "  Include PM optional:              $INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS"
+echo -e "  Include PM line:                  $INCLUDE_DSL_CPE_PM_LINE_COUNTERS"
+echo -e "  Include PM line event showtime:   $INCLUDE_DSL_CPE_PM_LINE_EVENT_SHOWTIME_COUNTERS"
+echo -e "  Include PM channel:               $INCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS"
+echo -e "  Include PM channel extended:      $INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS"
+echo -e "  Include PM data path:             $INCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS"
+echo -e "  Include PM data path failure:     $INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS"
+echo -e "  Include PM ReTx:                  $INCLUDE_DSL_CPE_PM_RETX_COUNTERS"
+echo -e "  Include PM line threshold:        $INCLUDE_DSL_CPE_PM_LINE_THRESHOLDS"
+echo -e "  Include PM channel threshold:     $INCLUDE_DSL_CPE_PM_CHANNEL_THRESHOLDS"
+echo -e "  Include PM data path threshold:   $INCLUDE_DSL_CPE_PM_DATA_PATH_THRESHOLDS"
+echo -e "  Include PM ReTx threshold:        $INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS"
+echo -e "  Include TCP debug support:        $DSL_DEBUG_TOOL_INTERFACE"
+echo -e "----------------------- deprectated ! ----------------------------------"
+echo -e "  Include PM line failure:          $INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS"
+echo -e ""
+echo -e " Settings:"
+echo -e "  Configure options:              $CONFIGURE_OPTIONS"
+echo -e "------------------------------------------------------------------------"
+])
+
+AC_CONFIG_FILES([Makefile src/Makefile])
+AC_OUTPUT

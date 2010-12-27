@@ -1,0 +1,382 @@
+Document file - DO NOT EDIT
+
+<BEGIN> BUILD_PPC860gnu_BUILDRULE
+archive
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_AR
+arppc
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_ARCHIVE
+$(PRJ_DIR)/PPC860gnu/control_dsl_cpe_api.a
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_AS
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_CC
+ccppc
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_CFLAGS
+-g \
+	-DINCLUDE_DSL_CPE_CLI_SUPPORT \
+	-DINCLUDE_DSL_API_CONSOLE \
+	-DINCLUDE_DSL_API_CONSOLE_EXTRA \
+	-DDSL_CPE_REMOVE_PIPE_SUPPORT \
+	-DINCLUDE_DSL_PM \
+    -DDSL_DEBUG_TOOL_INTERFACE \
+	-DINCLUDE_DSL_CPE_PM_CHANNEL_COUNTERS \
+	-DINCLUDE_DSL_CPE_PM_LINE_COUNTERS \
+	-DINCLUDE_DSL_CPE_PM_DATA_PATH_COUNTERS \
+	-DINCLUDE_DSL_CPE_PM_HISTORY \
+	-DINCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS \
+	-DDSL_CHANNELS_PER_LINE=1 \
+	-DINCLUDE_DSL_CPE_API_VINAX \
+	-O0 \
+	-mcpu=860 \
+	-ansi \
+	-nostdinc \
+	-DRW_MULTI_THREAD \
+	-D_REENTRANT \
+	-fvolatile \
+	-fno-builtin \
+	-fno-for-scope \
+	-DCPU=PPC860 \
+	-DVXWORKS \
+	-DUSE_LIB_IFXOS=1 \
+	-D__PROTOTYPE_5_0 \
+	-Wall \
+	-I$(WIND_BASE)/target/h \
+	-I$(PRJ_DIR) \
+	-I$(PRJ_DIR)/../src \
+	-I$(PRJ_DIR)/../../../../../comacsd_lib/lib_ifxos/src/include \
+	-I$(PRJ_DIR)/../../../driver/src/include \
+    -I$(PRJ_DIR)/../../../../drv_vdsl2_dfe/src
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_CFLAGS_AS
+-g \
+	-mcpu=860 \
+	-ansi \
+	-nostdinc \
+	-fvolatile \
+	-fno-builtin \
+	-fno-for-scope \
+	-P \
+	-x \
+	assembler-with-cpp \
+	-I. \
+	-I$(WIND_BASE)/target/h \
+	-DCPU=PPC860
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_CPP
+ccppc -E -P -xc
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_LD
+ldppc
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_LDDEPS
+
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_LDFLAGS
+-X -N
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_LD_PARTIAL_FLAGS
+-X -r
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_MAKEFLAGS
+-ws
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_NM
+nmppc
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_OPTION_DEFINE_MACRO
+-D
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_OPTION_INCLUDE_DIR
+-I
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_POST_BUILD_RULE
+
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_PRJ_LIBS
+
+<END>
+
+<BEGIN> BUILD_PPC860gnu_MACRO_SIZE
+sizeppc
+<END>
+
+<BEGIN> BUILD_PPC860gnu_RO_DEPEND_PATH
+{$(WIND_BASE)/target/h/} {$(WIND_BASE)/target/src/}
+<END>
+
+<BEGIN> BUILD_PPC860gnu_TC
+::tc_PPC860gnu
+<END>
+
+<BEGIN> BUILD_RULE_archive
+
+<END>
+
+<BEGIN> BUILD_RULE_control_dsl_cpe_api.out
+
+<END>
+
+<BEGIN> BUILD_RULE_objects
+
+<END>
+
+<BEGIN> BUILD__CURRENT
+PPC860gnu
+<END>
+
+<BEGIN> BUILD__LIST
+PPC860gnu
+<END>
+
+<BEGIN> CORE_INFO_TYPE
+::prj_vxApp
+<END>
+
+<BEGIN> CORE_INFO_VERSION
+2.0
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli.c_objects
+dsl_cpe_cli.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_access.c_objects
+dsl_cpe_cli_access.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_access.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_console.c_objects
+dsl_cpe_cli_console.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_console.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_danube.c_objects
+dsl_cpe_cli_danube.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_danube.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_pipe.c_objects
+dsl_cpe_cli_pipe.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_pipe.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_vinax.c_objects
+dsl_cpe_cli_vinax.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_cli_vinax.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_control.c_objects
+dsl_cpe_control.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_control.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_debug.c_objects
+dsl_cpe_debug.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_debug.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_debug_danube.c_objects
+dsl_cpe_debug_danube.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_debug_danube.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_debug_vinax.c_objects
+dsl_cpe_debug_vinax.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_debug_vinax.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_init_cfg.c_objects
+dsl_cpe_init_cfg.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_init_cfg.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_legacy.c_objects
+dsl_cpe_legacy.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_legacy.c_tool
+C/C++ compiler
+<END>
+
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_linux.c_objects
+dsl_cpe_linux.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_linux.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_simulator.c_objects
+dsl_cpe_simulator.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_simulator.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap.c_objects
+dsl_cpe_soap.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap.c_tool
+C/C++ compiler
+<END>
+
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap_C.c_objects
+dsl_cpe_soap_C.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap_C.c_tool
+C/C++ compiler
+<END>
+
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap_Client.c_objects
+dsl_cpe_soap_Client.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap_Client.c_tool
+C/C++ compiler
+<END>
+
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap_Server.c_objects
+dsl_cpe_soap_Server.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_soap_Server.c_tool
+C/C++ compiler
+<END>
+
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_vxworks.c_objects
+dsl_cpe_vxworks.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_vxworks.c_tool
+C/C++ compiler
+<END>
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_win32.c_objects
+dsl_cpe_win32.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/dsl_cpe_win32.c_tool
+C/C++ compiler
+<END>
+
+
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/stdsoap2.c_objects
+stdsoap2.o
+<END>
+
+<BEGIN> FILE_$(PRJ_DIR)/../src/stdsoap2.c_tool
+C/C++ compiler
+<END>
+
+<BEGIN> PROJECT_FILES
+$(PRJ_DIR)/../src/dsl_cpe_cli.c \
+	$(PRJ_DIR)/../src/dsl_cpe_cli_access.c \
+	$(PRJ_DIR)/../src/dsl_cpe_cli_console.c \
+	$(PRJ_DIR)/../src/dsl_cpe_cli_danube.c \
+	$(PRJ_DIR)/../src/dsl_cpe_cli_pipe.c \
+	$(PRJ_DIR)/../src/dsl_cpe_cli_vinax.c \
+	$(PRJ_DIR)/../src/dsl_cpe_control.c \
+	$(PRJ_DIR)/../src/dsl_cpe_debug.c \
+	$(PRJ_DIR)/../src/dsl_cpe_debug_danube.c \
+	$(PRJ_DIR)/../src/dsl_cpe_debug_vinax.c \
+	$(PRJ_DIR)/../src/dsl_cpe_init_cfg.c \
+	$(PRJ_DIR)/../src/dsl_cpe_legacy.c \
+	$(PRJ_DIR)/../src/dsl_cpe_linux.c \
+	$(PRJ_DIR)/../src/dsl_cpe_simulator.c \
+	$(PRJ_DIR)/../src/dsl_cpe_soap.c \
+	$(PRJ_DIR)/../src/dsl_cpe_soap_C.c \
+	$(PRJ_DIR)/../src/dsl_cpe_soap_Client.c \
+	$(PRJ_DIR)/../src/dsl_cpe_soap_Server.c \
+	$(PRJ_DIR)/../src/dsl_cpe_win32.c \
+	$(PRJ_DIR)/../src/stdsoap2.c \
+	$(PRJ_DIR)/../src/dsl_cpe_vxworks.c
+<END>
+
+<BEGIN> userComments
+DSL CPE API control application
+<END>
+
