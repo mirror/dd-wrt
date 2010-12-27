@@ -1,0 +1,123 @@
+/******************************************************************************
+
+                               Copyright (c) 2009
+                            Infineon Technologies AG
+                     Am Campeon 1-12; 81726 Munich, Germany
+
+  For licensing information, see the file 'LICENSE' in the root folder of
+  this software module.
+
+******************************************************************************/
+
+
+1. CONTENT OF DELIVERY
+
+1.1 SOURCE CODE CONTENT
+
+The DSL CPE API is designed to fulfill a wide spectrum of applications.
+Support for both low footprint as well as premium applications results in a
+comprehensive source code content/structure. However please note that depending
+on the used configuration
+a) there are files available that you might not need at all
+   (for example OS specific files)
+b) even the needed files includes various configuration specific parts that
+   might be not used for the selected configuration
+As a result the lines of code (LOC) that are finally compiled/used are usually
+much smaller than the available LOC.
+For more details please also refer to chapter "3. Getting Started" within
+"User's Manual Programmers Reference" (UMPR) of the DSL CPE API
+
+
+1.2 SOURCE TREE STRUCTURE
+
+Source tree structure for the DSL CPE Control application.
+
+Please note that
+a) the following tree does not include ALL files, it is just to get an easier
+   overview about which parts might be important for the needed configuration
+b) the usage of "<device>" indicates that a device specific file will be
+   available according to the used source code delivery type.
+   Currently there are deliveries as follows
+   - "danube": Danube Family (includes Danube, Amazon-SE and AR9)
+   - "vinax": Vinax
+   
+dsl_cpe_control\
+M:.
+¦   AUTHORS
+¦   ChangeLog
+¦   Makefile.am
+¦   NEWS
+¦   TODO
+¦   configure.in
+¦   dsl_cpe_control.pjt
+¦   LICENSE
+¦   README
+¦
++---soap
+¦       dsl_cpe_soap_interface.h
+¦       soapcpp2.exe
+¦       dsl_cpe_soap_client.py
+¦       dslapi.wsdl
+¦       dslapi.DslCpeCliAccess.req.xml
+¦       dslapi.DslCpeCliAccess.res.xml
+¦       dslapi.DslCpeEventCallback.req.xml
+¦       dslapi.DslCpeEventCallback.res.xml
+¦       dslapi.nsmap
+¦
++---src                                     // ALL sources including header files
+¦   ¦   Makefile.am
+¦   ¦   dsl_cpe_soap.c                      \
+¦   ¦   dsl_cpe_soap_C.c                    |
+¦   ¦   dsl_cpe_soap_H.h                    |
+¦   ¦   dsl_cpe_soap_Server.c               + Only used if SOAP interface is included
+¦   ¦   dsl_cpe_soap_Stub.h                 |
+¦   ¦   dsl_cpe_soap_Client.c               |
+¦   ¦   stdsoap2.c                          |
+¦   ¦   stdsoap2.h                          /
+¦   ¦   dsl_cpe_control.c
+¦   ¦   dsl_cpe_control.h
+¦   ¦   dsl_cpe_init_cfg.c
+¦   ¦   dsl_cpe_init_cfg.h
+¦   ¦   dsl_cpe_cli_<device>.c
+¦   ¦   dsl_cpe_os.h                        \
+¦   ¦   dsl_cpe_linux.c                     |
+¦   ¦   dsl_cpe_linux.h                     |
+¦   ¦   dsl_cpe_win32.c                     |  API internal OS abstraction for
+¦   ¦   dsl_cpe_win32.h                     +  different OS in case of not using
+¦   ¦   dsl_cpe_rtems.c                     |  ifx_os
+¦   ¦   dsl_cpe_rtems.h                     |
+¦   ¦   dsl_cpe_vxworks.c                   |
+¦   ¦   dsl_cpe_vxworks.h                   /
+
+¦   ¦   dsl_cpe_simulator.c
+¦   ¦   dsl_cpe_simulator.h
+¦   ¦   dsl_cpe_cli.c
+¦   ¦   dsl_cpe_cli.h
+¦   ¦   dsl_cpe_cli_access.c
+¦   ¦   dsl_cpe_cli_console.c
+¦   ¦   dsl_cpe_cli_console.h
+¦   ¦   dsl_cpe_debug.c
+¦   ¦   dsl_cpe_debug.h
+¦   ¦   dsl_cpe_cli_pipe.c
+¦   ¦   dsl_cpe_debug_<device>.c
+¦   ¦   dsl_cpe_debug_<device>.h
+¦   ¦   dsl_cpe_os_lint_map.h
+¦   ¦   dsl_cpe_cli_mib.c
+¦   ¦   LLCfg.txt
+¦   ¦   Makefile.in
+¦   ¦
++---build_win32
+¦   ¦   dsl_cpe_control_version.h
+¦   ¦   drv_danube_api_intern.h
+¦   ¦   dsl_cpe_simulator_config.h
+¦   ¦
+¦   +---vc7
+¦   ¦
+¦   +---vc6
+¦
++---scripts
+¦       dsl_cpe_pipe.sh
+¦       alias_dsl_cpe.sh
+¦
++---build_vxworks
+        control_dsl_cpe_api.wpj
