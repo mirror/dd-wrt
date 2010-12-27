@@ -1,0 +1,1547 @@
+NEXT VERSION
+
+V3.24.4.4 - 2009-08-13
+common:
+- "--enable-dsl-bonding" configure option handling extended to disable BND
+  feature in case of a single device configuration.
+
+V3.24.4.3 - 2009-07-16
+Bug fix(es):
+- Corrected handling for using nTxDataRateRatio parameter within ioctl
+  DSL_FIO_BND_SETUP. The value now includes the ration between datarates of
+  PHY0/PHY1.
+
+V3.24.4.2 - 2009-07-10
+CLI:
+- Multiple device handling handling extended to support "nDevice=-1" parameter
+  to specify all devices for the normal CLI handling and a dedicated device
+  in case of Autoboot script handling.
+- "nDevice" parameter added to the CLI output.
+
+V3.24.4.1 - 2009-07-09
+common:
+- Modified CLI handling in context of script handling
+  Known issue: In case of using two devices the device number has always given
+  within CLI command.
+
+V3.24.4 - 2009-07-07
+CLI:
+- Removed command(s):
+  + "bndethdbgcr"/"BND_ETH_DBG_CountersReset"
+  + "bndethcr"/"BND_ETH_CountersReset"
+
+V3.24.3 - 2009-07-03
+CLI:
+- New command(s) added:
+  + "bndcs"/"BND_ConfigSet"
+  + "bndcg"/"BND_ConfigGet"
+  + "bndhsg"/"BND_HsStatusGet"
+  + "bndethdbgcg"/"BND_ETH_DBG_CountersGet"
+  + "bndethdbgcr"/"BND_ETH_DBG_CountersReset"
+  + "bndethcg"/"BND_ETH_CountersGet"
+  + "bndethcr"/"BND_ETH_CountersReset"
+common:
+- New file(s) added:
+  + dsl_cpe_bnd.c
+  + dsl_cpe_bnd.h
+- New configure option(s) added:
+  + "--enable-dsl-bonding"/"INCLUDE_DSL_BONDING"
+- Bonding implementation integrated from ver.3.20.5.104
+
+V3.24.2 - 2009-06-26
+Bug fix(es):
+- Common (SMS00927566) event handling over SOAP interface does not work at all.
+  SOAP CLI event callback handling fixed.
+
+V3.24.1 - 2009-06-19
+CLI:
+- New command(s) added:
+  + DebugTraceInterfaceSTART/dtistart
+  + DebugTraceInterfaceSTOP/dtistop
+common:
+- DTI support added
+- New startup option "-d" added for the DTI
+- New configuration option(s) added:
+  + INCLUDE_DSL_CPE_DTI_SUPPORT (--enable-dti)
+  + DTI_INCL_PATH (--enable-dti-include)
+  + DTI_LIBRARY_PATH (--enable-dti-library)
+- New file(s) added:
+  + dsl_cpe_dti.c
+  + dsl_cpe_dti.h
+Bug fix(es):
+- Common (SMS00925770) Bonding CPE: pipe crash if no line parameter is used.
+  CLI arguments handling fixed in case of multiple device support.
+
+V3.24.0 - 2009-06-05
+-
+
+V3.23.2 - 2009-06-03
+Bug fix(es):
+- Common (SMS00919114) output format change ok?
+  Format fixed.
+
+V3.23.1 - 2009-05-29
+CLI:
+- "mlsg" command extended with the new selector "DSL_MLS_MASK_ANNEX_M_J_US"
+
+V3.23.0 - 2009-05-18
+common:
+- New configuration option(s) added:
+  + INCLUDE_DSL_CPE_FILESYSTEM_SUPPORT (--enable-dsl-filesystem)
+- New file(s) added:
+  + dsl_cpe_autoboot_script_adsl.h
+  + dsl_cpe_autoboot_script_vdsl.h
+Bug fix(es):
+- Common (SMS00913382) Extend DSL Control App part with IOP handling in case of
+  missing filesystem support.
+  Control application extended for IOP features handling in case if missing
+  filesystem support.
+
+V3.22.1 - 2009-04-29
+CLI:
+- New command(s) added
+  + PM_SyncModeGet/pmsmg
+- Output format changed for the following command(s):
+  + G997_LineStatusPerBandGet
+  + BandBorderStatusGet
+  + G997_SnrAllocationNscGet
+  + G997_SnrAllocationNscShortGet
+  + G997_BitAllocationNscGet
+  + G997_BitAllocationNscShortGet
+  + G997_GainAllocationNscGet
+  + G997_GainAllocationNscShortGet
+  + G997_DeltHLINGet
+  + G997_DeltHLOGGet
+  + G997_DeltQLNGet
+  + AuxLineInventoryGet
+  + SAR_ReassemblyTableGet
+- Output format changed for the following commands, bValid parameter added:
+  + PM_ChannelCountersTotalGet
+  + PM_DataPathCountersTotalGet
+  + PM_ReTxCountersTotalGet
+  + PM_DataPathFailureCountersTotalGet
+  + PM_LineInitCountersTotalGet
+  + PM_LineSecCountersTotalGet
+  + PM_LineEventShowtimeCountersTotalGet
+- Existing command(s) extended:
+  + PM_Reset/pmr
+Bug fix(es):
+- Common (SMS00901658) reformat help output.
+  Help output reformated.
+
+V3.22.0 - 2009-04-24
+Bug fix(es):
+- Common (SMS00901628) help output for G997_LineTransmissionStatusGet is
+  inconsistent.
+  Help output corrected.
+- Common (SMS00901661) PM_LineFailureCountersTotalGet.
+  Implementation extended according to the assignment info log.
+
+V3.21.3 - 2009-04-03
+-
+
+V3.21.2 - 2009-03-27
+-
+
+V3.21.1 - 2009-03-20
+common:
+- Danube device specific configuration option(s) added:
+  + INCLUDE_DEVICE_EXCEPTION_CODES
+
+V3.21.0 - 2009-03-13
+CLI:
+- new command added:
+  + "dajes"/"DebugArcJtagEnableSet"
+Bug fix(es):
+- Common (SMS00880100) dsl_cpe_control app error/warning messages.
+  "-h", "-v" options handling fixed
+
+V3.20.5 - 2009-03-04
+-
+
+V3.20.4 - 2009-02-27
+Bug fix(es):
+- Vinax (N/A) Incorrect swap length for the WinHost 8/16 bit response message.
+  Implementation corrected.
+
+V3.20.3 - 2009-02-24
+common:
+- new configuration option(s) added:
+ + INCLUDE_DEPRECATED
+ + INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS
+CLI:
+- PM Line Failure related old (deprecated) commands added:
+ + PM_LineFailureCounters15MinGet
+ + PM_LineFailureCounters1DayGet
+ + PM_LineFailureCountersTotalGet
+ + PM_LineFailureCountersShowtimeGet
+ + PM_LineFailureHistoryStats15MinGet
+ + PM_LineFailureHistoryStats1DayGet
+
+V3.20.2 - 2009-02-20
+CLI:
+- New CLI command(s) added:
+  + "dfcs/DebugFeatureConfigSet"
+  + "dfcg/DebugFeatureConfigGet"
+Bug fix(es):
+- Vinax (SMS00872249) Incorrect scanning definitions for DSL_CPE_sscanf
+  function within CLI.
+  "LowLevelConfigurationSet","EfmMacConfigSet" CLI command parameters handling
+  fixed (%h, %b added).
+
+V3.20.1 - 2009-02-16
+common:
+- "--enable-dsl-pm-line-failure-counters" renamed to
+  "--enable-dsl-pm-line-event-showtime-counters"
+CLI:
+- PM_LineFailureCountersXXX commands renamed to PM_LineEventShowtimeCountersXXX
+- PM_LineFailureHistoryStatsXXX renamed to PM_LineEventShowtimeHistoryStatsXXX
+- PM "Line Event Showtime" group related commands extended with additional
+  "nSosSuccess" counter.
+- "G997_RateAdaptationConfigSet/g997racs" and "G997_RateAdaptationConfigGet/
+  g997racg" commands extended with "dynamic SOS = 4".
+
+V3.20.0 - 2009-02-13
+CLI:
+- "lfcs/lfcg" commands extended with the "bVirtualNoiseSupport" parameter.
+- "locs/locg" moved from the Vinax specific implementation to the common.
+- "locs/locg" commands extended with the folowing parameters:
+  + Erasure Decoding Type DS   = 1
+  + Trust Me Bit               = 2
+  + Inband Spectral Shaping US = 3
+- Danube specific commands "cr/cw" extened with additional group "dsl"
+- "bVirtualNoiseSupportUs/Ds" parameters excluded from the Vinax "llcs/llcg"
+  commands.
+- PM Line Init counters access commands extended with additional parameters:
+  + nShortInits
+  + nFailedShortInits
+Bug fix(es):
+- Common (SMS00865881) help detailed all outputs help twice - once is enough
+  "help" command handling fixed.
+
+V3.19.2 - 2009-01-30
+CLI:
+- New Danube specific command(s) added:
+  + "LastExceptionCodesGet/lecg"
+
+V3.19.1 - 2009-01-23
+common:
+- New configuration option(s) added:
+  + "INCLUDE_DSL_EVENT_POLLING" (--enable-dsl-event-polling)
+- Polling based event handling added
+
+V3.19.0 - 2009-01-16
+-
+
+V3.18.3 - 2008-12-26
+CLI:
+- PM Data Path related commands extended with the additional parameters:
+  + nTxUserTotalCells
+  + nTxIBE counter
+- New command(s) added:
+  + "pmrtc15mg"/"PM_ReTxCounters15MinGet"
+  + "pmrtc1dg"/"PM_ReTxCounters1DayGet"
+  + "pmrths15mg"/"PM_ReTxHistoryStats15MinGet"
+  + "pmrths1dg"/"PM_ReTxHistoryStats1DayGet"
+  + "pmrtctg"/"PM_ReTxCountersTotalGet"
+  + "pmrtcsg"/"PM_ReTxCountersShowtimeGet"
+  + "pmrtt15mg"/"PM_ReTxThresholds15MinGet"
+  + "pmrtt15ms"/"PM_ReTxThresholds15MinSet"
+  + "pmrtt1dg"/"PM_ReTxThresholds1DayGet"
+  + "pmrtt1ds"/"PM_ReTxThresholds1DaySet"
+common:
+- New configuration options added:
+  + "--enable-dsl-pm-retx-counters"/"INCLUDE_DSL_CPE_PM_RETX_COUNTERS"
+  + "--enable-dsl-pm-retx-thresholds"/"INCLUDE_DSL_CPE_PM_RETX_THRESHOLDS"
+
+V3.18.2 - 2008-12-19
+common:
+- Vinax chipset base address default configuration changed to "-1" (n/a).
+
+V3.18.1 - 2008-12-12
+CLI:
+- New Vinax specific commands added:
+  + "LineOptionsConfigSet/locs"
+  + "LineOptionsConfigGet/locg"
+
+V3.18.0 - 2008-12-05
+CLI:
+- "lsg" command moved to the common part.
+
+V3.17.1 - 2008-11-28
+CLI:
+- "lsg" command moved to the device specific part. "test" state added
+  for the Vinax implementation.
+
+V3.17.0 - 2008-11-21
+-
+
+V3.16.5 - 2008-11-14
+CLI:
+- "igcs/ifcg" commands extended with the "bFeRequestOff" parameter.
+common:
+- DSL_EVENT_S_FIRMWARE_REQUEST event printout fixed.
+Bug fix(es):
+- Vinax (SMS00833954) please remove ifcs and ifcg.
+  "ifcs/ifcg" CLI commands excluded from the Vinax build.
+- Common (SMS00779145) asecs cannot handle relative paths->force absolute path.
+  Rework description: Special check added for the file existence.
+- Common (SMS00833504) reboot interrupt handling not working after quit and
+  restart.
+  Workaround introduced. All events are masked at the control application exit.
+
+V3.16.4 - 2008-11-07
+CLI:
+- "lfcs/lgcg/lfsg" commands extended with the "bReTxEnable" parameter.
+Bug fix(es):
+- Danube (SMS00830687) please remove UtopiaAddress commands for Danube Family.
+  CLI commands "uacs/uacg" removed from the Danube family build.
+- Common (SMS00825964) IOCTL to change the notify script.
+  Rework description: Special check added for the file existence.
+
+V3.16.3 - 2008-10-31
+common:
+- Configuration models (lite/footprint/typical/full/debug) introduced
+CLI:
+- New Vinax specific command(s) added:
+  + "EfmMacConfigSet/emcs"
+  + "EfmMacConfigGet/emcg"
+Bug fix(es):
+- Common (SMS00830710) bbsg return values do not match format description.
+  Return format fixed.
+- Vinax (n/a) FW could not be reloaded via "alf" command in case of failed FW
+  download sequence and with the enabled FW request support.
+  "alf" command handling fixed.
+
+V3.16.2 - 2008-10-24
+CLI:
+- New command(s) added:
+  + "NotificationScriptExecuteConfigSet/nsecs"
+  + "NotificationScriptExecuteConfigGet/nsecg"
+- "alf" command parameters renamed.
+- "pmlfcXXX" commands extended with the "nLOM" parameter.
+Bug fix(es):
+- Danube (SMS00825925) cmvwrite inconsistency command line vs script file.
+  Handling within "DSL_CPE_ScriptExecute()" fixed.
+- Common (SMS00815364) "alf" CLI command parameters renamed according to the
+  used device build.
+- Common (SMS00826591) typo in sics help.
+  "sics/sicg/sisg" CLI online help fixed.
+- Common (SMS00813903) notification type DSL_DATARATE_STATUS is called two
+  times after going to showtime.
+  Notification type extended with DSL_DATARATE_US_STATUS and
+  DSL_DATARATE_DS_STATUS.
+
+V3.16.1 - 2008-10-17
+common:
+- Version Compatibility check added
+
+V3.16.0 - 2008-10-10
+-
+
+V3.15.4 - 2008-10-07
+common:
+- New configure option(s) added:
+  + INCLUDE_DSL_CPE_MISC_LINE_STATUS
+CLI:
+- "mlsg/MiscLineStatusGet" command extended with additional parameters:
+  + DSL_MLS_ATT_AGGREGATE_DATA_RATE_DS
+  + DSL_MLS_ATT_LINE_DATA_RATE_DS
+  + DSL_MLS_ATT_TOTAL_DATA_RATE_DS
+
+V3.15.3 - 2008-10-03
+common:
+- new configuration option(s) added:
+  + INCLUDE_DSL_CPE_PM_LINE_FAILURE_COUNTERS
+    (--enable-dsl-pm-line-failure-counters)
+  + INCLUDE_DSL_CPE_PM_DATA_PATH_FAILURE_COUNTERS
+    (--enable-dsl-pm-datapath-failure-counters)
+common:
+- FW download with retries added to the DSL_EVENT_S_FIRMWARE_REQUEST event
+  handling.
+CLI:
+- new command(s) added:
+  + "bbsg/BandBorderStatusGet"
+  + "mlsg/MiscLineStatusGet"
+  + "pmdpfc15mg/PM_DataPathFailureCounters15MinGet"
+  + "pmdpfc1dg/PM_DataPathFailureCounters1DayGet"
+  + "pmdpfhs15mg/PM_DataPathFailureHistoryStats15MinGet"
+  + "pmdpfhs1dg/PM_DataPathFailureHistoryStats1DayGet"
+  + "pmdpfctg/PM_DataPathFailureCountersTotalGet"
+  + "pmdpfcsg/PM_DataPathFailureCountersShowtimeGet"
+  + "pmlfc15mg/PM_LineFailureCounters15MinGet"
+  + "pmlfc1dg/PM_LineFailureCounters1DayGet"
+  + "pmlfhs15mg/PM_LineFailureHistoryStats15MinGet"
+  + "pmlfhs1dg/PM_LineFailureHistoryStats1DayGet"
+  + "pmlfctg/PM_LineFailureCountersTotalGet"
+  + "pmlfcsg/PM_LineFailureCountersShowtimeGet"
+Bug fix(es):
+- Danube (SMS00816341) notification script variables not set.
+  "DSL_EVENT_S_SYSTEM_INTERFACE_STATUS" event handling corrected. "-n" option
+  handling fixed.
+
+V3.15.2 - 2008-09-18
+CLI:
+- new filter type added to the "sarcs/sarcg" commands
+
+V3.15.1 - 2008-09-12
+-
+
+V3.15.0 - 2008-09-05
+common:
+- new configuration option(s) added:
+  + INCLUDE_DSL_CPE_PM_CONFIG
+CLI:
+- New CLI commands added:
+  + "pmcs/PM_ConfigSet"
+  + "pmcg/PM_ConfigGet"
+
+V3.14.0 - 2008-08-29
+Bug fix(es):
+- Common (SMS00797414) make --enable-cmv-scripts the default.
+  Configure/build scripts corrected.
+- Common (SMS00801019) XTSE default for ADSL (Vinax & Danube).
+  Implementation extended for the "WHAT" string support. Default XTSE
+  configuration handling extended according to the FW application type.
+- Common (SMS00804763) firmware change via -t option fails.
+  Firmware download handling corrected for the consecutive DSL CPE
+  Control aplication startup.
+- Danube (SMS00801838) change the default configuration to ATM only.
+  Default configuration changed.
+
+V3.13.5 - 2008-08-05
+-
+
+V3.13.4 - 2008-08-01
+common:
+- new configuration option(s) added:
+  + INCLUDE_DSL_CPE_PM_CHANNEL_EXT_COUNTERS
+CLI:
+- new command(s) added:
+  + pmccseg (PM_ChannelCountersShowtimeExtGet)
+- MIB_ATUC_PhysEntryGet/MIB_ATUC_PhysEntryGet CLI commands extended with
+  additional output parameters.
+Bug fix(es):
+- Danube (SMS00797156) tcpmessages interface: no CMV returned in case of an
+  error.
+  DSL_CPE_DEV_TcpMessageHandle() implementation corrected to response properly
+  for the CMVs handled with errors.
+
+V3.13.3 - 2008-07-25
+-
+
+V3.13.2 - 2008-07-21
+-
+
+V3.13.1 - 2008-07-18
+CLI:
+- New MIB command(s) implementation added:
+  + MIB_ATUR_PerfDataExtEntryGet
+  + MIB_ATUC_PerfDataExtEntryGet
+  + MIB_ATUR_IntervalExtEntryGet
+  + MIB_ATUC_IntervalExtEntryGet
+  + MIB_TrapsGet
+  + MIB_ExtTrapsGet
+  + MIB_LineExtEntryGet
+  + MIB_LineAlarmConfProfileEntryGet
+  + MIB_LineAlarmConfProfileEntrySet
+
+V3.13.0 - 2008-07-10
+common:
+- new file(s) added:
+  + dsl_cpe_cli_mib.c
+- New configuration option(s) added:
+  + INCLUDE_DSL_ADSL_MIB
+CLI:
+- New MIB command(s) implementation added:
+  + MIB_LineEntryGet
+  + MIB_ATUC_PhysEntryGet
+  + MIB_ATUR_PhysEntryGet
+  + MIB_ATUC_ChanEntryGet
+  + MIB_ATUR_ChanEntryGet
+  + MIB_ATUR_PerfDataEntryGet
+  + MIB_ATUC_PerfDataEntryGet
+  + MIB_ATUR_IntervalEntryGet
+  + MIB_ATUC_IntervalEntryGet
+  + MIB_ATUC_ChanPerfDataEntryGet
+  + MIB_ATUR_ChanPerfDataEntryGet
+  + MIB_ATUC_ChanIntervalEntryGet
+  + MIB_ATUR_ChanIntervalEntryGet
+
+V3.12.4 - 2008-07-01
+-
+
+V3.12.3 - 2008-06-26
+Bug fix(es):
+- Common (SMS00779145) asecs cannot handle relative paths -> force absolute path.
+  Special error printout added.
+
+V3.12.2 - 2008-06-20
+common:
+- New configuration option(s) added:
+  + INCLUDE_DSL_CPE_CMV_SCRIPTS_MATH
+  + INCLUDE_DSL_CPE_TRACE_BUFFER
+Bug fix(es):
+- Danube (SMS00778005) alf does not seem to work or vig is broken.
+  "alf" CLI command implementation corrected.
+- Danube (SMS00779137) mibadslleg not implemented / error code -515 is not
+  documented.
+  "mibadslleg" CLI command excluded from the build. ADSL MIB commands are not
+  supported in the CLI. "mibadslleg" CLI command was temporary added for the
+  testing purposes.
+
+V3.12.1 - 2008-06-16
+-
+
+V3.12.0 - 2008-05-30
+common:
+- New configuration options added:
+  + INCLUDE_DSL_FRAMING_PARAMETERS
+  + INCLUDE_DSL_G997_FRAMING_PARAMETERS
+  + INCLUDE_DSL_G997_LINE_INVENTORY
+  + INCLUDE_DSL_RESOURCE_STATISTICS
+  + INCLUDE_DSL_SYSTEM_INTERFACE
+  + INCLUDE_DSL_CONFIG_GET
+
+V3.11.3 - 2008-05-29
+Bug fix(es):
+- Danube (SMS00768492) CmvRead arguments are case sensitve and CmvWrite
+  arguments are not.
+  CmvRead implementation corrected.
+
+V3.11.2 - 2008-05-21
+CLI:
+- "llcs" and "llcg" commands extended with the "bNtrEnable" parameter
+- "llcs" command implementation changed to accept from min=1 to
+  max=24 paramteres. All unspecified parameters will be set to "-1"
+  to indicate that there is no change for the appropriate value.
+- "llcs" command help extended with the new Hybrid types definitions.
+Bug fix(es):
+- Vinax (SMS00767497) interworking: SAR_SegmentationTableSet: Not possible
+  to configure more than one table entry.
+  "sarsts" CLI command implementation corrected.
+- Vinax (SMS00767741) NTR Support.
+  Low level configuration extended for the NTR support.
+
+V3.11.1 - 2008-05-15
+common:
+- Complex (driver+application) Simulator support added
+- VC6 project added for the WIN32 Simulator
+- New startup option "-r<remote TCP debug server IP address>" added
+- New file(s) added:
+  + drv_danube_api_intern.h
+  + dsl_cpe_simulator_config.h
+
+V3.11.0 - 2008-05-04
+common:
+- RTEMS support added
+- New file(s) added
+  + src/dsl_cpe_rtems.c
+  + src/dsl_cpe_rtems.h
+  + build_rtems/Makefile
+
+V3.10.2 - 2008-04-29
+common:
+- New configuration options added:
+  + "--enable-dsl-delt"
+  + "--enable-dsl-G997-per-tone"
+  + "--enable-dsl-G997-status"
+  + "--enable-dsl-G997-alarm"
+Bug fix(es):
+- common "Thread Shutdown, invalid object" issue fixed
+
+V3.10.1 - 2008-04-18
+common:
+- Device dependency for compilation of Danube/Amazon-SE/AR9 removed.
+  Single configuration for Danube added.
+
+V3.10.0 - 2008-04-11
+-
+
+V3.9.4 - 2008-03-28
+common:
+- New configuration option "--with-max-device" (DSL_CPE_MAX_DEVICE_NUMBER)
+  added to specify the maximum supported devices. Default value "1"
+  (if not specified).
+- new field(s) in the DSL_CPE_Console_Context context structure:
+  + "DSL_CPE_Control_Context_t *pContext"
+- new field(s) in the CPE Control Context:
+  + bBackwardCompMode
+- new startup option "-b" ("backward compatible" mode) added.
+  if this mode has been activated and "--with-max-device > 1",the additional
+  'nDevice' parameter is not used. dscs/dscg CLI commands control the device
+  number to be accessed via CLI.
+- Common implementation added:
+  + DSL_CPE_CliDeviceCommandExecute()
+- Events printouts extended with the 'nDevice' parameter in case of
+  "--with-max-device > 1".
+CLI:
+- "nDevice" parameter added to all CLI commands in case of
+  "--with-max-device > 1".
+- DSL_CPE_CLI_AutobootConfigOptionSet/Get() implementation corected to be
+  "nDevice" parameter specific.
+- "InteropFeatureConfigGet/InteropFeatureConfigGet" (ifcg/ifcs) commands
+  extened with additional parameters:
+  + bL2modeDisable
+  + bL3modeDisable
+- "G997_RateAdaptationConfigSet/G997_RateAdaptationConfigGet"
+  (g997racs/g997racg) commands moved from the VINAX device specific part to the
+  common CLI part.
+- new CLI commands added:
+  + "DeviceSelectionConfigSet" (dscs)
+  + "DeviceSelectionConfigGet" (dscg)
+Bug fix(es):
+- Common (SMS00750182) CPE control application extended according to
+  the new requirements for the Multiple Device support. For more details
+  please refer to the appropriate UTP entry description.
+
+V3.9.3 - 2008-03-20
+Bug fix(es):
+- DSL_CPE_nodeDelete() implementation corrected.
+- DSL_CPE_EventHandler() implementation corrected. Correct sequence for the
+  event data resources free adde.
+
+V3.9.2 - 2008-03-18
+Bug fix(es):
+- Vinax: Corrected CLI help printout for 'nDirection' parameter within CLI
+  functions for G997_RateAdaptationConfigSet/Get
+
+V3.9.1 - 2008-03-14
+Bug fix(es):
+- Common, SOAP FW update sequence corrected
+
+V3.9.0 - 2008-03-07
+common:
+- new configuration option added "--enable-dsl-fw-request". This option is
+  enabled by default in the configure process.
+CLI:
+- stack usage optimized:
+  + DSL_CPE_CLI_PrintHelp()
+  + DSL_CPE_CLI_BandPlanSupportGet()
+Bug fix(es):
+- Common (SMS00743972) Improvement of autoboot handling in conjunction with
+  FW download mechanism.
+  FW download mechanism optimized.
+
+V3.8.4 - 2008-03-03
+common:
+- IFXOS support added for the Linux build
+- new configuration option added:
+  + "--enable-ifxos"
+  + "--enable-ifxos-include"
+  + "--enable-ifxos-library"
+- PC-Lint checks passed. Insecure coding corrected/removed.
+  The following PC-Lint errors/warnings corrected:
+  + e64, e525, e527, e752, e725, e746, e661
+- "dsl_cpe_os_lint_map.h" header file added
+Bug fix(es):
+- Common (SMS00740670) dsl_cpe_pipe.sh with no options should show help
+- Common (SMS00740575) dsl_cpe_control - changing the order of parameters makes
+  API unusable.
+  Implemenation corrected
+- Common (SMS00740659) debug tcp port #2001 interface can only handle one
+  connection.
+  CLI TCP clients handling corrected
+
+V3.8.3 - 2008-02-22
+-
+
+V3.8.2 - 2008-02-15
+CLI:
+- sarcg/sarcs commands online help extended.
+- sarscg/sarrcg commands output format corrected.
+- sarsts/sarrts commands help screen extended
+Bug fix(es):
+- Vinax (SMS00729972) some sarcg / sarcs parameters apply to segmentation only.
+  sarcg/sarcs CLI commands online help extended.
+- Vinax (SMS00733574) sarscg / sarrcg output format issues.
+  sarscg/sarrcg CLI commands output format corrected.
+
+V3.8.1 - 2008-02-08
+Bug fix(es):
+- Unwanted build behaviour without CLI support fixed
+
+V3.8.0 - 2008-02-01
+common:
+- DSL_CPE_Console_Context structure definition moved from the
+  "dsl_cpe_cli_console.c" to the "dsl_cpe_cli_console.h"
+- common implementation added:
+  + DSL_CPE_Pipe_StaticResourceUsageGet()
+  + DSL_CPE_ResourceUsageStatisticsGet()
+  + DSL_CPE_ResourceUsageStatisticsData_t
+  + DSL_CPE_TcpDebugMessageResourceUsageGet()
+  + DSL_CPE_DEV_TcpDebugMessageResourceUsageGet()
+- DSL_CPE_TcpDebugCliClientInfo_t type definition moved from the
+  "dsl_cpe_debug.c" to the "dsl_cpe_debug.h"
+- Usage of AR9 naming convention
+CLI:
+- common implemenmtation addded:
+  + DSL_CPE_treeResourceUsageGet()
+  + DSL_CLI_ResourceUsageStatisticsData_t
+- new commands added:
+  + ResourceUsageStatisticsGet ("rusg")
+Bug fix(es):
+- "llcs" CLI command implementation corrected
+
+V3.7.3 - 2008-01-25
+CLI:
+- InteropFeatureConfigGet/Set command extended with the new parameter(s):
+  + nSnrMarginRebootMode
+  + nUserMinSnrMargin
+- LowLevelConfigurationGet/Set command extended with the new parameter(s):
+  + bVirtualNoiseSupportUs
+  + bVirtualNoiseSupportDs
+
+V3.7.2 - 2008-01-18
+Bug fix(es):
+- Vinax, ADSL only mode WinHost "rb" command issue fixed
+
+V3.7.1 - 2008-01-14
+common:
+- BugFix according to using extended autoboot script handling configuration on
+  startup of dsl_cpe_control application using '-a' option. All available
+  trigger points will be automatically activated now.
+
+V3.7.0 - 2008-01-11
+common:
+- DSL_EVENT_S_PM_SYNC event handling added
+CLI:
+- new commands added:
+  + G997_RateAdaptationConfigSet ("racs")
+  + G997_RateAdaptationConfigGet ("racg")
+Bug fix(es):
+- Vinax (SMS00722571) alig should return "not supported" in ADSL mode
+  DSL CPE API ioctl "DSL_FIO_LOW_LEVEL_CONFIGURATION_GET" behaves correctly.
+  "alig" CLI command implementation corrected to return correct values in
+  the nReturn parameter.
+
+V3.6.4 - 2007-12-28
+common:
+- "DSL_CPE_LL_CFG_SET" macro extended with the "EAPS_TO" parameter
+CLI:
+- "LowLevelConfigurationSet", "LowLevelConfigurationGet" extended with the
+ "nEapsTimeout" parameter
+
+V3.6.3 - 2007-12-21
+Bug fix(es):
+- Amazon-Se/Danube (SMS00716516) dispensible API VDSL options.
+  Issue reworked. "asecs" CLI command implementation corrected and
+  appropriate online help extended.
+CLI:
+- DSL_CPE_CLI_AutobootScriptExecuteConfigSet() implementation corrected,
+  online help extended.
+- New commands added:
+  + DataPathCountersTotalGet, "dpctg"
+
+V3.6.2 - 2007-12-14
+common:
+- new configuration option "INCLUDE_DSL_CPE_API_AR9" added for the
+  AR9 chipset support. For more details please refer to "configure --help"
+- "CPE" prefix added to the following functions:
+  + DSL_CPE_Accept()
+  + DSL_CPE_Socket()
+  + DSL_CPE_FdOpen()
+  + DSL_CPE_StringToAddress()
+  + DSL_CPE_AddressToString()
+  + DSL_CPE_SockOptSet()
+  + DSL_CPE_SocketClose()
+  + DSL_CPE_SocketRecv()
+  + DSL_CPE_SocketSend()
+Bug fix(es):
+- Amazon-Se/Danube (SMS00716516) dispensible API VDSL options.
+  The following CLI commands corrected to be chip dependent:
+  + "alf"
+  + "asecs"
+  + "asecg"
+  CPE control application help screen corrected to be chip dependent.
+CLI:
+- New commands added:
+  + InteropFeatureConfigGet ("ifcg")
+  + InteropFeatureConfigSet ("ifcs")
+
+V3.6.1 - 2007-12-07
+common:
+- added possibility to build dsl cpe control application with debug tool
+  interface support and without CLI support
+- Debug tool interface VxWorks implementation adapted
+- OS specific implementation added:
+  + DSL_CPE_OwnAddrStringGet()
+  + DSL_Accept()
+  + DSL_Socket()
+  + DSL_CPE_SocketBind()
+  + DSL_CPE_Htons()
+  + DSL_CPE_Htonl()
+CLI:
+- DSL_CPE_CLI_AuxLineInventoryGet(): command help corrected - upstream/
+  downstream replaved by near-end/far-end
+- DSL_CPE_CLI_TestModeStatusGet(): command implementation added. Short
+  form "tmsg"
+
+V3.6.0 - 2007-12-03
+-
+
+V3.5.2 - 2007-11-30
+common:
+- tcp_message interface common implementation crosschecked/corrected
+- VINAX tcp_message interface implementation added
+  + DSL_CPE_VNX_Reboot()
+  + DSL_CPE_VNX_Halt()
+  + DSL_CPE_VNX_Run()
+  + DSL_CPE_VNX_LoadFirmwareFromFile()
+- Amazon-Se/DANUBE tcp_message interface implementation added
+  + DSL_CPE_DANUBE_Reboot()
+  + DSL_CPE_DANUBE_LoadFirmwareFromFile()
+- Amazon-Se/DANUBE H2DCE_DEBUG_REBOOT handling changed.
+Bug fix(es):
+- VINAX (SMS00710366) ADSL-AnnexA: g997dhling - not all HLIN values
+  returned by API.
+  DSL_CPE_CLI_G997_DeltHLINGet() function implementation corrected to print all
+  reported by the DSL CPE API driver data. Previously "0" values printing
+  were skiped. Also, in the latest FW a special value (-32768) indicating that
+  no measurement could be done for this subcarrier will be returned by the FW.
+- "echo" command execution corrected. This command will be executed only within
+  appropriate script section
+- Autoboot "auto continue" handling corrected in case of not defined
+  script files
+- VINAX: Changed initialization value for MaxDataRate US and DS from
+  200 MBit to 140 MBit (DSL_FIO_INIT)
+
+V3.5.1 - 2007-11-23
+Bug fix(es):
+- Common (SMS00704520)  reset switch of dsl_cpe_control not doing anything!?
+  "-r" option support removed completely
+- VINAX (SMS00710124) g997sang returns special value 0xFF.
+  "g997sang" CLI command implementation corrected to return values only
+  for the used tones
+
+V3.5.0 - 2007-11-20
+-
+
+V3.4.5 - 2007-11-19
+common:
+- Changed order of parameters within CLI_DSL_AutobootConfigOptionSet/Get
+  bAutoContinueWaitBeforeLinkActivation <-> bAutoContinueWaitBeforeConfigWrite
+
+V3.4.4 - 2007-11-15
+common:
+- DSL_CPE_ScriptSection_t type extended with
+  "DSL_SCRIPT_SECTION_WAIT_BEFORE_RESTART = 4"
+- "DSL_EVENT_S_AUTOBOOT_STATUS" event handling added
+- DSL_CPE_ScriptSectionTagFind(): new script tag "WaitForRestart" handling
+  added.
+- DSL_CPE_Event_S_AutobootStatusHandle() implementation added. This function
+  now handles Autoboot scripts according to the received status
+CLI:
+- CLI_DSL_AutobootConfigOptionSet(), CLI_DSL_AutobootConfigOptionGet()
+  commands extended with the new parameters: bWaitBeforeRestart,
+  bAutoContinueWaitBeforeLinkActivation, bAutoContinueWaitBeforeConfigWrite,
+  bAutoContinueWaitBeforeRestart
+- CLI_DSL_AutobootStatusGet() new status "restart wait = 6" added
+Bug fix(es):
+- VINAX (SMS00707463) new trigger point required.
+  Implementation added according to the new Autoboot Script handling
+  requirements
+- Amazon-Se/Danube (SMS00638841) tcpmessages / debug functionality causes
+  serial console output.
+  Debug output level reduced to "MSG" for the mentioned printouts.
+- opt3 parameter added to the initialization macro DSL_CPE_AUTOBOOT_CFG_SET()
+
+V3.4.3 - 2007-11-08
+common:
+- New field "nDevNum" adde to the CPE Control Context
+- Default FW binaries file names changed according to the current
+  OS in use
+- New "-d[dev_num]" startup option added
+- Added support for "multiple device" open according to the "nDevNum"
+  parameter.
+- Pipe Creation axtended for "multiple device" support
+Bug fix(es):
+- VINAX (SMS00705566) llcs online help leads to a api hang-up.
+  DSL_CPE_CLI_PrintHelp() implementation corrected : sHelp of
+  size=2048 was not enough to handle "llcs" command help string.
+- VINAX (SMS00706057) default api configuration change
+  for FW v9.9.4.2.1.2 required.
+  Default POTS_3 filter is set in the initial Low Level Configuration
+
+V3.4.2 - 2007-11-02
+common:
+- "unsigned int" replaced with the "DSL_uint32_t"
+Bug fix(es):
+- FW download fail in case of VDSL only mode.
+  DSL_CPE_DownloadFirmware() implementation fixed. New nFwReqType parameter
+  added to download only requested FW binary.
+
+V3.4.1 - 2007-10-25
+Bug fix(es):
+- Amazon-SE/Danube: Various corrections according to integration of lib_ifx_os
+  library
+
+V3.4.0 - 2007-10-22
+common:
+- Major rework to include new OS abstraction layer (lib_ifx_os)
+Bug fix(es):
+- CLI_DSL_G997_GainAllocationNscGet(): nNumData printout corrected
+
+V3.3.8 - 2007-10-19
+common:
+- Added new SystemInterface mode DSL_TC_EFM_FORCED
+Bug fix(es):
+- BugFix for DSL_INTERFACE_STATUS (UP/DOWN) signaling by script notification
+  handling.
+
+V3.3.7 - 2007-10-12
+Bug fix(es):
+- VINAX (SMS00670594) CLI: ScriptExecute (se) - enhancement
+  Additional help info added to the "se" CLI command
+
+V3.3.6 - 2007-10-05
+Bug fix(es):
+- Common (SMS00673360)DELT in DIAGNOSTIC MODE: Concept issue
+  "g997lsg" CLI command extended with the new parameter nDeltDataType
+
+V3.3.5 - 2007-09-28
+Bug fix(es):
+- VINAX (SMS00667237) auto boot load firmware (alf) leads to an CLI stuck
+  wenn ADSL-FW is loaded.
+  Issue reworked. DSL_CPE_DownloadFirmware() implementation corrected
+- VINAX (SMS00662341) Add of Utopia width configuration parameter.
+  New parameter nUtopiaBusWidth added to the "llcs", "llcg" CLI commands
+  New parameter nUtopiaBusWidth added to the low level configuration file
+  (see -l startup option of the dsl_cpe_control).
+  New CLI commands added "UtopiaBusWidthConfigSet", "UtopiaBusWidthConfigGet"
+
+V3.3.4 - 2007-09-21
+Bug fix(es):
+- Common (SMS00668804) Extension of autoboot script handling by using an
+  additional wait point "bWaitForConfiguration"
+  + DSL_CPE_CLI_AutobootConfigOptionSet() added bWaitBeforeConfigWrite
+    parameter handling
+  + DSL_CPE_ScriptSection_t new type definition added
+  + DSL_CPE_ScriptSectionTagFind() implementation added
+  + DSL_CPE_ScriptSectionOpenFind() implementation added
+  + DSL_CPE_ScriptSectionCloseFind() implementation added
+  + DSL_CPE_ScriptExecute() script parsing added
+  + DSL_CPE_Event_S_LineStateHandle() handling axtended according to the new
+    autoboot script handling requirements
+- VINAX (SMS00670282) ADSL: application of "SAR_SegmentationTableSet" (sarsts)
+  not clear/not working
+  DSL_CPE_CLI_SAR_SegmentationTableSet(), DSL_CPE_GetMacAdrFromString()
+  implementation corrected.
+  "sarsts" CLI command call example:
+  sarsts 0 1 00:03:19:11:22:33 00 00 01 32
+- VINAX (SMS00670144) ADSL: SAR_ReassemblyTableSet has no effect
+  DSL_CPE_CLI_SAR_ReassemblyTableSet() function implementation corrected within
+  control application. DSL_FIO_SAR_REASSEMBLY_TABLE_GET ioctl was called
+  instead of DSL_FIO_SAR_REASSEMBLY_TABLE_SET
+
+V3.3.2 - 2007-09-14
+CLI:
+- DSL_CPE_CLI_AutobootConfigOptionGet(), DSL_CPE_CLI_AutobootConfigOptionGet()
+  handling extended for the new interface parameter bWaitBeforeConfigWrite
+- DSL_CPE_CLI_G997_DeltHLINGet(), DSL_CPE_CLI_G997_DeltHLINScaleGet(),
+  DSL_CPE_CLI_G997_DeltHLOGGet(), DSL_CPE_CLI_G997_DeltQLNGet(), DSL_CPE_CLI_G997_DeltSNRGet
+  handling extended for the new interface parameter nDeltDataType
+
+V3.3.1 - 2007-09-13
+CLI:
+- Common (SMS00668806): Added new interface parameter for DELT data access
+  functions (not functionally supported yet!)
+
+V3.3.0 - 2007-09-07
+- DSL_CPE_DownloadFirmware() fixed bug with nRet value
+
+V3.2.3 - 2007-08-31
+common:
+- "asg" CLI command help corrected for "link activation wait" parameter
+- Added parameter 'bAutoContinue' to CLI function 'AutobootConfigOptionSet/Get'
+
+V3.2.2 - 2007-08-27
+common:
+- Added new CLI functions
+  + VINAX: DSL_CPE_CLI_LinePathCountersTotalGet (lpctg)
+  + DANUBE: DSL_CLI_DBG_DeviceMessageSend() function implementation corrected
+    to support additional opcodes
+
+V3.2.1 - 2007-08-24
+common:
+- Added new event handling
+  + DSL_EVENT_S_FIRMWARE_DOWNLOAD_STATUS
+  + DSL_CPE_Event_S_FirmwareDownloadStatusHandle() implementation added
+- Added new CLI functions
+  + DSL_CPE_CLI_AutobootConfigOptionSet (acos)
+  + DSL_CPE_CLI_AutobootConfigOptionGet (acog)
+  + DSL_CPE_CLI_AutobootControlSet (acs) : parameters extended, continue = 3, acs 3
+  + DSL_CPE_CLI_AutobootStatusGet (asg) : parameters extended, link activation wait = 3
+  + DSL_CPE_CLI_EventStatusMaskConfigSet (esmcs): parameters extended,
+    firmware download status = 20
+  + DSL_CPE_CLI_EventStatusMaskConfigGet (esmcg): parameters extended, firmware
+    download status = 20
+
+V3.2.0 - 2007-08-14
+common:
+- Added control application startup options to specify autoboot restart script
+  files
+  + auto_scr_1 (a)
+  + auto_scr_2 (A)
+- Added new CLI functions
+  + DSL_CPE_CLI_AutobootScriptExecuteConfigGet (asecg)
+  + DSL_CPE_CLI_AutobootScriptExecuteConfigSet (asecs)
+  + DSL_CPE_CLI_ScriptExecute (se)
+
+V3.1.1 - 2007-08-02
+-
+
+V3.1.0 - 2007-08-01
+-
+
+V3.0.104 - 2007-07-30
+common:
+- esmcs/esmcg CLI commands help corrected according to the DSL_EventType_t type
+* DSL_CPE_CLI_InstanceControlSet(): added implementation to start/stop event thread
+- new fields in the Control Context
+  + bEvtRun
+
+V3.0.103 - 2007-07-30
+common:
+- Added CLI functions
+  + DSL_CPE_CLI_InstanceControlSet (ics)
+  + DSL_CPE_CLI_InstanceStatusGet (isg)
+
+V3.0.102 - 2007-07-27
+Bug fix(es):
+- VINAX (SMS00649794) Board hangs after some ADSL-VDSL switches.
+   + DSL_CPE_DownloadFirmware() function from the dsl_cpe_control caused such
+     behaviour. There were missing memory deallocation for the pFirmware and
+     pFirmware2. DSL_Free(ldFw.data.pFirmware) and DSL_Free(ldFw.data.pFirmware2)
+     added.
+- VINAX (SMS00650633) EventStatusMaskConfigGet as well as EventStatusMaskConfigSet
+  are not working
+   + esmcg/esmcs commands help corrected according to the redefined type
+     "DSL_BF_EventType_t"
+common:
+- possibility to specify VINAX low level configuration on the "dsl_cpe_control"
+  startup added
+   + "-l" configuration option added
+   + DSL_GetInitialLowLevelConfig() implementation added
+   + DSL_VNX_ProcessDevConfigLine() implementation added
+   + configuiration script added (..\scripts\ll_cfg.cfg)
+- event handling mechanism adapted according to new requirements
+  (-e <enable/disable>_<mask>)
+
+
+V3.0.101 - 2007-07-20
+Bug fix(es):
+- DSL_CPE_CLI_SystemInterfaceConfigGet() help extended, see SMS00645624
+- DSL_CPE_CLI_SystemInterfaceConfigSet() help extended, see SMS00645624
+- DSL_CPE_CLI_SystemInterfaceStatusGet() help extended, see SMS00645624
+- DSL_CPE_CLI_G997_BitAllocationNscGet() implementation corrected to return number of
+  actually used tones in the nNumData parameter,
+- DSL_CPE_CLI_G997_LineInventorySet()
+- DSL_CPE_CLI_G997_DeltHLOGGet(), output format fixed, see SMS00636377
+- DSL_CPE_CLI_PM_ChannelThresholds1DayGet(), implementation correctedn to return
+  1-day thresholds, see SMS00636752
+- DSL_CPE_CLI_PM_DataPathThresholds1DayGet(), implemetation corrected, see SMS00636752
+- DSL_CPE_CLI_AuxLineInventoryGet(), implementation added, see SMS00636332
+- DSL_CPE_CLI_LowLevelConfigurationSet, cmd help extended for the POTS_3 filter
+  support, see SMS00645555
+- DSL_CPE_CLI_LowLevelConfigurationGet(), implementation corrected, see SMS00645574
+- control application help window extended for the "i" and "t" switches
+
+V3.0.100 - 2007-07-14
+common:
+- Support of the event configuration (DSL_FIO_EVENT_ACTIVATION_CONTROL_SET)
+  * option -e is now used to configure the event handling instead of disabling it
+  * main() updated: call to DSL_FIO_EVENT_ACTIVATION_CONTROL_SET added
+
+V3.0.0 - 2007-07-13
+common:
+- Added CLI functions
+  + DSL_CPE_CLI_G997_LastStateTransmittedGet (g997lstg)
+- Amazon-SE/Danube (SMS00638841): tcpmessages / debug functionality causes
+  serial console output.
+  Included new debug module DSL_CCA_DBG_TCPMSG (7).
+- In case of error during ioctl execution (return of ioctl < 0) within CLI, the
+  return error code within the DSL_AccessCtl_t structure will be examined which
+  makes it possible to display warning codes also.
+
+V2.7.105 - 2007-07-06
+bugfix(es):
+- Corrected implementation for SystemInterface Config/Status/Event handling
+  functionality
+common:
+- automatic detection of IP Address for tcp debug interface implemented
+
+V2.7.104 - 2007-07-03
+-
+
+V2.7.103 - 2007-06-29
+bugfix(es):
+- Amazon-SE/Danube: Fixed crash  in case of using CmvRead CLI command with
+  size bigger 12
+common:
+- Added possibility to compile with FlexeLint
+- Used FlexeLint for code analysis and to fix reported issues
+
+V2.7.102 - 2007-06-27
+common:
+- Amazon-SE/Danube
+  + Adaptation to use memory optimized firmware download using 64k chunks of
+    the binary
+  + Added application startup option '-o' to exclude optimized firmware
+    download procedure (Attention: Vinax version does not support memory
+    optimized download procedure). By default, if option is not specified, the
+	optimized handling is used.
+  + SMS00631512: g997smr & g997sms do not work - Corrected implementation for
+    for scanning and printing out SNMP data bytes
+- Added configure option (--enable-dsl-ceoc) to include CEOC handling
+
+V2.7.101 - 2007-06-20
+common:
+- Always check the status of running DSL CPE API autoboot thread on startup of
+  dsl_cpe_control application. In case of pending FW reboot request reload FW.
+- Added CLI functions
+  + DSL_CPE_CLI_G997_DeltFreeResources (g997dfr)
+
+V2.7.100 - 2007-06-11
+common:
+- build scripts updated
+  + new option INCLUDE_DSL_CPE_PM_OPTIONAL_PARAMETERS added
+- Full CMV Access: VINAX device specific implementation added
+- New sources
+   + "dsl_cpe_debug_danube.h"
+   + "dsl_cpe_debug_vinax.h"
+
+V2.7.1 - 2007-06-08
+bugfix(es):
+- Long CLI commands can be now executed in addition to its short commands
+
+
+V2.7.0 - 2007-06-06
+common:
+- Added CLI functions
+  + DSL_CPE_CLI_G997_SnmpMessageSend (g997sms)
+  + DSL_CPE_CLI_G997_SnmpMessageReceive (g997smr)
+  + DSL_CPE_CLI_G997_AlarmMaskDataPathFailuresConfigGet(g997amdpfcg)
+  + DSL_CPE_CLI_G997_AlarmMaskDataPathFailuresConfigSet (g997amdpfcs)
+  + DSL_CPE_CLI_G997_AlarmMaskLineFailuresConfigGet (g997amlfcg)
+  + DSL_CPE_CLI_G997_AlarmMaskLineFailuresConfigSet (g997amlfcs)
+  + DSL_CPE_CLI_PM_ChannelThresholds15MinGet (pmct15mg)
+  + DSL_CPE_CLI_PM_ChannelThresholds15MinSet (pmct15ms)
+  + DSL_CPE_CLI_PM_ChannelThresholds1DayGet (pmct1dg)
+  + DSL_CPE_CLI_PM_ChannelThresholds1DaySet (pmct1ds)
+  + DSL_CPE_CLI_PM_DataPathThresholds15MinGet (pmdpt15mg)
+  + DSL_CPE_CLI_PM_DataPathThresholds15MinSet (pmdpt15ms)
+  + DSL_CPE_CLI_PM_DataPathThresholds1DayGet (pmdpt1dg)
+  + DSL_CPE_CLI_PM_DataPathThresholds1DaySet (pmdpt1ds)
+  + DSL_CPE_CLI_PM_LineInitThresholds15MinGet (pmlit15mg)
+  + DSL_CPE_CLI_PM_LineInitThresholds15MinSet (pmlit15ms)
+  + DSL_CPE_CLI_PM_LineInitThresholds1DayGet (pmlit1dg)
+  + DSL_CPE_CLI_PM_LineInitThresholds1DaySet (pmlit1ds)
+  + DSL_CPE_CLI_PM_LineSecThresholds15MinGet (pmlst15mg)
+  + DSL_CPE_CLI_PM_LineSecThresholds15MinSet (pmlst15ms)
+  + DSL_CPE_CLI_PM_LineSecThresholds1DayGet (pmlst1dg)
+  + DSL_CPE_CLI_PM_LineSecThresholds1DaySet (pmlst1ds)
+- Added GroupSize parameter within CLI for DELT functions
+
+bugfix(es):
+- Corrected implementation within function "DSL_CPE_MoveCharPtr" for processing
+  of sending/receiving SNMP messages
+
+V2.6.105 - 2007-06-01
+-
+
+V2.6.104 - 2007-05-25
+common:
+- build scripts updated:
+  + new option for debug tool interface added
+  + new device specific files added
+- new application option added: tcpmsg (-t)
+- new implementation
+  - DSL_CPE_TcpMessageDebugIntfStart()
+  - DSL_CPE_TcpMessageDebugHandle()
+- new field in the DSL_CPE_Control_Context_t: nTcpMsgHandler
+- common implementation
+  - g_sFirmwareName1 declaration is now used from common header file
+  - handling of tcp debug tool interface option added
+  - TCP CLI interface call added
+- OS independent layer
+  + mapping for Linux added
+    - DSL_FdOpen
+    - DSL_Accept
+    - DSL_SocketClose
+    - DSL_SocketRecv
+    - DSL_SocketSend
+    - DSL_sockaddr_in_t
+    - DSL_sockaddr_t
+    - DSL_SockOptLinger_t
+    - DSL_socklen_t
+    - DSL_TimeVal_t
+    - DSL_StringToAddress
+    - DSL_AddressToString
+    - DSL_Socket
+    - DSL_SockOptSet
+    - DSL_FD_SETSIZE
+  + DSL_FD_CLR() for Linux and Windows
+  + DSL_FD_ZERO() for Linux and Windows
+  * DSL_Select() extended for case when -1 is passed as a timeout value
+  * DSL_FPrintf() updated for TCP socket use
+- debug module
+  + DSL_CPE_TcpDebugClientInfo_t defined
+  + implementation
+    - DSL_CPE_TcpMessageDebugIntfStart()
+    - DSL_CPE_TcpMessageDebugHandle()
+    - DSL_CPE_DEV_TcpMessageHandle()
+    - DSL_CPE_DANUBE_TcpMessageDceCommandHandle()
+    - DSL_CPE_DANUBE_TcpMessageFirmwareDownload()
+    - DSL_CPE_TcpMessageModemCommandHandle()
+    - DSL_CPE_TcpCliDebugIntfStart()
+    - DSL_CPE_TcpCliDebugHandle()
+- Danube specific part of Debug Module
+  + DSL_CPE_DANUBE_ReadDebug_Parameter_t, DSL_CPE_DANUBE_Parameter_t,
+    DSL_CPE_DANUBE_Message_t defined
+  + implementation
+    - DSL_CPE_DANUBE_TcpMessageFirmwareDownload() - not used now
+    - DSL_CPE_TcpMessageModemCommandHandle()
+    - DSL_CPE_DANUBE_TcpMessageDceCommandHandle()
+    - DSL_CPE_DEV_TcpMessageHandle()
+
+V2.6.103 - 2007-05-15
+common:
+- Updated license within file headers
+- Added configure option '--with-channels-per-line'
+
+V2.6.102 - 2007-05-11
+common:
+- congiguration options changed
+  * "--inc-dsl-pm-line-init-counters" renamed
+    to "--inc-dsl-pm-line-counters"
+  * "--inc-dsl-pm-line-init-thresholds" renamed
+    to "--inc-dsl-pm-line-thresholds"
+bugfix(es):
+- DSL_CPE_Event_S_InitReadyHandle() error code conditions fixed
+
+V2.6.101 - 2007-05-08
+bugfix(es):
+- fix compilation of CLI with disabled debug prints
+- fix compilation without CLI (with and without debug prints)
+- Do not exit application in case of
+  + SOAP socket binding failure
+  + Initialization failure (-i)
+Common:
+- configure script:
+  + build dynamical linked binary as default, use --enable-static to get
+    previous behaviour
+  + removed --enable-kernel-include (not required for application)
+  + small fix for --enable-driver-include
+- optimized memory requirements of pipe interface
+
+V2.6.100 - 2007-05-07
+common:
+- added configuration options for the following macros:
+  - INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS
+  - INCLUDE_DSL_CPE_PM_HISTORY
+  - INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS
+
+V2.6.2 - 2007-05-07
+bugfix(es):
+- Vinax: MII as default interface setting
+
+V2.6.1 - 2007-05-02
+-
+
+V2.6.0 - 2007-04-30
+Common:
+- Added configure option to building for Amazon-SE target
+CLI:
+- Added functions
+  + G997_FramingParameterStatusGet
+  + G997_PowerManagementStateForcedTrigger
+  + G997_PowerManagementStatusGet
+bugfix(es):
+- Script notification handling
+  + Usage of default script file name possible by using '-n' without filename
+  + Added Win32 implementation in common and OS specific part
+  + Added some debug printouts
+
+V2.5.104 - 2007-04-28
+Common:
+- System Interface default configuration updated for Danube
+- OS layer implementation
+  + DSL_System()
+  + DSL_SetEnv()
+- new implementation
+  + DSL_CPE_Event_S_ChannelDataRateHandle() updated
+  + DSL_CPE_Event_S_SystemInterfaceStatusHandle() - new function
+  + DSL_CPE_Event_S_LineStateHandle() updated
+  + DSL_CPE_ScriptRun() - new function
+build system:
+  build scripts updated for script notification feature
+
+V2.5.103 - 2007-04-20
+Common:
+- new firmware parameter was added to DSL_CPE_CLI_LowLevelConfigurationSet() and
+  DSL_CPE_CLI_LowLevelConfigurationGet() within VINAX part
+- "DSL_EVENT_S_LINE_POWERMANAGEMENT_STATE" event handling added
+
+V2.5.102 - 2007-04-19
+Common:
+- removed flag O_DIRECT from DSL_PipeOpen (linux)
+  (fixes problems if /tmp is mounted with option "nodev")
+CLI:
+- Moved functions SystemInterfaceConfigGet/Set to shared code section
+- Added SystemInterfaceStatusGet function
+- Added functions for TR-98 counter
+  + PM_ChannelCountersShowtimeGet
+  + PM_DataPathCountersShowtimeGet
+  + PM_LineInitCountersShowtimeGet
+  + PM_LineSecCountersShowtimeGet
+bugfix(es):
+- Changed return value of XTSE capabilities within cli function
+  DSL_CPE_CLI_G997_LineInventoryStringGet to hex format
+
+V2.5.101 - 2007-04-13
+Common:
+- Correct DSL_CPE_CLI_G997_DeltHLOGGet() function implementation to print
+  all available data in the correct format
+
+V2.5.100 - 2007-04-09
+CLI:
+- New CLI commands added
+  + DSL_CLI_LowLevelConfigurationSet()
+  + DSL_CLI_LowLevelConfigurationGet()
+
+V2.5.0 - 2007-03-30
+CLI:
+- Added shell scripts for easy using of pipe mechanism
+  + alias_dsl_cpe.sh
+    run this to register useful alias commands, for example
+      * 'cpe': calls the dsl_cpe_pipe.sh to for using cmd/ack pipes
+      * 'cpe_log_event_cout': starts a tail process that continiusly listen
+         to one event pipe
+  + dsl_cpe_pipe.sh
+    instruments usage of cmd/ack pipes to send cli commands and directly receive
+    the acknowledge
+- Added several common cli functions
+  + EventStatusMaskConfigGet (esmcg)
+  + EventStatusMaskConfigSet (esmcs)
+  + UtopiaAddressConfigGet (uacg)           - Vinax only by now
+  + UtopiaAddressConfigSet (uacs)           - Vinax only by now
+  + G997_DeltHLINGet (g997dhling)           - Danube only by now
+  + G997_DeltHlLINScaleGet (g997dhlinsg)    - Danube only by now
+  + G997_DeltHLOGGet (g997dhlogg)           - Danube only by now
+  + PM_ChannelCounters15MinGet (pmcc15mg)
+  + PM_ChannelCounters1DayGet (pmcc1dg)
+  + PM_DataPathCounters15MinGet (pmdpc15mg)
+  + PM_DataPathCounters1DayGet (pmdpc1dg)
+  + PM_LineInitCounters15MinGet (pmlic15mg)
+  + PM_LineInitCounters1DayGet (pmlic1dg)
+  + PM_LineSecCounters15MinGet (pmlsc15mg)
+  + PM_LineSecCounters1DayGet (pmlsc1dg)
+  + PM_ChannelHistoryStats15MinGet (pmchs15mg)      - Testing only!
+  + PM_ChannelHistoryStats1DayGet (pmchs1dg)        - Testing only!
+  + PM_DataPathHistoryStats15MinGet (pmdphs15mg)    - Testing only!
+  + PM_DataPathHistoryStats1DayGet (pmdphs1dg)      - Testing only!
+  + PM_LineInitHistoryStats15MinGet (pmlihs15mg)    - Testing only!
+  + PM_LineInitHistoryStats1DayGet (pmlihs1dg)      - Testing only!
+  + PM_LineSecHistoryStats15MinGet(pmlshs15mg)      - Testing only!
+  + PM_LineSecHistoryStats1DayGet (pmlshs1dg)       - Testing only!
+- Added several Vinax specific cli functions
+  + DeviceMessageSend (dms)
+  + AuxLineInventoryGet (alig)
+  + BandPlanSupportGet (bpsg)
+  + SystemInterfaceConfigGet (sicg)
+  + SystemInterfaceConfigSet (sics)
+  + SAR_ConfigGet (sarcg)                   - Testing only!
+  + SAR_ConfigSet (sarcs)                   - Testing only!
+  + SAR_ReassemblyCountersGet (sarrcg)      - Testing only!
+  + SAR_ReassemblyTableGet (sarrtg)         - Testing only!
+  + SAR_ReassemblyTableSet (sarrts)         - Testing only!
+  + SAR_SegmentationCountersGet (sarscg)    - Testing only!
+  + SAR_SegmentationTableGet (sarstg)       - Testing only!
+  + SAR_SegmentationTableSet (sarsts)       - Testing only!
+
+Common:
+- Removed daemonize functionality from application because this generates
+  ambiguous problems. Please use the ampersand command for starting the
+  application in background instead, for example
+    ./dsl_cpe_control -i &
+- Fixed segmentation fault in case of using '-v' option for application
+  Therefore only the version of DSL CPE Control application will be returned
+- Added extended debug functionality by using control application specific
+  debug modules that can be changed using the CLI functions
+  + CCA_DBG_ModuleLevelGet (ccadbgmls)
+  + CCA_DBG_ModuleLevelSet (ccadbgmlg)
+
+V2.4.4 - 2007-03-23
+CLI/SOAP:
+- Included pipe mechanism to use CLI within daemonized dsl_cpe_control
+  application
+- Included event handling for SOAP using 'ifx__DslCpeEventCallback' function
+- Started to adapt the event handling to distribute event information to
+  all pipes (up to three) that are currently used
+Common:
+- VINAX CLI implementation
+  + DSL_CPE_CLI_DBG_DeviceMessageSend() function implementation
+- DSL_EVENT_I_SNMP_MESSAGE_AVAILABLE event handling added
+
+V2.4.3 - 2007-03-16
+CLI:
+- Complete re-design for CLI implementation
+  + Short and long name will be stored within tree structure. Thus information
+    is only available once and is always consistent
+  + Help text is defined with a function specific global (static const) variable
+    and a pointer is stored within tree structure of CLI list
+  + Explicit help request will be checked within common CLI implementation
+- Corrected implementation for function 'DSL_CPE_CLI_G997_LineInventorySet'
+- Added new function 'DSL_CPE_CLI_CheckParamNumber' to check number of parameters
+  in different ways
+Common:
+- implementation
+  + DSL_CPE_CLI_G997_DeltHlinScaleGet()
+  + DSL_CPE_CLI_G997_DeltHlogGet()
+- ADSL MIB testing stuff added
+  + common macro definitions
+  + DSL_CPE_CLI_MIB_ADSL_LineEntryGet()
+build scripts:
+- PM related configuration parameters added
+- Added new configuration options for the PM
+- Added new PM events handlers
+  + DSL_CPE_Event_I_ChannelThresholdCrossingHandle()
+  + DSL_CPE_Event_I_LineThresholdCrossingHandle()
+  + DSL_CPE_Event_I_DataPathThresholdCrossingHandle()
+
+V2.4.2 - 2007-03-09
+Common:
+- Changed startup argument '-e' to exclude event handling if specified (will be
+  included by default if nothing is given)
+CLI:
+- Danube: Added functions to read/write CMVs
+  + CmvRead (cr)
+  + CmvWrite (cw)
+- Added new command pmlsctg (DSL_CPE_CLI_PM_LineSecCountersTotalGet())
+- DSL_CPE_CLI_G997_LineInventorySet() updated: Auxiliary field setting removed for
+  Danube
+
+V2.4.1 - 2007-03-05
+CLI:
+- Added new command dse (DebugScriptExecute)
+build scripts:
+- Added support for CMV debug script support enabling/disabling
+command line arguments:
+- -d switch type changed to non-required
+common:
+- execute debug script after firmware is downloaded
+- declare DSL_CPE_DebugFileParse() globally
+
+V2.4.0 - 2007-03-01
+common:
+- Added firmware download support for SOAP using DIME attachments
+
+V2.3.4 - 2007-02-22
+CLI:
+- Added cli functions
+  + DSL_CPE_CLI_LineFeatureConfigGet
+  + DSL_CPE_CLI_LineFeatureConfigSet
+  + DSL_CPE_CLI_LineFeatureStatusGet
+  + DSL_CPE_CLI_TestModeControlSet
+  + DSL_CPE_CLI_G997_LineActivateConfigGet
+  + DSL_CPE_CLI_G997_LineActivateConfigSet
+  + DSL_CPE_CLI_G997_LineActivateStatusGet
+command line arguments:
+- Added possibility to specify XTU System Enabling octets with -i command.
+  Octets has to be given in hex format separated by underscore, trailing 0's
+  can be skipped. If nothing is given, dsl_cpe_control internal, device
+  specific default values will be used
+common:
+- Danube: Added functionality to write showtime event logging data to a file
+- "Standard" printouts added to the event handlers
+- added event handler for the DSL_EVENT_I_DATA_PATH_FAILURES
+- added event handler for the DSL_EVENT_I_LINE_FAILURES
+- implementation
+  + DSL_CPE_Event_S_InitReadyHandle()
+  + DSL_CPE_Event_I_DataPathFailuresHandle()
+  + DSL_CPE_Event_I_LineFailuresHandle()
+
+V2.3.3 - 2007-02-16
+CLI interface:
+- Added CLI command for AutobootStatusGet functionality
+common:
+- Event handling extended with the event status data printous
+- -d command line switch is added
+- new file dsl_cpe_batch.c
+- new function DSL_CPE_DebugFileParse() - starts CMV script parsing
+- src/makefile.am changed: dsl_cpe_batch.c added to Danube sources
+
+V2.3.2 - 2007-02-09
+common:
+- DSL_CPE_EventHandle() : new events handling added
+- IOCTL codes converting array and routine added
+- DSL_CPE_CLI_PM_DataPathCountersTotalGet(): bug with wrong IOCTL call fixed
+- gInitCfgData for Danube fixed
+
+V2.3.1.1 - 2007-02-05
+common:
+- DSL_CPE_EventHandle: added DSL_EVENT_S_LINE_STATE event handling
+
+V2.3.1 - 2007-02-02
+common:
+- DSL_CPE_EventHandle: added DSL_EVENT_S_FIRMWARE_REQUEST event handling
+
+V2.3.0 - 2007-01-31
+common:
+- Console will be started in foreground
+- SOAP server will be started as thread (parallel access via SOAP and console)
+- CLI splitted to automatic and manual generated part (dynamic generation of
+  internal management functionality)
+- Added/Extended various wrapper functions for CLI access
+
+V2.2.3 - 2007-01-29
+common
+- event handling added
+   + event handling common implementation
+   + DSL_EVENT_S_SHOWTIME_LOGGING event handling added
+
+V2.2.2 - 2007-01-26
+common:
+- Added OS abstraction for compilation under Win32 and linux
+- Added project files for Visual Studio V7.0
+- Added simple simulator for DSL CPE API to debug dsl_cpe_control application
+  without real connection to lower layers
+- Added support to provide both terminal and SOAP CLI connection
+- Added new SOAP client/server application for Win32 systems
+  + drv_dsl_cpe_api/application/dsl_soap
+
+V2.2.0 - 2007-01-18
+common:
+- Extended CLI generation and make process to be done for Danube or Vinax
+  separately
+
+V2.1.6 - 2007-01-12
+common:
+- new files: src/dsl_cpe_init_cfg.c, src/dsl_cpe_init_cfg.h
+- update build scripts
+  + add device select support
+  + new script build_vinax_ppc.sh
+  + add src/dsl_cpe_init_cfg.c and src/dsl_cpe_init_cfg.h to makefile
+- include some headers in src\dsl_cpe_control.c
+- new command line command: init
+- new function implemented: DSL_CPE_DeviceInit()
+- update dsl_cpe_control.h:
+  * danube part is enclosed in #ifdefs
+- comment out danube #defines
+
+V2.1.4 - 2006-12-22
+common:
+- update build scripts
+  + add SOAP support
+- new file \drv_dsl_cpe_api\application\dsl_cpe_control\soap\dsl_cpe_soap_client.py
+- update \drv_dsl_cpe_api\application\dsl_cpe_control\soap\generate.cmd
+  * move SOAP sources to the \drv_dsl_cpe_api\application\dsl_cpe_control\src\
+- Added VC6 project to the dsl_cpe_control application WIN32 build
+
+V2.1.2 - 2006-12-15
+common:
+- update build scripts
+  * remove compiler switches
+  * add -static LD flag to src/Makefile.am
+  * remove legacy file from build
