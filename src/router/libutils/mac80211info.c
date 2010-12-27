@@ -22,6 +22,7 @@
 #include <glob.h>
 
 #include "unl.h"
+#include "mac80211regulatory.h"
 #include "linux/nl80211.h"
 
 #include "wlutils.h"
@@ -409,6 +410,115 @@ nla_put_failure:
 	return 0;
 }
 
+struct wifi_channels *mac80211_get_channels(char *interface,char *country,int max_bandwidth_khz, unsigned char checkband) {
+	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *bands, *band,*freqlist,*freq;
+	struct ieee80211_regdomain *rd;
+	struct ieee80211_freq_range regfreq;
+	struct ieee80211_power_rule regpower;
+	struct wifi_channels *list = NULL;
+	int rem, rem2, freq_mhz,wdev,phy,rrc,startfreq,stopfreq,range,regmaxbw,run;
+	int regfound=0;
+	int htrange=30;
+	int chancount=0;
+	int count=0;
+
+	wdev = if_nametoindex(interface);
+	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+
+	rd=mac80211_get_regdomain(country);
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return NULL;
+	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	if (!bands)
+		goto out;
+
+	for (run=0;run <2;run++) {
+		if (run == 1) {
+			list = (struct wifi_channels *)malloc(sizeof(struct wifi_channels) * (chancount+1));
+			(void)memset(list, 0, (sizeof(struct wifi_channels)*(chancount+1)));
+		}
+		nla_for_each_nested(band, bands, rem) {
+			freqlist = nla_find(nla_data(band), nla_len(band),
+					    NL80211_BAND_ATTR_FREQS);
+			if (!freqlist)
+				continue;
+			nla_for_each_nested(freq, freqlist, rem2) {
+				nla_parse_nested(tb, NL80211_FREQUENCY_ATTR_MAX,
+						 freq, freq_policy);
+				if (!tb[NL80211_FREQUENCY_ATTR_FREQ])
+					continue;
+
+				if (tb[NL80211_FREQUENCY_ATTR_DISABLED])
+					continue;
+				regfound=0;
+				if (max_bandwidth_khz == 40)
+						range=10;
+				else
+					// for 10/5mhz this should be fine 
+					range=max_bandwidth_khz/2;
+				freq_mhz = (int) nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
+				for (rrc = 0; rrc < rd->n_reg_rules; rrc++) {
+					regfreq  = rd->reg_rules[rrc].freq_range;
+					startfreq=(int)((float)(regfreq.start_freq_khz)/1000.0);
+					stopfreq=(int)((float)(regfreq.end_freq_khz)/1000.0);
+					regmaxbw=(int)((float)(regfreq.max_bandwidth_khz)/1000.0);
+					if ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq) {
+						if (run == 1) {
+							regpower = rd->reg_rules[rrc].power_rule;
+							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
+							list[count].freq = freq_mhz;
+							// todo: wenn wir das ueberhaupt noch verwenden
+							list[count].noise = 0;
+							list[count].max_eirp = (int)((float)(regpower.max_eirp)/100.0);
+							if (rd->reg_rules[rrc].flags & RRF_NO_OFDM)
+								list[count].no_ofdm = 1;
+							if (rd->reg_rules[rrc].flags & RRF_NO_CCK)
+								list[count].no_cck = 1;
+							if (rd->reg_rules[rrc].flags & RRF_NO_INDOOR)
+								list[count].no_indoor = 1;
+							if (rd->reg_rules[rrc].flags & RRF_NO_OUTDOOR)
+								list[count].no_outdoor = 1;
+							if (rd->reg_rules[rrc].flags & RRF_DFS)
+								list[count].dfs = 1;
+							if (rd->reg_rules[rrc].flags & RRF_PTP_ONLY)
+								list[count].ptp_only = 1;
+							if (rd->reg_rules[rrc].flags & RRF_PTMP_ONLY)
+								list[count].ptmp_only = 1;
+							if (rd->reg_rules[rrc].flags & RRF_PASSIVE_SCAN)
+								list[count].passive_scan = 1;
+							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
+								list[count].no_ibss = 1;
+							if (max_bandwidth_khz == 40) {
+								if ((freq_mhz - htrange) >= startfreq ) {
+									list[count].ht40minus = 1;
+								}
+								if ((freq_mhz + htrange) <= stopfreq) {
+									list[count].ht40plus = 1;
+								}
+							}
+							count++;
+						}
+						if (run == 0) chancount++;
+					}
+				}
+			}
+		}
+	}
+	if (count) list[count].freq=-1;
+	if (rd) 
+		free(rd);
+	return list;
+out:
+nla_put_failure:
+	nlmsg_free(msg);
+	return NULL;
+}
+
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root){
 		struct wifi_client_info *new = calloc(1, sizeof(struct wifi_client_info));
 		if (new == NULL) {
@@ -429,47 +539,3 @@ void free_wifi_clients(struct wifi_client_info *wci) {
 		wci = next;
 		}
 	}
-
-// DEBUGCODE
-#if 0
-static char *UPTIME(int uptime)
-{
-    int days, minutes;
-    static char str[64] = { 0 };
-    memset(str, 0, 64);
-    days = uptime / (60 * 60 * 24);
-    if (days)
-        sprintf(str, "%d day%s, ", days, (days == 1 ? "" : "s"));
-    minutes = uptime / 60;
-    if (strlen(str) > 0)
-        sprintf(str, "%s %d:%02d:%02d", str, (minutes / 60) % 24,
-            minutes % 60, uptime % 60);
-    else
-        sprintf(str, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60,
-            uptime % 60);
-    return str;
-}
-static void print_wifi_clients(struct wifi_client_info *wci) {
-	struct wifi_client_info *wc;
-	for (wc = wci ; wc ; wc = wc->next) {
-		int qual = wc->signal * 124 + 11600;
-		qual /= 10;
-
-		printf("'%s','%s','%s','%dM(%d)','%s%s','%d','%d','%d','%d'",
-			wc->mac,
-			wc->ifname,
-			UPTIME(wc->uptime),
-			wc->txrate / 10,
-			wc->mcs,
-			// wc->rxrate / 10, 
-			(wc->is_40mhz ? "HT40" : "HT20"),
-			(wc->is_short_gi ? "s" : ""),
-			wc->signal,
-			wc->noise,
-			wc->signal - wc->noise,
-			qual
-		);
-		}
-	}
-#endif
-

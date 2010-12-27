@@ -2332,12 +2332,18 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #endif
 #ifdef HAVE_ATH9K
 			if (is_ath9k(prefix)) {
+				// temp must be replaced with the actual selected country
+				char regdomain[16];
+				char *country;
+				sprintf(regdomain, "%s_regdomain", prefix);
+				country = nvram_default_get(regdomain, "UNITED_STATES");
+				// temp end
 				chan =
-				    list_channels_ath9k(prefix, "DE", 20, 0xff);
-				if (chan == NULL)
+				    mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
+				/* if (chan == NULL)
 					chan =
-					    list_channels_ath9k(dev, "DE", 20,
-								0xff);
+					    list_channels_ath9k(dev, "DE", 40,
+								0xff); */
 				gotchannels = 1;
 			}
 #endif
@@ -2369,7 +2375,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						chan[i].channel,
 						chan[i].ht40minus,
 						chan[i].ht40plus,
-						chan[i].outdoor, chan[i].dfs,
+						chan[i].no_outdoor, chan[i].dfs,
 						chan[i].max_eirp,
 						chan[i].no_ofdm);
 				} else
