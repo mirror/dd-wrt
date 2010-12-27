@@ -56,8 +56,8 @@
 #else
 #define USESTUBS 0 /* direct calls to API, based on following definitions */
 #define ENVNTFS3G "NTFS3G"
-#define LIBFILE64 "/lib64/libntfs-3g.so.4921"
-#define LIBFILE "/lib/libntfs-3g.so.4921"
+#define LIBFILE64 "/lib64/libntfs-3g.so.803"
+#define LIBFILE "/lib/libntfs-3g.so.803"
 #endif
 
 #define MAPDIR ".NTFS-3G"
@@ -229,11 +229,8 @@ typedef struct {
 	} ;
 } GUID;
 
-#ifdef NEED_PRINTF
 #define ntfs_log_error(args...) do { printf("** " args); if (!isatty(1)) fprintf(stderr,args); } while(0)
-#else
-#define ntfs_log_error(args...) do { } while(0)
-#endif
+
 /*
  *		Struct to hold the input mapping file
  *	(private to this module)
