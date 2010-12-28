@@ -1822,7 +1822,7 @@ void radio_on(int idx)
 
 #endif
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
 void radio_off(int idx)
 {
