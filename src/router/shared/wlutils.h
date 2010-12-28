@@ -160,7 +160,7 @@ char *getCountryList(void);
 u_int ieee80211_mhz2ieee(u_int freq);
 
 #endif
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 int wifi_getchannel(char *ifname);
 int wifi_getfreq(char *ifname);
 u_int ieee80211_mhz2ieee(u_int freq);
