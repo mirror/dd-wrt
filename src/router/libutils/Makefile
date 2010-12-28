@@ -34,7 +34,7 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fPIC 
 LDFLAGS += -L.
-OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5.save md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
+OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
 WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
@@ -214,6 +214,9 @@ ifeq ($(CONFIG_BR6574N),y)
 endif
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880 -I../wireless-tools -DHEADERS_KERNEL
+endif
+ifeq ($(CONFIG_RT61),y)
+  CFLAGS += -DHAVE_RT61 -I../wireless-tools -DHEADERS_KERNEL
 endif
 ifeq ($(CONFIG_ESR9752),y)
 CFLAGS += -DHAVE_ESR9752
