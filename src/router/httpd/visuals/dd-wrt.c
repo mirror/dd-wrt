@@ -315,6 +315,8 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 #define FREQLINE 2
 #elif HAVE_RT3052
 #define FREQLINE 4
+#elif defined(HAVE_DANUBE)
+#define FREQLINE 6
 #elif HAVE_RT2880
 #define FREQLINE 4
 #elif HAVE_XSCALE
@@ -323,7 +325,7 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 #define FREQLINE 3
 #elif defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_ADM5120) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_CA8) || defined(HAVE_RB500)
 #define FREQLINE 4
-#elif defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE)
+#elif defined(HAVE_PB42) || defined(HAVE_LSX)
 #define FREQLINE 5
 #elif HAVE_X86
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)

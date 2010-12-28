@@ -1,5 +1,5 @@
 /*
- * sysinit-pb42.c
+ * sysinit-danube.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -53,6 +53,58 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
+
+/*
+	option unit		0
+	option encaps	llc
+	option vpi		1
+	option vci		32
+	option payload	bridged # some ISPs need this set to 'routed'
+
+
+
+	local cfg="$1"
+
+	local atmdev
+	config_get atmdev "$cfg" atmdev 0
+
+	local unit
+	config_get unit "$cfg" unit 0
+
+	local vpi
+	config_get vpi "$cfg" vpi 8
+
+	local vci
+	config_get vci "$cfg" vci 35
+
+	local encaps
+	config_get encaps "$cfg" encaps
+
+	case "$encaps" in
+		1|vc) encaps=1;;
+		*) encaps=0;;
+	esac
+
+	local payload
+	config_get payload "$cfg" payload
+
+	case "$payload" in
+		0|routed) payload=0;;
+		*) payload=1;;
+	esac
+
+	local qos
+	config_get qos "$cfg" qos
+
+	local circuit="$atmdev.$vpi.$vci"
+	local pid="/var/run/br2684ctl-$circuit.pid"
+
+	start-stop-daemon -S -b -x /usr/sbin/br2684ctl -m -p "$pid" -- \
+		-c "$unit" -e "$encaps" -p "$payload" \
+		-a "$circuit" ${qos:+-q "$qos"}
+
+*/
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -81,7 +133,14 @@ void start_sysinit(void)
 	 */
 	// insmod("ag7100_mod");
 	// sleep(1);
+	//load dsl drivers
+	insmod("ifxmips_mei");
+	insmod("ifxmips_atm");
+	insmod("drv_dsl_cpe_api");
+	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
+	sysprintf("br2684ctl -b -c 0 -e 0 -p 1 -a 0.1.32");
 	eval("ifconfig", "eth0", "up");
+	detect_wireless_devices();
 	struct ifreq ifr;
 	int s;
 
