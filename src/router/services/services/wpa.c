@@ -22,6 +22,7 @@
 #ifdef HAVE_NAS
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_RT2880
+#ifndef HAVE_RT61
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -717,6 +718,7 @@ void stop_nas(void)
 	return;
 }
 
+#endif
 #endif
 #endif
 #endif
