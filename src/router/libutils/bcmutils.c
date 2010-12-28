@@ -325,7 +325,7 @@ int weekday(int month, int day, int year)
 
 }
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 
 int has_mimo(char *prefix)
 {
@@ -1436,7 +1436,7 @@ void getIfLists(char *eths, int size)
 	memset(eths2, 0, 256);
 	getIfList(eths2, "ath");
 	sprintf(eths, "%s %s", eths, eths2);
-#elif HAVE_RT2880
+#elif defined(HAVE_RT2880) || defined(HAVE_RT61) 
 	memset(eths2, 0, 256);
 	getIfList(eths2, "ra");
 	sprintf(eths, "%s %s", eths, eths2);

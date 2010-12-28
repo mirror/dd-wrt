@@ -131,7 +131,7 @@ void kick_mac(char *iface, char *mac)
 
 	do80211priv(iface, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
 }
-#elif HAVE_RT2880
+#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
