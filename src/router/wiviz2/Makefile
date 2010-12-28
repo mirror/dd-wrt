@@ -29,6 +29,9 @@ endif
 ifeq ($(CONFIG_RT2880),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
+ifeq ($(CONFIG_RT61),y)
+CCOPTS+=-DHAVE_RT2880 
+endif
 
 wiviz: ${OBJS}
 	${CC} ${CCOPTS} -I${INCLUDE} -o ${TARGET} ${OBJS} ${LIBS}
