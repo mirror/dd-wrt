@@ -796,6 +796,11 @@ endif
 
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880
+  CFLAGS += -DHAVE_RT61
+  VISOBJS += wireless_ralink.o
+endif
+ifeq ($(CONFIG_RT61),y)
+  CFLAGS += -DHAVE_RT2880
   VISOBJS += wireless_ralink.o
 endif
 ifeq ($(CONFIG_RT3052),y)
