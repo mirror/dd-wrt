@@ -35,7 +35,7 @@ struct nvram_tuple router_defaults[] = {
 
 #ifndef HAVE_MADWIFI
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(char *prefix)
 {
 	char *ifname = NULL;
@@ -595,7 +595,7 @@ int getwdslist(char *name, unsigned char *list)
 	return (ret);
 }
 
-#ifndef HAVE_RT2880
+#if !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 int getNoise(char *ifname, unsigned char *macname)
 {
 	unsigned int noise;

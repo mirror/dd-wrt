@@ -9,7 +9,7 @@
 #include <bcmnvram.h>
 #include <math.h>
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *get_wl_instance_name(int instance)
 {
 	return "ra0";
@@ -130,7 +130,7 @@ char *get_wdev(void)
 	else {
 		return "ath0";
 	}
-#elif HAVE_RT2880
+#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 	return "ra0";
 #else
 	return get_wl_instance_name(0);
