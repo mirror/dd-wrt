@@ -123,16 +123,20 @@ endif
 ifeq ($(CONFIG_WPA_SUPPLICANT),y)
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_RT2880),y)
+ifneq ($(CONFIG_RT61),y)
 CFLAGS_EXTRA += -DHAVE_WPA_SUPPLICANT
 OBJS += brcm_80211x.o
+endif
 endif
 endif
 endif
 ifeq ($(CONFIG_WPA_SUPPLICANT2),y)
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_RT2880),y)
+ifneq ($(CONFIG_RT61),y)
 CFLAGS_EXTRA += -DHAVE_WPA_SUPPLICANT
 OBJS += brcm_80211x.o
+endif
 endif
 endif
 endif
@@ -361,7 +365,11 @@ else
 ifeq ($(CONFIG_RT2880),y)
 OBJS += site_survey_ralink.o
 else
+ifeq ($(CONFIG_RT61),y)
+OBJS += site_survey_ralink.o
+else
 OBJS += site_survey_broadcom.o
+endif
 endif
 endif
 
