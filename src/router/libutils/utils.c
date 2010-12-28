@@ -2539,7 +2539,7 @@ char *getWET(void)
 	return NULL;
 }
 
-#elif HAVE_RT2880
+#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 
 char *getSTA()
 {
