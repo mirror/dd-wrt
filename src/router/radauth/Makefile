@@ -25,6 +25,9 @@ endif
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880 
 endif
+ifeq ($(CONFIG_RT61),y)
+  CFLAGS += -DHAVE_RT2880 
+endif
 CFLAGS += -DNEED_PRINTF -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += -L -ffunction-sections -fdata-sections -Wl,--gc-sections
 all: wrt-radauth radius-client macupd
