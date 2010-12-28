@@ -948,10 +948,10 @@ void start_restore_defaults(void)
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "eth0 ath0", 0},
-		{"wan_ifname", "", 0},
-		{"wan_ifname2", "", 0},
-		{"wan_ifnames", "", 0},
-		{"wan_default", "", 0},
+		{"wan_ifname", "nas0", 0},
+		{"wan_ifname2", "nas0", 0},
+		{"wan_ifnames", "nas0", 0},
+		{"wan_default", "nas0", 0},
 		{0, 0, 0}
 	};
 #elif HAVE_WBD222

@@ -329,7 +329,9 @@ static int wlc_noack(int value)
 
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_RT2880
+#ifndef HAVE_RT61
 static int notify_nas(char *type, char *ifname, char *action);
+#endif
 #endif
 #endif
 
@@ -397,7 +399,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 /*
  * Enable WET DHCP relay for ethernet clients 
  */
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 static int enable_dhcprelay(char *ifname)
 {
 	char name[80], *next;
@@ -448,7 +450,7 @@ static int wlconf_up(char *name)
 
 	int phytype, gmode, val, ret;
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 	return -1;
 #endif
 	if (!strncmp(name, "vlan", 4))
@@ -580,7 +582,7 @@ static int wlconf_up(char *name)
 		eval("wl", "-i", name, "ssid",
 		     nvram_nget("wl%d_ssid", instance));
 	}
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	eval("wl", "-i", name, "vlan_mode", "0");
 	char ifinst[32];
 
@@ -604,7 +606,7 @@ void start_wlconf(void)
 	int c;
 
 	for (c = 0; c < cnt; c++) {
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		if (cnt > 1)
 			eval("wl", "-i", get_wl_instance_name(c),
 			     "interference", "0");
@@ -615,7 +617,7 @@ void start_wlconf(void)
 }
 
 // #ifdef HAVE_PORTSETUP
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 #define IFMAP(a) getRADev(a)
 #else
 #define IFMAP(a) (a)
@@ -1152,7 +1154,7 @@ void start_lan(void)
 		PORTSETUPWAN("");
 	} else {
 		nvram_setz(lan_ifnames, "eth0 ath0");
-		PORTSETUPWAN("eth0");
+		PORTSETUPWAN("nas0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
@@ -1563,7 +1565,7 @@ void start_lan(void)
 	// find wireless interface
 	diag_led(DIAG, STOP_LED);	// stop that blinking
 	strcpy(wl_face, get_wdev());
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 #ifndef HAVE_NOWIFI
 	deconfigure_wifi();
 #endif
@@ -1579,7 +1581,7 @@ void start_lan(void)
 	 */
 	cprintf("configure wl_face %s\n", wl_face);
 	ifconfig(wl_face, 0, 0, 0);
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
 	if (nvram_match("mac_clone_enable", "1") &&
 	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
@@ -1654,7 +1656,7 @@ void start_lan(void)
 			if (!ex)
 				continue;
 #ifdef HAVE_EAD
-#if defined(HAVE_RT2880) || defined(HAVE_MADWIFI)
+#if defined(HAVE_RT2880) || defined(HAVE_MADWIFI) || defined(HAVE_RT61)
 			if (strncmp(name, "ath", 3) && strncmp(name, "ra", 2))
 #else
 			if (wl_probe(name))
@@ -1694,7 +1696,7 @@ void start_lan(void)
 			 * Set the logical bridge address to that of the first interface 
 			 */
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			strncpy(ifr.ifr_name, lan_ifname, IFNAMSIZ);
 			if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0 &&
 			    memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
@@ -1716,7 +1718,7 @@ void start_lan(void)
 			/*
 			 * If not a wl i/f then simply add it to the bridge 
 			 */
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			if (wlconf_up(name)) {
 				// #ifdef HAVE_PORTSETUP
 				do_portsetup(lan_ifname, name);
@@ -1782,7 +1784,7 @@ void start_lan(void)
 				char wl_name[] = "wlXXXXXXXXXX_mode";
 				int unit;
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 				unit = 0;
 #else
 				wl_ioctl(name, WLC_GET_INSTANCE, &unit,
@@ -1803,7 +1805,7 @@ void start_lan(void)
 							 name);
 					led_control(LED_BRIDGE, LED_ON);
 					/* Enable host DHCP relay */
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
@@ -1837,7 +1839,7 @@ void start_lan(void)
 					do_mssid(name);
 				}
 				if (nvram_match(wl_name, "apsta")) {
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "infra", "1");
@@ -1849,7 +1851,7 @@ void start_lan(void)
 					// eval("wlconf", name, "up");
 					ifconfig(name, IFUP | IFF_ALLMULTI,
 						 NULL, NULL);
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "ssid", nvram_get ("wl0_ssid"));
@@ -1868,7 +1870,7 @@ void start_lan(void)
 				 * if client/wet mode, turn off ap mode et al 
 				 */
 				if (nvram_match(wl_name, "infra")) {
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "infra", "0");
@@ -1889,7 +1891,7 @@ void start_lan(void)
 				}
 
 				if (nvram_match(wl_name, "sta")) {
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "infra", "1");
@@ -1901,7 +1903,7 @@ void start_lan(void)
 					// eval("wlconf", name, "up");
 					ifconfig(name, IFUP | IFF_ALLMULTI,
 						 NULL, NULL);
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "ssid", nvram_get ("wl0_ssid"));
@@ -1928,9 +1930,9 @@ void start_lan(void)
 	if (strlen(eadline) > 0)
 		sysprintf("ead %s -B", eadline);
 #endif
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 #define getWifi(a) a
 #define getWDSSTA() NULL
 #endif
@@ -1977,7 +1979,7 @@ void start_lan(void)
 		 */
 		ifconfig(lan_ifname, IFUP, NULL, NULL);
 		eval("ifconfig", lan_ifname, "promisc");
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		/*
 		 * config wireless i/f 
 		 */
@@ -2043,6 +2045,7 @@ void start_lan(void)
 
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_RT2880
+#ifndef HAVE_RT61
 	int cnt = get_wl_instances();
 	int c;
 
@@ -2184,6 +2187,7 @@ void start_lan(void)
 	}
 #endif
 #endif
+#endif
 #ifdef HAVE_XSCALE
 #define HAVE_RB500
 #endif
@@ -2292,7 +2296,7 @@ void start_lan(void)
 		eval("ip", "ro", "add", "default", "via",
 		     nvram_safe_get("lan_gateway"), "dev", "br0");
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	for (c = 0; c < cnt; c++) {
 		eval("wl", "-i", get_wl_instance_name(c), "vlan_mode", "0");
 	}
@@ -2306,7 +2310,7 @@ void start_lan(void)
 	 * Set additional lan static routes if need 
 	 */
 	start_set_routes();
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	for (c = 0; c < cnt; c++) {
 		eval("wl", "-i", get_wl_instance_name(c), "radio",
 		     nvram_nmatch("disabled", "wl%d_net_mode",
@@ -2362,7 +2366,7 @@ void stop_lan(void)
 	br_init();
 #endif
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	br_del_interface(lan_ifname, "wl0.1");
 	ifconfig("wl0.1", 0, NULL, NULL);
 	br_del_interface(lan_ifname, "wl0.2");
@@ -2385,7 +2389,7 @@ void stop_lan(void)
 				continue;
 			if (!ifexists(name))
 				continue;
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			eval("wlconf", name, "down");
 #endif
 			ifconfig(name, 0, NULL, NULL);
@@ -2396,7 +2400,7 @@ void stop_lan(void)
 	/*
 	 * Bring down specific interface 
 	 */
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	else if (strcmp(lan_ifname, ""))
 		eval("wlconf", lan_ifname, "down");
 #endif
@@ -2626,7 +2630,7 @@ void start_wan(int status)
 #elif HAVE_DANUBE
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+	    nvram_safe_get("pppoe_wan_ifname") : "nas0";
 #elif HAVE_STORM
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
@@ -2686,7 +2690,7 @@ void start_wan(int status)
 #endif
 
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	if (getWET()) {
 		dns_to_resolv();
 		return;
@@ -2784,7 +2788,7 @@ void start_wan(int status)
 
 	if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) {
 		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
 		if (wlifname && !strcmp(wan_ifname, wlifname))
 			eval("wl", "-i", wan_ifname, "down");
@@ -2795,7 +2799,7 @@ void start_wan(int status)
 //          eval("ifconfig",wan_ifname,"promisc"); // set wan to promisc, since we now have usually different mac addresses on vlans
 		}
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		if (wlifname && !strcmp(wan_ifname, wlifname)) {
 			eval("wl", "-i", wan_ifname, "up");
 			start_config_macs(wan_ifname);
@@ -3774,7 +3778,7 @@ void start_wan_done(char *wan_ifname)
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 #ifndef HAVE_NOWIFI
 	start_hostapdwan();
 #endif
@@ -3908,7 +3912,7 @@ void start_set_routes(void)
 		system("sh /tmp/tvrouting");
 }
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)  && !defined(HAVE_RT61)
 static int notify_nas(char *type, char *ifname, char *action)
 {
 	char *argv[] = { "nas4not", type, ifname, action,
@@ -4125,7 +4129,7 @@ void start_hotplug_net(void)
 		 * Notify NAS of adding the interface 
 		 */
 		sleep(5);
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		notify_nas("lan", interface, "up");
 #endif
 		if (nvram_match("lan_stp", "0"))

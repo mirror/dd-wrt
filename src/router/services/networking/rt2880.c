@@ -20,7 +20,7 @@
  * $Id:
  */
 
-#ifdef HAVE_RT2880
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <sys/mman.h>
