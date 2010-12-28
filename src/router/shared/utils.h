@@ -834,7 +834,7 @@ int isXR36(char *ifname);
 char *get3GControlDevice(void);
 char *getIsoName(const char *country);
 int has_gateway(void);		// return 1 if nat/gateway mode is enabled for wan
-#ifdef defined(HAVE_RT2880) || defined(HAVE_RT61)
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(char *prefix);
 #endif
 
