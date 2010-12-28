@@ -34,7 +34,7 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fPIC 
 LDFLAGS += -L.
-OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
+OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5.save md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
 WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
@@ -830,7 +830,7 @@ clean:
 	rm -f *.c~
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram -lcrypt
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram
 
 libwireless.so: $(WOBJS)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
