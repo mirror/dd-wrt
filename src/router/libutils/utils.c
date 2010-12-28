@@ -979,7 +979,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M, 0},	//
 		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M, 0},	//
 		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M, 0},	//
-		{"Ubiquiti Bullet M5", 0xe202, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Bullet M5", 0xe205, "1", "1", ROUTER_BOARD_BS5M, 0},	//
 		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M, 0},	//
 		{"Ubiquiti Airgrid 5M", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0},	//
 		{"Ubiquiti AirRouter", 0xe4a2, "3", "3", ROUTER_BOARD_NS2M, 0},	//
