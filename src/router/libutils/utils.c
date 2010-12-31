@@ -3982,7 +3982,7 @@ char *zencrypt(char *passwd)
 
 	strcpy(salt, "$1$");
 	crypt_make_salt(salt + 3, 4, 0);
-	strcpy(passout, __md5_crypt((unsigned char *)passwd, (unsigned char *)salt));
+	strcpy(passout, crypt((unsigned char *)passwd, (unsigned char *)salt));
 	return passout;
 }
 
