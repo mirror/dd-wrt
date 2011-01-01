@@ -4586,7 +4586,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 					      "wet") ?
 				  "selected=\\\"selected\\\"" : "");
 #endif
+#ifndef HAVE_BUFFALO
 			if (!cpeonly)
+#else
+			if (!cpeonly && !has_5ghz(prefix))
+#endif
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n",
 					  nvram_match(wl_mode,
