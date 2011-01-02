@@ -5,6 +5,13 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
+MOTD_ADD:=
+ifdef CONFIG_TMK
+ MOTD_ADD:=.kmt
+endif
+ifdef CONFIG_BKM
+ MOTD_ADD:=.bkm
+endif
 install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/init.d
@@ -36,14 +43,10 @@ ifndef CONFIG_MAKSAT
 ifndef CONFIG_WIKINGS
 ifndef CONFIG_ERC
 ifndef CONFIG_NEXTMEDIA
-ifdef CONFIG_TMK
-	install motd.kmt $(INSTALLDIR)/etc/motd
-else
 ifdef CONFIG_MSSID
-	install motd $(INSTALLDIR)/etc
+	install motd$(MOTD_ADD) $(INSTALLDIR)/etc/motd
 else
 	install motd.v23 $(INSTALLDIR)/etc/motd
-endif
 endif
 endif
 endif
