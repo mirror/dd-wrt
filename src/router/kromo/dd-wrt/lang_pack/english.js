@@ -1108,6 +1108,10 @@ networking.iface="Interfaces";
 networking.h5="DHCPD";
 networking.legend5="Multiple DHCP Server";
 
+//help container
+var hnetworking = new Object();
+hnetworking.right1="Multi DHCPD:";
+hnetworking.right2="To be able to use Multiple DHCPD you must use DNSMasq as DHCP-Server";
 
 // ** QoS.asp **//
 var qos = new Object();
