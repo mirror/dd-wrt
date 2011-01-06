@@ -567,7 +567,7 @@ char *get3GControlDevice(void)
 		devicecount++;
 	}
 	//not found, use generic implementation (tts0, all drivers)
-	insmod("cdc_acm");
+	insmod("cdc-acm");
 	insmod("usbserial");
 	insmod("sierra");
 	insmod("option");
