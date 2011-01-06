@@ -235,6 +235,31 @@ static void modeswitch_icon210(int needreset, char *controldev)
 	sleep(2);
 }
 
+static void modeswitch_nokia(int needreset, char *controldev)
+{
+	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x0421\n");
+	fprintf(out, "DefaultProduct=0x060c\n");
+	fprintf(out, "TargetVendor=0x0421\n");
+	fprintf(out, "TargetProduct=0x060e\n");
+	fprintf(out, "CheckSuccess=20\n");
+	fprintf(out,
+		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x0421\n");
+	fprintf(out, "DefaultProduct=0x0610\n");
+	fprintf(out, "TargetVendor=0x0421\n");
+	fprintf(out, "TargetProduct=0x0612\n");
+	fprintf(out, "CheckSuccess=20\n");
+	fprintf(out,
+		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	sleep(2);
+}
+
 static void hsoinit_icon225(int needreset, char *controldev)
 {
 	system("ozerocdoff -wi 0x6971");
@@ -409,6 +434,10 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0xfff6, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
 	{0x19d2, 0xfff1, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
 	{0x19d2, 0xffff, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
+	{0x0421, 0x060c, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-10 (cdrom mode)"},	//
+	{0x0421, 0x060e, "option", "0", "0", 2, NULL, "Nokia CS-10 (modem mode)"},	//
+	{0x0421, 0x0610, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-15 (cdrom mode)"},	//
+	{0x0421, 0x0612, "option", "0", "0", 2, NULL, "Nokia CS-15 (modem mode)"},	//
 
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
@@ -493,10 +522,18 @@ char *get3GControlDevice(void)
 				if (!strcmp
 				    (devicelist[devicecount].datadevice, "hso"))
 					sprintf(data, "hso");
-				else
-					sprintf(data, "/dev/usb/tts/%s",
-						devicelist[devicecount].
-						datadevice);
+				else {
+					if (devicelist[devicecount].vendor ==
+					    0x0421)
+						sprintf(data, "/dev/ttyACM%s",
+							devicelist
+							[devicecount].datadevice);
+					else
+						sprintf(data, "/dev/usb/tts/%s",
+							devicelist
+							[devicecount].datadevice);
+
+				}
 				nvram_set("3gdata", data);
 			}
 			if (devicelist[devicecount].modeswitch) {
@@ -509,20 +546,28 @@ char *get3GControlDevice(void)
 			if (devicelist[devicecount].customsetup)
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].controldevice);
+								    [devicecount].
+								    controldevice);
 			static char control[32];
 			if (!strcmp
 			    (devicelist[devicecount].controldevice, "hso"))
 				sprintf(control, "hso");
-			else
-				sprintf(control, "/dev/usb/tts/%s",
-					devicelist[devicecount].controldevice);
+			else {
+				if (devicelist[devicecount].vendor == 0x0421)
+					sprintf(control, "/dev/ttyACM%s",
+						devicelist[devicecount].
+						controldevice);
+				else
+					sprintf(control, "/dev/usb/tts/%s",
+						devicelist[devicecount].
+						controldevice);
+			}
 			return control;
 		}
 		devicecount++;
 	}
 	//not found, use generic implementation (tts0, all drivers)
-
+	insmod("cdc_acm");
 	insmod("usbserial");
 	insmod("sierra");
 	insmod("option");
