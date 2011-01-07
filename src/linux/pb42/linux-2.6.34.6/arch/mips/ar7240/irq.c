@@ -49,7 +49,7 @@ void __init arch_init_irq(void)
     ar7240_misc_irq_init(AR7240_MISC_IRQ_BASE);
 //    ar7240_gpio_irq_init(AR7240_GPIO_IRQ_BASE);
 #ifdef CONFIG_PCI
-    ar7240_pci_irq_init(AR7240_PCI_IRQ_BASE);
+//    ar7240_pci_irq_init(AR7240_PCI_IRQ_BASE);
 #endif
 
     /*
@@ -58,7 +58,7 @@ void __init arch_init_irq(void)
     setup_irq(AR7240_CPU_IRQ_MISC,  &cascade);
     setup_irq(AR7240_MISC_IRQ_GPIO, &cascade);
 #ifdef CONFIG_PCI
-    setup_irq(AR7240_CPU_IRQ_PCI,   &cascade);
+//    setup_irq(AR7240_CPU_IRQ_PCI,   &cascade);
 #endif
 #ifdef CONFIG_WASP_SUPPORT
 	set_irq_chip_and_handler(ATH_CPU_IRQ_WLAN,

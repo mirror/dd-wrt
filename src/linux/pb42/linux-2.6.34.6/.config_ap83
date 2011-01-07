@@ -908,6 +908,7 @@ CONFIG_WLAN=y
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_USBNET is not set
 CONFIG_USB_HSO=m
+CONFIG_USB_CDC_PHONET=m
 # CONFIG_USB_IPHETH is not set
 # CONFIG_WAN is not set
 CONFIG_PPP=y
@@ -1069,7 +1070,7 @@ CONFIG_USB_EHCI_AR9130=y
 #
 # USB Device Class drivers
 #
-# CONFIG_USB_ACM is not set
+CONFIG_USB_ACM=m
 CONFIG_USB_PRINTER=m
 # CONFIG_USB_WDM is not set
 # CONFIG_USB_TMC is not set

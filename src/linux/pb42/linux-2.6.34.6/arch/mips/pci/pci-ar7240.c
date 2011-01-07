@@ -15,6 +15,7 @@
 
 
 static int ar724x_pci_fixup_enable;
+static int arnew=0;
 
 
 /*
@@ -92,18 +93,56 @@ struct irq_chip ar7240_pci_irq_chip = {
 	.unmask		= ar7240_pci_irq_enable,
 	.mask_ack	= ar7240_pci_irq_disable,
 };
+#define AR724X_RESET_PCIE_PHY_SERIAL	BIT(10)
+#define AR724X_RESET_PCIE_PHY		BIT(7)
+#define AR724X_RESET_PCIE		BIT(6)
 
+#define AR724X_PCI_REG_INT_STATUS	0x4c
+#define AR724X_PCI_REG_INT_MASK		0x50
+static void __iomem *ar724x_pci_ctrl_base;
+#define AR724X_PCI_INT_DEV0		BIT(14)
+#define AR71XX_PCI_IRQ_BASE     48
+#define AR71XX_PCI_IRQ_DEV0	(AR71XX_PCI_IRQ_BASE + 0)
+
+static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
+{
+	void __iomem *base = ar724x_pci_ctrl_base;
+	u32 pending;
+
+	pending = __raw_readl(base + AR724X_PCI_REG_INT_STATUS) &
+		  __raw_readl(base + AR724X_PCI_REG_INT_MASK);
+
+	if (pending & AR724X_PCI_INT_DEV0)
+		generic_handle_irq(AR71XX_PCI_IRQ_DEV0);
+
+	else
+		spurious_interrupt();
+}
 
 void
 ar7240_pci_irq_init(int irq_base)
 {
 	int i;
+	u32 t;
+	void __iomem *base = ar724x_pci_ctrl_base;
+
+	t = ar7240_reg_rd(AR7240_RESET);
+	if (t & (AR724X_RESET_PCIE | AR724X_RESET_PCIE_PHY |
+		 AR724X_RESET_PCIE_PHY_SERIAL)) {
+		 printk(KERN_EMERG "can't init irq, device still not up\n");
+		return;
+	}
+
+	__raw_writel(0, base + AR724X_PCI_REG_INT_MASK);
+	__raw_writel(0, base + AR724X_PCI_REG_INT_STATUS);
 
 	for (i = irq_base; i < irq_base + AR7240_PCI_IRQ_COUNT; i++) {
 		irq_desc[i].status = IRQ_DISABLED;
 		set_irq_chip_and_handler(i, &ar7240_pci_irq_chip,
 					 handle_level_irq);
 	}
+//	set_irq_chained_handler(AR71XX_CPU_IRQ_IP2, ar724x_pci_irq_handler);
+	set_irq_chained_handler(AR7240_CPU_IRQ_PCI, ar724x_pci_irq_handler);
 }
 
 /*
@@ -146,7 +185,7 @@ ar7240_pci_core_intr(int cpl, void *dev_id, struct pt_regs *regs)
 
 static void ar724x_pci_fixup(struct pci_dev *dev)
 {
-	u32 t;
+	u16 t;
 
 	if (!ar724x_pci_fixup_enable)
 		return;
@@ -154,6 +193,7 @@ static void ar724x_pci_fixup(struct pci_dev *dev)
 	if (dev->bus->number != 0 || dev->devfn != 0)
 		return;
 
+	pci_read_config_word(dev, PCI_COMMAND, &t);
 
 	/* setup COMMAND register */
 	t = PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INVALIDATE
@@ -218,7 +258,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
 
 	/* Setup the PCI device to allow access to the internal registers */
-        if ((is_ar7241() || is_ar7242()))
+        if (arnew)
         {
 	    pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0x1000ffff);
         }else{
@@ -236,6 +276,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 		val = *cal_data++;
 		val |= (*cal_data++) << 16;
 
+		printk(KERN_EMERG "bootstraping %X->%X\n",reg,val);
 		__raw_writel(val, mem + reg);
 		udelay(100);
 	}
@@ -243,6 +284,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
+	printk(KERN_EMERG "bootstrap returns device %X:%X\n",dev->vendor,dev->device);
 	if (dev->device==0x0030) //AR9300 Hack
  	    {
  		calcopy+=0x1000;
@@ -297,10 +339,136 @@ DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ap91_pci_fixup);
  *
  * There is no translation for inbound access (PCI device as a master)
  */ 
+
+extern void ar724x_pci_write(void __iomem *base, int where, int size, u32 value);
+
+#define AR71XX_RESET_BASE	(AR7240_APB_BASE + 0x00060000)
+#define AR71XX_RESET_SIZE	0x10000
+static void __iomem *ar71xx_reset_base;
+
+static inline void ar71xx_reset_wr(unsigned reg, u32 val)
+{
+	__raw_writel(val, ar71xx_reset_base + reg);
+}
+
+static inline u32 ar71xx_reset_rr(unsigned reg)
+{
+	return __raw_readl(ar71xx_reset_base + reg);
+}
+
+#define RESET_MODULE_USB_OHCI_DLL_7240	1<<3
+#define AR724X_RESET_REG_RESET_MODULE		0x1c
+
+void ar71xx_device_stop(u32 mask)
+{
+	unsigned long flags;
+	u32 mask_inv;
+	u32 t;
+
+		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
+		t |= mask;
+		t &= ~mask_inv;
+		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t);
+		local_irq_restore(flags);
+}
+
+void ar71xx_device_start(u32 mask)
+{
+	unsigned long flags;
+	u32 mask_inv;
+	u32 t;
+
+		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
+		t &= ~mask;
+		t |= mask_inv;
+		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t);
+		local_irq_restore(flags);
+}
+#define AR7240_PCIE_PLL_CONFIG          AR7240_PLL_BASE+0x10
+
+static void __init ar7242_pci_reset(void)
+{
+//	printk(KERN_EMERG "reset register before %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
+//	ar71xx_device_stop(AR724X_RESET_PCIE);
+//	ar71xx_device_stop(AR724X_RESET_PCIE_PHY);
+//	ar71xx_device_stop(AR724X_RESET_PCIE_PHY_SERIAL);
+	udelay(1000);
+	printk(KERN_EMERG "reset register middle %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
+
+	ar71xx_device_start(AR724X_RESET_PCIE_PHY_SERIAL);
+	udelay(100);
+	ar71xx_device_start(AR724X_RESET_PCIE_PHY);
+	ar71xx_device_start(AR724X_RESET_PCIE);
+	printk(KERN_EMERG "reset register after %X PLL:%X\n", ar7240_reg_rd(AR71XX_RESET_BASE + AR724X_RESET_REG_RESET_MODULE),ar7240_reg_rd(AR7240_PCIE_PLL_CONFIG));
+}
+#define AR724X_PCI_CTRL_BASE	(AR7240_APB_BASE + 0x000F0000)
+#define AR724X_PCI_CTRL_SIZE	0x100
+#define AR724X_PCI_REG_RESET		0x18
+#define AR724X_PCI_REG_APP		0x00
+#define AR7240_PLL_BASE                 AR7240_APB_BASE+0x00050000
+#define AR724X_PCI_CRP_BASE	(AR7240_APB_BASE + 0x000C0000)
+#define AR724X_PCI_CRP_SIZE	0x100
+static void __iomem *ar724x_pci_localcfg_base;
+
+static int __init ar7242_pci_setup(void)
+{
+	void __iomem *base = ar724x_pci_ctrl_base;
+	u32 t;
+	/* setup COMMAND register */
+
+	t = PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INVALIDATE |
+	    PCI_COMMAND_PARITY|PCI_COMMAND_SERR|PCI_COMMAND_FAST_BACK;
+
+	ar724x_pci_write(ar724x_pci_localcfg_base, PCI_COMMAND, 4, t);
+	ar724x_pci_write(ar724x_pci_localcfg_base, 0x20, 4, 0x1ff01000);
+	ar724x_pci_write(ar724x_pci_localcfg_base, 0x24, 4, 0x1ff01000);
+
+
+	t = __raw_readl(base + AR724X_PCI_REG_RESET);
+	printk(KERN_EMERG "reset reg %X\n", t);
+	if (t != 0x7) {
+		printk(KERN_EMERG "reset PCIE Bus and PLL\n");
+		udelay(100000);
+		__raw_writel(0, base + AR724X_PCI_REG_RESET);
+		udelay(100);
+		__raw_writel(4, base + AR724X_PCI_REG_RESET);
+		udelay(100000);
+	}
+
+	t = __raw_readl(base + AR724X_PCI_REG_RESET);
+	printk(KERN_EMERG "reset reg after %X\n", t);
+
+	if (arnew)
+		t = 0x1ffc1;
+	else
+		t = 1;
+
+	__raw_writel(t, base + AR724X_PCI_REG_APP);
+	/* flush write */
+	(void) __raw_readl(base + AR724X_PCI_REG_APP);
+	udelay(1000);
+
+	t = __raw_readl(base + AR724X_PCI_REG_RESET);
+	if ((t & 0x1) == 0x0) {
+		printk(KERN_WARNING "PCI: no PCIe module found\n");
+		return -ENODEV;
+	}
+
+	if (arnew) {
+		t = __raw_readl(base + AR724X_PCI_REG_APP);
+		t |= BIT(16);
+		__raw_writel(t, base + AR724X_PCI_REG_APP);
+	}
+
+	return 0;
+}
  
  
- 
-static int __init ar7240_pcibios_init(void)
+int __init ar7240_pcibios_init(void)
 {
 
 #ifdef CONFIG_WASP_SUPPORT
@@ -308,12 +476,26 @@ static int __init ar7240_pcibios_init(void)
 		return 0;
 	}
 #endif
+	if (is_ar7241() || is_ar7242())
+	    {
+	    printk(KERN_EMERG "ar7241/ar7242 detected\n");
+	    arnew=1;
+	    }
+	ar724x_pci_localcfg_base = ioremap_nocache(AR724X_PCI_CRP_BASE,
+						   AR724X_PCI_CRP_SIZE);
+	ar724x_pci_ctrl_base = ioremap_nocache(AR724X_PCI_CTRL_BASE,
+					       AR724X_PCI_CTRL_SIZE);
+	ar71xx_reset_base = ioremap_nocache(AR71XX_RESET_BASE,
+						AR71XX_RESET_SIZE);
+
 	/*
 	 * Check if the WLAN PCI-E H/W is present, If the
 	 * WLAN H/W is not present, skip the PCI
 	 * initialization code and just return.
 	 */
-
+	ar7242_pci_reset();
+	ar7242_pci_setup();
+/*
 	if (((ar7240_reg_rd(AR7240_PCI_LCL_RESET)) & 0x1) == 0x0) {
 		printk("***** Warning *****: PCIe WLAN H/W not found !!!\n");
 		return 0;
@@ -329,11 +511,13 @@ static int __init ar7240_pcibios_init(void)
           PCI_COMMAND_PARITY|PCI_COMMAND_SERR|PCI_COMMAND_FAST_BACK;
 
     ar7240_local_write_config(PCI_COMMAND, 4, cmd);
+*/
     ar724x_pci_fixup_enable = 1;
+    ar7240_pci_irq_init(AR7240_PCI_IRQ_BASE);
 
     register_pci_controller(&ar7240_pci_controller);
 
     return 0;
 }
 
-arch_initcall(ar7240_pcibios_init);
+//arch_initcall(ar7240_pcibios_init);

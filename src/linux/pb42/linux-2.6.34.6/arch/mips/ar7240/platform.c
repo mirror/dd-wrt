@@ -127,7 +127,7 @@ static struct platform_device *ar7240_platform_devices[] __initdata = {
 static struct platform_device *ar724x_platform_devices[] __initdata = {
 	&ar7240_uart
 };
-
+extern int ar7240_pcibios_init(void);
 int __init ar7240_platform_init(void)
 {
 	int ret;
@@ -145,14 +145,15 @@ int __init ar7240_platform_init(void)
 		return ret; 
 
 	if (is_ar7241() || is_ar7242()  || is_ar9330() || is_wasp()) {
-	    return (platform_add_devices(ar7241_platform_devices, 
-                                ARRAY_SIZE(ar7241_platform_devices)));
+	    ret = platform_add_devices(ar7241_platform_devices, 
+                                ARRAY_SIZE(ar7241_platform_devices));
         }
         if (is_ar7240()) {
-	    return (platform_add_devices(ar7240_platform_devices, 
-                                ARRAY_SIZE(ar7240_platform_devices)));
+	    ret = platform_add_devices(ar7240_platform_devices, 
+                                ARRAY_SIZE(ar7240_platform_devices));
         }
-        return ret;
+	ar7240_pcibios_init();
+return ret;
 }
 
 arch_initcall(ar7240_platform_init);
