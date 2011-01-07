@@ -1,0 +1,281 @@
+2006-01-24  Markus Klotzbuecher  <mk@mary.denx.de>
+
+	* Add tons of ugly ifdefs to Ed L. Cashin's mutex patch to
+          retain backwards compatibility.
+
+2006-01-24  Ed L. Cashin <ecashin@coraid.com>
+
+	* Support for the new mutex infrastructure
+	(7892f2f48d165a34b0b8130c8a195dfd807b8cb6)
+
+2005-10-15  Markus Klotzbuecher  <mk@localhost.localdomain>
+
+	* Bugfix for a serious memory leak in mini_fo_follow_link.
+
+2005-09-21  Markus Klotzbuecher  <mk@mary>
+
+	* new release 0.6.1
+
+	* fix of a compiler warning due to changes in 2.6.13
+
+2005-09-21  Klaus Wenninger  <klaus.wenninger@siemens.com>
+
+	* file.c: readdir: fix for a bug that caused directory entries
+          to show up twice when using storage filesystems such as
+          minixfs or pramfs.
+
+2005-06-30  Eric Lammerts <eric@lammerts.org>
+
+	* fix for an oops when overwriting a binary thats beeing
+          executed.
+
+2005-06-09    <mk@mary>
+
+	* Renamed overlay to mini_fo-overlay.
+
+	* Added mini_fo-merge script to allow merging of storage and base
+	after making modifications.
+
+2005-05-22  root  <mk@mary>
+
+	* Added overlay script that allows to easily mount mini_fo ontop
+	of a given base directory
+
+2005-05-10    <mk@mary>
+
+	* inode.c: xattr functions return -EOPNOSUPP instead of
+          -ENOSUPP, what confuses "ls -l"
+
+	* Changed license from LGPL to GPL.
+
+2005-05-08  root  <mk@mary>
+
+	* Makefile: clean it up and added make install and make
+          uninstall.
+
+2005-05-06    <mk@mary>
+
+	* merged devel branch back to main. [v0-6-0-pre3]
+
+	* removed unused files print.c and fist_ioctl. [devel-0-0-18]
+
+	* ioctl: removed fist_ioctl stuff, that is not needed for
+          now.
+
+2005-05-03    <mk@mary>
+
+	* file.c: simplified mini_fo_open and mini_fo_setattr using
+          new state changing functions. [devel-0-0-17]
+
+	* inode.c: Fixed getattr state bug (see below) in 2.4 function
+          mini_fo_inode revalidate.
+
+	* inode.c: found an other bug in mini_fo_getattr. States are not
+	  reliable in this function, as a file can be opened, unlinked and
+	  the getattr function called. This results in a deleted dentry
+	  with an inode. Fix is to ignore states and simply use the inode
+	  available.
+
+2005-04-29    <mk@mary>
+
+	* file.c: Bugfix and cleanup in fasync and fsync. [devel-0-0-16]
+
+	* file.c: do not use mini_fo_lock so the generic version is
+          used (I guess).
+
+	* inode.c: getattr, never call getattr on lower files, as this
+          will cause the inum to change.
+
+	* inode.c: rename_reg_file renamed to rename_nondir, as it
+          doesn't matter as long it't not a dir. Removed all
+          rename_dev_file etc.
+
+	* tagged as devel-0-0-15
+
+	* inode.c: added support for chosing support for extended
+          attrs at compile time by XATTR define in mini_fo.h .
+
+	* inode.c: fixed mini_fo_getattr to use mini_fo inode and not
+          lower again, what avoids inode number changes that confused
+          rm again. This is the proper solution.
+
+2005-04-24    <mk@mary>
+
+	* all files: updated Copyright notive to 2005. [devel-0-0-14]
+
+	* inode.c: fixed mini_fo_getattr to not change the inode
+          number, even if lower files change.
+
+	* super.c: fixed a bug that caused deleted base file to show
+          up suddenly after some time, or after creating a special
+          file. The problem was that after some time or after special
+          file creating sync_sb_inodes is called by the vfs, that
+          called our mini_fo_put_inode. There was (wrongly) called
+          __meta_put_lists, that nuked the lists, although the inode
+          was going to continue its life. Moving __meta_put_lists to
+          mini_fo_clear_inode, where an inode is really destroyed,
+          solved the problem.
+
+
+2005-04-23    <mk@mary>
+
+	* state.c, aux.c: more cleaning up and
+          simplifications. [devel-0-0-13]
+
+	* inode.c: implemented mini_fo_getattr, that was required for
+          2.6 because inode_revalidate has been remove there, and the
+	  old "du" bug returned.
+
+
+2005-04-20    <mk@mary>
+
+	* aux.c: get_neg_sto_dentry(): allow to be called for dentries
+          in state UNMODIFIED, NON_EXISTANT _and_ DELETED.
+
+2005-04-19    <mk@mary>
+
+	* Fixed a bug under 2.6 that caused files deleted via mini_fo
+          not to be deleted properly and therefore the fs filled up
+          untill no memory was left. [devel-0-0-12]
+
+	* Added basic hard link support. This means that creating
+          hardlinks will work, but existing ones will be treated as
+          individual files. [devel-0-0-11]
+
+2005-04-17    <mk@mary>
+
+	* Bugfixes
+
+2005-04-13  root  <mk@mary>
+
+	* Added file state.c for the state transition
+          functions. Doesn't work very well yet, though...
+
+2005-04-12    <mk@mary>
+
+	* Porting to 2.6 started, which is easier than expected, also
+          due to Olivier previous work.
+
+2005-04-08    <mk@mary>
+
+	* Fixed the bug that caused du to return invalid sizes of
+          directory trees. The problem was that
+          mini_fo_inode_revalidate didn't always copy the attributes
+          from the base inode properly.
+
+2005-04-01  Markus Klotzbuecher  <mk@chasey>
+
+	* Merged devel branch back to main trunk and updated the
+          RELEASE notes. This will be 0-6-0-pre1.
+
+2005-03-31  Markus Klotzbuecher  <mk@chasey>
+
+	* Fixed some bugs in rename_reg_file, that only showed up in
+          the kernel compile test. Kernel compiles cleanly ontop of
+          mini_fo, now also make mrproper etc. work. Seems pretty stable.
+
+2005-03-28  Markus Klotzbuecher  <mk@chasey>
+
+	* Many, many directory renaming bugfixes and a lot of other
+          cleanup. Dir renaming seems to work relatively stable.
+
+2005-03-22  Markus Klotzbuecher  <mk@chasey>
+
+	* Finished implementing lightweight directory renaming. Some
+          basic testing indicates it works fine.
+	  Next is to implement testcases for the testsuite and confirm
+          everything is really working ok.
+
+2005-03-18  Markus Klotzbuecher  <mk@chasey>
+
+	* Finished implementing meta.c stuff required for directory
+          renaming.
+
+2005-03-17  Markus Klotzbuecher  <mk@chasey>
+
+	* Fixed all compile warnings + an extremly old bug that
+          somehow crept in while reworking the wol stuff to the META
+          system. Turning on -Werror again... :-)
+
+	* Fixed some bugs in the new rename_reg_file function.
+
+	* Rewrote mini_fo rename and split it into several
+          subfunctions, that handle the different types
+          seperately. Rewrote the regular file function aswell, as it
+          was implemented somewhat inefficient.
+
+2005-03-16  Markus Klotzbuecher  <mk@chasey>
+
+	* Implemented new META subsystem, removed old WOL stuff in favor
+	  if it.
+
+	* After some basic testing everything seems ok...
+
+2005-03-11  Markus Klotzbuecher  <mk@chasey>
+
+	* Renaming a non regular file caused trouble because I always
+	  tried to copy the contents. Now I only do this for regular
+	  files. mini_fo_rename still isn't implemented properly, renaming
+	  of device files, symlinks etc. results in a empty regular file
+	  instead of the proper type.
+
+	* Directory renaming suddenly works! What a surprise! I guess
+          this is because renaming is implemented as making a copy and
+          removing the original. Still this might not work
+          everywhere...
+
+2005-03-09  Markus Klotzbuecher  <mk@chasey>
+
+	* Bugfix, when a mini_fo directory that exists in storage
+  	  (state: MODIFIED, CREATED and DEL_REWRITTEN) is deleted, a
+  	  possibly existing WOL file contained in it needs to be
+  	  deleted too.
+
+	* Starting cleanup: defined state names in order to get rid of
+          the state numbers.
+
+2005-03-08  Markus Klotzbuecher  <mk@chasey>
+
+	* Makefile fix, fist_ioctl was built against wrong sources if ARCH=um
+
+	* Fixed a bug in dentry.c, mini_fo_d_hash. In state 4 =
+          DEL_REWRITTEN the hash was calculated from the base dentry,
+          which was wrong and and caused assertions in
+          __mini_fo_hidden_dentry to fail.
+
+2005-02-21    <mk@mary>
+
+	* Implemented directory deleting (inode.c)
+
+	* main.c: made mini_fo_parse_options a little more robust.
+
+2004-12-22    <mk@mary>
+
+	* Makefile cleanup and uml stuff, removed unneccessary files
+
+	* Created a new and hopefully more informative README
+
+	* CHANGELOG: created a new CHANGELOG and added old entries reversely
+
+
+2004-10-24 Gleb Natapov <gleb@nbase.co.il>
+
+	* Fix: owner and group where not correctly copied from base to
+          storage.
+
+
+2004-10-05 Gleb Natapov <gleb@nbase.co.il>
+
+	* Implementation of fsync, fasync and lock mini_fo functions.
+
+
+2004-09-29 Bob Lee <bob@pantasys.com>
+
+	* Fix of a serious pointer bug
+
+
+2004-09-28 Gleb Natapov <gleb@nbase.co.il>
+
+	* Implementation of mini_fo_mknod and mini_fo_rename, support
+          for device files.
+

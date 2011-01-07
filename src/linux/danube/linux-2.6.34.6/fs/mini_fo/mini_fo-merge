@@ -1,0 +1,180 @@
+#!/bin/bash
+#
+# Copyright (C) 2005 Markus Klotzbuecher <mk@creamnet.de>
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version
+# 2 of the License, or (at your option) any later version.
+#
+
+BASE=
+STO=
+HELP=
+DRYRUN=
+VERBOSE=
+TMP="/tmp/"
+META_NAME="META_dAfFgHE39ktF3HD2sr"
+SKIP_DEL_LIST="skip-delete-list.mini_fo-merge"
+
+COMMAND=
+exec_command()
+{
+    if [ x$DRYRUN == "xset" ]; then
+	echo "  would run: $COMMAND"
+    elif ! [ x$DRYRUN == "xset" ]; then
+	if [ x$VERBOSE == "xset" ]; then
+	    echo "  running: $COMMAND"
+	fi
+	eval $COMMAND
+    fi
+}
+
+usage()
+{
+cat <<EOF
+
+USAGE: $0 -b <base dir> -s <storage dir>
+Version 0.1
+
+This script merges the contents of a mini_fo storage file system back
+to the base file system.
+
+!!! Warning: This will modify the base filesystem and can destroy data
+             if used wrongly.
+
+Options:
+     -b <base dir>
+          the directory of the base file system.
+
+     -s <storage dir>
+          the directory of the storage file system.
+
+     -d   dry run, will not change anything and print the commands that
+          would be executed.
+
+     -t   tmp dir for storing temporary file. default: $TMP
+
+     -v   show what operations are performed.
+
+     -h   displays this message.
+
+EOF
+}
+
+# parse parameters
+while getopts hdvt:b:s: OPTS
+  do
+  case $OPTS in
+      h)  HELP="set";;
+      d)  DRYRUN="set";;
+      v)  VERBOSE="set";;
+      b)  BASE="$OPTARG";;
+      s)  STO="$OPTARG";;
+      t)  TMP="$OPTARG";;
+      ?)  usage
+	  exit 1;;
+  esac
+done
+
+if [ "x$HELP" == "xset" ]; then
+    usage
+    exit -1
+fi
+
+if ! [ -d "$BASE" ] || ! [ -d "$STO" ]; then
+    echo -e "$0:\n Error, -s and/or -b argument missing. type $0 -h for help."
+    exit -1;
+fi
+
+# get full paths
+pushd $STO; STO=`pwd`; popd
+pushd $BASE; BASE=`pwd`; popd
+TMP=${TMP%/}
+
+
+cat<<EOF
+###############################################################################
+# mini_fo-merge
+#
+# base dir:       $BASE
+# storage dir:    $STO
+# meta filename:  $META_NAME
+# dry run:        $DRYRUN
+# verbose:        $VERBOSE
+# tmp files:      $TMP
+###############################################################################
+
+EOF
+
+rm $TMP/$SKIP_DEL_LIST
+
+# first process all renamed dirs
+echo "Merging renamed directories..."
+pushd $STO &> /dev/null
+find . -name $META_NAME -type f -print0  | xargs -0 -e grep  -e '^R ' | tr -s ':R' ' ' | while read ENTRY; do
+    echo "entry: $ENTRY"
+    META_FILE=`echo $ENTRY | cut -d ' ' -f 1`
+    OLD_B_DIR=`echo $ENTRY | cut -d ' ' -f 2 | sed -e 's/\///'`
+    NEW_NAME=`echo $ENTRY | cut -d ' ' -f 3`
+    NEW_B_DIR=`echo $META_FILE | sed -e "s/$META_NAME/$NEW_NAME/" | sed -e 's/^\.\///'`
+    echo "META_FILE: $META_FILE"
+    echo "OLD_B_DIR: $OLD_B_DIR"
+    echo "NEW_NAME: $NEW_NAME"
+    echo  "NEW_B_DIR: $NEW_B_DIR"
+
+    pushd $BASE &> /dev/null
+    # remove an existing dir in storage
+    COMMAND="rm -rf $NEW_B_DIR"; exec_command
+    COMMAND="cp -R $OLD_B_DIR $NEW_B_DIR"; exec_command
+    echo ""
+    popd &> /dev/null
+
+    # remember this dir to exclude it from deleting later
+    echo $NEW_B_DIR >> $TMP/$SKIP_DEL_LIST
+done
+
+# delete all whiteouted files from base
+echo -e "\nDeleting whiteout'ed files from base file system..."
+find . -name $META_NAME -type f -print0  | xargs -0 -e grep  -e '^D ' | sed -e 's/:D//' | while read ENTRY; do
+    META_FILE=`echo $ENTRY | cut -d ' ' -f 1`
+    DEL_NAME=`echo $ENTRY | cut -d ' ' -f 2`
+    DEL_FILE=`echo $META_FILE | sed -e "s/$META_NAME/$DEL_NAME/" | sed -e 's/^\.\///'`
+    grep -x $DEL_FILE $TMP/$SKIP_DEL_LIST &> /dev/null
+    if [ $? -ne 0 ]; then
+	pushd $BASE &> /dev/null
+	COMMAND="rm -rf $DEL_FILE"; exec_command
+	popd &> /dev/null
+    else
+	echo "  excluding: $DEL_FILE as in skip-del-list."
+    fi
+done
+
+# create all dirs and update permissions
+echo -e "\nSetting up directory structures in base file system..."
+find . -type d | sed -e 's/^\.\///' | while read DIR; do
+    PERMS=`stat -c %a $DIR`
+    DIR_UID=`stat -c %u $DIR`
+    DIR_GID=`stat -c %g $DIR`
+    pushd $BASE &> /dev/null
+    if ! [ -d $DIR ]; then
+	COMMAND="mkdir -p $DIR"; exec_command
+    fi
+    COMMAND="chmod $PERMS $DIR"; exec_command
+    COMMAND="chown $DIR_UID:$DIR_GID $DIR"; exec_command
+    popd &> /dev/null
+done
+
+# merge all non-directory files
+echo -e "\nMerging all non-directory files...."
+for i in b c p f l s; do
+    find . -type $i | sed -e 's/^\.\///' | grep -v "$META_NAME" | while read FILE; do
+	pushd $BASE #&> /dev/null
+	COMMAND="cp -df $STO/$FILE $BASE/$FILE"; exec_command
+	popd &> /dev/null
+    done
+done
+popd &> /dev/null
+
+#rm $TMP/$SKIP_DEL_LIST
+
+echo "Done!"

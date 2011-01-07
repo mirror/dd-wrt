@@ -1,0 +1,23 @@
+if SOC_LANTIQ_XWAY
+
+menu "Mips Machine"
+
+config LANTIQ_MACH_EASY50812
+	bool "Easy50812"
+	default y
+
+config LANTIQ_MACH_EASY50712
+	bool "Easy50712"
+	default y
+
+config LANTIQ_MACH_EASY4010
+	bool "Easy4010"
+	default y
+
+config LANTIQ_MACH_ARV45XX
+	bool "ARV45XX"
+	default y
+
+endmenu
+
+endif
