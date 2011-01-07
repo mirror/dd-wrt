@@ -1,0 +1,51 @@
+if LANTIQ
+
+config SOC_LANTIQ
+	bool
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select CEVT_R4K
+	select CSRC_R4K
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_MULTITHREADING
+	select SYS_HAS_EARLY_PRINTK
+	select HW_HAS_PCI
+	select ARCH_REQUIRE_GPIOLIB
+	select SWAP_IO_SPACE
+	select MIPS_MACHINE
+
+choice
+	prompt "SoC Type"
+	default SOC_LANTIQ_XWAY
+
+#config SOC_LANTIQ_FALCON
+#	bool "FALCON"
+#	select SOC_LANTIQ
+
+config SOC_LANTIQ_XWAY
+	bool "XWAY"
+	select SOC_LANTIQ
+endchoice
+
+#source "arch/mips/lantiq/falcon/Kconfig"
+source "arch/mips/lantiq/xway/Kconfig"
+
+if EARLY_PRINTK
+choice
+	prompt "Early printk port"
+	default LANTIQ_PROM_ASC1
+	help
+	  Choose which serial port is used, until the console driver is loaded
+
+config LANTIQ_PROM_ASC0
+	bool "ASC0"
+
+config LANTIQ_PROM_ASC1
+	bool "ASC1"
+endchoice
+endif
+
+endif
