@@ -139,7 +139,7 @@ static int
 ar7240_pci_write_config(struct pci_bus *bus,  unsigned int devfn, int where, 
                         int size, uint32_t value)
 {
-    uint32_t flags, tval, addr, mask;
+    unsigned long flags, tval, addr, mask;
 
 	if(devfn)
            return PCIBIOS_DEVICE_NOT_FOUND;
@@ -175,6 +175,37 @@ ar7240_pci_write_config(struct pci_bus *bus,  unsigned int devfn, int where,
     }
     spin_unlock_irqrestore(&ar7100_pci_lock, flags);
     return PCIBIOS_SUCCESSFUL;
+}
+
+void ar724x_pci_write(void __iomem *base, int where, int size, u32 value)
+{
+	unsigned long flags;
+	u32 data;
+	int s;
+
+	spin_lock_irqsave(&ar7100_pci_lock, flags);
+	data = __raw_readl(base + (where & ~3));
+
+	switch (size) {
+	case 1:
+		s = ((where & 3) << 3);
+		data &= ~(0xFF << s);
+		data |= ((value & 0xFF) << s);
+		break;
+	case 2:
+		s = ((where & 2) << 3);
+		data &= ~(0xFFFF << s);
+		data |= ((value & 0xFFFF) << s);
+		break;
+	case 4:
+		data = value;
+		break;
+	}
+
+	__raw_writel(data, base + (where & ~3));
+	/* flush write */
+	(void)__raw_readl(base + (where & ~3));
+	spin_unlock_irqrestore(&ar7100_pci_lock, flags);
 }
 
 struct pci_ops ar7240_pci_ops = {
