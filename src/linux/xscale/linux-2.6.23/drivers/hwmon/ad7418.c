@@ -163,8 +163,10 @@ static int ad7418_detect(struct i2c_adapter *adapter, int address, int kind)
 
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA |
 				     I2C_FUNC_SMBUS_WORD_DATA))
+		{
+		printk(KERN_EMERG "check functionality failed\n");
 		goto exit;
-
+		}
 	/* OK. For now, we presume we have a valid client. We now create the
 	   client structure, even though we cannot fill it completely yet.
 	   But it allows us to access ad7418_{read,write}_value. */
