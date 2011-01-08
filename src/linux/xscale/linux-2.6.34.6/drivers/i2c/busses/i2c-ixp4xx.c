@@ -127,7 +127,7 @@ static int ixp4xx_i2c_probe(struct platform_device *plat_dev)
 	drv_data->algo_data.timeout = 100;
 
 	drv_data->adapter.id = I2C_HW_B_IXP4XX;
-	drv_data->adapter.class = I2C_CLASS_HWMON;
+	drv_data->adapter.class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
 	strlcpy(drv_data->adapter.name, plat_dev->dev.driver->name,
 		sizeof(drv_data->adapter.name));
 	drv_data->adapter.algo_data = &drv_data->algo_data;
@@ -138,8 +138,11 @@ static int ixp4xx_i2c_probe(struct platform_device *plat_dev)
 	gpio_line_config(gpio->sda_pin, IXP4XX_GPIO_IN);
 	gpio_line_set(gpio->scl_pin, 0);
 	gpio_line_set(gpio->sda_pin, 0);
+	printk(KERN_ERR "install %s\n", dev_name(&plat_dev->dev));
 
-	err = i2c_bit_add_bus(&drv_data->adapter);
+	drv_data->adapter.nr = 0;
+	err = i2c_bit_add_numbered_bus(&drv_data->adapter);
+//	err = i2c_bit_add_bus(&drv_data->adapter);
 	if (err) {
 		printk(KERN_ERR "ERROR: Could not install %s\n", dev_name(&plat_dev->dev));
 
