@@ -246,6 +246,10 @@ void start_sysinit(void)
 												 */
 	fprintf(stderr, "Read MAC Addresses from EEPROM\n");
 	FILE *file = fopen(filename, "r");
+	if (!file)
+		    filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-1/1-0051/eeprom";	//for 2.6.34.6
+	FILE *file = fopen(filename, "r");
+
 
 	if (file) {
 		unsigned char buf[20];
@@ -348,8 +352,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -368,8 +372,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -389,8 +393,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -442,8 +446,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -481,6 +485,7 @@ void start_sysinit(void)
 	    || !strcmp(modelname, "Gateworks Avila GW2355")
 	    || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
+		insmod("libata");
 		insmod("pata_ixp4xx_cf");
 	}
 

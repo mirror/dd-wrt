@@ -71,8 +71,8 @@ void deviceID(char *output)
 	// fprintf (stderr, "generate hash\n");
 	doHash(&MD, "/dev/mtdblock/0");
 	doHash(&MD, "/dev/mtdblock0");
-	doHash(&MD,
-	       "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
+	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
+	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-1/1-0051/eeprom");
 	doHash(&MD, "/dev/discs/disc0/part4");
 	md5_end((unsigned char *)key, &MD);
 	int i;
