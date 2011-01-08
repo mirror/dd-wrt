@@ -2268,6 +2268,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	    fopen
 	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
 	     "rb");
+	if (!fp)
+	    fp = fopen
+	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input",
+	     "rb");
+	
 #elif HAVE_LAGUNA
 	int TEMP_MUL = 10;
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
@@ -2320,6 +2325,10 @@ void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 	FILE *fp =
 	    fopen
 	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt",
+	     "rb");
+	if (!fp)
+	    fp = fopen
+	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in1_input",
 	     "rb");
 #endif
 	if (fp == NULL) {
