@@ -168,8 +168,7 @@ static ssize_t show_adc(struct device *dev, struct device_attribute *devattr,
 	struct sensor_device_attribute *attr = to_sensor_dev_attr(devattr);
 	struct ad7418_data *data = ad7418_update_device(dev);
 
-	return sprintf(buf, "%d\n",
-		((data->in[attr->index] >> 6) * 2500 + 512) / 1024);
+	return sprintf(buf, "%d\n",((data->in[attr->index] >> 6) * 564) / 10);
 }
 
 static ssize_t set_temp(struct device *dev, struct device_attribute *devattr,
@@ -246,7 +245,6 @@ static int ad7418_probe(struct i2c_client *client,
 
 	mutex_init(&data->lock);
 	data->type = id->driver_data;
-
 	switch (data->type) {
 	case ad7416:
 		data->adc_max = 0;

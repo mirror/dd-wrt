@@ -15,6 +15,8 @@
 #include <linux/tty.h>
 #include <linux/serial_8250.h>
 #include <linux/slab.h>
+#include <linux/i2c.h>
+#include <linux/i2c/at24.h>
 #include <linux/io.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
@@ -213,6 +215,28 @@ static struct platform_device *ixdp425_devices[] __initdata = {
 	&ixdp425_spi_controller
 };
 
+static struct at24_platform_data avila_eeprom_info = {
+	.byte_len	= 1024,
+	.page_size	= 16,
+	.flags		= AT24_FLAG_READONLY,
+//	.setup		= at24_setup,
+};
+
+static struct i2c_board_info __initdata avila_i2c_board_info[] = {
+	{
+		I2C_BOARD_INFO("ds1672", 0x68),
+	},
+	{
+		I2C_BOARD_INFO("ad7418", 0x28),
+	},
+	{
+		I2C_BOARD_INFO("24c08", 0x51),
+		.platform_data	= &avila_eeprom_info
+	},
+};
+
+
+
 static void __init ixdp425_init(void)
 {
 	ixp4xx_sys_init();
@@ -243,6 +267,8 @@ static void __init ixdp425_init(void)
 	}
 
 	platform_add_devices(ixdp425_devices, ARRAY_SIZE(ixdp425_devices));
+		i2c_register_board_info(0, avila_i2c_board_info,
+				ARRAY_SIZE(avila_i2c_board_info));
 }
 
 #ifdef CONFIG_ARCH_IXDP425

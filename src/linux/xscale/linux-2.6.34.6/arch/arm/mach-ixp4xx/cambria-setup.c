@@ -15,6 +15,9 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/device.h>
+#include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
+#include <linux/i2c/at24.h>
 #include <linux/serial.h>
 #include <linux/tty.h>
 #include <linux/serial_8250.h>
@@ -198,6 +201,25 @@ static struct platform_device *cambria_devices[] __initdata = {
 	&cambria_leds_mem
 };
 
+static struct at24_platform_data cambria_eeprom_info = {
+	.byte_len	= 1024,
+	.page_size	= 16,
+	.flags		= AT24_FLAG_READONLY,
+//	.setup		= at24_setup,
+};
+
+static struct i2c_board_info __initdata cambria_i2c_board_info[] = {
+	{
+		I2C_BOARD_INFO("ds1672", 0x68),
+	},
+	{
+		I2C_BOARD_INFO("ad7418", 0x28),
+	},
+	{
+		I2C_BOARD_INFO("24c08", 0x51),		
+		.platform_data	= &cambria_eeprom_info
+	},
+};
 
 
 static void __init cambria_init(void)
@@ -224,6 +246,7 @@ static void __init cambria_init(void)
   platform_device_register(&cambria_usb0_device);
   platform_device_register(&cambria_usb1_device);
   platform_device_register(&cambria_pata);
+  i2c_register_board_info(0, cambria_i2c_board_info, ARRAY_SIZE(cambria_i2c_board_info));
 }
 
 

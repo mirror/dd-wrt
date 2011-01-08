@@ -18,6 +18,8 @@
 #include <linux/tty.h>
 #include <linux/serial_8250.h>
 #include <linux/slab.h>
+#include <linux/i2c.h>
+#include <linux/i2c/at24.h>
 #include <linux/delay.h>
 
 #include <asm/types.h>
@@ -345,6 +347,25 @@ eeprom_read(int addr, cyg_uint8 *buf, int nbytes)
 
 
 
+static struct at24_platform_data avila_eeprom_info = {
+	.byte_len	= 1024,
+	.page_size	= 16,
+	.flags		= AT24_FLAG_READONLY,
+//	.setup		= at24_setup,
+};
+
+static struct i2c_board_info __initdata avila_i2c_board_info[] = {
+	{
+		I2C_BOARD_INFO("ds1672", 0x68),
+	},
+	{
+		I2C_BOARD_INFO("ad7418", 0x28),
+	},
+	{
+		I2C_BOARD_INFO("24c08", 0x51),
+		.platform_data	= &avila_eeprom_info
+	},
+};
 
 static void __init avila_init(void)
 {
@@ -371,6 +392,8 @@ static void __init avila_init(void)
 	avila_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_16M - 1;	
 	}
 	platform_add_devices(avila_devices, ARRAY_SIZE(avila_devices));
+		i2c_register_board_info(0, avila_i2c_board_info,
+				ARRAY_SIZE(avila_i2c_board_info));
 
 }
 
@@ -400,7 +423,7 @@ MACHINE_END
  /*
   * Loft is functionally equivalent to Avila except that it has a
   * different number for the maximum PCI devices.  The MACHINE
-  * structure below is identical to Avila except for the comment.
+ * structure below is identical to Avila except for the comment.
   */
 #ifdef CONFIG_MACH_LOFT
 MACHINE_START(LOFT, "Giant Shoulder Inc Loft board")
