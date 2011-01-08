@@ -577,7 +577,7 @@ int internal_getRouterBrand()
 	FILE *file = fopen(filename, "r");
 	if (!file)
 	{
-	    filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-1/1-0051/eeprom";	//for 2.6.34.6
+	    filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	//for 2.6.34.6
 	    file = fopen(filename, "r");
 	}
 	if (file)		// new detection scheme
