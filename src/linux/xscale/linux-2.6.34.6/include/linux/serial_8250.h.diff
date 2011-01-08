@@ -1,0 +1,10 @@
+--- a/include/linux/serial_8250.h
++++ b/include/linux/serial_8250.h
+@@ -27,6 +27,7 @@ struct plat_serial8250_port {
+ 	void            *private_data;
+ 	unsigned char	regshift;	/* register shift */
+ 	unsigned char	iotype;		/* UPIO_* */
++	unsigned int rw_delay;	/* udelay for slower busses IXP4XX Expansion Bus */
+ 	unsigned char	hub6;
+ 	upf_t		flags;		/* UPF_* flags */
+ 	unsigned int	type;		/* If UPF_FIXED_TYPE */
