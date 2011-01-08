@@ -246,7 +246,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
 	arch_decomp_setup();
 
 	
-	printf("DD-WRT LZMA Loader v1.0\nArch ID is %d\n",arch_id);
+	printf("DD-WRT LZMA Loader v1.1\nArch ID is %d\n",arch_id);
 	printf("Uncompressing Linux");
 	lzma_unzip();
 	printf("\ndone, booting the kernel.\n");
