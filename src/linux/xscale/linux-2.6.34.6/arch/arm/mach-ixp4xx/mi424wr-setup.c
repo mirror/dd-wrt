@@ -31,6 +31,7 @@
 #include <linux/types.h>
 #include <linux/memory.h>
 #include <linux/leds.h>
+#include <linux/spi/spi_gpio_old.h>
 
 #include <asm/setup.h>
 #include <asm/irq.h>
@@ -51,20 +52,33 @@
 #define MI424WR_KSSPI_RXD		3
 
 
-static struct ixp4xx_spi_pins ixdp425_spi_gpio_pins = {
-	.spis_pin       = MI424WR_KSSPI_SELECT,
-	.spic_pin       = MI424WR_KSSPI_CLOCK,
-	.spid_pin       = MI424WR_KSSPI_TXD,
-	.spiq_pin       = MI424WR_KSSPI_RXD
+static int mi424wr_spi_boardinfo_setup(struct spi_board_info *bi,
+		struct spi_master *master, void *data)
+{
+
+	strlcpy(bi->modalias, "spi-ks8995", sizeof(bi->modalias));
+
+	bi->max_speed_hz = 5000000 /* Hz */;
+	bi->bus_num = master->bus_num;
+	bi->mode = SPI_MODE_0;
+
+	return 0;
+}
+
+static struct spi_gpio_platform_data mi424wr_spi_bus_data = {
+	.pin_cs			= MI424WR_KSSPI_SELECT,
+	.pin_clk		= MI424WR_KSSPI_CLOCK,
+	.pin_miso		= MI424WR_KSSPI_RXD,
+	.pin_mosi		= MI424WR_KSSPI_TXD,
+	.cs_activelow		= 1,
+	.no_spi_delay		= 1,
+	.boardinfo_setup	= mi424wr_spi_boardinfo_setup,
 };
 
-static struct platform_device ixdp425_spi_controller = {
-    .name               = "IXP4XX-SPI",
-	.id                 = 0,
-	.dev                = {
-		.platform_data  = &ixdp425_spi_gpio_pins,
-	},
-	.num_resources      = 0
+static struct platform_device mi424wr_spi_bus = {
+	.name		= "spi-ixp4xx",
+	.id		= 0,
+	.dev.platform_data = &mi424wr_spi_bus_data,
 };
 
 /*
@@ -205,7 +219,7 @@ static void mi424wr_latch_set_led(u8 bit, enum led_brightness value)
 static struct platform_device *mi424wr_devices[] __initdata = {
 	&mi424wr_uart_device,
 	&mi424wr_flash,
-	&ixdp425_spi_controller,
+	&mi424wr_spi_bus,
 };
 
 static void __init mi424wr_init(void)

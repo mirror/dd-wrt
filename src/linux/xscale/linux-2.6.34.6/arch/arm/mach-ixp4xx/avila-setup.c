@@ -21,6 +21,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c/at24.h>
 #include <linux/delay.h>
+#include <linux/spi/spi_gpio_old.h>
 
 #include <asm/types.h>
 #include <asm/setup.h>
@@ -61,38 +62,57 @@ static struct platform_device avila_flash = {
 #define IXDP425_GW2355_KSSPI_RXD	0
 
 
-static struct ixp4xx_spi_pins ixdp425_spi_gpio_pins = {
-	.spis_pin       = IXDP425_KSSPI_SELECT,
-	.spic_pin       = IXDP425_KSSPI_CLOCK,
-	.spid_pin       = IXDP425_KSSPI_TXD,
-	.spiq_pin       = IXDP425_KSSPI_RXD
+
+static int avila_spi_boardinfo_setup(struct spi_board_info *bi,
+		struct spi_master *master, void *data)
+{
+
+	strlcpy(bi->modalias, "spi-ks8995", sizeof(bi->modalias));
+
+	bi->max_speed_hz = 5000000 /* Hz */;
+	bi->bus_num = master->bus_num;
+	bi->mode = SPI_MODE_0;
+
+	return 0;
+}
+
+static struct spi_gpio_platform_data avila_spi_bus_data = {
+	.pin_cs			= IXDP425_KSSPI_SELECT,
+	.pin_clk		= IXDP425_KSSPI_CLOCK,
+	.pin_miso		= IXDP425_KSSPI_RXD,
+	.pin_mosi		= IXDP425_KSSPI_TXD,
+	.cs_activelow		= 1,
+	.no_spi_delay		= 1,
+	.boardinfo_setup	= avila_spi_boardinfo_setup,
 };
 
-static struct platform_device ixdp425_spi_controller = {
-    .name               = "IXP4XX-SPI",
-	.id                 = 0,
-	.dev                = {
-		.platform_data  = &ixdp425_spi_gpio_pins,
+static struct spi_gpio_platform_data avilagw2355_spi_bus_data = {
+	.pin_cs			= IXDP425_GW2355_KSSPI_SELECT,
+	.pin_clk		= IXDP425_GW2355_KSSPI_CLOCK,
+	.pin_miso		= IXDP425_GW2355_KSSPI_RXD,
+	.pin_mosi		= IXDP425_GW2355_KSSPI_TXD,
+	.cs_activelow		= 1,
+	.no_spi_delay		= 1,
+	.boardinfo_setup	= avila_spi_boardinfo_setup,
+};
+
+static struct platform_device avila_spi_bus = {
+	.name		= "spi-ixp4xx",
+	.id		= 0,
+	.dev		= {
+		.platform_data = &avila_spi_bus_data,
 	},
-	.num_resources      = 0
 };
 
-
-static struct ixp4xx_spi_pins ixdp425_gw2355_spi_gpio_pins = {
-	.spis_pin       = IXDP425_GW2355_KSSPI_SELECT,
-	.spic_pin       = IXDP425_GW2355_KSSPI_CLOCK,
-	.spid_pin       = IXDP425_GW2355_KSSPI_TXD,
-	.spiq_pin       = IXDP425_GW2355_KSSPI_RXD
-};
-
-static struct platform_device ixdp425_gw2355_spi_controller = {
-    .name               = "IXP4XX-SPI-GW2355",
-	.id                 = 0,
-	.dev                = {
-		.platform_data  = &ixdp425_gw2355_spi_gpio_pins,
+static struct platform_device avilagw2355_spi_bus = {
+	.name		= "spi-ixp4xx-gw2355",
+	.id		= 0,
+	.dev		= {
+		.platform_data = &avilagw2355_spi_bus_data,
 	},
-	.num_resources      = 0
 };
+
+
 
 
 static struct ixp4xx_i2c_pins avila_i2c_gpio_pins = {
@@ -152,14 +172,41 @@ static struct platform_device avila_uart = {
 	.resource		= avila_uart_resources
 };
 
+static struct resource avila_pata_resources[] = {
+	{
+		.flags	= IORESOURCE_MEM
+	},
+	{
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.name	= "intrq",
+		.start	= IRQ_IXP4XX_GPIO12,
+		.end	= IRQ_IXP4XX_GPIO12,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct ixp4xx_pata_data avila_pata_data = {
+	.cs0_bits	= 0xbfff0043,
+	.cs1_bits	= 0xbfff0043,
+};
+
+static struct platform_device avila_pata = {
+	.name			= "pata_ixp4xx_cf",
+	.id			= 0,
+	.dev.platform_data      = &avila_pata_data,
+	.num_resources		= ARRAY_SIZE(avila_pata_resources),
+	.resource		= avila_pata_resources,
+};
 
 
 static struct platform_device *avila_devices[] __initdata = {
 	&avila_i2c_controller,
 	&avila_flash,
 	&avila_uart,
-	&ixdp425_spi_controller,
-	&ixdp425_gw2355_spi_controller
+	&avila_spi_bus,
+	&avilagw2355_spi_bus,
 };
 
 
@@ -394,6 +441,16 @@ static void __init avila_init(void)
 	platform_add_devices(avila_devices, ARRAY_SIZE(avila_devices));
 		i2c_register_board_info(0, avila_i2c_board_info,
 				ARRAY_SIZE(avila_i2c_board_info));
+	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
+	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
+
+	avila_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(2);
+	avila_pata_resources[1].end = IXP4XX_EXP_BUS_END(2);
+
+	avila_pata_data.cs0_cfg = IXP4XX_EXP_CS1;
+	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
+
+	platform_device_register(&avila_pata);
 
 }
 
