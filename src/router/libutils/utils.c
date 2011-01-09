@@ -585,7 +585,7 @@ int internal_getRouterBrand()
 		    
 		char *gwid;
 		char temp[64];
-		int ret = fread(gwid, 40, 1, file);
+		int ret = fread(temp, 40, 1, file);
 		if (ret < 1) {
 			fclose(file);
 			goto old_way;
