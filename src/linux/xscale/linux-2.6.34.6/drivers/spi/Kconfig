@@ -53,6 +53,15 @@ if SPI_MASTER
 
 comment "SPI Master Controller Drivers"
 
+config SPI_KS8995
+	tristate "Micrel/Kendin KS8995 Ethernet switch"
+	depends on SPI
+
+config SPI_IXP4XX
+	tristate "IXP4XX SPI Controler"
+	depends on SPI
+
+
 config SPI_ATMEL
 	tristate "Atmel SPI Controller"
 	depends on (ARCH_AT91 || AVR32)
