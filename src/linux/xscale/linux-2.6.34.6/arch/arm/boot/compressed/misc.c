@@ -230,7 +230,7 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
 	tmp = (unsigned char *) (((unsigned long)input_data_end) - 4);
 	output_ptr = get_unaligned_le32(tmp);
 
-	printf("DD-WRT LZMA Loader v1.0\nArch ID is %d\n",arch_id);
+	printf("DD-WRT LZMA Loader v1.2\nArch ID is %d\n",arch_id);
 	putstr("Uncompressing Linux...");
 	do_decompress(input_data, input_data_end - input_data,
 			output_data, error);
