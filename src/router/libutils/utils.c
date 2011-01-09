@@ -582,16 +582,17 @@ int internal_getRouterBrand()
 	}
 	if (file)		// new detection scheme
 	{
-		fseek(file, 32, SEEK_SET);
-		char gwid[9];
-
-		gwid[8] = 0;
-		int ret = fread(gwid, 8, 1, file);
-
+		    
+		char *gwid;
+		char temp[64];
+		int ret = fread(gwid, 40, 1, file);
 		if (ret < 1) {
 			fclose(file);
 			goto old_way;
 		}
+		gwid=&temp[32];
+		gwid[8] = 0;
+		fprintf(stderr,"id is %s\n",gwid);
 		fclose(file);
 		if (!strncmp(gwid, "GW2347", 6)) {
 			setRouter("Gateworks Avila GW2347");
