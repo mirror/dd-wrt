@@ -142,6 +142,7 @@ void start_sysinit(void)
 				mac[17] = 0;
 				eval("ifconfig", "eth2", "hw", "ether", mac);
 				nvram_set("et0macaddr_safe", mac);
+				nvram_set("et0macaddr", mac);
 				break;
 			}
 		}
