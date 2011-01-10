@@ -681,67 +681,71 @@ void reset_hwaddr(char *ifname)
 				eval("event", "5", "1", "15");
 			}
 		}
+		if (strlen(nvram_safe_get("et0macaddr")) == 0) {
+			char *def = nvram_get("et0macaddr_safe");
+			if (!def)
+				def = nvram_safe_get("lan_hwaddr");
 #ifdef HAVE_RB500
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_XSCALE
 #ifndef HAVE_GATEWORX
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #endif
 #ifdef HAVE_MAGICBOX
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_LAGUNA
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_RB600
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_FONERA
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_RT2880
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_LS2
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_LS5
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_SOLO51
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_WHRAG108
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_PB42
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_LSX
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_DANUBE
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_STORM
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_OPENRISC
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_ADM5120
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_TW6600
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_CA8
-		nvram_set("et0macaddr", nvram_safe_get("lan_hwaddr"));
+			nvram_set("et0macaddr", def);
 #endif
+		}
 	}
-
 	close(s);
 
 }
@@ -1228,10 +1232,12 @@ void start_lan(void)
 #endif
 #ifdef HAVE_LAGUNA
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
+		nvram_setz(lan_ifnames,
+			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
+		nvram_setz(lan_ifnames,
+			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -1809,8 +1815,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2915,44 +2921,53 @@ void start_wan(int status)
 			if (strlen(nvram_safe_get("3gnmvariant"))) {
 				int netmode;
 				int netmodetoggle;
-				netmode=atoi(nvram_default_get("wan_conmode","0"));
+				netmode =
+				    atoi(nvram_default_get("wan_conmode", "0"));
 				if (netmode == 5) {
-					if (strlen(nvram_safe_get("3gnetmodetoggle"))) {
-						netmodetoggle=atoi(nvram_safe_get("3gnetmodetoggle"));
-					if (netmodetoggle == 1) {
-						// 2g
-						netmode=2;
-						nvram_set ("3gnetmodetoggle","0");
+					if (strlen
+					    (nvram_safe_get("3gnetmodetoggle")))
+					{
+						netmodetoggle =
+						    atoi(nvram_safe_get
+							 ("3gnetmodetoggle"));
+						if (netmodetoggle == 1) {
+							// 2g
+							netmode = 2;
+							nvram_set
+							    ("3gnetmodetoggle",
+							     "0");
+						} else {
+							// auto
+							netmode = 0;
+							nvram_set
+							    ("3gnetmodetoggle",
+							     "1");
 						}
-					else{
+					} else {
 						// auto
-						netmode=0;
-						nvram_set ("3gnetmodetoggle","1");
-						}
+						netmode = 0;
+						nvram_set("3gnetmodetoggle",
+							  "1");
 					}
-					else{
-						// auto
-						netmode=0;
-						nvram_set ("3gnetmodetoggle","1");
-						}
-					}
+				}
 				sysprintf
-					("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out\n",
-					nvram_safe_get("3gnmvariant"), netmode, controldevice);
-				printf
-					("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"),netmode);
-			}
-
-			// Wait for device to attach to the provider network
-			int retcgatt=0;
-			retcgatt=sysprintf
-			    ("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1\n",
+				    ("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out\n",
+				     nvram_safe_get("3gnmvariant"), netmode,
 				     controldevice);
+				printf
+				    ("3g setting netmode with variant %s to mode %d\n",
+				     nvram_safe_get("3gnmvariant"), netmode);
+			}
+			// Wait for device to attach to the provider network
+			int retcgatt = 0;
+			retcgatt = sysprintf
+			    ("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1\n",
+			     controldevice);
 			// if (retcgatt == 0) 
-					// {
-					// nvram_set("3g_fastdial", "1");
-					// return (5);
-					// }
+			// {
+			// nvram_set("3g_fastdial", "1");
+			// return (5);
+			// }
 			if (strlen(nvram_safe_get("wan_apn")))
 				if (!nvram_match("wan_dial", "2"))
 					sysprintf
