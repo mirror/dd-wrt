@@ -87,6 +87,7 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure ETH0 to %s\n", mac);
 		nvram_set("et0macaddr_safe", mac);
+		nvram_set("et0macaddr", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		fread(&buf[6], 6, 1, fp);
 		for (i = 0; i < 12; i++)

@@ -228,6 +228,7 @@ void start_sysinit(void)
 			copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure IXP0 to %s\n", mac);
 		nvram_set("et0macaddr_safe", mac);
+		nvram_set("et0macaddr", mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
 		fseek(file, 0x43b, SEEK_SET);
 		fread(&buf[6], 6, 1, file);
@@ -267,6 +268,7 @@ void start_sysinit(void)
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
 			copy[2], copy[3], copy[4], copy[5]);
 		nvram_set("et0macaddr_safe", mac);
+		nvram_set("et0macaddr", mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7],
 			copy[8], copy[9], copy[10], copy[11]);
@@ -324,6 +326,7 @@ void start_sysinit(void)
 				copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure IXP0 to %s\n", mac);
 			nvram_set("et0macaddr_safe", mac);
+			nvram_set("et0macaddr", mac);
 			eval("ifconfig", "ixp0", "hw", "ether", mac);
 			fseek(file, 0x1f818, SEEK_SET);
 			fread(&buf[6], 6, 1, file);
@@ -356,6 +359,9 @@ void start_sysinit(void)
 			nvram_set("et0macaddr_safe",
 				  ether_etoa((unsigned char *)ifr.
 					     ifr_hwaddr.sa_data, eabuf));
+			nvram_set("et0macaddr",
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -374,6 +380,9 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
+			nvram_set("et0macaddr",
 				  ether_etoa((unsigned char *)ifr.
 					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
@@ -397,6 +406,9 @@ void start_sysinit(void)
 			nvram_set("et0macaddr_safe",
 				  ether_etoa((unsigned char *)ifr.
 					     ifr_hwaddr.sa_data, eabuf));
+			nvram_set("et0macaddr",
+				  ether_etoa((unsigned char *)ifr.
+					     ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -416,6 +428,9 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe",
 			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
 				     eabuf));
+		nvram_set("et0macaddr",
+			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				     eabuf));
 		close(s);
 	}
 #else
@@ -431,6 +446,9 @@ void start_sysinit(void)
 		strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		nvram_set("et0macaddr_safe",
+			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				     eabuf));
+		nvram_set("et0macaddr",
 			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
 				     eabuf));
 		close(s);
