@@ -237,6 +237,7 @@ void start_sysinit(void)
 				strcpy(lanmac, mac);
 				eval("ifconfig", "eth0", "hw", "ether", mac);
 				nvram_set("et0macaddr_safe", mac);
+				nvram_set("et0macaddr", mac);
 				if (haswan)
 					break;
 			}
@@ -248,6 +249,7 @@ void start_sysinit(void)
 				mac[17] = 0;
 				eval("ifconfig", "eth1", "hw", "ether", mac);
 				nvram_set("et0macaddr_safe", mac);
+				nvram_set("et0macaddr", mac);
 				if (haslan)
 					break;
 			}
