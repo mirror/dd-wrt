@@ -552,21 +552,21 @@ int main(int argc, char **argv)
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
 	fprintf(fp,
-		"KMT-WAS %s (c) 2010 KMT GmbH\nRelease: "
+		"KMT-WAS %s (c) 2011 KMT GmbH\nRelease: "
 		BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
 #ifdef DIST
 	if (strlen(DIST) > 0)
 		fprintf(fp,
-			"DD-WRT v24-sp2 %s (c) 2010 NewMedia-NET GmbH\nRelease: "
+			"DD-WRT v24-sp2 %s (c) 2011 NewMedia-NET GmbH\nRelease: "
 			BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 	else
 		fprintf(fp,
-			"DD-WRT v24-sp2 custom (c) 2010 NewMedia-NET GmbH\nRelease: "
+			"DD-WRT v24-sp2 custom (c) 2011 NewMedia-NET GmbH\nRelease: "
 			BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
 	fprintf(fp,
-		"DD-WRT v24-sp2 custom (c) 2010 NewMedia-NET GmbH\nRelease: "
+		"DD-WRT v24-sp2 custom (c) 2011 NewMedia-NET GmbH\nRelease: "
 		BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #endif
