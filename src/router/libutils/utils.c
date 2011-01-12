@@ -713,7 +713,7 @@ int internal_getRouterBrand()
 	setRouter("Airlink 101 AR690W");
 	return ROUTER_BOARD_AR690W;
 #elif HAVE_RT15N
-	setRouter("Asus-RT15N");
+	setRouter("Asus RT-N15");
 	return ROUTER_BOARD_RT15N;
 #elif HAVE_BR6574N
 	setRouter("Edimax BR-6574N");
