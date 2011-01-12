@@ -34,7 +34,7 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fPIC 
 LDFLAGS += -L.
-OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
+OBJS := utils.o shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5.save md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
 WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
@@ -208,6 +208,9 @@ ifeq ($(CONFIG_AR670W),y)
 endif
 ifeq ($(CONFIG_AR690W),y)
   CFLAGS += -DHAVE_AR690W
+endif
+ifeq ($(CONFIG_RT15N),y)
+  CFLAGS += -DHAVE_RT15N
 endif
 ifeq ($(CONFIG_BR6574N),y)
   CFLAGS += -DHAVE_BR6574N
