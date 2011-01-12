@@ -242,6 +242,7 @@ void start_sysinit(void)
 		sysprintf("mii_mgr -s -p 30 -r 1 -v 0x2f00");
 		sysprintf("mii_mgr -s -p 30 -r 2 -v 0x0030");
 #elif HAVE_AR690W
+#elif HAVE_RT15N
 #elif HAVE_BR6574N
 #elif HAVE_F5D8235
 		sysprintf("switch reg w 14 405555");
@@ -409,6 +410,7 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 70 ffff417e");
 #elif HAVE_BR6574N
 #elif HAVE_AR690W
+#elif HAVE_RT15N
 #elif HAVE_AR670W
 #elif HAVE_F5D8235
 #else
