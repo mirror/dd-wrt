@@ -151,6 +151,9 @@ endif
 ifeq ($(CONFIG_RT10N),y)
 CFLAGS += -DHAVE_RT10N
 endif
+ifeq ($(CONFIG_RT15N),y)
+CFLAGS += -DHAVE_RT15N
+endif
 ifeq ($(CONFIG_LAGUNA),y)
 CFLAGS += -DHAVE_LAGUNA
 endif

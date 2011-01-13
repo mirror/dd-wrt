@@ -587,6 +587,8 @@ void period_check(int sig)
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_ASUS_RTN10PLUS) {
 		val = get_gpio(10) << 10;
+	} else if (brand == ROUTER_ASUS_RT15N) {
+		val = get_gpio(12) << 12;
 	} else if (brand == ROUTER_BOARD_DIR615D) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_ESR6650) {
@@ -652,6 +654,9 @@ void period_check(int sig)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
 #elif defined(HAVE_RT10N)
+	sesgpio = 0x100;
+	val |= get_gpio(0);	//aoss pushbutton
+#elif defined(HAVE_RT15N)
 	sesgpio = 0x100;
 	val |= get_gpio(0);	//aoss pushbutton
 #elif defined(HAVE_F5D8235)
