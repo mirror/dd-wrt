@@ -66,6 +66,7 @@ extern unsigned int mips_hpt_frequency;
 extern u32 mips_cpu_feq;
 
 #define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5)
+extern void ralink_gpio_control(int gpio,int level);
 
 void mips_timer_interrupt(void)
 {

@@ -108,6 +108,7 @@ obj-$(CONFIG_WATCHDOG_RTAS) += wdrtas.o
 
 # SUPERH (sh + sh64) Architecture
 obj-$(CONFIG_SH_WDT) += shwdt.o
+obj-y += ralink_wdt.o
 
 # SPARC Architecture
 

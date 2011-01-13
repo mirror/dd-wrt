@@ -33,8 +33,16 @@ config  RTL8366_SWITCH
         bool "100PHY"
         depends on !RALINK_RT3052
 
+config  RTL8366RB_SWITCH
+        bool "100PHY"
+        depends on RALINK_RT3052
+
 config  AR690W
         bool "RTL config for AR690W"
+        depends on RTL8366_SWITCH
+
+config  RT15N
+        bool "RTL config for Asus RT-15N"
         depends on RTL8366_SWITCH
 
 config  MAC_TO_MAC_MODE

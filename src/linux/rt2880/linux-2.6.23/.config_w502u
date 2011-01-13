@@ -1,3 +1,7 @@
+# CONFIG_RTL8366RB_SWITCH is not set
+# CONFIG_RT2860V2_AP_VIDEO_TURBINE is not set
+CONFIG_RT2860V2_80211N_DRAFT3=y
+# CONFIG_RT2860V2_RT3XXX_STA_ANTENNA_DIVERSITY is not set
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.17

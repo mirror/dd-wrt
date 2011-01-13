@@ -442,7 +442,7 @@ dev_nvram_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsign
 {
 	if (cmd != NVRAM_MAGIC)
 	{
-	    printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
+//	    printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
 		return -EINVAL;
 	}
 	return nvram_commit();
