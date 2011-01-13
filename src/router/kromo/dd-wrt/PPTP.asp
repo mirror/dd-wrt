@@ -250,7 +250,7 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hstatus_vpn.right1"); %></dd>
 							<dd class="definition"><% tran("hstatus_vpn.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('Hstatus_VPN.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HPPTP.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
