@@ -3980,6 +3980,7 @@ int crypt_make_salt(char *p, int cnt, int x)
 	return x;
 }
 
+#include <crypt.h>
 #define MD5_OUT_BUFSIZE 36
 
 
