@@ -219,6 +219,9 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("wl0gpio0", "2");
 		nvram_set("wl0gpio1", "0");
 		break;
+	case ROUTER_ASUS_WL700GE:
+		nvram_set("wl0gpio0", "135");
+		break;
 	case ROUTER_NETGEAR_WNR3500L:
 		nvram_set("ledbh0", "7");
 		break;
