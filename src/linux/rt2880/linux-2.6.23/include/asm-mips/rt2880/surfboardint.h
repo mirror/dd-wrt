@@ -25,20 +25,20 @@
 #define _SURFBOARDINT_H
 
 /* Number of IRQ supported on hw interrupt 0. */
-#if defined (CONFIG_RT2880_FPGA) || defined (CONFIG_RT2880_ASIC)
+#if defined (CONFIG_RALINK_RT2880)
 #define RALINK_CPU_TIMER_IRQ 	 6	/* mips timer */
 #define SURFBOARDINT_GPIO	 7	/* GPIO */
 #define SURFBOARDINT_UART1	 8	/* UART Lite */
 #define SURFBOARDINT_UART	 9	/* UART */
 #define SURFBOARDINT_TIMER0	 10	/* timer0 */
-#else
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883)
 #define RALINK_CPU_TIMER_IRQ 	 5	/* mips timer */
 #define SURFBOARDINT_GPIO	 6	/* GPIO */
 #define SURFBOARDINT_DMA	 7	/* DMA */
 #define SURFBOARDINT_NAND	 8	/* NAND */
 #define SURFBOARDINT_PC	 	 9	/* Performance counter */
 #define SURFBOARDINT_I2S 	 10	/* I2S */
-#define SURFBOARDINT_ESW 	 11	/* ESW */
+#define SURFBOARDINT_ESW	 17	/* ESW */
 #define SURFBOARDINT_UART1	 12 	/* UART Lite */
 #define SURFBOARDINT_SYSCTL 	 32	/* SYSCTL */
 #define SURFBOARDINT_TIMER0	 33	/* timer0 */
@@ -46,6 +46,22 @@
 #define SURFBOARDINT_ILL_ACC	 35	/* illegal access */
 #define SURFBOARDINT_PCM	 36	/* PCM */
 #define SURFBOARDINT_UART	 37	/* UART */
+#elif defined (CONFIG_RALINK_RT3883)
+#define RALINK_CPU_TIMER_IRQ     5      /* mips timer */
+#define SURFBOARDINT_GPIO        6      /* GPIO */
+#define SURFBOARDINT_DMA         7      /* DMA */
+#define SURFBOARDINT_NAND        8      /* NAND */
+#define SURFBOARDINT_PC          9      /* Performance counter */
+#define SURFBOARDINT_I2S         10     /* I2S */
+#define SURFBOARDINT_UART1       12     /* UART Lite */
+#define SURFBOARDINT_PCI         18     /* PCI */
+#define SURFBOARDINT_UDEV        19     /* USB Device */
+#define SURFBOARDINT_UHST        20     /* USB Host */
+#define SURFBOARDINT_SYSCTL      32     /* SYSCTL */
+#define SURFBOARDINT_TIMER0      33     /* timer0 */
+#define SURFBOARDINT_ILL_ACC     35     /* illegal access */
+#define SURFBOARDINT_PCM         36     /* PCM */
+#define SURFBOARDINT_UART        37     /* UART */
 #endif
 
 #define SURFBOARDINT_END 	 64

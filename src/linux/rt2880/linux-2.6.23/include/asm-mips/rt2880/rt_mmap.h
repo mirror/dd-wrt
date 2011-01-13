@@ -1,9 +1,9 @@
 /**************************************************************************
  *
  *  BRIEF MODULE DESCRIPTION
- *     serial port definition for Ralink RT2880 solution
+ *     register definition for Ralink RT-series SoC
  *
- *  Copyright 2007 Ralink Inc. (steven_liu@ralinktech.com.tw)
+ *  Copyright 2007 Ralink Inc.
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -113,7 +113,7 @@
 #define RALINK_FE_RST			(1<<18)
 #define RALINK_PCM_RST			(1<<19)
 
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883)
+#elif defined (CONFIG_RALINK_RT3052) 
 
 #define RALINK_SYSCTL_BASE		0xB0000000
 #define RALINK_TIMER_BASE		0xB0000100
@@ -170,6 +170,185 @@
 #define RALINK_OTG_RST			(1<<22)
 #define RALINK_SW_RST			(1<<23)
 #define RALINK_EPHY_RST			(1<<24)
+
+#elif defined (CONFIG_RALINK_RT3352)
+
+#define RALINK_SYSCTL_BASE		0xB0000000
+#define RALINK_TIMER_BASE		0xB0000100
+#define RALINK_INTCL_BASE		0xB0000200
+#define RALINK_MEMCTRL_BASE		0xB0000300
+#define RALINK_UART_BASE		0x10000500
+#define RALINK_PIO_BASE			0xB0000600
+#define RALINK_I2C_BASE			0xB0000900
+#define RALINK_I2S_BASE			0xB0000A00
+#define RALINK_SPI_BASE			0xB0000B00
+#define RALINK_UART_LITE_BASE		0x10000C00
+#define RALINK_PCM_BASE			0xB0002000
+#define RALINK_GDMA_BASE		0xB0002800
+#define RALINK_FRAME_ENGINE_BASE	0xB0100000
+#define RALINK_ETH_SW_BASE		0xB0110000
+#define RALINK_USB_DEV_BASE		0x10120000
+#define RALINK_11N_MAC_BASE		0xB0180000
+#define RALINK_USB_HOST_BASE		0x101C0000
+
+#define RALINK_MCNT_CFG			0xB0000D00
+#define RALINK_COMPARE			0xB0000D04
+#define RALINK_COUNT			0xB0000D08
+
+//Interrupt Controller
+#define RALINK_INTCTL_SYSCTL		(1<<0)
+#define RALINK_INTCTL_TIMER0		(1<<1)
+#define RALINK_INTCTL_WDTIMER		(1<<2)
+#define RALINK_INTCTL_ILL_ACCESS	(1<<3)
+#define RALINK_INTCTL_PCM		(1<<4)
+#define RALINK_INTCTL_UART		(1<<5)
+#define RALINK_INTCTL_PIO		(1<<6)
+#define RALINK_INTCTL_DMA		(1<<7)
+#define RALINK_INTCTL_PC		(1<<9)
+#define RALINK_INTCTL_I2S		(1<<10)
+#define RALINK_INTCTL_UARTLITE		(1<<12)
+#define RALINK_INTCTL_ESW		(1<<17)
+#define RALINK_INTCTL_OTG		(1<<18)
+#define RALINK_INTCTL_GLOBAL		(1<<31)
+
+//Reset Control Register
+#define RALINK_SYS_RST			(1<<0)
+#define RALINK_TIMER_RST		(1<<8)
+#define RALINK_INTC_RST			(1<<9)
+#define RALINK_MC_RST			(1<<10)
+#define RALINK_PCM_RST			(1<<11)
+#define RALINK_UART_RST			(1<<12)
+#define RALINK_PIO_RST			(1<<13)
+#define RALINK_DMA_RST			(1<<14)
+#define RALINK_I2C_RST			(1<<16)
+#define RALINK_I2S_RST			(1<<17)
+#define RALINK_SPI_RST			(1<<18)
+#define RALINK_UARTL_RST		(1<<19)
+#define RALINK_WLAN_RST			(1<<20)
+#define RALINK_FE_RST			(1<<21)
+#define RALINK_UHST_RST			(1<<22)
+#define RALINK_ESW_RST			(1<<23)
+#define RALINK_EPHY_RST			(1<<24)
+#define RALINK_UDEV_RST			(1<<25)
+
+#elif defined (CONFIG_RALINK_RT2883)
+
+#define RALINK_SYSCTL_BASE		0xB0000000
+#define RALINK_TIMER_BASE		0xB0000100
+#define RALINK_INTCL_BASE		0xB0000200
+#define RALINK_MEMCTRL_BASE		0xB0000300
+#define RALINK_PCM_BASE			0xB0000400
+#define RALINK_UART_BASE		0x10000500
+#define RALINK_PIO_BASE			0xB0000600
+#define RALINK_GDMA_BASE		0xB0000700
+#define RALINK_NAND_CTRL_BASE		0xB0000800
+#define RALINK_I2C_BASE			0xB0000900
+#define RALINK_I2S_BASE			0xB0000A00
+#define RALINK_SPI_BASE			0xB0000B00
+#define RALINK_UART_LITE_BASE		0x10000C00
+#define RALINK_FRAME_ENGINE_BASE	0xB0100000
+#define RALINK_PCI_BASE			0xB0140000
+#define RALINK_11N_MAC_BASE		0xB0180000
+#define RALINK_USB_OTG_BASE		0x101C0000
+
+//Interrupt Controller
+#define RALINK_INTCTL_SYSCTL		(1<<0)
+#define RALINK_INTCTL_TIMER0		(1<<1)
+#define RALINK_INTCTL_WDTIMER		(1<<2)
+#define RALINK_INTCTL_ILL_ACCESS	(1<<3)
+#define RALINK_INTCTL_PCM		(1<<4)
+#define RALINK_INTCTL_UART		(1<<5)
+#define RALINK_INTCTL_PIO		(1<<6)
+#define RALINK_INTCTL_DMA		(1<<7)
+#define RALINK_INTCTL_NAND		(1<<8)
+#define RALINK_INTCTL_PC		(1<<9)
+#define RALINK_INTCTL_I2S		(1<<10)
+#define RALINK_INTCTL_UARTLITE		(1<<12)
+#define RALINK_INTCTL_OTG		(1<<18)
+#define RALINK_INTCTL_OTG_IRQN		18
+#define RALINK_INTCTL_GLOBAL		(1<<31)
+
+//Reset Control Register
+#define RALINK_SYS_RST			(1<<0)
+#define RALINK_CPU_RST			(1<<1)
+#define RALINK_TIMER_RST		(1<<8)
+#define RALINK_INTC_RST			(1<<9)
+#define RALINK_MC_RST			(1<<10)
+#define RALINK_PCM_RST			(1<<11)
+#define RALINK_UART_RST			(1<<12)
+#define RALINK_PIO_RST			(1<<13)
+#define RALINK_DMA_RST			(1<<14)
+#define RALINK_I2C_RST			(1<<16)
+#define RALINK_I2S_RST			(1<<17)
+#define RALINK_SPI_RST			(1<<18)
+#define RALINK_UARTL_RST		(1<<19)
+#define RALINK_WLAN_RST			(1<<20)
+#define RALINK_FE_RST			(1<<21)
+#define RALINK_OTG_RST			(1<<22)
+#define RALINK_PCIE_RST			(1<<23)
+
+#elif defined (CONFIG_RALINK_RT3883)
+
+#define RALINK_SYSCTL_BASE		0xB0000000
+#define RALINK_TIMER_BASE		0xB0000100
+#define RALINK_INTCL_BASE		0xB0000200
+#define RALINK_MEMCTRL_BASE		0xB0000300
+#define RALINK_UART_BASE		0x10000500
+#define RALINK_PIO_BASE			0xB0000600
+#define RALINK_NOR_CTRL_BASE		0xB0000700
+#define RALINK_NAND_CTRL_BASE		0xB0000810
+#define RALINK_I2C_BASE			0xB0000900
+#define RALINK_I2S_BASE			0xB0000A00
+#define RALINK_SPI_BASE			0xB0000B00
+#define RALINK_UART_LITE_BASE		0x10000C00
+#define RALINK_PCM_BASE			0xB0002000
+#define RALINK_GDMA_BASE		0xB0002800
+#define RALINK_CODEC1_BASE		0xB0003000
+#define RALINK_CODEC2_BASE		0xB0003800
+#define RALINK_FRAME_ENGINE_BASE	0xB0100000
+#define RALINK_USB_DEV_BASE		0x10120000
+#define RALINK_PCI_BASE			0xB0140000
+#define RALINK_11N_MAC_BASE		0xB0180000
+#define RALINK_USB_HOST_BASE		0x101C0000
+#define RALINK_PCIE_BASE		0xB0200000
+
+//Interrupt Controller
+#define RALINK_INTCTL_SYSCTL		(1<<0)
+#define RALINK_INTCTL_TIMER0		(1<<1)
+#define RALINK_INTCTL_WDTIMER		(1<<2)
+#define RALINK_INTCTL_ILL_ACCESS	(1<<3)
+#define RALINK_INTCTL_PCM		(1<<4)
+#define RALINK_INTCTL_UART		(1<<5)
+#define RALINK_INTCTL_PIO		(1<<6)
+#define RALINK_INTCTL_DMA		(1<<7)
+#define RALINK_INTCTL_NAND		(1<<8)
+#define RALINK_INTCTL_PC		(1<<9)
+#define RALINK_INTCTL_I2S		(1<<10)
+#define RALINK_INTCTL_UARTLITE		(1<<12)
+#define RALINK_INTCTL_UHST		(1<<18)
+#define RALINK_INTCTL_UDEV		(1<<19)
+
+//Reset Control Register
+#define RALINK_SYS_RST			(1<<0)
+#define RALINK_TIMER_RST		(1<<8)
+#define RALINK_INTC_RST			(1<<9)
+#define RALINK_MC_RST			(1<<10)
+#define RALINK_PCM_RST			(1<<11)
+#define RALINK_UART_RST			(1<<12)
+#define RALINK_PIO_RST			(1<<13)
+#define RALINK_DMA_RST			(1<<14)
+#define RALINK_NAND_RST			(1<<15)
+#define RALINK_I2C_RST			(1<<16)
+#define RALINK_I2S_RST			(1<<17)
+#define RALINK_SPI_RST			(1<<18)
+#define RALINK_UARTL_RST		(1<<19)
+#define RALINK_WLAN_RST			(1<<20)
+#define RALINK_FE_RST			(1<<21)
+#define RALINK_UHST_RST			(1<<22)
+#define RALINK_PCIE_RST			(1<<23)
+#define RALINK_PCI_RST			(1<<24)
+#define RALINK_UDEV_RST			(1<<25)
+#define RALINK_FLASH_RST		(1<<26)
 
 #endif
 #endif

@@ -6,6 +6,11 @@ raeth-objs  += rtl_smi.o rtl8366s_api.o  rtl8366s_asicdrv.o
 EXTRA_CFLAGS   += -D_LITTLE_ENDIAN
 endif
 
+ifeq ($(CONFIG_RTL8366RB_SWITCH),y)
+raeth-objs  += rtl_smi.o rb/rtl8366rb_api.o  rb/rtl8368s_asicdrv.o rb/rmain.o
+EXTRA_CFLAGS   += -D_LITTLE_ENDIAN
+endif
+
 ifeq ($(CONFIG_RAETH_QOS),y)
 raeth-objs += ra_qos.o
 endif

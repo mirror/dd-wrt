@@ -1757,6 +1757,11 @@ extern int rtl_smi_init(void);
         rtl_smi_init();
         udelay(500);
 #endif
+#if defined (CONFIG_RTL8366RB_SWITCH)
+extern int rtl_smi_init(void);
+        rtl_smi_init();
+        udelay(500);
+#endif
 
 
 	strcpy(dev->name, DEV_NAME);
@@ -1838,6 +1843,10 @@ extern int rtl_smi_init(void);
 
         printk("Rtl8366 Phy Init...\n");
         sysRegWrite(MDIO_CFG, 0x0000dc01);
+#elif defined (CONFIG_RTL8366RB_SWITCH)
+
+        printk("Rtl8366RB Phy Init...\n");
+//        sysRegWrite(MDIO_CFG, 0x0000dc01);
 
 #elif defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_ICPLUS_PHY)
 
