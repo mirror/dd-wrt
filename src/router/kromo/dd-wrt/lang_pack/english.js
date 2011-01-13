@@ -1110,8 +1110,8 @@ networking.legend5="Multiple DHCP Server";
 
 //help container
 var hnetworking = new Object();
-hnetworking.right1="Multi DHCPD:";
-hnetworking.right2="To be able to use Multiple DHCPD you must use DNSMasq as DHCP-Server";
+hnetworking.right1="Multi DHCPD";
+hnetworking.right2="To use Multiple DHCPD enable DNSMasq as DHCP-Server";
 
 // ** QoS.asp **//
 var qos = new Object();
@@ -1357,9 +1357,14 @@ service.vpn_clikey="Private Client Key";
 service.vpn_nat="Enable NAT";
 service.vpn_cipher="Encryption Cipher";
 service.vpn_auth="Hash Algorithm";
-service.vpn_bridge="Bridge Tap to br0";
+service.vpn_bridge="Bridge TAP to br0";
 service.vpn_adv="Advanced Options";
 service.vpn_tlscip="TLS Cipher";
+
+//help container
+var hstatus_vpn = new Object();
+hstatus_vpn.right1="OpenVPN Server:";
+hstatus_vpn.right2="";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1955,8 +1960,8 @@ freeradius.cert_status="Certificate Status";
 freeradius.port="Radius Port";
 
 //help container
-var hfreeradius = new Object();
-hfreeradius.right2="You must enable JFFS before starting FreeRadius.";
+var hstatus_freeradius = new Object();
+hstatus_freeradius.right2="You must enable JFFS before starting FreeRadius.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();
