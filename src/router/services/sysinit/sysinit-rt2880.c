@@ -96,7 +96,7 @@ void start_sysinit(void)
 	sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
 	sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
 #endif
-#if defined(HAVE_RT10N) || defined(HAVE_F5D8235)
+#if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N)
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	unsigned char mac[32];
 	if (in != NULL) {
