@@ -14,8 +14,8 @@
 	</div>
 	<div class="setting">
 	<div class="label"><% tran("service.vpnd_switch"); %></div>
-	<input class="spaceradio" type="radio" name="openvpn_switch" value="1" <% nvram_checked("openvpn_switch", "1"); %> onclick="toggle_layer_ext(this, 'idnew', 'idold', true)" />new Style&nbsp;
-	<input class="spaceradio" type="radio" name="openvpn_switch" value="0" <% nvram_checked("openvpn_switch", "0"); %> onclick="toggle_layer_ext(this, 'idnew', 'idold', false)" />old Style&nbsp;
+	<input class="spaceradio" type="radio" name="openvpn_switch" value="1" <% nvram_checked("openvpn_switch", "1"); %> onclick="toggle_layer_ext(this, 'idnew', 'idold', true)" />GUI&nbsp;
+	<input class="spaceradio" type="radio" name="openvpn_switch" value="0" <% nvram_checked("openvpn_switch", "0"); %> onclick="toggle_layer_ext(this, 'idnew', 'idold', false)" />Config File&nbsp;
 	</div>
 	<div id="idnew">
 		<div class="setting">
