@@ -451,7 +451,9 @@ int vlan_dev_hard_header(struct sk_buff *skb, struct net_device *dev,
 int vlan_dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct net_device_stats *stats = vlan_dev_get_stats(dev);
+#if !defined (CONFIG_ESW_DOUBLE_VLAN_TAG) || defined (VLAN_DEBUG)
 	struct vlan_ethhdr *veth = (struct vlan_ethhdr *)(skb->data);
+#endif
 
 	/* Handle non-VLAN frames if they are sent to us, for example by DHCP.
 	 *
@@ -459,8 +461,10 @@ int vlan_dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	 * OTHER THINGS LIKE FDDI/TokenRing/802.3 SNAPs...
 	 */
 
-	if (veth->h_vlan_proto != htons(ETH_P_8021Q) ||
-		VLAN_DEV_INFO(dev)->flags & VLAN_FLAG_REORDER_HDR) {
+#ifndef CONFIG_ESW_DOUBLE_VLAN_TAG
+	if (veth->h_vlan_proto != htons(ETH_P_8021Q) || VLAN_DEV_INFO(dev)->flags & VLAN_FLAG_REORDER_HDR) {
+
+#endif
 		int orig_headroom = skb_headroom(skb);
 		unsigned short veth_TCI;
 
@@ -489,7 +493,9 @@ int vlan_dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		if (orig_headroom < VLAN_HLEN) {
 			VLAN_DEV_INFO(dev)->cnt_inc_headroom_on_tx++;
 		}
+#ifndef CONFIG_ESW_DOUBLE_VLAN_TAG
 	}
+#endif
 
 #ifdef VLAN_DEBUG
 	printk(VLAN_DBG "%s: about to send skb: %p to dev: %s\n",

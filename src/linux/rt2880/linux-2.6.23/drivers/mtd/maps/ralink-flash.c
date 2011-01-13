@@ -239,6 +239,9 @@ int __init rt2880_mtd_init(void)
 #ifdef CONFIG_MTD_ESR6650 
 int nvramsize = ralink_mtd[0]->erasesize*2;
 		int offset = 0;
+#elif CONFIG_EAP9550
+int nvramsize = ralink_mtd[0]->erasesize*2;
+		int offset = 0;
 #elif CONFIG_RT2880_FLASH_8M 
 /* marklin 20080605 : return read mode for ST */
 Flash_SetModeRead();
