@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 18.Nov.2010, svn 15735	//
+//				Slovenian translation DD-WRT by Eko, last revision: 15.Jan.2011, svn 16025	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -1108,6 +1108,10 @@ networking.iface="Vmesniki";
 networking.h5="DHCPD";
 networking.legend5="Mnogokraten DHCP strežnik";
 
+//help container
+
+hnetworking.right1="Mnogokraten DHCPD";
+hnetworking.right2="Za uporabo DHCPD omogočite DNSMasq kot DHCP strežnik";
 
 // ** QoS.asp **//
 
@@ -1353,8 +1357,14 @@ service.vpn_clikey="Zasebni odjemalčev ključ";
 service.vpn_nat="Dovoli NAT";
 service.vpn_cipher="Šifra za šifriranje";
 service.vpn_auth="Hash algoritem";
-service.vpn_bridge="Most Tap - br0";
+service.vpn_bridge="Most TAP - br0";
 service.vpn_adv="Napredne možnosti";
+service.vpn_tlscip="Šifra TLS";
+
+//help container
+
+hstatus_vpn.right1="OpenVPN strežnik:";
+hstatus_vpn.right2="";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
