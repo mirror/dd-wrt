@@ -770,6 +770,11 @@ void start_lan(void)
 	static char realname[80];
 	static char wl_face[10];
 
+	// don't let packages pass to iptables without ebtables loaded
+	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
+	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
+	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+
 	strcpy(lan_ifname, nvram_safe_get("lan_ifname"));
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
 	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
