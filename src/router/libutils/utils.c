@@ -575,14 +575,13 @@ int internal_getRouterBrand()
 	char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
 												 */
 	FILE *file = fopen(filename, "r");
-	if (!file)
-	{
-	    filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	//for 2.6.34.6
-	    file = fopen(filename, "r");
+	if (!file) {
+		filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	//for 2.6.34.6
+		file = fopen(filename, "r");
 	}
 	if (file)		// new detection scheme
 	{
-		    
+
 		char *gwid;
 		char temp[64];
 		int ret = fread(temp, 40, 1, file);
@@ -590,9 +589,9 @@ int internal_getRouterBrand()
 			fclose(file);
 			goto old_way;
 		}
-		gwid=&temp[32];
+		gwid = &temp[32];
 		gwid[8] = 0;
-		fprintf(stderr,"id is %s\n",gwid);
+		fprintf(stderr, "id is %s\n", gwid);
 		fclose(file);
 		if (!strncmp(gwid, "GW2347", 6)) {
 			setRouter("Gateworks Avila GW2347");
@@ -980,7 +979,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M, 0},	//
 		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M, 0},	//
 		{"Ubiquiti NanoStation M365", 0xe003, "3", "3", ROUTER_BOARD_NS5M, M365},	//
-//		{"Ubiquiti NanoStation M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900},	//
+//              {"Ubiquiti NanoStation M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900},       //
 		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M, 0},	//
@@ -1015,6 +1014,7 @@ int internal_getRouterBrand()
 #undef M365
 #undef M900
 
+#if 0
 	FILE *fp =
 	    fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device", "rb");
 	if (fp == NULL)
@@ -1022,6 +1022,25 @@ int internal_getRouterBrand()
 	int device;
 	fscanf(fp, "0x%04X", &device);
 	fclose(fp);
+#else
+	FILE *fp = fopen("/dev/mtdblock5", "rb");	//open board config
+	fseek(fp, 0x1006, SEEK_SET);
+	unsigned short cal[128];
+	fread(&cal[0], 1, 256, fp);
+	fclose(fp);
+	int calcnt = 0;
+	int device = 0;
+	while (cal[calcnt] & 0xffff != 0xffff) {
+		unsigned short reg = cal[calcnt++] & 0xffff;
+		if (reg == 0x602c || reg == 0x502c) {
+			calcnt++;
+			device = cal[calcnt++] & 0xffff;
+		} else {
+			calcnt += 2;
+		}
+	}
+
+#endif
 	int devcnt = 0;
 	while (dev[devcnt].devicename != NULL) {
 		if (dev[devcnt].devid == device) {
@@ -1127,7 +1146,7 @@ int internal_getRouterBrand()
 	setRouter("ZCom TG-2521");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG300NH2
-	nvram_default_get("ath0_rxantenna", "3"); 
+	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 #ifdef HAVE_BUFFALO
 	setRouter("WZR-HP-G300NH2");
@@ -1136,7 +1155,7 @@ int internal_getRouterBrand()
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG450
-	nvram_default_get("ath0_rxantenna", "7"); 
+	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 #ifdef HAVE_BUFFALO
 	setRouter("WZR-HP-G450H");
@@ -3116,19 +3135,19 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_WZRG450
 		diag_gpio = 0x10e;
-                ses_gpio = 0x10d;
+		ses_gpio = 0x10d;
 		connected_gpio = 0x10e;
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
-                ses_gpio = 0x126;
+		ses_gpio = 0x126;
 		connected_gpio = 0x127;
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
-                connected_gpio = 0x133;
-                ses_gpio = 0x125;
-                ses2_gpio = 0x135;
+		connected_gpio = 0x133;
+		ses_gpio = 0x125;
+		ses2_gpio = 0x135;
 #endif
 #ifdef HAVE_DIR615E
 		power_gpio = 0x006;
@@ -3236,9 +3255,9 @@ int led_control(int type, int act)
 		usb_gpio = 0x104;
 		break;
 	case ROUTER_ASUS_RTN10PLUS:
-//		diag_gpio = 0x10d;
-//		connected_gpio = 0x108;
-//		power_gpio = 0x109;
+//              diag_gpio = 0x10d;
+//              connected_gpio = 0x108;
+//              power_gpio = 0x109;
 		break;
 	case ROUTER_BOARD_DIR600B:
 		diag_gpio = 0x10d;
@@ -3271,18 +3290,18 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
-                connected_gpio = 0x133;
-                ses_gpio = 0x121;
-                ses2_gpio = 0x135;
+		connected_gpio = 0x133;
+		ses_gpio = 0x121;
+		ses2_gpio = 0x135;
 #endif
 #ifdef HAVE_WZRG450
 		diag_gpio = 0x10e;
-                ses_gpio = 0x10d;
+		ses_gpio = 0x10d;
 		connected_gpio = 0x10e;
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
-                ses_gpio = 0x126;
+		ses_gpio = 0x126;
 		connected_gpio = 0x127;
 #endif
 		break;
@@ -3982,7 +4001,6 @@ int crypt_make_salt(char *p, int cnt, int x)
 
 #include <crypt.h>
 #define MD5_OUT_BUFSIZE 36
-
 
 char *zencrypt(char *passwd)
 {
