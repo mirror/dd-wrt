@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 / updated since svn15338 / by Silvio Peša / 2010-11-03 // 
+// Croatian Translation / DD-WRT v24-sp2 / updated since svn15672 / by Silvio Peša / 2011-01-15 // 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -29,7 +29,7 @@ share.disabled="Onemogućeno";
 share.usrname="Ime Korisnika";
 share.passwd="Zaporka";
 share.hostname="Ime Stroja";
-share.vdsl="T-Home VDSL 7 VLAN Tagging";
+share.vdsl="T-Home VDSL VLAN 7/8 Tagging";
 share.vdslvlan8="VLAN 8 podrška";
 share.wan_vlantag="VLAN Oznaka ID";
 share.compression="PPP Sažimanje";
@@ -637,8 +637,12 @@ firewall.cookies="Filtrirati Cookies";
 firewall.applet="Filtrirati Java Applets";
 firewall.activex="Filtrirati ActiveX";
 firewall.legend3="Blokiranje WAN Zahtjeva";
+firewall.legend4="Impede DoS/Brutforce";
 firewall.ping="Blokiranje Anonimnih WAN Zahtjeva (ping)";
 firewall.muticast="Filter Multicast";
+firewall.ssh="Limit SSH Access";
+firewall.telnet="Limit Telnet Access";
+firewall.http="Limit HTTP Access";
 filter.nat="Filter WAN NAT Redirekciju";
 filter.port113="Filter IDENT (Vrata 113)";
 
@@ -1104,6 +1108,10 @@ networking.iface="Sučelja";
 networking.h5="DHCPD";
 networking.legend5="Višestruki DHCP Poslužitelj";
 
+//help container
+
+hnetworking.right1="Multi DHCPD";
+hnetworking.right2="To use Multiple DHCPD enable DNSMasq as DHCP-Server";
 
 // ** QoS.asp **//
 
@@ -1332,13 +1340,12 @@ service.vpnd_endip="Pool end IP";
 service.vpnd_cl2cl="Dozvoli Vezu Klijent do Klijenta";
 service.vpnd_switch="Konf. Switch Poslužitelja";
 service.vpnd_dupcn="Dozvoli dvostruki CN";
-service.vpn_redirgate="Redirecto default Gateway";
+service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Klijent";
 service.vpn_srv="Pokreni OpenVPN Klijent";
 service.vpn_ipname="IP/Ime Poslužitelja";
 service.vpn_mtu="TUN MTU Postavka";
-service.vpn_mru="TUN MTU Posebno";
-service.vpn_mss="TCP MSS Fix/Fragment";
+service.vpn_mss="MSS-Fix/Fragment across the tunnel";
 service.vpn_compress="Koristi LZO Sažimanje";
 service.vpn_cl2cl="Dozvoli Klijent do Klijenta";
 service.vpn_tunnel="Protokol Tunela";
@@ -1350,8 +1357,14 @@ service.vpn_clikey="Privatni Ključ Klijenta";
 service.vpn_nat="Omogući NAT";
 service.vpn_cipher="Enkripcijski Cipher";
 service.vpn_auth="Hash Algoritam";
-service.vpn_bridge="Premosti Tap u br0";
+service.vpn_bridge="Premosti TAP u br0";
 service.vpn_adv="Napredne Opcije";
+service.vpn_tlscip="TLS Cipher";
+
+//help container
+
+hstatus_vpn.right1="OpenVPN Server:";
+hstatus_vpn.right2="";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1945,6 +1958,10 @@ freeradius.passphrase="Passphrase";
 freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
 freeradius.port="Radius Port";
+
+//help container
+
+hstatus_freeradius.right2="You must enable JFFS before starting FreeRadius.";
 
 // ** Wireless_Advanced.asp **//
 
