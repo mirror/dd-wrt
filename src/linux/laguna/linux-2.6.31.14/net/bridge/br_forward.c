@@ -30,6 +30,26 @@ static inline unsigned packet_length(const struct sk_buff *skb)
 	return skb->len - (skb->protocol == htons(ETH_P_8021Q) ? VLAN_HLEN : 0);
 }
 
+/*
+ * When forwarding bridge frames, we save a copy of the original
+ * header before processing.
+ */
+#ifdef CONFIG_BRIDGE_NETFILTER
+int nf_bridge_copy_header(struct sk_buff *skb)
+{
+	int err;
+	int header_size = ETH_HLEN + nf_bridge_encap_header_len(skb);
+
+	err = skb_cow_head(skb, header_size);
+	if (err)
+		return err;
+
+	skb_copy_to_linear_data_offset(skb, -header_size,
+				       skb->nf_bridge->data, header_size);
+	__skb_push(skb, nf_bridge_encap_header_len(skb));
+	return 0;
+}
+#endif
 int br_dev_queue_push_xmit(struct sk_buff *skb)
 {
 	/* drop mtu oversized packets except gso */
@@ -48,6 +68,7 @@ int br_dev_queue_push_xmit(struct sk_buff *skb)
 
 	return 0;
 }
+EXPORT_SYMBOL(br_dev_queue_push_xmit);
 
 int br_forward_finish(struct sk_buff *skb)
 {
@@ -55,6 +76,7 @@ int br_forward_finish(struct sk_buff *skb)
 		       br_dev_queue_push_xmit);
 
 }
+EXPORT_SYMBOL(br_forward_finish);
 
 static void __br_deliver(const struct net_bridge_port *to, struct sk_buff *skb)
 {
