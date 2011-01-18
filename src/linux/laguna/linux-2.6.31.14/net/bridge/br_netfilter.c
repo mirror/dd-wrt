@@ -101,35 +101,6 @@ static inline __be16 pppoe_proto(const struct sk_buff *skb)
 	 pppoe_proto(skb) == htons(PPP_IPV6) && \
 	 brnf_filter_pppoe_tagged)
 
-static void fake_update_pmtu(struct dst_entry *dst, u32 mtu)
-{
-}
-
-static struct dst_ops fake_dst_ops = {
-	.family =		AF_INET,
-	.protocol =		cpu_to_be16(ETH_P_IP),
-	.update_pmtu =		fake_update_pmtu,
-	.entries =		ATOMIC_INIT(0),
-};
-
-/*
- * Initialize bogus route table used to keep netfilter happy.
- * Currently, we fill in the PMTU entry because netfilter
- * refragmentation needs it, and the rt_flags entry because
- * ipt_REJECT needs it.  Future netfilter modules might
- * require us to fill additional fields.
- */
-void br_netfilter_rtable_init(struct net_bridge *br)
-{
-	struct rtable *rt = &br->fake_rtable;
-
-	atomic_set(&rt->u.dst.__refcnt, 1);
-	rt->u.dst.dev = br->dev;
-	rt->u.dst.path = &rt->u.dst;
-	rt->u.dst.metrics[RTAX_MTU - 1] = 1500;
-	rt->u.dst.flags	= DST_NOXFRM;
-	rt->u.dst.ops = &fake_dst_ops;
-}
 
 static inline struct rtable *bridge_parent_rtable(const struct net_device *dev)
 {
@@ -203,24 +174,6 @@ static inline void nf_bridge_save_header(struct sk_buff *skb)
 					 skb->nf_bridge->data, header_size);
 }
 
-/*
- * When forwarding bridge frames, we save a copy of the original
- * header before processing.
- */
-int nf_bridge_copy_header(struct sk_buff *skb)
-{
-	int err;
-	int header_size = ETH_HLEN + nf_bridge_encap_header_len(skb);
-
-	err = skb_cow_head(skb, header_size);
-	if (err)
-		return err;
-
-	skb_copy_to_linear_data_offset(skb, -header_size,
-				       skb->nf_bridge->data, header_size);
-	__skb_push(skb, nf_bridge_encap_header_len(skb));
-	return 0;
-}
 
 /* PF_BRIDGE/PRE_ROUTING *********************************************/
 /* Undo the changes made for ip6tables PREROUTING and continue the

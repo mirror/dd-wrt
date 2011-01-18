@@ -168,3 +168,4 @@ drop:
 	}
 	return NULL;
 }
+EXPORT_SYMBOL(br_handle_frame_finish);
