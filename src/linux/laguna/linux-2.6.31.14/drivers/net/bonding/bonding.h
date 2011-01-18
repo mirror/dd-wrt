@@ -145,9 +145,9 @@ struct vlan_entry {
 	struct list_head vlan_list;
 	__be32 vlan_ip;
 	unsigned short vlan_id;
-#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
-	struct in6_addr vlan_ipv6;
-#endif
+//#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
+//	struct in6_addr vlan_ipv6;
+//#endif
 };
 
 struct slave {
@@ -219,9 +219,9 @@ struct bonding {
 	struct   delayed_work arp_work;
 	struct   delayed_work alb_work;
 	struct   delayed_work ad_work;
-#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
-	struct   in6_addr master_ipv6;
-#endif
+//#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
+//	struct   in6_addr master_ipv6;
+//#endif
 };
 
 /**
@@ -350,11 +350,11 @@ extern const struct bond_parm_tbl arp_validate_tbl[];
 extern const struct bond_parm_tbl fail_over_mac_tbl[];
 extern struct bond_parm_tbl ad_select_tbl[];
 
-#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
-void bond_send_unsolicited_na(struct bonding *bond);
-void bond_register_ipv6_notifier(void);
-void bond_unregister_ipv6_notifier(void);
-#else
+//#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
+//void bond_send_unsolicited_na(struct bonding *bond);
+//void bond_register_ipv6_notifier(void);
+//void bond_unregister_ipv6_notifier(void);
+//#else
 static inline void bond_send_unsolicited_na(struct bonding *bond)
 {
 	return;
@@ -367,7 +367,7 @@ static inline void bond_unregister_ipv6_notifier(void)
 {
 	return;
 }
-#endif
+//#endif
 
 #endif /* _LINUX_BONDING_H */
 
