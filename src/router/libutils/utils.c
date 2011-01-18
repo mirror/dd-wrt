@@ -1024,22 +1024,24 @@ int internal_getRouterBrand()
 	fclose(fp);
 #else
 	FILE *fp = fopen("/dev/mtdblock5", "rb");	//open board config
-	fseek(fp, 0x1006, SEEK_SET);
-	unsigned short cal[128];
-	fread(&cal[0], 1, 256, fp);
-	fclose(fp);
-	int calcnt = 0;
 	int device = 0;
-	while (cal[calcnt] & 0xffff != 0xffff) {
-		unsigned short reg = cal[calcnt++] & 0xffff;
-		if (reg == 0x602c || reg == 0x502c) {
-			calcnt++;
-			device = cal[calcnt++] & 0xffff;
-		} else {
-			calcnt += 2;
+	if (fp) {
+		fseek(fp, 0x1006, SEEK_SET);
+		unsigned short cal[128];
+		fread(&cal[0], 1, 256, fp);
+		fclose(fp);
+		int calcnt = 0;
+		while (((cal[calcnt] & 0xffff) != 0xffff)) {
+			unsigned short reg = cal[calcnt++] & 0xffff;
+			if (reg == 0x602c || reg == 0x502c) {
+				calcnt++;
+				device = cal[calcnt++] & 0xffff;
+				break;
+			} else {
+				calcnt += 2;
+			}
 		}
 	}
-
 #endif
 	int devcnt = 0;
 	while (dev[devcnt].devicename != NULL) {
