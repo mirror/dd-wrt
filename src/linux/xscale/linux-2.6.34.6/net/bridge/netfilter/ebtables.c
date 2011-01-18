@@ -14,6 +14,7 @@
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
  */
+#include "../br_netfilter.c"
 
 
 #include <linux/kmod.h>
@@ -2430,6 +2431,9 @@ static int __init ebtables_init(void)
 {
 	int ret;
 
+	if (br_netfilter_init())
+		return 1;
+
 	ret = xt_register_target(&ebt_standard_target);
 	if (ret < 0)
 		return ret;
@@ -2448,6 +2452,7 @@ static void __exit ebtables_fini(void)
 	nf_unregister_sockopt(&ebt_sockopts);
 	xt_unregister_target(&ebt_standard_target);
 	printk(KERN_INFO "Ebtables v2.0 unregistered\n");
+	br_netfilter_fini();
 }
 
 EXPORT_SYMBOL(ebt_register_table);
