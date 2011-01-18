@@ -105,7 +105,6 @@ drop:
 	kfree_skb(skb);
 	goto out;
 }
-
 /* note: already called with rcu_read_lock */
 static int br_handle_local_finish(struct sk_buff *skb)
 {
@@ -184,3 +183,4 @@ drop:
 	}
 	return NULL;
 }
+EXPORT_SYMBOL(br_handle_frame_finish);
