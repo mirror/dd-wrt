@@ -1793,9 +1793,9 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
         {
             return -1;
         }
-    	if (bf->buf_pkt)
-    	    return -1;
-//        assert(!bf->buf_pkt);
+//    	if (bf->buf_pkt)
+//    	    return -1;
+        assert(!bf->buf_pkt);
 
         bf->buf_pkt         = ag7100_buffer_alloc();
         if (!bf->buf_pkt)
