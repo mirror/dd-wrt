@@ -1558,7 +1558,7 @@ process_pkts:
         if (ag7100_rx_owned_by_dma(ds))
         {
     	    break;
-#if 0
+#if 1
             if(quota == iquota)
             {
                 *work_done = quota = 0;
@@ -1686,7 +1686,7 @@ process_pkts:
         ag7100_ring_incr(head);
     }
 
-#if 0
+#if 1
     if(quota == iquota)
     {
         *work_done = quota = 0;
@@ -1695,7 +1695,7 @@ process_pkts:
 #endif
     r->ring_head   =  head;
     rep = ag7100_rx_replenish(mac);
-#if 0
+#if 1
     if(rep < 0)
     {
         *work_done =0 ;
@@ -1792,7 +1792,9 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
         {
             return -1;
         }
-        assert(!bf->buf_pkt);
+    	if (bf->buf_pkt)
+    	    return -1;
+//        assert(!bf->buf_pkt);
 
         bf->buf_pkt         = ag7100_buffer_alloc();
         if (!bf->buf_pkt)
