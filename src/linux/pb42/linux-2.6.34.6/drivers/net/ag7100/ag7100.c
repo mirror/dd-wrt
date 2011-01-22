@@ -1555,7 +1555,6 @@ process_pkts:
         ag7100_trc(head,"hd");
         ag7100_trc(ds,  "ds");
 
-        bp                  = &r->ring_buffer[head];
         if (ag7100_rx_owned_by_dma(ds))
         {
     	    break;
@@ -1570,6 +1569,7 @@ process_pkts:
         }
         ag7100_intr_ack_rx(mac);
 
+        bp                  = &r->ring_buffer[head];
         len                 = ds->pkt_size;
         skb                 = bp->buf_pkt;
         assert(skb);
@@ -1695,7 +1695,7 @@ process_pkts:
 #endif
     r->ring_head   =  head;
     rep = ag7100_rx_replenish(mac);
-#if 1
+#if 0
     if(rep < 0)
     {
         *work_done =0 ;
@@ -1792,8 +1792,6 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
         {
             return -1;
         }
-//    	if (bf->buf_pkt)
-//    	    return -2;
         assert(!bf->buf_pkt);
 
         bf->buf_pkt         = ag7100_buffer_alloc();
@@ -2265,9 +2263,9 @@ ag7100_init(void)
         /*
         * out of memory timer
         */
-//        init_timer(&mac->mac_oom_timer);
-//        mac->mac_oom_timer.data     = (unsigned long)mac;
-//        mac->mac_oom_timer.function = ag7100_oom_timer;
+        init_timer(&mac->mac_oom_timer);
+        mac->mac_oom_timer.data     = (unsigned long)mac;
+        mac->mac_oom_timer.function = ag7100_oom_timer;
         /*
         * watchdog task
         */

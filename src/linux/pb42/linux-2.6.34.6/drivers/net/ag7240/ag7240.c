@@ -1584,7 +1584,6 @@ process_pkts:
         ag7240_trc(head,"hd");
         ag7240_trc(ds,  "ds");
 
-        bp                  = &r->ring_buffer[head];
         if (ag7240_rx_owned_by_dma(ds))
         {
     	    break;
@@ -1597,6 +1596,7 @@ process_pkts:
         }
         ag7240_intr_ack_rx(mac);
 
+        bp                  = &r->ring_buffer[head];
         len                 = ds->pkt_size;
 //        printk(KERN_INFO "pkt_size=%d\n",len);
         skb                 = bp->buf_pkt;
@@ -1679,11 +1679,11 @@ process_pkts:
     r->ring_head   =  head;
 
     rep = ag7240_rx_replenish(mac);
-    if(rep < 0)
+/*    if(rep < 0)
     {
         *work_done =0 ;
         return AG7240_RX_DMA_HANG;
-    }
+    }*/
 
     /*
     * let's see what changed while we were slogging.
@@ -1771,9 +1771,7 @@ ag7240_rx_replenish(ag7240_mac_t *mac)
     	{
     	    return -1;
     	}
-    	assert(!bf->buf_pkt);
-//    	if (bf->buf_pkt)
-//    	    return -1;
+        assert(!bf->buf_pkt);
 
         bf->buf_pkt         = ag7240_buffer_alloc();
         if (!bf->buf_pkt)
