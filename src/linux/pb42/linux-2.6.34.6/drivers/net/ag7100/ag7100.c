@@ -1558,7 +1558,6 @@ process_pkts:
         bp                  = &r->ring_buffer[head];
         if (ag7100_rx_owned_by_dma(ds))
         {
-    	bp->buf_pkt         = NULL;
     	    break;
 #if 0
             if(quota == iquota)
@@ -1794,7 +1793,7 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
             return -1;
         }
 //    	if (bf->buf_pkt)
-//    	    return -1;
+//    	    return -2;
         assert(!bf->buf_pkt);
 
         bf->buf_pkt         = ag7100_buffer_alloc();
@@ -2038,7 +2037,7 @@ ag7100_oom_timer(unsigned long data)
     int val;
 
     ag7100_trc(data,"data");
-    ag7100_rx_replenish(mac);
+//    ag7100_rx_replenish(mac);
     if (ag7100_rx_ring_full(mac))
     {
         val = mod_timer(&mac->mac_oom_timer, jiffies+1);
@@ -2266,9 +2265,9 @@ ag7100_init(void)
         /*
         * out of memory timer
         */
-        init_timer(&mac->mac_oom_timer);
-        mac->mac_oom_timer.data     = (unsigned long)mac;
-        mac->mac_oom_timer.function = ag7100_oom_timer;
+//        init_timer(&mac->mac_oom_timer);
+//        mac->mac_oom_timer.data     = (unsigned long)mac;
+//        mac->mac_oom_timer.function = ag7100_oom_timer;
         /*
         * watchdog task
         */

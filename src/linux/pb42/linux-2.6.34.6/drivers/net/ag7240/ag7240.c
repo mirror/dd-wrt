@@ -1587,7 +1587,6 @@ process_pkts:
         bp                  = &r->ring_buffer[head];
         if (ag7240_rx_owned_by_dma(ds))
         {
-        bp->buf_pkt         = NULL;
     	    break;
 /*            if(quota == iquota)
             {
@@ -2036,7 +2035,7 @@ ag7240_oom_timer(unsigned long data)
     int val;
 
     ag7240_trc(data,"data");
-    ag7240_rx_replenish(mac);
+//    ag7240_rx_replenish(mac);
     if (ag7240_rx_ring_full(mac))
     {
         val = mod_timer(&mac->mac_oom_timer, jiffies+1);
