@@ -1772,8 +1772,9 @@ ag7240_rx_replenish(ag7240_mac_t *mac)
     	{
     	    return -1;
     	}
-    	if (bf->buf_pkt)
-    	    return -1;
+    	assert(!bf->buf_pkt);
+//    	if (bf->buf_pkt)
+//    	    return -1;
 
         bf->buf_pkt         = ag7240_buffer_alloc();
         if (!bf->buf_pkt)
