@@ -1671,19 +1671,19 @@ process_pkts:
         ag7240_ring_incr(head);
     }
 
-/*    if(quota == iquota)
+    if(quota == iquota)
     {
         *work_done = quota = 0;
         return AG7240_RX_DMA_HANG;
-    }*/
+    }
     r->ring_head   =  head;
 
     rep = ag7240_rx_replenish(mac);
-/*    if(rep < 0)
+    if(rep < 0)
     {
         *work_done =0 ;
         return AG7240_RX_DMA_HANG;
-    }*/
+    }
 
     /*
     * let's see what changed while we were slogging.
@@ -1771,7 +1771,8 @@ ag7240_rx_replenish(ag7240_mac_t *mac)
     	{
     	    return -1;
     	}
-        assert(!bf->buf_pkt);
+    	if (bf->buf_pkt)
+    	    return -1;
 
         bf->buf_pkt         = ag7240_buffer_alloc();
         if (!bf->buf_pkt)
