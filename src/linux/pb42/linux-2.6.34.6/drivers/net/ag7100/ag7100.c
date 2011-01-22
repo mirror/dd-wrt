@@ -1555,8 +1555,10 @@ process_pkts:
         ag7100_trc(head,"hd");
         ag7100_trc(ds,  "ds");
 
+        bp                  = &r->ring_buffer[head];
         if (ag7100_rx_owned_by_dma(ds))
         {
+    	bp->buf_pkt         = NULL;
     	    break;
 #if 0
             if(quota == iquota)
@@ -1569,7 +1571,6 @@ process_pkts:
         }
         ag7100_intr_ack_rx(mac);
 
-        bp                  = &r->ring_buffer[head];
         len                 = ds->pkt_size;
         skb                 = bp->buf_pkt;
         assert(skb);

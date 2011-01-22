@@ -1584,8 +1584,10 @@ process_pkts:
         ag7240_trc(head,"hd");
         ag7240_trc(ds,  "ds");
 
+        bp                  = &r->ring_buffer[head];
         if (ag7240_rx_owned_by_dma(ds))
         {
+        bp->buf_pkt         = NULL;
     	    break;
 /*            if(quota == iquota)
             {
@@ -1596,7 +1598,6 @@ process_pkts:
         }
         ag7240_intr_ack_rx(mac);
 
-        bp                  = &r->ring_buffer[head];
         len                 = ds->pkt_size;
 //        printk(KERN_INFO "pkt_size=%d\n",len);
         skb                 = bp->buf_pkt;
