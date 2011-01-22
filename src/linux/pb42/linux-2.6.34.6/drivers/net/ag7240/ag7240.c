@@ -1671,11 +1671,11 @@ process_pkts:
         ag7240_ring_incr(head);
     }
 
-    if(quota == iquota)
+/*    if(quota == iquota)
     {
         *work_done = quota = 0;
         return AG7240_RX_DMA_HANG;
-    }
+    }*/
     r->ring_head   =  head;
 
     rep = ag7240_rx_replenish(mac);
