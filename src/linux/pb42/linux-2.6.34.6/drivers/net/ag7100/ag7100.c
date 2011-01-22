@@ -1558,7 +1558,7 @@ process_pkts:
         if (ag7100_rx_owned_by_dma(ds))
         {
     	    break;
-#if 1
+#if 0
             if(quota == iquota)
             {
                 *work_done = quota = 0;
@@ -1686,7 +1686,7 @@ process_pkts:
         ag7100_ring_incr(head);
     }
 
-#if 1
+#if 0
     if(quota == iquota)
     {
         *work_done = quota = 0;
