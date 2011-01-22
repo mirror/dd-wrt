@@ -1792,8 +1792,9 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
         {
             return -1;
         }
-        assert(!bf->buf_pkt);
-
+        //assert(!bf->buf_pkt);
+	if (!bf->buf_pkt)
+	{
         bf->buf_pkt         = ag7100_buffer_alloc();
         if (!bf->buf_pkt)
         {
@@ -1802,7 +1803,7 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
         }
         dma_cache_sync(NULL, (void *)bf->buf_pkt->data, AG7100_RX_BUF_SIZE, DMA_FROM_DEVICE);
         ds->pkt_start_addr  = virt_to_phys(bf->buf_pkt->data);
-
+	}
         ag7100_rx_give_to_dma(ds);
         refilled ++;
 
