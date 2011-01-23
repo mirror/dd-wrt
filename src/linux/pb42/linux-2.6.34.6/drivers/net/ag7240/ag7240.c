@@ -1586,13 +1586,12 @@ process_pkts:
 
         if (ag7240_rx_owned_by_dma(ds))
         {
-    	    break;
-/*            if(quota == iquota)
+            if(quota == iquota)
             {
                 *work_done = quota = 0;
                 return AG7240_RX_DMA_HANG;
             }
-            break;*/
+            break;
         }
         ag7240_intr_ack_rx(mac);
 
