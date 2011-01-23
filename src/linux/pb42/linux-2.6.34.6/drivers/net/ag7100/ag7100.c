@@ -1560,8 +1560,7 @@ process_pkts:
 
         if (ag7100_rx_owned_by_dma(ds))
         {
-    	    break;
-#if 0
+#if 1
             if(quota == iquota)
             {
                 *work_done = quota = 0;
