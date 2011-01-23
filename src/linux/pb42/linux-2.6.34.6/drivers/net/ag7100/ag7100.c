@@ -886,15 +886,18 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
 
         if(ag7100_tx_owned_by_dma(ds)) {
                         if ((jiffies - bp->trans_start) > (1 * HZ)) {
-//                printk(MODULE_NAME ": Tx Dma status : %s\n",
-//                ag7100_tx_stopped(mac) ? "inactive" : "active");
+                printk(MODULE_NAME ": Tx Dma status : %s\n",
+                ag7100_tx_stopped(mac) ? "inactive" : "active");
 #if 0
 //                printk(MODULE_NAME ": timestamp:%u jiffies:%u diff:%d\n",bp->trans_start,jiffies,
 //                             (jiffies - bp->trans_start));
 #endif
-               ag7100_dma_reset(mac);
+
+		ag7100_intr_ack_txurn(mac);
+		ag7100_tx_start(mac);
                            return 1;
            }
+           break;
         }
         ag7100_ring_incr(tail);
     }
@@ -1788,10 +1791,10 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
 
         ag7100_trc(ds,"ds");
 
-        if(ag7100_rx_owned_by_dma(ds))
-        {
-            return -1;
-        }
+//        if(ag7100_rx_owned_by_dma(ds))
+//        {
+//            return -1;
+//        }
         //assert(!bf->buf_pkt);
 	if (!bf->buf_pkt)
 	{

@@ -28,6 +28,14 @@ typedef struct {
     uint32_t 	pad;
 }ag7100_desc_t;
 
+
+typedef struct {
+    uint32_t    pkt_start_addr;
+    uint32_t    ctrl;
+    uint32_t    next_desc      ;
+    uint32_t 	pad;
+}ag7100_desc_sim_t;
+
 /*
  * s/w descriptor
  */
@@ -159,7 +167,7 @@ typedef enum {
  */
 #define ETHERNET_FCS_SIZE            4
 #define AG71XX_TX_FIFO_LEN	2048
-#define AG71XX_TX_MTU_LEN	1544
+#define AG71XX_TX_MTU_LEN	1540
 #define AG7100_RX_RESERVE           (64)
 #define AG7100_RX_BUF_SIZE      \
     (AG7100_RX_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETHERNET_FCS_SIZE)
@@ -392,11 +400,22 @@ static inline int ag7100_rx_ring_full(ag7100_mac_t *mac)
 /*
  * ownership of descriptors between DMA and cpu
  */
+#define DESC_EMPTY	BIT(31)
+#define DESC_MORE	BIT(24)
+#define DESC_PKTLEN_M	0xfff
+
+/*#define ag7100_rx_owned_by_dma(_ds)     ((_ds)->ctrl & DESC_EMPTY)
+#define ag7100_rx_give_to_dma(_ds)      ((_ds)->ctrl = DESC_EMPTY)
+#define ag7100_tx_owned_by_dma(_ds)     (!((_ds)->ctrl & DESC_EMPTY))
+#define ag7100_tx_give_to_dma(_ds)      ((_ds)->ctrl = 0)
+#define ag7100_tx_own(_ds)              ((_ds)->ctrl = DESC_EMPTY)
+*/
+
 #define ag7100_rx_owned_by_dma(_ds)     ((_ds)->is_empty == 1)
-#define ag7100_rx_give_to_dma(_ds)      ((_ds)->is_empty = 1)
+#define ag7100_rx_give_to_dma(_ds)      (((ag7100_desc_sim_t *)(_ds))->ctrl = DESC_EMPTY)
 #define ag7100_tx_owned_by_dma(_ds)     ((_ds)->is_empty == 0)
 #define ag7100_tx_give_to_dma(_ds)      ((_ds)->is_empty = 0)
-#define ag7100_tx_own(_ds)              ((_ds)->is_empty = 1)
+#define ag7100_tx_own(_ds)              (((ag7100_desc_sim_t *)(_ds))->ctrl = DESC_EMPTY)
 
 /*
  * Interrupts 
