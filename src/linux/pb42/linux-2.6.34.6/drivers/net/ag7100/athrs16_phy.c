@@ -455,7 +455,7 @@ athrs16_phy_is_fdx(int ethUnit)
     uint32_t  phyAddr;
     uint16_t  phyHwStatus;
     int       ii = 200;
-
+#if 0
     if (ethUnit == ENET_UNIT_LAN)
         return TRUE;
 
@@ -483,6 +483,9 @@ athrs16_phy_is_fdx(int ethUnit)
     }
 
     return FALSE;
+#else
+    return TRUE;
+#endif
 }
 
 /******************************************************************************
@@ -504,7 +507,7 @@ athrs16_phy_speed(int ethUnit)
     uint32_t  phyAddr;
     int       ii = 200;
     ag7100_phy_speed_t phySpeed;
-
+#if 0
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;
@@ -555,6 +558,9 @@ athrs16_phy_speed(int ethUnit)
          phySpeed = AG7100_PHY_SPEED_1000T;
 
     return phySpeed;
+#else
+    return AG7100_PHY_SPEED_1000T;
+#endif
 }
 
 /*****************************************************************************
@@ -580,7 +586,7 @@ athrs16_phy_is_up(int ethUnit)
     int           gainedLinks = 0;
     uint32_t      phyBase;
     uint32_t      phyAddr;
-
+    #if 0
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;
@@ -628,7 +634,9 @@ athrs16_phy_is_up(int ethUnit)
     }
 
     return (linkCount);
-
+    #else
+        return 1;
+    #endif
 }
 
 static uint32_t
