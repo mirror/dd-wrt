@@ -455,7 +455,7 @@ athrs16_phy_is_fdx(int ethUnit)
     uint32_t  phyAddr;
     uint16_t  phyHwStatus;
     int       ii = 200;
-#if 0
+#if 1
     if (ethUnit == ENET_UNIT_LAN)
         return TRUE;
 
@@ -507,7 +507,7 @@ athrs16_phy_speed(int ethUnit)
     uint32_t  phyAddr;
     int       ii = 200;
     ag7100_phy_speed_t phySpeed;
-#if 0
+#if 1
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;
