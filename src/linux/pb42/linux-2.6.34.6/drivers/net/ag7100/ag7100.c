@@ -1187,9 +1187,9 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
     int                nds_this_pkt;
 
 
-    ds = &r->ring_desc[r->ring_head];
-    if(ag7100_tx_owned_by_dma(ds))
-	goto dropit;
+//    ds = &r->ring_desc[r->ring_head];
+//    if(ag7100_tx_owned_by_dma(ds))
+//	goto dropit;
     
 
 #ifdef VSC73XX_DEBUG
@@ -1245,8 +1245,8 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
 #endif    
 #endif
 
-//    if (ag7100_tx_reap_thresh(mac)) 
-//        ag7100_tx_reap(mac);
+    if (ag7100_tx_reap_thresh(mac)) 
+        ag7100_tx_reap(mac);
 
     ag7100_trc_new(r->ring_head,"hard-stop hd");
     ag7100_trc_new(r->ring_tail,"hard-stop tl");
@@ -1433,6 +1433,12 @@ ag7100_poll(struct net_device *dev, int *budget)
 
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
 
+    if (ret == AG7100_RX_STATUS_OOM)
+    {
+        mod_timer(&mac->mac_oom_timer, jiffies+1);
+    	napi_complete(napi);
+    	return 0;
+    }
 
 	if (work_done < budget)
 		{
@@ -1456,14 +1462,6 @@ ag7100_poll(struct net_device *dev, int *budget)
     {
         ag7100_dma_reset(mac);
         return 0;
-    }
-    else if (ret == AG7100_RX_STATUS_OOM)
-    {
-        printk(MODULE_NAME ": oom..?\n");
-        /* 
-        * Start timer, stop polling, but do not enable rx interrupts.
-        */
-        mod_timer(&mac->mac_oom_timer, jiffies+1);
     }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
@@ -2006,18 +2004,7 @@ ag7100_oom_timer(unsigned long data)
     int val;
 
     ag7100_trc(data,"data");
-//    ag7100_rx_replenish(mac);
-    if (ag7100_rx_ring_full(mac))
-    {
-        val = mod_timer(&mac->mac_oom_timer, jiffies+1);
-        assert(!val);
-    }
-    else
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	napi_schedule(&mac->mac_napi);
-#else
-	netif_rx_schedule(mac->mac_dev);
-#endif
+    napi_schedule(&mac->mac_napi);
 }
 
 static void
