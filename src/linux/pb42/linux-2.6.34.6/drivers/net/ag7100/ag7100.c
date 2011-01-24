@@ -1347,7 +1347,7 @@ ag7100_intr(int cpl, void *dev_id)
 
     assert(isr == (isr & imr));
 
-    if (likely(isr & (AG7100_INTR_RX | AG7100_INTR_RX_OVF)))
+    if (likely(isr & (AG7100_INTR_RX | AG7100_INTR_RX_OVF | AG7100_INTR_TX)))
     {
         handled = 1;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
@@ -1370,12 +1370,6 @@ ag7100_intr(int cpl, void *dev_id)
             ag7100_intr_disable_recv(mac);
         }
         /*ag7100_recv_packets(dev, mac, 200, &budget);*/
-    }
-    if (likely(isr & AG7100_INTR_TX))
-    {
-        handled = 1;
-        ag7100_intr_ack_tx(mac);
-        ag7100_tx_reap(mac);
     }
     if (unlikely(isr & AG7100_INTR_RX_BUS_ERROR))
     {
@@ -1448,6 +1442,8 @@ ag7100_poll(struct net_device *dev, int *budget)
 #endif
     ag7100_rx_status_t  ret;
     u32                 flags;
+    u32                 status;
+    ag7100_tx_reap(mac);
 
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
 
@@ -1455,6 +1451,15 @@ ag7100_poll(struct net_device *dev, int *budget)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	if (work_done < budget)
 		{
+		if (likely(ret == AG7100_RX_STATUS_NOT_DONE))
+		{
+    		return work_done;
+		}
+		status = ag7100_reg_rd(mac, AG7100_DMA_TX_STATUS);
+		if (status & AG7100_TX_STATUS_PKT_SENT)
+		{
+		return work_done;
+		}
     		napi_complete(napi);
 		spin_lock_irqsave(&mac->mac_lock, flags);
     		ag7100_intr_enable_recv(mac);
@@ -1473,13 +1478,6 @@ ag7100_poll(struct net_device *dev, int *budget)
     {
         status = 0;
         ag7100_dma_reset(mac);
-    }
-    if (likely(ret == AG7100_RX_STATUS_NOT_DONE))
-    {
-        /*
-        * We have work left
-        */
-        status = 1;
     }
     else if (ret == AG7100_RX_STATUS_OOM)
     {
@@ -1839,7 +1837,6 @@ ag7100_tx_reap(ag7100_mac_t *mac)
     ag7100_trc_new(tail,"tl");
 
     ar7100_flush_ge(mac->mac_unit);
-    spin_lock_irqsave(&mac->mac_lock, flags);
     while(tail != head)
     {
         ds   = &r->ring_desc[tail];
@@ -1848,6 +1845,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
         if(ag7100_tx_owned_by_dma(ds))
             break;
+        ag7100_intr_ack_tx(mac);
 
         bf      = &r->ring_buffer[tail];
         assert(bf->buf_pkt);
@@ -1868,7 +1866,6 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
         reaped ++;
     }
-    spin_unlock_irqrestore(&mac->mac_lock, flags);
 
     r->ring_tail = tail;
 
