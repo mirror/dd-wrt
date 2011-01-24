@@ -464,9 +464,14 @@ static inline int ag7100_rx_ring_full(ag7100_mac_t *mac)
 
 #define ag7100_intr_enable_tx(_mac)                                      \
     ag7100_reg_rmw_set((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_TX);
+#define ag7100_intr_enable_rxtx(_mac)                                      \
+    ag7100_reg_rmw_set((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_TX | AG7100_INTR_RX | AG7100_INTR_RX_OVF);
 
 #define ag7100_intr_disable_tx(_mac)                                     \
     ag7100_reg_rmw_clear((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_TX);
+
+#define ag7100_intr_disable_rxtx(_mac)                                     \
+    ag7100_reg_rmw_clear((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_TX | AG7100_INTR_RX | AG7100_INTR_RX_OVF);
 
 #define ag7100_intr_disable_recv(_mac)                                      \
     ag7100_reg_rmw_clear(mac, AG7100_DMA_INTR_MASK,                         \
