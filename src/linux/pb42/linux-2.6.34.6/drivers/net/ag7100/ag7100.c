@@ -1123,9 +1123,6 @@ ag7100_handle_tx_full(ag7100_mac_t *mac)
 
     netif_stop_queue(mac->mac_dev);
 
-    spin_lock_irqsave(&mac->mac_lock, flags);
-    ag7100_intr_enable_tx(mac);
-    spin_unlock_irqrestore(&mac->mac_lock, flags);
 }
 
 /* ******************************
@@ -1826,7 +1823,6 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
         if(ag7100_tx_owned_by_dma(ds))
             break;
-        ag7100_intr_ack_tx(mac);
 
         bf      = &r->ring_buffer[tail];
         assert(bf->buf_pkt);
@@ -1847,6 +1843,8 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
         reaped ++;
     }
+    if (reaped)
+	ag7100_intr_ack_tx(mac);
 
     r->ring_tail = tail;
 
