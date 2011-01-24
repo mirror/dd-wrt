@@ -1542,8 +1542,8 @@ process_pkts:
                 *work_done = quota = 0;
                 return AG7100_RX_DMA_HANG;
             }
-            break;
 #endif
+            break;
         }
         ag7100_intr_ack_rx(mac);
 
