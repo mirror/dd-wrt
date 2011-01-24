@@ -1189,6 +1189,13 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
     int                len;
     int                nds_this_pkt;
 
+
+    ag7100_desc_t      *ds;
+    ds = &r->ring_desc[r->ring_head];
+    if(ag7100_tx_owned_by_dma(ds))
+	goto dropit;
+    
+
 #ifdef VSC73XX_DEBUG
     {
         static int vsc73xx_dbg;
@@ -1242,8 +1249,8 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
 #endif    
 #endif
 
-    if (ag7100_tx_reap_thresh(mac)) 
-        ag7100_tx_reap(mac);
+//    if (ag7100_tx_reap_thresh(mac)) 
+//        ag7100_tx_reap(mac);
 
     ag7100_trc_new(r->ring_head,"hard-stop hd");
     ag7100_trc_new(r->ring_tail,"hard-stop tl");
@@ -1431,7 +1438,6 @@ ag7100_poll(struct net_device *dev, int *budget)
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
 
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	if (work_done < budget)
 		{
 		if (likely(ret == AG7100_RX_STATUS_NOT_DONE))
@@ -1439,7 +1445,7 @@ ag7100_poll(struct net_device *dev, int *budget)
     		return work_done;
 		}
 		status = ag7100_reg_rd(mac, AG7100_DMA_TX_STATUS);
-		if (status & AG7100_TX_STATUS_PKT_SENT)
+		if ((status & AG7100_TX_STATUS_PKT_SENT))
 		{
 		return work_done;
 		}
@@ -1449,14 +1455,6 @@ ag7100_poll(struct net_device *dev, int *budget)
     		ag7100_intr_enable_tx(mac);
 		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
-#else
-    dev->quota  -= work_done;
-    *budget     -= work_done;
-    if (likely(ret == AG7100_RX_STATUS_DONE))
-    {
-	netif_rx_complete(dev);
-    }
-#endif
 
     if(ret == AG7100_RX_DMA_HANG)
     {
@@ -1853,9 +1851,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
     r->ring_tail = tail;
 
-    if (netif_queue_stopped(mac->mac_dev) &&
-        (ag7100_ndesc_unused(mac, r) >= AG7100_TX_QSTART_THRESH) &&
-        netif_carrier_ok(mac->mac_dev))
+    if ((ag7100_ndesc_unused(mac, r) >= AG7100_TX_QSTART_THRESH))
     {
         netif_wake_queue(mac->mac_dev);
     }
