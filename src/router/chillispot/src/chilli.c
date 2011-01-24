@@ -462,8 +462,7 @@ int static set_uamallowed(char *uamallowed, int len) {
 	sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
 		"Invalid uamallowed domain or address: %s!", 
 		p3);
-	free(p3);
-	return -1;
+	goto next; //silently ignore invalid domain or addresses
       }
       else {
 	int j = 0;
@@ -487,6 +486,7 @@ int static set_uamallowed(char *uamallowed, int len) {
 	}
       }
     }
+    next:;
     if (p2) {
       p1 = p2+1;
       if ((p2 = strchr(p1, ','))) {
