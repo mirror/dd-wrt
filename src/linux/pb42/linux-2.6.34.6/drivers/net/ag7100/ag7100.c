@@ -1448,37 +1448,40 @@ ag7100_poll(struct net_device *dev, int *budget)
 #endif
     ag7100_rx_status_t  ret;
     u32                 flags;
-    spin_lock_irqsave(&mac->mac_lock, flags);
 
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (work_done < budget)
+	if (likely(ret ==  AG7100_RX_STATUS_DONE) && work_done < budget)
 		{
-    		napi_complete(napi);
+		spin_lock_irqsave(&mac->mac_lock, flags);
+    		__napi_complete(napi);
     		ag7100_intr_enable_recv(mac);
+		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
 #else
     dev->quota  -= work_done;
     *budget     -= work_done;
     if (likely(ret == AG7100_RX_STATUS_DONE))
     {
-    netif_rx_complete(dev);
+	netif_rx_complete(dev);
     }
 #endif
+
     if(ret == AG7100_RX_DMA_HANG)
     {
         status = 0;
         ag7100_dma_reset(mac);
     }
-
     if (likely(ret == AG7100_RX_STATUS_NOT_DONE))
     {
         /*
         * We have work left
         */
         status = 1;
+    	napi_complete(napi);
+	napi_reschedule(napi)    
     }
     else if (ret == AG7100_RX_STATUS_OOM)
     {
@@ -1487,8 +1490,8 @@ ag7100_poll(struct net_device *dev, int *budget)
         * Start timer, stop polling, but do not enable rx interrupts.
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
+    	napi_complete(napi);
     }
-    spin_unlock_irqrestore(&mac->mac_lock, flags);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	return work_done;
@@ -1560,7 +1563,7 @@ process_pkts:
 
         if (ag7100_rx_owned_by_dma(ds))
         {
-#if 1
+#if 0
             if(quota == iquota)
             {
                 *work_done = quota = 0;
