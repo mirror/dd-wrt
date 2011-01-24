@@ -1959,6 +1959,10 @@ freeradius.generate="Izdelaj certifikat";
 freeradius.cert_status="Status certifikata";
 freeradius.port="Radius vrata";
 
+//help container
+
+hfreeradius.right2="Preden zaženete FreeRadius morate omogočiti JFFS.";
+
 // ** Wireless_Advanced.asp **//
 
 wl_adv.titl="Napredne brezžične nastavitve";
