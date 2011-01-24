@@ -210,7 +210,7 @@ addEvent(window, "unload", function() {
 						<div id="help">
 							<div><h2><% tran("share.help"); %></h2></div>
 							<dl>
-								<dd class="definition"><% tran("hstatus_freeradius.right2"); %></dd>
+								<dd class="definition"><% tran("hfreeradius.right2"); %></dd>
 							</dl><br />
 							<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HFreeRadius.asp');"><% tran("share.more"); %></a>
 					</div>
