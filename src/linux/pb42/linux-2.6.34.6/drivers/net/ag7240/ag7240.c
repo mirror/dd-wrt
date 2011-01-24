@@ -946,7 +946,6 @@ ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
             /* A race condition is hit when the queue is switched on while tx interrupts are enabled.
              * To avoid that disable tx interrupts when phy is down.
              */
-            ag7240_intr_disable_tx(mac);
 
             netif_carrier_off(dev);
             netif_stop_queue(dev);
@@ -1039,8 +1038,6 @@ ag7242_check_link(ag7240_mac_t *mac)
             /* A race condition is hit when the queue is switched on while tx interrupts are enabled.
              * To avoid that disable tx interrupts when phy is down.
              */
-            ag7240_intr_disable_tx(mac);
-
             netif_carrier_off(dev);
             netif_stop_queue(dev);
        }
@@ -1159,11 +1156,6 @@ ag7240_handle_tx_full(ag7240_mac_t *mac)
 
     mac->mac_net_stats.tx_fifo_errors ++;
     netif_stop_queue(mac->mac_dev);
-
-
-    spin_lock_irqsave(&mac->mac_lock, flags);
-    ag7240_intr_enable_tx(mac);
-    spin_unlock_irqrestore(&mac->mac_lock, flags);
 }
 
 /* ******************************
@@ -1226,6 +1218,11 @@ ag7240_hard_start(struct sk_buff *skb, struct net_device *dev)
     unsigned char      *start;
     int                len;
     int                nds_this_pkt;
+    ds = &r->ring_desc[r->ring_head];
+    if(ag7240_tx_owned_by_dma(ds))
+	goto dropit;
+
+
 //#ifdef CONFIG_AR7240_S26_VLAN_IGMP
     if(unlikely((skb->len <= 0) || (skb->len > (dev->mtu + ETH_VLAN_HLEN +6 ))))
 //#else
@@ -1236,10 +1233,10 @@ ag7240_hard_start(struct sk_buff *skb, struct net_device *dev)
         goto dropit;
     }
 
-    for (ac = 0;ac < mac->mac_noacs; ac++) {
+/*    for (ac = 0;ac < mac->mac_noacs; ac++) {
         if (ag7240_tx_reap_thresh(mac,ac)) 
             ag7240_tx_reap(mac,ac);
-    }
+    }*/
 
     /* 
      * Select the TX based on access category 
@@ -1406,37 +1403,12 @@ ag7240_intr(int cpl, void *dev_id)
 
         ag7240_intr_ack_rxovf(mac);
     }
-    if (likely(isr & AG7240_INTR_RX))
+    if (likely(isr & AG7240_INTR_RX | AG7240_INTR_TX))
     {
         handled = 1;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (napi_schedule_prep(&mac->mac_napi))
-#else
-	if (netif_rx_schedule_prep(dev))
-#endif
-        {
-            ag7240_intr_disable_recv(mac);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-            __napi_schedule(&mac->mac_napi);
-#else
-            __netif_rx_schedule(dev);
-#endif
-        }
-        else
-        {
-            printk(MODULE_NAME ": driver bug! interrupt while in poll\n");
-//            assert(0);
-//            ag7240_intr_disable_recv(mac);
-        }
-        /*ag7240_recv_packets(dev, mac, 200, &budget);*/
-    }
-    if (likely(isr & AG7240_INTR_TX))
-    {
-        handled = 1;
-        ag7240_intr_ack_tx(mac);
-	/* Which queue to reap ??????????? */
-        for(ac = 0; ac < mac->mac_noacs;ac++)
-            ag7240_tx_reap(mac,ac);
+        ag7240_intr_disable_recv(mac);
+        ag7240_intr_disable_tx(mac);
+        napi_schedule(&mac->mac_napi);
     }
     if (unlikely(isr & AG7240_INTR_RX_BUS_ERROR))
     {
@@ -1501,19 +1473,31 @@ ag7240_poll(struct net_device *dev, int *budget)
 	ag7240_mac_t       *mac       = (ag7240_mac_t *)netdev_priv(dev);
 	int work_done,      max_work  = min(*budget, dev->quota), status = 0;
 #endif
-
-
+    int ac;
     ag7240_rx_status_t  ret;
     u32                 flags;
+    /* Which queue to reap ??????????? */
+    for(ac = 0; ac < mac->mac_noacs;ac++)
+        ag7240_tx_reap(mac,ac);
 
     ret = ag7240_recv_packets(dev, mac, max_work, &work_done);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	if (work_done < budget)
 		{
+		if (likely(ret == AG7240_RX_STATUS_NOT_DONE))
+		{
+    		return work_done;
+		}
+		status = ag7240_reg_rd(mac, AG7240_DMA_TX_STATUS);
+		if ((status & AG7240_TX_STATUS_PKT_SENT))
+		{
+		return work_done;
+		}
     		napi_complete(napi);
 		spin_lock_irqsave(&mac->mac_lock, flags);
     		ag7240_intr_enable_recv(mac);
+    		ag7240_intr_enable_tx(mac);
 		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
 #else
@@ -1528,13 +1512,6 @@ ag7240_poll(struct net_device *dev, int *budget)
     {
         status = 0;
         ag7240_dma_reset(mac);
-    }
-    if (likely(ret == AG7240_RX_STATUS_NOT_DONE))
-    {
-        /*
-        * We have work left
-        */
-        status = 1;
     }
     else if (ret == AG7240_RX_STATUS_OOM)
     {
@@ -1850,19 +1827,13 @@ ag7240_tx_reap(ag7240_mac_t *mac,int ac)
 
         reaped ++;
     }
+    if (reaped)
+        ag7240_intr_ack_tx(mac);
 
     r->ring_tail = tail;
 
-    if (netif_queue_stopped(mac->mac_dev) &&
-        (ag7240_ndesc_unused(mac, r) >= AG7240_TX_QSTART_THRESH) &&
-        netif_carrier_ok(mac->mac_dev))
+    if ((ag7240_ndesc_unused(mac, r) >= AG7240_TX_QSTART_THRESH))
     {
-        if (ag7240_reg_rd(mac, AG7240_DMA_INTR_MASK) & AG7240_INTR_TX)
-        {
-            spin_lock_irqsave(&mac->mac_lock, flags);
-            ag7240_intr_disable_tx(mac);
-            spin_unlock_irqrestore(&mac->mac_lock, flags);
-        }
         netif_wake_queue(mac->mac_dev);
     }
 
