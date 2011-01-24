@@ -209,9 +209,6 @@ static inline int id_chip(void)
 void phy_mode_setup() 
 {
     printk("phy_mode_setup\n");
-    int idchip = id_chip();
-      if (idchip==AR8216)
-      {
     /*work around for phy4 rgmii mode*/
     phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 18);     
     phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x480c);    
@@ -223,7 +220,6 @@ void phy_mode_setup()
     /*tx delay*/ 
     phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 5);     
     phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x3d47);    
-	}
 }
 
 void athrs16_reg_init()
