@@ -1453,10 +1453,10 @@ ag7100_poll(struct net_device *dev, int *budget)
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (likely(ret ==  AG7100_RX_STATUS_DONE) && work_done < budget)
+	if (work_done < budget)
 		{
+    		napi_complete(napi);
 		spin_lock_irqsave(&mac->mac_lock, flags);
-    		__napi_complete(napi);
     		ag7100_intr_enable_recv(mac);
 		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
@@ -1480,8 +1480,6 @@ ag7100_poll(struct net_device *dev, int *budget)
         * We have work left
         */
         status = 1;
-    	napi_complete(napi);
-	napi_reschedule(napi); 
     }
     else if (ret == AG7100_RX_STATUS_OOM)
     {
@@ -1490,7 +1488,6 @@ ag7100_poll(struct net_device *dev, int *budget)
         * Start timer, stop polling, but do not enable rx interrupts.
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
-    	napi_complete(napi);
     }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
