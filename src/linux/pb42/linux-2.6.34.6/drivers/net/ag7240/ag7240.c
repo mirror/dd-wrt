@@ -1510,10 +1510,12 @@ ag7240_poll(struct net_device *dev, int *budget)
     ret = ag7240_recv_packets(dev, mac, max_work, &work_done);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (work_done < budget)
+	if (likely(ret ==  AG7240_RX_STATUS_DONE) && work_done < budget)
 		{
-    		napi_complete(napi);
-    		ag7240_intr_enable_recv(mac);
+		spin_lock_irqsave(&mac->mac_lock, flags);
+    		__napi_complete(napi);
+    		ag7100_intr_enable_recv(mac);
+		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
 #else
     dev->quota  -= work_done;
@@ -1534,6 +1536,8 @@ ag7240_poll(struct net_device *dev, int *budget)
         * We have work left
         */
         status = 1;
+    	napi_complete(napi);
+	napi_reschedule(napi)    
     }
     else if (ret == AG7240_RX_STATUS_OOM)
     {
@@ -1542,6 +1546,7 @@ ag7240_poll(struct net_device *dev, int *budget)
         * Start timer, stop polling, but do not enable rx interrupts.
         */
         mod_timer(&mac->mac_oom_timer, jiffies+1);
+    	napi_complete(napi);
     }
 spin_unlock_irqrestore(&mac->mac_lock, flags);
 
