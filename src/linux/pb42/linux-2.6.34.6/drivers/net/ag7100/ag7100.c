@@ -1350,26 +1350,9 @@ ag7100_intr(int cpl, void *dev_id)
     if (likely(isr & (AG7100_INTR_RX | AG7100_INTR_RX_OVF | AG7100_INTR_TX)))
     {
         handled = 1;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (likely(napi_schedule_prep(&mac->mac_napi)))
-#else
-	if (likely(netif_rx_schedule_prep(dev)))
-#endif
-        {
-            ag7100_intr_disable_recv(mac);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-            __napi_schedule(&mac->mac_napi);
-#else
-            __netif_rx_schedule(dev);
-#endif
-        }
-        else
-        {
-            printk(MODULE_NAME ": driver bug! interrupt while in poll\n");
-            assert(0);
-            ag7100_intr_disable_recv(mac);
-        }
-        /*ag7100_recv_packets(dev, mac, 200, &budget);*/
+        ag7100_intr_disable_recv(mac);
+        ag7100_intr_disable_tx(mac);
+        napi_schedule(&mac->mac_napi);
     }
     if (unlikely(isr & AG7100_INTR_RX_BUS_ERROR))
     {
@@ -1435,10 +1418,10 @@ ag7100_poll(struct net_device *dev, int *budget)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	ag7100_mac_t *mac = container_of(napi, ag7100_mac_t, mac_napi);
 	struct net_device *dev = mac->mac_dev;
-	int work_done,      max_work  = budget, status = 0;
+	int work_done,      max_work  = budget;
 #else
 	ag7100_mac_t       *mac       = (ag7100_mac_t *)netdev_priv(dev);
-	int work_done,      max_work  = min(*budget, dev->quota), status = 0;
+	int work_done,      max_work  = min(*budget, dev->quota);
 #endif
     ag7100_rx_status_t  ret;
     u32                 flags;
@@ -1463,6 +1446,7 @@ ag7100_poll(struct net_device *dev, int *budget)
     		napi_complete(napi);
 		spin_lock_irqsave(&mac->mac_lock, flags);
     		ag7100_intr_enable_recv(mac);
+    		ag7100_intr_enable_tx(mac);
 		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
 #else
@@ -1476,8 +1460,8 @@ ag7100_poll(struct net_device *dev, int *budget)
 
     if(ret == AG7100_RX_DMA_HANG)
     {
-        status = 0;
         ag7100_dma_reset(mac);
+        return 0;
     }
     else if (ret == AG7100_RX_STATUS_OOM)
     {
@@ -1873,12 +1857,6 @@ ag7100_tx_reap(ag7100_mac_t *mac)
         (ag7100_ndesc_unused(mac, r) >= AG7100_TX_QSTART_THRESH) &&
         netif_carrier_ok(mac->mac_dev))
     {
-        if (ag7100_reg_rd(mac, AG7100_DMA_INTR_MASK) & AG7100_INTR_TX)
-        {
-            spin_lock_irqsave(&mac->mac_lock, flags);
-            ag7100_intr_disable_tx(mac);
-            spin_unlock_irqrestore(&mac->mac_lock, flags);
-        }
         netif_wake_queue(mac->mac_dev);
     }
 
