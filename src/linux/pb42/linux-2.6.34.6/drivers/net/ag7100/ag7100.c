@@ -1190,7 +1190,6 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
     int                nds_this_pkt;
 
 
-    ag7100_desc_t      *ds;
     ds = &r->ring_desc[r->ring_head];
     if(ag7100_tx_owned_by_dma(ds))
 	goto dropit;
