@@ -1351,8 +1351,7 @@ ag7100_intr(int cpl, void *dev_id)
     if (likely(isr & (AG7100_INTR_RX | AG7100_INTR_RX_OVF | AG7100_INTR_TX)))
     {
         handled = 1;
-        ag7100_intr_disable_recv(mac);
-        ag7100_intr_disable_tx(mac);
+        ag7100_intr_disable_rxtx(mac);
         napi_schedule(&mac->mac_napi);
     }
     if (unlikely(isr & AG7100_INTR_RX_BUS_ERROR))
@@ -1453,8 +1452,7 @@ ag7100_poll(struct net_device *dev, int *budget)
 		}
     		napi_complete(napi);
 		spin_lock_irqsave(&mac->mac_lock, flags);
-    		ag7100_intr_enable_recv(mac);
-    		ag7100_intr_enable_tx(mac);
+    		ag7100_intr_enable_rxtx(mac);
 		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
 
