@@ -998,7 +998,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Loco M2", 0xe0a2, "3", "3", ROUTER_BOARD_NS5M, 0},	//
 		{"Ubiquiti Loco M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900},	//
 		{"Ubiquiti LiteStation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M, 0},	//
-		{"Ubiquiti PowerAP N", 0xe402, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti PowerAP N", 0xe402, "3", "3", ROUTER_BOARD_NS2M, 0},	//
 		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M, 0},	//
 		{"Ubiquiti PowerBridge M365", 0xe1a3, "3", "3", ROUTER_BOARD_R5M, M365},	//
