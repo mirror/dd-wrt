@@ -558,7 +558,6 @@ ag7100_tx_flush(ag7100_mac_t *mac)
     uint32_t    flags;
 
 
-    ar7100_flush_ge(mac->mac_unit);
 
     while(flushed != head)
     {
@@ -877,7 +876,6 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
 #endif
     ag7100_buffer_t *bp;
 
-    ar7100_flush_ge(mac->mac_unit);
 
     while (tail != head)
     {
@@ -1411,6 +1409,7 @@ void ag7100_dma_reset(ag7100_mac_t *mac)
 
 #endif
 
+
 static int
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 ag7100_poll(struct napi_struct *napi, int budget)
@@ -1429,8 +1428,9 @@ ag7100_poll(struct net_device *dev, int *budget)
     ag7100_rx_status_t  ret;
     u32                 flags;
     u32                 status;
-    ag7100_tx_reap(mac);
+    ar7100_flush_ge(mac->mac_unit);
 
+    ag7100_tx_reap(mac);
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
 
     if (ret == AG7100_RX_STATUS_OOM)
@@ -1521,7 +1521,6 @@ process_pkts:
     /*
     * Flush the DDR FIFOs for our gmac
     */
-    ar7100_flush_ge(mac->mac_unit);
 
     assert(quota > 0); /* WCL */
 
@@ -1812,7 +1811,6 @@ ag7100_tx_reap(ag7100_mac_t *mac)
     ag7100_trc_new(head,"hd");
     ag7100_trc_new(tail,"tl");
 
-    ar7100_flush_ge(mac->mac_unit);
     while(tail != head)
     {
         ds   = &r->ring_desc[tail];
