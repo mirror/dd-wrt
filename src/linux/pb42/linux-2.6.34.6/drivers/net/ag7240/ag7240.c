@@ -1514,7 +1514,7 @@ ag7240_poll(struct net_device *dev, int *budget)
 		{
 		spin_lock_irqsave(&mac->mac_lock, flags);
     		__napi_complete(napi);
-    		ag7100_intr_enable_recv(mac);
+    		ag7240_intr_enable_recv(mac);
 		spin_unlock_irqrestore(&mac->mac_lock, flags);
     		}
 #else
