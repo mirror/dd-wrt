@@ -978,17 +978,26 @@ int internal_getRouterBrand()
 		{"Ubiquiti NanoStation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M, 0},	//
 		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M, 0},	//
 		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M, 0},	//
+		{"Ubiquiti NanoStation M3", 0xe035, "3", "3", ROUTER_BOARD_NS5M, M35},	//
 		{"Ubiquiti NanoStation M365", 0xe003, "3", "3", ROUTER_BOARD_NS5M, M365},	//
 //              {"Ubiquiti NanoStation M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900},       //
 		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti Rocket M2", 0xe1c2, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M, 0},	//
 		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M, 0},	//
+		{"Ubiquiti Rocket M5", 0xe1c5, "3", "3", ROUTER_BOARD_R5M, 0},	//
+		{"Ubiquiti Rocket M3", 0xe1c3, "3", "3", ROUTER_BOARD_R5M, M35},	//
+		{"Ubiquiti Rocket M365", 0xe1b3, "3", "3", ROUTER_BOARD_R5M, M365},	//
+		{"Ubiquiti Rocket M365", 0xe1d3, "3", "3", ROUTER_BOARD_R5M, M365},	//
+		{"Ubiquiti Rocket M900", 0xe1b9, "3", "3", ROUTER_BOARD_R2M, M900},	//
 		{"Ubiquiti Bullet M2", 0xe202, "1", "1", ROUTER_BOARD_BS5M, 0},	//
 		{"Ubiquiti Bullet M5", 0xe205, "1", "1", ROUTER_BOARD_BS5M, 0},	//
-		{"Ubiquiti Airgrid 2M", 0xe212, "1", "1", ROUTER_BOARD_BS2M, 0},	//
-		{"Ubiquiti Airgrid 5M", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Airgrid M2", 0xe212, "1", "1", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti Airgrid M2", 0xe242, "1", "1", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti Airgrid M5", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti Airgrid M5", 0xe245, "1", "1", ROUTER_BOARD_BS5M, 0},	//
 		{"Ubiquiti AirRouter", 0xe4a2, "3", "3", ROUTER_BOARD_NS2M, 0},	//
 		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0},	//
 		{"Ubiquiti Pico M5", 0xe305, "1", "1", ROUTER_BOARD_BS5M, 0},	//
@@ -1000,13 +1009,21 @@ int internal_getRouterBrand()
 		{"Ubiquiti LiteStation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M, 0},	//
 		{"Ubiquiti PowerAP N", 0xe402, "3", "3", ROUTER_BOARD_NS2M, 0},	//
 		{"Ubiquiti Simple AP", 0xe4a2, "3", "3", ROUTER_BOARD_R2M, 0},	//
+		{"Ubiquiti PowerBridge M3", 0xe2a3, "3", "3", ROUTER_BOARD_R5M, M35},	//
 		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M, 0},	//
 		{"Ubiquiti PowerBridge M365", 0xe1a3, "3", "3", ROUTER_BOARD_R5M, M365},	//
+		{"Ubiquiti NanoBridge M3", 0xe243, "3", "3", ROUTER_BOARD_BS5M, M35},	//
+		{"Ubiquiti NanoBridge M365", 0xe233, "3", "3", ROUTER_BOARD_BS5M, M365},	//
+		{"Ubiquiti NanoBridge M900", 0xe239, "3", "3", ROUTER_BOARD_BS5M, M900},	//
 		{"Ubiquiti NanoBridge M5", 0xe235, "3", "3", ROUTER_BOARD_BS5M, 0},	//
+		{"Ubiquiti NanoBridge M5", 0xe2b5, "3", "3", ROUTER_BOARD_BS5M, 0},	//
 		{"Ubiquiti NanoBridge M2", 0xe232, "3", "3", ROUTER_BOARD_BS2M, 0},	//
-		{"Ubiquiti Rocket M365", 0xe1b3, "3", "3", ROUTER_BOARD_R5M, M365},	//
-		{"Ubiquiti Rocket M35", 0xe1c3, "3", "3", ROUTER_BOARD_R5M, M35},	//
-		{"Ubiquiti Rocket M900", 0xe1b9, "3", "3", ROUTER_BOARD_R2M, M900},	//
+		{"Ubiquiti 3G Station", 0xe6a2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti 3G Station Professional", 0xe6b2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti 3G Station Outdoor", 0xe6c2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti WispStation M5", 0xe2a5, "3", "3", ROUTER_BOARD_BS2M, 0},	//
+
+
 		{NULL, 0, NULL, NULL, 0},	//
 	};
 
