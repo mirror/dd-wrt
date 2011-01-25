@@ -535,11 +535,11 @@ int internal_getRouterBrand()
 		char gwid[9];
 		fread(&gwid[0], 9, 1, file);
 		fclose(file);
-		if (!strncmp(gwid, "GW2388-4", 8)) {
-			setRouter("Gateworks Laguna GW2388-4");
+		if (!strncmp(gwid, "GW2388", 6)) {
+			setRouter("Gateworks Laguna GW2388");
 			return ROUTER_BOARD_GW2388;
 		} else {
-			setRouter("Gateworks Laguna GWXXXX-X");
+			setRouter("Gateworks Laguna GWXXXX");
 			return ROUTER_BOARD_GW2388;
 		}
 	} else {
