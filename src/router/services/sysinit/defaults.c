@@ -188,6 +188,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
 #elif defined(HAVE_NS2) || defined(HAVE_EOC2610)
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
+#elif defined(HAVE_WHRHPGN) 
+	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #endif
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_CORENET
@@ -683,9 +685,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ssid", "hotspot-internet", 0},	/* Service set ID (network name) */
 #elif HAVE_CORENET
 	{"wl_ssid", "corenet", 0},	/* Service set ID (network name) */
-#elif defined(HAVE_GGEW) && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610)
+#elif defined(HAVE_GGEW) && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610) && !defined(HAVE_BUFFALO_BL_DEFAULTS)
 	{"wl_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
-#elif HAVE_NEWMEDIA  && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610)
+#elif HAVE_NEWMEDIA  && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610) && !defined(HAVE_BUFFALO_BL_DEFAULTS)
 	{"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
 #if defined(HAVE_DEFREGDOMAIN)
@@ -869,6 +871,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
 	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_WHRHPGN)
+	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
 	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
@@ -895,6 +899,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
 	{"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_WHRHPGN)
+	{"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
 	{"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_CARLSONWIRELES
