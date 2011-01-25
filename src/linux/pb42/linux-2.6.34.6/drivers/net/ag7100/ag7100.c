@@ -1185,9 +1185,9 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
     int                nds_this_pkt;
 
 
-//    ds = &r->ring_desc[r->ring_head];
-//    if(ag7100_tx_owned_by_dma(ds))
-//	goto dropit;
+    ds = &r->ring_desc[r->ring_head];
+    if(ag7100_tx_owned_by_dma(ds))
+	goto dropit;
     
 
 #ifdef VSC73XX_DEBUG
@@ -1548,92 +1548,6 @@ process_pkts:
         assert(skb);
         skb_put(skb, len - ETHERNET_FCS_SIZE);
 
-#if defined(CONFIG_ATHRS26_PHY) && defined(HEADER_EN)
-        uint8_t type;
-        uint16_t def_vid;
-
-        if(mac->mac_unit == 0)
-        {
-            type = (skb->data[1]) & 0xf;
-
-            if (type == NORMAL_PACKET)
-            {
-#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)            	
-                /*cpu egress tagged*/
-                if (is_cpu_egress_tagged())
-                {
-                    if ((skb->data[12 + HEADER_LEN] != 0x81) || (skb->data[13 + HEADER_LEN] != 0x00))
-                    {
-                        def_vid = athrs26_defvid_get(skb->data[0] & 0xf);
-                        skb_push(skb, 2); /* vid lenghth - header length */
-                        memmove(&skb->data[0], &skb->data[4], 12); /*remove header and add vlan tag*/
-
-                        skb->data[12] = 0x81;
-                        skb->data[13] = 0x00;
-                        skb->data[14] = (def_vid >> 8) & 0xf;
-                        skb->data[15] = def_vid & 0xff;
-                    }
-                }
-                else
-#endif                
-                    skb_pull(skb, 2); /* remove attansic header */
-
-                mac->net_rx_packets ++;
-                mac->net_rx_bytes += skb->len;
-#if 0//def CONFIG_CAMEO_REALTEK_PHY
-		/* align the data to the ip header - should be faster than copying the entire packet */
-		for (i = len - (len % 4); i >= 0; i -= 4) {
-			put_unaligned(*((u32 *) (skb->data + i)), (u32 *) (skb->data + i + 2));
-		}
-		skb->data += 2;
-		skb->tail += 2;
-#endif
-
-                /*
-                * also pulls the ether header
-                */
-                skb->protocol       = eth_type_trans(skb, dev);
-                skb->dev            = dev;
-                bp->buf_pkt         = NULL;
-                dev->last_rx        = jiffies;
-                quota--;
-
-                netif_receive_skb(skb);
-            }
-            else
-            {
-                mac->net_rx_packets ++;
-                mac->net_rx_bytes += skb->len;
-                bp->buf_pkt         = NULL;
-                dev->last_rx        = jiffies;
-                quota--;
-
-                if (type == READ_WRITE_REG_ACK)
-                {
-                    header_receive_skb(skb);
-                }
-                else
-                {
-                    kfree_skb(skb);
-                }
-            }
-        }else
-        {
-            mac->net_rx_packets ++;
-            mac->net_rx_bytes += skb->len;
-            /*
-            * also pulls the ether header
-            */
-            skb->protocol       = eth_type_trans(skb, dev);
-            skb->dev            = dev;
-            bp->buf_pkt         = NULL;
-            dev->last_rx        = jiffies;
-            quota--;
-
-            netif_receive_skb(skb);
-        }
-
-#else
         mac->net_rx_packets ++;
         mac->net_rx_bytes += skb->len;
         /*
@@ -1654,7 +1568,6 @@ process_pkts:
     	    skb->protocol       = eth_type_trans(skb, dev);
             netif_receive_skb(skb);
             }
-#endif
 
         ag7100_ring_incr(head);
     }
@@ -1685,10 +1598,6 @@ process_pkts:
     ag7100_trc(more_pkts,"more_pkts");
 
     if (!more_pkts) goto done;
-    /*
-    * more pkts arrived; if we have quota left, get rolling again
-    */
-    if (quota)      goto process_pkts;
     /*
     * out of quota
     */
