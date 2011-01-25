@@ -8,21 +8,21 @@ void start_backup(void)
 #endif
 	//backup nvram
 	fprintf(stderr, "backup nvram\n");
-	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
 		char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
 		in = fopen(drive, "r+b");
-		fseeko64(in, 0, SEEK_END);
-		__off64_t mtdlen = ftell(in);
-		fseeko64(in, mtdlen-(65536*2), SEEK_SET);
+		fseeko(in, 0, SEEK_END);
+		off_t mtdlen = ftello(in);
+		fseeko(in, mtdlen-(65536*2), SEEK_SET);
 		fwrite(mem, 65536, 1, in);
 		fclose(in);
 		eval("sync");
 		fprintf(stderr, "reread for sync disc\n");
-		in = fopen64(drive, "rb");
-		fseeko64(in, mtdlen-(65536*2), SEEK_SET);
+		in = fopen(drive, "rb");
+		fseeko(in, mtdlen-(65536*2), SEEK_SET);
 		fread(mem, 65536, 1, in);
 		fprintf(stderr, "%X%X%X%X\n", mem[0] & 0xff, mem[1] & 0xff,
 			mem[2] & 0xff, mem[3] & 0xff);
@@ -43,9 +43,9 @@ void start_recover(void)
 	sprintf(dev, "/dev/discs/disc%d/disc", getdiscindex());
 #endif
 	in = fopen(dev, "rb");
-	fseeko64(in, 0, SEEK_END);
-	__off64_t mtdlen = ftello64(in);
-	fseeko64(in, mtdlen-(65536*2), SEEK_SET);
+	fseeko(in, 0, SEEK_END);
+	off_t mtdlen = ftello64(in);
+	fseeko(in, mtdlen-(65536*2), SEEK_SET);
 
 	unsigned char *mem = malloc(65536);
 	fread(mem, 65536, 1, in);
@@ -53,7 +53,7 @@ void start_recover(void)
 	if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
 	    && mem[3] == 0x48) {
 		fprintf(stderr, "found recovery\n");
-		in = fopen64("/usr/local/nvram/nvram.bin", "wb");
+		in = fopen("/usr/local/nvram/nvram.bin", "wb");
 		if (in != NULL) {
 			fwrite(mem, 65536, 1, in);
 			fclose(in);
