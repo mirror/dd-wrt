@@ -209,7 +209,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		fclose(in);
 		in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);
-		__off_t mtdlen = ftello(in);
+		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		fwrite(mem, 65536, 1, in);
 		fclose(in);
@@ -344,7 +344,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 #endif
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);
-		__off_t mtdlen = ftell(in);
+		off_t mtdlen = ftell(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
 		for (i = 0; i < 65536; i++)
