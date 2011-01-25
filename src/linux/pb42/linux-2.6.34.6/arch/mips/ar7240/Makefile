@@ -24,6 +24,10 @@ obj-y	+=	prom.o	\
 			irq.o	\
 			setup.o	\
 			ar7240.o \
+			ar71xx.o \
+			pci.o \
+			dev-ap91-pci.o \
+			pci-ath9k-fixup.o \
 			platform.o
 
 #obj-$(CONFIG_AR9100)	+= wdt.o
