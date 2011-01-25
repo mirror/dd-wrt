@@ -1419,10 +1419,10 @@ ag7100_poll(struct net_device *dev, int *budget)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	ag7100_mac_t *mac = container_of(napi, ag7100_mac_t, mac_napi);
 	struct net_device *dev = mac->mac_dev;
-	int work_done,      max_work  = budget;
+	int work_done=0,      max_work  = budget;
 #else
 	ag7100_mac_t       *mac       = (ag7100_mac_t *)netdev_priv(dev);
-	int work_done,      max_work  = min(*budget, dev->quota);
+	int work_done=0,      max_work  = min(*budget, dev->quota);
 #endif
     ag7100_rx_status_t  ret;
     u32                 flags;
@@ -1558,7 +1558,7 @@ process_pkts:
         dev->last_rx        = jiffies;
 
         quota--;
-
+	*work_done++;
 #if defined(CONFIG_PHY_LAYER)
 	if (mac->rx)
 	    mac->rx(skb);
@@ -1604,7 +1604,7 @@ process_pkts:
     ret = AG7100_RX_STATUS_NOT_DONE;
 
 done:
-    *work_done   = (iquota - quota);
+//    *work_done   = (iquota - quota);
 
     if (unlikely(ag7100_rx_ring_full(mac))) 
         return AG7100_RX_STATUS_OOM;
