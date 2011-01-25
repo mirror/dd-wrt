@@ -1,7 +1,3 @@
-#ifdef __UCLIBC_HAS_LFS__
-#define _FILE_OFFFSET_BITS 64
-#define __USE_LARGEFILE64
-#endif
 /*
  * sysinit-x86.c
  *
@@ -114,21 +110,21 @@ void start_sysinit(void)
 		eval("rm", "-f", "/etc/nvram/offsets.db");
 	}
 	//recover nvram if available
-	in = fopen64("/usr/local/nvram/nvram.bin", "rb");
+	in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
 		sprintf(dev, "/dev/discs/disc%d/disc", index);
-		in = fopen64(dev, "rb");
-		fseeko64(in, 0, SEEK_END);
-		__off64_t mtdlen = ftell(in);
-		fseeko64(in, mtdlen-(65536*2), SEEK_SET);
+		in = fopen(dev, "rb");
+		fseeko(in, 0, SEEK_END);
+		off_t mtdlen = ftello(in);
+		fseeko(in, mtdlen-(65536*2), SEEK_SET);
 		unsigned char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
 		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
 		    && mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
-			in = fopen64("/usr/local/nvram/nvram.bin", "wb");
+			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {
 				fwrite(mem, 65536, 1, in);
 				fclose(in);
