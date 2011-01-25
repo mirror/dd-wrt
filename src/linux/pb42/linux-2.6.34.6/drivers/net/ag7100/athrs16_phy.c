@@ -156,6 +156,23 @@ BOOL athrs16_phy_is_link_alive(int phyUnit);
 static uint32_t athrs16_reg_read(uint32_t reg_addr);
 static void athrs16_reg_write(uint32_t reg_addr, uint32_t reg_val);
 
+void phy_mode_setup() 
+{
+    printk("phy_mode_setup\n");
+
+    /*work around for phy4 rgmii mode*/
+    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 18);     
+    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x480c);    
+
+    /*rx delay*/ 
+    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 0);     
+    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x824e);  
+
+    /*tx delay*/ 
+    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 5);     
+    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x3d47);    
+
+}
 
 #define AR8X16_PROBE_RETRIES	10
 
@@ -205,21 +222,6 @@ static inline int id_chip(void)
 			(int)(id >> AR8216_CTRL_VERSION_S),
 			(int)(id & AR8216_CTRL_REVISION));
 	return ret;
-}
-void phy_mode_setup() 
-{
-    printk("phy_mode_setup\n");
-    /*work around for phy4 rgmii mode*/
-    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 18);     
-    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x480c);    
-
-    /*rx delay*/ 
-    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 0);     
-    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x824e);  
-
-    /*tx delay*/ 
-    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 29, 5);     
-    phy_reg_write(ATHR_PHYBASE(ATHR_IND_PHY), ATHR_PHYADDR(ATHR_IND_PHY), 30, 0x3d47);    
 }
 
 void athrs16_reg_init()
@@ -453,7 +455,7 @@ athrs16_phy_is_fdx(int ethUnit)
     uint32_t  phyAddr;
     uint16_t  phyHwStatus;
     int       ii = 200;
-#if 1
+
     if (ethUnit == ENET_UNIT_LAN)
         return TRUE;
 
@@ -481,9 +483,6 @@ athrs16_phy_is_fdx(int ethUnit)
     }
 
     return FALSE;
-#else
-    return TRUE;
-#endif
 }
 
 /******************************************************************************
@@ -505,7 +504,7 @@ athrs16_phy_speed(int ethUnit)
     uint32_t  phyAddr;
     int       ii = 200;
     ag7100_phy_speed_t phySpeed;
-#if 1
+
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;
@@ -556,9 +555,6 @@ athrs16_phy_speed(int ethUnit)
          phySpeed = AG7100_PHY_SPEED_1000T;
 
     return phySpeed;
-#else
-    return AG7100_PHY_SPEED_1000T;
-#endif
 }
 
 /*****************************************************************************
@@ -584,7 +580,7 @@ athrs16_phy_is_up(int ethUnit)
     int           gainedLinks = 0;
     uint32_t      phyBase;
     uint32_t      phyAddr;
-#if 1
+
     for (phyUnit=0; phyUnit < ATHR_PHY_MAX; phyUnit++) {
         if (!ATHR_IS_ETHUNIT(phyUnit, ethUnit)) {
             continue;
@@ -632,9 +628,7 @@ athrs16_phy_is_up(int ethUnit)
     }
 
     return (linkCount);
-    #else
-        return 1;
-    #endif
+
 }
 
 static uint32_t
