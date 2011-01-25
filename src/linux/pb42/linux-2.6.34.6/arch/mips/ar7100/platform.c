@@ -223,6 +223,8 @@ int __init ar7100_platform_init(void)
 #ifdef CONFIG_RTL8366_SMI_MODULE
 	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
 #endif
+
+
 //	mips_machine_setup();
 return 0;
 }

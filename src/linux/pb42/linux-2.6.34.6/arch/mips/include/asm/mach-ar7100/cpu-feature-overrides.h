@@ -1,6 +1,21 @@
-#ifndef __ASM_MACH_MIPS_CPU_FEATURE_OVERRIDES_H
-#define __ASM_MACH_MIPS_CPU_FEATURE_OVERRIDES_H
-                                                                                
+/*
+ *  Atheros AR71xx specific CPU feature overrides
+ *
+ *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ *
+ *  This file was derived from: include/asm-mips/cpu-features.h
+ *	Copyright (C) 2003, 2004 Ralf Baechle
+ *	Copyright (C) 2004 Maciej W. Rozycki
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
+ *
+ */
+#ifndef __ASM_MACH_AR71XX_CPU_FEATURE_OVERRIDES_H
+#define __ASM_MACH_AR71XX_CPU_FEATURE_OVERRIDES_H
+
 #define cpu_has_tlb		1
 #define cpu_has_4kex		1
 #define cpu_has_3k_cache	0
@@ -38,4 +53,4 @@
 #define cpu_dcache_line_size()	32
 #define cpu_icache_line_size()	32
 
-#endif
+#endif /* __ASM_MACH_AR71XX_CPU_FEATURE_OVERRIDES_H */
