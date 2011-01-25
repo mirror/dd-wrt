@@ -179,7 +179,7 @@ void runStartup(char *folder, char *extension)
 	return;
 }
 
-#ifdef HAVE_BUFFALO
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 
 extern void *getUEnv(char *name);
 
@@ -1698,7 +1698,7 @@ void start_restore_defaults(void)
 #else
 	int icnt = getdevicecount();
 #endif
-#ifdef HAVE_BUFFALO
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 	buffalo_defaults(restore_defaults);
 #endif
 	// if (!nvram_match("default_init","1"))
