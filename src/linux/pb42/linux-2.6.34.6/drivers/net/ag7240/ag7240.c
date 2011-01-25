@@ -1496,10 +1496,10 @@ ag7240_poll(struct net_device *dev, int *budget)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	ag7240_mac_t *mac = container_of(napi, ag7240_mac_t, mac_napi);
 	struct net_device *dev = mac->mac_dev;
-	int work_done,      max_work  = budget, status = 0;
+	int work_done=0,      max_work  = budget, status = 0;
 #else
 	ag7240_mac_t       *mac       = (ag7240_mac_t *)netdev_priv(dev);
-	int work_done,      max_work  = min(*budget, dev->quota), status = 0;
+	int work_done=0,      max_work  = min(*budget, dev->quota), status = 0;
 #endif
 
 
@@ -1667,6 +1667,7 @@ process_pkts:
         dev->last_rx        = jiffies;
 
         quota--;
+        *work_done++;
         netif_receive_skb(skb);
         ag7240_ring_incr(head);
     }
@@ -1698,14 +1699,12 @@ process_pkts:
     /*
     * more pkts arrived; if we have quota left, get rolling again
     */
-    if (quota)      goto process_pkts;
     /*
     * out of quota
     */
     ret = AG7240_RX_STATUS_NOT_DONE;
 
 done:
-    *work_done   = (iquota - quota);
 
     if (unlikely(ag7240_rx_ring_full(mac))) 
         return AG7240_RX_STATUS_OOM;
