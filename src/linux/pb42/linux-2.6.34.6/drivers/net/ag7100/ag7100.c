@@ -1438,10 +1438,10 @@ ag7100_poll(struct net_device *dev, int *budget)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 	ag7100_mac_t *mac = container_of(napi, ag7100_mac_t, mac_napi);
 	struct net_device *dev = mac->mac_dev;
-	int work_done,      max_work  = budget, status = 0;
+	int work_done=0,      max_work  = budget, status = 0;
 #else
 	ag7100_mac_t       *mac       = (ag7100_mac_t *)netdev_priv(dev);
-	int work_done,      max_work  = min(*budget, dev->quota), status = 0;
+	int work_done=0,      max_work  = min(*budget, dev->quota), status = 0;
 #endif
     ag7100_rx_status_t  ret;
     u32                 flags;
