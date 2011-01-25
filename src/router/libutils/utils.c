@@ -2204,7 +2204,7 @@ int check_wan_link(int num)
 	return wan_link;
 }
 
-#ifdef HAVE_BUFFALO
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
