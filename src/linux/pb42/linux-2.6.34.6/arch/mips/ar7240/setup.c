@@ -21,6 +21,7 @@
 #include <asm/traps.h>
 #include <linux/serial_core.h>
 #include <asm/bootinfo.h>
+#include <asm/mach-ar71xx/ar71xx.h>
 
 #include "ar7240.h"
 
@@ -348,7 +349,7 @@ void __init plat_time_init(void)
 
 
 
-
+#if 0
 int 
 ar7240_be_handler(struct pt_regs *regs, int is_fixup)
 {
@@ -388,7 +389,7 @@ ar7240_be_handler(struct pt_regs *regs, int is_fixup)
     printk("ar7240 data bus error: cause %#x\n", read_c0_cause());
     return (is_fixup ? MIPS_BE_FIXUP : MIPS_BE_FATAL);
 }
-
+#endif
 void disable_early_printk(void)
 {
 }
@@ -441,6 +442,28 @@ int is_ar9000;
 EXPORT_SYMBOL(is_ar9000);
 void __init plat_mem_setup(void)
 {
+
+        if (is_ar7240()) {
+		ar71xx_soc = AR71XX_SOC_AR7240;
+        }else if (is_ar7241()) {
+		ar71xx_soc = AR71XX_SOC_AR7241;
+        }else if (is_ar7242()) {
+		ar71xx_soc = AR71XX_SOC_AR7242;
+        } 
+        
+	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE,
+						AR71XX_DDR_CTRL_SIZE);
+
+	ar71xx_pll_base = ioremap_nocache(AR71XX_PLL_BASE,
+						AR71XX_PLL_SIZE);
+
+	ar71xx_reset_base = ioremap_nocache(AR71XX_RESET_BASE,
+						AR71XX_RESET_SIZE);
+
+	ar71xx_gpio_base = ioremap_nocache(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE);
+
+	ar71xx_usb_ctrl_base = ioremap_nocache(AR71XX_USB_CTRL_BASE,
+						AR71XX_USB_CTRL_SIZE);
 
 #if 0
     board_be_handler = ar7240_be_handler;

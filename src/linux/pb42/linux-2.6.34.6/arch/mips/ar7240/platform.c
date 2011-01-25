@@ -13,6 +13,7 @@
 #include <linux/serial_8250.h>
 
 #include <asm/mach-ar7240/ar7240.h>
+#include <asm/mach-ar71xx/ar71xx.h>
 
 #ifdef CONFIG_WASP_SUPPORT
 extern uint32_t ath_ref_clk_freq;
@@ -127,11 +128,32 @@ static struct platform_device *ar7240_platform_devices[] __initdata = {
 static struct platform_device *ar724x_platform_devices[] __initdata = {
 	&ar7240_uart
 };
-extern int ar7240_pcibios_init(void);
+
+extern __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
+
+static void *getCalData(int slot)
+{
+u8 *base;
+for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
+	u32 *cal = (u32 *)base;
+	if (*cal==0xa55a0000 || *cal==0x5aa50000) { //protection bit is always zero on inflash devices, so we can use for match it
+		if (slot) {
+			base+=0x4000;
+		}
+		printk(KERN_INFO "found calibration data for slot %d on 0x%08X\n",slot,base);
+		return base;
+	}
+    }
+return NULL;
+}
+
+enum ar71xx_soc_type ar71xx_soc;
+EXPORT_SYMBOL_GPL(ar71xx_soc);
+
 int __init ar7240_platform_init(void)
 {
 	int ret;
-
+	void *ee;
         /* need to set clock appropriately */
 #ifdef CONFIG_WASP_SUPPORT
 	ar7240_uart_data[0].uartclk = ath_ref_clk_freq;
@@ -152,7 +174,9 @@ int __init ar7240_platform_init(void)
 	    ret = platform_add_devices(ar7240_platform_devices, 
                                 ARRAY_SIZE(ar7240_platform_devices));
         }
-	ar7240_pcibios_init();
+        
+	ee = getCalData(0);
+	ap91_pci_init(ee, NULL);
 return ret;
 }
 

@@ -10,6 +10,7 @@
  */
 #ifndef __ASM_MACH_AR71XX_KERNEL_ENTRY_H
 #define __ASM_MACH_AR71XX_KERNEL_ENTRY_H
+
 	/*
 	 * Some bootloaders set the 'Kseg0 coherency algorithm' to
 	 * 'Cacheable, noncoherent, write-through, no write allocate'
