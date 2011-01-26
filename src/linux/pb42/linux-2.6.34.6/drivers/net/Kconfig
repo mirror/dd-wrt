@@ -2195,6 +2195,10 @@ config AR7242_RGMII_PHY
 config AR7242_S16_PHY
     bool "AR7242 S16 Switch"
 
+config WZRG450
+    bool "WZRG450 Vlan Mapping"
+    depends on AR7242_S16_PHY
+
 config AR7242_VIR_PHY
     bool "AR7242 Vitual Switch"
 
