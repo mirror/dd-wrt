@@ -331,15 +331,6 @@ static void buffalo_defaults(int force)
 				edata[3] & 0xff, edata[4] & 0xff,
 				edata[5] & 0xff);
 			nvram_set("ath0_ssid", eabuf);
-		}
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			close(s);
-			unsigned char *edata =
-			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
 			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A",
 				edata[3] & 0xff, edata[4] & 0xff,
 				edata[5] & 0xff);
