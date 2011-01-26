@@ -64,6 +64,7 @@ static int remap_area_pte(pmd_t *pmd, unsigned long addr, unsigned long end,
  bad:
 	printk(KERN_CRIT "remap_area_pte: page already exists\n");
 	BUG();
+	return 0;
 }
 
 static inline int remap_area_pmd(pgd_t *pgd, unsigned long addr,
