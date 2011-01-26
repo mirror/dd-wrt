@@ -257,7 +257,7 @@ void athrs16_reg_init(int ethUinit)
     athrs16_reg_write(S16_CPU_PORT_REGISTER,0x000001f0);
 
 
-#if 0
+#ifndef CONFIG_WZRG450
 // config wan = port 4, lan = 0 - 3
     /* Recognize tag packet from CPU */
     athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER0,0xc03e0001); // 1111100000000000000001
