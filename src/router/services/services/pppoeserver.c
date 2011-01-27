@@ -237,6 +237,8 @@ void start_pppoeserver(void)
 				if (!ip || !enable)
 					continue;
 
+				if (!strcmp(ip,"0.0.0.0"))
+				    ip = "*";
 				if (!strcmp(enable, "on"))
 					fprintf(fp, "%s * %s %s\n", user, pass,
 						ip);
