@@ -376,8 +376,7 @@ void athrs26_reg_init(int ethUnit)
     }
    
     /* Enable flow control on CPU port */
-    athrs26_reg_write(PORT_STATUS_REGISTER0, 
-                      (athrs26_reg_read(PORT_STATUS_REGISTER0) | 0x30));
+    athrs26_reg_write(PORT_STATUS_REGISTER0, (athrs26_reg_read(PORT_STATUS_REGISTER0) | 0x30));
 
     /* Disable WAN mac inside S26 */
     athrs26_reg_write(PORT_STATUS_REGISTER5,0x0);
