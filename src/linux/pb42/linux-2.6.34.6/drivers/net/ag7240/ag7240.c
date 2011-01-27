@@ -448,8 +448,8 @@ ag7240_hw_setup(ag7240_mac_t *mac)
     } 
     else 
     {
-        ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN |
-            AG7240_MAC_CFG1_TX_EN));
+        ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN | AG7240_MAC_CFG1_TX_EN | AG7240_MAC_CFG1_RX_FCTL | AG7240_MAC_CFG1_TX_FCTL));
+//        ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN | AG7240_MAC_CFG1_TX_EN));
         ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN | AG7240_MAC_CFG2_LEN_CHECK));
     }
 

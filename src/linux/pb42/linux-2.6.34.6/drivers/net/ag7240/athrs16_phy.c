@@ -202,19 +202,49 @@ void athrs16_reg_init(int ethUinit)
     //athrs16_reg_write(0x8, 0x012e1bea);
     athrs16_reg_write(0x8, 0x01261be2);
 #endif
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER0, /* 0x7e */
+                                    S16_PORT_STATUS_SPEED_1000MBPS 
+                                    | S16_PORT_STATUS_TXMAC_EN 
+                                    | S16_PORT_STATUS_RXMAC_EN
+                                    | S16_PORT_STATUS_RXFLOW_EN
+                                    | S16_PORT_STATUS_TXFLOW_EN
+                                    | S16_PORT_STATUS_DUPLEX_FULL);
+
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER1, /* 0x230 */
+                             S16_PORT_STATUS_LINK_EN
+                           | S16_PORT_STATUS_RXFLOW_EN
+                           | S16_PORT_STATUS_TXFLOW_EN);
+
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER2, /*0x230*/
+                             S16_PORT_STATUS_LINK_EN
+                           | S16_PORT_STATUS_RXFLOW_EN
+                           | S16_PORT_STATUS_TXFLOW_EN);
+
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER3, /*0x230*/
+                             S16_PORT_STATUS_LINK_EN
+                           | S16_PORT_STATUS_RXFLOW_EN
+                           | S16_PORT_STATUS_TXFLOW_EN);
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER4, /*0x230*/
+                             S16_PORT_STATUS_LINK_EN
+                           | S16_PORT_STATUS_RXFLOW_EN
+                           | S16_PORT_STATUS_TXFLOW_EN);
     
-    athrs16_reg_write(S16_PORT_STATUS_REGISTER0, 0x7e);
-    athrs16_reg_write(S16_PORT_STATUS_REGISTER1, 0x200);
-    athrs16_reg_write(S16_PORT_STATUS_REGISTER2, 0x200);
-    athrs16_reg_write(S16_PORT_STATUS_REGISTER3, 0x200);
-    athrs16_reg_write(S16_PORT_STATUS_REGISTER4, 0x200);
+//    athrs16_reg_write(S16_PORT_STATUS_REGISTER0, 0x7e);
+//    athrs16_reg_write(S16_PORT_STATUS_REGISTER1, 0x200);
+//    athrs16_reg_write(S16_PORT_STATUS_REGISTER2, 0x200);
+//    athrs16_reg_write(S16_PORT_STATUS_REGISTER3, 0x200);
+//    athrs16_reg_write(S16_PORT_STATUS_REGISTER4, 0x200);
 #if CFG_BOARD_PB45
     athrs16_reg_write(0x600, 0x200);
     printk("CFG Board PB45 \n");
 #elif CFG_BOARD_AP96
     //athrs16_reg_write(0x600, 0x0);
     printk("CFG Board AP96 \n");
-    athrs16_reg_write(0x600, 0x200);
+//    athrs16_reg_write(0x600, 0x200);
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER5, /*0x230*/
+                             S16_PORT_STATUS_LINK_EN
+                           | S16_PORT_STATUS_RXFLOW_EN
+                           | S16_PORT_STATUS_TXFLOW_EN);
 #endif
 
     athrs16_reg_write(S16_FLD_MASK_REG, 0x003f003f);

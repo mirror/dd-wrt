@@ -88,6 +88,38 @@
 #define S16_PORT_STATUS_REGISTER4            0x0500
 #define S16_PORT_STATUS_REGISTER5            0x0600
 
+
+/* bit definition for port status register
+ * 31:13    : RO :       : Reserved
+ *    12    : RW :      1: Reserved
+ *    11    : RW :      0: Reserved
+ *    10    : RW :      0: Reserved
+ *     9    : RW :      1: LIN_EN 
+ *     8    : RO :      1: 0 - phy link down. 1 - phy link up
+ *     7    : RW :      1; TX_HALF_FLOW_EN
+ *     6    : RW :      0: DUPLEX_MODE, 0-half, 1-full
+ *     5    : RW :      0: RxFlow control Enable
+ *     4    : RW :      0: TxFlow control Enable
+ *     3    : RW :      0: Rx Mac Enable
+ *     2    : RW :      0: Tx Mac Enable
+ *    1:0   : RW :      00: Speed, 00-10, 01-100, 10-1000, 11 -err mbps. 
+*/
+#define S16_PORT_STATUS_LINK_EN              (1<<9)
+#define S16_PORT_STATUS_LINK_STATUS          (1<<8)
+#define S16_PORT_STATUS_TXHALF_FLOW_EN       (1<<7)
+#define S16_PORT_STATUS_DUPLEX_HALF          (0<<6)
+#define S16_PORT_STATUS_DUPLEX_FULL          (1<<6)
+#define S16_PORT_STATUS_RXFLOW_EN            (1<<5)
+#define S16_PORT_STATUS_TXFLOW_EN            (1<<4)
+#define S16_PORT_STATUS_RXMAC_EN             (1<<3)
+#define S16_PORT_STATUS_TXMAC_EN             (1<<2)
+#define S16_PORT_STATUS_SPEED_10MBPS         0x0
+#define S16_PORT_STATUS_SPEED_100MBPS        0x1
+#define S16_PORT_STATUS_SPEED_1000MBPS       0x2
+#define S16_PORT_STATUS_SPEED_ERROR          0x3
+ 
+
+
 #define S16_PORT_BASE_VLAN_REGISTER0         0x0108 
 #define S16_PORT_BASE_VLAN_REGISTER1         0x0208
 #define S16_PORT_BASE_VLAN_REGISTER2         0x0308
