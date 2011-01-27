@@ -264,7 +264,7 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dd class="definition"><% tran("hpppoesrv.right1"); %></dd>
+							<dt class="term"><% tran("service.pppoesrv_chaps"); %>:</dt>
 							<dd class="definition"><% tran("hpppoesrv.right2"); %></dd>
 						</dl><br />
 							<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('Hpppoesrv.asp');"><% tran("share.more"); %></a>

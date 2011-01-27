@@ -1313,7 +1313,6 @@ service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
 var hpppoesrv = new Object();
-hpppoesrv.right1="Local User Management";
 hpppoesrv.right2="IP: 0.0.0.0; you will serve an IP from the pool";
 
 //snmp.webservices
