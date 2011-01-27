@@ -192,6 +192,9 @@ endif
 ifeq ($(CONFIG_RT10N),y)
   CFLAGS += -DHAVE_RT10N
 endif
+ifeq ($(CONFIG_TECHNAXX),y)
+  CFLAGS += -DHAVE_TECHNAXX
+endif
 ifeq ($(CONFIG_CORENET),y)
   CFLAGS += -DHAVE_CORENET
 endif
