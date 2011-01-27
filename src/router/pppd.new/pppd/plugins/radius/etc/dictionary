@@ -34,6 +34,14 @@ VENDOR		RoaringPenguin		10055	RoaringPenguin
 
 ATTRIBUTE	RP-Upstream-Speed-Limit		1 integer RoaringPenguin
 ATTRIBUTE	RP-Downstream-Speed-Limit	1 integer RoaringPenguin
+
+VENDOR		WISPr			14122	WISPr
+
+ATTRIBUTE	WISPr-Bandwidth-Min-Up		5	integer	WISPr
+ATTRIBUTE	WISPr-Bandwidth-Min-Down	6	integer	WISPr
+ATTRIBUTE	WISPr-Bandwidth-Max-Up		7	integer	WISPr
+ATTRIBUTE	WISPr-Bandwidth-Max-Down	8	integer	WISPr
+
 #
 # Vendor-specific attributes have a fifth field with the name of the
 # vendor.  For example:
