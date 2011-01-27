@@ -146,8 +146,8 @@ void set_packet_inspection_flag(int flag)
 }
 
 #define addr_to_words(addr, w1, w2)  {                                 \
-    w1 = (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | addr[3]; \
-    w2 = (addr[4] << 24) | (addr[5] << 16) | 0;                        \
+    w1 = (addr[5] << 24) | (addr[4] << 16) | (addr[3] << 8) | addr[2]; \
+    w2 = (addr[1] << 24) | (addr[0] << 16) | 0;                        \
 }
 
 /*
