@@ -263,9 +263,12 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
-						<br/>
-						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HPPPoE_Server.asp');"><% tran("share.more"); %></a>
-					</div>
+						<dl>
+							<dd class="definition"><% tran("hpppoesrv.right1"); %></dd>
+							<dd class="definition"><% tran("hpppoesrv.right2"); %></dd>
+						</dl><br />
+							<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('Hpppoesrv.asp');"><% tran("share.more"); %></a>
+						</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
