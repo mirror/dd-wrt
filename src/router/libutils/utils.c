@@ -735,6 +735,9 @@ int internal_getRouterBrand()
 #elif HAVE_DIR615
 	setRouter("Dlink-DIR615 rev d");
 	return ROUTER_BOARD_DIR615D;
+#elif HAVE_TECHNAXX
+	setRouter("TECHNAXX Router-150 Wifi-N");
+	return ROUTER_BOARD_TECHNAXX;
 #elif HAVE_RT10N
 	setRouter("Asus RT-N10+");
 	return ROUTER_ASUS_RTN10PLUS;

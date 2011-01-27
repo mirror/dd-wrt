@@ -508,6 +508,8 @@
 // Asus RT-15N
 #define ROUTER_BOARD_RT15N 0xa21c
 
+#define ROUTER_BOARD_TECHNAXX 0xa30f
+
 
 
 #define NVROUTER "DD_BOARD"
