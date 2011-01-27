@@ -176,7 +176,7 @@ void start_freeradius(void)
 					fprintf(fp, "\n");
 				if (db->users[i].downstream) {
 					fprintf(fp,"\tWISPr-Bandwidth-Max-Down := %d,\n",db->users[i].downstream * 1024);
-					fprintf(fp,"\tRP-Downstream-Speed-Limit := %d,\n",db->users[i].downstream);
+					fprintf(fp,"\tRP-Downstream-Speed-Limit := %d",db->users[i].downstream);
 				}
 				if (db->users[i].upstream) {
 					if (db->users[i].downstream)
