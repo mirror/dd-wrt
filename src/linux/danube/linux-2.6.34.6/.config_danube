@@ -625,7 +625,7 @@ CONFIG_NET_SCH_RED=y
 # CONFIG_NET_SCH_SFQ is not set
 # CONFIG_NET_SCH_ESFQ is not set
 # CONFIG_NET_SCH_TEQL is not set
-# CONFIG_NET_SCH_TBF is not set
+CONFIG_NET_SCH_TBF=y
 # CONFIG_NET_SCH_GRED is not set
 # CONFIG_NET_SCH_DSMARK is not set
 # CONFIG_NET_SCH_NETEM is not set
