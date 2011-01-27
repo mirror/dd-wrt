@@ -182,7 +182,7 @@ void start_freeradius(void)
 					if (db->users[i].downstream)
 						fprintf(fp, ",\n");
 					fprintf(fp,"\tWISPr-Bandwidth-Max-Up := %d,\n",db->users[i].upstream * 1024);
-					fprintf(fp,"\tRP-Upstream-Speed-Limit := %d\n",db->users[i].upstream);
+					fprintf(fp,"\tRP-Upstream-Speed-Limit := %d",db->users[i].upstream);
 				}
 				fprintf(fp, "\n");
 			}
