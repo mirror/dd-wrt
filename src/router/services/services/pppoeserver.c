@@ -83,7 +83,17 @@ static void makeipup(void)
 		"echo $PPPD_PID $1 $5 $PEERNAME >> /tmp/pppoe_connected\n"
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"iptables -I INPUT -i $1 -j ACCEPT\n"
-		"iptables -I FORWARD -i $1 -j ACCEPT\n");
+		"iptables -I FORWARD -i $1 -j ACCEPT\n"
+		//we need some seperation between radius and chap accounting here
+		"DOWN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"
+		"UP=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"
+		"let UBURST=$UP/1000"
+		"let DBURST=$DOWN/100"
+		"tc qdisc del root dev $1\n"
+		"tc qdisc del ingress dev $1\n"
+		"tc qdisc add dev $1 root tbf rate \"$UP\"kbit latency 50ms burst \"$UBURST\"kb\n"
+		"tc qdisc add dev $1 handle ffff: ingress\n"
+		"tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$DOWN\"kbit burst \"$DBURST\"kb drop flowid :1\n");
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n"
@@ -91,7 +101,11 @@ static void makeipup(void)
 		"mv /tmp/pppoe_connected.new /tmp/pppoe_connected\n"
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"iptables -D INPUT -i $1 -j ACCEPT\n"
-		"iptables -D FORWARD -i $1 -j ACCEPT\n");
+		"iptables -D FORWARD -i $1 -j ACCEPT\n"
+		"tc qdisc del root dev $1\n"
+		"tc qdisc del ingress dev $1\n"
+		"echo $BYTES_SENT >> /var/log/volume"
+		"echo $BYTES_RCVD >> /var/log/volume");
 	fclose(fp);
 	chmod("/tmp/pppoeserver/ip-up", 0744);
 	chmod("/tmp/pppoeserver/ip-down", 0744);
