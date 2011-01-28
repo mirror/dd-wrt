@@ -87,8 +87,8 @@ static void makeipup(void)
 		//we need some seperation between radius and chap accounting here
 		"DOWN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"
 		"UP=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"
-		"let UBURST=$UP/1000"
-		"let DBURST=$DOWN/100"
+		"let UBURST=$UP/1000\n"
+		"let DBURST=$DOWN/100\n"
 		"tc qdisc del root dev $1\n"
 		"tc qdisc del ingress dev $1\n"
 		"tc qdisc add dev $1 root tbf rate \"$UP\"kbit latency 50ms burst \"$UBURST\"kb\n"
@@ -104,8 +104,8 @@ static void makeipup(void)
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"
 		"tc qdisc del root dev $1\n"
 		"tc qdisc del ingress dev $1\n"
-		"echo $BYTES_SENT >> /var/log/volume"
-		"echo $BYTES_RCVD >> /var/log/volume");
+		"echo $BYTES_SENT >> /var/log/volume\n"
+		"echo $BYTES_RCVD >> /var/log/volume\n");
 	fclose(fp);
 	chmod("/tmp/pppoeserver/ip-up", 0744);
 	chmod("/tmp/pppoeserver/ip-down", 0744);
