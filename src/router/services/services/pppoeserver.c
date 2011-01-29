@@ -80,31 +80,27 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-		"echo $PPPD_PID $1 $5 $PEERNAME >> /tmp/pppoe_connected\n"
-		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-		"iptables -I INPUT -i $1 -j ACCEPT\n"
-		"iptables -I FORWARD -i $1 -j ACCEPT\n"
+		"echo $PPPD_PID $1 $5 $PEERNAME >> /tmp/pppoe_connected\n"	//
+		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
+		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
+		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		//we need some seperation between radius and chap accounting here
-		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"
-		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"
-		"tc qdisc del root dev $1\n"
-		"tc qdisc del dev $1 ingress\n"
-		"tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"
-		"tc qdisc add dev $1 handle ffff: ingress\n"
-		"tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
-		"echo $PPPLOGNAME >> /var/log/volume\n");
+		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"	//
+		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"	//
+		"tc qdisc del root dev $1\n"	//
+		"tc qdisc del dev $1 ingress\n"	//
+		"tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
+		"tc qdisc add dev $1 handle ffff: ingress\n"	//
+		"tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n");
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
-	fprintf(fp, "#!/bin/sh\n"
-		"grep -v $1  /tmp/pppoe_connected > /tmp/pppoe_connected.new\n"
-		"mv /tmp/pppoe_connected.new /tmp/pppoe_connected\n"
-		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-		"iptables -D INPUT -i $1 -j ACCEPT\n"
-		"iptables -D FORWARD -i $1 -j ACCEPT\n"
-		"tc qdisc del root dev $1\n"
-		"tc qdisc del dev $1 ingress\n"
-		"echo $BYTES_SENT >> /var/log/volume\n"
-		"echo $BYTES_RCVD >> /var/log/volume\n");
+	fprintf(fp, "#!/bin/sh\n" "grep -v $1  /tmp/pppoe_connected > /tmp/pppoe_connected.new\n"	//
+		"mv /tmp/pppoe_connected.new /tmp/pppoe_connected\n"	//
+		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
+		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
+		"iptables -D FORWARD -i $1 -j ACCEPT\n"	//
+		"tc qdisc del root dev $1\n"	//
+		"tc qdisc del dev $1 ingress\n");
 	fclose(fp);
 	chmod("/tmp/pppoeserver/ip-up", 0744);
 	chmod("/tmp/pppoeserver/ip-down", 0744);
@@ -250,8 +246,8 @@ void start_pppoeserver(void)
 				if (!ip || !enable)
 					continue;
 
-				if (!strcmp(ip,"0.0.0.0"))
-				    ip = "*";
+				if (!strcmp(ip, "0.0.0.0"))
+					ip = "*";
 				if (!strcmp(enable, "on"))
 					fprintf(fp, "%s * %s %s\n", user, pass,
 						ip);
