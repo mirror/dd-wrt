@@ -68,8 +68,8 @@ void start_radvd(void)
 	if (!nvram_match("ipv6_enable", "1"))
 		return;
 	buf = nvram_get("radvd_conf");
-	if (buf != NULL)	
-	    writenvram("radvd_conf","/tmp/radvd.conf");
+	if (buf != NULL)
+		writenvram("radvd_conf", "/tmp/radvd.conf");
 
 	system2("sync");
 

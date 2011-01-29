@@ -24,7 +24,6 @@ int usb_add_ufd(void);
 
 #define DUMPFILE	"/tmp/disktype.dump"
 
-
 #ifdef HAVE_X86
 static int getdiscindex(void)	// works only for squashfs 
 {
@@ -174,11 +173,11 @@ static int usb_process_path(char *path, char *fs)
 
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
-	if (!strcmp(fs, "ntfs")) {
-		ret = eval("ntfs-3g", path, mount_point);
-	} else
+		if (!strcmp(fs, "ntfs")) {
+			ret = eval("ntfs-3g", path, mount_point);
+		} else
 #endif
-		ret = eval("/bin/mount", path, mount_point);	//guess fs
+			ret = eval("/bin/mount", path, mount_point);	//guess fs
 	}
 	system("echo 4096 > /proc/sys/vm/min_free_kbytes");	// avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram to 4096. everything else can be used for fs cache
 	eval("startservice", "samba3");
@@ -248,13 +247,14 @@ int usb_add_ufd(void)
 
 #ifdef HAVE_X86
 			char check[32];
-			sprintf("disc%d",getdiscindex());
-			if (!strncmp(entry->d_name,check,5))
-				{
-				fprintf(stderr,"skip %s, since its the system drive\n",check);
+			sprintf("disc%d", getdiscindex());
+			if (!strncmp(entry->d_name, check, 5)) {
+				fprintf(stderr,
+					"skip %s, since its the system drive\n",
+					check);
 				continue;
-				}
-#endif		
+			}
+#endif
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
 			if (new && (strncmp(entry->d_name, "sd", 2)))
@@ -292,10 +292,14 @@ int usb_add_ufd(void)
 				while (fgets(line, sizeof(line), fp) != NULL) {
 					if (strstr(line, "Partition"))
 						is_part = 1;
-fprintf( stderr, "[USB Device] partition: %s\n", line );
+					fprintf(stderr,
+						"[USB Device] partition: %s\n",
+						line);
 
 					if (strstr(line, "file system")) {
-fprintf( stderr, "[USB Device] file system: %s\n", line );
+						fprintf(stderr,
+							"[USB Device] file system: %s\n",
+							line);
 						if (strstr(line, "FAT")) {
 							fs = "vfat";
 							break;
