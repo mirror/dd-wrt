@@ -39,9 +39,10 @@ int stop_process(char *name, char *desc)
 		while (pidof(name) > 0 && deadcounter--) {
 			usleep(100);
 		}
-		if (pidof(name)>0) {
+		if (pidof(name) > 0) {
 			dd_syslog(LOG_INFO,
-				  "%s : %s hanging, send SIGKILL\n", name, desc);
+				  "%s : %s hanging, send SIGKILL\n", name,
+				  desc);
 			killall(name, SIGKILL);
 		}
 		return 1;

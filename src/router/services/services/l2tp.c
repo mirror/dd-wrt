@@ -113,11 +113,14 @@ length bit = yes
 		fprintf(fp, "port = 1701\n");	// Bind address
 		fprintf(fp, "[lac %s]\n", nvram_safe_get("l2tp_server_name"));
 		fprintf(fp, "lns = %s\n", nvram_safe_get("l2tp_server_name"));
-		fprintf(fp, "require chap = %s\n", nvram_default_get("l2tp_req_chap", "yes"));
-		fprintf(fp, "refuse pap = %s\n", nvram_default_get("l2tp_ref_pap", "yes"));
+		fprintf(fp, "require chap = %s\n",
+			nvram_default_get("l2tp_req_chap", "yes"));
+		fprintf(fp, "refuse pap = %s\n",
+			nvram_default_get("l2tp_ref_pap", "yes"));
 		fprintf(fp, "redial = yes\n");
 		fprintf(fp, "redial timeout = 15\n");
-		fprintf(fp, "require authentication = %s\n", nvram_default_get("l2tp_req_auth", "yes"));
+		fprintf(fp, "require authentication = %s\n",
+			nvram_default_get("l2tp_req_auth", "yes"));
 		fprintf(fp, "name = %s\n", username);
 		fprintf(fp, "pppoptfile = /tmp/ppp/options\n");
 		fprintf(fp, "length bit = yes\n");

@@ -60,7 +60,7 @@ void start_milkfish_boot(void)
 		char *et0 = nvram_safe_get("et0macaddr");
 
 		md5_begin(&MD);
-		md5_hash(et0,17,&MD);
+		md5_hash(et0, 17, &MD);
 		md5_end((unsigned char *)hash, &MD);
 		char request[32];
 		int i;
