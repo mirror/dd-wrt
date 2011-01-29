@@ -113,7 +113,7 @@ void start_mkfiles(void)
 	{
 #ifdef HAVE_ERC
 		// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		//	http_passwd);
+		//      http_passwd);
 		fprintf(fp,
 			"SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 			nvram_safe_get("newhttp_passwd"));

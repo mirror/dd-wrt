@@ -58,8 +58,8 @@ void start_olsrd(void)
 	fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
 #ifdef HAVE_IPV6
 	if (nvram_match("olsrd_smartgw", "1")) {
-		nvram_set("ipv6_enable","1");
-		start_ipv6(); // load ipv6 drivers
+		nvram_set("ipv6_enable", "1");
+		start_ipv6();	// load ipv6 drivers
 		fprintf(fp, "RtTable auto\n");
 		fprintf(fp, "RtTableDefault auto\n");
 		fprintf(fp, "RtTableTunnel auto\n");
@@ -74,7 +74,7 @@ void start_olsrd(void)
 		fprintf(fp, "SmartGatewayUplink \"both\"\n");
 		fprintf(fp, "SmartGatewayUplinkNAT yes\n");
 		fprintf(fp, "SmartGatewaySpeed 128 1024\n");
-//		fprintf(fp, "SmartGatewayPrefix 0::/0\n");
+//              fprintf(fp, "SmartGatewayPrefix 0::/0\n");
 	} else {
 #endif
 		fprintf(fp, "SmartGateway no\n");
@@ -85,9 +85,9 @@ void start_olsrd(void)
 		nvram_safe_get("olsrd_lqfisheye"));
 	fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
 	fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
-//	fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
-//		nvram_safe_get("olsrd_lqdijkstramin"),
-//		nvram_safe_get("olsrd_lqdijkstramax"));
+//      fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
+//              nvram_safe_get("olsrd_lqdijkstramin"),
+//              nvram_safe_get("olsrd_lqdijkstramax"));
 	fprintf(fp, "UseHysteresis\t%s\n",
 		nvram_match("olsrd_hysteresis", "1") ? "yes" : "no");
 	if (nvram_match("olsrd_hysteresis", "0"))

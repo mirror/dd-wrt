@@ -155,8 +155,6 @@ void start_radius(char *prefix)
 
 void start_nas_single(char *type, char *prefix);
 
-
-
 static void convert_wds(int instance)
 {
 	char wds_mac[254];

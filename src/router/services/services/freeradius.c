@@ -175,14 +175,22 @@ void start_freeradius(void)
 				} else
 					fprintf(fp, "\n");
 				if (db->users[i].downstream) {
-					fprintf(fp,"\tWISPr-Bandwidth-Max-Down := %d,\n",db->users[i].downstream * 1024);
-					fprintf(fp,"\tRP-Downstream-Speed-Limit := %d",db->users[i].downstream);
+					fprintf(fp,
+						"\tWISPr-Bandwidth-Max-Down := %d,\n",
+						db->users[i].downstream * 1024);
+					fprintf(fp,
+						"\tRP-Downstream-Speed-Limit := %d",
+						db->users[i].downstream);
 				}
 				if (db->users[i].upstream) {
 					if (db->users[i].downstream)
 						fprintf(fp, ",\n");
-					fprintf(fp,"\tWISPr-Bandwidth-Max-Up := %d,\n",db->users[i].upstream * 1024);
-					fprintf(fp,"\tRP-Upstream-Speed-Limit := %d",db->users[i].upstream);
+					fprintf(fp,
+						"\tWISPr-Bandwidth-Max-Up := %d,\n",
+						db->users[i].upstream * 1024);
+					fprintf(fp,
+						"\tRP-Upstream-Speed-Limit := %d",
+						db->users[i].upstream);
 				}
 				fprintf(fp, "\n");
 			}

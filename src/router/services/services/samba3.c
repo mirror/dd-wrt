@@ -40,7 +40,7 @@ void start_samba3(void)
 	if (!nvram_match("samba3_enable", "1"))
 		return;
 
-	eval("sh" , "/etc/config/samba3.startup");;
+	eval("sh", "/etc/config/samba3.startup");;
 	syslog(LOG_INFO, "Samba3 : samba started\n");
 	return;
 }
