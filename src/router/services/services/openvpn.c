@@ -86,7 +86,8 @@ void start_openvpnserver(void)
 		if (nvram_match("openvpn_redirgate", "1"))
 			fprintf(fp, "push \"redirect-gateway def1\"\n");
 		if (nvram_invmatch("openvpn_tlscip", "0"))
-			fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpn_tlscip"));
+			fprintf(fp, "tls-cipher %s\n",
+				nvram_safe_get("openvpn_tlscip"));
 		if (nvram_match("openvpn_proto", "udp"))
 			fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 		else		//TCP_NODELAY is generally a good latency optimization
@@ -272,7 +273,8 @@ void start_openvpn(void)
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	if (nvram_invmatch("openvpncl_tlscip", "0"))
-		fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpncl_tlscip"));
+		fprintf(fp, "tls-cipher %s\n",
+			nvram_safe_get("openvpncl_tlscip"));
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
 

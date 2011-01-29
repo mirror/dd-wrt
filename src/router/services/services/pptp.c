@@ -66,22 +66,18 @@ void start_pptpd(void)
 	cprintf("write config\n");
 	fprintf(fp, "lock\n"
 		"name *\n"
-		"nobsdcomp\n" 
-		"nodeflate\n" 
+		"nobsdcomp\n"
+		"nodeflate\n"
 		"auth\n"
 		"refuse-pap\n"
 		"refuse-eap\n"
-		"refuse-chap\n"
-		"refuse-mschap\n"
-		"require-mschap-v2\n");
+		"refuse-chap\n" "refuse-mschap\n" "require-mschap-v2\n");
 	if (nvram_match("pptpd_forcemppe", "1"))
 		fprintf(fp, "mppe required,stateless\n");
 	else
 		fprintf(fp, "mppe stateless\n");
-		fprintf(fp, "mppc\n"
-		"debug\n"
-		"logfd 2\n"
-//disable 4 now		"connections 254\n"	//allows X concurrent connections (default 100)
+	fprintf(fp, "mppc\n" "debug\n" "logfd 2\n"
+//disable 4 now         "connections 254\n"     //allows X concurrent connections (default 100)
 		"ms-ignore-domain\n"
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
 		"ip-up-script /tmp/pptpd/ip-up\n"
@@ -225,13 +221,31 @@ void start_pptpd(void)
 
 	fp = fopen("/tmp/pptpd/ip-up", "w");
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-		"echo $PPPD_PID $1 $5 $6 $PEERNAME >> /tmp/pptp_connected\n" "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" "iptables -I INPUT -i $1 -j ACCEPT\n" "iptables -I FORWARD -i $1 -j ACCEPT\n" "iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	// rule for wake on lan over pptp tunnel
+		"echo $PPPD_PID $1 $5 $6 $PEERNAME >> /tmp/pptp_connected\n"	//
+		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
+		"iptables -I INPUT -i $1 -j ACCEPT\n" "iptables -I FORWARD -i $1 -j ACCEPT\n"	//
+		"iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	// rule for wake on lan over pptp tunnel
+		"DOWN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"	//
+		"UP=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"	//
+		"let UBURST=$UP/1000\n"	//
+		"let DBURST=$DOWN/100\n"	//
+		"tc qdisc del root dev $1\n"	//
+		"tc qdisc del ingress dev $1\n"	//
+		"tc qdisc add dev $1 root tbf rate \"$UP\"kbit latency 50ms burst \"$UBURST\"kb\n"	//
+		"tc qdisc add dev $1 handle ffff: ingress\n"	//
+		"tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$DOWN\"kbit burst \"$DBURST\"kb drop flowid :1\n"	//
 		"%s\n", bcast,
 		nvram_get("pptpd_ipup_script") ?
 		nvram_get("pptpd_ipup_script") : "");
 	fclose(fp);
 	fp = fopen("/tmp/pptpd/ip-down", "w");
-	fprintf(fp, "#!/bin/sh\n" "grep -v $1  /tmp/pptp_connected > /tmp/pptp_connected.new\n" "mv /tmp/pptp_connected.new /tmp/pptp_connected\n" "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" "iptables -D INPUT -i $1 -j ACCEPT\n" "iptables -D FORWARD -i $1 -j ACCEPT\n" "iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	// rule for wake on lan over pptp tunnel
+	fprintf(fp, "#!/bin/sh\n" "grep -v $1  /tmp/pptp_connected > /tmp/pptp_connected.new\n"	//
+		"mv /tmp/pptp_connected.new /tmp/pptp_connected\n"	//
+		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
+		"iptables -D INPUT -i $1 -j ACCEPT\n" "iptables -D FORWARD -i $1 -j ACCEPT\n"	//
+		"iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	// rule for wake on lan over pptp tunnel
+		"tc qdisc del root dev $1\n"	//
+		"tc qdisc del ingress dev $1\n"	//
 		"%s\n", bcast,
 		nvram_get("pptpd_ipdown_script") ?
 		nvram_get("pptpd_ipdown_script") : "");

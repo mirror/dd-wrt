@@ -82,11 +82,12 @@ void start_hwmon(void)
 	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
 	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
 		  TEMP_PREFIX);
-	#ifdef TEMP2_PATH
-	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP2_PATH, TEMP2_PREFIX);
+#ifdef TEMP2_PATH
+	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP2_PATH,
+		  TEMP2_PREFIX);
 	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP2_PATH,
 		  TEMP2_PREFIX);
-	#endif
+#endif
 	dd_syslog(LOG_INFO, "hwmon successfully started\n");
 }
 #endif

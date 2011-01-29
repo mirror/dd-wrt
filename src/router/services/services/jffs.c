@@ -45,7 +45,7 @@ void start_jffs2(void)
 			insmod("lzma_compress");
 			insmod("lzma_decompress");
 			insmod("jffs2");
-			
+
 			char dev[64];
 
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
