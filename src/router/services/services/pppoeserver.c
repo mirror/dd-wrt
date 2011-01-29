@@ -85,15 +85,14 @@ static void makeipup(void)
 		"iptables -I INPUT -i $1 -j ACCEPT\n"
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"
 		//we need some seperation between radius and chap accounting here
-		"DOWN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"
-		"UP=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"
-		"let UBURST=$UP/1000\n"
-		"let DBURST=$DOWN/100\n"
+		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"
+		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"
 		"tc qdisc del root dev $1\n"
-		"tc qdisc del ingress dev $1\n"
-		"tc qdisc add dev $1 root tbf rate \"$UP\"kbit latency 50ms burst \"$UBURST\"kb\n"
+		"tc qdisc del dev $1 ingress\n"
+		"tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"
 		"tc qdisc add dev $1 handle ffff: ingress\n"
-		"tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$DOWN\"kbit burst \"$DBURST\"kb drop flowid :1\n");
+		"tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
+		"echo $PPPLOGNAME >> /var/log/volume\n");
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n"
@@ -103,7 +102,7 @@ static void makeipup(void)
 		"iptables -D INPUT -i $1 -j ACCEPT\n"
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"
 		"tc qdisc del root dev $1\n"
-		"tc qdisc del ingress dev $1\n"
+		"tc qdisc del dev $1 ingress\n"
 		"echo $BYTES_SENT >> /var/log/volume\n"
 		"echo $BYTES_RCVD >> /var/log/volume\n");
 	fclose(fp);
