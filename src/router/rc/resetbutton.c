@@ -920,7 +920,9 @@ void period_check(int sig)
 				dd_syslog(LOG_DEBUG,
 					  "AOSS button: turning radio(s) on\n");
 #endif
+#ifndef HAVE_ERC
 				sysprintf("startservice radio_on");
+#endif
 #endif
 
 				ses_mode = 0;
@@ -935,7 +937,9 @@ void period_check(int sig)
 				dd_syslog(LOG_DEBUG,
 					  "AOSS button: turning radio(s) off\n");
 #endif
+#ifndef HAVE_ERC
 				sysprintf("startservice radio_off");
+#endif
 #endif
 
 				ses_mode = 1;
