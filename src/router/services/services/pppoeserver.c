@@ -86,7 +86,7 @@ static void makeipup(void)
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"	//
 		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"	//
-		"if [ -n $IN ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]"
+		"if [ !-z $IN ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]"
 		"then	tc qdisc del root dev $1\n"	//
 		"	tc qdisc del dev $1 ingress\n"	//
 		" 	tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
