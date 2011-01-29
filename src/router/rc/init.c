@@ -742,6 +742,7 @@ int main(int argc, char **argv)
 			start_service("bridgesif");
 #endif
 
+#ifndef HAVE_ERC
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")
 			    && nvram_match("radiooff_boot_off", "1")) {
@@ -753,7 +754,7 @@ int main(int argc, char **argv)
 			{
 				start_service("radio_on");
 			}
-
+#endif
 			start_service_f("radio_timer");
 
 			cprintf("run rc file\n");
