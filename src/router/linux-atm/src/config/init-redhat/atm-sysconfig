@@ -1,0 +1,11 @@
+#
+# /etc/sysconfig/atm - general ATM setup
+#
+ATM=yes				# enable ATM support at all
+IPATM=no			# Classical IP over ATM (using ATMARP)
+BR2684=no			# RFC1483/2684
+LANE=no				# LAN Emulation (client)
+# ILMIQOS="ubr:pcr=100kbps"	# optional: QOS to use on the ILMI VC
+ATMMODULES=
+ATMSIGD_OPTIONS="-u uni31 -l syslog -D /var/tmp -t 20 -c /etc/atmsigd.conf"
+ILMID_OPTIONS="-u 3.1 -l syslog"

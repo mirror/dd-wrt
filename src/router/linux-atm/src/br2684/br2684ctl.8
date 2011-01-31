@@ -1,0 +1,83 @@
+.\"
+.TH br2684ctl 8 "7 Jul 2003"
+.SH NAME
+br2684ctl \- RFC1483/2684 Bridge Daemon
+.SH SYNOPSIS
+.B br2684ctl
+[
+.BI \-b
+] [[
+.BI \-c\  n
+] [
+.BI \-e\  0|1
+] [
+.BI \-p\  0|1
+] [
+.BI \-s\  sndbuf
+] [
+.BI \-a\  [itf].vpi.vci
+]] ...
+.SH PARAMETERS
+.TP 15
+.BI \-a\  [itf].vpi.vci
+ATM PVC number, VPI and VCI.  (Required)
+.TP 15
+.BI \-b
+Puts the process in the background.
+.TP 15
+.BI \-c\  n
+br2684 interface number such as 0, 1, ... (Required)
+.TP 15
+.BI \-e\  0|1
+Encapsulation method:  0=LLC, 1=VC mux (the default is 0 or LLC)
+.TP 15
+.BI \-p\  0|1
+Payload method:  0=Routed, 1=Bridged (the default is 1 or Bridged)
+.TP 15
+.BI \-s\  sndbuf
+Send buffer size. Default is 8192.
+.SH DESCRIPTION
+br2684ctl handles RFC1483/2684 bridged PDUs.
+This is most often used in ADSL scenarios where
+.I usually
+the subscribers'
+ethernet traffic is encapsulated in ATM AAL5 (by bridging ADSL modems)
+according to RFC2684. 
+The subscriber-side ADSL modem can be external with an ethernet connector 
+or an internal ADSL card in a PC.
+RFC1483 has been obsoleted by RFC2684.
+
+For example it is possible to set up your Linux box to handle several
+ATM PVC's with bridged-1483 (sometimes referred as SNAP) encapsulation.
+The Linux network stack might provide DHCP, IP masquerading, IP firewall services or
+bridge the Ethernet frames just like it had several ethernet interfaces.
+In fact it can have several (logical) ethernet interfaces, where
+ATM is just used as a carrier.
+.SH USAGE
+br2684ctl creates a new network interface named nas[n]
+which is bound to an specific ATM PVC. It requires two mandatory
+arguments:  -c, the interface number, and -a, the ATM PVC. It should be
+noted that the order of the command arguments matter; -c should be
+followed by -a. You can create as many interfaces as necessary
+in one go, just make a long command line ;) 
+
+For example, following command will create a nas0 interface which uses
+the ATM PVC with VPI=0 and VCI=401. You need to configure the PVC connection
+0.401 on the ATM switch manually.
+
+% br2684ctl -c 0 -a 0.401
+
+The command will only create a new interface nas0.
+Next step is to assign an IP address and netmask to
+the interface nas0 using the ifconfig command. Using ifconfig, you can
+also assign a Ethernet MAC address to the interface nas0, if necessary.
+
+% ifconfig nas0 192.168.2.1 netmask 255.255.255.0
+
+Messages are logged to the LOCAL2 syslog facility.
+.SH FILES
+/var/run/br2684ctl-<iface>.pid
+.SH NOTES
+This man page is based on a tutorial by by Joonbum Byun <jbyun@megaxess.com>
+.SH SEE ALSO
+.BR qos (7)

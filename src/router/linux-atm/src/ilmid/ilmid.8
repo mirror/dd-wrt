@@ -1,0 +1,53 @@
+.\"
+.TH ilmid 1 "2 Aug 2001"
+.SH NAME
+ilmid \- Integrated Local Management Interface Daemon
+.SH SYNOPSIS
+.B ilmid
+[
+.B \-b
+] [
+.B \-d
+] [
+.B \-v
+] [
+.BI \-l\  logfile
+] [
+.B \-x
+] [
+.BI \-q\  qos
+] [
+.BI \-i\  local_ip
+] [
+.BI \-u\  uni
+] <interface>
+.SH PARAMETERS
+.TP 15
+.B \-b
+Puts the process in the background.
+.TP 15
+.B \-d
+Turn on debugging output.
+.TP 15
+.B \-v
+Verbose.
+.TP 15
+.BI \-l\  logfile
+Set the location of the log file.
+.TP 15
+.B \-x
+No var bindings?
+.TP 15
+.BI \-q\  qos
+Set the qos parameters to use on the ilmi VC.
+.TP 15
+.BI \-i\  local_ip
+the address that should be used by the switch for network management.
+.TP 15
+.BI \-u\  uni
+uni version.  This can be 3.0, 3.1 or 4.0.
+.SH DESCRIPTION
+ilmid implements SNMP on an ATM PVC.  It is used to negotiate operating
+parameters with a switch.
+.SH SEE ALSO
+.BR atmsigd (8)

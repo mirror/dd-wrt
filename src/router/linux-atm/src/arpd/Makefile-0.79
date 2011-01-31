@@ -1,0 +1,16 @@
+LIBS=-latmd
+LIBDEPS=../lib/libatmd.a
+#LIBS=-lfl # lex may want  -ll  here
+#INCLUDES=
+OBJS=atmarpd.o arp.o io.o itf.o table.o
+BOOTPGMS=atmarp atmarpd
+MAN8=atmarp.8 atmarpd.8
+SYSHDR=atmarp.h atmarpd.h
+
+include ../Rules.make
+
+atmarp:			atmarp.o
+			$(CC) $(LDFLAGS) -o atmarp atmarp.o $(LIBS) $(LDLIBS)
+
+atmarpd:		$(OBJS)
+			$(CC) $(LDFLAGS) -o atmarpd $(OBJS) $(LIBS) $(LDLIBS)

@@ -1,0 +1,2062 @@
+diff -urN bind-498-REL.orig/Makefile bind-498-REL/Makefile
+--- bind-498-REL.orig/Makefile	Sat Jan 27 17:29:22 2001
++++ bind-498-REL/Makefile	Tue Oct  2 17:21:47 2001
+@@ -107,20 +107,20 @@
+ 
+ #(Linux - on modern systems, all you need to do is rename or remove
+ # compat/include/sys/cdefs.h.  See doc/info/Linux for more information.)
+-#CC = gcc $(CPPFLAGS)
+-#CDEBUG = -g
+-#CPPFLAGS = -DSYSV
+-#LEX=flex -8 -I
+-#INSTALL_COMPAT = install-compat
+-#LIBS = -lfl
+-#DESTEXEC = /usr/sbin
+-#DESTMAN = /usr/man
+-#MANDIR = man
+-#MANROFF = cat
+-#DESTHELP = /usr/lib
+-#CATEXT = $$$$N
+-#PS = ps -p
+-#IOT = IOT
++CC = gcc $(CPPFLAGS)
++CDEBUG = -g
++CPPFLAGS = -DSYSV -DATM
++LEX=flex -8 -I
++INSTALL_COMPAT = install-compat
++LIBS = -lfl -latm
++DESTEXEC = /usr/sbin
++DESTMAN = /usr/man
++MANDIR = man
++MANROFF = cat
++DESTHELP = /usr/lib
++CATEXT = $$$$N
++PS = ps -p
++IOT = IOT
+ #uncomment next line to build a shared library version of libresolv
+ #SHRES = shres/linux
+ #uncomment next line to build tools and named with shared libresolv
+diff -urN bind-498-REL.orig/compat/include/sys/cdefs.h bind-498-REL/compat/include/sys/cdefs.h
+--- bind-498-REL.orig/compat/include/sys/cdefs.h	Sat Dec 16 16:29:21 2000
++++ bind-498-REL/compat/include/sys/cdefs.h	Wed Dec 31 18:00:00 1969
+@@ -1,143 +0,0 @@
+-/*
+- * Copyright (c) 1991, 1993
+- *	The Regents of the University of California.  All rights reserved.
+- *
+- * This code is derived from software contributed to Berkeley by
+- * Berkeley Software Design, Inc.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- * 3. All advertising materials mentioning features or use of this software
+- *    must display the following acknowledgement:
+- *	This product includes software developed by the University of
+- *	California, Berkeley and its contributors.
+- * 4. Neither the name of the University nor the names of its contributors
+- *    may be used to endorse or promote products derived from this software
+- *    without specific prior written permission.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+- * SUCH DAMAGE.
+- *
+- *	@(#)cdefs.h	8.7 (Berkeley) 1/21/94
+- */
+-
+-#ifndef	_CDEFS_H_
+-#define	_CDEFS_H_
+-
+-/* POSIX.2 feature test macro: enable POSIX.1 and/or more */
+-#if _POSIX_C_SOURCE == 1 || _POSIX_C_SOURCE == 2
+-#define	_POSIX_SOURCE
+-#endif
+-
+-#if defined(_POSIX_SOURCE) || defined(__STRICT_ANSI__)
+-#define	_ANSI_SOURCE
+-#endif
+-
+-#if defined(__cplusplus)
+-#define	__BEGIN_DECLS	extern "C" {
+-#define	__END_DECLS	};
+-#else
+-#define	__BEGIN_DECLS
+-#define	__END_DECLS
+-#endif
+-
+-/*
+- * The __CONCAT macro is used to concatenate parts of symbol names, e.g.
+- * with "#define OLD(foo) __CONCAT(old,foo)", OLD(foo) produces oldfoo.
+- * The __CONCAT macro is a bit tricky -- make sure you don't put spaces
+- * in between its arguments.  __CONCAT can also concatenate double-quoted
+- * strings produced by the __STRING macro, but this only works with ANSI C.
+- */
+-#if defined(__STDC__) || defined(__cplusplus)
+-#define	__P(protos)	protos		/* full-blown ANSI C */
+-#define	__CONCAT(x,y)	x ## y
+-#define	__STRING(x)	#x
+-
+-#define	__const		const		/* define reserved names to standard */
+-#define	__signed	signed
+-#define	__volatile	volatile
+-#if defined(__cplusplus)
+-#define	__inline	inline		/* convert to C++ keyword */
+-#else
+-#ifndef __GNUC__
+-#define	__inline			/* delete GCC keyword */
+-#endif /* !__GNUC__ */
+-#endif /* !__cplusplus */
+-
+-#else	/* !(__STDC__ || __cplusplus) */
+-#define	__P(protos)	()		/* traditional C preprocessor */
+-#define	__CONCAT(x,y)	x/**/y
+-#define	__STRING(x)	"x"
+-
+-#ifndef __GNUC__
+-#define	__const				/* delete pseudo-ANSI C keywords */
+-#define	__inline
+-#define	__signed
+-#define	__volatile
+-/*
+- * In non-ANSI C environments, new programs will want ANSI-only C keywords
+- * deleted from the program and old programs will want them left alone.
+- * When using a compiler other than gcc, programs using the ANSI C keywords
+- * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
+- * When using "gcc -traditional", we assume that this is the intent; if
+- * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
+- */
+-#ifndef	NO_ANSI_KEYWORDS
+-#define	const				/* delete ANSI C keywords */
+-#define	inline
+-#define	signed
+-#define	volatile
+-#endif
+-#endif	/* !__GNUC__ */
+-#endif	/* !(__STDC__ || __cplusplus) */
+-
+-/*
+- * GCC1 and some versions of GCC2 declare dead (non-returning) and
+- * pure (no side effects) functions using "volatile" and "const";
+- * unfortunately, these then cause warnings under "-ansi -pedantic".
+- * GCC2 uses a new, peculiar __attribute__((attrs)) style.  All of
+- * these work for GNU C++ (modulo a slight glitch in the C++ grammar
+- * in the distribution version of 2.5.5).
+- */
+-#if !defined(__GNUC__) || __GNUC__ < 2 || __GNUC_MINOR__ < 5
+-#define	__attribute__(x)	/* delete __attribute__ if non-gcc or gcc1 */
+-#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+-#define	__dead		__volatile
+-#define	__pure		__const
+-#endif
+-#endif
+-/* The following lines were added for newer versions of GNU C
+- *   Ed Lewis - Sept 1996 lewis@tis.com
+- */    
+-#if __GNUC__ == 2 &&  __GNUC_MINOR__ >= 5 || __GNUC__ >= 3
+-#define __dead
+-#define __dead2     __attribute__((noreturn))
+-#define __pure
+-#define __pure2     __attribute__((const))
+-#define __printflike(x, y)
+-#define __scanflike(x, y)
+-#endif
+-
+-
+-/* Delete pseudo-keywords wherever they are not available or needed. */
+-#ifndef __dead
+-#define	__dead
+-#define	__pure
+-#endif
+-
+-#endif /* !_CDEFS_H_ */
+diff -urN bind-498-REL.orig/compat/include/sys/cdefs.h.moved bind-498-REL/compat/include/sys/cdefs.h.moved
+--- bind-498-REL.orig/compat/include/sys/cdefs.h.moved	Wed Dec 31 18:00:00 1969
++++ bind-498-REL/compat/include/sys/cdefs.h.moved	Tue Oct  2 17:21:56 2001
+@@ -0,0 +1,141 @@
++/*
++ * Copyright (c) 1991, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * This code is derived from software contributed to Berkeley by
++ * Berkeley Software Design, Inc.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)cdefs.h	8.7 (Berkeley) 1/21/94
++ */
++
++#ifndef	_CDEFS_H_
++#define	_CDEFS_H_
++
++/* POSIX.2 feature test macro: enable POSIX.1 and/or more */
++#if _POSIX_C_SOURCE == 1 || _POSIX_C_SOURCE == 2
++#define	_POSIX_SOURCE
++#endif
++
++#if defined(_POSIX_SOURCE) || defined(__STRICT_ANSI__)
++#define	_ANSI_SOURCE
++#endif
++
++#if defined(__cplusplus)
++#define	__BEGIN_DECLS	extern "C" {
++#define	__END_DECLS	};
++#else
++#define	__BEGIN_DECLS
++#define	__END_DECLS
++#endif
++
++/*
++ * The __CONCAT macro is used to concatenate parts of symbol names, e.g.
++ * with "#define OLD(foo) __CONCAT(old,foo)", OLD(foo) produces oldfoo.
++ * The __CONCAT macro is a bit tricky -- make sure you don't put spaces
++ * in between its arguments.  __CONCAT can also concatenate double-quoted
++ * strings produced by the __STRING macro, but this only works with ANSI C.
++ */
++#if defined(__STDC__) || defined(__cplusplus)
++#define	__P(protos)	protos		/* full-blown ANSI C */
++#define	__CONCAT(x,y)	x ## y
++#define	__STRING(x)	#x
++
++#define	__const		const		/* define reserved names to standard */
++#define	__signed	signed
++#define	__volatile	volatile
++#if defined(__cplusplus)
++#define	__inline	inline		/* convert to C++ keyword */
++#else
++#ifndef __GNUC__
++#define	__inline			/* delete GCC keyword */
++#endif /* !__GNUC__ */
++#endif /* !__cplusplus */
++
++#else	/* !(__STDC__ || __cplusplus) */
++#define	__P(protos)	()		/* traditional C preprocessor */
++#define	__CONCAT(x,y)	x/**/y
++#define	__STRING(x)	"x"
++
++#ifndef __GNUC__
++#define	__const				/* delete pseudo-ANSI C keywords */
++#define	__inline
++#define	__signed
++#define	__volatile
++/*
++ * In non-ANSI C environments, new programs will want ANSI-only C keywords
++ * deleted from the program and old programs will want them left alone.
++ * When using a compiler other than gcc, programs using the ANSI C keywords
++ * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
++ * When using "gcc -traditional", we assume that this is the intent; if
++ * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
++ */
++#ifndef	NO_ANSI_KEYWORDS
++#define	const				/* delete ANSI C keywords */
++#define	inline
++#define	signed
++#define	volatile
++#endif
++#endif	/* !__GNUC__ */
++#endif	/* !(__STDC__ || __cplusplus) */
++
++/*
++ * GCC1 and some versions of GCC2 declare dead (non-returning) and
++ * pure (no side effects) functions using "volatile" and "const";
++ * unfortunately, these then cause warnings under "-ansi -pedantic".
++ * GCC2 uses a new, peculiar __attribute__((attrs)) style.  All of
++ * these work for GNU C++ (modulo a slight glitch in the C++ grammar
++ * in the distribution version of 2.5.5).
++ */
++#if !defined(__GNUC__) || __GNUC__ < 2 || __GNUC_MINOR__ < 5
++#define	__attribute__(x)	/* delete __attribute__ if non-gcc or gcc1 */
++#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
++#define	__dead		__volatile
++#define	__pure		__const
++#endif
++#endif
++/* The following lines were added for newer versions of GNU C
++ *   Ed Lewis - Sept 1996 lewis@tis.com
++ */    
++#if __GNUC__ == 2 &&  __GNUC_MINOR__ >= 5 || __GNUC__ >= 3
++#define __dead
++#define __dead2     __attribute__((noreturn))
++#define __pure
++#define __pure2     __attribute__((const))
++#endif
++
++
++/* Delete pseudo-keywords wherever they are not available or needed. */
++#ifndef __dead
++#define	__dead
++#define	__pure
++#endif
++
++#endif /* !_CDEFS_H_ */
+diff -urN bind-498-REL.orig/include/arpa/nameser.h bind-498-REL/include/arpa/nameser.h
+--- bind-498-REL.orig/include/arpa/nameser.h	Mon Oct  7 23:51:02 1996
++++ bind-498-REL/include/arpa/nameser.h	Tue Oct  2 17:21:56 2001
+@@ -204,6 +204,12 @@
+ #define C_ANY		255		/* wildcard match */
+ 
+ /*
++ * Values for ATM format
++ */
++#define ATMA_AESA        0
++#define ATMA_E164        1
++
++/*
+  * Flags field of the KEY RR rdata
+  */
+ #define	KEYFLAG_TYPEMASK	0xC000	/* Mask for "type" bits */
+diff -urN bind-498-REL.orig/include/atmresolv.h bind-498-REL/include/atmresolv.h
+--- bind-498-REL.orig/include/atmresolv.h	Wed Dec 31 18:00:00 1969
++++ bind-498-REL/include/atmresolv.h	Tue Oct  2 17:21:56 2001
+@@ -0,0 +1,58 @@
++/*
++ *
++ * Header for resolver funcs and defines used
++ *
++ * $Id: bind-498-REL.patch,v 1.2 2001/10/09 22:33:06 paulsch Exp $
++ *
++ */
++
++#ifndef _ATMRESOLV_H_
++#define _ATMRESOLV_H_
++#include <arpa/nameser.h>
++#include <resolv.h>
++#if defined(linux)
++#include <linux/atm.h>
++
++/* Path to resolver file */
++#define _PATH_ATMRESCONF        _PATH_RESCONF
++
++/*
++ * Global defines and variables for resolver stub.
++ */
++
++#define RES_MAX_CELL_RATE       3584    /* Max cell rate of connection */
++
++struct __atmres_state {
++  int            nscount;                /* number of name servers */
++  struct sockaddr_atmsvc  
++                 nsaddr_list[MAXNS];
++};
++
++#define nsaddr nsaddr_list[0]
++
++/*
++ * Resolver options (keep these in synch with res_debug.c, please)
++ */
++#define RES_ATMINIT     0x00001000      /* ATM resolver initialized */
++
++extern struct __atmres_state _atmres;
++extern int _queryatm;
++
++#else
++#define ATM_ESA_LEN 20
++#define ATM_E164_LEN 12
++#define ATM_AFI_DCC     0x39            /* DCC ATM Format */
++#define ATM_AFI_ICD     0x47            /* ICD ATM Format */
++#define ATM_AFI_E164    0x45            /* E.164 ATM Format */
++#endif
++
++/* New parameters for h_addrtype in gethostbyaddr */
++#define AF_ATMNSAP              3
++#define AF_ATME164              8
++
++struct hostent *gethostbyname_atmnsap(const char *name);
++struct hostent *gethostbyname_e164(const char *name);
++
++/* Protos */
++int atmres_init(void);
++#endif /* _ATMRESOLV_H_ */
+diff -urN bind-498-REL.orig/named/Makefile bind-498-REL/named/Makefile
+--- bind-498-REL.orig/named/Makefile	Sat Sep 21 19:13:10 1996
++++ bind-498-REL/named/Makefile	Tue Oct  2 17:21:56 2001
+@@ -97,17 +97,18 @@
+ 
+ CFLAGS = ${CDEBUG} -I${INCL} -I${COMPINCL} ${DEFS}
+ 
+-HDRS=	db_defs.h db_glob.h ns_defs.h ns_glob.h named.h pathnames.h tree.h
++HDRS=	db_defs.h db_glob.h ns_defs.h ns_glob.h named.h pathnames.h tree.h \
++	atm_itf.h
+ SRCS=	db_dump.c db_load.c db_lookup.c db_reload.c db_save.c db_update.c \
+ 	db_secure.c db_glue.c \
+ 	ns_forw.c ns_init.c ns_main.c ns_maint.c ns_req.c ns_resp.c \
+ 	ns_sort.c ns_stats.c ns_validate.c ns_ncache.c \
+-	storage.c tree.c ns_udp.c
++	storage.c tree.c ns_udp.c atm_itf.c
+ OBJS=	db_dump.o db_load.o db_lookup.o db_reload.o db_save.o db_update.o \
+ 	db_secure.o db_glue.o \
+ 	ns_forw.o ns_init.o ns_main.o ns_maint.o ns_req.o ns_resp.o \
+ 	ns_sort.o ns_stats.o ns_validate.o ns_ncache.o \
+-	storage.o tree.o ns_udp.o
++	storage.o tree.o ns_udp.o atm_itf.o
+ XFERSRCS=  named-xfer.c
+ XFEROBJ=   named-xfer.o db_glue.o storage.o version.o
+ 
+diff -urN bind-498-REL.orig/named/atm_itf.c bind-498-REL/named/atm_itf.c
+--- bind-498-REL.orig/named/atm_itf.c	Wed Dec 31 18:00:00 1969
++++ bind-498-REL/named/atm_itf.c	Tue Oct  2 17:21:56 2001
+@@ -0,0 +1,117 @@
++/*
++ * Marko Kiiskila carnil@cs.tut.fi 
++ * 
++ * Copyright (c) 1996
++ * Tampere University of Technology - Telecommunications Laboratory
++ * All rights reserved.
++ *
++ * Permission to use, copy, modify and distribute this
++ * software and its documentation is hereby granted,
++ * provided that both the copyright notice and this
++ * permission notice appear in all copies of the software,
++ * derivative works or modified versions, and any portions
++ * thereof, that both notices appear in supporting
++ * documentation, and that the use of this software is
++ * acknowledged in any publications resulting from using
++ * the software.
++ * 
++ * TUT ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
++ * CONDITION AND DISCLAIMS ANY LIABILITY OF ANY KIND FOR
++ * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS
++ * SOFTWARE.
++ * 
++ */
++
++/*
++ *
++ * Source file for ATM interface in Linux
++ *
++ */
++#include <unistd.h>
++#include <stdio.h>
++#include <errno.h>
++#include <sys/socket.h>
++#include <string.h>
++#include <netinet/in.h>
++#include <arpa/nameser.h>
++
++#include "named.h"
++#include <sys/syslog.h>
++extern int errno;
++
++#if defined(linux) && defined(ATM)
++
++#include <linux/atm.h>
++#include <linux/atmsap.h>
++
++#endif /* (defined(linux) && ATM) */
++#include "atm_itf.h"
++
++#if defined(linux) && defined(ATM)
++
++/* Listening ATM socket */
++int atm_vs;
++
++/* From ATM address */
++struct sockaddr_atmsvc from_atmaddr;
++
++int 
++open_atm_stream(void)
++{
++  struct sockaddr_atmsvc server;
++  int s;
++  unsigned char appl_id[] = { 0x00, 0xa0, 0x3e, 0x00, 0x00, 0x00, 0x01 };
++  struct atm_qos conqos;
++
++  s = socket(PF_ATMSVC, SOCK_DGRAM, ATM_AAL5);
++  if (s<0) {
++    syslog(LOG_ERR, "ATM socket failed: %m\n");
++    return -errno;
++  }
++  memset(&server, 0, sizeof(server));
++  server.sas_family = AF_ATMSVC;
++  server.sas_addr.bhli.hl_type = ATM_HL_VENDOR;
++  memcpy(server.sas_addr.bhli.hl_info, appl_id, 7);
++
++  memset(&conqos, 0, sizeof(conqos));
++  conqos.txtp.traffic_class = conqos.rxtp.traffic_class = ATM_UBR;
++  conqos.txtp.max_sdu = conqos.rxtp.max_sdu = 512;
++  if (setsockopt(s,SOL_ATM,SO_ATMQOS,&conqos,sizeof(conqos)) < 0) {
++    syslog(LOG_ERR, "ATM setsockopt SO_ATMQOS failed: %m\n");
++    close(s);
++    return -errno;
++  }
++  if (bind(s, (struct sockaddr *)&server, sizeof(struct sockaddr_atmsvc))<0) {
++    syslog(LOG_ERR, "ATM socket bind failed: %m\n");
++    close(s);
++    return -errno;
++  }
++
++  if (listen(s, QLEN) <0) {
++    syslog(LOG_ERR, "ATM socket listen failed: %m\n");
++    close(s);
++    return -errno;
++  }
++  return s;
++}
++
++int
++close_atm_stream(int s)
++{
++  if (s==atm_vs)
++    atm_vs = -1;
++  return (close(s));
++}
++
++int
++is_qstream_atm(struct qstream *to_test)
++{
++  return (to_test->s_atmfrom.sas_family);
++}
++
++#endif /* (defined(linux) && ATM) */
++/*
++ *
++ * $Log: bind-498-REL.patch,v $
++ * Revision 1.2  2001/10/09 22:33:06  paulsch
++ * Merge V2_4_0 branch into the main branch...
++ *
++ * Revision 1.1.2.1  2001/10/03 17:45:52  paulsch
++ * Here is the ANS stuff coalesced(sp?) into a single directory now...  Updated
++ * the bind patch so that it applies against the latest BIND 4...  For the record,
++ * I have not tested this...  I don't know if anybody is even using this...
++ *
++ *
++ */
+diff -urN bind-498-REL.orig/named/atm_itf.h bind-498-REL/named/atm_itf.h
+--- bind-498-REL.orig/named/atm_itf.h	Wed Dec 31 18:00:00 1969
++++ bind-498-REL/named/atm_itf.h	Tue Oct  2 17:21:56 2001
+@@ -0,0 +1,55 @@
++/*
++ * Marko Kiiskila carnil@cs.tut.fi 
++ * 
++ * Copyright (c) 1996
++ * Tampere University of Technology - Telecommunications Laboratory
++ * All rights reserved.
++ *
++ * Permission to use, copy, modify and distribute this
++ * software and its documentation is hereby granted,
++ * provided that both the copyright notice and this
++ * permission notice appear in all copies of the software,
++ * derivative works or modified versions, and any portions
++ * thereof, that both notices appear in supporting
++ * documentation, and that the use of this software is
++ * acknowledged in any publications resulting from using
++ * the software.
++ * 
++ * TUT ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
++ * CONDITION AND DISCLAIMS ANY LIABILITY OF ANY KIND FOR
++ * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS
++ * SOFTWARE.
++ * 
++ */
++
++/*
++ *
++ * Include file for ATM interface in Linux
++ *
++ */
++#ifndef _ATM_ITF_H_
++#define _ATM_ITF_H_
++#if defined(linux) && defined(ATM)
++#include <linux/atm.h>
++#include <linux/atmsap.h>
++
++#define MAX_CELL_RATE 3084
++#define QLEN 5
++
++/* Listening ATM socket */
++extern int atm_vs;
++
++/* From ATM address */
++extern struct sockaddr_atmsvc from_atmaddr;
++
++/* Protos */
++int open_atm_stream(void);
++int close_atm_stream(int s);
++int is_qstream_atm(struct qstream *to_test);
++#endif /* defined(linux) && defined(ATM) */
++#endif /* _ATM_ITF_H_ */
++/*
++ *
++ * $Log: bind-498-REL.patch,v $
++ * Revision 1.2  2001/10/09 22:33:06  paulsch
++ * Merge V2_4_0 branch into the main branch...
++ *
++ * Revision 1.1.2.1  2001/10/03 17:45:52  paulsch
++ * Here is the ANS stuff coalesced(sp?) into a single directory now...  Updated
++ * the bind patch so that it applies against the latest BIND 4...  For the record,
++ * I have not tested this...  I don't know if anybody is even using this...
++ *
++ *
++ */
+diff -urN bind-498-REL.orig/named/db_dump.c bind-498-REL/named/db_dump.c
+--- bind-498-REL.orig/named/db_dump.c	Mon Oct  7 23:51:03 1996
++++ bind-498-REL/named/db_dump.c	Tue Oct  2 17:21:56 2001
+@@ -569,6 +569,20 @@
+ 							    dp->d_data, NULL),
+ 					     fp);
+ 				break;
++#if defined(ATM)
++                       case T_ATMA:
++                         if (dp->d_size == 21) {
++			   int i;
++
++                           (void) fputs("AESA ",fp);
++			   for (i=1;i<dp->d_size;i++)
++			     (void)fprintf(fp,"%2.2x",dp->d_data[i]&0xff);
++                         } else {
++                           (void) fputs("E164 ", fp);
++                           (void) fputs(dp->d_data+1, fp);
++                         }
++                         break;
++#endif /* defined (ATM) */
+ 			case T_AAAA: {
+ 				char t[sizeof
+ 				"ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"
+diff -urN bind-498-REL.orig/named/db_load.c bind-498-REL/named/db_load.c
+--- bind-498-REL.orig/named/db_load.c	Sun May 10 23:19:45 1998
++++ bind-498-REL/named/db_load.c	Tue Oct  2 17:21:56 2001
+@@ -103,6 +103,10 @@
+ 
+ #include "named.h"
+ 
++#if defined(ATM)
++#include <atmresolv.h>
++#endif /* defined(ATM) */
++
+ #define ALLOW_LONG_TXT_RDATA
+ 
+ static int		gettoken __P((register FILE *, const char *)),
+@@ -814,6 +818,33 @@
+ 				if (n == 0)
+ 					goto err;
+ 				break;
++#if defined(ATM)
++                       case T_ATMA:
++                         if (*buf=='+') { /* E.164 */
++                           cp = buf+1;
++                           data[0] = ATMA_E164;
++                           n=1;
++                           while (*cp != '\0' && *cp != '\n' &&
++                                  n <= ATM_E164_LEN) {
++                             if (isdigit(*cp))
++                               data[n++] = *cp++;
++                             else if (*cp++ != '.')
++                               goto err;
++                           }
++                           if (n-1 > ATM_E164_LEN || n == 0)
++                             goto err;
++                           endline(fp);
++                         } else { /* NSAP */
++                           data[0] = ATMA_AESA;
++                           n = inet_nsap_addr(buf, (u_char *)data+1,
++                                              (sizeof data) -1);
++                           if (n != ATM_ESA_LEN)
++                             goto err;
++                           n++;
++                           endline(fp);
++                         }
++                         break;
++#endif /* defined (ATM) */
+ 
+ 			case T_NSAP:
+ 				n = inet_nsap_addr(buf, (u_char *)data,
+diff -urN bind-498-REL.orig/named/db_update.c bind-498-REL/named/db_update.c
+--- bind-498-REL.orig/named/db_update.c	Sun Jun  1 15:34:34 1997
++++ bind-498-REL/named/db_update.c	Tue Oct  2 17:21:56 2001
+@@ -682,6 +682,9 @@
+ 	case T_GID:
+ 	case T_WKS:
+ 	case T_NULL:
++#if defined(ATM)
++       case T_ATMA:
++#endif /* defined(ATM) */
+ 	case T_NSAP:
+ 	case T_AAAA:
+ 	case T_LOC:
+diff -urN bind-498-REL.orig/named/named-xfer.c bind-498-REL/named/named-xfer.c
+--- bind-498-REL.orig/named/named-xfer.c	Sat Dec 16 16:54:43 2000
++++ bind-498-REL/named/named-xfer.c	Tue Oct  2 17:21:56 2001
+@@ -1270,6 +1270,9 @@
+ 	case T_X25:
+ 	case T_ISDN:
+ 	case T_LOC:
++#if defined(ATM)
++       case T_ATMA:
++#endif /* defined(ATM) */
+ 	case T_NSAP:
+ 	case T_AAAA:
+ 	case T_UID:
+@@ -1808,6 +1811,12 @@
+ 	case T_NSAP:
+ 		fprintf(dbfp, "%s\n", inet_nsap_ntoa(n, cp, NULL));
+ 		break;
++
++#if defined(ATM)
++       case T_ATMA:
++         fprintf(dbfp, "ATM RR\n");
++         break;
++#endif /* defined(ATM) */
+ 
+ 	case T_AAAA: {
+ 		char t[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
+diff -urN bind-498-REL.orig/named/ns_defs.h bind-498-REL/named/ns_defs.h
+--- bind-498-REL.orig/named/ns_defs.h	Sat Sep 21 19:13:10 1996
++++ bind-498-REL/named/ns_defs.h	Tue Oct  2 17:21:56 2001
+@@ -188,6 +188,12 @@
+ 	int		nretry;		/* # of times addr retried */
+ };
+ 
++#if defined(ATM)
++#if defined(linux)
++#include <linux/atm.h>
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
++
+ /*
+  * Structure for recording info on forwarded or generated queries.
+  */
+@@ -259,6 +265,12 @@
+ 	struct qstream	*s_next;	/* next stream */
+ 	struct sockaddr_in
+ 			s_from;		/* address query came from */
++#if defined(ATM)
++#if defined(linux)
++        struct sockaddr_atmsvc
++                       s_atmfrom;      /* ATM address query came from */
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
+ 	u_int32_t	s_time;		/* time stamp of last transaction */
+ 	int		s_refcnt;	/* number of outstanding queries */
+ 	u_int16_t	s_tempsize;	/* temporary for size from net */
+diff -urN bind-498-REL.orig/named/ns_forw.c bind-498-REL/named/ns_forw.c
+--- bind-498-REL.orig/named/ns_forw.c	Sat Dec 16 16:59:16 2000
++++ bind-498-REL/named/ns_forw.c	Tue Oct  2 17:21:56 2001
+@@ -128,7 +128,10 @@
+ 	qp->q_domain = strdup(tmpdomain);
+ 	if (!qp->q_domain)
+ 		panic(ENOMEM, "ns_forw: strdup failed");
+-	qp->q_from = *fp;	/* nslookup wants to know this */
++	if (fp)
++	  qp->q_from = *fp;	/* nslookup wants to know this */
++	else
++	  memset(&qp->q_from, 0, sizeof(qp->q_from));
+ 	n = nslookup(nsp, qp, dname, "ns_forw");
+ 	if (n < 0) {
+ 		dprintf(2, (ddt, "forw: nslookup reports danger\n"));
+diff -urN bind-498-REL.orig/named/ns_main.c bind-498-REL/named/ns_main.c
+--- bind-498-REL.orig/named/ns_main.c	Sat Dec 16 16:54:43 2000
++++ bind-498-REL/named/ns_main.c	Tue Oct  2 17:21:56 2001
+@@ -111,6 +111,10 @@
+ #include "named.h"
+ #undef MAIN_PROGRAM
+ 
++#if defined(ATM)
++#include "atm_itf.h"
++#endif /* defined(ATM) */
++
+ #undef nsaddr
+ 
+ 				/* UDP receive, TCP send buffer size */
+@@ -405,6 +409,26 @@
+ 		exit(1);
+ 	}
+ 
++#if defined(ATM)
++#if defined(linux)
++	/* ATM socket creation */
++	for(n=0;;n++) {
++	  printf("About to create listen socket\n");
++	  if ((atm_vs=open_atm_stream()) < 0 && n < 2) {
++	    printf("open_atm_stream failed %d\n",atm_vs);
++	    syslog(LOG_ERR, "ATM socket failure, can't answer ATM connection requests\n");
++	    if (errno == EADDRINUSE) {
++	      syslog(LOG_NOTICE,
++		     "There may be an ATM name server already running\n");
++	    }
++	  } else
++	    break;
++	  /* Retry opening the socket a few times */
++	  sleep(3);
++	}
++#endif /* defined (linux) */
++#endif /* defined (ATM) */
++
+   	/*
+ 	 * named would be terminated if one of these is sent and no handler.
+ 	 */
+@@ -424,6 +448,11 @@
+ 	 */
+ 	FD_ZERO(&mask);
+ 	FD_SET(vs, &mask);
++#if defined(ATM)
++#if defined(linux)
++       FD_SET(atm_vs, &mask);
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
+ 	getnetconf();
+ 
+ 	/*
+@@ -785,6 +814,11 @@
+ 			gettime(&tt);
+ 			sp->s_time = tt.tv_sec;	/* last transaction time */
+ 			sp->s_from = from_addr;	/* address to respond to */
++#if defined(ATM)
++#if defined(linux)
++                       memset(&sp->s_atmfrom, 0, sizeof(sp->s_atmfrom));
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
+ 			sp->s_bufp = (u_char *)&sp->s_tempsize;
+ 			FD_SET(rfd, &mask);
+ 			FD_SET(rfd, &tmpmask);
+@@ -795,6 +829,83 @@
+ 				       sin_ntoa(&sp->s_from), rfd);
+ #endif
+ 		}
++#if defined(ATM)
++#if defined(linux)
++		/*
++		** Process ATM stream connection.
++		**
++		** Note that a "continue" in here takes us back to the select()
++		** which, if our accept() failed, will bring us back here.
++		*/
++		if (FD_ISSET(atm_vs, &tmpmask)) {
++			
++			int from_len = sizeof(from_atmaddr);
++			rfd = accept(atm_vs,
++				     (struct sockaddr *)&from_atmaddr,
++				     &from_len);
++			if (rfd < 0 && errno == EINTR)
++				continue;
++			if (rfd < 0 && errno == EMFILE && streamq) {
++				maxctime = 0;
++				candidate = NULL;
++				for (sp = streamq; sp; sp = nextsp) {
++					nextsp = sp->s_next;
++					if (sp->s_refcnt)
++						continue;
++					gettime(&tt);
++					lasttime = tt.tv_sec - sp->s_time;
++					if (lasttime >= VQEXPIRY)
++						sqrm(sp);
++					else if (lasttime > maxctime) {
++						candidate = sp;
++						maxctime = lasttime;
++					}
++				}
++				if (candidate)
++					sqrm(candidate);
++				continue;
++			}
++			if (rfd < 0 && (errno == ENOENT || errno == EUNATCH)) {
++				syslog(LOG_INFO, "ATM signalling died!\n");
++				(void)my_close(atm_vs);
++				FD_CLR(atm_vs, &mask);
++				continue;
++			}
++			if (rfd < 0) {
++				syslog(LOG_INFO, "accept: %m");
++				continue;
++			}
++			if (getpeername(rfd, 
++					(struct sockaddr*)&from_atmaddr, 
++					&from_len) != 0) {
++				syslog(LOG_INFO,
++				  "getpeername(rfd, &from_atmaddr, &from):%m");
++				(void) my_close(rfd);
++				continue;
++			}
++			if ((sp = sqadd()) == QSTREAM_NULL) {
++				(void) my_close(rfd);
++				continue;
++			}
++			sp->s_rfd = rfd;        /* stream file descriptor */
++			sp->s_size = -1;        /* amount of data to receive */
++			gettime(&tt);
++			sp->s_time = tt.tv_sec; /* last transaction time */
++			
++			memset(&sp->s_from,0,sizeof(sp->s_from));
++			memcpy(&sp->s_atmfrom, &from_atmaddr,
++			       sizeof(from_atmaddr));
++			/* address to respond to */
++			sp->s_bufp = (u_char *)&sp->s_tempsize;
++			FD_SET(rfd, &mask);
++			FD_SET(rfd, &tmpmask);
++			dprintf(1, (ddt,
++				    "\nATM connection from [%s] (fd %d)\n",
++				    "ATMADDRESS", rfd));
++			
++		}
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
+ 		if (streamq)
+ 			dprintf(3, (ddt, "streamq = 0x%lx\n",
+ 				    (u_long)streamq));
+@@ -802,6 +913,29 @@
+ 			nextsp = sp->s_next;
+ 			if (!FD_ISSET(sp->s_rfd, &tmpmask))
+ 				continue;
++#if defined(ATM)
++#if defined(linux)
++			/*
++			 * ATM streams process packets as datagrams,
++			 * so read()'s have to be done accordingly.
++			 */
++			if (is_qstream_atm(sp)) {
++				n = read(sp->s_rfd, (char*)buf,
++					 MIN(PACKETSZ, sizeof(buf)));
++				if ((n <0) && (errno == EAGAIN)) {
++					sq_query(sp);
++					errno = 0;
++					continue;
++				}
++				if (n <=0) {
++					sqrm(sp);
++					continue;
++				}
++				sq_query(sp);
++				ns_req(buf, n, PACKETSZ, sp, NULL, -1);
++			} else {
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
+ 			dprintf(5, (ddt,
+ 				  "sp x%lx rfd %d size %d time %d next x%lx\n",
+ 				    (u_long)sp, sp->s_rfd, sp->s_size,
+@@ -942,6 +1076,11 @@
+ 				}
+ 				continue;
+ 			}
++#if defined(ATM)
++#if defined(linux)
++                       }
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
+ 		}
+ 	}
+ 	/* NOTREACHED */
+diff -urN bind-498-REL.orig/named/ns_maint.c bind-498-REL/named/ns_maint.c
+--- bind-498-REL.orig/named/ns_maint.c	Sat Sep 21 19:13:10 1996
++++ bind-498-REL/named/ns_maint.c	Tue Oct  2 17:21:56 2001
+@@ -73,6 +73,12 @@
+ 
+ #include "named.h"
+ 
++#if defined(ATM)
++#if defined(linux)
++#include "atm_itf.h"
++#endif /* defined(linux)*/
++#endif /* defined(ATM) */
++
+ #ifdef USE_UTIME
+ # include <utime.h>
+ #endif
+@@ -163,6 +169,19 @@
+ 		stats_time = tt.tv_sec;
+ 	}
+ #endif
++#if defined(ATM)
++#if defined(linux)
++	if (atm_vs < 0) {
++	  /* Try to create ATM socket again */
++	  printf("About to retry opening listen socket\n");
++	  if ((atm_vs=open_atm_stream()) < 0) {
++	    printf("open_atm_stream failed %d\n",atm_vs);
++	    syslog(LOG_ERR, "ATM socket failure, can't answer ATM connection requests\n");
++	  } else
++	    printf("ATM socket creation success!\n");
++	}
++#endif /* defined (linux) */
++#endif /* defined (ATM) */
+ 	if (!needmaint)
+ 		sched_maint();
+ 	dprintf(1, (ddt, "exit ns_maint()\n"));
+@@ -207,6 +226,13 @@
+ 		ival.it_value.tv_sec = next_refresh - tt.tv_sec;
+ 		if ((long) ival.it_value.tv_sec < maint_interval)
+ 			ival.it_value.tv_sec = maint_interval;
++#if defined(ATM)
++#if defined(linux)
++		if (atm_vs < 0) /* ATM socket doesn't exist, try again after
++				 * maint_interval */
++		  ival.it_value.tv_sec = maint_interval;
++#endif /* defined(linux)*/
++#endif /* defined(ATM) */
+ 		next_alarm = next_refresh;
+ 		alarm_pending = 1;
+ 	}
+diff -urN bind-498-REL.orig/named/ns_req.c bind-498-REL/named/ns_req.c
+--- bind-498-REL.orig/named/ns_req.c	Sat Dec 16 16:31:26 2000
++++ bind-498-REL/named/ns_req.c	Tue Oct  2 17:21:56 2001
+@@ -96,6 +96,13 @@
+ 
+ #include "named.h"
+ 
++#if defined(ATM)
++#if defined(linux)
++#include "atm_itf.h"
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
++
++
+ struct addinfo {
+ 	char		*a_dname;		/* domain name */
+ 	char		*a_rname;		/* referred by */
+@@ -251,12 +258,17 @@
+ 
+ #ifdef DEBUG
+ #ifdef SORT_RESPONSE
++#if defined(linux) && defined(ATM)
++	sortmsgtxt = "   ";
++#else
+ 	sortmsgtxt = local(from) == NULL ? "Remote" : "Local";
++#endif /* defined(linux) && defined(ATM) */
+ #else /*SORT*/
+ 	sortmsgtxt = "(not sorting)";
+ #endif /*SORT*/
+ 	dprintf(1, (ddt, "ns_req: answer -> %s fd=%d id=%d size=%d %s\n",
+-		    sin_ntoa(from), (qsp == QSTREAM_NULL) ? dfd : qsp->s_rfd,
++		    from?sin_ntoa(from):"(null)", 
++		    (qsp == QSTREAM_NULL) ? dfd : qsp->s_rfd,
+ 		    ntohs(hp->id), cp - msg, sortmsgtxt));
+ 	if (debug >= 10)
+ 		fp_nquery(msg, cp - msg, ddt);
+@@ -280,6 +292,13 @@
+ 			nameserIncr(from->sin_addr, nssSentNaAns);
+ #endif
+ 	} else {
++#if defined(ATM)
++#if defined(linux)
++	  if (is_qstream_atm(qsp))
++	    write(qsp->s_rfd, msg, cp-msg);
++	  else
++#endif /* defined(linux) */
++#endif /* defined(ATM) */
+ 		(void) writemsg(qsp->s_rfd, msg, cp - msg);
+ 		sq_done(qsp);
+ 	}
+@@ -520,10 +539,14 @@
+ 	 */
+ 	if (type == T_AXFR) {
+ 		/* refuse request if not a TCP connection */
++#if defined(ATM) && defined(linux)
++         if (qsp == QSTREAM_NULL || is_qstream_atm(qsp)) {
++#else
+ 		if (qsp == QSTREAM_NULL) {
++#endif
+ 			syslog(LOG_INFO,
+-			       "rejected UDP AXFR from %s for \"%s\"",
+-			       sin_ntoa(from), *dnbuf ? dnbuf : ".");
++			       "rejected UDP/ATM AXFR from %s for \"%s\"",
++			       from?sin_ntoa(from):"ATM",*dnbuf ? dnbuf : ".");
+ 			return (Refuse);
+ 		}
+ 		/* the position of this is subtle. */
+@@ -729,7 +752,7 @@
+ 		    foundname, count, founddata, cname));
+ 
+ #ifdef SORT_RESPONSE
+-	if ((lp = local(from)) != NULL) 
++	if (from && (lp = local(from)) != NULL) 
+ 		sort_response(answers, count, lp, *cpp);
+ #endif
+ #ifdef BIND_NOTIFY
+diff -urN bind-498-REL.orig/named/ns_resp.c bind-498-REL/named/ns_resp.c
+--- bind-498-REL.orig/named/ns_resp.c	Mon Apr  6 23:59:45 1998
++++ bind-498-REL/named/ns_resp.c	Tue Oct  2 17:21:56 2001
+@@ -1460,6 +1460,9 @@
+ 	case T_TXT:
+ 	case T_X25:
+ 	case T_ISDN:
++#if defined(ATM)
++       case T_ATMA:
++#endif
+ 	case T_NSAP:
+ 	case T_AAAA:
+ 	case T_LOC:
+@@ -1948,6 +1951,11 @@
+ 			return (1);
+ 		}
+ 	} else {
++#if defined(ATM) && defined(linux)
++	  if (is_qstream_atm(qp->q_stream))
++	    (void) write(qp->q_stream->s_rfd, (u_char*)msg, msglen);
++	  else
++#endif /* defined(ATM) && defined(linux) */
+ 		(void) writemsg(qp->q_stream->s_rfd, (u_char*)msg, msglen);
+ 		sq_done(qp->q_stream);
+ 	}
+diff -urN bind-498-REL.orig/res/Makefile bind-498-REL/res/Makefile
+--- bind-498-REL.orig/res/Makefile	Sun Jun  1 15:34:37 1997
++++ bind-498-REL/res/Makefile	Tue Oct  2 17:21:56 2001
+@@ -73,13 +73,13 @@
+ 
+ CFLAGS=	${CDEBUG} -I${INCL} -I${COMPINCL} ${DEFS} ${LOCDEFS}
+ 
+-SRCS=	base64.c herror.c res_debug.c res_data.c \
++SRCS=	base64.c herror.c res_debug.c res_data.c atm_init.c \
+ 	res_comp.c res_init.c res_mkquery.c res_query.c res_send.c \
+ 	getnetbyaddr.c getnetbyname.c getnetent.c getnetnamadr.c \
+ 	gethnamaddr.c sethostent.c nsap_addr.c hostnamelen.c inet_addr.c \
+ 	inet_ntop.c inet_neta.c inet_pton.c inet_net_ntop.c inet_net_pton.c
+ 
+-OBJS=	base64.o herror.o res_debug.o res_data.o \
++OBJS=	base64.o herror.o res_debug.o res_data.o atm_init.o \
+ 	res_comp.o res_init.o res_mkquery.o res_query.o res_send.o \
+ 	getnetbyaddr.o getnetbyname.o getnetent.o getnetnamadr.o \
+ 	gethnamaddr.o sethostent.o nsap_addr.o hostnamelen.o inet_addr.o \
+diff -urN bind-498-REL.orig/res/atm_init.c bind-498-REL/res/atm_init.c
+--- bind-498-REL.orig/res/atm_init.c	Wed Dec 31 18:00:00 1969
++++ bind-498-REL/res/atm_init.c	Tue Oct  2 17:21:56 2001
+@@ -0,0 +1,205 @@
++/*
++ * Marko Kiiskila carnil@cs.tut.fi 
++ * 
++ * Copyright (c) 1996
++ * Tampere University of Technology - Telecommunications Laboratory
++ * All rights reserved.
++ *
++ * Permission to use, copy, modify and distribute this
++ * software and its documentation is hereby granted,
++ * provided that both the copyright notice and this
++ * permission notice appear in all copies of the software,
++ * derivative works or modified versions, and any portions
++ * thereof, that both notices appear in supporting
++ * documentation, and that the use of this software is
++ * acknowledged in any publications resulting from using
++ * the software.
++ * 
++ * TUT ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
++ * CONDITION AND DISCLAIMS ANY LIABILITY OF ANY KIND FOR
++ * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS
++ * SOFTWARE.
++ * -
++ * Portions Copyright (c) 1985, 1989, 1993
++ *    The Regents of the University of California.  All rights reserved.
++ * 
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *      This product includes software developed by the University of
++ *      California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ * 
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * -
++ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
++ * 
++ * Permission to use, copy, modify, and distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies, and that
++ * the name of Digital Equipment Corporation not be used in advertising or
++ * publicity pertaining to distribution of the document or software without
++ * specific, written prior permission.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
++ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
++ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
++ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
++ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
++ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
++ * SOFTWARE.
++ * -
++ * --Copyright--
++ */
++
++/*
++ * 
++ * Resolver initialization
++ *
++ * $Id: bind-498-REL.patch,v 1.2 2001/10/09 22:33:06 paulsch Exp $
++ *
++ */
++#if defined(ATM) && defined(linux)
++#include <sys/time.h>
++#include <unistd.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <atm.h>
++#include <netinet/in.h>
++
++#include <atmresolv.h>
++
++#define MATCH(line, name) \
++(!strncmp(line, name, sizeof(name) - 1) && \
++ (line[sizeof(name) - 1] == ' ' || \
++  line[sizeof(name) - 1] == '\t'))
++
++/*
++ * Resolver state default settings.
++ */
++
++struct __atmres_state _atmres;
++int _queryatm = 0;
++
++static unsigned short
++atmres_randomid(void)
++{
++        struct timeval now;
++
++        gettimeofday(&now, NULL);
++        return (0xffff & (now.tv_sec ^ now.tv_usec ^ getpid()));
++}
++
++/*
++ * Set up default settings.  If the configuration file exist, the values
++ * there will have precedence. Otherwise, the server address is set to
++ * WKS. Here should also be request for ILMI to find out ANS server address.
++ *
++ * Return 0 if completes successfully, -1 on error
++ */
++int
++atmres_init(void)
++{
++  FILE *fp;
++  register char *cp, **pp;
++  register int n;
++  char buf[BUFSIZ];
++  int nserv = 0;    /* number of nameserver records read from file */
++  int haveenv = 0;
++  int havesearch = 0;
++  unsigned char appl_id[] = { 0x00, 0xa0, 0x3e, 0x00, 0x00, 0x00, 0x01 };
++  struct sockaddr_atmsvc tmp;
++
++  memset(&_atmres.nsaddr, 0, sizeof(struct sockaddr_atmsvc));
++  _atmres.nsaddr.sas_family = AF_ATMSVC;
++  _atmres.nsaddr.sas_addr.bhli.hl_type = ATM_HL_VENDOR;
++  memcpy(_atmres.nsaddr.sas_addr.bhli.hl_info, appl_id, 7);
++  _atmres.nscount = 1;
++
++  /* ANS WKS addr */
++  _atmres.nsaddr.sas_addr.prv[0] = 0x02;
++  _atmres.nsaddr.sas_addr.prv[1] = 0xc5;
++  _atmres.nsaddr.sas_addr.prv[2] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[3] = 0x79;
++  _atmres.nsaddr.sas_addr.prv[4] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[5] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[6] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[7] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[8] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[9] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[10] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[11] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[12] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[13] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[14] = 0xa0;
++  _atmres.nsaddr.sas_addr.prv[15] = 0x3e;
++  _atmres.nsaddr.sas_addr.prv[16] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[17] = 0x00;
++  _atmres.nsaddr.sas_addr.prv[18] = 0x02;
++  _atmres.nsaddr.sas_addr.prv[19] = 0x00;
++
++    
++  if ((fp = fopen(_PATH_ATMRESCONF, "r")) != NULL) {
++    /* read the config file */
++    while (fgets(buf, sizeof(buf), fp) != NULL) {
++      /* skip comments */
++      if (*buf == ';' || *buf == '#')
++	continue;
++      /* read nameservers to query */
++      if (MATCH(buf, "ans") && nserv < MAXNS) {
++	cp = buf + sizeof("ans") - 1;
++	while (*cp == ' ' || *cp == '\t')
++	  cp++;
++	
++	while (buf[strlen(buf)-1] == '\n' ||
++	       buf[strlen(buf)-1] == ' ' ||
++	       buf[strlen(buf)-1] == '\t')
++	  buf[strlen(buf)-1] = '\0';
++	memset(&tmp, 0, sizeof(struct sockaddr_atmsvc));
++	if (text2atm(cp, (struct sockaddr*)&tmp, 
++		     sizeof(struct sockaddr_atmsvc), T2A_SVC) < 0)
++	  continue;
++	else {
++	  _atmres.nsaddr_list[nserv] = tmp;
++	  _atmres.nsaddr_list[nserv].sas_family = AF_ATMSVC;
++	  _atmres.nsaddr_list[nserv].sas_addr.bhli.hl_type = ATM_HL_VENDOR;
++	  memcpy(_atmres.nsaddr_list[nserv].sas_addr.bhli.hl_info, appl_id, 7);
++	  nserv++;
++	}
++	continue;
++      }
++    }
++    if (nserv > 1)
++      _atmres.nscount = nserv;
++    fclose(fp);
++  }    
++  return 0;
++}
++#endif
++
++/*
++ *
++ * $Log: bind-498-REL.patch,v $
++ * Revision 1.2  2001/10/09 22:33:06  paulsch
++ * Merge V2_4_0 branch into the main branch...
++ *
++ * Revision 1.1.2.1  2001/10/03 17:45:52  paulsch
++ * Here is the ANS stuff coalesced(sp?) into a single directory now...  Updated
++ * the bind patch so that it applies against the latest BIND 4...  For the record,
++ * I have not tested this...  I don't know if anybody is even using this...
++ *
++ * 
++ */
+diff -urN bind-498-REL.orig/res/gethnamaddr.c bind-498-REL/res/gethnamaddr.c
+--- bind-498-REL.orig/res/gethnamaddr.c	Mon Apr  6 23:59:46 1998
++++ bind-498-REL/res/gethnamaddr.c	Tue Oct  2 17:52:23 2001
+@@ -89,6 +89,10 @@
+ # include <../conf/options.h>
+ #endif
+ 
++#if defined(ATM)
++#include <atmresolv.h>
++#endif
++
+ #ifdef SPRINTF_CHAR
+ # define SPRINTF(x) strlen(sprintf/**/x)
+ #else
+@@ -192,6 +196,9 @@
+ 	host.h_name = NULL;
+ 	eom = answer->buf + anslen;
+ 	switch (qtype) {
++#if defined(ATM)
++       case T_ATMA:
++#endif
+ 	case T_A:
+ 	case T_AAAA:
+ 		name_ok = res_hnok;
+@@ -222,7 +229,11 @@
+ 		return (NULL);
+ 	}
+ 	BOUNDED_INCR(n + QFIXEDSZ);
++#if defined(ATM)
++	if (qtype == T_A || qtype == T_AAAA || qtype == T_ATMA) {
++#else
+ 	if (qtype == T_A || qtype == T_AAAA) {
++#endif /* defined(ATM) */
+ 		/* res_send() has already verified that the query name is the
+ 		 * same as the one we sent; this just gets the expanded name
+ 		 * (i.e., with the succeeding search-domain tacked on).
+@@ -382,6 +393,56 @@
+ 			h_errno = NETDB_SUCCESS;
+ 			return (&host);
+ #endif
++#if defined(ATM)
++		case T_ATMA:
++		  if (strcasecmp(host.h_name, bp) != 0) {
++		    syslog(LOG_NOTICE|LOG_AUTH,
++			   AskedForGot, host.h_name, bp);
++		    cp += n;
++		    continue;
++		  }
++		  if ((host.h_length == ATM_ESA_LEN &&
++		       (n != ATM_ESA_LEN+1 ||
++			*cp != ATMA_AESA)) ||
++		      (host.h_length  == ATM_E164_LEN &&
++		       (n != ATM_E164_LEN +1 ||
++			*cp != ATMA_E164))) {
++		    cp += n;
++		    h_errno = NO_DATA;
++		    if (ancount==0 && !haveanswer)
++		      return (NULL);
++		    continue;
++		  }
++		  if (haveanswer) {
++		    if (n != host.h_length +1) {
++		      cp += n;
++		      continue;
++		    }
++		  } else {
++		    register int nn;
++		    
++		    host.h_name = bp;
++		    nn = strlen(bp) +1;
++		    bp += nn;
++		    buflen -= nn;
++		  }
++		  if (bp + n > &hostbuf[sizeof hostbuf]) {
++		    dprintf("size (%d) too big\n", n);
++		    had_error++;
++		    continue;
++		  }
++		  if (hap >= &h_addr_ptrs[MAXADDRS-1]) {
++		    if (!toobig++)
++		      dprintf("Too many addresses (%d)\n",
++			      MAXADDRS);
++		    cp += n;
++		    continue;
++		  }
++		  bcopy(cp+1, *hap++ = bp, n-1);
++		  bp += n;
++		  cp += n;
++		  break;
++#endif /* defined(ATM) */
+ 		case T_A:
+ 		case T_AAAA:
+ 			if (strcasecmp(host.h_name, bp) != 0) {
+@@ -463,6 +524,42 @@
+ 	return (NULL);
+ }
+ 
++#if defined(ATM)
++struct hostent *
++gethostbyname_e164(const char *name)
++{
++  struct hostent *hp;
++#if defined(linux)
++  int old_queryatm;
++  
++  old_queryatm = _queryatm;
++  _queryatm =1;
++#endif /* defined (linux) */
++  hp =gethostbyname2(name, AF_ATME164);
++#if defined(linux)
++  _queryatm = old_queryatm;
++#endif /* defined(linux) */
++  return hp;
++}
++
++struct hostent *
++gethostbyname_atmnsap(const char *name)
++{
++  struct hostent *hp;
++#if defined(linux)
++  int old_queryatm;
++  
++  old_queryatm = _queryatm;
++  _queryatm =1;
++#endif /* defined(linux) */
++  hp = gethostbyname2(name, AF_ATMNSAP);
++#if defined(linux)
++  _queryatm = old_queryatm;
++#endif /* defined(linux) */
++  return hp;
++}
++#endif /* defined(ATM) */
++
+ struct hostent *
+ gethostbyname(name)
+ 	const char *name;
+@@ -498,6 +595,16 @@
+ 	}
+ 
+ 	switch (af) {
++#if defined(ATM)
++	case AF_ATMNSAP:
++	  size = ATM_ESA_LEN;
++	  type = T_ATMA;
++	  break;
++	case AF_ATME164:
++	  size = ATM_E164_LEN;
++	  type = T_ATMA;
++	  break;
++#endif /* defined(ATM) */
+ 	case AF_INET:
+ 		size = INADDRSZ;
+ 		type = T_A;
+@@ -619,6 +726,12 @@
+ 	char hname2[MAXDNAME+1];
+ #endif /*SUNSECURITY*/
+ 	extern struct hostent *_gethtbyaddr();
++
++#if defined(ATM) && defined(linux)
++       int old_queryatm;
++ 
++       old_queryatm = _queryatm;
++#endif /*defined(ATM) && defined(linux)*/
+ 	
+ 	if ((_res.options & RES_INIT) == 0 && res_init() == -1) {
+ 		h_errno = NETDB_INTERNAL;
+@@ -640,6 +753,20 @@
+ 	case AF_INET6:
+ 		size = IN6ADDRSZ;
+ 		break;
++#if defined(ATM)
++	case AF_ATMNSAP:
++	  size = ATM_ESA_LEN;
++#if defined(linux)
++	  _queryatm = 1;
++#endif /* defined(linux) */
++	  break;
++	case AF_ATME164:
++	  size = ATM_E164_LEN;
++#if defined(linux)
++	  _queryatm = 1;
++#endif /*defined(linux) */
++	  break;
++#endif /* defined(ATM) */
+ 	default:
+ 		errno = EAFNOSUPPORT;
+ 		h_errno = NETDB_INTERNAL;
+@@ -667,10 +794,50 @@
+ 		}
+ 		strcpy(qp, "ip6.int");
+ 		break;
++#if defined(ATM)
++        case AF_ATMNSAP:
++          qp =qbuf;
++          qp += SPRINTF((qbuf,"%2.2x.%2.2x%2.2x%2.2x%2.2x%2.2x%2.2x", 
++                         uaddr[19] & 0xff, uaddr[13] & 0xff,
++                         uaddr[14] & 0xff, uaddr[15] & 0xff,
++                         uaddr[16] & 0xff, uaddr[17] & 0xff,
++                         uaddr[18] & 0xff));
++          if (uaddr[0] == ATM_AFI_DCC || uaddr[0] == ATM_AFI_ICD) {
++            for (n = 12; n > 2; n--)
++              qp += SPRINTF((qp, ".%x.%x", uaddr[n] & 0xf,
++                             (uaddr[n] >> 4) & 0xf));
++            qp += SPRINTF((qp,".%2.2x%2.2x.%2.2x.AESA.ATMA.INT",
++                           uaddr[1] & 0xff, uaddr[2] & 0xff,
++                           uaddr[0] & 0xff));
++          } else if (uaddr[0] == ATM_AFI_E164) {
++            for (n = 12; n > 8; n--)
++              qp += SPRINTF((qp, ".%x.%x", uaddr[n] & 0xf,
++                             (uaddr[n] >> 4) & 0xf));
++            qp += SPRINTF((qp, "."));
++            for (n = 1; n < 9; n++)
++              qp += SPRINTF((qp, "%2.2x", uaddr[n] & 0xff));
++            qp += SPRINTF((qp, "%2.2x.AESA.ATMA.INT", uaddr[0] & 0xff));
++          } else {
++            errno = EAFNOSUPPORT;
++            h_errno = NETDB_INTERNAL;
++            return (NULL);
++          }
++          break;
++        case AF_ATME164:
++          qp =qbuf;
++          for (n=11;n > 2;n--)
++            qp += SPRINTF((qp, "%c.",uaddr[n] & 0xff));
++          qp += SPRINTF((qp,"%c%c%c.E164.ATMA.INT",uaddr[0],uaddr[1],
++                         uaddr[2]));
++          break;
++#endif
+ 	default:
+ 		abort();
+ 	}
+ 	n = res_query(qbuf, C_IN, T_PTR, (u_char *)buf.buf, sizeof buf.buf);
++#if defined(ATM) && defined(linux)
++        _queryatm = old_queryatm;
++#endif
+ 	if (n < 0) {
+ 		dprintf("res_query failed (%d)\n", n);
+ 		if (errno == ECONNREFUSED)
+diff -urN bind-498-REL.orig/res/res_debug.c bind-498-REL/res/res_debug.c
+--- bind-498-REL.orig/res/res_debug.c	Sun Jun  1 15:34:37 1997
++++ bind-498-REL/res/res_debug.c	Tue Oct  2 17:21:56 2001
+@@ -659,7 +659,9 @@
+ 				putc(' ', file);
+ 		}
+ 		break;
+-
++#if defined(ATM)
++       case T_ATMA:
++#endif
+ 	case T_NSAP:
+ 		(void) fprintf(file, "\t%s", inet_nsap_ntoa(dlen, cp, NULL));
+ 		cp += dlen;
+@@ -922,7 +924,7 @@
+ 	{T_EID,		"EID",		"endpoint identifier (unimplemented)"},
+ 	{T_NIMLOC,	"NIMLOC",	"NIMROD locator (unimplemented)"},
+ 	{T_SRV,		"SRV",		"server selection"},
+-	{T_ATMA,	"ATMA",		"ATM address (unimplemented)"},
++	{T_ATMA,	"ATMA",		"ATM address"},
+ 	{T_IXFR,	"IXFR",		"incremental zone transfer"},
+ 	{T_AXFR,	"AXFR",		"zone transfer"},
+ 	{T_MAILB,	"MAILB",	"mailbox-related data (deprecated)"},
+diff -urN bind-498-REL.orig/res/res_query.c bind-498-REL/res/res_query.c
+--- bind-498-REL.orig/res/res_query.c	Sun Jun  1 15:34:37 1997
++++ bind-498-REL/res/res_query.c	Tue Oct  2 17:21:56 2001
+@@ -80,6 +80,10 @@
+ # include <../conf/options.h>
+ #endif
+ 
++#if defined(ATM) && defined(linux)
++#include <atmresolv.h>
++#endif
++
+ #if PACKETSZ > 1024
+ #define MAXPACKET	PACKETSZ
+ #else
+@@ -131,6 +135,11 @@
+ 		h_errno = NO_RECOVERY;
+ 		return (n);
+ 	}
++#if defined(ATM) && defined(linux)
++	if (_queryatm)
++	  n = atm_res_send(buf, n, answer, anslen);
++	else
++#endif /* defined(ATM) && defined(linux) */
+ 	n = res_send(buf, n, answer, anslen);
+ 	if (n < 0) {
+ #ifdef DEBUG
+diff -urN bind-498-REL.orig/res/res_send.c bind-498-REL/res/res_send.c
+--- bind-498-REL.orig/res/res_send.c	Mon Apr  6 23:59:46 1998
++++ bind-498-REL/res/res_send.c	Tue Oct  2 17:21:56 2001
+@@ -94,6 +94,16 @@
+ # include <../conf/options.h>
+ #endif
+ 
++#if defined(ATM) && defined(linux)
++#include <linux/atmdev.h>
++#include <atmresolv.h>
++
++static int atms = -1;   /* ATM socket used for communications */
++
++void _atmres_close __P((void));
++
++#endif /* defined(ATM) && defined(linux) */
++
+ static int s = -1;	/* socket used for communications */
+ static int connected = 0;	/* is the socket connected */
+ static int vc = 0;	/* is the socket a virtual ciruit? */
+@@ -802,6 +812,257 @@
+ 		errno = terrno;
+ 	return (-1);
+ }
++
++#if defined(ATM) && defined(linux)
++
++static int
++atm_getouraddr(int ss, struct sockaddr_atmsvc *addr)
++{
++  struct atmif_sioc req;
++  
++  req.number = 0;
++  req.arg = addr;
++  req.length = sizeof(struct sockaddr_atmsvc);
++  
++  if (ioctl(ss, ATM_GETADDR, &req) <0) {
++    Perror(stderr, "ioctl ATM_GETADDR failed", errno);      
++    return -1;
++  }
++  return 0;
++}
++
++int
++atm_res_send(const unsigned char *buf, int buflen, 
++            unsigned char *ans, int anssiz)
++{
++  HEADER *anhp = (HEADER *) ans;
++  int try, ns, terrno, gotsomewhere, connreset, resplen, n;
++  unsigned short badns;  /* XXX NSMAX can't exceed #/bits in this var */
++  int truncated;
++  unsigned char *cp;
++  struct sockaddr_atmsvc us;
++  struct atm_qos conqos;
++  
++  if ((_res.options & RES_INIT) == 0 && res_init() == -1) {
++    return -1;
++  }
++  
++  if ((_res.options & RES_ATMINIT) == 0 && atmres_init() == -1) {
++    return -1;
++  }
++  
++  gotsomewhere = 0;
++  connreset = 0;
++  terrno = ETIMEDOUT;
++  badns = 0;
++  
++  
++  /*
++   * Send request, RETRY times, or until successful
++   */
++  
++  for (try = 0; try < _res.retry; try++) {
++    for (ns = 0; ns < _atmres.nscount; ns++) {
++      struct sockaddr_atmsvc *nsap = &_atmres.nsaddr_list[ns];
++      struct timeval timeout;
++      fd_set dsmask;
++    same_ns:
++      if (badns & (1 << ns)) {
++       _atmres_close();
++       goto next_ns;
++      }
++      
++      if (_res.options & RES_DEBUG) {
++       char buffer[50];
++
++       for(n=0;n<ATM_ESA_LEN;n++) {
++         sprintf(&buffer[n*3], "%2.2x ", nsap->sas_addr.prv[n]);
++       }
++       Dprint(_res.options & RES_DEBUG,
++              (stdout, ";; Querying server (# %d) address = %s\n",
++               ns + 1, buffer));
++      }
++      /*
++       * Use virtual circuit;
++       * at most one attempt per server.
++       */
++      try = _res.retry;
++      truncated = 0;
++      if (atms < 0) {
++       atms = socket(PF_ATMSVC, SOCK_DGRAM, ATM_AAL5);
++       if (atms < 0) {
++         terrno = errno;
++         Perror(stderr, "socket", errno);
++         return (-1);
++       }
++       errno = 0;
++       memset(&us, 0, sizeof(us));
++       atm_getouraddr(atms, &us);
++       memset(&conqos, 0, sizeof(conqos));
++       conqos.txtp.traffic_class = conqos.rxtp.traffic_class = ATM_UBR;
++       conqos.txtp.max_sdu = conqos.rxtp.max_sdu = 512;
++       if (setsockopt(atms,SOL_ATM,SO_ATMQOS,&conqos,sizeof(conqos)) < 0) {
++         terrno = errno;
++         Perror(stderr,"setsockopt SO_ATMQOS",errno);
++         _atmres_close();
++         return(-1);
++       }
++
++       if (bind(atms, (struct sockaddr *)&us,
++                sizeof(struct sockaddr_atmsvc))<0) {
++         terrno = errno;
++         Aerror(stderr, "bind", errno, &us);
++         _atmres_close();
++         return(-1);
++       }
++
++       if (connect(atms, (struct sockaddr *)nsap, 
++                   sizeof(struct sockaddr_atmsvc))
++           <0) {
++         terrno = errno;
++         Aerror(stderr, "connect", errno, nsap);
++         badns |= (1 << ns);
++         _atmres_close();
++         goto next_ns;
++       }
++      }
++      
++      /*
++       * Send length & message
++       */
++      if (write(atms, buf, buflen)<0) {
++       terrno = errno;
++       Perror(stderr, "write failed", errno);
++       badns |= (1 << ns);
++       _atmres_close();
++       goto next_ns;
++      }      
++      /*
++       * Wait for reply
++       */
++      timeout.tv_sec = (_res.retrans << try);
++      if (try > 0)
++       timeout.tv_sec /= _atmres.nscount;
++      if ((long) timeout.tv_sec <= 0)
++       timeout.tv_sec = 1;
++      timeout.tv_usec = 0;
++    wait:
++      FD_ZERO(&dsmask);
++      FD_SET(atms, &dsmask);
++      n = select(atms+1, &dsmask, (fd_set *)NULL,
++                (fd_set *)NULL, &timeout);
++      if (n < 0) {
++       Perror(stderr, "select", errno);
++       _atmres_close();
++       goto next_ns;
++      }
++      if (n == 0) {
++       /*
++        * timeout
++        */
++       Dprint(_res.options & RES_DEBUG,
++              (stdout, ";; timeout\n"));
++       gotsomewhere = 1;
++       _atmres_close();
++       goto next_ns;
++      }
++      errno = 0;
++      
++      cp = ans;
++      resplen = read(atms, (char *)cp, (int)anssiz);
++      if (resplen <= 0) {
++       terrno = errno;
++       Perror(stderr, "read failed", errno);
++       _atmres_close();
++       /*
++        * A long running process might get its ATM
++        * connection reset if the network sent one.
++        * Requery the server instead of
++        * trying a new one.  When there is only one
++        * server, this means that a query might work
++        * instead of failing.  We only allow one reset
++        * per query to prevent looping.
++        */
++       if (terrno == ECONNRESET && !connreset) {
++         connreset = 1;
++         _atmres_close();
++         goto same_ns;
++       }
++       _atmres_close();
++       goto next_ns;
++      }
++      gotsomewhere = 1;
++      
++      if (!res_queriesmatch(buf, buf + buflen,
++                           ans, ans + anssiz)) {
++       /*
++        * response contains wrong query? ignore it.
++        * XXX - potential security hazard could
++        *       be detected here.
++        */
++       DprintQ((_res.options & RES_DEBUG) ||
++               (_res.pfcode & RES_PRF_REPLY),
++               (stdout, ";; wrong query name:\n"),
++               ans, resplen);
++       goto wait;
++      }
++      if (anhp->rcode == SERVFAIL ||
++         anhp->rcode == NOTIMP ||
++         anhp->rcode == REFUSED) {
++       DprintQ(_res.options & RES_DEBUG,
++               (stdout, "server rejected query:\n"),
++               ans, resplen);
++       badns |= (1 << ns);
++       _atmres_close();
++       /* don't retry if called from dig */
++       if (!_res.pfcode)
++         goto next_ns;
++      }
++      Dprint((_res.options & RES_DEBUG) ||
++            ((_res.pfcode & RES_PRF_REPLY) &&
++             (_res.pfcode & RES_PRF_HEAD1)),
++            (stdout, ";; got answer:\n"));
++      DprintQ((_res.options & RES_DEBUG) ||
++             (_res.pfcode & RES_PRF_REPLY),
++             (stdout, " "),
++             ans, resplen);
++      /*
++       * If using virtual circuits, we assume that the first server
++       * is preferred over the rest (i.e. it is on the local
++       * machine) and only keep that one open.
++       * If we have temporarily opened a virtual circuit,
++       * or if we haven't been asked to keep a socket open,
++       * close the socket.
++       */
++      if ((ns != 0) || !(_res.options & RES_STAYOPEN)) {
++       _atmres_close();
++      }
++      return (resplen);
++    next_ns: ;
++    } /*foreach ns*/
++  } /*foreach retry*/
++  _atmres_close();
++  errno = terrno;
++  return (-1);
++}
++
++/*
++ * This routine is for closing the socket if a virtual circuit is used and
++ * the program wants to close it.  This provides support for endhostent()
++ * which expects to close the socket.
++ *
++ * This routine is not expected to be user visible.
++ */
++void
++_atmres_close()
++{
++  if (atms >= 0) {
++    (void) close(atms);
++    atms = -1;
++  }
++}
++
++#endif /* defined(ATM) && defined(linux) */
+ 
+ /*
+  * This routine is for closing the socket if a virtual circuit is used and
+diff -urN bind-498-REL.orig/res/sethostent.c bind-498-REL/res/sethostent.c
+--- bind-498-REL.orig/res/sethostent.c	Sat Sep 28 01:51:07 1996
++++ bind-498-REL/res/sethostent.c	Tue Oct  2 17:21:56 2001
+@@ -58,4 +58,7 @@
+ {
+ 	_res.options &= ~(RES_STAYOPEN | RES_USEVC);
+ 	res_close();
++#if defined(ATM) && defined(linux)
++       _atmres_close();
++#endif
+ }
+diff -urN bind-498-REL.orig/shres/linux/Makefile bind-498-REL/shres/linux/Makefile
+--- bind-498-REL.orig/shres/linux/Makefile	Tue Apr  7 00:00:24 1998
++++ bind-498-REL/shres/linux/Makefile	Tue Oct  2 17:21:56 2001
+@@ -3,13 +3,13 @@
+ CFLAGS=	${CDEBUG} -I../${INCL} -I../${COMPINCL} ${DEFS} ${LOCDEFS}
+ # What is USE_OPTIONS_H for? -u@q.net
+ LOCDEFS= -DUSE_OPTIONS_H
+-SRCS=	base64.c herror.c res_debug.c res_data.c \
++SRCS=	base64.c herror.c res_debug.c res_data.c atm_init.c \
+ 	res_comp.c res_init.c res_mkquery.c res_query.c res_send.c \
+ 	getnetbyaddr.c getnetbyname.c getnetent.c getnetnamadr.c \
+ 	gethnamaddr.c sethostent.c nsap_addr.c inet_ntop.c inet_pton.c \
+ 	inet_addr.c strerror.c
+ 
+-OBJS=	base64.o herror.o res_debug.o res_data.o \
++OBJS=	base64.o herror.o res_debug.o res_data.o atm_init.o \
+ 	res_comp.o res_init.o res_mkquery.o res_query.o res_send.o \
+ 	getnetbyaddr.o getnetbyname.o getnetent.o getnetnamadr.o \
+ 	gethnamaddr.o sethostent.o nsap_addr.o inet_ntop.o inet_pton.o \
+@@ -42,6 +42,7 @@
+ libresolv.so: ${OBJS}
+ 	$(SHLD) -o $@ $(OBJS)
+ 
++atm_init.o: ../../res/atm_init.c
+ base64.o: ../../res/base64.c
+ herror.o: ../../res/herror.c
+ res_comp.o: ../../res/res_comp.c
+diff -urN bind-498-REL.orig/tools/host.c bind-498-REL/tools/host.c
+--- bind-498-REL.orig/tools/host.c	Mon Oct  7 23:51:07 1996
++++ bind-498-REL/tools/host.c	Tue Oct  2 17:21:56 2001
+@@ -401,6 +401,11 @@
+ 			case T_UNSPEC:
+ 				fprintf(stderr,"any Unspecified Format data.\n");
+ 				break;
++#if defined(ATM)
++		        case T_ATMA:
++				fprintf(stderr, "an ATM address\n");
++				break;
++#endif
+ 			default:
+ 				fprintf(stderr,"the information you requested.\n");
+ 				break;
+@@ -906,7 +911,20 @@
+ 			cp += INT32SZ;
+ 		}
+ 		break;
+-
++#if defined(ATM)
++	case T_ATMA:
++		if (doprint) {
++			int i;
++			if (*cp == ATMA_AESA)
++				fprintf(file, " NSAP ");
++			else if (*cp == ATMA_E164)
++				fprintf(file, " E164 ");
++			for (i=1;i<dlen;i++)
++				fprintf(file, "%2.2x", cp[i]);
++		}
++		cp += dlen;
++		break;
++#endif /* defined(ATM) */
+ 	case T_WKS:
+ 		if (dlen < INT32SZ + 1)
+ 			break;
+diff -urN bind-498-REL.orig/tools/nslookup/debug.c bind-498-REL/tools/nslookup/debug.c
+--- bind-498-REL.orig/tools/nslookup/debug.c	Tue Dec 17 22:09:50 1996
++++ bind-498-REL/tools/nslookup/debug.c	Tue Oct  2 17:21:56 2001
+@@ -556,6 +556,19 @@
+ 		cp += dlen;
+   		break;
+ 
++#if defined(ATM)
++	case T_ATMA: {
++		int i;
++		
++		fprintf(file, "\tatm = %s",*cp==ATMA_E164?"E164":"NSAP");
++		for(i=1;i<dlen;i++)
++			fprintf(file, " %2.2x", cp[i]&0xff);
++		fprintf(file,"\n");
++		cp+=dlen;
++		break;
++	}
++#endif /* defined(ATM) */
++
+ 	case T_AAAA: {
+ 		char t[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
+ 
+diff -urN bind-498-REL.orig/tools/nslookup/list.c bind-498-REL/tools/nslookup/list.c
+--- bind-498-REL.orig/tools/nslookup/list.c	Tue Nov 26 04:11:26 1996
++++ bind-498-REL/tools/nslookup/list.c	Tue Oct  2 17:21:56 2001
+@@ -753,6 +753,21 @@
+ 		cp += dlen;
+ 		break;
+ 
++#if defined(ATM)
++	    case T_ATMA: {
++		    int i;
++		    
++		    if (*cp++ == ATMA_E164)          
++			    fprintf(file, " E164");
++		    else
++			    fprintf(file, " NSAP");
++		    for(i=1;i<dlen;i++) 
++			    fprintf(file, " %2.2x", *cp++);
++		    cp++;
++		    break;
++	    }
++#endif
++
+ 	    case T_AAAA: {
+ 		char t[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
+ 
+diff -urN bind-498-REL.orig/tools/nslookup/nslookup.help bind-498-REL/tools/nslookup/nslookup.help
+--- bind-498-REL.orig/tools/nslookup/nslookup.help	Mon Oct  7 23:51:08 1996
++++ bind-498-REL/tools/nslookup/nslookup.help	Tue Oct  2 17:21:56 2001
+@@ -16,7 +16,7 @@
+     root=NAME	- set root server to NAME
+     retry=X	- set number of retries to X
+     timeout=X	- set initial time-out interval to X seconds
+-    querytype=X	- set query type, e.g., A,ANY,CNAME,HINFO,MX,PX,NS,PTR,SOA,TXT,WKS,SRV,NAPTR
++    querytype=X	- set query type, e.g., A,ANY,CNAME,HINFO,MX,PX,NS,PTR,SOA,TXT,WKS,SRV,NAPTR,ATMA
+     port=X	- set port number to send query on
+     type=X	- synonym for querytype
+     class=X	- set query class to one of IN (Internet), CHAOS, HESIOD or ANY

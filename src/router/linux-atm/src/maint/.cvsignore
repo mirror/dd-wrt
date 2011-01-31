@@ -1,0 +1,15 @@
+Makefile
+Makefile.in
+.deps
+.libs
+atmaddr
+atmdiag
+atmdump
+atmloop
+atmtcp
+enitune
+esi
+saaldump
+sonetdiag
+zntune
+

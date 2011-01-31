@@ -1,0 +1,99 @@
+Basic configuration
+-------------------
+
+1. When configuring the kernel, select at least the following options under
+   "Networking options":
+    - kernel/User netlink socket
+    - QoS and/or fair queueing
+    - ATM pseudoscheduler
+    - Packet classifier API
+    - Routing tables based classifier
+   You may select additional schedulers/classifiers/etc. As usual, module
+   support is not tested yet, so you should select "y", not "m".
+
+2. Build the kernel.
+
+3.  Download iproute2-x.x.x-now-ssXXXXXX.tar.gz from
+
+   ftp://ftp.inr.ac.ru/ip-routing/ or one of its mirrors.
+
+4. Extract iproute2:
+    - tar xvfz iproute2-x.x.x-now-ssXXXXXX.tar.gz
+
+5. Build and install iproute2:
+    - cd iproute2
+    - edit Config to enable the ATM queuing discipline: TC_CONFIG_ATM=y
+    - make
+    - cp tc/tc ip/ip /sbin
+
+6. Run a little example. We first set up the ATM queuing discipline to
+   intercept selected traffic through our Ethernet interface "eth0" and
+   to forward this traffic over a PVC 0.100:
+
+     # tc qdisc add dev eth0 handle 1: root atm
+     # tc class add dev eth0 classid 1:1 atm pvc 0.100
+
+   Verify that the operation succeeded:
+
+     % tc qdisc show dev eth0
+     qdisc atm 1:
+     % tc class show dev eth0
+     class atm 1: parent 1: hdr . excess clp 
+     class atm 1:1 parent 1: pvc 0.0.100 hdr aa.aa.03.00.00.00.08.00 excess clp
+       CONNECTED 
+
+   (The first class is used to send all traffic that isn't explicitly
+   selected for ATM over the normal Ethernet interface. This class is
+   automatically created when setting up the ATM queuing discipline.)
+
+   Next, we add a filter and set up a route that selects it. If you
+   have enabled other filters, you can also try to select flows via
+   firewall rules, etc.
+
+     # tc filter add dev eth0 protocol ip route to 1 flowid 1:1
+     # ip route add 10.0.0.0/8 dev eth0 realm 1
+
+   Test the redirection to ATM:
+
+     % ping 10.0.0.1
+
+   Remove the ATM queuing discipline again:
+
+     # tc qdisc del dev eth0 root
+
+   Verify that the PVC has been removed:
+
+     % cat /proc/net/atm/pvc
+
+
+Policing (UNTESTED !)
+--------
+
+When adding policing, proceed as follows:
+
+1. Enable in "Networking options" the item "Ingres traffic policing"
+
+2. Specify policy along with the classifier (use u32 or rsvp)
+
+3. Decide on policing action. There are three choices:
+
+    - drop packet
+    - send packet in different class (re-classify)
+    - send packet in same class, with CLP=1
+
+   Note that policing is only done once, so it's not possible to
+   re-classify a second time. Also note that dropping currently isn't
+   supported by tc.
+
+4. Set up the classifier and the class according to the choice made:
+
+     Action	Classifier/filter action  Class
+     ----------	------------------------  --------------
+     drop	drop (not yet supported)  n/a
+     reclassify	reclassify (default)	  excess CLASSID
+     CLP=1	reclassify (default)	  excess clp
+
+   Example:
+     # tc filter add dev eth0 parent 1:1 protocol ip route \
+          burst 100 rate 100
+     # tc class add dev eth0 classid 1:1 atm pvc 0.100 excess 1:0

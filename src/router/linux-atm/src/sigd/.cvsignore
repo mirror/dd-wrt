@@ -1,0 +1,10 @@
+Makefile
+Makefile.in
+.deps
+.libs
+atmsigd
+cfg_l.c
+cfg_y.c
+cfg_y.h
+mess.c
+

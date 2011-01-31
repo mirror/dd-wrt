@@ -1,0 +1,145 @@
+.TH ATMTCP 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmtcp \- set up ATM over TCP connections
+.SH SYNOPSIS
+.ad l
+.B atmtcp
+.RB [ \-d ]
+.RB [ \-v ]
+.I command
+.B ...
+.br
+.B atmtcp
+.B \-V
+.ad b
+.SH DESCRIPTION
+The main purpose of \fBatmtcp\fP
+is to establish TCP connections and to configure them as virtual ATM devices.
+Such pairs of "ATM over TCP" devices are connected as if they were real
+ATM adapters linked by a cable or fiber, i.e. SDUs sent on a given VPI/VCI
+are received at the other end on the same VPI/VCI.
+.PP
+Virtual interfaces and ATM over TCP connections are called \fIlinks\fP.
+Other link types supported by \fBatmtcp\fP are real interfaces, files for
+recording and playback of ATM traffic, and printing a hex dump of the
+PDU content on standard output. Any pair of such links can be connected
+with \fBatmtcp\fP.  If additional links are attached to such a connection,
+they send to all other links, except to the first link and the respective
+sender, and they receive from all other links.
+.PP
+\fBatmtcp\fP can operate with two types of virtual interfaces: ephemeral or
+persistent. By default, \fBatmtcp\fP interfaces are ephemeral. When the
+\fBatmtcp\fP process that created an interface terminates, the virtual ATM
+device is removed as soon all VCs are closed. However, if the interface was
+previously created as a persistent interface, only the communication stops,
+but the interface and all VCs on it remain intact. Attempts to send data on
+an \fBatmtcp\fP interface in this state fail silently, i.e. the interface
+behaves just like a real ATM interface without a wire.
+A new \fBatmtcp\fP process can then attach to the interface and resume
+operation. Persistent interfaces need to be removed explicitly.
+.PP
+If \fBatmtcp\fP has any readable links after processing the command line,
+it enters a loop to perform the data forwarding. If no readable links
+have been specified, \fBatmtcp\fP terminates after processing the command
+line. If any setup operation fails, \fBatmtcp\fP terminates at this point
+and does not attempt to cancel previous operations (e.g. creation of
+permanent interfaces).
+.SH OPTIONS
+.IP \fB\-d\fP
+print detailed progress information on standard error.
+.IP \fB\-v\fP
+print some progress information on standard error.
+.IP \fB\-V\fP
+print version number of \fBatmtcp\fP on standard output and exit.
+.SH COMMANDS
+.IP \fBcreate\fP\ [\fIitf\fP]
+create a persistent interface. If no interface number is specified,
+\fBatmtcp\fP uses the default value 0.
+.IP \fBremove\fP\ [\fIitf\fP]
+remove a persistent interface. If the interface is still in use, it is marked
+as ephemeral and will be removed as soon as all VCs are closed. If no
+interface number is specified, \fBatmtcp\fP uses the default value 0.
+.IP \fBvirtual\fP\ [\fIitf\fP]
+link to the corresponding virtual (ATM over TCP) interface. If no interface
+number is specified, the kernel assigns the first available number.
+.IP \fBreal\fP\ [\fIitf\fP]
+link to the corresponding ATM interface. If no 
+interface number is specified, \fBatmtcp\fP uses the default value 0.
+If a link requests that a VC be
+opened, \fBatmtcp\fP will attempt to open a VC with the specified QoS
+parameters on that interface. If the operation succeeds, data can be
+sent or received on that VC. If the operation fails, an error code is
+returned to the requester. Note that only data arriving on open VCs can be
+received and that a \fIreal\fP ATM interface never initiates a connection.
+\fBatmtcp\fP can share ATM interfaces with other applications. 
+.IP \fBconnect\fP\ \fIhost\fP\ [\fIport\fP]
+connect to an instance of \fBatmtcp\fP running on the specified host.
+If the port argument is omitted, \fBatmtcp\fP uses the default port 2812.
+.IP \fBswitch\fP\ \fIhost\fP\ \fIline\fP\ [\fIport\fP]
+like \fBconnect\fP, but connects to an ATM over TCP "switch" and selects
+the specified virtual line.
+.IP \fBlisten\fP\ [\fIport\fP]
+listen for an incoming ATM over TCP connection.
+If the port argument is omitted, \fBatmtcp\fP uses the default port 2812.
+\fBatmtcp\fP waits until the connection
+is established. Only one connection is accepted per \fBlisten\fP command.
+.IP \fBlisten-bg\fP\ [\fIport\fP]
+like \fBlisten\fP, but run in background after beginning to listen.
+.IP \fBread\fP\ \fIfile\fP\ [\fIstream\fP]
+play back all streams from the specified file. If a stream number is
+specified, only that stream is played back.
+.IP \fBwrite\fP\ \fIfile\fP
+record the traffic of all links in the specified file. The PDUs from each
+link are stored in a stream with the same number as the link.
+.IP \fBprint\fP
+print a hex dump of the content of all received PDUs on standard output.
+.IP \fBbg\fP
+continue to run in background (i.e. in a forked child process).
+.IP \fBwait\fP\ [\fIseconds\fP]
+wait for the specified number of seconds. If no time is specified,
+\fBatmtcp\fP waits for a newline on standard input.
+.SH RESTRICTIONS
+Due to recent protocol changes, \fBatmtcp\fP is currently not compatible
+with the ATM over TCP "switch".
+.PP
+Only AAL SDUs are exchanged, no segmentation or reassembly is performed.
+That implies that using different AALs (e.g. AAL5 and AAL0) on either side
+will reveal limitations of this emulation.
+.PP
+The \fBatmtcp\fP process needs to run during the the whole lifetime of the
+connection.
+.SH EXAMPLES
+Create a pair of virtual ATM over TCP interfaces on the local host and
+connect them:
+.nf
+.sp
+  # session A
+  atmtcp virtual listen
+  # session B
+  atmtcp virtual connect localhost
+.sp
+.fi
+Create virtual interface 1, connect it to real ATM interface 0, then start
+\fBatmsigd\fP on the virtual interface, and log all the traffic in a file:
+.nf
+.sp
+  atmtcp virtual 1 real 0 write /tmp/log
+  atmsigd 1.0.5
+.sp
+.fi
+Take the previously created file and examine the traffic sent from
+\fBatmsigd\fP using \fBsaaldump\fP:
+.nf
+.sp
+  # session A
+  atmtcp virtual 1 read /tmp/log 0 wait
+  # session B
+  saaldump 1.0.5
+  # press [Enter] in session A
+.sp
+.fi
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmdiag(8)
+.\"{{{}}}
