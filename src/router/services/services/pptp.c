@@ -227,7 +227,7 @@ void start_pptpd(void)
 		"iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	// rule for wake on lan over pptp tunnel
 		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"		//
 		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"	//
-		"if [ !-z $IN ] && [ !-z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//Speed limit !=0 and !empty
+		"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//Speed limit !=0 and !empty
 		"then	tc qdisc del root dev $1\n"	//
 		"	tc qdisc del dev $1 ingress\n"	//
 		" 	tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
