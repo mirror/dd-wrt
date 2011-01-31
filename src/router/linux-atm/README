@@ -1,0 +1,27 @@
+ATM on Linux, release 2.5.1
+===========================
+
+Werner Almesberger, EPFL ICA <wa@almesberger.net>
+Mitchell Blank Jr., <mitch@sfgoth.com>
+Paul B Schroeder, <paulsch@us.ibm.com>
+Chas Williams, <chas@cmf.nrl.navy.mil>
+--------------------------------------
+
+This is experimental software. There are known bugs and certainly even
+many more yet unknown problems. Internal and external interfaces may
+still change every once in a while. Use at your own risk.
+
+Please see  http://linux-atm.sourceforge.net/  for a list of features
+supported by ATM on Linux.
+
+If you're just looking for the device drivers: you may find what
+you're looking for under src/extra/drivers.  Most are already in
+the mainstream kernel or, for those which are not integrated, visit
+http://linux-atm.sourceforge.net/info.php
+
+For usage and installation instructions, please read the "ATM on Linux
+HOWTO" in the doc/ directory.  The README in that directory explains
+how to generate alternative document types of the documentation.
+
+For known restrictions and bugs, please read the file BUGS.
+

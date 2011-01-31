@@ -1,0 +1,137 @@
+.TH ATMSIGD.CONF 4 "March 19, 2000" "Linux" "File Formats"
+.SH NAME
+atmsigd.conf \- configuration file for the ATM signaling demon
+.SH SYNOPSIS
+.B /etc/atmsigd.conf
+.SH DESCRIPTION
+\fBatmsigd.conf\fP contains configuration data for \fBatmsigd\fP.
+\fBatmsigd\fP reads \fBatmsigd.conf\fP after parsing the command
+line options, before connecting to the ATM network.
+.P
+Configuration parameters are arranged in functional groups. In order to
+set a parameter, the name of the group, the name of the parameter, and
+the parameter value(s) have to be specified, e.g.
+.nf
+.sp
+     sig level debug
+.sp
+.fi
+decreases the logging threshold for messages related to signaling to the
+\fBdebug\fP level. The following options are recognized:
+.IP \fBdebug\ dump\ \fIpath\fP
+Specifies the directory to which \fBatmsigd\fP will write status and trace
+dumps. If tracing is not yet enabled, the trace size is automatically
+set to a (small) default value.
+.IP \fBdebug\ level\ \fIlevel\fP
+Sets the default debug level to \fIlevel\fP. \fIlevel\fP can be any of
+\fBdebug\fP, \fBinfo\fP, \fBwarn\fP, \fBerror\fP, and \fBfatal\fP. Only
+messages with the same or a higher priority than the debug level are printed.
+Note that
+the command-line option \fB\-d\fP generates even more output (e.g. hexdumps
+of all packets passing between \fBatmsigd\fP and the network) than
+\fBdebug level debug\fP.
+.IP \fBdebug\ log\ \fIpath\fP
+Specifies the file to which \fBatmsigd\fP writes logging messages. When
+using the special file name \fBsyslog\fP, messages are send to the
+system logger instead. Log messages are written to standard output if no log
+file is specified. Writing to standard output can also be explicitly requested
+by using the special file name \fBstderr\fP.
+.IP \fBdebug\ trace\ \fP[\fInumber\fP]
+Enables tracing and optionally sets the number of entries that should be
+kept in the trace buffer. A (small) default is used if the number is
+omitted.
+.IP \fBio\ level\ \fIlevel\fP
+Sets the debug level for IO-related messages to \fIlevel\fP.
+.IP \fBio\ max_rate\ \fIrate\fP
+Sets the rate to signal if an application requests the "maximum". See qos(7)
+for the syntax to use for expressing the rate. The default maximum rate is
+353207 cells/second (OC3). (Note that the value of \fBmax_rate\fP does not
+constrain the rates an application can explicitly request.)
+.IP \fBio\ qos\ \fIqos\fP
+Configures the signaling VC to use the specified QOS (see qos(7) for the
+syntax). By default, UBR at link speed is used on the signaling VC.
+.IP \fBio\ vc\ \fP[\fIitf\fB.\fP]\fIvpi\fB.\fIvci\fP
+Uses the specified VC for signaling messages instead of the usual 0.0.5.
+.IP \fBsaal\ level\ \fIlevel\fP
+Sets the debug level for messages related to SAAL (i.e. SSCF and SSCOP) to
+\fIlevel\fP.
+.IP \fBsig\ level\ \fIlevel\fP
+Sets the debug level for messages related to signaling (Q.2931 or ISP) to
+\fIlevel\fP.
+.IP \fBsig\ mode\ \fImode\fP
+Set the mode of operation. The following modes are available: \fBuser\fP for
+the user side, \fBnetwork\fP for the network side, and \fBswitch\fP for
+operation in a switch. The default behaviour is \fBuser\fP.
+.IP \fBsig\ uni30\fP
+Use UNI 3.0 signaling. If specified together with \fBsig uni31\fP, this
+option sets UNI 3.1 signaling with a few backwards-compatibility extensions.
+.IP \fBsig\ uni31\fP
+Use UNI 3.1 signaling. This option can be combined with \fBsig uni30\fP (see
+above).
+.IP \fBsig\ uni40\fP
+Use UNI 4.0 signaling. This option can be combined with \fBsig q.2963.1\fP
+(see below).
+.IP \fBsig\ q.2963.1\fP
+Enable peak cell rate renegotiation. This option is only available with
+UNI 4.0 signaling.
+.IP \fBsig\ vpci\ \fIvpci\fB\ itf\ \fIitf\fP
+Sets up a very simplistic type of routing. All calls with VPCI values
+equal to or greater than \fIvpci\fP will be routed to \fIitf\fP, and their
+VPI values will be set to the signaled VPCI minus \fIvpci\fP. Multiple
+\fBsig vpci\fP entries can be used to support an arbitrary number of
+interfaces.
+Example: with \fBsig vpci 4 itf 1\fP, a call signaled for
+VPCI/VCI 0.x is routed to 0.0.x, a call signaled for 6.y is routed to
+1.2.y, etc.
+.IP \fBpolicy\ level\ \fIlevel\fP
+Sets the debug level for messages related to policy decisions to \fIlevel\fP.
+.IP \fBpolicy\ \fIdecision\ direction\ address\fP
+Takes the specified \fIdecision\fP for calls from or to \fIaddress\fP.
+\fIdecision\fP can be either \fBallow\fP or \fBreject\fP. \fIdirection\fP is
+either \fBfrom\fP or \fBto\fP. The \fIaddress\fP may be wildcarded by
+prepending a slash and the number of significant bits (NSAP) or digits (E.164).
+The rules are searched in the order in which they appear in \fBatmsigd.conf\fP
+until the first match. If no rule matches, the call is allowed.
+.IP \fBentity\ \fP[\fIitf\fB.\fP]\fIvpi\fB.\fIvci\fP\ {\ \fIoptions\ ...\fP\ }
+Activates a signaling entity on that specific VC. Multiple \fBentity\fP
+clauses can appear in the same configuration. When using \fBentity\fP,
+the option \fBio vc\fP is not available.
+\fBentity\fP is optionally followed by the following options, enclosed in
+curly braces: \fBvpci\fP (corresponds to \fBsig vpci\fP),
+\fBmode\fP (corresponds to \fBsig mode\fP), \fBqos\fP (corresponds to \fBvc
+qos\fP), \fBroute\fP, and \fBdefault\fP. The last two options determine how
+outbound calls are routed. The \fBroute\fP option is followed by an address
+in the format used for addresses in \fBpolicy\fP. If no route entry matches
+the called party number of an outbound call, the entry marked with
+\fBdefault\fP is selected.
+.P
+When setting multiple parameters in the same group, the group name doesn't
+have to be repeated if it is followed by the parameters in curly braces.
+Example:
+.nf
+.sp
+    debug {
+        level warn
+        dump /var/tmp
+        log syslog
+        trace 100
+    }
+.sp
+.fi
+.P
+Line breaks can be inserted in \fBatmsigd.conf\fP wherever spaces or tabs
+are allowed. Everything between a `#' and the end of the line is considered
+a comment. The `#' character cannot be escaped.
+.P
+If an option is specified in \fBatmsigd.conf\fP and on the command
+line, the command line has priority.
+.SH COMPATIBILITY
+Certain options used by past versions of \fBatmsigd\fP but no longer documented
+on the man page are still recognized and supported, but they also yield a
+warning message. Future versions of \fBatmsigd\fP will not recognize those
+options.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmsigd(8), qos(7), syslogd(8)
+.\"{{{}}}

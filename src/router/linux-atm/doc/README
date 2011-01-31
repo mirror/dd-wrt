@@ -1,0 +1,20 @@
+In order to build the documentation just do:
+
+make my_favorite_doc_type
+
+Where my_favorite_doc_type is one of:
+
+html - HyperText Markup Language (HTML)
+txt  - ASCII plain text
+rtf  - Rich Text Format
+ps   - Postscript
+pdf  - Portable Document Format (PDF)
+
+SGMLtools-Lite (http://sgmltools-lite.sourceforge.net/) is used to create the
+HTML, text, and Postscript verions of the documentation as it does the best
+overall job of creating those document types.  It won't work if you wish to
+create the RTF or PDF versions of the document.  You will need the
+Cygnus DocBook Tools available from RedHat (http://www.redhat.com/) if you
+wish to create those document types.
+
+

@@ -1,0 +1,108 @@
+.TH ATMARP 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmarp \- administer classical IP over ATM connections
+.SH SYNOPSIS
+.ad l
+.B atmarp
+.B \-a
+.br
+.B atmarp
+.B \-c
+.RB [[atm]\fInumber\fP]
+.br
+.B atmarp
+.B \-q
+.RB \fIip_addr\fP
+.RB [ qos\ \fIqos\fP ]
+.RB [ sndbuf\ \fIbytes\fP ]
+.br
+.B atmarp
+.B \-s
+.RB \fIip_addr\fP
+.RB [\fIitf\fP.]\fIvpi\fP.\fIvci\fP
+.RB [ qos\ \fIqos\fP ]
+.RB [ sndbuf\ \fIbytes\fP ]
+.RB [ temp ]
+.RB [ pub ]
+.RB [ null ]
+.br
+.B atmarp
+.B \-s
+.RB \fIip_addr\fP
+.RB \fIatm_addr\fP
+.RB [ qos\ \fIqos\fP ]
+.RB [ sndbuf\ \fIbytes\fP ]
+.RB [ temp ]
+.RB [ pub ]
+.RB [ arpsrv ]
+.br
+.B atmarp
+.B \-d
+.RB \fIip_addr\fP
+.RB [ arpsrv ]
+.br
+.B atmarp
+.B \-V
+.ad b
+.SH DESCRIPTION
+\fBatmarp\fP is used to maintain the ATMARP table of the ATMARP demon.
+The table can be listed, new PVC and SVC entries can be added, and existing
+entries can be deleted. In addition to that, \fBatmarp\fP is also used to
+create new IP over ATM interfaces.
+.P
+Note that the kernel has its own ATMARP table containing only entries
+for destinations to which a connection exists. The table of \fBatmarpd\fP
+can also contain currently unused entries.
+.SH OPTIONS
+.IP \fB\-a\fP
+list the current ATMARP table.
+.IP \fB\-c\fP
+create the specified IP interface. If the interface number is omitted,
+the operating system assigns the next free number and \fBatmarp\fP
+prints the resulting interface name (e.g. `atm0') on standard output.
+.IP \fB\-q\fP
+sets the QOS and the send buffer size to use as the default for all VCs
+generated for that IP network (\fIip_addr\fP must be the address of the
+network).
+.IP \fB\-s\fP
+set up a PVC or create an SVC entry. The following options are recognized:
+.RS
+.IP \fBqos\fP\ \fIqos\fP
+uses the specified quality of service (see qos(7) for the syntax). UBR at
+link speed is used by default.
+.IP \fBsndbuf\fP\ \fIbytes\fP
+tries to set the send buffer to the specified number of bytes. A system
+default value is used if \fBsndbuf\fP is not specified.
+.IP \fBtemp\fP
+does not mark the entry as permanent, i.e. it will time out and then be
+removed.
+.IP \fBpub\fP
+publishes the entry (only relevant for ATMARP server). ATMARP requests for
+entries not marked for publishing yield an ATMARP_NAK response.
+.IP \fBnull\fP
+uses NULL encapsulation instead of LLC/SNAP encapsulation on the PVC. This
+option is not available for SVCs, because the LLC/SNAP header is required
+to identify ATMARP packets. \fBnull\fP also implies that the entry is
+permanent.
+.IP \fBarpsrv\fP
+identifies the entry pointing to the ATMARP server. Note that the node
+acting as the ATMARP server must have no ATMARP server entry in its ATMARP
+table.
+.RE
+.IP \fB\-d\fP
+delete the specified ARP entry.  In order to prevent accidental deletion of
+the ATMARP server entry, the \fBarpsrv\fP flag must be specified when
+deleting it.
+.RE
+.IP \fB\-V\fP
+print the version number of \fBatmarp\fP on standard output and exit.
+.SH FILES
+.PD 0
+.TP 25
+.B /var/run/atmarpd.table
+ATMARP table
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmarpd(8), clip(8), qos(7)
+.\"{{{}}}

@@ -1,0 +1,177 @@
+#!/bin/sh
+#
+# /etc/rc.d/init.d/atm - Bring up/down ATM
+#
+# chkconfig: 2345 09 91
+# description: Loads/Unloads ATM drivers and starts/stops basic services
+#
+### BEGIN INIT INFO
+# Provides:       atm
+# Required-Start: $local_fs dbus haldaemon
+# Should-Start:
+# Required-Stop:
+# Should-Stop:
+# Default-Start:  2 3 5
+# Default-Stop:
+# Description:    Loads/Unloads ATM drivers and starts/stops basic services
+### END INIT INFO
+
+# Source function library.
+
+# source function library
+if [ -f /etc/init.d/functions ]; then
+        . /etc/init.d/functions
+	alias start_daemon=daemon
+elif [ -f /etc/rc.d/init.d/functions ]; then
+        . /etc/rc.d/init.d/functions
+	alias start_daemon=daemon
+elif [ -f /lib/lsb/init-functions ]; then
+        . /lib/lsb/init-functions
+elif [ -f /sbin/startproc ]; then
+	alias start_daemon=/sbin/startproc
+else
+        exit 0
+fi
+
+if [ -f /etc/rc.status ]; then
+	. /etc/rc.status
+else
+	rc_reset() { RETVAL=0; }
+	rc_failed()
+	{
+		if [ -z "$1" ]; then
+			RETVAL=1;
+		elif [ "$1" -ne 0 ]; then
+			RETVAL=$1;
+		fi
+	}
+	rc_check() { rc_failed $?; }
+	rc_exit() { exit $RETVAL; }
+	rc_status()
+	{
+		if [ "$?" = "-v" ]; then
+			[ $RETVAL -eq 0 ] && success || failure
+		fi
+	}
+	
+fi
+rc_reset
+
+if [ ! -f /etc/sysconfig/atm ]; then
+	rc_failed 6
+	rc_exit
+fi
+
+. /etc/sysconfig/atm
+
+[ "$ATM" != yes ] && exit 0
+
+if [ -d /etc/sysconfig/network-scripts ]; then
+	cd /etc/sysconfig/network-scripts
+elif [ -d /etc/sysconfig/network ]; then
+	cd /etc/sysconfig/network
+else
+	rc_failed
+	rc_status -v
+	rc_exit
+fi
+
+clipinterfaces=$(ls ifcfg-atm[0-9] 2> /dev/null | sed -e 's/^ifcfg-//g')
+laneinterfaces=$(ls ifcfg-lec[0-9] 2> /dev/null | sed -e 's/^ifcfg-//g')
+nasinterfaces=$(ls ifcfg-nas[0-9] 2> /dev/null | sed -e 's/^ifcfg-//g')
+
+case "$1" in
+  start)
+	echo -n "Starting ATM demons"
+
+	[ -z "$ATMMODULES" ] || /sbin/modprobe "$ATMMODULES"
+
+	start_daemon /usr/sbin/atmsigd -b -u uni31 -l syslog -D /var/tmp -t 20 -c /etc/atmsigd.conf
+	rc_check
+	start_daemon /usr/sbin/ilmid -b -u 3.1 -l syslog ${ILMIQOS:+ -q $ILMIQOS}
+	rc_check
+	if [ "$IPATM" = yes ]; then
+		start_daemon /usr/sbin/atmarpd -b -l syslog -m
+		rc_check
+		for i in $clipinterfaces; do
+			/usr/sbin/atmarp -c $i
+			rc_check
+		done
+	fi
+	if [ "$BR2684" = yes ]; then
+		for i in $nasinterfaces; do
+			(. ifcfg-$i
+
+			ITF=`echo $i | sed -e 's/nas//'`
+			start_daemon /usr/sbin/br2684ctl -b \
+				-c $ITF \
+				${PAYLOAD:+ -p $PAYLOAD } \
+				${ENCAPSULATION:+ -e $ENCAPSULATION} \
+				${QOS:+ -q $QOS} \
+				${VPIVCI:+ -a $VPIVCI}
+			rc_check
+			)
+		done
+	fi
+	if [ "$LANE" = yes ]; then
+		for i in $laneinterfaces; do
+			(. ifcfg-$i
+
+			ITF=`echo $i | sed -e 's/lec//'`
+			start_daemon /usr/sbin/zeppelin -b \
+				-i $ITF -l $ITF \
+				${VLAN:+ -n $VLAN} \
+				${LECS:+ -c $LECS} \
+				${VERSION:+ -$VERSION} \
+				${MTU:+ -t $MTU} \
+				${ESI:+ -e $ESI} \
+				${V2CAPABLE:+ -2} \
+				${DEBUG:+ -m $DEBUG} \
+				-F /var/log/${DEVICE}
+			rc_check
+			)
+		done
+	fi
+	touch /var/lock/subsys/atm
+	rc_status -v
+	;;
+
+  stop)
+	echo -n "Stopping ATM demons"
+	if [ "$LANE" = yes ]; then
+		for i in $laneinterfaces; do
+			./ifdown $i
+			[ -f "/var/run/${i}.pid" ] && kill -TERM `cat /var/run/${i}.pid`
+		done
+	fi
+	if [ "$BR2684" = yes ]; then
+		for i in $nasinterfaces; do
+			./ifdown $i
+			[ -f "/var/run/br2684ctl-${i}.pid" ] && kill -TERM `cat /var/run/br2684ctl-${i}.pid`
+		done
+	fi
+        if [ "$IPATM" = yes ]; then
+		for i in $clipinterfaces; do
+			./ifdown $i
+		done
+		killproc atmarpd
+        fi
+	killproc atmsigd	# kill ILMID later, so we don't get complaints
+	killproc ilmid
+
+	[ -z "$ATMMODULES" ] || /sbin/modprobe -r "$ATMMODULES"
+
+	rm -f /var/lock/subsys/atm
+	rc_status -v
+	;;
+
+  restart)
+	$0 stop
+	$0 start
+	;;
+
+  *)
+	echo "Usage: atm {start|stop|restart}"
+	exit 1
+esac
+rc_exit

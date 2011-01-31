@@ -1,0 +1,36 @@
+.TH ATMDIAG 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmdiag \- show ATM device driver diagnostics
+.SH SYNOPSIS
+.ad l
+.B atmdiag
+.RB [ \-z ]
+.RB [ \fIinterface ...\fB ]
+.ad b
+.SH DESCRIPTION
+.B atmdiag
+shows statistic counters maintained by ATM device drivers. If one or more
+interface numbers are specified, the statistics of only these interfaces
+are shown. Otherwise, statistics of all interfaces are displayed.
+.PP
+The following counters are shown for each AAL:
+.RS
+.IP \fBTX_okay\fP
+number of successfully sent PDUs.
+.IP \fBTX_err\fP
+number of PDUs not sent because of errors.
+.IP \fBRX_okay\fP
+number of successfully received PDUs.
+.IP \fBRX_err\fP
+number of PDUs discarded because of errors.
+.IP \fBRX_drop\fP
+number of PDUs dropped because of lack of memory.
+.RE
+.SH OPTIONS
+.IP \fB\-z\fP
+zero all counters after showing them.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmdump(8), sonetdiag(8)
+.\"{{{}}}

@@ -1,0 +1,79 @@
+Changes from version 0.55
+=========================
+o mpoa_proc.c: CDV is no more requred for CBR entries
+o mpc.c: two small skb_buff leaks fixed
+o kernel: number of debug messages reduced
+
+o k_interf.c: mpcd could not be killed if MPS's address was not known
+
+Changes from version 0.52
+=========================
+o mpoa_proc.c: when setting QoS values for shortcuts, receive values
+               can now be specified with just "... rx=tx"
+
+Changes from version 0.50
+=========================
+o lecs.c: new file. mpcd can now ask LECS for configuration info
+          if it is given correct command line arguments
+o p_recogn.c: added more sanity checks for incoming packets,
+              fixed possible dereferences of uninitialized variables
+o p_recogn.c: receiving MPOA Triggers now works
+ 
+o k_interf.c: added missing ntohl()
+
+o mpc.c: If MPS does not advertise its MAC address with
+         MPOA Device Discover we take it from LE_ARP packet.
+         This should remove the need for -m commandline option.
+
+o both kernel & daemon: killing mpcd with SIGHUP now makes it restart
+                        itself closing all connections and flushing
+                        both ingress and egress cache
+o mpcd.8: updated, example added
+o README.mpoa: updated
+
+Changes from version 0.46
+========================= 
+o io.c: fixed a misuse of a buffer in set_mps_ctrl_addr()
+o p_recogn: If service category extension present in MPOA resolution
+            reply, appropriate information is included in to message to kernel.
+	    New func service_category_to_traff_class().
+o poll2select.[ch]: new files to circumvent bugs in poll()
+o io.c: poll2select() is now used instead of poll()
+o k_interf.c: mpcd now does nothing before MPS's atm addr is known
+o README.mpoa: CBR example updated and changed
+
+o mpc.c: res_reply_rcvd(): a check that CBR is supported by the other end before
+         attempting to create a CBR shortcut was added.
+o mpc.c: res_reply_rcvd(): pcr-value of egress shortcut in tx-direction is
+	 checked before using the same svc as an ingress shortcut.
+o mpc.c: if MPS's ATM address is known to kernel when mpcd comes up,
+         kernel sends it to mpcd. Old version waited for the next LE_ARP 
+o mpc.c: when adding a QoS entry for a shortcut the old entry is
+         overwritten instead. Old version just added another IP
+o mpoa_proc.c: CBR QoS now only wants max_pcr, max_cdv, and max_sdu values
+
+Changes from version 0.43
+==============================
+o io.c: poll() seems to have problems returning correct values
+        fixed it with a workaround
+o mpcd: put all the global variables in one global struct
+o io.c: listen sockets are now created with ATM_ANYCLASS traffic class
+o p_recogn.c: calculation of ip-address mask from a prefix-length in
+              a CIE
+o io.c: mpoad no more exits when something really bad happens to
+        it's sockets. Instead it does a soft boot and tries again
+
+o mpc.c: now correct pointer is kfree()ed in atm_mpoa_delete_qos()
+o mpc.c: while purging ingress entries ip-masks are taken into consideration
+o mpoa_caches.[ch]: new function in_cache_search_with_mask()
+o mpc.h: struct mpoa_client contains a new struct mpc_parameters
+o mpc.c: lane_assoc_ind() handles also MPC configuration TLVs
+o mpc.c: mpc->number_of_mps_macs is now updated correctly
+
+Changes from version pre0.43-0
+==============================
+o p_recogn.c: fixed a bug in extension parsing
+o io.c: fixed handling of the pollfd array indexing
+o p_recogn.c: chechksum checking for incoming control packets
+o main.c: default values for local listen ATM-adresses
+o getvars.[ch]: removed stupid set_own_atm_address function
