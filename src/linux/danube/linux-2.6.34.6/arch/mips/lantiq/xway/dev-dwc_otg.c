@@ -63,6 +63,6 @@ int __init
 xway_register_dwc(int pin)
 {
 	lq_enable_irq(resources[1].start);
-	platform_dev.dev.platform_data = pin;
+	platform_dev.dev.platform_data = (void*) pin;
 	return platform_device_register(&platform_dev);
 }

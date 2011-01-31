@@ -74,7 +74,10 @@ lq_gpio_request(unsigned int pin, unsigned int alt0,
 		printk("failed to register %s gpio\n", name);
 		return -EBUSY;
 	}
-	gpio_direction_output(pin, dir);
+	if(dir)
+		gpio_direction_output(pin, 1);
+	else
+		gpio_direction_input(pin);
 	if(pin >= PINS_PER_PORT)
 	{
 		pin -= PINS_PER_PORT;
@@ -200,4 +203,4 @@ lq_gpio_init(void)
 	return ret;
 }
 
-arch_initcall(lq_gpio_init);
+postcore_initcall(lq_gpio_init);

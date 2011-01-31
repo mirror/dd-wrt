@@ -10,6 +10,7 @@
 #define _LQ_DEVICES_H__
 
 #include <lantiq_platform.h>
+#include <xway_irq.h>
 
 extern void __init lq_register_gpio(void);
 extern void __init lq_register_gpio_stp(void);
@@ -20,6 +21,7 @@ extern void __init lq_register_nor(struct physmap_flash_data *data);
 extern void __init lq_register_wdt(void);
 extern void __init lq_register_ethernet(struct lq_eth_data *eth);
 extern void __init lq_register_asc(int port);
+extern void __init lq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
 extern void __init lq_register_crypto(const char *name);
 
 #endif

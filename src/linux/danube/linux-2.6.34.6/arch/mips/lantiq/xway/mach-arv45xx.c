@@ -25,7 +25,8 @@
 #include "devices.h"
 #include "dev-dwc_otg.h"
 
-#define ARV452_LATCH_SWITCH		(1 << 10)
+#define ARV4520PW_LATCH_SWITCH		(1 << 10)
+#define ARV752DPW_LATCH_DEFAULT		(2)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition arv45xx_partitions[] =
@@ -51,6 +52,56 @@ static struct mtd_partition arv45xx_partitions[] =
 		.size	= 0x10000,
 	},
 };
+
+static struct mtd_partition arv4518_partitions[] =
+{
+	{
+		.name	= "uboot",
+		.offset	= 0x0,
+		.size	= 0x40000,
+	},
+	{
+		.name	= "uboot_env",
+		.offset	= 0x40000,
+		.size	= 0x10000,
+	},
+	{
+		.name	= "linux",
+		.offset	= 0x50000,
+		.size	= 0x3a0000,
+	},
+	{
+		.name	= "board_config",
+		.offset	= 0x3f0000,
+		.size	= 0x10000,
+	},
+};
+
+static struct mtd_partition arv75xx_partitions[] =
+{
+	{
+		.name	= "uboot",
+		.offset	= 0x0,
+		.size	= 0x40000,
+	},
+	{
+		.name	= "uboot_env",
+		.offset	= 0x40000,
+		.size	= 0x10000,
+	},
+	{
+		.name	= "linux",
+		.offset	= 0x50000,
+		.size	= 0x7a0000,
+	},
+	{
+		.name	= "board_config",
+		.offset	= 0x7f0000,
+		.size	= 0x10000,
+	},
+};
+
+
 #endif
 
 static struct physmap_flash_data arv45xx_flash_data = {
@@ -60,9 +111,27 @@ static struct physmap_flash_data arv45xx_flash_data = {
 #endif
 };
 
+static struct physmap_flash_data arv4518_flash_data = {
+#ifdef CONFIG_MTD_PARTITIONS
+	.nr_parts	= ARRAY_SIZE(arv4518_partitions),
+	.parts		= arv4518_partitions,
+#endif
+};
+
+static struct physmap_flash_data arv75xx_flash_data = {
+#ifdef CONFIG_MTD_PARTITIONS
+	.nr_parts	= ARRAY_SIZE(arv75xx_partitions),
+	.parts		= arv75xx_partitions,
+#endif
+};
+
+
 static struct lq_pci_data lq_pci_data = {
 	.clock      = PCI_CLOCK_EXT,
-	.req_mask   = 0xf,
+	.gpio   = PCI_GNT1 | PCI_REQ1,
+	.irq    = {
+		[14] = INT_NUM_IM0_IRL0 + 22,
+	},
 };
 
 static struct lq_eth_data lq_eth_data = {
@@ -71,7 +140,34 @@ static struct lq_eth_data lq_eth_data = {
 };
 
 static struct gpio_led
-arv4518_leds_gpio[] __initdata = {
+arv4510pw_leds_gpio[] __initdata = {
+	{ .name = "soc:green:foo", .gpio = 4, .active_low = 1, },
+};
+
+static struct gpio_led
+arv4518pw_leds_gpio[] __initdata = {
+	{ .name = "soc:green:power", .gpio = 3, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:adsl", .gpio = 4, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:internet", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wlan", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:yellow:wps", .gpio = 7, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:red:fail", .gpio = 8, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:usb", .gpio = 19, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:voip", .gpio = 32, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:fxs1", .gpio = 33, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:fxs2", .gpio = 34, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:fxo", .gpio = 35, .active_low = 1, .default_trigger = "default-on" },
+};
+
+static struct gpio_button
+arv4518pw_gpio_buttons[] __initdata = {
+	{ .desc = "wlan", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 28, .active_low = 1, },
+	{ .desc = "wps", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 29, .active_low = 1, },
+	{ .desc = "reset", .type = EV_KEY, .code = BTN_2, .threshold = 3, .gpio = 30, .active_low = 1, },
+};
+
+static struct gpio_led
+arv4520pw_leds_gpio[] __initdata = {
 	{ .name = "soc:blue:power", .gpio = 3, .active_low = 1, },
 	{ .name = "soc:blue:adsl", .gpio = 4, .active_low = 1, },
 	{ .name = "soc:blue:internet", .gpio = 5, .active_low = 1, },
@@ -88,28 +184,48 @@ arv4518_leds_gpio[] __initdata = {
 };
 
 static struct gpio_led
-arv452_leds_gpio[] __initdata = {
-	{ .name = "soc:blue:power", .gpio = 3, .active_low = 1, },
-	{ .name = "soc:blue:adsl", .gpio = 4, .active_low = 1, },
-	{ .name = "soc:blue:internet", .gpio = 5, .active_low = 1, },
-	{ .name = "soc:red:power", .gpio = 6, .active_low = 1, },
-	{ .name = "soc:yello:wps", .gpio = 7, .active_low = 1, },
-	{ .name = "soc:red:wps", .gpio = 9, .active_low = 1, },
-	{ .name = "soc:blue:voip", .gpio = 32, .active_low = 1, },
-	{ .name = "soc:blue:fxs1", .gpio = 33, .active_low = 1, },
-	{ .name = "soc:blue:fxs2", .gpio = 34, .active_low = 1, },
-	{ .name = "soc:blue:fxo", .gpio = 35, .active_low = 1, },
-	{ .name = "soc:blue:voice", .gpio = 36, .active_low = 1, },
-	{ .name = "soc:blue:usb", .gpio = 37, .active_low = 1, },
-	{ .name = "soc:blue:wlan", .gpio = 38, .active_low = 1, },
+arv4525pw_leds_gpio[] __initdata = {
+	{ .name = "soc:green:festnetz", .gpio = 4, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:internet", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:dsl", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wlan", .gpio = 8, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:online", .gpio = 9, .active_low = 1, .default_trigger = "default-on" },
 };
 
-static struct gpio_led arv4525_leds_gpio[] __initdata = {
-	{ .name = "soc:green:festnetz", .gpio = 4, .active_low = 1, },
+static struct gpio_led
+arv752dpw_leds_gpio[] __initdata = {
+	{ .name = "soc:blue:power", .gpio = 3, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:red:internet", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:red:power", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:red:wps", .gpio = 8, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:red:fxo", .gpio = 35, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:red:voice", .gpio = 36, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:usb", .gpio = 37, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wlan", .gpio = 38, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wlan1", .gpio = 39, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:blue:wlan", .gpio = 40, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:blue:wlan1", .gpio = 41, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:eth1", .gpio = 43, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:eth2", .gpio = 44, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:eth3", .gpio = 45, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:eth4", .gpio = 46, .active_low = 1, .default_trigger = "default-on", },
+};
+
+static struct gpio_button
+arv752dpw_gpio_buttons[] __initdata = {
+	{ .desc = "btn0", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 12, .active_low = 1, },
+	{ .desc = "btn1", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 13, .active_low = 1, },
+	{ .desc = "btn2", .type = EV_KEY, .code = BTN_2, .threshold = 3, .gpio = 28, .active_low = 1, },
+};
+
+static struct gpio_led
+arv7518pw_leds_gpio[] __initdata = {
+	{ .name = "soc:green:power", .gpio = 2, .active_low = 1, },
+	{ .name = "soc:green:adsl", .gpio = 4, .active_low = 1, },
 	{ .name = "soc:green:internet", .gpio = 5, .active_low = 1, },
-	{ .name = "soc:green:dsl", .gpio = 6, .active_low = 1, },
-	{ .name = "soc:green:wlan", .gpio = 8, .active_low = 1, },
-	{ .name = "soc:green:online", .gpio = 9, .active_low = 1, },
+	{ .name = "soc:green:wlan", .gpio = 6, .active_low = 1, },
+	{ .name = "sco:red:internet", .gpio = 8, .active_low = 1, },
+	{ .name = "soc:green:usb", .gpio = 19, .active_low = 1, },
 };
 
 static void
@@ -121,32 +237,78 @@ arv45xx_register_ethernet(void)
 	lq_register_ethernet(&lq_eth_data);
 }
 
+static void
+arv75xx_register_ethernet(void)
+{
+#define ARV75XX_BRN_MAC			0x7f0016
+	memcpy_fromio(lq_eth_data.mac,
+		(void *)KSEG1ADDR(LQ_FLASH_START + ARV75XX_BRN_MAC), 6);
+	lq_register_ethernet(&lq_eth_data);
+}
+
+static void
+bewan_register_ethernet(void)
+{
+#define BEWAN_BRN_MAC			0x3f0014
+	memcpy_fromio(lq_eth_data.mac,
+		(void *)KSEG1ADDR(LQ_FLASH_START + BEWAN_BRN_MAC), 6);
+	lq_register_ethernet(&lq_eth_data);
+}
+
 static void __init
-arv4518_init(void)
+arv4510pw_init(void)
 {
 	lq_register_gpio();
-	lq_register_gpio_ebu(0);
-	lq_register_gpio_leds(arv4518_leds_gpio, ARRAY_SIZE(arv4518_leds_gpio));
+	lq_register_gpio_stp();
+	lq_register_gpio_leds(arv4510pw_leds_gpio, ARRAY_SIZE(arv4510pw_leds_gpio));
 	lq_register_asc(0);
 	lq_register_asc(1);
 	lq_register_nor(&arv45xx_flash_data);
 	lq_register_pci(&lq_pci_data);
+	lq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
+	lq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
+	lq_register_pci(&lq_pci_data);
+	lq_register_wdt();
+	bewan_register_ethernet();
+}
+
+MIPS_MACHINE(LANTIQ_MACH_ARV4510PW,
+			"ARV4510PW",
+			"ARV4510PW - Wippies Homebox",
+			arv4510pw_init);
+
+static void __init
+arv4518pw_init(void)
+{
+	lq_register_gpio();
+	lq_register_gpio_ebu(0);
+	lq_register_gpio_leds(arv4518pw_leds_gpio, ARRAY_SIZE(arv4518pw_leds_gpio));
+	lq_register_gpio_buttons(arv4518pw_gpio_buttons, ARRAY_SIZE(arv4518pw_gpio_buttons));
+	lq_register_asc(0);
+	lq_register_asc(1);
+	lq_register_nor(&arv4518_flash_data);
+	lq_pci_data.gpio = PCI_GNT2 | PCI_REQ2;
+	lq_register_pci(&lq_pci_data);
 	lq_register_wdt();
 	arv45xx_register_ethernet();
 	xway_register_dwc(14);
+	gpio_request(13, "switch-reset");
+	gpio_direction_output(13, 1);
+	gpio_export(13, 0);
 }
 
-MIPS_MACHINE(LANTIQ_MACH_ARV4518,
-			"ARV4518",
-			"ARV4518 - SMC7908A-ISP",
-			arv4518_init);
+
+MIPS_MACHINE(LANTIQ_MACH_ARV4518PW,
+			"ARV4518PW",
+			"ARV4518PW - SMC7908A-ISP, Airties WAV-221",
+			arv4518pw_init);
 
 static void __init
-arv452_init(void)
+arv4520pw_init(void)
 {
 	lq_register_gpio();
-	lq_register_gpio_ebu(ARV452_LATCH_SWITCH);
-	lq_register_gpio_leds(arv452_leds_gpio, ARRAY_SIZE(arv452_leds_gpio));
+	lq_register_gpio_ebu(ARV4520PW_LATCH_SWITCH);
+	lq_register_gpio_leds(arv4520pw_leds_gpio, ARRAY_SIZE(arv4520pw_leds_gpio));
 	lq_register_asc(0);
 	lq_register_asc(1);
 	lq_register_nor(&arv45xx_flash_data);
@@ -156,26 +318,76 @@ arv452_init(void)
 	xway_register_dwc(28);
 }
 
-MIPS_MACHINE(LANTIQ_MACH_ARV452,
-			"ARV452",
-			"ARV452 - Airties WAV-281, Arcor A800",
-			arv452_init);
+MIPS_MACHINE(LANTIQ_MACH_ARV4520PW,
+			"ARV4520PW",
+			"ARV4520PW - Airties WAV-281, Arcor A800",
+			arv4520pw_init);
 
 static void __init
-arv4525_init(void)
+arv4525pw_init(void)
 {
 	lq_register_gpio();
-	lq_register_gpio_leds(arv4525_leds_gpio, ARRAY_SIZE(arv4525_leds_gpio));
+	lq_register_gpio_leds(arv4525pw_leds_gpio, ARRAY_SIZE(arv4525pw_leds_gpio));
 	lq_register_asc(0);
 	lq_register_asc(1);
 	lq_register_nor(&arv45xx_flash_data);
+	lq_pci_data.clock = PCI_CLOCK_INT;
 	lq_register_pci(&lq_pci_data);
 	lq_register_wdt();
 	lq_eth_data.mii_mode = MII_MODE;
 	arv45xx_register_ethernet();
 }
 
-MIPS_MACHINE(LANTIQ_MACH_ARV4525,
-			"ARV4525",
-			"ARV4525 - Speedport W502V",
-			arv4525_init);
+MIPS_MACHINE(LANTIQ_MACH_ARV4525PW,
+			"ARV4525PW",
+			"ARV4525PW - Speedport W502V",
+			arv4525pw_init);
+
+static void __init
+arv7518pw_init(void)
+{
+	lq_register_gpio();
+	lq_register_gpio_ebu(ARV4520PW_LATCH_SWITCH);
+	lq_register_asc(0);
+	lq_register_asc(1);
+	lq_register_gpio_leds(arv7518pw_leds_gpio, ARRAY_SIZE(arv7518pw_leds_gpio));
+	lq_register_nor(&arv75xx_flash_data);
+	lq_register_pci(&lq_pci_data);
+	lq_register_wdt();
+	arv75xx_register_ethernet();
+	//arv7518_register_ath9k(mac);
+}
+
+MIPS_MACHINE(LANTIQ_MACH_ARV7518PW,
+			"ARV7518PW",
+			"ARV7518PW - ASTORIA",
+			arv7518pw_init);
+
+static void __init
+arv752dpw_init(void)
+{
+	lq_register_gpio();
+	lq_register_gpio_ebu(ARV752DPW_LATCH_DEFAULT);
+	lq_register_asc(0);
+	lq_register_asc(1);
+	lq_register_gpio_leds(arv752dpw_leds_gpio, ARRAY_SIZE(arv752dpw_leds_gpio));
+	lq_register_gpio_buttons(arv752dpw_gpio_buttons, ARRAY_SIZE(arv752dpw_gpio_buttons));
+	lq_register_nor(&arv75xx_flash_data);
+	lq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
+	lq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
+	lq_register_pci(&lq_pci_data);
+	lq_register_wdt();
+	arv75xx_register_ethernet();
+	gpio_request(32, "usb-power");
+	gpio_direction_output(32, 0);
+	mdelay(1);
+	__gpio_set_value(32, 1);
+	gpio_request(33, "relay");
+	gpio_direction_output(33, 1);
+}
+
+MIPS_MACHINE(LANTIQ_MACH_ARV752DPW,
+			"ARV752DPW",
+			"ARV752DPW - Arcor A803",
+			arv752dpw_init);
+
