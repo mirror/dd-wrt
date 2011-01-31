@@ -591,7 +591,6 @@ int internal_getRouterBrand()
 		}
 		gwid = &temp[32];
 		gwid[8] = 0;
-		fprintf(stderr, "id is %s\n", gwid);
 		fclose(file);
 		if (!strncmp(gwid, "GW2347", 6)) {
 			setRouter("Gateworks Avila GW2347");
