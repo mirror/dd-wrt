@@ -32,6 +32,7 @@ plat_mem_setup(void)
 	ioport_resource.end = IOPORT_RESOURCE_END;
 	iomem_resource.start = IOMEM_RESOURCE_START;
 	iomem_resource.end = IOMEM_RESOURCE_END;
+	set_io_port_base((unsigned long) KSEG1);
 
 	while (*envp)
 	{

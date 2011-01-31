@@ -158,4 +158,4 @@ init_lq_stp(void)
 	return ret;
 }
 
-arch_initcall(init_lq_stp);
+postcore_initcall(init_lq_stp);

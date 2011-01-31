@@ -27,19 +27,24 @@ lq_ebu_direction_output(struct gpio_chip *chip, unsigned offset, int value)
 	return 0;
 }
 
-static void
-lq_ebu_set(struct gpio_chip *chip, unsigned offset, int value)
+static void lq_ebu_apply(void)
 {
 	unsigned long flags;
-	if(value)
-		shadow |= (1 << offset);
-	else
-		shadow &= ~(1 << offset);
 	spin_lock_irqsave(&ebu_lock, flags);
 	lq_w32(LQ_EBU_BUSCON, LQ_EBU_BUSCON1);
 	*((__u16*)virt) = shadow;
 	lq_w32(LQ_EBU_BUSCON | LQ_EBU_WP, LQ_EBU_BUSCON1);
 	spin_unlock_irqrestore(&ebu_lock, flags);
+}
+
+static void
+lq_ebu_set(struct gpio_chip *chip, unsigned offset, int value)
+{
+	if(value)
+		shadow |= (1 << offset);
+	else
+		shadow &= ~(1 << offset);
+	lq_ebu_apply();
 }
 
 static struct gpio_chip
@@ -82,7 +87,10 @@ lq_ebu_probe(struct platform_device *pdev)
 
 	ret = gpiochip_add(&lq_ebu_chip);
 	if (!ret)
+	{
+		lq_ebu_apply();
 		return 0;
+	}
 
 err_release_mem_region:
 	release_mem_region(res->start, resource_size(res));
@@ -104,4 +112,4 @@ init_lq_ebu(void)
 	return platform_driver_register(&lq_ebu_driver);
 }
 
-arch_initcall(init_lq_ebu);
+postcore_initcall(init_lq_ebu);

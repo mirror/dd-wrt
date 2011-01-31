@@ -53,7 +53,10 @@ static struct physmap_flash_data easy50712_flash_data = {
 
 static struct lq_pci_data lq_pci_data = {
 	.clock      = PCI_CLOCK_INT,
-	.req_mask   = 0xf,
+	.gpio   = PCI_GNT1 | PCI_REQ1,
+	.irq    = {
+		[14] = INT_NUM_IM0_IRL0 + 22,
+	},
 };
 
 static struct lq_eth_data lq_eth_data = {
