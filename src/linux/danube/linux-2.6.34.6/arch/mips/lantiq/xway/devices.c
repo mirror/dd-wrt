@@ -20,6 +20,7 @@
 #include <linux/time.h>
 #include <linux/io.h>
 #include <linux/gpio.h>
+#include <linux/gpio_buttons.h>
 #include <linux/leds.h>
 
 #include <asm/bootinfo.h>
@@ -48,6 +49,26 @@ lq_register_gpio_leds(struct gpio_led *leds, int cnt)
 	lq_gpio_led_data.leds = leds;
 	lq_gpio_led_data.num_leds = cnt;
 	platform_device_register(&lq_gpio_leds);
+}
+
+/* gpio buttons */
+static struct gpio_buttons_platform_data lq_gpio_buttons_platform_data;
+
+static struct platform_device lq_gpio_buttons_platform_device =
+{
+	.name = "gpio-buttons",
+	.id = 0,
+	.dev = {
+		.platform_data = (void *) &lq_gpio_buttons_platform_data,
+	},
+};
+
+void __init
+lq_register_gpio_buttons(struct gpio_button *buttons, int cnt)
+{
+	lq_gpio_buttons_platform_data.buttons = buttons;
+	lq_gpio_buttons_platform_data.nbuttons = cnt;
+	platform_device_register(&lq_gpio_buttons_platform_device);
 }
 
 /* serial to parallel conversion */

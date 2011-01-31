@@ -30,6 +30,9 @@
 
 #define LQ_ICU_OFFSET		(LQ_ICU_IM1_ISR - LQ_ICU_IM0_ISR)
 
+#define LQ_EBU_BASE_ADDR	0xBE105300
+#define LQ_EBU_PCC_ISTAT	((u32 *)(LQ_EBU_BASE_ADDR + 0x00A0))
+
 void
 lq_disable_irq(unsigned int irq_nr)
 {
@@ -116,6 +119,9 @@ lq_hw_irqdispatch(int module)
 	   other bits might be bogus */
 	irq = __fls(irq);
 	do_IRQ((int)irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
+	if ((irq == 22) && (module == 0))
+		lq_w32(lq_r32(LQ_EBU_PCC_ISTAT) | 0x10,
+			LQ_EBU_PCC_ISTAT);
 }
 
 #define DEFINE_HWx_IRQDISPATCH(x) \
