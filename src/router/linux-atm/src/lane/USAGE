@@ -1,0 +1,109 @@
+/*
+ * Marko Kiiskila carnil@cs.tut.fi 
+ * 
+ * Tampere University of Technology - Telecommunications Laboratory
+ *
+ */
+
+LANE Service Package
+====================
+Lan Emulation Configuration Server, Lan Emulation Server and
+Broadcast and Unknown Server. Description
+of LAN-E can be found from ATM Forum's specification "LAN Emulation
+Over ATM - Version 1.0". 
+ftp://ftp.atmforum.com/pub/specs/af-lane-0021.000.ps.Z
+
+Usage:
+======
+Compile the package. This produces three executables lecs, les and bus.
+LES and BUS noth use same configuration file '.lanevars'. Fill in the 
+required fields in that file and start the servers.
+Configuration file for LECS is .lecs_conf
+
+Configuration file (.lanevars):
+===============================
+Has following variables for controlling VLAN and server operation:
+
+S1=Address of the LES. This address is used in ATM signalling.
+S2=Type of the emulated LAN. Valid values are "802.3" and "802.5".
+S3=Maximum frame size. Valid values are 1516, 4544, 9234 and 18190
+S4=Join Timeout. Time in seconds which LES waits for LE_JOIN_REQUEST 
+   before tearing down a connection.
+S5=Maximum frame Age. Currently not used.
+S6=Address of the BUS. This address is used in ATM signalling.
+ELANNAME= Name of the emulated LAN
+
+Most important variables are S1 and S6. When one is running LE service
+and LE client in same machine, care must be taken in choosing different
+ATM addresses for these entities. This is needed because SAPs for these
+entities must be different, and ATM address is the only way for this.
+Currently these variables must be given in format shown in example
+configuration file included in package, i.e.:
+
+S6=:47:00:23:00:00:00:03:03:00:01:00:02:01:00:20:ea:00:0a:e9:02 #viulu
+
+Configuration file (.lecs_conf):
+================================
+Includes definitions for LECS's ATM address and ELAN definitions for
+which LECS knows about. Look for example configuration file
+.lecs_conf for description of variables and syntax of these.
+
+Example scenario:
+=================
+
+--------             --------             --------
+|      |             |      |             |      |
+| Box1 |-------------|Switch|-------------| Box2 |
+|      |             |      |             |      |
+--------             --------             --------
+
+Box1 has ATM addresses A1, A2 and A3. Box2 has ATM address B1 and B2.
+A1 = LEC address in Box1
+A2 = LES address
+A3 = BUS address
+B1 = LECS address
+B2 = LEC address in Box2
+
+Start ATM signalling in both boxes. Switch is configures with IISP
+routes, because ilmid can only register one ATM address. 
+
+Another way is to modify signalling daemon's code.
+-----8<------
+                    if (walk->state == ls_same && atm_equal(&walk->addr,
+                      &msg->svc,0,0)) break;
+
+to
+
+                    if (walk->state == ls_same && atm_equal(&walk->addr,
+                      &msg->svc,(ATM_ESA_LEN-1)*8,AXE_WILDCARD)) break;
+
+(atm/sigd/kernel.c, near line 156)
+-----8<------
+
+After this it is possible to run ilmid if A1, A2 and A3 differ only in 
+selector byte of their ATM addresses. In this case IISP routes are
+not needed.
+
+.lanevars contains:
+[conn]
+S1=A2
+S6=A3
+
+
+.lecs_conf contains:
+#LECS address
+B1
+
+#ELAN definition
+[] 
+DEFAULT
+
+
+Start lecs, les and bus.
+
+Run LEC in Box1:
+zeppelin -c B1 -l A1 
+
+Run LEC in Box2:
+zeppelin -c B1 -l B2
+

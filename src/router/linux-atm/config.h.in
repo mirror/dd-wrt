@@ -1,0 +1,115 @@
+/* config.h.in.  Generated from configure.in by autoheader.  */
+
+/* Allow UNI 3.0 backwards-compatible extensions (if using UNI 3.1) */
+#undef ALLOW_UNI30
+
+/* Default config file location for atmsigd */
+#undef ATMSIGD_CONF
+
+/* Use select() instead of poll() with MPOA */
+#undef BROKEN_POLL
+
+/* If you're using a Cisco LS100 or LS7010 switch, you should add the
+   following line to work around a bug in their point-to-multipoint signaling
+   (it got confused when receiving a CALL PROCEEDING, so we don't send it,
+   which of course makes our clearing procedure slightly non-conformant): */
+#undef CISCO
+
+/* The UNI version can be configured at run time. Dynamic is the default. Use
+   the explicit version selections only in case of problems. */
+#undef DYNAMIC_UNI
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `mpr' library (-lmpr). */
+#undef HAVE_LIBMPR
+
+/* Define to 1 if you have the `resolv' library (-lresolv). */
+#undef HAVE_LIBRESOLV
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Use proposed MPOA 1.1 features */
+#undef MPOA_1_1
+
+/* Point to multipoint signalling support for atmsigd. */
+#undef MULTIPOINT
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* If using UNI40, you can also enable peak cell rate modification as
+   specified in Q.2963.1 */
+#undef Q2963_1
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Some versions of the Thomson Thomflex 5000 won't do any signaling before
+   they get a RESTART. Uncomment the next line to enable sending of a RESTART
+   whenever SAAL comes up. Note that the RESTART ACKNOWLEDGE sent in response
+   to the RESTART will yield a warning, because we don't implement the full
+   RESTART state machine. */
+#undef THOMFLEX
+
+/* */
+#undef UNI30
+
+/* Note: some UNI 3.0 switches will show really strange behaviour if
+   confronted with using 3.1 signaling, so be sure to test your network *very*
+   carefully before permanently configuring machines to use UNI 3.1. */
+#undef UNI31
+
+/* Some partial support for UNI 4.0 can be enabled by using UNI40 */
+#undef UNI40
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+/* */
+#undef YY_USE_CONST

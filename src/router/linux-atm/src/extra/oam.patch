@@ -1,0 +1,462 @@
+# This is a BitKeeper generated patch for the following project:
+# Project Name: Linux kernel tree
+# This patch format is intended for GNU patch command version 2.5 or higher.
+# This patch includes the following deltas:
+#	           ChangeSet	1.1345  -> 1.1346 
+#	    net/atm/Makefile	1.6     -> 1.7    
+#	       net/Config.in	1.14    -> 1.15   
+#	       net/atm/raw.c	1.3     -> 1.4    
+#	    net/atm/common.c	1.29    -> 1.30   
+#	               (new)	        -> 1.1     include/linux/atmoam.h
+#	               (new)	        -> 1.1     net/atm/oam.c  
+#
+# The following is the BitKeeper ChangeSet Log
+# --------------------------------------------
+# 04/02/21	chas@relax.cmf.nrl.navy.mil	1.1346
+# [ATM]: OAM support from Jorge Boncompte [DTI2] <jorge@dti2.net>
+# --------------------------------------------
+#
+diff -Nru a/include/linux/atmoam.h b/include/linux/atmoam.h
+--- /dev/null	Wed Dec 31 16:00:00 1969
++++ b/include/linux/atmoam.h	Sat Feb 21 09:13:01 2004
+@@ -0,0 +1,77 @@
++/*
++ * atmoam.h - ATM OAM protocol and kernel-daemon interface definitions
++ *
++ * Written 2003 by Jorge Boncompte, DTI2
++*/
++
++#ifndef _LINUX_ATMOAM_H
++#define _LINUX_ATMOAM_H
++
++#ifdef __KERNEL__
++#include <linux/types.h>
++#endif
++#include <linux/atmapi.h>
++#include <linux/atmioc.h>
++
++#define ATMOAMD_CTRL	_IO('a', ATMIOC_SPECIAL+4)	/* become atmoamd ctrl sock */
++
++#define POLYNOMIAL 0x633
++
++/* OAM Cell Types */
++#define ATM_OAM_T_FAULT		1
++#define ATM_OAM_T_PERF		2
++#define ATM_OAM_T_ACTDEACT	8
++
++/* OAM Cell Functions */
++#define ATM_OAM_F_AIS		0
++#define ATM_OAM_F_FERF		1
++#define ATM_OAM_F_CONT		4
++#define ATM_OAM_F_LOOP		8
++
++#define OAM_TYPE_SHIFT		4
++#define OAM_FUNC_MASK		0x0000000f
++
++#define OAM_TYPE(X)		(X[0] >> OAM_TYPE_SHIFT)
++#define OAM_FUNC(X)		(X[0] & OAM_FUNC_MASK)
++#define ATM_CELL_PTI(X)		((X & ATM_HDR_PTI_MASK) >> ATM_HDR_PTI_SHIFT)
++ 
++struct oamcell {
++	unsigned char	hdr[ATM_AAL0_SDU - ATM_CELL_PAYLOAD]; /* AAL0 Cell Header */
++	unsigned char	payload[ATM_CELL_PAYLOAD];
++};
++
++struct atmoam_ctrl {
++	atm_kptr_t	vcc;			/* Vcc Kernel Pointer */
++	int		number;			/* Device index */
++	short		pti;			/* Payload Type Identifier */
++	short		vpi;			/* VPI number */
++	int 		vci;			/* VCI number */
++	struct oamcell cell;
++};
++
++#ifdef __KERNEL__
++struct atm_oam_ops {
++	int (*toatmoamd)(struct atm_vcc *vcc, void *oamcell);
++	int (*init)(struct atm_vcc *vcc);
++	struct module *owner;
++};
++
++void atm_oam_ops_set(struct atm_oam_ops *);
++int try_atm_oam_ops(void);
++
++extern struct atm_oam_ops *atm_oam_ops;
++#endif
++
++struct oampayload {
++	u_int8_t	FunctNType;
++
++	u_int8_t 	LoopBackInd:8;
++	u_int8_t 	CorrelationTag[4];
++	u_int8_t 	LocationID[16];
++	u_int8_t	SourceID[16];
++	u_int8_t	Unused[8];
++
++	u_int8_t	OAMCRC10[2];
++};
++
++#endif
+diff -Nru a/net/Config.in b/net/Config.in
+--- a/net/Config.in	Sat Feb 21 09:13:01 2004
++++ b/net/Config.in	Sat Feb 21 09:13:01 2004
+@@ -50,6 +50,7 @@
+       if [ "$CONFIG_ATM_BR2684" != "n" ]; then
+             bool '    Per-VC IP filter kludge' CONFIG_ATM_BR2684_IPFILTER
+       fi
++      dep_tristate '  OAM protocol support' CONFIG_ATM_OAM $CONFIG_ATM
+    fi
+ fi
+ tristate '802.1Q VLAN Support' CONFIG_VLAN_8021Q
+diff -Nru a/net/atm/Makefile b/net/atm/Makefile
+--- a/net/atm/Makefile	Sat Feb 21 09:13:01 2004
++++ b/net/atm/Makefile	Sat Feb 21 09:13:01 2004
+@@ -46,6 +46,7 @@
+ obj-$(CONFIG_ATM_LANE) += lec.o
+ obj-$(CONFIG_ATM_MPOA) += mpoa.o
+ obj-$(CONFIG_PPPOATM) += pppoatm.o
++obj-$(CONFIG_ATM_OAM) += oam.o
+ 
+ include $(TOPDIR)/Rules.make
+ 
+diff -Nru a/net/atm/common.c b/net/atm/common.c
+--- a/net/atm/common.c	Sat Feb 21 09:13:01 2004
++++ b/net/atm/common.c	Sat Feb 21 09:13:01 2004
+@@ -129,6 +129,36 @@
+ #endif
+ #endif
+ 
++#if defined(CONFIG_ATM_OAM) || defined(CONFIG_ATM_OAM_MODULE)
++#include <linux/atmoam.h>
++struct atm_oam_ops *atm_oam_ops;
++static DECLARE_MUTEX(atm_oam_ops_mutex);
++
++void atm_oam_ops_set(struct atm_oam_ops *hook)
++{
++	down(&atm_oam_ops_mutex);
++	atm_oam_ops = hook;
++	up(&atm_oam_ops_mutex);
++}
++
++int try_atm_oam_ops(void)
++{
++	down(&atm_oam_ops_mutex);
++	if (atm_oam_ops && try_inc_mod_count(atm_oam_ops->owner)) {
++		up(&atm_oam_ops_mutex);
++		return 1;
++	}
++	up(&atm_oam_ops_mutex);
++	return 0;
++}
++
++#ifdef CONFIG_ATM_OAM_MODULE
++EXPORT_SYMBOL(atm_oam_ops);
++EXPORT_SYMBOL(try_atm_oam_ops);
++EXPORT_SYMBOL(atm_oam_ops_set);
++#endif
++#endif
++
+ #if defined(CONFIG_PPPOATM) || defined(CONFIG_PPPOATM_MODULE)
+ static DECLARE_MUTEX(pppoatm_ioctl_mutex);
+ 
+@@ -782,6 +812,26 @@
+ 				error = atm_clip_ops->clip_encap(vcc, arg);
+ 				if (atm_clip_ops->owner)
+ 					__MOD_DEC_USE_COUNT(atm_clip_ops->owner);
++			} else
++				error = -ENOSYS;
++			goto done;
++#endif
++#if defined(CONFIG_ATM_OAM) || defined(CONFIG_ATM_OAM_MODULE)
++		case ATMOAMD_CTRL:
++			if (!capable(CAP_NET_ADMIN)) {
++				error = -EPERM;
++				goto done;
++			}
++#if defined(CONFIG_ATM_OAM_MODULE)
++			if (!atm_oam_ops)
++				request_module("oam");
++#endif
++			if (try_atm_oam_ops()) {
++				error = atm_oam_ops->init(vcc);
++				if (atm_oam_ops->owner)
++					__MOD_DEC_USE_COUNT(atm_oam_ops->owner);
++				if (!error)
++					sock->state = SS_CONNECTED;
+ 			} else
+ 				error = -ENOSYS;
+ 			goto done;
+diff -Nru a/net/atm/oam.c b/net/atm/oam.c
+--- /dev/null	Wed Dec 31 16:00:00 1969
++++ b/net/atm/oam.c	Sat Feb 21 09:13:01 2004
+@@ -0,0 +1,223 @@
++/*
++ *		net/atm/oam.c - Kernel support for an userspace OAM daemon. 
++ *
++ *		Author: Jorge Boncompte, DTI-2
++ *
++ *		Based on the code of the linux ATM stack.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/errno.h>
++#include <linux/sched.h>
++#include <linux/kernel.h>
++#include <linux/skbuff.h>
++#include <linux/mm.h>
++#include <linux/atm.h>
++#include <linux/atmdev.h>
++#include <linux/atmoam.h>
++
++#include "common.h"
++#include "protocols.h"
++
++struct atm_vcc *atmoamd = NULL;
++
++#if 0
++#define DPRINTK(format,args...) printk(KERN_DEBUG format,##args)
++#else
++#define DPRINTK(format,args...)
++#endif
++
++static struct atm_vcc *vcc_find_byvpivci(struct atm_dev *dev, short vpi, int vci)
++{
++	struct sock *s;
++	struct atm_vcc *walk;
++
++	read_lock(&vcc_sklist_lock);
++        for (s = vcc_sklist; s; s = s->next) {
++                walk = s->protinfo.af_atm;
++		if (test_bit(ATM_VF_ADDR, &walk->flags) &&
++		    walk->vpi == vpi &&
++		    walk->vci == vci) {
++			sock_hold(s);
++			read_unlock(&vcc_sklist_lock);
++			return walk;
++		}
++	}
++
++	read_unlock(&vcc_sklist_lock);
++	return NULL;
++}
++
++static int oam_to_atmoamd(struct atm_vcc *vcc, void *oamcell)
++{
++	struct atmoam_ctrl	*oamctrl;
++	struct sk_buff	*skb;
++	unsigned char	*cell;
++
++	DPRINTK("to_atmoamd\n");
++
++	cell = (unsigned char *) oamcell;
++	
++	if (!atmoamd)
++		return -EUNATCH;
++
++	skb = alloc_skb(sizeof(struct atmoam_ctrl), GFP_ATOMIC);
++	
++	if (!skb)
++		return -ENOMEM;
++
++	oamctrl = (struct atmoam_ctrl *) skb_put(skb, sizeof(struct atmoam_ctrl));
++
++	*(struct atm_vcc **) &oamctrl->vcc = vcc;
++	oamctrl->number = vcc->dev->number;
++	oamctrl->pti = ATM_CELL_PTI(cell[3]);
++	oamctrl->vpi = vcc->vpi;
++	oamctrl->vci = vcc->vci;
++	memcpy(&oamctrl->cell, cell, ATM_AAL0_SDU);
++
++	DPRINTK("to_atmoamd: Intf %d PTI %d vc %d/%d Vcc 0x%p\n",
++		oamctrl->number, oamctrl->pti, oamctrl->vpi, oamctrl->vci,
++		*(struct atm_vcc **)&oamctrl->vcc);
++
++/*	skb->stamp = xtime;
++
++        if (!atm_charge(atmoamd, skb->truesize)) {
++    		dev_kfree_skb_any(skb);
++    		return -1;
++        }
++        ATM_SKB(skb)->vcc = atmoamd;
++*/
++	atm_force_charge(atmoamd, skb->truesize);
++	skb_queue_tail(&atmoamd->sk->receive_queue, skb);
++	wake_up(&atmoamd->sleep);
++
++	return 0;
++}
++
++static int oam_from_atmoamd(struct atm_vcc *oamvcc, struct sk_buff *skb)
++{
++	struct atm_vcc *vcc;
++	struct atm_dev *dev;
++	struct atmoam_ctrl *oamctrl = (struct atmoam_ctrl *) skb->data;
++	int result = 0;
++
++	DPRINTK("from_atmoamd\n");
++
++	/* FIXME: Check message length?  Is the below line correct? */
++	atomic_sub(skb->truesize, &oamvcc->sk->wmem_alloc);
++
++	DPRINTK("from_atmoamd: Intf %d PTI %d vc %d/%d Vcc 0x%p\n",
++		oamctrl->number, oamctrl->pti, oamctrl->vpi, oamctrl->vci,
++		*(struct atm_vcc **)&oamctrl->vcc);
++
++	dev = atm_dev_lookup(oamctrl->number);
++	if (!dev) {
++		result = -ENODEV;
++		goto err;
++	}
++
++	vcc = *(struct atm_vcc **) &oamctrl->vcc;
++    
++	/* This is a new outgoing cell, not a reply */
++	if (vcc == 0) {
++		if ((vcc = vcc_find_byvpivci(dev, oamctrl->vpi, oamctrl->vci)) == NULL) {
++			DPRINTK("Vcc %d/%d not in device %d list\n",
++			    oamctrl->vpi, oamctrl->vci, oamctrl->number);
++			result = -EUNATCH;
++			goto err_put;
++		}
++	}
++	
++	if (vcc->dev->ops->send_oam)
++		result = vcc->dev->ops->send_oam(vcc, &oamctrl->cell, 0);
++	else {
++		if (net_ratelimit())
++			printk(KERN_INFO "%s%d: Driver does not support sending OAM cells\n",
++			    dev->type, dev->number);
++		result = -ENOSYS;
++	}
++	sock_put(vcc->sk);
++
++err_put:
++	atm_dev_put(dev);
++err:
++	if (result) /* Should we release the skb if there is no error? */
++	    kfree_skb(skb);
++	return result;
++}
++
++
++static void oam_close_atmoamd(struct atm_vcc *vcc)
++{
++	DPRINTK("atmoamd_close\n");
++	atmoamd = NULL; /* assumed to be atomic */
++	barrier();
++	if (skb_peek(&vcc->sk->receive_queue))
++		printk(KERN_ERR "atmoamd_close: closing with requests pending\n");
++	skb_queue_purge(&vcc->sk->receive_queue);
++	DPRINTK("(done)\n");
++	MOD_DEC_USE_COUNT;
++}
++
++
++static struct atmdev_ops atmoamd_dev_ops = {
++	.close = oam_close_atmoamd,
++	.send = oam_from_atmoamd,
++};
++
++
++static struct atm_dev atmoamd_dev = {
++	.ops = &atmoamd_dev_ops,	/* device operations */
++	.type = "oamd",		/* device type */
++	.number = 989,		/* dummy device number */
++};
++
++
++int atm_init_atmoam(struct atm_vcc *vcc)
++{
++	DPRINTK("atm_init_atmoam\n");
++
++        if (atmoamd)
++		return -EADDRINUSE;
++
++	atmoamd = vcc;
++        set_bit(ATM_VF_META, &vcc->flags);
++	set_bit(ATM_VF_READY, &vcc->flags);
++
++	/* allow replies and avoid getting closed if signaling dies */
++	vcc->dev = &atmoamd_dev;
++	vcc_insert_socket(vcc->sk);
++	vcc->push = NULL;
++	vcc->pop = NULL; /* crash */
++        vcc->push_oam = NULL; /* crash */
++
++	MOD_INC_USE_COUNT;
++        return 0;
++}
++
++static struct atm_oam_ops __atm_oam_ops = {
++	.toatmoamd = oam_to_atmoamd,
++	.init = atm_init_atmoam,
++	.owner = THIS_MODULE
++};
++
++static int __init atm_oam_init(void)
++{
++	atm_oam_ops_set(&__atm_oam_ops);
++	printk(KERN_INFO "ATM: OAM kernel module support loaded.\n");
++        return 0;
++}
++
++static void __exit atm_oam_exit(void)
++{
++	atm_oam_ops_set(NULL);
++	printk(KERN_INFO "ATM: OAM kernel module support removed.\n");
++}
++
++module_init(atm_oam_init);
++module_exit(atm_oam_exit);
++
++MODULE_AUTHOR("Jorge Boncompte - DTI2");
++MODULE_DESCRIPTION("OAM support for ATM");
++MODULE_LICENSE("GPL");
+diff -Nru a/net/atm/raw.c b/net/atm/raw.c
+--- a/net/atm/raw.c	Sat Feb 21 09:13:01 2004
++++ b/net/atm/raw.c	Sat Feb 21 09:13:01 2004
+@@ -10,6 +10,9 @@
+ #include <linux/skbuff.h>
+ #include <linux/mm.h>
+ 
++#if defined(CONFIG_ATM_OAM) || defined(CONFIG_ATM_OAM_MODULE)
++#include <linux/atmoam.h>
++#endif
+ #include "common.h"
+ #include "protocols.h"
+ 
+@@ -21,6 +24,24 @@
+ #endif
+ 
+ 
++int atm_push_oam(struct atm_vcc *vcc, void *oamcell)
++{
++	int result = 0;
++	
++	DPRINTK("atm_push_oam\n");
++
++#if defined(CONFIG_ATM_OAM) || defined(CONFIG_ATM_OAM_MODULE)
++	if (try_atm_oam_ops()) {
++		result = atm_oam_ops->toatmoamd(vcc, (unsigned char *) oamcell);
++		if (atm_oam_ops->owner)
++			__MOD_DEC_USE_COUNT(atm_oam_ops->owner);
++	} else
++		result = -ENOSYS;
++#endif
++	return result;
++}
++
++
+ /*
+  * SKB == NULL indicates that the link is being closed
+  */
+@@ -84,7 +105,7 @@
+ {
+ 	vcc->push = atm_push_raw;
+ 	vcc->pop = atm_pop_raw;
+-	vcc->push_oam = NULL;
++	vcc->push_oam = atm_push_oam;
+ 	vcc->send = vcc->dev->ops->send;
+ 	return 0;
+ }

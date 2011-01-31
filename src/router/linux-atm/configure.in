@@ -1,0 +1,238 @@
+dnl configure.in - the Autoconf input file
+dnl
+dnl Paul B Schroeder <paulsch@us.ibm.com>
+dnl
+dnl 2001-08-29:  Initial configure.in for atm tools starting with version 2.4.0
+dnl
+
+AC_INIT(src/include/atm.h)
+AM_CONFIG_HEADER(config.h)
+
+dnl Find operating system, vendor, architecture
+AC_CANONICAL_SYSTEM
+
+AM_INIT_AUTOMAKE(linux-atm,2.5.1)
+
+LIBVER_CURRENT="1"
+LIBVER_REVISION="0"
+LIBVER_AGE="0"
+AC_SUBST(LIBVER_CURRENT)
+AC_SUBST(LIBVER_REVISION)
+AC_SUBST(LIBVER_AGE)
+
+dnl Find programs needed for building and installation.
+AC_PROG_CC
+AM_PROG_LEX
+AC_PROG_YACC
+AC_PROG_INSTALL
+
+dnl libtool defs
+AM_PROG_LIBTOOL
+AC_SUBST(LIBTOOL_DEPS)
+
+dnl We have some special PERL scripts which are used during the build process
+AC_PATH_PROG(PERL, perl)
+AC_SUBST(PERL)
+
+
+dnl Check for needed header files
+AC_CHECK_HEADER(asm/errno.h, ,
+	AC_MSG_ERROR([*** Unable to find asm/errno.h!!!])
+)
+
+AC_CHECK_HEADER(linux/atmsap.h, ,
+	AC_MSG_ERROR([*** Unable to find linux/atmsap.h!!!])
+)
+
+dnl Check for libraries
+dnl libresolv is required
+AC_CHECK_LIB(resolv, main, ,
+	AC_MSG_ERROR([*** Unable to find libresolv!!!])
+)
+
+dnl We don't want libresolv everywhere, just with libatm
+LIBS=""
+
+INCLUDES="-I\$(top_srcdir)/src/include"
+CFLAGS="$INCLUDES $CFLAGS -Wall -Wshadow -Wpointer-arith -Wwrite-strings -Wstrict-prototypes"
+if test "x$cross_compiling" = "xyes"; then
+  AC_MSG_CHECKING(cc for build)
+  AC_CHECK_PROGS(CC_FOR_BUILD, gcc)
+  AC_MSG_RESULT($CC_FOR_BUILD)
+  CFLAGS_FOR_BUILD="$INCLUDES $CFLAGS_FOR_BUILD -Wall -Wshadow -Wpointer-arith -Wwrite-strings -Wstrict-prototypes"
+else
+  CC_FOR_BUILD="${CC_FOR_BUILD-$CC}"
+  CFLAGS_FOR_BUILD="${CFLAGS_FOR_BUILD-$CFLAGS}"
+fi
+AC_SUBST(CC_FOR_BUILD)
+AC_SUBST(CFLAGS_FOR_BUILD)
+dnl Add -d flag to bison/yacc to create intermediate .h files
+YACC="$YACC -d"
+
+dnl For yacc compiles...
+AC_DEFINE(YY_USE_CONST, [], [ ])
+
+dnl Config files
+atmsigd_conf_dir=`	test "x$exec_prefix" = xNONE && exec_prefix=$ac_default_prefix
+			test "x$prefix" = xNONE && prefix=${exec_prefix}
+			eval echo "$sysconfdir"`
+AC_DEFINE_UNQUOTED(ATMSIGD_CONF, "$atmsigd_conf_dir/atmsigd.conf", [Default config file location for atmsigd])
+
+dnl Do our ./configure arguments here
+AC_ARG_WITH(uni,
+	[  --with-uni=VERSION      UNI version to use (3.0,3.1,4.0) [default=dynamic]],
+	[
+	case "$with_uni" in
+	"3.0" ) AC_DEFINE(UNI30, [], [ ])
+	;;
+	"3.1" ) AC_DEFINE(UNI31, [], [Note: some UNI 3.0 switches will show really strange behaviour if confronted
+with using 3.1 signaling, so be sure to test your network *very*
+carefully before permanently configuring machines to use UNI 3.1.])
+	;;
+	"4.0" ) AC_DEFINE(UNI40, [], [Some partial support for UNI 4.0 can be enabled by using UNI40])
+	;;
+	*)
+		AC_DEFINE(DYNAMIC_UNI, [], [The UNI version can be configured at run time. Dynamic is the default. Use the
+explicit version selections only in case of problems.])
+		AC_MSG_WARN([*** UNI version not specified correctly.  Defaulting to dynamic UNI.])
+	esac
+	],
+	AC_DEFINE(DYNAMIC_UNI)
+)
+
+AC_ARG_ENABLE(allow_uni30,
+	[  --enable-allow_uni30    Allow UNI 3.0 backwards-compatible extensions (if using UNI 3.1)],
+	[
+	if test "$with_uni" = "3.1" ; then
+		AC_DEFINE(ALLOW_UNI30, [], [Allow UNI 3.0 backwards-compatible extensions (if using UNI 3.1)])
+	else
+		AC_MSG_WARN([*** Allow UNI 3.0 was not enabled.  It is only valid when UNI 3.1 is specified as the default via --with-uni.])
+	fi
+	]
+)
+
+AC_ARG_ENABLE(q2963_1,
+	[  --enable-q2963_1        Enable peak cell rate modification as specified in Q.2963.1 (if using UNI 4.0)],
+	[
+	if test "$with_uni" = "4.0" ; then
+		AC_DEFINE(Q2963_1, [], [If using UNI40, you can also enable peak cell rate modification as
+specified in Q.2963.1])
+	else
+		AC_MSG_WARN([*** Q.2963.1 was not enabled.  It is only valid when UNI 4.0 is specified as the default via --with-uni.])
+	fi
+	]
+)
+
+AC_ARG_ENABLE(cisco,
+	[  --enable-cisco          Enable work around for point-to-multipoint signaling bug in Cisco LS100 or LS7010 switches],
+	AC_DEFINE(CISCO, [], [If you're using a Cisco LS100 or LS7010 switch, you should add the following
+line to work around a bug in their point-to-multipoint signaling (it got
+confused when receiving a CALL PROCEEDING, so we don't send it, which of
+course makes our clearing procedure slightly non-conformant):])
+)
+
+AC_ARG_ENABLE(thomflex,
+	[  --enable-thomflex       Some versions of the Thomson Thomflex 5000 won't do any signaling before they get a RESTART.  Enable sending of a RESTART whenever SAAL comes up.],
+	AC_DEFINE(THOMFLEX, [], [Some versions of the Thomson Thomflex 5000 won't do any signaling before they
+get a RESTART. Uncomment the next line to enable sending of a RESTART
+whenever SAAL comes up. Note that the RESTART ACKNOWLEDGE sent in response to
+the RESTART will yield a warning, because we don't implement the full RESTART
+state machine.])
+)
+
+dnl Use select() instead of poll() with MPOA
+dnl Do we still need this??  Make it selectable??
+AC_DEFINE(BROKEN_POLL, [], [Use select() instead of poll() with MPOA])
+
+AC_ARG_ENABLE(mpoa_1_1,
+	[  --enable-mpoa_1_1       Enable proposed MPOA 1.1 features],
+	AC_DEFINE(MPOA_1_1, [], [Use proposed MPOA 1.1 features])
+)
+
+AC_ARG_ENABLE(mpr,
+	[  --enable-mpr            Enable memory debugging (if MPR is installed)],
+	[
+	case "$enable_mpr" in
+	"" | y | ye | yes | Y | YE | YES )
+		AC_CHECK_LIB(mpr, main, ,
+			[
+			AC_MSG_WARN([*** Could not find libmpr!  Is MPR installed?])
+			]
+		)
+	;;
+	esac
+	]
+)
+
+AC_ARG_WITH(kernel-headers,
+[  --with-kernel-headers=path     use the kernel headers found at path]
+)
+if test "x$with_kernel_headers" != "x"; then
+  CFLAGS="-I$with_kernel_headers/include $CFLAGS"
+fi
+
+dnl AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[])
+pmp_send=""
+AC_SUBST(pmp_send)
+AC_ARG_ENABLE(multipoint,
+	[  --enable-multipoint    Enable point to multipoint signalling],
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT
+#include <stdint.h>
+#include <linux/atmdev.h>
+],
+[[ int fd;
+  struct atm_iobuf buf;
+
+  ioctl(fd, ATM_ADDPARTY, &buf);
+]])],
+	[AC_DEFINE(MULTIPOINT, [], [Point to multipoint signalling support for atmsigd.])
+	 pmp_send="pmp_send"],
+	[AC_MSG_WARN([*** Multipoint signalling was not enabled.  Missing kernel support?])])]
+)
+
+atmoamd=""
+AC_SUBST(atmoamd)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT
+#include <stdint.h>
+#include <linux/atmoam.h>
+],
+[[ int fd;
+
+  ioctl(fd, ATMOAMD_CTRL, 0);
+]])],
+               [atmoamd="atmoamd"],
+               [AC_MSG_WARN([*** atmoamd will not be built.  Missing kernel support?])])
+
+dnl Xsed="sed -e s/^X//"
+dnl LTLIBOBJS=`echo X"$LIBOBJS" | \$Xsed -e "s,\. [^.]* ,.lo,g;s,\.[^.]*$,.lo,"`
+dnl AC_SUBST(LTLIBOBJS)
+
+dnl Output all of our Makefiles
+AC_OUTPUT(	Makefile \
+		doc/Makefile \
+		src/Makefile \
+		src/include/Makefile \
+		src/lib/Makefile \
+		src/test/Makefile \
+		src/debug/Makefile \
+		src/qgen/Makefile \
+		src/saal/Makefile \
+		src/q2931/Makefile \
+		src/sigd/Makefile \
+		src/maint/Makefile \
+		src/arpd/Makefile \
+		src/ilmid/Makefile \
+		src/ilmid/asn1/Makefile \
+		src/man/Makefile \
+		src/led/Makefile \
+		src/lane/Makefile \
+		src/mpoad/Makefile \
+		src/oamd/Makefile \
+		src/switch/Makefile \
+		src/switch/debug/Makefile \
+		src/switch/tcp/Makefile \
+		src/br2684/Makefile \
+		src/config/Makefile \
+		src/extra/Makefile \
+		src/extra/linux-atm.spec
+		)

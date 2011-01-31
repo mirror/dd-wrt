@@ -1,0 +1,10 @@
+This is a quick readme on how to setup ATM on linux.
+
+This script will work in conjuction with the /etc/rc.d/init.d/network script to startup LANE services and interfaces.  I have tested it with LANE but your mileage may vary with other configurations.
+
+- Copy atm-sysconfig to /etc/sysconfig/atm
+- Copy atm to /etc/rc.d/init.d/
+- Link atm to your favorite runlevel to start on boot, but remember atmsigd and other services need to start before networking.
+- Copy ifcfg-lec0 to /etc/sysconfig/network-scripts (change it to suit your needs such as the correct ELAN and selector byte)
+
+That's about the basics, if you need help email me at john@strangeness.org and I'll be glad to help.

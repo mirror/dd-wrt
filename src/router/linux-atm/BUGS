@@ -1,0 +1,14 @@
+Known bugs and restrictions in version 2.5.0
+============================================
+
+ - ENI driver: closing an AAL0 socket while data is arriving at a high rate
+   hangs in the close system call
+ - mpcd: adds an MPOA Egress Cache Tag Extension in the MPOA Cache Imposition
+   Replies it sends even if the extension is missing from the incoming Request
+ - ANS: libresolve conflicts with libc on some systems
+ - ENI driver loses synchronization on some systems, leading to panics or hung
+   VCs (these may be two distinct problems)
+ - few if any drivers build properly as modules
+ - swc show  only displays manually configured VCs
+ - invoking a queuing discipline that overwrites skb->cb from within sch_atm
+   will yield unpredictable results if CONFIG_ATM_SKB is enabled

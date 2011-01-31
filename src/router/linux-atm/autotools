@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if [ "$1" = "--verbose" ]; then
+	VERBOSE='--verbose'
+else
+	VERBOSE=''
+fi
+
+echo "Running libtoolize..."
+libtoolize --force --copy
+echo "Running aclocal..."
+aclocal $VERBOSE
+echo "Running autoconf..."
+autoconf
+echo "Running autoheader..."
+autoheader
+echo "Running automake..."
+automake --force-missing --add-missing --copy $VERBOSE
+
+echo "Finished...  Now run './configure' and 'make'..."
+

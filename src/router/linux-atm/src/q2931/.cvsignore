@@ -1,0 +1,13 @@
+Makefile
+Makefile.in
+.deps
+.libs
+default.nl
+q.out.c
+q.out.h
+qd.dump.c
+qd.out.c
+qd.out.h
+q.test.c
+qd.test.c
+q.dump

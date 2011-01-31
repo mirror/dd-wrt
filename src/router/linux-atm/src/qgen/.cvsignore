@@ -1,0 +1,8 @@
+Makefile
+Makefile.in
+.deps
+.libs
+qgen
+ql_l.c
+ql_y.c
+ql_y.h

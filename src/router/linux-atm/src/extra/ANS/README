@@ -1,0 +1,51 @@
+E.164 Country Codes
+-------------------
+
+The file e164_cc is provided for those performing reverse lookups with the ATM
+Name Service (ANS).  It can be installed via:
+
+cp e164_cc /etc
+
+The latest "List of ITU-T Recommendation E.164 Assigned Country Codes" can be
+obtained from the International Telecommunications Union (ITU)
+(http://www.itu.org/) in PDF or Word format
+(http://www.itu.int/itudoc/itu-t/ob-lists/icc/e164_717.html).  The
+pdf2e164_cc.pl script, which is included in this directory, can be used to
+convert this file into the proper text format:
+
+perl pdf2e164_cc.pl >/etc/e164_cc
+
+
+
+
+Installing BIND
+---------------
+
+BIND 4.9.8 can be gotten from the Internet Software Consortium (ISC)
+(http://www.isc.org/products/BIND/).  The patch included in this directory
+(bind-498-REL.patch) is based upon version 4
+(http://www.isc.org/products/BIND/bind4.html).
+
+After downloading BIND, unbundle it like so:
+
+mkdir /usr/src/bind-498-REL
+tar xzvf bind-498-REL.tar.gz -C /usr/src/bind-498-REL
+
+Apply the patch with:
+
+cp bind-498-REL.patch /usr/src
+cd /usr/src
+patch -p0 <bind-498-REL.patch
+
+or:
+
+cp bind-498-REL.patch /usr/src/bind-498-REL
+cd /usr/src/bind-498-REL
+patch -p1 <bind-498-REL.patch
+
+Then follow the instructions as outlined in the INSTALL file provided with the
+distribution.  If you followed the instructions as outlined above, that will be
+/usr/src/bind-498-REL/INSTALL.
+
+See the README.DNS file in this directory for further instructions.
+
