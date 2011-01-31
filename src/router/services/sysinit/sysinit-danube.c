@@ -134,8 +134,8 @@ void start_sysinit(void)
 	// insmod("ag7100_mod");
 	// sleep(1);
 	//load dsl drivers
-	insmod("ifxmips_mei");
-	insmod("ifxmips_atm");
+	insmod("lantiq_mei");
+	insmod("lantiq_atm");
 	insmod("drv_dsl_cpe_api");
 	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
 	sysprintf("br2684ctl -b -c 0 -e 0 -p 1 -a 0.1.32");
@@ -154,7 +154,7 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
-
+	insmod("dwc_otg"); // usb
 	/*
 	 * Set a sane date 
 	 */
