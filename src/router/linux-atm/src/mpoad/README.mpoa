@@ -1,0 +1,82 @@
+November 5 1998
+
+Short instructions to get MPOA up and running
+=============================================
+
+In order to run MPOA you need to have LANE client (zeppelin)
+running too. Below is a snippet from our boot-up script which
+starts LANE and MPOA.
+
+case "$1" in
+  start)
+        cd $ATM
+        if [ -x sigd/atmsigd ] ; then
+                sigd/atmsigd -b 
+        fi
+        if [ -x ilmid/ilmid ] ; then
+                ilmid/ilmid -b -x
+        fi
+        if [ -x led/zeppelin ] ; then
+                led/zeppelin -f "Linux 2.1.126/ATM-0.51" -2 -c mpoa-lecs -n sampo -i2 -l jaarlimpc3 &
+                sleep 2
+                ifconfig lec2 10.10.10.208 \
+                         netmask 255.255.255.192 \
+                         broadcast 10.10.10.255
+                ifconfig lec2 up
+                route add default gw 10.10.10.193
+        fi
+        sleep 5
+        if [ -x mpoad/mpcd ] ; then
+               mpoad/mpcd -i2 -s jaarlimpc1 -l jaarlimpc2 &
+        fi              
+        ;;
+esac
+
+exit 0
+
+Things worth noting are:
+  o same interface number (2) for zeppelin and mpcd
+  o different local ATM addresses (jaarlimpc[123])
+  o -2 option for zeppelin to get it running as a LANEv2 client
+  o default gw being reached via MPOA-enabled LANE interface.
+
+Shortcuts, shortcut states and packet counters are available in
+/proc/atm/mpc
+
+
+How to create CBR SVCs
+======================
+
+You can create CBR SVCs with /proc/atm/mpc. Here is an example:
+
+# echo add 130.230.54.142 tx=40000,0,1536 rx=40000,0,1536 > /proc/atm/mpc
+
+After this when a shortcut is created to destination 130.230.54.142 it will
+be signaled using the above values which are
+
+   tx=max_pcr,max_cdv,max_sdu rx=max_pcr,max_cdv,max_sdu
+
+Correct value for max_cdv is currently 0.
+These values correspond to values in <linux/atm.h>
+                              struct atm_trafprm
+
+
+An entry can be deleted like this:
+
+# echo del 130.230.54.142 > /proc/atm/mpc
+
+
+Existing entries can be checked with
+
+% cat /proc/atm/mpc
+
+
+Other things
+============
+If you are running your LANE services on a Fore switch, you can try
+the '-f' option for zeppelin. My favourite is -f "`fortune`" :)
+
+
+Sampo Saaristo <s156953@cs.tut.fi>
+Heikki Vatiainen <hessu@cs.tut.fi>
+

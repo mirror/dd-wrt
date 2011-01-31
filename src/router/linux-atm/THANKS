@@ -1,0 +1,47 @@
+NOTE: This file is no longer being maintained.  The names of recent
+contributors can be found in the ChangeLog file.  THANKS may be merged
+with ChangeLog in the future.
+
+-------------------------- original content follows ---------------------------
+
+Although many of the files carry just one name, many other people have
+contributed to the project in various ways, e.g. by scrutinizing parts
+of the implementation or by designing and implementing prototypes of
+major system components. Their ideas significantly influenced the
+concepts that went into the final design. Here they are, in alphabetic
+order:
+
+Rolf Fiedler wrote the driver for the TI TNETA1570-based ATM adapter he
+(!) designed and built at TU Chemnitz.
+
+Angela Giannitrapani found countless bugs in the signaling code while
+working on Arequipa.
+
+Michael Ginis created the "ATM on Linux" logo using POV-Ray.
+
+Marko Kiiskila contributed LAN Emulation client and servers (kernel code
+and demon processes), the ATM Name Service (ANS) programs, and also found
+countless bugs in the signaling code.
+
+Ronald A. McCormick modularized the ATMTCP driver and also contributed
+a patch to upgrade from 1.3.24 to 1.3.50.
+
+Andre Meier designed the first concept for Q.2931 message handling and
+implemented a prototype. Although the current code is rewritten from
+scratch, many of his ideas went into the table-based message handler.
+
+Pedro Paiva did the first round of information gathering for a
+thorough design study of IP over ATM and signaling, which was also
+accompanied with some prototype implementation work.
+
+Jean-Michel Pittet examined the problems that have to be tackled in the
+design of SVC sockets, proposed a design, and implemented part of a
+prototype. In a second project, he prototyped most of the AREQUIPA code.
+
+Scott Shumate contributed the ILMI address registration demon that
+saves us from typing all those unpleasently long ATM NSAP addresses
+over and over again.
+
+The kind help of people from Efficient Networks (particularly Chase
+Bailey) and from ZeitNet (particularly George Marshall) was invaluable
+for speedy development of the respective drivers.

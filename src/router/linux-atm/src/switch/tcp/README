@@ -1,0 +1,119 @@
+The following sequence works. Figuring out why is left as an exercise to
+the reader ;-)
+
+Commands:
+
+lrcpc4:~/w/atm/switch/tcp# ./sw_tcp -b -d
+lrcpc4:~# atmtcp virtual 1 switch localhost 1 bg
+lrcpc4:~# atmtcp virtual 2 switch localhost 2 bg
+lrcpc4:~# atmaddr -a 2 +1
+lrcpc4:~/w/atm/switch/tcp# atmsigd -b -c 2.conf
+lrcpc15:~# atmtcp virtual 1 switch lrcpc4 3 bg
+lrcpc15:~# atmaddr -a 1 +2
+lrcpc15:~/w/atm/switch/tcp# atmsigd -b -c 1.conf
+lrcpc15:~$ ttcp_atm -r -a
+lrcpc4:~$ ttcp_atm -t -a +2
+
+--- switch.conf ---------------------------------------------------------------
+
+command "atmsigd -c s1.conf -b -m switch 1.0.100 /tmp/1" socket /tmp/1 {
+    itf 2 1.0.100
+    route +1
+}
+command "atmsigd -c s2.conf -b -m switch 1.0.101 /tmp/2" socket /tmp/2 {
+    itf 3 1.0.101
+    default
+}
+
+--- s1.conf -------------------------------------------------------------------
+
+debug log stderr
+debug level warn
+sig level debug
+sig vpci 0 itf 2
+
+--- s2.conf -------------------------------------------------------------------
+
+debug log stderr
+debug level warn
+sig level debug
+sig vpci 0 itf 3
+
+--- 1.conf --------------------------------------------------------------------
+
+debug log stderr
+debug level warn
+sig level debug
+io vc 1.0.5
+sig vpci 0 itf 1
+
+--- 2.conf --------------------------------------------------------------------
+
+debug log stderr
+debug level warn
+sig level debug
+io vc 2.0.5
+sig vpci 0 itf 2
+
+--- -
+
+The following picture shows a simplified view of the configuration. Note
+that the command-line options have been choosen for clarity (and minor
+details like the vpci settings in the configuration file have been
+omitted) and are not identical with the ones given above.
+
+
++-----------------------------------------------------------------------+
+| ./sw_tcp                                                              |
+|                                                                       |
+| +---------+          +----------------------------------+ 1.0.100     |
+| |         |--/tmp/1--| atmsigd -m switch 1.0.100 /tmp/1 |---+         |
+| |         |          +----------------------------------+   |         |
+| | <relay> |                                                 +-----+   |
+| |         |          +----------------------------------+   |     |   |
+| |         |--/tmp/2--| atmsigd -m switch 1.0.101 /tmp/2 |---+     |   |
+| +---------+          +----------------------------------+ 1.0.101 |   |
+|      |							    |   |
+|      |                      +--------------+                      |   |
+|      |                      |              |                      |   |
+|      |  control             |              |                      |   |
+|      +----------------------|              |                    itf 1 |
+|                             |   <fabric>   |                      |   |
+|                             |              |                      |   |
+|        2.0.5 <--> 1.0.100   |              |                      |   |
+|        3.0.5 <--> 1.0.101   | 2     3    1 |                      |   |
+|                             +--------------+                      |   |
+|                               |     |    |                        |   |
++-------------------------------|-----|----|------------------------|---+
+   			        |     |    |                        |
+                   +------------+     |    |                        |
+                   |                  |    |                        |
++-----------------------------------+ | +-----------------------------------+
+|atmtcp virtual 2 switch localhost 2| | |atmtcp virtual 1 switch localhost 1|
++-----------------------------------+ | +-----------------------------------+
+                   |                  |
+	       itf 2 (+1)	      +---- - - - - - ----+
+		   |					  |
+           +---------------+        |  on lrcpc15:	  |
+           | atmsigd 2.0.5 |				  |
+           +---------------+	    |		          |
+							  |
+				    |   +--------------------------------+
+                                    |   |atmtcp virtual 1 switch lrcpc4 3|
+                                    |   +--------------------------------+
+                     					   |
+				    |		       itf 1 (+2)
+                     					   |
+				    |		   +---------------+
+                                		   | atmsigd 1.0.5 |
+				    |		   +---------------+
+
+In order to control the switch with swc, add the line
+  control <path>
+to switch.conf, e.g.
+  control /var/run/tcpswc
+
+Then invoke swc as follows:
+  swc <path> show
+
+To add VCs, use  add <itf>.<vpi>.<vci> , to add VPs, use  add <itf>.<vpi>.?

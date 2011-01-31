@@ -1,0 +1,91 @@
+snacc ASN.1 Compiler Release  1.1 - (updated Jul 93)
+-----------------------------------------------------
+
+This package provides the C/yacc/lex source code for snacc, an ASN.1
+to C or C++ compiler.  Snacc is short for "Sample Neufeld Asn.1 to C
+Compiler" and ASN.1 stands for Abstract Syntax Notation One (CCITT
+X.208/ ISO 8824).  See the COPYRIGHT file for copyright information.
+
+
+What It Does
+------------
+
+Given an ASN.1 source file(s) snacc can produce:
+
+   1. C routines for BER encoding, decoding, printing and freeing.
+   2. C++ routines for BER encoding, decoding, and printing.
+   3. A type table that can be used with C driver routines
+      for BER encoding, decoding, printing and freeing.
+   4. if you are really lucky, a core dump! :)
+
+Snacc produces reasonably efficient C or C++ routines and data
+structures to support BER encoding and decoding values of the given
+ASN.1 data structures.  Printing routines for the decoded values are
+also generated.  For C only, hierarchical freeing routines are
+generated (but are not recommended for efficiency reasons).  
+
+When using the C or C++ (not table) options, snacc creates the
+following C files for each ASN.1 source file (module):
+
+        1. .h file for the C/C++ translation of the ASN.1 data
+           structure and prototypes for the generated routines.
+
+        2. .c/.C file for the C/C++ encode, decode, print and free
+           routines.
+
+When using the table option, snacc produces a type table file
+(a BER encoding) that can later be loaded at runtime by the
+table driven encoding and decoding routines.
+
+See the latex or PostScript version of the documentation in the
+snacc/doc directory for indepth information on this tool.  For a quick
+introduction, look at the examples in snacc/c_examples,
+snacc/c++_examples and snacc/tbl_example.
+
+
+Features of ASN.1 Supported
+---------------------------
+
+   - parses ASN.1 '90 (subtype notation etc.)
+   - macro definitions do not generate syntax errors but are
+     are not processed. (retained as string)
+   - value notation is parsed and for OBJECT IDENTIFIERs, INTEGERs
+      and BOOLEANS (any other value in { }'s is currently kept as a string)
+   - handles multiple ASN.1 module compiling/linking (IMPORTS/EXPORTS)
+   - some X.400 and SNMP macros are parsed
+   - supports ";" separted type or value definitions in the ASN.1 source.
+     This is useful when dealing with some macros that introduce parsing
+     problems.  Does not require the ";"'s though.
+   - ANY DEFINED BY types are handled using the SNMP OBJECT-TYPE
+     macro to define the identifier to type mapping.
+
+
+Bugs are still quite likely even though this is the second release of
+snacc.  if you find any or have other comments please email:
+   snacc-bugs@cs.ubc.ca 
+
+
+To Install It
+-------------
+
+By default, the snacc makefile uses GNU bison and GNU flex (instead of
+yacc and lex).  If you do not have these installed, see the
+snacc/src/README and snacc/src/makefile.  Otherwise, type "make" in
+this directory.  Hopefully this will put the snacc binary in the
+snacc/bin directory and build the C runtime library, the table library
+and the table tools. Alternatively, type "make all" to install these
+and the C++ library.
+
+Compiling problems may occurr on different flavours of UNIX but they
+should not be too difficult fix.  Likely sources of problems include
+non-standard include files and lex, yacc and cc idiosyncrasies.
+If your yacc croaks with a message about too many productions use 
+bison.  Same thing with lex -> use flex.   Bison and flex are both
+freely available from numerous ftp sites. (even cs.ubc.ca in /mirror2/gnu)
+
+The snacc compiler and the generated code will compile under ANSI and
+non-ANSI C compilers.  See the README and the makefile in the
+snacc/src directory for more compiling information.  Snacc has been
+successfully installed on Sun SPARCs, HP700s, IBM RS 6000s, MIPS,
+i486/Linux, and many other machines.
+

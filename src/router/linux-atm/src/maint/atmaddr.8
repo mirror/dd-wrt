@@ -1,0 +1,52 @@
+.TH ATMADDR 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmaddr \- list and maintain local ATM addresses
+.SH SYNOPSIS
+.ad l
+.B atmaddr
+.RB [ \-n ]\ [ \fIitf\fP ]
+.br
+.B atmaddr
+.B \-r
+.RB [ \fIitf\fP ]
+.br
+.B atmaddr
+.B \-a
+.RB [ \fIitf\fP ]\ \fIatm_addr\fP
+.br
+.B atmaddr
+.B \-d
+.RB [ \fIitf\fP ]\ \fIatm_addr\fP
+.br
+.B atmaddr
+.B \-V
+.ad b
+.SH DESCRIPTION
+.B atmaddr
+is used to list the local addresses configured for ATM interfaces and to
+manually change the list of addresses. If the interface number \fIitf\fP
+is omitted, interface 0 is used by default. The ATM address \fIatm_addr\fP
+can be any valid ATM SVC address, e.g. an E.164 address or an ATM Forum
+NSAP address.
+.P
+If invoked without options, \fBatmaddr\fP lists the addresses that are
+currently configured on the specified interface.
+.P
+Note that local ATM addresses are normally automatically maintained by
+the ILMI demon.
+.SH OPTIONS
+.IP \fB\-a\fP
+append the specified address at the end of the list.
+.IP \fB\-d\fP
+delete the specified address from the list.
+.IP \fB\-n\fP
+numeric address output only. No address to name translation is attempted.
+.IP \fB\-r\fP
+reset (clear) the local address list of the specified interface.
+.IP \fB\-V\fP
+print the version number of \fBatmaddr\fP on standard output and exit.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+ilmid(8)
+.\"{{{}}}
