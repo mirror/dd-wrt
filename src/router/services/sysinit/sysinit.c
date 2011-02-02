@@ -2142,6 +2142,19 @@ void start_drivers(void)
 //                      usb_add_ufd();
 //              }
 	} else {
+		eval("rmmod","usblp");
+		eval("rmmod","printer");
+		eval("rmmod","usb-storage");
+		eval("rmmod","sd_mod");
+		eval("rmmod","scsi_wait_scan");
+		eval("rmmod","scsi_mod");
+		eval("rmmod","usb-ohci");
+		eval("rmmod","ohci-hcd");
+		eval("rmmod","uhci-hcd");
+		eval("rmmod","usb-uhci");
+		eval("rmmod","ehci-hcd");
+		eval("rmmod","usbcore");
+		
 		led_control(LED_USB, LED_OFF);
 	}
 #endif
