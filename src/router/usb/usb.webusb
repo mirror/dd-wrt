@@ -8,21 +8,6 @@
 	</div>
 	<div id="idusb">
 		<div class="setting">
-			<div class="label"><% tran("usb.usb_uhci"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="usb_uhci" <% nvram_checked("usb_uhci","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="usb_uhci" <% nvram_checked("usb_uhci","0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("usb.usb_ohci"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="usb_ohci" <% nvram_checked("usb_ohci","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="usb_ohci" <% nvram_checked("usb_ohci","0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
-			<div class="label"><% tran("usb.usb_ehci"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="usb_usb2" <% nvram_checked("usb_usb2","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="usb_usb2" <% nvram_checked("usb_usb2","0"); %> /><% tran("share.disable"); %>
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("usb.usb_printer"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_printer" <% nvram_checked("usb_printer","1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_printer" <% nvram_checked("usb_printer","0"); %> /><% tran("share.disable"); %>
