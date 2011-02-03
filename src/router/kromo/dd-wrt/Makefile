@@ -732,7 +732,12 @@ cleanup:
 	rm -rf $(INSTALLDIR)/www/js
 	rm -rf $(INSTALLDIR)/www/lang_pack
 
-install: installwebfiles stripfiles processlangfiles optimizefiles removeobsolete makewww removepwc cleanup
+ifneq ($(NO_PROCESSLANGFILES),y)
+PROCESSLANGFILES:= processlangfiles
+endif
+
+install: installwebfiles stripfiles $(PROCESSLANGFILES) optimizefiles removeobsolete makewww removepwc cleanup
+
 
 postinstall: installwebfiles removeobsolete removepwc cleanup
 
