@@ -187,7 +187,9 @@ static void buffalo_defaults(int force)
 {
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
-		if (!region || (strcmp(region, "AP") && strcmp(region, "TW") && strcmp(region, "KR") && strcmp(region, "CH"))) {
+		if (!region
+		    || (strcmp(region, "AP") && strcmp(region, "TW")
+			&& strcmp(region, "KR") && strcmp(region, "CH"))) {
 			{
 				char *mode_ex =
 				    getUEnv
@@ -2103,22 +2105,16 @@ void start_drivers(void)
 		cprintf("loading usbcore\n");
 		insmod("usbcore");
 
-		if (nvram_match("usb_usb2", "1")) {
-			cprintf("loading usb2 module\n");
-			insmod("ehci-hcd");
-		}
+		cprintf("loading usb2 module\n");
+		insmod("ehci-hcd");
 
-		if (nvram_match("usb_uhci", "1")) {
-			cprintf("loading usb-uhci\n");
-			insmod("usb-uhci");
-			insmod("uhci-hcd");
-		}
+		cprintf("loading usb-uhci\n");
+		insmod("usb-uhci");
+		insmod("uhci-hcd");
 
-		if (nvram_match("usb_ohci", "1")) {
-			cprintf("loading usb-ohci\n");
-			insmod("usb-ohci");
-			insmod("ohci-hcd");
-		}
+		cprintf("loading usb-ohci\n");
+		insmod("usb-ohci");
+		insmod("ohci-hcd");
 
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
@@ -2142,19 +2138,19 @@ void start_drivers(void)
 //                      usb_add_ufd();
 //              }
 	} else {
-		eval("rmmod","usblp");
-		eval("rmmod","printer");
-		eval("rmmod","usb-storage");
-		eval("rmmod","sd_mod");
-		eval("rmmod","scsi_wait_scan");
-		eval("rmmod","scsi_mod");
-		eval("rmmod","usb-ohci");
-		eval("rmmod","ohci-hcd");
-		eval("rmmod","uhci-hcd");
-		eval("rmmod","usb-uhci");
-		eval("rmmod","ehci-hcd");
-		eval("rmmod","usbcore");
-		
+		eval("rmmod", "usblp");
+		eval("rmmod", "printer");
+		eval("rmmod", "usb-storage");
+		eval("rmmod", "sd_mod");
+		eval("rmmod", "scsi_wait_scan");
+		eval("rmmod", "scsi_mod");
+		eval("rmmod", "usb-ohci");
+		eval("rmmod", "ohci-hcd");
+		eval("rmmod", "uhci-hcd");
+		eval("rmmod", "usb-uhci");
+		eval("rmmod", "ehci-hcd");
+		eval("rmmod", "usbcore");
+
 		led_control(LED_USB, LED_OFF);
 	}
 #endif
