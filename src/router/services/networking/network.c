@@ -1898,8 +1898,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2978,6 +2978,12 @@ void start_wan(int status)
 	 */
 #ifdef HAVE_3G
 	if ((strcmp(wan_proto, "3g") == 0)) {
+		if (!nvram_match("usb_enable", "1")) {
+			nvram_set("usb_enable", "1");	//  simply enable it, otherwise 3g might not work
+			nvram_commit();
+			start_drivers();
+		}
+
 		stop_dhcpc();
 #ifdef HAVE_PPTP
 		stop_pptp();
