@@ -187,9 +187,9 @@ static void buffalo_defaults(int force)
 {
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
-		if (!region
-		    || (strcmp(region, "AP") && strcmp(region, "TW")
-			&& strcmp(region, "KR") && strcmp(region, "CH"))) {
+		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
+				&& strcmp(region, "KR")
+				&& strcmp(region, "CH"))) {
 			{
 				char *mode_ex =
 				    getUEnv
@@ -2100,6 +2100,7 @@ void start_drivers(void)
 
 	fprintf(stderr, "[USB] checking...\n");
 	if (nvram_match("usb_enable", "1")) {
+		led_control(USB_POWER, LED_ON);
 		led_control(LED_USB, LED_ON);
 
 		cprintf("loading usbcore\n");
@@ -2150,6 +2151,7 @@ void start_drivers(void)
 		eval("rmmod", "usb-uhci");
 		eval("rmmod", "ehci-hcd");
 		eval("rmmod", "usbcore");
+		led_control(USB_POWER, LED_OFF);
 
 		led_control(LED_USB, LED_OFF);
 	}
