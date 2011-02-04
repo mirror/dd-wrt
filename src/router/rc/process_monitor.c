@@ -123,13 +123,6 @@ int main(int argc, char **argv)
 			sysprintf("startservice_f wifidog");
 		}
 #endif
-		// give user a chance to use resetbutton for first 4 min even if
-		// disabled and time is not synched
-		if (then.tv_sec > 240 && nvram_match("resetbutton_enable", "0")
-		    && pidof("resetbutton") > 0) {
-			sysprintf("stopservice resetbutton");
-		}
-
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n",
 			  NTP_M_TIMER);
 
