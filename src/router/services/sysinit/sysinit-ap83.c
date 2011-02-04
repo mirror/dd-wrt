@@ -295,7 +295,7 @@ void start_sysinit(void)
 		fprintf(stderr, "configure wifi0 to %s\n", mac);
 		eval("ifconfig", "wifi0", "hw", "ether", mac);
 	}
-	eval("gpio", "disable", "5");	// enable usb port
+//	eval("gpio", "disable", "5");	// enable usb port
 #endif
 #ifdef HAVE_WR1043
 	{
