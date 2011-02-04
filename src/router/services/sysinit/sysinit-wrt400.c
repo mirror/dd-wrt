@@ -117,7 +117,7 @@ void start_sysinit(void)
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
-		eval("gpio","enable","2");
+//		eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
@@ -130,7 +130,7 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
-		eval("gpio","enable","13");
+//		eval("gpio","enable","13");
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		eval("ifconfig", "eth0", "hw", "ether", mac2);
 		eval("ifconfig", "eth0", "up");
@@ -155,7 +155,7 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 //		mac1[0] |= 0x02; // add private bit
 //		mac2[0] |= 0x02;
-		eval("gpio","disable","16");
+//		eval("gpio","disable","16");
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		eval("ifconfig", "eth0", "hw", "ether", mac2);
 		eval("ifconfig", "eth0", "up");
