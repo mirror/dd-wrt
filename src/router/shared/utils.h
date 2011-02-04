@@ -581,7 +581,7 @@ extern char *cpustring(void);
 extern int isap8x(void);
 extern int led_control(int type, int act);
 enum { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
-	LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1
+	LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1, USB_POWER
 };
 enum { LED_ON, LED_OFF, LED_FLASH };
 

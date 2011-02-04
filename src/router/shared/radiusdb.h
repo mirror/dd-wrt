@@ -11,12 +11,12 @@ struct radiususer {
 	unsigned int upstream;
 	unsigned int expiration;
 //more fields can be added in future
-};
+}  __attribute__((packed));
 
 struct radiusdb {
 	unsigned int usercount;
 	struct radiususer *users;
-};
+}  __attribute__((packed));
 
 struct radiusclient {
 	unsigned int fieldlen;
@@ -25,12 +25,12 @@ struct radiusclient {
 	unsigned int passwordsize;
 	unsigned char *passwd;
 //more fields can be added in future
-};
+}  __attribute__((packed));
 
 struct radiusclientdb {
 	unsigned int usercount;
 	struct radiusclient *users;
-};
+}  __attribute__((packed));
 
 struct radiusdb *loadradiusdb(void);
 void writeradiusdb(struct radiusdb *db);

@@ -3095,6 +3095,7 @@ int led_control(int type, int act)
 	int usb_gpio = 0x0ff;
 	int sec0_gpio = 0x0ff;	// security leds, wrt600n
 	int sec1_gpio = 0x0ff;
+	int usb_power = 0x0ff;
 	int v1func = 0;
 	int connblue = nvram_match("connblue", "1") ? 1 : 0;
 
@@ -3127,6 +3128,7 @@ int led_control(int type, int act)
 #ifdef HAVE_TG2521
 		ses_gpio = 0x103;
 		diag_gpio = 0x103;
+		usb_power = 0x105;
 #endif
 #ifdef HAVE_TEW632BRP
 		diag_gpio = 0x101;
@@ -3157,11 +3159,13 @@ int led_control(int type, int act)
 #ifdef HAVE_WZRG450
 		diag_gpio = 0x10e;
 		ses_gpio = 0x10d;
+		usb_power = 0x110;
 		connected_gpio = 0x10e;
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
 		ses_gpio = 0x126;
+		usb_power = 0x00d;
 		connected_gpio = 0x127;
 #endif
 #ifdef HAVE_WZRHPAG300NH
@@ -3169,6 +3173,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x133;
 		ses_gpio = 0x125;
 		ses2_gpio = 0x135;
+		usb_power = 0x002;
 #endif
 #ifdef HAVE_DIR615E
 		power_gpio = 0x006;
@@ -3314,15 +3319,18 @@ int led_control(int type, int act)
 		connected_gpio = 0x133;
 		ses_gpio = 0x121;
 		ses2_gpio = 0x135;
+		usb_power = 0x002;
 #endif
 #ifdef HAVE_WZRG450
 		diag_gpio = 0x10e;
 		ses_gpio = 0x10d;
+		usb_power = 0x110;
 		connected_gpio = 0x10e;
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
 		ses_gpio = 0x126;
+		usb_power = 0x00d;
 		connected_gpio = 0x127;
 #endif
 		break;
@@ -3667,6 +3675,9 @@ int led_control(int type, int act)
 	switch (type) {
 	case LED_POWER:
 		use_gpio = power_gpio;
+		break;
+	case USB_POWER:
+		use_gpio = usb_power;
 		break;
 	case LED_DIAG:
 		use_gpio = diag_gpio;
