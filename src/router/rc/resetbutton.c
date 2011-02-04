@@ -818,7 +818,7 @@ void period_check(int sig)
 	/* 
 	 * The value is zero during button-pushed. 
 	 */
-	if (state) {
+	if (state && nvram_match("resetbutton_enable", "1")) {
 		DEBUG("resetbutton: mode=%d, count=%d\n", mode, count);
 
 		if (mode == 0) {
