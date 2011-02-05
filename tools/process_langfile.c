@@ -104,6 +104,8 @@ filter (char *m, char *source, char *dest, int len)
             len -= delta;
             i += dlen;
         }
+        int before = i;
+        while(m[i++]!='\n' && i<(len - slen));
     }
     return len;
 }
