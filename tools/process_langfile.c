@@ -7,6 +7,19 @@
 
 int filter (char *m, char *source, char *dest, int len);
 
+int copyline(char *source, char *dest,int maxlen)
+{
+int c=0;
+while(c<maxlen)
+    {
+    dest[c]=source[c];
+    if (dest[c++]=='\n')
+	break;
+    }
+dest[c++]=0;
+//printf("returns %d\n",c);
+return c-1;    
+}
 int
 main (int argc, char *argv[])
 {
@@ -14,14 +27,19 @@ main (int argc, char *argv[])
     char *m;
     int a;
     FILE *inFile;
-    FILE *refFile;
     char linebuff[32762];
 
     if (argc <= 2)
         return 0;
 
     printf ("Language files processing...\n");
-
+    FILE *refFile = fopen (argv[1], "rb");
+    fseek(refFile,0,SEEK_END);
+    int refsize = ftell(refFile);
+    char *ref = malloc(refsize);
+    fseek(refFile,0,SEEK_SET);
+    fread(ref,1,refsize,refFile);
+    fclose(refFile);
     for (a = 2; a < argc; a++)
     {
         if (!strcmp(argv[a], argv[1]))
@@ -35,14 +53,15 @@ main (int argc, char *argv[])
         int len = ftell (inFile);
         m = (char *) malloc (len);
         fseek (inFile, 0, SEEK_SET);
-        for (i = 0; i < len; i++)
-            m[i] = getc (inFile);
-
+        fread(m,1,len,inFile);
         fclose (inFile);
-
-        FILE *refFile = fopen (argv[1], "rb");
-        while (fgets(linebuff, sizeof(linebuff), refFile))
+	int offset=0;
+	
+//        FILE *refFile = fopen (argv[1], "rb");
+	int oinc;
+        while ((oinc=copyline(&ref[offset],linebuff,refsize-offset)))
         {
+    	    offset+=oinc;
             // some sanity checks
             if (linebuff[0]=='\r' || linebuff[0]=='\n')
                 continue;
@@ -53,7 +72,7 @@ main (int argc, char *argv[])
 
             len = filter (m, linebuff, "", len);
         }
-        fclose (refFile);
+//        fclose (refFile);
 
         printf ("Writing \n");
 
