@@ -150,7 +150,6 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
 	case ROUTER_MOTOROLA:
-	case ROUTER_BUFFALO_WLAG54C:
 	case ROUTER_NETGEAR_WG602_V3:
 	case ROUTER_RT480W:
 	case ROUTER_USR_5465:
@@ -219,6 +218,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("wl0gpio0", "2");
 		nvram_set("wl0gpio1", "0");
 		break;
+	case ROUTER_BUFFALO_WLAG54C:
 	case ROUTER_ASUS_WL700GE:
 		nvram_set("wl0gpio0", "135");
 		break;
