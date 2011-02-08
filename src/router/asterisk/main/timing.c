@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 241143 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 294278 $")
 
 #include "asterisk/_private.h"
 
@@ -203,6 +203,11 @@ unsigned int ast_timer_get_max_rate(const struct ast_timer *handle)
 	res = handle->holder->iface->timer_get_max_rate(handle->fd);
 
 	return res;
+}
+
+const char *ast_timer_get_name(const struct ast_timer *handle)
+{
+	return handle->holder->iface->name;
 }
 
 static char *timing_test(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)

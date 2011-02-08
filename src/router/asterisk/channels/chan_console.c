@@ -53,7 +53,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 297535 $")
 
 #include <sys/signal.h>  /* SIGURG */
 
@@ -1155,7 +1155,7 @@ static char *cli_console_active(struct ast_cli_entry *e, int cmd, struct ast_cli
 
 	switch (cmd) {
 	case CLI_INIT:
-		e->command = "console {set|show} active [<device>]";
+		e->command = "console {set|show} active";
 		e->usage =
 			"Usage: console {set|show} active [<device>]\n"
 			"       Set or show the active console device for the Asterisk CLI.\n";

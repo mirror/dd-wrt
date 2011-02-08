@@ -322,12 +322,11 @@ static void analog_swap_subs(struct analog_pvt *p, enum analog_sub a, enum analo
 	ast_debug(1, "Swapping %d and %d\n", a, b);
 
 	towner = p->subs[a].owner;
-	tinthreeway = p->subs[a].inthreeway;
-
 	p->subs[a].owner = p->subs[b].owner;
-	p->subs[a].inthreeway = p->subs[b].inthreeway;
-
 	p->subs[b].owner = towner;
+
+	tinthreeway = p->subs[a].inthreeway;
+	p->subs[a].inthreeway = p->subs[b].inthreeway;
 	p->subs[b].inthreeway = tinthreeway;
 
 	if (p->calls->swap_subs) {
@@ -374,7 +373,8 @@ static int analog_send_callerid(struct analog_pvt *p, int cwcid, struct ast_part
 	return 0;
 }
 
-static int analog_get_index(struct ast_channel *ast, struct analog_pvt *p, int nullok)
+#define analog_get_index(ast, p, nullok)	_analog_get_index(ast, p, nullok, __PRETTY_FUNCTION__, __LINE__)
+static int _analog_get_index(struct ast_channel *ast, struct analog_pvt *p, int nullok, const char *fname, unsigned long line)
 {
 	int res;
 	if (p->subs[ANALOG_SUB_REAL].owner == ast) {
@@ -386,7 +386,9 @@ static int analog_get_index(struct ast_channel *ast, struct analog_pvt *p, int n
 	} else {
 		res = -1;
 		if (!nullok) {
-			ast_log(LOG_WARNING, "Unable to get index, and nullok is not asserted\n");
+			ast_log(LOG_WARNING,
+				"Unable to get index for '%s' on channel %d (%s(), line %lu)\n",
+				ast ? ast->name : "", p->channel, fname, line);
 		}
 	}
 	return res;
@@ -410,6 +412,14 @@ static int analog_play_tone(struct analog_pvt *p, enum analog_sub sub, enum anal
 	return -1;
 }
 
+static void analog_set_new_owner(struct analog_pvt *p, struct ast_channel *new_owner)
+{
+	p->owner = new_owner;
+	if (p->calls->set_new_owner) {
+		p->calls->set_new_owner(p->chan_pvt, new_owner);
+	}
+}
+
 static struct ast_channel * analog_new_ast_channel(struct analog_pvt *p, int state, int startpbx, enum analog_sub sub, const struct ast_channel *requestor)
 {
 	struct ast_channel *c;
@@ -424,7 +434,7 @@ static struct ast_channel * analog_new_ast_channel(struct analog_pvt *p, int sta
 	}
 	p->subs[sub].owner = c;
 	if (!p->owner) {
-		p->owner = c;
+		analog_set_new_owner(p, c);
 	}
 	return c;
 }
@@ -614,10 +624,10 @@ static int analog_dsp_set_digitmode(struct analog_pvt *p, enum analog_dsp_digitm
 	return -1;
 }
 
-static void analog_cb_handle_dtmfup(struct analog_pvt *p, struct ast_channel *ast, enum analog_sub analog_index, struct ast_frame **dest)
+static void analog_cb_handle_dtmf(struct analog_pvt *p, struct ast_channel *ast, enum analog_sub analog_index, struct ast_frame **dest)
 {
-	if (p->calls->handle_dtmfup) {
-		p->calls->handle_dtmfup(p->chan_pvt, ast, analog_index, dest);
+	if (p->calls->handle_dtmf) {
+		p->calls->handle_dtmf(p->chan_pvt, ast, analog_index, dest);
 	}
 }
 
@@ -650,6 +660,7 @@ static int analog_is_dialing(struct analog_pvt *p, enum analog_sub index)
  * \brief Attempt to transfer 3-way call.
  *
  * \param p Analog private structure.
+ * \param inthreeway TRUE if the 3-way call is conferenced.
  *
  * \note
  * On entry these locks are held: real-call, private, 3-way call.
@@ -659,74 +670,77 @@ static int analog_is_dialing(struct analog_pvt *p, enum analog_sub index)
  * \retval 0 Transfer successful.  3-way call is unlocked and subchannel is unalloced.
  * \retval -1 on error.  Caller must unlock 3-way call.
  */
-static int analog_attempt_transfer(struct analog_pvt *p)
+static int analog_attempt_transfer(struct analog_pvt *p, int inthreeway)
 {
-	/* In order to transfer, we need at least one of the channels to
-	   actually be in a call bridge.  We can't conference two applications
-	   together (but then, why would we want to?) */
-	if (ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner)) {
-		/* The three-way person we're about to transfer to could still be in MOH, so
-		   stop it now if appropriate */
-		if (ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner)) {
-			ast_queue_control(p->subs[ANALOG_SUB_THREEWAY].owner, AST_CONTROL_UNHOLD);
-		}
-		if (p->subs[ANALOG_SUB_REAL].owner->_state == AST_STATE_RINGING) {
-			/*
-			 * This may not be safe.
-			 * We currently hold the locks on the real-call, private, and 3-way call.
-			 * We could possibly avoid this here by using an ast_queue_control() instead.
-			 * However, the following ast_channel_masquerade() is going to be locking
-			 * the bridged channel again anyway.
-			 */
-			ast_indicate(ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner), AST_CONTROL_RINGING);
-		}
-		if (p->subs[ANALOG_SUB_THREEWAY].owner->_state == AST_STATE_RING) {
-			analog_play_tone(p, ANALOG_SUB_THREEWAY, ANALOG_TONE_RINGTONE);
-		}
-		if (!p->subs[ANALOG_SUB_THREEWAY].inthreeway) {
-			ast_cel_report_event(p->subs[ANALOG_SUB_THREEWAY].owner, AST_CEL_ATTENDEDTRANSFER, NULL, p->subs[ANALOG_SUB_THREEWAY].owner->linkedid, NULL);
-		}
-		if (ast_channel_masquerade(p->subs[ANALOG_SUB_THREEWAY].owner, ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner))) {
+	struct ast_channel *owner_real;
+	struct ast_channel *owner_3way;
+	struct ast_channel *bridge_real;
+	struct ast_channel *bridge_3way;
+
+	owner_real = p->subs[ANALOG_SUB_REAL].owner;
+	owner_3way = p->subs[ANALOG_SUB_THREEWAY].owner;
+	bridge_real = ast_bridged_channel(owner_real);
+	bridge_3way = ast_bridged_channel(owner_3way);
+
+	/*
+	 * In order to transfer, we need at least one of the channels to
+	 * actually be in a call bridge.  We can't conference two
+	 * applications together.  Why would we want to?
+	 */
+	if (bridge_3way) {
+		ast_verb(3, "TRANSFERRING %s to %s\n", owner_3way->name, owner_real->name);
+		ast_cel_report_event(owner_3way,
+			(owner_real->_state == AST_STATE_RINGING
+				|| owner_3way->_state == AST_STATE_RINGING)
+				? AST_CEL_BLINDTRANSFER : AST_CEL_ATTENDEDTRANSFER,
+			NULL, owner_3way->linkedid, NULL);
+
+		/*
+		 * The three-way party we're about to transfer is on hold if he
+		 * is not in a three way conference.
+		 */
+		if (ast_channel_transfer_masquerade(owner_real, &owner_real->connected, 0,
+			bridge_3way, &owner_3way->connected, !inthreeway)) {
 			ast_log(LOG_WARNING, "Unable to masquerade %s as %s\n",
-					ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner)->name, p->subs[ANALOG_SUB_THREEWAY].owner->name);
+				bridge_3way->name, owner_real->name);
 			return -1;
 		}
-		/* Orphan the channel after releasing the lock */
-		ast_channel_unlock(p->subs[ANALOG_SUB_THREEWAY].owner);
-		analog_unalloc_sub(p, ANALOG_SUB_THREEWAY);
-	} else if (ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner)) {
-		ast_queue_control(p->subs[ANALOG_SUB_REAL].owner, AST_CONTROL_UNHOLD);
-		if (p->subs[ANALOG_SUB_THREEWAY].owner->_state == AST_STATE_RINGING) {
-			/*
-			 * This may not be safe.
-			 * We currently hold the locks on the real-call, private, and 3-way call.
-			 * We could possibly avoid this here by using an ast_queue_control() instead.
-			 * However, the following ast_channel_masquerade() is going to be locking
-			 * the bridged channel again anyway.
-			 */
-			ast_indicate(ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner), AST_CONTROL_RINGING);
-		}
-		if (p->subs[ANALOG_SUB_REAL].owner->_state == AST_STATE_RING) {
-			analog_play_tone(p, ANALOG_SUB_REAL, ANALOG_TONE_RINGTONE);
-		}
-		ast_cel_report_event(p->subs[ANALOG_SUB_THREEWAY].owner, AST_CEL_BLINDTRANSFER, NULL, p->subs[ANALOG_SUB_THREEWAY].owner->linkedid, NULL);
-		if (ast_channel_masquerade(p->subs[ANALOG_SUB_REAL].owner, ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner))) {
-			ast_log(LOG_WARNING, "Unable to masquerade %s as %s\n",
-					ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner)->name, p->subs[ANALOG_SUB_REAL].owner->name);
-			return -1;
-		}
+
 		/* Three-way is now the REAL */
 		analog_swap_subs(p, ANALOG_SUB_THREEWAY, ANALOG_SUB_REAL);
-		ast_channel_unlock(p->subs[ANALOG_SUB_REAL].owner); /* unlock REAL because THREEWAY has become REAL */
+		ast_channel_unlock(owner_3way);
 		analog_unalloc_sub(p, ANALOG_SUB_THREEWAY);
 		/* Tell the caller not to hangup */
 		return 1;
+	} else if (bridge_real) {
+		/* Try transferring the other way. */
+		ast_verb(3, "TRANSFERRING %s to %s\n", owner_real->name, owner_3way->name);
+		ast_cel_report_event(owner_3way,
+			(owner_real->_state == AST_STATE_RINGING
+				|| owner_3way->_state == AST_STATE_RINGING)
+				? AST_CEL_BLINDTRANSFER : AST_CEL_ATTENDEDTRANSFER,
+			NULL, owner_3way->linkedid, NULL);
+
+		/*
+		 * The three-way party we're about to transfer is on hold if he
+		 * is not in a three way conference.
+		 */
+		if (ast_channel_transfer_masquerade(owner_3way, &owner_3way->connected,
+			!inthreeway, bridge_real, &owner_real->connected, 0)) {
+			ast_log(LOG_WARNING, "Unable to masquerade %s as %s\n",
+				bridge_real->name, owner_3way->name);
+			return -1;
+		}
+
+		/* Orphan the channel after releasing the lock */
+		ast_channel_unlock(owner_3way);
+		analog_unalloc_sub(p, ANALOG_SUB_THREEWAY);
+		return 0;
 	} else {
 		ast_debug(1, "Neither %s nor %s are in a bridge, nothing to transfer\n",
-					p->subs[ANALOG_SUB_REAL].owner->name, p->subs[ANALOG_SUB_THREEWAY].owner->name);
+			owner_real->name, owner_3way->name);
 		return -1;
 	}
-	return 0;
 }
 
 static int analog_update_conf(struct analog_pvt *p)
@@ -760,7 +774,7 @@ struct ast_channel * analog_request(struct analog_pvt *p, int *callwait, const s
 {
 	struct ast_channel *ast;
 
-	ast_log(LOG_DEBUG, "%s %d\n", __FUNCTION__, p->channel);
+	ast_debug(1, "%s %d\n", __FUNCTION__, p->channel);
 	*callwait = (p->owner != NULL);
 
 	if (p->owner) {
@@ -783,7 +797,8 @@ int analog_available(struct analog_pvt *p)
 {
 	int offhook;
 
-	ast_log(LOG_DEBUG, "%s %d\n", __FUNCTION__, p->channel);
+	ast_debug(1, "%s %d\n", __FUNCTION__, p->channel);
+
 	/* If do not disturb, definitely not */
 	if (p->dnd) {
 		return 0;
@@ -808,6 +823,7 @@ int analog_available(struct analog_pvt *p)
 		/* TDM FXS card, "offhook" means someone took the hook off so it's unavailable! */
 		} else if (offhook) {
 			ast_debug(1, "Channel %d off hook, can't use\n", p->channel);
+			/* Not available when the other end is off hook */
 			return 0;
 		}
 		return 1;
@@ -843,10 +859,7 @@ int analog_available(struct analog_pvt *p)
 
 static int analog_stop_callwait(struct analog_pvt *p)
 {
-	if (p->callwaitingcallerid) {
-		p->callwaitcas = 0;
-	}
-
+	p->callwaitcas = 0;
 	if (p->calls->stop_callwait) {
 		return p->calls->stop_callwait(p->chan_pvt);
 	}
@@ -855,13 +868,19 @@ static int analog_stop_callwait(struct analog_pvt *p)
 
 static int analog_callwait(struct analog_pvt *p)
 {
-	if (p->callwaitingcallerid) {
-		p->callwaitcas = 1;
-	}
+	p->callwaitcas = p->callwaitingcallerid;
 	if (p->calls->callwait) {
 		return p->calls->callwait(p->chan_pvt);
 	}
 	return 0;
+}
+
+static void analog_set_callwaiting(struct analog_pvt *p, int callwaiting_enable)
+{
+	p->callwaiting = callwaiting_enable;
+	if (p->calls->set_callwaiting) {
+		p->calls->set_callwaiting(p->chan_pvt, callwaiting_enable);
+	}
 }
 
 static void analog_set_cadence(struct analog_pvt *p, struct ast_channel *chan)
@@ -954,22 +973,30 @@ static void analog_set_pulsedial(struct analog_pvt *p, int flag)
 	p->calls->set_pulsedial(p->chan_pvt, flag);
 }
 
-static int analog_set_linear_mode(struct analog_pvt *p, int index, int linear_mode)
+static int analog_set_linear_mode(struct analog_pvt *p, enum analog_sub sub, int linear_mode)
 {
 	if (p->calls->set_linear_mode) {
 		/* Return provides old linear_mode setting or error indication */
-		return p->calls->set_linear_mode(p->chan_pvt, index, linear_mode);
+		return p->calls->set_linear_mode(p->chan_pvt, sub, linear_mode);
 	}
 	return -1;
 }
 
+static void analog_set_inthreeway(struct analog_pvt *p, enum analog_sub sub, int inthreeway)
+{
+	p->subs[sub].inthreeway = inthreeway;
+	if (p->calls->set_inthreeway) {
+		p->calls->set_inthreeway(p->chan_pvt, sub, inthreeway);
+	}
+}
+
 int analog_call(struct analog_pvt *p, struct ast_channel *ast, char *rdest, int timeout)
 {
-	int res, index,mysig;
+	int res, idx, mysig;
 	char *c, *n, *l;
 	char dest[256]; /* must be same length as p->dialdest */
 
-	ast_log(LOG_DEBUG, "CALLING CID_NAME: %s CID_NUM:: %s\n",
+	ast_debug(1, "CALLING CID_NAME: %s CID_NUM:: %s\n",
 		S_COR(ast->connected.id.name.valid, ast->connected.id.name.str, ""),
 		S_COR(ast->connected.id.number.valid, ast->connected.id.number.str, ""));
 
@@ -1028,6 +1055,7 @@ int analog_call(struct analog_pvt *p, struct ast_channel *ast, char *rdest, int 
 			}
 			analog_set_dialing(p, 1);
 		} else {
+			/* Call waiting call */
 			if (ast->connected.id.number.valid && ast->connected.id.number.str) {
 				ast_copy_string(p->callwait_num, ast->connected.id.number.str, sizeof(p->callwait_num));
 			} else {
@@ -1068,14 +1096,14 @@ int analog_call(struct analog_pvt *p, struct ast_channel *ast, char *rdest, int 
 		}
 
 		ast_setstate(ast, AST_STATE_RINGING);
-		index = analog_get_index(ast, p, 0);
-		if (index > -1) {
+		idx = analog_get_index(ast, p, 0);
+		if (idx > -1) {
 			struct ast_cc_config_params *cc_params;
 
 			/* This is where the initial ringing frame is queued for an analog call.
 			 * As such, this is a great time to offer CCNR to the caller if it's available.
 			 */
-			cc_params = ast_channel_get_cc_config_params(p->subs[index].owner);
+			cc_params = ast_channel_get_cc_config_params(p->subs[idx].owner);
 			if (cc_params) {
 				switch (ast_get_cc_monitor_policy(cc_params)) {
 				case AST_CC_MONITOR_NEVER:
@@ -1083,12 +1111,12 @@ int analog_call(struct analog_pvt *p, struct ast_channel *ast, char *rdest, int 
 				case AST_CC_MONITOR_NATIVE:
 				case AST_CC_MONITOR_ALWAYS:
 				case AST_CC_MONITOR_GENERIC:
-					ast_queue_cc_frame(p->subs[index].owner, AST_CC_GENERIC_MONITOR_TYPE,
+					ast_queue_cc_frame(p->subs[idx].owner, AST_CC_GENERIC_MONITOR_TYPE,
 						analog_get_orig_dialstring(p), AST_CC_CCNR, NULL);
 					break;
 				}
 			}
-			ast_queue_control(p->subs[index].owner, AST_CONTROL_RINGING);
+			ast_queue_control(p->subs[idx].owner, AST_CONTROL_RINGING);
 		}
 		break;
 	case ANALOG_SIG_FXSLS:
@@ -1130,7 +1158,7 @@ int analog_call(struct analog_pvt *p, struct ast_channel *ast, char *rdest, int 
 				return -1;
 			}
 		}
-		ast_log(LOG_DEBUG, "Dialing '%s'\n", c);
+		ast_debug(1, "Dialing '%s'\n", c);
 		p->dop.op = ANALOG_DIAL_OP_REPLACE;
 
 		c += p->stripmsd;
@@ -1232,38 +1260,38 @@ int analog_call(struct analog_pvt *p, struct ast_channel *ast, char *rdest, int 
 int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 {
 	int res;
-	int index, x;
+	int idx, x;
 
-	ast_log(LOG_DEBUG, "%s %d\n", __FUNCTION__, p->channel);
+	ast_debug(1, "%s %d\n", __FUNCTION__, p->channel);
 	if (!ast->tech_pvt) {
 		ast_log(LOG_WARNING, "Asked to hangup channel not connected\n");
 		return 0;
 	}
 
-	index = analog_get_index(ast, p, 1);
+	idx = analog_get_index(ast, p, 1);
 
 	x = 0;
 	if (p->origcid_num) {
 		ast_copy_string(p->cid_num, p->origcid_num, sizeof(p->cid_num));
-		free(p->origcid_num);
+		ast_free(p->origcid_num);
 		p->origcid_num = NULL;
 	}
 	if (p->origcid_name) {
 		ast_copy_string(p->cid_name, p->origcid_name, sizeof(p->cid_name));
-		free(p->origcid_name);
+		ast_free(p->origcid_name);
 		p->origcid_name = NULL;
 	}
 
 	analog_dsp_set_digitmode(p, ANALOG_DIGITMODE_DTMF);
 
 	ast_debug(1, "Hangup: channel: %d index = %d, normal = %d, callwait = %d, thirdcall = %d\n",
-		p->channel, index, p->subs[ANALOG_SUB_REAL].allocd, p->subs[ANALOG_SUB_CALLWAIT].allocd, p->subs[ANALOG_SUB_THREEWAY].allocd);
-	if (index > -1) {
+		p->channel, idx, p->subs[ANALOG_SUB_REAL].allocd, p->subs[ANALOG_SUB_CALLWAIT].allocd, p->subs[ANALOG_SUB_THREEWAY].allocd);
+	if (idx > -1) {
 		/* Real channel, do some fixup */
-		p->subs[index].owner = NULL;
+		p->subs[idx].owner = NULL;
 		p->polarity = POLARITY_IDLE;
-		analog_set_linear_mode(p, index, 0);
-		switch (index) {
+		analog_set_linear_mode(p, idx, 0);
+		switch (idx) {
 		case ANALOG_SUB_REAL:
 			if (p->subs[ANALOG_SUB_CALLWAIT].allocd && p->subs[ANALOG_SUB_THREEWAY].allocd) {
 				ast_debug(1, "Normal call hung up with both three way call and a call waiting call in place?\n");
@@ -1273,7 +1301,7 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 					/* Move to the call-wait, but un-own us until they flip back. */
 					analog_swap_subs(p, ANALOG_SUB_CALLWAIT, ANALOG_SUB_REAL);
 					analog_unalloc_sub(p, ANALOG_SUB_CALLWAIT);
-					p->owner = NULL;
+					analog_set_new_owner(p, NULL);
 				} else {
 					/* The three way hung up, but we still have a call wait */
 					ast_debug(1, "We were in the threeway and have a callwait still.  Ditching the threeway.\n");
@@ -1283,12 +1311,12 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 						/* This was part of a three way call.  Immediately make way for
 						   another call */
 						ast_debug(1, "Call was complete, setting owner to former third call\n");
-						p->subs[ANALOG_SUB_REAL].inthreeway = 0;
-						p->owner = p->subs[ANALOG_SUB_REAL].owner;
+						analog_set_inthreeway(p, ANALOG_SUB_REAL, 0);
+						analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 					} else {
 						/* This call hasn't been completed yet...  Set owner to NULL */
 						ast_debug(1, "Call was incomplete, setting owner to NULL\n");
-						p->owner = NULL;
+						analog_set_new_owner(p, NULL);
 					}
 				}
 			} else if (p->subs[ANALOG_SUB_CALLWAIT].allocd) {
@@ -1296,14 +1324,14 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 				analog_lock_sub_owner(p, ANALOG_SUB_CALLWAIT);
 				if (!p->subs[ANALOG_SUB_CALLWAIT].owner) {
 					/* The call waiting call dissappeared. */
-					p->owner = NULL;
+					analog_set_new_owner(p, NULL);
 					break;
 				}
 
 				/* Move to the call-wait and switch back to them. */
 				analog_swap_subs(p, ANALOG_SUB_CALLWAIT, ANALOG_SUB_REAL);
 				analog_unalloc_sub(p, ANALOG_SUB_CALLWAIT);
-				p->owner = p->subs[ANALOG_SUB_REAL].owner;
+				analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 				if (p->owner->_state != AST_STATE_UP) {
 					ast_queue_control(p->subs[ANALOG_SUB_REAL].owner, AST_CONTROL_ANSWER);
 				}
@@ -1319,12 +1347,12 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 					/* This was part of a three way call.  Immediately make way for
 					   another call */
 					ast_debug(1, "Call was complete, setting owner to former third call\n");
-					p->subs[ANALOG_SUB_REAL].inthreeway = 0;
-					p->owner = p->subs[ANALOG_SUB_REAL].owner;
+					analog_set_inthreeway(p, ANALOG_SUB_REAL, 0);
+					analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 				} else {
 					/* This call hasn't been completed yet...  Set owner to NULL */
 					ast_debug(1, "Call was incomplete, setting owner to NULL\n");
-					p->owner = NULL;
+					analog_set_new_owner(p, NULL);
 				}
 			}
 			break;
@@ -1341,7 +1369,7 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 						S_OR(p->mohsuggest, NULL),
 						!ast_strlen_zero(p->mohsuggest) ? strlen(p->mohsuggest) + 1 : 0);
 				}
-				p->subs[ANALOG_SUB_THREEWAY].inthreeway = 0;
+				analog_set_inthreeway(p, ANALOG_SUB_THREEWAY, 0);
 				/* Make it the call wait now */
 				analog_swap_subs(p, ANALOG_SUB_CALLWAIT, ANALOG_SUB_THREEWAY);
 				analog_unalloc_sub(p, ANALOG_SUB_THREEWAY);
@@ -1359,7 +1387,7 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 			if (p->subs[ANALOG_SUB_CALLWAIT].inthreeway) {
 				/* The other party of the three way call is currently in a call-wait state.
 				   Start music on hold for them, and take the main guy out of the third call */
-				p->subs[ANALOG_SUB_CALLWAIT].inthreeway = 0;
+				analog_set_inthreeway(p, ANALOG_SUB_CALLWAIT, 0);
 				if (p->subs[ANALOG_SUB_CALLWAIT].owner && ast_bridged_channel(p->subs[ANALOG_SUB_CALLWAIT].owner)) {
 					ast_queue_control_data(p->subs[ANALOG_SUB_CALLWAIT].owner, AST_CONTROL_HOLD,
 						S_OR(p->mohsuggest, NULL),
@@ -1369,7 +1397,7 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 			if (p->subs[ANALOG_SUB_CALLWAIT].owner) {
 				ast_channel_unlock(p->subs[ANALOG_SUB_CALLWAIT].owner);
 			}
-			p->subs[ANALOG_SUB_REAL].inthreeway = 0;
+			analog_set_inthreeway(p, ANALOG_SUB_REAL, 0);
 			/* If this was part of a three way call index, let us make
 			   another three way call */
 			analog_unalloc_sub(p, ANALOG_SUB_THREEWAY);
@@ -1385,7 +1413,7 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 	}
 
 	if (!p->subs[ANALOG_SUB_REAL].owner && !p->subs[ANALOG_SUB_CALLWAIT].owner && !p->subs[ANALOG_SUB_THREEWAY].owner) {
-		p->owner = NULL;
+		analog_set_new_owner(p, NULL);
 		analog_set_ringtimeout(p, 0);
 		analog_set_confirmanswer(p, 0);
 		analog_set_pulsedial(p, 0);
@@ -1422,6 +1450,7 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 			break;
 		default:
 			analog_play_tone(p, ANALOG_SUB_REAL, -1);
+			break;
 		}
 
 		analog_set_echocanceller(p, 0);
@@ -1430,7 +1459,7 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 		ast_channel_setoption(ast,AST_OPTION_TONE_VERIFY,&x,sizeof(char),0);
 		ast_channel_setoption(ast,AST_OPTION_TDD,&x,sizeof(char),0);
 		p->callwaitcas = 0;
-		p->callwaiting = p->permcallwaiting;
+		analog_set_callwaiting(p, p->permcallwaiting);
 		p->hidecallerid = p->permhidecallerid;
 		analog_set_dialing(p, 0);
 		analog_update_conf(p);
@@ -1448,13 +1477,14 @@ int analog_hangup(struct analog_pvt *p, struct ast_channel *ast)
 int analog_answer(struct analog_pvt *p, struct ast_channel *ast)
 {
 	int res = 0;
-	int index;
+	int idx;
 	int oldstate = ast->_state;
-	ast_log(LOG_DEBUG, "%s %d\n", __FUNCTION__, p->channel);
+
+	ast_debug(1, "%s %d\n", __FUNCTION__, p->channel);
 	ast_setstate(ast, AST_STATE_UP);
-	index = analog_get_index(ast, p, 1);
-	if (index < 0) {
-		index = ANALOG_SUB_REAL;
+	idx = analog_get_index(ast, p, 1);
+	if (idx < 0) {
+		idx = ANALOG_SUB_REAL;
 	}
 	switch (p->sig) {
 	case ANALOG_SIG_FXSLS:
@@ -1486,14 +1516,14 @@ int analog_answer(struct analog_pvt *p, struct ast_channel *ast)
 			gettimeofday(&p->polaritydelaytv, NULL);
 		}
 		res = analog_off_hook(p);
-		analog_play_tone(p, index, -1);
+		analog_play_tone(p, idx, -1);
 		analog_set_dialing(p, 0);
-		if ((index == ANALOG_SUB_REAL) && p->subs[ANALOG_SUB_THREEWAY].inthreeway) {
+		if ((idx == ANALOG_SUB_REAL) && p->subs[ANALOG_SUB_THREEWAY].inthreeway) {
 			if (oldstate == AST_STATE_RINGING) {
 				ast_debug(1, "Finally swapping real and threeway\n");
 				analog_play_tone(p, ANALOG_SUB_THREEWAY, -1);
 				analog_swap_subs(p, ANALOG_SUB_THREEWAY, ANALOG_SUB_REAL);
-				p->owner = p->subs[ANALOG_SUB_REAL].owner;
+				analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 			}
 		}
 
@@ -1516,6 +1546,7 @@ int analog_answer(struct analog_pvt *p, struct ast_channel *ast)
 	default:
 		ast_log(LOG_WARNING, "Don't know how to answer signalling %d (channel %d)\n", p->sig, p->channel);
 		res = -1;
+		break;
 	}
 	ast_setstate(ast, AST_STATE_UP);
 	return res;
@@ -1546,34 +1577,45 @@ static int analog_handles_digit(struct ast_frame *f)
 	}
 }
 
-void analog_handle_dtmfup(struct analog_pvt *p, struct ast_channel *ast, enum analog_sub index, struct ast_frame **dest)
+void analog_handle_dtmf(struct analog_pvt *p, struct ast_channel *ast, enum analog_sub idx, struct ast_frame **dest)
 {
 	struct ast_frame *f = *dest;
 
+	ast_debug(1, "%s DTMF digit: 0x%02X '%c' on %s\n",
+		f->frametype == AST_FRAME_DTMF_BEGIN ? "Begin" : "End",
+		f->subclass.integer, f->subclass.integer, ast->name);
+
 	if (analog_check_confirmanswer(p)) {
-		ast_debug(1, "Confirm answer on %s!\n", ast->name);
-		/* Upon receiving a DTMF digit, consider this an answer confirmation instead
-		of a DTMF digit */
-		p->subs[index].f.frametype = AST_FRAME_CONTROL;
-		p->subs[index].f.subclass.integer = AST_CONTROL_ANSWER;
-		*dest = &p->subs[index].f;
-		/* Reset confirmanswer so DTMF's will behave properly for the duration of the call */
-		analog_set_confirmanswer(p, 0);
-	}
-	if (p->callwaitcas) {
-		if ((f->subclass.integer == 'A') || (f->subclass.integer == 'D')) {
-			ast_debug(1, "Got some DTMF, but it's for the CAS\n");
-			p->caller.id.name.str = p->callwait_name;
-			p->caller.id.number.str = p->callwait_num;
-			analog_send_callerid(p, 1, &p->caller);
+		if (f->frametype == AST_FRAME_DTMF_END) {
+			ast_debug(1, "Confirm answer on %s!\n", ast->name);
+			/* Upon receiving a DTMF digit, consider this an answer confirmation instead
+			of a DTMF digit */
+			p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+			p->subs[idx].f.subclass.integer = AST_CONTROL_ANSWER;
+			/* Reset confirmanswer so DTMF's will behave properly for the duration of the call */
+			analog_set_confirmanswer(p, 0);
+		} else {
+			p->subs[idx].f.frametype = AST_FRAME_NULL;
+			p->subs[idx].f.subclass.integer = 0;
 		}
-		if (analog_handles_digit(f))
-			p->callwaitcas = 0;
-		p->subs[index].f.frametype = AST_FRAME_NULL;
-		p->subs[index].f.subclass.integer = 0;
-		*dest = &p->subs[index].f;
+		*dest = &p->subs[idx].f;
+	} else if (p->callwaitcas) {
+		if (f->frametype == AST_FRAME_DTMF_END) {
+			if ((f->subclass.integer == 'A') || (f->subclass.integer == 'D')) {
+				ast_debug(1, "Got some DTMF, but it's for the CAS\n");
+				p->caller.id.name.str = p->callwait_name;
+				p->caller.id.number.str = p->callwait_num;
+				analog_send_callerid(p, 1, &p->caller);
+			}
+			if (analog_handles_digit(f)) {
+				p->callwaitcas = 0;
+			}
+		}
+		p->subs[idx].f.frametype = AST_FRAME_NULL;
+		p->subs[idx].f.subclass.integer = 0;
+		*dest = &p->subs[idx].f;
 	} else {
-		analog_cb_handle_dtmfup(p, ast, index, dest);
+		analog_cb_handle_dtmf(p, ast, idx, dest);
 	}
 }
 
@@ -1671,16 +1713,17 @@ static void *__analog_ss_thread(void *data)
 	struct callerid_state *cs = NULL;
 	char *name = NULL, *number = NULL;
 	int flags = 0;
+	struct ast_smdi_md_message *smdi_msg = NULL;
 	int timeout;
 	int getforward = 0;
 	char *s1, *s2;
 	int len = 0;
 	int res;
-	int index;
+	int idx;
 
 	analog_increase_ss_count(p);
 
-	ast_log(LOG_DEBUG, "%s %d\n", __FUNCTION__, p->channel);
+	ast_debug(1, "%s %d\n", __FUNCTION__, p->channel);
 
 	if (!chan) {
 		/* What happened to the channel? */
@@ -1696,8 +1739,8 @@ static void *__analog_ss_thread(void *data)
 	}
 
 	ast_verb(3, "Starting simple switch on '%s'\n", chan->name);
-	index = analog_get_index(chan, p, 0);
-	if (index < 0) {
+	idx = analog_get_index(chan, p, 0);
+	if (idx < 0) {
 		ast_hangup(chan);
 		goto quit;
 	}
@@ -1714,17 +1757,18 @@ static void *__analog_ss_thread(void *data)
 	case ANALOG_SIG_SF_FEATDMF:
 	case ANALOG_SIG_SF_FEATB:
 	case ANALOG_SIG_SFWINK:
-		if (analog_wink(p, index))
+		if (analog_wink(p, idx))
 			goto quit;
 		/* Fall through */
 	case ANALOG_SIG_EM:
 	case ANALOG_SIG_EM_E1:
 	case ANALOG_SIG_SF:
 	case ANALOG_SIG_FGC_CAMA:
-		res = analog_play_tone(p, index, -1);
+		res = analog_play_tone(p, idx, -1);
 
 		analog_dsp_reset_and_flush_digits(p);
 
+		/* set digit mode appropriately */
 		if (ANALOG_NEED_MFDETECT(p)) {
 			analog_dsp_set_digitmode(p, ANALOG_DIGITMODE_MF);
 		} else {
@@ -1758,7 +1802,7 @@ static void *__analog_ss_thread(void *data)
 				if (res < 1) {
 					analog_dsp_reset_and_flush_digits(p);
 				}
-				if (analog_wink(p, index)) {
+				if (analog_wink(p, idx)) {
 					goto quit;
 				}
 				dtmfbuf[0] = 0;
@@ -1777,7 +1821,7 @@ static void *__analog_ss_thread(void *data)
 				/* if international caca, do it again to get real ANO */
 				if ((p->sig == ANALOG_SIG_FEATDMF) && (dtmfbuf[1] != '0') 
 					&& (strlen(dtmfbuf) != 14)) {
-					if (analog_wink(p, index)) {
+					if (analog_wink(p, idx)) {
 						goto quit;
 					}
 					dtmfbuf[0] = 0;
@@ -1861,13 +1905,13 @@ static void *__analog_ss_thread(void *data)
 			char anibuf[100];
 
 			if (ast_safe_sleep(chan,1000) == -1) {
-	                        ast_hangup(chan);
-	                        goto quit;
+				ast_hangup(chan);
+				goto quit;
 			}
 			analog_off_hook(p);
 			analog_dsp_set_digitmode(p, ANALOG_DIGITMODE_MF);
-                        res = analog_my_getsigstr(chan, anibuf, "#", 10000);
-                        if ((res > 0) && (strlen(anibuf) > 2)) {
+			res = analog_my_getsigstr(chan, anibuf, "#", 10000);
+			if ((res > 0) && (strlen(anibuf) > 2)) {
 				if (anibuf[strlen(anibuf) - 1] == '#') {
 					anibuf[strlen(anibuf) - 1] = 0;
 				}
@@ -1962,7 +2006,7 @@ static void *__analog_ss_thread(void *data)
 			}
 		}
 		if ((p->sig == ANALOG_SIG_FEATDMF) || (p->sig == ANALOG_SIG_FEATDMF_TA)) {
-			analog_wink(p, index);
+			analog_wink(p, idx);
 			/* some switches require a minimum guard time between
 			the last FGD wink and something that answers
 			immediately. This ensures it */
@@ -1981,13 +2025,13 @@ static void *__analog_ss_thread(void *data)
 			res = ast_pbx_run(chan);
 			if (res) {
 				ast_log(LOG_WARNING, "PBX exited non-zero\n");
-				res = analog_play_tone(p, index, ANALOG_TONE_CONGESTION);
+				res = analog_play_tone(p, idx, ANALOG_TONE_CONGESTION);
 			}
 			goto quit;
 		} else {
 			ast_verb(3, "Unknown extension '%s' in context '%s' requested\n", exten, chan->context);
 			sleep(2);
-			res = analog_play_tone(p, index, ANALOG_TONE_INFO);
+			res = analog_play_tone(p, idx, ANALOG_TONE_INFO);
 			if (res < 0) {
 				ast_log(LOG_WARNING, "Unable to start special tone on %d\n", p->channel);
 			} else {
@@ -1997,7 +2041,7 @@ static void *__analog_ss_thread(void *data)
 			if (res >= 0) {
 				ast_waitstream(chan, "");
 			}
-			res = analog_play_tone(p, index, ANALOG_TONE_CONGESTION);
+			res = analog_play_tone(p, idx, ANALOG_TONE_CONGESTION);
 			ast_hangup(chan);
 			goto quit;
 		}
@@ -2023,17 +2067,18 @@ static void *__analog_ss_thread(void *data)
 			timeout = 0;
 			if (res < 0) {
 				ast_debug(1, "waitfordigit returned < 0...\n");
-				res = analog_play_tone(p, index, -1);
+				res = analog_play_tone(p, idx, -1);
 				ast_hangup(chan);
 				goto quit;
 			} else if (res) {
+				ast_debug(1,"waitfordigit returned '%c' (%d), timeout = %d\n", res, res, timeout);
 				exten[len++]=res;
 				exten[len] = '\0';
 			}
 			if (!ast_ignore_pattern(chan->context, exten)) {
-				analog_play_tone(p, index, -1);
+				analog_play_tone(p, idx, -1);
 			} else {
-				analog_play_tone(p, index, ANALOG_TONE_DIALTONE);
+				analog_play_tone(p, idx, ANALOG_TONE_DIALTONE);
 			}
 			if (ast_exists_extension(chan, chan->context, exten, 1, p->cid_num) && !ast_parking_ext_valid(exten, chan, chan->context)) {
 				if (!res || !ast_matchmore_extension(chan, chan->context, exten, 1, p->cid_num)) {
@@ -2041,19 +2086,19 @@ static void *__analog_ss_thread(void *data)
 						/* Record this as the forwarding extension */
 						ast_copy_string(p->call_forward, exten, sizeof(p->call_forward));
 						ast_verb(3, "Setting call forward to '%s' on channel %d\n", p->call_forward, p->channel);
-						res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+						res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 						if (res) {
 							break;
 						}
 						usleep(500000);
-						res = analog_play_tone(p, index, -1);
+						res = analog_play_tone(p, idx, -1);
 						sleep(1);
 						memset(exten, 0, sizeof(exten));
-						res = analog_play_tone(p, index, ANALOG_TONE_DIALTONE);
+						res = analog_play_tone(p, idx, ANALOG_TONE_DIALTONE);
 						len = 0;
 						getforward = 0;
 					} else {
-						res = analog_play_tone(p, index, -1);
+						res = analog_play_tone(p, idx, -1);
 						ast_copy_string(chan->exten, exten, sizeof(chan->exten));
 						if (!ast_strlen_zero(p->cid_num)) {
 							if (!p->hidecallerid) {
@@ -2072,7 +2117,7 @@ static void *__analog_ss_thread(void *data)
 						res = ast_pbx_run(chan);
 						if (res) {
 							ast_log(LOG_WARNING, "PBX exited non-zero\n");
-							res = analog_play_tone(p, index, ANALOG_TONE_CONGESTION);
+							res = analog_play_tone(p, idx, ANALOG_TONE_CONGESTION);
 						}
 						goto quit;
 					}
@@ -2083,15 +2128,15 @@ static void *__analog_ss_thread(void *data)
 				}
 			} else if (res == 0) {
 				ast_debug(1, "not enough digits (and no ambiguous match)...\n");
-				res = analog_play_tone(p, index, ANALOG_TONE_CONGESTION);
+				res = analog_play_tone(p, idx, ANALOG_TONE_CONGESTION);
 				analog_wait_event(p);
 				ast_hangup(chan);
 				goto quit;
 			} else if (p->callwaiting && !strcmp(exten, "*70")) {
 				ast_verb(3, "Disabling call waiting on %s\n", chan->name);
 				/* Disable call waiting if enabled */
-				p->callwaiting = 0;
-				res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+				analog_set_callwaiting(p, 0);
+				res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				if (res) {
 					ast_log(LOG_WARNING, "Unable to do dial recall on channel %s: %s\n",
 						chan->name, strerror(errno));
@@ -2105,7 +2150,7 @@ static void *__analog_ss_thread(void *data)
 				 * ringing channels that have call groups
 				 * that equal this channels pickup group
 				 */
-				if (index == ANALOG_SUB_REAL) {
+				if (idx == ANALOG_SUB_REAL) {
 					/* Switch us from Third call to Call Wait */
 					if (p->subs[ANALOG_SUB_THREEWAY].owner) {
 						/* If you make a threeway call and the *8# a call, it should actually
@@ -2117,7 +2162,7 @@ static void *__analog_ss_thread(void *data)
 					analog_set_echocanceller(p, 1);
 					if (ast_pickup_call(chan)) {
 						ast_debug(1, "No call pickup possible...\n");
-						res = analog_play_tone(p, index, ANALOG_TONE_CONGESTION);
+						res = analog_play_tone(p, idx, ANALOG_TONE_CONGESTION);
 						analog_wait_event(p);
 					}
 					ast_hangup(chan);
@@ -2127,6 +2172,7 @@ static void *__analog_ss_thread(void *data)
 					ast_hangup(chan);
 					goto quit;
 				}
+
 			} else if (!p->hidecallerid && !strcmp(exten, "*67")) {
 				ast_verb(3, "Disabling Caller*ID on %s\n", chan->name);
 				/* Disable Caller*ID if enabled */
@@ -2135,7 +2181,7 @@ static void *__analog_ss_thread(void *data)
 				ast_party_number_init(&chan->caller.id.number);
 				ast_party_name_free(&chan->caller.id.name);
 				ast_party_name_init(&chan->caller.id.name);
-				res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+				res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				if (res) {
 					ast_log(LOG_WARNING, "Unable to do dial recall on channel %s: %s\n",
 						chan->name, strerror(errno));
@@ -2149,39 +2195,31 @@ static void *__analog_ss_thread(void *data)
 					res = ast_say_digit_str(chan, p->lastcid_num, "", chan->language);
 				}
 				if (!res) {
-					res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+					res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				}
 				break;
 			} else if (!strcmp(exten, "*78")) {
-				/* Do not disturb */
-				ast_verb(3, "Enabled DND on channel %d\n", p->channel);
-				manager_event(EVENT_FLAG_SYSTEM, "DNDState",
-					      "Channel: DAHDI/%d\r\n"
-					      "Status: enabled\r\n", p->channel);
-				res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
-				p->dnd = 1;
+				/* Do not disturb enabled */
+				analog_dnd(p, 1);
+				res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				getforward = 0;
 				memset(exten, 0, sizeof(exten));
 				len = 0;
 			} else if (!strcmp(exten, "*79")) {
-				/* Do not disturb */
-				ast_verb(3, "Disabled DND on channel %d\n", p->channel);
-				manager_event(EVENT_FLAG_SYSTEM, "DNDState",
-					      "Channel: DAHDI/%d\r\n"
-					      "Status: disabled\r\n", p->channel);
-				res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
-				p->dnd = 0;
+				/* Do not disturb disabled */
+				analog_dnd(p, 0);
+				res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				getforward = 0;
 				memset(exten, 0, sizeof(exten));
 				len = 0;
 			} else if (p->cancallforward && !strcmp(exten, "*72")) {
-				res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+				res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				getforward = 1;
 				memset(exten, 0, sizeof(exten));
 				len = 0;
 			} else if (p->cancallforward && !strcmp(exten, "*73")) {
 				ast_verb(3, "Cancelling call forwarding on channel %d\n", p->channel);
-				res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+				res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				memset(p->call_forward, 0, sizeof(p->call_forward));
 				getforward = 0;
 				memset(exten, 0, sizeof(exten));
@@ -2198,7 +2236,7 @@ static void *__analog_ss_thread(void *data)
 				ast_verb(3, "Blacklisting number %s\n", p->lastcid_num);
 				res = ast_db_put("blacklist", p->lastcid_num, "1");
 				if (!res) {
-					res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+					res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 					memset(exten, 0, sizeof(exten));
 					len = 0;
 				}
@@ -2207,7 +2245,7 @@ static void *__analog_ss_thread(void *data)
 				/* Enable Caller*ID if enabled */
 				p->hidecallerid = 0;
 				ast_set_callerid(chan, p->cid_num, p->cid_name, NULL);
-				res = analog_play_tone(p, index, ANALOG_TONE_DIALRECALL);
+				res = analog_play_tone(p, idx, ANALOG_TONE_DIALRECALL);
 				if (res) {
 					ast_log(LOG_WARNING, "Unable to do dial recall on channel %s: %s\n",
 						chan->name, strerror(errno));
@@ -2218,7 +2256,7 @@ static void *__analog_ss_thread(void *data)
 			} else if (!strcmp(exten, "*0")) {
 				struct ast_channel *nbridge = p->subs[ANALOG_SUB_THREEWAY].owner;
 				struct analog_pvt *pbridge = NULL;
-				  /* set up the private struct of the bridged one, if any */
+				/* set up the private struct of the bridged one, if any */
 				if (nbridge && ast_bridged_channel(nbridge)) {
 					pbridge = analog_get_bridged_channel(p, nbridge);
 				}
@@ -2235,19 +2273,19 @@ static void *__analog_ss_thread(void *data)
 					}
 					analog_swap_subs(p, ANALOG_SUB_REAL, ANALOG_SUB_THREEWAY);
 					analog_unalloc_sub(p, ANALOG_SUB_THREEWAY);
-					p->owner = p->subs[ANALOG_SUB_REAL].owner;
+					analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 					if (ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner)) {
 						ast_queue_control(p->subs[ANALOG_SUB_REAL].owner, AST_CONTROL_UNHOLD);
 					}
 					ast_hangup(chan);
 					goto quit;
 				} else {
-					analog_play_tone(p, index, ANALOG_TONE_CONGESTION);
+					analog_play_tone(p, idx, ANALOG_TONE_CONGESTION);
 					analog_wait_event(p);
-					analog_play_tone(p, index, -1);
+					analog_play_tone(p, idx, -1);
 					analog_swap_subs(p, ANALOG_SUB_REAL, ANALOG_SUB_THREEWAY);
 					analog_unalloc_sub(p, ANALOG_SUB_THREEWAY);
-					p->owner = p->subs[ANALOG_SUB_REAL].owner;
+					analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 					ast_hangup(chan);
 					goto quit;
 				}
@@ -2264,27 +2302,48 @@ static void *__analog_ss_thread(void *data)
 				timeout = analog_gendigittimeout;
 			}
 			if (len && !ast_ignore_pattern(chan->context, exten)) {
-				analog_play_tone(p, index, -1);
+				analog_play_tone(p, idx, -1);
 			}
 		}
 		break;
 	case ANALOG_SIG_FXSLS:
 	case ANALOG_SIG_FXSGS:
 	case ANALOG_SIG_FXSKS:
+		/* check for SMDI messages */
+		if (p->use_smdi && p->smdi_iface) {
+			smdi_msg = ast_smdi_md_message_wait(p->smdi_iface, ANALOG_SMDI_MD_WAIT_TIMEOUT);
+			if (smdi_msg != NULL) {
+				ast_copy_string(chan->exten, smdi_msg->fwd_st, sizeof(chan->exten));
+
+				if (smdi_msg->type == 'B')
+					pbx_builtin_setvar_helper(chan, "_SMDI_VM_TYPE", "b");
+				else if (smdi_msg->type == 'N')
+					pbx_builtin_setvar_helper(chan, "_SMDI_VM_TYPE", "u");
+
+				ast_debug(1, "Received SMDI message on %s\n", chan->name);
+			} else {
+				ast_log(LOG_WARNING, "SMDI enabled but no SMDI message present\n");
+			}
+		}
+
+		if (p->use_callerid && (p->cid_signalling == CID_SIG_SMDI && smdi_msg)) {
+			number = smdi_msg->calling_st;
 
 		/* If we want caller id, we're in a prering state due to a polarity reversal
 		 * and we're set to use a polarity reversal to trigger the start of caller id,
 		 * grab the caller id and wait for ringing to start... */
-		if (p->use_callerid && (chan->_state == AST_STATE_PRERING &&
-				  (p->cid_start == ANALOG_CID_START_POLARITY || p->cid_start == ANALOG_CID_START_POLARITY_IN || p->cid_start == ANALOG_CID_START_DTMF_NOALERT))) {
+		} else if (p->use_callerid && (chan->_state == AST_STATE_PRERING
+			&& (p->cid_start == ANALOG_CID_START_POLARITY
+				|| p->cid_start == ANALOG_CID_START_POLARITY_IN
+				|| p->cid_start == ANALOG_CID_START_DTMF_NOALERT))) {
 			/* If set to use DTMF CID signalling, listen for DTMF */
 			if (p->cid_signalling == CID_SIG_DTMF) {
-				int i = 0;
+				int k = 0;
 				int oldlinearity; 
 				cs = NULL;
 				ast_debug(1, "Receiving DTMF cid on channel %s\n", chan->name);
 
-				oldlinearity = analog_set_linear_mode(p, index, 0);
+				oldlinearity = analog_set_linear_mode(p, idx, 0);
 
 				/*
 				 * We are the only party interested in the Rx stream since
@@ -2308,25 +2367,27 @@ static void *__analog_ss_thread(void *data)
 						ast_hangup(chan);
 						goto quit;
 					}
-					if (!(f = ast_read(chan))) {
+					f = ast_read(chan);
+					if (!f) {
 						break;
 					}
 					if (f->frametype == AST_FRAME_DTMF) {
-						if (i < ARRAY_LEN(dtmfbuf) - 1) {
-							dtmfbuf[i++] = f->subclass.integer;
+						if (k < ARRAY_LEN(dtmfbuf) - 1) {
+							dtmfbuf[k++] = f->subclass.integer;
 						}
 						ast_debug(1, "CID got digit '%c'\n", f->subclass.integer);
 						res = 4000;/* This is a typical OFF time between rings. */
 					}
 					ast_frfree(f);
-					if (chan->_state == AST_STATE_RING || chan->_state == AST_STATE_RINGING) {
+					if (chan->_state == AST_STATE_RING ||
+						chan->_state == AST_STATE_RINGING) {
 						break; /* Got ring */
 					}
 				}
 				ast_clear_flag(chan, AST_FLAG_END_DTMF_ONLY);
-				dtmfbuf[i] = '\0';
+				dtmfbuf[k] = '\0';
 
-				analog_set_linear_mode(p, index, oldlinearity);
+				analog_set_linear_mode(p, idx, oldlinearity);
 
 				/* Got cid and ring. */
 				ast_debug(1, "CID got string '%s'\n", dtmfbuf);
@@ -2407,7 +2468,7 @@ static void *__analog_ss_thread(void *data)
 							break; /* Got ring */
 					}
 
-					if (analog_distinctive_ring(chan, p, index, NULL)) {
+					if (analog_distinctive_ring(chan, p, idx, NULL)) {
 						goto quit;
 					}
 
@@ -2417,7 +2478,6 @@ static void *__analog_ss_thread(void *data)
 				} else {
 					ast_log(LOG_WARNING, "Unable to get caller ID space\n");
 				}
-
 			} else {
 				ast_log(LOG_WARNING, "Channel %s in prering "
 					"state, but I have nothing to do. "
@@ -2481,7 +2541,7 @@ static void *__analog_ss_thread(void *data)
 
 				analog_stop_cid_detect(p);
 
-				if (analog_distinctive_ring(chan, p, index, curRingData)) {
+				if (analog_distinctive_ring(chan, p, idx, curRingData)) {
 					goto quit;
 				}
 
@@ -2519,12 +2579,15 @@ static void *__analog_ss_thread(void *data)
 		ast_log(LOG_WARNING, "Don't know how to handle simple switch with signalling %s on channel %d\n", analog_sigtype_to_str(p->sig), p->channel);
 		break;
 	}
-	res = analog_play_tone(p, index, ANALOG_TONE_CONGESTION);
+	res = analog_play_tone(p, idx, ANALOG_TONE_CONGESTION);
 	if (res < 0) {
 		ast_log(LOG_WARNING, "Unable to play congestion tone on channel %d\n", p->channel);
 	}
 	ast_hangup(chan);
 quit:
+	if (smdi_msg) {
+		ASTOBJ_UNREF(smdi_msg, ast_smdi_md_message_destroy);
+	}
 	analog_decrease_ss_count(p);
 	return NULL;
 }
@@ -2540,19 +2603,19 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 {
 	int res, x;
 	int mysig;
-	enum analog_sub index;
+	enum analog_sub idx;
 	char *c;
 	pthread_t threadid;
-	pthread_attr_t attr;
 	struct ast_channel *chan;
 	struct ast_frame *f;
-	ast_log(LOG_DEBUG, "%s %d\n", __FUNCTION__, p->channel);
 
-	index = analog_get_index(ast, p, 0);
-	if (index < 0) {
+	ast_debug(1, "%s %d\n", __FUNCTION__, p->channel);
+
+	idx = analog_get_index(ast, p, 0);
+	if (idx < 0) {
 		return &ast_null_frame;
 	}
-	if (index != ANALOG_SUB_REAL) {
+	if (idx != ANALOG_SUB_REAL) {
 		ast_log(LOG_ERROR, "We got an event on a non real sub.  Fix it!\n");
 	}
 
@@ -2561,27 +2624,27 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 		mysig = p->outsigmod;
 	}
 
-	p->subs[index].f.frametype = AST_FRAME_NULL;
-	p->subs[index].f.subclass.integer = 0;
-	p->subs[index].f.datalen = 0;
-	p->subs[index].f.samples = 0;
-	p->subs[index].f.mallocd = 0;
-	p->subs[index].f.offset = 0;
-	p->subs[index].f.src = "dahdi_handle_event";
-	p->subs[index].f.data.ptr = NULL;
-	f = &p->subs[index].f;
+	p->subs[idx].f.frametype = AST_FRAME_NULL;
+	p->subs[idx].f.subclass.integer = 0;
+	p->subs[idx].f.datalen = 0;
+	p->subs[idx].f.samples = 0;
+	p->subs[idx].f.mallocd = 0;
+	p->subs[idx].f.offset = 0;
+	p->subs[idx].f.src = "dahdi_handle_event";
+	p->subs[idx].f.data.ptr = NULL;
+	f = &p->subs[idx].f;
 
 	res = analog_get_event(p);
 
-	ast_debug(1, "Got event %s(%d) on channel %d (index %d)\n", analog_event2str(res), res, p->channel, index);
+	ast_debug(1, "Got event %s(%d) on channel %d (index %d)\n", analog_event2str(res), res, p->channel, idx);
 
 	if (res & (ANALOG_EVENT_PULSEDIGIT | ANALOG_EVENT_DTMFUP)) {
 		analog_set_pulsedial(p, (res & ANALOG_EVENT_PULSEDIGIT) ? 1 : 0);
 		ast_debug(1, "Detected %sdigit '%c'\n", (res & ANALOG_EVENT_PULSEDIGIT) ? "pulse ": "", res & 0xff);
 		analog_confmute(p, 0);
-		p->subs[index].f.frametype = AST_FRAME_DTMF_END;
-		p->subs[index].f.subclass.integer = res & 0xff;
-		analog_handle_dtmfup(p, ast, index, &f);
+		p->subs[idx].f.frametype = AST_FRAME_DTMF_END;
+		p->subs[idx].f.subclass.integer = res & 0xff;
+		analog_handle_dtmf(p, ast, idx, &f);
 		return f;
 	}
 
@@ -2589,8 +2652,9 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 		ast_debug(1, "DTMF Down '%c'\n", res & 0xff);
 		/* Mute conference */
 		analog_confmute(p, 1);
-		p->subs[index].f.frametype = AST_FRAME_DTMF_BEGIN;
-		p->subs[index].f.subclass.integer = res & 0xff;
+		p->subs[idx].f.frametype = AST_FRAME_DTMF_BEGIN;
+		p->subs[idx].f.subclass.integer = res & 0xff;
+		analog_handle_dtmf(p, ast, idx, &f);
 		return f;
 	}
 
@@ -2622,7 +2686,7 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 		if (p->inalarm) {
 			break;
 		}
-		x = analog_is_dialing(p, index);
+		x = analog_is_dialing(p, idx);
 		if (!x) { /* if not still dialing in driver */
 			analog_set_echocanceller(p, 1);
 			if (p->echobreak) {
@@ -2637,8 +2701,8 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 					/* if thru with dialing after offhook */
 					if (ast->_state == AST_STATE_DIALING_OFFHOOK) {
 						ast_setstate(ast, AST_STATE_UP);
-						p->subs[index].f.frametype = AST_FRAME_CONTROL;
-						p->subs[index].f.subclass.integer = AST_CONTROL_ANSWER;
+						p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+						p->subs[idx].f.subclass.integer = AST_CONTROL_ANSWER;
 						break;
 					} else { /* if to state wait for offhook to dial rest */
 						/* we now wait for off hook */
@@ -2646,12 +2710,20 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 					}
 				}
 				if (ast->_state == AST_STATE_DIALING) {
-					if (analog_check_confirmanswer(p) || (!p->dialednone && ((mysig == ANALOG_SIG_EM) || (mysig == ANALOG_SIG_EM_E1) ||  (mysig == ANALOG_SIG_EMWINK) || (mysig == ANALOG_SIG_FEATD) || (mysig == ANALOG_SIG_FEATDMF_TA) || (mysig == ANALOG_SIG_FEATDMF) || (mysig == ANALOG_SIG_E911) || (mysig == ANALOG_SIG_FGC_CAMA) || (mysig == ANALOG_SIG_FGC_CAMAMF) || (mysig == ANALOG_SIG_FEATB) || (mysig == ANALOG_SIG_SF) || (mysig == ANALOG_SIG_SFWINK) || (mysig == ANALOG_SIG_SF_FEATD) || (mysig == ANALOG_SIG_SF_FEATDMF) || (mysig == ANALOG_SIG_SF_FEATB)))) {
+					if (analog_check_confirmanswer(p) || (!p->dialednone
+						&& ((mysig == ANALOG_SIG_EM) || (mysig == ANALOG_SIG_EM_E1)
+							|| (mysig == ANALOG_SIG_EMWINK) || (mysig == ANALOG_SIG_FEATD)
+							|| (mysig == ANALOG_SIG_FEATDMF_TA) || (mysig == ANALOG_SIG_FEATDMF)
+							|| (mysig == ANALOG_SIG_E911) || (mysig == ANALOG_SIG_FGC_CAMA)
+							|| (mysig == ANALOG_SIG_FGC_CAMAMF) || (mysig == ANALOG_SIG_FEATB)
+							|| (mysig == ANALOG_SIG_SF) || (mysig == ANALOG_SIG_SFWINK)
+							|| (mysig == ANALOG_SIG_SF_FEATD) || (mysig == ANALOG_SIG_SF_FEATDMF)
+							|| (mysig == ANALOG_SIG_SF_FEATB)))) {
 						ast_setstate(ast, AST_STATE_RINGING);
 					} else if (!p->answeronpolarityswitch) {
 						ast_setstate(ast, AST_STATE_UP);
-						p->subs[index].f.frametype = AST_FRAME_CONTROL;
-						p->subs[index].f.subclass.integer = AST_CONTROL_ANSWER;
+						p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+						p->subs[idx].f.subclass.integer = AST_CONTROL_ANSWER;
 						/* If aops=0 and hops=1, this is necessary */
 						p->polarity = POLARITY_REV;
 					} else {
@@ -2665,7 +2737,6 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 	case ANALOG_EVENT_ALARM:
 		analog_set_alarm(p, 1);
 		analog_get_and_handle_alarms(p);
-
 	case ANALOG_EVENT_ONHOOK:
 		switch (p->sig) {
 		case ANALOG_SIG_FXOLS:
@@ -2676,7 +2747,7 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 			p->onhooktime = time(NULL);
 			p->msgstate = -1;
 			/* Check for some special conditions regarding call waiting */
-			if (index == ANALOG_SUB_REAL) {
+			if (idx == ANALOG_SUB_REAL) {
 				/* The normal line was hung up */
 				if (p->subs[ANALOG_SUB_CALLWAIT].owner) {
 					/* Need to hold the lock for real-call, private, and call-waiting call */
@@ -2695,7 +2766,7 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 					ast_verb(3, "Channel %d still has (callwait) call, ringing phone\n", p->channel);
 					analog_unalloc_sub(p, ANALOG_SUB_CALLWAIT);
 					analog_stop_callwait(p);
-					p->owner = NULL;
+					analog_set_new_owner(p, NULL);
 					/* Don't start streaming audio yet if the incoming call isn't up yet */
 					if (p->subs[ANALOG_SUB_REAL].owner->_state != AST_STATE_UP) {
 						analog_set_dialing(p, 1);
@@ -2731,50 +2802,50 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 						ast_channel_unlock(p->subs[ANALOG_SUB_THREEWAY].owner);
 					} else if ((ast->pbx) || (ast->_state == AST_STATE_UP)) {
 						if (p->transfer) {
+							int inthreeway;
+
+							inthreeway = p->subs[ANALOG_SUB_THREEWAY].inthreeway;
+
+							/* In any case this isn't a threeway call anymore */
+							analog_set_inthreeway(p, ANALOG_SUB_REAL, 0);
+							analog_set_inthreeway(p, ANALOG_SUB_THREEWAY, 0);
+
 							/* Only attempt transfer if the phone is ringing; why transfer to busy tone eh? */
 							if (!p->transfertobusy && ast->_state == AST_STATE_BUSY) {
 								/* Swap subs and dis-own channel */
 								analog_swap_subs(p, ANALOG_SUB_THREEWAY, ANALOG_SUB_REAL);
 								/* Unlock the 3-way call that we swapped to real-call. */
 								ast_channel_unlock(p->subs[ANALOG_SUB_REAL].owner);
-								p->owner = NULL;
+								analog_set_new_owner(p, NULL);
 								/* Ring the phone */
 								analog_ring(p);
 							} else {
-								res = analog_attempt_transfer(p);
+								res = analog_attempt_transfer(p, inthreeway);
 								if (res < 0) {
 									/* Transfer attempt failed. */
 									ast_softhangup_nolock(p->subs[ANALOG_SUB_THREEWAY].owner, AST_SOFTHANGUP_DEV);
 									ast_channel_unlock(p->subs[ANALOG_SUB_THREEWAY].owner);
 								} else if (res) {
-									/* this isn't a threeway call anymore */
-									p->subs[ANALOG_SUB_REAL].inthreeway = 0;
-									p->subs[ANALOG_SUB_THREEWAY].inthreeway = 0;
-
 									/* Don't actually hang up at this point */
 									break;
 								}
 							}
-							/* this isn't a threeway call anymore */
-							p->subs[ANALOG_SUB_REAL].inthreeway = 0;
-							p->subs[ANALOG_SUB_THREEWAY].inthreeway = 0;
 						} else {
 							ast_softhangup_nolock(p->subs[ANALOG_SUB_THREEWAY].owner, AST_SOFTHANGUP_DEV);
 							ast_channel_unlock(p->subs[ANALOG_SUB_THREEWAY].owner);
 						}
 					} else {
-						ast_cel_report_event(ast, AST_CEL_BLINDTRANSFER, NULL, ast->linkedid, NULL);
 						/* Swap subs and dis-own channel */
 						analog_swap_subs(p, ANALOG_SUB_THREEWAY, ANALOG_SUB_REAL);
 						/* Unlock the 3-way call that we swapped to real-call. */
 						ast_channel_unlock(p->subs[ANALOG_SUB_REAL].owner);
-						p->owner = NULL;
+						analog_set_new_owner(p, NULL);
 						/* Ring the phone */
 						analog_ring(p);
 					}
 				}
 			} else {
-				ast_log(LOG_WARNING, "Got a hangup and my index is %d?\n", index);
+				ast_log(LOG_WARNING, "Got a hangup and my index is %d?\n", idx);
 			}
 			/* Fall through */
 		default:
@@ -2816,7 +2887,7 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 				return NULL;
 			}
 			analog_set_dialing(p, 1);
-			return &p->subs[index].f;
+			return &p->subs[idx].f;
 		}
 		switch (p->sig) {
 		case ANALOG_SIG_FXOLS:
@@ -2827,19 +2898,22 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 			case AST_STATE_RINGING:
 				analog_set_echocanceller(p, 1);
 				analog_train_echocanceller(p);
-				p->subs[index].f.frametype = AST_FRAME_CONTROL;
-				p->subs[index].f.subclass.integer = AST_CONTROL_ANSWER;
+				p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+				p->subs[idx].f.subclass.integer = AST_CONTROL_ANSWER;
 				/* Make sure it stops ringing */
 				analog_set_needringing(p, 0);
 				analog_off_hook(p);
 				ast_debug(1, "channel %d answered\n", p->channel);
+
+				/* Cancel any running CallerID spill */
 				analog_cancel_cidspill(p);
+
 				analog_set_dialing(p, 0);
 				p->callwaitcas = 0;
 				if (analog_check_confirmanswer(p)) {
 					/* Ignore answer if "confirm answer" is enabled */
-					p->subs[index].f.frametype = AST_FRAME_NULL;
-					p->subs[index].f.subclass.integer = 0;
+					p->subs[idx].f.frametype = AST_FRAME_NULL;
+					p->subs[idx].f.subclass.integer = 0;
 				} else if (!ast_strlen_zero(p->dop.dialstr)) {
 					/* nick@dccinc.com 4/3/03 - fxo should be able to do deferred dialing */
 					res = analog_dial_digits(p, ANALOG_SUB_REAL, &p->dop);
@@ -2849,8 +2923,8 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 						return NULL;
 					} else {
 						ast_debug(1, "Sent FXO deferred digit string: %s\n", p->dop.dialstr);
-						p->subs[index].f.frametype = AST_FRAME_NULL;
-						p->subs[index].f.subclass.integer = 0;
+						p->subs[idx].f.frametype = AST_FRAME_NULL;
+						p->subs[idx].f.subclass.integer = 0;
 						analog_set_dialing(p, 1);
 					}
 					p->dop.dialstr[0] = '\0';
@@ -2859,14 +2933,14 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 					ast_setstate(ast, AST_STATE_UP);
 					analog_answer_polarityswitch(p);
 				}
-				return &p->subs[index].f;
+				return &p->subs[idx].f;
 			case AST_STATE_DOWN:
 				ast_setstate(ast, AST_STATE_RING);
 				ast->rings = 1;
-				p->subs[index].f.frametype = AST_FRAME_CONTROL;
-				p->subs[index].f.subclass.integer = AST_CONTROL_OFFHOOK;
+				p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+				p->subs[idx].f.subclass.integer = AST_CONTROL_OFFHOOK;
 				ast_debug(1, "channel %d picked up\n", p->channel);
-				return &p->subs[index].f;
+				return &p->subs[idx].f;
 			case AST_STATE_UP:
 				/* Make sure it stops ringing */
 				analog_off_hook(p);
@@ -2917,19 +2991,19 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 			case AST_STATE_DOWN:
 			case AST_STATE_RING:
 				ast_debug(1, "Ring detected\n");
-				p->subs[index].f.frametype = AST_FRAME_CONTROL;
-				p->subs[index].f.subclass.integer = AST_CONTROL_RING;
+				p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+				p->subs[idx].f.subclass.integer = AST_CONTROL_RING;
 				break;
 			case AST_STATE_RINGING:
 			case AST_STATE_DIALING:
 				if (p->outgoing) {
 					ast_debug(1, "Line answered\n");
 					if (analog_check_confirmanswer(p)) {
-						p->subs[index].f.frametype = AST_FRAME_NULL;
-						p->subs[index].f.subclass.integer = 0;
+						p->subs[idx].f.frametype = AST_FRAME_NULL;
+						p->subs[idx].f.subclass.integer = 0;
 					} else {
-						p->subs[index].f.frametype = AST_FRAME_CONTROL;
-						p->subs[index].f.subclass.integer = AST_CONTROL_ANSWER;
+						p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+						p->subs[idx].f.subclass.integer = AST_CONTROL_ANSWER;
 						ast_setstate(ast, AST_STATE_UP);
 					}
 					break;
@@ -2969,20 +3043,16 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 			analog_cancel_cidspill(p);
 			p->callwaitcas = 0;
 		}
-		p->subs[index].f.frametype = AST_FRAME_CONTROL;
-		p->subs[index].f.subclass.integer = AST_CONTROL_RINGING;
+		p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+		p->subs[idx].f.subclass.integer = AST_CONTROL_RINGING;
 		break;
 	case ANALOG_EVENT_RINGERON:
 		break;
 	case ANALOG_EVENT_NOALARM:
 		analog_set_alarm(p, 0);
-		if (!p->unknown_alarm) {
-			ast_log(LOG_NOTICE, "Alarm cleared on channel %d\n", p->channel);
-			manager_event(EVENT_FLAG_SYSTEM, "AlarmClear",
-				"Channel: %d\r\n", p->channel);
-		} else {
-			p->unknown_alarm = 0;
-		}
+		ast_log(LOG_NOTICE, "Alarm cleared on channel %d\n", p->channel);
+		manager_event(EVENT_FLAG_SYSTEM, "AlarmClear",
+			"Channel: %d\r\n", p->channel);
 		break;
 	case ANALOG_EVENT_WINKFLASH:
 		if (p->inalarm) {
@@ -2995,12 +3065,14 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 		case ANALOG_SIG_FXOGS:
 		case ANALOG_SIG_FXOKS:
 			ast_debug(1, "Winkflash, index: %d, normal: %d, callwait: %d, thirdcall: %d\n",
-				index, analog_get_sub_fd(p, ANALOG_SUB_REAL), analog_get_sub_fd(p, ANALOG_SUB_CALLWAIT), analog_get_sub_fd(p, ANALOG_SUB_THREEWAY));
+				idx, analog_get_sub_fd(p, ANALOG_SUB_REAL), analog_get_sub_fd(p, ANALOG_SUB_CALLWAIT), analog_get_sub_fd(p, ANALOG_SUB_THREEWAY));
 
+			/* Cancel any running CallerID spill */
+			analog_cancel_cidspill(p);
 			p->callwaitcas = 0;
 
-			if (index != ANALOG_SUB_REAL) {
-				ast_log(LOG_WARNING, "Got flash hook with index %d on channel %d?!?\n", index, p->channel);
+			if (idx != ANALOG_SUB_REAL) {
+				ast_log(LOG_WARNING, "Got flash hook with index %d on channel %d?!?\n", idx, p->channel);
 				goto winkflashdone;
 			}
 
@@ -3019,7 +3091,7 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 				/* Swap to call-wait */
 				analog_swap_subs(p, ANALOG_SUB_REAL, ANALOG_SUB_CALLWAIT);
 				analog_play_tone(p, ANALOG_SUB_REAL, -1);
-				p->owner = p->subs[ANALOG_SUB_REAL].owner;
+				analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 				ast_debug(1, "Making %s the new owner\n", p->owner->name);
 				if (p->subs[ANALOG_SUB_REAL].owner->_state == AST_STATE_RINGING) {
 					ast_setstate(p->subs[ANALOG_SUB_REAL].owner, AST_STATE_UP);
@@ -3104,29 +3176,16 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 					if (res) {
 						ast_log(LOG_WARNING, "Unable to start dial recall tone on channel %d\n", p->channel);
 					}
-					p->ss_astchan = p->owner = chan;
-					pthread_attr_init(&attr);
-					pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-					if (ast_pthread_create(&threadid, &attr, __analog_ss_thread, p)) {
+					analog_set_new_owner(p, chan);
+					p->ss_astchan = chan;
+					if (ast_pthread_create_detached(&threadid, NULL, __analog_ss_thread, p)) {
 						ast_log(LOG_WARNING, "Unable to start simple switch on channel %d\n", p->channel);
 						res = analog_play_tone(p, ANALOG_SUB_REAL, ANALOG_TONE_CONGESTION);
 						analog_set_echocanceller(p, 1);
 						ast_hangup(chan);
 					} else {
- 						struct ast_channel *other = ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner);
- 						int way3bridge = 0, cdr3way = 0;
-
-						if (!other) {
-							other = ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner);
-						} else {
-							way3bridge = 1;
-						}
-
-						if (p->subs[ANALOG_SUB_THREEWAY].owner->cdr) {
-							cdr3way = 1;
-						}
-
 						ast_verb(3, "Started three way call on channel %d\n", p->channel);
+
 						/* Start music on hold if appropriate */
 						if (ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner)) {
 							ast_queue_control_data(p->subs[ANALOG_SUB_THREEWAY].owner, AST_CONTROL_HOLD,
@@ -3134,7 +3193,6 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 								!ast_strlen_zero(p->mohsuggest) ? strlen(p->mohsuggest) + 1 : 0);
 						}
 					}
-					pthread_attr_destroy(&attr);
 				}
 			} else {
 				/* Already have a 3 way call */
@@ -3161,34 +3219,23 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 						/* Swap back -- we're dropping the real 3-way that isn't finished yet*/
 						analog_swap_subs(p, ANALOG_SUB_THREEWAY, ANALOG_SUB_REAL);
 						orig_3way_sub = ANALOG_SUB_REAL;
-						p->owner = p->subs[ANALOG_SUB_REAL].owner;
+						analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 					}
 					/* Drop the last call and stop the conference */
 					ast_verb(3, "Dropping three-way call on %s\n", p->subs[ANALOG_SUB_THREEWAY].owner->name);
 					ast_softhangup_nolock(p->subs[ANALOG_SUB_THREEWAY].owner, AST_SOFTHANGUP_DEV);
-					p->subs[ANALOG_SUB_REAL].inthreeway = 0;
-					p->subs[ANALOG_SUB_THREEWAY].inthreeway = 0;
+					analog_set_inthreeway(p, ANALOG_SUB_REAL, 0);
+					analog_set_inthreeway(p, ANALOG_SUB_THREEWAY, 0);
 				} else {
 					/* Lets see what we're up to */
 					if (((ast->pbx) || (ast->_state == AST_STATE_UP)) &&
 						(p->transfertobusy || (ast->_state != AST_STATE_BUSY))) {
-						struct ast_channel *other = ast_bridged_channel(p->subs[ANALOG_SUB_THREEWAY].owner);
-						int way3bridge = 0, cdr3way = 0;
-
-						if (!other) {
-							other = ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner);
-						} else {
-							way3bridge = 1;
-						}
-
-						if (p->subs[ANALOG_SUB_THREEWAY].owner->cdr) {
-							cdr3way = 1;
-						}
-
-						ast_verb(3, "Building conference on call on %s and %s\n", p->subs[ANALOG_SUB_THREEWAY].owner->name, p->subs[ANALOG_SUB_REAL].owner->name);
+						ast_verb(3, "Building conference call with %s and %s\n",
+							p->subs[ANALOG_SUB_THREEWAY].owner->name,
+							p->subs[ANALOG_SUB_REAL].owner->name);
 						/* Put them in the threeway, and flip */
-						p->subs[ANALOG_SUB_THREEWAY].inthreeway = 1;
-						p->subs[ANALOG_SUB_REAL].inthreeway = 1;
+						analog_set_inthreeway(p, ANALOG_SUB_THREEWAY, 1);
+						analog_set_inthreeway(p, ANALOG_SUB_REAL, 1);
 						if (ast->_state == AST_STATE_UP) {
 							analog_swap_subs(p, ANALOG_SUB_THREEWAY, ANALOG_SUB_REAL);
 							orig_3way_sub = ANALOG_SUB_REAL;
@@ -3196,18 +3243,13 @@ static struct ast_frame *__analog_handle_event(struct analog_pvt *p, struct ast_
 						if (ast_bridged_channel(p->subs[orig_3way_sub].owner)) {
 							ast_queue_control(p->subs[orig_3way_sub].owner, AST_CONTROL_UNHOLD);
 						}
-						p->owner = p->subs[ANALOG_SUB_REAL].owner;
-						if (ast->_state == AST_STATE_RINGING) {
-							ast_debug(1, "Enabling ringtone on real and threeway\n");
-							analog_play_tone(p, ANALOG_SUB_REAL, ANALOG_TONE_RINGTONE);
-							analog_play_tone(p, ANALOG_SUB_THREEWAY, ANALOG_TONE_RINGTONE);
-						}
+						analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 					} else {
 						ast_verb(3, "Dumping incomplete call on %s\n", p->subs[ANALOG_SUB_THREEWAY].owner->name);
 						analog_swap_subs(p, ANALOG_SUB_THREEWAY, ANALOG_SUB_REAL);
 						orig_3way_sub = ANALOG_SUB_REAL;
 						ast_softhangup_nolock(p->subs[ANALOG_SUB_THREEWAY].owner, AST_SOFTHANGUP_DEV);
-						p->owner = p->subs[ANALOG_SUB_REAL].owner;
+						analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 						if (ast_bridged_channel(p->subs[ANALOG_SUB_REAL].owner)) {
 							ast_queue_control(p->subs[ANALOG_SUB_REAL].owner, AST_CONTROL_UNHOLD);
 						}
@@ -3275,12 +3317,14 @@ winkflashdone:
 			p->dop.dialstr[0] = '\0';
 			break;
 		default:
-			ast_log(LOG_WARNING, "Don't know how to handle ring/off hoook for signalling %d\n", p->sig);
+			ast_log(LOG_WARNING, "Don't know how to handle ring/off hook for signalling %d\n", p->sig);
 		}
 		break;
 	case ANALOG_EVENT_HOOKCOMPLETE:
 		if (p->inalarm) break;
-		if (analog_check_waitingfordt(p)) break;
+		if (analog_check_waitingfordt(p)) {
+			break;
+		}
 		switch (mysig) {
 		case ANALOG_SIG_FXSLS:  /* only interesting for FXS */
 		case ANALOG_SIG_FXSGS:
@@ -3321,17 +3365,16 @@ winkflashdone:
 		break;
 	case ANALOG_EVENT_POLARITY:
 		/*
- 		 * If we get a Polarity Switch event, this could be
- 		 * due to line seizure, remote end connect or remote end disconnect.
- 		 *
- 		 * Check to see if we should change the polarity state and
+		 * If we get a Polarity Switch event, this could be
+		 * due to line seizure, remote end connect or remote end disconnect.
+		 *
+		 * Check to see if we should change the polarity state and
 		 * mark the channel as UP or if this is an indication
 		 * of remote end disconnect.
 		 */
 
 		if (p->polarityonanswerdelay > 0) {
 			/* check if event is not too soon after OffHook or Answer */
-
 			if (ast_tvdiff_ms(ast_tvnow(), p->polaritydelaytv) > p->polarityonanswerdelay) {
 				switch (ast->_state) {
 				case AST_STATE_DIALING:			/*!< Digits (or equivalent) have been dialed */
@@ -3347,6 +3390,7 @@ winkflashdone:
 						ast_debug(1, "Ignore Answer on polarity switch, channel %d\n", p->channel);
 					}
 					break;
+
 				case AST_STATE_UP:				/*!< Line is up */
 				case AST_STATE_RING:			/*!< Line is ringing */
 					if (p->hanguponpolarityswitch) {
@@ -3368,6 +3412,7 @@ winkflashdone:
 					if (p->answeronpolarityswitch || p->hanguponpolarityswitch) {
 						ast_debug(1, "Ignoring Polarity switch on channel %d, state %d\n", p->channel, ast->_state);
 					}
+					break;
 				}
 
 			} else {
@@ -3391,6 +3436,7 @@ winkflashdone:
 					if (p->answeronpolarityswitch || p->hanguponpolarityswitch) {
 						ast_debug(1, "Polarity switch detected (too close to previous event) on channel %d, state %d\n", p->channel, ast->_state);
 					}
+					break;
 				}
 			}
 		}
@@ -3401,31 +3447,31 @@ winkflashdone:
 	default:
 		ast_debug(1, "Dunno what to do with event %d on channel %d\n", res, p->channel);
 	}
-	return &p->subs[index].f;
+	return &p->subs[idx].f;
 }
 
 struct ast_frame *analog_exception(struct analog_pvt *p, struct ast_channel *ast)
 {
 	int res;
-	int index;
+	int idx;
 	struct ast_frame *f;
 
-	ast_log(LOG_DEBUG, "%s %d\n", __FUNCTION__, p->channel);
+	ast_debug(1, "%s %d\n", __FUNCTION__, p->channel);
 
-	index = analog_get_index(ast, p, 1);
-	if (index < 0) {
-		index = ANALOG_SUB_REAL;
+	idx = analog_get_index(ast, p, 1);
+	if (idx < 0) {
+		idx = ANALOG_SUB_REAL;
 	}
 
-	p->subs[index].f.frametype = AST_FRAME_NULL;
-	p->subs[index].f.datalen = 0;
-	p->subs[index].f.samples = 0;
-	p->subs[index].f.mallocd = 0;
-	p->subs[index].f.offset = 0;
-	p->subs[index].f.subclass.integer = 0;
-	p->subs[index].f.delivery = ast_tv(0,0);
-	p->subs[index].f.src = "dahdi_exception";
-	p->subs[index].f.data.ptr = NULL;
+	p->subs[idx].f.frametype = AST_FRAME_NULL;
+	p->subs[idx].f.datalen = 0;
+	p->subs[idx].f.samples = 0;
+	p->subs[idx].f.mallocd = 0;
+	p->subs[idx].f.offset = 0;
+	p->subs[idx].f.subclass.integer = 0;
+	p->subs[idx].f.delivery = ast_tv(0,0);
+	p->subs[idx].f.src = "dahdi_exception";
+	p->subs[idx].f.data.ptr = NULL;
 
 	if (!p->owner) {
 		/* If nobody owns us, absorb the event appropriately, otherwise
@@ -3439,7 +3485,7 @@ struct ast_frame *analog_exception(struct analog_pvt *p, struct ast_channel *ast
 		if ((res != ANALOG_EVENT_RINGEROFF) && (res != ANALOG_EVENT_RINGERON) &&
 			(res != ANALOG_EVENT_HOOKCOMPLETE)) {
 			ast_debug(1, "Restoring owner of channel %d on event %d\n", p->channel, res);
-			p->owner = p->subs[ANALOG_SUB_REAL].owner;
+			analog_set_new_owner(p, p->subs[ANALOG_SUB_REAL].owner);
 			if (p->owner && ast != p->owner) {
 				/*
 				 * Could this even happen?
@@ -3501,14 +3547,14 @@ struct ast_frame *analog_exception(struct analog_pvt *p, struct ast_channel *ast
 			ast_log(LOG_WARNING, "Don't know how to absorb event %s\n", analog_event2str(res));
 			break;
 		}
-		f = &p->subs[index].f;
+		f = &p->subs[idx].f;
 		return f;
 	}
 	ast_debug(1, "Exception on %d, channel %d\n", ast->fds[0],p->channel);
 	/* If it's not us, return NULL immediately */
 	if (ast != p->owner) {
 		ast_log(LOG_WARNING, "We're %s, not %s\n", ast->name, p->owner->name);
-		f = &p->subs[index].f;
+		f = &p->subs[idx].f;
 		return f;
 	}
 	f = __analog_handle_event(p, ast);
@@ -3541,7 +3587,10 @@ void *analog_handle_init_event(struct analog_pvt *i, int event)
 			if (res && (errno == EBUSY)) {
 				break;
 			}
+
+			/* Cancel VMWI spill */
 			analog_cancel_cidspill(i);
+
 			if (i->immediate) {
 				analog_set_echocanceller(i, 1);
 				/* The channel is immediately up.  Start right away */
@@ -3606,15 +3655,15 @@ void *analog_handle_init_event(struct analog_pvt *i, int event)
 				chan = analog_new_ast_channel(i, AST_STATE_RING, 0, ANALOG_SUB_REAL, NULL);
 			}
 			i->ss_astchan = chan;
-			if (chan && ast_pthread_create_detached(&threadid, NULL, __analog_ss_thread, i)) {
+			if (!chan) {
+				ast_log(LOG_WARNING, "Cannot allocate new structure on channel %d\n", i->channel);
+			} else if (ast_pthread_create_detached(&threadid, NULL, __analog_ss_thread, i)) {
 				ast_log(LOG_WARNING, "Unable to start simple switch thread on channel %d\n", i->channel);
 				res = analog_play_tone(i, ANALOG_SUB_REAL, ANALOG_TONE_CONGESTION);
 				if (res < 0) {
 					ast_log(LOG_WARNING, "Unable to play congestion tone on channel %d\n", i->channel);
 				}
 				ast_hangup(chan);
-			} else if (!chan) {
-				ast_log(LOG_WARNING, "Cannot allocate new structure on channel %d\n", i->channel);
 			}
 			break;
 		default:
@@ -3628,18 +3677,13 @@ void *analog_handle_init_event(struct analog_pvt *i, int event)
 		break;
 	case ANALOG_EVENT_NOALARM:
 		analog_set_alarm(i, 0);
-		if (!i->unknown_alarm) {
-			ast_log(LOG_NOTICE, "Alarm cleared on channel %d\n", i->channel);
-			manager_event(EVENT_FLAG_SYSTEM, "AlarmClear",
-				      "Channel: %d\r\n", i->channel);
-		} else {
-			i->unknown_alarm = 0;
-		}
+		ast_log(LOG_NOTICE, "Alarm cleared on channel %d\n", i->channel);
+		manager_event(EVENT_FLAG_SYSTEM, "AlarmClear",
+			"Channel: %d\r\n", i->channel);
 		break;
 	case ANALOG_EVENT_ALARM:
 		analog_set_alarm(i, 1);
 		analog_get_and_handle_alarms(i);
-
 		/* fall thru intentionally */
 	case ANALOG_EVENT_ONHOOK:
 		/* Back on hook.  Hang up. */
@@ -3648,6 +3692,7 @@ void *analog_handle_init_event(struct analog_pvt *i, int event)
 		case ANALOG_SIG_FXOGS:
 			i->fxsoffhookstate = 0;
 			analog_start_polarityswitch(i);
+			/* Fall through */
 		case ANALOG_SIG_FEATD:
 		case ANALOG_SIG_FEATDMF:
 		case ANALOG_SIG_FEATDMF_TA:
@@ -3700,15 +3745,16 @@ void *analog_handle_init_event(struct analog_pvt *i, int event)
 			if (i->hanguponpolarityswitch) {
 				i->polarity = POLARITY_REV;
 			}
-
 			if (i->cid_start == ANALOG_CID_START_POLARITY || i->cid_start == ANALOG_CID_START_POLARITY_IN) {
 				i->polarity = POLARITY_REV;
-				ast_verbose(VERBOSE_PREFIX_2 "Starting post polarity "
-					    "CID detection on channel %d\n",
-					    i->channel);
+				ast_verb(2, "Starting post polarity "
+					"CID detection on channel %d\n",
+					i->channel);
 				chan = analog_new_ast_channel(i, AST_STATE_PRERING, 0, ANALOG_SUB_REAL, NULL);
 				i->ss_astchan = chan;
-				if (chan && ast_pthread_create_detached(&threadid, NULL, __analog_ss_thread, i)) {
+				if (!chan) {
+					ast_log(LOG_WARNING, "Cannot allocate new structure on channel %d\n", i->channel);
+				} else if (ast_pthread_create_detached(&threadid, NULL, __analog_ss_thread, i)) {
 					ast_log(LOG_WARNING, "Unable to start simple switch thread on channel %d\n", i->channel);
 				}
 			}
@@ -3717,31 +3763,35 @@ void *analog_handle_init_event(struct analog_pvt *i, int event)
 			ast_log(LOG_WARNING, "handle_init_event detected "
 				"polarity reversal on non-FXO (ANALOG_SIG_FXS) "
 				"interface %d\n", i->channel);
+			break;
 		}
 		break;
 	case ANALOG_EVENT_DTMFCID:
 		switch (i->sig) {
-			case ANALOG_SIG_FXSLS:
-			case ANALOG_SIG_FXSKS:
-			case ANALOG_SIG_FXSGS:
-				if (i->cid_start == ANALOG_CID_START_DTMF_NOALERT) {
-					ast_verbose(VERBOSE_PREFIX_2 "Starting DTMF CID detection on channel %d\n",
-								i->channel);
-					chan = analog_new_ast_channel(i, AST_STATE_PRERING, 0, ANALOG_SUB_REAL, NULL);
-					i->ss_astchan = chan;
-					if (chan && ast_pthread_create_detached(&threadid, NULL, __analog_ss_thread, i)) {
-						ast_log(LOG_WARNING, "Unable to start simple switch thread on channel %d\n", i->channel);
-					}
+		case ANALOG_SIG_FXSLS:
+		case ANALOG_SIG_FXSKS:
+		case ANALOG_SIG_FXSGS:
+			if (i->cid_start == ANALOG_CID_START_DTMF_NOALERT) {
+				ast_verb(2, "Starting DTMF CID detection on channel %d\n",
+					i->channel);
+				chan = analog_new_ast_channel(i, AST_STATE_PRERING, 0, ANALOG_SUB_REAL, NULL);
+				i->ss_astchan = chan;
+				if (!chan) {
+					ast_log(LOG_WARNING, "Cannot allocate new structure on channel %d\n", i->channel);
+				} else if (ast_pthread_create_detached(&threadid, NULL, __analog_ss_thread, i)) {
+					ast_log(LOG_WARNING, "Unable to start simple switch thread on channel %d\n", i->channel);
 				}
-				break;
-			default:
-				ast_log(LOG_WARNING, "handle_init_event detected "
-						"dtmfcid generation event on non-FXO (ANALOG_SIG_FXS) "
-								"interface %d\n", i->channel);
+			}
+			break;
+		default:
+			ast_log(LOG_WARNING, "handle_init_event detected "
+				"dtmfcid generation event on non-FXO (ANALOG_SIG_FXS) "
+				"interface %d\n", i->channel);
+			break;
 		}
 		break;
 	case ANALOG_EVENT_REMOVED: /* destroy channel, will actually do so in do_monitor */
-		ast_log(LOG_NOTICE, "Got DAHDI_EVENT_REMOVED. Destroying channel %d\n",
+		ast_log(LOG_NOTICE, "Got ANALOG_EVENT_REMOVED. Destroying channel %d\n",
 			i->channel);
 		return i->chan_pvt;
 	case ANALOG_EVENT_NEONMWI_ACTIVE:
@@ -3798,14 +3848,14 @@ int analog_config_complete(struct analog_pvt *p)
 		p->permcallwaiting = 0;
 	}
 
-	p->callwaiting = p->permcallwaiting;
+	analog_set_callwaiting(p, p->permcallwaiting);
 
 	return 0;
 }
 
 void analog_free(struct analog_pvt *p)
 {
-	free(p);
+	ast_free(p);
 }
 
 /* called while dahdi_pvt is locked in dahdi_fixup */
@@ -3815,7 +3865,7 @@ int analog_fixup(struct ast_channel *oldchan, struct ast_channel *newchan, void 
 	int x;
 	ast_debug(1, "New owner for channel %d is %s\n", new_pvt->channel, newchan->name);
 	if (new_pvt->owner == oldchan) {
-		new_pvt->owner = newchan;
+		analog_set_new_owner(new_pvt, newchan);
 	}
 	for (x = 0; x < 3; x++) {
 		if (new_pvt->subs[x].owner == oldchan) {
@@ -3836,12 +3886,12 @@ int analog_dnd(struct analog_pvt *p, int flag)
 	p->dnd = flag;
 
 	ast_verb(3, "%s DND on channel %d\n",
-			flag? "Enabled" : "Disabled",
+			flag ? "Enabled" : "Disabled",
 			p->channel);
 	manager_event(EVENT_FLAG_SYSTEM, "DNDState",
 			"Channel: DAHDI/%d\r\n"
 			"Status: %s\r\n", p->channel,
-			flag? "enabled" : "disabled");
+			flag ? "enabled" : "disabled");
 
 	return 0;
 }

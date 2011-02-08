@@ -231,6 +231,9 @@ ifeq ($(PROC),ppc)
 endif
 
 ifeq ($(OSARCH),FreeBSD)
+  ifeq ($(PROC),i386)
+    _ASTCFLAGS+=-march=i686
+  endif
   # -V is understood by BSD Make, not by GNU make.
   BSDVERSION=$(shell make -V OSVERSION -f /usr/share/mk/bsd.port.subdir.mk)
   _ASTCFLAGS+=$(shell if test $(BSDVERSION) -lt 500016 ; then echo "-D_THREAD_SAFE"; fi)
@@ -798,8 +801,17 @@ config:
 			cat contrib/init.d/rc.archlinux.asterisk | sed 's|__ASTERISK_ETC_DIR__|$(ASTETCDIR)|;s|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;s|__ASTERISK_VARRUN_DIR__|$(ASTVARRUNDIR)|;' > contrib/init.d/rc.asterisk.tmp ; \
 			$(INSTALL) -m 755 contrib/init.d/rc.asterisk.tmp $(DESTDIR)/etc/rc.d/asterisk ; \
 			rm -f contrib/init.d/rc.asterisk.tmp ; \
-		elif [ -d $(DESTDIR)/Library/LaunchDaemons -a ! -f $(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist ] ; then \
-			$(INSTALL) -m 644 contrib/init.d/org.asterisk.asterisk.plist $(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist; \
+		elif [ -d $(DESTDIR)/Library/LaunchDaemons ]; then \
+			if [ ! -f $(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist ]; then \
+				sed 's|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;' < contrib/init.d/org.asterisk.asterisk.plist > asterisk.plist ; \
+				$(INSTALL) -m 644 asterisk.plist $(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist; \
+				rm -f asterisk.plist; \
+			fi; \
+			if [ ! -f $(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist ]; then \
+				sed 's|__ASTERISK_SBIN_DIR__|$(ASTSBINDIR)|;' < contrib/init.d/org.asterisk.muted.plist > muted.plist ; \
+				$(INSTALL) -m 644 muted.plist $(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist; \
+				rm -f muted.plist; \
+			fi; \
 		elif [ -f /etc/slackware-version ]; then \
 			echo "Slackware is not currently supported, although an init script does exist for it."; \
 		else \
@@ -922,14 +934,6 @@ menuselect-tree: $(foreach dir,$(filter-out main,$(MOD_SUBDIRS)),$(wildcard $(di
 	@cat sounds/sounds.xml >> $@
 	@echo "</menu>" >> $@
 
-pdf: asterisk.pdf
-asterisk.pdf:
-	$(MAKE) -C doc/tex asterisk.pdf
-
-txt: asterisk.txt
-asterisk.txt:
-	$(MAKE) -C doc/tex asterisk.txt
-
 .PHONY: menuselect
 .PHONY: main
 .PHONY: sounds
@@ -942,7 +946,6 @@ asterisk.txt:
 .PHONY: uninstall
 .PHONY: _uninstall
 .PHONY: uninstall-all
-.PHONY: pdf
 .PHONY: dont-optimize
 .PHONY: badshell
 .PHONY: installdirs

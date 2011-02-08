@@ -19,7 +19,7 @@
 
 #if !defined(STANDALONE) && !defined(STANDALONE2)	\
 	
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 267041 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 293197 $")
 #else
 #ifndef __USE_ISOC99
 #define __USE_ISOC99 1
@@ -1402,6 +1402,8 @@ op_compl (struct val *a)
 					v1 = 0;
 				else if (strlen(a->u.s) == 1 && a->u.s[0] == '0' )
 					v1 = 0;
+				else
+					v1 = atoi(a->u.s);
 			}
 			break;
 			
@@ -1414,6 +1416,8 @@ op_compl (struct val *a)
 					v1 = 0;
 				else if (strlen(a->u.s) == 1 && a->u.s[0] == '0' )
 					v1 = 0;
+				else
+					v1 = atoi(a->u.s);
 			}
 			break;
 		}

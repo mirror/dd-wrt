@@ -240,11 +240,11 @@
 <member name="cdr_radius" displayname="RADIUS CDR Backend" remove_on_change="cdr/cdr_radius.o cdr/cdr_radius.so">
 	<depend>radius</depend>
 </member>
-<member name="cdr_sqlite3_custom" displayname="SQLite3 Custom CDR Module" remove_on_change="cdr/cdr_sqlite3_custom.o cdr/cdr_sqlite3_custom.so">
-	<depend>sqlite3</depend>
-</member>
 <member name="cdr_sqlite" displayname="SQLite CDR Backend" remove_on_change="cdr/cdr_sqlite.o cdr/cdr_sqlite.so">
 	<depend>sqlite</depend>
+</member>
+<member name="cdr_sqlite3_custom" displayname="SQLite3 Custom CDR Module" remove_on_change="cdr/cdr_sqlite3_custom.o cdr/cdr_sqlite3_custom.so">
+	<depend>sqlite3</depend>
 </member>
 <member name="cdr_syslog" displayname="Customizable syslog CDR Backend" remove_on_change="cdr/cdr_syslog.o cdr/cdr_syslog.so">
 	 <depend>syslog</depend>
@@ -352,11 +352,11 @@
 </member>
 </category>
 <category name="MENUSELECT_CODECS" displayname="Codec Translators" remove_on_change="codecs/modules.link">
+<member name="codec_a_mu" displayname="A-law and Mulaw direct Coder/Decoder" remove_on_change="codecs/codec_a_mu.o codecs/codec_a_mu.so">
+</member>
 <member name="codec_adpcm" displayname="Adaptive Differential PCM Coder/Decoder" remove_on_change="codecs/codec_adpcm.o codecs/codec_adpcm.so">
 </member>
 <member name="codec_alaw" displayname="A-law Coder/Decoder" remove_on_change="codecs/codec_alaw.o codecs/codec_alaw.so">
-</member>
-<member name="codec_a_mu" displayname="A-law and Mulaw direct Coder/Decoder" remove_on_change="codecs/codec_a_mu.o codecs/codec_a_mu.so">
 </member>
 <member name="codec_dahdi" displayname="Generic DAHDI Transcoder Codec Translator" remove_on_change="codecs/codec_dahdi.o codecs/codec_dahdi.so">
 	<depend>dahdi</depend>
@@ -413,9 +413,9 @@
 </member>
 <member name="format_siren7" displayname="ITU G.722.1 (Siren7, licensed from Polycom)" remove_on_change="formats/format_siren7.o formats/format_siren7.so">
 </member>
-<member name="format_sln16" displayname="Raw Signed Linear 16KHz Audio support (SLN16)" remove_on_change="formats/format_sln16.o formats/format_sln16.so">
-</member>
 <member name="format_sln" displayname="Raw Signed Linear Audio support (SLN)" remove_on_change="formats/format_sln.o formats/format_sln.so">
+</member>
+<member name="format_sln16" displayname="Raw Signed Linear 16KHz Audio support (SLN16)" remove_on_change="formats/format_sln16.o formats/format_sln16.so">
 </member>
 <member name="format_vox" displayname="Dialogic VOX (ADPCM) File Format" remove_on_change="formats/format_vox.o formats/format_vox.so">
 </member>
@@ -614,7 +614,6 @@
 </member>
 <member name="res_musiconhold" displayname="Music On Hold Resource" remove_on_change="res/res_musiconhold.o res/res_musiconhold.so">
 	<conflict>win32</conflict>
-	<use>dahdi</use>
 </member>
 <member name="res_mutestream" displayname="Mute audio stream resources" remove_on_change="res/res_mutestream.o res/res_mutestream.so">
 </member>
@@ -697,6 +696,9 @@
 	<defaultenabled>no</defaultenabled>
 </member>
 <member name="test_event" displayname="ast_event API Tests" remove_on_change="tests/test_event.o tests/test_event.so">
+	<depend>TEST_FRAMEWORK</depend>
+</member>
+<member name="test_expr" displayname="Expression evaluation tests" remove_on_change="tests/test_expr.o tests/test_expr.so">
 	<depend>TEST_FRAMEWORK</depend>
 </member>
 <member name="test_func_file" displayname="FILE() Tests" remove_on_change="tests/test_func_file.o tests/test_func_file.so">

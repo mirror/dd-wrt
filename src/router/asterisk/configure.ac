@@ -20,7 +20,7 @@ AC_CONFIG_SRCDIR([main/asterisk.c])
 AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_COPYRIGHT("Asterisk")
-AC_REVISION($Revision: 290289 $)
+AC_REVISION($Revision: 301494 $)
 
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
@@ -431,7 +431,7 @@ AST_EXT_LIB_SETUP([RADIUS], [Radius Client], [radius])
 AST_EXT_LIB_SETUP([RESAMPLE], [LIBRESAMPLE], [resample])
 AST_EXT_LIB_SETUP([SDL], [Sdl], [sdl])
 AST_EXT_LIB_SETUP([SDL_IMAGE], [Sdl Image], [SDL_image])
-AST_OPTION_ONLY([sounds-cache], [SOUNDS_CACHE_DIR], [cached sound tarfiles], [${HOME}/.asterisk_sounds_cache])
+AST_OPTION_ONLY([sounds-cache], [SOUNDS_CACHE_DIR], [cached sound tarfiles], [])
 AST_EXT_LIB_SETUP([SPANDSP], [SPANDSP], [spandsp])
 AST_EXT_LIB_SETUP([SS7], [ISDN SS7], [ss7])
 AST_EXT_LIB_SETUP([SPEEX], [Speex], [speex])
@@ -486,6 +486,8 @@ AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_CHECK_MEMBERS([struct stat.st_blksize])
+AC_CHECK_MEMBERS([struct ucred.uid, struct ucred.cr_uid], [], [], [#include <sys/socket.h>])
+AC_CHECK_MEMBERS([struct ifreq.ifr_ifru.ifru_hwaddr], [], [], [#include <net/if.h>])
 AC_HEADER_TIME
 AC_STRUCT_TM
 AC_C_VOLATILE
@@ -1003,6 +1005,9 @@ else if test $ac_cv_sizeof_long = $ac_cv_sizeof_fd_set_fds_bits; then
 else if test $ac_cv_sizeof_long_long = $ac_cv_sizeof_fd_set_fds_bits; then
   AC_DEFINE([TYPEOF_FD_SET_FDS_BITS], [long long], [Define to a type of the same size as fd_set.fds_bits[[0]]])
 fi ; fi ; fi
+
+# PKGCONFIG is used in later tests
+AC_CHECK_TOOL(PKGCONFIG, pkg-config, No)
 
 
 # do the package library checks now
@@ -1968,6 +1973,21 @@ then
 fi
 
 AST_EXT_TOOL_CHECK([GMIME], [gmime-config], [], [], [#include <gmime/gmime.h>], [gboolean q = g_mime_check_version(0,0,0);])
+if test "x${PBX_GMIME}" = "x0"; then
+	# Later versions of GMime use pkg-config
+	if test "x${PKGCONFIG}" = xNo; then :; else
+		GMIME_INCLUDE=$(${PKGCONFIG} gmime-2.0 --cflags 2>/dev/null)
+		GMIME_LIB=$(${PKGCONFIG} gmime-2.0 --libs)
+		if test "x${GMIME_INCLUDE}${GMIME_LIB}" = "x"; then 
+			GMIME_INCLUDE=$(${PKGCONFIG} gmime-2.2 --cflags 2>/dev/null)
+			GMIME_LIB=$(${PKGCONFIG} gmime-2.2 --libs)
+		fi
+		if test "x${GMIME_INCLUDE}${GMIME_LIB}" != "x"; then
+			PBX_GMIME=1
+			AC_DEFINE([HAVE_GMIME], 1, [Define if your system has the GMIME libraries.])
+		fi
+	fi
+fi
 
 AST_EXT_LIB_CHECK([HOARD], [hoard], [malloc], [])
 
@@ -2108,7 +2128,6 @@ fi
 AC_SUBST(PBX_LAUNCHD)
 
 PBX_GTK2=0
-AC_CHECK_TOOL(PKGCONFIG, pkg-config, No)
 if test ! "x${PKGCONFIG}" = xNo; then
    GTK2_INCLUDE=$(${PKGCONFIG} gtk+-2.0 --cflags 2>/dev/null)
    GTK2_LIB=$(${PKGCONFIG} gtk+-2.0 --libs)

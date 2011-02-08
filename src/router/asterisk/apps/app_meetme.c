@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 287760 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 297245 $")
 
 #include <dahdi/user.h>
 
@@ -492,7 +492,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 287760 $")
 		</synopsis>
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
-			<parameter name="Conference" required="true">
+			<parameter name="Conference" required="false">
 				<para>Conference number.</para>
 			</parameter>
 		</syntax>
@@ -1215,9 +1215,9 @@ static struct ast_conference *build_conf(const char *confno, const char *pin,
 			/* if we are creating a conference for a unit test, it is not neccesary
 			 * to open a pseudo channel, so, if we fail continue creating
 			 * the conference. */
-			ast_test_status_update(test, "Unable to open pseudo device\n");
+			ast_test_status_update(test, "Unable to open DAHDI pseudo device\n");
 		} else {
-			ast_log(LOG_WARNING, "Unable to open pseudo device\n");
+			ast_log(LOG_WARNING, "Unable to open DAHDI pseudo device\n");
 			if (cnf->fd >= 0)
 				close(cnf->fd);
 			ast_free(cnf);
@@ -2571,7 +2571,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 		/* open pseudo in non-blocking mode */
 		fd = open("/dev/dahdi/pseudo", O_RDWR | O_NONBLOCK);
 		if (fd < 0) {
-			ast_log(LOG_WARNING, "Unable to open pseudo channel: %s\n", strerror(errno));
+			ast_log(LOG_WARNING, "Unable to open DAHDI pseudo channel: %s\n", strerror(errno));
 			goto outrun;
 		}
 		using_pseudo = 1;
@@ -3783,8 +3783,8 @@ static struct ast_conference *find_conf_realtime(struct ast_channel *chan, char 
 		struct timeval now;
 		char recordingfilename[256] = "";
 		char recordingformat[11] = "";
-		char currenttime[19] = "";
-		char eatime[19] = "";
+		char currenttime[32] = "";
+		char eatime[32] = "";
 		char bookid[51] = "";
 		char recordingtmp[AST_MAX_EXTENSION] = "";
 		char useropts[OPTIONS_LEN + 1]; /* Used for RealTime conferences */
