@@ -36,7 +36,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 294989 $")
 
 #include <curl/curl.h>
 
@@ -529,8 +529,11 @@ static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info
 			struct ast_str *fields = ast_str_create(ast_str_strlen(str) / 2);
 			struct ast_str *values = ast_str_create(ast_str_strlen(str) / 2);
 			int rowcount = 0;
-			while ((piece = strsep(&remainder, "&"))) {
+			while (fields && values && (piece = strsep(&remainder, "&"))) {
 				char *name = strsep(&piece, "=");
+				if (!piece) {
+					piece = "";
+				}
 				ast_uri_decode(piece);
 				ast_uri_decode(name);
 				ast_str_append(&fields, 0, "%s%s", rowcount ? "," : "", name);

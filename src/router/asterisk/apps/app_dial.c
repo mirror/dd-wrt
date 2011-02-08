@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 290614 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296002 $")
 
 #include <sys/time.h>
 #include <sys/signal.h>
@@ -984,7 +984,16 @@ static struct ast_channel *wait_for_answer(struct ast_channel *in,
 			ast_deactivate_generator(in);
 			/* If we are calling a single channel, and not providing ringback or music, */
 			/* then, make them compatible for in-band tone purpose */
-			ast_channel_make_compatible(outgoing->chan, in);
+			if (ast_channel_make_compatible(outgoing->chan, in) < 0) {
+				/* If these channels can not be made compatible, 
+				 * there is no point in continuing.  The bridge
+				 * will just fail if it gets that far.
+				 */
+				*to = -1;
+				strcpy(pa->status, "CONGESTION");
+				ast_cdr_failed(in->cdr);
+				return NULL;
+			}
 		}
 
 		if (!ast_test_flag64(peerflags, OPT_IGNORE_CONNECTEDLINE) && !ast_test_flag64(outgoing, DIAL_CALLERID_ABSENT)) {
@@ -1695,7 +1704,7 @@ static int setup_privacy_args(struct privacy_args *pa,
 			*/
 			silencethreshold = ast_dsp_get_threshold_from_settings(THRESHOLD_SILENCE);
 			ast_answer(chan);
-			res = ast_play_and_record(chan, "priv-recordintro", pa->privintro, 4, "gsm", &duration, silencethreshold, 2000, 0);  /* NOTE: I've reduced the total time to 4 sec */
+			res = ast_play_and_record(chan, "priv-recordintro", pa->privintro, 4, "sln", &duration, silencethreshold, 2000, 0);  /* NOTE: I've reduced the total time to 4 sec */
 									/* don't think we'll need a lock removed, we took care of
 									   conflicts by naming the pa.privintro file */
 			if (res == -1) {

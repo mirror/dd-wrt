@@ -68,6 +68,10 @@ enum ast_fax_state {
 	AST_FAX_STATE_ACTIVE,
 	/*! fax session complete */
 	AST_FAX_STATE_COMPLETE,
+	/*! reserved state */
+	AST_FAX_STATE_RESERVED,
+	/*! inactive state */
+	AST_FAX_STATE_INACTIVE,
 };
 
 /*! \brief fax session options */
@@ -168,7 +172,8 @@ struct ast_fax_session_details {
 
 struct ast_fax_tech;
 struct ast_fax_debug_info;
-	
+struct ast_fax_tech_token;
+
 /*! \brief The data required to handle a fax session */
 struct ast_fax_session {
 	/*! session id */
@@ -198,8 +203,6 @@ struct ast_fax_session {
 	/*! used to take variable-sized frames in and output frames of an expected size to the fax stack */
 	struct ast_smoother *smoother;
 };
-
-struct ast_fax_tech_token;
 
 /*! \brief used to register a FAX technology module with res_fax */
 struct ast_fax_tech {
@@ -242,7 +245,7 @@ struct ast_fax_tech {
 	/*! displays settings from the fax technology module */
 	char * (* const cli_show_settings)(int);
 };
-  
+
 /*! \brief register a fax technology */
 int ast_fax_tech_register(struct ast_fax_tech *tech);
 

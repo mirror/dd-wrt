@@ -90,10 +90,10 @@ struct sig_pri_callback {
 	void (* const unlock_private)(void *pvt);
 	/* Lock the private in the signalling private structure.  ... */
 	void (* const lock_private)(void *pvt);
-	/* Function which is called back to handle any other DTMF up events that are received.  Called by analog_handle_event.  Why is this
+	/* Function which is called back to handle any other DTMF events that are received.  Called by analog_handle_event.  Why is this
 	 * important to use, instead of just directly using events received before they are passed into the library?  Because sometimes,
 	 * (CWCID) the library absorbs DTMF events received. */
-	//void (* const handle_dtmfup)(void *pvt, struct ast_channel *ast, enum analog_sub analog_index, struct ast_frame **dest);
+	//void (* const handle_dtmf)(void *pvt, struct ast_channel *ast, enum analog_sub analog_index, struct ast_frame **dest);
 
 	//int (* const dial_digits)(void *pvt, enum analog_sub sub, struct analog_dialoperation *dop);
 	int (* const play_tone)(void *pvt, enum sig_pri_tone tone);
@@ -395,6 +395,8 @@ struct sig_pri_span {
 	int resetpos;							/*!< current position during a reset (-1 if not started) */
 	int sig;								/*!< ISDN signalling type (SIG_PRI, SIG_BRI, SIG_BRI_PTMP, etc...) */
 	int new_chan_seq;						/*!< New struct ast_channel sequence number */
+	/*! TRUE if we have already whined about no D channels available. */
+	unsigned int no_d_channels:1;
 
 	/* Everything after here is internally set */
 	struct pri *dchans[SIG_PRI_NUM_DCHANS];		/*!< Actual d-channels */

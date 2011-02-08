@@ -208,7 +208,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 291942 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 297965 $")
 
 #include <signal.h>
 #include <sys/signal.h>
@@ -1417,7 +1417,7 @@ static void realtime_update_peer(const char *peername, struct ast_sockaddr *addr
 static void update_peer(struct sip_peer *p, int expire);
 static struct ast_variable *get_insecure_variable_from_config(struct ast_config *config);
 static const char *get_name_from_variable(struct ast_variable *var, const char *newpeername);
-static struct sip_peer *realtime_peer(const char *peername, struct ast_sockaddr *sin, int devstate_only);
+static struct sip_peer *realtime_peer(const char *peername, struct ast_sockaddr *sin, int devstate_only, int which_objects);
 static char *sip_prune_realtime(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 
 /*--- Internal UA client handling (outbound registrations) */
@@ -2627,6 +2627,9 @@ cleanup:
 static int peer_is_marked(void *peerobj, void *arg, int flags)
 {
 	struct sip_peer *peer = peerobj;
+	if (peer->the_mark && peer->pokeexpire != -1) {
+		AST_SCHED_DEL(sched, peer->pokeexpire);
+	}
 	return peer->the_mark ? CMP_MATCH : 0;
 }
 
@@ -4031,7 +4034,6 @@ static int sip_setoption(struct ast_channel *chan, int option, void *data, int d
 		res = 0;
 		break;
 	default:
-		ast_log(LOG_NOTICE, "Unknown option: %d\n", option);
 		break;
 	}
 
@@ -4219,6 +4221,12 @@ static void realtime_update_peer(const char *peername, struct ast_sockaddr *addr
 	else if (sip_cfg.rtsave_sysname)
 		syslabel = "regserver";
 
+	/* XXX IMPORTANT: Anytime you add a new parameter to be updated, you
+         *  must also add it to contrib/scripts/asterisk.ldap-schema,
+         *  contrib/scripts/asterisk.ldif,
+         *  and to configs/res_ldap.conf.sample as described in
+         *  bugs 15156 and 15895 
+         */
 	if (fc) {
 		ast_update_realtime(tablename, "name", peername, "ipaddr", ipaddr,
 			"port", port, "regseconds", regseconds,
@@ -4387,7 +4395,7 @@ static const char *get_name_from_variable(struct ast_variable *var, const char *
  * This returns a pointer to a peer and because we use build_peer, we can rest
  * assured that the refcount is bumped.
 */
-static struct sip_peer *realtime_peer(const char *newpeername, struct ast_sockaddr *addr, int devstate_only)
+static struct sip_peer *realtime_peer(const char *newpeername, struct ast_sockaddr *addr, int devstate_only, int which_objects)
 {
 	struct sip_peer *peer;
 	struct ast_variable *var = NULL;
@@ -4511,11 +4519,19 @@ static struct sip_peer *realtime_peer(const char *newpeername, struct ast_sockad
 	}
 
 	for (tmp = var; tmp; tmp = tmp->next) {
-		if (!newpeername && !strcasecmp(tmp->name, "name")) {
+		if (!strcasecmp(tmp->name, "type") && (!strcasecmp(tmp->value, "peer") && which_objects == FINDUSERS)) {
+			if (peerlist) {
+				ast_config_destroy(peerlist);
+			} else {
+				ast_variables_destroy(var);
+				ast_variables_destroy(varregs);
+			}
+			return NULL;
+		} else if (!newpeername && !strcasecmp(tmp->name, "name")) {
 			newpeername = tmp->value;
 		}
 	}
-	
+
 	if (!newpeername) {	/* Did not find peer in realtime */
 		ast_log(LOG_WARNING, "Cannot Determine peer name ip=%s\n", ipaddr);
 		if(peerlist)
@@ -4630,7 +4646,7 @@ static struct sip_peer *find_peer(const char *peer, struct ast_sockaddr *addr, i
 	}
 
 	if (!p && (realtime || devstate_only)) {
-		p = realtime_peer(peer, addr, devstate_only);
+		p = realtime_peer(peer, addr, devstate_only, which_objects);
 		if (p) {
 			switch (which_objects) {
 			case FINDUSERS:
@@ -5138,6 +5154,10 @@ static int sip_call(struct ast_channel *ast, char *dest, int timeout)
 		} else if (!strcasecmp(ast_var_name(current), "SIPTRANSFER_REPLACES")) {
 			/* We're replacing a call. */
 			p->options->replaces = ast_var_value(current);
+		} else if (!strcasecmp(ast_var_name(current), "SIP_MAX_FORWARDS")) {
+			if (sscanf(ast_var_value(current), "%d", &(p->maxforwards)) != 1) {
+				ast_log(LOG_WARNING, "The SIP_MAX_FORWARDS channel variable is not a valid integer.");
+			}
 		}
 	}
 
@@ -7950,6 +7970,35 @@ static int find_sdp(struct sip_request *req)
 	return FALSE;
 }
 
+/*! \brief Change hold state for a call */
+static void change_hold_state(struct sip_pvt *dialog, struct sip_request *req, int holdstate, int sendonly)
+{
+	if (sip_cfg.notifyhold && (!holdstate || !ast_test_flag(&dialog->flags[1], SIP_PAGE2_CALL_ONHOLD)))
+		sip_peer_hold(dialog, holdstate);
+	if (sip_cfg.callevents)
+		manager_event(EVENT_FLAG_CALL, "Hold",
+			      "Status: %s\r\n"
+			      "Channel: %s\r\n"
+			      "Uniqueid: %s\r\n",
+			      holdstate ? "On" : "Off",
+			      dialog->owner->name,
+			      dialog->owner->uniqueid);
+	append_history(dialog, holdstate ? "Hold" : "Unhold", "%s", req->data->str);
+	if (!holdstate) {	/* Put off remote hold */
+		ast_clear_flag(&dialog->flags[1], SIP_PAGE2_CALL_ONHOLD);	/* Clear both flags */
+		return;
+	}
+	/* No address for RTP, we're on hold */
+
+	if (sendonly == 1)	/* One directional hold (sendonly/recvonly) */
+		ast_set_flag(&dialog->flags[1], SIP_PAGE2_CALL_ONHOLD_ONEDIR);
+	else if (sendonly == 2)	/* Inactive stream */
+		ast_set_flag(&dialog->flags[1], SIP_PAGE2_CALL_ONHOLD_INACTIVE);
+	else
+		ast_set_flag(&dialog->flags[1], SIP_PAGE2_CALL_ONHOLD_ACTIVE);
+	return;
+}
+
 
 static int get_ip_and_port_from_sdp(struct sip_request *req, const enum media_type media, struct ast_sockaddr *addr)
 {
@@ -8587,20 +8636,8 @@ static int process_sdp(struct sip_pvt *p, struct sip_request *req, int t38action
 		ast_queue_control(p->owner, AST_CONTROL_UNHOLD);
 		/* Activate a re-invite */
 		ast_queue_frame(p->owner, &ast_null_frame);
-		/* Queue Manager Unhold event */
-		append_history(p, "Unhold", "%s", req->data->str);
-		if (sip_cfg.callevents)
-			ast_manager_event(p->owner, EVENT_FLAG_CALL, "Hold",
-				      "Status: Off\r\n"
-				      "Channel: %s\r\n"
-				      "Uniqueid: %s\r\n",
-				      p->owner->name,
-				      p->owner->uniqueid);
-		if (sip_cfg.notifyhold)
-			sip_peer_hold(p, FALSE);
-		ast_clear_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD); /* Clear both flags */
+		change_hold_state(p, req, FALSE, sendonly);
 	} else if ((ast_sockaddr_isnull(sa) && ast_sockaddr_isnull(vsa) && ast_sockaddr_isnull(tsa) && ast_sockaddr_isnull(isa)) || (sendonly && sendonly != -1)) {
-		int already_on_hold = ast_test_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD);
 		ast_queue_control_data(p->owner, AST_CONTROL_HOLD,
 				       S_OR(p->mohsuggest, NULL),
 				       !ast_strlen_zero(p->mohsuggest) ? strlen(p->mohsuggest) + 1 : 0);
@@ -8609,24 +8646,7 @@ static int process_sdp(struct sip_pvt *p, struct sip_request *req, int t38action
 		/* RTCP needs to go ahead, even if we're on hold!!! */
 		/* Activate a re-invite */
 		ast_queue_frame(p->owner, &ast_null_frame);
-		/* Queue Manager Hold event */
-		append_history(p, "Hold", "%s", req->data->str);
-		if (sip_cfg.callevents && !ast_test_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD)) {
-			ast_manager_event(p->owner, EVENT_FLAG_CALL, "Hold",
-				      "Status: On\r\n"
-				      "Channel: %s\r\n"
-				      "Uniqueid: %s\r\n",
-				      p->owner->name,
-				      p->owner->uniqueid);
-		}
-		if (sendonly == 1)	/* One directional hold (sendonly/recvonly) */
-			ast_set_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD_ONEDIR);
-		else if (sendonly == 2)	/* Inactive stream */
-			ast_set_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD_INACTIVE);
-		else
-			ast_set_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD_ACTIVE);
-		if (sip_cfg.notifyhold && !already_on_hold)
-			sip_peer_hold(p, TRUE);
+		change_hold_state(p, req, TRUE, sendonly);
 	}
 	
 	return 0;
@@ -9077,29 +9097,17 @@ static int add_header(struct sip_request *req, const char *var, const char *valu
 	return 0;	
 }
 
-/*! \brief Add 'Max-Forwards' header to SIP message */
+/*! 
+ * \pre dialog is assumed to be locked while calling this function
+ * \brief Add 'Max-Forwards' header to SIP message 
+ */
 static int add_header_max_forwards(struct sip_pvt *dialog, struct sip_request *req)
 {
 	char clen[10];
-	const char *max = NULL;
 
-	/* deadlock avoidance */
-	while (dialog->owner && ast_channel_trylock(dialog->owner)) {
-		sip_pvt_unlock(dialog);
-		usleep(1);
-		sip_pvt_lock(dialog);
-	}
+	snprintf(clen, sizeof(clen), "%d", dialog->maxforwards);
 
-	if (dialog->owner) {
- 		max = pbx_builtin_getvar_helper(dialog->owner, "SIP_MAX_FORWARDS");
-		ast_channel_unlock(dialog->owner);
-	}
-
-	/* The channel variable overrides the peer/channel value */
-	if (max == NULL) {
-		snprintf(clen, sizeof(clen), "%d", dialog->maxforwards);
-	}
-	return add_header(req, "Max-Forwards", max != NULL ? max : clen);
+	return add_header(req, "Max-Forwards", clen);
 }
 
 /*! \brief Add 'Content-Length' header and content to SIP message */
@@ -10437,6 +10445,7 @@ static void get_crypto_attrib(struct sip_srtp *srtp, const char **a_crypto)
 static enum sip_result add_sdp(struct sip_request *resp, struct sip_pvt *p, int oldsdp, int add_audio, int add_t38)
 {
 	format_t alreadysent = 0;
+	int doing_directmedia = FALSE;
 
 	struct ast_sockaddr addr = { {0,} };
 	struct ast_sockaddr vaddr = { {0,} };
@@ -10501,6 +10510,7 @@ static enum sip_result add_sdp(struct sip_request *resp, struct sip_pvt *p, int 
 	}
 
 	if (add_audio) {
+		doing_directmedia = (!ast_sockaddr_isnull(&p->redirip) && p->redircodecs) ? TRUE : FALSE;
 		/* Check if we need video in this call */
 		if ((p->jointcapability & AST_FORMAT_VIDEO_MASK) && !p->novideo) {
 			if (p->vrtp) {
@@ -10540,12 +10550,27 @@ static enum sip_result add_sdp(struct sip_request *resp, struct sip_pvt *p, int 
 		 ast_sockaddr_stringify_addr(&dest));
 
 	if (add_audio) {
+		if (ast_test_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD) == SIP_PAGE2_CALL_ONHOLD_ONEDIR) {
+			hold = "a=recvonly\r\n";
+			doing_directmedia = FALSE;
+		} else if (ast_test_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD) == SIP_PAGE2_CALL_ONHOLD_INACTIVE) {
+			hold = "a=inactive\r\n";
+			doing_directmedia = FALSE;
+		} else {
+			hold = "a=sendrecv\r\n";
+		}
+
 		capability = p->jointcapability;
 
 		/* XXX note, Video and Text are negated - 'true' means 'no' */
 		ast_debug(1, "** Our capability: %s Video flag: %s Text flag: %s\n", ast_getformatname_multiple(codecbuf, sizeof(codecbuf), capability),
 			  p->novideo ? "True" : "False", p->notext ? "True" : "False");
 		ast_debug(1, "** Our prefcodec: %s \n", ast_getformatname_multiple(codecbuf, sizeof(codecbuf), p->prefcodec));
+
+		if (doing_directmedia) {
+			capability &= p->redircodecs;
+			ast_debug(1, "** Our native-bridge filtered capablity: %s\n", ast_getformatname_multiple(codecbuf, sizeof(codecbuf), capability));
+		}
 
 		/* Check if we need audio */
 		if (capability & AST_FORMAT_AUDIO_MASK)
@@ -10591,13 +10616,6 @@ static enum sip_result add_sdp(struct sip_request *resp, struct sip_pvt *p, int 
 		get_crypto_attrib(p->srtp, &a_crypto);
 		ast_str_append(&m_audio, 0, "m=audio %d RTP/%s", ast_sockaddr_port(&dest),
 			a_crypto ? "SAVP" : "AVP");
-
-		if (ast_test_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD) == SIP_PAGE2_CALL_ONHOLD_ONEDIR)
-			hold = "a=recvonly\r\n";
-		else if (ast_test_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD) == SIP_PAGE2_CALL_ONHOLD_INACTIVE)
-			hold = "a=inactive\r\n";
-		else
-			hold = "a=sendrecv\r\n";
 
 		/* Now, start adding audio codecs. These are added in this order:
 		   - First what was requested by the calling channel
@@ -11278,8 +11296,10 @@ static int transmit_publish(struct sip_epa_entry *epa_entry, enum sip_publish_ty
 	sip_pvt_lock(pvt);
 
 	if (create_addr(pvt, epa_entry->destination, NULL, TRUE, NULL)) {
+		sip_pvt_unlock(pvt);
 		dialog_unlink_all(pvt, TRUE, TRUE);
 		dialog_unref(pvt, "create_addr failed in transmit_publish. Unref dialog");
+		return -1;
 	}
 	ast_sip_ouraddrfor(&pvt->sa, &pvt->ourip, pvt);
 	ast_set_flag(&pvt->flags[0], SIP_OUTGOING);
@@ -12772,11 +12792,22 @@ static int expire_register(const void *data)
 static int sip_poke_peer_s(const void *data)
 {
 	struct sip_peer *peer = (struct sip_peer *)data;
+	struct sip_peer *foundpeer;
 
 	peer->pokeexpire = -1;
 
-	sip_poke_peer(peer, 0);
+	foundpeer = ao2_find(peers, peer, OBJ_POINTER);
+	if (!foundpeer) {
+		unref_peer(peer, "removing poke peer ref");
+		return 0;
+	} else if (foundpeer->name != peer->name) {
+		unref_peer(foundpeer, "removing above peer ref");
+		unref_peer(peer, "removing poke peer ref");
+		return 0;
+	}
 
+	unref_peer(foundpeer, "removing above peer ref");
+	sip_poke_peer(peer, 0);
 	unref_peer(peer, "removing poke peer ref");
 
 	return 0;
@@ -12938,8 +12969,12 @@ static enum parse_register_result parse_register_contact(struct sip_pvt *pvt, st
 	int transport_type;
 	const char *useragent;
 	struct ast_sockaddr oldsin, testsa;
+	char *firstcuri = NULL;
+	int start = 0;
+	int wildcard_found = 0;
+	int single_binding_found;
 
-	ast_copy_string(contact, get_header(req, "Contact"), sizeof(contact));
+	ast_copy_string(contact, __get_header(req, "Contact", &start), sizeof(contact));
 
 	if (ast_strlen_zero(expires)) {	/* No expires header, try look in Contact: */
 		char *s = strcasestr(contact, ";expires=");
@@ -12956,11 +12991,31 @@ static enum parse_register_result parse_register_contact(struct sip_pvt *pvt, st
 
 	copy_socket_data(&pvt->socket, &req->socket);
 
-	/* Look for brackets */
-	curi = contact;
-	if (strchr(contact, '<') == NULL)	/* No <, check for ; and strip it */
-		strsep(&curi, ";");	/* This is Header options, not URI options */
-	curi = get_in_brackets(contact);
+	do {
+		/* Look for brackets */
+		curi = contact;
+		if (strchr(contact, '<') == NULL)	/* No <, check for ; and strip it */
+			strsep(&curi, ";");	/* This is Header options, not URI options */
+		curi = get_in_brackets(contact);
+		if (!firstcuri) {
+			firstcuri = ast_strdupa(curi);
+		}
+
+		if (!strcasecmp(curi, "*")) {
+			wildcard_found = 1;
+		} else {
+			single_binding_found = 1;
+		}
+
+		if (wildcard_found && (ast_strlen_zero(expires) || expire != 0 || single_binding_found)) {
+			/* Contact header parameter "*" detected, so punt if: Expires header is missing,
+			 * Expires value is not zero, or another Contact header is present. */
+			return PARSE_REGISTER_FAILED;
+		}
+
+		ast_copy_string(contact, __get_header(req, "Contact", &start), sizeof(contact));
+	} while (!ast_strlen_zero(contact));
+	curi = firstcuri;
 
 	/* if they did not specify Contact: or Expires:, they are querying
 	   what we currently have stored as their contact address, so return
@@ -15702,7 +15757,7 @@ static char *_sip_show_peers(int fd, int *total, struct mansession *s, const str
 			"RealtimeDevice: %s\r\n\r\n",
 			idtext,
 			peer->name,
-			ast_sockaddr_isnull(&peer->addr) ? "-none-" : ast_sockaddr_stringify(&peer->addr),
+			ast_sockaddr_isnull(&peer->addr) ? "-none-" : ast_sockaddr_stringify_fmt(&peer->addr, AST_SOCKADDR_STR_HOST),
 			ast_sockaddr_isnull(&peer->addr) ? 0 : ast_sockaddr_port(&peer->addr),
 			peer->host_dynamic ? "yes" : "no", 	/* Dynamic or not? */
 			ast_test_flag(&peer->flags[0], SIP_NAT_FORCE_RPORT) ? "yes" : "no",	/* NAT=yes? */
@@ -16394,6 +16449,7 @@ static char *_sip_show_peer(int type, int fd, struct mansession *s, const struct
 		ast_cli(fd, "  RTP Engine   : %s\n", peer->engine);
 		ast_cli(fd, "  Parkinglot   : %s\n", peer->parkinglot);
 		ast_cli(fd, "  Use Reason   : %s\n", AST_CLI_YESNO(ast_test_flag(&peer->flags[1], SIP_PAGE2_Q850_REASON)));
+		ast_cli(fd, "  Encryption   : %s\n", AST_CLI_YESNO(ast_test_flag(&peer->flags[1], SIP_PAGE2_USE_SRTP)));
 		ast_cli(fd, "\n");
 		peer = unref_peer(peer, "sip_show_peer: unref_peer: done with peer ptr");
 	} else  if (peer && type == 1) { /* manager listing */
@@ -16449,6 +16505,7 @@ static char *_sip_show_peer(int type, int fd, struct mansession *s, const struct
 		astman_append(s, "SIP-Sess-Expires: %d\r\n", peer->stimer.st_max_se);
 		astman_append(s, "SIP-Sess-Min: %d\r\n", peer->stimer.st_min_se);
 		astman_append(s, "SIP-RTP-Engine: %s\r\n", peer->engine);
+		astman_append(s, "SIP-Encryption: %s\r\n", ast_test_flag(&peer->flags[1], SIP_PAGE2_USE_SRTP) ? "Y" : "N");
 
 		/* - is enumerated */
 		astman_append(s, "SIP-DTMFmode: %s\r\n", dtmfmode2str(ast_test_flag(&peer->flags[0], SIP_DTMF)));
@@ -17026,7 +17083,7 @@ static char *sip_show_settings(struct ast_cli_entry *e, int cmd, struct ast_cli_
 		ast_cli(a->fd, "  Update:                 %s\n", AST_CLI_YESNO(sip_cfg.peer_rtupdate));
 		ast_cli(a->fd, "  Ignore Reg. Expire:     %s\n", AST_CLI_YESNO(sip_cfg.ignore_regexpire));
 		ast_cli(a->fd, "  Save sys. name:         %s\n", AST_CLI_YESNO(sip_cfg.rtsave_sysname));
-		ast_cli(a->fd, "  Auto Clear:             %d\n", sip_cfg.rtautoclear);
+		ast_cli(a->fd, "  Auto Clear:             %d (%s)\n", sip_cfg.rtautoclear, ast_test_flag(&global_flags[1], SIP_PAGE2_RTAUTOCLEAR) ? "Enabled" : "Disabled");
 	}
 	ast_cli(a->fd, "\n----\n");
 	return CLI_SUCCESS;
@@ -21161,6 +21218,15 @@ static int handle_request_invite(struct sip_pvt *p, struct sip_request *req, int
 			} else {
 				p->jointcapability = p->capability;
 				ast_debug(1, "Hm....  No sdp for the moment\n");
+				/* Some devices signal they want to be put off hold by sending a re-invite
+				   *without* an SDP, which is supposed to mean "Go back to your state"
+				   and since they put os on remote hold, we go back to off hold */
+				if (ast_test_flag(&p->flags[1], SIP_PAGE2_CALL_ONHOLD)) {
+					ast_queue_control(p->owner, AST_CONTROL_UNHOLD);
+					/* Activate a re-invite */
+					ast_queue_frame(p->owner, &ast_null_frame);
+					change_hold_state(p, req, FALSE, 0);
+				}
 			}
 			if (p->do_history) /* This is a response, note what it was for */
 				append_history(p, "ReInv", "Re-invite received");
@@ -21816,6 +21882,10 @@ static int local_attended_transfer(struct sip_pvt *transferer, struct sip_dual *
 
 		ast_indicate(target.chan1, AST_CONTROL_UNHOLD);
 
+		if (current->chan2 && current->chan2->_state == AST_STATE_RING) {
+			ast_indicate(target.chan1, AST_CONTROL_RINGING);
+		}
+
 		if (target.chan2) {
 			ast_channel_queue_connected_line_update(target.chan1, &connected_to_transferee, NULL);
 			ast_channel_queue_connected_line_update(target.chan2, &connected_to_target, NULL);
@@ -22184,6 +22254,9 @@ static int handle_request_refer(struct sip_pvt *p, struct sip_request *req, int 
 
 	/* For blind transfers, move the call to the new extensions. For attended transfers on multiple
 	   servers - generate an INVITE with Replaces. Either way, let the dial plan decided  */
+	/* indicate before masquerade so the indication actually makes it to the real channel
+	   when using local channels with MOH passthru */
+	ast_indicate(current.chan2, AST_CONTROL_UNHOLD);
 	res = ast_async_goto(current.chan2, p->refer->refer_to_context, p->refer->refer_to, 1);
 
 	if (!res) {
@@ -23380,6 +23453,13 @@ static int handle_request_register(struct sip_pvt *p, struct sip_request *req, s
 {
 	enum check_auth_result res;
 
+	/* If this is not the intial request, and the initial request isn't
+	 * a register, something screwy happened, so bail */
+	if (p->initreq.headers && p->initreq.method != SIP_REGISTER) {
+		ast_log(LOG_WARNING, "Ignoring spurious REGISTER with Call-ID: %s\n", p->callid);
+		return -1;
+	}
+
 	/* Use this as the basis */
 	copy_request(&p->initreq, req);
 	if (sipdebug)
@@ -23443,6 +23523,9 @@ static int handle_incoming(struct sip_pvt *p, struct sip_request *req, struct as
 	const char *cmd;
 	const char *cseq;
 	const char *useragent;
+	const char *via;
+	const char *callid;
+	int via_pos = 0;
 	int seqno;
 	int len;
 	int respid;
@@ -23453,13 +23536,19 @@ static int handle_incoming(struct sip_pvt *p, struct sip_request *req, struct as
 	int oldmethod = p->method;
 	int acked = 0;
 
-	/* Get Method and Cseq */
+	/* RFC 3261 - 8.1.1 A valid SIP request must contain To, From, CSeq, Call-ID and Via.
+	 * 8.2.6.2 Response must have To, From, Call-ID CSeq, and Via related to the request,
+	 * so we can check to make sure these fields exist for all requests and responses */
 	cseq = get_header(req, "Cseq");
 	cmd = REQ_OFFSET_TO_STR(req, header[0]);
+	/* Save the via_pos so we can check later that responses only have 1 Via header */
+	via = __get_header(req, "Via", &via_pos);
+	/* This must exist already because we've called find_call by now */
+	callid = get_header(req, "Call-ID");
 
 	/* Must have Cseq */
-	if (ast_strlen_zero(cmd) || ast_strlen_zero(cseq)) {
-		ast_log(LOG_ERROR, "Missing Cseq. Dropping this SIP message, it's incomplete.\n");
+	if (ast_strlen_zero(cmd) || ast_strlen_zero(cseq) || ast_strlen_zero(via)) {
+		ast_log(LOG_ERROR, "Dropping this SIP message with Call-ID '%s', it's incomplete.\n", callid);
 		error = 1;
 	}
 	if (!error && sscanf(cseq, "%30d%n", &seqno, &len) != 1) {
@@ -23499,6 +23588,13 @@ static int handle_incoming(struct sip_pvt *p, struct sip_request *req, struct as
 		}
 		if (respid <= 0) {
 			ast_log(LOG_WARNING, "Invalid SIP response code: '%d'\n", respid);
+			return 0;
+		}
+		/* RFC 3261 - 8.1.3.3 If more than one Via header field value is present in a reponse
+		 * the UAC SHOULD discard the message. This is not perfect, as it will not catch multiple
+		 * headers joined with a comma. Fixing that would pretty much involve writing a new parser */
+		if (!ast_strlen_zero(__get_header(req, "via", &via_pos))) {
+			ast_log(LOG_WARNING, "Misrouted SIP response '%s' with Call-ID '%s', too many vias\n", e, callid);
 			return 0;
 		}
 		if (p->ocseq && (p->ocseq < seqno)) {
@@ -27547,19 +27643,19 @@ static int sip_set_rtp_peer(struct ast_channel *chan, struct ast_rtp_instance *i
 	}
 
 	if (instance) {
-		changed |= ast_rtp_instance_get_remote_address(instance, &p->redirip);
+		changed |= ast_rtp_instance_get_and_cmp_remote_address(instance, &p->redirip);
 	} else if (!ast_sockaddr_isnull(&p->redirip)) {
 		memset(&p->redirip, 0, sizeof(p->redirip));
 		changed = 1;
 	}
 	if (vinstance) {
-		changed |= ast_rtp_instance_get_remote_address(vinstance, &p->vredirip);
+		changed |= ast_rtp_instance_get_and_cmp_remote_address(vinstance, &p->vredirip);
 	} else if (!ast_sockaddr_isnull(&p->vredirip)) {
 		memset(&p->vredirip, 0, sizeof(p->vredirip));
 		changed = 1;
 	}
 	if (tinstance) {
-		changed |= ast_rtp_instance_get_remote_address(tinstance, &p->tredirip);
+		changed |= ast_rtp_instance_get_and_cmp_remote_address(tinstance, &p->tredirip);
 	} else if (!ast_sockaddr_isnull(&p->tredirip)) {
 		memset(&p->tredirip, 0, sizeof(p->tredirip));
 		changed = 1;

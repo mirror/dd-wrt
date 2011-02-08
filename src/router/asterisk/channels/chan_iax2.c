@@ -37,7 +37,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 290506 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296951 $")
 
 #include <sys/mman.h>
 #include <dirent.h>
@@ -1438,6 +1438,9 @@ static struct iax2_thread *find_idle_thread(void)
 	if (ast_pthread_create_background(&thread->threadid, NULL, iax2_process_thread, thread)) {
 		ast_cond_destroy(&thread->cond);
 		ast_mutex_destroy(&thread->lock);
+		ast_mutex_unlock(&thread->init_lock);
+		ast_cond_destroy(&thread->init_cond);
+		ast_mutex_destroy(&thread->init_lock);
 		ast_free(thread);
 		return NULL;
 	}
@@ -8700,7 +8703,7 @@ static int update_registry(struct sockaddr_in *sin, int callno, char *devtype, i
 		peercnt_modify(0, 0, &p->addr);
 
 		/* Stash the IP address from which they registered */
-		memcpy(&p->addr, sin, sizeof(p->addr));
+		ast_sockaddr_from_sin(&p->addr, sin);
 
 		snprintf(data, sizeof(data), "%s:%d:%d", ast_inet_ntoa(sin->sin_addr), ntohs(sin->sin_port), p->expiry);
 		if (!ast_test_flag64(p, IAX_TEMPONLY) && sin->sin_addr.s_addr) {
@@ -11190,10 +11193,13 @@ immediatedial:
 				if ((ast_strlen_zero(iaxs[fr->callno]->secret) && ast_strlen_zero(iaxs[fr->callno]->inkeys)) ||
 						ast_test_flag(&iaxs[fr->callno]->state, IAX_STATE_AUTHENTICATED)) {
 
-					if (f.subclass.integer == IAX_COMMAND_REGREL)
+					if (f.subclass.integer == IAX_COMMAND_REGREL) {
 						memset(&sin, 0, sizeof(sin));
-					if (update_registry(&sin, fr->callno, ies.devicetype, fd, ies.refresh))
+						sin.sin_family = AF_INET;
+					}
+					if (update_registry(&sin, fr->callno, ies.devicetype, fd, ies.refresh)) {
 						ast_log(LOG_WARNING, "Registry error\n");
+					}
 					if (!iaxs[fr->callno]) {
 						break;
 					}
@@ -12087,10 +12093,17 @@ static int start_network_thread(void)
 			thread->threadnum = ++threadcount;
 			ast_mutex_init(&thread->lock);
 			ast_cond_init(&thread->cond, NULL);
+			ast_mutex_init(&thread->init_lock);
+			ast_cond_init(&thread->init_cond, NULL);
 			if (ast_pthread_create_background(&thread->threadid, NULL, iax2_process_thread, thread)) {
 				ast_log(LOG_WARNING, "Failed to create new thread!\n");
+				ast_mutex_destroy(&thread->lock);
+				ast_cond_destroy(&thread->cond);
+				ast_mutex_destroy(&thread->init_lock);
+				ast_cond_destroy(&thread->init_cond);
 				ast_free(thread);
 				thread = NULL;
+				continue;
 			}
 			AST_LIST_LOCK(&idle_list);
 			AST_LIST_INSERT_TAIL(&idle_list, thread, list);
@@ -14215,8 +14228,6 @@ static int __unload_module(void)
 	cleanup_thread_list(&active_list);
 	cleanup_thread_list(&dynamic_list);
 
-	sched = ast_sched_thread_destroy(sched);
-
 	ast_netsock_release(netsock);
 	ast_netsock_release(outsock);
 	for (x = 0; x < ARRAY_LEN(iaxs); x++) {
@@ -14258,6 +14269,7 @@ static int __unload_module(void)
 		ast_timer_close(timer);
 	}
 	transmit_processor = ast_taskprocessor_unreference(transmit_processor);
+	sched = ast_sched_thread_destroy(sched);
 
 	con = ast_context_find(regcontext);
 	if (con)
