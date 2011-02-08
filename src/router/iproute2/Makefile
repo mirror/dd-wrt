@@ -9,7 +9,11 @@ ifeq ($(ARCH),mips)
 ASM_INCLUDE=-I$(LINUXDIR)/arch/mips/include 
 endif
 ifeq ($(ARCH),mipsel)
+ifeq ($(ARCHITECTURE),broadcom)
+KERNEL_INCLUDE=../include
+else
 ASM_INCLUDE=-I$(LINUXDIR)/arch/mips/include 
+endif
 endif
 ifeq ($(ARCH),arm)
 ASM_INCLUDE=-I$(LINUXDIR)/arch/arm/include 
