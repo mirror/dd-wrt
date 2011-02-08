@@ -3,7 +3,7 @@ SBINDIR=/usr/sbin
 CONFDIR=/etc/iproute2
 DOCDIR=/usr/share/doc/iproute2
 MANDIR=/usr/share/man
-KERNEL_INCLUDE=$(SRCBASE)/linux/linux/include
+KERNEL_INCLUDE=$(LINUXDIR)/include
 
 # Path to db_185.h include
 DBM_INCLUDE:=/usr/include
@@ -25,7 +25,7 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
 HOSTCC = $(CC) 
 #ipsel-linux-uclibc-gcc
 CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
-CFLAGS = $(CCOPTS) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS = $(CCOPTS) -I$(KERNEL_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 
 LDLIBS += -L../lib -lnetlink -lutil 
