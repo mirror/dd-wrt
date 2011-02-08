@@ -935,7 +935,7 @@ void dwc_otg_disable_host_interrupts(dwc_otg_core_if_t *_core_if)
         dwc_modify_reg32(&global_regs->gintmsk, intr_mask.d32, 0);
 }
 
-#if 1
+#if 0
 /* currently not used, keep it here as if needed later */
 static int phy_read(dwc_otg_core_if_t * _core_if, int addr)
 {

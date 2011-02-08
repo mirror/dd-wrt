@@ -91,10 +91,6 @@ void dwc_otg_power_on (void)
 	writel (0x14014, (volatile unsigned long *)0xbe10103c);
 }
 
-static void release_platform_dev(struct device * dev)
-{
-}
-
 int ifx_usb_hc_init(unsigned long base_addr, int irq)
 {
 	return 0;

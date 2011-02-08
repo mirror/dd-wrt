@@ -15,6 +15,8 @@
 
 #include <machine.h>
 
+static unsigned int *cp1_base;
+
 void __init
 plat_mem_setup(void)
 {
@@ -44,9 +46,18 @@ plat_mem_setup(void)
 		}
 		envp++;
 	}
+//	memsize -= 2;
 	memsize *= 1024 * 1024;
+//	cp1_base = (unsigned int*)(KSEG1 | memsize);
 	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
 }
+
+unsigned int*
+lq_get_cp1_base(void)
+{
+	return cp1_base;
+}
+EXPORT_SYMBOL(lq_get_cp1_base);
 
 static int __init
 lq_machine_setup(void)

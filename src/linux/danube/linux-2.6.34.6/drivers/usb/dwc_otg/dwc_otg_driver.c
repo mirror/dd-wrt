@@ -646,8 +646,14 @@ dwc_otg_driver_probe(struct platform_device *_dev)
 	gusbcfg_data_t usbcfg = {.d32 = 0};
 
 	// GPIOs
-	gpio_request(_dev->dev.platform_data, "USB_POWER");
-	gpio_direction_output(_dev->dev.platform_data, 1);
+	if(_dev->dev.platform_data >= 0)
+	{
+		int pin = (int)_dev->dev.platform_data;
+		gpio_request(pin, "usb_power");
+		gpio_direction_output(pin, 1);
+		gpio_set_value(pin, 1);
+		gpio_export(pin, 0);
+	}
 
 	dev_dbg(&_dev->dev, "dwc_otg_driver_probe (%p)\n", _dev);
 

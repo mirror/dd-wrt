@@ -169,10 +169,18 @@ static struct resource lq_ebu_resource =
 	.flags	= IORESOURCE_MEM,
 };
 
+static struct platform_device lq_ebu =
+{
+	.name		= "lq_ebu",
+	.resource	= &lq_ebu_resource,
+	.num_resources	= 1,
+};
+
 void __init
 lq_register_gpio_ebu(unsigned int value)
 {
-	platform_device_register_simple("lq_ebu", 0, &lq_ebu_resource, 1);
+	lq_ebu.dev.platform_data = (void*) value;
+	platform_device_register(&lq_ebu);
 }
 
 /* ethernet */
