@@ -115,7 +115,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 263640 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 294501 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/channel.h"
@@ -605,7 +605,8 @@ static void process_collection(const char *device, struct change_collection *col
 
 	state = ast_devstate_aggregate_result(&agg);
 
-	ast_debug(1, "Aggregate devstate result is %d\n", state);
+	ast_debug(1, "Aggregate devstate result is '%s' for '%s'\n",
+		ast_devstate2str(state), device);
 
 	event = ast_event_get_cached(AST_EVENT_DEVICE_STATE,
 		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, device,

@@ -979,14 +979,42 @@ struct outgoing_helper {
 };
 
 enum {
-	/*! Soft hangup by device */
+	/*!
+	 * Soft hangup requested by device or other internal reason.
+	 * Actual hangup needed.
+	 */
 	AST_SOFTHANGUP_DEV =       (1 << 0),
-	/*! Soft hangup for async goto */
+	/*!
+	 * Used to break the normal frame flow so an async goto can be
+	 * done instead of actually hanging up.
+	 */
 	AST_SOFTHANGUP_ASYNCGOTO = (1 << 1),
+	/*!
+	 * Soft hangup requested by system shutdown.  Actual hangup
+	 * needed.
+	 */
 	AST_SOFTHANGUP_SHUTDOWN =  (1 << 2),
+	/*!
+	 * Used to break the normal frame flow after a timeout so an
+	 * implicit async goto can be done to the 'T' exten if it exists
+	 * instead of actually hanging up.  If the exten does not exist
+	 * then actually hangup.
+	 */
 	AST_SOFTHANGUP_TIMEOUT =   (1 << 3),
+	/*!
+	 * Soft hangup requested by application/channel-driver being
+	 * unloaded.  Actual hangup needed.
+	 */
 	AST_SOFTHANGUP_APPUNLOAD = (1 << 4),
+	/*!
+	 * Soft hangup requested by non-associated party.  Actual hangup
+	 * needed.
+	 */
 	AST_SOFTHANGUP_EXPLICIT =  (1 << 5),
+	/*!
+	 * Used to break a bridge so the channel can be spied upon
+	 * instead of actually hanging up.
+	 */
 	AST_SOFTHANGUP_UNBRIDGE =  (1 << 6),
 };
 
@@ -1873,6 +1901,52 @@ int ast_channel_bridge(struct ast_channel *c0,struct ast_channel *c1,
  * \note Neither channel passed here needs to be locked before calling this function.
  */
 int ast_channel_masquerade(struct ast_channel *original, struct ast_channel *clone);
+
+/*!
+ * \brief Setup a masquerade to transfer a call.
+ * \since 1.8
+ *
+ * \param target_chan Target of the call transfer.  (Masquerade original channel)
+ * \param target_id New connected line information for the target channel.
+ * \param target_held TRUE if the target call is on hold.
+ * \param transferee_chan Transferee of the call transfer. (Masquerade clone channel)
+ * \param transferee_id New connected line information for the transferee channel.
+ * \param transferee_held TRUE if the transferee call is on hold.
+ *
+ * \details
+ * Party A - Transferee
+ * Party B - Transferer
+ * Party C - Target of transfer
+ *
+ * Party B transfers A to C.
+ *
+ * Party A is connected to bridged channel B1.
+ * Party B is connected to channels C1 and C2.
+ * Party C is connected to bridged channel B2.
+ *
+ * Party B -- C1 == B1 -- Party A
+ *               __/
+ *              /
+ * Party B -- C2 == B2 -- Party C
+ *
+ * Bridged channel B1 is masqueraded into channel C2.  Where B1
+ * is the masquerade clone channel and C2 is the masquerade
+ * original channel.
+ *
+ * \see ast_channel_masquerade()
+ *
+ * \note Has the same locking requirements as ast_channel_masquerade().
+ *
+ * \retval 0 on success.
+ * \retval -1 on error.
+ */
+int ast_channel_transfer_masquerade(
+	struct ast_channel *target_chan,
+	const struct ast_party_connected_line *target_id,
+	int target_held,
+	struct ast_channel *transferee_chan,
+	const struct ast_party_connected_line *transferee_id,
+	int transferee_held);
 
 /*!
  * \brief Gives the string form of a given cause code.

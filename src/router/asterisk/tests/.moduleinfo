@@ -37,6 +37,9 @@
 <member name="test_event" displayname="ast_event API Tests" remove_on_change="tests/test_event.o tests/test_event.so">
 	<depend>TEST_FRAMEWORK</depend>
 </member>
+<member name="test_expr" displayname="Expression evaluation tests" remove_on_change="tests/test_expr.o tests/test_expr.so">
+	<depend>TEST_FRAMEWORK</depend>
+</member>
 <member name="test_func_file" displayname="FILE() Tests" remove_on_change="tests/test_func_file.o tests/test_func_file.so">
 	<depend>TEST_FRAMEWORK</depend>
 </member>

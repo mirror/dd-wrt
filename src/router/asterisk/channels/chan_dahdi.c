@@ -48,7 +48,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 291656 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296167 $")
 
 #if defined(__NetBSD__) || defined(__FreeBSD__)
 #include <pthread.h>
@@ -492,11 +492,12 @@ static inline int dahdi_wait_event(int fd)
 #define MASK_AVAIL		(1 << 0)	/*!< Channel available for PRI use */
 #define MASK_INUSE		(1 << 1)	/*!< Channel currently in use */
 
-#define CALLWAITING_SILENT_SAMPLES	( (300 * 8) / READ_SIZE) /*!< 300 ms */
-#define CALLWAITING_REPEAT_SAMPLES	( (10000 * 8) / READ_SIZE) /*!< 10,000 ms */
-#define CIDCW_EXPIRE_SAMPLES		( (500 * 8) / READ_SIZE) /*!< 500 ms */
-#define MIN_MS_SINCE_FLASH			( (2000) )	/*!< 2000 ms */
-#define DEFAULT_RINGT 				( (8000 * 8) / READ_SIZE) /*!< 8,000 ms */
+#define CALLWAITING_SILENT_SAMPLES		((300 * 8) / READ_SIZE) /*!< 300 ms */
+#define CALLWAITING_REPEAT_SAMPLES		((10000 * 8) / READ_SIZE) /*!< 10,000 ms */
+#define CALLWAITING_SUPPRESS_SAMPLES	((100 * 8) / READ_SIZE) /*!< 100 ms */
+#define CIDCW_EXPIRE_SAMPLES			((500 * 8) / READ_SIZE) /*!< 500 ms */
+#define MIN_MS_SINCE_FLASH				((2000) )	/*!< 2000 ms */
+#define DEFAULT_RINGT 					((8000 * 8) / READ_SIZE) /*!< 8,000 ms */
 
 struct dahdi_pvt;
 
@@ -955,7 +956,7 @@ struct dahdi_pvt {
 	 */
 	unsigned int use_smdi:1;
 	struct mwisend_info mwisend_data;
-	/*! \brief The serial port to listen for SMDI data on */
+	/*! \brief The SMDI interface to get SMDI messages from. */
 	struct ast_smdi_interface *smdi_iface;
 
 	/*! \brief Distinctive Ring data */
@@ -1053,7 +1054,8 @@ struct dahdi_pvt {
 	struct timeval	dtmfcid_delay;  /*!< Time value used for allow line to settle */
 	int callingpres;				/*!< The value of calling presentation that we're going to use when placing a PRI call */
 	int callwaitingrepeat;				/*!< How many samples to wait before repeating call waiting */
-	int cidcwexpire;				/*!< When to expire our muting for CID/CW */
+	int cidcwexpire;				/*!< When to stop waiting for CID/CW CAS response (In samples) */
+	int cid_suppress_expire;		/*!< How many samples to suppress after a CID spill. */
 	/*! \brief Analog caller ID waveform sample buffer */
 	unsigned char *cidspill;
 	/*! \brief Position in the cidspill buffer to send out next. */
@@ -1074,7 +1076,12 @@ struct dahdi_pvt {
 	 * characters are processed.
 	 */
 	int stripmsd;
-	/*! \brief BOOLEAN. XXX Meaning what?? */
+	/*!
+	 * \brief TRUE if Call Waiting (CW) CPE Alert Signal (CAS) is being sent.
+	 * \note
+	 * After CAS is sent, the call waiting caller id will be sent if the phone
+	 * gives a positive reply.
+	 */
 	int callwaitcas;
 	/*! \brief Number of call waiting rings. */
 	int callwaitrings;
@@ -1839,18 +1846,19 @@ static int my_distinctive_ring(struct ast_channel *chan, void *pvt, int idx, int
 	return 0;
 }
 
-static int send_callerid(struct dahdi_pvt *p);
-
 static int my_stop_callwait(void *pvt)
 {
 	struct dahdi_pvt *p = pvt;
 	p->callwaitingrepeat = 0;
 	p->cidcwexpire = 0;
+	p->cid_suppress_expire = 0;
 
 	return 0;
 }
 
+static int send_callerid(struct dahdi_pvt *p);
 static int save_conference(struct dahdi_pvt *p);
+static int restore_conference(struct dahdi_pvt *p);
 
 static int my_callwait(void *pvt)
 {
@@ -1860,6 +1868,11 @@ static int my_callwait(void *pvt)
 		ast_log(LOG_WARNING, "Spill already exists?!?\n");
 		ast_free(p->cidspill);
 	}
+
+	/*
+	 * SAS: Subscriber Alert Signal, 440Hz for 300ms
+	 * CAS: CPE Alert Signal, 2130Hz * 2750Hz sine waves
+	 */
 	if (!(p->cidspill = ast_malloc(2400 /* SAS */ + 680 /* CAS */ + READ_SIZE * 4)))
 		return -1;
 	save_conference(p);
@@ -1898,6 +1911,8 @@ static int my_send_callerid(void *pvt, int cwcid, struct ast_party_caller *calle
 				caller->id.number.str,
 				AST_LAW(p));
 		} else {
+			ast_verb(3, "CPE supports Call Waiting Caller*ID.  Sending '%s/%s'\n",
+				caller->id.name.str, caller->id.number.str);
 			p->callwaitcas = 0;
 			p->cidcwexpire = 0;
 			p->cidlen = ast_callerid_callwaiting_generate(p->cidspill,
@@ -1907,6 +1922,7 @@ static int my_send_callerid(void *pvt, int cwcid, struct ast_party_caller *calle
 			p->cidlen += READ_SIZE * 4;
 		}
 		p->cidpos = 0;
+		p->cid_suppress_expire = 0;
 		send_callerid(p);
 	}
 	return 0;
@@ -1978,68 +1994,72 @@ static int reset_conf(struct dahdi_pvt *p);
 
 static inline int dahdi_confmute(struct dahdi_pvt *p, int muted);
 
-static void my_handle_dtmfup(void *pvt, struct ast_channel *ast, enum analog_sub analog_index, struct ast_frame **dest)
+static void my_handle_dtmf(void *pvt, struct ast_channel *ast, enum analog_sub analog_index, struct ast_frame **dest)
 {
 	struct ast_frame *f = *dest;
 	struct dahdi_pvt *p = pvt;
 	int idx = analogsub_to_dahdisub(analog_index);
 
-	ast_debug(1, "DTMF digit: %c on %s\n", f->subclass.integer, ast->name);
+	ast_debug(1, "%s DTMF digit: 0x%02X '%c' on %s\n",
+		f->frametype == AST_FRAME_DTMF_BEGIN ? "Begin" : "End",
+		f->subclass.integer, f->subclass.integer, ast->name);
 
 	if (f->subclass.integer == 'f') {
-		/* Fax tone -- Handle and return NULL */
-		if ((p->callprogress & CALLPROGRESS_FAX) && !p->faxhandled) {
-			/* If faxbuffers are configured, use them for the fax transmission */
-			if (p->usefaxbuffers && !p->bufferoverrideinuse) {
-				struct dahdi_bufferinfo bi = {
-					.txbufpolicy = p->faxbuf_policy,
-					.bufsize = p->bufsize,
-					.numbufs = p->faxbuf_no
-				};
-				int res;
+		if (f->frametype == AST_FRAME_DTMF_END) {
+			/* Fax tone -- Handle and return NULL */
+			if ((p->callprogress & CALLPROGRESS_FAX) && !p->faxhandled) {
+				/* If faxbuffers are configured, use them for the fax transmission */
+				if (p->usefaxbuffers && !p->bufferoverrideinuse) {
+					struct dahdi_bufferinfo bi = {
+						.txbufpolicy = p->faxbuf_policy,
+						.bufsize = p->bufsize,
+						.numbufs = p->faxbuf_no
+					};
+					int res;
 
-				if ((res = ioctl(p->subs[idx].dfd, DAHDI_SET_BUFINFO, &bi)) < 0) {
-					ast_log(LOG_WARNING, "Channel '%s' unable to set buffer policy, reason: %s\n", ast->name, strerror(errno));
-				} else {
-					p->bufferoverrideinuse = 1;
+					if ((res = ioctl(p->subs[idx].dfd, DAHDI_SET_BUFINFO, &bi)) < 0) {
+						ast_log(LOG_WARNING, "Channel '%s' unable to set buffer policy, reason: %s\n", ast->name, strerror(errno));
+					} else {
+						p->bufferoverrideinuse = 1;
+					}
 				}
-			}
-			p->faxhandled = 1;
-			if (p->dsp) {
-				p->dsp_features &= ~DSP_FEATURE_FAX_DETECT;
-				ast_dsp_set_features(p->dsp, p->dsp_features);
-				ast_debug(1, "Disabling FAX tone detection on %s after tone received\n", ast->name);
-			}
-			if (strcmp(ast->exten, "fax")) {
-				const char *target_context = S_OR(ast->macrocontext, ast->context);
+				p->faxhandled = 1;
+				if (p->dsp) {
+					p->dsp_features &= ~DSP_FEATURE_FAX_DETECT;
+					ast_dsp_set_features(p->dsp, p->dsp_features);
+					ast_debug(1, "Disabling FAX tone detection on %s after tone received\n", ast->name);
+				}
+				if (strcmp(ast->exten, "fax")) {
+					const char *target_context = S_OR(ast->macrocontext, ast->context);
 
-				/* We need to unlock 'ast' here because ast_exists_extension has the
-				 * potential to start autoservice on the channel. Such action is prone
-				 * to deadlock.
-				 */
-				ast_mutex_unlock(&p->lock);
-				ast_channel_unlock(ast);
-				if (ast_exists_extension(ast, target_context, "fax", 1,
-					S_COR(ast->caller.id.number.valid, ast->caller.id.number.str, NULL))) {
-					ast_channel_lock(ast);
-					ast_mutex_lock(&p->lock);
-					ast_verb(3, "Redirecting %s to fax extension\n", ast->name);
-					/* Save the DID/DNIS when we transfer the fax call to a "fax" extension */
-					pbx_builtin_setvar_helper(ast, "FAXEXTEN", ast->exten);
-					if (ast_async_goto(ast, target_context, "fax", 1))
-						ast_log(LOG_WARNING, "Failed to async goto '%s' into fax of '%s'\n", ast->name, target_context);
+					/* We need to unlock 'ast' here because ast_exists_extension has the
+					 * potential to start autoservice on the channel. Such action is prone
+					 * to deadlock.
+					 */
+					ast_mutex_unlock(&p->lock);
+					ast_channel_unlock(ast);
+					if (ast_exists_extension(ast, target_context, "fax", 1,
+						S_COR(ast->caller.id.number.valid, ast->caller.id.number.str, NULL))) {
+						ast_channel_lock(ast);
+						ast_mutex_lock(&p->lock);
+						ast_verb(3, "Redirecting %s to fax extension\n", ast->name);
+						/* Save the DID/DNIS when we transfer the fax call to a "fax" extension */
+						pbx_builtin_setvar_helper(ast, "FAXEXTEN", ast->exten);
+						if (ast_async_goto(ast, target_context, "fax", 1))
+							ast_log(LOG_WARNING, "Failed to async goto '%s' into fax of '%s'\n", ast->name, target_context);
+					} else {
+						ast_channel_lock(ast);
+						ast_mutex_lock(&p->lock);
+						ast_log(LOG_NOTICE, "Fax detected, but no fax extension\n");
+					}
 				} else {
-					ast_channel_lock(ast);
-					ast_mutex_lock(&p->lock);
-					ast_log(LOG_NOTICE, "Fax detected, but no fax extension\n");
+					ast_debug(1, "Already in a fax extension, not redirecting\n");
 				}
 			} else {
-				ast_debug(1, "Already in a fax extension, not redirecting\n");
+				ast_debug(1, "Fax already handled\n");
 			}
-		} else {
-			ast_debug(1, "Fax already handled\n");
+			dahdi_confmute(p, 0);
 		}
-		dahdi_confmute(p, 0);
 		p->subs[idx].f.frametype = AST_FRAME_NULL;
 		p->subs[idx].f.subclass.integer = 0;
 		*dest = &p->subs[idx].f;
@@ -2068,17 +2088,24 @@ static void my_deadlock_avoidance_private(void *pvt)
 /* linear_mode = 0 - turn linear mode off, >0 - turn linear mode on
 * 	returns the last value of the linear setting 
 */ 
-static int my_set_linear_mode(void *pvt, int idx, int linear_mode)
+static int my_set_linear_mode(void *pvt, enum analog_sub sub, int linear_mode)
 {
 	struct dahdi_pvt *p = pvt;
 	int oldval;
+	int idx = analogsub_to_dahdisub(sub);
 	
-    if (0 > linear_mode || !dahdi_setlinear(p->subs[idx].dfd, linear_mode)) {
-        return -1;
-    }
+	dahdi_setlinear(p->subs[idx].dfd, linear_mode);
 	oldval = p->subs[idx].linear;
-	p->subs[idx].linear = linear_mode;
+	p->subs[idx].linear = linear_mode ? 1 : 0;
 	return oldval;
+}
+
+static void my_set_inthreeway(void *pvt, enum analog_sub sub, int inthreeway)
+{
+	struct dahdi_pvt *p = pvt;
+	int idx = analogsub_to_dahdisub(sub);
+
+	p->subs[idx].inthreeway = inthreeway;
 }
 
 static int get_alarms(struct dahdi_pvt *p);
@@ -2218,13 +2245,20 @@ static int my_check_confirmanswer(void *pvt)
 	return 0;
 }
 
+static void my_set_callwaiting(void *pvt, int callwaiting_enable)
+{
+	struct dahdi_pvt *p = pvt;
+
+	p->callwaiting = callwaiting_enable;
+}
+
 static void my_cancel_cidspill(void *pvt)
 {
 	struct dahdi_pvt *p = pvt;
-	if (p->cidspill) {
-		ast_free(p->cidspill);
-		p->cidspill = NULL;
-	}
+
+	ast_free(p->cidspill);
+	p->cidspill = NULL;
+	restore_conference(p);
 }
 
 static int my_confmute(void *pvt, int mute)
@@ -2237,6 +2271,13 @@ static void my_set_pulsedial(void *pvt, int flag)
 {
 	struct dahdi_pvt *p = pvt;
 	p->pulsedial = flag;
+}
+
+static void my_set_new_owner(void *pvt, struct ast_channel *new_owner)
+{
+	struct dahdi_pvt *p = pvt;
+
+	p->owner = new_owner;
 }
 
 static const char *my_get_orig_dialstring(void *pvt)
@@ -2382,23 +2423,26 @@ static void my_swap_subchannels(void *pvt, enum analog_sub a, struct ast_channel
 	struct dahdi_pvt *p = pvt;
 	int da, db;
 	int tchan;
+	int tinthreeway;
 
 	da = analogsub_to_dahdisub(a);
 	db = analogsub_to_dahdisub(b);
 
 	tchan = p->subs[da].chan;
-
 	p->subs[da].chan = p->subs[db].chan;
-
 	p->subs[db].chan = tchan;
+
+	tinthreeway = p->subs[da].inthreeway;
+	p->subs[da].inthreeway = p->subs[db].inthreeway;
+	p->subs[db].inthreeway = tinthreeway;
+
+	p->subs[da].owner = ast_a;
+	p->subs[db].owner = ast_b;
 
 	if (ast_a)
 		ast_channel_set_fd(ast_a, 0, p->subs[da].dfd);
 	if (ast_b)
 		ast_channel_set_fd(ast_b, 0, p->subs[db].dfd);
-
-	p->subs[da].owner = ast_a;
-	p->subs[db].owner = ast_b;
 
 	wakeup_sub(p, a);
 	wakeup_sub(p, b);
@@ -3487,7 +3531,7 @@ static struct analog_callback dahdi_analog_callbacks =
 	.lock_private = my_lock_private,
 	.unlock_private = my_unlock_private,
 	.deadlock_avoidance_private = my_deadlock_avoidance_private,
-	.handle_dtmfup = my_handle_dtmfup,
+	.handle_dtmf = my_handle_dtmf,
 	.wink = my_wink,
 	.new_ast_channel = my_new_analog_ast_channel,
 	.dsp_set_digitmode = my_dsp_set_digitmode,
@@ -3503,6 +3547,7 @@ static struct analog_callback dahdi_analog_callbacks =
 	.decrease_ss_count = my_decrease_ss_count,
 	.distinctive_ring = my_distinctive_ring,
 	.set_linear_mode = my_set_linear_mode,
+	.set_inthreeway = my_set_inthreeway,
 	.get_and_handle_alarms = my_get_and_handle_alarms,
 	.get_sigpvt_bridged_channel = my_get_sigpvt_bridged_channel,
 	.get_sub_fd = my_get_sub_fd,
@@ -3514,9 +3559,11 @@ static struct analog_callback dahdi_analog_callbacks =
 	.check_waitingfordt = my_check_waitingfordt,
 	.set_confirmanswer = my_set_confirmanswer,
 	.check_confirmanswer = my_check_confirmanswer,
+	.set_callwaiting = my_set_callwaiting,
 	.cancel_cidspill = my_cancel_cidspill,
 	.confmute = my_confmute,
 	.set_pulsedial = my_set_pulsedial,
+	.set_new_owner = my_set_new_owner,
 	.get_orig_dialstring = my_get_orig_dialstring,
 	.set_needringing = my_set_needringing,
 	.set_polarity = my_set_polarity,
@@ -3528,7 +3575,8 @@ static struct analog_callback dahdi_analog_callbacks =
 /*! Round robin search locations. */
 static struct dahdi_pvt *round_robin[32];
 
-static int dahdi_get_index(struct ast_channel *ast, struct dahdi_pvt *p, int nullok)
+#define dahdi_get_index(ast, p, nullok)	_dahdi_get_index(ast, p, nullok, __PRETTY_FUNCTION__, __LINE__)
+static int _dahdi_get_index(struct ast_channel *ast, struct dahdi_pvt *p, int nullok, const char *fname, unsigned long line)
 {
 	int res;
 	if (p->subs[SUB_REAL].owner == ast)
@@ -3540,7 +3588,9 @@ static int dahdi_get_index(struct ast_channel *ast, struct dahdi_pvt *p, int nul
 	else {
 		res = -1;
 		if (!nullok)
-			ast_log(LOG_WARNING, "Unable to get index, and nullok is not asserted\n");
+			ast_log(LOG_WARNING,
+				"Unable to get index for '%s' on channel %d (%s(), line %lu)\n",
+				ast ? ast->name : "", p->channel, fname, line);
 	}
 	return res;
 }
@@ -5027,17 +5077,16 @@ static int restore_conference(struct dahdi_pvt *p)
 			ast_log(LOG_WARNING, "Unable to restore conference info: %s\n", strerror(errno));
 			return -1;
 		}
+		ast_debug(1, "Restored conferencing\n");
 	}
-	ast_debug(1, "Restored conferencing\n");
 	return 0;
 }
-
-static int send_callerid(struct dahdi_pvt *p);
 
 static int send_cwcidspill(struct dahdi_pvt *p)
 {
 	p->callwaitcas = 0;
 	p->cidcwexpire = 0;
+	p->cid_suppress_expire = 0;
 	if (!(p->cidspill = ast_malloc(MAX_CALLERID_SIZE)))
 		return -1;
 	p->cidlen = ast_callerid_callwaiting_generate(p->cidspill, p->callwait_name, p->callwait_num, AST_LAW(p));
@@ -5100,11 +5149,13 @@ static int send_callerid(struct dahdi_pvt *p)
 			return 0;
 		p->cidpos += res;
 	}
+	p->cid_suppress_expire = CALLWAITING_SUPPRESS_SAMPLES;
 	ast_free(p->cidspill);
 	p->cidspill = NULL;
 	if (p->callwaitcas) {
 		/* Wait for CID/CW to expire */
 		p->cidcwexpire = CIDCW_EXPIRE_SAMPLES;
+		p->cid_suppress_expire = p->cidcwexpire;
 	} else
 		restore_conference(p);
 	return 0;
@@ -5118,6 +5169,11 @@ static int dahdi_callwait(struct ast_channel *ast)
 		ast_log(LOG_WARNING, "Spill already exists?!?\n");
 		ast_free(p->cidspill);
 	}
+
+	/*
+	 * SAS: Subscriber Alert Signal, 440Hz for 300ms
+	 * CAS: CPE Alert Signal, 2130Hz * 2750Hz sine waves
+	 */
 	if (!(p->cidspill = ast_malloc(2400 /* SAS */ + 680 /* CAS */ + READ_SIZE * 4)))
 		return -1;
 	save_conference(p);
@@ -5568,9 +5624,7 @@ static void destroy_dahdi_pvt(struct dahdi_pvt *pvt)
 			break;
 		}
 	}
-	if (p->cidspill) {
-		ast_free(p->cidspill);
-	}
+	ast_free(p->cidspill);
 	if (p->use_smdi)
 		ast_smdi_interface_unref(p->smdi_iface);
 	if (p->mwi_event_sub)
@@ -6292,11 +6346,11 @@ static int dahdi_hangup(struct ast_channel *ast)
 
 	p->callwaitingrepeat = 0;
 	p->cidcwexpire = 0;
+	p->cid_suppress_expire = 0;
 	p->oprmode = 0;
 	ast->tech_pvt = NULL;
 hangup_out:
-	if (p->cidspill)
-		ast_free(p->cidspill);
+	ast_free(p->cidspill);
 	p->cidspill = NULL;
 
 	ast_mutex_unlock(&p->lock);
@@ -6990,6 +7044,24 @@ static enum ast_bridge_result dahdi_bridge(struct ast_channel *c0, struct ast_ch
 		return AST_BRIDGE_RETRY;
 	}
 
+	if ((p0->callwaiting && p0->callwaitingcallerid)
+		|| (p1->callwaiting && p1->callwaitingcallerid)) {
+		/*
+		 * Call Waiting Caller ID requires DTMF detection to know if it
+		 * can send the CID spill.
+		 *
+		 * For now, don't attempt to native bridge if either channel
+		 * needs DTMF detection.  There is code below to handle it
+		 * properly until DTMF is actually seen, but due to currently
+		 * unresolved issues it's ignored...
+		 */
+		ast_mutex_unlock(&p0->lock);
+		ast_mutex_unlock(&p1->lock);
+		ast_channel_unlock(c0);
+		ast_channel_unlock(c1);
+		return AST_BRIDGE_FAILED_NOWARN;
+	}
+
 #if defined(HAVE_PRI)
 	if ((dahdi_sig_pri_lib_handles(p0->sig)
 			&& ((struct sig_pri_chan *) p0->sig_pvt)->no_b_channel)
@@ -7068,11 +7140,14 @@ static enum ast_bridge_result dahdi_bridge(struct ast_channel *c0, struct ast_ch
 			p1->subs[SUB_REAL].owner &&
 			p1->subs[SUB_REAL].inthreeway &&
 			(p1->subs[SUB_REAL].owner->_state == AST_STATE_RINGING)) {
-			ast_debug(1, "Playing ringback on %s since %s is in a ringing three-way\n", c0->name, c1->name);
+			ast_debug(1,
+				"Playing ringback on %d/%d(%s) since %d/%d(%s) is in a ringing three-way\n",
+				p0->channel, oi0, c0->name, p1->channel, oi1, c1->name);
 			tone_zone_play_tone(p0->subs[oi0].dfd, DAHDI_TONE_RINGTONE);
 			os1 = p1->subs[SUB_REAL].owner->_state;
 		} else {
-			ast_debug(1, "Stopping tones on %d/%d talking to %d/%d\n", p0->channel, oi0, p1->channel, oi1);
+			ast_debug(1, "Stopping tones on %d/%d(%s) talking to %d/%d(%s)\n",
+				p0->channel, oi0, c0->name, p1->channel, oi1, c1->name);
 			tone_zone_play_tone(p0->subs[oi0].dfd, -1);
 		}
 		if ((oi0 == SUB_THREEWAY) &&
@@ -7080,12 +7155,15 @@ static enum ast_bridge_result dahdi_bridge(struct ast_channel *c0, struct ast_ch
 			p0->subs[SUB_REAL].owner &&
 			p0->subs[SUB_REAL].inthreeway &&
 			(p0->subs[SUB_REAL].owner->_state == AST_STATE_RINGING)) {
-			ast_debug(1, "Playing ringback on %s since %s is in a ringing three-way\n", c1->name, c0->name);
+			ast_debug(1,
+				"Playing ringback on %d/%d(%s) since %d/%d(%s) is in a ringing three-way\n",
+				p1->channel, oi1, c1->name, p0->channel, oi0, c0->name);
 			tone_zone_play_tone(p1->subs[oi1].dfd, DAHDI_TONE_RINGTONE);
 			os0 = p0->subs[SUB_REAL].owner->_state;
 		} else {
-			ast_debug(1, "Stopping tones on %d/%d talking to %d/%d\n", p1->channel, oi1, p0->channel, oi0);
-			tone_zone_play_tone(p1->subs[oi0].dfd, -1);
+			ast_debug(1, "Stopping tones on %d/%d(%s) talking to %d/%d(%s)\n",
+				p1->channel, oi1, c1->name, p0->channel, oi0, c0->name);
+			tone_zone_play_tone(p1->subs[oi1].dfd, -1);
 		}
 		if ((oi0 == SUB_REAL) && (oi1 == SUB_REAL)) {
 			if (!p0->echocanbridged || !p1->echocanbridged) {
@@ -7421,87 +7499,98 @@ static int get_alarms(struct dahdi_pvt *p)
 	return DAHDI_ALARM_NONE;
 }
 
-static void dahdi_handle_dtmfup(struct ast_channel *ast, int idx, struct ast_frame **dest)
+static void dahdi_handle_dtmf(struct ast_channel *ast, int idx, struct ast_frame **dest)
 {
 	struct dahdi_pvt *p = ast->tech_pvt;
 	struct ast_frame *f = *dest;
 
-	ast_debug(1, "DTMF digit: %c on %s\n", (int) f->subclass.integer, ast->name);
+	ast_debug(1, "%s DTMF digit: 0x%02X '%c' on %s\n",
+		f->frametype == AST_FRAME_DTMF_BEGIN ? "Begin" : "End",
+		f->subclass.integer, f->subclass.integer, ast->name);
 
 	if (p->confirmanswer) {
-		ast_debug(1, "Confirm answer on %s!\n", ast->name);
-		/* Upon receiving a DTMF digit, consider this an answer confirmation instead
-		   of a DTMF digit */
-		p->subs[idx].f.frametype = AST_FRAME_CONTROL;
-		p->subs[idx].f.subclass.integer = AST_CONTROL_ANSWER;
-		*dest = &p->subs[idx].f;
-		/* Reset confirmanswer so DTMF's will behave properly for the duration of the call */
-		p->confirmanswer = 0;
-	} else if (p->callwaitcas) {
-		if ((f->subclass.integer == 'A') || (f->subclass.integer == 'D')) {
-			ast_debug(1, "Got some DTMF, but it's for the CAS\n");
-			if (p->cidspill)
-				ast_free(p->cidspill);
-			send_cwcidspill(p);
+		if (f->frametype == AST_FRAME_DTMF_END) {
+			ast_debug(1, "Confirm answer on %s!\n", ast->name);
+			/* Upon receiving a DTMF digit, consider this an answer confirmation instead
+			   of a DTMF digit */
+			p->subs[idx].f.frametype = AST_FRAME_CONTROL;
+			p->subs[idx].f.subclass.integer = AST_CONTROL_ANSWER;
+			/* Reset confirmanswer so DTMF's will behave properly for the duration of the call */
+			p->confirmanswer = 0;
+		} else {
+			p->subs[idx].f.frametype = AST_FRAME_NULL;
+			p->subs[idx].f.subclass.integer = 0;
 		}
-		p->callwaitcas = 0;
+		*dest = &p->subs[idx].f;
+	} else if (p->callwaitcas) {
+		if (f->frametype == AST_FRAME_DTMF_END) {
+			if ((f->subclass.integer == 'A') || (f->subclass.integer == 'D')) {
+				ast_debug(1, "Got some DTMF, but it's for the CAS\n");
+				ast_free(p->cidspill);
+				p->cidspill = NULL;
+				send_cwcidspill(p);
+			}
+			p->callwaitcas = 0;
+		}
 		p->subs[idx].f.frametype = AST_FRAME_NULL;
 		p->subs[idx].f.subclass.integer = 0;
 		*dest = &p->subs[idx].f;
 	} else if (f->subclass.integer == 'f') {
-		/* Fax tone -- Handle and return NULL */
-		if ((p->callprogress & CALLPROGRESS_FAX) && !p->faxhandled) {
-			/* If faxbuffers are configured, use them for the fax transmission */
-			if (p->usefaxbuffers && !p->bufferoverrideinuse) {
-				struct dahdi_bufferinfo bi = {
-					.txbufpolicy = p->faxbuf_policy,
-					.bufsize = p->bufsize,
-					.numbufs = p->faxbuf_no
-				};
-				int res;
+		if (f->frametype == AST_FRAME_DTMF_END) {
+			/* Fax tone -- Handle and return NULL */
+			if ((p->callprogress & CALLPROGRESS_FAX) && !p->faxhandled) {
+				/* If faxbuffers are configured, use them for the fax transmission */
+				if (p->usefaxbuffers && !p->bufferoverrideinuse) {
+					struct dahdi_bufferinfo bi = {
+						.txbufpolicy = p->faxbuf_policy,
+						.bufsize = p->bufsize,
+						.numbufs = p->faxbuf_no
+					};
+					int res;
 
-				if ((res = ioctl(p->subs[idx].dfd, DAHDI_SET_BUFINFO, &bi)) < 0) {
-					ast_log(LOG_WARNING, "Channel '%s' unable to set buffer policy, reason: %s\n", ast->name, strerror(errno));
-				} else {
-					p->bufferoverrideinuse = 1;
+					if ((res = ioctl(p->subs[idx].dfd, DAHDI_SET_BUFINFO, &bi)) < 0) {
+						ast_log(LOG_WARNING, "Channel '%s' unable to set buffer policy, reason: %s\n", ast->name, strerror(errno));
+					} else {
+						p->bufferoverrideinuse = 1;
+					}
 				}
-			}
-			p->faxhandled = 1;
-			if (p->dsp) {
-				p->dsp_features &= ~DSP_FEATURE_FAX_DETECT;
-				ast_dsp_set_features(p->dsp, p->dsp_features);
-				ast_debug(1, "Disabling FAX tone detection on %s after tone received\n", ast->name);
-			}
-			if (strcmp(ast->exten, "fax")) {
-				const char *target_context = S_OR(ast->macrocontext, ast->context);
+				p->faxhandled = 1;
+				if (p->dsp) {
+					p->dsp_features &= ~DSP_FEATURE_FAX_DETECT;
+					ast_dsp_set_features(p->dsp, p->dsp_features);
+					ast_debug(1, "Disabling FAX tone detection on %s after tone received\n", ast->name);
+				}
+				if (strcmp(ast->exten, "fax")) {
+					const char *target_context = S_OR(ast->macrocontext, ast->context);
 
-				/* We need to unlock 'ast' here because ast_exists_extension has the
-				 * potential to start autoservice on the channel. Such action is prone
-				 * to deadlock.
-				 */
-				ast_mutex_unlock(&p->lock);
-				ast_channel_unlock(ast);
-				if (ast_exists_extension(ast, target_context, "fax", 1,
-					S_COR(ast->caller.id.number.valid, ast->caller.id.number.str, NULL))) {
-					ast_channel_lock(ast);
-					ast_mutex_lock(&p->lock);
-					ast_verb(3, "Redirecting %s to fax extension\n", ast->name);
-					/* Save the DID/DNIS when we transfer the fax call to a "fax" extension */
-					pbx_builtin_setvar_helper(ast, "FAXEXTEN", ast->exten);
-					if (ast_async_goto(ast, target_context, "fax", 1))
-						ast_log(LOG_WARNING, "Failed to async goto '%s' into fax of '%s'\n", ast->name, target_context);
+					/* We need to unlock 'ast' here because ast_exists_extension has the
+					 * potential to start autoservice on the channel. Such action is prone
+					 * to deadlock.
+					 */
+					ast_mutex_unlock(&p->lock);
+					ast_channel_unlock(ast);
+					if (ast_exists_extension(ast, target_context, "fax", 1,
+						S_COR(ast->caller.id.number.valid, ast->caller.id.number.str, NULL))) {
+						ast_channel_lock(ast);
+						ast_mutex_lock(&p->lock);
+						ast_verb(3, "Redirecting %s to fax extension\n", ast->name);
+						/* Save the DID/DNIS when we transfer the fax call to a "fax" extension */
+						pbx_builtin_setvar_helper(ast, "FAXEXTEN", ast->exten);
+						if (ast_async_goto(ast, target_context, "fax", 1))
+							ast_log(LOG_WARNING, "Failed to async goto '%s' into fax of '%s'\n", ast->name, target_context);
+					} else {
+						ast_channel_lock(ast);
+						ast_mutex_lock(&p->lock);
+						ast_log(LOG_NOTICE, "Fax detected, but no fax extension\n");
+					}
 				} else {
-					ast_channel_lock(ast);
-					ast_mutex_lock(&p->lock);
-					ast_log(LOG_NOTICE, "Fax detected, but no fax extension\n");
+					ast_debug(1, "Already in a fax extension, not redirecting\n");
 				}
 			} else {
-				ast_debug(1, "Already in a fax extension, not redirecting\n");
+				ast_debug(1, "Fax already handled\n");
 			}
-		} else {
-			ast_debug(1, "Fax already handled\n");
+			dahdi_confmute(p, 0);
 		}
-		dahdi_confmute(p, 0);
 		p->subs[idx].f.frametype = AST_FRAME_NULL;
 		p->subs[idx].f.subclass.integer = 0;
 		*dest = &p->subs[idx].f;
@@ -7575,20 +7664,32 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 		} else
 #endif	/* defined(HAVE_PRI) */
 		{
+			/* Unmute conference */
 			dahdi_confmute(p, 0);
 			p->subs[idx].f.frametype = AST_FRAME_DTMF_END;
 			p->subs[idx].f.subclass.integer = res & 0xff;
+			dahdi_handle_dtmf(ast, idx, &f);
 		}
-		dahdi_handle_dtmfup(ast, idx, &f);
 		return f;
 	}
 
 	if (res & DAHDI_EVENT_DTMFDOWN) {
 		ast_debug(1, "DTMF Down '%c'\n", res & 0xff);
-		/* Mute conference */
-		dahdi_confmute(p, 1);
-		p->subs[idx].f.frametype = AST_FRAME_DTMF_BEGIN;
-		p->subs[idx].f.subclass.integer = res & 0xff;
+#if defined(HAVE_PRI)
+		if (dahdi_sig_pri_lib_handles(p->sig)
+			&& !((struct sig_pri_chan *) p->sig_pvt)->proceeding
+			&& p->pri
+			&& (p->pri->overlapdial & DAHDI_OVERLAPDIAL_INCOMING)) {
+			/* absorb event */
+		} else
+#endif	/* defined(HAVE_PRI) */
+		{
+			/* Mute conference */
+			dahdi_confmute(p, 1);
+			p->subs[idx].f.frametype = AST_FRAME_DTMF_BEGIN;
+			p->subs[idx].f.subclass.integer = res & 0xff;
+			dahdi_handle_dtmf(ast, idx, &f);
+		}
 		return &p->subs[idx].f;
 	}
 
@@ -7760,6 +7861,7 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 #endif
 					p->callwaitingrepeat = 0;
 					p->cidcwexpire = 0;
+					p->cid_suppress_expire = 0;
 					p->owner = NULL;
 					/* Don't start streaming audio yet if the incoming call isn't up yet */
 					if (p->subs[SUB_REAL].owner->_state != AST_STATE_UP)
@@ -7906,11 +8008,12 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 				p->subs[SUB_REAL].needringing = 0;
 				dahdi_set_hook(p->subs[idx].dfd, DAHDI_OFFHOOK);
 				ast_debug(1, "channel %d answered\n", p->channel);
-				if (p->cidspill) {
-					/* Cancel any running CallerID spill */
-					ast_free(p->cidspill);
-					p->cidspill = NULL;
-				}
+
+				/* Cancel any running CallerID spill */
+				ast_free(p->cidspill);
+				p->cidspill = NULL;
+				restore_conference(p);
+
 				p->dialing = 0;
 				p->callwaitcas = 0;
 				if (p->confirmanswer) {
@@ -8075,6 +8178,11 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 		case SIG_FXOKS:
 			ast_debug(1, "Winkflash, index: %d, normal: %d, callwait: %d, thirdcall: %d\n",
 				idx, p->subs[SUB_REAL].dfd, p->subs[SUB_CALLWAIT].dfd, p->subs[SUB_THREEWAY].dfd);
+
+			/* Cancel any running CallerID spill */
+			ast_free(p->cidspill);
+			p->cidspill = NULL;
+			restore_conference(p);
 			p->callwaitcas = 0;
 
 			if (idx != SUB_REAL) {
@@ -8094,6 +8202,7 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 				}
 				p->callwaitingrepeat = 0;
 				p->cidcwexpire = 0;
+				p->cid_suppress_expire = 0;
 				/* Start music on hold if appropriate */
 				if (!p->subs[SUB_CALLWAIT].inthreeway && ast_bridged_channel(p->subs[SUB_CALLWAIT].owner)) {
 					ast_queue_control_data(p->subs[SUB_CALLWAIT].owner, AST_CONTROL_HOLD,
@@ -8168,17 +8277,6 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 						dahdi_enable_ec(p);
 						ast_hangup(chan);
 					} else {
- 						struct ast_channel *other = ast_bridged_channel(p->subs[SUB_THREEWAY].owner);
- 						int way3bridge = 0, cdr3way = 0;
-
-							if (!other) {
- 							other = ast_bridged_channel(p->subs[SUB_REAL].owner);
- 						} else
- 							way3bridge = 1;
-
-							if (p->subs[SUB_THREEWAY].owner->cdr)
- 							cdr3way = 1;
-
 						ast_verb(3, "Started three way call on channel %d\n", p->channel);
 
 						/* Start music on hold if appropriate */
@@ -8211,18 +8309,10 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 					if (((ast->pbx) || (ast->_state == AST_STATE_UP)) &&
 						(p->transfertobusy || (ast->_state != AST_STATE_BUSY))) {
 						int otherindex = SUB_THREEWAY;
-						struct ast_channel *other = ast_bridged_channel(p->subs[SUB_THREEWAY].owner);
-						int way3bridge = 0, cdr3way = 0;
 
-						if (!other) {
-							other = ast_bridged_channel(p->subs[SUB_REAL].owner);
-						} else
-							way3bridge = 1;
-
-						if (p->subs[SUB_THREEWAY].owner->cdr)
-							cdr3way = 1;
-
-						ast_verb(3, "Building conference on call on %s and %s\n", p->subs[SUB_THREEWAY].owner->name, p->subs[SUB_REAL].owner->name);
+						ast_verb(3, "Building conference call with %s and %s\n",
+							p->subs[SUB_THREEWAY].owner->name,
+							p->subs[SUB_REAL].owner->name);
 						/* Put them in the threeway, and flip */
 						p->subs[SUB_THREEWAY].inthreeway = 1;
 						p->subs[SUB_REAL].inthreeway = 1;
@@ -8234,11 +8324,6 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 							ast_queue_control(p->subs[otherindex].owner, AST_CONTROL_UNHOLD);
 						p->subs[otherindex].needunhold = 1;
 						p->owner = p->subs[SUB_REAL].owner;
-						if (ast->_state == AST_STATE_RINGING) {
-							ast_debug(1, "Enabling ringtone on real and threeway\n");
-							res = tone_zone_play_tone(p->subs[SUB_REAL].dfd, DAHDI_TONE_RINGTONE);
-							res = tone_zone_play_tone(p->subs[SUB_THREEWAY].dfd, DAHDI_TONE_RINGTONE);
-						}
 					} else {
 						ast_verb(3, "Dumping incomplete call on on %s\n", p->subs[SUB_THREEWAY].owner->name);
 						swap_subs(p, SUB_THREEWAY, SUB_REAL);
@@ -8450,6 +8535,7 @@ static struct ast_frame *__dahdi_exception(struct ast_channel *ast)
 				dahdi_ring_phone(p);
 				p->callwaitingrepeat = 0;
 				p->cidcwexpire = 0;
+				p->cid_suppress_expire = 0;
 			} else
 				ast_log(LOG_WARNING, "Absorbed on hook, but nobody is left!?!?\n");
 			update_conf(p);
@@ -8481,6 +8567,7 @@ static struct ast_frame *__dahdi_exception(struct ast_channel *ast)
 				}
 				p->callwaitingrepeat = 0;
 				p->cidcwexpire = 0;
+				p->cid_suppress_expire = 0;
 				if (ast_bridged_channel(p->owner))
 					ast_queue_control(p->owner, AST_CONTROL_UNHOLD);
 				p->subs[SUB_REAL].needunhold = 1;
@@ -8752,21 +8839,25 @@ static struct ast_frame *dahdi_read(struct ast_channel *ast)
 			return &p->subs[idx].f;
 		}
 	}
-	/* Ensure the CW timer decrements only on a single subchannel */
-	if (p->callwaitingrepeat && dahdi_get_index(ast, p, 1) == SUB_REAL) {
-		p->callwaitingrepeat--;
-	}
-	if (p->cidcwexpire)
-		p->cidcwexpire--;
-	/* Repeat callwaiting */
-	if (p->callwaitingrepeat == 1) {
-		p->callwaitrings++;
-		dahdi_callwait(ast);
-	}
-	/* Expire CID/CW */
-	if (p->cidcwexpire == 1) {
-		ast_verb(3, "CPE does not support Call Waiting Caller*ID.\n");
-		restore_conference(p);
+	if (idx == SUB_REAL) {
+		/* Ensure the CW timers decrement only on a single subchannel */
+		if (p->cidcwexpire) {
+			if (!--p->cidcwexpire) {
+				/* Expired CID/CW */
+				ast_verb(3, "CPE does not support Call Waiting Caller*ID.\n");
+				restore_conference(p);
+			}
+		}
+		if (p->cid_suppress_expire) {
+			--p->cid_suppress_expire;
+		}
+		if (p->callwaitingrepeat) {
+			if (!--p->callwaitingrepeat) {
+				/* Expired, Repeat callwaiting tone */
+				++p->callwaitrings;
+				dahdi_callwait(ast);
+			}
+		}
 	}
 	if (p->subs[idx].linear) {
 		p->subs[idx].f.datalen = READ_SIZE * 2;
@@ -8870,11 +8961,31 @@ static struct ast_frame *dahdi_read(struct ast_channel *ast)
 	} else
 		f = &p->subs[idx].f;
 
-	if (f && (f->frametype == AST_FRAME_DTMF)) {
-		if (analog_lib_handles(p->sig, p->radio, p->oprmode)) {
-			analog_handle_dtmfup(p->sig_pvt, ast, idx, &f);
-		} else
-			dahdi_handle_dtmfup(ast, idx, &f);
+	if (f) {
+		switch (f->frametype) {
+		case AST_FRAME_DTMF_BEGIN:
+		case AST_FRAME_DTMF_END:
+			if (analog_lib_handles(p->sig, p->radio, p->oprmode)) {
+				analog_handle_dtmf(p->sig_pvt, ast, idx, &f);
+			} else {
+				dahdi_handle_dtmf(ast, idx, &f);
+			}
+			break;
+		case AST_FRAME_VOICE:
+			if (p->cidspill || p->cid_suppress_expire) {
+				/* We are/were sending a caller id spill.  Suppress any echo. */
+				p->subs[idx].f.frametype = AST_FRAME_NULL;
+				p->subs[idx].f.subclass.integer = 0;
+				p->subs[idx].f.samples = 0;
+				p->subs[idx].f.mallocd = 0;
+				p->subs[idx].f.offset = 0;
+				p->subs[idx].f.data.ptr = NULL;
+				p->subs[idx].f.datalen= 0;
+			}
+			break;
+		default:
+			break;
+		}
 	}
 
 	/* If we have a fake_event, trigger exception to handle it */
@@ -8939,7 +9050,8 @@ static int dahdi_write(struct ast_channel *ast, struct ast_frame *frame)
 		return 0;
 	}
 	if (p->cidspill) {
-		ast_debug(1, "Dropping frame since I've still got a callerid spill\n");
+		ast_debug(1, "Dropping frame since I've still got a callerid spill on %s...\n",
+			ast->name);
 		return 0;
 	}
 	/* Return if it's not valid data */
@@ -10851,11 +10963,9 @@ static int mwi_send_process_event(struct dahdi_pvt * pvt, int event)
 				handled = 1;
 
 				if (dahdi_set_hook(pvt->subs[SUB_REAL].dfd, DAHDI_RINGOFF) ) {
-					ast_log(LOG_WARNING, "Unable to finsh RP-AS: %s mwi send aborted\n", strerror(errno));
-					if(pvt->cidspill) {
-						ast_free(pvt->cidspill);
-						pvt->cidspill = NULL;
-					}
+					ast_log(LOG_WARNING, "Unable to finish RP-AS: %s mwi send aborted\n", strerror(errno));
+					ast_free(pvt->cidspill);
+					pvt->cidspill = NULL;
 					pvt->mwisend_data.mwisend_current = MWI_SEND_DONE;
 					pvt->mwisendactive = 0;
 				} else {
@@ -10932,11 +11042,12 @@ static struct dahdi_pvt *handle_init_event(struct dahdi_pvt *i, int event)
 			res = dahdi_set_hook(i->subs[SUB_REAL].dfd, DAHDI_OFFHOOK);
 			if (res && (errno == EBUSY))
 				break;
-			if (i->cidspill) {
-				/* Cancel VMWI spill */
-				ast_free(i->cidspill);
-				i->cidspill = NULL;
-			}
+
+			/* Cancel VMWI spill */
+			ast_free(i->cidspill);
+			i->cidspill = NULL;
+			restore_conference(i);
+
 			if (i->immediate) {
 				dahdi_enable_ec(i);
 				/* The channel is immediately up.  Start right away */
@@ -12568,7 +12679,9 @@ static struct dahdi_pvt *mkintf(int channel, const struct dahdi_chan_conf *conf,
 				analog_p->threewaycalling = conf->chan.threewaycalling;
 				analog_p->transfer = conf->chan.transfer;
 				analog_p->transfertobusy = conf->chan.transfertobusy;
-				analog_p->use_callerid = conf->chan.use_callerid;
+				analog_p->use_callerid = tmp->use_callerid;
+				analog_p->use_smdi = tmp->use_smdi;
+				analog_p->smdi_iface = tmp->smdi_iface;
 				analog_p->outsigmod = ANALOG_SIG_NONE;
 				analog_p->echotraining = conf->chan.echotraining;
 				analog_p->cid_signalling = conf->chan.cid_signalling;
@@ -12588,7 +12701,6 @@ static struct dahdi_pvt *mkintf(int channel, const struct dahdi_chan_conf *conf,
 					break;
 				}
 				analog_p->callwaitingcallerid = conf->chan.callwaitingcallerid;
-				analog_p->usedistinctiveringdetection = conf->chan.usedistinctiveringdetection;
 				analog_p->ringt = conf->chan.ringt;
 				analog_p->ringt_base = ringt_base;
 				analog_p->chan_tech = &dahdi_tech;

@@ -17,11 +17,11 @@
 <member name="cdr_radius" displayname="RADIUS CDR Backend" remove_on_change="cdr/cdr_radius.o cdr/cdr_radius.so">
 	<depend>radius</depend>
 </member>
-<member name="cdr_sqlite3_custom" displayname="SQLite3 Custom CDR Module" remove_on_change="cdr/cdr_sqlite3_custom.o cdr/cdr_sqlite3_custom.so">
-	<depend>sqlite3</depend>
-</member>
 <member name="cdr_sqlite" displayname="SQLite CDR Backend" remove_on_change="cdr/cdr_sqlite.o cdr/cdr_sqlite.so">
 	<depend>sqlite</depend>
+</member>
+<member name="cdr_sqlite3_custom" displayname="SQLite3 Custom CDR Module" remove_on_change="cdr/cdr_sqlite3_custom.o cdr/cdr_sqlite3_custom.so">
+	<depend>sqlite3</depend>
 </member>
 <member name="cdr_syslog" displayname="Customizable syslog CDR Backend" remove_on_change="cdr/cdr_syslog.o cdr/cdr_syslog.so">
 	 <depend>syslog</depend>

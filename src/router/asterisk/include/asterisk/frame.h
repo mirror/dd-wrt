@@ -332,6 +332,7 @@ enum ast_control_frame_type {
 	AST_CONTROL_SRCCHANGE = 26,  /*!< Media source has changed and requires a new RTP SSRC */
 	AST_CONTROL_READ_ACTION = 27, /*!< Tell ast_read to take a specific action */
 	AST_CONTROL_AOC = 28,           /*!< Advice of Charge with encoded generic AOC payload */
+	AST_CONTROL_END_OF_Q = 29,		/*!< Indicate that this position was the end of the channel queue for a softhangup. */
 };
 
 enum ast_frame_read_action {
@@ -707,7 +708,15 @@ int ast_parse_allow_disallow(struct ast_codec_pref *pref, format_t *mask, const 
 /*! \brief Dump audio codec preference list into a string */
 int ast_codec_pref_string(struct ast_codec_pref *pref, char *buf, size_t size);
 
-/*! \brief Shift an audio codec preference list up or down 65 bytes so that it becomes an ASCII string */
+/*! \brief Shift an audio codec preference list up or down 65 bytes so that it becomes an ASCII string
+ * \note Due to a misunderstanding in how codec preferences are stored, this
+ * list starts at 'B', not 'A'.  For backwards compatibility reasons, this
+ * cannot change.
+ * \param pref A codec preference list structure
+ * \param buf A string denoting codec preference, appropriate for use in line transmission
+ * \param size Size of \a buf
+ * \param right Boolean:  if 0, convert from \a buf to \a pref; if 1, convert from \a pref to \a buf.
+ */
 void ast_codec_pref_convert(struct ast_codec_pref *pref, char *buf, size_t size, int right);
 
 /*! \brief Returns the number of samples contained in the frame */

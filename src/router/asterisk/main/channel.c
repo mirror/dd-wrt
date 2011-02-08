@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 291581 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 297825 $")
 
 #include "asterisk/_private.h"
 
@@ -1129,7 +1129,9 @@ __ast_channel_alloc_ap(int needqueue, int state, const char *cid_num, const char
 	}
 
 	if ((tmp->timer = ast_timer_open())) {
-		needqueue = 0;
+		if (strcmp(ast_timer_get_name(tmp->timer), "timerfd")) {
+			needqueue = 0;
+		}
 		tmp->timingfd = ast_timer_fd(tmp->timer);
 	}
 
@@ -1358,15 +1360,42 @@ static int __ast_queue_frame(struct ast_channel *chan, struct ast_frame *fin, in
 
 	ast_channel_lock(chan);
 
-	/* See if the last frame on the queue is a hangup, if so don't queue anything */
-	if ((cur = AST_LIST_LAST(&chan->readq)) &&
-	    (cur->frametype == AST_FRAME_CONTROL) &&
-	    (cur->subclass.integer == AST_CONTROL_HANGUP)) {
-		ast_channel_unlock(chan);
-		return 0;
+	/*
+	 * Check the last frame on the queue if we are queuing the new
+	 * frames after it.
+	 */
+	cur = AST_LIST_LAST(&chan->readq);
+	if (cur && cur->frametype == AST_FRAME_CONTROL && !head && (!after || after == cur)) {
+		switch (cur->subclass.integer) {
+		case AST_CONTROL_END_OF_Q:
+			if (fin->frametype == AST_FRAME_CONTROL
+				&& fin->subclass.integer == AST_CONTROL_HANGUP) {
+				/*
+				 * Destroy the end-of-Q marker frame so we can queue the hangup
+				 * frame in its place.
+				 */
+				AST_LIST_REMOVE(&chan->readq, cur, frame_list);
+				ast_frfree(cur);
+
+				/*
+				 * This has degenerated to a normal queue append anyway.  Since
+				 * we just destroyed the last frame in the queue we must make
+				 * sure that "after" is NULL or bad things will happen.
+				 */
+				after = NULL;
+				break;
+			}
+			/* Fall through */
+		case AST_CONTROL_HANGUP:
+			/* Don't queue anything. */
+			ast_channel_unlock(chan);
+			return 0;
+		default:
+			break;
+		}
 	}
 
-	/* Build copies of all the frames and count them */
+	/* Build copies of all the new frames and count them */
 	AST_LIST_HEAD_INIT_NOLOCK(&frames);
 	for (cur = fin; cur; cur = AST_LIST_NEXT(cur, frame_list)) {
 		if (!(f = ast_frdup(cur))) {
@@ -2789,7 +2818,6 @@ int ast_raw_answer(struct ast_channel *chan, int cdr_answer)
 	}
 
 	ast_indicate(chan, -1);
-	chan->visible_indication = 0;
 
 	return res;
 }
@@ -3612,14 +3640,17 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 		if (chan->generator)
 			ast_deactivate_generator(chan);
 
-		/* It is possible for chan->_softhangup to be set, yet there still be control
-		 * frames that still need to be read. Instead of just going to 'done' in the
-		 * case of ast_check_hangup(), we instead need to send the HANGUP frame so that
-		 * it can mark the end of the read queue. If there are frames to be read, 
-		 * ast_queue_control will be called repeatedly, but will only queue one hangup
-		 * frame. */
-		if (ast_check_hangup(chan)) {
-			ast_queue_control(chan, AST_CONTROL_HANGUP);
+		/*
+		 * It is possible for chan->_softhangup to be set and there
+		 * still be control frames that need to be read.  Instead of
+		 * just going to 'done' in the case of ast_check_hangup(), we
+		 * need to queue the end-of-Q frame so that it can mark the end
+		 * of the read queue.  If there are frames to be read,
+		 * ast_queue_control() will be called repeatedly, but will only
+		 * queue the first end-of-Q frame.
+		 */
+		if (chan->_softhangup) {
+			ast_queue_control(chan, AST_CONTROL_END_OF_Q);
 		} else {
 			goto done;
 		}
@@ -3742,12 +3773,21 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			}
 		}
 
-		/* Interpret hangup and return NULL */
+		/* Interpret hangup and end-of-Q frames to return NULL */
 		/* XXX why not the same for frames from the channel ? */
-		if (f->frametype == AST_FRAME_CONTROL && f->subclass.integer == AST_CONTROL_HANGUP) {
-			cause = f->data.uint32;
-			ast_frfree(f);
-			f = NULL;
+		if (f->frametype == AST_FRAME_CONTROL) {
+			switch (f->subclass.integer) {
+			case AST_CONTROL_HANGUP:
+				chan->_softhangup |= AST_SOFTHANGUP_DEV;
+				cause = f->data.uint32;
+				/* Fall through */
+			case AST_CONTROL_END_OF_Q:
+				ast_frfree(f);
+				f = NULL;
+				break;
+			default:
+				break;
+			}
 		}
 	} else {
 		chan->blocker = pthread_self();
@@ -4073,7 +4113,9 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 		}
 	} else {
 		/* Make sure we always return NULL in the future */
-		chan->_softhangup |= AST_SOFTHANGUP_DEV;
+		if (!chan->_softhangup) {
+			chan->_softhangup |= AST_SOFTHANGUP_DEV;
+		}
 		if (cause)
 			chan->hangupcause = cause;
 		if (chan->generator)
@@ -4147,6 +4189,7 @@ static int attribute_const is_visible_indication(enum ast_control_frame_type con
 	case AST_CONTROL_CC:
 	case AST_CONTROL_READ_ACTION:
 	case AST_CONTROL_AOC:
+	case AST_CONTROL_END_OF_Q:
 		break;
 
 	case AST_CONTROL_CONGESTION:
@@ -4154,8 +4197,12 @@ static int attribute_const is_visible_indication(enum ast_control_frame_type con
 	case AST_CONTROL_RINGING:
 	case AST_CONTROL_RING:
 	case AST_CONTROL_HOLD:
-	case AST_CONTROL_UNHOLD:
+		/* You can hear these */
 		return 1;
+
+	case AST_CONTROL_UNHOLD:
+		/* This is a special case.  You stop hearing this. */
+		break;
 	}
 
 	return 0;
@@ -4176,7 +4223,6 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 
 	/* Don't bother if the channel is about to go away, anyway. */
 	if (ast_test_flag(chan, AST_FLAG_ZOMBIE) || ast_check_hangup(chan)) {
-		ast_channel_unlock(chan);
 		res = -1;
 		goto indicate_cleanup;
 	}
@@ -4195,7 +4241,6 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 
 		/* who knows what we will get back! the anticipation is killing me. */
 		if (!(awesome_frame = ast_framehook_list_read_event(chan->framehooks, &frame))) {
-			ast_channel_unlock(chan);
 			res = 0;
 			goto indicate_cleanup;
 		}
@@ -4236,6 +4281,14 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 		break;
 	}
 
+	if (is_visible_indication(condition)) {
+		/* A new visible indication is requested. */
+		chan->visible_indication = condition;
+	} else if (condition == AST_CONTROL_UNHOLD || _condition < 0) {
+		/* Visible indication is cleared/stopped. */
+		chan->visible_indication = 0;
+	}
+
 	if (chan->tech->indicate) {
 		/* See if the channel driver can handle this condition. */
 		res = chan->tech->indicate(chan, condition, data, datalen);
@@ -4243,13 +4296,8 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 		res = -1;
 	}
 
-	ast_channel_unlock(chan);
-
 	if (!res) {
 		/* The channel driver successfully handled this indication */
-		if (is_visible_indication(condition)) {
-			chan->visible_indication = condition;
-		}
 		res = 0;
 		goto indicate_cleanup;
 	}
@@ -4324,6 +4372,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 	case AST_CONTROL_CC:
 	case AST_CONTROL_READ_ACTION:
 	case AST_CONTROL_AOC:
+	case AST_CONTROL_END_OF_Q:
 		/* Nothing left to do for these. */
 		res = 0;
 		break;
@@ -4332,10 +4381,8 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 	if (ts) {
 		/* We have a tone to play, yay. */
 		ast_debug(1, "Driver for channel '%s' does not support indication %d, emulating it\n", chan->name, condition);
-		ast_playtones_start(chan, 0, ts->data, 1);
+		res = ast_playtones_start(chan, 0, ts->data, 1);
 		ts = ast_tone_zone_sound_unref(ts);
-		res = 0;
-		chan->visible_indication = condition;
 	}
 
 	if (res) {
@@ -4344,6 +4391,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 	}
 
 indicate_cleanup:
+	ast_channel_unlock(chan);
 	if (awesome_frame) {
 		ast_frfree(awesome_frame);
 	}
@@ -4943,19 +4991,32 @@ static int set_format(struct ast_channel *chan, format_t fmt, format_t *rawforma
 	/* User perspective is fmt */
 	*format = fmt;
 	/* Free any read translation we have right now */
-	if (*trans)
+	if (*trans) {
 		ast_translator_free_path(*trans);
+		*trans = NULL;
+	}
 	/* Build a translation path from the raw format to the desired format */
-	if (!direction)
-		/* reading */
-		*trans = ast_translator_build_path(*format, *rawformat);
-	else
-		/* writing */
-		*trans = ast_translator_build_path(*rawformat, *format);
+	if (*format == *rawformat) {
+		/*
+		 * If we were able to swap the native format to the format that
+		 * has been requested, then there is no need to try to build
+		 * a translation path.
+		 */
+		res = 0;
+	} else {
+		if (!direction) {
+			/* reading */
+			*trans = ast_translator_build_path(*format, *rawformat);
+		} else {
+			/* writing */
+			*trans = ast_translator_build_path(*rawformat, *format);
+		}
+		res = *trans ? 0 : -1;
+	}
 	ast_channel_unlock(chan);
 	ast_debug(1, "Set channel %s to %s format %s\n", chan->name,
 		direction ? "write" : "read", ast_getformatname(fmt));
-	return 0;
+	return res;
 }
 
 int ast_set_read_format(struct ast_channel *chan, format_t fmt)
@@ -5583,7 +5644,7 @@ int ast_channel_make_compatible(struct ast_channel *chan, struct ast_channel *pe
 	return rc;
 }
 
-int ast_channel_masquerade(struct ast_channel *original, struct ast_channel *clonechan)
+static int __ast_channel_masquerade(struct ast_channel *original, struct ast_channel *clonechan, struct ast_datastore *xfer_ds)
 {
 	int res = -1;
 	struct ast_channel *final_orig, *final_clone, *base;
@@ -5645,6 +5706,9 @@ retrymasq:
 	if (!original->masqr && !original->masq && !clonechan->masq && !clonechan->masqr) {
 		original->masq = clonechan;
 		clonechan->masqr = original;
+		if (xfer_ds) {
+			ast_channel_datastore_add(original, xfer_ds);
+		}
 		ast_queue_frame(original, &ast_null_frame);
 		ast_queue_frame(clonechan, &ast_null_frame);
 		ast_debug(1, "Done planning to masquerade channel %s into the structure of %s\n", clonechan->name, original->name);
@@ -5667,6 +5731,115 @@ retrymasq:
 	ast_channel_unlock(clonechan);
 	ast_channel_unlock(original);
 
+	return res;
+}
+
+int ast_channel_masquerade(struct ast_channel *original, struct ast_channel *clone)
+{
+	return __ast_channel_masquerade(original, clone, NULL);
+}
+
+/*!
+ * \internal
+ * \brief Copy the source connected line information to the destination for a transfer.
+ * \since 1.8
+ *
+ * \param dest Destination connected line
+ * \param src Source connected line
+ *
+ * \return Nothing
+ */
+static void party_connected_line_copy_transfer(struct ast_party_connected_line *dest, const struct ast_party_connected_line *src)
+{
+	struct ast_party_connected_line connected;
+
+	connected = *((struct ast_party_connected_line *) src);
+	connected.source = AST_CONNECTED_LINE_UPDATE_SOURCE_TRANSFER;
+
+	/* Make sure empty strings will be erased. */
+	if (!connected.id.name.str) {
+		connected.id.name.str = "";
+	}
+	if (!connected.id.number.str) {
+		connected.id.number.str = "";
+	}
+	if (!connected.id.subaddress.str) {
+		connected.id.subaddress.str = "";
+	}
+	if (!connected.id.tag) {
+		connected.id.tag = "";
+	}
+
+	ast_party_connected_line_copy(dest, &connected);
+}
+
+/*! Transfer masquerade connected line exchange data. */
+struct xfer_masquerade_ds {
+	/*! New ID for the target of the transfer (Masquerade original channel) */
+	struct ast_party_connected_line target_id;
+	/*! New ID for the transferee of the transfer (Masquerade clone channel) */
+	struct ast_party_connected_line transferee_id;
+	/*! TRUE if the target call is held. (Masquerade original channel) */
+	int target_held;
+	/*! TRUE if the transferee call is held. (Masquerade clone channel) */
+	int transferee_held;
+};
+
+/*!
+ * \internal
+ * \brief Destroy the transfer connected line exchange datastore information.
+ * \since 1.8
+ *
+ * \param data The datastore payload to destroy.
+ *
+ * \return Nothing
+ */
+static void xfer_ds_destroy(void *data)
+{
+	struct xfer_masquerade_ds *ds = data;
+
+	ast_party_connected_line_free(&ds->target_id);
+	ast_party_connected_line_free(&ds->transferee_id);
+	ast_free(ds);
+}
+
+static const struct ast_datastore_info xfer_ds_info = {
+	.type = "xfer_colp",
+	.destroy = xfer_ds_destroy,
+};
+
+int ast_channel_transfer_masquerade(
+	struct ast_channel *target_chan,
+	const struct ast_party_connected_line *target_id,
+	int target_held,
+	struct ast_channel *transferee_chan,
+	const struct ast_party_connected_line *transferee_id,
+	int transferee_held)
+{
+	struct ast_datastore *xfer_ds;
+	struct xfer_masquerade_ds *xfer_colp;
+	int res;
+
+	xfer_ds = ast_datastore_alloc(&xfer_ds_info, NULL);
+	if (!xfer_ds) {
+		return -1;
+	}
+
+	xfer_colp = ast_calloc(1, sizeof(*xfer_colp));
+	if (!xfer_colp) {
+		ast_datastore_free(xfer_ds);
+		return -1;
+	}
+	party_connected_line_copy_transfer(&xfer_colp->target_id, target_id);
+	xfer_colp->target_held = target_held;
+	party_connected_line_copy_transfer(&xfer_colp->transferee_id, transferee_id);
+	xfer_colp->transferee_held = transferee_held;
+	xfer_ds->data = xfer_colp;
+
+	res = __ast_channel_masquerade(target_chan, transferee_chan, xfer_ds);
+	if (res) {
+		ast_datastore_free(xfer_ds);
+	}
 	return res;
 }
 
@@ -5936,18 +6109,70 @@ static void report_new_callerid(struct ast_channel *chan)
 }
 
 /*!
-  \brief Masquerade a channel
+ * \internal
+ * \brief Transfer COLP between target and transferee channels.
+ * \since 1.8
+ *
+ * \param transferee Transferee channel to exchange connected line information.
+ * \param colp Connected line information to exchange.
+ *
+ * \return Nothing
+ */
+static void masquerade_colp_transfer(struct ast_channel *transferee, struct xfer_masquerade_ds *colp)
+{
+	struct ast_control_read_action_payload *frame_payload;
+	int payload_size;
+	int frame_size;
+	unsigned char connected_line_data[1024];
 
-  \note Assumes _NO_ channels and _NO_ channel pvt's are locked.  If a channel is locked while calling
-        this function, it invalidates our channel container locking order.  All channels
-		must be unlocked before it is permissible to lock the channels' ao2 container.
-*/
+	/* Release any hold on the target. */
+	if (colp->target_held) {
+		ast_queue_control(transferee, AST_CONTROL_UNHOLD);
+	}
+
+	/*
+	 * Since transferee may not actually be bridged to another channel,
+	 * there is no way for us to queue a frame so that its connected
+	 * line status will be updated.  Instead, we use the somewhat
+	 * hackish approach of using a special control frame type that
+	 * instructs ast_read() to perform a specific action.  In this
+	 * case, the frame we queue tells ast_read() to call the
+	 * connected line interception macro configured for transferee.
+	 */
+	payload_size = ast_connected_line_build_data(connected_line_data,
+		sizeof(connected_line_data), &colp->target_id, NULL);
+	if (payload_size != -1) {
+		frame_size = payload_size + sizeof(*frame_payload);
+		frame_payload = alloca(frame_size);
+		frame_payload->action = AST_FRAME_READ_ACTION_CONNECTED_LINE_MACRO;
+		frame_payload->payload_size = payload_size;
+		memcpy(frame_payload->payload, connected_line_data, payload_size);
+		ast_queue_control_data(transferee, AST_CONTROL_READ_ACTION, frame_payload,
+			frame_size);
+	}
+	/*
+	 * In addition to queueing the read action frame so that the
+	 * connected line info on transferee will be updated, we also are
+	 * going to queue a plain old connected line update on transferee to
+	 * update the target.
+	 */
+	ast_channel_queue_connected_line_update(transferee, &colp->transferee_id, NULL);
+}
+
+/*!
+ * \brief Masquerade a channel
+ *
+ * \note Assumes _NO_ channels and _NO_ channel pvt's are locked.  If a channel is locked while calling
+ *       this function, it invalidates our channel container locking order.  All channels
+ *       must be unlocked before it is permissible to lock the channels' ao2 container.
+ */
 int ast_do_masquerade(struct ast_channel *original)
 {
 	format_t x;
 	int i;
 	int res=0;
 	int origstate;
+	int visible_indication;
 	struct ast_frame *current;
 	const struct ast_channel_tech *t;
 	void *t_pvt;
@@ -5960,6 +6185,8 @@ int ast_do_masquerade(struct ast_channel *original)
 	struct ast_channel *clonechan, *chans[2];
 	struct ast_channel *bridged;
 	struct ast_cdr *cdr;
+	struct ast_datastore *xfer_ds;
+	struct xfer_masquerade_ds *xfer_colp;
 	format_t rformat = original->readformat;
 	format_t wformat = original->writeformat;
 	char newn[AST_CHANNEL_NAME];
@@ -6008,6 +6235,23 @@ int ast_do_masquerade(struct ast_channel *original)
 		CHANNEL_DEADLOCK_AVOIDANCE(original);
 	}
 
+	/* Get any transfer masquerade connected line exchange data. */
+	xfer_ds = ast_channel_datastore_find(original, &xfer_ds_info, NULL);
+	if (xfer_ds) {
+		ast_channel_datastore_remove(original, xfer_ds);
+		xfer_colp = xfer_ds->data;
+	} else {
+		xfer_colp = NULL;
+	}
+
+	/*
+	 * Release any hold on the transferee channel before proceeding
+	 * with the masquerade.
+	 */
+	if (xfer_colp && xfer_colp->transferee_held) {
+		ast_indicate(clonechan, AST_CONTROL_UNHOLD);
+	}
+
 	/* clear the masquerade channels */
 	original->masq = NULL;
 	clonechan->masqr = NULL;
@@ -6019,10 +6263,21 @@ int ast_do_masquerade(struct ast_channel *original)
 	ast_debug(4, "Actually Masquerading %s(%d) into the structure of %s(%d)\n",
 		clonechan->name, clonechan->_state, original->name, original->_state);
 
+	/*
+	 * Stop any visible indiction on the original channel so we can
+	 * transfer it to the clonechan taking the original's place.
+	 */
+	visible_indication = original->visible_indication;
+	ast_indicate(original, -1);
+
 	chans[0] = clonechan;
 	chans[1] = original;
-	ast_manager_event_multichan(EVENT_FLAG_CALL, "Masquerade", 2, chans, "Clone: %s\r\nCloneState: %s\r\nOriginal: %s\r\nOriginalState: %s\r\n",
-		      clonechan->name, ast_state2str(clonechan->_state), original->name, ast_state2str(original->_state));
+	ast_manager_event_multichan(EVENT_FLAG_CALL, "Masquerade", 2, chans,
+		"Clone: %s\r\n"
+		"CloneState: %s\r\n"
+		"Original: %s\r\n"
+		"OriginalState: %s\r\n",
+		clonechan->name, ast_state2str(clonechan->_state), original->name, ast_state2str(original->_state));
 
 	/* Having remembered the original read/write formats, we turn off any translation on either
 	   one */
@@ -6246,8 +6501,8 @@ int ast_do_masquerade(struct ast_channel *original)
 	 * of this channel, and the new channel private data needs to be made
 	 * aware of the current visible indication (RINGING, CONGESTION, etc.)
 	 */
-	if (original->visible_indication) {
-		ast_indicate(original, original->visible_indication);
+	if (visible_indication) {
+		ast_indicate(original, visible_indication);
 	}
 
 	/* Now, at this point, the "clone" channel is totally F'd up.  We mark it as
@@ -6283,10 +6538,21 @@ int ast_do_masquerade(struct ast_channel *original)
 		ast_indicate(bridged, AST_CONTROL_SRCCHANGE);
 		ast_channel_unlock(bridged);
 	}
-
 	ast_indicate(original, AST_CONTROL_SRCCHANGE);
 
+	if (xfer_colp) {
+		/*
+		 * After the masquerade, the original channel pointer actually
+		 * points to the new transferee channel and the bridged channel
+		 * is still the intended transfer target party.
+		 */
+		masquerade_colp_transfer(original, xfer_colp);
+	}
+
 done:
+	if (xfer_ds) {
+		ast_datastore_free(xfer_ds);
+	}
 	/* it is possible for the clone channel to disappear during this */
 	if (clonechan) {
 		ast_channel_unlock(original);
@@ -6300,7 +6566,7 @@ done:
 
 	ao2_unlock(channels);
 
-	return 0;
+	return res;
 }
 
 void ast_set_callerid(struct ast_channel *chan, const char *cid_num, const char *cid_name, const char *cid_ani)
@@ -6538,11 +6804,13 @@ static enum ast_bridge_result ast_generic_bridge(struct ast_channel *c0, struct 
 			/* No frame received within the specified timeout - check if we have to deliver now */
 			if (jb_in_use)
 				ast_jb_get_and_deliver(c0, c1);
-			if (c0->_softhangup == AST_SOFTHANGUP_UNBRIDGE || c1->_softhangup == AST_SOFTHANGUP_UNBRIDGE) {
-				if (c0->_softhangup == AST_SOFTHANGUP_UNBRIDGE)
-					c0->_softhangup = 0;
-				if (c1->_softhangup == AST_SOFTHANGUP_UNBRIDGE)
-					c1->_softhangup = 0;
+			if ((c0->_softhangup | c1->_softhangup) & AST_SOFTHANGUP_UNBRIDGE) {/* Bit operators are intentional. */
+				if (c0->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
+					c0->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+				}
+				if (c1->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
+					c1->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+				}
 				c0->_bridge = c1;
 				c1->_bridge = c0;
 			}
@@ -6749,7 +7017,7 @@ static void bridge_play_sounds(struct ast_channel *c0, struct ast_channel *c1)
 enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_channel *c1,
 					  struct ast_bridge_config *config, struct ast_frame **fo, struct ast_channel **rc)
 {
-	struct ast_channel *who = NULL, *chans[2] = { c0, c1 };
+	struct ast_channel *chans[2] = { c0, c1 };
 	enum ast_bridge_result res = AST_BRIDGE_COMPLETE;
 	format_t o0nativeformats;
 	format_t o1nativeformats;
@@ -6826,8 +7094,8 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 	manager_bridge_event(1, 1, c0, c1);
 
 	/* Before we enter in and bridge these two together tell them both the source of audio has changed */
-	ast_indicate(c0, AST_CONTROL_SRCCHANGE);
-	ast_indicate(c1, AST_CONTROL_SRCCHANGE);
+	ast_indicate(c0, AST_CONTROL_SRCUPDATE);
+	ast_indicate(c1, AST_CONTROL_SRCUPDATE);
 
 	for (/* ever */;;) {
 		struct timeval now = { 0, };
@@ -6858,8 +7126,6 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 				if (callee_warning && config->end_sound)
 					bridge_playfile(c1, c0, config->end_sound, 0);
 				*fo = NULL;
-				if (who)
-					*rc = who;
 				res = 0;
 				break;
 			}
@@ -6882,11 +7148,13 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 			ast_clear_flag(config, AST_FEATURE_WARNING_ACTIVE);
 		}
 
-		if (c0->_softhangup == AST_SOFTHANGUP_UNBRIDGE || c1->_softhangup == AST_SOFTHANGUP_UNBRIDGE) {
-			if (c0->_softhangup == AST_SOFTHANGUP_UNBRIDGE)
-				c0->_softhangup = 0;
-			if (c1->_softhangup == AST_SOFTHANGUP_UNBRIDGE)
-				c1->_softhangup = 0;
+		if ((c0->_softhangup | c1->_softhangup) & AST_SOFTHANGUP_UNBRIDGE) {/* Bit operators are intentional. */
+			if (c0->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
+				c0->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+			}
+			if (c1->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
+				c1->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+			}
 			c0->_bridge = c1;
 			c1->_bridge = c0;
 			ast_debug(1, "Unbridge signal received. Ending native bridge.\n");
@@ -6897,8 +7165,6 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 		if (ast_test_flag(c0, AST_FLAG_ZOMBIE) || ast_check_hangup_locked(c0) ||
 		    ast_test_flag(c1, AST_FLAG_ZOMBIE) || ast_check_hangup_locked(c1)) {
 			*fo = NULL;
-			if (who)
-				*rc = who;
 			res = 0;
 			ast_debug(1, "Bridge stops because we're zombie or need a soft hangup: c0=%s, c1=%s, flags: %s,%s,%s,%s\n",
 				c0->name, c1->name,
@@ -6942,8 +7208,9 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 				ast_clear_flag(c0, AST_FLAG_NBRIDGE);
 				ast_clear_flag(c1, AST_FLAG_NBRIDGE);
 
-				if (c0->_softhangup == AST_SOFTHANGUP_UNBRIDGE || c1->_softhangup == AST_SOFTHANGUP_UNBRIDGE)
+				if ((c0->_softhangup | c1->_softhangup) & AST_SOFTHANGUP_UNBRIDGE) {/* Bit operators are intentional. */
 					continue;
+				}
 
 				c0->_bridge = NULL;
 				c1->_bridge = NULL;

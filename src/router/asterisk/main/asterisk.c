@@ -61,7 +61,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 290864 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296534 $")
 
 #include "asterisk/_private.h"
 
@@ -1202,12 +1202,18 @@ static int read_credentials(int fd, char *buffer, size_t size, struct console *c
 		return result;
 	}
 
-#if defined(SO_PEERCRED)
+#if defined(SO_PEERCRED) && (defined(HAVE_STRUCT_UCRED_UID) || defined(HAVE_STRUCT_UCRED_CR_UID))
 	if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &len)) {
 		return result;
 	}
+#if defined(HAVE_STRUCT_UCRED_UID)
 	uid = cred.uid;
 	gid = cred.gid;
+#else /* defined(HAVE_STRUCT_UCRED_CR_UID) */
+	uid = cred.cr_uid;
+	gid = cred.cr_gid;
+#endif /* defined(HAVE_STRUCT_UCRED_UID) */
+
 #elif defined(HAVE_GETPEEREID)
 	if (getpeereid(fd, &uid, &gid)) {
 		return result;
@@ -3201,6 +3207,7 @@ int main(int argc, char *argv[])
 	tdd_init();
 	ast_tps_init();
 	ast_fd_init();
+	ast_pbx_init();
 
 	if (getenv("HOME")) 
 		snprintf(filename, sizeof(filename), "%s/.asterisk_history", getenv("HOME"));

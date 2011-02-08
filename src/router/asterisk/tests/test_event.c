@@ -48,7 +48,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 275105 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 292741 $")
 
 #include "asterisk/module.h"
 #include "asterisk/utils.h"
@@ -253,7 +253,7 @@ AST_TEST_DEFINE(event_sub_test)
 	struct ast_event *event;
 	int i;
 	enum ast_event_subscriber_res sub_res;
-	static struct {
+	struct {
 		struct ast_event_sub *sub;
 		struct event_sub_data data;
 		const unsigned int expected_count;
