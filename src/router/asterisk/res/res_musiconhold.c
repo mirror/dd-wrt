@@ -1,7 +1,7 @@
 /*
  * Asterisk -- An open source telephony toolkit.
  *
- * Copyright (C) 1999 - 2006, Digium, Inc.
+ * Copyright (C) 1999 - 2010, Digium, Inc.
  *
  * Mark Spencer <markster@digium.com>
  *
@@ -27,12 +27,11 @@
 
 /*** MODULEINFO
 	<conflict>win32</conflict>
-	<use>dahdi</use>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 292050 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 292376 $")
 
 #include <ctype.h>
 #include <signal.h>

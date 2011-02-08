@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 222873 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 298051 $")
 
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__Darwin__)
 #include <net/if_dl.h>
@@ -234,7 +234,7 @@ char *ast_eid_to_str(char *s, int maxlen, struct ast_eid *eid)
 
 void ast_set_default_eid(struct ast_eid *eid)
 {
-#if defined(SIOCGIFHWADDR)
+#if defined(SIOCGIFHWADDR) && defined(HAVE_STRUCT_IFREQ_IFR_IFRU_IFRU_HWADDR)
 	int s, x = 0;
 	char eid_str[20];
 	struct ifreq ifr;

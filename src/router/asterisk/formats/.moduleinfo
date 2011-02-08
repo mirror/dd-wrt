@@ -27,9 +27,9 @@
 </member>
 <member name="format_siren7" displayname="ITU G.722.1 (Siren7, licensed from Polycom)" remove_on_change="formats/format_siren7.o formats/format_siren7.so">
 </member>
-<member name="format_sln16" displayname="Raw Signed Linear 16KHz Audio support (SLN16)" remove_on_change="formats/format_sln16.o formats/format_sln16.so">
-</member>
 <member name="format_sln" displayname="Raw Signed Linear Audio support (SLN)" remove_on_change="formats/format_sln.o formats/format_sln.so">
+</member>
+<member name="format_sln16" displayname="Raw Signed Linear 16KHz Audio support (SLN16)" remove_on_change="formats/format_sln16.o formats/format_sln16.so">
 </member>
 <member name="format_vox" displayname="Dialogic VOX (ADPCM) File Format" remove_on_change="formats/format_vox.o formats/format_vox.so">
 </member>
