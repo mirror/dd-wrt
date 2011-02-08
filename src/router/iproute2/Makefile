@@ -4,6 +4,28 @@ CONFDIR=/etc/iproute2
 DOCDIR=/usr/share/doc/iproute2
 MANDIR=/usr/share/man
 KERNEL_INCLUDE=$(LINUXDIR)/include
+ASM_INCLUDE=-I$(LINUXDIR)/arch/mips/include 
+ifeq ($(ARCH),mips)
+ASM_INCLUDE=-I$(LINUXDIR)/arch/mips/include 
+endif
+ifeq ($(ARCH),mipsel)
+ASM_INCLUDE=-I$(LINUXDIR)/arch/mips/include 
+endif
+ifeq ($(ARCH),arm)
+ASM_INCLUDE=-I$(LINUXDIR)/arch/arm/include 
+endif
+ifeq ($(ARCH),armeb)
+ASM_INCLUDE=-I$(LINUXDIR)/arch/arm/include 
+endif
+ifeq ($(ARCH),armbe)
+ASM_INCLUDE=-I$(LINUXDIR)/arch/arm/include 
+endif
+ifeq ($(ARCH),i386)
+ASM_INCLUDE=-I$(LINUXDIR)/arch/x86/include 
+endif
+ifeq ($(ARCH),powerpc)
+ASM_INCLUDE=-I$(LINUXDIR)/arch/powerpc/include 
+endif
 
 # Path to db_185.h include
 DBM_INCLUDE:=/usr/include
@@ -25,7 +47,7 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
 HOSTCC = $(CC) 
 #ipsel-linux-uclibc-gcc
 CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
-CFLAGS = $(CCOPTS) -I$(KERNEL_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS = $(CCOPTS) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 
 LDLIBS += -L../lib -lnetlink -lutil 
