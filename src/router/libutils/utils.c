@@ -1222,6 +1222,11 @@ int internal_getRouterBrand()
 #elif HAVE_DIR615C1
 	setRouter("D-Link DIR-615-C1");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_DIR601A1
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("D-Link DIR-601-A1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615E1
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
