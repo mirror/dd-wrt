@@ -73,8 +73,8 @@
 #else
 #define USESTUBS 0 /* direct calls to API, based on following definitions */
 #define ENVNTFS3G "NTFS3G"
-#define LIBFILE64 "/lib64/libntfs-3g.so.803"
-#define LIBFILE "/lib/libntfs-3g.so.803"
+#define LIBFILE64 "/lib64/libntfs-3g.so.801"
+#define LIBFILE "/lib/libntfs-3g.so.801"
 #endif
 
 #define GET_FILE_SECURITY "ntfs_get_file_security"
