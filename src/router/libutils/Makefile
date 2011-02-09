@@ -674,6 +674,9 @@ endif
 ifeq ($(CONFIG_DIR615),y)
 CFLAGS += -DHAVE_DIR615
 endif
+ifeq ($(CONFIG_DIR601A1),y)
+CFLAGS += -DHAVE_DIR601A1
+endif
 ifeq ($(CONFIG_DIR615E),y)
 CFLAGS += -DHAVE_DIR615E
 endif
