@@ -93,7 +93,8 @@ filter (char *m, char *source, char *dest, int len)
     int i;
     int slen = strlen(source);
     int dlen = strlen(dest);
-    for (i = 0; i <= len - slen; i++)
+    i=0;
+    while (i <= len - slen)
     {
         if (strncmp ((char *) &m[i], source, slen) == 0)
         {
@@ -104,7 +105,7 @@ filter (char *m, char *source, char *dest, int len)
             len -= delta;
             i += dlen;
         }
-        int before = i;
+        else
         while(m[i++]!='\n' && i<(len - slen));
     }
     return len;
