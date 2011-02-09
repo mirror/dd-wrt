@@ -1812,7 +1812,7 @@ search:
 	while (!ntfs_attr_lookup(AT_FILE_NAME, AT_UNNAMED, 0, CASE_SENSITIVE,
 			0, NULL, 0, actx)) {
 		char *s;
-		BOOL case_sensitive = IGNORE_CASE;
+		IGNORE_CASE_BOOL case_sensitive = IGNORE_CASE;
 
 		errno = 0;
 		fn = (FILE_NAME_ATTR*)((u8*)actx->attr +

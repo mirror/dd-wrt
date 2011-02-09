@@ -728,8 +728,8 @@ SHELL=${CONFIG_SHELL-/bin/sh}
 # Identity of this package.
 PACKAGE_NAME='ntfs-3g'
 PACKAGE_TARNAME='ntfs-3g'
-PACKAGE_VERSION='2010.10.2'
-PACKAGE_STRING='ntfs-3g 2010.10.2'
+PACKAGE_VERSION='2011.1.15AR.1'
+PACKAGE_STRING='ntfs-3g 2011.1.15AR.1'
 PACKAGE_BUGREPORT='ntfs-3g-devel@lists.sf.net'
 
 ac_unique_file="src/ntfs-3g.c"
@@ -2004,7 +2004,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-LIBNTFS_3G_VERSION="80"
+LIBNTFS_3G_VERSION="801"
 
 
 # Environment
