@@ -77,12 +77,11 @@ void start_cron(void)
 	}
 	mkdir("/tmp/cron.d", 0700);
 
-	buf_to_file("/tmp/cron.d/check_ps",
-		    "*/2 * * * * root /sbin/check_ps\n");
+	buf_to_file("/tmp/cron.d/check_ps","*/2 * * * * root /sbin/check_ps\n");
 	/*
 	 * pppoe reconnect 
 	 */
-	unlink("/tmp/cron.d/pppoe_reconnect");
+	unlink("/tmp/cron.d/pppoe_reconnect"); // may change, so we reconnect
 	if (nvram_match("reconnect_enable", "1")) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
@@ -161,7 +160,6 @@ void start_cron(void)
 void stop_cron(void)
 {
 	stop_process("cron", "cron daemon");
-	eval("rm", "-rf", "/tmp/cron.d");
 	cprintf("done\n");
 	return;
 }
