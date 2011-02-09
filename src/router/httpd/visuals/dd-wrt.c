@@ -4345,9 +4345,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 #ifdef HAVE_RT2880
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta")
-	    || nvram_match(wl_mode, "apstawet"))
 #else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra"))
@@ -4776,9 +4773,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 // test
 #ifdef HAVE_RT2880
-	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
-	    || nvram_match(wl_mode, "infra") || nvram_match(wl_mode, "apsta")
-	    || nvram_match(wl_mode, "apstawet"))
 #else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra"))
