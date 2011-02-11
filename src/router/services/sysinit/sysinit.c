@@ -64,6 +64,7 @@
 #include <wlutils.h>
 #include <cy_conf.h>
 #include <cymac.h>
+#include <glob.h>
 // #include <ledcontrol.h>
 
 #define WL_IOCTL(name, cmd, buf, len) (ret = wl_ioctl((name), (cmd), (buf), (len)))
@@ -2068,6 +2069,36 @@ void start_restore_defaults(void)
 	else
 		check_cfe_nv();
 	cprintf("restore defaults\n");
+
+	glob_t globbuf;
+	char globstring[1024];
+	char firststyle[32] = "";
+	int globresult;
+
+	sprintf(globstring, "/www/style/*");
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	int i, found = 0;
+	for (i = 0; i < globbuf.gl_pathc; i++) {
+		char *style;
+		style = strrchr(globbuf.gl_pathv[i], '/') + 1;
+#ifdef HAVE_PWC
+		if( strcmp( style, "pwc" ) ) 
+#endif
+			if( firststyle[0] == '\0')
+				strcpy( firststyle, style);
+		
+		if( !strcmp( nvram_get("router_style"), style ) ) {
+			found = 1;
+		}
+	}
+	if( found == 0 && firststyle[0] != '\0') {
+		fprintf(stderr, "[SET ROUTER STYLE] %s\n", firststyle);
+		nvram_set("router_style", firststyle);
+		if( !restore_defaults ) {
+			nvram_commit();
+		}
+	}
+	globfree(&globbuf);
 
 	/*
 	 * Commit values 

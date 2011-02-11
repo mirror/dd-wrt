@@ -782,6 +782,9 @@ endif
 ifeq ($(CONFIG_CAMBRIA),y)
 CFLAGS_EXTRA += -DHAVE_CAMBRIA
 endif
+ifeq ($(CONFIG_PWC),y)
+CFLAGS += -DHAVE_PWC
+endif
 ifeq ($(CONFIG_VNCREPEATER),y)
 CFLAGS_EXTRA += -DHAVE_VNCREPEATER
 OBJS += vncrepeater.o
