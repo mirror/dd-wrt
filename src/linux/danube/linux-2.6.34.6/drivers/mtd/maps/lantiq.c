@@ -131,6 +131,7 @@ find_uImage_size(struct map_info *map, unsigned long offset)
 	if (le32_to_cpu(magic) != UBOOT_MAGIC)
 		return 0;
 	map->copy_from(map, &temp, offset + 12, 4);
+	printk("uImage size %X\n",temp + 0x40);
 	return temp + 0x40;
 }
 
@@ -210,6 +211,7 @@ lq_mtd_probe(struct platform_device *pdev)
 	lq_mtd->owner = THIS_MODULE;
 
 	nr_parts = parse_mtd_partitions(lq_mtd, part_probe_types, &parts, 0);
+	printk(KERN_EMERG "parse_mtd returns %d\n",nr_parts);
 	if (nr_parts > 0) {
 		printk(KERN_INFO "ifxmips_mtd: found %d partitions from cmdline\n", err);
 		num_parts = err;
@@ -231,15 +233,24 @@ lq_mtd_probe(struct platform_device *pdev)
 
 	/* dynamic size detection only if rootfs-part follows kernel-part */
 	if (kernel_part+1 == rootfs_part) {
-		uimage_size = find_uImage_size(&lq_map,parts[kernel_part].offset);
-
+		for (i=0;i<0x60000;i+=0x10000)
+		{
+		uimage_size = find_uImage_size(&lq_map,i);
+		if (uimage_size>0)
+		    break;
+		}
+		parts[0].offset=0;
+		parts[0].size=i-0x10000;
+		parts[1].offset=parts[0].size;
+		parts[1].size=0x10000;
+		parts[kernel_part].offset=i;
+		uimage_size &= ~(4096 -1);
+		uimage_size += 4096;
+		
 		if (detect_squashfs_partition(&lq_map,parts[kernel_part].offset + uimage_size)) {
 			printk(KERN_INFO "lq_mtd: found a squashfs following the uImage\n");
-		} else {
-			uimage_size &= ~(4096 -1);
-			uimage_size += 4096;
 		}
-
+		
 		parts[kernel_part].size = uimage_size;
 		parts[rootfs_part].offset = parts[kernel_part].offset + parts[kernel_part].size;
 		parts[rootfs_part].size = ((lq_mtd->size >> 20) * 1024 * 1024) - parts[rootfs_part].offset;
