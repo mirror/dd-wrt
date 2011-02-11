@@ -154,7 +154,6 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
-	insmod("dwc_otg"); // usb
 	/*
 	 * Set a sane date 
 	 */

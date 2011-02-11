@@ -1298,6 +1298,9 @@ int internal_getRouterBrand()
 #elif HAVE_LSX
 	setRouter("Ubiquiti LiteStation-SR71");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_VF803
+	setRouter("Vodafone Easybox 803");
+	return ROUTER_BOARD_DANUBE;
 #elif HAVE_DANUBE
 	setRouter("Infineon Danube");
 	return ROUTER_BOARD_DANUBE;
