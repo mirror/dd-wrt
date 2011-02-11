@@ -2001,15 +2001,16 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
 			  vlan_name, prio != NULL ? prio : "32768");
 		websWrite(wp, "&nbsp;MTU&nbsp;");
+		/*  Now shown under Port setup
 		sprintf(vlan_name, "bridgemtu%d", count);
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  vlan_name, mtu != NULL ? mtu : "1500");
+			  vlan_name, mtu != NULL ? mtu : "1500");*/
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
 		websWrite(wp, "</div>\n");
-		show_ipnetmask(wp, bridge);
+		// moved to Port setup show_ipnetmask(wp, bridge);
 		count++;
 	}
 	int i;
@@ -7578,26 +7579,22 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		strcpy(layer, var);
 		rep(layer, '.', 'X');
 		sprintf(ssid, "%s_bridged", var);
-		if (!strncmp(var, "br", 2) && !contains(var, '.')) {
-			nvram_nset("0", "%s_bridged", var);
-		} else {
-
-			websWrite(wp,
-				  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",
-				  var);
-			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
-				  layer, var, nvram_default_match(ssid,
-								  "0",
-								  "1") ?
-				  "checked=\"checked\"" : "");
-			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(share.deflt)</script>\n",
-				  layer, var, nvram_default_match(ssid, "1",
-								  "1") ?
-				  "checked=\"checked\"" : "");
-			websWrite(wp, "</div>\n");
-		}
+		// nvram_nset("0", "%s_bridged", var);
+		websWrite(wp,
+			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",
+			  var);
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
+			  layer, var, nvram_default_match(ssid,
+							  "0",
+							  "1") ?
+			  "checked=\"checked\"" : "");
+		websWrite(wp,
+			"<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(share.deflt)</script>\n",
+			layer, var, nvram_default_match(ssid, "1",
+						  "1") ?
+			"checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_idnet\">\n", layer);
 
 		websWrite(wp, "<div class=\"setting\">\n");
