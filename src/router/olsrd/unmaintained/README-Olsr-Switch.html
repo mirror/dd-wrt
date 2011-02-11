@@ -1,0 +1,489 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+        <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+	<TITLE>Olsr Switch</TITLE>
+	<STYLE>
+	<!--
+		H1 { color: #000000 }
+		P { color: #000000; font-family: "verdana", "arial", sans-serif; font-size: 10pt }
+		H2 { color: #000000 }
+		H3 { color: #000000 }
+		PRE { color: #000000 }
+	-->
+	</STYLE>
+</HEAD>
+<BODY>
+<H1>Olsr_Switch network simulation</H1>
+</P>
+<H2>Summary</H2>
+<P>This document gives a brief introduction to the <A HREF="http://www.olsr.org/">olsr.org</A>
+OLSR daemon network simulation extentions and tools. The network
+simulation tool olsr_switch provides olsrd processes running in a
+special <I>host-emultion</I> mode with access to a virtual network.
+Multiple such processes can run on a host. This network can be freely
+manipulated by the user allowing for simulation of dynamic
+large-scale networks. 
+</P>
+<P>Only IPv4 is supported for now. 
+</P>
+<H2>Background</H2>
+<P>olsr_switch was inspired by the uml_switch used to communicate
+between <A HREF="http://user-mode-linux.sourceforge.net/">UML</A>
+instances, which I have used for olsrd testing. Also I remember
+seeing that the guys at LRI working on the <A HREF="http://qolsr.lri.fr/">qolsr</A>
+project has done something similar. 
+</P>
+<P>The target users for this kind of things are probably mainly
+developers and researchers. But it might come in handy for others as
+well. 
+</P>
+<H2>Description</H2>
+<H3>olsr.org</H3>
+<P>The olsr.org OLSR daemon is an implementation of the <A HREF="http://ietf.org/rfc/rfc3626.txt">Optimized
+Link State Routing protocol</A> a IP routing protocol for mobile
+ad-hoc networks. Multiple interesting extensions are available for
+the implementation. Read more at <A HREF="http://www.olsr.org/">olsr.org</A>.
+</P>
+<H3>olsr_switch</H3>
+<P>The application, called olsr_switch, is really a traffic router
+that will allow multiple olsrd instances to connect and communicate
+over TCP via the loopback interface. Connecting to olsr_switch on
+remote hosts will be possible, but it is not implemented at the
+current time. 
+</P>
+<P>Basically olsr_switch works on two datasets - clients and links. A
+client is a connected olsrd process and there are two uni-directional
+link between all nodes(A-&gt;B and B-&gt;A) that can be manipulated
+independently. When receiving traffic from a olsrd client the switch
+will forward this traffic to all other clients to which it has a
+valid link. Links can be set to three different &quot;modes&quot;
+based on the <I>quality</I> set on the link: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in"><B>Open</B>(quality 100) - all
+	traffic will be forwarded over this link. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><B>Closed</B>(quality 0) - no
+	traffic will be forwarded over this link. 
+	</P>
+	<LI><P><B>Lossy</B>(quality 1-99) - in this mode the quality
+	constraint is used as the chance in percentage, for traffic to be
+	forwarded over the link. So if quality is set to 25 there will in
+	average be 75% packet loss. 
+	</P>
+</UL>
+<P>The application provides the user with a prompt/shell where
+various commands for topology manipulation or data retrieval are
+available. A help command is provided for the users convenience. This
+help command will also provide the user with specific help on all
+available commands. More on this later. 
+</P>
+<H3>olsrd host-emulation clients</H3>
+<P>The communication interface against olsr_switch can naturally not
+be 100% transparent for the olsrd process which normally runs on
+UDP/698 on &quot;real&quot; network interfaces. Olsrd itself had to
+be modified to set up a virtual interface connecting to olsr_switch.
+This virtual interface is transparent to all overlying functionality.
+This means that that olsrd host-emulation can run in both RFC and LQ
+mode, and that plugins can be loaded normally etc. But no routes are
+added by the olsrd process. Later on route information might be
+signaled from the olsrd instance to olsr_switch so that a centralized
+route database is available to the user. As of now, you can watch the
+olsrd debug output or easier yet, run one node with the httpinfo
+plugin to get the route/topology/link information. 
+</P>
+<P>Currently olsrd cannot run on both real and host-emulation
+interfaces, but this might change in the future if I get convinced
+that it is useful. No routes can be added by the host-emulating olsrd
+instances, so 
+</P>
+<H2>Building and running</H2>
+<P>As of yet, olsr_switch builds and runs on GNU/Linux and FreeBSD
+systems. 
+</P>
+<H3>Building</H3>
+<P>The olsr.org olsrd source code and pre-compiled packages can be
+downloaded from the olsr.org <A HREF="http://www.olsr.org/index.cgi?action=download">download</A>
+section. But as of now you need the CVS version if you want the
+olsr_switch code. To check out the current snapshot do: 
+</P>
+<PRE>cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/olsrd login
+
+cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/olsrd co olsrd-current</PRE><P>
+Now enter the olsrd source directory and do: 
+</P>
+<PRE STYLE="margin-bottom: 0.2in">olsrd-current# make</PRE><P>
+to build olsrd itself, and: 
+</P>
+<PRE STYLE="margin-bottom: 0.2in">olsrd-current# make switch</PRE><P>
+to build olsr_switch. If no error messages occurred, you should now
+have the two executables <I>olsrd</I> and <I>olsr_switch</I>
+available in the current directory. 
+</P>
+<H3>Running</H3>
+<P>Before starting any olsrd host-emu clients the switch must be
+started. This is done using the command <I>olsr_switch</I> and the
+application will initiate the communication socket and provide the
+user with a prompt for input: 
+</P>
+<PRE>olsrd-current# ./olsr_switch
+olsrd host-switch daemon version 0.1 starting
+Initiating socket TCP port 10150
+OHS command interpreter reading from STDIN
+&gt;</PRE><P>
+<BR><BR>
+</P>
+<P>olsrd_switch has a buildt-in command for starting and
+stopping local olsrd instances and we will learn more about 
+this later. But olsrd can also be ran in host-emulation mode
+from the command line. To start olsrd in host-emulation mode do: 
+</P>
+<PRE STYLE="margin-bottom: 0.2in">./olsrd -hemu <B>IP-ADDRESS</B></PRE><P>
+Here <I>IP-ADDRESS</I> will be the IP address that the process will
+set as its main address in the emulation mode. This address has no
+connection to the real IP-stack and can be chosen freely. Of cause,
+no two instances can run using the same IP.<BR>It might be wise to
+have a separate olsrd configuration file for host-emulation. In that
+case issue: 
+</P>
+<PRE STYLE="margin-bottom: 0.2in">./olsrd -f <B>FILENAME</B> -hemu <B>IP-ADDRESS</B></PRE><P>
+As of now there is no emulated destination address used. All traffic
+will be passed on regardless of the network address used. Olsrd
+communicates using broadcast/multicast so that multiple &quot;overlapping&quot;
+networks might exist. 
+</P>
+<H2>Command-line interface</H2>
+<P>Blah blah blah 
+</P>
+<H3>help</H3>
+<P>Type 'help cmd' for help on a specific command 
+</P>
+<PRE>&gt; help
+Olsrd host switch version 0.1
+Available commands:
+        help - Help on shell commands
+        exit - Exits olsr host switch
+        log - Displays or sets log bits
+        list - List all connected clients or links
+        link - Manipulate links</PRE><H3>
+list</H3>
+<P>The <I>list</I> command is used for client and link listing. The
+help page states: 
+</P>
+<PRE>&gt; help list
+Usage: <B>list &lt;clients|links&gt;</B>
+Description:
+<I>This command will list all the clients or all the links registered </I>
+<I>by olsr_switch. By default clients are listed.</I></PRE><H3>
+link</H3>
+<P>The <I>link</I> command is used for manipulating links. Here is
+the help page for this command: 
+</P>
+<PRE>&gt; help link
+Usage: <B>link &lt;bi&gt; [srcIP|*] [dstIP|*] [0-100]</B>
+Description:
+<I>This command is used for manipulating olsr links. The link quality </I>
+<I>is a number between 0-100 representing the chance in percentage </I>
+<I>for a packet to be forwarded</I>
+<I>on the link.</I>
+To make the link between 10.0.0.1 and 10.0.0.2 have 50% packetloss do:
+ link 10.0.0.1 10.0.0.2 50
+Note that this will only effect the unidirectional link 
+10.0.0.1 -&gt; 10.0.0.2. To make the changes affect traffic 
+in both directions do:
+ link bi 10.0.0.1 10.0.0.2 50
+To completely block a link do:
+ link 10.0.0.1 10.0.0.2 0
+To make all traffic pass(delete the entry) do:
+ link 10.0.0.1 10.0.0.2 100
+Note that &quot;bi&quot; can be used in all these examples.
+Wildcard source and/or destinations are also supported.
+To block all traffic from a node do:
+link 10.0.0.1 * 0
+To set 50% packetloss on all links to 10.0.0.2 do:
+ link * 10.0.0.2 50
+To delete all links do:
+ link * * 100
+Wildcards can also be used in combination with 'bi'.
+To list all manipulated links use 'list links'.</PRE>
+<H3>olsrd</H3>
+<P>The <I>olsrd</I> command is used for manipulating links. Here is
+the help page for this command: 
+</P>
+<PRE>
+> help olsrd
+Usage: <B>olsrd [start|stop|show|setb|seta] [IP|path|args]</B>
+Description:
+<I>This command is used for managing local olsrd instances from within olsr_switch.</I>
+<I>The command can be configured in runtime using the setb and seta sub-commands.</I>
+To show the current olsrd command-configuration do:
+ olsrd show
+To set the olsrd binary path do:
+ olsrd setb /full/path/to/olsrd
+To start a olsrd instance with a IP address of 10.0.0.1, do:
+ olsrd start 10.0.0.1
+To stop that same instance do:
+ olsrd stop 10.0.0.1
+</PRE>
+<H3>others</H3>
+<P>Two other commands are available: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in"><B>exit</B> - terminates
+	olsr_switch. 
+	</P>
+	<LI><P><B>log</B> - sets the log level. 
+	</P>
+</UL>
+<P>Read the help pages for details. 
+</P>
+<H2>Running olsrd in host-emulation mode</H2>
+<P>Now for a real world example of connecting olsrd instances. Let's
+assume we have a modified configuration file, <I>/etc/olsrd.emu.conf</I>
+that we use for host-emu instances. We'll choose the 10.0.0.0/24 IP
+address space for our clients.<BR>First start the olsr_switch in one
+terminal: 
+</P>
+<PRE STYLE="margin-bottom: 0.2in">./olsr_switch</PRE><P>
+Now start the olsrd instances in other terminal(s). If you want to
+follow olsrd operation you should use a debug value &gt; 0. To easen
+CPU usage and terminal count you can start multiple instances that
+will run in the background using the <I>-d 0</I> option. In this
+example we'll run our olsrd instances in the foreground using debug
+level 1. Start them off(in separate terminals) using: 
+</P>
+<PRE STYLE="margin-bottom: 0.2in">./olsrd -f /etc/olsrd.emu.conf -hemu 10.0.0.x -d 1</PRE><P>
+where x is 1-8(we'll run 8 instances). The <A HREF="http://www.gnu.org/software/screen/">screen</A>
+terminal multiplexer application is <I>highly</I> recomended for
+making your life easier if working on multiple terminals. 
+</P>
+<P>Here is the output form the 10.0.0.1 instance of olsrd after some
+time: 
+</P>
+<PRE>       *** olsr.org - 0.4.10-pre (May 30 2005) ***
+
+--- 20:53:26.58 ---------------------------------------------------- LINKS
+
+IP address       hyst   LQ     lost   total  NLQ    ETX
+10.0.0.8         0.000  1.000  0      10     1.000  1.00
+10.0.0.7         0.000  1.000  0      10     1.000  1.00
+10.0.0.6         0.000  1.000  0      10     1.000  1.00
+10.0.0.5         0.000  1.000  0      10     1.000  1.00
+10.0.0.4         0.000  1.000  0      10     1.000  1.00
+10.0.0.3         0.000  1.000  0      10     1.000  1.00
+10.0.0.2         0.000  1.000  0      10     1.000  1.00
+
+--- 20:53:26.58 ------------------------------------------------ NEIGHBORS
+
+IP address       LQ     NLQ    SYM   MPR   MPRS  will
+10.0.0.2         1.000  1.000  YES   NO    NO    3
+10.0.0.3         1.000  1.000  YES   NO    NO    3
+10.0.0.4         1.000  1.000  YES   NO    NO    3
+10.0.0.5         1.000  1.000  YES   NO    NO    3
+10.0.0.6         1.000  1.000  YES   NO    NO    3
+10.0.0.7         1.000  1.000  YES   NO    NO    3
+10.0.0.8         1.000  1.000  YES   NO    NO    3
+
+--- 20:53:26.58 ------------------------------------------------- TOPOLOGY
+
+Source IP addr   Dest IP addr     LQ     ILQ    ETX
+</PRE><P>
+We now have our own virtual network! Notice that you can
+start olsrd instances from olsr_switch using the <i>olsrd</i>
+command. The equvivalent of the above command line statement
+would be:
+<PRE>
+olsrd start 10.0.0.x
+</PRE>
+<P>
+Given that the olsrd command is configured properly
+(see olsrd show, setb and seta).
+</P>
+<P>
+At our switch prompt the command
+<I>list</I> yields the following output: 
+</P>
+<PRE>All connected clients:
+        10.0.0.8 - Rx: 647 Tx: 89 LinkCnt: 0
+        10.0.0.7 - Rx: 752 Tx: 105 LinkCnt: 0
+        10.0.0.6 - Rx: 790 Tx: 120 LinkCnt: 0
+        10.0.0.5 - Rx: 809 Tx: 112 LinkCnt: 0
+        10.0.0.4 - Rx: 811 Tx: 125 LinkCnt: 0
+        10.0.0.3 - Rx: 804 Tx: 138 LinkCnt: 0
+        10.0.0.2 - Rx: 805 Tx: 140 LinkCnt: 0
+        10.0.0.1 - Rx: 829 Tx: 119 LinkCnt: 0</PRE><P>
+Hey - everything is running a-ok! 
+</P>
+<H2>Manipulating links</H2>
+<P>So lets create some link trouble. This introduction has become too
+long already, so we'll introduce two simple example conditions: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">We want 10.0.0.1 only to have a
+	link to 10.0.0.2 and no one else. 
+	</P>
+	<LI><P>We want 10.0.0.8 only to have 25% chance of getting direct
+	traffic trough to 10.0.0.2,3,4 
+	</P>
+</UL>
+<P>Here's what we need to do: 
+</P>
+<PRE>&gt; link bi 10.0.0.1 * 0
+Setting bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.8 quality 0
+Setting bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.7 quality 0
+Setting bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.6 quality 0
+Setting bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.5 quality 0
+Setting bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.4 quality 0
+Setting bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.3 quality 0
+Setting bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.2 quality 0
+
+
+&gt; link bi 10.0.0.1 10.0.0.2 100
+Removing bidirectional link(s) 10.0.0.1 &lt;=&gt; 10.0.0.2 quality 100
+
+&gt; list links
+All configured links:
+        10.0.0.8 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.7 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.6 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.5 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.4 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.3 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.3 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.4 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.5 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.6 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.7 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.8 Quality: 0
+</PRE><P>
+Now our first condition is met. First all bidirectional links from
+10.0.0.1 was blocked and then the bidirectional link to 10.0.0.2 was
+opened. Now 10.0.0.1 can only see 10.0.0.2 as a neighbor. Note that
+only manipulated links are listed when issuing 'list links'. olsrd at
+10.0.0.1 now shows: 
+</P>
+<PRE>       *** olsr.org - 0.4.10-pre (May 30 2005) ***
+
+--- 21:17:46.06 ---------------------------------------------------- LINKS
+
+IP address       hyst   LQ     lost   total  NLQ    ETX
+10.0.0.2         0.000  1.000  0      10     1.000  1.00
+
+--- 21:17:46.06 ------------------------------------------------ NEIGHBORS
+
+IP address       LQ     NLQ    SYM   MPR   MPRS  will
+10.0.0.2         1.000  1.000  YES   YES   NO    3
+
+--- 21:17:46.06 ------------------------------------------------- TOPOLOGY
+
+Source IP addr   Dest IP addr     LQ     ILQ    ETX
+10.0.0.2         10.0.0.1         1.000  1.000  1.00
+10.0.0.2         10.0.0.3         1.000  1.000  1.00
+10.0.0.2         10.0.0.4         1.000  1.000  1.00
+10.0.0.2         10.0.0.5         1.000  1.000  1.00
+10.0.0.2         10.0.0.6         1.000  1.000  1.00
+10.0.0.2         10.0.0.7         1.000  1.000  1.00
+10.0.0.2         10.0.0.8         1.000  1.000  1.00</PRE><P>
+works like a charm. Now let's make sure we can meet condition two: 
+</P>
+<PRE>&gt; link bi 10.0.0.8 10.0.0.2 25
+Setting bidirectional link(s) 10.0.0.8 &lt;=&gt; 10.0.0.2 quality 25
+
+&gt; link bi 10.0.0.8 10.0.0.3 25
+Setting bidirectional link(s) 10.0.0.8 &lt;=&gt; 10.0.0.3 quality 25
+
+&gt; link bi 10.0.0.8 10.0.0.4 25
+Setting bidirectional link(s) 10.0.0.8 &lt;=&gt; 10.0.0.4 quality 25
+
+&gt; list links
+All configured links:
+        10.0.0.8 =&gt; 10.0.0.4 Quality: 25
+        10.0.0.8 =&gt; 10.0.0.3 Quality: 25
+        10.0.0.8 =&gt; 10.0.0.2 Quality: 25
+        10.0.0.8 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.7 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.6 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.5 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.4 =&gt; 10.0.0.8 Quality: 25
+        10.0.0.4 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.3 =&gt; 10.0.0.8 Quality: 25
+        10.0.0.3 =&gt; 10.0.0.1 Quality: 0
+        10.0.0.2 =&gt; 10.0.0.8 Quality: 25
+        10.0.0.1 =&gt; 10.0.0.3 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.4 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.5 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.6 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.7 Quality: 0
+        10.0.0.1 =&gt; 10.0.0.8 Quality: 0
+</PRE><P>
+Now for a look at olsrd 10.0.0.8s output: 
+</P>
+<PRE>       *** olsr.org - 0.4.10-pre (May 30 2005) ***
+
+--- 21:23:00.35 ---------------------------------------------------- LINKS
+
+IP address       hyst   LQ     lost   total  NLQ    ETX
+10.0.0.7         0.000  1.000  0      10     1.000  1.00
+10.0.0.5         0.000  1.000  0      10     1.000  1.00
+10.0.0.6         0.000  1.000  0      10     1.000  1.00
+10.0.0.2         0.000  0.800  2      10     0.498  2.51
+10.0.0.3         0.000  0.600  4      10     0.498  3.35
+10.0.0.4         0.000  0.900  1      10     0.800  1.39
+
+--- 21:23:00.35 ------------------------------------------------ NEIGHBORS
+
+IP address       LQ     NLQ    SYM   MPR   MPRS  will
+10.0.0.2         0.800  0.498  YES   YES   NO    3
+10.0.0.3         0.600  0.498  NO    NO    NO    3
+10.0.0.4         0.900  0.800  YES   NO    NO    3
+10.0.0.5         1.000  1.000  YES   NO    NO    3
+10.0.0.6         1.000  1.000  YES   YES   NO    3
+10.0.0.7         1.000  1.000  YES   YES   NO    3
+
+--- 21:23:00.35 ------------------------------------------------- TOPOLOGY
+
+Source IP addr   Dest IP addr     LQ     ILQ    ETX
+10.0.0.2         10.0.0.1         1.000  1.000  1.00
+10.0.0.2         10.0.0.3         1.000  1.000  1.00
+10.0.0.2         10.0.0.4         1.000  1.000  1.00
+10.0.0.2         10.0.0.5         1.000  1.000  1.00
+10.0.0.2         10.0.0.6         1.000  1.000  1.00
+10.0.0.2         10.0.0.7         1.000  1.000  1.00
+10.0.0.2         10.0.0.8         0.898  0.498  2.24
+10.0.0.5         10.0.0.4         1.000  1.000  1.00
+10.0.0.6         10.0.0.8         1.000  1.000  1.00
+10.0.0.7         10.0.0.2         1.000  1.000  1.00
+10.0.0.7         10.0.0.3         1.000  1.000  1.00
+10.0.0.7         10.0.0.8         1.000  1.000  1.00
+</PRE><P>
+Yes, there most certainly are some very weak links here. 
+</P>
+<P>Well, lets leave it at that :-) The command line interface is
+meant to be used by applications as well as humans, so if somebody
+wants to create a GUI front-end that should not be to much work. 
+</P>
+<H2>Performance</H2>
+<P>Regarding CPU load I have not done any real testing, but I did try
+seeing how far I could get on my 1.3Ghz/512MB-RAM desktop system
+running LQ olsrd instances in the background initiated from olsrd_switch. 
+When reaching a certain amount (15+) the cPU load is very high for 
+neighbor detection, but as soon as links stabelize the CPU is almost
+idle again. I have ran with 30+ nodes with no problem. But do not start
+to many instances at the same time.
+</P>
+<P>
+Note that, this
+was only using a idle network(no topology changes except new nodes joining). 
+But as soon as olsrd instances can connect from other hosts one can 
+distribute the load. Also the application will be subject to various future
+optimizations.
+</P>
+<P>
+Network load measurement tools will also be on the to-do list.
+</P>
+<HR>
+<P><I>by <A HREF="mailto:andreto--at--olsr.org">Andreas T&oslash;nnesen</A></I>
+</P>
+</BODY>
+</HTML>

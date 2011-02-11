@@ -40,11 +40,11 @@
 #include "olsrd_plugin.h"
 
 /* Common/utility functions for plugins */
-set_plugin_parameter set_plugin_port;
-set_plugin_parameter set_plugin_ipaddress;
-set_plugin_parameter set_plugin_boolean;
-set_plugin_parameter set_plugin_int;
-set_plugin_parameter set_plugin_string;
+extern set_plugin_parameter set_plugin_port;
+extern set_plugin_parameter set_plugin_ipaddress;
+extern set_plugin_parameter set_plugin_boolean;
+extern set_plugin_parameter set_plugin_int;
+extern set_plugin_parameter set_plugin_string;
 
 #endif
 

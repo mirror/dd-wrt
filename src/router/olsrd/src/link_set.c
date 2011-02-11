@@ -660,9 +660,10 @@ lookup_link_entry(const union olsr_ip_addr *remote, const union olsr_ip_addr *re
       if (NULL != remote_main && !ipequal(remote_main, &link->neighbor->neighbor_main_addr)) {
         /* Neighbor has changed it's main_addr, update */
         struct ipaddr_str oldbuf, newbuf;
+
         OLSR_PRINTF(1, "Neighbor changed main_ip, updating %s -> %s\n",
                     olsr_ip_to_string(&oldbuf, &link->neighbor->neighbor_main_addr), olsr_ip_to_string(&newbuf, remote_main));
-        link->neighbor->neighbor_main_addr = *remote_main;
+        olsr_update_neighbor_main_addr(link->neighbor, remote_main);
       }
       return link;
     }

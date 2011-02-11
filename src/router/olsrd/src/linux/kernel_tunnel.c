@@ -57,7 +57,7 @@
 #include <linux/ip.h>
 #include <linux/if_tunnel.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 #include <linux/ip6_tunnel.h>
 #endif
 
@@ -122,7 +122,7 @@ static int os_ip4_tunnel(const char *name, in_addr_t *target)
   int err;
   struct ip_tunnel_parm p;
 
-  /* only IPIP tunnel if OLSR runs with IPv6 */
+  /* only IPIP tunnel if OLSR runs with IPv4 */
   assert (olsr_cnf->ip_version == AF_INET);
   memset(&p, 0, sizeof(p));
   p.iph.version = 4;
@@ -157,7 +157,7 @@ static int os_ip4_tunnel(const char *name, in_addr_t *target)
  * @return 0 if an error happened,
  *   if_index for successful created tunnel, 1 for successful deleted tunnel
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 static int os_ip6_tunnel(const char *name, struct in6_addr *target)
 {
   struct ifreq ifr;
@@ -227,7 +227,7 @@ struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, 
       if_idx = os_ip4_tunnel(name, &target->v4.s_addr);
     }
     else {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
       if_idx = os_ip6_tunnel(name, &target->v6);
 #else
       if_idx = 0;
@@ -245,7 +245,7 @@ struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, 
         os_ip4_tunnel(name, NULL);
       }
       else {
-  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
         os_ip6_tunnel(name, NULL);
   #endif
       }
@@ -291,7 +291,7 @@ static void internal_olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *t, bool
     os_ip4_tunnel(t->if_name, NULL);
   }
   else {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
     os_ip6_tunnel(t->if_name, NULL);
 #endif
   }

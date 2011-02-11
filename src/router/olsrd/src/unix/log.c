@@ -48,11 +48,17 @@
 #include <syslog.h>
 #include <stdarg.h>
 
+#ifdef android
+#include <android/log.h>
+#endif
+
 void
 olsr_openlog(const char *ident)
 {
+#ifndef android
   openlog(ident, LOG_PID | LOG_ODELAY, LOG_DAEMON);
   setlogmask(LOG_UPTO(LOG_INFO));
+#endif
 
   return;
 }
@@ -78,17 +84,29 @@ olsr_syslog(int level, const char *format, ...)
 
   switch (level) {
   case (OLSR_LOG_INFO):
+#ifdef android
+    linux_level = ANDROID_LOG_INFO;
+#else
     linux_level = LOG_INFO;
+#endif
     break;
   case (OLSR_LOG_ERR):
+#ifdef android
+    linux_level = ANDROID_LOG_ERROR;
+#else
     linux_level = LOG_ERR;
+#endif
     break;
   default:
     return;
   }
 
   va_start(arglist, format);
+#ifdef android
+  __android_log_vprint(linux_level, "olsrd", format, arglist);
+#else
   vsyslog(linux_level, format, arglist);
+#endif
   va_end(arglist);
 
   return;

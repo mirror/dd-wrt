@@ -1105,12 +1105,12 @@ write_hosts_file(void)
       entry = list2db(list_node);
 
       for (name = entry->names; name != NULL; name = name->next) {
-        struct ipaddr_str strbuf;
-        OLSR_PRINTF(6, "%s\t%s%s\t#%s\n", olsr_ip_to_string(&strbuf, &name->ip), name->name, my_suffix,
-                    olsr_ip_to_string(&strbuf, &entry->originator));
+        struct ipaddr_str strbuf1, strbuf2;
+        OLSR_PRINTF(6, "%s\t%s%s\t#%s\n", olsr_ip_to_string(&strbuf1, &name->ip), name->name, my_suffix,
+                    olsr_ip_to_string(&strbuf2, &entry->originator));
 
-        fprintf(hosts, "%s\t%s%s\t# %s\n", olsr_ip_to_string(&strbuf, &name->ip), name->name, my_suffix,
-                olsr_ip_to_string(&strbuf, &entry->originator));
+        fprintf(hosts, "%s\t%s%s\t# %s\n", olsr_ip_to_string(&strbuf1, &name->ip), name->name, my_suffix,
+                olsr_ip_to_string(&strbuf2, &entry->originator));
 
 #ifdef MID_ENTRIES
         // write mid entries
@@ -1119,16 +1119,14 @@ write_hosts_file(void)
           char mid_prefix[MID_MAXLEN];
 
           while (alias != NULL) {
-            struct ipaddr_str midbuf;
-
             // generate mid prefix
             sprintf(mid_prefix, MID_PREFIX, mid_num);
 
-            OLSR_PRINTF(6, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&midbuf, &alias->alias), mid_prefix, name->name,
-                        my_suffix, olsr_ip_to_string(&strbuf, &entry->originator), mid_num);
+            OLSR_PRINTF(6, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&strbuf1, &alias->alias), mid_prefix, name->name,
+                        my_suffix, olsr_ip_to_string(&strbuf2, &entry->originator), mid_num);
 
-            fprintf(hosts, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&midbuf, &alias->alias), mid_prefix, name->name,
-                    my_suffix, olsr_ip_to_string(&strbuf, &entry->originator), mid_num);
+            fprintf(hosts, "%s\t%s%s%s\t# %s (mid #%i)\n", olsr_ip_to_string(&strbuf1, &alias->alias), mid_prefix, name->name,
+                    my_suffix, olsr_ip_to_string(&strbuf2, &entry->originator), mid_num);
 
             alias = alias->next_alias;
             mid_num++;

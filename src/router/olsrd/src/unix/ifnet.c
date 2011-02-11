@@ -180,8 +180,8 @@ chk_if_changed(struct olsr_if *iface)
    * First check if the interface is set DOWN
    */
 
-  if ((ifp->int_flags & IFF_UP) == 0) {
-    OLSR_PRINTF(1, "\tInterface %s not up - removing it...\n", iface->name);
+  if ((ifp->int_flags & IFF_UP) == 0 || (ifp->int_flags & IFF_RUNNING) == 0) {
+    OLSR_PRINTF(1, "\tInterface %s not up and running - removing it...\n", iface->name);
     goto remove_interface;
   }
 
@@ -271,7 +271,9 @@ chk_if_changed(struct olsr_if *iface)
 
       olsr_trigger_ifchange(ifp->if_index, ifp, IFCHG_IF_UPDATE);
 
-      return 1;
+      /* we have to make sure that olsrd uses the new source address of this interface */
+      olsr_remove_interface(iface); /* so we remove the interface completely */
+      chk_if_up(iface,3); /* and create it again to get new sockets,..*/
     }
     return 0;
 
@@ -307,7 +309,10 @@ chk_if_changed(struct olsr_if *iface)
 #endif
       memcpy(&ifp->ip_addr, &((struct sockaddr_in *)ARM_NOWARN_ALIGN(&ifr.ifr_addr))->sin_addr.s_addr, olsr_cnf->ipsize);
 
-      if_changes = 1;
+      /* we have to make sure that olsrd uses the new source address of this interface */
+      olsr_remove_interface(iface); /* so we remove the interface completely */
+      chk_if_up(iface,3); /* and create it again to get new sockets,..*/
+      return 0;
     }
 
     /* Check netmask */
@@ -572,8 +577,8 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
 
   ifs.int_flags = ifr.ifr_flags;
 
-  if ((ifs.int_flags & IFF_UP) == 0) {
-    OLSR_PRINTF(debuglvl, "\tInterface not up - skipping it...\n");
+  if ( ( (ifs.int_flags & IFF_UP) == 0) || ( (ifs.int_flags & IFF_RUNNING) == 0) ) {
+    OLSR_PRINTF(debuglvl, "\tInterface not up & running - skipping it...\n");
     return 0;
   }
 
@@ -709,6 +714,68 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     OLSR_PRINTF(1, "\tMulticast: %s\n", ip6_to_string(&buf, &ifs.int6_multaddr.sin6_addr));
   }
 
+  name_size = strlen(if_basename(ifr.ifr_name)) + 1;
+  ifs.int_name = olsr_malloc(name_size, "Interface update 3");
+  strscpy(ifs.int_name, if_basename(ifr.ifr_name), name_size);
+
+  if (olsr_cnf->ip_version == AF_INET) {
+    /* IP version 4 */
+    ifs.ip_addr.v4 = ifs.int_addr.sin_addr;
+    /*
+     *We create one socket for each interface and bind
+     *the socket to it. This to ensure that we can control
+     *on what interface the message is transmitted
+     */
+
+    ifs.olsr_socket = getsocket(BUFSPACE, &ifs);
+    ifs.send_socket = getsocket(0, &ifs);
+
+    if (ifs.olsr_socket < 0) {
+      fprintf(stderr, "Could not initialize socket... exiting!\n\n");
+      olsr_syslog(OLSR_LOG_ERR, "Could not initialize socket... exiting!\n\n");
+      olsr_cnf->exit_value = EXIT_FAILURE;
+      free(ifs.int_name);
+      kill(getpid(), SIGINT);
+      return 0;
+    }
+    if (ifs.send_socket < 0) {
+      OLSR_PRINTF(1, "Warning, transmission socket could not be initialized. Abort if-up.\n");
+      close (ifs.olsr_socket);
+      free(ifs.int_name);
+      return 0;
+    }
+  } else {
+    /* IP version 6 */
+    ifs.ip_addr.v6 = ifs.int6_addr.sin6_addr;
+
+    /*
+     *We create one socket for each interface and bind
+     *the socket to it. This to ensure that we can control
+     *on what interface the message is transmitted
+     */
+
+    ifs.olsr_socket = getsocket6(BUFSPACE, &ifs);
+    ifs.send_socket = getsocket6(0, &ifs);
+
+    if (ifs.olsr_socket < 0) {
+      fprintf(stderr, "Could not initialize socket... exiting!\n\n");
+      olsr_syslog(OLSR_LOG_ERR, "Could not initialize socket... exiting!\n\n");
+      olsr_cnf->exit_value = EXIT_FAILURE;
+      free(ifs.int_name);
+      kill(getpid(), SIGINT);
+      return 0;
+    }
+    if (ifs.send_socket < 0) {
+      OLSR_PRINTF(1, "Warning, transmission socket could not be initialized. Abort if-up.\n");
+      close (ifs.olsr_socket);
+      free(ifs.int_name);
+      return 0;
+    }
+
+    join_mcast(&ifs, ifs.olsr_socket);
+    join_mcast(&ifs, ifs.send_socket);
+  }
+
   ifp = olsr_malloc(sizeof(struct interface), "Interface update 2");
 
   iface->configured = 1;
@@ -727,55 +794,9 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
       ifp->immediate_send_tc ? iface->cnf->tc_params.emission_interval : iface->cnf->hello_params.emission_interval;
   }
 
-  name_size = strlen(if_basename(ifr.ifr_name)) + 1;
   ifp->gen_properties = NULL;
-  ifp->int_name = olsr_malloc(name_size, "Interface update 3");
-  strscpy(ifp->int_name, if_basename(ifr.ifr_name), name_size);
   ifp->int_next = ifnet;
   ifnet = ifp;
-
-  if (olsr_cnf->ip_version == AF_INET) {
-    /* IP version 4 */
-    ifp->ip_addr.v4 = ifp->int_addr.sin_addr;
-    /*
-     *We create one socket for each interface and bind
-     *the socket to it. This to ensure that we can control
-     *on what interface the message is transmitted
-     */
-
-    ifp->olsr_socket = getsocket(BUFSPACE, ifp);
-    ifp->send_socket = getsocket(0, ifp);
-
-    if (ifp->olsr_socket < 0) {
-      fprintf(stderr, "Could not initialize socket... exiting!\n\n");
-      olsr_syslog(OLSR_LOG_ERR, "Could not initialize socket... exiting!\n\n");
-      olsr_cnf->exit_value = EXIT_FAILURE;
-      kill(getpid(), SIGINT);
-    }
-
-  } else {
-    /* IP version 6 */
-    ifp->ip_addr.v6 = ifp->int6_addr.sin6_addr;
-
-    /*
-     *We create one socket for each interface and bind
-     *the socket to it. This to ensure that we can control
-     *on what interface the message is transmitted
-     */
-
-    ifp->olsr_socket = getsocket6(BUFSPACE, ifp);
-    ifp->send_socket = getsocket6(0, ifp);
-
-    join_mcast(ifp, ifp->olsr_socket);
-
-    if (ifp->olsr_socket < 0) {
-      fprintf(stderr, "Could not initialize socket... exiting!\n\n");
-      olsr_syslog(OLSR_LOG_ERR, "Could not initialize socket... exiting!\n\n");
-      olsr_cnf->exit_value = EXIT_FAILURE;
-      kill(getpid(), SIGINT);
-    }
-
-  }
 
   set_buffer_timer(ifp);
 
