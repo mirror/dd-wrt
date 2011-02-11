@@ -148,6 +148,24 @@ olsr_lookup_my_neighbors(const struct neighbor_entry *neighbor, const union olsr
 }
 
 /**
+ * Update a neighbours main_addr inlcuding hash
+*/
+
+void
+olsr_update_neighbor_main_addr(struct neighbor_entry *entry, const union olsr_ip_addr *new_main_addr)
+{
+  /*remove from old pos*/
+  DEQUEUE_ELEM(entry);
+
+  /*update main addr*/
+  entry->neighbor_main_addr = *new_main_addr;
+
+  /*insert it again*/
+  QUEUE_ELEM(neighbortable[olsr_ip_hashing(new_main_addr)], entry);
+
+}
+
+/**
  *Delete a neighbr table entry.
  *
  *Remember: Deleting a neighbor entry results

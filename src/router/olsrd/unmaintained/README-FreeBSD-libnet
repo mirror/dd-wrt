@@ -1,0 +1,35 @@
+Instructions for FreeBSD libnet build
+spoggle@gmail.com
+
+libnet URL: http://www.packetfactory.net/libnet/
+FreeBSD Ports: /usr/ports/net/libnet-devel/
+
+
+The BSD networking is missing features that prevent the use of
+multiple interfaces with olsrd.  By using libnet we can get around
+the problem and support this feature.
+
+1) From the FreeBSD ports collection install libnet-devel, plain
+   libnet is NOT sufficient!
+
+  % cd /usr/ports/net/libnet-devel
+  % make install
+
+   Additionally, you must have gmake installed (/usr/ports/devel/gmake)
+
+2) If you're reading this, you have the proper olsrd distribution.  So
+   I won't bore you with getting that.
+
+3) Change into the main directory of the olsrd source and build the
+   daemon:
+
+  % cd <blah>
+  % gmake OS=fbsd-ll
+
+4) If that succeeds, then just follow all the other documentation on
+   the use of olsrd.
+
+The code is pretty ugly right now and I know there are some efficiency
+things I can do to make it better.  Bug reports, better ways to do
+this are welcomed.
+

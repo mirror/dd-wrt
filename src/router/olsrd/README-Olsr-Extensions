@@ -28,7 +28,7 @@ The LQ-Plugin rewrite was done by Henning Rogge in 2008.
 
 The NIIT kernel module was written by lynxis in 2009.
 
-The asymmetric gateway tunnels was written by Markus Kittenberg
+The asymmetric gateway tunnels was written by Markus Kittenberger
 and Henning Rogge, but the concept was used by B.A.T.M.A.N before OLSRd.
 
 
@@ -119,6 +119,10 @@ implementations detect etx_ffeth nodes with LQ 0 (ETX infinite).
 
 etx_ffeth only use integer arithmetic, so it performs well on embedded
 hardware.
+
+All ethernet interfaces must be marked with "mode ether" 
+(see olsrd.conf.default.full) in their interface configuration to get any
+useful advantage of etxff_eth.
 
 At the time of this writing, etx_ffeth is the prefered metric for building new
 mesh networks which include links over LAN cables (such as daisy chained
@@ -216,7 +220,7 @@ More information on NIIT can be found at: http://wiki.freifunk.net/Niit
     5.) Smart gateways (asymmetric gateway tunnels)
 *******************************************************
 
-The smartgateway mechanism was written by Markus Kittenberg and
+The smartgateway mechanism was written by Markus Kittenberger and
 Henning Rogge to allow an OLSR user to directly choose their default
 internet gateway instead of relying on the hop by hop decisions on
 the way to the gateway. OLSRd 0.6.0 can create an IPIP tunnel
@@ -308,6 +312,19 @@ attached LAN clients without OLSRD, you may want MSS-clamping for the tunnel
 interface created by OLSRD. Because OLSRD uses an arbitrary name for the tunnel
 iface (e.g. tnl_7c41c668) you may want to include a wildcard iptables rule. Example:
 iptables -A FORWARD -o tnl_+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+Furthermore (or alternatively) you might consider to clamp all traffic to your ipip mtu
+on your gateway nodes that is leaving your mesh. (regardless if the traffic comes out 
+of the smartgateway tunnel or not!)
+iptables -A FORWARD -o [your_gateway_interface] -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1480
+
+Especially as during olsrd startup, before an smartgateway is choosen (which is delayed), 
+new connections would use a larger MSS as the smartgateway tunnel can handle. 
+So the approach to clamp on the gateways should give better results.
+
+But if you don't NAT on your gateways (but want to use SmartGateway for some some 
+special reason), you would have to do this on ALL gateways (Even on gateways that 
+do not provide the SmartGateway functionality!)
 
     6.) NatThreshold
 ************************

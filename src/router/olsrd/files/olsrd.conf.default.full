@@ -250,8 +250,8 @@ Hna6
 
 # MPR coverage specifies how many MPRs a node should
 # try select to reach every 2 hop neighbor. Because of
-# a design problem in the 0.5.x dijkstra algorithm this
-# value should be set to 7.
+# a design problem in the 0.5.x lq mpr selection algorithm
+# this value should be set to 7.
 # (default is 7)
 
 # MprCoverage 7

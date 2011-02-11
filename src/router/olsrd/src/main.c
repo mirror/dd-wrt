@@ -80,7 +80,9 @@ bool olsr_win32_end_flag = false;
 static void olsr_shutdown(int) __attribute__ ((noreturn));
 #endif
 
-#if defined linux || __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
+#if defined android
+#define DEFAULT_LOCKFILE_PREFIX "/data/local/olsrd"
+#elif defined linux || __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
 #define DEFAULT_LOCKFILE_PREFIX "/var/run/olsrd"
 #elif defined WIN32
 #define DEFAULT_LOCKFILE_PREFIX "C:\\olsrd"
@@ -124,10 +126,13 @@ struct olsr_cookie_info *def_timer_ci = NULL;
  * Additionally the lock can be killed by removing the
  * locking file.
  */
-static void olsr_create_lock_file(void) {
+static int olsr_create_lock_file(bool noExitOnFail) {
 #ifdef WIN32
   HANDLE lck = CreateEvent(NULL, TRUE, FALSE, lock_file_name);
   if (NULL == lck || ERROR_ALREADY_EXISTS == GetLastError()) {
+    if (noenoExitOnFail) {
+      return -1;
+    }
     if (NULL == lck) {
       fprintf(stderr,
           "Error, cannot create OLSR lock '%s'.\n",
@@ -147,7 +152,9 @@ static void olsr_create_lock_file(void) {
   /* create file for lock */
   lock_fd = open(lock_file_name, O_WRONLY | O_CREAT, S_IRWXU);
   if (lock_fd == 0) {
-    close(lock_fd);
+    if (noExitOnFail) {
+      return -1;
+    }
     fprintf(stderr,
         "Error, cannot create OLSR lock '%s'.\n",
         lock_file_name);
@@ -163,6 +170,9 @@ static void olsr_create_lock_file(void) {
 
   if (fcntl(lock_fd, F_SETLK, &lck) == -1) {
     close(lock_fd);
+    if (noExitOnFail) {
+      return -1;
+    }
     fprintf(stderr,
         "Error, cannot aquire OLSR lock '%s'.\n"
         "Another OLSR instance might be running.\n",
@@ -170,7 +180,7 @@ static void olsr_create_lock_file(void) {
     olsr_exit("", EXIT_FAILURE);
   }
 #endif
-  return;
+  return 0;
 }
 
 /**
@@ -508,7 +518,14 @@ int main(int argc, char *argv[]) {
   /*
    * Create locking file for olsrd, will be cleared after olsrd exits
    */
-  olsr_create_lock_file();
+  for (i=5; i>=0; i--) {
+    OLSR_PRINTF(3, "Trying to get olsrd lock...\n");
+    if (olsr_create_lock_file(i > 0) == 0) {
+      /* lock sucessfully created */
+      break;
+    }
+    sleep (1);
+  }
 
   /* Load plugins */
   olsr_load_plugins();

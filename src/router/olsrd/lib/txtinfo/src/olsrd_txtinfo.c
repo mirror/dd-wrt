@@ -91,7 +91,7 @@ static int ipc_socket;
 /* IPC initialization function */
 static int plugin_ipc_init(void);
 
-static void send_info(int /*send_what*/, int /*socket*/);
+static void send_info(unsigned int /*send_what*/, int /*socket*/);
 
 static void ipc_action(int, void *, unsigned int);
 
@@ -111,18 +111,22 @@ static void ipc_print_gateway(struct autobuf *);
 
 static void ipc_print_config(struct autobuf *);
 
+static void ipc_print_interface(struct autobuf *);
+
 #define TXT_IPC_BUFSIZE 256
 
-#define SIW_ALL 0
-#define SIW_NEIGH 1
-#define SIW_LINK 2
-#define SIW_ROUTE 3
-#define SIW_HNA 4
-#define SIW_MID 5
-#define SIW_TOPO 6
-#define SIW_NEIGHLINK 7
-#define SIW_GATEWAY 8
-#define SIW_CONFIG 9
+#define SIW_NEIGH 0x0001
+#define SIW_LINK 0x0002
+#define SIW_ROUTE 0x0004
+#define SIW_HNA 0x0008
+#define SIW_MID 0x0010
+#define SIW_TOPO 0x0020
+#define SIW_GATEWAY 0x0040
+#define SIW_INTERFACE 0x0080
+#define SIW_CONFIG 0x0100
+
+/* ALL = neigh link route hna mid topo */
+#define SIW_ALL 0x003F
 
 #define MAX_CLIENTS 3
 
@@ -242,7 +246,7 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
   char addr[INET6_ADDRSTRLEN];
   fd_set rfds;
   struct timeval tv;
-  int send_what = 0;
+  unsigned int send_what = 0;
   int ipc_connection;
 
   socklen_t addrlen = sizeof(pin);
@@ -296,25 +300,25 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
        * page the normal output is somewhat lengthy. The
        * header parsing is sufficient for standard wget.
        */
-      if (0 != strstr(requ, "/neighbours"))
-        send_what = SIW_NEIGHLINK;
-      else if (0 != strstr(requ, "/neigh"))
-        send_what = SIW_NEIGH;
-      else if (0 != strstr(requ, "/link"))
-        send_what = SIW_LINK;
-      else if (0 != strstr(requ, "/route"))
-        send_what = SIW_ROUTE;
-      else if (0 != strstr(requ, "/hna"))
-        send_what = SIW_HNA;
-      else if (0 != strstr(requ, "/mid"))
-        send_what = SIW_MID;
-      else if (0 != strstr(requ, "/topo"))
-        send_what = SIW_TOPO;
-      else if (0 != strstr(requ, "/gateway"))
-        send_what = SIW_GATEWAY;
-      else if (0 != strstr(requ, "/config"))
-        send_what = SIW_CONFIG;
-    }
+      if (0 != strstr(requ, "/neighbours")) send_what = SIW_NEIGH | SIW_LINK;
+      else {
+        /* print out every combinations of requested tabled
+         * 3++ letter abbreviations are matched */
+        if (0 != strstr(requ, "/all")) send_what = SIW_ALL;
+        else { /*already included in /all*/
+          if (0 != strstr(requ, "/nei")) send_what |= SIW_NEIGH;
+          if (0 != strstr(requ, "/lin")) send_what |= SIW_LINK;
+          if (0 != strstr(requ, "/rou")) send_what |= SIW_ROUTE;
+          if (0 != strstr(requ, "/hna")) send_what |= SIW_HNA;
+          if (0 != strstr(requ, "/mid")) send_what |= SIW_MID;
+          if (0 != strstr(requ, "/top")) send_what |= SIW_TOPO;
+        }
+        if (0 != strstr(requ, "/gat")) send_what |= SIW_GATEWAY;
+        if (0 != strstr(requ, "/con")) send_what |= SIW_CONFIG;
+        if (0 != strstr(requ, "/int")) send_what |= SIW_INTERFACE;
+      }
+    } 
+    else send_what = SIW_ALL;
   }
 
   send_info(send_what, ipc_connection);
@@ -607,6 +611,36 @@ ipc_print_config(struct autobuf *abuf)
 }
 
 static void
+ipc_print_interface(struct autobuf *abuf)
+{
+  const struct olsr_if *ifs;
+  abuf_puts(abuf, "Table: Interfaces\nName\tState\tMTU\tWLAN\tSrc-Adress\tMask\tDst-Adress\n");
+  for (ifs = olsr_cnf->interfaces; ifs != NULL; ifs = ifs->next) {
+    const struct interface *const rifs = ifs->interf;
+    abuf_appendf(abuf, "%s\t", ifs->name);
+    if (!rifs) {
+      abuf_puts(abuf, "DOWN\n");
+      continue;
+    }
+    abuf_appendf(abuf, "UP\t%d\t%s\t",
+               rifs->int_mtu, rifs->is_wireless ? "Yes" : "No");
+ 
+    if (olsr_cnf->ip_version == AF_INET) {
+      struct ipaddr_str addrbuf, maskbuf, bcastbuf;
+      abuf_appendf(abuf, "%s\t%s\t%s\n",
+                 ip4_to_string(&addrbuf, rifs->int_addr.sin_addr), ip4_to_string(&maskbuf, rifs->int_netmask.sin_addr),
+                 ip4_to_string(&bcastbuf, rifs->int_broadaddr.sin_addr));
+    } else {
+       struct ipaddr_str addrbuf, maskbuf;
+      abuf_appendf(abuf, "%s\t\t%s\n",
+                 ip6_to_string(&addrbuf, &rifs->int6_addr.sin6_addr), ip6_to_string(&maskbuf, &rifs->int6_multaddr.sin6_addr));
+    }
+  }
+  abuf_puts(abuf, "\n");
+}
+
+
+static void
 txtinfo_write_data(void *foo __attribute__ ((unused))) {
   fd_set set;
   int result, i, j, max;
@@ -659,7 +693,7 @@ txtinfo_write_data(void *foo __attribute__ ((unused))) {
 }
 
 static void
-send_info(int send_what, int the_socket)
+send_info(unsigned int send_what, int the_socket)
 {
   struct autobuf abuf;
 
@@ -671,36 +705,24 @@ send_info(int send_what, int the_socket)
 
   /* Print tables to IPC socket */
 
-  /* links + Neighbors */
-  if ((send_what == SIW_ALL) || (send_what == SIW_NEIGHLINK) || (send_what == SIW_LINK))
-    ipc_print_link(&abuf);
-
-  if ((send_what == SIW_ALL) || (send_what == SIW_NEIGHLINK) || (send_what == SIW_NEIGH))
-    ipc_print_neigh(&abuf);
-
+  /* links */
+  if ((send_what & SIW_LINK) == SIW_LINK) ipc_print_link(&abuf);
+  /* neighbours */
+  if ((send_what & SIW_NEIGH) == SIW_NEIGH) ipc_print_neigh(&abuf);
   /* topology */
-  if ((send_what == SIW_ALL) || (send_what == SIW_TOPO))
-    ipc_print_topology(&abuf);
-
+  if ((send_what & SIW_TOPO) == SIW_TOPO) ipc_print_topology(&abuf);
   /* hna */
-  if ((send_what == SIW_ALL) || (send_what == SIW_HNA))
-    ipc_print_hna(&abuf);
-
+  if ((send_what & SIW_HNA) == SIW_HNA) ipc_print_hna(&abuf);
   /* mid */
-  if ((send_what == SIW_ALL) || (send_what == SIW_MID))
-    ipc_print_mid(&abuf);
-
+  if ((send_what & SIW_MID) == SIW_MID) ipc_print_mid(&abuf);
   /* routes */
-  if ((send_what == SIW_ALL) || (send_what == SIW_ROUTE))
-    ipc_print_routes(&abuf);
-
+  if ((send_what & SIW_ROUTE) == SIW_ROUTE) ipc_print_routes(&abuf);
   /* gateways */
-  if (send_what == SIW_GATEWAY)
-    ipc_print_gateway(&abuf);
-
+  if ((send_what & SIW_GATEWAY) == SIW_GATEWAY) ipc_print_gateway(&abuf);
   /* config */
-  if (send_what == SIW_CONFIG)
-    ipc_print_config(&abuf);
+  if ((send_what & SIW_CONFIG) == SIW_CONFIG) ipc_print_config(&abuf);
+  /* interface */
+  if ((send_what & SIW_INTERFACE) == SIW_INTERFACE) ipc_print_interface(&abuf);
 
   outbuffer[outbuffer_count] = olsr_malloc(abuf.len, "txt output buffer");
   outbuffer_size[outbuffer_count] = abuf.len;

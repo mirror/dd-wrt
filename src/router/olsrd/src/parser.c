@@ -292,6 +292,11 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
     olsr_syslog(OLSR_LOG_ERR, " packet length error in  packet received from %s!", olsr_ip_to_string(&buf, from_addr));
     return;
   }
+
+  /* Display packet */
+  if (disp_pack_in)
+    print_olsr_serialized_packet(stdout, (union olsr_packet *)olsr, size, from_addr);
+
   // translate sequence number to host order
   olsr->olsr_seqno = ntohs(olsr->olsr_seqno);
 
@@ -304,20 +309,16 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
 
   //printf("Message from %s\n\n", olsr_ip_to_string(&buf, from_addr));
 
-  /* Display packet */
-  if (disp_pack_in)
-    print_olsr_serialized_packet(stdout, (union olsr_packet *)olsr, size, from_addr);
-
   /*
    * Hysteresis update - for every OLSR package
    */
   if (olsr_cnf->use_hysteresis) {
     if (olsr_cnf->ip_version == AF_INET) {
       /* IPv4 */
-      update_hysteresis_incoming(from_addr, in_if, ntohs(olsr->olsr_seqno));
+      update_hysteresis_incoming(from_addr, in_if, olsr->olsr_seqno);
     } else {
       /* IPv6 */
-      update_hysteresis_incoming(from_addr, in_if, ntohs(olsr->olsr_seqno));
+      update_hysteresis_incoming(from_addr, in_if, olsr->olsr_seqno);
     }
   }
 

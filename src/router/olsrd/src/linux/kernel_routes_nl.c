@@ -121,12 +121,12 @@ static void netlink_process_link(struct nlmsghdr *h)
   struct ifinfomsg *ifi = (struct ifinfomsg *) NLMSG_DATA(h);
   struct interface *iface;
   struct olsr_if *oif;
+  char namebuffer[IF_NAMESIZE];
 
   iface = if_ifwithindex(ifi->ifi_index);
   oif = NULL;
-  if (iface == NULL && (ifi->ifi_flags & IFF_UP) != 0) {
-    char namebuffer[IF_NAMESIZE];
 
+  if (iface == NULL && (ifi->ifi_flags & (IFF_UP|IFF_RUNNING)) == (IFF_UP|IFF_RUNNING)) {
     if (if_indextoname(ifi->ifi_index, namebuffer)) {
       if ((oif = olsrif_ifwithname(namebuffer)) != NULL) {
         /* try to take interface up, will trigger ifchange */
@@ -141,8 +141,12 @@ static void netlink_process_link(struct nlmsghdr *h)
 
   if (iface == NULL && oif == NULL) {
     /* this is not an OLSR interface */
-    olsr_trigger_ifchange(ifi->ifi_index, NULL,
-        (ifi->ifi_flags & IFF_UP) == 0 ? IFCHG_IF_REMOVE : IFCHG_IF_ADD);
+    if ((ifi->ifi_flags & IFF_UP) != 0 && (ifi->ifi_flags & IFF_RUNNING) != 0) {
+      olsr_trigger_ifchange(ifi->ifi_index, NULL, IFCHG_IF_ADD);
+    }
+    else if ((ifi->ifi_flags & IFF_UP) == 0 && (ifi->ifi_flags & IFF_RUNNING) == 0){
+      olsr_trigger_ifchange(ifi->ifi_index, NULL, IFCHG_IF_REMOVE);
+    }
   }
 }
 
@@ -178,6 +182,8 @@ static void rtnetlink_read(int sock, void *data __attribute__ ((unused)), unsign
               len, ret, plen);
       return;
     }
+
+    OLSR_PRINTF(3, "Netlink message received: type 0x%x\n", nlh->nlmsg_type);
     if ((nlh->nlmsg_type == RTM_NEWLINK) || ( nlh->nlmsg_type == RTM_DELLINK)) {
       /* handle ifup/ifdown */
       netlink_process_link(nlh);

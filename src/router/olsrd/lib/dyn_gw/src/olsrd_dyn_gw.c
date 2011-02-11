@@ -53,6 +53,7 @@
 #include "ipcalc.h"
 #include "scheduler.h"
 #include "log.h"
+#include "routing_table.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -470,7 +471,7 @@ update_routing(void)
       continue;
     }
     
-    if ((iflags & RTF_UP) && (metric == 0)) {
+    if ((iflags & RTF_UP) && (metric != RT_METRIC_DEFAULT)) {
       hna->checked = true;
     }
   }

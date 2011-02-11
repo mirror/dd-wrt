@@ -216,6 +216,12 @@ olsr_spf_relax(struct avl_tree *cand_tree, struct tc_entry *tc)
       continue;
     }
 
+    if (tc_edge->cost == LINK_COST_BROKEN) {
+#ifdef DEBUG
+      OLSR_PRINTF(2, "SPF:   ignore edge %s (broken)\n", olsr_ip_to_string(&buf, &tc_edge->T_dest_addr));
+#endif
+      continue;
+    }
     /*
      * total quality of the path through this vertex
      * to the destination of this edge
