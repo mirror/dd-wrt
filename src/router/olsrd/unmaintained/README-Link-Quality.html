@@ -1,0 +1,745 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+  <HEAD>
+    <TITLE>olsrd Link Quality Extensions</TITLE>
+
+    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+
+    <STYLE TYPE="text/css">
+      body {
+        font-family: verdana,arial,sans-serif;
+        font-size: 10pt;
+        background-color: #ffffff;
+        color: #000000;
+      }
+
+      :link { color: #123e80 }
+      :visited { color: #123e80 }
+      :active { color: #123e80 }
+    </STYLE>
+  </HEAD>
+
+  <BODY>
+    <H2>olsrd Link Quality Extensions</H2>
+
+    <P>
+    </P>
+
+    <H3>Credits</H3>
+
+    <P>
+      The way in which the ETX metric is applied to OLSR owes its
+      existence to ideas conceived by the wonderful folks at
+      <A HREF="http://www.c-base.org">c-base</A>
+      and
+      <A HREF="http://www.freifunk.net">freifunk.net</A>.
+      Any implementation bugs are solely Thomas's fault, though.
+    </P>
+
+    <P>
+      Guys, also thanks a lot for your hospitality, for your valuable
+      input, for being brave enough to test early releases of olsrd,
+      for supplying a great testbed in Berlin, and for being
+      you!
+    </P>
+
+    <H3>Changes</H3>
+
+    <UL>
+      <LI>
+        <P>
+          0.4.9 - Documented the <EM>LinkQualityMult</EM>
+          configuration directive.
+        </P>
+      </LI>
+    </UL>
+      
+    <H3>Theory</H3>
+
+    <P>
+      Release 0.4.8 of olsrd offers an experimental implementation of
+      an ETX-like metric. When calculating a routing table for us,
+      pure RFC-compliant OLSR simply minimizes the number of hops
+      between ourselves and the other nodes in the MANET, even if this
+      means that a route via a single very bad link will be preferred
+      to a route via two excellent links, although the latter would
+      probably have been the better choice.
+    </P>
+
+    <P>
+      To solve this problem, we have to teach olsrd how to tell good
+      links from bad links. We have done so by measuring the packet
+      loss for OLSR packets that we receive from our neighbors. As we
+      periodically receive HELLO messages from our neighbors (by
+      default every 2 seconds), we have enough packets to determine
+      the packet loss for packets that each of our neighbors sends to
+      us.
+    </P>
+
+    <P>
+      If, for example, 3 out of 10 packets are lost on their way from
+      our neighbor to ourselves, we have a packet loss of 3/10 = 0.3 =
+      30%. At the same time 7 of the 10 packets that the neighbor sent
+      went through. Hence, the probability for a successful packet
+      transmission from this neighbor to ourselves is 7/10 = 0.7 =
+      70%. This probability is what we call the <EM>Link
+      Quality</EM>. So the Link Quality says how good a given link
+      between a neighbor and ourselves is in the direction from the
+      neighbor to ourselves. It does so by saying how likely it is
+      that a packet that we send is successfully received by our
+      neighbor.
+    </P>
+
+    <P>
+      However, it is also important to know the quality of the link in
+      the opposite direction, i.e. how many of the packets that we
+      send out are received by each of our neighbors. So, we are not
+      only interested in the Link Quality of a given link, but also in
+      the corresponding neighbor's idea of the Link Quality. That's
+      what we call the <EM>Neighbor Link Quality</EM>. The Neighbor
+      Link Quality says how good a given link between a neighbor and
+      ourselves is in the direction from ourselves to the neighbor.
+    </P>
+
+    <P>
+      The Link Quality and the Neighbor Link Quality are values
+      between 0 and 1 or, which is equivalent, between 0 and
+      100%. They represent the probability that a packet that our
+      neighbor sends actually makes it to us (Link Quality) and that
+      a packet that we send actually makes it to our neighbor
+      (Neighbor Link Quality).
+    </P>
+
+    <P>
+      Let's now look at the probability for a successful packet round
+      trip, i.e. the probability that we successfully send a packet to
+      our neighbor and, on receiving it, our neighbor successfully
+      replies with a response packet. For a successful round trip both
+      packets must get through, the packet that we've sent and the
+      response packet that our neighbor has sent. So, the success
+      probability is NLQ x LQ, where NLQ is the Neighbor Link Quality
+      of the link and LQ is its link quality. For example, if we have
+      a NLQ of 60% and a LQ of 70%, the probability of a successful
+      round trip is 60% x 70% = 0.6 x 0.7 = 0.42 = 42%.
+    </P>
+
+    <P>
+      In wireless networks each recipient of a packet acknowledges
+      packet reception by sending back an acknowledgment packet to
+      the sender. So, when does a retransmission of a packet happen? 
+      It happens, if the sender does not receive an
+      acknowledgment. And in which cases does the sender not receive
+      an acknowledgment? If either the packet that it sent is lost or
+      if the corresponding acknowledgment packet is lost. So, what is
+      the probability for a retransmission to <EM>not</EM> take place? 
+      Well, as the sender's packet has to get through in one direction
+      and the recipient's acknowledgment has to get through in the
+      opposite direction, too, this is exactly the probability for a
+      successful packet round trip, i.e. NLQ x LQ.
+    </P>
+
+    <P>
+      We can now answer the question of how many transmission attempts
+      it will typically take to get a packet from us to a neighbor or
+      from the neighbor to us. It is 1 / (NLQ x LQ). So, in the above
+      case of NLQ x LQ = 42%, we expect on average 1 / 0.42 = 2.38
+      transmission attempts for a packet until it gets through.
+    </P>
+
+    <P>
+      Note that this number is valid for both directions of the link,
+      as in both cases we have to look at the probability for a
+      successful packet round trip. For packets that we send to our
+      neighbor, the packet goes from us to the neighbor and the
+      acknowledgment travels the other way around. For packets that
+      our neighbor sends to us, the packet goes from the neighbor to
+      us and the acknowledgment travels from us to the neighbor. In
+      both cases a packet is sent in each direction and retransmission
+      occurs if either packet is lost.
+    </P>
+
+    <P>
+      The value 1 / (NLQ x LQ) is called the <EM>Expected Transmission
+      Count</EM> or <EM>ETX</EM>. For those interested in a more
+      in-depth discussion, there's a
+      <a href="http://pdos.csail.mit.edu/papers/grid:mobicom03/">
+      scientific paper</a> by the people who invented all this, and
+      for those who would like to know still more, there's
+      <a href="http://pdos.csail.mit.edu/papers/grid:decouto-phd/thesis.pdf">
+      Doug's PhD</a> thesis.
+    </P>
+
+    <P>
+      Let's assume that we have a route from ourselves via two nodes A
+      and B to a node C. What is the ETX for the total route, i.e. how
+      often is our packet retransmitted on its way from us to C? Well,
+      we know how many attempts we need on average to successfully
+      transmit a packet from us to A. Let's call this value ETX1. So,
+      we already have ETX1 attempts just to reach A. The packet would
+      then take an additional number of attempts to hop from A to
+      B. Let's call this second value ETX2. Finally, a further number
+      of attempts is required to hop from B to C. Let's call this
+      third value ETX3. Let's now have a look at the total number of
+      transmissions that have happened to get our packet from us to
+      C. This number is simply ETX1 + ETX2 + ETX3.
+    </P>
+
+    <H3>Protocol</H3>
+
+    <P>
+      In order to calculate the ETX for a link to a neighbor, we need
+      to know the neighbor's idea of the link quality, i.e. the NLQ,
+      as we can only determine the LQ ourselves, but we want to know
+      ETX = 1 / (NLQ * LQ). So the link quality extensions to olsrd
+      introduce a new kind of HELLO messages, which we call <EM>LQ
+      HELLO</EM> messages. For each link listed in such a message, the
+      originator of the messages also tells us the link quality. So,
+      each neighbor puts the LQ values that it has determined in the
+      message, which from our perspective are NLQ values. So, owing to
+      the LQ HELLOs we now have all the information to calculate the
+      ETX for each link between ourselves and one of our neighbors.
+    </P>
+
+    <P>
+      Let's again have a look at the total number of transmissions
+      required for a route that consists of more than one hop,
+      i.e. that is not a route to one of our neighbors. If we stick
+      with the above example, we know ETX1 from the LQ HELLOs. But how
+      do we learn ETX2 and ETX3? For this the link quality extensions
+      to olsrd introduce a new kind of TC messages. TC messages are
+      used in OLSR to tell the world, i.e. all other nodes in the
+      MANET, which neighbors we have. We have extended TC messages to
+      additionally carry information on how good the links to our
+      neighbors are. We call this extended variant of TCs,
+      analogously to LQ HELLOS, <EM>LQ TC</EM> messages.
+    </P>
+
+    <P>
+      So, with LQ HELLO messages we find out which neighbors we have
+      and how good our links to them are and with LQ TC messages, we
+      share this knowledge with all other nodes and all other nodes
+      share their knowledge with us.
+    </P>
+
+    <P>
+      In this way each node in the network ends up knowing which links
+      each other node in the MANET has and how good they are. Well,
+      actually, it's a bit more complex than that, because of an
+      optimization called multi-point relaying. But this is beyond the
+      scope of this introductory text.
+    </P>
+
+    <H3>Warning</H3>
+
+    <P>
+      LQ HELLO messages and LQ TC messages are not compatible with
+      RFC-compliant HELLO and TC messages. So make sure that you
+      either switch <EM>all</EM> nodes of your network to link quality
+      or <EM>none</EM> of your nodes. A mixed configuration will
+      probably result in an unpredictable mess.
+    </P>
+
+    <H3>Practice</H3>
+
+    <H4>New Configuration Parameters</H4>
+
+    <H5>LinkQualityLevel</H5>
+
+    <P>
+      Let's now have a look at how we would use the link quality
+      extensions. The configuration parameter that controls link
+      quality is <EM>LinkQualityLevel</EM>, as it sets the level to
+      which link quality is used, i.e. for which purposes olsrd looks
+      at the link quality information.
+    </P>
+    <UL>
+      <LI>
+        <P>
+          Setting this parameter to 0 disables the link quality
+          extensions. olsrd then works in exactly the same way as
+          before, i.e. it is RFC-compliant, uses HELLO and TC
+          messages, and calculates routes by minimizing the hop count.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          Setting this parameter to 1 enable the link quality
+          extensions and tells olsrd to select MPRs based on the link
+          quality information. A neighbor is selected as an MPR, if
+          it has the best route to any 2-hop neighbor. Suppose that
+          ETX1 is the expected number of transmissions between us and
+          a neighbor N and that ETX2 is the expected number of
+          transmissions between N and a two-hop neighbor N2. For each
+          of our two-hop neighbors we then select the neighbor N as
+          an MPR that results in the lowest possible total ETX of ETX1
+          + ETX2.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          Setting this parameter to 2 not only selects MPRs based on
+          the link quality but also considers link quality information
+          when calculating the routing table. For a given destination
+          node D we select the route that has the minimal total ETX of
+          ETX1 + ETX2 + ... + ETXn, where ETX1 is the expected number
+          of transmissions from us to our neighbor, ETX2 is the
+          expected number of transmissions from our neighbor to the
+          next node, and ETXn is the expected number of transmissions
+          from our destination's neighbor to the destination. This is
+          the recommended setting.
+        </P>
+      </LI>
+    </UL>
+
+    <P>
+      <B>IMPORTANT:</B> Remember to set <EM>all</EM> nodes of your
+      MANET to the same link quality level. Even if levels 2 and 3 use
+      the same kind of messages, i.e. LQ HELLOs and LQ TCs, they use a
+      different algorithm for calculating the routing table. This can
+      also mess up your routing!
+    </P>
+
+    <H5>LinkQualityWinSize</H5>
+
+    <P>
+      The second configuration parameter related to link quality is
+      <EM>LinkQualityWinSize</EM>. When determining the packet loss of
+      the packets received from a neighbor, olsrd only looks at the
+      <EM>n</EM> most recent packets. By default <EM>n</EM> is set to
+      10, so olsrd looks at the ten most recent packets received (or
+      not received) from a neighbor and then determines the packet
+      loss. Let's assume that of the 10 packets we have received 7,
+      then we have missed 3, which corresponds to a packet loss of
+      3/10 = 0.3 = 30%. The corresponding Link Quality is 7/10 = 0.7 =
+      70%.
+    </P>
+
+    <P>
+      Let's have a look at what the default value means. Let's for the
+      moment only think of LQ HELLO messages and neglect other message
+      types. By default LQ HELLOs are sent every 2 seconds. So, we
+      calculate the packet loss over the past 20 seconds. So, changes
+      in the link quality are accounted for relatively fast. For
+      longer intervals just increase this value.
+    </P>
+
+    <H5>LinkQualityMult</H5>
+
+    <P>
+      Version 0.4.9 supports a third configuration parameter,
+      <EM>LinkQualityMult</EM>. This is a per-interface parameter, so
+      it may only appear in an interface configuration block. This
+      parameter can be used to alter the LQ values that we announce,
+      which will then result in an altered ETX for links between us
+      and our neighbors - remember that ETX = 1 / (NLQ x LQ).
+    </P>
+
+    <P>
+      The idea is to enable us to make certain links that we have
+      artificially appear better or worse than they actually are. In
+      this way we can manually affect the routing decisions made by
+      the OLSR network.
+    </P>
+    
+    <P>
+      The <EM>LinkQualityMult</EM> parameter is followed by an IP
+      address and a number, the multiplier. The IP address specifies
+      the IP address of the neighbor interface address of the link
+      that we want to manipulate. The LQ values that we determine for
+      this link are then multiplied by the given multiplier.
+    </P>
+
+    <P>
+      If the word <EM>default</EM> is specified in lieu of an IP
+      address, then this multiplier applies to all links via the
+      interface that we're configuring. Note, however, that a
+      multiplier linked to a real IP address has priority over the
+      default multiplier. So, we're looking for the most specific
+      match.
+    </P>
+
+    <H4>Old Configuration Parameters</H4>
+
+    <P>
+      The link quality extensions do not work very well with
+      hysteresis. Hysteresis basically acts as a sort of barrier that
+      only links that are "good enough" can cross. If a link is too
+      flaky, hysteresis will make olsrd consider the link as
+      non-existent. So, this is a binary thing. Either a link is able
+      to cross the barrier, or it is not. There's nothing in
+      between. However, we want olsrd to consider <EM>every</EM> link
+      there is, without any barrier, because then we can leave it to
+      the link quality extensions to judge how good the link actually
+      is and how much we trust the link.
+    </P>
+
+    <P>
+      If a link with an ETX value of 50 is the only way of
+      reaching a node, then we want to use this link, as there is no
+      better way.
+    </P>
+
+    <P>
+      In addition, in contrast to only saying "good enough" or "not
+      good enough" like hysteresis, the link quality extensions offer
+      a much more detailed view of the world by saying something like
+      "75% good enough, 25% not good enough".
+    </P>
+
+    <P>
+      The second mechanism that could interfere with the link quality
+      extensions is the link detection scheme. By default, if olsrd
+      misses three (LQ) HELLO messages in a row from a neighbor, the
+      link is considered broken. However, we'd prefer the link to just
+      expose a lower quality. So, setting the HELLO validity time to
+      the HELLO interval multiplied by the link quality window size is
+      probably a good rule of thumb. In this way the link will be
+      removed not before the link quality extensions have had enough
+      time to gradually reduce the link quality to zero.
+    </P>
+
+    <H4>Sample Configuration</H4>
+
+    <P>
+      A minimal configuration that leaves everything at the default
+      and just makes the changes required for the link quality
+      extension to work properly could look as follows. Note the
+      <EM>ClearScreen</EM> directive that causes the screen to be
+      cleared before updated debug information is printed. This makes
+      the debug output more readable in many cases.
+    </P>
+
+    <PRE>
+DebugLevel              2
+ClearScreen             yes
+LinkQualityLevel        2
+LinkQualityWinSize      12
+UseHysteresis           no
+
+Interface "if03"
+{
+  HelloInterval         2.0
+  HelloValidityTime     20.0
+}
+    </PRE>
+
+    <P>
+      Let's assume that we would like to use the
+      <EM>LinkQualityMult</EM> directive to multiply the LQ value that
+      we report for the link between our local interface <EM>if03</EM>
+      and an interface of one of our neighbors that has an IP address
+      of 192.168.0.1. Say, we'd like to multiply the LQ value by
+      0.5. We would then simply add the following line to the
+      <EM>Interface</EM> section of the above configuration file.
+    </P>
+
+    <PRE>
+  LinkQualityMult 192.168.0.1 0.5
+    </PRE>
+
+    <P>
+      Suppose that we would further like to multiply the LQ values
+      that we report for all other links between our local interface
+      <EM>if03</EM> and a neighbor interface by 0.8. We would then
+      add a second, default <EM>LinkQualityMult</EM> statement and we
+      would end up with the following two lines.
+    </P>
+
+    <PRE>
+  LinkQualityMult 192.168.0.1 0.5
+  LinkQualityMult default 0.8
+    </PRE>
+
+    <P>
+      For the link to 192.168.0.1 the first line would have precedence
+      over the second (default) line and 0.5 would be used as the
+      multiplier. For all other links the default multiplier of 0.8
+      would be used, as there isn't any better match.
+    </P>
+
+    <H3>Debug Output</H3>
+    
+    <P>
+      0.4.8 also introduces significant changes in the debug
+      output. Let's have a look at what happens at debug level 2, which
+      is the recommended default for the link quality extensions.
+    </P>
+
+    <PRE>
+--- 14:28:56.80 ---------------------------------------------------- LINKS
+
+IP address       hyst   LQ     lost   total  NLQ    ETX
+192.168.0.1      0.000  1.000  0      10     1.000  1.00
+    </PRE>
+
+    <P>
+      This table contains the links to our neighbors. It contains the
+      following columns.
+    </P>
+
+    <UL>
+      <LI>
+        <P>
+          <EM>IP address</EM> - the IP address of the interface via
+          which we have contact to the neighbor.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>hyst</EM> - the current hysteresis value for this link.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>LQ</EM> - the quality of the link determined at our
+          end. This is what we have previously called the Link
+          Quality.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>lost</EM> - the number of lost packets among the
+          <EM>n</EM> packets most recently sent by our neighbor via
+          this link. <EM>n</EM> is the link quality window size.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>total</EM> - the total number of packets received up to
+          now. This value starts at 0 immediately after a link has
+          come to life and then counts each packet. It is capped at
+          the link quality window size.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>NLQ</EM> - this is our neighbor's view of the link
+          quality. Previously we have called this the Neighbor Link
+          Quality. This value is extracted from LQ HELLO messages
+          received from our neighbors. NB: If a neighbor stops
+          sending packets completely, we do not have any means of
+          updating this value. However, in this case the LQ value will
+          decrease and the link thus be detected as becoming worse.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>ETX</EM> - this is the ETX for this link, i.e. 1 / (NLQ
+          x LQ).
+        </P>
+      </LI>
+    </UL>
+
+    <PRE>
+--- 14:28:56.80 ------------------------------------------------ NEIGHBORS
+
+IP address       LQ     NLQ    SYM   MPR   MPRS  will
+10.0.0.6         1.000  1.000  YES   YES   NO    6
+    </PRE>
+
+    <P>
+      This table contains a list of all our neighbors. It is closely
+      related to the link table in that we are connected to a
+      neighbor via one or more links. The table has the following
+      columns.
+    </P>
+      
+    <UL>
+      <LI>
+        <P>
+          <EM>IP address</EM> - the main IP address of the neighbor.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>LQ</EM> and <EM>NLQ</EM> - the LQ and NLQ values of the
+          best link that we have with this neighbor. (In
+          multi-interface configurations we can have more than one
+          link with a neighbor.)
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>SYM</EM> - this states whether the link to this
+          neighbor is considered symmetric by olsrd's link detection
+          mechanism.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>MPR</EM> (multi-point relay) - this indicates whether we
+          have selected this neighbor to act as an MPR for us.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>MPRS</EM> (multi-point relay selector) - this indicates
+          whether the neighbor node has selected us to act as an MPR
+          for it.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>will</EM> - the neighbor's willingness.
+        </P>
+      </LI>
+    </UL>
+
+    <PRE>
+--- 14:28:56.80 ------------------------------------------------- TOPOLOGY
+
+Source IP addr   Dest IP addr     LQ     ILQ    ETX
+10.0.0.6         192.168.0.2      1.000  1.000  1.00
+10.0.0.6         10.0.0.5         1.000  1.000  1.00
+    </PRE>
+
+    <P>
+      This table displays the topology information that olsrd has
+      gathered from LQ TC messages. It states which nodes in the
+      network report links to which other nodes and which quality
+      these links have. So, it's olsrd's view of the world beyond its
+      immediate neighbor nodes, i.e. its view of the nodes that it
+      cannot reach directly. This table has the following columns.
+    </P>
+
+    <UL>
+      <LI>
+        <P>
+          <EM>Source IP addr</EM> - the node that reports a link.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>Dest IP addr</EM> - the node to which the source node
+          reports the link.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>LQ</EM> (link quality) - the quality of the link as
+          determined by the source node. For the source node this is
+          the Link Quality. For the destination node this is the
+          Neighbor Link Quality.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>ILQ</EM> (inverse link quality) - the quality of the
+          link as determined by the destination node. For the source
+          node this is the Neighbor Link Quality. For the destination
+          node this is the Link Quality. We just did not want to name
+          it "NLQ", as we use NLQ only for the link quality reported
+          by our neighbors. But functionally this is equivalent to
+          the NLQ we know from the link and neighbor tables.
+        </P>
+      </LI>
+      <LI>
+        <P>
+          <EM>ETX</EM> - the ETX value for this link, calculated by
+          ETX = 1 / (ILQ x LQ).
+        </P>
+      </LI>
+    </UL>
+
+    <PRE>
+--- 14:28:56.80 ------------------------------------------------- DIJKSTRA
+
+10.0.0.6:1.00 (one-hop)
+10.0.0.5:2.00 <- 10.0.0.6:1.00 (one-hop)
+    </PRE>
+
+    <P>
+      This table displays the best routes that olsrd could find for
+      each destination that it knows about. The leftmost IP address
+      given on each line is the destination of a route. The remaining
+      IP addresses in a line specify the nodes on the route between
+      ourselves and the destination address. Moving from the
+      destination address to the right, address by address, moves us
+      closer from the destination to ourselves, hop by hop.
+    </P>
+
+    <P>
+      In the above case we see routes to two nodes, 10.0.0.6 and
+      10.0.0.5. In the first line, there aren't any intermediate nodes
+      between us and the destination, the destination address is the
+      only IP address in this line. In the second line we have one
+      intermediate node, 10.0.0.6. So, the second line describes a
+      route to 10.0.0.5 via 10.0.0.6.
+    </P>
+
+    <P>
+      The number after the colon following an IP address in the table
+      is the total ETX of the route up to this IP address, i.e. the
+      sum of the ETX values of all hops between ourselves and this IP
+      address.
+    </P>
+
+    <P>
+      In the above example the first line represents a path with an
+      ETX value of 1.00 to 10.0.0.6. As we've seen in the neighbor
+      table above 10.0.0.6 is our neighbor, so the route to it
+      consists only of a single hop, which has an ETX of 1.00, hence
+      the 1.00 in this line.
+    </P>
+
+    <P>
+      In the second line, 10.0.0.5 is not a neighbor of ours. However,
+      10.0.0.6 is and from the topology table above we can tell that
+      10.0.0.6 reports a link to 10.0.0.5. So, we can reach 10.0.0.5
+      via 10.0.0.6. This is what this line says. Remember that each
+      line represents a route by first giving the IP address of the
+      destination (10.0.0.5) and that moving to the right means moving
+      towards ourselves until one of our (one-hop) neighbor is
+      reached. If we move from 10.0.0.5 to the right, we find
+      10.0.0.6, which is our (one-hop) neighbor. So we have a route.
+    </P>
+    
+    <P>
+      If we would like to know which path a packet takes that we send
+      to 10.0.0.5, we have to read the line backwards. We then see
+      that the packet first travels to our (one-hop) neighbor 10.0.0.6
+      via a link that has an ETX of 1.00 (which we can confirm by
+      looking at the neighbor table above). From there it is forwarded
+      to 10.0.0.5 via another link that also has an ETX of 1.00 (which
+      we can confirm by means of the topology table above), resulting
+      in a total ETX of 1.00 + 1.00 = 2.00, which is the number that
+      follows 10.0.0.5. Remember that the ETX value given for an IP
+      address is the cumulative ETX for the complete route up to this
+      IP address.
+    </P>
+
+    <P>
+      If olsrd is able to find a route between us and the destination,
+      the last IP address in the line is one of our neighbors. In this
+      case, "(one-hop)" is appended to the line to illustrate that the
+      last IP address is one of our (one-hop) neighbors. However,
+      let's assume that we've just switched on olsrd. In this case, it
+      does not know about all links in the network, yet, as it hasn't
+      received LQ TC messages from all nodes. So, it may know that a
+      node exists (as it has already received LQ TC messages from it)
+      but it does not necessarily know how to reach it (as it may not
+      have received LQ TC messages from nodes between it and
+      ourselves, yet). In this case the last IP address is the last
+      node that is reachable from the destination and the line ends
+      with the word "FAILED".
+    </P>
+
+    <P>
+      The same is true for neighbors to which we do not have a
+      symmetric link. We know that they're there, but we do not have a
+      link to them, hence olsrd cannot find a route, which results in
+      "FAILED".
+    </P>
+
+    <H3>Remarks</H3>
+
+    <P>
+      If you have any questions on using olsrd or if you would like to
+      know more about the link quality extension, it's probably best
+      to subscribe to the mailing lists and ask your question
+      there. Information on the mailing lists is available at
+      <A HREF="http://www.olsr.org">http://www.olsr.org</A>.
+    </P>
+
+  </BODY>
+</HTML>

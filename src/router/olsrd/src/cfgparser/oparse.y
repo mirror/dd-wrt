@@ -228,8 +228,9 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_MAXIPC
 
 %token TOK_IFMODE
-%token TOK_IPV4BROADCAST
 %token TOK_IPV4MULTICAST
+%token TOK_IP4BROADCAST
+%token TOK_IPV4BROADCAST
 %token TOK_IPV6MULTICAST
 %token TOK_IPV4SRC
 %token TOK_IPV6SRC
@@ -371,8 +372,9 @@ ifstmts:   | ifstmts ifstmt
 ifstmt:      vcomment
              | iifweight
              | isetifmode
-             | isetipv4br
-             | isetipv4mc
+             | TOK_IP4BROADCAST isetipv4mc
+             | TOK_IPV4BROADCAST isetipv4mc
+             | TOK_IPV4MULTICAST isetipv4mc
              | isetipv6mc
              | isetipv4src
              | isetipv6src
@@ -536,43 +538,24 @@ isetifmode: TOK_IFMODE TOK_STRING
 }
 ;
 
-isetipv4br: TOK_IPV4BROADCAST TOK_IPV4_ADDR
+/* called if prepended with TOK_IPV4MULTICAST TOK_IP4BROADCAST TOK_IPV4BROADCAST */
+isetipv4mc: TOK_IPV4_ADDR
 {
   struct in_addr in;
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $1->string);
 
-  if (inet_aton($2->string, &in) == 0) {
-    fprintf(stderr, "isetipv4br: Failed converting IP address %s\n", $2->string);
+  if (inet_aton($1->string, &in) == 0) {
+    fprintf(stderr, "isetipv4br: Failed converting IP address %s\n", $1->string);
     YYABORT;
   }
 
 	SET_IFS_CONF(ifs, ifcnt, ipv4_multicast.v4, in);
 
-  free($2->string);
-  free($2);
-}
-;
-
-isetipv4mc: TOK_IPV4MULTICAST TOK_IPV4_ADDR
-{
-  struct in_addr in;
-  int ifcnt = ifs_in_curr_cfg;
-  struct olsr_if *ifs = olsr_cnf->interfaces;
-
-  PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $2->string);
-
-  if (inet_aton($2->string, &in) == 0) {
-    fprintf(stderr, "isetipv4br: Failed converting IP address %s\n", $2->string);
-    YYABORT;
-  }
-
-	SET_IFS_CONF(ifs, ifcnt, ipv4_multicast.v4, in);
-
-  free($2->string);
-  free($2);
+  free($1->string);
+  free($1);
 }
 ;
 
@@ -624,7 +607,7 @@ isetipv6src: TOK_IPV6SRC TOK_IPV6_ADDR
 
   PARSER_DEBUG_PRINTF("\tIPv6 src prefix: %s\n", $2->string);
 
-  if (olsr_string_to_prefix(AF_INET6, &pr6, $2->string) <= 0) {
+  if (olsr_string_to_prefix(AF_INET6, &pr6, $2->string)) {
     fprintf(stderr, "isetipv6src: Failed converting IP prefix %s\n", $2->string);
     YYABORT;
   }
@@ -1349,7 +1332,11 @@ ismart_gw_prefix: TOK_SMART_GW_PREFIX TOK_IPV6_ADDR TOK_INTEGER
 bsrc_ip_routes: TOK_SRC_IP_ROUTES TOK_BOOLEAN
 {
 	PARSER_DEBUG_PRINTF("Use originator for routes src-ip: %s\n", $2->boolean ? "yes" : "no");
-	olsr_cnf->use_src_ip_routes = $2->boolean;
+	if (olsr_cnf->ip_version != AF_INET) {
+          fprintf(stderr, "Source ip routes not possible with IPV6\n");
+          YYABORT;
+	}
+	else olsr_cnf->use_src_ip_routes = $2->boolean;
 	free($2);
 }
 ;
@@ -1363,6 +1350,7 @@ amain_ip: TOK_MAIN_IP TOK_IPV4_ADDR
     fprintf(stderr, "Bad main IP: %s\n", $2->string);
     YYABORT;
   }
+  else olsr_cnf->unicast_src_ip = olsr_cnf->main_addr;
   free($2);
 }
         |       TOK_MAIN_IP TOK_IPV6_ADDR

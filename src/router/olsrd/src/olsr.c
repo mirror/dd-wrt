@@ -227,7 +227,9 @@ olsr_process_changes(void)
     olsr_print_link_set();
     olsr_print_neighbor_table();
     olsr_print_two_hop_neighbor_table();
-    olsr_print_tc_table();
+    if (olsr_cnf->debug_level > 3) {
+      olsr_print_tc_table();
+    }
   }
 
   for (tmp_pc_list = pcf_list; tmp_pc_list != NULL; tmp_pc_list = tmp_pc_list->next) {
