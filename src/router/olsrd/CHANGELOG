@@ -1,5 +1,26 @@
 This file states changes as of version 0.2.4:
 
+0.6.1 --------------------------------------------------------------------
+
+Bugfix release for 0.6.0
+
+Markus Kittenberger <Markus.Kittenberger@gmx.at>
+- Major bugfix for the neighbor table when a neighbor gets a new main IP.
+- add /interface command to txtinfo, allow multiple commands per request
+
+Henning Rogge <henning.rogge@fkie.fraunhofer.de>
+- wait up to four seconds for aquiring the OLSRd lock. This helps to
+  shutdown OLSRd with a script and restart it at once (kill <pid> is
+  asynchrone, and kill -w is not available in busybox)
+- add md5 has of all source/headers into version string
+
+Mitar<mitar@tnode.com>
+- lot's of small changes for Android. Slowly Android gets a fully
+  supported platform for OLSRd.
+
+and a lot more small bugfixes. Read GIT changelog at http://olsr.org/git
+to see a complete history.
+
 0.6.0 --------------------------------------------------------------------
 
 Change in version number system. No more -rcX for release candidates and
@@ -7,7 +28,7 @@ Change in version number system. No more -rcX for release candidates and
 will increase the third digit of the version string while feature releases
 will increase the first and/or the second one.
 
-Markus Kittenberg <Markus.Kittenberger@gmx.at>
+Markus Kittenberger <Markus.Kittenberger@gmx.at>
 Henning Rogge <henning.rogge@fkie.fraunhofer.de>
 - added NIIT kernel module support for sending IPv4 traffic over
   IPv6 mesh networks. See README-Olsr-Extensions for more information.
@@ -55,7 +76,7 @@ Henning Rogge <henning.rogge@fkie.fraunhofer.de>
   for ipv4/6. See example config files. 
 - patch to ignore HNA4 for IPv6 and HNA6 for IPv4
 
-Markus Kittenberg <Markus.Kittenberger@gmx.at>
+Markus Kittenberger <Markus.Kittenberger@gmx.at>
 - patch series for MID handling cleanup
 - compiletime switch for txtinfo to always allow localhost access
 - add "InterfaceDefaults" section to config files to allow setting values

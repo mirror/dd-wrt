@@ -166,7 +166,7 @@ olsr_message_is_duplicate(union olsr_message *m)
       entry->array = 1;
       return false;             /* start with a new sequence number, so NO duplicate */
     }
-    OLSR_PRINTF(9, "blocked %x from %s\n", seqnr, olsr_ip_to_string(&buf, mainIp));
+    OLSR_PRINTF(9, "blocked 0x%x from %s\n", seqnr, olsr_ip_to_string(&buf, mainIp));
     return true;                /* duplicate ! */
   }
 
@@ -175,11 +175,11 @@ olsr_message_is_duplicate(union olsr_message *m)
     uint32_t bitmask = 1 << ((uint32_t) (-diff));
 
     if ((entry->array & bitmask) != 0) {
-      OLSR_PRINTF(9, "blocked %x (diff=%d,mask=%08x) from %s\n", seqnr, diff, entry->array, olsr_ip_to_string(&buf, mainIp));
+      OLSR_PRINTF(9, "blocked 0x%x (diff=%d,mask=%08x) from %s\n", seqnr, diff, entry->array, olsr_ip_to_string(&buf, mainIp));
       return true;              /* duplicate ! */
     }
     entry->array |= bitmask;
-    OLSR_PRINTF(9, "processed %x from %s\n", seqnr, olsr_ip_to_string(&buf, mainIp));
+    OLSR_PRINTF(9, "processed 0x%x from %s\n", seqnr, olsr_ip_to_string(&buf, mainIp));
     return false;               /* no duplicate */
   } else if (diff < 32) {
     entry->array <<= (uint32_t) diff;
@@ -188,7 +188,7 @@ olsr_message_is_duplicate(union olsr_message *m)
   }
   entry->array |= 1;
   entry->seqnr = seqnr;
-  OLSR_PRINTF(9, "processed %x from %s\n", seqnr, olsr_ip_to_string(&buf, mainIp));
+  OLSR_PRINTF(9, "processed 0x%x from %s\n", seqnr, olsr_ip_to_string(&buf, mainIp));
   return false;                 /* no duplicate */
 }
 

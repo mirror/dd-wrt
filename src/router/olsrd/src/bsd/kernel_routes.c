@@ -207,8 +207,13 @@ add_del_route(const struct rt_entry *rt, int add)
   rtm->rtm_msglen = (unsigned short)(walker - buff);
   len = write(olsr_cnf->rts, buff, rtm->rtm_msglen);
   if (0 != rtm->rtm_errno || len < rtm->rtm_msglen) {
-    fprintf(stderr, "\nCannot write to routing socket: (rtm_errno= 0x%x) (last error message: %s)\n", rtm->rtm_errno,
-            strerror(errno));
+    fprintf(stderr, "\nCannot write to routing socket: (rtm_errno= 0x%x) (last error message: %s)\n",
+              rtm->rtm_errno,strerror(errno));
+    if (add) {
+      fprintf(stderr, " Failed on Adding %s\n", olsr_rtp_to_string(rt->rt_best));
+    } else {
+      fprintf(stderr, " Failed on Deleting %s\n",olsr_rt_to_string(rt));
+    }
   }
   return 0;
 }

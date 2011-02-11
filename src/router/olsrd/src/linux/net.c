@@ -91,7 +91,10 @@
 static char orig_fwd_state;
 static char orig_global_redirect_state;
 static char orig_global_rp_filter;
-static char orig_tunnel_rp_filter, orig_tunnel6_rp_filter;
+static char orig_tunnel_rp_filter;
+#if 0 // should not be necessary for IPv6 */
+static char orig_tunnel6_rp_filter;
+#endif
 
 /**
  *Bind a socket to a device
@@ -181,14 +184,17 @@ net_os_set_global_ifoptions(void) {
     char procfile[FILENAME_MAX];
 
     /* Generate the procfile name */
-    snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF);
-    if (writeToProc(procfile, &orig_tunnel_rp_filter, '0')) {
-      OLSR_PRINTF(0, "WARNING! Could not disable the IP spoof filter for tunnel!\n"
-          "you should mannually ensure that IP spoof filtering is disabled!\n\n");
+    if (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit) {
+      snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF);
+      if (writeToProc(procfile, &orig_tunnel_rp_filter, '0')) {
+        OLSR_PRINTF(0, "WARNING! Could not disable the IP spoof filter for tunnel!\n"
+            "you should mannually ensure that IP spoof filtering is disabled!\n\n");
 
-      olsr_startup_sleep(3);
+        olsr_startup_sleep(3);
+      }
     }
 
+#if 0 // should not be necessary for IPv6
     if (olsr_cnf->ip_version == AF_INET6) {
       snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF6);
       if (writeToProc(procfile, &orig_tunnel6_rp_filter, '0')) {
@@ -198,6 +204,7 @@ net_os_set_global_ifoptions(void) {
         olsr_startup_sleep(3);
       }
     }
+#endif
   }
 
   if (olsr_cnf->ip_version == AF_INET) {
@@ -271,19 +278,21 @@ net_os_restore_ifoptions(void)
     OLSR_PRINTF(1, "Error, could not restore ip_forward settings\n");
   }
 
-  if (olsr_cnf->smart_gw_active) {
+  if (olsr_cnf->smart_gw_active && (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit)) {
     /* Generate the procfile name */
     snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF);
     if (writeToProc(procfile, NULL, orig_tunnel_rp_filter)) {
       OLSR_PRINTF(0, "WARNING! Could not restore the IP spoof filter for tunnel!\n");
     }
 
+#if 0 // should not be necessary for IPv6
     if (olsr_cnf->ip_version == AF_INET6) {
       snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF6);
       if (writeToProc(procfile, NULL, orig_tunnel6_rp_filter)) {
         OLSR_PRINTF(0, "WARNING! Could not restore the IP spoof filter for tunnel6!\n");
       }
     }
+#endif
   }
 
   if (olsr_cnf->ip_version == AF_INET) {
@@ -511,13 +520,18 @@ getsocket6(int bufspace, struct interface *ifp)
   memset(&sin, 0, sizeof(sin));
   sin.sin6_family = AF_INET6;
   sin.sin6_port = htons(olsr_cnf->olsrport);
+  sin.sin6_scope_id = ifp->if_index;
 
   if(bufspace <= 0) {
     memcpy(&sin.sin6_addr, &ifp->int6_addr.sin6_addr, sizeof(struct in6_addr));
   }
 
   if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
-    perror("bind");
+    struct ipaddr_str buf;
+    OLSR_PRINTF(1, "Error, cannot bind address %s to %s-socket: %s (%d)\n",
+        inet_ntop(sin.sin6_family, &sin.sin6_addr, buf.buf, sizeof(buf)),
+        bufspace <= 0 ? "transmit" : "receive",
+        strerror(errno), errno);
     syslog(LOG_ERR, "bind: %m");
     close(sock);
     return (-1);
@@ -592,7 +606,7 @@ get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, struct olsr_ip_prefi
 
   if ((f = fopen(PATH_PROCNET_IFINET6, "r")) != NULL) {
     while (fscanf
-           (f, "%4s%4s%4s%4s%4s%4s%4s%4s %02x %02x %02x %02x %20s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
+           (f, "%4s%4s%4s%4s%4s%4s%4s%4s %x %02x %02x %02x %20s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
             addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
       if (!strcmp(devname, ifname)) {
         bool isNetWide = false;

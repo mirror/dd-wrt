@@ -39,7 +39,7 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.6.0
+VERS =		0.6.1
 
 TOPDIR = .
 include Makefile.inc
@@ -76,7 +76,7 @@ switch:
 src/builddata.c:
 	@$(RM) "$@"
 	@echo "#include \"defs.h\"" >> "$@" 
-	@echo "const char olsrd_version[] = \"olsr.org - $(VERS)\";" >> "$@" 
+	@echo "const char olsrd_version[] = \"olsr.org -  $(VERS)-git_`git log -1 --pretty=%h`-hash_`./make/hash_source.sh`\";"  >> "$@"
 	@date +"const char build_date[] = \"%Y-%m-%d %H:%M:%S\";" >> "$@" 
 	@echo "const char build_host[] = \"$(shell hostname)\";" >> "$@" 
 
@@ -150,8 +150,7 @@ ifeq ($(OS),win32)
 SUBDIRS := dot_draw httpinfo mini pgraph secure txtinfo
 else
 ifeq ($(OS),android)
-# nameservice: no regex
-SUBDIRS := bmf dot_draw dyn_gw_plain httpinfo mini quagga secure tas txtinfo watchdog
+SUBDIRS := arprefresh bmf dot_draw dyn_gw_plain httpinfo mini nameservice pgraph secure tas txtinfo watchdog
 else
 SUBDIRS := dot_draw dyn_gw dyn_gw_plain httpinfo mini nameservice pgraph secure txtinfo watchdog
 endif

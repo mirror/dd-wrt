@@ -139,7 +139,10 @@ abuf_appendf(struct autobuf *autobuf, const char *fmt, ...)
 int
 abuf_puts(struct autobuf *autobuf, const char *s)
 {
-  int len = strlen(s);
+  int len; 
+
+  if (NULL == s) return 0;
+  len = strlen(s);
   if (autobuf_enlarge(autobuf, autobuf->len + len + 1) < 0) {
     return -1;
   }
