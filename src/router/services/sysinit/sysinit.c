@@ -2147,6 +2147,9 @@ void start_drivers(void)
 		cprintf("loading usb-ohci\n");
 		insmod("usb-ohci");
 		insmod("ohci-hcd");
+#ifdef HAVE_DANUBE
+		insmod("dwc_otg"); // usb
+#endif
 
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
