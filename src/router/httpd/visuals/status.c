@@ -153,8 +153,9 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		wan_gateway =
 		    wan_link ? nvram_safe_get("wan_gateway") :
 		    nvram_safe_get("wan_gateway");
+	} 
 #endif
-	} else {
+	else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 		wan_gateway = nvram_safe_get("wan_gateway");
 		wan_netmask = nvram_safe_get("wan_netmask");
