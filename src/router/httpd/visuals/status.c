@@ -121,8 +121,9 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		    wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
 		wan_gateway =
 		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
+	} 
 #ifdef HAVE_PPPOATM
-	} else if (!strcmp(wan_proto, "pppoa")) {
+	else if (!strcmp(wan_proto, "pppoa")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 		wan_netmask =
