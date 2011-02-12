@@ -1206,9 +1206,13 @@ void start_lan(void)
 #ifdef HAVE_DANUBE
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames, "nas0 eth0 ath0");
+		stop_atm();
+		start_atm();
 		PORTSETUPWAN("");
 	} else {
 		nvram_setz(lan_ifnames, "eth0 ath0");
+		stop_atm();
+		start_atm();
 		PORTSETUPWAN("nas0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -3487,6 +3491,8 @@ void start_wan(int status)
 	if ((strcmp(wan_proto, "pppoa") == 0)) {
 		char username[80], passwd[80];
 		char idletime[20], retry_num[20];
+		stop_atm();
+		start_atm();
 
 		snprintf(idletime, sizeof(idletime), "%d",
 			 atoi(nvram_safe_get("ppp_idletime")) * 60);
