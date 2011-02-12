@@ -2172,6 +2172,7 @@ int check_wan_link(int num)
 	if ((nvram_match("wan_proto", "pptp")
 	     || nvram_match("wan_proto", "l2tp")
 	     || nvram_match("wan_proto", "pppoe")
+	     || nvram_match("wan_proto", "pppoa")
 	     || nvram_match("wan_proto", "3g")
 	     || nvram_match("wan_proto", "heartbeat"))
 	    && !nvram_match("3gdata", "hso")) {
@@ -2261,13 +2262,22 @@ char *get_wan_ipaddr(void)
 	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+#ifdef HAVE_PPPOATM
+	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoa")) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+#endif
+#ifdef HAVE_3G
 	} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+#endif
+#ifdef HAVE_L2TP
 	} else if (nvram_match("wan_proto", "l2tp")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("l2tp_get_ip") :
 		    nvram_safe_get("wan_ipaddr");
+#endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}
@@ -2715,6 +2725,7 @@ char *get_wan_face(void)
 	if (nvram_match("wan_proto", "pptp")
 	    || nvram_match("wan_proto", "l2tp")
 	    || nvram_match("wan_proto", "3g")
+	    || nvram_match("wan_proto", "pppoa")
 	    || nvram_match("wan_proto", "pppoe")) {
 		if (nvram_match("pppd_pppifname", ""))
 			strncpy(localwanface, "ppp0", IFNAMSIZ);
