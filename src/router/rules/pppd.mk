@@ -11,7 +11,11 @@ pppd-symlinks:
 	ln -s Makefile.linux pppstats/Makefile ; \
 	)
 
+ifeq ($(CONFIG_PPPOATM),y)
+pppd: pppd-symlinks atm
+else
 pppd: pppd-symlinks
+endif
 	$(MAKE) -j 4 -C pppd.new/pppd
 ifeq ($(CONFIG_3G),y)
 	$(MAKE) -j 4 -C pppd.new/chat
@@ -30,6 +34,7 @@ endif
 
 pppd-clean pppd-distclean: pppd-symlinks
 	$(MAKE) -C pppd.new/pppd/plugins/rp-pppoe clean
+	$(MAKE) -C pppd.new/pppd/plugins/pppoatm clean
 	$(MAKE) -C pppd.new/pppd/plugins/radius clean
 	$(MAKE) -C pppd.new/pppd clean
 
