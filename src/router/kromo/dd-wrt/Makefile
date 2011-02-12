@@ -599,6 +599,9 @@ endif
 ifneq ($(CONFIG_L2TP),y)
 	rm -f $(INSTALLDIR)/www/index_l2tp.asp
 endif
+ifneq ($(CONFIG_PPPOATM),y)
+	rm -f $(INSTALLDIR)/www/index_pppoa.asp
+endif
 ifneq ($(CONFIG_AOSS),y)
 	rm -f $(INSTALLDIR)/www/AOSS.asp
 endif
