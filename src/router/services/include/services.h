@@ -157,6 +157,9 @@ void stop_openvpnserverwan(void);
 void start_openvpnserver(void);
 void stop_openvpnserver(void);
 
+void start_atm(void);
+void stop_atm(void);
+
 void start_wanup(void);
 
 void stop_anchorfree(void);
