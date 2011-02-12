@@ -16,7 +16,11 @@ pppd: pppd-symlinks atm
 else
 pppd: pppd-symlinks
 endif
+ifeq ($(CONFIG_IPV6),y)
+	$(MAKE) HAVE_INET6=y -j 4 -C pppd.new/pppd
+else
 	$(MAKE) -j 4 -C pppd.new/pppd
+endif
 ifeq ($(CONFIG_3G),y)
 	$(MAKE) -j 4 -C pppd.new/chat
 endif
