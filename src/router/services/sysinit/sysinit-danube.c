@@ -148,7 +148,6 @@ else
 	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
 
 #endif
-	sysprintf("br2684ctl -b -c 0 -e 0 -p 1 -a 0.1.32");
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices();
 	struct ifreq ifr;

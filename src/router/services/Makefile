@@ -729,6 +729,7 @@ OBJS += overclock_routerstation.o
 endif
 ifeq ($(CONFIG_DANUBE),y)
 CFLAGS_EXTRA += -DHAVE_DANUBE
+OBJS += atm.o
 endif
 ifeq ($(CONFIG_STORM),y)
 CFLAGS_EXTRA += -DHAVE_STORM
