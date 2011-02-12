@@ -8,10 +8,6 @@
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
-	<div class="label"><% tran("share.srv"); %></div>
-	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvram_get("ppp_service"); %>" />
-</div>
-<div class="setting">
 	<div class="label"><% tran("share.compression"); %></div>
 	<input class="spaceradio" type="radio" name="ppp_compression" value="1" <% nvram_checked("ppp_compression","1"); %> /><% tran("share.enable"); %>&nbsp;
 	<input class="spaceradio" type="radio" name="ppp_compression" value="0" <% nvram_checked("ppp_compression","0"); %> /><% tran("share.disable"); %> 
