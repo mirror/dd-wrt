@@ -20,6 +20,7 @@ PLUGIN_OBJS := pppoatm.o
 HAVE_LIBATM=yes
 
 ifdef HAVE_LIBATM
+CFLAGS += -I$(TOP)/linux-atm/src/include
 LIBS := $(TOP)/linux-atm/src/lib/.libs/libatm.so.1
 else
 CFLAGS += -I.
