@@ -523,12 +523,8 @@ int vslprintf __P((char *, int, char *, va_list));	/* vsprintf++ */
 size_t strlcpy __P((char *, const char *, size_t));	/* safe strcpy */
 size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
 
+#ifndef NEED_PRINTF
 #define option_error(fmt,args...) { }
-//void option_error __P((char *fmt, ...));
-
-//void dbglog __P((char *, ...));	/* log a debug message */
-//void info __P((char *, ...));	/* log an informational message */
-//void notice __P((char *, ...));	/* log a notice-level message */
 
 
 #define notice(fmt,...) { }
@@ -537,10 +533,18 @@ size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
 #define warn(fmt,...) { }
 #define error(fmt,...) { ++error_count; }
 #define fatal(fmt,...) { die(1); }
-//void warn __P((char *, ...));	/* log a warning message */
-//void error __P((char *, ...));	/* log an error message */
-//void fatal __P((char *, ...));	/* log an error message and die(1) */
+#else
 
+void option_error __P((char *fmt, ...));
+
+void dbglog __P((char *, ...));	/* log a debug message */
+void info __P((char *, ...));	/* log an informational message */
+void notice __P((char *, ...));	/* log a notice-level message */
+
+void warn __P((char *, ...));	/* log a warning message */
+void error __P((char *, ...));	/* log an error message */
+void fatal __P((char *, ...));	/* log an error message and die(1) */
+#endif
 
 void init_pr_log __P((char *, int));	/* initialize for using pr_log */
 void pr_log __P((void *, char *, ...));	/* printer fn, output to syslog */

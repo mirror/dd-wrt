@@ -17,13 +17,13 @@ PLUGIN_OBJS := pppoatm.o
 # or leave it unset to build the few routines we actually _use_ into
 # the plugin directly.
 #
-HAVE_LIBATM=yes
+#HAVE_LIBATM=yes
 
 ifdef HAVE_LIBATM
-CFLAGS += -I$(TOP)/linux-atm/src/include
+CFLAGS += -I$(TOP)/linux-atm/src/include -I$(LINUXDIR)/include 
 LIBS := $(TOP)/linux-atm/src/lib/.libs/libatm.so.1
 else
-CFLAGS += -I.
+CFLAGS += -I. -I$(LINUXDIR)/include
 PLUGIN_OBJS += text2qos.o text2atm.o misc.o ans.o
 LIBS := -lresolv
 endif

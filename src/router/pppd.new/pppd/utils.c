@@ -680,7 +680,7 @@ log_write(level, buf)
 /*
  * fatal - log an error message and die horribly.
  */
-/*
+#ifdef NEED_PRINTF
 void
 fatal __V((char *fmt, ...))
 {
@@ -734,8 +734,7 @@ warn __V((char *fmt, ...))
     logit(LOG_WARNING, fmt, pvar);
     va_end(pvar);
 }
-*/
-/*
+
 void
 notice __V((char *fmt, ...))
 {
@@ -752,8 +751,8 @@ notice __V((char *fmt, ...))
     logit(LOG_NOTICE, fmt, pvar);
     va_end(pvar);
 }
-*/
-/*void
+
+void
 info __V((char *fmt, ...))
 {
     va_list pvar;
@@ -769,8 +768,8 @@ info __V((char *fmt, ...))
     logit(LOG_INFO, fmt, pvar);
     va_end(pvar);
 }
-*/
-/*
+
+
 void
 dbglog __V((char *fmt, ...))
 {
@@ -787,7 +786,7 @@ dbglog __V((char *fmt, ...))
     logit(LOG_DEBUG, fmt, pvar);
     va_end(pvar);
 }
-*/
+#endif
 /*
  * dump_packet - print out a packet in readable form if it is interesting.
  * Assumes len >= PPP_HDRLEN.
