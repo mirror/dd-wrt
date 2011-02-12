@@ -96,10 +96,21 @@ int redial_main(int argc, char **argv)
 					sleep(1);
 					start_service("wan_redial");
 				}
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
+				else
+#endif
+#endif
+
+#ifdef HAVE_PPPOATM
+				if (nvram_match("wan_proto", "pppoa")) {
+					sleep(1);
+					start_service("wan_redial");
+				}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 				else
 #endif
 #endif
+
 #ifdef HAVE_PPTP
 				if (nvram_match("wan_proto", "pptp")) {
 					stop_service("pptp");

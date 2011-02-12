@@ -264,6 +264,9 @@ endif
 ifeq ($(CONFIG_X86),y)
   CFLAGS += -DHAVE_X86
 endif
+ifeq ($(CONFIG_L2TP),y)
+  CFLAGS += -DHAVE_L2TP
+endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
   OBJS += lib3g.o
@@ -575,6 +578,9 @@ endif
 
 ifeq ($(CONFIG_PPPOERELAY),y)
   CFLAGS += -DHAVE_PPPOERELAY
+endif
+ifeq ($(CONFIG_PPPOATM),y)
+  CFLAGS += -DHAVE_PPPOATM
 endif
 
 ifeq ($(CONFIG_CHILLISPOT),y)
