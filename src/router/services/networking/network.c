@@ -3843,8 +3843,7 @@ void start_wan_done(char *wan_ifname)
 			while (route_add
 			       (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 			       && timeout--) {
-				if ((nvram_match("wan_proto", "pppoe") || (nvram_match("wan_proto", "pppoa")  )
-				    && nvram_match("ppp_demand", "1")) {
+				if ((nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoa")) && nvram_match("ppp_demand", "1")) {
 					printf
 					    ("Wait ppp interface to init (3) ...\n");
 					sleep(1);
