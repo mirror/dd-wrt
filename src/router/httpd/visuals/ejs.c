@@ -2089,13 +2089,22 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+#ifdef HAVE_PPPOATM
+	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoa")) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+#endif
+#ifdef HAVE_3G
 	} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+#endif
+#ifdef HAVE_L2TP
 	} else if (nvram_match("wan_proto", "l2tp")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("l2tp_get_ip") :
 		    nvram_safe_get("wan_ipaddr");
+#endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}

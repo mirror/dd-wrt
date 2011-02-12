@@ -21,6 +21,10 @@ void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp(type, "pppoe"))
 		do_ej(NULL, "index_pppoe.asp", wp, NULL);
 #endif
+#ifdef HAVE_PPPOATM
+	else if (!strcmp(type, "pppoa"))
+		do_ej(NULL, "index_pppoa.asp", wp, NULL);
+#endif
 #ifdef HAVE_PPTP
 	else if (!strcmp(type, "pptp"))
 		do_ej(NULL, "index_pptp.asp", wp, NULL);

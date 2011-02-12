@@ -3485,8 +3485,6 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_PPPOATM
 	if ((strcmp(wan_proto, "pppoa") == 0)) {
-//		plugin pppoatm.so ${atmdev:+$atmdev.}${vpi:-8}.${vci:-35} \
-//		${encaps} ${mtu:+mtu $mtu mru $mtu}
 		char username[80], passwd[80];
 		char idletime[20], retry_num[20];
 
@@ -3505,7 +3503,7 @@ void start_wan(int status)
 
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoa", "w");
-		fprintf(fp, "plugin /usr/lib/pppoatm.so atm0.1.32 llc-encaps");
+		fprintf(fp, "plugin /usr/lib/pppoatm.so 1.32 llc-encaps");
 		fprintf(fp, "\n");
 
 
