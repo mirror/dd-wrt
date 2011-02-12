@@ -228,6 +228,11 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 		  nvram_selmatch(wp, "wan_proto",
 				 "pppoe") ? "selected=\"selected\"" : "");
 #endif
+#ifdef HAVE_PPPOATM
+	websWrite(wp, "<option value=\"pppoa\" %s >PPPoA</option>\n",
+		  nvram_selmatch(wp, "wan_proto",
+				 "pppoa") ? "selected=\"selected\"" : "");
+#endif
 #ifdef HAVE_PPTP
 	websWrite(wp, "<option value=\"pptp\" %s >PPTP</option>\n",
 		  nvram_selmatch(wp, "wan_proto",
