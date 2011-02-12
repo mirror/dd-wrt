@@ -2809,6 +2809,11 @@ void start_wan(int status)
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
 #endif
+#ifdef HAVE_PPPOATM
+	if (nvram_match("wan_proto", "pppoa"))
+		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
+	else
+#endif
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp"))
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
@@ -2908,6 +2913,11 @@ void start_wan(int status)
 	// Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
 	if (nvram_match("wan_proto", "pppoe")) {
+		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+	} else
+#endif
+#ifdef HAVE_PPPOATM
+	if (nvram_match("wan_proto", "pppoa")) {
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
 	} else
 #endif
@@ -3473,6 +3483,176 @@ void start_wan(int status)
 		}
 	} else
 #endif
+#ifdef HAVE_PPPOATM
+	if ((strcmp(wan_proto, "pppoa") == 0)) {
+//		plugin pppoatm.so ${atmdev:+$atmdev.}${vpi:-8}.${vci:-35} \
+//		${encaps} ${mtu:+mtu $mtu mru $mtu}
+		char username[80], passwd[80];
+		char idletime[20], retry_num[20];
+
+		snprintf(idletime, sizeof(idletime), "%d",
+			 atoi(nvram_safe_get("ppp_idletime")) * 60);
+		snprintf(retry_num, sizeof(retry_num), "%d",
+			 (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+
+		snprintf(username, sizeof(username), "%s",
+			 nvram_safe_get("ppp_username"));
+		snprintf(passwd, sizeof(passwd), "%s",
+			 nvram_safe_get("ppp_passwd"));
+
+		mkdir("/tmp/ppp", 0777);
+		int timeout = 5;
+
+		// Lets open option file and enter all the parameters.
+		fp = fopen("/tmp/ppp/options.pppoa", "w");
+		fprintf(fp, "plugin /usr/lib/pppoatm.so atm0.1.32 llc-encaps");
+		fprintf(fp, "\n");
+
+
+		// Those are default options we use + user/passwd
+		// By using user/password options we dont have to deal with chap/pap
+		// secrets files.
+		if (nvram_match("ppp_compression", "1")) {
+			fprintf(fp, "mppc\n");
+		} else {
+			fprintf(fp, "noccp\n");
+			fprintf(fp, "nomppc\n");
+		}
+		fprintf(fp, "noipdefault\n"
+			"noauth\n"
+			"defaultroute\n" "noaccomp\n" "nobsdcomp\n"
+			"nodeflate\n"
+			"nopcomp\n");
+		if (nvram_invmatch("ppp_mppe", ""))
+			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
+		else
+			fprintf(fp, "nomppe\n");
+		if (nvram_match("ppp_mlppp", "1"))
+			fprintf(fp, "mp\n");
+		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n",
+			username, passwd);
+
+		if (nvram_match("ppp_asyncmap", "1"))
+			fprintf(fp, "asyncmap 0\n");
+		else
+			fprintf(fp, "default-asyncmap\n");
+
+		if (nvram_match("mtu_enable", "1")) {
+			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+				fprintf(fp, "mtu %s\n",
+					nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mru %s\n",
+					nvram_safe_get("wan_mtu"));
+			}
+
+		} else {
+			// If MRU set to Auto we still allow custom MTU/MRU settings for
+			// expirienced users
+			if (nvram_invmatch("pppoe_ppp_mtu", ""))
+				if (atoi(nvram_safe_get("pppoe_ppp_mtu")) > 0)
+					fprintf(fp, "mtu %s\n",
+						nvram_safe_get
+						("pppoe_ppp_mtu"));
+			if (nvram_invmatch("pppoe_ppp_mru", ""))
+				if (atoi(nvram_safe_get("pppoe_ppp_mru")) > 0)
+					fprintf(fp, "mru %s\n",
+						nvram_safe_get
+						("pppoe_ppp_mru"));
+		}
+
+		if (nvram_match("ppp_debug", "1"))
+			fprintf(fp, "debug\n");
+
+		if (nvram_match("ppp_demand", "1"))
+			fprintf(fp, "demand\n"
+				"idle %s\n"
+				"10.112.112.112:10.112.112.113\n"
+				"lcp-echo-interval %d\n"
+				"lcp-echo-failure 3\n"
+				"ipcp-accept-remote\n"
+				"ipcp-accept-local\n"
+				"connect true\n" "ktune\n", idletime,
+				atoi(idletime) * 2);
+		else
+			fprintf(fp, "persist\n"
+				"lcp-echo-interval 5\n"
+				"lcp-echo-failure 10\n");
+
+		fclose(fp);
+
+		symlink("/sbin/rc", "/tmp/ppp/ip-up");
+		symlink("/sbin/rc", "/tmp/ppp/ip-down");
+		unlink("/tmp/ppp/log");
+
+		// Clean pppoe linksys client files - Added by ice-man (Wed Jun 1)
+		unlink("/tmp/ppp/connect-log");
+		unlink("/tmp/ppp/set-pppoepid");
+
+		stop_dhcpc();
+#ifdef HAVE_PPTP
+		stop_pptp();
+#endif
+		stop_process("pppd", "PPP daemon");
+		eval("pppd", "file", "/tmp/ppp/options.pppoa");
+
+		/*
+		 * Pretend that the WAN interface is up 
+		 */
+		if (nvram_match("ppp_demand", "1")) {
+			/*
+			 * Wait for ppp0 to be created 
+			 */
+			while (ifconfig("ppp0", IFUP, NULL, NULL) && timeout--)
+				sleep(1);
+			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
+
+			/*
+			 * Set temporary IP address 
+			 */
+			timeout = 3;
+			while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
+				perror("ppp0");
+				printf("Wait ppp inteface to init (1) ...\n");
+				sleep(1);
+			};
+			char client[32];
+
+			nvram_set("wan_ipaddr",
+				  inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr),
+					    client, 16));
+			nvram_set("wan_netmask", "255.255.255.255");
+
+			/*
+			 * Set temporary P-t-P address 
+			 */
+			timeout = 3;
+			while (ioctl(s, SIOCGIFDSTADDR, &ifr) && timeout--) {
+				perror("ppp0");
+				printf("Wait ppp inteface to init (2) ...\n");
+				sleep(1);
+			}
+			char *peer =
+			    inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
+				      client,
+				      16);
+
+			nvram_set("wan_gateway", peer);
+
+			start_wan_done("ppp0");
+
+			// if user press Connect" button from web, we must force to dial
+			if (nvram_match("action_service", "start_pppoa")) {
+				sleep(3);
+				start_force_to_dial();
+				nvram_unset("action_service");
+			}
+		} else {
+			if (status != REDIAL) {
+				start_redial();
+			}
+		}
+	} else
+#endif
 	if (strcmp(wan_proto, "dhcp") == 0) {
 		start_dhcpc(wan_ifname, NULL, NULL, 1);
 	}
@@ -3640,6 +3820,13 @@ void start_wan_done(char *wan_ifname)
 		       (nvram_safe_get("wan_ifname_1"), 0, NULL, NULL,
 			NULL) == 0) ;
 	}
+#ifdef HAVE_PPPOATM
+	if ((nvram_match("wan_proto", "pppoa")) && check_wan_link(1)) {
+		while (route_del
+		       (nvram_safe_get("wan_ifname_1"), 0, NULL, NULL,
+			NULL) == 0) ;
+	}
+#endif
 
 	if (nvram_invmatch("wan_proto", "disabled")) {
 		int timeout = 5;
@@ -3658,7 +3845,7 @@ void start_wan_done(char *wan_ifname)
 			while (route_add
 			       (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 			       && timeout--) {
-				if ((nvram_match("wan_proto", "pppoe"))
+				if ((nvram_match("wan_proto", "pppoe") || (nvram_match("wan_proto", "pppoa")  )
 				    && nvram_match("ppp_demand", "1")) {
 					printf
 					    ("Wait ppp interface to init (3) ...\n");
@@ -3722,6 +3909,7 @@ void start_wan_done(char *wan_ifname)
 	cprintf("routes done\n");
 	if (nvram_match("wan_proto", "pppoe")
 	    || nvram_match("wan_proto", "pptp")
+	    || nvram_match("wan_proto", "pppoa")
 	    || nvram_match("wan_proto", "l2tp")
 	    || nvram_match("wan_proto", "3g")) {
 		if (nvram_match("ppp_demand", "1")) {	// ntp and ddns will trigger DOD, so we must

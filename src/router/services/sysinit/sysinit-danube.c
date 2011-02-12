@@ -137,7 +137,17 @@ void start_sysinit(void)
 	insmod("lantiq_mei");
 	insmod("lantiq_atm");
 	insmod("drv_dsl_cpe_api");
+#ifdef HAVE_ANNEXB
 	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
+#elif HAVE_ANNEXA
+	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
+#else
+if (nvram_match("annex","a"))
+	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
+else
+	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
+
+#endif
 	sysprintf("br2684ctl -b -c 0 -e 0 -p 1 -a 0.1.32");
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices();
