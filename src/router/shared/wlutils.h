@@ -136,8 +136,11 @@ struct wifi_client_info {
     uint32_t noise;
     uint32_t snr;
     int8_t mcs;
+    int8_t rx_mcs;
     char is_40mhz;
     char is_short_gi;
+    char rx_is_40mhz;
+    char rx_is_short_gi;
     uint32_t inactive_time;
     uint32_t rx_packets;
     uint32_t tx_packets;
