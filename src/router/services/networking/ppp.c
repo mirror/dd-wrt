@@ -114,12 +114,16 @@ int ipup_main(int argc, char **argv)
 			nvram_set("wan_ipaddr", value);
 			nvram_set("wan_netmask", "255.255.255.255");
 #endif
+#ifdef HAVE_PPTP
 		} else if (nvram_match("wan_proto", "pptp")) {
 			nvram_set("wan_ipaddr_buf", nvram_safe_get("wan_ipaddr"));	// Store 
 			nvram_set("pptp_get_ip", value);
+#endif
+#ifdef HAVE_L2TP
 		} else if (nvram_match("wan_proto", "l2tp")) {
 			nvram_set("wan_ipaddr_buf", nvram_safe_get("wan_ipaddr"));	// Store 
 			nvram_set("l2tp_get_ip", value);
+#endif
 		}
 #ifdef HAVE_3G
 		else if (nvram_match("wan_proto", "3g")) {
