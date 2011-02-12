@@ -284,6 +284,8 @@ int usb_add_ufd(void)
 					entry->d_name);
 			}
 			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
+			//set spindown time
+			sysprintf("hdparm -S 120 %s",path);
 
 			/* 
 			 * Check if it has file system 
