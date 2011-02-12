@@ -1,5 +1,3 @@
-CC	= gcc
-COPTS	= -O2 -g
 CFLAGS	= $(COPTS) -I../.. -I../../../include -fPIC
 LDFLAGS	= -shared
 INSTALL	= install
@@ -19,10 +17,10 @@ PLUGIN_OBJS := pppoatm.o
 # or leave it unset to build the few routines we actually _use_ into
 # the plugin directly.
 #
-#HAVE_LIBATM=yes
+HAVE_LIBATM=yes
 
 ifdef HAVE_LIBATM
-LIBS := -latm
+LIBS := $(TOP)/linux-atm/src/lib/.libs/libatm.so.1
 else
 CFLAGS += -I.
 PLUGIN_OBJS += text2qos.o text2atm.o misc.o ans.o
