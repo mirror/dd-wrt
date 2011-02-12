@@ -121,7 +121,16 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		    wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
 		wan_gateway =
 		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
+#ifdef HAVE_PPPOATM
+	} else if (!strcmp(wan_proto, "pppoa")) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		wan_netmask =
+		    wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
+		wan_gateway =
+		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
 	}
+#endif
 #ifdef HAVE_3G
 	else if (!strcmp(wan_proto, "3g")) {
 		wan_ipaddr =
@@ -132,6 +141,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
 	}
 #endif
+#ifdef HAVE_L2TP
 	else if (!strcmp(wan_proto, "l2tp")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("l2tp_get_ip") :
@@ -142,6 +152,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		wan_gateway =
 		    wan_link ? nvram_safe_get("wan_gateway") :
 		    nvram_safe_get("wan_gateway");
+#endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 		wan_gateway = nvram_safe_get("wan_gateway");
@@ -152,6 +163,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 
 	if (!strcmp(wan_proto, "pppoe") || !strcmp(wan_proto, "pptp")
 	    || !strcmp(wan_proto, "3g")
+	    || !strcmp(wan_proto, "pppoa")
 	    || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "heartbeat")) {
 		hidden1 = "";
 		hidden2 = "";
@@ -238,6 +250,7 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 
 	if (!strcmp(wan_proto, "pppoe") || !strcmp(wan_proto, "pptp")
 	    || !strcmp(wan_proto, "3g")
+	    || !strcmp(wan_proto, "pppoa")
 	    || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "heartbeat")) {
 
 		/*
