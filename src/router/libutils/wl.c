@@ -1081,6 +1081,9 @@ int get_wififreq(char *ifname, int freq)
 		return freq - (5540 - 4516);	// xr4 
 		// case 24:
 		// return -(5540-4540); //sr4 
+	case 23: // reserved for XR2.3 until spec is known
+	case 26: // reserved for XR2.6 until spec is known
+
 	default:
 		return freq;
 		break;
