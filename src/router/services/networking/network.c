@@ -1205,7 +1205,7 @@ void start_lan(void)
 #endif
 #ifdef HAVE_DANUBE
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 ath0");
+		nvram_setz(lan_ifnames, "nas0 eth0 ath0");
 		PORTSETUPWAN("");
 	} else {
 		nvram_setz(lan_ifnames, "eth0 ath0");

@@ -445,6 +445,9 @@ endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
+ifeq ($(CONFIG_PPPOATM),y)
+CFLAGS += -DHAVE_PPPOATM
+endif
 
 ifeq ($(CONFIG_CTORRENT),y)
 CFLAGS += -DHAVE_CTORRENT
