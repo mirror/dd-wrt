@@ -454,6 +454,9 @@ ifeq ($(CONFIG_PPPOE),y)
 CFLAGS_EXTRA += -DHAVE_PPPOE
 OBJS += ppp.o
 endif
+ifeq ($(CONFIG_PPPOE),y)
+CFLAGS_EXTRA += -DHAVE_PPPOATM
+endif
 ifeq ($(CONFIG_PPPOERELAY),y)
 CFLAGS_EXTRA += -DHAVE_PPPOERELAY
 OBJS += pppoerelay.o

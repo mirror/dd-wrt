@@ -23,7 +23,9 @@ endif
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
 	$(MAKE) -j 4 -C pppd.new/pppd/plugins/radius
 endif
-#	$(MAKE) -C pppd/pppd/plugins/pppoatm
+ifeq ($(CONFIG_PPPOATM),y)
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/pppoatm
+endif
 
 
 pppd-clean pppd-distclean: pppd-symlinks
@@ -37,6 +39,10 @@ ifeq ($(CONFIG_3G),y)
 	install -D pppd.new/chat/chat $(INSTALLDIR)/pppd/usr/sbin/chat
 endif
 	install -D pppd.new/pppd/plugins/rp-pppoe/rp-pppoe.so $(INSTALLDIR)/pppd/usr/lib/rp-pppoe.so
+ifeq ($(CONFIG_PPPOATM),y)
+	install -D pppd.new/pppd/plugins/pppoatm/pppoatm.so $(INSTALLDIR)/pppd/usr/lib/pppoatm.so
+endif
+
 ifeq ($(CONFIG_PPPSTATS),y)
 	install -D pppd.new/pppstats/pppstats $(INSTALLDIR)/pppd/usr/sbin/pppstats
 else
