@@ -193,6 +193,7 @@ static int mac80211_cb_stations(struct nl_msg *msg,void *data) {
         [NL80211_STA_INFO_TX_PACKETS] = { .type = NLA_U32 },
         [NL80211_STA_INFO_SIGNAL] = { .type = NLA_U8 },
         [NL80211_STA_INFO_TX_BITRATE] = { .type = NLA_NESTED },
+	[NL80211_STA_INFO_RX_BITRATE] = { .type = NLA_NESTED },
         [NL80211_STA_INFO_LLID] = { .type = NLA_U16 },
         [NL80211_STA_INFO_PLID] = { .type = NLA_U16 },
         [NL80211_STA_INFO_PLINK_STATE] = { .type = NLA_U8 },
@@ -262,20 +263,37 @@ static int mac80211_cb_stations(struct nl_msg *msg,void *data) {
 			printf("\n\ttx bitrate:\t");
 			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
 				mac80211_info->wci->txrate =nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
-				int rate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
-				printf("%d.%d MBit/s", rate / 10, rate % 10);
 			}
 
 			if (rinfo[NL80211_RATE_INFO_MCS]) {
 				mac80211_info->wci->mcs=nla_get_u8(rinfo[NL80211_RATE_INFO_MCS]);
-				printf(" MCS %d", nla_get_u8(rinfo[NL80211_RATE_INFO_MCS]));
 				}
 			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH]) {
 				mac80211_info->wci->is_40mhz=1;
-				printf(" 40Mhz");
 				}
 			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
 				mac80211_info->wci->is_short_gi=1;
+				}
+		}
+	}
+	if (sinfo[NL80211_STA_INFO_RX_BITRATE]) {
+		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX,
+				     sinfo[NL80211_STA_INFO_RX_BITRATE], rate_policy)) {
+			fprintf(stderr, "failed to parse nested rate attributes!\n");
+		} else {
+			printf("\n\trx bitrate:\t");
+			if (rinfo[NL80211_RATE_INFO_BITRATE]) {
+				mac80211_info->wci->rxrate =nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
+			}
+
+			if (rinfo[NL80211_RATE_INFO_MCS]) {
+				mac80211_info->wci->rx_mcs=nla_get_u8(rinfo[NL80211_RATE_INFO_MCS]);
+				}
+			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH]) {
+				mac80211_info->wci->rx_is_40mhz=1;
+				}
+			if (rinfo[NL80211_RATE_INFO_SHORT_GI]) {
+				mac80211_info->wci->rx_is_short_gi=1;
 				printf(" short GI");
 				}
 		}
