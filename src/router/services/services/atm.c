@@ -31,7 +31,7 @@
 void start_atm(void)
 {
 	if (!nvram_match("wan_proto", "pppoa"))
-		sysprintf("br2684ctl -b -c 0 -e 0 -p 1 -a 0.1.32");
+		sysprintf("br2684ctl -b -c 0 -e 0 -p 1 -a 0.%s.%s",nvram_safe_get("vpi"),nvram_safe_get("vci"));
 	dd_syslog(LOG_INFO, "ATM : DSL Modem interface created\n");
 
 	cprintf("done\n");
