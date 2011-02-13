@@ -105,8 +105,12 @@ obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_FDISK) += fdisk
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
+ifneq ($(CONFIG_RT2880),y)
+ifneq ($(CONFIG_RT61),y)
 obj-$(CONFIG_NAS) += nas
 obj-$(CONFIG_WLCONF) += wlconf
+endif
+endif
 endif
 endif
 obj-$(CONFIG_UTILS) += utils
@@ -183,6 +187,7 @@ obj-$(CONFIG_USB) += usb disktype
 obj-$(CONFIG_ASTERISK) += asterisk
 obj-$(CONFIG_ZAPTEL) += zaptel
 obj-$(CONFIG_WAVESAT) += wavesat
+obj-$(CONFIG_RT2860APD) += rt2860apd
 obj-$(CONFIG_POUND) += pound
 obj-$(CONFIG_VNCREPEATER) += vncrepeater
 obj-$(CONFIG_SWCONFIG) += swconfig
@@ -200,6 +205,7 @@ obj-$(CONFIG_ATH9K) += crda
 obj-$(CONFIG_LIBNLTINY) += libnltiny
 obj-$(CONFIG_HOTPLUG2) += hotplug2 udev
 obj-$(CONFIG_UBOOTENV) += ubootenv
+obj-$(CONFIG_DSL_CPE_CONTROL) += dsl_cpe_control atm
 
 obj-y+=anchorfree
 obj-y+=ttraff
