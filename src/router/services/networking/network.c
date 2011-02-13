@@ -1205,9 +1205,7 @@ void start_lan(void)
 #endif
 #ifdef HAVE_DANUBE
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "nas0 eth0 ath0");
-		stop_atm();
-		start_atm();
+		nvram_setz(lan_ifnames, "eth0 ath0");
 		PORTSETUPWAN("");
 	} else {
 		nvram_setz(lan_ifnames, "eth0 ath0");
@@ -3477,6 +3475,14 @@ void start_wan(int status)
 		}
 	} else
 #endif
+#ifdef HAVE_MODEMBRIDGE
+	if ((strcmp(wan_proto, "bridge") == 0)) {
+	    stop_atm();
+	    start_atm();
+	    br_add_interface("br0", "nas0");
+	    start_wan_done("nas0");
+	} else
+#endif
 #ifdef HAVE_PPPOATM
 	if ((strcmp(wan_proto, "pppoa") == 0)) {
 		char username[80], passwd[80];
@@ -4133,6 +4139,9 @@ void stop_wan(void)
 	 * Bring down WAN interfaces 
 	 */
 	ifconfig(wan_ifname, 0, NULL, NULL);
+#ifdef HAVE_MODEMBRIDGE
+	br_del_interface("br0", "nas0");    
+#endif
 	eval("ifconfig", wan_ifname, "down");	// to allow for MAC clone to
 	// take effect
 #ifdef HAVE_PPP
