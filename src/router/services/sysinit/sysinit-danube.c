@@ -146,8 +146,9 @@ if (nvram_match("annex","a"))
 	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
 else
 	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
-
 #endif
+	nvram_default_get("vpi","1");
+	nvram_default_get("vci","32");
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices();
 	struct ifreq ifr;

@@ -2813,11 +2813,6 @@ void start_wan(int status)
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
 #endif
-#ifdef HAVE_PPPOATM
-	if (nvram_match("wan_proto", "pppoa"))
-		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
-	else
-#endif
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp"))
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
@@ -2917,11 +2912,6 @@ void start_wan(int status)
 	// Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
 	if (nvram_match("wan_proto", "pppoe")) {
-		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
-	} else
-#endif
-#ifdef HAVE_PPPOATM
-	if (nvram_match("wan_proto", "pppoa")) {
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
 	} else
 #endif
@@ -3509,7 +3499,7 @@ void start_wan(int status)
 
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoa", "w");
-		fprintf(fp, "plugin /usr/lib/pppoatm.so 1.32 llc-encaps");
+		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s llc-encaps",nvram_safe_get("vpi"),nvram_safe_get("vci"));
 		fprintf(fp, "\n");
 
 
@@ -4490,9 +4480,6 @@ int init_mtu(char *wan_proto)
 		if (nvram_match("mtu_enable", "0")) {	// Auto
 			nvram_set("wan_mtu", "1500");	// set max value
 		} else {	// Manual
-			if (atoi(nvram_safe_get("wan_mtu")) > 1500) {
-				nvram_set("wan_mtu", "1500");
-			}
 			if (atoi(nvram_safe_get("wan_mtu")) < 576) {
 				nvram_set("wan_mtu", "576");
 			}
