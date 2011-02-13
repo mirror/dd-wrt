@@ -2075,7 +2075,7 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	char *wan_ipaddr;
 	int wan_link;
 
-	if (getWET() || nvram_match("wan_proto", "disabled")) {
+	if (getWET() || nvram_match("wan_proto", "disabled") || nvram_match("wan_proto", "bridge")) {
 		websWrite(wp, ": %s", live_translate("share.disabled"));
 		return;
 	}

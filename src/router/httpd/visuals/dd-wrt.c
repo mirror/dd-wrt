@@ -223,6 +223,11 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 				 "dhcp") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "\n//]]>\n</script>\n");
 
+#ifdef HAVE_MODEMBRIDGE
+	websWrite(wp, "<option value=\"bridge\" %s >DSL Modem Bridge</option>\n",
+		  nvram_selmatch(wp, "wan_proto",
+				 "bridge") ? "selected=\"selected\"" : "");
+#endif
 #ifdef HAVE_PPPOE
 	websWrite(wp, "<option value=\"pppoe\" %s >PPPoE</option>\n",
 		  nvram_selmatch(wp, "wan_proto",
