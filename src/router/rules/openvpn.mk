@@ -12,7 +12,11 @@ openvpn: openssl
 	make -j 4 -C lzo clean
 	make -j 4 -C lzo
 ifneq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_DANUBE),y)
+ifneq ($(CONFIG_FREERADIUS),y)
 	rm -f openssl/*.so*
+endif
+endif
 endif
 ifeq ($(CONFIG_NEWMEDIA),y)
 	make -j 4 -C openvpn clean
