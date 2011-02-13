@@ -213,6 +213,8 @@ include rules/relayd.mk
 include $(TOP)/private/ath9k-rules/ath9k.mk
 include rules/libnltiny.mk
 include rules/hotplug2.mk
+include rules/dsl_cpe_control.mk
+include rules/atm.mk
 # Generic rules
 #
 
