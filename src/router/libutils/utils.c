@@ -1198,6 +1198,13 @@ int internal_getRouterBrand()
 	setRouter("Buffalo WZR-HP-AG300H");
 #endif
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WNDR3700V2
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	setRouter("Netgear WNDR3700 v2");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WNDR3700
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
