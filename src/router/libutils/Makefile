@@ -317,6 +317,12 @@ endif
 ifeq ($(CONFIG_WNDR3700),y)
   CFLAGS += -DHAVE_WNDR3700
 endif
+ifeq ($(CONFIG_WNDR3700V2),y)
+  CFLAGS += -DHAVE_WNDR3700V2
+endif
+ifeq ($(CONFIG_WNDR3700V2),y)
+  CFLAGS += -DHAVE_WNDR3700V2
+endif
 ifeq ($(CONFIG_WRT400),y)
   CFLAGS += -DHAVE_WRT400
 endif
