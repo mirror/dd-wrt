@@ -436,7 +436,7 @@ endif
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	
 	#cd $(TARGETDIR)
-	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
+#	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
 #ifneq ($(CONFIG_NOOPT),y)
@@ -661,7 +661,12 @@ ifeq ($(CONFIG_WNDR3700),y)
 		-n 'WNDR3700-V1.0.4.68' \
 		-d $(ARCH)-uclibc/kernel.squashfs \
 		$(ARCH)-uclibc/kernel.uimage
-	./tools/wndr3700/wndr3700 \
+	mkimage -A mips -O linux -T filesystem -C none \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'WNDR3700v2-V1.0.4.68' \
+		-d $(ARCH)-uclibc/kernel.squashfs \
+		$(ARCH)-uclibc/kernel.uimage
+	./tools/wndr3700/wndr3700v2 \
 		$(ARCH)-uclibc/kernel.uimage \
 		$(ARCH)-uclibc/kernel.image
 	
@@ -671,7 +676,10 @@ ifeq ($(CONFIG_WNDR3700),y)
 	) > $(ARCH)-uclibc/wndr3700-uimage.bin
 	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_NA.img
 	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r "" -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_WW.img
+	./tools/wndr3700/mkdniimg -B WNDR3700v2 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3700v2-uimage.bin -o $(ARCH)-uclibc/wndr3700v2-factory_NA.img
+	./tools/wndr3700/mkdniimg -B WNDR3700v2 -v 1.0.4.68 -r "" -i $(ARCH)-uclibc/wndr3700v2-uimage.bin -o $(ARCH)-uclibc/wndr3700v2-factory_WW.img
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/wndr3700-webflash.bin $(ARCH)-uclibc/wndr3700-uimage.bin	
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/wndr3700v2-webflash.bin $(ARCH)-uclibc/wndr3700v2-uimage.bin	
 endif
 ifeq ($(CONFIG_TEW632BRP),y)
 	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/tew632brp-uimage.bin
@@ -697,6 +705,8 @@ ifeq ($(CONFIG_DIR615E),y)
 	cat tools/dir615e3.tag >> $(ARCH)-uclibc/dir615e3-uimage.bin
 	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir615e4-uimage.bin bs=3538944 conv=sync
 	cat tools/dir615e4.tag >> $(ARCH)-uclibc/dir615e4-uimage.bin
+	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir601-uimage.bin bs=3735552 conv=sync
+	cat tools/dir601.tag >> $(ARCH)-uclibc/dir601-uimage.bin
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage	
 endif
 ifeq ($(CONFIG_WRT160NL),y)
