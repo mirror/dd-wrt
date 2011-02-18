@@ -202,6 +202,9 @@ endif
 ifeq ($(CONFIG_WNDR3700),y)
 	cp $(LINUXDIR)/.config_wndr3700 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WNDR3700V2),y)
+	cp $(LINUXDIR)/.config_wndr3700v2 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WP543),y)
 	cp $(LINUXDIR)/.config_wp543 $(LINUXDIR)/.config
 endif
@@ -649,31 +652,54 @@ ifeq ($(CONFIG_DIR825),y)
 endif
 ifeq ($(CONFIG_WNDR3700),y)
 	mkdir -p $(ARCH)-uclibc/wndr3700/image
+	mkdir -p $(ARCH)-uclibc/wndr3700v2/image
 	./tools/wndr3700/wndr3700 \
 		$(ARCH)-uclibc/root.uimage \
 		$(ARCH)-uclibc/wndr3700/image/uImage
+
+	./tools/wndr3700/wndr3700v2 \
+		$(ARCH)-uclibc/root.uimage \
+		$(ARCH)-uclibc/wndr3700v2/image/uImage
+
 	./tools/wndr3700/mksquashfs-lzma \
 		$(ARCH)-uclibc/wndr3700 $(ARCH)-uclibc/kernel.squashfs \
 		-nopad -noappend -root-owned -be
+
+	./tools/wndr3700/mksquashfs-lzma \
+		$(ARCH)-uclibc/wndr3700v2 $(ARCH)-uclibc/kernelv2.squashfs \
+		-nopad -noappend -root-owned -be
+
 	-rm -rf $(ARCH)-uclibc/wndr3700
+	-rm -rf $(ARCH)-uclibc/wndr3700v2
+
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
 		-n 'WNDR3700-V1.0.4.68' \
 		-d $(ARCH)-uclibc/kernel.squashfs \
 		$(ARCH)-uclibc/kernel.uimage
+
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
 		-n 'WNDR3700v2-V1.0.4.68' \
-		-d $(ARCH)-uclibc/kernel.squashfs \
-		$(ARCH)-uclibc/kernel.uimage
+		-d $(ARCH)-uclibc/kernelv2.squashfs \
+		$(ARCH)-uclibc/kernelv2.uimage
 	./tools/wndr3700/wndr3700v2 \
+		$(ARCH)-uclibc/kernelv2.uimage \
+		$(ARCH)-uclibc/kernelv2.image	
+
+	./tools/wndr3700/wndr3700 \
 		$(ARCH)-uclibc/kernel.uimage \
-		$(ARCH)-uclibc/kernel.image
-	
+		$(ARCH)-uclibc/kernel.image	
 	( \
 		dd if=$(ARCH)-uclibc/kernel.image bs=1024k conv=sync; \
 		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
 	) > $(ARCH)-uclibc/wndr3700-uimage.bin
+
+	( \
+		dd if=$(ARCH)-uclibc/kernelv2.image bs=1024k conv=sync; \
+		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
+	) > $(ARCH)-uclibc/wndr3700v2-uimage.bin
+
 	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_NA.img
 	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r "" -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_WW.img
 	./tools/wndr3700/mkdniimg -B WNDR3700v2 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3700v2-uimage.bin -o $(ARCH)-uclibc/wndr3700v2-factory_NA.img
