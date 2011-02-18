@@ -136,6 +136,16 @@ static struct resource lq_gpio_resource[] = {
 		.start  = LQ_GPIO1_BASE_ADDR,
 		.end    = LQ_GPIO1_BASE_ADDR + LQ_GPIO_SIZE - 1,
 		.flags  = IORESOURCE_MEM,
+	}, {
+		.name	= "gpio2",
+		.start  = LQ_GPIO2_BASE_ADDR,
+		.end    = LQ_GPIO2_BASE_ADDR + LQ_GPIO_SIZE - 1,
+		.flags  = IORESOURCE_MEM,
+	}, {
+		.name	= "gpio3",
+		.start  = LQ_GPIO3_BASE_ADDR,
+		.end    = LQ_GPIO3_BASE_ADDR + LQ_GPIO_SIZE - 1,
+		.flags  = IORESOURCE_MEM,
 	}
 };
 
@@ -144,6 +154,10 @@ lq_register_gpio(void)
 {
 	platform_device_register_simple("lq_gpio", 0, &lq_gpio_resource[0], 1);
 	platform_device_register_simple("lq_gpio", 1, &lq_gpio_resource[1], 1);
+#ifdef CONFIG_AR9
+	platform_device_register_simple("lq_gpio", 2, &lq_gpio_resource[2], 1);
+	platform_device_register_simple("lq_gpio", 3, &lq_gpio_resource[3], 1);
+#endif
 }
 
 /* pci */

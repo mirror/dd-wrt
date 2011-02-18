@@ -21,6 +21,9 @@ lq_machine_restart(char *command)
 {
 	printk(KERN_NOTICE "System restart\n");
 	local_irq_disable();
+#if defined(CONFIG_AR9)
+	lq_w32(lq_r32(LQ_RCU_PPE_CONF) & ~(3 << 30),	LQ_RCU_PPE_CONF);
+#endif
 	lq_w32(lq_r32(LQ_RCU_RST) | LQ_RCU_RST_ALL,	LQ_RCU_RST);
 	for(;;);
 }

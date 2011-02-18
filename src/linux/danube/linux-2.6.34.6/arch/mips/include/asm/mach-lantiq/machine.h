@@ -17,7 +17,8 @@ enum lantiq_mach_type {
 	LANTIQ_MACH_ARV4520PW,		/* Airties WAV-281, Arcor EasyboxA800 */
 	LANTIQ_MACH_ARV452CPW,		/* Arcor EasyboxA801 */
 	LANTIQ_MACH_ARV4525PW,		/* Speedport W502V */
-	LANTIQ_MACH_ARV752DPW,		/* Arcor easybox a803 */
+	LANTIQ_MACH_ARV752DPW,		/* Arcor easybox a802 */
 	LANTIQ_MACH_ARV752DPW22,	/* Arcor easybox a803 */
 	LANTIQ_MACH_ARV7518PW,		/* ASTORIA */
+	LANTIQ_MACH_WMBR,		/* ASTORIA */
 };

@@ -1,8 +1,7 @@
-# CONFIG_AR9 is not set
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.34.8
-# Sat Feb 12 21:18:48 2011
+# Fri Feb 18 01:45:14 2011
 #
 CONFIG_MIPS=y
 
@@ -55,6 +54,7 @@ CONFIG_LANTIQ=y
 # CONFIG_ALCHEMY_GPIO_INDIRECT is not set
 CONFIG_SOC_LANTIQ=y
 CONFIG_SOC_LANTIQ_XWAY=y
+CONFIG_AR9=y
 
 #
 # Mips Machine
@@ -1641,7 +1641,7 @@ CONFIG_TRACING_SUPPORT=y
 CONFIG_HAVE_ARCH_KGDB=y
 # CONFIG_EARLY_PRINTK is not set
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyS1,115200 root=1f03 rootfstype=squashfs noinitrd machtype=ARV752DPW22 cp1_size=2M init=/sbin/init"
+CONFIG_CMDLINE="console=ttyS1,115200 root=1f03 rootfstype=squashfs noinitrd machtype=WMBR cp1_size=2M init=/sbin/init"
 CONFIG_CMDLINE_OVERRIDE=y
 
 #

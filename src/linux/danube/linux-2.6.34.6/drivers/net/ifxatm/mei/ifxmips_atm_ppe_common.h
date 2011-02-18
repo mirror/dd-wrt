@@ -1,15 +1,15 @@
 #ifndef IFXMIPS_ATM_PPE_COMMON_H
 #define IFXMIPS_ATM_PPE_COMMON_H
 
-#if defined(CONFIG_LANTIQ)
+#if defined(CONFIG_AR9)
+  #include "ifxmips_atm_ppe_ar9.h"
+#elif defined(CONFIG_LANTIQ)
   #include "ifxmips_atm_ppe_danube.h"
   #define CONFIG_DANUBE
 #elif defined(CONFIG_DANUBE) 
   #include "ifxmips_atm_ppe_danube.h"
 #elif defined(CONFIG_AMAZON_SE)
   #include "ifxmips_atm_ppe_amazon_se.h"
-#elif defined(CONFIG_AR9)
-  #include "ifxmips_atm_ppe_ar9.h"
 #elif defined(CONFIG_VR9)
   #include "ifxmips_atm_ppe_vr9.h"
 #else

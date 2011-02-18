@@ -15,6 +15,8 @@
 
 #define LQ_GPIO0_BASE_ADDR	0x1E100B10
 #define LQ_GPIO1_BASE_ADDR	0x1E100B40
+#define LQ_GPIO2_BASE_ADDR	0x1E100B70
+#define LQ_GPIO3_BASE_ADDR	0x1E100BA0
 #define LQ_GPIO_SIZE		0x30
 
 #define LQ_GPIO_OUT			0x00
@@ -26,6 +28,11 @@
 
 #define PINS_PER_PORT		16
 
+#ifdef CONFIG_AR9
+#define MAXPINS 56
+#else
+#define MAXPINS 32
+#endif
 #define lq_gpio_getbit(m, r, p)		!!(lq_r32(m + r) & (1 << p))
 #define lq_gpio_setbit(m, r, p)		lq_w32_mask(0, (1 << p), m + r)
 #define lq_gpio_clearbit(m, r, p)	lq_w32_mask((1 << p), 0, m + r)
@@ -47,8 +54,18 @@ int
 lq_gpio_setconfig(unsigned int pin, unsigned int reg, unsigned int val)
 {
 	void __iomem *membase = (void*)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-	if(pin >= (2 * PINS_PER_PORT))
+	if(pin >= MAXPINS)
 		return -EINVAL;
+	if(pin >= PINS_PER_PORT)
+	{
+		pin -= PINS_PER_PORT;
+		membase += LQ_GPIO_SIZE;
+	}
+	if(pin >= PINS_PER_PORT)
+	{
+		pin -= PINS_PER_PORT;
+		membase += LQ_GPIO_SIZE;
+	}
 	if(pin >= PINS_PER_PORT)
 	{
 		pin -= PINS_PER_PORT;
@@ -67,7 +84,7 @@ lq_gpio_request(unsigned int pin, unsigned int alt0,
 	unsigned int alt1, unsigned int dir, const char *name)
 {
 	void __iomem *membase = (void*)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-	if(pin >= (2 * PINS_PER_PORT))
+	if(pin >= MAXPINS)
 		return -EINVAL;
 	if(gpio_request(pin, name))
 	{
@@ -78,6 +95,16 @@ lq_gpio_request(unsigned int pin, unsigned int alt0,
 		gpio_direction_output(pin, 1);
 	else
 		gpio_direction_input(pin);
+	if(pin >= PINS_PER_PORT)
+	{
+		pin -= PINS_PER_PORT;
+		membase += LQ_GPIO_SIZE;
+	}
+	if(pin >= PINS_PER_PORT)
+	{
+		pin -= PINS_PER_PORT;
+		membase += LQ_GPIO_SIZE;
+	}
 	if(pin >= PINS_PER_PORT)
 	{
 		pin -= PINS_PER_PORT;

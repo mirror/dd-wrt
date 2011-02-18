@@ -183,10 +183,10 @@ typedef enum {
 
 #define IRAM0_BASE 		(0x00000)
 #define IRAM1_BASE 		(0x04000)
-#if defined(CONFIG_DANUBE)
-#define BRAM_BASE  		(0x0A000)
-#elif defined(CONFIG_AMAZON_SE) || defined(CONFIG_AR9) || defined(CONFIG_VR9)
+#if defined(CONFIG_AMAZON_SE) || defined(CONFIG_AR9) || defined(CONFIG_VR9)
 #define BRAM_BASE               (0x08000)
+#elif defined(CONFIG_DANUBE)
+#define BRAM_BASE  		(0x0A000)
 #endif
 #define XRAM_BASE		(0x18000)
 #define YRAM_BASE		(0x1A000)
@@ -310,16 +310,16 @@ typedef enum {
 #define AUX_ARC_GPIO_DATA	(0x10D)
 //      ARC_TO_MEI_MAILBOX[11] is a special location used to indicate
 //      page swap requests.
-#if defined(CONFIG_DANUBE)
-#define OMBOX_BASE      	0xDF80
-#define	ARC_TO_MEI_MAILBOX	0xDFA0
-#define IMBOX_BASE      	0xDFC0
-#define MEI_TO_ARC_MAILBOX	0xDFD0
-#elif defined(CONFIG_AMAZON_SE) || defined(CONFIG_AR9) || defined(CONFIG_VR9)
+#if defined(CONFIG_AMAZON_SE) || defined(CONFIG_AR9) || defined(CONFIG_VR9)
 #define OMBOX_BASE              0xAF80
 #define ARC_TO_MEI_MAILBOX      0xAFA0
 #define IMBOX_BASE              0xAFC0
 #define MEI_TO_ARC_MAILBOX      0xAFD0
+#elif defined(CONFIG_DANUBE)
+#define OMBOX_BASE      	0xDF80
+#define	ARC_TO_MEI_MAILBOX	0xDFA0
+#define IMBOX_BASE      	0xDFC0
+#define MEI_TO_ARC_MAILBOX	0xDFD0
 #endif
 
 #define MEI_TO_ARC_MAILBOXR	(MEI_TO_ARC_MAILBOX + 0x2C)
