@@ -477,6 +477,7 @@ rtl_hw_init(struct switch_dev *dev)
 		rtl_set(dev, RTL_PORT_REG(i, VID_INSERT), 1);
 		rtl_set(dev, RTL_PORT_REG(i, TAG_INSERT), 3);
 	}
+	rtl_w16(dev, 0, 6, 22, 0x873f); //enable rmii
 	rtl_hw_apply(dev);
 }
 

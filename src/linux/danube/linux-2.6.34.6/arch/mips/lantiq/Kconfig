@@ -28,7 +28,12 @@ choice
 config SOC_LANTIQ_XWAY
 	bool "XWAY"
 	select SOC_LANTIQ
+
+	
 endchoice
+
+config AR9
+	bool "AR9 DSL Driver extensions"
 
 #source "arch/mips/lantiq/falcon/Kconfig"
 source "arch/mips/lantiq/xway/Kconfig"
@@ -45,6 +50,8 @@ config LANTIQ_PROM_ASC0
 
 config LANTIQ_PROM_ASC1
 	bool "ASC1"
+
+
 endchoice
 endif
 

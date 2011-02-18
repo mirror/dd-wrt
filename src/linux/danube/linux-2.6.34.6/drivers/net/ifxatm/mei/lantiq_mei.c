@@ -1331,9 +1331,9 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 	#ifdef CONFIG_LANTIQ_AMAZON_SE
 	disable_irq (IFXMIPS_USB_OC_INT0);
 	disable_irq (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_LANTIQ_AR9)
-	disable_irq (IFXMIPS_USB_OC_INT0);
-	disable_irq (IFXMIPS_USB_OC_INT2);
+	#elif defined(CONFIG_IFXMIPS_AR9)
+	disable_irq (LQ_USB_OC_INT0);
+	disable_irq (LQ_USB_OC_INT2);
 	#elif defined(CONFIG_SOC_LANTIQ_XWAY)
 	disable_irq (LQ_USB_OC_INT);
 	#else

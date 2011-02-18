@@ -517,3 +517,34 @@ MIPS_MACHINE(LANTIQ_MACH_ARV752DPW22,
 			"ARV752DPW22 - Arcor A803",
 			arv752dpw22_init);
 
+
+static void __init
+arv752dpw_init(void)
+{
+#define ARV752DPW22_EBU			0x2
+#define ARV752DPW22_USB			32
+#define ARV752DPW22_RELAY		33
+	lq_register_gpio();
+	lq_register_gpio_ebu(ARV752DPW22_EBU);
+	lq_register_asc(0);
+	lq_register_asc(1);
+	lq_register_gpio_leds(arv752dpw22_leds_gpio, ARRAY_SIZE(arv752dpw22_leds_gpio));
+	lq_register_gpio_buttons(arv752dpw22_gpio_buttons, ARRAY_SIZE(arv752dpw22_gpio_buttons));
+	lq_register_nor(&arv75xx_flash_data);
+	lq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
+	lq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
+	lq_register_pci(&lq_pci_data);
+	lq_register_wdt();
+	xway_register_dwc(ARV752DPW22_USB);
+	arv75xx_register_ethernet();
+	gpio_request(ARV752DPW22_RELAY, "relay");
+	gpio_set_value(ARV752DPW22_RELAY, 1);
+	gpio_export(ARV752DPW22_RELAY, 0);
+}
+
+MIPS_MACHINE(LANTIQ_MACH_ARV752DPW,
+			"ARV752DPW",
+			"ARV752DPW - Arcor A802",
+			arv752dpw_init);
+
+
