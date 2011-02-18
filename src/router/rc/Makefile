@@ -163,6 +163,9 @@ endif
 ifeq ($(CONFIG_PPPOATM),y)
 CFLAGS += -DHAVE_PPPOATM
 endif
+ifeq ($(CONFIG_WMBR_G300NH),y)
+CFLAGS += -DHAVE_WMBR_G300NH
+endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
 endif

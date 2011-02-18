@@ -374,8 +374,11 @@
 // Belkin F5D7230 v3000 (BCM5350 cpu, flash ?? , fccid: Belkin PD5F5D72304)
 #define ROUTER_BELKIN_F5D7230_V3000 0x6011
 
+#ifdef HAVE_WMBR_G300NH
+#define ROUTER_BOARD_DANUBE 0x6101
+#else
 #define ROUTER_BOARD_DANUBE 0x610f
-
+#endif
 #define ROUTER_BOARD_STORM 0x6201	// value 1 is a fake to enable reset button code. real gpio is 60
 
 #define ROUTER_BOARD_ADM5120 0x630f
@@ -509,6 +512,7 @@
 #define ROUTER_BOARD_RT15N 0xa21c
 
 #define ROUTER_BOARD_TECHNAXX 0xa30f
+#ifdef HAVE_WMBR_G300NH
 
 
 
