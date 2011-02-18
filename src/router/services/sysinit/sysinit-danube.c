@@ -162,8 +162,23 @@ else
 		nvram_set("et0macaddr",
 			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
 				     eabuf));
+		nvram_set("et0macaddr_safe",
+			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				     eabuf));
 		close(s);
 	}
+#ifdef HAVE_WMBR_G300NH	
+	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_SES2, LED_OFF);
+	led_control(LED_DIAG, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
+#endif
+
 	/*
 	 * Set a sane date 
 	 */
