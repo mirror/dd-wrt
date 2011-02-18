@@ -112,6 +112,11 @@ static struct mtd_partition ifxmips_partitions[] = {
 		.offset = 0x0,
 		.size = 0x0,
 	},
+	{
+		.name = "fullflash",
+		.offset = 0x0,
+		.size = 0x0,
+	},
 };
 
 static struct mtd_partition ifxmips_meta_partition = {
@@ -233,16 +238,16 @@ lq_mtd_probe(struct platform_device *pdev)
 
 	/* dynamic size detection only if rootfs-part follows kernel-part */
 	if (kernel_part+1 == rootfs_part) {
-		for (i=0;i<0x60000;i+=0x10000)
+		for (i=0;i<0xa0000;i+=0x10000)
 		{
 		uimage_size = find_uImage_size(&lq_map,i);
 		if (uimage_size>0)
 		    break;
 		}
 		parts[0].offset=0;
-		parts[0].size=i-0x10000;
+		parts[0].size=i-lq_mtd->erasesize;
 		parts[1].offset=parts[0].size;
-		parts[1].size=0x10000;
+		parts[1].size=lq_mtd->erasesize;
 		parts[kernel_part].offset=i;
 		uimage_size &= ~(4096 -1);
 		uimage_size += 4096;
@@ -260,11 +265,13 @@ lq_mtd_probe(struct platform_device *pdev)
 	}
 
 	if (err <= 0) {
-			parts[3].size -= (lq_mtd->erasesize*2);
-			parts[4].offset = lq_mtd->size - (lq_mtd->erasesize*2);
+			parts[3].size -= (lq_mtd->erasesize*3);
+			parts[4].offset = lq_mtd->size - (lq_mtd->erasesize*3);
 			parts[4].size = lq_mtd->erasesize;
-			parts[5].offset = lq_mtd->size - lq_mtd->erasesize;
+			parts[5].offset = lq_mtd->size - (lq_mtd->erasesize);
 			parts[5].size = lq_mtd->erasesize;
+			parts[6].offset = 0;
+			parts[6].size = lq_mtd->size;
 			ifxmips_meta_partition.size -= lq_mtd->erasesize;
 	}
 

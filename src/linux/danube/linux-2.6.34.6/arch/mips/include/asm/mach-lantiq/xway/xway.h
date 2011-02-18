@@ -46,6 +46,7 @@ extern unsigned int lq_get_fpi_bus_clock(int bus);
 
 /*------------ RCU */
 #define LQ_RCU_BASE_ADDR	0xBF203000
+#define LQ_RCU_PPE_CONF 		((u32 *)(LQ_RCU_BASE_ADDR + 0x002C))
 
 /*------------ GPTU */
 #define LQ_GPTU_BASE_ADDR	0xB8000300
@@ -101,6 +102,8 @@ extern unsigned int lq_get_fpi_bus_clock(int bus);
 /*------------ GPIO */
 #define LQ_GPIO0_BASE_ADDR	0x1E100B10
 #define LQ_GPIO1_BASE_ADDR	0x1E100B40
+#define LQ_GPIO2_BASE_ADDR	0x1E100B70
+#define LQ_GPIO3_BASE_ADDR	0x1E100BA0
 #define LQ_GPIO_SIZE		0x30
 
 /*------------ SSC */

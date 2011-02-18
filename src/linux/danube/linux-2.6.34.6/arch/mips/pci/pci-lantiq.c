@@ -174,15 +174,53 @@ lq_pci_setup_gpio(int gpio)
 }
 
 
+/* ar9
 
+#define IFX_PCI_CLK_SHIFT			 20
+#define IFX_PCI_CLK_MASK			(0x1F << IFX_PCI_CLK_SHIFT)
+#define IFX_PCI_33MHZ			    (0xe << IFX_PCI_CLK_SHIFT)
+#define IFX_PCI_60MHZ			    (0x7 << IFX_PCI_CLK_SHIFT)
+#define IFX_PCI_INTERNAL_CLK_SRC    0x00010000 
+
+#define IFX_PCI_CLK_FROM_CGU        0x80000000
+#define IFX_PCI_CLK_RESET_FROM_CGU  0x40000000
+#define IFX_PCI_DELAY_SHIFT         21
+#define IFX_PCI_DELAY_MASK          (0x7 << IFX_PCI_DELAY_SHIFT)
+
+*/
+
+/* danube 
+#define CGU_PCI_CR_PADSEL               (*IFX_CGU_PCI_CR & (1 << 31))
+#define CGU_PCI_CR_RESSEL               (*IFX_CGU_PCI_CR & (1 << 30))
+#define CGU_PCI_CR_PCID_H               GET_BITS(*IFX_CGU_PCI_CR, 23, 21)
+#define CGU_PCI_CR_PCID_L               GET_BITS(*IFX_CGU_PCI_CR, 20, 18)
+
+#define IFX_PCI_CLK_SHIFT                       20
+#define IFX_PCI_CLK_MASK                        (0xF << IFX_PCI_CLK_SHIFT)
+#define IFX_PCI_33MHZ                           (8 << IFX_PCI_CLK_SHIFT)
+#define IFX_PCI_60MHZ                           (4 << IFX_PCI_CLK_SHIFT)
+#define IFX_PCI_INTERNAL_CLK_SRC                0x00010000 
+
+#define IFX_PCI_CLK_FROM_CGU                    0x80000000
+#define IFX_PCI_CLK_RESET_FROM_CGU              0x40000000
+#define IFX_PCI_DELAY_SHIFT                     21
+#define IFX_PCI_DELAY_MASK                      (0x7 << IFX_PCI_DELAY_SHIFT)
+
+
+*/
 static int __init
 lq_pci_startup(struct lq_pci_data *conf)
 {
 	u32 temp_buffer;
 
 	/* set clock to 33Mhz */
+#ifdef CONFIG_AR9
+	lq_w32(lq_r32(LQ_CGU_IFCCR) & ~0x1f00000, LQ_CGU_IFCCR);
+	lq_w32(lq_r32(LQ_CGU_IFCCR) | 0xe00000,	LQ_CGU_IFCCR);
+#else
 	lq_w32(lq_r32(LQ_CGU_IFCCR) & ~0xf00000, LQ_CGU_IFCCR);
 	lq_w32(lq_r32(LQ_CGU_IFCCR) | 0x800000,	LQ_CGU_IFCCR);
+#endif
 	if (conf->clock == PCI_CLOCK_EXT)
 	{
 		lq_w32(lq_r32(LQ_CGU_IFCCR) & ~(1 << 16), LQ_CGU_IFCCR);
@@ -251,13 +289,15 @@ lq_pci_startup(struct lq_pci_data *conf)
 	/* toggle reset pin */
 	__gpio_set_value(21, 0);
 	wmb();
-	mdelay(1);
+	mdelay(2);
 	__gpio_set_value(21, 1);
+	mdelay(1);
 	return 0;
 }
 
 int __init
 pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
+	printk("lq_pci: trying to map slot %d\n", slot);
 	if(lq_pci_irq_map[slot])
 		return lq_pci_irq_map[slot];
 	printk("lq_pci: trying to map irq for unknown slot %d\n", slot);

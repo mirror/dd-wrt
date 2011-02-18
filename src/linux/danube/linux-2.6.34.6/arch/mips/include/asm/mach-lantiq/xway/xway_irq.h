@@ -30,8 +30,12 @@
 
 #define LQ_TIMER6_INT		(INT_NUM_IM1_IRL0 + 23)
 #define LQ_USB_INT			(INT_NUM_IM1_IRL0 + 22)
+#ifdef CONFIG_AR9
+#define LQ_USB_OC_INT		(INT_NUM_IM1_IRL0 + 28)
+#else
 #define LQ_USB_OC_INT		(INT_NUM_IM4_IRL0 + 23)
 
+#endif
 #define MIPS_CPU_TIMER_IRQ		7
 
 #define LQ_DMA_CH0_INT		(INT_NUM_IM2_IRL0)
