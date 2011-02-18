@@ -74,6 +74,9 @@ endif
 ifeq ($(CONFIG_WZRG450),y)
 CFLAGS += -DHAVE_WZRG450
 endif
+ifeq ($(CONFIG_DANUBE),y)
+CFLAGS += -DHAVE_DANUBE
+endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
 endif
