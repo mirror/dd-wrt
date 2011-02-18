@@ -81,7 +81,12 @@ void start_sysinit(void)
 		int copy[6];
 		int i;
 #ifdef HAVE_WNDR3700
+
+#ifdef HAVE_WNDR3700V2
+		fseek(fp, 0xff0000, SEEK_SET);
+#else
 		fseek(fp, 0x7f0000, SEEK_SET);
+#endif
 		fread(mactmp, 6, 1, fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
