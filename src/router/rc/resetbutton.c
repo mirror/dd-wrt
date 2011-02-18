@@ -314,6 +314,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WMBR_G300NH)
+int getbuttonstate()
+{
+	int ret = get_gpio(37);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #endif
 #if defined(HAVE_GATEWORX) || defined (HAVE_STORM)
 
@@ -557,7 +566,7 @@ void period_check(int sig)
 	// time(&t);
 	// DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC)
+#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE)
 	val = getbuttonstate();
 #ifdef HAVE_WRK54G
 	if (val)
@@ -634,7 +643,7 @@ void period_check(int sig)
 
 	int state = 0;
 
-#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC)
+#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE)
 	state = val;
 	int sesgpio = 0xfff;
 	int push;
@@ -644,6 +653,9 @@ void period_check(int sig)
 #elif defined(HAVE_WZRG300NH2)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
+#elif defined(HAVE_WMBR_G300NH)
+	sesgpio = 0x100;
+	val |= get_gpio(0);	//aoss pushbutton
 #elif defined(HAVE_WZRG450)
 	sesgpio = 0x108;
 	val |= get_gpio(8) << 8;	//aoss pushbutton
