@@ -1305,6 +1305,9 @@ int internal_getRouterBrand()
 #elif HAVE_LSX
 	setRouter("Ubiquiti LiteStation-SR71");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WMBR_G300NH
+	setRouter("Buffalo WBMR-HP-G300H");
+	return ROUTER_BOARD_DANUBE;
 #elif HAVE_VF803
 	setRouter("Vodafone Easybox 803");
 	return ROUTER_BOARD_DANUBE;
@@ -3130,6 +3133,15 @@ int led_control(int type, int act)
 		// number (f=disabled)
 	{
 #ifndef HAVE_BUFFALO
+#ifdef HAVE_WMBR_G300NH
+	case ROUTER_BOARD_DANUBE:
+		diag_gpio = 0x105;
+		ses_gpio = 0x10e;
+		connected_gpio = 111;
+		disconnected_gpio = 112;
+		power_gpio = 101;
+	break;
+#endif 
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WR941
 		diag_gpio = 0x102;
