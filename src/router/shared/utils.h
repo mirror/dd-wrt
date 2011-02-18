@@ -512,7 +512,6 @@
 #define ROUTER_BOARD_RT15N 0xa21c
 
 #define ROUTER_BOARD_TECHNAXX 0xa30f
-#ifdef HAVE_WMBR_G300NH
 
 
 
