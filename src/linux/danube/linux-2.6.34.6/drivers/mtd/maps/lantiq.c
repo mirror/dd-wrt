@@ -265,10 +265,11 @@ lq_mtd_probe(struct platform_device *pdev)
 		parts[rootfs_part].offset = parts[kernel_part].offset + parts[kernel_part].size;
 		struct squashfs_super_block sb;
 		lq_map.copy_from(&lq_map, &sb, parts[rootfs_part].offset, sizeof(struct squashfs_super_block));
-		parts[rootfs_part].size = sb.bytes_used;
-		int jffsoffset = parts[rootfs_part].offset + parts[rootfs_part].size;
+		int jffsoffset = sb.bytes_used;
 		jffsoffset += (lq_mtd->erasesize - 1);
 		jffsoffset &= ~(lq_mtd->erasesize - 1);
+		parts[rootfs_part].size = jffsoffset;
+		jffsoffset += parts[rootfs_part].offset;
 		parts[7].offset = jffsoffset;
 		parts[7].size = (lq_mtd->size - (lq_mtd->erasesize*3)) - jffsoffset;
 		ifxmips_meta_partition.offset = parts[kernel_part].offset;
