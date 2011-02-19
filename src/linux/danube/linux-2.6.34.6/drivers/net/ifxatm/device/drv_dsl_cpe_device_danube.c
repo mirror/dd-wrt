@@ -8434,7 +8434,11 @@ DSL_Error_t DSL_DRV_DEV_LED_FirmwareInit(
        (FwVer.nMajorVersion == DSL_DANUBE_FW_MAJOR_NUMBER))
    {
       /* Configure GPIO[9] for OUTPUT */
+#ifdef CONFIG_AR9
+      nData |= (1<<16);
+#else
       nData |= (1<<9);
+#endif
    }
 #endif /* defined(INCLUDE_ADSL_LED)*/
 
