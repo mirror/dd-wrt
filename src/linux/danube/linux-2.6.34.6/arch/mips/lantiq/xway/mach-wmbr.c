@@ -87,6 +87,7 @@ static struct lq_pci_data lq_pci_data = {
 
 static struct lq_eth_data lq_eth_data = {
 	.mii_mode = REV_MII_MODE,
+	.mac		= "\xff\xff\xff\xff\xff\xff",
 };
 
 static void __init
@@ -100,6 +101,8 @@ wmbr_init(void)
 	lq_register_nor(&wmbr_flash_data);
 	lq_register_wdt();
 	lq_register_pci(&lq_pci_data);
+#define WMBR_BRN_MAC			0x1fd0024
+	memcpy_fromio(lq_eth_data.mac,(void *)KSEG1ADDR(LQ_FLASH_START + WMBR_BRN_MAC), 6);
 	lq_register_ethernet(&lq_eth_data);
 	xway_register_dwc(36);
 	lq_register_crypto("lq_ar9_deu");
