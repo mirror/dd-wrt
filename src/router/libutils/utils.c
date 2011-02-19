@@ -3133,15 +3133,15 @@ int led_control(int type, int act)
 		// number (f=disabled)
 	{
 #ifndef HAVE_BUFFALO
-#ifdef HAVE_WMBR_G300NH
 	case ROUTER_BOARD_DANUBE:
+#ifdef HAVE_WMBR_G300NH
 		diag_gpio = 0x105;
 		ses_gpio = 0x10e;
 		connected_gpio = 111;
 		disconnected_gpio = 112;
 		power_gpio = 101;
-	break;
 #endif 
+	break;
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WR941
 		diag_gpio = 0x102;
