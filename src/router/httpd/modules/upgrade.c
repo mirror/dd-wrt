@@ -328,7 +328,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_BUFFALO
-			if (!strncmp(buf, "bgn", 3)) {
+			if (!strncmp(buf, "bgn", 3) || !strncmp(buf, "WZR", 3) || !strncmp(buf, "WHR", 3) || !strncmp(buf, "WLA", 3) ) {
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
