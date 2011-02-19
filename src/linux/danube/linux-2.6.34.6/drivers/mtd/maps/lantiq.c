@@ -117,6 +117,11 @@ static struct mtd_partition ifxmips_partitions[] = {
 		.offset = 0x0,
 		.size = 0x0,
 	},
+	{
+		.name = "ddwrt",
+		.offset = 0x0,
+		.size = 0x0,
+	},
 };
 
 static struct mtd_partition ifxmips_meta_partition = {
@@ -258,14 +263,20 @@ lq_mtd_probe(struct platform_device *pdev)
 		
 		parts[kernel_part].size = uimage_size;
 		parts[rootfs_part].offset = parts[kernel_part].offset + parts[kernel_part].size;
-		parts[rootfs_part].size = ((lq_mtd->size >> 20) * 1024 * 1024) - parts[rootfs_part].offset;
-
+		struct squashfs_super_block sb;
+		lq_map.copy_from(&lq_map, &sb, parts[rootfs_part].offset, sizeof(struct squashfs_super_block));
+		parts[rootfs_part].size = sb.bytes_used;
+		int jffsoffset = parts[rootfs_part].offset + parts[rootfs_part].size;
+		jffsoffset += (lq_mtd->erasesize - 1);
+		jffsoffset &= ~(lq_mtd->erasesize - 1);
+		parts[7].offset = jffsoffset;
+		parts[7].size = (lq_mtd->size - (lq_mtd->erasesize*3)) - jffsoffset;
 		ifxmips_meta_partition.offset = parts[kernel_part].offset;
 		ifxmips_meta_partition.size = parts[kernel_part].size + parts[rootfs_part].size;
 	}
 
 	if (err <= 0) {
-			parts[3].size -= (lq_mtd->erasesize*3);
+//			parts[3].size -= (lq_mtd->erasesize*3);
 			parts[4].offset = lq_mtd->size - (lq_mtd->erasesize*3);
 			parts[4].size = lq_mtd->erasesize;
 			parts[5].offset = lq_mtd->size - (lq_mtd->erasesize);
