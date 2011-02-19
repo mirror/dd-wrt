@@ -168,6 +168,23 @@ else
 		close(s);
 	}
 #ifdef HAVE_WMBR_G300NH	
+	FILE *fp = fopen("/dev/mtdblock/7", "rb");
+	if (fp) {
+		char mactmp[6];
+		int copy[6];
+		int i;
+		char mac1[32];
+		fseek(fp, 0x1fd0024+12, SEEK_SET);
+		fread(mactmp, 6, 1, fp);
+		for (i = 0; i < 6; i++)
+			copy[i] = mactmp[i];
+		for (i = 0; i < 6; i++)
+			copy[i] &= 0xff;
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
+			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		eval("ifconfig", "wifi0", "hw", "ether", mac1);
+
+
 	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	led_control(LED_POWER, LED_ON);
