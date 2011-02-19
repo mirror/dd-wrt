@@ -53,15 +53,12 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
-
 /*
 	option unit		0
 	option encaps	llc
 	option vpi		1
 	option vci		32
 	option payload	bridged # some ISPs need this set to 'routed'
-
-
 
 	local cfg="$1"
 
@@ -138,17 +135,21 @@ void start_sysinit(void)
 	insmod("lantiq_atm");
 	insmod("drv_dsl_cpe_api");
 #ifdef HAVE_ANNEXB
-	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
+	sysprintf
+	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
 #elif HAVE_ANNEXA
-	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
+	sysprintf
+	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
 #else
-if (nvram_match("annex","a"))
-	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
-else
-	sysprintf("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
+	if (nvram_match("annex", "a"))
+		sysprintf
+		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
+	else
+		sysprintf
+		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
 #endif
-	nvram_default_get("vpi","1");
-	nvram_default_get("vci","32");
+	nvram_default_get("vpi", "1");
+	nvram_default_get("vci", "32");
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices();
 	struct ifreq ifr;
@@ -167,14 +168,14 @@ else
 				     eabuf));
 		close(s);
 	}
-#ifdef HAVE_WMBR_G300NH	
+#ifdef HAVE_WMBR_G300NH
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	if (fp) {
 		char mactmp[6];
 		int copy[6];
 		int i;
 		char mac1[32];
-		fseek(fp, 0x1fd0024+12, SEEK_SET);
+		fseek(fp, 0x1fd0024 + 12, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
@@ -183,7 +184,7 @@ else
 		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		eval("ifconfig", "wifi0", "hw", "ether", mac1);
-
+	}
 
 	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
