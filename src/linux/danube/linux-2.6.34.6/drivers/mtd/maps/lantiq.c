@@ -273,7 +273,7 @@ lq_mtd_probe(struct platform_device *pdev)
 		parts[7].offset = jffsoffset;
 		parts[7].size = (lq_mtd->size - (lq_mtd->erasesize*3)) - jffsoffset;
 		ifxmips_meta_partition.offset = parts[kernel_part].offset;
-		ifxmips_meta_partition.size = parts[kernel_part].size + parts[rootfs_part].size;
+		ifxmips_meta_partition.size = parts[kernel_part].size + parts[rootfs_part].size + parts[7].size;
 	}
 
 	if (err <= 0) {
@@ -284,7 +284,7 @@ lq_mtd_probe(struct platform_device *pdev)
 			parts[5].size = lq_mtd->erasesize;
 			parts[6].offset = 0;
 			parts[6].size = lq_mtd->size;
-			ifxmips_meta_partition.size -= lq_mtd->erasesize;
+//			ifxmips_meta_partition.size -= lq_mtd->erasesize;
 	}
 
 	add_mtd_partitions(lq_mtd, parts, num_parts);
