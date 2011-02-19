@@ -243,7 +243,7 @@ BOOL
 rtl8366sr_phy_setup(int ethUnit)
 {
     int     phyUnit;
-    uint32_t  phyHwStatus;
+    uint32_t  phyHwStatus, checkvalue;
 //    uint16_t  timeout;
     int     liveLinks = 0;    
 //    BOOL    foundPhy = FALSE;
@@ -262,6 +262,9 @@ rtl8366sr_phy_setup(int ethUnit)
     if(!init_first){
     	//smi_reset();
     	smi_init();
+    	switch_reg_read(0x6,&checkvalue);
+    	printk(KERN_EMERG "rtl8366sr register 0x6 state = %08X\n",checkvalue);
+    	switch_reg_write(0x6,0x108);
     
 		switch_reg_read(RTL8366S_CHIP_ID_REG,&phyHwStatus);
 		switch_reg_read(RTL8366S_CHIP_ID_REG,&phyHwStatus);
