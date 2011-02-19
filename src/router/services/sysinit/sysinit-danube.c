@@ -177,6 +177,8 @@ else
 	led_control(LED_BRIDGE, LED_OFF);
 	led_control(LED_WLAN, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
+	system2("gpio disable 1");
+	system2("gpio disable 18");
 #endif
 
 	/*
