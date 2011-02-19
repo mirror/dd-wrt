@@ -169,7 +169,7 @@ void start_sysinit(void)
 		close(s);
 	}
 #ifdef HAVE_WMBR_G300NH
-	FILE *fp = fopen("/dev/mtdblock/7", "rb");
+	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		char mactmp[6];
 		int copy[6];
