@@ -1307,6 +1307,8 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WMBR_G300NH
 	setRouter("Buffalo WBMR-HP-G300H");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_DANUBE;
 #elif HAVE_VF803
 	setRouter("Vodafone Easybox 803");
