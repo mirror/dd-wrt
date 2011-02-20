@@ -734,6 +734,9 @@ int internal_getRouterBrand()
 #elif HAVE_DIR615
 	setRouter("Dlink-DIR615 rev d");
 	return ROUTER_BOARD_DIR615D;
+#elif HAVE_NEPTUNE
+	setRouter("Neptune-Mini");
+	return ROUTER_BOARD_NEPTUNE;
 #elif HAVE_TECHNAXX
 	setRouter("TECHNAXX Router-150 Wifi-N");
 	return ROUTER_BOARD_TECHNAXX;
@@ -3683,6 +3686,11 @@ int led_control(int type, int act)
 		power_gpio = 0x102;
 		diag_gpio = 0x002;	// power blink
 		break;
+	case ROUTER_BOARD_NEPTUNE:
+//		usb_gpio = 0x108;
+		// 0x10c //unknown gpio label, use as diag
+		diag_gpio = 0x10c;		
+		break
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_ASUS_RTN16:
 	case ROUTER_NETCORE_NW618:

@@ -198,6 +198,9 @@ endif
 ifeq ($(CONFIG_TECHNAXX),y)
   CFLAGS += -DHAVE_TECHNAXX
 endif
+ifeq ($(CONFIG_NEPTUNE),y)
+  CFLAGS += -DHAVE_NEPTUNE
+endif
 ifeq ($(CONFIG_CORENET),y)
   CFLAGS += -DHAVE_CORENET
 endif
