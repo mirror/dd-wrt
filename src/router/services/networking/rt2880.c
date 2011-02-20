@@ -486,6 +486,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #elif HAVE_DIR600
 		fprintf(fp, "Ht_TxStream=1\n");
 		fprintf(fp, "Ht_RxStream=1\n");
+#elif HAVE_NEPTUNE
+		fprintf(fp, "Ht_TxStream=2\n");
+		fprintf(fp, "Ht_RxStream=2\n");
 #elif HAVE_RT10N
 		fprintf(fp, "Ht_TxStream=1\n");
 		fprintf(fp, "Ht_RxStream=1\n");
