@@ -96,16 +96,29 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 
 	/* set pointer to first reg address */
 	cal_data += 3;
+if (swap)
+{
 	while (*cal_data != 0xffff) {
 		u32 reg;
 		reg = le16_to_cpu(*cal_data++);
 		val = le16_to_cpu(*cal_data++);
-		val |= (le16_to_cpu(*cal_data++)) << 16;
+		val |= (le16_to_cpu(*cal_data++) << 16;
 
 		__raw_writel(val, mem + reg);
 		udelay(100);
 	}
+}else
+{
+	while (*cal_data != 0xffff) {
+		u32 reg;
+		reg = *cal_data++;
+		val = *cal_data++;
+		val |= (*cal_data++) << 16;
 
+		__raw_writel(val, mem + reg);
+		udelay(100);
+	}
+}
 	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
@@ -113,10 +126,9 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	printk(KERN_EMERG "bootstrap returns device %X:%X\n",dev->vendor,dev->device);
 	if (dev->device==0x0030) //AR9300 Hack
  	    {
- 		calcopy+=0x1000;
-		memcpy(wmac_data.eeprom_data,calcopy,sizeof(wmac_data.eeprom_data));
+ 		printk(KERN_EMERG "move calibration data offset %d\n",sizeof(wmac_data.eeprom_data));
+		memcpy(calcopy,calcopy+0x1000,sizeof(wmac_data.eeprom_data)-0x1000);
 		wmac_data.led_pin = 15;
-		dev->dev.platform_data = &wmac_data;	    
 	    }
 
 	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
