@@ -16,11 +16,11 @@
 #include <asm/mach-ar71xx/pci.h>
 
 struct ath9k_fixup {
-	u16		*cal_data;
-	unsigned	slot;
+	u16 *cal_data;
+	unsigned slot;
 };
 
-static int ath9k_num_fixups=0;
+static int ath9k_num_fixups = 0;
 static struct ath9k_fixup ath9k_fixups[2];
 
 extern struct ath9k_platform_data wmac_data;
@@ -33,7 +33,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	u32 bar0;
 	u32 val;
 	unsigned i;
-	u8 swap=0;
+	u8 swap = 0;
 
 	for (i = 0; i < ath9k_num_fixups; i++) {
 		if (ath9k_fixups[i].cal_data == NULL)
@@ -44,7 +44,6 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 		cal_data = ath9k_fixups[i].cal_data;
 		break;
 	}
-	
 
 	if (cal_data == NULL)
 		return;
@@ -56,11 +55,10 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 		return;
 	}
 
-	if (*cal_data == 0x5aa5)
-	    {
-	    printk(KERN_EMERG "detected swapped eeprom data\n");
-	    swap=1;
-	    }
+	if (*cal_data == 0x5aa5) {
+		printk(KERN_EMERG "detected swapped eeprom data\n");
+		swap = 1;
+	}
 
 	pr_info("pci %s: fixup device configuration\n", pci_name(dev));
 
@@ -96,44 +94,45 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 
 	/* set pointer to first reg address */
 	cal_data += 3;
-if (swap)
-{
-	while (*cal_data != 0xffff) {
-		u32 reg;
-		reg = le16_to_cpu(*cal_data++);
-		val = le16_to_cpu(*cal_data++);
-		val |= (le16_to_cpu(*cal_data++) << 16;
+	if (swap) {
+		while (*cal_data != 0xffff) {
+			u32 reg;
+			reg = le16_to_cpu(*cal_data++);
+			val = le16_to_cpu(*cal_data++);
+			val |= (le16_to_cpu(*cal_data++)) << 16;
 
-		__raw_writel(val, mem + reg);
-		udelay(100);
-	}
-}else
-{
-	while (*cal_data != 0xffff) {
-		u32 reg;
-		reg = *cal_data++;
-		val = *cal_data++;
-		val |= (*cal_data++) << 16;
+			__raw_writel(val, mem + reg);
+			udelay(100);
+		}
+	} else {
+		while (*cal_data != 0xffff) {
+			u32 reg;
+			reg = *cal_data++;
+			val = *cal_data++;
+			val |= (*cal_data++) << 16;
 
-		__raw_writel(val, mem + reg);
-		udelay(100);
+			__raw_writel(val, mem + reg);
+			udelay(100);
+		}
 	}
-}
 	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
 
-	printk(KERN_EMERG "bootstrap returns device %X:%X\n",dev->vendor,dev->device);
-	if (dev->device==0x0030) //AR9300 Hack
- 	    {
- 		printk(KERN_EMERG "move calibration data offset %d\n",sizeof(wmac_data.eeprom_data));
-		memcpy(calcopy,calcopy+0x1000,sizeof(wmac_data.eeprom_data)-0x1000);
+	printk(KERN_EMERG "bootstrap returns device %X:%X\n", dev->vendor,
+	       dev->device);
+	if (dev->device == 0x0030)	//AR9300 Hack
+	{
+		printk(KERN_EMERG "move calibration data offset %d\n",
+		       sizeof(wmac_data.eeprom_data));
+		memcpy(calcopy, calcopy + 0x1000,
+		       sizeof(wmac_data.eeprom_data) - 0x1000);
 		wmac_data.led_pin = 15;
-	    }
+	}
 
 	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
 	dev->revision = val & 0xff;
-	dev->class = val >> 8; /* upper 3 bytes */
+	dev->class = val >> 8;	/* upper 3 bytes */
 
 	pci_read_config_word(dev, PCI_COMMAND, &cmd);
 	cmd &= ~(PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
@@ -143,6 +142,7 @@ if (swap)
 
 	iounmap(mem);
 }
+
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ath9k_pci_fixup);
 
 void __init pci_enable_ath9k_fixup(unsigned slot, u16 *cal_data)
