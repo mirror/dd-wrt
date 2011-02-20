@@ -157,6 +157,9 @@ endif
 ifeq ($(CONFIG_LAGUNA),y)
 CFLAGS += -DHAVE_LAGUNA
 endif
+ifeq ($(CONFIG_NEPTUNE),y)
+CFLAGS += -DHAVE_NEPTUNE
+endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
