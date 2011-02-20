@@ -198,6 +198,9 @@ endif
 ifeq ($(CONFIG_RT10N),y)
   CFLAGS_EXTRA += -DHAVE_RT10N
 endif
+ifeq ($(CONFIG_NEPTUNE),y)
+  CFLAGS_EXTRA += -DHAVE_NEPTUNE
+endif
 ifeq ($(CONFIG_NP25G),y)
   CFLAGS_EXTRA += -DHAVE_NP25G
 endif
