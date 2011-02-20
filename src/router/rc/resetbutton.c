@@ -588,6 +588,8 @@ void period_check(int sig)
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_ECB9750) {
 		val = get_gpio(11) << 11;
+	} else if (brand == ROUTER_BOARD_NEPTUNE) {
+		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_WR5422) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_DIR600B) {
@@ -650,6 +652,9 @@ void period_check(int sig)
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
+#elif defined(HAVE_NEPTUNE)
+	sesgpio = 0x100;
+	val |= get_gpio(0);	//aoss pushbutton
 #elif defined(HAVE_WZRG300NH2)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
