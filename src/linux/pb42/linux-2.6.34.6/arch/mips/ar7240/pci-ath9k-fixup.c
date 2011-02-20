@@ -20,7 +20,7 @@ struct ath9k_fixup {
 	unsigned	slot;
 };
 
-static int ath9k_num_fixups;
+static int ath9k_num_fixups=0;
 static struct ath9k_fixup ath9k_fixups[2];
 
 extern struct ath9k_platform_data wmac_data;
@@ -33,11 +33,11 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	u32 bar0;
 	u32 val;
 	unsigned i;
+	u8 swap=0;
 
 	for (i = 0; i < ath9k_num_fixups; i++) {
 		if (ath9k_fixups[i].cal_data == NULL)
 			continue;
-
 		if (ath9k_fixups[i].slot != PCI_SLOT(dev->devfn))
 			continue;
 
@@ -51,10 +51,16 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 
 	calcopy = (u8 *)cal_data;
 
-	if (*cal_data != 0xa55a) {
+	if (*cal_data != 0xa55a && *cal_data != 0x5aa5) {
 		pr_err("pci %s: invalid calibration data\n", pci_name(dev));
 		return;
 	}
+
+	if (*cal_data == 0x5aa5)
+	    {
+	    printk(KERN_EMERG "detected swapped eeprom data\n");
+	    swap=1;
+	    }
 
 	pr_info("pci %s: fixup device configuration\n", pci_name(dev));
 
@@ -92,9 +98,9 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	cal_data += 3;
 	while (*cal_data != 0xffff) {
 		u32 reg;
-		reg = *cal_data++;
-		val = *cal_data++;
-		val |= (*cal_data++) << 16;
+		reg = le16_to_cpu(*cal_data++);
+		val = le16_to_cpu(*cal_data++);
+		val |= (le16_to_cpu(*cal_data++)) << 16;
 
 		__raw_writel(val, mem + reg);
 		udelay(100);
@@ -131,7 +137,6 @@ void __init pci_enable_ath9k_fixup(unsigned slot, u16 *cal_data)
 {
 	if (ath9k_num_fixups >= ARRAY_SIZE(ath9k_fixups))
 		return;
-
 	ath9k_fixups[ath9k_num_fixups].slot = slot;
 	ath9k_fixups[ath9k_num_fixups].cal_data = cal_data;
 	ath9k_num_fixups++;
