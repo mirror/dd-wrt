@@ -513,6 +513,7 @@
 
 #define ROUTER_BOARD_TECHNAXX 0xa30f
 
+#define ROUTER_BOARD_NEPTUNE 0xa40a
 
 
 #define NVROUTER "DD_BOARD"
