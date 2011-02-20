@@ -2032,7 +2032,7 @@ ag7240_oom_timer(unsigned long data)
     int val;
 
     ag7240_trc(data,"data");
-//    ag7240_rx_replenish(mac);
+    ag7240_rx_replenish(mac);
     if (ag7240_rx_ring_full(mac))
     {
         val = mod_timer(&mac->mac_oom_timer, jiffies+1);
