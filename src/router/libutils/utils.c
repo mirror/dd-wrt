@@ -3690,7 +3690,7 @@ int led_control(int type, int act)
 //		usb_gpio = 0x108;
 		// 0x10c //unknown gpio label, use as diag
 		diag_gpio = 0x10c;		
-		break
+		break;
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_ASUS_RTN16:
 	case ROUTER_NETCORE_NW618:
