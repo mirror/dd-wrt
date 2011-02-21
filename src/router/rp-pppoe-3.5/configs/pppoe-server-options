@@ -3,4 +3,4 @@
 require-pap
 login
 lcp-echo-interval 10
-lcp-echo-failure 2
+lcp-echo-failure 6

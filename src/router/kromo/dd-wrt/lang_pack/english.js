@@ -1310,6 +1310,7 @@ service.pppoesrv_radauthport="Radius Authentication Port";
 service.pppoesrv_radaccport="Radius Accounting Port";
 service.pppoesrv_radkey="Radius Shared Key";
 service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
+service.pppoesrv_peers="Max. concurrent PPPoE sessions";
 
 //help container
 var hpppoesrv = new Object();

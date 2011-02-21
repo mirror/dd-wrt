@@ -129,6 +129,10 @@ addEvent(window, "unload", function() {
 				<input maxlength="15" size="24" name="pppoeserver_remotemask" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remotemask"); %>" />
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_peers"); %></div>
+				<input maxlength="4" size="10" name="pppoeserver_peers" value="<% nvram_get("pppoeserver_peers"); %>" />
+			</div>
+			<div class="setting">
 				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_deflate" <% nvram_checked("pppoeserver_deflate", "1"); %> />
 			</div>
