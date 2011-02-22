@@ -114,7 +114,14 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		wan_gateway =
 		    wan_link ? nvram_safe_get("wan_gateway") :
 		    nvram_safe_get("pptp_server_ip");
-	} else if (!strcmp(wan_proto, "pppoe")) {
+	} else if (!strcmp(wan_proto, "pppoe")
+#ifdef HAVE_PPPOATM
+	|| !strcmp(wan_proto, "pppoa")
+#endif
+#ifdef HAVE_3G
+	|| !strcmp(wan_proto, "3g")
+#endif	
+	) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 		wan_netmask =
@@ -122,26 +129,6 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		wan_gateway =
 		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
 	} 
-#ifdef HAVE_PPPOATM
-	else if (!strcmp(wan_proto, "pppoa")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
-		wan_netmask =
-		    wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
-		wan_gateway =
-		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
-	}
-#endif
-#ifdef HAVE_3G
-	else if (!strcmp(wan_proto, "3g")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
-		wan_netmask =
-		    wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
-		wan_gateway =
-		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
-	}
-#endif
 #ifdef HAVE_L2TP
 	else if (!strcmp(wan_proto, "l2tp")) {
 		wan_ipaddr =
@@ -163,10 +150,18 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 
 	dns_list = get_dns_list();
 
-	if (!strcmp(wan_proto, "pppoe") || !strcmp(wan_proto, "pptp")
+	if (!strcmp(wan_proto, "pppoe") 
+	    || !strcmp(wan_proto, "pptp")
+#ifdef HAVE_3G
 	    || !strcmp(wan_proto, "3g")
+#endif
+#ifdef HAVE_PPPOATM
 	    || !strcmp(wan_proto, "pppoa")
-	    || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "heartbeat")) {
+#endif
+#ifdef HAVE_L2TP
+	    || !strcmp(wan_proto, "l2tp") 
+#endif
+	    || !strcmp(wan_proto, "heartbeat")) {
 		hidden1 = "";
 		hidden2 = "";
 		if (wan_link == 0) {
@@ -250,10 +245,18 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 	int wan_link = 0;
 	char buf[254];
 
-	if (!strcmp(wan_proto, "pppoe") || !strcmp(wan_proto, "pptp")
+	if (!strcmp(wan_proto, "pppoe") 
+	    || !strcmp(wan_proto, "pptp")
+#ifdef HAVE_3G
 	    || !strcmp(wan_proto, "3g")
+#endif
+#ifdef HAVE_PPPOATM
 	    || !strcmp(wan_proto, "pppoa")
-	    || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "heartbeat")) {
+#endif
+#ifdef HAVE_L2TP
+	    || !strcmp(wan_proto, "l2tp") 
+#endif
+	    || !strcmp(wan_proto, "heartbeat")) {
 
 		/*
 		 * get type [ refresh | reload ] 

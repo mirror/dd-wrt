@@ -1067,8 +1067,14 @@ static struct SERVICES services_def[] = {
 	{"start_3g", handle_pppoe},
 	{"stop_3g", handle_spppoe},
 #endif
+#ifdef HAVE_PPPOATM
+	{"start_pppoa", handle_pppoe},
+	{"stop_pppoa", handle_spppoe},
+#endif
 	{"start_pppoe", handle_pppoe},
+	{"stop_pppoe", handle_spppoe},
 	{"start_pptp", handle_pppoe},
+	{"stop_pptp", handle_spppoe},
 #ifdef HAVE_L2TP
 	{"start_l2tp", handle_pppoe},
 #endif
