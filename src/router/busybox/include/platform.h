@@ -152,11 +152,13 @@
 /* ---- Unaligned access ------------------------------------ */
 
 /* parameter is supposed to be an uint32_t* ptr */
-#if defined(i386) || defined(__x86_64__)
+#if defined(i386) || defined(__x86_64__) || defined(__powerpc__)
+# define move_from_unaligned_int(v, intp) ((v) = *(bb__aliased_int*)(intp))
 #define get_unaligned_u32p(u32p) (*(u32p))
 /* #elif ... - add your favorite arch today! */
 #else
 /* performs reasonably well (gcc usually inlines memcpy here) */
+# define move_from_unaligned_int(v, intp) (memcpy(&(v), (intp), sizeof(int)))
 #define get_unaligned_u32p(u32p) ({ uint32_t __t; memcpy(&__t, (u32p), 4); __t; })
 #endif
 

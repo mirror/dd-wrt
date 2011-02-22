@@ -488,6 +488,10 @@ int create_and_bind_dgram_or_die(const char *bindaddr, int port) FAST_FUNC;
 int create_and_connect_stream_or_die(const char *peer, int port) FAST_FUNC;
 /* Connect to peer identified by lsa */
 int xconnect_stream(const len_and_sockaddr *lsa) FAST_FUNC;
+
+/* Get local address of bound or accepted socket */
+len_and_sockaddr *get_sock_lsa(int fd) FAST_FUNC;
+
 /* Return malloc'ed len_and_sockaddr with socket address of host:port
  * Currently will return IPv4 or IPv6 sockaddrs only
  * (depending on host), but in theory nothing prevents e.g.
@@ -625,6 +629,7 @@ extern char *xmalloc_fgetline(FILE *file) FAST_FUNC;
 
 extern void die_if_ferror(FILE *file, const char *msg) FAST_FUNC;
 extern void die_if_ferror_stdout(void) FAST_FUNC;
+int fflush_all(void) FAST_FUNC;
 extern void xfflush_stdout(void) FAST_FUNC;
 extern void fflush_stdout_and_exit(int retval) NORETURN FAST_FUNC;
 extern int fclose_if_not_stdin(FILE *file) FAST_FUNC;
