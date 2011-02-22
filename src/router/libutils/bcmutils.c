@@ -488,9 +488,15 @@ int dns_to_resolv(void)
 	 */
 	if (dns_list->num_servers == 0 && (nvram_match("wan_proto", "pppoe")
 					   || nvram_match("wan_proto", "pptp")
+#ifdef HAVE_PPPOATM
 					   || nvram_match("wan_proto", "pppoa")
+#endif
+#ifdef HAVE_L2TP
 					   || nvram_match("wan_proto", "l2tp")
+#endif
+#ifdef HAVE_3G
 					   || nvram_match("wan_proto", "3g"))
+#endif
 	    && nvram_match("ppp_demand", "1"))
 		fprintf(fp_w, "nameserver 1.1.1.1\n");
 
