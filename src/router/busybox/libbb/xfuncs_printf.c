@@ -244,6 +244,10 @@ void FAST_FUNC xfflush_stdout(void)
 	}
 }
 
+int FAST_FUNC fflush_all(void)
+{
+	return fflush(NULL);
+}
 
 int FAST_FUNC bb_putchar(int ch)
 {

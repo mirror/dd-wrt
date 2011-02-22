@@ -3045,13 +3045,13 @@
 #define ping_full_usage "\n\n" \
        "Send ICMP ECHO_REQUEST packets to network hosts\n" \
      "\nOptions:" \
-     "\n	-4, -6		Force IPv4 or IPv6 hostname resolution" \
+     "\n	-4,-6		Force IP or IPv6 name resolution" \
      "\n	-c CNT		Send only CNT pings" \
-     "\n	-s SIZE		Send SIZE data bytes in packets (default=56)" \
-     "\n	-I iface/IP	Use interface or IP address as source" \
-     "\n	-W timeout	Seconds to wait for the first response (default:10)" \
+     "\n	-s SIZE		Send SIZE data bytes in packets (default:56)" \
+     "\n	-I IFACE/IP	Use interface or IP address as source" \
+     "\n	-W SEC		Seconds to wait for the first response (default:10)" \
      "\n			(after all -c CNT packets are sent)" \
-     "\n	-w deadline	Seconds until ping exits (default:infinite)" \
+     "\n	-w SEC		Seconds until ping exits (default:infinite)" \
      "\n			(can exit earlier with -c CNT)" \
      "\n	-q		Quiet, only displays output at start" \
      "\n			and when finished" \
@@ -3062,8 +3062,8 @@
        "Send ICMP ECHO_REQUEST packets to network hosts\n" \
      "\nOptions:" \
      "\n	-c CNT		Send only CNT pings" \
-     "\n	-s SIZE		Send SIZE data bytes in packets (default=56)" \
-     "\n	-I iface/IP	Use interface or IP address as source" \
+     "\n	-s SIZE		Send SIZE data bytes in packets (default:56)" \
+     "\n	-I IFACE/IP	Use interface or IP address as source" \
      "\n	-q		Quiet, only displays output at start" \
      "\n			and when finished" \
 
@@ -4337,6 +4337,9 @@
 #define traceroute_full_usage "\n\n" \
        "Trace the route to HOST\n" \
      "\nOptions:" \
+	USE_TRACEROUTE6( \
+     "\n	-4,-6	Force IP or IPv6 name resolution" \
+	) \
      "\n	-F	Set the don't fragment bit" \
      "\n	-I	Use ICMP ECHO instead of UDP datagrams" \
      "\n	-l	Display the ttl value of the returned packet" \
@@ -4353,6 +4356,26 @@
      "\n	-w wait		Time in seconds to wait for a response" \
      "\n			(default 3 sec)" \
      "\n	-g		Loose source route gateway (8 max)" \
+
+#define traceroute6_trivial_usage \
+       "[-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES]\n" \
+       "	[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-i IFACE]\n" \
+       "	HOST [BYTES]"
+#define traceroute6_full_usage "\n\n" \
+       "Trace the route to HOST\n" \
+     "\nOptions:" \
+     "\n	-d	Set SO_DEBUG options to socket" \
+     "\n	-n	Print numeric addresses" \
+     "\n	-r	Bypass routing tables, send directly to HOST" \
+     "\n	-v	Verbose" \
+     "\n	-m	Max time-to-live (max number of hops)" \
+     "\n	-p	Base UDP port number used in probes" \
+     "\n		(default is 33434)" \
+     "\n	-q	Number of probes per TTL (default 3)" \
+     "\n	-s	IP address to use as the source address" \
+     "\n	-t	Type-of-service in probe packets (default 0)" \
+     "\n	-w	Time in seconds to wait for a response (default 3)" \
+
 
 #define true_trivial_usage \
        ""
