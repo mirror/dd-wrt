@@ -2185,10 +2185,18 @@ int check_wan_link(int num)
 	int wan_link = 0;
 
 	if ((nvram_match("wan_proto", "pptp")
+#ifdef HAVE_L2TP
 	     || nvram_match("wan_proto", "l2tp")
+#endif
+#ifdef HAVE_PPPOE
 	     || nvram_match("wan_proto", "pppoe")
+#endif
+#ifdef HAVE_PPPOA
 	     || nvram_match("wan_proto", "pppoa")
+#endif
+#ifdef HAVE_3G
 	     || nvram_match("wan_proto", "3g")
+#endif
 	     || nvram_match("wan_proto", "heartbeat"))
 	    && !nvram_match("3gdata", "hso")) {
 		FILE *fp;
@@ -2268,30 +2276,25 @@ void *getUEnv(char *name)
 char *get_wan_ipaddr(void)
 {
 	char *wan_ipaddr;
+	char *wan_proto = nvram_safe_get("wan_proto");
 	int wan_link = check_wan_link(0);
 
-	if (nvram_match("wan_proto", "pptp")) {
+	if (!strcmp(wan_proto, "pptp")) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("pptp_get_ip") :
 		    nvram_safe_get("wan_ipaddr");
-	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	} else if (!strcmp(wan_proto, "pppoe") 
 #ifdef HAVE_PPPOATM
-	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoa")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	|| !strcmp(wan_proto, "pppoa")
 #endif
 #ifdef HAVE_3G
-	} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	|| !strcmp(wan_proto, "3g")
 #endif
+	) {
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 #ifdef HAVE_L2TP
-	} else if (nvram_match("wan_proto", "l2tp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("l2tp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
+	} else if (!strcmp(wan_proto, "l2tp")) {
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
 #endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
@@ -2738,9 +2741,15 @@ char *get_wan_face(void)
 	 * "ppp0", IFNAMSIZ); return localwanface; }
 	 */
 	if (nvram_match("wan_proto", "pptp")
+#ifdef HAVE_L2TP
 	    || nvram_match("wan_proto", "l2tp")
+#endif
+#ifdef HAVE_3G
 	    || nvram_match("wan_proto", "3g")
+#endif
+#ifdef HAVE_PPPOATM
 	    || nvram_match("wan_proto", "pppoa")
+#endif
 	    || nvram_match("wan_proto", "pppoe")) {
 		if (nvram_match("pppd_pppifname", ""))
 			strncpy(localwanface, "ppp0", IFNAMSIZ);
