@@ -256,10 +256,12 @@ ifeq ($(ARCH),powerpc)
 	cp busybox/.config_powerpc busybox/.config
 endif
 ifeq ($(CONFIG_IPV6),y)
+	echo "CONFIG_TRACEROUTE6=y" >> busybox/.config
 	echo "CONFIG_PING6=y" >> busybox/.config
 	echo "CONFIG_FEATURE_IPV6=y" >> busybox/.config
 	echo "CONFIG_FEATURE_PREFER_IPV4_ADDRESS=y" >> busybox/.config
 else
+	echo "# CONFIG_TRACEROUTE is not set" >> busybox/.config
 	echo "# CONFIG_PING6 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_IPV6 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_PREFER_IPV4_ADDRESS is not set" >> busybox/.config
