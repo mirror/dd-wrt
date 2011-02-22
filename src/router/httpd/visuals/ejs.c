@@ -2081,24 +2081,18 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	}
 
 	wan_link = check_wan_link(0);
-
-	if (nvram_match("wan_proto", "pptp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("pptp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
-	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	char *wan_proto = nvram_safe_get("wan_proto");
+	if (!strcmp(wan_proto, "pptp")) {
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
+	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
-	} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoa")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	|| !strcmp(wan_proto, "pppoa")
 #endif
 #ifdef HAVE_3G
-	} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
-#endif
+	|| !strcmp(wan_proto, "3g")
+#endif	
+	) {
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 #ifdef HAVE_L2TP
 	} else if (nvram_match("wan_proto", "l2tp")) {
 		wan_ipaddr =

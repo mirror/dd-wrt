@@ -1115,6 +1115,10 @@ static struct gozila_action gozila_actions[] = {
 	{"Status_Internet", "Connect_3g", "start_3g", 1, RESTART, NULL},	// for 
 	{"Status_Internet", "Disconnect_3g", "stop_3g", 2, SERVICE_RESTART, "stop_ppp"},	// for 
 #endif
+#ifdef HAVE_PPPOATM
+	{"Status_Internet", "Connect_pppoa", "start_pppoa", 1, RESTART, NULL},	// for 
+	{"Status_Internet", "Disconnect_pppoa", "stop_pppoa", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+#endif
 	{"Status_Internet", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for 
 	{"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp"},	// for 
 

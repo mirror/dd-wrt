@@ -185,28 +185,9 @@ void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
 	type = GOZILA_GET(wp, "wan_proto");
 	if (type == NULL)
 		type = nvram_safe_get("wan_proto");
-	if (!strcmp(type, "static"))
-		do_ej(NULL, "sas_static.asp", wp, NULL);
-#ifdef HAVE_PPPOE
-	else if (!strcmp(type, "pppoe"))
-		do_ej(NULL, "sas_pppoe.asp", wp, NULL);
-#endif
-#ifdef HAVE_PPTP
-	else if (!strcmp(type, "pptp"))
-		do_ej(NULL, "sas_pptp.asp", wp, NULL);
-#endif
-#ifdef HAVE_L2TP
-	else if (!strcmp(type, "l2tp"))
-		do_ej(NULL, "sas_l2tp.asp", wp, NULL);
-#endif
-#ifdef HAVE_HEARTBEAT
-	else if (!strcmp(type, "heartbeat"))
-		do_ej(NULL, "sas_heartbeat.asp", wp, NULL);
-#endif
-#ifdef HAVE_3G
-	else if (!strcmp(type, "3g"))
-		do_ej(NULL, "sas_3g.asp", wp, NULL);
-#endif
+	char ejname[32];
+	snprintf(ejname,31,"sas_%s",type);
+	do_ej(NULL, ejname, wp, NULL);
 }
 
 char *ej_get_sas_stage(webs_t wp, int argc, char_t ** argv)
