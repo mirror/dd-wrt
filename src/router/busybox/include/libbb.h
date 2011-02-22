@@ -1379,6 +1379,7 @@ extern const char bb_msg_requires_arg[];
 extern const char bb_msg_invalid_arg[];
 extern const char bb_msg_standard_input[];
 extern const char bb_msg_standard_output[];
+extern const char bb_msg_you_must_be_root[];
 
 extern const char bb_str_default[];
 /* NB: (bb_hexdigits_upcase[i] | 0x20) -> lowercase hex digit */
