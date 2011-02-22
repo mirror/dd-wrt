@@ -286,8 +286,9 @@ typedef unsigned long in_addr_t;
 /* We assume that systems which don't have IPv6
    headers don't have ntop and pton either */
 
-#if defined(INET6_ADDRSTRLEN) && defined(IPV6_V6ONLY) && !defined(NO_IPV6)
+#if defined(INET6_ADDRSTRLEN) && !defined(NO_IPV6)
 #  define HAVE_IPV6
+#  define IPV6_V6ONLY 26
 #  define ADDRSTRLEN INET6_ADDRSTRLEN
 #  if defined(SOL_IPV6)
 #    define IPV6_LEVEL SOL_IPV6
