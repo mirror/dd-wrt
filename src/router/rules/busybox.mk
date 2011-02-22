@@ -62,7 +62,6 @@ else
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
 endif
-	cd busybox && make oldconfig
 endif
 
 
