@@ -186,7 +186,7 @@ void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
 	if (type == NULL)
 		type = nvram_safe_get("wan_proto");
 	char ejname[32];
-	snprintf(ejname,31,"sas_%s",type);
+	snprintf(ejname,31,"sas_%s.asp",type);
 	do_ej(NULL, ejname, wp, NULL);
 }
 
