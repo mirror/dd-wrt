@@ -11,7 +11,7 @@
  * This code is derived from software contributed to Berkeley by
  * Mike Muuss.
  *
- * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 /* from ping6.c:
  * Copyright (C) 1999 by Randolph Chung <tausq@debian.org>
@@ -30,26 +30,25 @@
 #include "libbb.h"
 
 #if ENABLE_PING6
-#include <netinet/icmp6.h>
+# include <netinet/icmp6.h>
 /* I see RENUMBERED constants in bits/in.h - !!?
  * What a fuck is going on with libc? Is it a glibc joke? */
-#ifdef IPV6_2292HOPLIMIT
-#undef IPV6_HOPLIMIT
-#define IPV6_HOPLIMIT IPV6_2292HOPLIMIT
-#endif
+# ifdef IPV6_2292HOPLIMIT
+#  undef IPV6_HOPLIMIT
+#  define IPV6_HOPLIMIT IPV6_2292HOPLIMIT
+# endif
 #endif
 
 enum {
 	DEFDATALEN = 56,
 	MAXIPLEN = 60,
 	MAXICMPLEN = 76,
-	MAXPACKET = 65468,
 	MAX_DUP_CHK = (8 * 128),
 	MAXWAIT = 10,
 	PINGINTERVAL = 1, /* 1 second */
 };
 
-/* common routines */
+/* Common routines */
 
 static int in_cksum(unsigned short *buf, int sz)
 {
@@ -76,40 +75,41 @@ static int in_cksum(unsigned short *buf, int sz)
 
 #if !ENABLE_FEATURE_FANCY_PING
 
-/* simple version */
+/* Simple version */
 
-static char *hostname;
+struct globals {
+	char *hostname;
+	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
+} FIX_ALIASING;
+#define G (*(struct globals*)&bb_common_bufsiz1)
+#define INIT_G() do { } while (0)
 
 static void noresp(int ign UNUSED_PARAM)
 {
-	printf("No response from %s\n", hostname);
+	printf("No response from %s\n", G.hostname);
 	exit(EXIT_FAILURE);
 }
 
 static void ping4(len_and_sockaddr *lsa)
 {
-	struct sockaddr_in pingaddr;
 	struct icmp *pkt;
 	int pingsock, c;
-	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
 
 	pingsock = create_icmp_socket();
-	pingaddr = lsa->u.sin;
 
-	pkt = (struct icmp *) packet;
-	memset(pkt, 0, sizeof(packet));
+	pkt = (struct icmp *) G.packet;
+	memset(pkt, 0, sizeof(G.packet));
 	pkt->icmp_type = ICMP_ECHO;
-	pkt->icmp_cksum = in_cksum((unsigned short *) pkt, sizeof(packet));
+	pkt->icmp_cksum = in_cksum((unsigned short *) pkt, sizeof(G.packet));
 
-	c = xsendto(pingsock, packet, DEFDATALEN + ICMP_MINLEN,
-			   (struct sockaddr *) &pingaddr, sizeof(pingaddr));
+	xsendto(pingsock, G.packet, DEFDATALEN + ICMP_MINLEN, &lsa->u.sa, lsa->len);
 
 	/* listen for replies */
 	while (1) {
 		struct sockaddr_in from;
 		socklen_t fromlen = sizeof(from);
 
-		c = recvfrom(pingsock, packet, sizeof(packet), 0,
+		c = recvfrom(pingsock, G.packet, sizeof(G.packet), 0,
 				(struct sockaddr *) &from, &fromlen);
 		if (c < 0) {
 			if (errno != EINTR)
@@ -117,9 +117,9 @@ static void ping4(len_and_sockaddr *lsa)
 			continue;
 		}
 		if (c >= 76) {			/* ip + icmp */
-			struct iphdr *iphdr = (struct iphdr *) packet;
+			struct iphdr *iphdr = (struct iphdr *) G.packet;
 
-			pkt = (struct icmp *) (packet + (iphdr->ihl << 2));	/* skip ip hdr */
+			pkt = (struct icmp *) (G.packet + (iphdr->ihl << 2));	/* skip ip hdr */
 			if (pkt->icmp_type == ICMP_ECHOREPLY)
 				break;
 		}
@@ -131,39 +131,35 @@ static void ping4(len_and_sockaddr *lsa)
 #if ENABLE_PING6
 static void ping6(len_and_sockaddr *lsa)
 {
-	struct sockaddr_in6 pingaddr;
 	struct icmp6_hdr *pkt;
 	int pingsock, c;
 	int sockopt;
-	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
 
 	pingsock = create_icmp6_socket();
-	pingaddr = lsa->u.sin6;
 
-	pkt = (struct icmp6_hdr *) packet;
-	memset(pkt, 0, sizeof(packet));
+	pkt = (struct icmp6_hdr *) G.packet;
+	memset(pkt, 0, sizeof(G.packet));
 	pkt->icmp6_type = ICMP6_ECHO_REQUEST;
 
 	sockopt = offsetof(struct icmp6_hdr, icmp6_cksum);
 	setsockopt(pingsock, SOL_RAW, IPV6_CHECKSUM, &sockopt, sizeof(sockopt));
 
-	c = xsendto(pingsock, packet, DEFDATALEN + sizeof (struct icmp6_hdr),
-			   (struct sockaddr *) &pingaddr, sizeof(pingaddr));
+	xsendto(pingsock, G.packet, DEFDATALEN + sizeof(struct icmp6_hdr), &lsa->u.sa, lsa->len);
 
 	/* listen for replies */
 	while (1) {
 		struct sockaddr_in6 from;
 		socklen_t fromlen = sizeof(from);
 
-		c = recvfrom(pingsock, packet, sizeof(packet), 0,
+		c = recvfrom(pingsock, G.packet, sizeof(G.packet), 0,
 				(struct sockaddr *) &from, &fromlen);
 		if (c < 0) {
 			if (errno != EINTR)
 				bb_perror_msg("recvfrom");
 			continue;
 		}
-		if (c >= 8) {			/* icmp6_hdr */
-			pkt = (struct icmp6_hdr *) packet;
+		if (c >= ICMP_MINLEN) {			/* icmp6_hdr */
+			pkt = (struct icmp6_hdr *) G.packet;
 			if (pkt->icmp6_type == ICMP6_ECHO_REPLY)
 				break;
 		}
@@ -173,13 +169,16 @@ static void ping6(len_and_sockaddr *lsa)
 }
 #endif
 
-int ping_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int ping_main(int argc UNUSED_PARAM, char **argv)
+#if !ENABLE_PING6
+# define common_ping_main(af, argv) common_ping_main(argv)
+#endif
+static int common_ping_main(sa_family_t af, char **argv)
 {
 	len_and_sockaddr *lsa;
-#if ENABLE_PING6
-	sa_family_t af = AF_UNSPEC;
 
+	INIT_G();
+
+#if ENABLE_PING6
 	while ((++argv)[0] && argv[0][0] == '-') {
 		if (argv[0][1] == '4') {
 			af = AF_INET;
@@ -195,14 +194,14 @@ int ping_main(int argc UNUSED_PARAM, char **argv)
 	argv++;
 #endif
 
-	hostname = *argv;
-	if (!hostname)
+	G.hostname = *argv;
+	if (!G.hostname)
 		bb_show_usage();
 
 #if ENABLE_PING6
-	lsa = xhost_and_af2sockaddr(hostname, 0, af);
+	lsa = xhost_and_af2sockaddr(G.hostname, 0, af);
 #else
-	lsa = xhost_and_af2sockaddr(hostname, 0, AF_INET);
+	lsa = xhost_and_af2sockaddr(G.hostname, 0, AF_INET);
 #endif
 	/* Set timer _after_ DNS resolution */
 	signal(SIGALRM, noresp);
@@ -214,7 +213,7 @@ int ping_main(int argc UNUSED_PARAM, char **argv)
 	else
 #endif
 		ping4(lsa);
-	printf("%s is alive!\n", hostname);
+	printf("%s is alive!\n", G.hostname);
 	return EXIT_SUCCESS;
 }
 
@@ -222,7 +221,7 @@ int ping_main(int argc UNUSED_PARAM, char **argv)
 #else /* FEATURE_FANCY_PING */
 
 
-/* full(er) version */
+/* Full(er) version */
 
 #define OPT_STRING ("qvc:s:w:W:I:4" USE_PING6("6"))
 enum {
@@ -252,6 +251,9 @@ struct globals {
 	unsigned deadline;
 	unsigned timeout;
 	unsigned total_secs;
+	unsigned sizeof_rcv_packet;
+	char *rcv_packet; /* [datalen + MAXIPLEN + MAXICMPLEN] */
+	void *snd_packet; /* [datalen + ipv4/ipv6_const] */
 	const char *hostname;
 	const char *dotted;
 	union {
@@ -262,7 +264,7 @@ struct globals {
 #endif
 	} pingaddr;
 	char rcvd_tbl[MAX_DUP_CHK / 8];
-};
+} FIX_ALIASING;
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define pingsock     (G.pingsock    )
 #define if_index     (G.if_index    )
@@ -295,11 +297,11 @@ void BUG_ping_globals_too_big(void);
 } while (0)
 
 
-#define	A(bit)		rcvd_tbl[(bit)>>3]	/* identify byte in array */
-#define	B(bit)		(1 << ((bit) & 0x07))	/* identify bit in byte */
-#define	SET(bit)	(A(bit) |= B(bit))
-#define	CLR(bit)	(A(bit) &= (~B(bit)))
-#define	TST(bit)	(A(bit) & B(bit))
+#define A(bit)		rcvd_tbl[(bit)>>3]	/* identify byte in array */
+#define B(bit)		(1 << ((bit) & 0x07))	/* identify bit in byte */
+#define SET(bit)	(A(bit) |= B(bit))
+#define CLR(bit)	(A(bit) &= (~B(bit)))
+#define TST(bit)	(A(bit) & B(bit))
 
 /**************************************************************************/
 
@@ -369,19 +371,20 @@ static void sendping_tail(void (*sp)(int), const void *pkt, int size_pkt)
 
 static void sendping4(int junk UNUSED_PARAM)
 {
-	/* +4 reserves a place for timestamp, which may end up sitting
-	 * *after* packet. Saves one if() */
-	struct icmp *pkt = alloca(datalen + ICMP_MINLEN + 4);
+	struct icmp *pkt = G.snd_packet;
 
-	memset(pkt, 0, datalen + ICMP_MINLEN + 4);
+	//memset(pkt, 0, datalen + ICMP_MINLEN + 4); - G.snd_packet was xzalloced
 	pkt->icmp_type = ICMP_ECHO;
 	/*pkt->icmp_code = 0;*/
-	/*pkt->icmp_cksum = 0;*/
+	pkt->icmp_cksum = 0; /* cksum is calculated with this field set to 0 */
 	pkt->icmp_seq = htons(ntransmitted); /* don't ++ here, it can be a macro */
 	pkt->icmp_id = myid;
 
-	/* We don't do hton, because we will read it back on the same machine */
+	/* If datalen < 4, we store timestamp _past_ the packet,
+	 * but it's ok - we allocated 4 extra bytes in xzalloc() just in case.
+	 */
 	/*if (datalen >= 4)*/
+		/* No hton: we'll read it back on the same machine */
 		*(uint32_t*)&pkt->icmp_dun = monotonic_us();
 
 	pkt->icmp_cksum = in_cksum((unsigned short *) pkt, datalen + ICMP_MINLEN);
@@ -391,9 +394,9 @@ static void sendping4(int junk UNUSED_PARAM)
 #if ENABLE_PING6
 static void sendping6(int junk UNUSED_PARAM)
 {
-	struct icmp6_hdr *pkt = alloca(datalen + sizeof(struct icmp6_hdr) + 4);
+	struct icmp6_hdr *pkt = G.snd_packet;
 
-	memset(pkt, 0, datalen + sizeof(struct icmp6_hdr) + 4);
+	//memset(pkt, 0, datalen + sizeof(struct icmp6_hdr) + 4);
 	pkt->icmp6_type = ICMP6_ECHO_REQUEST;
 	/*pkt->icmp6_code = 0;*/
 	/*pkt->icmp6_cksum = 0;*/
@@ -402,6 +405,8 @@ static void sendping6(int junk UNUSED_PARAM)
 
 	/*if (datalen >= 4)*/
 		*(uint32_t*)(&pkt->icmp6_data8[4]) = monotonic_us();
+
+	//TODO? pkt->icmp_cksum = in_cksum(...);
 
 	sendping_tail(sendping6, pkt, datalen + sizeof(struct icmp6_hdr));
 }
@@ -491,7 +496,7 @@ static void unpack_tail(int sz, uint32_t *tp,
 	if (tp)
 		printf(" time=%u.%03u ms", triptime / 1000, triptime % 1000);
 	puts(dupmsg);
-	fflush(stdout);
+	fflush_all();
 }
 static void unpack4(char *buf, int sz, struct sockaddr_in *from)
 {
@@ -560,7 +565,6 @@ static void unpack6(char *packet, int sz, /*struct sockaddr_in6 *from,*/ int hop
 
 static void ping4(len_and_sockaddr *lsa)
 {
-	char packet[datalen + MAXIPLEN + MAXICMPLEN];
 	int sockopt;
 
 	pingsock = create_icmp_socket();
@@ -593,14 +597,14 @@ static void ping4(len_and_sockaddr *lsa)
 		socklen_t fromlen = (socklen_t) sizeof(from);
 		int c;
 
-		c = recvfrom(pingsock, packet, sizeof(packet), 0,
+		c = recvfrom(pingsock, G.rcv_packet, G.sizeof_rcv_packet, 0,
 				(struct sockaddr *) &from, &fromlen);
 		if (c < 0) {
 			if (errno != EINTR)
 				bb_perror_msg("recvfrom");
 			continue;
 		}
-		unpack4(packet, c, &from);
+		unpack4(G.rcv_packet, c, &from);
 		if (pingcount && nreceived >= pingcount)
 			break;
 	}
@@ -609,7 +613,6 @@ static void ping4(len_and_sockaddr *lsa)
 extern int BUG_bad_offsetof_icmp6_cksum(void);
 static void ping6(len_and_sockaddr *lsa)
 {
-	char packet[datalen + MAXIPLEN + MAXICMPLEN];
 	int sockopt;
 	struct msghdr msg;
 	struct sockaddr_in6 from;
@@ -669,8 +672,8 @@ static void ping6(len_and_sockaddr *lsa)
 	msg.msg_iov = &iov;
 	msg.msg_iovlen = 1;
 	msg.msg_control = control_buf;
-	iov.iov_base = packet;
-	iov.iov_len = sizeof(packet);
+	iov.iov_base = G.rcv_packet;
+	iov.iov_len = G.sizeof_rcv_packet;
 	while (1) {
 		int c;
 		struct cmsghdr *mp;
@@ -689,10 +692,11 @@ static void ping6(len_and_sockaddr *lsa)
 			 /* don't check len - we trust the kernel: */
 			 /* && mp->cmsg_len >= CMSG_LEN(sizeof(int)) */
 			) {
-				hoplimit = *(int*)CMSG_DATA(mp);
+				/*hoplimit = *(int*)CMSG_DATA(mp); - unaligned access */
+				move_from_unaligned_int(hoplimit, CMSG_DATA(mp));
 			}
 		}
-		unpack6(packet, c, /*&from,*/ hoplimit);
+		unpack6(G.rcv_packet, c, /*&from,*/ hoplimit);
 		if (pingcount && nreceived >= pingcount)
 			break;
 	}
@@ -708,26 +712,32 @@ static void ping(len_and_sockaddr *lsa)
 	}
 	printf(": %d data bytes\n", datalen);
 
+	G.sizeof_rcv_packet = datalen + MAXIPLEN + MAXICMPLEN;
+	G.rcv_packet = xzalloc(G.sizeof_rcv_packet);
 #if ENABLE_PING6
-	if (lsa->u.sa.sa_family == AF_INET6)
+	if (lsa->u.sa.sa_family == AF_INET6) {
+		/* +4 reserves a place for timestamp, which may end up sitting
+		 * _after_ packet. Saves one if() - see sendping4/6() */
+		G.snd_packet = xzalloc(datalen + sizeof(struct icmp6_hdr) + 4);
 		ping6(lsa);
-	else
+	} else
 #endif
+	{
+		G.snd_packet = xzalloc(datalen + ICMP_MINLEN + 4);
 		ping4(lsa);
+	}
 }
 
-int ping_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int ping_main(int argc UNUSED_PARAM, char **argv)
+static int common_ping_main(int opt, char **argv)
 {
 	len_and_sockaddr *lsa;
 	char *str_s;
-	int opt;
 
 	INIT_G();
 
 	/* exactly one argument needed; -v and -q don't mix; -c NUM, -w NUM, -W NUM */
 	opt_complementary = "=1:q--v:v--q:c+:w+:W+";
-	opt = getopt32(argv, OPT_STRING, &pingcount, &str_s, &deadline, &timeout, &str_I);
+	opt |= getopt32(argv, OPT_STRING, &pingcount, &str_s, &deadline, &timeout, &str_I);
 	if (opt & OPT_s)
 		datalen = xatou16(str_s); // -s
 	if (opt & OPT_I) { // -I
@@ -765,13 +775,25 @@ int ping_main(int argc UNUSED_PARAM, char **argv)
 #endif /* FEATURE_FANCY_PING */
 
 
+int ping_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+int ping_main(int argc UNUSED_PARAM, char **argv)
+{
+#if !ENABLE_FEATURE_FANCY_PING
+	return common_ping_main(AF_UNSPEC, argv);
+#else
+	return common_ping_main(0, argv);
+#endif
+}
+
 #if ENABLE_PING6
 int ping6_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int ping6_main(int argc UNUSED_PARAM, char **argv)
 {
-	argv[0] = (char*)"-6";
-	return ping_main(0 /* argc+1 - but it's unused anyway */,
-			argv - 1);
+# if !ENABLE_FEATURE_FANCY_PING
+	return common_ping_main(AF_INET6, argv);
+# else
+	return common_ping_main(OPT_IPV6, argv);
+# endif
 }
 #endif
 

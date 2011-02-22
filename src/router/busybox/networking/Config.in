@@ -833,6 +833,14 @@ config TRACEROUTE
 	help
 	  Utility to trace the route of IP packets
 
+config TRACEROUTE6
+	bool "traceroute6"
+	default y
+	depends on FEATURE_IPV6 && TRACEROUTE
+	help
+	  Utility to trace the route of IPv6 packets.
+
+
 config FEATURE_TRACEROUTE_VERBOSE
 	bool "Enable verbose output"
 	default n
