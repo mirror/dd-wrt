@@ -14,10 +14,12 @@ ifeq ($(CONFIG_IPTABLES),y)
 #	install iptables/extensions/*.so $(INSTALLDIR)/iptables/usr/lib/iptables
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/lib/iptables/*.so
 	install -D iptables/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables
+	install -D iptables/ip6tables $(INSTALLDIR)/iptables/usr/sbin/ip6tables
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables
 #	install -D iptables/iptables-restore $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
+	ln -sf /usr/sbin/ip6tables $(INSTALLDIR)/iptables/usr/sbin/ip6tables-restore
 #	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-save
 
         ifeq ($(CONFIG_L7),y)
