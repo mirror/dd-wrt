@@ -215,6 +215,7 @@ include rules/libnltiny.mk
 include rules/hotplug2.mk
 include rules/dsl_cpe_control.mk
 include rules/atm.mk
+include rules/aiccu.mk
 # Generic rules
 #
 
