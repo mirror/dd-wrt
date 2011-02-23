@@ -73,7 +73,7 @@ void start_radvd(void)
 
 	system2("sync");
 
-	ret = eval("radvd");
+	ret = eval("radvd", "-C", "/tmp/radvd.conf");
 	dd_syslog(LOG_INFO, "radvd : RADV daemon successfully started\n");
 
 	cprintf("done\n");
