@@ -1405,8 +1405,8 @@ static void configure_single(int count)
 	static char maxassoc[32];
 	static char wl_poll[32];
 	static int vapcount = 0;
-	static char inact[16];
-	static char inact_tick[16];
+	static char inact[36];
+	static char inact_tick[40];
 	if (count == 0)
 		vapcount = 0;
 
@@ -2088,6 +2088,17 @@ static void configure_single(int count)
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_default_get(mode, "ap");
 
+			sprintf(inact_tick, "%s_inact_tick", var);
+			sprintf(inact, "%s_inact", var);
+#ifdef HAVE_MAKSAT
+			sysprintf("iwpriv %s inact_tick %s", var,
+			nvram_default_get(inact_tick, "1"));
+			sysprintf("iwpriv %s inact %s", var, nvram_default_get(inact, "15"));
+#else
+			sysprintf("iwpriv %s inact_tick %s", var,
+			nvram_default_get(inact_tick, "15"));
+			sysprintf("iwpriv %s inact %s", var, nvram_default_get(inact, "300"));
+#endif
 			if (strcmp(m2, "sta")) {
 				char bridged[32];
 
