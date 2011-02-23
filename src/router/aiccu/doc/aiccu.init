@@ -1,0 +1,68 @@
+#! /bin/sh
+#
+# /etc/init.d/aiccu: start / stop AICCU
+#
+# Jeroen Massar <jeroen@sixxs.net>
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=aiccu
+DAEMON=/usr/sbin/${NAME}
+DESC="SixXS Automatic IPv6 Connectivity Client Utility (${NAME})"
+BACKGROUND=true
+
+# Options
+OPTIONS=""
+
+test -x $DAEMON || exit 0
+
+# Verify that the configuration file exists
+if [ ! -f /etc/aiccu.conf ]; then
+	echo "AICCU Configuration file /etc/aiccu.conf doesn't exist"
+	exit 0;
+fi
+
+# Verify that the configuration is correct
+if [ `grep -c "^username" /etc/aiccu.conf 2>/dev/null` -ne 1 ]; then
+	echo "AICCU is not configured, edit /etc/aiccu.conf first"
+	exit 0;
+fi
+
+# Verify that it is in daemonize mode, otherwise it won't ever return
+if [ `grep -c "^daemonize true" /etc/aiccu.conf 2>/dev/null` -ne 1 ]; then
+	echo "AICCU is not configured to daemonize on run"
+	exit 0;
+fi
+
+if [ -f /etc/default/${NAME} ]; then
+	. /etc/default/${NAME}
+fi
+
+if [ "$BACKGROUND" = "false" ]; then
+	exit 0;
+fi
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	start-stop-daemon --start --oknodo --quiet --exec $DAEMON -- start $OPTIONS
+	echo "$NAME."
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON -- stop
+	echo "$NAME."
+	;;
+  restart|reload|force-reload)
+	echo -n "Restarting $DESC: "
+	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON -- stop
+	sleep 2
+	start-stop-daemon --start --oknodo --quiet --exec $DAEMON -- start $OPTIONS
+	echo "$NAME."
+	;;
+  *)
+	echo "Usage: /etc/init.d/$NAME {start|stop|reload|force-reload|restart}" >&2
+	exit 1
+esac
+
+exit 0
+

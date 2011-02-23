@@ -1,0 +1,6 @@
+@comment $FreeBSD$
+etc/aiccu.conf.sample
+sbin/sixxs-aiccu
+%%DOCSDIR%%/README
+%%EXAMPLESDIR%%/aiccu.conf
+@dirrm %%EXAMPLESDIR%%
