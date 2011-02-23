@@ -1,0 +1,198 @@
+aiccu (20070115) stable; urgency=medium
+  * Fixup in Debian init script (based on original patch by Bernhard Schmidt).
+  * Change in redirections so that errors don't show in debconf menu's etc.
+  * NetBSD fixes as there is not always a Tunnel Device that
+    supports IPv6 (thanks to Geert Hendrickx).
+  * Gentoo ebuild update, adding depends and require ntp-client.
+  * RPM spec update, add build-requirement.
+  * Check return values of system commands.
+  * Added a big warning about running AICCU from Daemontools and similar
+    programs which run AICCU in a loop, thus hammering the TIC server.
+  * Be a bit smarter in checking for support of IPv6.
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Mon, 15 Jan 2007 11:00:42 +0000
+
+aiccu (20070107) stable; urgency=high
+  * 2007 Edition of AICCU.
+  * License change to standard 3-clause BSD license.
+    With thanks to Theo de Raadt, Marco d'Itri and Philipp Kern for
+    their wise words and reasoning for coming to this decision.
+  * High urgency because of the above and it fixing large problems.
+  * Fixed Mac OS X / Darwin support on the MacBookPro of Pim van Pelt.
+  * Added MTU, from TIC, configuration on most platforms.
+  * Fixed up silly linux bug, adding LL address to tunnels but not to tun/taps.
+  * Removed Win32 Alpha Endianess (reported by Christian Weisgerber).
+  * Fixed up alignment error in parseline() (reported by Christian Weisgerber).
+  * OpenBSD 4.0 support (patch provided by Christian Weisgerber).
+  * OpenBSD AYIYA fixup (patch provided by Pim van Pelt).
+  * Fedora/RPM init script fixup (bash case's don't fall through)
+    reported and patch supplied by Matt Domsch.
+  * NetBSD AYIYA support (noted by Tobias Riediger)
+    Works on NetBSD 4.x, for NetBSD 3.0 one needs to patch tun/tap to
+    support IPv6. Patch is available from the archives.
+  * local_ipv4_override option so one can use AICCU behind a NAT that
+    has been configured correctly to do proto-41 forwarding. This is
+    usually called a DMZ setup.
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun, 07 Jan 2007 14:00:42 +0000
+
+aiccu (20060806) stable; urgency=low
+  * Changelog version format change as the 'official' (before there where
+    legal issues as they don't understand the word 'SHOULD' which is cleary
+    defined in the IETF and now somebody simply uploaded it anyway it without
+    even asking or notifying us about it) debian packages which are broken,
+    old and unsupported would seem newer and thus this new version would not
+    get updated to even when folks would have the official AICCU repository
+    in their sources.list. This solves that issue.
+  * pidfile fixup and configuration parameter.
+  * Corrected Broker selection in debconf.
+  * Configuration file rewriting by debconf is now done in a 'nice' way.
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun,  6 Aug 2006 13:56:42 +0100 
+
+aiccu (2006-07-25) stable; urgency=low
+  * DragonFlyBSD fix
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Tue, 25 Jul 2006 11:22:42 +0100
+
+aiccu (2006-07-23) stable; urgency=low
+  * The Nina'th release.
+  * Verified AYIYA support on Windows, OpenBSD, FreeBSD and Linux ia32/AMD64/armeb.
+  * Disabled TSP and L2TP (Teepee) support as they are not finished.
+  * No more IPv4 interface as it is not used anymore.
+  * On AIX we now compile with xlc_r.
+  * Retrieves Tunnel Brokers from _aiccu.<search path> and from _aiccu.sixxs.net.
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun, 23 Jul 2006 16:48:42 +0100
+
+aiccu (2006-07-13) stable; urgency=low
+  * Added no-configure and defaultroute options.
+  * AYIYA now forks so that AYIYA heartbeats work.
+  * Ctrl-C handling
+  * Protocol and server can be specified in configuration file
+  * AYIYA fixes: header alignment, Win32 TAP 8.1 support
+  * TAP listing using --listtaps (windows)
+  * Confuration can now be saved using a menu entry in the GUI (windows)
+  * TAP interface renaming when it's the only TAP and name not in the config (windows)
+  * Fedora fixes by Matt Domsch
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Thu, 13 Jul 2006 22:42:42 +0100
+
+aiccu (2006-03-10) stable; urgency=low
+  * Changed Debian start/stop priority as noted by Mario 'BitKoenig' Holbe.
+    They now match openvpn/pppd etc.
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Fri, 10 Mar 2006 21:24:42 +0100
+
+aiccu (2005-12-05) stable; urgency=low
+  * DragonFlyBSD (uses the FreeBSD4 interface) added as noted by Geert Hendrickx.
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun, 14 Aug 2005 14:10:42 +0200
+
+aiccu (2005-08-14) stable; urgency=low
+  * Mac OS X typo-fix (reported by Wim Biemolt)
+  * GNUTLS support. TIC will go over TLS avoiding cleartext
+    negotiations where possible.
+  * Heartbeat stop & start per signal (requested by Peter Bieringer)
+  * AYIYA Heartbeating.
+  * L2TPv2 Support.
+  * TSP Support.
+  * Gary Coady's <gary@lyranthe.org> Debian/Ubuntu update:
+    * Use dpkg-buildpackage to generate deb files
+    * Remove configuration checks from Debian init script
+    * Use common print functions in Debian init script
+    * Add 'tunnels' parameter to aiccu, which reports available tunnels
+    * Return non-zero exit code if unable to successfully authenticate
+      to POP
+    * Log to stderr instead of stdout
+    * Send signal 0 to existing aiccu binary instead of SIGHUP
+    * Add debconf support
+    Thanks to Gary for these very nice addons!
+  * Added OpenBSD PortInfo by Thomas Kaschwig
+  * Added Makefile changes to support FreeBSD6, noted by Meno Abels
+  * Added _NETBSD_SOURCE define as mentioned by Maarten Dammers
+  * Changed aiccu_kame to do configuration differently depending
+    if the interface is a proto-41 one or a tun device.
+  * Solaris and AIX support + Endian Fixes.
+  * 'version' option for unix_console.
+  * 64bit fixes + compilation check against a big number of platforms.
+  * Multiple Tunnelbrokers Support using TXT records from _aiccu.sixxs.net DNS.
+  * AYIYA Port number set to 5072 (IANA assigned)
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun, 14 Aug 2005 14:10:42 +0200
+
+aiccu (2005-01-31) stable; urgency=low
+  * Full integration of AYIYA, thus normal request procedures
+  * Version -gui/-console correction
+  * FreeBSD/Darwin route fixes (reported by Peter van Dijk)
+  * Windows: New POP logos added
+  * Linklocals for AYIYA tunnels making MLD and thus multicast
+    work (reported by Marco d'Itri)
+  * fflush() during non-syslog logging so that AICCU logs
+    correctly when run from daemontools (Peter van Dijk)
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Mon, 31 Jan 2005 20:29:42 +0100
+
+aiccu (2005-01-09) stable; urgency=low
+
+  * Mum's birthday release
+  * MacOS X support (Marc Kramis)
+  * DEBUG messages are not logged anymore
+  * OpenBSD 2.x/3.x support (Wouter van Hemel)
+  * Don't overwrite config when doing a 'make install' (Wouter van Hemel)
+  * Manual page (Antonio Ospite)
+  * Windows Configuration directory based on GetWindowsDirectory()
+    (reported by Thomas B. Ruecker)
+  * Windows NAT message fix (reported by Thomas B. Ruecker)
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun, 9 Jan 2005 09:00:42 +0100
+
+aiccu (2004-09-17-beta2b) stable; urgency=low
+
+  * OpenBSD fixes (AO)
+  * debian/rules debclean - now calls the correct clean (A0)
+  * Debian dependency on iproute (MdI)
+  * Gentoo Port (Thorsten Becker)
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun, 12 Sep 2004 10:24:42 +0100
+
+aiccu (2004-09-09-beta2a) stable; urgency=low
+
+  * Compile with pendantic, removing C++ "//" comments (AO)
+  * Debian fixes: file permissions, distclean (AO)
+  * rc.d addon (AO)
+  * Remove superfluous CVS dirs (AO)
+  * init script fix specifying 'start' (RS)
+  * RPM_OPT_FLAGS passing (RS)
+  * License fixes, making it more open (PvD & MdI)
+  * RPM package (RS)
+  * FreeBSD 4.x + 5.x port (MA)
+  * Many more fixes and cleanups (JM)
+  Who/what:
+  * AO = Antonio Ospite
+  * RS = Robert Schiele
+  * PvD = Peter van Dijk
+  * MdI = Marco d'Itri
+  * MA = Meno Abels
+  * JM = Jeroen Massar
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Thu, 09 Sep 2004 10:24:42 +0100
+
+aiccu (2004-08-30-beta2) stable; urgency=low
+
+  * Updated LICENSE which should now be 100% free(tm)
+  * Local-IP fix when using heartbeat tunnels
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Mon, 30 Aug 2004 21:26:42 +0100
+
+aiccu (2004-08-29-beta2) stable; urgency=low
+
+  * Brand spanking new AICCU
+  * Compiles both on Windows and UNIX
+  * Supports:
+    - TIC
+    - 6in4-static
+    - 6in4-heartbeat
+    - AYIYA
+
+ -- Jeroen Massar <jeroen@sixxs.net>  Sun, 29 Aug 2004 20:55:42 +0100

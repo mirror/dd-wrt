@@ -1,0 +1,43 @@
+Template: aiccu/username
+Type: string
+Default:
+Description: Username
+ To successfully connect, you must have a valid username. This is
+ the same as the handle you use to log into the website.
+
+Template: aiccu/password
+Type: password
+Description: Password
+ To successfully connect, you must have a valid password. This is
+ the same password you use to log into the website.
+
+Template: aiccu/brokername
+Type: select
+Choices: ${brokers}
+Description: Tunnel Broker
+ Select the Tunnel Broker you would like to use.
+
+Template: aiccu/tunnelname
+Type: select
+Choices: ${tunnels}
+Description: Tunnel Name
+ If you have more than one tunnel configured in your account, you must
+ specify which tunnel should be activated.
+
+Template: aiccu/badauth
+Type: boolean
+Description: Recheck authentication details?
+ You most likely have given bad authentication details. Try to login through
+ the website of the Tunnel Broker or contact them to ask about problems.
+
+Template: aiccu/nobrokers
+Type: note
+Description: No Tunnel Brokers available
+ No Tunnel Brokers could be retrieved from DNS (_aiccu + _aiccu.sixxs.net)
+ this most likely indicates a DNS configuration problem.
+
+Template: aiccu/notunnels
+Type: note
+Description: No tunnels available
+ You currently have no tunnels available. Please go to the SixXS website
+ at http://www.sixxs.net/ to request a tunnel for your account.

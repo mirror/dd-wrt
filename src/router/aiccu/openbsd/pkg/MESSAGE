@@ -1,0 +1,12 @@
+Copy ${PREFIX}/share/examples/sixxs-aiccu/aiccu.conf to
+${SYSCONFDIR} and insert your account data.
+
+You can start the daemon with:
+/usr/local/sbin/sixxs-aiccu start ${SYSCONFDIR}/aiccu.conf
+
+Add the following to the /etc/rc.local script to start the daemon on boot:
+
+if [ -x ${PREFIX}/sbin/sixxs-aiccu -a -f ${SYSCONFDIR}/aiccu.conf ]; then
+        echo -n ' sixxs-aiccu'
+        ${PREFIX}/sbin/sixxs-aiccu start ${SYSCONFDIR}/aiccu.conf
+fi
