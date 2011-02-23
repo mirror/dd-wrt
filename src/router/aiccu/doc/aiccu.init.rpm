@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# description: Starts and stops the AICCU daemon
+#
+# aiccu: Starts and stops the AICCU daemon
+# description: hearbeat daemon for IPv6-in-IPv4 (Proto-41, AYIYA, Heartbeat) tunnels
+# pidfile: /var/run/aiccu.pid
+# config:  /etc/aiccu.conf
+# chkconfig: - 59 73
+# processname: aiccu
+
+# Source function library.
+if [ -f /etc/init.d/functions ] ; then
+  . /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ] ; then
+  . /etc/rc.d/init.d/functions
+else
+  exit 0
+fi
+
+# Avoid using root's TMPDIR
+unset TMPDIR
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Default options
+OPTIONS=
+
+if [ -f /etc/sysconfig/aiccu ]; then
+   . /etc/sysconfig/aiccu
+fi
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+# Check that aiccu.conf exists.
+[ -f /etc/aiccu.conf ] || exit 0
+
+# Verify that the configuration is correct
+if [ `grep -c "^username" /etc/aiccu.conf 2>/dev/null` -ne 1 ]; then
+	echo "AICCU is not configured, edit /etc/aiccu.conf first"
+	exit 0;
+fi
+
+RETVAL=0
+
+KIND="AICCU (Automatic IPv6 Connectivity Configuration Utility)"
+
+start() {
+	echo -n $"Starting $KIND services: "
+	daemon aiccu start $OPTIONS
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0  ] && touch /var/lock/subsys/aiccu || \
+	   RETVAL=1
+	return $RETVAL
+}	
+
+stop() {
+	echo -n $"Shutting down $KIND services: "
+	killproc aiccu
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/aiccu
+	echo ""
+	return $RETVAL
+}	
+
+restart() {
+	stop
+	start
+}	
+
+rhstatus() {
+	status aiccu
+}	
+
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  restart)
+	restart
+	;;
+  reload)
+  	restart
+	;;
+  status)
+  	rhstatus
+	;;
+  condrestart)
+  	[ -f /var/lock/subsys/aiccu ] && restart || :
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|reload|status|condrestart}"
+	exit 1
+esac
+
+exit $?
+

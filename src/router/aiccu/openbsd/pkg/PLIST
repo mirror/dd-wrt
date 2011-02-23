@@ -1,0 +1,8 @@
+@comment $OpenBSD$
+sbin/sixxs-aiccu
+share/doc/sixxs-aiccu/
+share/doc/sixxs-aiccu/HOWTO
+share/doc/sixxs-aiccu/LICENSE
+share/doc/sixxs-aiccu/README
+share/examples/sixxs-aiccu/
+share/examples/sixxs-aiccu/aiccu.conf

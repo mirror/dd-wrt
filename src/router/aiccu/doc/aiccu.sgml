@@ -1,0 +1,185 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+<!-- Process this file with docbook-to-man to generate an nroff manual
+     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
+     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
+     less'.  A typical entry in a Makefile or Makefile.am is:
+
+manpage.1: manpage.sgml
+	docbook-to-man $< > $@
+  -->
+
+  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
+  <!ENTITY dhfirstname "<firstname>Jeroen</firstname>">
+  <!ENTITY dhsurname   "<surname>Massar</surname>">
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY dhdate      "<date>January 09, 2005</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>jeroen@sixxs.net</email>">
+  <!ENTITY dhusername  "Jeroen Massar">
+  <!ENTITY dhucpackage "<refentrytitle>AICCU</refentrytitle>">
+  <!ENTITY dhpackage   "AICCU">
+
+  <!ENTITY debian      "<productname>Debian GNU/Linux</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2005</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>Automatic IPv6 Connectivity Configuration Utility</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>aiccu </command>
+      <arg choice="req">&lt;start|stop|tunnels|test|autotest|license&gt;</arg>
+      <arg choice="opt"><replaceable>config</replaceable></arg>
+
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+
+    <para>
+AICCU makes it very easy for anybody to get IPv6 connectivity
+everywhere they want. It uses the TIC (Tunnel Information & Control)
+protocol to request the information needed to setup a tunnel through
+which the connectivity is created.
+
+AICCU supports the following tunneling protocols:
+ - 6in4 static    (RFC 2893)
+ - 6in4 heartbeat (RFC 2893 + draft-massar-v6ops-heartbeat)
+ - tinc           (http://www.tinc-vpn.org)
+ - AYIYA          (draft-massar-v6ops-ayiya)
+
+As AYIYA even works from behind NAT's, thus unless there is a very
+restrictive firewall in place, anybody should be able to get IPv6
+connectivity without problems and everywhere they want.
+</para>
+
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    <variablelist>
+
+      <varlistentry>
+        <term>start</term>
+        <listitem>
+          <para>
+            Starts aiccu service.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>stop</term>
+        <listitem>
+          <para>
+            Stops aiccu service.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>tunnels</term>
+        <listitem>
+          <para>
+            Prints a list of currently available tunnels.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>test</term>
+        <listitem>
+          <para>
+            Builds the connection and runs a simple selftest allowing a user
+            to report this back as it should show most obvious problems.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>autotest</term>
+        <listitem>
+          <para>
+            Decription here
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>license</term>
+        <listitem>
+          <para>
+            Shows the license aiccu is released under.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><replaceable>config</replaceable></term>
+        <listitem>
+          <para>
+            Read the configuration from <replaceable>config</replaceable> file.
+          </para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+  
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>The AICCU <ulink url="http://www.sixxs.net/tools/aiccu/">page</ulink> at sixxs.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+
+    <para>AICCU was written by Jeroen Massar with contributions supplied a number of people as mentioned in the Changelog.</para>
+
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

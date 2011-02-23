@@ -1,0 +1,40 @@
+Howto AICCU
+~~~~~~~~~~~
+
+For AYIYA support:
+ - Windows & Mac OS X: Install the driver mentioned in the FAQ.
+   at http://www.sixxs.net/faq/
+ - Linux, *BSD: make sure that the tun/tap device is available.
+   NetBSD v3 users - check the IPv6 tun/tap patch on
+   http://www.sixxs.net/archive/sixxs/aiccu/unix/
+
+- Windows GUI client:
+  - Just run and follow the dialogs.
+
+- Window GUI client as a service:
+  - Run the GUI client without options.
+  - Choose all the correct settings and check that
+    the tunnel works.
+  - Select the "Auto Enable" button on the info page.
+  - Select the "Save Configuration" option from the menu.
+    (See screenshots for its location)
+  - Quit the GUI.
+  - Install it as a service using "aiccu /i"
+  - Then use "net start aiccu" or start it from the
+    service control manager (services.msc)
+
+  One can uninstall the service with "aiccu /u" and
+  of course use the start/stop options to start/stop it.
+
+- Unix/Windows console client:
+  - Edit /etc/aiccu.conf and fill in the required values.
+  - Run aiccu test; aiccu start
+
+If there any problems:
+ - read the SixXS FAQ at http://www.sixxs.net/faq/
+ - check the SixXS Forum at http://www.sixxs.net/forum/
+
+If then it still fails, contact the SixXS staff as
+described per http://www.sixxs.net/contact/
+For problem reports please read and use the "Reporting Problems" 
+section on that page to determine where the problem occurs.
