@@ -3,6 +3,7 @@
 
 # uncomment this to disable IPv6 support
 # DO_IPV6 = 0
+DO_IPV6 = 1
 
 ######################################################################
 # YOU SHOULD NOT NEED TO TOUCH ANYTHING BELOW THIS LINE
