@@ -1,0 +1,10 @@
+Notes on the OpenBSD port of AICCU.
+You should regenerate the checksums in the distinfo file in this directory.
+
+Something like this should do the trick:
+{ 
+   md5 aiccu_2007.01.07.tar.gz
+   sha1 aiccu_2007.01.07.tar.gz
+   rmd160 aiccu_2007.01.07.tar.gz
+   echo "SIZE (aiccu_2007.01.07.tar.gz) = `ls -l aiccu_2007.01.07.tar.gz | awk '{ print $5}'`
+} > distinfo

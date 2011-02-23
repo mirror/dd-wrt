@@ -1,0 +1,22 @@
+SixXS AICCU: Automatic IPv6 Connectivity Configuration Utility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+AICCU makes it very easy for anybody to get IPv6 connectivity
+everywhere they want. It uses the TIC (Tunnel Information & Control)
+protocol to request the information needed to setup a tunnel through
+which the connectivity is created.
+
+AICCU supports the following tunneling protocols:
+ - 6in4 static    (RFC 2893)
+ - 6in4 heartbeat (RFC 2893 + draft-massar-v6ops-heartbeat)
+ - tinc           (http://www.tinc-vpn.org)
+ - AYIYA          (draft-massar-v6ops-ayiya)
+
+As AYIYA even works from behind NAT's, thus unless there is a very
+restrictive firewall in place, anybody should be able to get IPv6
+connectivity without problems and everywhere they want.
+
+The main AICCU page, containing information, screenshots, updates
+and of course the software itself, unix source + binaries/packages
+and Windows binaries, can be downloaded from:
+
+WWW: http://www.sixxs.net/tools/aiccu/

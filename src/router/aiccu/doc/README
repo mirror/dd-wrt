@@ -1,0 +1,62 @@
+SixXS AICCU: Automatic IPv6 Connectivity Configuration Utility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+AICCU makes it very easy for anybody to get IPv6 connectivity
+everywhere they want. It uses the TIC (Tunnel Information & Control)
+protocol to request the information needed to setup a tunnel through
+which the connectivity is created.
+
+AICCU supports the following tunneling protocols:
+ - 6in4 static    (RFC 2893)
+ - 6in4 heartbeat (RFC 2893 + draft-massar-v6ops-heartbeat)
+ - AYIYA          (draft-massar-v6ops-ayiya)
+ 
+As AYIYA even works from behind NAT's, thus unless there is a very
+restrictive firewall in place, anybody should be able to get IPv6
+connectivity without problems and everywhere they want.
+
+WARNING: never run AICCU from DaemonTools or a similar automated
+'restart' tool/script. When AICCU does not start, it has a reason
+not to start which it gives on either the stdout or in the (sys)log
+file. The TIC server *will* automatically disable accounts which
+are detected to run in this mode.
+
+The main AICCU page, containing information, screenshots, updates
+and of course the software itself, unix source + binaries/packages
+and Windows binaries, can be downloaded from:
+
+   http://www.sixxs.net/tools/aiccu/
+
+Author
+~~~~~~
+The author of this code is:
+
+Jeroen Massar
+SixXS Staff <info@sixxs.net>
+http://www.sixxs.net/
+
+With patches accepted from other sources as can be found
+in the changelog.
+
+Contact
+~~~~~~~
+In the event that you find bugs or have questions please see:
+   http://www.sixxs.net/contact/
+which contains the contact details of the SixXS Staff.
+
+If you have problems using this tool you should of course first
+check the FAQ at http://www.sixxs.net/faq/ and check the Forum
+which can be found at http://www.sixxs.net/forum/
+
+If you are using this software please notify us of it. We are
+always interrested to hear in what various ways people are
+using our software.
+
+License
+~~~~~~~
+See the LICENSE file in the doc directory
+
+Copyright
+~~~~~~~~~
+Automatic IPv6 Connectivity Configuration Utility
+AICCU (C) Copyright 2003-2007 SixXS Staff <info@sixxs.net>
+

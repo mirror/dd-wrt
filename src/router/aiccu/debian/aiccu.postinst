@@ -1,0 +1,108 @@
+#!/bin/sh -e
+
+CONFIGFILE="/etc/aiccu.conf"
+TMPCONF=/etc/aiccu.conf.dpkg-tmp
+EXAMPLE=/usr/share/doc/aiccu/examples/aiccu.conf
+CTLINFO="# Under control from debconf, please use 'dpkg-reconfigure aiccu' to reconfigure"
+BINARY=/usr/sbin/aiccu
+
+. /usr/share/debconf/confmodule
+
+db_get aiccu/username
+USERNAME="$RET"
+
+db_get aiccu/password
+PASSWORD="$RET"
+
+AICCUOUT=$($BINARY brokers)
+
+db_get aiccu/brokername
+URL=$(echo "$AICCUOUT" | grep "$RET")
+PROTO=$(echo $URL | cut -f2 -d'|' | cut -f1 -d:)
+SERVER=$(echo $URL | cut -f2 -d'|' | cut -f3 -d/)
+
+db_get aiccu/tunnelname
+TUNNEL="$RET"
+
+db_stop
+
+if [ "$USERNAME" = "" ]; then
+	# Not configured yet, thus skip
+	exit 0;
+fi
+
+# Defaults when nothing gets chosen
+# This might happen because of broken DNS
+if [ "$PROTO" = "" ]; then
+	PROTO="tic"
+fi
+
+if [ "$SERVER" = "" ]; then
+	SERVER="tic.sixxs.net"
+fi
+
+# Make sure that files we create are not readable by anyone but us (root)
+umask 077
+
+# Check if the /etc/aiccu.conf is actually the example
+if [ diff -q $EXAMPLE $CONFIGFILE 2>/dev/null >/dev/null ]; then
+	DEFAULTCONFIG="true"
+else
+	DEFAULTCONFIG="false"
+fi
+
+# Install a default config when it didn't exist yet or it is the same as the example
+# bash uses '==', dash uses '=', thus use '!=' as that is the same
+if [ "$DEFAULTCONFIG" != "false" -o ! -e "$CONFIGFILE" ]; then
+
+	# Note that it is under debconf control
+	echo $CTLINFO >> $TMPCONF
+
+	# Replace the example lines so that they become normals
+	sed -e "s/^#username .*/username $USERNAME/; s/^#password .*/password $PASSWORD/; s/^#protocol .*/protocol $PROTO/; s/^#server .*/server $SERVER/; s/^#tunnel_id .*/tunnel_id $TUNNEL/;" < $EXAMPLE >> $TMPCONF
+
+# Modify the existing one
+else
+	# Note that it is under debconf control
+	if ! grep -q "^$CTLINFO" $CONFIGFILE; then
+		echo $CTLINFO >> $TMPCONF >>$TMPCONF
+	fi
+
+	# Make sure that all the variables can be stored somewhere
+	if ! grep -q "^username" $CONFIGFILE; then
+		if [ "$USERNAME" != "" ]; then
+			echo "username $USERNAME" >> $TMPCONF
+		fi
+	fi
+
+	if ! grep -q "^password" $CONFIGFILE; then
+		if [ "$PASSWORD" != "" ]; then
+			echo "password $PASSWORD" >> $TMPCONF
+		fi
+	fi
+
+	if ! grep -q "^protocol" $CONFIGFILE; then
+		if [ "$PROTO" != "" ]; then
+			echo "protocol $PROTO" >> $TMPCONF
+		fi
+	fi
+	if ! grep -q "^server" $CONFIGFILE; then
+		if [ "$SERVER" != "" ]; then
+			echo "server $SERVER" >> $TMPCONF
+		fi
+	fi
+
+	if ! grep -q "^tunnel_id" $CONFIGFILE; then
+		if [ "$TUNNEL" != "" ]; then
+			echo "tunnel_id $TUNNEL" >> $TMPCONF
+		fi
+	fi
+
+	sed -e "s/^username .*/username $USERNAME/; s/^password .*/password $PASSWORD/; s/^protocol .*/protocol $PROTO/; s/^server .*/server $SERVER/; s/^tunnel_id .*/tunnel_id $TUNNEL/;" < $CONFIGFILE >> $TMPCONF
+fi
+
+# Move it into place
+mv -f $TMPCONF $CONFIGFILE
+# Just in case, make sure the permissions are perfect and dandy
+chmod 600 $CONFIGFILE
+
