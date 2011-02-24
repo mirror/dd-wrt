@@ -2,7 +2,11 @@ iptables-clean:
 	$(MAKE) -C iptables clean
 
 iptables:
+ifeq ($(CONFIG_IPV6),y)
+	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1
+else
 	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
+endif
 
 iptables-devel:
 	$(MAKE) -j 4 -C iptables install-devel LIBDIR=/opt/openwrt/lib/ KERNEL_DIR=$(LINUXDIR)
@@ -14,12 +18,16 @@ ifeq ($(CONFIG_IPTABLES),y)
 #	install iptables/extensions/*.so $(INSTALLDIR)/iptables/usr/lib/iptables
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/lib/iptables/*.so
 	install -D iptables/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables
+ifeq ($(CONFIG_IPV6),y)
 	install -D iptables/ip6tables $(INSTALLDIR)/iptables/usr/sbin/ip6tables
+endif
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables
 #	install -D iptables/iptables-restore $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
+ifeq ($(CONFIG_IPV6),y)
 	ln -sf /usr/sbin/ip6tables $(INSTALLDIR)/iptables/usr/sbin/ip6tables-restore
+endif
 #	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-save
 
         ifeq ($(CONFIG_L7),y)
