@@ -2767,9 +2767,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pppoeserver_enabled", "0", 0},
 	{"pppoeserver_interface", "br0", 0},
 	{"pppoeradius_enabled", "0", 0},
-	{"pppoeserver_remoteaddr", "10.10.10.1", 0},
-	{"pppoeserver_remotenet", "10.10.10.0", 0},
-	{"pppoeserver_remotemask", "255.255.255.0", 0},
 	{"pppoeserver_bsdcomp", "0", 0},
 	{"pppoeserver_deflate", "0", 0},
 	{"pppoeserver_lzs", "0", 0},
@@ -2785,7 +2782,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pppoeserver_authserverport", "1812", 0},
 	{"pppoeserver_acctserverport", "1813", 0},
 	{"pppoeserver_sharedkey", "", 0},
-	{"pppoeserver_peers", "64", 0},
 #endif
 #ifdef HAVE_MILKFISH
 	{"milkfish_enabled", "0", 0},	/* MILKFISH enable=1|disable=0 */
