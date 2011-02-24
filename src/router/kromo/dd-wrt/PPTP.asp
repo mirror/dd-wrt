@@ -116,24 +116,29 @@ addEvent(window, "unload", function() {
 			<div class="label"><% tran("service.pptp_client"); %></div>
 			<input size="60" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
 		</div>
-		<div class="setting">
-			<div class="label"><% tran("service.pptp_chap"); %></div>
-			<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
-			<script type="text/javascript">
-			//<![CDATA[
-				var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
-				document.getElementById("pptpd_auth").value = var_pptpd_auth;
-			//]]>
-			</script>
-		</div>
+
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("radius.legend"); %></div>
-			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="show_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="show_layer_ext(this, 'idradius', 'idlocal', false)" /><% tran("share.disable"); %>
+		</div>
+		<div id="idlocal">
+			<fieldset>
+				<div class="setting">
+				<div class="label"><% tran("service.pptp_chap"); %></div>
+				<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
+				<script type="text/javascript">
+				//<![CDATA[
+					var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
+					document.getElementById("pptpd_auth").value = var_pptpd_auth;
+				//]]>
+				</script>
+				</div>
+			</fieldset>
 		</div>
 		<div id="idradius">
-	<fieldset>
+		<fieldset>
 		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
@@ -161,7 +166,7 @@ addEvent(window, "unload", function() {
 				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
 				<input size="20" maxlength="63" type="password" name="pptpd_radpass" value="d6nw5v1x2pc7st9m" />
 			</div>
-	</fieldset>
+		</fieldset>
 		</div>
 <% ifndef("RADIUSPLUGIN", "-->"); %>
 	</div>
