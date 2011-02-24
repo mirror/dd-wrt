@@ -2782,6 +2782,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pppoeserver_authserverport", "1812", 0},
 	{"pppoeserver_acctserverport", "1813", 0},
 	{"pppoeserver_sharedkey", "", 0},
+	{"pppoeserver_pool", "192.168.1.10-100", 0}, 
 #endif
 #ifdef HAVE_MILKFISH
 	{"milkfish_enabled", "0", 0},	/* MILKFISH enable=1|disable=0 */
