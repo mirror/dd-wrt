@@ -2437,13 +2437,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_ca", "", 0},
 	{"openvpn_crl", "", 0},
 	{"openvpn_crt", "", 0},
-	{"openvpn_client", "", 0},	//old and invalid just to be compatible to old config for now
+	{"openvpn_client", "", 0},	//old and invalid just to be compatible to old config
 	{"openvpn_key", "", 0},
 	{"openvpn_lzo", "0", 0},
 	{"openvpn_proto", "udp", 0},
 	{"openvpn_mtu", "", 0},
 	{"openvpn_mssfix", "", 0},
-//	{"openvpn_certtype", "0", 0},
 	{"openvpn_config", "", 0},
 	{"openvpn_dh", "", 0},
 	{"openvpn_tlsauth", "", 0},
@@ -2452,10 +2451,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_cl2cl", "1", 0},
 	{"openvpn_dupcn", "0", 0},
 	{"openvpn_onwan", "0", 0},
-	{"openvpn_switch", "0", 0},	//switch between old/new style config for now
+	{"openvpn_switch", "0", 0},	//switch between old/new style config
 	{"openvpn_cipher", "bf-cbc", 0},
 	{"openvpn_auth", "sha1", 0},
-	{"openvpn_redirgate", "1", 0},
+	{"openvpn_redirgate", "0", 0},
 	{"openvpn_adv", "0", 0},
 	{"openvpn_tlscip", "0", 0},
 
