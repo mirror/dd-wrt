@@ -203,12 +203,13 @@ static void do_pppoeconfig(FILE * fp)
 
 void start_pppoeserver(void)
 {
+	FILE *fp;
 	if (nvram_default_match("pppoeserver_enabled", "1", "0")) {
 		add_pppoe_natrule();
 		if (nvram_default_match("pppoeradius_enabled", "0", "0")) {
 
 			mkdir("/tmp/pppoeserver", 0777);
-			FILE *fp =
+			fp =
 			    fopen("/tmp/pppoeserver/pppoe-server-options",
 				  "wb");
 			do_pppoeconfig(fp);
@@ -260,7 +261,7 @@ void start_pppoeserver(void)
 		} else {
 
 			mkdir("/tmp/pppoeserver", 0777);
-			FILE *fp =
+			fp =
 			    fopen("/tmp/pppoeserver/pppoe-server-options",
 				  "wb");
 			do_pppoeconfig(fp);
