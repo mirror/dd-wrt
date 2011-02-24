@@ -495,9 +495,9 @@ int dns_to_resolv(void)
 					   || nvram_match("wan_proto", "l2tp")
 #endif
 #ifdef HAVE_3G
-					   || nvram_match("wan_proto", "3g"))
+					   || nvram_match("wan_proto", "3g")
 #endif
-	    && nvram_match("ppp_demand", "1"))
+	    ) && nvram_match("ppp_demand", "1"))
 		fprintf(fp_w, "nameserver 1.1.1.1\n");
 
 	fclose(fp_w);
