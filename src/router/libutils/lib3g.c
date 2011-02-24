@@ -217,6 +217,8 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	    ("usb_modeswitch -v 0x12d1 -p 0x1523 -M 55534243123456780000000000000011060000000000000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1557 -M 55534243123456780000000000000011060000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1c05 -M 55534243123456780000000000000011060000000000000000000000000000");
 	sleep(2);
 }
 
@@ -369,6 +371,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1491, "option", "0", "0", 2, NULL, "Huawei R201"},	//
 	{0x12d1, 0x1557, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173"},	//
 	{0x12d1, 0x14a5, "option", "0", "0", 2, NULL, "Huawei E173"},	//
+	{0x12d1, 0x1c05, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173"},	//
 
 	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
 
