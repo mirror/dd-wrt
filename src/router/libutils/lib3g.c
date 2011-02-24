@@ -200,27 +200,27 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780600000080000601000000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1446 -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x1446 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x14ad -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x14ad -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x14c1 -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x14c1 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x14c6 -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x14c6 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1521 -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x1521 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1523 -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x1523 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1553 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1557 -M 55534243123456780000000000000011060000000000000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x1557 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1c0b -M 55534243123456780000000000000011062000000100000000000000000000");
 	sleep(2);
@@ -253,6 +253,7 @@ static void modeswitch_nokia(int needreset, char *controldev)
 		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
 	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x0421\n");
 	fprintf(out, "DefaultProduct=0x0610\n");
@@ -263,6 +264,29 @@ static void modeswitch_nokia(int needreset, char *controldev)
 		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x0421\n");
+	fprintf(out, "DefaultProduct=0x0622\n");
+	fprintf(out, "TargetVendor=0x0421\n");
+	fprintf(out, "TargetProduct=0x0623\n");
+	fprintf(out, "CheckSuccess=20\n");
+	fprintf(out,
+		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x0421\n");
+	fprintf(out, "DefaultProduct=0x0627\n");
+	fprintf(out, "TargetVendor=0x0421\n");
+	fprintf(out, "TargetProduct=0x0612\n");
+	fprintf(out, "CheckSuccess=20\n");
+	fprintf(out,
+		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
 	sleep(2);
 }
 
@@ -447,7 +471,10 @@ static struct DEVICES devicelist[] = {
 	{0x0421, 0x060c, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-10 (cdrom mode)"},	//
 	{0x0421, 0x060e, "option", "0", "0", 2, NULL, "Nokia CS-10 (modem mode)"},	//
 	{0x0421, 0x0610, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-15 (cdrom mode)"},	//
-	{0x0421, 0x0612, "option", "0", "0", 2, NULL, "Nokia CS-15 (modem mode)"},	//
+	{0x0421, 0x0612, "option", "0", "0", 2, NULL, "Nokia CS-15/CS-18 (modem mode)"},	//
+	{0x0421, 0x0622, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-17 (cdrom mode)"},	//
+	{0x0421, 0x0623, "option", "0", "0", 2, NULL, "Nokia CS-17 (modem mode)"},	//
+	{0x0421, 0x0627, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
 
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
