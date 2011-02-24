@@ -1297,9 +1297,6 @@ service.pppoesrv_srv="RP-PPPoE Server Daemon";
 service.pppoesrv_interface="RP-PPPoE Server Interface";
 service.pppoesrv_srvopt="RP-PPPoE Server Options";
 service.pppoesrv_compr="Compression";
-service.pppoesrv_remoteaddr="Remote Start IP";
-service.pppoesrv_remotenet="Remote Network IP";
-service.pppoesrv_remotemask="Remote Network Mask";
 service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_limit="Session Limit per MAC";
@@ -1310,7 +1307,6 @@ service.pppoesrv_radauthport="Radius Authentication Port";
 service.pppoesrv_radaccport="Radius Accounting Port";
 service.pppoesrv_radkey="Radius Shared Key";
 service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
-service.pppoesrv_peers="Max. concurrent PPPoE sessions";
 
 //help container
 var hpppoesrv = new Object();

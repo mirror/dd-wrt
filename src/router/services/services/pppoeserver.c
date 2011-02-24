@@ -311,7 +311,13 @@ void start_pppoeserver(void)
 			fclose(fp);
 			makeipup();
 		}
-		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-R", nvram_safe_get("pppoeserver_remoteaddr"), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-N", nvram_safe_get("pppoeserver_peers"));	
+
+		//create the ip pool file
+		fp = fopen("/tmp/pppoeserver/pool", "wb");
+		fprintf(fp, "%s\n", nvram_safe_get("pppoeserver_pool"));
+		fclose(fp);
+
+		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-p", "/tmp/pppoeserver/pool");	
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
 	}

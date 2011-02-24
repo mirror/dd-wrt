@@ -117,20 +117,8 @@ addEvent(window, "unload", function() {
 				<% show_ifselect("pppoeserver_interface"); %>
 			</div>
 			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_remoteaddr"); %></div>
-				<input maxlength="15" size="24" name="pppoeserver_remoteaddr" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remoteaddr"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_remotenet"); %></div>
-				<input maxlength="15" size="24" name="pppoeserver_remotenet" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remotenet"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_remotemask"); %></div>
-				<input maxlength="15" size="24" name="pppoeserver_remotemask" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remotemask"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_peers"); %></div>
-				<input maxlength="4" size="10" name="pppoeserver_peers" value="<% nvram_get("pppoeserver_peers"); %>" />
+				<div class="label"><% tran("service.pptp_client"); %></div>
+				<input maxlength="19" size="19" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_pool"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
