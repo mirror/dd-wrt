@@ -260,12 +260,13 @@ void start_openvpn(void)
 		fprintf(fp, "fragment %s\n",
 			nvram_safe_get("openvpncl_mssfix"));
 	}
-	// Botho 22/05/2006 - start
+	if (nvram_match("openvpncl_lzo", "1"))
+		fprintf(fp, "comp-lzo adaptive\n");
+	else {
+		fprintf(fp, "comp-lzo no\n");
+	}
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
-	// end
-	if (nvram_match("openvpncl_lzo", "1"))
-		fprintf(fp, "comp-lzo yes\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 	if (nvram_match("openvpncl_tuntap", "tap"))
