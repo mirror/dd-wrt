@@ -149,10 +149,17 @@
 #define SWAP_LE64(x) (x)
 #endif
 
+#if __GNUC_PREREQ(4,4)
+# define FIX_ALIASING __attribute__((__may_alias__))
+#else
+# define FIX_ALIASING
+#endif
+
 /* ---- Unaligned access ------------------------------------ */
 
 /* parameter is supposed to be an uint32_t* ptr */
 #if defined(i386) || defined(__x86_64__) || defined(__powerpc__)
+typedef int      bb__aliased_int      FIX_ALIASING;
 # define move_from_unaligned_int(v, intp) ((v) = *(bb__aliased_int*)(intp))
 #define get_unaligned_u32p(u32p) (*(u32p))
 /* #elif ... - add your favorite arch today! */
