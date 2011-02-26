@@ -26,7 +26,7 @@
 #define DSL_DRV_MAX_DEVICE_NUMBER 1
 
 /* Include ADSL LED support */
-#define INCLUDE_ADSL_LED
+/* #undef  INCLUDE_ADSL_LED */
 
 /* Include deprecated functions */
 #define INCLUDE_DEPRECATED /**/
