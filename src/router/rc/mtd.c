@@ -73,7 +73,7 @@ static unsigned long calculate_checksum(int action, char *s, int size);
 #define TRX_MAGIC_F7D3301			0x20100322	/* Belkin Share Max; router's birthday ? */
 #define TRX_MAGIC_F7D3302			0x20090928	/* Belkin Share; router's birthday ? */
 #define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
-#define TRX_MAGIC_F7D8235V3			0x00017116	/* Belkin F7D8235V3 */
+#define TRX_MAGIC_F5D8235V3			0x00017116	/* Belkin F7D8235V3 */
 #define TRX_MAGIC_QA				0x12345678	/* Belkin: cfe: It's QA firmware */
 /* end */
 
@@ -242,7 +242,7 @@ int mtd_write(const char *path, const char *mtd)
 	if (brand == ROUTER_BELKIN_F7D3301 
 		|| brand == ROUTER_BELKIN_F7D3302
 		|| brand == ROUTER_BELKIN_F7D4302
-		|| brand == ROUTER_BELKIN_F7D8235V3) {
+		|| brand == ROUTER_BELKIN_F5D8235V3) {
 			if ((fp = fopen("/dev/mtdblock/1", "rb"))) {
 				fread(&trxhd, 4, 1, fp);
 				fclose(fp);
@@ -673,7 +673,7 @@ int mtd_write(const char *path, const char *mtd)
 	if (brand == ROUTER_BELKIN_F7D3301 
 		|| brand == ROUTER_BELKIN_F7D3302
 		|| brand == ROUTER_BELKIN_F7D4302
-		|| brand == ROUTER_BELKIN_F7D8235V3) {
+		|| brand == ROUTER_BELKIN_F5D8235V3) {
 
 		sector_start = 0;
 		unsigned long be_magic = STORE32_LE(trxhd);
