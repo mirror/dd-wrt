@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
     if (!strcmp(progname, "ip6tables"))
       return ip6tables_main(argc, argv);
     
-    if (!strcmp(progname, "ip6tables-save"))
-      return ip6tables_save_main(argc, argv);
+//    if (!strcmp(progname, "ip6tables-save"))
+//      return ip6tables_save_main(argc, argv);
     
     if (!strcmp(progname, "ip6tables-restore"))
       return ip6tables_restore_main(argc, argv);
