@@ -482,8 +482,8 @@
 
 #define ROUTER_BOARD_GW2388 0x980f
 
-// Belkin Share Max F7D8235v3 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 32MB ram, fccid: Belkin K7SF7D8235V3)
-#define ROUTER_BELKIN_F7D8235V3 0x9916
+// Belkin Share Max F5D8235v3 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 32MB ram, fccid: Belkin K7SF5D8235V3)
+#define ROUTER_BELKIN_F5D8235V3 0x9916
 
 // Belkin Share Max F7D3301v1 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3301V1)
 #define ROUTER_BELKIN_F7D3301 0x9a16
