@@ -1431,8 +1431,8 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardtype", "0xa4cf")
 	    && nvram_match("boardrev", "0x1100")) {
-		setRouter("Belkin F7D8235-4 v3");
-		return ROUTER_BELKIN_F7D8235V3;
+		setRouter("Belkin F5D8235-4 v3");
+		return ROUTER_BELKIN_F5D8235V3;
 	}
 	
 	if (nvram_match("boardtype", "0xd4cf")
