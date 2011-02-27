@@ -27,9 +27,6 @@ int main(int argc, char **argv) {
     
     if (!strcmp(progname, "iptables-restore"))
       return iptables_restore_main(argc, argv);
-
-    if (!strcmp(progname, "iptables-restore"))
-      return iptables_restore_main(argc, argv);
     
     fprintf(stderr, "iptables multi-purpose version: unknown applet name %s\n", progname);
     exit(1);

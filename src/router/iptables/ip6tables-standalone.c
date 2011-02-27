@@ -36,8 +36,13 @@
 #include <errno.h>
 #include <ip6tables.h>
 
+#ifdef IPTABLES_MULTI
+int
+ip6tables_main(int argc, char *argv[])
+#else
 int
 main(int argc, char *argv[])
+#endif
 {
 	int ret;
 	char *table = "filter";
