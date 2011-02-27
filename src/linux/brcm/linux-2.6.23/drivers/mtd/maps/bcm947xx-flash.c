@@ -67,18 +67,19 @@ static struct mtd_info *bcm947xx_mtd;
 #endif
 
 
-#define ROUTER_NETGEAR_WGR614L         1
-#define ROUTER_NETGEAR_WNR834B         2
-#define ROUTER_NETGEAR_WNDR3300        3
-#define ROUTER_NETGEAR_WNR3500L        4
-#define ROUTER_NETGEAR_WNR2000V2       5
-#define ROUTER_BELKIN_F7D3301_3302_4302_8235V3     6
+#define ROUTER_NETGEAR_WGR614L           1
+#define ROUTER_NETGEAR_WNR834B           2
+#define ROUTER_NETGEAR_WNDR3300          3
+#define ROUTER_NETGEAR_WNR3500L          4
+#define ROUTER_NETGEAR_WNR2000V2         5
+#define ROUTER_BELKIN_F5D8235V3          6
+#define ROUTER_BELKIN_F7D3301_3302_4302  7
 
-/* Belkin Share & Play series */
+/* Belkin series */
 #define TRX_MAGIC_F7D3301              0x20100322      /* Belkin Share Max; router's birthday ? */
 #define TRX_MAGIC_F7D3302              0x20090928      /* Belkin Share; router's birthday ? */
 #define TRX_MAGIC_F7D4302              0x20091006      /* Belkin Play; router's birthday ? */
-#define TRX_MAGIC_F7D8235V3            0x00017116      /* Belkin F7D8235V3 */
+#define TRX_MAGIC_F5D8235V3            0x00017116      /* Belkin F5D8235-4v3 */
 #define TRX_MAGIC_QA                   0x12345678      /* cfe: It's QA firmware */
 
 /* Netgear wgr614 */
@@ -124,8 +125,13 @@ static int get_router (void)
 	}
 	
 	if (nvram_match("boardtype", "0xa4cf")
-	  && (nvram_match("boardrev", "0x1100") || nvram_match("boardrev", "0x1102"))) {
-		return ROUTER_BELKIN_F7D3301_3302_4302_8235V3;  //Belkin F7D3301v1 /F7D3302v1 / F7D4302v1 /F7D8235V3
+	  && nvram_match("boardrev", "0x1100")) {
+		return ROUTER_BELKIN_F5D8235V3;  //F5D8235v3
+	}	
+	
+	if (nvram_match("boardtype", "0xa4cf")
+	  && nvram_match("boardrev", "0x1102")) {
+		return ROUTER_BELKIN_F7D3301_3302_4302;  //Belkin F7D3301v1 /F7D3302v1 / F7D4302v1
 	}
 	
 	return 0;
@@ -197,13 +203,14 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 		case TRX_MAGIC:
 			goto found;
 			break;
-		/* found a Belkin Share or Play TRX header */
+		/* found a Belkin TRX header */
 		case TRX_MAGIC_F7D3301:
 		case TRX_MAGIC_F7D3302:
 		case TRX_MAGIC_F7D4302:
-		case TRX_MAGIC_F7D8235V3:
+		case TRX_MAGIC_F5D8235V3:
 		case TRX_MAGIC_QA:
-			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302_8235V3) {
+			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302
+				|| get_router() == ROUTER_BELKIN_F5D8235V3) {
 				printk(KERN_EMERG  "Found Belkin TRX magic\n");
 				goto found;
 			}
@@ -324,13 +331,14 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		case TRX_MAGIC:
 			goto found;
 			break;
-		/* found a Belkin Share or Play TRX header */
+		/* found a Belkin TRX header */
 		case TRX_MAGIC_F7D3301:
 		case TRX_MAGIC_F7D3302:
 		case TRX_MAGIC_F7D4302:
-		case TRX_MAGIC_F7D8235V3:
+		case TRX_MAGIC_F5D8235V3:
 		case TRX_MAGIC_QA:
-			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302_8235V3) {
+			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302
+				|| get_router() == ROUTER_BELKIN_F5D8235V3) {
 				printk(KERN_EMERG  "Found Belkin TRX magic\n");
 				goto found;
 			}
