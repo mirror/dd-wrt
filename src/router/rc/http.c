@@ -153,11 +153,11 @@ wget(int method, const char *server, char *buf, size_t count, off_t offset)
 		if (*s == '\n')
 			break;
 		if (!strncasecmp(s, "Content-Length:", 15)) {
-			for (s += 15; isblank(*s); s++) ;
+			for (s += 15; dd_isblank(*s); s++) ;
 			chomp(s);
 			len = atoi(s);
 		} else if (!strncasecmp(s, "Transfer-Encoding:", 18)) {
-			for (s += 18; isblank(*s); s++) ;
+			for (s += 18; dd_isblank(*s); s++) ;
 			chomp(s);
 			if (!strncasecmp(s, "chunked", 7))
 				chunked = 1;
