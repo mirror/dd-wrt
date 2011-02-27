@@ -102,7 +102,13 @@ static void free_argv(void) {
 		free(newargv[i]);
 }
 
-int main(int argc, char *argv[])
+#ifdef IPTABLES_MULTI
+int
+ip6tables_restore_main(int argc, char *argv[])
+#else
+int
+main(int argc, char *argv[])
+#endif
 {
 	ip6tc_handle_t handle = NULL;
 	char buffer[10240];

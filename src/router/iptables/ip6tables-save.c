@@ -314,7 +314,13 @@ static int do_output(const char *tablename)
  * :Chain name POLICY packets bytes
  * rule
  */
-int main(int argc, char *argv[])
+#ifdef IPTABLES_MULTI
+int
+ip6tables_save_main(int argc, char *argv[])
+#else
+int
+main(int argc, char *argv[])
+#endif
 {
 	const char *tablename = NULL;
 	int c;
