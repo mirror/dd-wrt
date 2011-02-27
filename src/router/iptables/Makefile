@@ -1,5 +1,6 @@
 # uncomment this to get a fully statically linked version
 # NO_SHARED_LIBS = 1
+include $(TOP)/.config
 
 # uncomment this to disable IPv6 support
 # DO_IPV6 = 0
@@ -32,7 +33,12 @@ RELEASE_DIR:=/tmp
 #DO_IPV6:=1
 #endif
 
-COPT_FLAGS:=$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
+COPT_FLAGS:=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
+COPT_FLAGS += -DNEED_PRINTF
+#endif
+#endif
 CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
 NO_SHARED_LIBS=1
 DO_MULTI=1
@@ -121,10 +127,10 @@ iptables.o: iptables.c
 	$(CC) $(CFLAGS) -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" -c -o $@ $<
 
 ifeq ($(DO_MULTI), 1)
-iptables: iptables-multi.c iptables-restore.c iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libiptc.a
+iptables: iptables-multi.c iptables-restore.c iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libip4tc.o
 	$(CC) $(CFLAGS) -DIPTABLES_MULTI -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)
 else
-iptables: iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libiptc.a
+iptables: iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libip4tc.o
 	$(CC) $(CFLAGS) -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)
 endif
 
@@ -172,10 +178,10 @@ $(DESTDIR)$(BINDIR)/iptables-xml: iptables-xml
 endif
 
 ifeq ($(DO_MULTI), 1)
-ip6tables: ip6tables-multi.c ip6tables-restore.c ip6tables-standalone.c ip6tables.o $(STATIC6_LIBS) libiptc/libiptc.a
+ip6tables: ip6tables-multi.c ip6tables-restore.c ip6tables-standalone.c ip6tables.o $(STATIC6_LIBS) libiptc/libip6tc.o
 	$(CC) $(CFLAGS) -DIPTABLES_MULTI -DIPT6_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)
 else
-ip6tables: ip6tables-standalone.c ip6tables.o $(STATIC6_LIBS) libiptc/libiptc.a
+ip6tables: ip6tables-standalone.c ip6tables.o $(STATIC6_LIBS) libiptc/libip6tc.o
 	$(CC) $(CFLAGS) -DIPT6_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)
 endif
 
@@ -200,7 +206,7 @@ $(DESTDIR)$(BINDIR)/ip6tables-save: ip6tables-save
 
 
 
-ip6tables-restore: ip6tables-restore.c ip6tables.o $(STATIC6_LIBS) libiptc/libiptc.a
+ip6tables-restore: ip6tables-restore.c ip6tables.o $(STATIC6_LIBS) libiptc/libip6tc.o
 	$(CC) $(CFLAGS) -DIP6T_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(DESTDIR)$(BINDIR)/ip6tables-restore: ip6tables-restore
