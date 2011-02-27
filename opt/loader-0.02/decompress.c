@@ -81,6 +81,7 @@ static __inline__ void blast_dcache(unsigned long size, unsigned long lsize)
 #define TRX_MAGIC_F7D3301     0x20100322      /* Belkin Share Max; router's birthday ? */
 #define TRX_MAGIC_F7D3302     0x20090928      /* Belkin Share; router's birthday ? */
 #define TRX_MAGIC_F7D4302     0x20091006      /* Belkin Play; router's birthday ? */
+#define TRX_MAGIC_F7D8235V3   0x00017116      /* Belkin F7D8235V3 */
 
 struct trx_header {
 	unsigned int magic;		/* "HDR0" */
@@ -131,7 +132,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	unsigned int lp; /* literal pos state bits */
 	unsigned int pb; /* pos state bits */
 	unsigned int osize; /* uncompressed size */
-	unsigned char SIGN[]="DD-WRT v24-sp2 (c) 2004 - 2010 Sebastian Gottschall / NewMedia-NET GmbH";
+	unsigned char SIGN[]="DD-WRT v24-sp2 (c) 2004 - 2011 Sebastian Gottschall / NewMedia-NET GmbH";
 
 	
 	/* look for trx header, 32-bit data access */
@@ -145,6 +146,8 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		if (((struct trx_header *)data)->magic == TRX_MAGIC_F7D3302)
 			break;
 		if (((struct trx_header *)data)->magic == TRX_MAGIC_F7D4302)
+			break;
+		if (((struct trx_header *)data)->magic == TRX_MAGIC_F7D8235V3)
 			break;
 		data += 65536;	
 	}
