@@ -1401,7 +1401,7 @@ static void configure_single(int count)
 	static char diversity[32];
 	static char rxantenna[32];
 	static char txantenna[32];
-	static char athmac[16];
+	static char athmac[19];
 	static char maxassoc[32];
 	static char wl_poll[32];
 	static int vapcount = 0;
