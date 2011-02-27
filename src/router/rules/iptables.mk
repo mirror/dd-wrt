@@ -1,18 +1,8 @@
 iptables-clean:
-ifeq ($(CONFIG_IPV6),y)
 	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1 clean
-else
-	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) clean
-endif
 
 iptables:
-ifeq ($(CONFIG_IPV6),y)
-	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1 clean
 	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1
-else
-	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) clean
-	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
-endif
 
 iptables-devel:
 	$(MAKE) -j 4 -C iptables install-devel LIBDIR=/opt/openwrt/lib/ KERNEL_DIR=$(LINUXDIR)
