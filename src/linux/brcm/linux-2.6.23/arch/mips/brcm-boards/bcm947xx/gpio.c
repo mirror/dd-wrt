@@ -325,9 +325,9 @@ if (nvram_match("boardtype", "0xd4cf")
 }
 
 if (nvram_match("boardtype", "0xa4cf") 
-		&& nvram_match("boardrev", "0x1102"))
+		&& (nvram_match("boardrev", "0x1100") || nvram_match("boardrev", "0x1102")))
 {
-		printk(KERN_EMERG "F7D3301v1/3302v1/4302v1 GPIO Init\n");
+		printk(KERN_EMERG "F7D3301v1/3302v1/4302v1/8235v3 GPIO Init\n");
 		gpios = 1 << 10 | 1 << 11 | 1 << 13;
 }
 
