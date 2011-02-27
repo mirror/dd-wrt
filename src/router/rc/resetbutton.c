@@ -790,6 +790,7 @@ void period_check(int sig)
 	case ROUTER_BELKIN_F7D3302:
 	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_BELKIN_F7D4302:
+	case ROUTER_BELKIN_F7D8235V3:
 		sesgpio = 0x108;	// gpio 8, inversed
 		break;
 	case ROUTER_ASUS_WL500W:
