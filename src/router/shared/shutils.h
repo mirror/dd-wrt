@@ -171,7 +171,7 @@ void showmemdebugstat();
 /*
  * Check for a blank character; that is, a space or a tab 
  */
-#define isblank(c) ((c) == ' ' || (c) == '\t')
+#define dd_isblank(c) ((c) == ' ' || (c) == '\t')
 
 /*
  * Strip trailing CR/NL from string <s> 
