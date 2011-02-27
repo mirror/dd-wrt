@@ -719,7 +719,7 @@
 #define HAVE_RECVMSG 1
 
 /* Define to 1 if you have the <rpc/types.h> header file. */
-#define HAVE_RPC_TYPES_H 1
+//#define HAVE_RPC_TYPES_H 1
 
 /* Define to 1 if you have the `rresvport_af' function. */
 #define HAVE_RRESVPORT_AF 1
