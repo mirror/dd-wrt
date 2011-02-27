@@ -482,38 +482,41 @@
 
 #define ROUTER_BOARD_GW2388 0x980f
 
-// Belkin Share Max F7D3301v1 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD3301V1)
-#define ROUTER_BELKIN_F7D3301 0x9916
+// Belkin Share Max F7D8235v3 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 32MB ram, fccid: Belkin K7SF7D8235V3)
+#define ROUTER_BELKIN_F7D8235V3 0x9916
 
-// Belkin Share F7D3302v1 (BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD3302V1)
-#define ROUTER_BELKIN_F7D3302 0x9a16
+// Belkin Share Max F7D3301v1 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3301V1)
+#define ROUTER_BELKIN_F7D3301 0x9a16
 
-// Belkin Play Max F7D4301v1 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4301V1)
-#define ROUTER_BELKIN_F7D4301 0x9b16
+// Belkin Share F7D3302v1 (BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3302V1)
+#define ROUTER_BELKIN_F7D3302 0x9b16
 
-// Belkin Play F7D4302v1 (dual radio, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SFD4302V1)
-#define ROUTER_BELKIN_F7D4302 0x9c16
+// Belkin Play Max F7D4301v1 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D4301V1)
+#define ROUTER_BELKIN_F7D4301 0x9c16
+
+// Belkin Play F7D4302v1 (dual radio, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D4302V1)
+#define ROUTER_BELKIN_F7D4302 0x9d16
 
 // Asus RT-N10+
-#define ROUTER_ASUS_RTN10PLUS 0x9d1a
+#define ROUTER_ASUS_RTN10PLUS 0x9e1a
 
 // Linksys E1000 v2 (BCM5357 cpu, 4MB serial flash, 32 MB ram, fccid: Linksys Q87-E1000V2)
-#define ROUTER_LINKSYS_E1000V2 0x9e0f
+#define ROUTER_LINKSYS_E1000V2 0x9f0f
 
 // Repotec RP-WR5422
-#define ROUTER_BOARD_WR5422 0x9f1a
+#define ROUTER_BOARD_WR5422 0xa01a
 
 // Asus WL-700ge (BCM4780 cpu, 2MB flash, 64MB ram, BCM5325E switch)
-#define ROUTER_ASUS_WL700GE 0xa017
+#define ROUTER_ASUS_WL700GE 0xa117
 
-#define ROUTER_BOARD_F5D8235 0xa11a
+#define ROUTER_BOARD_F5D8235 0xa21a
 
 // Asus RT-15N
-#define ROUTER_BOARD_RT15N 0xa21c
+#define ROUTER_BOARD_RT15N 0xa31c
 
-#define ROUTER_BOARD_TECHNAXX 0xa30f
+#define ROUTER_BOARD_TECHNAXX 0xa40f
 
-#define ROUTER_BOARD_NEPTUNE 0xa41a
+#define ROUTER_BOARD_NEPTUNE 0xa51a
 
 
 #define NVROUTER "DD_BOARD"
