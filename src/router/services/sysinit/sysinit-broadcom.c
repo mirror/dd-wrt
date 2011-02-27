@@ -246,7 +246,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_BELKIN_F7D3302:
 	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_BELKIN_F7D4302:
-	case ROUTER_BELKIN_F7D8235V3:
+	case ROUTER_BELKIN_F5D8235V3:
 	case ROUTER_WRT300N:
 	case ROUTER_WRT300NV11:
 	case ROUTER_WRT310N:
@@ -704,7 +704,7 @@ void start_sysinit(void)
 		}
 		break;
 		
-	case ROUTER_BELKIN_F7D8235V3:
+	case ROUTER_BELKIN_F5D8235V3:
 		basic_params = vlan_1_2;
 		if (nvram_match("vlan1ports", "0 8")
 		    || nvram_match("vlan2ports", "1 2 3 4 8*")) {
@@ -1465,7 +1465,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_BELKIN_F7D3301:
 			case ROUTER_BELKIN_F7D4301:
-			case ROUTER_BELKIN_F7D8235V3:
+			case ROUTER_BELKIN_F5D8235V3:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
@@ -1995,7 +1995,7 @@ char *enable_dtag_vlan(int enable)
 		case ROUTER_WRT610NV2:
 		case ROUTER_BELKIN_F7D3301:
 		case ROUTER_BELKIN_F7D4301:
-		case ROUTER_BELKIN_F7D8235V3:
+		case ROUTER_BELKIN_F5D8235V3:
 			eth = "eth0";
 			break;
 		case ROUTER_WRT600N:
