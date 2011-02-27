@@ -204,7 +204,7 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 		case TRX_MAGIC_F7D8235V3:
 		case TRX_MAGIC_QA:
 			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302_8235V3) {
-				printk(KERN_EMERG  "Found Belkin Share or Play TRX magic\n");
+				printk(KERN_EMERG  "Found Belkin TRX magic\n");
 				goto found;
 			}
 			break;
@@ -331,7 +331,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		case TRX_MAGIC_F7D8235V3:
 		case TRX_MAGIC_QA:
 			if (get_router() == ROUTER_BELKIN_F7D3301_3302_4302_8235V3) {
-				printk(KERN_EMERG  "Found Belkin Share or Play TRX magic\n");
+				printk(KERN_EMERG  "Found Belkin TRX magic\n");
 				goto found;
 			}
 			break;
