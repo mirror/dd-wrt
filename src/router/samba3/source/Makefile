@@ -940,7 +940,6 @@ bin/smbd: bin/libsmbd.a $(SMBD_OBJ_MAIN) $(POPT_OBJS) $(POPT_LIB_OBJ) bin/.dummy
 	$(CC) $(FLAGS)  -o $@ $(SMBD_OBJ_MAIN) $(POPT_OBJS) $(POPT_LIB_OBJ) $(LDFLAGS) \
 		$(AUTH_LIBS) \
 		-Lbin -lsmbd \
-		-L$(TARGETFS)/lib \
 		$(LIBS)
 
 bin/libsmbd.a: $(SMBD_OBJ_BASE)
@@ -1021,8 +1020,7 @@ MY_PASS_OBJ = libsmb/smbdes.o lib/md4.o lib/arc4.o
 
 bin/smbpasswd: utils/owrt_smbpasswd.o $(MY_PASS_OBJ)
 	@echo Linking $@
-	@$(CC) $(FLAGS)  -o $@ utils/owrt_smbpasswd.o $(MY_PASS_OBJ) \
-		-L$(TARGETFS)/lib
+	@$(CC) $(FLAGS)  -o $@ utils/owrt_smbpasswd.o $(MY_PASS_OBJ) 
 
  
 
