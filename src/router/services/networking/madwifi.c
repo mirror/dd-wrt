@@ -1889,11 +1889,32 @@ static void configure_single(int count)
 	sprintf(isolate, "%s_ap_isolate", dev);
 	if (nvram_default_match(isolate, "1", "0"))
 		sysprintf("iwpriv %s ap_bridge 0", dev);
-	// removed hostroaming 0 due to excessive tests and driver research
-	// sysprintf("iwpriv %s hostroaming 0", dev);
 
 	sprintf(ssid, "ath%d_ssid", count);
 	sprintf(broadcast, "ath%d_closed", count);
+	if (!strcmp(apm, "infra") ) {
+		char *cellid;
+		char cellidtemp[32];
+		sprintf(cellidtemp, "ath%d_cellid", count);
+		cellid = nvram_safe_get(cellidtemp);
+        if (strlen(cellid) != 0) {
+			sysprintf("iwconfig %s ap %s", dev,
+				cellid);
+			}
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+		else {
+			char cellidtemp[5];
+			memset(cellidtemp,0,5);
+			strncpy(cellidtemp,ssid,5);
+			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x", dev,
+				cellidtemp[0],
+				cellidtemp[1],
+				cellidtemp[2],
+				cellidtemp[3],
+				cellidtemp[4]);
+		}
+#endif
+	}
 
 	memset(var, 0, 80);
 
