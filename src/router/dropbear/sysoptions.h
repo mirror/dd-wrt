@@ -4,7 +4,7 @@
  *******************************************************************/
 
 #ifndef DROPBEAR_VERSION
-#define DROPBEAR_VERSION "0.52"
+#define DROPBEAR_VERSION "0.53"
 #endif
 
 #define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
@@ -60,6 +60,7 @@
 
 /* various algorithm identifiers */
 #define DROPBEAR_KEX_DH_GROUP1 0
+#define DROPBEAR_KEX_DH_GROUP14 1
 
 #define DROPBEAR_SIGNKEY_ANY 0
 #define DROPBEAR_SIGNKEY_RSA 1
@@ -146,10 +147,6 @@
 #define DISABLE_X11FWD
 #endif
 
-#ifndef ENABLE_AGENTFWD
-#define DISABLE_AGENTFWD
-#endif
-
 #if defined(ENABLE_CLI_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD)
 #define ENABLE_CLI_ANYTCPFWD 
 #endif
@@ -160,12 +157,16 @@
 
 #if defined(ENABLE_CLI_REMOTETCPFWD) || defined(ENABLE_CLI_LOCALTCPFWD) || \
 	defined(ENABLE_SVR_REMOTETCPFWD) || defined(ENABLE_SVR_LOCALTCPFWD) || \
-	defined(ENABLE_AGENTFWD) || defined(ENABLE_X11FWD)
+	defined(ENABLE_SVR_AGENTFWD) || defined(ENABLE_X11FWD)
 #define USING_LISTENERS
 #endif
 
 #if defined(ENABLE_CLI_NETCAT) && defined(ENABLE_CLI_PROXYCMD)
 #define ENABLE_CLI_MULTIHOP
+#endif
+
+#if defined(ENABLE_CLI_AGENTFWD) || defined(DROPBEAR_PRNGD_SOCKET)
+#define ENABLE_CONNECT_UNIX
 #endif
 
 #if defined(DROPBEAR_CLIENT) || defined(ENABLE_SVR_PUBKEY_AUTH)
@@ -202,5 +203,8 @@
 #define IS_DROPBEAR_CLIENT 1
 
 #else
-#error You must compiled with either DROPBEAR_CLIENT or DROPBEAR_SERVER selected
+/* Just building key utils? */
+#define IS_DROPBEAR_SERVER 0
+#define IS_DROPBEAR_CLIENT 0
+
 #endif
