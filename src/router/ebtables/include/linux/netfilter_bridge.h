@@ -5,11 +5,6 @@
  */
 #include <linux/version.h>
 
-#if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
-#include <linux/autoconf.h>
-#else
-#include <linux/config.h>
-#endif
 
 #include <linux/netfilter.h>
 #if defined(__KERNEL__) && defined(CONFIG_BRIDGE_NETFILTER)
