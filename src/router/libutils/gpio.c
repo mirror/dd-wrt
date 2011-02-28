@@ -104,8 +104,8 @@ int get_gpio(int gpio)
 #define IXP4XX_GPIO_IN  		0x2
 
 struct gpio_bit {
-	unsigned char bit;
-	unsigned char state;
+	unsigned int bit;
+	unsigned int state;
 };
 
 char *filename = "/dev/gpio";
@@ -147,7 +147,7 @@ void set_gpio(int gpio, int value)
 	 */
 	_bit.bit = gpio;
 	_bit.state = value;
-	if (ioctl(file, GPIO_SET_BIT, (unsigned long)&_bit) < 0) {
+	if (ioctl(file, GPIO_SET_BIT, (long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
