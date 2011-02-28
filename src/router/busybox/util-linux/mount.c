@@ -30,9 +30,9 @@
 #include <sys/utsname.h>
 #undef TRUE
 #undef FALSE
-#include <rpc/rpc.h>
-#include <rpc/pmap_prot.h>
-#include <rpc/pmap_clnt.h>
+//#include <rpc/rpc.h>
+//#include <rpc/pmap_prot.h>
+//#include <rpc/pmap_clnt.h>
 
 #ifndef MS_SILENT
 #define MS_SILENT	(1 << 15)
@@ -214,7 +214,7 @@ static const char mount_option_str[] =
 	"remount" "\0"   // action flag
 ;
 
-
+#define ENABLE_FEATURE_MOUNT_NFS 0
 struct globals {
 #if ENABLE_FEATURE_MOUNT_NFS
 	smalluint nfs_mount_version;
