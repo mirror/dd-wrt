@@ -7,6 +7,9 @@
 /* Broken getaddrinfo */
 /* #undef BROKEN_GETADDRINFO */
 
+/* Use bundled libtom */
+#define BUNDLED_LIBTOM 
+
 /* lastlog file location */
 /* #undef CONF_LASTLOG_FILE */
 
@@ -133,6 +136,12 @@
 /* Define to 1 if you have the `pam' library (-lpam). */
 /* #undef HAVE_LIBPAM */
 
+/* Define to 1 if you have the `tomcrypt' library (-ltomcrypt). */
+/* #undef HAVE_LIBTOMCRYPT */
+
+/* Define to 1 if you have the `tommath' library (-ltommath). */
+/* #undef HAVE_LIBTOMMATH */
+
 /* Define to 1 if you have the <libutil.h> header file. */
 /* #undef HAVE_LIBUTIL_H */
 
@@ -171,6 +180,9 @@
 
 /* Have openpty() function */
 #define HAVE_OPENPTY 1
+
+/* Define to 1 if you have the `pam_fail_delay' function. */
+/* #undef HAVE_PAM_FAIL_DELAY */
 
 /* Define to 1 if you have the <pam/pam_appl.h> header file. */
 /* #undef HAVE_PAM_PAM_APPL_H */
