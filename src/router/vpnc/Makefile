@@ -128,8 +128,9 @@ install : install-common
 	install -m755 vpnc $(DESTDIR)$(SBINDIR)
 	-rm -rf $(DESTDIR)/usr/share
 	-rm -rf $(DESTDIR)/usr/include
-	-rm -f $(DESTDIR)/usr/lib/*.la
-	-rm -f $(DESTDIR)/usr/lib/*.a
+	-rm -rf $(DESTDIR)/usr/lib
+	-rm -f $(DESTDIR)/usr/bin/gpg-error*
+	-rm -f $(DESTDIR)/usr/bin/libgcrypt*
 
 install-strip : install-common
 	install -s -m755 vpnc $(DESTDIR)$(SBINDIR)
