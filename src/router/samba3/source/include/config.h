@@ -1003,7 +1003,7 @@
 /* #undef HAVE_RPC_NETTYPE_H */
 
 /* Define to 1 if you have the <rpc/rpc.h> header file. */
-#define HAVE_RPC_RPC_H 1
+//#define HAVE_RPC_RPC_H 1
 
 /* Whether mkstemp is secure */
 #define HAVE_SECURE_MKSTEMP 1
