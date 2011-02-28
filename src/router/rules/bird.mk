@@ -54,7 +54,7 @@ bird-symlinks:
 	)
 
 bird: bird-symlinks
-	$(MAKE) -C bird IPV6=1
+	$(MAKE) -C bird
 
 bird-install:
 	@true
