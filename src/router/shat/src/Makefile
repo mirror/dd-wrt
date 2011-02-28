@@ -26,7 +26,7 @@ SOURCES = util.c do.c pool.c device.c lookup.c arp.c ip2ether.c \
 HEADERS = $(SOURCES:.c=.h)
 OBJECTS = $(SOURCES:.c=.o) $(MAINSRC:.c=.o)
 
-CFLAGS  = -Wall $(DEBUG) $(OPTIM) $(UNWANTED) $(EXTRA)
+CFLAGS  = -Wall $(DEBUG) $(OPTIM)
 CFLAGS += -DVERSION=\"$(VERSION)\" $(NETBIOS) $(PROF)
 
 LDFLAGS = $(DEBUG) $(PROF)
