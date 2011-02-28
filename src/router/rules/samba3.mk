@@ -1,9 +1,9 @@
 
 samba3:
 	CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" \
+	CFLAGS="$(COPTS)" \
+	CPPFLAGS="$(COPTS)" \
+	LDFLAGS="-fPIC $(COPTS)" \
 	$(MAKE) -C samba3/source all bin/smbpasswd  
 
 samba3-install:
