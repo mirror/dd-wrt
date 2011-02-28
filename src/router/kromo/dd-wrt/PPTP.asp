@@ -119,9 +119,9 @@ addEvent(window, "unload", function() {
 
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<div class="setting">
-			<div class="label"><% tran("radius.legend"); %></div>
-			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', false)" /><% tran("share.disable"); %>
+			<div class="label"><% tran("service.pppoesrv_auth"); %></div>
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("radius.legend"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', false)" /><% tran("service.pppoesrv_chaps"); %>
 		</div>
 		<div id="idlocal">
 			<fieldset>
