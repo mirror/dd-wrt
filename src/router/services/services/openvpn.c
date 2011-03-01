@@ -107,12 +107,27 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_mask"));
 			fprintf(fp, "dev tun0\n");
 //                      fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
-		} else {
+		} 
+		if (nvram_match("openvpn_tuntap", "tap") && 
+			nvram_match("openvpn_proxy", "0") &&
+			nvram_match("openvpn_nogw", "0")) {
 			fprintf(fp, "server-bridge %s %s %s %s\n",
 				nvram_safe_get("openvpn_gateway"),
 				nvram_safe_get("openvpn_mask"),
 				nvram_safe_get("openvpn_startip"),
 				nvram_safe_get("openvpn_endip"));
+			fprintf(fp, "dev tap0\n");
+		}
+		else if (nvram_match("openvpn_tuntap", "tap") && 
+			nvram_match("openvpn_proxy", "1") &&
+			nvram_match("openvpn_redirgate", "1")) {
+			fprintf(fp, "server-bridge\n");
+			fprintf(fp, "dev tap0\n");
+		}
+		else if (nvram_match("openvpn_tuntap", "tap") && 
+			nvram_match("openvpn_proxy", "1") &&
+			nvram_match("openvpn_redirgate", "0")) {
+			fprintf(fp, "server-bridge nogw \n");
 			fprintf(fp, "dev tap0\n");
 		}
 		if (strlen(nvram_safe_get("openvpn_tlsauth")) > 0)
