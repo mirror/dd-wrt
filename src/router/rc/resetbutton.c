@@ -345,8 +345,8 @@ int getbuttonstate()
 #define IXP4XX_GPIO_IN  		0x2
 
 struct gpio_bit {
-	unsigned char bit;
-	unsigned char state;
+	unsigned int bit;
+	unsigned int state;
 };
 
 char *filename = "/dev/gpio";
@@ -371,7 +371,7 @@ int read_bit(int bit)
 	 */
 	_bit.bit = bit;
 	_bit.state = IXP4XX_GPIO_IN;
-	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_SET_CONFIG, (unsigned long)&_bit) < 0) {
 		/* 
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
@@ -382,7 +382,7 @@ int read_bit(int bit)
 	 * Read data 
 	 */
 	_bit.bit = bit;
-	if (ioctl(file, GPIO_GET_BIT, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_GET_BIT, (unsigned long)&_bit) < 0) {
 		/* 
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
