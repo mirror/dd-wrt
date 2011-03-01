@@ -36,12 +36,12 @@ cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
 
 
 
-INITCFLAGS = $(call cc-option,-Os -fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
+INITCFLAGS = $(call cc-option,-Os -ffunction-sections -fdata-sections,)
 # -fno-guess-branch-probability: prohibit pseudo-random guessing
 # of branch probabilities (hopefully makes bloatcheck more stable):
-INITCFLAGS += $(call cc-option,-fno-guess-branch-probability,)
-INITCFLAGS += $(call cc-option,-funsigned-char -static-libgcc,)
-INITCFLAGS += $(call cc-option,-falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1,)
+#INITCFLAGS += $(call cc-option,-fno-guess-branch-probability,)
+#INITCFLAGS += $(call cc-option,-funsigned-char -static-libgcc,)
+#INITCFLAGS += $(call cc-option,-falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1,)
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
