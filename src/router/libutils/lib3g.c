@@ -91,9 +91,10 @@ static int scanFor(int Vendor, int Product)
 void checkreset(char *tty)
 {
 #ifdef HAVE_CAMBRIA
-	eval("comgt", "-d", tty, "-s", "/etc/comgt/reset.comgt");
 	FILE *check = NULL;
 	int count = 0;
+	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt\n",
+		tty);
 	sleep(1);
 	while (!(check = fopen(tty, "rb")) && count < 10) {
 		sleep(1);
@@ -104,7 +105,8 @@ void checkreset(char *tty)
 	else
 		fprintf(stderr, "reset error\n");
 	fprintf(stderr, "wakeup card\n");
-	eval("comgt", "-d", tty, "-s", "/etc/comgt/wakeup.comgt");
+	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt\n",
+		tty);
 	sleep(5);		//give extra delay for registering
 #endif
 }
@@ -356,9 +358,9 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6839, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
 	{0x1199, 0x683a, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC8785 Modem Mode"},	//
 	{0x1199, 0x683b, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC8785 Composite Modem Mode"},	//
-	{0x1199, 0x683c, "sierra", "3", "4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
-	{0x1199, 0x683d, "sierra", "3", "4", 1, &reset_mc, "Sierra Wireless MC8791 Composite"},	//
-	{0x1199, 0x683e, "sierra", "3", "4", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x683c, "sierra", "3", "3", 1, &reset_mc, "Sierra Wireless MC8790"},	//
+	{0x1199, 0x683d, "sierra", "3", "3", 1, &reset_mc, "Sierra Wireless MC8791 Composite"},	//
+	{0x1199, 0x683e, "sierra", "3", "3", 1, &reset_mc, "Sierra Wireless MC8790"},	//
 	{0x1199, 0x6850, "sierra", "2", "0", 1, NULL, "Sierra Wireless AirCard 880 Modem Mode"},	//
 	{0x1199, 0x6851, "sierra", "2", "0", 1, NULL, "Sierra Wireless AirCard 881 Modem Mode"},	//
 	{0x1199, 0x6852, "sierra", "2", "0", 1, NULL, "Sierra Wireless AirCard 880E Modem Mode"},	//
@@ -489,42 +491,31 @@ char *get3GControlDevice(void)
 	int needreset = 1;
 	char *ttsdevice = "/dev/usb/tts/0";
 #ifdef HAVE_CAMBRIA
-	int gpio1 = atoi(nvram_safe_get("gpio26"));
-	int gpio2 = atoi(nvram_safe_get("gpio27"));
+	int gpio1,gpio2;
 	int select = atoi(nvram_safe_get("wan_select"));
 	switch (select) {
 	case 1:
-		if (gpio1 == 1 || gpio2 == 0)
-			needreset = 0;
-		else {
-			gpio1 = 1;
-			gpio2 = 0;
-		}
+		gpio1 = 1;
+		gpio2 = 0;
 		break;
 	case 2:
-		if (gpio1 == 0 || gpio2 == 1)
-			needreset = 0;
-		else {
-			gpio1 = 0;
-			gpio2 = 1;
-		}
+		gpio1 = 0;
+		gpio2 = 1;
 		break;
 	case 3:
-		if (gpio1 == 1 || gpio2 == 1)
-			needreset = 0;
-		else {
-			gpio1 = 1;
-			gpio2 = 1;
-		}
+		gpio1 = 1;
+		gpio2 = 1;
 		break;
 	default:
-		if (gpio1 == 0 && gpio2 == 0) {
-			gpio1 = 1;
-			gpio2 = 0;
-		} else
-			needreset = 0;
+		gpio1 = 1;
+		gpio2 = 0;
 		break;
 	}
+
+	if (gpio1 == atoi(nvram_safe_get("gpio26"))
+		&& gpio2 == atoi(nvram_safe_get("gpio27")) )
+		needreset=0;
+
 	if (gpio1) {
 		nvram_set("gpio26", "1");
 		set_gpio(26, 1);
@@ -580,11 +571,13 @@ char *get3GControlDevice(void)
 				nvram_set("3gnmvariant", variant);
 			}
 			//start custom setup, if defined
-			if (devicelist[devicecount].customsetup)
+			if (devicelist[devicecount].customsetup) {
+				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
 								    [devicecount].
 								    controldevice);
+				}
 			static char control[32];
 			if (!strcmp
 			    (devicelist[devicecount].controldevice, "hso"))
