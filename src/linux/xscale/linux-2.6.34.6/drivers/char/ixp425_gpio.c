@@ -326,7 +326,7 @@ else if (bit.bit < 32)
 	bit.state = pld_read_gpio_b2(bit.bit - 24);
 }
 		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
-        case GPIO_SET_BIT:
+        case 5:
 #ifdef DEBUG
              	printk("ixp425_gpio: Write _bit 0x%02x %s\n", bit.bit, (bit.state==0)?"LOW":"HIGH");
 #endif
@@ -380,7 +380,7 @@ else if (bit.bit < 32)
 	bit.state = pld_read_gpio_b2(bit.bit - 24);
 }
 		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
-	case 5:
+	case GPIO_SET_CONFIG:
 if (bit.bit < 16)
 {
 		val = bit.state;
