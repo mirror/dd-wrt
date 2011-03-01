@@ -337,7 +337,7 @@ int getbuttonstate()
 #define u32 unsigned long
 
 #define GPIO_GET_BIT	0x0000001
-#define GPIO_SET_BIT	0x0000002
+#define GPIO_SET_BIT	0x0000005
 #define GPIO_GET_CONFIG	0x0000003
 #define GPIO_SET_CONFIG 0x0000004
 
@@ -345,8 +345,8 @@ int getbuttonstate()
 #define IXP4XX_GPIO_IN  		0x2
 
 struct gpio_bit {
-	unsigned int bit;
-	unsigned int state;
+	unsigned char bit;
+	unsigned char state;
 };
 
 char *filename = "/dev/gpio";
