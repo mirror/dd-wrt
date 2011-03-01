@@ -153,7 +153,7 @@ void set_gpio(int gpio, int value)
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
 	}
-	fprintf(stderr,"done\n");
+//	fprintf(stderr,"done\n");
 
 	close(file);
 
