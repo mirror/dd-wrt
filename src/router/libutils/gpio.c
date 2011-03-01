@@ -132,7 +132,7 @@ void set_gpio(int gpio, int value)
 	 */
 	_bit.bit = gpio;
 	_bit.state = IXP4XX_GPIO_OUT;
-	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_SET_CONFIG, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
@@ -147,7 +147,7 @@ void set_gpio(int gpio, int value)
 	 */
 	_bit.bit = gpio;
 	_bit.state = value;
-	if (ioctl(file, GPIO_SET_BIT, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_SET_BIT, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
@@ -181,7 +181,7 @@ int get_gpio(int gpio)
 	 */
 	_bit.bit = gpio;
 	_bit.state = IXP4XX_GPIO_IN;
-	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_SET_CONFIG, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
@@ -195,7 +195,7 @@ int get_gpio(int gpio)
 	 * Read data 
 	 */
 	_bit.bit = gpio;
-	if (ioctl(file, GPIO_GET_BIT, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_GET_BIT, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
@@ -257,7 +257,7 @@ void set_gpio(int gpio, int value)
 	 */
 	_bit.bit = gpio;
 	_bit.state = IXP4XX_GPIO_OUT;
-	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_SET_CONFIG, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
@@ -306,7 +306,7 @@ int get_gpio(int gpio)
 	 */
 	_bit.bit = gpio;
 	_bit.state = IXP4XX_GPIO_IN;
-	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_SET_CONFIG, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
@@ -320,7 +320,7 @@ int get_gpio(int gpio)
 	 * Read data 
 	 */
 	_bit.bit = gpio;
-	if (ioctl(file, GPIO_GET_BIT, (long)&_bit) < 0) {
+	if (ioctl(file, GPIO_GET_BIT, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
