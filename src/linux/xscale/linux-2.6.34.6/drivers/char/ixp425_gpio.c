@@ -301,7 +301,7 @@ static int gpio_ioctl(struct inode *inode, struct file *file,
 	if (copy_from_user(&bit, (struct gpio_bit *)arg, 
 				sizeof(bit)))
 		return -EFAULT;
-printk("ixp425_gpio: ioctl cmd 0x%02x, bit %d, state %d\n", cmd, bit.bit, bit.state);
+//printk("ixp425_gpio: ioctl cmd 0x%02x, bit %d, state %d\n", cmd, bit.bit, bit.state);
 #ifdef DEBUG
 printk("ixp425_gpio: ioctl cmd 0x%02x, bit %d, state %d\n", cmd, bit.bit, bit.state);
 #endif
