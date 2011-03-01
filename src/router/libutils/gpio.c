@@ -104,8 +104,8 @@ int get_gpio(int gpio)
 #define IXP4XX_GPIO_IN  		0x2
 
 struct gpio_bit {
-	unsigned int bit;
-	unsigned int state;
+	unsigned char bit;
+	unsigned char state;
 };
 
 char *filename = "/dev/gpio";
@@ -113,7 +113,7 @@ char *filename = "/dev/gpio";
 void set_gpio(int gpio, int value)
 {
 	int file;
-	struct gpio_bit _bit;
+	static struct gpio_bit _bit;
 
 	/*
 	 * open device 
@@ -127,7 +127,7 @@ void set_gpio(int gpio, int value)
 		return;
 	}
 
-	/*
+    	/*
 	 * Config bit as output 
 	 */
 	_bit.bit = gpio;
@@ -141,19 +141,19 @@ void set_gpio(int gpio, int value)
 		close(file);
 		return;
 	}
-
-	/*
+    	/*
 	 * Write data 
 	 */
 	_bit.bit = gpio;
 	_bit.state = value;
-	if (ioctl(file, GPIO_SET_BIT, (unsigned long)&_bit) < 0) {
+	if (ioctl(file, 5, (unsigned long)&_bit) < 0) {
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
 	}
+	fprintf(stderr,"done\n");
 
 	close(file);
 
@@ -776,4 +776,40 @@ int get_gpio(int pin)
 	return gpio;
 }
 
+#endif
+
+#ifdef TEST
+int main(int argc, char **argv)
+{
+
+	unsigned int gpio;
+	unsigned int old_gpio = -1;
+	unsigned int pin;
+
+	if (argc != 3) {
+		fprintf(stderr, "%s <poll | enable | disable> <pin>\n",
+			argv[0]);
+		exit(1);
+	}
+
+	pin = atoi(argv[2]);
+	if (!strcmp(argv[1], "poll")) {
+		while (1) {
+			gpio = get_gpio(pin);
+			if (gpio != old_gpio)
+				fprintf(stdout, "%02X\n", gpio);
+			old_gpio = gpio;
+		}
+	} else if (!strcmp(argv[1], "init")) {
+		gpio = get_gpio(pin);
+	} else if (!strcmp(argv[1], "enable")) {
+		gpio = 1;
+		set_gpio(pin, gpio);
+	} else if (!strcmp(argv[1], "disable")) {
+		gpio = 0;
+		set_gpio(pin, gpio);
+	}
+
+	return 0;
+}
 #endif
