@@ -29,25 +29,35 @@
 				<div class="label"><% tran("service.vpnd_net"); %></div>
 				<input size="15" maxlength="15" name="openvpn_net" value="<% nvram_get("openvpn_net"); %>" />
 			</div>
-		</div>
-		<div id="idbridge">
-			<div class="setting">
-				<div class="label"><% tran("service.vpnd_startip"); %></div>
-				<input size="15" maxlength="15" name="openvpn_startip" value="<% nvram_get("openvpn_startip"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.vpnd_endip"); %></div>
-				<input size="15" maxlength="15" name="openvpn_endip" value="<% nvram_get("openvpn_endip"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("share.gateway"); %></div>
-				<input size="15" maxlength="15" name="openvpn_gateway" value="<% nvram_get("openvpn_gateway"); %>" />
-			</div>
-		</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_mask"); %></div>
 				<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
 			</div>
+		</div>
+		<div id="idbridge">
+			<div class="label"><% tran("service.vpnd_proxy"); %></div>
+				<input class="spaceradio" type="radio" name="openvpn_proxy" value="1" <% nvram_checked("openvpn_proxy", "1"); %> onclick="show_layer_ext(this, 'idproxy', true)" /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpn_proxy" value="0" <% nvram_checked("openvpn_proxy", "0"); %> onclick="show_layer_ext(this, 'idproxy', false)" /><% tran("share.disable"); %>
+			</div>
+			<div id="idproxy">
+				<div class="setting">
+					<div class="label"><% tran("service.vpnd_startip"); %></div>
+					<input size="15" maxlength="15" name="openvpn_startip" value="<% nvram_get("openvpn_startip"); %>" />
+				</div>
+				<div class="setting">
+					<div class="label"><% tran("service.vpnd_endip"); %></div>
+					<input size="15" maxlength="15" name="openvpn_endip" value="<% nvram_get("openvpn_endip"); %>" />
+				</div>
+				<div class="setting">
+					<div class="label"><% tran("service.vpnd_mask"); %></div>
+					<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
+				</div>
+				<div class="setting">
+					<div class="label"><% tran("share.gateway"); %></div>
+					<input size="15" maxlength="15" name="openvpn_gateway" value="<% nvram_get("openvpn_gateway"); %>" />
+				</div>
+			</div>
+		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
 			<input size="5" maxlength="5" class="num" name="openvpn_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_port"); %>" />
