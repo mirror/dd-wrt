@@ -101,8 +101,7 @@ void start_openvpnserver(void)
 		if (nvram_invmatch("openvpn_mssfix", "")
 		    && nvram_match("openvpn_proto", "udp")) {
 			fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpn_mssfix"));	//fragment==mssfix
-			fprintf(fp, "fragment %s\n",
-				nvram_safe_get("openvpn_mssfix"));
+			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_mssfix"));
 		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
@@ -297,13 +296,12 @@ void start_openvpn(void)
 	if (fp == NULL)
 		return;
 	//bridge tap interface to br0 when choosen
-	if (nvram_match("openvpncl_bridge", "1")
-	    && nvram_match("openvpncl_tuntap", "tap")) {
+	if (nvram_match("openvpncl_tuntap", "tap")
+	    && nvram_match("openvpncl_bridge", "1")
+	    && nvram_match("openvpncl_nat", "0"))
 		fprintf(fp, "brctl addif br0 tap1\n");
-	}
 	if (nvram_match("openvpncl_nat", "1"))
-		fprintf(fp,
-			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
+		fprintf(fp, "iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
 		fprintf(fp, "iptables -I INPUT -i %s1 -j ACCEPT\n",
@@ -330,10 +328,10 @@ void start_openvpn(void)
 		fprintf(fp, "iptables -D FORWARD -o %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	}
-	if (nvram_match("openvpncl_bridge", "1")
-	    && nvram_match("openvpncl_tuntap", "tap")) {
+	if (nvram_match("openvpncl_tuntap", "tap")
+	    && nvram_match("openvpncl_bridge", "1")
+	    && nvram_match("openvpncl_nat", "0"))
 		fprintf(fp, "brctl delif br0 tap1\n");
-	}
 	fclose(fp);
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
