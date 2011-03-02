@@ -77,8 +77,7 @@ void start_openvpnserver(void)
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
-		if (nvram_match("openvpn_dupcn", "0")) &&
-			nvram_match("openvpn_proxy", "0")
+		if (nvram_match("openvpn_dupcn", "0") && nvram_match("openvpn_proxy", "0"))
 			fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
