@@ -44,6 +44,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
+	mkdir("/tmp/openvpn/peers", 0700);
 	/*
 	   26.10.2010 Sash      
 	   write openvpn server config file on current config and common settings
@@ -72,6 +73,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "management-log-cache 50\n");
 		fprintf(fp, "mtu-disc yes\n");
 		fprintf(fp, "topology subnet\n");
+		fprintf(fp, "client-config-dir /tmp/openvpn/peers\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		else		//store client ip.keep them persistant for x sec.works only when dupcn=off
