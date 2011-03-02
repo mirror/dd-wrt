@@ -23,15 +23,10 @@
 			<input class="spaceradio" type="radio" name="openvpn_tuntap" value="tun" <% nvram_checked("openvpn_tuntap", "tun"); %> onclick="toggle_layer_ext(this, 'idrouter', 'idbridge', true)" />Router (TUN)&nbsp;
 			<input class="spaceradio" type="radio" name="openvpn_tuntap" value="tap" <% nvram_checked("openvpn_tuntap", "tap"); %> onclick="toggle_layer_ext(this, 'idrouter', 'idbridge', false)" />Bridge (TAP)&nbsp;
 		</div>
-
 		<div id="idrouter">
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_net"); %></div>
 				<input size="15" maxlength="15" name="openvpn_net" value="<% nvram_get("openvpn_net"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.vpnd_mask"); %></div>
-				<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
 			</div>
 		</div>
 		<div id="idbridge">
@@ -49,14 +44,14 @@
 					<input size="15" maxlength="15" name="openvpn_endip" value="<% nvram_get("openvpn_endip"); %>" />
 				</div>
 				<div class="setting">
-					<div class="label"><% tran("service.vpnd_mask"); %></div>
-					<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
-				</div>
-				<div class="setting">
 					<div class="label"><% tran("share.gateway"); %></div>
 					<input size="15" maxlength="15" name="openvpn_gateway" value="<% nvram_get("openvpn_gateway"); %>" />
 				</div>
 			</div>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.vpnd_mask"); %></div>
+			<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>

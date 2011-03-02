@@ -76,9 +76,10 @@ void start_openvpnserver(void)
 		fprintf(fp, "client-config-dir /tmp/openvpn/peers\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
-		else		//store client ip.keep them persistant for x sec.works only when dupcn=off
-			fprintf(fp,
-				"ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
+		//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
+		if (nvram_match("openvpn_dupcn", "0")) &&
+			nvram_match("openvpn_proxy", "0")
+			fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
@@ -99,7 +100,7 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_mtu"));
 		if (nvram_invmatch("openvpn_mssfix", "")
 		    && nvram_match("openvpn_proto", "udp")) {
-			fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpn_mssfix"));	//fragment=mssfix
+			fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpn_mssfix"));	//fragment==mssfix
 			fprintf(fp, "fragment %s\n",
 				nvram_safe_get("openvpn_mssfix"));
 		}
@@ -110,9 +111,8 @@ void start_openvpnserver(void)
 			fprintf(fp, "dev tun0\n");
 //                      fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
 		} 
-		if (nvram_match("openvpn_tuntap", "tap") && 
-			nvram_match("openvpn_proxy", "0") &&
-			nvram_match("openvpn_nogw", "0")) {
+		else if (nvram_match("openvpn_tuntap", "tap") && 
+			nvram_match("openvpn_proxy", "0")) {
 			fprintf(fp, "server-bridge %s %s %s %s\n",
 				nvram_safe_get("openvpn_gateway"),
 				nvram_safe_get("openvpn_mask"),
@@ -126,20 +126,17 @@ void start_openvpnserver(void)
 			fprintf(fp, "server-bridge\n");
 			fprintf(fp, "dev tap0\n");
 		}
-		else if (nvram_match("openvpn_tuntap", "tap") && 
-			nvram_match("openvpn_proxy", "1") &&
-			nvram_match("openvpn_redirgate", "0")) {
-			fprintf(fp, "server-bridge nogw \n");
+		else {
+			fprintf(fp, "server-bridge nogw\n");
 			fprintf(fp, "dev tap0\n");
 		}
 		if (strlen(nvram_safe_get("openvpn_tlsauth")) > 0)
 			fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 		if (strlen(nvram_safe_get("openvpn_crl")) > 0)
 			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
-	} else {
+	} else
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 
-	}
 	fprintf(fp, "%s\n", nvram_safe_get("openvpn_config"));
 	fclose(fp);
 
