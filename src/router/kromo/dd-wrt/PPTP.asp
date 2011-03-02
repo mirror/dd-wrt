@@ -31,14 +31,15 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvram_else_match("openvpncl_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_tuntap, 'idrouter', <% nvram_else_match("openvpn_tuntap", "tun", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvram_else_match("openvpn_tuntap", "tap", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_proxy, 'idproxy', <% nvram_else_match("openvpn_proxy", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvram_else_match("openvpn_switch", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvram_else_match("openvpn_switch", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvram_else_match("openvpncl_adv", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvram_else_match("openvpn_adv", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvram_else_match("openvpncl_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvram_else_match("openvpncl_adv", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvram_else_match("openvpncl_nat", "1", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
