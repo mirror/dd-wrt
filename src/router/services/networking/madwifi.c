@@ -1303,6 +1303,7 @@ static void configure_single(int count)
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
 		configure_single_ath9k(count);
+		ath9k_start_supplicant(count);
 		return;
 	}
 #endif
@@ -2281,9 +2282,6 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		{
 			configure_single(i);
 		}
-#ifdef HAVE_ATH9K
-	ath9k_start_supplicant(i);
-#endif
 	}
 
 	if (changed)		// if changed, deconfigure myself and
