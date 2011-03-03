@@ -216,7 +216,6 @@ void configure_single_ath9k(int count) {
 	else {
 		setupSupplicant_ath9k(dev, NULL);
 	}
-	// sleep(3);		// don't give some time to let hostapd initialize
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
 	foreach(var, vifs, next) {
@@ -230,6 +229,9 @@ void configure_single_ath9k(int count) {
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
 			fprintf(stderr, "setup vifs %s %d\n",var, counter);
+			// create the first main hostapd interface when this is repaeter mode
+			if (isfirst)
+				sysprintf("iw %s interface add %s.%d type managed", wif, dev,counter);
 			setupHostAP_ath9k(dev, isfirst, counter);
 			isfirst=0;
 			counter++;
@@ -945,14 +947,17 @@ void ath9k_start_supplicant(int count) {
 		if (vifs) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			do_hostapd(fstr, dev);
+			sleep(3);		// give some time to let hostapd initialize
 			sprintf(ctrliface, "/var/run/%s_hostapd\n", dev);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta"))
 			&& nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(dev),
-			background, "-Dnl80211", psk, "-H", ctrliface,
+			background, "-Dnl80211", 
 			"-c", fstr);
+			// wpa_supplicant patches for repeater mode needs to be applied
+			// psk, "-H", ctrliface,
 		else
 			eval("wpa_supplicant", background, "-Dnl80211", psk,
 				"-H" ctrliface, "-c", fstr);
@@ -960,8 +965,10 @@ void ath9k_start_supplicant(int count) {
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
 			&& nvram_match(bridged, "1"))
 			eval("wpa_supplicant", "-b", getBridge(dev),
-				background, "-Dnl80211", psk, "-H", ctrliface,
+				background, "-Dnl80211", psk, 
 				"-c", fstr);
+			// wpa_supplicant patches for repeater mode needs to be applied
+			// 	"-H", ctrliface,
 		else
 			eval("wpa_supplicant", background, "-Dnl80211", psk,
 				"-H", ctrliface, "-c", fstr);
