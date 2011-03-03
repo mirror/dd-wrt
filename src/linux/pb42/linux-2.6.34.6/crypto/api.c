@@ -444,7 +444,7 @@ err:
 
 	return ERR_PTR(err);
 }
-EXPORT_SYMBOL_GPL(crypto_alloc_base);
+EXPORT_SYMBOL(crypto_alloc_base);
 
 void *crypto_create_tfm(struct crypto_alg *alg,
 			const struct crypto_type *frontend)
@@ -561,7 +561,7 @@ err:
 
 	return ERR_PTR(err);
 }
-EXPORT_SYMBOL_GPL(crypto_alloc_tfm);
+EXPORT_SYMBOL(crypto_alloc_tfm);
 
 /*
  *	crypto_destroy_tfm - Free crypto transform
@@ -586,7 +586,7 @@ void crypto_destroy_tfm(void *mem, struct crypto_tfm *tfm)
 	crypto_mod_put(alg);
 	kzfree(mem);
 }
-EXPORT_SYMBOL_GPL(crypto_destroy_tfm);
+EXPORT_SYMBOL(crypto_destroy_tfm);
 
 int crypto_has_alg(const char *name, u32 type, u32 mask)
 {
