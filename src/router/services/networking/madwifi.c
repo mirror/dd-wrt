@@ -683,118 +683,6 @@ void start_checkhostapd(void)
 	}
 }
 
-#ifdef HAVE_ATH9K
-void setupHostAP_generic_ath9k(char *prefix, char *driver, int iswan, FILE * fp)
-{
-	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
-	fprintf(fp, "wmm_ac_bk_cwmax=10\n");
-	fprintf(fp, "wmm_ac_bk_aifs=7\n");
-	fprintf(fp, "wmm_ac_bk_txop_limit=0\n");
-	fprintf(fp, "wmm_ac_bk_acm=0\n");
-	fprintf(fp, "wmm_ac_be_aifs=3\n");
-	fprintf(fp, "wmm_ac_be_cwmin=4\n");
-	fprintf(fp, "wmm_ac_be_cwmax=10\n");
-	fprintf(fp, "wmm_ac_be_txop_limit=0\n");
-	fprintf(fp, "wmm_ac_be_acm=0\n");
-	fprintf(fp, "wmm_ac_vi_aifs=2\n");
-	fprintf(fp, "wmm_ac_vi_cwmin=3\n");
-	fprintf(fp, "wmm_ac_vi_cwmax=4\n");
-	fprintf(fp, "wmm_ac_vi_txop_limit=94\n");
-	fprintf(fp, "wmm_ac_vi_acm=0\n");
-	fprintf(fp, "wmm_ac_vo_aifs=2\n");
-	fprintf(fp, "wmm_ac_vo_cwmin=2\n");
-	fprintf(fp, "wmm_ac_vo_cwmax=3\n");
-	fprintf(fp, "wmm_ac_vo_txop_limit=47\n");
-	fprintf(fp, "wmm_ac_vo_acm=0\n");
-	fprintf(fp, "tx_queue_data3_aifs=7\n");
-	fprintf(fp, "tx_queue_data3_cwmin=15\n");
-	fprintf(fp, "tx_queue_data3_cwmax=1023\n");
-	fprintf(fp, "tx_queue_data3_burst=0\n");
-	fprintf(fp, "tx_queue_data2_aifs=3\n");
-	fprintf(fp, "tx_queue_data2_cwmin=15\n");
-	fprintf(fp, "tx_queue_data2_cwmax=63\n");
-	fprintf(fp, "tx_queue_data2_burst=0\n");
-	fprintf(fp, "tx_queue_data1_aifs=1\n");
-	fprintf(fp, "tx_queue_data1_cwmin=7\n");
-	fprintf(fp, "tx_queue_data1_cwmax=15\n");
-	fprintf(fp, "tx_queue_data1_burst=3.0\n");
-	fprintf(fp, "tx_queue_data0_aifs=1\n");
-	fprintf(fp, "tx_queue_data0_cwmin=3\n");
-	fprintf(fp, "tx_queue_data0_cwmax=7\n");
-	fprintf(fp, "tx_queue_data0_burst=1.5\n");
-
-	char *netmode = nvram_nget("%s_net_mode", prefix);
-	char ht[5];
-	if (!strcmp(netmode, "ng-only") ||	//
-	    !strcmp(netmode, "na-only") ||	//
-	    !strcmp(netmode, "n2-only") ||	//
-	    !strcmp(netmode, "n5-only") ||	//
-	    !strcmp(netmode, "mixed")) {
-		fprintf(fp, "ieee80211n=1\n");
-		char bw[32];
-		sprintf(bw, "%s_channelbw", prefix);
-		if (nvram_default_match(bw, "20", "20")) {
-			sprintf(ht, "20");
-		} else if (nvram_match(bw, "40")
-			   || nvram_match(bw, "2040")) {
-			char sb[32];
-			sprintf(sb, "%s_nctrlsb", prefix);
-			if (nvram_default_match(sb, "upper", "lower")) {
-				sprintf(ht, "40+");
-			} else {
-				sprintf(ht, "40-");
-			}
-		}
-
-	} else {
-		sprintf(ht, "20");
-	}
-	// todo: check if hardware is able to do the flags
-	// nsmx supports them
-	fprintf(fp,
-		"ht_capab=[HT%s]%s\n",
-		ht,
-		mac80211_get_caps(prefix));
-	char *mode = nvram_nget("%s_mode", prefix);
-	if (!strcmp(mode, "wdsap"))
-		fprintf(fp, "wds_sta=1\n");
-	fprintf(fp, "wmm_enabled=1\n");
-	char macaddr[32];
-	getMacAddr(prefix, macaddr);
-	fprintf(fp, "bssid=%s\n", macaddr);
-	char isolate[32];
-	char broadcast[32];
-	sprintf(isolate, "%s_ap_isolate", prefix);
-	if (nvram_default_match(isolate, "1", "0"))
-		fprintf(fp, "ap_isolate=1\n");
-	sprintf(broadcast, "%s_closed", prefix);
-	if (nvram_default_match(broadcast, "1", "0"))
-		fprintf(fp, "ignore_broadcast_ssid=1\n");
-	else
-		fprintf(fp, "ignore_broadcast_ssid=0\n");
-	static char nfreq[16];
-	sprintf(nfreq, "%s_channel", prefix);
-	int channel = ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
-	// i know that's not the right way.. autochannel is 0
-	if (channel < 36 || nvram_match(nfreq, "0"))
-		fprintf(fp, "hw_mode=g\n");
-	else
-		fprintf(fp, "hw_mode=a\n");
-	if (nvram_default_match(nfreq, "0", "0"))
-		fprintf(fp, "channel=6\n");
-	else
-		fprintf(fp, "channel=%d\n", channel);
-	char regdomain[16];
-	char *country;
-	sprintf(regdomain, "%s_regdomain", prefix);
-	country = nvram_default_get(regdomain, "UNITED_STATES");
-	fprintf(fp, "country_code=%s\n", getIsoName(country));
-	char *ssid;
-	ssid = nvram_nget("%s_ssid", prefix);
-	fprintf(fp, "ssid=%s\n", ssid);
-}
-#endif
-
 #ifdef HAVE_WPS
 //loaned from hostapd
 void get_uuid(char *uuid_str)
@@ -1200,9 +1088,9 @@ static void set_rate(char *dev, char *priv)
 		}
 	if (!strcmp(netmode, "b-only"))
 		sysprintf("iwconfig %s rate 11M auto", priv);
-	else {
-		sysprintf("iwconfig %s rate 54M auto", priv);
-	}
+	// else {
+		// sysprintf("iwconfig %s rate 54M auto", priv);
+	// }
 	if (atol(mr) > 0)
 		sysprintf("iwpriv %s maxrate %s", priv, mr);
 	if (atoi(r) > 0)
@@ -2393,6 +2281,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		{
 			configure_single(i);
 		}
+#ifdef HAVE_ATH9K
+	ath9k_start_supplicant(i);
+#endif
 	}
 
 	if (changed)		// if changed, deconfigure myself and
