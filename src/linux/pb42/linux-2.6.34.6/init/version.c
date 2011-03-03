@@ -34,7 +34,7 @@ struct uts_namespace init_uts_ns = {
 		.domainname	= UTS_DOMAINNAME,
 	},
 };
-EXPORT_SYMBOL(init_uts_ns);
+EXPORT_SYMBOL_GPL(init_uts_ns);
 
 /* FIXED STRINGS! Don't touch! */
 const char linux_banner[] =
