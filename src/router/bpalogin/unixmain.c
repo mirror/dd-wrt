@@ -20,6 +20,7 @@
 
 #include "bpalogin.h"
 #include "ddns3-client/ctx.h"
+#include <errno.h>
 #include <bcmnvram.h>
 
 struct session s;
@@ -27,7 +28,7 @@ int debug_level = DEFAULT_DEBUG;
 char ddnsconffile[256];
 int dosyslog = 1;
 
-extern int errno;
+//extern int errno;
 
 int parse_parms(struct session *,char * conffile);
 void usage();

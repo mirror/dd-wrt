@@ -6,6 +6,7 @@ CFLAGS = $(COPTS) -Wall -I$(SRCBASE)/include.v24 -I.
 else
 CFLAGS = $(COPTS) -Wall -I$(SRCBASE)/include.v23 -I.
 endif
+CFLAGS += -fPIC
 LIBS = -lcrypt -lnvram
 LFLAGS = -L$(TOP)/nvram
 
