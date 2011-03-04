@@ -729,6 +729,10 @@ int main(int argc, char **argv)
 			start_services();
 
 			cprintf("start wan boot\n");
+#ifdef HAVE_VLANTAGGING
+			start_service("vlantagging");
+			start_service("bridgesif");
+#endif
 			start_service("wan_boot");
 			start_service_f("ttraff");
 
@@ -737,10 +741,6 @@ int main(int argc, char **argv)
 			cprintf("set led release wan control\n");
 			SET_LED(RELEASE_WAN_CONTROL);
 
-#ifdef HAVE_VLANTAGGING
-			start_service("vlantagging");
-			start_service("bridgesif");
-#endif
 
 #ifndef HAVE_ERC
 #ifdef HAVE_RADIOOFF
