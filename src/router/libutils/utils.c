@@ -2253,13 +2253,19 @@ void *getUEnv(char *name)
 #define UOFFSET 0x40000
 #elif HAVE_WZRG450
 #define UOFFSET 0x40000
+#elif HAVE_WMBR_G300NH
+#define UOFFSET 0x0
 #else
 #define UOFFSET 0x3E000
 #endif
 	static char res[64];
 	memset(res, 0, sizeof(res));
 	//fprintf(stderr,"[u-boot env]%s\n",name);
+#ifdef HAVE_WMBR_G300NH
+	FILE *fp = fopen("/dev/mtdblock/1", "rb");
+#else
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+#endif
 	fseek(fp, UOFFSET, SEEK_SET);
 	char *mem = safe_malloc(0x2000);
 	fread(mem, 0x2000, 1, fp);
