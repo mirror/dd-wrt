@@ -1,6 +1,6 @@
 #AR=ar
 #CC=gcc
-CF=-Wall $(COPTS)
+CF=-Wall $(COPTS) -fPIC
 CL=-lcrypt
 #ST=strip
 
