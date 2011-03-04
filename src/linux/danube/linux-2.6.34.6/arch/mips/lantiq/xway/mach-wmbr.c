@@ -33,7 +33,7 @@ static struct mtd_partition wmbr_partitions[] =
 		.size	= 0x40000,
 	},
 	{
-		.name	= "uboot_env",
+		.name	= "uboot-env",
 		.offset	= 0x40000,
 		.size	= 0x20000,
 	},

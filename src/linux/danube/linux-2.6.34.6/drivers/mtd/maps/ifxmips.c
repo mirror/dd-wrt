@@ -101,7 +101,7 @@ static struct mtd_partition ifxmips_partitions[] = {
 		.size = 0x00020000,
 	},
 	{
-		.name = "uboot_env",
+		.name = "uboot-env",
 		.offset = 0x00020000,
 		.size = 0x0,
 	},
