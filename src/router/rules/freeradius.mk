@@ -1,4 +1,4 @@
-freeradius-configure:
+freeradius-configure: openssl
 	cd freeradius && \
 	sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" \
 	sys_lib_search_path_spec="$(ARCH)-uclibc" \
