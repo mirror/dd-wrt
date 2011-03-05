@@ -127,7 +127,7 @@
 			</script>
 			</div>
 			<div class="setting">		
-				<div class="label"><% tran("service.vpnd_route"); %></div>
+				<div class="label"><% tran("service.vpn_route"); %></div>
 				<textarea cols="60" rows="2" id="openvpncl_route" name="openvpncl_route"></textarea>
 				<script type="text/javascript">
 				//<![CDATA[
