@@ -254,6 +254,8 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
+							<dd class="term"><% tran("service.vpnd_config"); %></dd>
+							<dt class="definition"><% tran("hstatus_vpn.right2"); %></dt>
 							<dd class="term"><% tran("service.vpn_route"); %></dd>
 							<dt class="definition"><% tran("hstatus_vpn.right1"); %></dt>
 						</dl><br />
