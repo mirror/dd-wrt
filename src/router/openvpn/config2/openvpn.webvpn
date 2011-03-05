@@ -142,16 +142,6 @@
 				</select>
 			</div>
 			<div class="setting">		
-				<div class="label"><% tran("service.vpnd_config"); %></div>
-				<textarea cols="60" rows="10" id="openvpn_config" name="openvpn_config"> </textarea>
-				<script type="text/javascript">
-				//<![CDATA[
-						var openvpn_config = fix_cr( '<% nvram_get("openvpn_config"); %>' );
-						document.getElementById("openvpn_config").value = openvpn_config;
-				//]]>
-				</script>
-			</div>
-			<div class="setting">		
 				<div class="label"><% tran("service.vpnd_tlsauth"); %></div>
 				<textarea cols="60" rows="2" id="openvpn_tlsauth" name="openvpn_tlsauth"> </textarea>
 				<script type="text/javascript">
@@ -222,6 +212,16 @@
 		//<![CDATA[		
 				var openvpn_dh = fix_cr( '<% nvram_get("openvpn_dh"); %>' );
 				document.getElementById("openvpn_dh").value = openvpn_dh;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label"><% tran("service.vpnd_config"); %></div>
+		<textarea cols="60" rows="10" id="openvpn_config" name="openvpn_config"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_config = fix_cr( '<% nvram_get("openvpn_config"); %>' );
+				document.getElementById("openvpn_config").value = openvpn_config;
 		//]]>
 		</script>
 	</div>
