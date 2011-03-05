@@ -1362,11 +1362,11 @@ service.vpn_auth="Hash Algorithm";
 service.vpn_bridge="Bridge TAP to br0";
 service.vpn_adv="Advanced Options";
 service.vpn_tlscip="TLS Cipher";
-service.vpnd_route="Policy based Routing";
+service.vpn_route="Policy based Routing";
 
 //help container
 var hstatus_vpn = new Object();
-hstatus_vpn.right1="OpenVPN Server:";
+hstatus_vpn.right1="Add IP's in the form 0.0.0.0/0 to use the tunnelgateway. One Line per IP. Redirect Gateway MUST be off.";
 hstatus_vpn.right2="";
 
 //vnc.repeater
