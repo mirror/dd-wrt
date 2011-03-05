@@ -126,6 +126,17 @@
 				//]]>
 			</script>
 			</div>
+			<div class="setting">		
+				<div class="label"><% tran("service.vpnd_route"); %></div>
+				<textarea cols="60" rows="2" id="openvpncl_route" name="openvpncl_route"></textarea>
+				<script type="text/javascript">
+				//<![CDATA[
+					var openvpncl_config = fix_cr( '<% nvram_get("openvpncl_route"); %>' );
+					document.getElementById("openvpncl_route").value = openvpncl_config;
+				//]]>
+			</script>
+			</div>
+
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_srvcert"); %></div>
