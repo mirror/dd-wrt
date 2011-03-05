@@ -146,6 +146,7 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
+	fprintf(fp, "#!/bin/sh\n");
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl addif br0 tap0\n");
@@ -163,6 +164,7 @@ void start_openvpnserver(void)
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
+	fprintf(fp, "#!/bin/sh\n");
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl delif br0 tap0\n");
 		fprintf(fp, "ifconfig tap0 down\n");
@@ -294,6 +296,7 @@ void start_openvpn(void)
 	fp = fopen("/tmp/openvpncl/route-up.sh", "wb");
 	if (fp == NULL)
 		return;
+	fprintf(fp, "#!/bin/sh\n");
 	//bridge tap interface to br0 when choosen
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
@@ -310,11 +313,19 @@ void start_openvpn(void)
 		fprintf(fp, "iptables -I FORWARD -o %s1 -j ACCEPT\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	}
+	if (strlen(nvram_safe_get("openvpncl_route")) > 0) //policy based routing
+		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
+		fprintf(fp, "ip route add default via %s table 10\n",
+			nvram_safe_get("wan_gateway"));
+		fprintf(fp, "for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
+			"	ip rule add from $IP table 10\n" "done\n");
+  	}
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
+	fprintf(fp, "#!/bin/sh\n");
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
 			"iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
@@ -331,6 +342,13 @@ void start_openvpn(void)
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0"))
 		fprintf(fp, "brctl delif br0 tap1\n");
+	if (strlen(nvram_safe_get("openvpncl_route")) > 0) //policy based routing
+		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
+		fprintf(fp, "ip route del default via %s table 10\n",
+			nvram_safe_get("wan_gateway"));
+		fprintf(fp, "for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
+			"	ip rule del from $IP table 10\n" "done\n");
+  	}
 	fclose(fp);
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
