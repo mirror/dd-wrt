@@ -68,6 +68,7 @@ addEvent(window, "load", function() {
 	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
 	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
 	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
+	setElementVisible("wan_signal", "<% nvram_get("wan_proto"); %>" == "3g");
 
 	update = new StatusUpdate("Status_Internet.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate("wan_shortproto", function(u) {
