@@ -2870,7 +2870,7 @@ int radius_conf(struct radius_t *radius,
 
   /* Get Service Type */
   if (!radius_getattr(pack, &attr, RADIUS_ATTR_SERVICE_TYPE, 0, 0, 0)) {
-    if(ntohl(attr->v.i) != RADIUS_SERVICE_TYPE_CHILLISPOT_AUTHORIZE_ONLY) {
+    if(ntohl(stateattr->v.i) == RADIUS_SERVICE_TYPE_CHILLISPOT_AUTHORIZE_ONLY) {
       sys_err(LOG_ERR, __FILE__, __LINE__, 0,
 	      "Chillispot-Authorize-Only Service-Type not in Access-Accept");
       return 0;
