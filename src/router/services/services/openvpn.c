@@ -317,7 +317,7 @@ void start_openvpn(void)
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route add default via %s table 10\n",
 			nvram_safe_get("wan_gateway"));
-		fprintf(fp, "for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
+		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
 			"	ip rule add from $IP table 10\n" "done\n");
   	}
 	fclose(fp);
