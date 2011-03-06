@@ -168,8 +168,10 @@ static struct map_info lq_map = {
 	.copy_to = lq_copy_to,
 };
 
-
-
+#ifdef CONFIG_AR9
+#define RESERVE 6
+#else
+#define RESERVE 3
 static int
 lq_mtd_probe(struct platform_device *pdev)
 {
@@ -271,14 +273,14 @@ lq_mtd_probe(struct platform_device *pdev)
 		jffsoffset &= ~(lq_mtd->erasesize - 1);
 		parts[rootfs_part].size = jffsoffset - parts[rootfs_part].offset;
 		parts[7].offset = jffsoffset;
-		parts[7].size = (lq_mtd->size - (lq_mtd->erasesize*3)) - jffsoffset;
+		parts[7].size = (lq_mtd->size - (lq_mtd->erasesize*RESERVE)) - jffsoffset;
 		ifxmips_meta_partition.offset = parts[kernel_part].offset;
 		ifxmips_meta_partition.size = parts[kernel_part].size + parts[rootfs_part].size + parts[7].size;
 	}
 
 	if (err <= 0) {
 //			parts[3].size -= (lq_mtd->erasesize*3);
-			parts[4].offset = lq_mtd->size - (lq_mtd->erasesize*3);
+			parts[4].offset = lq_mtd->size - (lq_mtd->erasesize*RESERVE);
 			parts[4].size = lq_mtd->erasesize;
 			parts[5].offset = lq_mtd->size - (lq_mtd->erasesize);
 			parts[5].size = lq_mtd->erasesize;
@@ -294,6 +296,7 @@ lq_mtd_probe(struct platform_device *pdev)
 		lq_map.name, ((int)lq_mtd->size) >> 20);
 	return 0;
 }
+#undef RESERVE
 
 static struct platform_driver lq_mtd_driver = {
 	.probe = lq_mtd_probe,
