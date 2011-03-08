@@ -172,6 +172,7 @@ static struct map_info lq_map = {
 #define RESERVE 6
 #else
 #define RESERVE 3
+#endif
 static int
 lq_mtd_probe(struct platform_device *pdev)
 {
