@@ -282,36 +282,35 @@ static void set_netmode(char *wif, char *dev, char *use)
 //                      sysprintf("iwpriv %s xr 0", use);
 			if (!strcmp(netmode, "mixed")) {
 				sysprintf("iwpriv %s mode 0", use);
+				sysprintf("iwpriv %s pureg 0", use);
+				sysprintf("iwpriv %s pureb 0", use);
+				sysprintf("iwpriv %s puren 0", use);
 				setup_channel(dev, use);
 			}
 			if (!strcmp(netmode, "b-only")) {
 				sysprintf("iwpriv %s mode 2", use);
+				sysprintf("iwpriv %s pureg 0", use);
+				sysprintf("iwpriv %s puren 0", use);
 				sysprintf("iwpriv %s pureb 1", use);
 				setup_channel(dev, use);
 			}
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 3", use);
+				sysprintf("iwpriv %s pureb 0", use);
+				sysprintf("iwpriv %s puren 0", use);
 				sysprintf("iwpriv %s pureg 1", use);
 				setup_channel(dev, use);
 			}
 
 			if (!strcmp(netmode, "a-only")) {
 				sysprintf("iwpriv %s mode 1", use);
+				sysprintf("iwpriv %s pureb 0", use);
+				sysprintf("iwpriv %s puren 0", use);
+				sysprintf("iwpriv %s pureg 0", use);
 				setup_channel(dev, use);
 			}
 		}
 	}
-//      IEEE80211_HTINFO_EXTOFFSET_ABOVE = 1,   /* +1 extension channel above control channel */ 
-//      IEEE80211_HTINFO_EXTOFFSET_UNDEF = 2,   /* -2 undefined */ 
-//      IEEE80211_HTINFO_EXTOFFSET_BELOW = 3    /* -1 extension channel below control channel*/
-//      IEEE80211_MODE_11NA_HT20        = 7,    /* 5Ghz, HT20 */
-//      IEEE80211_MODE_11NG_HT20        = 8,    /* 2Ghz, HT20 */
-//      IEEE80211_MODE_11NA_HT40PLUS    = 9,    /* 5Ghz, HT40 (ext ch +1) */
-//      IEEE80211_MODE_11NA_HT40MINUS   = 10,   /* 5Ghz, HT40 (ext ch -1) */
-//      IEEE80211_MODE_11NG_HT40PLUS    = 11,   /* 2Ghz, HT40 (ext ch +1) */
-//      IEEE80211_MODE_11NG_HT40MINUS   = 12,   /* 2Ghz, HT40 (ext ch -1) */
-//    ifconfig ${APNAME} txqueuelen $TXQUEUELEN
-//    ifconfig wifi$IFNUM txqueuelen $TXQUEUELEN
 
 	int up = 0;
 	char sb[32];
@@ -321,11 +320,20 @@ static void set_netmode(char *wif, char *dev, char *use)
 	if (nvram_default_match(bw, "40", "20")) {
 		if (!strcmp(netmode, "g-only")) {
 			sysprintf("iwpriv %s mode 6", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
 			sysprintf("iwpriv %s pureg 1", use);
 			setup_channel(dev, use);
+		} else {
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 		}
 		if (!strcmp(netmode, "a-only")) {
 			sysprintf("iwpriv %s mode 5", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 			setup_channel(dev, use);
 		}
 		if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "n2-only")) {
@@ -408,6 +416,16 @@ static void set_netmode(char *wif, char *dev, char *use)
 	}
 	if (!strcmp(netmode, "n5-only") || !strcmp(netmode, "n2-only")) {
 		sysprintf("iwpriv %s puren 1", use);
+	} else {
+		sysprintf("iwpriv %s puren 0", use);
+	}
+
+	if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "na-only")) {
+		sysprintf("iwpriv %s puren 1", use);
+		sysprintf("iwpriv %s pureg 1", use);
+	} else {
+		sysprintf("iwpriv %s puren 0", use);
+		sysprintf("iwpriv %s pureg 0", use);
 	}
 	sysprintf
 	    ("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
@@ -1092,8 +1110,8 @@ void configure_single_11n(int count)
 #ifdef HAVE_RELAYD
 		if (!strcmp(apm, "wet")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", dev);
-//			sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
-//				  dev);
+//                      sysprintf("relayd -I %s -I %s -D -B", getBridge(dev),
+//                                dev);
 		}
 #endif
 
