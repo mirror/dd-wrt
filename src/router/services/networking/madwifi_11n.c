@@ -296,10 +296,14 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 3", use);
-				sysprintf("iwpriv %s pureb 0", use);
-				sysprintf("iwpriv %s puren 0", use);
-				sysprintf("iwpriv %s pureg 1", use);
 				setup_channel(dev, use);
+			}
+
+			if (!strcmp(netmode, "bg-mixed")) {
+				sysprintf("iwpriv %s mode 3", use);
+				sysprintf("iwpriv %s puren 0", use);
+				sysprintf("iwpriv %s pureb 1", use);
+				sysprintf("iwpriv %s pureg 1", use);
 			}
 
 			if (!strcmp(netmode, "a-only")) {
@@ -416,16 +420,11 @@ static void set_netmode(char *wif, char *dev, char *use)
 	}
 	if (!strcmp(netmode, "n5-only") || !strcmp(netmode, "n2-only")) {
 		sysprintf("iwpriv %s puren 1", use);
-	} else {
-		sysprintf("iwpriv %s puren 0", use);
 	}
 
 	if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "na-only")) {
 		sysprintf("iwpriv %s puren 1", use);
 		sysprintf("iwpriv %s pureg 1", use);
-	} else {
-		sysprintf("iwpriv %s puren 0", use);
-		sysprintf("iwpriv %s pureg 0", use);
 	}
 	sysprintf
 	    ("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
