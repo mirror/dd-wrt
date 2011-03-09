@@ -296,14 +296,17 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 			if (!strcmp(netmode, "g-only")) {
 				sysprintf("iwpriv %s mode 3", use);
+				sysprintf("iwpriv %s puren 0", use);
+				sysprintf("iwpriv %s pureb 0", use);
+				sysprintf("iwpriv %s pureg 1", use);
 				setup_channel(dev, use);
 			}
 
 			if (!strcmp(netmode, "bg-mixed")) {
 				sysprintf("iwpriv %s mode 3", use);
 				sysprintf("iwpriv %s puren 0", use);
-				sysprintf("iwpriv %s pureb 1", use);
-				sysprintf("iwpriv %s pureg 1", use);
+				sysprintf("iwpriv %s pureb 0", use);
+				sysprintf("iwpriv %s pureg 0", use);
 			}
 
 			if (!strcmp(netmode, "a-only")) {
@@ -328,11 +331,8 @@ static void set_netmode(char *wif, char *dev, char *use)
 			sysprintf("iwpriv %s puren 0", use);
 			sysprintf("iwpriv %s pureg 1", use);
 			setup_channel(dev, use);
-		} else {
-			sysprintf("iwpriv %s pureb 0", use);
-			sysprintf("iwpriv %s puren 0", use);
-			sysprintf("iwpriv %s pureg 0", use);
-		}
+		} 
+		
 		if (!strcmp(netmode, "a-only")) {
 			sysprintf("iwpriv %s mode 5", use);
 			sysprintf("iwpriv %s pureb 0", use);
@@ -345,6 +345,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 				sysprintf("iwpriv %s mode 11nbht40plus", use);
 			else
 				sysprintf("iwpriv %s mode 11nght40minus", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
@@ -363,6 +366,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 				sysprintf("iwpriv %s mode 11naht40plus", use);
 			else
 				sysprintf("iwpriv %s mode 11naht40minus", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
@@ -378,6 +384,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 	if (nvram_default_match(bw, "2040", "20")) {
 		if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "n2-only")) {
 			sysprintf("iwpriv %s mode 11nght20", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
@@ -388,6 +397,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 		}
 		if (!strcmp(netmode, "na-only") || !strcmp(netmode, "n5-only")) {
 			sysprintf("iwpriv %s mode 11naht20", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
 			sysprintf("iwpriv %s shortgi 1", use);
@@ -399,6 +411,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 	if (nvram_default_match(bw, "20", "20")) {
 		if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "n2-only")) {
 			sysprintf("iwpriv %s mode 11nght20", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
@@ -409,6 +424,9 @@ static void set_netmode(char *wif, char *dev, char *use)
 		}
 		if (!strcmp(netmode, "na-only") || !strcmp(netmode, "n5-only")) {
 			sysprintf("iwpriv %s mode 11naht20", use);
+			sysprintf("iwpriv %s pureb 0", use);
+			sysprintf("iwpriv %s puren 0", use);
+			sysprintf("iwpriv %s pureg 0", use);
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
@@ -422,10 +440,6 @@ static void set_netmode(char *wif, char *dev, char *use)
 		sysprintf("iwpriv %s puren 1", use);
 	}
 
-	if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "na-only")) {
-		sysprintf("iwpriv %s puren 1", use);
-		sysprintf("iwpriv %s pureg 1", use);
-	}
 	sysprintf
 	    ("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
 	sysprintf("iwpriv %s ampdu 1", use);
