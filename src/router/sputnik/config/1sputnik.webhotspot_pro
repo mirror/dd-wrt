@@ -11,6 +11,11 @@
 		<div class="setting">
 			<div class="label"><% tran("hotspot.sputnik_mode"); %></div>
 				<select name="sputnik_mode" >
+					<script type="text/javascript">
+					//<![CDATA[
+						document.write("<option value=\"standard\" <% nvram_selected_js("sputnik_mode", "standard"); %> >" + share.standard + "</option>");
+					//]]>
+					</script>
 					<option value="nms" <% nvram_selected("sputnik_mode", "nms"); %> >NMS</option>
 					<option value="pro" <% nvram_selected("sputnik_mode", "pro"); %> >PRO</option>
 				</select>
