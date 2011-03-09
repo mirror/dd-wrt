@@ -385,8 +385,11 @@ static void set_netmode(char *wif, char *dev, char *use)
 		if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "n2-only")) {
 			sysprintf("iwpriv %s mode 11nght20", use);
 			sysprintf("iwpriv %s pureb 0", use);
-			sysprintf("iwpriv %s puren 0", use);
-			sysprintf("iwpriv %s pureg 0", use);
+			if (!strcmp(netmode, "na-only"))
+				sysprintf("iwpriv %s puren 0", use);
+			else
+				sysprintf("iwpriv %s puren 1", use);
+			sysprintf("iwpriv %s pureg 1", use);
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
@@ -398,7 +401,10 @@ static void set_netmode(char *wif, char *dev, char *use)
 		if (!strcmp(netmode, "na-only") || !strcmp(netmode, "n5-only")) {
 			sysprintf("iwpriv %s mode 11naht20", use);
 			sysprintf("iwpriv %s pureb 0", use);
-			sysprintf("iwpriv %s puren 0", use);
+			if (!strcmp(netmode, "na-only"))
+				sysprintf("iwpriv %s puren 0", use);
+			else
+				sysprintf("iwpriv %s puren 1", use);
 			sysprintf("iwpriv %s pureg 0", use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
@@ -412,8 +418,11 @@ static void set_netmode(char *wif, char *dev, char *use)
 		if (!strcmp(netmode, "ng-only") || !strcmp(netmode, "n2-only")) {
 			sysprintf("iwpriv %s mode 11nght20", use);
 			sysprintf("iwpriv %s pureb 0", use);
-			sysprintf("iwpriv %s puren 0", use);
-			sysprintf("iwpriv %s pureg 0", use);
+			if (!strcmp(netmode, "ng-only"))
+				sysprintf("iwpriv %s puren 0", use);
+			else
+				sysprintf("iwpriv %s puren 1", use);
+			sysprintf("iwpriv %s pureg 1", use);
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
 			sysprintf("ifconfig %s txqueuelen 1000", wif);
@@ -425,7 +434,10 @@ static void set_netmode(char *wif, char *dev, char *use)
 		if (!strcmp(netmode, "na-only") || !strcmp(netmode, "n5-only")) {
 			sysprintf("iwpriv %s mode 11naht20", use);
 			sysprintf("iwpriv %s pureb 0", use);
-			sysprintf("iwpriv %s puren 0", use);
+			if (!strcmp(netmode, "na-only"))
+				sysprintf("iwpriv %s puren 0", use);
+			else
+				sysprintf("iwpriv %s puren 1", use);
 			sysprintf("iwpriv %s pureg 0", use);
 			setup_channel(dev, use);
 			sysprintf("ifconfig %s txqueuelen 1000", use);
@@ -435,9 +447,6 @@ static void set_netmode(char *wif, char *dev, char *use)
 			sysprintf("iwpriv %s extoffset -1", use);
 			sysprintf("iwpriv %s extprotspac 0", use);
 		}
-	}
-	if (!strcmp(netmode, "n5-only") || !strcmp(netmode, "n2-only")) {
-		sysprintf("iwpriv %s puren 1", use);
 	}
 
 	sysprintf
