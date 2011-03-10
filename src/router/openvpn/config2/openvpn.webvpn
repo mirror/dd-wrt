@@ -141,16 +141,6 @@
 				<option value="AES256-SHA" <% nvram_selected("openvpn_tlscip","AES256-SHA"); %>>AES-256 SHA</option>
 				</select>
 			</div>
-			<div class="setting">		
-				<div class="label"><% tran("service.vpnd_crl"); %></div>
-				<textarea cols="60" rows="2" id="openvpn_crl" name="openvpn_crl"> </textarea>
-				<script type="text/javascript">
-				//<![CDATA[
-						var openvpn_crl = fix_cr( '<% nvram_get("openvpn_crl"); %>' );
-						document.getElementById("openvpn_crl").value = openvpn_crl;
-				//]]>
-				</script>
-			</div>
 		</div>
 		<div class="setting">		
 			<div class="label"><% tran("service.vpnd_cert"); %></div>
@@ -222,6 +212,16 @@
 		//<![CDATA[
 			var openvpn_tlsauth = fix_cr( '<% nvram_get("openvpn_tlsauth"); %>' );
 			document.getElementById("openvpn_tlsauth").value = openvpn_tlsauth;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label"><% tran("service.vpnd_crl"); %></div>
+		<textarea cols="60" rows="2" id="openvpn_crl" name="openvpn_crl"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_crl = fix_cr( '<% nvram_get("openvpn_crl"); %>' );
+				document.getElementById("openvpn_crl").value = openvpn_crl;
 		//]]>
 		</script>
 	</div>
