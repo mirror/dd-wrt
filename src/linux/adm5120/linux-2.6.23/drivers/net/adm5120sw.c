@@ -832,9 +832,9 @@ static int adm5120_if_open(struct net_device *dev)
 
 
 //wp54g patch
-	sw_write_reg(SWITCH_REG_PORT_CONF1, sw_read_reg(SWITCH_REG_PORT_CONF1) | SW_DIS_SA_LEARN_MASK);
-	adm5120_if_set_multicast_list(dev);
-	adm5120_write_mac(dev);
+//	sw_write_reg(SWITCH_REG_PORT_CONF1, sw_read_reg(SWITCH_REG_PORT_CONF1) | SW_DIS_SA_LEARN_MASK);
+//	adm5120_if_set_multicast_list(dev);
+//	adm5120_write_mac(dev);
 /*
 //important: promisc mode
 #define SW_DIS_UN_SHIFT							9
