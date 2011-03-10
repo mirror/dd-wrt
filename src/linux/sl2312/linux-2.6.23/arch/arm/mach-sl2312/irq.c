@@ -109,14 +109,12 @@ static struct irq_chip sl2312_level_irq = {
         .ack            = sl2312_mask_irq,
         .mask           = sl2312_mask_irq,
         .unmask         = sl2312_unmask_irq,
-//		.set_type	= ixp4xx_set_irq_type,
 };
 
 static struct irq_chip sl2312_edge_irq = {
         .ack            = sl2312_ack_irq,
         .mask           = sl2312_mask_irq,
         .unmask         = sl2312_unmask_irq,
-//		.set_type	= ixp4xx_set_irq_type,
 };
 
 static struct resource irq_resource = {
@@ -129,6 +127,11 @@ void __init sl2312_init_irq(void)
 {
 	unsigned int i, mode, level;
 
+	/*
+	 * Disable arch_idle() by default since it is buggy
+	 * For more info see arch/arm/mach-gemini/include/mach/system.h
+	 */
+	disable_hlt();
     request_resource(&iomem_resource, &irq_resource);
 
 	for (i = 0; i < NR_IRQS; i++)
@@ -141,7 +144,7 @@ void __init sl2312_init_irq(void)
 	    else
         {
 	        set_irq_chip(i, &sl2312_level_irq);
-            set_irq_handler(i,handle_level_irq);
+        	set_irq_handler(i,handle_level_irq);
         }
         set_irq_flags(i, IRQF_VALID | IRQF_PROBE);
 	}

@@ -28,7 +28,7 @@
 #else
 #define GMAC_NUM					1
 #endif
-#define	L2_jumbo_frame				1
+#define	L2_jumbo_frame				0
 
 #define _PACKED_					__attribute__ ((aligned(1), packed))
 
