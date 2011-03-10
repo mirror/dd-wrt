@@ -30,9 +30,14 @@
 static void arch_idle(void)
 {
 	/*
-	 * This should do all the clock switching
-	 * and wait for interrupt tricks
+	 * Because of broken hardware we have to enable interrupts or the CPU
+	 * will never wakeup... Acctualy it is not very good to enable
+	 * interrupts here since scheduler can miss a tick, but there is
+	 * no other way around this. Platforms that needs it for power saving
+	 * should call enable_hlt() in init code, since by default it is
+	 * disabled.
 	 */
+	local_irq_enable();
 	cpu_do_idle();
 }
 

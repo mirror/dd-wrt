@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.17
-# Wed Apr 28 21:16:23 2010
+# Thu May 27 09:47:59 2010
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -557,7 +557,8 @@ CONFIG_FIB_RULES=y
 CONFIG_WIRELESS_EXT=y
 # CONFIG_MAC80211 is not set
 # CONFIG_IEEE80211 is not set
-# CONFIG_RFKILL is not set
+CONFIG_RFKILL=y
+# CONFIG_RFKILL_INPUT is not set
 # CONFIG_NET_9P is not set
 
 #
@@ -723,6 +724,7 @@ CONFIG_ATA=m
 # CONFIG_SATA_NV is not set
 # CONFIG_PDC_ADMA is not set
 # CONFIG_SATA_QSTOR is not set
+# CONFIG_SATA_LEPUS is not set
 # CONFIG_SATA_PROMISE is not set
 # CONFIG_SATA_SX4 is not set
 # CONFIG_SATA_SIL is not set
@@ -869,6 +871,7 @@ CONFIG_GEMINI_NET_ENGINE_GMAC=m
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_USBNET_MII is not set
 # CONFIG_USB_USBNET is not set
+CONFIG_USB_HSO=m
 # CONFIG_WAN is not set
 # CONFIG_FDDI is not set
 # CONFIG_HIPPI is not set
@@ -1238,11 +1241,7 @@ CONFIG_RTC_DRV_GEMINI=y
 #
 # File systems
 #
-CONFIG_EXT2_FS=m
-CONFIG_EXT2_FS_XATTR=y
-# CONFIG_EXT2_FS_POSIX_ACL is not set
-# CONFIG_EXT2_FS_SECURITY is not set
-# CONFIG_EXT2_FS_XIP is not set
+# CONFIG_EXT2_FS is not set
 CONFIG_EXT3_FS=m
 CONFIG_EXT3_FS_XATTR=y
 # CONFIG_EXT3_FS_POSIX_ACL is not set
@@ -1254,11 +1253,7 @@ CONFIG_FS_MBCACHE=m
 # CONFIG_REISERFS_FS is not set
 # CONFIG_JFS_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
-CONFIG_XFS_FS=m
-# CONFIG_XFS_QUOTA is not set
-# CONFIG_XFS_SECURITY is not set
-# CONFIG_XFS_POSIX_ACL is not set
-# CONFIG_XFS_RT is not set
+# CONFIG_XFS_FS is not set
 # CONFIG_GFS2_FS is not set
 # CONFIG_OCFS2_FS is not set
 # CONFIG_MINIX_FS is not set
