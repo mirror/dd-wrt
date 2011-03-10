@@ -342,6 +342,6 @@ obj-$(CONFIG_SFC) += sfc/
 obj-$(CONFIG_WIMAX) += wimax/
 
 obj-$(CONFIG_OCTEON_MGMT_ETHERNET) += octeon/
-obj-$(CONFIG_AG7100) += ag7100/
-obj-$(CONFIG_AG7240) += ag7240/
+#obj-$(CONFIG_AG7100) += ag7100/
+#obj-$(CONFIG_AG7240) += ag7240/
 obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
