@@ -20,13 +20,16 @@
 #include "asm/arch/irqs.h"
 #include <asm/hardware.h>
 #include <asm/irq.h>
+#include <asm/io.h>
 #include <linux/platform_device.h>
 
 /*
  * device registration specific to sl2312.
  */
 
-static u64 sl2312_dmamask = 0xffffffffUL;
+static u64 sl2312_usb0_dmamask = 0xffffffffUL;
+
+static u64 sl2312_usb1_dmamask = 0xffffffffUL;
 
 static struct resource sl2312_otg_resources_1[] = {
 	[0] = {
@@ -57,7 +60,7 @@ static struct platform_device ehci_device_1 = {
 	.name		= "ehci-hcd-FOTG2XX",
 	.id		= 1,
 	.dev		= {
-		.dma_mask = &sl2312_dmamask,
+		.dma_mask = &sl2312_usb0_dmamask,
 		.coherent_dma_mask = 0xffffffff,
 	},
 	.num_resources  = ARRAY_SIZE(sl2312_otg_resources_1),
@@ -68,7 +71,7 @@ static struct platform_device ehci_device_2 = {
 	.name		= "ehci-hcd-FOTG2XX",
 	.id		= 2,
 	.dev		= {
-		.dma_mask = &sl2312_dmamask,
+		.dma_mask = &sl2312_usb1_dmamask,
 		.coherent_dma_mask = 0xffffffff,
 	},
 	.num_resources  = ARRAY_SIZE(sl2312_otg_resources_2),
@@ -175,6 +178,8 @@ static struct platform_device *devices[] __initdata = {
 
 static int __init sl2312_init(void)
 {
+//	__raw_writel( (int) RESET_USB0|RESET_USB1, IO_ADDRESS(SL2312_GLOBAL_BASE) + GLOBAL_RESET_REG);
+
 #ifdef CONFIG_MACH_WBD222
 	platform_register_pata(1);
 #endif
