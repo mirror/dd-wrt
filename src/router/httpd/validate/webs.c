@@ -1586,6 +1586,7 @@ void macro_rem(char *a, char *nv)
 				}
 				b[i] = 0;
 				nvram_set(nv, b);
+				free(b);
 			}
 
 		}
@@ -2560,6 +2561,7 @@ static void save_prefix(webs_t wp, char *prefix)
 					slc[i] = ' ';
 			}
 			nvram_set(n, slc);
+			free(slc);
 		}
 	}
 #ifdef HAVE_MAKSAT

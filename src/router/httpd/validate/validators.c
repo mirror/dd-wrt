@@ -3011,8 +3011,10 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		   i_from, i_to, o_from, o_to); */
 		newbuf = (char *)safe_malloc(strlen(buf) + len);
 		newbuf = strcat(buf, entry);
+		free(entry);
 		buf = (char *)safe_malloc(strlen(newbuf));
 		strcpy(buf, newbuf);
+		free(newbuf);
 	}
 
 	if (!error)
