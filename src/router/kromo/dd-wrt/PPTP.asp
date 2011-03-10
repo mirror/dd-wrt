@@ -2,8 +2,6 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-
-
 function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
@@ -72,9 +70,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="openvpncl_certtype" />
-
-														
-<h2><% tran("service.pptp_srv"); %></h2>
+							
+							<h2><% tran("service.pptp_srv"); %></h2>
 
 <fieldset>
 	<legend><% tran("service.pptp_srv"); %></legend>
@@ -119,7 +116,6 @@ addEvent(window, "unload", function() {
 			<input size="60" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
 		</div>
 
-<% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_auth"); %></div>
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("radius.legend"); %>&nbsp;
@@ -141,6 +137,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div id="idradius">
 		<fieldset>
+<% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
@@ -168,9 +165,9 @@ addEvent(window, "unload", function() {
 				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
 				<input size="20" maxlength="63" type="password" name="pptpd_radpass" value="d6nw5v1x2pc7st9m" />
 			</div>
+<% ifndef("RADIUSPLUGIN", "-->"); %>
 		</fieldset>
 		</div>
-<% ifndef("RADIUSPLUGIN", "-->"); %>
 	</div>
 
 </fieldset><br/>
