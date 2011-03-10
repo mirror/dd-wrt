@@ -46,7 +46,7 @@ static struct resource cambria_optional_uart_resources[] = {
 
 static struct plat_serial8250_port cambria_optional_uart_data[] = {
 	{
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_BUGGY_UART,
+		.flags		= UPF_BOOT_AUTOCONF
 //		.flags		= UPF_BOOT_AUTOCONF,
 		.iotype		= UPIO_MEM_DELAY,
 		.regshift	= 0,
@@ -54,7 +54,7 @@ static struct plat_serial8250_port cambria_optional_uart_data[] = {
 		.rw_delay	= 2,
 	},
 	{
-		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_BUGGY_UART,
+		.flags		= UPF_BOOT_AUTOCONF
 //		.flags		= UPF_BOOT_AUTOCONF,
 		.iotype		= UPIO_MEM_DELAY,
 		.regshift	= 0,
