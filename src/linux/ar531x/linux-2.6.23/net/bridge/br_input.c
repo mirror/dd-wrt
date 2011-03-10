@@ -51,8 +51,7 @@ int br_handle_frame_finish(struct sk_buff *skb)
 	br = p->br;
 	br_fdb_update(br, p, eth_hdr(skb)->h_source);
 
-	if (p->state == BR_STATE_LEARNING)
-		goto drop;
+	if ((p->state == BR_STATE_LEARNING) && skb->protocol != htons(ETH_P_PAE))
 
 	/* The packet skb2 goes to the local host (NULL to skip). */
 	skb2 = NULL;
