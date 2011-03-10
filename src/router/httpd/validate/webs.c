@@ -1534,7 +1534,7 @@ void qos_save(webs_t wp)
 
 }
 
-void macro_add(char *a)
+static void macro_add(char *a)
 {
 	cprintf("adding %s\n", a);
 
@@ -1556,7 +1556,7 @@ void macro_add(char *a)
 	return;
 }
 
-void macro_rem(char *a, char *nv)
+static void macro_rem(char *a, char *nv)
 {
 	char *count;
 	int c, i, cnt;
