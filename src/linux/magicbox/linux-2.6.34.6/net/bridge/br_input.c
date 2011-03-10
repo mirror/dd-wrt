@@ -56,7 +56,7 @@ int br_handle_frame_finish(struct sk_buff *skb)
 	    br_multicast_rcv(br, p, skb))
 		goto drop;
 
-	if (p->state == BR_STATE_LEARNING)
+	if ((p->state == BR_STATE_LEARNING) && skb->protocol != htons(ETH_P_PAE))
 		goto drop;
 
 	BR_INPUT_SKB_CB(skb)->brdev = br->dev;
