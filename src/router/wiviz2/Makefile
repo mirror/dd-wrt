@@ -5,6 +5,9 @@
 include $(TOP)/.config
 
 LIBS=-L../libpcap_noring -lpcap -lcrypt -lnvram -lutils -lwireless
+ifeq ($(CONFIG_ATH9K),y)
+LIBS += -L$(TOP)/libnl-tiny -lnl-tiny
+endif
 
 CCOPTS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 INCLUDE=../libpcap_noring
