@@ -26,6 +26,9 @@ endif
 
 CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.bcm -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += -L../nvram -L../shared -L../libutils -lutils -lnvram -lwireless -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifeq ($(CONFIG_ATH9K),y)
+LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+endif
 
 vpath %.c $(SRCBASE)/tools/misc
 
