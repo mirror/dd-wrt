@@ -76,7 +76,7 @@ void start_pptpd(void)
 		fprintf(fp, "mppe required,stateless\n");
 	else
 		fprintf(fp, "mppe stateless\n");
-	fprintf(fp, "mppc\n" "debug\n" "logfd 2\n"
+	fprintf(fp, "mppc\n" "debug dump\n" "logfd 2\n"
 //disable 4 now         "connections 254\n"     //allows X concurrent connections (default 100)
 		"ms-ignore-domain\n"
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
