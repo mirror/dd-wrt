@@ -2011,16 +2011,16 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
 			  vlan_name, prio != NULL ? prio : "32768");
 		websWrite(wp, "&nbsp;MTU&nbsp;");
-		/*  Now shown under Port setup
+		
 		sprintf(vlan_name, "bridgemtu%d", count);
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  vlan_name, mtu != NULL ? mtu : "1500");*/
+			  vlan_name, mtu != NULL ? mtu : "1500");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
 		websWrite(wp, "</div>\n");
-		// moved to Port setup show_ipnetmask(wp, bridge);
+		show_ipnetmask(wp, bridge);
 		count++;
 	}
 	int i;
@@ -7585,6 +7585,20 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
+
+		int match = 0;
+		static char word[256];
+		char *next2, *wordlist;
+		wordlist = nvram_safe_get("bridges");
+		foreach(word, wordlist, next2) {
+			char *bridge = word;
+			char *brname = strsep(&bridge, ">");
+			if (!strcmp(brname, var))
+				match += 1;
+		}
+		if (match)
+			continue;
+
 		char layer[64];
 		strcpy(layer, var);
 		rep(layer, '.', 'X');
