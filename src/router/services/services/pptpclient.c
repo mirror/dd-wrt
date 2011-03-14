@@ -136,8 +136,7 @@ static void create_pptp_config(char *servername, char *username)
 	fprintf(fp, "noipdefault\n");
 	fprintf(fp, "lock\n");
 	fprintf(fp, "noauth\n");
-	fprintf(fp, "debug\n");
-	fprintf(fp, "logfd 2\n");
+	fprintf(fp, "debug dump\n" "logfd 2\n");
 
 	if (nvram_invmatch("pptp_extraoptions", ""))
 		fwritenvram("pptp_extraoptions", fp);
