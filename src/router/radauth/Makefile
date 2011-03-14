@@ -30,6 +30,11 @@ ifeq ($(CONFIG_RT61),y)
 endif
 CFLAGS += -DNEED_PRINTF -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += -L -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+ifeq ($(CONFIG_ATH9K),y)
+LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+endif
+
 all: wrt-radauth radius-client macupd
 
 wrt-radauth: wrt-radauth.o md5.o radius.o
