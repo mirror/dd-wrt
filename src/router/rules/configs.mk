@@ -217,6 +217,8 @@ obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
 obj-checkout := $(foreach obj,$(obj-y) $(obj-n),$(obj)-checkout)
 obj-update := $(foreach obj,$(obj-y) $(obj-n),$(obj)-update)
 
+all:
+
 configs-checkout:
 	rm -rf $(TOP)/private
 	svn co svn://svn.dd-wrt.com/private $(TOP)/private
