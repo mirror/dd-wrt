@@ -2272,6 +2272,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"NC_MACWhiteList", "", 0},
 	{"NC_GatewayPort", "5280", 0},
 	{"NC_GatewayMode", "Open", 0},
+	{"NC_extifname", "auto", 0},
 	{"NC_ForcedRedirect", "0", 0},
 	{"NC_IdleTimeout", "0", 0},
 	{"NC_MaxMissedARP", "5", 0},

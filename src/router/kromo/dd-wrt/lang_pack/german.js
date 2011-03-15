@@ -716,6 +716,7 @@ hotspot.http_net="HTTP-Ursprungsnetzwerk";
 // ** NoCatSplash **//
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
+hotspot.nocat_extifname="Externes Interface";
 hotspot.nocat_gateway="Gateway-Name";
 hotspot.nocat_home="Homepage";
 hotspot.nocat_allowweb="Erlaubte Web-Hosts";

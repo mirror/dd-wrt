@@ -130,6 +130,11 @@ int mk_nocat_conf(void)
 	fprintf(fp, "GatewayAddr\t%s\n",
 		nvram_default_get("NC_GatewayAddr",
 				  nvram_safe_get("lan_ipaddr")));
+	if (!nvram_match("NC_extifname", "auto")) {
+		fprintf(fp, "ExternalDevice\t%s\n",
+			nvram_safe_get("NC_extifname"));
+	}
+
 	fprintf(fp, "InternalDevice\t%s\n",
 		nvram_default_get("NC_ifname", nvram_safe_get("lan_ifname")));
 	fprintf(fp, "GatewayPort\t%s\n", nvram_safe_get("NC_GatewayPort"));
