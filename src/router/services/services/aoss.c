@@ -32,7 +32,13 @@ void stop_aoss(void);
 void start_aoss(void)
 {
 	int ret;
-
+#ifdef HAVE_WZRHPAG300NH
+	if (nvram_match("ath0_net_mode","disabled") && nvram_match("ath1_net_mode","disabled"))
+	    return;
+#else
+	if (nvram_match("ath0_net_mode","disabled"))
+	    return;
+#endif	
 	if (nvram_match("aoss_enable", "0")) {
 		stop_aoss();
 #ifdef HAVE_WPS			// set to 1 or remove the #if to reenable WPS support
