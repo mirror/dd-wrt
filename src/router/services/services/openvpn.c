@@ -64,11 +64,11 @@ void start_openvpnserver(void)
 			"management-log-cache 50\n"
 			"mtu-disc yes\n"
 			"topology subnet\n"
-			"client-config-dir /tmp/openvpn/peers\n");
-			"port %s\n", nvram_safe_get("openvpn_port"));
-			"proto %s\n", nvram_safe_get("openvpn_proto"));
-			"cipher %s\n", nvram_safe_get("openvpn_cipher"));
-			"auth %s\n", nvram_safe_get("openvpn_auth"));
+			"client-config-dir /tmp/openvpn/peers\n"
+			"port %s\n"
+			"proto %s\n"
+			"cipher %s\n"
+			"auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
@@ -137,6 +137,13 @@ void start_openvpnserver(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	char * gpiovpn=nvram_get("gpiovpn");
+	if (gpiovpn != NULL)
+		{
+		fprintf(fp, "gpio enable %s\n",gpiovpn);
+		}
+#endif
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl addif br0 tap0\n"
@@ -155,6 +162,10 @@ void start_openvpnserver(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	if (gpiovpn != NULL)
+		fprintf(fp, "gpio disable %s\n",gpiovpn);
+#endif
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl delif br0 tap0\n"
 			"ifconfig tap0 down\n");
@@ -189,6 +200,13 @@ void start_openvpnserver(void)
 
 void stop_openvpnserver(void)
 {
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	char * gpiovpn=nvram_get("gpiovpn");
+	if (gpiovpn != NULL)
+		{
+		set_gpio(atoi(gpiovpn), 0);
+		}
+#endif
 	stop_process("openvpnserver", "OpenVPN daemon (Server)");
 	return;
 }
