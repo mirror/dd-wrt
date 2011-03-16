@@ -965,8 +965,6 @@ void period_check(int sig)
 		}
 #ifdef HAVE_AOSS
 		else if (nvram_match("radiooff_button", "2")) {
-
-			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 			sysprintf("startservice aoss");
 		}
 #else
