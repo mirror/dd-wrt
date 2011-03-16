@@ -1383,7 +1383,7 @@ service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
-service.radiooff_legend_aoss="AOSS Button Funktion";
+service.radiooff_legend_aoss="AOSS Button Function";
 service.radiooff_srv="Turning off radio";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Unused";
