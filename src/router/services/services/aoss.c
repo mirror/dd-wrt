@@ -33,12 +33,19 @@ void start_aoss(void)
 {
 	int ret;
 #ifdef HAVE_WZRHPAG300NH
-	if (nvram_match("ath0_net_mode","disabled") && nvram_match("ath1_net_mode","disabled"))
-	    return;
+	if (nvram_match("ath0_net_mode", "disabled")
+	    && nvram_match("ath1_net_mode", "disabled")) {
+		led_control(LED_SES, LED_OFF);
+		stop_aoss();
+		return;
+	}
 #else
-	if (nvram_match("ath0_net_mode","disabled"))
-	    return;
-#endif	
+	if (nvram_match("ath0_net_mode", "disabled")) {
+		led_control(LED_SES, LED_OFF);
+		stop_aoss();
+		return;
+	}
+#endif
 	if (nvram_match("aoss_enable", "0")) {
 		stop_aoss();
 #ifdef HAVE_WPS			// set to 1 or remove the #if to reenable WPS support
@@ -55,6 +62,7 @@ void start_aoss(void)
 	}
 	if (pidof("aoss") > 0)
 		return;
+	led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 	system("killall ledtool");
 	nvram_set("aoss_success", "0");
 	led_control(LED_SES, LED_OFF);
@@ -81,7 +89,9 @@ void start_aoss(void)
 	nvram_commit();
 	int hasaoss = 0;
 #ifdef HAVE_WZRHPAG300NH
-	if (nvram_match("ath1_mode", "ap") || nvram_match("ath1_mode", "wdsap")) {
+	if ((nvram_match("ath1_mode", "ap")
+	     || nvram_match("ath1_mode", "wdsap"))
+	    && !nvram_match("ath1_net_mode", "disabled")) {
 		hasaoss = 1;
 		sysprintf
 		    ("80211n_wlanconfig aossa create wlandev wifi1 wlanmode ap");
@@ -91,7 +101,9 @@ void start_aoss(void)
 		sysprintf("iwconfig aossa key [1]");
 		sysprintf("ifconfig aossa 0.0.0.0 up");
 	}
-	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
+	if ((nvram_match("ath0_mode", "ap")
+	     || nvram_match("ath0_mode", "wdsap"))
+	    && !nvram_match("ath0_net_mode", "disabled")) {
 		hasaoss = 1;
 		sysprintf
 		    ("80211n_wlanconfig aossg create wlandev wifi0 wlanmode ap");
@@ -105,8 +117,12 @@ void start_aoss(void)
 		//create aoss bridge
 		sysprintf("brctl addbr aoss");
 		sysprintf("ifconfig aoss 0.0.0.0 up");
-		sysprintf("brctl addif aoss aossa");
-		sysprintf("brctl addif aoss aossg");
+		if (!nvram_match("ath1_net_mode", "disabled")) {
+			sysprintf("brctl addif aoss aossa");
+		}
+		if (!nvram_match("ath0_net_mode", "disabled")) {
+			sysprintf("brctl addif aoss aossg");
+		}
 	}
 #else
 	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
