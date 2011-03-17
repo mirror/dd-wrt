@@ -1311,7 +1311,7 @@ service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
 var hpppoesrv = new Object();
-hpppoesrv.right2="IP: 0.0.0.0; you will serve an IP from the pool";
+hpppoesrv.right2="IP: 0.0.0.0; you will get served an IP from the pool";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1433,7 +1433,7 @@ service.warn_pass="SMTP Auth Password";
 service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Main Switch";
+service.milkfish_mainswitch="SIP Router";
 service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
 service.milkfish_username="Milkfish Username";
