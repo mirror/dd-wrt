@@ -68,12 +68,17 @@ void start_openvpnserver(void)
 			"port %s\n"
 			"proto %s\n"
 			"cipher %s\n"
-			"auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+			"auth %s\n", nvram_safe_get("openvpn_port"),
+			nvram_safe_get("openvpn_proto"),
+			nvram_safe_get("openvpn_cipher"),
+			nvram_safe_get("openvpn_auth"));
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
-		if (nvram_match("openvpn_dupcn", "0") && nvram_match("openvpn_proxy", "0"))
-			fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
+		if (nvram_match("openvpn_dupcn", "0")
+		    && nvram_match("openvpn_proxy", "0"))
+			fprintf(fp,
+				"ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 		if (nvram_match("openvpn_certtype", "1"))
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
@@ -90,11 +95,13 @@ void start_openvpnserver(void)
 		else		//TCP_NODELAY is generally a good latency optimization
 			fprintf(fp, "tcp-nodelay\n");
 		if (nvram_invmatch("openvpn_mtu", ""))
-			fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpn_mtu"));
+			fprintf(fp, "tun-mtu %s\n",
+				nvram_safe_get("openvpn_mtu"));
 		if (nvram_invmatch("openvpn_mssfix", "")
 		    && nvram_match("openvpn_proto", "udp")) {
 			fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpn_mssfix"));	//fragment==mssfix
-			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_mssfix"));
+			fprintf(fp, "fragment %s\n",
+				nvram_safe_get("openvpn_mssfix"));
 		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
@@ -102,19 +109,17 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_mask"));
 			fprintf(fp, "dev tun0\n");
 //                      fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
-		} 
-		else if (nvram_match("openvpn_tuntap", "tap") && 
-			nvram_match("openvpn_proxy", "0")) {
+		} else if (nvram_match("openvpn_tuntap", "tap") &&
+			   nvram_match("openvpn_proxy", "0")) {
 			fprintf(fp, "server-bridge %s %s %s %s\n",
 				nvram_safe_get("openvpn_gateway"),
 				nvram_safe_get("openvpn_mask"),
 				nvram_safe_get("openvpn_startip"),
 				nvram_safe_get("openvpn_endip"));
 			fprintf(fp, "dev tap0\n");
-		}
-		else if (nvram_match("openvpn_tuntap", "tap") && 
-			nvram_match("openvpn_proxy", "1") &&
-			nvram_match("openvpn_redirgate", "1"))
+		} else if (nvram_match("openvpn_tuntap", "tap") &&
+			   nvram_match("openvpn_proxy", "1") &&
+			   nvram_match("openvpn_redirgate", "1"))
 			fprintf(fp, "server-bridge\n" "dev tap0\n");
 		else
 			fprintf(fp, "server-bridge nogw\n" "dev tap0\n");
@@ -138,11 +143,10 @@ void start_openvpnserver(void)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
-	char * gpiovpn=nvram_get("gpiovpn");
-	if (gpiovpn != NULL)
-		{
-		fprintf(fp, "gpio enable %s\n",gpiovpn);
-		}
+	char *gpiovpn = nvram_get("gpiovpn");
+	if (gpiovpn != NULL) {
+		fprintf(fp, "gpio enable %s\n", gpiovpn);
+	}
 #endif
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
@@ -164,11 +168,10 @@ void start_openvpnserver(void)
 	fprintf(fp, "#!/bin/sh\n");
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
 	if (gpiovpn != NULL)
-		fprintf(fp, "gpio disable %s\n",gpiovpn);
+		fprintf(fp, "gpio disable %s\n", gpiovpn);
 #endif
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl delif br0 tap0\n"
-			"ifconfig tap0 down\n");
+		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
 	}
 /*	fprintf(fp, "iptables -D INPUT -i %s0 -j ACCEPT\n",
 		nvram_safe_get("openvpn_tuntap"));
@@ -201,11 +204,10 @@ void start_openvpnserver(void)
 void stop_openvpnserver(void)
 {
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
-	char * gpiovpn=nvram_get("gpiovpn");
-	if (gpiovpn != NULL)
-		{
+	char *gpiovpn = nvram_get("gpiovpn");
+	if (gpiovpn != NULL) {
 		set_gpio(atoi(gpiovpn), 0);
-		}
+	}
 #endif
 	stop_process("openvpnserver", "OpenVPN daemon (Server)");
 	return;
@@ -263,10 +265,7 @@ void start_openvpn(void)
 		"client\n"
 		"tls-client\n"
 		"resolv-retry infinite\n"
-		"nobind\n"
-		"persist-key\n"
-		"persist-tun\n"
-		"mtu-disc yes\n");
+		"nobind\n" "persist-key\n" "persist-tun\n" "mtu-disc yes\n");
 	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
@@ -278,7 +277,8 @@ void start_openvpn(void)
 	if (nvram_invmatch("openvpncl_mssfix", "")
 	    && nvram_match("openvpn_proto", "udp")) {
 		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));	//fragment=mssfix
-		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_mssfix"));
+		fprintf(fp, "fragment %s\n",
+			nvram_safe_get("openvpncl_mssfix"));
 	}
 	if (nvram_match("openvpncl_lzo", "1"))
 		fprintf(fp, "comp-lzo adaptive\n");
@@ -293,7 +293,8 @@ void start_openvpn(void)
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	if (nvram_invmatch("openvpncl_tlscip", "0"))
-		fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpncl_tlscip"));
+		fprintf(fp, "tls-cipher %s\n",
+			nvram_safe_get("openvpncl_tlscip"));
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
 
@@ -308,13 +309,14 @@ void start_openvpn(void)
 		fprintf(fp, "brctl addif br0 tap1\n"
 			"ifconfig tap1 0.0.0.0 promisc up\n");
 	//do TAP clientrouting -> must set ip when server does proxy mode (doesnt push ip)
-/*	else if (nvram_match("openvpncl_tuntap", "tap")	
+	else if (nvram_match("openvpncl_tuntap", "tap")	
 		&& nvram_match("openvpncl_bridge", "0")
 		&& strlen(nvram_safe_get("openvpn_ip")) > 0)
 		fprintf(fp, "ifconfig tap1 %s up\n",
-			nvram_safe_get("openvpncl_ip"));		*/
+			nvram_safe_get("openvpncl_ip"));
 	if (nvram_match("openvpncl_nat", "1"))
-		fprintf(fp, "iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
+		fprintf(fp,
+			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 /*	else {
 		fprintf(fp, "iptables -I INPUT -i %s1 -j ACCEPT\n",
@@ -330,7 +332,7 @@ void start_openvpn(void)
 			nvram_safe_get("wan_gateway"));
 		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
 			"	ip rule add from $IP table 10\n" "done\n");
-  	}
+	}
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
@@ -338,13 +340,12 @@ void start_openvpn(void)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
 	if (nvram_match("openvpncl_tuntap", "tap")
-		&& nvram_match("openvpncl_bridge", "1")
-		&& nvram_match("openvpncl_nat", "0"))
-		fprintf(fp, "brctl delif br0 tap1\n"
-			"ifconfig tap1 down\n");
+	    && nvram_match("openvpncl_bridge", "1")
+	    && nvram_match("openvpncl_nat", "0"))
+		fprintf(fp, "brctl delif br0 tap1\n" "ifconfig tap1 down\n");
 	else if (nvram_match("openvpncl_tuntap", "tap")
-		&& nvram_match("openvpncl_bridge", "0")
-		&& strlen(nvram_safe_get("openvpn_ip")) > 0)
+		 && nvram_match("openvpncl_bridge", "0")
+		 && strlen(nvram_safe_get("openvpn_ip")) > 0)
 		fprintf(fp, "ifconfig tap1 down\n");
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
@@ -364,7 +365,7 @@ void start_openvpn(void)
 			nvram_safe_get("wan_gateway"));
 		fprintf(fp, "for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
 			"	ip rule del from $IP table 10\n" "done\n");
-  	}
+	}
 	fclose(fp);
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
