@@ -1279,6 +1279,8 @@ service.pppoesrv_radaccport="Radius Accounting Port";
 service.pppoesrv_radkey="Radius Shared Key";
 service.pppoesrv_chaps="Lokales Nutzer Management (CHAP Secrets)";
 
+hpppoesrv.right2="IP: 0.0.0.0; Ihnen wird eine IP aus dem Pool bereit gestellt";
+
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
@@ -1367,44 +1369,44 @@ service.warn_pass="SMTP Auth Passwort";
 
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_database="Milkfish SIP Database";
-service.database_subscribers="Local Subscribers";
-service.database_aliases="Local Aliases";
+service.milkfish_database="Milkfish SIP Datenbank";
+service.database_subscribers="Lokale Teilnehmer";
+service.database_aliases="Lokale Aliase";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Main Switch";
-service.milkfish_fromswitch="From-Substitution";
-service.milkfish_fromdomain="From-Domain";
-service.milkfish_username="Milkfish Username";
-service.milkfish_password="Milkfish Password";
-service.milkfish_audit="Milkfish Audit";
-service.milkfish_siptrace="SIP Trace";
-service.milkfish_subscribers="Local Subscribers";
-service.milkfish_aliases="Local Aliases";
-service.milkfish_dynsip="Dynamic SIP";
+service.milkfish_mainswitch="SIP Router";
+service.milkfish_fromswitch="Von-Ersetzen";
+service.milkfish_fromdomain="Von-Domain";
+service.milkfish_username="Milkfish Nutzername";
+service.milkfish_password="Milkfish Passwort";
+service.milkfish_audit="Milkfish Kontrolle";
+service.milkfish_siptrace="SIP Verfolgen";
+service.milkfish_subscribers="Lokale Teilnehmer";
+service.milkfish_aliases="Lokale Aliase";
+service.milkfish_dynsip="Dynamisches SIP";
 service.milkfish_status="SIP Status";
-service.milkfish_database="SIP Database";
-service.milkfish_messaging="SIP Messaging";
-service.milkfish_phonebook="SIP Phonebook";
+service.milkfish_database="SIP Datenbank";
+service.milkfish_messaging="SIP Nachrichten";
+service.milkfish_phonebook="SIP Telefonbuch";
 service.milkfish_dynsipdomain="DynSIP Domain";
 service.milkfish_dynsipurl="DynSIP Update URL";
-service.milkfish_dsusername="DynSIP Username";
-service.milkfish_dspassword="DynSIP Password";
-service.milkfish_sipmessage="SIP Message";
-service.milkfish_destination="SIP Destination";
-service.milkfish_contact="Contact";
-service.milkfish_agent="User Agent";
-service.milkfish_registrations="Active Registrations";
+service.milkfish_dsusername="DynSIP Nutzername";
+service.milkfish_dspassword="DynSIP Passwort";
+service.milkfish_sipmessage="SIP Nachricht";
+service.milkfish_destination="SIP Ziel";
+service.milkfish_contact="Kontakt";
+service.milkfish_agent="Nutzer Agent";
+service.milkfish_registrations="Aktive Registrierungen";
 //service.milkfish_="";//
-service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
-service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
-service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
-service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
-service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
-service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right2="Schaltet den Milkfish SIP Router ein oder aus.";
+service.hmilkfish_right4="Schaltet die Von:-Kopfzeile ersetzung ihrer WAN IP in ausgehenden SIP Nachrichten Ein oder Aus. Diese Einstellungen sollte eingeschaltet sein, wenn Sie möchten das der Anrufer Sie zurückrufen kann, wenn sich ihre WAN IP ändert";
+service.hmilkfish_right6="Der Anrufer ruft Sie unter dieser Domain zurück (anstelle der WAN IP), wenn Sie diesen Eintrag als Von:-Domain anstelle ihrer WAN IP mitsenden. Von-Ersetzen muss hierbei eingeschaltet sein";
+service.hmilkfish_right8="Dies ist der Milkfish Community Nutzername - Die Registrierung weist ihnen yourname.homesip.net automatisch zu";
+service.hmilkfish_right10="Dies ist das Milkfish Community Forum Passwort";
+service.hmilkfish_right12="Schaltet die einfache SIP verfolgung auf ihren Router An oder Aus";
+service.hmilkfish_right14="Lokale SIP Teilnehmer sind lokal verwaltete SIP Accounts";
+service.hmilkfish_right16="Lokale SIP Aliase sind SIP weiterleitungen ähnlich wie Email weiterleitungen. Mann kann es z.b. benutzen um Alphanumerische Nutzer accounts and Numerische weiterzuleiten oder umgekehrt";
+service.hmilkfish_right18="Schaltet den Dynamischen SIP (i.e. Homesip.net) Dienst an oder aus - Nutzername und Passwort müssen angegeben werden";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1518,7 +1520,7 @@ status_inet.titl="WAN Status";
 status_inet.h11="WAN";
 status_inet.conft="Konfigurationstyp";
 status_inet.www_loginstatus="Login-Status";
-status_inet.wanuptime="Connection Uptime";
+status_inet.wanuptime="Verbindungszeit";
 status_inet.leasetime="Verbleibende Lease Zeit";
 status_inet.traff="Traffic";
 status_inet.traff_tot="Gesammter Traffic";
@@ -1533,7 +1535,7 @@ status_inet.delete_confirm="WARNUNG! Dies löscht alle ihre Traffic Daten. Fortfa
 
 hstatus_inet.right2="Dies zeigt die Informationen an, welche von Ihrem Anbieter zum Verbinden ins Internet benötigt werden. \
 				Diese Informationen wurden auf dem Setup-Tab eingegeben. Sie können hier auch Ihre Verbindung <em>aufbauen</em> oder <em>trennen</em> indem Sie den entsprechenden Button anklicken.";
-hstatus_inet.right4="This shows your router's Internet traffic.";
+hstatus_inet.right4="Dies Zeigt den Internet Verkehr ihres Routers an.";
 
 // **************************************************************** Status_SputnikAPD.asp **********************************************************************//
 
