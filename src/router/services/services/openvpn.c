@@ -309,11 +309,11 @@ void start_openvpn(void)
 		fprintf(fp, "brctl addif br0 tap1\n"
 			"ifconfig tap1 0.0.0.0 promisc up\n");
 	//do TAP clientrouting -> must set ip when server does proxy mode (doesnt push ip)
-	else if (nvram_match("openvpncl_tuntap", "tap")	
+/*	else if (nvram_match("openvpncl_tuntap", "tap")	
 		&& nvram_match("openvpncl_bridge", "0")
 		&& strlen(nvram_safe_get("openvpn_ip")) > 0)
 		fprintf(fp, "ifconfig tap1 %s up\n",
-			nvram_safe_get("openvpncl_ip"));
+			nvram_safe_get("openvpncl_ip"));	*/
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
