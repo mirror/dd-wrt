@@ -186,6 +186,10 @@ extern void *getUEnv(char *name);
 
 static void buffalo_defaults(int force)
 {
+	char *pincode = getUEnv("pincode");
+	if (pincode && nvram_get("pincode")==NULL) {
+		nvram_set("pincode",pincode);
+	}
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
 		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
