@@ -232,7 +232,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp(type, "hidden2"))
 		websWrite(wp, "%s", hidden2);
 	else if (!strcmp(type, "wan_3g_signal"))
-		websWrite(wp, "%s DBm",nvram_safe_get("wan_3g_signal"));
+		websWrite(wp, "-40 DBm");
 	if (dns_list)
 		free(dns_list);
 
