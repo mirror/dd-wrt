@@ -2083,7 +2083,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
 			  bridge_name, "32768");
-		websWrite(wp, "&nbsp;");	//MTU&nbsp;");
+		websWrite(wp, "&nbsp;MTU&nbsp;");
                 sprintf(bridge_name, "bridgemtu%d", count);
                 websWrite(wp,
                         "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
