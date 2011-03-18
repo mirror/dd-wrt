@@ -1774,6 +1774,10 @@ struct wpa_driver_ops {
 	 */
 	int (*send_frame)(void *priv, const u8 *data, size_t data_len,
 			  int encrypt);
+
+
+	int (*stop_ap)(void *priv);
+
 };
 
 
