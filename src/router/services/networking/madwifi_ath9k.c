@@ -43,7 +43,7 @@
 #include <unistd.h>
 
 #include <services.h>
-static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid);
+void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
 
 void deconfigure_single_ath9k(int count)
@@ -211,7 +211,7 @@ void configure_single_ath9k(int count)
 	// setup encryption
 	int isfirst = 1;
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
-		setupHostAP_ath9k(dev, isfirst, 0);
+		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
 		setupSupplicant_ath9k(dev, NULL);
@@ -233,7 +233,7 @@ void configure_single_ath9k(int count)
 		if (isfirst)
 			sysprintf("iw %s interface add %s.%d type managed", wif,
 				  dev, counter);
-		setupHostAP_ath9k(dev, isfirst, counter);
+		setupHostAP_ath9k(dev, isfirst, counter, 0);
 		isfirst = 0;
 		counter++;
 
@@ -330,7 +330,7 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp)
 
 extern void addWPS(FILE * fp, char *prefix);
 
-static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid)
+void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -349,6 +349,8 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid)
 	} else {
 		sprintf(ifname, "%s.%d", maininterface, vapid);
 	}
+	if (aoss)
+		sprintf(ifname, "aoss");
 
 	sprintf(akm, "%s_akm", ifname);
 	if (nvram_match(akm, "8021X"))
@@ -393,18 +395,15 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid)
 	else
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 
-	ssid = nvram_nget("%s_ssid", ifname);
+	if (aoss)
+		ssid = "ESSID-AOSS";
+	else
+		ssid = nvram_nget("%s_ssid", ifname);
+
 	fprintf(fp, "ssid=%s\n", ssid);
-
 	// wep key support
-	if (nvram_match(akm, "wep")) {
-		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
-		fprintf(fp, "interface=%s\n", prefix);
+	if (nvram_match(akm, "wep") || aoss) {
 
-		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
-		fprintf(fp, "interface=%s\n", prefix);
 		if (nvram_nmatch("1", "%s_bridged", prefix))
 			fprintf(fp, "bridge=%s\n", getBridge(prefix));
 		fprintf(fp, "driver=%s\n", driver);
@@ -415,6 +414,8 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid)
 		fprintf(fp, "debug=0\n");
 		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
 		char *authmode = nvram_nget("%s_authmode", prefix);
+		if (aoss)
+			authmode = "auto";
 		if (!strcmp(authmode, "shared"))
 			fprintf(fp, "auth_algs=2\n");
 		else if (!strcmp(authmode, "auto"))
@@ -422,22 +423,29 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid)
 		else
 			fprintf(fp, "auth_algs=1\n");
 		int i;
-		for (i = 1; i < 5; i++) {
-			char *athkey = nvram_nget("%s_key%d", prefix, i);
-			if (athkey != NULL && strlen(athkey) > 0) {
-				fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);
+		if (aoss) {
+			for (i = 1; i < 5; i++) {
+				char *athkey = "4D454C434F";
+				if (athkey != NULL && strlen(athkey) > 0) {
+					fprintf(fp, "wep_key%d=%s\n", i - 1,
+						athkey);
+				}
 			}
+			fprintf(fp, "wep_default_key=1\n");
+
+		} else {
+			for (i = 1; i < 5; i++) {
+				char *athkey =
+				    nvram_nget("%s_key%d", prefix, i);
+				if (athkey != NULL && strlen(athkey) > 0) {
+					fprintf(fp, "wep_key%d=%s\n", i - 1,
+						athkey);
+				}
+			}
+			fprintf(fp, "wep_default_key=%d\n",
+				atoi(nvram_nget("%s_key", prefix)) - 1);
+			addWPS(fp, prefix);
 		}
-		fprintf(fp, "wep_default_key=%d\n",
-			atoi(nvram_nget("%s_key", prefix)) - 1);
-		addWPS(fp, prefix);
-#ifdef HAVE_ATH9K
-		if (is_ath9k(prefix)) {
-			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
-		}
-#endif
-		fclose(fp);
-		do_hostapd(fstr, prefix);
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
 		   nvram_match(akm, "psk psk2") ||

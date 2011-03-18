@@ -27,6 +27,8 @@
 #include <syslog.h>
 #include <signal.h>
 
+void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
+
 void stop_aoss(void);
 
 void start_aoss(void)
@@ -126,14 +128,31 @@ void start_aoss(void)
 	}
 #else
 	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
-		hasaoss = 1;
-		sysprintf
-		    ("80211n_wlanconfig aoss create wlandev wifi0 wlanmode ap");
-		sysprintf("iwconfig aoss essid ESSID-AOSS");
-		sysprintf("iwpriv aoss authmode 4");
-		sysprintf("iwconfig aoss key [1] 4D454C434F");
-		sysprintf("iwconfig aoss key [1]");
-		sysprintf("ifconfig aoss 0.0.0.0 up");
+#ifdef HAVE_ATH9K
+		if (is_ath9k("ath0")) {
+			hasaoss = 1;
+			char *next;
+			static char var[80];
+			char *vifs = nvram_safe_get(wifivifs);
+			int counter = 1;
+			foreach(var, vifs, next) {
+				counter++;
+			}
+			setupHostAP_ath9k("ath0", 0, counter, 1);
+
+		} else
+#endif
+
+		{
+			hasaoss = 1;
+			sysprintf
+			    ("80211n_wlanconfig aoss create wlandev wifi0 wlanmode ap");
+			sysprintf("iwconfig aoss essid ESSID-AOSS");
+			sysprintf("iwpriv aoss authmode 4");
+			sysprintf("iwconfig aoss key [1] 4D454C434F");
+			sysprintf("iwconfig aoss key [1]");
+			sysprintf("ifconfig aoss 0.0.0.0 up");
+		}
 	}
 #endif
 	if (hasaoss) {
