@@ -7627,7 +7627,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		// filter bridges they are under bridges, not under ports
 		foreach(bword, bufferif, bnext) {
 			if(!strcmp( bword, var) ) {
-				continue;
+				goto skip;
 			}
 		}
 
@@ -7715,6 +7715,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			  var, layer, nvram_match(ssid,
 						  "0") ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
+		skip:;
 	}
 	websWrite(wp, "</fieldset><br />\n");
 }
