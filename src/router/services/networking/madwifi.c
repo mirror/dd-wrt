@@ -802,10 +802,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
-
-		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-		FILE *fp = fopen(fstr, "wb");
-		fprintf(fp, "interface=%s\n", prefix);
 		if (nvram_nmatch("1", "%s_bridged", prefix))
 			fprintf(fp, "bridge=%s\n", getBridge(prefix));
 		fprintf(fp, "driver=%s\n", driver);
