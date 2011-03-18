@@ -898,6 +898,7 @@ static void do_hostapd(char *fstr, char *prefix)
 	}
 	argv[argc++] = fstr;
 	_evalpid(argv, NULL, 0, &pid);
+	sleep(4);
 }
 
 void ath9k_start_supplicant(int count)
@@ -1029,9 +1030,6 @@ void ath9k_start_supplicant(int count)
 
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
-			if (!ifexists(var)) {
-				sleep(2);	// give time to get up
-			}
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_safe_get(mode);
 			if (strcmp(m2, "sta")) {
