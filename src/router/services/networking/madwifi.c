@@ -882,8 +882,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fclose(fp);
 			do_hostapd(fstr, prefix);
 		}
+	}
 #endif
-	} else if (nvram_match(akm, "psk") ||
+	else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
 		   nvram_match(akm, "psk psk2") ||
 		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
