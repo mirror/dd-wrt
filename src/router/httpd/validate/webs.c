@@ -900,9 +900,10 @@ extern struct wl_client_mac *wl_client_macs;
 
 void add_active_mac(webs_t wp)
 {
-	char buf[1000] = "", *cur = buf;
 	int i, count = 0;
-
+	char *buf = malloc(4096);
+	char *cur = buf;
+	memset(buf, 0, 4096);
 	char *ifname = websGetVar(wp, "ifname", NULL);
 
 	nvram_set("wl_active_add_mac", "1");
@@ -941,6 +942,7 @@ void add_active_mac(webs_t wp)
 	nvram_set(acmac, buf);
 	if (!strcmp(ifname, "wl0"))
 		nvram_set("wl_active_mac", buf);
+	free(buf);
 }
 
 void removeLineBreak(char *startup)
@@ -3417,4 +3419,3 @@ void tf_upnp(webs_t wp)
 	}
 
 }
-
