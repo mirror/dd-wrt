@@ -133,7 +133,7 @@ void start_aoss(void)
 			hasaoss = 1;
 			char *next;
 			static char var[80];
-			char *vifs = nvram_safe_get(wifivifs);
+			char *vifs = nvram_safe_get("ath0_vifs");
 			int counter = 1;
 			foreach(var, vifs, next) {
 				counter++;
