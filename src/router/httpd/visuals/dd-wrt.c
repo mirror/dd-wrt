@@ -1965,8 +1965,12 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 {
 	char buffer[256];
 	int count = 0;
+	int br0found=0;
 	static char word[256];
 	char *next, *wordlist;
+	char *stp = word;
+	char *bridge, *prio,*mtu;
+	char bridge_name[32];
 
 	memset(buffer, 0, 256);
 	getIfList(buffer, NULL);
@@ -1974,13 +1978,47 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
+		bridge = strsep(&stp, ">");
+		if (!strcmp(bridge,"br0")) { 
+			br0found=1;
+			break;
+		}
+	}
+	if (!br0found) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">Bridge %d</div>\n", count);
+		sprintf(bridge_name, "bridgename%d", count);
+		websWrite(wp,
+			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"br0\" />\n",
+			  bridge_name);
+		websWrite(wp, "&nbsp;STP&nbsp;");
+		sprintf(bridge_name, "bridgestp%d", count);
+		showOptions(wp, bridge_name, "On Off", "Off");
+		websWrite(wp, "&nbsp;Prio&nbsp;");
+		sprintf(bridge_name, "bridgeprio%d", count);
+		websWrite(wp,
+			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"32768\" />\n",
+			  bridge_name);
+		websWrite(wp, "&nbsp;MTU&nbsp;");
+		// Bridges are bridges, Ports are ports, show it again HERE          
+		   sprintf(bridge_name, "bridgemtu%d", count);
+		   websWrite(wp,
+		   "<input class=\"num\" name=\"%s\"size=\"5\" value=\"1500\" />\n",
+		   bridge_name); 
+		websWrite(wp, "</div>\n");
+		// don't show that here, since that is under Basic Setup
+			// show_ipnetmask(wp, bridge);
+		count++;
+	}
 
-		char *stp = word;
-		char *bridge = strsep(&stp, ">");
-		char *prio = stp;
+	foreach(word, wordlist, next) {
+
+		stp = word;
+		bridge = strsep(&stp, ">");
+		prio = stp;
 
 		stp = strsep(&prio, ">");
-		char *mtu = prio;
+		mtu = prio;
 
 		prio = strsep(&mtu, ">");
 		if (!prio) {
@@ -1996,59 +2034,60 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		if (!bridge || !stp)
 			break;
 
-		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">Bridge %d</div>\n", count);
-		sprintf(vlan_name, "bridgename%d", count);
+		sprintf(bridge_name, "bridgename%d", count);
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  vlan_name, bridge);
+			  bridge_name, bridge);
 		websWrite(wp, "&nbsp;STP&nbsp;");
-		sprintf(vlan_name, "bridgestp%d", count);
-		showOptions(wp, vlan_name, "On Off", stp);
+		sprintf(bridge_name, "bridgestp%d", count);
+		showOptions(wp, bridge_name, "On Off", stp);
 		websWrite(wp, "&nbsp;Prio&nbsp;");
-		sprintf(vlan_name, "bridgeprio%d", count);
+		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  vlan_name, prio != NULL ? prio : "32768");
-		websWrite(wp, "&nbsp;");	//MTU&nbsp;");
-		/* shown under Port settings, NOT HERE          
-		   sprintf(vlan_name, "bridgemtu%d", count);
+			  bridge_name, prio != NULL ? prio : "32768");
+		websWrite(wp, "&nbsp;MTU&nbsp;");
+		// Bridges are bridges, Ports are ports, show it again HERE          
+		   sprintf(bridge_name, "bridgemtu%d", count);
 		   websWrite(wp,
 		   "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-		   vlan_name, mtu != NULL ? mtu : "1500"); */
+		   bridge_name, mtu != NULL ? mtu : "1500"); 
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
 		websWrite(wp, "</div>\n");
-//              show_ipnetmask(wp, bridge);
+		// don't show that here, since that is under Basic Setup
+		if (strcmp(bridge,"br0")) {
+			show_ipnetmask(wp, bridge);
+		}
 		count++;
 	}
 	int i;
 	int totalcount = count;
 
 	for (i = count; i < realcount; i++) {
-		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">Bridge %d</div>\n", i);
-		sprintf(vlan_name, "bridgename%d", i);
+		sprintf(bridge_name, "bridgename%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" />\n",
-			  vlan_name);
+			  bridge_name);
 		websWrite(wp, "&nbsp;STP&nbsp;");
-		sprintf(vlan_name, "bridgestp%d", i);
-		showOptions(wp, vlan_name, "On Off", "On");
+		sprintf(bridge_name, "bridgestp%d", i);
+		showOptions(wp, bridge_name, "On Off", "On");
 		websWrite(wp, "&nbsp;Prio&nbsp;");
-		sprintf(vlan_name, "bridgeprio%d", i);
+		sprintf(bridge_name, "bridgeprio%d", i);
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  vlan_name, "32768");
+			  bridge_name, "32768");
 		websWrite(wp, "&nbsp;");	//MTU&nbsp;");
-//              sprintf(vlan_name, "bridgemtu%d", count);
+//              sprintf(bridge_name, "bridgemtu%d", count);
 //              websWrite(wp,
 //                        "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-//                        vlan_name, "1500");
+//                        bridge_name, "1500");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
@@ -7543,9 +7582,11 @@ void ej_bandwidth(webs_t wp, int argc, char_t ** argv)
 void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 {
 	char ssid[64];
-	char *next;
+	char *next,*bnext;
 	char var[64];
 	char eths[256];
+	static char bword[256];
+	char bufferif[512];
 
 	websWrite(wp,
 		  "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
@@ -7576,11 +7617,19 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "</select></div>\n");
 	}
+	memset(bufferif, 0, 256);
+	getIfList(bufferif, "br");
 	foreach(var, eths, next) {
 		if (!strcmp(get_wan_face(), var))
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
+		// filter bridges they are under bridges, not under ports
+		foreach(bword, bufferif, bnext) {
+			if(!strcmp( bword, var) ) {
+				continue;
+			}
+		}
 
 		char layer[64];
 		strcpy(layer, var);
@@ -7631,7 +7680,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		if(registered_has_cap(21)) {
 			char nld_enable[32], nld_bridge[32], bufferif[256];
 			static char word[256];
-			char *next, *wordlist;
+			char *next;
 
 			sprintf(nld_enable, "nld_%s_enable", var);
 			websWrite(wp,
