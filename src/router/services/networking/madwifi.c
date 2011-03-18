@@ -738,6 +738,41 @@ void get_uuid(char *uuid_str)
 
 #endif
 
+void addWPS(FILE * fp, char *prefix)
+{
+#ifdef HAVE_WPS
+	if (!strcmp(prefix, "ath0")
+	    || !strcmp(prefix, "ath1")) {
+		fprintf(fp, "eap_server=1\n");
+		fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
+
+//# WPS configuration (AP configured, do not allow external WPS Registrars)
+		fprintf(fp, "wps_state=2\n");
+		fprintf(fp, "ap_setup_locked=1\n");
+#ifdef HAVE_WZRHPAG300NH
+		fprintf(fp, "dualband=1\n");
+#endif
+//# If UUID is not configured, it will be generated based on local MAC address. 
+		char uuid[64];
+		get_uuid(uuid);
+		fprintf(fp, "uuid=%s\n", uuid);
+		fprintf(fp, "wps_pin_requests=/var/run/hostapd.pin-req\n");
+		fprintf(fp, "device_name=%s\n", nvram_safe_get("router_name"));
+		fprintf(fp, "manufacturer=DD-WRT\n");
+		fprintf(fp, "model_name=%s\n", nvram_safe_get("DD_BOARD"));
+		fprintf(fp, "model_number=0\n");
+		fprintf(fp, "serial_number=12345\n");
+		fprintf(fp, "device_type=6-0050F204-1\n");
+		fprintf(fp, "os_version=01020300\n");
+		fprintf(fp, "upnp_iface=%s\n", nvram_safe_get("lan_ifname"));
+		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
+		fprintf(fp,
+			"config_methods=label display push_button keypad\n");
+	}
+#endif
+
+}
+
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
@@ -764,113 +799,47 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	}*/
 	// wep key support
 	if (nvram_match(akm, "wep")) {
-		/* ignore */
+		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+		FILE *fp = fopen(fstr, "wb");
+		fprintf(fp, "interface=%s\n", prefix);
 
-#ifdef HAVE_ATH9K
-		/* don't ignore for ath9k */
-		if (is_ath9k(prefix)) {
-			sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-			FILE *fp = fopen(fstr, "wb");
-			fprintf(fp, "interface=%s\n", prefix);
-			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
-			/*
-			   char key[16];
-			   int cnt = 1;
-			   int i;
-			   char bul[8];
-			   char *authmode = nvram_nget("%s_authmode", prefix);
-			   if (!strcmp(authmode, "shared"))
-			   sysprintf("iwpriv %s authmode 2", prefix);
-			   else if (!strcmp(authmode, "auto"))
-			   sysprintf("iwpriv %s authmode 4", prefix);
-			   else
-			   sysprintf("iwpriv %s authmode 1", prefix);
-			   for (i = 1; i < 5; i++) {
-			   char *athkey = nvram_nget("%s_key%d", prefix, i);
-
-			   if (athkey != NULL && strlen(athkey) > 0) {
-			   sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey); // setup wep
-			   }
-			   }
-			   sysprintf("iwconfig %s key [%s]", prefix,
-			   nvram_nget("%s_key", prefix));
-			   wep_default_key=
-			 */
-			fclose(fp);
-			do_hostapd(fstr, prefix);
-		} else
-#endif
-		{
-			sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-			FILE *fp = fopen(fstr, "wb");
-			fprintf(fp, "interface=%s\n", prefix);
-			if (nvram_nmatch("1", "%s_bridged", prefix))
-				fprintf(fp, "bridge=%s\n", getBridge(prefix));
-			fprintf(fp, "driver=%s\n", driver);
-			fprintf(fp, "logger_syslog=-1\n");
-			fprintf(fp, "logger_syslog_level=2\n");
-			fprintf(fp, "logger_stdout=-1\n");
-			fprintf(fp, "logger_stdout_level=2\n");
-			fprintf(fp, "debug=0\n");
-			fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
-			char *authmode = nvram_nget("%s_authmode", prefix);
-			if (!strcmp(authmode, "shared"))
-				fprintf(fp, "auth_algs=2\n");
-			else if (!strcmp(authmode, "auto"))
-				fprintf(fp, "auth_algs=3\n");
-			else
-				fprintf(fp, "auth_algs=1\n");
-			int i;
-			for (i = 1; i < 5; i++) {
-				char *athkey =
-				    nvram_nget("%s_key%d", prefix, i);
-				if (athkey != NULL && strlen(athkey) > 0) {
-					fprintf(fp, "wep_key%d=%s\n", i - 1,
-						athkey);
-				}
+		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+		FILE *fp = fopen(fstr, "wb");
+		fprintf(fp, "interface=%s\n", prefix);
+		if (nvram_nmatch("1", "%s_bridged", prefix))
+			fprintf(fp, "bridge=%s\n", getBridge(prefix));
+		fprintf(fp, "driver=%s\n", driver);
+		fprintf(fp, "logger_syslog=-1\n");
+		fprintf(fp, "logger_syslog_level=2\n");
+		fprintf(fp, "logger_stdout=-1\n");
+		fprintf(fp, "logger_stdout_level=2\n");
+		fprintf(fp, "debug=0\n");
+		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
+		char *authmode = nvram_nget("%s_authmode", prefix);
+		if (!strcmp(authmode, "shared"))
+			fprintf(fp, "auth_algs=2\n");
+		else if (!strcmp(authmode, "auto"))
+			fprintf(fp, "auth_algs=3\n");
+		else
+			fprintf(fp, "auth_algs=1\n");
+		int i;
+		for (i = 1; i < 5; i++) {
+			char *athkey = nvram_nget("%s_key%d", prefix, i);
+			if (athkey != NULL && strlen(athkey) > 0) {
+				fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);
 			}
-			fprintf(fp, "wep_default_key=%d\n",
-				atoi(nvram_nget("%s_key", prefix)) - 1);
-
-#ifdef HAVE_WPS
-			if (!strcmp(prefix, "ath0")
-			    || !strcmp(prefix, "ath1")) {
-				fprintf(fp, "eap_server=1\n");
-				fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
-
-//# WPS configuration (AP configured, do not allow external WPS Registrars)
-				fprintf(fp, "wps_state=2\n");
-				fprintf(fp, "ap_setup_locked=1\n");
-#ifdef HAVE_WZRHPAG300NH
-				fprintf(fp, "dualband=1\n");
-#endif
-//# If UUID is not configured, it will be generated based on local MAC address. 
-				char uuid[64];
-				get_uuid(uuid);
-				fprintf(fp, "uuid=%s\n", uuid);
-				fprintf(fp,
-					"wps_pin_requests=/var/run/hostapd.pin-req\n");
-				fprintf(fp, "device_name=%s\n",
-					nvram_safe_get("router_name"));
-				fprintf(fp, "manufacturer=DD-WRT\n");
-				fprintf(fp, "model_name=%s\n",
-					nvram_safe_get("DD_BOARD"));
-				fprintf(fp, "model_number=0\n");
-				fprintf(fp, "serial_number=12345\n");
-				fprintf(fp, "device_type=6-0050F204-1\n");
-				fprintf(fp, "os_version=01020300\n");
-				fprintf(fp, "upnp_iface=%s\n",
-					nvram_safe_get("lan_ifname"));
-				fprintf(fp,
-					"friendly_name=DD-WRT WPS Access Point\n");
-				fprintf(fp,
-					"config_methods=label display push_button keypad\n");
-			}
-#endif
-			fclose(fp);
-			do_hostapd(fstr, prefix);
-
 		}
+		fprintf(fp, "wep_default_key=%d\n",
+			atoi(nvram_nget("%s_key", prefix)) - 1);
+		addWPS(fp, prefix);
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix)) {
+			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
+		}
+#endif
+		fclose(fp);
+		do_hostapd(fstr, prefix);
+
 	}
 #ifdef HAVE_ATH9K
 	else if (nvram_match(akm, "disabled")) {
@@ -926,41 +895,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				fprintf(fp, "wpa_passphrase=%s\n",
 					nvram_nget("%s_wpa_psk", prefix));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
-#ifdef HAVE_WPS
-			if (!strcmp(prefix, "ath0")
-			    || !strcmp(prefix, "ath1")) {
-				fprintf(fp, "eap_server=1\n");
-				fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
-
-//# WPS configuration (AP configured, do not allow external WPS Registrars)
-				fprintf(fp, "wps_state=2\n");
-				fprintf(fp, "ap_setup_locked=1\n");
-#ifdef HAVE_WZRHPAG300NH
-				fprintf(fp, "dualband=1\n");
-#endif
-//# If UUID is not configured, it will be generated based on local MAC address. 
-				char uuid[64];
-				get_uuid(uuid);
-				fprintf(fp, "uuid=%s\n", uuid);
-				fprintf(fp,
-					"wps_pin_requests=/var/run/hostapd.pin-req\n");
-				fprintf(fp, "device_name=%s\n",
-					nvram_safe_get("router_name"));
-				fprintf(fp, "manufacturer=DD-WRT\n");
-				fprintf(fp, "model_name=%s\n",
-					nvram_safe_get("DD_BOARD"));
-				fprintf(fp, "model_number=0\n");
-				fprintf(fp, "serial_number=12345\n");
-				fprintf(fp, "device_type=6-0050F204-1\n");
-				fprintf(fp, "os_version=01020300\n");
-				fprintf(fp, "upnp_iface=%s\n",
-					nvram_safe_get("lan_ifname"));
-				fprintf(fp,
-					"friendly_name=DD-WRT WPS Access Point\n");
-				fprintf(fp,
-					"config_methods=label display push_button keypad\n");
-			}
-#endif
+			addWPS(fp, prefix);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
 			fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
