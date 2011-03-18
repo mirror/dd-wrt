@@ -98,6 +98,8 @@ struct wpa_interface {
 	 * receiving of EAPOL frames from an additional interface.
 	 */
 	const char *bridge_ifname;
+
+	const char *hostapd_ctrl;
 };
 
 /**
@@ -315,6 +317,8 @@ struct wpa_supplicant {
 	char *dbus_new_path;
 #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
 	char bridge_ifname[16];
+
+	struct wpa_ctrl *hostapd;
 
 	char *confname;
 	struct wpa_config *conf;

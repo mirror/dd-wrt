@@ -1602,9 +1602,12 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv)
 }
 
 
-static int wpa_driver_nl80211_del_beacon(struct wpa_driver_nl80211_data *drv)
+static int wpa_driver_nl80211_del_bss_beacon(struct i802_bss *bss)
 {
+	struct wpa_driver_nl80211_data *drv = bss->drv;
 	struct nl_msg *msg;
+	bss->beacon_set = 0;
+
 
 	msg = nlmsg_alloc();
 	if (!msg)
@@ -1612,11 +1615,27 @@ static int wpa_driver_nl80211_del_beacon(struct wpa_driver_nl80211_data *drv)
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_DEL_BEACON, 0);
-	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, drv->ifindex);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, bss->ifindex);
 
 	return send_and_recv_msgs(drv, msg, NULL, NULL);
  nla_put_failure:
+	nlmsg_free(msg);
 	return -ENOBUFS;
+}
+
+static int wpa_driver_nl80211_del_beacon(struct wpa_driver_nl80211_data *drv)
+{
+	struct i802_bss *bss;
+
+	for (bss = &drv->first_bss; bss; bss = bss->next)
+		wpa_driver_nl80211_del_bss_beacon(bss);
+}
+
+static int wpa_driver_nl80211_stop_ap(void *priv)
+{
+	struct i802_bss *bss = priv;
+
+	wpa_driver_nl80211_del_beacon(bss->drv);
 }
 
 
@@ -5510,4 +5529,5 @@ const struct wpa_driver_ops wpa_driver_nl80211_ops = {
 	.send_ft_action = nl80211_send_ft_action,
 	.signal_monitor = nl80211_signal_monitor,
 	.send_frame = nl80211_send_frame,
+	.stop_ap = wpa_driver_nl80211_stop_ap,
 };
