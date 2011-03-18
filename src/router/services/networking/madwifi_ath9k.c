@@ -404,8 +404,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	// wep key support
 	if (nvram_match(akm, "wep") || aoss) {
 
-		if (nvram_nmatch("1", "%s_bridged", prefix))
-			fprintf(fp, "bridge=%s\n", getBridge(prefix));
+		if (nvram_nmatch("1", "%s_bridged", ifname))
+			fprintf(fp, "bridge=%s\n", getBridge(ifname));
 		fprintf(fp, "driver=%s\n", driver);
 		fprintf(fp, "logger_syslog=-1\n");
 		fprintf(fp, "logger_syslog_level=2\n");
@@ -413,7 +413,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "logger_stdout_level=2\n");
 		fprintf(fp, "debug=0\n");
 		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
-		char *authmode = nvram_nget("%s_authmode", prefix);
+		char *authmode = nvram_nget("%s_authmode", ifname);
 		if (aoss)
 			authmode = "auto";
 		if (!strcmp(authmode, "shared"))
@@ -436,15 +436,15 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		} else {
 			for (i = 1; i < 5; i++) {
 				char *athkey =
-				    nvram_nget("%s_key%d", prefix, i);
+				    nvram_nget("%s_key%d", ifname, i);
 				if (athkey != NULL && strlen(athkey) > 0) {
 					fprintf(fp, "wep_key%d=%s\n", i - 1,
 						athkey);
 				}
 			}
 			fprintf(fp, "wep_default_key=%d\n",
-				atoi(nvram_nget("%s_key", prefix)) - 1);
-			addWPS(fp, prefix);
+				atoi(nvram_nget("%s_key", ifname)) - 1);
+			addWPS(fp, ifname);
 		}
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
@@ -483,7 +483,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "wpa_passphrase=%s\n",
 					nvram_nget("%s_wpa_psk", ifname));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
-			addWPS(fp, prefix);
+			addWPS(fp, ifname);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
 			fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
