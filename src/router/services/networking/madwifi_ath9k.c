@@ -944,7 +944,7 @@ void ath9k_start_supplicant(int count)
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			do_hostapd(fstr, dev);
 			sleep(3);	// give some time to let hostapd initialize
-			sprintf(ctrliface, "/var/run/hostapd/%s\n", dev);
+			sprintf(ctrliface, "/var/run/hostapd/%s", dev);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
 			if ((nvram_match(wmode, "wdssta"))
@@ -1029,6 +1029,9 @@ void ath9k_start_supplicant(int count)
 
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
+			if (!ifexists(var)) {
+				sleep(2);	// give time to get up
+			}
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_safe_get(mode);
 			if (strcmp(m2, "sta")) {
