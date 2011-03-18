@@ -829,8 +829,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 						athkey);
 				}
 			}
-			fprintf(fp, "wep_default_key=%s\n",
-				nvram_nget("%s_key", prefix));
+			fprintf(fp, "wep_default_key=%d\n",
+				atoi(nvram_nget("%s_key", prefix)) - 1);
 
 #ifdef HAVE_WPS
 			if (!strcmp(prefix, "ath0")
@@ -885,10 +885,10 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	}
 #endif
 	else if (nvram_match(akm, "psk") ||
-		   nvram_match(akm, "psk2") ||
-		   nvram_match(akm, "psk psk2") ||
-		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-		   || nvram_match(akm, "wpa wpa2")) {
+		 nvram_match(akm, "psk2") ||
+		 nvram_match(akm, "psk psk2") ||
+		 nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+		 || nvram_match(akm, "wpa wpa2")) {
 
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -1994,11 +1994,11 @@ static void configure_single(int count)
 	set_netmode(wif, dev, dev);
 
 	setMacFilter(dev);
-//	setupKey(dev);
+//      setupKey(dev);
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
 			setMacFilter(var);
-//			setupKey(var);
+//                      setupKey(var);
 		}
 	}
 
