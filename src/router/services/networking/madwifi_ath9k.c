@@ -55,7 +55,8 @@ void deconfigure_single_ath9k(int count)
 	delete_ath9k_devices(wif);
 }
 
-void configure_single_ath9k(int count) {
+void configure_single_ath9k(int count)
+{
 	char *next;
 	static char var[80];
 	static char mode[80];
@@ -208,12 +209,11 @@ void configure_single_ath9k(int count) {
 
 	cprintf("setup encryption");
 	// setup encryption
-	int isfirst=1;
+	int isfirst = 1;
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
 		setupHostAP_ath9k(dev, isfirst, 0);
-		isfirst=0;
-		}
-	else {
+		isfirst = 0;
+	} else {
 		setupSupplicant_ath9k(dev, NULL);
 	}
 	char *vifs = nvram_safe_get(wifivifs);
@@ -225,21 +225,23 @@ void configure_single_ath9k(int count) {
 		countvaps = 4;
 	if (countvaps > vapcount)
 		vapcount = countvaps;
-	int counter=1;
+	int counter = 1;
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
-			fprintf(stderr, "setup vifs %s %d\n",var, counter);
-			// create the first main hostapd interface when this is repaeter mode
-			if (isfirst)
-				sysprintf("iw %s interface add %s.%d type managed", wif, dev,counter);
-			setupHostAP_ath9k(dev, isfirst, counter);
-			isfirst=0;
-			counter++;
+		fprintf(stderr, "setup vifs %s %d\n", var, counter);
+		// create the first main hostapd interface when this is repaeter mode
+		if (isfirst)
+			sysprintf("iw %s interface add %s.%d type managed", wif,
+				  dev, counter);
+		setupHostAP_ath9k(dev, isfirst, counter);
+		isfirst = 0;
+		counter++;
 
 		}
 }
 
-static void setupHostAP_generic_ath9k(char *prefix, FILE * fp) {
+static void setupHostAP_generic_ath9k(char *prefix, FILE * fp)
+{
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
 	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
@@ -305,10 +307,7 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp) {
 	} else {
 		sprintf(ht, "20");
 	}
-	fprintf(fp,
-		"ht_capab=[HT%s]%s\n",
-		ht,
-		mac80211_get_caps(prefix));
+	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, mac80211_get_caps(prefix));
 	char regdomain[16];
 	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
@@ -329,7 +328,10 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp) {
 	fprintf(fp, "\n");
 }
 
-static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
+extern void addWPS(FILE * fp, char *prefix);
+
+static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid)
+{
 #ifdef HAVE_REGISTER
 	if (!isregistered())
 		return;
@@ -337,18 +339,16 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
 	char psk[32];
 	char akm[16];
 	char fstr[32];
-	FILE *fp=NULL;
+	FILE *fp = NULL;
 	char *ssid;
 	char ifname[10];
 	unsigned char hwbuff[16];
 	char macaddr[32];
 	if (isfirst && vapid == 0) {
-		sprintf(ifname,"%s",maininterface);
+		sprintf(ifname, "%s", maininterface);
+	} else {
+		sprintf(ifname, "%s.%d", maininterface, vapid);
 	}
-	else {
-		sprintf(ifname,"%s.%d",maininterface,vapid);
-	}
-
 
 	sprintf(akm, "%s_akm", ifname);
 	if (nvram_match(akm, "8021X"))
@@ -359,10 +359,9 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
 		fp = fopen(fstr, "wb");
 		setupHostAP_generic_ath9k(ifname, fp);
 		fprintf(fp, "interface=%s\n", ifname);
-		}
-	else {
+	} else {
 		fp = fopen(fstr, "ab");
-		fprintf(stderr, "setup vap %d bss %s\n",vapid ,ifname);
+		fprintf(stderr, "setup vap %d bss %s\n", vapid, ifname);
 		fprintf(fp, "bss=%s\n", ifname);
 	}
 
@@ -371,7 +370,7 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
 		fprintf(fp, "wds_sta=1\n");
 	fprintf(fp, "wmm_enabled=1\n");
 	int i = wl_hwaddr(maininterface, hwbuff);
-	if (vapid >0) {
+	if (vapid > 0) {
 		hwbuff[0] |= 2;
 		hwbuff[0] ^= (vapid - 1) << 2;
 	}
@@ -381,7 +380,7 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
 	char vathmac[16];
 	sprintf(vathmac, "%s_hwaddr", ifname);
 	nvram_set(vathmac, macaddr);
-	fprintf(stderr, "setup %s %s\n",ifname, macaddr);
+	fprintf(stderr, "setup %s %s\n", ifname, macaddr);
 
 	char isolate[32];
 	char broadcast[32];
@@ -399,29 +398,46 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
 
 	// wep key support
 	if (nvram_match(akm, "wep")) {
-			/*
-			   char key[16];
-			   int cnt = 1;
-			   int i;
-			   char bul[8];
-			   char *authmode = nvram_nget("%s_authmode", prefix);
-			   if (!strcmp(authmode, "shared"))
-			   sysprintf("iwpriv %s authmode 2", prefix);
-			   else if (!strcmp(authmode, "auto"))
-			   sysprintf("iwpriv %s authmode 4", prefix);
-			   else
-			   sysprintf("iwpriv %s authmode 1", prefix);
-			   for (i = 1; i < 5; i++) {
-			   char *athkey = nvram_nget("%s_key%d", prefix, i);
+		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+		FILE *fp = fopen(fstr, "wb");
+		fprintf(fp, "interface=%s\n", prefix);
 
-			   if (athkey != NULL && strlen(athkey) > 0) {
-			   sysprintf("iwconfig %s key [%d] %s", prefix, cnt++, athkey); // setup wep
-			   }
-			   }
-			   sysprintf("iwconfig %s key [%s]", prefix,
-			   nvram_nget("%s_key", prefix));
-			   wep_default_key=
-			 */
+		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+		FILE *fp = fopen(fstr, "wb");
+		fprintf(fp, "interface=%s\n", prefix);
+		if (nvram_nmatch("1", "%s_bridged", prefix))
+			fprintf(fp, "bridge=%s\n", getBridge(prefix));
+		fprintf(fp, "driver=%s\n", driver);
+		fprintf(fp, "logger_syslog=-1\n");
+		fprintf(fp, "logger_syslog_level=2\n");
+		fprintf(fp, "logger_stdout=-1\n");
+		fprintf(fp, "logger_stdout_level=2\n");
+		fprintf(fp, "debug=0\n");
+		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
+		char *authmode = nvram_nget("%s_authmode", prefix);
+		if (!strcmp(authmode, "shared"))
+			fprintf(fp, "auth_algs=2\n");
+		else if (!strcmp(authmode, "auto"))
+			fprintf(fp, "auth_algs=3\n");
+		else
+			fprintf(fp, "auth_algs=1\n");
+		int i;
+		for (i = 1; i < 5; i++) {
+			char *athkey = nvram_nget("%s_key%d", prefix, i);
+			if (athkey != NULL && strlen(athkey) > 0) {
+				fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);
+			}
+		}
+		fprintf(fp, "wep_default_key=%d\n",
+			atoi(nvram_nget("%s_key", prefix)) - 1);
+		addWPS(fp, prefix);
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix)) {
+			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
+		}
+#endif
+		fclose(fp);
+		do_hostapd(fstr, prefix);
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
 		   nvram_match(akm, "psk psk2") ||
@@ -459,38 +475,7 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
 				fprintf(fp, "wpa_passphrase=%s\n",
 					nvram_nget("%s_wpa_psk", ifname));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
-#ifdef HAVE_WPS
-			if (!strcmp(maininterface, "ath0")
-			    || !strcmp(maininterface, "ath1")) {
-				fprintf(fp, "eap_server=1\n");
-
-//# WPS configuration (AP configured, do not allow external WPS Registrars)
-				fprintf(fp, "wps_state=2\n");
-				fprintf(fp, "ap_setup_locked=1\n");
-#ifdef HAVE_WZRHPAG300NH
-				fprintf(fp, "dualband=1\n");
-#endif
-//# If UUID is not configured, it will be generated based on local MAC address. 
-				char uuid[64];
-				get_uuid(uuid);
-				fprintf(fp, "uuid=%s\n", uuid);
-				fprintf(fp,
-					"wps_pin_requests=/var/run/hostapd.pin-req\n");
-				fprintf(fp, "device_name=%s\n",
-					nvram_safe_get("router_name"));
-				fprintf(fp, "manufacturer=DD-WRT\n");
-				fprintf(fp, "model_name=%s\n",
-					nvram_safe_get("DD_BOARD"));
-				fprintf(fp, "model_number=0\n");
-				fprintf(fp, "serial_number=12345\n");
-				fprintf(fp, "device_type=6-0050F204-1\n");
-				fprintf(fp, "os_version=01020300\n");
-				fprintf(fp, "upnp_iface=%s\n",nvram_safe_get("lan_ifname"));
-				fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
-				fprintf(fp,
-					"config_methods=label display push_button keypad\n");
-			}
-#endif
+			addWPS(fp, prefix);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
 			fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
@@ -551,9 +536,10 @@ static void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid) {
 		}
 		// fprintf (fp, "jumpstart_p1=1\n");
 	}
-fprintf(fp, "\n");
-fclose(fp);
+	fprintf(fp, "\n");
+	fclose(fp);
 }
+
 /* das muessen wir noch machen
 void setupradauth_ath9k(char *prefix, char *driver, int iswan) {
 	if (nvram_match(akm, "radius")) {
@@ -583,7 +569,8 @@ void setupradauth_ath9k(char *prefix, char *driver, int iswan) {
 	}
 */
 
-void setupSupplicant_ath9k(char *prefix, char *ssidoverride) {
+void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
+{
 #ifdef HAVE_REGISTER
 	if (!isregistered())
 		return;
@@ -906,7 +893,8 @@ static void do_hostapd(char *fstr, char *prefix)
 	_evalpid(argv, NULL, 0, &pid);
 }
 
-void ath9k_start_supplicant(int count) {
+void ath9k_start_supplicant(int count)
+{
 // erst hostapd starten fuer repeater mode
 // dann wpa_supplicant mit link zu hostapd
 // dann bridgen und konfiguriren
@@ -918,13 +906,13 @@ void ath9k_start_supplicant(int count) {
 	static char dev[10];
 	char *apm, *vifs;
 	static char wl[16];
-	static char ctrliface[32]="";
+	static char ctrliface[32] = "";
 	static char wifivifs[16];
 	char *background = "-B";
 	char *debug;
 	char psk[16];
 	char wmode[16];
-	int ctrlifneeded=0;
+	int ctrlifneeded = 0;
 	sprintf(wl, "ath%d_mode", count);
 	sprintf(dev, "ath%d", count);
 	apm = nvram_safe_get(wl);
@@ -944,56 +932,54 @@ void ath9k_start_supplicant(int count) {
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
-		}
-	else {
+	} else {
 		if (vifs) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			do_hostapd(fstr, dev);
-			sleep(3);		// give some time to let hostapd initialize
+			sleep(3);	// give some time to let hostapd initialize
 			sprintf(ctrliface, "/var/run/hostapd/%s\n", dev);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta"))
-			&& nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(dev),
-			background, "-Dnl80211", 
-			"-c", fstr);
+			if ((nvram_match(wmode, "wdssta"))
+			    && nvram_match(bridged, "1"))
+				eval("wpa_supplicant", "-b", getBridge(dev),
+				     background, "-Dnl80211", "-c", fstr);
 			// wpa_supplicant patches for repeater mode needs to be applied
 			// psk, "-H", ctrliface,
-		else
-			eval("wpa_supplicant", background, "-Dnl80211", psk,
-				"-H" ctrliface, "-c", fstr);
+			else
+				eval("wpa_supplicant", background, "-Dnl80211",
+				     psk, "-H" ctrliface, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
-			&& nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(dev),
-				background, "-Dnl80211", psk, 
-				"-c", fstr);
+			if ((nvram_match(wmode, "wdssta")
+			     || nvram_match(wmode, "wet"))
+			    && nvram_match(bridged, "1"))
+				eval("wpa_supplicant", "-b", getBridge(dev),
+				     background, "-Dnl80211", psk, "-c", fstr);
 			// wpa_supplicant patches for repeater mode needs to be applied
-			// 	"-H", ctrliface,
-		else
-			eval("wpa_supplicant", background, "-Dnl80211", psk,
-				"-H", ctrliface, "-c", fstr);
+			//      "-H", ctrliface,
+			else
+				eval("wpa_supplicant", background, "-Dnl80211",
+				     psk, "-H", ctrliface, "-c", fstr);
 #endif
-		}
-		else {
-		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
+		} else {
+			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
-		if ((nvram_match(wmode, "wdssta"))
-			&& nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(dev),
-			background, "-Dnl80211", psk, "-c", fstr);
-		else
-			eval("wpa_supplicant", background, "-Dnl80211", psk,
-				"-c", fstr);
+			if ((nvram_match(wmode, "wdssta"))
+			    && nvram_match(bridged, "1"))
+				eval("wpa_supplicant", "-b", getBridge(dev),
+				     background, "-Dnl80211", psk, "-c", fstr);
+			else
+				eval("wpa_supplicant", background, "-Dnl80211",
+				     psk, "-c", fstr);
 #else
-		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
-			&& nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(dev),
-				background, "-Dnl80211", psk, "-c", fstr);
-		else
-			eval("wpa_supplicant", background, "-Dnl80211", psk,
-				"-c", fstr);
+			if ((nvram_match(wmode, "wdssta")
+			     || nvram_match(wmode, "wet"))
+			    && nvram_match(bridged, "1"))
+				eval("wpa_supplicant", "-b", getBridge(dev),
+				     background, "-Dnl80211", psk, "-c", fstr);
+			else
+				eval("wpa_supplicant", background, "-Dnl80211",
+				     psk, "-c", fstr);
 #endif
 		}
 	}
