@@ -103,7 +103,7 @@ void show_ipnetmask(webs_t wp, char *var)
 	websWrite(wp,
 		  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />",
 		  var, get_single_ip(ipv, 3));
-	websWrite(wp, "</div>\n<br />\n");
+	websWrite(wp, "</div>\n");
 
 }
 
@@ -4122,10 +4122,12 @@ websWrite(wp,
 	  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
 	  nvram_match(wl_width, "5") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_SUBQUARTER
+	if(registered_has_subquarter()) {
 	/* will be enabled once it is tested and the spectrum analyse is done */
 websWrite(wp,
 	  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
 	  nvram_match(wl_width, "2") ? "selected=\\\"selected\\\"" : "");
+	}
 #endif
 websWrite(wp, "//]]>\n</script>\n");
 websWrite(wp, "</select>\n");
@@ -4764,11 +4766,13 @@ if (!strcmp(prefix, "wl1"))
 		  nvram_match(wl_width,
 			      "5") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_SUBQUARTER
+	if(registered_has_subquarter()) {
 	/* will be enabled once it is tested and the spectrum analyse is done */
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
 		  nvram_match(wl_width,
 			      "2") ? "selected=\\\"selected\\\"" : "");
+	}
 #endif
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
@@ -7621,8 +7625,40 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			nvram_default_get(mcast, "1");
 			showRadio(wp, "wl_basic.masquerade", mcast);
 		}
+
 		show_ipnetmask(wp, var);
-		websWrite(wp, "</div>\n");
+#if defined(HAVE_BKM) || defined(HAVE_TMK)
+		if(registered_has_cap(21)) {
+			char nld_enable[32], nld_bridge[32], bufferif[256];
+			static char word[256];
+			char *next, *wordlist;
+
+			sprintf(nld_enable, "nld_%s_enable", var);
+			websWrite(wp,
+				"<div class=\"setting\">\n<div class=\"label\">ZCM enable</div>\n");
+			websWrite(wp,
+				"<input class=\"spaceradio\" type=\"checkbox\" name=\"nld_%s_enable\" value=\"1\" %s /></div>\n", var,
+				nvram_match(nld_enable, "1") ? "checked=\"checked\"" : "");
+
+			sprintf(nld_bridge, "nld_%s_bridge", var);
+			nvram_default_get(nld_bridge,"br0");
+			websWrite(wp,
+				  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>ZCM Bridge</div>\n");
+			websWrite(wp, "<select name=\"nld_%s_bridge\">\n", var);
+			websWrite(wp, "  <option value=\"\">none</option>\n");
+			memset(bufferif, 0, 256);
+			getIfList(bufferif, "br");
+			foreach(word, bufferif, next) {
+				// if( strcmp( word, "br0" ) ) {
+					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
+						  word, nvram_match( nld_bridge, word ) ? "selected=\"selected\"" :
+						  "", word);
+				// }
+			}
+			websWrite(wp, "</select>\n</div>\n");
+		}
+#endif
+		websWrite(wp, "<br />\n</div>\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n ");
 		websWrite(wp,
