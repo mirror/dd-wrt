@@ -17,6 +17,7 @@
 #include "utils/common.h"
 #include "utils/eloop.h"
 #include "common/ieee802_11_defs.h"
+#include "common/ieee802_11_common.h"
 #include "drivers/driver.h"
 #include "wpa_supplicant_i.h"
 #include "config.h"
@@ -89,6 +90,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_supplicant *wpa_s, const u8 *bssid,
 
 static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src)
 {
+	struct ieee80211_ht_capabilities *capab;
+	struct ieee802_11_elems elems;
 	os_time_t usec;
 
 	dst->flags = src->flags;
@@ -100,6 +103,12 @@ static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src)
 	dst->noise = src->noise;
 	dst->level = src->level;
 	dst->tsf = src->tsf;
+
+	memset(&elems, 0, sizeof(elems));
+	ieee802_11_parse_elems((u8 *) (src + 1), src->ie_len, &elems, 0);
+	capab = (struct ieee80211_ht_capabilities *) elems.ht_capabilities;
+	if (capab)
+		dst->ht_capab = le_to_host16(capab->ht_capabilities_info);
 
 	os_get_time(&dst->last_update);
 	dst->last_update.sec -= src->age / 1000;

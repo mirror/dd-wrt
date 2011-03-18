@@ -50,6 +50,10 @@ OBJS_p += ../src/utils/common.o
 OBJS_p += ../src/utils/wpa_debug.o
 OBJS_p += ../src/utils/wpabuf.o
 OBJS_c = wpa_cli.o ../src/common/wpa_ctrl.o
+ifdef MULTICALL
+OBJS += ../src/common/wpa_ctrl.o
+CFLAGS += -DMULTICALL
+endif
 
 -include ../../.config
 -include .config
