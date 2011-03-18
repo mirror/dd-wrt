@@ -765,6 +765,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	// wep key support
 	if (nvram_match(akm, "wep")) {
 		/* ignore */
+
 #ifdef HAVE_ATH9K
 		/* don't ignore for ath9k */
 		if (is_ath9k(prefix)) {
@@ -797,8 +798,82 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			 */
 			fclose(fp);
 			do_hostapd(fstr, prefix);
+		} else
+#endif
+		{
+			sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
+			FILE *fp = fopen(fstr, "wb");
+			fprintf(fp, "interface=%s\n", prefix);
+			if (nvram_nmatch("1", "%s_bridged", prefix))
+				fprintf(fp, "bridge=%s\n", getBridge(prefix));
+			fprintf(fp, "driver=%s\n", driver);
+			fprintf(fp, "logger_syslog=-1\n");
+			fprintf(fp, "logger_syslog_level=2\n");
+			fprintf(fp, "logger_stdout=-1\n");
+			fprintf(fp, "logger_stdout_level=2\n");
+			fprintf(fp, "debug=0\n");
+			fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
+			char *authmode = nvram_nget("%s_authmode", prefix);
+			if (!strcmp(authmode, "shared"))
+				fprintf(fp, "auth_algs=2\n");
+			else if (!strcmp(authmode, "auto"))
+				fprintf(fp, "auth_algs=3\n");
+			else
+				fprintf(fp, "auth_algs=1\n");
+			int i;
+			for (i = 1; i < 5; i++) {
+				char *athkey =
+				    nvram_nget("%s_key%d", prefix, i);
+				if (athkey != NULL && strlen(athkey) > 0) {
+					fprintf(fp, "wep_key%d=%s\n", i - 1,
+						athkey);
+				}
+			}
+			fprintf(fp, "wep_default_key=%s\n",
+				nvram_nget("%s_key", prefix));
+
+#ifdef HAVE_WPS
+			if (!strcmp(prefix, "ath0")
+			    || !strcmp(prefix, "ath1")) {
+				fprintf(fp, "eap_server=1\n");
+				fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
+
+//# WPS configuration (AP configured, do not allow external WPS Registrars)
+				fprintf(fp, "wps_state=2\n");
+				fprintf(fp, "ap_setup_locked=1\n");
+#ifdef HAVE_WZRHPAG300NH
+				fprintf(fp, "dualband=1\n");
+#endif
+//# If UUID is not configured, it will be generated based on local MAC address. 
+				char uuid[64];
+				get_uuid(uuid);
+				fprintf(fp, "uuid=%s\n", uuid);
+				fprintf(fp,
+					"wps_pin_requests=/var/run/hostapd.pin-req\n");
+				fprintf(fp, "device_name=%s\n",
+					nvram_safe_get("router_name"));
+				fprintf(fp, "manufacturer=DD-WRT\n");
+				fprintf(fp, "model_name=%s\n",
+					nvram_safe_get("DD_BOARD"));
+				fprintf(fp, "model_number=0\n");
+				fprintf(fp, "serial_number=12345\n");
+				fprintf(fp, "device_type=6-0050F204-1\n");
+				fprintf(fp, "os_version=01020300\n");
+				fprintf(fp, "upnp_iface=%s\n",
+					nvram_safe_get("lan_ifname"));
+				fprintf(fp,
+					"friendly_name=DD-WRT WPS Access Point\n");
+				fprintf(fp,
+					"config_methods=label display push_button keypad\n");
+			}
+#endif
+			fclose(fp);
+			do_hostapd(fstr, prefix);
+
 		}
-	} else if (nvram_match(akm, "disabled")) {
+	}
+#ifdef HAVE_ATH9K
+	else if (nvram_match(akm, "disabled")) {
 		if (is_ath9k(prefix)) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 			FILE *fp = fopen(fstr, "wb");
@@ -877,9 +952,12 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				fprintf(fp, "serial_number=12345\n");
 				fprintf(fp, "device_type=6-0050F204-1\n");
 				fprintf(fp, "os_version=01020300\n");
-				fprintf(fp, "upnp_iface=%s\n",nvram_safe_get("lan_ifname"));
-				fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
-				fprintf(fp, "config_methods=label display push_button keypad\n");
+				fprintf(fp, "upnp_iface=%s\n",
+					nvram_safe_get("lan_ifname"));
+				fprintf(fp,
+					"friendly_name=DD-WRT WPS Access Point\n");
+				fprintf(fp,
+					"config_methods=label display push_button keypad\n");
 			}
 #endif
 		} else {
@@ -1090,7 +1168,7 @@ static void set_rate(char *dev, char *priv)
 	if (!strcmp(netmode, "b-only"))
 		sysprintf("iwconfig %s rate 11M auto", priv);
 	// else {
-		// sysprintf("iwconfig %s rate 54M auto", priv);
+	// sysprintf("iwconfig %s rate 54M auto", priv);
 	// }
 	if (atol(mr) > 0)
 		sysprintf("iwpriv %s maxrate %s", priv, mr);
@@ -1782,26 +1860,22 @@ static void configure_single(int count)
 
 	sprintf(ssid, "ath%d_ssid", count);
 	sprintf(broadcast, "ath%d_closed", count);
-	if (!strcmp(apm, "infra") ) {
+	if (!strcmp(apm, "infra")) {
 		char *cellid;
 		char cellidtemp[32];
 		sprintf(cellidtemp, "ath%d_cellid", count);
 		cellid = nvram_safe_get(cellidtemp);
-        if (strlen(cellid) != 0) {
-			sysprintf("iwconfig %s ap %s", dev,
-				cellid);
-			}
+		if (strlen(cellid) != 0) {
+			sysprintf("iwconfig %s ap %s", dev, cellid);
+		}
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
 		else {
 			char cellidtemp[5];
-			memset(cellidtemp,0,5);
-			strncpy(cellidtemp,ssid,5);
-			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x", dev,
-				cellidtemp[0],
-				cellidtemp[1],
-				cellidtemp[2],
-				cellidtemp[3],
-				cellidtemp[4]);
+			memset(cellidtemp, 0, 5);
+			strncpy(cellidtemp, ssid, 5);
+			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x",
+				  dev, cellidtemp[0], cellidtemp[1],
+				  cellidtemp[2], cellidtemp[3], cellidtemp[4]);
 		}
 #endif
 	}
@@ -1919,11 +1993,11 @@ static void configure_single(int count)
 	set_netmode(wif, dev, dev);
 
 	setMacFilter(dev);
-	setupKey(dev);
+//	setupKey(dev);
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
 			setMacFilter(var);
-			setupKey(var);
+//			setupKey(var);
 		}
 	}
 
@@ -2003,12 +2077,14 @@ static void configure_single(int count)
 			sprintf(inact, "%s_inact", var);
 #ifdef HAVE_MAKSAT
 			sysprintf("iwpriv %s inact_tick %s", var,
-			nvram_default_get(inact_tick, "1"));
-			sysprintf("iwpriv %s inact %s", var, nvram_default_get(inact, "15"));
+				  nvram_default_get(inact_tick, "1"));
+			sysprintf("iwpriv %s inact %s", var,
+				  nvram_default_get(inact, "15"));
 #else
 			sysprintf("iwpriv %s inact_tick %s", var,
-			nvram_default_get(inact_tick, "15"));
-			sysprintf("iwpriv %s inact %s", var, nvram_default_get(inact, "300"));
+				  nvram_default_get(inact_tick, "15"));
+			sysprintf("iwpriv %s inact %s", var,
+				  nvram_default_get(inact, "300"));
 #endif
 			if (strcmp(m2, "sta")) {
 				char bridged[32];
