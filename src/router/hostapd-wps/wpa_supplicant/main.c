@@ -31,7 +31,7 @@ static void usage(void)
 	       "usage:\n"
 	       "  wpa_supplicant [-BddhKLqqstuvW] [-P<pid file>] "
 	       "[-g<global ctrl>] \\\n"
-	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] "
+	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] [-H<hostapd path>]"
 	       "[-p<driver_param>] \\\n"
 	       "        [-b<br_ifname>] [-f<debug file>] \\\n"
 	       "        [-o<override driver>] [-O<override ctrl>] \\\n"
@@ -67,6 +67,7 @@ static void usage(void)
 #endif /* CONFIG_DEBUG_SYSLOG */
 	printf("  -t = include timestamp in debug messages\n"
 	       "  -h = show this help text\n"
+		   "  -H = connect to a hostapd instance to manage state changes\n"
 	       "  -L = show license (GPL and BSD)\n"
 	       "  -o = override driver parameter for new interfaces\n"
 	       "  -O = override ctrl_interface parameter for new interfaces\n"
@@ -143,7 +144,7 @@ int main(int argc, char *argv[])
 	wpa_supplicant_fd_workaround();
 
 	for (;;) {
-		c = getopt(argc, argv, "b:Bc:C:D:df:g:hi:KLNo:O:p:P:qstuvW");
+		c = getopt(argc, argv, "b:Bc:C:D:df:g:hH:i:KLNo:O:p:P:qstuvW");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -184,6 +185,9 @@ int main(int argc, char *argv[])
 			usage();
 			exitcode = 0;
 			goto out;
+		case 'H':
+			iface->hostapd_ctrl = optarg;
+			break;
 		case 'i':
 			iface->ifname = optarg;
 			break;

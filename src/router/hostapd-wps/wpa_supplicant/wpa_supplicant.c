@@ -120,6 +120,55 @@ extern int wpa_debug_show_keys;
 extern int wpa_debug_timestamp;
 extern struct wpa_driver_ops *wpa_drivers[];
 
+#ifdef MULTICALL
+static int hostapd_stop(struct wpa_supplicant *wpa_s)
+{
+	const char *cmd = "DOWN";
+	char buf[256];
+	int len = sizeof(buf);
+
+	if (wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL) < 0) {
+		wpa_printf(MSG_ERROR, "\nFailed to stop hostapd AP interfaces\n");
+		return -1;
+	}
+	return 0;
+}
+
+static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
+{
+	char *cmd = NULL;
+	char buf[256];
+	int len = sizeof(buf);
+	int channel, hw_mode;
+	int ret;
+
+	if (!bss)
+		return;
+
+	if (bss->freq < 4000) {
+		hw_mode = HOSTAPD_MODE_IEEE80211G;
+		channel = (bss->freq - 2407) / 5;
+	} else {
+		hw_mode = HOSTAPD_MODE_IEEE80211A;
+		channel = (bss->freq - 5000) / 5;
+	}
+
+	if (asprintf(&cmd, "RELOAD channel=%d sec_chan=0 hw_mode=%d ieee80211n=%d",
+		     channel, hw_mode, !!bss->ht_capab) < 0) {
+		return -1;
+	}
+
+	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
+	free(cmd);
+
+	if (ret < 0) {
+		wpa_printf(MSG_ERROR, "\nFailed to reload hostapd AP interfaces\n");
+		return -1;
+	}
+	return 0;
+}
+#endif
+
 /* Configure default/group WEP keys for static WEP */
 int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
 {
@@ -548,8 +597,16 @@ void wpa_supplicant_set_state(struct wpa_supplicant *wpa_s,
 #ifndef IEEE8021X_EAPOL
 		wpa_drv_set_supp_port(wpa_s, 1);
 #endif
+#ifdef MULTICALL
+		if (wpa_s->hostapd)
+			hostapd_reload(wpa_s, wpa_s->current_bss);
+#endif
 	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
 		   state == WPA_ASSOCIATED) {
+#ifdef MULTICALL
+		if (wpa_s->hostapd)
+			hostapd_stop(wpa_s);
+#endif
 		wpa_s->new_connection = 1;
 		wpa_drv_set_operstate(wpa_s, 0);
 #ifndef IEEE8021X_EAPOL
@@ -1957,6 +2014,21 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
 			   sizeof(wpa_s->bridge_ifname));
 	}
+#ifdef MULTICALL
+	if (iface->hostapd_ctrl) {
+		char *cmd = "DOWN";
+		char buf[256];
+		int len = sizeof(buf);
+
+		wpa_s->hostapd = wpa_ctrl_open(iface->hostapd_ctrl);
+		if (!wpa_s->hostapd) {
+			wpa_printf(MSG_ERROR, "\nFailed to connect to hostapd\n");
+			return -1;
+		}
+		if (hostapd_stop(wpa_s) < 0)
+			return -1;
+	}
+#endif
 
 	/* RSNA Supplicant Key Management - INITIALIZE */
 	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);

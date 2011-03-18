@@ -56,6 +56,7 @@ struct wpa_bss {
 	unsigned int flags;
 	u8 bssid[ETH_ALEN];
 	u8 ssid[32];
+	u16 ht_capab;
 	size_t ssid_len;
 	int freq;
 	u16 beacon_int;
