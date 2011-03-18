@@ -331,8 +331,8 @@ static void set_netmode(char *wif, char *dev, char *use)
 			sysprintf("iwpriv %s puren 0", use);
 			sysprintf("iwpriv %s pureg 1", use);
 			setup_channel(dev, use);
-		} 
-		
+		}
+
 		if (!strcmp(netmode, "a-only")) {
 			sysprintf("iwpriv %s mode 5", use);
 			sysprintf("iwpriv %s pureb 0", use);
