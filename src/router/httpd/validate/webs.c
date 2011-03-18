@@ -919,7 +919,7 @@ void add_active_mac(webs_t wp)
 
 		count++;
 
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
+		cur += snprintf(cur, buf + 4096 - cur, "%s%s",
 				cur == buf ? "" : " ",
 				wl_client_macs[atoi(index)].hwaddr);
 	}
@@ -933,7 +933,7 @@ void add_active_mac(webs_t wp)
 			continue;
 
 		count++;
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
+		cur += snprintf(cur, buf  + 4096 - cur, "%s%s",
 				cur == buf ? "" : " ",
 				wl_client_macs[atoi(index)].hwaddr);
 	}
