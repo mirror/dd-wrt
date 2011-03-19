@@ -897,7 +897,7 @@ static void do_hostapd(char *fstr, char *prefix)
 			argv[argc++] = "-ddd";
 	}
 	argv[argc++] = fstr;
-	_evalpid(argv, NULL, 0, &pid);
+	_evalpid(argv, NULL, 0, NULL);
 }
 
 void ath9k_start_supplicant(int count)
