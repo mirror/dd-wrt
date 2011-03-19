@@ -2021,45 +2021,6 @@ void start_lan(void)
 	if (strlen(eadline) > 0)
 		sysprintf("ead %s -B", eadline);
 #endif
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
-
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
-#define getWifi(a) a
-#define getWDSSTA() NULL
-#endif
-#ifndef HAVE_NOWIFI
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_hwaddr", "")) {
-#ifdef HAVE_MADWIFI
-		char *wifi = "wifi0";
-#else
-		char *wifi = "ra0";
-#endif
-		eval("ifconfig", wifi, "down");
-		eval("ifconfig", wifi, "hw", "ether",
-		     nvram_safe_get("def_whwaddr"));
-//              eval("ifconfig", wifi, "up");
-	}
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_whwaddr", "")) {
-#ifdef HAVE_MADWIFI
-		char *wifi = "wifi0";
-#else
-		char *wifi = "ra0";
-#endif
-		eval("ifconfig", wifi, "down");
-		eval("ifconfig", wifi, "hw", "ether",
-		     nvram_safe_get("def_whwaddr"));
-//              eval("ifconfig", wifi, "up");
-	}
-	configure_wifi();
-#endif
-#endif
-#ifdef HAVE_WAVESAT
-	configure_wimax();
-#endif
 
 	/*
 	 * specific non-bridged lan i/f 
@@ -2130,6 +2091,47 @@ void start_lan(void)
 #endif
 	close(s);
 	reset_hwaddr(lan_ifname);
+
+
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
+
+#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+#define getWifi(a) a
+#define getWDSSTA() NULL
+#endif
+#ifndef HAVE_NOWIFI
+	if (nvram_match("mac_clone_enable", "1") &&
+	    nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
+	    nvram_invmatch("def_hwaddr", "")) {
+#ifdef HAVE_MADWIFI
+		char *wifi = "wifi0";
+#else
+		char *wifi = "ra0";
+#endif
+		eval("ifconfig", wifi, "down");
+		eval("ifconfig", wifi, "hw", "ether",
+		     nvram_safe_get("def_whwaddr"));
+//              eval("ifconfig", wifi, "up");
+	}
+	if (nvram_match("mac_clone_enable", "1") &&
+	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
+	    nvram_invmatch("def_whwaddr", "")) {
+#ifdef HAVE_MADWIFI
+		char *wifi = "wifi0";
+#else
+		char *wifi = "ra0";
+#endif
+		eval("ifconfig", wifi, "down");
+		eval("ifconfig", wifi, "hw", "ether",
+		     nvram_safe_get("def_whwaddr"));
+//              eval("ifconfig", wifi, "up");
+	}
+	configure_wifi();
+#endif
+#endif
+#ifdef HAVE_WAVESAT
+	configure_wimax();
+#endif
 
 	cprintf("%s %s\n",
 		nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
