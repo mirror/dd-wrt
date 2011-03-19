@@ -37,7 +37,7 @@ int stop_process(char *name, char *desc)
 		killall(name, SIGTERM);
 		int deadcounter = 20;
 		while (pidof(name) > 0 && deadcounter--) {
-			usleep(100);
+			usleep(100*1000);
 		}
 		if (pidof(name) > 0) {
 			dd_syslog(LOG_INFO,
