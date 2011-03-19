@@ -1210,6 +1210,7 @@ static void hostapd_wps_ap_pin_enable(struct hostapd_data *hapd, int timeout)
 		hapd->wps->ap_setup_locked = 0;
 		wps_registrar_update_ie(hapd->wps->registrar);
 	}
+
 	eloop_cancel_timeout(hostapd_wps_ap_pin_timeout, hapd, NULL);
 	if (timeout > 0)
 		eloop_register_timeout(timeout, 0,
