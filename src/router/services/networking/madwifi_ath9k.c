@@ -289,7 +289,7 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp)
 	    !strcmp(netmode, "na-only") ||	//
 	    !strcmp(netmode, "n2-only") ||	//
 	    !strcmp(netmode, "n5-only") ||	//
-	    !strcmp(netmode, "mixed")) && strcmp(akm,"wep") && strcmp(crypto,"tkip")) {
+	    !strcmp(netmode, "mixed")) && strcmp(akm,"wep")) {
 		fprintf(fp, "ieee80211n=1\n");
 		char bw[32];
 		sprintf(bw, "%s_channelbw", prefix);
