@@ -885,7 +885,7 @@ static void do_hostapd(char *fstr, char *prefix)
 			kill(pid, SIGTERM);
 	}
 
-	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL };
+/*	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL };
 	int argc = 4;
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	if (debug != NULL) {
@@ -897,7 +897,8 @@ static void do_hostapd(char *fstr, char *prefix)
 			argv[argc++] = "-ddd";
 	}
 	argv[argc++] = fstr;
-	_evalpid(argv, NULL, 0, NULL);
+	_evalpid(argv, NULL, 0, NULL);*/
+	sysprintf("hostapd -B -P %s -dd %s >/tmp/hostapd.log 2>&1",fname,fstr);
 }
 
 void ath9k_start_supplicant(int count)
