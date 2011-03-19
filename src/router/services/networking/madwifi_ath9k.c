@@ -868,38 +868,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 
 }
 
-static void do_hostapd(char *fstr, char *prefix)
-{
-	char fname[32];
-	char *debug;
-	FILE *fp;
-	int pid;
-
-	sprintf(fname, "/var/run/%s_hostapd.pid", prefix);
-
-	fp = fopen(fname, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &pid);
-		fclose(fp);
-		if (pid > 0)
-			kill(pid, SIGTERM);
-	}
-
-/*	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL };
-	int argc = 4;
-	debug = nvram_nget("%s_wpa_debug", prefix);
-	if (debug != NULL) {
-		if (!strcmp(debug, "1"))
-			argv[argc++] = "-d";
-		else if (!strcmp(debug, "2"))
-			argv[argc++] = "-dd";
-		else if (!strcmp(debug, "3"))
-			argv[argc++] = "-ddd";
-	}
-	argv[argc++] = fstr;
-	_evalpid(argv, NULL, 0, NULL);*/
-	sysprintf("hostapd -B -P %s -dd %s >/tmp/hostapd.log 2>&1",fname,fstr);
-}
+extern void do_hostapd(char *fstr, char *prefix);
 
 void ath9k_start_supplicant(int count)
 {
