@@ -580,7 +580,7 @@ void supplicant_main(int argc, char *argv[])
 	setupSupplicant(argv[1], argv[2]);
 }
 
-static void do_hostapd(char *fstr, char *prefix)
+void do_hostapd(char *fstr, char *prefix)
 {
 	char fname[32];
 	char *debug;
@@ -609,7 +609,7 @@ static void do_hostapd(char *fstr, char *prefix)
 			argv[argc++] = "-ddd";
 	}
 	argv[argc++] = fstr;
-	_evalpid(argv, NULL, 0, &pid);
+	_evalpid(argv, NULL, 0, NULL);
 }
 
 static void checkhostapd(char *ifname)
