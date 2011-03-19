@@ -1029,8 +1029,6 @@ void ath9k_start_supplicant(int count)
 
 	if (vifs != NULL && strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
-			if (!ifexists(var))
-			    sleep(2); //wait a little bit
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_safe_get(mode);
 			if (strcmp(m2, "sta")) {
