@@ -276,7 +276,7 @@ static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
 
 	for (opt = strtok(reload_opts, " ");
 	     opt;
-		 opt = strtok(opt, " ")) {
+		 opt = strtok(NULL, " ")) {
 
 		if ((val = get_option(opt, "channel=")))
 			conf->channel = atoi(val);
