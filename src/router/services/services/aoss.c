@@ -152,11 +152,14 @@ void start_aoss(void)
 			}
 			setupHostAP_ath9k("ath0", 0, counter, 1);
 			FILE *fp = fopen("/var/run/ath0_hostapd.pid", "rb");
+			if (fp)  // file not found means that hostapd usually doesnt run
+			{
 			int pid;
 			fscanf(fp, "%d", &pid);
 			fclose(fp);
 			sysprintf("kill %d", pid);
 			sleep(2);
+			}
 			sysprintf
 			    ("hostapd -B -P /var/run/ath0_hostapd.pid /tmp/ath0_hostap.conf");
 		} else
