@@ -1836,6 +1836,8 @@ aoss.wep_info="(required for most gaming consoles supporting AOSS)";
 aoss.wps="WPS Setup";
 aoss.wpspin="WPS PIN";
 aoss.wpsregister="Register PIN";
+aoss.wpsgenerate="Generate PIN";
+aoss.pinnotvalid="Invalid PIN, checksum not correct!";
 aoss.wpsenable="WPS Button";
 
 var sec80211x = new Object();
