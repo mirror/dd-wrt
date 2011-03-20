@@ -749,7 +749,7 @@ void addWPS(FILE * fp, char *prefix)
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 		fprintf(fp, "wps_state=2\n");
 		fprintf(fp, "ap_setup_locked=0\n");
-		fprintf(fp, "ap_pin=%s\n",nvram_safe_get("pincode"));
+//		fprintf(fp, "ap_pin=%s\n",nvram_safe_get("pincode"));
 #ifdef HAVE_WZRHPAG300NH
 		fprintf(fp, "dualband=1\n");
 #endif
