@@ -32,10 +32,10 @@ function wps_pin_checksum(pin)
 {
 	accum = 0;
 	while (pin) {
-		accum += 3 * (pin % 10);
-		pin /= 10;
-		accum += pin % 10;
-		pin /= 10;
+		accum += parseInt(3 * (pin % 10));
+		pin = parseInt(pin / 10);
+		accum += parseInt(pin % 10);
+		pin = parseInt(pin / 10);
 	}
 
 	return (10 - accum % 10) % 10;
@@ -43,7 +43,7 @@ function wps_pin_checksum(pin)
 
 function wps_pin_valid(pin)
 {
-	return wps_pin_checksum(pin / 10) == (pin % 10);
+	return wps_pin_checksum(parseInt(pin / 10)) == (pin % 10);
 }
 
 function wps_generate_pin(field)
