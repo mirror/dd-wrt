@@ -1854,7 +1854,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		if (chain_trusted)
 			continue;
 
-		if (
+/*		if (
 #ifndef NO_TIMESTAMP_CHECK
 		    (unsigned long) now.sec <
 		    (unsigned long) cert->not_before ||
@@ -1866,7 +1866,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 				   now.sec, cert->not_before, cert->not_after);
 			*reason = X509_VALIDATE_CERTIFICATE_EXPIRED;
 			return -1;
-		}
+		}*/
 
 		if (cert->next) {
 			if (x509_name_compare(&cert->issuer,
@@ -1939,7 +1939,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		}
 	}
 
-	if (!chain_trusted) {
+/*	if (!chain_trusted) {
 		wpa_printf(MSG_DEBUG, "X509: Did not find any of the issuers "
 			   "from the list of trusted certificates");
 		if (trusted) {
@@ -1948,7 +1948,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		}
 		wpa_printf(MSG_DEBUG, "X509: Certificate chain validation "
 			   "disabled - ignore unknown CA issue");
-	}
+	}*/
 
 	wpa_printf(MSG_DEBUG, "X509: Certificate chain valid");
 
