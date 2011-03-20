@@ -56,14 +56,14 @@ void start_aoss(void)
 			if (!nvram_match("ath0_net_mode", "disabled")) {
 				sysprintf("hostapd_cli -i ath0 wps_pbc");
 				sysprintf
-				    ("hostapd_cli -i ath0 wps_ap_pin %s 300",
+				    ("hostapd_cli -i ath0 wps_ap_pin set %s 300",
 				     nvram_safe_get("pincode"));
 			}
 #ifdef HAVE_WZRHPAG300NH
 			if (!nvram_match("ath1_net_mode", "disabled")) {
 				sysprintf("hostapd_cli -i ath1 wps_pbc");
 				sysprintf
-				    ("hostapd_cli -i ath1 wps_ap_pin %s 300",
+				    ("hostapd_cli -i ath1 wps_ap_pin set %s 300",
 				     nvram_safe_get("pincode"));
 			}
 #endif
