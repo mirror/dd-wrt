@@ -1203,8 +1203,14 @@ static void hostapd_wps_ap_pin_timeout(void *eloop_data, void *user_ctx)
 static void hostapd_wps_ap_pin_enable(struct hostapd_data *hapd, int timeout)
 {
 	wpa_printf(MSG_DEBUG, "WPS: Enabling AP PIN (timeout=%d)", timeout);
+	if (!hapd)
+	    return;
 	hapd->ap_pin_failures = 0;
+	if (!hapd->conf)
+	    return;
 	hapd->conf->ap_setup_locked = 0;
+	if (!hapd->wps)
+	    return;
 	if (hapd->wps->ap_setup_locked) {
 		wpa_msg(hapd->msg_ctx, MSG_INFO, WPS_EVENT_AP_SETUP_UNLOCKED);
 		hapd->wps->ap_setup_locked = 0;
@@ -1215,6 +1221,7 @@ static void hostapd_wps_ap_pin_enable(struct hostapd_data *hapd, int timeout)
 	if (timeout > 0)
 		eloop_register_timeout(timeout, 0,
 				       hostapd_wps_ap_pin_timeout, hapd, NULL);
+	wpa_printf(MSG_DEBUG, "WPS: Enabling AP PIN (timeout=%d) done", timeout);
 }
 
 
