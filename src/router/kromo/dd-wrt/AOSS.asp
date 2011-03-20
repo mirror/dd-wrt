@@ -26,7 +26,7 @@ function to_apply(F) {
   applytake(F);
 }
 
-/* the following 3 functions are taken and ported from HostAPD */
+/* the following 3 functions are taken and ported from HostAPD to Javascript*/
 
 function wps_pin_checksum(pin)
 {
@@ -60,6 +60,7 @@ function wps_generate_pin(field)
 function to_register(F) {
 	if (!wps_pin_valid(F.wps_pin.value)) {
 	    alert(aoss.pinnotvalid);
+	    return;
 	    }
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "wps_register";
