@@ -45,37 +45,32 @@ struct variable **variables;
 void aoss_save(webs_t wp)
 {
 	char buf[32];
-	sprintf(buf, "%s", websGetVar(wp, "aoss_enable", "0"));
-	nvram_set("aoss_enable", buf);
-	sprintf(buf, "%s", websGetVar(wp, "aoss_aes", "0"));
-	nvram_set("aoss_aes", buf);
-	sprintf(buf, "%s", websGetVar(wp, "aoss_tkip", "0"));
-	nvram_set("aoss_tkip", buf);
-	sprintf(buf, "%s", websGetVar(wp, "aoss_wep", "0"));
-	nvram_set("aoss_wep", buf);
+	nvram_set("aoss_enable", websGetVar(wp, "aoss_enable", "0"));
+	nvram_set("aoss_aes", websGetVar(wp, "aoss_aes", "0"));
+	nvram_set("aoss_tkip", websGetVar(wp, "aoss_tkip", "0"));
+	nvram_set("aoss_wep", websGetVar(wp, "aoss_wep", "0"));
 #ifdef HAVE_WPS
-	sprintf(buf, "%s", websGetVar(wp, "wps_enabled", "0"));
-	nvram_set("wps_enabled", buf);
+	nvram_set("wps_enabled", websGetVar(wp, "wps_enabled", "0"));
+	char *pin = websGetVar(wp, "pincode", NULL);
+	if (pin)
+		nvram_set("aoss_wep", pin);
 #endif
 	// check if at least one value was set
-	if (!strcmp(websGetVar(wp, "aoss_aes", "0"), "0")
-	    && !strcmp(websGetVar(wp, "aoss_tkip", "0"), "0")
-	    && !strcmp(websGetVar(wp, "aoss_wep", "0"), "0")) {
-		fprintf(stderr, "[AOSS] no encryption\n");
+	if (nvram_match("aoss_aes", "0")
+	    && nvram_match("aoss_tkip", "0")
+	    && nvram_match("aoss_wep", "0")) {
 		nvram_set("aoss_aes", "1");
 	}
-	if (strlen(nvram_safe_get("aoss_vifs")))
-	    {
-	    nvram_unset("ath0_vifs");
-	    nvram_unset("aoss_vifs");
-	    nvram_commit();
-	    }
-	if (strlen(nvram_safe_get("aossa_vifs")))
-	    {
-	    nvram_unset("ath1_vifs");
-	    nvram_unset("aossa_vifs");
-	    nvram_commit();
-	    }
+	if (strlen(nvram_safe_get("aoss_vifs"))) {
+		nvram_unset("ath0_vifs");
+		nvram_unset("aoss_vifs");
+		nvram_commit();
+	}
+	if (strlen(nvram_safe_get("aossa_vifs"))) {
+		nvram_unset("ath1_vifs");
+		nvram_unset("aossa_vifs");
+		nvram_commit();
+	}
 	// all other vars
 	//validate_cgi(wp);
 }
