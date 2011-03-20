@@ -19,17 +19,53 @@ function to_submit(F) {
   apply(F);
 }
 
-function to_register(F) {
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "wps_register";
-  apply(F);
-}
 function to_apply(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
   applytake(F);
 }
+
+/* the following 3 functions are taken and ported from HostAPD */
+
+function wps_pin_checksum(pin)
+{
+	accum = 0;
+	while (pin) {
+		accum += 3 * (pin % 10);
+		pin /= 10;
+		accum += pin % 10;
+		pin /= 10;
+	}
+
+	return (10 - accum % 10) % 10;
+}
+
+function wps_pin_valid(pin)
+{
+	return wps_pin_checksum(pin / 10) == (pin % 10);
+}
+
+function wps_generate_pin(field)
+{
+
+	/* Generate seven random digits for the PIN */
+	val = parseInt(Math.random()*(9999999+1));
+	val %= 10000000;
+
+	/* Append checksum digit */
+	field.value = val * 10 + wps_pin_checksum(val);
+}
+
+function to_register(F) {
+	if (!wps_pin_valid(F.wps_pin.value)) {
+	    alert(aoss.pinnotvalid);
+	    }
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "wps_register";
+  apply(F);
+}
+
 
 var update;
 
@@ -183,6 +219,7 @@ document.write("<\/tr>");
 						<script type="text/javascript">
 						//<![CDATA[
 						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsregister + "\" onclick=\"to_register(this.form);\" />");
+						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsgenerate + "\" onclick=\"wps_generate_pin(this.form.wps_pin);\" />");
 						//]]>
 						</script>
 					</div>
