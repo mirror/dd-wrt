@@ -386,10 +386,17 @@ void athrs16_reg_init(int ethUinit)
 #endif
 
 
+    printk("Disable switch learning function.\n");
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER0, athrs16_reg_read(S16_PORT_CONTROL_REGISTER0)&(~(0x1<<14)));
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER1, athrs16_reg_read(S16_PORT_CONTROL_REGISTER1)&(~(0x1<<14)));
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER2, athrs16_reg_read(S16_PORT_CONTROL_REGISTER2)&(~(0x1<<14)));
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER3, athrs16_reg_read(S16_PORT_CONTROL_REGISTER3)&(~(0x1<<14)));
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER4, athrs16_reg_read(S16_PORT_CONTROL_REGISTER4)&(~(0x1<<14)));
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER5, athrs16_reg_read(S16_PORT_CONTROL_REGISTER5)&(~(0x1<<14)));
+    printk("athrs16_reg_init complete.\n");
 
 #endif
     athr16_init_flag = 1;
-    printk("athrs16_reg_init complete.\n");
 }
 
 /******************************************************************************
