@@ -53,9 +53,19 @@ void start_aoss(void)
 #ifdef HAVE_WPS			// set to 1 or remove the #if to reenable WPS support
 		sysprintf("rm -f /tmp/.wpsdone");
 		if (nvram_match("wps_enabled", "1")) {
-			sysprintf("hostapd_cli -i ath0 wps_pbc");
+			if (!nvram_match("ath0_net_mode", "disabled")) {
+				sysprintf("hostapd_cli -i ath0 wps_pbc");
+				sysprintf
+				    ("hostapd_cli -i ath0 wps_ap_pin %s 300",
+				     nvram_safe_get("pincode"));
+			}
 #ifdef HAVE_WZRHPAG300NH
-			sysprintf("hostapd_cli -i ath1 wps_pbc");
+			if (!nvram_match("ath1_net_mode", "disabled")) {
+				sysprintf("hostapd_cli -i ath1 wps_pbc");
+				sysprintf
+				    ("hostapd_cli -i ath1 wps_ap_pin %s 300",
+				     nvram_safe_get("pincode"));
+			}
 #endif
 		}
 #endif
@@ -152,13 +162,13 @@ void start_aoss(void)
 			}
 			setupHostAP_ath9k("ath0", 0, counter, 1);
 			FILE *fp = fopen("/var/run/ath0_hostapd.pid", "rb");
-			if (fp)  // file not found means that hostapd usually doesnt run
+			if (fp)	// file not found means that hostapd usually doesnt run
 			{
-			int pid;
-			fscanf(fp, "%d", &pid);
-			fclose(fp);
-			sysprintf("kill %d", pid);
-			sleep(2);
+				int pid;
+				fscanf(fp, "%d", &pid);
+				fclose(fp);
+				sysprintf("kill %d", pid);
+				sleep(2);
 			}
 			sysprintf
 			    ("hostapd -B -P /var/run/ath0_hostapd.pid /tmp/ath0_hostap.conf");
