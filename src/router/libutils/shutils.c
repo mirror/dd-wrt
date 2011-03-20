@@ -102,12 +102,28 @@ int waitfor(int fd, int timeout)
  * @return      return value of executed command or errno
  */
 
+static void flog(const char *fmt, ...)
+{
+	if (nvram_match("flog_enabled", "1")) {
+		char varbuf[256];
+		va_list args;
+
+		va_start(args, (char *)fmt);
+		vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+		va_end(args);
+		FILE *fp = fopen("/tmp/syslog.log", "ab");
+		fprintf(fp, varbuf);
+		fclose(fp);
+	}
+}
+
 int system2(char *command)
 {
 #ifndef HAVE_X86		//we must disable this on x86 since nvram is not available at startup
 
 	if (nvram_match("console_debug", "1")) {
 		fprintf(stderr, "system: %s\n", command);
+		flog("system: %s\n", command);
 	}
 #endif
 
@@ -147,8 +163,10 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 
 		while (argv[i] != NULL) {
 			fprintf(stderr, "%s ", argv[i++]);
+			flog("%s ", argv[i - 1]);
 		}
 		fprintf(stderr, "\n");
+		flog("\n");
 	}
 #ifndef HAVE_SILENCE
 	int i = 0;
@@ -745,57 +763,54 @@ int wait_file_exists(const char *name, int max, int invert)
 
 #ifdef MEMDEBUG
 #define MEMDEBUGSIZE 1024
-typedef struct MEMENTRY
-{
-void *reference;
-int size;
-char func[32];
-int dirty;
+typedef struct MEMENTRY {
+	void *reference;
+	int size;
+	char func[32];
+	int dirty;
 };
 
-static unsigned int memdebugpnt=0;
+static unsigned int memdebugpnt = 0;
 static struct MEMENTRY mementry[MEMDEBUGSIZE];
 void *mymalloc(int size, char *func)
 {
-if (memdebugpnt>=MEMDEBUGSIZE)
-    return safe_malloc(size);
-mementry[memdebugpnt].size=size;
-mementry[memdebugpnt].dirty=1;
-void *ref = malloc(size);
-mementry[memdebugpnt].reference=ref;
-strncpy(mementry[memdebugpnt].func,func,32);
-memdebugpnt++;
-if (memdebugpnt==MEMDEBUGSIZE)
-    memdebugpnt=0;
-return ref;
+	if (memdebugpnt >= MEMDEBUGSIZE)
+		return safe_malloc(size);
+	mementry[memdebugpnt].size = size;
+	mementry[memdebugpnt].dirty = 1;
+	void *ref = malloc(size);
+	mementry[memdebugpnt].reference = ref;
+	strncpy(mementry[memdebugpnt].func, func, 32);
+	memdebugpnt++;
+	if (memdebugpnt == MEMDEBUGSIZE)
+		memdebugpnt = 0;
+	return ref;
 }
+
 #undef free
 void myfree(void *ref)
 {
-int i;
-for (i=0;i<MEMDEBUGSIZE;i++)
-    {
-    if (mementry[i].reference==ref && mementry[i].dirty)
-	{
-//	fprintf(stderr,"free from %s\n",mementry[i].func);
-	mementry[i].dirty = 0;
-	break;
-	}   
-    }
-free(ref);
+	int i;
+	for (i = 0; i < MEMDEBUGSIZE; i++) {
+		if (mementry[i].reference == ref && mementry[i].dirty) {
+//      fprintf(stderr,"free from %s\n",mementry[i].func);
+			mementry[i].dirty = 0;
+			break;
+		}
+	}
+	free(ref);
 }
 
 void showmemdebugstat(void)
 {
-int i;
-for (i=0;i<MEMDEBUGSIZE;i++)
-    {
-    if (mementry[i].dirty)
-	{
-	fprintf(stderr,"%s leaks %d bytes\n",mementry[i].func,mementry[i].size);
-	mementry[i].dirty=0;
+	int i;
+	for (i = 0; i < MEMDEBUGSIZE; i++) {
+		if (mementry[i].dirty) {
+			fprintf(stderr, "%s leaks %d bytes\n", mementry[i].func,
+				mementry[i].size);
+			mementry[i].dirty = 0;
+		}
 	}
-    }
 }
 
 #endif
