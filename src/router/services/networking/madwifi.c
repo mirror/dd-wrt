@@ -741,10 +741,10 @@ void get_uuid(char *uuid_str)
 void addWPS(FILE * fp, char *prefix)
 {
 #ifdef HAVE_WPS
+	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
 	if (!strcmp(prefix, "ath0")
 	    || !strcmp(prefix, "ath1")) {
 		fprintf(fp, "eap_server=1\n");
-		fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
 
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 		fprintf(fp, "wps_state=2\n");
