@@ -428,11 +428,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		int i;
 		if (aoss) {
 			for (i = 1; i < 5; i++) {
-				char *athkey = "4D454C434F";
-				if (athkey != NULL && strlen(athkey) > 0) {
-					fprintf(fp, "wep_key%d=%s\n", i - 1,
-						athkey);
-				}
+				fprintf(fp, "wep_key%d=4D454C434F\n", i - 1);
 			}
 			fprintf(fp, "wep_default_key=1\n");
 
