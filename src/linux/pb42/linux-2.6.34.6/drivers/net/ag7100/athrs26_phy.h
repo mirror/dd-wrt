@@ -151,9 +151,9 @@ void athrs26_phy_off(ag7100_mac_t *mac);
 void athrs26_phy_on(ag7100_mac_t *mac);
 void athrs26_mac_speed_set(ag7100_mac_t *mac, ag7100_phy_speed_t speed);
 void set_cpu_egress_tagged(uint8_t is_tagged);
-inline uint16_t athrs26_defvid_get(uint32_t port_id);
+uint16_t athrs26_defvid_get(uint32_t port_id);
 int athr_ioctl(uint32_t *args, int cmd);
-inline uint8_t is_cpu_egress_tagged(void);
+uint8_t is_cpu_egress_tagged(void);
 
 #endif
 
