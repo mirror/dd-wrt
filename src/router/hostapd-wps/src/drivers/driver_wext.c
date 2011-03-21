@@ -856,7 +856,7 @@ static int wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
 {
 	int send_rfkill_event = 0;
 
-	if (linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 1) < 0) {
+/*	if (linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 1) < 0) {
 #ifdef CONFIG_RFKILL
 		if (rfkill_is_blocked(drv->rfkill)) {
 			wpa_printf(MSG_DEBUG, "WEXT: Could not yet enable "
@@ -871,7 +871,7 @@ static int wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
 				   "interface '%s' UP", drv->ifname);
 			return -1;
 		}
-	}
+	}*/
 
 	/*
 	 * Make sure that the driver does not have any obsolete PMKID entries.
@@ -1637,7 +1637,7 @@ static int wpa_driver_wext_set_key_ext(void *priv, enum wpa_alg alg,
 	iwr.u.encoding.pointer = (caddr_t) ext;
 	iwr.u.encoding.length = sizeof(*ext) + key_len;
 
-	if (addr == NULL || is_broadcast_ether_addr(addr))
+	if (addr == NULL || os_memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN) == 0)
 		ext->ext_flags |= IW_ENCODE_EXT_GROUP_KEY;
 	if (set_tx)
 		ext->ext_flags |= IW_ENCODE_EXT_SET_TX_KEY;

@@ -465,7 +465,7 @@ madwifi_set_key(const char *ifname, void *priv, enum wpa_alg alg,
 	wk.ik_flags = IEEE80211_KEY_RECV;
 	if (set_tx)
 		wk.ik_flags |= IEEE80211_KEY_XMIT;
-	if (addr == NULL || is_broadcast_ether_addr(addr)) {
+	if (addr == NULL) {
 		os_memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
 		wk.ik_keyix = key_idx;
 	} else {
