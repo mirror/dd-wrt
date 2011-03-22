@@ -31,7 +31,28 @@ useful_functions.o ebtables.o
 
 OBJECTS:=$(OBJECTS2) $(EXT_OBJS) $(EXT_LIBS)
 
-KERNEL_INCLUDES?=include/
+KERNEL_INCLUDES=-I$(LINUXDIR)/include/
+ifeq ($(ARCH),mips)
+KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/mips/include
+endif
+ifeq ($(ARCH),mipsel)
+KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/mips/include
+endif
+ifeq ($(ARCH),powerpc)
+KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/powerpc/include
+endif
+ifeq ($(ARCH),arm)
+KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/arm/include
+endif
+ifeq ($(ARCH),armbe)
+KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/arm/include
+endif
+ifeq ($(ARCH),armeb)
+KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/arm/include
+endif
+ifeq ($(ARCH),i386)
+KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/x86/include
+endif
 
 ETHERTYPESPATH?=$(ETCDIR)
 ETHERTYPESFILE:=$(ETHERTYPESPATH)/ethertypes
@@ -66,47 +87,47 @@ PROGSPECSD:=-DPROGVERSION=\"$(PROGVERSION)\" \
 all: ebtables ebtables-restore
 
 communication.o: communication.c include/ebtables_u.h
-	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< -I$(KERNEL_INCLUDES)
+	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< $(KERNEL_INCLUDES)
 
 libebtc.o: libebtc.c include/ebtables_u.h
-	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< -I$(KERNEL_INCLUDES)
+	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< $(KERNEL_INCLUDES)
 
 useful_functions.o: useful_functions.c include/ebtables_u.h
-	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< -I$(KERNEL_INCLUDES)
+	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< $(KERNEL_INCLUDES)
 
 getethertype.o: getethertype.c include/ethernetdb.h
 	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< -Iinclude/
 
 ebtables.o: ebtables.c include/ebtables_u.h
-	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< -I$(KERNEL_INCLUDES)
+	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c -o $@ $< $(KERNEL_INCLUDES)
 
 ebtables-standalone.o: ebtables-standalone.c include/ebtables_u.h
-	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c $< -o $@ -I$(KERNEL_INCLUDES)
+	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(PROGSPECS) -c $< -o $@ $(KERNEL_INCLUDES)
 
 .PHONY: libebtc
 libebtc: $(OBJECTS2)
 	$(CC) -shared -Wl,-soname,libebtc.so -o libebtc.so -lc $(OBJECTS2)
 
 ebtables: $(OBJECTS) ebtables-standalone.o libebtc
-	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) -o $@ ebtables-standalone.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
+	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) -o $@ ebtables-standalone.o $(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
 	-Wl,-rpath,$(LIBDIR)
 
 ebtablesu: ebtablesu.c
 	$(CC) $(CFLAGS) $(PROGSPECSD) $< -o $@
 
 ebtablesd.o: ebtablesd.c include/ebtables_u.h
-	$(CC) $(CFLAGS) $(PROGSPECSD) -c $< -o $@  -I$(KERNEL_INCLUDES)
+	$(CC) $(CFLAGS) $(PROGSPECSD) -c $< -o $@  $(KERNEL_INCLUDES)
 
 ebtablesd: $(OBJECTS) ebtablesd.o libebtc
-	$(CC) $(CFLAGS) -o $@ ebtablesd.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
+	$(CC) $(CFLAGS) -o $@ ebtablesd.o $(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
 	-Wl,-rpath,$(LIBDIR)
 
 ebtables-restore.o: ebtables-restore.c include/ebtables_u.h
-	$(CC) $(CFLAGS) $(PROGSPECS) -c $< -o $@  -I$(KERNEL_INCLUDES)
+	$(CC) $(CFLAGS) $(PROGSPECS) -c $< -o $@  $(KERNEL_INCLUDES)
 
 ebtables-restore: $(OBJECTS) ebtables-restore.o libebtc
-	$(CC) $(CFLAGS) -o $@ ebtables-restore.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
-	-Wl,-rpath,$(LIBDIR)
+	$(CC) $(CFLAGS) -o $@ ebtables-restore.o $(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
+	-Wl,-rpath,$(LIBDIRS)
 
 .PHONY: daemon
 daemon: ebtablesd ebtablesu
@@ -134,7 +155,7 @@ static: extensions/ebt_*.c extensions/ebtable_*.c ebtables.c communication.c ebt
 	printf "extern void %s();\n" _t_$${arg}_init >> include/ebtables_u.h ; \
 	done ; \
 	printf "\n\tpseudomain(argc, argv);\n\treturn 0;\n}\n" >> ebtables-standalone.c ;\
-	$(CC) $(CFLAGS) $(PROGSPECS) -o $@ $^ -I$(KERNEL_INCLUDES) -Iinclude ; \
+	$(CC) $(CFLAGS) $(PROGSPECS) -o $@ $^ $(KERNEL_INCLUDES) -Iinclude ; \
 	for arg in $(EXT_FUNC) \
 	; do \
 	sed "s/ .*_init/ _init/" extensions/ebt_$${arg}.c > extensions/ebt_$${arg}.c_ ; \
@@ -234,7 +255,7 @@ rpmbuild:
 
 .PHONY: test_ulog
 test_ulog: examples/ulog/test_ulog.c getethertype.o
-	$(CC) $(CFLAGS)  $< -o test_ulog -I$(KERNEL_INCLUDES) -lc \
+	$(CC) $(CFLAGS)  $< -o test_ulog $(KERNEL_INCLUDES) -lc \
 	getethertype.o
 	mv test_ulog examples/ulog/
 

@@ -1,6 +1,6 @@
 ebtables:
 ifeq ($(CONFIG_HOTPLUG2),y)
-	$(MAKE) -C ebtables-2.0.9 static BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) KERNEL_INCLUDES=$(LINUXDIR)/include
+	$(MAKE) -C ebtables-2.0.9 static BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
 else
 	$(MAKE) -C ebtables static BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) KERNEL_INCLUDES=$(LINUXDIR)/include
 endif
