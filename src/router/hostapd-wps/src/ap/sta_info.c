@@ -124,6 +124,9 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 
 	accounting_sta_stop(hapd, sta);
 
+	/* just in case */
+	ap_sta_set_authorized(hapd, sta, 0);
+
 	if (sta->flags & WLAN_STA_WDS)
 		hostapd_set_wds_sta(hapd, sta->addr, sta->aid, 0);
 
@@ -270,27 +273,33 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 	    (sta->timeout_next == STA_NULLFUNC ||
 	     sta->timeout_next == STA_DISASSOC)) {
 		int inactive_sec;
-		wpa_printf(MSG_DEBUG, "Checking STA " MACSTR " inactivity:",
-			   MAC2STR(sta->addr));
 		inactive_sec = hostapd_drv_get_inact_sec(hapd, sta->addr);
 		if (inactive_sec == -1) {
-			wpa_printf(MSG_DEBUG, "Could not get station info "
-				   "from kernel driver for " MACSTR ".",
-				   MAC2STR(sta->addr));
+			wpa_msg(hapd, MSG_DEBUG, "Check inactivity: Could not "
+				"get station info rom kernel driver for "
+				MACSTR, MAC2STR(sta->addr));
 		} else if (inactive_sec < hapd->conf->ap_max_inactivity &&
 			   sta->flags & WLAN_STA_ASSOC) {
 			/* station activity detected; reset timeout state */
-			wpa_printf(MSG_DEBUG, "  Station has been active");
+			wpa_msg(hapd, MSG_DEBUG, "Station " MACSTR " has been "
+				"active %is ago",
+				MAC2STR(sta->addr), inactive_sec);
 			sta->timeout_next = STA_NULLFUNC;
 			next_time = hapd->conf->ap_max_inactivity -
 				inactive_sec;
+		} else {
+			wpa_msg(hapd, MSG_DEBUG, "Station " MACSTR " has been "
+				"inactive too long: %d sec, max allowed: %d",
+				MAC2STR(sta->addr), inactive_sec,
+				hapd->conf->ap_max_inactivity);
 		}
 	}
 
 	if ((sta->flags & WLAN_STA_ASSOC) &&
 	    sta->timeout_next == STA_DISASSOC &&
 	    !(sta->flags & WLAN_STA_PENDING_POLL)) {
-		wpa_printf(MSG_DEBUG, "  Station has ACKed data poll");
+		wpa_msg(hapd, MSG_DEBUG, "Station " MACSTR " has ACKed data "
+			"poll", MAC2STR(sta->addr));
 		/* data nullfunc frame poll did not produce TX errors; assume
 		 * station ACKed it */
 		sta->timeout_next = STA_NULLFUNC;
@@ -750,6 +759,23 @@ void ap_sta_stop_sa_query(struct hostapd_data *hapd, struct sta_info *sta)
 #endif /* CONFIG_IEEE80211W */
 
 
+void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
+			   int authorized)
+{
+	if (!!authorized == !!(sta->flags & WLAN_STA_AUTHORIZED))
+		return;
+
+	if (authorized)
+		sta->flags |= WLAN_STA_AUTHORIZED;
+	else
+		sta->flags &= ~WLAN_STA_AUTHORIZED;
+
+	if (hapd->sta_authorized_cb)
+		hapd->sta_authorized_cb(hapd->sta_authorized_cb_ctx,
+					sta->addr, authorized);
+}
+
+
 void ap_sta_disconnect(struct hostapd_data *hapd, struct sta_info *sta,
 		       const u8 *addr, u16 reason)
 {
@@ -762,7 +788,8 @@ void ap_sta_disconnect(struct hostapd_data *hapd, struct sta_info *sta,
 
 	if (sta == NULL)
 		return;
-	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC | WLAN_STA_AUTHORIZED);
+	ap_sta_set_authorized(hapd, sta, 0);
+	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
 	eloop_cancel_timeout(ap_handle_timer, hapd, sta);
 	eloop_register_timeout(0, 0, ap_handle_timer, hapd, sta);
 	sta->timeout_next = STA_REMOVE;

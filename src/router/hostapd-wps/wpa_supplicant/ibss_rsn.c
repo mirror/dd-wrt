@@ -39,6 +39,13 @@ static void supp_set_state(void *ctx, enum wpa_states state)
 }
 
 
+static enum wpa_states supp_get_state(void *ctx)
+{
+	struct ibss_rsn_peer *peer = ctx;
+	return peer->supp_state;
+}
+
+
 static int supp_ether_send(void *ctx, const u8 *dest, u16 proto, const u8 *buf,
 			   size_t len)
 {
@@ -171,6 +178,7 @@ int ibss_rsn_supp_init(struct ibss_rsn_peer *peer, const u8 *own_addr,
 	ctx->ctx = peer;
 	ctx->msg_ctx = peer->ibss_rsn->wpa_s;
 	ctx->set_state = supp_set_state;
+	ctx->get_state = supp_get_state;
 	ctx->ether_send = supp_ether_send;
 	ctx->get_beacon_ie = supp_get_beacon_ie;
 	ctx->alloc_eapol = supp_alloc_eapol;
@@ -291,6 +299,24 @@ static int auth_set_key(void *ctx, int vlan_id, enum wpa_alg alg,
 }
 
 
+static int auth_for_each_sta(void *ctx, int (*cb)(struct wpa_state_machine *sm,
+						  void *ctx),
+			     void *cb_ctx)
+{
+	struct ibss_rsn *ibss_rsn = ctx;
+	struct ibss_rsn_peer *peer;
+
+	wpa_printf(MSG_DEBUG, "AUTH: for_each_sta");
+
+	for (peer = ibss_rsn->peers; peer; peer = peer->next) {
+		if (peer->auth && cb(peer->auth, cb_ctx))
+			return 1;
+	}
+
+	return 0;
+}
+
+
 static int ibss_rsn_auth_init_group(struct ibss_rsn *ibss_rsn,
 				    const u8 *own_addr)
 {
@@ -306,6 +332,7 @@ static int ibss_rsn_auth_init_group(struct ibss_rsn *ibss_rsn,
 	conf.rsn_pairwise = WPA_CIPHER_CCMP;
 	conf.wpa_group = WPA_CIPHER_CCMP;
 	conf.eapol_version = 2;
+	conf.wpa_group_rekey = 600;
 
 	os_memset(&cb, 0, sizeof(cb));
 	cb.ctx = ibss_rsn;
@@ -313,6 +340,7 @@ static int ibss_rsn_auth_init_group(struct ibss_rsn *ibss_rsn,
 	cb.send_eapol = auth_send_eapol;
 	cb.get_psk = auth_get_psk;
 	cb.set_key = auth_set_key;
+	cb.for_each_sta = auth_for_each_sta;
 
 	ibss_rsn->init_in_progress = 1;
 	ibss_rsn->auth_group = wpa_init(own_addr, &conf, &cb);
@@ -395,6 +423,46 @@ int ibss_rsn_start(struct ibss_rsn *ibss_rsn, const u8 *addr)
 	ibss_rsn->peers = peer;
 
 	return 0;
+}
+
+
+void ibss_rsn_stop(struct ibss_rsn *ibss_rsn, const u8 *peermac)
+{
+	struct ibss_rsn_peer *peer, *prev;
+
+	if (ibss_rsn == NULL)
+		return;
+
+	if (peermac == NULL) {
+		/* remove all peers */
+		wpa_printf(MSG_DEBUG, "%s: Remove all peers", __func__);
+		peer = ibss_rsn->peers;
+		while (peer) {
+			prev = peer;
+			peer = peer->next;
+			ibss_rsn_free(prev);
+			ibss_rsn->peers = peer;
+		}
+	} else {
+		/* remove specific peer */
+		wpa_printf(MSG_DEBUG, "%s: Remove specific peer " MACSTR,
+			   __func__, MAC2STR(peermac));
+
+		for (prev = NULL, peer = ibss_rsn->peers; peer != NULL;
+		     prev = peer, peer = peer->next) {
+			if (os_memcmp(peermac, peer->addr, ETH_ALEN) == 0) {
+				if (prev == NULL)
+					ibss_rsn->peers = peer->next;
+				else
+					prev->next = peer->next;
+				ibss_rsn_free(peer);
+				wpa_printf(MSG_DEBUG, "%s: Successfully "
+					   "removed a specific peer",
+					   __func__);
+				break;
+			}
+		}
+	}
 }
 
 

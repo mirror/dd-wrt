@@ -53,6 +53,8 @@ u8 * hostapd_eid_supp_rates(struct hostapd_data *hapd, u8 *eid)
 
 	*pos++ = WLAN_EID_SUPP_RATES;
 	num = hapd->iface->num_rates;
+	if (hapd->iconf->ieee80211n && hapd->iconf->require_ht)
+		num++;
 	if (num > 8) {
 		/* rest of the rates are encoded in Extended supported
 		 * rates element */
@@ -70,6 +72,10 @@ u8 * hostapd_eid_supp_rates(struct hostapd_data *hapd, u8 *eid)
 		pos++;
 	}
 
+	if (hapd->iconf->ieee80211n && hapd->iconf->require_ht &&
+	    hapd->iface->num_rates < 8)
+		*pos++ = 0x80 | BSS_MEMBERSHIP_SELECTOR_HT_PHY;
+
 	return pos;
 }
 
@@ -83,6 +89,8 @@ u8 * hostapd_eid_ext_supp_rates(struct hostapd_data *hapd, u8 *eid)
 		return eid;
 
 	num = hapd->iface->num_rates;
+	if (hapd->iconf->ieee80211n && hapd->iconf->require_ht)
+		num++;
 	if (num <= 8)
 		return eid;
 	num -= 8;
@@ -100,6 +108,10 @@ u8 * hostapd_eid_ext_supp_rates(struct hostapd_data *hapd, u8 *eid)
 			*pos |= 0x80;
 		pos++;
 	}
+
+	if (hapd->iconf->ieee80211n && hapd->iconf->require_ht &&
+	    hapd->iface->num_rates >= 8)
+		*pos++ = 0x80 | BSS_MEMBERSHIP_SELECTOR_HT_PHY;
 
 	return pos;
 }
@@ -148,6 +160,31 @@ u16 hostapd_own_capab_info(struct hostapd_data *hapd, struct sta_info *sta,
 		capab |= WLAN_CAPABILITY_SHORT_SLOT_TIME;
 
 	return capab;
+}
+
+
+u8 * hostapd_eid_ext_capab(struct hostapd_data *hapd, u8 *eid)
+{
+	u8 *pos = eid;
+
+	if ((hapd->conf->tdls & (TDLS_PROHIBIT | TDLS_PROHIBIT_CHAN_SWITCH)) ==
+	    0)
+		return eid;
+
+	*pos++ = WLAN_EID_EXT_CAPAB;
+	*pos++ = 5;
+	*pos++ = 0x00;
+	*pos++ = 0x00;
+	*pos++ = 0x00;
+	*pos++ = 0x00;
+	*pos = 0x00;
+	if (hapd->conf->tdls & TDLS_PROHIBIT)
+		*pos |= 0x40; /* Bit 38 - TDLS Prohibited */
+	if (hapd->conf->tdls & TDLS_PROHIBIT_CHAN_SWITCH)
+		*pos |= 0x80; /* Bit 39 - TDLS Channel Switching Prohibited */
+	pos++;
+
+	return pos;
 }
 
 
@@ -638,10 +675,17 @@ static u16 check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 	if (resp != WLAN_STATUS_SUCCESS)
 		return resp;
 #ifdef CONFIG_IEEE80211N
-	resp = copy_sta_ht_capab(sta, elems.ht_capabilities,
+	resp = copy_sta_ht_capab(hapd, sta, elems.ht_capabilities,
 				 elems.ht_capabilities_len);
 	if (resp != WLAN_STATUS_SUCCESS)
 		return resp;
+	if (hapd->iconf->ieee80211n && hapd->iconf->require_ht &&
+	    !(sta->flags & WLAN_STA_HT)) {
+		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_INFO, "Station does not support "
+			       "mandatory HT PHY - reject association");
+		return WLAN_STATUS_ASSOC_DENIED_NO_HT;
+	}
 #endif /* CONFIG_IEEE80211N */
 
 	if ((hapd->conf->wpa & WPA_PROTO_RSN) && elems.rsn_ie) {
@@ -866,6 +910,8 @@ static void send_assoc_resp(struct hostapd_data *hapd, struct sta_info *sta,
 	p = hostapd_eid_ht_capabilities(hapd, p);
 	p = hostapd_eid_ht_operation(hapd, p);
 #endif /* CONFIG_IEEE80211N */
+
+	p = hostapd_eid_ext_capab(hapd, p);
 
 	if (sta->flags & WLAN_STA_WMM)
 		p = hostapd_eid_wmm(hapd, p);
@@ -1146,20 +1192,20 @@ static void handle_deauth(struct hostapd_data *hapd,
 	struct sta_info *sta;
 
 	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.deauth)) {
-		printf("handle_deauth - too short payload (len=%lu)\n",
-		       (unsigned long) len);
+		wpa_msg(hapd, MSG_DEBUG, "handle_deauth - too short payload "
+			"(len=%lu)", (unsigned long) len);
 		return;
 	}
 
-	wpa_printf(MSG_DEBUG, "deauthentication: STA=" MACSTR
-		   " reason_code=%d",
-		   MAC2STR(mgmt->sa),
-		   le_to_host16(mgmt->u.deauth.reason_code));
+	wpa_msg(hapd, MSG_DEBUG, "deauthentication: STA=" MACSTR
+		" reason_code=%d",
+		MAC2STR(mgmt->sa), le_to_host16(mgmt->u.deauth.reason_code));
 
 	sta = ap_get_sta(hapd, mgmt->sa);
 	if (sta == NULL) {
-		printf("Station " MACSTR " trying to deauthenticate, but it "
-		       "is not authenticated.\n", MAC2STR(mgmt->sa));
+		wpa_msg(hapd, MSG_DEBUG, "Station " MACSTR " trying to "
+			"deauthenticate, but it is not authenticated",
+			MAC2STR(mgmt->sa));
 		return;
 	}
 
@@ -1515,7 +1561,7 @@ void ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
 		handle_disassoc(hapd, mgmt, len);
 		break;
 	case WLAN_FC_STYPE_DEAUTH:
-		wpa_printf(MSG_DEBUG, "mgmt::deauth");
+		wpa_msg(hapd, MSG_DEBUG, "mgmt::deauth");
 		handle_deauth(hapd, mgmt, len);
 		break;
 	case WLAN_FC_STYPE_ACTION:
@@ -1628,7 +1674,7 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		 * Open, static WEP, or FT protocol; no separate authorization
 		 * step.
 		 */
-		sta->flags |= WLAN_STA_AUTHORIZED;
+		ap_sta_set_authorized(hapd, sta, 1);
 		wpa_msg(hapd->msg_ctx, MSG_INFO,
 			AP_STA_CONNECTED MACSTR, MAC2STR(sta->addr));
 	}

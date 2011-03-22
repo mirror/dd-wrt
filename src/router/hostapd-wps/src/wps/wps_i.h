@@ -117,6 +117,8 @@ struct wps_data {
 	struct wps_credential *use_cred;
 
 	int use_psk_key;
+	u8 p2p_dev_addr[ETH_ALEN]; /* P2P Device Address of the client or
+				    * 00:00:00:00:00:00 if not a P2p client */
 };
 
 
@@ -193,6 +195,8 @@ struct wps_parse_attr {
 	size_t eap_identity_len;
 	const u8 *authorized_macs; /* <= 30 octets */
 	size_t authorized_macs_len;
+	const u8 *sec_dev_type_list; /* <= 128 octets */
+	size_t sec_dev_type_list_len;
 
 	/* attributes that can occur multiple times */
 #define MAX_CRED_COUNT 10
@@ -203,6 +207,10 @@ struct wps_parse_attr {
 #define MAX_REQ_DEV_TYPE_COUNT 10
 	const u8 *req_dev_type[MAX_REQ_DEV_TYPE_COUNT];
 	size_t num_req_dev_type;
+
+	const u8 *vendor_ext[MAX_WPS_PARSE_VENDOR_EXT];
+	size_t vendor_ext_len[MAX_WPS_PARSE_VENDOR_EXT];
+	size_t num_vendor_ext;
 };
 
 /* wps_common.c */

@@ -657,6 +657,31 @@ static int interface_count(struct hostapd_iface *iface)
 }
 
 
+static int hostapd_wps_set_vendor_ext(struct hostapd_data *hapd,
+				      struct wps_context *wps)
+{
+	int i;
+
+	for (i = 0; i < MAX_WPS_VENDOR_EXTENSIONS; i++) {
+		wpabuf_free(wps->dev.vendor_ext[i]);
+		wps->dev.vendor_ext[i] = NULL;
+
+		if (hapd->conf->wps_vendor_ext[i] == NULL)
+			continue;
+
+		wps->dev.vendor_ext[i] =
+			wpabuf_dup(hapd->conf->wps_vendor_ext[i]);
+		if (wps->dev.vendor_ext[i] == NULL) {
+			while (--i >= 0)
+				wpabuf_free(wps->dev.vendor_ext[i]);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+
 int hostapd_init_wps(struct hostapd_data *hapd,
 		     struct hostapd_bss_config *conf)
 {
@@ -728,13 +753,14 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 		wps->config_methods |= WPS_CONFIG_VIRT_PUSHBUTTON;
 	}
 #endif /* CONFIG_WPS2 */
-	if (hapd->conf->device_type &&
-	    wps_dev_type_str2bin(hapd->conf->device_type,
-				 wps->dev.pri_dev_type) < 0) {
-		wpa_printf(MSG_ERROR, "WPS: Invalid device_type");
+	os_memcpy(wps->dev.pri_dev_type, hapd->conf->device_type,
+		  WPS_DEV_TYPE_LEN);
+
+	if (hostapd_wps_set_vendor_ext(hapd, wps) < 0) {
 		os_free(wps);
 		return -1;
 	}
+
 	wps->dev.os_version = WPA_GET_BE32(hapd->conf->os_version);
 	wps->dev.rf_bands = hapd->iconf->hw_mode == HOSTAPD_MODE_IEEE80211A ?
 		WPS_RF_50GHZ : WPS_RF_24GHZ; /* FIX: dualband AP */
@@ -906,6 +932,8 @@ void hostapd_update_wps(struct hostapd_data *hapd)
 	hapd->wps->upc = hapd->conf->upc;
 #endif /* CONFIG_WPS_UPNP */
 
+	hostapd_wps_set_vendor_ext(hapd, hapd->wps);
+
 	if (hapd->conf->wps_state)
 		wps_registrar_update_ie(hapd->wps->registrar);
 	else
@@ -967,15 +995,18 @@ int hostapd_wps_add_pin(struct hostapd_data *hapd, const u8 *addr,
 
 static int wps_button_pushed(struct hostapd_data *hapd, void *ctx)
 {
+	const u8 *p2p_dev_addr = ctx;
 	if (hapd->wps == NULL)
 		return 0;
-	return wps_registrar_button_pushed(hapd->wps->registrar);
+	return wps_registrar_button_pushed(hapd->wps->registrar, p2p_dev_addr);
 }
 
 
-int hostapd_wps_button_pushed(struct hostapd_data *hapd)
+int hostapd_wps_button_pushed(struct hostapd_data *hapd,
+			      const u8 *p2p_dev_addr)
 {
-	return hostapd_wps_for_each(hapd, wps_button_pushed, NULL);
+	return hostapd_wps_for_each(hapd, wps_button_pushed,
+				    (void *) p2p_dev_addr);
 }
 
 

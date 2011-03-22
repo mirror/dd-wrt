@@ -108,11 +108,28 @@ static int wps_parse_vendor_ext(struct wps_parse_attr *attr, const u8 *pos,
 	switch (vendor_id) {
 	case WPS_VENDOR_ID_WFA:
 		return wps_parse_vendor_ext_wfa(attr, pos + 3, len - 3);
-	default:
-		wpa_printf(MSG_MSGDUMP, "WPS: Skip unknown Vendor Extension "
-			   "(Vendor ID %u)", vendor_id);
-		break;
 	}
+
+	/* Handle unknown vendor extensions */
+
+	wpa_printf(MSG_MSGDUMP, "WPS: Unknown Vendor Extension (Vendor ID %u)",
+		   vendor_id);
+
+	if (len > WPS_MAX_VENDOR_EXT_LEN) {
+		wpa_printf(MSG_DEBUG, "WPS: Too long Vendor Extension (%u)",
+			   len);
+		return -1;
+	}
+
+	if (attr->num_vendor_ext > MAX_WPS_PARSE_VENDOR_EXT) {
+		wpa_printf(MSG_DEBUG, "WPS: Skipped Vendor Extension "
+			   "attribute (max %d vendor extensions)",
+			   MAX_WPS_PARSE_VENDOR_EXT);
+		return -1;
+	}
+	attr->vendor_ext[attr->num_vendor_ext] = pos;
+	attr->vendor_ext_len[attr->num_vendor_ext] = len;
+	attr->num_vendor_ext++;
 
 	return 0;
 }
@@ -511,6 +528,16 @@ static int wps_set_attr(struct wps_parse_attr *attr, u16 type,
 		}
 		attr->req_dev_type[attr->num_req_dev_type] = pos;
 		attr->num_req_dev_type++;
+		break;
+	case ATTR_SECONDARY_DEV_TYPE_LIST:
+		if (len > WPS_SEC_DEV_TYPE_MAX_LEN ||
+		    (len % WPS_DEV_TYPE_LEN) > 0) {
+			wpa_printf(MSG_DEBUG, "WPS: Invalid Secondary Device "
+				   "Type length %u", len);
+			return -1;
+		}
+		attr->sec_dev_type_list = pos;
+		attr->sec_dev_type_list_len = len;
 		break;
 	case ATTR_VENDOR_EXT:
 		if (wps_parse_vendor_ext(attr, pos, len) < 0)

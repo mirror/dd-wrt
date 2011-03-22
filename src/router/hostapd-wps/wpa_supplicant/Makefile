@@ -145,6 +145,13 @@ NEED_SHA256=y
 NEED_AES_OMAC1=y
 endif
 
+ifdef CONFIG_TDLS
+CFLAGS += -DCONFIG_TDLS
+OBJS += ../src/rsn_supp/tdls.o
+NEED_SHA256=y
+NEED_AES_OMAC1=y
+endif
+
 ifdef CONFIG_PEERKEY
 CFLAGS += -DCONFIG_PEERKEY
 endif
@@ -1238,6 +1245,9 @@ endif
 
 ifdef CONFIG_DEBUG_SYSLOG
 CFLAGS += -DCONFIG_DEBUG_SYSLOG
+ifdef CONFIG_DEBUG_SYSLOG_FACILITY
+CFLAGS += -DLOG_HOSTAPD="$(CONFIG_DEBUG_SYSLOG_FACILITY)"
+endif
 endif
 
 ifdef CONFIG_DEBUG_FILE
@@ -1341,6 +1351,13 @@ ifndef LDO
 LDO=$(CC)
 endif
 
+Q=@
+E=echo
+ifeq ($(V), 1)
+Q=
+E=true
+endif
+
 dynamic_eap_methods: $(EAPDYN)
 
 ../src/drivers/build.wpa_supplicant:
@@ -1352,7 +1369,8 @@ dynamic_eap_methods: $(EAPDYN)
 BCHECK=../src/drivers/build.wpa_supplicant
 
 wpa_priv: $(BCHECK) $(OBJS_priv)
-	$(LDO) $(LDFLAGS) -o wpa_priv $(OBJS_priv) $(LIBS)
+	$(Q)$(LDO) $(LDFLAGS) -o wpa_priv $(OBJS_priv) $(LIBS)
+	@$(E) "  LD " $@
 
 wpa_supplicant_multi.a: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
 	$(Q)$(CC) -c -o wpa_supplicant_multi.o -Dmain=wpa_supplicant_main $(CFLAGS) main.c
@@ -1361,28 +1379,36 @@ wpa_supplicant_multi.a: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
 	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS)
 
 wpa_supplicant: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
-	$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
+	$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
+	@$(E) "  LD " $@
 
 eapol_test: .config $(OBJS_t)
-	$(LDO) $(LDFLAGS) -o eapol_test $(OBJS_t) $(LIBS)
+	$(Q)$(LDO) $(LDFLAGS) -o eapol_test $(OBJS_t) $(LIBS)
+	@$(E) "  LD " $@
 
 preauth_test: .config $(OBJS_t2) 
-	$(LDO) $(LDFLAGS) -o preauth_test $(OBJS_t2) $(LIBS)
+	$(Q)$(LDO) $(LDFLAGS) -o preauth_test $(OBJS_t2) $(LIBS)
+	@$(E) "  LD " $@
 
 wpa_passphrase: $(OBJS_p)
-	$(LDO) $(LDFLAGS) -o wpa_passphrase $(OBJS_p) $(LIBS_p)
+	$(Q)$(LDO) $(LDFLAGS) -o wpa_passphrase $(OBJS_p) $(LIBS_p)
+	@$(E) "  LD " $@
 
 wpa_cli: $(OBJS_c)
-	$(LDO) $(LDFLAGS) -o wpa_cli $(OBJS_c) $(LIBS_c)
+	$(Q)$(LDO) $(LDFLAGS) -o wpa_cli $(OBJS_c) $(LIBS_c)
+	@$(E) "  LD " $@
 
 link_test: $(OBJS) $(OBJS_h) tests/link_test.o
-	$(LDO) $(LDFLAGS) -o link_test $(OBJS) $(OBJS_h) tests/link_test.o $(LIBS)
+	$(Q)$(LDO) $(LDFLAGS) -o link_test $(OBJS) $(OBJS_h) tests/link_test.o $(LIBS)
+	@$(E) "  LD " $@
 
 test_wpa: $(OBJS_wpa) $(OBJS_h)
-	$(LDO) $(LDFLAGS) -o test_wpa $(OBJS_wpa) $(LIBS)
+	$(Q)$(LDO) $(LDFLAGS) -o test_wpa $(OBJS_wpa) $(LIBS)
+	@$(E) "  LD " $@
 
 win_if_list: win_if_list.c
-	$(LDO) $(LDFLAGS) -o $@ win_if_list.c $(CFLAGS) $(LIBS_w)
+	$(Q)$(LDO) $(LDFLAGS) -o $@ win_if_list.c $(CFLAGS) $(LIBS_w)
+	@$(E) "  LD " $@
 
 eap_psk.so: ../src/eap_peer/eap_psk.c ../src/eap_common/eap_psk_common.c
 	$(CC) $(LDFLAGS) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $^ \
@@ -1407,13 +1433,6 @@ eap_ikev2.so: ../src/eap_peer/eap_ikev2.c ../src/eap_peer/ikev2.c ../src/eap_com
 %.so: %.c
 	$(CC) $(LDFLAGS) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $< \
 		-D$(*F:eap_%=eap_peer_%)_register=eap_peer_method_dynamic_init
-
-Q=@
-E=echo
-ifeq ($(V), 1)
-Q=
-E=true
-endif
 
 %.o: %.c
 	$(Q)$(CC) -c -o $@ $(CFLAGS) $<

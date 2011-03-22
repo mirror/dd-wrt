@@ -31,25 +31,6 @@
  */
 #define WPA_BSS_EXPIRATION_PERIOD 10
 
-/**
- * WPA_BSS_EXPIRATION_AGE - BSS entry age after which it can be expired
- *
- * This value control the time in seconds after which a BSS entry gets removed
- * if it has not been updated or is not in use.
- */
-#define WPA_BSS_EXPIRATION_AGE 180
-
-/**
- * WPA_BSS_EXPIRATION_SCAN_COUNT - Expire BSS after number of scans
- *
- * If the BSS entry has not been seen in this many scans, it will be removed.
- * Value 1 means that the entry is removed after the first scan without the
- * BSSID being seen. Larger values can be used to avoid BSS entries
- * disappearing if they are not visible in every scan (e.g., low signal quality
- * or interference).
- */
-#define WPA_BSS_EXPIRATION_SCAN_COUNT 2
-
 #define WPA_BSS_FREQ_CHANGED_FLAG	BIT(0)
 #define WPA_BSS_SIGNAL_CHANGED_FLAG	BIT(1)
 #define WPA_BSS_PRIVACY_CHANGED_FLAG	BIT(2)
@@ -66,9 +47,9 @@ static void wpa_bss_remove(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 	dl_list_del(&bss->list);
 	dl_list_del(&bss->list_id);
 	wpa_s->num_bss--;
-	wpa_printf(MSG_DEBUG, "BSS: Remove id %u BSSID " MACSTR " SSID '%s'",
-		   bss->id, MAC2STR(bss->bssid),
-		   wpa_ssid_txt(bss->ssid, bss->ssid_len));
+	wpa_dbg(wpa_s, MSG_DEBUG, "BSS: Remove id %u BSSID " MACSTR
+		" SSID '%s'", bss->id, MAC2STR(bss->bssid),
+		wpa_ssid_txt(bss->ssid, bss->ssid_len));
 	wpas_notify_bss_removed(wpa_s, bss->bssid, bss->id);
 	os_free(bss);
 }
@@ -142,8 +123,9 @@ static void wpa_bss_add(struct wpa_supplicant *wpa_s,
 	dl_list_add_tail(&wpa_s->bss, &bss->list);
 	dl_list_add_tail(&wpa_s->bss_id, &bss->list_id);
 	wpa_s->num_bss++;
-	wpa_printf(MSG_DEBUG, "BSS: Add new id %u BSSID " MACSTR " SSID '%s'",
-		   bss->id, MAC2STR(bss->bssid), wpa_ssid_txt(ssid, ssid_len));
+	wpa_dbg(wpa_s, MSG_DEBUG, "BSS: Add new id %u BSSID " MACSTR
+		" SSID '%s'",
+		bss->id, MAC2STR(bss->bssid), wpa_ssid_txt(ssid, ssid_len));
 	wpas_notify_bss_added(wpa_s, bss->bssid, bss->id);
 	if (wpa_s->num_bss > wpa_s->conf->bss_max_count) {
 		/* Remove the oldest entry */
@@ -326,8 +308,8 @@ static int wpa_bss_in_use(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 void wpa_bss_update_start(struct wpa_supplicant *wpa_s)
 {
 	wpa_s->bss_update_idx++;
-	wpa_printf(MSG_DEBUG, "BSS: Start scan result update %u",
-		   wpa_s->bss_update_idx);
+	wpa_dbg(wpa_s, MSG_DEBUG, "BSS: Start scan result update %u",
+		wpa_s->bss_update_idx);
 }
 
 
@@ -339,13 +321,13 @@ void wpa_bss_update_scan_res(struct wpa_supplicant *wpa_s,
 
 	ssid = wpa_scan_get_ie(res, WLAN_EID_SSID);
 	if (ssid == NULL) {
-		wpa_printf(MSG_DEBUG, "BSS: No SSID IE included for " MACSTR,
-			   MAC2STR(res->bssid));
+		wpa_dbg(wpa_s, MSG_DEBUG, "BSS: No SSID IE included for "
+			MACSTR, MAC2STR(res->bssid));
 		return;
 	}
 	if (ssid[1] > 32) {
-		wpa_printf(MSG_DEBUG, "BSS: Too long SSID IE included for "
-			   MACSTR, MAC2STR(res->bssid));
+		wpa_dbg(wpa_s, MSG_DEBUG, "BSS: Too long SSID IE included for "
+			MACSTR, MAC2STR(res->bssid));
 		return;
 	}
 
@@ -420,18 +402,18 @@ void wpa_bss_update_end(struct wpa_supplicant *wpa_s, struct scan_info *info,
 			continue; /* expire only BSSes that were scanned */
 		if (bss->last_update_idx < wpa_s->bss_update_idx)
 			bss->scan_miss_count++;
-		if (bss->scan_miss_count >= WPA_BSS_EXPIRATION_SCAN_COUNT) {
-			wpa_printf(MSG_DEBUG, "BSS: Expire BSS %u due to no "
-				   "match in scan", bss->id);
+		if (bss->scan_miss_count >=
+		    wpa_s->conf->bss_expiration_scan_count) {
+			wpa_dbg(wpa_s, MSG_DEBUG, "BSS: Expire BSS %u due to "
+				"no match in scan", bss->id);
 			wpa_bss_remove(wpa_s, bss);
 		}
 	}
 }
 
 
-static void wpa_bss_timeout(void *eloop_ctx, void *timeout_ctx)
+void wpa_bss_flush_by_age(struct wpa_supplicant *wpa_s, int age)
 {
-	struct wpa_supplicant *wpa_s = eloop_ctx;
 	struct wpa_bss *bss, *n;
 	struct os_time t;
 
@@ -439,19 +421,27 @@ static void wpa_bss_timeout(void *eloop_ctx, void *timeout_ctx)
 		return;
 
 	os_get_time(&t);
-	t.sec -= WPA_BSS_EXPIRATION_AGE;
+	t.sec -= age;
 
 	dl_list_for_each_safe(bss, n, &wpa_s->bss, struct wpa_bss, list) {
 		if (wpa_bss_in_use(wpa_s, bss))
 			continue;
 
 		if (os_time_before(&bss->last_update, &t)) {
-			wpa_printf(MSG_DEBUG, "BSS: Expire BSS %u due to age",
-				   bss->id);
+			wpa_dbg(wpa_s, MSG_DEBUG, "BSS: Expire BSS %u due to "
+				"age", bss->id);
 			wpa_bss_remove(wpa_s, bss);
 		} else
 			break;
 	}
+}
+
+
+static void wpa_bss_timeout(void *eloop_ctx, void *timeout_ctx)
+{
+	struct wpa_supplicant *wpa_s = eloop_ctx;
+
+	wpa_bss_flush_by_age(wpa_s, wpa_s->conf->bss_expiration_age);
 	eloop_register_timeout(WPA_BSS_EXPIRATION_PERIOD, 0,
 			       wpa_bss_timeout, wpa_s, NULL);
 }
@@ -467,14 +457,25 @@ int wpa_bss_init(struct wpa_supplicant *wpa_s)
 }
 
 
-void wpa_bss_deinit(struct wpa_supplicant *wpa_s)
+void wpa_bss_flush(struct wpa_supplicant *wpa_s)
 {
 	struct wpa_bss *bss, *n;
-	eloop_cancel_timeout(wpa_bss_timeout, wpa_s, NULL);
+
 	if (wpa_s->bss.next == NULL)
 		return; /* BSS table not yet initialized */
-	dl_list_for_each_safe(bss, n, &wpa_s->bss, struct wpa_bss, list)
+
+	dl_list_for_each_safe(bss, n, &wpa_s->bss, struct wpa_bss, list) {
+		if (wpa_bss_in_use(wpa_s, bss))
+			continue;
 		wpa_bss_remove(wpa_s, bss);
+	}
+}
+
+
+void wpa_bss_deinit(struct wpa_supplicant *wpa_s)
+{
+	eloop_cancel_timeout(wpa_bss_timeout, wpa_s, NULL);
+	wpa_bss_flush(wpa_s);
 }
 
 
@@ -482,7 +483,7 @@ struct wpa_bss * wpa_bss_get_bssid(struct wpa_supplicant *wpa_s,
 				   const u8 *bssid)
 {
 	struct wpa_bss *bss;
-	dl_list_for_each(bss, &wpa_s->bss, struct wpa_bss, list) {
+	dl_list_for_each_reverse(bss, &wpa_s->bss, struct wpa_bss, list) {
 		if (os_memcmp(bss->bssid, bssid, ETH_ALEN) == 0)
 			return bss;
 	}

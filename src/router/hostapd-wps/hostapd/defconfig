@@ -21,12 +21,6 @@ CONFIG_DRIVER_HOSTAP=y
 
 # Driver interface for drivers using the nl80211 kernel interface
 #CONFIG_DRIVER_NL80211=y
-# driver_nl80211.c requires a rather new libnl (version 1.1) which may not be
-# shipped with your distribution yet. If that is the case, you need to build
-# newer libnl version and point the hostapd build to use it.
-#LIBNL=/usr/src/libnl
-#CFLAGS += -I$(LIBNL)/include
-#LIBS += -L$(LIBNL)/lib
 
 # Driver interface for FreeBSD net80211 layer (e.g., Atheros driver)
 #CONFIG_DRIVER_BSD=y
@@ -143,6 +137,10 @@ CONFIG_IPV6=y
 # This can be used to reduce the size of the hostapd considerably if debugging
 # code is not needed.
 #CONFIG_NO_STDOUT_DEBUG=y
+
+# Add support for writing debug log to a file: -f /tmp/hostapd.log
+# Disabled by default.
+#CONFIG_DEBUG_FILE=y
 
 # Remove support for RADIUS accounting
 #CONFIG_NO_ACCOUNTING=y

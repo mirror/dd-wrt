@@ -23,15 +23,41 @@ static int wpa_debug_syslog = 0;
 #endif /* CONFIG_DEBUG_SYSLOG */
 
 
-#ifdef CONFIG_DEBUG_FILE
-static FILE *out_file = NULL;
-#endif /* CONFIG_DEBUG_FILE */
 int wpa_debug_level = MSG_INFO;
 int wpa_debug_show_keys = 0;
 int wpa_debug_timestamp = 0;
 
 
+#ifdef CONFIG_ANDROID_LOG
+
+#include <android/log.h>
+
+void android_printf(int level, char *format, ...)
+{
+	if (level >= wpa_debug_level) {
+		va_list ap;
+		if (level == MSG_ERROR)
+			level = ANDROID_LOG_ERROR;
+		else if (level == MSG_WARNING)
+			level = ANDROID_LOG_WARN;
+		else if (level == MSG_INFO)
+			level = ANDROID_LOG_INFO;
+		else
+			level = ANDROID_LOG_DEBUG;
+		va_start(ap, format);
+		__android_log_vprint(level, "wpa_supplicant", format, ap);
+		va_end(ap);
+	}
+}
+
+#else /* CONFIG_ANDROID_LOG */
+
 #ifndef CONFIG_NO_STDOUT_DEBUG
+
+#ifdef CONFIG_DEBUG_FILE
+static FILE *out_file = NULL;
+#endif /* CONFIG_DEBUG_FILE */
+
 
 void wpa_debug_print_timestamp(void)
 {
@@ -52,9 +78,13 @@ void wpa_debug_print_timestamp(void)
 
 
 #ifdef CONFIG_DEBUG_SYSLOG
+#ifndef LOG_HOSTAPD
+#define LOG_HOSTAPD LOG_DAEMON
+#endif /* LOG_HOSTAPD */
+
 void wpa_debug_open_syslog(void)
 {
-	openlog("wpa_supplicant", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+	openlog("wpa_supplicant", LOG_PID | LOG_NDELAY, LOG_HOSTAPD);
 	wpa_debug_syslog++;
 }
 
@@ -273,11 +303,43 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 }
 
 
+#ifdef CONFIG_DEBUG_FILE
+static char *last_path = NULL;
+#endif /* CONFIG_DEBUG_FILE */
+
+int wpa_debug_reopen_file(void)
+{
+#ifdef CONFIG_DEBUG_FILE
+	int rv;
+	if (last_path) {
+		char *tmp = os_strdup(last_path);
+		wpa_debug_close_file();
+		rv = wpa_debug_open_file(tmp);
+		os_free(tmp);
+	} else {
+		wpa_printf(MSG_ERROR, "Last-path was not set, cannot "
+			   "re-open log file.");
+		rv = -1;
+	}
+	return rv;
+#else /* CONFIG_DEBUG_FILE */
+	return 0;
+#endif /* CONFIG_DEBUG_FILE */
+}
+
+
 int wpa_debug_open_file(const char *path)
 {
 #ifdef CONFIG_DEBUG_FILE
 	if (!path)
 		return 0;
+
+	if (last_path == NULL || os_strcmp(last_path, path) != 0) {
+		/* Save our path to enable re-open */
+		os_free(last_path);
+		last_path = os_strdup(path);
+	}
+
 	out_file = fopen(path, "a");
 	if (out_file == NULL) {
 		wpa_printf(MSG_ERROR, "wpa_debug_open_file: Failed to open "
@@ -299,11 +361,14 @@ void wpa_debug_close_file(void)
 		return;
 	fclose(out_file);
 	out_file = NULL;
+	os_free(last_path);
+	last_path = NULL;
 #endif /* CONFIG_DEBUG_FILE */
 }
 
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
+#endif /* CONFIG_ANDROID_LOG */
 
 #ifndef CONFIG_NO_WPA_MSG
 static wpa_msg_cb_func wpa_msg_cb = NULL;
@@ -314,12 +379,21 @@ void wpa_msg_register_cb(wpa_msg_cb_func func)
 }
 
 
+static wpa_msg_get_ifname_func wpa_msg_ifname_cb = NULL;
+
+void wpa_msg_register_ifname_cb(wpa_msg_get_ifname_func func)
+{
+	wpa_msg_ifname_cb = func;
+}
+
+
 void wpa_msg(void *ctx, int level, const char *fmt, ...)
 {
 	va_list ap;
 	char *buf;
 	const int buflen = 2048;
 	int len;
+	char prefix[130];
 
 	buf = os_malloc(buflen);
 	if (buf == NULL) {
@@ -328,9 +402,19 @@ void wpa_msg(void *ctx, int level, const char *fmt, ...)
 		return;
 	}
 	va_start(ap, fmt);
+	prefix[0] = '\0';
+	if (wpa_msg_ifname_cb) {
+		const char *ifname = wpa_msg_ifname_cb(ctx);
+		if (ifname) {
+			int res = os_snprintf(prefix, sizeof(prefix), "%s: ",
+					      ifname);
+			if (res < 0 || res >= (int) sizeof(prefix))
+				prefix[0] = '\0';
+		}
+	}
 	len = vsnprintf(buf, buflen, fmt, ap);
 	va_end(ap);
-	wpa_printf(level, "%s", buf);
+	wpa_printf(level, "%s%s", prefix, buf);
 	if (wpa_msg_cb)
 		wpa_msg_cb(ctx, level, buf, len);
 	os_free(buf);

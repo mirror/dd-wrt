@@ -177,6 +177,7 @@ struct wlantest {
 	int last_mgmt_valid;
 };
 
+int add_wep(struct wlantest *wt, const char *key);
 int read_cap_file(struct wlantest *wt, const char *fname);
 int read_wired_cap_file(struct wlantest *wt, const char *fname);
 int write_pcap_init(struct wlantest *wt, const char *fname);
@@ -198,7 +199,8 @@ void rx_data(struct wlantest *wt, const u8 *data, size_t len);
 void rx_data_eapol(struct wlantest *wt, const u8 *dst, const u8 *src,
 		   const u8 *data, size_t len, int prot);
 void rx_data_ip(struct wlantest *wt, const u8 *bssid, const u8 *sta_addr,
-		const u8 *dst, const u8 *src, const u8 *data, size_t len);
+		const u8 *dst, const u8 *src, const u8 *data, size_t len,
+		const u8 *peer_addr);
 void rx_data_80211_encap(struct wlantest *wt, const u8 *bssid,
 			 const u8 *sta_addr, const u8 *dst, const u8 *src,
 			 const u8 *data, size_t len);
@@ -212,6 +214,7 @@ void bss_flush(struct wlantest *wt);
 int bss_add_pmk_from_passphrase(struct wlantest_bss *bss,
 				const char *passphrase);
 void pmk_deinit(struct wlantest_pmk *pmk);
+void tdls_deinit(struct wlantest_tdls *tdls);
 
 struct wlantest_sta * sta_find(struct wlantest_bss *bss, const u8 *addr);
 struct wlantest_sta * sta_get(struct wlantest_bss *bss, const u8 *addr);

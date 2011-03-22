@@ -63,6 +63,13 @@ struct wps_credential {
 
 #define WPS_DEV_TYPE_LEN 8
 #define WPS_DEV_TYPE_BUFSIZE 21
+#define WPS_SEC_DEV_TYPE_MAX_LEN 128
+/* maximum number of advertised WPS vendor extension attributes */
+#define MAX_WPS_VENDOR_EXTENSIONS 10
+/* maximum size of WPS Vendor extension attribute */
+#define WPS_MAX_VENDOR_EXT_LEN 1024
+/* maximum number of parsed WPS vendor extension attributes */
+#define MAX_WPS_PARSE_VENDOR_EXT 10
 
 /**
  * struct wps_device_data - WPS Device Data
@@ -73,6 +80,8 @@ struct wps_credential {
  * @model_number: Model Number (0..32 octets encoded in UTF-8)
  * @serial_number: Serial Number (0..32 octets encoded in UTF-8)
  * @pri_dev_type: Primary Device Type
+ * @sec_dev_type: Array of secondary device types
+ * @num_sec_dev_type: Number of secondary device types
  * @os_version: OS Version
  * @rf_bands: RF bands (WPS_RF_24GHZ, WPS_RF_50GHZ flags)
  * @p2p: Whether the device is a P2P device
@@ -85,8 +94,12 @@ struct wps_device_data {
 	char *model_number;
 	char *serial_number;
 	u8 pri_dev_type[WPS_DEV_TYPE_LEN];
+#define WPS_SEC_DEVICE_TYPES 5
+	u8 sec_dev_type[WPS_SEC_DEVICE_TYPES][WPS_DEV_TYPE_LEN];
+	u8 num_sec_dev_types;
 	u32 os_version;
 	u8 rf_bands;
+	struct wpabuf *vendor_ext[MAX_WPS_VENDOR_EXTENSIONS];
 
 	int p2p;
 };
@@ -164,6 +177,16 @@ struct wps_config {
 	 * dev_pw_id - Device Password ID for Enrollee when PIN is used
 	 */
 	u16 dev_pw_id;
+
+	/**
+	 * p2p_dev_addr - P2P Device Address from (Re)Association Request
+	 *
+	 * On AP/GO, this is set to the P2P Device Address of the associating
+	 * P2P client if a P2P IE is included in the (Re)Association Request
+	 * frame and the P2P Device Address is included. Otherwise, this is set
+	 * to %NULL to indicate the station does not have a P2P Device Address.
+	 */
+	const u8 *p2p_dev_addr;
 };
 
 struct wps_data * wps_init(const struct wps_config *cfg);
@@ -213,7 +236,9 @@ struct wpabuf * wps_build_assoc_req_ie(enum wps_request_type req_type);
 struct wpabuf * wps_build_assoc_resp_ie(void);
 struct wpabuf * wps_build_probe_req_ie(int pbc, struct wps_device_data *dev,
 				       const u8 *uuid,
-				       enum wps_request_type req_type);
+				       enum wps_request_type req_type,
+				       unsigned int num_req_dev_types,
+				       const u8 *req_dev_types);
 
 
 /**
@@ -747,7 +772,8 @@ int wps_registrar_add_pin(struct wps_registrar *reg, const u8 *addr,
 int wps_registrar_invalidate_pin(struct wps_registrar *reg, const u8 *uuid);
 int wps_registrar_wps_cancel(struct wps_registrar *reg);
 int wps_registrar_unlock_pin(struct wps_registrar *reg, const u8 *uuid);
-int wps_registrar_button_pushed(struct wps_registrar *reg);
+int wps_registrar_button_pushed(struct wps_registrar *reg,
+				const u8 *p2p_dev_addr);
 void wps_registrar_probe_req_rx(struct wps_registrar *reg, const u8 *addr,
 				const struct wpabuf *wps_data,
 				int p2p_wildcard);
