@@ -1093,7 +1093,7 @@ HCFLAGS += $(CFLAGS_EXTRA)
 
 vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/shared $(SRCBASE)/rts/src
 
-all: services.so services.a
+all: libnltiny services.so services.a
 ifeq ($(CONFIG_RT2880),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c
