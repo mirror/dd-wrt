@@ -226,7 +226,7 @@ void configure_single_ath9k(int count)
 	if (countvaps > vapcount)
 		vapcount = countvaps;
 	int counter = 1;
-	if (vifs != NULL)
+	if (strlen(vifs) > 0)
 		foreach(var, vifs, next) {
 		fprintf(stderr, "setup vifs %s %d\n", var, counter);
 		// create the first main hostapd interface when this is repaeter mode
@@ -914,7 +914,7 @@ void ath9k_start_supplicant(int count)
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
 	} else {
-		if (vifs) {
+		if (strlen(vifs) > 0) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			do_hostapd(fstr, dev);
 			sleep(3);	// give some time to let hostapd initialize
@@ -1001,7 +1001,7 @@ void ath9k_start_supplicant(int count)
 		}
 	}
 
-	if (vifs != NULL && strlen(vifs) > 0) {
+	if (strlen(vifs) > 0) {
 		foreach(var, vifs, next) {
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_safe_get(mode);
