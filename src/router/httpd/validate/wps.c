@@ -42,16 +42,25 @@
 
 struct variable **variables;
 
+void wps_ap_register(webs_t wp)
+{
+	char *pin = websGetVar(wp, "wps_ap_pin", NULL);
+	if (pin) {
+		sysprintf("hostapd_cli -i ath0 wps_ap_pin set %s 300", pin);
+#ifdef HAVE_WZRHPAG300NH
+		sysprintf("hostapd_cli -i ath1 wps_ap_pin set %s 300", pin);
+#endif
+	}
+}
+
+
 void wps_register(webs_t wp)
 {
 	char *pin = websGetVar(wp, "wps_pin", NULL);
 	if (pin) {
-		nvram_set("pincode", pin);
 		sysprintf("hostapd_cli -i ath0 wps_pin any %s 300", pin);
-		sysprintf("hostapd_cli -i ath0 wps_ap_pin set %s 300", pin);
 #ifdef HAVE_WZRHPAG300NH
 		sysprintf("hostapd_cli -i ath1 wps_pin any %s 300", pin);
-		sysprintf("hostapd_cli -i ath1 wps_ap_pin set %s 300", pin);
 #endif
 	}
 }

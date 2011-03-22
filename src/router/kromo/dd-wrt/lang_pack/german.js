@@ -1743,6 +1743,7 @@ aoss.ap_mode_notice="Mitteilung: AOSS kann nur genutzt werden, wenn die Primäre 
 aoss.wep_notice="Der WEP Modus ist unsicher, aus dem Grunde empfehlen wir Ihnen, diesen Nicht zu benutzen.";
 aoss.wep_info="(wird für einige Spielkonsolen die AOSS unterstützen, in Verbindung mit AOSS benötigt)";
 aoss.wps="WPS Einstellungen";
+aoss.wps_ap_pin="WPS Gateway PIN (Aufkleber)";
 aoss.wpspin="WPS PIN";
 aoss.wpsregister="Registriere PIN";
 aoss.wpsgenerate="Erzeuge PIN";
