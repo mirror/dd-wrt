@@ -17,6 +17,7 @@
 
 #include "utils/common.h"
 #include "utils/eloop.h"
+#include "utils/uuid.h"
 #include "common/ieee802_11_defs.h"
 #include "common/wpa_ctrl.h"
 #include "ap/hostapd.h"
@@ -41,6 +42,7 @@
 #include "p2p_supplicant.h"
 #include "ap.h"
 #include "ap/sta_info.h"
+#include "notify.h"
 
 
 #ifdef CONFIG_WPS
@@ -167,8 +169,8 @@ static int wpa_supplicant_conf_ap(struct wpa_supplicant *wpa_s,
 	bss->ap_setup_locked = 2;
 	if (wpa_s->conf->config_methods)
 		bss->config_methods = os_strdup(wpa_s->conf->config_methods);
-	if (wpa_s->conf->device_type)
-		bss->device_type = os_strdup(wpa_s->conf->device_type);
+	os_memcpy(bss->device_type, wpa_s->conf->device_type,
+		  WPS_DEV_TYPE_LEN);
 	if (wpa_s->conf->device_name) {
 		bss->device_name = os_strdup(wpa_s->conf->device_name);
 		bss->friendly_name = os_strdup(wpa_s->conf->device_name);
@@ -181,7 +183,10 @@ static int wpa_supplicant_conf_ap(struct wpa_supplicant *wpa_s,
 		bss->model_number = os_strdup(wpa_s->conf->model_number);
 	if (wpa_s->conf->serial_number)
 		bss->serial_number = os_strdup(wpa_s->conf->serial_number);
-	os_memcpy(bss->uuid, wpa_s->conf->uuid, WPS_UUID_LEN);
+	if (is_nil_uuid(wpa_s->conf->uuid))
+		os_memcpy(bss->uuid, wpa_s->wps->uuid, WPS_UUID_LEN);
+	else
+		os_memcpy(bss->uuid, wpa_s->conf->uuid, WPS_UUID_LEN);
 	os_memcpy(bss->os_version, wpa_s->conf->os_version, 4);
 #endif /* CONFIG_WPS */
 
@@ -239,6 +244,13 @@ static void ap_wps_event_cb(void *ctx, enum wps_event event,
 }
 
 
+static void ap_sta_authorized_cb(void *ctx, const u8 *mac_addr,
+				 int authorized)
+{
+	wpas_notify_sta_authorized(ctx, mac_addr, authorized);
+}
+
+
 static int ap_vendor_action_rx(void *ctx, const u8 *buf, size_t len, int freq)
 {
 #ifdef CONFIG_P2P
@@ -278,6 +290,18 @@ static void ap_wps_reg_success_cb(void *ctx, const u8 *mac_addr,
 	struct wpa_supplicant *wpa_s = ctx;
 	wpas_p2p_wps_success(wpa_s, mac_addr, 1);
 #endif /* CONFIG_P2P */
+}
+
+
+static void wpas_ap_configured_cb(void *ctx)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+
+	wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
+
+	if (wpa_s->ap_configured_cb)
+		wpa_s->ap_configured_cb(wpa_s->ap_configured_cb_ctx,
+					wpa_s->ap_configured_cb_data);
 }
 
 
@@ -407,12 +431,16 @@ int wpa_supplicant_create_ap(struct wpa_supplicant *wpa_s,
 		hapd_iface->bss[i]->wps_reg_success_cb_ctx = wpa_s;
 		hapd_iface->bss[i]->wps_event_cb = ap_wps_event_cb;
 		hapd_iface->bss[i]->wps_event_cb_ctx = wpa_s;
+		hapd_iface->bss[i]->sta_authorized_cb = ap_sta_authorized_cb;
+		hapd_iface->bss[i]->sta_authorized_cb_ctx = wpa_s;
 #ifdef CONFIG_P2P
 		hapd_iface->bss[i]->p2p = wpa_s->global->p2p;
 		hapd_iface->bss[i]->p2p_group = wpas_p2p_group_init(
 			wpa_s, ssid->p2p_persistent_group,
 			ssid->mode == WPAS_MODE_P2P_GROUP_FORMATION);
 #endif /* CONFIG_P2P */
+		hapd_iface->bss[i]->setup_complete_cb = wpas_ap_configured_cb;
+		hapd_iface->bss[i]->setup_complete_cb_ctx = wpa_s;
 	}
 
 	os_memcpy(hapd_iface->bss[0]->own_addr, wpa_s->own_addr, ETH_ALEN);
@@ -428,11 +456,6 @@ int wpa_supplicant_create_ap(struct wpa_supplicant *wpa_s,
 	wpa_s->current_ssid = ssid;
 	os_memcpy(wpa_s->bssid, wpa_s->own_addr, ETH_ALEN);
 	wpa_s->assoc_freq = ssid->frequency;
-	wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
-
-	if (wpa_s->ap_configured_cb)
-		wpa_s->ap_configured_cb(wpa_s->ap_configured_cb_ctx,
-					wpa_s->ap_configured_cb_data);
 
 	return 0;
 }
@@ -517,11 +540,13 @@ void wpa_supplicant_ap_rx_eapol(struct wpa_supplicant *wpa_s,
 
 #ifdef CONFIG_WPS
 
-int wpa_supplicant_ap_wps_pbc(struct wpa_supplicant *wpa_s, const u8 *bssid)
+int wpa_supplicant_ap_wps_pbc(struct wpa_supplicant *wpa_s, const u8 *bssid,
+			      const u8 *p2p_dev_addr)
 {
 	if (!wpa_s->ap_iface)
 		return -1;
-	return hostapd_wps_button_pushed(wpa_s->ap_iface->bss[0]);
+	return hostapd_wps_button_pushed(wpa_s->ap_iface->bss[0],
+					 p2p_dev_addr);
 }
 
 

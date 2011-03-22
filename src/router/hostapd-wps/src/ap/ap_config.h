@@ -18,6 +18,7 @@
 #include "common/defs.h"
 #include "ip_addr.h"
 #include "common/wpa_common.h"
+#include "wps/wps.h"
 
 #define MAX_STA_COUNT 2007
 #define MAX_VLAN_ID 4094
@@ -130,7 +131,6 @@ struct hostapd_tx_queue_params {
 	int cwmin;
 	int cwmax;
 	int burst; /* maximum burst time in 0.1 ms, i.e., 10 = 1 ms */
-	int configured;
 };
 
 struct hostapd_wmm_ac_params {
@@ -233,6 +233,7 @@ struct hostapd_bss_config {
 	struct ft_remote_r0kh *r0kh_list;
 	struct ft_remote_r1kh *r1kh_list;
 	int pmk_r1_push;
+	int ft_over_ds;
 #endif /* CONFIG_IEEE80211R */
 
 	char *ctrl_interface; /* directory for UNIX domain sockets */
@@ -300,7 +301,7 @@ struct hostapd_bss_config {
 	char *model_name;
 	char *model_number;
 	char *serial_number;
-	char *device_type;
+	u8 device_type[WPS_DEV_TYPE_LEN];
 	char *config_methods;
 	u8 os_version[4];
 	char *ap_pin;
@@ -316,6 +317,7 @@ struct hostapd_bss_config {
 	char *model_description;
 	char *model_url;
 	char *upc;
+	struct wpabuf *wps_vendor_ext[MAX_WPS_VENDOR_EXTENSIONS];
 #endif /* CONFIG_WPS */
 
 #define P2P_ENABLED BIT(0)
@@ -326,6 +328,11 @@ struct hostapd_bss_config {
 	int p2p;
 
 	int disassoc_low_ack;
+
+#define TDLS_PROHIBIT BIT(0)
+#define TDLS_PROHIBIT_CHAN_SWITCH BIT(1)
+	int tdls;
+	int disable_11n;
 };
 
 
@@ -386,6 +393,7 @@ struct hostapd_config {
 	int noscan;
 	int ieee80211n;
 	int secondary_channel;
+	int require_ht;
 };
 
 

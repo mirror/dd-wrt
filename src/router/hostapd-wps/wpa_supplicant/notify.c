@@ -25,6 +25,7 @@
 #include "driver_i.h"
 #include "scan.h"
 #include "p2p_supplicant.h"
+#include "sme.h"
 #include "notify.h"
 
 int wpas_notify_supplicant_initialized(struct wpa_global *global)
@@ -89,6 +90,15 @@ void wpas_notify_state_changed(struct wpa_supplicant *wpa_s,
 	else if (new_state < WPA_ASSOCIATED)
 		wpas_p2p_notif_disconnected(wpa_s);
 #endif /* CONFIG_P2P */
+
+	sme_state_changed(wpa_s);
+
+#ifdef ANDROID
+	wpa_msg_ctrl(wpa_s, MSG_INFO, WPA_EVENT_STATE_CHANGE
+		     "id=%d state=%d BSSID=" MACSTR,
+		     wpa_s->current_ssid ? wpa_s->current_ssid->id : -1,
+		     new_state, MAC2STR(wpa_s->pending_bssid));
+#endif /* ANDROID */
 }
 
 
@@ -107,6 +117,12 @@ void wpas_notify_ap_scan_changed(struct wpa_supplicant *wpa_s)
 void wpas_notify_bssid_changed(struct wpa_supplicant *wpa_s)
 {
 	wpas_dbus_signal_prop_changed(wpa_s, WPAS_DBUS_PROP_CURRENT_BSS);
+}
+
+
+void wpas_notify_auth_changed(struct wpa_supplicant *wpa_s)
+{
+	wpas_dbus_signal_prop_changed(wpa_s, WPAS_DBUS_PROP_CURRENT_AUTH_MODE);
 }
 
 
@@ -344,4 +360,81 @@ void wpas_notify_resume(struct wpa_global *global)
 		if (wpa_s->wpa_state == WPA_DISCONNECTED)
 			wpa_supplicant_req_scan(wpa_s, 0, 100000);
 	}
+}
+
+
+#ifdef CONFIG_P2P
+
+void wpas_notify_p2p_device_found(struct wpa_supplicant *wpa_s,
+				  const u8 *dev_addr, int new_device)
+{
+}
+
+
+void wpas_notify_p2p_device_lost(struct wpa_supplicant *wpa_s,
+				 const u8 *dev_addr)
+{
+}
+
+
+void wpas_notify_p2p_group_removed(struct wpa_supplicant *wpa_s,
+				   const struct wpa_ssid *ssid,
+				   const char *role)
+{
+}
+
+
+void wpas_notify_p2p_go_neg_req(struct wpa_supplicant *wpa_s,
+				const u8 *src, u16 dev_passwd_id)
+{
+}
+
+
+void wpas_notify_p2p_go_neg_completed(struct wpa_supplicant *wpa_s, int status)
+{
+}
+
+
+void wpas_notify_p2p_invitation_result(struct wpa_supplicant *wpa_s,
+				       int status, const u8 *bssid)
+{
+}
+
+
+void wpas_notify_p2p_sd_request(struct wpa_supplicant *wpa_s,
+				int freq, const u8 *sa, u8 dialog_token,
+				u16 update_indic, const u8 *tlvs,
+				size_t tlvs_len)
+{
+}
+
+
+void wpas_notify_p2p_sd_response(struct wpa_supplicant *wpa_s,
+				 const u8 *sa, u16 update_indic,
+				 const u8 *tlvs, size_t tlvs_len)
+{
+}
+
+#endif /* CONFIG_P2P */
+
+
+static void wpas_notify_ap_sta_authorized(struct wpa_supplicant *wpa_s,
+					  const u8 *sta)
+{
+}
+
+
+static void wpas_notify_ap_sta_deauthorized(struct wpa_supplicant *wpa_s,
+					    const u8 *sta)
+{
+}
+
+
+void wpas_notify_sta_authorized(struct wpa_supplicant *wpa_s,
+				const u8 *mac_addr, int authorized)
+{
+	if (authorized)
+		wpas_notify_ap_sta_authorized(wpa_s, mac_addr);
+	else
+		wpas_notify_ap_sta_deauthorized(wpa_s, mac_addr);
 }

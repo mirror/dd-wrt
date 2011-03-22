@@ -162,7 +162,8 @@ int hostapd_prepare_rates(struct hostapd_data *hapd,
 		hapd->iface->num_rates++;
 	}
 
-	if (hapd->iface->num_rates == 0 || num_basic_rates == 0) {
+	if ((hapd->iface->num_rates == 0 || num_basic_rates == 0) &&
+	    (!hapd->iconf->ieee80211n || !hapd->iconf->require_ht)) {
 		wpa_printf(MSG_ERROR, "No rates remaining in supported/basic "
 			   "rate sets (%d,%d).",
 			   hapd->iface->num_rates, num_basic_rates);
@@ -424,6 +425,7 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 {
 	struct wpa_scan_results *scan_res;
 	int oper40;
+	int res;
 
 	/* Check list of neighboring BSSes (from scan) to see whether 40 MHz is
 	 * allowed per IEEE 802.11n/D7.0, 11.14.3.2 */
@@ -452,7 +454,8 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 		iface->conf->ht_capab &= ~HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET;
 	}
 
-	hostapd_setup_interface_complete(iface, 0);
+	res = ieee80211n_allowed_ht40_channel_pair(iface);
+	hostapd_setup_interface_complete(iface, !res);
 }
 
 
@@ -482,9 +485,6 @@ static int ieee80211n_supported_ht_capab(struct hostapd_iface *iface)
 {
 	u16 hw = iface->current_mode->ht_capab;
 	u16 conf = iface->conf->ht_capab;
-
-	if (!iface->conf->ieee80211n)
-		return 1;
 
 	if ((conf & HT_CAP_INFO_LDPC_CODING_CAP) &&
 	    !(hw & HT_CAP_INFO_LDPC_CODING_CAP)) {
@@ -585,12 +585,14 @@ int hostapd_check_ht_capab(struct hostapd_iface *iface)
 {
 #ifdef CONFIG_IEEE80211N
 	int ret;
+	if (!iface->conf->ieee80211n)
+		return 0;
+	if (!ieee80211n_supported_ht_capab(iface))
+		return -1;
 	ret = ieee80211n_check_40mhz(iface);
 	if (ret)
 		return ret;
 	if (!ieee80211n_allowed_ht40_channel_pair(iface))
-		return -1;
-	if (!ieee80211n_supported_ht_capab(iface))
 		return -1;
 #endif /* CONFIG_IEEE80211N */
 

@@ -567,6 +567,7 @@ DBusMessage * wpas_dbus_handler_create_interface(DBusMessage *message,
 	struct wpa_dbus_dict_entry entry;
 	char *driver = NULL;
 	char *ifname = NULL;
+	char *confname = NULL;
 	char *bridge_ifname = NULL;
 
 	dbus_message_iter_init(message, &iter);
@@ -587,6 +588,12 @@ DBusMessage * wpas_dbus_handler_create_interface(DBusMessage *message,
 			ifname = os_strdup(entry.str_value);
 			wpa_dbus_dict_entry_clear(&entry);
 			if (ifname == NULL)
+				goto error;
+		} else if (!strcmp(entry.key, "ConfigFile") &&
+			   (entry.type == DBUS_TYPE_STRING)) {
+			confname = os_strdup(entry.str_value);
+			wpa_dbus_dict_entry_clear(&entry);
+			if (confname == NULL)
 				goto error;
 		} else if (!strcmp(entry.key, "BridgeIfname") &&
 			   (entry.type == DBUS_TYPE_STRING)) {
@@ -618,6 +625,7 @@ DBusMessage * wpas_dbus_handler_create_interface(DBusMessage *message,
 		os_memset(&iface, 0, sizeof(iface));
 		iface.driver = driver;
 		iface.ifname = ifname;
+		iface.confname = confname;
 		iface.bridge_ifname = bridge_ifname;
 		/* Otherwise, have wpa_supplicant attach to it. */
 		if ((wpa_s = wpa_supplicant_add_iface(global, &iface))) {
@@ -893,7 +901,7 @@ DBusMessage * wpas_dbus_getter_interfaces(DBusMessage *message,
 	}
 
 	for (wpa_s = global->ifaces; wpa_s; wpa_s = wpa_s->next)
-		paths[i] = wpa_s->dbus_new_path;
+		paths[i++] = wpa_s->dbus_new_path;
 
 	reply = wpas_dbus_simple_array_property_getter(message,
 						       DBUS_TYPE_OBJECT_PATH,
@@ -1462,6 +1470,42 @@ out:
 }
 
 
+static void remove_network(void *arg, struct wpa_ssid *ssid)
+{
+	struct wpa_supplicant *wpa_s = arg;
+
+	wpas_notify_network_removed(wpa_s, ssid);
+
+	if (wpa_config_remove_network(wpa_s->conf, ssid->id) < 0) {
+		wpa_printf(MSG_ERROR,
+			   "wpas_dbus_handler_remove_all_networks[dbus]: "
+			   "error occurred when removing network %d",
+			   ssid->id);
+		return;
+	}
+
+	if (ssid == wpa_s->current_ssid)
+		wpa_supplicant_disassociate(wpa_s, WLAN_REASON_DEAUTH_LEAVING);
+}
+
+
+/**
+ * wpas_dbus_handler_remove_all_networks - Remove all configured networks
+ * @message: Pointer to incoming dbus message
+ * @wpa_s: wpa_supplicant structure for a network interface
+ * Returns: NULL on success or dbus error on failure
+ *
+ * Handler function for "RemoveAllNetworks" method call of a network interface.
+ */
+DBusMessage * wpas_dbus_handler_remove_all_networks(
+	DBusMessage *message, struct wpa_supplicant *wpa_s)
+{
+	/* NB: could check for failure and return an error */
+	wpa_config_foreach_network(wpa_s->conf, remove_network, wpa_s);
+	return NULL;
+}
+
+
 /**
  * wpas_dbus_handler_select_network - Attempt association with a network
  * @message: Pointer to incoming dbus message
@@ -1674,6 +1718,30 @@ DBusMessage * wpas_dbus_handler_remove_blob(DBusMessage *message,
 
 	return reply;
 
+}
+
+/*
+ * wpas_dbus_handler_flush_bss - Flush the BSS cache
+ * @message: Pointer to incoming dbus message
+ * @wpa_s: wpa_supplicant structure for a network interface
+ * Returns: NULL
+ *
+ * Handler function for "FlushBSS" method call of network interface.
+ */
+DBusMessage * wpas_dbus_handler_flush_bss(DBusMessage *message,
+					  struct wpa_supplicant *wpa_s)
+{
+	dbus_uint32_t age;
+
+	dbus_message_get_args(message, NULL, DBUS_TYPE_UINT32, &age,
+			      DBUS_TYPE_INVALID);
+
+	if (age == 0)
+		wpa_bss_flush(wpa_s);
+	else
+		wpa_bss_flush_by_age(wpa_s, age);
+
+	return NULL;
 }
 
 
@@ -2088,6 +2156,94 @@ DBusMessage * wpas_dbus_setter_ap_scan(DBusMessage *message,
 
 
 /**
+ * wpas_dbus_getter_bss_expire_age - Get BSS entry expiration age
+ * @message: Pointer to incoming dbus message
+ * @wpa_s: wpa_supplicant structure for a network interface
+ * Returns: A message containing value of bss_expiration_age variable
+ *
+ * Getter function for "BSSExpireAge" property.
+ */
+DBusMessage * wpas_dbus_getter_bss_expire_age(DBusMessage *message,
+					      struct wpa_supplicant *wpa_s)
+{
+	dbus_uint32_t expire_age = wpa_s->conf->bss_expiration_age;
+	return wpas_dbus_simple_property_getter(message, DBUS_TYPE_UINT32,
+						&expire_age);
+}
+
+
+/**
+ * wpas_dbus_setter_bss_expire_age - Control BSS entry expiration age
+ * @message: Pointer to incoming dbus message
+ * @wpa_s: wpa_supplicant structure for a network interface
+ * Returns: NULL
+ *
+ * Setter function for "BSSExpireAge" property.
+ */
+DBusMessage * wpas_dbus_setter_bss_expire_age(DBusMessage *message,
+					      struct wpa_supplicant *wpa_s)
+{
+	DBusMessage *reply = NULL;
+	dbus_uint32_t expire_age;
+
+	reply = wpas_dbus_simple_property_setter(message, DBUS_TYPE_UINT32,
+						 &expire_age);
+	if (reply)
+		return reply;
+
+	if (wpa_supplicant_set_bss_expiration_age(wpa_s, expire_age)) {
+		return wpas_dbus_error_invalid_args(
+			message, "BSSExpireAge must be >=10");
+	}
+	return NULL;
+}
+
+
+/**
+ * wpas_dbus_getter_bss_expire_count - Get BSS entry expiration scan count
+ * @message: Pointer to incoming dbus message
+ * @wpa_s: wpa_supplicant structure for a network interface
+ * Returns: A message containing value of bss_expire_count variable
+ *
+ * Getter function for "BSSExpireCount" property.
+ */
+DBusMessage * wpas_dbus_getter_bss_expire_count(DBusMessage *message,
+						struct wpa_supplicant *wpa_s)
+{
+	dbus_uint32_t expire_count = wpa_s->conf->bss_expiration_age;
+	return wpas_dbus_simple_property_getter(message, DBUS_TYPE_UINT32,
+						&expire_count);
+}
+
+
+/**
+ * wpas_dbus_setter_bss_expire_count - Control BSS entry expiration scan count
+ * @message: Pointer to incoming dbus message
+ * @wpa_s: wpa_supplicant structure for a network interface
+ * Returns: NULL
+ *
+ * Setter function for "BSSExpireCount" property.
+ */
+DBusMessage * wpas_dbus_setter_bss_expire_count(DBusMessage *message,
+						struct wpa_supplicant *wpa_s)
+{
+	DBusMessage *reply = NULL;
+	dbus_uint32_t expire_count;
+
+	reply = wpas_dbus_simple_property_setter(message, DBUS_TYPE_UINT32,
+						 &expire_count);
+	if (reply)
+		return reply;
+
+	if (wpa_supplicant_set_bss_expiration_count(wpa_s, expire_count)) {
+		return wpas_dbus_error_invalid_args(
+			message, "BSSExpireCount must be >0");
+	}
+	return NULL;
+}
+
+
+/**
  * wpas_dbus_getter_ifname - Get interface name
  * @message: Pointer to incoming dbus message
  * @wpa_s: wpa_supplicant structure for a network interface
@@ -2186,6 +2342,45 @@ DBusMessage * wpas_dbus_getter_current_network(DBusMessage *message,
 	reply = wpas_dbus_simple_property_getter(message,
 						 DBUS_TYPE_OBJECT_PATH,
 						 &net_obj_path);
+
+	return reply;
+}
+
+
+/**
+ * wpas_dbus_getter_current_auth_mode - Get current authentication type
+ * @message: Pointer to incoming dbus message
+ * @wpa_s: wpa_supplicant structure for a network interface
+ * Returns: A dbus message containing a string indicating the current
+ * authentication type.
+ *
+ * Getter for "CurrentAuthMode" property.
+ */
+DBusMessage * wpas_dbus_getter_current_auth_mode(DBusMessage *message,
+						 struct wpa_supplicant *wpa_s)
+{
+	DBusMessage *reply;
+	const char *eap_mode;
+	const char *auth_mode;
+	char eap_mode_buf[WPAS_DBUS_AUTH_MODE_MAX];
+
+	if (wpa_s->wpa_state != WPA_COMPLETED) {
+		auth_mode = "INACTIVE";
+	} else if (wpa_s->key_mgmt == WPA_KEY_MGMT_IEEE8021X ||
+	    wpa_s->key_mgmt == WPA_KEY_MGMT_IEEE8021X_NO_WPA) {
+		eap_mode = wpa_supplicant_get_eap_mode(wpa_s);
+		os_snprintf(eap_mode_buf, WPAS_DBUS_AUTH_MODE_MAX,
+			    "EAP-%s", eap_mode);
+		auth_mode = eap_mode_buf;
+
+	} else {
+		auth_mode = wpa_key_mgmt_txt(wpa_s->key_mgmt,
+					     wpa_s->current_ssid->proto);
+	}
+
+	reply = wpas_dbus_simple_property_getter(message,
+						 DBUS_TYPE_STRING,
+						 &auth_mode);
 
 	return reply;
 }
@@ -2882,7 +3077,7 @@ DBusMessage * wpas_dbus_getter_network_properties(
 	DBusMessage *reply = NULL;
 	DBusMessageIter	iter, variant_iter, dict_iter;
 	char **iterator;
-	char **props = wpa_config_get_all(net->ssid, 0);
+	char **props = wpa_config_get_all(net->ssid, 1);
 	if (!props)
 		return dbus_message_new_error(message, DBUS_ERROR_NO_MEMORY,
 					      NULL);

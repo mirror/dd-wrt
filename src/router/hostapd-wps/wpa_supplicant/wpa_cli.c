@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - command line interface for wpa_supplicant daemon
- * Copyright (c) 2004-2010, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2011, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -25,11 +25,14 @@
 #include "utils/eloop.h"
 #include "utils/edit.h"
 #include "common/version.h"
+#ifdef ANDROID
+#include <cutils/properties.h>
+#endif /* ANDROID */
 
 
 static const char *wpa_cli_version =
 "wpa_cli v" VERSION_STR "\n"
-"Copyright (c) 2004-2010, Jouni Malinen <j@w1.fi> and contributors";
+"Copyright (c) 2004-2011, Jouni Malinen <j@w1.fi> and contributors";
 
 
 static const char *wpa_cli_license =
@@ -90,7 +93,10 @@ static int wpa_cli_quit = 0;
 static int wpa_cli_attached = 0;
 static int wpa_cli_connected = 0;
 static int wpa_cli_last_id = 0;
-static const char *ctrl_iface_dir = "/var/run/wpa_supplicant";
+#ifndef CONFIG_CTRL_IFACE_DIR
+#define CONFIG_CTRL_IFACE_DIR "/var/run/wpa_supplicant"
+#endif /* CONFIG_CTRL_IFACE_DIR */
+static const char *ctrl_iface_dir = CONFIG_CTRL_IFACE_DIR;
 static char *ctrl_ifname = NULL;
 static const char *pid_file = NULL;
 static const char *action_file = NULL;
@@ -114,7 +120,7 @@ static void usage(void)
 	       "events from\n"
 	       "       wpa_supplicant\n"
 	       "  -B = run a daemon in the background\n"
-	       "  default path: /var/run/wpa_supplicant\n"
+	       "  default path: " CONFIG_CTRL_IFACE_DIR "\n"
 	       "  default interface: first interface found in socket path\n");
 	print_help();
 }
@@ -159,20 +165,31 @@ static int wpa_cli_open_connection(const char *ifname, int attach)
 	else
 		mon_conn = NULL;
 #else /* CONFIG_CTRL_IFACE_UDP || CONFIG_CTRL_IFACE_NAMED_PIPE */
-	char *cfile;
+	char *cfile = NULL;
 	int flen, res;
 
 	if (ifname == NULL)
 		return -1;
 
-	flen = os_strlen(ctrl_iface_dir) + os_strlen(ifname) + 2;
-	cfile = os_malloc(flen);
-	if (cfile == NULL)
-		return -1L;
-	res = os_snprintf(cfile, flen, "%s/%s", ctrl_iface_dir, ifname);
-	if (res < 0 || res >= flen) {
-		os_free(cfile);
-		return -1;
+#ifdef ANDROID
+	if (access(ctrl_iface_dir, F_OK) < 0) {
+		cfile = os_strdup(ifname);
+		if (cfile == NULL)
+			return -1;
+	}
+#endif /* ANDROID */
+
+	if (cfile == NULL) {
+		flen = os_strlen(ctrl_iface_dir) + os_strlen(ifname) + 2;
+		cfile = os_malloc(flen);
+		if (cfile == NULL)
+			return -1;
+		res = os_snprintf(cfile, flen, "%s/%s", ctrl_iface_dir,
+				  ifname);
+		if (res < 0 || res >= flen) {
+			os_free(cfile);
+			return -1;
+		}
 	}
 
 	ctrl_conn = wpa_ctrl_open(cfile);
@@ -254,6 +271,8 @@ static int _wpa_ctrl_command(struct wpa_ctrl *ctrl, char *cmd, int print)
 	if (print) {
 		buf[len] = '\0';
 		printf("%s", buf);
+		if (interactive && len > 0 && buf[len - 1] != '\n')
+			printf("\n");
 	}
 	return 0;
 }
@@ -275,6 +294,12 @@ static int wpa_cli_cmd_status(struct wpa_ctrl *ctrl, int argc, char *argv[])
 static int wpa_cli_cmd_ping(struct wpa_ctrl *ctrl, int argc, char *argv[])
 {
 	return wpa_ctrl_command(ctrl, "PING");
+}
+
+
+static int wpa_cli_cmd_relog(struct wpa_ctrl *ctrl, int argc, char *argv[])
+{
+	return wpa_ctrl_command(ctrl, "RELOG");
 }
 
 
@@ -444,6 +469,46 @@ static int wpa_cli_cmd_ap_scan(struct wpa_ctrl *ctrl, int argc, char *argv[])
 	res = os_snprintf(cmd, sizeof(cmd), "AP_SCAN %s", argv[0]);
 	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
 		printf("Too long AP_SCAN command.\n");
+		return -1;
+	}
+	return wpa_ctrl_command(ctrl, cmd);
+}
+
+
+static int wpa_cli_cmd_bss_expire_age(struct wpa_ctrl *ctrl, int argc,
+				      char *argv[])
+{
+	char cmd[256];
+	int res;
+
+	if (argc != 1) {
+		printf("Invalid BSS_EXPIRE_AGE command: needs one argument "
+		       "(bss_expire_age value)\n");
+		return -1;
+	}
+	res = os_snprintf(cmd, sizeof(cmd), "BSS_EXPIRE_AGE %s", argv[0]);
+	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
+		printf("Too long BSS_EXPIRE_AGE command.\n");
+		return -1;
+	}
+	return wpa_ctrl_command(ctrl, cmd);
+}
+
+
+static int wpa_cli_cmd_bss_expire_count(struct wpa_ctrl *ctrl, int argc,
+				        char *argv[])
+{
+	char cmd[256];
+	int res;
+
+	if (argc != 1) {
+		printf("Invalid BSS_EXPIRE_COUNT command: needs one argument "
+		       "(bss_expire_count value)\n");
+		return -1;
+	}
+	res = os_snprintf(cmd, sizeof(cmd), "BSS_EXPIRE_COUNT %s", argv[0]);
+	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
+		printf("Too long BSS_EXPIRE_COUNT command.\n");
 		return -1;
 	}
 	return wpa_ctrl_command(ctrl, cmd);
@@ -2145,6 +2210,69 @@ static int wpa_cli_cmd_sta_autoconnect(struct wpa_ctrl *ctrl, int argc,
 }
 
 
+static int wpa_cli_cmd_tdls_discover(struct wpa_ctrl *ctrl, int argc,
+				     char *argv[])
+{
+	char cmd[256];
+	int res;
+
+	if (argc != 1) {
+		printf("Invalid TDLS_DISCOVER command: needs one argument "
+		       "(Peer STA MAC address)\n");
+		return -1;
+	}
+
+	res = os_snprintf(cmd, sizeof(cmd), "TDLS_DISCOVER %s", argv[0]);
+	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
+		printf("Too long TDLS_DISCOVER command.\n");
+		return -1;
+	}
+	return wpa_ctrl_command(ctrl, cmd);
+}
+
+
+static int wpa_cli_cmd_tdls_setup(struct wpa_ctrl *ctrl, int argc,
+				  char *argv[])
+{
+	char cmd[256];
+	int res;
+
+	if (argc != 1) {
+		printf("Invalid TDLS_SETUP command: needs one argument "
+		       "(Peer STA MAC address)\n");
+		return -1;
+	}
+
+	res = os_snprintf(cmd, sizeof(cmd), "TDLS_SETUP %s", argv[0]);
+	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
+		printf("Too long TDLS_SETUP command.\n");
+		return -1;
+	}
+	return wpa_ctrl_command(ctrl, cmd);
+}
+
+
+static int wpa_cli_cmd_tdls_teardown(struct wpa_ctrl *ctrl, int argc,
+				     char *argv[])
+{
+	char cmd[256];
+	int res;
+
+	if (argc != 1) {
+		printf("Invalid TDLS_TEARDOWN command: needs one argument "
+		       "(Peer STA MAC address)\n");
+		return -1;
+	}
+
+	res = os_snprintf(cmd, sizeof(cmd), "TDLS_TEARDOWN %s", argv[0]);
+	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
+		printf("Too long TDLS_TEARDOWN command.\n");
+		return -1;
+	}
+	return wpa_ctrl_command(ctrl, cmd);
+}
+
+
 enum wpa_cli_cmd_flags {
 	cli_cmd_flag_none		= 0x00,
 	cli_cmd_flag_sensitive		= 0x01
@@ -2164,6 +2292,9 @@ static struct wpa_cli_cmd wpa_cli_commands[] = {
 	{ "ping", wpa_cli_cmd_ping,
 	  cli_cmd_flag_none,
 	  "= pings wpa_supplicant" },
+	{ "relog", wpa_cli_cmd_relog,
+	  cli_cmd_flag_none,
+	  "= re-open log-file (allow rolling logs)" },
 	{ "note", wpa_cli_cmd_note,
 	  cli_cmd_flag_none,
 	  "<text> = add a note to wpa_supplicant debug log" },
@@ -2298,6 +2429,12 @@ static struct wpa_cli_cmd wpa_cli_commands[] = {
 	{ "ap_scan", wpa_cli_cmd_ap_scan,
 	  cli_cmd_flag_none,
 	  "<value> = set ap_scan parameter" },
+	{ "bss_expire_age", wpa_cli_cmd_bss_expire_age,
+	  cli_cmd_flag_none,
+	  "<value> = set BSS expiration age parameter" },
+	{ "bss_expire_count", wpa_cli_cmd_bss_expire_count,
+	  cli_cmd_flag_none,
+	  "<value> = set BSS expiration scan count parameter" },
 	{ "stkstart", wpa_cli_cmd_stkstart,
 	  cli_cmd_flag_none,
 	  "<addr> = request STK negotiation with <addr>" },
@@ -2439,6 +2576,15 @@ static struct wpa_cli_cmd wpa_cli_commands[] = {
 #endif /* CONFIG_P2P */
 	{ "sta_autoconnect", wpa_cli_cmd_sta_autoconnect, cli_cmd_flag_none,
 	  "<0/1> = disable/enable automatic reconnection" },
+	{ "tdls_discover", wpa_cli_cmd_tdls_discover,
+	  cli_cmd_flag_none,
+	  "<addr> = request TDLS discovery with <addr>" },
+	{ "tdls_setup", wpa_cli_cmd_tdls_setup,
+	  cli_cmd_flag_none,
+	  "<addr> = request TDLS setup with <addr>" },
+	{ "tdls_teardown", wpa_cli_cmd_tdls_teardown,
+	  cli_cmd_flag_none,
+	  "<addr> = tear down TDLS with <addr>" },
 	{ NULL, NULL, cli_cmd_flag_none, NULL }
 };
 
@@ -2920,8 +3066,17 @@ static char * wpa_cli_get_default_ifname(void)
 #ifdef CONFIG_CTRL_IFACE_UNIX
 	struct dirent *dent;
 	DIR *dir = opendir(ctrl_iface_dir);
-	if (!dir)
+	if (!dir) {
+#ifdef ANDROID
+		char ifprop[PROPERTY_VALUE_MAX];
+		if (property_get("wifi.interface", ifprop, NULL) != 0) {
+			ifname = os_strdup(ifprop);
+			printf("Using interface '%s'\n", ifname);
+			return ifname;
+		}
+#endif /* ANDROID */
 		return NULL;
+	}
 	while ((dent = readdir(dir))) {
 #ifdef _DIRENT_HAVE_D_TYPE
 		/*

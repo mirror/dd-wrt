@@ -1978,8 +1978,11 @@ SM_STEP(WPA_PTK)
 	if (sm->Init)
 		SM_ENTER(WPA_PTK, INITIALIZE);
 	else if (sm->Disconnect
-		 /* || FIX: dot11RSNAConfigSALifetime timeout */)
+		 /* || FIX: dot11RSNAConfigSALifetime timeout */) {
+		wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG,
+				"WPA_PTK: sm->Disconnect");
 		SM_ENTER(WPA_PTK, DISCONNECT);
+	}
 	else if (sm->DeauthenticationRequest)
 		SM_ENTER(WPA_PTK, DISCONNECTED);
 	else if (sm->AuthenticationRequest)
@@ -2015,6 +2018,8 @@ SM_STEP(WPA_PTK)
 			SM_ENTER(WPA_PTK, PTKSTART);
 		else {
 			wpa_auth->dot11RSNA4WayHandshakeFailures++;
+			wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_INFO,
+					"INITPMK - keyAvailable = false");
 			SM_ENTER(WPA_PTK, DISCONNECT);
 		}
 		break;
@@ -2035,6 +2040,9 @@ SM_STEP(WPA_PTK)
 		else if (sm->TimeoutCtr >
 			 (int) dot11RSNAConfigPairwiseUpdateCount) {
 			wpa_auth->dot11RSNA4WayHandshakeFailures++;
+			wpa_auth_vlogger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
+					 "PTKSTART: Retry limit %d reached",
+					 dot11RSNAConfigPairwiseUpdateCount);
 			SM_ENTER(WPA_PTK, DISCONNECT);
 		} else if (sm->TimeoutEvt)
 			SM_ENTER(WPA_PTK, PTKSTART);
@@ -2058,6 +2066,10 @@ SM_STEP(WPA_PTK)
 		else if (sm->TimeoutCtr >
 			 (int) dot11RSNAConfigPairwiseUpdateCount) {
 			wpa_auth->dot11RSNA4WayHandshakeFailures++;
+			wpa_auth_vlogger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
+					 "PTKINITNEGOTIATING: Retry limit %d "
+					 "reached",
+					 dot11RSNAConfigPairwiseUpdateCount);
 			SM_ENTER(WPA_PTK, DISCONNECT);
 		} else if (sm->TimeoutEvt)
 			SM_ENTER(WPA_PTK, PTKINITNEGOTIATING);
@@ -2468,19 +2480,21 @@ int wpa_get_mib(struct wpa_authenticator *wpa_auth, char *buf, size_t buflen)
 {
 	int len = 0, ret;
 	char pmkid_txt[PMKID_LEN * 2 + 1];
+#ifdef CONFIG_RSN_PREAUTH
+	const int preauth = 1;
+#else /* CONFIG_RSN_PREAUTH */
+	const int preauth = 0;
+#endif /* CONFIG_RSN_PREAUTH */
 
 	if (wpa_auth == NULL)
 		return len;
 
 	ret = os_snprintf(buf + len, buflen - len,
 			  "dot11RSNAOptionImplemented=TRUE\n"
-#ifdef CONFIG_RSN_PREAUTH
-			  "dot11RSNAPreauthenticationImplemented=TRUE\n"
-#else /* CONFIG_RSN_PREAUTH */
-			  "dot11RSNAPreauthenticationImplemented=FALSE\n"
-#endif /* CONFIG_RSN_PREAUTH */
+			  "dot11RSNAPreauthenticationImplemented=%s\n"
 			  "dot11RSNAEnabled=%s\n"
 			  "dot11RSNAPreauthenticationEnabled=%s\n",
+			  wpa_bool_txt(preauth),
 			  wpa_bool_txt(wpa_auth->conf.wpa & WPA_PROTO_RSN),
 			  wpa_bool_txt(wpa_auth->conf.rsn_preauth));
 	if (ret < 0 || (size_t) ret >= buflen - len)
