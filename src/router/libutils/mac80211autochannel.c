@@ -23,9 +23,14 @@
 #include "list.h"
 #include "list_sort.h"
 
+#include "wlutils.h"
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
+
+static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
+void free_mac80211_ac(struct mac80211_ac *acs);
 
 static const char *freq_range;
 
@@ -314,58 +319,31 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	else
 		return (f1->quality < f2->quality);
 }
-/* scans= 2 */
-int mac80211autochannel(char *interface, char *freq_range, int scans, int enable_passive)
-{
+
+// leave space for enhencements with more cards and already chosen channels...
+struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive) {
+	struct mac80211_ac *acs;
 	struct frequency *f;
 	struct unl unl;
-	unsigned int count = 0;
 	int verbose = 0;
 	int i, ch;
 	struct sort_data sdata;
 	int wdev, phy;
-	int ret = 0;
-/* 
-	while ((ch = getopt(argc, argv, "i:f:c:s:v")) != -1) {
-		switch(ch) {
-		case 'i':
-			interface = optarg;
-			break;
-		case 'f':
-			freq_range = optarg;
-			break;
-		case 'c':
-			count = atoi(optarg);
-			break;
-		case 'v':
-			verbose++;
-			break;
-		case 's':
-			scans = atoi(optarg);
-			break;
-		case 'p':
-			enable_passive = true;
-			break;
-		default:
-			return usage(argv[0]);
-		}
-	}
-*/
-	if (!count)
-		count = verbose ? 1000 : 1;
+
+	unsigned int count = ammount;
+
+	if (scans=0) scans=2;
 
 	unl_genl_init(&unl, "nl80211");
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
-		fprintf(stderr, "Interface not found\n");
-		ret = -1;
+		fprintf(stderr, "mac80211autochannel Interface not found\n");
 		goto out;
 	}
 
 	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
 	if (phy < 0) {
-		fprintf(stderr, "PHY not found\n");
-		ret = -1;
+		fprintf(stderr, "mac80211autochannel PHY not found\n");
 		goto out;
 	}
 
@@ -395,22 +373,41 @@ int mac80211autochannel(char *interface, char *freq_range, int scans, int enable
 
 	list_sort(&sdata, &frequencies, sort_cmp);
 
-	count++;
 	list_for_each_entry(f, &frequencies, list) {
 		if (f->passive && !enable_passive)
 			continue;
 
-		if (--count == 0)
+		if (count-- == 0)
 			break;
-
-		if (verbose)
-			printf("Frequency: %d MHz, Quality: %d%%, Clear: %d%%, Noise: %d dBm\n",
-			       f->freq, f->quality, f->clear, f->noise);
-		else
-			printf("%d\n", f->freq);
+		acs=add_to_mac80211_ac(acs);
+		acs->freq=f->freq;
+		acs->quality=f->quality;
+		acs->noise=f->noise;
 	}
 
 out:
 	unl_free(&unl);
-	return ret;
+	return acs;
 }
+
+// thats wrong order
+static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root){
+		struct mac80211_ac *new = calloc(1, sizeof(struct mac80211_ac));
+		if (new == NULL) {
+			fprintf(stderr, "mac80211_autochannel add_to_mac80211_ac: Out of memory!\n");
+			return(NULL);
+			}
+		else
+			{
+			 new->next =  list_root;
+			 return(new);
+			}
+		}
+
+void free_mac80211_ac(struct mac80211_ac *acs) {
+	while (acs) {
+		struct mac80211_ac *next = acs->next;
+		free(acs);
+		acs = next;
+		}
+	}

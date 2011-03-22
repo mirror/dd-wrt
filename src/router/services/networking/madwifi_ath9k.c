@@ -246,6 +246,7 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 	struct wifi_channels *chan;
 	int channel=0;
 	static char nfreq[16];
+	int i=0;
 
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
@@ -290,6 +291,7 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
 	char ht[5];
+	int iht=0;
 
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
@@ -313,45 +315,75 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 			sprintf(sb, "%s_nctrlsb", prefix);
 			if (nvram_default_match(sb, "upper", "lower")) {
 				sprintf(ht, "40+");
+				iht=1;
 			} else {
 				sprintf(ht, "40-");
+				iht=-1;
 			}
 		}
 
 	} else {
 		sprintf(ht, "20");
 	}
-	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, mac80211_get_caps(prefix));
 	char regdomain[16];
 	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 	fprintf(fp, "country_code=%s\n", getIsoName(country));
+	chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
 	if (isrepeater) {
-		chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
-		if (chan != NULL && chan[0].freq != -1) {
-			channel=chan[0].channel;
-			free(chan);
+		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
+		if (iht == -1) i=1;
+		if (chan != NULL && chan[i].freq != -1) {
+			channel=chan[i].channel;
 			}
 		else {
 			// that should never be called
 			if (has_2ghz(prefix)) channel=6;
-			if (has_5ghz(prefix)) channel=36;
+			if (has_5ghz(prefix)) channel=40;
 		}
 	}
 	else {
-		// for now, autochannel follows...
-		// also we should take care on the selected mode
+		// also we still should take care on the selected mode
 		sprintf(nfreq, "%s_channel", prefix);
 		int freq=atoi(nvram_default_get(nfreq, "0"));
 		if (freq == 0) {
-			if (has_2ghz(prefix)) channel=6;
-			if (has_5ghz(prefix)) channel=36;
+			struct mac80211_ac *acs;
+			fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
+			acs = mac80211autochannel(prefix, NULL, 2, 1, 0);
+			if (acs != NULL) {
+				freq=acs->freq;
+				channel = ieee80211_mhz2ieee(freq);
+				fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
+				int i = 0;
+				while (chan[i].freq != -1) {
+					if (chan[i].freq == freq) break;
+					i++;
+				}
+				if (iht != 0) {
+					if (chan[i].ht40minus) {
+						sprintf(ht, "40-");
+					}
+					else if (chan[i].ht40plus) {
+						sprintf(ht, "40+");
+					}
+					else {
+						sprintf(ht, "20");
+					}
+				}
+				free_mac80211_ac(acs);
+			}
+			else {
+				if (has_2ghz(prefix)) channel=6;
+				if (has_5ghz(prefix)) channel=40;
+			}
 		}
 		else {
 			channel = ieee80211_mhz2ieee(freq);
 		}
 	}
+	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, mac80211_get_caps(prefix));
+	if (chan) free(chan);
 	if (channel < 36)
 		fprintf(fp, "hw_mode=g\n");
 	else
