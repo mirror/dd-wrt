@@ -2,7 +2,7 @@
  * Initialization and support routines for self-booting
  * compressed image.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte_osl.c,v 1.28.2.1 2008/05/24 00:21:48 Exp $
+ * $Id: hndrte_osl.c,v 1.32 2009/04/27 21:09:06 Exp $
  */
 
 #include <typedefs.h>
@@ -118,8 +118,6 @@ osl_pci_read_config(osl_t *osh, uint offset, uint size)
 	                       &data, size) != 0)
 		data = 0xffffffff;
 
-	printf("%s: cfgrd for %d-%d-%d 0x%x/%d => 0x%x\n", __FUNCTION__,
-	       pdev->bus, pdev->slot, pdev->func, offset, size, data);
 	return data;
 }
 
@@ -129,8 +127,6 @@ osl_pci_write_config(osl_t *osh, uint offset, uint size, uint val)
 	hndrte_dev_t *dev = (hndrte_dev_t *)osh->dev;
 	pdev_t *pdev = dev->pdev;
 
-	printf("%s: cfgwr for %d-%d-%d 0x%x =>0x%x/%d\n", __FUNCTION__,
-	       pdev->bus, pdev->slot, pdev->func, val, offset, size);
 	extpci_write_config(hndrte_sih, pdev->bus, pdev->slot, pdev->func, offset, &val, size);
 }
 #endif /* SBPCI */
@@ -140,10 +136,11 @@ osl_pktget(osl_t *osh, uint len)
 {
 	void *pkt;
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
-	if ((pkt = (void *)lb_alloc(len, __FILE__, __LINE__)))
+	pkt = (void *)lb_alloc(len, __FILE__, __LINE__);
 #else
-	if ((pkt = (void *)lb_alloc(len)))
+	pkt = (void *)lb_alloc(len);
 #endif
+	if (pkt)
 		osh->pktalloced++;
 
 	return pkt;
@@ -163,6 +160,22 @@ osl_pktfree(osl_t *osh, void* p, bool send)
 	}
 
 	lb_free((struct lbuf *)p);
+}
+
+void *
+osl_pktclone(osl_t *osh, void *p, int offset, int len)
+{
+	void *pkt;
+
+#if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
+	pkt = (void *)lb_clone(p, offset, len, __FILE__, __LINE__);
+#else
+	pkt = (void *)lb_clone(p, offset, len);
+#endif
+	if (pkt)
+		osh->pktalloced++;
+
+	return pkt;
 }
 
 void *

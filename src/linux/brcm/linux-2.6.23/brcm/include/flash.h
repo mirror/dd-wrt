@@ -1,7 +1,7 @@
 /*
  * flash.h: Common definitions for flash access.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: flash.h,v 13.23.242.2 2008/11/28 03:26:07 Exp $
+ * $Id: flash.h,v 13.25 2008/11/28 03:26:24 Exp $
  */
 
 /* FILE-CSTYLED Cannot figure out how to make the initialization continuation lines acceptable */

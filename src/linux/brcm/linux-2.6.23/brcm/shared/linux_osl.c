@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linux_osl.c,v 1.152.18.27 2010/08/02 17:43:31 Exp $
+ * $Id: linux_osl.c,v 1.152.18.27.2.1 2010/10/01 02:05:03 Exp $
  */
 
 #define LINUX_PORT
@@ -202,6 +202,12 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
 	spin_lock_init(&(osh->pktlist_lock));
 #endif
 	spin_lock_init(&(osh->pktalloc_lock));
+#ifdef BCMDBG
+	if (pkttag) {
+		struct sk_buff *skb;
+		ASSERT(OSL_PKTTAG_SZ <= sizeof(skb->cb));
+	}
+#endif
 	return osh;
 }
 
@@ -462,6 +468,18 @@ osl_pktfastfree(osl_t *osh, struct sk_buff *skb)
 	unsigned long flags;
 #endif /* CTFPOOL_SPINLOCK */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
+	skb->tstamp.tv.sec = 0;
+#else
+	skb->stamp.tv_sec = 0;
+#endif
+
+	/* We only need to init the fields that we change */
+	skb->dev = NULL;
+	skb->dst = NULL;
+	memset(skb->cb, 0, sizeof(skb->cb));
+	skb->ip_summed = 0;
+	skb->destructor = NULL;
 
 	ctfpool = (ctfpool_t *)CTFPOOLPTR(osh, skb);
 	ASSERT(ctfpool != NULL);
@@ -476,19 +494,6 @@ osl_pktfastfree(osl_t *osh, struct sk_buff *skb)
 
 	ASSERT(ctfpool->curr_obj <= ctfpool->max_obj);
 	CTFPOOL_UNLOCK(ctfpool, flags);
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
-	skb->tstamp.tv.sec = 0;
-#else
-	skb->stamp.tv_sec = 0;
-#endif
-
-	/* We only need to init the fields that we change */
-	skb->dev = NULL;
-	skb->dst = NULL;
-	memset(skb->cb, 0, sizeof(skb->cb));
-	skb->ip_summed = 0;
-	skb->destructor = NULL;
 }
 #endif /* CTFPOOL */
 
@@ -565,6 +570,11 @@ osl_pci_read_config(osl_t *osh, uint offset, uint size)
 			break;
 	} while (retry--);
 
+#ifdef BCMDBG
+	if (retry < PCI_CFG_RETRY)
+		printk("PCI CONFIG READ access to %d required %d retries\n", offset,
+		       (PCI_CFG_RETRY - retry));
+#endif /* BCMDBG */
 
 	return (val);
 }
@@ -587,6 +597,11 @@ osl_pci_write_config(osl_t *osh, uint offset, uint size, uint val)
 			break;
 	} while (retry--);
 
+#ifdef BCMDBG
+	if (retry < PCI_CFG_RETRY)
+		printk("PCI CONFIG WRITE access to %d required %d retries\n", offset,
+		       (PCI_CFG_RETRY - retry));
+#endif /* BCMDBG */
 }
 
 /* return bus # for the pci device pointed by osh->pdev */

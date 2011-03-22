@@ -1,7 +1,7 @@
 /*
  * HND RTE packet buffer definitions.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte_lbuf.h,v 13.27.14.1 2008/05/24 00:21:47 Exp $
+ * $Id: hndrte_lbuf.h,v 13.35 2009/01/28 19:56:24 Exp $
  */
 
 #ifndef _hndrte_lbuf_h_
@@ -26,6 +26,8 @@ struct lbuf {
 	uint16		len;		/* nbytes of data */
 	uint16		flags;		/* private flags; don't touch */
 	uint16		dmapad;		/* padding to be added for tx dma */
+	uint8		dataOff;	/* offset to beginning of data in 4-byte words */
+	uint8		refcnt;		/* external references to this lbuf */
 	uint32		pkttag[(OSL_PKTTAG_SZ + 3) / 4];  /* 4-byte-aligned packet tag area */
 };
 
@@ -38,20 +40,36 @@ struct lbuf {
 #define	LBF_PRI		0x0007		/* priority (low 3 bits of flags) */
 #define LBF_SUM_NEEDED	0x0008
 #define LBF_SUM_GOOD	0x0010
+#define LBF_MSGTRACE	0x0020
+#define LBF_CLONE	0x0040
+#define LBF_PTBLK	0x0100		/* came from fixed block in a partition, not main malloc */
 
 #define	LBP(lb)		((struct lbuf *)(lb))
+
+/* lbuf clone structure
+ * if lbuf->flags LBF_CLONE bit is set, the lbuf can be cast to an lbuf_clone
+ */
+struct lbuf_clone {
+	struct lbuf	lbuf;
+	struct lbuf	*orig;	/* original non-clone lbuf providing the buffer space */
+};
 
 /* prototypes */
 extern void lb_init(void);
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
-extern struct lbuf *lb_alloc(uint size, char *file, int line);
+extern struct lbuf *lb_alloc(uint size, const char *file, int line);
+extern struct lbuf *lb_clone(struct lbuf *lb, int offset, int len, const char *file, int line);
 #else
 extern struct lbuf *lb_alloc(uint size);
-#endif /* BCMDBG_MEM */
+extern struct lbuf *lb_clone(struct lbuf *lb, int offset, int len);
+#endif /* BCMDBG_MEM || BCMDBG_MEMFAIL */
 
 extern struct lbuf *lb_dup(struct lbuf *lb);
 extern void lb_free(struct lbuf *lb);
 extern bool lb_sane(struct lbuf *lb);
+#ifdef BCMDBG
+extern void lb_dump(void);
+#endif
 
 static INLINE uchar *
 lb_push(struct lbuf *lb, uint len)
@@ -128,6 +146,53 @@ lb_setsumgood(struct lbuf *lb, bool summed)
 		lb->flags |= LBF_SUM_GOOD;
 	else
 		lb->flags &= ~LBF_SUM_GOOD;
+}
+
+static INLINE bool
+lb_msgtrace(struct lbuf *lb)
+{
+	ASSERT(lb_sane(lb));
+	return ((lb->flags & LBF_MSGTRACE) != 0);
+}
+
+static INLINE void
+lb_setmsgtrace(struct lbuf *lb, bool set)
+{
+	ASSERT(lb_sane(lb));
+	if (set)
+		lb->flags |= LBF_MSGTRACE;
+	else
+		lb->flags &= ~LBF_MSGTRACE;
+}
+
+/* get Data Offset */
+static INLINE uint8
+lb_dataoff(struct lbuf *lb)
+{
+	ASSERT(lb_sane(lb));
+	return (lb->dataOff);
+}
+
+/* set Data Offset */
+static INLINE void
+lb_setdataoff(struct lbuf *lb, uint8 dataOff)
+{
+	ASSERT(lb_sane(lb));
+	lb->dataOff = dataOff;
+}
+
+static INLINE int
+lb_isclone(struct lbuf *lb)
+{
+	ASSERT(lb_sane(lb));
+	return ((lb->flags & LBF_CLONE) != 0);
+}
+
+static INLINE int
+lb_isptblk(struct lbuf *lb)
+{
+	ASSERT(lb_sane(lb));
+	return ((lb->flags & LBF_PTBLK) != 0);
 }
 
 #endif	/* _hndrte_lbuf_h_ */

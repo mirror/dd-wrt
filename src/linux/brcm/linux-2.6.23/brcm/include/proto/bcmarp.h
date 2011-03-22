@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,19 +9,19 @@
  *
  * Fundamental constants relating to ARP Protocol
  *
- * $Id: bcmarp.h,v 9.6 2007/02/07 17:29:59 Exp $
+ * $Id: bcmarp.h,v 9.7 2008/12/01 22:55:12 Exp $
  */
 
 #ifndef _bcmarp_h_
 #define _bcmarp_h_
 
-/* enable structure packing */
-#if defined(__GNUC__)
-#define	PACKED	__attribute__((packed))
-#else
-#pragma pack(1)
-#define	PACKED
+#ifndef _TYPEDEFS_H_
+#include <typedefs.h>
 #endif
+
+/* This marks the start of a packed structure section. */
+#include <packed_section_start.h>
+
 
 #define ARP_OPC_OFFSET		6		/* option code offset */
 #define ARP_SRC_ETH_OFFSET	8		/* src h/w address offset */
@@ -34,7 +34,7 @@
 
 #define ARP_DATA_LEN		28		/* ARP data length */
 
-struct bcmarp {
+BWL_PRE_PACKED_STRUCT struct bcmarp {
 	uint16	htype;				/* Header type (1 = ethernet) */
 	uint16	ptype;				/* Protocol type (0x800 = IP) */
 	uint8	hlen;				/* Hardware address length (Eth = 6) */
@@ -44,17 +44,15 @@ struct bcmarp {
 	uint8	src_ip[IPV4_ADDR_LEN];		/* Source protocol address (not aligned) */
 	uint8	dst_eth[ETHER_ADDR_LEN];	/* Destination hardware address */
 	uint8	dst_ip[IPV4_ADDR_LEN];		/* Destination protocol address */
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 
 /* Ethernet header + Arp message */
-struct bcmetharp {
+BWL_PRE_PACKED_STRUCT struct bcmetharp {
 	struct ether_header	eh;
 	struct bcmarp	arp;
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 
-#undef PACKED
-#if !defined(__GNUC__)
-#pragma pack()
-#endif
+/* This marks the end of a packed structure section. */
+#include <packed_section_end.h>
 
 #endif	/* !defined(_bcmarp_h_) */

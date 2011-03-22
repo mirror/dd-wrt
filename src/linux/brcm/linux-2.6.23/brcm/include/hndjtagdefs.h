@@ -1,9 +1,9 @@
 /*
  * Definitiosn for Jtag taps in HND chips.
  *
- * $Id: hndjtagdefs.h,v 13.1 2008/11/13 22:33:43 Exp $
+ * $Id: hndjtagdefs.h,v 13.2 2009/04/27 20:49:08 Exp $
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -79,7 +79,7 @@
 #define	LV_IR_SIZE		32
 #define	LV_DR_SIZE		32
 
-#define	LV_BASE			0x0003ff3a
+#define	LV_BASE			0xfe03ff3a
 #define	LV_REG_MASK		0x01f00000
 #define	LV_REG_SHIFT		20
 #define LV_RO			0x00080000

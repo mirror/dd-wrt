@@ -5,6 +5,7 @@ SECTIONS {
 	.text : {
 		_ftext = . ;
 		text_start = .;
+		*(.text.startup)
 		*(.init)
 		*(.text)
 		*(.text.*)

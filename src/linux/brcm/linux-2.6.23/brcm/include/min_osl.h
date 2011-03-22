@@ -33,8 +33,16 @@ static inline void blast_icache(void) { return; };
 #endif	/* mips */
 
 /* assert & debugging */
+#if defined(BCMDBG)
+extern void assfail(char *exp, char *file, int line);
+#define ASSERT(exp) \
+	do { if (!(exp)) assfail(#exp, __FILE__, __LINE__); } while (0)
+#define	TRACE_LOC		OSL_UNCACHED(0x18000044)	/* flash address reg in chipc */
+#define	BCMDBG_TRACE(val)	do {*((uint32 *)TRACE_LOC) = val;} while (0)
+#else
 #define	ASSERT(exp)		do {} while (0)
 #define	BCMDBG_TRACE(val)	do {} while (0)
+#endif
 
 /* PCMCIA attribute space access macros */
 #define	OSL_PCMCIA_READ_ATTR(osh, offset, buf, size) \

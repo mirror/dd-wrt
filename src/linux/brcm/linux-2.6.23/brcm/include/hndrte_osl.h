@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment OS Abstraction Layer.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte_osl.h,v 13.81.14.2.12.1 2008/11/19 01:45:20 Exp $
+ * $Id: hndrte_osl.h,v 13.90.18.3 2010/03/18 02:03:55 Exp $
  */
 
 #ifndef _hndrte_osl_h_
@@ -17,6 +17,9 @@
 
 #include <hndrte.h>
 #include <hndrte_lbuf.h>
+
+/* Global ASSERT type */
+extern uint32 g_assert_type;
 
 struct osl_info {
 	uint pktalloced;	/* Number of allocated packet buffers */
@@ -119,18 +122,23 @@ extern int osl_error(int bcmerror);
 #define	OSL_UNCACHED(va)	hndrte_uncached(va)
 #define	OSL_CACHED(va)		hndrte_cached(va)
 
+#define OSL_PREF_RANGE_LD(va, sz)
+#define OSL_PREF_RANGE_ST(va, sz)
+
 /* dereference an address that may cause a bus exception */
 #define	BUSPROBE(val, addr)	osl_busprobe(&(val), (uint32)(addr))
 extern int osl_busprobe(uint32 *val, uint32 addr);
 
 /* allocate/free shared (dma-able) consistent (uncached) memory */
-#define	DMA_CONSISTENT_ALIGN	4096	/* Size of Lbuf - 4k */
+#define DMA_CONSISTENT_ALIGN_BITS	2
+#define	DMA_CONSISTENT_ALIGN	(1 << DMA_CONSISTENT_ALIGN_BITS)
+
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
-#define	DMA_ALLOC_CONSISTENT(osh, size, pap, dmah) \
-	hndrte_dma_alloc_consistent(size, (void *)(pap), __FILE__, __LINE__)
+#define	DMA_ALLOC_CONSISTENT(osh, size, align, tot, pap, dmah) \
+	hndrte_dma_alloc_consistent(size, align, (tot), (void *)(pap), __FILE__, __LINE__)
 #else
-#define	DMA_ALLOC_CONSISTENT(osh, size, pap, dmah) \
-	hndrte_dma_alloc_consistent(size, (void *)(pap))
+#define	DMA_ALLOC_CONSISTENT(osh, size, align, tot, pap, dmah) \
+	hndrte_dma_alloc_consistent(size, align, (tot), (void *)(pap))
 #endif
 #define	DMA_FREE_CONSISTENT(osh, va, size, pa, dmah) \
 	hndrte_dma_free_consistent((void*)(va))
@@ -179,12 +187,16 @@ extern int osl_busprobe(uint32 *val, uint32 addr);
 #define	PKTSETLINK(lb, x)		(LBP(lb)->link = LBP(x))
 #define	PKTPRIO(lb)			lb_pri(lb)
 #define	PKTSETPRIO(lb, x)		lb_setpri((lb), (x))
-#define PKTSHARED(lb)                   (0)
+#define PKTSHARED(lb)                   (lb_isclone(lb) || LBP(lb)->refcnt > 1)
 #define PKTALLOCED(osh)			((osl_t *)osh)->pktalloced
 #define PKTSUMNEEDED(lb)		lb_sumneeded(lb)
 #define PKTSETSUMNEEDED(lb, x)		lb_setsumneeded((lb), (x))
 #define PKTSUMGOOD(lb)			lb_sumgood(lb)
 #define PKTSETSUMGOOD(lb, x)		lb_setsumgood((lb), (x))
+#define PKTMSGTRACE(lb)			lb_msgtrace(lb)
+#define PKTSETMSGTRACE(lb, x)		lb_setmsgtrace((lb), (x))
+#define PKTDATAOFFSET(lb)			lb_dataoff(LBP(lb))
+#define PKTSETDATAOFFSET(lb, dataOff)	lb_setdataoff(LBP(lb), dataOff)
 
 #define BCM_DMAPAD
 #define PKTDMAPAD(osh, lb)		(LBP(lb)->dmapad)
@@ -206,8 +218,11 @@ extern struct lbuf * osl_pkttonative(osl_t *osh, void *p);
 extern void * osl_pktget(osl_t *osh, uint len);
 extern void osl_pktfree(osl_t *osh, void *p, bool send);
 extern void * osl_pktdup(osl_t *osh, void *p);
+extern void * osl_pktclone(osl_t *osh, void *p, int offset, int len);
 
 /* get system up time in miliseconds */
 #define OSL_SYSUPTIME()		(hndrte_time())
+/* free memory available in pool */ 
+#define OSL_MEM_AVAIL()         (hndrte_memavail())
 
 #endif	/* _hndrte_osl_h_ */

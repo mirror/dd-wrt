@@ -176,7 +176,6 @@ extern uint32 si_addrspacesize(si_t *sih, uint asidx);
 extern int si_corebist(si_t *sih);
 extern void si_core_reset(si_t *sih, uint32 bits, uint32 resetbits);
 extern void si_core_disable(si_t *sih, uint32 bits);
-extern void si_core_tofixup(si_t *sih);
 extern uint32 si_clock_rate(uint32 pll_type, uint32 n, uint32 m);
 extern uint32 si_clock(si_t *sih);
 extern uint32 si_alp_clock(si_t *sih);
@@ -286,7 +285,6 @@ extern uint32 si_pcielcreg(si_t *sih, uint32 mask, uint32 val);
 extern void si_war42780_clkreq(si_t *sih, bool clkreq);
 extern void si_pci_down(si_t *sih);
 extern void si_pci_up(si_t *sih);
-extern void si_pcie_war_ovr_disable(si_t *sih);
 #ifdef WLC_HIGH_ONLY
 #define si_pci_sleep(sih)	do{ASSERT(0);}while(0)
 #define si_pcie_war_ovr_update(sih, aspm)	do{ASSERT(0);}while(0)
@@ -298,11 +296,6 @@ extern void si_pcie_extendL1timer(si_t *sih, bool extend);
 extern int si_pci_fixcfg(si_t *sih);
 extern bool si_ldo_war(si_t *sih, uint devid);
 extern void si_chippkg_set(si_t *sih, uint);
-
-extern void si_4329_tweak(si_t *sih, uint32 mask, uint32 val);
-extern void si_4329_vbatmeas_on(si_t *sih, uint32 *save_reg0, uint32 *save_reg5);
-extern void si_4329_vbatmeas_off(si_t *sih, uint32 save_reg0, uint32 save_reg5);
-extern void si_4329_pmu_voltage(si_t *sih);
 
 extern void si_chipcontrl_epa4331(si_t *sih, bool on);
 
@@ -318,6 +311,10 @@ extern void si_pll_htavail_reset_4313_war(si_t *sih);
 
 extern bool si_taclear(si_t *sih, bool details);
 
+#ifdef BCMDBG
+extern void si_view(si_t *sih, bool verbose);
+extern void si_viewall(si_t *sih, bool verbose);
+#endif
 
 #if defined(BCMDBG_DUMP)
 extern void si_dump(si_t *sih, struct bcmstrbuf *b);
@@ -326,7 +323,7 @@ extern void si_clkctl_dump(si_t *sih, struct bcmstrbuf *b);
 extern int si_gpiodump(si_t *sih, struct bcmstrbuf *b);
 extern int si_dump_pcieregs(si_t *sih, struct bcmstrbuf *b);
 #endif
-#if defined(BCMDBG_DUMP)
+#if defined(BCMDBG) || defined(BCMDBG_DUMP)
 extern void si_dumpregs(si_t *sih, struct bcmstrbuf *b);
 #endif
 

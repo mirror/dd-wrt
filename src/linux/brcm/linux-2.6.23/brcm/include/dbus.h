@@ -2,7 +2,7 @@
  * Dongle BUS interface Abstraction layer
  *   target serial buses like USB, SDIO, SPI, etc.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: dbus.h,v 13.7.4.8 2008/10/05 06:24:26 Exp $
+ * $Id: dbus.h,v 13.27.20.7 2010/05/26 01:27:56 Exp $
  */
 
 #ifndef __DBUS_H__
@@ -46,7 +46,8 @@ enum {
 	DBUS_ERR_TXCTLFAIL,
 	DBUS_ERR_RXCTLFAIL,
 	DBUS_ERR_REG_PARAM,
-	DBUS_STATUS_CANCELLED
+	DBUS_STATUS_CANCELLED,
+	DBUS_ERR_NVRAM
 };
 
 #define ERR_CBMASK_TXFAIL		0x00000001
@@ -58,6 +59,12 @@ enum {
 
 #define DBUS_TX_RETRY_LIMIT		3		/* retries for failed txirb */
 #define DBUS_TX_TIMEOUT_INTERVAL	250		/* timeout for txirb complete, in ms */
+
+#define DBUS_BUFFER_SIZE_TX	16000
+#define DBUS_BUFFER_SIZE_RX	5000
+
+#define DBUS_BUFFER_SIZE_TX_NOAGG	2048
+#define DBUS_BUFFER_SIZE_RX_NOAGG	2048
 
 /* DBUS types */
 enum {
@@ -73,7 +80,8 @@ enum dbus_state {
 	DBUS_STATE_UP,
 	DBUS_STATE_DOWN,
 	DBUS_STATE_PNP_FWDL,
-	DBUS_STATE_DISCONNECT
+	DBUS_STATE_DISCONNECT,
+	DBUS_STATE_SLEEP
 };
 
 enum dbus_pnp_state {
@@ -82,13 +90,23 @@ enum dbus_pnp_state {
 	DBUS_PNP_RESUME
 };
 
+typedef enum _DEVICE_SPEED {
+	INVALID_SPEED = -1,
+	LOW_SPEED     =  1,	/* USB 1.1: 1.5 Mbps */
+	FULL_SPEED,     	/* USB 1.1: 12  Mbps */
+	HIGH_SPEED,		/* USB 2.0: 480 Mbps */
+	SUPER_SPEED,		/* USB 3.0: 4.8 Gbps */
+} DEVICE_SPEED;
+
 typedef struct {
 	int bustype;
 	int vid;
 	int pid;
 	int devid;
+	int chiprev; /* chip revsion number */
 	int mtu;
 	int nchan; /* Data Channels */
+	int has_2nd_bulk_in_ep;
 } dbus_attrib_t;
 
 /* FIX: Account for errors related to DBUS;
@@ -166,6 +184,7 @@ typedef struct {
 	int  (*set_config)(void *bus, dbus_config_t *config);
 	int  (*get_config)(void *bus, dbus_config_t *config);
 
+	bool (*device_exists)(void *bus);
 	bool (*dlneeded)(void *bus);
 	int  (*dlstart)(void *bus, uint8 *fw, int len);
 	int  (*dlrun)(void *bus);
@@ -188,6 +207,7 @@ typedef struct {
 	int (*recv_stop)(void *bus);
 	int (*recv_resume)(void *bus);
 
+	int (*recv_irb_from_ep)(void *bus, struct dbus_irb_rx *rxirb, uint ep_idx);
 	/* Add from the bottom */
 } dbus_intf_t;
 
@@ -196,8 +216,13 @@ typedef struct dbus_pub {
 	dbus_stats_t stats;
 	dbus_attrib_t attrib;
 	enum dbus_state busstate;
+	DEVICE_SPEED device_speed;
 	int ntxq, nrxq, rxsize;
+	void *bus;
+	struct shared_info *sh;
 } dbus_pub_t;
+
+#define BUS_INFO(bus, type) (((type *) bus)->pub->bus)
 
 /*
  * Public Bus Function Interface
@@ -215,7 +240,7 @@ extern int dbus_register(int vid, int pid, probe_cb_t prcb, disconnect_cb_t disc
 extern int dbus_deregister(void);
 
 extern const dbus_pub_t *dbus_attach(struct osl_info *osh, int rxsize, int nrxq, int ntxq,
-	void *cbarg, dbus_callbacks_t *cbs);
+	void *cbarg, dbus_callbacks_t *cbs, struct shared_info *sh);
 extern void dbus_detach(const dbus_pub_t *pub);
 
 extern int dbus_up(const dbus_pub_t *pub);
@@ -228,9 +253,11 @@ extern int dbus_send_buf(const dbus_pub_t *pub, uint8 *buf, int len, void *info)
 extern int dbus_send_pkt(const dbus_pub_t *pub, void *pkt, void *info);
 extern int dbus_send_ctl(const dbus_pub_t *pub, uint8 *buf, int len);
 extern int dbus_recv_ctl(const dbus_pub_t *pub, uint8 *buf, int len);
+extern int dbus_recv_bulk(const dbus_pub_t *pub, uint32 ep_idx);
 
 extern int dbus_get_stats(const dbus_pub_t *pub, dbus_stats_t *stats);
 extern int dbus_get_attrib(const dbus_pub_t *pub, dbus_attrib_t *attrib);
+extern int dbus_get_device_speed(const dbus_pub_t *pub);
 extern int dbus_set_config(const dbus_pub_t *pub, dbus_config_t *config);
 extern int dbus_get_config(const dbus_pub_t *pub, dbus_config_t *config);
 
@@ -244,6 +271,9 @@ extern int dbus_pnp_disconnect(const dbus_pub_t *pub);
 
 extern int dbus_iovar_op(const dbus_pub_t *pub, const char *name,
 	void *params, int plen, void *arg, int len, bool set);
+#ifdef BCMDBG
+extern void dbus_hist_dump(const dbus_pub_t *pub, struct bcmstrbuf *b);
+#endif /* BCMDBG */
 /*
  * Private Common Bus Interface
  */
@@ -271,6 +301,7 @@ typedef struct dbus_irb_tx {
 	int retry_count;
 	void *info;
 	void *arg;
+	void *send_buf; /* linear  bufffer for LINUX when aggreagtion is enabled */
 } dbus_irb_tx_t;
 
 /* DBUS interface callbacks are different from user callbacks
@@ -283,12 +314,13 @@ typedef struct dbus_intf_callbacks {
 	void (*errhandler)(void *cbarg, int err);
 	void (*ctl_complete)(void *cbarg, int type, int status);
 	void (*state_change)(void *cbarg, int state);
-	void (*isr)(void *cbarg);
-	int  (*dpc)(void *cbarg);
+	bool (*isr)(void *cbarg, bool *wantdpc);
+	bool (*dpc)(void *cbarg, bool bounded);
 	void (*watchdog)(void *cbarg);
 	void *(*pktget)(void *cbarg, uint len, bool send);
 	void (*pktfree)(void *cbarg, void *p, bool send);
 	struct dbus_irb* (*getirb)(void *cbarg, bool send);
+	void (*rxerr_indicate)(void *cbarg, bool on);
 } dbus_intf_callbacks_t;
 
 /*
@@ -319,4 +351,5 @@ extern int dbus_bus_osl_hw_register(int vid, int pid, probe_cb_t prcb, disconnec
 	void *prarg, dbus_intf_t **intf);
 extern int dbus_bus_osl_hw_deregister(void);
 
+extern uint usbdev_bulkin_eps(void);
 #endif /* __DBUS_H__ */

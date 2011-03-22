@@ -49,10 +49,19 @@
 
 uint32 otp_msg_level = OTP_ERR_VAL;
 
+#if defined(BCMDBG) || defined(BCMDBG_ERR)
+#define OTP_ERR(args)	do {if (otp_msg_level & OTP_ERR_VAL) printf args;} while (0)
+#else
 #define OTP_ERR(args)
+#endif
 
+#ifdef BCMDBG
+#define OTP_MSG(args)	do {if (otp_msg_level & OTP_MSG_VAL) printf args;} while (0)
+#define OTP_DBG(args)	do {if (otp_msg_level & OTP_DBG_VAL) printf args;} while (0)
+#else
 #define OTP_MSG(args)
 #define OTP_DBG(args)
+#endif
 
 #define OTPP_TRIES	10000000	/* # of tries for OTPP */
 
@@ -1621,12 +1630,12 @@ out:
 }
 
 #ifdef BCMNVRAMW
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 static	uint st_n, st_s, st_hwm, pp_hwm;
 #ifdef	OTP_FORCEFAIL
 static	uint forcefail_bitcount = 0;
 #endif /* OTP_FORCEFAIL */
-#endif 
+#endif /* BCMDBG || WLTEST */
 
 static int
 hndotp_write_bit(void *oh, chipcregs_t *cc, int bn, bool bit)
@@ -1673,10 +1682,10 @@ hndotp_write_bit(void *oh, chipcregs_t *cc, int bn, bool bit)
 		pst = R_REG(osh, &cc->otpprog);
 		for (k = 0; ((pst & OTPP_START_BUSY) == OTPP_START_BUSY) && (k < OTPP_TRIES); k++)
 			pst = R_REG(osh, &cc->otpprog);
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 		if (k > pp_hwm)
 			pp_hwm = k;
-#endif 
+#endif /* BCMDBG || WLTEST */
 		if (k >= OTPP_TRIES) {
 			OTP_ERR(("BUSY stuck: pst=0x%x, count=%d\n", pst, k));
 			st = OTPS_PROGFAIL;
@@ -1694,7 +1703,7 @@ hndotp_write_bit(void *oh, chipcregs_t *cc, int bn, bool bit)
 				pwait = OTPC_PROGWAIT;
 		}
 	}
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 	st_n++;
 	st_s += j;
 	if (j > st_hwm)
@@ -1706,7 +1715,7 @@ hndotp_write_bit(void *oh, chipcregs_t *cc, int bn, bool bit)
 		st = OTPS_PROGFAIL;
 	}
 #endif
-#endif 
+#endif /* BCMDBG || WLTEST */
 	if (st & OTPS_PROGFAIL) {
 		OTP_ERR(("After %d tries: otpc = 0x%x, otpp = 0x%x/0x%x, otps = 0x%x\n",
 		       j, otpc | pwait, otpp, pst, st));
@@ -1934,9 +1943,9 @@ hndotp_write_region(void *oh, int region, uint16 *data, uint wlen)
 	}
 	lim = base + wlen;
 
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 	st_n = st_s = st_hwm = pp_hwm = 0;
-#endif 
+#endif /* BCMDBG || WLTEST */
 
 	/* force ALP for progrramming stability */
 	save_clk = R_REG(oi->osh, &cc->clk_ctl_st);
@@ -1991,7 +2000,7 @@ out_rclk:
 	W_REG(oi->osh, &cc->clk_ctl_st, save_clk);
 
 out:
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 	OTP_MSG(("bits written: %d, average (%d/%d): %d, max retry: %d, pp max: %d\n",
 		st_n, st_s, st_n, st_n?(st_s / st_n):0, st_hwm, pp_hwm));
 #endif
@@ -2115,9 +2124,9 @@ hndotp_nvwrite(void *oh, uint16 *data, uint wlen)
 		goto out;
 	}
 
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 	st_n = st_s = st_hwm = pp_hwm = 0;
-#endif 
+#endif /* BCMDBG || WLTEST */
 
 	/* Prepare the header and crc */
 	hdr[0] = OTP_MAGIC;

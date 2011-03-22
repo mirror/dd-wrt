@@ -29,7 +29,7 @@ extern int srom_write(si_t *sih, uint bus, void *curmap, osl_t *osh,
                       uint byteoff, uint nbytes, uint16 *buf);
 
 extern int srom_otp_cisrwvar(si_t *sih, osl_t *osh, char *vars, int *count);
-#if defined(WLTEST)
+#if defined(WLTEST) || defined(BCMDBG)
 extern int srom_otp_write_region_crc(si_t *sih, uint nbytes, uint16* buf16, bool write);
 #endif 
 

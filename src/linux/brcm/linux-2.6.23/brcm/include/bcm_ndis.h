@@ -4,7 +4,7 @@
  * Windows platforms.
  *
  * Portions
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -12,7 +12,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_ndis.h,v 13.8 2007/10/25 18:56:43 Exp $
+ * $Id: bcm_ndis.h,v 13.10 2009/04/15 20:01:44 Exp $
  */
 
 /*FILE-CSTYLED*/
@@ -24,13 +24,8 @@
 
 #include <typedefs.h>
 
-/* enable structure packing */
-#if defined(__GNUC__)
-#define PACKED  __attribute__((packed))
-#else
-#pragma pack(1)
-#define PACKED
-#endif
+/* This marks the start of a packed structure section. */
+#include <packed_section_start.h>
 
 /* Basic types */
 typedef char CHAR, *PCHAR;
@@ -445,10 +440,8 @@ typedef struct _NDIS_802_11_FIXED_IEs
 #define OID_802_11_REMOVE_KEY                   0x0D01011E
 #define OID_802_11_ASSOCIATION_INFORMATION      0x0D01011F
 #define OID_802_11_TEST                         0x0D010120
-#ifdef BCMWPA2
 #define OID_802_11_CAPABILITY					0x0D010122
 #define OID_802_11_PMKID						0x0D010123
-#endif /* BCMWPA2 */
 
 //
 // IEEE 802.11 Structures and definitions
@@ -458,10 +451,8 @@ typedef struct _NDIS_802_11_FIXED_IEs
 typedef enum _NDIS_802_11_STATUS_TYPE
 {
     Ndis802_11StatusType_Authentication,
-#ifdef BCMWPA2
     Ndis802_11StatusType_MediaStreamMode,
     Ndis802_11StatusType_PMKID_CandidateList,
-#endif /* BCMWPA2 */
     Ndis802_11StatusTypeMax    // not a real type, defined as an upper bound
 } NDIS_802_11_STATUS_TYPE, *PNDIS_802_11_STATUS_TYPE;
 
@@ -488,7 +479,6 @@ typedef struct _NDIS_802_11_AUTHENTICATION_REQUEST
     ULONG Flags;
 } NDIS_802_11_AUTHENTICATION_REQUEST, *PNDIS_802_11_AUTHENTICATION_REQUEST;
 
-#ifdef BCMWPA2
 //Added new types for PMKID Candidate lists.
 typedef struct _PMKID_CANDIDATE {
     NDIS_802_11_MAC_ADDRESS BSSID;
@@ -505,7 +495,6 @@ typedef struct _NDIS_802_11_PMKID_CANDIDATE_LIST
 
 //Flags for PMKID Candidate list structure
 #define NDIS_802_11_PMKID_CANDIDATE_PREAUTH_ENABLED	0x01
-#endif /* BCMWPA2 */
 
 //
 // IEEE 802.11 Structures and definitions
@@ -575,7 +564,6 @@ typedef struct _NDIS_802_11_STATISTICS
     LARGE_INTEGER   ReceivedFragmentCount;
     LARGE_INTEGER   MulticastReceivedFrameCount;
     LARGE_INTEGER   FCSErrorCount;
-#ifdef BCMWPA2
     LARGE_INTEGER   TKIPLocalMICFailures;
     LARGE_INTEGER   TKIPRemoteMICErrors;
     LARGE_INTEGER   TKIPCounterMeasuresInvoked;
@@ -584,7 +572,6 @@ typedef struct _NDIS_802_11_STATISTICS
     LARGE_INTEGER   CCMPReplays;
     LARGE_INTEGER   CCMPDecryptErrors;
     LARGE_INTEGER   FourWayHandshakeFailures;
-#endif /* BCMWPA2 */
 } NDIS_802_11_STATISTICS, *PNDIS_802_11_STATISTICS;
 
 typedef  ULONG  NDIS_802_11_KEY_INDEX;
@@ -634,10 +621,8 @@ typedef enum _NDIS_802_11_AUTHENTICATION_MODE
     Ndis802_11AuthModeWPA,
     Ndis802_11AuthModeWPAPSK,
     Ndis802_11AuthModeWPANone,
-#ifdef BCMWPA2
     Ndis802_11AuthModeWPA2,
     Ndis802_11AuthModeWPA2PSK,
-#endif /* BCMWPA2 */
     Ndis802_11AuthModeMax               // Not a real mode, defined as upper bound
 } NDIS_802_11_AUTHENTICATION_MODE, *PNDIS_802_11_AUTHENTICATION_MODE;
 
@@ -768,32 +753,22 @@ typedef struct _NDIS_802_11_ASSOCIATION_INFORMATION
     ULONG OffsetResponseIEs;
 } NDIS_802_11_ASSOCIATION_INFORMATION, *PNDIS_802_11_ASSOCIATION_INFORMATION;
 
-#ifdef BCMWPA2
 typedef struct _NDIS_802_11_AUTHENTICATION_EVENT
 {
     NDIS_802_11_STATUS_INDICATION       Status;
     NDIS_802_11_AUTHENTICATION_REQUEST  Request[1];
 } NDIS_802_11_AUTHENTICATION_EVENT, *PNDIS_802_11_AUTHENTICATION_EVENT;
-#endif /* BCMWPA2 */        
 
 typedef struct _NDIS_802_11_TEST
 {
 	ULONG Length;
 	ULONG Type;
 	union {
-#ifdef BCMWPA2
         NDIS_802_11_AUTHENTICATION_EVENT AuthenticationEvent;
-#else /* BCMWPA2 */
-		struct _AuthenticationEvent {
-			NDIS_802_11_STATUS_INDICATION Status;
-			NDIS_802_11_AUTHENTICATION_REQUEST Request[1];
-		} AuthenticationEvent;
-#endif /* BCMWPA2 */
 		NDIS_802_11_RSSI RssiTrigger;
 	};
 } NDIS_802_11_TEST, *PNDIS_802_11_TEST;
 
-#ifdef BCMWPA2
 // PMKID Structures
 typedef UCHAR   NDIS_802_11_PMKID_VALUE[16];
 
@@ -824,7 +799,6 @@ typedef struct _NDIS_802_11_CAPABILITY
     ULONG NoOfAuthEncryptPairsSupported;
     NDIS_802_11_AUTH_ENCRYPTION AuthEncryptionSupported[1];
 } NDIS_802_11_CAPABILITY, *PNDIS_802_11_CAPABILITY;
-#endif /* BCMWPA2 */
 
 //
 // Medium the Ndis Driver is running on (OID_GEN_MEDIA_SUPPORTED/ OID_GEN_MEDIA_IN_USE).
@@ -970,9 +944,7 @@ typedef struct _NDIS_CONFIGURATION_PARAMETER {
 #define NdisZeroMemory(b, len)		bzero((b), (len))
 
 
-#undef PACKED
-#if !defined(__GNUC__)
-#pragma pack()
-#endif
+/* This marks the end of a packed structure section. */
+#include <packed_section_end.h>
 
 #endif /* _bcm_ndis_h_ */

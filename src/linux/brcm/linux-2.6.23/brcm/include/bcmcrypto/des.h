@@ -2,7 +2,7 @@
  * Interface definitions for DES.
  * Copied from des-ka9q-1.0-portable. a public domain DES implementation.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY

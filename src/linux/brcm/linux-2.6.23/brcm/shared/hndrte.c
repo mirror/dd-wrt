@@ -2,7 +2,7 @@
  * Initialization and support routines for self-booting
  * compressed image.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte.c,v 1.175.2.2 2008/07/16 00:41:46 Exp $
+ * $Id: hndrte.c,v 1.205.4.5 2009/12/29 05:57:36 Exp $
  */
 
 #include <typedefs.h>
@@ -25,9 +25,14 @@
 #include <pci_core.h>
 #include <hndpci.h>
 #include <pcicfg.h>
-#endif /* SBPCI */
+#endif
 #include <hndchipc.h>
 #include <hndrte.h>
+#include <hndrte_lbuf.h>
+#ifdef BCMASSERT_LOG
+#include <bcm_assert_log.h>
+#endif
+#include <bcmsdpcm.h>
 
 /* debug */
 #ifdef BCMDBG
@@ -41,47 +46,43 @@ osl_t *hndrte_osh = NULL;		/* Backplane osl handle */
 chipcregs_t *hndrte_ccr = NULL;		/* Chipc core regs */
 sbconfig_t *hndrte_ccsbr = NULL;	/* Chipc core SB config regs */
 
-/* Allow to program the h/w timer */
-static bool timer_allowed = TRUE;
-/* Don't program the h/w timer again if it has been */
-static bool timer_armed;
+/* Global ASSERT type flag */
+uint32 g_assert_type = 0;
 
+/* misc local function */
 static void hndrte_chipc_init(si_t *sih);
 #ifdef WLGPIOHLR
 static void hndrte_gpio_init(si_t *sih);
 #endif
-
 #ifdef BCMECICOEX
 static void hndrte_eci_init(si_t *sih);
 #endif /* BCMECICOEX */
 
 /*
- * hndrte.
- *
- * Memory allocation:
+ * ======HNDRTE====== Memory allocation:
  *	hndrte_free(w): Free previously allocated memory at w
  *	hndrte_malloc_align(size, abits): Allocate memory at a 2^abits boundary
  *	hndrte_memavail(): Return a (slightly optimistic) estimate of free memory
  *	hndrte_hwm(): Return a high watermark of allocated memory
  *	hndrte_print_memuse(): Dump memory usage stats.
  *	hndrte_print_memwaste(): Malloc memory to simulate low memory environment
- *	hndrte_print_malloc(): (BCMDBG) Dump free & inuse lists
+ *	hndrte_print_cpuuse(): Dump cpu idle time stats.
+ *	hndrte_print_malloc(): (BCMDBG_MEM) Dump free & inuse lists
  *	hndrte_arena_add(base, size): Add a block of memory to the arena
  */
-
 #define	MIN_MEM_SIZE	8	/* Min. memory size is 8 bytes */
 #define	MIN_ALIGN	4	/* Alignment at 4 bytes */
 #define	MAX_ALIGN	4096	/* Max alignment at 4k */
 #define	ALIGN(ad, al)	(((ad) + ((al) - 1)) & ~((al) - 1))
 #define	ALIGN_DOWN(ad, al)	((ad) & ~((al) - 1))
 
+
 typedef struct _mem {
 #ifdef BCMDBG_MEM
-#define BCM_MEM_FILENAME_LEN	64	/* Filename length */
 	uint32		magic;
 	uchar		*malloc_function;
 	uchar		*free_function;
-	char		file[BCM_MEM_FILENAME_LEN];
+	const char	*file;
 	int		line;
 #endif /* BCMDBG_MEM */
 	uint32		size;
@@ -93,8 +94,13 @@ static mem_t	free_mem;		/* Free list head */
 static uint	arena_size;		/* Total heap size */
 static uint	inuse_size;		/* Current in use */
 static uint	inuse_overhead;		/* tally of allocated mem_t blocks */
-static uint	inuse_hwm;		/* High watermark  of memory - reclaimed memory */
+static uint	inuse_hwm;		/* High watermark of memory - reclaimed memory */
 static uint	mf_count;		/* Malloc failure count */
+
+#ifdef BCMDBG_CPU
+hndrte_cpu_stats_t cpu_stats;
+static uint32 enterwaittime = 0xFFFFFFFF;
+#endif
 
 #define	STACK_MAGIC	0x5354414b	/* Magic # for stack protection: 'STAK' */
 
@@ -106,9 +112,6 @@ static	uint32	*tos = NULL;		/* Top of the stack */
 
 static mem_t	inuse_mem;		/* In-use list head */
 #endif /* BCMDBG_MEM */
-
-static void hndrte_rte_timer(void *tid);
-static void update_timeout_list(void);
 
 void
 BCMATTACHFN(hndrte_arena_init)(uintptr base, uintptr lim, uintptr stackbottom)
@@ -188,7 +191,7 @@ hndrte_arena_add(uint32 base, uint size)
 
 #ifdef BCMDBG_MEM
 	this->magic = MEM_MAGIC;
-	this->file[0] = '\0';
+	this->file = NULL;
 	this->line = 0;
 	this->next = inuse_mem.next;
 	inuse_mem.next = this;
@@ -204,7 +207,7 @@ hndrte_arena_add(uint32 base, uint size)
 
 void *
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
-hndrte_malloc_align(uint size, uint alignbits, char *file, int line)
+hndrte_malloc_align(uint size, uint alignbits, const char *file, int line)
 #else
 hndrte_malloc_align(uint size, uint alignbits)
 #endif /* BCMDBG_MEM */
@@ -213,7 +216,7 @@ hndrte_malloc_align(uint size, uint alignbits)
 	uint	align, rem, waste;
 	uintptr	addr = 0, top = 0;
 #ifdef BCMDBG_MEM
-	char *basename;
+	const char *basename;
 #endif /* BCMDBG_MEM */
 
 	ASSERT(size);
@@ -229,6 +232,8 @@ hndrte_malloc_align(uint size, uint alignbits)
 	/* Search for available memory */
 	last = &free_mem;
 	waste = arena_size;
+
+	/* Algorithm: best fit */
 	while ((curr = last->next) != NULL) {
 		if (curr->size >= size) {
 			/* Calculate alignment */
@@ -245,9 +250,11 @@ hndrte_malloc_align(uint size, uint alignbits)
 				prev = last;
 				top = end;
 				addr = a;
+
+				if (waste == 0)
+					break;
 			}
 		}
-
 		last = curr;
 	}
 
@@ -260,18 +267,36 @@ hndrte_malloc_align(uint size, uint alignbits)
 		hndrte_print_malloc();
 #endif
 #else
-		RTE_MSG(("No memory to satisfy request for %d bytes, inuse %d\n",
-		       size, inuse_size));
+		RTE_MSG(("No memory to satisfy request %d bytes, inuse %d\n", size, inuse_size));
 #endif /* BCMDBG_MEM */
 		return NULL;
 	}
 
 #ifdef BCMDBG_MEM
 	ASSERT(this->magic == MEM_MAGIC);
-#endif /* BCMDBG_MEM */
+#endif
+
 	if (*bos != STACK_MAGIC)
 		RTE_MSG(("Stack bottom has been overwritten\n"));
 	ASSERT(*bos == STACK_MAGIC);
+
+	/* best fit has been found as below
+	 *  - split above or below if tht's big enough
+	 *  - otherwise adjust size to absorb those tiny gap
+	 *
+	 *      ----------------  <-- this
+	 *          mem_t
+	 *      ----------------
+	 *
+	 *       waste(not used)
+	 *
+	 *      ----------------  <-- addr
+	 *      alignment offset
+	 *      ----------------
+	 *	    size
+	 *
+	 *      ----------------  <-- top
+	 */
 
 	/* Anything above? */
 	rem = (top - addr) - size;
@@ -329,8 +354,7 @@ hndrte_malloc_align(uint size, uint alignbits)
 		basename++;
 	if (!basename)
 		basename = file;
-	strncpy(this->file, basename, BCM_MEM_FILENAME_LEN);
-	this->file[BCM_MEM_FILENAME_LEN - 1] = '\0';
+	this->file = basename;
 	this->malloc_function = __builtin_return_address(0);
 #else
 	this->next = NULL;
@@ -442,6 +466,16 @@ hndrte_hwm(void)
 	return (inuse_hwm);
 }
 
+#ifdef HNDRTE_PT_GIANT
+static void *mem_pt_get(uint size);
+static bool mem_pt_put(void *pblk);
+static void mem_pt_printuse(void);
+#else
+#ifdef DMA_TX_FREE
+#warning "DMA_TX_FREE defined without HNDRTE_PT_GIANT set!"
+#endif /* DMA_TX_FREE */
+#endif /* HNDRTE_PT_GIANT */
+
 void
 hndrte_print_memuse(void)
 {
@@ -463,7 +497,7 @@ hndrte_print_memuse(void)
 	       (arena_size - inuse_size), (arena_size - inuse_size)/1024,
 	       inuse_size, inuse_size/1024, inuse_hwm, inuse_hwm/1024);
 	printf("In use + overhead: %d(%dK), Max memory in use: %d(%dK)\n",
-	       inuse_size + inuse_overhead, (inuse_size+ inuse_overhead)/1024,
+	       inuse_size + inuse_overhead, (inuse_size + inuse_overhead)/1024,
 	       tot, tot/1024);
 	printf("Malloc failure count: %d\n", mf_count);
 
@@ -487,25 +521,27 @@ hndrte_print_memuse(void)
 		       ((uintptr)tos - (uintptr)p),
 		       ((uintptr)tos - (uintptr)p));
 	}
+#ifdef HNDRTE_PT_GIANT
+	mem_pt_printuse();
+#endif
 }
 
-#ifdef BCMDBG_MEMTEST
 /*
 * Malloc memory to simulate low memory environment
 * Memory waste [kk] in KB usage: mw [kk]
 */
-void hndrte_print_memwaste(uint32 arg, uint argc, char *argv[])
+void
+hndrte_print_memwaste(uint32 arg, uint argc, char *argv[])
 {
 	/* Only process if input argv specifies the mw size(in KB) */
 	if (argc > 1)
-		hndrte_malloc(atoi(argv[1])*1024);
+		printf("%p\n", hndrte_malloc(atoi(argv[1]) * 1024));
 }
-#endif /* BCMDBG_MEMTEST */
 
 #ifdef BCMDBG_MEM
 int
-hndrte_memcheck(char *file, int line) {
-
+hndrte_memcheck(char *file, int line)
+{
 	mem_t *this = inuse_mem.next;
 
 	while (this) {
@@ -528,6 +564,7 @@ hndrte_print_malloc(void)
 	mem_t *this = inuse_mem.next;
 
 	printf("Heap inuse list:\n");
+	printf("Addr\t\tSize\tfile:line\t\tmalloc fn\n");
 	while (this) {
 		printf("0x%08lx\t%5d\t%s:%d\t0x%p\t0x%p\n", (uintptr)this + sizeof(mem_t),
 		       this->size,
@@ -553,8 +590,255 @@ hndrte_print_malloc(void)
 }
 #endif /* BCMDBG_MEM */
 
+/* 
+ * ======HNDRTE====== Partition allocation:
+ */
+void *
+#if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
+hndrte_malloc_ptblk(uint size, const char *file, int line)
+#else
+hndrte_malloc_ptblk(uint size)
+#endif
+{
+#ifdef HNDRTE_PT_GIANT
+	return mem_pt_get(size);
+#else
+	return NULL;
+#endif
+}
+
+int
+hndrte_free_pt(void *where)
+{
+#ifdef HNDRTE_PT_GIANT
+	return mem_pt_put(where);
+#else
+	return 0;
+#endif
+}
+
+#ifdef HNDRTE_PT_GIANT
+
+/* Each partition has a overhead management structure, which contains the partition specific 
+ * attributes. But within the partition, each subblock has no overhead.
+ *  subblocks are linked together using the first 4 bytes as pointers, which will be
+ *    available to use once assigned
+ *  partition link list free pointer always point to the available empty subblock
+ */
+
+#ifdef WLC_LOW
+#define MEM_PT_BLKSIZE	(LBUFSZ + 3400)
+#else
+#define MEM_PT_BLKSIZE	(LBUFSZ + BCMEXTRAHDROOM + PKTBUFSZ)
+#endif
+
+#if defined(DMA_TX_FREE)
+#ifdef BCMDBG
+#define MEM_PT_BLKNUM	5	/* minimal buffers for debug build with less free memory */
+#else
+#ifdef USB43236
+#define MEM_PT_BLKNUM	30
+#else /* USB43236 */ 
+#define MEM_PT_BLKNUM	22
+#endif /* USB43236 */
+#endif /* BCMDBG */
+#else
+#ifdef USB43236
+#define MEM_PT_BLKNUM	33
+#else
+#define MEM_PT_BLKNUM	25
+#endif /* USB43236 */
+#endif /* DMA_TX_FREE */
+
+#define MEM_PT_POOL	(MEM_PT_BLKSIZE * MEM_PT_BLKNUM)
+#define MEM_PT_GAINT_THRESHOLD	(MAXPKTBUFSZ + LBUFSZ)	/* only bigger pkt use this method */
+char *mem_partition1;
+
+typedef struct {	/* memory control block */
+	void *mem_pt_addr;	/* Pointer to beginning of memory partition */
+	void *mem_pt_freell; /* free blocks link list head */
+	hndrte_lowmem_free_t *lowmem_free_list; /* list of lowmem free functions */
+	uint32 mem_pt_blk_size; /* Size (in bytes) of each block of memory */
+	uint32 mem_pt_blk_total; /* Total number of blocks in this partition */
+	uint32 mem_pt_blk_free; /* Number of memory blocks remaining in this partition */
+	uint32 cnt_req;		/* counter: malloc request */
+	uint32 cnt_fail;	/* counter: malloc fail */
+} pt_mcb_t;
+
+static pt_mcb_t g_mem_pt_tbl;
+
+static void mem_pt_init(void);
+static uint16 mem_pt_create(char *addr, int size, uint32 blksize);
+
+/* initialize memory partition manager */
+static void
+mem_pt_init(void)
+{
+	pt_mcb_t *pmem;
+
+	pmem = &g_mem_pt_tbl;
+
+	pmem->mem_pt_addr = (void *)0;
+	pmem->mem_pt_freell = NULL;
+	pmem->mem_pt_blk_size = 0;
+	pmem->mem_pt_blk_free = 0;
+	pmem->mem_pt_blk_total = 0;
+
+	/* create partitions */
+#if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
+	mem_partition1 = hndrte_malloc_align(MEM_PT_POOL, 4, __FILE__, __LINE__);
+#else
+	mem_partition1 = hndrte_malloc_align(MEM_PT_POOL, 4);
+#endif
+	ASSERT(mem_partition1 != NULL);
+	mem_pt_create(mem_partition1, MEM_PT_POOL, MEM_PT_BLKSIZE);
+}
+
 /*
- * Timing support:
+ * create a fixed-sized memory partition
+ * Arguments   : base, is the starting address of the memory partition
+ *               blksize  is the size (in bytes) of each block in the memory partition
+ * Return: nblks successfully allocated out the memory area
+ * NOTE: no alignment adjust for base. assume users knows what they want and have done that
+*/
+static uint16
+mem_pt_create(char *base, int size, uint32 blksize)
+{
+	pt_mcb_t *pmem;
+	uint8 *pblk;
+	void **plink;
+	uint num;
+
+	if (blksize < sizeof(void *)) { /* Must contain space for at least a pointer */
+		return 0;
+	}
+
+	pmem = &g_mem_pt_tbl;
+
+	/* Create linked list of free memory blocks */
+	plink = (void **)base;
+	pblk = (uint8 *)base + blksize;
+	num = 0;
+
+	while (size >= blksize) {
+		num++;
+		*plink = (void *)pblk;
+		plink  = (void **)pblk;
+		pblk += blksize;
+		size -= blksize;
+	}
+	*plink = NULL;	/* Last memory block points to NULL */
+
+	pmem->mem_pt_addr = base;
+	pmem->mem_pt_freell = base;
+	pmem->mem_pt_blk_free = num;
+	pmem->mem_pt_blk_total = num;
+	pmem->mem_pt_blk_size = blksize;
+
+	printf("mem_pt_create: addr %p, blksize %d, totblk %d free %d leftsize %d\n",
+	       base, pmem->mem_pt_blk_size, pmem->mem_pt_blk_total,
+	       pmem->mem_pt_blk_free, size);
+	return num;
+}
+
+void
+hndrte_pt_lowmem_register(hndrte_lowmem_free_t *lowmem_free_elt)
+{
+	pt_mcb_t *pmem = &g_mem_pt_tbl;
+
+	lowmem_free_elt->next = pmem->lowmem_free_list;
+	pmem->lowmem_free_list = lowmem_free_elt;
+}
+
+void
+hndrte_pt_lowmem_unregister(hndrte_lowmem_free_t *lowmem_free_elt)
+{
+	pt_mcb_t *pmem = &g_mem_pt_tbl;
+	hndrte_lowmem_free_t **prev_ptr = &pmem->lowmem_free_list;
+	hndrte_lowmem_free_t *elt = pmem->lowmem_free_list;
+
+	while (elt) {
+		if (elt == lowmem_free_elt) {
+			*prev_ptr = elt->next;
+			return;
+		}
+		prev_ptr = &elt->next;
+		elt = elt->next;
+	}
+}
+
+static void
+mem_pt_lowmem_run(pt_mcb_t *pmem)
+{
+	hndrte_lowmem_free_t *free_elt;
+
+	for (free_elt = pmem->lowmem_free_list;
+	     free_elt != NULL && pmem->mem_pt_blk_free == 0;
+	     free_elt = free_elt->next)
+		(free_elt->free_fn)(free_elt->free_arg);
+}
+
+static void *
+mem_pt_get(uint size)
+{
+	pt_mcb_t *pmem = &g_mem_pt_tbl;
+	void *pblk;
+
+	if (size > pmem->mem_pt_blk_size) {
+		printf("request partition fixbuf size too big %d\n", size);
+		ASSERT(0);
+		return NULL;
+	}
+
+	pmem->cnt_req++;
+	if (pmem->mem_pt_blk_free == 0)
+		mem_pt_lowmem_run(pmem);
+
+	if (pmem->mem_pt_blk_free > 0) {
+		pblk = pmem->mem_pt_freell;
+
+		/* Adjust the freeblk pointer to next block */
+		pmem->mem_pt_freell = *(void **)pblk;
+		pmem->mem_pt_blk_free--;
+		/* printf("mem_pt_get %p, freell %p\n", pblk, pmem->mem_pt_freell); */
+		return (pblk);
+	} else {
+		pmem->cnt_fail++;
+		return NULL;
+	}
+}
+
+static bool
+mem_pt_put(void *pblk)
+{
+	pt_mcb_t *pmem = &g_mem_pt_tbl;
+
+	if (pmem->mem_pt_blk_free >= pmem->mem_pt_blk_total) {
+		/* Make sure all blocks not already returned */
+		return FALSE;
+	}
+
+	/* printf("mem_pt_put %p, freell %p\n", pblk, pmem->mem_pt_freell); */
+
+	*(void **)pblk = pmem->mem_pt_freell;
+	pmem->mem_pt_freell = pblk;
+	pmem->mem_pt_blk_free++;
+	return TRUE;
+}
+
+static void
+mem_pt_printuse(void)
+{
+	printf("Partition: blksize %u totblk %u freeblk %u, malloc_req %u, fail %u (%u%%)\n",
+	g_mem_pt_tbl.mem_pt_blk_size, g_mem_pt_tbl.mem_pt_blk_total,
+	g_mem_pt_tbl.mem_pt_blk_free, g_mem_pt_tbl.cnt_req, g_mem_pt_tbl.cnt_fail,
+	(g_mem_pt_tbl.cnt_req == 0) ? 0 : (100 * g_mem_pt_tbl.cnt_fail) / g_mem_pt_tbl.cnt_req);
+}
+
+#endif /* HNDRTE_PT_GIANT */
+
+/*
+ * ======HNDRTE====== Timer support:
  *
  * All these routines need some interrupt protection if they are shared
  * by ISR and other functions. However since they are all called from
@@ -572,8 +856,15 @@ hndrte_print_malloc(void)
  * hndrte_timeout(ctimeout_t *new, uint32 ms, to_fun_t fun, uint32 arg);
  */
 
+/* Allow to program the h/w timer */
+static bool timer_allowed = TRUE;
+/* Don't program the h/w timer again if it has been */
+static bool timer_armed;
 
 static ctimeout_t timers = {NULL, 0, NULL, 0};
+
+static void hndrte_rte_timer(void *tid);
+static void update_timeout_list(void);
 
 /* Update expiration times in timeout list */
 static void
@@ -633,6 +924,8 @@ hndrte_del_timeout(ctimeout_t *new)
 
 	while (((this = prev->next) != NULL)) {
 		if (this == new) {
+			if (this->next != NULL)
+				this->next->ms += this->ms;
 			prev->next = this->next;
 			this->fun = NULL;
 			break;
@@ -830,6 +1123,18 @@ hndrte_time(void)
 	return now;
 }
 
+#ifdef BCMDBG_SD_LATENCY
+static uint32 now_us = 0;  /* Used in latency test for micro-second precision */
+
+uint32
+hndrte_time_us(void)
+{
+	now_us += hndrte_update_now_us();
+
+	return now_us;
+}
+#endif /* BCMDBG_SD_LATENCY */
+
 /* Cancel the h/w timer if it is already armed and ignore any further h/w timer requests */
 void
 hndrte_suspend_timer(void)
@@ -847,9 +1152,7 @@ hndrte_resume_timer(void)
 }
 
 /*
- * hndrte.
- *
- * Device support:
+ * ======HNDRTE====== Device support:
  *	PCI support if included.
  *	hndrte_add_device(dev, coreid, device): Add a device.
  *	hndrte_get_dev(char *name): Get named device struct.
@@ -1126,7 +1429,10 @@ hndrte_dev_poll(void)
 }
 
 #else	/* !HNDRTE_POLLING */
-/* hndrte ISR support:
+
+/*
+ * ======HNDRTE====== ISR support:
+ *
  * hndrte_add_isr(action, irq, coreid, isr, cbdata): Add a ISR
  * hndrte_isr(): run the interrupt service routines for all devices
  */
@@ -1145,9 +1451,9 @@ static hndrte_irq_action_t *action_list = NULL;
 /* irq is for future use */
 int
 BCMINITFN(hndrte_add_isr)(uint irq, uint coreid, uint unit,
-                          isr_fun_t isr, void *cbdata)
+                          isr_fun_t isr, void *cbdata, uint bus)
 {
-	void	*regs;
+	void	*regs = NULL;
 	uint	origidx;
 	hndrte_irq_action_t *action;
 
@@ -1157,7 +1463,12 @@ BCMINITFN(hndrte_add_isr)(uint irq, uint coreid, uint unit,
 	}
 
 	origidx = si_coreidx(hndrte_sih);
-	regs = si_setcore(hndrte_sih, coreid, unit);
+	if (bus == SI_BUS)
+		regs = si_setcore(hndrte_sih, coreid, unit);
+#ifdef SBPCI
+	else if (bus == PCI_BUS)
+		regs = si_setcore(hndrte_sih, PCI_CORE_ID, 0);
+#endif
 	ASSERT(regs);
 
 	action->sbtpsflag = 1 << si_flag(hndrte_sih);
@@ -1177,12 +1488,22 @@ hndrte_isr(void)
 {
 	hndrte_irq_action_t *action;
 	uint32 sbflagst;
+#ifdef BCMDBG_CPU
+	/* Keep the values that could be used for computation after the ISR
+	 * Computation at the end of ISR is profiled and happens to consume 60 cycles in
+	 * case of armcm3
+	 */
+	uint32 exittime = 0;
+	uint32 cpuwait_cycles = 0;
+
+	exittime = get_arm_inttimer();
+#endif
 
 	/* Get the flag bit corresponding to core interrupts */
-	sbflagst = R_REG(hndrte_osh, &hndrte_ccsbr->sbflagst);
+	sbflagst = si_intflag(hndrte_sih);
 
 	/* Loop through each registered isr routine until one of
-	 * them clain the interrupt
+	 * them claims the interrupt
 	 */
 	action = action_list;
 	while (action) {
@@ -1191,13 +1512,33 @@ hndrte_isr(void)
 
 		action = action->next;
 	}
+#ifdef BCMDBG_CPU
+	/* Take care of round off value */
+	cpuwait_cycles = (exittime == 0)
+		? 0 : (enterwaittime - exittime);
+
+	cpu_stats.totcpusleep_cycles += cpuwait_cycles;
+
+	if (cpu_stats.num_wfi_hit == 0) {
+		cpu_stats.min_cpusleep_cycles = cpuwait_cycles;
+		cpu_stats.max_cpusleep_cycles = cpuwait_cycles;
+	}
+
+	/* update min max cycles in sleep state */
+	cpu_stats.min_cpusleep_cycles =
+		((cpuwait_cycles < cpu_stats.min_cpusleep_cycles))
+		? cpuwait_cycles : cpu_stats.min_cpusleep_cycles;
+	cpu_stats.max_cpusleep_cycles =
+		((cpuwait_cycles > cpu_stats.max_cpusleep_cycles))
+		? cpuwait_cycles : cpu_stats.max_cpusleep_cycles;
+	cpu_stats.num_wfi_hit++;
+#endif /* BCMDBG_CPU */
 }
 #endif	/* !HNDRTE_POLLING */
 
 /*
- * hndrte.
+ * ======HNDRTE======  Initialize and background:
  *
- * Initialize and background:
  *	hndrte_init: Initialize the world.
  *	hndrte_poll: Run background work once.
  *	hndrte_idle: Run background work forever.
@@ -1205,6 +1546,9 @@ hndrte_isr(void)
 
 #ifdef _HNDRTE_SIM_
 extern uchar *sdrambuf;
+#endif
+#if defined(__ARM_ARCH_4T__) || defined(__ARM_ARCH_7M__)
+sdpcm_shared_t sdpcm_shared;
 #endif
 
 void *
@@ -1224,18 +1568,40 @@ BCMATTACHFN(hndrte_init)(void)
 	ramLimit = (uchar *)&stackBottom - HNDRTE_STACK_SIZE;
 #endif
 
+#if defined(__ARM_ARCH_4T__) || defined(__ARM_ARCH_7M__)
+	{
+#ifdef _HNDRTE_SIM_
+		uint32 _memsize = RAMSZ;
+#else
+#ifdef BCMDBG_ASSERT
+		extern uint32 _memsize;
+#endif
+#endif	/* ARM 4T/7M */
+
+#ifdef BCMDBG_ASSERT
+		memset(&sdpcm_shared, 0, sizeof(sdpcm_shared));
+		sdpcm_shared.flags = SDPCM_SHARED_VERSION;
+		sdpcm_shared.flags |= SDPCM_SHARED_ASSERT_BUILT;
+		*(uint32*)(_memsize - 4) = (uint32)&sdpcm_shared;
+#endif
+	}
+#endif /* defined(__ARM_ARCH_4T__) || defined(__ARM_ARCH_7M__) */
+
 	/* Init malloc */
 	hndrte_arena_init((uintptr)ramStart,
 	                  (uintptr)ramLimit,
 	                  ((uintptr)&stackBottom) - HNDRTE_STACK_SIZE);
-
 	hndrte_disable_interrupts();
 
 #ifdef HNDRTE_CONSOLE
 	/* Create a logbuf separately from a console. This logbuf will be
-	 * dumpped and reused when the console is created later on.
+	 * dumped and reused when the console is created later on.
 	 */
 	hndrte_log_init();
+#endif
+
+#ifdef HNDRTE_PT_GIANT
+	mem_pt_init();
 #endif
 
 	/* Now that we have initialized memory management let's allocate the osh */
@@ -1255,32 +1621,36 @@ BCMATTACHFN(hndrte_init)(void)
 	/* Initialize timer */
 	hndrte_update_now();
 
+#ifdef BCMDBG_SD_LATENCY
+	hndrte_update_now_us();
+#endif /* BCMDBG_SD_LATENCY */
+
 #ifdef HNDRTE_CONSOLE
-	/* No printf's come out earlier than this */
+	/* No printf's go to the UART earlier than this */
 	hndrte_cons_init(hndrte_sih);
+
 	/* Add a few commands */
 	hndrte_cons_addcmd("mu", (cons_fun_t)hndrte_print_memuse, 0);
-#ifdef BCMDBG_MEMTEST
 	/* Max runtime memory requirement test */
 	hndrte_cons_addcmd("mw", (cons_fun_t)hndrte_print_memwaste, 0);
-#endif /* BCMDBG_MEMTEST */
 #ifdef BCMDBG_MEM
 	hndrte_cons_addcmd("ar", (cons_fun_t)hndrte_print_malloc, 0);
-#endif /* BCMDBG_MEM */
+#endif
 #ifdef	BCMDBG
 	hndrte_cons_addcmd("tim", hndrte_print_timers, 0);
-#endif /* BCMDBG */
+#endif
 #endif /* HNDRTE_CONSOLE */
+
 
 #ifdef	SBPCI
 	/* Init pci core if there is one */
 	hndrte_init_pci((void *)hndrte_sih);
-#endif /* SBPCI */
+#endif
 
 #ifdef BCMECICOEX
 	/* Initialize ECI registers */
 	hndrte_eci_init(hndrte_sih);
-#endif /* BCMECICOEX */
+#endif
 
 #ifdef WLGPIOHLR
 	/* Initialize GPIO */
@@ -1297,8 +1667,11 @@ hndrte_poll(si_t *sih)
 	run_timeouts();
 	hndrte_dev_poll();
 #else
-	hndrte_wait_irq(sih);
+#ifdef BCMDBG_CPU
+	set_arm_inttimer(enterwaittime);
 #endif
+	hndrte_wait_irq(sih);
+#endif /* HNDRTE_POLLING */
 }
 
 void
@@ -1312,25 +1685,82 @@ hndrte_idle(si_t *sih)
 		hndrte_poll(sih);
 }
 
-#ifdef BCMDBG_ASSERT
+/* ======HNDRTE====== misc
+ *     assert
+ *     chipc init
+ *     gpio init
+ */
+
+#if defined(BCMDBG_ASSERT) || defined(BCMASSERT_LOG)
 #include <hndrte_trap.h>
+#ifdef BCMASSERT_LOG
+static void
+hndrte_assert_log(char *exp, char *file, int line)
+{
+	char tempbuf[64];
+
+	if (file) {
+		char *basename;
+		basename = strrchr(file, '/');
+		/* skip the '/' */
+		if (basename)
+			basename++;
+		if (!basename)
+			basename = file;
+		snprintf(tempbuf, 64, "ASSERT \"%s\" in file \"%s\" line %d\n",
+			exp, basename, line);
+	}
+	else
+		snprintf(tempbuf, 64, "ASSERT \"%s\" in line %d\n", exp, line);
+
+	bcm_assert_log(tempbuf);
+}
+#endif /* BCMASSERT_LOG */
 
 #ifdef BCMSPACE
 void
-hndrte_assert(char *exp, char *file, int line)
+hndrte_assert(const char *exp, const char *file, int line)
 {
 	printf("ASSERT \"%s\" in file %s line %d\n", exp, file, line);
-	hndrte_die(line);
+#ifdef BCMASSERT_LOG
+	hndrte_assert_log(exp, file, line);
+#endif
+#ifdef BCMDBG_ASSERT
+	if (g_assert_type == 0) {
+#if defined(__ARM_ARCH_4T__) || defined(__ARM_ARCH_7M__)
+		/* Fill in structure that be downloaded by the host */
+		sdpcm_shared.flags           |= SDPCM_SHARED_ASSERT;
+		sdpcm_shared.assert_exp_addr  = (uint32)exp;
+		sdpcm_shared.assert_file_addr = (uint32)file;
+		sdpcm_shared.assert_line      = (uint32)line;
+#endif
+		hndrte_die(line);
+	}
+#endif /* BCMDBG_ASSERT */
 }
 #else
 void
-hndrte_assert(char *exp, int line)
+hndrte_assert(const char *file, int line)
 {
-	printf("ASSERT \"%s\" in line %d\n", exp, line);
-	hndrte_die(line);
+	printf("ASSERT in file %s line %d\n", file, line);
+#ifdef BCMASSERT_LOG
+	hndrte_assert_log(file, NULL, line);
+#endif
+#ifdef BCMDBG_ASSERT
+	if (g_assert_type == 0) {
+#if defined(__ARM_ARCH_4T__) || defined(__ARM_ARCH_7M__)
+		/* Fill in structure that be downloaded by the host */
+		sdpcm_shared.flags           |= SDPCM_SHARED_ASSERT;
+		sdpcm_shared.assert_exp_addr  = 0;
+		sdpcm_shared.assert_file_addr = (uint32)file;
+		sdpcm_shared.assert_line      = (uint32)line;
+#endif
+		hndrte_die(line);
+	}
+#endif /* BCMDBG_ASSERT */
 }
 #endif /* BCMSPACE */
-#endif /* BCMDBG_ASSERT */
+#endif /* BCMDBG_ASSERT || BCMASSERT_LOG */
 
 #ifdef HNDRTE_POLLING
 static hndrte_devfuncs_t cfuns;
@@ -1378,7 +1808,7 @@ BCMATTACHFN(hndrte_chipc_init)(si_t *sih)
 
 	hndrte_add_device(&cdev, CC_CORE_ID, BCM4710_DEVICE_ID);
 #else
-	hndrte_add_isr(0, CC_CORE_ID, 0, (isr_fun_t)hndrte_chipc_isr, NULL);
+	hndrte_add_isr(0, CC_CORE_ID, 0, (isr_fun_t)hndrte_chipc_isr, NULL, SI_BUS);
 #endif	/* !HNDRTE_POLLING */
 }
 
@@ -1409,3 +1839,17 @@ BCMINITFN(hndrte_eci_init)(si_t *sih)
 	si_eci_init(sih);
 }
 #endif	/* BCMECICOEX */
+
+#ifdef BCMDBG_CPU
+void
+hndrte_update_stats(hndrte_cpu_stats_t *cpustats)
+{
+	cpustats->totcpusleep_cycles = cpu_stats.totcpusleep_cycles;
+	cpustats->min_cpusleep_cycles = cpu_stats.min_cpusleep_cycles;
+	cpustats->max_cpusleep_cycles = cpu_stats.max_cpusleep_cycles;
+	cpustats->num_wfi_hit = cpu_stats.num_wfi_hit;
+
+	/* clean it off */
+	bzero(&cpu_stats, sizeof(cpu_stats));
+}
+#endif

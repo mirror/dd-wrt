@@ -94,5 +94,8 @@ extern int bcm_robo_enable_device(robo_info_t *robo);
 extern int bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr);
 extern int bcm_robo_enable_switch(robo_info_t *robo);
 
+#ifdef BCMDBG
+extern void robo_dump_regs(robo_info_t *robo, struct bcmstrbuf *b);
+#endif /* BCMDBG */
 
 #endif /* _bcm_robo_h_ */

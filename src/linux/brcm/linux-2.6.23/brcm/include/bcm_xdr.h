@@ -1,7 +1,7 @@
 /*
  * Utilites for XDR encode and decode of data
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_xdr.h,v 13.1.4.2 2008/05/13 19:12:06 Exp $
+ * $Id: bcm_xdr.h,v 13.4 2008/11/07 20:27:02 Exp $
  */
 
 #ifndef _BCM_XDR_H
@@ -48,6 +48,10 @@ int bcm_xdr_unpack_string(bcm_xdr_buf_t *b, uint *plen, char **pstr);
 
 int bcm_xdr_pack_uint8_vec(bcm_xdr_buf_t *, uint8 *vec, uint32 elems);
 int bcm_xdr_unpack_uint8_vec(bcm_xdr_buf_t *, uint8 *vec, uint32 elems);
+int bcm_xdr_pack_uint16_vec(bcm_xdr_buf_t *b, uint len, void *vec);
+int bcm_xdr_unpack_uint16_vec(bcm_xdr_buf_t *b, uint len, void *vec);
+int bcm_xdr_pack_uint32_vec(bcm_xdr_buf_t *b, uint len, void *vec);
+int bcm_xdr_unpack_uint32_vec(bcm_xdr_buf_t *b, uint len, void *vec);
 
 int bcm_xdr_pack_opaque_raw(bcm_xdr_buf_t *b, uint len, void *data);
 int bcm_xdr_pack_opaque_pad(bcm_xdr_buf_t *b);

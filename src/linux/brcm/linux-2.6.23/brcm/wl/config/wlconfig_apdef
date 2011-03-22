@@ -1,6 +1,6 @@
 # Broadcom 802.11abg Networking Device Driver Configuration file
 #
-# Copyright (C) 2008, Broadcom Corporation
+# Copyright (C) 2009, Broadcom Corporation
 # All Rights Reserved.
 # 
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -10,12 +10,14 @@
 
 # wl driver config file for AP
 #
-# $Id: wlconfig_apdef,v 1.3 2007/11/19 19:31:41 Exp $
+# $Id: wlconfig_apdef,v 1.5.24.6 2010/06/29 00:30:25 Exp $
 
 # AP features
 AP=1
+WDS=1
 BCMCCMP=1
 WLCNTSCB=1
 MBSS=1
 WME_PER_AC_TX_PARAMS=1
 WME_PER_AC_TUNING=1
+WLOVERTHRUSTER=1

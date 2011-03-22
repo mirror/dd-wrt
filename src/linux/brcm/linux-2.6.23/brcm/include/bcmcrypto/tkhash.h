@@ -7,7 +7,15 @@
  * duplicated in any form, in whole or in part, without the prior written
  * permission of Broadcom Corporation.
  *
- * $Id: tkhash.h,v 1.4 2006/06/14 21:10:12 Exp $
+ * Copyright (C) 2009, Broadcom Corporation
+ * All Rights Reserved.
+ * 
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ * $Id: tkhash.h,v 1.5 2008/12/16 03:56:04 Exp $
  */
 
 #ifndef _TKHASH_H_

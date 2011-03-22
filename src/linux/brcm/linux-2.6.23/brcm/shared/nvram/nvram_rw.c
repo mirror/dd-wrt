@@ -1,7 +1,7 @@
 /*
  * NVRAM variable manipulation (direct mapped flash)
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,9 +9,10 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: nvram_rw.c,v 1.49 2008/05/06 17:54:03 Exp $
+ * $Id: nvram_rw.c,v 1.57 2010/09/30 21:14:31 Exp $
  */
 
+#include <bcm_cfg.h>
 #include <typedefs.h>
 #include <bcmdefs.h>
 #include <osl.h>
@@ -23,6 +24,10 @@
 #include <flashutl.h>
 #include <hndsoc.h>
 #include <sbchipc.h>
+
+#ifdef NANDBOOT
+#include <nflash.h>
+#endif	/* NANDBOOT */
 
 struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, const char *value);
 void  _nvram_free(struct nvram_tuple *t);
@@ -117,7 +122,7 @@ BCMINITFN(nvram_resetgpio_init)(void *si)
 		return -1;
 
 	gpio = (int) bcm_atoi(value);
-	if (gpio > 7)
+	if (gpio > 31)
 		return -1;
 
 	/* Setup GPIO input */
@@ -150,32 +155,64 @@ BCMINITFN(nvram_reset)(void  *si)
 extern unsigned char embedded_nvram[];
 
 static struct nvram_header *
-BCMINITFN(find_nvram)(bool embonly, bool *isemb)
+BCMINITFN(find_nvram)(si_t *sih, bool embonly, bool *isemb)
 {
 	struct nvram_header *nvh;
 	uint32 off, lim;
+	uint32 flbase = SI_FLASH2;
+#ifdef NANDBOOT
+	int nandboot = 0;
+	chipcregs_t *cc = NULL;
+	struct nflash *nfl_info;
 
+	if ((sih->ccrev >= 38) && ((sih->chipst & (1 << 4)) != 0)) {
+		flbase = SI_FLASH1;
+		nandboot = 1;
+	}
+#endif
 
 	if (!embonly) {
 		*isemb = FALSE;
-		lim = SI_FLASH2_SZ;
-		off = FLASH_MIN;
-		while (off <= lim) {
-			nvh = (struct nvram_header *)KSEG1ADDR(SI_FLASH2 + off - NVRAM_SPACE);
-			if (nvh->magic == NVRAM_MAGIC)
-				/* if (nvram_calc_crc(nvh) == (uint8) nvh->crc_ver_init) */{
-					return (nvh);
+#ifdef NANDBOOT
+		if (nandboot) {
+			if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) {
+				nfl_info = nflash_init(sih, cc);
+				if (nfl_info) {
+					off = nfl_info->blocksize;
+					for (; off < SI_FLASH1_SZ; off += nfl_info->blocksize) {
+						if (nflash_checkbadb(sih, cc, off) != 0)
+							continue;
+						nvh = (struct nvram_header *)KSEG1ADDR(flbase+off);
+						if (nvh->magic == NVRAM_MAGIC)
+							return (nvh);
+					}
 				}
-			off <<= 1;
-		};
+			}
+		} else
+#endif /* NANDBOOT */
+		{
+			lim = SI_FLASH2_SZ;
+			off = FLASH_MIN;
+			while (off <= lim) {
+				nvh = (struct nvram_header *)KSEG1ADDR(flbase + off - NVRAM_SPACE);
+				if (nvh->magic == NVRAM_MAGIC)
+					/* if (nvram_calc_crc(nvh) == (uint8) nvh->crc_ver_init) */{
+						return (nvh);
+					}
+					off <<= 1;
+			}
+		}
+#ifdef BCMDBG
+		printf("find_nvram: nvram not found, trying embedded nvram next\n");
+#endif /* BCMDBG */
 	}
 
 	/* Now check embedded nvram */
 	*isemb = TRUE;
-	nvh = (struct nvram_header *)KSEG1ADDR(SI_FLASH2 + (4 * 1024));
+	nvh = (struct nvram_header *)KSEG1ADDR(flbase + (4 * 1024));
 	if (nvh->magic == NVRAM_MAGIC)
 		return (nvh);
-	nvh = (struct nvram_header *)KSEG1ADDR(SI_FLASH2 + 1024);
+	nvh = (struct nvram_header *)KSEG1ADDR(flbase + 1024);
 	if (nvh->magic == NVRAM_MAGIC)
 		return (nvh);
 #ifdef _CFE_
@@ -188,7 +225,7 @@ BCMINITFN(find_nvram)(bool embonly, bool *isemb)
 }
 
 int
-BCMINITFN(nvram_init)(void *si)
+BCMATTACHFN(nvram_init)(void *si)
 {
 	bool isemb;
 	int ret;
@@ -213,7 +250,7 @@ BCMINITFN(nvram_init)(void *si)
 	/* Restore defaults from embedded NVRAM if button held down */
 	if (nvram_do_reset) {
 		/* Initialize with embedded NVRAM */
-		nvram_header = find_nvram(TRUE, &isemb);
+		nvram_header = find_nvram(sih, TRUE, &isemb);
 		ret = _nvram_init(si);
 		if (ret == 0) {
 			nvram_status = 1;
@@ -224,7 +261,7 @@ BCMINITFN(nvram_init)(void *si)
 	}
 
 	/* Find NVRAM */
-	nvram_header = find_nvram(FALSE, &isemb);
+	nvram_header = find_nvram(sih, FALSE, &isemb);
 	ret = _nvram_init(si);
 	if (ret == 0) {
 		/* Restore defaults if embedded NVRAM used */

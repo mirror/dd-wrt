@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment for standalone MIPS programs.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte.h,v 13.101.2.2 2008/06/19 23:49:45 Exp $
+ * $Id: hndrte.h,v 13.118.4.2 2010/02/09 20:45:12 Exp $
  */
 
 #ifndef	_HNDRTE_H
@@ -67,8 +67,17 @@ typedef struct {
 	unsigned long	tx_errors;		/* packet transmit problems	*/
 	unsigned long	rx_dropped;		/* no space in linux buffers	*/
 	unsigned long	tx_dropped;		/* no space available in linux	*/
+	unsigned long   multicast;      /* multicast packets received */
 } hndrte_stats_t;
 
+#ifdef BCMDBG_CPU
+typedef struct {
+	uint32 totcpusleep_cycles;
+	uint32 min_cpusleep_cycles;
+	uint32 max_cpusleep_cycles;
+	uint32 num_wfi_hit;
+} hndrte_cpu_stats_t;
+#endif
 /* Device instance */
 typedef struct hndrte_dev {
 	char		dev_fullname[MAX_NETDEV_NAME];
@@ -110,6 +119,7 @@ struct hndrte_devfuncs {
 	void (*txflowcontrol) (hndrte_dev_t *dev, bool state, int prio);
 	void (*poll)(hndrte_dev_t *dev);
 	int (*xmit_ctl)(hndrte_dev_t *src, hndrte_dev_t *dev, struct lbuf *lb);
+	int (*xmit2)(hndrte_dev_t *src, hndrte_dev_t *dev, struct lbuf *lb, uint32 ep_idx);
 };
 
 /* Use standard symbols for Armulator build which does not use the hndrte.lds linker script */
@@ -134,7 +144,7 @@ extern hndrte_dev_t *hndrte_get_dev(char *name);
 typedef void (*isr_fun_t)(void *cbdata);
 
 extern int hndrte_add_isr(uint irq, uint coreid, uint unit,
-                          isr_fun_t isr, void *cbdata);
+                          isr_fun_t isr, void *cbdata, uint bus);
 
 /* Basic initialization and background */
 extern void *hndrte_init(void);
@@ -148,7 +158,12 @@ extern void hndrte_cpu_init(si_t *sih);
 extern void hndrte_idle_init(si_t *sih);
 extern void hndrte_arena_init(uintptr base, uintptr lim, uintptr stackbottom);
 extern void hndrte_cons_init(si_t *sih);
+extern void hndrte_cons_check(void);
 extern int hndrte_log_init(void);
+
+#ifdef BCMDBG_CPU
+extern void hndrte_update_stats(hndrte_cpu_stats_t *cpustats);
+#endif
 
 /* Console command support */
 typedef void (*cons_fun_t)(uint32 arg, uint argc, char *argv[]);
@@ -160,19 +175,11 @@ extern	void hndrte_cons_addcmd(char *name, cons_fun_t fun, uint32 arg);
 #define	bzero(b, len)		memset((b), '\0', (len))
 
 #ifdef BCMDBG
-
 #define	TRACE_LOC		OSL_UNCACHED(0x18000044)	/* flash address reg in chipc */
 #define	HNDRTE_TRACE(val)	do {*((uint32 *)TRACE_LOC) = val;} while (0)
 #else
 #define	HNDRTE_TRACE(val)	do {} while (0)
 #endif
-
-/* Enable mw console command */
-#ifdef HNDRTE_CONSOLE
-#ifndef BCMDBG_MEMTEST
-#define BCMDBG_MEMTEST
-#endif /* BCMDBG_MEMTEST */
-#endif /* HNDRTE_CONSOLE */
 
 /* debugging prints */
 #ifdef BCMDBG_ERR
@@ -182,18 +189,18 @@ extern	void hndrte_cons_addcmd(char *name, cons_fun_t fun, uint32 arg);
 #endif /* BCMDBG_ERR */
 
 /* assert */
-#ifdef BCMDBG_ASSERT
+#if defined(BCMDBG_ASSERT) || defined(BCMASSERT_LOG)
 #ifdef BCMSPACE
-extern void hndrte_assert(char *exp, char *file, int line);
+extern void hndrte_assert(const char *exp, const char *file, int line);
 #define ASSERT(exp) \
-	do { } while (0)
+	do { if (!(exp)) hndrte_assert(#exp, __FILE__, __LINE__); } while (0)
 #else
-extern void hndrte_assert(char *exp, int line);
+extern void hndrte_assert(const char *file, int line);
 #ifndef _FILENAME_
 #define _FILENAME_ "_FILENAME_ is not defined"
 #endif
 #define ASSERT(exp) \
-	do { } while (0)
+	do { if (!(exp)) hndrte_assert(_FILENAME_, __LINE__); } while (0)
 #endif /* BCMSPACE */
 #else
 #define	ASSERT(exp)		do {} while (0)
@@ -211,6 +218,10 @@ typedef struct _ctimeout {
 extern void hndrte_delay(uint32 usec);
 extern uint32 hndrte_time(void);
 extern uint32 hndrte_update_now(void);
+#ifdef BCMDBG_SD_LATENCY
+extern uint32 hndrte_time_us(void);
+extern uint32 hndrte_update_now_us(void);
+#endif /* BCMDBG_SD_LATENCY */
 extern void hndrte_wait_irq(si_t *sih);
 extern void hndrte_enable_interrupts(void);
 extern void hndrte_disable_interrupts(void);
@@ -250,28 +261,51 @@ extern int hndrte_schedule_work(void *context, void *data,
 /* malloc, free */
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
 #define hndrte_malloc(_size)	hndrte_malloc_align((_size), 0, __FILE__, __LINE__)
-extern void *hndrte_malloc_align(uint size, uint alignbits, char *file, int line);
+extern void *hndrte_malloc_align(uint size, uint alignbits, const char *file, int line);
+#define hndrte_malloc_pt(_size)	hndrte_malloc_ptblk((_size), __FILE__, __LINE__)
+extern void *hndrte_malloc_ptblk(uint size, const char *file, int line);
 #else
 #define hndrte_malloc(_size)	hndrte_malloc_align((_size), 0)
 extern void *hndrte_malloc_align(uint size, uint alignbits);
+
+#define hndrte_malloc_pt(_size)	hndrte_malloc_ptblk((_size))
+extern void *hndrte_malloc_ptblk(uint size);
 #endif /* BCMDBG_MEM */
 extern void *hndrte_realloc(void *ptr, uint size);
 extern int hndrte_free(void *ptr);
+extern int hndrte_free_pt(void *ptr);
 extern uint hndrte_memavail(void);
 extern uint hndrte_hwm(void);
 extern void hndrte_print_memuse(void);
-#ifdef BCMDBG_MEMTEST
-void hndrte_print_memwaste(uint32 arg, uint argc, char *argv[]);
-#endif /* BCMDBG_MEMTEST */
+extern void hndrte_print_memwaste(uint32 arg, uint argc, char *argv[]);
+
+/* Low Memory rescue functions
+ * Implement a list of Low Memory free functions that hndrte can
+ * call on allocation failure. List is populated through calls to
+ * hndrte_pt_lowmem_register() API
+ */
+typedef void (*hndrte_lowmem_free_fn_t)(void *free_arg);
+typedef struct hndrte_lowmem_free hndrte_lowmem_free_t;
+struct hndrte_lowmem_free {
+	hndrte_lowmem_free_t *next;
+	hndrte_lowmem_free_fn_t free_fn;
+	void *free_arg;
+};
+
+extern void hndrte_pt_lowmem_register(hndrte_lowmem_free_t *lowmem_free_elt);
+extern void hndrte_pt_lowmem_unregister(hndrte_lowmem_free_t *lowmem_free_elt);
+
 
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
 #ifdef BCMDBG_MEM
 extern void hndrte_print_malloc(void);
 extern int hndrte_memcheck(char *file, int line);
 #endif
-extern void *hndrte_dma_alloc_consistent(uint size, void *pap, char *file, int line);
+extern void *hndrte_dma_alloc_consistent(uint size, uint16 align, uint *alloced,
+	void *pap, char *file, int line);
 #else
-extern void *hndrte_dma_alloc_consistent(uint size, void *pap);
+extern void *hndrte_dma_alloc_consistent(uint size, uint16 align, uint *alloced,
+	void *pap);
 #endif /* BCMDBG_MEM */
 extern void hndrte_dma_free_consistent(void *va);
 
@@ -299,5 +333,8 @@ extern uint __watermark;
 #else
 #define	BCMDBG_TRACE(x)
 #endif	/* BCMDBG */
+
+/* Global ASSERT type flag */
+extern uint32 g_assert_type;
 
 #endif	/* _HNDRTE_H */

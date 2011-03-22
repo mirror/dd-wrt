@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane chipcommon serial flash interface
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sflash.c,v 1.44.2.5.4.4 2009/01/22 01:16:14 Exp $
+ * $Id: sflash.c,v 1.50.24.1 2010/02/18 02:35:15 Exp $
  */
 
 #include <typedefs.h>
@@ -22,9 +22,11 @@
 #include <bcmdevs.h>
 #include <sflash.h>
 
+#ifdef BCMDBG
+#define	SFL_MSG(args)	printf args
+#else
 #define	SFL_MSG(args)
-
-bool sflash_uncached = FALSE;
+#endif	/* BCMDBG */
 
 /* Private global state */
 static struct sflash sflash;
@@ -163,7 +165,8 @@ sflash_init(si_t *sih, chipcregs_t *cc)
 		       sflash.size / (1024 * 1024), name);
 
 	/* 4716A0 hack */
-	if ((sih->chip == BCM4716_CHIP_ID) && (sih->chiprev == 0)) {
+	if (((sih->chip == BCM4716_CHIP_ID) || (sih->chip == BCM4748_CHIP_ID)) &&
+		(sih->chiprev == 0)) {
 		if (sflash.size > (4 * 1024 * 1024)) {
 			sflash.size = 4 * 1024 * 1024;
 			if (firsttime)
@@ -202,11 +205,7 @@ sflash_read(si_t *sih, chipcregs_t *cc, uint offset, uint len, uchar *buf)
 	if (sih->ccrev == 12)
 		from = (uint8 *)OSL_UNCACHED(SI_FLASH2 + offset);
 	else
-		/* Read sflash using uncached addresses if the override exists.
-		 * Otherwise default to reading thru' cache.
-		 */
-		from = (uint8 *)(sflash_uncached ? OSL_UNCACHED(SI_FLASH2 + offset) :
-		                                   OSL_CACHED(SI_FLASH2 + offset));
+		from = (uint8 *)OSL_CACHED(SI_FLASH2 + offset);
 	to = (uint8 *)buf;
 
 	if (cnt < 4) {
