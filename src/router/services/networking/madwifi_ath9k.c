@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <bcmnvram.h>
+#include <wlutils.h>
 #include <bcmutils.h>
 #include <shutils.h>
 #include <utils.h>
@@ -45,6 +46,7 @@
 #include <services.h>
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
+static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater);
 
 void deconfigure_single_ath9k(int count)
 {
@@ -240,8 +242,11 @@ void configure_single_ath9k(int count)
 		}
 }
 
-static void setupHostAP_generic_ath9k(char *prefix, FILE * fp)
-{
+static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
+	struct wifi_channels *chan;
+	int channel=0;
+	static char nfreq[16];
+
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
 	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
@@ -322,9 +327,22 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp)
 	sprintf(regdomain, "%s_regdomain", prefix);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 	fprintf(fp, "country_code=%s\n", getIsoName(country));
-	static char nfreq[16];
-	sprintf(nfreq, "%s_channel", prefix);
-	int channel = ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
+	if (isrepeater) {
+		chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
+		if (chan != NULL && chan[0].freq != -1) {
+			channel=chan[0].channel;
+			free(chan);
+			}
+		else {
+			// that should never be called
+			if (has_2ghz(prefix)) channel=6;
+			if (has_5ghz(prefix)) channel=36;
+		}
+	}
+	else {
+		sprintf(nfreq, "%s_channel", prefix);
+		channel = ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
+	}
 	// i know that's not the right way.. autochannel is 0
 	if (channel < 36 || nvram_match(nfreq, "0"))
 		fprintf(fp, "hw_mode=g\n");
@@ -351,12 +369,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	FILE *fp = NULL;
 	char *ssid;
 	char ifname[10];
+	int isrepeater=0;
 	unsigned char hwbuff[16];
 	char macaddr[32];
 	if (isfirst && vapid == 0) {
 		sprintf(ifname, "%s", maininterface);
 	} else {
 		sprintf(ifname, "%s.%d", maininterface, vapid);
+		isrepeater=1;
 	}
 	if (aoss)
 		sprintf(ifname, "aoss");
@@ -368,7 +388,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
-		setupHostAP_generic_ath9k(ifname, fp);
+		setupHostAP_generic_ath9k(maininterface, fp, isrepeater);
 		fprintf(fp, "interface=%s\n", ifname);
 	} else {
 		fp = fopen(fstr, "ab");
