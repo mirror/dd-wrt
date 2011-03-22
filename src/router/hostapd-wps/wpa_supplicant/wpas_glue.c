@@ -254,14 +254,29 @@ static void wpa_supplicant_eapol_cb(struct eapol_sm *eapol, int success,
 		   "handshake");
 
 	pmk_len = PMK_LEN;
-	res = eapol_sm_get_key(eapol, pmk, PMK_LEN);
-	if (res) {
-		/*
-		 * EAP-LEAP is an exception from other EAP methods: it
-		 * uses only 16-byte PMK.
-		 */
-		res = eapol_sm_get_key(eapol, pmk, 16);
-		pmk_len = 16;
+	if (wpa_key_mgmt_ft(wpa_s->key_mgmt)) {
+#ifdef CONFIG_IEEE80211R
+		u8 buf[2 * PMK_LEN];
+		wpa_printf(MSG_DEBUG, "RSN: Use FT XXKey as PMK for "
+			   "driver-based 4-way hs and FT");
+		res = eapol_sm_get_key(eapol, buf, 2 * PMK_LEN);
+		if (res == 0) {
+			os_memcpy(pmk, buf + PMK_LEN, PMK_LEN);
+			os_memset(buf, 0, sizeof(buf));
+		}
+#else /* CONFIG_IEEE80211R */
+		res = -1;
+#endif /* CONFIG_IEEE80211R */
+	} else {
+		res = eapol_sm_get_key(eapol, pmk, PMK_LEN);
+		if (res) {
+			/*
+			 * EAP-LEAP is an exception from other EAP methods: it
+			 * uses only 16-byte PMK.
+			 */
+			res = eapol_sm_get_key(eapol, pmk, 16);
+			pmk_len = 16;
+		}
 	}
 
 	if (res) {
@@ -269,6 +284,9 @@ static void wpa_supplicant_eapol_cb(struct eapol_sm *eapol, int success,
 			   "machines");
 		return;
 	}
+
+	wpa_hexdump_key(MSG_DEBUG, "RSN: Configure PMK for driver-based 4-way "
+			"handshake", pmk, pmk_len);
 
 	if (wpa_drv_set_key(wpa_s, WPA_ALG_PMK, NULL, 0, 0, NULL, 0, pmk,
 			    pmk_len)) {
@@ -517,6 +535,28 @@ static int wpa_supplicant_mark_authenticated(void *ctx, const u8 *target_ap)
 #endif /* CONFIG_NO_WPA */
 
 
+#ifdef CONFIG_TDLS
+
+static int wpa_supplicant_send_tdls_mgmt(void *ctx, const u8 *dst,
+					 u8 action_code, u8 dialog_token,
+					 u16 status_code, const u8 *buf,
+					 size_t len)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	return wpa_drv_send_tdls_mgmt(wpa_s, dst, action_code, dialog_token,
+				      status_code, buf, len);
+}
+
+
+static int wpa_supplicant_tdls_oper(void *ctx, int oper, const u8 *peer)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	return wpa_drv_tdls_oper(wpa_s, oper, peer);
+}
+
+#endif /* CONFIG_TDLS */
+
+
 #ifdef IEEE8021X_EAPOL
 #if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
 static void wpa_supplicant_eap_param_needed(void *ctx, const char *field,
@@ -650,6 +690,10 @@ int wpa_supplicant_init_wpa(struct wpa_supplicant *wpa_s)
 	ctx->send_ft_action = wpa_supplicant_send_ft_action;
 	ctx->mark_authenticated = wpa_supplicant_mark_authenticated;
 #endif /* CONFIG_IEEE80211R */
+#ifdef CONFIG_TDLS
+	ctx->send_tdls_mgmt = wpa_supplicant_send_tdls_mgmt;
+	ctx->tdls_oper = wpa_supplicant_tdls_oper;
+#endif /* CONFIG_TDLS */
 
 	wpa_s->wpa = wpa_sm_init(ctx);
 	if (wpa_s->wpa == NULL) {

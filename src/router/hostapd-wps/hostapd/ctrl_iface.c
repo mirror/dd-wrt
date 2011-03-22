@@ -514,6 +514,9 @@ static int hostapd_ctrl_iface_wps_ap_pin(struct hostapd_data *hapd, char *txt,
 	char *pos;
 	const char *pin_txt;
 
+	if (!hapd->wps)
+		return -1;
+
 	pos = os_strchr(txt, ' ');
 	if (pos)
 		*pos++ = '\0';
@@ -852,6 +855,9 @@ static void hostapd_ctrl_iface_receive(int sock, void *eloop_ctx,
 	if (os_strcmp(buf, "PING") == 0) {
 		os_memcpy(reply, "PONG\n", 5);
 		reply_len = 5;
+	} else if (os_strncmp(buf, "RELOG", 5) == 0) {
+		if (wpa_debug_reopen_file() < 0)
+			reply_len = -1;
 #ifdef CONFIG_CTRL_IFACE_MIB
 	} else if (os_strcmp(buf, "MIB") == 0) {
 		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
@@ -932,7 +938,7 @@ static void hostapd_ctrl_iface_receive(int sock, void *eloop_ctx,
 		reply_len = hostapd_ctrl_iface_wps_check_pin(
 			hapd, buf + 14, reply, reply_size);
 	} else if (os_strcmp(buf, "WPS_PBC") == 0) {
-		if (hostapd_wps_button_pushed(hapd))
+		if (hostapd_wps_button_pushed(hapd, NULL))
 			reply_len = -1;
 #ifdef CONFIG_WPS_OOB
 	} else if (os_strncmp(buf, "WPS_OOB ", 8) == 0) {

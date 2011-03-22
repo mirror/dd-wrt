@@ -492,7 +492,7 @@ struct wpa_supplicant {
 		P2P_GROUP_INTERFACE_CLIENT
 	} p2p_group_interface;
 	struct p2p_group *p2p_group;
-	int p2p_long_listen;
+	int p2p_long_listen; /* remaining time in long Listen state in ms */
 	char p2p_pin[10];
 	int p2p_wps_method;
 	u8 p2p_auth_invite[ETH_ALEN];
@@ -579,6 +579,7 @@ void wpa_supplicant_req_auth_timeout(struct wpa_supplicant *wpa_s,
 void wpa_supplicant_set_state(struct wpa_supplicant *wpa_s,
 			      enum wpa_states state);
 struct wpa_ssid * wpa_supplicant_get_ssid(struct wpa_supplicant *wpa_s);
+const char * wpa_supplicant_get_eap_mode(struct wpa_supplicant *wpa_s);
 void wpa_supplicant_cancel_auth_timeout(struct wpa_supplicant *wpa_s);
 void wpa_supplicant_deauthenticate(struct wpa_supplicant *wpa_s,
 				   int reason_code);
@@ -593,6 +594,10 @@ void wpa_supplicant_select_network(struct wpa_supplicant *wpa_s,
 				   struct wpa_ssid *ssid);
 int wpa_supplicant_set_ap_scan(struct wpa_supplicant *wpa_s,
 			       int ap_scan);
+int wpa_supplicant_set_bss_expiration_age(struct wpa_supplicant *wpa_s,
+					  unsigned int expire_age);
+int wpa_supplicant_set_bss_expiration_count(struct wpa_supplicant *wpa_s,
+					    unsigned int expire_count);
 int wpa_supplicant_set_debug_params(struct wpa_global *global,
 				    int debug_level, int debug_timestamp,
 				    int debug_show_keys);

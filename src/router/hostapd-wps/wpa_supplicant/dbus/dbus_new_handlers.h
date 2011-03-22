@@ -83,6 +83,9 @@ DBusMessage * wpas_dbus_handler_add_network(DBusMessage *message,
 DBusMessage * wpas_dbus_handler_remove_network(DBusMessage *message,
 					       struct wpa_supplicant *wpa_s);
 
+DBusMessage * wpas_dbus_handler_remove_all_networks(
+	DBusMessage *message, struct wpa_supplicant *wpa_s);
+
 DBusMessage * wpas_dbus_handler_select_network(DBusMessage *message,
 					       struct wpa_supplicant *wpa_s);
 
@@ -94,6 +97,9 @@ DBusMessage * wpas_dbus_handler_get_blob(DBusMessage *message,
 
 DBusMessage * wpas_dbus_handler_remove_blob(DBusMessage *message,
 					    struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_handler_flush_bss(DBusMessage *message,
+					  struct wpa_supplicant *wpa_s);
 
 DBusMessage * wpas_dbus_getter_capabilities(DBusMessage *message,
 					    struct wpa_supplicant *wpa_s);
@@ -110,6 +116,18 @@ DBusMessage * wpas_dbus_getter_ap_scan(DBusMessage *message,
 DBusMessage * wpas_dbus_setter_ap_scan(DBusMessage *message,
 				       struct wpa_supplicant *wpa_s);
 
+DBusMessage * wpas_dbus_getter_bss_expire_age(DBusMessage *message,
+					      struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_setter_bss_expire_age(DBusMessage *message,
+					      struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_getter_bss_expire_count(DBusMessage *message,
+						struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_setter_bss_expire_count(DBusMessage *message,
+						struct wpa_supplicant *wpa_s);
+
 DBusMessage * wpas_dbus_getter_ifname(DBusMessage *message,
 				      struct wpa_supplicant *wpa_s);
 
@@ -124,6 +142,9 @@ DBusMessage * wpas_dbus_getter_current_bss(DBusMessage *message,
 
 DBusMessage * wpas_dbus_getter_current_network(DBusMessage *message,
 					       struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_getter_current_auth_mode(DBusMessage *message,
+						 struct wpa_supplicant *wpa_s);
 
 DBusMessage * wpas_dbus_getter_bsss(DBusMessage *message,
 				    struct wpa_supplicant *wpa_s);

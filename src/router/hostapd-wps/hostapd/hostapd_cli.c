@@ -1,6 +1,6 @@
 /*
  * hostapd - command line interface for hostapd daemon
- * Copyright (c) 2004-2010, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2011, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -22,7 +22,7 @@
 
 static const char *hostapd_cli_version =
 "hostapd_cli v" VERSION_STR "\n"
-"Copyright (c) 2004-2010, Jouni Malinen <j@w1.fi> and contributors";
+"Copyright (c) 2004-2011, Jouni Malinen <j@w1.fi> and contributors";
 
 
 static const char *hostapd_cli_license =
@@ -218,6 +218,12 @@ static inline int wpa_ctrl_command(struct wpa_ctrl *ctrl, char *cmd)
 static int hostapd_cli_cmd_ping(struct wpa_ctrl *ctrl, int argc, char *argv[])
 {
 	return wpa_ctrl_command(ctrl, "PING");
+}
+
+
+static int hostapd_cli_cmd_relog(struct wpa_ctrl *ctrl, int argc, char *argv[])
+{
+	return wpa_ctrl_command(ctrl, "RELOG");
 }
 
 
@@ -698,6 +704,7 @@ struct hostapd_cli_cmd {
 static struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	{ "ping", hostapd_cli_cmd_ping },
 	{ "mib", hostapd_cli_cmd_mib },
+	{ "relog", hostapd_cli_cmd_relog },
 	{ "sta", hostapd_cli_cmd_sta },
 	{ "all_sta", hostapd_cli_cmd_all_sta },
 	{ "new_sta", hostapd_cli_cmd_new_sta },

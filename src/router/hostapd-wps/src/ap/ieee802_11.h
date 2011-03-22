@@ -46,6 +46,7 @@ static inline int ieee802_11_get_mib_sta(struct hostapd_data *hapd,
 #endif /* NEED_AP_MLME */
 u16 hostapd_own_capab_info(struct hostapd_data *hapd, struct sta_info *sta,
 			   int probe);
+u8 * hostapd_eid_ext_capab(struct hostapd_data *hapd, u8 *eid);
 u8 * hostapd_eid_supp_rates(struct hostapd_data *hapd, u8 *eid);
 u8 * hostapd_eid_ext_supp_rates(struct hostapd_data *hapd, u8 *eid);
 u8 * hostapd_eid_ht_capabilities(struct hostapd_data *hapd, u8 *eid);
@@ -56,8 +57,8 @@ void ieee802_11_send_sa_query_req(struct hostapd_data *hapd,
 void hostapd_get_ht_capab(struct hostapd_data *hapd,
 			  struct ieee80211_ht_capabilities *ht_cap,
 			  struct ieee80211_ht_capabilities *neg_ht_cap);
-u16 copy_sta_ht_capab(struct sta_info *sta, const u8 *ht_capab,
-		      size_t ht_capab_len);
+u16 copy_sta_ht_capab(struct hostapd_data *hapd, struct sta_info *sta,
+		      const u8 *ht_capab, size_t ht_capab_len);
 void update_ht_state(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_tx_status(struct hostapd_data *hapd, const u8 *addr,
 		       const u8 *buf, size_t len, int ack);

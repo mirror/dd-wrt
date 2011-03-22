@@ -25,9 +25,12 @@
 #define DEFAULT_P2P_GO_INTENT 7
 #define DEFAULT_P2P_INTRA_BSS 1
 #define DEFAULT_BSS_MAX_COUNT 200
+#define DEFAULT_BSS_EXPIRATION_AGE 180
+#define DEFAULT_BSS_EXPIRATION_SCAN_COUNT 2
 #define DEFAULT_MAX_NUM_STA 128
 
 #include "config_ssid.h"
+#include "wps/wps.h"
 
 
 #define CFG_CHANGED_DEVICE_NAME BIT(0)
@@ -40,6 +43,7 @@
 #define CFG_CHANGED_P2P_SSID_POSTFIX BIT(7)
 #define CFG_CHANGED_WPS_STRING BIT(8)
 #define CFG_CHANGED_P2P_INTRA_BSS BIT(9)
+#define CFG_CHANGED_VENDOR_EXTENSION BIT(10)
 
 /**
  * struct wpa_config - wpa_supplicant configuration data
@@ -299,18 +303,8 @@ struct wpa_config {
 
 	/**
 	 * device_type - Primary Device Type (WPS)
-	 * Used format: categ-OUI-subcateg
-	 * categ = Category as an integer value
-	 * OUI = OUI and type octet as a 4-octet hex-encoded value;
-	 *	0050F204 for default WPS OUI
-	 * subcateg = OUI-specific Sub Category as an integer value
-	 * Examples:
-	 *   1-0050F204-1 (Computer / PC)
-	 *   1-0050F204-2 (Computer / Server)
-	 *   5-0050F204-1 (Storage / NAS)
-	 *   6-0050F204-1 (Network Infrastructure / AP)
 	 */
-	char *device_type;
+	u8 device_type[WPS_DEV_TYPE_LEN];
 
 	/**
 	 * config_methods - Config Methods
@@ -352,10 +346,10 @@ struct wpa_config {
 
 #define MAX_SEC_DEVICE_TYPES 5
 	/**
-	 * sec_device_type - Secondary Device Types (P2P)
-	 * See device_type for the format used with these.
+	 * sec_device_types - Secondary Device Types (P2P)
 	 */
-	char *sec_device_type[MAX_SEC_DEVICE_TYPES];
+	u8 sec_device_type[MAX_SEC_DEVICE_TYPES][WPS_DEV_TYPE_LEN];
+	int num_sec_device_types;
 
 	int p2p_listen_reg_class;
 	int p2p_listen_channel;
@@ -365,6 +359,12 @@ struct wpa_config {
 	char *p2p_ssid_postfix;
 	int persistent_reconnect;
 	int p2p_intra_bss;
+
+#define MAX_WPS_VENDOR_EXT 10
+	/**
+	 * wps_vendor_ext - Vendor extension attributes in WPS
+	 */
+	struct wpabuf *wps_vendor_ext[MAX_WPS_VENDOR_EXT];
 
 	/**
 	 * p2p_group_idle - Maximum idle time in seconds for P2P group
@@ -382,6 +382,25 @@ struct wpa_config {
 	 * bss_max_count - Maximum number of BSS entries to keep in memory
 	 */
 	unsigned int bss_max_count;
+
+	/**
+	 * bss_expiration_age - BSS entry age after which it can be expired
+	 *
+	 * This value controls the time in seconds after which a BSS entry
+	 * gets removed if it has not been updated or is not in use.
+	 */
+	unsigned int bss_expiration_age;
+
+	/**
+	 * bss_expiration_scan_count - Expire BSS after number of scans
+	 *
+	 * If the BSS entry has not been seen in this many scans, it will be
+	 * removed. A value of 1 means that entry is removed after the first
+	 * scan in which the BSSID is not seen. Larger values can be used
+	 * to avoid BSS entries disappearing if they are not visible in
+	 * every scan (e.g., low signal quality or interference).
+	 */
+	unsigned int bss_expiration_scan_count;
 
 	/**
 	 * filter_ssids - SSID-based scan result filtering
@@ -402,7 +421,7 @@ struct wpa_config {
 	unsigned int changed_parameters;
 
 	/**
-	 * disassoc_low_ack - disassocenticate stations with massive packet loss
+	 * disassoc_low_ack - Disassocicate stations with massive packet loss
 	 */
 	int disassoc_low_ack;
 };
@@ -412,6 +431,9 @@ struct wpa_config {
 
 void wpa_config_free(struct wpa_config *ssid);
 void wpa_config_free_ssid(struct wpa_ssid *ssid);
+void wpa_config_foreach_network(struct wpa_config *config,
+				void (*func)(void *, struct wpa_ssid *),
+				void *arg);
 struct wpa_ssid * wpa_config_get_network(struct wpa_config *config, int id);
 struct wpa_ssid * wpa_config_add_network(struct wpa_config *config);
 int wpa_config_remove_network(struct wpa_config *config, int id);
