@@ -62,8 +62,9 @@ function to_register(F) {
 	F.submit_type.value = "wps_register";
   apply(F);
 }
+
 function to_ap_register(F) {
-	if (!wps_ap_pin_valid(F.wps_ap_pin.value)) {
+	if (!wps_pin_valid(F.wps_ap_pin.value)) {
 	    alert(aoss.pinnotvalid);
 	    return;
 	    }
