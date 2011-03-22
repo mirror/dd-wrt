@@ -92,6 +92,7 @@ extern int has_5ghz(char *prefix);
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 #include <stdint.h>
+
 extern struct wifi_channels *list_channels_11n(char *devnr);
 extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country,int max_bandwidth_khz, unsigned char band);
 extern int getdevicecount(void);
@@ -99,6 +100,7 @@ extern struct mac80211_info *mac80211_assoclist(char *interface);
 extern char *mac80211_get_caps(char *interface); 
 extern int mac80211_check_band(char *interface,int checkband);
 struct wifi_channels *mac80211_get_channels(char *interface,char *country,int max_bandwidth_khz, unsigned char checkband);
+extern struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive);
 
 struct wifi_channels {
 	int channel;
@@ -148,7 +150,17 @@ struct wifi_client_info {
     uint32_t tx_bytes;
     struct wifi_client_info *next;
 };
+
+struct mac80211_ac {
+    int freq;
+	int8_t noise;
+	int quality;
+	int clear;
+    struct mac80211_ac *next;
+};
+
 extern void free_wifi_clients(struct wifi_client_info *wci);
+extern void free_mac80211_ac(struct mac80211_ac *ac);
 #endif
 
 #ifdef HAVE_MADWIFI
