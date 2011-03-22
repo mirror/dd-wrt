@@ -1836,6 +1836,7 @@ aoss.wep_info="(required for most gaming consoles supporting AOSS)";
 aoss.wps="WPS Setup";
 aoss.wps_ap_pin="WPS Gateway PIN (Label)";
 aoss.wpspin="WPS Client PIN";
+aoss.wpsactivate="Activate PIN";
 aoss.wpsregister="Register PIN";
 aoss.wpsgenerate="Generate PIN";
 aoss.pinnotvalid="Invalid PIN, checksum not correct!";
