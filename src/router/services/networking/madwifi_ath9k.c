@@ -285,11 +285,17 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp)
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
 	char ht[5];
+
 	if ((!strcmp(netmode, "ng-only") ||	//
-	    !strcmp(netmode, "na-only") ||	//
-	    !strcmp(netmode, "n2-only") ||	//
-	    !strcmp(netmode, "n5-only") ||	//
-	    !strcmp(netmode, "mixed")) && strcmp(akm,"wep")) {
+	     !strcmp(netmode, "na-only") ||	//
+	     !strcmp(netmode, "n2-only") ||	//
+	     !strcmp(netmode, "n5-only") ||	//
+	     !strcmp(netmode, "mixed")) && strcmp(akm, "wep")) {
+
+		if (strcmp(netmode, "mixed")) {
+			fprintf(fp, "require_ht=1\n");
+		}
+
 		fprintf(fp, "ieee80211n=1\n");
 		char bw[32];
 		sprintf(bw, "%s_channelbw", prefix);
@@ -405,8 +411,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "ssid=%s\n", ssid);
 	// wep key support
 	if (nvram_match(akm, "wep") || aoss) {
-		if (!isfirst || aoss);
-		    	fprintf(fp, "ieee80211n=0\n");
+		if (!isfirst || aoss) ;
+		fprintf(fp, "ieee80211n=0\n");
 
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname));
@@ -534,12 +540,11 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			sprintf(psk, "%s_crypto", ifname);
 			if (nvram_match(psk, "aes"))
 				fprintf(fp, "wpa_pairwise=CCMP\n");
-			if (nvram_match(psk, "tkip"))
-			    {
-			    if (!isfirst);
-		    		    fprintf(fp, "ieee80211n=0\n");
+			if (nvram_match(psk, "tkip")) {
+				if (!isfirst) ;
+				fprintf(fp, "ieee80211n=0\n");
 				fprintf(fp, "wpa_pairwise=TKIP\n");
-			    }
+			}
 			if (nvram_match(psk, "tkip+aes"))
 				fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
 			fprintf(fp, "wpa_group_rekey=%s\n",
