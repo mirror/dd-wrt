@@ -1745,6 +1745,7 @@ aoss.wep_info="(wird für einige Spielkonsolen die AOSS unterstützen, in Verbindu
 aoss.wps="WPS Einstellungen";
 aoss.wps_ap_pin="WPS Gateway PIN (Aufkleber)";
 aoss.wpspin="WPS Client PIN";
+aoss.wpsactivate="Aktiviere PIN";
 aoss.wpsregister="Registriere PIN";
 aoss.wpsgenerate="Erzeuge PIN";
 aoss.pinnotvalid="Ungültige PIN. Prüfsumme nicht korrekt!";
