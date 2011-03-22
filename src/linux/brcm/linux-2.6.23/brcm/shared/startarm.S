@@ -1,7 +1,7 @@
 /*
  * HNDRTE ARM run-time initialization and first level exception handling.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: startarm.S,v 1.48.2.3 2008/04/02 23:22:15 Exp $
+ * $Id: startarm.S,v 1.69.4.2 2009/12/12 05:24:19 Exp $
  */
 
 #include <arminc.h>
@@ -37,8 +37,8 @@
 #endif	/* THUMB */
 
 /* Debug macro - write a number to memory - use it with caution,
-*  it changes r0 and r1 registers.
-*/
+ *  it changes r0 and r1 registers.
+ */
 #if defined(BCMDBG)
 #define TRACE(x) \
 	ldr	r0,=x; \
@@ -118,6 +118,7 @@ tmp_regs:
 
 	.arm
 
+
 /* Reset handler that detects an unwanted reset */
 #ifdef BCMDBG_ARMRST
 armrst:	.word	1f
@@ -147,6 +148,8 @@ tr_rst:
 	/* Install arm reset handler to catch reset */
 	ldr     r0,=0x0
 	ldr	r1,[r0]
+	ldr	r2,=orig_rst
+	str	r1,[r2]
 	ldr	r2,=~0xfff
 	and	r1,r1,r2
 	ldr	r2,=armrst
@@ -704,8 +707,8 @@ END(set_arm_intstatus)
 #endif	/* __ARM_ARCH_7M__ */
 
 /*
-* Common code/data start here...
-*/
+ * Common code/data start here...
+ */
 #ifdef CONFIG_XIP
 	.data
 #endif
@@ -714,17 +717,36 @@ END(set_arm_intstatus)
 	.global	__watermark
 __watermark:
 	.word	0xbbadbadd
+/* to save reset vec for CRC */
+	.global orig_rst
+orig_rst:
+	.word	0
 
 /* C trap handler */
 trap_hook:
 	.word	0
 
-/* arm core regs base */
+/* chiptype */
+	.global chiptype
 chiptype:
 	.word	0
+/* arm core regs and wrapper */
+	.global arm_regs
 arm_regs:
 	.word	0
+	.global arm_wrap
 arm_wrap:
+	.word	0
+/* socram core regs and corerev */
+	.global	socram_regs
+	.type socram_regs, %object
+	.size socram_regs, 4
+socram_regs:
+	.word	0
+	.global	socram_rev
+	.type socram_rev, %object
+	.size socram_rev, 4
+socram_rev:
 	.word	0
 
 #ifdef	CONFIG_XIP
@@ -732,8 +754,8 @@ arm_wrap:
 #endif
 
 /*
-* Setup the trap handler.
-*/
+ * Setup the trap handler.
+ */
 FUNC(hndrte_set_trap)
 	ldr	r2,=trap_hook
 	ldr	r1,[r2]
@@ -751,6 +773,14 @@ FUNC(hndrte_die)
 	str	r0,[r1]
 	b	.
 END(hndrte_die)
+
+/*
+ * Unimplemented routine handler
+ */
+FUNC(hndrte_unimpl)
+	mov	r0,lr
+	b	hndrte_die
+END(hndrte_unimpl)
 
 /*
  * Turn remap off and then jump to an given address
@@ -806,7 +836,7 @@ END(arm_jumpto)
 	/* Embedded NVRAM */
 	.global	embedded_nvram
 embedded_nvram:
-	.fill	0x100,4,~0x48534C46
+	.fill	0x100,4,~0x48534C46	/* 'FLSH' */
 #endif	/* !CONFIG_XIP */
 
 /*
@@ -821,6 +851,44 @@ FUNC(setup)
 	/* Figure out if we have an SB or AI chip */
 	ldr	r0,=SI_ENUM_BASE		/* r0:	core regs SI base address */
 	ldr	r1,[r0,#CC_CHIPID]
+	ldr	r2,=(CID_ID_MASK & ~0x7)
+	and	r2,r2,r1
+	ldr	r3,=(BCM43236_CHIP_ID & ~0x7)	/* Is it a 43232 ~ 43239 family of chips? */
+	cmp	r2,r3
+	bne	1f
+
+	/* Check if we should boot from sflash in a 43236a0 */
+	ldr	r2,[r0,#CC_CHIPST]		/* 1: Is sflash present? */
+	ldr	r3,=CST43236_SFLASH_MASK
+	tst	r2,r3
+	beq	1f
+
+	ldr	r2,=SI_FLASH2			/* 2: Is first word 0? */
+	ldr	r3,[r2]
+	tst	r3,r3
+	bne	1f
+
+	ldr	r3,=0xff000000			/* 3: Are we in rom? */
+	mov	r4,pc
+	ldr	r2,=SI_ARM_ROM
+	and	r3,r3,r4
+	cmp	r2,r3
+	bne	1f
+
+	/* OK boot from flash */
+	ldr	r1,=(0x18102000 + AI_IOCTRL)	/* First change the remap */
+	ldr	r3,[r1]
+	ldr	r4,=~SICF_REMAP_MSK
+	and	r3,r3,r4
+	ldr	r4,=SIFC_REMAP_FLASH
+	orr	r3,r3,r4
+
+	ldr	r0,[r2,#4]			/* Pick up boot vector */
+	orr	r0,r0,r2
+	str	r3,[r1]
+	bx	r0				/* And go there */
+
+1:
 	ldr	r7,=CID_TYPE_MASK
 	and	r7,r7,r1			/* r7:	0 if SB, non-zero if AI */
 
@@ -841,8 +909,13 @@ FUNC(setup)
  *	r0, r1, r2, r3, r4, r5, r8, r9, r10, r11, r12
  */
 findcore:
+#if !defined(BCMCHIPTYPE) || (BCMCHIPTYPE == SOCI_AI)
 	tst	r7,r7
 	bne	ai_findcore
+#endif
+	mov	r3,#0
+	mov	r8,r3
+	mov	r10,r3
 
 	/* Find cores in Siliconbackplane chips */
 	ldr	r2,=CID_CC_MASK
@@ -872,7 +945,7 @@ findcore:
 	mov	r10,r0
 	ldr	r5,=SBCONFIGOFF
 	add	r5,r0,r5
-	mov	r11,r1
+	mov	r11,r5
 
 	/* Also figure out corerev and save it */
 	ldr	r4,=SBIDH_RC_MASK
@@ -884,10 +957,16 @@ findcore:
 	orr	r3,r3,r5
 	mov	r12,r3
 
-3:	ldr	r3,=SI_CORE_SIZE
+3:	mov 	r3, #0
+	cmp	r8,r3
+	beq	4f
+	cmp	r10,r3
+	bne	chk_cores
+4:	ldr	r3,=SI_CORE_SIZE
 	add	r0,r0,r3
 	sub	r2,r2,#1
 	bne	1b
+	b	panic
 
 	/* Done, check we have both arm and socram cores */
 chk_cores:
@@ -901,6 +980,7 @@ chk_cores:
 
 panic:	b	panic
 
+#if !defined(BCMCHIPTYPE) || (BCMCHIPTYPE == SOCI_AI)
 	/* findcores for AMBA Interconnect chips */
 ai_findcore:
 	ldr	r1,=CC_EROMPTR
@@ -963,6 +1043,7 @@ ai_findcore:
 	bl	ai_get_wrapper
 	mov	r11,r0
 	b	1b
+#endif
 
 /*
  * Change to run on ALP until PLL is configured.
@@ -1012,6 +1093,30 @@ waitotp:
 	ldr	r4,=CST4325_OTP_PWRDN
 	beq	1f
 #endif
+#if BCMCHIPID == BCM4329_CHIP_ID
+	ldr	r4,=CST4329_SPROM_OTP_SEL_MASK
+	and	r3,r3,r4
+	ldr	r4,=BCM4329_CHIP_ID
+	cmp	r1,r4
+	ldr	r4,=CST4329_OTP_PWRDN
+	beq	1f
+#endif
+#if BCMCHIPID == BCM4315_CHIP_ID
+	ldr	r4,=CST4315_SPROM_OTP_SEL_MASK
+	and	r3,r3,r4
+	ldr	r4,=BCM4315_CHIP_ID
+	cmp	r1,r4
+	ldr	r4,=CST4315_OTP_PWRDN
+	beq	1f
+#endif
+#if BCMCHIPID == BCM4319_CHIP_ID
+	ldr	r4,=CST4319_SPROM_OTP_SEL_MASK
+	and	r3,r3,r4
+	ldr	r4,=BCM4319_CHIP_ID
+	cmp	r1,r4
+	ldr	r4,=CST4319_OTP_PWRDN
+	beq	1f
+#endif
 	/* Assume we don't need to wait for OTP ready */
 	b	isflrom
 	/* Don't wait if OTP is strapped to powered down */
@@ -1019,8 +1124,26 @@ waitotp:
 	beq	isflrom
 	/* Check OTP power up status through PMU resources */
 #if BCMCHIPID == BCM4325_CHIP_ID
-	ldr	r3,=PMURES_BIT(RES4325_LNLDO2_PU)
+	ldr	r3,=PMURES_BIT(RES4325_OTP_PU)
 	ldr	r4,=BCM4325_CHIP_ID
+	cmp	r1,r4
+	beq	1f
+#endif
+#if BCMCHIPID == BCM4329_CHIP_ID
+	ldr	r3,=PMURES_BIT(RES4329_OTP_PU)
+	ldr	r4,=BCM4329_CHIP_ID
+	cmp	r1,r4
+	beq	1f
+#endif
+#if BCMCHIPID == BCM4315_CHIP_ID
+	ldr	r3,=PMURES_BIT(RES4315_OTP_PU)
+	ldr	r4,=BCM4315_CHIP_ID
+	cmp	r1,r4
+	beq	1f
+#endif
+#if BCMCHIPID == BCM4319_CHIP_ID
+	ldr	r3,=PMURES_BIT(RES4319_OTP_PU)
+	ldr	r4,=BCM4319_CHIP_ID
 	cmp	r1,r4
 	beq	1f
 #endif
@@ -1083,13 +1206,21 @@ isflrom:
  * The data section is in RAM now so we can read/write memory!
  */
 inram:
-	/* Save arm regs & wrap */
+	/* Save arm regs & wrapper */
 	TRACE(0)
 	mov	r0,r8
 	ldr	r1,=arm_regs
 	str	r0,[r1]
 	mov	r0,r9
 	ldr	r1,=arm_wrap
+	str	r0,[r1]
+
+	/* Save socram regs and corerev */
+	mov	r0,r10
+	ldr	r1,=socram_regs
+	str	r0,[r1]
+	mov	r0,r12
+	ldr	r1,=socram_rev
 	str	r0,[r1]
 
 	/* Also save chip type */
@@ -1101,12 +1232,12 @@ inram:
  * Input:
  *	r7 - (chip type << CID_TYPE_SHIFT)
  *	r10 - socram registers
- *	r11 - socram wrapper
  *	r12 - socram corerev
  * Output:
  *	r5 - memsize.
  */
 memsz:
+#ifndef MEMSIZE
 	/* Find ram size */
 	TRACE(1)
 	mov	r0,r12
@@ -1119,6 +1250,8 @@ memsz:
 	ldr	r1,=SRCI_SRNB_MASK
 	and	r3,r3,r1
 	_LSR_	r3,r3,#SRCI_SRNB_SHIFT
+	cmp	r0,#8
+	bge	3f
 	/* Take the last bank out of the calculation if socram >= 3 */
 	cmp	r0,#3
 	blo	1f
@@ -1153,13 +1286,37 @@ memsz:
 
 	/* Save memory size */
 	ldr	r1,=_memsize
-#ifdef MEMSIZE
-	ldr	r4,=MEMSIZE
-	cmp	r5,r4
-	blo	3f
-	mov	r5,r4
+	b	6f
+
+	/* corerev >= 8 memory size calculation */
+3:
+	/* r3 are number of banks, r10 are the regs */
+	ldr	r0,=0
+	ldr	r5,=0
+	ldr	r2,=SOCRAM_BANKIDX_REG
+	ldr	r7,=SOCRAM_BANKINFO_REG
+	ldr	r6,=SOCRAM_BANKINFO_SZMASK
+	ldr	r4,=SOCRAM_BANKSIZE_SHIFT
+4:
+	mov	r1,r10
+	str	r0,[r1, r2]
+	ldr	r1,[r1, r7]
+	and	r1,r6
+	add	r1,#1
+	_LSL_	r1,r1,r4
+	add	r5,r1
+	add	r0,#1
+	cmp	r0,r3
+	beq	5f
+	b	4b
+5:
+	ldr	r1,=_memsize
+#else
+	/* Save memory size */
+	ldr	r1,=_memsize
+	ldr	r5,=MEMSIZE
 #endif
-3:	str	r5,[r1]
+6:	str	r5,[r1]
 
 /*
  * Setup stack pointer.
@@ -1181,13 +1338,20 @@ setsp:
 	 * record their location/size and start the stack pointer below them.
 	 * If valid, the vars length is in words (4 bytes) a multiple of 4 encoded in the last
 	 * word of memory as (~len << 16 | len).  The vars precede the length.
+	 * If invalid, the stack pointer starts at end of memory minus 4.
+	 * During the init sequence of SDIO firmware, the last 4 bytes of memory are
+	 * overwritten with the address of the sdpcm_shared structure.
 	 */
 	ldr	r5,[sp]
 	mvn	r4,r5
 	mov	r3,#16
 	_ROR_	r5,r5,r3
 	cmp	r4,r5
-	bne	clearbss
+	beq	vars_present
+	/* Vars are not present */	
+	sub	sp,sp,#4 
+	b	clearbss
+vars_present:		
 	/* Vars present */
 	_LSR_	r4,r4,#16
 	_LSL_	r4,r4,#2
@@ -1228,6 +1392,7 @@ clearbss:
 
 #if defined(__ARM_ARCH_4T__)
 	/* Call c_main and should never come back! */
+	TRACE(4)
 #ifdef EXT_CBALL
 	ldr	r4,=main
 #else
@@ -1244,9 +1409,15 @@ j2fn:	bx	r4
 
 #elif defined(__ARM_ARCH_7M__)
 
+	/* Enable traps for detecting unaligned accesses */
+	ldr	r3,=0xe000ed14
+	ldr	r1,[r3]
+	mov	r2,#8			/* UNALIGN_TRP */
+	orr	r1,r2
+	str	r1,[r3]
 
-	TRACE(4)
 	/* Call c_main and should never come back! */
+	TRACE(4)
 	bl	c_main
 
 /* Halt in case we ever come out of c_main! */

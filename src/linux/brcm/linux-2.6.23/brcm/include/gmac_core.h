@@ -1,14 +1,14 @@
 /*
  * gmacdefs - Broadcom gmac (Unimac) specific definitions
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: gmac_core.h,v 13.1.4.1.14.2 2009/03/12 01:14:08 Exp $
+ * $Id: gmac_core.h,v 13.4 2009/03/13 22:43:20 Exp $
  */
 
 #ifndef	_gmac_core_h_

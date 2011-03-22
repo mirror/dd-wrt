@@ -1,4 +1,4 @@
-/* $Id: sha1.h,v 1.9 2007/07/27 21:53:01 Exp $ */
+/* $Id: sha1.h,v 1.10.28.1 2010/04/07 06:00:52 Exp $ */
 /*FILE-CSTYLED*/
 
 /* From rfc3174.txt */
@@ -55,6 +55,8 @@
 #ifndef BCMDRIVER
 #if defined(_WIN32)
 typedef short int	int_least16_t;
+#elif defined(__ECOS)
+typedef short int	int_least16_t;
 #else
 #include <stdint.h>
 #endif
@@ -108,11 +110,11 @@ typedef struct SHA1Context
  *  Function Prototypes
  */
 
-int SHA1Reset(  SHA1Context *);
-int SHA1Input(  SHA1Context *,
+int BCMROMFN(SHA1Reset)(SHA1Context *);
+int BCMROMFN(SHA1Input)(SHA1Context *,
                 const uint8 *,
                 unsigned int);
-int SHA1Result( SHA1Context *,
+int BCMROMFN(SHA1Result)( SHA1Context *,
                 uint8 Message_Digest[SHA1HashSize]);
 
 #endif

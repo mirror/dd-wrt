@@ -30,7 +30,6 @@
 #define pcicore_up(a, b)	do { } while (0)
 #define pcicore_sleep(a)	do { } while (0)
 #define pcicore_down(a, b)	do { } while (0)
-#define pcie_war_ovr_aspm_disable(a) do { } while (0)
 
 #define pcie_war_ovr_aspm_update(a, b)	do { } while (0)
 
@@ -38,6 +37,10 @@
 #define pcicore_pciereg(a, b, c, d, e) (0)
 #if defined(BCMDBG_DUMP)
 #define pcicore_dump_pcieregs(a, b) (0)
+#endif
+#ifdef BCMDBG
+#define pcie_lcreg(a, b, c) (0)
+#define pcicore_dump(a, b)	do { } while (0)
 #endif
 
 #define pcicore_pmecap_fast(a)	(FALSE)
@@ -55,7 +58,6 @@ extern uint pcie_writereg(osl_t *osh, struct sbpcieregs *pcieregs, uint addrtype
 
 extern uint8 pcie_clkreq(void *pch, uint32 mask, uint32 val);
 extern uint32 pcie_lcreg(void *pch, uint32 mask, uint32 val);
-extern void pcie_war_ovr_aspm_disable(void *pch);
 
 extern void *pcicore_init(si_t *sih, osl_t *osh, void *regs);
 extern void pcicore_deinit(void *pch);
@@ -75,6 +77,9 @@ extern uint32 pcicore_pciereg(void *pch, uint32 offset, uint32 mask, uint32 val,
 extern int pcicore_dump_pcieregs(void *pch, struct bcmstrbuf *b);
 #endif
 
+#ifdef BCMDBG
+extern void pcicore_dump(void *pch, struct bcmstrbuf *b);
+#endif
 
 extern bool pcicore_pmecap_fast(osl_t *osh);
 extern void pcicore_pmeen(void *pch);

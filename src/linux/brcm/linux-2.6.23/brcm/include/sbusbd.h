@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane USB device core support
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: sbusbd.h,v 13.12 2008/03/13 13:36:21 Exp $
+ * $Id: sbusbd.h,v 13.13.30.2 2010/01/13 09:07:37 Exp $
  */
 
 #ifndef	_usbdev_sb_h_
@@ -52,13 +52,13 @@ typedef volatile struct {
 typedef volatile struct {
 	/* Device control */
 	uint32 devcontrol;			/* DevControl, 0x000, rev 2 */
-	uint32 devstatus;			/* DevStatus, 0x004, rev 2 */
+	uint32 devstatus;			/* DevStatus,  0x004, rev 2 */
 	uint32 PAD[1];
 	uint32 biststatus;			/* BISTStatus, 0x00C, rev 2 */
 
 	/* USB control */
 	uint32 usbsetting;			/* USBSetting, 0x010, rev 2 */
-	uint32 usbframe;			/* USBFrame, 0x014, rev 2 */
+	uint32 usbframe;			/* USBFrame,   0x014, rev 2 */
 	uint32 PAD[2];
 
 	/* 2nd level DMA int status/mask, IntStatus0-4, IntMask0-4 */
@@ -69,11 +69,11 @@ typedef volatile struct {
 
 	/* Top level interrupt status and mask */
 	uint32 usbintstatus;			/* IntStatus, 0x048, rev 2 */
-	uint32 usbintmask;			/* IntMask, 0x04C, rev 2 */
+	uint32 usbintmask;			/* IntMask,   0x04C, rev 2 */
 
 	/* Endpoint status */
 	uint32 epstatus;			/* CtrlOutStatus, 0x050, rev 2 */
-	uint32 PAD[1];
+	uint32 txfifowtermark;			/* bytes threshold before commit tx, POR=0x100 */
 
 	/* Dedicated 2nd level DMA int status/mask for Setup Data, rev 3 */
 	uint32 sdintstatus;			/* IntStatus5, 0x58, rev 3 */
@@ -96,9 +96,14 @@ typedef volatile struct {
 
 	/* Endpoint byte counters, EPByteCount0-8, 0x2B4-0x2D4, rev 2 */
 	uint32 epbytes[EP_MAX];
-	uint32 PAD[20];
+	uint32 PAD[2];
 
-	uint32 phymiscctl;			/* PhyMiscCtl, 0x328, rev 4 */
+	uint32 hsicphyctrl1;		/* HSICPhyCtrl1 0x2e0, rev 10 */
+	uint32 PAD[15];
+
+	uint32 mdio_ctl;		/* mdio_ctl, 0x320 */
+	uint32 mdio_data;		/* mdio_data, 0x324 */
+	uint32 phymiscctl;		/* PhyMiscCtl, 0x328, rev 4 */
 	uint32 PAD[5];
 
 	/* Dedicated Setup Data DMA engine, 0x340-0x35C, rev 3 */
@@ -139,36 +144,39 @@ typedef volatile struct {
 #define DC_UP			(1L << 10)	/* UTMI Power Down */
 #define DC_AP			(1L << 11)	/* Analog Power Down */
 #define DC_PR			(1L << 12)	/* Phy Reset */
+#define DC_SS_MASK		0x6000		/* Speed Select bits */
+#define DC_SS_SHIFT		13
+#define DC_SS_FS		1		/* Full Speed */
+#define DC_SS_HS		0		/* High Speed */
 #define DC_PE			(1L << 15)	/* Phy Error Detect Enable */
+#define DC_NZLP_MASK		0x30000		/* Non-zero length Packet Stall */
+#define DC_NZLP_SHIFT		16
 #define DC_EH			(1L << 18)	/* Ep0 Halt Command Stall */
+#define DC_HSTC_MASK		0x380000	/* HS Timeout Calibration */
+#define DC_HSTC_SHIFT		19
+#define DC_FSTC_MASK		0x1c00000	/* FS Timeout Calibration */
+#define DC_FSTC_SHIFT		22
 #define DC_DC			(1L << 25)	/* Soft Disconnect */
 #define DC_UR			(1L << 26)	/* UTMI Soft Reset */
 #define DC_UL			(1L << 27)	/* App ULPI Select */
 #define DC_ULD			(1L << 28)	/* App ULPI DDR Select */
-
-#define DC_SS_MASK		0x6000		/* Speed Select bits */
-#define DC_SS_SHIFT		13
-#define DC_SS_FS		1			/* Full Speed */
-#define DC_SS_HS		0			/* High Speed */
 #define DC_SS(n)		(((uint32)(n) << DC_SS_SHIFT) & DC_SS_MASK)
-
-#define DC_NZLP_MASK	0x30000		/* Non-zero length Packet Stall */
-#define DC_NZLP_SHIFT	16
-
-#define DC_HSTC_MASK	0x380000	/* HS Timeout Calibration */
-#define DC_HSTC_SHIFT	19
-
-#define DC_FSTC_MASK	0x1c00000	/* FS Timeout Calibration */
-#define DC_FSTC_SHIFT	22
 
 /* Device status bits */
 #define DS_SP			(1L << 0)	/* Suspend */
 #define DS_RS			(1L << 1)	/* Reset */
 #define DS_PE			(1L << 4)	/* Phy Error (USB20D) */
-
-#define DS_DS_MASK		0xc			/* Device Operating Speed (USB20D) */
+#define DS_DS_MASK		0xC		/* Device Operating Speed (USB20D) */
 #define DS_DS_SHIFT		2
-#define DS_DS_HS		(0 << DS_DS_SHIFT)		/* Configured and Operating at HS */
+#define DS_DS_HSCAP_HSMODE	0		/* HS cap, operating in HS mode */
+#define DS_DS_HSCAP_FSMODE	1		/* HS cap, operating in FS mode */
+#define DS_DS_FSCAP_FSMODE	3		/* FS cap, operating in FS mode */
+#define DS_DS_HS		(DS_DS_HSCAP_HSMODE << DS_DS_SHIFT)
+#define DS_PHYMODE_MASK		0x0300
+#define DS_PHYMODE_SHIFT	8
+#define DS_PHYMODE_NORMAL	0		/* normal operation */
+#define DS_PHYMODE_NONDRIVING	1		/* nob-driving */
+#define DS_PHYMODE_NOSTUFF_NZI	2		/* disable bit stuffing and NZI */
 
 /* USB setting bits */
 #define USB_CF_MASK		0x00f		/* Configuration */
@@ -218,6 +226,16 @@ typedef volatile struct {
 #define IRL_FC(n)		(((uint32)(n) << IRL_FC_SHIFT) & IRL_FC_MASK)
 
 /* ClkCtlStatus bits defined in sbconfig.h */
+
+/* hsicphyctrl1 "PLL lock count" and "PLL reset count" bits */
+#define PLL_LOCK_CT_MASK	0x0f000000
+#define PLL_LOCK_CT_SHIFT	24
+#define PLL_RESET_CT_MASK	0x30000000
+#define PLL_RESET_CT_SHIFT	28
+
+/* phymiscctrl */
+#define PMC_PLL_SUSP_EN		(1 << 0)
+#define PMC_PLL_CAL_EN		(1 << 1)
 
 /* Endpoint status bits */
 #define EPS_STALL_MASK		0x0000001f	/* Stall on Status IN (4:0) */

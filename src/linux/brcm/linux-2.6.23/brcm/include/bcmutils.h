@@ -217,6 +217,9 @@ extern void bcm_mdelay(uint ms);
 extern char *getvar(char *vars, const char *name);
 extern int getintvar(char *vars, const char *name);
 extern uint getgpiopin(char *vars, char *pin_name, uint def_pin);
+#ifdef BCMDBG
+extern void prpkt(const char *msg, osl_t *osh, void *p0);
+#endif /* BCMDBG */
 #ifdef BCMPERFSTATS
 extern void bcm_perf_enable(void);
 extern void bcmstats(char *fmt);
@@ -280,10 +283,10 @@ typedef struct bcm_iovar {
 
 extern const bcm_iovar_t *bcm_iovar_lookup(const bcm_iovar_t *table, const char *name);
 extern int bcm_iovar_lencheck(const bcm_iovar_t *table, void *arg, int len, bool set);
-#if defined(WLTINYDUMP) || defined(WLMSG_INFORM) || defined(WLMSG_ASSOC) || \
-	defined(WLMSG_PRPKT) || defined(WLMSG_WSEC)
+#if defined(WLTINYDUMP) || defined(BCMDBG) || defined(WLMSG_INFORM) || \
+	defined(WLMSG_ASSOC) || defined(WLMSG_PRPKT) || defined(WLMSG_WSEC)
 extern int bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len);
-#endif 
+#endif /* WLTINYDUMP || BCMDBG || WLMSG_INFORM || WLMSG_ASSOC || WLMSG_PRPKT */
 #endif	/* BCMDRIVER */
 
 /* Base type definitions */
@@ -607,11 +610,15 @@ extern uint8 BCMROMFN(hndcrc8)(uint8 *p, uint nbytes, uint8 crc);
 extern uint16 BCMROMFN(hndcrc16)(uint8 *p, uint nbytes, uint16 crc);
 extern uint32 BCMROMFN(hndcrc32)(uint8 *p, uint nbytes, uint32 crc);
 /* format/print */
-#if defined(DHD_DEBUG) || defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || \
-	defined(WLMSG_ASSOC) || defined(BCMDBG_DUMP)
+#if defined(BCMDBG) || defined(DHD_DEBUG) || defined(BCMDBG_ERR) || \
+	defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || \
+	defined(BCMDBG_DUMP)
 extern int bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len);
 extern int bcm_format_hex(char *str, const void *bytes, int len);
 extern void prhex(const char *msg, uchar *buf, uint len);
+#endif
+#ifdef BCMDBG
+extern void deadbeef(void *p, uint len);
 #endif
 extern const char *bcm_crypto_algo_name(uint algo);
 extern char *bcm_chipname(uint chipid, char *buf, uint len);

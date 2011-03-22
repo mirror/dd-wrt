@@ -2,7 +2,7 @@
  * Chip-specific hardware definitions for
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: d11.h,v 13.443.2.12.6.3 2008/12/20 03:57:54 Exp $
+ * $Id: d11.h,v 13.499.2.57 2010/06/29 00:20:18 Exp $
  */
 
 #ifndef	_D11_H
@@ -23,12 +23,18 @@
 #include <sbhnddma.h>
 #include <proto/802.11.h>
 
-/* enable structure packing */
-#if defined(__GNUC__)
-#define	PACKED	__attribute__((packed))
-#else
-#pragma pack(1)
-#define	PACKED
+#ifndef _TYPEDEFS_H_
+#include <typedefs.h>
+#endif
+
+/* This marks the start of a packed structure section. */
+#include <packed_section_start.h>
+
+
+#ifndef WL_RSSI_ANT_MAX
+#define WL_RSSI_ANT_MAX		4	/* max possible rx antennas */
+#elif WL_RSSI_ANT_MAX != 4
+#error "WL_RSSI_ANT_MAX does not match"
 #endif
 
 /* cpp contortions to concatenate w/arg prescan */
@@ -115,7 +121,7 @@ typedef volatile struct _d11regs {
 	uint32	biststatus2;		/* 0x10 */
 	uint32	PAD;			/* 0x14 */
 	uint32	gptimer;		/* 0x18 */	/* for corerev >= 3 */
-	uint32	PAD;			/* 0x1c */
+	uint32	usectimer;		/* 0x1c */	/* for corerev >= 26 */
 
 	/* Interrupt Control */		/* 0x20 */
 	intctrlregs_t	intctrlregs[8];
@@ -188,7 +194,11 @@ typedef volatile struct _d11regs {
 	/* FIFO diagnostic port access */
 	dma32diag_t dmafifo;		/* 0x380 - 0x38C */
 
-	uint32	PAD[19];		/* 0x390 - 0x3D8 */
+	uint32	aggfifocnt;		/* 0x390 */
+	uint32	aggfifodata;		/* 0x394 */
+	uint32	PAD[16];		/* 0x398 - 0x3d4 */
+	uint16  radioregaddr;		/* 0x3d8 */
+	uint16  radioregdata;		/* 0x3da */
 
 	/* time delay between the change on rf disable input and radio shutdown corerev 10 */
 	uint32	rfdisabledly;		/* 0x3DC */
@@ -288,7 +298,9 @@ typedef volatile struct _d11regs {
 	uint16 psm_pc_reg_1;		/* 0x4D0 */
 	uint16 psm_pc_reg_2;		/* 0x4D2 */
 	uint16 psm_pc_reg_3;		/* 0x4D4 */
-	uint16 PAD[0x15];		/* 0x4D6 - 0x4FE */
+	uint16 PAD[0xD];		/* 0x4D6 - 0x4DE */
+	uint16 psm_corectlsts;          /* 0x4f0 */	/* Corerev >= 13 */
+	uint16 PAD[0x7];                /* 0x4f2 - 0x4fE */ 
 
 	/* TXE0 Block */		/* 0x500 - 0x580 */
 	uint16	txe_ctl;		/* 0x500 */
@@ -314,7 +326,16 @@ typedef volatile struct _d11regs {
 	uint16  xmtfifo_wr_ptr;         /* 0x52A */     /* Corerev >= 16 */
 	uint16  xmtfifodef1;            /* 0x52C */     /* Corerev >= 16 */
 
-	uint16  PAD[0x09];              /* 0x52E - 0x53E */
+	/* AggFifo */
+	uint16  aggfifo_cmd;            /* 0x52e */
+	uint16  aggfifo_stat;           /* 0x530 */
+	uint16  aggfifo_cfgctl;         /* 0x532 */
+	uint16  aggfifo_cfgdata;        /* 0x534 */
+	uint16  aggfifo_mpdunum;        /* 0x536 */
+	uint16  aggfifo_len;            /* 0x538 */
+	uint16  aggfifo_bmp;            /* 0x53A */
+	uint16  aggfifo_ackedcnt;       /* 0x53C */
+	uint16  aggfifo_sel;            /* 0x53E */
 
 	uint16	xmtfifocmd;		/* 0x540 */
 	uint16	xmtfifoflush;		/* 0x542 */
@@ -325,9 +346,11 @@ typedef volatile struct _d11regs {
 	uint16	xmttplatetxptr;		/* 0x54C */
 	uint16	PAD;			/* 0x54E */
 	uint16	xmttplateptr;		/* 0x550 */
-
-	uint16	PAD[0x07];		/* 0x552 - 0x55E */
-
+	uint16  smpl_clct_strptr;       /* 0x552 */	/* Corerev >= 22 */
+	uint16  smpl_clct_stpptr;       /* 0x554 */	/* Corerev >= 22 */
+	uint16  smpl_clct_curptr;       /* 0x556 */	/* Corerev >= 22 */
+	uint16  aggfifo_data;           /* 0x558 */
+	uint16	PAD[0x03];		/* 0x55A - 0x55E */
 	uint16	xmttplatedatalo;	/* 0x560 */
 	uint16	xmttplatedatahi;	/* 0x562 */
 
@@ -374,11 +397,11 @@ typedef volatile struct _d11regs {
 	uint16	ifsmedbusyctl;		/* 0x692 */
 	uint16	iftxdur;		/* 0x694 */
 	uint16	PAD[0x3];		/* 0x696 - 0x69b */
-	/* EDCF support in dot11macs with corerevs >= 16 */
+		/* EDCF support in dot11macs with corerevs >= 16 */
 	uint16	ifs_aifsn;		/* 0x69c */
 	uint16	ifs_ctl1;		/* 0x69e */
 
-	/* New slow clock registers on corerev >= 5 */
+		/* New slow clock registers on corerev >= 5 */
 	uint16	scc_ctl;		/* 0x6a0 */
 	uint16	scc_timer_l;		/* 0x6a2 */
 	uint16	scc_timer_h;		/* 0x6a4 */
@@ -388,17 +411,27 @@ typedef volatile struct _d11regs {
 	uint16	scc_per_frac;		/* 0x6ac */
 	uint16	scc_cal_timer_l;	/* 0x6ae */
 	uint16	scc_cal_timer_h;	/* 0x6b0 */
-	uint16	PAD;			/* 0x6b2 */
+	uint16	PAD;				/* 0x6b2 */
 
 	/* BTCX block on corerev >=13 */
-	uint16	btcx_ctrl;		/* 0x6b4 */
-	uint16	btcx_stat;		/* 0x6b6 */
-	uint16	btcx_trans_ctrl;	/* 0x6b8 */
-	uint16	btcx_pri_win;		/* 0x6ba */
-	uint16	btcx_tx_conf_timer;	/* 0x6bc */
-	uint16	btcx_ant_sw_timer;	/* 0x6be */
+	uint16	btcx_ctrl;				/* 0x6b4 */
+	uint16	btcx_stat;			/* 0x6b6 */
+	uint16	btcx_trans_ctrl;		/* 0x6b8 */
+	uint16	btcx_pri_win;			/* 0x6ba */
+	uint16	btcx_tx_conf_timer;		/* 0x6bc */
+	uint16	btcx_ant_sw_timer;		/* 0x6be */
 
-	uint16	PAD[32];		/* 0x6C0 - 0x6FF */
+	uint16	btcx_prv_rfact_timer;		/* 0x6c0 */
+	uint16	btcx_cur_rfact_timer;		/* 0x6c2 */
+	uint16	btcx_rfact_dur_timer;		/* 0x6c4 */
+
+	uint16	PAD[21];		/* 0x6c6 - 0x6ee */
+
+	/* ECI regs on corerev >=14 */
+	uint16	btcx_eci_addr;			/* 0x6f0 */
+	uint16 	btcx_eci_data;			/* 0x6f2 */
+
+	uint16	PAD[6];
 
 	/* NAV Block */
 	uint16	nav_ctl;		/* 0x700 */
@@ -493,6 +526,8 @@ typedef volatile struct _d11regs {
 #define	MCTL1_GCPS		0x00000001
 #define MCTL1_EGS_MASK		0x0000c000
 #define MCTL1_EGS_SHIFT		14
+#define MCTL1_EGS_MASK_REV26	0x00001f00
+#define MCTL1_EGS_SHIFT_REV26	8
 
 /* maccommand register */
 #define	MCMD_BCN0VLD		(1 <<  0)
@@ -528,6 +563,7 @@ typedef volatile struct _d11regs {
 #define	MI_PWRUP		(1 << 21)	/* Radio/PHY has been powered back up. */
 #define	MI_BT_RFACT_STUCK	(1 << 22)	/* MAC has detected invalid BT_RFACT pin */
 #define	MI_BT_PRED_REQ		(1 << 23)	/* MAC requested driver BTCX predictor calc */
+#define MI_P2P			(1 << 25)	/* WiFi P2P interrupt */
 #define MI_RFDISABLE		(1 << 28)	/* MAC detected a change on RF Disable input
 						 * (corerev >= 10)
 						 */
@@ -539,7 +575,7 @@ typedef volatile struct _d11regs {
 /* machwcap */
 #define	MCAP_TKIPMIC		0x80000000	/* TKIP MIC hardware present */
 #define	MCAP_TKIPPH2KEY		0x40000000	/* TKIP phase 2 key hardware present */
-#define	MCAP_BTCX		0x20000000	/* BT coexistance hardware and pins present */
+#define	MCAP_BTCX		0x20000000	/* BT coexistence hardware and pins present */
 #define	MCAP_MBSS		0x10000000	/* Multi-BSS hardware present */
 #define	MCAP_RXFSZ_MASK		0x03f80000	/* Rx fifo size (* 512 bytes) */
 #define	MCAP_RXFSZ_SHIFT	19
@@ -558,13 +594,23 @@ typedef volatile struct _d11regs {
 #define	MCAP_NTXQ_SHIFT		0
 
 /* machwcap1 */
-#define	MCAP1_ERC_MASK		0x00000001	/* external radio coexistance */
+#define	MCAP1_ERC_MASK		0x00000001	/* external radio coexistence */
 #define	MCAP1_ERC_SHIFT		0
 #define	MCAP1_SHMSZ_MASK	0x0000000e	/* shm size (corerev >= 16) */
 #define	MCAP1_SHMSZ_SHIFT	1
 #define MCAP1_SHMSZ_1K		0		/* 1024 words in unit of 32-bit */
 #define MCAP1_SHMSZ_2K		1		/* 1536 words in unit of 32-bit */
 
+/* BTCX control */
+#define BTCX_CTRL_EN		0x0001  /* Enable BTCX module */
+#define BTCX_CTRL_SW		0x0002  /* Enable software override */
+
+/* BTCX status */
+#define BTCX_STAT_RA		0x0001  /* RF_ACTIVE state */
+
+/* BTCX transaction control */
+#define BTCX_TRANS_ANTSEL	0x0040  /* ANTSEL output */
+#define BTCX_TRANS_TXCONF	0x0080  /* TX_CONF output */
 
 /* pmqhost data */
 #define	PMQH_DATA_MASK		0xffff0000	/* data entry of head pmq entry */
@@ -630,6 +676,10 @@ typedef volatile struct _d11regs {
 #define CCS_ERSRC_AVAIL_D11PLL	0x01000000	/* d11 core pll available */
 #define CCS_ERSRC_AVAIL_PHYPLL	0x02000000	/* PHY pll available */
 
+/* HT Cloclk Ctrl and Clock Avail */
+#define CCS_ERSRC_REQ_HT    0x00000010   /* HT avail request */
+#define CCS_ERSRC_AVAIL_HT  0x00020000   /* HT clock available */
+
 /* d11_pwrctl, corerev16 only */
 #define D11_PHYPLL_AVAIL_REQ	0x000010000	/* request PHY PLL resource */
 #define D11_PHYPLL_AVAIL_STS	0x001000000	/* PHY PLL is available */
@@ -693,6 +743,9 @@ typedef volatile struct _d11regs {
 #define	PHY_TYPE_N		4	/* N-Phy value */
 #define	PHY_TYPE_LP		5	/* LP-Phy value */
 #define	PHY_TYPE_SSN		6	/* SSLPN-Phy value */
+#define	PHY_TYPE_HT		7	/* 3x3 HTPhy value */
+#define	PHY_TYPE_LCN		8	/* LCN-Phy value */
+#define	PHY_TYPE_LCNXN		9	/* LCNXN-Phy value */
 #define	PHY_TYPE_NULL		0xf	/* Invalid Phy value */
 
 /* analog types, PhyVersion:AnalogType field */
@@ -705,11 +758,11 @@ typedef volatile struct _d11regs {
 
 /* 802.11a PLCP header def */
 typedef struct ofdm_phy_hdr ofdm_phy_hdr_t;
-struct ofdm_phy_hdr {
+BWL_PRE_PACKED_STRUCT struct ofdm_phy_hdr {
 	uint8	rlpt[3];	/* rate, length, parity, tail */
 	uint16	service;
 	uint8	pad;
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 
 #define	D11A_PHY_HDR_GRATE(phdr)	((phdr)->rlpt[0] & 0x0f)
 #define	D11A_PHY_HDR_GRES(phdr)		(((phdr)->rlpt[0] >> 4) & 0x01)
@@ -740,12 +793,12 @@ struct ofdm_phy_hdr {
 
 /* 802.11b PLCP header def */
 typedef struct cck_phy_hdr cck_phy_hdr_t;
-struct cck_phy_hdr {
+BWL_PRE_PACKED_STRUCT struct cck_phy_hdr {
 	uint8	signal;
 	uint8	service;
 	uint16	length;
 	uint16	crc;
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 
 #define	D11B_PHY_HDR_LEN	6
 
@@ -776,7 +829,6 @@ struct cck_phy_hdr {
 #define WLC_CLR_MIMO_PLCP_AMPDU(plcp) (plcp[3] &= ~MIMO_PLCP_AMPDU)
 #define WLC_IS_MIMO_PLCP_AMPDU(plcp) (plcp[3] & MIMO_PLCP_AMPDU)
 
-
 /* The dot11a PLCP header is 5 bytes.  To simplify the software (so that we
  * don't need e.g. different tx DMA headers for 11a and 11b), the PLCP header has
  * padding added in the ucode.
@@ -785,40 +837,44 @@ struct cck_phy_hdr {
 
 /* TX DMA buffer header */
 typedef struct d11txh d11txh_t;
-struct d11txh {
-	uint16	MacTxControlLow;
-	uint16	MacTxControlHigh;
-	uint16	MacFrameControl;
-	uint16	TxFesTimeNormal;
-	uint16	PhyTxControlWord;
-	uint16	PhyTxControlWord_1;
-	uint16	PhyTxControlWord_1_Fbr;
-	uint16	PhyTxControlWord_1_Rts;
-	uint16	PhyTxControlWord_1_FbrRts;
-	uint16	MainRates;
-	uint16	XtraFrameTypes;
-	uint8	IV[16];
-	uint8	TxFrameRA[6];
-	uint16	TxFesTimeFallback;
-	uint8	RTSPLCPFallback[6];
-	uint16	RTSDurFallback;
-	uint8	FragPLCPFallback[6];
-	uint16	FragDurFallback;
-	uint16	MModeLen;
-	uint16	MModeFbrLen;
-	uint16	TstampLow;
-	uint16	TstampHigh;
-	uint16	MimoAntSel;
-	uint16	PreloadSize;
-	uint16	PAD;
-	uint16	TxFrameID;
-	uint16	TxStatus;
-	uint8	RTSPhyHeader[D11_PHY_HDR_LEN];
-	struct dot11_rts_frame rts_frame;
-	uint16	PAD;
-} PACKED;
+BWL_PRE_PACKED_STRUCT struct d11txh {
+	uint16	MacTxControlLow;		/* 0x0 */
+	uint16	MacTxControlHigh;		/* 0x1 */
+	uint16	MacFrameControl;		/* 0x2 */
+	uint16	TxFesTimeNormal;		/* 0x3 */
+	uint16	PhyTxControlWord;		/* 0x4 */
+	uint16	PhyTxControlWord_1;		/* 0x5 */
+	uint16	PhyTxControlWord_1_Fbr;		/* 0x6 */
+	uint16	PhyTxControlWord_1_Rts;		/* 0x7 */
+	uint16	PhyTxControlWord_1_FbrRts;	/* 0x8 */
+	uint16	MainRates;			/* 0x9 */
+	uint16	XtraFrameTypes;			/* 0xa */
+	uint8	IV[16];				/* 0x0b - 0x12 */
+	uint8	TxFrameRA[6];			/* 0x13 - 0x15 */
+	uint16	TxFesTimeFallback;		/* 0x16 */
+	uint8	RTSPLCPFallback[6];		/* 0x17 - 0x19 */
+	uint16	RTSDurFallback;			/* 0x1a */
+	uint8	FragPLCPFallback[6];		/* 0x1b - 1d */
+	uint16	FragDurFallback;		/* 0x1e */
+	uint16	MModeLen;			/* 0x1f */
+	uint16	MModeFbrLen;			/* 0x20 */
+	uint16	TstampLow;			/* 0x21 */
+	uint16	TstampHigh;			/* 0x22 */
+	uint16	ABI_MimoAntSel;			/* 0x23 */
+	uint16	PreloadSize;			/* 0x24 */
+	uint16	AmpduSeqCtl;			/* 0x25 */
+	uint16	TxFrameID;			/* 0x26 */
+	uint16	TxStatus;			/* 0x27 */
+	uint16	MaxNMpdus;			/* 0x28 corerev >=16 */
+	uint16	MaxABytes_MRT;			/* 0x29 corerev >=16 */
+	uint16	MaxABytes_FBR;			/* 0x2a corerev >=16 */
+	uint16	MinMBytes;			/* 0x2b corerev >=16 */
+	uint8	RTSPhyHeader[D11_PHY_HDR_LEN];	/* 0x2c - 0x2e */
+	struct	dot11_rts_frame rts_frame;	/* 0x2f - 0x36 */
+	uint16	PAD;				/* 0x37 */
+} BWL_POST_PACKED_STRUCT;
 
-#define	D11_TXH_LEN		0x68
+#define	D11_TXH_LEN		112	/* bytes */
 
 /* Frame Types */
 #define FT_CCK	0
@@ -851,20 +907,24 @@ struct d11txh {
 #define	TXC_IMMEDACK		0x0001
 
 /* MacTxControlHigh */
-#define TXC_PREAMBLE_DATA_FB	0x8000	/* DATA fallback rate preamble type */
-#define TXC_PREAMBLE_DATA_MAIN	0x4000	/* DATA main rate preamble type */
-#define TXC_PREAMBLE_RTS_FB	0x2000	/* RTS fallback rate preamble type */
-		/* TXC_PREAMBLE_RTS_MAIN is in PHyTxControl bit 5 */
+#define TXC_PREAMBLE_RTS_FB_SHORT	0x8000	/* RTS fallback preamble type 1 = SHORT 0 = LONG */
+#define TXC_PREAMBLE_RTS_MAIN_SHORT	0x4000	/* RTS main rate preamble type 1 = SHORT 0 = LONG */
+#define TXC_PREAMBLE_DATA_FB_SHORT	0x2000	/* Main fallback rate preamble type
+					 * 1 = SHORT for OFDM/GF for MIMO
+					 * 0 = LONG for CCK/MM for MIMO
+					 */
+/* TXC_PREAMBLE_DATA_MAIN is in PhyTxControl bit 5 */
 #define	TXC_AMPDU_FBR		0x1000	/* use fallback rate for this AMPDU */
 #define	TXC_SECKEY_MASK		0x0FF0
 #define	TXC_SECKEY_SHIFT	4
+#define	TXC_ALT_TXPWR		0x0008	/* Use alternate txpwr defined at loc. M_ALT_TXPWR_IDX */
 #define	TXC_SECTYPE_MASK	0x0007
 #define	TXC_SECTYPE_SHIFT	0
 
 /* Null delimiter for Fallback rate */
 #define AMPDU_FBR_NULL_DELIM  5 /* Location of Null delimiter count for AMPDU */
 
-/* PhyTxControl */
+/* PhyTxControl for Mimophy */
 #define	PHY_TXC_PWR_MASK	0xFC00
 #define	PHY_TXC_PWR_SHIFT	10
 #define	PHY_TXC_ANT_MASK	0x03C0	/* bit 6, 7, 8, 9 */
@@ -886,36 +946,51 @@ struct d11txh {
 #define	PHY_TXC_OLD_ANT_1	0x0100
 #define	PHY_TXC_OLD_ANT_LAST	0x0300
 
-/* PhyTxControl_1 */
-#define PHY_TXC1_BW_MASK	0x0007
-#define PHY_TXC1_BW_10MHZ	0
-#define PHY_TXC1_BW_10MHZ_UP	1
-#define PHY_TXC1_BW_20MHZ	2
-#define PHY_TXC1_BW_20MHZ_UP	3
-#define PHY_TXC1_BW_40MHZ	4
-#define PHY_TXC1_BW_40MHZ_DUP	5
-#define PHY_TXC1_MODE_SHIFT	3
-#define PHY_TXC1_MODE_MASK	0x0038
-#define PHY_TXC1_MODE_SISO	0
-#define PHY_TXC1_MODE_CDD	1
-#define PHY_TXC1_MODE_STBC	2
-#define PHY_TXC1_MODE_SDM	3
-#define	PHY_TXC1_CODE_RATE_SHIFT	8
-#define	PHY_TXC1_CODE_RATE_MASK		0x0700
-#define	PHY_TXC1_CODE_RATE_1_2		0
-#define	PHY_TXC1_CODE_RATE_2_3		1
-#define	PHY_TXC1_CODE_RATE_3_4		2
-#define	PHY_TXC1_CODE_RATE_4_5		3
-#define	PHY_TXC1_CODE_RATE_5_6		4
-#define	PHY_TXC1_CODE_RATE_7_8		6
-#define	PHY_TXC1_MOD_SCHEME_SHIFT	11
-#define	PHY_TXC1_MOD_SCHEME_MASK	0x3800
-#define	PHY_TXC1_MOD_SCHEME_BPSK	0
-#define	PHY_TXC1_MOD_SCHEME_QPSK	1
-#define	PHY_TXC1_MOD_SCHEME_QAM16	2
-#define	PHY_TXC1_MOD_SCHEME_QAM64	3
-#define	PHY_TXC1_MOD_SCHEME_QAM256	4
+/* PhyTxControl_1 for Mimophy */
+#define PHY_TXC1_BW_MASK		0x0007
+#define PHY_TXC1_BW_10MHZ		0
+#define PHY_TXC1_BW_10MHZ_UP		1
+#define PHY_TXC1_BW_20MHZ		2
+#define PHY_TXC1_BW_20MHZ_UP		3
+#define PHY_TXC1_BW_40MHZ		4
+#define PHY_TXC1_BW_40MHZ_DUP		5
+#define PHY_TXC1_MODE_SHIFT		3
+#define PHY_TXC1_MODE_MASK		0x0038
+#define PHY_TXC1_MODE_SISO		0
+#define PHY_TXC1_MODE_CDD		1
+#define PHY_TXC1_MODE_STBC		2
+#define PHY_TXC1_MODE_SDM		3
+#define PHY_TXC1_CODE_RATE_SHIFT	8
+#define PHY_TXC1_CODE_RATE_MASK		0x0700
+#define PHY_TXC1_CODE_RATE_1_2		0
+#define PHY_TXC1_CODE_RATE_2_3		1
+#define PHY_TXC1_CODE_RATE_3_4		2
+#define PHY_TXC1_CODE_RATE_4_5		3
+#define PHY_TXC1_CODE_RATE_5_6		4
+#define PHY_TXC1_CODE_RATE_7_8		6
+#define PHY_TXC1_MOD_SCHEME_SHIFT	11
+#define PHY_TXC1_MOD_SCHEME_MASK	0x3800
+#define PHY_TXC1_MOD_SCHEME_BPSK	0
+#define PHY_TXC1_MOD_SCHEME_QPSK	1
+#define PHY_TXC1_MOD_SCHEME_QAM16	2
+#define PHY_TXC1_MOD_SCHEME_QAM64	3
+#define PHY_TXC1_MOD_SCHEME_QAM256	4
 
+/* PhyTxControl for HTphy that are different from Mimophy */
+#define	PHY_TXC_HTANT_MASK		0x3fC0	/* bit 6, 7, 8, 9, 10, 11, 12, 13 */
+#define	PHY_TXC_HTCORE_MASK		0x03C0	/* core enable core3:core0, 1=enable, 0=disable */
+#define	PHY_TXC_HTANT_IDX_MASK		0x3C00	/* 4-bit, 16 possible antenna configuration */
+#define	PHY_TXC_HTANT_IDX_SHIFT		10
+#define	PHY_TXC_HTANT_IDX0		0
+#define	PHY_TXC_HTANT_IDX1		1
+#define	PHY_TXC_HTANT_IDX2		2
+#define	PHY_TXC_HTANT_IDX3		3
+
+/* PhyTxControl_1 for HTphy that are different from Mimophy */
+#define PHY_TXC1_HTSPARTIAL_MAP_MASK	0x7C00	/* bit 14:10 */
+#define PHY_TXC1_HTSPARTIAL_MAP_SHIFT	10
+#define PHY_TXC1_HTTXPWR_OFFSET_MASK	0x01f8	/* bit 8:3 */
+#define PHY_TXC1_HTTXPWR_OFFSET_SHIFT	3
 
 /* XtraFrameTypes */
 #define XFTS_RTS_FT_SHIFT	2
@@ -938,9 +1013,21 @@ struct d11txh {
 /* IFS ctl */
 #define IFS_USEEDCF	(1 << 2)
 
+/* IFS ctl1 */
+#define IFS_CTL1_EDCRS	(1 << 3)
+#define IFS_CTL1_EDCRS_20L (1 << 4)
+#define IFS_CTL1_EDCRS_40 (1 << 5)
+
+/* ABI_MimoAntSel */
+#define ABI_MAS_ADDR_BMP_IDX_MASK	0x0f00
+#define ABI_MAS_ADDR_BMP_IDX_SHIFT	8
+#define ABI_MAS_FBR_ANT_PTN_MASK	0x00f0
+#define ABI_MAS_FBR_ANT_PTN_SHIFT	4
+#define ABI_MAS_MRT_ANT_PTN_MASK	0x000f
+
 /* tx status packet */
 typedef struct tx_status tx_status_t;
-struct tx_status {
+BWL_PRE_PACKED_STRUCT struct tx_status {
 	uint16 framelen;
 	uint16 PAD;
 	uint16 frameid;
@@ -949,7 +1036,7 @@ struct tx_status {
 	uint16 sequence;
 	uint16 phyerr;
 	uint16 ackphyrxsh;
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 
 #define	TXSTATUS_LEN	16
 
@@ -976,9 +1063,9 @@ struct tx_status {
 #define	TX_STATUS_SUPR_BADCH	(4 << 2)	/* channel mismatch */
 #define	TX_STATUS_SUPR_EXPTIME	(5 << 2)	/* lifetime expiry */
 #define	TX_STATUS_SUPR_UF	(6 << 2)	/* underflow */
-#ifdef WLAFTERBURNER
-#define	TX_STATUS_SUPR_NACK	(7 << 2)	/* afterburner NACK */
-#endif /* WLAFTERBURNER */
+#if defined(WLAFTERBURNER) || defined(WLP2P)
+#define	TX_STATUS_SUPR_NACK_ABS	(7 << 2)	/* BSS entered ABSENCE period or afterburner NACK */
+#endif
 
 /* Unexpected tx status for rate update */
 #define TX_STATUS_UNEXP(status) \
@@ -986,11 +1073,11 @@ struct tx_status {
 	 TX_STATUS_UNEXP_AMPDU(status))
 
 /* Unexpected tx status for A-MPDU rate update */
-#ifdef WLAFTERBURNER
+#if defined(WLAFTERBURNER) || defined(WLP2P)
 #define TX_STATUS_UNEXP_AMPDU(status) \
 	((((status) & TX_STATUS_SUPR_MASK) != 0) && \
 	 (((status) & TX_STATUS_SUPR_MASK) != TX_STATUS_SUPR_EXPTIME) && \
-	 (((status) & TX_STATUS_SUPR_MASK) != TX_STATUS_SUPR_NACK))
+	 (((status) & TX_STATUS_SUPR_MASK) != TX_STATUS_SUPR_NACK_ABS))
 #else
 #define TX_STATUS_UNEXP_AMPDU(status) \
 	((((status) & TX_STATUS_SUPR_MASK) != 0) && \
@@ -1038,11 +1125,34 @@ struct tx_status {
 
 /* WEP data formats */
 
-/* max keys in M_SECTXKEYS_BLK and M_SECRXKEYS_BLK */
-#define	WSEC_MAX_SEC_KEYS	16	/* 12 + 4 default */
+/* the number of RCMTA entries */
+#define RCMTA_SIZE 50
 
-/* max keys in rcmta block */
+/* WiFi P2P address attribute block */
+#define M_ADDR_BMP_BLK		(0x37e * 2)
+#define M_ADDR_BMP_BLK_SZ	12
+
+#define ADDR_BMP_RA		(1 << 0)	/* Receiver Address (RA) */
+#define ADDR_BMP_TA		(1 << 1)	/* Transmitter Address (TA) */
+#define ADDR_BMP_BSSID		(1 << 2)	/* BSSID */
+#define ADDR_BMP_AP		(1 << 3)	/* Infra-BSS Access Point (AP) */
+#define ADDR_BMP_STA		(1 << 4)	/* Infra-BSS Station (STA) */
+#define ADDR_BMP_P2P_DISC	(1 << 5)	/* P2P Device */
+#define ADDR_BMP_P2P_GO		(1 << 6)	/* P2P Group Owner */
+#define ADDR_BMP_P2P_GC		(1 << 7)	/* P2P Client */
+#define ADDR_BMP_BSS_IDX_MASK	(3 << 8)	/* BSS control block index */
+#define ADDR_BMP_BSS_IDX_SHIFT	8
+
+/* WiFi P2P address starts from this entry in RCMTA */
+#define P2P_ADDR_STRT_INDX	(RCMTA_SIZE - M_ADDR_BMP_BLK_SZ)
+
+
+#ifdef WLP2P
+/* Reserve bottom of RCMTA for P2P Addresses */
+#define	WSEC_MAX_RCMTA_KEYS	(54 - M_ADDR_BMP_BLK_SZ)
+#else
 #define	WSEC_MAX_RCMTA_KEYS	54
+#endif
 
 /* max keys in M_TKMICKEYS_BLK */
 #define	WSEC_MAX_TKMIC_ENGINE_KEYS		12 /* 8 + 4 default */
@@ -1052,18 +1162,24 @@ struct tx_status {
 
 /* SECKINDXALGO (Security Key Index & Algorithm Block) word format */
 /* SKL (Security Key Lookup) */
-#define	SKL_INDEX_MASK		0xF0
-#define	SKL_INDEX_SHIFT		4
-#define	SKL_ALGO_MASK		0x07
+#define	SKL_ALGO_MASK		0x0007
 #define	SKL_ALGO_SHIFT		0
+#define	SKL_KEYID_MASK		0x0008
+#define	SKL_KEYID_SHIFT		3
+#define	SKL_INDEX_MASK		0x03F0
+#define	SKL_INDEX_SHIFT		4
+#define	SKL_GRP_ALGO_MASK	0x1c00
+#define	SKL_GRP_ALGO_SHIFT	10
 
 /* additional bits defined for IBSS group key support */
-#define SKL_IBSS_KEYID1_MASK	0x600
-#define SKL_IBSS_KEYID1_SHIFT	9
-#define SKL_IBSS_KEYID2_MASK	0x1800
-#define SKL_IBSS_KEYID2_SHIFT	11
-#define SKL_IBSS_KEYALGO_MASK	0xE000
-#define SKL_IBSS_KEYALGO_SHIFT	13
+#define	SKL_IBSS_INDEX_MASK	0x01F0
+#define	SKL_IBSS_INDEX_SHIFT	4
+#define	SKL_IBSS_KEYID1_MASK	0x0600
+#define	SKL_IBSS_KEYID1_SHIFT	9
+#define	SKL_IBSS_KEYID2_MASK	0x1800
+#define	SKL_IBSS_KEYID2_SHIFT	11
+#define	SKL_IBSS_KEYALGO_MASK	0xE000
+#define	SKL_IBSS_KEYALGO_SHIFT	13
 
 #define	WSEC_MODE_OFF		0
 #define	WSEC_MODE_HW		1
@@ -1075,7 +1191,8 @@ struct tx_status {
 #define	WSEC_ALGO_AES		3
 #define	WSEC_ALGO_WEP128	4
 #define	WSEC_ALGO_AES_LEGACY	5
-#define	WSEC_ALGO_NALG		6
+#define	WSEC_ALGO_SMS4		6
+#define	WSEC_ALGO_NALG		7
 
 #define	AES_MODE_NONE		0
 #define	AES_MODE_CCM		1
@@ -1109,6 +1226,18 @@ struct tx_status {
 #define T_BA_TPL_BASE		T_QNULL_TPL_BASE	/* template area for BA */
 
 #define T_RAM_ACCESS_SZ		4	/* template ram is 4 byte access only */
+
+#define TPLBLKS_PER_BCN	2
+#define TPLBLKS_PER_PRS	2
+/* calculate the number of template mem blks needed for beacons
+ * and probe responses of all the BSSs. add one additional block
+ * to account for 104 bytes of space reserved (?) at the start of
+ * template memory.
+ */
+#define	MBSS_TPLBLKS(n)			(1 + ((n) * (TPLBLKS_PER_BCN + TPLBLKS_PER_PRS)))
+#define	MBSS_TXFIFO_START_BLK(n)	MBSS_TPLBLKS(n)
+#define	MBSS_PRS_BLKS_START(n)		(T_BCN0_TPL_BASE + \
+	                                ((n) * TPLBLKS_PER_BCN * TXFIFO_SIZE_UNIT))
 
 /* Shared Mem byte offsets */
 
@@ -1161,7 +1290,9 @@ struct tx_status {
 #define	M_PHYTYPE		(0x029 * 2)
 #define	M_SECRXKEYS_PTR		(0x02b * 2)
 #define	M_TKMICKEYS_PTR		(0x059 * 2)
+#define	M_WAPIMICKEYS_PTR	(0x051 * 2)
 #define	M_SECKINDXALGO_BLK	(0x2ea * 2)
+#define M_SECKINDXALGO_BLK_SZ	54
 #define	M_SECPSMRXTAMCH_BLK	(0x2fa * 2)
 #define	M_TKIP_TSC_TTAK		(0x18c * 2)
 #define	D11_MAX_KEY_SIZE	16
@@ -1188,6 +1319,8 @@ struct tx_status {
 #define	M_HOST_FLAGS1		(0x02f * 2)
 #define	M_HOST_FLAGS2		(0x030 * 2)
 #define	M_HOST_FLAGS3		(0x031 * 2)
+#define	M_HOST_FLAGS4		(0x03c * 2)
+#define	M_HOST_FLAGS5		(0x06a * 2)
 #define	M_HOST_FLAGS_SZ		16
 
 #define M_RADAR_REG		(0x033 * 2)
@@ -1234,6 +1367,121 @@ struct tx_status {
 /* extended beacon phyctl bytes for 11N */
 #define	M_BCN_PCTL1WD		(0x058 * 2)
 
+/* idle busy ratio to duty_cycle requirement  */
+#define M_TX_IDLE_BUSY_RATIO_X_16_CCK  (0x52 * 2)
+#define M_TX_IDLE_BUSY_RATIO_X_16_OFDM (0x5A * 2)
+
+/* SHM_reg = 2*(wlc_read_shm(M_SSLPNPHYREGS_PTR) + offset) */
+#define M_SSLPNPHYREGS_PTR	(71 * 2)
+
+/* CW RSSI for SSLPNPHY */
+#define M_SSLPN_RSSI_0 		0x1332
+#define M_SSLPN_RSSI_1 		0x1338
+#define M_SSLPN_RSSI_2 		0x133e
+#define M_SSLPN_RSSI_3 		0x1344
+
+/* SNR for SSLPNPHY */
+#define M_SSLPN_SNR_A_0 	0x1334
+#define M_SSLPN_SNR_B_0 	0x1336
+
+#define M_SSLPN_SNR_A_1 	0x133a
+#define M_SSLPN_SNR_B_1 	0x133c
+
+#define M_SSLPN_SNR_A_2 	0x1340
+#define M_SSLPN_SNR_B_2 	0x1342
+
+#define M_SSLPN_SNR_A_3 	0x1346
+#define M_SSLPN_SNR_B_3 	0x1348
+
+/* Olympic N9037.4Mhz crystal change */
+#define M_SSLPNPHY_REG_55f_REG_VAL  16
+#define M_SSLPNPHY_REG_4F2_2_4		17
+#define M_SSLPNPHY_REG_4F3_2_4		18
+#define M_SSLPNPHY_REG_4F2_16_64	19
+#define M_SSLPNPHY_REG_4F3_16_64	20
+#define M_SSLPNPHY_REG_4F2_CCK		21
+#define M_SSLPNPHY_REG_4F3_CCK		22
+#define M_SSLPNPHY_ANTDIV_REG		27
+
+/* Olympic N9037.4Mhz crystal change */
+#define M_55f_REG_VAL  			16
+#define M_SSLPNPHY_REG_4F2_2_4		17
+#define M_SSLPNPHY_REG_4F3_2_4		18
+#define M_SSLPNPHY_REG_4F2_16_64	19
+#define M_SSLPNPHY_REG_4F3_16_64	20
+#define M_SSLPNPHY_REG_4F2_CCK		21
+#define M_SSLPNPHY_REG_4F3_CCK		22
+#define M_SSLPNPHY_ANTDIV_REG		27
+#define M_SSLPNPHY_NOISE_SAMPLES	34
+#define M_SSLPNPHY_LNA_TX               36
+
+/* ??? PBR
+#define M_SSLPN_RSSI_0 		0x133a
+#define M_SSLPN_RSSI_1 		0x1340
+#define M_SSLPN_RSSI_2 		0x1346
+#define M_SSLPN_RSSI_3 		0x134c
+
+#define M_SSLPN_SNR_A_0 	0x133c
+#define M_SSLPN_SNR_B_0 	0x133e
+
+#define M_SSLPN_SNR_A_1 	0x1342
+#define M_SSLPN_SNR_B_1 	0x1344
+
+#define M_SSLPN_SNR_A_2 	0x1348
+#define M_SSLPN_SNR_B_2 	0x134a
+
+#define M_SSLPN_SNR_A_3 	0x134e
+#define M_SSLPN_SNR_B_3 	0x1350
+*/
+
+/* For noise cal */
+#define M_NOISE_CAL_MIN    35
+#define M_NOISE_CAL_MAX    36
+#define M_NOISE_CAL_METRIC 37
+#define M_NOISE_CAL_ACC    38
+#define M_NOISE_CAL_CMD    39
+#define M_NOISE_CAL_RSP    40
+
+#define M_SSLPN_ACI_TMOUT   0x1308
+#define M_SSLPN_ACI_CNT     0x130a
+
+#define M_SSLPN_LAST_RESET 	(81*2)
+#define M_SSLPN_LAST_LOC	(63*2)
+#define M_SSLPNPHY_RESET_STATUS (4902)
+#define M_SSLPNPHY_DSC_TIME	(0x98d*2)
+#define M_SSLPNPHY_RESET_CNT_DSC (0x98b*2)
+#define M_SSLPNPHY_RESET_CNT	(0x98c*2)
+
+
+/* CW RSSI for LCNPHY */
+#define M_LCN_RSSI_0 		0x1332
+#define M_LCN_RSSI_1 		0x1338
+#define M_LCN_RSSI_2 		0x133e
+#define M_LCN_RSSI_3 		0x1344
+
+/* SNR for LCNPHY */
+#define M_LCN_SNR_A_0 	0x1334
+#define M_LCN_SNR_B_0 	0x1336
+
+#define M_LCN_SNR_A_1 	0x133a
+#define M_LCN_SNR_B_1 	0x133c
+
+#define M_LCN_SNR_A_2 	0x1340
+#define M_LCN_SNR_B_2 	0x1342
+
+#define M_LCN_SNR_A_3 	0x1346
+#define M_LCN_SNR_B_3 	0x1348
+
+#define M_LCN_ACI_TMOUT   0x1308
+#define M_LCN_ACI_CNT     0x130a
+
+#define M_LCN_LAST_RESET 	(81*2)
+#define M_LCN_LAST_LOC	(63*2)
+#define M_LCNPHY_RESET_STATUS (4902)
+#define M_LCNPHY_DSC_TIME	(0x98d*2)
+#define M_LCNPHY_RESET_CNT_DSC (0x98b*2)
+#define M_LCNPHY_RESET_CNT	(0x98c*2)
+
 /* Rate table offsets */
 #define	M_RT_DIRMAP_A		(0xe0 * 2)
 #define	M_RT_BBRSMAP_A		(0xf0 * 2)
@@ -1245,7 +1493,7 @@ struct tx_status {
 #define	M_RT_PRS_DUR_POS	16
 #define	M_RT_OFDM_PCTL1_POS	18
 
-#define M_20IN40_IQ		(0x380 * 2)
+#define M_20IN40_IQ			(0x380 * 2)
 
 /* SHM locations where ucode stores the current power index */
 #define M_CURR_IDX1		(0x384 *2)
@@ -1258,9 +1506,8 @@ struct tx_status {
 #define M_MIMO_ANTSEL_RXDFLT	(0x63 * 2)
 #define M_ANTSEL_CLKDIV	(0x61 * 2)
 #define M_MIMO_ANTSEL_TXDFLT	(0x64 * 2)
-#define M_MIMO_ANTSEL_RXUNID	(0x65 * 2)
 
-#define M_MIMO_MAXSYM		(0x5d * 2)
+#define M_MIMO_MAXSYM	(0x5d * 2)
 #define MIMO_MAXSYM_DEF		0x8000 /* 32k */
 #define MIMO_MAXSYM_MAX		0xffff /* 64k */
 
@@ -1271,21 +1518,31 @@ struct tx_status {
 /* Manufacturing Test Variables */
 #define M_PKTENG_CTRL		(0x6c * 2) /* PER test mode */
 #define M_PKTENG_IFS		(0x6d * 2) /* IFS for TX mode */
-#define M_PKTENG_FRMCNT_LO	(0x6e * 2) /* Lower word of tx frmcnt/rx lostcnt */
-#define M_PKTENG_FRMCNT_HI	(0x6f * 2) /* Upper word of tx frmcnt/rx lostcnt */
-
-/* M_PKTENG_CTRL bit definitions */
-#define M_PKTENG_MODE_MASK		0x0003
-#define M_PKTENG_MODE_TX		0x0001
-#define M_PKTENG_MODE_TX_RIFS		0x0004
-#define M_PKTENG_MODE_TX_CTS    	0x0008
-#define M_PKTENG_MODE_RX		0x0002
-#define M_PKTENG_MODE_RX_WITH_ACK	0x0402
-#define M_PKTENG_FRMCNT_VLD		0x0100	/* TX frames indicated in the frmcnt reg */
+#define M_PKTENG_FRMCNT_LO		(0x6e * 2) /* Lower word of tx frmcnt/rx lostcnt */
+#define M_PKTENG_FRMCNT_HI		(0x6f * 2) /* Upper word of tx frmcnt/rx lostcnt */
 
 /* Index variation in vbat ripple */
 #define M_SSLPN_PWR_IDX_MAX	(0x67 * 2)	/* highest index read by ucode */
 #define M_SSLPN_PWR_IDX_MIN	(0x66 * 2) 	/* lowest index read by ucode */
+#define M_LCN_PWR_IDX_MAX	(0x67 * 2)	/* highest index read by ucode */
+#define M_LCN_PWR_IDX_MIN	(0x66 * 2) 	/* lowest index read by ucode */
+
+/* Index variation in vbat ripple */
+#define M_SSLPN_PWR_IDX_MAX	(0x67 * 2)	/* highest index read by ucode */
+#define M_SSLPN_PWR_IDX_MIN	(0x66 * 2) 	/* lowest index read by ucode */
+
+/* M_PKTENG_CTRL bit definitions */
+#define M_PKTENG_MODE_TX		0x0001
+#define M_PKTENG_MODE_TX_RIFS	        0x0004
+#define M_PKTENG_MODE_TX_CTS            0x0008
+#define M_PKTENG_MODE_RX		0x0002
+#define M_PKTENG_MODE_RX_WITH_ACK	0x0402
+#define M_PKTENG_MODE_MASK		0x0003
+#define M_PKTENG_FRMCNT_VLD		0x0100	/* TX frames indicated in the frmcnt reg */
+
+/* Sample Collect parameters (bitmap and type) */
+#define M_SMPL_COL_BMP		(0x37d * 2)	/* Trigger bitmap for sample collect */
+#define M_SMPL_COL_CTL		(0x3b2 * 2)	/* Sample collect type */
 
 #define ANTSEL_CLKDIV_4MHZ	6
 #define MIMO_ANTSEL_BUSY	0x4000 /* bit 14 (busy) */
@@ -1294,7 +1551,7 @@ struct tx_status {
 #define MIMO_ANTSEL_OVERRIDE	0x8000 /* flag */
 
 typedef struct shm_acparams shm_acparams_t;
-struct shm_acparams {
+BWL_PRE_PACKED_STRUCT struct shm_acparams {
 	uint16	txop;
 	uint16	cwmin;
 	uint16	cwmax;
@@ -1304,74 +1561,90 @@ struct shm_acparams {
 	uint16	reggap;
 	uint16	status;
 	uint16	rsvd[8];
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 #define M_EDCF_QLEN	(16 * 2)
 
 #define WME_STATUS_NEWAC	(1 << 8)
 
 /* M_HOST_FLAGS */
-#define MHFMAX		3 /* Number of valid hostflag half-word (uint16) */
+#define MHFMAX		5 /* Number of valid hostflag half-word (uint16) */
 #define MHF1		0 /* Hostflag 1 index */
 #define MHF2		1 /* Hostflag 2 index */
 #define MHF3		2 /* Hostflag 3 index */
+#define MHF4		3 /* Hostflag 4 index */
+#define MHF5		4 /* Hostflag 5 index */
 
 /* Flags in M_HOST_FLAGS */
 #define	MHF1_ANTDIV		0x0001		/* Enable ucode antenna diversity help */
-#define	MHF1_SYMWAR		0x0002
-#define	MHF1_RXPUWAR		0x0004
+#define MHF1_WLAN_CRITICAL  0x0002  /* WLAN is in critical state */
 #define	MHF1_MBSS_EN		0x0004		/* Enable MBSS: RXPUWAR deprecated for rev >= 9 */
 #define	MHF1_CCKPWR		0x0008		/* Enable 4 Db CCK power boost */
 #define	MHF1_BTCOEXIST		0x0010		/* Enable Bluetooth / WLAN coexistence */
 #define	MHF1_DCFILTWAR		0x0020		/* Enable g-mode DC canceler filter bw WAR */
-#define	MHF1_OFDMPWR		0x0040		/* Enable PA gain boost for OFDM frames */
+#define	MHF1_PACTL		0x0040		/* Enable PA gain boost for OFDM frames */
 #define	MHF1_ACPRWAR		0x0080		/* Enable ACPR.  Disable for Japan, channel 14 */
 #define	MHF1_EDCF		0x0100		/* Enable EDCF access control */
-#define MHF1_20IN40_IQ_WAR	0x0200
+#define MHF1_IQSWAP_WAR		0x0200
 #define	MHF1_FORCEFASTCLK	0x0400		/* Disable Slow clock request, for corerev < 11 */
-#define	MHF1_ACI		0x0800		/* Enable ACI war: shiftbits by 2 on PHY_CRS */
-#define	MHF1_AWAR		0x1000		/* Toggle bit 11 of the 2060's rx-gm_updn register
-						 * on rx/tx/rx transitions
-						 */
+#define	MHF1_ACIWAR		0x0800		/* Enable ACI war: shiftbits by 2 on PHY_CRS */
+#define	MHF1_A2060WAR		0x1000		/* PR15874WAR */
 #define MHF1_RADARWAR		0x2000
 #define MHF1_DEFKEYVALID	0x4000		/* Enable use of the default keys */
-#ifdef WLAFTERBURNER
 #define	MHF1_AFTERBURNER	0x8000		/* Enable afterburner */
-#endif /* WLAFTERBURNER */
 
 /* Flags in M_HOST_FLAGS2 */
-#define MHF2_BT4PCOEX		0x0001		/* Bluetooth 4-priority coexistence */
-#define MHF2_FASTWAKE		0x0002
-#define MHF2_SYNTHPUWAR		0x0004		/* force VCO recal when powerup synthpu */
-#define MHF2_PCISLOWCLKWAR	0x0008
-#define MHF2_SKIP_ADJTSF	0x0010		/* Don't update TSF when receiving
-						 * beacons or probe responses
-						 */
-#define MHF2_PIO_RECVING	0x0020
+#define MHF2_MBSSIDMODE		0x0001		/* MBSSID mode */
+#define MHF2_4317FWAKEWAR	0x0002		/* PR19311WAR: 4317PCMCIA, fast wakeup ucode */
+#define MHF2_SYNTHPUWAR		0x0004
+#define MHF2_PCISLOWCLKWAR	0x0008		/* PR16165WAR : Enable ucode PCI slow clock WAR */
+#define MHF2_SKIP_ADJTSF	0x0010		/* skip TSF update when receiving bcn/probeRsp */
+#define MHF2_4317PIORXWAR	0x0020		/* PR38778WAR : PIO receiving */
 #define MHF2_TXBCMC_NOW		0x0040		/* Flush BCMC FIFO immediately */
-#define MHF2_HWPWRCTL		0x0080		/* Enable hw power control */
-#define MHF2_BTCMOD		0x0100		/* BTC in alternate pins */
+#define MHF2_HWPWRCTL		0x0080		/* Enable ucode/hw power control */
+#define MHF2_BTC2WIRE_ALTGPIO	0x0100		/* BTC 2wire in alternate pins */
 #define MHF2_BTCPREMPT		0x0200		/* BTC enable bluetooth check during tx */
 #define MHF2_SKIP_CFP_UPDATE	0x0400		/* Skip CFP update */
 #define MHF2_NPHY40MHZ_WAR	0x0800
-#define MHF2_BTHWCOEX		0x2000		/* Bluetooth 3-wire hardware coexistence */
-#define MHF2_BTCANTMODE		0x4000		/* Bluetooth coexistence  antenna mode */
+#define MHF2_TMP_HTRSP		0x1000		/* Temp hack to use HT response frames in ucode */
+#define MHF2_PAPD_FLT_DIS	0x2000		/* LPPHY adjust tx filter */
+#define MHF2_BTCANTMODE		0x4000		/* BTC ant mode ?? */
+#define MHF2_NITRO_MODE		0x8000		/* Enable Nitro mode */
 
 /* Flags in M_HOST_FLAGS3 */
-#define MHF3_ANTSEL_EN		0x0001		/* enabled antenna selection */
-#define MHF3_ANTSEL_MODE	0x0002		/* antenna selection mode: */
+#define MHF3_ANTSEL_EN		0x0001		/* enabled mimo antenna selection */
+#define MHF3_ANTSEL_MODE	0x0002		/* antenna selection mode: 0: 2x3, 1: 2x4 */
 #define MHF3_BTCX_DEF_BT	0x0004		/* corerev >= 13 BT Coex. */
 #define MHF3_BTCX_ACTIVE_PROT	0x0008		/* corerev >= 13 BT Coex. */
 #define MHF3_NPHY_MLADV_WAR	0x0010
-#define MHF3_BT_RFACT_STUCK_WAR	0x0080
-#define MHF3_BTCX_SIM_RSP 	0x0100	/* For 3-wire BTCX allow responses during BT activity */
-#define MHF3_BTCX_PS_PROTECT	0x0200		/* corerev >= 13 BT Coex. */
-#define MHF3_BTCX_SIM_RSP_LOW	0x0400	/* For 3-wire BTCX reduce response power if BT is active */
+#define MHF3_AESAAD_PSM		0x0020		/* PSM supplies AES nonce and mic_iv */
+#define MHF3_UCAMPDU_RETX	0x0040		/* ucode handles AMPDU retransmission */
+#define MHF3_BTCX_DELL_WAR	0x0080
+#define MHF3_BTCX_SIM_RSP 	0x0100		/* allow limited lwo power tx when BT is active */
+#define MHF3_BTCX_PS_PROTECT	0x0200		/* use PS mode to protect BT activity */
+#define MHF3_BTCX_SIM_TX_LP	0x0400		/* use low power for simultaneous tx responses */
 #define MHF3_PR45960_WAR	0x0800
 #define MHF3_BTCX_ECI		0x1000		/* Enable BTCX ECI interface */
+#define MHF3_BTCX_EXTRA_PRI 0x2000      /* Extra priority for 4th wire */
 #define MHF3_PAPD_OFF_CCK	0x4000		/* Disable PAPD comp for CCK frames */
 #define MHF3_PAPD_OFF_OFDM	0x8000		/* Disable PAPD comp for OFDM frames */
 
+/* Flags in M_HOST_FLAGS4 */
+#define MHF4_CISCOTKIP_WAR	0x0001		/* Change WME timings under certain conditions */
+#define	MHF4_RCMTA_BSSID_EN	0x0002		/* BTAMP: multiSta BSSIDs matching in RCMTA area */
+#define	MHF4_BCN_ROT_RR		0x0004		/* MBSSID: beacon roarate in round-robin fashion */
+#define	MHF4_OPT_SLEEP		0x0008		/* enable opportunistic sleep */
+#define	MHF4_PROXY_STA		0x0010		/* enable proxy-STA feature */
+#define MHF4_AGING		0x0020		/* Enable aging threshold for RF awareness */
+#define MHF4_BPHY_2TXCORES	0x0040		/* bphy Tx on both cores (negative logic) */
+#define MHF4_BPHY_TXCORE0	0x0080		/* force bphy Tx on core 0 (board level WAR) */
+#define MHF4_BTAMP_TXLOWPWR	0x0100		/* BTAMP, low tx-power mode */
+#define MHF4_WMAC_ACKTMOUT	0x0200		/* reserved for WMAC testing */
+#define MHF4_IBSS_SEC		0x0800		/* IBSS WPA2-PSK operating mode */
 
+/* Flags in M_HOST_FLAGS5 */
+#define MHF5_4313_BTCX_GPIOCTRL	0x0001		/* Enable gpio for bt/wlan sel for 4313 */
+#define MHF5_BTCX_LIGHT         0x0002 /* light coex mode, turn off txpu only for critical BT */
+#define MHF5_BTCX_PARALLEL      0x0004 /* BT and WLAN run in parallel. */
 /* Radio power setting for ucode */
 #define	M_RADIO_PWR		(0x32 * 2)
 
@@ -1381,22 +1654,34 @@ struct shm_acparams {
 
 /* Receive Frame Data Header for 802.11b DCF-only frames */
 typedef struct d11rxhdr d11rxhdr_t;
-struct d11rxhdr {
-	uint16	RxFrameSize;		/* Actual byte length of the frame data received */
-	uint16	PAD;			/* Reserved */
-	uint16	PhyRxStatus_0;		/* PhyRxStatus 15:0 */
-	uint16	PhyRxStatus_1;		/* PhyRxStatus 31:16 */
-	uint16	PhyRxStatus_2;		/* PhyRxStatus 47:32 */
-	uint16	PhyRxStatus_3;		/* PhyRxStatus 63:48 */
-	uint16	RxStatus1;		/* MAC Rx Status */
-	uint16	RxStatus2;		/* extended MAC Rx status */
-	uint16	RxTSFTime;		/* RxTSFTime time of first MAC symbol + M_PHY_PLCPRX_DLY */
-	uint16	RxChan;			/* gain code, channel radio code, and phy type */
-} PACKED;
+BWL_PRE_PACKED_STRUCT struct d11rxhdr {
+	uint16 RxFrameSize;	/* Actual byte length of the frame data received */
+	uint16 PAD;
+	uint16 PhyRxStatus_0;	/* PhyRxStatus 15:0 */
+	uint16 PhyRxStatus_1;	/* PhyRxStatus 31:16 */
+	uint16 PhyRxStatus_2;	/* PhyRxStatus 47:32 */
+	uint16 PhyRxStatus_3;	/* PhyRxStatus 63:48 */
+	uint16 PhyRxStatus_4;	/* PhyRxStatus 79:64 */
+	uint16 PhyRxStatus_5;	/* PhyRxStatus 95:80 */
+	uint16 RxStatus1;	/* MAC Rx Status */
+	uint16 RxStatus2;	/* extended MAC Rx status */
+	uint16 RxTSFTime;	/* RxTSFTime time of first MAC symbol + M_PHY_PLCPRX_DLY */
+	uint16 RxChan;		/* gain code, channel radio code, and phy type */
+} BWL_POST_PACKED_STRUCT;
 
-#define	RXHDR_LEN		20	/* sizeof d11rxhdr_t */
-
+#define	RXHDR_LEN		24	/* sizeof d11rxhdr_t */
 #define	FRAMELEN(h)		((h)->RxFrameSize)
+
+typedef struct wlc_d11rxhdr wlc_d11rxhdr_t;
+BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
+	d11rxhdr_t rxhdr;
+	uint32	tsf_l;		/* TSF_L reading */
+	int8	rssi;		/* computed instanteneous rssi in BMAC */
+	int8	rxpwr0;		/* obsoleted, place holder for legacy ROM code. use rxpwr[] */
+	int8	rxpwr1;		/* obsoleted, place holder for legacy ROM code. use rxpwr[] */
+	int8	do_rssi_ma;	/* do per-pkt sampling for per-antenna ma in HIGH */
+	int8	rxpwr[WL_RSSI_ANT_MAX];	/* rssi for supported antennas */
+} BWL_POST_PACKED_STRUCT;
 
 /* PhyRxStatus_0: */
 #define	PRXS0_FT_MASK		0x0003	/* NPHY only: CCK, OFDM, preN, N */
@@ -1412,13 +1697,13 @@ struct d11rxhdr {
 #define PRXS0_ANTSEL_MASK	0xF000	/* NPHY: Antennas used for received frame, bitmask */
 #define PRXS0_ANTSEL_SHIFT	0x12
 
-	/* subfield PRXS0_FT_MASK */
+/* subfield PRXS0_FT_MASK */
 #define	PRXS0_CCK		0x0000
 #define	PRXS0_OFDM		0x0001	/* valid only for G phy, use rxh->RxChan for A phy */
 #define	PRXS0_PREN		0x0002
 #define	PRXS0_STDN		0x0003
 
-	/* subfield PRXS0_ANTSEL_MASK */
+/* subfield PRXS0_ANTSEL_MASK */
 #define PRXS0_ANTSEL_0		0x0	/* antenna 0 is used */
 #define PRXS0_ANTSEL_1		0x2	/* antenna 1 is used */
 #define PRXS0_ANTSEL_2		0x4	/* antenna 2 is used */
@@ -1458,6 +1743,33 @@ struct d11rxhdr {
 #define PRXS3_nphy_MMPLCP_RATE_MASK	0xF000	/* Mixed-mode preamble rate field */
 #define PRXS3_nphy_MMPLCP_RATE_SHIFT	12
 
+/* HTPHY Rx Status defines */
+/* htphy PhyRxStatus_0: those bit are overlapped with PhyRxStatus_0 */
+#define PRXS0_BAND	        0x0400	/* 0 = 2.4G, 1 = 5G */
+#define PRXS0_RSVD	        0x0800	/* reserved; set to 0 */
+#define PRXS0_UNUSED	        0xF000	/* unused and not defined; set to 0 */
+
+/* htphy PhyRxStatus_1: */
+#define PRXS1_HTPHY_CORE_MASK	0x000F	/* core enables for {3..0}, 0=disabled, 1=enabled */
+#define PRXS1_HTPHY_ANTCFG_MASK	0x00F0	/* antenna configation */
+#define PRXS1_HTPHY_MMPLCPLenL_MASK	0xFF00	/* Mixmode PLCP Length low byte mask */
+
+/* htphy PhyRxStatus_2: */
+#define PRXS2_HTPHY_MMPLCPLenH_MASK	0x000F	/* Mixmode PLCP Length high byte maskw */
+#define PRXS2_HTPHY_MMPLCH_RATE_MASK	0x00F0	/* Mixmode PLCP rate mask */
+#define PRXS2_HTPHY_RXPWR_ANT0	0xFF00	/* Rx power on core 0 */
+
+/* htphy PhyRxStatus_3: */
+#define PRXS3_HTPHY_RXPWR_ANT1	0x00FF	/* Rx power on core 1 */
+#define PRXS3_HTPHY_RXPWR_ANT2	0xFF00	/* Rx power on core 2 */
+
+/* htphy PhyRxStatus_4: */
+#define PRXS4_HTPHY_RXPWR_ANT3	0x00FF	/* Rx power on core 3 */
+#define PRXS4_HTPHY_CFO		0xFF00	/* Coarse frequency offset */
+
+/* htphy PhyRxStatus_5: */
+#define PRXS5_HTPHY_FFO	        0x00FF	/* Fine frequency offset */
+#define PRXS5_HTPHY_AR	        0xFF00	/* Advance Retard */
 
 /* ucode RxStatus1: */
 #define	RXS_BCNSENT		0x8000
@@ -1480,7 +1792,8 @@ struct d11rxhdr {
 #define	RXS_TKMICATMPT		(1 << 3)
 #define	RXS_TKMICERR		(1 << 4)
 #define	RXS_PHYRXST_VALID	(1 << 8)
-
+#define RXS_RXANT_MASK		0x3
+#define RXS_RXANT_SHIFT		12
 
 
 
@@ -1493,11 +1806,32 @@ struct d11rxhdr {
 #define	RXS_CHAN_PHYTYPE_SHIFT	0
 
 /* Index of attenuations used during ucode power control. */
-#define M_PWRIND_BLKS	(0x188 * 2)
+#define M_PWRIND_BLKS	(0x184 * 2)
 #define M_PWRIND_MAP0	(M_PWRIND_BLKS + 0x0)
 #define M_PWRIND_MAP1	(M_PWRIND_BLKS + 0x2)
 #define M_PWRIND_MAP2	(M_PWRIND_BLKS + 0x4)
 #define M_PWRIND_MAP3	(M_PWRIND_BLKS + 0x6)
+#define M_PWRIND_MAP4	(M_PWRIND_BLKS + 0x8)
+#define M_PWRIND_MAP5	(M_PWRIND_BLKS + 0xa)
+/* M_PWRIND_MAP(core) macro */
+#define M_PWRIND_MAP(core)  (M_PWRIND_BLKS + ((core)<<1))
+
+/* CCA Statistics */
+#define M_CCA_STATS_BLK (0x360 * 2)
+#define M_CCA_TXDUR_L	(M_CCA_STATS_BLK + 0x0)
+#define M_CCA_TXDUR_H	(M_CCA_STATS_BLK + 0x2)
+#define M_CCA_INBSS_L	(M_CCA_STATS_BLK + 0x4)
+#define M_CCA_INBSS_H	(M_CCA_STATS_BLK + 0x6)
+#define M_CCA_OBSS_L	(M_CCA_STATS_BLK + 0x8)
+#define M_CCA_OBSS_H	(M_CCA_STATS_BLK + 0xa)
+#define M_CCA_NOCTG_L	(M_CCA_STATS_BLK + 0xc)
+#define M_CCA_NOCTG_H	(M_CCA_STATS_BLK + 0xe)
+#define M_CCA_NOPKT_L	(M_CCA_STATS_BLK + 0x10)
+#define M_CCA_NOPKT_H	(M_CCA_STATS_BLK + 0x12)
+#define M_MAC_DOZE_L	(M_CCA_STATS_BLK + 0x14)
+#define M_MAC_DOZE_H	(M_CCA_STATS_BLK + 0x16)
+
+#define M_CCA_FLAGS	(0x9b7 * 2)
 
 /* PSM SHM variable offsets */
 #define	M_PSM_SOFT_REGS	0x0
@@ -1508,25 +1842,89 @@ struct d11rxhdr {
 #define	M_UCODE_DBGST	(M_PSM_SOFT_REGS + 0x40)	/* ucode debug status code */
 #define	M_UCODE_MACSTAT	(M_PSM_SOFT_REGS + 0xE0)	/* macstat counters */
 
+#define M_AGING_THRSH	(0x3e * 2)			/* max time waiting for medium before tx */
 #define	M_MBURST_SIZE	(0x40 * 2)			/* max frames in a frameburst */
 #define	M_MBURST_TXOP	(0x41 * 2)			/* max frameburst TXOP in unit of us */
 #define M_SYNTHPU_DLY	(0x4a * 2)			/* pre-wakeup for synthpu, default: 500 */
 #define	M_PRETBTT	(0x4b * 2)
 
-#define M_BTCX_DEFER_INT		(M_PSM_SOFT_REGS + (0x3b * 2))
-#define M_BTCX_DEFER_LMT		(M_PSM_SOFT_REGS + (0x3c * 2))
-#define M_BTCX_LAST_SCO		(M_PSM_SOFT_REGS + (0x51 * 2))
-#define M_BTCX_LAST_SCO_H	(M_PSM_SOFT_REGS + (0x52 * 2))
-#define M_BTCX_NEXT_SCO		(M_PSM_SOFT_REGS + (0x5a * 2))
-#define M_BTCX_MIN_ACTIVE		(M_PSM_SOFT_REGS + (0x5c * 2))
-#define M_BTCX_MIN_PROT		(M_PSM_SOFT_REGS + (0x66 * 2))
-#define M_BTCX_BT_DUR		(M_PSM_SOFT_REGS + (0x67 * 2))
-#define M_BTCX_ANT_DLY		(M_PSM_SOFT_REGS + (0x68 * 2))
-#define M_BTCX_PRED_PER		(M_PSM_SOFT_REGS + (0x69 * 2))
-#define M_BTCX_PRED_ADV		(M_PSM_SOFT_REGS + (0x6a * 2))
-#define M_BTCX_BCN_LOSS_LMT	(M_PSM_SOFT_REGS + (0x6b * 2))
+#define M_BTCX_MAX_INDEX		89
+#define M_BTCX_BLK_PTR			(M_PSM_SOFT_REGS + (0x49 * 2))
 
-#define M_PHY_TX_FLT_PTR		(M_PSM_SOFT_REGS + (0x3d * 2))
+#define M_BTCX_BT_TXOP			(1 * 2)
+#define M_BTCX_PRED_PER			(4 * 2)
+#define M_BTCX_LAST_SCO			(12 * 2)
+#define M_BTCX_LAST_SCO_H		(13 * 2)
+#define M_BTCX_NEXT_SCO			(14 * 2)
+#define M_BTCX_LAST_DATA		(23 * 2)
+#define M_BTCX_A2DP_BUFFER		(30 * 2)
+#define M_BTCX_LAST_A2DP		(38 * 2)
+#define M_BTCX_A2DP_BUFFER_LOWMARK	(40 * 2)
+#define M_BTCX_BT_TX_MODE 		(41 * 2)
+#define M_BTCX_PRED_PER_COUNT		(72 * 2)
+#define M_BTCX_PROT_RSSI_THRESH		(73 * 2)
+#define M_BTCX_AMPDUTX_RSSI_THRESH	(74 * 2)
+#define M_BTCX_AMPDURX_RSSI_THRESH	(75 * 2)
+#define M_BTCX_DIVERSITY_SAVE		(89 * 2)
+
+
+#define M_ALT_TXPWR_IDX		(M_PSM_SOFT_REGS + (0x3b * 2))	/* offset to the target txpwr */
+#define M_PHY_TX_FLT_PTR	(M_PSM_SOFT_REGS + (0x3d * 2))
+#define M_CTS_DURATION		(M_PSM_SOFT_REGS + (0x5c * 2))
+#define M_SSLPN_OLYMPIC		(M_PSM_SOFT_REGS + (0x68 * 2))
+#define M_LP_RCCAL_OVR		(M_PSM_SOFT_REGS + (0x6b * 2))
+
+#ifdef WLP2P
+/* WiFi P2P per BSS control block positions.
+ * all time related fields are in units of 32us unless noted otherwise.
+ */
+#define M_P2P_BSS_MAX		4
+#define M_P2P_BSS_BLK_SZ	10
+#define M_P2P_BSS_BLK(b)	(M_PSM_SOFT_REGS + (0x38a * 2) + M_P2P_BSS_BLK_SZ * (b) * 2)
+#define M_P2P_BSS(b, p)		(M_P2P_BSS_BLK(b) + (p) * 2)
+#define M_P2P_BSS_BCN_INT(b)	(M_P2P_BSS_BLK(b) + (0 * 2))	/* beacon interval */
+#define M_P2P_BSS_DTIM_CNT(b)	(M_P2P_BSS_BLK(b) + (1 * 2))	/* DTIM interval? */
+#define M_P2P_BSS_ST(b)		(M_P2P_BSS_BLK(b) + (2 * 2))	/* current state */
+#define M_P2P_BSS_PRE_TBTT(b)	(M_P2P_BSS_BLK(b) + (3 * 2))	/* pretbtt time */
+#define M_P2P_BSS_CTW(b)	(M_P2P_BSS_BLK(b) + (4 * 2))	/* CTWindow duration */
+#define M_P2P_BSS_N_CTW_END(b)	(M_P2P_BSS_BLK(b) + (5 * 2))	/* next CTWindow end */
+#define M_P2P_BSS_NOA_CNT(b)	(M_P2P_BSS_BLK(b) + (6 * 2))	/* NoA count */
+#define M_P2P_BSS_N_NOA(b)	(M_P2P_BSS_BLK(b) + (7 * 2))	/* next absence time */
+#define M_P2P_BSS_NOA_DUR(b)	(M_P2P_BSS_BLK(b) + (8 * 2))	/* absence period */
+#define M_P2P_BSS_NOA_TD(b)	(M_P2P_BSS_BLK(b) + (9 * 2))	/* presence per. (NoA int - dur) */
+
+/* M_P2P_BSS_ST word positions. */
+#define M_P2P_BSS_ST_AP		(1 << 4)	/* BSS is Infra-BSS AP */
+#define M_P2P_BSS_ST_STA	(1 << 5)	/* BSS is Infra-BSS STA */
+#define M_P2P_BSS_ST_GO		(1 << 6)	/* BSS is P2P Group Owner */
+#define M_P2P_BSS_ST_GC		(1 << 7)	/* BSS is P2P Client */
+
+/* WiFi P2P interrupt block positions */
+#define M_P2P_I_BLK_SZ		4
+#define M_P2P_I_BLK(b)		(M_PSM_SOFT_REGS + (0x36c * 2) + M_P2P_I_BLK_SZ * (b) * 2)
+#define M_P2P_I(b, i)		(M_P2P_I_BLK(b) + (i) * 2)
+#define M_P2P_I_PRE_TBTT	0		/* pretbtt */
+#define M_P2P_I_CTW_END		1		/* CTWindow ends */
+#define M_P2P_I_ABS		2		/* absence period starts */
+#define M_P2P_I_PRS		3		/* presence period starts */
+
+/* P2P hps flags */
+#define M_P2P_HPS		(M_PSM_SOFT_REGS + (0x37c * 2))
+#define M_P2P_HPS_CTW(b)	(1 << (b))
+#define M_P2P_HPS_NOA(b)	(1 << ((b) + M_P2P_BSS_MAX))
+#endif /* WLP2P */
+
+/* PKTENG Rx Stats Block */
+#define M_RXSTATS_BLK_PTR	(M_PSM_SOFT_REGS + (0x65 * 2))
+
+/* Txcore Mask related parameters 5 locations (BPHY, OFDM, 1-streams ~ 3-Streams */
+#define M_COREMASK_BLK  	0x3b4
+#define M_COREMASK_BPHY		((M_COREMASK_BLK + 0) * 2)
+#define M_COREMASK_OFDM		((M_COREMASK_BLK + 1) * 2)
+#define M_COREMASK_MCS		((M_COREMASK_BLK + 2) * 2)
+#define TXCOREMASK		0x0F
+#define SPATIAL_SHIFT		8
+#define MAX_COREMASK_BLK	5
 
 
 /* ucode debug status codes */
@@ -1537,21 +1935,105 @@ struct d11rxhdr {
 #define	DBGST_ASLEEP		4		/* asleep (PS mode) */
 
 /* Scratch Reg defs */
-#define	S_DOT11_CWMIN		3		/* Contention window min */
-#define	S_DOT11_CWMAX		4		/* Contention window max */
-#define	S_DOT11_CWCUR		5		/* Contention window current */
-#define	S_DOT11_SRC_LMT		6		/* short retry count limit */
-#define	S_DOT11_LRC_LMT		7		/* long retry count limit */
-#define	S_DOT11_DTIMCOUNT	8		/* current DTIM count */
-#define	S_DOT11_SEQNUM		9		/* current seq number */
-#define	S_BCN0_FRM_BYTESZ	21		/* Beacon 0 template length */
-#define	S_BCN1_FRM_BYTESZ	22		/* Beacon 1 template length */
-#define	S_SFRMTXCNTFBRTHSD	23		/* short frame tx count threshold for rate
-						 * fallback
-						 */
-#define	S_LFRMTXCNTFBRTHSD	24		/* long frame tx count threshold */
+typedef enum
+{
+	S_RSV0 = 0,
+	S_RSV1,
+	S_RSV2,
+
+	/* scratch registers for Dot11-contants */
+	S_DOT11_CWMIN,		/* CW-minimum					0x03 */
+	S_DOT11_CWMAX,		/* CW-maximum					0x04 */
+	S_DOT11_CWCUR,		/* CW-current					0x05 */
+	S_DOT11_SRC_LMT,	/* short retry count limit			0x06 */
+	S_DOT11_LRC_LMT,	/* long retry count limit			0x07 */
+	S_DOT11_DTIMCOUNT,	/* DTIM-count					0x08 */
+
+	/* Tx-side scratch registers */
+	S_SEQ_NUM,		/* hardware sequence number reg			0x09 */
+	S_SEQ_NUM_FRAG,		/* seq-num for frags (Set at the start os MSDU	0x0A */
+	S_FRMRETX_CNT,		/* frame retx count				0x0B */
+	S_SSRC,			/* Station short retry count			0x0C */
+	S_SLRC,			/* Station long retry count			0x0D */
+	S_EXP_RSP,		/* Expected response frame			0x0E */
+	S_OLD_BREM,		/* Remaining backoff ctr			0x0F */
+	S_OLD_CWWIN,		/* saved-off CW-cur				0x10 */
+	S_TXECTL,		/* TXE-Ctl word constructed in scr-pad		0x11 */
+	S_CTXTST,		/* frm type-subtype as read from Tx-descr	0x12 */
+
+	/* Rx-side scratch registers */
+	S_RXTST,		/* Type and subtype in Rxframe			0x13 */
+
+	/* Global state register */
+	S_STREG,		/* state storage actual bit maps below		0x14 */
+
+	S_TXPWR_SUM,		/* Tx power control: accumulator		0x15 */
+	S_TXPWR_ITER,		/* Tx power control: iteration			0x16 */
+	S_RX_FRMTYPE,		/* Rate and PHY type for frames			0x17 */
+	S_THIS_AGG,		/* Size of this AGG (A-MSDU)			0x18 */
+
+	S_KEYINDX,		/*						0x19 */
+	S_RXFRMLEN,		/* Receive MPDU length in bytes			0x1A */
+
+	/* Receive TSF time stored in SCR */
+	S_RXTSFTMRVAL_WD3,	/* TSF value at the start of rx			0x1B */
+	S_RXTSFTMRVAL_WD2,	/* TSF value at the start of rx			0x1C */
+	S_RXTSFTMRVAL_WD1,	/* TSF value at the start of rx			0x1D */
+	S_RXTSFTMRVAL_WD0,	/* TSF value at the start of rx			0x1E */
+	S_RXSSN,		/* Received start seq number for A-MPDU BA	0x1F */
+	S_RXQOSFLD,		/* Rx-QoS field (if present)			0x20 */
+
+	/* Scratch pad regs used in microcode as temp storage */
+	S_TMP0,			/* stmp0					0x21 */
+	S_TMP1,			/* stmp1					0x22 */
+	S_TMP2,			/* stmp2					0x23 */
+	S_TMP3,			/* stmp3					0x24 */
+	S_TMP4,			/* stmp4					0x25 */
+	S_TMP5,			/* stmp5					0x26 */
+	S_PRQPENALTY_CTR,	/* Probe response queue penalty counter		0x27 */
+	S_ANTCNT,		/* unsuccessful attempts on current ant.	0x28 */
+	S_SYMBOL,		/* flag for possible symbol ctl frames		0x29 */
+	S_RXTP,			/* rx frame type				0x2A */
+	S_STREG2,		/* extra state storage				0x2B */
+	S_STREG3,		/* even more extra state storage		0x2C */
+	S_STREG4,		/* ...						0x2D */
+	S_STREG5,		/* remember to initialize it to zero		0x2E */
+
+	S_NITRO_TXT,		/* NITRO: time of MP_ACK or Rsp frm trans	0x2F */
+	S_NITRO_RXAID,		/* NITRO: received child AID (at Parent)	0x30 */
+
+	S_ADJPWR_IDX,
+	S_CUR_PTR,		/* Temp pointer for A-MPDU re-Tx SHM table	0x32 */
+	S_REVID4,		/* 0x33 */
+	S_INDX,			/* 0x34 */
+	S_ADDR0,		/* 0x35 */
+	S_ADDR1,		/* 0x36 */
+	S_ADDR2,		/* 0x37 */
+	S_ADDR3,		/* 0x38 */
+	S_ADDR4,		/* 0x39 */
+	S_ADDR5,		/* 0x3A */
+	S_TMP6,			/* 0x3B */
+	S_KEYINDX_BU,		/* Backup for Key index 			0x3C */
+	S_MFGTEST_TMP0,		/* Temp register used for RX test calculations	0x3D */
+	S_RXESN,		/* Received end sequence number for A-MPDU BA	0x3E */
+	S_STREG6,		/* 0x3F */
+} ePsmScratchPadRegDefinitions;
+
+#define S_BEACON_INDX	S_OLD_BREM
+#define S_PRS_INDX	S_OLD_CWWIN
+#define S_BTCX_BT_DUR	S_REVID4
+#define S_PHYTYPE	S_SSRC
+#define S_PHYVER	S_SLRC
 
 /* IHR offsets */
+
+#define PSM_PC_REG_0            0x068
+#define PSM_PC_REG_1            0x069
+#define PSM_PC_REG_2            0x06a
+#define PSM_PC_REG_3            0x06b
+
+#define TSF_CLK_FRAC_L		0x117
+#define TSF_CLK_FRAC_H		0x118
 #define TSF_TMR_TSF_L		0x119
 #define TSF_TMR_TSF_ML		0x11A
 #define TSF_TMR_TSF_MU		0x11B
@@ -1576,10 +2058,10 @@ struct d11rxhdr {
 #define TSF_GPT_2_VAL_H		0x137
 
 /* Slow timer registers */
-#define SLOW_CTRL				0x150
-#define SLOW_TIMER_L			0x151
+#define SLOW_CTRL		0x150
+#define SLOW_TIMER_L		0x151
 #define SLOW_TIMER_H		0x152
-#define SLOW_FRAC				0x153
+#define SLOW_FRAC		0x153
 #define FAST_PWRUP_DLY		0x154
 
 /* IHR TSF_GPT STAT values */
@@ -1648,8 +2130,10 @@ typedef struct macstat {
 	uint16	txnack;
 	uint16	txglitch_nack;
 	uint16	txburst;		/* 0xf6 # tx bursts */
-	uint16	rxburst;		/* 0xf8 # rx bursts */
+	uint16	bphy_rxcrsglitch;	/* bphy rx crs glitch */
 	uint16	phywatchdog;		/* 0xfa # of phy watchdog events */
+	uint16 PAD;
+	uint16 bphy_badplcp;            /* bphy bad plcp */
 } macstat_t;
 
 /* dot11 core-specific control flags */
@@ -1661,9 +2145,9 @@ typedef struct macstat {
  * to a NPHY (and corerev >= 11 which it will always be for NPHYs).
  */
 #define	SICF_BWMASK		0x00c0		/* phy clock mask (b6 & b7) */
-#define	SICF_BW40		0x0080		/* 40Mhz BW (160MHZ phyclk) */
-#define	SICF_BW20		0x0040		/* 20Mhz BW (80MHZ phyclk) */
-#define	SICF_BW10		0x0000		/* 10Mhz BW (40MHZ phyclk) */
+#define	SICF_BW40		0x0080		/* 40MHz BW (160MHz phyclk) */
+#define	SICF_BW20		0x0040		/* 20MHz BW (80MHz phyclk) */
+#define	SICF_BW10		0x0000		/* 10MHz BW (40MHz phyclk) */
 #define	SICF_GMODE		0x2000		/* gmode enable */
 
 /* dot11 core-specific status flags */
@@ -1760,7 +2244,6 @@ typedef struct macstat {
 #define	BPHY_RF_OVERRIDE2	0x65
 #define	BPHY_SPUR_CANCEL_CTRL	0x66
 #define	BPHY_FINE_DIGIGAIN_CTRL	0x67
-#define	BPHY_SPUR_CANCEL_CTRL	0x66
 #define	BPHY_RSSI_LUT		0x88
 #define	BPHY_RSSI_LUT_END	0xa7
 #define	BPHY_TSSI_LUT		0xa8
@@ -1797,3169 +2280,6 @@ typedef struct macstat {
 #define	TST_TXTEST_RATE_5_5MBPS	2
 #define	TST_TXTEST_RATE_11MBPS	3
 #define	TST_TXTEST_RATE_SHIFT	3
-
-/* Bits in BPHY_RF_OVERRIDE(0x15): */
-#define	RFO_FLTR_RX_CTRL_OVR	0x0080
-#define	RFO_FLTR_RX_CTRL_VAL	0x0040
-
-/* Bits in BPHY_RF_TR_LOOKUP1(0x16): */
-
-/* Bits in BPHY_RF_TR_LOOKUP2(0x17): */
-
-/* Bits in BPHY_REFRESH_MAIN(0x1a): */
-#define	REF_RXPU_TRIG		0x8000
-#define	REF_IDLE_TRIG		0x4000
-#define	REF_TO0_TRIG		0x2000
-#define	REF_TO1_TRIG		0x1000
-
-/* Bits in BPHY_LNA_GAIN_RANGE(0x26): */
-#define	LNA_DIGI_GAIN_ENABLE	0x8000
-#define	LNA_ON_CTRL		0x4000
-#define	LNA_PTR_THRESH		0x0f00
-#define	LNA_GAIN_RANGE		0x00ff
-
-/* Bits in BPHY_SYNC_CTL(0x35): */
-#define	SYN_ANGLE_START		0x0f00
-#define	SYN_TOGGLE_CUTOFF	0x0080
-#define	SYN_WARMUP_DUR		0x007f
-
-/* Bits in BPHY_OPTIONAL_MODES	(0x5d): */
-#define	OPT_MODE_G		0x4000
-
-/* Aphy regs offset in the gphy */
-#define	GPHY_TO_APHY_OFF	0x400
-
-#define	APHY_REG_OFT_BASE	0x0
-
-/* offsets for indirect access to aphy registers */
-#define	APHY_PHYVERSION		0x00
-#define	APHY_BBCONFIG		0x01
-#define	APHY_PWRDWN		0x03
-#define	APHY_PHYCRSTH		0x06
-#define	APHY_RF_OVERRIDE	0x10
-#define	APHY_RF_OVERRIDE_VAL	0x11
-#define	APHY_GPIO_OUTEN		0x12
-#define	APHY_TR_LUT1		0x13
-#define	APHY_TR_LUT2		0x14
-#define	APHY_DIGI_GAIN1		0x15
-#define	APHY_DIGI_GAIN2		0x16
-#define	APHY_DIGI_GAIN3		0x17
-#define	APHY_DESIRED_PWR	0x18
-#define	APHY_PAR_GAIN_SEL	0x19
-#define	APHY_MIN_MAX_GAIN	0x1a
-#define	APHY_GAIN_INFO		0x1b
-#define	APHY_INIT_GAIN_INDX	0x1c
-#define	APHY_CLIP_GAIN_INDX	0x1d
-#define	APHY_TRN_INFO		0x1e
-#define	APHY_CLIP_BO_THRESH	0x1f
-#define	APHY_LPF_GAIN_BO_THRESH	0x20
-#define	APHY_ADC_VSQR		0x21
-#define	APHY_CCK_CLIP_BO_THRESH	0x22
-#define	APHY_CLIP_PWR_THRESH	0x24
-#define	APHY_JSSI_OFFSET	0x25
-#define	APHY_DC_B0		0x26
-#define	APHY_DC_B1		0x27
-#define	APHY_DC_A1		0x28
-#define	APHY_CTHR_STHR_SHDIN	0x29
-#define	APHY_MIN_PWR_GSETTL	0x2a
-#define	APHY_ANT_DWELL		0x2b
-#define	APHY_RESET_LEN		0x2c
-#define	APHY_CLIP_CTR_INIT	0x2d
-#define	APHY_ED_TO		0x2e
-#define	APHY_CRS_HOLD		0x2f
-#define	APHY_PLCP_TMT_STR0_MIN	0x30
-#define	APHY_STRN_COLL_MAX_SAMP	0x31
-#define	APHY_STRN_MIN_REAL	0x33
-#define	APHY_COARSE_UPD_CTL	0x34
-#define APHY_IqestEnWaitTime	0x34
-#define	APHY_SCALE_FACT_I	0x35
-#define APHY_IqestNumSamps	0x35
-#define	APHY_SCALE_FACT_Q	0x36
-#define APHY_IqestIqAccHi	0x36
-#define	APHY_DC_OFFSET_I	0x37
-#define APHY_IqestIqAccLo	0x37
-#define	APHY_DC_OFFSET_Q	0x38
-#define APHY_IqestIpwrAccHi	0x38
-#define	APHY_FIX_VAL_OUT_I	0x39
-#define APHY_IqestIpwrAccLo	0x39
-#define	APHY_FIX_VAL_OUT_Q	0x3a
-#define APHY_IqestQpwrAccHi	0x3a
-#define	APHY_MAX_SAMP_FINE	0x3b
-#define APHY_IqestQpwrAccLo	0x3b
-#define	APHY_LTRN_MIN_OFFSET	0x3d
-#define	APHY_COMP_CTL		0x3e
-#define	APHY_HSQ_MIN_BPSK	0x41
-#define	APHY_HSQ_MIN_QPSK	0x42
-#define	APHY_HSQ_MIN_16QAM	0x43
-#define	APHY_HSQ_MIN_64QAM	0x44
-#define	APHY_QUANT_ST_BPSK	0x45
-#define	APHY_QUANT_ST_QPSK	0x46
-#define	APHY_QUANT_ST_16QAM	0x47
-#define	APHY_QUANT_ST_64QAM	0x48
-#define	APHY_VITERBI_OFFSET	0x49
-#define	APHY_MAX_STEPS		0x4a
-#define	APHY_ALPHA1		0x50
-#define	APHY_ALPHA2		0x51
-#define	APHY_BETA1		0x52
-#define	APHY_BETA2		0x53
-#define	APHY_NUM_LOOP		0x54
-#define	APHY_MU			0x55
-#define	APHY_THETA_I		0x56
-#define	APHY_THETA_Q		0x57
-#define	APHY_SCRAM_CTL_INIT_ST	0x58
-#define	APHY_PKT_GAIN		0x59
-#define	APHY_COARSE_ES		0x5a
-#define	APHY_FINE_ES		0x5b
-#define	APHY_TRN_OFFSET		0x5c
-#define	APHY_NUM_PKT_CNT	0x5f
-#define	APHY_STOP_PKT_CNT	0x60
-#define	APHY_CTL		0x61
-#define	APHY_PASS_TH_SAMPS	0x62
-#define	APHY_RX_COMP_COEFF	0x63
-#define	APHY_TC_PLCP_DELAY	0x68
-#define	APHY_TX_COMP_COEFF	0x69
-#define	APHY_TX_COMP_OFFSET	0x6a
-#define	APHY_DC_BIAS		0x6b
-#define	APHY_ROTATE_FACT	0x6e
-#define	APHY_TABLE_ADDR		0x72
-#define	APHY_TABLE_DATA_I	0x73
-#define	APHY_TABLE_DATA_Q	0x74
-#define	APHY_RSSI_FILT_B0	0x75
-#define	APHY_RSSI_FILT_B1	0x76
-#define	APHY_RSSI_FILT_B2	0x77
-#define	APHY_RSSI_FILT_A1	0x78
-#define	APHY_RSSI_FILT_A2	0x79
-#define	APHY_RSSI_ADC_CTL	0x7a
-#define	APHY_TSSI_STAT		0x7b
-#define	APHY_TSSI_TEMP_CTL	0x7c
-#define	APHY_TEMP_STAT		0x7d
-#define	APHY_CRS_DELAY		0x7e
-#define	APHY_WRSSI_NRSSI	0x7f
-#define	APHY_P1_P2_GAIN_SETTLE	0x80
-#define	APHY_N1_N2_GAIN_SETTLE	0x81
-#define	APHY_N1_P1_GAIN_SETTLE	0x82
-#define	APHY_P1_CLIP_CTR	0x83
-#define	APHY_P2_CLIP_CTR	0x84
-#define	APHY_N1_CLIP_CTR	0x85
-#define	APHY_N2_CLIP_CTR	0x86
-#define	APHY_P1_COMP_TIME	0x88
-#define	APHY_N1_COMP_TIME	0x89
-#define	APHY_N1_N2_THRESH	0x8a
-#define	APHY_ANT2_DWELL		0x8b
-#define	APHY_ANT_WR_SETTLE	0x8c
-#define	APHY_ANT_COMP_TIME	0x8d
-#define	APHY_AUX_CLIP_THRESH	0x8e
-#define	APHY_DS_AUX_CLIP_THRESH	0x8f
-#define	APHY_CLIP2RST_N1_P1	0x90
-#define	APHY_P1_P2_EDDR_THRESH	0x91
-#define	APHY_N1_N2_EDDR_THRESH	0x92
-#define	APHY_CLIP_PWDN_THRESH	0x93
-#define	APHY_SRCH_COMP_SETTLE	0x94
-#define	APHY_ED_DROP_ENAB	0x95
-#define	APHY_N1_P1_P2_COMP	0x96
-#define	APHY_CCK_NUS_THRESH	0x9b
-#define	APHY_CLIP_N1_P1_IDX	0xa0
-#define	APHY_CLIP_P1_P2_IDX	0xa1
-#define	APHY_CLIP_N1_N2_IDX	0xa2
-#define	APHY_CLIP_THRESH	0xa3
-#define	APHY_CCK_DESIRED_POW	0xa4
-#define	APHY_CCK_GAIN_INFO	0xa5
-#define	APHY_CCK_SHBITS_REF	0xa6
-#define	APHY_CCK_SHBITS_GNREF	0xa7
-#define	APHY_DIV_SEARCH_IDX	0xa8
-#define	APHY_CLIP2_THRESH	0xa9
-#define	APHY_CLIP3_THRESH	0xaa
-#define	APHY_DIV_SEARCH_P1_P2	0xab
-#define	APHY_CLIP_P1_P2_THRESH	0xac
-#define	APHY_DIV_SEARCH_GN_BACK	0xad
-#define	APHY_DIV_SEARCH_GN_CHANGE 0xae
-#define	APHY_WB_PWR_THRESH	0xb0
-#define	APHY_WW_CLIP0_THRESH	0xb1
-#define	APHY_WW_CLIP1_THRESH	0xb2
-#define	APHY_WW_CLIP2_THRESH	0xb3
-#define	APHY_WW_CLIP3_THRESH	0xb4
-#define	APHY_WW_CLIP0_IDX	0xb5
-#define	APHY_WW_CLIP1_IDX	0xb6
-#define	APHY_WW_CLIP2_IDX	0xb7
-#define	APHY_WW_CLIP3_IDX	0xb8
-#define	APHY_WW_CLIPWRSSI_IDX	0xb9
-#define	APHY_WW_CLIPVAR_THRESH	0xba
-#define	APHY_NB_WRRSI_WAIT	0xbb
-#define	APHY_CRSON_THRESH	0xc0
-#define	APHY_CRSOFF_THRESH	0xc1
-#define	APHY_CRSMF_THRESH0	0xc2
-#define	APHY_CRSMF_THRESH1	0xc3
-#define	APHY_RADAR_BLANK_CTL	0xc4
-#define	APHY_RADAR_FIFO_CTL	0xc5
-#define	APHY_RADAR_FIFO		0xc6
-#define	APHY_RADAR_THRESH0	0xc7
-#define	APHY_RADAR_THRESH1	0xc8
-#define	APHY_EDON_P1		0xc9
-#define	APHY_FACT_RHOSQ		0xcc
-
-#define APHY_RSSISELL1_TBL	0xdc /* RSSISelLookup1Table corerev >= 6 */
-
-/* APHY_ANT_DWELL bits (FirstAntSecondAntDwellTime) */
-#define	APHY_ANT_DWELL_FIRST_ANT	0x100
-
-/* Bits in APHY_IqestEnWaitTime */
-#define APHY_IqEnWaitTime_waitTime_SHIFT 0
-#define APHY_IqEnWaitTime_waitTime_MASK (0xff << APHY_IqEnWaitTime_waitTime_SHIFT)
-#define APHY_IqMode_SHIFT 8
-#define APHY_IqMode (1 << APHY_IqMode_SHIFT)
-#define APHY_IqStart_SHIFT 9
-#define APHY_IqStart (1 << APHY_IqStart_SHIFT)
-
-/* Bits in APHY_CTHR_STHR_SHDIN(0x29): */
-#define APHY_CTHR_CRS1_ENABLE	0x4000
-
-/* Gphy registers in the aphy :-( */
-
-#define	GPHY_REG_OFT_BASE	0x800
-/* Gphy registers */
-#define	GPHY_PHY_VER		0x0800
-#define	GPHY_CTRL		0x0801
-#define	GPHY_CLASSIFY_CTRL	0x0802
-#define	GPHY_TABLE_ADDR		0x0803
-#define	GPHY_TRLUT1		0x0803		/* phyrev > 1 */
-#define	GPHY_TABLE_DATA		0x0804
-#define	GPHY_TRLUT2		0x0804		/* phyrev > 1 */
-#define	GPHY_RSSI_B0		0x0805
-#define	GPHY_RSSI_B1		0x0806
-#define	GPHY_RSSI_B2		0x0807
-#define	GPHY_RSSI_A0		0x0808
-#define	GPHY_RSSI_A1		0x0809
-#define	GPHY_TSSI_B0		0x080a
-#define	GPHY_TSSI_B1		0x080b
-#define	GPHY_TSSI_B2		0x080c
-#define	GPHY_TSSI_A0		0x080d
-#define	GPHY_TSSI_A1		0x080e
-#define	GPHY_DC_OFFSET1		0x080f
-#define	GPHY_DC_OFFSET2		0x0810
-#define	GPHY_RF_OVERRIDE	0x0811
-#define	GPHY_RF_OVERRIDE_VAL	0x0812
-#define	GPHY_DBG_STATE		0x0813
-#define	GPHY_ANA_OVERRIDE	0x0814
-#define	GPHY_ANA_OVERRIDE_VAL	0x0815
-
-/* NPHY Tables */
-#define NPHY_TBL_ID_GAIN1		0
-#define NPHY_TBL_ID_GAIN2		1
-#define NPHY_TBL_ID_GAINBITS1		2
-#define NPHY_TBL_ID_GAINBITS2		3
-#define NPHY_TBL_ID_GAINLIMIT		4
-#define NPHY_TBL_ID_WRSSIGainLimit	5
-#define NPHY_TBL_ID_RFSEQ		7
-#define NPHY_TBL_ID_AFECTRL		8
-#define NPHY_TBL_ID_ANTSWCTRLLUT	9
-#define NPHY_TBL_ID_IQLOCAL		15
-#define NPHY_TBL_ID_NOISEVAR		16
-#define NPHY_TBL_ID_SAMPLEPLAY		17
-#define NPHY_TBL_ID_CORE1TXPWRCTL	26
-#define NPHY_TBL_ID_CORE2TXPWRCTL	27
-#define NPHY_TBL_ID_CMPMETRICDATAWEIGHTTBL	30
-
-/* PAPD related NPHY tables */
-#define NPHY_TBL_ID_EPSILONTBL0   31
-#define NPHY_TBL_ID_SCALARTBL0    32
-#define NPHY_TBL_ID_EPSILONTBL1   33
-#define NPHY_TBL_ID_SCALARTBL1    34
-
-
-/* Bphy regs offset in the nphy */
-#define	NPHY_TO_BPHY_OFF	0xc00
-
-/* Nphy registers, this can be auto-generated by regdb.pl:
- * regdb.pl -name mimophy
- *          -def /projects/BCM4321/a0/design/mimophy/doc/mimophy_regs.txt
- *          -chdr mimophy_regs.h
- *          -pfx NPHY
- */
-#define NPHY_Version			0x00
-#define NPHY_BBConfig			0x01
-#define NPHY_RxStatus0			0x04	/* REV3 */
-#define NPHY_RxStatus1			0x05	/* REV3 */
-#define NPHY_Channel_rev0		0x05	/* REV0-2 */
-#define NPHY_TxError			0x07
-#define NPHY_Channel			0x08	/* REV3 */
-#define NPHY_BandControl		0x09
-#define NPHY_FourwireAddress		0x0b
-#define NPHY_FourwireDataHi		0x0c
-#define NPHY_FourwireDataLo		0x0d
-#define NPHY_BistStatus0		0x0e
-#define NPHY_BistStatus1		0x0f
-#define NPHY_Core1DesiredPower		0x18
-#define NPHY_Core1cckDesiredPower	0x19
-#define NPHY_Core1barelyClipBackoff	0x1a
-#define NPHY_Core1cckbarelyClipBackoff	0x1b
-#define NPHY_Core1computeGainInfo	0x1c
-#define NPHY_Core1cckcomputeGainInfo	0x1d
-#define NPHY_Core1MinMaxGain		0x1e
-#define NPHY_Core1cckMinMaxGain		0x1f
-#define NPHY_Core1InitGainCode		0x20
-#define NPHY_Core1InitGainCodeA2056	0x20	/* REV3 */
-#define NPHY_Core1Clip1HiGainCode	0x21
-#define NPHY_Core1InitGainCodeB2056	0x21	/* REV3 */
-#define NPHY_Core1Clip1MdGainCode	0x22
-#define NPHY_Core1clipHiGainCodeA2056	0x22	/* REV3 */
-#define NPHY_Core1Clip1LoGainCode	0x23
-#define NPHY_Core1clipHiGainCodeB2056	0x23	/* REV3 */
-#define NPHY_Core1Clip2GainCode		0x24
-#define NPHY_Core1clipmdGainCodeA2056	0x24	/* REV3 */
-#define NPHY_Core1FilterGain		0x25
-#define NPHY_Core1lpfQHpFBw		0x26
-#define NPHY_Core1clipwbThreshold	0x27
-#define NPHY_Core1w1Threshold		0x28
-#define NPHY_Core1edThreshold		0x29
-#define NPHY_Core1smallsigThreshold	0x2a
-#define NPHY_Core1nbClipThreshold	0x2b
-#define NPHY_Core1Clip1Threshold	0x2c
-#define NPHY_Core1Clip2Threshold	0x2d
-#define NPHY_Core2DesiredPower		0x2e
-#define NPHY_Core2cckDesiredPower	0x2f
-#define NPHY_Core2barelyClipBackoff	0x30
-#define NPHY_Core2cckbarelyClipBackoff	0x31
-#define NPHY_Core2computeGainInfo	0x32
-#define NPHY_Core2cckcomputeGainInfo	0x33
-#define NPHY_Core2MinMaxGain		0x34
-#define NPHY_Core2cckMinMaxGain		0x35
-#define NPHY_Core2InitGainCode		0x36
-#define NPHY_Core1clipmdGainCodeB2056	0x36	/* REV3 */
-#define NPHY_Core2Clip1HiGainCode	0x37
-#define NPHY_Core1cliploGainCodeA2056	0x37	/* REV3 */
-#define NPHY_Core2Clip1MdGainCode	0x38
-#define NPHY_Core1cliploGainCodeB2056	0x38	/* REV3 */
-#define NPHY_Core2Clip1LoGainCode	0x39
-#define NPHY_Core1clip2GainCodeA2056	0x39	/* REV3 */
-#define NPHY_Core2Clip2GainCode		0x3a
-#define NPHY_Core1clip2GainCodeB2056	0x3a	/* REV3 */
-#define NPHY_Core2FilterGain		0x3b
-#define NPHY_Core2lpfQHpFBw		0x3c
-#define NPHY_Core2clipwbThreshold	0x3d
-#define NPHY_Core2w1Threshold		0x3e
-#define NPHY_Core2edThreshold		0x3f
-#define NPHY_Core2smallsigThreshold	0x40
-#define NPHY_Core2nbClipThreshold	0x41
-#define NPHY_Core2Clip1Threshold	0x42
-#define NPHY_Core2Clip2Threshold	0x43
-#define NPHY_crsThreshold1		0x44
-#define NPHY_crsThreshold2		0x45
-#define NPHY_crsThreshold3		0x46
-#define NPHY_crsControl			0x47
-#define NPHY_DcFiltAddress		0x48
-#define NPHY_RxFilt20Num00		0x49
-#define NPHY_RxFilt20Num01		0x4a
-#define NPHY_RxFilt20Num02		0x4b
-#define NPHY_RxFilt20Den00		0x4c
-#define NPHY_RxFilt20Den01		0x4d
-#define NPHY_RxFilt20Num10		0x4e
-#define NPHY_RxFilt20Num11		0x4f
-#define NPHY_RxFilt20Num12		0x50
-#define NPHY_RxFilt20Den10		0x51
-#define NPHY_RxFilt20Den11		0x52
-#define NPHY_RxFilt40Num00		0x53
-#define NPHY_RxFilt40Num01		0x54
-#define NPHY_RxFilt40Num02		0x55
-#define NPHY_RxFilt40Den00		0x56
-#define NPHY_RxFilt40Den01		0x57
-#define NPHY_RxFilt40Num10		0x58
-#define NPHY_RxFilt40Num11		0x59
-#define NPHY_RxFilt40Num12		0x5a
-#define NPHY_RxFilt40Den10		0x5b
-#define NPHY_RxFilt40Den11		0x5c
-#define NPHY_pktprocResetLen		0x60
-#define NPHY_initcarrierDetLen		0x61
-#define NPHY_clip1carrierDetLen		0x62
-#define NPHY_clip2carrierDetLen		0x63
-#define NPHY_initgainSettleLen		0x64
-#define NPHY_clip1gainSettleLen		0x65
-#define NPHY_clip2gainSettleLen		0x66
-#define NPHY_pktgainSettleLen		0x67
-#define NPHY_carriersearchtimeoutLen	0x68
-#define NPHY_timingsearchtimeoutLen	0x69
-#define NPHY_energydroptimeoutLen	0x6a
-#define NPHY_clip1nbdwellLen		0x6b
-#define NPHY_clip2nbdwellLen		0x6c
-#define NPHY_w1clip1dwellLen		0x6d
-#define NPHY_w1clip2dwellLen		0x6e
-#define NPHY_w2clip1dwellLen		0x6f
-#define NPHY_payloadcrsExtensionLen	0x70
-#define NPHY_energyDropcrsExtensionLen	0x71
-#define NPHY_TableAddress		0x72
-#define NPHY_TableDataLo		0x73
-#define NPHY_TableDataHi		0x74
-#define NPHY_WwiseLengthIndex		0x75
-#define NPHY_NsyncLengthIndex		0x76
-#define NPHY_TxMacIfHoldOff		0x77
-#define NPHY_RfctrlCmd			0x78
-#define NPHY_RfctrlRSSIOTHERS1		0x7a
-#define NPHY_RfctrlRXGAIN1		0x7b
-#define NPHY_RfctrlTXGAIN1		0x7c
-#define NPHY_RfctrlRSSIOTHERS2		0x7d
-#define NPHY_RfctrlRXGAIN2		0x7e
-#define NPHY_RfctrlTXGAIN2		0x7f
-#define NPHY_RfctrlRSSIOTHERS3		0x80
-#define NPHY_RfctrlRXGAIN3		0x81
-#define NPHY_RfctrlTXGAIN3		0x82
-#define NPHY_RfctrlRSSIOTHERS4		0x83
-#define NPHY_RfctrlRXGAIN4		0x84
-#define NPHY_RfctrlTXGAIN4		0x85
-#define NPHY_Core1TxIQCompCoeff		0x87	/* REV0-2 */
-#define NPHY_Core2TxIQCompCoeff		0x88	/* REV0-2 */
-#define NPHY_Core1TxControl		0x8b
-#define NPHY_Core2TxControl		0x8c
-#define NPHY_AfectrlOverride1		0x8f	/* REV3 */
-#define NPHY_ScramSigCtrl		0x90
-#define NPHY_RfctrlIntc1		0x91
-#define NPHY_RfctrlIntc2		0x92
-#define NPHY_RfctrlIntc3		0x93
-#define NPHY_RfctrlIntc4		0x94
-#define NPHY_NumDatatoneswwise		0x95
-#define NPHY_NumDatatonesnsync		0x96
-#define NPHY_sigfieldmodwwise		0x97
-#define NPHY_legsigfieldmod11n		0x98
-#define NPHY_htsigfieldmod11n		0x99
-#define NPHY_Core1RxIQCompA0		0x9a
-#define NPHY_Core1RxIQCompB0		0x9b
-#define NPHY_Core2RxIQCompA1		0x9c
-#define NPHY_Core2RxIQCompB1		0x9d
-#define NPHY_RxControl			0xa0
-#define NPHY_RfseqMode			0xa1
-#define NPHY_RfseqCoreActv		0xa2
-#define NPHY_RfseqTrigger		0xa3
-#define NPHY_RfseqStatus		0xa4
-#define NPHY_AfectrlOverride		0xa5	/* REV0-2 */
-#define NPHY_AfectrlOverride2		0xa5	/* REV3 */
-#define NPHY_AfectrlCore1		0xa6
-#define NPHY_AfectrlCore2		0xa7
-#define NPHY_AfectrlCore3		0xa8
-#define NPHY_AfectrlCore4		0xa9
-#define NPHY_AfectrlDacGain1		0xaa
-#define NPHY_AfectrlDacGain2		0xab
-#define NPHY_AfectrlDacGain3		0xac
-#define NPHY_AfectrlDacGain4		0xad
-#define NPHY_STRAddress1		0xae
-#define NPHY_StrAddress2		0xaf
-#define NPHY_ClassifierCtrl		0xb0
-#define NPHY_IQFlip			0xb1
-#define NPHY_SisoSnrThresh		0xb2
-#define NPHY_SigmaNmult			0xb3
-#define NPHY_TxMacDelay			0xb4
-#define NPHY_TxFrameDelay		0xb5
-#define NPHY_MLparams			0xb6
-#define NPHY_MLcontrol			0xb7
-#define NPHY_wwise20Ncycdata		0xb8
-#define NPHY_wwise40Ncycdata		0xb9
-#define NPHY_nsync20Ncycdata		0xba
-#define NPHY_nsync40Ncycdata		0xbb
-#define NPHY_initswizzlepattern		0xbc
-#define NPHY_txTailCountValue		0xbd
-#define NPHY_BphyControl1		0xbe
-#define NPHY_BphyControl2		0xbf
-#define NPHY_iqloCalCmd			0xc0
-#define NPHY_iqloCalCmdNnum		0xc1
-#define NPHY_iqloCalCmdGctl		0xc2
-#define NPHY_sampleCmd			0xc3
-#define NPHY_sampleLoopCount		0xc4
-#define NPHY_sampleWaitCount		0xc5	/* REV0-2 */
-#define NPHY_sampleInitWaitCount	0xc5	/* REV3 */
-#define NPHY_sampleDepthCount		0xc6
-#define NPHY_sampleStatus		0xc7
-#define NPHY_gpioLoOutEn		0xc8
-#define NPHY_gpioHiOutEn		0xc9
-#define NPHY_gpioSel			0xca
-#define NPHY_gpioClkControl		0xcb
-#define NPHY_txfilt20CoeffAStg0		0xcc	/* REV0-2 */
-#define NPHY_RfctrlLUTLna1		0xcc	/* REV3 */
-#define NPHY_txfilt20CoeffAStg1		0xcd	/* REV0-2 */
-#define NPHY_RfctrlLUTLna2		0xcd	/* REV3 */
-#define NPHY_txfilt20CoeffAStg2		0xce	/* REV0-2 */
-#define NPHY_RfctrlLUTLna3		0xce	/* REV3 */
-#define NPHY_txfilt20CoeffB32Stg0	0xcf	/* REV0-2 */
-#define NPHY_RfctrlLUTLna4		0xcf	/* REV3 */
-#define NPHY_txfilt20CoeffB1Stg0	0xd0	/* REV0-2 */
-#define NPHY_txfilt20CoeffB32Stg1	0xd1	/* REV0-2 */
-#define NPHY_txfilt20CoeffB1Stg1	0xd2	/* REV0-2 */
-#define NPHY_txfilt20CoeffB32Stg2	0xd3	/* REV0-2 */
-#define NPHY_txfilt20CoeffB1Stg2	0xd4	/* REV0-2 */
-#define NPHY_sigFldTolerance		0xd5	/* REV0-2 */
-#define NPHY_cmpmetricparam		0xd5	/* REV3 */
-#define NPHY_TxServiceField		0xd6	/* REV0-2 */
-#define NPHY_AfeseqRx2TxPwrUpDownDly	0xd7	/* REV0-2 */
-#define NPHY_AfeseqTx2RxPwrUpDownDly	0xd8	/* REV0-2 */
-#define NPHY_NsyncscramInit0		0xd9
-#define NPHY_NsyncscramInit1		0xda
-#define NPHY_initswizzlepatternleg	0xdb
-#define NPHY_BphyControl3		0xdc
-#define NPHY_BphyControl4		0xdd
-#define NPHY_Core1TxBBMult		0xde	/* REV0-2 */
-#define NPHY_Core2TxBBMult		0xdf	/* REV0-2 */
-#define NPHY_RxStatusWord0		0xe0	/* REV3 */
-#define NPHY_txfilt40CoeffAStg0		0xe1	/* REV0-2 */
-#define NPHY_RxStatusWord1		0xe1	/* REV3 */
-#define NPHY_txfilt40CoeffAStg1		0xe2	/* REV0-2 */
-#define NPHY_RxStatusWord2		0xe2	/* REV3 */
-#define NPHY_txfilt40CoeffAStg2		0xe3	/* REV0-2 */
-#define NPHY_RxStatusWord3		0xe3	/* REV3 */
-#define NPHY_txfilt40CoeffB32Stg0	0xe4	/* REV0-2 */
-#define NPHY_RxStatusLatchCtrl		0xe4	/* REV3 */
-#define NPHY_txfilt40CoeffB1Stg0	0xe5	/* REV0-2 */
-#define NPHY_RfctrlOverrideAux0		0xe5	/* REV3 */
-#define NPHY_txfilt40CoeffB32Stg1	0xe6	/* REV0-2 */
-#define NPHY_RfctrlOverrideAux1		0xe6	/* REV3 */
-#define NPHY_txfilt40CoeffB1Stg1	0xe7	/* REV0-2 */
-#define NPHY_RfctrlOverride0		0xe7	/* REV3 */
-#define NPHY_txfilt40CoeffB32Stg2	0xe8	/* REV0-2 */
-#define NPHY_RfSeqTXLPFBW_OFDM		0xe8	/* REV3 */
-#define NPHY_txfilt40CoeffB1Stg2	0xe9	/* REV0-2 */
-#define NPHY_RfSeqTXLPFBW_11B		0xe9	/* REV3 */
-#define NPHY_BistStatus2		0xea
-#define NPHY_BistStatus3		0xeb
-#define NPHY_RfctrlOverride		0xec	/* REV0-2 */
-#define NPHY_RfctrlOverride1		0xec	/* REV3 */
-#define NPHY_MimoConfig			0xed
-#define NPHY_RadarBlankCtrl		0x0ee
-#define NPHY_Antenna0_radarFifoCtrl	0x0ef
-#define NPHY_Antenna1_radarFifoCtrl	0x0f0
-#define NPHY_Antenna0_radarFifoData	0x0f1
-#define NPHY_Antenna1_radarFifoData	0x0f2
-#define NPHY_RadarThresh0		0x0f3
-#define NPHY_RadarThresh1		0x0f4
-#define NPHY_RadarThresh0R		0x0f5
-#define NPHY_RadarThresh1R		0x0f6
-#define NPHY_Crs20In40DwellLength	0x0f7
-#define NPHY_RfctrlLUTtrswLower1	0xf8	/* REV0-2 */
-#define NPHY_RfctrlAuxReg1		0xf8	/* REV3 */
-#define NPHY_RfctrlLUTtrswUpper1	0xf9	/* REV0-2 */
-#define NPHY_RfctrlMiscReg1		0xf9	/* REV3 */
-#define NPHY_RfctrlLUTtrswLower2	0xfa	/* REV0-2 */
-#define NPHY_RfctrlAuxReg2		0xfa	/* REV3 */
-#define NPHY_RfctrlLUTtrswUpper2	0xfb	/* REV0-2 */
-#define NPHY_RfctrlMiscReg2		0xfb	/* REV3 */
-#define NPHY_RfctrlLUTtrswLower3	0x0fc	/* REV0-2 */
-#define NPHY_RfctrlAuxReg3		0xfc	/* REV3 */
-#define NPHY_RfctrlLUTtrswUpper3	0x0fd	/* REV0-2 */
-#define NPHY_RfctrlMiscReg3		0xfd	/* REV3 */
-#define NPHY_RfctrlLUTtrswLower4	0x0fe	/* REV0-2 */
-#define NPHY_RfctrlAuxReg4		0xfe	/* REV3 */
-#define NPHY_RfctrlLUTtrswUpper4	0x0ff	/* REV0-2 */
-#define NPHY_RfctrlMiscReg4		0xff	/* REV3 */
-#define NPHY_RfctrlLUTLnaPa1		0x100	/* REV0-2 */
-#define NPHY_RfctrlLUTPa1		0x100	/* REV3 */
-#define NPHY_RfctrlLUTLnaPa2		0x101	/* REV0-2 */
-#define NPHY_RfctrlLUTPa2		0x101	/* REV3 */
-#define NPHY_RfctrlLUTLnaPa3		0x102	/* REV0-2 */
-#define NPHY_RfctrlLUTPa3		0x102	/* REV3 */
-#define NPHY_RfctrlLUTLnaPa4		0x103	/* REV0-2 */
-#define NPHY_RfctrlLUTPa4		0x103	/* REV3 */
-#define NPHY_nsynccrcmask0		0x104
-#define NPHY_nsynccrcmask1		0x105
-#define NPHY_nsynccrcmask2		0x106
-#define NPHY_nsynccrcmask3		0x107
-#define NPHY_nsynccrcmask4		0x108
-#define NPHY_crcpolynomial		0x109
-#define NPHY_NumSigCnt			0x10a
-#define NPHY_sigstartbitCtrl		0x10b
-#define NPHY_crcpolyorder		0x10c
-#define NPHY_RFCtrlCoreSwapTbl0		0x10d
-#define NPHY_RFCtrlCoreSwapTbl1		0x10e
-#define NPHY_RFCtrlCoreSwapTbl2OTHERS	0x10f
-#define NPHY_BphyControl5		0x111
-#define NPHY_RFSeqLPFBW			0x112	/* REV0-2 */
-#define NPHY_RFSeqRXLPFBW		0x112	/* REV3 */
-#define NPHY_TSSIBiasVal1		0x114
-#define NPHY_TSSIBiasVal2		0x115
-#define NPHY_EstPower1			0x118
-#define NPHY_EstPower2			0x119
-#define NPHY_TSSIMaxTxFrmDlyTime	0x11c
-#define NPHY_TSSIMaxTssiDlyTime		0x11d
-#define NPHY_TSSIIdle1			0x11e
-#define NPHY_TSSIIdle2			0x11f
-#define NPHY_TSSIMode			0x122
-#define NPHY_RxMacifMode		0x123
-#define NPHY_CRSidleTimeCrsOnCountLo	0x124
-#define NPHY_CRSidleTimeCrsOnCountHi	0x125
-#define NPHY_CRSidleTimeMeasTimeCountLo	0x126
-#define NPHY_CRSidleTimeMeasTimeCountHi	0x127
-#define NPHY_sampleTailWaitCount	0x128
-#define NPHY_IqestCmd			0x129
-#define NPHY_IqestWaitTime		0x12a
-#define NPHY_IqestSampleCount		0x12b
-#define NPHY_IqestIqAccLo0		0x12c
-#define NPHY_IqestIqAccHi0		0x12d
-#define NPHY_IqestipwrAccLo0		0x12e
-#define NPHY_IqestipwrAccHi0		0x12f
-#define NPHY_IqestqpwrAccLo0		0x130
-#define NPHY_IqestqpwrAccHi0		0x131
-#define NPHY_IqestIqAccLo1		0x134
-#define NPHY_IqestIqAccHi1		0x135
-#define NPHY_IqestipwrAccLo1		0x136
-#define NPHY_IqestipwrAccHi1		0x137
-#define NPHY_IqestqpwrAccLo1		0x138
-#define NPHY_IqestqpwrAccHi1		0x139
-#define NPHY_mimophycrsTxExtension	0x13a
-#define NPHY_PowerDet1			0x13b
-#define NPHY_PowerDet2			0x13c
-#define NPHY_RSSIMaxrssiDlyTime		0x13f
-#define NPHY_PilotDataWeight0		0x141
-#define NPHY_PilotDataWeight1		0x142
-#define NPHY_PilotDataWeight2		0x143
-#define NPHY_FMDemodConfig		0x144
-#define NPHY_PhaseTrackAlpha0		0x145
-#define NPHY_PhaseTrackAlpha1		0x146
-#define NPHY_PhaseTrackAlpha2		0x147
-#define NPHY_PhaseTrackBeta0		0x148
-#define NPHY_PhaseTrackBeta1		0x149
-#define NPHY_PhaseTrackBeta2		0x14a
-#define NPHY_PhaseTrackChange0		0x14b
-#define NPHY_PhaseTrackChange1		0x14c
-#define NPHY_PhaseTrackOffset		0x14d
-#define NPHY_RfctrlDebug		0x14e
-#define NPHY_cckshiftbitsRefVar		0x150
-#define NPHY_overideDigiGain0		0x152
-#define NPHY_overideDigiGain1		0x153
-#define NPHY_HPFBWovrdigictrl		0x154	/* REV3 */
-#define NPHY_BistStatus4		0x156
-#define NPHY_RadarMaLength		0x157
-#define NPHY_RadarSearchCtrl		0x158
-#define NPHY_VldDataTonesSIG		0x159
-#define NPHY_VldDataTonesDATA		0x15a
-#define NPHY_Core1BPhyRxIQCompA0	0x15b
-#define NPHY_Core1BPhyRxIQCompB0	0x15c
-#define NPHY_Core2BPhyRxIQCompA1	0x15d
-#define NPHY_Core2BPhyRxIQCompB1	0x15e
-#define NPHY_FreqGain0			0x160
-#define NPHY_FreqGain1			0x161
-#define NPHY_FreqGain2			0x162
-#define NPHY_FreqGain3			0x163
-#define NPHY_FreqGain4			0x164
-#define NPHY_FreqGain5			0x165
-#define NPHY_FreqGain6			0x166
-#define NPHY_FreqGain7			0x167
-#define NPHY_FreqGainBypass		0x168
-#define NPHY_TRLossValue		0x169
-#define NPHY_Core1Adcclip		0x16a
-#define NPHY_Core2Adcclip		0x16b
-#define NPHY_LtrnOffsetGain		0x16f
-#define NPHY_LtrnOffset			0x170
-#define NPHY_NumDatatonesWise20sig	0x171
-#define NPHY_NumDatatonesWise40sig	0x172
-#define NPHY_NumDatatonesnsync20sig	0x173
-#define NPHY_NumDatatonesnsync40sig	0x174
-#define NPHY_wwisecrcmask0		0x175
-#define NPHY_wwisecrcmask1		0x176
-#define NPHY_wwisecrcmask2		0x177
-#define NPHY_wwisecrcmask3		0x178
-#define NPHY_wwisecrcmask4		0x179
-#define NPHY_ChanestCDDshift		0x17a
-#define NPHY_HTAGCWaitCounters		0x17b
-#define NPHY_Sqparams			0x17c
-#define NPHY_mcsDup6M			0x17d
-#define NPHY_NumDatatonesdup40		0x17e
-#define NPHY_dup40Ncycdata		0x17f
-#define NPHY_dup40GFfrmtbladdr		0x180
-#define NPHY_dup40frmtbladdr		0x181
-#define NPHY_legdupfrmtbladdr		0x182
-#define NPHY_pktprocdebug		0x183
-#define NPHY_pilotcyclecnt1		0x184
-#define NPHY_pilotcyclecnt2		0x185
-#define NPHY_txfilt20CoeffStg0A1	0x186
-#define NPHY_txfilt20CoeffStg0A2	0x187
-#define NPHY_txfilt20CoeffStg1A1	0x188
-#define NPHY_txfilt20CoeffStg1A2	0x189
-#define NPHY_txfilt20CoeffStg2A1	0x18a
-#define NPHY_txfilt20CoeffStg2A2	0x18b
-#define NPHY_txfilt20CoeffStg0B1	0x18c
-#define NPHY_txfilt20CoeffStg0B2	0x18d
-#define NPHY_txfilt20CoeffStg0B3	0x18e
-#define NPHY_txfilt20CoeffStg1B1	0x18f
-#define NPHY_txfilt20CoeffStg1B2	0x190
-#define NPHY_txfilt20CoeffStg1B3	0x191
-#define NPHY_txfilt20CoeffStg2B1	0x192
-#define NPHY_txfilt20CoeffStg2B2	0x193
-#define NPHY_txfilt20CoeffStg2B3	0x194
-#define NPHY_txfilt40CoeffStg0A1	0x195
-#define NPHY_txfilt40CoeffStg0A2	0x196
-#define NPHY_txfilt40CoeffStg1A1	0x197
-#define NPHY_txfilt40CoeffStg1A2	0x198
-#define NPHY_txfilt40CoeffStg2A1	0x199
-#define NPHY_txfilt40CoeffStg2A2	0x19a
-#define NPHY_txfilt40CoeffStg0B1	0x19b
-#define NPHY_txfilt40CoeffStg0B2	0x19c
-#define NPHY_txfilt40CoeffStg0B3	0x19d
-#define NPHY_txfilt40CoeffStg1B1	0x19e
-#define NPHY_txfilt40CoeffStg1B2	0x19f
-#define NPHY_txfilt40CoeffStg1B3	0x1a0
-#define NPHY_txfilt40CoeffStg2B1	0x1a1
-#define NPHY_txfilt40CoeffStg2B2	0x1a2
-#define NPHY_txfilt40CoeffStg2B3	0x1a3
-#define NPHY_RSSIMultCoef0IRSSIX	0x1a4
-#define NPHY_RSSIMultCoef0IRSSIY	0x1a5
-#define NPHY_RSSIMultCoef0IRSSIZ	0x1a6
-#define NPHY_RSSIMultCoef0ITBD		0x1a7
-#define NPHY_RSSIMultCoef0IPowerDet	0x1a8
-#define NPHY_RSSIMultCoef0ITSSI		0x1a9
-#define NPHY_RSSIMultCoef0QRSSIX	0x1aa
-#define NPHY_RSSIMultCoef0QRSSIY	0x1ab
-#define NPHY_RSSIMultCoef0QRSSIZ	0x1ac
-#define NPHY_RSSIMultCoef0QTBD		0x1ad
-#define NPHY_RSSIMultCoef0QPowerDet	0x1ae
-#define NPHY_RSSIMultCoef0QTSSI		0x1af
-#define NPHY_RSSIMultCoef1IRSSIX	0x1b0
-#define NPHY_RSSIMultCoef1IRSSIY	0x1b1
-#define NPHY_RSSIMultCoef1IRSSIZ	0x1b2
-#define NPHY_RSSIMultCoef1ITBD		0x1b3
-#define NPHY_RSSIMultCoef1IPowerDet	0x1b4
-#define NPHY_RSSIMultCoef1ITSSI		0x1b5
-#define NPHY_RSSIMultCoef1QRSSIX	0x1b6
-#define NPHY_RSSIMultCoef1QRSSIY	0x1b7
-#define NPHY_RSSIMultCoef1QRSSIZ	0x1b8
-#define NPHY_RSSIMultCoef1QTBD		0x1b9
-#define NPHY_RSSIMultCoef1QPowerDet	0x1ba
-#define NPHY_RSSIMultCoef1QTSSI		0x1bb
-#define NPHY_SampCollectWaitCounter	0x1bc
-#define NPHY_PassThroughCounter		0x1bd
-#define NPHY_LtrnOffsetGain_20L		0x1c4
-#define NPHY_LtrnOffset_20L		0x1c5
-#define NPHY_LtrnOffsetGain_20U		0x1c6
-#define NPHY_LtrnOffset_20U		0x1c7
-#define NPHY_dssscckgainSettleLen	0x1c8
-#define NPHY_gpioLoOut			0x1c9
-#define NPHY_gpioHiOut			0x1ca
-#define NPHY_crsCheck			0x1cb
-#define NPHY_Mllogssratio		0x1cc
-#define NPHY_dupscale			0x1cd
-#define NPHY_BW1a 			0x1ce /* sfo_chan_centerTs20__3 */
-#define NPHY_BW2			0x1cf /* sfo_chan_centerTs20__2 */
-#define NPHY_BW3			0x1d0 /* sfo_chan_centerTs20__1 */
-#define NPHY_BW4			0x1d1 /* sfo_chan_center_factor__3 */
-#define NPHY_BW5			0x1d2 /* sfo_chan_center_factor__2 */
-#define NPHY_BW6			0x1d3 /* sfo_chan_center_factor__1 */
-#define NPHY_CoarseLength0		0x1d4
-#define NPHY_CoarseLength1		0x1d5
-#define NPHY_crsThreshold1u		0x1d6
-#define NPHY_crsThreshold2u		0x1d7
-#define NPHY_crsThreshold3u		0x1d8
-#define NPHY_crsControlu		0x1d9
-#define NPHY_crsThreshold1l		0x1da
-#define NPHY_crsThreshold2l		0x1db
-#define NPHY_crsThreshold3l		0x1dc
-#define NPHY_crsControll		0x1dd
-#define NPHY_STRAddress1u		0x1de
-#define NPHY_StrAddress2u		0x1df
-#define NPHY_STRAddress1l		0x1e0
-#define NPHY_StrAddress2l		0x1e1
-#define NPHY_CrsCheck1			0x1e2
-#define NPHY_CrsCheck2			0x1e3
-#define NPHY_CrsCheck3			0x1e4
-#define NPHY_JumpStep0			0x1e5
-#define NPHY_JumpStep1			0x1e6
-#define NPHY_TxPwrCtrlCmd		0x1e7
-#define NPHY_TxPwrCtrlNnum		0x1e8
-#define NPHY_TxPwrCtrlIdleTssi		0x1e9
-#define NPHY_TxPwrCtrlTargetPwr		0x1ea
-#define NPHY_TxPwrCtrlBaseIndex		0x1eb
-#define NPHY_TxPwrCtrlPwrIndex		0x1ec
-#define NPHY_Core0TxPwrCtrlStatus	0x1ed
-#define NPHY_Core1TxPwrCtrlStatus	0x1ee
-#define NPHY_smallsigGainSettleLen	0x1ef
-#define NPHY_PhyStatsGainInfo0		0x1f0
-#define NPHY_PhyStatsGainInfo1		0x1f1
-#define NPHY_PhyStatsFreqEst		0x1f2
-#define NPHY_PhyStatsAdvRetard		0x1f3
-#define NPHY_PhyLoopbackMode		0x1f4
-#define NPHY_ToneMapIndex201		0x1f5
-#define NPHY_ToneMapIndex202		0x1f6
-#define NPHY_ToneMapIndex203		0x1f7
-#define NPHY_ToneMapIndex401		0x1f8
-#define NPHY_ToneMapIndex402		0x1f9
-#define NPHY_ToneMapIndex403		0x1fa
-#define NPHY_ToneMapIndex404		0x1fb
-#define NPHY_PilotToneMapIndex1		0x1fc
-#define NPHY_PilotToneMapIndex2		0x1fd
-#define NPHY_PilotToneMapIndex3		0x1fe
-#define NPHY_TxRifsFrameDelay		0x1ff
-#define NPHY_AfeseqRx2TxPwrUpDownDly40M	0x200
-#define NPHY_AfeseqTx2RxPwrUpDownDly40M	0x201
-#define NPHY_AfeseqRx2TxPwrUpDownDly20M	0x202
-#define NPHY_AfeseqTx2RxPwrUpDownDly20M	0x203
-#define NPHY_RxSigControl		0x204
-#define NPHY_rxpilotcyclecnt0		0x205
-#define NPHY_rxpilotcyclecnt1		0x206
-#define NPHY_rxpilotcyclecnt2		0x207
-#define NPHY_AfeseqRx2TxPwrUpDownDly10M	0x208
-#define NPHY_AfeseqTx2RxPwrUpDownDly10M	0x209
-#define NPHY_dssscckCrsExtensionLen	0x20a
-#define NPHY_Mllogssratioslope		0x20b
-#define NPHY_rifsSearchTimeoutLength	0x20c
-#define NPHY_TxRealFrameDelay		0x20d
-#define NPHY_highpowAntswitchThresh	0x20e
-#define NPHY_ed_crsAssertThresh0	0x210
-#define NPHY_ed_crsAssertThresh1	0x211
-#define NPHY_ed_crsDeassertThresh0	0x212
-#define NPHY_ed_crsDeassertThresh1	0x213
-#define NPHY_StrWaitTime20U		0x214
-#define NPHY_StrWaitTime20L		0x215
-#define NPHY_ToneMapIndex675M		0x216
-#define NPHY_HTSigTones			0x217
-/* Additional regs for REV2 */
-#define NPHY_fourwireclockcontrol	0x218	/* REV3 */
-#define NPHY_RSSIVal1			0x219
-#define NPHY_RSSIVal2			0x21a
-#define NPHY_ChanestHang		0x21d	/* REV0-2 */
-#define NPHY_FrontEndDebug		0x21d	/* REV3 */
-#define NPHY_fineclockgatecontrol       0x21f
-#define NPHY_fineRx2clockgatecontrol	0x221
-#define NPHY_TxPwrCtrlInit		0x222
-#define NPHY_ed_crsEn			0x223
-#define NPHY_ed_crs40AssertThresh0	0x224
-#define NPHY_ed_crs40AssertThresh1	0x225
-#define NPHY_ed_crs40DeassertThresh0	0x226
-#define NPHY_ed_crs40DeassertThresh1	0x227
-#define NPHY_ed_crs20LAssertThresh0	0x228
-#define NPHY_ed_crs20LAssertThresh1	0x229
-#define NPHY_ed_crs20LDeassertThresh0	0x22a
-#define NPHY_ed_crs20LDeassertThresh1	0x22b
-#define NPHY_ed_crs20UAssertThresh0	0x22c
-#define NPHY_ed_crs20UAssertThresh1	0x22d
-#define NPHY_ed_crs20UDeassertThresh0	0x22e
-#define NPHY_ed_crs20UDeassertThresh1	0x22f
-#define NPHY_ed_crs			0x230
-#define NPHY_timeoutEn			0x231
-#define NPHY_ofdmpaydecodetimeoutlen	0x232
-#define NPHY_cckpaydecodetimeoutlen	0x233
-#define NPHY_nonpaydecodetimeoutlen	0x234
-#define NPHY_timeoutstatus		0x235
-#define NPHY_Rfctrlcore0gpio0		0x236
-#define NPHY_Rfctrlcore0gpio1		0x237
-#define NPHY_Rfctrlcore0gpio2		0x238
-#define NPHY_Rfctrlcore0gpio3		0x239
-#define NPHY_Rfctrlcore1gpio0		0x23a
-#define NPHY_Rfctrlcore1gpio1		0x23b
-#define NPHY_Rfctrlcore1gpio2		0x23c
-#define NPHY_Rfctrlcore1gpio3		0x23d
-#define NPHY_bphytestcontrol		0x23e
-/* Additional regs for REV3 */
-#define NPHY_forceFront0		0x23f
-#define NPHY_forceFront1		0x240
-#define NPHY_NormVarHystTh		0x241
-#define NPHY_TxCCKError			0x242
-#define NPHY_AfeseqInitDACgain		0x243
-#define NPHY_TxAntSwLUT			0x244
-#define NPHY_CoreConfig			0x245
-#define NPHY_AntennaDivDwellTime	0x246
-#define NPHY_AntennaCCKDivDwellTime	0x247
-#define NPHY_AntennaDivBackOffGain	0x248
-#define NPHY_AntennaDivMinGain		0x249
-#define NPHY_BrdSel_NormVarHystTh	0x24a
-#define NPHY_RxAntSwitchCtrl		0x24b
-#define NPHY_energydroptimeoutLen2	0x24c
-#define NPHY_ML_log_txevm0		0x250
-#define NPHY_ML_log_txevm1		0x251
-#define NPHY_ML_log_txevm2		0x252
-#define NPHY_ML_log_txevm3		0x253
-#define NPHY_ML_log_txevm4		0x254
-#define NPHY_ML_log_txevm5		0x255
-#define NPHY_ML_log_txevm6		0x256
-#define NPHY_ML_log_txevm7		0x257
-#define NPHY_ML_scale_tweak		0x258
-#define NPHY_mluA			0x259
-#define NPHY_zfuA			0x25a
-#define NPHY_chanupsym01		0x25b
-#define NPHY_chanupsym2			0x25c
-#define NPHY_RxStrnFilt20Num00		0x25d
-#define NPHY_RxStrnFilt20Num01		0x25e
-#define NPHY_RxStrnFilt20Num02		0x25f
-#define NPHY_RxStrnFilt20Den00		0x260
-#define NPHY_RxStrnFilt20Den01		0x261
-#define NPHY_RxStrnFilt20Num10		0x262
-#define NPHY_RxStrnFilt20Num11		0x263
-#define NPHY_RxStrnFilt20Num12		0x264
-#define NPHY_RxStrnFilt20Den10		0x265
-#define NPHY_RxStrnFilt20Den11		0x266
-#define NPHY_RxStrnFilt40Num00		0x267
-#define NPHY_RxStrnFilt40Num01		0x268
-#define NPHY_RxStrnFilt40Num02		0x269
-#define NPHY_RxStrnFilt40Den00		0x26a
-#define NPHY_RxStrnFilt40Den01		0x26b
-#define NPHY_RxStrnFilt40Num10		0x26c
-#define NPHY_RxStrnFilt40Num11		0x26d
-#define NPHY_RxStrnFilt40Num12		0x26e
-#define NPHY_RxStrnFilt40Den10		0x26f
-#define NPHY_RxStrnFilt40Den11		0x270
-#define NPHY_crshighpowThreshold1	0x271
-#define NPHY_crshighpowThreshold2	0x272
-#define NPHY_crshighlowpowThreshold	0x273
-#define NPHY_crshighpowThreshold1l	0x274
-#define NPHY_crshighpowThreshold2l	0x275
-#define NPHY_crshighlowpowThresholdl	0x276
-#define NPHY_crshighpowThreshold1u	0x277
-#define NPHY_crshighpowThreshold2u	0x278
-#define NPHY_crshighlowpowThresholdu	0x279
-#define NPHY_crsacidetectThresh		0x27a
-#define NPHY_crsacidetectThreshl	0x27b
-#define NPHY_crsacidetectThreshu	0x27c
-#define NPHY_crsminpower0		0x27d
-#define NPHY_crsminpower1		0x27e
-#define NPHY_crsminpower2		0x27f
-#define NPHY_crsminpowerl0		0x280
-#define NPHY_crsminpowerl1		0x281
-#define NPHY_crsminpowerl2		0x282
-#define NPHY_crsminpoweru0		0x283
-#define NPHY_crsminpoweru1		0x284
-#define NPHY_crsminpoweru2		0x285
-#define NPHY_strparam			0x286
-#define NPHY_strparaml			0x287
-#define NPHY_strparamu			0x288
-#define NPHY_bphycrsminpower0		0x289
-#define NPHY_bphycrsminpower1		0x28a
-#define NPHY_bphycrsminpower2		0x28b
-#define NPHY_bphyFiltDen0Coef		0x28c
-#define NPHY_bphyFiltDen1Coef		0x28d
-#define NPHY_bphyFiltDen2Coef		0x28e
-#define NPHY_bphyFiltNum0Coef		0x28f
-#define NPHY_bphyFiltNum1Coef		0x290
-#define NPHY_bphyFiltNum2Coef		0x291
-#define NPHY_bphyFiltNum01Coef2		0x292
-#define NPHY_bphyFiltBypass		0x293
-#define NPHY_sgiLtrnOffset		0x294
-#define NPHY_Radar_t2_min		0x295
-#define NPHY_TxPwrCtrlDamping		0x296
-#define NPHY_PapdEnable0		0x297
-#define NPHY_EpsilonTableAdjust0	0x298
-#define NPHY_EpsilonOverrideI_0		0x299
-#define NPHY_EpsilonOverrideQ_0		0x29a
-#define NPHY_PapdEnable1		0x29b
-#define NPHY_EpsilonTableAdjust1	0x29c
-#define NPHY_EpsilonOverrideI_1		0x29d
-#define NPHY_EpsilonOverrideQ_1		0x29e
-#define NPHY_PapdCalAddress		0x29f
-#define NPHY_PapdCalYrefEpsilon		0x2a0
-#define NPHY_PapdCalSettle		0x2a1
-#define NPHY_PapdCalCorrelate		0x2a2
-#define NPHY_PapdCalShifts0		0x2a3
-#define NPHY_PapdCalShifts1		0x2a4
-#define NPHY_sampleStartAddr		0x2a5
-#define NPHY_Radar_adc_to_dbm		0x2a6
-#define NPHY_Core2InitGainCodeA2056	0x2a7
-#define NPHY_Core2InitGainCodeB2056	0x2a8
-#define NPHY_Core2clipHiGainCodeA2056	0x2a9
-#define NPHY_Core2clipHiGainCodeB2056	0x2aa
-#define NPHY_Core2clipmdGainCodeA2056	0x2ab
-#define NPHY_Core2clipmdGainCodeB2056	0x2ac
-#define NPHY_Core2cliploGainCodeA2056	0x2ad
-#define NPHY_Core2cliploGainCodeB2056	0x2ae
-#define NPHY_Core2clip2GainCodeA2056	0x2af
-#define NPHY_Core2clip2GainCodeB2056	0x2b0
-#define NPHY_PapdCalYref_I1		0x2b1
-#define NPHY_PapdCalYref_Q1		0x2b2
-#define NPHY_TxClipThreshCCK0		0x2b3
-#define NPHY_TxClipThreshBPSK0		0x2b4
-#define NPHY_TxClipThreshQPSK0		0x2b5
-#define NPHY_TxClipThresh16QAM0		0x2b6
-#define NPHY_TxClipThresh64QAM0		0x2b7
-#define NPHY_TxClipThreshCCK1		0x2b8
-#define NPHY_TxClipThreshBPSK1		0x2b9
-#define NPHY_TxClipThreshQPSK1		0x2ba
-#define NPHY_TxClipThresh16QAM1		0x2bb
-#define NPHY_TxClipThresh64QAM1		0x2bc
-#define NPHY_CplresetPulse		0x2bd
-#define NPHY_PapdCalStart		0x2be
-#define NPHY_PapdCalYref_I0		0x2bf
-#define NPHY_PapdCalYref_Q0		0x2c0
-#define NPHY_PapdCalYrefOverride_I0	0x2c1
-#define NPHY_PapdCalYrefOverride_Q0	0x2c2
-#define NPHY_PapdCalYrefOverride_I1	0x2c3
-#define NPHY_PapdCalYrefOverride_Q1	0x2c4
-#define NPHY_ccktxfilt20CoeffStg0A1	0x2c5
-#define NPHY_ccktxfilt20CoeffStg0A2	0x2c6
-#define NPHY_ccktxfilt20CoeffStg1A1	0x2c7
-#define NPHY_ccktxfilt20CoeffStg1A2	0x2c8
-#define NPHY_ccktxfilt20CoeffStg2A1	0x2c9
-#define NPHY_ccktxfilt20CoeffStg2A2	0x2ca
-#define NPHY_ccktxfilt20CoeffStg0B1	0x2cb
-#define NPHY_ccktxfilt20CoeffStg0B2	0x2cc
-#define NPHY_ccktxfilt20CoeffStg0B3	0x2cd
-#define NPHY_ccktxfilt20CoeffStg1B1	0x2ce
-#define NPHY_ccktxfilt20CoeffStg1B2	0x2cf
-#define NPHY_ccktxfilt20CoeffStg1B3	0x2d0
-#define NPHY_ccktxfilt20CoeffStg2B1	0x2d1
-#define NPHY_ccktxfilt20CoeffStg2B2	0x2d2
-#define NPHY_ccktxfilt20CoeffStg2B3	0x2d3
-#define NPHY_BphyControl6		0x2d4
-#define NPHY_Auxphystats		0x2d5
-#define NPHY_BphyControl7		0x2d6
-
-#define NPHY_REV6_PapdCalShifts0		0x2a3
-#define NPHY_REV6_PapdCalShifts1		0x2a4
-#define NPHY_REV6_PapdEpsilonUpdateIterations 0x2e5
-
-/* Bits in NPHY_Version */
-#define NPHY_Version_analogType_SHIFT		12
-#define NPHY_Version_analogType_MASK		(0xf << NPHY_Version_analogType_SHIFT)
-#define NPHY_Version_phyType_SHIFT		8
-#define NPHY_Version_phyType_MASK		(0xf << NPHY_Version_phyType_SHIFT)
-#define NPHY_Version_version_SHIFT		0
-#define NPHY_Version_version_MASK		(0xf << NPHY_Version_version_SHIFT)
-
-/* Bits in NPHY_BBConfig */
-#define NPHY_BBConfig_resample_clk160_SHIFT	15
-#define NPHY_BBConfig_resample_clk160_MASK	(0x1 << NPHY_BBConfig_resample_clk160_SHIFT)
-#define NPHY_BBConfig_resetCCA_SHIFT		14
-#define NPHY_BBConfig_resetCCA_MASK		(0x1 << NPHY_BBConfig_resetCCA_SHIFT)
-#define NPHY_BBConfig_darwin_SHIFT		12
-#define NPHY_BBConfig_darwin_MASK		(0x1 << NPHY_BBConfig_darwin_SHIFT)
-#define NPHY_BBConfig_antDiv_SHIFT		7
-#define NPHY_BBConfig_antDiv_MASK		(0x3 << NPHY_BBConfig_antDiv_SHIFT)
-#define NPHY_BBConfig_chk_pwr_en_SHIFT		0
-#define NPHY_BBConfig_chk_pwr_en_MASK		(0x1 << NPHY_BBConfig_chk_pwr_en_SHIFT)
-
-/* Bits in NPHY_RxStatus0 */
-#define NPHY_RxStatus0_RxStatus_SHIFT		0
-#define NPHY_RxStatus0_RxStatus_MASK		(0xffff << NPHY_RxStatus0_RxStatus_SHIFT)
-
-/* Bits in NPHY_RxStatus1 */
-#define NPHY_RxStatus1_RxStatus_SHIFT		0
-#define NPHY_RxStatus1_RxStatus_MASK		(0xffff << NPHY_RxStatus1_RxStatus_SHIFT)
-
-/* Bits in NPHY_TxError */
-#define NPHY_TxError_COMBUnsupport_SHIFT	8
-#define NPHY_TxError_COMBUnsupport_MASK		(0x1 << NPHY_TxError_COMBUnsupport_SHIFT)
-#define NPHY_TxError_BWUnsupport_SHIFT		7
-#define NPHY_TxError_BWUnsupport_MASK		(0x1 << NPHY_TxError_BWUnsupport_SHIFT)
-#define NPHY_TxError_txInCal_SHIFT		6
-#define NPHY_TxError_txInCal_MASK		(0x1 << NPHY_TxError_txInCal_SHIFT)
-#define NPHY_TxError_send_frame_low_SHIFT	5
-#define NPHY_TxError_send_frame_low_MASK	(0x1 << NPHY_TxError_send_frame_low_SHIFT)
-#define NPHY_TxError_lengthmismatch_short_SHIFT	4
-#define NPHY_TxError_lengthmismatch_short_MASK	(0x1 << NPHY_TxError_lengthmismatch_short_SHIFT)
-#define NPHY_TxError_lengthmismatch_long_SHIFT	3
-#define NPHY_TxError_lengthmismatch_long_MASK	(0x1 << NPHY_TxError_lengthmismatch_long_SHIFT)
-#define NPHY_TxError_invalidRate_SHIFT		2
-#define NPHY_TxError_invalidRate_MASK		(0x1 << NPHY_TxError_invalidRate_SHIFT)
-
-/* Bits in NPHY_Channel */
-#define NPHY_Channel_currentChannel_SHIFT	0
-#define NPHY_Channel_currentChannel_MASK	(0xff << NPHY_Channel_currentChannel_SHIFT)
-
-
-/* Bits in NPHY_BandControl */
-#define NPHY_BandControl_currentBand			0x0001
-#define NPHY_BandControl_currentBand_SHIFT		0
-#define NPHY_BandControl_currentBand_MASK		(0x1 << NPHY_BandControl_currentBand_SHIFT)
-#define NPHY_BandControl_DupSettingsBothBands_SHIFT    	1
-#define NPHY_BandControl_DupSettingsBothBands_MASK \
-(0x1 << NPHY_BandControl_DupSettingsBothBands_SHIFT)
-
-/* Bits in NPHY_FourwireAddress */
-#define NPHY_REV3_FourwireAddress_fourwireAddress_SHIFT		0
-#define NPHY_REV3_FourwireAddress_fourwireAddress_MASK \
-	(0x1ff << NPHY_REV3_FourwireAddress_fourwireAddress_SHIFT)
-#define NPHY_REV3_FourwireAddress_fourwireJtagEn_SHIFT		12
-#define NPHY_REV3_FourwireAddress_fourwireJtagEn_MASK \
-	(0xf << NPHY_REV3_FourwireAddress_fourwireJtagEn_SHIFT)
-
-/* Bits in NPHY_FourwireDataHi */
-#define NPHY_FourwireDataHi_fourwireDataHi_SHIFT	0
-#define NPHY_FourwireDataHi_fourwireDataHi_MASK	\
-	(0xffff << NPHY_FourwireDataHi_fourwireDataHi_SHIFT)
-
-/* Bits in NPHY_FourwireDataLo */
-#define NPHY_FourwireDataLo_fourwireDataLo_SHIFT       	0
-#define NPHY_FourwireDataLo_fourwireDataLo_MASK	\
-	(0xffff << NPHY_FourwireDataLo_fourwireDataLo_SHIFT)
-
-/* Bits in NPHY_BistStatus0 */
-#define NPHY_BistStatus0_bistFail_SHIFT		0
-#define NPHY_BistStatus0_bistFail_MASK		(0xffff << NPHY_BistStatus0_bistFail_SHIFT)
-
-/* Bits in NPHY_BistStatus1 */
-#define NPHY_BistStatus1_bistFail_SHIFT		0
-#define NPHY_BistStatus1_bistFail_MASK		(0xffff << NPHY_BistStatus1_bistFail_SHIFT)
-
-/* Bits in NPHY_Core1DesiredPower */
-#define NPHY_Core1DesiredPower_normDesiredPower_SHIFT  	0
-#define NPHY_Core1DesiredPower_normDesiredPower_MASK \
-	(0xffff << NPHY_Core1DesiredPower_normDesiredPower_SHIFT)
-
-/* Bits in NPHY_Core1cckDesiredPower */
-#define NPHY_Core1cckDesiredPower_ccknormDesiredPower_SHIFT    	0
-#define NPHY_Core1cckDesiredPower_ccknormDesiredPower_MASK \
-	(0xffff << NPHY_Core1cckDesiredPower_ccknormDesiredPower_SHIFT)
-
-/* Bits in NPHY_Core1barelyClipBackoff */
-#define NPHY_Core1barelyClipBackoff_barelyclipThreshold_SHIFT  	0
-#define NPHY_Core1barelyClipBackoff_barelyclipThreshold_MASK \
-	(0xffff << NPHY_Core1barelyClipBackoff_barelyclipThreshold_SHIFT)
-
-/* Bits in NPHY_Core1cckbarelyClipBackoff */
-#define NPHY_Core1cckbarelyClipBackoff_cckbarelyclipThreshold_SHIFT    	0
-#define NPHY_Core1cckbarelyClipBackoff_cckbarelyclipThreshold_MASK \
-	(0xffff << NPHY_Core1cckbarelyClipBackoff_cckbarelyclipThreshold_SHIFT)
-
-/* Bits in NPHY_Core[12]computeGainInfo */
-#define NPHY_CorecomputeGainInfo_gainBackoffValue_SHIFT 0
-#define NPHY_CorecomputeGainInfo_gainBackoffValue_MASK \
-		(0x1f << NPHY_CorecomputeGainInfo_gainBackoffValue_SHIFT)
-#define NPHY_CorecomputeGainInfo_barelyClipGainBackoffValue_SHIFT 5
-#define NPHY_CorecomputeGainInfo_barelyClipGainBackoffValue_MASK \
-		(0x1f << NPHY_CorecomputeGainInfo_barelyClipGainBackoffValue_SHIFT)
-#define NPHY_CorecomputeGainInfo_gainStepValue_SHIFT 10
-#define NPHY_CorecomputeGainInfo_gainStepValue_MASK \
-		(0x7 << NPHY_CorecomputeGainInfo_gainStepValue_SHIFT)
-#define NPHY_CorecomputeGainInfo_disableClip2detect_SHIFT 13
-#define NPHY_CorecomputeGainInfo_disableClip2detect_MASK \
-		(0x1 << NPHY_CorecomputeGainInfo_disableClip2detect_SHIFT)
-
-/* Bits in NPHY_Core[12]MinMaxGain */
-#define NPHY_CoreMinMaxGain_maxGainValue_SHIFT	8
-#define NPHY_CoreMinMaxGain_maxGainValue_MASK	\
-		(0xff << NPHY_CoreMinMaxGain_maxGainValue_SHIFT)
-#define NPHY_CoreMinMaxGain_minGainValue_SHIFT	0
-#define NPHY_CoreMinMaxGain_minGainValue_MASK	\
-		(0xff << NPHY_CoreMinMaxGain_minGainValue_SHIFT)
-
-/* Bits in NPHY_Core[12]cckcomputeGainInfo */
-#define NPHY_CorecckcomputeGainInfo_gainBackoffValue_SHIFT 0
-#define NPHY_CorecckcomputeGainInfo_gainBackoffValue_MASK \
-		(0x1f << NPHY_CorecckcomputeGainInfo_gainBackoffValue_SHIFT)
-#define NPHY_CorecckcomputeGainInfo_cckbarelyClipGainBackoffValue_SHIFT 5
-#define NPHY_CorecckcomputeGainInfo_cckbarelyClipGainBackoffValue_MASK \
-		(0xf << NPHY_CorecckcomputeGainInfo_cckbarelyClipGainBackoffValue_SHIFT)
-
-/* Bits in NPHY_Core[12]cckMinMaxGain */
-#define NPHY_CorecckMinMaxGain_cckmaxGainValue_SHIFT	8
-#define NPHY_CorecckMinMaxGain_cckmaxGainValue_MASK	\
-		(0xff << NPHY_CorecckMinMaxGain_cckmaxGainValue_SHIFT)
-#define NPHY_CorecckMinMaxGain_cckminGainValue_SHIFT	0
-#define NPHY_CorecckMinMaxGain_cckminGainValue_MASK	\
-		(0xff << NPHY_CorecckMinMaxGain_cckminGainValue_SHIFT)
-
-/* Bits in NPHY_Core[12]InitGainCode */
-#define NPHY_CoreInitGainCode_initTrTxIndex_SHIFT	13
-#define NPHY_CoreInitGainCode_initTrTxIndex_MASK	\
-		(0x1 << NPHY_CoreInitGainCode_initTrTxIndex_SHIFT)
-#define NPHY_CoreInitGainCode_initTrRxIndex_SHIFT	12
-#define NPHY_CoreInitGainCode_initTrRxIndex_MASK	\
-		(0x1 << NPHY_CoreInitGainCode_initTrRxIndex_SHIFT)
-#define NPHY_CoreInitGainCode_initHpvga2Index_SHIFT	7
-#define NPHY_CoreInitGainCode_initHpvga2Index_MASK	\
-		(0x1f << NPHY_CoreInitGainCode_initHpvga2Index_SHIFT)
-#define NPHY_CoreInitGainCode_initHpvga1Index_SHIFT	3
-#define NPHY_CoreInitGainCode_initHpvga1Index_MASK	\
-		(0xf << NPHY_CoreInitGainCode_initHpvga1Index_SHIFT)
-#define NPHY_CoreInitGainCode_initLnaIndex_SHIFT	1
-#define NPHY_CoreInitGainCode_initLnaIndex_MASK	\
-		(0x3 << NPHY_CoreInitGainCode_initLnaIndex_SHIFT)
-#define NPHY_CoreInitGainCode_initExtLnaIndex_SHIFT	0
-#define NPHY_CoreInitGainCode_initExtLnaIndex_MASK	\
-		(0x1 << NPHY_CoreInitGainCode_initExtLnaIndex_SHIFT)
-
-/* Bits in NPHY_Core1InitGainCodeA2056 */
-#define NPHY_Core1InitGainCodeA2056_initvgagainIndex_SHIFT	12
-#define NPHY_Core1InitGainCodeA2056_initvgagainIndex_MASK \
-	(0xf << NPHY_Core1InitGainCodeA2056_initvgagainIndex_SHIFT)
-#define NPHY_Core1InitGainCodeA2056_initlpfgainIndex_SHIFT	9
-#define NPHY_Core1InitGainCodeA2056_initlpfgainIndex_MASK \
-	(0x7 << NPHY_Core1InitGainCodeA2056_initlpfgainIndex_SHIFT)
-#define NPHY_Core1InitGainCodeA2056_initmixergainIndex_SHIFT	5
-#define NPHY_Core1InitGainCodeA2056_initmixergainIndex_MASK \
-	(0xf << NPHY_Core1InitGainCodeA2056_initmixergainIndex_SHIFT)
-#define NPHY_Core1InitGainCodeA2056_initlna2Index_SHIFT	3
-#define NPHY_Core1InitGainCodeA2056_initlna2Index_MASK \
-	(0x3 << NPHY_Core1InitGainCodeA2056_initlna2Index_SHIFT)
-#define NPHY_Core1InitGainCodeA2056_initLnaIndex_SHIFT	1
-#define NPHY_Core1InitGainCodeA2056_initLnaIndex_MASK \
-	(0x3 << NPHY_Core1InitGainCodeA2056_initLnaIndex_SHIFT)
-#define NPHY_Core1InitGainCodeA2056_initExtLnaIndex_SHIFT	0
-#define NPHY_Core1InitGainCodeA2056_initExtLnaIndex_MASK \
-	(0x1 << NPHY_Core1InitGainCodeA2056_initExtLnaIndex_SHIFT)
-
-/* Bits in NPHY_Core1InitGainCodeB2056 */
-#define NPHY_Core1InitGainCodeB2056_InitTrTxIndex_SHIFT	3
-#define NPHY_Core1InitGainCodeB2056_InitTrTxIndex_MASK \
-	(0x1 << NPHY_Core1InitGainCodeB2056_InitTrTxIndex_SHIFT)
-#define NPHY_Core1InitGainCodeB2056_InitTrRxIndex_SHIFT	2
-#define NPHY_Core1InitGainCodeB2056_InitTrRxIndex_MASK \
-	(0x1 << NPHY_Core1InitGainCodeB2056_InitTrRxIndex_SHIFT)
-#define NPHY_Core1InitGainCodeB2056_initbuffergainIndex_SHIFT	0
-#define NPHY_Core1InitGainCodeB2056_initbuffergainIndex_MASK \
-	(0x3 << NPHY_Core1InitGainCodeB2056_initbuffergainIndex_SHIFT)
-
-/* Bits in NPHY_Core1clipHiGainCodeA2056 */
-#define NPHY_Core1clipHiGainCodeA2056_clip1hivgagainIndex_SHIFT	12
-#define NPHY_Core1clipHiGainCodeA2056_clip1hivgagainIndex_MASK \
-	(0xf << NPHY_Core1clipHiGainCodeA2056_clip1hivgagainIndex_SHIFT)
-#define NPHY_Core1clipHiGainCodeA2056_clip1hilpfgainIndex_SHIFT	9
-#define NPHY_Core1clipHiGainCodeA2056_clip1hilpfgainIndex_MASK \
-	(0x7 << NPHY_Core1clipHiGainCodeA2056_clip1hilpfgainIndex_SHIFT)
-#define NPHY_Core1clipHiGainCodeA2056_clip1himixergainIndex_SHIFT	5
-#define NPHY_Core1clipHiGainCodeA2056_clip1himixergainIndex_MASK \
-	(0xf << NPHY_Core1clipHiGainCodeA2056_clip1himixergainIndex_SHIFT)
-#define NPHY_Core1clipHiGainCodeA2056_clip1hilna2Index_SHIFT	3
-#define NPHY_Core1clipHiGainCodeA2056_clip1hilna2Index_MASK \
-	(0x3 << NPHY_Core1clipHiGainCodeA2056_clip1hilna2Index_SHIFT)
-#define NPHY_Core1clipHiGainCodeA2056_clip1hiLnaIndex_SHIFT	1
-#define NPHY_Core1clipHiGainCodeA2056_clip1hiLnaIndex_MASK \
-	(0x3 << NPHY_Core1clipHiGainCodeA2056_clip1hiLnaIndex_SHIFT)
-#define NPHY_Core1clipHiGainCodeA2056_clip1hiextLnaIndex_SHIFT	0
-#define NPHY_Core1clipHiGainCodeA2056_clip1hiextLnaIndex_MASK \
-	(0x1 << NPHY_Core1clipHiGainCodeA2056_clip1hiextLnaIndex_SHIFT)
-
-/* Bits in NPHY_Core1clipHiGainCodeB2056 */
-#define NPHY_Core1clipHiGainCodeB2056_clip1hiTrTxIndex_SHIFT	3
-#define NPHY_Core1clipHiGainCodeB2056_clip1hiTrTxIndex_MASK \
-	(0x1 << NPHY_Core1clipHiGainCodeB2056_clip1hiTrTxIndex_SHIFT)
-#define NPHY_Core1clipHiGainCodeB2056_clip1HiTrRxIndex_SHIFT	2
-#define NPHY_Core1clipHiGainCodeB2056_clip1HiTrRxIndex_MASK \
-	(0x1 << NPHY_Core1clipHiGainCodeB2056_clip1HiTrRxIndex_SHIFT)
-#define NPHY_Core1clipHiGainCodeB2056_clip1hibuffergainIndex_SHIFT	0
-#define NPHY_Core1clipHiGainCodeB2056_clip1hibuffergainIndex_MASK \
-	(0x3 << NPHY_Core1clipHiGainCodeB2056_clip1hibuffergainIndex_SHIFT)
-
-/* Bits in NPHY_Core1clipmdGainCodeA2056 */
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdvgagainIndex_SHIFT	12
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdvgagainIndex_MASK \
-	(0xf << NPHY_Core1clipmdGainCodeA2056_clip1mdvgagainIndex_SHIFT)
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdlpfgainIndex_SHIFT	9
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdlpfgainIndex_MASK \
-	(0x7 << NPHY_Core1clipmdGainCodeA2056_clip1mdlpfgainIndex_SHIFT)
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdmixergainIndex_SHIFT	5
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdmixergainIndex_MASK \
-	(0xf << NPHY_Core1clipmdGainCodeA2056_clip1mdmixergainIndex_SHIFT)
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdlna2Index_SHIFT	3
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdlna2Index_MASK \
-	(0x3 << NPHY_Core1clipmdGainCodeA2056_clip1mdlna2Index_SHIFT)
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdLnaIndex_SHIFT	1
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdLnaIndex_MASK \
-	(0x3 << NPHY_Core1clipmdGainCodeA2056_clip1mdLnaIndex_SHIFT)
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdextLnaIndex_SHIFT	0
-#define NPHY_Core1clipmdGainCodeA2056_clip1mdextLnaIndex_MASK \
-	(0x1 << NPHY_Core1clipmdGainCodeA2056_clip1mdextLnaIndex_SHIFT)
-
-/* Bits in NPHY_REV3_Core1lpfQHpFBw */
-#define NPHY_REV3_Core1lpfQHpFBw_lpfqOvr_SHIFT	8
-#define NPHY_REV3_Core1lpfQHpFBw_lpfqOvr_MASK	(0xff << NPHY_REV3_Core1lpfQHpFBw_lpfqOvr_SHIFT)
-#define NPHY_REV3_Core1lpfQHpFBw_hpfbWval_SHIFT	0
-#define NPHY_REV3_Core1lpfQHpFBw_hpfbWval_MASK	(0xff << NPHY_REV3_Core1lpfQHpFBw_hpfbWval_SHIFT)
-
-/* Bits in NPHY_Core[12]clipwbThreshold */
-#define NPHY_CoreclipwbThreshold_clip1wbThreshold_SHIFT 0
-#define NPHY_CoreclipwbThreshold_clip1wbThreshold_MASK \
-		(0x3f << NPHY_CoreclipwbThreshold_clip1wbThreshold_SHIFT)
-#define NPHY_CoreclipwbThreshold_clip2wbThreshold_SHIFT 6
-#define NPHY_CoreclipwbThreshold_clip2wbThreshold_MASK \
-		(0x3f << NPHY_CoreclipwbThreshold_clip2wbThreshold_SHIFT)
-
-/* Bits in NPHY_Core1w1Threshold */
-#define NPHY_Core1w1Threshold_w1Threshold_SHIFT	0
-#define NPHY_Core1w1Threshold_w1Threshold_MASK	(0x3f << NPHY_Core1w1Threshold_w1Threshold_SHIFT)
-#define NPHY_Core1w1Threshold_w2ClipTh_SHIFT	6
-#define NPHY_Core1w1Threshold_w2ClipTh_MASK	(0x3f << NPHY_Core1w1Threshold_w2ClipTh_SHIFT)
-
-/* Bits in NPHY_Core1edThreshold */
-#define NPHY_Core1edThreshold_edThreshold_SHIFT	0
-#define NPHY_Core1edThreshold_edThreshold_MASK	(0xffff << NPHY_Core1edThreshold_edThreshold_SHIFT)
-
-/* Bits in NPHY_Core1smallsigThreshold */
-#define NPHY_Core1smallsigThreshold_smallsigThreshold_SHIFT	0
-#define NPHY_Core1smallsigThreshold_smallsigThreshold_MASK \
-	(0xffff << NPHY_Core1smallsigThreshold_smallsigThreshold_SHIFT)
-
-/* Bits in NPHY_Core1nbClipThreshold */
-#define NPHY_Core1nbClipThreshold_nbClipThreshold_SHIFT	0
-#define NPHY_Core1nbClipThreshold_nbClipThreshold_MASK \
-	(0xffff << NPHY_Core1nbClipThreshold_nbClipThreshold_SHIFT)
-
-/* Bits in NPHY_Core1Clip1Threshold */
-#define NPHY_Core1Clip1Threshold_Clip1Threshold_SHIFT	0
-#define NPHY_Core1Clip1Threshold_Clip1Threshold_MASK \
-	(0xffff << NPHY_Core1Clip1Threshold_Clip1Threshold_SHIFT)
-
-/* Bits in NPHY_Core1Clip2Threshold */
-#define NPHY_Core1Clip2Threshold_Clip2Threshold_SHIFT	0
-#define NPHY_Core1Clip2Threshold_Clip2Threshold_MASK \
-	(0xffff << NPHY_Core1Clip2Threshold_Clip2Threshold_SHIFT)
-
-/* Bits in NPHY_Core2DesiredPower */
-#define NPHY_Core2DesiredPower_normDesiredPower_SHIFT	0
-#define NPHY_Core2DesiredPower_normDesiredPower_MASK \
-	(0xffff << NPHY_Core2DesiredPower_normDesiredPower_SHIFT)
-
-/* Bits in NPHY_Core2cckDesiredPower */
-#define NPHY_Core2cckDesiredPower_ccknormDesiredPower_SHIFT	0
-#define NPHY_Core2cckDesiredPower_ccknormDesiredPower_MASK \
-	(0xffff << NPHY_Core2cckDesiredPower_ccknormDesiredPower_SHIFT)
-
-/* Bits in NPHY_Core2barelyClipBackoff */
-#define NPHY_Core2barelyClipBackoff_barelyclipThreshold_SHIFT	0
-#define NPHY_Core2barelyClipBackoff_barelyclipThreshold_MASK \
-	(0xffff << NPHY_Core2barelyClipBackoff_barelyclipThreshold_SHIFT)
-
-/* Bits in NPHY_Core2cckbarelyClipBackoff */
-#define NPHY_Core2cckbarelyClipBackoff_cckbarelyclipThreshold_SHIFT	0
-#define NPHY_Core2cckbarelyClipBackoff_cckbarelyclipThreshold_MASK \
-	(0xffff << NPHY_Core2cckbarelyClipBackoff_cckbarelyclipThreshold_SHIFT)
-
-
-/* Bits in NPHY_Core1clipmdGainCodeB2056 */
-#define NPHY_Core1clipmdGainCodeB2056_clip1mdTrTxIndex_SHIFT	3
-#define NPHY_Core1clipmdGainCodeB2056_clip1mdTrTxIndex_MASK \
-	(0x1 << NPHY_Core1clipmdGainCodeB2056_clip1mdTrTxIndex_SHIFT)
-#define NPHY_Core1clipmdGainCodeB2056_clip1mdTrRxIndex_SHIFT	2
-#define NPHY_Core1clipmdGainCodeB2056_clip1mdTrRxIndex_MASK \
-	(0x1 << NPHY_Core1clipmdGainCodeB2056_clip1mdTrRxIndex_SHIFT)
-#define NPHY_Core1clipmdGainCodeB2056_clip1mdbuffergainIndex_SHIFT	0
-#define NPHY_Core1clipmdGainCodeB2056_clip1mdbuffergainIndex_MASK \
-	(0x3 << NPHY_Core1clipmdGainCodeB2056_clip1mdbuffergainIndex_SHIFT)
-
-
-/* Bits in NPHY_Core1cliploGainCodeA2056 */
-#define NPHY_Core1cliploGainCodeA2056_clip1lovgagainIndex_SHIFT	12
-#define NPHY_Core1cliploGainCodeA2056_clip1lovgagainIndex_MASK \
-	(0xf << NPHY_Core1cliploGainCodeA2056_clip1lovgagainIndex_SHIFT)
-#define NPHY_Core1cliploGainCodeA2056_clip1lolpfgainIndex_SHIFT	9
-#define NPHY_Core1cliploGainCodeA2056_clip1lolpfgainIndex_MASK \
-	(0x7 << NPHY_Core1cliploGainCodeA2056_clip1lolpfgainIndex_SHIFT)
-#define NPHY_Core1cliploGainCodeA2056_clip1lomixergainIndex_SHIFT	5
-#define NPHY_Core1cliploGainCodeA2056_clip1lomixergainIndex_MASK \
-	(0xf << NPHY_Core1cliploGainCodeA2056_clip1lomixergainIndex_SHIFT)
-#define NPHY_Core1cliploGainCodeA2056_clip1lolna2Index_SHIFT	3
-#define NPHY_Core1cliploGainCodeA2056_clip1lolna2Index_MASK \
-	(0x3 << NPHY_Core1cliploGainCodeA2056_clip1lolna2Index_SHIFT)
-#define NPHY_Core1cliploGainCodeA2056_clip1loLnaIndex_SHIFT	1
-#define NPHY_Core1cliploGainCodeA2056_clip1loLnaIndex_MASK \
-	(0x3 << NPHY_Core1cliploGainCodeA2056_clip1loLnaIndex_SHIFT)
-#define NPHY_Core1cliploGainCodeA2056_clip1loextLnaIndex_SHIFT	0
-#define NPHY_Core1cliploGainCodeA2056_clip1loextLnaIndex_MASK \
-	(0x1 << NPHY_Core1cliploGainCodeA2056_clip1loextLnaIndex_SHIFT)
-
-/* Bits in NPHY_Core1cliploGainCodeB2056 */
-#define NPHY_Core1cliploGainCodeB2056_clip1loTrTxIndex_SHIFT	3
-#define NPHY_Core1cliploGainCodeB2056_clip1loTrTxIndex_MASK \
-	(0x1 << NPHY_Core1cliploGainCodeB2056_clip1loTrTxIndex_SHIFT)
-#define NPHY_Core1cliploGainCodeB2056_clip1loTrRxIndex_SHIFT	2
-#define NPHY_Core1cliploGainCodeB2056_clip1loTrRxIndex_MASK \
-	(0x1 << NPHY_Core1cliploGainCodeB2056_clip1loTrRxIndex_SHIFT)
-#define NPHY_Core1cliploGainCodeB2056_clip1lobuffergainIndex_SHIFT	0
-#define NPHY_Core1cliploGainCodeB2056_clip1lobuffergainIndex_MASK \
-	(0x3 << NPHY_Core1cliploGainCodeB2056_clip1lobuffergainIndex_SHIFT)
-
-/* Bits in NPHY_Core1clip2GainCodeA2056 */
-#define NPHY_Core1clip2GainCodeA2056_clip2vgagainIndex_SHIFT	12
-#define NPHY_Core1clip2GainCodeA2056_clip2vgagainIndex_MASK \
-	(0xf << NPHY_Core1clip2GainCodeA2056_clip2vgagainIndex_SHIFT)
-#define NPHY_Core1clip2GainCodeA2056_clip2lpfgainIndex_SHIFT	9
-#define NPHY_Core1clip2GainCodeA2056_clip2lpfgainIndex_MASK \
-	(0x7 << NPHY_Core1clip2GainCodeA2056_clip2lpfgainIndex_SHIFT)
-#define NPHY_Core1clip2GainCodeA2056_clip2mixergainIndex_SHIFT	5
-#define NPHY_Core1clip2GainCodeA2056_clip2mixergainIndex_MASK \
-	(0xf << NPHY_Core1clip2GainCodeA2056_clip2mixergainIndex_SHIFT)
-#define NPHY_Core1clip2GainCodeA2056_clip2lna2Index_SHIFT	3
-#define NPHY_Core1clip2GainCodeA2056_clip2lna2Index_MASK \
-	(0x3 << NPHY_Core1clip2GainCodeA2056_clip2lna2Index_SHIFT)
-#define NPHY_Core1clip2GainCodeA2056_clip2LnaIndex_SHIFT	1
-#define NPHY_Core1clip2GainCodeA2056_clip2LnaIndex_MASK \
-	(0x3 << NPHY_Core1clip2GainCodeA2056_clip2LnaIndex_SHIFT)
-#define NPHY_Core1clip2GainCodeA2056_cllip2extLnaIndex_SHIFT	0
-#define NPHY_Core1clip2GainCodeA2056_cllip2extLnaIndex_MASK \
-	(0x1 << NPHY_Core1clip2GainCodeA2056_cllip2extLnaIndex_SHIFT)
-
-/* Bits in NPHY_Core1clip2GainCodeB2056 */
-#define NPHY_Core1clip2GainCodeB2056_clip2TRTxIndex_SHIFT	3
-#define NPHY_Core1clip2GainCodeB2056_clip2TRTxIndex_MASK \
-	(0x1 << NPHY_Core1clip2GainCodeB2056_clip2TRTxIndex_SHIFT)
-#define NPHY_Core1clip2GainCodeB2056_clip2TRRxIndex_SHIFT	2
-#define NPHY_Core1clip2GainCodeB2056_clip2TRRxIndex_MASK \
-	(0x1 << NPHY_Core1clip2GainCodeB2056_clip2TRRxIndex_SHIFT)
-#define NPHY_Core1clip2GainCodeB2056_clip2buffergainIndex_SHIFT	0
-#define NPHY_Core1clip2GainCodeB2056_clip2buffergainIndex_MASK \
-	(0x3 << NPHY_Core1clip2GainCodeB2056_clip2buffergainIndex_SHIFT)
-
-/* Bits in NPHY_Core2FilterGain */
-#define NPHY_Core2FilterGain_bfiGainValue_SHIFT	12
-#define NPHY_Core2FilterGain_bfiGainValue_MASK	(0xf << NPHY_Core2FilterGain_bfiGainValue_SHIFT)
-#define NPHY_Core2FilterGain_bfoGainValue_SHIFT	8
-#define NPHY_Core2FilterGain_bfoGainValue_MASK	(0xf << NPHY_Core2FilterGain_bfoGainValue_SHIFT)
-#define NPHY_Core2FilterGain_lpfGainValue_SHIFT	4
-#define NPHY_Core2FilterGain_lpfGainValue_MASK	(0xf << NPHY_Core2FilterGain_lpfGainValue_SHIFT)
-#define NPHY_Core2FilterGain_mixerGainValue_SHIFT	0
-#define NPHY_Core2FilterGain_mixerGainValue_MASK \
-	(0xf << NPHY_Core2FilterGain_mixerGainValue_SHIFT)
-
-/* Bits in NPHY_REV3_Core2lpfQHpFBw */
-#define NPHY_REV3_Core2lpfQHpFBw_lpfqOvr_SHIFT	8
-#define NPHY_REV3_Core2lpfQHpFBw_lpfqOvr_MASK	(0xff << NPHY_REV3_Core2lpfQHpFBw_lpfqOvr_SHIFT)
-#define NPHY_REV3_Core2lpfQHpFBw_hpfbWval_SHIFT	0
-#define NPHY_REV3_Core2lpfQHpFBw_hpfbWval_MASK	(0xff << NPHY_REV3_Core2lpfQHpFBw_hpfbWval_SHIFT)
-
-
-/* Bits in NPHY_Core2w1Threshold */
-#define NPHY_Core2w1Threshold_w1Threshold_SHIFT	0
-#define NPHY_Core2w1Threshold_w1Threshold_MASK	(0x3f << NPHY_Core2w1Threshold_w1Threshold_SHIFT)
-#define NPHY_Core2w1Threshold_w2ClipTh_SHIFT	6
-#define NPHY_Core2w1Threshold_w2ClipTh_MASK	(0x3f << NPHY_Core2w1Threshold_w2ClipTh_SHIFT)
-
-/* Bits in NPHY_Core2edThreshold */
-#define NPHY_Core2edThreshold_edThreshold_SHIFT	0
-#define NPHY_Core2edThreshold_edThreshold_MASK	(0xffff << NPHY_Core2edThreshold_edThreshold_SHIFT)
-
-/* Bits in NPHY_Core2smallsigThreshold */
-#define NPHY_Core2smallsigThreshold_smallsigThreshold_SHIFT	0
-#define NPHY_Core2smallsigThreshold_smallsigThreshold_MASK \
-	(0xffff << NPHY_Core2smallsigThreshold_smallsigThreshold_SHIFT)
-
-/* Bits in NPHY_Core2nbClipThreshold */
-#define NPHY_Core2nbClipThreshold_nbClipThreshold_SHIFT	0
-#define NPHY_Core2nbClipThreshold_nbClipThreshold_MASK \
-	(0xffff << NPHY_Core2nbClipThreshold_nbClipThreshold_SHIFT)
-
-/* Bits in NPHY_Core2Clip1Threshold */
-#define NPHY_Core2Clip1Threshold_Clip1Threshold_SHIFT	0
-#define NPHY_Core2Clip1Threshold_Clip1Threshold_MASK \
-	(0xffff << NPHY_Core2Clip1Threshold_Clip1Threshold_SHIFT)
-
-/* Bits in NPHY_Core2Clip2Threshold */
-#define NPHY_Core2Clip2Threshold_Clip2Threshold_SHIFT	0
-#define NPHY_Core2Clip2Threshold_Clip2Threshold_MASK \
-	(0xffff << NPHY_Core2Clip2Threshold_Clip2Threshold_SHIFT)
-
-/* Bits in NPHY_crsThreshold1 */
-#define NPHY_crsThreshold1_autoThresh_SHIFT	0
-#define NPHY_crsThreshold1_autoThresh_MASK	(0xff << NPHY_crsThreshold1_autoThresh_SHIFT)
-#define NPHY_crsThreshold1_autoThresh2_SHIFT	8
-#define NPHY_crsThreshold1_autoThresh2_MASK	(0xff << NPHY_crsThreshold1_autoThresh2_SHIFT)
-
-/* Bits in NPHY_crsThreshold2 */
-#define NPHY_crsThreshold2_peakThresh_SHIFT	0
-#define NPHY_crsThreshold2_peakThresh_MASK	(0xff << NPHY_crsThreshold2_peakThresh_SHIFT)
-#define NPHY_crsThreshold2_peakDiffThresh_SHIFT	8
-#define NPHY_crsThreshold2_peakDiffThresh_MASK	(0xff << NPHY_crsThreshold2_peakDiffThresh_SHIFT)
-
-/* Bits in NPHY_crsThreshold3 */
-#define NPHY_crsThreshold3_peakValThresh_SHIFT	8
-#define NPHY_crsThreshold3_peakValThresh_MASK	(0xff << NPHY_crsThreshold3_peakValThresh_SHIFT)
-
-/* Bits in NPHY_crsControl */
-#define NPHY_crsControl_muxSelect_SHIFT	0
-#define NPHY_crsControl_muxSelect_MASK	(0x3 << NPHY_crsControl_muxSelect_SHIFT)
-#define NPHY_crsControl_autoEnable_SHIFT	2
-#define NPHY_crsControl_autoEnable_MASK	(0x1 << NPHY_crsControl_autoEnable_SHIFT)
-#define NPHY_crsControl_mfEnable_SHIFT	3
-#define NPHY_crsControl_mfEnable_MASK	(0x1 << NPHY_crsControl_mfEnable_SHIFT)
-#define NPHY_crsControl_totEnable_SHIFT	4
-#define NPHY_crsControl_totEnable_MASK	(0x1 << NPHY_crsControl_totEnable_SHIFT)
-
-/* Bits in NPHY_DcFiltAddress */
-#define NPHY_DcFiltAddress_dcCoef0_SHIFT	0
-#define NPHY_DcFiltAddress_dcCoef0_MASK	(0x1f << NPHY_DcFiltAddress_dcCoef0_SHIFT)
-#define NPHY_DcFiltAddress_dcBypass_SHIFT	8
-#define NPHY_DcFiltAddress_dcBypass_MASK	(0x1 << NPHY_DcFiltAddress_dcBypass_SHIFT)
-
-/* Bits in NPHY_RxFilt20Num00 */
-#define NPHY_RxFilt20Num00_RxFilt20Num00_SHIFT	0
-#define NPHY_RxFilt20Num00_RxFilt20Num00_MASK	(0x7ff << NPHY_RxFilt20Num00_RxFilt20Num00_SHIFT)
-
-/* Bits in NPHY_RxFilt20Num01 */
-#define NPHY_RxFilt20Num01_RxFilt20Num01_SHIFT	0
-#define NPHY_RxFilt20Num01_RxFilt20Num01_MASK	(0x7ff << NPHY_RxFilt20Num01_RxFilt20Num01_SHIFT)
-
-/* Bits in NPHY_RxFilt20Num02 */
-#define NPHY_RxFilt20Num02_RxFilt20Num02_SHIFT	0
-#define NPHY_RxFilt20Num02_RxFilt20Num02_MASK	(0x7ff << NPHY_RxFilt20Num02_RxFilt20Num02_SHIFT)
-
-/* Bits in NPHY_RxFilt20Den00 */
-#define NPHY_RxFilt20Den00_RxFilt20Den00_SHIFT	0
-#define NPHY_RxFilt20Den00_RxFilt20Den00_MASK	(0x7ff << NPHY_RxFilt20Den00_RxFilt20Den00_SHIFT)
-
-/* Bits in NPHY_RxFilt20Den01 */
-#define NPHY_RxFilt20Den01_RxFilt20Den01_SHIFT	0
-#define NPHY_RxFilt20Den01_RxFilt20Den01_MASK	(0x7ff << NPHY_RxFilt20Den01_RxFilt20Den01_SHIFT)
-
-/* Bits in NPHY_RxFilt20Num10 */
-#define NPHY_RxFilt20Num10_RxFilt20Num10_SHIFT	0
-#define NPHY_RxFilt20Num10_RxFilt20Num10_MASK	(0x7ff << NPHY_RxFilt20Num10_RxFilt20Num10_SHIFT)
-
-/* Bits in NPHY_RxFilt20Num11 */
-#define NPHY_RxFilt20Num11_RxFilt20Num11_SHIFT	0
-#define NPHY_RxFilt20Num11_RxFilt20Num11_MASK	(0x7ff << NPHY_RxFilt20Num11_RxFilt20Num11_SHIFT)
-
-/* Bits in NPHY_RxFilt20Num12 */
-#define NPHY_RxFilt20Num12_RxFilt20Num12_SHIFT	0
-#define NPHY_RxFilt20Num12_RxFilt20Num12_MASK	(0x7ff << NPHY_RxFilt20Num12_RxFilt20Num12_SHIFT)
-
-/* Bits in NPHY_RxFilt20Den10 */
-#define NPHY_RxFilt20Den10_RxFilt20Den10_SHIFT	0
-#define NPHY_RxFilt20Den10_RxFilt20Den10_MASK	(0x7ff << NPHY_RxFilt20Den10_RxFilt20Den10_SHIFT)
-
-/* Bits in NPHY_RxFilt20Den11 */
-#define NPHY_RxFilt20Den11_RxFilt20Den11_SHIFT	0
-#define NPHY_RxFilt20Den11_RxFilt20Den11_MASK	(0x7ff << NPHY_RxFilt20Den11_RxFilt20Den11_SHIFT)
-
-/* Bits in NPHY_RxFilt40Num00 */
-#define NPHY_RxFilt40Num00_RxFilt40Num00_SHIFT	0
-#define NPHY_RxFilt40Num00_RxFilt40Num00_MASK	(0x7ff << NPHY_RxFilt40Num00_RxFilt40Num00_SHIFT)
-
-/* Bits in NPHY_RxFilt40Num01 */
-#define NPHY_RxFilt40Num01_RxFilt40Num01_SHIFT	0
-#define NPHY_RxFilt40Num01_RxFilt40Num01_MASK	(0x7ff << NPHY_RxFilt40Num01_RxFilt40Num01_SHIFT)
-
-/* Bits in NPHY_RxFilt40Num02 */
-#define NPHY_RxFilt40Num02_RxFilt40Num02_SHIFT	0
-#define NPHY_RxFilt40Num02_RxFilt40Num02_MASK	(0x7ff << NPHY_RxFilt40Num02_RxFilt40Num02_SHIFT)
-
-/* Bits in NPHY_RxFilt40Den00 */
-#define NPHY_RxFilt40Den00_RxFilt40Den00_SHIFT	0
-#define NPHY_RxFilt40Den00_RxFilt40Den00_MASK	(0x7ff << NPHY_RxFilt40Den00_RxFilt40Den00_SHIFT)
-
-/* Bits in NPHY_RxFilt40Den01 */
-#define NPHY_RxFilt40Den01_RxFilt40Den01_SHIFT	0
-#define NPHY_RxFilt40Den01_RxFilt40Den01_MASK	(0x7ff << NPHY_RxFilt40Den01_RxFilt40Den01_SHIFT)
-
-/* Bits in NPHY_RxFilt40Num10 */
-#define NPHY_RxFilt40Num10_RxFilt40Num10_SHIFT	0
-#define NPHY_RxFilt40Num10_RxFilt40Num10_MASK	(0x7ff << NPHY_RxFilt40Num10_RxFilt40Num10_SHIFT)
-
-/* Bits in NPHY_RxFilt40Num11 */
-#define NPHY_RxFilt40Num11_RxFilt40Num11_SHIFT	0
-#define NPHY_RxFilt40Num11_RxFilt40Num11_MASK	(0x7ff << NPHY_RxFilt40Num11_RxFilt40Num11_SHIFT)
-
-/* Bits in NPHY_RxFilt40Num12 */
-#define NPHY_RxFilt40Num12_RxFilt40Num12_SHIFT	0
-#define NPHY_RxFilt40Num12_RxFilt40Num12_MASK	(0x7ff << NPHY_RxFilt40Num12_RxFilt40Num12_SHIFT)
-
-/* Bits in NPHY_RxFilt40Den10 */
-#define NPHY_RxFilt40Den10_RxFilt40Den10_SHIFT	0
-#define NPHY_RxFilt40Den10_RxFilt40Den10_MASK	(0x7ff << NPHY_RxFilt40Den10_RxFilt40Den10_SHIFT)
-
-/* Bits in NPHY_RxFilt40Den11 */
-#define NPHY_RxFilt40Den11_RxFilt40Den11_SHIFT	0
-#define NPHY_RxFilt40Den11_RxFilt40Den11_MASK	(0x7ff << NPHY_RxFilt40Den11_RxFilt40Den11_SHIFT)
-
-/* Bits in NPHY_pktprocResetLen */
-#define NPHY_pktprocResetLen_resetLen_SHIFT	0
-#define NPHY_pktprocResetLen_resetLen_MASK	(0xffff << NPHY_pktprocResetLen_resetLen_SHIFT)
-
-/* Bits in NPHY_initcarrierDetLen */
-#define NPHY_initcarrierDetLen_initcarrierDetLen_SHIFT	0
-#define NPHY_initcarrierDetLen_initcarrierDetLen_MASK \
-	(0xffff << NPHY_initcarrierDetLen_initcarrierDetLen_SHIFT)
-
-/* Bits in NPHY_clip1carrierDetLen */
-#define NPHY_clip1carrierDetLen_clip1carrierDetLen_SHIFT	0
-#define NPHY_clip1carrierDetLen_clip1carrierDetLen_MASK \
-	(0xffff << NPHY_clip1carrierDetLen_clip1carrierDetLen_SHIFT)
-
-/* Bits in NPHY_clip2carrierDetLen */
-#define NPHY_clip2carrierDetLen_clip2carrierDetLen_SHIFT	0
-#define NPHY_clip2carrierDetLen_clip2carrierDetLen_MASK \
-	(0xffff << NPHY_clip2carrierDetLen_clip2carrierDetLen_SHIFT)
-
-/* Bits in NPHY_initgainSettleLen */
-#define NPHY_initgainSettleLen_initgainsettleLen_SHIFT	0
-#define NPHY_initgainSettleLen_initgainsettleLen_MASK \
-	(0xffff << NPHY_initgainSettleLen_initgainsettleLen_SHIFT)
-
-/* Bits in NPHY_clip1gainSettleLen */
-#define NPHY_clip1gainSettleLen_clip1gainsettleLen_SHIFT	0
-#define NPHY_clip1gainSettleLen_clip1gainsettleLen_MASK \
-	(0xffff << NPHY_clip1gainSettleLen_clip1gainsettleLen_SHIFT)
-
-/* Bits in NPHY_clip2gainSettleLen */
-#define NPHY_clip2gainSettleLen_clip2gainsettleLen_SHIFT	0
-#define NPHY_clip2gainSettleLen_clip2gainsettleLen_MASK \
-	(0xffff << NPHY_clip2gainSettleLen_clip2gainsettleLen_SHIFT)
-
-/* Bits in NPHY_pktgainSettleLen */
-#define NPHY_pktgainSettleLen_pktgainsettleLen_SHIFT	0
-#define NPHY_pktgainSettleLen_pktgainsettleLen_MASK \
-	(0xffff << NPHY_pktgainSettleLen_pktgainsettleLen_SHIFT)
-
-/* Bits in NPHY_carriersearchtimeoutLen */
-#define NPHY_carriersearchtimeoutLen_carriersearchtimeoutLen_SHIFT	0
-#define NPHY_carriersearchtimeoutLen_carriersearchtimeoutLen_MASK \
-	(0xffff << NPHY_carriersearchtimeoutLen_carriersearchtimeoutLen_SHIFT)
-
-/* Bits in NPHY_timingsearchtimeoutLen */
-#define NPHY_timingsearchtimeoutLen_timingsearchtimeoutLen_SHIFT	0
-#define NPHY_timingsearchtimeoutLen_timingsearchtimeoutLen_MASK \
-	(0xffff << NPHY_timingsearchtimeoutLen_timingsearchtimeoutLen_SHIFT)
-
-/* Bits in NPHY_energydroptimeoutLen */
-#define NPHY_energydroptimeoutLen_energydroptimeoutLen_SHIFT	0
-#define NPHY_energydroptimeoutLen_energydroptimeoutLen_MASK \
-	(0xffff << NPHY_energydroptimeoutLen_energydroptimeoutLen_SHIFT)
-
-/* Bits in NPHY_clip1nbdwellLen */
-#define NPHY_clip1nbdwellLen_clip1nbdwellLen_SHIFT	0
-#define NPHY_clip1nbdwellLen_clip1nbdwellLen_MASK \
-	(0xffff << NPHY_clip1nbdwellLen_clip1nbdwellLen_SHIFT)
-
-/* Bits in NPHY_clip2nbdwellLen */
-#define NPHY_clip2nbdwellLen_clip2nbdwellLen_SHIFT	0
-#define NPHY_clip2nbdwellLen_clip2nbdwellLen_MASK \
-	(0xffff << NPHY_clip2nbdwellLen_clip2nbdwellLen_SHIFT)
-
-/* Bits in NPHY_w1clip1dwellLen */
-#define NPHY_w1clip1dwellLen_w1clip1dwellLen_SHIFT	0
-#define NPHY_w1clip1dwellLen_w1clip1dwellLen_MASK \
-	(0xffff << NPHY_w1clip1dwellLen_w1clip1dwellLen_SHIFT)
-
-/* Bits in NPHY_w1clip2dwellLen */
-#define NPHY_w1clip2dwellLen_w1clip2dwellLen_SHIFT	0
-#define NPHY_w1clip2dwellLen_w1clip2dwellLen_MASK \
-	(0xffff << NPHY_w1clip2dwellLen_w1clip2dwellLen_SHIFT)
-
-/* Bits in NPHY_w2clip1dwellLen */
-#define NPHY_w2clip1dwellLen_w2clip1dwellLen_SHIFT	0
-#define NPHY_w2clip1dwellLen_w2clip1dwellLen_MASK \
-	(0xffff << NPHY_w2clip1dwellLen_w2clip1dwellLen_SHIFT)
-
-/* Bits in NPHY_payloadcrsExtensionLen */
-#define NPHY_payloadcrsExtensionLen_payloadcrsExtensionLen_SHIFT	0
-#define NPHY_payloadcrsExtensionLen_payloadcrsExtensionLen_MASK \
-	(0xffff << NPHY_payloadcrsExtensionLen_payloadcrsExtensionLen_SHIFT)
-
-/* Bits in NPHY_energyDropcrsExtensionLen */
-#define NPHY_energyDropcrsExtensionLen_energyDropcrsExtensionLen_SHIFT	0
-#define NPHY_energyDropcrsExtensionLen_energyDropcrsExtensionLen_MASK \
-	(0xffff << NPHY_energyDropcrsExtensionLen_energyDropcrsExtensionLen_SHIFT)
-
-/* Bits in NPHY_TableAddress */
-#define NPHY_TableAddress_Table_SHIFT	10
-#define NPHY_TableAddress_Table_MASK	(0x3f << NPHY_TableAddress_Table_SHIFT)
-#define NPHY_TableAddress_Offset_SHIFT	0
-#define NPHY_TableAddress_Offset_MASK	(0x3ff << NPHY_TableAddress_Offset_SHIFT)
-
-/* Bits in NPHY_TableDataLo */
-#define NPHY_TableDataLo_TableDataLo_SHIFT	0
-#define NPHY_TableDataLo_TableDataLo_MASK	(0xffff << NPHY_TableDataLo_TableDataLo_SHIFT)
-
-/* Bits in NPHY_TableDataHi */
-#define NPHY_TableDataHi_TableDataHi_SHIFT	0
-#define NPHY_TableDataHi_TableDataHi_MASK	(0xffff << NPHY_TableDataHi_TableDataHi_SHIFT)
-
-/* Bits in NPHY_WwiseLengthIndex */
-#define NPHY_WwiseLengthIndex_WwiseLengthIndexHi_SHIFT	8
-#define NPHY_WwiseLengthIndex_WwiseLengthIndexHi_MASK \
-	(0x3f << NPHY_WwiseLengthIndex_WwiseLengthIndexHi_SHIFT)
-#define NPHY_WwiseLengthIndex_WwiseLengthIndexLo_SHIFT	0
-#define NPHY_WwiseLengthIndex_WwiseLengthIndexLo_MASK \
-	(0x3f << NPHY_WwiseLengthIndex_WwiseLengthIndexLo_SHIFT)
-
-/* Bits in NPHY_NsyncLengthIndex */
-#define NPHY_NsyncLengthIndex_NsyncLengthIndexHi_SHIFT	8
-#define NPHY_NsyncLengthIndex_NsyncLengthIndexHi_MASK \
-	(0x3f << NPHY_NsyncLengthIndex_NsyncLengthIndexHi_SHIFT)
-#define NPHY_NsyncLengthIndex_NsyncLengthIndexLo_SHIFT	0
-#define NPHY_NsyncLengthIndex_NsyncLengthIndexLo_MASK \
-	(0x3f << NPHY_NsyncLengthIndex_NsyncLengthIndexLo_SHIFT)
-
-/* Bits in NPHY_TxMacIfHoldOff */
-#define NPHY_TxMacIfHoldOff_holdoffval_SHIFT	0
-#define NPHY_TxMacIfHoldOff_holdoffval_MASK	(0xff << NPHY_TxMacIfHoldOff_holdoffval_SHIFT)
-
-/* Bits in NPHY_RfctrlCmd */
-#define NPHY_RfctrlCmd_startseq_SHIFT	0
-#define NPHY_RfctrlCmd_startseq_MASK	(0x1 << NPHY_RfctrlCmd_startseq_SHIFT)
-#define NPHY_RfctrlCmd_RxOrTxn_SHIFT	2
-#define NPHY_RfctrlCmd_RxOrTxn_MASK	(0x1 << NPHY_RfctrlCmd_RxOrTxn_SHIFT)
-#define NPHY_RfctrlCmd_core_sel_SHIFT	3
-#define NPHY_RfctrlCmd_core_sel_MASK	(0x7 << NPHY_RfctrlCmd_core_sel_SHIFT)
-#define RFCC_POR_FORCE			0x0040
-#define RFCC_OE_POR_FORCE		0x0080
-#define NPHY_RfctrlCmd_rxen_SHIFT	8
-#define NPHY_RfctrlCmd_rxen_MASK	(0x1 << NPHY_RfctrlCmd_rxen_SHIFT)
-#define NPHY_RfctrlCmd_txen_SHIFT	9
-#define NPHY_RfctrlCmd_txen_MASK	(0x1 << NPHY_RfctrlCmd_txen_SHIFT)
-#define RFCC_CHIP0_PU			0x0400
-#define NPHY_RfctrlCmd_seqen_core_SHIFT	12
-#define NPHY_RfctrlCmd_seqen_core_MASK	(0xf << NPHY_RfctrlCmd_seqen_core_SHIFT)
-
-/* Bits in NPHY_REV3_RfctrlCmd */
-#define NPHY_REV3_RfctrlCmd_startseq0_SHIFT	0
-#define NPHY_REV3_RfctrlCmd_startseq0_MASK	(0x1 << NPHY_REV3_RfctrlCmd_startseq0_SHIFT)
-#define NPHY_REV3_RfctrlCmd_startseq1_SHIFT	1
-#define NPHY_REV3_RfctrlCmd_startseq1_MASK	(0x1 << NPHY_REV3_RfctrlCmd_startseq1_SHIFT)
-#define NPHY_REV3_RfctrlCmd_RxOrTxn_SHIFT	2
-#define NPHY_REV3_RfctrlCmd_RxOrTxn_MASK	(0x1 << NPHY_REV3_RfctrlCmd_RxOrTxn_SHIFT)
-#define NPHY_REV3_RfctrlCmd_core_sel_SHIFT	3
-#define NPHY_REV3_RfctrlCmd_core_sel_MASK	(0x7 << NPHY_REV3_RfctrlCmd_core_sel_SHIFT)
-#define NPHY_REV3_RfctrlCmd_cpl_reset_SHIFT	6
-#define NPHY_REV3_RfctrlCmd_cpl_reset_MASK	(0x1 << NPHY_REV3_RfctrlCmd_cpl_reset_SHIFT)
-#define NPHY_REV3_RfctrlCmd_por_force_SHIFT	7
-#define NPHY_REV3_RfctrlCmd_por_force_MASK	(0x1 << NPHY_REV3_RfctrlCmd_por_force_SHIFT)
-#define NPHY_REV3_RfctrlCmd_rxen_SHIFT	8
-#define NPHY_REV3_RfctrlCmd_rxen_MASK	(0x1 << NPHY_REV3_RfctrlCmd_rxen_SHIFT)
-#define NPHY_REV3_RfctrlCmd_txen_SHIFT	9
-#define NPHY_REV3_RfctrlCmd_txen_MASK	(0x1 << NPHY_REV3_RfctrlCmd_txen_SHIFT)
-#define NPHY_REV3_RfctrlCmd_chip_pu_SHIFT	10
-#define NPHY_REV3_RfctrlCmd_chip_pu_MASK	(0x3 << NPHY_REV3_RfctrlCmd_chip_pu_SHIFT)
-
-/* Bits in NPHY_RfctrlRSSIOTHERS[1,2] */
-#define NPHY_RfctrlRSSIOTHERS_rx_pd_SHIFT 0
-#define NPHY_RfctrlRSSIOTHERS_rx_pd_MASK (0x1 << NPHY_RfctrlRSSIOTHERS_rx_pd_SHIFT)
-#define NPHY_RfctrlRSSIOTHERS_tx_pd_SHIFT 1
-#define NPHY_RfctrlRSSIOTHERS_tx_pd_MASK (0x1 << NPHY_RfctrlRSSIOTHERS_tx_pd_SHIFT)
-#define NPHY_RfctrlRSSIOTHERS_pa_pd_SHIFT 2
-#define NPHY_RfctrlRSSIOTHERS_pa_pd_MASK (0x1 << NPHY_RfctrlRSSIOTHERS_pa_pd_SHIFT)
-#define NPHY_RfctrlRSSIOTHERS_rssi_ctrl_SHIFT 4
-#define NPHY_RfctrlRSSIOTHERS_rssi_ctrl_MASK (0x3 << NPHY_RfctrlRSSIOTHERS_rssi_ctrl_SHIFT)
-#define NPHY_RfctrlRSSIOTHERS_lpf_bw_SHIFT 6
-#define NPHY_RfctrlRSSIOTHERS_lpf_bw_MASK (0x3 << NPHY_RfctrlRSSIOTHERS_lpf_bw_SHIFT)
-#define NPHY_RfctrlRSSIOTHERS_hpf_bw_hi_SHIFT 8
-#define NPHY_RfctrlRSSIOTHERS_hpf_bw_hi_MASK (0x1 << NPHY_RfctrlRSSIOTHERS_hpf_bw_hi_SHIFT)
-#define NPHY_RfctrlRSSIOTHERS_hiq_dis_core_SHIFT 9
-#define NPHY_RfctrlRSSIOTHERS_hiq_dis_core_MASK (0x1 << NPHY_RfctrlRSSIOTHERS_hiq_dis_core_SHIFT)
-
-/* Bits in NPHY_REV3_RfctrlRSSIOTHERS[1,2,3,4] */
-#define NPHY_REV3_RfctrlRSSIOTHERS_rx_pu_SHIFT	0
-#define NPHY_REV3_RfctrlRSSIOTHERS_rx_pu_MASK	(0x1 << NPHY_REV3_RfctrlRSSIOTHERS_rx_pu_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_tx_pu_SHIFT	1
-#define NPHY_REV3_RfctrlRSSIOTHERS_tx_pu_MASK	(0x1 << NPHY_REV3_RfctrlRSSIOTHERS_tx_pu_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_intpa_pu_SHIFT	2
-#define NPHY_REV3_RfctrlRSSIOTHERS_intpa_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlRSSIOTHERS_intpa_pu_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb1a_pu_SHIFT	4
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb1a_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb1a_pu_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb1g_pu_SHIFT	5
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb1g_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb1g_pu_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb2_pu_SHIFT	6
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb2_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlRSSIOTHERS_rssi_wb2_pu_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_nb_pu_SHIFT	7
-#define NPHY_REV3_RfctrlRSSIOTHERS_rssi_nb_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlRSSIOTHERS_rssi_nb_pu_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_rx_lpf_bw_SHIFT	8
-#define NPHY_REV3_RfctrlRSSIOTHERS_rx_lpf_bw_MASK \
-	(0x7 << NPHY_REV3_RfctrlRSSIOTHERS_rx_lpf_bw_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_hpf_bw_hi_SHIFT	11
-#define NPHY_REV3_RfctrlRSSIOTHERS_hpf_bw_hi_MASK \
-	(0x3 << NPHY_REV3_RfctrlRSSIOTHERS_hpf_bw_hi_SHIFT)
-#define NPHY_REV3_RfctrlRSSIOTHERS_hiq_dis_core_SHIFT	13
-#define NPHY_REV3_RfctrlRSSIOTHERS_hiq_dis_core_MASK \
-	(0x7 << NPHY_REV3_RfctrlRSSIOTHERS_hiq_dis_core_SHIFT)
-
-
-/* Bits in NPHY_REV3_RfctrlRXGAIN[1,2,3,4] */
-#define NPHY_REV3_RfctrlRXGAIN_rxgain_SHIFT	0
-#define NPHY_REV3_RfctrlRXGAIN_rxgain_MASK	(0xffff << NPHY_REV3_RfctrlRXGAIN_rxgain_SHIFT)
-
-
-/* Bits in NPHY_REV3_RfctrlTXGAIN[1,2,3,4] */
-#define NPHY_REV3_RfctrlTXGAIN_txgain_SHIFT	0
-#define NPHY_REV3_RfctrlTXGAIN_txgain_MASK	(0xffff << NPHY_REV3_RfctrlTXGAIN_txgain_SHIFT)
-
-
-/* Bits in NPHY_Core1TxControl */
-#define NPHY_Core1TxControl_loft_comp_en_SHIFT	4
-#define NPHY_Core1TxControl_loft_comp_en_MASK	(0x1 << NPHY_Core1TxControl_loft_comp_en_SHIFT)
-#define NPHY_Core1TxControl_iqSwapEnable_SHIFT	3
-#define NPHY_Core1TxControl_iqSwapEnable_MASK	(0x1 << NPHY_Core1TxControl_iqSwapEnable_SHIFT)
-#define NPHY_Core1TxControl_iqImbCompEnable_SHIFT	2
-#define NPHY_Core1TxControl_iqImbCompEnable_MASK \
-	(0x1 << NPHY_Core1TxControl_iqImbCompEnable_SHIFT)
-#define NPHY_Core1TxControl_phaseRotate_SHIFT	1
-#define NPHY_Core1TxControl_phaseRotate_MASK	(0x1 << NPHY_Core1TxControl_phaseRotate_SHIFT)
-#define NPHY_Core1TxControl_BphyFrqBndSelect_SHIFT	0
-#define NPHY_Core1TxControl_BphyFrqBndSelect_MASK \
-	(0x1 << NPHY_Core1TxControl_BphyFrqBndSelect_SHIFT)
-
-/* Bits in NPHY_Core2TxControl */
-#define NPHY_Core2TxControl_loft_comp_en_SHIFT	4
-#define NPHY_Core2TxControl_loft_comp_en_MASK	(0x1 << NPHY_Core2TxControl_loft_comp_en_SHIFT)
-#define NPHY_Core2TxControl_iqSwapEnable_SHIFT	3
-#define NPHY_Core2TxControl_iqSwapEnable_MASK	(0x1 << NPHY_Core2TxControl_iqSwapEnable_SHIFT)
-#define NPHY_Core2TxControl_iqImbCompEnable_SHIFT	2
-#define NPHY_Core2TxControl_iqImbCompEnable_MASK \
-	(0x1 << NPHY_Core2TxControl_iqImbCompEnable_SHIFT)
-#define NPHY_Core2TxControl_phaseRotate_SHIFT	1
-#define NPHY_Core2TxControl_phaseRotate_MASK	(0x1 << NPHY_Core2TxControl_phaseRotate_SHIFT)
-#define NPHY_Core2TxControl_BphyFrqBndSelect_SHIFT	0
-#define NPHY_Core2TxControl_BphyFrqBndSelect_MASK \
-	(0x1 << NPHY_Core2TxControl_BphyFrqBndSelect_SHIFT)
-
-
-/* Bits in NPHY_ScramSigCtrl */
-#define NPHY_ScramSigCtrl_initStateValue_SHIFT 0
-#define NPHY_ScramSigCtrl_initStateValue_MASK (0x7f << NPHY_ScramSigCtrl_initStateValue_SHIFT)
-#define NPHY_ScramSigCtrl_scramCtrlMode_SHIFT 7
-#define NPHY_ScramSigCtrl_scramCtrlMode_MASK (0x1 << NPHY_ScramSigCtrl_scramCtrlMode_SHIFT)
-#define NPHY_ScramSigCtrl_scramindexctlEn_SHIFT 8
-#define NPHY_ScramSigCtrl_scramindexctlEn_MASK (0x1 << NPHY_ScramSigCtrl_scramindexctlEn_SHIFT)
-#define NPHY_ScramSigCtrl_scramstartbit_SHIFT 9
-#define NPHY_ScramSigCtrl_scramstartbit_MASK (0x7f << NPHY_ScramSigCtrl_scramstartbit_SHIFT)
-
-/* Bits in NPHY_REV3_RfctrlIntc[1,2,3,4] */
-#define NPHY_REV3_RfctrlIntc_ext_lna_5g_pu_SHIFT	0
-#define NPHY_REV3_RfctrlIntc_ext_lna_5g_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlIntc_ext_lna_5g_pu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_ext_lna_5g_gain_SHIFT	1
-#define NPHY_REV3_RfctrlIntc_ext_lna_5g_gain_MASK \
-	(0x1 << NPHY_REV3_RfctrlIntc_ext_lna_5g_gain_SHIFT)
-#define NPHY_REV3_RfctrlIntc_ext_lna_2g_pu_SHIFT	2
-#define NPHY_REV3_RfctrlIntc_ext_lna_2g_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlIntc_ext_lna_2g_pu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_ext_lna_2g_gain_SHIFT	3
-#define NPHY_REV3_RfctrlIntc_ext_lna_2g_gain_MASK \
-	(0x1 << NPHY_REV3_RfctrlIntc_ext_lna_2g_gain_SHIFT)
-#define NPHY_REV3_RfctrlIntc_ext_2g_papu_SHIFT	4
-#define NPHY_REV3_RfctrlIntc_ext_2g_papu_MASK	(0x1 << NPHY_REV3_RfctrlIntc_ext_2g_papu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_ext_5g_papu_SHIFT	5
-#define NPHY_REV3_RfctrlIntc_ext_5g_papu_MASK	(0x1 << NPHY_REV3_RfctrlIntc_ext_5g_papu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_tr_sw0_tx_pu_SHIFT	6
-#define NPHY_REV3_RfctrlIntc_tr_sw0_tx_pu_MASK	(0x1 << NPHY_REV3_RfctrlIntc_tr_sw0_tx_pu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_tr_sw0_rx_pu_SHIFT	7
-#define NPHY_REV3_RfctrlIntc_tr_sw0_rx_pu_MASK	(0x1 << NPHY_REV3_RfctrlIntc_tr_sw0_rx_pu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_tr_sw1_tx_pu_SHIFT	8
-#define NPHY_REV3_RfctrlIntc_tr_sw1_tx_pu_MASK	(0x1 << NPHY_REV3_RfctrlIntc_tr_sw1_tx_pu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_tr_sw1_rx_pu_SHIFT	9
-#define NPHY_REV3_RfctrlIntc_tr_sw1_rx_pu_MASK	(0x1 << NPHY_REV3_RfctrlIntc_tr_sw1_rx_pu_SHIFT)
-#define NPHY_REV3_RfctrlIntc_override_SHIFT	10
-#define NPHY_REV3_RfctrlIntc_override_MASK	(0x1 << NPHY_REV3_RfctrlIntc_override_SHIFT)
-
-#define NPHY_RfctrlIntc_override_OFF			0
-#define NPHY_RfctrlIntc_override_TRSW			1
-#define NPHY_RfctrlIntc_override_PA				2
-#define NPHY_RfctrlIntc_override_EXT_LNA_PU		3
-#define NPHY_RfctrlIntc_override_EXT_LNA_GAIN	4
-
-/* Bits in NPHY_NumDatatoneswwise */
-#define NPHY_NumDatatoneswwise_datatoneswwise20_SHIFT	0
-#define NPHY_NumDatatoneswwise_datatoneswwise20_MASK \
-	(0xff << NPHY_NumDatatoneswwise_datatoneswwise20_SHIFT)
-#define NPHY_NumDatatoneswwise_datatoneswwise40_SHIFT	8
-#define NPHY_NumDatatoneswwise_datatoneswwise40_MASK \
-	(0xff << NPHY_NumDatatoneswwise_datatoneswwise40_SHIFT)
-
-/* Bits in NPHY_NumDatatonesnsync */
-#define NPHY_NumDatatonesnsync_datatones11n20_SHIFT	0
-#define NPHY_NumDatatonesnsync_datatones11n20_MASK \
-	(0xff << NPHY_NumDatatonesnsync_datatones11n20_SHIFT)
-#define NPHY_NumDatatonesnsync_datatones11n40_SHIFT	8
-#define NPHY_NumDatatonesnsync_datatones11n40_MASK \
-	(0xff << NPHY_NumDatatonesnsync_datatones11n40_SHIFT)
-
-/* Bits in NPHY_sigfieldmodwwise */
-#define NPHY_sigfieldmodwwise_sig0modulationwwise20_SHIFT	0
-#define NPHY_sigfieldmodwwise_sig0modulationwwise20_MASK \
-	(0x7 << NPHY_sigfieldmodwwise_sig0modulationwwise20_SHIFT)
-#define NPHY_sigfieldmodwwise_sig0modulationwwise40_SHIFT	3
-#define NPHY_sigfieldmodwwise_sig0modulationwwise40_MASK \
-	(0x7 << NPHY_sigfieldmodwwise_sig0modulationwwise40_SHIFT)
-#define NPHY_sigfieldmodwwise_sig1modulationwwise20_SHIFT	6
-#define NPHY_sigfieldmodwwise_sig1modulationwwise20_MASK \
-	(0x7 << NPHY_sigfieldmodwwise_sig1modulationwwise20_SHIFT)
-#define NPHY_sigfieldmodwwise_sig1modulationwwise40_SHIFT	9
-#define NPHY_sigfieldmodwwise_sig1modulationwwise40_MASK \
-	(0x7 << NPHY_sigfieldmodwwise_sig1modulationwwise40_SHIFT)
-#define NPHY_sigfieldmodwwise_stbcswapEn_SHIFT	12
-#define NPHY_sigfieldmodwwise_stbcswapEn_MASK	(0x1 << NPHY_sigfieldmodwwise_stbcswapEn_SHIFT)
-
-/* Bits in NPHY_legsigfieldmod11n */
-#define NPHY_legsigfieldmod11n_legsigmodulation11n20_SHIFT	0
-#define NPHY_legsigfieldmod11n_legsigmodulation11n20_MASK \
-	(0x7 << NPHY_legsigfieldmod11n_legsigmodulation11n20_SHIFT)
-#define NPHY_legsigfieldmod11n_legsigmodulation11n40_SHIFT	3
-#define NPHY_legsigfieldmod11n_legsigmodulation11n40_MASK \
-	(0x7 << NPHY_legsigfieldmod11n_legsigmodulation11n40_SHIFT)
-
-/* Bits in NPHY_htsigfieldmod11n */
-#define NPHY_htsigfieldmod11n_htsig0modulation11n20_SHIFT	0
-#define NPHY_htsigfieldmod11n_htsig0modulation11n20_MASK \
-	(0x7 << NPHY_htsigfieldmod11n_htsig0modulation11n20_SHIFT)
-#define NPHY_htsigfieldmod11n_htsig0modulation11n40_SHIFT	3
-#define NPHY_htsigfieldmod11n_htsig0modulation11n40_MASK \
-	(0x7 << NPHY_htsigfieldmod11n_htsig0modulation11n40_SHIFT)
-#define NPHY_htsigfieldmod11n_htsig1modulation11n20_SHIFT	6
-#define NPHY_htsigfieldmod11n_htsig1modulation11n20_MASK \
-	(0x7 << NPHY_htsigfieldmod11n_htsig1modulation11n20_SHIFT)
-#define NPHY_htsigfieldmod11n_htsig1modulation11n40_SHIFT	9
-#define NPHY_htsigfieldmod11n_htsig1modulation11n40_MASK \
-	(0x7 << NPHY_htsigfieldmod11n_htsig1modulation11n40_SHIFT)
-
-/* Bits in NPHY_Core1RxIQCompA0 */
-#define NPHY_Core1RxIQCompA0_a0_SHIFT	0
-#define NPHY_Core1RxIQCompA0_a0_MASK	(0x3ff << NPHY_Core1RxIQCompA0_a0_SHIFT)
-
-/* Bits in NPHY_Core1RxIQCompB0 */
-#define NPHY_Core1RxIQCompB0_b0_SHIFT	0
-#define NPHY_Core1RxIQCompB0_b0_MASK	(0x3ff << NPHY_Core1RxIQCompB0_b0_SHIFT)
-
-/* Bits in NPHY_Core2RxIQCompA1 */
-#define NPHY_Core2RxIQCompA1_a1_SHIFT	0
-#define NPHY_Core2RxIQCompA1_a1_MASK	(0x3ff << NPHY_Core2RxIQCompA1_a1_SHIFT)
-
-/* Bits in NPHY_Core2RxIQCompB1 */
-#define NPHY_Core2RxIQCompB1_b1_SHIFT	0
-#define NPHY_Core2RxIQCompB1_b1_MASK	(0x3ff << NPHY_Core2RxIQCompB1_b1_SHIFT)
-
-/* Bits in NPHY_RxControl */
-#define RIFS_ENABLE			0x80
-#define BPHY_BAND_SEL_UP20		0x10
-#define NPHY_MLenable			0x02
-
-/* Bits in NPHY_RxControl */
-#define NPHY_RxControl_dbgpktprocReset_SHIFT	15
-#define NPHY_RxControl_dbgpktprocReset_MASK	(0x1 << NPHY_RxControl_dbgpktprocReset_SHIFT)
-#define NPHY_RxControl_resetCrsEnergyDrop_SHIFT	11
-#define NPHY_RxControl_resetCrsEnergyDrop_MASK	(0x1 << NPHY_RxControl_resetCrsEnergyDrop_SHIFT)
-#define NPHY_RxControl_updatePhyCrsPayload_SHIFT	10
-#define NPHY_RxControl_updatePhyCrsPayload_MASK	(0x1 << NPHY_RxControl_updatePhyCrsPayload_SHIFT)
-#define NPHY_RxControl_defaultbehavior_SHIFT	8
-#define NPHY_RxControl_defaultbehavior_MASK	(0x3 << NPHY_RxControl_defaultbehavior_SHIFT)
-#define NPHY_RxControl_RIFSEnable_SHIFT	7
-#define NPHY_RxControl_RIFSEnable_MASK	(0x1 << NPHY_RxControl_RIFSEnable_SHIFT)
-#define NPHY_RxControl_initRssiSelect_SHIFT	6
-#define NPHY_RxControl_initRssiSelect_MASK	(0x1 << NPHY_RxControl_initRssiSelect_SHIFT)
-#define NPHY_RxControl_bphy_start_core_SHIFT	5
-#define NPHY_RxControl_bphy_start_core_MASK	(0x1 << NPHY_RxControl_bphy_start_core_SHIFT)
-#define NPHY_RxControl_bphy_band_sel_SHIFT	4
-#define NPHY_RxControl_bphy_band_sel_MASK	(0x1 << NPHY_RxControl_bphy_band_sel_SHIFT)
-#define NPHY_RxControl_BphyRxIQCompEn1_SHIFT	3
-#define NPHY_RxControl_BphyRxIQCompEn1_MASK	(0x1 << NPHY_RxControl_BphyRxIQCompEn1_SHIFT)
-#define NPHY_RxControl_BphyRxIQCompEn0_SHIFT	2
-#define NPHY_RxControl_BphyRxIQCompEn0_MASK	(0x1 << NPHY_RxControl_BphyRxIQCompEn0_SHIFT)
-#define NPHY_RxControl_MLenable_SHIFT	1
-#define NPHY_RxControl_MLenable_MASK	(0x1 << NPHY_RxControl_MLenable_SHIFT)
-#define NPHY_RxControl_RxIQCompEn_SHIFT	0
-#define NPHY_RxControl_RxIQCompEn_MASK	(0x1 << NPHY_RxControl_RxIQCompEn_SHIFT)
-
-
-/* Bits in NPHY_RfseqMode */
-#define NPHY_RfseqMode_CoreActv_override 0x0001
-#define NPHY_RfseqMode_Trigger_override	0x0002
-#define NPHY_RfseqMode_CoreActv_override_SHIFT	0
-#define NPHY_RfseqMode_CoreActv_override_MASK	(0x1 << NPHY_RfseqMode_CoreActv_override_SHIFT)
-#define NPHY_RfseqMode_Trigger_override_SHIFT	1
-#define NPHY_RfseqMode_Trigger_override_MASK	(0x1 << NPHY_RfseqMode_Trigger_override_SHIFT)
-
-/* Bits in NPHY_RfseqCoreActv */
-#define NPHY_RfseqCoreActv_EnTx_SHIFT	0
-#define NPHY_RfseqCoreActv_EnTx_MASK	(0xf << NPHY_RfseqCoreActv_EnTx_SHIFT)
-#define NPHY_RfseqCoreActv_EnRx_SHIFT	4
-#define NPHY_RfseqCoreActv_EnRx_MASK	(0xf << NPHY_RfseqCoreActv_EnRx_SHIFT)
-#define NPHY_RfseqCoreActv_DisTx_SHIFT	8
-#define NPHY_RfseqCoreActv_DisTx_MASK	(0xf << NPHY_RfseqCoreActv_DisTx_SHIFT)
-#define NPHY_RfseqCoreActv_DisRx_SHIFT	12
-#define NPHY_RfseqCoreActv_DisRx_MASK	(0xf << NPHY_RfseqCoreActv_DisRx_SHIFT)
-#define NPHY_RfseqCoreActv_TxRxChain0	(0x11)
-#define NPHY_RfseqCoreActv_TxRxChain1	(0x22)
-
-
-/* Bits in NPHY_RfseqTrigger */
-#define NPHY_RfseqTrigger_rx2tx		0x0001
-#define NPHY_RfseqTrigger_tx2rx		0x0002
-#define NPHY_RfseqTrigger_updategainh	0x0004
-#define NPHY_RfseqTrigger_updategainl	0x0008
-#define NPHY_RfseqTrigger_updategainu	0x0010
-#define NPHY_RfseqTrigger_reset2rx	0x0020
-#define NPHY_RfseqTrigger_rx2tx_SHIFT	0
-#define NPHY_RfseqTrigger_rx2tx_MASK	(0x1 << NPHY_RfseqTrigger_rx2tx_SHIFT)
-#define NPHY_RfseqTrigger_tx2rx_SHIFT	1
-#define NPHY_RfseqTrigger_tx2rx_MASK	(0x1 << NPHY_RfseqTrigger_tx2rx_SHIFT)
-#define NPHY_RfseqTrigger_updategainh_SHIFT	2
-#define NPHY_RfseqTrigger_updategainh_MASK	(0x1 << NPHY_RfseqTrigger_updategainh_SHIFT)
-#define NPHY_RfseqTrigger_updategainl_SHIFT	3
-#define NPHY_RfseqTrigger_updategainl_MASK	(0x1 << NPHY_RfseqTrigger_updategainl_SHIFT)
-#define NPHY_RfseqTrigger_updategainu_SHIFT	4
-#define NPHY_RfseqTrigger_updategainu_MASK	(0x1 << NPHY_RfseqTrigger_updategainu_SHIFT)
-#define NPHY_RfseqTrigger_reset2rx_SHIFT	5
-#define NPHY_RfseqTrigger_reset2rx_MASK	(0x1 << NPHY_RfseqTrigger_reset2rx_SHIFT)
-#define NPHY_RfseqTrigger_updategainld_SHIFT	6
-#define NPHY_RfseqTrigger_updategainld_MASK	(0x1 << NPHY_RfseqTrigger_updategainld_SHIFT)
-
-/* Bits in NPHY_RfseqStatus */
-#define NPHY_RfseqStatus_rx2tx		0x0001
-#define NPHY_RfseqStatus_tx2rx		0x0002
-#define NPHY_RfseqStatus_updategainh	0x0004
-#define NPHY_RfseqStatus_updategainl	0x0008
-#define NPHY_RfseqStatus_updategainu	0x0010
-#define NPHY_RfseqStatus_reset2rx	0x0020
-#define NPHY_RfseqStatus_rx2tx_SHIFT	0
-#define NPHY_RfseqStatus_rx2tx_MASK	(0x1 << NPHY_RfseqStatus_rx2tx_SHIFT)
-#define NPHY_RfseqStatus_tx2rx_SHIFT	1
-#define NPHY_RfseqStatus_tx2rx_MASK	(0x1 << NPHY_RfseqStatus_tx2rx_SHIFT)
-#define NPHY_RfseqStatus_updategainh_SHIFT	2
-#define NPHY_RfseqStatus_updategainh_MASK	(0x1 << NPHY_RfseqStatus_updategainh_SHIFT)
-#define NPHY_RfseqStatus_updategainl_SHIFT	3
-#define NPHY_RfseqStatus_updategainl_MASK	(0x1 << NPHY_RfseqStatus_updategainl_SHIFT)
-#define NPHY_RfseqStatus_updategainu_SHIFT	4
-#define NPHY_RfseqStatus_updategainu_MASK	(0x1 << NPHY_RfseqStatus_updategainu_SHIFT)
-#define NPHY_RfseqStatus_reset2rx_SHIFT	5
-#define NPHY_RfseqStatus_reset2rx_MASK	(0x1 << NPHY_RfseqStatus_reset2rx_SHIFT)
-#define NPHY_RfseqStatus_updategainld_SHIFT	6
-#define NPHY_RfseqStatus_updategainld_MASK	(0x1 << NPHY_RfseqStatus_updategainld_SHIFT)
-
-/* Bits in NPHY_AfectrlOverride */
-#define NPHY_AfectrlOverride_slowpwup_adc_SHIFT 0
-#define NPHY_AfectrlOverride_slowpwup_adc_MASK (0x1 << NPHY_AfectrlOverride_slowpwup_adc_SHIFT)
-#define NPHY_AfectrlOverride_coarsepwup_adc_SHIFT 1
-#define NPHY_AfectrlOverride_coarsepwup_adc_MASK (0x1 << NPHY_AfectrlOverride_coarsepwup_adc_SHIFT)
-#define NPHY_AfectrlOverride_finepwup_adc_SHIFT 2
-#define NPHY_AfectrlOverride_finepwup_adc_MASK (0x1 << NPHY_AfectrlOverride_finepwup_adc_SHIFT)
-#define NPHY_AfectrlOverride_slowpwup_dac_SHIFT 3
-#define NPHY_AfectrlOverride_slowpwup_dac_MASK (0x1 << NPHY_AfectrlOverride_slowpwup_dac_SHIFT)
-#define NPHY_AfectrlOverride_reset_dac_SHIFT 4
-#define NPHY_AfectrlOverride_reset_dac_MASK (0x1 << NPHY_AfectrlOverride_reset_dac_SHIFT)
-#define NPHY_AfectrlOverride_dac_lpf_en_SHIFT 5
-#define NPHY_AfectrlOverride_dac_lpf_en_MASK (0x1 << NPHY_AfectrlOverride_dac_lpf_en_SHIFT)
-#define NPHY_AfectrlOverride_slowpwup_rssi_i_SHIFT 6
-#define NPHY_AfectrlOverride_slowpwup_rssi_i_MASK \
-		(0x1 << NPHY_AfectrlOverride_slowpwup_rssi_i_SHIFT)
-#define NPHY_AfectrlOverride_fastpwup_rssi_i_SHIFT 7
-#define NPHY_AfectrlOverride_fastpwup_rssi_i_MASK \
-		(0x1 << NPHY_AfectrlOverride_fastpwup_rssi_i_SHIFT)
-#define NPHY_AfectrlOverride_slowpwup_rssi_q_SHIFT 8
-#define NPHY_AfectrlOverride_slowpwup_rssi_q_MASK \
-		(0x1 << NPHY_AfectrlOverride_slowpwup_rssi_q_SHIFT)
-#define NPHY_AfectrlOverride_fastpwup_rssi_q_SHIFT 9
-#define NPHY_AfectrlOverride_fastpwup_rssi_q_MASK \
-		(0x1 << NPHY_AfectrlOverride_fastpwup_rssi_q_SHIFT)
-#define NPHY_AfectrlOverride_pwup_bg_SHIFT 10
-#define NPHY_AfectrlOverride_pwup_bg_MASK (0x1 << NPHY_AfectrlOverride_pwup_bg_SHIFT)
-#define NPHY_AfectrlOverride_pwup_cmout_SHIFT 11
-#define NPHY_AfectrlOverride_pwup_cmout_MASK (0x1 << NPHY_AfectrlOverride_pwup_cmout_SHIFT)
-#define NPHY_AfectrlOverride_rssi_select_i_SHIFT 12
-#define NPHY_AfectrlOverride_rssi_select_i_MASK (0x1 << NPHY_AfectrlOverride_rssi_select_i_SHIFT)
-#define NPHY_AfectrlOverride_rssi_select_q_SHIFT 13
-#define NPHY_AfectrlOverride_rssi_select_q_MASK (0x1 << NPHY_AfectrlOverride_rssi_select_q_SHIFT)
-#define NPHY_AfectrlOverride_dac_gain_SHIFT 14
-#define NPHY_AfectrlOverride_dac_gain_MASK (0x1 << NPHY_AfectrlOverride_dac_gain_SHIFT)
-
-/* Bits in NPHY_REV3_AfectrlOverride1[2] */
-#define NPHY_REV3_AfectrlOverride_adc_lp_SHIFT	0
-#define NPHY_REV3_AfectrlOverride_adc_lp_MASK	(0x1 << NPHY_REV3_AfectrlOverride_adc_lp_SHIFT)
-#define NPHY_REV3_AfectrlOverride_adc_hp_SHIFT	1
-#define NPHY_REV3_AfectrlOverride_adc_hp_MASK	(0x1 << NPHY_REV3_AfectrlOverride_adc_hp_SHIFT)
-#define NPHY_REV3_AfectrlOverride_adc_pd_SHIFT	2
-#define NPHY_REV3_AfectrlOverride_adc_pd_MASK	(0x1 << NPHY_REV3_AfectrlOverride_adc_pd_SHIFT)
-#define NPHY_REV3_AfectrlOverride_dac_pd_SHIFT	3
-#define NPHY_REV3_AfectrlOverride_dac_pd_MASK	(0x1 << NPHY_REV3_AfectrlOverride_dac_pd_SHIFT)
-#define NPHY_REV3_AfectrlOverride_reset_dac_SHIFT	4
-#define NPHY_REV3_AfectrlOverride_reset_dac_MASK \
-	(0x1 << NPHY_REV3_AfectrlOverride_reset_dac_SHIFT)
-#define NPHY_REV3_AfectrlOverride_dac_lp_SHIFT	5
-#define NPHY_REV3_AfectrlOverride_dac_lp_MASK	(0x1 << NPHY_REV3_AfectrlOverride_dac_lp_SHIFT)
-#define NPHY_REV3_AfectrlOverride_rssi_pd_SHIFT	6
-#define NPHY_REV3_AfectrlOverride_rssi_pd_MASK	(0x1 << NPHY_REV3_AfectrlOverride_rssi_pd_SHIFT)
-#define NPHY_REV3_AfectrlOverride_bg_pd_SHIFT	7
-#define NPHY_REV3_AfectrlOverride_bg_pd_MASK	(0x1 << NPHY_REV3_AfectrlOverride_bg_pd_SHIFT)
-#define NPHY_REV3_AfectrlOverride_dac_gain_SHIFT	8
-#define NPHY_REV3_AfectrlOverride_dac_gain_MASK \
-	(0x1 << NPHY_REV3_AfectrlOverride_dac_gain_SHIFT)
-#define NPHY_REV3_AfectrlOverride_rssi_select_i_SHIFT	9
-#define NPHY_REV3_AfectrlOverride_rssi_select_i_MASK \
-	(0x1 << NPHY_REV3_AfectrlOverride_rssi_select_i_SHIFT)
-#define NPHY_REV3_AfectrlOverride_rssi_select_q_SHIFT	10
-#define NPHY_REV3_AfectrlOverride_rssi_select_q_MASK \
-	(0x1 << NPHY_REV3_AfectrlOverride_rssi_select_q_SHIFT)
-
-
-/* Bits in NPHY_AfectrlCore[12] */
-#define NPHY_AfectrlCore_slowpwup_adc_SHIFT 0
-#define NPHY_AfectrlCore_slowpwup_adc_MASK (0x1 << NPHY_AfectrlCore_slowpwup_adc_SHIFT)
-#define NPHY_AfectrlCore_coarsepwup_adc_SHIFT 1
-#define NPHY_AfectrlCore_coarsepwup_adc_MASK (0x1 << NPHY_AfectrlCore_coarsepwup_adc_SHIFT)
-#define NPHY_AfectrlCore_finepwup_adc_SHIFT 2
-#define NPHY_AfectrlCore_finepwup_adc_MASK (0x1 << NPHY_AfectrlCore_finepwup_adc_SHIFT)
-#define NPHY_AfectrlCore_slowpwup_dac_SHIFT 3
-#define NPHY_AfectrlCore_slowpwup_dac_MASK (0x1 << NPHY_AfectrlCore_slowpwup_dac_SHIFT)
-#define NPHY_AfectrlCore_reset_dac_SHIFT 4
-#define NPHY_AfectrlCore_reset_dac_MASK (0x1 << NPHY_AfectrlCore_reset_dac_SHIFT)
-#define NPHY_AfectrlCore_dac_lpf_en_SHIFT 5
-#define NPHY_AfectrlCore_dac_lpf_en_MASK (0x1 << NPHY_AfectrlCore_dac_lpf_en_SHIFT)
-#define NPHY_AfectrlCore_slowpwup_rssi_i_SHIFT 6
-#define NPHY_AfectrlCore_slowpwup_rssi_i_MASK (0x1 << NPHY_AfectrlCore_slowpwup_rssi_i_SHIFT)
-#define NPHY_AfectrlCore_fastpwup_rssi_i_SHIFT 7
-#define NPHY_AfectrlCore_fastpwup_rssi_i_MASK (0x1 << NPHY_AfectrlCore_fastpwup_rssi_i_SHIFT)
-#define NPHY_AfectrlCore_slowpwup_rssi_q_SHIFT 8
-#define NPHY_AfectrlCore_slowpwup_rssi_q_MASK (0x1 << NPHY_AfectrlCore_slowpwup_rssi_q_SHIFT)
-#define NPHY_AfectrlCore_fastpwup_rssi_q_SHIFT 9
-#define NPHY_AfectrlCore_fastpwup_rssi_q_MASK (0x1 << NPHY_AfectrlCore_fastpwup_rssi_q_SHIFT)
-#define NPHY_AfectrlCore_pwup_bg_SHIFT 10
-#define NPHY_AfectrlCore_pwup_bg_MASK (0x1 << NPHY_AfectrlCore_pwup_bg_SHIFT)
-#define NPHY_AfectrlCore_pwup_cmout_SHIFT 11
-#define NPHY_AfectrlCore_pwup_cmout_MASK (0x1 << NPHY_AfectrlCore_pwup_cmout_SHIFT)
-#define NPHY_AfectrlCore_rssi_select_i_SHIFT 12
-#define NPHY_AfectrlCore_rssi_select_i_MASK (0x3 << NPHY_AfectrlCore_rssi_select_i_SHIFT)
-#define NPHY_AfectrlCore_rssi_select_q_SHIFT 14
-#define NPHY_AfectrlCore_rssi_select_q_MASK (0x3 << NPHY_AfectrlCore_rssi_select_q_SHIFT)
-
-/* Bits in NPHY_REV3_AfectrlCore[1,2,3,4] */
-#define NPHY_REV3_AfectrlCore_adc_lp_SHIFT	0
-#define NPHY_REV3_AfectrlCore_adc_lp_MASK	(0x1 << NPHY_REV3_AfectrlCore_adc_lp_SHIFT)
-#define NPHY_REV3_AfectrlCore_adc_hp_SHIFT	1
-#define NPHY_REV3_AfectrlCore_adc_hp_MASK	(0x1 << NPHY_REV3_AfectrlCore_adc_hp_SHIFT)
-#define NPHY_REV3_AfectrlCore_adc_pd_SHIFT	2
-#define NPHY_REV3_AfectrlCore_adc_pd_MASK	(0x1 << NPHY_REV3_AfectrlCore_adc_pd_SHIFT)
-#define NPHY_REV3_AfectrlCore_dac_pd_SHIFT	3
-#define NPHY_REV3_AfectrlCore_dac_pd_MASK	(0x1 << NPHY_REV3_AfectrlCore_dac_pd_SHIFT)
-#define NPHY_REV3_AfectrlCore_reset_dac_SHIFT	4
-#define NPHY_REV3_AfectrlCore_reset_dac_MASK	(0x1 << NPHY_REV3_AfectrlCore_reset_dac_SHIFT)
-#define NPHY_REV3_AfectrlCore_dac_lp_SHIFT	5
-#define NPHY_REV3_AfectrlCore_dac_lp_MASK	(0x1 << NPHY_REV3_AfectrlCore_dac_lp_SHIFT)
-#define NPHY_REV3_AfectrlCore_rssi_pd_SHIFT	6
-#define NPHY_REV3_AfectrlCore_rssi_pd_MASK	(0x1 << NPHY_REV3_AfectrlCore_rssi_pd_SHIFT)
-#define NPHY_REV3_AfectrlCore_bg_pd_SHIFT	7
-#define NPHY_REV3_AfectrlCore_bg_pd_MASK	(0x1 << NPHY_REV3_AfectrlCore_bg_pd_SHIFT)
-#define NPHY_REV3_AfectrlCore_rssi_select_i_SHIFT	8
-#define NPHY_REV3_AfectrlCore_rssi_select_i_MASK \
-	(0x3 << NPHY_REV3_AfectrlCore_rssi_select_i_SHIFT)
-#define NPHY_REV3_AfectrlCore_rssi_select_q_SHIFT	10
-#define NPHY_REV3_AfectrlCore_rssi_select_q_MASK \
-	(0x3 << NPHY_REV3_AfectrlCore_rssi_select_q_SHIFT)
-
-/* Bits in NPHY_REV3_AfectrlDacGain[1,2,3,4] */
-#define NPHY_REV3_AfectrlDacGain_dac_gain_SHIFT	0
-#define NPHY_REV3_AfectrlDacGain_dac_gain_MASK	(0x7 << NPHY_REV3_AfectrlDacGain_dac_gain_SHIFT)
-
-/* Bits in NPHY_STRAddress1 */
-#define NPHY_STRAddress1_strPwrThresh_SHIFT	0
-#define NPHY_STRAddress1_strPwrThresh_MASK	(0xff << NPHY_STRAddress1_strPwrThresh_SHIFT)
-
-/* Bits in NPHY_StrAddress2 */
-#define NPHY_StrAddress2_stren_SHIFT	0
-#define NPHY_StrAddress2_stren_MASK	(0x1 << NPHY_StrAddress2_stren_SHIFT)
-#define NPHY_StrAddress2_strmin_SHIFT	8
-#define NPHY_StrAddress2_strmin_MASK	(0xf << NPHY_StrAddress2_strmin_SHIFT)
-#define NPHY_StrAddress2_strminstart_SHIFT	12
-#define NPHY_StrAddress2_strminstart_MASK	(0xf << NPHY_StrAddress2_strminstart_SHIFT)
-
-/* Bits in NPHY_ClassifierCtrl */
-#define NPHY_ClassifierCtrl_classifierSel_SHIFT 0
-#define NPHY_ClassifierCtrl_classifierSel_MASK (0x7 << NPHY_ClassifierCtrl_classifierSel_SHIFT)
-#define NPHY_ClassifierCtrl_cck_en	0x1
-#define NPHY_ClassifierCtrl_ofdm_en	0x2
-#define NPHY_ClassifierCtrl_waited_en	0x4
-#define NPHY_ClassifierCtrl_MaxrxStatusCnt_SHIFT	4
-#define NPHY_ClassifierCtrl_MaxrxStatusCnt_MASK	(0x3f << NPHY_ClassifierCtrl_MaxrxStatusCnt_SHIFT)
-#define NPHY_ClassifierCtrl_cck2ofdmstateflipen_SHIFT	10
-#define NPHY_ClassifierCtrl_cck2ofdmstateflipen_MASK \
-	(0x1 << NPHY_ClassifierCtrl_cck2ofdmstateflipen_SHIFT)
-#define NPHY_ClassifierCtrl_mac_bphy_band_sel_SHIFT	11
-#define NPHY_ClassifierCtrl_mac_bphy_band_sel_MASK \
-	(0x1 << NPHY_ClassifierCtrl_mac_bphy_band_sel_SHIFT)
-
-/* Bits in NPHY_IQFlip */
-#define NPHY_IQFlip_ADC1		0x0001
-#define NPHY_IQFlip_ADC2		0x0010
-#define NPHY_IQFlip_adc1_SHIFT	0
-#define NPHY_IQFlip_adc1_MASK	(0x1 << NPHY_IQFlip_adc1_SHIFT)
-#define NPHY_IQFlip_dac1_SHIFT	1
-#define NPHY_IQFlip_dac1_MASK	(0x1 << NPHY_IQFlip_dac1_SHIFT)
-#define NPHY_IQFlip_rssi1_SHIFT	2
-#define NPHY_IQFlip_rssi1_MASK	(0x1 << NPHY_IQFlip_rssi1_SHIFT)
-#define NPHY_IQFlip_adc2_SHIFT	4
-#define NPHY_IQFlip_adc2_MASK	(0x1 << NPHY_IQFlip_adc2_SHIFT)
-#define NPHY_IQFlip_dac2_SHIFT	5
-#define NPHY_IQFlip_dac2_MASK	(0x1 << NPHY_IQFlip_dac2_SHIFT)
-#define NPHY_IQFlip_rssi2_SHIFT	6
-#define NPHY_IQFlip_rssi2_MASK	(0x1 << NPHY_IQFlip_rssi2_SHIFT)
-#define NPHY_IQFlip_adc3_SHIFT	8
-#define NPHY_IQFlip_adc3_MASK	(0x1 << NPHY_IQFlip_adc3_SHIFT)
-#define NPHY_IQFlip_dac3_SHIFT	9
-#define NPHY_IQFlip_dac3_MASK	(0x1 << NPHY_IQFlip_dac3_SHIFT)
-#define NPHY_IQFlip_rssi3_SHIFT	10
-#define NPHY_IQFlip_rssi3_MASK	(0x1 << NPHY_IQFlip_rssi3_SHIFT)
-#define NPHY_IQFlip_adc4_SHIFT	12
-#define NPHY_IQFlip_adc4_MASK	(0x1 << NPHY_IQFlip_adc4_SHIFT)
-#define NPHY_IQFlip_dac4_SHIFT	13
-#define NPHY_IQFlip_dac4_MASK	(0x1 << NPHY_IQFlip_dac4_SHIFT)
-#define NPHY_IQFlip_rssi4_SHIFT	14
-#define NPHY_IQFlip_rssi4_MASK	(0x1 << NPHY_IQFlip_rssi4_SHIFT)
-
-/* Bits in NPHY_SisoSnrThresh */
-#define NPHY_SisoSnrThresh_SisoSnrThresh_SHIFT	0
-#define NPHY_SisoSnrThresh_SisoSnrThresh_MASK	(0xffff << NPHY_SisoSnrThresh_SisoSnrThresh_SHIFT)
-
-/* Bits in NPHY_SigmaNmult */
-#define NPHY_SigmaNmult_SigmaNmult_SHIFT	0
-#define NPHY_SigmaNmult_SigmaNmult_MASK	(0xffff << NPHY_SigmaNmult_SigmaNmult_SHIFT)
-
-/* Bits in NPHY_TxMacDelay */
-#define NPHY_TxMacDelay_macdelay_SHIFT	0
-#define NPHY_TxMacDelay_macdelay_MASK	(0x7ff << NPHY_TxMacDelay_macdelay_SHIFT)
-
-/* Bits in NPHY_TxFrameDelay */
-#define NPHY_TxFrameDelay_framedelay_SHIFT	0
-#define NPHY_TxFrameDelay_framedelay_MASK	(0x7ff << NPHY_TxFrameDelay_framedelay_SHIFT)
-
-/* Bits in NPHY_MLparams */
-#define NPHY_MLparams_ML_log_ss_ratio_pwr_thresh_min_SHIFT	0
-#define NPHY_MLparams_ML_log_ss_ratio_pwr_thresh_min_MASK \
-	(0xff << NPHY_MLparams_ML_log_ss_ratio_pwr_thresh_min_SHIFT)
-#define NPHY_MLparams_ML_log_ss_ratio_pwr_thresh_max_SHIFT	8
-#define NPHY_MLparams_ML_log_ss_ratio_pwr_thresh_max_MASK \
-	(0xff << NPHY_MLparams_ML_log_ss_ratio_pwr_thresh_max_SHIFT)
-
-/* Bits in NPHY_MLcontrol */
-#define NPHY_MLcontrol_useNoiseFromTable_SHIFT	0
-#define NPHY_MLcontrol_useNoiseFromTable_MASK	(0x1 << NPHY_MLcontrol_useNoiseFromTable_SHIFT)
-
-/* Bits in NPHY_wwise20Ncycdata */
-#define NPHY_wwise20Ncycdata_wwise20NcycData_SHIFT	0
-#define NPHY_wwise20Ncycdata_wwise20NcycData_MASK \
-	(0x7fff << NPHY_wwise20Ncycdata_wwise20NcycData_SHIFT)
-
-/* Bits in NPHY_wwise40Ncycdata */
-#define NPHY_wwise40Ncycdata_wwise40NcycData_SHIFT	0
-#define NPHY_wwise40Ncycdata_wwise40NcycData_MASK \
-	(0x7fff << NPHY_wwise40Ncycdata_wwise40NcycData_SHIFT)
-
-/* Bits in NPHY_nsync20Ncycdata */
-#define NPHY_nsync20Ncycdata_nsync20Ncycdata_SHIFT	0
-#define NPHY_nsync20Ncycdata_nsync20Ncycdata_MASK \
-	(0x7fff << NPHY_nsync20Ncycdata_nsync20Ncycdata_SHIFT)
-
-/* Bits in NPHY_nsync40Ncycdata */
-#define NPHY_nsync40Ncycdata_nsync40Ncycdata_SHIFT	0
-#define NPHY_nsync40Ncycdata_nsync40Ncycdata_MASK \
-	(0x7fff << NPHY_nsync40Ncycdata_nsync40Ncycdata_SHIFT)
-
-/* Bits in NPHY_initswizzlepattern */
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternwise20_SHIFT	0
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternwise20_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant0QAM64swizpatternwise20_SHIFT)
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternwise20_SHIFT	2
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternwise20_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant1QAM64swizpatternwise20_SHIFT)
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternwise40_SHIFT	4
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternwise40_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant0QAM64swizpatternwise40_SHIFT)
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternwise40_SHIFT	6
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternwise40_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant1QAM64swizpatternwise40_SHIFT)
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternnsync20_SHIFT	8
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternnsync20_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant0QAM64swizpatternnsync20_SHIFT)
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternnsync20_SHIFT	10
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternnsync20_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant1QAM64swizpatternnsync20_SHIFT)
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternnsync40_SHIFT	12
-#define NPHY_initswizzlepattern_Ant0QAM64swizpatternnsync40_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant0QAM64swizpatternnsync40_SHIFT)
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternnsync40_SHIFT	14
-#define NPHY_initswizzlepattern_Ant1QAM64swizpatternnsync40_MASK \
-	(0x3 << NPHY_initswizzlepattern_Ant1QAM64swizpatternnsync40_SHIFT)
-
-/* Bits in NPHY_txTailCountValue */
-#define NPHY_txTailCountValue_TailCountValue_SHIFT	0
-#define NPHY_txTailCountValue_TailCountValue_MASK \
-	(0xff << NPHY_txTailCountValue_TailCountValue_SHIFT)
-
-/* Bits in NPHY_BphyControl1 */
-#define NPHY_BphyControl1_adccompCtrl_SHIFT	0
-#define NPHY_BphyControl1_adccompCtrl_MASK	(0x1 << NPHY_BphyControl1_adccompCtrl_SHIFT)
-#define NPHY_BphyControl1_flipiq_adccompout_SHIFT	1
-#define NPHY_BphyControl1_flipiq_adccompout_MASK \
-	(0x1 << NPHY_BphyControl1_flipiq_adccompout_SHIFT)
-#define NPHY_BphyControl1_framedelay_SHIFT	2
-#define NPHY_BphyControl1_framedelay_MASK	(0x3ff << NPHY_BphyControl1_framedelay_SHIFT)
-
-/* Bits in NPHY_BphyControl2 */
-#define NPHY_BphyControl2_lutIndex_SHIFT	0
-#define NPHY_BphyControl2_lutIndex_MASK	(0x1f << NPHY_BphyControl2_lutIndex_SHIFT)
-#define NPHY_BphyControl2_macdelay_SHIFT	5
-#define NPHY_BphyControl2_macdelay_MASK	(0x3ff << NPHY_BphyControl2_macdelay_SHIFT)
-
-/* Bits in NPHY_iqloCalCmd */
-#define NPHY_iqloCalCmd_iqloCalCmd_SHIFT	15
-#define NPHY_iqloCalCmd_iqloCalCmd_MASK	(0x1 << NPHY_iqloCalCmd_iqloCalCmd_SHIFT)
-#define NPHY_iqloCalCmd_iqloCalDFTCmd_SHIFT	14
-#define NPHY_iqloCalCmd_iqloCalDFTCmd_MASK	(0x1 << NPHY_iqloCalCmd_iqloCalDFTCmd_SHIFT)
-#define NPHY_iqloCalCmd_core2cal_SHIFT	12
-#define NPHY_iqloCalCmd_core2cal_MASK	(0x3 << NPHY_iqloCalCmd_core2cal_SHIFT)
-#define NPHY_iqloCalCmd_cal_type_SHIFT	8
-#define NPHY_iqloCalCmd_cal_type_MASK	(0xf << NPHY_iqloCalCmd_cal_type_SHIFT)
-#define NPHY_iqloCalCmd_stepsize_start_log2_SHIFT	4
-#define NPHY_iqloCalCmd_stepsize_start_log2_MASK \
-	(0xf << NPHY_iqloCalCmd_stepsize_start_log2_SHIFT)
-#define NPHY_iqloCalCmd_num_of_level_SHIFT	0
-#define NPHY_iqloCalCmd_num_of_level_MASK	(0xf << NPHY_iqloCalCmd_num_of_level_SHIFT)
-
-/* Bits in NPHY_iqloCalCmdNnum */
-#define NPHY_iqloCalCmdNnum_N_settle_search_log2_SHIFT	12
-#define NPHY_iqloCalCmdNnum_N_settle_search_log2_MASK \
-	(0xf << NPHY_iqloCalCmdNnum_N_settle_search_log2_SHIFT)
-#define NPHY_iqloCalCmdNnum_N_meas_search_log2_SHIFT	8
-#define NPHY_iqloCalCmdNnum_N_meas_search_log2_MASK \
-	(0xf << NPHY_iqloCalCmdNnum_N_meas_search_log2_SHIFT)
-#define NPHY_iqloCalCmdNnum_N_settle_gctl_log2_SHIFT	4
-#define NPHY_iqloCalCmdNnum_N_settle_gctl_log2_MASK \
-	(0xf << NPHY_iqloCalCmdNnum_N_settle_gctl_log2_SHIFT)
-#define NPHY_iqloCalCmdNnum_N_meas_gctl_log2_SHIFT	0
-#define NPHY_iqloCalCmdNnum_N_meas_gctl_log2_MASK \
-	(0xf << NPHY_iqloCalCmdNnum_N_meas_gctl_log2_SHIFT)
-
-/* Bits in NPHY_iqloCalCmdGctl */
-#define NPHY_iqloCalCmdGctl_iqlo_cal_en_SHIFT	15
-#define NPHY_iqloCalCmdGctl_iqlo_cal_en_MASK	(0x1 << NPHY_iqloCalCmdGctl_iqlo_cal_en_SHIFT)
-#define NPHY_iqloCalCmdGctl_index_gctl_start_SHIFT	8
-#define NPHY_iqloCalCmdGctl_index_gctl_start_MASK \
-	(0x1f << NPHY_iqloCalCmdGctl_index_gctl_start_SHIFT)
-#define NPHY_iqloCalCmdGctl_gctl_threshold_d2_SHIFT	4
-#define NPHY_iqloCalCmdGctl_gctl_threshold_d2_MASK \
-	(0xf << NPHY_iqloCalCmdGctl_gctl_threshold_d2_SHIFT)
-#define NPHY_iqloCalCmdGctl_gctl_LADlen_d2_SHIFT	0
-#define NPHY_iqloCalCmdGctl_gctl_LADlen_d2_MASK	(0xf << NPHY_iqloCalCmdGctl_gctl_LADlen_d2_SHIFT)
-
-/* Bits in NPHY_sampleCmd */
-#define NPHY_sampleCmd_STOP		0x0002
-#define NPHY_sampleCmd_start_SHIFT	0
-#define NPHY_sampleCmd_start_MASK	(0x1 << NPHY_sampleCmd_start_SHIFT)
-#define NPHY_sampleCmd_stop_SHIFT	1
-#define NPHY_sampleCmd_stop_MASK	(0x1 << NPHY_sampleCmd_stop_SHIFT)
-#define NPHY_sampleCmd_DacTestMode_SHIFT	2
-#define NPHY_sampleCmd_DacTestMode_MASK	(0x1 << NPHY_sampleCmd_DacTestMode_SHIFT)
-#define NPHY_sampleCmd_DisTxFrameInSampleplay_SHIFT	3
-#define NPHY_sampleCmd_DisTxFrameInSampleplay_MASK \
-	(0x1 << NPHY_sampleCmd_DisTxFrameInSampleplay_SHIFT)
-#define NPHY_sampleCmd_DisTxFrameInIqlocal_SHIFT	4
-#define NPHY_sampleCmd_DisTxFrameInIqlocal_MASK	(0x1 << NPHY_sampleCmd_DisTxFrameInIqlocal_SHIFT)
-
-/* Bits in NPHY_sampleLoopCount */
-#define NPHY_sampleLoopCount_LoopCount_SHIFT	0
-#define NPHY_sampleLoopCount_LoopCount_MASK	(0xffff << NPHY_sampleLoopCount_LoopCount_SHIFT)
-
-/* Bits in NPHY_sampleInitWaitCount */
-#define NPHY_sampleInitWaitCount_InitWaitCount_SHIFT	0
-#define NPHY_sampleInitWaitCount_InitWaitCount_MASK \
-	(0xffff << NPHY_sampleInitWaitCount_InitWaitCount_SHIFT)
-
-/* Bits in NPHY_sampleDepthCount */
-#define NPHY_sampleDepthCount_DepthCount_SHIFT	0
-#define NPHY_sampleDepthCount_DepthCount_MASK	(0x3ff << NPHY_sampleDepthCount_DepthCount_SHIFT)
-
-/* Bits in NPHY_sampleStatus */
-#define NPHY_sampleStatus_NormalPlay_SHIFT	0
-#define NPHY_sampleStatus_NormalPlay_MASK	(0x1 << NPHY_sampleStatus_NormalPlay_SHIFT)
-#define NPHY_sampleStatus_iqlocalPlay_SHIFT	1
-#define NPHY_sampleStatus_iqlocalPlay_MASK	(0x1 << NPHY_sampleStatus_iqlocalPlay_SHIFT)
-
-
-/* Bits in NPHY_gpioLoOutEn */
-#define NPHY_gpioLoOutEn_gpioLoOutEn_SHIFT	0
-#define NPHY_gpioLoOutEn_gpioLoOutEn_MASK	(0xffff << NPHY_gpioLoOutEn_gpioLoOutEn_SHIFT)
-
-/* Bits in NPHY_gpioHiOutEn */
-#define NPHY_gpioHiOutEn_gpioHiOutEn_SHIFT	0
-#define NPHY_gpioHiOutEn_gpioHiOutEn_MASK	(0xffff << NPHY_gpioHiOutEn_gpioHiOutEn_SHIFT)
-
-/* Bits in NPHY_gpioSel */
-#define NPHY_gpioSel_gpioSel_SHIFT	0
-#define NPHY_gpioSel_gpioSel_MASK	(0x3ff << NPHY_gpioSel_gpioSel_SHIFT)
-
-/* Bits in NPHY_gpioClkControl */
-#define NPHY_gpioClkControl_gpioClkSel_SHIFT	0
-#define NPHY_gpioClkControl_gpioClkSel_MASK	(0x1 << NPHY_gpioClkControl_gpioClkSel_SHIFT)
-#define NPHY_gpioClkControl_gpioClkOutEn_SHIFT	1
-#define NPHY_gpioClkControl_gpioClkOutEn_MASK	(0x1 << NPHY_gpioClkControl_gpioClkOutEn_SHIFT)
-
-
-/* Bits in NPHY_RfctrlLUTLna[1,2,3,4] */
-#define NPHY_RfctrlLUTLna_RfctrlLUTLna_SHIFT	0
-#define NPHY_RfctrlLUTLna_RfctrlLUTLna_MASK	(0xffff << NPHY_RfctrlLUTLna_RfctrlLUTLna_SHIFT)
-
-/* Bits in NPHY_cmpmetricparam */
-#define NPHY_cmpmetricparam_tolVal_SHIFT	8
-#define NPHY_cmpmetricparam_tolVal_MASK	(0xff << NPHY_cmpmetricparam_tolVal_SHIFT)
-
-/* Bits in NPHY_TxServiceField */
-#define NPHY_TxServiceField_TxServiceField_SHIFT	0
-#define NPHY_TxServiceField_TxServiceField_MASK	(0xffff << NPHY_TxServiceField_TxServiceField_SHIFT)
-
-/* Bits in NPHY_NsyncscramInit0 */
-#define NPHY_NsyncscramInit0_Nsyncscram0Init_SHIFT	0
-#define NPHY_NsyncscramInit0_Nsyncscram0Init_MASK \
-	(0x7f << NPHY_NsyncscramInit0_Nsyncscram0Init_SHIFT)
-#define NPHY_NsyncscramInit0_Nsyncscram1Init_SHIFT	7
-#define NPHY_NsyncscramInit0_Nsyncscram1Init_MASK \
-	(0x7f << NPHY_NsyncscramInit0_Nsyncscram1Init_SHIFT)
-
-/* Bits in NPHY_NsyncscramInit1 */
-#define NPHY_NsyncscramInit1_Nsyncscram2Init_SHIFT	0
-#define NPHY_NsyncscramInit1_Nsyncscram2Init_MASK \
-	(0x7f << NPHY_NsyncscramInit1_Nsyncscram2Init_SHIFT)
-#define NPHY_NsyncscramInit1_Nsyncscram3Init_SHIFT	7
-#define NPHY_NsyncscramInit1_Nsyncscram3Init_MASK \
-	(0x7f << NPHY_NsyncscramInit1_Nsyncscram3Init_SHIFT)
-#define NPHY_NsyncscramInit1_autoScramEn_SHIFT	14
-#define NPHY_NsyncscramInit1_autoScramEn_MASK	(0x1 << NPHY_NsyncscramInit1_autoScramEn_SHIFT)
-
-/* Bits in NPHY_initswizzlepatternleg */
-#define NPHY_initswizzlepatternleg_Ant0QAM64swizpatternleg_SHIFT	0
-#define NPHY_initswizzlepatternleg_Ant0QAM64swizpatternleg_MASK \
-	(0x3 << NPHY_initswizzlepatternleg_Ant0QAM64swizpatternleg_SHIFT)
-#define NPHY_initswizzlepatternleg_Ant0QAM64swizpatternlegdup_SHIFT	2
-#define NPHY_initswizzlepatternleg_Ant0QAM64swizpatternlegdup_MASK \
-	(0x3 << NPHY_initswizzlepatternleg_Ant0QAM64swizpatternlegdup_SHIFT)
-#define NPHY_initswizzlepatternleg_Ant0QAM64swizpattern11ndup_SHIFT	4
-#define NPHY_initswizzlepatternleg_Ant0QAM64swizpattern11ndup_MASK \
-	(0x3 << NPHY_initswizzlepatternleg_Ant0QAM64swizpattern11ndup_SHIFT)
-#define NPHY_initswizzlepatternleg_Ant1QAM64swizpattern11ndup_SHIFT	6
-#define NPHY_initswizzlepatternleg_Ant1QAM64swizpattern11ndup_MASK \
-	(0x3 << NPHY_initswizzlepatternleg_Ant1QAM64swizpattern11ndup_SHIFT)
-
-
-/* Bits in NPHY_BphyControl3 */
-#define NPHY_BphyControl3_bphyScale_SHIFT	0
-#define NPHY_BphyControl3_bphyScale_MASK	(0xff << NPHY_BphyControl3_bphyScale_SHIFT)
-#define NPHY_BphyControl3_bphyFrmStartCntValue_SHIFT	8
-#define NPHY_BphyControl3_bphyFrmStartCntValue_MASK	\
-	(0xff << NPHY_BphyControl3_bphyFrmStartCntValue_SHIFT)
-
-/* Bits in NPHY_REV3_BphyControl3 */
-#define NPHY_REV3_BphyControl3_bphyScale20MHz_SHIFT	0
-#define NPHY_REV3_BphyControl3_bphyScale20MHz_MASK \
-	(0xff << NPHY_REV3_BphyControl3_bphyScale20MHz_SHIFT)
-#define NPHY_REV3_BphyControl3_bphyFrmStartCntValue_SHIFT	8
-#define NPHY_REV3_BphyControl3_bphyFrmStartCntValue_MASK \
-	(0xff << NPHY_REV3_BphyControl3_bphyFrmStartCntValue_SHIFT)
-
-/* Bits in NPHY_BphyControl4 */
-#define NPHY_BphyControl4_bphyFrmTailCntValue_SHIFT	0
-#define NPHY_BphyControl4_bphyFrmTailCntValue_MASK \
-	(0x3ff << NPHY_BphyControl4_bphyFrmTailCntValue_SHIFT)
-
-/* Bits in NPHY_RxStatusWord0 */
-#define NPHY_RxStatusWord0_DbgRxStatus_SHIFT	0
-#define NPHY_RxStatusWord0_DbgRxStatus_MASK	(0xffff << NPHY_RxStatusWord0_DbgRxStatus_SHIFT)
-
-/* Bits in NPHY_RxStatusWord1 */
-#define NPHY_RxStatusWord1_DbgRxStatus_SHIFT	0
-#define NPHY_RxStatusWord1_DbgRxStatus_MASK	(0xffff << NPHY_RxStatusWord1_DbgRxStatus_SHIFT)
-
-/* Bits in NPHY_RxStatusWord2 */
-#define NPHY_RxStatusWord2_DbgRxStatus_SHIFT	0
-#define NPHY_RxStatusWord2_DbgRxStatus_MASK	(0xffff << NPHY_RxStatusWord2_DbgRxStatus_SHIFT)
-
-/* Bits in NPHY_RxStatusWord3 */
-#define NPHY_RxStatusWord3_DbgRxStatus_SHIFT	0
-#define NPHY_RxStatusWord3_DbgRxStatus_MASK	(0xffff << NPHY_RxStatusWord3_DbgRxStatus_SHIFT)
-
-/* Bits in NPHY_RxStatusLatchCtrl */
-#define NPHY_RxStatusLatchCtrl_LatchCtrl0_SHIFT	0
-#define NPHY_RxStatusLatchCtrl_LatchCtrl0_MASK	(0x1 << NPHY_RxStatusLatchCtrl_LatchCtrl0_SHIFT)
-#define NPHY_RxStatusLatchCtrl_LatchCtrl1_SHIFT	1
-#define NPHY_RxStatusLatchCtrl_LatchCtrl1_MASK	(0x1 << NPHY_RxStatusLatchCtrl_LatchCtrl1_SHIFT)
-
-/* Bits in NPHY_REV3_RfctrlOverrideAux */
-#define NPHY_REV3_RfctrlOverrideAux_rxrf_pu_SHIFT	0
-#define NPHY_REV3_RfctrlOverrideAux_rxrf_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverrideAux_rxrf_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverrideAux_rc_cal_ovr_en_SHIFT	1
-#define NPHY_REV3_RfctrlOverrideAux_rc_cal_ovr_en_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverrideAux_rc_cal_ovr_en_SHIFT)
-#define NPHY_REV3_RfctrlOverrideAux_rc_cal_ovr_val_SHIFT	2
-#define NPHY_REV3_RfctrlOverrideAux_rc_cal_ovr_val_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverrideAux_rc_cal_ovr_val_SHIFT)
-#define NPHY_REV3_RfctrlOverrideAux_rx_bias_reset_SHIFT	3
-#define NPHY_REV3_RfctrlOverrideAux_rx_bias_reset_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverrideAux_rx_bias_reset_SHIFT)
-#define NPHY_REV3_RfctrlOverrideAux_tx_bias_reset_SHIFT	4
-#define NPHY_REV3_RfctrlOverrideAux_tx_bias_reset_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverrideAux_tx_bias_reset_SHIFT)
-#define NPHY_REV3_RfctrlOverrideAux_rssi_ctrl_SHIFT	5
-#define NPHY_REV3_RfctrlOverrideAux_rssi_ctrl_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverrideAux_rssi_ctrl_SHIFT)
-
-/* Bits in NPHY_RfctrlOverride */
-#define NPHY_RfctrlOverride_trigger_SHIFT 0
-#define NPHY_RfctrlOverride_trigger_MASK (0x1 << NPHY_RfctrlOverride_trigger_SHIFT)
-#define NPHY_RfctrlOverride_core_sel_SHIFT 1
-#define NPHY_RfctrlOverride_core_sel_MASK (0x1 << NPHY_RfctrlOverride_core_sel_SHIFT)
-#define NPHY_RfctrlOverride_rx_pd_SHIFT 2
-#define NPHY_RfctrlOverride_rx_pd_MASK (0x1 << NPHY_RfctrlOverride_rx_pd_SHIFT)
-#define NPHY_RfctrlOverride_tx_pd_SHIFT 3
-#define NPHY_RfctrlOverride_tx_pd_MASK (0x1 << NPHY_RfctrlOverride_tx_pd_SHIFT)
-#define NPHY_RfctrlOverride_pa_pd_SHIFT 4
-#define NPHY_RfctrlOverride_pa_pd_MASK (0x1 << NPHY_RfctrlOverride_pa_pd_SHIFT)
-#define NPHY_RfctrlOverride_rssi_ctrl_SHIFT 5
-#define NPHY_RfctrlOverride_rssi_ctrl_MASK (0x1 << NPHY_RfctrlOverride_rssi_ctrl_SHIFT)
-#define NPHY_RfctrlOverride_lpf_bw_SHIFT 6
-#define NPHY_RfctrlOverride_lpf_bw_MASK (0x1 << NPHY_RfctrlOverride_lpf_bw_SHIFT)
-#define NPHY_RfctrlOverride_hpf_bw_hi_SHIFT 7
-#define NPHY_RfctrlOverride_hpf_bw_hi_MASK (0x1 << NPHY_RfctrlOverride_hpf_bw_hi_SHIFT)
-#define NPHY_RfctrlOverride_hiq_dis_core_SHIFT 8
-#define NPHY_RfctrlOverride_hiq_dis_core_MASK (0x1 << NPHY_RfctrlOverride_hiq_dis_core_SHIFT)
-#define NPHY_RfctrlOverride_RxOrTxn_SHIFT 9
-#define NPHY_RfctrlOverride_RxOrTxn_MASK (0x1 << NPHY_RfctrlOverride_RxOrTxn_SHIFT)
-#define NPHY_RfctrlOverride_rxgain_SHIFT 10
-#define NPHY_RfctrlOverride_rxgain_MASK (0x1 << NPHY_RfctrlOverride_rxgain_SHIFT)
-#define NPHY_RfctrlOverride_txgain_SHIFT 11
-#define NPHY_RfctrlOverride_txgain_MASK (0x1 << NPHY_RfctrlOverride_txgain_SHIFT)
-#define NPHY_RfctrlOverride_rxen_SHIFT 12
-#define NPHY_RfctrlOverride_rxen_MASK (0x1 << NPHY_RfctrlOverride_rxen_SHIFT)
-#define NPHY_RfctrlOverride_txen_SHIFT 13
-#define NPHY_RfctrlOverride_txen_MASK (0x1 << NPHY_RfctrlOverride_txen_SHIFT)
-#define NPHY_RfctrlOverride_seqen_core_SHIFT 14
-#define NPHY_RfctrlOverride_seqen_core_MASK (0x1 << NPHY_RfctrlOverride_seqen_core_SHIFT)
-
-/* Bits in NPHY_REV3_RfctrlOverride[1,2] */
-#define NPHY_REV3_RfctrlOverride_trigger_SHIFT	0
-#define NPHY_REV3_RfctrlOverride_trigger_MASK	(0x1 << NPHY_REV3_RfctrlOverride_trigger_SHIFT)
-#define NPHY_REV3_RfctrlOverride_rx_pu_SHIFT	1
-#define NPHY_REV3_RfctrlOverride_rx_pu_MASK	(0x1 << NPHY_REV3_RfctrlOverride_rx_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverride_tx_pu_SHIFT	2
-#define NPHY_REV3_RfctrlOverride_tx_pu_MASK	(0x1 << NPHY_REV3_RfctrlOverride_tx_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverride_intpa_pu_SHIFT	3
-#define NPHY_REV3_RfctrlOverride_intpa_pu_MASK	(0x1 << NPHY_REV3_RfctrlOverride_intpa_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverride_rssi_wb1a_pu_SHIFT	4
-#define NPHY_REV3_RfctrlOverride_rssi_wb1a_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverride_rssi_wb1a_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverride_rssi_wb1g_pu_SHIFT	5
-#define NPHY_REV3_RfctrlOverride_rssi_wb1g_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverride_rssi_wb1g_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverride_rssi_wb2_pu_SHIFT	6
-#define NPHY_REV3_RfctrlOverride_rssi_wb2_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverride_rssi_wb2_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverride_rssi_nb_pu_SHIFT	7
-#define NPHY_REV3_RfctrlOverride_rssi_nb_pu_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverride_rssi_nb_pu_SHIFT)
-#define NPHY_REV3_RfctrlOverride_rx_lpf_bw_SHIFT	8
-#define NPHY_REV3_RfctrlOverride_rx_lpf_bw_MASK	(0x1 << NPHY_REV3_RfctrlOverride_rx_lpf_bw_SHIFT)
-#define NPHY_REV3_RfctrlOverride_hpf_hpc_SHIFT	9
-#define NPHY_REV3_RfctrlOverride_hpf_hpc_MASK	(0x1 << NPHY_REV3_RfctrlOverride_hpf_hpc_SHIFT)
-#define NPHY_REV3_RfctrlOverride_lpf_hpc_SHIFT	10
-#define NPHY_REV3_RfctrlOverride_lpf_hpc_MASK	(0x1 << NPHY_REV3_RfctrlOverride_lpf_hpc_SHIFT)
-#define NPHY_REV3_RfctrlOverride_hiq_dis_core_SHIFT	11
-#define NPHY_REV3_RfctrlOverride_hiq_dis_core_MASK \
-	(0x1 << NPHY_REV3_RfctrlOverride_hiq_dis_core_SHIFT)
-#define NPHY_REV3_RfctrlOverride_rxgain_SHIFT	12
-#define NPHY_REV3_RfctrlOverride_rxgain_MASK	(0x1 << NPHY_REV3_RfctrlOverride_rxgain_SHIFT)
-#define NPHY_REV3_RfctrlOverride_txgain_SHIFT	13
-#define NPHY_REV3_RfctrlOverride_txgain_MASK	(0x1 << NPHY_REV3_RfctrlOverride_txgain_SHIFT)
-#define NPHY_REV3_RfctrlOverride_op_buf_bw_SHIFT	14
-#define NPHY_REV3_RfctrlOverride_op_buf_bw_MASK	(0x1 << NPHY_REV3_RfctrlOverride_op_buf_bw_SHIFT)
-#define NPHY_REV3_RfctrlOverride_tx_lpf_bw_SHIFT	15
-#define NPHY_REV3_RfctrlOverride_tx_lpf_bw_MASK	(0x1 << NPHY_REV3_RfctrlOverride_tx_lpf_bw_SHIFT)
-
-/* Bits in NPHY_RfSeqTXLPFBW_OFDM */
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw1_SHIFT	0
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw1_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw1_SHIFT)
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw2_SHIFT	3
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw2_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw2_SHIFT)
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw3_SHIFT	6
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw3_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw3_SHIFT)
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw4_SHIFT	9
-#define NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw4_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_OFDM_tx_ofdm_lpf_bw4_SHIFT)
-
-/* Bits in NPHY_RfSeqTXLPFBW_11B */
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw1_SHIFT	0
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw1_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw1_SHIFT)
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw2_SHIFT	3
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw2_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw2_SHIFT)
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw3_SHIFT	6
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw3_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw3_SHIFT)
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw4_SHIFT	9
-#define NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw4_MASK \
-	(0x7 << NPHY_RfSeqTXLPFBW_11B_tx_11b_lpf_bw4_SHIFT)
-
-/* Bits in NPHY_BistStatus2 */
-#define NPHY_BistStatus2_bistFail_SHIFT	0
-#define NPHY_BistStatus2_bistFail_MASK	(0xffff << NPHY_BistStatus2_bistFail_SHIFT)
-
-/* Bits in NPHY_BistStatus3 */
-#define NPHY_BistStatus3_bistFail_SHIFT	0
-#define NPHY_BistStatus3_bistFail_MASK	(0xffff << NPHY_BistStatus3_bistFail_SHIFT)
-
-/* Bits in NPHY_MimoConfig */
-#define RX_GF_OR_MM			0x0004	/* 0: receive MM only, 1: receive GF only */
-#define RX_GF_MM_AUTO			0x0100	/* auto: can receive either GF or MM */
-
-/* Bits in NPHY_MimoConfig */
-#define NPHY_MimoConfig_OperatingMode_SHIFT	0
-#define NPHY_MimoConfig_OperatingMode_MASK	(0x3 << NPHY_MimoConfig_OperatingMode_SHIFT)
-#define NPHY_MimoConfig_GreenFieldOrMixModeN_SHIFT	2
-#define NPHY_MimoConfig_GreenFieldOrMixModeN_MASK \
-	(0x1 << NPHY_MimoConfig_GreenFieldOrMixModeN_SHIFT)
-#define NPHY_MimoConfig_NoOfSVCBytesInHT_SHIFT	4
-#define NPHY_MimoConfig_NoOfSVCBytesInHT_MASK	(0x3 << NPHY_MimoConfig_NoOfSVCBytesInHT_SHIFT)
-#define NPHY_MimoConfig_HTAgcPktgainEn_SHIFT	7
-#define NPHY_MimoConfig_HTAgcPktgainEn_MASK	(0x1 << NPHY_MimoConfig_HTAgcPktgainEn_SHIFT)
-#define NPHY_MimoConfig_AutoEnv_SHIFT	8
-#define NPHY_MimoConfig_AutoEnv_MASK	(0x1 << NPHY_MimoConfig_AutoEnv_SHIFT)
-#define NPHY_MimoConfig_Dup675Mode_SHIFT	9
-#define NPHY_MimoConfig_Dup675Mode_MASK	(0x1 << NPHY_MimoConfig_Dup675Mode_SHIFT)
-
-
-/* Bits in NPHY_RadarBlankCtrl */
-#define NPHY_RadarBlankCtrl_radarBlankingInterval_SHIFT	0
-#define NPHY_RadarBlankCtrl_radarBlankingInterval_MASK \
-	(0xff << NPHY_RadarBlankCtrl_radarBlankingInterval_SHIFT)
-#define NPHY_RadarBlankCtrl_radarCrsSrhBlankEn_SHIFT	8
-#define NPHY_RadarBlankCtrl_radarCrsSrhBlankEn_MASK \
-	(0x1 << NPHY_RadarBlankCtrl_radarCrsSrhBlankEn_SHIFT)
-#define NPHY_RadarBlankCtrl_radarTimSrhBlankEn_SHIFT	9
-#define NPHY_RadarBlankCtrl_radarTimSrhBlankEn_MASK \
-	(0x1 << NPHY_RadarBlankCtrl_radarTimSrhBlankEn_SHIFT)
-#define NPHY_RadarBlankCtrl_radarDecBlankEn_SHIFT	10
-#define NPHY_RadarBlankCtrl_radarDecBlankEn_MASK \
-	(0x1 << NPHY_RadarBlankCtrl_radarDecBlankEn_SHIFT)
-#define NPHY_RadarBlankCtrl_radarRstBlankEn_SHIFT	11
-#define NPHY_RadarBlankCtrl_radarRstBlankEn_MASK \
-	(0x1 << NPHY_RadarBlankCtrl_radarRstBlankEn_SHIFT)
-#define NPHY_RadarBlankCtrl_radarWaitEngyDropBlankEn_SHIFT	12
-#define NPHY_RadarBlankCtrl_radarWaitEngyDropBlankEn_MASK \
-	(0x1 << NPHY_RadarBlankCtrl_radarWaitEngyDropBlankEn_SHIFT)
-#define NPHY_RadarBlankCtrl_radarChnEstBlankEn_SHIFT	13
-#define NPHY_RadarBlankCtrl_radarChnEstBlankEn_MASK \
-	(0x1 << NPHY_RadarBlankCtrl_radarChnEstBlankEn_SHIFT)
-#define NPHY_RadarBlankCtrl_radarNClksBlankEn_SHIFT	14
-#define NPHY_RadarBlankCtrl_radarNClksBlankEn_MASK \
-	(0x1 << NPHY_RadarBlankCtrl_radarNClksBlankEn_SHIFT)
-
-/* Bits in NPHY_Antenna0_radarFifoCtrl */
-#define NPHY_Antenna0_radarFifoCtrl_recordCnt_SHIFT	0
-#define NPHY_Antenna0_radarFifoCtrl_recordCnt_MASK \
-	(0x3ff << NPHY_Antenna0_radarFifoCtrl_recordCnt_SHIFT)
-#define NPHY_Antenna0_radarFifoCtrl_overRun_SHIFT	10
-#define NPHY_Antenna0_radarFifoCtrl_overRun_MASK \
-	(0x1 << NPHY_Antenna0_radarFifoCtrl_overRun_SHIFT)
-
-/* Bits in NPHY_Antenna1_radarFifoCtrl */
-#define NPHY_Antenna1_radarFifoCtrl_recordCnt_SHIFT	0
-#define NPHY_Antenna1_radarFifoCtrl_recordCnt_MASK \
-	(0x3ff << NPHY_Antenna1_radarFifoCtrl_recordCnt_SHIFT)
-#define NPHY_Antenna1_radarFifoCtrl_overRun_SHIFT	10
-#define NPHY_Antenna1_radarFifoCtrl_overRun_MASK \
-	(0x1 << NPHY_Antenna1_radarFifoCtrl_overRun_SHIFT)
-
-/* Bits in NPHY_Antenna0_radarFifoData */
-#define NPHY_Antenna0_radarFifoData_rdData_SHIFT	0
-#define NPHY_Antenna0_radarFifoData_rdData_MASK	(0xffff << NPHY_Antenna0_radarFifoData_rdData_SHIFT)
-
-/* Bits in NPHY_Antenna1_radarFifoData */
-#define NPHY_Antenna1_radarFifoData_rdData_SHIFT	0
-#define NPHY_Antenna1_radarFifoData_rdData_MASK	(0xffff << NPHY_Antenna1_radarFifoData_rdData_SHIFT)
-
-/* Bits in NPHY_RadarThresh0 */
-#define NPHY_RadarThresh0_radarThd0_SHIFT	0
-#define NPHY_RadarThresh0_radarThd0_MASK	(0x7ff << NPHY_RadarThresh0_radarThd0_SHIFT)
-
-/* Bits in NPHY_RadarThresh1 */
-#define NPHY_RadarThresh1_radarThd1_SHIFT	0
-#define NPHY_RadarThresh1_radarThd1_MASK	(0x7ff << NPHY_RadarThresh1_radarThd1_SHIFT)
-
-/* Bits in NPHY_RadarThresh0R */
-#define NPHY_RadarThresh0R_radarThd0r_SHIFT	0
-#define NPHY_RadarThresh0R_radarThd0r_MASK	(0x7ff << NPHY_RadarThresh0R_radarThd0r_SHIFT)
-
-/* Bits in NPHY_RadarThresh1R */
-#define NPHY_RadarThresh1R_radarThd1r_SHIFT	0
-#define NPHY_RadarThresh1R_radarThd1r_MASK	(0x7ff << NPHY_RadarThresh1R_radarThd1r_SHIFT)
-
-/* Bits in NPHY_Crs20In40DwellLength */
-#define NPHY_Crs20In40DwellLength_crs_20in40_dwell_len_SHIFT	0
-#define NPHY_Crs20In40DwellLength_crs_20in40_dwell_len_MASK \
-	(0xffff << NPHY_Crs20In40DwellLength_crs_20in40_dwell_len_SHIFT)
-
-/* Bits in NPHY_RfctrlAuxReg[1,2,3,4] */
-#define NPHY_RfctrlAuxReg_Rfctrl_hpvga_hpc_SHIFT	0
-#define NPHY_RfctrlAuxReg_Rfctrl_hpvga_hpc_MASK \
-	(0x7 << NPHY_RfctrlAuxReg_Rfctrl_hpvga_hpc_SHIFT)
-#define NPHY_RfctrlAuxReg_Rfctrl_lpf_hpc_SHIFT	4
-#define NPHY_RfctrlAuxReg_Rfctrl_lpf_hpc_MASK	(0x7 << NPHY_RfctrlAuxReg_Rfctrl_lpf_hpc_SHIFT)
-#define NPHY_RfctrlAuxReg_rx_bias_reset_SHIFT	8
-#define NPHY_RfctrlAuxReg_rx_bias_reset_MASK	(0x1 << NPHY_RfctrlAuxReg_rx_bias_reset_SHIFT)
-#define NPHY_RfctrlAuxReg_tx_bias_reset_SHIFT	9
-#define NPHY_RfctrlAuxReg_tx_bias_reset_MASK	(0x1 << NPHY_RfctrlAuxReg_tx_bias_reset_SHIFT)
-#define NPHY_RfctrlAuxReg_tx_lpf_bw_SHIFT	10
-#define NPHY_RfctrlAuxReg_tx_lpf_bw_MASK	(0x7 << NPHY_RfctrlAuxReg_tx_lpf_bw_SHIFT)
-
-/* Bits in NPHY_RfctrlMiscReg[1,2,3,4] */
-#define NPHY_RfctrlMiscReg_rxgain_upper_SHIFT	0
-#define NPHY_RfctrlMiscReg_rxgain_upper_MASK	(0x3 << NPHY_RfctrlMiscReg_rxgain_upper_SHIFT)
-#define NPHY_RfctrlMiscReg_rssi_wb1a_sel_SHIFT	2
-#define NPHY_RfctrlMiscReg_rssi_wb1a_sel_MASK	(0x1 << NPHY_RfctrlMiscReg_rssi_wb1a_sel_SHIFT)
-#define NPHY_RfctrlMiscReg_rssi_wb1g_sel_SHIFT	3
-#define NPHY_RfctrlMiscReg_rssi_wb1g_sel_MASK	(0x1 << NPHY_RfctrlMiscReg_rssi_wb1g_sel_SHIFT)
-#define NPHY_RfctrlMiscReg_rssi_wb2_sel_SHIFT	4
-#define NPHY_RfctrlMiscReg_rssi_wb2_sel_MASK	(0x1 << NPHY_RfctrlMiscReg_rssi_wb2_sel_SHIFT)
-#define NPHY_RfctrlMiscReg_rssi_nb_sel_SHIFT	5
-#define NPHY_RfctrlMiscReg_rssi_nb_sel_MASK	(0x1 << NPHY_RfctrlMiscReg_rssi_nb_sel_SHIFT)
-#define NPHY_RfctrlMiscReg_op_buf_bw_SHIFT	6
-#define NPHY_RfctrlMiscReg_op_buf_bw_MASK	(0x3 << NPHY_RfctrlMiscReg_op_buf_bw_SHIFT)
-#define NPHY_RfctrlMiscReg_rc_cal_ovr_en_SHIFT	9
-#define NPHY_RfctrlMiscReg_rc_cal_ovr_en_MASK	(0x1 << NPHY_RfctrlMiscReg_rc_cal_ovr_en_SHIFT)
-#define NPHY_RfctrlMiscReg_rc_cal_ovr_val_SHIFT	10
-#define NPHY_RfctrlMiscReg_rc_cal_ovr_val_MASK	(0x1f << NPHY_RfctrlMiscReg_rc_cal_ovr_val_SHIFT)
-#define NPHY_RfctrlMiscReg_rxrf_pu_SHIFT	15
-#define NPHY_RfctrlMiscReg_rxrf_pu_MASK	(0x1 << NPHY_RfctrlMiscReg_rxrf_pu_SHIFT)
-
-/* Bits in NPHY_RfctrlLUTPa[1,2,3,4] */
-#define NPHY_RfctrlLUTPa_RfctrlLUTPa_SHIFT	0
-#define NPHY_RfctrlLUTPa_RfctrlLUTPa_MASK	(0xffff << NPHY_RfctrlLUTPa_RfctrlLUTPa_SHIFT)
-
-/* Bits in NPHY_nsynccrcmask0 */
-#define NPHY_nsynccrcmask0_nsynccrcmask0_SHIFT	0
-#define NPHY_nsynccrcmask0_nsynccrcmask0_MASK	(0xffff << NPHY_nsynccrcmask0_nsynccrcmask0_SHIFT)
-
-/* Bits in NPHY_nsynccrcmask1 */
-#define NPHY_nsynccrcmask1_nsynccrcmask1_SHIFT	0
-#define NPHY_nsynccrcmask1_nsynccrcmask1_MASK	(0xffff << NPHY_nsynccrcmask1_nsynccrcmask1_SHIFT)
-
-/* Bits in NPHY_nsynccrcmask2 */
-#define NPHY_nsynccrcmask2_nsynccrcmask2_SHIFT	0
-#define NPHY_nsynccrcmask2_nsynccrcmask2_MASK	(0xffff << NPHY_nsynccrcmask2_nsynccrcmask2_SHIFT)
-
-/* Bits in NPHY_nsynccrcmask3 */
-#define NPHY_nsynccrcmask3_nsynccrcmask3_SHIFT	0
-#define NPHY_nsynccrcmask3_nsynccrcmask3_MASK	(0xffff << NPHY_nsynccrcmask3_nsynccrcmask3_SHIFT)
-
-/* Bits in NPHY_nsynccrcmask4 */
-#define NPHY_nsynccrcmask4_nsynccrcmask4_SHIFT	0
-#define NPHY_nsynccrcmask4_nsynccrcmask4_MASK	(0xff << NPHY_nsynccrcmask4_nsynccrcmask4_SHIFT)
-
-/* Bits in NPHY_crcpolynomial */
-#define NPHY_crcpolynomial_wwisecrcpoly_SHIFT	0
-#define NPHY_crcpolynomial_wwisecrcpoly_MASK	(0xff << NPHY_crcpolynomial_wwisecrcpoly_SHIFT)
-#define NPHY_crcpolynomial_nsynccrcpoly_SHIFT	8
-#define NPHY_crcpolynomial_nsynccrcpoly_MASK	(0xff << NPHY_crcpolynomial_nsynccrcpoly_SHIFT)
-
-/* Bits in NPHY_NumSigCnt */
-#define NPHY_NumSigCnt_sigcntwise20_SHIFT	0
-#define NPHY_NumSigCnt_sigcntwise20_MASK	(0x1 << NPHY_NumSigCnt_sigcntwise20_SHIFT)
-#define NPHY_NumSigCnt_sigcntwise40_SHIFT	1
-#define NPHY_NumSigCnt_sigcntwise40_MASK	(0x1 << NPHY_NumSigCnt_sigcntwise40_SHIFT)
-#define NPHY_NumSigCnt_sigcnt11n20_SHIFT	2
-#define NPHY_NumSigCnt_sigcnt11n20_MASK	(0x1 << NPHY_NumSigCnt_sigcnt11n20_SHIFT)
-#define NPHY_NumSigCnt_sigcnt11n40_SHIFT	3
-#define NPHY_NumSigCnt_sigcnt11n40_MASK	(0x1 << NPHY_NumSigCnt_sigcnt11n40_SHIFT)
-
-/* Bits in NPHY_sigstartbitCtrl */
-#define NPHY_sigstartbitCtrl_nsynccrcstartbit_SHIFT	0
-#define NPHY_sigstartbitCtrl_nsynccrcstartbit_MASK \
-	(0x3f << NPHY_sigstartbitCtrl_nsynccrcstartbit_SHIFT)
-#define NPHY_sigstartbitCtrl_wwisecrcstartbit_SHIFT	6
-#define NPHY_sigstartbitCtrl_wwisecrcstartbit_MASK \
-	(0x3f << NPHY_sigstartbitCtrl_wwisecrcstartbit_SHIFT)
-#define NPHY_sigstartbitCtrl_wisecrcen_SHIFT	12
-#define NPHY_sigstartbitCtrl_wisecrcen_MASK	(0x1 << NPHY_sigstartbitCtrl_wisecrcen_SHIFT)
-#define NPHY_sigstartbitCtrl_nsynccrcen_SHIFT	13
-#define NPHY_sigstartbitCtrl_nsynccrcen_MASK	(0x1 << NPHY_sigstartbitCtrl_nsynccrcen_SHIFT)
-#define NPHY_sigstartbitCtrl_UseMtxparity_SHIFT	14
-#define NPHY_sigstartbitCtrl_UseMtxparity_MASK	(0x1 << NPHY_sigstartbitCtrl_UseMtxparity_SHIFT)
-#define NPHY_sigstartbitCtrl_RsvdPolarityInHT_SHIFT	15
-#define NPHY_sigstartbitCtrl_RsvdPolarityInHT_MASK \
-	(0x1 << NPHY_sigstartbitCtrl_RsvdPolarityInHT_SHIFT)
-
-/* Bits in NPHY_crcpolyorder */
-#define NPHY_crcpolyorder_nsynccrcpolyorder_SHIFT	0
-#define NPHY_crcpolyorder_nsynccrcpolyorder_MASK \
-	(0x7 << NPHY_crcpolyorder_nsynccrcpolyorder_SHIFT)
-#define NPHY_crcpolyorder_wwisecrcpolyorder_SHIFT	3
-#define NPHY_crcpolyorder_wwisecrcpolyorder_MASK \
-	(0x7 << NPHY_crcpolyorder_wwisecrcpolyorder_SHIFT)
-
-/* Bits in NPHY_BphyControl5 */
-#define NPHY_BphyControl5_bphyCrsCntLngValue_SHIFT	0
-#define NPHY_BphyControl5_bphyCrsCntLngValue_MASK \
-	(0xff << NPHY_BphyControl5_bphyCrsCntLngValue_SHIFT)
-#define NPHY_BphyControl5_bphyCrsCntShtValue_SHIFT	8
-#define NPHY_BphyControl5_bphyCrsCntShtValue_MASK \
-	(0xff << NPHY_BphyControl5_bphyCrsCntShtValue_SHIFT)
-
-/* Bits in NPHY_RFSeqRXLPFBW */
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw1_SHIFT	0
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw1_MASK	(0x7 << NPHY_RFSeqRXLPFBW_rx_lpf_bw1_SHIFT)
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw2_SHIFT	3
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw2_MASK	(0x7 << NPHY_RFSeqRXLPFBW_rx_lpf_bw2_SHIFT)
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw3_SHIFT	6
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw3_MASK	(0x7 << NPHY_RFSeqRXLPFBW_rx_lpf_bw3_SHIFT)
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw4_SHIFT	9
-#define NPHY_RFSeqRXLPFBW_rx_lpf_bw4_MASK	(0x7 << NPHY_RFSeqRXLPFBW_rx_lpf_bw4_SHIFT)
-
-/* Bits in NPHY_iqloCalCmdGctl */
-#define NPHY_iqloCalCmdGctl_IQLO_CAL_EN	0x8000
-
-/* Bits in NPHY_TSSIBiasVal1 */
-#define NPHY_TSSIBiasVal1_TSSIBias_SHIFT	8
-#define NPHY_TSSIBiasVal1_TSSIBias_MASK	(0xff << NPHY_TSSIBiasVal1_TSSIBias_SHIFT)
-#define NPHY_TSSIBiasVal1_TSSIVal_SHIFT	0
-#define NPHY_TSSIBiasVal1_TSSIVal_MASK	(0xff << NPHY_TSSIBiasVal1_TSSIVal_SHIFT)
-
-/* Bits in NPHY_TSSIBiasVal2 */
-#define NPHY_TSSIBiasVal2_TSSIBias_SHIFT	8
-#define NPHY_TSSIBiasVal2_TSSIBias_MASK	(0xff << NPHY_TSSIBiasVal2_TSSIBias_SHIFT)
-#define NPHY_TSSIBiasVal2_TSSIVal_SHIFT	0
-#define NPHY_TSSIBiasVal2_TSSIVal_MASK	(0xff << NPHY_TSSIBiasVal2_TSSIVal_SHIFT)
-
-/* Bits in NPHY_EstPower1 */
-#define NPHY_EstPower1_estPowerValid_SHIFT	8
-#define NPHY_EstPower1_estPowerValid_MASK	(0x1 << NPHY_EstPower1_estPowerValid_SHIFT)
-#define NPHY_EstPower1_estPower_SHIFT	0
-#define NPHY_EstPower1_estPower_MASK	(0xff << NPHY_EstPower1_estPower_SHIFT)
-
-/* Bits in NPHY_EstPower2 */
-#define NPHY_EstPower2_estPowerValid_SHIFT	8
-#define NPHY_EstPower2_estPowerValid_MASK	(0x1 << NPHY_EstPower2_estPowerValid_SHIFT)
-#define NPHY_EstPower2_estPower_SHIFT	0
-#define NPHY_EstPower2_estPower_MASK	(0xff << NPHY_EstPower2_estPower_SHIFT)
-
-/* Bits in NPHY_TSSIMaxTxFrmDlyTime */
-#define NPHY_TSSIMaxTxFrmDlyTime_maxtxfrmdlytime_SHIFT	0
-#define NPHY_TSSIMaxTxFrmDlyTime_maxtxfrmdlytime_MASK \
-	(0xff << NPHY_TSSIMaxTxFrmDlyTime_maxtxfrmdlytime_SHIFT)
-
-/* Bits in NPHY_TSSIMaxTssiDlyTime */
-#define NPHY_TSSIMaxTssiDlyTime_maxtssidlytime_SHIFT	0
-#define NPHY_TSSIMaxTssiDlyTime_maxtssidlytime_MASK \
-	(0xff << NPHY_TSSIMaxTssiDlyTime_maxtssidlytime_SHIFT)
-
-/* Bits in NPHY_TSSIIdle1 */
-#define NPHY_TSSIIdle1_idletssi_SHIFT	0
-#define NPHY_TSSIIdle1_idletssi_MASK	(0xff << NPHY_TSSIIdle1_idletssi_SHIFT)
-
-/* Bits in NPHY_TSSIIdle2 */
-#define NPHY_TSSIIdle2_idletssi_SHIFT	0
-#define NPHY_TSSIIdle2_idletssi_MASK	(0xff << NPHY_TSSIIdle2_idletssi_SHIFT)
-
-/* Bits in NPHY_TSSIMode */
-#define NPHY_TSSIMode_tssiEn_SHIFT	0
-#define NPHY_TSSIMode_tssiEn_MASK	(0x1 << NPHY_TSSIMode_tssiEn_SHIFT)
-#define NPHY_TSSIMode_PowerDetEn_SHIFT	1
-#define NPHY_TSSIMode_PowerDetEn_MASK	(0x1 << NPHY_TSSIMode_PowerDetEn_SHIFT)
-
-/* Bits in NPHY_RxMacifMode */
-#define NPHY_RxMacifMode_SampleCore_SHIFT	0
-#define NPHY_RxMacifMode_SampleCore_MASK	0x3
-#define NPHY_RxMacifMode_PassThrough_SHIFT	2
-#define NPHY_RxMacifMode_PassThrough_MASK	(0x3 << NPHY_RxMacifMode_PassThrough_SHIFT)
-
-/* Bits in NPHY_IqestCmd */
-#define NPHY_IqestCmd_iqstart		0x1
-#define NPHY_IqestCmd_iqMode		0x2
-
-/* Bits in NPHY_IqestWaitTime */
-#define NPHY_IqestWaitTime_waitTime_SHIFT 0
-#define NPHY_IqestWaitTime_waitTime_MASK (0xff << NPHY_IqestWaitTime_waitTime_SHIFT)
-
-/* Bits in NPHY_PilotDataWeight1 */
-#define NPHY_PilotDataWeight1_64qam_SHIFT 12
-#define NPHY_PilotDataWeight1_64qam_MASK (0xf << NPHY_PilotDataWeight1_64qam_SHIFT)
-#define NPHY_PilotDataWeight1_16qam_SHIFT 8
-#define NPHY_PilotDataWeight1_16qam_MASK (0xf << NPHY_PilotDataWeight1_16qam_SHIFT)
-#define NPHY_PilotDataWeight1_qpsk_SHIFT 4
-#define NPHY_PilotDataWeight1_qpsk_MASK (0xf << NPHY_PilotDataWeight1_qpsk_SHIFT)
-#define NPHY_PilotDataWeight1_bpsk_SHIFT 0
-#define NPHY_PilotDataWeight1_bpsk_MASK (0xf << NPHY_PilotDataWeight1_bpsk_SHIFT)
-
-/* Bits in NPHY_TxPwrCtrlCmd */
-#define NPHY_TxPwrCtrlCmd_txPwrCtrl_en_SHIFT	15
-#define NPHY_TxPwrCtrlCmd_txPwrCtrl_en_MASK	(0x1 << NPHY_TxPwrCtrlCmd_txPwrCtrl_en_SHIFT)
-#define NPHY_TxPwrCtrlCmd_hwtxPwrCtrl_en_SHIFT	14
-#define NPHY_TxPwrCtrlCmd_hwtxPwrCtrl_en_MASK	(0x1 << NPHY_TxPwrCtrlCmd_hwtxPwrCtrl_en_SHIFT)
-#define NPHY_TxPwrCtrlCmd_use_txPwrCtrlCoefs_SHIFT	13
-#define NPHY_TxPwrCtrlCmd_use_txPwrCtrlCoefs_MASK \
-	(0x1 << NPHY_TxPwrCtrlCmd_use_txPwrCtrlCoefs_SHIFT)
-#define NPHY_TxPwrCtrlCmd_pwrIndex_init_SHIFT	0
-#define NPHY_TxPwrCtrlCmd_pwrIndex_init_MASK	(0x7f << NPHY_TxPwrCtrlCmd_pwrIndex_init_SHIFT)
-#define NPHY_TxPwrCtrlCmd_pwrIndex_init		0x40
-
-/* Bits in NPHY_TxPwrCtrlNnum */
-#define NPHY_TxPwrCtrlNnum_Npt_intg_log2_SHIFT	8
-#define NPHY_TxPwrCtrlNnum_Npt_intg_log2_MASK	(0x7 << NPHY_TxPwrCtrlNnum_Npt_intg_log2_SHIFT)
-#define NPHY_TxPwrCtrlNnum_Ntssi_delay_SHIFT	0
-#define NPHY_TxPwrCtrlNnum_Ntssi_delay_MASK	(0xff << NPHY_TxPwrCtrlNnum_Ntssi_delay_SHIFT)
-
-/* Bits in NPHY_TxPwrCtrlIdleTssi */
-#define NPHY_TxPwrCtrlIdleTssi_rawTssiOffsetBinFormat_SHIFT	15
-#define NPHY_TxPwrCtrlIdleTssi_rawTssiOffsetBinFormat_MASK \
-	(0x1 << NPHY_TxPwrCtrlIdleTssi_rawTssiOffsetBinFormat_SHIFT)
-#define NPHY_TxPwrCtrlIdleTssi_tssiPosSlope_SHIFT	        14
-#define NPHY_TxPwrCtrlIdleTssi_tssiPosSlope_MASK  (0x1 << NPHY_TxPwrCtrlIdleTssi_tssiPosSlope_SHIFT)
-
-#define NPHY_TxPwrCtrlIdleTssi_idleTssi1_SHIFT	8
-#define NPHY_TxPwrCtrlIdleTssi_idleTssi1_MASK	(0x3f << NPHY_TxPwrCtrlIdleTssi_idleTssi1_SHIFT)
-#define NPHY_TxPwrCtrlIdleTssi_idleTssi0_SHIFT	0
-#define NPHY_TxPwrCtrlIdleTssi_idleTssi0_MASK	(0x3f << NPHY_TxPwrCtrlIdleTssi_idleTssi0_SHIFT)
-
-/* Bits in NPHY_TxPwrCtrlTargetPwr */
-#define NPHY_TxPwrCtrlTargetPwr_targetPwr1_SHIFT	8
-#define NPHY_TxPwrCtrlTargetPwr_targetPwr1_MASK	(0xff << NPHY_TxPwrCtrlTargetPwr_targetPwr1_SHIFT)
-#define NPHY_TxPwrCtrlTargetPwr_targetPwr0_SHIFT	0
-#define NPHY_TxPwrCtrlTargetPwr_targetPwr0_MASK	(0xff << NPHY_TxPwrCtrlTargetPwr_targetPwr0_SHIFT)
-
-/* Bits in NPHY_TxPwrCtrlBaseIndex */
-#define NPHY_TxPwrCtrlBaseIndex_loadBaseIndex_SHIFT	15
-#define NPHY_TxPwrCtrlBaseIndex_loadBaseIndex_MASK \
-	(0x1 << NPHY_TxPwrCtrlBaseIndex_loadBaseIndex_SHIFT)
-#define NPHY_TxPwrCtrlBaseIndex_uC_baseIndex1_SHIFT	8
-#define NPHY_TxPwrCtrlBaseIndex_uC_baseIndex1_MASK \
-	(0x7f << NPHY_TxPwrCtrlBaseIndex_uC_baseIndex1_SHIFT)
-#define NPHY_TxPwrCtrlBaseIndex_uC_baseIndex0_SHIFT	0
-#define NPHY_TxPwrCtrlBaseIndex_uC_baseIndex0_MASK \
-	(0x7f << NPHY_TxPwrCtrlBaseIndex_uC_baseIndex0_SHIFT)
-
-/* Bits in NPHY_TxPwrCtrlPwrIndex */
-#define NPHY_TxPwrCtrlPwrIndex_loadPwrIndex_SHIFT	15
-#define NPHY_TxPwrCtrlPwrIndex_loadPwrIndex_MASK \
-	(0x1 << NPHY_TxPwrCtrlPwrIndex_loadPwrIndex_SHIFT)
-#define NPHY_TxPwrCtrlPwrIndex_uC_pwrIndex1_SHIFT	8
-#define NPHY_TxPwrCtrlPwrIndex_uC_pwrIndex1_MASK \
-	(0x7f << NPHY_TxPwrCtrlPwrIndex_uC_pwrIndex1_SHIFT)
-#define NPHY_TxPwrCtrlPwrIndex_uC_pwrIndex0_SHIFT	0
-#define NPHY_TxPwrCtrlPwrIndex_uC_pwrIndex0_MASK \
-	(0x7f << NPHY_TxPwrCtrlPwrIndex_uC_pwrIndex0_SHIFT)
-
-/* Bits in NPHY_TxPwrCtrlStatus */
-#define NPHY_TxPwrCtrlStatus_estPwrValid_SHIFT	15
-#define NPHY_TxPwrCtrlStatus_estPwrValid_MASK \
-	(0x1 << NPHY_TxPwrCtrlStatus_estPwrValid_SHIFT)
-#define NPHY_TxPwrCtrlStatus_baseIndex_SHIFT	8
-#define NPHY_TxPwrCtrlStatus_baseIndex_MASK \
-	(0x7f << NPHY_TxPwrCtrlStatus_baseIndex_SHIFT)
-#define NPHY_TxPwrCtrlStatus_estPwr_SHIFT		0
-#define NPHY_TxPwrCtrlStatus_estPwr_MASK \
-	(0xff << NPHY_TxPwrCtrlStatus_estPwr_SHIFT)
-
-/* Bits in NPHY_Core1TxPwrCtrlStatus */
-#define NPHY_Core1TxPwrCtrlStatus_estPwrValid_SHIFT	15
-#define NPHY_Core1TxPwrCtrlStatus_estPwrValid_MASK \
-	(0x1 << NPHY_Core1TxPwrCtrlStatus_estPwrValid_SHIFT)
-#define NPHY_Core1TxPwrCtrlStatus_baseIndex_SHIFT	8
-#define NPHY_Core1TxPwrCtrlStatus_baseIndex_MASK \
-	(0x7f << NPHY_Core1TxPwrCtrlStatus_baseIndex_SHIFT)
-#define NPHY_Core1TxPwrCtrlStatus_estPwr_SHIFT		0
-#define NPHY_Core1TxPwrCtrlStatus_estPwr_MASK \
-	(0xff << NPHY_Core1TxPwrCtrlStatus_estPwr_SHIFT)
-
-/* Bits in NPHY_Core2TxPwrCtrlStatus */
-#define NPHY_Core2TxPwrCtrlStatus_estPwrValid_SHIFT	15
-#define NPHY_Core2TxPwrCtrlStatus_estPwrValid_MASK \
-	(0x1 << NPHY_Core2TxPwrCtrlStatus_estPwrValid_SHIFT)
-#define NPHY_Core2TxPwrCtrlStatus_baseIndex_SHIFT	8
-#define NPHY_Core2TxPwrCtrlStatus_baseIndex_MASK \
-	(0x7f << NPHY_Core2TxPwrCtrlStatus_baseIndex_SHIFT)
-#define NPHY_Core2TxPwrCtrlStatus_estPwr_SHIFT		0
-#define NPHY_Core2TxPwrCtrlStatus_estPwr_MASK \
-	(0xff << NPHY_Core2TxPwrCtrlStatus_estPwr_SHIFT)
-
-/* Bits in NPHY_TxPwrCtrlInit */
-#define NPHY_TxPwrCtrlInit_pwrIndex_init1_SHIFT		0
-#define NPHY_TxPwrCtrlInit_pwrIndex_init1_MASK \
-	(0xff << NPHY_TxPwrCtrlInit_pwrIndex_init1_SHIFT)
-
-/* Bits in NPHY_crsminpower0 */
-#define NPHY_crsminpower0_crsminpower0_SHIFT	0
-#define NPHY_crsminpower0_crsminpower0_MASK	(0xff << NPHY_crsminpower0_crsminpower0_SHIFT)
-#define NPHY_crsminpower0_crsminpower1_SHIFT	8
-#define NPHY_crsminpower0_crsminpower1_MASK	(0xff << NPHY_crsminpower0_crsminpower1_SHIFT)
-
-/* Bits in NPHY_crsminpower1 */
-#define NPHY_crsminpower1_crsminpower2_SHIFT	0
-#define NPHY_crsminpower1_crsminpower2_MASK	(0xff << NPHY_crsminpower1_crsminpower2_SHIFT)
-#define NPHY_crsminpower1_crsminpower3_SHIFT	8
-#define NPHY_crsminpower1_crsminpower3_MASK	(0xff << NPHY_crsminpower1_crsminpower3_SHIFT)
-
-/* Bits in NPHY_crsminpower2 */
-#define NPHY_crsminpower2_crsminpower4_SHIFT	0
-#define NPHY_crsminpower2_crsminpower4_MASK	(0xff << NPHY_crsminpower2_crsminpower4_SHIFT)
-
-/* Bits in NPHY_crsminpowerl0 */
-#define NPHY_crsminpowerl0_crsminpower0_SHIFT	0
-#define NPHY_crsminpowerl0_crsminpower0_MASK	(0xff << NPHY_crsminpowerl0_crsminpower0_SHIFT)
-#define NPHY_crsminpowerl0_crsminpower1_SHIFT	8
-#define NPHY_crsminpowerl0_crsminpower1_MASK	(0xff << NPHY_crsminpowerl0_crsminpower1_SHIFT)
-
-/* Bits in NPHY_crsminpowerl1 */
-#define NPHY_crsminpowerl1_crsminpower2_SHIFT	0
-#define NPHY_crsminpowerl1_crsminpower2_MASK	(0xff << NPHY_crsminpowerl1_crsminpower2_SHIFT)
-#define NPHY_crsminpowerl1_crsminpower3_SHIFT	8
-#define NPHY_crsminpowerl1_crsminpower3_MASK	(0xff << NPHY_crsminpowerl1_crsminpower3_SHIFT)
-
-/* Bits in NPHY_crsminpowerl2 */
-#define NPHY_crsminpowerl2_crsminpower4_SHIFT	0
-#define NPHY_crsminpowerl2_crsminpower4_MASK	(0xff << NPHY_crsminpowerl2_crsminpower4_SHIFT)
-
-/* Bits in NPHY_crsminpoweru0 */
-#define NPHY_crsminpoweru0_crsminpower0_SHIFT	0
-#define NPHY_crsminpoweru0_crsminpower0_MASK	(0xff << NPHY_crsminpoweru0_crsminpower0_SHIFT)
-#define NPHY_crsminpoweru0_crsminpower1_SHIFT	8
-#define NPHY_crsminpoweru0_crsminpower1_MASK	(0xff << NPHY_crsminpoweru0_crsminpower1_SHIFT)
-
-/* Bits in NPHY_crsminpoweru1 */
-#define NPHY_crsminpoweru1_crsminpower2_SHIFT	0
-#define NPHY_crsminpoweru1_crsminpower2_MASK	(0xff << NPHY_crsminpoweru1_crsminpower2_SHIFT)
-#define NPHY_crsminpoweru1_crsminpower3_SHIFT	8
-#define NPHY_crsminpoweru1_crsminpower3_MASK	(0xff << NPHY_crsminpoweru1_crsminpower3_SHIFT)
-
-/* Bits in NPHY_crsminpoweru2 */
-#define NPHY_crsminpoweru2_crsminpower4_SHIFT	0
-#define NPHY_crsminpoweru2_crsminpower4_MASK	(0xff << NPHY_crsminpoweru2_crsminpower4_SHIFT)
-
-
-/* Bits in NPHY_overideDigiGain1 */
-#define NPHY_overideDigiGain1_cckdigigainEnCntValue_SHIFT 8
-#define NPHY_overideDigiGain1_cckdigigainEnCntValue_MASK \
-	(0xff << NPHY_overideDigiGain1_cckdigigainEnCntValue_SHIFT)
-#define NPHY_overideDigiGain1_forcedigigainEnable_SHIFT 3
-#define NPHY_overideDigiGain1_forcedigigainEnable_MASK \
-	(0x1 << NPHY_overideDigiGain1_forcedigigainEnable_SHIFT)
-#define NPHY_overideDigiGain1_forcedigiGainValue_SHIFT 0
-#define NPHY_overideDigiGain1_forcedigiGainValue_MASK \
-	(0x7 << NPHY_overideDigiGain1_forcedigiGainValue_SHIFT)
-
-/*
-#define NPHY_PapdEnable0		0x297
-#define NPHY_EpsilonTableAdjust0	0x298
-#define NPHY_EpsilonOverrideI_0		0x299
-#define NPHY_EpsilonOverrideQ_0		0x29a
-#define NPHY_PapdEnable1		0x29b
-#define NPHY_EpsilonTableAdjust1	0x29c
-#define NPHY_EpsilonOverrideI_1		0x29d
-#define NPHY_EpsilonOverrideQ_1		0x29e
-#define NPHY_PapdCalAddress		0x29f
-#define NPHY_PapdCalYrefEpsilon		0x2a0
-#define NPHY_PapdCalSettle		0x2a1
-#define NPHY_PapdCalCorrelate		0x2a2
-#define NPHY_PapdCalShifts0		0x2a3
-#define NPHY_PapdCalShifts1		0x2a4
-#define NPHY_sampleStartAddr		0x2a5
-*/
-/* bits in NPHY_PapdEnable */
-#define NPHY_PapdEnable_compEnable_SHIFT  0
-#define NPHY_PapdEnable_compEnable_MASK \
-	(0x1 << NPHY_PapdEnable_compEnable_SHIFT)
-#define NPHY_PapdEnable_gainDacRfOverride_SHIFT 2
-#define NPHY_PapdEnable_gainDacRfOverride_MASK \
-	(0x1 << NPHY_PapdEnable_gainDacRfOverride_SHIFT)
-#define NPHY_PapdEnable_gainDacRfValue_SHIFT 4
-#define NPHY_PapdEnable_gainDacRfValue_MASK \
-	(0x1ff << NPHY_PapdEnable_gainDacRfValue_SHIFT)
-
-/* bits in NPHY_EpsilonTableAdjust */
-#define NPHY_EpsilonTableAdjust_epsilonOffset_SHIFT 7
-#define NPHY_EpsilonTableAdjust_epsilonOffset_MASK \
-	(0x1ff << NPHY_EpsilonTableAdjust_epsilonOffset_SHIFT)
-
-/* bits in NPHY_PapdCalShifts */
-#define NPHY_PapdCalShifts_calEnable_SHIFT 11
-#define NPHY_PapdCalShifts_calEnable_MASK \
-	(0x1 << NPHY_PapdCalShifts_calEnable_SHIFT)
-#define NPHY_PapdCalShifts_lambdaI_SHIFT  4
-#define NPHY_PapdCalShifts_lambdaI_MASK \
-	(0x7 << NPHY_PapdCalShifts_lambdaI_SHIFT)
-#define NPHY_PapdCalShifts_lambdaQ_SHIFT  8
-#define NPHY_PapdCalShifts_lambdaQ_MASK \
-	(0x7 << NPHY_PapdCalShifts_lambdaQ_SHIFT)
-#define NPHY_PapdCalShifts_CorrShift_SHIFT  0
-#define NPHY_PapdCalShifts_CorrShift_MASK \
-	(0x7 << NPHY_PapdCalShifts_CorrShift_SHIFT)
-
-/* bits in NPHY_PapdCalShifts (REV6) */
-#define NPHY_REV6_PapdCalShifts_calEnable_SHIFT 13
-#define NPHY_REV6_PapdCalShifts_calEnable_MASK \
-	(0x1 << NPHY_REV6_PapdCalShifts_calEnable_SHIFT)
-#define NPHY_REV6_PapdCalShifts_lambdaI_SHIFT  4
-#define NPHY_REV6_PapdCalShifts_lambdaI_MASK \
-	(0xf << NPHY_REV6_PapdCalShifts_lambdaI_SHIFT)
-#define NPHY_REV6_PapdCalShifts_lambdaQ_SHIFT  8
-#define NPHY_REV6_PapdCalShifts_lambdaQ_MASK \
-	(0xf << NPHY_REV6_PapdCalShifts_lambdaQ_SHIFT)
-#define NPHY_REV6_PapdCalShifts_CorrShift_SHIFT  0
-#define NPHY_REV6_PapdCalShifts_CorrShift_MASK \
-	(0xf << NPHY_REV6_PapdCalShifts_CorrShift_SHIFT)
-
-/* bits in NPHY_PapdCalYrefEpsilon (REV6) */
-#define NPHY_PapdCalYrefEpsilon_YrefAddr_SHIFT 0
-#define NPHY_PapdCalYrefEpsilon_YrefAddr_MASK \
-	(0x3f << NPHY_PapdCalYrefEpsilon_YrefAddr_SHIFT)
-#define NPHY_PapdCalYrefEpsilon_InitYref_SHIFT 6
-#define NPHY_PapdCalYrefEpsilon_InitYref_MASK \
-	(0x1 << NPHY_PapdCalYrefEpsilon_InitYref_SHIFT)
-#define NPHY_PapdCalYrefEpsilon_NumIters_SHIFT 8
-#define NPHY_PapdCalYrefEpsilon_NumIters_MASK \
-	(0x3f << NPHY_PapdCalYrefEpsilon_NumIters_SHIFT)
-#define NPHY_PapdCalYrefEpsilon_EpsilonInit_SHIFT 14
-#define NPHY_PapdCalYrefEpsilon_EpsilonInit_MASK \
-	(0x3 << NPHY_PapdCalYrefEpsilon_EpsilonInit_SHIFT)
-
-
-/* bits in NPHY_PapdCalAddress */
-#define NPHY_PapdCalAddress_StartAddr_SHIFT 0
-#define NPHY_PapdCalAddress_StartAddr_MASK \
-	(0x3f << NPHY_PapdCalAddress_StartAddr_SHIFT)
-#define NPHY_PapdCalAddress_EndAddr_SHIFT   8
-#define NPHY_PapdCalAddress_EndAddr_MASK \
-	(0x3f << NPHY_PapdCalAddress_EndAddr_SHIFT)
-
-/* Bits in NPHY_sgiLtrnOffset */
-#define NPHY_sgiLtrnOffset_sgiLtrnOffset40_SHIFT        8
-#define NPHY_sgiLtrnOffset_sgiLtrnOffset40_MASK		\
-	(0xf << NPHY_sgiLtrnOffset_sgiLtrnOffset40_SHIFT)
-#define NPHY_sgiLtrnOffset_sgiLtrnOffset20U_SHIFT       4
-#define NPHY_sgiLtrnOffset_sgiLtrnOffset20U_MASK	\
-	(0xf << NPHY_sgiLtrnOffset_sgiLtrnOffset20U_SHIFT)
-#define NPHY_sgiLtrnOffset_sgiLtrnOffset20L_SHIFT       0
-#define NPHY_sgiLtrnOffset_sgiLtrnOffset20L_MASK	\
-	(0xf << NPHY_sgiLtrnOffset_sgiLtrnOffset20L_SHIFT)
-
-/* NPHY RFSeq Commands */
-#define NPHY_RFSEQ_RX2TX		0x0
-#define NPHY_RFSEQ_TX2RX		0x1
-#define NPHY_RFSEQ_RESET2RX		0x2
-#define NPHY_RFSEQ_UPDATEGAINH		0x3
-#define NPHY_RFSEQ_UPDATEGAINL		0x4
-#define NPHY_RFSEQ_UPDATEGAINU		0x5
-
-/* NPHY RFSeq Events */
-#define NPHY_RFSEQ_CMD_NOP		0x0
-#define NPHY_RFSEQ_CMD_RXG_FBW		0x1
-#define NPHY_RFSEQ_CMD_TR_SWITCH	0x2
-#define NPHY_RFSEQ_CMD_EXT_PA		0x3
-#define NPHY_RFSEQ_CMD_RXPD_TXPD	0x4
-#define NPHY_RFSEQ_CMD_TX_GAIN		0x5
-#define NPHY_RFSEQ_CMD_RX_GAIN		0x6
-#define NPHY_RFSEQ_CMD_SET_HPF_BW	0x7
-#define NPHY_RFSEQ_CMD_CLR_HIQ_DIS	0x8
-#define NPHY_RFSEQ_CMD_END		0xf
-
-/* NPHY_REV3 RFSeq Events */
-#define NPHY_REV3_RFSEQ_CMD_NOP		0x0
-#define NPHY_REV3_RFSEQ_CMD_RXG_FBW	0x1
-#define NPHY_REV3_RFSEQ_CMD_TR_SWITCH	0x2
-#define NPHY_REV3_RFSEQ_CMD_INT_PA_PU	0x3
-#define NPHY_REV3_RFSEQ_CMD_EXT_PA	0x4
-#define NPHY_REV3_RFSEQ_CMD_RXPD_TXPD	0x5
-#define NPHY_REV3_RFSEQ_CMD_TX_GAIN	0x6
-#define NPHY_REV3_RFSEQ_CMD_RX_GAIN	0x7
-#define NPHY_REV3_RFSEQ_CMD_CLR_HIQ_DIS	0x8
-#define NPHY_REV3_RFSEQ_CMD_SET_HPF_H_HPC	0x9
-#define NPHY_REV3_RFSEQ_CMD_SET_LPF_H_HPC	0xa
-#define NPHY_REV3_RFSEQ_CMD_SET_HPF_M_HPC	0xb
-#define NPHY_REV3_RFSEQ_CMD_SET_LPF_M_HPC	0xc
-#define NPHY_REV3_RFSEQ_CMD_SET_HPF_L_HPC	0xd
-#define NPHY_REV3_RFSEQ_CMD_SET_LPF_L_HPC	0xe
-#define NPHY_REV3_RFSEQ_CMD_CLR_RXRX_BIAS	0xf
-#define NPHY_REV3_RFSEQ_CMD_END		0x1f
-
-/* NPHY RSSI_SEL Codes */
-#define NPHY_RSSI_SEL_W1 		0x0
-#define NPHY_RSSI_SEL_W2 		0x1
-#define NPHY_RSSI_SEL_NB 		0x2
-#define NPHY_RSSI_SEL_IQ 		0x3
-#define NPHY_RSSI_SEL_TSSI_2G 		0x4
-#define NPHY_RSSI_SEL_TSSI_5G 		0x5
-#define NPHY_RSSI_SEL_TBD 		0x6
-
-/* NPHY Rail Codes */
-#define NPHY_RAIL_I			0x0
-#define NPHY_RAIL_Q			0x1
-
-/* NPHY fineRx2clockgatecontrol */
-#define NPHY_FORCESIG_DECODEGATEDCLKS	0x8
 
 /*
  * MBSS shared memory address definitions; see MultiBSSUcode Twiki page
@@ -5033,11 +2353,11 @@ typedef struct macstat {
 #define SHM_MBSS_PRQ_WRITE_PTR (0x5F * 2)
 
 typedef struct shm_mbss_prq_entry_s shm_mbss_prq_entry_t;
-struct shm_mbss_prq_entry_s {
+BWL_PRE_PACKED_STRUCT struct shm_mbss_prq_entry_s {
 	struct ether_addr ta;
 	uint8 prq_info[2];
 	uint16 time_stamp;
-} PACKED;
+} BWL_POST_PACKED_STRUCT;
 
 typedef enum shm_mbss_prq_ft_e {
 	SHM_MBSS_PRQ_FT_CCK,
@@ -5060,17 +2380,16 @@ typedef enum shm_mbss_prq_ft_e {
 #define SHM_MBSS_PRQ_ENT_DIR_BSSID(entry) \
 	((((entry)->prq_info[0] >> 6) == 0) || ((entry)->prq_info[0] >> 6) == 2)
 
-#undef PACKED
-#if !defined(__GNUC__)
-#pragma pack()
-#endif
+
+/* This marks the end of a packed structure section. */
+#include <packed_section_end.h>
 
 #define SHM_BYT_CNT	0x2 /* IHR location */
 #define MAX_BYT_CNT	0x600 /* Maximum frame len */
 
-#define M_HOST_WOWLBM	(0x066 * 2) /* Events to be set by driver */
-#define M_WAKEEVENT_IND	(0x067 * 2) /* Event indication by ucode */
-#define M_WOWL_NOBCN	(0x068 * 2) /* loss of bcn value */
+#define M_HOST_WOWLBM	(0x06a * 2) /* Events to be set by driver */
+#define M_WAKEEVENT_IND	(0x06b * 2) /* Event indication by ucode */
+#define M_WOWL_NOBCN	(0x06c * 2) /* loss of bcn value */
 
 /* Event definitions */
 #define WOWL_MAGIC	(1 << 0)	/* Wakeup on Magic packet */
@@ -5106,10 +2425,9 @@ typedef enum shm_mbss_prq_ft_e {
 #define NETPATTERNSIZE	(148) /* 128 value + 16 mask + 4 offset + 4 patternsize */
 #define MAXPATTERNSIZE 128
 #define MAXMASKSIZE	MAXPATTERNSIZE/8
-#define MAXPATTERNS	4
 
 /* Power-save related */
-#define M_AID_NBIT 	(0x064 * 2)	/* The station's AID bit position in AP's TIM bitmap */
+#define M_AID_NBIT 	(0x068 * 2)	/* The station's AID bit position in AP's TIM bitmap */
 #define M_PSP_PCTLWD 	(0x02a * 2)	/* PHYCTL word for the PS-Poll frame */
 #define M_PSP_PCT1LWD 	(0x058 * 2)	/* PHYCTL_1 word for the PS-Poll frame */
 
@@ -5121,10 +2439,10 @@ typedef enum shm_mbss_prq_ft_e {
 #define M_WOWL_SECRXKEYS_PTR	(0x02b * 2)
 #define M_WOWL_TKMICKEYS_PTR	(0x059 * 2)
 
-#define M_WOWL_SECSUITE		(0x065 * 2)	/* Security being used */
+#define M_WOWL_SECSUITE		(0x069 * 2)	/* Security being used */
 
 /* test mode -- wakeup the system after 'x' seconds */
-#define M_WOWL_TEST_CYCLE	(0x069 * 2)	/* Time to wakeup in seconds */
+#define M_WOWL_TEST_CYCLE	(0x06d * 2)	/* Time to wakeup in seconds */
 
 #define M_WOWL_WAKEUP_FRM	(0x468 *2)	/* Frame that woke us up */
 
@@ -5133,13 +2451,24 @@ typedef enum shm_mbss_prq_ft_e {
 #define M_KEYRC_LAST	(0x2a0 * 2)	/* Last good key replay counter */
 #define M_KCK		(0x15a * 2)	/* KCK */
 #define M_KEK		(0x16a * 2)	/* KEK for WEP/TKIP */
-#define M_AESTABLES_PTR	(0x06a * 2)	/* Pointer to AES tables (see below) */
+#define M_AESTABLES_PTR	(0x06e * 2)	/* Pointer to AES tables (see below) */
 #define M_CTX_GTKMSG2	(0x2a4 * 2)	/* Tx descriptor for GTK MSG2 (see below) */
 
 #define EXPANDED_KEY_RNDS 10
 #define EXPANDED_KEY_LEN  176 /* the expanded key from KEK (4*11*4, 16-byte state, 11 rounds) */
 
-/* Orginization of Template ram is as follows
+/* Txcore Mask related parameters 5 locations (BPHY, OFDM, 1-streams ~ 3-Streams) for WOWL
+ * The base address is different than normal ucode(offset is the same)
+ * Refer to above M_COREMASK_BLK definition
+ */
+#define M_COREMASK_BLK_WOWL  	0x3fa
+#define M_COREMASK_BPHY_WOWL	((M_COREMASK_BLK_WOWL + 0) * 2)
+#define M_COREMASK_OFDM_WOWL	((M_COREMASK_BLK_WOWL + 1) * 2)
+#define M_COREMASK_MCS_WOWL	((M_COREMASK_BLK_WOWL + 2) * 2)
+
+#define MHF4_EXTPA_ENABLE  0x4000 /* for 4313A0 FEM boards */
+
+/* Organization of Template RAM is as follows
  *   typedef struct {
  *      uint8 AES_XTIME9DBE[1024];
  *	uint8 AES_INVSBOX[256];
@@ -5183,4 +2512,47 @@ typedef struct {
 /* constant tables required for AES key unwraping for key rotation */
 extern uint16 aes_invsbox[128];
 extern uint16 aes_xtime9dbe[512];
+
+/* Common to ucode/hw agg : WLAMPDU_MAC not defined yet here */
+#if defined(WLAMPDU_UCODE) || defined(WLAMPDU_HW)
+#define M_TXMPDU_CNT		(0x74  * 2)	/* # of total MPDUs in AMPDUs tx'd */
+#define M_TXAMPDU_CNT		(0x7d  * 2)	/* # of total AMPDUs tx'd */
+#define M_RXBA_CNT		(0xaa  * 2)	/* # of rx'ed block acks */
+#endif /* defined(WLAMPDU_UCODE) || defined(WLAMPDU_HW) */
+
+#ifdef WLAMPDU_UCODE
+/* ucode assisted AMPDU aggregation */
+#define TOT_TXFS_WSIZE		50		/* totally 50 entries */
+#define M_TXFS_BLKS		(0x36C * 2)	/* Start of side channel, len = 264 bytes */
+#define M_TXFS_INTF_BLKS	(0x39E * 2)	/* Start of side channel descriptors.  One 10 
+						 * byte descriptor for each of the 4 channels
+						 */
+#define C_TXFS_SIZE		10		/* Each descriptor is 10 bytes */
+#define C_TXFS_STRT_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 0) /* start */
+#define C_TXFS_END_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 2) /* end */
+#define C_TXFS_WPTR_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 4) /* driver updates */
+#define C_TXFS_RPTR_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 6) /* ucode updates */
+#define C_TXFS_RNUM_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 8) /* For ucode debugging */
+
+#define MPDU_LEN_SHIFT		0
+#define MPDU_LEN_MASK		(0xfff << MPDU_LEN_SHIFT)	/* Bits 0 - 11 */
+#define MPDU_EPOCH_SHIFT	14
+#define MPDU_EPOCH_MASK		(0x1 << MPDU_EPOCH_SHIFT)	/* Bit 14 */
+#define MPDU_DEBUG_SHIFT	15
+#define MPDU_DEBUG_MASK		(0x1 << MPDU_DEBUG_SHIFT)	/* Bit 15 */
+#endif /* WLAMPDU_UCODE */
+
+#ifdef WLAMPDU_HW
+#define AGGFIFO_CAP		64
+#define MPDU_LEN_SHIFT		0
+#define MPDU_LEN_MASK		(0xfff << MPDU_LEN_SHIFT)	/* Bits 0 - 11 */
+#define MPDU_EPOCH_HW_SHIFT	12
+#define MPDU_EPOCH_HW_MASK	(0x1 << MPDU_EPOCH_HW_SHIFT)	/* Bit 12 */
+#define MPDU_RSVD_SHIFT		13
+#define MPDU_RSVD_MASK		(0x7 << MPDU_RSVD_SHIFT)	/* Bit 13-15 */
+#define MPDU_FIFOSEL_SHIFT	16
+#define MPDU_FIFOSEL_MASK	(0x3 << MPDU_FIFOSEL_SHIFT)	/* Bit 16-17 */
+#define M_AMU_MPDU_PTR          (0x69 * 2)
+#endif /* WLAMPDU_HW */
+
 #endif	/* _D11_H */

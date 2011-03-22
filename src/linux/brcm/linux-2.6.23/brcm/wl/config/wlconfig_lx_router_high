@@ -1,6 +1,6 @@
 # Broadcom 802.11abg Networking Device Driver Configuration file
 #
-# Copyright (C) 2008, Broadcom Corporation
+# Copyright (C) 2009, Broadcom Corporation
 # All Rights Reserved.
 # 
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -8,8 +8,53 @@
 # SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 # FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 #
-# $Id: wlconfig_lx_router_high,v 1.1.2.1 2008/04/28 23:22:00 Exp $
+# $Id: wlconfig_lx_router_high,v 1.7.24.20 2010/08/10 02:17:50 Exp $
 #
 # src/wl/linux driver config file
 
-include $(WLCFGDIR)/wlconfig_lx_wl_high
+# get common 
+include $(WLCFGDIR)/wl_default
+include $(WLCFGDIR)/wl_hnd
+
+# features
+include $(WLCFGDIR)/wlconfig_apdef
+include $(WLCFGDIR)/wlconfig_lx_wl_stadef
+
+OSLLX=1
+
+# BMAC split
+WL_HIGH=1
+WL_LOW=0
+BCMDBUS=1
+# No copy config
+RPC_NOCOPY=1
+# One copy config
+#RPC_RXNOCOPY=1
+#BMAC_ENABLE_LINUX_HOST_RPCAGG=1
+#RPC_TOC=1
+#DBUS_LINUX_RXDPC=1
+BCMDMA32=1
+#BCM_RPC_TP_DBUS_NTXQ=100
+#BCM_RPC_TP_DBUS_NRXQ=300
+BCM_RPC_TP_DBUS_NTXQ=80
+BCM_RPC_TP_DBUS_NRXQ=200
+
+# Embed 43236 image
+EMBED_IMAGE_43236a0=1
+EMBED_IMAGE_43236b0=1
+BCM_DNGL_EMBEDIMAGE=1
+DNGL_WD_KEEP_ALIVE=1
+
+USBAP=1
+WLLED=1
+WLPIO=0
+WLTUNEFILE=wltunable_rte_43236_bmac_usbap.h
+BTC2WIRE=0
+BCMECICOEX=0
+WL_AP_TPC=1
+SMF_STATS=1
+PHYMON=1
+BCM_DCS=1
+
+# Overrides
+WLEXTLOG=0

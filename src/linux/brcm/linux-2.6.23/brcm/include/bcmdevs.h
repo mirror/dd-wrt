@@ -99,10 +99,6 @@
 #define BCM43222_D11N5G_ID	0x4352		/* 43222 802.11n 5GHz device */
 #define BCM43224_D11N_ID	0x4353		/* 43224 802.11n dualband device */
 #define BCM43224_D11N_ID_VEN1	0x0576		/* Vendor specific 43224 802.11n db device */
-#define BCM43224_D11N2G_ID	0x4354		/* 43224 802.11n 2.4GHz device */
-#define BCM43224_D11N5G_ID	0x4355		/* 43224 802.11n 5GHz device */
-
-
 #define BCM43226_D11N_ID	0x4354		/* 43226 802.11n dualband device */
 #define BCM43236_D11N_ID	0x4346		/* 43236 802.11n dualband device */
 #define BCM43236_D11N2G_ID	0x4347		/* 43236 802.11n 2.4GHz device */
@@ -256,11 +252,9 @@
 #define PCIXX21_FLASHMEDIA0_ID	0x8033		/* TI PCI xx21 Standard Host Controller */
 #define PCIXX21_SDIOH0_ID	0x8034		/* TI PCI xx21 Standard Host Controller */
 
-
 /* boardflags */
 #define	BFL_BTC2WIRE		0x00000001  /* old 2wire Bluetooth coexistence, OBSOLETE */
 #define BFL_BTCOEX      0x00000001      /* Board supports BTCOEX */
-#define BFL_BTCOEXIST      0x00000001      /* Board supports BTCOEX */
 #define	BFL_PACTRL		0x00000002  /* Board has gpio 9 controlling the PA */
 #define	BFL_AIRLINEMODE		0x00000004  /* Board implements gpio 13 radio disable indication */
 #define	BFL_ADCDIV		0x00000008  /* Board has the rssi ADC divider */
@@ -276,7 +270,6 @@
 #define BFL_FEM			0x00000800  /* Board supports the Front End Module */
 #define BFL_EXTLNA		0x00001000  /* Board has an external LNA in 2.4GHz band */
 #define BFL_HGPA		0x00002000  /* Board has a high gain PA */
-#define	BFL_BTCMOD		0x00004000  /* Board's BTCOEXIST is in the alternate gpios */
 #define	BFL_BTC2WIRE_ALTGPIO	0x00004000  /* Board's BTC 2wire is in the alternate gpios */
 #define	BFL_ALTIQ		0x00008000  /* Alternate I/Q settings */
 #define BFL_NOPA		0x00010000  /* Board has no PA */
@@ -626,43 +619,5 @@
 
 /* # of GPIO pins */
 #define GPIO_NUMPINS		32
-
-/* radio ID codes */
-#define	NORADIO_ID		0xe4f5
-#define	NORADIO_IDCODE		0x4e4f5246
-
-#define	BCM2050_ID		0x2050
-#define	BCM2050_IDCODE		0x02050000
-#define	BCM2050A0_IDCODE	0x1205017f
-#define	BCM2050A1_IDCODE	0x2205017f
-#define	BCM2050R8_IDCODE	0x8205017f
-
-#define BCM2055_ID		0x2055
-#define BCM2055_IDCODE		0x02055000
-#define BCM2055A0_IDCODE	0x1205517f
-
-#define BCM2056_ID		0x2056
-#define BCM2056_IDCODE		0x02056000
-#define BCM2056A0_IDCODE	0x1205517f
-
-#define	BCM2060_ID		0x2060
-#define	BCM2060_IDCODE		0x02060000
-#define	BCM2060WW_IDCODE	0x1206017f
-
-#define BCM2062_ID		0x2062
-#define BCM2062_IDCODE		0x02062000
-#define BCM2062A0_IDCODE	0x0206217f
-
-#define BCM2063_ID		0x2063
-#define BCM2063_IDCODE		0x02063000
-#define BCM2063A0_IDCODE	0x0206317f
-
-/* parts of an idcode: */
-#define	IDCODE_MFG_MASK		0x00000fff
-#define	IDCODE_MFG_SHIFT	0
-#define	IDCODE_ID_MASK		0x0ffff000
-#define	IDCODE_ID_SHIFT		12
-#define	IDCODE_REV_MASK		0xf0000000
-#define	IDCODE_REV_SHIFT	28
 
 #endif /* _BCMDEVS_H */

@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment for standalone MIPS programs.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: mipsinc.h,v 13.23.2.2 2008/10/02 23:01:09 Exp $
+ * $Id: mipsinc.h,v 13.26 2008/10/07 01:15:49 Exp $
  */
 
 #ifndef	_MISPINC_H
@@ -410,11 +410,6 @@ symbol:		.frame	sp, 0, ra
 		 (PRID_COMP_BROADCOM | PRID_IMP_BCM3302)) || \
 		((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
 		 (PRID_COMP_BROADCOM | PRID_IMP_BCM3303)))
-
-
-#define BCM4710(id) \
-		(((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
-		 (PRID_COMP_BROADCOM | PRID_IMP_BCM4710)))
 
 #define MIPS74K(id) \
 		(((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \

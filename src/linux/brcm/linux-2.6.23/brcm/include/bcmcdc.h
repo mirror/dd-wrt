@@ -4,7 +4,7 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -12,8 +12,10 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: bcmcdc.h,v 13.14 2007/11/21 02:07:16 Exp $
+ * $Id: bcmcdc.h,v 13.23.18.1 2009/08/28 09:30:12 Exp $
  */
+#ifndef _bcmcdc_h_
+#define	_bcmcdc_h_
 #include <proto/ethernet.h>
 
 typedef struct cdc_ioctl {
@@ -36,11 +38,18 @@ typedef struct cdc_ioctl {
 /* CDC flag definitions */
 #define CDCF_IOC_ERROR		0x01	/* 0=success, 1=ioctl cmd failed */
 #define CDCF_IOC_SET		0x02	/* 0=get, 1=set cmd */
+#define CDCF_IOC_IF_MASK	0xF000	/* I/F index */
+#define CDCF_IOC_IF_SHIFT	12
 #define CDCF_IOC_ID_MASK	0xFFFF0000	/* used to uniquely id an ioctl req/resp pairing */
 #define CDCF_IOC_ID_SHIFT	16		/* # of bits of shift for ID Mask */
 
-/* Convenient extraction of message ID */
+#define CDC_IOC_IF_IDX(flags)	(((flags) & CDCF_IOC_IF_MASK) >> CDCF_IOC_IF_SHIFT)
 #define CDC_IOC_ID(flags)	(((flags) & CDCF_IOC_ID_MASK) >> CDCF_IOC_ID_SHIFT)
+
+#define CDC_GET_IF_IDX(hdr) \
+	((int)((((hdr)->flags) & CDCF_IOC_IF_MASK) >> CDCF_IOC_IF_SHIFT))
+#define CDC_SET_IF_IDX(hdr, idx) \
+	((hdr)->flags = (((hdr)->flags & ~CDCF_IOC_IF_MASK) | ((idx) << CDCF_IOC_IF_SHIFT)))
 
 /*
  * BDC header
@@ -50,20 +59,31 @@ typedef struct cdc_ioctl {
 
 #define	BDC_HEADER_LEN		4
 
-#define BDC_PROTO_VER		1	/* Protocol version */
+#define BDC_PROTO_VER		2	/* Protocol version */
 
 #define BDC_FLAG_VER_MASK	0xf0	/* Protocol version mask */
 #define BDC_FLAG_VER_SHIFT	4	/* Protocol version shift */
 
-#define BDC_FLAG_SUM_NEEDED	0x08	/* Dongle needs to do TX checksums */
-#define BDC_FLAG_SUM_GOOD	0x04	/* Dongle has verified good RX checksums */
-
 #define BDC_FLAG__UNUSED	0x03	/* Unassigned */
+#define BDC_FLAG_SUM_GOOD	0x04	/* Dongle has verified good RX checksums */
+#define BDC_FLAG_SUM_NEEDED	0x08	/* Dongle needs to do TX checksums */
 
 #define BDC_PRIORITY_MASK	0x7
+
+#define BDC_FLAG2_IF_MASK	0x0f	/* APSTA: interface on which the packet was received */
+#define BDC_FLAG2_IF_SHIFT	0
+
+#define BDC_GET_IF_IDX(hdr) \
+	((int)((((hdr)->flags2) & BDC_FLAG2_IF_MASK) >> BDC_FLAG2_IF_SHIFT))
+#define BDC_SET_IF_IDX(hdr, idx) \
+	((hdr)->flags2 = (((hdr)->flags2 & ~BDC_FLAG2_IF_MASK) | ((idx) << BDC_FLAG2_IF_SHIFT)))
 
 struct bdc_header {
 	uint8	flags;			/* Flags */
 	uint8	priority;		/* 802.1d Priority (low 3 bits) */
-	uint8	pad[2];
+	uint8	flags2;
+	uint8	dataOffset;		/* Data Offset in 4-byte words */
 };
+
+#define BDC_PROTO_VER_1		1	/* Old Protocol version */
+#endif /* _bcmcdc_h_ */

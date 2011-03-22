@@ -3,7 +3,7 @@
  *
  * Used by both cfe and shared/boot.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -11,7 +11,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sisdram.S,v 1.3.2.3.8.2 2008/11/11 04:31:47 Exp $
+ * $Id: sisdram.S,v 1.8 2008/12/04 01:08:42 Exp $
  */
 
 #include "mipsinc.h"
@@ -20,12 +20,36 @@
 #include "bcmdevs.h"
 
 
-/* Debug macro - write a number to memory - use it with caution,
+/* Debug macro - write a number to a chipc reg - use it with caution,
  *  it changes k0 and k1 registers.
  */
+#ifdef	BCMDBG
+#if	defined(IL_BIGENDIAN) && defined(BCMHND74K)
+#define	FLADDR_OFF	0
+#define	FLDATA_OFF	12
+#else
+#define	FLADDR_OFF	4
+#define	FLDATA_OFF	8
+#endif
+
+#define TRACEINIT(x) \
+	li	k0,KSEG1ADDR(0x18000040); \
+	li	k1,x; \
+	sw	k1,FLADDR_OFF(k0)
+	
+#define TRACE(x) \
+	li	k1,x; \
+	sw	k1,FLADDR_OFF(k0)
+
+#define TRACE2(x) \
+	li	k1,x; \
+	sw	k1,FLDATA_OFF(k0)
+
+#else
 #define TRACEINIT(x)
 #define TRACE(x)
 #define TRACE2(x)
+#endif	/* BCMDBG */
 
 	/*
 	 * This file exists because board_draminit is an entry point for cfe as well

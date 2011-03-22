@@ -1,5 +1,5 @@
 # BCM94333U board
-# Copyright (C) 2008, Broadcom Corporation
+# Copyright (C) 2009, Broadcom Corporation
 # All Rights Reserved.
 # 
 # This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -8,7 +8,6 @@
 # written permission of Broadcom Corporation.
 # $Id: bcm94333u.txt,v 1.3 2004/12/15 21:09:27 Exp $
 
-# XXX For all practical purposes
 boardtype=bcm94710ap
 boardnum=${serno}
 

@@ -634,6 +634,10 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 	}
 
 
+#ifdef BCMDBG
+	/* clear any previous epidiag-induced target abort */
+	si_taclear(sih, FALSE);
+#endif	/* BCMDBG */
 
 	return (sii);
 
@@ -1128,13 +1132,6 @@ si_core_reset(si_t *sih, uint32 bits, uint32 resetbits)
 		ub_core_reset(sih, bits, resetbits);
 }
 
-void
-si_core_tofixup(si_t *sih)
-{
-	if (CHIPTYPE(sih->socitype) == SOCI_SB)
-		sb_core_tofixup(sih);
-}
-
 /* Run bist on current core. Caller needs to take care of core-specific bist hazards */
 int
 si_corebist(si_t *sih)
@@ -1357,7 +1354,7 @@ si_watchdog_ms(si_t *sih, uint32 ms)
 }
 #endif
 
-#if defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
+#if defined(BCMDBG_ERR) || defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
 bool
 si_taclear(si_t *sih, bool details)
 {
@@ -1552,7 +1549,7 @@ BCMINITFN(si_corepciid)(si_t *sih, uint func, uint16 *pcivendor, uint16 *pcidevi
 	return 0;
 }
 
-#if defined(BCMDBG_DUMP)
+#if defined(BCMDBG) || defined(BCMDBG_DUMP)
 /* print interesting sbconfig registers */
 void
 si_dumpregs(si_t *sih, struct bcmstrbuf *b)
@@ -1576,8 +1573,43 @@ si_dumpregs(si_t *sih, struct bcmstrbuf *b)
 	si_setcoreidx(sih, origidx);
 	INTR_RESTORE(sii, intr_val);
 }
-#endif	
+#endif	/* BCMDBG || BCMDBG_DUMP */
 
+#ifdef BCMDBG
+void
+si_view(si_t *sih, bool verbose)
+{
+	if (CHIPTYPE(sih->socitype) == SOCI_SB)
+		sb_view(sih, verbose);
+	else if (CHIPTYPE(sih->socitype) == SOCI_AI)
+		ai_view(sih, verbose);
+	else if (CHIPTYPE(sih->socitype) == SOCI_UBUS)
+		ub_view(sih, verbose);
+	else
+		ASSERT(0);
+}
+
+void
+si_viewall(si_t *sih, bool verbose)
+{
+	si_info_t *sii;
+	uint curidx, i;
+	uint intr_val = 0;
+
+	sii = SI_INFO(sih);
+	curidx = sii->curidx;
+
+	SI_ERROR(("sb_viewall: num_cores %d\n", sii->numcores));
+	for (i = 0; i < sii->numcores; i++) {
+		INTR_OFF(sii, intr_val);
+		si_setcoreidx(sih, i);
+		si_view(sih, verbose);
+		INTR_RESTORE(sii, intr_val);
+	}
+
+	si_setcoreidx(sih, curidx);
+}
+#endif	/* BCMDBG */
 
 /* return the slow clock source - LPO, XTAL, or PCI */
 static uint
@@ -2198,24 +2230,6 @@ BCMINITFN(si_pci_up)(si_t *sih)
 	}
 }
 
-/* Disable pcie_war_ovr for some platforms (sigh!)
- * This is for boards that have BFL2_PCIEWAR_OVR set
- * but are in systems that still want the benefits of ASPM
- * Note that this should be done AFTER si_doattach
- */
-void
-si_pcie_war_ovr_disable(si_t *sih)
-{
-	si_info_t *sii;
-
-	sii = SI_INFO(sih);
-
-	if (!PCIE(sii))
-		return;
-
-	pcie_war_ovr_aspm_disable(sii->pch);
-}
-
 /* Unconfigure and/or apply various WARs when system is going to sleep mode */
 void
 BCMUNINITFN(si_pci_sleep)(si_t *sih)
@@ -2416,6 +2430,10 @@ si_dump(si_t *sih, struct bcmstrbuf *b)
 	bcm_bprintf(b, "ccrev %d buscoretype 0x%x buscorerev %d curidx %d\n",
 	            sih->ccrev, sih->buscoretype, sih->buscorerev, sii->curidx);
 
+#ifdef	BCMDBG
+	if ((BUSTYPE(sih->bustype) == PCI_BUS) && (sii->pch))
+		pcicore_dump(sii->pch, b);
+#endif
 
 	bcm_bprintf(b, "cores:  ");
 	for (i = 0; i < sii->numcores; i++)
@@ -2851,6 +2869,19 @@ BCMINITFN(si_gpio_handler_register)(si_t *sih, uint32 event,
 	gi->next = sii->gpioh_head;
 	sii->gpioh_head = gi;
 
+#ifdef BCMDBG_ERR
+	{
+		gpioh_item_t *h = sii->gpioh_head;
+		int cnt = 0;
+
+		for (; h; h = h->next) {
+			cnt++;
+			SI_ERROR(("gpiohdler=%p cb=%p event=0x%x\n",
+				h, h->handler, h->event));
+		}
+		SI_ERROR(("gpiohdler total=%d\n", cnt));
+	}
+#endif
 	return (void *)(gi);
 }
 
@@ -2883,6 +2914,19 @@ BCMINITFN(si_gpio_handler_unregister)(si_t *sih, void *gpioh)
 		}
 	}
 
+#ifdef BCMDBG_ERR
+	{
+		gpioh_item_t *h = sii->gpioh_head;
+		int cnt = 0;
+
+		for (; h; h = h->next) {
+			cnt++;
+			SI_ERROR(("gpiohdler=%p cb=%p event=0x%x\n",
+				h, h->handler, h->event));
+		}
+		SI_ERROR(("gpiohdler total=%d\n", cnt));
+	}
+#endif
 	ASSERT(0); /* Not found in list */
 }
 
@@ -3416,7 +3460,7 @@ si_otp_power(si_t *sih, bool on)
 }
 
 bool
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 si_is_sprom_enabled(si_t *sih)
 #else
 BCMATTACHFN(si_is_sprom_enabled)(si_t *sih)
@@ -3428,7 +3472,7 @@ BCMATTACHFN(si_is_sprom_enabled)(si_t *sih)
 }
 
 void
-#if defined(WLTEST)
+#if defined(BCMDBG) || defined(WLTEST)
 si_sprom_enable(si_t *sih, bool enable)
 #else
 BCMATTACHFN(si_sprom_enable)(si_t *sih, bool enable)
@@ -3494,109 +3538,4 @@ si_cis_source(si_t *sih)
 		return CIS_DEFAULT;
 
 	}
-}
-void
-osi_4329_tweak(si_t *sih, uint32 mask, uint32 val)
-{
-	si_info_t *sii;
-	chipcregs_t *cc;
-	uint origidx;
-	uint32 temp;
-
-	sii = SI_INFO(sih);
-
-	origidx = sii->curidx;
-	ASSERT(GOODIDX(origidx));
-
-	cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0);
-
-	W_REG(sii->osh, &cc->chipcontrol_addr, 0);
-	temp = R_REG(sii->osh, &cc->chipcontrol_data);
-	temp = temp & ~mask;
-	temp = temp | val;
-	W_REG(sii->osh, &cc->chipcontrol_data, temp);
-
-	si_setcoreidx(sih, origidx);
-}
-
-void
-si_4329_pmu_voltage(si_t *sih)
-{
-	si_info_t *sii;
-	chipcregs_t *cc;
-	uint origidx;
-	uint32 temp;
-	/* Function For CHANGING CBUCK,CLDO,LNLDO1 Voltages To Same As BT */
-	sii = SI_INFO(sih);
-	origidx = sii->curidx;
-	ASSERT(GOODIDX(origidx));
-	cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0);
-
-	W_REG(sii->osh, &cc->regcontrol_addr, 3);
-	temp = R_REG(sii->osh, &cc->regcontrol_data);
-	temp = temp | 0x04200000;
-	W_REG(sii->osh, &cc->regcontrol_data, temp);
-
-	W_REG(sii->osh, &cc->regcontrol_addr, 5);
-	temp = R_REG(sii->osh, &cc->regcontrol_data);
-	temp = temp | 0x0003fe00;
-	W_REG(sii->osh, &cc->regcontrol_data, temp);
-	si_setcoreidx(sih, origidx);
-}
-
-void
-si_4329_vbatmeas_on(si_t *sih, uint32 *save_reg0, uint32 *save_reg5)
-{
-	si_info_t *sii;
-	chipcregs_t *cc;
-	uint origidx;
-	uint32 temp;
-
-	return;
-
-	sii = SI_INFO(sih);
-
-	origidx = sii->curidx;
-	ASSERT(GOODIDX(origidx));
-
-	cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0);
-
-	W_REG(sii->osh, &cc->regcontrol_addr, 0);
-	temp = R_REG(sii->osh, &cc->regcontrol_data);
-	*save_reg0 = temp;
-	temp = temp | 0x00000001;
-	W_REG(sii->osh, &cc->regcontrol_data, temp);
-
-	W_REG(sii->osh, &cc->regcontrol_addr, 5);
-	temp = R_REG(sii->osh, &cc->regcontrol_data);
-	*save_reg5 = temp;
-	temp = temp | 0x80000000;
-	W_REG(sii->osh, &cc->regcontrol_data, temp);
-
-	si_setcoreidx(sih, origidx);
-}
-
-void
-si_4329_vbatmeas_off(si_t *sih, uint32 save_reg0, uint32 save_reg5)
-{
-	si_info_t *sii;
-	chipcregs_t *cc;
-	uint origidx;
-
-	return;
-
-	sii = SI_INFO(sih);
-
-	origidx = sii->curidx;
-	ASSERT(GOODIDX(origidx));
-
-	cc = (chipcregs_t *)si_setcore(sih, CC_CORE_ID, 0);
-
-	W_REG(sii->osh, &cc->regcontrol_addr, 0);
-	W_REG(sii->osh, &cc->regcontrol_data, save_reg0);
-
-	W_REG(sii->osh, &cc->regcontrol_addr, 5);
-	W_REG(sii->osh, &cc->regcontrol_data, save_reg5);
-
-	si_setcoreidx(sih, origidx);
 }

@@ -1,7 +1,7 @@
 /*
  * BCM43XX Sonics SiliconBackplane ARM core routines
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndarm.c,v 1.52.2.4 2008/08/27 02:01:19 Exp $
+ * $Id: hndarm.c,v 1.63.20.2 2010/04/30 01:55:16 Exp $
  */
 
 #include <typedefs.h>
@@ -188,8 +188,10 @@ BCMATTACHFN(si_arm_init)(si_t *sih)
 	if (sr != NULL) {
 		uint32 bank;
 		uint32 rev;
+		uint32 port_type;
 
 		bank = (R_REG(osh, &sr->coreinfo) & SRCI_SRNB_MASK) >> SRCI_SRNB_SHIFT;
+		port_type = (R_REG(osh, &sr->coreinfo) & SRCI_PT_MASK) >> SRCI_PT_SHIFT;
 		ASSERT(bank);
 
 		/* SOCRAM standby is disabled by default in corerev >= 4 so
@@ -198,7 +200,7 @@ BCMATTACHFN(si_arm_init)(si_t *sih)
 		 * "ramstbydis" with non-zero value to use hardware default.
 		 */
 		rev = si_corerev(sih);
-		if (rev >= 5) {
+		if ((rev >= 5) || (rev == 4 && (port_type == SRCI_PT_CM3AHB_OCP))) {
 			if (getintvar(NULL, "ramstbydis") == 0) {
 				uint32 ctlval = ISSIM_ENAB(sih) ? 8 : 0x17fff;
 				while (bank--) {
@@ -226,11 +228,26 @@ BCMATTACHFN(si_arm_init)(si_t *sih)
 	ASSERT(hndarm_armr);
 	hndarm_rev = si_corerev(sih);
 
+#if defined(__ARM_ARCH_7M__)
+
+	/* Make CM3 Not Sleeping clk req to be HT. 	*/
+	/* In simpler words: 				*/
+	/* CM3 does not request for HT by default 	*/
+	/* But the dongle code almost assume e.g., OSL_DELAY */
+	/* that we are running on HT clk		*/
+	/* and so we set the CM3 to request HT when it is not sleeping */
+
+
+	OR_REG(osh, ARMREG(hndarm_armr, corecontrol), (1 << ACC_NOTSLEEPINGCLKREQ_SHIFT));
+
+#endif	/* __ARM_ARCH_7M__ */
+
 	/* Now that it's safe, allow ARM to request HT */
 	W_REG(osh, ARMREG(hndarm_armr, clk_ctl_st), 0);
 	SPINWAIT(((R_REG(osh, ARMREG(hndarm_armr, clk_ctl_st)) & CCS_HTAVAIL) == 0),
 	         PMU_MAX_TRANSITION_DLY);
-	/* ASSERT(R_REG(osh, ARMREG(hndarm_armr, clk_ctl_st)) & CCS_HTAVAIL); */
+	/* Need to assert if HT is not available by now */
+	ASSERT(R_REG(osh, ARMREG(hndarm_armr, clk_ctl_st)) & CCS_HTAVAIL);
 
 	/* Initialize CPU sleep/wait mechanism */
 #if defined(__ARM_ARCH_4T__)
@@ -272,16 +289,30 @@ BCMATTACHFN(si_arm_init)(si_t *sih)
 
 #elif defined(__ARM_ARCH_7M__)
 	switch (CHIPID(sih->chip)) {
+	case BCM4329_CHIP_ID:
+		si_setirq(sih, ARMCM3_SHARED_INT, CC_CORE_ID, 0);
+		si_setirq(sih, ARMCM3_SHARED_INT, D11_CORE_ID, 0);
+		si_setirq(sih, ARMCM3_SHARED_INT, SDIOD_CORE_ID, 0);
+		break;
+	case BCM4319_CHIP_ID:
+		si_setirq(sih, ARMCM3_SHARED_INT, CC_CORE_ID, 0);
+		si_setirq(sih, ARMCM3_SHARED_INT, D11_CORE_ID, 0);
+		si_setirq(sih, ARMCM3_SHARED_INT, SDIOD_CORE_ID, 0);
+		si_setirq(sih, ARMCM3_SHARED_INT, USB20D_CORE_ID, 0);
+		break;
 	case BCM4322_CHIP_ID:
-	case BCM43221_CHIP_ID:
-	case BCM43231_CHIP_ID:
+	case BCM43221_CHIP_ID:	case BCM43231_CHIP_ID:	case BCM4342_CHIP_ID:
+	case BCM43236_CHIP_ID:	case BCM43235_CHIP_ID:	case BCM43238_CHIP_ID:
 		si_setirq(sih, ARMCM3_SHARED_INT, CC_CORE_ID, 0);
 		si_setirq(sih, ARMCM3_SHARED_INT, D11_CORE_ID, 0);
 		si_setirq(sih, ARMCM3_SHARED_INT, USB20D_CORE_ID, 0);
 		break;
 	default:
+		/* fix interrupt for the new chips! */
+		ASSERT(0);
 		break;
 	}
+
 #endif	/* ARM */
 
 	/* Enable reset & error loggings */

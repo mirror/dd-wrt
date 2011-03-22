@@ -2,7 +2,7 @@
  * RPC OSL linux port
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: linux_rpc_osl.c,v 1.5.2.2 2008/06/07 00:30:24 Exp $
+ * $Id: linux_rpc_osl.c,v 1.7.40.1 2010/08/11 06:57:55 Exp $
  */
 #if (!defined(WLC_HIGH) && !defined(WLC_LOW))
 #error "SPLIT"
@@ -75,9 +75,11 @@ rpc_osl_wait(rpc_osl_t *rpc_osh, uint ms, bool *ptimedout)
 	ret = wait_event_interruptible_timeout(rpc_osh->wait, rpc_osh->wakeup == FALSE, j);
 
 	/* 0 ret => timeout */
-	if (ret == 0)
+	if (ret == 0) {
 		if (ptimedout)
 			*ptimedout = TRUE;
+	} else if (ret < 0)
+		return ret;
 
 	RPC_OSL_LOCK(rpc_osh);
 	/* set the flag to be ready for next return  */

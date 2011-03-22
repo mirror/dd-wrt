@@ -39,24 +39,24 @@
 #include <sbsdpcmdev.h>
 #endif 
 
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 #include <sbsprom.h>
 #endif /* WLTEST */
 #include <proto/ethernet.h>	/* for sprom content groking */
 
 /* debug/trace */
-#if defined(WLTEST)
+#if defined(BCMDBG_ERR) || defined(WLTEST)
 #define	BS_ERROR(args)	printf args
 #else
 #define	BS_ERROR(args)
-#endif	
+#endif	/* BCMDBG_ERR || WLTEST */
 
 #define SROM_OFFSET(sih)  ((sih->ccrev > 31) ? \
 	(((sih->cccaps & CC_CAP_SROM) == 0) ? NULL : \
 	 ((uint8 *)curmap + PCI_16KB0_CCREGS_OFFSET + CC_SROM_OTP)) : \
 	((uint8 *)curmap + PCI_BAR0_SPROM_OFFSET))
 
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 #define WRITE_ENABLE_DELAY	500	/* 500 ms after write enable/disable toggle */
 #define WRITE_WORD_DELAY	20	/* 20 ms between each word write */
 #endif 
@@ -84,7 +84,7 @@ static int initvars_cis_spi(osl_t *osh, char **vars, uint *count);
 #endif /* BCMSPI */
 static int sprom_cmd_pcmcia(osl_t *osh, uint8 cmd);
 static int sprom_read_pcmcia(osl_t *osh, uint16 addr, uint16 *data);
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 static int sprom_write_pcmcia(osl_t *osh, uint16 addr, uint16 data);
 #endif 
 static int sprom_read_pci(osl_t *osh, si_t *sih, uint16 *sprom, uint wordoff, uint16 *buf,
@@ -101,7 +101,7 @@ static int initvars_flash(si_t *sih, osl_t *osh, char **vp, uint len);
 #if defined(BCMUSBDEV)
 static int get_si_pcmcia_srom(si_t *sih, osl_t *osh, uint8 *pcmregs,
                               uint boff, uint16 *srom, uint bsz, bool check_crc);
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 static int set_si_pcmcia_srom(si_t *sih, osl_t *osh, uint8 *pcmregs,
                               uint boff, uint16 *srom, uint bsz);
 #endif 
@@ -804,7 +804,7 @@ srom_read(si_t *sih, uint bustype, void *curmap, osl_t *osh,
 	return 0;
 }
 
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 /* support only 16-bit word write into srom */
 int
 srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
@@ -1058,7 +1058,7 @@ srom_read_si_pcmcia(osl_t *osh, uint8 *pcmregs, uint16 addr, uint16 *data)
 	return 0;
 }
 
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 /* write a word to the PCMCIA srom over SI */
 static int
 srom_write_si_pcmcia(osl_t *osh, uint8 *pcmregs, uint16 addr, uint16 data)
@@ -1149,7 +1149,7 @@ out:
 	return err;
 }
 
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 /*
  * Write the srom for the pcmcia-srom over si case.
  * Return 0 on success, nonzero on error.
@@ -2189,7 +2189,7 @@ sprom_read_pcmcia(osl_t *osh, uint16 addr, uint16 *data)
 	return 0;
 }
 
-#if defined(WLTEST) || defined(DHD_SPROM)
+#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 /* write a word to the PCMCIA srom */
 static int
 sprom_write_pcmcia(osl_t *osh, uint16 addr, uint16 data)
@@ -2368,7 +2368,7 @@ otp_read_pci(osl_t *osh, si_t *sih, uint16 *buf, uint bufsz)
 }
 #endif /* defined(BCMNVRAMW) || defined(BCMNVRAMR) */
 
-#if defined(WLTEST)
+#if defined(WLTEST) || defined(BCMDBG)
 int
 srom_otp_write_region_crc(si_t *sih, uint nbytes, uint16* buf16, bool write)
 {

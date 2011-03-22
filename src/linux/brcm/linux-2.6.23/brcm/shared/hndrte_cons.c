@@ -1,7 +1,7 @@
 /*
  * Console support for hndrte.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte_cons.c,v 1.62.2.1 2008/05/05 01:02:15 Exp $
+ * $Id: hndrte_cons.c,v 1.77 2009/05/25 07:53:21 Exp $
  */
 
 #include <typedefs.h>
@@ -21,89 +21,79 @@
 #include <sbchipc.h>
 #include <hndchipc.h>
 #include <bcmdevs.h>
+#include <bcmsdpcm.h>
+#include <hndrte_cons.h>
 
-#define	VIRTUAL_UART	((serial_dev_t *)0xffffffff)
+#if defined(RWL_DONGLE) || defined(UART_REFLECTOR)
 
-#define CBUF_LEN	(128)
+#include <bcmcdc.h>
+#include <rwl_shared.h>
+#define REMOTE_REPLY 4
+#define DATA_FRAG_LEN 960
+#define REMOTE_SET_CMD 1
+#define REMOTE_GET_CMD 2
 
-#ifdef	BCMDBG
-#define LOG_BUF_LEN	(16 * 1024)
+extern hndrte_dev_t bcmwl;
+typedef struct remote_ioctl {
+	cdc_ioctl_t 	msg;
+	uint		data_len;
+} rem_ioctl_t;
+
+#define REMOTE_SIZE sizeof(rem_ioctl_t)
+#define RWL_HEADER_END		5		/* CDC header ends after 5 spaces */
+
+static char rwl_buf[RWL_MAX_DATA_LEN];
+static uint rwl_data_count;
+static uint rwl_space_count;
+
+static void remote_cmd_function(uint32 arg, uint argc, char *argv[]);
+static void remote_uart_tx_packet(uchar* res_buf, int len);
+void remote_uart_tx(uchar *buf);
+
+/* Globals */
+rwl_dongle_packet_t g_rwl_dongle_data;
+
+#endif  /* RWL_DONGLE || UART_REFLECTOR */
+#ifdef RWL_DONGLE
+extern int g_rwl_dongle_flag;
 #else
-#define LOG_BUF_LEN	(1024)
+int g_rwl_dongle_flag = 0;
 #endif
-#define LOG_BUF_MASK	(LOG_BUF_LEN-1)
 
-typedef struct _ccmd {
-	char		*name;
-	cons_fun_t	fun;
-	uint32		arg;
-	struct _ccmd	*next;
-} ccmd_t;
+/* Moved this out of RWL_DONGLE to make certain functions ROMable */
+static void remote_reset_buffers(void);
 
 typedef struct _serial_struct {
-	int	baud_base;
-	int	irq;
+	int		baud_base;
+	int		irq;
 	unsigned char	*reg_base;
 	unsigned short	reg_shift;
 } serial_dev_t;
 
-/* Console description. */
-typedef struct _cons_state {
-	/* Virtual (SHM) uart control */
-	volatile uint	vcons_in;
-	volatile uint	vcons_out;
-
-	/* For QT scripting through dhd */
-	char   *log_buf_addr;
-	uint	log_buf_size;
-
-	/* Output (logging) buffer */
-	uint	log_idx;
-	char	*log_buf;
-
-	/* Input buffer */
-	uint	cbuf_idx;
-	char	cbuf[CBUF_LEN];
-
-	/* uart device, or VIRTUAL_UART */
-	serial_dev_t	*uart;
-
-	/* Console command processing */
-	ccmd_t		*ccmd;
-} cons_soft_t;
-
-
 static serial_dev_t hndrte_uart;
-
-/* FXIME, allocate dynamically if multiple console support is desired. */
-static cons_soft_t *cons0 = NULL;
-static cons_soft_t *active_cons = NULL;
-
 
 /* serial_in: read a uart register */
 static inline int
-serial_in(serial_dev_t *info, int offset)
+serial_in(serial_dev_t *dev, int offset)
 {
-	return ((int)R_REG(NULL, (uint8 *)(info->reg_base + (offset << info->reg_shift))));
+	return ((int)R_REG(NULL, (uint8 *)(dev->reg_base + (offset << dev->reg_shift))));
 }
 
 /* serial_out: write a uart register */
 static inline void
-serial_out(serial_dev_t *info, int offset, int value)
+serial_out(serial_dev_t *dev, int offset, int value)
 {
-	W_REG(NULL, (uint8 *)(info->reg_base + (offset << info->reg_shift)), value);
+	W_REG(NULL, (uint8 *)(dev->reg_base + (offset << dev->reg_shift)), value);
 }
 
-/* local functions */
-static void *add_console(si_t *sih);
-static void process_ccmd(char *line, uint len);
-static char **process_cmdline(char *cmd_line, uint *argc);
-#ifndef EXT_CBALL
-static void serial_add(void *regs, uint irq, uint baud_base, uint reg_shift);
-#endif
-#ifdef	BCMDBG
-static void serial_dump_cmds(uint32 arg, uint argc, char *argv[]);
-#endif
+/* serial_putc: spinwait for room in UART output FIFO, then write character */
+static inline void
+serial_putc(serial_dev_t *dev, int c)
+{
+	while (!(serial_in(dev, UART_LSR) & UART_LSR_THRE))
+		;
+	serial_out(dev, UART_TX, c);
+}
 
 #ifndef EXT_CBALL
 /* serial_add: callback to initialize the uart structure */
@@ -146,6 +136,38 @@ BCMINITFN(serial_add)(void *regs, uint irq, uint baud_base, uint reg_shift)
 }
 #endif	/* EXT_CBALL */
 
+/*
+ * Console description
+ */
+
+typedef struct _ccmd {
+	char		*name;
+	cons_fun_t	fun;
+	uint32		arg;
+	struct _ccmd	*next;
+} ccmd_t;
+
+typedef struct {
+	/* Console state shared with host */
+	hndrte_cons_t	state;
+
+	/* UART device, NULL for none (virtual UART) */
+	serial_dev_t	*uart;
+
+	/* Console command processing */
+	ccmd_t		*ccmd;
+} cons_soft_t;
+
+/* Console is allocated dynamically for multiple console support. */
+static cons_soft_t *cons0 = NULL;
+static cons_soft_t *active_cons = NULL;
+
+/* Forward decl */
+static void process_ccmd(char *line, uint len);
+static char **process_cmdline(char *cmd_line, uint *argc);
+static void hndrte_cons_isr(hndrte_dev_t *dev);
+static void dump_cmds(uint32 arg, uint argc, char *argv[]);
+
 static void *
 BCMINITFN(add_console)(si_t *sih)
 {
@@ -156,14 +178,20 @@ BCMINITFN(add_console)(si_t *sih)
 			hndrte_log_init();
 		active_cons = cons0;
 	}
+
+#if defined(__ARM_ARCH_4T__) || defined(__ARM_ARCH_7M__)
+	sdpcm_shared.console_addr = (uint32)&active_cons->state;
+#endif
+
 	if (active_cons == NULL)
 		return NULL;
 
+	active_cons->state.vcons_in = 0;
+	active_cons->state.vcons_out = 0;
+	active_cons->uart = NULL;
+
 #ifdef BCMQT
-		active_cons->vcons_in = 0;
-		active_cons->vcons_out = 0;
-		active_cons->uart = NULL;
-		return active_cons;
+	return active_cons;
 #endif
 
 #ifndef EXT_CBALL
@@ -173,78 +201,142 @@ BCMINITFN(add_console)(si_t *sih)
 
 	if (hndrte_uart.reg_base)
 		active_cons->uart = &hndrte_uart;
-	else {
-		active_cons->vcons_in = 0;
-		active_cons->vcons_out = 0;
 
-		active_cons->uart = VIRTUAL_UART;
-	}
+	/* dump whatever is already in the logbuf */
+	for (i = 0; i < active_cons->state.log.idx; i++)
+		if (active_cons->uart != NULL)
+			serial_putc(active_cons->uart, active_cons->state.log.buf[i]);
 
-	/* dump whatever that is already in the logbuf */
-	for (i = 0; i < active_cons->log_idx; i ++) {
-		if (active_cons->uart != VIRTUAL_UART) {
-			while (!(serial_in(active_cons->uart, UART_LSR) & UART_LSR_THRE))
-				;
-			serial_out(active_cons->uart, UART_TX, active_cons->log_buf[i]);
-		}
-	}
+	hndrte_cons_addcmd("?", dump_cmds, (uint32)active_cons);
 
-#ifdef	BCMDBG
-	hndrte_cons_addcmd("cmds", serial_dump_cmds, (uint32)active_cons);
-	hndrte_cons_addcmd("help", serial_dump_cmds, (uint32)active_cons);
-	hndrte_cons_addcmd("?", serial_dump_cmds, (uint32)active_cons);
-#endif /* BCMDBG */
+#if defined(RWL_DONGLE) || defined(UART_REFLECTOR)
+	hndrte_cons_addcmd("rwl", remote_cmd_function, (uint32)active_cons);
+#endif
 
 	return active_cons;
 }
 
 static void
-hndrte_cons_isr(hndrte_dev_t *dev)
+hndrte_cons_isr(hndrte_dev_t *dev)	/* Argument dev not used */
 {
 	cons_soft_t *cd = active_cons;
 	uint idx;
 
-	if (cd->uart == NULL)
-		return;
+	/* Check for virtual UART input */
+	if ((idx = cd->state.vcons_in) != 0) {
+		int i;
 
-	if (cd->uart != VIRTUAL_UART) {
-		if ((serial_in(cd->uart, UART_IIR) & UART_IIR_INT_MASK) == UART_IIR_NOINT) {
-			return;
-		}
-	}
+		/* NUL-terminate */
+		cd->state.cbuf[idx] = 0;
 
-	if (cd->uart == VIRTUAL_UART) {
-		uint i;
-
-		/* Wait for input */
-		if ((idx = cd->vcons_in) == 0) {
-			return;
-		}
-
-		cd->cbuf_idx = idx;
+		/* Mark input consumed */
+		cd->state.cbuf_idx = idx;
 
 		/* echo it synchronously */
 		for (i = 0; i < idx; i++)
-			putc(cd->cbuf[i]);
+			putc(cd->state.cbuf[i]);
+
 		putc('\n');
-	} else {
-		int c;
+	} else if (cd->uart == NULL)
+		return;
+	else {
+		int lsr, c;
+#if defined(RWL_DONGLE) || defined(UART_REFLECTOR)
+		static int new_line_flag;
+#endif
+
+		if ((serial_in(cd->uart, UART_IIR) & UART_IIR_INT_MASK) == UART_IIR_NOINT)
+			return;
 
 		/* Input available? */
-		if (!(serial_in(cd->uart, UART_LSR) & UART_LSR_RXRDY)) {
+		if (!((lsr = serial_in(cd->uart, UART_LSR)) & UART_LSR_RXRDY))
 			return;
-		}
 
 		/* Get the char */
 		c = serial_in(cd->uart, UART_RX);
+
+#if defined(RWL_DONGLE) || defined(UART_REFLECTOR)
+		if (g_rwl_dongle_flag) {
+		/* Receive error? */
+			if (lsr & (UART_LSR_RX_FIFO | UART_LSR_BREAK |
+				UART_LSR_FRAMING | UART_LSR_PARITY | UART_LSR_OVERRUN)) {
+				remote_reset_buffers();
+				cd->state.cbuf_idx = 0;
+				return;
+			}
+
+			/* The data comes in the form of 
+			 * "rwl <cmd> <msg_length> <flag(shell or wl)> 
+			 * <datalength> <binarydata> \n\n".
+			 * Hence each of the fields are separated by a space. 
+			 * (total 5 spaces). When the spaces count reaches more than 
+			 * or equal to 5 data is binary.
+			 * rwl_data_count keeps track of how many number 
+			 * of bytes it has received.
+			 * This data processing continues till two \n\n are received. 
+			 * This denotes end of transmission from client side. 
+			 * Now the data is ready to go to the server
+			 */
+
+			idx = cd->state.cbuf_idx;
+			if (c != '\n') {
+				/* Valid data; save it 
+				 * cbuf stores CDC header 
+				 */
+				cd->state.cbuf[idx++] = c;
+				/* Reset new line flag if we had received a \n earlier */
+				new_line_flag = 0;
+
+				if (rwl_space_count >= RWL_HEADER_END) {
+					/* Store binary data coming after 5 spaces */
+					rwl_buf[rwl_data_count] = c;
+					rwl_data_count++;
+				}
+				if (c == ' ') {
+					rwl_space_count++;
+				}
+
+				if ((cd->state.cbuf_idx = idx) < CBUF_LEN) {
+					return;
+				}
+			} else if (c == '\n' && new_line_flag == 0) {
+				/* If it is a newline upates the new_line_flag to 1.
+				 * But this can be binary data to so store it for now
+				 */
+				cd->state.cbuf[idx++] = c;
+				new_line_flag = 1;
+				if (rwl_space_count >= RWL_HEADER_END) {
+					rwl_buf[rwl_data_count] = c;
+					rwl_data_count++;
+				}
+
+				if ((cd->state.cbuf_idx = idx) < CBUF_LEN) {
+					return;
+				}
+			} else if (c == '\n' && new_line_flag == 1) {
+				/* Now we received two consecutive \n. 
+				 * Decrement buffer to remove \n as it is not part of data
+				 */
+				cd->state.cbuf_idx--;
+				idx = cd->state.cbuf_idx;
+				cd->state.cbuf[idx] = '\0';
+				 /* reset new line flag so as to recv fresh next time */
+				new_line_flag = 0;
+				/* \n\n is not part of the data. Remove that */
+				if (rwl_space_count >= RWL_HEADER_END) {
+					rwl_data_count--;
+				}
+			}
+		}
+#endif /* RWL_DONGLE || UART_REFLECTOR */
 
 		if (c == '\r')
 			c = '\n';
 
 		/* Backspace */
 		if (c == '\b' || c == 0177) {
-			if (cd->cbuf_idx > 0) {
-				cd->cbuf_idx--;
+			if (cd->state.cbuf_idx > 0) {
+				cd->state.cbuf_idx--;
 				putc('\b');
 				putc(' ');
 				putc('\b');
@@ -255,28 +347,37 @@ hndrte_cons_isr(hndrte_dev_t *dev)
 		/* echo it synchronously */
 		putc(c);
 
-		idx = cd->cbuf_idx;
+		idx = cd->state.cbuf_idx;
 		if (c != '\n') {
 			/* Save it */
-			cd->cbuf[idx++] = c;
+			cd->state.cbuf[idx++] = c;
 
 			/* If not a carriage return, and still space in buffer;
 			 * return from the poll to continue waiting.
 			 */
-			if ((cd->cbuf_idx = idx) < CBUF_LEN) {
+			if ((cd->state.cbuf_idx = idx) < CBUF_LEN)
 				return;
-			}
 		} else
-			cd->cbuf[idx] = '\0';
+			cd->state.cbuf[idx] = '\0';
 	}
 
 	/* OK, process the input and call the proper command processor */
-	process_ccmd(cd->cbuf, idx);
+	if (g_rwl_dongle_flag) {
+		/*
+		 * Guard against buffer overflow.
+		 * We won't process if the data length is more than CBUF_LEN
+		 */
+		if ((cd->state.cbuf_idx = idx) < CBUF_LEN)
+			process_ccmd(cd->state.cbuf, idx);
+	}
+	else {
+		process_ccmd(cd->state.cbuf, idx);
+	}
 
-	/* After we are done, setup for next */
-	cd->cbuf_idx = 0;
-	if (cd->uart == VIRTUAL_UART)
-		cd->vcons_in = 0;
+	/* After we are done, set up for next */
+	cd->state.cbuf_idx = 0;
+	cd->state.vcons_in = 0;
+
 	putc('>');
 	putc(' ');
 }
@@ -297,9 +398,17 @@ BCMINITFN(hndrte_cons_init)(si_t *sih)
 }
 
 /*
- * hdnrte.
- *
- * Console i/o:
+ * Called from sdpcmdev.c:sdpcmd_sendup in order to poll for virtual UART
+ * input whenever the host sends the dongle a packet on the test channel.
+ */
+void
+hndrte_cons_check(void)
+{
+	hndrte_cons_isr(NULL);
+}
+
+/*
+ * Console I/O:
  *	putc(c): Write out a byte to the console
  *	getc(): Wait for and read a byte from the console
  *	keypressed(): Check for key pressed
@@ -308,6 +417,13 @@ BCMINITFN(hndrte_cons_init)(si_t *sih)
 void
 putc(int c)
 {
+#if defined(RWL_DONGLE) || defined(UART_REFLECTOR)
+
+	if (g_rwl_dongle_flag) {
+		/* Safeguard against others using dongle for debug printfs */
+		return;
+	}
+#endif
 	cons_soft_t *cd = active_cons;
 
 	/* ready? */
@@ -318,22 +434,20 @@ putc(int c)
 	if (c == '\n')
 		putc('\r');
 
-	if (cd->log_buf != NULL) {
-		int idx = cd->log_idx;
+	if (cd->state.log.buf != NULL) {
+		int idx = cd->state.log.idx;
 
 		/* Store in log buffer */
-		cd->log_buf[idx] = (char) c;
-		cd->log_idx = (idx + 1) & LOG_BUF_MASK;
+		cd->state.log.buf[idx] = (char)c;
+		cd->state.log.idx = (idx + 1) % LOG_BUF_LEN;
 	}
 
 	/* No UART */
 	if (cd->uart == NULL)
 		return;
-	else if (cd->uart == VIRTUAL_UART) {
-	} else {
+	else {
 #ifdef HNDRTE_CONSOLE
-		while (!(serial_in(cd->uart, UART_LSR) & UART_LSR_THRE));
-			serial_out(cd->uart, UART_TX, c);
+		serial_putc(cd->uart, c);
 #endif
 	}
 }
@@ -343,14 +457,25 @@ keypressed(void)
 {
 	cons_soft_t *cd = active_cons;
 
-	/* no UART */
-	if ((cd == NULL) || (cd->uart == NULL))
+	/* Not initialized */
+	if (cd == NULL)
 		return FALSE;
 
-	if (cd->uart == VIRTUAL_UART)
-		return (cd->vcons_in != 0);
-	else
-		return (serial_in(cd->uart, UART_LSR) & UART_LSR_RXRDY);
+	/* Virtual UART */
+	if (cd->state.vcons_in != 0) {
+		/* See if we have not yet consumed all the previous input */
+		if (cd->state.cbuf_idx < cd->state.vcons_in)
+			return TRUE;
+
+		/* Out of input */
+		cd->state.cbuf_idx = cd->state.vcons_in = 0;
+	}
+
+	/* Real UART */
+	if (cd->uart != NULL)
+		return (serial_in(cd->uart, UART_LSR) & UART_LSR_RXRDY) != 0;
+
+	return FALSE;
 }
 
 int
@@ -358,35 +483,32 @@ getc(void)
 {
 	cons_soft_t *cd = active_cons;
 
-	/* no UART */
-	if ((cd == NULL) || (cd->uart == NULL))
-		return (0);
+	/* Not initialized */
+	if (cd == NULL)
+		return -1;
 
-	if (cd->uart == VIRTUAL_UART) {
-		/* If we have consumed all the previous input */
-		if (cd->cbuf_idx >= cd->vcons_in)
-			cd->cbuf_idx = cd->vcons_in = 0;
+	for (;;) {
+		/* Virtual UART */
+		if (cd->state.vcons_in != 0) {
+			/* See if we have not yet consumed all the previous input */
+			if (cd->state.cbuf_idx < cd->state.vcons_in)
+				return cd->state.cbuf[cd->state.cbuf_idx++];
 
-		/* Wait for input */
-		while (cd->vcons_in == 0)
-			hndrte_poll(hndrte_sih);
+			/* Out of input */
+			cd->state.cbuf_idx = cd->state.vcons_in = 0;
+		}
 
-		return (cd->cbuf[cd->cbuf_idx++]);
-	} else {
-		/* Wait for input */
-		while (!keypressed())
-			hndrte_poll(hndrte_sih);
+		/* Real UART */
+		if (cd->uart != NULL) {
+			if ((serial_in(cd->uart, UART_LSR) & UART_LSR_RXRDY) != 0)
+				return serial_in(cd->uart, UART_RX);
+		}
 
-		return (serial_in(cd->uart, UART_RX));
+		hndrte_poll(hndrte_sih);
 	}
 }
 
-/*
- * hdnrte.
- *
- * Console command support:
- *	hndrte_cons_addcmd()
- */
+/* Routine to add an hndrte console command */
 void
 hndrte_cons_addcmd(char *name, cons_fun_t fun, uint32 arg)
 {
@@ -478,7 +600,26 @@ process_ccmd(char *line, uint len)
 	else
 		printf("?\n");
 
+	/* #ifdef Moved inside the function to make this function ROMable */
+	remote_reset_buffers();
+
 	hndrte_free(argv);
+}
+
+static void
+dump_cmds(uint32 arg, uint argc, char *argv[])
+{
+	cons_soft_t *cd = (cons_soft_t *)arg;
+	ccmd_t *ccmd = cd->ccmd;
+
+	while (ccmd != NULL) {
+#ifdef BCMDBG
+		printf("cmd \"%s\": %p(%p)\n", ccmd->name, (void *)ccmd->fun, (void *)ccmd->arg);
+#else
+		printf("%s\n", ccmd->name);
+#endif
+		ccmd = ccmd->next;
+	}
 }
 
 int
@@ -489,33 +630,193 @@ BCMINITFN(hndrte_log_init)(void)
 		return BCME_ERROR;
 
 	bzero(cons0, sizeof(cons_soft_t));
-	cons0->log_buf = (char *)hndrte_malloc(LOG_BUF_LEN);
-	if (cons0->log_buf == NULL) {
+
+	cons0->state.log.buf = (char *)hndrte_malloc(LOG_BUF_LEN);
+	if (cons0->state.log.buf == NULL) {
 		hndrte_free((void *)cons0);
 		cons0 = NULL;
 		return BCME_ERROR;
 	}
 
-	cons0->log_buf = (char *)OSL_UNCACHED(cons0->log_buf);
-	bzero(cons0->log_buf, LOG_BUF_LEN);
-	cons0->log_buf_addr = cons0->log_buf;
-	cons0->log_buf_size = LOG_BUF_LEN;
+	cons0->state.log.buf = (char *)OSL_UNCACHED(cons0->state.log.buf);
+	cons0->state.log.buf_size = LOG_BUF_LEN;
+	cons0->state.log._buf_compat = cons0->state.log.buf;
+
+	bzero(cons0->state.log.buf, LOG_BUF_LEN);
 
 	active_cons = cons0;
 
 	return 0;
 }
 
-#ifdef	BCMDBG
 static void
-serial_dump_cmds(uint32 arg, uint argc, char *argv[])
+remote_reset_buffers(void)
 {
-	cons_soft_t *cd = (cons_soft_t *)arg;
-	ccmd_t *ccmd = cd->ccmd;
+#if defined(RWL_DONGLE) || defined(UART_REFLECTOR)
+	memset(rwl_buf, 0, RWL_MAX_DATA_LEN);
+	rwl_data_count = 0;
+	rwl_space_count = 0;
+#endif
+}
 
-	while (ccmd != NULL) {
-		printf("cmd \"%s\": %p(%p)\n", ccmd->name, (void *)ccmd->fun, (void *)ccmd->arg);
-		ccmd = ccmd->next;
+#if defined(RWL_DONGLE) || defined(UART_REFLECTOR)
+
+/* Function is mapped to 'rwl' command
+ * Function constructs the CDC header from command line arguments, calculates
+ * the packet length. Copies CDC header and data in the global buffer shared
+ * between UART driver and wl driver and indiactes wl driver that packet is ready to
+ * be picked up
+ */
+static void
+remote_cmd_function(uint32 arg, uint argc, char *argv[])
+{
+	rem_ioctl_t rem_cdc;
+
+#ifdef UART_REFLECTOR
+	int err;
+	uint noframes;
+	uint count;
+	rem_ioctl_t *reply_cdc = NULL;
+	uchar *buffer = NULL;
+	uchar *ptr = NULL;
+	uint rem_bytes = 0;
+	g_rwl_dongle_flag = 1;
+	rem_ioctl_t reply;
+	const char err_msg[] = "In-dongle does not support shell/ASD/DHD\n";
+#endif
+	rem_cdc.msg.cmd = atoi(argv[1]);
+	rem_cdc.msg.len   = atoi(argv[2]);
+	rem_cdc.msg.flags = atoi(argv[3]);
+
+	rem_cdc.data_len = rwl_data_count;
+
+	g_rwl_dongle_data.packet_len = sizeof(rem_ioctl_t) + rem_cdc.data_len;
+
+	/* Allocates memory for the packet */
+	g_rwl_dongle_data.packet_buf = (uchar*)MALLOC(NULL, g_rwl_dongle_data.packet_len);
+
+	/* Copy the CDC header */
+	bcopy((char*)(&rem_cdc), g_rwl_dongle_data.packet_buf, sizeof(rem_ioctl_t));
+
+	/* Copy the binary data */
+	bcopy(rwl_buf, &g_rwl_dongle_data.packet_buf[sizeof(rem_ioctl_t)], rwl_data_count);
+
+#ifdef UART_REFLECTOR
+	/* The bcmwl structure is a wl driver handle that is created at
+	 * the initialization of the dongle. It is defined in sys/wl_rte.c
+	 * We use that handle to call the wlc_ioctls to get from or set to driver
+	 */
+	if (rem_cdc.msg.flags & REMOTE_SET_CMD) {
+	/* Capture the packet, call WLC ioctl, send back the response 
+	 * We call wl_ioctl using the pointer from the bcmwl structure
+	 */
+		err = (bcmwl.dev_funcs->ioctl)(&bcmwl, rem_cdc.msg.cmd,
+			&g_rwl_dongle_data.packet_buf[REMOTE_SIZE],
+			rem_cdc.msg.len, NULL, NULL, FALSE);
+		reply.msg.cmd = err;
+		reply.msg.len = 0;
+		reply.msg.flags = REMOTE_REPLY;
+		reply.data_len = 0;
+		remote_uart_tx((uchar *)&reply);
+	}
+	else if (rem_cdc.msg.flags & REMOTE_GET_CMD) {
+		/* Allocate buffer for ioctl results */
+		buffer = (uchar *)MALLOC(NULL, rem_cdc.msg.len+REMOTE_SIZE);
+		memcpy(&buffer[REMOTE_SIZE],
+			&g_rwl_dongle_data.packet_buf[REMOTE_SIZE], rwl_data_count);
+		err = (bcmwl.dev_funcs->ioctl)(&bcmwl, rem_cdc.msg.cmd,
+			&buffer[REMOTE_SIZE], rem_cdc.msg.len, NULL, NULL, FALSE);
+
+		reply.msg.cmd = err;
+		reply.msg.len = rem_cdc.msg.len;
+		reply.msg.flags = REMOTE_REPLY;
+		reply.data_len = rem_cdc.data_len;
+
+		if (rem_cdc.msg.len < DATA_FRAG_LEN) {
+			/* Response size fits into single packet.
+			 * Send it off
+			 */
+			memcpy(buffer, &reply, REMOTE_SIZE);
+			remote_uart_tx(buffer);
+		}
+		 else {
+			ptr = buffer;
+			noframes = rem_cdc.msg.len/DATA_FRAG_LEN;
+			if ((rem_bytes = (rem_cdc.msg.len%DATA_FRAG_LEN)) > 0) {
+				noframes++;
+			}
+			/* Fragment and sent out the frames */
+			for (count = 0; count < noframes; count++) {
+				if (count == noframes -1)
+					reply.data_len = rem_bytes;
+				else
+					reply.data_len = DATA_FRAG_LEN;
+				memcpy(ptr, &reply, REMOTE_SIZE);
+				remote_uart_tx(ptr);
+				ptr += DATA_FRAG_LEN;
+			}
+
+		}
+		MFREE(NULL, buffer, rem_cdc.msg.len+REMOTE_SIZE);
+	} else
+	{
+		/* Invalid wl command received. Inform the client that
+		 * the command cannot be executed
+		 */
+		reply_cdc = (rem_ioctl_t*)&g_rwl_dongle_data.packet_buf[0];
+		reply_cdc->msg.cmd = 0;
+		reply_cdc->msg.flags = REMOTE_REPLY;
+		strcpy((char*)&g_rwl_dongle_data.packet_buf[REMOTE_SIZE],
+			err_msg);
+		remote_uart_tx(g_rwl_dongle_data.packet_buf);
+	}
+	/* Free the allocated memory for the packet. When reflector is not enabled
+	 * this is done when application reads out the data.
+	 */
+	MFREE(NULL, g_rwl_dongle_data.packet_buf, g_rwl_dongle_data.packet_len);
+
+#endif /* UART_REFLECTOR */
+	/* Clear the buffers since we have the copied data in global buffers */
+	remote_reset_buffers();
+#ifndef UART_REFLECTOR
+	/* If UART_REFLECTOR is not defined, then indicate that we have a packet
+	 * else we use and modify the input buffers to send out the response and
+	 * thus the input buffers get destroyed. We donot want to send destroyed
+	 * buffer to the application layer
+	 */
+	g_rwl_dongle_data.packet_status = 1;
+#endif
+
+}
+
+/* Function gets the packet(buf) from wl driver
+ *  Extracts the CDC header and transmits the header
+ *  and then transmits the data by calling respective functions.
+ */
+void
+remote_uart_tx(uchar *buf)
+{
+	rem_ioctl_t rem_cdc;
+
+	bcopy(buf, &rem_cdc, sizeof(rem_ioctl_t));
+
+	remote_uart_tx_packet((uchar*)&rem_cdc, sizeof(rem_ioctl_t));
+
+	if (rem_cdc.data_len != 0) {
+		remote_uart_tx_packet(&buf[sizeof(rem_ioctl_t)], rem_cdc.data_len);
 	}
 }
-#endif	/* BCMDBG */
+
+static void
+remote_uart_tx_packet(uchar* res_buf, int len)
+{
+	int i;
+	cons_soft_t *cd = active_cons;
+
+	bcopy((char *)res_buf, cd->state.log.buf, len);
+
+	if (cd->uart != NULL)
+		for (i = 0; i < len; i++)
+			serial_putc(cd->uart, cd->state.log.buf[i]);
+}
+#endif  /* RWL_DONGLE || UART_REFLECTOR */

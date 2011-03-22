@@ -1,7 +1,7 @@
 /*
  * HND SiliconBackplane chipcommon support.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndchipc.h,v 13.6.54.1 2008/11/13 22:46:11 Exp $
+ * $Id: hndchipc.h,v 13.7 2008/11/13 23:38:15 Exp $
  */
 
 #ifndef _hndchipc_h_

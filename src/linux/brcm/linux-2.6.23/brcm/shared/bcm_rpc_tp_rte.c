@@ -2,7 +2,7 @@
  * RPC Transport layer(for HNDRTE bus driver)
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_rpc_tp_rte.c,v 1.1.2.17 2008/10/21 06:24:07 Exp $
+ * $Id: bcm_rpc_tp_rte.c,v 1.26.4.1 2010/02/09 20:46:51 Exp $
  */
 
 #ifndef WLC_LOW
@@ -26,12 +26,16 @@
 #include <bcm_rpc_tp.h>
 #include <bcm_rpc.h>
 
-/* #define RTEDBG	1 */
-
-#ifdef RTEDBG
-#define	RPC_TP_DBGRTE(args)	do {printf args;} while (0)
+static uint8 tp_level_bmac = RPC_TP_MSG_DNGL_ERR_VAL; /* RPC_TP_MSG_DNGL_ERR_VAL; */
+#define	RPC_TP_ERR(args)   do {if (tp_level_bmac & RPC_TP_MSG_DNGL_ERR_VAL) printf args;} while (0)
+#ifdef BCMDBG
+#define	RPC_TP_DBG(args)   do {if (tp_level_bmac & RPC_TP_MSG_DNGL_DBG_VAL) printf args;} while (0)
+#define	RPC_TP_AGG(args)   do {if (tp_level_bmac & RPC_TP_MSG_DNGL_AGG_VAL) printf args;} while (0)
+#define	RPC_TP_DEAGG(args) do {if (tp_level_bmac & RPC_TP_MSG_DNGL_DEA_VAL) printf args;} while (0)
 #else
-#define	RPC_TP_DBGRTE(args)
+#define RPC_TP_DBG(args)
+#define RPC_TP_AGG(args)
+#define RPC_TP_DEAGG(args)
 #endif
 
 /* CLIENT dongle drvier RPC Transport implementation
@@ -49,6 +53,8 @@ struct rpc_transport_info {
 	struct spktq *tx_flowctlq;	/* Queue to store pkts when in global RX flowcontrol */
 	uint8 tx_q_flowctl_hiwm;	/* Queue high watermask */
 	uint8 tx_q_flowctl_lowm;	/* Queue low watermask */
+	uint  tx_q_flowctl_highwm_cnt;	/* hit high watermark counter */
+	uint8 tx_q_flowctl_segcnt;	/* Queue counter all segments(no. of LBUF) */
 
 	rpc_rx_fn_t rx_pkt;
 	void* rx_context;
@@ -62,7 +68,7 @@ struct rpc_transport_info {
 
 	uint tx_flowctl_cnt;		/* tx flow control transition times */
 	bool tx_flowcontrolled;		/* tx flow control active */
-#ifdef WLC_LOW
+
 	rpc_txflowctl_cb_t txflowctl_cb; /* rpc tx flow control to control wlc_dpc() */
 	void *txflowctl_ctx;
 
@@ -77,30 +83,52 @@ struct rpc_transport_info {
 	uint tp_dngl_agg_cnt_chain;	/* total aggregated pkt */
 	uint tp_dngl_agg_cnt_sf;	/* total aggregated subframes */
 	uint tp_dngl_agg_cnt_bytes;	/* total aggregated bytes */
-	uint tp_dngl_agg_cnt_pass;	/* no. pkts not aggregated */
-#endif	/* WLC_LOW */
+	uint tp_dngl_agg_cnt_noagg;	/* no. pkts not aggregated */
+	uint tp_dngl_agg_cnt_pass;	/* no. pkt bypass agg */
+
+	uint tp_dngl_agg_lazy;		/* lazy to release agg on tp_dngl_aggregation clear */
+
+	uint tp_dngl_deagg_cnt_chain;	/* multifrag pkt */
+	uint tp_dngl_deagg_cnt_sf;	/* no. of frag inside multifrag */
+	uint tp_dngl_deagg_cnt_clone;	/* no. of clone */
+	uint tp_dngl_deagg_cnt_bytes;	/* total deagg bytes */
+	uint tp_dngl_deagg_cnt_badfmt;	/* bad format */
+	uint tp_dngl_deagg_cnt_badsflen;	/* bad sf len */
+	uint tp_dngl_deagg_cnt_pass;	/* passthrough, single frag */
+	int has_2nd_bulk_in_ep;
 };
 
 #define	BCM_RPC_TP_Q_MAX	1024	/* Rx flow control queue size - Set it big and we don't
 					 * expect it to get full. If the memory gets low, we
 					 * just stop processing wlc_dpc
 					 */
-#ifdef WLC_LOW
-#define BCM_RPC_TP_FLOWCTL_QWM_HIGH	16	/* high watermark for tp queue */
+#define BCM_RPC_TP_FLOWCTL_QWM_HIGH	24	/* high watermark for tp queue */
 #define BCM_RPC_TP_FLOWCTL_QWM_LOW	4	/* low watermark for tp queue */
-#endif
 
-#define BCM_RPC_TP_AGG_MAX_SFRAME	6	/* agg limit on max subframes */
-#define	BCM_RPC_TP_AGG_MAX_BYTE		18000	/* agg limit on max bytes */
+/* no. of aggregated subframes per second to activate/deactivate lazy agg(delay release)
+ * For medium traffic, the sf/s is > 5k+
+ */
+#define BCM_RPC_TP_AGG_LAZY_WM_HI	2000	/* activate lazy agg if higher than this */
+#define BCM_RPC_TP_AGG_LAZY_WM_LO	1000	/* deactivate lazy agg if lower than this */
+
+#define BCM_RPC_TP_DNGL_TOTLEN_BAD	516
+#define BCM_RPC_TP_DNGL_TOTLEN_BAD_PAD	8
+/* this WAR is similar to the preaggregated one in wlc_high_stubs.c
+ * #define USB_TOTAL_LEN_BAD		516
+ * #define USB_TOTAL_LEN_BAD_PAD	8
+ */
+
+#define BCM_RPC_TP_DNGL_TOTLEN_ZLP		512
+#define BCM_RPC_TP_DNGL_TOTLEN_ZLP_PAD	12	/* random: make it 524 total like above */
 
 static void bcm_rpc_tp_tx_encap(rpc_tp_info_t * rpcb, rpc_buf_t *b);
-static int  bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpc_th, rpc_buf_t *b);
+static int  bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpc_th, rpc_buf_t *b, uint32 ep_idx);
 static void bcm_rpc_tp_buf_send_enq(rpc_tp_info_t * rpc_th, rpc_buf_t *b);
 
 static void bcm_rpc_tp_dngl_agg_initstate(rpc_tp_info_t * rpcb);
-static bool bcm_rpc_tp_dngl_agg(rpc_tp_info_t *rpcb, rpc_buf_t *b);
+static int  bcm_rpc_tp_dngl_agg(rpc_tp_info_t *rpcb, rpc_buf_t *b);
 static void bcm_rpc_tp_dngl_agg_append(rpc_tp_info_t * rpcb, rpc_buf_t *b);
-static void bcm_rpc_tp_dngl_agg_close(rpc_tp_info_t * rpcb);
+static int  bcm_rpc_tp_dngl_agg_release(rpc_tp_info_t * rpcb);
 static void bcm_rpc_tp_dngl_agg_flush(rpc_tp_info_t * rpcb);
 
 rpc_tp_info_t *
@@ -111,7 +139,7 @@ BCMATTACHFN(bcm_rpc_tp_attach)(osl_t * osh, void *bus)
 
 	rpc_th = (rpc_tp_info_t *)MALLOC(osh, sizeof(rpc_tp_info_t));
 	if (rpc_th == NULL) {
-		printf("%s: rpc_tp_info_t malloc failed\n", __FUNCTION__);
+		RPC_TP_ERR(("%s: rpc_tp_info_t malloc failed\n", __FUNCTION__));
 		return NULL;
 	}
 
@@ -122,9 +150,10 @@ BCMATTACHFN(bcm_rpc_tp_attach)(osl_t * osh, void *bus)
 
 	/* Init for flow control */
 	rpc_th->tx_flowctl = FALSE;
+	rpc_th->tx_q_flowctl_segcnt = 0;
 	rpc_th->tx_flowctlq = (struct spktq *)MALLOC(osh, sizeof(struct spktq));
 	if (rpc_th->tx_flowctlq == NULL) {
-		printf("%s: txflowctlq malloc failed\n", __FUNCTION__);
+		RPC_TP_ERR(("%s: txflowctlq malloc failed\n", __FUNCTION__));
 		MFREE(rpc_th->osh, rpc_th, sizeof(rpc_tp_info_t));
 		return NULL;
 	}
@@ -132,9 +161,12 @@ BCMATTACHFN(bcm_rpc_tp_attach)(osl_t * osh, void *bus)
 	rpc_th->tx_q_flowctl_hiwm = BCM_RPC_TP_FLOWCTL_QWM_HIGH;
 	rpc_th->tx_q_flowctl_lowm = BCM_RPC_TP_FLOWCTL_QWM_LOW;
 
-	rpc_th->tp_dngl_agg_sframes_limit = BCM_RPC_TP_AGG_MAX_SFRAME;
-	rpc_th->tp_dngl_agg_bytes_max = BCM_RPC_TP_AGG_MAX_BYTE;
-
+	rpc_th->tp_dngl_agg_lazy = 0;
+	rpc_th->tp_dngl_agg_sframes_limit = BCM_RPC_TP_DNGL_AGG_MAX_SFRAME;
+	rpc_th->tp_dngl_agg_bytes_max = BCM_RPC_TP_DNGL_AGG_MAX_BYTE;
+#ifdef  BCMUSBDEV_EP_FOR_RPCRETURN
+	rpc_th->has_2nd_bulk_in_ep = 1;
+#endif /* BCMUSBDEV_EP_FOR_RPCRETURN */
 	return rpc_th;
 }
 
@@ -148,25 +180,226 @@ BCMATTACHFN(bcm_rpc_tp_detach)(rpc_tp_info_t * rpc_th)
 	MFREE(rpc_th->osh, rpc_th, sizeof(rpc_tp_info_t));
 }
 
+void
+bcm_rpc_tp_watchdog(rpc_tp_info_t *rpcb)
+{
+	static int old = 0;
+	int delta;
+
+	/* (1) close agg periodically to avoid stale aggregation */
+	bcm_rpc_tp_dngl_agg_release(rpcb);
+
+
+	delta = rpcb->tp_dngl_agg_cnt_sf - old;
+	old = rpcb->tp_dngl_agg_cnt_sf;
+
+	RPC_TP_DBG(("agg delta %d tp flowcontrol queue pending (qlen %d subframe %d)\n", delta,
+		pktq_len(rpcb->tx_flowctlq), rpcb->tx_q_flowctl_segcnt));
+
+	if (rpcb->tp_dngl_agg_lazy)
+		rpcb->tp_dngl_agg_lazy = (delta < BCM_RPC_TP_AGG_LAZY_WM_LO) ? 0 : 1;
+	else
+		rpcb->tp_dngl_agg_lazy = (delta > BCM_RPC_TP_AGG_LAZY_WM_HI) ? 1 : 0;
+}
 
 void
 bcm_rpc_tp_rx_from_dnglbus(rpc_tp_info_t *rpc_th, struct lbuf *lb)
 {
-	void *p;
+	void *orig_p, *p;
+	void *rpc_p, *rpc_prev;
+	uint pktlen, tp_len, iter = 0;
+	osl_t *osh;
+	bool dbg_agg;
+	uint dbg_data[16], i;	/* must fit host agg limit BCM_RPC_TP_HOST_AGG_MAX_SFRAME+1 */
+
+	dbg_agg = FALSE;
 
 	rpc_th->rx_cnt++;
 
 	if (rpc_th->rx_pkt == NULL) {
-		printf("%s: no rpc rx fn, dropping\n", __FUNCTION__);
+		RPC_TP_ERR(("%s: no rpc rx fn, dropping\n", __FUNCTION__));
 		rpc_th->rxdrop_cnt++;
 		lb_free(lb);
 		return;
 	}
+	orig_p = PKTFRMNATIVE(rpc_th->osh, lb);
 
-	p = PKTFRMNATIVE(rpc_th->osh, lb);
 
-	(rpc_th->rx_pkt)(rpc_th->rx_context, p);
+	osh = rpc_th->osh;
+
+	/* take ownership of the dnglbus packet chain
+	 * since it will be freed by bcm_rpc_tp_buf_free()
+	 */
+	rpc_th->buf_cnt_inuse += pktsegcnt(rpc_th->osh, orig_p);
+
+	dbg_data[0] = pktsegcnt(rpc_th->osh, orig_p);
+
+	pktlen = PKTLEN(osh, orig_p);
+
+	p = orig_p;
+
+	/* while we have more data in the TP frame's packet chain,
+	 *   create a packet chain(could be cloned) for the next RPC frame
+	 *   then give it away to high layer for process(buffer not freed)
+	 */
+	while (p != NULL) {
+		iter++;
+
+		/* read TP_HDR(len of rpc frame) and pull the data pointer past the length word */
+		if (pktlen >= BCM_RPC_TP_ENCAP_LEN) {
+			tp_len = ltoh32(*(uint32*)PKTDATA(osh, p));
+			PKTPULL(osh, p, BCM_RPC_TP_ENCAP_LEN);
+			pktlen -= BCM_RPC_TP_ENCAP_LEN;
+		} else {
+			/* error case: less data than the encapsulation size
+			 * treat as an empty tp buffer, at end of current buffer
+			 */
+			tp_len = 0;
+			pktlen = 0;
+
+			rpc_th->tp_dngl_deagg_cnt_badsflen++;	/* bad sf len */
+		}
+
+		/* if TP header finished a buffer(rpc header in next chained buffer), open next */
+		if (pktlen == 0) {
+			void *next_p = PKTNEXT(osh, p);
+			PKTSETNEXT(osh, p, NULL);
+			rpc_th->buf_cnt_inuse--;
+			PKTFREE(osh, p, FALSE);
+			p = next_p;
+			if (p)
+				pktlen = PKTLEN(osh, p);
+		}
+
+		dbg_data[iter] = tp_len;
+
+		if (tp_len < pktlen || dbg_agg) {
+			dbg_agg = TRUE;
+			RPC_TP_DEAGG(("DEAGG: [%d] p %p data 0x%x pktlen %d tp_len %d\n",
+				iter, p, PKTDATA(osh, p), pktlen, tp_len));
+			rpc_th->tp_dngl_deagg_cnt_sf++;
+			rpc_th->tp_dngl_deagg_cnt_bytes += tp_len;
+		}
+
+		/* empty TP buffer (special case: use tp_len to pad for some USB pktsize bugs) */
+		if (tp_len == 0) {
+			rpc_th->tp_dngl_deagg_cnt_pass++;
+			continue;
+		} else if (tp_len > 10000 ) {	/* something is wrong */
+			RPC_TP_ERR(("DEAGG: iter %d, p(0x%x data 0x%x pktlen %d)\n",
+				iter, p, PKTDATA(osh, p), PKTLEN(osh, p)));
+		}
+
+		/* ========= For this TP subframe, find the end, build a chain, sendup ========= */
+
+		/* RPC frame packet chain starts with this packet */
+		rpc_prev = NULL;
+		rpc_p = p;
+		ASSERT(p != NULL);
+
+		/* find the last frag in this rpc chain */
+		while ((tp_len >= pktlen) && p) {
+			if (dbg_agg)
+				RPC_TP_DEAGG(("DEAGG: tp_len %d consumes p(%p pktlen %d)\n", tp_len,
+					p, pktlen));
+			rpc_prev = p;
+			p = PKTNEXT(osh, p);
+			tp_len -= pktlen;
+
+			if (p != NULL) {
+				pktlen = PKTLEN(osh, p);
+			} else {
+				if (tp_len != 0) {
+					uint totlen, seg;
+					totlen = pkttotlen(osh, rpc_p);
+					seg = pktsegcnt(rpc_th->osh, rpc_p);
+
+					RPC_TP_ERR(("DEAGG, toss[%d], orig_p %p segcnt %d",
+					       iter, orig_p, dbg_data[0]));
+					RPC_TP_ERR(("DEAGG,rpc_p %p totlen %d pktl %d tp_len %d\n",
+					       rpc_p, totlen, pktlen, tp_len));
+					for (i = 1; i <= iter; i++)
+						RPC_TP_ERR(("tplen[%d] = %d  ", i, dbg_data[i]));
+					RPC_TP_ERR(("\n"));
+					p = rpc_p;
+					while (p != NULL) {
+						RPC_TP_ERR(("this seg len %d\n", PKTLEN(osh, p)));
+						p = PKTNEXT(osh, p);
+					}
+
+					rpc_th->buf_cnt_inuse -= seg;
+					PKTFREE(osh, rpc_p, FALSE);
+					rpc_th->tp_dngl_deagg_cnt_badfmt++;
+
+					/* big hammer to recover USB
+					 * extern void dngl_reboot(void); dngl_reboot();
+					 */
+					goto end;
+				}
+				pktlen = 0;
+				break;
+			}
+		}
+
+		/* fix up the last frag */
+		if (tp_len == 0) {
+			/* if the whole RPC buffer chain ended at the end of the prev TP buffer,
+			 *    end the RPC buffer chain. we are done
+			 */
+			if (dbg_agg)
+				RPC_TP_DEAGG(("DEAGG: END rpc chain p 0x%x len %d\n\n", rpc_prev,
+					pktlen));
+
+			PKTSETNEXT(osh, rpc_prev, NULL);
+			if (iter > 1) {
+				rpc_th->tp_dngl_deagg_cnt_chain++;
+				RPC_TP_DEAGG(("this frag %d totlen %d\n", pktlen,
+					pkttotlen(osh, orig_p)));
+			}
+
+		} else {
+			/* if pktlen has more bytes than tp_len, another tp frame must follow
+			 *   create a clone of the sub-range of the current TP buffer covered
+			 *   by the RPC buffer, attach to the end of the RPC buffer chain
+			 *   (cut off the original chain link)
+			 *   continue chain looping(p != NULL)
+			 */
+			void *new_p;
+			ASSERT(p != NULL);
+
+			RPC_TP_DEAGG(("DEAGG: cloning %d bytes out of p(0x%x data 0x%x) len %d\n",
+				tp_len, p, PKTDATA(osh, p), pktlen));
+
+			new_p = osl_pktclone(osh, p, 0, tp_len);
+			rpc_th->buf_cnt_inuse++;
+			rpc_th->tp_dngl_deagg_cnt_clone++;
+
+			RPC_TP_DEAGG(("DEAGG: after clone, newp(0x%x data 0x%x pktlen %d)\n",
+				new_p, PKTDATA(osh, new_p), PKTLEN(osh, new_p)));
+
+			if (rpc_prev) {
+				RPC_TP_DEAGG(("DEAGG: chaining: 0x%x->0x%x(clone)\n", rpc_prev,
+					new_p));
+				PKTSETNEXT(osh, rpc_prev, new_p);
+			} else {
+				RPC_TP_DEAGG(("DEAGG: clone 0x%x is a complete rpc pkt\n", new_p));
+				rpc_p = new_p;
+			}
+
+			PKTPULL(osh, p, tp_len);
+			pktlen -= tp_len;
+			RPC_TP_DEAGG(("DEAGG: remainder packet p 0x%x data 0x%x pktlen %d\n",
+				p, PKTDATA(osh, p), PKTLEN(osh, p)));
+		}
+
+		/* !! send up */
+		(rpc_th->rx_pkt)(rpc_th->rx_context, rpc_p);
+	}
+
+end:
+	ASSERT(p == NULL);
 }
+
 void
 bcm_rpc_tp_register_cb(rpc_tp_info_t * rpc_th,
                                rpc_tx_complete_fn_t txcmplt, void* tx_context,
@@ -201,7 +434,7 @@ bcm_rpc_tp_txflowctl(rpc_tp_info_t *rpc_th, bool state, int prio)
 	if (rpc_th->tx_flowctl == state)
 		return;
 
-	printf("tp_txflowctl %d\n", state);
+	RPC_TP_AGG(("tp_txflowctl %d\n", state));
 
 	rpc_th->tx_flowctl = state;
 	rpc_th->tx_flowctl_cnt++;
@@ -213,15 +446,18 @@ bcm_rpc_tp_txflowctl(rpc_tp_info_t *rpc_th, bool state, int prio)
 	while (!rpc_th->tx_flowctl && !pktq_empty(rpc_th->tx_flowctlq)) {
 
 		b = pktdeq(rpc_th->tx_flowctlq);
+		rpc_th->tx_q_flowctl_segcnt -= pktsegcnt(rpc_th->osh, b);
 
-		bcm_rpc_tp_buf_send_internal(rpc_th, b);
+		bcm_rpc_tp_buf_send_internal(rpc_th, b, USBDEV_BULK_IN_EP1);
 	}
+
+	/* bcm_rpc_tp_agg_set(rpc_th, BCM_RPC_TP_DNGL_AGG_FLOWCTL, state); */
 
 	/* if lowm is reached, release wldriver
 	 *   TODO, count more(average 3?) if agg is ON
 	 */
-	if (pktq_len(rpc_th->tx_flowctlq) < rpc_th->tx_q_flowctl_lowm) {
-		printf("bcm_rpc_tp_txflowctl, wm hit low!\n");
+	if (rpc_th->tx_q_flowctl_segcnt < rpc_th->tx_q_flowctl_lowm) {
+		RPC_TP_AGG(("bcm_rpc_tp_txflowctl, wm hit low!\n"));
 		rpc_th->txflowctl_cb(rpc_th->txflowctl_ctx, OFF);
 	}
 
@@ -258,13 +494,22 @@ bcm_rpc_tp_send_callreturn(rpc_tp_info_t * rpc_th, rpc_buf_t *b)
 	bcm_rpc_tp_tx_encap(rpc_th, b);
 
 	lb = PKTTONATIVE(rpc_th->osh, b);
+
+	if (rpc_th->has_2nd_bulk_in_ep) {
+		err = chained->dev_funcs->xmit2(rpc_th->ctx, chained, lb, USBDEV_BULK_IN_EP2);
+	} else {
+		err = chained->dev_funcs->xmit_ctl(rpc_th->ctx, chained, lb);
+	}
 	/* send through control endpoint */
-	if ((err = chained->dev_funcs->xmit_ctl(rpc_th->ctx, chained, lb)) != 0) {
-		printf("%s: xmit failed; free pkt 0x%p\n", __FUNCTION__, lb);
+	if (err != 0) {
+		RPC_TP_ERR(("%s: xmit failed; free pkt 0x%p\n", __FUNCTION__, lb));
 		rpc_th->txerr_cnt++;
 		lb_free(lb);
 	} else {
 		rpc_th->tx_cnt++;
+
+		/* give pkt ownership to usb driver, decrement the counter */
+		rpc_th->buf_cnt_inuse -= pktsegcnt(rpc_th->osh, b);
 	}
 
 	return err;
@@ -275,16 +520,20 @@ static void
 bcm_rpc_tp_buf_send_enq(rpc_tp_info_t * rpc_th, rpc_buf_t *b)
 {
 	pktenq(rpc_th->tx_flowctlq, (void*)b);
+	rpc_th->tx_q_flowctl_segcnt += pktsegcnt(rpc_th->osh, b);
 
 	/* if hiwm is reached, throttle wldriver
 	 *   TODO, count more(average 3?) if agg is ON
 	 */
-	if (pktq_len(rpc_th->tx_flowctlq) > rpc_th->tx_q_flowctl_hiwm) {
-		printf("bcm_rpc_tp_buf_send_enq, wm hit high!\n");
+	if (rpc_th->tx_q_flowctl_segcnt > rpc_th->tx_q_flowctl_hiwm) {
+		rpc_th->tx_q_flowctl_highwm_cnt++;
+
+		RPC_TP_ERR(("bcm_rpc_tp_buf_send_enq, wm hit high!\n"));
+
 		rpc_th->txflowctl_cb(rpc_th->txflowctl_ctx, ON);
 	}
 
-	/* If tx_flowctlq  gets full, set a bigger BCM_RPC_TP_Q_MAX */
+	/* If tx_flowctlq gets full, set a bigger BCM_RPC_TP_Q_MAX */
 	ASSERT(!pktq_full(rpc_th->tx_flowctlq));
 }
 
@@ -298,37 +547,94 @@ bcm_rpc_tp_buf_send(rpc_tp_info_t * rpc_th, rpc_buf_t *b)
 
 	/* if agg successful, done; otherwise, send it */
 	if (rpc_th->tp_dngl_aggregation) {
-		if (bcm_rpc_tp_dngl_agg(rpc_th, b))
-			return 0;
+		err = bcm_rpc_tp_dngl_agg(rpc_th, b);
+		return err;
 	}
+	rpc_th->tp_dngl_agg_cnt_pass++;
 
 	if (rpc_th->tx_flowctl) {
 		bcm_rpc_tp_buf_send_enq(rpc_th, b);
 		err = 0;
 	} else {
-		err = bcm_rpc_tp_buf_send_internal(rpc_th, b);
+		err = bcm_rpc_tp_buf_send_internal(rpc_th, b, USBDEV_BULK_IN_EP1);
 	}
 
 	return err;
 }
 
+static void
+bcm_rpc_tp_buf_pad(rpc_tp_info_t * rpcb, rpc_buf_t *bb, uint padbytes)
+{
+	uint32 *tp_lenp = (uint32 *)bcm_rpc_buf_data(rpcb, bb);
+	uint32 tp_len = ltoh32(*tp_lenp);
+	uint32 pktlen = bcm_rpc_buf_len_get(rpcb, bb);
+	ASSERT(tp_len + BCM_RPC_TP_ENCAP_LEN == pktlen);
+
+	tp_len += padbytes;
+	pktlen += padbytes;
+	*tp_lenp = htol32(tp_len);
+	bcm_rpc_buf_len_set(rpcb, bb, pktlen);
+}
+
 static int
-bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpc_th, rpc_buf_t *b)
+bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b, uint32 tx_ep_index)
 {
 	int err;
 	struct lbuf *lb = (struct lbuf *)b;
-	hndrte_dev_t *chained = rpc_th->ctx->dev_chained;
+	hndrte_dev_t *chained = rpcb->ctx->dev_chained;
+	uint pktlen;
 
 	ASSERT(chained);
 
-	lb = PKTTONATIVE(rpc_th->osh, b);
+	if ((rpcb->tp_dngl_agg_bytes != 0) && (tx_ep_index == USBDEV_BULK_IN_EP1)) {
+		if (rpcb->tp_dngl_agg_bytes == BCM_RPC_TP_DNGL_TOTLEN_BAD) {
+			ASSERT(rpcb->tp_dngl_agg_p == b);
+			ASSERT(rpcb->tp_dngl_agg_ptail != NULL);
+
+			RPC_TP_AGG(("%s, agg tp pkt is %d bytes, padding %d bytes\n", __FUNCTION__,
+				BCM_RPC_TP_DNGL_TOTLEN_BAD, BCM_RPC_TP_DNGL_TOTLEN_BAD_PAD));
+
+			bcm_rpc_tp_buf_pad(rpcb, rpcb->tp_dngl_agg_ptail,
+				BCM_RPC_TP_DNGL_TOTLEN_BAD_PAD);
+
+		} else if (rpcb->tp_dngl_agg_bytes % BCM_RPC_TP_DNGL_TOTLEN_ZLP == 0) {
+			RPC_TP_AGG(("%s, agg tp pkt is multiple of %d bytes, padding %d bytes\n",
+				__FUNCTION__,
+				BCM_RPC_TP_DNGL_TOTLEN_ZLP, BCM_RPC_TP_DNGL_TOTLEN_ZLP_PAD));
+			bcm_rpc_tp_buf_pad(rpcb, rpcb->tp_dngl_agg_ptail,
+				BCM_RPC_TP_DNGL_TOTLEN_ZLP_PAD);
+		}
+
+
+	} else {	/* not aggregated */
+		ASSERT(b != NULL);
+		pktlen = bcm_rpc_buf_len_get(rpcb, b);
+		if (pktlen == BCM_RPC_TP_DNGL_TOTLEN_BAD) {
+			RPC_TP_AGG(("%s, nonagg pkt is %d bytes, padding %d bytes\n", __FUNCTION__,
+				BCM_RPC_TP_DNGL_TOTLEN_BAD, BCM_RPC_TP_DNGL_TOTLEN_BAD_PAD));
+
+			bcm_rpc_tp_buf_pad(rpcb, b, BCM_RPC_TP_DNGL_TOTLEN_BAD_PAD);
+
+		} else if (pktlen % BCM_RPC_TP_DNGL_TOTLEN_ZLP == 0) {
+			RPC_TP_AGG(("%s, nonagg tp pkt is multiple of %d bytes, padding %d bytes\n",
+				__FUNCTION__,
+				BCM_RPC_TP_DNGL_TOTLEN_ZLP, BCM_RPC_TP_DNGL_TOTLEN_ZLP_PAD));
+
+			bcm_rpc_tp_buf_pad(rpcb, b, BCM_RPC_TP_DNGL_TOTLEN_ZLP_PAD);
+		}
+	}
+
+	lb = PKTTONATIVE(rpcb->osh, b);
 	/* send through data endpoint */
-	if ((err = chained->dev_funcs->xmit(rpc_th->ctx, chained, lb)) != 0) {
-		printf("%s: xmit failed; free pkt 0x%p\n", __FUNCTION__, lb);
-		rpc_th->txerr_cnt++;
+	if ((err = chained->dev_funcs->xmit(rpcb->ctx, chained, lb)) != 0) {
+		RPC_TP_ERR(("%s: xmit failed; free pkt 0x%p\n", __FUNCTION__, lb));
+		rpcb->txerr_cnt++;
 		lb_free(lb);
 	} else {
-		rpc_th->tx_cnt++;
+		rpcb->tx_cnt++;
+
+		/* give pkt ownership to usb driver, decrement the counter */
+		rpcb->buf_cnt_inuse -= pktsegcnt(rpcb->osh, b);
 	}
 
 	return err;
@@ -342,23 +648,39 @@ bcm_rpc_tp_dump(rpc_tp_info_t *rpcb)
 		rpcb->bufalloc, rpcb->buf_cnt_inuse, rpcb->tx_cnt, rpcb->txerr_cnt,
 		rpcb->rx_cnt, rpcb->rxdrop_cnt);
 
-#if WLC_LOW
-	printf("tx_flowctrl_cnt %d tx_flowctrl_status %d hwm %d lwm %d\n",
+	printf("tx_flowctrl_cnt %d tx_flowctrl_status %d hwm %d lwm %d hit_hiwm #%d segcnt %d\n",
 		rpcb->tx_flowctl_cnt, rpcb->tx_flowcontrolled,
-		rpcb->tx_q_flowctl_hiwm, rpcb->tx_q_flowctl_lowm);
+		rpcb->tx_q_flowctl_hiwm, rpcb->tx_q_flowctl_lowm, rpcb->tx_q_flowctl_highwm_cnt,
+		rpcb->tx_q_flowctl_segcnt);
 
-	printf("tp_dngl_agg sf_limit %d bytes_limit %d aggregation 0x%x\n",
+	printf("tp_dngl_agg sf_limit %d bytes_limit %d aggregation 0x%x lazy %d\n",
 		rpcb->tp_dngl_agg_sframes_limit, rpcb->tp_dngl_agg_bytes_max,
-		rpcb->tp_dngl_aggregation);
-	printf("agg counter: chain %d, sf %d, bytes %d byte-per-chain %d, bypass %d\n",
+		rpcb->tp_dngl_aggregation, rpcb->tp_dngl_agg_lazy);
+	printf("agg counter: chain %u, sf %u, bytes %u byte-per-chain %u, bypass %u noagg %u\n",
 		rpcb->tp_dngl_agg_cnt_chain, rpcb->tp_dngl_agg_cnt_sf,
 		rpcb->tp_dngl_agg_cnt_bytes,
-		CEIL(rpcb->tp_dngl_agg_cnt_bytes, (rpcb->tp_dngl_agg_cnt_chain + 1)),
-		rpcb->tp_dngl_agg_cnt_pass);
-#endif	/* WLC_LOW */
+	        (rpcb->tp_dngl_agg_cnt_chain == 0) ?
+	        0 : CEIL(rpcb->tp_dngl_agg_cnt_bytes, (rpcb->tp_dngl_agg_cnt_chain)),
+		rpcb->tp_dngl_agg_cnt_pass, rpcb->tp_dngl_agg_cnt_noagg);
+
+	printf("\n");
+
+	printf("tp_dngl_deagg chain %u sf %u bytes %u clone %u badsflen %u badfmt %u\n",
+		rpcb->tp_dngl_deagg_cnt_chain, rpcb->tp_dngl_deagg_cnt_sf,
+		rpcb->tp_dngl_deagg_cnt_bytes, rpcb->tp_dngl_deagg_cnt_clone,
+		rpcb->tp_dngl_deagg_cnt_badsflen, rpcb->tp_dngl_deagg_cnt_badfmt);
+	printf("tp_dngl_deagg byte-per-chain %u passthrough %u\n",
+		(rpcb->tp_dngl_deagg_cnt_chain == 0) ?
+		0 : rpcb->tp_dngl_deagg_cnt_bytes/rpcb->tp_dngl_deagg_cnt_chain,
+		rpcb->tp_dngl_deagg_cnt_pass);
 }
 
 /* Buffer manipulation, LEN + RPC_header + body */
+uint
+bcm_rpc_buf_tp_header_len(rpc_tp_info_t * rpc_th)
+{
+	return BCM_RPC_TP_ENCAP_LEN;
+}
 
 rpc_buf_t *
 bcm_rpc_tp_buf_alloc(rpc_tp_info_t * rpc_th, int len)
@@ -429,7 +751,12 @@ bcm_rpc_buf_next_set(rpc_tp_info_t * rpcb, rpc_buf_t* b, rpc_buf_t *nextb)
 	PKTSETLINK(b, nextb);
 }
 
-#ifdef WLC_LOW
+void
+bcm_rpc_tp_buf_cnt_adjust(rpc_tp_info_t * rpcb, int adjust)
+{
+	rpcb->buf_cnt_inuse += adjust;
+}
+
 void
 bcm_rpc_tp_txflowctlcb_init(rpc_tp_info_t *rpc_th, void *ctx, rpc_txflowctl_cb_t cb)
 {
@@ -472,8 +799,6 @@ bcm_rpc_tp_agg_limit_get(rpc_tp_info_t *rpc_th, uint8 *sf, uint16 *bytes)
 	*bytes = rpc_th->tp_dngl_agg_bytes_max;
 }
 
-#endif	/* WLC_LOW */
-
 /* TP aggregation: set, init, agg, append, close, flush */
 static void
 bcm_rpc_tp_dngl_agg_initstate(rpc_tp_info_t * rpcb)
@@ -485,11 +810,12 @@ bcm_rpc_tp_dngl_agg_initstate(rpc_tp_info_t * rpcb)
 	rpcb->tp_dngl_agg_txpending = 0;
 }
 
-static bool
+static int
 bcm_rpc_tp_dngl_agg(rpc_tp_info_t *rpcb, rpc_buf_t *b)
 {
 	uint totlen;
 	uint pktlen;
+	int err;
 
 	ASSERT(rpcb->tp_dngl_aggregation);
 
@@ -500,17 +826,26 @@ bcm_rpc_tp_dngl_agg(rpc_tp_info_t *rpcb, rpc_buf_t *b)
 	if ((totlen > rpcb->tp_dngl_agg_bytes_max) ||
 		(rpcb->tp_dngl_agg_sframes + 1 > rpcb->tp_dngl_agg_sframes_limit)) {
 
-		RPC_TP_DBGRTE(("bcm_rpc_tp_dngl_agg: terminte TP agg for tpbyte %d or txframe %d\n",
+		RPC_TP_AGG(("bcm_rpc_tp_dngl_agg: terminte TP agg for tpbyte %d or txframe %d\n",
 			rpcb->tp_dngl_agg_bytes_max,	rpcb->tp_dngl_agg_sframes_limit));
 
-		bcm_rpc_tp_dngl_agg_close(rpcb);
-		rpcb->tp_dngl_agg_cnt_pass++;
-
-		return FALSE;
+		/* release current agg, continue with new agg */
+		err = bcm_rpc_tp_dngl_agg_release(rpcb);
+	} else {
+		err = 0;
 	}
 
 	bcm_rpc_tp_dngl_agg_append(rpcb, b);
-	return TRUE;
+
+	/* if the new frag is also already over the agg limit, release it */
+	if (pktlen >= rpcb->tp_dngl_agg_bytes_max) {
+		int new_err;
+		new_err = bcm_rpc_tp_dngl_agg_release(rpcb);
+		if (!err)
+			err = new_err;
+	}
+
+	return err;
 }
 
 /*
@@ -543,33 +878,29 @@ bcm_rpc_tp_dngl_agg_append(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 	rpcb->tp_dngl_agg_sframes++;
 	rpcb->tp_dngl_agg_bytes += tp_len;
 
-	RPC_TP_DBGRTE(("bcm_rpc_tp_dngl_agg_append, tp_len %d tot %d, sframe %d\n", tp_len,
+	RPC_TP_AGG(("%s, tp_len %d tot %d, sframe %d\n", __FUNCTION__, tp_len,
 		rpcb->tp_dngl_agg_bytes, rpcb->tp_dngl_agg_sframes));
 }
 
-#define BCM_RPC_TP_USB_TOTAL_LEN_BOUNDARY	516
-
-static void
-bcm_rpc_tp_dngl_agg_close(rpc_tp_info_t * rpcb)
+static int
+bcm_rpc_tp_dngl_agg_release(rpc_tp_info_t * rpcb)
 {
 	int err;
 	rpc_buf_t *b;
 
 	if (rpcb->tp_dngl_agg_p == NULL) {	/* no aggregation formed */
-		return;
+		return 0;
 	}
 
-	RPC_TP_DBGRTE(("bcm_rpc_tp_dngl_agg_close, send %d, sframe %d\n", rpcb->tp_dngl_agg_bytes,
-		rpcb->tp_dngl_agg_sframes));
+	RPC_TP_AGG(("%s, send %d, sframe %d\n", __FUNCTION__,
+		rpcb->tp_dngl_agg_bytes, rpcb->tp_dngl_agg_sframes));
 
 	b = rpcb->tp_dngl_agg_p;
 	rpcb->tp_dngl_agg_cnt_chain++;
 	rpcb->tp_dngl_agg_cnt_sf += rpcb->tp_dngl_agg_sframes;
 	rpcb->tp_dngl_agg_cnt_bytes += rpcb->tp_dngl_agg_bytes;
-
-	if (rpcb->tp_dngl_agg_bytes == BCM_RPC_TP_USB_TOTAL_LEN_BOUNDARY) {
-		RPC_TP_DBGRTE(("%s: risk totlen pkt\n", __FUNCTION__));
-	}
+	if (rpcb->tp_dngl_agg_sframes == 1)
+		rpcb->tp_dngl_agg_cnt_noagg++;
 
 	bcm_rpc_tp_dngl_agg_initstate(rpcb);
 
@@ -579,13 +910,15 @@ bcm_rpc_tp_dngl_agg_close(rpc_tp_info_t * rpcb)
 		bcm_rpc_tp_buf_send_enq(rpcb, b);
 		err = 0;
 	} else {
-		err = bcm_rpc_tp_buf_send_internal(rpcb, b);
+		err = bcm_rpc_tp_buf_send_internal(rpcb, b, USBDEV_BULK_IN_EP1);
 	}
 
 	if (err != 0) {
-		printf("bcm_rpc_tp_dngl_agg_close: send err!!!\n");
+		RPC_TP_ERR(("bcm_rpc_tp_dngl_agg_release: send err!!!\n"));
 		/* ASSERT(0) */
 	}
+
+	return err;
 }
 
 static void
@@ -599,18 +932,35 @@ bcm_rpc_tp_dngl_agg_flush(rpc_tp_info_t * rpcb)
 }
 
 void
-bcm_rpc_tp_dngl_agg_set(rpc_tp_info_t *rpcb, uint32 reason, bool set)
+bcm_rpc_tp_agg_set(rpc_tp_info_t *rpcb, uint32 reason, bool set)
 {
+	static int i = 0;
+
 	if (set) {
-		RPC_TP_DBGRTE(("bcm_rpc_tp_dngl_agg_set: agg start\n"));
+		RPC_TP_AGG(("%s: agg start\n", __FUNCTION__));
 
 		mboolset(rpcb->tp_dngl_aggregation, reason);
 
 	} else if (rpcb->tp_dngl_aggregation) {
-		RPC_TP_DBGRTE(("bcm_rpc_tp_dngl_agg_set: agg end\n"));
+
+		RPC_TP_AGG(("%s: agg end\n", __FUNCTION__));
+
+		if (i > 0) {
+			i--;
+			return;
+		} else {
+			i = rpcb->tp_dngl_agg_lazy;
+		}
 
 		mboolclr(rpcb->tp_dngl_aggregation, reason);
 		if (!rpcb->tp_dngl_aggregation)
-			bcm_rpc_tp_dngl_agg_close(rpcb);
+			bcm_rpc_tp_dngl_agg_release(rpcb);
 	}
+}
+
+void
+bcm_rpc_tp_msglevel_set(rpc_tp_info_t *rpc_th, uint8 msglevel, bool high_low)
+{
+	ASSERT(high_low == FALSE);
+	tp_level_bmac = msglevel;
 }
