@@ -7,8 +7,7 @@
 # $Id: wl_generic.mk,v 1.3 2008/08/22 22:13:41 Exp $
 #
 
-REBUILD_WL_MODULE=0
-#$(shell if [ -d "$(src)/$(SRCBASE)/wl/sys" -a "$(REUSE_PREBUILT_WL)" != "1" ]; then echo 1; else echo 0; fi)
+REBUILD_WL_MODULE=$(shell if [ -d "$(src)/$(SRCBASE)/wl/sys" -a "$(REUSE_PREBUILT_WL)" != "1" ]; then echo 1; else echo 0; fi)
 
 # If source directory (src/wl/sys) exists and REUSE_PREBUILT_WL is undefined, 
 # then build inside $(SRCBASE)/wl/sys, otherwise use pre-builts
@@ -57,6 +56,15 @@ ifeq ($(REBUILD_WL_MODULE),1)
     
     EXTRA_CFLAGS += -DDMA $(WL_DFLAGS) -I$(src) -I$(src)/.. -I$(src)/$(SRCBASE)/wl/linux \
 		    -I$(src)/$(SRCBASE)/wl/sys -finline-limit=2048
+
+    # If the PHY_HAL flag is defined we look in directory wl/phy for the
+    # phy source files.
+    ifneq ($(findstring PHY_HAL,$(WL_DFLAGS)),)
+        WL_OBJS   += $(foreach file, $(WL_SOURCE), \
+		     $(if $(wildcard $(src)/$(SRCBASE)/wl/phy/$(file)), \
+		     $(addprefix $(SRCBASE)/wl/phy/, $(patsubst %.c,%.o,$(file)))))
+        EXTRA_CFLAGS += -I$(src)/$(SRCBASE)/wl/phy
+    endif
     
     # wl-objs is for linking to wl.o
     $(TARGET)-objs := $(WLCONF_O) $(WL_OBJS)
@@ -92,4 +100,4 @@ $(obj)/$(WLCONF_H): $(WLCFGDIR)/$(WLTUNEFILE) FORCE
 FORCE:
 
 
-clean-files += $(SRCBASE)/wl/sys/*.o $(SRCBASE)/wl/sys/.*.*.cmd $(WLCONF_H) $(WLCONF_O)
+clean-files += $(SRCBASE)/wl/sys/*.o $(SRCBASE)/wl/phy/*.o $(SRCBASE)/wl/sys/.*.*.cmd $(SRCBASE)/wl/phy/.*.*.cmd $(WLCONF_H) $(WLCONF_O)
