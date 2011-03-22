@@ -77,7 +77,6 @@ void configure_single_ath9k(int count)
 	static char basedev[16];
 	static char diversity[32];
 	static char athmac[16];
-	static char maxassoc[32];
 	static char wl_poll[32];
 	static char rxantenna[32];
 	static char txantenna[32];
@@ -201,9 +200,6 @@ void configure_single_ath9k(int count)
 	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
 	sysprintf("iw %s set distance %d", wif, distance);
 
-	sprintf(maxassoc, "%s_maxassoc", dev);
-	sysprintf("echo TBD maxassoc: %s maxassoc %s", dev,
-		  nvram_default_get(maxassoc, "256"));
 // das scheint noch aerger zu machen
 	sysprintf("iw dev %s set power_save off", dev);
 
@@ -405,6 +401,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char fstr[32];
 	FILE *fp = NULL;
 	char *ssid;
+	static char maxassoc[32];
 	char ifname[10];
 	int isrepeater=0;
 	unsigned char hwbuff[16];
@@ -460,6 +457,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "ignore_broadcast_ssid=1\n");
 	else
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
+	sprintf(maxassoc, "%s_maxassoc", ifname);
+	fprintf(fp, "max_num_sta=%s\n", 
+		nvram_default_get(maxassoc, "256"));
 
 	if (aoss)
 		ssid = "ESSID-AOSS";
