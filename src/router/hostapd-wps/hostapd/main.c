@@ -1,6 +1,6 @@
 /*
  * hostapd / main()
- * Copyright (c) 2002-2010, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2011, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -454,7 +454,7 @@ static void show_version(void)
 		"hostapd v" VERSION_STR "\n"
 		"User space daemon for IEEE 802.11 AP management,\n"
 		"IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator\n"
-		"Copyright (c) 2002-2010, Jouni Malinen <j@w1.fi> "
+		"Copyright (c) 2002-2011, Jouni Malinen <j@w1.fi> "
 		"and contributors\n");
 }
 
@@ -473,10 +473,22 @@ static void usage(void)
 		"   -B   run daemon in the background\n"
 		"   -P   PID file\n"
 		"   -K   include key data in debug messages\n"
+#ifdef CONFIG_DEBUG_FILE
+		"   -f   log output to debug file instead of stdout\n"
+#endif /* CONFIG_DEBUG_FILE */
 		"   -t   include timestamps in some debug messages\n"
 		"   -v   show hostapd version\n");
 
 	exit(1);
+}
+
+
+static const char * hostapd_msg_ifname_cb(void *ctx)
+{
+	struct hostapd_data *hapd = ctx;
+	if (hapd && hapd->iconf && hapd->iconf->bss)
+		return hapd->iconf->bss->iface;
+	return NULL;
 }
 
 void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
@@ -489,13 +501,14 @@ int main(int argc, char *argv[])
 	int ret = 1;
 	size_t i;
 	int c, debug = 0;
+	const char *log_file = NULL;
 
 	if (os_program_init())
 		return -1;
 
 	wpa_supplicant_event = hostapd_wpa_event;
 	for (;;) {
-		c = getopt(argc, argv, "BdhKP:tv");
+		c = getopt(argc, argv, "Bdf:hKP:tv");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -509,6 +522,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'B':
 			daemonize++;
+			break;
+		case 'f':
+			log_file = optarg;
 			break;
 		case 'K':
 			wpa_debug_show_keys++;
@@ -533,6 +549,11 @@ int main(int argc, char *argv[])
 
 	if (optind == argc)
 		usage();
+
+	wpa_msg_register_ifname_cb(hostapd_msg_ifname_cb);
+
+	if (log_file)
+		wpa_debug_open_file(log_file);
 
 	interfaces.count = argc - optind;
 	interfaces.iface = os_malloc(interfaces.count *
@@ -567,6 +588,9 @@ int main(int argc, char *argv[])
 
 	hostapd_global_deinit();
 	os_free(pid_file);
+
+	if (log_file)
+		wpa_debug_close_file();
 
 	os_program_deinit();
 

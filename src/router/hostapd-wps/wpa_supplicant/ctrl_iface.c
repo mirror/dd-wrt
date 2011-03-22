@@ -108,6 +108,12 @@ static int wpa_supplicant_ctrl_iface_set(struct wpa_supplicant *wpa_s,
 	} else if (os_strcasecmp(cmd, "ampdu") == 0) {
 		if (wpa_drv_ampdu(wpa_s, atoi(value)) < 0)
 			ret = -1;
+#ifdef CONFIG_TDLS_TESTING
+	} else if (os_strcasecmp(cmd, "tdls_testing") == 0) {
+		extern unsigned int tdls_testing;
+		tdls_testing = strtol(value, NULL, 0);
+		wpa_printf(MSG_DEBUG, "TDLS: tdls_testing=0x%x", tdls_testing);
+#endif /* CONFIG_TDLS_TESTING */
 	} else {
 		value[-1] = '=';
 		ret = wpa_config_process_global(wpa_s->conf, cmd, -1);
@@ -181,6 +187,68 @@ static int wpa_supplicant_ctrl_iface_stkstart(
 #endif /* CONFIG_PEERKEY */
 
 
+#ifdef CONFIG_TDLS
+
+static int wpa_supplicant_ctrl_iface_tdls_discover(
+	struct wpa_supplicant *wpa_s, char *addr)
+{
+	u8 peer[ETH_ALEN];
+
+	if (hwaddr_aton(addr, peer)) {
+		wpa_printf(MSG_DEBUG, "CTRL_IFACE TDLS_DISCOVER: invalid "
+			   "address '%s'", addr);
+		return -1;
+	}
+
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE TDLS_DISCOVER " MACSTR,
+		   MAC2STR(peer));
+
+	return wpa_drv_tdls_oper(wpa_s, TDLS_DISCOVERY_REQ, peer);
+}
+
+
+static int wpa_supplicant_ctrl_iface_tdls_setup(
+	struct wpa_supplicant *wpa_s, char *addr)
+{
+	u8 peer[ETH_ALEN];
+	int ret;
+
+	if (hwaddr_aton(addr, peer)) {
+		wpa_printf(MSG_DEBUG, "CTRL_IFACE TDLS_SETUP: invalid "
+			   "address '%s'", addr);
+		return -1;
+	}
+
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE TDLS_SETUP " MACSTR,
+		   MAC2STR(peer));
+
+	ret = wpa_tdls_reneg(wpa_s->wpa, peer);
+	if (ret)
+		ret = wpa_drv_tdls_oper(wpa_s, TDLS_SETUP, peer);
+	return ret;
+}
+
+
+static int wpa_supplicant_ctrl_iface_tdls_teardown(
+	struct wpa_supplicant *wpa_s, char *addr)
+{
+	u8 peer[ETH_ALEN];
+
+	if (hwaddr_aton(addr, peer)) {
+		wpa_printf(MSG_DEBUG, "CTRL_IFACE TDLS_TEARDOWN: invalid "
+			   "address '%s'", addr);
+		return -1;
+	}
+
+	wpa_printf(MSG_DEBUG, "CTRL_IFACE TDLS_TEARDOWN " MACSTR,
+		   MAC2STR(peer));
+
+	return wpa_drv_tdls_oper(wpa_s, TDLS_TEARDOWN, peer);
+}
+
+#endif /* CONFIG_TDLS */
+
+
 #ifdef CONFIG_IEEE80211R
 static int wpa_supplicant_ctrl_iface_ft_ds(
 	struct wpa_supplicant *wpa_s, char *addr)
@@ -213,10 +281,21 @@ static int wpa_supplicant_ctrl_iface_wps_pbc(struct wpa_supplicant *wpa_s,
 					     char *cmd)
 {
 	u8 bssid[ETH_ALEN], *_bssid = bssid;
+	u8 p2p_dev_addr[ETH_ALEN], *_p2p_dev_addr = NULL;
 
-	if (cmd == NULL || os_strcmp(cmd, "any") == 0)
+	if (cmd == NULL || os_strcmp(cmd, "any") == 0) {
 		_bssid = NULL;
-	else if (hwaddr_aton(cmd, bssid)) {
+#ifdef CONFIG_P2P
+	} else if (os_strncmp(cmd, "p2p_dev_addr=", 13) == 0) {
+		if (hwaddr_aton(cmd + 13, p2p_dev_addr)) {
+			wpa_printf(MSG_DEBUG, "CTRL_IFACE WPS_PBC: invalid "
+				   "P2P Device Address '%s'",
+				   cmd + 13);
+			return -1;
+		}
+		_p2p_dev_addr = p2p_dev_addr;
+#endif /* CONFIG_P2P */
+	} else if (hwaddr_aton(cmd, bssid)) {
 		wpa_printf(MSG_DEBUG, "CTRL_IFACE WPS_PBC: invalid BSSID '%s'",
 			   cmd);
 		return -1;
@@ -224,7 +303,7 @@ static int wpa_supplicant_ctrl_iface_wps_pbc(struct wpa_supplicant *wpa_s,
 
 #ifdef CONFIG_AP
 	if (wpa_s->ap_iface)
-		return wpa_supplicant_ap_wps_pbc(wpa_s, _bssid);
+		return wpa_supplicant_ap_wps_pbc(wpa_s, _bssid, _p2p_dev_addr);
 #endif /* CONFIG_AP */
 
 	return wpas_wps_start_pbc(wpa_s, _bssid, 0);
@@ -1081,7 +1160,7 @@ static int wpa_supplicant_ctrl_iface_scan_result(
 	ret = os_snprintf(pos, end - pos, MACSTR "\t%d\t%d\t",
 			  MAC2STR(bss->bssid), bss->freq, bss->level);
 	if (ret < 0 || ret >= end - pos)
-		return pos - buf;
+		return -1;
 	pos += ret;
 	ie = wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
 	if (ie)
@@ -1093,37 +1172,37 @@ static int wpa_supplicant_ctrl_iface_scan_result(
 	if (!ie && !ie2 && bss->caps & IEEE80211_CAP_PRIVACY) {
 		ret = os_snprintf(pos, end - pos, "[WEP]");
 		if (ret < 0 || ret >= end - pos)
-			return pos - buf;
+			return -1;
 		pos += ret;
 	}
 	if (bss->caps & IEEE80211_CAP_IBSS) {
 		ret = os_snprintf(pos, end - pos, "[IBSS]");
 		if (ret < 0 || ret >= end - pos)
-			return pos - buf;
+			return -1;
 		pos += ret;
 	}
 	if (bss->caps & IEEE80211_CAP_ESS) {
 		ret = os_snprintf(pos, end - pos, "[ESS]");
 		if (ret < 0 || ret >= end - pos)
-			return pos - buf;
+			return -1;
 		pos += ret;
 	}
 	if (p2p) {
 		ret = os_snprintf(pos, end - pos, "[P2P]");
 		if (ret < 0 || ret >= end - pos)
-			return pos - buf;
+			return -1;
 		pos += ret;
 	}
 
 	ret = os_snprintf(pos, end - pos, "\t%s",
 			  wpa_ssid_txt(bss->ssid, bss->ssid_len));
 	if (ret < 0 || ret >= end - pos)
-		return pos - buf;
+		return -1;
 	pos += ret;
 
 	ret = os_snprintf(pos, end - pos, "\n");
 	if (ret < 0 || ret >= end - pos)
-		return pos - buf;
+		return -1;
 	pos += ret;
 
 	return pos - buf;
@@ -1915,6 +1994,22 @@ static int wpa_supplicant_ctrl_iface_ap_scan(
 }
 
 
+static int wpa_supplicant_ctrl_iface_bss_expire_age(
+	struct wpa_supplicant *wpa_s, char *cmd)
+{
+	int expire_age = atoi(cmd);
+	return wpa_supplicant_set_bss_expiration_age(wpa_s, expire_age);
+}
+
+
+static int wpa_supplicant_ctrl_iface_bss_expire_count(
+	struct wpa_supplicant *wpa_s, char *cmd)
+{
+	int expire_count = atoi(cmd);
+	return wpa_supplicant_set_bss_expiration_count(wpa_s, expire_count);
+}
+
+
 static void wpa_supplicant_ctrl_iface_drop_sa(struct wpa_supplicant *wpa_s)
 {
 	wpa_printf(MSG_DEBUG, "Dropping SA without deauthentication");
@@ -1989,8 +2084,7 @@ static int p2p_ctrl_find(struct wpa_supplicant *wpa_s, char *cmd)
 	else if (os_strstr(cmd, "type=progressive"))
 		type = P2P_FIND_PROGRESSIVE;
 
-	wpas_p2p_find(wpa_s, timeout, type);
-	return 0;
+	return wpas_p2p_find(wpa_s, timeout, type, 0, NULL);
 }
 
 
@@ -2786,6 +2880,9 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	if (os_strcmp(buf, "PING") == 0) {
 		os_memcpy(reply, "PONG\n", 5);
 		reply_len = 5;
+	} else if (os_strncmp(buf, "RELOG", 5) == 0) {
+		if (wpa_debug_reopen_file() < 0)
+			reply_len = -1;
 	} else if (os_strncmp(buf, "NOTE ", 5) == 0) {
 		wpa_printf(MSG_INFO, "NOTE: %s", buf + 5);
 #ifdef CONFIG_CTRL_IFACE_MIB
@@ -2850,10 +2947,18 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 #endif /* CONFIG_IEEE80211R */
 #ifdef CONFIG_WPS
 	} else if (os_strcmp(buf, "WPS_PBC") == 0) {
-		if (wpa_supplicant_ctrl_iface_wps_pbc(wpa_s, NULL))
+		int res = wpa_supplicant_ctrl_iface_wps_pbc(wpa_s, NULL);
+		if (res == -2) {
+			os_memcpy(reply, "FAIL-PBC-OVERLAP\n", 17);
+			reply_len = 17;
+		} else if (res)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "WPS_PBC ", 8) == 0) {
-		if (wpa_supplicant_ctrl_iface_wps_pbc(wpa_s, buf + 8))
+		int res = wpa_supplicant_ctrl_iface_wps_pbc(wpa_s, buf + 8);
+		if (res == -2) {
+			os_memcpy(reply, "FAIL-PBC-OVERLAP\n", 17);
+			reply_len = 17;
+		} else if (res)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "WPS_PIN ", 8) == 0) {
 		reply_len = wpa_supplicant_ctrl_iface_wps_pin(wpa_s, buf + 8,
@@ -2990,7 +3095,8 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strcmp(buf, "P2P_FLUSH") == 0) {
 		os_memset(wpa_s->p2p_auth_invite, 0, ETH_ALEN);
 		wpa_s->force_long_sd = 0;
-		p2p_flush(wpa_s->global->p2p);
+		if (wpa_s->global->p2p)
+			p2p_flush(wpa_s->global->p2p);
 	} else if (os_strncmp(buf, "P2P_UNAUTHORIZE ", 16) == 0) {
 		if (wpas_p2p_unauthorize(wpa_s, buf + 16) < 0)
 			reply_len = -1;
@@ -3108,6 +3214,24 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "STA_AUTOCONNECT ", 16) == 0) {
 		if (wpa_supplicant_ctrl_iface_sta_autoconnect(wpa_s, buf + 16))
 			reply_len = -1;
+	} else if (os_strncmp(buf, "BSS_EXPIRE_AGE ", 15) == 0) {
+		if (wpa_supplicant_ctrl_iface_bss_expire_age(wpa_s, buf + 15))
+			reply_len = -1;
+	} else if (os_strncmp(buf, "BSS_EXPIRE_COUNT ", 17) == 0) {
+		if (wpa_supplicant_ctrl_iface_bss_expire_count(wpa_s,
+							       buf + 17))
+			reply_len = -1;
+#ifdef CONFIG_TDLS
+	} else if (os_strncmp(buf, "TDLS_DISCOVER ", 14) == 0) {
+		if (wpa_supplicant_ctrl_iface_tdls_discover(wpa_s, buf + 14))
+			reply_len = -1;
+	} else if (os_strncmp(buf, "TDLS_SETUP ", 11) == 0) {
+		if (wpa_supplicant_ctrl_iface_tdls_setup(wpa_s, buf + 11))
+			reply_len = -1;
+	} else if (os_strncmp(buf, "TDLS_TEARDOWN ", 14) == 0) {
+		if (wpa_supplicant_ctrl_iface_tdls_teardown(wpa_s, buf + 14))
+			reply_len = -1;
+#endif /* CONFIG_TDLS */
 	} else {
 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
 		reply_len = 16;

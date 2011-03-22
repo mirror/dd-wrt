@@ -695,6 +695,11 @@ void wpas_dbus_signal_prop_changed(struct wpa_supplicant *wpa_s,
 		getter = (WPADBusPropertyAccessor) wpas_dbus_getter_bsss;
 		prop = "BSSs";
 		break;
+	case WPAS_DBUS_PROP_CURRENT_AUTH_MODE:
+		getter = (WPADBusPropertyAccessor)
+			wpas_dbus_getter_current_auth_mode;
+		prop = "CurrentAuthMode";
+		break;
 	default:
 		wpa_printf(MSG_ERROR, "dbus: %s: Unknown Property value %d",
 			   __func__, property);
@@ -1307,6 +1312,12 @@ static const struct wpa_dbus_method_desc wpas_dbus_interface_methods[] = {
 		  END_ARGS
 	  }
 	},
+	{ "RemoveAllNetworks", WPAS_DBUS_NEW_IFACE_INTERFACE,
+	  (WPADBusMethodHandler) &wpas_dbus_handler_remove_all_networks,
+	  {
+		  END_ARGS
+	  }
+	},
 	{ "SelectNetwork", WPAS_DBUS_NEW_IFACE_INTERFACE,
 	  (WPADBusMethodHandler) &wpas_dbus_handler_select_network,
 	  {
@@ -1347,6 +1358,13 @@ static const struct wpa_dbus_method_desc wpas_dbus_interface_methods[] = {
 	  }
 	},
 #endif /* CONFIG_WPS */
+	{ "FlushBSS", WPAS_DBUS_NEW_IFACE_INTERFACE,
+	  (WPADBusMethodHandler) &wpas_dbus_handler_flush_bss,
+	  {
+		  { "age", "u", ARG_IN },
+		  END_ARGS
+	  }
+	},
 	{ NULL, NULL, NULL, { END_ARGS } }
 };
 
@@ -1368,6 +1386,16 @@ static const struct wpa_dbus_property_desc wpas_dbus_interface_properties[] = {
 	  (WPADBusPropertyAccessor) wpas_dbus_setter_ap_scan,
 	  RW
 	},
+	{ "BSSExpireAge", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
+	  (WPADBusPropertyAccessor) wpas_dbus_getter_bss_expire_age,
+	  (WPADBusPropertyAccessor) wpas_dbus_setter_bss_expire_age,
+	  RW
+	},
+	{ "BSSExpireCount", WPAS_DBUS_NEW_IFACE_INTERFACE, "u",
+	  (WPADBusPropertyAccessor) wpas_dbus_getter_bss_expire_count,
+	  (WPADBusPropertyAccessor) wpas_dbus_setter_bss_expire_count,
+	  RW
+	},
 	{ "Ifname", WPAS_DBUS_NEW_IFACE_INTERFACE, "s",
 	  (WPADBusPropertyAccessor) wpas_dbus_getter_ifname,
 	  NULL, R
@@ -1386,6 +1414,10 @@ static const struct wpa_dbus_property_desc wpas_dbus_interface_properties[] = {
 	},
 	{ "CurrentNetwork", WPAS_DBUS_NEW_IFACE_INTERFACE, "o",
 	  (WPADBusPropertyAccessor) wpas_dbus_getter_current_network,
+	  NULL, R
+	},
+	{ "CurrentAuthMode", WPAS_DBUS_NEW_IFACE_INTERFACE, "s",
+	  (WPADBusPropertyAccessor) wpas_dbus_getter_current_auth_mode,
 	  NULL, R
 	},
 	{ "Blobs", WPAS_DBUS_NEW_IFACE_INTERFACE, "a{say}",

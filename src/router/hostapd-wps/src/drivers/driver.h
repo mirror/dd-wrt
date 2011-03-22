@@ -694,6 +694,14 @@ struct p2p_params {
 	size_t num_sec_dev_types;
 };
 
+enum tdls_oper {
+	TDLS_DISCOVERY_REQ,
+	TDLS_SETUP,
+	TDLS_TEARDOWN,
+	TDLS_ENABLE_LINK,
+	TDLS_DISABLE_LINK
+};
+
 /**
  * struct wpa_driver_ops - Driver interface API definition
  *
@@ -780,7 +788,7 @@ struct wpa_driver_ops {
 	 * Please note that TKIP keys include separate TX and RX MIC keys and
 	 * some drivers may expect them in different order than wpa_supplicant
 	 * is using. If the TX/RX keys are swapped, all TKIP encrypted packets
-	 * will tricker Michael MIC errors. This can be fixed by changing the
+	 * will trigger Michael MIC errors. This can be fixed by changing the
 	 * order of MIC keys by swapping te bytes 16..23 and 24..31 of the key
 	 * in driver_*.c set_key() implementation, see driver_ndis.c for an
 	 * example on how this can be done.
@@ -1596,11 +1604,13 @@ struct wpa_driver_ops {
 	 * @if_addr: Buffer for returning the allocated interface address
 	 *	(this may differ from the requested addr if the driver cannot
 	 *	change interface address)
+	 * @bridge: Bridge interface to use or %NULL if no bridge configured
 	 * Returns: 0 on success, -1 on failure
 	 */
 	int (*if_add)(void *priv, enum wpa_driver_if_type type,
 		      const char *ifname, const u8 *addr, void *bss_ctx,
-		      void **drv_priv, char *force_ifname, u8 *if_addr);
+		      void **drv_priv, char *force_ifname, u8 *if_addr,
+		      const char *bridge);
 
 	/**
 	 * if_remove - Remove a virtual interface
@@ -2188,6 +2198,26 @@ struct wpa_driver_ops {
 			  const u8 *bssid, const u8 *ssid, size_t ssid_len,
 			  const u8 *go_dev_addr, int persistent_group);
 
+	/**
+	 * send_tdls_mgmt - for sending TDLS management packets
+	 * @priv: private driver interface data
+	 * @dst: Destination (peer) MAC address
+	 * @action_code: TDLS action code for the mssage
+	 * @dialog_token: Dialog Token to use in the message (if needed)
+	 * @status_code: Status Code or Reason Code to use (if needed)
+	 * @buf: TDLS IEs to add to the message
+	 * @len: Length of buf in octets
+	 * Returns: 0 on success, -1 on failure
+	 *
+	 * This optional function can be used to send packet to driver which is
+	 * responsible for receiving and sending all TDLS packets.
+	 */
+	int (*send_tdls_mgmt)(void *priv, const u8 *dst, u8 action_code,
+			      u8 dialog_token, u16 status_code,
+			      const u8 *buf, size_t len);
+
+	int (*tdls_oper)(void *priv, enum tdls_oper oper, const u8 *peer);
+
 	int (*stop_ap)(void *priv);
 };
 
@@ -2309,6 +2339,13 @@ enum wpa_event_type {
 	 * event.
 	 */
 	EVENT_STKSTART,
+
+	/**
+	 * EVENT_TDLS - Request TDLS operation
+	 *
+	 * This event can be used to request a TDLS operation to be performed.
+	 */
+	EVENT_TDLS,
 
 	/**
 	 * EVENT_FT_RESPONSE - Report FT (IEEE 802.11r) response IEs
@@ -2579,7 +2616,12 @@ enum wpa_event_type {
 	EVENT_P2P_PROV_DISC_REQUEST,
 	EVENT_P2P_PROV_DISC_RESPONSE,
 	EVENT_P2P_SD_REQUEST,
-	EVENT_P2P_SD_RESPONSE
+	EVENT_P2P_SD_RESPONSE,
+
+	/**
+	 * EVENT_IBSS_PEER_LOST - IBSS peer not reachable anymore
+	 */
+	EVENT_IBSS_PEER_LOST
 };
 
 
@@ -2596,6 +2638,11 @@ union wpa_event_data {
 	 * calls.
 	 */
 	struct assoc_info {
+		/**
+		 * reassoc - Flag to indicate association or reassociation
+		 */
+		int reassoc;
+
 		/**
 		 * req_ies - (Re)Association Request IEs
 		 *
@@ -2753,6 +2800,18 @@ union wpa_event_data {
 	struct stkstart {
 		u8 peer[ETH_ALEN];
 	} stkstart;
+
+	/**
+	 * struct tdls - Data for EVENT_TDLS
+	 */
+	struct tdls {
+		u8 peer[ETH_ALEN];
+		enum {
+			TDLS_REQUEST_SETUP,
+			TDLS_REQUEST_TEARDOWN
+		} oper;
+		u16 reason_code; /* for teardown */
+	} tdls;
 
 	/**
 	 * struct ft_ies - FT information elements (EVENT_FT_RESPONSE)
@@ -3093,6 +3152,13 @@ union wpa_event_data {
 		const u8 *tlvs;
 		size_t tlvs_len;
 	} p2p_sd_resp;
+
+	/**
+	 * struct ibss_peer_lost - Data for EVENT_IBSS_PEER_LOST
+	 */
+	struct ibss_peer_lost {
+		u8 peer[ETH_ALEN];
+	} ibss_peer_lost;
 };
 
 /**
@@ -3115,10 +3181,11 @@ extern void (*wpa_supplicant_event)(void *ctx, enum wpa_event_type event,
  */
 
 static inline void drv_event_assoc(void *ctx, const u8 *addr, const u8 *ie,
-				   size_t ielen)
+				   size_t ielen, int reassoc)
 {
 	union wpa_event_data event;
 	os_memset(&event, 0, sizeof(event));
+	event.assoc_info.reassoc = reassoc;
 	event.assoc_info.req_ies = ie;
 	event.assoc_info.req_ies_len = ielen;
 	event.assoc_info.addr = addr;

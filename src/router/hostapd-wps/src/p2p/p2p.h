@@ -138,6 +138,58 @@ enum p2p_scan_type {
 	P2P_SCAN_SOCIAL_PLUS_ONE
 };
 
+#define P2P_MAX_WPS_VENDOR_EXT 10
+
+/**
+ * struct p2p_peer_info - P2P peer information
+ */
+struct p2p_peer_info {
+	/**
+	 * p2p_device_addr - P2P Device Address of the peer
+	 */
+	u8 p2p_device_addr[ETH_ALEN];
+
+	/**
+	 * pri_dev_type - Primary Device Type
+	 */
+	u8 pri_dev_type[8];
+
+	/**
+	 * device_name - Device Name
+	 */
+	char device_name[33];
+
+	/**
+	 * config_methods - WPS Configuration Methods
+	 */
+	u16 config_methods;
+
+	/**
+	 * dev_capab - Device Capabilities
+	 */
+	u8 dev_capab;
+
+	/**
+	 * group_capab - Group Capabilities
+	 */
+	u8 group_capab;
+
+	/**
+	 * wps_sec_dev_type_list - WPS secondary device type list
+	 *
+	 * This list includes from 0 to 16 Secondary Device Types as indicated
+	 * by wps_sec_dev_type_list_len (8 * number of types).
+	 */
+	u8 wps_sec_dev_type_list[128];
+
+	/**
+	 * wps_sec_dev_type_list_len - Length of secondary device type list
+	 */
+	size_t wps_sec_dev_type_list_len;
+
+	struct wpabuf *wps_vendor_ext[P2P_MAX_WPS_VENDOR_EXT];
+};
+
 /**
  * struct p2p_config - P2P configuration
  *
@@ -263,6 +315,8 @@ struct p2p_config {
 	 * @ctx: Callback context from cb_ctx
 	 * @type: Scan type
 	 * @freq: Specific frequency (MHz) to scan or 0 for no restriction
+	 * @num_req_dev_types: Number of requested device types
+	 * @req_dev_types: Array containing requested device types
 	 * Returns: 0 on success, -1 on failure
 	 *
 	 * This callback function is used to request a P2P scan or search
@@ -284,7 +338,9 @@ struct p2p_config {
 	 * then calling p2p_scan_res_handled() to indicate that all scan
 	 * results have been indicated.
 	 */
-	int (*p2p_scan)(void *ctx, enum p2p_scan_type type, int freq);
+	int (*p2p_scan)(void *ctx, enum p2p_scan_type type, int freq,
+			unsigned int num_req_dev_types,
+			const u8 *req_dev_types);
 
 	/**
 	 * send_probe_resp - Transmit a Probe Response frame
@@ -393,21 +449,26 @@ struct p2p_config {
 	 * dev_found - Notification of a found P2P Device
 	 * @ctx: Callback context from cb_ctx
 	 * @addr: Source address of the message triggering this notification
-	 * @dev_addr: P2P Device Address of the found P2P Device
-	 * @pri_dev_type: Primary Device Type
-	 * @dev_name: Device Name
-	 * @config_methods: Configuration Methods
-	 * @dev_capab: Device Capabilities
-	 * @group_capab: Group Capabilities
+	 * @info: P2P peer information
+	 * @new_device: Inform if the peer is newly found
 	 *
 	 * This callback is used to notify that a new P2P Device has been
 	 * found. This may happen, e.g., during Search state based on scan
 	 * results or during Listen state based on receive Probe Request and
 	 * Group Owner Negotiation Request.
 	 */
-	void (*dev_found)(void *ctx, const u8 *addr, const u8 *dev_addr,
-			  const u8 *pri_dev_type, const char *dev_name,
-			  u16 config_methods, u8 dev_capab, u8 group_capab);
+	void (*dev_found)(void *ctx, const u8 *addr,
+			  const struct p2p_peer_info *info,
+			  int new_device);
+
+	/**
+	 * dev_lost - Notification of a lost P2P Device
+	 * @ctx: Callback context from cb_ctx
+	 * @dev_addr: P2P Device Address of the lost P2P Device
+	 *
+	 * This callback is used to notify that a P2P Device has been deleted.
+	 */
+	void (*dev_lost)(void *ctx, const u8 *dev_addr);
 
 	/**
 	 * go_neg_req_rx - Notification of a receive GO Negotiation Request
@@ -676,10 +737,15 @@ enum p2p_discovery_type {
  * @p2p: P2P module context from p2p_init()
  * @timeout: Timeout for find operation in seconds or 0 for no timeout
  * @type: Device Discovery type
+ * @num_req_dev_types: Number of requested device types
+ * @req_dev_types: Requested device types array, must be an array
+ *	containing num_req_dev_types * WPS_DEV_TYPE_LEN bytes; %NULL if no
+ *	requested device types.
  * Returns: 0 on success, -1 on failure
  */
 int p2p_find(struct p2p_data *p2p, unsigned int timeout,
-	     enum p2p_discovery_type type);
+	     enum p2p_discovery_type type,
+	     unsigned int num_req_dev_types, const u8 *req_dev_types);
 
 /**
  * p2p_stop_find - Stop P2P Find (Device Discovery)
@@ -1339,5 +1405,33 @@ unsigned int p2p_get_group_num_members(struct p2p_group *group);
  * Returns: A P2P Interface Address for each call and %NULL for no more members
  */
 const u8 * p2p_iterate_group_members(struct p2p_group *group, void **next);
+
+/**
+ * p2p_get_peer_found - Get P2P peer info structure of a found peer
+ * @p2p: P2P module context from p2p_init()
+ * @addr: P2P Device Address of the peer or %NULL to indicate the first peer
+ * @next: Whether to select the peer entry following the one indicated by addr
+ * Returns: The first P2P peer info available or %NULL if no such peer exists
+ */
+const struct p2p_peer_info *
+p2p_get_peer_found(struct p2p_data *p2p, const u8 *addr, int next);
+
+/**
+ * p2p_remove_wps_vendor_extensions - Remove WPS vendor extensions
+ * @p2p: P2P module context from p2p_init()
+ */
+void p2p_remove_wps_vendor_extensions(struct p2p_data *p2p);
+
+/**
+ * p2p_add_wps_vendor_extension - Add a WPS vendor extension
+ * @p2p: P2P module context from p2p_init()
+ * @vendor_ext: The vendor extensions to add
+ * Returns: 0 on success, -1 on failure
+ *
+ * The wpabuf structures in the array are owned by the P2P
+ * module after this call.
+ */
+int p2p_add_wps_vendor_extension(struct p2p_data *p2p,
+				 const struct wpabuf *vendor_ext);
 
 #endif /* P2P_H */

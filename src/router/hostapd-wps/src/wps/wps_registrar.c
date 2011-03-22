@@ -135,6 +135,8 @@ struct wps_registrar {
 
 	u8 authorized_macs[WPS_MAX_AUTHORIZED_MACS][ETH_ALEN];
 	u8 authorized_macs_union[WPS_MAX_AUTHORIZED_MACS][ETH_ALEN];
+
+	u8 p2p_dev_addr[ETH_ALEN];
 };
 
 
@@ -308,20 +310,25 @@ static void wps_registrar_add_pbc_session(struct wps_registrar *reg,
 
 
 static void wps_registrar_remove_pbc_session(struct wps_registrar *reg,
-					     const u8 *addr, const u8 *uuid_e)
+					     const u8 *uuid_e)
 {
-	struct wps_pbc_session *pbc, *prev = NULL;
+	struct wps_pbc_session *pbc, *prev = NULL, *tmp;
 
 	pbc = reg->pbc_sessions;
 	while (pbc) {
-		if (os_memcmp(pbc->addr, addr, ETH_ALEN) == 0 &&
-		    os_memcmp(pbc->uuid_e, uuid_e, WPS_UUID_LEN) == 0) {
+		if (os_memcmp(pbc->uuid_e, uuid_e, WPS_UUID_LEN) == 0) {
 			if (prev)
 				prev->next = pbc->next;
 			else
 				reg->pbc_sessions = pbc->next;
-			os_free(pbc);
-			break;
+			tmp = pbc;
+			pbc = pbc->next;
+			wpa_printf(MSG_DEBUG, "WPS: Removing PBC session for "
+				   "addr=" MACSTR, MAC2STR(tmp->addr));
+			wpa_hexdump(MSG_DEBUG, "WPS: Removed UUID-E",
+				    tmp->uuid_e, WPS_UUID_LEN);
+			os_free(tmp);
+			continue;
 		}
 		prev = pbc;
 		pbc = pbc->next;
@@ -334,21 +341,45 @@ int wps_registrar_pbc_overlap(struct wps_registrar *reg,
 {
 	int count = 0;
 	struct wps_pbc_session *pbc;
+	struct wps_pbc_session *first = NULL;
 	struct os_time now;
 
 	os_get_time(&now);
 
-	for (pbc = reg->pbc_sessions; pbc; pbc = pbc->next) {
-		if (now.sec > pbc->timestamp.sec + WPS_PBC_WALK_TIME)
-			break;
-		if (addr == NULL || os_memcmp(addr, pbc->addr, ETH_ALEN) ||
-		    uuid_e == NULL ||
-		    os_memcmp(uuid_e, pbc->uuid_e, WPS_UUID_LEN))
-			count++;
+	wpa_printf(MSG_DEBUG, "WPS: Checking active PBC sessions for overlap");
+
+	if (uuid_e) {
+		wpa_printf(MSG_DEBUG, "WPS: Add one for the requested UUID");
+		wpa_hexdump(MSG_DEBUG, "WPS: Requested UUID",
+			    uuid_e, WPS_UUID_LEN);
+		count++;
 	}
 
-	if (addr || uuid_e)
-		count++;
+	for (pbc = reg->pbc_sessions; pbc; pbc = pbc->next) {
+		wpa_printf(MSG_DEBUG, "WPS: Consider PBC session with " MACSTR,
+			   MAC2STR(pbc->addr));
+		wpa_hexdump(MSG_DEBUG, "WPS: UUID-E",
+			    pbc->uuid_e, WPS_UUID_LEN);
+		if (now.sec > pbc->timestamp.sec + WPS_PBC_WALK_TIME) {
+			wpa_printf(MSG_DEBUG, "WPS: PBC walk time has "
+				   "expired");
+			break;
+		}
+		if (first &&
+		    os_memcmp(pbc->uuid_e, first->uuid_e, WPS_UUID_LEN) == 0) {
+			wpa_printf(MSG_DEBUG, "WPS: Same Enrollee");
+			continue; /* same Enrollee */
+		}
+		if (uuid_e == NULL ||
+		    os_memcmp(uuid_e, pbc->uuid_e, WPS_UUID_LEN)) {
+			wpa_printf(MSG_DEBUG, "WPS: New Enrollee");
+			count++;
+		}
+		if (first == NULL)
+			first = pbc;
+	}
+
+	wpa_printf(MSG_DEBUG, "WPS: %u active PBC session(s) found", count);
 
 	return count > 1 ? 1 : 0;
 }
@@ -842,6 +873,7 @@ static void wps_registrar_stop_pbc(struct wps_registrar *reg)
 {
 	reg->selected_registrar = 0;
 	reg->pbc = 0;
+	os_memset(reg->p2p_dev_addr, 0, ETH_ALEN);
 	wps_registrar_remove_authorized_mac(reg,
 					    (u8 *) "\xff\xff\xff\xff\xff\xff");
 	wps_registrar_selected_registrar_changed(reg);
@@ -861,24 +893,35 @@ static void wps_registrar_pbc_timeout(void *eloop_ctx, void *timeout_ctx)
 /**
  * wps_registrar_button_pushed - Notify Registrar that AP button was pushed
  * @reg: Registrar data from wps_registrar_init()
- * Returns: 0 on success, -1 on failure
+ * @p2p_dev_addr: Limit allowed PBC devices to the specified P2P device, %NULL
+ *	indicates no such filtering
+ * Returns: 0 on success, -1 on failure, -2 on session overlap
  *
  * This function is called on an AP when a push button is pushed to activate
  * PBC mode. The PBC mode will be stopped after walk time (2 minutes) timeout
- * or when a PBC registration is completed.
+ * or when a PBC registration is completed. If more than one Enrollee in active
+ * PBC mode has been detected during the monitor time (previous 2 minutes), the
+ * PBC mode is not actived and -2 is returned to indicate session overlap. This
+ * is skipped if a specific Enrollee is selected.
  */
-int wps_registrar_button_pushed(struct wps_registrar *reg)
+int wps_registrar_button_pushed(struct wps_registrar *reg,
+				const u8 *p2p_dev_addr)
 {
-	if (wps_registrar_pbc_overlap(reg, NULL, NULL)) {
+	if (p2p_dev_addr == NULL &&
+	    wps_registrar_pbc_overlap(reg, NULL, NULL)) {
 		wpa_printf(MSG_DEBUG, "WPS: PBC overlap - do not start PBC "
 			   "mode");
 		wps_pbc_overlap_event(reg->wps);
-		return -1;
+		return -2;
 	}
 	wpa_printf(MSG_DEBUG, "WPS: Button pushed - PBC mode started");
 	reg->force_pbc_overlap = 0;
 	reg->selected_registrar = 1;
 	reg->pbc = 1;
+	if (p2p_dev_addr)
+		os_memcpy(reg->p2p_dev_addr, p2p_dev_addr, ETH_ALEN);
+	else
+		os_memset(reg->p2p_dev_addr, 0, ETH_ALEN);
 	wps_registrar_add_authorized_mac(reg,
 					 (u8 *) "\xff\xff\xff\xff\xff\xff");
 	wps_registrar_selected_registrar_changed(reg);
@@ -988,6 +1031,8 @@ void wps_registrar_probe_req_rx(struct wps_registrar *reg, const u8 *addr,
 			   "UUID-E included");
 		return;
 	}
+	wpa_hexdump(MSG_DEBUG, "WPS: UUID-E from Probe Request", attr.uuid_e,
+		    WPS_UUID_LEN);
 
 	wps_registrar_add_pbc_session(reg, addr, attr.uuid_e);
 	if (wps_registrar_pbc_overlap(reg, addr, attr.uuid_e)) {
@@ -1068,14 +1113,23 @@ static int wps_set_ie(struct wps_registrar *reg)
 	struct wpabuf *probe;
 	const u8 *auth_macs;
 	size_t count;
+	size_t vendor_len = 0;
+	int i;
 
 	if (reg->set_ie_cb == NULL)
 		return 0;
 
-	beacon = wpabuf_alloc(400);
+	for (i = 0; i < MAX_WPS_VENDOR_EXTENSIONS; i++) {
+		if (reg->wps->dev.vendor_ext[i]) {
+			vendor_len += 2 + 2;
+			vendor_len += wpabuf_len(reg->wps->dev.vendor_ext[i]);
+		}
+	}
+
+	beacon = wpabuf_alloc(400 + vendor_len);
 	if (beacon == NULL)
 		return -1;
-	probe = wpabuf_alloc(500);
+	probe = wpabuf_alloc(500 + vendor_len);
 	if (probe == NULL) {
 		wpabuf_free(beacon);
 		return -1;
@@ -1093,11 +1147,21 @@ static int wps_set_ie(struct wps_registrar *reg)
 	    wps_build_sel_reg_config_methods(reg, beacon) ||
 	    wps_build_sel_pbc_reg_uuid_e(reg, beacon) ||
 	    (reg->dualband && wps_build_rf_bands(&reg->wps->dev, beacon)) ||
-	    wps_build_wfa_ext(beacon, 0, auth_macs, count)) {
+	    wps_build_wfa_ext(beacon, 0, auth_macs, count) ||
+	    wps_build_vendor_ext(&reg->wps->dev, beacon)) {
 		wpabuf_free(beacon);
 		wpabuf_free(probe);
 		return -1;
 	}
+
+#ifdef CONFIG_P2P
+	if (wps_build_dev_name(&reg->wps->dev, beacon) ||
+	    wps_build_primary_dev_type(&reg->wps->dev, beacon)) {
+		wpabuf_free(beacon);
+		wpabuf_free(probe);
+		return -1;
+	}
+#endif /* CONFIG_P2P */
 
 	wpa_printf(MSG_DEBUG, "WPS: Build Probe Response IEs");
 
@@ -1113,20 +1177,12 @@ static int wps_set_ie(struct wps_registrar *reg)
 	    wps_build_device_attrs(&reg->wps->dev, probe) ||
 	    wps_build_probe_config_methods(reg, probe) ||
 	    wps_build_rf_bands(&reg->wps->dev, probe) ||
-	    wps_build_wfa_ext(probe, 0, auth_macs, count)) {
+	    wps_build_wfa_ext(probe, 0, auth_macs, count) ||
+	    wps_build_vendor_ext(&reg->wps->dev, probe)) {
 		wpabuf_free(beacon);
 		wpabuf_free(probe);
 		return -1;
 	}
-
-#ifdef CONFIG_P2P
-	if (wps_build_dev_name(&reg->wps->dev, beacon) ||
-	    wps_build_primary_dev_type(&reg->wps->dev, beacon)) {
-		wpabuf_free(beacon);
-		wpabuf_free(probe);
-		return -1;
-	}
-#endif /* CONFIG_P2P */
 
 	beacon = wps_ie_encapsulate(beacon);
 	probe = wps_ie_encapsulate(probe);
@@ -2226,6 +2282,45 @@ static int wps_process_config_error(struct wps_data *wps, const u8 *err)
 }
 
 
+static int wps_registrar_p2p_dev_addr_match(struct wps_data *wps)
+{
+#ifdef CONFIG_P2P
+	struct wps_registrar *reg = wps->wps->registrar;
+
+	if (is_zero_ether_addr(reg->p2p_dev_addr))
+		return 1; /* no filtering in use */
+
+	if (os_memcmp(reg->p2p_dev_addr, wps->p2p_dev_addr, ETH_ALEN) != 0) {
+		wpa_printf(MSG_DEBUG, "WPS: No match on P2P Device Address "
+			   "filtering for PBC: expected " MACSTR " was "
+			   MACSTR " - indicate PBC session overlap",
+			   MAC2STR(reg->p2p_dev_addr),
+			   MAC2STR(wps->p2p_dev_addr));
+		return 0;
+	}
+#endif /* CONFIG_P2P */
+	return 1;
+}
+
+
+static int wps_registrar_skip_overlap(struct wps_data *wps)
+{
+#ifdef CONFIG_P2P
+	struct wps_registrar *reg = wps->wps->registrar;
+
+	if (is_zero_ether_addr(reg->p2p_dev_addr))
+		return 0; /* no specific Enrollee selected */
+
+	if (os_memcmp(reg->p2p_dev_addr, wps->p2p_dev_addr, ETH_ALEN) == 0) {
+		wpa_printf(MSG_DEBUG, "WPS: Skip PBC overlap due to selected "
+			   "Enrollee match");
+		return 1;
+	}
+#endif /* CONFIG_P2P */
+	return 0;
+}
+
+
 static enum wps_process_res wps_process_m1(struct wps_data *wps,
 					   struct wps_parse_attr *attr)
 {
@@ -2278,14 +2373,19 @@ static enum wps_process_res wps_process_m1(struct wps_data *wps,
 #endif /* CONFIG_WPS_OOB */
 
 	if (wps->dev_pw_id == DEV_PW_PUSHBUTTON) {
-		if (wps->wps->registrar->force_pbc_overlap ||
-		    wps_registrar_pbc_overlap(wps->wps->registrar,
-					      wps->mac_addr_e, wps->uuid_e)) {
+		if ((wps->wps->registrar->force_pbc_overlap ||
+		     wps_registrar_pbc_overlap(wps->wps->registrar,
+					       wps->mac_addr_e, wps->uuid_e) ||
+		     !wps_registrar_p2p_dev_addr_match(wps)) &&
+		    !wps_registrar_skip_overlap(wps)) {
 			wpa_printf(MSG_DEBUG, "WPS: PBC overlap - deny PBC "
 				   "negotiation");
 			wps->state = SEND_M2D;
 			wps->config_error = WPS_CFG_MULTIPLE_PBC_DETECTED;
 			wps_pbc_overlap_event(wps->wps);
+			wps_fail_event(wps->wps, WPS_M1,
+				       WPS_CFG_MULTIPLE_PBC_DETECTED,
+				       WPS_EI_NO_ERROR);
 			wps->wps->registrar->force_pbc_overlap = 1;
 			return WPS_CONTINUE;
 		}
@@ -2329,7 +2429,8 @@ static enum wps_process_res wps_process_m3(struct wps_data *wps,
 		return WPS_CONTINUE;
 	}
 
-	if (wps->pbc && wps->wps->registrar->force_pbc_overlap) {
+	if (wps->pbc && wps->wps->registrar->force_pbc_overlap &&
+	    !wps_registrar_skip_overlap(wps)) {
 		wpa_printf(MSG_DEBUG, "WPS: Reject negotiation due to PBC "
 			   "session overlap");
 		wps->state = SEND_WSC_NACK;
@@ -2366,7 +2467,8 @@ static enum wps_process_res wps_process_m5(struct wps_data *wps,
 		return WPS_CONTINUE;
 	}
 
-	if (wps->pbc && wps->wps->registrar->force_pbc_overlap) {
+	if (wps->pbc && wps->wps->registrar->force_pbc_overlap &&
+	    !wps_registrar_skip_overlap(wps)) {
 		wpa_printf(MSG_DEBUG, "WPS: Reject negotiation due to PBC "
 			   "session overlap");
 		wps->state = SEND_WSC_NACK;
@@ -2502,7 +2604,8 @@ static enum wps_process_res wps_process_m7(struct wps_data *wps,
 		return WPS_CONTINUE;
 	}
 
-	if (wps->pbc && wps->wps->registrar->force_pbc_overlap) {
+	if (wps->pbc && wps->wps->registrar->force_pbc_overlap &&
+	    !wps_registrar_skip_overlap(wps)) {
 		wpa_printf(MSG_DEBUG, "WPS: Reject negotiation due to PBC "
 			   "session overlap");
 		wps->state = SEND_WSC_NACK;
@@ -2880,7 +2983,7 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 
 	if (wps->pbc) {
 		wps_registrar_remove_pbc_session(wps->wps->registrar,
-						 wps->mac_addr_e, wps->uuid_e);
+						 wps->uuid_e);
 		wps_registrar_pbc_completed(wps->wps->registrar);
 	} else {
 		wps_registrar_pin_completed(wps->wps->registrar);

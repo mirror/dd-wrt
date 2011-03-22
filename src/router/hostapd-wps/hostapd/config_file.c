@@ -778,7 +778,7 @@ static int hostapd_config_tx_queue(struct hostapd_config *conf, char *name,
 	}
 
 	if (num >= NUM_TX_QUEUES) {
-		/* for backwards compatibility, do not tricker failure */
+		/* for backwards compatibility, do not trigger failure */
 		wpa_printf(MSG_INFO, "DEPRECATED: '%s' not used", name);
 		return 0;
 	}
@@ -812,8 +812,6 @@ static int hostapd_config_tx_queue(struct hostapd_config *conf, char *name,
 		wpa_printf(MSG_ERROR, "Unknown tx_queue field '%s'", pos);
 		return -1;
 	}
-
-	queue->configured = 1;
 
 	return 0;
 }
@@ -1092,17 +1090,18 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 /*#ifdef CONFIG_IEEE80211N
 	if (conf->ieee80211n &&
 	    bss->ssid.security_policy == SECURITY_STATIC_WEP) {
+		bss->disable_11n = 1;
 		wpa_printf(MSG_ERROR, "HT (IEEE 802.11n) with WEP is not "
-			   "allowed");
-		return -1;
+			   "allowed, disabling HT capabilities");
 	}
 
 	if (conf->ieee80211n && bss->wpa &&
 	    !(bss->wpa_pairwise & WPA_CIPHER_CCMP) &&
 	    !(bss->rsn_pairwise & WPA_CIPHER_CCMP)) {
+		bss->disable_11n = 1;
 		wpa_printf(MSG_ERROR, "HT (IEEE 802.11n) with WPA/WPA2 "
-			   "requires CCMP to be enabled");
-		return -1;
+			   "requires CCMP to be enabled, disabling HT "
+			   "capabilities");
 	}
 #endif */
 
@@ -1674,6 +1673,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			}
 		} else if (os_strcmp(buf, "pmk_r1_push") == 0) {
 			bss->pmk_r1_push = atoi(pos);
+		} else if (os_strcmp(buf, "ft_over_ds") == 0) {
+			bss->ft_over_ds = atoi(pos);
 #endif /* CONFIG_IEEE80211R */
 #ifndef CONFIG_NO_CTRL_IFACE
 		} else if (os_strcmp(buf, "ctrl_interface") == 0) {
@@ -1900,6 +1901,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 					   "ht_capab", line);
 				errors++;
 			}
+		} else if (os_strcmp(buf, "require_ht") == 0) {
+			conf->require_ht = atoi(pos);
 #endif /* CONFIG_IEEE80211N */
 		} else if (os_strcmp(buf, "max_listen_interval") == 0) {
 			bss->max_listen_interval = atoi(pos);
@@ -1967,8 +1970,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			os_free(bss->serial_number);
 			bss->serial_number = os_strdup(pos);
 		} else if (os_strcmp(buf, "device_type") == 0) {
-			os_free(bss->device_type);
-			bss->device_type = os_strdup(pos);
+			if (wps_dev_type_str2bin(pos, bss->device_type))
+				errors++;
 		} else if (os_strcmp(buf, "config_methods") == 0) {
 			os_free(bss->config_methods);
 			bss->config_methods = os_strdup(pos);
@@ -2038,6 +2041,23 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 #endif /* CONFIG_P2P_MANAGER */
 		} else if (os_strcmp(buf, "disassoc_low_ack") == 0) {
 			bss->disassoc_low_ack = atoi(pos);
+		} else if (os_strcmp(buf, "tdls_prohibit") == 0) {
+			int val = atoi(pos);
+			if (val)
+				bss->tdls |= TDLS_PROHIBIT;
+			else
+				bss->tdls &= ~TDLS_PROHIBIT;
+		} else if (os_strcmp(buf, "tdls_prohibit_chan_switch") == 0) {
+			int val = atoi(pos);
+			if (val)
+				bss->tdls |= TDLS_PROHIBIT_CHAN_SWITCH;
+			else
+				bss->tdls &= ~TDLS_PROHIBIT_CHAN_SWITCH;
+#ifdef CONFIG_RSN_TESTING
+		} else if (os_strcmp(buf, "rsn_testing") == 0) {
+			extern int rsn_testing;
+			rsn_testing = atoi(pos);
+#endif /* CONFIG_RSN_TESTING */
 		} else {
 			wpa_printf(MSG_ERROR, "Line %d: unknown configuration "
 				   "item '%s'", line, buf);

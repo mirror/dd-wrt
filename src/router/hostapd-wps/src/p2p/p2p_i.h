@@ -36,12 +36,7 @@ struct p2p_device {
 	int level;
 	enum p2p_wps_method wps_method;
 
-	u8 p2p_device_addr[ETH_ALEN]; /* P2P Device Address of the peer */
-	u8 pri_dev_type[8];
-	char device_name[33];
-	u16 config_methods;
-	u8 dev_capab;
-	u8 group_capab;
+	struct p2p_peer_info info;
 
 	/*
 	 * If the peer was discovered based on an interface address (e.g., GO
@@ -94,6 +89,7 @@ struct p2p_device {
 #define P2P_DEV_GROUP_CLIENT_ONLY BIT(12)
 #define P2P_DEV_FORCE_FREQ BIT(13)
 #define P2P_DEV_PD_FOR_JOIN BIT(14)
+#define P2P_DEV_REPORTED_ONCE BIT(15)
 	unsigned int flags;
 
 	int status; /* enum p2p_status_code */
@@ -365,6 +361,10 @@ struct p2p_data {
 	u8 after_scan_peer[ETH_ALEN];
 	struct p2p_pending_action_tx *after_scan_tx;
 
+	/* Requested device types for find/search */
+	unsigned int num_req_dev_types;
+	u8 *req_dev_types;
+
 	struct p2p_group **groups;
 	size_t num_groups;
 
@@ -388,6 +388,11 @@ struct p2p_data {
 	int best_freq_24;
 	int best_freq_5;
 	int best_freq_overall;
+
+	/**
+	 * wps_vendor_ext - WPS Vendor Extensions to add
+	 */
+	struct wpabuf *wps_vendor_ext[P2P_MAX_WPS_VENDOR_EXT];
 };
 
 /**
@@ -441,6 +446,10 @@ struct p2p_message {
 	u16 dev_password_id;
 	u16 wps_config_methods;
 	const u8 *wps_pri_dev_type;
+	const u8 *wps_sec_dev_type_list;
+	size_t wps_sec_dev_type_list_len;
+	const u8 *wps_vendor_ext[P2P_MAX_WPS_VENDOR_EXT];
+	size_t wps_vendor_ext_len[P2P_MAX_WPS_VENDOR_EXT];
 
 	/* DS Parameter Set IE */
 	const u8 *ds_params;
