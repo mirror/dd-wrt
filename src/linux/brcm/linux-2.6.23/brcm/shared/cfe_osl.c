@@ -1,7 +1,7 @@
 /*
  * CFE OS Independent Layer
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,12 +9,16 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: cfe_osl.c,v 1.18 2006/05/29 10:37:25 Exp $
+ * $Id: cfe_osl.c,v 1.21.8.1 2009/09/02 22:14:14 Exp $
  */
 
 #include <typedefs.h>
 #include <bcmdefs.h>
 #include <osl.h>
+#include <bcmutils.h>
+
+/* Global ASSERT type flag */
+uint32 g_assert_type = 0;
 
 osl_t *
 osl_attach(void *pdev)
@@ -118,9 +122,15 @@ osl_pktpull(struct lbuf *lb, uint bytes)
 }
 
 void *
-osl_dma_alloc_consistent(uint size, ulong *pap)
+osl_dma_alloc_consistent(uint size, uint16 align_bits, uint *alloced, ulong *pap)
 {
 	void *buf;
+	uint16 align = (1 << align_bits);
+
+	/* fix up the alignment requirements first */
+	if (!ISALIGNED(DMA_CONSISTENT_ALIGN, align))
+		size += align;
+	*alloced = size;
 
 	if (!(buf = KMALLOC(size, DMA_CONSISTENT_ALIGN)))
 		return NULL;
@@ -138,6 +148,14 @@ osl_dma_free_consistent(void *va)
 	KFREE((void *) KERNADDR(PHYSADDR((ulong) va)));
 }
 
+#ifdef BCMDBG_ASSERT
+void
+osl_assert(char *exp, char *file, int line)
+{
+	printf("assertion \"%s\" failed: file \"%s\", line %d\n", exp, file, line);
+	*((int *) 0) = 0;
+}
+#endif /* BCMDBG_ASSERT */
 
 int
 osl_busprobe(uint32 *val, uint32 addr)

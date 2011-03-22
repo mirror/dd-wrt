@@ -1,7 +1,7 @@
 /*
  * BCM47XX support code for some chipcommon facilities (uart, jtagm)
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: hndchipc.c,v 1.23.52.1 2008/11/13 22:55:07 Exp $
+ * $Id: hndchipc.c,v 1.24 2008/11/13 23:35:46 Exp $
  */
 
 #include <typedefs.h>
@@ -24,9 +24,17 @@
 #include <hndcpu.h>
 
 /* debug/trace */
+#ifdef BCMDBG_ERR
+#define	CC_ERROR(args)	printf args
+#else
 #define	CC_ERROR(args)
+#endif	/* BCMDBG_ERR */
 
+#ifdef BCMDBG
+#define	CC_MSG(args)	printf args
+#else
 #define	CC_MSG(args)
+#endif	/* BCMDBG */
 
 /* interested chipcommon interrupt source
  *  - GPIO

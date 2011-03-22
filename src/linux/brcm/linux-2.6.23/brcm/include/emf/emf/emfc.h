@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -7,7 +7,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: emfc.h,v 1.2 2008/08/12 17:50:33 Exp $
+ * $Id: emfc.h,v 1.2.106.1 2010/02/17 23:29:21 Exp $
  */
 
 #ifndef _EMFC_H_
@@ -20,6 +20,7 @@
 
 #define IP_ISMULTI(a)           (((a) & 0xf0000000) == 0xe0000000)
 #define MCAST_ADDR_LINKLOCAL(a) (((a) & 0xffffff00) == 0xe0000000)
+#define MCAST_ADDR_UPNP_SSDP(a) ((a) == 0xeffffffa)
 
 #define EMFC_STATS_INCR(emfc, member) (((emfc)->stats.member)++)
 

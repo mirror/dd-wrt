@@ -1,7 +1,7 @@
 /*
  * BCM47XX Denali based memory controller initialization
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: aisdram.S,v 1.3.2.3.8.9 2009/02/13 23:46:47 Exp $
+ * $Id: aisdram.S,v 1.18.2.6 2010/03/19 01:53:59 Exp $
  */
 
 #include <hndsoc.h>
@@ -26,9 +26,34 @@
 /* Debug macro - write a number to a chipc reg - use it with caution,
  *  it changes k0 and k1 registers.
  */
+#ifdef	BCMDBG
+
+#if	defined(IL_BIGENDIAN) && defined(BCMHND74K)
+#define	FLADDR_OFF	0
+#define	FLDATA_OFF	12
+#else
+#define	FLADDR_OFF	4
+#define	FLDATA_OFF	8
+#endif
+
+#define TRACEINIT(x) \
+	li	k0,KSEG1ADDR(0x18000040); \
+	li	k1,x; \
+	sw	k1,FLADDR_OFF(k0)
+	
+#define TRACE(x) \
+	li	k1,x; \
+	sw	k1,FLADDR_OFF(k0)
+
+#define TRACE2(x) \
+	li	k1,x; \
+	sw	k1,FLDATA_OFF(k0)
+
+#else
 #define TRACEINIT(x)
 #define TRACE(x)
 #define TRACE2(x)
+#endif	/* BCMDBG */
 	.text
 
 dmemc_init:
@@ -41,7 +66,7 @@ dmemc_init:
 	.word	8,	0x00000100
 	.word	9,	0x00000100
 	.word	10,	0x01010101
-	.word	12,	0x03010200
+	.word	12,	0x00010200
 	.word	16,	0x0f00000a
 	.word	20,	0x64000000
 	.word	27,	0x00000001
@@ -51,7 +76,16 @@ dmemc_init:
 	.word	31,	0x00000000
 	.word	33,	0x000200c8
 	.word	35,	0x000000c8
-	.word	36,	0x0000d2f0
+	.word	36,	0x00000000
+	.word	125,	0x01010000
+	.word	126,	0x02000100
+	.word	129,	0x02000200
+	.word	132,	0x00000000
+	.word	138,	0x00000000
+	.word	139,	0x00000000
+	.word	149,	0x26c00300
+	.word	150,	0x26c00300
+	.word	151,	0x00000005
 	.word	DMEMC_TABLE_END
 
 sdr_init:
@@ -89,12 +123,28 @@ ddr1_init:
 	.word	26,	0x000f000f
 	.word	32,	0x00000000
 	.word	34,	0x000d2d89
+	.word	127,	0x00000001
+	.word	128,	0x07000300
+	.word	130,	0x00010103
+	.word	131,	0x00000200
+	.word	133,	0x06120000
+	.word	134,	0x06120612
+	.word	135,	0x06120612
+	.word	136,	0x00000612
+	.word	137,	0x00000032
+	.word	140,	0x001f4008
+	.word	141,	0x001f4008
+	.word	142,	0x002ee004
+	.word	143,	0x002ee004
+	.word	146,	0x000f0033
+	.word	147,	0xf4113c17
+	.word	148,	0xf4113c17
 	.word	DMEMC_TABLE_END
 
 ddr2_init:
 	.word	4,	0x00010100
 	.word	6,	0x00000000
-	.word	11,	0x00030001
+	.word	11,	0x00030000
 	.word	14,	0x02030203
 	.word	15,	0x0f030204
 	.word	17,	0x08000002
@@ -108,6 +158,22 @@ ddr2_init:
 	.word	26,	0x00200020
 	.word	32,	0x006b0000
 	.word	34,	0x003848e1
+	.word	127,	0x00000002
+	.word	128,	0x07000404
+	.word	130,	0x03020304
+	.word	131,	0x00000400
+	.word	133,	0x081b0000
+	.word	134,	0x081b081b
+	.word	135,	0x081b081b
+	.word	136,	0x0000081b
+	.word	137,	0x00400642
+	.word	140,	0x00164008
+	.word	141,	0x00164008
+	.word	142,	0x00236004
+	.word	143,	0x00236004
+	.word	146,	0x000f0133
+	.word	147,	0xf4112c17
+	.word	148,	0xf4112c17
 	.word	DMEMC_TABLE_END
 
 	/* Register conventions.
@@ -117,12 +183,14 @@ ddr2_init:
 	 *		s6 = ChipId reg
 	 *		s7 = ChipType
 	 *	Local:
-	 *		s0 = sdram_config + sdram_refres values
+	 *		s0 = sdram_config + sdram_refresh values
 	 *		s1 = package opt
-	 *		s3 = KSEG1
+	 *		s3 = Controller corerev
 	 *		s4 = Controller coreid
-	 *		s6 = chipid (after last use as ChipId reg)
 	 *		s8 = config_ncdl
+	 *		a1 = dmemc regs
+	 *		a2 = dmemc DMP regs
+	 *		a3 = memory type (sdr,ddr1,ddr2)
 	 */
 
 	LEAF(ai_draminit)
@@ -135,15 +203,19 @@ ddr2_init:
 
 	/* Scan for a Denali DDR controller (a0) */
 	lw	a0,CC_EROMPTR(s2)
-	li	s3,KSEG1			# s3 = KSEG1
-	or	a0,a0,s3			# a0 points to the EROM
+	li	t0,KSEG1			# t0 = KSEG1
+	or	a0,a0,t0			# a0 points to the EROM
 	TRACE(0x415302)
 1:
 #if	defined(IL_BIGENDIAN) && defined(BCMHND74K)
 	xor	t0,a0,4
 	lw	t0,0(t0)
+	add	t3,a0,4
+	xor	t3,t3,4
+	lw	t3,0(t3)
 #else
-	lw	t0,0(a0)
+	lw	t0,0(a0)			# t0 = CIA
+	lw	t3,4(a0)			# t3 = CIB
 #endif
 	and	t1,t0,ER_TAG
 	TRACE(0x415303)
@@ -199,7 +271,8 @@ founddmemc:
 #endif
 	li	t2,AD_ADDR_MASK
 	and	a1,a1,t2
-	or	a1,a1,s3			# a1: dmemc regs
+	li	t0,KSEG1			# t0 = KSEG1
+	or	a1,a1,t0			# a1: dmemc regs
 	/* after that, the first slave wrapper will be its DMP registers */
 	addi	a0,12
 1:
@@ -222,7 +295,8 @@ addesc:	and	t1,t0,AD_ST_MASK
 	addi	a0,4
 
 swrap:	and	a2,t0,t2
-	or	a2,a2,s3			# a2: dmemc DMP regs
+	li	t0,KSEG1			# t0 = KSEG1
+	or	a2,a2,t0			# a2: dmemc DMP regs
 
 	/* Got our core, reset it */
 	TRACE(0x415309)
@@ -235,17 +309,18 @@ swrap:	and	a2,t0,t2
 	and	t0,t0,s6
 	srl	s1,t0,CID_PKG_SHIFT		# s1 = package opt
 
-	/* Find out the type of memory from the strapps */
-	li	t0,CID_ID_MASK
-	and	s6,t0,s6			# s6 = chipid (now)
-	li	t0,BCM4716_CHIP_ID
-	beq	t0,s6,is16x
-	nop
-	li	t0,BCM47162_CHIP_ID
-	beq	t0,s6,is16x
+	/* Find out the type of memory from the straps */
+	/* Corerevs 0 & 1 did not have this register, so we have to
+	 * check the corerev and use chipstatus for those two.
+	 */
+	and	t3,t3,CIB_REV_MASK
+	srl	s3,t3,CIB_REV_SHIFT		# s3 = core revision
+	beq     s4,DMEMS_CORE_ID,1f
+	li	t0,1
+	ble	s3,t0,is16x
 	nop
 
-	/* Not a 4716/47162 (a0?) read the stat register */
+1:	/* Not a 4716/47162 (a0?) read the stat register */
 	lw	t0,DMEMC_STAT(a1)
 	li	t1,DM_STAT_MASK
 	and	a3,t0,t1			# a3 == 4 if ddr2, 2 if ddr1, 1 if sdr.
@@ -330,22 +405,17 @@ read_config:
 	 *
 	 * sdram_refresh:
 	 *	15:8	delay_dqs_0
-	 *	7:0	clk_wr_delay
+	 *	7:0	clk_wr_delay, or clk_wr_delay_0 (for corerev >= 2)
 	 *
 	 * sdram_ncdl:	control22
-	 *	31:24	clk_dqs_delay
+	 *	31:24	clk_dqs_delay, or clk_wr_delay_1 (for corerev >= 2)
 	 *	23:16	delay_dqs_3
 	 *	15:8	delay_dqs_2
 	 *	7:0	delay_dqs_1
 	 */
 	TRACE(0x415310)
-#if	defined(IL_BIGENDIAN) && defined(BCMHND74K)
-	lw	s0,8(t4)
-	lw	s8,20(t4)
-#else
 	lw	s0,12(t4)	# Pick up sdram_config & sdram_refresh
 	lw	s8,16(t4)	# Pick up sdram_ncdl
-#endif
 
 	/* Initialize DMEMC/DMEMS */
 init_dmemc:
@@ -384,13 +454,6 @@ init_regs:
 fixs:	bne	s4,DMEMS_CORE_ID,fix2
 	nop
 
-	lw	t0,DMEMC_CONTROL12(a1)		# Reset addr_pins for the 16bit wide controller
-	li	t1,~0x07000000
-	li	t2,0x01000000
-	and	t0,t0,t1
-	or	t0,t0,t2
-	sw	t0,DMEMC_CONTROL12(a1)
-
 	li	t0,0x02020002
 	beq	a3,DM_STAT_SDR,1f
 	nop
@@ -410,8 +473,10 @@ fixs:	bne	s4,DMEMS_CORE_ID,fix2
 	li	t0,0x00000001
 	sw	t0,DMEMC_CONTROL53(a1)
 
-		/* Fixup differences in 47162 */
-fix2:	bne	s6,BCM47162_CHIP_ID,nvover
+	/* Fixup differences in 47162 */
+fix2:	li	t0,CID_ID_MASK
+	and	t0,t0,s6
+	bne	t0,BCM47162_CHIP_ID,nvover
 	nop
 
 	li	t0,0x16006400
@@ -427,6 +492,47 @@ fix2:	bne	s6,BCM47162_CHIP_ID,nvover
 nvover:	beqz	s8,chhalf
 	nop
 
+	li	t0,1
+	ble	s3,t0,old_ncdl
+	nop
+	li	t0,0x7f000000
+	and	t0,t0,s0		# delay_dqs_0
+	srl	t0,t0,15
+	lw	t1,DMEMC_CONTROL140(a1)
+	li	t2,~0x0000fe00
+	and	t1,t1,t2
+	or	t0,t0,t1
+	sw	t0,DMEMC_CONTROL140(a1)
+
+	li	t0,0x7f
+	and	t0,t0,s8		# delay_dqs_1
+	sll	t0,t0,9
+	lw	t1,DMEMC_CONTROL141(a1)
+	and	t1,t1,t2
+	or	t0,t0,t1
+	sw	t0,DMEMC_CONTROL141(a1)
+	
+	li	t0,0x7f0000
+	and	t0,t0,s0		# clk_wr_delay_0
+	srl	t0,t0,8
+	lw	t1,DMEMC_CONTROL142(a1)
+	li	t2,~0x00007f00
+	and	t1,t1,t2
+	or	t0,t0,t1
+	sw	t0,DMEMC_CONTROL142(a1)
+
+	li	t0,0x7f000000
+	and	t0,t0,s8		# clk_wr_delay_1
+	srl	t0,t0,16
+	lw	t1,DMEMC_CONTROL143(a1)
+	and	t1,t1,t2
+	or	t0,t0,t1
+	sw	t0,DMEMC_CONTROL143(a1)
+
+	b	chhalf
+	nop
+
+old_ncdl:
 	li	t0,0x7f000000
 	and	t0,t0,s0		# delay_dqs_0
 	or	t0,t0,0x6400
@@ -522,6 +628,11 @@ ckbyp:	beq	s1,HWSIM_PKG_ID,dobypass
 
 dobypass:
 	TRACE(0x415317)
+	li	t3,1
+
+	bgt	s3,t3,2f
+	nop
+	
 	li	t0,0x00200020
 	sw	t0,DMEMC_CONTROL25(a1)
 	beq	s4,DMEMS_CORE_ID,1f
@@ -533,7 +644,7 @@ dobypass:
 	or	t0,t0,t1
 	sw	t0,DMEMC_CONTROL28(a1)
 
-	lw	t0,DMEMC_CONTROL29(a1)
+2:	lw	t0,DMEMC_CONTROL29(a1)
 	li	t1,~0x0000007f
 	li	t2,0x0000005f
 	and	t0,t0,t1
@@ -544,6 +655,18 @@ dobypass:
 	li	t1,0x00000001
 	or	t0,t0,t1
 	sw	t0,DMEMC_CONTROL05(a1)
+
+	ble	s3,t3,ckvsim
+	nop
+	
+	lw	t0,DMEMC_CONTROL140(a1)
+	li	t1,0x10000000
+	or	t0,t0,t1
+	sw	t0,DMEMC_CONTROL140(a1)
+
+	lw	t0,DMEMC_CONTROL141(a1)
+	or	t0,t0,t1
+	sw	t0,DMEMC_CONTROL141(a1)
 
 	/* For vsim change tinit so sims run faster */
 ckvsim:	bne	s1,HDLSIM_PKG_ID,turnon
@@ -560,11 +683,73 @@ turnon:
 	or	t0,t0,DMC09_START		# Add start bit
 	sw	t0,DMEMC_CONTROL09(a1)		# Start the controller
 
-1:	lw	t0,DMEMC_CONTROL24(a1)		# Poll for INT_INIT_DONE
+	li	t2,1
+	ble	s3,t2,2f
+	nop
+1:	lw	t0,DMEMC_CONTROL133(a1)		# Poll for INT_INIT_DONE
 	and	t1,t0,DM_INT_INIT_DONE
 	beqz	t1,1b
 	nop
-
+	/* Bypass mode programming */
+	lw	t0,DMEMC_CONTROL05(a1)
+	li	t1,0x00000001
+	and	t0,t0,t1
+	beqz	t0,ack_ints
+	nop
+	lw	t1,DMEMC_CONTROL144(a1)
+	srl	t1,t1,3
+	lw	t2,DMEMC_CONTROL140(a1)
+	li	t0,~0x03ff0000
+	and	t2,t2,t0
+	sll	t0,t1,16
+	or	t2,t2,t0
+	sw	t2,DMEMC_CONTROL140(a1)
+	
+	lw	t2,DMEMC_CONTROL142(a1)
+	li	t0,~0x01ff8000
+	and	t2,t2,t0
+	sll	t0,t1,1
+	add	t0,t0,t1
+	li	t1,0x3ff
+	and	t0,t0,t1
+	sll	t0,t0,15
+	or	t2,t2,t0
+	sw	t2,DMEMC_CONTROL142(a1)
+	
+	lw	t1,DMEMC_CONTROL145(a1)
+	srl	t1,t1,3
+	lw	t2,DMEMC_CONTROL141(a1)
+	li	t0,~0x03ff0000
+	and	t2,t2,t0
+	sll	t0,t1,16
+	or	t2,t2,t0
+	sw	t2,DMEMC_CONTROL141(a1)
+	
+	lw	t2,DMEMC_CONTROL143(a1)
+	li	t0,~0x01ff8000
+	and	t2,t2,t0
+	sll	t0,t1,1
+	add	t0,t0,t1
+	li	t1,0x3ff
+	and	t0,t0,t1
+	sll	t0,t0,15
+	or	t2,t2,t0
+	sw	t2,DMEMC_CONTROL143(a1)
+ack_ints:
+	/* Clear any pending interrupts from dmemc */
+	li	t1,DMC132_INTACK_MASK
+	and	t0,t0,t1			# t0 = control133 & mask
+	lw	t2,DMEMC_CONTROL132(a1)
+	not	t1
+	and	t2,t1,t2			# t2 = control132 & ~mask
+	or	t0,t0,t2			# Or them and ...
+	sw	t0,DMEMC_CONTROL132(a1)		# Ack all ints
+	b	3f
+	nop
+2:	lw	t0,DMEMC_CONTROL24(a1)		# Poll for INT_INIT_DONE
+	and	t1,t0,DM_INT_INIT_DONE
+	beqz	t1,2b
+	nop
 	/* Clear any pending interrupts from dmemc */
 	li	t1,DMC23_INTACK_MASK
 	and	t0,t0,t1			# t0 = control24 & mask
@@ -574,7 +759,7 @@ turnon:
 	or	t0,t0,t2			# Or them and ...
 	sw	t0,DMEMC_CONTROL23(a1)		# Ack all ints
 
-	jr	t6
+3:	jr	t6
 	li	v0,0
 
 	/* Reset core using DMP regs at (a2) */
@@ -615,9 +800,18 @@ ai_core_reset:
 	 * Assumes (a1) points to the regs.
 	 */
 dmemc_init_regs:
+	li	t3,128
+	li	t0,1
+	ble	s3,t0,loop_regs
+	nop
+	li	t3,256
+	
+loop_regs:
 	add	a0,a0,s5			# Relocate address
 	li	t0,DMEMC_TABLE_END
 1:	lw	t1,0(a0)			# Pick up reg num
+	bge	t1,t3,2f			# Return if the reg num >= num of supported regs
+	nop
 	beq	t1,t0,2f			# Return if done
 	nop
 

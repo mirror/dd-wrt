@@ -1,7 +1,7 @@
 /*
  * Read-only support for NVRAM on flash and otp.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: nvram_ro.c,v 1.57.2.2 2008/07/16 00:41:46 Exp $
+ * $Id: nvram_ro.c,v 1.86 2010/09/30 20:29:42 Exp $
  */
 
 #include <typedefs.h>
@@ -22,9 +22,7 @@
 #include <sbchipc.h>
 #include <bcmsrom.h>
 #include <bcmotp.h>
-#ifdef BCMJTAG
 #include <bcmdevs.h>
-#endif	/* BCMJTAG */
 #include <sflash.h>
 #include <hndsoc.h>
 
@@ -45,12 +43,19 @@ typedef struct _vars {
 
 static vars_t *vars = NULL;
 
-/* support flash memory by default */
-#ifndef FLASH
-#define FLASH	1
+#if !defined(DONGLEBUILD) && !defined(BCM_BOOTLOADER)
+#define NVRAM_FILE	1
 #endif
 
-#if FLASH
+#ifdef NVRAM_FILE
+static int nvram_file_init(void* sih);
+static int initvars_file(si_t *sih, osl_t *osh, char **nvramp, int *nvraml);
+#endif
+
+static char *findvar(char *vars, char *lim, const char *name);
+extern void nvram_get_global_vars(char **varlst, uint *varsz);
+
+#if defined(FLASH)
 /* copy flash to ram */
 static void
 BCMINITFN(get_flash_nvram)(si_t *sih, struct nvram_header *nvh)
@@ -124,7 +129,7 @@ extern uint8 embedded_nvram[];
 int
 BCMATTACHFN(nvram_init)(void *si)
 {
-#if FLASH
+#if defined(FLASH)
 	uint idx;
 	chipcregs_t *cc;
 	si_t *sih;
@@ -142,18 +147,22 @@ BCMATTACHFN(nvram_init)(void *si)
 		return 0;
 	}
 
-#if FLASH
+#if defined(FLASH)
 	sih = (si_t *)si;
 	osh = si_osh(sih);
 
 	/* Check for flash */
 	idx = si_coreidx(sih);
-	cc = si_setcore(sih, CC_CORE_ID, 0);
+	cc = si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
-	flbase = (uintptr)OSL_UNCACHED((void*)SI_FLASH2);
+	flbase = (uintptr)OSL_UNCACHED((void *)SI_FLASH2);
 	flsz = 0;
 	cap = R_REG(osh, &cc->capabilities);
+
+	if ((CHIPID(sih->chip) == BCM4329_CHIP_ID) && (sih->chiprev == 0))
+		cap &= ~CC_CAP_FLASH_MASK;
+
 	switch (cap & CC_CAP_FLASH_MASK) {
 	case PFLASH:
 		flsz = SI_FLASH2_SZ;
@@ -176,7 +185,7 @@ BCMATTACHFN(nvram_init)(void *si)
 		off = FLASH_MIN;
 		nvh = NULL;
 		while (off <= flsz) {
-			nvh = (struct nvram_header *) (flbase + off - NVRAM_SPACE);
+			nvh = (struct nvram_header *)(flbase + off - NVRAM_SPACE);
 			if (R_REG(osh, &nvh->magic) == NVRAM_MAGIC)
 				break;
 			off <<= 1;
@@ -237,18 +246,105 @@ BCMATTACHFN(nvram_init)(void *si)
 #ifndef CONFIG_XIP
 #endif	/* CONFIG_XIP */
 #endif	
+
+#ifdef NVRAM_FILE
+	if (BUSTYPE(((si_t *)si)->bustype) == PCI_BUS) {
+		if (nvram_file_init(si) != 0)
+			return BCME_ERROR;
+	}
+#endif /* NVRAM_FILE */
+
 	return 0;
 }
+
+#ifdef NVRAM_FILE
+static int
+nvram_file_init(void* sih)
+{
+	char *base = NULL, *nvp = NULL, *flvars = NULL;
+	int err = 0, nvlen = 0;
+
+	base = nvp = MALLOC(si_osh((si_t *)sih), MAXSZ_NVRAM_VARS);
+	if (base == NULL)
+		return BCME_NOMEM;
+
+	/* Init nvram from nvram file if they exist */
+	err = initvars_file(sih, si_osh((si_t *)sih), &nvp, (int*)&nvlen);
+	if (err != 0) {
+		NVR_MSG(("No NVRAM file present!!!\n"));
+		goto exit;
+	}
+	if (nvlen) {
+		flvars = MALLOC(si_osh((si_t *)sih), nvlen);
+		if (flvars == NULL)
+			goto exit;
+	}
+	else
+		goto exit;
+
+	bcopy(base, flvars, nvlen);
+	err = nvram_append(sih, flvars, nvlen);
+
+exit:
+	MFREE(si_osh((si_t *)sih), base, MAXSZ_NVRAM_VARS);
+
+	return err;
+}
+
+/* NVRAM file read for pcie NIC's */
+static int
+initvars_file(si_t *sih, osl_t *osh, char **nvramp, int *nvraml)
+{
+#if defined(BCMDRIVER)
+	/* Init nvram from nvram file if they exist */
+	char *nvram_file_name = "nvram.txt";
+	char *nvram_buf = *nvramp;
+	void	*nvram_fp = NULL;
+	int nv_len = 0, ret = 0, i = 0, len = 0;
+
+	nvram_fp = (void*)osl_os_open_image(nvram_file_name);
+	if (nvram_fp != NULL) {
+		while ((nv_len = osl_os_get_image_block(nvram_buf, MAXSZ_NVRAM_VARS, nvram_fp)))
+			len = nv_len;
+	}
+	else {
+		NVR_MSG(("Could not open nvram.txt file\n"));
+		ret = -1;
+		goto exit;
+	}
+
+	/* Make array of strings */
+	for (i = 0; i < len; i++) {
+		if ((*nvram_buf == ' ') || (*nvram_buf == '\t') || (*nvram_buf == '\n') ||
+			(*nvram_buf == '\0')) {
+			*nvram_buf = '\0';
+			nvram_buf++;
+		}
+		else
+			nvram_buf++;
+	}
+	*nvram_buf++ = '\0';
+	*nvramp = nvram_buf;
+	*nvraml = len+1; /* add one for the null character */
+
+exit:
+	if (nvram_fp)
+		osl_os_close_image(nvram_fp);
+
+	return ret;
+#else /* BCMDRIVER */
+	return BCME_ERROR
+#endif /* BCMDRIVER */
+}
+#endif /* NVRAM_FILE */
 
 int
 BCMATTACHFN(nvram_append)(void *si, char *varlst, uint varsz)
 {
-	si_t *sih = (si_t *) si;
-	osl_t *osh = si_osh(sih);
 	uint bufsz = VARS_T_OH;
 	vars_t *new;
 
-	if ((new = MALLOC(osh, bufsz)) == NULL)
+	if ((new = MALLOC(si_osh((si_t *)si), bufsz)) == NULL)
 		return BCME_NOMEM;
 
 	new->vars = varlst;
@@ -261,13 +357,26 @@ BCMATTACHFN(nvram_append)(void *si, char *varlst, uint varsz)
 }
 
 void
-BCMATTACHFN(nvram_exit)(void *si)
+nvram_get_global_vars(char **varlst, uint *varsz)
+{
+	*varlst = vars->vars;
+	*varsz = vars->size;
+}
+
+void
+BCMUNINITFN(nvram_exit)(void *si)
 {
 	vars_t *this, *next;
 	si_t *sih;
 
 	sih = (si_t *)si;
 	this = vars;
+
+#ifndef DONGLEBUILD
+	if (this)
+		MFREE(si_osh(sih), this->vars, this->size);
+#endif /* DONGLEBUILD */
+
 	while (this) {
 		next = this->next;
 		MFREE(si_osh(sih), this, this->bufsz);
@@ -385,3 +494,26 @@ nvram_getall(char *buf, int count)
 	*buf = '\0';
 	return 0;
 }
+
+#ifdef BCMQT
+extern void nvram_printall(void);
+/* QT: print nvram w/o a big buffer - helps w/memory consumption evaluation of USB bootloader */
+void
+nvram_printall(void)
+{
+	vars_t *this;
+
+	this = vars;
+	while (this) {
+		char *from, *lim;
+
+		from = this->vars;
+		lim = (char *)((uintptr)this->vars + this->size);
+		while ((from < lim) && (*from)) {
+			printf("%s\n", from);
+			from += strlen(from) + 1;
+		}
+		this = this->next;
+	}
+}
+#endif /* BCMQT */

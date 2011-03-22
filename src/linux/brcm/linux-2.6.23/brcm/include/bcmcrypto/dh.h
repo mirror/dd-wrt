@@ -4,7 +4,7 @@
  * Code copied from openssl distribution and
  * Modified just enough so that compiles and runs standalone
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -12,7 +12,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: dh.h,v 1.3 2007/03/06 23:13:08 Exp $
+ * $Id: dh.h,v 1.3.428.1 2010/08/12 07:56:55 Exp $
  */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
@@ -87,7 +87,7 @@ typedef struct dh_st
 	BIGNUM *priv_key;	/* x */
 
 	int flags;
-	char *method_mont_p;
+	BN_MONT_CTX *method_mont_p;
 	/* Place holders if we want to do X9.42 DH */
 	BIGNUM *q;
 	BIGNUM *j;

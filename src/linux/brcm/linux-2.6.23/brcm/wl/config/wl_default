@@ -1,6 +1,6 @@
 # Broadcom 802.11abg Networking Device Driver Configuration file
 #
-# Copyright (C) 2008, Broadcom Corporation
+# Copyright (C) 2009, Broadcom Corporation
 # All Rights Reserved.
 # 
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -10,7 +10,7 @@
 
 # default wl driver config file
 #
-# $Id: wl_default,v 1.25.2.5 2008/09/08 05:54:24 Exp $
+# $Id: wl_default,v 1.31.20.5 2010/01/25 22:44:08 Exp $
 
 # wl driver base
 WL=1
@@ -31,18 +31,21 @@ WL11D=1
 DBAND=1
 WLRM=1
 WLCQ=1
-BCMWPA2=1
-BCMDMA64=1
+BCMDMA32=1
 WLCNT=1
 #WLTINYDUMP=1
 WLLXIW=1
 WLAMPDU=1
+WLAMPDU_UCODE=0
+WLAMPDU_HW=1
 WLAMSDU=1
 WLAMSDU_SWDEAGG=1
 BCMROMOFFLOAD=0
 BTC2WIRE=1
 WLCOEX=1
+WL_NOPHYIPA=0
 WLHOSTVARS=1
+BCMECICOEX=1
 #ifndef LINUX_CRYPTO
 LINUX_CRYPTO=0
 #endif

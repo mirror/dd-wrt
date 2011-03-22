@@ -1,7 +1,7 @@
 /*
  * flashutl.c - Flash Read/write/Erase routines
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: flashutl.c,v 1.46.34.5 2008/12/23 09:17:27 Exp $
+ * $Id: flashutl.c,v 1.52 2009/05/19 02:06:58 Exp $
  */
 
 #include <typedefs.h>
@@ -29,7 +29,7 @@
 #define ERR2	0x30 /* Mask for err UNUSED */
 #define DONE	0x80 /* Mask for done */
 #define WBUFSIZE 32  /* Write Buffer size */
-#define FLASH_TRIES 4000000 /* retry count */
+#define FLASH_TRIES 700000 /* retry count */
 #define CMD_ADDR ((unsigned long)0xFFFFFFFF)
 
 /* 'which' param for block() */
@@ -434,20 +434,24 @@ flash_poll(unsigned long off, uint16 data)
 	if (flashutl_desc->type == AMD || flashutl_desc->type == SST) {
 		/* AMD style poll checkes the address being written */
 		addr = FLASH_ADDR(off);
-		while ((st = flash_readword(addr)) != data && cnt != 0)
+		while ((st = flash_readword(addr)) != data && cnt != 0) {
+			OSL_DELAY(10);
 			cnt--;
+		}
 		if (cnt == 0) {
-			DPRINT(("flash_poll: timeout, off %lx, read 0x%x, expected 0x%x\n",
-			        off, st, data));
+			DPRINT(("%s: timeout, off %lx, read 0x%x, expected 0x%x\n",
+				__FUNCTION__, off, st, data));
 			return -1;
 		}
 	} else {
 		/* INTEL style poll is at second word of the block being written */
 		addr = FLASH_ADDR(block(off, BLOCK_BASE)+sizeof(uint16));
-		while (((st = flash_readword(addr)) & DONE) == 0 && cnt != 0)
+		while (((st = flash_readword(addr)) & DONE) == 0 && cnt != 0) {
+			OSL_DELAY(10);
 			cnt--;
+		}
 		if (cnt == 0) {
-			DPRINT(("flash_poll: timeout, error status = 0x%x\n", st));
+			DPRINT(("%s: timeout, error status = 0x%x\n", __FUNCTION__, st));
 			return -1;
 		}
 	}

@@ -1,13 +1,13 @@
 /*
  * prototypes for functions defined in bcmstdlib.c
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: bcmstdlib.h,v 13.26 2007/05/09 03:58:00 Exp $:
+ * $Id: bcmstdlib.h,v 13.28 2008/12/13 00:18:20 Exp $:
  */
 
 /*
@@ -27,6 +27,22 @@
 #define INT_MAX 2147483647 /* from limits.h */
 #endif
 
+
+/* For backwards compatibility, define "BWL_NO_INTERNAL_STDLIB_SUPPORT" to
+ * exclude support for the BRCM stdlib APIs. This should be cleaned-up such
+ * that platforms that require the BRCM stdlib API should simply define
+ * "BWL_INTERNAL_STDLIB_SUPPORT". This would eliminate the need for the
+ * following #ifndef check.
+ */
+#ifndef BWL_NO_INTERNAL_STDLIB_SUPPORT
+#define BWL_INTERNAL_STDLIB_SUPPORT
+#endif
+
+#ifdef BWL_INTERNAL_STDLIB_SUPPORT
+/* This should be cleaned-up such that platforms that require the BRCM stdlib
+ * API should simply define "BWL_INTERNAL_STDLIB_SUPPORT". This would eliminate
+ * the need for the following #ifdef check.
+ */
 #if (!defined(_WIN32) || defined(EFI)) && !defined(_CFE_)
 
 typedef int FILE;
@@ -93,6 +109,7 @@ extern int BCMROMFN(memcmp)(const void *s1, const void *s2, size_t n);
 extern unsigned long rand(void);
 
 #endif 
+#endif   /* BWL_INTERNAL_STDLIB_SUPPORT */
 
 extern int BCMROMFN(snprintf)(char *str, size_t n, char const *fmt, ...);
 extern int BCMROMFN(vsnprintf)(char *buf, size_t size, const char *fmt, va_list ap);

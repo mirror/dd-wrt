@@ -1,7 +1,7 @@
 /*
  * NVRAM variable manipulation
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: bcmnvram.h,v 13.60.2.1 2008/05/02 22:47:26 Exp $
+ * $Id: bcmnvram.h,v 13.62 2008/11/25 21:02:44 Exp $
  */
 
 #ifndef _bcmnvram_h_
@@ -90,7 +90,8 @@ extern int BCMINITFN(nvram_resetgpio_init)(void *sih);
  *		to match or FALSE otherwise
  */
 static INLINE int
-nvram_match(char *name, char *match) {
+nvram_match(char *name, char *match)
+{
 	const char *value = nvram_get(name);
 	return (value && !strcmp(value, match));
 }
@@ -103,7 +104,8 @@ nvram_match(char *name, char *match) {
  *		equal to invmatch or FALSE otherwise
  */
 static INLINE int
-nvram_invmatch(char *name, char *invmatch) {
+nvram_invmatch(char *name, char *invmatch)
+{
 	const char *value = nvram_get(name);
 	return (value && strcmp(value, invmatch));
 }
@@ -160,11 +162,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define NVRAM_INVALID_MAGIC	0xFFFFFFFF
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
-#ifdef CONFIG_NVRAM_60K
-#define NVRAM_SPACE		0xf000
-#else
 #define NVRAM_SPACE		0x8000
-#endif
 
 #define NVRAM_MAX_VALUE_LEN 255
 #define NVRAM_MAX_PARAM_LEN 64

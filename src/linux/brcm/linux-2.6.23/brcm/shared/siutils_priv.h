@@ -15,9 +15,17 @@
 #ifndef	_siutils_priv_h_
 #define	_siutils_priv_h_
 
+#ifdef BCMDBG_ERR
+#define	SI_ERROR(args)	printf args
+#else
 #define	SI_ERROR(args)
+#endif	/* BCMDBG_ERR */
 
+#ifdef BCMDBG
+#define	SI_MSG(args)	printf args
+#else
 #define	SI_MSG(args)
+#endif	/* BCMDBG */
 
 /* Define SI_VMSG to printf for verbose debugging, but don't check it in */
 #define	SI_VMSG(args)
@@ -159,7 +167,6 @@ extern void sb_commit(si_t *sih);
 extern uint32 sb_base(uint32 admatch);
 extern uint32 sb_size(uint32 admatch);
 extern void sb_core_reset(si_t *sih, uint32 bits, uint32 resetbits);
-extern void sb_core_tofixup(si_t *sih);
 extern void sb_core_disable(si_t *sih, uint32 bits);
 extern uint32 sb_addrspace(si_t *sih, uint asidx);
 extern uint32 sb_addrspacesize(si_t *sih, uint asidx);
@@ -169,10 +176,14 @@ extern uint32 sb_set_initiator_to(si_t *sih, uint32 to, uint idx);
 
 extern bool sb_taclear(si_t *sih, bool details);
 
+#ifdef BCMDBG
+extern void sb_view(si_t *sih, bool verbose);
+extern void sb_viewall(si_t *sih, bool verbose);
+#endif
 #if defined(BCMDBG_DUMP)
 extern void sb_dump(si_t *sih, struct bcmstrbuf *b);
 #endif
-#if defined(BCMDBG_DUMP)
+#if defined(BCMDBG) || defined(BCMDBG_DUMP)
 extern void sb_dumpregs(si_t *sih, struct bcmstrbuf *b);
 #endif
 
@@ -207,7 +218,10 @@ extern int ai_numaddrspaces(si_t *sih);
 extern uint32 ai_addrspace(si_t *sih, uint asidx);
 extern uint32 ai_addrspacesize(si_t *sih, uint asidx);
 
-#if defined(BCMDBG_DUMP)
+#ifdef BCMDBG
+extern void ai_view(si_t *sih, bool verbose);
+#endif
+#if defined(BCMDBG) || defined(BCMDBG_DUMP)
 extern void ai_dumpregs(si_t *sih, struct bcmstrbuf *b);
 #endif
 

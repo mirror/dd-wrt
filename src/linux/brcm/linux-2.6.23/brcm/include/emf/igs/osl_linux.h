@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -64,6 +64,9 @@ typedef struct osl_timer {
 	uint   ms;
 	bool   periodic;
 	bool   set;
+#ifdef BCMDBG
+	char    *name;          /* Desription of the timer */
+#endif
 } osl_timer_t;
 
 extern osl_timer_t *osl_timer_init(const char *name, void (*fn)(void *arg), void *arg);

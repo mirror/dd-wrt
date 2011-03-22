@@ -1,7 +1,7 @@
 /*
  * RPC module header file
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_rpc.h,v 13.1.4.10 2008/09/06 16:07:16 Exp $
+ * $Id: bcm_rpc.h,v 13.17.8.3 2010/03/06 01:28:33 Exp $
  */
 
 #ifndef _BCM_RPC_H_
@@ -24,15 +24,22 @@ struct rpc_transport_info;
 typedef void (*rpc_dispatch_cb_t)(void *ctx, struct rpc_buf* buf);
 typedef void (*rpc_resync_cb_t)(void *ctx);
 typedef void (*rpc_down_cb_t)(void *ctx);
+typedef void (*rpc_txdone_cb_t)(void *ctx, struct rpc_buf* buf);
+extern struct rpc_info *bcm_rpc_attach(void *pdev, osl_t *osh, struct rpc_transport_info *rpc_th,
+	uint16 *devid);
 
-extern struct rpc_info *bcm_rpc_attach(void *pdev, osl_t *osh, struct rpc_transport_info *rpc_th);
-extern void bcm_rpc_down(struct rpc_info *rpci);
 #ifdef NDIS
-extern void bcm_rpc_sleep(struct rpc_info *rpc);
-extern bool bcm_rpc_resume(struct rpc_info *rpc);
 extern int bcm_rpc_shutdown(struct rpc_info *rpc);
 #endif
+extern void bcm_rpc_sleep(struct rpc_info *rpc);
+extern bool bcm_rpc_resume(struct rpc_info *rpc);
 extern void bcm_rpc_detach(struct rpc_info *rpc);
+extern void bcm_rpc_down(struct rpc_info *rpc);
+extern void bcm_rpc_watchdog(struct rpc_info *rpc);
+extern int bcm_rpc_is_asleep(struct rpc_info *rpc);
+extern void bcm_rpc_dngl_suspend_enable_set(rpc_info_t *rpc, uint32 val);
+extern void bcm_rpc_dngl_suspend_enable_get(rpc_info_t *rpc, uint32 *pval);
+
 extern struct rpc_buf *bcm_rpc_buf_alloc(struct rpc_info *rpc, int len);
 extern void bcm_rpc_buf_free(struct rpc_info *rpc, struct rpc_buf *b);
 /* get rpc transport handle */
@@ -41,7 +48,8 @@ extern struct rpc_transport_info *bcm_rpc_tp_get(struct rpc_info *rpc);
 
 /* callback for: data_rx, down, resync */
 extern void bcm_rpc_rxcb_init(struct rpc_info *rpc, void *ctx, rpc_dispatch_cb_t cb,
-                              void *dnctx, rpc_down_cb_t dncb, rpc_resync_cb_t resync_cb);
+                              void *dnctx, rpc_down_cb_t dncb, rpc_resync_cb_t resync_cb,
+                              rpc_txdone_cb_t);
 extern void bcm_rpc_rxcb_deinit(struct rpc_info *rpci);
 
 /* HOST or CLIENT rpc call, requiring no return value */
@@ -59,9 +67,23 @@ extern int bcm_rpc_call_return(struct rpc_info *rpc, struct rpc_buf *retb);
 
 extern uint bcm_rpc_buf_header_len(struct rpc_info *rpci);
 
-#if defined(WLC_HIGH) && defined(BCMDBG)
+#define RPC_PKTLOG_SIZE		50 /* Depth of the history */
+#define RPC_PKTLOG_RD_LEN	3
+#define RPC_PKTLOG_DUMP_SIZE	150 /* dump size should be more than the product of above two */
+#ifdef WLC_HIGH
 extern int bcm_rpc_pktlog_get(struct rpc_info *rpci, uint32 *buf, uint buf_size, bool send);
 extern int bcm_rpc_dump(rpc_info_t *rpci, struct bcmstrbuf *b);
 #endif
+
+/* HIGH/BMAC: bit 15-8: RPC module, bit 7-0: TP module */
+#define RPC_ERROR_VAL	0x0001
+#define RPC_TRACE_VAL	0x0002
+#define RPC_PKTTRACE_VAL 0x0004
+#define RPC_PKTLOG_VAL	0x0008
+extern void bcm_rpc_msglevel_set(struct rpc_info *rpci, uint16 msglevel, bool high_low);
+
+/* USB device BULK IN endpoint index */	
+#define USBDEV_BULK_IN_EP1		0
+#define USBDEV_BULK_IN_EP2		1
 
 #endif /* _BCM_RPC_H_ */

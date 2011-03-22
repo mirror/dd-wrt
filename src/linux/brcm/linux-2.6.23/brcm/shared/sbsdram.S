@@ -1,7 +1,7 @@
 /*
  * BCM47XX Sonics SiliconBackplane SDRAM/MEMC core initialization
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: sbsdram.S,v 1.43.2.1.12.1 2008/11/14 18:14:26 Exp $
+ * $Id: sbsdram.S,v 1.45 2008/11/14 17:51:32 Exp $
  */
 
 #include <hndsoc.h>
@@ -45,9 +45,29 @@
 /* Debug macro - write a number to a chipc reg - use it with caution,
  *  it changes k0 and k1 registers.
  */
+#ifdef	BCMDBG
+
+#define	FLADDR_OFF	4
+#define	FLDATA_OFF	8
+
+#define TRACEINIT(x) \
+	li	k0,KSEG1ADDR(0x18000040); \
+	li	k1,x; \
+	sw	k1,FLADDR_OFF(k0)
+	
+#define TRACE(x) \
+	li	k1,x; \
+	sw	k1,FLADDR_OFF(k0)
+
+#define TRACE2(x) \
+	li	k1,x; \
+	sw	k1,FLDATA_OFF(k0)
+
+#else
 #define TRACEINIT(x)
 #define TRACE(x)
 #define TRACE2(x)
+#endif	/* BCMDBG */
 
 /*
  * Register usage within this file:

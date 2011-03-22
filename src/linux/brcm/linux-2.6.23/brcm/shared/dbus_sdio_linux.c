@@ -2,7 +2,7 @@
  * Dongle BUS interface
  * SDIO Linux Implementation
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,9 +10,10 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: dbus_sdio_linux.c,v 1.2.4.2 2008/06/04 01:56:04 Exp $
+ * $Id: dbus_sdio_linux.c,v 1.13.22.1 2010/01/05 09:00:54 Exp $
  */
 
+#include <linuxver.h>
 #include <linux/module.h>
 #include <typedefs.h>
 #include <osl.h>
@@ -39,7 +40,7 @@
 #include "dbus.h"
 
 typedef struct {
-	dbus_pub_t *pub;
+	dbus_pub_t *pub; /* Must be first */
 
 	void *cbarg;
 	dbus_intf_callbacks_t *cbs;
@@ -58,6 +59,9 @@ typedef struct {
 	long dpc_pid;
 	struct semaphore dpc_sem;
 	struct completion dpc_exited;
+	long txq_pid;
+	struct semaphore txq_sem;
+	struct completion txq_exited;
 
 	uint tickcnt;
 	struct timer_list timer;
@@ -77,6 +81,10 @@ static void dbus_sdos_disconnect_cb(void);
 static void dbus_sdos_probe_dpc(ulong data);
 static int dhd_probe_thread(void *data);
 
+/* Functions shared between dbus_sdio.c/dbus_sdio_os.c */
+extern int dbus_sdio_txq_sched(void *bus);
+extern int dbus_sdio_txq_stop(void *bus);
+extern int dbus_sdio_txq_process(void *bus);
 
 /* This stores SDIO info during Linux probe callback
  * since attach() is not called yet at this point
@@ -96,6 +104,7 @@ typedef struct {
 
 static work_tcb_t probe_work;
 static probe_info_t g_probe_info;
+extern bcmsdh_driver_t sdh_driver;
 
 /* FIX: Can this stuff be moved to linuxver.h?
  */
@@ -174,10 +183,6 @@ extern uint dhd_rxbound;
 module_param(dhd_txbound, uint, 0);
 module_param(dhd_rxbound, uint, 0);
 
-/* Deferred transmits */
-extern uint dhd_deferred_tx;
-module_param(dhd_deferred_tx, uint, 0);
-
 
 #ifdef BCMSLTGT
 uint htclkratio = 10;
@@ -208,6 +213,7 @@ static int dbus_sdos_get_attrib(void *bus, dbus_attrib_t *attrib);
 static int dbus_sdos_up(void *bus);
 static int dbus_sdos_down(void *bus);
 static int dbus_sdos_stop(void *bus);
+static bool dbus_sdos_device_exists(void *bus);
 static bool dbus_sdos_dlneeded(void *bus);
 static int dbus_sdos_dlstart(void *bus, uint8 *fw, int len);
 static int dbus_sdos_dlrun(void *bus);
@@ -243,6 +249,7 @@ static dbus_intf_t dbus_sdos_intf = {
 	NULL, /* dump */
 	NULL, /* set_config */
 	NULL, /* get_config */
+	dbus_sdos_device_exists,
 	dbus_sdos_dlneeded,
 	dbus_sdos_dlstart,
 	dbus_sdos_dlrun,
@@ -256,6 +263,11 @@ static dbus_intf_t dbus_sdos_intf = {
 	dbus_sdos_lock,
 	dbus_sdos_unlock,
 	dbus_sdos_sched_probe_cb
+
+	/* shutdown */
+
+	/* recv_stop */
+	/* recv_resume */
 };
 
 static probe_cb_t probe_cb = NULL;
@@ -317,6 +329,12 @@ dbusos_stop(sdos_info_t *sdos_info)
 	/* Clear the watchdog timer */
 	del_timer(&sdos_info->timer);
 	sdos_info->wd_timer_valid = FALSE;
+}
+
+static bool
+dbus_sdos_device_exists(void *bus)
+{
+	return TRUE;
 }
 
 static bool
@@ -496,6 +514,24 @@ dbus_wd_timer(ulong data)
 }
 
 static int
+dbus_txq_thread(void *data)
+{
+	sdos_info_t *sdos_info = (sdos_info_t *)data;
+
+	DAEMONIZE("dbus_sdio_txq");
+
+	/* Run until signal received */
+	while (1) {
+		if (down_interruptible(&sdos_info->txq_sem) == 0)
+			dbus_sdio_txq_process(sdos_info->cbarg);
+		else
+			break;
+	}
+
+	complete_and_exit(&sdos_info->txq_exited, 0);
+}
+
+static int
 dhd_probe_thread(void *data)
 {
 	probe_info_t *pinfo = (probe_info_t *) data;
@@ -527,7 +563,7 @@ dhd_dpc_thread(void *data)
 			if (sdos_info->pub->busstate != DBUS_STATE_DOWN) {
 				if (sdos_info->cbarg && sdos_info->cbs) {
 					if (sdos_info->cbs->dpc)
-						if (sdos_info->cbs->dpc(sdos_info->cbarg)) {
+						if (sdos_info->cbs->dpc(sdos_info->cbarg, FALSE)) {
 							up(&sdos_info->dpc_sem);
 						}
 				}
@@ -838,6 +874,7 @@ dbus_bus_osl_register(int vid, int pid, probe_cb_t prcb,
 	disconnect_cb_t discb, void *prarg, dbus_intf_t **intf, void *param1, void *param2)
 {
 	probe_info_t *pinfo = &g_probe_info;
+	int err;
 
 	probe_cb = prcb;
 	disconnect_cb = discb;
@@ -854,7 +891,14 @@ dbus_bus_osl_register(int vid, int pid, probe_cb_t prcb,
 	if (register_chrdev(CHARDEV_MAJOR, CHARDEV_NAME CHARDEV_SUFFIX, &dbus_dldr_fops))
 		DBUSERR(("register_chrdev failed\n"));
 #endif
-	return DBUS_OK;
+
+	err = bcmsdh_register(&sdh_driver);
+	if (err == 0)
+		err = DBUS_OK;
+	else
+		err = DBUS_ERR;
+
+	return err;
 }
 
 int
@@ -867,6 +911,8 @@ dbus_bus_osl_deregister()
 #ifdef CDEV_IOC_IF
 	unregister_chrdev(CHARDEV_MAJOR, CHARDEV_NAME CHARDEV_SUFFIX);
 #endif
+
+	bcmsdh_unregister();
 	return DBUS_OK;
 }
 
@@ -894,6 +940,11 @@ dbus_sdos_attach(dbus_pub_t *pub, void *cbarg, dbus_intf_callbacks_t *cbs)
 	init_timer(&sdos_info->timer);
 	sdos_info->timer.data = (ulong)sdos_info;
 	sdos_info->timer.function = dbus_wd_timer;
+
+	/* Set up txq thread */
+	sema_init(&sdos_info->txq_sem, 0);
+	init_completion(&sdos_info->txq_exited);
+	sdos_info->txq_pid = kernel_thread(dbus_txq_thread, sdos_info, 0);
 
 	/* Initialize thread based operation and lock */
 	init_MUTEX(&sdos_info->sdsem);
@@ -943,6 +994,11 @@ dbus_sdos_detach(dbus_pub_t *pub, void *info)
 		wait_for_completion(&sdos_info->watchdog_exited);
 	}
 
+	if (sdos_info->txq_pid >= 0) {
+		kill_proc(sdos_info->txq_pid, SIGTERM, 1);
+		wait_for_completion(&sdos_info->txq_exited);
+	}
+
 	if (sdos_info->dpc_pid >= 0) {
 		kill_proc(sdos_info->dpc_pid, SIGTERM, 1);
 		wait_for_completion(&sdos_info->dpc_exited);
@@ -953,8 +1009,40 @@ dbus_sdos_detach(dbus_pub_t *pub, void *info)
 	MFREE(osh, sdos_info, sizeof(sdos_info_t));
 }
 
+int
+dbus_sdio_txq_sched(void *bus)
+{
+	sdos_info_t *sdos_info = (sdos_info_t *) bus;
+
+	if (sdos_info == NULL)
+		return DBUS_ERR;
+
+	if (sdos_info->txq_pid >= 0)
+		up(&sdos_info->txq_sem);
+	else
+		ASSERT(0);
+
+	return DBUS_OK;
+}
+
+int
+dbus_sdio_txq_stop(void *bus)
+{
+	sdos_info_t *sdos_info = (sdos_info_t *) bus;
+
+	if (sdos_info == NULL)
+		return DBUS_ERR;
+
+	if (sdos_info->txq_pid >= 0) {
+		kill_proc(sdos_info->txq_pid, SIGTERM, 1);
+		wait_for_completion(&sdos_info->txq_exited);
+		sdos_info->txq_pid = -1;
+	}
+	return DBUS_OK;
+}
 
 /* FIX: */
+extern void test(void);
 void test(void)
 {
 	dbus_sdos_send_complete(NULL);

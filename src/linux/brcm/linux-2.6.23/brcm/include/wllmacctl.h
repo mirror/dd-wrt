@@ -4,7 +4,7 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -12,7 +12,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: wllmacctl.h,v 13.17 2008/02/13 04:00:11 Exp $:
+ * $Id: wllmacctl.h,v 13.29 2008/12/02 22:10:53 Exp $:
  */
 
 #ifndef _wllmacctl_h_
@@ -30,14 +30,95 @@ typedef struct {
 	uint8	vec[32];	/* bitvec of channels */
 } lmacchanvec_t;
 
+#define LMAC_MAXMCS		80
+
+typedef struct {
+	uint8	mcs[(LMAC_MAXMCS / 8)];
+} lmac_mcs_t;
+
+typedef struct {
+	uint32		htcaps;
+	uint16		max_phy_rxrate;		/* Mbps */
+	uint8		sup_chan_width;		/* 20MHz/40MHz */
+	uint8		rx_stbc_cap;
+	uint8		max_amsdulen;
+	uint8		max_rx_ampdulen;
+	uint8		ampdu_spacing;		/* time between mpdus in an ampdu */
+	lmac_mcs_t	rxmcs_set;
+	lmac_mcs_t	txmcs_set;
+	uint8		pco_trans_time;
+	uint8		sup_mcs_feedback;
+	uint8		reserved[3];
+} lmac_ht_cap_t;
+
+/* LMAC HT CAP field specific definitions */
+
+/* htcaps bits 13-31 reserved */
+#define LMAC_HTCAP_RX_LDPC		0x00000001
+#define LMAC_HTCAP_40MHz		0x00000002
+#define LMAC_HTCAP_GF_FRAMES		0x00000004
+#define LMAC_HTCAP_SGI_20MHz		0x00000008
+#define LMAC_HTCAP_SGI_40MHz		0x00000010
+#define LMAC_HTCAP_STBC_TX		0x00000020
+#define LMAC_HTCAP_DELAYED_BA		0x00000040
+#define LMAC_HTCAP_DSSSCCK_40MHz	0x00000080
+#define LMAC_HTCAP_PSMP			0x00000100
+#define LMAC_HTCAP_LSIG_TXOP		0x00000200
+#define LMAC_HTCAP_PCO			0x00000400
+#define LMAC_HTCAP_HTC_FIELD		0x00000800
+#define LMAC_HTCAP_RD_RESP		0x00001000
+
+/* sup_chan_width */
+#define LMAC_SUP_20MHz_ONLY		0
+#define LMAC_SUP_20MHz40MHz		1
+
+/* rx_stbc_cap */
+#define LMAC_RXSTBC_UNSUPPORTED		0
+#define LMAC_RXSTBC_1_SSTREAM		1
+#define LMAC_RXSTBC_1_2_SSTREAM		2
+#define LMAC_RXSTBC_1_2_3_SSTREAM	3
+
+/* max_amsdulen */
+#define LMAC_MAXAMSDU_SIZE_3839		0
+#define LMAC_MAXAMSDU_SIZE_7935		1
+
+/* max_rx_ampdulen */
+#define LMAC_RXMAXAMPDU_SIZE_8191	0
+#define LMAC_RXMAXAMPDU_SIZE_16383	1
+#define LMAC_RXMAXAMPDU_SIZE_32767	2
+#define LMAC_RXMAXAMPDU_SIZE_65535	3
+
+/* ampdu_spacing */
+#define LMAC_SPACING_NORESTRICT		0
+#define LMAC_SPACING_250ns		1
+#define LMAC_SPACING_512ns		2
+#define LMAC_SPACING_1000ns		3
+#define LMAC_SPACING_2000ns		4
+#define LMAC_SPACING_4000ns		5
+#define LMAC_SPACING_8000ns		6
+#define LMAC_SPACING_16000ns		7
+
+/* pco_trans_time */
+#define LMAC_PCO_TRANSITION_NONE	0
+#define LMAC_PCO_TRANSITION_400us	1
+#define LMAC_PCO_TRANSITION_1500us	2
+#define LMAC_PCO_TRANSITION_5000us	3
+
+/* sup_mcs_feedback */
+#define LMAC_MCSFEEDBACK_NONE		0
+#define LMAC_MCSFEEDBACK_RSVD		1
+#define LMAC_MCSFEEDBACK_UNSOLICITED	2
+#define LMAC_MCSFEEDBACK_ALL		3
+
+
 #define LMAC_CAP_MAGIC		0xdeadbeef
 #define LMAC_VERSION_BUF_SIZE	64
 
 typedef struct wl_lmac_cap {
 	uint32		magic;
-	uint32		hwrates;
+	wl_rateset_t	hw_legacy_rateset;	/* nonHT hw rates */
 	uint8		scan_ssid;
-	uint8		bands;		/* bands */
+	uint8		bands;			/* bands (WLC_BAND_xx) */
 	uint8		nmulticast;
 	uint8		nratefallbackclasses;
 	uint16		ssid_buffer_len;
@@ -48,30 +129,20 @@ typedef struct wl_lmac_cap {
 		uint32	step_dB;
 	} txpower[3];
 	uint32		capabilities;
-	uint16		max_txbuffers;
+	uint8		max_txbuffers[AC_COUNT];
 	uint16		max_rxbuffers;
+	uint8		max_ethtype_filters;
+	uint8		max_udpport_filters;
 
+	/* HT Capabilities */
+	lmac_ht_cap_t	lmac_htcap;
+
+	/* BROADCOM specific parts */
 	wlc_rev_info_t	lmac_rev_info;
 	uint32		radioid[2];
 	lmacchanvec_t 	sup_chan[2];
 	char		lmac_version[LMAC_VERSION_BUF_SIZE];
 } wl_lmac_cap_t;
-
-/* rateset defines */
-#define LMAC_RATE_1M		0x00000001
-#define LMAC_RATE_2M		0x00000002
-#define LMAC_RATE_5M5		0x00000004
-#define LMAC_RATE_6M		0x00000008
-#define LMAC_RATE_9M		0x00000010
-#define LMAC_RATE_11M		0x00000020
-#define LMAC_RATE_12M		0x00000040
-#define LMAC_RATE_18M		0x00000080
-#define LMAC_RATE_22M		0x00000100
-#define LMAC_RATE_24M		0x00000200
-#define LMAC_RATE_33M		0x00000400
-#define LMAC_RATE_36M		0x00000800
-#define LMAC_RATE_48M		0x00001000
-#define LMAC_RATE_54M		0x00002000
 
 /* LMAC capabilities */
 #define LMAC_CAP_MAXRXLIFETIME_AC	0x00000001
@@ -93,7 +164,10 @@ typedef struct wl_lmac_cap {
 #define LMAC_CAP_MOREDATA_ACK		0x00010000
 #define LMAC_CAP_SCAN_MINMAX_TIME	0x00020000
 #define LMAC_CAP_TXAUTORATE		0x00040000
-#define LMAC_CAP_HT			0x00080000
+#define LMAC_CAP_NOIVICV_IN_PKT		0x00080000
+#define LMAC_CAP_HT			0x00100000
+#define LMAC_CAP_WAPI			0x00200000
+#define LMAC_CAP_DSPARAM_IN_PRB		0x00400000
 #define LMAC_CAP_STA			0x80000000	/* (BRCM) STA functions included */
 
 /* LMAC Join params */
@@ -103,7 +177,6 @@ typedef struct wl_lmac_cap {
 /* Note: order of fields is chosen carefully for proper alignment */
 typedef struct wl_lmac_join_params {
 	uint32			mode;
-	uint32			basic_rates;
 	uint32			beacon_interval;	/* TUs */
 	uint16			atim_window;
 	struct ether_addr	bssid;
@@ -113,6 +186,8 @@ typedef struct wl_lmac_join_params {
 	uint8			SSID_len;
 	uint8			SSID[32];
 	uint8			probe_for_join;
+	uint8			rsvd[3];
+	wl_rateset_t		basic_rateset;
 } wl_lmac_join_params_t;
 
 typedef struct wl_lmac_bss_params {
@@ -160,7 +235,7 @@ typedef struct wl_lmac_conf_ac {
 	uint16	cwmax[AC_COUNT];
 	uint8	aifs[AC_COUNT];
 	uint16	txop[AC_COUNT];
-	uint16	max_rxlifetime[AC_COUNT];
+	uint32	max_rxlifetime[AC_COUNT];
 } wl_lmac_conf_ac_t;
 
 #define TEMPLATE_BUFFER_LEN		(256 + 32)
@@ -188,24 +263,22 @@ typedef struct wl_lmac_bcnfilter {
 	uint32	hostwake_bcn_count;
 } wl_lmac_bcnfilter_t;
 
-typedef struct wl_lmac_bcn_reg_ie {
+#define WLLMAC_BCNFILTER_MAX_IES	8
+typedef struct wl_lmac_bcnie {
 	uint8	id;
 	uint8	mask;
-} wl_lmac_bcn_regie_t;
-
-typedef struct wl_lmac_bcn_prop_ie {
-	uint8	id;
-	uint8	mask;
+	int16  offset;
 	uint8	OUI[3];
 	uint8	type;
 	uint16	ver;
-} wl_lmac_bcn_propie_t;
+} wl_lmac_bcnie_t;
 
 typedef struct wl_lmac_bcniefilter {
-	uint32		nies;
+	uint32			nies;
+	wl_lmac_bcnie_t		ies[WLLMAC_BCNFILTER_MAX_IES];
 } wl_lmac_bcniefilter_t;
 
-struct wl_lmac_txrate_class {
+typedef struct wl_lmac_txrate_class {
 	uint8		retry_54Mbps;
 	uint8		retry_48Mbps;
 	uint8		retry_36Mbps;
@@ -223,17 +296,12 @@ struct wl_lmac_txrate_class {
 	uint8		SRL;
 	uint8		LRL;
 	uint32		iflags;
-};
+} wl_lmac_txrate_class_t;
 
 typedef struct wl_lmac_txrate_policy {
 	uint32		nclasses;
-	struct wl_lmac_txrate_class txrate_classes[1];
+	wl_lmac_txrate_class_t txrate_classes[1];
 } wl_lmac_txrate_policy_t;
-
-typedef struct wl_lmac_txautorate_policy {
-	uint32		nclasses;
-	uint8		data[1];
-} wl_lmac_txautorate_policy_t;
 
 typedef struct wl_lmac_setchannel {
 	uint8 		channel;
@@ -243,17 +311,10 @@ typedef struct wl_lmac_setchannel {
 	uint8		txpwr_percent;
 } wl_lmac_set_channel_t;
 
-#define LMAC_WEP_DEFAULT_KEY		0
-#define LMAC_WEP_PAIRWISE_KEY		1
-#define LMAC_TKIP_GROUP_KEY		2
-#define LMAC_TKIP_PAIRWISE_KEY		3
-#define LMAC_AES_GROUP_KEY		4
-#define LMAC_AES_PAIRWISE_KEY		5
-
 typedef struct wl_lmac_addkey {
-	uint8		keytype;
-	uint8		keydata[64];
-	uint8		keyindex;
+	uint8		index;
+	uint8		reserved[3];
+	wl_wsec_key_t	key;
 } wl_lmac_addkey_t;
 
 typedef struct wl_lmac_delkey {
@@ -297,7 +358,8 @@ typedef struct wl_bcmlmac_txdone {
 #define LMAC_EVENT_RMCOMPLETE		7
 #define LMAC_EVENT_JOINCOMPLETE		8
 #define LMAC_EVENT_PSCOMPLETE		9
-#define LMAC_EVENT_LAST			10	/* Must be last */
+#define LMAC_EVENT_TRACE		10
+#define LMAC_EVENT_LAST			11	/* Must be last */
 
 typedef struct wllmac_join_data {
 	int32	max_powerlevel;
@@ -311,19 +373,6 @@ typedef struct wllmac_pscomplete_data {
 typedef struct wllmac_scancomplete_data {
 	uint32 pmstate;
 } wllmac_scancomplete_data_t;
-
-#define LMAC_BAND2G		0x01
-#define LMAC_BAND4G		0x02
-#define LMAC_BAND5G		0x04
-#define LMAC_BANDS_ALL		(LMAC_BAND2G | LMAC_BAND4G | LMAC_BAND5G)
-
-/* LMAC Band and Channel defines, freq in MHz  */
-#define LMAC_BAND2G_BASE		2407
-#define LMAC_BAND4G_BASE		4900
-#define LMAC_BAND5G_BASE		5000
-#define LMAC_CHAN_FREQ_OFFSET		5
-
-#define LMAC_CHAN_MAX			200
 
 typedef struct wl_lmac_rmreq_params {
 	int32		tx_power;
@@ -352,5 +401,80 @@ struct wlc_lmac_rm_bcn_measure {
 #define LMAC_SLEEPMODE_WAKEUP			0
 #define LMAC_SLEEPMODE_PDOWN			1
 #define LMAC_SLEEPMODE_LPDOWN			2
+
+
+#define WLLMAC_PF_DISABLE			0
+#define WLLMAC_PF_MATCH_FORWARD			1
+#define WLLMAC_PF_MATCH_DISCARD			2
+
+#define WLLMAC_PFTYPE_ETHTYPE			1
+#define WLLMAC_PFTYPE_ARPHOSTIP			2	/* not used for now */
+#define WLLMAC_PFTYPE_BCAST_UDPPORT		3
+
+typedef struct wllmac_pktfilter {
+	uint8 pf_type;
+	uint8 pf_flags;
+	uint8 pf_nelements;
+	uint8 reserved;
+	/* actual pkt filter data starts here */
+} wllmac_pktfilter_t;
+
+#define WLLMAC_PKTFILTER_MINSIZE	sizeof(wllmac_pktfilter_t)
+
+typedef struct wllmac_htcap {
+	uint8			ht_supported;
+	uint8			rx_stbc_cap;
+	struct ether_addr       ibss_peer_mac;
+	ht_cap_ie_t		ie;
+} wllmac_htcap_t;
+
+#define LMAC_HT_RXBCN_PRIMARY		0x00
+#define LMAC_HT_RXBCN_ANY		0x01
+#define LMAC_HT_RXBCN_SECONDARY		0x02
+
+typedef struct wllmac_ht_secbcn {
+	uint8			sec_bcn;
+	uint8			reserved[3];
+} wllmac_ht_secbcn_t;
+
+typedef struct wllmac_ht_blockack {
+	uint8	tx_tid_bitmap;
+	uint8	rx_tid_bitmap;
+	uint8	reserved[2];
+} wllmac_ht_blockack_t;
+
+#define WLLMAC_RATE_MCS				0x8000
+#define WLLMAC_RATE_MASK			0x7fff
+
+#define WLLMAC_RX_FLAG_RAMATCH			0x00000001
+#define WLLMAC_RX_FLAG_MCASTMATCH		0x00000002
+#define WLLMAC_RX_FLAG_BCASTMATCH		0x00000004
+#define WLLMAC_RX_FLAG_BCNTIM_SET		0x00000008
+#define WLLMAC_RX_FLAG_BCNVBMP_LOT		0x00000010
+#define WLLMAC_RX_FLAG_SSID_MATCH		0x00000020
+#define WLLMAC_RX_FLAG_BSSID_MATCH		0x00000040
+#define WLLMAC_RX_FLAG_ENC_MASK			0x00038000
+#define WLLMAC_RX_FLAG_MORE_RX			0x00040000
+#define WLLMAC_RX_FLAG_MORE_MEASURE		0x00080000
+#define WLLMAC_RX_FLAG_HTPACKET			0x00100000
+#define WLLMAC_RX_FLAG_AMPDU			0x00200000
+#define WLLMAC_RX_FLAG_STBC			0x00400000
+
+#define WLLMAC_RX_FLAG_ENC_SHIFT		15
+#define WLLMAC_RX_FLAG_ENC_NONE			(0 << WLLMAC_RX_FLAG_ENC_SHIFT)
+#define WLLMAC_RX_FLAG_ENC_WAPI			(1 << WLLMAC_RX_FLAG_ENC_SHIFT)
+#define WLLMAC_RX_FLAG_ENC_WEP			(2 << WLLMAC_RX_FLAG_ENC_SHIFT)
+#define WLLMAC_RX_FLAG_ENC_TKIP			(4 << WLLMAC_RX_FLAG_ENC_SHIFT)
+#define WLLMAC_RX_FLAG_ENC_AES			(6 << WLLMAC_RX_FLAG_ENC_SHIFT)
+
+
+typedef struct wllmac_autorate_class {
+	wl_rateset_t	legacy_rateset;
+	lmac_mcs_t	mcs_rates;
+	uint8		index;
+	uint8		SRL;
+	uint8		LRL;
+	uint8		pad[3];
+} wllmac_autorate_t;
 
 #endif /* _wllmacctl_h_ */

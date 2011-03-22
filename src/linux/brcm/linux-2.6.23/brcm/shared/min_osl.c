@@ -2,7 +2,7 @@
  * Initialization and support routines for self-booting compressed
  * image.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -10,7 +10,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: min_osl.c,v 1.22.2.1 2008/07/26 01:12:51 Exp $
+ * $Id: min_osl.c,v 1.27.24.1 2009/09/02 22:14:14 Exp $
  */
 
 #include <typedefs.h>
@@ -23,11 +23,14 @@
 #include <sbchipc.h>
 #include <hndchipc.h>
 
+/* Global ASSERT type flag */
+uint32 g_assert_type = 0;
+
 #ifdef	mips
 /* Cache support */
 
 /* Cache and line sizes */
-static uint icache_size, ic_lsize, dcache_size, dc_lsize;
+uint __icache_size, __ic_lsize, __dcache_size, __dc_lsize;
 
 static void
 _change_cachability(uint32 cm)
@@ -59,12 +62,12 @@ caches_on(void)
 	config1 = MFC0(C0_CONFIG, 1);
 
 	icache_probe(config1, &size, &lsize);
-	icache_size = size;
-	ic_lsize = lsize;
+	__icache_size = size;
+	__ic_lsize = lsize;
 
 	dcache_probe(config1, &size, &lsize);
-	dcache_size = size;
-	dc_lsize = lsize;
+	__dcache_size = size;
+	__dc_lsize = lsize;
 
 	/* If caches are not in the default state then
 	 * presume that caches are already init'd
@@ -79,17 +82,17 @@ caches_on(void)
 	if (((tmp & CID_PKG_MASK) >> CID_PKG_SHIFT) != HDLSIM_PKG_ID) {
 		/* init icache */
 		start = KSEG0ADDR(caches_on) & 0xff800000;
-		end = (start + icache_size);
+		end = (start + __icache_size);
 		MTC0(C0_TAGLO, 0, 0);
 		MTC0(C0_TAGHI, 0, 0);
 		while (start < end) {
 			cache_op(start, Index_Store_Tag_I);
-			start += ic_lsize;
+			start += __ic_lsize;
 		}
 
 		/* init dcache */
 		start = KSEG0ADDR(caches_on) & 0xff800000;
-		end = (start + dcache_size);
+		end = (start + __dcache_size);
 		if (r2) {
 			/* mips32r2 has the data tags in select 2 */
 			MTC0(C0_TAGLO, 2, 0);
@@ -100,7 +103,7 @@ caches_on(void)
 		}
 		while (start < end) {
 			cache_op(start, Index_Store_Tag_D);
-			start += dc_lsize;
+			start += __dc_lsize;
 		}
 	}
 
@@ -116,11 +119,11 @@ blast_dcache(void)
 	uint32 start, end;
 
 	start = KSEG0ADDR(blast_dcache) & 0xff800000;
-	end = start + dcache_size;
+	end = start + __dcache_size;
 
 	while (start < end) {
 		cache_op(start, Index_Writeback_Inv_D);
-		start += dc_lsize;
+		start += __dc_lsize;
 	}
 }
 
@@ -130,11 +133,11 @@ blast_icache(void)
 	uint32 start, end;
 
 	start = KSEG0ADDR(blast_icache) & 0xff800000;
-	end = start + icache_size;
+	end = start + __icache_size;
 
 	while (start < end) {
 		cache_op(start, Index_Invalidate_I);
-		start += ic_lsize;
+		start += __ic_lsize;
 	}
 }
 #endif	/* mips */
@@ -150,7 +153,11 @@ struct serial_struct {
 
 static struct serial_struct min_uart;
 
+#ifdef	BCMDBG
+#define LOG_BUF_LEN	(16 * 1024)
+#else
 #define LOG_BUF_LEN	(1024)
+#endif
 #define LOG_BUF_MASK	(LOG_BUF_LEN-1)
 static unsigned long log_idx;
 static char log_buf[LOG_BUF_LEN];
@@ -192,6 +199,13 @@ putc(int c)
 
 /* assert & debugging */
 
+#ifdef BCMDBG_ASSERT
+void
+assfail(char *exp, char *file, int line)
+{
+	printf("ASSERT %s file %s line %d\n", exp, file, line);
+}
+#endif /* BCMDBG_ASSERT */
 
 /* general purpose memory allocation */
 
@@ -231,13 +245,21 @@ free(void *where)
 	return 0;
 }
 
-/* microsecond delay */
+/* get processor cycle count */
 
 #if defined(mips)
 #define	get_cycle_count	get_c0_count
 #elif defined(__arm__) || defined(__thumb__) || defined(__thumb2__)
 #define	get_cycle_count	get_arm_cyclecount
 #endif
+
+uint32
+osl_getcycles(void)
+{
+	return get_cycle_count();
+}
+
+/* microsecond delay */
 
 /* Default to 125 MHz */
 static uint32 cpu_clock = 125000000;

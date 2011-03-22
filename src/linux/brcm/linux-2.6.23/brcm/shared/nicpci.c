@@ -44,7 +44,11 @@ typedef struct {
 } pcicore_info_t;
 
 /* debug/trace */
+#ifdef BCMDBG_ERR
+#define	PCI_ERROR(args)	printf args
+#else
 #define	PCI_ERROR(args)
+#endif	/* BCMDBG_ERR */
 
 /* routines to access mdio slave device registers */
 static bool pcie_mdiosetblock(pcicore_info_t *pi,  uint blk);
@@ -534,17 +538,6 @@ pcie_war_aspm_clkreq(pcicore_info_t *pi)
 	W_REG(pi->osh, reg16, val16);
 }
 
-void
-pcie_war_ovr_aspm_disable(void *pch)
-{
-	pcicore_info_t *pi = (pcicore_info_t *)pch;
-
-	pi->pcie_war_aspm_ovr = FALSE;
-
-	/* Update the current state */
-	pcie_war_aspm_clkreq(pi);
-}
-
 /* Apply the polarity determined at the start */
 /* Needs to happen when coming out of 'standby'/'hibernate' */
 static void
@@ -888,6 +881,16 @@ pcie_lcreg(void *pch, uint32 mask, uint32 val)
 	return OSL_PCI_READ_CONFIG(pi->osh, offset, sizeof(uint32));
 }
 
+#ifdef BCMDBG
+void
+pcicore_dump(void *pch, struct bcmstrbuf *b)
+{
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+
+	bcm_bprintf(b, "FORCEHT %d pcie_polarity 0x%x pcie_aspm_ovr 0x%x\n",
+	            pi->sih->pci_pr32414, pi->pcie_polarity, pi->pcie_war_aspm_ovr);
+}
+#endif /* BCMDBG */
 
 uint32
 pcicore_pciereg(void *pch, uint32 offset, uint32 mask, uint32 val, uint type)

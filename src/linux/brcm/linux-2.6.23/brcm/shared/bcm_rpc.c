@@ -2,7 +2,7 @@
  * RPC layer. It links to bus layer with transport layer(bus dependent)
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_rpc.c,v 1.11.2.56 2008/10/18 06:13:35 Exp $
+ * $Id: bcm_rpc.c,v 1.77.6.9 2010/08/11 09:50:40 Exp $
  */
 
 #include <epivers.h>
@@ -23,6 +23,7 @@
 #include <bcm_rpc_tp.h>
 #include <bcm_rpc.h>
 #include <rpc_osl.h>
+#include <bcmdevs.h>
 
 #if (!defined(WLC_HIGH) && !defined(WLC_LOW))
 #error "SPLIT"
@@ -40,47 +41,68 @@
 #endif
 #endif /* WLC_HIGH */
 #ifdef WLC_LOW
+#if !defined(_HNDRTE_)
 #error "RPC only supports HNDRTE in LOW driver"
+#endif
 #endif /* WLC_LOW */
 
-#define RPC_ERROR_VAL 0x0001
-#define RPC_TRACE_VAL 0x0002
-#define RPC_PKTTRACE_VAL 0x0004
-#define RPC_PKTLOG_VAL 0x0008
+/* use local flag BCMDBG_RPC so that it can be turned on without global BCMDBG */
+#ifdef	BCMDBG
+#ifndef BCMDBG_RPC
+#define BCMDBG_RPC
+#endif
+#endif	/* BCMDBG */
 
-static uint32 rpc_msg_level = RPC_ERROR_VAL; /* Print error messages even for non-debug drivers */
+/* #define BCMDBG_RPC */
+
+static uint32 rpc_msg_level = RPC_ERROR_VAL;
+/* Print error messages even for non-debug drivers
+ * NOTE: RPC_PKTLOG_VAL can be added in bcm_rpc_pktlog_init()
+ */
 
 /* osl_msg_level is a bitvector with defs in wlioctl.h */
 #define	RPC_ERR(args)		do {if (rpc_msg_level & RPC_ERROR_VAL) printf args;} while (0)
 
-#ifdef	BCMDBG
+#ifdef	BCMDBG_RPC
 #define	RPC_TRACE(args)		do {if (rpc_msg_level & RPC_TRACE_VAL) printf args;} while (0)
 #define RPC_PKTTRACE_ON()	(rpc_msg_level & RPC_PKTTRACE_VAL)
 #else
-#ifdef BCMDBG_ERR
+#ifdef	BCMDBG_ERR
 #define	RPC_TRACE(args)		do {if (rpc_msg_level & RPC_TRACE_VAL) printf args;} while (0)
 #define RPC_PKTTRACE_ON()	(FALSE)
 #define prhex(a, b, c)		do { } while (0)  /* prhex is not defined under */
-#define RPC_PKTLOG_ON()	(FALSE)
+#define RPC_PKTLOG_ON()		(FALSE)
 #else
 #define	RPC_TRACE(args)
 #define RPC_PKTTRACE_ON()	(FALSE)
-#define RPC_PKTLOG_ON()	(FALSE)
+#define RPC_PKTLOG_ON()		(FALSE)
 #define prhex(a, b, c) 	do { } while (0)  /* prhex is not defined under */
 #endif /* BCMDBG_ERR */
-#endif /* BCMDBG */
+#endif /* BCMDBG_RPC */
 
-#if defined(WLC_HIGH) && defined(BCMDBG)
+#ifdef BCMDBG_RPC
 #define RPC_PKTLOG_ON()		(rpc_msg_level & RPC_PKTLOG_VAL)
 #else
 #define RPC_PKTLOG_ON()		(FALSE)
-#endif /* defined(WLC_HIGH) && defined(BCMDBG) */
+#endif /* BCMDBG_RPC */
+
+#ifndef BCM_RPC_REORDER_LIMIT
+#ifdef WLC_HIGH
+#define BCM_RPC_REORDER_LIMIT 40	/* limit to toss hole to avoid overflow reorder queque */
+#else
+#define BCM_RPC_REORDER_LIMIT 30
+#endif
+#endif	/* BCM_RPC_REORDER_LIMIT */
 
 /* OS specific files for locks */
 #define RPC_INIT_WAIT_TIMEOUT_MSEC	1000
+#ifdef NDIS
 #define RPC_RETURN_WAIT_TIMEOUT_MSEC	800 /* NDIS OIDs timeout in 1 second.
 					     * This timeout needs to be smaller than that
 					     */
+#else
+#define RPC_RETURN_WAIT_TIMEOUT_MSEC	1600
+#endif
 
 /* RPC Frame formats */
 /* |--------------||-------------|
@@ -120,6 +142,7 @@ typedef uint32 rpc_header_t;
 #define RPC_ACN_LEN	sizeof(uint32)
 #define RPC_VER_LEN	sizeof(EPI_VERSION_NUM)
 #define RPC_RC_LEN	sizeof(uint32)
+#define RPC_CHIPID_LEN	sizeof(uint32)
 
 #define RPC_HDR_TYPE(_rpch) (((_rpch) >> 24) & 0xff)
 #define RPC_HDR_SESSION(_rpch) (((_rpch) >> 16) & 0xff)
@@ -172,21 +195,29 @@ typedef enum {
 #define	HDR_SESSION_MISMATCH	0x2
 #define	HDR_XACTION_MISMATCH	0x4
 
-#ifdef	BCMDBG
-#define RPC_PKTLOG_SIZE 100 /* Depth of the history */
-#define RPC_PKTLOG_DATASIZE 16
-
+#ifdef	BCMDBG_RPC
+#define RPC_PKTLOG_DATASIZE	4
 struct rpc_pktlog {
 	uint16	trans;
 	int	len;
 	uint32	data[RPC_PKTLOG_DATASIZE]; /* First few bytes of the payload only */
 };
-#endif /* BCMDBG */
+#endif /* BCMDBG_RPC */
+
 #ifdef WLC_LOW
-static void do_rpcdump_cmd(uint32 arg, uint argc, char *argv[]);
+static void bcm_rpc_dump_state(uint32 arg, uint argc, char *argv[]);
 #else
 static void bcm_rpc_fatal_dump(void *arg);
+#endif	/* WLC_LOW */
+
+#ifdef BCMDBG_RPC
+static void _bcm_rpc_dump_pktlog(rpc_info_t *rpci);
+#ifdef WLC_HIGH
+static void bcm_rpc_dump_pktlog_high(rpc_info_t *rpci);
+#else
+static void bcm_rpc_dump_pktlog_low(uint32 arg, uint argc, char *argv[]);
 #endif
+#endif	/* BCMDBG_RPC */
 
 #ifdef WLC_HIGH
 /* This lock is needed to handle the Receive Re-order queue that guarantees
@@ -219,6 +250,8 @@ struct rpc_info {
 	rpc_resync_cb_t resync_cb;	/* callback when host reenabled and dongle
 					 * was not rebooted. Uses dnctx
 					 */
+	rpc_txdone_cb_t txdone_cb;	/* when non-null, called when a tx has completed. */
+	uint8 rpc_tp_hdr_len;		/* header len for rpc and tp layer */
 
 	uint8 session;			/* 255 sessions enough ? */
 	uint16 trans;			/* More than 255 can't be pending */
@@ -231,7 +264,10 @@ struct rpc_info {
 	rpc_state_t  state;
 	uint reset;			/* # of resets */
 	uint cnt_xidooo;		/* transactionID out of order */
-
+	uint cnt_rx_drop_hole;		/* number of rcp calls dropped due to reorder overflow */
+	uint cnt_reorder_overflow;	/* number of time the reorder queue overflowed,
+					 * causing drops
+					 */
 	uint32 version;
 
 	bool wait_init;
@@ -239,8 +275,7 @@ struct rpc_info {
 
 	rpc_osl_t *rpc_osh;
 
-#ifdef WLC_HIGH
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	struct rpc_pktlog *send_log;
 	uint16 send_log_idx;	/* Point to the next slot to fill-in */
 	uint16 send_log_num;	/* Number of entries */
@@ -248,11 +283,14 @@ struct rpc_info {
 	struct rpc_pktlog *recv_log;
 	uint16 recv_log_idx;	/* Point to the next slot to fill-in */
 	uint16 recv_log_num;	/* Number of entries */
-#endif /* BCMDBG */
+#endif /* BCMDBG_RPC */
 
+#ifdef WLC_HIGH
 #ifdef NDIS
 	NDIS_SPIN_LOCK reorder_lock; /* TO RAISE the IRQ */
 	bool reorder_lock_alloced;
+	bool down_oe_pending;
+	bool down_pending;
 #else
 	spinlock_t	reorder_lock;
 	ulong reorder_flags;
@@ -260,34 +298,39 @@ struct rpc_info {
 #endif /* WLC_HIGH */
 	/* Protect against rx reordering */
 	rpc_buf_t *reorder_pktq;
+	uint	reorder_depth;
+	uint	reorder_depth_max;
+	uint 	chipid;
+	uint	suspend_enable;
 };
 
 static void bcm_rpc_tx_complete(void *ctx, rpc_buf_t *buf, int status);
 static void bcm_rpc_buf_recv(void *context, rpc_buf_t *);
+static void bcm_rpc_process_reorder_queue(rpc_info_t *rpci);
 static bool bcm_rpc_buf_recv_inorder(rpc_info_t *rpci, rpc_buf_t *rpc_buf, mbool hdr_invalid);
 
 #ifdef WLC_HIGH
 static rpc_buf_t *bcm_rpc_buf_recv_high(struct rpc_info *rpci, rpc_type_t type, rpc_acn_t acn,
 	rpc_buf_t *rpc_buf);
-
-#ifdef BCMDBG
-static void bcm_rpc_pktlog_init(rpc_info_t *rpci);
-static void bcm_rpc_pktlog_deinit(rpc_info_t *rpci);
-static struct rpc_pktlog *bcm_rpc_prep_entry(struct rpc_info * rpci, rpc_buf_t *b,
-                                             struct rpc_pktlog *cur);
-static void bcm_rpc_add_send_entry(struct rpc_info * rpci, struct rpc_pktlog *cur);
-static void bcm_rpc_add_recv_entry(struct rpc_info * rpci, struct rpc_pktlog *cur);
-#endif /* BCMDBG */
+static int bcm_rpc_resume_oe(struct rpc_info *rpci);
 #else
 static rpc_buf_t *bcm_rpc_buf_recv_low(struct rpc_info *rpci, rpc_header_t header,
 	rpc_acn_t acn, rpc_buf_t *rpc_buf);
 #endif /* WLC_HIGH */
-
 static int bcm_rpc_up(rpc_info_t *rpci);
 static void bcm_rpc_down_oe(rpc_info_t *rpci);
-#ifdef NDIS
-static int bcm_rpc_resume_oe(struct rpc_info *rpci);
-#endif
+static uint16 bcm_rpc_reorder_next_xid(struct rpc_info *rpci);
+
+
+#ifdef BCMDBG_RPC
+static void bcm_rpc_pktlog_init(rpc_info_t *rpci);
+static void bcm_rpc_pktlog_deinit(rpc_info_t *rpci);
+static struct rpc_pktlog *bcm_rpc_prep_entry(struct rpc_info * rpci, rpc_buf_t *b,
+                                             struct rpc_pktlog *cur, bool tx);
+static void bcm_rpc_add_entry_tx(struct rpc_info * rpci, struct rpc_pktlog *cur);
+static void bcm_rpc_add_entry_rx(struct rpc_info * rpci, struct rpc_pktlog *cur);
+#endif /* BCMDBG_RPC */
+
 
 /* Header and componet retrieval functions */
 static INLINE rpc_header_t
@@ -319,6 +362,16 @@ bcm_rpc_mgn_reason(struct rpc_info *rpci, rpc_buf_t *rpc_buf)
 	rpc_header_t *rpch = (rpc_header_t *)bcm_rpc_buf_data(rpci->rpc_th, rpc_buf);
 	return (rpc_rc_t)ltoh32(*rpch);
 }
+
+#ifdef WLC_HIGH
+static uint32
+bcm_rpc_mgn_chipid(struct rpc_info *rpci, rpc_buf_t *rpc_buf)
+{
+	rpc_header_t *rpch = (rpc_header_t *)bcm_rpc_buf_data(rpci->rpc_th, rpc_buf);
+
+	return ltoh32(*rpch);
+}
+#endif /* WLC_HIGH */
 
 
 static INLINE uint
@@ -395,14 +448,20 @@ bcm_rpc_hdr_validate(struct rpc_info *rpci, rpc_buf_t *rpc_buf, uint32 *xaction,
 }
 
 struct rpc_info *
-BCMATTACHFN(bcm_rpc_attach)(void *pdev, osl_t *osh, struct rpc_transport_info *rpc_th)
+BCMATTACHFN(bcm_rpc_attach)(void *pdev, osl_t *osh, struct rpc_transport_info *rpc_th,
+	uint16 *devid)
 {
 	struct rpc_info *rpci;
+
+#ifndef WLC_HIGH
+	UNUSED_PARAMETER(devid);
+#endif /* WLC_HIGH */
 
 	if ((rpci = (struct rpc_info *)MALLOC(osh, sizeof(struct rpc_info))) == NULL)
 		return NULL;
 
 	bzero(rpci, sizeof(struct rpc_info));
+
 	rpci->osh = osh;
 	rpci->pdev = pdev;
 	rpci->rpc_th = rpc_th;
@@ -420,15 +479,48 @@ BCMATTACHFN(bcm_rpc_attach)(void *pdev, osl_t *osh, struct rpc_transport_info *r
 
 	rpci->version = EPI_VERSION_NUM;
 
+	rpci->rpc_tp_hdr_len = RPC_HDR_LEN + bcm_rpc_buf_tp_header_len(rpci->rpc_th);
+
 	if (bcm_rpc_up(rpci)) {
 		RPC_ERR(("bcm_rpc_attach: rpc_up failed\n"));
 		goto fail;
 	}
 
+#ifdef WLC_HIGH
+	*devid = (uint16)rpci->chipid;
+#endif
+
 	return rpci;
 fail:
 	bcm_rpc_detach(rpci);
 	return NULL;
+}
+
+static uint16
+bcm_rpc_reorder_next_xid(struct rpc_info *rpci)
+{
+	rpc_buf_t * buf;
+	rpc_header_t header;
+	uint16 cur_xid = rpci->oe_trans;
+	uint16 min_xid = 0;
+	uint16 min_delta = 0xffff;
+	uint16 xid, delta;
+
+	ASSERT(rpci->rpc_th);
+	for (buf = rpci->reorder_pktq;
+	     buf != NULL;
+	     buf = bcm_rpc_buf_next_get(rpci->rpc_th, buf)) {
+		header = bcm_rpc_header(rpci, buf);
+		xid = RPC_HDR_XACTION(header);
+		delta = xid - cur_xid;
+
+		if (delta < min_delta) {
+			min_delta = delta;
+			min_xid = xid;
+		}
+	}
+
+	return min_xid;
 }
 
 void
@@ -437,10 +529,9 @@ BCMATTACHFN(bcm_rpc_detach)(struct rpc_info *rpci)
 	if (!rpci)
 		return;
 
-#ifdef WLC_HIGH
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	bcm_rpc_pktlog_deinit(rpci);
-#endif /* BCMDBG */
+#endif
 
 	if (rpci->reorder_pktq) {
 		rpc_buf_t * node;
@@ -449,11 +540,18 @@ BCMATTACHFN(bcm_rpc_detach)(struct rpc_info *rpci)
 			rpci->reorder_pktq = bcm_rpc_buf_next_get(rpci->rpc_th,
 			                                          node);
 			bcm_rpc_buf_next_set(rpci->rpc_th, node, NULL);
+#if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC)
+			PKTFREE(rpci->osh, node, FALSE);
+#else
 			bcm_rpc_tp_buf_free(rpci->rpc_th, node);
+#endif /* BCM_RPC_NOCOPY || BCM_RPC_RXNOCOPY || BCM_RPC_ROC */
 		}
 		ASSERT(rpci->reorder_pktq == NULL);
+		rpci->reorder_depth = 0;
+		rpci->reorder_depth_max = 0;
 	}
 
+#ifdef WLC_HIGH
 #if defined(NDIS)
 	if (rpci->reorder_lock_alloced)
 		NdisFreeSpinLock(&rpcb->lock);
@@ -495,7 +593,7 @@ bcm_rpc_buf_alloc(struct rpc_info *rpci, int datalen)
 uint
 bcm_rpc_buf_header_len(struct rpc_info *rpci)
 {
-	return RPC_HDR_LEN;
+	return rpci->rpc_tp_hdr_len;
 }
 
 void
@@ -506,13 +604,14 @@ bcm_rpc_buf_free(struct rpc_info *rpci, rpc_buf_t *rpc_buf)
 
 void
 bcm_rpc_rxcb_init(struct rpc_info *rpci, void *ctx, rpc_dispatch_cb_t cb,
-                  void *dnctx, rpc_down_cb_t dncb, rpc_resync_cb_t resync_cb)
+	void *dnctx, rpc_down_cb_t dncb, rpc_resync_cb_t resync_cb, rpc_txdone_cb_t txdone_cb)
 {
 	rpci->dispatchcb = cb;
 	rpci->ctx = ctx;
 	rpci->dnctx = dnctx;
 	rpci->dncb = dncb;
 	rpci->resync_cb = resync_cb;
+	rpci->txdone_cb = txdone_cb;
 }
 
 void
@@ -574,7 +673,8 @@ bcm_rpc_up(struct rpc_info *rpci)
 	int ret;
 
 	/* Allocate a frame, prep it, send and wait */
-	rpc_buf = bcm_rpc_tp_buf_alloc(rpci->rpc_th, RPC_HDR_LEN + RPC_ACN_LEN + RPC_VER_LEN);
+	rpc_buf = bcm_rpc_tp_buf_alloc(rpci->rpc_th, RPC_HDR_LEN + RPC_ACN_LEN + RPC_VER_LEN
+		+ RPC_CHIPID_LEN);
 
 	if (!rpc_buf)
 		return -1;
@@ -622,40 +722,57 @@ bcm_rpc_up(struct rpc_info *rpci)
 	rpci->wait_init = FALSE;
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
 
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	bcm_rpc_pktlog_init(rpci);
-#endif /* BCMDBG */
+#endif
 
 	return ret;
 }
 
-#ifdef NDIS
+int
+bcm_rpc_is_asleep(struct rpc_info *rpci)
+{
+	return (rpci->state == ASLEEP);
+}
+
 void
 bcm_rpc_sleep(struct rpc_info *rpci)
 {
+	if (!rpci->suspend_enable)
+		return;
 	bcm_rpc_tp_sleep(rpci->rpc_th);
 	rpci->state = ASLEEP;
 	/* Ignore anything coming after this */
 	rpci->session++;
 }
 
+#ifdef NDIS
 int
 bcm_rpc_shutdown(struct rpc_info *rpci)
 {
-	int ret = bcm_rpc_tp_shutdown(rpci->rpc_th);
-	rpci->state = DISCONNECTED;
+	int ret = -1;
+
+	if (rpci) {
+		ret = bcm_rpc_tp_shutdown(rpci->rpc_th);
+		rpci->state = DISCONNECTED;
+	}
 	return ret;
 }
+#endif /* NDIS */
 
 bool
 bcm_rpc_resume(struct rpc_info *rpci)
 {
+	if (!rpci->suspend_enable)
+		return FALSE;
+
 	bcm_rpc_tp_resume(rpci->rpc_th);
 
 	if (bcm_rpc_resume_oe(rpci) == 0) {
 		rpci->trans = 0;
 		rpci->oe_trans = 0;
 	}
+	RPC_TRACE(("bcm_rpc_resume done, state %d\n", rpci->state));
 	return (rpci->state == ESTABLISHED);
 }
 
@@ -710,13 +827,17 @@ bcm_rpc_resume_oe(struct rpc_info *rpci)
 
 	return ret;
 }
-#endif /* NDIS */
 #else
 static int
 bcm_rpc_up(struct rpc_info *rpci)
 {
 	rpci->state = WAIT_INITIALIZING;
-	hndrte_cons_addcmd("rpcdump", do_rpcdump_cmd, (uint32)rpci);
+
+#ifdef BCMDBG_RPC
+	bcm_rpc_pktlog_init(rpci);
+	hndrte_cons_addcmd("rpcpktdump", bcm_rpc_dump_pktlog_low, (uint32)rpci);
+#endif
+	hndrte_cons_addcmd("rpcdump", bcm_rpc_dump_state, (uint32)rpci);
 	return 0;
 }
 
@@ -728,7 +849,7 @@ bcm_rpc_connect_resp(struct rpc_info *rpci, rpc_acn_t acn, uint32 reason)
 
 	/* Allocate a frame, prep it, send and wait */
 	rpc_buf = bcm_rpc_tp_buf_alloc(rpci->rpc_th, RPC_HDR_LEN + RPC_ACN_LEN +
-	                               RPC_RC_LEN + RPC_VER_LEN);
+	                               RPC_RC_LEN + RPC_VER_LEN + RPC_CHIPID_LEN);
 	if (!rpc_buf) {
 		RPC_ERR(("%s: bcm_rpc_tp_buf_alloc() failed\n", __FUNCTION__));
 		return FALSE;
@@ -740,7 +861,9 @@ bcm_rpc_connect_resp(struct rpc_info *rpci, rpc_acn_t acn, uint32 reason)
 
 	*(header + 2) = ltoh32(rpci->version);
 	*(header + 3) = ltoh32(reason);
-
+#ifdef BCMCHIPID
+	*(header + 4) = ltoh32(BCMCHIPID);
+#endif /* BCMCHIPID */
 	if (bcm_rpc_tp_buf_send(rpci->rpc_th, rpc_buf)) {
 		RPC_ERR(("%s: bcm_rpc_tp_buf_send() call failed\n", __FUNCTION__));
 		return FALSE;
@@ -749,6 +872,34 @@ bcm_rpc_connect_resp(struct rpc_info *rpci, rpc_acn_t acn, uint32 reason)
 	return TRUE;
 }
 #endif /* WLC_HIGH */
+
+void
+bcm_rpc_watchdog(struct rpc_info *rpci)
+{
+	static uint32 uptime = 0;
+
+	uptime++;
+	if (uptime % 60 == 0) {
+		RPC_ERR(("rpc uptime %d minutes\n", (uptime / 60)));
+	}
+
+#ifdef NDIS
+	if (rpci->down_oe_pending) {
+		ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+		RPC_ERR(("%s: safe context, resume bcm_rpc_down_oe\n", __FUNCTION__));
+		bcm_rpc_down_oe(rpci);
+		rpci->down_oe_pending = FALSE;
+	}
+
+	if (rpci->down_pending) {
+		ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+		RPC_ERR(("%s: safe context, resume bcm_rpc_down\n", __FUNCTION__));
+		bcm_rpc_down(rpci);
+		rpci->down_pending = FALSE;
+	}
+#endif
+	bcm_rpc_tp_watchdog(rpci->rpc_th);
+}
 
 void
 bcm_rpc_down(struct rpc_info *rpci)
@@ -760,7 +911,7 @@ bcm_rpc_down(struct rpc_info *rpci)
 #ifdef WLC_HIGH
 		bcm_rpc_fatal_dump(rpci);
 #else
-		do_rpcdump_cmd((uint32)rpci, 0, NULL);
+		bcm_rpc_dump_state((uint32)rpci, 0, NULL);
 #endif
 		rpci->state = DISCONNECTED;
 		RPC_OSL_UNLOCK(rpci->rpc_osh);
@@ -772,6 +923,7 @@ bcm_rpc_down(struct rpc_info *rpci)
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
 }
 
+/* call other end to go down */
 static void
 bcm_rpc_down_oe(rpc_info_t *rpci)
 {
@@ -801,12 +953,13 @@ bcm_rpc_tx_complete(void *ctx, rpc_buf_t *buf, int status)
 
 	ASSERT(rpci && rpci->rpc_th);
 
-	/* RPC_BUFFER_TX: dealloc */
-	if (buf)
-		bcm_rpc_tp_buf_free(rpci->rpc_th, buf);
-
-	if (status)
-		bcm_rpc_down(rpci);
+	if (buf) {
+		if (rpci->txdone_cb) {
+			/* !!must pull off the rpc/tp header after dbus is done for wl driver */
+			rpci->txdone_cb(rpci->ctx, buf);
+		} else
+			bcm_rpc_tp_buf_free(rpci->rpc_th, buf);
+	}
 }
 
 int
@@ -814,7 +967,7 @@ bcm_rpc_call(struct rpc_info *rpci, rpc_buf_t *b)
 {
 	rpc_header_t *header;
 	int err = 0;
-#if defined(WLC_HIGH) && defined(BCMDBG)
+#ifdef BCMDBG_RPC
 	struct rpc_pktlog cur;
 #endif
 
@@ -829,23 +982,25 @@ bcm_rpc_call(struct rpc_info *rpci, rpc_buf_t *b)
 	}
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
 
-#if defined(WLC_HIGH) && defined(BCMDBG)
+#ifdef BCMDBG_RPC
 	/* Prepare the current log entry but add only if the TX was successful */
 	/* This is done here before DATA pointer gets modified */
 	if (RPC_PKTLOG_ON())
-		bcm_rpc_prep_entry(rpci, b, &cur);
+		bcm_rpc_prep_entry(rpci, b, &cur, TRUE);
 #endif
 
 	header = (rpc_header_t *)bcm_rpc_buf_push(rpci->rpc_th, b, RPC_HDR_LEN);
 
 	rpc_header_prep(rpci, header, RPC_TYPE_DATA, 0);
 
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	if (RPC_PKTTRACE_ON()) {
+#ifdef BCMDBG
 		prhex("RPC Call ", bcm_rpc_buf_data(rpci->rpc_th, b),
 		      bcm_rpc_buf_len_get(rpci->rpc_th, b));
-	}
 #endif
+	}
+#endif	/* BCMDBG_RPC */
 
 	if (bcm_rpc_tp_buf_send(rpci->rpc_th, b)) {
 		RPC_ERR(("%s: bcm_rpc_tp_buf_send() call failed\n", __FUNCTION__));
@@ -855,11 +1010,11 @@ bcm_rpc_call(struct rpc_info *rpci, rpc_buf_t *b)
 
 	rpci->trans++;
 
-#if defined(WLC_HIGH) && defined(BCMDBG)
-	/* Since successful add the entry */
-	if (RPC_PKTLOG_ON())
-		bcm_rpc_add_send_entry(rpci, &cur);
-#endif /* BCMDBG */
+#ifdef BCMDBG_RPC	    /* Since successful add the entry */
+	if (RPC_PKTLOG_ON()) {
+		bcm_rpc_add_entry_tx(rpci, &cur);
+	}
+#endif
 done:
 	return err;
 }
@@ -871,10 +1026,11 @@ bcm_rpc_call_with_return(struct rpc_info *rpci, rpc_buf_t *b)
 	rpc_header_t *header;
 	rpc_buf_t *retb = NULL;
 	int ret;
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	struct rpc_pktlog cur;
 #endif
 	bool timedout = FALSE;
+	uint32 start_wait_time;
 
 	RPC_TRACE(("%s:\n", __FUNCTION__));
 
@@ -887,11 +1043,11 @@ bcm_rpc_call_with_return(struct rpc_info *rpci, rpc_buf_t *b)
 	}
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
 
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	/* Prepare the current log entry but add only if the TX was successful */
 	/* This is done here before DATA pointer gets modified */
 	if (RPC_PKTLOG_ON())
-		bcm_rpc_prep_entry(rpci, b, &cur);
+		bcm_rpc_prep_entry(rpci, b, &cur, TRUE);
 #endif
 
 	header = (rpc_header_t *)bcm_rpc_buf_push(rpci->rpc_th, b, RPC_HDR_LEN);
@@ -906,16 +1062,26 @@ bcm_rpc_call_with_return(struct rpc_info *rpci, rpc_buf_t *b)
 	/* Prep the return packet BEFORE sending the buffer and also within spinlock
 	 * within raised IRQ
 	 */
-	bcm_rpc_tp_recv_rtn(rpci->rpc_th);
+	ret = bcm_rpc_tp_recv_rtn(rpci->rpc_th);
+	if ((ret == BCME_RXFAIL) || (ret == BCME_NODEVICE)) {
+		RPC_ERR(("%s: bcm_rpc_tp_recv_rtn() failed\n", __FUNCTION__));
+
+		rpci->wait_return = FALSE;
+		RPC_OSL_UNLOCK(rpci->rpc_osh);
+		bcm_rpc_down(rpci);
+		return NULL;
+	}
 
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
 
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	if (RPC_PKTTRACE_ON()) {
+#ifdef BCMDBG
 		prhex("RPC Call With Return Buf", bcm_rpc_buf_data(rpci->rpc_th, b),
 		      bcm_rpc_buf_len_get(rpci->rpc_th, b));
-	}
 #endif
+	}
+#endif	/* BCMDBG_RPC */
 
 	if (bcm_rpc_tp_buf_send(rpci->rpc_th, b)) {
 		RPC_ERR(("%s: bcm_rpc_bus_buf_send() failed\n", __FUNCTION__));
@@ -927,29 +1093,43 @@ bcm_rpc_call_with_return(struct rpc_info *rpci, rpc_buf_t *b)
 		return NULL;
 	}
 
+	start_wait_time = OSL_SYSUPTIME();
 	ret = RPC_OSL_WAIT(rpci->rpc_osh, RPC_RETURN_WAIT_TIMEOUT_MSEC, &timedout);
 
+	/* When RPC_OSL_WAIT returns because of signal pending. wait for the signal to
+	 * be processed
+	 */
 	RPC_OSL_LOCK(rpci->rpc_osh);
+	while ((ret < 0) && ((OSL_SYSUPTIME() - start_wait_time) <= RPC_RETURN_WAIT_TIMEOUT_MSEC)) {
+		RPC_OSL_UNLOCK(rpci->rpc_osh);
+		ret = RPC_OSL_WAIT(rpci->rpc_osh, RPC_RETURN_WAIT_TIMEOUT_MSEC, &timedout);
+		RPC_OSL_LOCK(rpci->rpc_osh);
+	}
+
 	if (ret || timedout) {
-		RPC_ERR(("%s: RPC call return wait err %d timedout:%d\n",
-		         __FUNCTION__, ret, timedout));
+		RPC_ERR(("%s: RPC call trans 0x%x return wait err %d timedout %d limit %d(ms)\n",
+		         __FUNCTION__, (rpci->trans - 1), ret, timedout,
+		         RPC_RETURN_WAIT_TIMEOUT_MSEC));
 		rpci->wait_return = FALSE;
 		RPC_OSL_UNLOCK(rpci->rpc_osh);
+#ifdef BCMDBG_RPC
+		bcm_rpc_dump_pktlog_high(rpci);
+#endif
 		bcm_rpc_down(rpci);
 		return NULL;
 	}
 
 	/* See if we timed out or actually initialized */
+	ASSERT(rpci->rtn_rpcbuf != NULL);	/* Make sure we've got the response */
 	retb = rpci->rtn_rpcbuf;
 	rpci->rtn_rpcbuf = NULL;
 	rpci->wait_return = FALSE; /* Could have woken up by timeout */
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
 
-#ifdef BCMDBG
-	/* Since successful add the entry */
+#ifdef BCMDBG_RPC	    /* Since successful add the entry */
 	if (RPC_PKTLOG_ON())
-		bcm_rpc_add_send_entry(rpci, &cur);
-#endif /* BCMDBG */
+		bcm_rpc_add_entry_tx(rpci, &cur);
+#endif
 
 	return retb;
 }
@@ -967,12 +1147,14 @@ bcm_rpc_call_return(struct rpc_info *rpci, rpc_buf_t *b)
 
 	rpc_header_prep(rpci, header, RPC_TYPE_RTN, 0);
 
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	if (RPC_PKTTRACE_ON()) {
+#ifdef BCMDBG
 		prhex("RPC Call Return Buf", bcm_rpc_buf_data(rpci->rpc_th, b),
 		      bcm_rpc_buf_len_get(rpci->rpc_th, b));
-	}
 #endif
+	}
+#endif	/* BCMDBG_RPC */
 
 	/* If the TX fails, it's sender's responsibilty */
 	if (bcm_rpc_tp_send_callreturn(rpci->rpc_th, b)) {
@@ -1006,18 +1188,48 @@ bcm_rpc_buf_recv(void *context, rpc_buf_t *rpc_buf)
 	    !mboolisset(hdr_invalid, ~HDR_XACTION_MISMATCH)) {
 		rpc_buf_t *node = rpci->reorder_pktq;
 		rpci->cnt_xidooo++;
+		rpci->reorder_depth++;
+		if (rpci->reorder_depth > rpci->reorder_depth_max)
+			rpci->reorder_depth_max = rpci->reorder_depth;
 
 		/* Catch roll-over or retries */
 		rpci->reorder_pktq = rpc_buf;
 
 		if (node != NULL)
 			bcm_rpc_buf_next_set(rpci->rpc_th, rpc_buf, node);
+
+		/* if we have held too many packets, move past the hole */
+		if (rpci->reorder_depth > BCM_RPC_REORDER_LIMIT) {
+			uint16 next_xid = bcm_rpc_reorder_next_xid(rpci);
+
+			RPC_ERR(("%s: reorder queue depth %d, skipping ID 0x%x to 0x%x\n",
+			         __FUNCTION__, rpci->reorder_depth,
+			         rpci->oe_trans, next_xid));
+			rpci->cnt_reorder_overflow++;
+			rpci->cnt_rx_drop_hole += (uint)(next_xid - rpci->oe_trans);
+			rpci->oe_trans = next_xid;
+			bcm_rpc_process_reorder_queue(rpci);
+		}
+
 		goto done;
 	}
 
 	/* Bail out if failed */
 	if (!bcm_rpc_buf_recv_inorder(rpci, rpc_buf, hdr_invalid))
 		goto done;
+
+	/* see if we can make progress on the reorder backlog */
+	bcm_rpc_process_reorder_queue(rpci);
+
+done:
+	RPC_RO_UNLOCK(rpci);
+}
+
+static void
+bcm_rpc_process_reorder_queue(rpc_info_t *rpci)
+{
+	uint32 xaction;
+	mbool hdr_invalid = 0;
 
 	while (rpci->reorder_pktq) {
 		bool found = FALSE;
@@ -1030,14 +1242,16 @@ bcm_rpc_buf_recv(void *context, rpc_buf_t *rpc_buf)
 			if (!mboolisset(hdr_invalid, HDR_XACTION_MISMATCH)) {
 				bcm_rpc_buf_next_set(rpci->rpc_th, buf, NULL);
 
-				/* Bail out if failed */
-				if (!bcm_rpc_buf_recv_inorder(rpci, buf, hdr_invalid))
-					goto done;
-
 				if (buf == rpci->reorder_pktq)
 					rpci->reorder_pktq = next;
 				else
 					bcm_rpc_buf_next_set(rpci->rpc_th, prev, next);
+				rpci->reorder_depth--;
+
+				/* Bail out if failed */
+				if (!bcm_rpc_buf_recv_inorder(rpci, buf, hdr_invalid))
+					return;
+
 				buf = NULL;
 				found = TRUE;
 			} else {
@@ -1051,8 +1265,7 @@ bcm_rpc_buf_recv(void *context, rpc_buf_t *rpc_buf)
 			break;
 	}
 
-done:
-	RPC_RO_UNLOCK(rpci);
+	return;
 }
 
 static bool
@@ -1067,12 +1280,14 @@ bcm_rpc_buf_recv_inorder(rpc_info_t *rpci, rpc_buf_t *rpc_buf, mbool hdr_invalid
 	           rpc_buf, bcm_rpc_buf_len_get(rpci->rpc_th, rpc_buf),
 	           bcm_rpc_buf_data(rpci->rpc_th, rpc_buf)));
 
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 	if (RPC_PKTTRACE_ON()) {
+#ifdef BCMDBG
 		prhex("RPC Rx Buf", bcm_rpc_buf_data(rpci->rpc_th, rpc_buf),
 		      bcm_rpc_buf_len_get(rpci->rpc_th, rpc_buf));
-	}
 #endif
+	}
+#endif	/* BCMDBG_RPC */
 
 	header = bcm_rpc_header(rpci, rpc_buf);
 
@@ -1081,11 +1296,28 @@ bcm_rpc_buf_recv_inorder(rpc_info_t *rpci, rpc_buf_t *rpc_buf, mbool hdr_invalid
 	if (hdr_invalid) {
 		RPC_ERR(("%s: bcm_rpc_hdr_validate failed on 0x%08x 0x%x\n", __FUNCTION__,
 		         header, hdr_invalid));
+#if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC)
+		if (RPC_HDR_TYPE(header) != RPC_TYPE_RTN) {
+			PKTFRMNATIVE(rpci->osh, rpc_buf);
+			PKTFREE(rpci->osh, rpc_buf, FALSE);
+		}
+#else
 		bcm_rpc_tp_buf_free(rpci->rpc_th, rpc_buf);
+#endif
 		RPC_OSL_UNLOCK(rpci->rpc_osh);
 		if (mboolisset(hdr_invalid, HDR_STATE_MISMATCH)) {
-			bcm_rpc_down_oe(rpci);
-			bcm_rpc_down(rpci);
+#ifdef NDIS
+			if ((KeGetCurrentIrql() == DISPATCH_LEVEL) &&
+				(bcm_rpc_tp_tx_flowctl_get(rpci->rpc_th))) {
+				RPC_TRACE(("%s: unsafe and delay bcm_rpc_down_x\n", __FUNCTION__));
+				rpci->down_oe_pending = TRUE;
+				rpci->down_pending = TRUE;
+			} else
+#endif
+			{
+				bcm_rpc_down_oe(rpci);
+				bcm_rpc_down(rpci);
+			}
 		}
 		return FALSE;
 	}
@@ -1093,7 +1325,22 @@ bcm_rpc_buf_recv_inorder(rpc_info_t *rpci, rpc_buf_t *rpc_buf, mbool hdr_invalid
 	RPC_TRACE(("%s state:0x%x type:0x%x session:0x%x xacn:0x%x\n", __FUNCTION__, rpci->state,
 		RPC_HDR_TYPE(header), RPC_HDR_SESSION(header), RPC_HDR_XACTION(header)));
 
-	bcm_rpc_buf_pull(rpci->rpc_th, rpc_buf, RPC_HDR_LEN);
+	if (bcm_rpc_buf_len_get(rpci->rpc_th, rpc_buf) > RPC_HDR_LEN)
+		bcm_rpc_buf_pull(rpci->rpc_th, rpc_buf, RPC_HDR_LEN);
+	else {
+		/* if the head packet ends with rpc_hdr, free and advance to next packet in chain */
+		rpc_buf_t *next_p;
+
+		ASSERT(bcm_rpc_buf_len_get(rpci->rpc_th, rpc_buf) == RPC_HDR_LEN);
+		next_p = (rpc_buf_t*)PKTNEXT(rpci->osh, rpc_buf);
+
+		RPC_TRACE(("%s: following pkt chain to pkt %p len %d\n", __FUNCTION__,
+		           next_p, bcm_rpc_buf_len_get(rpci->rpc_th, next_p)));
+
+		PKTSETNEXT(rpci->osh, rpc_buf, NULL);
+		bcm_rpc_tp_buf_free(rpci->rpc_th, rpc_buf);
+		rpc_buf = next_p;
+	}
 
 	switch (RPC_HDR_TYPE(header)) {
 	case RPC_TYPE_MGN:
@@ -1140,6 +1387,7 @@ bcm_rpc_buf_recv_mgn_high(struct rpc_info *rpci, rpc_acn_t acn, rpc_buf_t *rpc_b
 		bcm_rpc_buf_pull(rpci->rpc_th, rpc_buf, RPC_VER_LEN);
 
 		reason = bcm_rpc_mgn_reason(rpci, rpc_buf);
+		bcm_rpc_buf_pull(rpci->rpc_th, rpc_buf, RPC_RC_LEN);
 
 		RPC_ERR(("%s: Reason: %x Dongle Version: 0x%x\n", __FUNCTION__,
 		         reason, version));
@@ -1152,6 +1400,9 @@ bcm_rpc_buf_recv_mgn_high(struct rpc_info *rpci, rpc_acn_t acn, rpc_buf_t *rpc_b
 		 */
 		if (rpci->state != UNINITED) {
 			rpci->state = ESTABLISHED;
+			rpci->chipid = bcm_rpc_mgn_chipid(rpci, rpc_buf);
+			bcm_rpc_buf_pull(rpci->rpc_th, rpc_buf, RPC_CHIPID_LEN);
+
 			RPC_ERR(("%s: Connected!\n", __FUNCTION__));
 			if (rpci->wait_init)
 				RPC_OSL_WAKE(rpci->rpc_osh);
@@ -1168,7 +1419,17 @@ bcm_rpc_buf_recv_mgn_high(struct rpc_info *rpci, rpc_acn_t acn, rpc_buf_t *rpc_b
 
 	case RPC_DOWN:
 		RPC_OSL_UNLOCK(rpci->rpc_osh);
-		bcm_rpc_down(rpci);
+#ifdef NDIS
+		if ((KeGetCurrentIrql() == DISPATCH_LEVEL) &&
+			(bcm_rpc_tp_tx_flowctl_get(rpci->rpc_th))) {
+			RPC_TRACE(("%s: unsafe to down rpc, delay\n", __FUNCTION__));
+			rpci->down_pending = TRUE;
+		} else
+#endif
+		{
+			bcm_rpc_down(rpci);
+		}
+
 		RPC_OSL_LOCK(rpci->rpc_osh);
 		break;
 
@@ -1186,7 +1447,10 @@ bcm_rpc_buf_recv_high(struct rpc_info *rpci, rpc_type_t type, rpc_acn_t acn, rpc
 	switch (type) {
 	case RPC_TYPE_RTN:
 		if (rpci->wait_return) {
+			RPC_OSL_LOCK(rpci->rpc_osh);
 			rpci->rtn_rpcbuf = rpc_buf;
+			RPC_OSL_UNLOCK(rpci->rpc_osh);
+			/* This buffer will be freed in bcm_rpc_tp_recv_rtn() */
 			rpc_buf = NULL;
 			RPC_OSL_WAKE(rpci->rpc_osh);
 		} else if (rpci->state != DISCONNECTED)
@@ -1194,22 +1458,30 @@ bcm_rpc_buf_recv_high(struct rpc_info *rpci, rpc_type_t type, rpc_acn_t acn, rpc
 		break;
 
 	case RPC_TYPE_MGN:
+#if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC)
 		bcm_rpc_buf_recv_mgn_high(rpci, acn, rpc_buf);
+		PKTFRMNATIVE(rpci->osh, rpc_buf);
+		PKTFREE(rpci->osh, rpc_buf, FALSE);
+		rpc_buf = NULL;
+#else
+		bcm_rpc_buf_recv_mgn_high(rpci, acn, rpc_buf);
+#endif
 		break;
 
 	case RPC_TYPE_DATA:
 		ASSERT(rpci->state == ESTABLISHED);
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 		/* Prepare the current log entry but add only if the TX was successful */
 		/* This is done here before DATA pointer gets modified */
 		if (RPC_PKTLOG_ON()) {
 			struct rpc_pktlog cur;
-			bcm_rpc_prep_entry(rpci, rpc_buf, &cur);
-			bcm_rpc_add_recv_entry(rpci, &cur);
+			bcm_rpc_prep_entry(rpci, rpc_buf, &cur, FALSE);
+			bcm_rpc_add_entry_rx(rpci, &cur);
 		}
-#endif /* BCMDBG */
+#endif /* BCMDBG_RPC */
 		if (rpci->dispatchcb) {
 			(rpci->dispatchcb)(rpci->ctx, rpc_buf);
+			/* The dispatch routine will free the buffer */
 			rpc_buf = NULL;
 		} else {
 			RPC_ERR(("%s: no rpcq callback, drop the pkt\n", __FUNCTION__));
@@ -1273,8 +1545,9 @@ bcm_rpc_buf_recv_mgn_low(struct rpc_info *rpci, uint8 session, rpc_acn_t acn, rp
 		rpci->oe_trans = 0;
 		rpci->trans = 0;
 		rpci->rtn_trans = 0;
-	} else if (acn == RPC_DOWN)
+	} else if (acn == RPC_DOWN) {
 		bcm_rpc_down(rpci);
+	}
 }
 
 static rpc_buf_t *
@@ -1289,6 +1562,16 @@ bcm_rpc_buf_recv_low(struct rpc_info *rpci, rpc_header_t header,
 	case RPC_TYPE_RTN:
 	case RPC_TYPE_DATA:
 		ASSERT(rpci->state == ESTABLISHED);
+#ifdef BCMDBG_RPC
+		/* Prepare the current log entry but add only if the TX was successful */
+		/* This is done here before DATA pointer gets modified */
+		if (RPC_PKTLOG_ON()) {
+			struct rpc_pktlog cur;
+			bcm_rpc_prep_entry(rpci, rpc_buf, &cur, FALSE);
+			bcm_rpc_add_entry_rx(rpci, &cur);
+		}
+#endif /* BCMDBG_RPC */
+
 		if (rpci->dispatchcb) {
 			(rpci->dispatchcb)(rpci->ctx, rpc_buf);
 			rpc_buf = NULL;
@@ -1306,24 +1589,24 @@ bcm_rpc_buf_recv_low(struct rpc_info *rpci, rpc_header_t header,
 }
 #endif /* WLC_HIGH */
 
-#ifdef WLC_HIGH
-#ifdef BCMDBG
+#ifdef BCMDBG_RPC
 static void
 bcm_rpc_pktlog_init(rpc_info_t *rpci)
 {
 	rpc_msg_level |= RPC_PKTLOG_VAL;
+
 	if (RPC_PKTLOG_ON()) {
 		if ((rpci->send_log = MALLOC(rpci->osh,
-		                             sizeof(struct rpc_pktlog) * RPC_PKTLOG_SIZE)) == NULL)
+			sizeof(struct rpc_pktlog) * RPC_PKTLOG_SIZE)) == NULL)
 			goto err;
 		bzero(rpci->send_log, sizeof(struct rpc_pktlog) * RPC_PKTLOG_SIZE);
 		if ((rpci->recv_log = MALLOC(rpci->osh,
-		                             sizeof(struct rpc_pktlog) * RPC_PKTLOG_SIZE)) == NULL)
+			sizeof(struct rpc_pktlog) * RPC_PKTLOG_SIZE)) == NULL)
 			goto err;
 		bzero(rpci->recv_log, sizeof(struct rpc_pktlog) * RPC_PKTLOG_SIZE);
 		return;
 	}
-
+	RPC_ERR(("pktlog is on\n"));
 err:
 	bcm_rpc_pktlog_deinit(rpci);
 }
@@ -1343,17 +1626,22 @@ bcm_rpc_pktlog_deinit(rpc_info_t *rpci)
 }
 
 static struct rpc_pktlog *
-bcm_rpc_prep_entry(struct rpc_info * rpci, rpc_buf_t *b, struct rpc_pktlog *cur)
+bcm_rpc_prep_entry(struct rpc_info * rpci, rpc_buf_t *b, struct rpc_pktlog *cur, bool tx)
 {
 	bzero(cur, sizeof(struct rpc_pktlog));
-	cur->trans = rpci->trans;
+	if (tx) {
+		cur->trans = rpci->trans;
+	} else {
+		/* this function is called after match, so the oe_trans is already advanced */
+		cur->trans = rpci->oe_trans - 1;
+	}
 	cur->len = bcm_rpc_buf_len_get(rpci->rpc_th, b);
 	bcopy(bcm_rpc_buf_data(rpci->rpc_th, b), cur->data, RPC_PKTLOG_DATASIZE);
 	return cur;
 }
 
 static void
-bcm_rpc_add_send_entry(struct rpc_info * rpci, struct rpc_pktlog *cur)
+bcm_rpc_add_entry_tx(struct rpc_info * rpci, struct rpc_pktlog *cur)
 {
 	RPC_OSL_LOCK(rpci->rpc_osh);
 	bcopy(cur, &rpci->send_log[rpci->send_log_idx], sizeof(struct rpc_pktlog));
@@ -1366,7 +1654,7 @@ bcm_rpc_add_send_entry(struct rpc_info * rpci, struct rpc_pktlog *cur)
 }
 
 static void
-bcm_rpc_add_recv_entry(struct rpc_info * rpci, struct rpc_pktlog *cur)
+bcm_rpc_add_entry_rx(struct rpc_info * rpci, struct rpc_pktlog *cur)
 {
 	bcopy(cur, &rpci->recv_log[rpci->recv_log_idx], sizeof(struct rpc_pktlog));
 	rpci->recv_log_idx = (rpci->recv_log_idx + 1) % RPC_PKTLOG_SIZE;
@@ -1374,11 +1662,38 @@ bcm_rpc_add_recv_entry(struct rpc_info * rpci, struct rpc_pktlog *cur)
 	if (rpci->recv_log_num < RPC_PKTLOG_SIZE)
 		rpci->recv_log_num++;
 }
+#endif /* BCMDBG_RPC */
+
+#ifdef WLC_HIGH
+int
+bcm_rpc_dump(rpc_info_t *rpci, struct bcmstrbuf *b)
+{
+#ifdef BCMDBG
+
+	bcm_bprintf(b, "\nHOST rpc dump:\n");
+	RPC_OSL_LOCK(rpci->rpc_osh);
+	bcm_bprintf(b, "Version: 0x%x State: %x\n", rpci->version, rpci->state);
+	bcm_bprintf(b, "session %d trans 0x%x oe_trans 0x%x rtn_trans 0x%x oe_rtn_trans 0x%x\n",
+		rpci->session, rpci->trans, rpci->oe_trans,
+		rpci->rtn_trans, rpci->oe_rtn_trans);
+	bcm_bprintf(b, "xactionID out of order %d\n", rpci->cnt_xidooo);
+	bcm_bprintf(b, "reorder queue depth %u first ID 0x%x, max depth %u, tossthreshold %u\n",
+		rpci->reorder_depth, bcm_rpc_reorder_next_xid(rpci), rpci->reorder_depth_max,
+		BCM_RPC_REORDER_LIMIT);
+
+	RPC_OSL_UNLOCK(rpci->rpc_osh);
+	return bcm_rpc_tp_dump(rpci->rpc_th, b);
+#else
+	return 0;
+#endif	/* BCMDBG */
+}
 
 int
 bcm_rpc_pktlog_get(struct rpc_info *rpci, uint32 *buf, uint buf_size, bool send)
 {
-	int ret;
+	int ret = -1;
+
+#ifdef BCMDBG_RPC
 	int start, i, tot;
 
 	/* Clear the whole buffer */
@@ -1399,63 +1714,166 @@ bcm_rpc_pktlog_get(struct rpc_info *rpci, uint32 *buf, uint buf_size, bool send)
 	}
 
 	/* Return only first byte */
-	if (buf_size < (uint)ret) {
+	if (buf_size < (uint) (ret * RPC_PKTLOG_RD_LEN)) {
 		RPC_OSL_UNLOCK(rpci->rpc_osh);
+		RPC_ERR(("%s buf too short\n", __FUNCTION__));
 		return BCME_BUFTOOSHORT;
 	}
 
 	if (ret == 0) {
 		RPC_OSL_UNLOCK(rpci->rpc_osh);
+		RPC_ERR(("%s no record\n", __FUNCTION__));
 		return ret;
 	}
 
 	tot = ret;
 	for (i = 0; tot > 0; tot--, i++) {
 		if (send) {
-			buf[i] = rpci->send_log[start].data[0];
-			/* buf[i+1] = rpci->send_log[start].trans; */
+			buf[i*RPC_PKTLOG_RD_LEN] = rpci->send_log[start].data[0];
+			buf[i*RPC_PKTLOG_RD_LEN+1] = rpci->send_log[start].trans;
+			buf[i*RPC_PKTLOG_RD_LEN+2] = rpci->send_log[start].len;
 			start++;
-		} else
-			buf[i] = rpci->recv_log[start++].data[0];
+		} else {
+			buf[i*RPC_PKTLOG_RD_LEN] = rpci->recv_log[start].data[0];
+			buf[i*RPC_PKTLOG_RD_LEN+1] = rpci->recv_log[start].trans;
+			buf[i*RPC_PKTLOG_RD_LEN+2] = rpci->recv_log[start].len;
+			start++;
+		}
 		start = (start % RPC_PKTLOG_SIZE);
 	}
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
 
+#endif	/* BCMDBG_RPC */
 	return ret;
 }
+#endif	/* WLC_HIGH */
 
-int
-bcm_rpc_dump(rpc_info_t *rpci, struct bcmstrbuf *b)
+
+#ifdef BCMDBG_RPC
+
+static void
+_bcm_rpc_dump_pktlog(rpc_info_t *rpci)
 {
-	bcm_bprintf(b, "\nbcm rpc dump:\n");
+	int ret = -1;
+	int start, i;
+
 	RPC_OSL_LOCK(rpci->rpc_osh);
-	bcm_bprintf(b, "Version: 0x%x State: %x\n", rpci->version, rpci->state);
-	bcm_bprintf(b, "session %d trans 0x%x oe_trans 0x%x rtn_trans 0x%x oe_rtn_trans 0x%x\n",
-	            rpci->session, rpci->trans, rpci->oe_trans,
-	            rpci->rtn_trans, rpci->oe_rtn_trans);
+	ret = rpci->send_log_num;
+	if (ret == 0)
+		goto done;
+
+	if (ret < RPC_PKTLOG_SIZE)
+		start = 0;
+	else
+		start = (rpci->send_log_idx + 1) % RPC_PKTLOG_SIZE;
+
+	printf("send %d\n", ret);
+	for (i = 0; ret > 0; ret--, i++) {
+		printf("[%d] trans 0x%x len %d data 0x%x\n", i,
+		       rpci->send_log[start].trans,
+		       rpci->send_log[start].len,
+		       rpci->send_log[start].data[0]);
+		start++;
+		start = (start % RPC_PKTLOG_SIZE);
+	}
+
+	ret = rpci->recv_log_num;
+	if (ret == 0)
+		goto done;
+
+	if (ret < RPC_PKTLOG_SIZE)
+		start = 0;
+	else
+		start = (rpci->recv_log_idx + 1) % RPC_PKTLOG_SIZE;
+
+	printf("recv %d\n", ret);
+	for (i = 0; ret > 0; ret--, i++) {
+		printf("[%d] trans 0x%x len %d data 0x%x\n", i,
+		       rpci->recv_log[start].trans,
+		       rpci->recv_log[start].len,
+		       rpci->recv_log[start].data[0]);
+		start++;
+		start = (start % RPC_PKTLOG_SIZE);
+	}
+
+done:
 	RPC_OSL_UNLOCK(rpci->rpc_osh);
-	return bcm_rpc_tp_dump(rpci->rpc_th, b);
 }
 
-#endif /* BCMDBG */
+#ifdef WLC_HIGH
+static void
+bcm_rpc_dump_pktlog_high(rpc_info_t *rpci)
+{
+	printf("HOST rpc pktlog dump:\n");
+	_bcm_rpc_dump_pktlog(rpci);
+}
+
+#else
+
+static void
+bcm_rpc_dump_pktlog_low(uint32 arg, uint argc, char *argv[])
+{
+	rpc_info_t *rpci;
+
+	rpci = (rpc_info_t *)(uintptr)arg;
+
+	printf("DONGLE rpc pktlog dump:\n");
+	_bcm_rpc_dump_pktlog(rpci);
+}
 #endif /* WLC_HIGH */
+#endif /* BCMDBG_RPC */
 
 #ifdef WLC_LOW
 static void
-do_rpcdump_cmd(uint32 arg, uint argc, char *argv[])
+bcm_rpc_dump_state(uint32 arg, uint argc, char *argv[])
 #else
 static void
 bcm_rpc_fatal_dump(void *arg)
 #endif
 {
 	rpc_info_t *rpci = (rpc_info_t *)(uintptr)arg;
+	printf("DONGLE rpc dump:\n");
 	printf("Version: 0x%x State: %x\n", rpci->version, rpci->state);
 	printf("session %d trans 0x%x oe_trans 0x%x rtn_trans 0x%x\n",
 	       rpci->session, rpci->trans, rpci->oe_trans,
 	       rpci->rtn_trans);
-	printf("xactionID out of order %d\n", rpci->cnt_xidooo);
+	printf("xactionID out of order %u reorder ovfl %u dropped hole %u\n",
+	       rpci->cnt_xidooo, rpci->cnt_reorder_overflow, rpci->cnt_rx_drop_hole);
+	printf("reorder queue depth %u first ID 0x%x reorder_q_depth_max %d, tossthreshold %u\n",
+	       rpci->reorder_depth, bcm_rpc_reorder_next_xid(rpci), rpci->reorder_depth_max,
+	       BCM_RPC_REORDER_LIMIT);
 
 #ifdef WLC_LOW
 	bcm_rpc_tp_dump(rpci->rpc_th);
 #endif
+}
+
+void
+bcm_rpc_msglevel_set(struct rpc_info *rpci, uint16 msglevel, bool high)
+{
+#ifdef WLC_HIGH
+	ASSERT(high == TRUE);
+	/* high 8 bits are for rpc, low 8 bits are for tp */
+	rpc_msg_level = msglevel >> 8;
+	bcm_rpc_tp_msglevel_set(rpci->rpc_th, (uint8)(msglevel & 0xff), TRUE);
+	return;
+#else
+	ASSERT(high == FALSE);
+	/* high 8 bits are for rpc, low 8 bits are for tp */
+	rpc_msg_level = msglevel >> 8;
+	bcm_rpc_tp_msglevel_set(rpci->rpc_th, (uint8)(msglevel & 0xff), FALSE);
+	return;
+#endif
+}
+
+void
+bcm_rpc_dngl_suspend_enable_set(rpc_info_t *rpc, uint32 val)
+{
+	rpc->suspend_enable = val;
+}
+
+void
+bcm_rpc_dngl_suspend_enable_get(rpc_info_t *rpc, uint32 *pval)
+{
+	*pval = rpc->suspend_enable;
 }

@@ -267,6 +267,17 @@ typedef struct {
 
 #define BCMDONGLEOVERHEAD	(BCMDONGLEHDRSZ + BCMDONGLEPADSZ)
 
+#ifdef BCMDBG
+
+#ifndef BCMDBG_ERR
+#define BCMDBG_ERR
+#endif /* BCMDBG_ERR */
+
+#ifndef BCMDBG_ASSERT
+#define BCMDBG_ASSERT
+#endif /* BCMDBG_ASSERT */
+
+#endif /* BCMDBG */
 
 #if defined(BCMDBG_ASSERT) || defined(BCMASSERT_LOG)
 #define BCMASSERT_SUPPORT

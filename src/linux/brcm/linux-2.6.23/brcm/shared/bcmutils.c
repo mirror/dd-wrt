@@ -8,7 +8,7 @@
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: bcmutils.c,v 1.248.4.4 2010/06/15 06:19:14 Exp $
+ * $Id: bcmutils.c,v 1.248.4.4.2.1 2010/09/16 04:11:50 Exp $
  */
 
 #include <typedefs.h>
@@ -1213,7 +1213,7 @@ bcmprinttslogs(void)
 }
 #endif	/* BCMTSTAMPEDLOGS */
 
-#if defined(DHD_DEBUG)
+#if defined(BCMDBG) || defined(DHD_DEBUG)
 /* pretty hex print a pkt buffer chain */
 void
 prpkt(const char *msg, osl_t *osh, void *p0)
@@ -1226,7 +1226,7 @@ prpkt(const char *msg, osl_t *osh, void *p0)
 	for (p = p0; p; p = PKTNEXT(osh, p))
 		prhex(NULL, PKTDATA(osh, p), PKTLEN(osh, p));
 }
-#endif	
+#endif	/* BCMDBG || DHD_DEBUG */
 
 /* Takes an Ethernet frame and sets out-of-bound PKTPRIO.
  * Also updates the inplace vlan tag if requested.
@@ -1870,21 +1870,25 @@ BCMROMFN(hndcrc32)(uint8 *pdata, uint nbytes, uint32 crc)
 	uint8 tmp[4];
 	ulong *tptr = (ulong *)tmp;
 
-	/* in case the beginning of the buffer isn't aligned */
-	pend = (uint8 *)((uint)(pdata + 3) & 0xfffffffc);
-	nbytes -= (pend - pdata);
-	while (pdata < pend)
-		CRC_INNER_LOOP(32, crc, *pdata++);
+	if (nbytes > 3) {
+		/* in case the beginning of the buffer isn't aligned */
+		pend = (uint8 *)((uint)(pdata + 3) & ~0x3);
+		nbytes -= (pend - pdata);
+		while (pdata < pend)
+			CRC_INNER_LOOP(32, crc, *pdata++);
+	}
 
-	/* handle bulk of data as 32-bit words */
-	pend = pdata + (nbytes & 0xfffffffc);
-	while (pdata < pend) {
-		*tptr = *(ulong *)pdata;
-		pdata += sizeof(ulong *);
-		CRC_INNER_LOOP(32, crc, tmp[0]);
-		CRC_INNER_LOOP(32, crc, tmp[1]);
-		CRC_INNER_LOOP(32, crc, tmp[2]);
-		CRC_INNER_LOOP(32, crc, tmp[3]);
+	if (nbytes > 3) {
+		/* handle bulk of data as 32-bit words */
+		pend = pdata + (nbytes & ~0x3);
+		while (pdata < pend) {
+			*tptr = *(ulong *)pdata;
+			pdata += sizeof(ulong *);
+			CRC_INNER_LOOP(32, crc, tmp[0]);
+			CRC_INNER_LOOP(32, crc, tmp[1]);
+			CRC_INNER_LOOP(32, crc, tmp[2]);
+			CRC_INNER_LOOP(32, crc, tmp[3]);
+		}
 	}
 
 	/* 1-3 bytes at end of buffer */
@@ -2029,8 +2033,9 @@ BCMROMFN(bcm_parse_ordered_tlvs)(void *buf, int buflen, uint key)
 }
 #endif	/* !BCMROMOFFLOAD */
 
-#if defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || \
-	defined(BCMDBG_DUMP) || defined(DHD_DEBUG)
+#if defined(BCMDBG) || defined(BCMDBG_ERR) || defined(WLMSG_PRHDRS) || \
+	defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || defined(BCMDBG_DUMP) || \
+	defined(DHD_DEBUG)
 int
 bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len)
 {
@@ -2135,7 +2140,7 @@ prhex(const char *msg, uchar *buf, uint nbytes)
 	if (p != line)
 		printf("%s\n", line);
 }
-#endif 
+#endif /* BCMDBG || WLMSG_PRHDRS || WLMSG_PRPKT || WLMSG_ASSOC || BCMDBG_DUMP || DHD_DEBUG */
 
 static const char *crypto_algo_names[] = {
 	"NONE",
@@ -2161,6 +2166,18 @@ bcm_crypto_algo_name(uint algo)
 	return (algo < ARRAYSIZE(crypto_algo_names)) ? crypto_algo_names[algo] : "ERR";
 }
 
+#ifdef BCMDBG
+void
+deadbeef(void *p, uint len)
+{
+	static uint8 meat[] = { 0xde, 0xad, 0xbe, 0xef };
+
+	while (len-- > 0) {
+		*(uint8*)p = meat[((uintptr)p) & 3];
+		p = (uint8*)p + 1;
+	}
+}
+#endif /* BCMDBG */
 
 char *
 bcm_chipname(uint chipid, char *buf, uint len)
@@ -2441,8 +2458,8 @@ bcm_print_bytes(char *name, const uchar *data, int len)
 	}
 	printf("\n");
 }
-#if defined(WLTINYDUMP) || defined(WLMSG_INFORM) || defined(WLMSG_ASSOC) || \
-	defined(WLMSG_PRPKT) || defined(WLMSG_WSEC)
+#if defined(WLTINYDUMP) || defined(BCMDBG) || defined(WLMSG_INFORM) || \
+	defined(WLMSG_ASSOC) || defined(WLMSG_PRPKT) || defined(WLMSG_WSEC)
 #define SSID_FMT_BUF_LEN	((4 * DOT11_MAX_SSID_LEN) + 1)
 
 int
@@ -2470,6 +2487,6 @@ bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len)
 
 	return (int)(p - buf);
 }
-#endif 
+#endif /* WLTINYDUMP || BCMDBG || WLMSG_INFORM || WLMSG_ASSOC || WLMSG_PRPKT */
 
 #endif /* BCMDRIVER */

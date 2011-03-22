@@ -1,7 +1,7 @@
 /*
  *   bcmwpa.c - shared WPA-related functions
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcmwpa.c,v 1.36.2.1.6.1 2008/11/19 04:36:58 Exp $
+ * $Id: bcmwpa.c,v 1.44.18.3 2010/02/18 23:34:50 Exp $
  */
 
 #include <bcmendian.h>
@@ -17,6 +17,9 @@
 /* include wl driver config file if this file is compiled for driver */
 #ifdef BCMDRIVER
 #include <osl.h>
+#elif defined(BCMEXTSUP)
+#include <string.h>
+#include <bcm_osl.h>
 #else
 #if defined(__GNUC__)
 extern void bcopy(const void *src, void *dst, uint len);
@@ -27,7 +30,10 @@ extern void bzero(void *b, uint len);
 #define	bcmp(b1, b2, len)	memcmp((b1), (b2), (len))
 #define	bzero(b, len)		memset((b), 0, (len))
 #endif /* defined(__GNUC__) */
+
 #endif /* BCMDRIVER */
+
+
 #include <wlioctl.h>
 #include <proto/802.11.h>
 #if defined(BCMSUP_PSK) || defined(BCMSUPPL)
@@ -41,13 +47,11 @@ extern void bzero(void *b, uint len);
 #include <bcmcrypto/prf.h>
 #include <bcmcrypto/rc4.h>
 
-#ifdef BCMWPA2
 void
 BCMROMFN(wpa_calc_pmkid)(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
-                         uint8 *pmk, uint pmk_len, uint8 *pmkid)
+                         uint8 *pmk, uint pmk_len, uint8 *pmkid, uint8 *data, uint8 *digest)
 {
 	/* PMKID = HMAC-SHA1-128(PMK, "PMK Name" | AA | SPA) */
-	uint8 data[128], digest[PRF_OUTBUF_LEN];
 	char prefix[] = "PMK Name";
 	int data_len = 0;
 
@@ -63,15 +67,59 @@ BCMROMFN(wpa_calc_pmkid)(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
 	hmac_sha1(data, data_len, pmk, pmk_len, digest);
 	bcopy(digest, pmkid, WPA2_PMKID_LEN);
 }
-#endif /* BCMWPA2 */
+
+bool
+wpa_encr_key_data(eapol_wpa_key_header_t *body, uint16 key_info, uint8 *ekey,
+	uint8 *gtk,	uint8 *data, uint8 *encrkey, rc4_ks_t *rc4key)
+{
+	uint16 len;
+
+	switch (key_info & (WPA_KEY_DESC_V1 | WPA_KEY_DESC_V2)) {
+	case WPA_KEY_DESC_V1:
+		if (gtk)
+			len = ntoh16_ua((uint8 *)&body->key_len);
+		else
+			len = ntoh16_ua((uint8 *)&body->data_len);
+
+		/* create the iv/ptk key */
+		bcopy(body->iv, encrkey, 16);
+		bcopy(ekey, &encrkey[16], 16);
+		/* encrypt the key data */
+		prepare_key(encrkey, 32, rc4key);
+		rc4(data, WPA_KEY_DATA_LEN_256, rc4key); /* dump 256 bytes */
+		rc4(body->data, len, rc4key);
+		break;
+	case WPA_KEY_DESC_V2:
+		len = ntoh16_ua((uint8 *)&body->data_len);
+		/* pad if needed - min. 16 bytes, 8 byte aligned */
+		/* padding is 0xdd followed by 0's */
+		if (len < 2*AKW_BLOCK_LEN) {
+			body->data[len] = WPA2_KEY_DATA_PAD;
+			bzero(&body->data[len+1], 2*AKW_BLOCK_LEN - (len+1));
+			len = 2*AKW_BLOCK_LEN;
+		} else if (len % AKW_BLOCK_LEN) {
+			body->data[len] = WPA2_KEY_DATA_PAD;
+			bzero(&body->data[len+1], AKW_BLOCK_LEN - ((len+1) % AKW_BLOCK_LEN));
+			len += AKW_BLOCK_LEN - (len % AKW_BLOCK_LEN);
+		}
+		if (aes_wrap(WPA_MIC_KEY_LEN, ekey, len, body->data, body->data)) {
+			return FALSE;
+		}
+		len += 8;
+		hton16_ua_store(len, (uint8 *)&body->data_len);
+		break;
+	default:
+		return FALSE;
+	}
+
+	return TRUE;
+}
 
 /* Decrypt a key data from a WPA key message */
 bool
 BCMROMFN(wpa_decr_key_data)(eapol_wpa_key_header_t *body, uint16 key_info, uint8 *ekey,
-                            uint8 *gtk)
+                            uint8 *gtk, uint8 *data, uint8 *encrkey, rc4_ks_t *rc4key)
 {
-	unsigned char data[256], encrkey[WPA_MIC_KEY_LEN*2];
-	rc4_ks_t rc4key;
 	uint16 len;
 
 	switch (key_info & (WPA_KEY_DESC_V1 | WPA_KEY_DESC_V2)) {
@@ -79,13 +127,13 @@ BCMROMFN(wpa_decr_key_data)(eapol_wpa_key_header_t *body, uint16 key_info, uint8
 		bcopy(body->iv, encrkey, WPA_MIC_KEY_LEN);
 		bcopy(ekey, &encrkey[WPA_MIC_KEY_LEN], WPA_MIC_KEY_LEN);
 		/* decrypt the key data */
-		prepare_key(encrkey, sizeof(encrkey), &rc4key);
-		rc4(data, sizeof(data), &rc4key); /* dump 256 bytes */
+		prepare_key(encrkey, WPA_MIC_KEY_LEN*2, rc4key);
+		rc4(data, WPA_KEY_DATA_LEN_256, rc4key); /* dump 256 bytes */
 		if (gtk)
 			len = ntoh16_ua((uint8 *)&body->key_len);
 		else
 			len = ntoh16_ua((uint8 *)&body->data_len);
-		rc4(body->data, len, &rc4key);
+		rc4(body->data, len, rc4key);
 		if (gtk)
 			bcopy(body->data, gtk, len);
 		break;
@@ -145,9 +193,9 @@ BCMROMFN(wpa_calc_ptk)(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
 /* Decrypt a group transient key from a WPA key message */
 bool
 BCMROMFN(wpa_decr_gtk)(eapol_wpa_key_header_t *body, uint16 key_info, uint8 *ekey,
-	uint8 *gtk)
+	uint8 *gtk, uint8 *data, uint8 *encrkey, rc4_ks_t *rc4key)
 {
-	return wpa_decr_key_data(body, key_info, ekey, gtk);
+	return wpa_decr_key_data(body, key_info, ekey, gtk, data, encrkey, rc4key);
 }
 
 /* Compute Message Integrity Code (MIC) over EAPOL message */
@@ -237,43 +285,22 @@ BCMROMFN(wpa_cipher)(wpa_suite_t *suite, ushort *cipher, bool wep_ok)
 	return rsn_cipher(suite, cipher, (const uchar*)WPA_OUI, wep_ok);
 }
 
-#ifdef BCMWPA2
 bool
 BCMROMFN(wpa2_cipher)(wpa_suite_t *suite, ushort *cipher, bool wep_ok)
 {
 	return rsn_cipher(suite, cipher, (const uchar*)WPA2_OUI, wep_ok);
 }
-#endif /* BCMWPA2 */
 
-/* Is this body of this tlvs entry a WPA entry? If */
-/* not update the tlvs buffer pointer/length */
+/* Is this body of this tlvs entry a WFA entry? If
+ * not update the tlvs buffer pointer/length.
+ */
 bool
-BCMROMFN(bcm_is_wpa_ie)(uint8 *ie, uint8 **tlvs, uint *tlvs_len)
+bcm_is_wfa_ie(uint8 *ie, uint8 **tlvs, uint *tlvs_len, uint8 type)
 {
-	/* If the contents match the WPA_OUI and type=1 */
-	if ((ie[TLV_LEN_OFF] > (WPA_OUI_LEN+1)) &&
-	    !bcmp(&ie[TLV_BODY_OFF], WPA_OUI "\x01", WPA_OUI_LEN + 1)) {
-		return TRUE;
-	}
-
-	/* point to the next ie */
-	ie += ie[TLV_LEN_OFF] + TLV_HDR_LEN;
-	/* calculate the length of the rest of the buffer */
-	*tlvs_len -= (int)(ie - *tlvs);
-	/* update the pointer to the start of the buffer */
-	*tlvs = ie;
-
-	return FALSE;
-}
-
-/* Is this body of this tlvs entry a WPS entry? If */
-/* not update the tlvs buffer pointer/length */
-bool
-bcm_is_wps_ie(uint8 *ie, uint8 **tlvs, uint *tlvs_len)
-{
-	/* If the contents match the WPA_OUI and type=1 */
-	if ((ie[TLV_LEN_OFF] > (WPA_OUI_LEN+1)) &&
-	    !bcmp(&ie[TLV_BODY_OFF], WPA_OUI "\x04", WPA_OUI_LEN + 1)) {
+	/* If the contents match the WFA_OUI and type */
+	if ((ie[TLV_LEN_OFF] > (WFA_OUI_LEN+1)) &&
+	    !bcmp(&ie[TLV_BODY_OFF], WFA_OUI, WFA_OUI_LEN) &&
+	    type == ie[TLV_BODY_OFF + WFA_OUI_LEN]) {
 		return TRUE;
 	}
 
@@ -292,7 +319,7 @@ BCMROMFN(bcm_find_wpaie)(uint8 *parse, uint len)
 {
 	bcm_tlv_t *ie;
 
-	while ((ie = bcm_parse_tlvs(parse, len, DOT11_MNG_WPA_ID))) {
+	while ((ie = bcm_parse_tlvs(parse, len, DOT11_MNG_VS_ID))) {
 		if (bcm_is_wpa_ie((uint8*)ie, &parse, &len)) {
 			return (wpa_ie_fixed_t *)ie;
 		}
@@ -305,7 +332,7 @@ bcm_find_wpsie(uint8 *parse, uint len)
 {
 	bcm_tlv_t *ie;
 
-	while ((ie = bcm_parse_tlvs(parse, len, DOT11_MNG_WPA_ID))) {
+	while ((ie = bcm_parse_tlvs(parse, len, DOT11_MNG_VS_ID))) {
 		if (bcm_is_wps_ie((uint8*)ie, &parse, &len)) {
 			return (wpa_ie_fixed_t *)ie;
 		}
@@ -313,7 +340,21 @@ bcm_find_wpsie(uint8 *parse, uint len)
 	return NULL;
 }
 
-#ifdef BCMWPA2
+#ifdef WLP2P
+wifi_p2p_ie_t *
+bcm_find_p2pie(uint8 *parse, uint len)
+{
+	bcm_tlv_t *ie;
+
+	while ((ie = bcm_parse_tlvs(parse, len, DOT11_MNG_VS_ID))) {
+		if (bcm_is_p2p_ie((uint8*)ie, &parse, &len)) {
+			return (wifi_p2p_ie_t *)ie;
+		}
+	}
+	return NULL;
+}
+#endif
+
 #if defined(BCMSUP_PSK) || defined(BCMSUPPL)
 /* Is this body of this tlvs entry a WPA entry? If */
 /* not update the tlvs buffer pointer/length */
@@ -362,7 +403,6 @@ BCMROMFN(wpa_find_gtk_encap)(uint8 *parse, uint len)
 	return wpa_find_kde(parse, len, WPA2_KEY_DATA_SUBTYPE_GTK);
 }
 #endif /* defined(BCMSUP_PSK) || defined(BCMSUPPL) */
-#endif /* BCMWPA2 */
 
 uint8 *
 BCMROMFN(wpa_array_cmp)(int max_array, uint8 *x, uint8 *y, uint len)
@@ -401,7 +441,6 @@ BCMROMFN(wpa_incr_array)(uint8 *array, uint len)
 bool
 BCMROMFN(bcmwpa_akm2WPAauth)(uint8 *akm, uint32 *auth, bool sta_iswpa)
 {
-#ifdef BCMWPA2
 	if (!bcmp(akm, WPA2_OUI, DOT11_OUI_LEN)) {
 		switch (akm[DOT11_OUI_LEN]) {
 		case RSN_AKM_NONE:
@@ -419,7 +458,6 @@ BCMROMFN(bcmwpa_akm2WPAauth)(uint8 *akm, uint32 *auth, bool sta_iswpa)
 		return TRUE;
 	}
 	else
-#endif /* BCMWPA2 */
 	if (!bcmp(akm, WPA_OUI, DOT11_OUI_LEN)) {
 		switch (akm[DOT11_OUI_LEN]) {
 		case RSN_AKM_NONE:

@@ -2,7 +2,7 @@
  * Dongle BUS interface
  * Common to all SDIO interface
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: dbus_sdio.c,v 1.2.4.11 2008/06/20 00:23:54 Exp $
+ * $Id: dbus_sdio.c,v 1.37 2009/04/20 22:07:48 Exp $
  */
 
 #include <typedefs.h>
@@ -33,6 +33,7 @@
 #include <spid.h>
 #include <sbsdio.h>
 #include <sbsdpcmdev.h>
+#include <bcmsdpcm.h>
 
 #include <proto/ethernet.h>
 #include <proto/802.1d.h>
@@ -77,9 +78,6 @@ typedef struct dhd_pktgen {
 #define IDLE_ACTIVE	0	/* Do not request any SD clock change when idle */
 #define IDLE_STOP	(-1)	/* Request SD clock be stopped (and use SD1 mode) */
 
-#define QLEN		128	/* bulk rx and tx queue lengths */
-#define FCHI		((QLEN) - 10)
-#define FCLOW		((FCHI)/2)
 #define PRIOMASK	7
 
 #define TXRETRIES	2	/* # of retries for tx frames */
@@ -135,12 +133,27 @@ typedef struct dhd_pktgen {
 					dbus_sdcb_pktfree(sdio_info, pkt, FALSE);
 
 typedef struct {
-	uint8 *buf;
-	int len;
+	bool pending;
+	bool is_iovar;
+
+	union {
+		struct {
+			uint8 *buf;
+			int len;
+		} ctl;
+		struct {
+			const char *name;
+			void *params;
+			int plen;
+			void *arg;
+			int len;
+			bool set;
+		} iovar;
+	};
 } sdctl_info_t;
 
 typedef struct {
-	dbus_pub_t *pub;
+	dbus_pub_t *pub; /* Must be first */
 
 	void *cbarg;
 	dbus_intf_callbacks_t *cbs;
@@ -159,7 +172,8 @@ typedef struct {
 	bool dongle_reset;  /* TRUE = DEVRESET put dongle into reset */
 	uint8 wme_dp;   /* wme discard priority */
 
-	sdctl_info_t rxctl_parms;
+	sdctl_info_t rxctl_req;
+	sdctl_info_t txctl_req;
 	bool sdlocked;
 
 	/* FIX: Ported from dhd_bus_t */
@@ -317,19 +331,16 @@ union {
 static int qcount[NUMPRIO];
 #endif /* BCMDBG */
 
-/* Deferred transmit */
-uint dhd_deferred_tx = 1;
-
 /* Tx/Rx bounds */
 uint dhd_txbound = DHD_TXBOUND;
 uint dhd_rxbound = DHD_RXBOUND;
-static uint dhd_txminmax = DHD_TXMINMAX;
+/* static uint dhd_txminmax = DHD_TXMINMAX; */
 
 /* overrride the RAM size if possible */
 #define DONGLE_MIN_MEMSIZE (128 *1024)
 int dhd_dongle_memsize = 0;
 
-static bool dhd_doflow = FALSE;
+
 static bool dhd_alignctl = TRUE;
 
 static bool sd1idle = TRUE;
@@ -630,8 +641,9 @@ static const chipinfo_t chipinfo_4329 = {
  */
 static void * dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 	uint16 func, uint bustype, void *regsva, osl_t * osh,
-	void *sdh, char * firmware_file, char * nvram_file);
+	void *sdh);
 static void dbus_sdh_disconnect(void *ptr);
+static void dbus_sdh_isr(void *handle);
 
 /*
  * Local function prototypes
@@ -639,13 +651,18 @@ static void dbus_sdh_disconnect(void *ptr);
 static void *dbus_sdio_probe_cb(void *handle, const char *desc, uint32 bustype, uint32 hdrlen);
 static void dbus_sdio_disconnect_cb(void *handle);
 
+#ifdef SDTEST
 static void dbus_sdio_sdtest_set(sdio_info_t *sdio_info, bool start);
 static void dbus_sdio_testrcv(sdio_info_t *sdio_info, void *pkt, uint seq);
+#endif
 static bool dbus_sdio_attach_init(sdio_info_t *sdio_info, void *sdh,
 	char *firmware_path, char * nvram_path);
 static void dbus_sdio_release(sdio_info_t *sdio_info, osl_t *osh);
 static void dbus_sdio_release_dongle(sdio_info_t *sdio_info, osl_t *osh);
 static int dbus_sdio_rxctl(sdio_info_t *sdio_info, uchar *msg, uint msglen);
+static uint dbus_sdio_sendfromq(sdio_info_t *sdio_info, uint maxframes);
+static int dbus_sdio_txctl(sdio_info_t *sdio_info, uchar *msg, uint msglen);
+static void dbus_sdio_txq_flush(sdio_info_t *sdio_info);
 
 /*
  * NOTE: These functions can also be called before attach() occurs
@@ -697,8 +714,8 @@ static void dbus_sdio_recv_irb_complete(void *handle, dbus_irb_rx_t *rxirb, int 
 static void dbus_sdio_errhandler(void *handle, int err);
 static void dbus_sdio_ctl_complete(void *handle, int type, int status);
 static void dbus_sdio_state_change(void *handle, int state);
-static void dbus_sdio_isr(void *handle);
-static int  dbus_sdio_dpc(void *handle);
+static bool dbus_sdio_isr(void *handle, bool *wantdpc);
+static bool dbus_sdio_dpc(void *handle, bool bounded);
 static void dbus_sdio_watchdog(void *handle);
 
 static dbus_intf_callbacks_t dbus_sdio_intf_cbs = {
@@ -735,16 +752,13 @@ static int dbus_sdif_recv_ctl(void *bus, uint8 *buf, int len);
 static int dbus_sdif_up(void *bus);
 static int dbus_sdif_iovar_op(void *bus, const char *name,
 	void *params, int plen, void *arg, int len, bool set);
+static bool dbus_sdif_device_exists(void *bus);
 static bool dbus_sdif_dlneeded(void *bus);
 static int dbus_sdif_dlstart(void *bus, uint8 *fw, int len);
 static int dbus_sdif_dlrun(void *bus);
 static int dbus_sdif_stop(void *bus);
 static int dbus_sdif_down(void *bus);
 
-/* FIX: g_sdio_info needed for over-ridden functions
- * since the bus argument is actually from dbus_sdio_os.c.
- */
-static sdio_info_t *g_sdio_info = NULL;
 static dbus_intf_t dbus_sdio_intf;
 static dbus_intf_t *g_dbusintf = NULL;
 
@@ -753,10 +767,15 @@ static dbus_intf_t *g_dbusintf = NULL;
  * order to look for or await the device.
  */
 
-static bcmsdh_driver_t sdh_driver = {
+bcmsdh_driver_t sdh_driver = {
 	dbus_sdh_probe,
 	dbus_sdh_disconnect
 };
+
+/* Functions shared between dbus_sdio.c/dbus_sdio_os.c */
+extern int dbus_sdio_txq_sched(void *bus);
+extern int dbus_sdio_txq_stop(void *bus);
+extern int dbus_sdio_txq_process(void *bus);
 
 /*
  * Local functions
@@ -1243,7 +1262,11 @@ dbus_sdio_txpkt(sdio_info_t *sdio_info, void *pkt, uint chan)
 			          __FUNCTION__, ret));
 			sdio_info->tx_sderrs++;
 
-			bcmsdh_abort(sdh, SDIO_FUNC_2);
+			ret = bcmsdh_abort(sdh, SDIO_FUNC_2);
+			if (ret == BCME_NODEVICE) {
+				dbus_sdio_state_change(sdio_info, DBUS_STATE_DISCONNECT);
+				break;
+			}
 #ifdef BCMSPI
 			DBUSERR(("%s: gSPI transmit error.  Check Overflow or F2-fifo-not-ready"
 			           " counters.\n", __FUNCTION__));
@@ -1338,8 +1361,6 @@ dbus_prec_pkt_enq(sdio_info_t *sdio_info, void *pkt, int prec)
 
 	return TRUE;
 err:
-	/* Free pkt here this this function is executed in exec_txlock() */
-	dbus_sdcb_pktfree(sdio_info, pkt, TRUE);
 	return FALSE;
 }
 
@@ -1365,7 +1386,24 @@ dbus_sdio_txbuf_submit(sdio_info_t *sdio_info, dbus_irb_tx_t *txirb)
 
 	osh = sdio_info->pub->osh;
 	pkt = txirb->pkt;
-	datalen = PKTLEN(osh, pkt);
+	if (pkt == NULL) {
+		/*
+		 * For BMAC sdio high driver that uses send_buf,
+		 * we need to convert the buf into pkt for dbus.
+		 */
+		datalen = txirb->len;
+		DBUSTRACE(("%s: Converting buf(%d bytes) to pkt.\n", __FUNCTION__, datalen));
+		pkt = dbus_sdcb_pktget(sdio_info, datalen, TRUE);
+		if (pkt == NULL) {
+			DBUSERR(("%s: Out of Tx buf.\n", __FUNCTION__));
+			return DBUS_ERR_TXDROP;
+		}
+
+		txirb->pkt = pkt;
+		bcopy(txirb->buf, PKTDATA(osh, pkt), datalen);
+		PKTLEN(osh, pkt) = datalen;
+	} else
+		datalen = PKTLEN(osh, pkt);
 
 	ASSERT(OSL_PKTTAG_SZ >= sizeof(pkttag_t));
 	ptag = (pkttag_t *) PKTTAG(pkt);
@@ -1393,63 +1431,33 @@ dbus_sdio_txbuf_submit(sdio_info_t *sdio_info, dbus_irb_tx_t *txirb)
 
 	prec = PRIO2PREC((PKTPRIO(pkt) & PRIOMASK));
 
-	/* Check for existing queue, current flow-control, pending event, or pending clock */
-	if (dhd_deferred_tx || sdio_info->fcstate || pktq_len(&sdio_info->txq) ||
-		sdio_info->dpc_sched || (!DATAOK(sdio_info)) ||
-		(sdio_info->flowcontrol & NBITVAL(prec)) ||
-		(sdio_info->clkstate == CLK_PENDING)) {
-		sdio_info->fcqueued++;
+	sdio_info->fcqueued++;
 
-		/* Priority based enq */
-		exec_args.penq.sdio_info = sdio_info;
-		exec_args.penq.pkt = pkt;
-		exec_args.penq.prec = prec;
-		berr = (int) dbus_sdos_exec_txlock(sdio_info,
-			(exec_cb_t) dbus_prec_pkt_enq_exec, &exec_args);
-		if (berr == FALSE) {
-			/* free is done in dbus_prec_pkt_enq */
-			ret = DBUS_ERR_TXFAIL;
-		}
-#ifdef BCMDBG
-		if (pktq_plen(&sdio_info->txq, prec) > qcount[prec])
-			qcount[prec] = pktq_plen(&sdio_info->txq, prec);
-#endif
-		/* Schedule DPC if needed to send queued packet(s) */
-		if (dhd_deferred_tx && !sdio_info->dpc_sched) {
-			dbus_sdos_sched_dpc(sdio_info);
-			sdio_info->dpc_sched = TRUE;
-		}
-	} else {
-		/* Lock: we're about to use shared data/code (and SDIO) */
-
-		/* Otherwise, send it now */
-		BUS_WAKE(sdio_info);
-		dbus_sdio_clkctl(sdio_info, CLK_AVAIL, TRUE);
-
-#ifndef SDTEST
-		ret = dbus_sdio_txpkt(sdio_info, pkt, SDPCM_DATA_CHANNEL);
-#else
-		ret = dbus_sdio_txpkt(sdio_info, pkt,
-			(sdio_info->ext_loop ? SDPCM_TEST_CHANNEL : SDPCM_DATA_CHANNEL));
-#endif
-		if (ret)
-			sdio_info->pub->stats.tx_errors++;
-
-		if ((sdio_info->idletime == IDLE_IMMEDIATE) && !sdio_info->dpc_sched) {
-			sdio_info->activity = FALSE;
-			dbus_sdio_clkctl(sdio_info, CLK_NONE, TRUE);
-		}
+	/* Priority based enq */
+	exec_args.penq.sdio_info = sdio_info;
+	exec_args.penq.pkt = pkt;
+	exec_args.penq.prec = prec;
+	berr = (uintptr) dbus_sdos_exec_txlock(sdio_info,
+		(exec_cb_t) dbus_prec_pkt_enq_exec, &exec_args);
+	if (berr == FALSE) {
+		DBUSERR(("%s: Dropping pkt!\n", __FUNCTION__));
+		ASSERT(0); /* FIX: Should not be dropping pkts */
+		ret = DBUS_ERR_TXFAIL;
+		goto err;
 	}
+#ifdef BCMDBG
+	if (pktq_plen(&sdio_info->txq, prec) > qcount[prec])
+		qcount[prec] = pktq_plen(&sdio_info->txq, prec);
+#endif
+	dbus_sdio_txq_sched(sdio_info->sdos_info);
+
+err:
 	return ret;
 }
 
 static void
 dbus_bus_stop(sdio_info_t *sdio_info)
 {
-	int prec_out;
-	struct exec_parms exec_args;
-	pkttag_t *ptag;
-	void *pkt;
 	uint8 saveclk;
 	uint retries;
 	int err;
@@ -1457,6 +1465,8 @@ dbus_bus_stop(sdio_info_t *sdio_info)
 	DBUSTRACE(("%s: Enter\n", __FUNCTION__));
 
 	BUS_WAKE(sdio_info);
+
+	dbus_sdio_txq_stop(sdio_info->sdos_info);
 
 	/* Enable clock for device interrupts */
 	dbus_sdio_clkctl(sdio_info, CLK_AVAIL, FALSE);
@@ -1489,19 +1499,7 @@ dbus_bus_stop(sdio_info_t *sdio_info)
 	/* Turn off the backplane clock (only) */
 	dbus_sdio_clkctl(sdio_info, CLK_SDONLY, FALSE);
 
-	exec_args.pdeq.sdio_info = sdio_info;
-	exec_args.pdeq.tx_prec_map = ALLPRIO;
-	exec_args.pdeq.prec_out = &prec_out;
-
-	/* Cancel all pending pkts */
-	while ((pkt = dbus_sdos_exec_txlock(sdio_info,
-		(exec_cb_t) dbus_prec_pkt_deq_exec, &exec_args)) != NULL) {
-		ptag = (pkttag_t *) PKTTAG(pkt);
-		ASSERT(ptag);
-
-		dbus_sdio_send_irb_complete(sdio_info, ptag->txirb, DBUS_STATUS_CANCELLED);
-		dbus_sdcb_pktfree(sdio_info, pkt, TRUE);
-	}
+	dbus_sdio_txq_flush(sdio_info);
 
 	/* Clear any held glomming stuff */
 	if (sdio_info->glomd) {
@@ -1589,14 +1587,8 @@ dbus_sdio_init(sdio_info_t *sdio_info)
 	/* Using interrupt mode and wait for up indication from dongle */
 	bcmsdh_intr_enable(sdio_info->sdh); /* We get interrupts immediately */
 
-	/* DEVREADY interrupt sets busstate to DBUS_STATE_UP
-	 * but also poll for ready to be sure dongle is up
+	/* FIX: Interrupt does not happen under PXA at this point.  Why?
 	 */
-	retries = 2000;
-	while ((sdio_info->pub->busstate != DBUS_STATE_UP) &&
-	       (retries-- > 0)) {
-		OSL_DELAY(1000);
-	}
 
 	/* Give the dongle some time to do its thing and set IOR2 */
 	retries = DHD_WAIT_F2RDY;
@@ -1627,6 +1619,7 @@ dbus_sdio_init(sdio_info_t *sdio_info)
 
 		/* bcmsdh_intr_unmask(sdio_info->sdh); */
 
+		sdio_info->pub->busstate = DBUS_STATE_UP;
 		sdio_info->intdis = FALSE;
 		if (sdio_info->intr) {
 			DBUSINTR(("%s: enable SDIO device interrupts\n", __FUNCTION__));
@@ -1698,7 +1691,11 @@ dbus_sdio_rxfail(sdio_info_t *sdio_info, bool abort, bool rtx)
 	           (abort ? "abort command, " : ""), (rtx ? ", send NAK" : "")));
 
 	if (abort) {
-		bcmsdh_abort(sdh, SDIO_FUNC_2);
+		err = bcmsdh_abort(sdh, SDIO_FUNC_2);
+		if (err == BCME_NODEVICE) {
+			dbus_sdio_state_change(sdio_info, DBUS_STATE_DISCONNECT);
+			return;
+		}
 	}
 
 	bcmsdh_cfg_write(sdh, SDIO_FUNC_1, SBSDIO_FUNC1_FRAMECTRL, SFC_RF_TERM, &err);
@@ -1827,18 +1824,22 @@ dbus_sdio_read_control(sdio_info_t *sdio_info, uint8 *hdr, uint len, uint doff)
 gotpkt:
 	/* Point to valid data and indicate its length */
 	sdio_info->rxctl += doff;
+
+	if (sdio_info->rxlen != 0) {
+		DBUSERR(("dropping previous recv ctl pkt\n"));
+	}
 	sdio_info->rxlen = len - doff;
 
 	if (sdio_info->cbarg && sdio_info->cbs) {
-		if (sdio_info->rxctl_parms.buf && (sdio_info->rxctl_parms.len > 0)) {
-			dbus_sdio_rxctl(sdio_info, sdio_info->rxctl_parms.buf,
-				sdio_info->rxctl_parms.len);
+		if (sdio_info->rxctl_req.pending == TRUE) {
+			dbus_sdio_rxctl(sdio_info, sdio_info->rxctl_req.ctl.buf,
+				sdio_info->rxctl_req.ctl.len);
+			bzero(&sdio_info->rxctl_req, sizeof(sdio_info->rxctl_req));
 			dbus_sdio_ctl_complete(sdio_info, DBUS_CBCTL_READ, DBUS_OK);
-			sdio_info->rxctl_parms.buf = NULL;
-			sdio_info->rxctl_parms.len = 0;
-		} else {
-			DBUSERR(("ERROR: Received control resp before recv_ctl()!\n"));
 		}
+		/* If receive ctl pkt before user request, leave in cache
+		 * and retrieve it next time recv_ctl() is called.
+		 */
 	}
 done:
 	return;
@@ -2195,8 +2196,6 @@ dbus_sdio_rxglom(sdio_info_t *sdio_info, uint8 rxseq)
 #endif /* BCMDBG */
 		}
 
-		dbus_sdos_unlock(sdio_info);
-
 		{
 			int i;
 			void *pnext;
@@ -2217,7 +2216,6 @@ dbus_sdio_rxglom(sdio_info_t *sdio_info, uint8 rxseq)
 				}
 			}
 		}
-		dbus_sdos_lock(sdio_info);
 
 		sdio_info->rxglomframes++;
 		sdio_info->rxglompkts += num;
@@ -2489,6 +2487,7 @@ dbus_sdio_readframes(sdio_info_t *sdio_info, uint maxframes, bool *finished)
 			doff = SDPCM_DOFFSET_VALUE(&sdio_info->rxhdr[SDPCM_FRAMETAG_LEN]);
 			txmax = SDPCM_WINDOW_VALUE(&sdio_info->rxhdr[SDPCM_FRAMETAG_LEN]);
 
+#ifdef BCMSPI
 			/* Save the readahead length if there is one */
 			if (sdio_info->bus == SPI_BUS) {
 				/* Use reconstructed dstatus bits and find out readahead size */
@@ -2508,6 +2507,7 @@ dbus_sdio_readframes(sdio_info_t *sdio_info, uint maxframes, bool *finished)
 					*finished = TRUE;
 				}
 			} else {
+#endif /* BCMSPI */
 				sdio_info->nextlen =
 				      sdio_info->rxhdr[SDPCM_FRAMETAG_LEN + SDPCM_NEXTLEN_OFFSET];
 				if ((sdio_info->nextlen << 4) > MAX_RX_DATASZ) {
@@ -2518,7 +2518,9 @@ dbus_sdio_readframes(sdio_info_t *sdio_info, uint maxframes, bool *finished)
 				}
 
 				sdio_info->rx_readahead_cnt ++;
+#ifdef BCMSPI
 			}
+#endif /* BCMSPI */
 
 			/* Handle Flow Control - Brett */
 			fcbits = SDPCM_FCMASK_VALUE(&sdio_info->rxhdr[SDPCM_FRAMETAG_LEN]);
@@ -2805,13 +2807,6 @@ deliver:
 			continue;
 		}
 
-		/* XXXX Release the lock around the rx delivery: an OS (like Windows)
-		 * might call tx in the same thread context, resulting in deadlock.
-		 */
-
-		/* Unlock during rx call */
-		dbus_sdos_unlock(sdio_info);
-
 		rxirb = (dbus_irb_rx_t *) dbus_sdcb_getirb(sdio_info, FALSE);
 		if (rxirb != NULL) {
 			rxirb->pkt = pkt;
@@ -2820,7 +2815,6 @@ deliver:
 			DBUSERR(("ERROR: failed to get rx irb\n"));
 			dbus_sdcb_pktfree(sdio_info, pkt, FALSE);
 		}
-		dbus_sdos_lock(sdio_info);
 	}
 
 #ifdef BCMDBG
@@ -2871,7 +2865,7 @@ dbus_sdio_hostmail(sdio_info_t *sdio_info)
 	 * DEVREADY does not occur with gSPI.
 	 */
 	if (hmb_data & (HMB_DATA_DEVREADY | HMB_DATA_FWREADY)) {
-		sdio_info->sdpcm_ver = (hmb_data >> HMB_DATA_VERSION_SHIFT) & HMB_DATA_VERSION_MASK;
+		sdio_info->sdpcm_ver = (hmb_data & HMB_DATA_VERSION_MASK) >> HMB_DATA_VERSION_SHIFT;
 		if (sdio_info->sdpcm_ver != SDPCM_PROT_VERSION)
 			DBUSERR(("Version mismatch, dongle reports %d, expecting %d\n",
 			           sdio_info->sdpcm_ver, SDPCM_PROT_VERSION));
@@ -2885,7 +2879,7 @@ dbus_sdio_hostmail(sdio_info_t *sdio_info)
 	 * compatible with older dongles
 	 */
 	if (hmb_data & HMB_DATA_FC) {
-		fcbits = (hmb_data >> HMB_DATA_FCDATA_SHIFT) & HMB_DATA_FCDATA_MASK;
+		fcbits = (hmb_data & HMB_DATA_FCDATA_MASK) >> HMB_DATA_FCDATA_SHIFT;
 
 		if (fcbits & ~sdio_info->flowcontrol)
 			sdio_info->fc_xoff++;
@@ -2901,8 +2895,8 @@ dbus_sdio_hostmail(sdio_info_t *sdio_info)
 	                 HMB_DATA_NAKHANDLED |
 	                 HMB_DATA_FC |
 	                 HMB_DATA_FWREADY |
-	                 (HMB_DATA_FCDATA_MASK << HMB_DATA_FCDATA_SHIFT) |
-	                 (HMB_DATA_VERSION_MASK << HMB_DATA_VERSION_SHIFT))) {
+	                 HMB_DATA_FCDATA_MASK |
+	                 HMB_DATA_VERSION_MASK)) {
 		DBUSERR(("Unknown mailbox data content: 0x%02x\n", hmb_data));
 	}
 
@@ -2911,7 +2905,7 @@ dbus_sdio_hostmail(sdio_info_t *sdio_info)
 
 #ifndef BCM_DNGL_EMBEDIMAGE
 static void
-dbus_sdio_devrdy_isr(void *handle)
+dbus_sdh_devrdy_isr(void *handle)
 {
 	probe_sdh_info_t *pinfo = handle;
 	bcmsdh_info_t *sdh = pinfo->sdh;
@@ -2932,29 +2926,44 @@ dbus_sdio_devrdy_isr(void *handle)
 #endif /* BCM_DNGL_EMBEDIMAGE */
 
 static void
-dbus_sdio_isr(void *handle)
+dbus_sdh_isr(void *handle)
 {
 	sdio_info_t *sdio_info = (sdio_info_t *) handle;
-	bcmsdh_info_t *sdh;
-	uint32 intstatus = 0, hmb_data = 0;
-	uint retries = 2;
+	bool wantdpc;
+
+	ASSERT(sdio_info);
+	ASSERT(sdio_info->sdh);
+
+	if (dbus_sdio_isr(sdio_info, &wantdpc) == TRUE) {
+		bcmsdh_intr_disable(sdio_info->sdh);
+		sdio_info->intdis = TRUE;
+	}
+}
+
+static bool
+dbus_sdio_isr(void *handle, bool *wantdpc)
+{
+	sdio_info_t *sdio_info = (sdio_info_t *) handle;
+	bool handle_int = FALSE;
 
 	DBUSTRACE(("%s: Enter\n", __FUNCTION__));
 
-	ASSERT(sdio_info);
-	sdh = sdio_info->sdh;
 
-	/* Monitor DEVREADY/FWREADY inside isr() because waiting for dpc()
-	 * is too long.  But the bulk of HOST_INT handling is still done
-	 * inside dpc().
+	/*
+	 * NOTE for NDIS:
+	 *
+	 * Do not use spinlock in isr() to share
+	 * resources with other lower priority functions
+	 * because isr() runs at DIRQL which can preempt
+	 * them and cause race condition/deadlock.
+	 * To share resources with isr() use NdisMSynchronizeWithInterrupt()
+	 * Functions that indirectly use spinlock bcmsdh_reg_read(),
+	 * bcmsdh_intr_disable(), etc.
 	 */
-	R_SDREG(intstatus, &sdio_info->regs->intstatus, retries);
-	if (intstatus & I_HMB_HOST_INT) {
-		R_SDREG(hmb_data, &sdio_info->regs->tohostmailboxdata, retries);
-		if (hmb_data & (HMB_DATA_DEVREADY|HMB_DATA_FWREADY)) {
-			sdio_info->pub->busstate = DBUS_STATE_UP;
-		}
-	}
+
+	ASSERT(sdio_info);
+
+	*wantdpc = FALSE;
 
 	/* Count the interrupt call */
 	sdio_info->intrcount++;
@@ -2963,7 +2972,8 @@ dbus_sdio_isr(void *handle)
 	/* Shouldn't get this interrupt if we're sleeping? */
 	if (sdio_info->sleeping) {
 		DBUSERR(("INTERRUPT WHILE SLEEPING??\n"));
-		return;
+		handle_int = FALSE;
+		goto err;
 	}
 
 	/* Disable additional interrupts (is this needed now)? */
@@ -2973,11 +2983,15 @@ dbus_sdio_isr(void *handle)
 		DBUSERR(("dbus_sdio_isr() w/o interrupt configured!\n"));
 	}
 
-	bcmsdh_intr_disable(sdh);
 	sdio_info->intdis = TRUE;
 
 	dbus_sdos_sched_dpc(sdio_info);
 	sdio_info->dpc_sched = TRUE;
+	*wantdpc = TRUE;
+
+	handle_int = TRUE;
+err:
+	return handle_int;
 }
 
 #ifdef SDTEST
@@ -3338,10 +3352,6 @@ dbus_sdio_downloadvars(probe_sdh_info_t *pinfo, void *arg, int len)
 {
 	int bcmerror = BCME_OK;
 
-	if (g_sdio_info == NULL) {
-		bcmerror = BCME_NOTDOWN;
-		goto err;
-	}
 	if (!len) {
 		bcmerror = BCME_BUFTOOSHORT;
 		goto err;
@@ -3873,7 +3883,7 @@ dbus_sdio_write_vars(probe_sdh_info_t *pinfo)
 	uint32 varsizew;
 
 	if (!pinfo->varsz || !pinfo->vars)
-		return BCME_ERROR;
+		return BCME_OK;
 
 	varsize = ROUNDUP(pinfo->varsz, 4);
 	varaddr = (pinfo->ramsize - 4) - varsize;
@@ -3931,8 +3941,6 @@ dbus_sdio_download_state(probe_sdh_info_t *pinfo, bool enter)
 	if (enter) {
 
 		pinfo->alp_only = TRUE;
-
-		si_pmu_otp_power(sih, si_osh(sih), 1);
 
 		if (!(si_setcore(sih, ARM7S_CORE_ID, 0)) &&
 		    !(si_setcore(sih, ARMCM3_CORE_ID, 0))) {
@@ -4120,19 +4128,159 @@ exit:
 	return bcmerror;
 }
 
+static int
+dbus_sdio_txctlq_process(void *bus)
+{
+	sdio_info_t *sdio_info = bus;
+	int err = DBUS_OK;
+
+	if (sdio_info->txctl_req.pending == TRUE) {
+		if (sdio_info->txctl_req.is_iovar == FALSE) {
+			ASSERT(sdio_info->txctl_req.ctl.buf);
+			ASSERT(sdio_info->txctl_req.ctl.len);
+
+			err = dbus_sdio_txctl(sdio_info, sdio_info->txctl_req.ctl.buf,
+				sdio_info->txctl_req.ctl.len);
+		} else {
+			err = dbus_iovar_process(sdio_info,
+				sdio_info->txctl_req.iovar.name,
+				sdio_info->txctl_req.iovar.params,
+				sdio_info->txctl_req.iovar.plen,
+				sdio_info->txctl_req.iovar.arg,
+				sdio_info->txctl_req.iovar.len,
+				sdio_info->txctl_req.iovar.set);
+		}
+
+		bzero(&sdio_info->txctl_req, sizeof(sdio_info->txctl_req));
+		dbus_sdio_ctl_complete(sdio_info, DBUS_CBCTL_WRITE, err);
+	}
+
+	return err;
+}
+
+static void
+dbus_sdio_txq_flush(sdio_info_t *sdio_info)
+{
+	int prec_out;
+	struct exec_parms exec_args;
+	pkttag_t *ptag;
+	void *pkt;
+
+	exec_args.pdeq.sdio_info = sdio_info;
+	exec_args.pdeq.tx_prec_map = ALLPRIO;
+	exec_args.pdeq.prec_out = &prec_out;
+
+	/* Cancel all pending pkts */
+	while ((pkt = dbus_sdos_exec_txlock(sdio_info,
+		(exec_cb_t) dbus_prec_pkt_deq_exec, &exec_args)) != NULL) {
+		ptag = (pkttag_t *) PKTTAG(pkt);
+		ASSERT(ptag);
+
+		dbus_sdio_send_irb_complete(sdio_info, ptag->txirb, DBUS_STATUS_CANCELLED);
+		dbus_sdcb_pktfree(sdio_info, pkt, TRUE);
+	}
+}
+
+int
+dbus_sdio_txq_process(void *bus)
+{
+	sdio_info_t *sdio_info = bus;
+	bcmsdh_info_t *sdh;
+	uint framecnt = 0;		  /* Temporary counter of tx/rx frames */
+	uint txlimit = dhd_txbound; /* Tx frames to send before resched */
+
+	dbus_sdos_lock(sdio_info);
+
+	sdh = sdio_info->sdh;
+
+	if (sdio_info->pub->busstate == DBUS_STATE_DOWN) {
+		dbus_sdio_txq_flush(sdio_info);
+		goto exit;
+	}
+
+	/* Send ctl requests first */
+	dbus_sdio_txctlq_process(sdio_info);
+
+	/* If waiting for HTAVAIL, check status */
+	if (sdio_info->clkstate == CLK_PENDING) {
+		int err;
+		uint8 clkctl, devctl = 0;
+
+		/* Read CSR, if clock on switch to AVAIL, else ignore */
+		clkctl = bcmsdh_cfg_read(sdh, SDIO_FUNC_1, SBSDIO_FUNC1_CHIPCLKCSR, &err);
+		if (err) {
+			DBUSERR(("%s: error reading CSR: %d\n", __FUNCTION__, err));
+			sdio_info->pub->busstate = DBUS_STATE_DOWN;
+		}
+
+		DBUSINFO(("DPC: PENDING, devctl 0x%02x clkctl 0x%02x\n", devctl, clkctl));
+
+		if (SBSDIO_HTAV(clkctl)) {
+			devctl = bcmsdh_cfg_read(sdh, SDIO_FUNC_1, SBSDIO_DEVICE_CTL, &err);
+			if (err) {
+				DBUSERR(("%s: error reading DEVCTL: %d\n",
+				           __FUNCTION__, err));
+				sdio_info->pub->busstate = DBUS_STATE_DOWN;
+			}
+			devctl &= ~SBSDIO_DEVCTL_CA_INT_ONLY;
+			bcmsdh_cfg_write(sdh, SDIO_FUNC_1, SBSDIO_DEVICE_CTL, devctl, &err);
+			if (err) {
+				DBUSERR(("%s: error writing DEVCTL: %d\n",
+				           __FUNCTION__, err));
+				sdio_info->pub->busstate = DBUS_STATE_DOWN;
+			}
+			sdio_info->clkstate = CLK_AVAIL;
+		}
+		else {
+			goto exit;
+		}
+	}
+
+	BUS_WAKE(sdio_info);
+
+	/* Make sure backplane clock is on */
+	dbus_sdio_clkctl(sdio_info, CLK_AVAIL, TRUE);
+	if (sdio_info->clkstate == CLK_PENDING)
+		goto exit;
+
+	/* Send queued frames (limit 1 if rx may still be pending) */
+	if ((sdio_info->clkstate != CLK_PENDING) && !sdio_info->fcstate &&
+	    pktq_mlen(&sdio_info->txq, ~sdio_info->flowcontrol) && txlimit && DATAOK(sdio_info)) {
+		framecnt = dbus_sdio_sendfromq(sdio_info, txlimit);
+	}
+
+	/* FIX: Check ctl requests again
+	 * It's possible to have ctl request while dbus_sdio_sendfromq()
+	 * is active.  Possibly check for pending ctl requests before sending
+	 * each pkt??
+	 */
+	dbus_sdio_txctlq_process(sdio_info);
+
+#ifdef SDTEST
+	/* Generate packets if configured */
+	if (sdio_info->pktgen_count && (++sdio_info->pktgen_tick >= sdio_info->pktgen_freq)) {
+		/* Make sure backplane clock is on */
+		dbus_sdio_clkctl(sdio_info, CLK_AVAIL, FALSE);
+		sdio_info->pktgen_tick = 0;
+		dbus_sdio_pktgen(sdio_info);
+	}
+#endif
+
+exit:
+	dbus_sdos_unlock(sdio_info);
+
+	return DBUS_OK;
+}
+
 static uint
 dbus_sdio_sendfromq(sdio_info_t *sdio_info, uint maxframes)
 {
 	void *pkt;
-	uint32 intstatus = 0;
-	uint retries = 0;
 	int ret = 0, prec_out;
 	uint cnt = 0;
 	uint datalen;
 	uint8 tx_prec_map;
 	struct exec_parms exec_args;
-
-	sdpcmd_regs_t *regs = sdio_info->regs;
 
 	DBUSTRACE(("%s: Enter\n", __FUNCTION__));
 
@@ -4156,19 +4304,10 @@ dbus_sdio_sendfromq(sdio_info_t *sdio_info, uint maxframes)
 		ret = dbus_sdio_txpkt(sdio_info, pkt,
 			(sdio_info->ext_loop ? SDPCM_TEST_CHANNEL : SDPCM_DATA_CHANNEL));
 #endif
-		if (ret)
+		if (ret) {
 			sdio_info->pub->stats.tx_errors++;
-
-		/* In poll mode, need to check for other events */
-		if (!sdio_info->intr && cnt)
-		{
-			/* Check device status, signal pending interrupt */
-			R_SDREG(intstatus, &regs->intstatus, retries);
-			sdio_info->f2txdata++;
-			if (bcmsdh_regfail(sdio_info->sdh))
+			if (sdio_info->pub->busstate == DBUS_STATE_DOWN)
 				break;
-			if (intstatus & sdio_info->hostintmask)
-				sdio_info->ipend = TRUE;
 		}
 	}
 
@@ -4249,7 +4388,11 @@ dbus_sdio_txctl(sdio_info_t *sdio_info, uchar *msg, uint msglen)
 			          __FUNCTION__, ret));
 			sdio_info->tx_sderrs++;
 
-			bcmsdh_abort(sdh, SDIO_FUNC_2);
+			ret = bcmsdh_abort(sdh, SDIO_FUNC_2);
+			if (ret == BCME_NODEVICE) {
+				dbus_sdio_state_change(sdio_info, DBUS_STATE_DISCONNECT);
+				break;
+			}
 
 #ifdef BCMSPI
 			DBUSERR(("%s: Check Overflow or F2-fifo-not-ready counters."
@@ -4311,13 +4454,15 @@ dbus_sdio_rxctl(sdio_info_t *sdio_info, uchar *msg, uint msglen)
 static void *
 dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 	uint16 func, uint bustype, void *regsva, osl_t * osh,
-	void *sdh, char * firmware_file, char * nvram_file)
+	void *sdh)
 {
 	int err;
 	void *prarg;
 #ifndef BCMSPI
 	uint8 clkctl = 0;
 #endif /* !BCMSPI */
+
+	DBUSTRACE(("%s\n", __FUNCTION__));
 
 	prarg = NULL;
 	/* We make assumptions about address window mappings */
@@ -4347,9 +4492,25 @@ dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 			DBUSERR(("%s: found 4325 Dongle\n", __FUNCTION__));
 			g_probe_info.chinfo =  &chipinfo_4325_15;
 			break;
+		case BCM4329_D11N_ID:		/* 4329 802.11n dualband device */
+		case BCM4329_D11N2G_ID:		/* 4329 802.11n 2.4G device */
+		case BCM4329_D11N5G_ID:		/* 4329 802.11n 5G device */
+		case BCM4321_D11N2G_ID:
+			DBUSERR(("%s: found 4329 Dongle\n", __FUNCTION__));
+			g_probe_info.chinfo =  &chipinfo_4329;
+			break;
+		case BCM4315_D11DUAL_ID:		/* 4315 802.11a/g id */
+		case BCM4315_D11G_ID:			/* 4315 802.11g id */
+		case BCM4315_D11A_ID:			/* 4315 802.11a id */
+			DBUSINFO(("%s: found 4315 Dongle\n", __FUNCTION__));
+			g_probe_info.chinfo =  &chipinfo_4325_15;
+			break;
+
 		case 0:
 			DBUSINFO(("%s: allow device id 0, will check chip internals\n",
 			          __FUNCTION__));
+			/* FIX: Need to query chip */
+			g_probe_info.chinfo =  &chipinfo_4325_15;
 			break;
 
 		default:
@@ -4364,7 +4525,6 @@ dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 		 * If we simplify and do away with si_attach() at this stage,
 		 * then remove this as well.
 		 */
-#ifdef LINUX
 		/* FIX: Linux needs this, but not NDIS
 		 * Remove this LINUX define;  Don't put
 		 * OS defines in this file.
@@ -4373,7 +4533,6 @@ dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 		 */
 		osh = osl_attach(NULL, SD_BUSTYPE, TRUE);
 		g_probe_info.free_probe_osh = TRUE;
-#endif
 	}
 	ASSERT(osh);
 
@@ -4386,8 +4545,10 @@ dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 	g_probe_info.regsva = regsva;
 	g_probe_info.osh = osh;
 	g_probe_info.sdh = sdh;
-	g_probe_info.firmware_file = firmware_file;
-	g_probe_info.nvram_file = nvram_file;
+	g_probe_info.firmware_file = NULL;
+	g_probe_info.nvram_file = NULL;
+
+	ASSERT(g_probe_info.chinfo);
 	g_probe_info.ramsize = g_probe_info.orig_ramsize = g_probe_info.chinfo->socram_size;
 
 
@@ -4434,6 +4595,11 @@ dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 
 #ifdef BCM_DNGL_EMBEDIMAGE
 	prarg = dbus_sdio_probe_cb(&g_probe_info, "", SD_BUSTYPE, SDPCM_RESERVE);
+
+	if (prarg != NULL)
+		return &g_probe_info;
+	else
+		return NULL;
 #else
 	dbus_sdio_alpclk(sdh);
 
@@ -4441,18 +4607,15 @@ dbus_sdh_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
 	 * Enable interrupt for DEVREADY when a valid image is downloaded
 	 */
 	bcmsdh_intr_disable(sdh);
-	if ((err = bcmsdh_intr_reg(sdh, dbus_sdio_devrdy_isr, &g_probe_info)) != 0) {
+	if ((err = bcmsdh_intr_reg(sdh, dbus_sdh_devrdy_isr, &g_probe_info)) != 0) {
 		DBUSERR(("%s: FAILED: bcmsdh_intr_reg returned %d\n",
 		           __FUNCTION__, err));
 	}
 
 	bcmsdh_intr_enable(sdh);
-#endif
 
-	if (prarg != NULL)
-		return &g_probe_info;
-	else
-		return NULL;
+	return &g_probe_info;
+#endif /* BCM_DNGL_EMBEDIMAGE */
 }
 
 static void
@@ -4466,7 +4629,6 @@ dbus_sdh_disconnect(void *ptr)
 		DBUSERR(("%s: pinfo is NULL\n", __FUNCTION__));
 		return;
 	}
-
 	dbus_sdio_disconnect_cb(NULL);
 
 	/* After this point, sdio_info is free'd;
@@ -4495,6 +4657,8 @@ dbus_sdio_probe_init(probe_sdh_info_t *pinfo)
 {
 	bcmsdh_info_t	*sdh;	/* Handle for BCMSDH calls */
 	osl_t *osh;
+
+	DBUSTRACE(("%s\n", __FUNCTION__));
 
 	ASSERT(pinfo);
 	ASSERT(pinfo->sdh);
@@ -4620,7 +4784,7 @@ dbus_sdio_attach_init(sdio_info_t *sdio_info, void *sdh, char *firmware_path,
 	/* Register interrupt callback, but mask it (not operational yet). */
 	DBUSINTR(("%s: disable SDIO interrupts (not interested yet)\n", __FUNCTION__));
 	bcmsdh_intr_disable(sdh);
-	if ((ret = bcmsdh_intr_reg(sdh, dbus_sdio_isr, sdio_info)) != 0) {
+	if ((ret = bcmsdh_intr_reg(sdh, dbus_sdh_isr, sdio_info)) != 0) {
 		DBUSERR(("%s: FAILED: bcmsdh_intr_reg returned %d\n",
 		           __FUNCTION__, ret));
 		goto fail;
@@ -4786,7 +4950,7 @@ dhd_bus_download_nvram_file(probe_sdh_info_t *pinfo, char * nvram_path)
 		bufp += len;
 		*bufp++ = 0;
 		if (len)
-			bcmerror = dbus_sdio_downloadvars(pinfo, memblock, len);
+			bcmerror = dbus_sdio_downloadvars(pinfo, memblock, len + 1);
 		if (bcmerror) {
 			DBUSERR(("%s: error downloading vars: %d\n",
 			           __FUNCTION__, bcmerror));
@@ -4886,26 +5050,18 @@ dbus_sdcb_getirb(sdio_info_t *sdio_info, bool send)
 	return NULL;
 }
 
-
 /*
  * Interface functions
  */
 static int
 dbus_sdif_send_irb(void *bus, dbus_irb_tx_t *txirb)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
 	int err;
 
 	if (sdio_info == NULL)
 		return DBUS_ERR;
 
-	/* This function can run under interrupt context
-	 * (in_interrupt() == TRUE) so don't call dbus_sdos_lock() which
-	 * at the moment can sleep.
-	 * Also, it can be called with process context of dpc() so if
-	 * using spinlock() between dpc() and this function, it can
-	 * cause deadlock().
-	 */
 	err = dbus_sdio_txbuf_submit(sdio_info, txirb);
 	if (err != DBUS_OK) {
 		err = DBUS_ERR_TXFAIL;
@@ -4917,44 +5073,54 @@ dbus_sdif_send_irb(void *bus, dbus_irb_tx_t *txirb)
 static int
 dbus_sdif_send_ctl(void *bus, uint8 *buf, int len)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
-	int err;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
+	int err = DBUS_OK;
 
 	if (sdio_info == NULL)
 		return DBUS_ERR;
 
-	dbus_sdos_lock(sdio_info);
-	err = dbus_sdio_txctl(sdio_info, buf, len);
-	dbus_sdos_unlock(sdio_info);
-	dbus_sdio_ctl_complete(sdio_info, DBUS_CBCTL_WRITE, err);
+	if (sdio_info->txctl_req.pending == TRUE) {
+		DBUSERR(("%s: ctl is pending!\n", __FUNCTION__));
+		return DBUS_ERR_PENDING;
+	}
+
+	sdio_info->txctl_req.ctl.buf = buf;
+	sdio_info->txctl_req.ctl.len = len;
+	sdio_info->txctl_req.is_iovar = FALSE;
+	sdio_info->txctl_req.pending = TRUE;
+	dbus_sdio_txq_sched(sdio_info->sdos_info);
 	return err;
 }
 
 static int
 dbus_sdif_recv_ctl(void *bus, uint8 *buf, int len)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
 
 	if (sdio_info == NULL)
 		return DBUS_ERR;
 
-	/* Save the buf and do callback when data is ready
-	 * Assumes buf is not free'd before callback happens
-	 *
-	 * control pkt can arrive before this async function is
-	 * called from DHD/RPC.  Need to buffer?
-	 */
-	dbus_sdos_lock(sdio_info);
-	sdio_info->rxctl_parms.buf = buf;
-	sdio_info->rxctl_parms.len = len;
-	dbus_sdos_unlock(sdio_info);
+	if (sdio_info->rxctl_req.pending == TRUE) {
+		DBUSERR(("%s: ctl is pending!\n", __FUNCTION__));
+		return DBUS_ERR_PENDING;
+	}
+
+	/* Do have a rxctl pkt available? */
+	if (sdio_info->rxlen > 0) {
+		dbus_sdio_rxctl(sdio_info, buf, len);
+		dbus_sdio_ctl_complete(sdio_info, DBUS_CBCTL_READ, DBUS_OK);
+	} else {
+		sdio_info->rxctl_req.ctl.buf = buf;
+		sdio_info->rxctl_req.ctl.len = len;
+		sdio_info->rxctl_req.pending = TRUE;
+	}
 	return DBUS_OK;
 }
 
 static int
 dbus_sdif_up(void *bus)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
 	int err = DBUS_ERR;
 
 	if (sdio_info == NULL)
@@ -4964,9 +5130,11 @@ dbus_sdif_up(void *bus)
 		err = sdio_info->drvintf->up(sdio_info->sdos_info);
 	}
 
+	dbus_sdos_lock(sdio_info);
 	err = dbus_sdio_init(sdio_info);
 	if (err != 0)
 		err = DBUS_ERR;
+	dbus_sdos_unlock(sdio_info);
 
 	return err;
 }
@@ -4975,27 +5143,41 @@ static int
 dbus_sdif_iovar_op(void *bus, const char *name,
 	void *params, int plen, void *arg, int len, bool set)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
-	int err = DBUS_ERR;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
+	int err = DBUS_OK;
 
 	if (sdio_info == NULL)
 		return DBUS_ERR;
 
-	dbus_sdos_lock(sdio_info);
-	err = dbus_iovar_process(sdio_info, name, params, plen, arg, len, set);
-	dbus_sdos_unlock(sdio_info);
+	if (sdio_info->txctl_req.pending == TRUE) {
+		DBUSERR(("%s: ctl is pending!\n", __FUNCTION__));
+		return DBUS_ERR_PENDING;
+	}
 
-	if (err != 0)
-		err = DBUS_ERR;
-	else
-		err = DBUS_OK;
+	sdio_info->txctl_req.iovar.name = name;
+	sdio_info->txctl_req.iovar.params = params;
+	sdio_info->txctl_req.iovar.plen = plen;
+	sdio_info->txctl_req.iovar.arg = arg;
+	sdio_info->txctl_req.iovar.len = len;
+	sdio_info->txctl_req.iovar.set = set;
+
+	sdio_info->txctl_req.is_iovar = TRUE;
+	sdio_info->txctl_req.pending = TRUE;
+	dbus_sdio_txq_sched(sdio_info->sdos_info);
 
 	return err;
 }
 
-static bool dbus_sdif_dlneeded(void *bus)
+static bool
+dbus_sdif_device_exists(void *bus)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	return TRUE;
+}
+
+static bool
+dbus_sdif_dlneeded(void *bus)
+{
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
 
 	if (sdio_info == NULL)
 		return FALSE;
@@ -5007,9 +5189,10 @@ static bool dbus_sdif_dlneeded(void *bus)
 #endif
 }
 
-static int dbus_sdif_dlstart(void *bus, uint8 *fw, int len)
+static int
+dbus_sdif_dlstart(void *bus, uint8 *fw, int len)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
 	int err = DBUS_ERR;
 
 	if (sdio_info == NULL)
@@ -5047,12 +5230,13 @@ err:
 	return err;
 }
 
-static int dbus_sdif_dlrun(void *bus)
+static int
+dbus_sdif_dlrun(void *bus)
 {
 	sdio_info_t *sdio_info;
 	int err = DBUS_ERR;
 
-	sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info = BUS_INFO(bus, sdio_info_t);
 
 	/* Take ARM out of reset */
 	err = dbus_sdio_download_state(&g_probe_info, FALSE);
@@ -5068,7 +5252,7 @@ static int dbus_sdif_dlrun(void *bus)
 static int
 dbus_sdif_stop(void *bus)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
 	int err;
 
 	if (sdio_info->drvintf && sdio_info->drvintf->stop)
@@ -5081,7 +5265,7 @@ dbus_sdif_stop(void *bus)
 static int
 dbus_sdif_down(void *bus)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info_t *sdio_info = BUS_INFO(bus, sdio_info_t);
 	int err;
 
 	if (sdio_info->drvintf && sdio_info->drvintf->down)
@@ -5090,7 +5274,6 @@ dbus_sdif_down(void *bus)
 	dbus_bus_stop(sdio_info);
 	return DBUS_OK;
 }
-
 
 static int
 dbus_sdos_sched_dpc(sdio_info_t *sdio_info)
@@ -5128,6 +5311,8 @@ dbus_sdos_sched_probe_cb()
 static void *
 dbus_sdio_probe_cb(void *handle, const char *desc, uint32 bustype, uint32 hdrlen)
 {
+	DBUSTRACE(("%s\n", __FUNCTION__));
+
 	if (handle == &g_probe_info) {
 
 		if (g_dbusintf != NULL) {
@@ -5151,6 +5336,7 @@ dbus_sdio_probe_cb(void *handle, const char *desc, uint32 bustype, uint32 hdrlen
 			dbus_sdio_intf.recv_ctl = dbus_sdif_recv_ctl;
 			dbus_sdio_intf.up = dbus_sdif_up;
 			dbus_sdio_intf.iovar_op = dbus_sdif_iovar_op;
+			dbus_sdio_intf.device_exists = dbus_sdif_device_exists;
 			dbus_sdio_intf.dlneeded = dbus_sdif_dlneeded;
 			dbus_sdio_intf.dlstart = dbus_sdif_dlstart;
 			dbus_sdio_intf.dlrun = dbus_sdif_dlrun;
@@ -5212,6 +5398,8 @@ dbus_sdio_probe_cb(void *handle, const char *desc, uint32 bustype, uint32 hdrlen
 static void
 dbus_sdio_disconnect_cb(void *handle)
 {
+	DBUSTRACE(("%s\n", __FUNCTION__));
+
 	if (disconnect_cb)
 		disconnect_cb(disc_arg);
 }
@@ -5226,17 +5414,10 @@ dbus_bus_register(int vid, int pid, probe_cb_t prcb,
 	disconnect_cb = discb;
 	probe_arg = prarg;
 
+	DBUSTRACE(("%s\n", __FUNCTION__));
+
 	bzero(&g_probe_info, sizeof(probe_sdh_info_t));
 	*intf = &dbus_sdio_intf;
-
-	/* Need to happen before dbus_bus_osl_register
-	 * because bcmsdh_probe() calls probe() directly
-	 */
-	err = bcmsdh_register(&sdh_driver);
-	if (err == 0)
-		err = DBUS_OK;
-	else
-		err = DBUS_ERR;
 
 	err = dbus_bus_osl_register(vid, pid, dbus_sdio_probe_cb,
 		dbus_sdio_disconnect_cb, &g_probe_info, &g_dbusintf, param1, param2);
@@ -5250,8 +5431,6 @@ int
 dbus_bus_deregister()
 {
 	dbus_bus_osl_deregister();
-	bcmsdh_unregister();
-
 	return DBUS_OK;
 }
 
@@ -5260,6 +5439,7 @@ dbus_sdif_attach(dbus_pub_t *pub, void *cbarg, dbus_intf_callbacks_t *cbs)
 {
 	sdio_info_t *sdio_info;
 
+	DBUSTRACE(("%s\n", __FUNCTION__));
 	if ((g_dbusintf == NULL) || (g_dbusintf->attach == NULL))
 		return NULL;
 
@@ -5339,7 +5519,8 @@ dbus_sdif_attach(dbus_pub_t *pub, void *cbarg, dbus_intf_callbacks_t *cbs)
 		goto err;
 	}
 
-	pktq_init(&sdio_info->txq, (PRIOMASK+1), QLEN);
+	ASSERT(sdio_info->pub->ntxq > 0);
+	pktq_init(&sdio_info->txq, (PRIOMASK+1), sdio_info->pub->ntxq);
 
 	/* Locate an appropriately-aligned portion of hdrbuf */
 	sdio_info->rxhdr = (uint8*)ROUNDUP((uintptr)&sdio_info->hdrbuf[0], SDALIGN);
@@ -5360,13 +5541,7 @@ dbus_sdif_attach(dbus_pub_t *pub, void *cbarg, dbus_intf_callbacks_t *cbs)
 	if (g_probe_info.devready == TRUE)
 		sdio_info->pub->busstate = DBUS_STATE_DL_DONE;
 
-	/* Because we mainly use functions from dbus_sdio_os.c
-	 * we're returning sdos_info, instead of sdio_info locally.
-	 * But in doing this, we need a way to
-	 * retrieve sdio_info for the overridden functions.
-	 * Thus, the use of g_sdio_info.  Is there better way??
-	 */
-	g_sdio_info = sdio_info;
+	pub->bus = sdio_info;
 
 	return (void *) sdio_info->sdos_info; /* Return Lower layer info */
 err:
@@ -5380,7 +5555,7 @@ err:
 void
 dbus_sdif_detach(dbus_pub_t *pub, void *info)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) g_sdio_info;
+	sdio_info_t *sdio_info = pub->bus;
 	osl_t *osh = pub->osh;
 
 	dbus_bus_stop(sdio_info);
@@ -5464,10 +5639,18 @@ dbus_sdio_state_change(void *handle, int state)
 
 	if (sdio_info->cbs && sdio_info->cbs->state_change)
 		sdio_info->cbs->state_change(sdio_info->cbarg, state);
+
+	if (state == DBUS_STATE_DISCONNECT) {
+		if (sdio_info->drvintf && sdio_info->drvintf->remove)
+			sdio_info->drvintf->remove(sdio_info->sdos_info);
+
+		sdio_info->pub->busstate = DBUS_STATE_DOWN;
+	}
+
 }
 
-static int
-dbus_sdio_dpc(void *handle)
+static bool
+dbus_sdio_dpc(void *handle, bool bounded)
 {
 	sdio_info_t *sdio_info = (sdio_info_t *) handle;
 	bcmsdh_info_t *sdh;
@@ -5476,7 +5659,6 @@ dbus_sdio_dpc(void *handle)
 	uint retries = 0;
 
 	uint rxlimit = dhd_rxbound; /* Rx frames to read before resched */
-	uint txlimit = dhd_txbound; /* Tx frames to send before resched */
 	uint framecnt = 0;		  /* Temporary counter of tx/rx frames */
 	bool rxdone = TRUE;		  /* Flag for no more read data */
 	bool resched = FALSE;	  /* Flag indicating resched wanted */
@@ -5625,6 +5807,11 @@ dbus_sdio_dpc(void *handle)
 		rxlimit -= MIN(framecnt, rxlimit);
 	}
 
+	if (pktq_mlen(&sdio_info->txq, ~sdio_info->flowcontrol) > 0) {
+		/* reschedule txq */
+		dbus_sdio_txq_sched(sdio_info->sdos_info);
+	}
+
 	/* Keep still-pending events for next scheduling */
 	sdio_info->intstatus = intstatus;
 
@@ -5640,27 +5827,17 @@ clkwait:
 		bcmsdh_intr_enable(sdh);
 	}
 
-	/* Send queued frames (limit 1 if rx may still be pending) */
-	if ((sdio_info->clkstate != CLK_PENDING) && !sdio_info->fcstate &&
-	    pktq_mlen(&sdio_info->txq, ~sdio_info->flowcontrol) && txlimit && DATAOK(sdio_info)) {
-		framecnt = rxdone ? txlimit : MIN(txlimit, dhd_txminmax);
-		framecnt = dbus_sdio_sendfromq(sdio_info, framecnt);
-		txlimit -= framecnt;
-	}
-
 	/* Resched if events or tx frames are pending, else await next interrupt */
 	/* On failed register access, all bets are off: no resched or interrupts */
 	if ((sdio_info->pub->busstate == DBUS_STATE_DOWN) || bcmsdh_regfail(sdh)) {
 		DBUSERR(("%s: failed backplane access over SDIO, halting operation\n",
 		           __FUNCTION__));
-		sdio_info->pub->busstate = DBUS_STATE_DOWN;
+		dbus_sdio_state_change(sdio_info, DBUS_STATE_DISCONNECT);
 		sdio_info->intstatus = 0;
+		dbus_bus_stop(sdio_info);
 	} else if (sdio_info->clkstate == CLK_PENDING) {
 		/* Awaiting I_CHIP_ACTIVE, don't resched */
-	} else if (sdio_info->intstatus || sdio_info->ipend ||
-		(!sdio_info->fcstate && pktq_mlen(&sdio_info->txq, ~sdio_info->flowcontrol) &&
-		DATAOK(sdio_info)) ||
-			PKT_AVAILABLE()) {  /* Read multiple frames */
+	} else if (sdio_info->intstatus || sdio_info->ipend || PKT_AVAILABLE()) {
 		resched = TRUE;
 	}
 
@@ -5679,98 +5856,4 @@ clkwait:
 static void
 dbus_sdio_watchdog(void *handle)
 {
-	sdio_info_t *sdio_info = (sdio_info_t *) handle;
-
-	DBUSTIMER(("%s: Enter\n", __FUNCTION__));
-
-	if (sdio_info == NULL)
-		return;
-
-	/* Ignore the timer if simulating bus down */
-	if (sdio_info->sleeping)
-		return;
-
-	dbus_sdos_lock(sdio_info);
-
-	/* Poll period: check device if appropriate. */
-	if (sdio_info->poll && (++sdio_info->polltick >= sdio_info->pollrate)) {
-		uint32 intstatus = 0;
-
-		/* Reset poll tick */
-		sdio_info->polltick = 0;
-
-		/* Check device if no interrupts */
-		if (!sdio_info->intr || (sdio_info->intrcount == sdio_info->lastintrs)) {
-#ifdef DEBUG_LOST_INTERRUPTS
-			uint retries = 0;
-			bool hostpending;
-			uint8 devena, devpend;
-
-			/* Make sure backplane clock is on */
-			dbus_sdio_clkctl(sdio_info, CLK_AVAIL, FALSE);
-
-			hostpending = bcmsdh_intr_pending(sdio_info->sdh);
-			devena = bcmsdh_cfg_read(sdio_info->sdh, SDIO_FUNC_0,
-				SDIOD_CCCR_INTEN, NULL);
-			devpend = bcmsdh_cfg_read(sdio_info->sdh, SDIO_FUNC_0,
-				SDIOD_CCCR_INTPEND, NULL);
-
-			R_SDREG(intstatus, &sdio_info->regs->intstatus, retries);
-			intstatus &= sdio_info->hostintmask;
-
-			if (intstatus && !hostpending) {
-				DBUSERR(("%s: !hpend: ena 0x%02x pend 0x%02x intstatus 0x%08x\n",
-				           __FUNCTION__, devena, devpend, intstatus));
-			}
-#endif /* DEBUG_LOST_INTERRUPTS */
-
-#ifndef BCMSPI
-			if (!sdio_info->dpc_sched) {
-				uint8 devpend;
-				devpend = bcmsdh_cfg_read(sdio_info->sdh, SDIO_FUNC_0,
-				                          SDIOD_CCCR_INTPEND, NULL);
-				intstatus = devpend & (INTR_STATUS_FUNC1 | INTR_STATUS_FUNC2);
-			}
-#endif /* !BCMSPI */
-
-			/* If there is something, make like the ISR and schedule the DPC */
-			if (intstatus) {
-				sdio_info->pollcnt++;
-				sdio_info->ipend = TRUE;
-				if (sdio_info->intr) {
-					bcmsdh_intr_disable(sdio_info->sdh);
-				}
-
-				dbus_sdos_sched_dpc(sdio_info);
-				sdio_info->dpc_sched = TRUE;
-			}
-		}
-
-		/* Update interrupt tracking */
-		sdio_info->lastintrs = sdio_info->intrcount;
-	}
-
-#ifdef SDTEST
-	/* Generate packets if configured */
-	if (sdio_info->pktgen_count && (++sdio_info->pktgen_tick >= sdio_info->pktgen_freq)) {
-		/* Make sure backplane clock is on */
-		dbus_sdio_clkctl(sdio_info, CLK_AVAIL, FALSE);
-		sdio_info->pktgen_tick = 0;
-		dbus_sdio_pktgen(sdio_info);
-	}
-#endif
-
-	/* On idle timeout clear activity flag and/or turn off clock */
-	if ((sdio_info->idletime > 0) && (sdio_info->clkstate == CLK_AVAIL)) {
-		if (++sdio_info->idlecount >= (uint32)sdio_info->idletime) {
-			sdio_info->idlecount = 0;
-			if (sdio_info->activity) {
-				sdio_info->activity = FALSE;
-			} else {
-				dbus_sdio_clkctl(sdio_info, CLK_NONE, FALSE);
-			}
-		}
-	}
-
-	dbus_sdos_unlock(sdio_info);
 }

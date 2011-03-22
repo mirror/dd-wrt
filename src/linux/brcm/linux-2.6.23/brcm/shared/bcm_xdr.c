@@ -1,7 +1,7 @@
 /*
  * Utilites for XDR encode and decode of data
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_xdr.c,v 1.2.4.3 2008/10/04 21:03:54 Exp $
+ * $Id: bcm_xdr.c,v 1.7 2008/11/07 20:26:33 Exp $
  */
 
 #include <osl.h>
@@ -38,6 +38,91 @@ bcm_xdr_unpack_uint8_vec(bcm_xdr_buf_t *b, uint8 *vec, uint32 elems)
 {
 	int err = 0;
 	err = bcm_xdr_unpack_opaque_cpy(b, elems, vec);
+
+	return err;
+}
+
+/* Pack 16-bit vectors */
+int
+bcm_xdr_pack_uint16_vec(bcm_xdr_buf_t *b, uint len, void *vec)
+{
+	size_t tot_len, r;
+	int i;
+	uint16	*vec16 = (uint16*)vec, *buf16 = (uint16*)b->buf;
+	ASSERT((len % sizeof(uint16)) == 0);
+
+	/* calc residual padding to 4 bytes */
+	r = (4 - len) & 3;
+
+	tot_len = len + r;
+
+	if (b->size < tot_len)
+		return -1;
+
+	/* Do the 16 bit swap and copy */
+	for (i = 0; i < (int)(len/sizeof(uint16)); i++)
+		buf16[i] = htol16(vec16[i]);
+
+	/* Padding */
+	memset(b->buf + len, 0, r);
+
+	b->size -= tot_len;
+	b->buf += tot_len;
+
+	return 0;
+}
+
+/* Unpack 16-bit vectors */
+int
+bcm_xdr_unpack_uint16_vec(bcm_xdr_buf_t *b, uint len, void *vec)
+{
+	int err = 0, i;
+	uint16	*vec16 = (uint16*)vec;
+	ASSERT((len % sizeof(uint16)) == 0);
+
+	err = bcm_xdr_unpack_opaque_cpy(b, len, vec);
+
+	/* Do the 16 bit swapping in the copied buffer */
+	for (i = 0; i < (int)(len/sizeof(uint16)); i++)
+		vec16[i] = ltoh16(vec16[i]);
+
+	return err;
+}
+
+/* Pack 32-bit vectors */
+int
+bcm_xdr_pack_uint32_vec(bcm_xdr_buf_t *b, uint len, void *vec)
+{
+	int i;
+	uint32	*vec32 = (uint32*)vec, *buf32 = (uint32*)b->buf;
+	ASSERT((len % sizeof(uint32)) == 0);
+
+	if (b->size < len)
+		return -1;
+
+	/* Do the 32 bit swap and copy */
+	for (i = 0; i < (int)(len/sizeof(uint32)); i++)
+		buf32[i] = htol32(vec32[i]);
+
+	b->size -= len;
+	b->buf += len;
+
+	return 0;
+}
+
+/* Unpack 32-bit vectors */
+int
+bcm_xdr_unpack_uint32_vec(bcm_xdr_buf_t *b, uint len, void *vec)
+{
+	int err = 0, i;
+	uint32	*vec32 = (uint32*)vec;
+	ASSERT((len % sizeof(uint32)) == 0);
+
+	err = bcm_xdr_unpack_opaque_cpy(b, len, vec);
+
+	/* Do the 32 bit swapping in the copied buffer */
+	for (i = 0; i < (int)(len/sizeof(uint32)); i++)
+		vec32[i] = ltoh32(vec32[i]);
 
 	return err;
 }
@@ -112,6 +197,7 @@ bcm_xdr_pack_opaque_raw(bcm_xdr_buf_t *b, uint len, void *data)
 	return 0;
 }
 
+/* Pad 0 at the remaining part of a rpc buffer */
 int
 bcm_xdr_pack_opaque_pad(bcm_xdr_buf_t *b)
 {
@@ -136,6 +222,9 @@ bcm_xdr_pack_opaque_pad(bcm_xdr_buf_t *b)
 	return 0;
 }
 
+/* pack a word-aligned buffer without dealing with the endianess, pad 0 at the end and make
+ * it word-aligned if len is not multiple of 4
+ */
 int
 bcm_xdr_pack_opaque(bcm_xdr_buf_t *b, uint len, void *data)
 {

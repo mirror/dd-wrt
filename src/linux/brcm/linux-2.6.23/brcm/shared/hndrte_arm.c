@@ -1,7 +1,7 @@
 /*
  * hndrte ARM port specific routines.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte_arm.c,v 1.59.2.2 2008/07/16 00:41:46 Exp $
+ * $Id: hndrte_arm.c,v 1.72.4.1 2010/02/23 06:29:25 Exp $
  */
 
 #include <typedefs.h>
@@ -24,6 +24,7 @@
 #include <sbhndarm.h>
 #include <sbchipc.h>
 #include <hndchipc.h>
+#include <bcmsdpcm.h>
 
 
 #ifndef HNDRTE_POLLING
@@ -99,11 +100,6 @@ static uint32 c0counts_per_us = HT_CLOCK / 1000000;
 /* ILP clock speed default to 32KHz */
 static uint32 pmuticks_per_ms = ILP_CLOCK / 1000;
 
-/* PmuRev0 has a 10-bit PMU RsrcReq timer which can last 31.x msec
- * at 32KHz clock. To work around this limitation we chop larger timer to
- * multiple maximum 31 msec timers. When these 31 msec timers expire the ISR
- * will be running at 32KHz to save power.
- */
 static uint max_timer_dur = ((1 << 10) - 1) / 32;
 /* PmuRev1 has a 24-bit PMU RsrcReq timer. However it pushes all other bits
  * upward. To make the code to run for all revs we use a variable to tell how
@@ -126,8 +122,7 @@ hndrte_update_now(void)
 
 	count = R_REG(hndrte_osh, &hndrte_ccr->pmutimer);
 
-	diff = (count >= lastcount) ? (count - lastcount) :
-		(~0 - lastcount + 1 + count);
+	diff = count - lastcount;
 	if (diff >= pmuticks_per_ms) {
 		lastcount = count;
 		return diff / pmuticks_per_ms;
@@ -135,6 +130,26 @@ hndrte_update_now(void)
 
 	return 0;
 }
+
+#ifdef BCMDBG_SD_LATENCY
+static uint32 lastcount_us = 0;
+
+uint32
+hndrte_update_now_us(void)
+{
+	uint32 count, diff;
+
+	count = get_arm_cyclecount();
+
+	diff = count - lastcount_us;
+	if (diff >= c0counts_per_us) {
+		lastcount_us = count;
+		return diff / c0counts_per_us;
+	}
+
+	return 0;
+}
+#endif /* BCMDBG_SD_LATENCY */
 
 void
 hndrte_delay(uint32 us)
@@ -217,21 +232,26 @@ BCMATTACHFN(hndrte_cpu_init)(si_t *sih)
 
 void *
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
-hndrte_dma_alloc_consistent(uint size, void *pap, char *file, int line)
+hndrte_dma_alloc_consistent(uint size, uint16 align_bits, uint *alloced, void *pap,
+	char *file, int line)
 #else
-hndrte_dma_alloc_consistent(uint size, void *pap)
+hndrte_dma_alloc_consistent(uint size, uint16 align_bits, uint *alloced, void *pap)
 #endif
 {
 	void *buf;
+	uint16 align;
 
-	/* align on a 4k boundary (2^12) */
+	align = (1 << align_bits);
+
+	/* align on a OSL defined boundary */
 #if defined(BCMDBG_MEM) || defined(BCMDBG_MEMFAIL)
-	if (!(buf = hndrte_malloc_align(size, 12, file, line)))
+	if (!(buf = hndrte_malloc_align(size, align_bits, file, line)))
 #else
-	if (!(buf = hndrte_malloc_align(size, 12)))
+	if (!(buf = hndrte_malloc_align(size, align_bits)))
 #endif
 		return NULL;
-	ASSERT(ISALIGNED((uintptr)buf, DMA_CONSISTENT_ALIGN));
+	ASSERT(ISALIGNED((uintptr)buf, align));
+	*alloced = size;
 
 #ifdef CONFIG_XIP
 	/* 
@@ -441,8 +461,36 @@ hndrte_trap_handler(trap_t *tr)
 	}
 #endif
 
-	printf("\nTrap type 0x%x @ epc 0x%x, cpsr 0x%x, spsr 0x%x, sp 0x%x, lp 0x%x, rpc 0x%x\n",
-	       tr->type, tr->epc, tr->cpsr, tr->spsr, tr->r13, tr->r14, tr->pc);
+#if defined(__ARM_ARCH_7M__)
+	 if ((tr->type == TR_FAULT) && (tr->pc  == ((uint32)&osl_busprobe & ~1))) {
+		 /*	LDR and ADR instruction always sets the least significant bit 
+		  *	of program address to 1 to indicate thumb mode 
+		  *	LDR R0, =osl_busprobe ; R0 = osl_busprobe + 1
+		  */
+		/* printf("busprobe failed for addr 0x%08x\n", tr->pc); */  
+			*((volatile uint32 *)(tr->r13 + CM3_TROFF_PC)) = tr->pc + 6;
+			*((volatile uint32 *)(tr->r13 + CM3_TROFF_R0)) = ~0;
+			return;
+		}
+#endif /* defined(__ARM_ARCH_7M__) */		
+
+	/* Trap type: 0=RST, 1=UND, 2=SWI, 3=IAB, 4=DAB, 5=BAD, 6=IRQ, 7=FIQ */
+	/* Note that UTF parses the first line, so the format should not be changed. */
+	printf("\nTRAP %x(%x): pc %x, lr %x, sp %x, cpsr %x, spsr %x\n",
+	       tr->type, (uint32)tr, tr->pc, tr->r14, tr->r13, tr->cpsr, tr->spsr);
+
+#if defined(BCMSPACE) || defined(HNDRTE_CONSOLE)
+	printf("  r0 %x, r1 %x, r2 %x, r3 %x, r4 %x, r5 %x, r6 %x\n",
+	       tr->r0, tr->r1, tr->r2, tr->r3, tr->r4, tr->r5, tr->r6);
+	printf("  r7 %x, r8 %x, r9 %x, r10 %x, r11 %x, r12 %x\n",
+	       tr->r7, tr->r8, tr->r9, tr->r10, tr->r11, tr->r12);
+#endif /* BCMSPACE */
+
+#if defined(__ARM_ARCH_4T__) || defined(__ARM_ARCH_7M__)
+	/* Fill in structure that be downloaded by the host */
+	sdpcm_shared.flags     |= SDPCM_SHARED_TRAP;
+	sdpcm_shared.trap_addr  = (uint32)tr;
+#endif
 
 	hndrte_die(__LINE__);
 }

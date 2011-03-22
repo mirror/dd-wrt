@@ -3,7 +3,7 @@
  * AES encrypt/decrypt wrapper functions used around Rijndael reference
  * implementation
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -11,7 +11,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: aes.h,v 1.19 2008/02/15 21:12:14 Exp $
+ * $Id: aes.h,v 1.21 2008/09/09 01:56:48 Exp $
  */
 
 #ifndef _AES_H_
@@ -109,7 +109,7 @@ int BCMROMFN(aes_ctr_crypt)(unsigned int *rk, const size_t key_len, const uint8 
 	- returns AES_CCMP_ENCRYPT_SUCCESS on success
 	- returns AES_CCMP_ENCRYPT_ERROR on error
 */
-int aes_ccmp_encrypt(unsigned int *rk, const size_t key_len,
+int BCMROMFN(aes_ccmp_encrypt)(unsigned int *rk, const size_t key_len,
 	const size_t data_len, uint8 *p, bool legacy, uint8 nonce_1st_byte);
 
 #define AES_CCMP_DECRYPT_SUCCESS	0
@@ -140,7 +140,5 @@ int BCMROMFN(aes_ccm_decrypt)(unsigned int *rk, const size_t key_len, const uint
                               const size_t aad_len, const uint8 *aad, const size_t data_len,
                               const uint8 *ctxt, uint8 *ptxt);
 
-
-INLINE void xor_128bit_block(const uint8 *src1, const uint8 *src2, uint8 *dst);
 
 #endif /* _AES_H_ */

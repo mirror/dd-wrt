@@ -1,7 +1,7 @@
 /*
  * stdlib support routines for self-contained images.
  *
- * Copyright (C) 2008, Broadcom Corporation
+ * Copyright (C) 2009, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: bcmstdlib.c,v 1.42.12.7 2008/07/11 21:35:59 Exp $
+ * $Id: bcmstdlib.c,v 1.50.32.1 2010/05/27 22:44:57 Exp $
  */
 
 /*
@@ -45,6 +45,10 @@
 #include <bcmstdlib.h>
 #ifndef BCMSTDLIB_WIN32_APP
 #include <bcmutils.h>
+#endif
+
+#ifdef MSGTRACE
+#include <msgtrace.h>
 #endif
 
 #ifdef BCMSTDLIB_WIN32_APP
@@ -84,6 +88,7 @@ snprintf(char *buf, size_t bufsize, const char *fmt, ...)
 
 #else /* BCMSTDLIB_WIN32_APP */
 
+#if	!defined(BCMROMOFFLOAD) || defined(BMAC_ROML_SHARED_LIB)
 
 static const char digits[17] = "0123456789ABCDEF";
 static const char ldigits[17] = "0123456789abcdef";
@@ -290,10 +295,33 @@ BCMROMFN(snprintf)(char *buf, size_t bufsize, const char *fmt, ...)
 
 	return r;
 }
+#endif	/* (!defined(BCMROMOFFLOAD)) || defined(BMAC_ROML_SHARED_LIB) */
 
 #endif /* BCMSTDLIB_WIN32_APP */
 
 #ifndef BCMSTDLIB_SNPRINTF_ONLY
+
+
+int
+BCMROMFN(vsprintf)(char *buf, const char *fmt, va_list ap)
+{
+	return (vsnprintf(buf, INT_MAX, fmt, ap));
+}
+
+
+int
+BCMROMFN(sprintf)(char *buf, const char *fmt, ...)
+{
+	va_list ap;
+	int count;
+
+	va_start(ap, fmt);
+	count = vsprintf(buf, fmt, ap);
+	va_end(ap);
+
+	return count;
+}
+
 
 void *
 BCMROMFN(memmove)(void *dest, const void *src, size_t n)
@@ -322,29 +350,6 @@ BCMROMFN(memmove)(void *dest, const void *src, size_t n)
 
 	return dest;
 }
-
-
-
-int
-BCMROMFN(vsprintf)(char *buf, const char *fmt, va_list ap)
-{
-	return (vsnprintf(buf, INT_MAX, fmt, ap));
-}
-
-
-int
-BCMROMFN(sprintf)(char *buf, const char *fmt, ...)
-{
-	va_list ap;
-	int count;
-
-	va_start(ap, fmt);
-	count = vsprintf(buf, fmt, ap);
-	va_end(ap);
-
-	return count;
-}
-
 
 #ifndef EFI
 int
@@ -696,6 +701,10 @@ printf(const char *fmt, ...)
 			putc('\r');
 #endif
 	}
+
+#ifdef MSGTRACE
+	msgtrace_put(buffer, count);
+#endif
 
 	return count;
 }

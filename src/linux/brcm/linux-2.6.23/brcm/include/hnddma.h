@@ -184,11 +184,11 @@ extern hnddma_t * dma_attach(osl_t *osh, char *name, si_t *sih, void *dmaregstx,
 #define dma_ctrlflags(di, mask, flags)  ((di)->di_fn->ctrlflags((di), (mask), (flags)))
 #define dma_txpending(di)		((di)->di_fn->txpending(di))
 #define dma_txcommitted(di)		((di)->di_fn->txcommitted(di))
-#if defined(BCMDBG_DUMP)
+#if defined(BCMDBG) || defined(BCMDBG_DUMP)
 #define dma_dump(di, buf, dumpring)	((di)->di_fn->dump(di, buf, dumpring))
 #define dma_dumptx(di, buf, dumpring)	((di)->di_fn->dumptx(di, buf, dumpring))
 #define dma_dumprx(di, buf, dumpring)	((di)->di_fn->dumprx(di, buf, dumpring))
-#endif 
+#endif /* defined(BCMDBG) || defined(BCMDBG_DUMP) */
 
 #else /* BCMDMA32 */
 extern const di_fcn_t dma64proc;
@@ -235,7 +235,7 @@ extern const di_fcn_t dma64proc;
 #define dma_ctrlflags(di, mask, flags)  (dma64proc.ctrlflags((di), (mask), (flags)))
 #define dma_txpending(di)		(dma64proc.txpending(di))
 #define dma_txcommitted(di)		(dma64proc.txcommitted(di))
-#if defined(BCMDBG_DUMP)
+#if defined(BCMDBG) || defined(BCMDBG_DUMP)
 #define dma_dump(di, buf, dumpring)	(dma64proc.dump(di, buf, dumpring))
 #define dma_dumptx(di, buf, dumpring)	(dma64proc.dumptx(di, buf, dumpring))
 #define dma_dumprx(di, buf, dumpring)	(dma64proc.dumprx(di, buf, dumpring))
