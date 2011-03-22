@@ -340,18 +340,23 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 		}
 	}
 	else {
+		// for now, autochannel follows...
+		// also we should take care on the selected mode
 		sprintf(nfreq, "%s_channel", prefix);
-		channel = ieee80211_mhz2ieee(atoi(nvram_default_get(nfreq, "0")));
+		int freq=atoi(nvram_default_get(nfreq, "0"));
+		if (freq == 0) {
+			if (has_2ghz(prefix)) channel=6;
+			if (has_5ghz(prefix)) channel=36;
+		}
+		else {
+			channel = ieee80211_mhz2ieee(freq);
+		}
 	}
-	// i know that's not the right way.. autochannel is 0
-	if (channel < 36 || nvram_match(nfreq, "0"))
+	if (channel < 36)
 		fprintf(fp, "hw_mode=g\n");
 	else
 		fprintf(fp, "hw_mode=a\n");
-	if (nvram_default_match(nfreq, "0", "0"))
-		fprintf(fp, "channel=6\n");
-	else
-		fprintf(fp, "channel=%d\n", channel);
+	fprintf(fp, "channel=%d\n", channel);
 	fprintf(fp, "\n");
 }
 
