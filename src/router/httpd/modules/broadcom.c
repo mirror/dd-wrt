@@ -1297,6 +1297,7 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
 #ifdef HAVE_WPS
 	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
+	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
 #endif
 #endif
 };

@@ -58,12 +58,17 @@ function wps_generate_pin(field)
 }
 
 function to_register(F) {
-	if (!wps_pin_valid(F.wps_pin.value)) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "wps_register";
+  apply(F);
+}
+function to_ap_register(F) {
+	if (!wps_ap_pin_valid(F.wps_ap_pin.value)) {
 	    alert(aoss.pinnotvalid);
 	    return;
 	    }
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "wps_register";
+	F.submit_type.value = "wps_ap_register";
   apply(F);
 }
 
@@ -215,12 +220,20 @@ document.write("<\/tr>");
 						<input class="spaceradio" type="radio" value="0" name="wps_enabled" <% nvram_checked("wps_enabled", "0"); %> /><% tran("share.disable"); %>
 					</div>
 					<div class="setting">
+						<div class="label"><% tran("aoss.wps_ap_pin"); %></div>
+						<input class="num" name="wps_ap_pin" size="16" maxlength="16" value="<% nvram_get("pincode"); %>" />&nbsp;
+						<script type="text/javascript">
+						//<![CDATA[
+						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsregister + "\" onclick=\"to_ap_register(this.form);\" />");
+						//]]>
+						</script>
+					</div>
+					<div class="setting">
 						<div class="label"><% tran("aoss.wpspin"); %></div>
-						<input class="num" name="wps_pin" size="16" maxlength="16" value="<% nvram_get("pincode"); %>" />&nbsp;
+						<input class="num" name="wps_pin" size="16" maxlength="16" />&nbsp;
 						<script type="text/javascript">
 						//<![CDATA[
 						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsregister + "\" onclick=\"to_register(this.form);\" />");
-						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsgenerate + "\" onclick=\"wps_generate_pin(this.form.wps_pin);\" />");
 						//]]>
 						</script>
 					</div>
