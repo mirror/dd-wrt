@@ -23,6 +23,57 @@
 #include <shutils.h>
 #include <wlutils.h>
 
+#define	BCM4306_CHIP_ID		0x4306		/* 4306 chipcommon chipid */
+#define	BCM4311_CHIP_ID		0x4311		/* 4311 PCIe 802.11a/b/g */
+#define	BCM43111_CHIP_ID	43111		/* 43111 chipcommon chipid (OTP chipid) */
+#define	BCM43112_CHIP_ID	43112		/* 43112 chipcommon chipid (OTP chipid) */
+#define	BCM4312_CHIP_ID		0x4312		/* 4312 chipcommon chipid */
+#define BCM4313_CHIP_ID		0x4313		/* 4313 chip id */
+#define	BCM4315_CHIP_ID		0x4315		/* 4315 chip id */
+#define	BCM4318_CHIP_ID		0x4318		/* 4318 chipcommon chipid */
+#define	BCM4319_CHIP_ID		0x4319		/* 4319 chip id */
+#define	BCM4320_CHIP_ID		0x4320		/* 4320 chipcommon chipid */
+#define	BCM4321_CHIP_ID		0x4321		/* 4321 chipcommon chipid */
+#define	BCM4322_CHIP_ID		0x4322		/* 4322 chipcommon chipid */
+#define	BCM43221_CHIP_ID	43221		/* 43221 chipcommon chipid (OTP chipid) */
+#define	BCM43222_CHIP_ID	43222		/* 43222 chipcommon chipid */
+#define	BCM43224_CHIP_ID	43224		/* 43224 chipcommon chipid */
+#define	BCM43225_CHIP_ID	43225		/* 43225 chipcommon chipid */
+#define	BCM43227_CHIP_ID	43227		/* 43227 chipcommon chipid */
+#define	BCM43228_CHIP_ID	43228		/* 43228 chipcommon chipid */
+#define	BCM43421_CHIP_ID	43421		/* 43421 chipcommon chipid */
+#define	BCM43226_CHIP_ID	43226		/* 43226 chipcommon chipid */
+#define	BCM43231_CHIP_ID	43231		/* 43231 chipcommon chipid (OTP chipid) */
+#define	BCM43234_CHIP_ID	43234		/* 43234 chipcommon chipid */
+#define	BCM43235_CHIP_ID	43235		/* 43235 chipcommon chipid */
+#define	BCM43236_CHIP_ID	43236		/* 43236 chipcommon chipid */
+#define	BCM43237_CHIP_ID	43237		/* 43237 chipcommon chipid */
+#define	BCM43238_CHIP_ID	43238		/* 43238 chipcommon chipid */
+#define	BCM4325_CHIP_ID		0x4325		/* 4325 chip id */
+#define	BCM4328_CHIP_ID		0x4328		/* 4328 chip id */
+#define	BCM4329_CHIP_ID		0x4329		/* 4329 chipcommon chipid */
+#define	BCM4331_CHIP_ID		0x4331		/* 4331 chipcommon chipid */
+#define BCM4336_CHIP_ID		0x4336		/* 4336 chipcommon chipid */
+#define BCM43362_CHIP_ID	43362		/* 43362 chipcommon chipid */
+#define BCM4330_CHIP_ID		0x4330		/* 4330 chipcommon chipid */
+#define BCM6362_CHIP_ID		0x6362		/* 6362 chipcommon chipid */
+
+#define	BCM4342_CHIP_ID		4342		/* 4342 chipcommon chipid (OTP, RBBU) */
+#define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
+#define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
+#define	BCM4710_CHIP_ID		0x4710		/* 4710 chipid */
+#define	BCM4712_CHIP_ID		0x4712		/* 4712 chipcommon chipid */
+#define	BCM4716_CHIP_ID		0x4716		/* 4716 chipcommon chipid */
+#define	BCM47162_CHIP_ID	47162		/* 47162 chipcommon chipid */
+#define	BCM4748_CHIP_ID		0x4748		/* 4716 chipcommon chipid (OTP, RBBU) */
+#define BCM4785_CHIP_ID		0x4785		/* 4785 chipcommon chipid */
+#define	BCM5350_CHIP_ID		0x5350		/* 5350 chipcommon chipid */
+#define	BCM5352_CHIP_ID		0x5352		/* 5352 chipcommon chipid */
+#define	BCM5354_CHIP_ID		0x5354		/* 5354 chipcommon chipid */
+#define BCM5365_CHIP_ID		0x5365		/* 5365 chipcommon chipid */
+#define	BCM5356_CHIP_ID		0x5356		/* 5356 chipcommon chipid */
+#define	BCM5357_CHIP_ID		0x5357		/* 5357 chipcommon chipid */
+
 /* phy types */
 #define	PHY_TYPE_A		0
 #define	PHY_TYPE_B		1
@@ -30,6 +81,8 @@
 #define	PHY_TYPE_N		4
 #define	PHY_TYPE_LP		5
 #define PHY_TYPE_SSN		6
+#define	PHY_TYPE_HT		7
+#define	PHY_TYPE_LCN		8
 #define	PHY_TYPE_NULL		0xf
 
 /* how many times to attempt to bring up a virtual i/f when
@@ -39,6 +92,9 @@
 
 /* notify the average dma xfer rate (in kbps) to the driver */
 #define AVG_DMA_XFER_RATE 120000
+
+/* Length of the wl capabilities string */
+#define CAP_STR_LEN 250
 
 /* parts of an idcode: */
 #define	IDCODE_MFG_MASK		0x00000fff
@@ -488,13 +544,19 @@ wlconf_auto_chanspec(char *name,char *prefix)
 				 (phy) == PHY_TYPE_B ? "b" : \
 				 (phy) == PHY_TYPE_LP ? "l" : \
 				 (phy) == PHY_TYPE_G ? "g" : \
-				 (phy) == PHY_TYPE_SSN ? "s" : "n")
+				 (phy) == PHY_TYPE_SSN ? "s" : \
+				 (phy) == PHY_TYPE_HT ? "h" : \
+				 (phy) == PHY_TYPE_LCN ? "c" : "n")
 #define WLCONF_STR2PHYTYPE(ch)	((ch) == 'a' ? PHY_TYPE_A : \
 				 (ch) == 'b' ? PHY_TYPE_B : \
 				 (ch) == 'l' ? PHY_TYPE_LP : \
 				 (ch) == 'g' ? PHY_TYPE_G : \
-				 (ch) == 's' ? PHY_TYPE_SSN : PHY_TYPE_N)
+				 (ch) == 's' ? PHY_TYPE_SSN : \
+				 (ch) == 'h' ? PHY_TYPE_HT : \
+				 (ch) == 'c' ? PHY_TYPE_LCN : PHY_TYPE_N)
 
+#define WLCONF_PHYTYPE_11N(phy) ((phy) == PHY_TYPE_N 	|| (phy) == PHY_TYPE_SSN || \
+				 (phy) == PHY_TYPE_LCN 	|| (phy) == PHY_TYPE_HT)
 
 
 #define PREFIX_LEN 32			/* buffer size for wlXXX_ prefix */
@@ -615,6 +677,120 @@ wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet)
 	WL_BSSIOVAR_SETINT(name, "auth", bsscfg_idx, val);
 }
 
+static int
+wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int btc_mode)
+{
+	bool ampdu_valid_option = FALSE;
+	bool amsdu_valid_option = FALSE;
+	bool aburn_valid_option = FALSE;
+	int  val, aburn_option_val = OFF, ampdu_option_val = OFF, amsdu_option_val = OFF;
+	int wme_option_val = ON;  /* On by default */
+	char tmp[CAP_STR_LEN], var[80], *next, *wme_val;
+	char buf[WLC_IOCTL_SMLEN];
+	int len = strlen("amsdu");
+	int ret;
+
+	/* First, clear WMM and afterburner settings to avoid conflicts */
+	WL_IOVAR_SETINT(name, "wme", OFF);
+	WL_IOVAR_SETINT(name, "afterburner_override", OFF);
+
+	/* Get WME setting from NVRAM if present */
+	wme_val = nvram_get(strcat_r(prefix, "wme", tmp));
+	if (wme_val && !strcmp(wme_val, "off")) {
+		wme_option_val = OFF;
+	}
+
+	/* Set options based on capability */
+	wl_iovar_get(name, "cap", (void *)tmp, CAP_STR_LEN);
+	foreach(var, tmp, next) {
+		char *nvram_str;
+		bool amsdu = 0;
+
+		/* Check for the capabilitiy 'amsdutx' */
+		if (strncmp(var, "amsdutx", sizeof(var)) == 0) {
+			var[len] = '\0';
+			amsdu = 1;
+		}
+		nvram_str = nvram_get(strcat_r(prefix, var, buf));
+		if (!nvram_str)
+			continue;
+
+		if (!strcmp(nvram_str, "on"))
+			val = ON;
+		else if (!strcmp(nvram_str, "off"))
+			val = OFF;
+		else if (!strcmp(nvram_str, "auto"))
+			val = AUTO;
+		else
+			continue;
+
+		if (btc_mode != WL_BTC_PREMPT && strncmp(var, "afterburner", sizeof(var)) == 0) {
+			aburn_valid_option = TRUE;
+			aburn_option_val = val;
+		}
+
+		if (strncmp(var, "ampdu", sizeof(var)) == 0) {
+			ampdu_valid_option = TRUE;
+			ampdu_option_val = val;
+		}
+
+		if (amsdu) {
+			amsdu_valid_option = TRUE;
+			amsdu_option_val = val;
+		}
+	}
+
+	if (nmode != OFF) { /* N-mode is ON/AUTO */
+		if (ampdu_valid_option) {
+			if (ampdu_option_val != OFF) {
+				WL_IOVAR_SETINT(name, "amsdu", OFF);
+				WL_IOVAR_SETINT(name, "ampdu", ampdu_option_val);
+			} else {
+				WL_IOVAR_SETINT(name, "ampdu", OFF);
+			}
+		}
+
+		if (amsdu_valid_option) {
+			if (amsdu_option_val != OFF) { /* AMPDU (above) has priority over AMSDU */
+				if (ampdu_option_val == OFF) {
+					WL_IOVAR_SETINT(name, "ampdu", OFF);
+					WL_IOVAR_SETINT(name, "amsdu", amsdu_option_val);
+				}
+			} else
+				WL_IOVAR_SETINT(name, "amsdu", OFF);
+		}
+		/* allow ab in N mode. Do this last: may defeat ampdu et al */
+		if (aburn_valid_option) {
+			WL_IOVAR_SETINT(name, "afterburner_override", aburn_option_val);
+
+			/* Also turn off N reqd setting if ab is not OFF */
+			if (aburn_option_val != 0)
+				WL_IOVAR_SETINT(name, "nreqd", 0);
+		}
+
+	} else {
+		/* When N-mode is off or for non N-phy device, turn off AMPDU, AMSDU;
+		 * if WME is off, set the afterburner based on the configured nvram setting.
+		 */
+		wl_iovar_setint(name, "amsdu", OFF);
+		wl_iovar_setint(name, "ampdu", OFF);
+		if (wme_option_val != OFF) { /* Can't have afterburner with WMM */
+			if (aburn_valid_option) {
+				WL_IOVAR_SETINT(name, "afterburner_override", OFF);
+			}
+		} else if (aburn_valid_option) { /* Okay, use NVRam setting for afterburner */
+			WL_IOVAR_SETINT(name, "afterburner_override", aburn_option_val);
+		}
+	}
+
+	if (wme_option_val && aburn_option_val == 0) {
+		WL_IOVAR_SETINT(name, "wme", wme_option_val);
+		wlconf_set_wme(name, prefix);
+	}
+
+	return wme_option_val;
+}
+
 /* configure the specified wireless interface */
 int
 wlconf(char *name)
@@ -639,7 +815,8 @@ wlconf(char *name)
 	wl_rateset_t rs;
 	unsigned int i;
 	char eaddr[32];
-	int ap, apsta, wds, sta = 0, wet = 0, mac_spoof = 0;
+	int ap, apsta, wds, sta = 0, wet = 0, mac_spoof = 0, wmf = 0;
+	int radio_pwrsave = 0, rxchain_pwrsave = 0;
 	char country_code[4];
 	int nas_will_run = 0;
 	char *wme, *ba;
@@ -658,8 +835,13 @@ wlconf(char *name)
 	char caps[WLC_IOCTL_SMLEN];
 	int btc_mode;
 	uint32 leddc;
-	bool ure_enab = FALSE;
+	uint nbw = WL_CHANSPEC_BW_20;
 	int nmode = OFF; /* 802.11n support */
+	int wme_global;
+	int max_assoc = -1;
+	bool ure_enab = FALSE;
+	bool radar_enab = FALSE;
+	bool obss_coex = FALSE;
 
 	/* wlconf doesn't work for virtual i/f, so if we are given a
 	 * virtual i/f return 0 if that interface is in it's parent's "vifs"
@@ -712,6 +894,12 @@ cprintf("get caps\n");
 			max_no_vifs = 4;
 			mbsscap = 1;
 		}
+		else if (!strcmp(cap, "wmf"))
+			wmf = 1;
+		else if (!strcmp(cap, "rxchain_pwrsave"))
+			rxchain_pwrsave = 1;
+		else if (!strcmp(cap, "radio_pwrsave"))
+			radio_pwrsave = 1;
 	}
 cprintf("wl probe\n");
 	/* Check interface (fail silently for non-wl interfaces) */
@@ -906,9 +1094,12 @@ cprintf("set infra flag %s\n",name);
 cprintf("set maxassoc flag %s\n",name);
 	/* Set The AP MAX Associations Limit */
 	if (ap | apsta) {
-		val = atoi(nvram_default_get(strcat_r(prefix, "maxassoc", tmp),"128"));
-		if (val > 0)
+		max_assoc = val = atoi(nvram_safe_get(strcat_r(prefix, "maxassoc", tmp)));
+		if (val > 0) {
 			WL_IOVAR_SETINT(name, "maxassoc", val);
+		} else { /* Get value from driver if not in nvram */
+			WL_IOVAR_GETINT(name, "maxassoc", &max_assoc);
+		}
 	}
 cprintf("set bsscfg %s\n",name);
 
@@ -939,6 +1130,16 @@ cprintf("set bsscfg %s\n",name);
 
 		subprefix = apsta ? prefix : bsscfg->prefix;
 
+		if (ap || (apsta && bsscfg->idx != 0)) {
+			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix, "bss_maxassoc", tmp)));
+			if (val > 0) {
+				WL_BSSIOVAR_SETINT(name, "bss_maxassoc", bsscfg->idx, val);
+			} else if (max_assoc > 0) { /* Set maxassoc same as global if not set */
+				snprintf(var, sizeof(var), "%d", max_assoc);
+				nvram_set(tmp, var);
+			}
+		}
+
 		/* Set network type */
 		val = atoi(nvram_default_get(strcat_r(subprefix, "closed", tmp),"0"));
 		WL_BSSIOVAR_SETINT(name, "closednet", bsscfg->idx, val);
@@ -946,7 +1147,46 @@ cprintf("set bsscfg %s\n",name);
 		/* Set the ap isolate mode */
 		val = atoi(nvram_default_get(strcat_r(subprefix, "ap_isolate", tmp),"0"));
 		WL_BSSIOVAR_SETINT(name, "ap_isolate", bsscfg->idx, val);
+
+		/* Set the WMF enable mode */
+		if (wmf) {
+			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp)));
+			WL_BSSIOVAR_SETINT(name, "wmf_bss_enable", bsscfg->idx, val);
+		}
+
+		if (wet) {
+			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix,
+							 "mcast_regen_bss_enable", tmp)));
+			WL_BSSIOVAR_SETINT(name, "mcast_regen_bss_enable", bsscfg->idx, val);
+		}
+
 	}
+
+	if (rxchain_pwrsave) {
+		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_enable", tmp)));
+		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_enable", bsscfg->idx, val);
+
+		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_quiet_time", tmp)));
+		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_quiet_time", bsscfg->idx, val);
+
+		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_pps", tmp)));
+		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_pps", bsscfg->idx, val);
+	}
+
+	if (radio_pwrsave) {
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_enable", tmp)));
+		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_enable", bsscfg->idx, val);
+
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_quiet_time", tmp)));
+		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_quiet_time", bsscfg->idx, val);
+
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_pps", tmp)));
+		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_pps", bsscfg->idx, val);
+
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_level", tmp)));
+		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_level", bsscfg->idx, val);
+	}
+
 
 cprintf("get phy type %s\n",name);
 	/* Get current phy type */
@@ -1103,9 +1343,8 @@ cprintf("get phy flags %s\n",name);
 	*(next = buf) = '\0';
 	for (i = 0; i < strlen(var); i++) {
 		/* Switch to band */
-		phy[0] = var[i];
-		val = WLCONF_STR2PHYTYPE(phy);
-		if (val == PHY_TYPE_N || val == PHY_TYPE_SSN) {
+		val = WLCONF_STR2PHYTYPE(var[i]);
+		if (WLCONF_PHYTYPE_11N(val)) {
 			WL_GETINT(name, WLC_GET_BAND, &val);
 		} else
 			val = WLCONF_PHYTYPE2BAND(val);
@@ -1115,15 +1354,16 @@ cprintf("get phy flags %s\n",name);
 		next += sprintf(next, "%sBCM%X", i ? " " : "",
 		                (rev.radiorev & IDCODE_ID_MASK) >> IDCODE_ID_SHIFT);
 	}
+	nvram_set(strcat_r(prefix, "radioids", tmp), buf);
 cprintf("set radio ids %s\n",name);
 	nvram_set(strcat_r(prefix, "radioids", tmp), buf);
 
 	/* Set band */
 cprintf("set nband %s\n",name);
 	str = nvram_get(strcat_r(prefix, "phytype", tmp));
-	val = WLCONF_STR2PHYTYPE(str);
+	val = str ? WLCONF_STR2PHYTYPE(str[0]) : PHY_TYPE_G;
 	/* For NPHY use band value from NVRAM */
-	if (val == PHY_TYPE_N || val == PHY_TYPE_SSN) {
+	if (WLCONF_PHYTYPE_11N(val)) {
 		str = nvram_get(strcat_r(prefix, "nband", tmp));
 		if (str)
 			val = atoi(str);
@@ -1133,14 +1373,12 @@ cprintf("set nband %s\n",name);
 	} else
 		val = WLCONF_PHYTYPE2BAND(val);
 
-cprintf("set band %s\n",name);
 	WL_SETINT(name, WLC_SET_BAND, val);
 
 	/* Check errors (card may have changed) */
 	if (ret) {
 		/* default band to the first band in band list */
-		phy[0] = var[0];
-		val = WLCONF_STR2PHYTYPE(phy);
+		val = WLCONF_STR2PHYTYPE(var[0]);
 		val = WLCONF_PHYTYPE2BAND(val);
 		WL_SETINT(name, WLC_SET_BAND, val);
 	}
@@ -1154,6 +1392,44 @@ cprintf("get core rev %s\n",name);
 	snprintf(buf, sizeof(buf), "%d", rev.corerev);
 	nvram_set(strcat_r(prefix, "corerev", tmp), buf);
 
+	if ((rev.chipnum == BCM4716_CHIP_ID) || (rev.chipnum == BCM47162_CHIP_ID) ||
+		(rev.chipnum == BCM4748_CHIP_ID) || (rev.chipnum == BCM4331_CHIP_ID)) {
+		int pam_mode = WLC_N_PREAMBLE_GF_BRCM; /* default GF-BRCM */
+
+		strcat_r(prefix, "mimo_preamble", tmp);
+		if (nvram_match(tmp, "mm"))
+			pam_mode = WLC_N_PREAMBLE_MIXEDMODE;
+		else if (nvram_match(tmp, "gf"))
+			pam_mode = WLC_N_PREAMBLE_GF;
+		else if (nvram_match(tmp, "auto"))
+			pam_mode = -1;
+		WL_IOVAR_SETINT(name, "mimo_preamble", pam_mode);
+	}
+
+	if (WLCONF_PHYTYPE_11N(phytype)) {
+		/* Get the user nmode setting now */
+		nmode = AUTO;	/* enable by default for NPHY */
+		/* Set n mode */
+		strcat_r(prefix, "nmode", tmp);
+		if (nvram_match(tmp, "0"))
+			nmode = OFF;
+
+		val = (nmode != OFF) ? atoi(nvram_safe_get(strcat_r(prefix, "nbw_cap", tmp))) :
+		        WLC_N_BW_20ALL;
+
+		WL_IOVAR_SETINT(name, "nmode", (uint32)nmode);
+		WL_IOVAR_SETINT(name, "mimo_bw_cap", val);
+
+		if (((bandtype == WLC_BAND_2G) && (val == WLC_N_BW_40ALL)) ||
+		    ((bandtype == WLC_BAND_5G) &&
+		     (val == WLC_N_BW_40ALL || val == WLC_N_BW_20IN2G_40IN5G)))
+			nbw = WL_CHANSPEC_BW_40;
+		else
+			nbw = WL_CHANSPEC_BW_20;
+	} else {
+		/* Save n mode to OFF */
+		nvram_set(strcat_r(prefix, "nmode", tmp), "0");
+	}
 
 	/* Set channel before setting gmode or rateset */
 	/* Manual Channel Selection - when channel # is not 0 */
@@ -1167,7 +1443,7 @@ cprintf("set channel %s\n",name);
 			snprintf(buf, sizeof(buf), "%d", ci.target_channel);
 			nvram_set(strcat_r(prefix, "channel", tmp), buf);
 		}
-	} else if (val && (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN)) {
+	} else if (val && WLCONF_PHYTYPE_11N(phytype)) {
 		chanspec_t chanspec = 0;
 		uint channel;
 		uint nbw;
@@ -1226,48 +1502,52 @@ cprintf("set channel %s\n",name);
 	}
 
 	/* Set up number of Tx and Rx streams */
-	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
+	if (WLCONF_PHYTYPE_11N(phytype)) {
 		int count;
 		int streams;
+		int policy;
 
-		wl_iovar_getint(name, "txchain_cnt", &count);
+		/* Get the number of tx chains supported by the hardware */
+		wl_iovar_getint(name, "hw_txchain", &count);
 		/* update NVRAM with capabilities */
 		snprintf(var, sizeof(var), "%d", count);
-		nvram_set(strcat_r(prefix, "txchain_cnt", tmp), var);
+		nvram_set(strcat_r(prefix, "hw_txchain", tmp), var);
 
 		/* Verify that there is an NVRAM param for txstreams, if not create it and
-		 * set it to txchain_cnt
+		 * set it to hw_txchain
 		 */
-		streams = atoi(nvram_safe_get(strcat_r(prefix, "txstreams", tmp)));
+		streams = atoi(nvram_safe_get(strcat_r(prefix, "txchain", tmp)));
 		if (streams == 0) {
 			/* invalid - NVRAM needs to be fixed/initialized */
-			nvram_set(strcat_r(prefix, "txstreams", tmp), var);
+			nvram_set(strcat_r(prefix, "txchain", tmp), var);
 			streams = count;
 		}
 		/* Apply user configured txstreams, use 1 if user disabled nmode */
-		if (nmode == OFF)
-			streams = 1;
-		WL_IOVAR_SETINT(name, "txstreams", streams);
+		WL_IOVAR_SETINT(name, "txchain", streams);
 
-		wl_iovar_getint(name, "rxchain_cnt", &count);
+		wl_iovar_getint(name, "hw_rxchain", &count);
 		/* update NVRAM with capabilities */
 		snprintf(var, sizeof(var), "%d", count);
-		nvram_set(strcat_r(prefix, "rxchain_cnt", tmp), var);
+		nvram_set(strcat_r(prefix, "hw_rxchain", tmp), var);
 
 		/* Verify that there is an NVRAM param for rxstreams, if not create it and
-		 * set it to txchain_cnt
+		 * set it to hw_txchain
 		 */
-		streams = atoi(nvram_safe_get(strcat_r(prefix, "rxstreams", tmp)));
+		streams = atoi(nvram_safe_get(strcat_r(prefix, "rxchain", tmp)));
 		if (streams == 0) {
 			/* invalid - NVRAM needs to be fixed/initialized */
-			nvram_set(strcat_r(prefix, "rxstreams", tmp), var);
+			nvram_set(strcat_r(prefix, "rxchain", tmp), var);
 			streams = count;
 		}
 
 		/* Apply user configured rxstreams, use 1 if user disabled nmode */
-		if (nmode == OFF)
-			streams = 1;
-		WL_IOVAR_SETINT(name, "rxstreams", streams);
+		WL_IOVAR_SETINT(name, "rxchain", streams);
+
+		/* update the spatial policy to make chain changes effect */
+		if (phytype == PHY_TYPE_HT) {
+			wl_iovar_getint(name, "spatial_policy", &policy);
+			WL_IOVAR_SETINT(name, "spatial_policy", policy);
+		}
 	}
 
 
@@ -1298,7 +1578,7 @@ cprintf("set g mode %s\n",name);
 
 cprintf("set n prot mode %s\n",name);
 	/* Set nmode_protectoin */
-	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
+	if (WLCONF_PHYTYPE_11N(phytype)) {
 		int override = WLC_PROTECTION_OFF;
 		int control = WLC_PROTECTION_CTL_OFF;
 		int nmode = AUTO;
@@ -1357,9 +1637,55 @@ cprintf("set wme %s\n",name);
 	if (val)
 		wlconf_set_wme(name, prefix);
 
+
+	/* Set 802.11n required */
+	if (nmode != OFF) {
+		uint32 nreqd = OFF; /* default */
+
+		strcat_r(prefix, "nreqd", tmp);
+
+		if (nvram_match(tmp, "1"))
+			nreqd = ON;
+
+		WL_IOVAR_SETINT(name, "nreqd", nreqd);
+	}
+
+	/* Set vlan_prio_mode */
+	{
+		uint32 mode = OFF; /* default */
+
+		strcat_r(prefix, "vlan_prio_mode", tmp);
+
+		if (nvram_match(tmp, "on"))
+			mode = ON;
+
+		WL_IOVAR_SETINT(name, "vlan_mode", mode);
+	}
+
+
 cprintf("set btc mode %s\n",name);
 	/* Get bluetootch coexistance(BTC) mode */
 	btc_mode = atoi(nvram_default_get(strcat_r(prefix, "btc_mode", tmp),"0"));
+
+
+	/* Set the afterburner, AMPDU and AMSDU options based on the N-mode */
+	wme_global = wlconf_aburn_ampdu_amsdu_set(name, prefix, nmode, btc_mode);
+
+	/* Now that wme_global is known, check per-BSS disable settings */
+	for (i = 0; i < bclist->count; i++) {
+		char *subprefix;
+		bsscfg = &bclist->bsscfgs[i];
+
+		subprefix = apsta ? prefix : bsscfg->prefix;
+
+		/* For each BSS, check WME; make sure wme is set properly for this interface */
+		strcat_r(subprefix, "wme", tmp);
+		nvram_set(tmp, wme_global ? "on" : "off");
+
+		str = nvram_safe_get(strcat_r(bsscfg->prefix, "wme_bss_disable", tmp));
+		val = (str[0] == '1') ? 1 : 0;
+		WL_BSSIOVAR_SETINT(name, "wme_bss_disable", bsscfg->idx, val);
+	}
 
 	/* Set options based on capability */
 cprintf("get caps %s\n",name);
@@ -1413,7 +1739,7 @@ cprintf("get caps %s\n",name);
 	}
 cprintf("set btc mode %s\n",name);
 
-	if (phytype != PHY_TYPE_SSN) {
+	if (phytype != PHY_TYPE_SSN && phytype != PHY_TYPE_LCN) {
 	/* Set BTC mode */
 	if (!wl_iovar_setint(name, "btc_mode", btc_mode)) {
 		if (btc_mode == WL_BTC_PREMPT) {
@@ -1435,9 +1761,11 @@ cprintf("set rate set %s\n",name);
 cprintf("set plcphdr %s\n",name);
 	/* Allow short preamble override for b cards */
 	if (phytype == PHY_TYPE_B ||
-	    (phytype == PHY_TYPE_G && (gmode == GMODE_LEGACY_B || gmode == GMODE_AUTO))) {
+	    (WLCONF_PHYTYPE_11N(phytype) && (bandtype == WLC_BAND_2G)) ||
+	    ((phytype == PHY_TYPE_G || phytype == PHY_TYPE_LP) &&
+	     (gmode == GMODE_LEGACY_B || gmode == GMODE_AUTO))) {
 		strcat_r(prefix, "plcphdr", tmp);
-		if (nvram_default_match(tmp, "long","long"))
+		if (nvram_match(tmp, "long"))
 			val = WLC_PLCP_AUTO;
 		else
 			val = WLC_PLCP_SHORT;
@@ -1449,7 +1777,7 @@ cprintf("set plcphdr %s\n",name);
 
 
 	/* Convert Auto mcsidx to Auto rate */
-	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
+	if (WLCONF_PHYTYPE_11N(phytype)) {
 		int mcsidx = atoi(nvram_default_get(strcat_r(prefix, "nmcsidx", tmp),"-1"));
 		/* -1 mcsidx used to designate AUTO rate */
 		if (mcsidx == -1)
@@ -1478,7 +1806,7 @@ cprintf("set get rates %s\n",name);
 	}
 
 	/* For N-Phy, check if nrate needs to be applied */
-	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
+	if (nmode != OFF) {
 		uint32 nrate = 0;
 		int mcsidx = atoi(nvram_safe_get(strcat_r(prefix, "nmcsidx", tmp)));
 		bool ismcs = (mcsidx >= 0);
@@ -1547,6 +1875,23 @@ cprintf("set frag tres %s\n",name);
 	val = atoi(nvram_default_get(strcat_r(prefix, "bcn", tmp),"100"));
 	WL_IOCTL(name, WLC_SET_BCNPRD, &val, sizeof(val));
 
+	/* Set beacon rotation */
+	str = nvram_get(strcat_r(prefix, "bcn_rotate", tmp));
+	if (!str) {
+		/* No nvram variable found, use the default */
+		str = nvram_default_get(strcat_r(prefix, "bcn_rotate", tmp),"0");
+	}
+	val = atoi(str);
+	wl_iovar_setint(name, "bcn_rotate", val);
+
+	/* Set framebursting mode */
+	if (btc_mode == WL_BTC_PREMPT)
+		val = FALSE;
+	else
+		val = nvram_match(strcat_r(prefix, "frameburst", tmp), "on");
+	WL_IOCTL(name, WLC_SET_FAKEFRAG, &val, sizeof(val));
+
+
 cprintf("set wds %s\n",name);
 	/* AP only config */
 	if (ap || apsta || wds) {
@@ -1572,22 +1917,34 @@ cprintf("set wds %s\n",name);
 		wl_iovar_setint(name, "wdstimeout", val);
 	}
 
-cprintf("set wframeburst %s\n",name);
-	/* Set framebursting mode */
-	if (btc_mode == WL_BTC_PREMPT)
-		val = FALSE;
-	else
-		val = nvram_default_match(strcat_r(prefix, "frameburst", tmp), "on","off");
-	WL_IOCTL(name, WLC_SET_FAKEFRAG, &val, sizeof(val));
 
-cprintf("set rifs mode %s\n",name);
+	/* Set the STBC tx mode */
+	if (phytype == PHY_TYPE_N) {
+		char *nvram_str = nvram_safe_get(strcat_r(prefix, "stbc_tx", tmp));
+
+		if (!strcmp(nvram_str, "auto")) {
+			WL_IOVAR_SETINT(name, "stbc_tx", AUTO);
+		} else if (!strcmp(nvram_str, "on")) {
+			WL_IOVAR_SETINT(name, "stbc_tx", ON);
+		} else if (!strcmp(nvram_str, "off")) {
+			WL_IOVAR_SETINT(name, "stbc_tx", OFF);
+		}
+	}
+
 	/* Set RIFS mode based on framebursting */
-	if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
+	if (WLCONF_PHYTYPE_11N(phytype)) {
 		char *nvram_str = nvram_safe_get(strcat_r(prefix, "rifs", tmp));
 		if (!strcmp(nvram_str, "on"))
 			wl_iovar_setint(name, "rifs", ON);
 		else if (!strcmp(nvram_str, "off"))
 			wl_iovar_setint(name, "rifs", OFF);
+
+		/* RIFS mode advertisement */
+		nvram_str = nvram_safe_get(strcat_r(prefix, "rifs_advert", tmp));
+		if (!strcmp(nvram_str, "auto"))
+			wl_iovar_setint(name, "rifs_advert", AUTO);
+		else if (!strcmp(nvram_str, "off"))
+			wl_iovar_setint(name, "rifs_advert", OFF);
 	}
 
 cprintf("set ba mode %s\n",name);
@@ -1598,6 +1955,11 @@ cprintf("set ba mode %s\n",name);
 	else if (!strcmp(ba, "off"))
 		wl_iovar_setint(name, "ba", OFF);
 
+	if (WLCONF_PHYTYPE_11N(phytype)) {
+		val = AVG_DMA_XFER_RATE;
+		wl_iovar_set(name, "avg_dma_xfer_rate", &val, sizeof(val));
+	}
+
 cprintf("set up %s\n",name);
 	/* Bring the interface back up */
 	WL_IOCTL(name, WLC_UP, NULL, 0);
@@ -1606,6 +1968,55 @@ cprintf("set antdiv mode %s\n",name);
 	/* Set antenna */
 	val = atoi(nvram_default_get(strcat_r(prefix, "antdiv", tmp),"3"));
 	WL_IOCTL(name, WLC_SET_ANTDIV, &val, sizeof(val));
+
+
+
+	/* Set channel interference threshold value if it is enabled */
+	str = nvram_get(strcat_r(prefix, "glitchthres", tmp));
+
+	if (str) {
+		int glitch_thres = atoi(str);
+		if (glitch_thres > 0)
+			WL_IOVAR_SETINT(name, "chanim_glitchthres", glitch_thres);
+	}
+
+	str = nvram_get(strcat_r(prefix, "ccathres", tmp));
+
+	if (str) {
+		int cca_thres = atoi(str);
+		if (cca_thres > 0)
+			WL_IOVAR_SETINT(name, "chanim_ccathres", cca_thres);
+	}
+
+	str = nvram_get(strcat_r(prefix, "chanimmode", tmp));
+
+	if (str) {
+		int chanim_mode = atoi(str);
+		if (chanim_mode >= 0)
+			WL_IOVAR_SETINT(name, "chanim_mode", chanim_mode);
+	}
+
+	/* Overlapping BSS Coexistence aka 20/40 Coex. aka OBSS Coex.
+	 * For an AP - Only use if 2G band AND user wants a 40Mhz chanspec.
+	 * For a STA - Always
+	 */
+	if (WLCONF_PHYTYPE_11N(phytype)) {
+		if (sta ||
+		    ((ap || apsta) && (nbw == WL_CHANSPEC_BW_40) && (bandtype == WLC_BAND_2G))) {
+			str = nvram_safe_get(strcat_r(prefix, "obss_coex", tmp));
+			if (!str) {
+				/* No nvram variable found, use the default */
+				str = nvram_default_get(strcat_r(prefix, "obss_coex", tmp),"0");
+			}
+			obss_coex = atoi(str);
+		} else {
+			/* Need to disable obss coex in case of 20MHz and/or
+			 * in case of 5G.
+			 */
+			obss_coex = 0;
+		}
+		WL_IOVAR_SETINT(name, "obss_coex", obss_coex);
+	}
 
 	/* Auto Channel Selection - when channel # is 0 in AP mode
 	 *
