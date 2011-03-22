@@ -292,7 +292,7 @@ static void setupHostAP_generic_ath9k(char *prefix, FILE * fp)
 	     !strcmp(netmode, "n5-only") ||	//
 	     !strcmp(netmode, "mixed")) && strcmp(akm, "wep")) {
 
-		if (strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only") && strcmp(netmode, "na-only")) {
 			fprintf(fp, "require_ht=1\n");
 		}
 
