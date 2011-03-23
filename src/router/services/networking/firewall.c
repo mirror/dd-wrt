@@ -2059,6 +2059,13 @@ static void filter_input(void)
 		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", wanface,
 			  nvram_safe_get("sshd_port"));
 	}
+	else if (remotessh && nvram_match("limit_ssh", "1") && nvram_invmatch("sshd_wanport", "22")) {
+		save2file
+		    ("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n",
+		     lanface, nvram_safe_get("sshd_port"));
+		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", lanface,
+			  nvram_safe_get("sshd_port"));
+	}
 #endif
 	/*
 	 * Remote Web GUI Management Botho 03-05-2006 : remote ssh & remote GUI
