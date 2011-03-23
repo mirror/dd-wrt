@@ -1748,6 +1748,10 @@ void start_restore_defaults(void)
 			nvram_set("vlan0ports", "3 2 1 0 5*");
 			nvram_set("vlan1ports", "4 5");
 			break;
+		case ROUTER_ASUS_RTN12B:
+			nvram_set("vlan0ports", "0 1 2 3 5*");
+			nvram_set("vlan1ports", "4 5");
+			break;
 		case ROUTER_LINKSYS_WRH54G:
 		case ROUTER_ASUS_WL500GD:
 		case ROUTER_BUFFALO_WBR2G54S:
@@ -2003,7 +2007,7 @@ void start_restore_defaults(void)
 
 	if (restore_defaults &&
 	    (brand == ROUTER_ASUS_RTN10
-	     || brand == ROUTER_ASUS_RTN12 || brand == ROUTER_ASUS_RTN16)) {
+	     || brand == ROUTER_ASUS_RTN12 || brand == ROUTER_ASUS_RTN12B || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
 #ifndef HAVE_BUFFALO
