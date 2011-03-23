@@ -40,6 +40,11 @@ int wifi_gettxpower(char *ifname);
 int wifi_gettxpoweroffset(char *ifname);
 int bcm_gettxpower(char *wlname);
 
+extern double HTTxRate20_800(unsigned int index);
+extern double HTTxRate20_400(unsigned int index);
+extern double HTTxRate40_800(unsigned int index);
+extern double HTTxRate40_400(unsigned int index); 
+
 /*
  * Pass a wlioctl request to the specified interface.
  * @param       name    interface name
