@@ -222,10 +222,11 @@ document.write("<\/tr>");
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("aoss.wps_ap_pin"); %></div>
-						<input class="num" name="wps_ap_pin" size="16" maxlength="16" value="<% nvram_get("pincode"); %>" disabled="true"/>&nbsp;
+						<input class="num" name="wps_ap_pin" size="16" maxlength="16" value="<% nvram_get("pincode"); %>"/>&nbsp;
 						<script type="text/javascript">
 						//<![CDATA[
 						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsactivate + "\" onclick=\"to_ap_register(this.form);\" />");
+						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsgenerate + "\" onclick=\"wps_generate_pin(this.form);\" />");
 						//]]>
 						</script>
 					</div>
