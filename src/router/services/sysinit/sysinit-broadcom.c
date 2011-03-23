@@ -1523,9 +1523,11 @@ void start_sysinit(void)
 				    :
 				    "switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
 				break;
-
+			case ROUTER_ASUS_RTN12B:
+				nvram_set("portprio_support", "0");
+				modules = "";
+				break;
 			default:
-
 				modules =
 				    nvram_invmatch("ct_modules",
 						   "") ?
@@ -1599,7 +1601,7 @@ void start_sysinit(void)
 				break;
 
 			default:
-#ifndef BCMMODERN
+#ifndef HAVE_BCMMODERN
 				if (check_vlan_support())
 					modules =
 					    nvram_invmatch("ct_modules",
