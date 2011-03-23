@@ -263,7 +263,7 @@ int getbuttonstate()
 #elif defined(HAVE_WZRHPAG300NH)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);	
+	int ret = get_gpio(11);
 
 	if (ret == 0)
 		return 1;
@@ -722,15 +722,26 @@ void period_check(int sig)
 	val |= get_gpio(12) << 12;	//wps/ses pushbutton
 #endif
 #else
-	if ((brand & 0x000f) != 0x000f)
-		gpio = 1 << (brand & 0x000f);	// calculate gpio value.
+	if (brand > 0xffff) {
+		if ((brand & 0x000ff) != 0x000ff)
+			gpio = 1 << (brand & 0x000ff);	// calculate gpio value.
 
-	if ((brand & 0x0010) == 0)	// check reset button polarity: 0
-		// normal, 1 inversed
-		state = (val & gpio);
-	else
-		state = !(val & gpio);
+		if ((brand & 0x00100) == 0)	// check reset button polarity: 0
+			// normal, 1 inversed
+			state = (val & gpio);
+		else
+			state = !(val & gpio);
+	} else {
 
+		if ((brand & 0x000f) != 0x000f)
+			gpio = 1 << (brand & 0x000f);	// calculate gpio value.
+
+		if ((brand & 0x0010) == 0)	// check reset button polarity: 0
+			// normal, 1 inversed
+			state = (val & gpio);
+		else
+			state = !(val & gpio);
+	}
 	/* 
 	 * 1 byte router's SES (AOSS) button gpio number and polarity; Eko
 	 * 25.nov.06
