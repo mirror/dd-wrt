@@ -76,19 +76,8 @@
 			<div id="idnat">
 				<div class="setting">
 					<div class="label"><% tran("service.vpn_bridge"); %></div>
-					<input class="spaceradio" type="radio" name="openvpncl_bridge" value="1" <% nvram_checked("openvpncl_bridge", "1"); %> onclick="show_layer_ext(this, 'idip', false)" /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" name="openvpncl_bridge" value="0" <% nvram_checked("openvpncl_bridge", "0"); %> onclick="show_layer_ext(this, 'idip', true)" /><% tran("share.disable"); %>
-				</div>
-				<div id="idip">
-					<div class="setting">
-						<div class="label"><% tran("idx.lanip"); %></div>
-						<input size="15" maxlength="15" name="openvpncl_ip" value="<% nvram_get("openvpncl_ip"); %>" />
-						<span class="default"><script type="text/javascript">
-						//<![CDATA[
-						document.write("(Use only when routing TAP)");
-						//]]>
-						</script></span>
-					</div>
+                                        <input class="spaceradio" type="radio" name="openvpncl_bridge" value="1" <% nvram_checked("openvpncl_bridge", "1"); %> /><% tran("share.enable"); %>&nbsp; 
+					<input class="spaceradio" type="radio" name="openvpncl_bridge" value="0" <% nvram_checked("openvpncl_bridge", "0"); %> /><% tran("share.disable"); %> 
 				</div>
 			</div>
 			<div class="setting">
