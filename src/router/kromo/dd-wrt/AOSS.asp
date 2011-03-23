@@ -226,7 +226,7 @@ document.write("<\/tr>");
 						<script type="text/javascript">
 						//<![CDATA[
 						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsactivate + "\" onclick=\"to_ap_register(this.form);\" />");
-						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsgenerate + "\" onclick=\"wps_generate_pin(this);\" />");
+						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsgenerate + "\" onclick=\"wps_generate_pin(this.form.wps_ap_pin);\" />");
 						//]]>
 						</script>
 					</div>
