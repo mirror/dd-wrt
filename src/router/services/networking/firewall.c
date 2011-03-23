@@ -2052,18 +2052,18 @@ static void filter_input(void)
 	 * Impede DoS/Bruteforce, reduce load on ssh
 	 */
 #ifndef HAVE_MICRO
-	if (remotessh && nvram_match("limit_ssh", "1")) {
-		save2file
-		    ("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n",
-		     wanface, nvram_safe_get("sshd_port"));
-		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", wanface,
-			  nvram_safe_get("sshd_port"));
-	}
-	else if (remotessh && nvram_match("limit_ssh", "1") && nvram_invmatch("sshd_wanport", "22")) {
+	if (remotessh && nvram_match("limit_ssh", "1") && nvram_invmatch("sshd_wanport", "22")) {
 		save2file
 		    ("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n",
 		     lanface, nvram_safe_get("sshd_port"));
 		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", lanface,
+			  nvram_safe_get("sshd_port"));
+	}
+	else if (remotessh && nvram_match("limit_ssh", "1")) {
+		save2file
+		    ("-A INPUT -i %s -p tcp -m tcp --dport %s -m state --state NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT\n",
+		     wanface, nvram_safe_get("sshd_port"));
+		save2file("-A INPUT -i %s -p tcp --dport %s -j DROP\n", wanface,
 			  nvram_safe_get("sshd_port"));
 	}
 #endif
