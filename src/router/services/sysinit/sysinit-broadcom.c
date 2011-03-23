@@ -1599,13 +1599,16 @@ void start_sysinit(void)
 				break;
 
 			default:
+#ifndef BCMMODERN
 				if (check_vlan_support())
 					modules =
 					    nvram_invmatch("ct_modules",
 							   "") ?
 					    nvram_safe_get("ct_modules") :
 					    "switch-core switch-robo";
-				else {
+				else
+#endif
+				 {
 					nvram_set("portprio_support", "0");
 					modules =
 					    nvram_invmatch("ct_modules",
