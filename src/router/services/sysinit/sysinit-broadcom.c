@@ -1450,7 +1450,6 @@ void start_sysinit(void)
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
 			case ROUTER_ASUS_RTN10:
-//			case ROUTER_LINKSYS_E1000V2:
 				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
@@ -1524,6 +1523,7 @@ void start_sysinit(void)
 				    "switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
 				break;
 			case ROUTER_ASUS_RTN12B:
+			case ROUTER_LINKSYS_E1000V2:
 				nvram_set("portprio_support", "0");
 				modules = "";
 				break;
@@ -1538,7 +1538,6 @@ void start_sysinit(void)
 		} else {
 			switch (brand) {
 			case ROUTER_ASUS_RTN10:
-//			case ROUTER_LINKSYS_E1000V2:
 				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
