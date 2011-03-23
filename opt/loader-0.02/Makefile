@@ -21,7 +21,7 @@ CC		:= mipsel-linux-uclibc-gcc
 CROSS_COMPILE 	:= mipsel-linux-uclibc-
 LD		:= mipsel-linux-uclibc-ld
 TEXT_START	:= 0x80001000
-BZ_TEXT_START	:= 0x80500000
+BZ_TEXT_START	:= 0x80700000
 
 OBJCOPY		:= $(CROSS_COMPILE)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 
