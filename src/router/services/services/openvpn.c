@@ -99,9 +99,8 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_mtu"));
 		if (nvram_invmatch("openvpn_mssfix", "")
 		    && nvram_match("openvpn_proto", "udp")) {
-			fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpn_mssfix"));	//fragment==mssfix
-			fprintf(fp, "fragment %s\n",
-				nvram_safe_get("openvpn_mssfix"));
+			fprintf(fp, "mssfix");	//fragment==mssfix
+			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_mssfix"));
 		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
@@ -276,9 +275,8 @@ void start_openvpn(void)
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_mssfix", "")
 	    && nvram_match("openvpn_proto", "udp")) {
-		fprintf(fp, "mssfix %s\n", nvram_safe_get("openvpncl_mssfix"));	//fragment=mssfix
-		fprintf(fp, "fragment %s\n",
-			nvram_safe_get("openvpncl_mssfix"));
+		fprintf(fp, "mssfix");	//fragment=mssfix
+		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_mssfix"));
 	}
 	if (nvram_match("openvpncl_lzo", "1"))
 		fprintf(fp, "comp-lzo adaptive\n");
@@ -309,11 +307,10 @@ void start_openvpn(void)
 		fprintf(fp, "brctl addif br0 tap1\n"
 			"ifconfig tap1 0.0.0.0 promisc up\n");
 	//do TAP clientrouting -> must set ip when server does proxy mode (doesnt push ip)
-/*	else if (nvram_match("openvpncl_tuntap", "tap")	
-		&& nvram_match("openvpncl_bridge", "0")
+	else if (nvram_match("openvpncl_tuntap", "tap")	
 		&& strlen(nvram_safe_get("openvpn_ip")) > 0)
 		fprintf(fp, "ifconfig tap1 %s up\n",
-			nvram_safe_get("openvpncl_ip"));	*/
+			nvram_safe_get("openvpncl_ip"));
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
@@ -344,7 +341,6 @@ void start_openvpn(void)
 	    && nvram_match("openvpncl_nat", "0"))
 		fprintf(fp, "brctl delif br0 tap1\n" "ifconfig tap1 down\n");
 	else if (nvram_match("openvpncl_tuntap", "tap")
-		 && nvram_match("openvpncl_bridge", "0")
 		 && strlen(nvram_safe_get("openvpn_ip")) > 0)
 		fprintf(fp, "ifconfig tap1 down\n");
 	if (nvram_match("openvpncl_nat", "1"))
