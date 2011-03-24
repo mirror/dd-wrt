@@ -1423,6 +1423,12 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_RTN12;
 	}
 
+	if (boardnum == 45 && nvram_match("boardtype", "0x054D")
+	    && nvram_match("boardrev", "0x1101")) {
+		setRouter("Asus RT-N12B");
+		return ROUTER_ASUS_RTN12B;
+	}
+
 	if (boardnum == 45 && nvram_match("boardtype", "0x04cf")
 	    && nvram_match("boardrev", "0x1218")) {
 		setRouter("Asus RT-N16");
