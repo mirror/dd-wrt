@@ -1225,36 +1225,6 @@ int getAssocMAC(char *ifname, char *mac)
 
 #ifdef HAVE_ATH9K
 
-int get_ath9k_phy_idx(int idx)
-{
-	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
-	return idx - getifcount("wifi");
-}
-
-int is_ath9k(char *prefix)
-{
-	glob_t globbuf;
-	int count = 0;
-	char globstring[1024];
-	int globresult;
-	int devnum;
-	// get legacy interface count
-#ifdef HAVE_MADWIFI_MIMO
-	if (!nvram_match("mimo_driver", "ath9k"))
-		return (0);
-#endif
-	if (!sscanf(prefix, "ath%d", &devnum))
-		return (0);
-	// correct index if there are legacy cards arround
-	devnum = get_ath9k_phy_idx(devnum);
-	sprintf(globstring, "/sys/class/ieee80211/phy%d", devnum);
-	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-	if (globresult == 0)
-		count = (int)globbuf.gl_pathc;
-	globfree(&globbuf);
-	return (count);
-}
-
 void delete_ath9k_devices(char *physical_iface)
 {
 	glob_t globbuf;
