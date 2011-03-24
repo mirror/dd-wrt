@@ -20,7 +20,6 @@
  * $Id:
  */
 
-#ifdef HAVE_MADWIFI
 #include <sys/mman.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -52,11 +51,13 @@
 #include <unistd.h>
 #include <sha1.h>
 #include "wireless.h"
+#include <services.h>
+
+#ifdef HAVE_MADWIFI
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 //#include <iwlib.h>
-#include <services.h>
 
 static int setsysctrl(const char *dev, const char *control, u_long value)
 {
@@ -70,7 +71,7 @@ static void setdistance(char *device, int distance, int chanbw)
 	if (distance >= 0)
 		setsysctrl(device, "distance", distance);
 }
-
+#endif
 // returns the number of installed atheros devices/cards
 
 static void deconfigure_single(int count)
@@ -95,6 +96,7 @@ static void deconfigure_single(int count)
 	}
 #endif
 
+#ifdef HAVE_MADWIFI
 	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
 		dev, dev, dev, dev, dev, dev, dev);
 	int s;
@@ -126,7 +128,7 @@ static void deconfigure_single(int count)
 			sysprintf("wlanconfig %s destroy", var);
 		}
 	}
-
+#endif
 }
 
 void deconfigure_wifi(void)
@@ -142,8 +144,9 @@ void deconfigure_wifi(void)
 	for (i = 0; i < c; i++)
 		deconfigure_single(i);
 }
-
 static int need_commit = 0;
+#ifdef HAVE_MADWIFI
+
 
 static int getMaxPower(char *ifname)
 {
@@ -224,12 +227,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	}
 
 	char driver[32];
-#ifdef HAVE_ATH9K
-	if (is_ath9k(prefix))
-		sprintf(driver, "-Dnl80211");
-	else
-#endif
-		sprintf(driver, "-Dmadwifi");
+	sprintf(driver, "-Dmadwifi");
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
@@ -579,7 +577,7 @@ void supplicant_main(int argc, char *argv[])
 {
 	setupSupplicant(argv[1], argv[2]);
 }
-
+#endif
 void do_hostapd(char *fstr, char *prefix)
 {
 	char fname[32];
@@ -773,7 +771,7 @@ void addWPS(FILE * fp, char *prefix)
 #endif
 
 }
-
+#ifdef HAVE_MADWIFI
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
@@ -829,27 +827,10 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fprintf(fp, "wep_default_key=%d\n",
 			atoi(nvram_nget("%s_key", prefix)) - 1);
 		addWPS(fp, prefix);
-#ifdef HAVE_ATH9K
-		if (is_ath9k(prefix)) {
-			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
-		}
-#endif
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
 	}
-#ifdef HAVE_ATH9K
-	else if (nvram_match(akm, "disabled")) {
-		if (is_ath9k(prefix)) {
-			sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
-			FILE *fp = fopen(fstr, "wb");
-			fprintf(fp, "interface=%s\n", prefix);
-			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
-			fclose(fp);
-			do_hostapd(fstr, prefix);
-		}
-	}
-#endif
 	else if (nvram_match(akm, "psk") ||
 		 nvram_match(akm, "psk2") ||
 		 nvram_match(akm, "psk psk2") ||
@@ -940,11 +921,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 					nvram_nget("%s_acct_key", prefix));
 			}
 		}
-#ifdef HAVE_ATH9K
-		if (is_ath9k(prefix)) {
-			setupHostAP_generic_ath9k(prefix, driver, iswan, fp);
-		}
-#endif
 		if (nvram_invmatch(akm, "radius")) {
 			sprintf(psk, "%s_crypto", prefix);
 			if (nvram_match(psk, "aes"))
@@ -985,14 +961,11 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma,
 			  prefix, server, port, share);
 	} else {
-#ifdef HAVE_ATH9K
-		if (!is_ath9k(prefix))
-#endif
 			sysprintf("iwconfig %s key off", prefix);
 	}
 
 }
-
+#endif
 void start_hostapdwan(void)
 {
 /*	char ath[32];
@@ -1016,7 +989,7 @@ void start_hostapdwan(void)
 	}
 */
 }
-
+#ifdef HAVE_MADWIFI
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
 static void set_scanlist(char *dev, char *wif)
 {
@@ -1276,7 +1249,7 @@ void setMacFilter(char *iface)
 	}
 
 }
-
+#endif
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 static void configure_single(int count)
@@ -1325,6 +1298,8 @@ static void configure_single(int count)
 		return;
 	}
 #endif
+#ifdef HAVE_MADWIFI
+
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(wl, "ath%d_mode", count);
 #ifdef HAVE_REGISTER
@@ -2104,6 +2079,7 @@ static void configure_single(int count)
 			sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
 		}
 	}
+#endif
 }
 
 void start_vifs(void)
@@ -2603,4 +2579,3 @@ void start_configurewifi(void)
 {
 	configure_wifi();
 }
-#endif
