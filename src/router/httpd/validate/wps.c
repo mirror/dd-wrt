@@ -52,7 +52,7 @@ void wps_ap_register(webs_t wp)
 		sysprintf("hostapd_cli -i ath1 wps_ap_pin set %s 300", pin);
 #endif
 	nvram_set("wps_status","2");
-	system("killall ledtool");
+	killall("ledtool",SIGKILL);
 	system("ledtool 300 2");
 	system("wpswatcher 300");
 	}
@@ -68,7 +68,7 @@ void wps_register(webs_t wp)
 		sysprintf("hostapd_cli -i ath1 wps_pin any %s 300", pin);
 #endif
 	nvram_set("wps_status","3");
-	system("killall ledtool");
+	killall("ledtool",SIGKILL);
 	system("ledtool 300 2");
 	system("wpswatcher 300");
 	}
