@@ -1126,20 +1126,46 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 		struct wifi_channels *chan;
 		char cn[32];
 		char fr[32];
+		int gotchannels = 0;
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 		if (is_ath11n(prefix)) {
-			chan = list_channels_11n(prefix);
-			if (chan == NULL)
-				chan = list_channels_11n(dev);
-		} else
+#ifdef HAVE_MADWIFI_MIMO
+			if (is_ar5008(prefix)) {
+				chan = list_channels_11n(prefix);
+				if (chan == NULL)
+					chan = list_channels_11n(dev);
+				gotchannels = 1;
+			}
 #endif
-		{
+#ifdef HAVE_ATH9K
+			if (is_ath9k(prefix)) {
+				// temp must be replaced with the actual selected country
+				char regdomain[16];
+				char *country;
+				sprintf(regdomain, "%s_regdomain", prefix);
+				country =
+				    nvram_default_get(regdomain,
+						      "UNITED_STATES");
+				// temp end
+				chan =
+				    mac80211_get_channels(prefix,
+							  getIsoName(country),
+							  40, 0xff);
+				/* if (chan == NULL)
+				   chan =
+				   list_channels_ath9k(dev, "DE", 40,
+				   0xff); */
+				gotchannels = 1;
+			}
+#endif
+		}
+#endif
+		if (!gotchannels) {
 			chan = list_channels(prefix);
 			if (chan == NULL)
 				chan = list_channels(dev);
 		}
-
 		if (chan != NULL) {
 			// int cnt = getchannelcount ();
 			websWrite(wp,
