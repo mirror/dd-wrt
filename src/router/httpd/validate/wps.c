@@ -54,7 +54,6 @@ void wps_ap_register(webs_t wp)
 	nvram_set("wps_status","2");
 	killall("ledtool",SIGKILL);
 	system("ledtool 300 2");
-	system("wpswatcher 300");
 	}
 }
 
@@ -70,7 +69,6 @@ void wps_register(webs_t wp)
 	nvram_set("wps_status","3");
 	killall("ledtool",SIGKILL);
 	system("ledtool 300 2");
-	system("wpswatcher 300");
 	}
 }
 #endif
