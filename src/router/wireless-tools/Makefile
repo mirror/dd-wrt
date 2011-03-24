@@ -21,7 +21,7 @@ RANLIB = ranlib
 
 ## Uncomment this to build without using libm (less efficient).
 ## This is mostly useful for embedded platforms without maths.
-# BUILD_NOLIBM = y
+BUILD_NOLIBM = y
 
 ## Uncomment this to strip binary from symbols. This reduce binary size.
 ## by a few percent but make debug worse...
