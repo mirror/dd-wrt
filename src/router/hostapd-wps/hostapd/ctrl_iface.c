@@ -437,7 +437,7 @@ static int hostapd_ctrl_iface_wps_pin(struct hostapd_data *hapd, char *txt)
 	} else
 		timeout = 0;
 	sysprintf("wpswatcher %d",timeout);
-	sysprintf"ledtool %d 2",timeout);
+	sysprintf("ledtool %d 2",timeout);
 	return hostapd_wps_add_pin(hapd, addr, txt, pin, timeout);
 }
 
@@ -559,7 +559,7 @@ static int hostapd_ctrl_iface_wps_ap_pin(struct hostapd_data *hapd, char *txt,
 		if (os_strlen(pin) > buflen)
 			return -1;
 		sysprintf("wpswatcher %d",timeout);
-		sysprintf"ledtool %d 2",timeout);
+		sysprintf("ledtool %d 2",timeout);
 		if (hostapd_wps_ap_pin_set(hapd, pin, timeout) < 0)
 			return -1;
 		return os_snprintf(buf, buflen, "%s", pin);
