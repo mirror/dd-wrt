@@ -51,9 +51,9 @@ void aoss_save(webs_t wp)
 	nvram_set("aoss_wep", websGetVar(wp, "aoss_wep", "0"));
 #ifdef HAVE_WPS
 	nvram_set("wps_enabled", websGetVar(wp, "wps_enabled", "0"));
-	char *pin = websGetVar(wp, "wps_pin", NULL);
+	char *pin = websGetVar(wp, "wps_ap_pin", NULL);
 	if (pin)
-		nvram_set("aoss_wep", pin);
+		nvram_set("pincode", pin);
 #endif
 	// check if at least one value was set
 	if (nvram_match("aoss_aes", "0")
