@@ -78,7 +78,7 @@ var update;
 
 addEvent(window, "load", function() {
 
-	update = new StatusbarUpdate();
+	update = new StatusUpdate("AOSS.live.asp", <% nvram_get("refresh_time"); %>);
 	update.start();
 
 });
