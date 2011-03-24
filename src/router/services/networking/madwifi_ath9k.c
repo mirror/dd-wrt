@@ -478,7 +478,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
-		fprintf(fp, "debug=0\n");
 		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
 		char *authmode = nvram_nget("%s_authmode", ifname);
 		if (aoss)
@@ -522,7 +521,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "logger_syslog_level=2\n");
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
-		fprintf(fp, "debug=0\n");
 		fprintf(fp, "dump_file=/tmp/hostapd.dump\n");
 		// fprintf (fp, "eap_server=0\n");
 		// fprintf (fp, "own_ip_addr=127.0.0.1\n");
@@ -963,6 +961,7 @@ void ath9k_start_supplicant(int count)
 	sprintf(wifivifs, "ath%d_vifs", count);
 	vifs = nvram_safe_get(wifivifs);
 	sprintf(psk, "-i%s", dev);
+	sprintf(wmode, "%s_mode", dev);
 	sprintf(bridged, "%s_bridged", dev);
 	debug = nvram_nget("%s_wpa_debug", dev);
 	if (debug != NULL) {
@@ -987,20 +986,16 @@ void ath9k_start_supplicant(int count)
 			if ((nvram_match(wmode, "wdssta"))
 			    && nvram_match(bridged, "1"))
 				eval("wpa_supplicant", "-b", getBridge(dev),
-				     background, "-Dnl80211", "-c", fstr);
-			// wpa_supplicant patches for repeater mode needs to be applied
-			// psk, "-H", ctrliface,
+				     background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211",
-				     psk, "-H" ctrliface, "-c", fstr);
+				     psk, "-H", ctrliface, "-c", fstr);
 #else
 			if ((nvram_match(wmode, "wdssta")
 			     || nvram_match(wmode, "wet"))
 			    && nvram_match(bridged, "1"))
 				eval("wpa_supplicant", "-b", getBridge(dev),
-				     background, "-Dnl80211", psk, "-c", fstr);
-			// wpa_supplicant patches for repeater mode needs to be applied
-			//      "-H", ctrliface,
+				     background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211",
 				     psk, "-H", ctrliface, "-c", fstr);
