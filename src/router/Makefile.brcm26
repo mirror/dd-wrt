@@ -464,7 +464,7 @@ ifeq ($(CONFIG_KAID),y)
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin 
-	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
+	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
 	cp ../../opt/etc/preinit mipsel-uclibc/target/etc
 	cp ../../opt/etc/postinit mipsel-uclibc/target/etc
 ifneq ($(CONFIG_DIST),"micro")
@@ -493,6 +493,16 @@ endif
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12
+
+# Asus RT-N12B1
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 1.6 RT-N12B1 1.00 1.00 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12B1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N12B1
+
 # Asus RT-N10
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.8 RT-N10 1.00 1.05 $(ARCH)-uclibc/vmlinuz
