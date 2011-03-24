@@ -46,7 +46,7 @@
 #include <services.h>
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
-static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater);
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater);
 
 void deconfigure_single_ath9k(int count)
 {
@@ -238,7 +238,7 @@ void configure_single_ath9k(int count)
 		}
 }
 
-static void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 	struct wifi_channels *chan;
 	int channel=0;
 	static char nfreq[16];
