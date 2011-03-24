@@ -239,6 +239,10 @@ document.write("<\/tr>");
 						//]]>
 						</script>
 					</div>
+					<div class="setting">
+						<div class="label"><% tran("aoss.wpsstatus"); %></div>
+						WPS Status:<span id="wpsstatus"></span>
+					</div>
 				</fieldset>
 				<br />
 <% ifndef("HAVE_WPS", "-->"); %>
