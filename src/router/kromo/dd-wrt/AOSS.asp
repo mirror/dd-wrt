@@ -241,7 +241,7 @@ document.write("<\/tr>");
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("aoss.wpsstatus"); %></div>
-						<span id="wpsstatus"></span>
+						<span id="wpsstatus"><% get_wpsstatus(); %></span>
 					</div>
 				</fieldset>
 				<br />
