@@ -715,6 +715,9 @@ endif
 	install check_ps $(INSTALLDIR)/sbin	
 	install nvram $(INSTALLDIR)/usr/sbin	
 	install ledtool $(INSTALLDIR)/sbin	
+ifeq ($(CONFIG_WPS),y)
+	install wpswatcher $(INSTALLDIR)/sbin	
+endif
 #	install event $(INSTALLDIR)/sbin	
 	install radio_timer $(INSTALLDIR)/sbin
 	install hotplug $(INSTALLDIR)/sbin
@@ -848,6 +851,9 @@ endif
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  -L$(TOP)/libutils -lutils
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
+ifeq ($(CONFIG_WPS),y)
+	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
+endif
 #	$(CC) $(CFLAGS) -o event event.c
 	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o hotplug hotplug.c $(LDFLAGS)
