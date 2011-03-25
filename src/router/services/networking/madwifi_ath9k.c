@@ -238,11 +238,12 @@ void configure_single_ath9k(int count)
 		}
 }
 
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
+{
 	struct wifi_channels *chan;
-	int channel=0;
+	int channel = 0;
 	static char nfreq[16];
-	int i=0;
+	int i = 0;
 
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
@@ -287,7 +288,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
 	char ht[5];
-	int iht=0;
+	int iht = 0;
 
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
@@ -311,10 +312,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 			sprintf(sb, "%s_nctrlsb", prefix);
 			if (nvram_default_match(sb, "upper", "lower")) {
 				sprintf(ht, "40+");
-				iht=1;
+				iht = 1;
 			} else {
 				sprintf(ht, "40-");
-				iht=-1;
+				iht = -1;
 			}
 		}
 
@@ -329,57 +330,62 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 	chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
 	if (isrepeater) {
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
-		if (iht == -1) i=1;
+		if (iht == -1)
+			i = 1;
 		if (chan != NULL && chan[i].freq != -1) {
-			channel=chan[i].channel;
-			}
-		else {
+			channel = chan[i].channel;
+		} else {
 			// that should never be called
-			if (has_2ghz(prefix)) channel=6;
-			if (has_5ghz(prefix)) channel=40;
+			if (has_2ghz(prefix))
+				channel = 6;
+			if (has_5ghz(prefix))
+				channel = 40;
 		}
-	}
-	else {
+	} else {
 		// also we still should take care on the selected mode
 		sprintf(nfreq, "%s_channel", prefix);
-		int freq=atoi(nvram_default_get(nfreq, "0"));
+		int freq = atoi(nvram_default_get(nfreq, "0"));
 		if (freq == 0) {
 			struct mac80211_ac *acs;
-			fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
+			fprintf(stderr,
+				"call mac80211autochannel for interface: %s\n",
+				prefix);
 			acs = mac80211autochannel(prefix, NULL, 2, 1, 0);
 			if (acs != NULL) {
-				freq=acs->freq;
+				freq = acs->freq;
 				channel = ieee80211_mhz2ieee(freq);
-				fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
+				fprintf(stderr,
+					"mac80211autochannel interface: %s frequency: %d\n",
+					prefix, freq);
 				int i = 0;
 				while (chan[i].freq != -1) {
-					if (chan[i].freq == freq) break;
+					if (chan[i].freq == freq)
+						break;
 					i++;
 				}
 				if (iht != 0) {
 					if (chan[i].ht40minus) {
 						sprintf(ht, "40-");
-					}
-					else if (chan[i].ht40plus) {
+					} else if (chan[i].ht40plus) {
 						sprintf(ht, "40+");
-					}
-					else {
+					} else {
 						sprintf(ht, "20");
 					}
 				}
 				free_mac80211_ac(acs);
+			} else {
+				if (has_2ghz(prefix))
+					channel = 6;
+				if (has_5ghz(prefix))
+					channel = 40;
 			}
-			else {
-				if (has_2ghz(prefix)) channel=6;
-				if (has_5ghz(prefix)) channel=40;
-			}
-		}
-		else {
+		} else {
 			channel = ieee80211_mhz2ieee(freq);
 		}
 	}
 	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, mac80211_get_caps(prefix));
-	if (chan) free(chan);
+	if (chan)
+		free(chan);
 	if (channel < 36)
 		fprintf(fp, "hw_mode=g\n");
 	else
@@ -388,7 +394,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater) {
 	fprintf(fp, "\n");
 }
 
-extern void addWPS(FILE * fp, char *prefix);
+extern void addWPS(FILE * fp, char *prefix, int configured);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
@@ -403,14 +409,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char *ssid;
 	static char maxassoc[32];
 	char ifname[10];
-	int isrepeater=0;
+	int isrepeater = 0;
 	unsigned char hwbuff[16];
 	char macaddr[32];
 	if (isfirst && vapid == 0) {
 		sprintf(ifname, "%s", maininterface);
 	} else {
 		sprintf(ifname, "%s.%d", maininterface, vapid);
-		isrepeater=1;
+		isrepeater = 1;
 	}
 	if (aoss)
 		sprintf(ifname, "aoss");
@@ -458,8 +464,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	else
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 	sprintf(maxassoc, "%s_maxassoc", ifname);
-	fprintf(fp, "max_num_sta=%s\n", 
-		nvram_default_get(maxassoc, "256"));
+	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 
 	if (aoss)
 		ssid = "ESSID-AOSS";
@@ -506,8 +511,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 			fprintf(fp, "wep_default_key=%d\n",
 				atoi(nvram_nget("%s_key", ifname)) - 1);
-			addWPS(fp, ifname);
+			addWPS(fp, ifname, 1);
 		}
+	} else if (nvram_match(akm, "disabled")) {
+		addWPS(fp, ifname, 0);
 	} else if (nvram_match(akm, "psk") ||
 		   nvram_match(akm, "psk2") ||
 		   nvram_match(akm, "psk psk2") ||
@@ -544,7 +551,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "wpa_passphrase=%s\n",
 					nvram_nget("%s_wpa_psk", ifname));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
-			addWPS(fp, ifname);
+			addWPS(fp, ifname, 1);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
 			fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
@@ -986,7 +993,8 @@ void ath9k_start_supplicant(int count)
 			if ((nvram_match(wmode, "wdssta"))
 			    && nvram_match(bridged, "1"))
 				eval("wpa_supplicant", "-b", getBridge(dev),
-				     background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				     background, "-Dnl80211", psk, "-H",
+				     ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211",
 				     psk, "-H", ctrliface, "-c", fstr);
@@ -995,7 +1003,8 @@ void ath9k_start_supplicant(int count)
 			     || nvram_match(wmode, "wet"))
 			    && nvram_match(bridged, "1"))
 				eval("wpa_supplicant", "-b", getBridge(dev),
-				     background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				     background, "-Dnl80211", psk, "-H",
+				     ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211",
 				     psk, "-H", ctrliface, "-c", fstr);
