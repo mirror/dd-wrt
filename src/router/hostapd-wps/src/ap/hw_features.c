@@ -214,7 +214,10 @@ static int ieee80211n_allowed_ht40_channel_pair(struct hostapd_iface *iface)
 	 * 2.4 GHz rules allow all cases where the secondary channel fits into
 	 * the list of allowed channels (already checked above).
 	 */
+#if 0
+// breaks BFWA channels, moved to mac80211_get_channels
 	if (iface->current_mode->mode != HOSTAPD_MODE_IEEE80211A)
+#endif
 		return 1;
 
 	if (iface->conf->secondary_channel > 0)
