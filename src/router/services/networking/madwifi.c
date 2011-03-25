@@ -144,9 +144,9 @@ void deconfigure_wifi(void)
 	for (i = 0; i < c; i++)
 		deconfigure_single(i);
 }
+
 static int need_commit = 0;
 #ifdef HAVE_MADWIFI
-
 
 static int getMaxPower(char *ifname)
 {
@@ -736,7 +736,7 @@ void get_uuid(char *uuid_str)
 
 #endif
 
-void addWPS(FILE * fp, char *prefix)
+void addWPS(FILE * fp, char *prefix, int configured)
 {
 #ifdef HAVE_WPS
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
@@ -745,9 +745,9 @@ void addWPS(FILE * fp, char *prefix)
 		fprintf(fp, "eap_server=1\n");
 
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
-		fprintf(fp, "wps_state=2\n");
-		fprintf(fp, "ap_setup_locked=1\n");
-//		fprintf(fp, "ap_pin=%s\n",nvram_safe_get("pincode"));
+		fprintf(fp, "wps_state=%d\n", 1 + configured);
+		fprintf(fp, "ap_setup_locked=0\n");
+//              fprintf(fp, "ap_pin=%s\n",nvram_safe_get("pincode"));
 #ifdef HAVE_WZRHPAG300NH
 		fprintf(fp, "dualband=1\n");
 #endif
@@ -771,6 +771,7 @@ void addWPS(FILE * fp, char *prefix)
 #endif
 
 }
+
 #ifdef HAVE_MADWIFI
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
@@ -826,16 +827,15 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		}
 		fprintf(fp, "wep_default_key=%d\n",
 			atoi(nvram_nget("%s_key", prefix)) - 1);
-		addWPS(fp, prefix);
+		addWPS(fp, prefix, 1);
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
-	}
-	else if (nvram_match(akm, "psk") ||
-		 nvram_match(akm, "psk2") ||
-		 nvram_match(akm, "psk psk2") ||
-		 nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-		 || nvram_match(akm, "wpa wpa2")) {
+	} else if (nvram_match(akm, "psk") ||
+		   nvram_match(akm, "psk2") ||
+		   nvram_match(akm, "psk psk2") ||
+		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+		   || nvram_match(akm, "wpa wpa2")) {
 
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -873,7 +873,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				fprintf(fp, "wpa_passphrase=%s\n",
 					nvram_nget("%s_wpa_psk", prefix));
 			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
-			addWPS(fp, prefix);
+			addWPS(fp, prefix, 1);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
 			fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
@@ -961,7 +961,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma,
 			  prefix, server, port, share);
 	} else {
-			sysprintf("iwconfig %s key off", prefix);
+		sysprintf("iwconfig %s key off", prefix);
 	}
 
 }
@@ -989,6 +989,7 @@ void start_hostapdwan(void)
 	}
 */
 }
+
 #ifdef HAVE_MADWIFI
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
 static void set_scanlist(char *dev, char *wif)
