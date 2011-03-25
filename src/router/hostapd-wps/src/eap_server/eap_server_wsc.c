@@ -449,7 +449,7 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 			   "successfully - report EAP failure");
 		eap_wsc_state(data, FAIL);
 #ifdef HAVE_AOSS
-	sysprintf("echo done > /tmp/.wpsdone");
+		sysprintf("echo done > /tmp/.wpsdone");
 #endif
 		break;
 	case WPS_CONTINUE:
