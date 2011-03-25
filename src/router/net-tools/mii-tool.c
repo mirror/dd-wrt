@@ -432,6 +432,10 @@ int main(int argc, char **argv)
 	    sprintf(s, "eth%d", i);
 	    ret &= do_one_xcvr(skfd, s, 1);
 	}
+	for (i = 0; i < MAX_ETH; i++) {
+	    sprintf(s, "ixp%d", i);
+	    ret &= do_one_xcvr(skfd, s, 1);
+	}
 	if (ret)
 	    fprintf(stderr, "no MII interfaces found\n");
     } else {
