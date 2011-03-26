@@ -103,6 +103,7 @@ obj-$(CONFIG_MULTICAST) += igmp-proxy
 obj-$(CONFIG_SKYTRON) += skytron
 obj-$(CONFIG_OPENVPN) += openvpn
 obj-$(CONFIG_OLSRD) += olsrd
+obj-$(CONFIG_BATMANADV) += batman-adv
 obj-$(CONFIG_FDISK) += fdisk
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
