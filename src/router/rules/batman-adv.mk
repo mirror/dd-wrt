@@ -1,10 +1,11 @@
 batman-adv:
 	$(MAKE) -C batman-adv KERNELPATH="$(LINUXDIR)" all
-	$(MAKE) -C batctl all CC=$(CC) CFLAGS="$(COPTS)"
+	$(MAKE) -C batctl all CC=$(CC) CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -lm"
+
 
 batman-adv-clean:
 	$(MAKE) -C batman-adv KERNELPATH="$(LINUXDIR)" clean
-	$(MAKE) -C batctl CC=$(CC) CFLAGS="$(COPTS)" clean
+	$(MAKE) -C batctl CC=$(CC) CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -lm" clean
 	@true
 
 batman-adv-install:
