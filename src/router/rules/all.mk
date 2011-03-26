@@ -163,6 +163,7 @@ include rules/openvpn.mk
 include rules/net-tools.mk
 include rules/wireless-tools.mk
 include rules/olsrd.mk
+include rules/batman-adv.mk
 include rules/tcpdump.mk
 include rules/nvram.mk
 include rules/fdisk.mk
