@@ -7707,6 +7707,37 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</select>\n</div>\n");
 		}
 #endif
+#if defined(HAVE_MAKSAT) || defined(HAVE_BKM) || defined(HAVE_TMK)
+		if(registered_has_cap(19)) {
+			char bat_enable[32], bat_bridge[32], bufferif[256];
+			static char word[256];
+			char *next;
+
+			sprintf(bat_enable, "bat_%s_enable", var);
+			websWrite(wp,
+				"<div class=\"setting\">\n<div class=\"label\">L2Mesh enable</div>\n");
+			websWrite(wp,
+				"<input class=\"spaceradio\" type=\"checkbox\" name=\"bat_%s_enable\" value=\"1\" %s /></div>\n", var,
+				nvram_match(bat_enable, "1") ? "checked=\"checked\"" : "");
+
+			sprintf(bat_bridge, "bat_%s_bridge", var);
+			nvram_default_get(bat_bridge,"br0");
+			websWrite(wp,
+				  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>L2Mesh Bridge</div>\n");
+			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
+			websWrite(wp, "  <option value=\"\">none</option>\n");
+			memset(bufferif, 0, 256);
+			getIfList(bufferif, "br");
+			foreach(word, bufferif, next) {
+				// if( strcmp( word, "br0" ) ) {
+					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
+						  word, nvram_match( bat_bridge, word ) ? "selected=\"selected\"" :
+						  "", word);
+				// }
+			}
+			websWrite(wp, "</select>\n</div>\n");
+		}
+#endif
 		websWrite(wp, "<br />\n</div>\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n ");
