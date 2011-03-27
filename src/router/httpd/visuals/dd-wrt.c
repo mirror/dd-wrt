@@ -7707,7 +7707,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</select>\n</div>\n");
 		}
 #endif
-#if defined(HAVE_MAKSAT) || defined(HAVE_BKM) || defined(HAVE_TMK)
+#if defined(HAVE_BATMANADV)
 		if(registered_has_cap(19)) {
 			char bat_enable[32], bat_bridge[32], bufferif[256];
 			static char word[256];
