@@ -223,6 +223,9 @@ endif
 ifeq ($(CONFIG_PICO2),y)
 CFLAGS += -DHAVE_PICO2
 endif
+ifeq ($(CONFIG_BATMANADV),y)
+CFLAGS += -DHAVE_BATMANADV
+endif
 ifeq ($(CONFIG_NEXTMEDIA),y)
 CFLAGS += -DHAVE_NEXTMEDIA
 endif
