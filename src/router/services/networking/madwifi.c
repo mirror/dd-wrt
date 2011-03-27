@@ -1777,7 +1777,7 @@ static void configure_single(int count)
 		if (strlen(cellid) != 0) {
 			sysprintf("iwconfig %s ap %s", dev, cellid);
 		}
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
+#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 		else {
 			char cellidtemp[5];
 			memset(cellidtemp, 0, 5);
@@ -2080,6 +2080,12 @@ static void configure_single(int count)
 			sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
 		}
 	}
+	// adhoc interface is stuck sometimes.. don't know why yet, this helps
+	if (!strcmp(apm, "infra") ) {
+	sysprintf("ifconfig %s 0.0.0.0 down", dev);
+	sleep(1);
+	sysprintf("ifconfig %s 0.0.0.0 up", dev);
+	}
 #endif
 }
 
@@ -2217,6 +2223,9 @@ extern void adjust_regulatory(int count);
 void configure_wifi(void)	// madwifi implementation for atheros based
 	    // cards
 {
+#ifdef HAVE_NLD
+	eval("nldstop.sh");
+#endif
 	deconfigure_wifi();
 	int c = getdevicecount();
 	int i;
@@ -2277,6 +2286,16 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		deconfigure_wifi();
 		configure_wifi();
 	}
+#ifdef HAVE_NLD
+	if(registered_has_cap(21)) {
+		eval("nldstart.sh");
+	}
+#endif
+#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+	if(registered_has_cap(19)) {
+		eval("batstart.sh");
+	}
+#endif
 #ifdef HAVE_AOSS
 	if (nvram_match("aoss_success", "1"))
 		led_control(LED_SES, LED_ON);
