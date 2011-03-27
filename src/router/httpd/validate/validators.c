@@ -778,6 +778,28 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 
 			if (get_merge_ipaddr(wp, val, netmask))
 				nvram_set(val, netmask);
+#if defined(HAVE_BKM) || defined(HAVE_TMK)
+			if(1) {
+				sprintf(val, "nld_%s_enable", var);
+				char *nld_enable = websGetVar(wp, val, "0");
+				nvram_set(val, nld_enable);
+
+				sprintf(val, "nld_%s_bridge", var);
+				char *nld_bridge = websGetVar(wp, val, "");
+				nvram_set(val, nld_bridge);
+			}
+#endif
+#if defined(HAVE_MAKSAT) || defined(HAVE_BKM) || defined(HAVE_TMK)
+			if(1) {
+				sprintf(val, "bat_%s_enable", var);
+				char *bat_enable = websGetVar(wp, val, "0");
+				nvram_set(val, bat_enable);
+
+				sprintf(val, "bat_%s_bridge", var);
+				char *bat_bridge = websGetVar(wp, val, "");
+				nvram_set(val, bat_bridge);
+			}
+#endif
 		}
 	}
 	next = websGetVar(wp, "wan_ifname", NULL);
