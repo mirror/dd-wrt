@@ -789,7 +789,7 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 				nvram_set(val, nld_bridge);
 			}
 #endif
-#if defined(HAVE_MAKSAT) || defined(HAVE_BKM) || defined(HAVE_TMK)
+#if defined(HAVE_BATMANADV)
 			if(1) {
 				sprintf(val, "bat_%s_enable", var);
 				char *bat_enable = websGetVar(wp, val, "0");
