@@ -54,12 +54,22 @@ function wps_generate_pin(field)
 	val %= 10000000;
 
 	/* Append checksum digit */
-	field.value = val * 10 + wps_pin_checksum(val);
+	value = val * 10 + wps_pin_checksum(val);
+	if (value<10000000)
+	    field.value = "0" + value;
+	else
+	    field.value = value;
 }
 
 function to_register(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "wps_register";
+  apply(F);
+}
+
+function to_forcerelease(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "wps_forcerelease";
   apply(F);
 }
 
@@ -221,6 +231,11 @@ document.write("<\/tr>");
 						<input class="spaceradio" type="radio" value="0" name="wps_enabled" <% nvram_checked("wps_enabled", "0"); %> /><% tran("share.disable"); %>
 					</div>
 					<div class="setting">
+						<div class="label"><% tran("aoss.externalregistrar"); %></div>
+						<input class="spaceradio" type="radio" value="1" name="wps_registrar" <% nvram_checked("wps_registrar", "1"); %> /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="0" name="wps_registrar" <% nvram_checked("wps_registrar", "0"); %> /><% tran("share.disable"); %>
+					</div>
+					<div class="setting">
 						<div class="label"><% tran("aoss.wps_ap_pin"); %></div>
 						<input class="num" name="wps_ap_pin" size="16" maxlength="16" value="<% nvram_get("pincode"); %>"/>&nbsp;
 						<script type="text/javascript">
@@ -242,6 +257,10 @@ document.write("<\/tr>");
 					<div class="setting">
 						<div class="label"><% tran("aoss.wpsstatus"); %></div>
 						<span id="wpsstatus"><% get_wpsstatus(); %></span>
+						<script type="text/javascript">
+						//<![CDATA[
+						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.release + "\" onclick=\"to_forcerelease(this.form);\" />");
+						//]]>
 					</div>
 				</fieldset>
 				<br />
