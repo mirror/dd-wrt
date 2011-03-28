@@ -70,7 +70,7 @@ static inline int skb_cow_head(struct sk_buff *skb, unsigned int headroom)
 
 #endif /* < KERNEL_VERSION(2, 6, 23) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
 
 #ifndef pr_fmt
 #define pr_fmt(fmt) fmt
