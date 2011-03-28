@@ -2309,7 +2309,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	}
 #endif
 #ifdef HAVE_WPS
-	nvram_unset("wps_forcerelease", "1");
+	nvram_unset("wps_forcerelease");
 #endif
 #ifdef HAVE_AOSS
 	if (nvram_match("aoss_success", "1"))
