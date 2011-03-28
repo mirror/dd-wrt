@@ -2875,6 +2875,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_WPS
 	{"wps_enabled", "1", 0},
+	{"wps_registrar", "1", 0},
 #endif
 	{"warn_enabled", "0", 0},
 	{"warn_connlimit", "500", 0},
