@@ -1842,6 +1842,8 @@ aoss.wpsgenerate="Generate PIN";
 aoss.pinnotvalid="Invalid PIN, checksum not correct!";
 aoss.wpsenable="WPS Button";
 aoss.wpsstatus="WPS Status";
+aoss.externalregistrar="External Registrar";
+aoss.release="Release";
 
 var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
