@@ -46,15 +46,14 @@ void wps_ap_register(webs_t wp)
 {
 	char *pin = websGetVar(wp, "wps_ap_pin", NULL);
 	if (pin) {
-		nvram_set("pincode",pin);
+		nvram_set("pincode", pin);
 		sysprintf("hostapd_cli -i ath0 wps_ap_pin set %s 300", pin);
 #ifdef HAVE_WZRHPAG300NH
 		sysprintf("hostapd_cli -i ath1 wps_ap_pin set %s 300", pin);
 #endif
-	nvram_set("wps_status","2");
+		nvram_set("wps_status", "2");
 	}
 }
-
 
 void wps_register(webs_t wp)
 {
@@ -64,7 +63,15 @@ void wps_register(webs_t wp)
 #ifdef HAVE_WZRHPAG300NH
 		sysprintf("hostapd_cli -i ath1 wps_pin any %s 300", pin);
 #endif
-	nvram_set("wps_status","3");
+		nvram_set("wps_status", "3");
 	}
 }
+
+void wps_forcerelease(webs_t wp)
+{
+	nvram_set("wps_forcerelease", "1");
+	addAction("wireless");
+	service_restart();
+}
+
 #endif

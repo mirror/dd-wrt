@@ -745,8 +745,20 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		fprintf(fp, "eap_server=1\n");
 
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
-		fprintf(fp, "wps_state=%d\n", 1 + configured);
-		fprintf(fp, "ap_setup_locked=0\n");
+		if (nvram_match("wps_forcerelease", "1")) {
+			nvram_set("wps_status", "0");
+			fprintf(fp, "wps_state=1\n");
+		} else {
+			if (configured)
+				nvram_set("wps_status", "1");
+			else
+				nvram_set("wps_status", "0");
+			fprintf(fp, "wps_state=%d\n", 1 + configured);
+		}
+		if (nvram_match("wps_registrar", "1"))
+			fprintf(fp, "ap_setup_locked=0\n");
+		else
+			fprintf(fp, "ap_setup_locked=1\n");
 //              fprintf(fp, "ap_pin=%s\n",nvram_safe_get("pincode"));
 #ifdef HAVE_WZRHPAG300NH
 		fprintf(fp, "dualband=1\n");
@@ -2081,10 +2093,10 @@ static void configure_single(int count)
 		}
 	}
 	// adhoc interface is stuck sometimes.. don't know why yet, this helps
-	if (!strcmp(apm, "infra") ) {
-	sysprintf("ifconfig %s 0.0.0.0 down", dev);
-	sleep(1);
-	sysprintf("ifconfig %s 0.0.0.0 up", dev);
+	if (!strcmp(apm, "infra")) {
+		sysprintf("ifconfig %s 0.0.0.0 down", dev);
+		sleep(1);
+		sysprintf("ifconfig %s 0.0.0.0 up", dev);
 	}
 #endif
 }
@@ -2287,14 +2299,17 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		configure_wifi();
 	}
 #ifdef HAVE_NLD
-	if(registered_has_cap(21)) {
+	if (registered_has_cap(21)) {
 		eval("nldstart.sh");
 	}
 #endif
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
-	if(registered_has_cap(19)) {
+	if (registered_has_cap(19)) {
 		eval("batstart.sh");
 	}
+#endif
+#ifdef HAVE_WPS
+	nvram_unset("wps_forcerelease", "1");
 #endif
 #ifdef HAVE_AOSS
 	if (nvram_match("aoss_success", "1"))
