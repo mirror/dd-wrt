@@ -1,15 +1,22 @@
 /*
  * Broadcom 53xx RoboSwitch device driver.
  *
- * Copyright (C) 2008, Broadcom Corporation
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Copyright (C) 2009, Broadcom Corporation. All Rights Reserved.
  *
- * $Id: bcmrobo.c,v 1.16.2.3.8.3 2009/01/01 00:39:36 Exp $
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * 
+ *
+ * $Id: bcmrobo.c,v 1.26.4.11 2010/05/06 05:39:11 Exp $
  */
 
 
@@ -25,6 +32,7 @@
 #include <bcmdevs.h>
 #include <bcmrobo.h>
 #include <proto/ethernet.h>
+#include <hndpmu.h>
 
 #define	ET_ERROR(args)
 #define	ET_MSG(args)
@@ -74,9 +82,9 @@
 #define REG_CTRL_PWRDOWN 0x0F   /* 5325: Power Down Mode register */
 #define REG_CTRL_SRST	0x79	/* Software reset control register */
 
+/* Status Page Registers */
 #define REG_STATUS_LINK	0x00	/* Link Status Summary */
 #define REG_STATUS_REV	0x50	/* Revision Register */
-
 
 #define REG_DEVICE_ID	0x30	/* 539x Device id: */
 
@@ -549,7 +557,6 @@ static dev_ops_t mdcmdio = {
 };
 
 static int iswrt610nv1=0;
-
 /* High level switch configuration functions. */
 
 /* Get access to the RoboSwitch */
@@ -559,10 +566,14 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	robo_info_t *robo;
 	uint32 reset, idx;
 	int rreset=8;
+	char *et1port, *et1phyaddr;
+	int mdcport = 0, phyaddr = 0;
+	char *pwrsave_phys;
 
 	/* Allocate and init private state */
 	if (!(robo = MALLOC(si_osh(sih), sizeof(robo_info_t)))) {
-		ET_ERROR(("robo_attach: out of memory, malloced %d bytes", MALLOCED(si_osh(sih))));
+		ET_ERROR(("robo_attach: out of memory, malloced %d bytes",
+		          MALLOCED(si_osh(sih))));
 		return NULL;
 	}
 	bzero(robo, sizeof(robo_info_t));
@@ -613,6 +624,9 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 			 */
 			robo->corerev = 3;
 		}
+		else {
+			mii_rreg(robo, PAGE_STATUS, REG_STATUS_REV, &robo->corerev, 1);
+		}
 		si_setcoreidx(sih, idx);
 		ET_MSG(("%s: Internal robo rev %d\n", __FUNCTION__, robo->corerev));
 	}
@@ -639,19 +653,20 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 
 		if (tmp != 0xffff) {
 			do {
-				rc = mii_rreg(robo, PAGE_MMR, REG_DEVICE_ID, \
+				rc = mii_rreg(robo, PAGE_MMR, REG_DEVICE_ID,
 				              &robo->devid, sizeof(uint16));
 				if (rc != 0)
 					break;
 				retry_count++;
 			} while ((robo->devid == 0) && (retry_count < 10));
 
-			ET_MSG(("%s: devid read %ssuccesfully via mii: 0x%x\n", __FUNCTION__, \
-		        rc ? "un" : "", robo->devid));
+			ET_MSG(("%s: devid read %ssuccesfully via mii: 0x%x\n",
+			        __FUNCTION__, rc ? "un" : "", robo->devid));
 			ET_MSG(("%s: mii access to switch works\n", __FUNCTION__));
 			robo->ops = &mdcmdio;
 			if ((rc != 0) || (robo->devid == 0)) {
-				ET_MSG(("%s: error reading devid, assuming 5325e\n", __FUNCTION__));
+				ET_MSG(("%s: error reading devid, assuming 5325e\n",
+				        __FUNCTION__));
 				robo->devid = DEVID5325;
 			}
 		}
@@ -674,7 +689,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	if (!iswrt610nv1)
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
-	    (robo->devid == DEVID5398)) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
+	    (robo->devid == DEVID5398)) {
 		uint8 srst_ctrl;
 
 		/* If it is a 539x switch, use the soft reset register */
@@ -683,9 +698,24 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		/* Reset the 539x switch core and register file */
 		srst_ctrl = 0x83;
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
-		bcm_mdelay(500);
 		srst_ctrl = 0x00;
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
+	}
+
+	/* Enable switch leds */
+	if (sih->chip == BCM5356_CHIP_ID) {
+		si_pmu_chipcontrol(sih, 2, (1 << 25), (1 << 25));
+	} else if (sih->chip == BCM5357_CHIP_ID) {
+		uint32 led_gpios = 0;
+		unsigned char *var;
+
+		if (sih->chippkg != BCM47186_PKG_ID)
+			led_gpios = 0x1f;
+		var = getvar(vars, "et_swleds");
+		if (var)
+			led_gpios = bcm_strtoul(var, NULL, 0);
+		if (led_gpios)
+			si_pmu_chipcontrol(sih, 2, (0x3ff << 8), (led_gpios << 8));
 	}
 
 	if (!robo->ops) {
@@ -732,6 +762,32 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	       (robo->devid == DEVID5397) ||
 	       (robo->devid == DEVID5398) ||
 	       (robo->devid == DEVID53115));
+
+	/* nvram variable switch_mode controls the power save mode on the switch
+	 * set the default value in the beginning
+	 */
+	robo->pwrsave_mode_manual = getintvar(robo->vars, "switch_mode_manual");
+	robo->pwrsave_mode_auto = getintvar(robo->vars, "switch_mode_auto");
+
+	/* Determining what all phys need to be included in
+	 * power save operation
+	 */
+	et1port = getvar(vars, "et1mdcport");
+	if (et1port)
+		mdcport = bcm_atoi(et1port);
+
+	et1phyaddr = getvar(vars, "et1phyaddr");
+	if (et1phyaddr)
+		phyaddr = bcm_atoi(et1phyaddr);
+	pwrsave_phys = getvar(vars, "et_pwrsave");
+	if (pwrsave_phys)
+		robo->pwrsave_phys = bcm_strtoul(pwrsave_phys, NULL, 0);
+	else if ((mdcport == 0) && (phyaddr == 4)) 
+		/* For 5325F switch we need to do only phys 0-3 */
+		robo->pwrsave_phys = 0xf;
+	else
+		/* By default all 5 phys are put into power save if there is no link */
+		robo->pwrsave_phys = 0x1f;
 
 	return robo;
 
@@ -857,7 +913,6 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 	if (robo->devid == DEVID5325)
 		val8 &= ~(1 << 1);	/* must clear reserved bit 1 */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
-
 	/* VLAN Control 1 Register (Page 0x34, Address 1) */
 	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));
 	val8 |= ((1 << 2) |		/* enable RSV multicast V Fwdmap */
@@ -875,19 +930,19 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 
 	if (robo->devid == DEVID5325) {
 		/* Init the entry 1 of the bin */
-		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E1, \
-				     arl_entry1, sizeof(arl_entry1));
-		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VID_E1, \
-				     arl_entry1, 1);
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E1,
+		                     arl_entry1, sizeof(arl_entry1));
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VID_E1,
+		                     arl_entry1, 1);
 
 		/* Init the entry 0 of the bin */
 		arl_entry[6] = 0x8;		/* Port Id: MII */
 		arl_entry[7] = 0xc0;	/* Static Entry, Valid */
 
-		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E0, \
-				     arl_entry, sizeof(arl_entry));
-		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX, \
-				     arl_entry, ETHER_ADDR_LEN);
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E0,
+		                     arl_entry, sizeof(arl_entry));
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX,
+		                     arl_entry, ETHER_ADDR_LEN);
 
 		/* VLAN Control 4 Register (Page 0x34, Address 4) */
 		val8 = (1 << 6);		/* drop frame with VID violation */
@@ -901,8 +956,8 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 		pdescsz = sizeof(pdesc25) / sizeof(pdesc_t);
 	} else {
 		/* Initialize the MAC Addr Index Register */
-		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX, \
-				     arl_entry, ETHER_ADDR_LEN);
+		robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_MINDX,
+		                     arl_entry, ETHER_ADDR_LEN);
 
 		pdesc = pdesc97;
 		pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);
@@ -1005,50 +1060,50 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 		/* Add static ARL entries */
 		if (robo->devid == DEVID5325) {
 			val8 = vid;
-			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VID_E0, \
-					     &val8, sizeof(val8));
-			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VINDX, \
-					     &val8, sizeof(val8));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VID_E0,
+			                     &val8, sizeof(val8));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VINDX,
+			                     &val8, sizeof(val8));
 
 			/* Write the entry */
 			val8 = 0x80;
-			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_CTRL, \
-					     &val8, sizeof(val8));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			                     &val8, sizeof(val8));
 			/* Wait for write to complete */
-			SPINWAIT((robo->ops->read_reg(robo, PAGE_VTBL, REG_VTBL_CTRL, \
-				 &val8, sizeof(val8)), ((val8 & 0x80) != 0)),
-				 100 /* usec */);
+			SPINWAIT((robo->ops->read_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			         &val8, sizeof(val8)), ((val8 & 0x80) != 0)),
+			         100 /* usec */);
 		} else {
 			/* Set the VLAN Id in VLAN ID Index Register */
 			val8 = vid;
-			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VINDX, \
-					     &val8, sizeof(val8));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_VINDX,
+			                     &val8, sizeof(val8));
 
 			/* Set the MAC addr and VLAN Id in ARL Table MAC/VID Entry 0
 			 * Register.
 			 */
 			arl_entry[6] = vid;
 			arl_entry[7] = 0x0;
-			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E0, \
-					     arl_entry, sizeof(arl_entry));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_ARL_E0,
+			                     arl_entry, sizeof(arl_entry));
 
 			/* Set the Static bit , Valid bit and Port ID fields in
 			 * ARL Table Data Entry 0 Register
 			 */
 			val16 = 0xc008;
-			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_DAT_E0, \
-					     &val16, sizeof(val16));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_DAT_E0,
+			                     &val16, sizeof(val16));
 
 			/* Clear the ARL_R/W bit and set the START/DONE bit in
 			 * the ARL Read/Write Control Register.
 			 */
 			val8 = 0x80;
-			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_CTRL, \
-					     &val8, sizeof(val8));
+			robo->ops->write_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			                     &val8, sizeof(val8));
 			/* Wait for write to complete */
-			SPINWAIT((robo->ops->read_reg(robo, PAGE_VTBL, REG_VTBL_CTRL, \
-				 &val8, sizeof(val8)), ((val8 & 0x80) != 0)),
-				 100 /* usec */);
+			SPINWAIT((robo->ops->read_reg(robo, PAGE_VTBL, REG_VTBL_CTRL,
+			         &val8, sizeof(val8)), ((val8 & 0x80) != 0)),
+			         100 /* usec */);
 		}
 
 vlan_setup:
@@ -1117,7 +1172,7 @@ vlan_setup:
 		         (7 << 21));	/* 7 -> 7 */
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_PMAP, &val32, sizeof(val32));
 	}
-	
+
 	if (robo->devid == DEVID53115) {
 		/* Configure the priority system to use to determine the TC of
 		 * ingress frames. Use DiffServ TC mapping, otherwise 802.1p
@@ -1305,17 +1360,17 @@ robo_power_save_mode_clear_manual(robo_info_t *robo, int32 phy)
 			robo->miiwr(robo->h, phy, 0x11, 0x0000);
 			robo->miiwr(robo->h, phy, 0x1f, 0x0b);
 		} else {
-			if (phy == 0)
-				return -1;
-			/* For 5325 page 0x00 address 0x0F is the power down
-			 * mode register. Bits 1-4 determines which of the
-			 * phys are enabled for this mode
-			 */ 
-			robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN,
-				&val8, sizeof(val8));
-			val8 &= ~(0x1  << phy);
-			robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN,
-				&val8, sizeof(val8));
+		if (phy == 0)
+			return -1;
+		/* For 5325 page 0x00 address 0x0F is the power down
+		 * mode register. Bits 1-4 determines which of the
+		 * phys are enabled for this mode
+		 */ 
+		robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN,
+		                    &val8, sizeof(val8));
+		val8 &= ~(0x1  << phy);
+		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN,
+		                     &val8, sizeof(val8));
 		}
 	} else
 		return -1;
@@ -1528,17 +1583,17 @@ robo_power_save_mode_manual(robo_info_t *robo, int32 phy)
 			robo->miiwr(robo->h, phy, 0x11, 0x1000);
 			robo->miiwr(robo->h, phy, 0x1f, 0x0b);
 		} else {
-			if (phy == 0)
-				return -1;
-			/* For 5325 page 0x00 address 0x0F is the power down mode
-			 * register. Bits 1-4 determines which of the phys are enabled
-			 * for this mode 
-			 */ 
-			robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN, &val8,
-				sizeof(val8));
-			val8 |= (1 << phy);
-			robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN, &val8,
-				sizeof(val8));
+		if (phy == 0)
+			return -1;
+		/* For 5325 page 0x00 address 0x0F is the power down mode
+		 * register. Bits 1-4 determines which of the phys are enabled
+		 * for this mode 
+		 */ 
+		robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN, &val8,
+		                    sizeof(val8));
+		val8 |= (1 << phy);
+		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_PWRDOWN, &val8,
+		                     sizeof(val8));
 		}
 
 	} else
