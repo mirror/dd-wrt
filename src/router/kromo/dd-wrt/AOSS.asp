@@ -261,6 +261,7 @@ document.write("<\/tr>");
 						//<![CDATA[
 						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.release + "\" onclick=\"to_forcerelease(this.form);\" />");
 						//]]>
+						</script>
 					</div>
 				</fieldset>
 				<br />
