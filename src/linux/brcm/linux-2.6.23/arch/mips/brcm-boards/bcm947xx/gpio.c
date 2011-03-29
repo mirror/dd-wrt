@@ -331,6 +331,13 @@ if (nvram_match("boardtype", "0xa4cf")
 		gpios = 1 << 10 | 1 << 11 | 1 << 13;
 }
 
+if (nvram_match("boot_hw_model", "E1000")
+		&& nvram_match("boot_hw_ver", "2.0"))
+{
+		printk(KERN_EMERG "E1000v2 GPIO Init\n");
+		gpios = 1 << 6 | 1 << 7 | 1 << 8;
+}
+
 /*if (iswrt300n11)
 {
 	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
