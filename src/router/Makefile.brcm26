@@ -493,7 +493,6 @@ endif
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12
-
 # Asus RT-N12B1
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 1.6 RT-N12B1 1.00 1.00 $(ARCH)-uclibc/vmlinuz
@@ -502,7 +501,6 @@ endif
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12B1
-
 # Asus RT-N10
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.8 RT-N10 1.00 1.05 $(ARCH)-uclibc/vmlinuz
@@ -510,7 +508,8 @@ endif
 	../../opt/tools/trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N10.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
-# end Asus RT-N12
+# end Asus RT-N10
+
 # Belkin f7d3301 / f7d3302 / f7d4302 /f5d8235v3
 	dd if=$(ARCH)-uclibc/dd-wrt.v24-K26.trx of=$(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd bs=4 count=10000000 skip=1 conv=notrunc
 	printf '\x22\x03\x10\x20' > $(ARCH)-uclibc/f7d3301.hdr
@@ -527,6 +526,7 @@ endif
 	rm -rf $(ARCH)-uclibc/f5d8235v3.hdr
 	rm -rf $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd
 # end Belkin  f7d3301 / f7d3302 / f7d4302 / f5d8235v3
+
 # Netgear
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2.chk
@@ -539,6 +539,7 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR2000v2.chk
 # end Netgear
+
 # Linksys
 	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
 	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt160nv3.bin -g
@@ -547,7 +548,7 @@ endif
 	../../opt/tools/addpattern -4 -p M010 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m10.bin -g
 	../../opt/tools/addpattern -4 -p M020 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m20.bin -g
 	../../opt/tools/addpattern -4 -p E100 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v1.bin -g
-#	../../opt/tools/addpattern -4 -p E100 -r 2.0.0.0 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v2.bin -g
+	../../opt/tools/addpattern -4 -p E100 -r 2.0.0.0 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v2.bin -g
 	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2000.bin -g
 	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3000.bin -g
 # end Linksys
