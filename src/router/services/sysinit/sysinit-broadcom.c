@@ -783,7 +783,7 @@ void start_sysinit(void)
 		break;
 		
 	case ROUTER_LINKSYS_E1000V2:
-		basic_params = vlan_0_1;
+		basic_params = vlan_1_2;
 		break;
 		
 #endif		
