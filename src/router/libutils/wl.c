@@ -108,7 +108,7 @@ int getchannels(unsigned int *list, char *ifname)
 #include <err.h>
 #include <linux/socket.h>
 #include <linux/if.h>
-
+#define __user
 #include "wireless.h"
 
 u_int ieee80211_mhz2ieee(u_int freq)

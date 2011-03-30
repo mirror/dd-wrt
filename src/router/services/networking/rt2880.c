@@ -398,7 +398,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 	startradius = 0;
 	deconfigure_wifi();
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803)
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
@@ -427,6 +427,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 	rmmod("rt2860v2_ap");
 	rmmod("rt2860v2_sta");
+	rmmod("rt3062ap");
 	if (nvram_match("wl0_net_mode", "disabled"))
 		return;
 
@@ -1158,7 +1159,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	fclose(fp);
 
 	if (isSTA()) {
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803)
 		if (nvram_match("mac_clone_enable", "1") &&
 		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
@@ -1201,13 +1202,16 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		nvram_set(vathmac, vmacaddr);
 		setupSupplicant("wl0");
 	} else {
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803)
 		if (nvram_match("mac_clone_enable", "1") &&
 		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_ap mac=%s",
 				  nvram_safe_get("def_whwaddr"));
+			sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s",
+				  nvram_safe_get("def_whwaddr"));
 		} else {
+			sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s",mac);
 			sysprintf("insmod rt2860v2_ap mac=%s", mac);
 		}
 #else
