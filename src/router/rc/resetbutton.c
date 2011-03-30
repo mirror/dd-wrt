@@ -323,6 +323,11 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_VF803)
+int getbuttonstate()
+{
+	return 0;
+}
 #endif
 #if defined(HAVE_GATEWORX) || defined (HAVE_STORM)
 
