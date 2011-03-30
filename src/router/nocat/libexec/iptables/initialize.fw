@@ -347,7 +347,8 @@ if [ $LAN2WAN_RULE_NR -gt 0 ]; then
 else
     # Filter policy.
     if [ $Verbosity -gt 4 ]; then logger "Set filter::FORWARD to DROP anything else"; fi
-    $fwd -j DROP
+    $fwd -i $iface -j DROP
+    $fwd -o $iface -j DROP
 fi
 
 if [ "$AuthServiceAddr" ]; then
