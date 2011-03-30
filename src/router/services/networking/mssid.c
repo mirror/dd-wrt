@@ -95,7 +95,7 @@ void do_mssid(char *wlifname)
 	close(s);
 }
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_RT2880) && !defined(HAVE_RT61) && !defined(HAVE_MADWIFI)
 
 void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
 {
