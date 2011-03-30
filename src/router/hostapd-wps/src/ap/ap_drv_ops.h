@@ -135,13 +135,14 @@ static inline int hostapd_drv_sta_remove(struct hostapd_data *hapd,
 
 static inline int hostapd_drv_hapd_send_eapol(struct hostapd_data *hapd,
 					      const u8 *addr, const u8 *data,
-					      size_t data_len, int encrypt)
+					      size_t data_len, int encrypt,
+					      u32 flags)
 {
 	if (hapd->driver == NULL || hapd->driver->hapd_send_eapol == NULL)
 		return 0;
 	return hapd->driver->hapd_send_eapol(hapd->drv_priv, addr, data,
 					     data_len, encrypt,
-					     hapd->own_addr);
+					     hapd->own_addr, flags);
 }
 
 static inline int hostapd_drv_read_sta_data(
