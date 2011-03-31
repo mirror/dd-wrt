@@ -74,35 +74,22 @@ static const struct ChanType *svr_chantypes[] = {
 	NULL /* Null termination is mandatory. */
 };
 
-void svr_session(int sock, int childpipe) {
-	char *host, *port;
-	size_t len;
+void svr_session(int sock, int childpipe, 
+		char* remotehost, char *addrstring) {
+
     reseedrandom();
 
 	crypto_init();
-	common_session_init(sock, sock);
+	common_session_init(sock, sock, remotehost);
 
 	/* Initialise server specific parts of the session */
 	svr_ses.childpipe = childpipe;
-#ifdef __uClinux__
-	svr_ses.server_pid = getpid();
-#endif
+	svr_ses.addrstring = addrstring;
 	svr_authinitialise();
 	chaninitialise(svr_chantypes);
 	svr_chansessinitialise();
 
 	ses.connect_time = time(NULL);
-
-	/* for logging the remote address */
-	get_socket_address(ses.sock_in, NULL, NULL, &host, &port, 0);
-	len = strlen(host) + strlen(port) + 2;
-	svr_ses.addrstring = m_malloc(len);
-	snprintf(svr_ses.addrstring, len, "%s:%s", host, port);
-	m_free(host);
-	m_free(port);
-
-	get_socket_address(ses.sock_in, NULL, NULL, 
-			&svr_ses.remotehost, NULL, 1);
 
 	/* set up messages etc */
 	ses.remoteclosed = svr_remoteclosed;
@@ -138,39 +125,30 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 	if (!sessinitdone) {
 		/* before session init */
 		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"Premature exit: %s", format);
+				"premature exit: %s", format);
 	} else if (ses.authstate.authdone) {
 		/* user has authenticated */
 		snprintf(fmtbuf, sizeof(fmtbuf),
-				"Exit (%s): %s", 
+				"exit after auth (%s): %s", 
 				ses.authstate.pw_name, format);
 	} else if (ses.authstate.pw_name) {
 		/* we have a potential user */
 		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"Exit before auth (user '%s', %d fails): %s",
+				"exit before auth (user '%s', %d fails): %s",
 				ses.authstate.pw_name, ses.authstate.failcount, format);
 	} else {
 		/* before userauth */
 		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"Exit before auth: %s", format);
+				"exit before auth: %s", format);
 	}
 
 	_dropbear_log(LOG_INFO, fmtbuf, param);
 
-#ifdef __uClinux__
-	/* only the main server process should cleanup - we don't want
-	 * forked children doing that */
-	if (svr_ses.server_pid == getpid())
-#else
-	if (1)
-#endif
-	{
-		/* free potential public key options */
-		svr_pubkey_options_cleanup();
+	/* free potential public key options */
+	svr_pubkey_options_cleanup();
 
-		/* must be after we've done with username etc */
-		common_session_cleanup();
-	}
+	/* must be after we've done with username etc */
+	common_session_cleanup();
 
 	exit(exitcode);
 

@@ -120,14 +120,8 @@
 #include <libgen.h>
 #endif
 
-#ifdef BUNDLED_LIBTOM
 #include "libtomcrypt/src/headers/tomcrypt.h"
 #include "libtommath/tommath.h"
-#else
-#include <tomcrypt.h>
-#include <tommath.h>
-#endif
-
 
 #include "compat.h"
 #include "fake-rfc2553.h"

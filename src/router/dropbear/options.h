@@ -46,9 +46,8 @@
 /*#define NO_FAST_EXPTMOD*/
 
 /* Set this if you want to use the DROPBEAR_SMALL_CODE option. This can save
-several kB in binary size however will make the symmetrical ciphers and hashes
-slower, perhaps by 50%. Recommended for small systems that aren't doing
-much traffic. */
+several kB in binary size, however will make the symmetrical ciphers (AES, DES
+etc) slower (perhaps by 50%). Recommended for most small systems. */
 #define DROPBEAR_SMALL_CODE
 
 /* Enable X11 Forwarding - server only */
@@ -64,9 +63,8 @@ much traffic. */
 #define ENABLE_SVR_LOCALTCPFWD
 #define ENABLE_SVR_REMOTETCPFWD
 
-/* Enable Authentication Agent Forwarding */
-#define ENABLE_SVR_AGENTFWD
-#define ENABLE_CLI_AGENTFWD
+/* Enable Authentication Agent Forwarding - server only for now */
+#define ENABLE_AGENTFWD
 
 
 /* Note: Both ENABLE_CLI_PROXYCMD and ENABLE_CLI_NETCAT must be set to
@@ -87,8 +85,7 @@ much traffic. */
 #define DROPBEAR_AES128
 #define DROPBEAR_3DES
 #define DROPBEAR_AES256
-/* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
-/*#define DROPBEAR_BLOWFISH*/
+#define DROPBEAR_BLOWFISH
 #define DROPBEAR_TWOFISH256
 #define DROPBEAR_TWOFISH128
 
@@ -128,20 +125,8 @@ much traffic. */
 /* Define DSS_PROTOK to use PuTTY's method of generating the value k for dss,
  * rather than just from the random byte source. Undefining this will save you
  * ~4k in binary size with static uclibc, but your DSS hostkey could be exposed
- * if the random number source isn't good. It happened to Sony. 
- * On systems with a decent random source this isn't required. */
+ * if the random number source isn't good. In general this isn't required */
 /* #define DSS_PROTOK */
-
-/* Control the memory/performance/compression tradeoff for zlib.
- * Set windowBits=8 for least memory usage, see your system's
- * zlib.h for full details.
- * Default settings (windowBits=15) will use 256kB for compression
- * windowBits=8 will use 129kB for compression.
- * Both modes will use ~35kB for decompression (using windowBits=15 for
- * interoperability) */
-#ifndef DROPBEAR_ZLIB_WINDOW_BITS
-#define DROPBEAR_ZLIB_WINDOW_BITS 15 
-#endif
 
 /* Whether to do reverse DNS lookups. */
 //#define DO_HOST_LOOKUP
@@ -169,8 +154,7 @@ much traffic. */
 /*#define ENABLE_SVR_PAM_AUTH*/
 #define ENABLE_SVR_PUBKEY_AUTH
 
-/* Whether to take public key options in 
- * authorized_keys file into account */
+/* Wether to ake public key options in authorized_keys file into account */
 #ifdef ENABLE_SVR_PUBKEY_AUTH
 #define ENABLE_SVR_PUBKEY_OPTIONS
 #endif
@@ -238,7 +222,7 @@ much traffic. */
 /* The command to invoke for xauth when using X11 forwarding.
  * "-q" for quiet */
 #ifndef XAUTH_COMMAND
-#define XAUTH_COMMAND "/usr/bin/X11/xauth -q"
+#define XAUTH_COMMAND "/usr/X11R6/bin/xauth -q"
 #endif
 
 /* if you want to enable running an sftp server (such as the one included with
@@ -264,19 +248,13 @@ much traffic. */
    significant difference to network performance. 24kB was empirically
    chosen for a 100mbit ethernet network. The value can be altered at
    runtime with the -W argument. */
-#ifndef DEFAULT_RECV_WINDOW
 #define DEFAULT_RECV_WINDOW 24576
-#endif
 /* Maximum size of a received SSH data packet - this _MUST_ be >= 32768
    in order to interoperate with other implementations */
-#ifndef RECV_MAX_PAYLOAD_LEN
 #define RECV_MAX_PAYLOAD_LEN 32768
-#endif
 /* Maximum size of a transmitted data packet - this can be any value,
    though increasing it may not make a significant difference. */
-#ifndef TRANS_MAX_PAYLOAD_LEN
 #define TRANS_MAX_PAYLOAD_LEN 16384
-#endif
 
 /* Ensure that data is transmitted every KEEPALIVE seconds. This can
 be overridden at runtime with -K. 0 disables keepalives */
