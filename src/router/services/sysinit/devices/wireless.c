@@ -31,6 +31,7 @@ static void detect_wireless_devices(void)
 	if (fp) {
 		char str[32];
 		fscanf(fp, "%s", str);
+		fclose(fp);
 		if (!strcmp(str, "0x3592"))
 			nvram_set("rtchip", "3062");
 		else
