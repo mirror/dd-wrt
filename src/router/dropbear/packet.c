@@ -35,13 +35,11 @@
 #include "auth.h"
 #include "channel.h"
 
-static int read_packet_init();
-static void make_mac(unsigned int seqno, const struct key_context_directional * key_state,
-		buffer * clear_buf, unsigned int clear_len, 
-		unsigned char *output_mac);
-static int checkmac();
+static void read_packet_init();
+static void writemac(buffer * outputbuffer, buffer * clearwritebuf);
+static int checkmac(buffer* hashbuf, buffer* readbuf);
 
-#define ZLIB_COMPRESS_INCR 100
+#define ZLIB_COMPRESS_INCR 20 /* this is 12 bytes + 0.1% of 8000 bytes */
 #define ZLIB_DECOMPRESS_INCR 100
 #ifndef DISABLE_ZLIB
 static buffer* buf_decompress(buffer* buf, unsigned int len);
@@ -53,8 +51,6 @@ void write_packet() {
 
 	int len, written;
 	buffer * writebuf = NULL;
-	time_t now;
-	unsigned packet_type;
 	
 	TRACE(("enter write_packet"))
 	dropbear_assert(!isempty(&ses.writequeue));
@@ -62,10 +58,7 @@ void write_packet() {
 	/* Get the next buffer in the queue of encrypted packets to write*/
 	writebuf = (buffer*)examine(&ses.writequeue);
 
-	/* The last byte of the buffer is not to be transmitted, but is 
-	 * a cleartext packet_type indicator */
-	packet_type = writebuf->data[writebuf->len-1];
-	len = writebuf->len - 1 - writebuf->pos;
+	len = writebuf->len - writebuf->pos;
 	dropbear_assert(len > 0);
 	/* Try to write as much as possible */
 	written = write(ses.sock_out, buf_getptr(writebuf, len), len);
@@ -75,16 +68,12 @@ void write_packet() {
 			TRACE(("leave writepacket: EINTR"))
 			return;
 		} else {
-			dropbear_exit("Error writing");
+			dropbear_exit("error writing");
 		}
 	} 
 	
-	now = time(NULL);
-	ses.last_trx_packet_time = now;
-
-	if (packet_type != SSH_MSG_IGNORE) {
-		ses.last_packet_time = now;
-	}
+	ses.last_trx_packet_time = time(NULL);
+	ses.last_packet_time = time(NULL);
 
 	if (written == 0) {
 		ses.remoteclosed();
@@ -113,18 +102,18 @@ void read_packet() {
 	unsigned char blocksize;
 
 	TRACE(("enter read_packet"))
-	blocksize = ses.keys->recv.algo_crypt->blocksize;
+	blocksize = ses.keys->recv_algo_crypt->blocksize;
 	
 	if (ses.readbuf == NULL || ses.readbuf->len < blocksize) {
-		int ret;
 		/* In the first blocksize of a packet */
 
 		/* Read the first blocksize of the packet, so we can decrypt it and
 		 * find the length of the whole packet */
-		ret = read_packet_init();
+		read_packet_init();
 
-		if (ret == DROPBEAR_FAILURE) {
-			/* didn't read enough to determine the length */
+		/* If we don't have the length of decryptreadbuf, we didn't read
+		 * a whole blocksize and should exit */
+		if (ses.decryptreadbuf->len == 0) {
 			TRACE(("leave read_packet: packetinit done"))
 			return;
 		}
@@ -132,6 +121,7 @@ void read_packet() {
 
 	/* Attempt to read the remainder of the packet, note that there
 	 * mightn't be any available (EAGAIN) */
+	dropbear_assert(ses.readbuf != NULL);
 	maxlen = ses.readbuf->len - ses.readbuf->pos;
 	len = read(ses.sock_in, buf_getptr(ses.readbuf, maxlen), maxlen);
 
@@ -144,7 +134,7 @@ void read_packet() {
 			TRACE(("leave read_packet: EINTR or EAGAIN"))
 			return;
 		} else {
-			dropbear_exit("Error reading: %s", strerror(errno));
+			dropbear_exit("error reading: %s", strerror(errno));
 		}
 	}
 
@@ -161,75 +151,71 @@ void read_packet() {
 
 /* Function used to read the initial portion of a packet, and determine the
  * length. Only called during the first BLOCKSIZE of a packet. */
-/* Returns DROPBEAR_SUCCESS if the length is determined, 
- * DROPBEAR_FAILURE otherwise */
-static int read_packet_init() {
+static void read_packet_init() {
 
 	unsigned int maxlen;
-	int slen;
-	unsigned int len;
-	unsigned int blocksize;
-	unsigned int macsize;
+	int len;
+	unsigned char blocksize;
+	unsigned char macsize;
 
 
-	blocksize = ses.keys->recv.algo_crypt->blocksize;
-	macsize = ses.keys->recv.algo_mac->hashsize;
+	blocksize = ses.keys->recv_algo_crypt->blocksize;
+	macsize = ses.keys->recv_algo_mac->hashsize;
 
 	if (ses.readbuf == NULL) {
 		/* start of a new packet */
 		ses.readbuf = buf_new(INIT_READBUF);
+		dropbear_assert(ses.decryptreadbuf == NULL);
+		ses.decryptreadbuf = buf_new(blocksize);
 	}
 
 	maxlen = blocksize - ses.readbuf->pos;
 			
 	/* read the rest of the packet if possible */
-	slen = read(ses.sock_in, buf_getwriteptr(ses.readbuf, maxlen),
+	len = read(ses.sock_in, buf_getwriteptr(ses.readbuf, maxlen),
 			maxlen);
-	if (slen == 0) {
+	if (len == 0) {
 		ses.remoteclosed();
 	}
-	if (slen < 0) {
+	if (len < 0) {
 		if (errno == EINTR) {
 			TRACE(("leave read_packet_init: EINTR"))
-			return DROPBEAR_FAILURE;
+			return;
 		}
-		dropbear_exit("Error reading: %s", strerror(errno));
+		dropbear_exit("error reading: %s", strerror(errno));
 	}
 
-	buf_incrwritepos(ses.readbuf, slen);
+	buf_incrwritepos(ses.readbuf, len);
 
-	if ((unsigned int)slen != maxlen) {
+	if ((unsigned int)len != maxlen) {
 		/* don't have enough bytes to determine length, get next time */
-		return DROPBEAR_FAILURE;
+		return;
 	}
 
 	/* now we have the first block, need to get packet length, so we decrypt
 	 * the first block (only need first 4 bytes) */
 	buf_setpos(ses.readbuf, 0);
-	if (ses.keys->recv.crypt_mode->decrypt(buf_getptr(ses.readbuf, blocksize), 
-				buf_getwriteptr(ses.readbuf, blocksize),
+	if (ses.keys->recv_crypt_mode->decrypt(buf_getptr(ses.readbuf, blocksize), 
+				buf_getwriteptr(ses.decryptreadbuf,blocksize),
 				blocksize,
-				&ses.keys->recv.cipher_state) != CRYPT_OK) {
-		dropbear_exit("Error decrypting");
+				&ses.keys->recv_cipher_state) != CRYPT_OK) {
+		dropbear_exit("error decrypting");
 	}
-	len = buf_getint(ses.readbuf) + 4 + macsize;
+	buf_setlen(ses.decryptreadbuf, blocksize);
+	len = buf_getint(ses.decryptreadbuf) + 4 + macsize;
 
-	TRACE(("packet size is %d, block %d mac %d", len, blocksize, macsize))
-
+	buf_setpos(ses.readbuf, blocksize);
 
 	/* check packet length */
 	if ((len > RECV_MAX_PACKET_LEN) ||
 		(len < MIN_PACKET_LEN + macsize) ||
 		((len - macsize) % blocksize != 0)) {
-		dropbear_exit("Integrity error (bad packet size %d)", len);
+		dropbear_exit("bad packet size %d", len);
 	}
 
-	if (len > ses.readbuf->size) {
-		buf_resize(ses.readbuf, len);		
-	}
+	buf_resize(ses.readbuf, len);
 	buf_setlen(ses.readbuf, len);
-	buf_setpos(ses.readbuf, blocksize);
-	return DROPBEAR_SUCCESS;
+
 }
 
 /* handle the received packet */
@@ -241,58 +227,69 @@ void decrypt_packet() {
 	unsigned int len;
 
 	TRACE(("enter decrypt_packet"))
-	blocksize = ses.keys->recv.algo_crypt->blocksize;
-	macsize = ses.keys->recv.algo_mac->hashsize;
+	blocksize = ses.keys->recv_algo_crypt->blocksize;
+	macsize = ses.keys->recv_algo_mac->hashsize;
 
 	ses.kexstate.datarecv += ses.readbuf->len;
 
 	/* we've already decrypted the first blocksize in read_packet_init */
 	buf_setpos(ses.readbuf, blocksize);
 
-	/* decrypt it in-place */
-	len = ses.readbuf->len - macsize - ses.readbuf->pos;
-	if (ses.keys->recv.crypt_mode->decrypt(
-				buf_getptr(ses.readbuf, len), 
-				buf_getwriteptr(ses.readbuf, len),
-				len,
-				&ses.keys->recv.cipher_state) != CRYPT_OK) {
-		dropbear_exit("Error decrypting");
+	buf_resize(ses.decryptreadbuf, ses.readbuf->len - macsize);
+	buf_setlen(ses.decryptreadbuf, ses.decryptreadbuf->size);
+	buf_setpos(ses.decryptreadbuf, blocksize);
+
+	/* decrypt it */
+	while (ses.readbuf->pos < ses.readbuf->len - macsize) {
+		if (ses.keys->recv_crypt_mode->decrypt(
+					buf_getptr(ses.readbuf, blocksize), 
+					buf_getwriteptr(ses.decryptreadbuf, blocksize),
+					blocksize,
+					&ses.keys->recv_cipher_state) != CRYPT_OK) {
+			dropbear_exit("error decrypting");
+		}
+		buf_incrpos(ses.readbuf, blocksize);
+		buf_incrwritepos(ses.decryptreadbuf, blocksize);
 	}
-	buf_incrpos(ses.readbuf, len);
 
 	/* check the hmac */
-	if (checkmac() != DROPBEAR_SUCCESS) {
+	buf_setpos(ses.readbuf, ses.readbuf->len - macsize);
+	if (checkmac(ses.readbuf, ses.decryptreadbuf) != DROPBEAR_SUCCESS) {
 		dropbear_exit("Integrity error");
 	}
 
+	/* readbuf no longer required */
+	buf_free(ses.readbuf);
+	ses.readbuf = NULL;
+
 	/* get padding length */
-	buf_setpos(ses.readbuf, PACKET_PADDING_OFF);
-	padlen = buf_getbyte(ses.readbuf);
+	buf_setpos(ses.decryptreadbuf, PACKET_PADDING_OFF);
+	padlen = buf_getbyte(ses.decryptreadbuf);
 		
 	/* payload length */
 	/* - 4 - 1 is for LEN and PADLEN values */
-	len = ses.readbuf->len - padlen - 4 - 1 - macsize;
+	len = ses.decryptreadbuf->len - padlen - 4 - 1;
 	if ((len > RECV_MAX_PAYLOAD_LEN) || (len < 1)) {
-		dropbear_exit("Bad packet size %d", len);
+		dropbear_exit("bad packet size");
 	}
 
-	buf_setpos(ses.readbuf, PACKET_PAYLOAD_OFF);
+	buf_setpos(ses.decryptreadbuf, PACKET_PAYLOAD_OFF);
 
 #ifndef DISABLE_ZLIB
 	if (is_compress_recv()) {
 		/* decompress */
-		ses.payload = buf_decompress(ses.readbuf, len);
+		ses.payload = buf_decompress(ses.decryptreadbuf, len);
 	} else 
 #endif
 	{
 		/* copy payload */
 		ses.payload = buf_new(len);
-		memcpy(ses.payload->data, buf_getptr(ses.readbuf, len), len);
+		memcpy(ses.payload->data, buf_getptr(ses.decryptreadbuf, len), len);
 		buf_incrlen(ses.payload, len);
 	}
 
-	buf_free(ses.readbuf);
-	ses.readbuf = NULL;
+	buf_free(ses.decryptreadbuf);
+	ses.decryptreadbuf = NULL;
 	buf_setpos(ses.payload, 0);
 
 	ses.recvseq++;
@@ -300,22 +297,49 @@ void decrypt_packet() {
 	TRACE(("leave decrypt_packet"))
 }
 
-/* Checks the mac at the end of a decrypted readbuf.
+/* Checks the mac in hashbuf, for the data in readbuf.
  * Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
-static int checkmac() {
+static int checkmac(buffer* macbuf, buffer* sourcebuf) {
 
-	unsigned char mac_bytes[MAX_MAC_LEN];
-	unsigned int mac_size, contents_len;
+	unsigned int macsize;
+	hmac_state hmac;
+	unsigned char tempbuf[MAX_MAC_LEN];
+	unsigned long bufsize;
+	unsigned int len;
+
+	macsize = ses.keys->recv_algo_mac->hashsize;
+	if (macsize == 0) {
+		return DROPBEAR_SUCCESS;
+	}
+
+	/* calculate the mac */
+	if (hmac_init(&hmac, 
+				find_hash(ses.keys->recv_algo_mac->hashdesc->name), 
+				ses.keys->recvmackey, 
+				ses.keys->recv_algo_mac->keysize) 
+				!= CRYPT_OK) {
+		dropbear_exit("HMAC error");
+	}
 	
-	mac_size = ses.keys->trans.algo_mac->hashsize;
-	contents_len = ses.readbuf->len - mac_size;
+	/* sequence number */
+	STORE32H(ses.recvseq, tempbuf);
+	if (hmac_process(&hmac, tempbuf, 4) != CRYPT_OK) {
+		dropbear_exit("HMAC error");
+	}
 
-	buf_setpos(ses.readbuf, 0);
-	make_mac(ses.recvseq, &ses.keys->recv, ses.readbuf, contents_len, mac_bytes);
+	buf_setpos(sourcebuf, 0);
+	len = sourcebuf->len;
+	if (hmac_process(&hmac, buf_getptr(sourcebuf, len), len) != CRYPT_OK) {
+		dropbear_exit("HMAC error");
+	}
+
+	bufsize = sizeof(tempbuf);
+	if (hmac_done(&hmac, tempbuf, &bufsize) != CRYPT_OK) {
+		dropbear_exit("HMAC error");
+	}
 
 	/* compare the hash */
-	buf_setpos(ses.readbuf, contents_len);
-	if (memcmp(mac_bytes, buf_getptr(ses.readbuf, mac_size), mac_size) != 0) {
+	if (memcmp(tempbuf, buf_getptr(macbuf, macsize), macsize) != 0) {
 		return DROPBEAR_FAILURE;
 	} else {
 		return DROPBEAR_SUCCESS;
@@ -330,7 +354,7 @@ static buffer* buf_decompress(buffer* buf, unsigned int len) {
 	buffer * ret;
 	z_streamp zstream;
 
-	zstream = ses.keys->recv.zstream;
+	zstream = ses.keys->recv_zstream;
 	ret = buf_new(len);
 
 	zstream->avail_in = len;
@@ -426,69 +450,52 @@ void maybe_flush_reply_queue() {
 void encrypt_packet() {
 
 	unsigned char padlen;
-	unsigned char blocksize, mac_size;
-	buffer * writebuf; /* the packet which will go on the wire. This is 
-	                      encrypted in-place. */
-	unsigned char packet_type;
-	unsigned int len, encrypt_buf_size;
-	unsigned char mac_bytes[MAX_MAC_LEN];
+	unsigned char blocksize, macsize;
+	buffer * writebuf; /* the packet which will go on the wire */
+	buffer * clearwritebuf; /* unencrypted, possibly compressed */
+	unsigned char type;
+	unsigned int clear_len;
 	
+	type = ses.writepayload->data[0];
 	TRACE(("enter encrypt_packet()"))
-
-	buf_setpos(ses.writepayload, 0);
-	packet_type = buf_getbyte(ses.writepayload);
-	buf_setpos(ses.writepayload, 0);
-
-	TRACE(("encrypt_packet type is %d", packet_type))
+	TRACE(("encrypt_packet type is %d", type))
 	
-	if (!ses.dataallowed && !packet_is_okay_kex(packet_type)) {
+	if (!ses.dataallowed && !packet_is_okay_kex(type)) {
 		/* During key exchange only particular packets are allowed.
-			Since this packet_type isn't OK we just enqueue it to send 
+			Since this type isn't OK we just enqueue it to send 
 			after the KEX, see maybe_flush_reply_queue */
 		enqueue_reply_packet();
 		return;
 	}
 		
-	blocksize = ses.keys->trans.algo_crypt->blocksize;
-	mac_size = ses.keys->trans.algo_mac->hashsize;
+	blocksize = ses.keys->trans_algo_crypt->blocksize;
+	macsize = ses.keys->trans_algo_mac->hashsize;
 
-	/* Encrypted packet len is payload+5. We need to then make sure
-	 * there is enough space for padding or MIN_PACKET_LEN. 
-	 * Add extra 3 since we need at least 4 bytes of padding */
-	encrypt_buf_size = (ses.writepayload->len+4+1) 
-		+ MAX(MIN_PACKET_LEN, blocksize) + 3
-	/* add space for the MAC at the end */
-				+ mac_size
+	/* Encrypted packet len is payload+5, then worst case is if we are 3 away
+	 * from a blocksize multiple. In which case we need to pad to the
+	 * multiple, then add another blocksize (or MIN_PACKET_LEN) */
+	clear_len = (ses.writepayload->len+4+1) + MIN_PACKET_LEN + 3;
+
 #ifndef DISABLE_ZLIB
-	/* some extra in case 'compression' makes it larger */
-				+ ZLIB_COMPRESS_INCR
+	clear_len += ZLIB_COMPRESS_INCR; /* bit of a kludge, but we can't know len*/
 #endif
-	/* and an extra cleartext (stripped before transmission) byte for the
-	 * packet type */
-				+ 1;
+	clearwritebuf = buf_new(clear_len);
+	buf_setlen(clearwritebuf, PACKET_PAYLOAD_OFF);
+	buf_setpos(clearwritebuf, PACKET_PAYLOAD_OFF);
 
-	writebuf = buf_new(encrypt_buf_size);
-	buf_setlen(writebuf, PACKET_PAYLOAD_OFF);
-	buf_setpos(writebuf, PACKET_PAYLOAD_OFF);
+	buf_setpos(ses.writepayload, 0);
 
 #ifndef DISABLE_ZLIB
 	/* compression */
 	if (is_compress_trans()) {
-		int compress_delta;
-		buf_compress(writebuf, ses.writepayload, ses.writepayload->len);
-		compress_delta = (writebuf->len - PACKET_PAYLOAD_OFF) - ses.writepayload->len;
-
-		/* Handle the case where 'compress' increased the size. */
-		if (compress_delta > ZLIB_COMPRESS_INCR) {
-			buf_resize(writebuf, writebuf->size + compress_delta);
-		}
+		buf_compress(clearwritebuf, ses.writepayload, ses.writepayload->len);
 	} else
 #endif
 	{
-		memcpy(buf_getwriteptr(writebuf, ses.writepayload->len),
+		memcpy(buf_getwriteptr(clearwritebuf, ses.writepayload->len),
 				buf_getptr(ses.writepayload, ses.writepayload->len),
 				ses.writepayload->len);
-		buf_incrwritepos(writebuf, ses.writepayload->len);
+		buf_incrwritepos(clearwritebuf, ses.writepayload->len);
 	}
 
 	/* finished with payload */
@@ -497,48 +504,53 @@ void encrypt_packet() {
 
 	/* length of padding - packet length must be a multiple of blocksize,
 	 * with a minimum of 4 bytes of padding */
-	padlen = blocksize - (writebuf->len) % blocksize;
+	padlen = blocksize - (clearwritebuf->len) % blocksize;
 	if (padlen < 4) {
 		padlen += blocksize;
 	}
 	/* check for min packet length */
-	if (writebuf->len + padlen < MIN_PACKET_LEN) {
+	if (clearwritebuf->len + padlen < MIN_PACKET_LEN) {
 		padlen += blocksize;
 	}
 
-	buf_setpos(writebuf, 0);
+	buf_setpos(clearwritebuf, 0);
 	/* packet length excluding the packetlength uint32 */
-	buf_putint(writebuf, writebuf->len + padlen - 4);
+	buf_putint(clearwritebuf, clearwritebuf->len + padlen - 4);
 
 	/* padding len */
-	buf_putbyte(writebuf, padlen);
+	buf_putbyte(clearwritebuf, padlen);
 	/* actual padding */
-	buf_setpos(writebuf, writebuf->len);
-	buf_incrlen(writebuf, padlen);
-	genrandom(buf_getptr(writebuf, padlen), padlen);
+	buf_setpos(clearwritebuf, clearwritebuf->len);
+	buf_incrlen(clearwritebuf, padlen);
+	genrandom(buf_getptr(clearwritebuf, padlen), padlen);
 
-	make_mac(ses.transseq, &ses.keys->trans, writebuf, writebuf->len, mac_bytes);
+	/* do the actual encryption */
+	buf_setpos(clearwritebuf, 0);
+	/* create a new writebuffer, this is freed when it has been put on the 
+	 * wire by writepacket() */
+	writebuf = buf_new(clearwritebuf->len + macsize);
 
-	/* do the actual encryption, in-place */
-	buf_setpos(writebuf, 0);
-	/* encrypt it in-place*/
-	len = writebuf->len;
-	if (ses.keys->trans.crypt_mode->encrypt(
-				buf_getptr(writebuf, len),
-				buf_getwriteptr(writebuf, len),
-				len,
-				&ses.keys->trans.cipher_state) != CRYPT_OK) {
-		dropbear_exit("Error encrypting");
+	/* encrypt it */
+	while (clearwritebuf->pos < clearwritebuf->len) {
+		if (ses.keys->trans_crypt_mode->encrypt(
+					buf_getptr(clearwritebuf, blocksize),
+					buf_getwriteptr(writebuf, blocksize),
+					blocksize,
+					&ses.keys->trans_cipher_state) != CRYPT_OK) {
+			dropbear_exit("error encrypting");
+		}
+		buf_incrpos(clearwritebuf, blocksize);
+		buf_incrwritepos(writebuf, blocksize);
 	}
-	buf_incrpos(writebuf, len);
 
-    /* stick the MAC on it */
-    buf_putbytes(writebuf, mac_bytes, mac_size);
+	/* now add a hmac and we're done */
+	writemac(writebuf, clearwritebuf);
 
-	/* The last byte of the buffer stores the cleartext packet_type. It is not
-	 * transmitted but is used for transmit timeout purposes */
-	buf_putbyte(writebuf, packet_type);
-	/* enqueue the packet for sending. It will get freed after transmission. */
+	/* clearwritebuf is finished with */
+	buf_free(clearwritebuf);
+	clearwritebuf = NULL;
+
+	/* enqueue the packet for sending */
 	buf_setpos(writebuf, 0);
 	enqueue(&ses.writequeue, (void*)writebuf);
 
@@ -551,43 +563,47 @@ void encrypt_packet() {
 
 
 /* Create the packet mac, and append H(seqno|clearbuf) to the output */
-/* output_mac must have ses.keys->trans.algo_mac->hashsize bytes. */
-static void make_mac(unsigned int seqno, const struct key_context_directional * key_state,
-		buffer * clear_buf, unsigned int clear_len, 
-		unsigned char *output_mac) {
+static void writemac(buffer * outputbuffer, buffer * clearwritebuf) {
+
+	unsigned int macsize;
 	unsigned char seqbuf[4];
+	unsigned char tempbuf[MAX_MAC_LEN];
 	unsigned long bufsize;
 	hmac_state hmac;
 
 	TRACE(("enter writemac"))
 
-	if (key_state->algo_mac->hashsize > 0) {
+	macsize = ses.keys->trans_algo_mac->hashsize;
+	if (macsize > 0) {
 		/* calculate the mac */
 		if (hmac_init(&hmac, 
-					key_state->hash_index,
-					key_state->mackey,
-					key_state->algo_mac->keysize) != CRYPT_OK) {
+					find_hash(ses.keys->trans_algo_mac->hashdesc->name), 
+					ses.keys->transmackey, 
+					ses.keys->trans_algo_mac->keysize) != CRYPT_OK) {
 			dropbear_exit("HMAC error");
 		}
 	
 		/* sequence number */
-		STORE32H(seqno, seqbuf);
+		STORE32H(ses.transseq, seqbuf);
 		if (hmac_process(&hmac, seqbuf, 4) != CRYPT_OK) {
 			dropbear_exit("HMAC error");
 		}
 	
 		/* the actual contents */
-		buf_setpos(clear_buf, 0);
+		buf_setpos(clearwritebuf, 0);
 		if (hmac_process(&hmac, 
-					buf_getptr(clear_buf, clear_len),
-					clear_len) != CRYPT_OK) {
+					buf_getptr(clearwritebuf, 
+						clearwritebuf->len),
+					clearwritebuf->len) != CRYPT_OK) {
 			dropbear_exit("HMAC error");
 		}
 	
-        bufsize = MAX_MAC_LEN;
-		if (hmac_done(&hmac, output_mac, &bufsize) != CRYPT_OK) {
+		bufsize = sizeof(tempbuf);
+		if (hmac_done(&hmac, tempbuf, &bufsize) 
+				!= CRYPT_OK) {
 			dropbear_exit("HMAC error");
 		}
+		buf_putbytes(outputbuffer, tempbuf, macsize);
 	}
 	TRACE(("leave writemac"))
 }
@@ -604,29 +620,29 @@ static void buf_compress(buffer * dest, buffer * src, unsigned int len) {
 
 	while (1) {
 
-		ses.keys->trans.zstream->avail_in = endpos - src->pos;
-		ses.keys->trans.zstream->next_in = 
-			buf_getptr(src, ses.keys->trans.zstream->avail_in);
+		ses.keys->trans_zstream->avail_in = endpos - src->pos;
+		ses.keys->trans_zstream->next_in = 
+			buf_getptr(src, ses.keys->trans_zstream->avail_in);
 
-		ses.keys->trans.zstream->avail_out = dest->size - dest->pos;
-		ses.keys->trans.zstream->next_out =
-			buf_getwriteptr(dest, ses.keys->trans.zstream->avail_out);
+		ses.keys->trans_zstream->avail_out = dest->size - dest->pos;
+		ses.keys->trans_zstream->next_out =
+			buf_getwriteptr(dest, ses.keys->trans_zstream->avail_out);
 
-		result = deflate(ses.keys->trans.zstream, Z_SYNC_FLUSH);
+		result = deflate(ses.keys->trans_zstream, Z_SYNC_FLUSH);
 
-		buf_setpos(src, endpos - ses.keys->trans.zstream->avail_in);
-		buf_setlen(dest, dest->size - ses.keys->trans.zstream->avail_out);
+		buf_setpos(src, endpos - ses.keys->trans_zstream->avail_in);
+		buf_setlen(dest, dest->size - ses.keys->trans_zstream->avail_out);
 		buf_setpos(dest, dest->len);
 
 		if (result != Z_OK) {
 			dropbear_exit("zlib error");
 		}
 
-		if (ses.keys->trans.zstream->avail_in == 0) {
+		if (ses.keys->trans_zstream->avail_in == 0) {
 			break;
 		}
 
-		dropbear_assert(ses.keys->trans.zstream->avail_out == 0);
+		dropbear_assert(ses.keys->trans_zstream->avail_out == 0);
 
 		/* the buffer has been filled, we must extend. This only happens in
 		 * unusual circumstances where the data grows in size after deflate(),

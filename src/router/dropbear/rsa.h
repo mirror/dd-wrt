@@ -32,28 +32,29 @@
 
 #define RSA_SIGNATURE_SIZE 4+7+4+40
 
-typedef struct {
+struct RSA_key {
 
 	mp_int* n;
 	mp_int* e;
-	/* d, p, and q are private parts */
 	mp_int* d;
 	mp_int* p;
 	mp_int* q;
 
-} dropbear_rsa_key;
+};
 
-void buf_put_rsa_sign(buffer* buf, dropbear_rsa_key *key, const unsigned char* data,
+typedef struct RSA_key rsa_key;
+
+void buf_put_rsa_sign(buffer* buf, rsa_key *key, const unsigned char* data,
 		unsigned int len);
 #ifdef DROPBEAR_SIGNKEY_VERIFY
-int buf_rsa_verify(buffer * buf, dropbear_rsa_key *key, const unsigned char* data,
+int buf_rsa_verify(buffer * buf, rsa_key *key, const unsigned char* data,
 		unsigned int len);
 #endif
-int buf_get_rsa_pub_key(buffer* buf, dropbear_rsa_key *key);
-int buf_get_rsa_priv_key(buffer* buf, dropbear_rsa_key *key);
-void buf_put_rsa_pub_key(buffer* buf, dropbear_rsa_key *key);
-void buf_put_rsa_priv_key(buffer* buf, dropbear_rsa_key *key);
-void rsa_key_free(dropbear_rsa_key *key);
+int buf_get_rsa_pub_key(buffer* buf, rsa_key *key);
+int buf_get_rsa_priv_key(buffer* buf, rsa_key *key);
+void buf_put_rsa_pub_key(buffer* buf, rsa_key *key);
+void buf_put_rsa_priv_key(buffer* buf, rsa_key *key);
+void rsa_key_free(rsa_key *key);
 
 #endif /* DROPBEAR_RSA */
 
