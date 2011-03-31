@@ -525,10 +525,12 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 					 "ap") ?
 			  "selected=\\\"selected\\\"" : "");
 	}
+#ifndef HAVE_RT61
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
 		  nvram_selmatch(wp, wl_mode,
 				 "sta") ? "selected=\\\"selected\\\"" : "");
+#endif
 #ifndef HAVE_RT2880
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
@@ -1496,6 +1498,7 @@ void sas_show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 		}
 	}
 #else
+#ifndef HAVE_RT61
 	if (nvram_selmatch(wp, sta, "sta") || nvram_match(wp, sta, "wet")) {
 		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 			  selmatch(wp, var, "8021X", "selected=\"selected\""));
@@ -1503,6 +1506,7 @@ void sas_show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 			sprintf(spf, "8021X");
 		}
 	}
+#endif
 #endif
 #endif
 #endif

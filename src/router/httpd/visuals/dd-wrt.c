@@ -990,10 +990,12 @@ show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 			  selmatch(var, "8021X", "selected=\"selected\""));
 	}
 #else
+#ifndef HAVE_RT61
 	if (nvram_match(sta, "sta") || nvram_match(sta, "wet")) {
 		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 			  selmatch(var, "8021X", "selected=\"selected\""));
 	}
+#endif
 #endif
 #endif
 #endif
@@ -3904,11 +3906,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 						      "ap") ?
 					  "selected=\\\"selected\\\"" : "");
 			}
+#ifndef HAVE_RT61
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
 				  nvram_match(wl_mode,
 					      "sta") ?
 				  "selected=\\\"selected\\\"" : "");
+#endif
 #ifndef HAVE_RT2880
 #ifdef HAVE_RELAYD
 			websWrite(wp,
@@ -4610,11 +4614,13 @@ if (!strcmp(prefix, "wl1"))
 						      "ap") ?
 					  "selected=\\\"selected\\\"" : "");
 			}
+#ifndef HAVE_RT61
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
 				  nvram_match(wl_mode,
 					      "sta") ?
 				  "selected=\\\"selected\\\"" : "");
+#endif
 #ifndef HAVE_RT2880
 #ifdef HAVE_RELAYD
 			websWrite(wp,
