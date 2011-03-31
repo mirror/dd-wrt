@@ -1,6 +1,7 @@
-/* Taken for Dropbear from OpenSSH 5.5p1 */
-
 /*
+ *
+ * Taken from OpenSSH 3.8.1p1
+ * 
  * Copyright (C) 2000-2003 Damien Miller.  All rights reserved.
  * Copyright (C) 1999 WIDE Project.  All rights reserved.
  * 
@@ -39,11 +40,7 @@
 
 #include "includes.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <netinet/in.h>
-#include <arpa/inet.h>
+/* RCSID("$.Id: fake-rfc2553.c,v 1.5 2003/09/22 02:08:23 dtucker Exp $");*/
 
 #ifndef HAVE_GETNAMEINFO
 int getnameinfo(const struct sockaddr *sa, size_t salen, char *host, 
@@ -53,8 +50,6 @@ int getnameinfo(const struct sockaddr *sa, size_t salen, char *host,
 	struct hostent *hp;
 	char tmpserv[16];
 
-	if (sa->sa_family != AF_UNSPEC && sa->sa_family != AF_INET)
-		return (EAI_FAMILY);
 	if (serv != NULL) {
 		snprintf(tmpserv, sizeof(tmpserv), "%d", ntohs(sin->sin_port));
 		if (strlcpy(serv, tmpserv, servlen) >= servlen)
@@ -99,8 +94,6 @@ gai_strerror(int err)
 		return ("memory allocation failure.");
 	case EAI_NONAME:
 		return ("nodename nor servname provided, or not known");
-	case EAI_FAMILY:
-		return ("ai_family not supported");
 	default:
 		return ("unknown/invalid error.");
 	}
@@ -165,9 +158,6 @@ getaddrinfo(const char *hostname, const char *servname,
 	u_long addr;
 
 	port = 0;
-	if (hints && hints->ai_family != AF_UNSPEC &&
-	    hints->ai_family != AF_INET)
-		return (EAI_FAMILY);
 	if (servname != NULL) {
 		char *cp;
 

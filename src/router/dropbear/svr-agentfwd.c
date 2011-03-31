@@ -27,7 +27,7 @@
 
 #include "includes.h"
 
-#ifdef ENABLE_SVR_AGENTFWD
+#ifndef DISABLE_AGENTFWD
 
 #include "agentfwd.h"
 #include "session.h"
@@ -49,11 +49,9 @@ static void agentaccept(struct Listener * listener, int sock);
 
 /* Handles client requests to start agent forwarding, sets up listening socket.
  * Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
-int svr_agentreq(struct ChanSess * chansess) {
+int agentreq(struct ChanSess * chansess) {
 
 	int fd;
-
-	TRACE(("enter svr_agentreq"))
 
 	if (!svr_pubkey_allows_agentfwd()) {
 		return DROPBEAR_FAILURE;
@@ -91,12 +89,10 @@ int svr_agentreq(struct ChanSess * chansess) {
 	}
 
 	return DROPBEAR_SUCCESS;
-	TRACE(("success"))
 
 fail:
-	TRACE(("fail"))
 	/* cleanup */
-	svr_agentcleanup(chansess);
+	agentcleanup(chansess);
 
 	return DROPBEAR_FAILURE;
 }
@@ -122,7 +118,7 @@ static void agentaccept(struct Listener *UNUSED(listener), int sock) {
 
 /* set up the environment variable pointing to the socket. This is called
  * just before command/shell execution, after dropping priveleges */
-void svr_agentset(struct ChanSess * chansess) {
+void agentset(struct ChanSess * chansess) {
 
 	char *path = NULL;
 	int len;
@@ -141,7 +137,7 @@ void svr_agentset(struct ChanSess * chansess) {
 }
 
 /* close the socket, remove the socket-file */
-void svr_agentcleanup(struct ChanSess * chansess) {
+void agentcleanup(struct ChanSess * chansess) {
 
 	char *path = NULL;
 	uid_t uid;
@@ -161,7 +157,7 @@ void svr_agentcleanup(struct ChanSess * chansess) {
 		gid = getgid();
 		if ((setegid(ses.authstate.pw_gid)) < 0 ||
 			(seteuid(ses.authstate.pw_uid)) < 0) {
-			dropbear_exit("Failed to set euid");
+			dropbear_exit("failed to set euid");
 		}
 
 		/* 2 for "/" and "\0" */
@@ -176,7 +172,7 @@ void svr_agentcleanup(struct ChanSess * chansess) {
 
 		if ((seteuid(uid)) < 0 ||
 			(setegid(gid)) < 0) {
-			dropbear_exit("Failed to revert euid");
+			dropbear_exit("failed to revert euid");
 		}
 
 		m_free(chansess->agentfile);
@@ -185,7 +181,7 @@ void svr_agentcleanup(struct ChanSess * chansess) {
 
 }
 
-static const struct ChanType chan_svr_agent = {
+static const struct ChanType chan_agent = {
 	0, /* sepfds */
 	"auth-agent@openssh.com",
 	NULL,
@@ -198,7 +194,7 @@ static const struct ChanType chan_svr_agent = {
 /* helper for accepting an agent request */
 static int send_msg_channel_open_agent(int fd) {
 
-	if (send_msg_channel_open_init(fd, &chan_svr_agent) == DROPBEAR_SUCCESS) {
+	if (send_msg_channel_open_init(fd, &chan_agent) == DROPBEAR_SUCCESS) {
 		encrypt_packet();
 		return DROPBEAR_SUCCESS;
 	} else {
@@ -224,7 +220,7 @@ static int bindagent(int fd, struct ChanSess * chansess) {
 	gid = getgid();
 	if ((setegid(ses.authstate.pw_gid)) < 0 ||
 		(seteuid(ses.authstate.pw_uid)) < 0) {
-		dropbear_exit("Failed to set euid");
+		dropbear_exit("failed to set euid");
 	}
 
 	memset((void*)&addr, 0x0, sizeof(addr));
@@ -267,7 +263,7 @@ bindsocket:
 out:
 	if ((seteuid(uid)) < 0 ||
 		(setegid(gid)) < 0) {
-		dropbear_exit("Failed to revert euid");
+		dropbear_exit("failed to revert euid");
 	}
 	return ret;
 }

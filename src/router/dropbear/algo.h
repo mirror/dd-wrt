@@ -50,8 +50,7 @@ extern algo_type sshkex[];
 extern algo_type sshhostkey[];
 extern algo_type sshciphers[];
 extern algo_type sshhashes[];
-extern algo_type ssh_compress[];
-extern algo_type ssh_nocompress[];
+extern algo_type sshcompress[];
 
 extern const struct dropbear_cipher dropbear_nocipher;
 extern const struct dropbear_cipher_mode dropbear_mode_none;
