@@ -474,8 +474,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "ssid=%s\n", ssid);
 	// wep key support
 	if (nvram_match(akm, "wep") || aoss) {
-		if (!isfirst || aoss)
-			fprintf(fp, "ieee80211n=0\n");
+//		if (!isfirst || aoss)
+//			fprintf(fp, "ieee80211n=0\n");
 
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname));
