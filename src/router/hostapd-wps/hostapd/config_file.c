@@ -1087,14 +1087,14 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 	}
 #endif /* CONFIG_IEEE80211R */
 
-/*#ifdef CONFIG_IEEE80211N
+#ifdef CONFIG_IEEE80211N
 	if (conf->ieee80211n &&
 	    bss->ssid.security_policy == SECURITY_STATIC_WEP) {
 		bss->disable_11n = 1;
 		wpa_printf(MSG_ERROR, "HT (IEEE 802.11n) with WEP is not "
 			   "allowed, disabling HT capabilities");
 	}
-
+	/*
 	if (conf->ieee80211n && bss->wpa &&
 	    !(bss->wpa_pairwise & WPA_CIPHER_CCMP) &&
 	    !(bss->rsn_pairwise & WPA_CIPHER_CCMP)) {
@@ -1102,8 +1102,8 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 		wpa_printf(MSG_ERROR, "HT (IEEE 802.11n) with WPA/WPA2 "
 			   "requires CCMP to be enabled, disabling HT "
 			   "capabilities");
-	}
-#endif */
+	}*/
+#endif 
 
 #ifdef CONFIG_WPS2
 	if (bss->wps_state && bss->ignore_broadcast_ssid) {
