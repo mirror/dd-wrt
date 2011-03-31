@@ -18,7 +18,6 @@
 					</script>
 					<option value="nms" <% nvram_selected("sputnik_mode", "nms"); %> >NMS</option>
 					<option value="pro" <% nvram_selected("sputnik_mode", "pro"); %> >PRO</option>
-					<option value="unlimited" <% nvram_selected("sputnik_mode", "unlimited"); %> >UNLIMITED</option>
 				</select>
 		</div>
 		<div class="setting">	
