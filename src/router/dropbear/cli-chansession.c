@@ -33,11 +33,12 @@
 #include "runopts.h"
 #include "termcodes.h"
 #include "chansession.h"
-#include "agentfwd.h"
 
 static void cli_closechansess(struct Channel *channel);
 static int cli_initchansess(struct Channel *channel);
 static void cli_chansessreq(struct Channel *channel);
+
+static void start_channel_request(struct Channel *channel, unsigned char *type);
 
 static void send_chansess_pty_req(struct Channel *channel);
 static void send_chansess_shell_req(struct Channel *channel);
@@ -91,7 +92,7 @@ static void cli_closechansess(struct Channel *UNUSED(channel)) {
 
 }
 
-void cli_start_send_channel_request(struct Channel *channel, 
+static void start_channel_request(struct Channel *channel, 
 		unsigned char *type) {
 
 	CHECKCLEARTOWRITE();
@@ -286,7 +287,7 @@ static void send_chansess_pty_req(struct Channel *channel) {
 
 	TRACE(("enter send_chansess_pty_req"))
 
-	cli_start_send_channel_request(channel, "pty-req");
+	start_channel_request(channel, "pty-req");
 
 	/* Don't want replies */
 	buf_putbyte(ses.writepayload, 0);
@@ -308,7 +309,7 @@ static void send_chansess_pty_req(struct Channel *channel) {
 
 	/* Set up a window-change handler */
 	if (signal(SIGWINCH, sigwinch_handler) == SIG_ERR) {
-		dropbear_exit("Signal error");
+		dropbear_exit("signal error");
 	}
 	TRACE(("leave send_chansess_pty_req"))
 }
@@ -329,7 +330,7 @@ static void send_chansess_shell_req(struct Channel *channel) {
 		reqtype = "shell";
 	}
 
-	cli_start_send_channel_request(channel, reqtype);
+	start_channel_request(channel, reqtype);
 
 	/* XXX TODO */
 	buf_putbyte(ses.writepayload, 0); /* Don't want replies */
@@ -360,12 +361,6 @@ static int cli_initchansess(struct Channel *channel) {
 
 	cli_init_stdpipe_sess(channel);
 
-#ifdef ENABLE_CLI_AGENTFWD
-	if (cli_opts.agent_fwd) {
-		cli_setup_agent(channel);
-	}
-#endif
-
 	if (cli_opts.wantpty) {
 		send_chansess_pty_req(channel);
 	}
@@ -381,19 +376,19 @@ static int cli_initchansess(struct Channel *channel) {
 
 #ifdef ENABLE_CLI_NETCAT
 
-static const struct ChanType cli_chan_netcat = {
-	0, /* sepfds */
-	"direct-tcpip",
-	cli_init_stdpipe_sess, /* inithandler */
-	NULL,
-	NULL,
-	cli_closechansess
-};
-
 void cli_send_netcat_request() {
 
 	const unsigned char* source_host = "127.0.0.1";
 	const int source_port = 22;
+
+	const struct ChanType cli_chan_netcat = {
+		0, /* sepfds */
+		"direct-tcpip",
+		cli_init_stdpipe_sess, /* inithandler */
+		NULL,
+		NULL,
+		cli_closechansess
+	};
 
 	cli_opts.wantpty = 0;
 
@@ -429,3 +424,16 @@ void cli_send_chansess_request() {
 	TRACE(("leave cli_send_chansess_request"))
 
 }
+
+
+#if 0
+	while (cli_opts.localfwds != NULL) {
+		ret = cli_localtcp(cli_opts.localfwds->listenport,
+				cli_opts.localfwds->connectaddr,
+				cli_opts.localfwds->connectport);
+		if (ret == DROPBEAR_FAILURE) {
+			dropbear_log(LOG_WARNING, "Failed local port forward %d:%s:%d",
+					cli_opts.localfwds->listenport,
+					cli_opts.localfwds->connectaddr,
+					cli_opts.localfwds->connectport);
+#endif

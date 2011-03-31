@@ -29,7 +29,6 @@
 #include "dbutil.h"
 #include "algo.h"
 #include "tcpfwd.h"
-#include "list.h"
 
 cli_runopts cli_opts; /* GLOBAL */
 
@@ -41,7 +40,7 @@ static void fill_own_user();
 static void loadidentityfile(const char* filename);
 #endif
 #ifdef ENABLE_CLI_ANYTCPFWD
-static void addforward(const char* str, m_list *fwdlist);
+static void addforward(const char* str, struct TCPFwdList** fwdlist);
 #endif
 #ifdef ENABLE_CLI_NETCAT
 static void add_netcat(const char *str);
@@ -67,15 +66,12 @@ static void printhelp() {
 #ifdef ENABLE_CLI_PUBKEY_AUTH
 					"-i <identityfile>   (multiple allowed)\n"
 #endif
-#ifdef ENABLE_CLI_AGENTFWD
-					"-A    Enable agent auth forwarding\n"
-#endif
 #ifdef ENABLE_CLI_LOCALTCPFWD
-					"-L <[listenaddress:]listenport:remotehost:remoteport> Local port forwarding\n"
+					"-L <listenport:remotehost:remoteport> Local port forwarding\n"
 					"-g    Allow remote hosts to connect to forwarded ports\n"
 #endif
 #ifdef ENABLE_CLI_REMOTETCPFWD
-					"-R <[listenaddress:]listenport:remotehost:remoteport> Remote port forwarding\n"
+					"-R <listenport:remotehost:remoteport> Remote port forwarding\n"
 #endif
 					"-W <receive_window_buffer> (default %d, larger may be faster, max 1MB)\n"
 					"-K <keepalive>  (0 is never, default %d)\n"
@@ -95,6 +91,7 @@ static void printhelp() {
 }
 
 void cli_getopts(int argc, char ** argv) {
+
 	unsigned int i, j;
 	char ** next = 0;
 	unsigned int cmdlen;
@@ -115,7 +112,6 @@ void cli_getopts(int argc, char ** argv) {
 	char* recv_window_arg = NULL;
 	char* keepalive_arg = NULL;
 	char* idle_timeout_arg = NULL;
-	char *host_arg = NULL;
 
 	/* see printhelp() for options */
 	cli_opts.progname = argv[0];
@@ -129,24 +125,17 @@ void cli_getopts(int argc, char ** argv) {
 	cli_opts.always_accept_key = 0;
 	cli_opts.is_subsystem = 0;
 #ifdef ENABLE_CLI_PUBKEY_AUTH
-	cli_opts.privkeys = list_new();
+	cli_opts.privkeys = NULL;
 #endif
 #ifdef ENABLE_CLI_LOCALTCPFWD
-	cli_opts.localfwds = list_new();
+	cli_opts.localfwds = NULL;
 	opts.listen_fwd_all = 0;
 #endif
 #ifdef ENABLE_CLI_REMOTETCPFWD
-	cli_opts.remotefwds = list_new();
-#endif
-#ifdef ENABLE_CLI_AGENTFWD
-	cli_opts.agent_fwd = 0;
-	cli_opts.agent_keys_loaded = 0;
+	cli_opts.remotefwds = NULL;
 #endif
 #ifdef ENABLE_CLI_PROXYCMD
 	cli_opts.proxycmd = NULL;
-#endif
-#ifndef DISABLE_ZLIB
-	opts.enable_compress = 1;
 #endif
 	/* not yet
 	opts.ipv4 = 1;
@@ -169,7 +158,7 @@ void cli_getopts(int argc, char ** argv) {
 #ifdef ENABLE_CLI_REMOTETCPFWD
 		if (nextisremote) {
 			TRACE(("nextisremote true"))
-			addforward(argv[i], cli_opts.remotefwds);
+			addforward(argv[i], &cli_opts.remotefwds);
 			nextisremote = 0;
 			continue;
 		}
@@ -177,7 +166,7 @@ void cli_getopts(int argc, char ** argv) {
 #ifdef ENABLE_CLI_LOCALTCPFWD
 		if (nextislocal) {
 			TRACE(("nextislocal true"))
-			addforward(argv[i], cli_opts.localfwds);
+			addforward(argv[i], &cli_opts.localfwds);
 			nextislocal = 0;
 			continue;
 		}
@@ -277,11 +266,6 @@ void cli_getopts(int argc, char ** argv) {
 				case 'I':
 					next = &idle_timeout_arg;
 					break;
-#ifdef ENABLE_CLI_AGENTFWD
-				case 'A':
-					cli_opts.agent_fwd = 1;
-					break;
-#endif
 #ifdef DEBUG_TRACE
 				case 'v':
 					debug_trace = 1;
@@ -320,8 +304,12 @@ void cli_getopts(int argc, char ** argv) {
 
 			/* Either the hostname or commands */
 
-			if (host_arg == NULL) {
-				host_arg = argv[i];
+			if (cli_opts.remotehost == NULL) {
+#ifdef ENABLE_CLI_MULTIHOP
+				parse_multihop_hostname(argv[i], argv[0]);
+#else
+				parse_hostname(argv[i]);
+#endif
 			} else {
 
 				/* this is part of the commands to send - after this we
@@ -350,7 +338,7 @@ void cli_getopts(int argc, char ** argv) {
 
 	/* And now a few sanity checks and setup */
 
-	if (host_arg == NULL) {
+	if (cli_opts.remotehost == NULL) {
 		printhelp();
 		exit(EXIT_FAILURE);
 	}
@@ -371,7 +359,7 @@ void cli_getopts(int argc, char ** argv) {
 
 	if (cli_opts.backgrounded && cli_opts.cmd == NULL
 			&& cli_opts.no_cmd == 0) {
-		dropbear_exit("Command required for -f");
+		dropbear_exit("command required for -f");
 	}
 	
 	if (recv_window_arg) {
@@ -381,19 +369,15 @@ void cli_getopts(int argc, char ** argv) {
 		}
 	}
 	if (keepalive_arg) {
-		unsigned int val;
-		if (m_str_to_uint(keepalive_arg, &val) == DROPBEAR_FAILURE) {
+		if (m_str_to_uint(keepalive_arg, &opts.keepalive_secs) == DROPBEAR_FAILURE) {
 			dropbear_exit("Bad keepalive '%s'", keepalive_arg);
 		}
-		opts.keepalive_secs = val;
 	}
 
 	if (idle_timeout_arg) {
-		unsigned int val;
-		if (m_str_to_uint(idle_timeout_arg, &val) == DROPBEAR_FAILURE) {
+		if (m_str_to_uint(idle_timeout_arg, &opts.idle_timeout_secs) == DROPBEAR_FAILURE) {
 			dropbear_exit("Bad idle_timeout '%s'", idle_timeout_arg);
 		}
-		opts.idle_timeout_secs = val;
 	}
 
 #ifdef ENABLE_CLI_NETCAT
@@ -401,72 +385,35 @@ void cli_getopts(int argc, char ** argv) {
 		dropbear_log(LOG_INFO, "Ignoring command '%s' in netcat mode", cli_opts.cmd);
 	}
 #endif
-
-	/* The hostname gets set up last, since
-	 * in multi-hop mode it will require knowledge
-	 * of other flags such as -i */
-#ifdef ENABLE_CLI_MULTIHOP
-	parse_multihop_hostname(host_arg, argv[0]);
-#else
-	parse_hostname(host_arg);
-#endif
+	
 }
 
 #ifdef ENABLE_CLI_PUBKEY_AUTH
 static void loadidentityfile(const char* filename) {
+
+	struct SignKeyList * nextkey;
 	sign_key *key;
 	int keytype;
 
 	key = new_sign_key();
 	keytype = DROPBEAR_SIGNKEY_ANY;
 	if ( readhostkey(filename, key, &keytype) != DROPBEAR_SUCCESS ) {
+
 		fprintf(stderr, "Failed loading keyfile '%s'\n", filename);
 		sign_key_free(key);
+
 	} else {
-		key->type = keytype;
-		key->source = SIGNKEY_SOURCE_RAW_FILE;
-		key->filename = m_strdup(filename);
-		list_append(cli_opts.privkeys, key);
+
+		nextkey = (struct SignKeyList*)m_malloc(sizeof(struct SignKeyList));
+		nextkey->key = key;
+		nextkey->next = cli_opts.privkeys;
+		nextkey->type = keytype;
+		cli_opts.privkeys = nextkey;
 	}
 }
 #endif
 
 #ifdef ENABLE_CLI_MULTIHOP
-
-static char*
-multihop_passthrough_args() {
-	char *ret;
-	int total;
-	unsigned int len = 0;
-	m_list_elem *iter;
-	/* Fill out -i and -W options that make sense for all
-	 * the intermediate processes */
-	for (iter = cli_opts.privkeys->first; iter; iter = iter->next)
-	{
-		sign_key * key = (sign_key*)iter->item;
-		len += 3 + strlen(key->filename);
-	}
-	len += 20; // space for -W <size>, terminator.
-	ret = m_malloc(len);
-	total = 0;
-
-	if (opts.recv_window != DEFAULT_RECV_WINDOW)
-	{
-		int written = snprintf(ret+total, len-total, "-W %d", opts.recv_window);
-		total += written;
-	}
-
-	for (iter = cli_opts.privkeys->first; iter; iter = iter->next)
-	{
-		sign_key * key = (sign_key*)iter->item;
-		const size_t size = len - total;
-		int written = snprintf(ret+total, size, "-i %s", key->filename);
-		dropbear_assert((unsigned int)written < size);
-		total += written;
-	}
-
-	return ret;
-}
 
 /* Sets up 'onion-forwarding' connections. This will spawn
  * a separate dbclient process for each hop.
@@ -482,8 +429,7 @@ multihop_passthrough_args() {
  */
 static void parse_multihop_hostname(const char* orighostarg, const char* argv0) {
 	char *userhostarg = NULL;
-	char *hostbuf = NULL;
-	char *last_hop = NULL;
+	char *last_hop = NULL;;
 	char *remainder = NULL;
 
 	/* both scp and rsync parse a user@host argument
@@ -495,12 +441,11 @@ static void parse_multihop_hostname(const char* orighostarg, const char* argv0) 
 			&& strchr(cli_opts.username, ',') 
 			&& strchr(cli_opts.username, '@')) {
 		unsigned int len = strlen(orighostarg) + strlen(cli_opts.username) + 2;
-		hostbuf = m_malloc(len);
-		snprintf(hostbuf, len, "%s@%s", cli_opts.username, orighostarg);
+		userhostarg = m_malloc(len);
+		snprintf(userhostarg, len, "%s@%s", cli_opts.username, orighostarg);
 	} else {
-		hostbuf = m_strdup(orighostarg);
+		userhostarg = m_strdup(orighostarg);
 	}
-	userhostarg = hostbuf;
 
 	last_hop = strrchr(userhostarg, ',');
 	if (last_hop) {
@@ -518,28 +463,19 @@ static void parse_multihop_hostname(const char* orighostarg, const char* argv0) 
 	if (last_hop) {
 		/* Set up the proxycmd */
 		unsigned int cmd_len = 0;
-		char *passthrough_args = multihop_passthrough_args();
 		if (cli_opts.proxycmd) {
 			dropbear_exit("-J can't be used with multihop mode");
 		}
 		if (cli_opts.remoteport == NULL) {
 			cli_opts.remoteport = "22";
 		}
-		cmd_len = strlen(argv0) + strlen(remainder) 
+		cmd_len = strlen(remainder) 
 			+ strlen(cli_opts.remotehost) + strlen(cli_opts.remoteport)
-			+ strlen(passthrough_args)
-			+ 30;
+			+ strlen(argv0) + 30;
 		cli_opts.proxycmd = m_malloc(cmd_len);
-		snprintf(cli_opts.proxycmd, cmd_len, "%s -B %s:%s %s %s", 
-				argv0, cli_opts.remotehost, cli_opts.remoteport, 
-				passthrough_args, remainder);
-#ifndef DISABLE_ZLIB
-		/* The stream will be incompressible since it's encrypted. */
-		opts.enable_compress = 0;
-#endif
-		m_free(passthrough_args);
+		snprintf(cli_opts.proxycmd, cmd_len, "%s -B %s:%s %s", 
+				argv0, cli_opts.remotehost, cli_opts.remoteport, remainder);
 	}
-	m_free(hostbuf);
 }
 #endif /* !ENABLE_CLI_MULTIHOP */
 
@@ -628,16 +564,14 @@ static void fill_own_user() {
 }
 
 #ifdef ENABLE_CLI_ANYTCPFWD
-/* Turn a "[listenaddr:]listenport:remoteaddr:remoteport" string into into a forwarding
+/* Turn a "listenport:remoteaddr:remoteport" string into into a forwarding
  * set, and add it to the forwarding list */
-static void addforward(const char* origstr, m_list *fwdlist) {
+static void addforward(const char* origstr, struct TCPFwdList** fwdlist) {
 
-	char *part1 = NULL, *part2 = NULL, *part3 = NULL, *part4 = NULL;
-	char * listenaddr = NULL;
 	char * listenport = NULL;
-	char * connectaddr = NULL;
 	char * connectport = NULL;
-	struct TCPFwdEntry* newfwd = NULL;
+	char * connectaddr = NULL;
+	struct TCPFwdList* newfwd = NULL;
 	char * str = NULL;
 
 	TRACE(("enter addforward"))
@@ -646,43 +580,25 @@ static void addforward(const char* origstr, m_list *fwdlist) {
 	   is never free()d. */ 
 	str = m_strdup(origstr);
 
-	part1 = str;
+	listenport = str;
 
-	part2 = strchr(str, ':');
-	if (part2 == NULL) {
-		TRACE(("part2 == NULL"))
+	connectaddr = strchr(str, ':');
+	if (connectaddr == NULL) {
+		TRACE(("connectaddr == NULL"))
 		goto fail;
 	}
-	*part2 = '\0';
-	part2++;
+	*connectaddr = '\0';
+	connectaddr++;
 
-	part3 = strchr(part2, ':');
-	if (part3 == NULL) {
-		TRACE(("part3 == NULL"))
+	connectport = strchr(connectaddr, ':');
+	if (connectport == NULL) {
+		TRACE(("connectport == NULL"))
 		goto fail;
 	}
-	*part3 = '\0';
-	part3++;
+	*connectport = '\0';
+	connectport++;
 
-	part4 = strchr(part3, ':');
-	if (part4) {
-		*part4 = '\0';
-		part4++;
-	}
-
-	if (part4) {
-		listenaddr = part1;
-		listenport = part2;
-		connectaddr = part3;
-		connectport = part4;
-	} else {
-		listenaddr = NULL;
-		listenport = part1;
-		connectaddr = part2;
-		connectport = part3;
-	}
-
-	newfwd = m_malloc(sizeof(struct TCPFwdEntry));
+	newfwd = (struct TCPFwdList*)m_malloc(sizeof(struct TCPFwdList));
 
 	/* Now we check the ports - note that the port ints are unsigned,
 	 * the check later only checks for >= MAX_PORT */
@@ -696,7 +612,6 @@ static void addforward(const char* origstr, m_list *fwdlist) {
 		goto fail;
 	}
 
-	newfwd->listenaddr = listenaddr;
 	newfwd->connectaddr = connectaddr;
 
 	if (newfwd->listenport > 65535) {
@@ -710,7 +625,8 @@ static void addforward(const char* origstr, m_list *fwdlist) {
 	}
 
 	newfwd->have_reply = 0;
-	list_append(fwdlist, newfwd);
+	newfwd->next = *fwdlist;
+	*fwdlist = newfwd;
 
 	TRACE(("leave addforward: done"))
 	return;
