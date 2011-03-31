@@ -527,7 +527,7 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 			}
 		}
 	}
-	if (count) list[count].freq=-1;
+	list[count].freq=-1;
 	if (rd) 
 		free(rd);
 	return list;
