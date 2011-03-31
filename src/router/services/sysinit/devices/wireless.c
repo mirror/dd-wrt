@@ -26,8 +26,21 @@
 
 static void detect_wireless_devices(void)
 {
-	nvram_default_get("rate_control","minstrel");
+#ifdef HAVE_RT61
+	FILE *fp = fopen("/sys/bus/pci/devices/0000:00:0e.0/device", "rb");
+	if (fp) {
+		char str[32];
+		fscanf(fp, "%s", str);
+		if (!strcmp(str, "0x3592"))
+			nvram_set("rtchip", "3062");
+		else
+			nvram_set("rtchip", "2860");
+	} else
+		nvram_set("rtchip", "2860");
+
+#endif
 #ifndef HAVE_NOWIFI
+	nvram_default_get("rate_control", "minstrel");
 #ifdef HAVE_MADWIFI
 	fprintf(stderr, "load ATH 802.11 a/b/g Driver\n");
 	insmod("ath_hal");
@@ -47,7 +60,7 @@ static void detect_wireless_devices(void)
 #else
 	if (nvram_match("mimo_driver", "ath9k"))
 #endif
-		{
+	{
 		fprintf(stderr, "load ATH9K 802.11n Driver\n");
 		// some are just for future use and not (yet) there
 		insmod("/lib/ath9k/compat.ko");
@@ -63,26 +76,25 @@ static void detect_wireless_devices(void)
 		insmod("/lib/ath9k/ath9k.ko");
 #endif
 		delete_ath9k_devices(NULL);
-		}
-	else
-		{
+	} else {
 #endif
 #ifdef HAVE_MADWIFI_MIMO
-			fprintf(stderr, "load ATH 802.11n Driver\n");
-			insmod("/lib/80211n/ath_mimo_hal.ko");
-			if (nvram_get("rate_control") != NULL) {
-				char rate[64];
+		fprintf(stderr, "load ATH 802.11n Driver\n");
+		insmod("/lib/80211n/ath_mimo_hal.ko");
+		if (nvram_get("rate_control") != NULL) {
+			char rate[64];
 
-				sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-				insmod("/lib/80211n/ath_mimo_pci.ko");
-				insmod("/lib/80211n/ath_mimo_ahb.ko");
-			} else {
-				insmod("/lib/80211n/ath_mimo_pci.ko");
-				insmod("/lib/80211n/ath_mimo_ahb.ko");
-			}
+			sprintf(rate, "ratectl=%s",
+				nvram_safe_get("rate_control"));
+			insmod("/lib/80211n/ath_mimo_pci.ko");
+			insmod("/lib/80211n/ath_mimo_ahb.ko");
+		} else {
+			insmod("/lib/80211n/ath_mimo_pci.ko");
+			insmod("/lib/80211n/ath_mimo_ahb.ko");
+		}
 #endif
 #ifdef HAVE_ATH9K
-		}
+	}
 #endif
 #endif
 #endif
