@@ -322,7 +322,7 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 
 // leave space for enhencements with more cards and already chosen channels...
 struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive) {
-	struct mac80211_ac *acs;
+	struct mac80211_ac *acs = NULL;
 	struct frequency *f;
 	struct unl unl;
 	int verbose = 0;
