@@ -428,6 +428,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	rmmod("rt2860v2_ap");
 	rmmod("rt2860v2_sta");
 	rmmod("rt3062ap");
+	rmmod("rt2860ap");
 	if (nvram_match("wl0_net_mode", "disabled"))
 		return;
 
@@ -1206,12 +1207,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		if (nvram_match("mac_clone_enable", "1") &&
 		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
-			sysprintf("insmod rt2860v2_ap mac=%s",
-				  nvram_safe_get("def_whwaddr"));
-			sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s",
-				  nvram_safe_get("def_whwaddr"));
+			sysprintf("insmod rt2860v2_ap mac=%s",nvram_safe_get("def_whwaddr"));
+			sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s",nvram_safe_get("def_whwaddr"));
+			sysprintf("insmod /lib/rt3062/rt2860ap.ko mac=%s",nvram_safe_get("def_whwaddr"));
 		} else {
 			sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s",mac);
+			sysprintf("insmod /lib/rt3062/rt2860ap.ko mac=%s",mac);
 			sysprintf("insmod rt2860v2_ap mac=%s", mac);
 		}
 #else
