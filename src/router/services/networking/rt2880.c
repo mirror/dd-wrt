@@ -584,14 +584,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		strcat(encryptype, "WEP");
 		strcat(x80211, "0");
 		if (isSTA()) {
-			fprintf(fp, "Key1Str=%s\n",
-				nvram_safe_get("wl0_key1"));
-			fprintf(fp, "Key2Str=%s\n",
-				nvram_safe_get("wl0_key2"));
-			fprintf(fp, "Key3Str=%s\n",
-				nvram_safe_get("wl0_key3"));
-			fprintf(fp, "Key4Str=%s\n",
-				nvram_safe_get("wl0_key4"));
+			fprintf(fp, "Key1Str=%s\n", nvram_safe_get("wl0_key1"));
+			fprintf(fp, "Key2Str=%s\n", nvram_safe_get("wl0_key2"));
+			fprintf(fp, "Key3Str=%s\n", nvram_safe_get("wl0_key3"));
+			fprintf(fp, "Key4Str=%s\n", nvram_safe_get("wl0_key4"));
 			fprintf(fp, "Key1Type=0\n");
 			fprintf(fp, "Key2Type=0\n");
 			fprintf(fp, "Key3Type=0\n");
@@ -1053,7 +1049,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	fprintf(fp, "FragThreshold=%s\n", nvram_safe_get("wl0_frag"));
 	fprintf(fp, "TxBurst=%s\n",
 		nvram_match("wl0_frameburst", "on") ? "0" : "1");
-	fprintf(fp, "PktAggregate=0\n"); // ralink propertiery, do not use
+	fprintf(fp, "PktAggregate=0\n");	// ralink propertiery, do not use
 	fprintf(fp, "TurboRate=0\n");
 	fprintf(fp, "WmmCapable=%s\n",
 		nvram_match("wl0_wme", "on") ? "1" : "0");
@@ -1207,12 +1203,25 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		if (nvram_match("mac_clone_enable", "1") &&
 		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
-			sysprintf("insmod rt2860v2_ap mac=%s",nvram_safe_get("def_whwaddr"));
-			sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s",nvram_safe_get("def_whwaddr"));
-			sysprintf("insmod /lib/rt3062/rt2860ap.ko mac=%s",nvram_safe_get("def_whwaddr"));
+			sysprintf("insmod rt2860v2_ap mac=%s",
+				  nvram_safe_get("def_whwaddr"));
+			if (nvram_match("rtchip", "3062"))
+				sysprintf
+				    ("insmod /lib/rt3062/rt3062ap.ko mac=%s",
+				     nvram_safe_get("def_whwaddr"));
+			else
+				sysprintf
+				    ("insmod /lib/rt3062/rt2860ap.ko mac=%s",
+				     nvram_safe_get("def_whwaddr"));
 		} else {
-			sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s",mac);
-			sysprintf("insmod /lib/rt3062/rt2860ap.ko mac=%s",mac);
+			if (nvram_match("rtchip", "3062"))
+				sysprintf
+				    ("insmod /lib/rt3062/rt3062ap.ko mac=%s",
+				     mac);
+			else
+				sysprintf
+				    ("insmod /lib/rt3062/rt2860ap.ko mac=%s",
+				     mac);
 			sysprintf("insmod rt2860v2_ap mac=%s", mac);
 		}
 #else
