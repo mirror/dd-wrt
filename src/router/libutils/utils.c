@@ -3631,8 +3631,8 @@ int led_control(int type, int act)
 		ses_gpio = 0x104;	// ses blue
 		break;
 	case ROUTER_LINKSYS_E1000V2:
-		power_gpio = 0x006;
-		diag_gpio = 0x106;	// power led blink / off to indicate fac.def. 
+		power_gpio = 0x106;
+		diag_gpio = 0x006;	// power led blink / off to indicate fac.def. 
 		connected_gpio = 0x007;	// ses orange
 		ses_gpio = 0x008;	// ses blue
 		break;
