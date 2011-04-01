@@ -40,6 +40,12 @@
 #include <err.h>
 
 #include "wireless_copy.h"
+
+#ifdef HAVE_DANUBE
+#define RT_BIG_ENDIAN
+#endif
+
+
 static const char *ieee80211_ntoa(const uint8_t mac[6])
 {
 	static char a[18];
@@ -51,6 +57,16 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 }
 
 typedef union _MACHTTRANSMIT_SETTING {
+#ifdef RT_BIG_ENDIAN
+	struct {
+		unsigned short MODE:2;	// Use definition MODE_xxx.
+		unsigned short rsv:3;
+		unsigned short STBC:2;	//SPACE
+		unsigned short ShortGI:1;
+		unsigned short BW:1;	//channel bandwidth 20MHz or 40 MHz
+		unsigned short MCS:7;	// MCS
+	} field;
+#else
 	struct {
 		unsigned short MCS:7;	// MCS
 		unsigned short BW:1;	//channel bandwidth 20MHz or 40 MHz
@@ -59,6 +75,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 		unsigned short rsv:3;
 		unsigned short MODE:2;	// Use definition MODE_xxx.
 	} field;
+#endif
 	unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
