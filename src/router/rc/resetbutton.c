@@ -836,6 +836,9 @@ void period_check(int sig)
 	case ROUTER_WRT310NV2:
 		sesgpio = 0x105;	// gpio 5, inversed
 		break;
+	case ROUTER_LINKSYS_E1000V2:
+		sesgpio = 0x109;	// gpio 9, inversed
+		break;	
 
 #endif
 	default:
