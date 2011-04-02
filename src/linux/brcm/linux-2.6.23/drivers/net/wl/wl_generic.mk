@@ -54,8 +54,8 @@ ifeq ($(REBUILD_WL_MODULE),1)
     
     # need -I. to pick up wlconf.h in build directory
     
-    EXTRA_CFLAGS += -DDMA $(WL_DFLAGS) -I$(src) -I$(src)/.. -I$(src)/$(SRCBASE)/wl/linux \
-		    -I$(src)/$(SRCBASE)/wl/sys -finline-limit=2048
+    EXTRA_CFLAGS += -DDMA $(WL_DFLAGS) -Os -I$(src) -I$(src)/.. -I$(src)/$(SRCBASE)/wl/linux \
+		    -I$(src)/$(SRCBASE)/wl/sys -finline-limit=0
 
     # If the PHY_HAL flag is defined we look in directory wl/phy for the
     # phy source files.
