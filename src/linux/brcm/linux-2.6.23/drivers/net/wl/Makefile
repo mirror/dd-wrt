@@ -13,7 +13,8 @@
 #
 
 SRCBASE := ../../../brcm
-EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include -DCONFIG_NOPRINTK=1
+EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include 
+#-DCONFIG_NOPRINTK=1
 
 TARGET := wl
 WLCONF_H := wlconf.h
@@ -34,7 +35,7 @@ endif
 
 # Set suffix and config based on the selected variant
 WL_SUFFIX := $(strip $(foreach v,$(VLIST),$(if $(CONFIG_WL_USE_$(v)),$(v))))
-CONFIG_WL_CONF := $(CONFIG_WL_$(WL_SUFFIX))
+CONFIG_WL_CONF := wlconfig_lx_router_apsta
 
 # Module file names use lowercase of the suffix
 wl_suffix := $(shell echo "$(WL_SUFFIX)" | tr A-Z a-z)
