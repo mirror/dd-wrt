@@ -1317,6 +1317,9 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_DANUBE;
+#elif HAVE_VF802
+	setRouter("Vodafone Easybox 802");
+	return ROUTER_BOARD_DANUBE;
 #elif HAVE_VF803
 	setRouter("Vodafone Easybox 803");
 	return ROUTER_BOARD_DANUBE;
