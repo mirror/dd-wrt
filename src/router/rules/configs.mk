@@ -177,6 +177,7 @@ obj-$(CONFIG_GPSI) += gpsi
 obj-$(CONFIG_BMON) += bmon
 obj-$(CONFIG_SERCD) += sercd
 obj-$(CONFIG_RT3062) += rt3062
+obj-$(CONFIG_RT2860) += rt2860
 obj-$(CONFIG_P910ND) += p910nd
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
