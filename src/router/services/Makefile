@@ -242,6 +242,9 @@ endif
 ifeq ($(CONFIG_VF803),y)
 CFLAGS_EXTRA += -DHAVE_VF803
 endif
+ifeq ($(CONFIG_VF802),y)
+CFLAGS_EXTRA += -DHAVE_VF802
+endif
 ifeq ($(CONFIG_CORENET),y)
 CFLAGS_EXTRA += -DHAVE_CORENET
 endif
