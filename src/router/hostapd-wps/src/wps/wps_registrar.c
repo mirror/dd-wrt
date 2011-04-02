@@ -2996,6 +2996,11 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 	return WPS_DONE;
 }
 
+#ifdef HAVE_AOSS
+extern int sysprintf(const char *fmt, ...);
+ 
+#endif
+
 
 enum wps_process_res wps_registrar_process_msg(struct wps_data *wps,
 					       enum wsc_op_code op_code,
@@ -3061,6 +3066,11 @@ enum wps_process_res wps_registrar_process_msg(struct wps_data *wps,
 			wps_fail_event(wps->wps, WPS_WSC_DONE,
 				       wps->config_error,
 				       wps->error_indication);
+		}else{
+#ifdef HAVE_AOSS
+		sysprintf("echo done > /tmp/.wpsdone");
+#endif
+		
 		}
 		return ret;
 	default:
