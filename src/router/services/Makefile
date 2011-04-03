@@ -996,6 +996,11 @@ CFLAGS_EXTRA += -DHAVE_SNMP
 OBJS += snmp.o
 endif
 
+ifeq ($(CONFIG_LLTD),y)
+CFLAGS_EXTRA += -DHAVE_LLTD
+OBJS += lltd.o
+endif
+
 ifeq ($(CONFIG_WOL),y)
 CFLAGS_EXTRA += -DHAVE_WOL
 OBJS += wol.o
