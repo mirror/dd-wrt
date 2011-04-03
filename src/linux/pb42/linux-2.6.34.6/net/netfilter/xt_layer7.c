@@ -267,9 +267,9 @@ static int match_no_append(struct nf_conn * conntrack,
 			DPRINTK("\nl7-filter gave up after %d bytes "
 				"(%d packets):\n%s\n",
 				strlen(f), total_acct_packets(master_conntrack), f);
+			DPRINTK("In hex: %s\n", g);
 			kfree(g);
 			kfree(f);
-			DPRINTK("In hex: %s\n", g);
 		}
 	#endif
 
