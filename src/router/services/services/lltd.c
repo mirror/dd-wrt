@@ -47,7 +47,7 @@ void start_lltd(void)
 	return;
 }
 
-void stop_apserv(void)
+void stop_lltd(void)
 {
 	stop_process("lld2d","Stop LLTD Daemon");
 	return;
