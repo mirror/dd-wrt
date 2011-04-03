@@ -107,6 +107,50 @@
 /*
  * Debugging Macros
  */
+#ifdef BCMDBG
+#define WLCONF_DBG(fmt, arg...)	fprintf(stderr, "%s: "fmt, __FUNCTION__ , ## arg)
+#define WL_IOCTL(ifname, cmd, buf, len)					\
+	if ((ret = wl_ioctl(ifname, cmd, buf, len)))			\
+		fprintf(stderr, "%s:%d:(%s): %s failed, err = %d\n",	\
+		        __FUNCTION__, __LINE__, ifname, #cmd, ret);
+#define WL_SETINT(ifname, cmd, val)								\
+	if ((ret = wlconf_setint(ifname, cmd, val)))						\
+		fprintf(stderr, "%s:%d:(%s): setting %s to %d (0x%x) failed, err = %d\n",	\
+		        __FUNCTION__, __LINE__, ifname, #cmd, (int)val, (unsigned int)val, ret);
+#define WL_GETINT(ifname, cmd, pval)								\
+	if ((ret = wlconf_getint(ifname, cmd, pval)))						\
+		fprintf(stderr, "%s:%d:(%s): getting %s failed, err = %d\n",			\
+		        __FUNCTION__, __LINE__, ifname, #cmd, ret);
+#define WL_IOVAR_SET(ifname, iovar, param, paramlen)					\
+	if ((ret = wl_iovar_set(ifname, iovar, param, paramlen)))			\
+		fprintf(stderr, "%s:%d:(%s): setting iovar \"%s\" failed, err = %d\n",	\
+		        __FUNCTION__, __LINE__, ifname, iovar, ret);
+#define WL_IOVAR_SETINT(ifname, iovar, val)							\
+	if ((ret = wl_iovar_setint(ifname, iovar, val)))					\
+		fprintf(stderr, "%s:%d:(%s): setting iovar \"%s\" to 0x%x failed, err = %d\n",	\
+		        __FUNCTION__, __LINE__, ifname, iovar, (unsigned int)val, ret);
+#define WL_IOVAR_GETINT(ifname, iovar, val)							\
+	if ((ret = wl_iovar_getint(ifname, iovar, val)))					\
+		fprintf(stderr, "%s:%d:(%s): getting iovar \"%s\" failed, err = %d\n",	\
+		        __FUNCTION__, __LINE__, ifname, iovar, ret);
+#define WL_BSSIOVAR_SETBUF(ifname, iovar, bssidx, param, paramlen, buf, buflen)			\
+	if ((ret = wl_bssiovar_setbuf(ifname, iovar, bssidx, param, paramlen, buf, buflen)))	\
+		fprintf(stderr, "%s:%d:(%s): setting bsscfg #%d iovar \"%s\" failed, err = %d\n", \
+		        __FUNCTION__, __LINE__, ifname, bssidx, iovar, ret);
+#define WL_BSSIOVAR_SET(ifname, iovar, bssidx, param, paramlen)					\
+	if ((ret = wl_bssiovar_set(ifname, iovar, bssidx, param, paramlen)))			\
+		fprintf(stderr, "%s:%d:(%s): setting bsscfg #%d iovar \"%s\" failed, err = %d\n", \
+		        __FUNCTION__, __LINE__, ifname, bssidx, iovar, ret);
+#define WL_BSSIOVAR_GET(ifname, iovar, bssidx, param, paramlen)					\
+	if ((ret = wl_bssiovar_get(ifname, iovar, bssidx, param, paramlen)))			\
+		fprintf(stderr, "%s:%d:(%s): getting bsscfg #%d iovar \"%s\" failed, err = %d\n", \
+		        __FUNCTION__, __LINE__, ifname, bssidx, iovar, ret);
+#define WL_BSSIOVAR_SETINT(ifname, iovar, bssidx, val)						\
+	if ((ret = wl_bssiovar_setint(ifname, iovar, bssidx, val)))				\
+		fprintf(stderr, "%s:%d:(%s): setting bsscfg #%d iovar \"%s\" " \
+				"to val 0x%x failed, err = %d\n",	\
+		        __FUNCTION__, __LINE__, ifname, bssidx, iovar, (unsigned int)val, ret);
+#else
 #define WLCONF_DBG(fmt, arg...)
 #define WL_IOCTL(name, cmd, buf, len)			(ret = wl_ioctl(name, cmd, buf, len))
 #define WL_SETINT(name, cmd, val)			(ret = wlconf_setint(name, cmd, val))
@@ -123,7 +167,8 @@
 		(ret = wl_bssiovar_get(ifname, iovar, bssidx, param, paramlen))
 #define WL_BSSIOVAR_SETINT(ifname, iovar, bssidx, val)	(ret = wl_bssiovar_setint(ifname, iovar, \
 			bssidx, val))
-
+#endif
+			
 #ifdef BCMWPA2
 #define CHECK_PSK(mode) ((mode) & (WPA_AUTH_PSK | WPA2_AUTH_PSK))
 #else
