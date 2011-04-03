@@ -1,0 +1,8 @@
+<fieldset>
+	<legend>Link Layer Topology Discovery</legend>
+	<div class="setting">
+		<div class="label">LLTD</div>
+		<input class="spaceradio" type="radio" name="lltd_enabled" value="1" <% nvram_checked("lltd_enabled", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="lltd_enabled" value="0" <% nvram_checked("lltd_enabled", "0"); %> /><% tran("share.disable"); %>
+		</div>
+</fieldset><br />

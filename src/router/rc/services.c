@@ -140,6 +140,10 @@ int start_services_main(int argc, char **argv)
 	handle = start_service_nofree_f("snmp", handle);
 #endif
 
+#ifdef HAVE_LLTD
+	handle = start_service_nofree_f("lltd", handle);
+#endif
+
 #ifdef HAVE_PPPOESERVER
 	handle = start_service_nofree_f("pppoeserver", handle);
 #endif
@@ -269,6 +273,10 @@ int stop_services_main(int argc, char **argv)
 
 #ifdef HAVE_SNMP
 	handle = stop_service_nofree("snmp", handle);
+#endif
+
+#ifdef HAVE_LLTD
+	handle = stop_service_nofree("lltd", handle);
 #endif
 
 #ifdef HAVE_WOL
@@ -523,6 +531,9 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_SNMP
 	handle = startstop_nofree_f("snmp", handle);
+#endif
+#ifdef HAVE_LLTD
+	handle = startstop_nofree_f("lltd", handle);
 #endif
 #ifdef HAVE_PPTPD
 	handle = startstop_nofree_f("pptpd", handle);
