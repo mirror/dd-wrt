@@ -613,6 +613,10 @@ ifeq ($(CONFIG_NOCAT),y)
 CFLAGS += -DHAVE_NOCAT
 endif
 
+ifeq ($(CONFIG_LLTD),y)
+CFLAGS += -DHAVE_LLTD
+endif
+
 ifeq ($(CONFIG_RFLOW),y)
 CFLAGS += -DHAVE_RFLOW
 endif
