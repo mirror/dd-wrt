@@ -1414,7 +1414,7 @@ cprintf("get core rev %s\n",name);
 		if (nvram_match(tmp, "0"))
 			nmode = OFF;
 
-		val = (nmode != OFF) ? atoi(nvram_safe_get(strcat_r(prefix, "nbw_cap", tmp))) :
+		val = (nmode != OFF) ? atoi(nvram_default_get(strcat_r(prefix, "nbw_cap", tmp),"1")) :
 		        WLC_N_BW_20ALL;
 
 		WL_IOVAR_SETINT(name, "nmode", (uint32)nmode);
