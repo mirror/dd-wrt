@@ -209,6 +209,8 @@ obj-$(CONFIG_LIBNLTINY) += libnltiny
 obj-$(CONFIG_HOTPLUG2) += hotplug2 udev
 obj-$(CONFIG_UBOOTENV) += ubootenv
 obj-$(CONFIG_DSL_CPE_CONTROL) += dsl_cpe_control atm
+obj-$(CONFIG_OPENDPI) += opendpi
+obj-$(CONFIG_LLTD) += lltd
 
 obj-y+=anchorfree
 obj-y+=ttraff
