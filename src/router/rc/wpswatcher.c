@@ -55,6 +55,7 @@ int main(int argc, char **argv)
 	}
 	if (!timeout) {
 		killall("ledtool",SIGKILL);
+		nvram_set("wps_status", "1");
 		system("ledtool 1800 3");
 	}
 	return 0;
