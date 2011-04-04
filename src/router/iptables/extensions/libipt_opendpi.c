@@ -26,8 +26,8 @@
 #include <iptables.h>
 #include "xt_opendpi.h"
 
-#define true 0
-#define false 1
+#define true 1
+#define false 0
 
 static char *prot_long_str[] = { IPOQUE_PROTOCOL_LONG_STRING };
 static char *prot_short_str[] = { IPOQUE_PROTOCOL_SHORT_STRING };
@@ -126,7 +126,7 @@ opendpi_mt4_reg = {
 	.revision = 0,
 //	.family = AF_INET,
 	.size = IPT_ALIGN(sizeof(struct xt_opendpi_mtinfo)),
-	.userspacesize = XT_ALIGN(sizeof(struct xt_opendpi_mtinfo)),
+	.userspacesize = IPT_ALIGN(sizeof(struct xt_opendpi_mtinfo)),
 	//.help = opendpi_mt_help,
 	.init = opendpi_mt_init,
 	.parse = opendpi_mt4_parse,
