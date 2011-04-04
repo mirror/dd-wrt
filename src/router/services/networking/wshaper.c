@@ -306,15 +306,9 @@ int svqos_iptables(void)
 	if (strcmp(dev, "br0")) {
 		sysprintf
 		    ("iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
-		     "br0");
-		sysprintf
-		    ("iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
-		     "br0");
-		sysprintf
-		    ("iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0",
 		     dev);
 		sysprintf
-		    ("iptables -t mangle -I FORWARD -i %s -j IMQ --todev 0",
+		    ("iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
 		     dev);
 //              if (nvram_match("dtag_vlan8","1"))
 //                  {
