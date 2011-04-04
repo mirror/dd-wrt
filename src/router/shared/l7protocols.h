@@ -9,9 +9,19 @@ typedef struct _l7filters	// l7 and p2p filters
 {
 
 	char *name;
-	int protocol;		// 1=p2p, 0=l7
+	int protocol;		// 1=p2p, 0=l7, 2=opendpi
 
 } l7filters;
+
+
+#define IPOQUE_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp",\
+	"bgp","snmp","xdmcp","smb","syslog","dhcp","postgres","mysql","tds","ddl","i23v5","apple","directconnect","socrates","winmx",\
+	"manolito","pando","filetopia","iMESH","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi",\
+	"flash","ogg","mpeg","quicktime","realmedia","windowsmedia","mms","xbox","qq","move","rtsp","feidian","icecast","pplive",\
+	"ppstream","zattoo","shoutcast","sopcast","tvants","tvuplayer","veohtv","qqlive","thunder","soulseek","gadugadu","irc",\
+	"popo","jabber","msn","oscar","yahoo","battlefield","quake","secondlife","steam","hl2","worldofwarcraft","telnet","stun",\
+	"ipsec","gre","icmp","igmp","egp","sctp","ospf","ipip","rtp","rdp","vnc","pcanywhere","ssl","ssh","usenet","mgcp","iax",\
+	"tftp","afp","stealthnet","aimini","sip","truphone"
 
 //Added ,  (in extra), dazhihui, .
 
@@ -48,8 +58,13 @@ l7filters filters_list[] = {
 	 "bgp", 0},		// BGP - Border Gateway Protocol - RFC 1771
 	{
 	 "biff", 0},		// Biff - new mail notification
+#ifdef HAVE_OPENDPI
+	{
+	 "bittorrent", 2},	// Bittorrent - P2P filesharing / publishing
+#else
 	{
 	 "bittorrent", 1},	// Bittorrent - P2P filesharing / publishing
+#endif
 	// tool - http://www.bittorrent.com
 	{
 	 "bt", 0},
@@ -118,7 +133,11 @@ l7filters filters_list[] = {
 	{
 	 "freegate_http", 0},
 	{
+#ifdef HAVE_OPENDPI
+	 "ftp", 2},		// FTP - File Transfer Protocol - RFC 959
+#else
 	 "ftp", 0},		// FTP - File Transfer Protocol - RFC 959
+#endif
 	{
 	 "gif", 0},		// GIF - Popular Image format.
 	{
@@ -244,6 +263,10 @@ l7filters filters_list[] = {
 	{
 	 "mute", 1},		// MUTE - P2P filesharing -
 	// http://mute-net.sourceforge.net
+#ifdef HAVE_OPENDPI
+	{
+	 "mysql", 2},	// Subversion - a version control system
+#endif
 	{
 	 "napster", 0},		// Napster - P2P filesharing
 	{
@@ -286,10 +309,19 @@ l7filters filters_list[] = {
 	{
 	 "pop3", 0},		// POP3 - Post Office Protocol version 3
 	// (popular e-mail protocol) - RFC 1939
+#ifdef HAVE_OPENDPI
+	{
+	 "postgres", 2},	// Subversion - a version control system
+#endif
 	{
 	 "postscript", 0},	// Postscript - Printing Language
+#ifdef HAVE_OPENDPI
+	{
+	 "pplive", 2},		// PPLive - Chinese P2P streaming video - http://pplive.com
+#else
 	{
 	 "pplive", 0},		// PPLive - Chinese P2P streaming video - http://pplive.com
+#endif
 	{
 	 "pre_icq_login", 0},
 	{
@@ -413,6 +445,10 @@ l7filters filters_list[] = {
 	// http://sscentral.com
 	{
 	 "subversion", 0},	// Subversion - a version control system
+#ifdef HAVE_OPENDPI
+	{
+	 "steam", 2},	// Subversion - a version control system
+#endif
 	{
 	 "tar", 0},		// Tar - tape archive. Standard UNIX file
 	// archiver, not just for tapes.
