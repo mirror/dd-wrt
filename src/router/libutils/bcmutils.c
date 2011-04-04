@@ -1733,7 +1733,7 @@ void get_filter_services(char *services, int maxsize)
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char proto[]= {"l7","p2p","dpi"};
+	char *proto[3]= {"l7","p2p","dpi"};
 	int size = 0;
 	while (filters->name)	// add l7 and p2p filters
 	{
