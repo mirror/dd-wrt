@@ -140,6 +140,10 @@ int protocol_to_num(char *proto)
 		return 99;
 	else if (!strcmp(proto, "p2p"))
 		return 100;
+#ifdef HAVE_OPENDPI
+	else if (!strcmp(proto, "dpi"))
+		return 101;
+#endif
 	else
 		return 0;
 }
