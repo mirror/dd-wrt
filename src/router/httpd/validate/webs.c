@@ -1257,6 +1257,15 @@ void qos_add_svc(webs_t wp)
 			add_svc[i] = tolower(add_svc[i]);
 	}
 
+#ifdef HAVE_OPENDPI
+	if (strcmp(protocol, "dpi") == 0) {
+		int slen = strlen(add_svc);
+
+		for (i = 0; i < slen; i++)
+			add_svc[i] = tolower(add_svc[i]);
+	}
+#endif
+
 	/*
 	 * if this service exists, return an error 
 	 */
@@ -1423,7 +1432,14 @@ void qos_save(webs_t wp)
 			for (j = 0; j < slen; j++)
 				name[j] = tolower(name[j]);
 		}
+#ifdef HAVE_OPENDPI
+		if (strcmp(protocol, "dpi") == 0) {
+			int slen = strlen(name);
 
+			for (j = 0; j < slen; j++)
+				name[j] = tolower(name[j]);
+		}
+#endif
 		if (strlen(svqos_var) > 0)
 			sprintf(svqos_var, "%s %s %s %s %s |", svqos_var, name,
 				protocol, ports, level);
