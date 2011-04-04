@@ -531,8 +531,8 @@ arv752dpw_init(void)
 	lq_register_gpio_leds(arv752dpw22_leds_gpio, ARRAY_SIZE(arv752dpw22_leds_gpio));
 	lq_register_gpio_buttons(arv752dpw22_gpio_buttons, ARRAY_SIZE(arv752dpw22_gpio_buttons));
 	lq_register_nor(&arv75xx_flash_data);
-	lq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
-	lq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
+//	lq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
+//	lq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
 	lq_register_pci(&lq_pci_data);
 	lq_register_wdt();
 	xway_register_dwc(ARV752DPW22_USB);

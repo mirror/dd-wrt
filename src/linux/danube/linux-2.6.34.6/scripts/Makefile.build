@@ -44,11 +44,11 @@ kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbui
 include $(kbuild-file)
 
 # If the save-* variables changed error out
-ifeq ($(KBUILD_NOPEDANTIC),)
-        ifneq ("$(save-cflags)","$(CFLAGS)")
-                $(error CFLAGS was changed in "$(kbuild-file)". Fix it to use EXTRA_CFLAGS)
-        endif
-endif
+#ifeq ($(KBUILD_NOPEDANTIC),)
+#        ifneq ("$(save-cflags)","$(CFLAGS)")
+#                $(error CFLAGS was changed in "$(kbuild-file)". Fix it to use EXTRA_CFLAGS)
+#        endif
+#endif
 include scripts/Makefile.lib
 
 ifdef host-progs
