@@ -1728,36 +1728,38 @@ void rep(char *in, char from, char to)
 }
 
 #include "l7protocols.h"
-void get_filter_services(char *services, int maxsize)
+
+char *get_filter_services(void)
 {
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char *proto[3]= {"l7","p2p","dpi"};
-	int size = 0;
+	char *proto[]= {"l7","p2p","dpi"};
+	char *services=NULL;
+
 	while (filters->name)	// add l7 and p2p filters
 	{
-	
-		size +=
-		    sprintf(temp,
-			    "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
-			    strlen(filters->name), filters->name,
+		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
+			strlen(filters->name), filters->name,
 			    filters->protocol == 0 ? 2 : 3,proto[filters->protocol]);
-		if (size > maxsize - 64) {
-			fprintf(stderr, "%s:max size exceeded\n", __func__);
-			break;
-		}
+		if (!services)
+		{
+		    services = malloc(strlen(temp)+1);
+		    services[0]=0;
+		}else
+		    services = realloc(services,strlen(services)+strlen(temp)+1);
 		strcat(services, temp);
 		filters++;
 	}
-
+	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services"))+1);
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
 	// defined
 	// filters
+	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services_1"))+1);
 	strcat(services, nvram_safe_get("filter_services_1"));
 
-	return;
+	return services;
 }
 
 int endswith(char *str, char *cmp)

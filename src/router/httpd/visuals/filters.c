@@ -891,17 +891,17 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 	type = argv[0];
 	which = atoi(argv[1]);
 
-	char services[11000];
+	char *services;
 
-	memset(services, 0, sizeof(services));
 
 	// get_filter_services (services);
 
 	if (!strcmp(type, "all_list") || !strcmp(type, "user_list")) {
 		if (!strcmp(type, "all_list"))
-			get_filter_services(services, sizeof(services));
+			services = get_filter_services();
 		else		// user_list only
-		{
+		{	
+			services = malloc(strlen(nvram_safe_get("filter_services")) + strlen(nvram_safe_get("filter_services_1")) + 1);
 			strcat(services, nvram_safe_get("filter_services"));	// this 
 			// is 
 			// user 
@@ -966,6 +966,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 			count++;
 
 		}
+		free(services);
 
 		websWrite(wp, "services_length = %d;\n", count);
 	} else if (!strcmp(type, "service")) {
