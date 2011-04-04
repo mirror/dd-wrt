@@ -361,6 +361,10 @@ char *num_to_protocol(int num)
 		return "l7";
 	case 100:
 		return "p2p";
+#ifdef HAVE_OPENDPI
+	case 101:
+		return "dpi";
+#endif
 	default:
 		return "unknown";
 	}
