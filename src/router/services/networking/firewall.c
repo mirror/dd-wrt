@@ -1373,7 +1373,7 @@ void fw_get_filter_services(char *services, int maxsize)
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char proto[]= {"l7","p2p","dpi"};
+	char *proto[]= {"l7","p2p","dpi"};
 
 	while (filters->name)	// add l7 and p2p filters
 	{
