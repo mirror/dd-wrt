@@ -48,6 +48,7 @@ int main(int argc, char **argv)
 			nvram_set("wps_status", "1");
 			sysprintf("rm -f /tmp/.wpsdone");
 			fclose(fp);
+			led_control(LED_SES, LED_ON);
 			break;
 		}
 		timeout--;
