@@ -1367,30 +1367,37 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable)
 		}
 	}
 }
-
-void fw_get_filter_services(char *services, int maxsize)
+char *fw_get_filter_services(void)
 {
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
 	char *proto[]= {"l7","p2p","dpi"};
+	char *services=NULL;
 
 	while (filters->name)	// add l7 and p2p filters
 	{
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
 			strlen(filters->name), filters->name,
 			    filters->protocol == 0 ? 2 : 3,proto[filters->protocol]);
+		if (!services)
+		{
+		    services = malloc(strlen(temp)+1);
+		    services[0]=0;
+		}else
+		    services = realloc(services,strlen(services)+strlen(temp)+1);
 		strcat(services, temp);
 		filters++;
 	}
-
+	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services"))+1);
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
 	// defined
 	// filters
+	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services_1"))+1);
 	strcat(services, nvram_safe_get("filter_services_1"));
 
-	return;
+	return services;
 }
 
 /*
@@ -1409,7 +1416,7 @@ void fw_get_filter_services(char *services, int maxsize)
 static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 {
 	char *wordlist, word[1024], *next;
-	char services[11000], srv[1024], *next2;
+	char *services, srv[1024], *next2;
 	char delim[] = "<&nbsp;>";
 
 	cprintf("add advgrp_chain\n");
@@ -1421,8 +1428,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	// services = fw_get_filter_services ();
 	// //nvram_safe_get("filter_services");
 
-	memset(services, 0, sizeof(services));
-	fw_get_filter_services(services, sizeof(services));
+	services = fw_get_filter_services();
 
 	/*
 	 * filter_port_grp5=My ICQ<&nbsp;>Game boy 
@@ -1496,10 +1502,6 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			}
 #ifdef HAVE_OPENDPI
 			if (!strcmp(protocol, "dpi")) {
-				int i;
-
-				for (i = 0; i < strlen(realname); i++)
-					realname[i] = tolower(realname[i]);
 				insmod("/lib/opendpi/xt_opendpi.ko");
 				save2file
 				    ("-A advgrp_%d -m opendpi --%s -j %s\n",
@@ -1539,12 +1541,21 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				if (proto)	//avoid null pointer, if realname isnt matched
 				{
 					insmod("ipt_ipp2p");
+#ifdef HAVE_OPENDPI
+					insmod("/lib/opendpi/xt_opendpi.ko");
+#else
 					insmod("ipt_layer7");
+#endif
 					save2file
 					    ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n",
 					     seq, proto, log_drop);
 					if (!strcmp(proto, "bit")) {
 						/* bittorrent detection enhanced */
+#ifdef HAVE_OPENDPI
+						save2file
+						    ("-A advgrp_%d -m opendpi --bittorrent -j %s\n",
+						     seq, log_drop);
+#else
 #ifdef HAVE_MICRO
 						save2file
 						    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
@@ -1560,13 +1571,6 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 						save2file
 						    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
 						     seq, log_drop);
-//                                      save2file
-//                                          ("-A advgrp_%d -m layer7 --l7proto bt3 -j %s\n",
-//                                           seq, log_drop);
-#ifndef HAVE_MICRO
-//                                      save2file
-//                                          ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
-//                                           seq, log_drop);
 #endif
 					}
 				}
@@ -1579,16 +1583,17 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	 */
 	if (nvram_nmatch("1", "filter_p2p_grp%d", seq)) {
 		insmod("ipt_ipp2p");
-		insmod("ipt_layer7");
 		save2file("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 			  log_drop);
 		/* bittorrent detection enhanced */
 #ifdef HAVE_OPENDPI
+		insmod("/lib/opendpi/xt_opendpi.ko");
 		save2file
 		    ("-A advgrp_%d -m opendpi --bittorrent -j %s\n",
 		     seq, log_drop);
 
 #else
+		insmod("ipt_layer7");
 #ifdef HAVE_MICRO
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
@@ -1606,11 +1611,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		     seq, log_drop);
 #endif
 	}
+	free(services);
 	/*
 	 * filter_web_host2=hello<&nbsp;>world<&nbsp;>friend 
 	 */
 	wordlist = nvram_nget("filter_web_host%d", seq);
-	if (strcmp(wordlist, "")) {
+	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
 		save2file
 		    ("-A advgrp_%d -p tcp -m webstr --host \"%s\" -j %s\n",
@@ -1620,7 +1626,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	 * filter_web_url3=hello<&nbsp;>world<&nbsp;>friend 
 	 */
 	wordlist = nvram_nget("filter_web_url%d", seq);
-	if (strcmp(wordlist, "")) {
+	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
 		save2file
 		    ("-A advgrp_%d -p tcp -m webstr --url \"%s\" -j %s\n",
@@ -1691,12 +1697,12 @@ static void lan2wan_chains(void)
 		fprintf(ifd, "%d,", up);
 	}
 
-	fclose(ifd);
 	fclose(cfd);
+	fclose(ifd);
 
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		data = nvram_nget("filter_rule%d", seq);
-		if (strcmp(data, "") == 0)
+		if (data && strcmp(data, "") == 0)
 			continue;
 
 		/*
@@ -2443,6 +2449,7 @@ static void filter_forward(void)
 		save2file("-A FORWARD -j %s\n", log_drop);
 
 	lan2wan_chains();
+
 	parse_trigger_out(nvram_safe_get("port_trigger"));
 }
 
@@ -2579,7 +2586,6 @@ static void filter_table(void)
 			}
 #endif
 			filter_forward();
-
 		} else {
 
 			filter_input();
