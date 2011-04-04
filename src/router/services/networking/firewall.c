@@ -1367,34 +1367,43 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable)
 		}
 	}
 }
+
 char *fw_get_filter_services(void)
 {
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char *proto[]= {"l7","p2p","dpi"};
-	char *services=NULL;
+	char *proto[] = { "l7", "p2p", "dpi" };
+	char *services = NULL;
 
 	while (filters->name)	// add l7 and p2p filters
 	{
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
 			strlen(filters->name), filters->name,
-			    filters->protocol == 0 ? 2 : 3,proto[filters->protocol]);
-		if (!services)
-		{
-		    services = malloc(strlen(temp)+1);
-		    services[0]=0;
-		}else
-		    services = realloc(services,strlen(services)+strlen(temp)+1);
+			filters->protocol == 0 ? 2 : 3,
+			proto[filters->protocol]);
+		if (!services) {
+			services = malloc(strlen(temp) + 1);
+			services[0] = 0;
+		} else
+			services =
+			    realloc(services,
+				    strlen(services) + strlen(temp) + 1);
 		strcat(services, temp);
 		filters++;
 	}
-	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services"))+1);
+	services =
+	    realloc(services,
+		    strlen(services) +
+		    strlen(nvram_safe_get("filter_services")) + 1);
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
 	// defined
 	// filters
-	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services_1"))+1);
+	services =
+	    realloc(services,
+		    strlen(services) +
+		    strlen(nvram_safe_get("filter_services_1")) + 1);
 	strcat(services, nvram_safe_get("filter_services_1"));
 
 	return services;
@@ -1541,21 +1550,19 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				if (proto)	//avoid null pointer, if realname isnt matched
 				{
 					insmod("ipt_ipp2p");
-#ifdef HAVE_OPENDPI
-					insmod("/lib/opendpi/xt_opendpi.ko");
-#else
-					insmod("ipt_layer7");
-#endif
 					save2file
 					    ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n",
 					     seq, proto, log_drop);
 					if (!strcmp(proto, "bit")) {
 						/* bittorrent detection enhanced */
 #ifdef HAVE_OPENDPI
+						insmod
+						    ("/lib/opendpi/xt_opendpi.ko");
 						save2file
 						    ("-A advgrp_%d -m opendpi --bittorrent -j %s\n",
 						     seq, log_drop);
 #else
+						insmod("ipt_layer7");
 #ifdef HAVE_MICRO
 						save2file
 						    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
@@ -2093,7 +2100,7 @@ static void filter_input(void)
 #ifndef HAVE_MICRO
 	if (remotetelnet && nvram_match("limit_telnet", "1")) {
 		save2file("-A INPUT -i %s -p tcp --dport 23 -j logbrute\n",
-		     wanface);
+			  wanface);
 	}
 #endif
 	if (remotetelnet) {
@@ -2499,13 +2506,11 @@ static void filter_table(void)
 		  ":FORWARD ACCEPT [0:0]\n"
 		  ":OUTPUT ACCEPT [0:0]\n"
 		  ":logaccept - [0:0]\n"
-		  ":logdrop - [0:0]\n"
-		  ":logreject - [0:0]\n"
+		  ":logdrop - [0:0]\n" ":logreject - [0:0]\n"
 #ifdef FLOOD_PROTECT
 		  ":limaccept - [0:0]\n"
 #endif
-		  ":trigger_out - [0:0]\n"
-		  ":lan2wan - [0:0]\n");
+		  ":trigger_out - [0:0]\n" ":lan2wan - [0:0]\n");
 
 	int seq;
 
@@ -2514,10 +2519,8 @@ static void filter_table(void)
 		save2file(":advgrp_%d - [0:0]\n", seq);
 	}
 #ifndef HAVE_MICRO
-	save2file
-	    (":logbrute - [0:0]\n");
-	save2file
-	    ("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
+	save2file(":logbrute - [0:0]\n");
+	save2file("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
 	save2file
 	    ("-A logbrute -m recent ! --update --seconds 60 --hitcount 4 --name BRUTEFORCE --rsource -j RETURN\n");
 	// -m limit rule is a fallback in case -m recent isn't included in a build
@@ -2527,8 +2530,7 @@ static void filter_table(void)
 	    && (nvram_match("log_dropped", "1")))
 		save2file
 		    ("-A logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options\n");
-	save2file
-	    ("-A logbrute -j DROP\n");
+	save2file("-A logbrute -j DROP\n");
 #endif
 	if (nvram_match("chilli_enable", "1")) {
 		if (has_gateway()) {
@@ -2642,8 +2644,7 @@ static void filter_table(void)
 	    && (nvram_match("log_rejected", "1")))
 		save2file("-A logreject -j LOG --log-prefix \"WEBDROP \" "
 			  "--log-tcp-sequence --log-tcp-options --log-ip-options\n");
-	save2file
-	    ("-A logreject -p tcp -j REJECT --reject-with tcp-reset\n");
+	save2file("-A logreject -p tcp -j REJECT --reject-with tcp-reset\n");
 
 #ifdef FLOOD_PROTECT
 	/*
