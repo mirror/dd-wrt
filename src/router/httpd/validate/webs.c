@@ -1175,11 +1175,9 @@ int get_svc(char *svc, char *protocol, char *ports)
 {
 	char word[1024], *next;
 	char delim[] = "<&nbsp;>";
-	char services[11000];
-
+	char *services;
 	// services = nvram_safe_get("filter_services");
-	memset(services, 0, sizeof(services));
-	get_filter_services(services, 16384);
+	services = get_filter_services();
 
 	split(word, services, next, delim) {
 		int len = 0;
@@ -1222,11 +1220,18 @@ int get_svc(char *svc, char *protocol, char *ports)
 		ports[len] = '\0';
 
 		if (sscanf(ports, "%d:%d", &from, &to) != 2)
+		{
+		free(services);
 			return -1;
+		}
 
 		if (strcasecmp(svc, name) == 0)
+		{
+		free(services);
 			return 0;
+		}
 	}
+		free(services);
 
 	return -1;
 }
