@@ -1,0 +1,55 @@
+OpenDPI module INSTALL
+----------------------
+
+The install the modules follow these steps, always from the modules package
+root (i.e. where this file is located)
+
+- To compile the modules first type:
+
+        OPENDPI_PATH=/home/foo/opendpi-1.2.0 make
+
+Where, OPENDPI_PATH is the path to the original OpenDPI source code package
+(note that you have to extract it first).
+
+- Then, as root, type:
+
+        make modules_install
+
+That would install the OpenDPI module for the given Linux kernel.
+
+- Finally, also as root, you should copy the iptables module into the
+  corresponding directory. Usually this is "/lib/xtables" or
+  "/usr/lib/xtables".
+
+        cp ipt/libxt_opendpi.so /lib/xtables
+
+Now you can read the following section to learn how to use it.
+
+
+Module usage
+------------
+
+Once you have installed both modules ("libxt_opendpi.so" and "xt_opendpi.ko")
+you should type (as root):
+
+        modprobe xt_opendpi
+
+If the module has been successfully loaded you shouldn't see any message.
+After loading the kernel module you can use iptables to add a rule. To see
+available protocols you can match for in every packet, type (as root):
+
+        iptables -m opendpi --help
+
+Note that the list is long, you best try: "iptables -m opendpi --help | more"
+
+An example rule would be (as root):
+
+        iptables -A OUTPUT -m opendpi --http -j REJECT
+
+This wouldn't allow any HTTP traffic that originates from the machine where the
+rule was added.
+
+In case you want to stop using the OpenDPI kernel module, first remove every
+iptables rule for OpenDPI and then type (as root):
+
+        modprobe -r xt_opendpi

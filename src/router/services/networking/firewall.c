@@ -1373,13 +1373,13 @@ void fw_get_filter_services(char *services, int maxsize)
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
+	char proto[]= {"l7","p2p","dpi"};
 
 	while (filters->name)	// add l7 and p2p filters
 	{
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
 			strlen(filters->name), filters->name,
-			filters->protocol == 1 ? 3 : 2,
-			filters->protocol == 1 ? "p2p" : "l7");
+			    filters->protocol == 0 ? 2 : 3,proto[filters->protocol]);
 		strcat(services, temp);
 		filters++;
 	}
@@ -1494,6 +1494,18 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				    ("-A advgrp_%d -m layer7 --l7proto %s -j %s\n",
 				     seq, realname, log_drop);
 			}
+#ifdef HAVE_OPENDPI
+			if (!strcmp(protocol, "dpi")) {
+				int i;
+
+				for (i = 0; i < strlen(realname); i++)
+					realname[i] = tolower(realname[i]);
+				insmod("/lib/opendpi/xt_opendpi.ko");
+				save2file
+				    ("-A advgrp_%d -m opendpi --%s -j %s\n",
+				     seq, realname, log_drop);
+			}
+#endif
 			if (!strcmp(protocol, "p2p")) {
 
 				char *proto = NULL;
@@ -1571,6 +1583,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 			  log_drop);
 		/* bittorrent detection enhanced */
+#ifdef HAVE_OPENDPI
+		save2file
+		    ("-A advgrp_%d -m opendpi --bittorrent -j %s\n",
+		     seq, log_drop);
+
+#else
 #ifdef HAVE_MICRO
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
@@ -1586,13 +1604,6 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
 		     seq, log_drop);
-//              save2file
-//                  ("-A advgrp_%d -m layer7 --l7proto bt3 -j %s\n",
-//                   seq, log_drop);
-#ifndef HAVE_MICRO
-//                                      save2file
-//                                          ("-A advgrp_%d -p tcp -m length ! --length 50:51 -m datalen --offset 4 --byte 4 --add 10 -m layer7 --l7proto bt3 -j %s\n",
-//                                           seq, log_drop);
 #endif
 	}
 	/*

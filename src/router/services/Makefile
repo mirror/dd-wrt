@@ -1001,6 +1001,10 @@ CFLAGS_EXTRA += -DHAVE_LLTD
 OBJS += lltd.o
 endif
 
+ifeq ($(CONFIG_OPENDPI),y)
+CFLAGS_EXTRA += -DHAVE_OPENDPI
+endif
+
 ifeq ($(CONFIG_WOL),y)
 CFLAGS_EXTRA += -DHAVE_WOL
 OBJS += wol.o
