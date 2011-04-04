@@ -1,0 +1,52 @@
+OpenDPI module README
+---------------------
+
+This package is a GPL implementation of an iptables and netfilter module for
+OpenDPI integration into the Linux kernel.
+
+The prerequisites are:
+
+- OpenDPI source package 
+
+- Linux sources (it's been tested for versions 2.6.26 and 2.6.34)
+
+- Iptables header files (called "iptables-dev" in Debian distributions, it's
+  been tested for version 1.4.2)
+
+
+Compiled kernel features
+------------------------
+
+In order to use OpenDPI as a kernel module notice that:
+
+- You should ENABLE Netfilter conntrack events (and also enable Advanced
+  netfilter features to see it).
+
+In kernel 2.6.34 its defined as:
+
+Connection tracking events
+Symbol: NF_CONNTRACK_EVENTS
+Location:
+-> Networking support
+ -> Networking options
+  -> Network packet filtering framework (Netfilter)
+   -> Core Netfilter Configuration
+    -> Netfilter connection tracking support
+
+- If your kernel version is 2.6.31 or greater, then you should DISABLE
+  Netfilter conntrack for the Netlink protocol.
+
+In kernel 2.6.34 its defined as:
+
+Connection tracking netlink interface
+Symbol: NF_CT_NETLINK
+Location:
+-> Networking support
+ -> Networking options
+  -> Network packet filtering framework (Netfilter)
+   -> Core Netfilter Configuration
+    -> Netfilter connection tracking support
+
+
+Once you have downloaded/installed each package and checked for the above
+kernel features you can read the INSTALL file.

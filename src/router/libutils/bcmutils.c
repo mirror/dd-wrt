@@ -1733,15 +1733,16 @@ void get_filter_services(char *services, int maxsize)
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
+	char proto[]= {"l7","p2p","dpi"};
 	int size = 0;
 	while (filters->name)	// add l7 and p2p filters
 	{
+	
 		size +=
 		    sprintf(temp,
 			    "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
 			    strlen(filters->name), filters->name,
-			    filters->protocol == 1 ? 3 : 2,
-			    filters->protocol == 1 ? "p2p" : "l7");
+			    filters->protocol == 0 ? 2 : 3,proto[filters->protocol]);
 		if (size > maxsize - 64) {
 			fprintf(stderr, "%s:max size exceeded\n", __func__);
 			break;

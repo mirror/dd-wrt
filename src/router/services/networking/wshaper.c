@@ -549,7 +549,17 @@ int svqos_iptables(void)
 			    ("iptables -t mangle -A SVQOS_IN -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
 			     name, level);
 		}
-
+#ifdef HAVE_OPENDPI
+		if (strstr(type, "dpi")) {
+			insmod("/lib/opendpi/xt_opendpi.ko");
+			sysprintf
+			    ("iptables -t mangle -A SVQOS_OUT -m opendpi --%s -m mark --mark 0 -j MARK --set-mark %s",
+			     name, level);
+			sysprintf
+			    ("iptables -t mangle -A SVQOS_IN -m opendpi --%s -m mark --mark 0 -j MARK --set-mark %s",
+			     name, level);
+		}
+#endif
 		if (strstr(type, "p2p")) {
 
 			char *proto = NULL;
