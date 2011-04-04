@@ -326,6 +326,10 @@ int getbuttonstate()
 #elif defined(HAVE_VF803)
 int getbuttonstate()
 {
+	int ret = get_gpio(28);
+
+	if (ret == 0)
+		return 1;
 	return 0;
 }
 #endif
