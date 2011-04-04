@@ -66,6 +66,9 @@ endif
 ifeq ($(CONFIG_HOTPLUG2),y)
 CFLAGS += -DHAVE_HOTPLUG2
 endif
+ifeq ($(CONFIG_OPENDPI),y)
+CFLAGS += -DHAVE_OPENDPI
+endif
 ifeq ($(CONFIG_ATH9K),y)
 CFLAGS += -DHAVE_ATH9K
 endif
