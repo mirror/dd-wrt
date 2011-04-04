@@ -43,7 +43,7 @@
 
 #ifdef HAVE_WIRELESS
   /* for get access-point address (BSSID) and infrastructure mode */
-# include <linux/wireless.h>
+# include "wireless.h"
 #else /* ! HAVE_WIRELESS */
   /* still want struct ifreq and friends */
 # include <net/if.h>
