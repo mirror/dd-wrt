@@ -13,6 +13,10 @@ ifneq ($(CONFIG_DIST),"micro-special")
 PF_EXT_SLIB:= CLASSIFY ah connlimit dscp ecn esp iprange length limit multiport physdev realm standard tos  unclean DSCP NOTRACK SAME TARPIT TOS ROUTE connmark conntrack helper icmp mark owner pkttype state tcp tcpmss ttl udp CONNMARK DNAT LOG MARK MASQUERADE MIRROR REDIRECT REJECT SNAT TCPMSS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac NETMAP recent
 endif
 endif
+ifeq ($(CONFIG_OPENDPI),y)
+PF_EXT_SLIB += opendpi
+CFLAGS += -DOPENDPI_NETFILTER_MODULE
+endif
 
 #random nth ROUTE
 
