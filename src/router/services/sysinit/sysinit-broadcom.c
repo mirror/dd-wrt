@@ -799,9 +799,9 @@ void start_sysinit(void)
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
 			MAC_ADD(mac);
-			nvram_set("pci/1/1/macaddr", mac);
-			MAC_ADD(mac);
 			nvram_set("sb/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
 			need_reboot = 1;
 		}
 		break;
