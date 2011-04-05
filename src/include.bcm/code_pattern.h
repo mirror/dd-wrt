@@ -64,6 +64,7 @@
 #define CODE_PATTERN_E1000   "E100"
 #define CODE_PATTERN_E2000   "32XN"
 #define CODE_PATTERN_E3000   "61XN"
+#define CODE_PATTERN_E4200   "4200"
 
 
 #ifdef HAVE_OMNI
