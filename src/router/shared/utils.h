@@ -522,6 +522,9 @@
 
 #define ROUTER_ASUS_RTN12B 0xa6116
 
+// Linksys E4200 (dual radio, BCM53115 giga switch, BCM4718 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E4200) >60K nvram<
+#define ROUTER_LINKSYS_E4200 0xa716
+
 
 #define NVROUTER "DD_BOARD"
 
