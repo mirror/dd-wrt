@@ -1208,27 +1208,27 @@ cprintf("set bsscfg %s\n",name);
 	}
 
 	if (rxchain_pwrsave) {
-		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_enable", tmp)));
+		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_enable", tmp), "1"));
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_enable", bsscfg->idx, val);
 
-		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_quiet_time", tmp)));
+		val = atoi(nvram_default_get(strcat_r(prefix, "rxchain_pwrsave_quiet_time", tmp), "1800"));
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_quiet_time", bsscfg->idx, val);
 
-		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_pps", tmp)));
+		val = atoi(nvram_safe_get(strcat_r(prefix, "rxchain_pwrsave_pps", tmp), "10"));
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_pps", bsscfg->idx, val);
 	}
 
 	if (radio_pwrsave) {
-		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_enable", tmp)));
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_enable", tmp), "0"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_enable", bsscfg->idx, val);
 
-		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_quiet_time", tmp)));
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_quiet_time", tmp), "1800"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_quiet_time", bsscfg->idx, val);
 
-		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_pps", tmp)));
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_pps", tmp), "10"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_pps", bsscfg->idx, val);
 
-		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_level", tmp)));
+		val = atoi(nvram_safe_get(strcat_r(prefix, "radio_pwrsave_level", tmp), "0"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_level", bsscfg->idx, val);
 	}
 
