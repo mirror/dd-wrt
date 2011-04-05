@@ -1537,6 +1537,8 @@ void start_restore_defaults(void)
 		linux_overrides = wrt60011vlan;
 		break;
 	case ROUTER_WRT610NV2:
+	case ROUTER_LINKSYS_E1000V2:
+	case ROUTER_LINKSYS_E4200:
 		linux_overrides = wrt6102vlan;
 		break;
 #endif
