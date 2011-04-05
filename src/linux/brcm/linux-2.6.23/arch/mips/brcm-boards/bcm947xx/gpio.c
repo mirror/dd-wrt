@@ -338,6 +338,13 @@ if (nvram_match("boot_hw_model", "E1000")
 		gpios = 1 << 6 | 1 << 7 | 1 << 8;
 }
 
+if (nvram_match("boot_hw_model", "E4200")
+		&& nvram_match("boot_hw_ver", "1.0"))
+{
+		printk(KERN_EMERG "E4200 GPIO Init\n");
+		gpios = 1 << 3 | 1 << 5;
+}
+
 /*if (iswrt300n11)
 {
 	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
