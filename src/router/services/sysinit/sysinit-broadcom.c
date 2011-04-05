@@ -790,6 +790,20 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_E4200:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
+		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+			|| startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+		    || !sv_valid_hwaddr(nvram_safe_get("sb/1/macaddr"))
+		    || startswith(nvram_safe_get("sb/1/macaddr"), "00:90:4C")) {
+			unsigned char mac[20];
+
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("sb/1/macaddr", mac);
+			need_reboot = 1;
+		}
 		break;
 		
 #endif		
