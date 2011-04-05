@@ -264,6 +264,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT610NV2:
 	case ROUTER_DYNEX_DX_NRUTER:
 	case ROUTER_LINKSYS_E1000V2:
+	case ROUTER_LINKSYS_E4200:
 
 		break;
 	case ROUTER_WRT600N:
@@ -784,6 +785,11 @@ void start_sysinit(void)
 		
 	case ROUTER_LINKSYS_E1000V2:
 		basic_params = vlan_1_2;
+		break;
+		
+	case ROUTER_LINKSYS_E4200:
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
 		break;
 		
 #endif		
@@ -1465,6 +1471,7 @@ void start_sysinit(void)
 			case ROUTER_BELKIN_F7D3301:
 			case ROUTER_BELKIN_F7D4301:
 			case ROUTER_BELKIN_F5D8235V3:
+			case ROUTER_LINKSYS_E4200:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
@@ -1550,6 +1557,7 @@ void start_sysinit(void)
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_ASUS_RTN16:
+			case ROUTER_LINKSYS_E4200:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
@@ -2000,6 +2008,7 @@ char *enable_dtag_vlan(int enable)
 		case ROUTER_BELKIN_F7D3301:
 		case ROUTER_BELKIN_F7D4301:
 		case ROUTER_BELKIN_F5D8235V3:
+		case ROUTER_LINKSYS_E4200:
 			eth = "eth0";
 			break;
 		case ROUTER_WRT600N:
