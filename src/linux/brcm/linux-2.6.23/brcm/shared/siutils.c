@@ -634,7 +634,7 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 	}
 
 
-#ifdef BCMDBG
+#if 1//def BCMDBG
 	/* clear any previous epidiag-induced target abort */
 	si_taclear(sih, FALSE);
 #endif	/* BCMDBG */
@@ -1354,7 +1354,7 @@ si_watchdog_ms(si_t *sih, uint32 ms)
 }
 #endif
 
-#if defined(BCMDBG_ERR) || defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
+#if 1// defined(BCMDBG_ERR) || defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
 bool
 si_taclear(si_t *sih, bool details)
 {
@@ -3277,7 +3277,7 @@ si_chipcontrl_epa4331(si_t *sih, bool on)
 }
 
 /*  FA009736 - PD Test Failure WAR */
-#ifdef WLTEST
+#if 1//def WLTEST
 void
 si_pll_htavail_reset_4313_war(si_t *sih)
 {

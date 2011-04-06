@@ -44,7 +44,7 @@ extern void si_pmu_set_switcher_voltage(si_t *sih, osl_t *osh, uint8 bb_voltage,
 extern void si_pmu_set_ldo_voltage(si_t *sih, osl_t *osh, uint8 ldo, uint8 voltage);
 extern void si_pmu_paref_ldo_enable(si_t *sih, osl_t *osh, bool enable);
 extern uint16 si_pmu_fast_pwrup_delay(si_t *sih, osl_t *osh);
-#ifdef WLTEST
+#if 1//def WLTEST
 extern void si_pll_minresmask_reset(si_t *sih, osl_t *osh);
 #endif
 extern void si_pmu_rcal(si_t *sih, osl_t *osh);
