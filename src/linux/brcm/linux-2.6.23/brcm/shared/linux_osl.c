@@ -889,7 +889,7 @@ osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction)
 	pci_unmap_single(osh->pdev, (uint32)pa, size, dir);
 }
 
-#if defined(BCMDBG_ASSERT) || defined(BCMASSERT_LOG)
+#if 1 // defined(BCMDBG_ASSERT) || defined(BCMASSERT_LOG)
 void
 osl_assert(char *exp, char *file, int line)
 {
@@ -911,7 +911,7 @@ osl_assert(char *exp, char *file, int line)
 	bcm_assert_log(tempbuf);
 
 #endif /* BCMASSERT_LOG */
-#ifdef BCMDBG_ASSERT
+///#ifdef BCMDBG_ASSERT
 	snprintf(tempbuf, 256, "assertion \"%s\" failed: file \"%s\", line %d\n",
 		exp, basename, line);
 
@@ -925,7 +925,7 @@ osl_assert(char *exp, char *file, int line)
 	}
 	if (g_assert_type == 0)
 		panic("%s", tempbuf);
-#endif
+//#endif
 
 }
 #endif /* BCMDBG_ASSERT || BCMASSERT_LOG */

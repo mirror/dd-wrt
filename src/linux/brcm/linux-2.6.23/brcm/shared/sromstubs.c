@@ -41,7 +41,7 @@ srom_write(si_t *sih, uint bus, void *curmap, osl_t *osh, uint byteoff, uint nby
 	return 0;
 }
 
-#if defined(WLTEST) || defined(BCMDBG)
+#if  1//defined(WLTEST) || defined(BCMDBG)
 int
 srom_otp_write_region_crc(si_t *sih, uint nbytes, uint16* buf16, bool write)
 {

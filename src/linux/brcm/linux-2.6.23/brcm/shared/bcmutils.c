@@ -1213,7 +1213,7 @@ bcmprinttslogs(void)
 }
 #endif	/* BCMTSTAMPEDLOGS */
 
-#if defined(BCMDBG) || defined(DHD_DEBUG)
+#if 1//defined(BCMDBG) || defined(DHD_DEBUG)
 /* pretty hex print a pkt buffer chain */
 void
 prpkt(const char *msg, osl_t *osh, void *p0)
@@ -2033,9 +2033,9 @@ BCMROMFN(bcm_parse_ordered_tlvs)(void *buf, int buflen, uint key)
 }
 #endif	/* !BCMROMOFFLOAD */
 
-#if defined(BCMDBG) || defined(BCMDBG_ERR) || defined(WLMSG_PRHDRS) || \
-	defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || defined(BCMDBG_DUMP) || \
-	defined(DHD_DEBUG)
+#if 1// defined(BCMDBG) || defined(BCMDBG_ERR) || defined(WLMSG_PRHDRS) || \
+//	defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || defined(BCMDBG_DUMP) || \
+//	defined(DHD_DEBUG)
 int
 bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len)
 {

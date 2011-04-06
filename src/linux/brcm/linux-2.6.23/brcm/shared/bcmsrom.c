@@ -56,7 +56,7 @@
 	 ((uint8 *)curmap + PCI_16KB0_CCREGS_OFFSET + CC_SROM_OTP)) : \
 	((uint8 *)curmap + PCI_BAR0_SPROM_OFFSET))
 
-#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
+#if 1//defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 #define WRITE_ENABLE_DELAY	500	/* 500 ms after write enable/disable toggle */
 #define WRITE_WORD_DELAY	20	/* 20 ms between each word write */
 #endif 
@@ -84,7 +84,7 @@ static int initvars_cis_spi(osl_t *osh, char **vars, uint *count);
 #endif /* BCMSPI */
 static int sprom_cmd_pcmcia(osl_t *osh, uint8 cmd);
 static int sprom_read_pcmcia(osl_t *osh, uint16 addr, uint16 *data);
-#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
+#if 1// defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 static int sprom_write_pcmcia(osl_t *osh, uint16 addr, uint16 data);
 #endif 
 static int sprom_read_pci(osl_t *osh, si_t *sih, uint16 *sprom, uint wordoff, uint16 *buf,
@@ -804,7 +804,7 @@ srom_read(si_t *sih, uint bustype, void *curmap, osl_t *osh,
 	return 0;
 }
 
-#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
+#if 1// defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 /* support only 16-bit word write into srom */
 int
 srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
@@ -2189,7 +2189,7 @@ sprom_read_pcmcia(osl_t *osh, uint16 addr, uint16 *data)
 	return 0;
 }
 
-#if defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
+#if  1//defined(WLTEST) || defined(DHD_SPROM) || defined(BCMDBG)
 /* write a word to the PCMCIA srom */
 static int
 sprom_write_pcmcia(osl_t *osh, uint16 addr, uint16 data)
@@ -2368,7 +2368,7 @@ otp_read_pci(osl_t *osh, si_t *sih, uint16 *buf, uint bufsz)
 }
 #endif /* defined(BCMNVRAMW) || defined(BCMNVRAMR) */
 
-#if defined(WLTEST) || defined(BCMDBG)
+#if 1//defined(WLTEST) || defined(BCMDBG)
 int
 srom_otp_write_region_crc(si_t *sih, uint nbytes, uint16* buf16, bool write)
 {

@@ -1230,7 +1230,7 @@ BCMINITFN(si_pmu0_alpclk0)(si_t *sih, osl_t *osh, chipcregs_t *cc)
 }
 
 /*  FA009736 - PD Test Failure WAR */
-#ifdef WLTEST
+#if 1//def WLTEST
 void
 si_pll_minresmask_reset(si_t *sih, osl_t *osh)
 	{
