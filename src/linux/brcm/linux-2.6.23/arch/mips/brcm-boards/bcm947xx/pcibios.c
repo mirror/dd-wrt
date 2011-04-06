@@ -86,7 +86,7 @@ pcibios_init(void)
 	 * can't use address match 2 (1 GB window) region as MIPS
 	 * can not generate 64-bit address on the backplane.
 	 */
-	if (sih->chip == BCM4716_CHIP_ID) {
+	if ((sih->chip == BCM4716_CHIP_ID) || (sih->chip == BCM4748_CHIP_ID)) {
 		printk("PCI: Using membase %x\n", SI_PCI_MEM);
 		pci_membase = SI_PCI_MEM;
 	}
@@ -123,7 +123,7 @@ pcibios_fixup_bus(struct pci_bus *b)
 	struct pci_dev *d, *dev;
 	struct resource *res;
 	int pos, size;
-	u32 *base;
+	u32 *base, capw;
 	u8 irq;
 
 	printk("PCI: Fixing up bus %d\n", b->number);
@@ -160,13 +160,56 @@ pcibios_fixup_bus(struct pci_bus *b)
 					break;
 			}
 			/* Fix up interrupt lines */
-			list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
+			if (pci_find_device(VENDOR_BROADCOM, PCI_CORE_ID, NULL))
+				d->irq = (pci_find_device(VENDOR_BROADCOM, PCI_CORE_ID, NULL))->irq;
+			else if (pci_find_device(VENDOR_BROADCOM, PCIE_CORE_ID, NULL))
+				d->irq = (pci_find_device(VENDOR_BROADCOM, PCIE_CORE_ID,
+				NULL))->irq;
+
+
+/*			list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
 				if ((dev != NULL) &&
 				    ((dev->device == PCI_CORE_ID) ||
 				    (dev->device == PCIE_CORE_ID)))
 					d->irq = dev->irq;
-			}
+			}*/
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
+
+			/* If the device is a Broadcom HND device, corerev 18 or higher,
+			 * make sure it does not issue requests > 128 bytes.
+			 */
+			pci_read_config_dword(d, 0x58, &capw);
+			if ((capw & 0xff00ff) == 0x780009) {
+				/* There is a Vendor Specific Info capability of the
+				 * right length at 0x58, preety good bet its an HND
+				 * pcie core.
+				 */
+
+				pci_read_config_dword(d, 0x5c, &capw);
+				printk("HND PCIE device corerev %d found at %d/%d/%d\n",
+				       capw, d->bus->number,  PCI_SLOT(d->devfn),
+				       PCI_FUNC(d->devfn));
+				if (capw >= 18) {
+					u32 pciecap;
+					u16 devctrl;
+
+					pci_read_config_dword(d, 0xd0, &pciecap);
+					pci_read_config_word(d, 0xd8, &devctrl);
+					if (pciecap == 0x10010) {
+						u16 new = devctrl & ~0x7000;
+
+						if (devctrl != new) {
+							printk("  Setting DevCtrl to 0x%x "
+								"(was 0x%x)\n", new, devctrl);
+							pci_write_config_word(d, 0xd8, new);
+						} else
+							printk("  DevCtrl is ok: 0x%x\n", new);
+					} else
+						printk(" ERROR: PCIECap is not at 0xd0\n");
+				}
+			}
+
+
 		}
 		hndpci_arb_park(sih, PCI_PARK_NVRAM);
 	}
@@ -327,7 +370,8 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 		}
 
                                 /* War for 4716 failures. */
-                if (sih->chip == BCM4716_CHIP_ID) {
+		if ((sih->chip == BCM4716_CHIP_ID) ||
+			(sih->chip == BCM4748_CHIP_ID)) {
                         uint32 tmp;
                         uint32 delay = 500;
                         uint32 val = 0;
@@ -337,7 +381,6 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
                         if(clk_freq == 480000000)
                                 val = 0x1846b;
                         else if (clk_freq == 453000000)
-//                        else if (clk_freq == 452000000)
                                 val = 0x1046b;
 
                         /* Change Shim mdio control reg to fix host not acking at high frequencies
