@@ -610,9 +610,7 @@ extern uint8 BCMROMFN(hndcrc8)(uint8 *p, uint nbytes, uint8 crc);
 extern uint16 BCMROMFN(hndcrc16)(uint8 *p, uint nbytes, uint16 crc);
 extern uint32 BCMROMFN(hndcrc32)(uint8 *p, uint nbytes, uint32 crc);
 /* format/print */
-#if 1//defined(BCMDBG) || defined(DHD_DEBUG) || defined(BCMDBG_ERR) || \
-//	defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || \
-//	defined(BCMDBG_DUMP)
+#if 1
 extern int bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len);
 extern int bcm_format_hex(char *str, const void *bytes, int len);
 extern void prhex(const char *msg, uchar *buf, uint len);
