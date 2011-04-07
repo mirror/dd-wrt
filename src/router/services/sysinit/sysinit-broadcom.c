@@ -804,6 +804,55 @@ void start_sysinit(void)
 			nvram_set("pci/1/1/macaddr", mac);
 			need_reboot = 1;
 		}
+		struct nvram_tuple e4200_pci_1_1_params[] = {
+			{"pa2gw0a0", "0xfe8c", 0},
+			{"pa2gw1a0", "0x1b20", 0},
+			{"pa2gw2a0", "0xf98c", 0},
+			{"pa2gw0a1", "0xfe98", 0},
+			{"pa2gw1a1", "0x19ae", 0},
+			{"pa2gw2a1", "0xf9ab", 0},
+			
+			{"pa5gw0a0", "0xfe52", 0},
+			{"pa5gw1a0", "0x163e", 0},
+			{"pa5gw2a0", "0xfa59", 0},
+			{"pa5gw0a1", "0xfe63", 0},
+			{"pa5gw1a1", "0x1584", 0},
+			{"pa5gw2a1", "0xfa92", 0},
+			{"pa5gw0a2", "0xfe7c", 0},
+			{"pa5gw1a2", "0x1720", 0},
+			{"pa5gw2a2", "0xfa4a", 0},
+			
+			{"pa5ghw0a0", "0xfe6a", 0},
+			{"pa5ghw1a0", "0x163c", 0},
+			{"pa5ghw2a0", "0xfa69", 0},
+			{"pa5ghw0a1", "0xfe67", 0},
+			{"pa5ghw1a1", "0x160e", 0},
+			{"pa5ghw2a1", "0xfa6a", 0},
+			{"pa5ghw0a2", "0xfe76", 0},
+			{"pa5ghw1a2", "0x1766", 0},
+			{"pa5ghw2a2", "0xfa2c", 0},
+/*			
+			{"pa5glw0a0", "0", 0},
+			{"pa5glw1a0", "0", 0},
+			{"pa5glw2a0", "0", 0},
+			{"pa5glw0a1", "0", 0},
+			{"pa5glw1a1", "0", 0},
+			{"pa5glw2a1", "0", 0},
+			{"pa5glw0a2", "0", 0},
+			{"pa5glw1a2", "0", 0},
+			{"pa5glw2a2", "0", 0},
+*/
+			{0, 0, 0}
+		};
+		/*
+		 * set router's extra parameters 
+		 */
+		extra_params = e4200_pci_1_1_params;
+		while (extra_params->name) {
+			nvram_nset(extra_params->value, "pci/1/1/%s",
+				   extra_params->name);
+			extra_params++;
+		}
 		break;
 		
 #endif		
