@@ -842,6 +842,17 @@ void start_sysinit(void)
 			{"pa5glw1a2", "0", 0},
 			{"pa5glw2a2", "0", 0},
 */
+
+			{"pa05gidx", "5", 0},
+			{"pa05glidx", "0", 0},
+			{"pa05ghidx", "7", 0},
+			{"pa15gidx", "0", 0},			
+			{"pa15glidx", "0", 0},
+			{"pa15ghidx", "3", 0},
+			{"pa25gidx", "5", 0},
+			{"pa25glidx", "0", 0},
+			{"pa25ghidx", "9", 0},
+
 			{0, 0, 0}
 		};
 		/*
