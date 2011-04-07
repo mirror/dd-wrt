@@ -223,7 +223,8 @@ typedef volatile struct {
 	uint32	pllcontrol_addr;
 	uint32	pllcontrol_data;
 	uint32	pmustrapopt;		/* 0x668, corerev >= 28 */
-	uint32	PAD[101];
+	uint32	pmu_xtalfreq;		/* 0x66C, pmurev >= 10 */
+	uint32	PAD[100];
 	uint16	sromotp[768];
 } chipcregs_t;
 
@@ -1096,6 +1097,11 @@ typedef volatile struct {
 #define	PMU5_PLL_PLLCTL_OFF		4
 #define	PMU5_PLL_PCHI_OFF		5
 #define	PMU5_PLL_PCHI_MASK		0x0000003f
+
+/* pmu XtalFreqRatio */
+#define	PMU_XTALFREQ_REG_ILPCTR_MASK	0x00001FFF
+#define	PMU_XTALFREQ_REG_MEASURE_MASK	0x80000000
+#define	PMU_XTALFREQ_REG_MEASURE_SHIFT	31
 
 /* Divider allocation in 4716/47162/5356/5357 */
 #define	PMU5_MAINPLL_CPU		1

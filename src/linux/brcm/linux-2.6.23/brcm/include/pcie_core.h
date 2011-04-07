@@ -1,15 +1,21 @@
 /*
  * BCM43XX PCIE core hardware definitions.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: pcie_core.h,v 13.7.28.1 2010/03/16 18:35:27 Exp $
+ * $Id: pcie_core.h,v 13.7.108.2 2010/05/24 06:41:20 Exp $
  */
 #ifndef	_PCIE_CORE_H
 #define	_PCIE_CORE_H
@@ -241,6 +247,14 @@ typedef struct sbpcieregs {
 #define MDIO_DEV_TXCTRL0	0x820
 #define MDIO_DEV_SERDESID	0x831
 #define MDIO_DEV_RXCTRL0	0x840
+
+
+/* XgxsBlk1_A Register Offsets */
+#define BLK1_PWR_MGMT0		0x16
+#define BLK1_PWR_MGMT1		0x17
+#define BLK1_PWR_MGMT2		0x18
+#define BLK1_PWR_MGMT3		0x19
+#define BLK1_PWR_MGMT4		0x1A
 
 /* serdes regs (rev < 10) */
 #define MDIODATA_DEV_PLL       		0x1d	/* SERDES PLL Dev */
