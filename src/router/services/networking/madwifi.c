@@ -1230,7 +1230,7 @@ static void setRTS(char *use)
 	setsysctrl( wif, "compression", 0 );
 }
 */
-void setMacFilter(char *iface)
+static void setMacFilter(char *iface)
 {
 	char *next;
 	char var[32];
