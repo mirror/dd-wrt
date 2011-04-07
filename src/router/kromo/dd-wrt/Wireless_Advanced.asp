@@ -189,10 +189,10 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.wireless.%s_wme, 'idwl_wme', <%% nvram_else_match("%s_wme", "on", "1", "0"); %%> == 1);
 	show_layer_ext(document.wireless.radio%d_timer_enable, 'radio', <%% nvram_else_match("radio%d_timer_enable", "1", "1", "0"); %%> == 1);
 	initWlTimer('<%% nvram_get("radio%d_on_time"); %%>');
-	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvram_else_match("%s_phytype", "n", "1", "0"); %%> == 1);
+	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvram_else_match("%s_phytype", "n", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "s", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "h", "1", "0"); %%> == 1);
 	setElementActive( "document.wireless.wl_rate", !(wl_net_mode=="n-only") );
 
-	if("<%% nvram_get("%s_phytype"); %%>"=="n") create_nrate('<%% nvram_get("%s_nbw"); %%>',document.wireless);
+	if("<%% nvram_get("%s_phytype"); %%>"=="n" || "<%% nvram_get("%s_phytype"); %%>"=="s" || "<%% nvram_get("%s_phytype"); %%>"=="h") create_nrate('<%% nvram_get("%s_nbw"); %%>',document.wireless);
 	
 	update = new StatusbarUpdate();
 	update.start();
