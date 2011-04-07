@@ -394,6 +394,43 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
 	fprintf(fp, "\n");
 }
 
+static void setMacFilter(char *fp, char *iface)
+{
+	char *next;
+	char var[32];
+
+
+	char nvvar[32];
+
+	sprintf(nvvar, "%s_macmode", iface);
+	if (nvram_match(nvvar, "deny")) {
+		fprintf(fp,"deny_mac_file=/tmp/%s_deny",iface);
+		char nvlist[32];
+		sprintf(nvlist, "%s_maclist", iface);
+		char name[32];
+		sprintf(name,"/tmp/%s_deny",iface);
+		FILE *out=fopen(name,"wb");
+		foreach(var, nvram_safe_get(nvlist), next) {
+			fprintf(out,"%s\n",var);
+		}
+		fclose(out);
+	} else if (nvram_match(nvvar, "allow")) {
+
+		fprintf(fp,"accept_mac_file=/tmp/%s_accept",iface);
+		char nvlist[32];
+		sprintf(nvlist, "%s_maclist", iface);
+		char name[32];
+		sprintf(name,"/tmp/%s_accept",iface);
+		FILE *out=fopen(name,"wb");
+		foreach(var, nvram_safe_get(nvlist), next) {
+			fprintf(out,"%s\n",var);
+		}
+		fclose(out);
+	}
+
+}
+
+
 extern void addWPS(FILE * fp, char *prefix, int configured);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
@@ -452,7 +489,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(vathmac, "%s_hwaddr", ifname);
 	nvram_set(vathmac, macaddr);
 	fprintf(stderr, "setup %s %s\n", ifname, macaddr);
-
+	setMacFilter(fp,ifname);
 	char isolate[32];
 	char broadcast[32];
 	sprintf(isolate, "%s_ap_isolate", ifname);
@@ -647,6 +684,8 @@ void setupradauth_ath9k(char *prefix, char *driver, int iswan) {
 			  prefix, server, port, share);
 	}
 */
+
+
 
 void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 {
