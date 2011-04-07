@@ -403,7 +403,7 @@ static void setMacFilter(char *fp, char *iface)
 
 	sprintf(nvvar, "%s_macmode", iface);
 	if (nvram_match(nvvar, "deny")) {
-		fprintf(fp, "deny_mac_file=/tmp/%s_deny", iface);
+		fprintf(fp, "deny_mac_file=/tmp/%s_deny\n", iface);
 		char nvlist[32];
 		sprintf(nvlist, "%s_maclist", iface);
 		char name[32];
@@ -415,7 +415,7 @@ static void setMacFilter(char *fp, char *iface)
 		fclose(out);
 	} else if (nvram_match(nvvar, "allow")) {
 
-		fprintf(fp, "accept_mac_file=/tmp/%s_accept", iface);
+		fprintf(fp, "accept_mac_file=/tmp/%s_accept\n", iface);
 		char nvlist[32];
 		sprintf(nvlist, "%s_maclist", iface);
 		char name[32];
