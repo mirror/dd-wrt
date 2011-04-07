@@ -2706,8 +2706,8 @@ static void save_prefix(webs_t wp, char *prefix)
 		char *wl = websGetVar(wp, n, NULL);
 
 		if (wl)
-			if (!strcmp(wl, "ap") || !strcmp(wl, "wdsap")
-			    || !strcmp(wl, "infra") || !strcmp(wl, "wdssta")) {
+			if ((!strcmp(wl, "ap") || !strcmp(wl, "wdsap")
+			    || !strcmp(wl, "infra") || !strcmp(wl, "wdssta")) && nvram_invmatch("wan_proto","3g") ) {
 				nvram_set("wan_proto", "disabled");
 			}
 	}
