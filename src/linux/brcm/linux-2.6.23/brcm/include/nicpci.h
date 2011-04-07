@@ -1,15 +1,21 @@
 /*
  * BCM43XX PCI/E core sw API definitions.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nicpci.h,v 13.9.8.1 2009/12/08 05:10:59 Exp $
+ * $Id: nicpci.h,v 13.10.12.2 2010/05/24 16:44:11 Exp $
  */
 
 #ifndef	_NICPCI_H
@@ -32,6 +38,7 @@
 #define pcicore_down(a, b)	do { } while (0)
 
 #define pcie_war_ovr_aspm_update(a, b)	do { } while (0)
+#define pcie_power_save_enable(a, b)	do { } while (0)
 
 #define pcicore_pcieserdesreg(a, b, c, d, e) (0)
 #define pcicore_pciereg(a, b, c, d, e) (0)
@@ -68,6 +75,8 @@ extern void pcicore_sleep(void *pch);
 extern void pcicore_down(void *pch, int state);
 
 extern void pcie_war_ovr_aspm_update(void *pch, uint8 aspm);
+extern void pcie_power_save_enable(void *pch, bool enable);
+
 extern uint32 pcicore_pcieserdesreg(void *pch, uint32 mdioslave, uint32 offset,
                                     uint32 mask, uint32 val);
 

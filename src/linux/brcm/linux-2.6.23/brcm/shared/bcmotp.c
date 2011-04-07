@@ -206,6 +206,13 @@ static otpinfo_t otpinfo;
 #define OTPGU_P_MSK		0xf000
 #define OTPGU_P_SHIFT		(OTPGU_HWP_OFF % 16)
 
+/* LOCK but offset */
+#define OTP_LOCK_ROW1_LOC_OFF	63	/* 1st ROW lock bit */
+#define OTP_LOCK_ROW2_LOC_OFF	127	/* 2nd ROW lock bit */
+#define OTP_LOCK_RD_LOC_OFF	128	/* Redundnancy Region lock bit */
+#define OTP_LOCK_GU_LOC_OFF	129	/* General User Region lock bit */
+
+
 /* OTP Size */
 #define OTP_SZ_FU_324		((ROUNDUP(324,8))/8)	/* 324 bits */
 #define OTP_SZ_FU_288		(288/8)		/* 288 bits */
@@ -269,7 +276,7 @@ ipxotp_read_bit(void *oh, chipcregs_t *cc, uint off)
 		OTP_ERR(("\n%s: BUSY stuck: st=0x%x, count=%d\n", __FUNCTION__, st, k));
 		return -1;
 	}
-	if (st & OTPP_READERR) {
+if (st & OTPP_READERR) {
 		OTP_ERR(("\n%s: Could not read OTP bit %d\n", __FUNCTION__, off));
 		return -1;
 	}
@@ -294,13 +301,18 @@ ipxotp_max_rgnsz(si_t *sih, int osizew)
 	case BCM43231_CHIP_ID:
 		ret = osizew*2 - OTP_SZ_FU_288 - OTP_SZ_CHECKSUM;
 		break;
-	case BCM43222_CHIP_ID:
-	case BCM43111_CHIP_ID:
-	case BCM43112_CHIP_ID:
 
-	case BCM43224_CHIP_ID:
-	case BCM43225_CHIP_ID:
-	case BCM43236_CHIP_ID:	case BCM43235_CHIP_ID:	case BCM43238_CHIP_ID:
+	case BCM43222_CHIP_ID:	
+	case BCM43111_CHIP_ID:	
+	case BCM43112_CHIP_ID:
+	case BCM43224_CHIP_ID:	
+	case BCM43225_CHIP_ID:	
+	case BCM43421_CHIP_ID:
+	case BCM43226_CHIP_ID:	
+	case BCM43236_CHIP_ID:	
+	case BCM43235_CHIP_ID:	
+	case BCM43238_CHIP_ID:
+	case BCM43234_CHIP_ID:
 		/* 43236 has 448K SOCRAM, fuse is bigger than 43224 */
 		ret = osizew*2 - OTP_SZ_FU_324 - OTP_SZ_CHECKSUM;
 		break;
@@ -323,6 +335,12 @@ ipxotp_max_rgnsz(si_t *sih, int osizew)
 		ret = osizew*2 - OTP_SZ_FU_144 - OTP_SZ_CHECKSUM;
 		break;
 	case BCM4331_CHIP_ID:
+		ret = osizew*2 - OTP_SZ_FU_72 - OTP_SZ_CHECKSUM;
+		break;
+	case BCM43228_CHIP_ID:
+		ret = osizew*2 - OTP_SZ_FU_72 - OTP_SZ_CHECKSUM;
+		break;
+	case BCM43227_CHIP_ID:
 		ret = osizew*2 - OTP_SZ_FU_72 - OTP_SZ_CHECKSUM;
 		break;
 	default:
@@ -372,6 +390,9 @@ BCMNMIATTACHFN(_ipxotp_init)(otpinfo_t *oi, chipcregs_t *cc)
 	oi->status = R_REG(oi->osh, &cc->otpstatus);
 
 	if ((CHIPID(oi->sih->chip) == BCM43222_CHIP_ID) ||
+	    (CHIPID(oi->sih->chip) == BCM43421_CHIP_ID) ||
+	    (CHIPID(oi->sih->chip) == BCM43234_CHIP_ID) ||
+	    (CHIPID(oi->sih->chip) == BCM4331_CHIP_ID) ||
 	    (CHIPID(oi->sih->chip) == BCM43111_CHIP_ID) ||
 	    (CHIPID(oi->sih->chip) == BCM43112_CHIP_ID) ||
 	    (CHIPID(oi->sih->chip) == BCM43224_CHIP_ID) ||
@@ -380,7 +401,7 @@ BCMNMIATTACHFN(_ipxotp_init)(otpinfo_t *oi, chipcregs_t *cc)
 	    (CHIPID(oi->sih->chip) == BCM43236_CHIP_ID) ||
 	    (CHIPID(oi->sih->chip) == BCM43235_CHIP_ID) ||
 	    (CHIPID(oi->sih->chip) == BCM43238_CHIP_ID) ||
-	    (CHIPID(oi->sih->chip) == BCM4331_CHIP_ID) ||
+	    (CHIPID(oi->sih->chip) == BCM4331_CHIP_ID) || 
 	    0) {
 		uint32 p_bits;
 		p_bits = (ipxotp_otpr(oi, cc, oi->otpgu_base + OTPGU_P_OFF) & OTPGU_P_MSK)

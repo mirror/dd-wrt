@@ -440,6 +440,15 @@ ai_setint(si_t *sih, int siflag)
 {
 }
 
+void
+ai_write_wrap_reg(si_t *sih, uint32 offset, uint32 val)
+{
+	si_info_t *sii = SI_INFO(sih);
+	uint32 *w = (uint32 *) sii->curwrap;
+	W_REG(sii->osh, w+(offset/4), val);
+	return;
+}
+
 uint
 ai_corevendor(si_t *sih)
 {
