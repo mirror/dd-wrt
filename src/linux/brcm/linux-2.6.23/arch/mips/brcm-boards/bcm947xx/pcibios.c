@@ -160,20 +160,17 @@ pcibios_fixup_bus(struct pci_bus *b)
 					break;
 			}
 			/* Fix up interrupt lines */
-			if (pci_find_device(VENDOR_BROADCOM, PCI_CORE_ID, NULL))
-				d->irq = (pci_find_device(VENDOR_BROADCOM, PCI_CORE_ID, NULL))->irq;
-			else if (pci_find_device(VENDOR_BROADCOM, PCIE_CORE_ID, NULL))
-				d->irq = (pci_find_device(VENDOR_BROADCOM, PCIE_CORE_ID,
-				NULL))->irq;
 
+			printk("Device %d map irq %d\n",PCI_SLOT(d->devfn),d->irq);
 
-/*			list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
+			list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
 				if ((dev != NULL) &&
 				    ((dev->device == PCI_CORE_ID) ||
 				    (dev->device == PCIE_CORE_ID)))
 					d->irq = dev->irq;
-			}*/
+			}
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
+			printk("result->irq %d\n",d->irq);
 
 			/* If the device is a Broadcom HND device, corerev 18 or higher,
 			 * make sure it does not issue requests > 128 bytes.
@@ -264,6 +261,7 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 	/* These cores come out of reset enabled */
 	if (dev->device == MIPS_CORE_ID ||
 	    dev->device == MIPS33_CORE_ID ||
+	    dev->device == MIPS74K_CORE_ID ||
 	    dev->device == EXTIF_CORE_ID ||
 	    dev->device == CC_CORE_ID)
 		return 0;
