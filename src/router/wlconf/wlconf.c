@@ -1480,7 +1480,7 @@ cprintf("get core rev %s\n",name);
 	/* Manual Channel Selection - when channel # is not 0 */
 cprintf("set channel %s\n",name);
 	val = atoi(nvram_default_get(strcat_r(prefix, "channel", tmp),"0"));
-	if (val && phytype != PHY_TYPE_N && phytype != PHY_TYPE_SSN) {
+	if (val && !WLCONF_PHYTYPE_11N(phytype)) {
 		WL_SETINT(name, WLC_SET_CHANNEL, val);
 		if (ret) {
 			/* Use current channel (card may have changed) */
@@ -2072,7 +2072,7 @@ cprintf("set antdiv mode %s\n",name);
 	 */
 	if (ap || apsta) {
 		if (!(val = atoi(nvram_default_get(strcat_r(prefix, "channel", tmp),"0")))) {
-			if (phytype == PHY_TYPE_N || phytype == PHY_TYPE_SSN) {
+			if (WLCONF_PHYTYPE_11N(phytype)) {
 				chanspec_t chanspec = wlconf_auto_chanspec(name,prefix);
 				if (chanspec != 0)
 					{
