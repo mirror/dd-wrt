@@ -624,7 +624,7 @@
 <member name="res_phoneprov" displayname="HTTP Phone Provisioning" remove_on_change="res/res_phoneprov.o res/res_phoneprov.so">
 </member>
 <member name="res_pktccops" displayname="PktcCOPS manager for MGCP" remove_on_change="res/res_pktccops.o res/res_pktccops.so">
-        <defaultenabled>no</defaultenabled>
+        <defaultenabled>yes</defaultenabled>
 </member>
 <member name="res_realtime" displayname="Realtime Data Lookup/Rewrite" remove_on_change="res/res_realtime.o res/res_realtime.so">
 </member>
