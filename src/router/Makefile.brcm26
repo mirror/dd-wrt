@@ -552,6 +552,7 @@ endif
 	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2000.bin -g
 	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3000.bin -g
 	../../opt/tools/addpattern -4 -p 4200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e4200.bin -g
+	../../opt/tools/addpattern -4 -p NV60 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv60k.bin -g
 # end Linksys
 
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
