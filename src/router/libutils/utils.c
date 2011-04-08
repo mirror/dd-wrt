@@ -3241,19 +3241,19 @@ int led_control(int type, int act)
 		diag_gpio = 0x10e;
 		ses_gpio = 0x10d;
 		usb_power = 0x110;
-		connected_gpio = 0x12e;
+		connected_gpio = 0x12e; // card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
-		ses_gpio = 0x126;
+		ses_gpio = 0x126;	// card 1, gpio 6
 		usb_power = 0x00d;
-		connected_gpio = 0x127;
+		connected_gpio = 0x127; // card 1, gpio 7
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
-		connected_gpio = 0x133;
-		ses_gpio = 0x125;
-		ses2_gpio = 0x135;
+		connected_gpio = 0x133; // card 2 gpio 3
+		ses_gpio = 0x125; // card 1 gpio 5
+		ses2_gpio = 0x135; // card 2 gpio 5
 		usb_power = 0x002;
 #endif
 #ifdef HAVE_DIR615E
