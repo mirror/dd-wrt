@@ -3241,7 +3241,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x10e;
 		ses_gpio = 0x10d;
 		usb_power = 0x110;
-		connected_gpio = 0x10e;
+		connected_gpio = 0x12e;
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
