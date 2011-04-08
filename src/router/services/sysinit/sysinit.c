@@ -2012,6 +2012,13 @@ void start_restore_defaults(void)
 	     || brand == ROUTER_ASUS_RTN12 || brand == ROUTER_ASUS_RTN12B || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
+	
+	if (restore_defaults &&
+	    (brand == ROUTER_LINKSYS_E4200)) {
+		nvram_set("wl0_txpwr", "100");
+		nvram_set("wl1_txpwr", "100");
+	}
+	
 #ifndef HAVE_BUFFALO
 	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S
 	    && nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
