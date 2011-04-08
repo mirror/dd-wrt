@@ -68,6 +68,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 								// https,
 								// 8/6/2003
 {
+	
+	int brand = getRouterBrand();
 
 #ifndef ANTI_FLASH
 	char upload_fifo[] = "/tmp/uploadXXXXXX";
@@ -404,6 +406,19 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				goto err;	// must be there, otherwise fail here
 			}
 #else
+
+			if ((brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307")) //E2000
+			 || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300")) //E3000
+			 || brand == ROUTER_LINKSYS_E4200) {
+			    if (memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
+				cprintf("image not compatibe with nv60k router!\n");
+				goto err;	// must be there, otherwise fail here
+				}
+			}
+
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT54G, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRT54GS, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRH54G, 4)
@@ -424,10 +439,13 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			    && memcmp(&buf[0], &CODE_PATTERN_E1000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)) {
+			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
 				cprintf("code pattern error!\n");
 				goto write_data;
 			}
+			
+		
 #endif
 #endif
 
@@ -451,7 +469,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			i++;
 			continue;
 		}
-	      write_data:
+		
+write_data:
 		*total -= count;
 		safe_fwrite(buf, 1, count, fifo);
 		// safe_fwrite(buf, 1, size, fifo);
