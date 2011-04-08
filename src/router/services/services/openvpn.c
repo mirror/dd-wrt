@@ -49,10 +49,14 @@ void start_openvpnserver(void)
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
-	fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
-	fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
-	fprintf(fp, "key /tmp/openvpn/key.pem\n");
+	if (nvram_invmatch("openvpn_dh", ""))
+		fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
+	if (nvram_invmatch("openvpn_ca", ""))
+		fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
+	if (nvram_invmatch("openvpn_crt", ""))
+		fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
+	if (nvram_invmatch("openvpn_key", ""))
+		fprintf(fp, "key /tmp/openvpn/key.pem\n");
 	//be sure Chris old style config is still working
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
@@ -100,7 +104,8 @@ void start_openvpnserver(void)
 		if (nvram_invmatch("openvpn_mssfix", "")
 		    && nvram_match("openvpn_proto", "udp")) {
 			fprintf(fp, "mssfix");	//fragment==mssfix
-			fprintf(fp, "fragment %s\n", nvram_safe_get("openvpn_mssfix"));
+			fprintf(fp, "fragment %s\n",
+				nvram_safe_get("openvpn_mssfix"));
 		}
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
@@ -153,12 +158,6 @@ void start_openvpnserver(void)
 			"ifconfig tap0 0.0.0.0 promisc up\n");
 	}
 	fprintf(fp, "startservice set_routes\n");
-/*	fprintf(fp, "iptables -I INPUT -i %s0 -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -I FORWARD -i %s0 -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -I FORWARD -o %s0 -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));		*/
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
@@ -172,15 +171,6 @@ void start_openvpnserver(void)
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
 	}
-/*	fprintf(fp, "iptables -D INPUT -i %s0 -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -D INPUT -p %s --dport %s -j ACCEPT\n",
-		nvram_match("openvpn_proto", "udp") ? "udp" : "tcp",
-		nvram_safe_get("openvpn_port"));
-	fprintf(fp, "iptables -D FORWARD -i %s0 -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));
-	fprintf(fp, "iptables -D FORWARD -o %s0 -j ACCEPT\n",
-		nvram_safe_get("openvpn_tuntap"));			*/
 	fclose(fp);
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
@@ -254,9 +244,13 @@ void start_openvpn(void)
 	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
-	fprintf(fp, "ca /tmp/openvpncl/ca.crt\n"
-		"cert /tmp/openvpncl/client.crt\n"
-		"key /tmp/openvpncl/client.key\n"
+	if (nvram_invmatch("openvpncl_ca", ""))
+		fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
+	if (nvram_invmatch("openvpncl_client", ""))
+		fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
+	if (nvram_invmatch("openvpncl_key", ""))
+		fprintf(fp, "key /tmp/openvpncl/client.key\n");
+	fprintf(fp,
 		"management 127.0.0.1 5001\n"
 		"management-log-cache 50\n"
 		"verb 4\n" "mute 5\n"
@@ -269,14 +263,16 @@ void start_openvpn(void)
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
-	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"),
+	fprintf(fp, "remote %s %s\n",
+		nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_mssfix", "")
 	    && nvram_match("openvpn_proto", "udp")) {
 		fprintf(fp, "mssfix");	//fragment=mssfix
-		fprintf(fp, "fragment %s\n", nvram_safe_get("openvpncl_mssfix"));
+		fprintf(fp, "fragment %s\n",
+			nvram_safe_get("openvpncl_mssfix"));
 	}
 	if (nvram_match("openvpncl_lzo", "1"))
 		fprintf(fp, "comp-lzo adaptive\n");
@@ -295,43 +291,38 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_tlscip"));
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
-
 	fp = fopen("/tmp/openvpncl/route-up.sh", "wb");
-	if (fp == NULL)
+	if (fp == NULL) {
 		return;
+	}
 	fprintf(fp, "#!/bin/sh\n");
 	//bridge tap interface to br0 when choosen
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
-	    && nvram_match("openvpncl_nat", "0"))
+	    && nvram_match("openvpncl_nat", "0")) {
 		fprintf(fp, "brctl addif br0 tap1\n"
 			"ifconfig tap1 0.0.0.0 promisc up\n");
-	//do TAP clientrouting -> must set ip when server does proxy mode (doesnt push ip)
-	else if (nvram_match("openvpncl_tuntap", "tap")	
-		&& strlen(nvram_safe_get("openvpncl_ip")) > 0)
-		fprintf(fp, "ifconfig tap1 %s up\n",
-			nvram_safe_get("openvpncl_ip"));
-	if (nvram_match("openvpncl_nat", "1"))
+	} else {
+		if (nvram_match("openvpncl_tuntap", "tap")
+		    && strlen(nvram_safe_get("openvpncl_ip")) > 0) {
+			fprintf(fp, "ifconfig tap1 %s up\n",
+				nvram_safe_get("openvpncl_ip"));
+		}
+	}
+	if (nvram_match("openvpncl_nat", "1")) {
 		fprintf(fp,
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
-/*	else {
-		fprintf(fp, "iptables -I INPUT -i %s1 -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -I FORWARD -i %s1 -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -I FORWARD -o %s1 -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-	}							*/
+	}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route add default via %s table 10\n",
 			nvram_safe_get("wan_gateway"));
-		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
+		fprintf(fp,
+			"for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
 			"	ip rule add from $IP table 10\n" "done\n");
 	}
 	fclose(fp);
-
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
@@ -359,22 +350,23 @@ void start_openvpn(void)
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route del default via %s table 10\n",
 			nvram_safe_get("wan_gateway"));
-		fprintf(fp, "for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
+		fprintf(fp,
+			"for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
 			"	ip rule del from $IP table 10\n" "done\n");
 	}
 	fclose(fp);
-
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
-
 	if (nvram_match("use_crypto", "1"))
-		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf",
-		     "--route-up", "/tmp/openvpn/route-up.sh", "--down",
-		     "/tmp/openvpn/route-down.sh", "--daemon", "--engine",
-		     "cryptodev");
+		eval("openvpn", "--config",
+		     "/tmp/openvpncl/openvpn.conf", "--route-up",
+		     "/tmp/openvpn/route-up.sh", "--down",
+		     "/tmp/openvpn/route-down.sh", "--daemon",
+		     "--engine", "cryptodev");
 	else
-		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf",
-		     "--route-up", "/tmp/openvpncl/route-up.sh", "--down",
+		eval("openvpn", "--config",
+		     "/tmp/openvpncl/openvpn.conf", "--route-up",
+		     "/tmp/openvpncl/route-up.sh", "--down",
 		     "/tmp/openvpncl/route-down.sh", "--daemon");
 	return;
 }
