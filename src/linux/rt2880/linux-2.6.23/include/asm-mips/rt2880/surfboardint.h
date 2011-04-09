@@ -31,7 +31,7 @@
 #define SURFBOARDINT_UART1	 8	/* UART Lite */
 #define SURFBOARDINT_UART	 9	/* UART */
 #define SURFBOARDINT_TIMER0	 10	/* timer0 */
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883)
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT5350)
 #define RALINK_CPU_TIMER_IRQ 	 5	/* mips timer */
 #define SURFBOARDINT_GPIO	 6	/* GPIO */
 #define SURFBOARDINT_DMA	 7	/* DMA */

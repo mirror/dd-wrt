@@ -6,7 +6,7 @@
 #define	CSR_WRITE	1
 #define	CSR_TEST	2
 
-#define RA2882_CSR_GROUP	2882	
+#define RALINK_CSR_GROUP	 2882	
 
 typedef struct rt2880_csr_msg {
   	int	enable;
@@ -17,11 +17,11 @@ typedef struct rt2880_csr_msg {
   	unsigned long write_mask;
   	unsigned long write_value;
   	int	status;
-} RT2880_CSR_MSG;
+} CSR_MSG;
 
-int csr_msg_send(RT2880_CSR_MSG* msg);
+int csr_msg_send(CSR_MSG* msg);
 int csr_msg_recv(void);
 
-// static RT2880_CSR_MSG	input_csr_msg;
+// static CSR_MSG	input_csr_msg;
 
 #endif

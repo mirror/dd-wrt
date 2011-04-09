@@ -107,6 +107,8 @@ static unsigned int __init probe_baud(struct uart_port *port)
 	serial_out(port, UART_LCR, lcr | UART_LCR_DLAB);
 #if defined (CONFIG_RALINK_RT2880) || \
     defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052)
 	quot= serial_in(port, UART_DLL);
 #else
@@ -117,6 +119,8 @@ static unsigned int __init probe_baud(struct uart_port *port)
 
 #if defined (CONFIG_RALINK_RT2880) || \
     defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052)
 	quot = (dlm << 8) | dll;
 #endif

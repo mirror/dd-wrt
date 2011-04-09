@@ -20,7 +20,7 @@ void rt2880_csr_receiver(struct sock *sk, int len)
 	int err;
 	struct nlmsghdr *nlh;
 	unsigned int reg_value = 0;
-	RT2880_CSR_MSG *csrmsg;
+	CSR_MSG *csrmsg;
 	RAETH_PRINT("csr netlink receiver!\n");
 	skb = skb_recv_datagram(sk, 0, 1, &err);
 
@@ -62,20 +62,20 @@ void rt2880_csr_receiver(struct sock *sk, int len)
 	skb_free_datagram(sk, skb);
 }
 
-int rt2880_csr_msgsend(RT2880_CSR_MSG* csrmsg)
+int rt2880_csr_msgsend(CSR_MSG* csrmsg)
 {
 	struct sk_buff *skb;
 	struct nlmsghdr *nlh = NULL;
 	size_t size = 0;
 	struct sock *send_syncnl = csr_msg_socket;
 
-	RT2880_CSR_MSG* csr_reg;
+	CSR_MSG* csr_reg;
 	if (send_syncnl == NULL) {
 		printk("drv: netlink_kernel_create() failed!\n");
 		return -1;
 	}
 		
-	size = NLMSG_SPACE(sizeof(RT2880_CSR_MSG));
+	size = NLMSG_SPACE(sizeof(CSR_MSG));
 	skb = alloc_skb(size, GFP_ATOMIC);
 	
 	if(!skb)
@@ -84,7 +84,7 @@ int rt2880_csr_msgsend(RT2880_CSR_MSG* csrmsg)
 		return -1;
 	}
 	
-	nlh = NLMSG_PUT(skb, 0, 0, RA2882_CSR_GROUP, size - sizeof(struct nlmsghdr));
+	nlh = NLMSG_PUT(skb, 0, 0, RALINK_CSR_GROUP, size - sizeof(struct nlmsghdr));
 	
 	if (!nlh)
 	{
@@ -102,11 +102,11 @@ int rt2880_csr_msgsend(RT2880_CSR_MSG* csrmsg)
 	csr_reg->address	= csrmsg->address;
 	csr_reg->default_value 	= csrmsg->default_value;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
-	NETLINK_CB(skb).dst_group = RA2882_CSR_GROUP;
+	NETLINK_CB(skb).dst_group = RALINK_CSR_GROUP;
 #else
-	NETLINK_CB(skb).dst_groups = RA2882_CSR_GROUP;
+	NETLINK_CB(skb).dst_groups = RALINK_CSR_GROUP;
 #endif
-	netlink_broadcast(send_syncnl, skb, 0, RA2882_CSR_GROUP, GFP_ATOMIC);
+	netlink_broadcast(send_syncnl, skb, 0, RALINK_CSR_GROUP, GFP_ATOMIC);
 	return 0;
 
 nlmsg_failure:
@@ -117,7 +117,7 @@ int csr_netlink_init()
 {
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,21)
-	csr_msg_socket = netlink_kernel_create(NETLINK_CSR, RA2882_CSR_GROUP, rt2880_csr_receiver, THIS_MODULE);
+	csr_msg_socket = netlink_kernel_create(NETLINK_CSR, RALINK_CSR_GROUP, rt2880_csr_receiver, THIS_MODULE);
 #else
 	csr_msg_socket = netlink_kernel_create(NETLINK_CSR, rt2880_csr_receiver);
 #endif

@@ -405,6 +405,8 @@ void rt2880_irqdispatch(void)
 
 #elif defined (CONFIG_RALINK_RT3352)
 
+#elif defined (CONFIG_RALINK_RT5350)
+
 #else // 2880
 
 #if defined(CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT3883)

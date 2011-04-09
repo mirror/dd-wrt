@@ -13,6 +13,7 @@
 #include <linux/string.h>
 #include <linux/signal.h>
 #include <linux/irq.h>
+#include <linux/ctype.h>
 
 #include <asm/system.h>
 #include <asm/io.h>
@@ -36,6 +37,11 @@
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
 
+
+#if defined(CONFIG_USER_SNMPD)
+#include <linux/seq_file.h>
+#endif
+
 #include "ra2882ethreg.h"
 #include "raether.h"
 #include "ra_mac.h"
@@ -44,178 +50,78 @@
 extern END_DEVICE *ra_ei_local;
 
 
-#if defined (CONFIG_GIGAPHY) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
-void enable_auto_negotiate(void)
+#if defined(CONFIG_USER_SNMPD)
+
+static int ra_snmp_seq_show(struct seq_file *seq, void *v)
 {
-#if defined (CONFIG_RALINK_RT3052)
-        u32 regValue = sysRegRead(0xb01100C8);
-#else
-	u32 regValue = sysRegRead(MDIO_CFG);
+	char strprint[100];
+
+#if !defined(CONFIG_RALINK_RT5350)
+
+	sprintf(strprint, "rx counters: %lu %lu %lu %lu %lu %lu %lu\n", sysRegRead(GDMA_RX_GBCNT0), sysRegRead(GDMA_RX_GPCNT0),sysRegRead(GDMA_RX_OERCNT0), sysRegRead(GDMA_RX_FERCNT0), sysRegRead(GDMA_RX_SERCNT0), sysRegRead(GDMA_RX_LERCNT0), sysRegRead(GDMA_RX_CERCNT0));
+	seq_puts(seq, strprint);
+
+	sprintf(strprint, "fc config: %lu %lu %lu\n", sysRegRead(CDMA_FC_CFG), sysRegRead(GDMA1_FC_CFG), PDMA_FC_CFG, sysRegRead(PDMA_FC_CFG));
+	seq_puts(seq, strprint);
+
+	sprintf(strprint, "scheduler: %lu %lu %lu\n", sysRegRead(GDMA1_SCH_CFG), sysRegRead(GDMA2_SCH_CFG), sysRegRead(PDMA_SCH_CFG));
+	seq_puts(seq, strprint);
+
+#endif
+	sprintf(strprint, "ports: %lu %lu %lu %lu %lu %lu\n", sysRegRead(PORT0_PKCOUNT), sysRegRead(PORT1_PKCOUNT), sysRegRead(PORT2_PKCOUNT), sysRegRead(PORT3_PKCOUNT), sysRegRead(PORT4_PKCOUNT), sysRegRead(PORT5_PKCOUNT));
+	seq_puts(seq, strprint);
+
+	return 0;
+}
+
+static int ra_snmp_seq_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, ra_snmp_seq_show, NULL);
+}
+
+static const struct file_operations ra_snmp_seq_fops = {
+	.owner	 = THIS_MODULE,
+	.open	 = ra_snmp_seq_open,
+	.read	 = seq_read,
+	.llseek	 = seq_lseek,
+	.release = single_release,
+};
 #endif
 
-        u32 addr = CONFIG_MAC_TO_GIGAPHY_MODE_ADDR;     // define in linux/autoconf.h
+
+#if defined (CONFIG_GIGAPHY) || defined (CONFIG_100PHY) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
+void enable_auto_negotiate(int ge)
+{
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+        u32 regValue = sysRegRead(0xb01100C8);
+#else
+	u32 regValue;
+	regValue = (ge == 2)? sysRegRead(MDIO_CFG2) : sysRegRead(MDIO_CFG);
+#endif
 
         regValue &= 0xe0ff7fff;                 // clear auto polling related field:
                                                 // (MD_PHY1ADDR & GP1_FRC_EN).
         regValue |= 0x20000000;                 // force to enable MDC/MDIO auto polling.
-        regValue |= (addr << 24);               // setup PHY address for auto polling.
 
-#if defined (CONFIG_RALINK_RT3052)
-	sysRegWrite(0xb01100C8, regValue);
-#else
-	sysRegWrite(MDIO_CFG, regValue);
+#if defined (CONFIG_GE2_RGMII_AN) || defined (CONFIG_GE2_MII_AN)
+	if(ge==2) {
+	    regValue |= (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR2 << 24);               // setup PHY address for auto polling.
+	}
+#endif
+#if defined (CONFIG_GE1_RGMII_AN) || defined (CONFIG_GE1_MII_AN) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
+	if(ge==1) {
+	    regValue |= (CONFIG_MAC_TO_GIGAPHY_MODE_ADDR << 24);               // setup PHY address for auto polling.
+	}
 #endif
 
-
-}
-
-int phyregread(unsigned int phy_register, unsigned int* value)
-{
-	unsigned long mdio_reg = sysRegRead(MDIO_ACCESS);
-	unsigned long timer = jiffies;
-
-	for (;;)
-	{
-		if ( !(mdio_reg & RT2880_BIT(31) ) )
-			break;
-		else if ((jiffies - timer) > (5*HZ))
-		{
-			printk(KERN_ERR "rt2880 MDIO read Failed...\n");
-			return -1;
-		}
-	}
-	sysRegWrite(MDIO_ACCESS, 0);
-
-	mdio_reg = (0x1f << 24) | (phy_register << 16);
-	sysRegWrite(MDIO_ACCESS, mdio_reg);
-	mdio_reg |= RT2880_BIT(31);
-	sysRegWrite(MDIO_ACCESS, mdio_reg);
-
-	timer = jiffies;
-
-        for (;;)
-        {
-		mdio_reg = sysRegRead(MDIO_ACCESS);
-
-                if ( !(mdio_reg & RT2880_BIT(31) )) {
-			mdio_reg = sysRegRead(MDIO_ACCESS);
-			*value = (unsigned long)(mdio_reg & 0x0000ffff);
-                        break;
-		} else if ((jiffies - timer) > (5*HZ))
-                {
-                        printk(KERN_ERR "rt2880 MDIO read Failed!\n");
-                        return -2;
-                }
-        }
-
-	return 1;
-}
-
-int phyregwrite(unsigned int phy_register, unsigned int value)
-{
-        unsigned long mdio_reg = sysRegRead(MDIO_ACCESS);
-        unsigned long timer = jiffies;
-
-        for (;;)
-        {
-                if ( !(mdio_reg & RT2880_BIT(31) ) )
-                        break;
-                else if ((jiffies - timer) > (5*HZ))
-                {
-                        printk(KERN_ERR "rt2880 MDIO Write Failed...\n");
-                        return -1;
-                }
-        }
-
-        sysRegWrite(MDIO_ACCESS, 0);
-	mdio_reg = (0x1f << 24) | (phy_register << 16) | RT2880_BIT(30) | value;
-        sysRegWrite(MDIO_ACCESS, mdio_reg);
-
-	mdio_reg |= RT2880_BIT(31);
-	sysRegWrite(MDIO_ACCESS, mdio_reg);
-
-	timer = jiffies;
-
-        mdio_reg = sysRegRead(MDIO_ACCESS);
-        for (;;)
-        {
-                if ( !(mdio_reg & RT2880_BIT(31) )) {
-                        break;
-                } else if ((jiffies - timer) > (5*HZ))
-                {
-                        printk(KERN_ERR "rt2880 MDIO Write Failed!\n");
-                        return -2;
-                }
-        	mdio_reg = sysRegRead(MDIO_ACCESS);
-        }
-	return 1;
-
-}
-#define LINKUP_RETRY_MAX 10
-void wait_linkup(void)
-{
-	u32 regValue;
-	int retry=0;
-	while(retry < LINKUP_RETRY_MAX){
-		regValue = sysRegRead(MDIO_CFG);
-		if(! (regValue & RT2880_GP1_LNK_DWN)){
-			printk("raeth: link up.\n");
-            return;
-		}
-		msleep(50);
-		retry++;
-	}
-	printk("raeth: give up to wait for linkup\n");
-	return;
-}
-
-#define AN_RETRY_MAX 30
-void wait_an_completed(void)
-{
-	u32 regValue;
-	int retry=0;
-	while(retry < AN_RETRY_MAX){
-		regValue = sysRegRead(MDIO_CFG);
-		if((regValue & RT2880_GP1_AN_FAIL)){
-			printk("raeth: AN completed.\n");
-			break;
-		}
-		msleep(100);
-		retry++;
-	}
-	printk("raeth: timeout for AN\n");
-	return;
-}
-
-void rt2880_mdio_cfg(unsigned int addr, unsigned int offset, unsigned int value)
-{
-	unsigned int phy_register;
-	int ret;
-	if (offset > 32) {
-		printk("offset input failed");
-		return;
-	}
-
-	ret = phyregread(addr, &phy_register);
-	if (ret < 0) {
-		printk("PHY config read failed!");
-		return;
-	} else
-		printk("mdio.wb addr[%08X] value[0x%08X]\n", addr, phy_register);
-
-	if(phy_register)
-	{
-		phy_register |= RT2880_BIT(offset);
-	} else {
-		phy_register &= ~(RT2880_BIT(offset));
-	}
-
-	ret = phyregwrite(addr, phy_register);
- 
-	if ( ret < 0)
-		printk("PHY config write failed!");
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+	sysRegWrite(0xb01100C8, regValue);
+#else
+	if (ge == 2)
+		sysRegWrite(MDIO_CFG2, regValue);
 	else
-		printk("mdio.wb addr[0x%X] value[0x%X]\n", addr, phy_register);
+		sysRegWrite(MDIO_CFG, regValue);
+#endif
 }
 
 #endif
@@ -225,7 +131,7 @@ void ra2880stop(END_DEVICE *ei_local)
 	printk("ra2880stop()...");
 
 	regValue = sysRegRead(PDMA_GLO_CFG);
-	regValue &= ~(RT2880_TX_WB_DDONE | RT2880_RX_DMA_EN | RT2880_TX_DMA_EN);
+	regValue &= ~(TX_WB_DDONE | RX_DMA_EN | TX_DMA_EN);
 	sysRegWrite(PDMA_GLO_CFG, regValue);
     	
 	printk("Done\n");	
@@ -239,11 +145,8 @@ void ei_irq_clear(void)
 
 void rt2880_gmac_hard_reset(void)
 {
-	unsigned int regValue = 0;
-
-	regValue |= FE_RESET_BIT;
-	sysRegWrite(FE_RESET, regValue);
-	sysRegWrite(FE_RESET, 0);	// update for RSTCTL issue
+	sysRegWrite(RSTCTRL, RALINK_FE_RST);
+	sysRegWrite(RSTCTRL, 0);
 }
 
 void ra2880EnableInterrupt()
@@ -260,16 +163,27 @@ void ra2880MacAddressSet(MAC_INFO *MACInfo, unsigned char p[6])
         unsigned long regValue;
 
 	regValue = (p[0] << 8) | (p[1]);
+#if defined (CONFIG_RALINK_RT5350)
+        sysRegWrite(SDM_MAC_ADRH, regValue);
+	printk("MAC_ADRH -- : 0x%08x\n", sysRegRead(SDM_MAC_ADRH));
+#else
         sysRegWrite(GDMA1_MAC_ADRH, regValue);
+	printk("MAC_ADRH -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRH));
+#endif
 
         regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
+#if defined (CONFIG_RALINK_RT5350)
+        sysRegWrite(SDM_MAC_ADRL, regValue);
+	printk("MAC_ADRL -- : 0x%08x\n", sysRegRead(SDM_MAC_ADRL));	    
+#else
         sysRegWrite(GDMA1_MAC_ADRL, regValue);
+	printk("MAC_ADRL -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRL));	    
+#endif
 
-	printk("GDMA1_MAC_ADRH -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRH));
-	printk("GDMA1_MAC_ADRL -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRL));	    
         return;
 }
 
+#ifdef CONFIG_PSEUDO_SUPPORT
 void ra2880Mac2AddressSet(MAC_INFO *MACInfo, unsigned char p[6])
 {
         unsigned long regValue;
@@ -283,30 +197,6 @@ void ra2880Mac2AddressSet(MAC_INFO *MACInfo, unsigned char p[6])
 	printk("GDMA2_MAC_ADRH -- : 0x%08x\n", sysRegRead(GDMA2_MAC_ADRH));
 	printk("GDMA2_MAC_ADRL -- : 0x%08x\n", sysRegRead(GDMA2_MAC_ADRL));	    
         return;
-}
-
-#if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
-/*
- *	mii_mgr_read wrapper for mii.o ethtool
- */
-static int mdio_read(struct net_device *dev, int phy_id, int location)
-{
-	unsigned int result;
-	END_DEVICE *ei_local = dev->priv; 
-	mii_mgr_read( (unsigned int) ei_local->mii_info.phy_id, (unsigned int)location, &result);
-	//printk("mii.o query= phy_id:%d, address:%d retval:%d\n", phy_id, location, result);
-	return (int)result;
-}
-
-/*
- *	mii_mgr_write wrapper for mii.o ethtool
- */
-static void mdio_write(struct net_device *dev, int phy_id, int location, int value)
-{
-	END_DEVICE *ei_local = dev->priv;
-	//printk("mii.o write= phy_id:%d, address:%d value:%d\n", phy_id, location, value);
-	mii_mgr_write( (unsigned int) ei_local->mii_info.phy_id, (unsigned int)location, (unsigned int)value);
-	return;
 }
 #endif
 
@@ -336,19 +226,21 @@ void hard_init(struct net_device *dev)
 	else
 		printk("HWnetInit() failed!!!\n");
 
-#if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
+#if defined (CONFIG_ETHTOOL)
 	// init mii structure
 	ei_local->mii_info.dev = dev;
 	ei_local->mii_info.mdio_read = mdio_read;
 	ei_local->mii_info.mdio_write = mdio_write;
 	ei_local->mii_info.phy_id_mask = 0x1f;
 	ei_local->mii_info.reg_num_mask = 0x1f;
+	ei_local->mii_info.supports_gmii = mii_check_gmii_support(&ei_local->mii_info);
 	// TODO:   phy_id: 0~4
 	ei_local->mii_info.phy_id = 1;
 #endif
 	return;
 }
 
+#if defined(CONFIG_RAETH_QOS)
 /*
  *	Routine Name : get_idx(mode, index)
  *	Description: calculate ring usage for tx/rx rings
@@ -357,24 +249,28 @@ void hard_init(struct net_device *dev)
  */
 int get_ring_usage(int mode, int i)
 {
-	unsigned long tx_ctx_idx, tx_dtx_idx, rx_usage, tx_usage;
+	unsigned long tx_ctx_idx, tx_dtx_idx, tx_usage;
+	unsigned long rx_calc_idx, rx_drx_idx, rx_usage;
+
 	struct PDMA_rxdesc* rxring;
 	struct PDMA_txdesc* txring;
 
+	extern struct net_device  *dev_raether;
+	END_DEVICE *ei_local = netdev_priv(dev_raether);
+
+
 	if (mode == 2 ) {
 		/* cpu point to the next descriptor of rx dma ring */
-		rx_usage =  (*(unsigned long*)RX_DRX_IDX0 - *(unsigned long*)RX_CALC_IDX0 - 1 + NUM_RX_DESC) % NUM_RX_DESC;
-
-		if ( rx_usage == 0 )
-		{
-			rxring = (struct PDMA_rxdesc*)RX_BASE_PTR0;
-			if(rxring == NULL)
-				return 0;
-
-			if( rxring->rxd_info2.DDONE_bit == 1)
-				rx_usage = NUM_RX_DESC;
-			else
-				rx_usage = 0;
+	        rx_calc_idx = *(unsigned long*)RX_CALC_IDX0;
+	        rx_drx_idx = *(unsigned long*)RX_DRX_IDX0;
+		rxring = (struct PDMA_rxdesc*)RX_BASE_PTR0;
+		
+		rx_usage = (rx_drx_idx - rx_calc_idx -1 + NUM_RX_DESC) % NUM_RX_DESC;
+		if ( rx_calc_idx == rx_drx_idx ) {
+		    if ( rxring[rx_drx_idx].rxd_info2.DDONE_bit == 1)
+			tx_usage = NUM_RX_DESC;
+		    else
+			tx_usage = 0;
 		}
 		return rx_usage;
 	}
@@ -384,22 +280,22 @@ int get_ring_usage(int mode, int i)
 		case 0:
 				tx_ctx_idx = *(unsigned long*)TX_CTX_IDX0;
 				tx_dtx_idx = *(unsigned long*)TX_DTX_IDX0;
-				txring = (struct PDMA_txdesc*)(TX_BASE_PTR0 + (sizeof(struct PDMA_txdesc)*((tx_dtx_idx + NUM_TX_DESC-1)%NUM_TX_DESC)));
+				txring = ei_local->tx_ring0;
 				break;
 		case 1:
 				tx_ctx_idx = *(unsigned long*)TX_CTX_IDX1;
 				tx_dtx_idx = *(unsigned long*)TX_DTX_IDX1;
-				txring = (struct PDMA_txdesc*)(TX_BASE_PTR1 + (sizeof(struct PDMA_txdesc)*((tx_dtx_idx + NUM_TX_DESC-1)%NUM_TX_DESC)));
+				txring = ei_local->tx_ring1;
 				break;
 		case 2:
 				tx_ctx_idx = *(unsigned long*)TX_CTX_IDX2;
 				tx_dtx_idx = *(unsigned long*)TX_DTX_IDX2;
-				txring = (struct PDMA_txdesc*)(TX_BASE_PTR2 + (sizeof(struct PDMA_txdesc)*((tx_dtx_idx + NUM_TX_DESC-1)%NUM_TX_DESC)));
+				txring = ei_local->tx_ring2;
 				break;
 		case 3:
 				tx_ctx_idx = *(unsigned long*)TX_CTX_IDX3;
 				tx_dtx_idx = *(unsigned long*)TX_DTX_IDX3;
-				txring = (struct PDMA_txdesc*)(TX_BASE_PTR3 + (sizeof(struct PDMA_txdesc)*((tx_dtx_idx + NUM_TX_DESC-1)%NUM_TX_DESC)));
+				txring = ei_local->tx_ring3;
 				break;
 		default:
 			printk("get_tx_idx failed %d %d\n", mode, i);
@@ -408,18 +304,15 @@ int get_ring_usage(int mode, int i)
 
 	tx_usage = (tx_ctx_idx - tx_dtx_idx + NUM_TX_DESC) % NUM_TX_DESC;
 	if ( tx_ctx_idx == tx_dtx_idx ) {
-		if ( txring == NULL )
-			return -1;
-		if ( txring->txd_info2.DDONE_bit == 1)
-			tx_usage = NUM_TX_DESC;
-		else
+		if ( txring[tx_ctx_idx].txd_info2.DDONE_bit == 1)
 			tx_usage = 0;
+		else
+			tx_usage = NUM_TX_DESC;
 	}
 	return tx_usage;
 
 }
 
-#if defined(CONFIG_RAETH_QOS)
 void dump_qos()
 {
 	int usage;
@@ -434,11 +327,12 @@ void dump_qos()
 
 	usage = get_ring_usage(2,0);
 	printk("RX Usage : %d/%d\n\n", usage, NUM_RX_DESC);
+#if !defined (CONFIG_RALINK_RT5350)
 	printk("GDMA1_FC_CFG(0x%08x)  : 0x%08x\n", GDMA1_FC_CFG, sysRegRead(GDMA1_FC_CFG));
 	printk("GDMA2_FC_CFG(0x%08x)  : 0x%08x\n", GDMA2_FC_CFG, sysRegRead(GDMA2_FC_CFG));
 	printk("PDMA_FC_CFG(0x%08x)  : 0x%08x\n", PDMA_FC_CFG, sysRegRead(PDMA_FC_CFG));
 	printk("PSE_FQ_CFG(0x%08x)  : 0x%08x\n", PSE_FQ_CFG, sysRegRead(PSE_FQ_CFG));
-
+#endif
 	printk("\n\nTX_CTX_IDX0    : 0x%08x\n", sysRegRead(TX_CTX_IDX0));	
 	printk("TX_DTX_IDX0    : 0x%08x\n", sysRegRead(TX_DTX_IDX0));
 	printk("TX_CTX_IDX1    : 0x%08x\n", sysRegRead(TX_CTX_IDX1));	
@@ -516,27 +410,31 @@ void dump_reg()
 	printk("RX_MAX_CNT0    : 0x%08x\n", sysRegRead(RX_MAX_CNT0));	
 	printk("RX_CALC_IDX0   : 0x%08x\n", sysRegRead(RX_CALC_IDX0));
 	printk("RX_DRX_IDX0    : 0x%08x\n", sysRegRead(RX_DRX_IDX0));
+#if !defined(CONFIG_RALINK_RT5350)
+	printk("FE_GLO_CFG(0x%08x)  : 0x%08x\n", FE_GLO_CFG, sysRegRead(FE_GLO_CFG));
+	printk("MDIO_CFG(0x%08x)     : 0x%08x\n", MDIO_CFG, sysRegRead(MDIO_CFG));
 
 	printk("GDMA1_FWD_CFG  : 0x%08x\n", sysRegRead(GDMA1_FWD_CFG));	
-	printk("PDMA_GLO_CFG   : 0x%08x\n", sysRegRead(PDMA_GLO_CFG));
-	printk("PDMA_RST_CFG   : 0x%08x\n", sysRegRead(PDMA_RST_CFG));	
-	printk("FE_RST_GL      : 0x%08x\n\n", sysRegRead(FE_RST_GL));
-
-	printk("MDIO_CFG(0x%08x)     : 0x%08x\n", MDIO_CFG, sysRegRead(MDIO_CFG));
-	printk("CDMA_OQ_STA(0x%08x)     : 0x%08x\n", CDMA_OQ_STA, sysRegRead(CDMA_OQ_STA));
-	printk("GDMA1_OQ_STA(0x%08x)     : 0x%08x\n",GDMA1_OQ_STA, sysRegRead(GDMA1_OQ_STA));
-	printk("PPE_OQ_STA(0x%08x)     : 0x%08x\n", PPE_OQ_STA, sysRegRead(PPE_OQ_STA));
-	printk("PSE_IQ_STA(0x%08x)     : 0x%08x\n", PSE_IQ_STA, sysRegRead(PSE_IQ_STA));
 	printk("GDMA1_SCH_CFG(0x%08x)  : 0x%08x\n", GDMA1_SCH_CFG, sysRegRead(GDMA1_SCH_CFG));
 	printk("GDMA2_SCH_CFG(0x%08x)  : 0x%08x\n", GDMA2_SCH_CFG, sysRegRead(GDMA2_SCH_CFG));
 	printk("CDMA_FC_CFG(0x%08x)  : 0x%08x\n", CDMA_FC_CFG, sysRegRead(CDMA_FC_CFG));
 	printk("GDMA1_FC_CFG(0x%08x)  : 0x%08x\n", GDMA1_FC_CFG, sysRegRead(GDMA1_FC_CFG));
-	printk("FE_GLO_CFG(0x%08x)  : 0x%08x\n", FE_GLO_CFG, sysRegRead(FE_GLO_CFG));
 	printk("GDMA1_SHPR_CFG(0x%08x)  : 0x%08x\n", GDMA1_SHPR_CFG, sysRegRead(GDMA1_SHPR_CFG));
 	printk("GDMA2_SHPR_CFG(0x%08x)  : 0x%08x\n", GDMA2_SHPR_CFG, sysRegRead(GDMA2_SHPR_CFG));
+	
+	printk("FE_RST_GL      : 0x%08x\n\n", sysRegRead(FE_RST_GL));
+	printk("PSE_IQ_STA(0x%08x)     : 0x%08x\n", PSE_IQ_STA, sysRegRead(PSE_IQ_STA));
 	printk("PDMA_FC_CFG(0x%08x)  : 0x%08x\n", PDMA_FC_CFG, sysRegRead(PDMA_FC_CFG));
+#endif
+	printk("PDMA_GLO_CFG   : 0x%08x\n", sysRegRead(PDMA_GLO_CFG));
+	printk("PDMA_RST_CFG   : 0x%08x\n", sysRegRead(PDMA_RST_CFG));	
+
+	printk("CDMA_OQ_STA(0x%08x)     : 0x%08x\n", CDMA_OQ_STA, sysRegRead(CDMA_OQ_STA));
+	printk("GDMA1_OQ_STA(0x%08x)     : 0x%08x\n",GDMA1_OQ_STA, sysRegRead(GDMA1_OQ_STA));
+	printk("PPE_OQ_STA(0x%08x)     : 0x%08x\n", PPE_OQ_STA, sysRegRead(PPE_OQ_STA));
 	printk("PDMA_SCH_CFG(0x%08x)  : 0x%08x\n", PDMA_SCH_CFG, sysRegRead(PDMA_SCH_CFG));
 	
+#if !defined(CONFIG_RALINK_RT5350)
 	printk("\n-----\nRX Counters:\n");
 	printk("GDMA_RX_GBCNT0(0x%08x)     : 0x%08x\n", GDMA_RX_GBCNT0, sysRegRead(GDMA_RX_GBCNT0));
 	printk("GDMA_RX_GPCNT0(0x%08x)     : 0x%08x\n", GDMA_RX_GPCNT0, sysRegRead(GDMA_RX_GPCNT0));
@@ -545,10 +443,15 @@ void dump_reg()
 	printk("GDMA_RX_SERCNT0(0x%08x)     : 0x%08x\n", GDMA_RX_SERCNT0, sysRegRead(GDMA_RX_SERCNT0));
 	printk("GDMA_RX_LERCNT0(0x%08x)     : 0x%08x\n", GDMA_RX_LERCNT0, sysRegRead(GDMA_RX_LERCNT0));
 	printk("GDMA_RX_CERCNT0(0x%08x)     : 0x%08x\n\n", GDMA_RX_CERCNT0, sysRegRead(GDMA_RX_CERCNT0));	
+#endif
 
-#if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
+#if defined (CONFIG_ETHTOOL)
 	// just for debug
 	printk("The current PHY address selected by ethtool is %d\n", get_current_phy_address());
+#endif
+
+#if defined (CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883)
+	printk("GDMA_RX_FCCNT1(0x%08x)     : 0x%08x\n\n", GDMA_RX_FCCNT1, sysRegRead(GDMA_RX_FCCNT1));	
 #endif
 }
 
@@ -590,7 +493,11 @@ void dump_cp0(void)
 	printk("CP0_DESAVE\t: 0x%08x\n\n", read_32bit_cp0_register(CP0_DESAVE));
 }
 
-static struct proc_dir_entry *procRegDir, *procGmac, *procSysCP0;
+struct proc_dir_entry *procRegDir;
+static struct proc_dir_entry *procGmac, *procSysCP0;
+#if defined(CONFIG_USER_SNMPD)
+static struct proc_dir_entry *procRaSnmp;
+#endif
 
 int RegReadMain(void)
 {
@@ -605,7 +512,10 @@ int CP0RegRead(void)
 }
 
 #if defined(CONFIG_RAETH_QOS)
-static struct proc_dir_entry *procRaQOS;
+static struct proc_dir_entry *procRaQOS, *procRaFeIntr, *procRaEswIntr;
+extern uint32_t num_of_rxdone_intr;
+extern uint32_t num_of_esw_intr;
+
 int RaQOSRegRead(void)
 {
 	dump_qos();
@@ -613,46 +523,69 @@ int RaQOSRegRead(void)
 }
 #endif
 
-#if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
+#if defined (CONFIG_ETHTOOL)
 /*
  * proc write procedure
  */
+#if 0
 static int change_phyid(struct file *file, const char *buffer, unsigned long count, void *data)
 {
 	char buf[32];
 	struct net_device *cur_dev_p;
 	END_DEVICE *ei_local;
-	cur_dev_p = net_device_entry(&dev_base_head);
-
-	for_each_netdev_continue(cur_dev_p)
-	{
-	    if (strncmp(cur_dev_p->name, DEV_NAME /* "eth2" usually */, 4) == 0)
-		break;	
-	}
-	if (cur_dev_p == NULL)
-		return -EFAULT;
-	ei_local = cur_dev_p->priv;
+	char if_name[64];
+	unsigned int phy_id;
 
 	if (count > 32)
 		count = 32;
 	memset(buf, 0, 32);
 	if (copy_from_user(buf, buffer, count))
 		return -EFAULT;
-	ei_local->mii_info.phy_id = (unsigned char)(simple_strtol(buf, 0, 10));
+
+	/* determine interface name */
+    strcpy(if_name, DEV_NAME);	/* "eth2" by default */
+    if(isalpha(buf[0]))
+		sscanf(buf, "%s %d", if_name, &phy_id);
+	else
+		phy_id = simple_strtol(buf, 0, 10);
+
+	for(cur_dev_p=dev_base; cur_dev_p!=NULL; cur_dev_p=cur_dev_p->next){
+		if (strncmp(cur_dev_p->name, if_name, 4) == 0)
+			break;
+	}
+	if (cur_dev_p == NULL)
+		return -EFAULT;
+
+#ifdef CONFIG_PSEUDO_SUPPORT
+	/* This may be wrong when more than 2 gmacs */
+	if(!strcmp(cur_dev_p->name, DEV_NAME)){
+		ei_local = cur_dev_p->priv;
+		ei_local->mii_info.phy_id = (unsigned char)phy_id;
+	}else{
+		PSEUDO_ADAPTER *pPseudoAd;
+		pPseudoAd = cur_dev_p->priv;
+		pPseudoAd->mii_info.phy_id = (unsigned char)phy_id;
+	}
+#else
+	ei_local = cur_dev_p->priv;
+	ei_local->mii_info.phy_id = (unsigned char)phy_id;
+#endif
 	return count;
 }
+#endif
 #endif
 
 int debug_proc_init(void)
 {
-    procRegDir = proc_mkdir(PROCREG_DIR, NULL);
-	
-    if ((procGmac = create_proc_entry(PROCREG_GMAC, 0, procRegDir))){
-	 procGmac->read_proc = (read_proc_t*)&RegReadMain;
-#if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
-	 procGmac->write_proc = (write_proc_t*)&change_phyid;
+    if (procRegDir == NULL)
+	procRegDir = proc_mkdir(PROCREG_DIR, NULL);
+   
+//    if ((procGmac = create_proc_entry(PROCREG_GMAC, 0, procRegDir))){
+//	 procGmac->read_proc = (read_proc_t*)&RegReadMain;
+#if defined (CONFIG_ETHTOOL)
+//	 procGmac->write_proc = (write_proc_t*)&change_phyid;
 #endif
-	}
+//	}
 
     if ((procSysCP0 = create_proc_entry(PROCREG_CP0, 0, procRegDir)))
 	 procSysCP0->read_proc = (read_proc_t*)&CP0RegRead;
@@ -662,6 +595,13 @@ int debug_proc_init(void)
 	 procRaQOS->read_proc = (read_proc_t*)&RaQOSRegRead;
 #endif
 
+#if defined(CONFIG_USER_SNMPD)
+    procRaSnmp = create_proc_entry(PROCREG_SNMP, S_IRUGO, procRegDir);
+    if (procRaSnmp == NULL)
+    	printk(KERN_ALERT "raeth: snmp proc create failed!!!");
+    else
+    	procRaSnmp->proc_fops = &ra_snmp_seq_fops;
+#endif
     printk(KERN_ALERT "PROC INIT OK!\n");
     return 0;
 }
@@ -678,12 +618,20 @@ void debug_proc_exit(void)
 #if defined(CONFIG_RAETH_QOS)
     if (procRaQOS)
     	remove_proc_entry(PROCREG_RAQOS, procRegDir);
+    if (procRaFeIntr)
+    	remove_proc_entry(PROCREG_RXDONE_INTR, procRegDir);
+    if (procRaEswIntr)
+    	remove_proc_entry(PROCREG_ESW_INTR, procRegDir);
 #endif
 
-    if (procRegDir)
-	remove_proc_entry(PROCREG_DIR, 0);
-	
+#if defined(CONFIG_USER_SNMPD)
+    if (procRaSnmp)
+	remove_proc_entry(PROCREG_SNMP, procRegDir);
+#endif
 
+    //if (procRegDir)
+   	//remove_proc_entry(PROCREG_DIR, 0);
+	
     printk(KERN_ALERT "proc exit\n");
 }
-
+EXPORT_SYMBOL(procRegDir);
