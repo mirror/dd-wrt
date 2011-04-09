@@ -1081,8 +1081,8 @@ int get_wififreq(char *ifname, int freq)
 		return freq - (5540 - 4516);	// xr4 
 		// case 24:
 		// return -(5540-4540); //sr4 
-	case 23: // reserved for XR2.3 until spec is known
-	case 26: // reserved for XR2.6 until spec is known
+	case 23:		// reserved for XR2.3 until spec is known
+	case 26:		// reserved for XR2.6 until spec is known
 
 	default:
 		return freq;
@@ -1169,7 +1169,6 @@ int get_radiostate(char *ifname)
 	}
 	return 0;
 }
-
 
 static inline int iw_get_ext(int skfd,	/* Socket to the kernel */
 			     const char *ifname,	/* Device name */
@@ -1313,7 +1312,7 @@ int has_5ghz(char *prefix)
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix,5);
+		return mac80211_check_band(prefix, 5);
 #endif
 
 	return has_athmask(devnum, 0x1);
@@ -1325,7 +1324,7 @@ int has_2ghz(char *prefix)
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix,2);
+		return mac80211_check_band(prefix, 2);
 #endif
 
 	return has_athmask(devnum, 0x8);
@@ -1366,7 +1365,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	struct wifi_channels *list =
 	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
 						(achans.ic_nchans + 1));
-	(void)memset(list, 0, (sizeof(struct wifi_channels)*((achans.ic_nchans + 1))));
+	(void)memset(list, 0,
+		     (sizeof(struct wifi_channels) * ((achans.ic_nchans + 1))));
 
 	char wl_mode[16];
 	char wl_turbo[16];
@@ -1763,7 +1763,10 @@ int getassoclist(char *ifname, unsigned char *list)
 void radio_off(int idx)
 {
 #ifdef HAVE_ATH9K
-	radio_off_ath9k(idx);
+#ifdef HAVE_MADWIFI_MIMO
+	if (nvram_match("mimo_driver", "ath9k"))
+#endif
+		radio_off_ath9k(idx);
 #endif
 	if (idx != -1) {
 		sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", idx);
@@ -1781,7 +1784,10 @@ void radio_off(int idx)
 void radio_on(int idx)
 {
 #ifdef HAVE_ATH9K
-	radio_on_ath9k(idx);
+#ifdef HAVE_MADWIFI_MIMO
+	if (nvram_match("mimo_driver", "ath9k"))
+#endif
+		radio_on_ath9k(idx);
 #endif
 	if (idx != -1)
 		sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent", idx);
