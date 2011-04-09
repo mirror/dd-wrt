@@ -88,6 +88,17 @@ do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *que
 #endif
 }
 
+#ifdef HAVE_RB600
+#define swap(x) \
+	((unsigned int )( \
+			(((unsigned int )(x) & (unsigned int )0x000000ffUL) << 24) | \
+			(((unsigned int )(x) & (unsigned int )0x0000ff00UL) <<  8) | \
+			(((unsigned int )(x) & (unsigned int )0x00ff0000UL) >>  8) | \
+			(((unsigned int )(x) & (unsigned int )0xff000000UL) >> 24) ))
+
+
+#endif
+
 int
 // sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
@@ -171,6 +182,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		wfread(&linuxsize, 1, 4, stream);
 		*total -= 4;
 		safe_fwrite(&linuxsize, 1, 4, fifo);
+#ifdef HAVE_RB600
+		linuxsize=swap(linuxsize);
+#endif
 		for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++) {
 			wfread(&buf[0], 1, MIN_BUF_SIZE, stream);
 			fwrite(&buf[0], 1, MIN_BUF_SIZE, fifo);
@@ -193,13 +207,13 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	linuxsize += getc(fifo) * 256 * 256 * 256;
 	char dev[128];
 
-	// fprintf (stderr, "Write Linux %d to %s\n", linuxsize,dev);
 	char drive[64];
 #ifdef HAVE_RB600
 	sprintf(drive, "/dev/sda");
 #else
 	sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
 #endif
+	fprintf (stderr, "Write Linux %d to %s\n", linuxsize,dev);
 	//backup nvram
 	fprintf(stderr, "backup nvram\n");
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
