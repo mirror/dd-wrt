@@ -384,6 +384,8 @@ static unsigned int serial_in(struct uart_8250_port *up, int offset)
 	default:
 #if defined (CONFIG_RALINK_RT2880) || \
     defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052)
 		return (*(int*)(up->port.iobase + offset));
 #else
@@ -439,6 +441,8 @@ serial_out(struct uart_8250_port *up, int offset, int value)
 	default:
 #if defined (CONFIG_RALINK_RT2880) || \
     defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052)
 		*(int*)(up->port.iobase + offset) = value;
 #else
@@ -488,8 +492,10 @@ static inline void _serial_dl_write(struct uart_8250_port *up, int value)
 }
 
 #if defined (CONFIG_RALINK_RT2880) || \
-     defined (CONFIG_RALINK_RT2883) || \
-     defined (CONFIG_RALINK_RT3052)
+    defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT3052)
  /* Ralink haven't got a standard divisor latch */
 static int serial_dl_read(struct uart_8250_port *up)
 {
@@ -712,6 +718,8 @@ static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
 	unsigned int id;
 #if defined (CONFIG_RALINK_RT2880) || \
     defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052)
 	unsigned short old_dl;
 

@@ -19,8 +19,6 @@ obj-$(CONFIG_PCI) += pci.o
 obj-$(CONFIG_DWC_OTG) += lm.o
 obj-$(CONFIG_RALINK_TIMER_DFS) +=  rt_timer.o
 
-ifdef CONFIG_RT3XXX_EHCI
-obj-y +=  ehci_ohci.o
-else ifdef CONFIG_RT3XXX_OHCI
-obj-y +=  ehci_ohci.o
-endif
+obj-$(CONFIG_RALINK_RT3883) +=  ehci_ohci.o
+obj-$(CONFIG_RALINK_RT3352) +=  ehci_ohci.o
+obj-$(CONFIG_RALINK_RT5350) +=  ehci_ohci.o

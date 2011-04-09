@@ -436,12 +436,13 @@ void __inline__ write_config(unsigned long bus, unsigned long dev, unsigned long
 }
 
 
-int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
   u16 cmd;
   u32 val;
   struct resource *res;
   int i;
+  int irq;
 #ifdef CONFIG_RALINK_RT2883	
   if (dev->bus->number > 1) {
     printk("bus>1\n");
@@ -462,6 +463,8 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 #ifdef CONFIG_RALINK_RT3883	
   if((dev->bus->number ==0) && (slot == 0)) {
 	RALINK_PCI0_BAR0SETUP_ADDR = 0x03FF0001;	//open 3FF:64M; ENABLE
+	RALINK_PCI0_BAR0SETUP_ADDR = 0x03FF0001;	//open 3FF:64M; ENABLE
+	RALINK_PCI1_BAR0SETUP_ADDR = 0x03FF0001;	//open 3FF:64M; ENABLE
 	RALINK_PCI1_BAR0SETUP_ADDR = 0x03FF0001;	//open 3FF:64M; ENABLE
   	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
   	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
@@ -475,7 +478,7 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	read_config(0, 0, 0, i<<2, &val);
 	printk("P2P(PCI) 0x%02x = %08x\n", i<<2, val);
 	}
-  	dev->irq = 0;
+  	irq = 0;
   }else if((dev->bus->number ==0) && (slot == 0x1)){
 	write_config(0, 1, 0, 0x1c, 0x00000101);
 	for(i=0;i<16;i++){
@@ -488,21 +491,21 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	read_config(0, 0x11, 0, i<<2, &val);
 	printk("dev I(PCI)  0x%02x = %08x\n", i<<2, val);
 	}
-	dev->irq = 2;
+	irq = 2;
   }else if((dev->bus->number ==0) && (slot == 0x12)){
  	printk("bus=0, slot = 0x%x\n", slot);
 	for(i=0;i<16;i++){
 	read_config(0, 0x12, 0, i<<2, &val);
 	printk("dev II(PCI)  0x%02x = %08x\n", i<<2, val);
 	}
-	dev->irq = 15;
+	irq = 15;
   }else if((dev->bus->number ==1) ){
  	printk("bus=1, slot = 0x%x\n", slot);
 	for(i=0;i<16;i++){
 	read_config(1, 0, 0, i<<2, &val);
 	printk("dev III(PCIe)  0x%02x = %08x\n", i<<2, val);
 	}
-	dev->irq = 16;
+	irq = 16;
   }else{
   	return 0;
   }	
@@ -521,14 +524,14 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	read_config(0, 0, 0, i<<2, &val);
 	printk("pci-to-pci 0x%02x = %08x\n", i<<2, val);
 	}
-  	dev->irq = 0;
+	irq = 0;
   }else if((dev->bus->number ==1)){
  	printk("bus=1, slot = 0x%x\n", slot);
 	for(i=0;i<16;i++){
 	read_config(1, slot, 0, (i)<<2, &val);
 	printk("bus 1 dev %d fun 0: 0x%02x = %08x\n", slot, i<<2, val);
 	}
-	dev->irq = 2;
+	irq = 2;
   }else{
   	return 0;
   }	
@@ -539,15 +542,15 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
  	printk("MEMORY_BASE = %x\n", MEMORY_BASE);
   	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
   	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
-  	dev->irq = 0;
+  	irq = 0;
     res = &dev->resource[0];
     res->start = 0x08000000;
     res->end   = 0x09ffffff;
  	printk("BAR0 at slot 0 = %x\n", val);
   }else if(slot ==0x11){
-	dev->irq = 2;
+	irq = 2;
   }else if(slot==0x12){
-	dev->irq = 15;
+	irq = 15;
   }else{
   	return 0;
   }	
@@ -573,9 +576,9 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
   	PCI_COMMAND_WAIT | PCI_COMMAND_PARITY;
 #endif
   pci_write_config_word(dev, PCI_COMMAND, cmd);
-  pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
+  pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
   //pci_write_config_byte(dev, PCI_INTERRUPT_PIN, dev->irq);
-  return (dev->irq);
+  return irq;
 }
 
 int init_rt2880pci(void)
@@ -583,6 +586,7 @@ int init_rt2880pci(void)
 	unsigned long val = 0;
 	int i, j;
 #if defined(CONFIG_PCIE_ONLY) || defined(CONFIG_PCIE_PCI_CONCURRENT)
+	RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCIE_RST);
 	RALINK_SYSCFG1 &= ~(0x30);
 	RALINK_SYSCFG1 |= (2<<4);
 	RALINK_PCIE_CLK_GEN &= 0x7fffffff;
@@ -590,6 +594,7 @@ int init_rt2880pci(void)
 	RALINK_PCIE_CLK_GEN1 |= 0xa << 24;
 	RALINK_PCIE_CLK_GEN |= 0x80000000;
 	mdelay(50);
+	RALINK_RSTCTRL = (RALINK_RSTCTRL & ~RALINK_PCIE_RST);
 #endif
 	
 #ifdef CONFIG_RALINK_RT3883
@@ -607,18 +612,18 @@ int init_rt2880pci(void)
 #ifdef CONFIG_PCI_ONLY
 //PCI host only, 330T
 	RALINK_GPIOMODE = (RALINK_GPIOMODE & ~(0x3800) | PCI_SLOTx2);
-	RALINK_SYSCFG1 = ((RALINK_SYSCFG1 | RALINK_PCI_HOST_MODE_EN) & ~RALINK_PCIE_RC_MODE_EN);
+	RALINK_SYSCFG1 = (RALINK_SYSCFG1 | RALINK_PCI_HOST_MODE_EN | RALINK_PCIE_RC_MODE_EN);
 	RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCIE_RST);
 	RALINK_CLKCFG1 = (RALINK_CLKCFG1 & ~RALINK_PCIE_CLK_EN);
 #elif CONFIG_PCIE_ONLY
 //PCIe RC only, 220T
-	RALINK_SYSCFG1 = (RALINK_SYSCFG1 | RALINK_PCIE_RC_MODE_EN & ~RALINK_PCI_HOST_MODE_EN);
+	RALINK_SYSCFG1 = (RALINK_SYSCFG1 | RALINK_PCIE_RC_MODE_EN | RALINK_PCI_HOST_MODE_EN);
 	RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCI_RST);
 	RALINK_CLKCFG1 = (RALINK_CLKCFG1 & ~RALINK_PCI_CLK_EN);
 #elif CONFIG_PCIE_PCI_CONCURRENT
 //PCIe PCI co-exist
 	RALINK_GPIOMODE = (RALINK_GPIOMODE & ~(0x3800) | PCI_SLOTx2);
-	RALINK_SYSCFG1 = ((RALINK_SYSCFG1 | RALINK_PCI_HOST_MODE_EN) | RALINK_PCIE_RC_MODE_EN);
+	RALINK_SYSCFG1 = (RALINK_SYSCFG1 | RALINK_PCI_HOST_MODE_EN | RALINK_PCIE_RC_MODE_EN);
 #endif
 	mdelay(500);
 
@@ -667,6 +672,7 @@ int init_rt2880pci(void)
 				read_config(0, 1, 0, i<<2, &val);
 				printk("pci-to-pci 0x%02x = %08x\n", i<<2, val);
 			}
+#ifdef CONFIG_PCIE_ONLY
 			printk("reset PCIe and turn off PCIe clock\n");
 			RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCIE_RST);
 			RALINK_RSTCTRL = (RALINK_RSTCTRL & ~RALINK_PCIE_RST);
@@ -676,6 +682,9 @@ int init_rt2880pci(void)
 			RALINK_PCIE_CLK_GEN &= 0x0fff3f7f;
 			printk("RALINK_PCIE_CLK_GEN= %x\n", RALINK_PCIE_CLK_GEN);
 			return 0;
+#else
+			RALINK_CLKCFG1 = (RALINK_CLKCFG1 & ~RALINK_PCIE_CLK_EN);
+#endif
 		}
 	}
 	if(RALINK_SYSCFG1 & RALINK_PCI_HOST_MODE_EN){
@@ -729,7 +738,7 @@ int init_rt2880pci(void)
 	RALINK_PCI0_CLASS = 0x00800001;
 	RALINK_PCI0_SUBID = 0x28801814;
 	//PCIe
-	RALINK_PCI1_BAR0SETUP_ADDR = 0x01FF0000;	//open 1FF:32M; DISABLE
+	RALINK_PCI1_BAR0SETUP_ADDR = 0x03FF0000;	//open 3FF:64M; DISABLE
 	RALINK_PCI1_IMBASEBAR0_ADDR = MEMORY_BASE;
 	RALINK_PCI1_ID = 0x08021814;
 	RALINK_PCI1_CLASS = 0x06040001;

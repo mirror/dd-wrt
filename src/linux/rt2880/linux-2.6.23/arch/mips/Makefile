@@ -182,6 +182,19 @@ cflags-$(CONFIG_RALINK_RT3052)	+= -Iinclude/asm-mips/rt2880
 load-$(CONFIG_RALINK_RT3052)	+= 0x80000000
 
 #
+# Ralink RT3352 board
+#
+core-$(CONFIG_RALINK_RT3352)	+= arch/mips/rt2880/
+cflags-$(CONFIG_RALINK_RT3352)	+= -Iinclude/asm-mips/rt2880
+load-$(CONFIG_RALINK_RT3352)	+= 0x80000000
+
+#
+# Ralink RT3883 board
+#
+core-$(CONFIG_RALINK_RT3883)	+= arch/mips/rt2880/
+cflags-$(CONFIG_RALINK_RT3883)	+= -Iinclude/asm-mips/rt2880
+load-$(CONFIG_RALINK_RT3883)	+= 0x80000000
+#
 # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
 #
 core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
