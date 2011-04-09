@@ -1,7 +1,44 @@
+/*
+ ***************************************************************************
+ * Ralink Tech Inc.
+ * 4F, No. 2 Technology 5th Rd.
+ * Science-based Industrial Park
+ * Hsin-chu, Taiwan, R.O.C.
+ *
+ * (c) Copyright, Ralink Technology, Inc.
+ *
+ *  This program is free software; you can redistribute  it and/or modify it
+ *  under  the terms of  the GNU General  Public License as published by the
+ *  Free Software Foundation;  either version 2 of the  License, or (at your
+ *  option) any later version.
+ *
+ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
+ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
+ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  You should have received a copy of the  GNU General Public License along
+ *  with this program; if not, write  to the Free Software Foundation, Inc.,
+ *  675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ *
+ ***************************************************************************
+ *
+ */
 #ifndef __SPIDRV
 #define __SPIDRV
 
 #include <asm/rt2880/rt_mmap.h>
+
+#if defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT3883)
+#define CONFIG_RALINK_MULTISPI	1
+#endif
 
 #define	RT2880_SPI_DUMP_STR		"dump"	/* Dump Content Command Prompt    */
 #define	RT2880_SPI_READ_STR		"read"	/* SPI read operation */
@@ -11,7 +48,8 @@
 #define RT2880_SPI_READ        3
 #define RT2880_SPI_WRITE       5
 #define RT2880_SPI_INIT_VTSS_NOVLAN   7
-#define RT2880_SPI_INIT_VTSS_VLAN     9
+#define RT2880_SPI_INIT_VTSS_WANATP0  9
+#define RT2880_SPI_INIT_VTSS_WANATP4  10
 #define RT2880_SPI_VTSS_READ   11
 #define RT2880_SPI_VTSS_WRITE  13
 
@@ -44,6 +82,11 @@ typedef struct spi_vtss_data {
 #define RT2880_SPICTL_REG		(RT2880_SPI_REG_BASE+0x14)
 #define RT2880_SPIDATA_REG		(RT2880_SPI_REG_BASE+0x20)
 
+#define RT2880_SPISTAT1_REG		(RT2880_SPI_REG_BASE+0x40)
+#define RT2880_SPICFG1_REG		(RT2880_SPI_REG_BASE+0x50)
+#define RT2880_SPICTL1_REG		(RT2880_SPI_REG_BASE+0x54)
+#define RT2880_SPIDATA1_REG		(RT2880_SPI_REG_BASE+0x60)
+#define RT2880_SPIARB_REG		(RT2880_SPI_REG_BASE+0xF0)
 
 /* SPICFG register bit field */
 #define SPICFG_LSBFIRST				(0<<8)
@@ -51,6 +94,8 @@ typedef struct spi_vtss_data {
 
 #define SPICFG_RXCLKEDGE_FALLING	(1<<5)		/* rx on the falling edge of the SPICLK signal */
 #define SPICFG_TXCLKEDGE_FALLING	(1<<4)		/* tx on the falling edge of the SPICLK signal */
+
+#define SPICFG_HIZSPI				(1<<3)
 
 #define SPICFG_SPICLK_DIV2			(0<<0)		/* system clock rat / 2  */
 #define SPICFG_SPICLK_DIV4			(1<<0)		/* system clock rat / 4  */
@@ -71,6 +116,7 @@ typedef struct spi_vtss_data {
 
 
 #define IS_BUSY		(RT2880_REG(RT2880_SPISTAT_REG) & 0x01)
+#define IS_SPI1_BUSY		(RT2880_REG(RT2880_SPISTAT1_REG) & 0x01)
 
 #define spi_busy_loop 3000
 #define max_ee_busy_loop 500

@@ -6,10 +6,9 @@
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/netdevice.h>
+#include <linux/if_vlan.h>
 #include <asm/semaphore.h>
 
-
-#if defined(CONFIG_RALINK_RT3052_MP) || defined(CONFIG_RALINK_RT3052_MP2)
 
 #define MAX_MCAST_ENTRY	    16
 #define AGEING_TIME	    5  //Unit: Sec
@@ -26,6 +25,7 @@
 typedef struct {
     uint8_t	src_mac[6];
     uint8_t	dst_mac[6];
+    uint16_t    vlan_id;
     uint32_t	valid;
     uint32_t	use_count;
     unsigned long ageout;
@@ -44,13 +44,14 @@ uint32_t inline is_multicast_pkt(uint8_t *mac)
     }
 }
 
-int32_t inline mcast_entry_get(uint8_t *src_mac, uint8_t *dst_mac) 
+int32_t inline mcast_entry_get(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
 {
     int i=0;
 
     for(i=0;i<MAX_MCAST_ENTRY;i++) {
-	if(memcmp(mcast_tbl[i].src_mac,src_mac, 6)==0 &&
-		memcmp(mcast_tbl[i].dst_mac, dst_mac, 6)==0 &&
+	if( (mcast_tbl[i].vlan_id == vlan_id) &&
+	    memcmp(mcast_tbl[i].src_mac,src_mac, 6)==0 &&
+	    memcmp(mcast_tbl[i].dst_mac, dst_mac, 6)==0 &&
 		mcast_tbl[i].valid == 1) {
 	    return i;
 	}
@@ -58,7 +59,7 @@ int32_t inline mcast_entry_get(uint8_t *src_mac, uint8_t *dst_mac)
     return -1;
 }
 
-int inline __add_mcast_entry(uint8_t *src_mac, uint8_t *dst_mac)
+int inline __add_mcast_entry(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac)
 {
     int i=0;
 
@@ -70,7 +71,7 @@ int inline __add_mcast_entry(uint8_t *src_mac, uint8_t *dst_mac)
 	    if(mcast_tbl[i].valid==0) {
 		atomic_inc(&mcast_entry_num);
 	    }
-
+	    mcast_tbl[i].vlan_id = vlan_id;
 	    memcpy(mcast_tbl[i].src_mac, src_mac, 6);
 	    memcpy(mcast_tbl[i].dst_mac, dst_mac, 6);
 	    mcast_tbl[i].valid=1;
@@ -85,12 +86,12 @@ int inline __add_mcast_entry(uint8_t *src_mac, uint8_t *dst_mac)
     return 0;
 }
 
-int inline mcast_entry_ins(uint8_t *src_mac, uint8_t *dst_mac) 
+int inline mcast_entry_ins(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
 {
     int entry_num=0, ret=0;
 
     down(&mtbl_lock);
-    if((entry_num = mcast_entry_get(src_mac, dst_mac)) >=0) {
+    if((entry_num = mcast_entry_get(vlan_id, src_mac, dst_mac)) >=0) {
 	mcast_tbl[entry_num].use_count++;
 	mcast_tbl[entry_num].ageout=jiffies + AGEING_TIME * HZ;
 	MCAST_PRINT("%s: Update %0X:%0X:%0X:%0X:%0X:%0X's use_count=%d\n" \
@@ -99,7 +100,7 @@ int inline mcast_entry_ins(uint8_t *src_mac, uint8_t *dst_mac)
     }else { //if entry not found, create new entry.
 	MCAST_PRINT("%s: Create new entry %0X:%0X:%0X:%0X:%0X:%0X\n", \
 		__FUNCTION__, MAC_ARG(dst_mac));
-	ret = __add_mcast_entry(src_mac,dst_mac);
+	ret = __add_mcast_entry(vlan_id, src_mac,dst_mac);
     }
     
     up(&mtbl_lock);
@@ -113,12 +114,12 @@ int inline mcast_entry_ins(uint8_t *src_mac, uint8_t *dst_mac)
  *	    0: entry found
  *	    1: entry not found
  */
-int inline mcast_entry_del(uint8_t *src_mac, uint8_t *dst_mac) 
+int inline mcast_entry_del(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
 {
     int entry_num;
 
     down(&mtbl_lock);
-    if((entry_num = mcast_entry_get(src_mac, dst_mac)) >=0) {
+    if((entry_num = mcast_entry_get(vlan_id, src_mac, dst_mac)) >=0) {
 	if((--mcast_tbl[entry_num].use_count)==0) {
 	    MCAST_PRINT("%s: %0X:%0X:%0X:%0X:%0X:%0X (entry_num=%d)\n", \
 		    __FUNCTION__, MAC_ARG(dst_mac), entry_num);
@@ -141,7 +142,7 @@ int inline mcast_entry_del(uint8_t *src_mac, uint8_t *dst_mac)
  */
 int32_t mcast_rx(struct sk_buff * skb)
 {
-    struct ethhdr *eth=(struct ethhdr *)(skb->data-ETH_HLEN);
+    struct vlan_ethhdr *eth = (struct vlan_ethhdr *)(skb->data-ETH_HLEN);
 
     /* if we do not send multicast packet before, 
      * we don't need to check re-inject multicast packet.
@@ -154,7 +155,12 @@ int32_t mcast_rx(struct sk_buff * skb)
     if(is_multicast_pkt(eth->h_dest)) {
 	MCAST_PRINT("%s: %0X:%0X:%0X:%0X:%0X:%0X\n", __FUNCTION__, \
 		MAC_ARG(eth->h_dest));
-	return mcast_entry_del(eth->h_source, eth->h_dest);
+
+	if(ntohs(eth->h_vlan_proto)==0x8100) {
+	    return mcast_entry_del(eth->h_vlan_TCI, eth->h_source, eth->h_dest);
+	} else {
+	    return mcast_entry_del(0, eth->h_source, eth->h_dest);
+	}
     }
 
     return 1;
@@ -163,16 +169,20 @@ int32_t mcast_rx(struct sk_buff * skb)
 
 int32_t mcast_tx(struct sk_buff *skb)
 {
-    struct ethhdr *eth = (struct ethhdr *) skb->data;
+    struct vlan_ethhdr *eth = (struct vlan_ethhdr *)(skb->data);
 
 
     if(is_multicast_pkt(eth->h_dest)) {
 	MCAST_PRINT("%s: %0X:%0X:%0X:%0X:%0X:%0X\n", __FUNCTION__,\
 	       	MAC_ARG(eth->h_dest));
-	mcast_entry_ins(eth->h_source, eth->h_dest);
+
+	if(ntohs(eth->h_vlan_proto)==0x8100) {
+	    mcast_entry_ins(eth->h_vlan_TCI, eth->h_source, eth->h_dest);
+	} else {
+	    mcast_entry_ins(0, eth->h_source, eth->h_dest);
+	}
     }
 
     return 1;
 }
 
-#endif

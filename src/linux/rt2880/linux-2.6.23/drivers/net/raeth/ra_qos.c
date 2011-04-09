@@ -158,6 +158,12 @@ int fe_qos_packet_send(struct net_device *dev, struct sk_buff* skb, unsigned int
 	tx_desc[tx_cpu_owner_idx].txd_info4.PN = pn;
 	tx_desc[tx_cpu_owner_idx].txd_info4.QN = qn;
 
+#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
+	ei_local->tx_ring0[tx_cpu_owner_idx].txd_info4.TCO = 1; 
+	ei_local->tx_ring0[tx_cpu_owner_idx].txd_info4.UCO = 1; 
+	ei_local->tx_ring0[tx_cpu_owner_idx].txd_info4.ICO = 1; 
+#endif
+
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE) 
 	if(FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) {
 	    tx_desc[tx_cpu_owner_idx].txd_info4.PN = 6; /* PPE */
@@ -165,8 +171,6 @@ int fe_qos_packet_send(struct net_device *dev, struct sk_buff* skb, unsigned int
 	    tx_desc[tx_cpu_owner_idx].txd_info4.PN = pn; 
 	}
 	
-	//tell hwnat module, which is incoming interface of this packet
-	tx_desc[tx_cpu_owner_idx].txd_info4.RXIF = FOE_ALG_RXIF(skb); /* 0: WLAN, 1: PCI */
 #endif
 
 	spin_lock_irqsave(&ei_local->page_lock, flags);
@@ -275,21 +279,25 @@ int fe_tx_desc_init(struct net_device *dev, unsigned int ring_no, unsigned int q
 			*(unsigned long*)TX_BASE_PTR0 = phys_to_bus((u32) phy_tx_ring);
 			*(unsigned long*)TX_MAX_CNT0  = cpu_to_le32((u32)NUM_TX_DESC);
 			*(unsigned long*)TX_CTX_IDX0  = cpu_to_le32((u32) tx_cpu_owner_idx);
+			sysRegWrite(PDMA_RST_CFG, PST_DTX_IDX0);
 			break;
 		case 1 :
 			*(unsigned long*)TX_BASE_PTR1 = phys_to_bus((u32) phy_tx_ring);
 			*(unsigned long*)TX_MAX_CNT1  = cpu_to_le32((u32)NUM_TX_DESC);
 			*(unsigned long*)TX_CTX_IDX1  = cpu_to_le32((u32) tx_cpu_owner_idx);
+			sysRegWrite(PDMA_RST_CFG, PST_DTX_IDX1);
 			break;
 		case 2 :
 			*(unsigned long*)TX_BASE_PTR2 = phys_to_bus((u32) phy_tx_ring);
 			*(unsigned long*)TX_MAX_CNT2  = cpu_to_le32((u32)NUM_TX_DESC);
 			*(unsigned long*)TX_CTX_IDX2  = cpu_to_le32((u32) tx_cpu_owner_idx);
+			sysRegWrite(PDMA_RST_CFG, PST_DTX_IDX2);
 			break;
 		case 3 :
 			*(unsigned long*)TX_BASE_PTR3 = phys_to_bus((u32) phy_tx_ring);
 			*(unsigned long*)TX_MAX_CNT3  = cpu_to_le32((u32)NUM_TX_DESC);
 			*(unsigned long*)TX_CTX_IDX3  = cpu_to_le32((u32) tx_cpu_owner_idx);
+			sysRegWrite(PDMA_RST_CFG, PST_DTX_IDX3);
 			break;
 		default :
 			printk("tx descriptor init failed %d\n", ring_no);
@@ -310,21 +318,44 @@ int fe_tx_desc_init(struct net_device *dev, unsigned int ring_no, unsigned int q
    48-55|  3 |  VO
    56-63|  3 |  VO 
 
+          |    TOS    |
+     DSCP |(bit5~bit7)|  WMM  
+   -------+-----------+-------
+    0x00  |    000    |   BE
+    0x18  |    011    |   BE
+    0x08  |    001    |   BG
+    0x10  |    010    |   BG
+    0x20  |    100    |   VI
+    0x28  |    101    |   VI
+    0x30  |    110    |   VO
+    0x38  |    111    |   VO
+
+    Notes: BE should be mapped to AC1, but mapped to AC0 in linux kernel.
+
  */
 
 int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no, int *port_no)
 {
-#if !defined(CONFIG_RALINK_RT2880)
+#if defined(CONFIG_RALINK_RT2880)
+    /* RT2880 -- Assume using 1 Ring (Ring0), Queue 0, and Port 0 */
+    *port_no 	= 0;
+    *ring_no 	= 0;
+    *queue_no 	= 0;
+#else
     unsigned int ac=0;
     unsigned int bridge_traffic=0, lan_traffic=0;
     struct iphdr *iph=NULL;
     struct vlan_ethhdr *veth=NULL;
     unsigned int vlan_id=0;
+#if defined (CONFIG_RAETH_QOS_DSCP_BASED)
     static char DscpToAcMap[8]={1,0,0,1,2,2,3,3};
+#elif defined (CONFIG_RAETH_QOS_PORT_BASED)
+    static char VlanPriToAcMap[8]={1,0,0,1,2,2,3,3};
+#endif
 
     /* Bridge:: {BG,BE,VI,VO} */
     /* GateWay:: WAN: {BG,BE,VI,VO}, LAN: {BG,BE,VI,VO} */
-#if defined (CONFIG_RALINK_RT2883) && defined (CONFIG_RAETH_GMAC2)
+#if defined (CONFIG_RALINK_RT3883) && defined (CONFIG_RAETH_GMAC2)
     /* 
      * 1) Bridge: 
      *    1.1) GMAC1 ONLY:
@@ -343,7 +374,9 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
     static unsigned char AcToRing_BridgeMap[4] = {2, 2, 3, 3}; 
     static unsigned char AcToRing_GE1Map[2][4] = {{3, 3, 3, 3},{2, 2, 2, 2}}; 
     static unsigned char AcToRing_GE2Map[4] = {0, 0, 1, 1};
-#elif defined (CONFIG_RALINK_RT3052) || (defined (CONFIG_RALINK_RT2883) && !defined(CONFIG_RAETH_GMAC2))
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || \
+      defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
+     (defined (CONFIG_RALINK_RT3883) && !defined(CONFIG_RAETH_GMAC2))
     /* 
      * 1) Bridge: VO->Ring3, VI->Ring2, BG->Ring1, BE->Ring0 
      * 2) GateWay:
@@ -373,14 +406,22 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 	}
 
 	if (veth->h_vlan_encapsulated_proto == htons(ETH_P_IP)) { //IPv4 
+#if defined (CONFIG_RAETH_QOS_DSCP_BASED)
 	    ac = DscpToAcMap[(iph->tos & 0xe0) >> 5];
+#elif defined (CONFIG_RAETH_QOS_PORT_BASED)
+	    ac = VlanPriToAcMap[skb->priority];
+#endif
 	}else { //Ipv6, ARP ...etc
 	    ac = 0;
 	}
     }else { // non-VLAN traffic
 	if (veth->h_vlan_proto == htons(ETH_P_IP)) { //IPv4
+#if defined (CONFIG_RAETH_QOS_DSCP_BASED)
 	    iph= (struct iphdr *)(skb->data + ETH_HLEN);
 	    ac = DscpToAcMap[(iph->tos & 0xe0) >> 5];
+#elif defined (CONFIG_RAETH_QOS_PORT_BASED)
+	    ac= VlanPriToAcMap[skb->priority];
+#endif
 	}else { // IPv6, ARP ...etc
 	    ac = 0;
 	}
@@ -397,16 +438,16 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 	    *ring_no = AcToRing_GE1Map[lan_traffic][ac];
 	}
     }else { //GMAC2
-#if defined (CONFIG_RALINK_RT2883) && defined (CONFIG_RAETH_GMAC2)
+#if defined (CONFIG_RALINK_RT3883) && defined (CONFIG_RAETH_GMAC2)
 	*ring_no = AcToRing_GE2Map[ac];
 #endif
     }
 
 
     /* Set Port No - PN field in Tx Descriptor*/
-#if defined (CONFIG_RALINK_RT2883) && defined(CONFIG_RAETH_GMAC2)
+#if defined(CONFIG_RAETH_GMAC2)
     *port_no = gmac_no;
-#elif defined (CONFIG_RALINK_RT3052) || (defined (CONFIG_RALINK_RT2883) && !defined(CONFIG_RAETH_GMAC2))
+#else
     if(bridge_traffic) {
 	*port_no = 1;
     }else {
@@ -416,14 +457,7 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 	    *port_no = 2;
 	}
     }
-#endif
-
-#else
-/* RT2880 -- Assume using 1 Ring (Ring0), Queue 0, and Port 0 */
-    *port_no 	= gmac_no;
-    *ring_no 	= 0;
-    *queue_no 	= 0;
-
+#endif // CONFIG_RAETH_GMAC2 //
 
 #endif
 
@@ -433,14 +467,14 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 
 
 /*
- * Routine Description : 
- * 	Hi/Li Rings and Queues definition for QoS Purpose
+ *  Routine Description : 
+ *  Hi/Li Rings and Queues definition for QoS Purpose
  *
- *	Related registers: (Detail information refer to pp106 of RT3052_DS_20080226.doc)
- *		Priority High/Low Definition - PDMA_FC_CFG, GDMA1_FC_CFG, GDMA2_FC_CFG
- *		  Bit 28 -  Allows high priority Q to share low priority Q's reserved pages
- *		  Bit 27:24 -  Px high priority definition bitmap
- *		Weight Configuration - GDMA1_SCH_CFG, GDMA2_SCH_CFG, PDMA_SCH_CFG -> default 3210
+ *  Related registers: (Detail information refer to pp106 of RT3052_DS_20080226.doc)
+ *  Priority High/Low Definition - PDMA_FC_CFG, GDMA1_FC_CFG, GDMA2_FC_CFG
+ *  Bit 28 -  Allows high priority Q to share low priority Q's reserved pages
+ *  Bit 27:24 -  Px high priority definition bitmap 
+ *  Weight Configuration - GDMA1_SCH_CFG, GDMA2_SCH_CFG, PDMA_SCH_CFG -> default 3210
  *
  * Parameter: 
  *	NONE
@@ -453,6 +487,7 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 
 #define HIGH_QUEUE(queue)   (1<<(queue))
 #define LOW_QUEUE(queue)    (0<<(queue))
+#define PAGES_SHARING	    (1<<28)
 #define RSEV_PAGE_COUNT_HQ  0x10 /* Reserved page count for high priority Q */
 #define RSEV_PAGE_COUNT_LQ  0x10 /* Reserved page count for low priority Q */
 #define VIQ_FC_ASRT	    0x10 /* Virtual input Q FC assertion threshold */
@@ -465,34 +500,58 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 
 #define WRR_SCH		    0 /*WRR */
 #define STRICT_PRI_SCH	    1 /* Strict Priority */
-#define MIX_SCH		    2 /* Mixed */
+#define MIX_SCH		    2 /* Mixed : Q3>WRR(Q2,Q1,Q0) */
 
+/*
+ *           Ring3  Ring2  Ring1  Ring0
+ *            |  |   |  |  |  |   |  |
+ *            |  |   |  |  |  |   |  |
+ *        --------------------------------
+ *        |         WRR Scheduler        |
+ *        --------------------------------
+ *                       |
+ *    ---------------------------------------
+ *    |                 PDMA                |
+ *    ---------------------------------------
+ *     |Q3||Q2||Q1||Q0|    |Q3||Q2||Q1||Q0|
+ *     |  ||  ||  ||  |    |  ||  ||  ||  |
+ *    ------------------- -------------------
+ *    |      GDMA2      | |     GDMA1       |
+ *    ------------------- -------------------
+ *              |                      |
+ *      ------------------------------------
+ *      |              GMAC                |
+ *      ------------------------------------
+ *                       |
+ *
+ */
 void set_scheduler_weight(void)
 {
+#if !defined (CONFIG_RALINK_RT5350)
     /* 
      * STEP1: Queue scheduling configuration 
      */
     *(unsigned long *)GDMA1_SCH_CFG = (WRR_SCH << 24) | 
-	(QUEUE_WEIGHT_8 << 12) | /* queue 3 weight */
-	(QUEUE_WEIGHT_4 << 8) |  /* queue 2 weight */
-	(QUEUE_WEIGHT_2 << 4) |  /* queue 1 weight */
-	(QUEUE_WEIGHT_1 << 0);   /* queue 0 weight */
+	(QUEUE_WEIGHT_16 << 12) | /* queue 3 weight */
+	(QUEUE_WEIGHT_8 << 8) |  /* queue 2 weight */
+	(QUEUE_WEIGHT_4  << 4) |  /* queue 1 weight */
+	(QUEUE_WEIGHT_2  << 0);   /* queue 0 weight */
 
     *(unsigned long *)GDMA2_SCH_CFG = (WRR_SCH << 24) | 
-	(QUEUE_WEIGHT_8 << 12) | /* queue 3 weight */
-	(QUEUE_WEIGHT_4 << 8) |  /* queue 2 weight */
-	(QUEUE_WEIGHT_2 << 4) |  /* queue 1 weight */
-	(QUEUE_WEIGHT_1 << 0);   /* queue 0 weight */
+	(QUEUE_WEIGHT_16 << 12) | /* queue 3 weight */
+	(QUEUE_WEIGHT_8 << 8) |  /* queue 2 weight */
+	(QUEUE_WEIGHT_4  << 4) |  /* queue 1 weight */
+	(QUEUE_WEIGHT_2  << 0);   /* queue 0 weight */
     
+#endif
     /* 
      * STEP2: Ring scheduling configuration 
      */
     *(unsigned long *)PDMA_SCH_CFG = (WRR_SCH << 24) | 
 	(QUEUE_WEIGHT_16 << 12) | /* ring 3 weight */
-	(QUEUE_WEIGHT_1 << 8) |   /* ring 2 weight */
+	(QUEUE_WEIGHT_4 << 8) |  /* ring 2 weight */
 	(QUEUE_WEIGHT_16 << 4) |  /* ring 1 weight */
-	(QUEUE_WEIGHT_1 << 0);    /* ring 0 weight */
-
+	(QUEUE_WEIGHT_4 << 0);   /* ring 0 weight */
 }
 
 /*
@@ -523,33 +582,56 @@ void set_scheduler_weight(void)
  */
 void set_schedule_pause_condition(void)
 {
-
+#if !defined (CONFIG_RALINK_RT5350) 
     /* 
      * STEP1: Set queue priority is high or low 
      *
-     * Set queue 3 is high queue for GMAC1/GMAC2 
+     * Set queue 3 as high queue in GMAC1/GMAC2 
      */	
     *(unsigned long *)GDMA1_FC_CFG = ((HIGH_QUEUE(3)|LOW_QUEUE(2) | 
 				      LOW_QUEUE(1)|LOW_QUEUE(0))<<24) |
 				      (RSEV_PAGE_COUNT_HQ << 16) |
 				      (RSEV_PAGE_COUNT_LQ <<8) |
-				      VIQ_FC_ASRT;
+				      VIQ_FC_ASRT | PAGES_SHARING;
 
     *(unsigned long *)GDMA2_FC_CFG = ((HIGH_QUEUE(3)|LOW_QUEUE(2) | 
 				      LOW_QUEUE(1)|LOW_QUEUE(0))<<24) |
 				      (RSEV_PAGE_COUNT_HQ << 16) |
 				      (RSEV_PAGE_COUNT_LQ <<8) |
-				      VIQ_FC_ASRT;
+				      VIQ_FC_ASRT | PAGES_SHARING;
     
     /* 
      * STEP2: Set flow control pause condition 
      *
-     * CPU is always use queue 3, and queue3 is high queue.
-     * If P1(GMAC1) high queue is full, pause ring2/3 
-     * If P2(GMAC2) high queue is full, pause ring1/0
+     * CPU always use queue 3, and queue3 is high queue.
+     * If P2(GMAC2) high queue is full, pause ring3/ring2
+     * If P1(GMAC1) high queue is full, pause ring1/ring0
      */
-    *(unsigned long *)PDMA_FC_CFG =  ( PSE_P1_HQ_FULL << 24 ) | /* queue 3 */
-	( PSE_P1_HQ_FULL << 16 ) | /* queue 2 */
-	( PSE_P2_HQ_FULL << 8 ) |  /* queue 1 */
-	( PSE_P2_HQ_FULL << 0 );  /* queue 0 */
+    *(unsigned long *)PDMA_FC_CFG =  ( PSE_P2_HQ_FULL << 24 ) | /* queue 3 */
+	( PSE_P2_HQ_FULL << 16 ) | /* queue 2 */
+	( PSE_P1_HQ_FULL << 8 ) |  /* queue 1 */
+	( PSE_P1_HQ_FULL << 0 );  /* queue 0 */
+#else
+    *(unsigned long *)SDM_TRING = (0xC << 28) | (0x3 << 24) | (0xC << 4) | 0x3;
+#endif
+    
+}
+
+
+void set_output_shaper(void)
+{
+#define GDMA1_TOKEN_RATE	16  /* unit=64bits/ms */
+#define GDMA2_TOKEN_RATE	16  /* unit=64bits/ms */
+
+#if 0
+    *(unsigned long *)GDMA1_SHPR_CFG =  (1 << 24) | /* output shaper enable */
+		                        (128 << 16) | /* bucket size (unit=1KB) */
+					(GDMA1_TOKEN_RATE << 0); /* token rate (unit=8B/ms) */
+#endif
+
+#if 0
+    *(unsigned long *)GDMA2_SHPR_CFG =  (1 << 24) | /* output shaper enable */
+		                        (128 << 16) | /* bucket size (unit=1KB) */
+					(GDMA2_TOKEN_RATE << 0); /* token rate (unit=8B/ms) */
+#endif
 }
