@@ -418,6 +418,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				goto err;	// must be there, otherwise fail here
 				}
 			}
+			else {
+			    if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) == 0) {
+				cprintf("image not compatibe with nv32k router!\n");
+				goto err;	// fail here				
+				}
+			}
 
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT54G, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRT54GS, 4)
