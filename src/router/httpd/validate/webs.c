@@ -1116,6 +1116,7 @@ void save_wireless_advanced(webs_t wp)
 
 	copytonv2(wp, prefix, set_prefix, "auth");
 	copytonv2(wp, prefix, set_prefix, "rateset");
+	copytonv2(wp, prefix, set_prefix, "nmcsidx");
 	copytonv2(wp, prefix, set_prefix, "rate");
 	copytonv2(wp, prefix, set_prefix, "gmode_protection");
 	copytonv2(wp, prefix, set_prefix, "frameburst");
