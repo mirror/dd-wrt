@@ -3,6 +3,7 @@
 		//<![CDATA[
 
 var wl_net_mode = '<%% nvram_get("%s_net_mode"); %%>';
+var wl_phytype = '<%% nvram_get("%s_phytype"); %%>';
 
 function initWlTimer(radio_on_time)
 {
@@ -135,8 +136,12 @@ function setRadioTable(){
 
 function create_nrate(num,F)
 {
-	var bw20 = new Array("6.5", "13", "19.5", "26", "39", "52", "58.5", "65", "13", "26", "39", "52", "78", "104", "117", "130");		
-	var bw40 = new Array("13.5", "27", "40.5", "54", "81", "108", "121.5", "135", "27", "54", "81", "108", "162", "216", "243", "270");
+	var bw20_1 = new Array("6.5 (7.2)", "13 (14.4)", "19.5 (21.7)", "26 (28.9)", "39 (43.3)", "52 (57.8)", "58.5 (65)", "65 (72.2)");
+	var bw20_2 = new Array("13 (14.4)", "26 (28.9)", "39 (43.3)", "52 (57.8)", "78 (86.6)", "104 (115.6)", "117 (130)", "130 (144)");
+	var bw20_3 = new Array("19.5 (21.7)", "39 (43.3)", "58.5 (65)", "78 (86.7)", "117 (130.7)", "156 (173.3)", "175.5 (195)", "195 (216.7)");
+	var bw40_1 = new Array("13.5 (15)", "27 (30)", "40.5 (45)", "54 (60)", "81 (90)", "108 (120)", "121.5 (135)", "135 (150)");
+	var bw40_2 = new Array("27 (30)", "54 (60)", "81 (90)", "108 (120)", "162 (180)", "216 (240)", "243 (270)", "270 (300)");
+	var bw40_3 = new Array("40.5 (45)", "81 (90)", "121.5 (135)", "162 (180)", "243 (270)", "324 (360)", "364.5 (405)", "405 (450)");
 	var index = '<%% nvram_get("%s_nmcsidx"); %%>';
 	
 
@@ -144,19 +149,43 @@ function create_nrate(num,F)
 	F.%s_nmcsidx[0].value = "-1";
 
 	if(num == 0 || num == 20) {
-	    for(i=0;i<bw20.length;i++) {
-		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20[i]+" Mbps ");
+	    for(i=0;i<8;i++) {
+		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_1[i]+" Mbps");
 		F.%s_nmcsidx[i+1].value = i;
 	    }
+	    if(wl_phytype == "n" || wl_phytype == "h") {
+		    for(i=8;i<16;i++) {
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_2[i-8]+" Mbps");
+			F.%s_nmcsidx[i+1].value = i;
+	    	}
+    	}
+	    if(wl_phytype == "h") {
+		    for(i=16;i<24;i++) {
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_3[i-16]+" Mbps");
+			F.%s_nmcsidx[i+1].value = i;
+	    	}
+    	}
 	}
 	else {
-	    for(i=0;i<bw40.length;i++) {
-		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40[i]+" Mbps");
+	    for(i=0;i<8;i++) {
+		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_1[i]+" Mbps");
 		F.%s_nmcsidx[i+1].value = i;
 	    }
+	    if(wl_phytype == "n" || wl_phytype == "h") {
+		    for(i=8;i<16;i++) {
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_2[i-8]+" Mbps");
+			F.%s_nmcsidx[i+1].value = i;
+	    	}
+    	}
+	    if(wl_phytype == "h") {
+		    for(i=16;i<24;i++) {
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_3[i-16]+" Mbps");
+			F.%s_nmcsidx[i+1].value = i;
+	    	}
+    	}
 	}
 
-	if(index == "-2" && (wl_net_mode == "g-only" || wl_net_mode == "b-only")) {
+	if(index == "-2" && (wl_net_mode == "b-only" || wl_net_mode == "g-only" || wl_net_mode == "bg-mixed" || wl_net_mode == "a-only")) {
 		F.%s_nmcsidx[0].selected = true;
 		choose_disable(F.%s_nmcsidx);
 	}
@@ -192,7 +221,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvram_else_match("%s_phytype", "n", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "s", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "h", "1", "0"); %%> == 1);
 	setElementActive( "document.wireless.wl_rate", !(wl_net_mode=="n-only") );
 
-	if("<%% nvram_get("%s_phytype"); %%>"=="n" || "<%% nvram_get("%s_phytype"); %%>"=="s" || "<%% nvram_get("%s_phytype"); %%>"=="h") create_nrate('<%% nvram_get("%s_nbw"); %%>',document.wireless);
+	if(wl_phytype == "s" || wl_phytype == "n" || wl_phytype== "h") create_nrate('<%% nvram_get("%s_nbw"); %%>',document.wireless);
 	
 	update = new StatusbarUpdate();
 	update.start();
