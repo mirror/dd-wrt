@@ -366,7 +366,7 @@ void start_openvpn(void)
 	else
 		eval("openvpn", "--config",
 		     "/tmp/openvpncl/openvpn.conf", "--route-up",
-		     "/tmp/openvpncl/route-up.sh", "--down",
+		     "/tmp/openvpncl/route-up.sh", "--down-pre",
 		     "/tmp/openvpncl/route-down.sh", "--daemon");
 	return;
 }
