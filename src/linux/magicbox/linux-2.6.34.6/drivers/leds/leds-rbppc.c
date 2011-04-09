@@ -1,5 +1,6 @@
 #include <linux/init.h>
 #include <linux/leds.h>
+#include <linux/of.h>
 #include <asm/of_platform.h>
 #include <asm/of_device.h>
 #include <asm/io.h>
