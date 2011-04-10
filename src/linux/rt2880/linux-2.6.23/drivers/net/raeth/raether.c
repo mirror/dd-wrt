@@ -2376,7 +2376,7 @@ void rt305x_esw_init(void)
  */
 int __init ra2882eth_init(void)
 {
-	int ret;
+	int ret=0;
 	struct net_device *dev = alloc_etherdev(sizeof(END_DEVICE));
 #if defined (CONFIG_GIGAPHY) || defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_100PHY)
         unsigned int regValue = 0;
@@ -2424,7 +2424,7 @@ extern int rtl_smi_init(void);
 #ifdef CONFIG_RAETH_NETLINK
 	csr_netlink_init();
 #endif
-	ret = debug_proc_init();
+//	ret = debug_proc_init();
 
 	// Case1: RT288x/RT3883 GE1 + GigaPhy
 #if defined (CONFIG_GE1_RGMII_AN)
@@ -2655,7 +2655,7 @@ void ra2882eth_cleanup_module(void)
         }       // dev_kfree_skb
 
 	free_netdev(dev);
-	debug_proc_exit();
+//	debug_proc_exit();
 #ifdef CONFIG_RAETH_NETLINK
 	csr_netlink_end();
 #endif
