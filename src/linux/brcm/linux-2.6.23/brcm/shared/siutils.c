@@ -639,7 +639,7 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 	}
 
 
-#ifdef BCMDBG
+#if 1//def BCMDBG
 	/* clear any previous epidiag-induced target abort */
 	si_taclear(sih, FALSE);
 #endif	/* BCMDBG */
@@ -1385,7 +1385,7 @@ si_watchdog_ms(si_t *sih, uint32 ms)
 	si_watchdog(sih, wd_msticks * ms);
 }
 
-#if defined(BCMDBG_ERR) || defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
+#if 1// defined(BCMDBG_ERR) || defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
 bool
 si_taclear(si_t *sih, bool details)
 {
@@ -3544,7 +3544,6 @@ si_clk_pmu_htavail_set(si_t *sih, bool set_clear)
 
 	si_pmu_minresmask_htavail_set(sih, sii->osh, set_clear);
 }
-
 /* WL/BT control for 4313 btcombo boards >= P250 */
 void
 si_btcombo_p250_4313_war(si_t *sih)
@@ -3794,3 +3793,4 @@ si_cis_source(si_t *sih)
 		return CIS_DEFAULT;
 	}
 }
+
