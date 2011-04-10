@@ -3681,3 +3681,4 @@ BCMATTACHFN(si_pmu_set_4330_plldivs)(si_t *sih)
 	pllc2 |= ((m5div << PMU1_PLL0_PC2_M5DIV_SHIFT) | (m6div << PMU1_PLL0_PC2_M6DIV_SHIFT));
 	si_pmu_pllcontrol(sih, PMU1_PLL0_PLLCTL2, ~0, pllc2);
 }
+
