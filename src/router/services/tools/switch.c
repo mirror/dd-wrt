@@ -43,7 +43,7 @@ void usage(char *cmd)
 	printf(" %s add [mac] [portmap]                  - add an entry to switch table\n", cmd);
 	printf(" %s add [mac] [portmap] [vlan idx]       - add an entry to switch table\n", cmd);
 	printf(" %s add [mac] [portmap] [vlan idx] [age] - add an entry to switch table\n", cmd);
-#ifdef CONFIG_RALINK_RT3352
+#ifdef HAVE_RT3352
 	printf(" %s ingress-rate on [port] [Mbps]        - set ingress rate limit on port 0~5 \n", cmd);
 	printf(" %s egress-rate on [port] [Mbps]         - set egress rate limit on port 0~5 \n", cmd);
 	printf(" %s ingress-rate off [port]              - del ingress rate limit on port 0~5 \n", cmd);
@@ -110,7 +110,7 @@ int reg_write(int offset, int value)
 }
 
 
-#if defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (HAVE_RT3352) || defined (CONFIG_RALINK_RT5350)
 
 int ingress_rate_set(int on_off, int port, int bw)
 {
@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
 		else
 			usage(argv[0]);
 	}
-#if defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (HAVE_RT3352) || defined (CONFIG_RALINK_RT5350)
 	else if (!strncmp(argv[1], "ingress-rate", 6)) {
 		int port=0, bw=0;
 

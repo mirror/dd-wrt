@@ -738,6 +738,9 @@ int internal_getRouterBrand()
 #elif HAVE_DIR615
 	setRouter("Dlink-DIR615 rev d");
 	return ROUTER_BOARD_DIR615D;
+#elif HAVE_RT3352
+	setRouter("Ralink RT3352 Device");
+	return ROUTER_BOARD_RT3352;
 #elif HAVE_NEPTUNE
 	setRouter("Neptune-Mini");
 	return ROUTER_BOARD_NEPTUNE;
