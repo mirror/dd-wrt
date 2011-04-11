@@ -51,12 +51,12 @@ void start_config_macs(char *wlifname)	// reconfigure macs which
 	if (!strcmp(mbss, "0")) {
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
-			eval("wl", "-i", var, "down");
+			eval("ifconfig","%s","down",var);
 			eval("wl", "-i", var, "cur_etheraddr",
 			     nvram_nget("%s_hwaddr", var));
 			eval("wl", "-i", var, "bssid",
 			     nvram_nget("%s_hwaddr", var));
-			eval("wl", "-i", var, "up");
+			eval("ifconfig","%s","up",up);
 			}
 	}
 }
