@@ -56,7 +56,7 @@ void start_config_macs(char *wlifname)	// reconfigure macs which
 			     nvram_nget("%s_hwaddr", var));
 			eval("wl", "-i", var, "bssid",
 			     nvram_nget("%s_hwaddr", var));
-			eval("ifconfig","%s","up",up);
+			eval("ifconfig","%s","up",var);
 			}
 	}
 }
