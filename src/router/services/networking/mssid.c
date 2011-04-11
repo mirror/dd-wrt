@@ -110,13 +110,12 @@ void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
 		return;
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
-		wl_getbssid(var, mac);
 		eval("ifconfig", var, "down");
+		wl_getbssid(var, mac);
 		ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 		strncpy(ifr.ifr_name, var, IFNAMSIZ);
 		ioctl(s, SIOCSIFHWADDR, &ifr);
-		eval("ifconfig", var, "up");
 		}
 	close(s);
 }
