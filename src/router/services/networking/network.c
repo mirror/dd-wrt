@@ -473,7 +473,7 @@ static int wlconf_up(char *name)
 	} else {
 		nvram_nset("1", "wl%d_infra", instance);
 	}
-	eval("ifconfig",name,"down");
+	eval("ifconfig", name, "up");
 	ret = eval("wlconf", name, "up");
 	/*
 	 * eval("wl","radio","off"); eval("wl","atten","0","0","60");
