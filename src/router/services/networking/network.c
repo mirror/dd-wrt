@@ -473,6 +473,7 @@ static int wlconf_up(char *name)
 	} else {
 		nvram_nset("1", "wl%d_infra", instance);
 	}
+	eval("ifconfig",name,"down");
 	ret = eval("wlconf", name, "up");
 	/*
 	 * eval("wl","radio","off"); eval("wl","atten","0","0","60");
@@ -588,7 +589,16 @@ static int wlconf_up(char *name)
 
 	sprintf(ifinst, "wl%d", instance);
 	set_vifsmac(ifinst);
+
+	char *next;
+	char var[80];
+	char *vifs = nvram_nget("%s_vifs", ifinst);
+	if (vifs != NULL)
+		foreach(var, vifs, next) {
+		eval("ifconfig", var, "up");
+		}
 #endif
+	eval("ifconfig",name,"up");
 	return ret;
 }
 
