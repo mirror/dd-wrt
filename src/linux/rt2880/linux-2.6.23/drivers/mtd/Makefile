@@ -26,6 +26,6 @@ obj-$(CONFIG_SSFDC)		+= ssfdc.o
 nftl-objs		:= nftlcore.o nftlmount.o
 inftl-objs		:= inftlcore.o inftlmount.o
 
-obj-y		+= chips/ maps/ devices/ nand/ onenand/
+obj-y		+= chips/ maps/ devices/ nand/ onenand/ ralink/
 
 obj-$(CONFIG_MTD_UBI)		+= ubi/

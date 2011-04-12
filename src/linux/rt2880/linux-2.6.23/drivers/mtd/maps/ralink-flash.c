@@ -20,6 +20,7 @@
 #include <linux/vmalloc.h>
 #include <linux/squashfs_fs.h>
 #include <linux/err.h>
+#include <asm/rt2880/rt_mmap.h>
 
 
 
@@ -203,11 +204,82 @@ static int ralink_unlock(struct mtd_info *mtd, loff_t ofs, size_t len)
 {
 	return 0;
 }
+#define BOOT_FROM_NOR	0
+#define BOOT_FROM_NAND	2
+#define BOOT_FROM_SPI	3
+
+
+int ra_check_flash_type(void)
+{
+
+    uint8_t Id[10];
+    int syscfg=0;
+    int boot_from=0;
+    int chip_mode=0;
+
+    memset(Id, 0, sizeof(Id));
+    strncpy(Id, (char *)RALINK_SYSCTL_BASE, 6);
+    syscfg = (*((int *)(RALINK_SYSCTL_BASE + 0x10)));
+
+    if((strcmp(Id,"RT3052")==0) || (strcmp(Id, "RT3350")==0)) {
+	boot_from = (syscfg >> 16) & 0x3; 
+	switch(boot_from)
+	{
+	case 0:
+	case 1:
+	    boot_from=BOOT_FROM_NOR;
+	    break;
+	case 2:
+	    boot_from=BOOT_FROM_NAND;
+	    break;
+	case 3:
+	    boot_from=BOOT_FROM_SPI;
+	    break;
+	}
+    }else if(strcmp(Id,"RT3883")==0) {
+	boot_from = (syscfg >> 4) & 0x3; 
+	switch(boot_from)
+	{
+	case 0:
+	case 1:
+	    boot_from=BOOT_FROM_NOR;
+	    break;
+	case 2:
+	case 3:
+	    chip_mode = syscfg & 0xF;
+	    if((chip_mode==0) || (chip_mode==7)) {
+		boot_from = BOOT_FROM_SPI;
+	    }else if(chip_mode==8) {
+		boot_from = BOOT_FROM_NAND;
+	    }else {
+		printk("unknow chip_mode=%d\n",chip_mode);
+	    }
+	    break;
+	}
+    }else if(strcmp(Id,"RT3352")==0) {
+	boot_from = BOOT_FROM_SPI;
+    }else if(strcmp(Id,"RT5350")==0) {
+	boot_from = BOOT_FROM_SPI;
+    }else if(strcmp(Id,"RT2880")==0) {
+	boot_from = BOOT_FROM_NOR;
+    } else {
+	printk("%s: %s is not supported\n",__FUNCTION__, Id);
+    }
+
+    return boot_from;
+
+
+}
+
 
 int __init rt2880_mtd_init(void)
 {
 	int ret = -ENXIO;
 	int i, found = 0;
+
+	if(ra_check_flash_type()!=BOOT_FROM_NOR) { /* NOR */
+	    return 0;
+	}
 
 	for (i = 0; i < NUM_FLASH_BANKS; i++) {
 		printk(KERN_NOTICE "ralink flash device: 0x%x at 0x%x\n",
