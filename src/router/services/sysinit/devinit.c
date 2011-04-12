@@ -125,7 +125,8 @@ void start_devinit(void)
 	// shell-skript. otherwise we loose our console
 	system("echo >/proc/sys/kernel/hotplug");
 	system("mount -t tmpfs none /dev -o size=512K");
-	system("mknod /dev/console c 5 1\n");
+	system("mknod /dev/console c 5 1");
+	system("mknod /dev/null c 1 3");
 	system("mkdir /dev/pts");
 #else
 	// fix for linux kernel 2.6
