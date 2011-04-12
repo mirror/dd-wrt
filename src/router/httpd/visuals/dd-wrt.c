@@ -4786,20 +4786,6 @@ if (!strcmp(prefix, "wl1"))
 
 	}
 // same haeh?
-#ifdef HAVE_ATH9K
-	if(is_ath9k(prefix)
-	   && ( nvram_nmatch("mixed", "%s_net_mode", prefix)
-		|| nvram_nmatch("n-only", "%s_net_mode", prefix)
-		|| nvram_nmatch("ng-only", "%s_net_mode", prefix)
-		|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
-		|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
-	        || nvram_nmatch("na-only", "%s_net_mode", prefix)))
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
-			  nvram_match(wl_width,
-				      "40") ? "selected=\\\"selected\\\"" : "");
-	else
-#endif
 	if (!is_ath11n(prefix)
 	    || (is_ath11n(prefix)
 		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
@@ -4812,14 +4798,6 @@ if (!strcmp(prefix, "wl1"))
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
 			  nvram_match(wl_width,
 				      "40") ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_ATH9K
-	if(is_ath9k(prefix))
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"20\\\" %s >\" + share.ht20 + \"</option>\");\n",
-			  nvram_match(wl_width,
-				      "20") ? "selected=\\\"selected\\\"" : "");
-	else
-#endif
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
 		  nvram_match(wl_width,
