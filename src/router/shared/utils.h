@@ -525,7 +525,7 @@
 // Linksys E4200 (dual radio, BCM53115 giga switch, BCM4718 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E4200) >60K nvram<
 #define ROUTER_LINKSYS_E4200 0xa716
 
-#define ROUTER_BOARD_RT3352 0xa80f // concept
+#define ROUTER_BOARD_RT3352 0xa81a // concept
 
 
 #define NVROUTER "DD_BOARD"
