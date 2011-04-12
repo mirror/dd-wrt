@@ -120,16 +120,16 @@
 				<input size="5" maxlength="5" class="num" name="openvpn_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_mtu"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 1500; Disable=empty)");
+				document.write("(" + share.deflt + ": 1500)");
 				//]]>
 				</script></span>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_mss"); %></div>
-				<input size="5" maxlength="5" class="num" name="openvpn_mssfix" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_mssfix"); %>" />
+				<input size="5" maxlength="5" class="num" name="openvpn_mssfix" value="<% nvram_get("openvpn_mssfix"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 1450; Disable=empty)");
+				document.write("(" + share.deflt + ": Disable)");
 				//]]>
 				</script></span>
 			</div>
