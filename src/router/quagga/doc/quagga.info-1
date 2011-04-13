@@ -24,8 +24,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 0.99.17, last updated 19 August 2010 of `The Quagga
-Manual', for Quagga Version 0.99.17.
+   This is Edition 0.99.18, last updated 21 March 2011 of `The Quagga
+Manual', for Quagga Version 0.99.18.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -50,7 +50,7 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga 0.99.17.
+TCP/IP based routing protocols.  This is the Manual for Quagga 0.99.18.
 Quagga is a fork of GNU Zebra.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
@@ -1024,7 +1024,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 0.99.17)
+     Hello, this is Quagga (version 0.99.18)
      Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
      User Access Verification
@@ -1252,9 +1252,9 @@ File: quagga.info,  Node: Interface Commands,  Next: Static Route Commands,  Pre
      Up or down the current interface.
 
  -- Interface Command: ip address ADDRESS/PREFIX
- -- Interface Command: ip6 address ADDRESS/PREFIX
+ -- Interface Command: ipv6 address ADDRESS/PREFIX
  -- Interface Command: no ip address ADDRESS/PREFIX
- -- Interface Command: no ip6 address ADDRESS/PREFIX
+ -- Interface Command: no ipv6 address ADDRESS/PREFIX
      Set the IPv4 or IPv6 address/prefix for the interface.
 
  -- Interface Command: ip address ADDRESS/PREFIX secondary
@@ -3071,29 +3071,6 @@ File: quagga.info,  Node: BGP route,  Next: Route Aggregation,  Up: BGP network
      routes if they aren't present in their IGP routing tables; `bgpd'
      doesn't care about IGP routes when announcing its routes.
 
- -- BGP: network A.B.C.D/M pathlimit <0-255>
-     This command configures a route to be originated into BGP, just as
-     with the previous command, but additionally sets an AS-Pathlimit
-     TTL to be advertised on the route. See draft-ietf-idr-as-pathlimit.
-
-     Specifying a TTL of 0 can be used to remove pathlimit from a
-     previously configured network statement.
-
-     Note that when advertising prefixes with AS-Pathlimit set, all
-     less-specific prefixes advertised SHOULD also have the
-     Atomic-Aggregate attribute set.  Failure to do so increases the
-     risks of accidental routing loops occuring.
-
-     This implementation will try to automatically set Atomic-Aggregate
-     as appropriate on any less-specific prefixes originated by the
-     same speaker, however it will not (and often can not) do so where
-     other speakers in the AS are originating more specifics.
-
-     Hence the system administrator must take care to ensure that all
-     less-specific prefixes originated carry atomic-aggregate as
-     appropriate, by manually configuring speakers originating
-     less-specifics to set Atomic-Aggregate on those advertisements!
-
  -- BGP: no network A.B.C.D/M
 
 
@@ -4486,7 +4463,7 @@ Key:  (X) - 'In'  Filter applied to Peer X's announcements
       [X] - 'Out' Filter applied to announcements to Peer X
 " ]
 
-Figure 10.1: Announcement processing inside a "normal" BGP speaker
+Figure   10.1: Announcement processing inside a "normal" BGP speaker
 
  [image src="fig_topologies_full.png" alt="Full Mesh BGP Topology" text="(RF1)--(RF2)
   | \\  / |
@@ -4496,7 +4473,7 @@ Figure 10.1: Announcement processing inside a "normal" BGP speaker
 (RF3)--(RF4)
 " ]
 
-Figure 10.2: Full Mesh
+Figure   10.2: Full Mesh
 
  [image src="fig_topologies_rs.png" alt="Route Server BGP Topology" text="(RF1)  (RF2)
     \\  /
@@ -4505,7 +4482,7 @@ Figure 10.2: Full Mesh
 (RF3)  (RF4)
 " ]
 
-Figure 10.3: Route Server and clients
+Figure   10.3: Route Server and clients
 
    Of course we want that the routing tables obtained in each of the
 routers are the same when using the route server than when not. But as
@@ -4638,7 +4615,7 @@ Key:  (X) - 'In'  Filter applied to Peer X's announcements before
             on routes before allowing them into X's RIB.
 " ]
 
-Figure 10.4: Announcement processing model implemented by the Route
+Figure   10.4: Announcement processing model implemented by the Route
 Server
 
 
@@ -4663,7 +4640,7 @@ order to support the route server features.
 
      With the route server patch, this command, apart from setting the
      transparent mode, creates a new Loc-RIB dedicated to the specified
-     peer (those named `Loc-RIB for X' in *note Figure 10.4:
+     peer (those named `Loc-RIB for X' in *note Figure   10.4:
      fig:rs-processing.). Starting from that moment, every announcement
      received by the route server will be also considered for the new
      Loc-RIB.
@@ -4690,7 +4667,7 @@ order to support the route server features.
      {A.B.C.D|X:X::X:X} is the address of the RS-Client into whose
      Loc-RIB the announce is going to be inserted (how the same export
      policy is applied before different Loc-RIBs is shown in *note
-     Figure 10.4: fig:rs-processing.).
+     Figure   10.4: fig:rs-processing.).
 
  -- Route-map Command: call WORD
      This command (also used inside a route-map) jumps into a different
@@ -5415,9 +5392,6 @@ File: quagga.info,  Node: Route Map Match Command,  Next: Route Map Set Command,
  -- Route-map Command: match community COMMUNITY_LIST
      Matches the specified  COMMUNITY_LIST
 
- -- Route-map Command: match pathlimit as ASN
-     Matches the specified AS-Pathlimit ASN.
-
 
 File: quagga.info,  Node: Route Map Set Command,  Next: Route Map Call Command,  Prev: Route Map Match Command,  Up: Route Map
 
@@ -5447,15 +5421,6 @@ File: quagga.info,  Node: Route Map Set Command,  Next: Route Map Call Command, 
 
  -- Route-map Command: set ipv6 next-hop local IPV6_ADDRESS
      Set the BGP-4+ link local IPv6 nexthop address.
-
- -- Route-map Command: set pathlimit ttl TTL
-     Sets the specified AS-Pathlimit TTL on the route. This will also
-     cause the AS to be set to the local AS.
-
-     Note that the AS-Pathlimit RFC specifies that speakers advertising
-     this attribute should set Atomic-aggregate on all less specific
-     routes. Setting AS-Pathlimit by route-map does not do this, the
-     user must do so themselves, as they wish.
 
 
 File: quagga.info,  Node: Route Map Call Command,  Next: Route Map Exit Action Command,  Prev: Route Map Set Command,  Up: Route Map
@@ -6040,8 +6005,8 @@ traps, like sound a siren, have your display flash, etc., be creative
 
 File: quagga.info,  Node: Zebra Protocol,  Next: Packet Binary Dump Format,  Prev: SNMP Support,  Up: Top
 
-Приложение A Zebra Protocol
-*************************************
+Appendix A Zebra Protocol
+*************************
 
 A.1 Overview of the Zebra Protocol
 ==================================
@@ -6141,8 +6106,8 @@ ZEBRA_IPV6_NEXTHOP_LOOKUP                    16
 
 File: quagga.info,  Node: Packet Binary Dump Format,  Next: Command Index,  Prev: Zebra Protocol,  Up: Top
 
-Приложение B Packet Binary Dump Format
-************************************************
+Appendix B Packet Binary Dump Format
+************************************
 
 Quagga can dump routing protocol packet into file with a binary format
 (*note Dump BGP packets and table::).
@@ -6555,7 +6520,7 @@ Command Index
 * ip route NETWORK NETMASK GATEWAY:      Static Route Commands.
                                                               (line  25)
 * ip split-horizon:                      RIP Configuration.   (line  70)
-* ip6 address ADDRESS/PREFIX:            Interface Commands.  (line  14)
+* ipv6 address ADDRESS/PREFIX:           Interface Commands.  (line  14)
 * ipv6 nd adv-interval-option:           Router Advertisement.
                                                               (line 127)
 * ipv6 nd home-agent-config-flag:        Router Advertisement.
@@ -6648,8 +6613,6 @@ Command Index
 * match metric <0-4294967295>:           RIP route-map.       (line  47)
 * match metric METRIC:                   Route Map Match Command.
                                                               (line  16)
-* match pathlimit as ASN:                Route Map Match Command.
-                                                              (line  22)
 * match peer {A.B.C.D|X:X::X:X}:         Commands for configuring a Route Server.
                                                               (line  34)
 * max-metric router-lsa [on-startup|on-shutdown] <5-86400>: OSPF router.
@@ -6696,7 +6659,6 @@ Command Index
 * network A.B.C.D/M:                     BGP route.           (line   7)
 * network A.B.C.D/M area <0-4294967295>: OSPF router.         (line 175)
 * network A.B.C.D/M area A.B.C.D:        OSPF router.         (line 174)
-* network A.B.C.D/M pathlimit <0-255>:   BGP route.           (line  16)
 * network IFNAME <1>:                    ripngd Configuration.
                                                               (line  18)
 * network IFNAME:                        RIP Configuration.   (line  27)
@@ -6801,7 +6763,7 @@ Command Index
 * no ip rip authentication mode text:    RIP Authentication.  (line  34)
 * no ip rip authentication string STRING: RIP Authentication. (line  38)
 * no ip split-horizon:                   RIP Configuration.   (line  71)
-* no ip6 address ADDRESS/PREFIX:         Interface Commands.  (line  16)
+* no ipv6 address ADDRESS/PREFIX:        Interface Commands.  (line  16)
 * no ipv6 nd adv-interval-option:        Router Advertisement.
                                                               (line 128)
 * no ipv6 nd home-agent-config-flag:     Router Advertisement.
@@ -6864,7 +6826,7 @@ Command Index
                                                               (line  41)
 * no neighbor PEER update-source:        BGP Peer commands.   (line  49)
 * no neighbor PEER weight WEIGHT:        BGP Peer commands.   (line  72)
-* no network A.B.C.D/M:                  BGP route.           (line  39)
+* no network A.B.C.D/M:                  BGP route.           (line  16)
 * no network A.B.C.D/M area <0-4294967295>: OSPF router.      (line 177)
 * no network A.B.C.D/M area A.B.C.D:     OSPF router.         (line 176)
 * no network IFNAME:                     RIP Configuration.   (line  28)
@@ -7032,8 +6994,6 @@ Command Index
 * set metric <0-4294967295>:             RIP route-map.       (line  57)
 * set metric METRIC:                     Route Map Set Command.
                                                               (line  16)
-* set pathlimit ttl TTL:                 Route Map Set Command.
-                                                              (line  31)
 * set src ADDRESS:                       zebra Route Filtering.
                                                               (line  17)
 * set weight WEIGHT:                     Route Map Set Command.
@@ -7234,4 +7194,63 @@ VTY Key Index
 * M-d:                                   CLI Editing Commands. (line 17)
 * M-f:                                   CLI Movement Commands.
                                                                (line 18)
+
+
+File: quagga.info,  Node: Index,  Prev: VTY Key Index,  Up: Top
+
+Index
+*****
+
+ [index ]
+* Menu:
+
+* About Quagga:                          About Quagga.         (line  6)
+* Bug hunting:                           Bug Reports.          (line  6)
+* Bug Reports:                           Bug Reports.          (line  6)
+* Build options:                         The Configure script and its options.
+                                                               (line  6)
+* Building on Linux boxes:               Linux notes.          (line  6)
+* Building the system:                   Installation.         (line  6)
+* Compatibility with other systems:      Supported Platforms.  (line  6)
+* Configuration files for running the software: Config Commands.
+                                                               (line  6)
+* Configuration options:                 The Configure script and its options.
+                                                               (line  6)
+* Configuring Quagga:                    Linux notes.          (line  6)
+* Contact information:                   Mailing List.         (line  6)
+* Distribution configuration:            The Configure script and its options.
+                                                               (line  6)
+* Errors in the software:                Bug Reports.          (line  6)
+* Files for running configurations:      Config Commands.      (line  6)
+* Found a bug?:                          Bug Reports.          (line  6)
+* Getting the herd running:              Config Commands.      (line  6)
+* How to get in touch with Quagga:       Mailing List.         (line  6)
+* How to install Quagga:                 Installation.         (line  6)
+* Installation:                          Installation.         (line  6)
+* Installing Quagga:                     Installation.         (line  6)
+* Linux configurations:                  Linux notes.          (line  6)
+* Mailing lists:                         Mailing List.         (line  6)
+* Mailing Quagga:                        Mailing List.         (line  6)
+* Making Quagga:                         Installation.         (line  6)
+* Modifying the herd's behavior:         Config Commands.      (line  6)
+* Operating systems that support Quagga: Supported Platforms.  (line  6)
+* Options for configuring:               The Configure script and its options.
+                                                               (line  6)
+* Options to ./configure:                The Configure script and its options.
+                                                               (line  6)
+* OSPFv2:                                ripngd Filtering Commands.
+                                                               (line 14)
+* Overview:                              Overview.             (line  6)
+* Quagga Least-Privileges:               Least-Privilege support.
+                                                               (line  6)
+* Quagga on other systems:               Supported Platforms.  (line  6)
+* Quagga Privileges:                     Least-Privilege support.
+                                                               (line  6)
+* Reporting bugs:                        Bug Reports.          (line  6)
+* Reporting software errors:             Bug Reports.          (line  6)
+* Software architecture:                 System Architecture.  (line  6)
+* Software internals:                    System Architecture.  (line  6)
+* Supported platforms:                   Supported Platforms.  (line  6)
+* System architecture:                   System Architecture.  (line  6)
+
 
