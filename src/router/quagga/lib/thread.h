@@ -82,7 +82,7 @@ struct thread
 struct cpu_thread_history 
 {
   int (*func)(struct thread *);
-  const char *funcname;
+  char *funcname;
   unsigned int total_calls;
   struct time_stats
   {
@@ -197,6 +197,7 @@ extern int thread_should_yield (struct thread *);
 /* Internal libzebra exports */
 extern void thread_getrusage (RUSAGE_T *);
 extern struct cmd_element show_thread_cpu_cmd;
+extern struct cmd_element clear_thread_cpu_cmd;
 
 /* replacements for the system gettimeofday(), clock_gettime() and
  * time() functions, providing support for non-decrementing clock on

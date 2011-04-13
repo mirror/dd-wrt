@@ -28,6 +28,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "stream.h"
 #include "log.h"
 #include "hash.h"
+#include "jhash.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_attr.h"
@@ -116,18 +117,9 @@ cluster_loop_check (struct cluster_list *cluster, struct in_addr originator)
 static unsigned int
 cluster_hash_key_make (void *p)
 {
-  struct cluster_list * cluster = (struct cluster_list *) p;
-  unsigned int key = 0;
-  int length;
-  caddr_t pnt;
+  const struct cluster_list *cluster = p;
 
-  length = cluster->length;
-  pnt = (caddr_t) cluster->list;
-  
-  while (length)
-    key += pnt[--length];
-
-  return key;
+  return jhash(cluster->list, cluster->length, 0);
 }
 
 static int
@@ -258,18 +250,9 @@ transit_unintern (struct transit *transit)
 static unsigned int
 transit_hash_key_make (void *p)
 {
-  struct transit * transit = (struct transit *) p;
-  unsigned int key = 0;
-  int length;
-  caddr_t pnt;
+  const struct transit * transit = p;
 
-  length = transit->length;
-  pnt = (caddr_t) transit->val;
-  
-  while (length)
-    key += pnt[--length];
-
-  return key;
+  return jhash(transit->val, transit->length, 0);
 }
 
 static int
@@ -352,51 +335,46 @@ attr_unknown_count (void)
 unsigned int
 attrhash_key_make (void *p)
 {
-  struct attr * attr = (struct attr *) p;
-  unsigned int key = 0;
+  const struct attr * attr = (struct attr *) p;
+  uint32_t key = 0;
+#define MIX(val)	key = jhash_1word(val, key)
+
+  MIX(attr->origin);
+  MIX(attr->nexthop.s_addr);
+  MIX(attr->med);
+  MIX(attr->local_pref);
 
   key += attr->origin;
   key += attr->nexthop.s_addr;
   key += attr->med;
   key += attr->local_pref;
-  if (attr->pathlimit.as)
-    {
-      key += attr->pathlimit.ttl;
-      key += attr->pathlimit.as;
-    }
   
   if (attr->extra)
     {
-      key += attr->extra->aggregator_as;
-      key += attr->extra->aggregator_addr.s_addr;
-      key += attr->extra->weight;
-      key += attr->extra->mp_nexthop_global_in.s_addr;
+      MIX(attr->extra->aggregator_as);
+      MIX(attr->extra->aggregator_addr.s_addr);
+      MIX(attr->extra->weight);
+      MIX(attr->extra->mp_nexthop_global_in.s_addr);
     }
   
   if (attr->aspath)
-    key += aspath_key_make (attr->aspath);
+    MIX(aspath_key_make (attr->aspath));
   if (attr->community)
-    key += community_hash_make (attr->community);
+    MIX(community_hash_make (attr->community));
   
   if (attr->extra)
     {
       if (attr->extra->ecommunity)
-        key += ecommunity_hash_make (attr->extra->ecommunity);
+        MIX(ecommunity_hash_make (attr->extra->ecommunity));
       if (attr->extra->cluster)
-        key += cluster_hash_key_make (attr->extra->cluster);
+        MIX(cluster_hash_key_make (attr->extra->cluster));
       if (attr->extra->transit)
-        key += transit_hash_key_make (attr->extra->transit);
+        MIX(transit_hash_key_make (attr->extra->transit));
 
 #ifdef HAVE_IPV6
-      {
-        int i;
-        
-        key += attr->extra->mp_nexthop_len;
-        for (i = 0; i < 16; i++)
-          key += attr->extra->mp_nexthop_global.s6_addr[i];
-        for (i = 0; i < 16; i++)
-          key += attr->extra->mp_nexthop_local.s6_addr[i];
-      }
+      MIX(attr->extra->mp_nexthop_len);
+      key = jhash2(attr->extra->mp_nexthop_global.s6_addr32, 4, key);
+      key = jhash2(attr->extra->mp_nexthop_local.s6_addr32, 4, key);
 #endif /* HAVE_IPV6 */
     }
 
@@ -415,9 +393,7 @@ attrhash_cmp (const void *p1, const void *p2)
       && attr1->aspath == attr2->aspath
       && attr1->community == attr2->community
       && attr1->med == attr2->med
-      && attr1->local_pref == attr2->local_pref
-      && attr1->pathlimit.ttl == attr2->pathlimit.ttl
-      && attr1->pathlimit.as == attr2->pathlimit.as)
+      && attr1->local_pref == attr2->local_pref)
     {
       const struct attr_extra *ae1 = attr1->extra;
       const struct attr_extra *ae2 = attr2->extra;
@@ -704,43 +680,6 @@ bgp_attr_flush (struct attr *attr)
     }
 }
 
-/* Parse AS_PATHLIMIT attribute in an UPDATE */
-static int
-bgp_attr_aspathlimit (struct peer *peer, bgp_size_t length,
-                      struct attr *attr, u_char flag, u_char *startp)
-{
-  bgp_size_t total;
-  
-  total = length + (CHECK_FLAG (flag, BGP_ATTR_FLAG_EXTLEN) ? 4 : 3);
-  
-  if (!CHECK_FLAG(flag, BGP_ATTR_FLAG_TRANS)
-       || !CHECK_FLAG(flag, BGP_ATTR_FLAG_OPTIONAL))
-    {
-      zlog (peer->log, LOG_ERR, 
-	    "AS-Pathlimit attribute flag isn't transitive %d", flag);
-      bgp_notify_send_with_data (peer, 
-				 BGP_NOTIFY_UPDATE_ERR, 
-				 BGP_NOTIFY_UPDATE_ATTR_FLAG_ERR,
-				 startp, total);
-      return -1;
-    }
-  
-  if (length != 5)
-    {
-      zlog (peer->log, LOG_ERR, 
-	    "AS-Pathlimit length, %u, is not 5", length);
-      bgp_notify_send_with_data (peer, 
-				 BGP_NOTIFY_UPDATE_ERR, 
-				 BGP_NOTIFY_UPDATE_ATTR_FLAG_ERR,
-				 startp, total);
-      return -1;
-    }
-  
-  attr->pathlimit.ttl = stream_getc (BGP_INPUT(peer));
-  attr->pathlimit.as = stream_getl (BGP_INPUT(peer));
-  attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_AS_PATHLIMIT);
-  return 0;
-}
 /* Get origin attribute of the update message. */
 static int
 bgp_attr_origin (struct peer *peer, bgp_size_t length, 
@@ -1235,13 +1174,16 @@ bgp_attr_community (struct peer *peer, bgp_size_t length,
       attr->community = NULL;
       return 0;
     }
-  else
-    {
-      attr->community = 
-        community_parse ((u_int32_t *)stream_pnt (peer->ibuf), length);
-      stream_forward_getp (peer->ibuf, length);
-    }
+  
+  attr->community =
+    community_parse ((u_int32_t *)stream_pnt (peer->ibuf), length);
+  
+  /* XXX: fix community_parse to use stream API and remove this */
+  stream_forward_getp (peer->ibuf, length);
 
+  if (!attr->community)
+    return -1;
+  
   attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_COMMUNITIES);
 
   return 0;
@@ -1301,8 +1243,8 @@ int
 bgp_mp_reach_parse (struct peer *peer, bgp_size_t length, struct attr *attr,
 		    struct bgp_nlri *mp_update)
 {
-  u_int16_t afi;
-  u_char safi;
+  afi_t afi;
+  safi_t safi;
   bgp_size_t nlri_len;
   size_t start;
   int ret;
@@ -1436,8 +1378,8 @@ bgp_mp_unreach_parse (struct peer *peer, bgp_size_t length,
 		      struct bgp_nlri *mp_withdraw)
 {
   struct stream *s;
-  u_int16_t afi;
-  u_char safi;
+  afi_t afi;
+  safi_t safi;
   u_int16_t withdraw_len;
   int ret;
 
@@ -1478,13 +1420,18 @@ bgp_attr_ext_communities (struct peer *peer, bgp_size_t length,
     {
       if (attr->extra)
         attr->extra->ecommunity = NULL;
+      /* Empty extcomm doesn't seem to be invalid per se */
+      return 0;
     }
-  else
-    {
-      (bgp_attr_extra_get (attr))->ecommunity = 
-        ecommunity_parse ((u_int8_t *)stream_pnt (peer->ibuf), length);
-      stream_forward_getp (peer->ibuf, length);
-    }
+
+  (bgp_attr_extra_get (attr))->ecommunity =
+    ecommunity_parse ((u_int8_t *)stream_pnt (peer->ibuf), length);
+  /* XXX: fix ecommunity_parse to use stream API */
+  stream_forward_getp (peer->ibuf, length);
+  
+  if (!attr->extra->ecommunity)
+    return -1;
+  
   attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_EXT_COMMUNITIES);
 
   return 0;
@@ -1709,9 +1656,6 @@ bgp_attr_parse (struct peer *peer, struct attr *attr, bgp_size_t size,
 	case BGP_ATTR_EXT_COMMUNITIES:
 	  ret = bgp_attr_ext_communities (peer, length, attr, flag);
 	  break;
-        case BGP_ATTR_AS_PATHLIMIT:
-          ret = bgp_attr_aspathlimit (peer, length, attr, flag, startp);
-          break;
 	default:
 	  ret = bgp_attr_unknown (peer, attr, flag, type, length, startp);
 	  break;
@@ -2266,24 +2210,6 @@ bgp_packet_attribute (struct bgp *bgp, struct peer *peer,
       stream_put_ipv4 (s, attr->extra->aggregator_addr.s_addr);
     }
   
-  /* AS-Pathlimit */
-  if (attr->pathlimit.ttl)
-    {
-      u_int32_t as = attr->pathlimit.as;
-      
-      /* should already have been done in announce_check(), 
-       * but just in case..
-       */
-      if (!as)
-        as = peer->local_as;
-      
-      stream_putc (s, BGP_ATTR_FLAG_OPTIONAL|BGP_ATTR_FLAG_TRANS);
-      stream_putc (s, BGP_ATTR_AS_PATHLIMIT);
-      stream_putc (s, 5);
-      stream_putc (s, attr->pathlimit.ttl);
-      stream_putl (s, as);
-    }
-  
   /* Unknown transit attribute. */
   if (attr->extra && attr->extra->transit)
     stream_put (s, attr->extra->transit->val, attr->extra->transit->length);
@@ -2494,16 +2420,6 @@ bgp_dump_routes_attr (struct stream *s, struct attr *attr,
       stream_putc_at (s, sizep, (stream_get_endp (s) - sizep) - 1);
     }
 #endif /* HAVE_IPV6 */
-
-  /* AS-Pathlimit */
-  if (attr->flag & ATTR_FLAG_BIT (BGP_ATTR_AS_PATHLIMIT))
-    {
-      stream_putc (s, BGP_ATTR_FLAG_OPTIONAL|BGP_ATTR_FLAG_TRANS);
-      stream_putc (s, BGP_ATTR_AS_PATHLIMIT);
-      stream_putc (s, 5);
-      stream_putc (s, attr->pathlimit.ttl);
-      stream_putl (s, attr->pathlimit.as);
-    }
 
   /* Return total size of attribute. */
   len = stream_get_endp (s) - cp - 2;
