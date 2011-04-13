@@ -513,6 +513,7 @@ void start_sysinit(void)
 		if (nvram_match("vlan1ports", "4 5u")) {
 			nvram_set("vlan1ports", "4 5");
 			need_reboot = 1;
+		}
 		break;
 
 	case ROUTER_RT210W:
