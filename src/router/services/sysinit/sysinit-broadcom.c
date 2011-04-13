@@ -508,10 +508,16 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_USR_5465:
+		if (nvram_match("vlan1ports", "4 5u"))
+			nvram_set("vlan1ports", "4 5");	
+		break;
+		
 	case ROUTER_ASUS_RTN10:
 		basic_params = vlan_0_1;
 		if (nvram_match("vlan1ports", "4 5u")) {
 			nvram_set("vlan1ports", "4 5");
+			if(sv_valid_hwaddr(nvram_safe_get("macaddr")))  //fix mac
+				nvram_set("et0macaddr", nvram_get("macaddr"));
 			need_reboot = 1;
 		}
 		break;
