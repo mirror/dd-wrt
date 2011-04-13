@@ -1343,6 +1343,7 @@ service.vpnd_cl2cl="Client to Client connection allowed";
 service.vpnd_switch="Config via";
 service.vpnd_dupcn="Allow duplicate cn";
 service.vpnd_proxy="DHCP-Proxy mode";
+service.vpnd_proxy="Client connect script";
 service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Client";
 service.vpn_srv="Start OpenVPN Client";
