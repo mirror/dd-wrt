@@ -510,8 +510,9 @@ void start_sysinit(void)
 	case ROUTER_USR_5465:
 	case ROUTER_ASUS_RTN10:
 		basic_params = vlan_0_1;
-		if (nvram_match("vlan1ports", "4 5u"))
+		if (nvram_match("vlan1ports", "4 5u")) {
 			nvram_set("vlan1ports", "4 5");
+			need_reboot = 1;
 		break;
 
 	case ROUTER_RT210W:
