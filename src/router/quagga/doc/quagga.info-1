@@ -4463,7 +4463,7 @@ Key:  (X) - 'In'  Filter applied to Peer X's announcements
       [X] - 'Out' Filter applied to announcements to Peer X
 " ]
 
-Figure   10.1: Announcement processing inside a "normal" BGP speaker
+Figure 10.1: Announcement processing inside a "normal" BGP speaker
 
  [image src="fig_topologies_full.png" alt="Full Mesh BGP Topology" text="(RF1)--(RF2)
   | \\  / |
@@ -4473,7 +4473,7 @@ Figure   10.1: Announcement processing inside a "normal" BGP speaker
 (RF3)--(RF4)
 " ]
 
-Figure   10.2: Full Mesh
+Figure 10.2: Full Mesh
 
  [image src="fig_topologies_rs.png" alt="Route Server BGP Topology" text="(RF1)  (RF2)
     \\  /
@@ -4482,7 +4482,7 @@ Figure   10.2: Full Mesh
 (RF3)  (RF4)
 " ]
 
-Figure   10.3: Route Server and clients
+Figure 10.3: Route Server and clients
 
    Of course we want that the routing tables obtained in each of the
 routers are the same when using the route server than when not. But as
@@ -4615,7 +4615,7 @@ Key:  (X) - 'In'  Filter applied to Peer X's announcements before
             on routes before allowing them into X's RIB.
 " ]
 
-Figure   10.4: Announcement processing model implemented by the Route
+Figure 10.4: Announcement processing model implemented by the Route
 Server
 
 
@@ -4640,7 +4640,7 @@ order to support the route server features.
 
      With the route server patch, this command, apart from setting the
      transparent mode, creates a new Loc-RIB dedicated to the specified
-     peer (those named `Loc-RIB for X' in *note Figure   10.4:
+     peer (those named `Loc-RIB for X' in *note Figure 10.4:
      fig:rs-processing.). Starting from that moment, every announcement
      received by the route server will be also considered for the new
      Loc-RIB.
@@ -4667,7 +4667,7 @@ order to support the route server features.
      {A.B.C.D|X:X::X:X} is the address of the RS-Client into whose
      Loc-RIB the announce is going to be inserted (how the same export
      policy is applied before different Loc-RIBs is shown in *note
-     Figure   10.4: fig:rs-processing.).
+     Figure 10.4: fig:rs-processing.).
 
  -- Route-map Command: call WORD
      This command (also used inside a route-map) jumps into a different
