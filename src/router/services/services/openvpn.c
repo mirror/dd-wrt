@@ -44,7 +44,10 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
-	mkdir("/tmp/openvpn/peers", 0700);
+	mkdir("/tmp/openvpn/ccd", 0700);
+	//use one script to do actions on client connect. will be replaced by the ccd dir when we have a gui solution
+	if (strlen(nvram_safe_get("openvpn_clcon")) > 0)
+			write_nvram("/tmp/openvpn/clientconnect.sh", "openvpn_clcon");
 
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
 	if (fp == NULL)
@@ -95,7 +98,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "tls-cipher %s\n",
 				nvram_safe_get("openvpn_tlscip"));
 		if (nvram_match("openvpn_proto", "udp"))
-			fprintf(fp, "fast-io\n" "mtu-test\n" );	//experimental!improving CPU efficiency by 5%-10%
+			fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 		else		//TCP_NODELAY is generally a good latency optimization
 			fprintf(fp, "tcp-nodelay\n");
 		if (nvram_invmatch("openvpn_mtu", ""))
@@ -281,7 +284,7 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
-		fprintf(fp, "fast-io\n" "mtu-test\n");	//experimental!improving CPU efficiency by 5%-10%
+		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 	if (nvram_match("openvpncl_tuntap", "tun"))
 		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support. not supported on server in version 2.1.3
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
