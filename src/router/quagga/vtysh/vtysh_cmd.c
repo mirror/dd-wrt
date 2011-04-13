@@ -480,17 +480,6 @@ DEFSH (VTYSH_ISISD, show_database_detail_cmd_vtysh,
        "IS-IS information\n"
        "IS-IS link state database\n")
 
-DEFSH (VTYSH_BGPD, no_bgp_network_mask_backdoor_ttl_cmd_vtysh, 
-       "no network A.B.C.D mask A.B.C.D  backdoor pathlimit <0-255>", 
-       "Negate a command or set its defaults\n"
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
-
 DEFSH (VTYSH_RIPD|VTYSH_RIPNGD|VTYSH_OSPFD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, rmap_onmatch_goto_cmd_vtysh, 
        "on-match goto <1-65535>", 
        "Exit policy on matches\n"
@@ -608,7 +597,6 @@ DEFSH (VTYSH_BGPD, bgp_deterministic_med_cmd_vtysh,
 DEFSH (VTYSH_BGPD, undebug_bgp_as4_cmd_vtysh, 
        "undebug bgp as4", 
        "Disable debugging functions (see also 'debug')\n"
-       "Debugging functions (see also 'undebug')\n"
        "BGP information\n"
        "BGP AS4 actions\n")
 
@@ -893,13 +881,6 @@ DEFSH (VTYSH_BGPD, neighbor_send_community_cmd_vtysh,
        "Specify neighbor router\n"
        "Neighbor address\nNeighbor IPv6 address\nNeighbor tag\n"
        "Send Community attribute to this neighbor\n")
-
-DEFSH (VTYSH_BGPD, no_set_pathlimit_ttl_cmd_vtysh, 
-       "no set pathlimit ttl", 
-       "Negate a command or set its defaults\n"
-       "Set values in destination routing protocol\n"
-       "BGP AS-Pathlimit attribute\n"
-       "Set AS-Path Hop-count TTL\n")
 
 DEFSH (VTYSH_BGPD, dump_bgp_updates_cmd_vtysh, 
        "dump bgp updates PATH", 
@@ -2715,13 +2696,6 @@ DEFSH (VTYSH_BGPD, clear_bgp_external_soft_out_cmd_vtysh,
        "Soft reconfig\n"
        "Soft reconfig outbound update\n")
 
-DEFSH (VTYSH_BGPD, ipv6_bgp_network_ttl_cmd_vtysh, 
-       "network X:X::X:X/M pathlimit <0-255>", 
-       "Specify a network to announce via BGP\n"
-       "IPv6 prefix <network>/<length>\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
-
 DEFSH (VTYSH_ISISD, show_isis_neighbors_detail_cmd_vtysh, 
        "show isis neighbors detail", 
        "Show running system information\n"
@@ -2734,13 +2708,6 @@ DEFSH (VTYSH_ISISD, no_lsp_lifetime_l2_arg_cmd_vtysh,
        "Negate a command or set its defaults\n"
        "Maximum LSP lifetime for Level 2 only\n"
        "LSP lifetime for Level 2 only in seconds\n")
-
-DEFSH (VTYSH_BGPD, no_match_pathlimit_as_cmd_vtysh, 
-       "no match pathlimit as", 
-       "Negate a command or set its defaults\n"
-       "Match values from routing table\n"
-       "BGP AS-Pathlimit attribute\n"
-       "Match Pathlimit AS number\n")
 
 DEFSH (VTYSH_ZEBRA, config_table_cmd_vtysh, 
        "table TABLENO", 
@@ -3015,14 +2982,6 @@ DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv4_rmap_metric_cmd_vtysh,
        "Pointer to route-map entries\n"
        "Metric for redistributed routes\n"
        "Default metric\n")
-
-DEFSH (VTYSH_BGPD, no_ipv6_bgp_network_ttl_cmd_vtysh, 
-       "no network X:X::X:X/M pathlimit <0-255>", 
-       "Negate a command or set its defaults\n"
-       "Specify a network to announce via BGP\n"
-       "IPv6 prefix <network>/<length>\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_ISISD, isis_hello_interval_cmd_vtysh, 
        "isis hello-interval (<1-65535>|minimal)", 
@@ -4794,6 +4753,7 @@ DEFSH (VTYSH_BGPD, debug_bgp_as4_segment_cmd_vtysh,
        "debug bgp as4 segment", 
        "Debugging functions (see also 'undebug')\n"
        "BGP information\n"
+       "BGP AS4 actions\n"
        "BGP AS4 aspath segment handling\n")
 
 DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_cmd_vtysh, 
@@ -4866,13 +4826,6 @@ DEFSH (VTYSH_BGPD, match_ip_route_source_cmd_vtysh,
        "IP access-list number\n"
        "IP access-list number (expanded range)\n"
        "IP standard access-list name\n")
-
-DEFSH (VTYSH_BGPD, bgp_network_mask_natural_ttl_cmd_vtysh, 
-       "network A.B.C.D pathlimit <0-255>", 
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_BGPD, clear_bgp_as_in_cmd_vtysh, 
        "clear bgp " "<1-4294967295>" " in", 
@@ -4954,12 +4907,6 @@ DEFSH (VTYSH_BGPD, debug_bgp_events_cmd_vtysh,
        "BGP information\n"
        "BGP events\n")
 
-DEFSH (VTYSH_BGPD, set_pathlimit_ttl_cmd_vtysh, 
-       "set pathlimit ttl <1-255>", 
-       "Set values in destination routing protocol\n"
-       "BGP AS-Pathlimit attribute\n"
-       "Set AS-Path Hop-count TTL\n")
-
 DEFSH (VTYSH_ZEBRA, debug_zebra_rib_q_cmd_vtysh, 
        "debug zebra rib queue", 
        "Debugging functions (see also 'undebug')\n"
@@ -5013,14 +4960,6 @@ DEFSH (VTYSH_RIPD|VTYSH_OSPFD|VTYSH_BGPD|VTYSH_ZEBRA, ip_prefix_list_ge_le_cmd_v
        "Minimum prefix length\n"
        "Maximum prefix length to be matched\n"
        "Maximum prefix length\n")
-
-DEFSH (VTYSH_BGPD, bgp_network_backdoor_ttl_cmd_vtysh, 
-       "network A.B.C.D/M backdoor pathlimit <0-255>", 
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_BGPD, clear_ip_bgp_all_ipv4_in_cmd_vtysh, 
        "clear ip bgp * ipv4 (unicast|multicast) in", 
@@ -5149,7 +5088,6 @@ DEFSH (VTYSH_RIPD, no_rip_version_val_cmd_vtysh,
 DEFSH (VTYSH_BGPD, undebug_bgp_zebra_cmd_vtysh, 
        "undebug bgp zebra", 
        "Disable debugging functions (see also 'debug')\n"
-       "Debugging functions (see also 'undebug')\n"
        "BGP information\n"
        "BGP Zebra messages\n")
 
@@ -5199,6 +5137,7 @@ DEFSH (VTYSH_BGPD, no_debug_bgp_as4_segment_cmd_vtysh,
        "Negate a command or set its defaults\n"
        "Debugging functions (see also 'undebug')\n"
        "BGP information\n"
+       "BGP AS4 actions\n"
        "BGP AS4 aspath segment handling\n")
 
 DEFSH (VTYSH_BGPD, clear_ip_bgp_as_out_cmd_vtysh, 
@@ -6429,8 +6368,8 @@ DEFSH (VTYSH_BGPD, no_neighbor_unsuppress_map_cmd_vtysh,
 DEFSH (VTYSH_BGPD, undebug_bgp_as4_segment_cmd_vtysh, 
        "undebug bgp as4 segment", 
        "Disable debugging functions (see also 'debug')\n"
-       "Debugging functions (see also 'undebug')\n"
        "BGP information\n"
+       "BGP AS4 actions\n"
        "BGP AS4 aspath segment handling\n")
 
 DEFSH (VTYSH_OSPF6D, debug_ospf6_spf_process_cmd_vtysh, 
@@ -6565,14 +6504,6 @@ DEFSH (VTYSH_OSPFD, ospf_abr_type_cmd_vtysh,
        "Alternative ABR,  IBM implementation\n"
        "Shortcut ABR\n"
        "Standard behavior (RFC2328)\n")
-
-DEFSH (VTYSH_BGPD, bgp_network_mask_natural_backdoor_ttl_cmd_vtysh, 
-       "network A.B.C.D backdoor pathlimit (1-255>", 
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_BGPD, clear_bgp_peer_soft_cmd_vtysh, 
        "clear bgp (A.B.C.D|X:X::X:X) soft", 
@@ -7169,6 +7100,14 @@ DEFSH (VTYSH_BGPD, show_bgp_view_ipv6_neighbor_advertised_route_cmd_vtysh,
        "Neighbor to display information about\n"
        "Display the routes advertised to a BGP neighbor\n")
 
+DEFSH (VTYSH_BGPD, no_neighbor_set_peer_group_cmd_vtysh, 
+       "no neighbor (A.B.C.D|X:X::X:X) " "peer-group WORD", 
+       "Negate a command or set its defaults\n"
+       "Specify neighbor router\n"
+       "Neighbor address\nIPv6 address\n"
+       "Member of the peer-group\n"
+       "peer-group name\n")
+
 DEFSH (VTYSH_BGPD, clear_ip_bgp_instance_all_soft_out_cmd_vtysh, 
        "clear ip bgp view WORD * soft out", 
        "Reset functions\n"
@@ -7179,14 +7118,6 @@ DEFSH (VTYSH_BGPD, clear_ip_bgp_instance_all_soft_out_cmd_vtysh,
        "Clear all peers\n"
        "Soft reconfig\n"
        "Soft reconfig outbound update\n")
-
-DEFSH (VTYSH_BGPD, no_neighbor_set_peer_group_cmd_vtysh, 
-       "no neighbor (A.B.C.D|X:X::X:X) " "peer-group WORD", 
-       "Negate a command or set its defaults\n"
-       "Specify neighbor router\n"
-       "Neighbor address\nIPv6 address\n"
-       "Member of the peer-group\n"
-       "peer-group name\n")
 
 DEFSH (VTYSH_BGPD, bgp_network_mask_route_map_cmd_vtysh, 
        "network A.B.C.D mask A.B.C.D route-map WORD", 
@@ -7711,12 +7642,6 @@ DEFSH (VTYSH_ALL, access_list_any_cmd_vtysh,
        "Specify packets to forward\n"
        "Prefix to match. e.g. 10.0.0.0/8\n")
 
-DEFSH (VTYSH_BGPD, match_pathlimit_as_cmd_vtysh, 
-       "match pathlimit as <1-65535>", 
-       "Match values from routing table\n"
-       "BGP AS-Pathlimit attribute\n"
-       "Match Pathlimit AS number\n")
-
 DEFSH (VTYSH_OSPF6D, debug_ospf6_lsa_hex_cmd_vtysh, 
        "debug ospf6 lsa XXXX/0xXXXX", 
        "Debugging functions (see also 'undebug')\n"
@@ -8039,16 +7964,6 @@ DEFSH (VTYSH_BGPD, bgp_network_route_map_cmd_vtysh,
        "Route-map to modify the attributes\n"
        "Name of the route map\n")
 
-DEFSH (VTYSH_BGPD, bgp_network_mask_backdoor_ttl_cmd_vtysh, 
-       "network A.B.C.D mask A.B.C.D backdoor pathlimit <0-255>", 
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
-
 DEFSH (VTYSH_BGPD, show_ip_bgp_neighbor_damp_cmd_vtysh, 
        "show ip bgp neighbors (A.B.C.D|X:X::X:X) dampened-routes", 
        "Show running system information\n"
@@ -8104,14 +8019,6 @@ DEFSH (VTYSH_BGPD, clear_bgp_peer_in_prefix_filter_cmd_vtysh,
        "BGP IPv6 neighbor to clear\n"
        "Soft reconfig inbound update\n"
        "Push out the existing ORF prefix-list\n")
-
-DEFSH (VTYSH_BGPD, no_bgp_network_ttl_cmd_vtysh, 
-       "no network A.B.C.D/M pathlimit <0-255>", 
-       "Negate a command or set its defaults\n"
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_BGPD, show_ip_bgp_scan_cmd_vtysh, 
        "show ip bgp scan", 
@@ -8221,7 +8128,6 @@ DEFSH (VTYSH_ALL, vty_login_cmd_vtysh,
 DEFSH (VTYSH_BGPD, undebug_bgp_fsm_cmd_vtysh, 
        "undebug bgp fsm", 
        "Disable debugging functions (see also 'debug')\n"
-       "Debugging functions (see also 'undebug')\n"
        "BGP information\n"
        "Finite State Machine\n")
 
@@ -8240,18 +8146,18 @@ DEFSH (VTYSH_ZEBRA, show_zebra_client_cmd_vtysh,
        "Zebra information"
        "Client information")
 
+DEFSH (VTYSH_BGPD, no_match_peer_cmd_vtysh, 
+       "no match peer", 
+       "Negate a command or set its defaults\n"
+       "Match values from routing table\n"
+       "Match peer address\n")
+
 DEFSH (VTYSH_RIPD, rip_distance_source_access_list_cmd_vtysh, 
        "distance <1-255> A.B.C.D/M WORD", 
        "Administrative distance\n"
        "Distance value\n"
        "IP source prefix\n"
        "Access list name\n")
-
-DEFSH (VTYSH_BGPD, no_match_peer_cmd_vtysh, 
-       "no match peer", 
-       "Negate a command or set its defaults\n"
-       "Match values from routing table\n"
-       "Match peer address\n")
 
 DEFSH (VTYSH_RIPNGD, ripng_passive_interface_cmd_vtysh, 
        "passive-interface IFNAME", 
@@ -8950,15 +8856,6 @@ DEFSH (VTYSH_ALL, access_list_extended_host_mask_cmd_vtysh,
        "Source address\n"
        "Destination address\n"
        "Destination Wildcard bits\n")
-
-DEFSH (VTYSH_BGPD, bgp_network_mask_ttl_cmd_vtysh, 
-       "network A.B.C.D mask A.B.C.D pathlimit <0-255>", 
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_BGPD, ip_extcommunity_list_standard_cmd_vtysh, 
        "ip extcommunity-list <1-99> (deny|permit) .AA:NN", 
@@ -10398,15 +10295,6 @@ DEFSH (VTYSH_RIPD, no_ip_rip_authentication_mode_cmd_vtysh,
        "Authentication control\n"
        "Authentication mode\n")
 
-DEFSH (VTYSH_BGPD, no_bgp_network_mask_natural_backdoor_ttl_cmd_vtysh, 
-       "no network A.B.C.D backdoor pathlimit <0-255>", 
-       "Negate a command or set its defaults\n"
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
-
 DEFSH (VTYSH_OSPFD, ospf_area_vlink_cmd_vtysh, 
        "area (A.B.C.D|<0-4294967295>) virtual-link A.B.C.D", 
        "OSPF area parameters\n" "OSPF area ID in IP address format\n" "OSPF area ID as a decimal value\n" "Configure a virtual link\n" "Router ID of the remote ABR\n")
@@ -11119,13 +11007,6 @@ DEFSH (VTYSH_BGPD, bgp_client_to_client_reflection_cmd_vtysh,
        "BGP specific commands\n"
        "Configure client to client route reflection\n"
        "reflection of routes allowed\n")
-
-DEFSH (VTYSH_BGPD, bgp_network_ttl_cmd_vtysh, 
-       "network A.B.C.D/M pathlimit <0-255>", 
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_OSPF6D, no_debug_ospf6_neighbor_cmd_vtysh, 
        "no debug ospf6 neighbor", 
@@ -11850,15 +11731,6 @@ DEFSH (VTYSH_BGPD, no_set_local_pref_val_cmd_vtysh,
        "BGP local preference path attribute\n"
        "Preference value\n")
 
-DEFSH (VTYSH_BGPD, no_bgp_network_backdoor_ttl_cmd_vtysh, 
-       "no network A.B.C.D/M backdoor pathlimit <0-255>", 
-       "Negate a command or set its defaults\n"
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
-
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_routemap_cmd_vtysh, 
        "redistribute " "(kernel|connected|static|rip|isis|bgp)" " route-map WORD", 
        "Redistribute information from another routing protocol\n"
@@ -12221,14 +12093,6 @@ DEFSH (VTYSH_BGPD, no_bgp_timers_arg_cmd_vtysh,
        "Keepalive interval\n"
        "Holdtime\n")
 
-DEFSH (VTYSH_BGPD, no_bgp_network_mask_natural_ttl_cmd_vtysh, 
-       "no network A.B.C.D pathlimit <0-255>", 
-       "Negate a command or set its defaults\n"
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
-
 DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_linkstate_detail_cmd_vtysh, 
        "show ipv6 ospf6 linkstate detail", 
        "Show running system information\n"
@@ -12545,16 +12409,6 @@ DEFSH (VTYSH_ISISD, no_isis_hello_interval_cmd_vtysh,
        "Negate a command or set its defaults\n"
        "IS-IS commands\n"
        "Set Hello interval\n")
-
-DEFSH (VTYSH_BGPD, no_bgp_network_mask_ttl_cmd_vtysh, 
-       "no network A.B.C.D mask A.B.C.D pathlimit <0-255>", 
-       "Negate a command or set its defaults\n"
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL,  in number of AS-Path hops\n")
 
 DEFSH (VTYSH_BGPD, clear_bgp_ipv6_external_out_cmd_vtysh, 
        "clear bgp ipv6 external WORD out", 
@@ -15581,19 +15435,19 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_instance_neighbors_cmd_vtysh,
        "View name\n"
        "Detailed information on TCP and BGP neighbor connections\n")
 
-DEFSH (VTYSH_OSPF6D, ipv6_ospf6_passive_cmd_vtysh, 
-       "ipv6 ospf6 passive", 
-       "IPv6 Information\n"
-       "Open Shortest Path First (OSPF) for IPv6\n"
-       "passive interface,  No adjacency will be formed on this interface\n"
-       )
-
 DEFSH (VTYSH_OSPF6D, no_ipv6_ospf6_passive_cmd_vtysh, 
        "no ipv6 ospf6 passive", 
        "Negate a command or set its defaults\n"
        "IPv6 Information\n"
        "Open Shortest Path First (OSPF) for IPv6\n"
        "passive interface: No Adjacency will be formed on this I/F\n"
+       )
+
+DEFSH (VTYSH_OSPF6D, ipv6_ospf6_passive_cmd_vtysh, 
+       "ipv6 ospf6 passive", 
+       "IPv6 Information\n"
+       "Open Shortest Path First (OSPF) for IPv6\n"
+       "passive interface,  No adjacency will be formed on this interface\n"
        )
 
 DEFSH (VTYSH_OSPFD, no_ip_ospf_authentication_key_cmd_vtysh, 
@@ -15882,6 +15736,21 @@ DEFSH (VTYSH_RIPD|VTYSH_RIPNGD|VTYSH_OSPFD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, 
        "Route-map comment\n"
        "Comment describing this route-map rule\n")
 
+DEFSH (VTYSH_OSPFD, debug_ospf_packet_send_recv_cmd_vtysh, 
+       "debug ospf packet (hello|dd|ls-request|ls-update|ls-ack|all) (send|recv|detail)", 
+       "Debugging functions\n"
+       "OSPF information\n"
+       "OSPF packets\n"
+       "OSPF Hello\n"
+       "OSPF Database Description\n"
+       "OSPF Link State Request\n"
+       "OSPF Link State Update\n"
+       "OSPF Link State Acknowledgment\n"
+       "OSPF all packets\n"
+       "Packet sent\n"
+       "Packet received\n"
+       "Detail information\n")
+
 DEFSH (VTYSH_BGPD, show_ipv6_bgp_community2_exact_cmd_vtysh, 
        "show ipv6 bgp community (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export) exact-match", 
        "Show running system information\n"
@@ -15897,21 +15766,6 @@ DEFSH (VTYSH_BGPD, show_ipv6_bgp_community2_exact_cmd_vtysh,
        "Do not advertise to any peer (well-known community)\n"
        "Do not export to next AS (well-known community)\n"
        "Exact match of the communities")
-
-DEFSH (VTYSH_OSPFD, debug_ospf_packet_send_recv_cmd_vtysh, 
-       "debug ospf packet (hello|dd|ls-request|ls-update|ls-ack|all) (send|recv|detail)", 
-       "Debugging functions\n"
-       "OSPF information\n"
-       "OSPF packets\n"
-       "OSPF Hello\n"
-       "OSPF Database Description\n"
-       "OSPF Link State Request\n"
-       "OSPF Link State Update\n"
-       "OSPF Link State Acknowledgment\n"
-       "OSPF all packets\n"
-       "Packet sent\n"
-       "Packet received\n"
-       "Detail information\n")
 
 DEFSH (VTYSH_ALL, ipv6_access_list_remark_cmd_vtysh, 
        "ipv6 access-list WORD remark .LINE", 
@@ -16458,7 +16312,6 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &ospf_redistribute_source_type_metric_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_route_ifname_flags_pref_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &no_key_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_ttl_cmd_vtysh);
   install_element (RIP_NODE, &no_rip_distance_source_cmd_vtysh);
   install_element (INTERFACE_NODE, &isis_passwd_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_prefix_list_cmd_vtysh);
@@ -16574,18 +16427,15 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &debug_rip_events_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_metric_val_cmd_vtysh);
   install_element (ENABLE_NODE, &show_database_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_network_mask_natural_backdoor_ttl_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf6_lsa_hex_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_instance_summary_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_maximum_prefix_threshold_warning_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_vlink_authtype_md5_cmd_vtysh);
   install_element (CONFIG_NODE, &no_dump_bgp_all_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_isis_snp_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_network_mask_natural_ttl_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_priority_l2_arg_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_passive_interface_default_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_attr_unchanged1_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &bgp_network_mask_natural_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_adv_router_linkstate_id_detail_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_attr_unchanged4_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_nexthop_self_cmd_vtysh);
@@ -16593,7 +16443,6 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &no_ip_rip_split_horizon_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_maximum_prefix_warning_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_attr_unchanged6_cmd_vtysh);
-  install_element (RMAP_NODE, &no_set_pathlimit_ttl_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_adj_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_default_information_originate_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_rip_packet_direct_cmd_vtysh);
@@ -16709,14 +16558,12 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &no_ospf_area_default_cost_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ripng_packet_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_vlink_param2_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &bgp_network_mask_backdoor_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_neighbor_received_prefix_filter_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &send_lifetime_infinite_day_month_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community_exact_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_attr_unchanged2_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ipv6_route_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_send_community_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_network_mask_backdoor_ttl_cmd_vtysh);
   install_element (BGP_NODE, &old_no_ipv6_aggregate_address_summary_only_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_filter_list_cmd_vtysh);
   install_element (ISIS_NODE, &no_spf_interval_cmd_vtysh);
@@ -16841,7 +16688,6 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &neighbor_attr_unchanged9_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_rip_split_horizon_poisoned_reverse_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_rsclient_summary_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_backdoor_ttl_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_set_peer_group_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_neighbor_priority_poll_interval_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_authentication_cmd_vtysh);
@@ -16896,11 +16742,9 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_summary_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_community_all_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_lupd_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &bgp_network_backdoor_ttl_cmd_vtysh);
   install_element (RIP_NODE, &rip_redistribute_type_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_range_cost_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_community4_cmd_vtysh);
-  install_element (RMAP_NODE, &match_pathlimit_as_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &send_lifetime_month_day_day_month_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf6_brouter_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_dampened_paths_cmd_vtysh);
@@ -16977,8 +16821,8 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_bgp_bestpath_med3_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_router_id_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_bgp_community_exact_cmd_vtysh);
-  install_element (CONFIG_NODE, &debug_bgp_filter_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_community2_exact_cmd_vtysh);
+  install_element (CONFIG_NODE, &debug_bgp_filter_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_aggregate_address_as_set_summary_cmd_vtysh);
   install_element (INTERFACE_NODE, &isis_priority_l2_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_community_list_name_standard2_cmd_vtysh);
@@ -17188,7 +17032,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &no_debug_ospf6_message_sendrecv_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_flap_prefix_list_cmd_vtysh);
   install_element (INTERFACE_NODE, &ospf_retransmit_interval_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &bgp_network_ttl_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_rfc1583_flag_cmd_vtysh);
   install_element (ENABLE_NODE, &show_isis_topology_l2_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_community_list_name_standard_cmd_vtysh);
@@ -17267,8 +17110,8 @@ vtysh_init_cmd ()
   install_element (BGP_VPNV4_NODE, &no_neighbor_maximum_prefix_val_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_rip_status_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_allowas_in_arg_cmd_vtysh);
-  install_element (BGP_VPNV4_NODE, &neighbor_attr_unchanged3_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_bgp_normal_cmd_vtysh);
+  install_element (BGP_VPNV4_NODE, &neighbor_attr_unchanged3_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &bgp_damp_set_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf6_message_cmd_vtysh);
   install_element (RIPNG_NODE, &no_ripng_timers_cmd_vtysh);
@@ -17302,7 +17145,6 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &bgp_damp_set3_cmd_vtysh);
   install_element (RMAP_NODE, &no_match_pathlimit_as_val_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_route_reflector_client_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_network_mask_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_rsclient_prefix_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_vpnv4_nexthop_val_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_attr_unchanged2_cmd_vtysh);
@@ -17442,8 +17284,8 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_bgp_ipv6_prefix_list_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_ospf6_instance_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_external_ipv4_soft_in_cmd_vtysh);
-  install_element (BGP_VPNV4_NODE, &no_neighbor_attr_unchanged6_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_community4_cmd_vtysh);
+  install_element (BGP_VPNV4_NODE, &no_neighbor_attr_unchanged6_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_rd_prefix_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_instance_neighbors_peer_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_interface_ifname_prefix_detail_cmd_vtysh);
@@ -17491,7 +17333,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_bgp_ipv6_as_in_prefix_filter_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ipv6_address_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &ipv6_aggregate_address_summary_only_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_ttl_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_irdp_holdtime_cmd_vtysh);
   install_element (ISIS_NODE, &no_lsp_gen_interval_l2_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_rsclient_cmd_vtysh);
@@ -17599,7 +17440,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_isis_topology_l1_cmd_vtysh);
   install_element (INTERFACE_NODE, &csnp_interval_l1_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_as_vpnv4_out_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_ttl_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &aggregate_address_as_set_summary_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_route_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_rip_receive_version_num_cmd_vtysh);
@@ -17673,7 +17513,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_bgp_peer_group_out_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_vpnv4_rd_neighbors_peer_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_allowas_in_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_network_mask_ttl_cmd_vtysh);
   install_element (RMAP_NODE, &match_ipv6_next_hop_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_default_originate_rmap_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_cluster_id_arg_cmd_vtysh);
@@ -17716,7 +17555,6 @@ vtysh_init_cmd ()
   install_element (BGP_IPV6_NODE, &no_neighbor_attr_unchanged9_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf6_spf_database_cmd_vtysh);
   install_element (ENABLE_NODE, &ipv6_mbgp_neighbor_routes_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_network_ttl_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_prefix_list_ge_le_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_send_community_type_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_neighbor_advertised_route_cmd_vtysh);
@@ -17780,7 +17618,6 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &debug_isis_events_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_border_routers_detail_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_prefix_list_detail_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &ipv6_bgp_network_ttl_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_unsuppress_map_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_network_cmd_vtysh);
   install_element (INTERFACE_NODE, &ospf_cost_u32_inet4_cmd_vtysh);
@@ -18035,7 +17872,6 @@ vtysh_init_cmd ()
   install_element (RMAP_NODE, &no_match_community_val_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_all_neighbors_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_bgp_prefix_longer_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_network_mask_backdoor_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_redistribute_cmd_vtysh);
   install_element (CONFIG_NODE, &no_access_list_any_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_exact_cmd_vtysh);
@@ -18136,7 +17972,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ipv6_mbgp_prefix_list_cmd_vtysh);
   install_element (ISIS_NODE, &no_lsp_lifetime_cmd_vtysh);
   install_element (RMAP_NODE, &set_tag_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_neighbor_flap_cmd_vtysh);
   install_element (ISIS_NODE, &metric_style_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_log_adjacency_changes_cmd_vtysh);
@@ -18321,7 +18156,6 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ip_extcommunity_list_name_expanded_all_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_database_type_self_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_neighbor_detail_all_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_network_mask_natural_backdoor_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_soft_cmd_vtysh);
   install_element (RMAP_NODE, &match_community_exact_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_distribute_list_cmd_vtysh);
@@ -18386,13 +18220,13 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_bgp_rsclient_route_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_retransmit_interval_cmd_vtysh);
   install_element (CONFIG_NODE, &no_access_list_extended_any_any_cmd_vtysh);
-  install_element (VIEW_NODE, &show_ip_bgp_neighbor_flap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_prefix_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_neighbor_flap_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_interface_prefix_detail_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_default_information_originate_always_type_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_all_neighbor_routes_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_attr_unchanged10_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_all_out_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_default_information_originate_always_type_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_extcommunity_list_expanded_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_abr_type_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_aggregate_address_summary_only_cmd_vtysh);
@@ -18434,8 +18268,8 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ipv6_ospf6_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_id_self_originated_cmd_vtysh);
-  install_element (VIEW_NODE, &show_ip_bgp_flap_prefix_longer_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_neighbor_received_prefix_filter_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_flap_prefix_longer_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_authentication_addr_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_route_mask_flags2_cmd_vtysh);
   install_element (CONFIG_NODE, &dump_bgp_updates_interval_cmd_vtysh);
@@ -18480,7 +18314,6 @@ vtysh_init_cmd ()
   install_element (VTY_NODE, &vty_ipv6_access_class_cmd_vtysh);
   install_element (BGP_NODE, &bgp_bestpath_med3_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_flap_route_map_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &bgp_network_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_simulate_spf_tree_root_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_rd_route_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_instance_neighbors_peer_cmd_vtysh);
@@ -18515,7 +18348,6 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_ospf_database_type_self_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_summary_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_cost_u32_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &no_ipv6_bgp_network_ttl_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_receive_version_2_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_nexthop_self_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_export_list_cmd_vtysh);
@@ -18536,10 +18368,10 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_bgp_bestpath_med2_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_passive_interface_default_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_regexp_cmd_vtysh);
-  install_element (OSPF_NODE, &no_ospf_default_information_originate_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_route_map_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_maximum_prefix_threshold_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_authentication_key_addr_cmd_vtysh);
+  install_element (OSPF_NODE, &no_ospf_default_information_originate_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_prefix_list_seq_le_ge_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_rd_neighbors_peer_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_route_longer_cmd_vtysh);
@@ -18628,9 +18460,9 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ipv6_ripng_status_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_all_route_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf6_lsa_hex_cmd_vtysh);
+  install_element (BGP_VPNV4_NODE, &no_neighbor_attr_unchanged1_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_set_peer_group_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_as_path_access_list_all_cmd_vtysh);
-  install_element (BGP_VPNV4_NODE, &no_neighbor_attr_unchanged1_cmd_vtysh);
   install_element (CONFIG_NODE, &no_access_list_extended_host_mask_cmd_vtysh);
   install_element (BGP_NODE, &aggregate_address_summary_only_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_soft_reconfiguration_cmd_vtysh);
@@ -18649,9 +18481,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_bgp_community_all_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_irdp_debug_misc_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_filter_list_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_network_backdoor_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_linkstate_id_detail_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &bgp_network_mask_backdoor_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_group_soft_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_authentication_mode_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_port_cmd_vtysh);
@@ -18659,7 +18489,6 @@ vtysh_init_cmd ()
   install_element (RIPNG_NODE, &no_ripng_network_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_prefix_list_seq_le_cmd_vtysh);
   install_element (BGP_NODE, &bgp_confederation_peers_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &bgp_network_mask_natural_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_community3_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_all_rsclient_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_isis_adj_cmd_vtysh);
@@ -18668,8 +18497,8 @@ vtysh_init_cmd ()
   install_element (BGP_IPV6M_NODE, &neighbor_prefix_list_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_ospf6_cost_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_id_router_detail_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_default_information_originate_metric_type_routemap_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_neighbor_advertised_route_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_default_information_originate_metric_type_routemap_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_ipv6_aggregate_address_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_view_prefix_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_attr_unchanged3_cmd_vtysh);
@@ -18718,9 +18547,8 @@ vtysh_init_cmd ()
   install_element (BGP_IPV6M_NODE, &neighbor_attr_unchanged1_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_community_list_exact_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_aggregate_address_mask_as_set_summary_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_distance_ospf_inter_external_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_statistics_view_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_ttl_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_distance_ospf_inter_external_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ipv6_access_list_remark_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &aggregate_address_mask_as_set_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_router_isis_cmd_vtysh);
@@ -18763,7 +18591,6 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_neighbor_dont_capability_negotiate_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_route_flags_distance_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_view_neighbor_advertised_route_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &bgp_network_backdoor_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community4_exact_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_prefix_list_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_in_cmd_vtysh);
@@ -18834,8 +18661,8 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_bgp_ipv6_external_out_cmd_vtysh);
   install_element (RIP_NODE, &distribute_list_prefix_all_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_zebra_sendrecv_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_default_information_originate_routemap_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ospf_authentication_key_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_default_information_originate_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_peer_soft_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_hello_interval_addr_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_redistribute_source_metric_type_routemap_cmd_vtysh);
@@ -18894,7 +18721,6 @@ vtysh_init_cmd ()
   install_element (RIPNG_NODE, &ipv6_distribute_list_prefix_all_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_weight_val_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_neighbors_peer_cmd_vtysh);
-  install_element (RMAP_NODE, &no_match_pathlimit_as_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_spfstats_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_authentication_addr_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_receive_version_cmd_vtysh);
@@ -18902,7 +18728,6 @@ vtysh_init_cmd ()
   install_element (RESTRICTED_NODE, &show_ip_bgp_vpnv4_all_prefix_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_standard_any_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_route_match_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_network_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_zebra_rib_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ospf_priority_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_csnp_interval_arg_cmd_vtysh);
@@ -18912,7 +18737,6 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_ospf_neighbor_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_instance_all_soft_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_backdoor_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_external_in_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf6_zebra_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_neighbor_flap_cmd_vtysh);
@@ -18927,14 +18751,12 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_all_prefix_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_all_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_attr_unchanged1_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_backdoor_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_all_in_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_route_map_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_isis_spfevents_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_attr_unchanged_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_activate_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_adv_router_detail_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_network_backdoor_ttl_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_set_peer_group_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_aggregate_address_as_set_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_route_prefix_cmd_vtysh);
@@ -18989,7 +18811,6 @@ vtysh_init_cmd ()
   install_element (RESTRICTED_NODE, &show_bgp_community4_exact_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_all_soft_in_cmd_vtysh);
   install_element (RMAP_NODE, &match_community_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_neighbor_detail_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_router_detail_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ripng_packet_direct_cmd_vtysh);
@@ -19029,7 +18850,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_bgp_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_cidr_only_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_csnp_interval_l2_arg_cmd_vtysh);
-  install_element (BGP_IPV4M_NODE, &bgp_network_mask_ttl_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_all_neighbors_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_ipv6_aggregate_address_summary_only_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_group_in_prefix_filter_cmd_vtysh);
@@ -19053,8 +18873,8 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ip_prefix_list_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_interface_prefix_detail_cmd_vtysh);
   install_element (OSPF6_NODE, &ospf6_router_id_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_default_information_originate_always_type_routemap_cmd_vtysh);
   install_element (BGP_NODE, &bgp_router_id_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_default_information_originate_always_type_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_route_server_client_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_extcommunity_list_name_expanded_cmd_vtysh);
@@ -19092,7 +18912,6 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &ospf_redistribute_source_type_cmd_vtysh);
   install_element (RIP_NODE, &no_rip_distance_source_access_list_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_attr_unchanged_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_backdoor_ttl_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_passive_interface_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_attr_unchanged7_cmd_vtysh);
   install_element (ISIS_NODE, &no_lsp_lifetime_l2_cmd_vtysh);
@@ -19247,11 +19066,9 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_vpnv4_out_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_bgp_regexp_cmd_vtysh);
   install_element (RMAP_NODE, &rmap_continue_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_network_mask_natural_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_ipv6_route_cmd_vtysh);
   install_element (OSPF6_NODE, &area_range_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_route_cmd_vtysh);
-  install_element (RMAP_NODE, &set_pathlimit_ttl_cmd_vtysh);
   install_element (OSPF6_NODE, &ospf6_redistribute_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_neighbor_advertised_route_cmd_vtysh);
   install_element (RIP_NODE, &rip_distance_cmd_vtysh);
@@ -19303,7 +19120,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_extcommunity_list_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_prefix_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_maximum_prefix_threshold_warning_cmd_vtysh);
-  install_element (BGP_IPV4_NODE, &bgp_network_mask_ttl_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_route_prefix_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_send_community_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_vlink_param2_cmd_vtysh);
